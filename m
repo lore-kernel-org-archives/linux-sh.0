@@ -1,228 +1,100 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 24 Mar 2020 16:26:28 +0000
-Subject: [PATCH 05/10] sh: move the ioremap implementation out of line
-Message-Id: <20200324162633.754714-6-hch@lst.de>
+From: Dmitry Safonov <dima@arista.com>
+Date: Mon, 16 Mar 2020 14:38:57 +0000
+Subject: [PATCHv2 31/50] sh: Add loglvl to printk_address()
+Message-Id: <20200316143916.195608-32-dima@arista.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200324162633.754714-1-hch@lst.de>
-In-Reply-To: <20200324162633.754714-1-hch@lst.de>
+References: <20200316143916.195608-1-dima@arista.com>
+In-Reply-To: <20200316143916.195608-1-dima@arista.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Dmitry Safonov <0x7f454c46@gmail.com>, Dmitry Safonov <dima@arista.com>, Andrew Morton <akpm@linux-foundation.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Ingo Molnar <mingo@kernel.org>, Jiri Slaby <jslaby@suse.com>, Petr Mladek <pmladek@suse.com>, Sergey Senozhatsky <sergey.senozhatsky@gmail.com>, Steven Rostedt <rostedt@goodmis.org>, Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-Move the internal implementation details of ioremap out of line, no need
-to expose any of this to drivers for a slow path API.
+Currently, the log-level of show_stack() depends on a platform
+realization. It creates situations where the headers are printed with
+lower log level or higher than the stacktrace (depending on
+a platform or user).
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Furthermore, it forces the logic decision from user to an architecture
+side. In result, some users as sysrq/kdb/etc are doing tricks with
+temporary rising console_loglevel while printing their messages.
+And in result it not only may print unwanted messages from other CPUs,
+but also omit printing at all in the unlucky case where the printk()
+was deferred.
+
+Introducing log-level parameter and KERN_UNSUPPRESSED [1] seems
+an easier approach than introducing more printk buffers.
+Also, it will consolidate printings with headers.
+
+Add log level argument to printk_address() as a preparation to introduce
+show_stack_loglvl().
+
+As a good side-effect show_fault_oops() now prints the address with
+KERN_EMREG as the rest of output, making sure there won't be situation
+where "PC: " is printed without actual address.
+
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+[1]: https://lore.kernel.org/lkml/20190528002412.1625-1-dima@arista.com/T/#u
+Signed-off-by: Dmitry Safonov <dima@arista.com>
 ---
- arch/sh/include/asm/io.h | 101 ++++++---------------------------------
- arch/sh/mm/ioremap.c     |  57 ++++++++++++++++++++++
- 2 files changed, 72 insertions(+), 86 deletions(-)
+ arch/sh/include/asm/kdebug.h | 3 ++-
+ arch/sh/kernel/dumpstack.c   | 6 +++---
+ arch/sh/mm/fault.c           | 2 +-
+ 3 files changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 59d53b06d461..282ec476c06e 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -246,109 +246,38 @@ unsigned long long poke_real_address_q(unsigned long long addr,
- #define phys_to_virt(address)	(__va(address))
- #endif
+diff --git a/arch/sh/include/asm/kdebug.h b/arch/sh/include/asm/kdebug.h
+index de8693fabb1d..960545306afa 100644
+--- a/arch/sh/include/asm/kdebug.h
++++ b/arch/sh/include/asm/kdebug.h
+@@ -12,7 +12,8 @@ enum die_val {
+ };
  
--/*
-- * On 32-bit SH, we traditionally have the whole physical address space
-- * mapped at all times (as MIPS does), so "ioremap()" and "iounmap()" do
-- * not need to do anything but place the address in the proper segment.
-- * This is true for P1 and P2 addresses, as well as some P3 ones.
-- * However, most of the P3 addresses and newer cores using extended
-- * addressing need to map through page tables, so the ioremap()
-- * implementation becomes a bit more complicated.
-- *
-- * See arch/sh/mm/ioremap.c for additional notes on this.
-- *
-- * We cheat a bit and always return uncachable areas until we've fixed
-- * the drivers to handle caching properly.
-- *
-- * On the SH-5 the concept of segmentation in the 1:1 PXSEG sense simply
-- * doesn't exist, so everything must go through page tables.
-- */
- #ifdef CONFIG_MMU
-+void iounmap(void __iomem *addr);
- void __iomem *__ioremap_caller(phys_addr_t offset, unsigned long size,
- 			       pgprot_t prot, void *caller);
--void iounmap(void __iomem *addr);
--
--static inline void __iomem *
--__ioremap(phys_addr_t offset, unsigned long size, pgprot_t prot)
--{
--	return __ioremap_caller(offset, size, prot, __builtin_return_address(0));
--}
--
--static inline void __iomem *
--__ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
--{
--#ifdef CONFIG_29BIT
--	phys_addr_t last_addr = offset + size - 1;
--
--	/*
--	 * For P1 and P2 space this is trivial, as everything is already
--	 * mapped. Uncached access for P1 addresses are done through P2.
--	 * In the P3 case or for addresses outside of the 29-bit space,
--	 * mapping must be done by the PMB or by using page tables.
--	 */
--	if (likely(PXSEG(offset) < P3SEG && PXSEG(last_addr) < P3SEG)) {
--		u64 flags = pgprot_val(prot);
--
--		/*
--		 * Anything using the legacy PTEA space attributes needs
--		 * to be kicked down to page table mappings.
--		 */
--		if (unlikely(flags & _PAGE_PCC_MASK))
--			return NULL;
--		if (unlikely(flags & _PAGE_CACHABLE))
--			return (void __iomem *)P1SEGADDR(offset);
--
--		return (void __iomem *)P2SEGADDR(offset);
--	}
--
--	/* P4 above the store queues are always mapped. */
--	if (unlikely(offset >= P3_ADDR_MAX))
--		return (void __iomem *)P4SEGADDR(offset);
--#endif
--
--	return NULL;
--}
--
--static inline void __iomem *
--__ioremap_mode(phys_addr_t offset, unsigned long size, pgprot_t prot)
--{
--	void __iomem *ret;
--
--	ret = __ioremap_trapped(offset, size);
--	if (ret)
--		return ret;
--
--	ret = __ioremap_29bit(offset, size, prot);
--	if (ret)
--		return ret;
--
--	return __ioremap(offset, size, prot);
--}
--#else
--#define __ioremap(offset, size, prot)		((void __iomem *)(offset))
--#define __ioremap_mode(offset, size, prot)	((void __iomem *)(offset))
--#define iounmap(addr)				do { } while (0)
--#endif /* CONFIG_MMU */
+ /* arch/sh/kernel/dumpstack.c */
+-extern void printk_address(unsigned long address, int reliable);
++extern void printk_address(unsigned long address, int reliable,
++			   const char *loglvl);
+ extern void dump_mem(const char *str, const char *loglvl,
+ 		     unsigned long bottom, unsigned long top);
  
- static inline void __iomem *ioremap(phys_addr_t offset, unsigned long size)
- {
--	return __ioremap_mode(offset, size, PAGE_KERNEL_NOCACHE);
-+	return __ioremap_caller(offset, size, PAGE_KERNEL_NOCACHE,
-+			__builtin_return_address(0));
+diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
+index 2c1a78e5776b..959064b90055 100644
+--- a/arch/sh/kernel/dumpstack.c
++++ b/arch/sh/kernel/dumpstack.c
+@@ -44,9 +44,9 @@ void dump_mem(const char *str, const char *loglvl,
+ 	}
  }
  
- static inline void __iomem *
- ioremap_cache(phys_addr_t offset, unsigned long size)
+-void printk_address(unsigned long address, int reliable)
++void printk_address(unsigned long address, int reliable, const char *loglvl)
  {
--	return __ioremap_mode(offset, size, PAGE_KERNEL);
-+	return __ioremap_caller(offset, size, PAGE_KERNEL,
-+			__builtin_return_address(0));
+-	printk(" [<%p>] %s%pS\n", (void *) address,
++	printk("%s [<%p>] %s%pS\n", loglvl, (void *) address,
+ 			reliable ? "" : "? ", (void *) address);
  }
- #define ioremap_cache ioremap_cache
  
- #ifdef CONFIG_HAVE_IOREMAP_PROT
--static inline void __iomem *
--ioremap_prot(phys_addr_t offset, unsigned long size, unsigned long flags)
-+static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
-+		unsigned long flags)
+@@ -118,7 +118,7 @@ static int print_trace_stack(void *data, char *name)
+  */
+ static void print_trace_address(void *data, unsigned long addr, int reliable)
  {
--	return __ioremap_mode(offset, size, __pgprot(flags));
-+	return __ioremap_caller(offset, size, __pgprot(flags),
-+			__builtin_return_address(0));
+-	printk_address(addr, reliable);
++	printk_address(addr, reliable, (char *)data);
  }
--#endif
-+#endif /* CONFIG_HAVE_IOREMAP_PROT */
-+
-+#else /* CONFIG_MMU */
-+#define iounmap(addr)		do { } while (0)
-+#define ioremap(offset, size)	((void __iomem *)(unsigned long)(offset))
-+#endif /* CONFIG_MMU */
  
- #define ioremap_uc	ioremap
+ static const struct stacktrace_ops print_trace_ops = {
+diff --git a/arch/sh/mm/fault.c b/arch/sh/mm/fault.c
+index 5f51456f4fc7..b11f0c5e65b6 100644
+--- a/arch/sh/mm/fault.c
++++ b/arch/sh/mm/fault.c
+@@ -196,7 +196,7 @@ show_fault_oops(struct pt_regs *regs, unsigned long address)
  
-diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
-index d9ec85b6bb21..a8170fa07bc1 100644
---- a/arch/sh/mm/ioremap.c
-+++ b/arch/sh/mm/ioremap.c
-@@ -26,6 +26,55 @@
- #include <asm/mmu.h>
- #include "ioremap.h"
+ 	printk(KERN_CONT " at %08lx\n", address);
+ 	printk(KERN_ALERT "PC:");
+-	printk_address(regs->pc, 1);
++	printk_address(regs->pc, 1, KERN_ALERT);
  
-+/*
-+ * On 32-bit SH, we traditionally have the whole physical address space mapped
-+ * at all times (as MIPS does), so "ioremap()" and "iounmap()" do not need to do
-+ * anything but place the address in the proper segment.  This is true for P1
-+ * and P2 addresses, as well as some P3 ones.  However, most of the P3 addresses
-+ * and newer cores using extended addressing need to map through page tables, so
-+ * the ioremap() implementation becomes a bit more complicated.
-+ *
-+ * On the SH-5 the concept of segmentation in the 1:1 PXSEG sense simply doesn't
-+ * exist, so everything must go through page tables.
-+ */
-+
-+#ifdef CONFIG_29BIT
-+static void __iomem *
-+__ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
-+{
-+	phys_addr_t last_addr = offset + size - 1;
-+
-+	/*
-+	 * For P1 and P2 space this is trivial, as everything is already
-+	 * mapped. Uncached access for P1 addresses are done through P2.
-+	 * In the P3 case or for addresses outside of the 29-bit space,
-+	 * mapping must be done by the PMB or by using page tables.
-+	 */
-+	if (likely(PXSEG(offset) < P3SEG && PXSEG(last_addr) < P3SEG)) {
-+		u64 flags = pgprot_val(prot);
-+
-+		/*
-+		 * Anything using the legacy PTEA space attributes needs
-+		 * to be kicked down to page table mappings.
-+		 */
-+		if (unlikely(flags & _PAGE_PCC_MASK))
-+			return NULL;
-+		if (unlikely(flags & _PAGE_CACHABLE))
-+			return (void __iomem *)P1SEGADDR(offset);
-+
-+		return (void __iomem *)P2SEGADDR(offset);
-+	}
-+
-+	/* P4 above the store queues are always mapped. */
-+	if (unlikely(offset >= P3_ADDR_MAX))
-+		return (void __iomem *)P4SEGADDR(offset);
-+
-+	return NULL;
-+}
-+#else
-+#define __ioremap_29bit(offset, size, prot)		NULL
-+#endif /* CONFIG_29BIT */
-+
- /*
-  * Remap an arbitrary physical address space into the kernel virtual
-  * address space. Needed when the kernel wants to access high addresses
-@@ -43,6 +92,14 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
- 	unsigned long offset, last_addr, addr, orig_addr;
- 	void __iomem *mapped;
- 
-+	mapped = __ioremap_trapped(phys_addr, size);
-+	if (mapped)
-+		return mapped;
-+
-+	mapped = __ioremap_29bit(phys_addr, size, pgprot);
-+	if (mapped)
-+		return mapped;
-+
- 	/* Don't allow wraparound or zero size */
- 	last_addr = phys_addr + size - 1;
- 	if (!size || last_addr < phys_addr)
+ 	show_pte(NULL, address);
+ }
 -- 
 2.25.1
