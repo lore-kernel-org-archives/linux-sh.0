@@ -1,88 +1,102 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 25 Mar 2020 10:03:56 +0000
-Subject: [PATCH 1/2] gpiolib: Pass gpio_desc to gpio_set_config()
-Message-Id: <20200325100357.13705-2-geert+renesas@glider.be>
+From: Dmitry Safonov <dima@arista.com>
+Date: Mon, 16 Mar 2020 14:38:58 +0000
+Subject: [PATCHv2 32/50] sh: Add loglvl to show_trace()
+Message-Id: <20200316143916.195608-33-dima@arista.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200325100357.13705-1-geert+renesas@glider.be>
-In-Reply-To: <20200325100357.13705-1-geert+renesas@glider.be>
+References: <20200316143916.195608-1-dima@arista.com>
+In-Reply-To: <20200316143916.195608-1-dima@arista.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Herring <robh@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Ulrich Hecht <uli+renesas@fpond.eu>, Chris Brandt <chris.brandt@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-kernel@vger.kernel.org
+Cc: Dmitry Safonov <0x7f454c46@gmail.com>, Dmitry Safonov <dima@arista.com>, Andrew Morton <akpm@linux-foundation.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Ingo Molnar <mingo@kernel.org>, Jiri Slaby <jslaby@suse.com>, Petr Mladek <pmladek@suse.com>, Sergey Senozhatsky <sergey.senozhatsky@gmail.com>, Steven Rostedt <rostedt@goodmis.org>, Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-All callers of gpio_set_config() have to convert a gpio_desc to a
-gpio_chip and offset.  Avoid these duplicated conversion steps by
-letting gpio_set_config() take a gpio_desc pointer directly.
+Currently, the log-level of show_stack() depends on a platform
+realization. It creates situations where the headers are printed with
+lower log level or higher than the stacktrace (depending on
+a platform or user).
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Furthermore, it forces the logic decision from user to an architecture
+side. In result, some users as sysrq/kdb/etc are doing tricks with
+temporary rising console_loglevel while printing their messages.
+And in result it not only may print unwanted messages from other CPUs,
+but also omit printing at all in the unlucky case where the printk()
+was deferred.
+
+Introducing log-level parameter and KERN_UNSUPPRESSED [1] seems
+an easier approach than introducing more printk buffers.
+Also, it will consolidate printings with headers.
+
+Add log level parameter to show_trace() as a preparation to introduce
+show_stack_loglvl().
+
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+[1]: https://lore.kernel.org/lkml/20190528002412.1625-1-dima@arista.com/T/#u
+Signed-off-by: Dmitry Safonov <dima@arista.com>
 ---
- drivers/gpio/gpiolib.c | 17 +++++++----------
- 1 file changed, 7 insertions(+), 10 deletions(-)
+ arch/sh/include/asm/processor_32.h |  2 +-
+ arch/sh/kernel/dumpstack.c         | 10 +++++-----
+ arch/sh/kernel/process_32.c        |  2 +-
+ 3 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/gpio/gpiolib.c b/drivers/gpio/gpiolib.c
-index cf7ee9a0ddde6b45..8eeb29de12cb5811 100644
---- a/drivers/gpio/gpiolib.c
-+++ b/drivers/gpio/gpiolib.c
-@@ -3244,9 +3244,9 @@ static int gpio_do_set_config(struct gpio_chip *gc, unsigned int offset,
- 	return gc->set_config(gc, offset, config);
- }
+diff --git a/arch/sh/include/asm/processor_32.h b/arch/sh/include/asm/processor_32.h
+index 0e0ecc0132e3..d44409413418 100644
+--- a/arch/sh/include/asm/processor_32.h
++++ b/arch/sh/include/asm/processor_32.h
+@@ -171,7 +171,7 @@ static __inline__ void enable_fpu(void)
+ #define thread_saved_pc(tsk)	(tsk->thread.pc)
  
--static int gpio_set_config(struct gpio_chip *gc, unsigned int offset,
--			   enum pin_config_param mode)
-+static int gpio_set_config(struct gpio_desc *desc, enum pin_config_param mode)
+ void show_trace(struct task_struct *tsk, unsigned long *sp,
+-		struct pt_regs *regs);
++		struct pt_regs *regs, const char *loglvl);
+ 
+ #ifdef CONFIG_DUMP_CODE
+ void show_code(struct pt_regs *regs);
+diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
+index 959064b90055..d488a47a1f0f 100644
+--- a/arch/sh/kernel/dumpstack.c
++++ b/arch/sh/kernel/dumpstack.c
+@@ -127,16 +127,16 @@ static const struct stacktrace_ops print_trace_ops = {
+ };
+ 
+ void show_trace(struct task_struct *tsk, unsigned long *sp,
+-		struct pt_regs *regs)
++		struct pt_regs *regs, const char *loglvl)
  {
-+	struct gpio_chip *chip = desc->gdev->chip;
- 	unsigned long config;
- 	unsigned arg;
+ 	if (regs && user_mode(regs))
+ 		return;
  
-@@ -3261,7 +3261,7 @@ static int gpio_set_config(struct gpio_chip *gc, unsigned int offset,
- 	}
+-	printk("\nCall trace:\n");
++	printk("%s\nCall trace:\n", loglvl);
  
- 	config = PIN_CONF_PACKED(mode, arg);
--	return gpio_do_set_config(gc, offset, config);
-+	return gpio_do_set_config(chip, gpio_chip_hwgpio(desc), config);
+-	unwind_stack(tsk, regs, sp, &print_trace_ops, "");
++	unwind_stack(tsk, regs, sp, &print_trace_ops, (void *)loglvl);
+ 
+-	printk("\n");
++	printk("%s\n", loglvl);
+ 
+ 	if (!tsk)
+ 		tsk = current;
+@@ -158,5 +158,5 @@ void show_stack(struct task_struct *tsk, unsigned long *sp)
+ 	stack = (unsigned long)sp;
+ 	dump_mem("Stack: ", KERN_DEFAULT, stack, THREAD_SIZE +
+ 		 (unsigned long)task_stack_page(tsk));
+-	show_trace(tsk, sp, NULL);
++	show_trace(tsk, sp, NULL, KERN_DEFAULT);
+ }
+diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
+index a094633874c3..456cc8d171f7 100644
+--- a/arch/sh/kernel/process_32.c
++++ b/arch/sh/kernel/process_32.c
+@@ -59,7 +59,7 @@ void show_regs(struct pt_regs * regs)
+ 	printk("MACH: %08lx MACL: %08lx GBR : %08lx PR  : %08lx\n",
+ 	       regs->mach, regs->macl, regs->gbr, regs->pr);
+ 
+-	show_trace(NULL, (unsigned long *)regs->regs[15], regs);
++	show_trace(NULL, (unsigned long *)regs->regs[15], regs, KERN_DEFAULT);
+ 	show_code(regs);
  }
  
- static int gpio_set_bias(struct gpio_chip *chip, struct gpio_desc *desc)
-@@ -3277,7 +3277,7 @@ static int gpio_set_bias(struct gpio_chip *chip, struct gpio_desc *desc)
- 		bias = PIN_CONFIG_BIAS_PULL_DOWN;
- 
- 	if (bias) {
--		ret = gpio_set_config(chip, gpio_chip_hwgpio(desc), bias);
-+		ret = gpio_set_config(desc, bias);
- 		if (ret != -ENOTSUPP)
- 			return ret;
- 	}
-@@ -3435,8 +3435,7 @@ int gpiod_direction_output(struct gpio_desc *desc, int value)
- 	gc = desc->gdev->chip;
- 	if (test_bit(FLAG_OPEN_DRAIN, &desc->flags)) {
- 		/* First see if we can enable open drain in hardware */
--		ret = gpio_set_config(gc, gpio_chip_hwgpio(desc),
--				      PIN_CONFIG_DRIVE_OPEN_DRAIN);
-+		ret = gpio_set_config(desc, PIN_CONFIG_DRIVE_OPEN_DRAIN);
- 		if (!ret)
- 			goto set_output_value;
- 		/* Emulate open drain by not actively driving the line high */
-@@ -3446,8 +3445,7 @@ int gpiod_direction_output(struct gpio_desc *desc, int value)
- 		}
- 	}
- 	else if (test_bit(FLAG_OPEN_SOURCE, &desc->flags)) {
--		ret = gpio_set_config(gc, gpio_chip_hwgpio(desc),
--				      PIN_CONFIG_DRIVE_OPEN_SOURCE);
-+		ret = gpio_set_config(desc, PIN_CONFIG_DRIVE_OPEN_SOURCE);
- 		if (!ret)
- 			goto set_output_value;
- 		/* Emulate open source by not actively driving the line low */
-@@ -3456,8 +3454,7 @@ int gpiod_direction_output(struct gpio_desc *desc, int value)
- 			goto set_output_flag;
- 		}
- 	} else {
--		gpio_set_config(gc, gpio_chip_hwgpio(desc),
--				PIN_CONFIG_DRIVE_PUSH_PULL);
-+		gpio_set_config(desc, PIN_CONFIG_DRIVE_PUSH_PULL);
- 	}
- 
- set_output_value:
 -- 
-2.17.1
+2.25.1
