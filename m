@@ -1,47 +1,38 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Thu, 12 Mar 2020 08:01:22 +0000
-Subject: Re: [RESEND PATCH v2 8/9] media: fsl-viu: Constify ioreadX() iomem argument (as in generic implement
-Message-Id: <1c4a11b5-5ca6-7555-de3c-ff30f707fac7@xs4all.nl>
+From: Dmitry Safonov <dima@arista.com>
+Date: Mon, 16 Mar 2020 14:38:56 +0000
+Subject: [PATCHv2 30/50] sh: Remove needless printk()
+Message-Id: <20200316143916.195608-31-dima@arista.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200219175007.13627-1-krzk@kernel.org>
- <20200219175007.13627-9-krzk@kernel.org>
-In-Reply-To: <20200219175007.13627-9-krzk@kernel.org>
+References: <20200316143916.195608-1-dima@arista.com>
+In-Reply-To: <20200316143916.195608-1-dima@arista.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Krzysztof Kozlowski <krzk@kernel.org>, Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, Alexey Brodkin <abrodkin@synopsys.com>, Vineet Gupta <vgupta@synopsys.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Airlie <airlied@redhat.com>, David Airlie <airlied@linux.ie>, Daniel Vetter <daniel@ffwll.ch>, Ben Skeggs <bskeggs@redhat.com>, Mauro Carvalho Chehab <mchehab@kernel.org>, Jiri Slaby <jirislaby@gmail.com>, Nick Kossifidis <mickflemm@gmail.com>, Luis Chamberlain <mcgrof@kernel.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Geert Uytterhoeven <geert+renesas@glider.be>, Andrew Morton <akpm@linux-foundation.org>, Thomas Gleixner <tglx@linutronix.de>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org, linux-media@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Dmitry Safonov <0x7f454c46@gmail.com>, Dmitry Safonov <dima@arista.com>, Andrew Morton <akpm@linux-foundation.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Ingo Molnar <mingo@kernel.org>, Jiri Slaby <jslaby@suse.com>, Petr Mladek <pmladek@suse.com>, Sergey Senozhatsky <sergey.senozhatsky@gmail.com>, Steven Rostedt <rostedt@goodmis.org>, Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
 
-On 2/19/20 6:50 PM, Krzysztof Kozlowski wrote:
-> The ioreadX() helpers have inconsistent interface.  On some architectures
-> void *__iomem address argument is a pointer to const, on some not.
-> 
-> Implementations of ioreadX() do not modify the memory under the address
-> so they can be converted to a "const" version for const-safety and
-> consistency among architectures.
-> 
-> Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
+Currently `data' is always an empty line "".
+No need for additional printk() call.
 
-Acked-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Dmitry Safonov <dima@arista.com>
+---
+ arch/sh/kernel/dumpstack.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-Regards,
-
-	Hans
-
-> ---
->  drivers/media/platform/fsl-viu.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/media/platform/fsl-viu.c b/drivers/media/platform/fsl-viu.c
-> index 81a8faedbba6..991d9dc82749 100644
-> --- a/drivers/media/platform/fsl-viu.c
-> +++ b/drivers/media/platform/fsl-viu.c
-> @@ -34,7 +34,7 @@
->  /* Allow building this driver with COMPILE_TEST */
->  #if !defined(CONFIG_PPC) && !defined(CONFIG_MICROBLAZE)
->  #define out_be32(v, a)	iowrite32be(a, (void __iomem *)v)
-> -#define in_be32(a)	ioread32be((void __iomem *)a)
-> +#define in_be32(a)	ioread32be((const void __iomem *)a)
->  #endif
->  
->  #define BUFFER_TIMEOUT		msecs_to_jiffies(500)  /* 0.5 seconds */
-> 
+diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
+index 6784b914fba0..2c1a78e5776b 100644
+--- a/arch/sh/kernel/dumpstack.c
++++ b/arch/sh/kernel/dumpstack.c
+@@ -118,7 +118,6 @@ static int print_trace_stack(void *data, char *name)
+  */
+ static void print_trace_address(void *data, unsigned long addr, int reliable)
+ {
+-	printk("%s", (char *)data);
+ 	printk_address(addr, reliable);
+ }
+ 
+-- 
+2.25.1
