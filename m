@@ -1,51 +1,35 @@
-From: Logan Gunthorpe <logang@deltatee.com>
-Date: Fri, 06 Mar 2020 17:08:46 +0000
-Subject: [PATCH v4 7/7] mm/memremap: Set caching mode for PCI P2PDMA memory to WC
-Message-Id: <20200306170846.9333-8-logang@deltatee.com>
+From: ECOWAS COMMITEE <ecowasmonitoringcommitteeabj@gmail.com>
+Date: Fri, 20 Mar 2020 11:20:34 +0000
+Subject: HAPPY SURVIVAL OF CORONAVIRUS
+Message-Id: <CAHHubrbE-eXijJvb-yMhHf_zMtqHatZECXC7fpgS=r7y6kGzGQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200306170846.9333-1-logang@deltatee.com>
-In-Reply-To: <20200306170846.9333-1-logang@deltatee.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Dan Williams <dan.j.williams@intel.com>, Michal Hocko <mhocko@kernel.org>, David Hildenbrand <david@redhat.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Eric Badger <ebadger@gigaio.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Jason Gunthorpe <jgg@ziepe.ca>, Logan Gunthorpe <logang@deltatee.com>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>
+To: linux-sh@vger.kernel.org
 
-PCI BAR IO memory should never be mapped as WB, however prior to this
-the PAT bits were set WB and it was typically overridden by MTRR
-registers set by the firmware.
+Dear Sir/Madam
 
-Set PCI P2PDMA memory to be UC as this is what it currently, typically,
-ends up being mapped as on x86 after the MTRR registers override the
-cache setting.
+HAPPY SURVIVAL OF CORONAVIRUS
 
-Future use-cases may need to generalize this by adding flags to
-select the caching type, as some P2PDMA cases may not want UC.
-However, those use-cases are not upstream yet and this can be changed
-when they arrive.
+We the West African Monitoring Committee of the West African Economic
+Community(ECOWAS)are contacting you for a business transaction which
+we feel will be of great interest to you.
 
-Cc: Christoph Hellwig <hch@lst.de>
-Cc: Jason Gunthorpe <jgg@ziepe.ca>
-Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
-Reviewed-by: Dan Williams <dan.j.williams@intel.com>
----
- mm/memremap.c | 3 +++
- 1 file changed, 3 insertions(+)
+Our duty is to see to the coming in and out of funds into this sub
+region.There is a fund which we confiscated worth of $12.5 million
+dollars.We will like you to receive this fund on your name in your
+account and as well helping us in the investment.
 
-diff --git a/mm/memremap.c b/mm/memremap.c
-index 06742372a203..9033ae401448 100644
---- a/mm/memremap.c
-+++ b/mm/memremap.c
-@@ -190,7 +190,10 @@ void *memremap_pages(struct dev_pagemap *pgmap, int nid)
- 		}
- 		break;
- 	case MEMORY_DEVICE_DEVDAX:
-+		need_devmap_managed = false;
-+		break;
- 	case MEMORY_DEVICE_PCI_P2PDMA:
-+		params.pgprot = pgprot_noncached(params.pgprot);
- 		need_devmap_managed = false;
- 		break;
- 	default:
--- 
-2.20.1
+You are advised to contact us as soon as you get this message for
+details of the transaction if you find it interesting.
+
+Best Regards,
+
+Mr John Aka
+
+Chairman
+ECOWAS
+West African Monitoring Committee
+Tel 00225 6716 6756
+Abidjan Cote D'Ivoire
