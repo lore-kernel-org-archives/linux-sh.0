@@ -1,142 +1,111 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Tue, 10 Mar 2020 14:31:12 +0000
-Subject: Applied "spi: rspi: Add support for active-high chip selects" to the spi tree
-Message-Id: <applied-20200309171537.21551-1-geert+renesas@glider.be>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 24 Mar 2020 16:26:33 +0000
+Subject: [PATCH 10/10] sh: use the generic dma coherent remap allocator
+Message-Id: <20200324162633.754714-11-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-In-Reply-To: <20200309171537.21551-1-geert+renesas@glider.be>
+References: <20200324162633.754714-1-hch@lst.de>
+In-Reply-To: <20200324162633.754714-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Chris Brandt <Chris.Brandt@renesas.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-spi@vger.kernel.org, Mark Brown <broonie@kernel.org>, Wolfram Sang <wsa+renesas@sang-engineering.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-The patch
+This switches to using common code for the DMA allocations, including
+potential use of the CMA allocator if configured.
 
-   spi: rspi: Add support for active-high chip selects
+Switching to the generic code enables DMA allocations from atomic
+context, which is required by the DMA API documentation, and also
+adds various other minor features drivers start relying upon.  It
+also makes sure we have on tested code base for all architectures
+that require uncached pte bits for coherent DMA allocations.
 
-has been applied to the spi tree at
-
-   https://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git 
-
-All being well this means that it will be integrated into the linux-next
-tree (usually sometime in the next 24 hours) and sent to Linus during
-the next merge window (or sooner if it is a bug fix), however if
-problems are discovered then the patch may be dropped or reverted.  
-
-You may get further e-mails resulting from automated or manual testing
-and review of the tree, please engage with people reporting problems and
-send followup patches addressing any issues that are reported if needed.
-
-If any updates are required or you are submitting further changes they
-should be sent as incremental updates against current git, existing
-patches will not be replaced.
-
-Please add any relevant lists and maintainers to the CCs when replying
-to this mail.
-
-Thanks,
-Mark
-
-From f3a14a3a4d9a54c665e979b1dedbbab1f7503a43 Mon Sep 17 00:00:00 2001
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 9 Mar 2020 18:15:37 +0100
-Subject: [PATCH] spi: rspi: Add support for active-high chip selects
-
-All RSPI variants support setting the polarity of the SSL signal.
-Advertize support for active-high chip selects, and configure polarity
-according to the state of the flag.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Link: https://lore.kernel.org/r/20200309171537.21551-1-geert+renesas@glider.be
-Signed-off-by: Mark Brown <broonie@kernel.org>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/spi/spi-rspi.c | 36 ++++++++++++++++++++++++++++++++----
- 1 file changed, 32 insertions(+), 4 deletions(-)
+ arch/sh/Kconfig               |  2 ++
+ arch/sh/kernel/dma-coherent.c | 51 ++---------------------------------
+ 2 files changed, 4 insertions(+), 49 deletions(-)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index aef05f2ac749..06192c9ea813 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -24,6 +24,7 @@
- #include <linux/sh_dma.h>
- #include <linux/spi/spi.h>
- #include <linux/spi/rspi.h>
-+#include <linux/spinlock.h>
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index b97d9712c252..57cf54e29684 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -157,7 +157,9 @@ config DMA_COHERENT
  
- #define RSPI_SPCR		0x00	/* Control Register */
- #define RSPI_SSLP		0x01	/* Slave Select Polarity Register */
-@@ -79,8 +80,7 @@
- #define SPCR_BSWAP		0x01	/* Byte Swap of read-data for DMAC */
+ config DMA_NONCOHERENT
+ 	def_bool !NO_DMA && !DMA_COHERENT
++	select ARCH_HAS_DMA_PREP_COHERENT
+ 	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
++	select DMA_DIRECT_REMAP
  
- /* SSLP - Slave Select Polarity Register */
--#define SSLP_SSL1P		0x02	/* SSL1 Signal Polarity Setting */
--#define SSLP_SSL0P		0x01	/* SSL0 Signal Polarity Setting */
-+#define SSLP_SSLP(i)		BIT(i)	/* SSLi Signal Polarity Setting */
+ config PGTABLE_LEVELS
+ 	default 3 if X2TLB
+diff --git a/arch/sh/kernel/dma-coherent.c b/arch/sh/kernel/dma-coherent.c
+index d4811691b93c..cd46a9825e3c 100644
+--- a/arch/sh/kernel/dma-coherent.c
++++ b/arch/sh/kernel/dma-coherent.c
+@@ -3,60 +3,13 @@
+  * Copyright (C) 2004 - 2007  Paul Mundt
+  */
+ #include <linux/mm.h>
+-#include <linux/init.h>
+ #include <linux/dma-noncoherent.h>
+-#include <linux/module.h>
+ #include <asm/cacheflush.h>
+ #include <asm/addrspace.h>
  
- /* SPPCR - Pin Control Register */
- #define SPPCR_MOIFE		0x20	/* MOSI Idle Value Fixing Enable */
-@@ -181,7 +181,9 @@ struct rspi_data {
- 	void __iomem *addr;
- 	u32 max_speed_hz;
- 	struct spi_controller *ctlr;
-+	struct platform_device *pdev;
- 	wait_queue_head_t wait;
-+	spinlock_t lock;		/* Protects RMW-access to RSPI_SSLP */
- 	struct clk *clk;
- 	u16 spcmd;
- 	u8 spsr;
-@@ -919,6 +921,29 @@ static int qspi_setup_sequencer(struct rspi_data *rspi,
- 	return 0;
+-void *arch_dma_alloc(struct device *dev, size_t size, dma_addr_t *dma_handle,
+-		gfp_t gfp, unsigned long attrs)
++void arch_dma_prep_coherent(struct page *page, size_t size)
+ {
+-	void *ret, *ret_nocache;
+-	int order = get_order(size);
+-
+-	gfp |= __GFP_ZERO;
+-
+-	ret = (void *)__get_free_pages(gfp, order);
+-	if (!ret)
+-		return NULL;
+-
+-	/*
+-	 * Pages from the page allocator may have data present in
+-	 * cache. So flush the cache before using uncached memory.
+-	 */
+-	arch_sync_dma_for_device(virt_to_phys(ret), size,
+-			DMA_BIDIRECTIONAL);
+-
+-	ret_nocache = (void __force *)ioremap(virt_to_phys(ret), size);
+-	if (!ret_nocache) {
+-		free_pages((unsigned long)ret, order);
+-		return NULL;
+-	}
+-
+-	split_page(pfn_to_page(virt_to_phys(ret) >> PAGE_SHIFT), order);
+-
+-	*dma_handle = virt_to_phys(ret);
+-	if (!WARN_ON(!dev))
+-		*dma_handle -= PFN_PHYS(dev->dma_pfn_offset);
+-
+-	return ret_nocache;
+-}
+-
+-void arch_dma_free(struct device *dev, size_t size, void *vaddr,
+-		dma_addr_t dma_handle, unsigned long attrs)
+-{
+-	int order = get_order(size);
+-	unsigned long pfn = (dma_handle >> PAGE_SHIFT);
+-	int k;
+-
+-	if (!WARN_ON(!dev))
+-		pfn += dev->dma_pfn_offset;
+-
+-	for (k = 0; k < (1 << order); k++)
+-		__free_pages(pfn_to_page(pfn + k), 0);
+-
+-	iounmap(vaddr);
++	__flush_purge_region(page_address(page), size);
  }
  
-+static int rspi_setup(struct spi_device *spi)
-+{
-+	struct rspi_data *rspi = spi_controller_get_devdata(spi->controller);
-+	u8 sslp;
-+
-+	if (spi->cs_gpiod)
-+		return 0;
-+
-+	pm_runtime_get_sync(&rspi->pdev->dev);
-+	spin_lock_irq(&rspi->lock);
-+
-+	sslp = rspi_read8(rspi, RSPI_SSLP);
-+	if (spi->mode & SPI_CS_HIGH)
-+		sslp |= SSLP_SSLP(spi->chip_select);
-+	else
-+		sslp &= ~SSLP_SSLP(spi->chip_select);
-+	rspi_write8(rspi, sslp, RSPI_SSLP);
-+
-+	spin_unlock_irq(&rspi->lock);
-+	pm_runtime_put(&rspi->pdev->dev);
-+	return 0;
-+}
-+
- static int rspi_prepare_message(struct spi_controller *ctlr,
- 				struct spi_message *msg)
- {
-@@ -1248,17 +1273,20 @@ static int rspi_probe(struct platform_device *pdev)
- 		goto error1;
- 	}
- 
-+	rspi->pdev = pdev;
- 	pm_runtime_enable(&pdev->dev);
- 
- 	init_waitqueue_head(&rspi->wait);
-+	spin_lock_init(&rspi->lock);
- 
- 	ctlr->bus_num = pdev->id;
-+	ctlr->setup = rspi_setup;
- 	ctlr->auto_runtime_pm = true;
- 	ctlr->transfer_one = ops->transfer_one;
- 	ctlr->prepare_message = rspi_prepare_message;
- 	ctlr->unprepare_message = rspi_unprepare_message;
--	ctlr->mode_bits = SPI_CPHA | SPI_CPOL | SPI_LSB_FIRST | SPI_LOOP |
--			  ops->extra_mode_bits;
-+	ctlr->mode_bits = SPI_CPHA | SPI_CPOL | SPI_CS_HIGH | SPI_LSB_FIRST |
-+			  SPI_LOOP | ops->extra_mode_bits;
- 	ctlr->flags = ops->flags;
- 	ctlr->dev.of_node = pdev->dev.of_node;
- 	ctlr->use_gpio_descriptors = true;
+ void arch_sync_dma_for_device(phys_addr_t paddr, size_t size,
 -- 
-2.20.1
+2.25.1
