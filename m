@@ -1,116 +1,94 @@
-From: Anshuman Khandual <anshuman.khandual@arm.com>
-Date: Wed, 04 Mar 2020 05:31:13 +0000
-Subject: Re: [RFC 1/3] mm/vma: Define a default value for VM_DATA_DEFAULT_FLAGS
-Message-Id: <8b0f4c1b-f693-e139-4f66-ee4e1e88b95c@arm.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 24 Mar 2020 16:26:31 +0000
+Subject: [PATCH 08/10] dma-mapping: consolidate the NO_DMA definition in kernel/dma/Kconfig
+Message-Id: <20200324162633.754714-9-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1583131666-15531-1-git-send-email-anshuman.khandual@arm.com>
- <1583131666-15531-2-git-send-email-anshuman.khandual@arm.com>
- <b243be54-7b5e-c6e9-fb68-46369d7d7aa4@suse.cz>
-In-Reply-To: <b243be54-7b5e-c6e9-fb68-46369d7d7aa4@suse.cz>
+References: <20200324162633.754714-1-hch@lst.de>
+In-Reply-To: <20200324162633.754714-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vlastimil Babka <vbabka@suse.cz>, linux-mm@kvack.org
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-mips@vger.kernel.org, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Guo Ren <guoren@kernel.org>, sparclinux@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-riscv@lists.infradead.org, Jonas Bonn <jonas@southpole.se>, linux-s390@vger.kernel.org, linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org, Brian Cain <bcain@codeaurora.org>, Michael Ellerman <mpe@ellerman.id.au>, Russell King <linux@armlinux.org.uk>, Ley Foon Tan <ley.foon.tan@intel.com>, Geert Uytterhoeven <geert@linux-m68k.org>, linux-parisc@vger.kernel.org, Mark Salter <msalter@redhat.com>, Paul Burton <paulburton@kernel.org>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, Jeff Dike <jdike@addtoit.com>, linux-um@lists.infradead.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, Paul Walmsley <paul.walmsley@sifive.com>, Thomas Gleixner <tglx@linutronix.de>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Richard Henderson <rth@twiddle.net>, Chris Zankel <chris@zankel.net>, Michal Simek <monstr@monstr.eu>, Tony Luck <tony.luck@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Nick Hu <nickhu@andestech.com>, Vineet Gupta <vgupta@synopsys.com>, linux-kernel@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linux-alpha@vger.kernel.org, nios2-dev@lists.rocketboards.org, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
+Have a single definition that architetures can select.
 
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/m68k/Kconfig         | 4 +---
+ arch/m68k/Kconfig.machine | 1 +
+ arch/um/Kconfig           | 4 +---
+ kernel/dma/Kconfig        | 3 +++
+ 4 files changed, 6 insertions(+), 6 deletions(-)
 
-On 03/03/2020 10:55 PM, Vlastimil Babka wrote:
-> On 3/2/20 7:47 AM, Anshuman Khandual wrote:
->> There are many platforms with exact same value for VM_DATA_DEFAULT_FLAGS
->> This creates a default value for VM_DATA_DEFAULT_FLAGS in line with the
->> existing VM_STACK_DEFAULT_FLAGS. While here, also define some more macros
->> with standard VMA access flag combinations that are used frequently across
->> many platforms. Apart from simplification, this reduces code duplication
->> as well.
->>
->> Cc: Richard Henderson <rth@twiddle.net>
->> Cc: Vineet Gupta <vgupta@synopsys.com>
->> Cc: Russell King <linux@armlinux.org.uk>
->> Cc: Catalin Marinas <catalin.marinas@arm.com>
->> Cc: Mark Salter <msalter@redhat.com>
->> Cc: Guo Ren <guoren@kernel.org>
->> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
->> Cc: Brian Cain <bcain@codeaurora.org>
->> Cc: Tony Luck <tony.luck@intel.com>
->> Cc: Geert Uytterhoeven <geert@linux-m68k.org>
->> Cc: Michal Simek <monstr@monstr.eu>
->> Cc: Ralf Baechle <ralf@linux-mips.org>
->> Cc: Paul Burton <paulburton@kernel.org>
->> Cc: Nick Hu <nickhu@andestech.com>
->> Cc: Ley Foon Tan <ley.foon.tan@intel.com>
->> Cc: Jonas Bonn <jonas@southpole.se>
->> Cc: "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>
->> Cc: Michael Ellerman <mpe@ellerman.id.au>
->> Cc: Paul Walmsley <paul.walmsley@sifive.com>
->> Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
->> Cc: Rich Felker <dalias@libc.org>
->> Cc: "David S. Miller" <davem@davemloft.net>
->> Cc: Guan Xuetao <gxt@pku.edu.cn>
->> Cc: Thomas Gleixner <tglx@linutronix.de>
->> Cc: Jeff Dike <jdike@addtoit.com>
->> Cc: Chris Zankel <chris@zankel.net>
->> Cc: Andrew Morton <akpm@linux-foundation.org>
->> Cc: linux-alpha@vger.kernel.org
->> Cc: linux-kernel@vger.kernel.org
->> Cc: linux-snps-arc@lists.infradead.org
->> Cc: linux-arm-kernel@lists.infradead.org
->> Cc: linux-c6x-dev@linux-c6x.org
->> Cc: uclinux-h8-devel@lists.sourceforge.jp
->> Cc: linux-hexagon@vger.kernel.org
->> Cc: linux-ia64@vger.kernel.org
->> Cc: linux-m68k@lists.linux-m68k.org
->> Cc: linux-mips@vger.kernel.org
->> Cc: nios2-dev@lists.rocketboards.org
->> Cc: openrisc@lists.librecores.org
->> Cc: linux-parisc@vger.kernel.org
->> Cc: linuxppc-dev@lists.ozlabs.org
->> Cc: linux-riscv@lists.infradead.org
->> Cc: linux-s390@vger.kernel.org
->> Cc: linux-sh@vger.kernel.org
->> Cc: sparclinux@vger.kernel.org
->> Cc: linux-um@lists.infradead.org
->> Cc: linux-xtensa@linux-xtensa.org
->> Cc: linux-mm@kvack.org
->> Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com
-> Reviewed-by: Vlastimil Babka <vbabka@suse.cz>
-> 
-> Nit:
-> 
->> diff --git a/include/linux/mm.h b/include/linux/mm.h
->> index b0e53ef13ff1..7a764ae6ab68 100644
->> --- a/include/linux/mm.h
->> +++ b/include/linux/mm.h
->> @@ -342,6 +342,21 @@ extern unsigned int kobjsize(const void *objp);
->>  /* Bits set in the VMA until the stack is in its final location */
->>  #define VM_STACK_INCOMPLETE_SETUP	(VM_RAND_READ | VM_SEQ_READ)
->>  
->> +#define TASK_EXEC ((current->personality & READ_IMPLIES_EXEC) ? VM_EXEC : 0)
->> +
->> +/* Common data flag combinations */
->> +#define VM_DATA_FLAGS_TSK_EXEC	(VM_READ | VM_WRITE | TASK_EXEC | \
->> +				 VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC)
->> +#define VM_DATA_FLAGS_NON_EXEC	(VM_READ | VM_WRITE | VM_MAYREAD | \
->> +				 VM_MAYWRITE | VM_MAYEXEC)
->> +#define VM_DATA_FLAGS_EXEC	(VM_READ | VM_WRITE | VM_EXEC | \
->> +				 VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC)
->> +
->> +#ifndef VM_DATA_DEFAULT_FLAGS		/* arch can override this */
->> +#define VM_DATA_DEFAULT_FLAGS	(VM_READ | VM_WRITE | VM_EXEC | \
->> +				 VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC)
-> 
-> Should you use VM_DATA_FLAGS_EXEC here? Yeah one more macro to expand, but it's
-> right above this.
-
-Sure, can do that.
-
-> 
->> +#endif
->> +
->>  #ifndef VM_STACK_DEFAULT_FLAGS		/* arch can override this */
->>  #define VM_STACK_DEFAULT_FLAGS VM_DATA_DEFAULT_FLAGS
->>  #endif
->>
-> 
-> 
-> 
+diff --git a/arch/m68k/Kconfig b/arch/m68k/Kconfig
+index 6ad6cdac74b3..8e488369a7e5 100644
+--- a/arch/m68k/Kconfig
++++ b/arch/m68k/Kconfig
+@@ -17,6 +17,7 @@ config M68K
+ 	select HAVE_COPY_THREAD_TLS
+ 	select GENERIC_IRQ_SHOW
+ 	select GENERIC_ATOMIC64
++	select NO_DMA if !MMU && !COLDFIRE
+ 	select HAVE_UID16
+ 	select VIRT_TO_BUS
+ 	select ARCH_HAVE_NMI_SAFE_CMPXCHG if RMW_INSNS
+@@ -60,9 +61,6 @@ config TIME_LOW_RES
+ config NO_IOPORT_MAP
+ 	def_bool y
+ 
+-config NO_DMA
+-	def_bool (MMU && SUN3) || (!MMU && !COLDFIRE)
+-
+ config ZONE_DMA
+ 	bool
+ 	default y
+diff --git a/arch/m68k/Kconfig.machine b/arch/m68k/Kconfig.machine
+index c01e103492fd..0b95bc980070 100644
+--- a/arch/m68k/Kconfig.machine
++++ b/arch/m68k/Kconfig.machine
+@@ -126,6 +126,7 @@ config SUN3
+ 	depends on MMU
+ 	depends on !MMU_MOTOROLA
+ 	select MMU_SUN3 if MMU
++	select NO_DMA
+ 	select M68020
+ 	help
+ 	  This option enables support for the Sun 3 series of workstations
+diff --git a/arch/um/Kconfig b/arch/um/Kconfig
+index 0917f8443c28..4e92502407df 100644
+--- a/arch/um/Kconfig
++++ b/arch/um/Kconfig
+@@ -15,6 +15,7 @@ config UML
+ 	select HAVE_DEBUG_KMEMLEAK
+ 	select HAVE_DEBUG_BUGVERBOSE
+ 	select HAVE_COPY_THREAD_TLS
++	select NO_DMA
+ 	select GENERIC_IRQ_SHOW
+ 	select GENERIC_CPU_DEVICES
+ 	select GENERIC_CLOCKEVENTS
+@@ -162,9 +163,6 @@ config MMAPPER
+ 	  This driver allows a host file to be used as emulated IO memory inside
+ 	  UML.
+ 
+-config NO_DMA
+-	def_bool y
+-
+ config PGTABLE_LEVELS
+ 	int
+ 	default 3 if 3_LEVEL_PGTABLES
+diff --git a/kernel/dma/Kconfig b/kernel/dma/Kconfig
+index 4c103a24e380..3df749b1fd23 100644
+--- a/kernel/dma/Kconfig
++++ b/kernel/dma/Kconfig
+@@ -1,5 +1,8 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ 
++config NO_DMA
++	bool
++
+ config HAS_DMA
+ 	bool
+ 	depends on !NO_DMA
+-- 
+2.25.1
