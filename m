@@ -1,69 +1,228 @@
-From: Logan Gunthorpe <logang@deltatee.com>
-Date: Fri, 06 Mar 2020 17:08:43 +0000
-Subject: [PATCH v4 4/7] x86/mm: Introduce __set_memory_prot()
-Message-Id: <20200306170846.9333-5-logang@deltatee.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 24 Mar 2020 16:26:28 +0000
+Subject: [PATCH 05/10] sh: move the ioremap implementation out of line
+Message-Id: <20200324162633.754714-6-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200306170846.9333-1-logang@deltatee.com>
-In-Reply-To: <20200306170846.9333-1-logang@deltatee.com>
+References: <20200324162633.754714-1-hch@lst.de>
+In-Reply-To: <20200324162633.754714-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, platform-driver-x86@vger.kernel.org, linux-mm@kvack.org, Dan Williams <dan.j.williams@intel.com>, Michal Hocko <mhocko@kernel.org>, David Hildenbrand <david@redhat.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Eric Badger <ebadger@gigaio.com>, "H. Peter Anvin" <hpa@zytor.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org, Logan Gunthorpe <logang@deltatee.com>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-For use in the 32bit arch_add_memory() to set the pgprot type of the
-memory to add.
+Move the internal implementation details of ioremap out of line, no need
+to expose any of this to drivers for a slow path API.
 
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Borislav Petkov <bp@alien8.de>
-Cc: "H. Peter Anvin" <hpa@zytor.com>
-Cc: x86@kernel.org
-Cc: Dave Hansen <dave.hansen@linux.intel.com>
-Cc: Andy Lutomirski <luto@kernel.org>
-Cc: Peter Zijlstra <peterz@infradead.org>
-Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
-Reviewed-by: Dan Williams <dan.j.williams@intel.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/x86/include/asm/set_memory.h |  1 +
- arch/x86/mm/pat/set_memory.c      | 13 +++++++++++++
- 2 files changed, 14 insertions(+)
+ arch/sh/include/asm/io.h | 101 ++++++---------------------------------
+ arch/sh/mm/ioremap.c     |  57 ++++++++++++++++++++++
+ 2 files changed, 72 insertions(+), 86 deletions(-)
 
-diff --git a/arch/x86/include/asm/set_memory.h b/arch/x86/include/asm/set_memory.h
-index 64c3dce374e5..034358da4837 100644
---- a/arch/x86/include/asm/set_memory.h
-+++ b/arch/x86/include/asm/set_memory.h
-@@ -34,6 +34,7 @@
-  * The caller is required to take care of these.
-  */
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index 59d53b06d461..282ec476c06e 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -246,109 +246,38 @@ unsigned long long poke_real_address_q(unsigned long long addr,
+ #define phys_to_virt(address)	(__va(address))
+ #endif
  
-+int __set_memory_prot(unsigned long addr, int numpages, pgprot_t prot);
- int _set_memory_uc(unsigned long addr, int numpages);
- int _set_memory_wc(unsigned long addr, int numpages);
- int _set_memory_wt(unsigned long addr, int numpages);
-diff --git a/arch/x86/mm/pat/set_memory.c b/arch/x86/mm/pat/set_memory.c
-index c4aedd00c1ba..a7b14dffeb0b 100644
---- a/arch/x86/mm/pat/set_memory.c
-+++ b/arch/x86/mm/pat/set_memory.c
-@@ -1792,6 +1792,19 @@ static inline int cpa_clear_pages_array(struct page **pages, int numpages,
- 		CPA_PAGES_ARRAY, pages);
+-/*
+- * On 32-bit SH, we traditionally have the whole physical address space
+- * mapped at all times (as MIPS does), so "ioremap()" and "iounmap()" do
+- * not need to do anything but place the address in the proper segment.
+- * This is true for P1 and P2 addresses, as well as some P3 ones.
+- * However, most of the P3 addresses and newer cores using extended
+- * addressing need to map through page tables, so the ioremap()
+- * implementation becomes a bit more complicated.
+- *
+- * See arch/sh/mm/ioremap.c for additional notes on this.
+- *
+- * We cheat a bit and always return uncachable areas until we've fixed
+- * the drivers to handle caching properly.
+- *
+- * On the SH-5 the concept of segmentation in the 1:1 PXSEG sense simply
+- * doesn't exist, so everything must go through page tables.
+- */
+ #ifdef CONFIG_MMU
++void iounmap(void __iomem *addr);
+ void __iomem *__ioremap_caller(phys_addr_t offset, unsigned long size,
+ 			       pgprot_t prot, void *caller);
+-void iounmap(void __iomem *addr);
+-
+-static inline void __iomem *
+-__ioremap(phys_addr_t offset, unsigned long size, pgprot_t prot)
+-{
+-	return __ioremap_caller(offset, size, prot, __builtin_return_address(0));
+-}
+-
+-static inline void __iomem *
+-__ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
+-{
+-#ifdef CONFIG_29BIT
+-	phys_addr_t last_addr = offset + size - 1;
+-
+-	/*
+-	 * For P1 and P2 space this is trivial, as everything is already
+-	 * mapped. Uncached access for P1 addresses are done through P2.
+-	 * In the P3 case or for addresses outside of the 29-bit space,
+-	 * mapping must be done by the PMB or by using page tables.
+-	 */
+-	if (likely(PXSEG(offset) < P3SEG && PXSEG(last_addr) < P3SEG)) {
+-		u64 flags = pgprot_val(prot);
+-
+-		/*
+-		 * Anything using the legacy PTEA space attributes needs
+-		 * to be kicked down to page table mappings.
+-		 */
+-		if (unlikely(flags & _PAGE_PCC_MASK))
+-			return NULL;
+-		if (unlikely(flags & _PAGE_CACHABLE))
+-			return (void __iomem *)P1SEGADDR(offset);
+-
+-		return (void __iomem *)P2SEGADDR(offset);
+-	}
+-
+-	/* P4 above the store queues are always mapped. */
+-	if (unlikely(offset >= P3_ADDR_MAX))
+-		return (void __iomem *)P4SEGADDR(offset);
+-#endif
+-
+-	return NULL;
+-}
+-
+-static inline void __iomem *
+-__ioremap_mode(phys_addr_t offset, unsigned long size, pgprot_t prot)
+-{
+-	void __iomem *ret;
+-
+-	ret = __ioremap_trapped(offset, size);
+-	if (ret)
+-		return ret;
+-
+-	ret = __ioremap_29bit(offset, size, prot);
+-	if (ret)
+-		return ret;
+-
+-	return __ioremap(offset, size, prot);
+-}
+-#else
+-#define __ioremap(offset, size, prot)		((void __iomem *)(offset))
+-#define __ioremap_mode(offset, size, prot)	((void __iomem *)(offset))
+-#define iounmap(addr)				do { } while (0)
+-#endif /* CONFIG_MMU */
+ 
+ static inline void __iomem *ioremap(phys_addr_t offset, unsigned long size)
+ {
+-	return __ioremap_mode(offset, size, PAGE_KERNEL_NOCACHE);
++	return __ioremap_caller(offset, size, PAGE_KERNEL_NOCACHE,
++			__builtin_return_address(0));
  }
  
-+/*
-+ * _set_memory_prot is an internal helper for callers that have been passed
-+ * a pgprot_t value from upper layers and a reservation has already been taken.
-+ * If you want to set the pgprot to a specific page protocol, use the
-+ * set_memory_xx() functions.
-+ */
-+int __set_memory_prot(unsigned long addr, int numpages, pgprot_t prot)
-+{
-+	return change_page_attr_set_clr(&addr, numpages, prot,
-+					__pgprot(~pgprot_val(prot)), 0, 0,
-+					NULL);
-+}
-+
- int _set_memory_uc(unsigned long addr, int numpages)
+ static inline void __iomem *
+ ioremap_cache(phys_addr_t offset, unsigned long size)
  {
- 	/*
+-	return __ioremap_mode(offset, size, PAGE_KERNEL);
++	return __ioremap_caller(offset, size, PAGE_KERNEL,
++			__builtin_return_address(0));
+ }
+ #define ioremap_cache ioremap_cache
+ 
+ #ifdef CONFIG_HAVE_IOREMAP_PROT
+-static inline void __iomem *
+-ioremap_prot(phys_addr_t offset, unsigned long size, unsigned long flags)
++static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
++		unsigned long flags)
+ {
+-	return __ioremap_mode(offset, size, __pgprot(flags));
++	return __ioremap_caller(offset, size, __pgprot(flags),
++			__builtin_return_address(0));
+ }
+-#endif
++#endif /* CONFIG_HAVE_IOREMAP_PROT */
++
++#else /* CONFIG_MMU */
++#define iounmap(addr)		do { } while (0)
++#define ioremap(offset, size)	((void __iomem *)(unsigned long)(offset))
++#endif /* CONFIG_MMU */
+ 
+ #define ioremap_uc	ioremap
+ 
+diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
+index d9ec85b6bb21..a8170fa07bc1 100644
+--- a/arch/sh/mm/ioremap.c
++++ b/arch/sh/mm/ioremap.c
+@@ -26,6 +26,55 @@
+ #include <asm/mmu.h>
+ #include "ioremap.h"
+ 
++/*
++ * On 32-bit SH, we traditionally have the whole physical address space mapped
++ * at all times (as MIPS does), so "ioremap()" and "iounmap()" do not need to do
++ * anything but place the address in the proper segment.  This is true for P1
++ * and P2 addresses, as well as some P3 ones.  However, most of the P3 addresses
++ * and newer cores using extended addressing need to map through page tables, so
++ * the ioremap() implementation becomes a bit more complicated.
++ *
++ * On the SH-5 the concept of segmentation in the 1:1 PXSEG sense simply doesn't
++ * exist, so everything must go through page tables.
++ */
++
++#ifdef CONFIG_29BIT
++static void __iomem *
++__ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
++{
++	phys_addr_t last_addr = offset + size - 1;
++
++	/*
++	 * For P1 and P2 space this is trivial, as everything is already
++	 * mapped. Uncached access for P1 addresses are done through P2.
++	 * In the P3 case or for addresses outside of the 29-bit space,
++	 * mapping must be done by the PMB or by using page tables.
++	 */
++	if (likely(PXSEG(offset) < P3SEG && PXSEG(last_addr) < P3SEG)) {
++		u64 flags = pgprot_val(prot);
++
++		/*
++		 * Anything using the legacy PTEA space attributes needs
++		 * to be kicked down to page table mappings.
++		 */
++		if (unlikely(flags & _PAGE_PCC_MASK))
++			return NULL;
++		if (unlikely(flags & _PAGE_CACHABLE))
++			return (void __iomem *)P1SEGADDR(offset);
++
++		return (void __iomem *)P2SEGADDR(offset);
++	}
++
++	/* P4 above the store queues are always mapped. */
++	if (unlikely(offset >= P3_ADDR_MAX))
++		return (void __iomem *)P4SEGADDR(offset);
++
++	return NULL;
++}
++#else
++#define __ioremap_29bit(offset, size, prot)		NULL
++#endif /* CONFIG_29BIT */
++
+ /*
+  * Remap an arbitrary physical address space into the kernel virtual
+  * address space. Needed when the kernel wants to access high addresses
+@@ -43,6 +92,14 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
+ 	unsigned long offset, last_addr, addr, orig_addr;
+ 	void __iomem *mapped;
+ 
++	mapped = __ioremap_trapped(phys_addr, size);
++	if (mapped)
++		return mapped;
++
++	mapped = __ioremap_29bit(phys_addr, size, pgprot);
++	if (mapped)
++		return mapped;
++
+ 	/* Don't allow wraparound or zero size */
+ 	last_addr = phys_addr + size - 1;
+ 	if (!size || last_addr < phys_addr)
 -- 
-2.20.1
+2.25.1
