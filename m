@@ -1,71 +1,45 @@
-From: Logan Gunthorpe <logang@deltatee.com>
-Date: Mon, 02 Mar 2020 18:46:13 +0000
-Subject: Re: [PATCH v3 4/7] x86/mm: Introduce _set_memory_prot()
-Message-Id: <1be997b0-e17a-5d48-efad-a01d84d5e496@deltatee.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 24 Mar 2020 16:26:32 +0000
+Subject: [PATCH 09/10] sh: don't allow non-coherent DMA for NOMMU
+Message-Id: <20200324162633.754714-10-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200221182503.28317-1-logang@deltatee.com>
- <20200221182503.28317-5-logang@deltatee.com>
- <CAPcyv4j=bZ5KBPp6PbViERdDe+HZpV_W6qbSJupTNAzyfiK6xg@mail.gmail.com>
-In-Reply-To: <CAPcyv4j=bZ5KBPp6PbViERdDe+HZpV_W6qbSJupTNAzyfiK6xg@mail.gmail.com>
+References: <20200324162633.754714-1-hch@lst.de>
+In-Reply-To: <20200324162633.754714-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dan Williams <dan.j.williams@intel.com>
-Cc: X86 ML <x86@kernel.org>, linux-ia64@vger.kernel.org, Linux-sh <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, platform-driver-x86@vger.kernel.org, Linux MM <linux-mm@kvack.org>, "H. Peter Anvin" <hpa@zytor.com>, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>, linux-s390 <linux-s390@vger.kernel.org>, David Hildenbrand <david@redhat.com>, Ingo Molnar <mingo@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, Michal Hocko <mhocko@kernel.org>, Linux ARM <linux-arm-kernel@lists.infradead.org>, Eric Badger <ebadger@gigaio.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
+The code handling non-coherent DMA depends on being able to remap code
+as non-cached.  But that can't be done without an MMU, so using this
+option on NOMMU builds is broken.
 
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/sh/Kconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-On 2020-02-29 3:33 p.m., Dan Williams wrote:
-> On Fri, Feb 21, 2020 at 10:25 AM Logan Gunthorpe <logang@deltatee.com> wrote:
->>
->> For use in the 32bit arch_add_memory() to set the pgprot type of the
->> memory to add.
->>
->> Cc: Thomas Gleixner <tglx@linutronix.de>
->> Cc: Ingo Molnar <mingo@redhat.com>
->> Cc: Borislav Petkov <bp@alien8.de>
->> Cc: "H. Peter Anvin" <hpa@zytor.com>
->> Cc: x86@kernel.org
->> Cc: Dave Hansen <dave.hansen@linux.intel.com>
->> Cc: Andy Lutomirski <luto@kernel.org>
->> Cc: Peter Zijlstra <peterz@infradead.org>
->> Signed-off-by: Logan Gunthorpe <logang@deltatee.com>
->> ---
->>  arch/x86/include/asm/set_memory.h | 1 +
->>  arch/x86/mm/pat/set_memory.c      | 7 +++++++
->>  2 files changed, 8 insertions(+)
->>
->> diff --git a/arch/x86/include/asm/set_memory.h b/arch/x86/include/asm/set_memory.h
->> index 64c3dce374e5..0aca959cf9a4 100644
->> --- a/arch/x86/include/asm/set_memory.h
->> +++ b/arch/x86/include/asm/set_memory.h
->> @@ -34,6 +34,7 @@
->>   * The caller is required to take care of these.
->>   */
->>
->> +int _set_memory_prot(unsigned long addr, int numpages, pgprot_t prot);
-> 
-> I wonder if this should be separated from the naming convention of the
-> other routines because this is only an internal helper for code paths
-> where the prot was established by an upper layer. For example, I
-> expect that the kernel does not want new usages to make the mistake of
-> calling:
-> 
->    _set_memory_prot(..., pgprot_writecombine(pgprot))
-> 
-> ...instead of
-> 
->     _set_memory_wc()
-> 
-> I'm thinking just a double underscore rename (__set_memory_prot) and a
-> kerneldoc comment for that  pointing people to use the direct
-> _set_memory_<cachemode> helpers.
-
-Thanks! Will do. Note, though, that even _set_memory_wc() is an internal
-x86-specific function. But the extra comment and underscore still make
-sense.
-
-> With that you can add:
-> 
-> Reviewed-by: Dan Williams <dan.j.williams@intel.com>
-> 
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 808b638b11f3..b97d9712c252 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -48,6 +48,7 @@ config SUPERH
+ 	select MAY_HAVE_SPARSE_IRQ
+ 	select MODULES_USE_ELF_RELA
+ 	select NEED_SG_DMA_LENGTH
++	select NO_DMA if !MMU && !DMA_COHERENT
+ 	select NO_GENERIC_PCI_IOPORT_MAP if PCI
+ 	select OLD_SIGACTION
+ 	select OLD_SIGSUSPEND
+@@ -155,7 +156,7 @@ config DMA_COHERENT
+ 	bool
+ 
+ config DMA_NONCOHERENT
+-	def_bool !DMA_COHERENT
++	def_bool !NO_DMA && !DMA_COHERENT
+ 	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
+ 
+ config PGTABLE_LEVELS
+-- 
+2.25.1
