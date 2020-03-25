@@ -1,154 +1,70 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 24 Mar 2020 16:26:25 +0000
-Subject: [PATCH 02/10] sh: sort the selects for SUPERH alphabetically
-Message-Id: <20200324162633.754714-3-hch@lst.de>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 25 Mar 2020 10:03:57 +0000
+Subject: [PATCH 2/2] gpiolib: Remove unused gpio_chip parameter from gpio_set_bias()
+Message-Id: <20200325100357.13705-3-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200324162633.754714-1-hch@lst.de>
-In-Reply-To: <20200324162633.754714-1-hch@lst.de>
+References: <20200325100357.13705-1-geert+renesas@glider.be>
+In-Reply-To: <20200325100357.13705-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Rob Herring <robh@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Ulrich Hecht <uli+renesas@fpond.eu>, Chris Brandt <chris.brandt@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-serial@vger.kernel.org, devicetree@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Ensure there is an order for the selects of the main SUPERH symbol,
-as well as the SUPERH32 and SUPER64 ones.
+gpio_set_bias() no longer uses the passed gpio_chip pointer parameter.
+Remove it.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/Kconfig | 87 ++++++++++++++++++++++++-------------------------
- 1 file changed, 43 insertions(+), 44 deletions(-)
+ drivers/gpio/gpiolib.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 9ece111b0254..808b638b11f3 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -2,59 +2,58 @@
- config SUPERH
- 	def_bool y
- 	select ARCH_HAS_BINFMT_FLAT if !MMU
-+	select ARCH_HAS_GCOV_PROFILE_ALL
-+	select ARCH_HAS_GIGANTIC_PAGE
- 	select ARCH_HAS_PTE_SPECIAL
- 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
-+	select ARCH_HAVE_CUSTOM_GPIO_H
-+	select ARCH_HAVE_NMI_SAFE_CMPXCHG if (GUSA_RB || CPU_SH4A)
- 	select ARCH_MIGHT_HAVE_PC_PARPORT
--	select HAVE_PATA_PLATFORM
-+	select ARCH_WANT_IPC_PARSE_VERSION
- 	select CLKDEV_LOOKUP
-+	select CPU_NO_EFFICIENT_FFS
- 	select DMA_DECLARE_COHERENT
--	select HAVE_IDE if HAS_IOPORT_MAP
--	select HAVE_MEMBLOCK_NODE_MAP
--	select HAVE_OPROFILE
-+	select GENERIC_ATOMIC64
-+	select GENERIC_CLOCKEVENTS
-+	select GENERIC_CMOS_UPDATE if SH_SH03 || SH_DREAMCAST
-+	select GENERIC_IDLE_POLL_SETUP
-+	select GENERIC_IRQ_SHOW
-+	select GENERIC_PCI_IOMAP if PCI
-+	select GENERIC_SCHED_CLOCK
-+	select GENERIC_SMP_IDLE_THREAD
-+	select GENERIC_STRNCPY_FROM_USER
-+	select GENERIC_STRNLEN_USER
-+	select HAVE_ARCH_AUDITSYSCALL
- 	select HAVE_ARCH_TRACEHOOK
--	select HAVE_PERF_EVENTS
- 	select HAVE_DEBUG_BUGVERBOSE
--	select HAVE_FAST_GUP if MMU
--	select ARCH_HAVE_CUSTOM_GPIO_H
--	select ARCH_HAVE_NMI_SAFE_CMPXCHG if (GUSA_RB || CPU_SH4A)
--	select ARCH_HAS_GCOV_PROFILE_ALL
--	select PERF_USE_VMALLOC
- 	select HAVE_DEBUG_KMEMLEAK
--	select HAVE_KERNEL_GZIP
--	select CPU_NO_EFFICIENT_FFS
-+	select HAVE_FAST_GUP if MMU
-+	select HAVE_FUTEX_CMPXCHG if FUTEX
-+	select HAVE_IDE if HAS_IOPORT_MAP
- 	select HAVE_KERNEL_BZIP2
-+	select HAVE_KERNEL_GZIP
- 	select HAVE_KERNEL_LZMA
--	select HAVE_KERNEL_XZ
- 	select HAVE_KERNEL_LZO
-+	select HAVE_KERNEL_XZ
-+	select HAVE_MEMBLOCK_NODE_MAP
-+	select HAVE_MOD_ARCH_SPECIFIC if DWARF_UNWINDER
-+	select HAVE_NMI
-+	select HAVE_OPROFILE
-+	select HAVE_PATA_PLATFORM
-+	select HAVE_PERF_EVENTS
-+	select HAVE_REGS_AND_STACK_ACCESS_API
- 	select HAVE_UID16
--	select ARCH_WANT_IPC_PARSE_VERSION
- 	select HAVE_SYSCALL_TRACEPOINTS
--	select HAVE_REGS_AND_STACK_ACCESS_API
--	select MAY_HAVE_SPARSE_IRQ
- 	select IRQ_FORCED_THREADING
--	select RTC_LIB
--	select GENERIC_ATOMIC64
--	select GENERIC_IRQ_SHOW
--	select GENERIC_SMP_IDLE_THREAD
--	select GENERIC_IDLE_POLL_SETUP
--	select GENERIC_CLOCKEVENTS
--	select GENERIC_CMOS_UPDATE if SH_SH03 || SH_DREAMCAST
--	select GENERIC_PCI_IOMAP if PCI
--	select GENERIC_SCHED_CLOCK
--	select GENERIC_STRNCPY_FROM_USER
--	select GENERIC_STRNLEN_USER
--	select HAVE_MOD_ARCH_SPECIFIC if DWARF_UNWINDER
-+	select MAY_HAVE_SPARSE_IRQ
- 	select MODULES_USE_ELF_RELA
-+	select NEED_SG_DMA_LENGTH
- 	select NO_GENERIC_PCI_IOPORT_MAP if PCI
--	select OLD_SIGSUSPEND
- 	select OLD_SIGACTION
-+	select OLD_SIGSUSPEND
- 	select PCI_DOMAINS if PCI
--	select HAVE_ARCH_AUDITSYSCALL
--	select HAVE_FUTEX_CMPXCHG if FUTEX
--	select HAVE_NMI
--	select NEED_SG_DMA_LENGTH
--	select ARCH_HAS_GIGANTIC_PAGE
--
-+	select PERF_USE_VMALLOC
-+	select RTC_LIB
- 	help
- 	  The SuperH is a RISC processor targeted for use in embedded systems
- 	  and consumer electronics; it was also used in the Sega Dreamcast
-@@ -64,23 +63,23 @@ config SUPERH
- config SUPERH32
- 	def_bool "$(ARCH)" = "sh"
- 	select ARCH_32BIT_OFF_T
-+	select ARCH_HIBERNATION_POSSIBLE if MMU
-+	select ARCH_WANT_IPC_PARSE_VERSION
- 	select GUP_GET_PTE_LOW_HIGH if X2TLB
--	select HAVE_KPROBES
--	select HAVE_KRETPROBES
--	select HAVE_IOREMAP_PROT if MMU && !X2TLB
-+	select HAVE_ARCH_KGDB
-+	select HAVE_DYNAMIC_FTRACE
- 	select HAVE_FUNCTION_TRACER
-+	select HAVE_FUNCTION_GRAPH_TRACER
- 	select HAVE_FTRACE_MCOUNT_RECORD
--	select HAVE_DYNAMIC_FTRACE
- 	select HAVE_FTRACE_NMI_ENTER if DYNAMIC_FTRACE
--	select ARCH_WANT_IPC_PARSE_VERSION
--	select HAVE_FUNCTION_GRAPH_TRACER
--	select HAVE_ARCH_KGDB
- 	select HAVE_HW_BREAKPOINT
-+	select HAVE_IOREMAP_PROT if MMU && !X2TLB
-+	select HAVE_KPROBES
-+	select HAVE_KRETPROBES
- 	select HAVE_MIXED_BREAKPOINTS_REGS
-+	select HAVE_STACKPROTECTOR
- 	select PERF_EVENTS
--	select ARCH_HIBERNATION_POSSIBLE if MMU
- 	select SPARSE_IRQ
--	select HAVE_STACKPROTECTOR
+diff --git a/drivers/gpio/gpiolib.c b/drivers/gpio/gpiolib.c
+index 8eeb29de12cb5811..7e3c19bd21cdf327 100644
+--- a/drivers/gpio/gpiolib.c
++++ b/drivers/gpio/gpiolib.c
+@@ -3264,7 +3264,7 @@ static int gpio_set_config(struct gpio_desc *desc, enum pin_config_param mode)
+ 	return gpio_do_set_config(chip, gpio_chip_hwgpio(desc), config);
+ }
  
- config SUPERH64
- 	def_bool "$(ARCH)" = "sh64"
+-static int gpio_set_bias(struct gpio_chip *chip, struct gpio_desc *desc)
++static int gpio_set_bias(struct gpio_desc *desc)
+ {
+ 	int bias = 0;
+ 	int ret = 0;
+@@ -3330,7 +3330,7 @@ int gpiod_direction_input(struct gpio_desc *desc)
+ 	}
+ 	if (ret = 0) {
+ 		clear_bit(FLAG_IS_OUT, &desc->flags);
+-		ret = gpio_set_bias(chip, desc);
++		ret = gpio_set_bias(desc);
+ 	}
+ 
+ 	trace_gpio_direction(desc_to_gpio(desc), 1, ret);
+@@ -3414,7 +3414,6 @@ EXPORT_SYMBOL_GPL(gpiod_direction_output_raw);
+  */
+ int gpiod_direction_output(struct gpio_desc *desc, int value)
+ {
+-	struct gpio_chip *gc;
+ 	int ret;
+ 
+ 	VALIDATE_DESC(desc);
+@@ -3432,7 +3431,6 @@ int gpiod_direction_output(struct gpio_desc *desc, int value)
+ 		return -EIO;
+ 	}
+ 
+-	gc = desc->gdev->chip;
+ 	if (test_bit(FLAG_OPEN_DRAIN, &desc->flags)) {
+ 		/* First see if we can enable open drain in hardware */
+ 		ret = gpio_set_config(desc, PIN_CONFIG_DRIVE_OPEN_DRAIN);
+@@ -3458,7 +3456,7 @@ int gpiod_direction_output(struct gpio_desc *desc, int value)
+ 	}
+ 
+ set_output_value:
+-	ret = gpio_set_bias(gc, desc);
++	ret = gpio_set_bias(desc);
+ 	if (ret)
+ 		return ret;
+ 	return gpiod_direction_output_raw_commit(desc, value);
 -- 
-2.25.1
+2.17.1
