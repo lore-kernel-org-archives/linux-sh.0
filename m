@@ -1,149 +1,84 @@
-From: Rob Landley <rob@landley.net>
-Date: Sun, 29 Mar 2020 02:10:38 +0000
-Subject: Re: [PATCH 2/2] include/asm-generic: vmlinux.lds.h
-Message-Id: <db57466b-8635-6c71-55bd-51c228490f3c@landley.net>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="------------479B1A57757F7B903A4373D9"
+From: afzal mohammed <afzal.mohd.ma@gmail.com>
+Date: Fri, 27 Mar 2020 16:20:18 +0000
+Subject: [PATCH 0/6] Kill setup_irq()
+Message-Id: <cover.1585320721.git.afzal.mohd.ma@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200315175108.9694-2-romain.naour@gmail.com>
-In-Reply-To: <20200315175108.9694-2-romain.naour@gmail.com>
-To: linux-sh@vger.kernel.org
-
-This is a multi-part message in MIME format.
---------------479B1A57757F7B903A4373D9
-Content-Type: text/plain; charset=utf-8
+References: <20200321174303.GA7930@afzalpc>
+In-Reply-To: <20200321174303.GA7930@afzalpc>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: Thomas Gleixner <tglx@linutronix.de>
+Cc: linux-s390@vger.kernel.org, linux-samsung-soc@vger.kernel.org, linux-ia64@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, x86@kernel.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-alpha@vger.kernel.org, linux-omap@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org
 
-Binutils 2.33.1 needs explicit alignment directives or sh kernel won't boot.
+Hi Thomas,
 
-https://www.spinics.net/lists/linux-sh/msg56835.html
-https://www.spinics.net/lists/linux-sh/msg56836.html
+As compared to the situation mentioned earlier[1], now powerpc patch is
+also in -next, and the pending ARM patches has been picked up by ARM SoC
+maintainers today and is expected to show up in next -next. All other
+subsytem patches has been picked by relevant maintainers & are already
+in -next except alpha, c6x, hexagon, unicore32 & sh.
 
-Patches attached, acked by arch maintainer and tested by me.
+As it is the case, i am sending you patches for the above 5
+architecture's plus the core removal patch.
 
-On 3/28/20 5:29 AM, Geert Uytterhoeven wrote:
-> CC arnd
-> 
-> On Fri, Mar 27, 2020 at 11:00 PM Rob Landley <rob@landley.net> wrote:
->> On 3/26/20 3:42 PM, Rich Felker wrote:
->>> On Sun, Mar 15, 2020 at 06:51:08PM +0100, Romain Naour wrote:
->>>> Since the patch [1], building the kernel using a toolchain built with
->>>> Binutils 2.33.1 prevent booting a sh4 system under Qemu.
->>>> Apply the patch provided by Alan Modra [2] that fix alignment of rodata.
->>>>
->>>> [1] https://sourceware.org/git/gitweb.cgi?p=binutils-gdb.git;h=ebd2263ba9a9124d93bbc0ece63d7e0fae89b40e
->>>> [2] https://www.sourceware.org/ml/binutils/2019-12/msg00112.html
->>>>
->>>> Signed-off-by: Romain Naour <romain.naour@gmail.com>
->>>> Cc: Alan Modra <amodra@gmail.com>
->>>
->>> Acked-by: Rich Felker <dalias@libc.org>
->>
->> Is there any way to get this into sunday's release?
-> 
-> Not if the maintainer isn't in CC.
-> 
->> Acked-by: Rob Landley <rob@landley.net>
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
+Status of 5 arch's:
+-------------------
+alpha:		received ack from Matt Turner, build test success
+c6x:		did receive ack from Mark Salter in v1, the final
+		 version (v3) was with minor changes, hence removed his
+		 ack & cc'ed him, build test success
+hexagon:	build test success
+unicore32:	couldn't get toolchain from kernel.org, 0day test robot
+		 or Segher's buildall
+sh:		To compile the relevant changes sh64 compiler is
+		 required, couldn't get it from above mentioned 3
+		 sources.
 
-[Puppy eyes intensify.]
+Note 1: sh toolchain is available, but that will not make the
+ relevant changes compile as it has dependency of 64bit arch toolchain,
+ did try a Kconfig hack to make it compile w/ 32bit sh toolchain, but it
+ failed due to other reasons (unknown operands), so gave up on that.
+Note 2: hexagon final image creation fails even w/o my patch, but it
+ has been ensured that w/ my changes relevant object files are getting
+ built  w/o warnings.
 
-Rob
+Regards
+afzal
 
---------------479B1A57757F7B903A4373D9
-Content-Type: text/x-patch; charset=UTF-8;
- name="patch1.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="patch1.patch"
+[1] https://lkml.kernel.org/r/20200321172626.GA6323@afzalpc
 
-From:   Romain Naour <romain.naour@gmail.com>
-To:     linux-sh@vger.kernel.org
-Cc:     Romain Naour <romain.naour@gmail.com>,
-        Alan Modra <amodra@gmail.com>
-Subject: [PATCH 1/2] arch/sh: vmlinux.scr
-Date:   Sun, 15 Mar 2020 18:51:07 +0100
-Message-Id: <20200315175108.9694-1-romain.naour@gmail.com>
+afzal mohammed (6):
+  alpha: Replace setup_irq() by request_irq()
+  c6x: replace setup_irq() by request_irq()
+  hexagon: replace setup_irq() by request_irq()
+  sh: replace setup_irq() by request_irq()
+  unicore32: replace setup_irq() by request_irq()
+  genirq: Remove setup_irq() and remove_irq()
 
-Since the patch [1], building the kernel using a toolchain built with
-Binutils 2.33.1 prevent booting a sh4 system under Qemu.
-Apply the patch provided by Alan Modra [2] that fix alignment of rodata.
+ arch/alpha/kernel/irq_alpha.c     | 29 ++++----------------
+ arch/alpha/kernel/irq_i8259.c     |  8 ++----
+ arch/alpha/kernel/irq_impl.h      |  7 +----
+ arch/alpha/kernel/irq_pyxis.c     |  3 ++-
+ arch/alpha/kernel/sys_alcor.c     |  3 ++-
+ arch/alpha/kernel/sys_cabriolet.c |  3 ++-
+ arch/alpha/kernel/sys_eb64p.c     |  3 ++-
+ arch/alpha/kernel/sys_marvel.c    |  2 +-
+ arch/alpha/kernel/sys_miata.c     |  6 +++--
+ arch/alpha/kernel/sys_ruffian.c   |  3 ++-
+ arch/alpha/kernel/sys_rx164.c     |  3 ++-
+ arch/alpha/kernel/sys_sx164.c     |  3 ++-
+ arch/alpha/kernel/sys_wildfire.c  |  7 ++---
+ arch/alpha/kernel/time.c          |  6 ++---
+ arch/c6x/platforms/timer64.c      | 11 +++-----
+ arch/hexagon/kernel/smp.c         | 22 ++++++++--------
+ arch/hexagon/kernel/time.c        | 11 +++-----
+ arch/sh/boards/mach-cayman/irq.c  | 18 +++++--------
+ arch/sh/drivers/dma/dma-pvr2.c    |  9 +++----
+ arch/unicore32/kernel/time.c      | 11 +++-----
+ include/linux/irq.h               |  2 --
+ kernel/irq/manage.c               | 44 -------------------------------
+ 22 files changed, 60 insertions(+), 154 deletions(-)
 
-[1] https://sourceware.org/git/gitweb.cgi?p=binutils-gdb.git;h=ebd2263ba9a9124d93bbc0ece63d7e0fae89b40e
-[2] https://www.sourceware.org/ml/binutils/2019-12/msg00112.html
-
-Signed-off-by: Romain Naour <romain.naour@gmail.com>
-Cc: Alan Modra <amodra@gmail.com>
-Acked-by: Rich Felker <dalias@libc.org>
-Tested-by: Rob Landley <rob@landley.net>
----
- arch/sh/boot/compressed/vmlinux.scr | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/sh/boot/compressed/vmlinux.scr b/arch/sh/boot/compressed/vmlinux.scr
-index 862d74808236..dd292b4b9082 100644
---- a/arch/sh/boot/compressed/vmlinux.scr
-+++ b/arch/sh/boot/compressed/vmlinux.scr
-@@ -1,6 +1,6 @@
- SECTIONS
- {
--  .rodata..compressed : {
-+  .rodata..compressed : ALIGN(8) {
- 	input_len = .;
- 	LONG(input_data_end - input_data) input_data = .;
- 	*(.data)
 -- 
-2.24.1
-
-
---------------479B1A57757F7B903A4373D9
-Content-Type: text/x-patch; charset=UTF-8;
- name="patch2.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment;
- filename="patch2.patch"
-
-From:   Romain Naour <romain.naour@gmail.com>
-To:     linux-sh@vger.kernel.org
-Cc:     Romain Naour <romain.naour@gmail.com>,
-        Alan Modra <amodra@gmail.com>
-Subject: [PATCH 2/2] include/asm-generic: vmlinux.lds.h
-Date:   Sun, 15 Mar 2020 18:51:08 +0100
-Message-Id: <20200315175108.9694-2-romain.naour@gmail.com>
-
-Since the patch [1], building the kernel using a toolchain built with
-Binutils 2.33.1 prevent booting a sh4 system under Qemu.
-Apply the patch provided by Alan Modra [2] that fix alignment of rodata.
-
-[1] https://sourceware.org/git/gitweb.cgi?p=binutils-gdb.git;h=ebd2263ba9a9124d93bbc0ece63d7e0fae89b40e
-[2] https://www.sourceware.org/ml/binutils/2019-12/msg00112.html
-
-Signed-off-by: Romain Naour <romain.naour@gmail.com>
-Cc: Alan Modra <amodra@gmail.com>
-Acked-by: Rich Felker <dalias@libc.org>
-Tested-by: Rob Landley <rob@landley.net>
----
- include/asm-generic/vmlinux.lds.h | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
-index e00f41aa8ec4..d46d34b58c96 100644
---- a/include/asm-generic/vmlinux.lds.h
-+++ b/include/asm-generic/vmlinux.lds.h
-@@ -374,6 +374,7 @@
-  */
- #ifndef RO_AFTER_INIT_DATA
- #define RO_AFTER_INIT_DATA						\
-+	. = ALIGN(8);							\
- 	__start_ro_after_init = .;					\
- 	*(.data..ro_after_init)						\
- 	JUMP_TABLE_DATA							\
--- 
-2.24.1
-
-
---------------479B1A57757F7B903A4373D9--
+2.25.1
