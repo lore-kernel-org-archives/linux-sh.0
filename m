@@ -1,125 +1,115 @@
-From: Dmitry Safonov <dima@arista.com>
-Date: Mon, 16 Mar 2020 14:38:55 +0000
-Subject: [PATCHv2 29/50] sh: Add loglvl to dump_mem()
-Message-Id: <20200316143916.195608-30-dima@arista.com>
+From: afzal mohammed <afzal.mohd.ma@gmail.com>
+Date: Fri, 27 Mar 2020 16:22:24 +0000
+Subject: [PATCH v5 4/6] sh: replace setup_irq() by request_irq()
+Message-Id: <b060312689820559121ee0a6456bbc1202fb7ee5.1585320721.git.afzal.mohd.ma@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200316143916.195608-1-dima@arista.com>
-In-Reply-To: <20200316143916.195608-1-dima@arista.com>
+References: <20200321174303.GA7930@afzalpc>
+ <cover.1585320721.git.afzal.mohd.ma@gmail.com>
+In-Reply-To: <cover.1585320721.git.afzal.mohd.ma@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Dmitry Safonov <0x7f454c46@gmail.com>, Dmitry Safonov <dima@arista.com>, Andrew Morton <akpm@linux-foundation.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Ingo Molnar <mingo@kernel.org>, Jiri Slaby <jslaby@suse.com>, Petr Mladek <pmladek@suse.com>, Sergey Senozhatsky <sergey.senozhatsky@gmail.com>, Steven Rostedt <rostedt@goodmis.org>, Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
+To: Thomas Gleixner <tglx@linutronix.de>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
 
-Currently, the log-level of show_stack() depends on a platform
-realization. It creates situations where the headers are printed with
-lower log level or higher than the stacktrace (depending on
-a platform or user).
+request_irq() is preferred over setup_irq(). Invocations of setup_irq()
+occur after memory allocators are ready.
 
-Furthermore, it forces the logic decision from user to an architecture
-side. In result, some users as sysrq/kdb/etc are doing tricks with
-temporary rising console_loglevel while printing their messages.
-And in result it not only may print unwanted messages from other CPUs,
-but also omit printing at all in the unlucky case where the printk()
-was deferred.
+Per tglx[1], setup_irq() existed in olden days when allocators were not
+ready by the time early interrupts were initialized.
 
-Introducing log-level parameter and KERN_UNSUPPRESSED [1] seems
-an easier approach than introducing more printk buffers.
-Also, it will consolidate printings with headers.
+Hence replace setup_irq() by request_irq().
 
-Add log level argument to dump_mem() as a preparation to introduce
-show_stack_loglvl().
+[1] https://lkml.kernel.org/r/alpine.DEB.2.20.1710191609480.1971@nanos
 
-Cc: Rich Felker <dalias@libc.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-sh@vger.kernel.org
-[1]: https://lore.kernel.org/lkml/20190528002412.1625-1-dima@arista.com/T/#u
-Signed-off-by: Dmitry Safonov <dima@arista.com>
+Signed-off-by: afzal mohammed <afzal.mohd.ma@gmail.com>
 ---
- arch/sh/include/asm/kdebug.h |  3 ++-
- arch/sh/kernel/dumpstack.c   | 17 +++++++++--------
- arch/sh/kernel/traps.c       |  4 ++--
- 3 files changed, 13 insertions(+), 11 deletions(-)
 
-diff --git a/arch/sh/include/asm/kdebug.h b/arch/sh/include/asm/kdebug.h
-index 5212f5fcd752..de8693fabb1d 100644
---- a/arch/sh/include/asm/kdebug.h
-+++ b/arch/sh/include/asm/kdebug.h
-@@ -13,6 +13,7 @@ enum die_val {
+Link to v3, v2 & v1,
+[v3] https://lkml.kernel.org/r/20200304005120.5403-1-afzal.mohd.ma@gmail.com
+[v2] https://lkml.kernel.org/r/cover.1582471508.git.afzal.mohd.ma@gmail.com
+[v1] https://lkml.kernel.org/r/cover.1581478323.git.afzal.mohd.ma@gmail.com
+
+v5:
+ * No change
+v4:
+ * Non-existent
+v3:
+ * Split out from tree wide series, as Thomas suggested to get it thr'
+	respective maintainers
+ * Modify pr_err displayed in case of error
+ * Re-arrange code & choose pr_err args as required to improve readability
+ * Remove irrelevant parts from commit message & improve
  
- /* arch/sh/kernel/dumpstack.c */
- extern void printk_address(unsigned long address, int reliable);
--extern void dump_mem(const char *str, unsigned long bottom, unsigned long top);
-+extern void dump_mem(const char *str, const char *loglvl,
-+		     unsigned long bottom, unsigned long top);
+v2:
+ * Replace pr_err("request_irq() on %s failed" by
+           pr_err("%s: request_irq() failed"
+ * Commit message massage
+
+ arch/sh/boards/mach-cayman/irq.c | 18 ++++++------------
+ arch/sh/drivers/dma/dma-pvr2.c   |  9 +++------
+ 2 files changed, 9 insertions(+), 18 deletions(-)
+
+diff --git a/arch/sh/boards/mach-cayman/irq.c b/arch/sh/boards/mach-cayman/irq.c
+index 3b6ea2d99013..0305d0b51730 100644
+--- a/arch/sh/boards/mach-cayman/irq.c
++++ b/arch/sh/boards/mach-cayman/irq.c
+@@ -40,16 +40,6 @@ static irqreturn_t cayman_interrupt_pci2(int irq, void *dev_id)
+ 	return IRQ_NONE;
+ }
  
- #endif /* __ASM_SH_KDEBUG_H */
-diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
-index 9f1c9c11d62d..6784b914fba0 100644
---- a/arch/sh/kernel/dumpstack.c
-+++ b/arch/sh/kernel/dumpstack.c
-@@ -16,30 +16,31 @@
- #include <asm/unwinder.h>
- #include <asm/stacktrace.h>
- 
--void dump_mem(const char *str, unsigned long bottom, unsigned long top)
-+void dump_mem(const char *str, const char *loglvl,
-+	      unsigned long bottom, unsigned long top)
+-static struct irqaction cayman_action_smsc = {
+-	.name		= "Cayman SMSC Mux",
+-	.handler	= cayman_interrupt_smsc,
+-};
+-
+-static struct irqaction cayman_action_pci2 = {
+-	.name		= "Cayman PCI2 Mux",
+-	.handler	= cayman_interrupt_pci2,
+-};
+-
+ static void enable_cayman_irq(struct irq_data *data)
  {
- 	unsigned long p;
- 	int i;
- 
--	printk("%s(0x%08lx to 0x%08lx)\n", str, bottom, top);
-+	printk("%s%s(0x%08lx to 0x%08lx)\n", loglvl, str, bottom, top);
- 
- 	for (p = bottom & ~31; p < top; ) {
--		printk("%04lx: ", p & 0xffff);
-+		printk("%s%04lx: ", loglvl,  p & 0xffff);
- 
- 		for (i = 0; i < 8; i++, p += 4) {
- 			unsigned int val;
- 
- 			if (p < bottom || p >= top)
--				printk("         ");
-+				printk("%s         ", loglvl);
- 			else {
- 				if (__get_user(val, (unsigned int __user *)p)) {
--					printk("\n");
-+					printk("%s\n", loglvl);
- 					return;
- 				}
--				printk("%08x ", val);
-+				printk("%s%08x ", loglvl, val);
- 			}
- 		}
--		printk("\n");
-+		printk("%s\n", loglvl);
+ 	unsigned int irq = data->irq;
+@@ -149,6 +139,10 @@ void init_cayman_irq(void)
  	}
+ 
+ 	/* Setup the SMSC interrupt */
+-	setup_irq(SMSC_IRQ, &cayman_action_smsc);
+-	setup_irq(PCI2_IRQ, &cayman_action_pci2);
++	if (request_irq(SMSC_IRQ, cayman_interrupt_smsc, 0, "Cayman SMSC Mux",
++			NULL))
++		pr_err("Failed to register Cayman SMSC Mux interrupt\n");
++	if (request_irq(PCI2_IRQ, cayman_interrupt_pci2, 0, "Cayman PCI2 Mux",
++			NULL))
++		pr_err("Failed to register Cayman PCI2 Mux interrupt\n");
+ }
+diff --git a/arch/sh/drivers/dma/dma-pvr2.c b/arch/sh/drivers/dma/dma-pvr2.c
+index b5dbd1f75768..21c347543e19 100644
+--- a/arch/sh/drivers/dma/dma-pvr2.c
++++ b/arch/sh/drivers/dma/dma-pvr2.c
+@@ -64,11 +64,6 @@ static int pvr2_xfer_dma(struct dma_channel *chan)
+ 	return 0;
  }
  
-@@ -156,7 +157,7 @@ void show_stack(struct task_struct *tsk, unsigned long *sp)
- 		sp = (unsigned long *)tsk->thread.sp;
+-static struct irqaction pvr2_dma_irq = {
+-	.name		= "pvr2 DMA handler",
+-	.handler	= pvr2_dma_interrupt,
+-};
+-
+ static struct dma_ops pvr2_dma_ops = {
+ 	.request	= pvr2_request_dma,
+ 	.get_residue	= pvr2_get_dma_residue,
+@@ -84,7 +79,9 @@ static struct dma_info pvr2_dma_info = {
  
- 	stack = (unsigned long)sp;
--	dump_mem("Stack: ", stack, THREAD_SIZE +
-+	dump_mem("Stack: ", KERN_DEFAULT, stack, THREAD_SIZE +
- 		 (unsigned long)task_stack_page(tsk));
- 	show_trace(tsk, sp, NULL);
- }
-diff --git a/arch/sh/kernel/traps.c b/arch/sh/kernel/traps.c
-index 63cf17bc760d..faad65409075 100644
---- a/arch/sh/kernel/traps.c
-+++ b/arch/sh/kernel/traps.c
-@@ -38,8 +38,8 @@ void die(const char *str, struct pt_regs *regs, long err)
- 			task_pid_nr(current), task_stack_page(current) + 1);
+ static int __init pvr2_dma_init(void)
+ {
+-	setup_irq(HW_EVENT_PVR2_DMA, &pvr2_dma_irq);
++	if (request_irq(HW_EVENT_PVR2_DMA, pvr2_dma_interrupt, 0,
++			"pvr2 DMA handler", NULL))
++		pr_err("Failed to register pvr2 DMA handler interrupt\n");
+ 	request_dma(PVR2_CASCADE_CHAN, "pvr2 cascade");
  
- 	if (!user_mode(regs) || in_interrupt())
--		dump_mem("Stack: ", regs->regs[15], THREAD_SIZE +
--			 (unsigned long)task_stack_page(current));
-+		dump_mem("Stack: ", KERN_DEFAULT, regs->regs[15],
-+			THREAD_SIZE + (unsigned long)task_stack_page(current));
- 
- 	notify_die(DIE_OOPS, str, regs, err, 255, SIGSEGV);
- 
+ 	return register_dmac(&pvr2_dma_info);
 -- 
 2.25.1
