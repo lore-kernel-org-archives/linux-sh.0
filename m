@@ -1,36 +1,46 @@
 From: Rob Landley <rob@landley.net>
-Date: Tue, 28 Apr 2020 16:40:47 +0000
-Subject: Re: [PATCH 2/5] coredump: Fix handling of partial writes in dump_emit()
-Message-Id: <94141fbb-9559-1851-54c1-cdc5fc529a1a@landley.net>
+Date: Fri, 03 Apr 2020 23:49:00 +0000
+Subject: v5.6 is still throwing a stack trace on boot.
+Message-Id: <24dbbbc2-644a-1f9e-4e82-b7b726a4ce42@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200428032745.133556-1-jannh@google.com>
- <20200428032745.133556-3-jannh@google.com>
- <CAHk-=wjSYTpTH0X8EcGGJD84tsJS62BN3tC6NfzmjvXdSkFVxg@mail.gmail.com>
-In-Reply-To: <CAHk-=wjSYTpTH0X8EcGGJD84tsJS62BN3tC6NfzmjvXdSkFVxg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>, Jann Horn <jannh@google.com>
-Cc: Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Oleg Nesterov <oleg@redhat.com>, Linux-MM <linux-mm@kvack.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Mark Salter <msalter@redhat.com>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, Russell King <linux@armlinux.org.uk>, Andrew Morton <akpm@linux-foundation.org>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Christoph Hellwig <hch@lst.de>, Linux ARM <linux-arm-kernel@lists.infradead.org>, "Eric W . Biederman" <ebiederm@xmission.com>
+To: linux-sh@vger.kernel.org
 
-On 4/27/20 10:35 PM, Linus Torvalds wrote:
-> On Mon, Apr 27, 2020 at 8:28 PM Jann Horn <jannh@google.com> wrote:
->>
->> After a partial write, we have to update the input buffer pointer.
-> 
-> Interesting. It seems this partial write case never triggers (except
-> for actually killing the core-dump).
-> 
-> Or did you find a case where it actually matters?
-> 
-> Your fix is obviously correct, but it also makes me go "that function
-> clearly never actually worked for partial writes, maybe we shouldn't
-> even bother?"
+Run /init as init process
+------------[ cut here ]------------
+WARNING: CPU: 0 PID: 1 at mm/slub.c:2468 ___slab_alloc.constprop.0+0x1f0/0x290
 
-Writes to a local filesystem should never be short unless disk full/error.
+CPU: 0 PID: 1 Comm: swapper Not tainted 5.6.0 #2
+PC is at ___slab_alloc.constprop.0+0x1f0/0x290
+PR is at __slab_alloc.constprop.0+0x2e/0x54
+PC  : 8c0a76c4 SP  : 8f829ea0 SR  : 400080f0
+TEA : c0001240
+R0  : 8c0a74d4 R1  : 00000100 R2  : 00000100 R3  : 00000000
+R4  : 8f8020a0 R5  : 00000dc0 R6  : 8c01d678 R7  : 8fff5180
+R8  : 8f8020a0 R9  : 8fff5180 R10 : 8c01d678 R11 : 80000000
+R12 : 00007fff R13 : 00000dc0 R14 : 8f8020a0
+MACH: 0000008b MACL: 0ae4849d GBR : 00000000 PR  : 8c0a7792
 
-Once upon a time this was yet another thing that NFS could break that no other
-filesystem would break, but I dunno about now? (I think the page cache collates
-it and defers the flush until the error can't be reported back anyway?)
+Call trace:
+ [<(ptrval)>] mm_alloc+0xe/0x48
+ [<(ptrval)>] do_IRQ+0x0/0x50
+ [<(ptrval)>] __slab_alloc.constprop.0+0x2e/0x54
+ [<(ptrval)>] arch_local_irq_restore+0x0/0x24
+ [<(ptrval)>] mm_init.isra.0+0xdc/0x138
+ [<(ptrval)>] kmem_cache_alloc+0xd0/0x15c
+ [<(ptrval)>] mm_init.isra.0+0xdc/0x138
+ [<(ptrval)>] mm_init.isra.0+0xdc/0x138
+ [<(ptrval)>] memset+0x0/0x8c
+ [<(ptrval)>] __do_execve_file+0x22e/0x5d8
+ [<(ptrval)>] kmem_cache_alloc+0x0/0x15c
+ [<(ptrval)>] do_execve+0x16/0x24
+ [<(ptrval)>] arch_local_irq_restore+0x0/0x24
+ [<(ptrval)>] printk+0x0/0x24
+ [<(ptrval)>] kernel_init+0x34/0xe8
+ [<(ptrval)>] ret_from_kernel_thread+0xc/0x14
+ [<(ptrval)>] schedule_tail+0x0/0x5c
+ [<(ptrval)>] kernel_init+0x0/0xe8
 
-Rob
+---[ end trace 76213c1325250d90 ]---
