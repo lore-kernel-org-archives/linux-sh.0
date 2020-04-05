@@ -1,57 +1,102 @@
-From: Barrister Robert Richter UN-Attorney at Law Court-Benin  <info.zennitbankplcnige
-Date: Mon, 13 Apr 2020 11:41:28 +0000
-Subject: I have already sent you first payment US$5000.00 this morning through MONEY Gram service.it is avail
-Message-Id: <CABHzvrngm=rA5Ct9h+JGdbyDfHJmnfntceDPoyJToo8PZn+YZg@mail.gmail.com>
+From: Stephen Boyd <sboyd@kernel.org>
+Date: Sun, 05 Apr 2020 02:51:14 +0000
+Subject: [PATCH 0/9] Allow COMMON_CLK to be selectable
+Message-Id: <20200405025123.154688-1-sboyd@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sctp@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Michael Turquette <mturquette@baylibre.com>, Stephen Boyd <sboyd@kernel.org>
+Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Jiaxun Yang <jiaxun.yang@flygoat.com>, linux-mips@vger.kernel.org, Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>, chenhc@lemote.com, Will Deacon <will@kernel.org>, linux-clk@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Alexander Shiyan <shc_work@mail.ru>, Russell King <linux@armlinux.org.uk>, Yoshinori Sato <ysato@users.sourceforge.jp>, Geert Uytterhoeven <geert@linux-m68k.org>, Mark Salter <msalter@redhat.com>, Thierry Reding <treding@nvidia.com>, uclinux-h8-devel@lists.sourceforge.jp, Arnd Bergmann <arnd@arndb.de>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Lubomir Rintel <lkundrak@v3.sk>, linux-m68k@lists.linux-m68k.org, Mark Brown <broonie@kernel.org>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Paul Walmsley <paul@pwsan.com>, Thomas Bogendoerfer <tsbogend@alpha.franken.de>, Paul Burton <paulburton@kernel.org>, linux-kernel@vger.kernel.org, Tony Prisk <linux@prisktech.co.nz>, =?UTF-8?q?Andreas=20F=C3=A4rber?= <afaerber@suse.de>
 
-ATTN DEAR BENEFICIARY.
+This patch series cleans up a handful of selects that were redundant and
+deletes presumably dead code with the goal of making it possible to add
+kunit tests for the CCF in the future. To do that, we introduce a
+"legacy" clk Kconfig option to mark code that hasn't migrated to the
+common clk framework and then make the COMMON_CLK config option visible
+in the menuconfig as long as that legacy option isn't enabled. I've also
+included a couple patches at the end that may be more controversial but
+helped me consolidate all this logic/code.
 
-GOOD NEWS.
+I haven't done more than compile test a few configs for arm, arm64,
+h8300, and mips. More testing is welcome.
 
-I have already sent you first payment US$5000.00 this morning through
-MONEY Gram service.it is available to pick up in address now.
+The plan is that I'll just merge the whole pile through the clk tree. If
+the first five patches or the last three patches are better going
+through another tree like arm-soc or architecture trees that's fine too,
+but there are potential conflicts between trees so maybe it's better to
+just leave it all in one tree.
 
-So we advise you to Contact This Money Gram office to pick up your
-transfer $US5000.00 today.
+Stephen Boyd (9):
+  ARM: Remove redundant COMMON_CLK selects
+  ARM: Remove redundant CLKDEV_LOOKUP selects
+  arm64: tegra: Remove redundant CLKDEV_LOOKUP selects
+  h8300: Remove redundant CLKDEV_LOOKUP selects
+  MIPS: Remove redundant CLKDEV_LOOKUP selects
+  clk: Allow the common clk framework to be selectable
+  ARM: mmp: Remove legacy clk code
+  MIPS: Loongson64: Drop asm/clock.h include
+  clk: Move HAVE_CLK config out of architecture layer
+
+Cc: Alexander Shiyan <shc_work@mail.ru>
+Cc: "Andreas F=C3=A4rber" <afaerber@suse.de>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: Aurelien Jacquiot <jacquiot.aurelien@gmail.com>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: <chenhc@lemote.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Guan Xuetao <gxt@pku.edu.cn>
+Cc: Jiaxun Yang <jiaxun.yang@flygoat.com>
+Cc: <linux-arm-kernel@lists.infradead.org>
+Cc: <linux-c6x-dev@linux-c6x.org>
+Cc: <linux-m68k@lists.linux-m68k.org>
+Cc: <linux-mips@vger.kernel.org>
+Cc: <linux-sh@vger.kernel.org>
+Cc: Lubomir Rintel <lkundrak@v3.sk>
+Cc: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Cc: Mark Brown <broonie@kernel.org>
+Cc: Mark Salter <msalter@redhat.com>
+Cc: Paul Burton <paulburton@kernel.org>
+Cc: Paul Walmsley <paul@pwsan.com>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Russell King <linux@armlinux.org.uk>
+Cc: Thierry Reding <treding@nvidia.com>
+Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+Cc: Tony Prisk <linux@prisktech.co.nz>
+Cc: uclinux-h8-devel@lists.sourceforge.jp
+Cc: Will Deacon <will@kernel.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+
+ arch/Kconfig                     |   6 --
+ arch/arm/Kconfig                 |   5 +-
+ arch/arm/mach-actions/Kconfig    |   1 -
+ arch/arm/mach-clps711x/Kconfig   |   1 -
+ arch/arm/mach-mmp/Kconfig        |   1 -
+ arch/arm/mach-mmp/Makefile       |   6 --
+ arch/arm/mach-mmp/clock-mmp2.c   | 114 -------------------------------
+ arch/arm/mach-mmp/clock-pxa168.c |  94 -------------------------
+ arch/arm/mach-mmp/clock-pxa910.c |  70 -------------------
+ arch/arm/mach-mmp/clock.c        | 105 ----------------------------
+ arch/arm/mach-mmp/clock.h        |  65 ------------------
+ arch/arm/mach-vt8500/Kconfig     |   1 -
+ arch/arm64/Kconfig.platforms     |   1 -
+ arch/c6x/Kconfig                 |   1 +
+ arch/h8300/Kconfig               |   1 -
+ arch/m68k/Kconfig.cpu            |   2 +-
+ arch/mips/Kconfig                |   8 +--
+ arch/mips/loongson2ef/Kconfig    |   2 +-
+ arch/mips/loongson64/smp.c       |   1 -
+ arch/sh/boards/Kconfig           |   5 ++
+ arch/unicore32/Kconfig           |   2 +-
+ drivers/clk/Kconfig              |  23 +++++--
+ 22 files changed, 34 insertions(+), 481 deletions(-)
+ delete mode 100644 arch/arm/mach-mmp/clock-mmp2.c
+ delete mode 100644 arch/arm/mach-mmp/clock-pxa168.c
+ delete mode 100644 arch/arm/mach-mmp/clock-pxa910.c
+ delete mode 100644 arch/arm/mach-mmp/clock.c
+ delete mode 100644 arch/arm/mach-mmp/clock.h
 
 
-Note that your compensation payment funds is total amount $US2.800,000
-Million Dollars.We have instructed the Money Gram Agent,Mr. James
-Gadner to keep sending the transfer to you daily, but the maximum
-amount you will be receiving everyday is US$5000.00. Contact Agent now
-to pick up your first payment $US5000.00 immediately.
-
-Contact Person, Mr. James Gadner, Dir. Money Gram Benin.
-Email: mgbenin903@gmail.com
-Telephone Numbers: +229 62819378/ +229 98477762
-
-HERE IS YOUR PAYMENT DETAILS FOR THE FIRST £US5000.00 SENT TODAY.
-
-Track View Website link:
-https://secure.moneygram.com/track
-Sender’s First name: David
-Sender’s Last Name: Joiner
-Money Transfer Control Number (MTCN) (REFERENCE)# 26046856
-
-Contact the Mmoney Gram Urgent and reconfirm your address to the
-office before, they will allow you to pick up the transfer today.
-
-HERE IS WHAT REQUIRED OF YOU.
-
-YOUR FULL NAME---------
-ADDRESS--------------
-COUNTRY-----------------------------
-TELEPHONE NUMBERS-----------------
-
-Note, I paid the transfer fee for you, but only you are required to
-send to the office is $75 only,Been Your Payment File activation fee,
-Send once you contact the office,before you can able to pick up your
-transfer today.
-
-Let me know once you pick up first payment today.
-
-Barrister Robert Richter UN-Attorney at Law Court-Benin
+base-commit: 7111951b8d4973bda27ff663f2cf18b663d15b48
+--=20
+Sent by a computer, using git, on the internet
