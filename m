@@ -1,56 +1,36 @@
-From: Rob Landley <rob@landley.net>
-Date: Thu, 09 Apr 2020 08:09:03 +0000
-Subject: [PATCH] Fix verbose arch/sh panic messages.
-Message-Id: <1da19521-b70c-272c-51bb-9416ece62772@landley.net>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 09 Apr 2020 08:16:49 +0000
+Subject: Re: [PATCH] Fix verbose arch/sh panic messages.
+Message-Id: <CAMuHMdWUCtpP3_roXz4Mfb9pLGdhksUHzM8LbViWZZT2w1JfOg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1da19521-b70c-272c-51bb-9416ece62772@landley.net>
+In-Reply-To: <1da19521-b70c-272c-51bb-9416ece62772@landley.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Rob Landley <rob@landley.net>
+Hi Rob,
 
-These days printk() adds a newline, so 8 lines of memory dump becomes 80.
+On Thu, Apr 9, 2020 at 10:03 AM Rob Landley <rob@landley.net> wrote:
+> From: Rob Landley <rob@landley.net>
+>
+> These days printk() adds a newline, so 8 lines of memory dump becomes 80.
+>
+> Signed-off-by: Rob Landley <rob@landley.net>
 
-Signed-off-by: Rob Landley <rob@landley.net>
----
+See also "[PATCH 2/7] sh: dump_stack: Fix broken lines and ptrval in
+calltrace dumps" of series "[PATCH 0/7] sh: Modernize printing of kernel
+messages"
+https://lore.kernel.org/lkml/20191203162645.19950-1-geert+renesas@glider.be/
 
- arch/sh/kernel/dumpstack.c |   10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+Gr{oetje,eeting}s,
 
-diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
-index 9f1c9c11d62d..bfbae0d79dde 100644
---- a/arch/sh/kernel/dumpstack.c
-+++ b/arch/sh/kernel/dumpstack.c
-@@ -19,12 +19,14 @@
- void dump_mem(const char *str, unsigned long bottom, unsigned long top)
- {
- 	unsigned long p;
-+	char buf[128], *s;
- 	int i;
+                        Geert
 
- 	printk("%s(0x%08lx to 0x%08lx)\n", str, bottom, top);
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
- 	for (p = bottom & ~31; p < top; ) {
--		printk("%04lx: ", p & 0xffff);
-+		s = buf;
-+		s += sprintf(s, "%04lx: ", p & 0xffff);
-
- 		for (i = 0; i < 8; i++, p += 4) {
- 			unsigned int val;
-@@ -33,13 +35,13 @@
- 				printk("         ");
- 			else {
- 				if (__get_user(val, (unsigned int __user *)p)) {
--					printk("\n");
-+					printk("FAULT\n");
- 					return;
- 				}
--				printk("%08x ", val);
-+				s += sprintf(s, "%08x ", val);
- 			}
- 		}
--		printk("\n");
-+		printk("%s\n", buf);
- 	}
- }
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
