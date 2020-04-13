@@ -1,170 +1,41 @@
-From: Jann Horn <jannh@google.com>
-Date: Wed, 29 Apr 2020 21:49:52 +0000
-Subject: [PATCH v2 3/5] coredump: Refactor page range dumping into common helper
-Message-Id: <20200429214954.44866-4-jannh@google.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Mon, 13 Apr 2020 16:15:42 +0000
+Subject: [PATCH] sh: mm: Fix build error
+Message-Id: <20200413161542.78700-1-linux@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200429214954.44866-1-jannh@google.com>
-In-Reply-To: <20200429214954.44866-1-jannh@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Oleg Nesterov <oleg@redhat.com>, linux-mm@kvack.org, Alexander Viro <viro@zeniv.linux.org.uk>, Mark Salter <msalter@redhat.com>, linux-fsdevel@vger.kernel.org, Russell King <linux@armlinux.org.uk>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Linus Torvalds <torvalds@linux-foundation.org>, Christoph Hellwig <hch@lst.de>, linux-arm-kernel@lists.infradead.org, "Eric W . Biederman" <ebiederm@xmission.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Guenter Roeck <linux@roeck-us.net>, Logan Gunthorpe <logang@deltatee.com>, Stephen Rothwell <sfr@canb.auug.org.au>
 
-Both fs/binfmt_elf.c and fs/binfmt_elf_fdpic.c need to dump ranges of pages
-into the coredump file. Extract that logic into a common helper.
+  415 |  if (WARN_ON_ONCE(params->pgprot.pgprot != PAGE_KERNEL.pgprot)
+      |     ^
+arch/sh/mm/init.c:424:1: error: expected expression before '}' token
+  424 | }
 
-Any other binfmt that actually wants to create coredumps will probably need
-the same function; so stop making get_dump_page() depend on
-CONFIG_ELF_CORE.
+Obviously never even compile tested.
 
-Signed-off-by: Jann Horn <jannh@google.com>
+Fixes: a332976e0184 ("mm/memory_hotplug: add pgprot_t to mhp_params")
+Cc: Logan Gunthorpe <logang@deltatee.com>
+Cc: Stephen Rothwell <sfr@canb.auug.org.au>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 ---
- fs/binfmt_elf.c          | 22 ++--------------------
- fs/binfmt_elf_fdpic.c    | 18 +++---------------
- fs/coredump.c            | 33 +++++++++++++++++++++++++++++++++
- include/linux/coredump.h |  2 ++
- mm/gup.c                 |  2 --
- 5 files changed, 40 insertions(+), 37 deletions(-)
+ arch/sh/mm/init.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/binfmt_elf.c b/fs/binfmt_elf.c
-index b29b84595b09f..fb36469848323 100644
---- a/fs/binfmt_elf.c
-+++ b/fs/binfmt_elf.c
-@@ -2323,26 +2323,8 @@ static int elf_core_dump(struct coredump_params *cprm)
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index b9de2d4fa57e..8d2a68aea1fc 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -412,7 +412,7 @@ int arch_add_memory(int nid, u64 start, u64 size,
+ 	unsigned long nr_pages = size >> PAGE_SHIFT;
+ 	int ret;
  
- 	for (i = 0, vma = first_vma(current, gate_vma); vma != NULL;
- 			vma = next_vma(vma, gate_vma)) {
--		unsigned long addr;
--		unsigned long end;
--
--		end = vma->vm_start + vma_filesz[i++];
--
--		for (addr = vma->vm_start; addr < end; addr += PAGE_SIZE) {
--			struct page *page;
--			int stop;
--
--			page = get_dump_page(addr);
--			if (page) {
--				void *kaddr = kmap(page);
--				stop = !dump_emit(cprm, kaddr, PAGE_SIZE);
--				kunmap(page);
--				put_page(page);
--			} else
--				stop = !dump_skip(cprm, PAGE_SIZE);
--			if (stop)
--				goto cleanup;
--		}
-+		if (!dump_user_range(cprm, vma->vm_start, vma_filesz[i++]))
-+			goto cleanup;
- 	}
- 	dump_truncate(cprm);
+-	if (WARN_ON_ONCE(params->pgprot.pgprot != PAGE_KERNEL.pgprot)
++	if (WARN_ON_ONCE(params->pgprot.pgprot != PAGE_KERNEL.pgprot))
+ 		return -EINVAL;
  
-diff --git a/fs/binfmt_elf_fdpic.c b/fs/binfmt_elf_fdpic.c
-index f5b47076fa762..938f66f4de9b2 100644
---- a/fs/binfmt_elf_fdpic.c
-+++ b/fs/binfmt_elf_fdpic.c
-@@ -1500,21 +1500,9 @@ static bool elf_fdpic_dump_segments(struct coredump_params *cprm)
- 		if (!maydump(vma, cprm->mm_flags))
- 			continue;
- 
--		for (addr = vma->vm_start; addr < vma->vm_end;
--							addr += PAGE_SIZE) {
--			bool res;
--			struct page *page = get_dump_page(addr);
--			if (page) {
--				void *kaddr = kmap(page);
--				res = dump_emit(cprm, kaddr, PAGE_SIZE);
--				kunmap(page);
--				put_page(page);
--			} else {
--				res = dump_skip(cprm, PAGE_SIZE);
--			}
--			if (!res)
--				return false;
--		}
-+		if (!dump_user_range(cprm, vma->vm_start,
-+				     vma->vma_end - vma->vm_start))
-+			return false;
- 	}
- 	return true;
- }
-diff --git a/fs/coredump.c b/fs/coredump.c
-index d6fcc36a7db1f..88f625eecaac1 100644
---- a/fs/coredump.c
-+++ b/fs/coredump.c
-@@ -859,6 +859,39 @@ int dump_skip(struct coredump_params *cprm, size_t nr)
- }
- EXPORT_SYMBOL(dump_skip);
- 
-+#ifdef CONFIG_ELF_CORE
-+int dump_user_range(struct coredump_params *cprm, unsigned long start,
-+		    unsigned long len)
-+{
-+	unsigned long addr;
-+
-+	for (addr = start; addr < start + len; addr += PAGE_SIZE) {
-+		struct page *page;
-+		int stop;
-+
-+		/*
-+		 * To avoid having to allocate page tables for virtual address
-+		 * ranges that have never been used yet, use a helper that
-+		 * returns NULL when encountering an empty page table entry that
-+		 * would otherwise have been filled with the zero page.
-+		 */
-+		page = get_dump_page(addr);
-+		if (page) {
-+			void *kaddr = kmap(page);
-+
-+			stop = !dump_emit(cprm, kaddr, PAGE_SIZE);
-+			kunmap(page);
-+			put_page(page);
-+		} else {
-+			stop = !dump_skip(cprm, PAGE_SIZE);
-+		}
-+		if (stop)
-+			return 0;
-+	}
-+	return 1;
-+}
-+#endif
-+
- int dump_align(struct coredump_params *cprm, int align)
- {
- 	unsigned mod = cprm->pos & (align - 1);
-diff --git a/include/linux/coredump.h b/include/linux/coredump.h
-index abf4b4e65dbb9..4289dc21c04ff 100644
---- a/include/linux/coredump.h
-+++ b/include/linux/coredump.h
-@@ -16,6 +16,8 @@ extern int dump_skip(struct coredump_params *cprm, size_t nr);
- extern int dump_emit(struct coredump_params *cprm, const void *addr, int nr);
- extern int dump_align(struct coredump_params *cprm, int align);
- extern void dump_truncate(struct coredump_params *cprm);
-+int dump_user_range(struct coredump_params *cprm, unsigned long start,
-+		    unsigned long len);
- #ifdef CONFIG_COREDUMP
- extern void do_coredump(const kernel_siginfo_t *siginfo);
- #else
-diff --git a/mm/gup.c b/mm/gup.c
-index 76080c4dbff05..9a7e83772f1fe 100644
---- a/mm/gup.c
-+++ b/mm/gup.c
-@@ -1550,7 +1550,6 @@ static long __get_user_pages_locked(struct task_struct *tsk,
-  *
-  * Called without mmap_sem, but after all other threads have been killed.
-  */
--#ifdef CONFIG_ELF_CORE
- struct page *get_dump_page(unsigned long addr)
- {
- 	struct vm_area_struct *vma;
-@@ -1563,7 +1562,6 @@ struct page *get_dump_page(unsigned long addr)
- 	flush_cache_page(vma, addr, page_to_pfn(page));
- 	return page;
- }
--#endif /* CONFIG_ELF_CORE */
- 
- #if defined(CONFIG_FS_DAX) || defined (CONFIG_CMA)
- static bool check_dax_vmas(struct vm_area_struct **vmas, long nr_pages)
+ 	/* We only have ZONE_NORMAL, so this is easy.. */
 -- 
-2.26.2.526.g744177e7f7-goog
+2.17.1
