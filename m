@@ -1,74 +1,57 @@
-From: Will Deacon <will@kernel.org>
-Date: Mon, 20 Apr 2020 20:42:39 +0000
-Subject: Re: [RFC PATCH v1 40/50] arch/*/include/asm/stackprotector.h: Use get_random_canary() consistently
-Message-Id: <20200420204238.GB29998@willie-the-truck>
+From: Barrister Robert Richter UN-Attorney at Law Court-Benin  <info.zennitbankplcnige
+Date: Mon, 13 Apr 2020 11:41:28 +0000
+Subject: I have already sent you first payment US$5000.00 this morning through MONEY Gram service.it is avail
+Message-Id: <CABHzvrngm=rA5Ct9h+JGdbyDfHJmnfntceDPoyJToo8PZn+YZg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <202003281643.02SGhM0T009250@sdf.org>
-In-Reply-To: <202003281643.02SGhM0T009250@sdf.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: George Spelvin <lkml@sdf.org>
-Cc: Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Ingo Molnar <mingo@redhat.com>, Catalin Marinas <catalin.marinas@arm.com>, James Hogan <jhogan@kernel.org>, linux-xtensa@linux-xtensa.org, Borislav Petkov <bp@alien8.de>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Chris Zankel <chris@zankel.net>, Paul Burton <paulburton@kernel.org>, linux-kernel@vger.kernel.org, Ralf Baechle <ralf@linux-mips.org>, linuxppc-dev@lists.ozlabs.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sctp@vger.kernel.org
 
-On Tue, Dec 10, 2019 at 12:35:14AM -0500, George Spelvin wrote:
-> ... in boot_init_stack_canary().
-> 
-> This is the archetypical example of where the extra security of
-> get_random_bytes() is wasted.  The canary is only important as
-> long as it's stored in __stack_chk_guard.
-> 
-> It's also a great example of code that has been copied around
-> a lot and not updated.
-> 
-> Remove the XOR with LINUX_VERSION_CODE as it's pointless; the inclusion
-> of utsname() in init_std_data in the random seeding obviates it.
-> 
-> The XOR with the TSC on x86 and mtfb() on powerPC were left in,
-> as I haven't proved them redundant yet.  For those, we call
-> get_random_long(), xor, and mask manually.
-> 
-> FUNCTIONAL CHANGE: mips and xtensa were changed from 64-bit
-> get_random_long() to 56-bit get_random_canary() to match the
-> others, in accordance with the logic in CANARY_MASK.
-> 
-> (We could do 1 bit better and zero *one* of the two high bytes.)
-> 
-> Signed-off-by: George Spelvin <lkml@sdf.org>
-> Cc: Russell King <linux@armlinux.org.uk>
-> Cc: linux-arm-kernel@lists.infradead.org
-> Cc: Catalin Marinas <catalin.marinas@arm.com>
-> Cc: Will Deacon <will@kernel.org>
-> Cc: Ralf Baechle <ralf@linux-mips.org>
-> Cc: Paul Burton <paulburton@kernel.org>
-> Cc: James Hogan <jhogan@kernel.org>
-> Cc: linux-mips@vger.kernel.org
-> Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-> Cc: Paul Mackerras <paulus@samba.org>
-> Cc: Michael Ellerman <mpe@ellerman.id.au>
-> Cc: linuxppc-dev@lists.ozlabs.org
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: linux-sh@vger.kernel.org
-> Cc: Thomas Gleixner <tglx@linutronix.de>
-> Cc: Ingo Molnar <mingo@redhat.com>
-> Cc: Borislav Petkov <bp@alien8.de>
-> Cc:  "H. Peter Anvin" <hpa@zytor.com>
-> Cc: x86@kernel.org
-> Cc: Chris Zankel <chris@zankel.net>
-> Cc: Max Filippov <jcmvbkbc@gmail.com>
-> Cc: linux-xtensa@linux-xtensa.org
-> ---
->  arch/arm/include/asm/stackprotector.h     | 9 +++------
->  arch/arm64/include/asm/stackprotector.h   | 8 ++------
->  arch/mips/include/asm/stackprotector.h    | 7 ++-----
->  arch/powerpc/include/asm/stackprotector.h | 6 ++----
->  arch/sh/include/asm/stackprotector.h      | 8 ++------
->  arch/x86/include/asm/stackprotector.h     | 4 ++--
->  arch/xtensa/include/asm/stackprotector.h  | 7 ++-----
->  7 files changed, 15 insertions(+), 34 deletions(-)
+ATTN DEAR BENEFICIARY.
 
-Just found this kicking around in the depths of my inbox. Is the series
-dead?
+GOOD NEWS.
 
-Will
+I have already sent you first payment US$5000.00 this morning through
+MONEY Gram service.it is available to pick up in address now.
+
+So we advise you to Contact This Money Gram office to pick up your
+transfer $US5000.00 today.
+
+
+Note that your compensation payment funds is total amount $US2.800,000
+Million Dollars.We have instructed the Money Gram Agent,Mr. James
+Gadner to keep sending the transfer to you daily, but the maximum
+amount you will be receiving everyday is US$5000.00. Contact Agent now
+to pick up your first payment $US5000.00 immediately.
+
+Contact Person, Mr. James Gadner, Dir. Money Gram Benin.
+Email: mgbenin903@gmail.com
+Telephone Numbers: +229 62819378/ +229 98477762
+
+HERE IS YOUR PAYMENT DETAILS FOR THE FIRST £US5000.00 SENT TODAY.
+
+Track View Website link:
+https://secure.moneygram.com/track
+Sender’s First name: David
+Sender’s Last Name: Joiner
+Money Transfer Control Number (MTCN) (REFERENCE)# 26046856
+
+Contact the Mmoney Gram Urgent and reconfirm your address to the
+office before, they will allow you to pick up the transfer today.
+
+HERE IS WHAT REQUIRED OF YOU.
+
+YOUR FULL NAME---------
+ADDRESS--------------
+COUNTRY-----------------------------
+TELEPHONE NUMBERS-----------------
+
+Note, I paid the transfer fee for you, but only you are required to
+send to the office is $75 only,Been Your Payment File activation fee,
+Send once you contact the office,before you can able to pick up your
+transfer today.
+
+Let me know once you pick up first payment today.
+
+Barrister Robert Richter UN-Attorney at Law Court-Benin
