@@ -1,134 +1,96 @@
-From: Jann Horn <jannh@google.com>
-Date: Tue, 28 Apr 2020 03:27:41 +0000
-Subject: [PATCH 1/5] binfmt_elf_fdpic: Stop using dump_emit() on user pointers on !MMU
-Message-Id: <20200428032745.133556-2-jannh@google.com>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Tue, 14 Apr 2020 15:34:47 +0000
+Subject: [PATCH v4 06/14] nios2: add support for folded p4d page tables
+Message-Id: <20200414153455.21744-7-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200428032745.133556-1-jannh@google.com>
-In-Reply-To: <20200428032745.133556-1-jannh@google.com>
+References: <20200414153455.21744-1-rppt@kernel.org>
+In-Reply-To: <20200414153455.21744-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Oleg Nesterov <oleg@redhat.com>, linux-mm@kvack.org, Alexander Viro <viro@zeniv.linux.org.uk>, Mark Salter <msalter@redhat.com>, linux-fsdevel@vger.kernel.org, Russell King <linux@armlinux.org.uk>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Linus Torvalds <torvalds@linux-foundation.org>, Christoph Hellwig <hch@lst.de>, linux-arm-kernel@lists.infradead.org, "Eric W . Biederman" <ebiederm@xmission.com>
+Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, linux-hexagon@vger.kernel.org, Will Deacon <will@kernel.org>, kvmarm@lists.cs.columbia.edu, Jonas Bonn <jonas@southpole.se>, linux-arch@vger.kernel.org, Brian Cain <bcain@codeaurora.org>, Marc Zyngier <maz@kernel.org>, Russell King <linux@armlinux.org.uk>, Ley Foon Tan <ley.foon.tan@intel.com>, Mike Rapoport <rppt@linux.ibm.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, Fenghua Yu <fenghua.yu@intel.com>, Arnd Bergmann <arnd@arndb.de>, kvm-ppc@vger.kernel.org, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Tony Luck <tony.luck@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-kernel@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, nios2-dev@lists.rocketboards.org, linuxppc-dev@lists.ozlabs.org, Mike Rapoport <rppt@kernel.org>
 
-dump_emit() is for kernel pointers, and VMAs describe userspace memory.
-Let's be tidy here and avoid accessing userspace pointers under KERNEL_DS,
-even if it probably doesn't matter much on !MMU systems - especially given
-that it looks like we can just use the same get_dump_page() as on MMU if
-we move it out of the CONFIG_MMU block.
+From: Mike Rapoport <rppt@linux.ibm.com>
 
-Signed-off-by: Jann Horn <jannh@google.com>
+Implement primitives necessary for the 4th level folding, add walks of p4d
+level where appropriate and remove usage of __ARCH_USE_5LEVEL_HACK.
+
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
 ---
- fs/binfmt_elf_fdpic.c |  8 ------
- mm/gup.c              | 58 +++++++++++++++++++++----------------------
- 2 files changed, 29 insertions(+), 37 deletions(-)
+ arch/nios2/include/asm/pgtable.h | 3 +--
+ arch/nios2/mm/fault.c            | 9 +++++++--
+ arch/nios2/mm/ioremap.c          | 6 +++++-
+ 3 files changed, 13 insertions(+), 5 deletions(-)
 
-diff --git a/fs/binfmt_elf_fdpic.c b/fs/binfmt_elf_fdpic.c
-index c62c17a5c34a9..f5b47076fa762 100644
---- a/fs/binfmt_elf_fdpic.c
-+++ b/fs/binfmt_elf_fdpic.c
-@@ -1495,14 +1495,11 @@ static bool elf_fdpic_dump_segments(struct coredump_params *cprm)
- 	struct vm_area_struct *vma;
+diff --git a/arch/nios2/include/asm/pgtable.h b/arch/nios2/include/asm/pgtable.h
+index f98b7f4519ba..47a1a3ea5734 100644
+--- a/arch/nios2/include/asm/pgtable.h
++++ b/arch/nios2/include/asm/pgtable.h
+@@ -22,7 +22,6 @@
+ #include <asm/tlbflush.h>
  
- 	for (vma = current->mm->mmap; vma; vma = vma->vm_next) {
--#ifdef CONFIG_MMU
- 		unsigned long addr;
--#endif
+ #include <asm/pgtable-bits.h>
+-#define __ARCH_USE_5LEVEL_HACK
+ #include <asm-generic/pgtable-nopmd.h>
  
- 		if (!maydump(vma, cprm->mm_flags))
- 			continue;
- 
--#ifdef CONFIG_MMU
- 		for (addr = vma->vm_start; addr < vma->vm_end;
- 							addr += PAGE_SIZE) {
- 			bool res;
-@@ -1518,11 +1515,6 @@ static bool elf_fdpic_dump_segments(struct coredump_params *cprm)
- 			if (!res)
- 				return false;
- 		}
--#else
--		if (!dump_emit(cprm, (void *) vma->vm_start,
--				vma->vm_end - vma->vm_start))
--			return false;
--#endif
- 	}
- 	return true;
- }
-diff --git a/mm/gup.c b/mm/gup.c
-index 50681f0286ded..76080c4dbff05 100644
---- a/mm/gup.c
-+++ b/mm/gup.c
-@@ -1490,35 +1490,6 @@ int __mm_populate(unsigned long start, unsigned long len, int ignore_errors)
- 		up_read(&mm->mmap_sem);
- 	return ret;	/* 0 or negative error code */
- }
--
--/**
-- * get_dump_page() - pin user page in memory while writing it to core dump
-- * @addr: user address
-- *
-- * Returns struct page pointer of user page pinned for dump,
-- * to be freed afterwards by put_page().
-- *
-- * Returns NULL on any kind of failure - a hole must then be inserted into
-- * the corefile, to preserve alignment with its headers; and also returns
-- * NULL wherever the ZERO_PAGE, or an anonymous pte_none, has been found -
-- * allowing a hole to be left in the corefile to save diskspace.
-- *
-- * Called without mmap_sem, but after all other threads have been killed.
-- */
--#ifdef CONFIG_ELF_CORE
--struct page *get_dump_page(unsigned long addr)
--{
--	struct vm_area_struct *vma;
--	struct page *page;
--
--	if (__get_user_pages(current, current->mm, addr, 1,
--			     FOLL_FORCE | FOLL_DUMP | FOLL_GET, &page, &vma,
--			     NULL) < 1)
--		return NULL;
--	flush_cache_page(vma, addr, page_to_pfn(page));
--	return page;
--}
--#endif /* CONFIG_ELF_CORE */
- #else /* CONFIG_MMU */
- static long __get_user_pages_locked(struct task_struct *tsk,
- 		struct mm_struct *mm, unsigned long start,
-@@ -1565,6 +1536,35 @@ static long __get_user_pages_locked(struct task_struct *tsk,
- }
- #endif /* !CONFIG_MMU */
- 
-+/**
-+ * get_dump_page() - pin user page in memory while writing it to core dump
-+ * @addr: user address
-+ *
-+ * Returns struct page pointer of user page pinned for dump,
-+ * to be freed afterwards by put_page().
-+ *
-+ * Returns NULL on any kind of failure - a hole must then be inserted into
-+ * the corefile, to preserve alignment with its headers; and also returns
-+ * NULL wherever the ZERO_PAGE, or an anonymous pte_none, has been found -
-+ * allowing a hole to be left in the corefile to save diskspace.
-+ *
-+ * Called without mmap_sem, but after all other threads have been killed.
-+ */
-+#ifdef CONFIG_ELF_CORE
-+struct page *get_dump_page(unsigned long addr)
-+{
-+	struct vm_area_struct *vma;
-+	struct page *page;
-+
-+	if (__get_user_pages(current, current->mm, addr, 1,
-+			     FOLL_FORCE | FOLL_DUMP | FOLL_GET, &page, &vma,
-+			     NULL) < 1)
-+		return NULL;
-+	flush_cache_page(vma, addr, page_to_pfn(page));
-+	return page;
-+}
-+#endif /* CONFIG_ELF_CORE */
-+
- #if defined(CONFIG_FS_DAX) || defined (CONFIG_CMA)
- static bool check_dax_vmas(struct vm_area_struct **vmas, long nr_pages)
+ #define FIRST_USER_ADDRESS	0UL
+@@ -100,7 +99,7 @@ extern pte_t invalid_pte_table[PAGE_SIZE/sizeof(pte_t)];
+  */
+ static inline void set_pmd(pmd_t *pmdptr, pmd_t pmdval)
  {
+-	pmdptr->pud.pgd.pgd = pmdval.pud.pgd.pgd;
++	*pmdptr = pmdval;
+ }
+ 
+ /* to find an entry in a page-table-directory */
+diff --git a/arch/nios2/mm/fault.c b/arch/nios2/mm/fault.c
+index ec9d8a9c426f..964eac1a21d0 100644
+--- a/arch/nios2/mm/fault.c
++++ b/arch/nios2/mm/fault.c
+@@ -242,6 +242,7 @@ asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long cause,
+ 		 */
+ 		int offset = pgd_index(address);
+ 		pgd_t *pgd, *pgd_k;
++		p4d_t *p4d, *p4d_k;
+ 		pud_t *pud, *pud_k;
+ 		pmd_t *pmd, *pmd_k;
+ 		pte_t *pte_k;
+@@ -253,8 +254,12 @@ asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long cause,
+ 			goto no_context;
+ 		set_pgd(pgd, *pgd_k);
+ 
+-		pud = pud_offset(pgd, address);
+-		pud_k = pud_offset(pgd_k, address);
++		p4d = p4d_offset(pgd, address);
++		p4d_k = p4d_offset(pgd_k, address);
++		if (!p4d_present(*p4d_k))
++			goto no_context;
++		pud = pud_offset(p4d, address);
++		pud_k = pud_offset(p4d_k, address);
+ 		if (!pud_present(*pud_k))
+ 			goto no_context;
+ 		pmd = pmd_offset(pud, address);
+diff --git a/arch/nios2/mm/ioremap.c b/arch/nios2/mm/ioremap.c
+index 819bdfcc2e71..fe821efb9a99 100644
+--- a/arch/nios2/mm/ioremap.c
++++ b/arch/nios2/mm/ioremap.c
+@@ -86,11 +86,15 @@ static int remap_area_pages(unsigned long address, unsigned long phys_addr,
+ 	if (address >= end)
+ 		BUG();
+ 	do {
++		p4d_t *p4d;
+ 		pud_t *pud;
+ 		pmd_t *pmd;
+ 
+ 		error = -ENOMEM;
+-		pud = pud_alloc(&init_mm, dir, address);
++		p4d = p4d_alloc(&init_mm, dir, address);
++		if (!p4d)
++			break;
++		pud = pud_alloc(&init_mm, p4d, address);
+ 		if (!pud)
+ 			break;
+ 		pmd = pmd_alloc(&init_mm, pud, address);
 -- 
-2.26.2.303.gf8c07b1a785-goog
+2.25.1
