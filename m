@@ -1,55 +1,72 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Tue, 14 Apr 2020 15:34:45 +0000
-Subject: [PATCH v4 04/14] hexagon: remove __ARCH_USE_5LEVEL_HACK
-Message-Id: <20200414153455.21744-5-rppt@kernel.org>
+From: Dmitry Safonov <dima@arista.com>
+Date: Sat, 18 Apr 2020 20:19:27 +0000
+Subject: [PATCHv3 33/50] sh: Add show_stack_loglvl()
+Message-Id: <20200418201944.482088-34-dima@arista.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200414153455.21744-1-rppt@kernel.org>
-In-Reply-To: <20200414153455.21744-1-rppt@kernel.org>
+References: <20200418201944.482088-1-dima@arista.com>
+In-Reply-To: <20200418201944.482088-1-dima@arista.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, linux-hexagon@vger.kernel.org, Will Deacon <will@kernel.org>, kvmarm@lists.cs.columbia.edu, Jonas Bonn <jonas@southpole.se>, linux-arch@vger.kernel.org, Brian Cain <bcain@codeaurora.org>, Marc Zyngier <maz@kernel.org>, Russell King <linux@armlinux.org.uk>, Ley Foon Tan <ley.foon.tan@intel.com>, Mike Rapoport <rppt@linux.ibm.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, Fenghua Yu <fenghua.yu@intel.com>, Arnd Bergmann <arnd@arndb.de>, kvm-ppc@vger.kernel.org, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Tony Luck <tony.luck@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-kernel@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, nios2-dev@lists.rocketboards.org, linuxppc-dev@lists.ozlabs.org, Mike Rapoport <rppt@kernel.org>
+To: linux-kernel@vger.kernel.org
+Cc: Dmitry Safonov <0x7f454c46@gmail.com>, Dmitry Safonov <dima@arista.com>, Andrew Morton <akpm@linux-foundation.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Ingo Molnar <mingo@kernel.org>, Jiri Slaby <jslaby@suse.com>, Petr Mladek <pmladek@suse.com>, Sergey Senozhatsky <sergey.senozhatsky@gmail.com>, Steven Rostedt <rostedt@goodmis.org>, Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
 
-From: Mike Rapoport <rppt@linux.ibm.com>
+Currently, the log-level of show_stack() depends on a platform
+realization. It creates situations where the headers are printed with
+lower log level or higher than the stacktrace (depending on
+a platform or user).
 
-The hexagon architecture has 2 level page tables and as such most of the
-page table folding is already implemented in asm-generic/pgtable-nopmd.h.
+Furthermore, it forces the logic decision from user to an architecture
+side. In result, some users as sysrq/kdb/etc are doing tricks with
+temporary rising console_loglevel while printing their messages.
+And in result it not only may print unwanted messages from other CPUs,
+but also omit printing at all in the unlucky case where the printk()
+was deferred.
 
-Fixup the only place in arch/hexagon to unfold the p4d level and remove
-__ARCH_USE_5LEVEL_HACK.
+Introducing log-level parameter and KERN_UNSUPPRESSED [1] seems
+an easier approach than introducing more printk buffers.
+Also, it will consolidate printings with headers.
 
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Introduce show_stack_loglvl(), that eventually will substitute
+show_stack().
+
+Cc: Rich Felker <dalias@libc.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-sh@vger.kernel.org
+[1]: https://lore.kernel.org/lkml/20190528002412.1625-1-dima@arista.com/T/#u
+Signed-off-by: Dmitry Safonov <dima@arista.com>
 ---
- arch/hexagon/include/asm/fixmap.h  | 4 ++--
- arch/hexagon/include/asm/pgtable.h | 1 -
- 2 files changed, 2 insertions(+), 3 deletions(-)
+ arch/sh/kernel/dumpstack.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
 
-diff --git a/arch/hexagon/include/asm/fixmap.h b/arch/hexagon/include/asm/fixmap.h
-index 933dac167504..97b1b062e750 100644
---- a/arch/hexagon/include/asm/fixmap.h
-+++ b/arch/hexagon/include/asm/fixmap.h
-@@ -16,7 +16,7 @@
- #include <asm-generic/fixmap.h>
+diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
+index d488a47a1f0f..cc51e9d74667 100644
+--- a/arch/sh/kernel/dumpstack.c
++++ b/arch/sh/kernel/dumpstack.c
+@@ -144,7 +144,8 @@ void show_trace(struct task_struct *tsk, unsigned long *sp,
+ 	debug_show_held_locks(tsk);
+ }
  
- #define kmap_get_fixmap_pte(vaddr) \
--	pte_offset_kernel(pmd_offset(pud_offset(pgd_offset_k(vaddr), \
--				(vaddr)), (vaddr)), (vaddr))
-+	pte_offset_kernel(pmd_offset(pud_offset(p4d_offset(pgd_offset_k(vaddr), \
-+				(vaddr)), (vaddr)), (vaddr)), (vaddr))
+-void show_stack(struct task_struct *tsk, unsigned long *sp)
++void show_stack_loglvl(struct task_struct *tsk, unsigned long *sp,
++		       const char *loglvl)
+ {
+ 	unsigned long stack;
  
- #endif
-diff --git a/arch/hexagon/include/asm/pgtable.h b/arch/hexagon/include/asm/pgtable.h
-index d383e8bea5b2..2a17d4eb2fa4 100644
---- a/arch/hexagon/include/asm/pgtable.h
-+++ b/arch/hexagon/include/asm/pgtable.h
-@@ -12,7 +12,6 @@
-  * Page table definitions for Qualcomm Hexagon processor.
-  */
- #include <asm/page.h>
--#define __ARCH_USE_5LEVEL_HACK
- #include <asm-generic/pgtable-nopmd.h>
+@@ -156,7 +157,12 @@ void show_stack(struct task_struct *tsk, unsigned long *sp)
+ 		sp = (unsigned long *)tsk->thread.sp;
  
- /* A handy thing to have if one has the RAM. Declared in head.S */
+ 	stack = (unsigned long)sp;
+-	dump_mem("Stack: ", KERN_DEFAULT, stack, THREAD_SIZE +
++	dump_mem("Stack: ", loglvl, stack, THREAD_SIZE +
+ 		 (unsigned long)task_stack_page(tsk));
+-	show_trace(tsk, sp, NULL, KERN_DEFAULT);
++	show_trace(tsk, sp, NULL, loglvl);
++}
++
++void show_stack(struct task_struct *task, unsigned long *sp)
++{
++	show_stack_loglvl(task, sp, KERN_DEFAULT);
+ }
 -- 
-2.25.1
+2.26.0
