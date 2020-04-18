@@ -1,170 +1,102 @@
-From: Jann Horn <jannh@google.com>
-Date: Tue, 28 Apr 2020 03:27:43 +0000
-Subject: [PATCH 3/5] coredump: Refactor page range dumping into common helper
-Message-Id: <20200428032745.133556-4-jannh@google.com>
+From: Dmitry Safonov <dima@arista.com>
+Date: Sat, 18 Apr 2020 20:19:26 +0000
+Subject: [PATCHv3 32/50] sh: Add loglvl to show_trace()
+Message-Id: <20200418201944.482088-33-dima@arista.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200428032745.133556-1-jannh@google.com>
-In-Reply-To: <20200428032745.133556-1-jannh@google.com>
+References: <20200418201944.482088-1-dima@arista.com>
+In-Reply-To: <20200418201944.482088-1-dima@arista.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Oleg Nesterov <oleg@redhat.com>, linux-mm@kvack.org, Alexander Viro <viro@zeniv.linux.org.uk>, Mark Salter <msalter@redhat.com>, linux-fsdevel@vger.kernel.org, Russell King <linux@armlinux.org.uk>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Linus Torvalds <torvalds@linux-foundation.org>, Christoph Hellwig <hch@lst.de>, linux-arm-kernel@lists.infradead.org, "Eric W . Biederman" <ebiederm@xmission.com>
+To: linux-kernel@vger.kernel.org
+Cc: Dmitry Safonov <0x7f454c46@gmail.com>, Dmitry Safonov <dima@arista.com>, Andrew Morton <akpm@linux-foundation.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Ingo Molnar <mingo@kernel.org>, Jiri Slaby <jslaby@suse.com>, Petr Mladek <pmladek@suse.com>, Sergey Senozhatsky <sergey.senozhatsky@gmail.com>, Steven Rostedt <rostedt@goodmis.org>, Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-Both fs/binfmt_elf.c and fs/binfmt_elf_fdpic.c need to dump ranges of pages
-into the coredump file. Extract that logic into a common helper.
+Currently, the log-level of show_stack() depends on a platform
+realization. It creates situations where the headers are printed with
+lower log level or higher than the stacktrace (depending on
+a platform or user).
 
-Any other binfmt that actually wants to create coredumps will probably need
-the same function; so stop making get_dump_page() depend on
-CONFIG_ELF_CORE.
+Furthermore, it forces the logic decision from user to an architecture
+side. In result, some users as sysrq/kdb/etc are doing tricks with
+temporary rising console_loglevel while printing their messages.
+And in result it not only may print unwanted messages from other CPUs,
+but also omit printing at all in the unlucky case where the printk()
+was deferred.
 
-Signed-off-by: Jann Horn <jannh@google.com>
+Introducing log-level parameter and KERN_UNSUPPRESSED [1] seems
+an easier approach than introducing more printk buffers.
+Also, it will consolidate printings with headers.
+
+Add log level parameter to show_trace() as a preparation to introduce
+show_stack_loglvl().
+
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+[1]: https://lore.kernel.org/lkml/20190528002412.1625-1-dima@arista.com/T/#u
+Signed-off-by: Dmitry Safonov <dima@arista.com>
 ---
- fs/binfmt_elf.c          | 22 ++--------------------
- fs/binfmt_elf_fdpic.c    | 18 +++---------------
- fs/coredump.c            | 33 +++++++++++++++++++++++++++++++++
- include/linux/coredump.h |  2 ++
- mm/gup.c                 |  2 --
- 5 files changed, 40 insertions(+), 37 deletions(-)
+ arch/sh/include/asm/processor_32.h |  2 +-
+ arch/sh/kernel/dumpstack.c         | 10 +++++-----
+ arch/sh/kernel/process_32.c        |  2 +-
+ 3 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/fs/binfmt_elf.c b/fs/binfmt_elf.c
-index b29b84595b09f..fb36469848323 100644
---- a/fs/binfmt_elf.c
-+++ b/fs/binfmt_elf.c
-@@ -2323,26 +2323,8 @@ static int elf_core_dump(struct coredump_params *cprm)
+diff --git a/arch/sh/include/asm/processor_32.h b/arch/sh/include/asm/processor_32.h
+index 0e0ecc0132e3..d44409413418 100644
+--- a/arch/sh/include/asm/processor_32.h
++++ b/arch/sh/include/asm/processor_32.h
+@@ -171,7 +171,7 @@ static __inline__ void enable_fpu(void)
+ #define thread_saved_pc(tsk)	(tsk->thread.pc)
  
- 	for (i = 0, vma = first_vma(current, gate_vma); vma != NULL;
- 			vma = next_vma(vma, gate_vma)) {
--		unsigned long addr;
--		unsigned long end;
--
--		end = vma->vm_start + vma_filesz[i++];
--
--		for (addr = vma->vm_start; addr < end; addr += PAGE_SIZE) {
--			struct page *page;
--			int stop;
--
--			page = get_dump_page(addr);
--			if (page) {
--				void *kaddr = kmap(page);
--				stop = !dump_emit(cprm, kaddr, PAGE_SIZE);
--				kunmap(page);
--				put_page(page);
--			} else
--				stop = !dump_skip(cprm, PAGE_SIZE);
--			if (stop)
--				goto cleanup;
--		}
-+		if (!dump_user_range(cprm, vma->vm_start, vma_filesz[i++]))
-+			goto cleanup;
- 	}
- 	dump_truncate(cprm);
+ void show_trace(struct task_struct *tsk, unsigned long *sp,
+-		struct pt_regs *regs);
++		struct pt_regs *regs, const char *loglvl);
  
-diff --git a/fs/binfmt_elf_fdpic.c b/fs/binfmt_elf_fdpic.c
-index f5b47076fa762..938f66f4de9b2 100644
---- a/fs/binfmt_elf_fdpic.c
-+++ b/fs/binfmt_elf_fdpic.c
-@@ -1500,21 +1500,9 @@ static bool elf_fdpic_dump_segments(struct coredump_params *cprm)
- 		if (!maydump(vma, cprm->mm_flags))
- 			continue;
+ #ifdef CONFIG_DUMP_CODE
+ void show_code(struct pt_regs *regs);
+diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
+index 959064b90055..d488a47a1f0f 100644
+--- a/arch/sh/kernel/dumpstack.c
++++ b/arch/sh/kernel/dumpstack.c
+@@ -127,16 +127,16 @@ static const struct stacktrace_ops print_trace_ops = {
+ };
  
--		for (addr = vma->vm_start; addr < vma->vm_end;
--							addr += PAGE_SIZE) {
--			bool res;
--			struct page *page = get_dump_page(addr);
--			if (page) {
--				void *kaddr = kmap(page);
--				res = dump_emit(cprm, kaddr, PAGE_SIZE);
--				kunmap(page);
--				put_page(page);
--			} else {
--				res = dump_skip(cprm, PAGE_SIZE);
--			}
--			if (!res)
--				return false;
--		}
-+		if (!dump_user_range(cprm, vma->vm_start,
-+				     vma->vma_end - vma->vm_start))
-+			return false;
- 	}
- 	return true;
- }
-diff --git a/fs/coredump.c b/fs/coredump.c
-index 047f5a11dbee7..3385de8a62302 100644
---- a/fs/coredump.c
-+++ b/fs/coredump.c
-@@ -860,6 +860,39 @@ int dump_skip(struct coredump_params *cprm, size_t nr)
- }
- EXPORT_SYMBOL(dump_skip);
- 
-+#ifdef CONFIG_ELF_CORE
-+int dump_user_range(struct coredump_params *cprm, unsigned long start,
-+		    unsigned long len)
-+{
-+	unsigned long addr;
-+
-+	for (addr = start; addr < start + len; addr += PAGE_SIZE) {
-+		struct page *page;
-+		int stop;
-+
-+		/*
-+		 * To avoid having to allocate page tables for virtual address
-+		 * ranges that have never been used yet, use a helper that
-+		 * returns NULL when encountering an empty page table entry that
-+		 * would otherwise have been filled with the zero page.
-+		 */
-+		page = get_dump_page(addr);
-+		if (page) {
-+			void *kaddr = kmap(page);
-+
-+			stop = !dump_emit(cprm, kaddr, PAGE_SIZE);
-+			kunmap(page);
-+			put_page(page);
-+		} else {
-+			stop = !dump_skip(cprm, PAGE_SIZE);
-+		}
-+		if (stop)
-+			return 0;
-+	}
-+	return 1;
-+}
-+#endif
-+
- int dump_align(struct coredump_params *cprm, int align)
+ void show_trace(struct task_struct *tsk, unsigned long *sp,
+-		struct pt_regs *regs)
++		struct pt_regs *regs, const char *loglvl)
  {
- 	unsigned mod = cprm->pos & (align - 1);
-diff --git a/include/linux/coredump.h b/include/linux/coredump.h
-index abf4b4e65dbb9..4289dc21c04ff 100644
---- a/include/linux/coredump.h
-+++ b/include/linux/coredump.h
-@@ -16,6 +16,8 @@ extern int dump_skip(struct coredump_params *cprm, size_t nr);
- extern int dump_emit(struct coredump_params *cprm, const void *addr, int nr);
- extern int dump_align(struct coredump_params *cprm, int align);
- extern void dump_truncate(struct coredump_params *cprm);
-+int dump_user_range(struct coredump_params *cprm, unsigned long start,
-+		    unsigned long len);
- #ifdef CONFIG_COREDUMP
- extern void do_coredump(const kernel_siginfo_t *siginfo);
- #else
-diff --git a/mm/gup.c b/mm/gup.c
-index 76080c4dbff05..9a7e83772f1fe 100644
---- a/mm/gup.c
-+++ b/mm/gup.c
-@@ -1550,7 +1550,6 @@ static long __get_user_pages_locked(struct task_struct *tsk,
-  *
-  * Called without mmap_sem, but after all other threads have been killed.
-  */
--#ifdef CONFIG_ELF_CORE
- struct page *get_dump_page(unsigned long addr)
- {
- 	struct vm_area_struct *vma;
-@@ -1563,7 +1562,6 @@ struct page *get_dump_page(unsigned long addr)
- 	flush_cache_page(vma, addr, page_to_pfn(page));
- 	return page;
- }
--#endif /* CONFIG_ELF_CORE */
+ 	if (regs && user_mode(regs))
+ 		return;
  
- #if defined(CONFIG_FS_DAX) || defined (CONFIG_CMA)
- static bool check_dax_vmas(struct vm_area_struct **vmas, long nr_pages)
+-	printk("\nCall trace:\n");
++	printk("%s\nCall trace:\n", loglvl);
+ 
+-	unwind_stack(tsk, regs, sp, &print_trace_ops, "");
++	unwind_stack(tsk, regs, sp, &print_trace_ops, (void *)loglvl);
+ 
+-	printk("\n");
++	printk("%s\n", loglvl);
+ 
+ 	if (!tsk)
+ 		tsk = current;
+@@ -158,5 +158,5 @@ void show_stack(struct task_struct *tsk, unsigned long *sp)
+ 	stack = (unsigned long)sp;
+ 	dump_mem("Stack: ", KERN_DEFAULT, stack, THREAD_SIZE +
+ 		 (unsigned long)task_stack_page(tsk));
+-	show_trace(tsk, sp, NULL);
++	show_trace(tsk, sp, NULL, KERN_DEFAULT);
+ }
+diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
+index a094633874c3..456cc8d171f7 100644
+--- a/arch/sh/kernel/process_32.c
++++ b/arch/sh/kernel/process_32.c
+@@ -59,7 +59,7 @@ void show_regs(struct pt_regs * regs)
+ 	printk("MACH: %08lx MACL: %08lx GBR : %08lx PR  : %08lx\n",
+ 	       regs->mach, regs->macl, regs->gbr, regs->pr);
+ 
+-	show_trace(NULL, (unsigned long *)regs->regs[15], regs);
++	show_trace(NULL, (unsigned long *)regs->regs[15], regs, KERN_DEFAULT);
+ 	show_code(regs);
+ }
+ 
 -- 
-2.26.2.303.gf8c07b1a785-goog
+2.26.0
