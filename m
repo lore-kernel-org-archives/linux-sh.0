@@ -1,81 +1,170 @@
 From: Jann Horn <jannh@google.com>
-Date: Tue, 28 Apr 2020 03:27:40 +0000
-Subject: [PATCH 0/5] Fix ELF / FDPIC ELF core dumping, and use mmap_sem properly in there
-Message-Id: <20200428032745.133556-1-jannh@google.com>
+Date: Tue, 28 Apr 2020 03:27:43 +0000
+Subject: [PATCH 3/5] coredump: Refactor page range dumping into common helper
+Message-Id: <20200428032745.133556-4-jannh@google.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200428032745.133556-1-jannh@google.com>
+In-Reply-To: <20200428032745.133556-1-jannh@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Andrew Morton <akpm@linux-foundation.org>
 Cc: Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Oleg Nesterov <oleg@redhat.com>, linux-mm@kvack.org, Alexander Viro <viro@zeniv.linux.org.uk>, Mark Salter <msalter@redhat.com>, linux-fsdevel@vger.kernel.org, Russell King <linux@armlinux.org.uk>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Linus Torvalds <torvalds@linux-foundation.org>, Christoph Hellwig <hch@lst.de>, linux-arm-kernel@lists.infradead.org, "Eric W . Biederman" <ebiederm@xmission.com>
 
-At the moment, we have that rather ugly mmget_still_valid() helper to
-work around <https://crbug.com/project-zero/1790>: ELF core dumping
-doesn't take the mmap_sem while traversing the task's VMAs, and if
-anything (like userfaultfd) then remotely messes with the VMA tree,
-fireworks ensue. So at the moment we use mmget_still_valid() to bail
-out in any writers that might be operating on a remote mm's VMAs.
+Both fs/binfmt_elf.c and fs/binfmt_elf_fdpic.c need to dump ranges of pages
+into the coredump file. Extract that logic into a common helper.
 
-With this series, I'm trying to get rid of the need for that as
-cleanly as possible.
-In particular, I want to avoid holding the mmap_sem across unbounded
-sleeps.
+Any other binfmt that actually wants to create coredumps will probably need
+the same function; so stop making get_dump_page() depend on
+CONFIG_ELF_CORE.
 
+Signed-off-by: Jann Horn <jannh@google.com>
+---
+ fs/binfmt_elf.c          | 22 ++--------------------
+ fs/binfmt_elf_fdpic.c    | 18 +++---------------
+ fs/coredump.c            | 33 +++++++++++++++++++++++++++++++++
+ include/linux/coredump.h |  2 ++
+ mm/gup.c                 |  2 --
+ 5 files changed, 40 insertions(+), 37 deletions(-)
 
-Patches 1, 2 and 3 are relatively unrelated cleanups in the core
-dumping code.
-
-Patches 4 and 5 implement the main change: Instead of repeatedly
-accessing the VMA list with sleeps in between, we snapshot it at the
-start with proper locking, and then later we just use our copy of
-the VMA list. This ensures that the kernel won't crash, that VMA
-metadata in the coredump is consistent even in the presence of
-concurrent modifications, and that any virtual addresses that aren't
-being concurrently modified have their contents show up in the core
-dump properly.
-
-The disadvantage of this approach is that we need a bit more memory
-during core dumping for storing metadata about all VMAs.
-
-After this series has landed, we should be able to rip out
-mmget_still_valid().
-
-
-Testing done so far:
-
- - Creating a simple core dump on X86-64 still works.
- - The created coredump on X86-64 opens in GDB, and both the stack and the
-   exectutable look vaguely plausible.
- - 32-bit ARM compiles with FDPIC support, both with MMU and !MMU config.
-
-I'm CCing some folks from the architectures that use FDPIC in case
-anyone wants to give this a spin.
-
-
-This series is based on
-<https://lore.kernel.org/linux-fsdevel/20200427200626.1622060-1-hch@lst.de/>
-(Christoph Hellwig's "remove set_fs calls from the coredump code v4").
-
-Jann Horn (5):
-  binfmt_elf_fdpic: Stop using dump_emit() on user pointers on !MMU
-  coredump: Fix handling of partial writes in dump_emit()
-  coredump: Refactor page range dumping into common helper
-  binfmt_elf, binfmt_elf_fdpic: Use a VMA list snapshot
-  mm/gup: Take mmap_sem in get_dump_page()
-
- fs/binfmt_elf.c          | 170 ++++++++++++---------------------------
- fs/binfmt_elf_fdpic.c    | 106 +++++++++---------------
- fs/coredump.c            | 102 +++++++++++++++++++++++
- include/linux/coredump.h |  12 +++
- mm/gup.c                 |  69 +++++++++-------
- 5 files changed, 243 insertions(+), 216 deletions(-)
-
-
-base-commit: 6a8b55ed4056ea5559ebe4f6a4b247f627870d4c
-prerequisite-patch-id: c0a20b414eebc48fe0a8ca570b05de34c7980396
-prerequisite-patch-id: 51973b8db0fa4b114e0c3fd8936b634d9d5061c5
-prerequisite-patch-id: 0e1e8de282ca6d458dc6cbdc6b6ec5879edd8a05
-prerequisite-patch-id: d5ee749c4d3a22ec80bd0dd88aadf89aeb569db8
-prerequisite-patch-id: 46ce14e59e98e212a1eca0aef69c6dcdb62b8242
+diff --git a/fs/binfmt_elf.c b/fs/binfmt_elf.c
+index b29b84595b09f..fb36469848323 100644
+--- a/fs/binfmt_elf.c
++++ b/fs/binfmt_elf.c
+@@ -2323,26 +2323,8 @@ static int elf_core_dump(struct coredump_params *cprm)
+ 
+ 	for (i = 0, vma = first_vma(current, gate_vma); vma != NULL;
+ 			vma = next_vma(vma, gate_vma)) {
+-		unsigned long addr;
+-		unsigned long end;
+-
+-		end = vma->vm_start + vma_filesz[i++];
+-
+-		for (addr = vma->vm_start; addr < end; addr += PAGE_SIZE) {
+-			struct page *page;
+-			int stop;
+-
+-			page = get_dump_page(addr);
+-			if (page) {
+-				void *kaddr = kmap(page);
+-				stop = !dump_emit(cprm, kaddr, PAGE_SIZE);
+-				kunmap(page);
+-				put_page(page);
+-			} else
+-				stop = !dump_skip(cprm, PAGE_SIZE);
+-			if (stop)
+-				goto cleanup;
+-		}
++		if (!dump_user_range(cprm, vma->vm_start, vma_filesz[i++]))
++			goto cleanup;
+ 	}
+ 	dump_truncate(cprm);
+ 
+diff --git a/fs/binfmt_elf_fdpic.c b/fs/binfmt_elf_fdpic.c
+index f5b47076fa762..938f66f4de9b2 100644
+--- a/fs/binfmt_elf_fdpic.c
++++ b/fs/binfmt_elf_fdpic.c
+@@ -1500,21 +1500,9 @@ static bool elf_fdpic_dump_segments(struct coredump_params *cprm)
+ 		if (!maydump(vma, cprm->mm_flags))
+ 			continue;
+ 
+-		for (addr = vma->vm_start; addr < vma->vm_end;
+-							addr += PAGE_SIZE) {
+-			bool res;
+-			struct page *page = get_dump_page(addr);
+-			if (page) {
+-				void *kaddr = kmap(page);
+-				res = dump_emit(cprm, kaddr, PAGE_SIZE);
+-				kunmap(page);
+-				put_page(page);
+-			} else {
+-				res = dump_skip(cprm, PAGE_SIZE);
+-			}
+-			if (!res)
+-				return false;
+-		}
++		if (!dump_user_range(cprm, vma->vm_start,
++				     vma->vma_end - vma->vm_start))
++			return false;
+ 	}
+ 	return true;
+ }
+diff --git a/fs/coredump.c b/fs/coredump.c
+index 047f5a11dbee7..3385de8a62302 100644
+--- a/fs/coredump.c
++++ b/fs/coredump.c
+@@ -860,6 +860,39 @@ int dump_skip(struct coredump_params *cprm, size_t nr)
+ }
+ EXPORT_SYMBOL(dump_skip);
+ 
++#ifdef CONFIG_ELF_CORE
++int dump_user_range(struct coredump_params *cprm, unsigned long start,
++		    unsigned long len)
++{
++	unsigned long addr;
++
++	for (addr = start; addr < start + len; addr += PAGE_SIZE) {
++		struct page *page;
++		int stop;
++
++		/*
++		 * To avoid having to allocate page tables for virtual address
++		 * ranges that have never been used yet, use a helper that
++		 * returns NULL when encountering an empty page table entry that
++		 * would otherwise have been filled with the zero page.
++		 */
++		page = get_dump_page(addr);
++		if (page) {
++			void *kaddr = kmap(page);
++
++			stop = !dump_emit(cprm, kaddr, PAGE_SIZE);
++			kunmap(page);
++			put_page(page);
++		} else {
++			stop = !dump_skip(cprm, PAGE_SIZE);
++		}
++		if (stop)
++			return 0;
++	}
++	return 1;
++}
++#endif
++
+ int dump_align(struct coredump_params *cprm, int align)
+ {
+ 	unsigned mod = cprm->pos & (align - 1);
+diff --git a/include/linux/coredump.h b/include/linux/coredump.h
+index abf4b4e65dbb9..4289dc21c04ff 100644
+--- a/include/linux/coredump.h
++++ b/include/linux/coredump.h
+@@ -16,6 +16,8 @@ extern int dump_skip(struct coredump_params *cprm, size_t nr);
+ extern int dump_emit(struct coredump_params *cprm, const void *addr, int nr);
+ extern int dump_align(struct coredump_params *cprm, int align);
+ extern void dump_truncate(struct coredump_params *cprm);
++int dump_user_range(struct coredump_params *cprm, unsigned long start,
++		    unsigned long len);
+ #ifdef CONFIG_COREDUMP
+ extern void do_coredump(const kernel_siginfo_t *siginfo);
+ #else
+diff --git a/mm/gup.c b/mm/gup.c
+index 76080c4dbff05..9a7e83772f1fe 100644
+--- a/mm/gup.c
++++ b/mm/gup.c
+@@ -1550,7 +1550,6 @@ static long __get_user_pages_locked(struct task_struct *tsk,
+  *
+  * Called without mmap_sem, but after all other threads have been killed.
+  */
+-#ifdef CONFIG_ELF_CORE
+ struct page *get_dump_page(unsigned long addr)
+ {
+ 	struct vm_area_struct *vma;
+@@ -1563,7 +1562,6 @@ struct page *get_dump_page(unsigned long addr)
+ 	flush_cache_page(vma, addr, page_to_pfn(page));
+ 	return page;
+ }
+-#endif /* CONFIG_ELF_CORE */
+ 
+ #if defined(CONFIG_FS_DAX) || defined (CONFIG_CMA)
+ static bool check_dax_vmas(struct vm_area_struct **vmas, long nr_pages)
 -- 
 2.26.2.303.gf8c07b1a785-goog
