@@ -1,89 +1,35 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Tue, 14 Apr 2020 15:34:48 +0000
-Subject: [PATCH v4 07/14] openrisc: add support for folded p4d page tables
-Message-Id: <20200414153455.21744-8-rppt@kernel.org>
+From: Wei Yongjun <weiyongjun1@huawei.com>
+Date: Tue, 28 Apr 2020 13:14:55 +0000
+Subject: [PATCH -next] maple: fix to pass correct device identity to free_irq()
+Message-Id: <20200428131455.69463-1-weiyongjun1@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200414153455.21744-1-rppt@kernel.org>
-In-Reply-To: <20200414153455.21744-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, linux-hexagon@vger.kernel.org, Will Deacon <will@kernel.org>, kvmarm@lists.cs.columbia.edu, Jonas Bonn <jonas@southpole.se>, linux-arch@vger.kernel.org, Brian Cain <bcain@codeaurora.org>, Marc Zyngier <maz@kernel.org>, Russell King <linux@armlinux.org.uk>, Ley Foon Tan <ley.foon.tan@intel.com>, Mike Rapoport <rppt@linux.ibm.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, Fenghua Yu <fenghua.yu@intel.com>, Arnd Bergmann <arnd@arndb.de>, kvm-ppc@vger.kernel.org, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Tony Luck <tony.luck@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-kernel@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, nios2-dev@lists.rocketboards.org, linuxppc-dev@lists.ozlabs.org, Mike Rapoport <rppt@kernel.org>
+To: linux-sh@vger.kernel.org
 
-From: Mike Rapoport <rppt@linux.ibm.com>
+free_irq() expects the same device identity that was passed to
+corresponding request_irq(), otherwise the IRQ is not freed.
 
-Implement primitives necessary for the 4th level folding, add walks of p4d
-level where appropriate and remove usage of __ARCH_USE_5LEVEL_HACK.
-
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Signed-off-by: Wei Yongjun <weiyongjun1@huawei.com>
 ---
- arch/openrisc/include/asm/pgtable.h |  1 -
- arch/openrisc/mm/fault.c            | 10 ++++++++--
- arch/openrisc/mm/init.c             |  4 +++-
- 3 files changed, 11 insertions(+), 4 deletions(-)
+ drivers/sh/maple/maple.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/openrisc/include/asm/pgtable.h b/arch/openrisc/include/asm/pgtable.h
-index 7f3fb9ceb083..219979e57790 100644
---- a/arch/openrisc/include/asm/pgtable.h
-+++ b/arch/openrisc/include/asm/pgtable.h
-@@ -21,7 +21,6 @@
- #ifndef __ASM_OPENRISC_PGTABLE_H
- #define __ASM_OPENRISC_PGTABLE_H
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index e5d7fb81ad66..ba32bd9876f0 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -868,10 +868,10 @@ static int __init maple_bus_init(void)
+ 	kmem_cache_destroy(maple_queue_cache);
  
--#define __ARCH_USE_5LEVEL_HACK
- #include <asm-generic/pgtable-nopmd.h>
+ cleanup_bothirqs:
+-	free_irq(HW_EVENT_VSYNC, 0);
++	free_irq(HW_EVENT_VSYNC, &maple_unsupported_device);
  
- #ifndef __ASSEMBLY__
-diff --git a/arch/openrisc/mm/fault.c b/arch/openrisc/mm/fault.c
-index 8af1cc78c4fb..6e0a11ac4c00 100644
---- a/arch/openrisc/mm/fault.c
-+++ b/arch/openrisc/mm/fault.c
-@@ -295,6 +295,7 @@ asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long address,
+ cleanup_irq:
+-	free_irq(HW_EVENT_MAPLE_DMA, 0);
++	free_irq(HW_EVENT_MAPLE_DMA, &maple_unsupported_device);
  
- 		int offset = pgd_index(address);
- 		pgd_t *pgd, *pgd_k;
-+		p4d_t *p4d, *p4d_k;
- 		pud_t *pud, *pud_k;
- 		pmd_t *pmd, *pmd_k;
- 		pte_t *pte_k;
-@@ -321,8 +322,13 @@ asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long address,
- 		 * it exists.
- 		 */
- 
--		pud = pud_offset(pgd, address);
--		pud_k = pud_offset(pgd_k, address);
-+		p4d = p4d_offset(pgd, address);
-+		p4d_k = p4d_offset(pgd_k, address);
-+		if (!p4d_present(*p4d_k))
-+			goto no_context;
-+
-+		pud = pud_offset(p4d, address);
-+		pud_k = pud_offset(p4d_k, address);
- 		if (!pud_present(*pud_k))
- 			goto no_context;
- 
-diff --git a/arch/openrisc/mm/init.c b/arch/openrisc/mm/init.c
-index 1f87b524db78..2536aeae0975 100644
---- a/arch/openrisc/mm/init.c
-+++ b/arch/openrisc/mm/init.c
-@@ -71,6 +71,7 @@ static void __init map_ram(void)
- 	unsigned long v, p, e;
- 	pgprot_t prot;
- 	pgd_t *pge;
-+	p4d_t *p4e;
- 	pud_t *pue;
- 	pmd_t *pme;
- 	pte_t *pte;
-@@ -90,7 +91,8 @@ static void __init map_ram(void)
- 
- 		while (p < e) {
- 			int j;
--			pue = pud_offset(pge, v);
-+			p4e = p4d_offset(pge, v);
-+			pue = pud_offset(p4e, v);
- 			pme = pmd_offset(pue, v);
- 
- 			if ((u32) pue != (u32) pge || (u32) pme != (u32) pge) {
--- 
-2.25.1
+ cleanup_dma:
+ 	free_pages((unsigned long) maple_sendbuf, MAPLE_DMA_PAGES);
