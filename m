@@ -1,41 +1,35 @@
-From: Jann Horn <jannh@google.com>
-Date: Tue, 28 Apr 2020 05:52:20 +0000
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Tue, 28 Apr 2020 16:40:21 +0000
 Subject: Re: [PATCH 2/5] coredump: Fix handling of partial writes in dump_emit()
-Message-Id: <CAG48ez0Nz8Bnty2aKdsUeMoXkjc_Bcxr+EcStZ7LBTOgRt1mrQ@mail.gmail.com>
+Message-Id: <CAHk-=wg2uw09tJMKTooQBr=AJPzzLTaq95b+SSS513Gm0gy5sw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200428032745.133556-1-jannh@google.com>
  <20200428032745.133556-3-jannh@google.com>
  <CAHk-=wjSYTpTH0X8EcGGJD84tsJS62BN3tC6NfzmjvXdSkFVxg@mail.gmail.com>
-In-Reply-To: <CAHk-=wjSYTpTH0X8EcGGJD84tsJS62BN3tC6NfzmjvXdSkFVxg@mail.gmail.com>
+ <94141fbb-9559-1851-54c1-cdc5fc529a1a@landley.net>
+In-Reply-To: <94141fbb-9559-1851-54c1-cdc5fc529a1a@landley.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>, Alexander Viro <viro@zeniv.linux.org.uk>
-Cc: Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Oleg Nesterov <oleg@redhat.com>, Linux-MM <linux-mm@kvack.org>, "Eric W . Biederman" <ebiederm@xmission.com>, Mark Salter <msalter@redhat.com>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, Russell King <linux@armlinux.org.uk>, Andrew Morton <akpm@linux-foundation.org>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Christoph Hellwig <hch@lst.de>, Linux ARM <linux-arm-kernel@lists.infradead.org>
+To: Rob Landley <rob@landley.net>
+Cc: Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Jann Horn <jannh@google.com>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Oleg Nesterov <oleg@redhat.com>, Linux-MM <linux-mm@kvack.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Mark Salter <msalter@redhat.com>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, Russell King <linux@armlinux.org.uk>, Andrew Morton <akpm@linux-foundation.org>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Christoph Hellwig <hch@lst.de>, Linux ARM <linux-arm-kernel@lists.infradead.org>, "Eric W . Biederman" <ebiederm@xmission.com>
 
-On Tue, Apr 28, 2020 at 5:36 AM Linus Torvalds
-<torvalds@linux-foundation.org> wrote:
-> On Mon, Apr 27, 2020 at 8:28 PM Jann Horn <jannh@google.com> wrote:
-> >
-> > After a partial write, we have to update the input buffer pointer.
+On Tue, Apr 28, 2020 at 9:34 AM Rob Landley <rob@landley.net> wrote:
 >
-> Interesting. It seems this partial write case never triggers (except
-> for actually killing the core-dump).
->
-> Or did you find a case where it actually matters?
->
-> Your fix is obviously correct, but it also makes me go "that function
-> clearly never actually worked for partial writes, maybe we shouldn't
-> even bother?"
+> Writes to a local filesystem should never be short unless disk full/error.
 
-Hmm, yeah... I can't really think of cases where write handlers can
-spuriously return early without having a pending signal, and a second
-write is likely to succeed... I just know that there are some things
-that are notorious for returning short *reads* (e.g. pipes, sockets,
-/proc/$pid/maps).
+Well, that code is definitely supposed to also write to pipes.
 
-Al's commit message refers to pipes specifically; but even at commit
-2507a4fbd48a, I don't actually see where pipe_write() could return a
-short write without a page allocation failure or something like that.
+But it also has "was I interrupted" logic, which stops the core dump.
 
-So maybe you're right and we should just get rid of it...
+So short writes can very much happen, it's just that they also imply
+that the core dump should be aborted.
+
+So the loop seems to be unnecessary. The situations where short writes
+can happen are all the same situations where we want to abort anyway,
+so the loop count should probably always be just one.
+
+The same would go for any potential network filesystem with the
+traditional NFS intr-like behavior.
+
+            Linus
