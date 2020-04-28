@@ -1,25 +1,36 @@
-From: Rich Felker <dalias@libc.org>
-Date: Sat, 25 Apr 2020 16:22:59 +0000
-Subject: Re: [PATCHv3 31/50] sh: Add loglvl to printk_address()
-Message-Id: <20200425162259.GK11469@brightrain.aerifal.cx>
+From: Jann Horn <jannh@google.com>
+Date: Tue, 28 Apr 2020 03:27:42 +0000
+Subject: [PATCH 2/5] coredump: Fix handling of partial writes in dump_emit()
+Message-Id: <20200428032745.133556-3-jannh@google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200418201944.482088-1-dima@arista.com>
- <20200418201944.482088-32-dima@arista.com>
- <20200420155237.1b6532c0d0c6940fccd1b762@linux-foundation.org>
- <92cf0382-bdb4-6966-5a77-2ade50fdc451@landley.net>
-In-Reply-To: <92cf0382-bdb4-6966-5a77-2ade50fdc451@landley.net>
+References: <20200428032745.133556-1-jannh@google.com>
+In-Reply-To: <20200428032745.133556-1-jannh@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Landley <rob@landley.net>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Dmitry Safonov <dima@arista.com>, linux-kernel@vger.kernel.org, Dmitry Safonov <0x7f454c46@gmail.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Ingo Molnar <mingo@kernel.org>, Jiri Slaby <jslaby@suse.com>, Petr Mladek <pmladek@suse.com>, Sergey Senozhatsky <sergey.senozhatsky@gmail.com>, Steven Rostedt <rostedt@goodmis.org>, Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>, linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Oleg Nesterov <oleg@redhat.com>, linux-mm@kvack.org, Alexander Viro <viro@zeniv.linux.org.uk>, Mark Salter <msalter@redhat.com>, linux-fsdevel@vger.kernel.org, Russell King <linux@armlinux.org.uk>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Linus Torvalds <torvalds@linux-foundation.org>, Christoph Hellwig <hch@lst.de>, linux-arm-kernel@lists.infradead.org, "Eric W . Biederman" <ebiederm@xmission.com>
 
-On Sat, Apr 25, 2020 at 11:06:41AM -0500, Rob Landley wrote:
-> On 4/20/20 5:52 PM, Andrew Morton wrote:
-> > I guess it doesn't matter much, as sh seems to be rather dead.
-> 
-> The j-core guys are using it.
+After a partial write, we have to update the input buffer pointer.
 
-Yes. There are also Debian/SH folks using classic SH4.
+Fixes: 2507a4fbd48a ("make dump_emit() use vfs_write() instead of banging at ->f_op->write directly")
+Cc: stable@vger.kernel.org
+Signed-off-by: Jann Horn <jannh@google.com>
+---
+ fs/coredump.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-Rich
+diff --git a/fs/coredump.c b/fs/coredump.c
+index 408418e6aa131..047f5a11dbee7 100644
+--- a/fs/coredump.c
++++ b/fs/coredump.c
+@@ -833,6 +833,7 @@ int dump_emit(struct coredump_params *cprm, const void *addr, int nr)
+ 		cprm->written += n;
+ 		cprm->pos += n;
+ 		nr -= n;
++		addr += n;
+ 	}
+ 	return 1;
+ }
+-- 
+2.26.2.303.gf8c07b1a785-goog
