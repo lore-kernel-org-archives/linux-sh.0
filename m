@@ -1,63 +1,83 @@
-From: Russell King - ARM Linux admin <linux@armlinux.org.uk>
-Date: Wed, 29 Apr 2020 21:56:20 +0000
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Wed, 29 Apr 2020 23:03:29 +0000
 Subject: Re: [PATCH v2 0/5] Fix ELF / FDPIC ELF core dumping, and use mmap_sem properly in there
-Message-Id: <20200429215620.GM1551@shell.armlinux.org.uk>
+Message-Id: <CAHk-=wgpoEr33NJwQ+hqK1dz3Rs9jSw+BGotsSdt2Kb3HqLV7A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200429214954.44866-1-jannh@google.com>
-In-Reply-To: <20200429214954.44866-1-jannh@google.com>
+ <20200429215620.GM1551@shell.armlinux.org.uk>
+In-Reply-To: <20200429215620.GM1551@shell.armlinux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jann Horn <jannh@google.com>, Nicolas Pitre <nico@fluxnic.net>
-Cc: Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Oleg Nesterov <oleg@redhat.com>, linux-mm@kvack.org, Alexander Viro <viro@zeniv.linux.org.uk>, Mark Salter <msalter@redhat.com>, linux-fsdevel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Linus Torvalds <torvalds@linux-foundation.org>, Christoph Hellwig <hch@lst.de>, linux-arm-kernel@lists.infradead.org, "Eric W . Biederman" <ebiederm@xmission.com>
+To: Russell King - ARM Linux admin <linux@armlinux.org.uk>, Greg Ungerer <gerg@linux-m68k.org>
+Cc: Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Nicolas Pitre <nico@fluxnic.net>, Linux-sh list <linux-sh@vger.kernel.org>, Jann Horn <jannh@google.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Oleg Nesterov <oleg@redhat.com>, Linux-MM <linux-mm@kvack.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Mark Salter <msalter@redhat.com>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Christoph Hellwig <hch@lst.de>, Linux ARM <linux-arm-kernel@lists.infradead.org>, "Eric W . Biederman" <ebiederm@xmission.com>
 
-On Wed, Apr 29, 2020 at 11:49:49PM +0200, Jann Horn wrote:
-> At the moment, we have that rather ugly mmget_still_valid() helper to
-> work around <https://crbug.com/project-zero/1790>: ELF core dumping
-> doesn't take the mmap_sem while traversing the task's VMAs, and if
-> anything (like userfaultfd) then remotely messes with the VMA tree,
-> fireworks ensue. So at the moment we use mmget_still_valid() to bail
-> out in any writers that might be operating on a remote mm's VMAs.
-> 
-> With this series, I'm trying to get rid of the need for that as
-> cleanly as possible.
-> In particular, I want to avoid holding the mmap_sem across unbounded
-> sleeps.
-> 
-> 
-> Patches 1, 2 and 3 are relatively unrelated cleanups in the core
-> dumping code.
-> 
-> Patches 4 and 5 implement the main change: Instead of repeatedly
-> accessing the VMA list with sleeps in between, we snapshot it at the
-> start with proper locking, and then later we just use our copy of
-> the VMA list. This ensures that the kernel won't crash, that VMA
-> metadata in the coredump is consistent even in the presence of
-> concurrent modifications, and that any virtual addresses that aren't
-> being concurrently modified have their contents show up in the core
-> dump properly.
-> 
-> The disadvantage of this approach is that we need a bit more memory
-> during core dumping for storing metadata about all VMAs.
-> 
-> After this series has landed, we should be able to rip out
-> mmget_still_valid().
-> 
-> 
-> Testing done so far:
-> 
->  - Creating a simple core dump on X86-64 still works.
->  - The created coredump on X86-64 opens in GDB, and both the stack and the
->    exectutable look vaguely plausible.
->  - 32-bit ARM compiles with FDPIC support, both with MMU and !MMU config.
-> 
-> I'm CCing some folks from the architectures that use FDPIC in case
-> anyone wants to give this a spin.
+On Wed, Apr 29, 2020 at 2:57 PM Russell King - ARM Linux admin
+<linux@armlinux.org.uk> wrote:
+>
+> I've never had any reason to use FDPIC, and I don't have any binaries
+> that would use it.  Nicolas Pitre added ARM support, so I guess he
+> would be the one to talk to about it.  (Added Nicolas.)
 
-I've never had any reason to use FDPIC, and I don't have any binaries
-that would use it.  Nicolas Pitre added ARM support, so I guess he
-would be the one to talk to about it.  (Added Nicolas.)
+While we're at it, is there anybody who knows binfmt_flat?
 
--- 
-RMK's Patch system: https://www.armlinux.org.uk/developer/patches/
-FTTC broadband for 0.8mile line in suburbia: sync at 10.2Mbps down 587kbps up
+It might be Nicolas too.
+
+binfmt_flat doesn't do core-dumping, but it has some other oddities.
+In particular, I'd like to bring sanity to the installation of the new
+creds, and all the _normal_ binfmt cases do it largely close together
+with setup_new_exec().
+
+binfmt_flat is doing odd things. It's doing this:
+
+        /* Flush all traces of the currently running executable */
+        if (id = 0) {
+                ret = flush_old_exec(bprm);
+                if (ret)
+                        goto err;
+
+                /* OK, This is the point of no return */
+                set_personality(PER_LINUX_32BIT);
+                setup_new_exec(bprm);
+        }
+
+in load_flat_file() - which is also used to loading _libraries_. Where
+it makes no sense at all.
+
+It does the
+
+        install_exec_creds(bprm);
+
+in load_flat_binary() (which makes more sense: that is only for actual
+binary loading, no library case).
+
+I would _like_ for every binfmt loader to do
+
+        /* Flush all traces of the currently running executable */
+        retval = flush_old_exec(bprm);
+        if (retval)
+                return retval;
+
+   .. possibly set up personalities here ..
+
+        setup_new_exec(bprm);
+        install_exec_creds(bprm);
+
+all together, and at least merge 'setup_new_exec()' with 'install_exec_creds()'.
+
+And I think all the binfmt handlers would be ok with that, but the
+flat one in particular is really oddly set up.
+
+*Particularly* with that flush_old_exec/setup_new_exec() being done by
+the same routine that is also loading libraries (and called from
+'calc_reloc()' from binary loading too).
+
+Adding Greg Ungerer for m68knommu. Can somebody sort out why that
+flush_old_exec/setup_new_exec() isn't in load_flat_binary() like
+install_exec_creds() is?
+
+Most of that file goes back to pre-git days. And most of the commits
+since are not so much about binfmt_flat, as they are about cleanups or
+changes elsewhere where binfmt_flat was just a victim.
+
+               Linus
