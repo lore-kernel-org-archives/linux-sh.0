@@ -1,7 +1,7 @@
-From: Rich Felker <dalias@libc.org>
-Date: Thu, 30 Apr 2020 14:51:23 +0000
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Thu, 30 Apr 2020 16:54:28 +0000
 Subject: Re: [PATCH v2 0/5] Fix ELF / FDPIC ELF core dumping, and use mmap_sem properly in there
-Message-Id: <20200430145123.GE21576@brightrain.aerifal.cx>
+Message-Id: <CAHk-=wjau_zmdLaFDLcY3xnqiFaC7VZDXnnzFG9QDHL4kqStYQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200429214954.44866-1-jannh@google.com>
  <20200429215620.GM1551@shell.armlinux.org.uk>
@@ -12,58 +12,63 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Greg Ungerer <gerg@linux-m68k.org>
-Cc: Mark Salter <msalter@redhat.com>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Nicolas Pitre <nico@fluxnic.net>, Linux-sh list <linux-sh@vger.kernel.org>, Jann Horn <jannh@google.com>, Russell King - ARM Linux admin <linux@armlinux.org.uk>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux-MM <linux-mm@kvack.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Oleg Nesterov <oleg@redhat.com>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Linus Torvalds <torvalds@linux-foundation.org>, Christoph Hellwig <hch@lst.de>, Linux ARM <linux-arm-kernel@lists.infradead.org>, "Eric W . Biederman" <ebiederm@xmission.com>
+Cc: Mark Salter <msalter@redhat.com>, Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Nicolas Pitre <nico@fluxnic.net>, Linux-sh list <linux-sh@vger.kernel.org>, Jann Horn <jannh@google.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Russell King - ARM Linux admin <linux@armlinux.org.uk>, Linux-MM <linux-mm@kvack.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Oleg Nesterov <oleg@redhat.com>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Christoph Hellwig <hch@lst.de>, Linux ARM <linux-arm-kernel@lists.infradead.org>, "Eric W . Biederman" <ebiederm@xmission.com>
 
-On Fri, May 01, 2020 at 12:10:05AM +1000, Greg Ungerer wrote:
-> 
-> 
-> On 30/4/20 9:03 am, Linus Torvalds wrote:
-> >On Wed, Apr 29, 2020 at 2:57 PM Russell King - ARM Linux admin
-> ><linux@armlinux.org.uk> wrote:
-> >>
-> >>I've never had any reason to use FDPIC, and I don't have any binaries
-> >>that would use it.  Nicolas Pitre added ARM support, so I guess he
-> >>would be the one to talk to about it.  (Added Nicolas.)
-> >
-> >While we're at it, is there anybody who knows binfmt_flat?
-> >
-> >It might be Nicolas too.
-> >
-> >binfmt_flat doesn't do core-dumping, but it has some other oddities.
-> >In particular, I'd like to bring sanity to the installation of the new
-> >creds, and all the _normal_ binfmt cases do it largely close together
-> >with setup_new_exec().
-> >
-> >binfmt_flat is doing odd things. It's doing this:
-> >
-> >         /* Flush all traces of the currently running executable */
-> >         if (id = 0) {
-> >                 ret = flush_old_exec(bprm);
-> >                 if (ret)
-> >                         goto err;
-> >
-> >                 /* OK, This is the point of no return */
-> >                 set_personality(PER_LINUX_32BIT);
-> >                 setup_new_exec(bprm);
-> >         }
-> >
-> >in load_flat_file() - which is also used to loading _libraries_. Where
-> >it makes no sense at all.
-> 
+On Thu, Apr 30, 2020 at 7:10 AM Greg Ungerer <gerg@linux-m68k.org> wrote:
+>
+> > in load_flat_file() - which is also used to loading _libraries_. Where
+> > it makes no sense at all.
+>
 > I haven't looked at the shared lib support in there for a long time,
 > but I thought that "id" is only 0 for the actual final program.
 > Libraries have a slot or id number associated with them.
 
-This sounds correct. My understanding of FLAT shared library support
-is that it's really bad and based on having preassigned slot indices
-for each library on the system, and a global array per-process to give
-to data base address for each library. Libraries are compiled to know
-their own slot numbers so that they just load from fixed_reg[slot_id]
-to get what's effectively their GOT pointer.
+Yes, that was my assumption, but looking at the code, it really isn't
+obvious that that is the case at all.
 
-I'm not sure if anybody has actually used this in over a decade. Last
-time I looked the tooling appeared broken, but in this domain lots of
-users have forked private tooling that's not publicly available or at
-least not publicly indexed, so it's hard to say for sure.
+'id' gets calculated from fields that very much look like they could
+be zero (eg by taking the top bits from another random field).
 
-Rich
+> > Most of that file goes back to pre-git days. And most of the commits
+> > since are not so much about binfmt_flat, as they are about cleanups or
+> > changes elsewhere where binfmt_flat was just a victim.
+>
+> I'll have a look at this.
+
+Thanks.
+
+> Quick hack test shows moving setup_new_exec(bprm) to be just before
+> install_exec_creds(bprm) works fine for the static binaries case.
+> Doing the flush_old_exec(bprm) there too crashed out - I'll need to
+> dig into that to see why.
+
+Just moving setup_new_exec() would at least allow us to then join the
+two together, and just say "setup_new_exec() does the credential
+installation too".
+
+So to some degree, that's the important one.
+
+But that flush_old_exec() does look odd in load_flat_file(). It's not
+like anything but executing a binary should flush the old exec.
+Certainly not loading a library, however odd that flat library code
+is.
+
+My _guess_ is that the reason for this is that "load_flat_file()" also
+does a lot of verification of the file and does that whole "return
+-ENOEXEC if the file format isn't right". So we don't want to flush
+the old exec before that is done, but we obviously also don't want to
+flush the old exec after we've actually loaded the new one into
+memory..
+
+So the location of flush_old_exec() makes that kind of sense, but it
+would have made it better if that flat file support had a clear
+separation of "check the file" from "load the file".
+
+Oh well. As mentioned, the whole "at least put setup_new_exec() and
+install_exec_creds() together" is the bigger thing.
+
+But if it's true that nobody really uses the odd flat library support
+any more and there are no testers, maybe we should consider ripping it
+out...
+
+                Linus
