@@ -1,59 +1,87 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Tue, 14 Apr 2020 15:34:53 +0000
-Subject: [PATCH v4 12/14] unicore32: remove __ARCH_USE_5LEVEL_HACK
-Message-Id: <20200414153455.21744-13-rppt@kernel.org>
+From: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+Date: Thu, 30 Apr 2020 16:18:30 +0000
+Subject: [PATCH v4 16/19] docs: sh: convert register-banks.txt to ReST
+Message-Id: <ca2ef2dea673dfd99e68b73da5bf3c24dc3b2d71.1588263270.git.mchehab+huawei@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200414153455.21744-1-rppt@kernel.org>
-In-Reply-To: <20200414153455.21744-1-rppt@kernel.org>
+References: <cover.1588263270.git.mchehab+huawei@kernel.org>
+In-Reply-To: <cover.1588263270.git.mchehab+huawei@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, linux-hexagon@vger.kernel.org, Will Deacon <will@kernel.org>, kvmarm@lists.cs.columbia.edu, Jonas Bonn <jonas@southpole.se>, linux-arch@vger.kernel.org, Brian Cain <bcain@codeaurora.org>, Marc Zyngier <maz@kernel.org>, Russell King <linux@armlinux.org.uk>, Ley Foon Tan <ley.foon.tan@intel.com>, Mike Rapoport <rppt@linux.ibm.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, Fenghua Yu <fenghua.yu@intel.com>, Arnd Bergmann <arnd@arndb.de>, kvm-ppc@vger.kernel.org, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Tony Luck <tony.luck@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-kernel@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, nios2-dev@lists.rocketboards.org, linuxppc-dev@lists.ozlabs.org, Mike Rapoport <rppt@kernel.org>
+To: Linux Doc Mailing List <linux-doc@vger.kernel.org>
+Cc: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>, linux-kernel@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-From: Mike Rapoport <rppt@linux.ibm.com>
+- Add a SPDX header;
+- Adjust document title to follow ReST style;
+- Add blank lines to make ReST markup happy
+- Add it to sh/index.rst.
 
-The unicore32 architecture has 2 level page tables and
-asm-generic/pgtable-nopmd.h and explicit casts from pud_t to pgd_t for page
-table folding.
-
-Add p4d walk in the only place that actually unfolds the pud level and
-remove __ARCH_USE_5LEVEL_HACK.
-
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
 ---
- arch/unicore32/include/asm/pgtable.h | 1 -
- arch/unicore32/kernel/hibernate.c    | 4 +++-
- 2 files changed, 3 insertions(+), 2 deletions(-)
+ Documentation/sh/index.rst                          |  1 +
+ .../sh/{register-banks.txt => register-banks.rst}   | 13 ++++++++++---
+ arch/sh/Kconfig.cpu                                 |  2 +-
+ 3 files changed, 12 insertions(+), 4 deletions(-)
+ rename Documentation/sh/{register-banks.txt => register-banks.rst} (88%)
 
-diff --git a/arch/unicore32/include/asm/pgtable.h b/arch/unicore32/include/asm/pgtable.h
-index 3b8731b3a937..826f49edd94e 100644
---- a/arch/unicore32/include/asm/pgtable.h
-+++ b/arch/unicore32/include/asm/pgtable.h
-@@ -9,7 +9,6 @@
- #ifndef __UNICORE_PGTABLE_H__
- #define __UNICORE_PGTABLE_H__
+diff --git a/Documentation/sh/index.rst b/Documentation/sh/index.rst
+index 56c08790265d..580f3b17e841 100644
+--- a/Documentation/sh/index.rst
++++ b/Documentation/sh/index.rst
+@@ -8,6 +8,7 @@ SuperH Interfaces Guide
+     :maxdepth: 1
  
--#define __ARCH_USE_5LEVEL_HACK
- #include <asm-generic/pgtable-nopmd.h>
- #include <asm/cpu-single.h>
+     new-machine
++    register-banks
  
-diff --git a/arch/unicore32/kernel/hibernate.c b/arch/unicore32/kernel/hibernate.c
-index f3812245cc00..ccad051a79b6 100644
---- a/arch/unicore32/kernel/hibernate.c
-+++ b/arch/unicore32/kernel/hibernate.c
-@@ -33,9 +33,11 @@ struct swsusp_arch_regs swsusp_arch_regs_cpu0;
- static pmd_t *resume_one_md_table_init(pgd_t *pgd)
- {
- 	pud_t *pud;
-+	p4d_t *p4d;
- 	pmd_t *pmd_table;
+ Memory Management
+ ========diff --git a/Documentation/sh/register-banks.txt b/Documentation/sh/register-banks.rst
+similarity index 88%
+rename from Documentation/sh/register-banks.txt
+rename to Documentation/sh/register-banks.rst
+index a6719f2f6594..2bef5c8fcbbc 100644
+--- a/Documentation/sh/register-banks.txt
++++ b/Documentation/sh/register-banks.rst
+@@ -1,5 +1,8 @@
+-	Notes on register bank usage in the kernel
+-	=====================
++.. SPDX-License-Identifier: GPL-2.0
++
++=====================
++Notes on register bank usage in the kernel
++=====================
  
--	pud = pud_offset(pgd, 0);
-+	p4d = p4d_offset(pgd, 0);
-+	pud = pud_offset(p4d, 0);
- 	pmd_table = pmd_offset(pud, 0);
+ Introduction
+ ------------
+@@ -23,11 +26,15 @@ Presently the kernel uses several of these registers.
  
- 	return pmd_table;
+ 	- r0_bank, r1_bank (referenced as k0 and k1, used for scratch
+ 	  registers when doing exception handling).
++
+ 	- r2_bank (used to track the EXPEVT/INTEVT code)
++
+ 		- Used by do_IRQ() and friends for doing irq mapping based off
+ 		  of the interrupt exception vector jump table offset
++
+ 	- r6_bank (global interrupt mask)
++
+ 		- The SR.IMASK interrupt handler makes use of this to set the
+ 		  interrupt priority level (used by local_irq_enable())
++
+ 	- r7_bank (current)
+-
+diff --git a/arch/sh/Kconfig.cpu b/arch/sh/Kconfig.cpu
+index 4a4edc7e03d4..07ad7597cbe7 100644
+--- a/arch/sh/Kconfig.cpu
++++ b/arch/sh/Kconfig.cpu
+@@ -94,7 +94,7 @@ config CPU_HAS_SR_RB
+ 	  that are lacking this bit must have another method in place for
+ 	  accomplishing what is taken care of by the banked registers.
+ 
+-	  See <file:Documentation/sh/register-banks.txt> for further
++	  See <file:Documentation/sh/register-banks.rst> for further
+ 	  information on SR.RB and register banking in the kernel in general.
+ 
+ config CPU_HAS_PTEAEX
 -- 
-2.25.1
+2.25.4
