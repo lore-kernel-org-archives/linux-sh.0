@@ -1,78 +1,71 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Date: Fri, 01 May 2020 11:13:24 +0000
+From: Rob Landley <rob@landley.net>
+Date: Fri, 01 May 2020 19:09:56 +0000
 Subject: Re: [PATCH v2 0/5] Fix ELF / FDPIC ELF core dumping, and use mmap_sem properly in there
-Message-Id: <87wo5vx60b.fsf@x220.int.ebiederm.org>
+Message-Id: <cff13fb7-5045-4afd-e1d3-58af99d81d5a@landley.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200429214954.44866-1-jannh@google.com>
  <20200429215620.GM1551@shell.armlinux.org.uk>
  <CAHk-=wgpoEr33NJwQ+hqK1dz3Rs9jSw+BGotsSdt2Kb3HqLV7A@mail.gmail.com>
  <31196268-2ff4-7a1d-e9df-6116e92d2190@linux-m68k.org>
- <CAHk-=wjau_zmdLaFDLcY3xnqiFaC7VZDXnnzFG9QDHL4kqStYQ@mail.gmail.com>
- <87imhgyeqt.fsf@x220.int.ebiederm.org>
- <9dd76936-0009-31e4-d869-f64d01886642@linux-m68k.org>
-In-Reply-To: <9dd76936-0009-31e4-d869-f64d01886642@linux-m68k.org> (Greg
- Ungerer's message of "Fri, 1 May 2020 15:44:03 +1000")
+ <20200430145123.GE21576@brightrain.aerifal.cx>
+ <6dd187b4-1958-fc40-73c4-3de53ed69a1e@linux-m68k.org>
+In-Reply-To: <6dd187b4-1958-fc40-73c4-3de53ed69a1e@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Greg Ungerer <gerg@linux-m68k.org>
-Cc: Mark Salter <msalter@redhat.com>, Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Nicolas Pitre <nico@fluxnic.net>, Linux-sh list <linux-sh@vger.kernel.org>, Jann Horn <jannh@google.com>, Russell King - ARM Linux admin <linux@armlinux.org.uk>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux-MM <linux-mm@kvack.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Oleg Nesterov <oleg@redhat.com>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Linus Torvalds <torvalds@linux-foundation.org>, Christoph Hellwig <hch@lst.de>, Linux ARM <linux-arm-kernel@lists.infradead.org>
+To: Greg Ungerer <gerg@linux-m68k.org>, Rich Felker <dalias@libc.org>
+Cc: Mark Salter <msalter@redhat.com>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Nicolas Pitre <nico@fluxnic.net>, Linux-sh list <linux-sh@vger.kernel.org>, Jann Horn <jannh@google.com>, Russell King - ARM Linux admin <linux@armlinux.org.uk>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux-MM <linux-mm@kvack.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Oleg Nesterov <oleg@redhat.com>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Linus Torvalds <torvalds@linux-foundation.org>, Christoph Hellwig <hch@lst.de>, Linux ARM <linux-arm-kernel@lists.infradead.org>, "Eric W . Biederman" <ebiederm@xmission.com>
 
-Greg Ungerer <gerg@linux-m68k.org> writes:
+On 5/1/20 1:00 AM, Greg Ungerer wrote:
+>> This sounds correct. My understanding of FLAT shared library support
+>> is that it's really bad and based on having preassigned slot indices
+>> for each library on the system, and a global array per-process to give
+>> to data base address for each library. Libraries are compiled to know
+>> their own slot numbers so that they just load from fixed_reg[slot_id]
+>> to get what's effectively their GOT pointer.
 
-> On 1/5/20 5:07 am, Eric W. Biederman wrote:
->> Linus Torvalds <torvalds@linux-foundation.org> writes:
->>
->>> On Thu, Apr 30, 2020 at 7:10 AM Greg Ungerer <gerg@linux-m68k.org> wrote:
->>
->>>>> Most of that file goes back to pre-git days. And most of the commits
->>>>> since are not so much about binfmt_flat, as they are about cleanups or
->>>>> changes elsewhere where binfmt_flat was just a victim.
->>>>
->>>> I'll have a look at this.
->>>
->>> Thanks.
->>>
->>>> Quick hack test shows moving setup_new_exec(bprm) to be just before
->>>> install_exec_creds(bprm) works fine for the static binaries case.
->>>> Doing the flush_old_exec(bprm) there too crashed out - I'll need to
->>>> dig into that to see why.
->>>
->>> Just moving setup_new_exec() would at least allow us to then join the
->>> two together, and just say "setup_new_exec() does the credential
->>> installation too".
->>
->> But it is only half a help if we allow failure points between
->> flush_old_exec and install_exec_creds.
->>
->> Greg do things work acceptably if install_exec_creds is moved to right
->> after setup_new_exec? (patch below)
->
-> Yes, confirmed. Worked fine with that patch applied.
+fdpic is to elf what binflt is to a.out, and a.out shared libraries were never
+pretty. Or easy.
 
-Good.  Thank you.
+>> I'm not sure if anybody has actually used this in over a decade. Last
+>> time I looked the tooling appeared broken, but in this domain lots of
+>> users have forked private tooling that's not publicly available or at
+>> least not publicly indexed, so it's hard to say for sure.
+> 
+> Be at least 12 or 13 years since I last had a working shared library
+> build for m68knommu. I have not bothered with it since then, not that I
+> even used it much when it worked. Seemed more pain than it was worth.
 
-That is what we need for other cleanups.  All three of those together.
+Shared libraries worked fine with fdpic on sh2 last I checked, it's basically
+just ELF PIC with the ability to move the 4 segments (text/rodata/bss/data)
+independently of each other. (4 base pointers, no waiting.)
 
->> This is what I was thinking about applying.
->>
->> diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
->> index 831a2b25ba79..1a1d1fcb893f 100644
->> --- a/fs/binfmt_flat.c
->> +++ b/fs/binfmt_flat.c
->> @@ -541,6 +541,7 @@ static int load_flat_file(struct linux_binprm *bprm,
->>   		/* OK, This is the point of no return */
->>   		set_personality(PER_LINUX_32BIT);
->>   		setup_new_exec(bprm);
->> +		install_exec_creds(bprm);
->>   	}
->>     	/*
->> @@ -963,8 +964,6 @@ static int load_flat_binary(struct linux_binprm *bprm)
->>   		}
->>   	}
->>   -	install_exec_creds(bprm);
->> -
->>   	set_binfmt(&flat_format);
->>     #ifdef CONFIG_MMU
+I don't think I've _ever_ used shared binflt libraries. I left myself
+breadcrumbs back when I was wrestling with that stuff:
 
-Eric
+  https://landley.net/notes-2014.html#07-12-2014
+
+But it looks like that last time I touched anything using elf2flt was:
+
+  https://landley.net/notes-2018.html#08-05-2018
+
+And that was just because arm's fdpic support stayed out of tree for years so I
+dug up binflt and gave it another go. (It sucked so much I wound up building
+static pie for cortex-m, taking the efficiency hit, and moving on. Running pie
+binaries on nommu _works_, it's just incredibly inefficient. Since the writeable
+and readable segments of the ELF are all relative to the same single base
+pointer, you can't share the read-only parts of the binaries without address
+remapping, so if you launch 4 instances of PIE bash on nommu you've loaded 4
+instances of the bash text and rodata, and of course none of it can even be
+demand faulted. In theory shared libraries _do_ help there but I hit some ld.so
+bug and didn't want to debug a half-assed solution, so big hammer and moved on
+until arm fdpic got merged and fixed it _properly_...)
+
+Rob
+
+P.S. The reason for binflt is bare metal hardware engineers who are conceptually
+uncomfortable with software love them, because it's as close to "objcopy -O
+binary" as they can get. Meanwhile on j-core we've had an 8k ROM boot loader
+that loads vmlinux images and does the ELF relocations for 5 years now, and ever
+since the switch to device tree that's our _only_ way to feed a dtb to the
+kernel without statically linking it in, so it's ELF all the way down for us.
