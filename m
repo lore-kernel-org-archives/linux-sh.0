@@ -1,35 +1,55 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 11 May 2020 07:36:05 +0000
-Subject: Re: [PATCH 21/31] mm: rename flush_icache_user_range to flush_icache_user_page
-Message-Id: <CAMuHMdXS-ygT01KfhS0y9WcYbi9HKdQL7Q1HXgUZdayzQb_qSA@mail.gmail.com>
+From: Gonsolo <gonsolo@gmail.com>
+Date: Mon, 04 May 2020 12:08:46 +0000
+Subject: Re: [PATCH 1/1] Fix undefined reference to 'node_reclaim_distance'.
+Message-Id: <CANL0fFQrO+kApsQd0N1+=_rPX_REBzpGf15J7Dmizb3WG1Xctw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200510075510.987823-1-hch@lst.de> <20200510075510.987823-22-hch@lst.de>
-In-Reply-To: <20200510075510.987823-22-hch@lst.de>
+References: <20191216103522.32215-1-gonsolo@gmail.com> <20191216103522.32215-2-gonsolo@gmail.com>
+ <CAMuHMdVotJuotVKa3rxgR3ujCedoWM19-HhwhbTC9g6gV_EVNw@mail.gmail.com>
+ <CANL0fFS81NgFBcMBdWo6OKefz04h_FeXadcau9Rkcna7Ap5PDw@mail.gmail.com>
+ <CAMuHMdVtm6BGx6d+F8-Bw+fD-M-DugspLkBvCtTKGgWiPvJnSA@mail.gmail.com>
+ <CANL0fFSNdzM-e=u+w0BTUqg5sQP_DuVBuJe9m0JDQnVTOPDMNQ@mail.gmail.com>
+ <20191223164220.GA14394@codeblueprint.co.uk> <29b721c1-b5a7-6fc1-4471-f42109d509ed@infradead.org>
+ <CANL0fFTCVj7c-EQTs1kRuOn8e++vgFw1fUTJfya12csWkJdGqA@mail.gmail.com>
+In-Reply-To: <CANL0fFTCVj7c-EQTs1kRuOn8e++vgFw1fUTJfya12csWkJdGqA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>, Jessica Yu <jeyu@kernel.org>, Michal Simek <monstr@monstr.eu>, the arch/x86 maintainers <x86@kernel.org>, alpha <linux-alpha@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux ARM <linux-arm-kernel@lists.infradead.org>, linux-c6x-dev@linux-c6x.org, "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>, "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>, linux-m68k <linux-m68k@lists.linux-m68k.org>, "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>, Openrisc <openrisc@lists.librecores.org>, linuxppc-dev <linuxppc-dev@lists.ozlabs.org>, linux-riscv@lists.infradead.orgLinux-shlistlinu
+To: Randy Dunlap <rdunlap@infradead.org>
+Cc: Matt Fleming <matt@codeblueprint.co.uk>, Geert Uytterhoeven <geert@linux-m68k.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>, Mike Rapoport <rppt@linux.ibm.com>, Nicholas Piggin <npiggin@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-On Sun, May 10, 2020 at 9:57 AM Christoph Hellwig <hch@lst.de> wrote:
-> The function currently known as flush_icache_user_range only operates
-> on a single page.  Rename it to flush_icache_user_page as we'll need
-> the name flush_icache_user_range for something else soon.
->
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
+Hi!
 
->  arch/m68k/include/asm/cacheflush_mm.h  |  4 ++--
->  arch/m68k/mm/cache.c                   |  2 +-
+> Yes, it fixes the arch/sh/ build errors in my testing.
+> I don't have a failing ppc64 .config file to test.
 
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+As of v5.7-rc4 this patch doesn't seem to have been applied and the
+build is still failing:
+http://kisskb.ellerman.id.au/kisskb/buildresult/14067948/
 
-Gr{oetje,eeting}s,
+diff --git a/kernel/sched/topology.c b/kernel/sched/topology.c
+index 6ec1e595b1d4..bf20e5883026 100644
+--- a/kernel/sched/topology.c
++++ b/kernel/sched/topology.c
+@@ -1281,7 +1281,6 @@ static int                      sched_domains_curr_level;
+int                          sched_max_numa_distance;
+static int                   *sched_domains_numa_distance;
+static struct cpumask                ***sched_domains_numa_masks;
+-int __read_mostly            node_reclaim_distance = RECLAIM_DISTANCE;
+#endif
 
-                        Geert
+/*
+diff --git a/mm/page_alloc.c b/mm/page_alloc.c
+index 4785a8a2040e..733890d913ea 100644
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -3523,6 +3523,7 @@ bool zone_watermark_ok_safe(struct zone *z,
+unsigned int order,
+}
 
+#ifdef CONFIG_NUMA
++int __read_mostly            node_reclaim_distance = RECLAIM_DISTANCE;
+static bool zone_allows_reclaim(struct zone *local_zone, struct zone *zone)
+{
+    return node_distance(zone_to_nid(local_zone), zone_to_nid(zone)) <
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+g
