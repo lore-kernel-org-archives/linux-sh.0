@@ -1,100 +1,22 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Sun, 31 May 2020 10:47:16 +0000
-Subject: [PATCH v2] sh: Implement __get_user_u64() required for 64-bit get_user()
-Message-Id: <20200531104715.2512247-1-glaubitz@physik.fu-berlin.de>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 05 May 2020 10:48:05 +0000
+Subject: Re: [PATCH v2 1/5] binfmt_elf_fdpic: Stop using dump_emit() on user pointers on !MMU
+Message-Id: <20200505104805.GA17400@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200429214954.44866-1-jannh@google.com>
+ <20200429214954.44866-2-jannh@google.com>
+In-Reply-To: <20200429214954.44866-2-jannh@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Geert Uytterhoeven <geert@linux-m68k.org>, Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>, linux-kernel@vger.kernel.org, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Jann Horn <jannh@google.com>
+Cc: Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Oleg Nesterov <oleg@redhat.com>, linux-mm@kvack.org, Alexander Viro <viro@zeniv.linux.org.uk>, Mark Salter <msalter@redhat.com>, linux-fsdevel@vger.kernel.org, Russell King <linux@armlinux.org.uk>, Andrew Morton <akpm@linux-foundation.org>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Linus Torvalds <torvalds@linux-foundation.org>, Christoph Hellwig <hch@lst.de>, linux-arm-kernel@lists.infradead.org, "Eric W . Biederman" <ebiederm@xmission.com>
 
-Trying to build the kernel with CONFIG_INFINIBAND_USER_ACCESS enabled fails
+On Wed, Apr 29, 2020 at 11:49:50PM +0200, Jann Horn wrote:
+> dump_emit() is for kernel pointers, and VMAs describe userspace memory.
+> Let's be tidy here and avoid accessing userspace pointers under KERNEL_DS,
+> even if it probably doesn't matter much on !MMU systems - especially given
+> that it looks like we can just use the same get_dump_page() as on MMU if
+> we move it out of the CONFIG_MMU block.
 
-     ERROR: "__get_user_unknown" [drivers/infiniband/core/ib_uverbs.ko] undefined!
-
-with on SH since the kernel misses a 64-bit implementation of get_user().
-
-Implement the missing 64-bit get_user() as __get_user_u64(), matching the
-already existing __put_user_u64() which implements the 64-bit put_user().
-
-Signed-off-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
----
- arch/sh/include/asm/uaccess_32.h | 51 ++++++++++++++++++++++++++++++++
- 1 file changed, 51 insertions(+)
-
- Changes since v1:
- - Replace single mov instruction for exception handling
-   in case of invalid load
-
-diff --git a/arch/sh/include/asm/uaccess_32.h b/arch/sh/include/asm/uaccess_32.h
-index 624cf55acc27..35f6c1e40ec3 100644
---- a/arch/sh/include/asm/uaccess_32.h
-+++ b/arch/sh/include/asm/uaccess_32.h
-@@ -26,6 +26,9 @@ do {								\
- 	case 4:							\
- 		__get_user_asm(x, ptr, retval, "l");		\
- 		break;						\
-+	case 8:							\
-+		__get_user_u64(x, ptr, retval);			\
-+		break;						\
- 	default:						\
- 		__get_user_unknown();				\
- 		break;						\
-@@ -66,6 +69,54 @@ do {							\
- 
- extern void __get_user_unknown(void);
- 
-+#if defined(CONFIG_CPU_LITTLE_ENDIAN)
-+#define __get_user_u64(x, addr, err) \
-+({ \
-+__asm__ __volatile__( \
-+	"1:\n\t" \
-+	"mov.l	%2,%R1\n\t" \
-+	"mov.l	%T2,%S1\n\t" \
-+	"2:\n" \
-+	".section	.fixup,\"ax\"\n" \
-+	"3:\n\t" \
-+	"mov  #0,%R1\n\t"   \
-+	"mov  #0,%S1\n\t"   \
-+	"mov.l	4f, %0\n\t" \
-+	"jmp	@%0\n\t" \
-+	" mov	%3, %0\n\t" \
-+	".balign	4\n" \
-+	"4:	.long	2b\n\t" \
-+	".previous\n" \
-+	".section	__ex_table,\"a\"\n\t" \
-+	".long	1b, 3b\n\t" \
-+	".previous" \
-+	:"=&r" (err), "=&r" (x) \
-+	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
-+#else
-+#define __get_user_u64(x, addr, err) \
-+({ \
-+__asm__ __volatile__( \
-+	"1:\n\t" \
-+	"mov.l	%2,%S1\n\t" \
-+	"mov.l	%T2,%R1\n\t" \
-+	"2:\n" \
-+	".section	.fixup,\"ax\"\n" \
-+	"3:\n\t" \
-+	"mov  #0,%S1\n\t"   \
-+	"mov  #0,%R1\n\t"   \
-+	"mov.l	4f, %0\n\t" \
-+	"jmp	@%0\n\t" \
-+	" mov	%3, %0\n\t" \
-+	".balign	4\n" \
-+	"4:	.long	2b\n\t" \
-+	".previous\n" \
-+	".section	__ex_table,\"a\"\n\t" \
-+	".long	1b, 3b\n\t" \
-+	".previous" \
-+	:"=&r" (err), "=&r" (x) \
-+	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
-+#endif
-+
- #define __put_user_size(x,ptr,size,retval)		\
- do {							\
- 	retval = 0;					\
--- 
-2.27.0.rc2
+Looks sensible.  Did you get a chance to test this with a nommu setup?
