@@ -1,38 +1,36 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Fri, 29 May 2020 17:45:40 +0000
-Subject: [RESEND] sh: Implement __get_user_u64() required for 64-bit get_user()
-Message-Id: <20200529174540.4189874-1-glaubitz@physik.fu-berlin.de>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sun, 10 May 2020 07:55:02 +0000
+Subject: [PATCH 23/31] sh: implement flush_icache_user_range
+Message-Id: <20200510075510.987823-24-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200510075510.987823-1-hch@lst.de>
+In-Reply-To: <20200510075510.987823-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Geert Uytterhoeven <geert@linux-m68k.org>, Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>, linux-kernel@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>
+Cc: Jessica Yu <jeyu@kernel.org>, Michal Simek <monstr@monstr.eu>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org, linux-fsdevel@vger.kernel.org
 
+The SuperH implementation of flush_icache_range seems to be able to
+cope with user addresses.  Just define flush_icache_user_range to
+flush_icache_range.
 
-Hi!
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/sh/include/asm/cacheflush.h | 1 +
+ 1 file changed, 1 insertion(+)
 
-This is my attempt of implementing a 64-bit get_user() for SH to address the
-build problem when CONFIG_INFINIBAND_USER_ACCESS is enabled.
-
-I have carefully looked at the existing implementations of __get_user_asm(),
-__put_user_asm() and the 64-bit __put_user_u64() to come up with the 64-bit
-__get_user_u64().
-
-I'm admittedly not an expert when it comes to writing GCC contraints, so the
-code might be completely wrong. However, it builds fine without warnings
-and fixes the aforementioned issue for me.
-
-Hopefully someone from the more experienced group of kernel developers can
-review my code and help me get it into proper shape for submission.
-
-Resent because I forgot to add a subject for the first cover text.
-
-Thanks,
-Adrian
-
---
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+diff --git a/arch/sh/include/asm/cacheflush.h b/arch/sh/include/asm/cacheflush.h
+index b932e42ef0284..fe7400079b97b 100644
+--- a/arch/sh/include/asm/cacheflush.h
++++ b/arch/sh/include/asm/cacheflush.h
+@@ -46,6 +46,7 @@ extern void flush_cache_range(struct vm_area_struct *vma,
+ #define ARCH_IMPLEMENTS_FLUSH_DCACHE_PAGE 1
+ extern void flush_dcache_page(struct page *page);
+ extern void flush_icache_range(unsigned long start, unsigned long end);
++#define flush_icache_user_range flush_icache_range
+ extern void flush_icache_page(struct vm_area_struct *vma,
+ 				 struct page *page);
+ extern void flush_cache_sigtramp(unsigned long address);
+-- 
+2.26.2
