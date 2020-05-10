@@ -1,76 +1,43 @@
-From: Mike Rapoport <rppt@linux.ibm.com>
-Date: Mon, 11 May 2020 14:15:36 +0000
-Subject: Re: [PATCH v4 02/14] arm: add support for folded p4d page tables
-Message-Id: <20200511141536.GB983798@linux.ibm.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sun, 10 May 2020 07:54:39 +0000
+Subject: sort out the flush_icache_range mess
+Message-Id: <20200510075510.987823-1-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200414153455.21744-1-rppt@kernel.org>
- <20200414153455.21744-3-rppt@kernel.org>
- <CGME20200507121658eucas1p240cf4a3e0fe5c22dda5ec4f72734149f@eucas1p2.samsung.com>
- <39ba8a04-d6b5-649d-c289-0c8b27cb66c5@samsung.com>
- <20200507161155.GE683243@linux.ibm.com>
- <98229ab1-fbf8-0a89-c5d6-270c828799e7@samsung.com>
- <20200508174232.GA759899@linux.ibm.com>
- <665dade8-727a-3318-6779-3998080da18f@samsung.com>
-In-Reply-To: <665dade8-727a-3318-6779-3998080da18f@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Marek Szyprowski <m.szyprowski@samsung.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, Fenghua Yu <fenghua.yu@intel.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, linux-mm@kvack.org, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Will Deacon <will@kernel.org>, kvmarm@lists.cs.columbia.edu, Jonas Bonn <jonas@southpole.se>, Brian Cain <bcain@codeaurora.org>, linux-hexagon@vger.kernel.org, linux-sh@vger.kernel.org, Russell King <linux@armlinux.org.uk>, Ley Foon Tan <ley.foon.tan@intel.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-arch@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>, =?utf-8?Q?=C5=81ukasz?= Stelmach <l.stelmach@samsung.com>, kvm-ppc@vger.kernel.org, Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>, openrisc@lists.librecores.org, Stafford Horne <shorne@gmail.com>, Guan Xuetao <gxt@pku.edu.cn>, linux-arm-kernel@lists.infradead.org, Christophe Leroy <christophe.leroy@c-s.fr>, Tony Luck <tony.luck@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-kernel@vger.kernel.org, Marc Zyngier <maz@kernel.org>, nios2-dev@lists.rocketboards.org, linuxppc-dev@lists.ozlabs.org, Mike Rapoport <rppt@kernel.org>
+To: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>
+Cc: linux-arch@vger.kernel.org, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Jessica Yu <jeyu@kernel.org>, linux-ia64@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, x86@kernel.org, linux-um@lists.infradead.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-mm@kvack.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-riscv@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org
 
-Hi Marek,
+Hi all,
 
-On Mon, May 11, 2020 at 08:36:41AM +0200, Marek Szyprowski wrote:
-> Hi Mike,
-> 
-> On 08.05.2020 19:42, Mike Rapoport wrote:
-> > On Fri, May 08, 2020 at 08:53:27AM +0200, Marek Szyprowski wrote:
-> >> On 07.05.2020 18:11, Mike Rapoport wrote:
-> >>> On Thu, May 07, 2020 at 02:16:56PM +0200, Marek Szyprowski wrote:
-> >>>> On 14.04.2020 17:34, Mike Rapoport wrote:
-> >>>>> From: Mike Rapoport <rppt@linux.ibm.com>
-> >>>>>
-> >>>>> Implement primitives necessary for the 4th level folding, add walks of p4d
-> >>>>> level where appropriate, and remove __ARCH_USE_5LEVEL_HACK.
-> >>>>>
-> >>>>> Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> > Can you please try the patch below:
-> >
-> > diff --git a/arch/arm/mm/init.c b/arch/arm/mm/init.c
-> > index 963b5284d284..f86b3d17928e 100644
-> > --- a/arch/arm/mm/init.c
-> > +++ b/arch/arm/mm/init.c
-> > @@ -571,7 +571,7 @@ static inline void section_update(unsigned long addr, pmdval_t mask,
-> >   {
-> >   	pmd_t *pmd;
-> >   
-> > -	pmd = pmd_off_k(addr);
-> > +	pmd = pmd_offset(pud_offset(p4d_offset(pgd_offset(mm, addr), addr), addr), addr);
-> >   
-> >   #ifdef CONFIG_ARM_LPAE
-> >   	pmd[0] = __pmd((pmd_val(pmd[0]) & mask) | prot);
-> This fixes kexec issue! Thanks!
-> 
-> 
-> Feel free to add:
-> 
-> Reported-by: Marek Szyprowski <m.szyprowski@samsung.com>
-> Fixes: 218f1c390557 ("arm: add support for folded p4d page tables")
-> Tested-by: Marek Szyprowski <m.szyprowski@samsung.com>
+flush_icache_range is mostly used for kernel address, except for the following
+cases:
 
-Thanks for testing!
+ - the nommu brk and mmap implementations,
+ - the read_code helper that is only used for binfmt_flat, binfmt_elf_fdpic,
+   and binfmt_aout including the broken ia32 compat version
+ - binfmt_flat itself,
 
-The patch is still in mmotm tree, so I don't think "Fixes" apply.
+none of which really are used by a typical MMU enabled kernel, as a.out can
+only be build for alpha and m68k to start with.
 
-Andrew, would you like me to send the fix as a formal patch or will pick
-it up as a fixup?
+But strangely enough commit ae92ef8a4424 ("PATCH] flush icache in correct
+context") added a "set_fs(KERNEL_DS)" around the flush_icache_range call
+in the module loader, because apparently m68k assumed user pointers.
 
-> Best regards
-> -- 
-> Marek Szyprowski, PhD
-> Samsung R&D Institute Poland
-> 
+This series first cleans up the cacheflush implementations, largely by
+switching as much as possible to the asm-generic version after a few
+preparations, then moves the misnamed current flush_icache_user_range to
+a new name, to finally introduce a real flush_icache_user_range to be used
+for the above use cases to flush the instruction cache for a userspace
+address range.  The last patch then drops the set_fs in the module code
+and moves it into the m68k implementation.
 
--- 
-Sincerely yours,
-Mike.
+A git tree is available here:
+
+    git://git.infradead.org/users/hch/misc.git flush_icache_range
+
+Gitweb:
+
+    http://git.infradead.org/users/hch/misc.git/shortlog/refs/heads/flush_icache_range
