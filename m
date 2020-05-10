@@ -1,67 +1,35 @@
-From: Mark Salter <msalter@redhat.com>
-Date: Mon, 18 May 2020 18:20:42 +0000
-Subject: Re: [PATCH 10/29] c6x: use asm-generic/cacheflush.h
-Message-Id: <5260142047d0339e00d4a74865c2f0b7511c89f6.camel@redhat.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sun, 10 May 2020 07:55:08 +0000
+Subject: [PATCH 29/31] binfmt_flat: use flush_icache_user_range
+Message-Id: <20200510075510.987823-30-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200515143646.3857579-1-hch@lst.de>
-         <20200515143646.3857579-11-hch@lst.de>
-In-Reply-To: <20200515143646.3857579-11-hch@lst.de>
+References: <20200510075510.987823-1-hch@lst.de>
+In-Reply-To: <20200510075510.987823-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>
-Cc: linux-arch@vger.kernel.org, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Jessica Yu <jeyu@kernel.org>, linux-ia64@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, x86@kernel.org, linux-um@lists.infradead.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-mm@kvack.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-riscv@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org
+To: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>
+Cc: Jessica Yu <jeyu@kernel.org>, Michal Simek <monstr@monstr.eu>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org, linux-fsdevel@vger.kernel.org
 
-On Fri, 2020-05-15 at 16:36 +0200, Christoph Hellwig wrote:
-> C6x needs almost no cache flushing routines of its own.  Rely on
-> asm-generic/cacheflush.h for the defaults.
-> 
-> Signed-off-by: Christoph Hellwig <hch@lst.de>
-> ---
->  arch/c6x/include/asm/cacheflush.h | 19 +------------------
->  1 file changed, 1 insertion(+), 18 deletions(-)
-> 
-> diff --git a/arch/c6x/include/asm/cacheflush.h b/arch/c6x/include/asm/cacheflush.h
-> index 4540b40475e6c..10922d528de6d 100644
-> --- a/arch/c6x/include/asm/cacheflush.h
-> +++ b/arch/c6x/include/asm/cacheflush.h
-> @@ -16,21 +16,6 @@
->  #include <asm/page.h>
->  #include <asm/string.h>
->  
-> -/*
-> - * virtually-indexed cache management (our cache is physically indexed)
-> - */
-> -#define flush_cache_all()			do {} while (0)
-> -#define flush_cache_mm(mm)			do {} while (0)
-> -#define flush_cache_dup_mm(mm)			do {} while (0)
-> -#define flush_cache_range(mm, start, end)	do {} while (0)
-> -#define flush_cache_page(vma, vmaddr, pfn)	do {} while (0)
-> -#define flush_cache_vmap(start, end)		do {} while (0)
-> -#define flush_cache_vunmap(start, end)		do {} while (0)
-> -#define ARCH_IMPLEMENTS_FLUSH_DCACHE_PAGE 0
-> -#define flush_dcache_page(page)			do {} while (0)
-> -#define flush_dcache_mmap_lock(mapping)		do {} while (0)
-> -#define flush_dcache_mmap_unlock(mapping)	do {} while (0)
-> -
->  /*
->   * physically-indexed cache management
->   */
-> @@ -49,14 +34,12 @@ do {								  \
->  			(unsigned long) page_address(page) + PAGE_SIZE)); \
->  } while (0)
->  
-> -
->  #define copy_to_user_page(vma, page, vaddr, dst, src, len) \
->  do {						     \
->  	memcpy(dst, src, len);			     \
->  	flush_icache_range((unsigned) (dst), (unsigned) (dst) + (len)); \
->  } while (0)
->  
-> -#define copy_from_user_page(vma, page, vaddr, dst, src, len) \
-> -	memcpy(dst, src, len)
-> +#include <asm-generic/cacheflush.h>
->  
->  #endif /* _ASM_C6X_CACHEFLUSH_H */
+load_flat_file works on user addresses.
 
-Acked-by: Mark Salter <msalter@redhat.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ fs/binfmt_flat.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/binfmt_flat.c b/fs/binfmt_flat.c
+index 831a2b25ba79f..6f0aca5379da2 100644
+--- a/fs/binfmt_flat.c
++++ b/fs/binfmt_flat.c
+@@ -854,7 +854,7 @@ static int load_flat_file(struct linux_binprm *bprm,
+ #endif /* CONFIG_BINFMT_FLAT_OLD */
+ 	}
+ 
+-	flush_icache_range(start_code, end_code);
++	flush_icache_user_range(start_code, end_code);
+ 
+ 	/* zero the BSS,  BRK and stack areas */
+ 	if (clear_user((void __user *)(datapos + data_len), bss_len +
+-- 
+2.26.2
