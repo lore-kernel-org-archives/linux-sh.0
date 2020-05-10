@@ -1,66 +1,66 @@
-From: Mike Kravetz <mike.kravetz@oracle.com>
-Date: Mon, 11 May 2020 20:22:50 +0000
-Subject: Re: [PATCH V3 3/3] mm/hugetlb: Define a generic fallback for arch_clear_hugepage_flags()
-Message-Id: <cbccae27-ff79-5580-80be-0a9493d063ba@oracle.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sun, 10 May 2020 07:54:47 +0000
+Subject: [PATCH 08/31] asm-generic: don't include <linux/mm.h> in cacheflush.h
+Message-Id: <20200510075510.987823-9-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1588907271-11920-1-git-send-email-anshuman.khandual@arm.com>
- <1588907271-11920-4-git-send-email-anshuman.khandual@arm.com>
-In-Reply-To: <1588907271-11920-4-git-send-email-anshuman.khandual@arm.com>
+References: <20200510075510.987823-1-hch@lst.de>
+In-Reply-To: <20200510075510.987823-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Anshuman Khandual <anshuman.khandual@arm.com>, linux-mm@kvack.org, akpm@linux-foundation.org
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-kernel@vger.kernel.org, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Helge Deller <deller@gmx.de>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Christian Borntraeger <borntraeger@de.ibm.com>, Ingo Molnar <mingo@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Fenghua Yu <fenghua.yu@intel.com>, Vasily Gorbik <gor@linux.ibm.com>, Thomas Bogendoerfer <tsbogend@a>
+To: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>
+Cc: Jessica Yu <jeyu@kernel.org>, Michal Simek <monstr@monstr.eu>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org, linux-fsdevel@vger.kernel.org
 
-On 5/7/20 8:07 PM, Anshuman Khandual wrote:
-> There are multiple similar definitions for arch_clear_hugepage_flags() on
-> various platforms. Lets just add it's generic fallback definition for
-> platforms that do not override. This help reduce code duplication.
-> 
-> Cc: Russell King <linux@armlinux.org.uk>
-> Cc: Catalin Marinas <catalin.marinas@arm.com>
-> Cc: Will Deacon <will@kernel.org>
-> Cc: Tony Luck <tony.luck@intel.com>
-> Cc: Fenghua Yu <fenghua.yu@intel.com>
-> Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-> Cc: "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>
-> Cc: Helge Deller <deller@gmx.de>
-> Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-> Cc: Paul Mackerras <paulus@samba.org>
-> Cc: Michael Ellerman <mpe@ellerman.id.au>
-> Cc: Paul Walmsley <paul.walmsley@sifive.com>
-> Cc: Palmer Dabbelt <palmer@dabbelt.com>
-> Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-> Cc: Vasily Gorbik <gor@linux.ibm.com>
-> Cc: Christian Borntraeger <borntraeger@de.ibm.com>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: "David S. Miller" <davem@davemloft.net>
-> Cc: Thomas Gleixner <tglx@linutronix.de>
-> Cc: Ingo Molnar <mingo@redhat.com>
-> Cc: Borislav Petkov <bp@alien8.de>
-> Cc: "H. Peter Anvin" <hpa@zytor.com>
-> Cc: Mike Kravetz <mike.kravetz@oracle.com>
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: x86@kernel.org
-> Cc: linux-arm-kernel@lists.infradead.org
-> Cc: linux-ia64@vger.kernel.org
-> Cc: linux-mips@vger.kernel.org
-> Cc: linux-parisc@vger.kernel.org
-> Cc: linuxppc-dev@lists.ozlabs.org
-> Cc: linux-riscv@lists.infradead.org
-> Cc: linux-s390@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org
-> Cc: sparclinux@vger.kernel.org
-> Cc: linux-mm@kvack.org
-> Cc: linux-arch@vger.kernel.org
-> Cc: linux-kernel@vger.kernel.org
-> Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
+This seems to lead to some crazy include loops when using
+asm-generic/cacheflush.h on more architectures, so leave it
+to the arch header for now.
 
-Thanks!
-Removing duplicate code is good.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/um/include/asm/tlb.h         | 2 ++
+ arch/x86/include/asm/cacheflush.h | 2 ++
+ include/asm-generic/cacheflush.h  | 3 ---
+ 3 files changed, 4 insertions(+), 3 deletions(-)
 
-Acked-by: Mike Kravetz <mike.kravetz@oracle.com>
-
+diff --git a/arch/um/include/asm/tlb.h b/arch/um/include/asm/tlb.h
+index 70ee603839006..ff9c62828962c 100644
+--- a/arch/um/include/asm/tlb.h
++++ b/arch/um/include/asm/tlb.h
+@@ -2,6 +2,8 @@
+ #ifndef __UM_TLB_H
+ #define __UM_TLB_H
+ 
++#include <linux/mm.h>
++
+ #include <asm/tlbflush.h>
+ #include <asm-generic/cacheflush.h>
+ #include <asm-generic/tlb.h>
+diff --git a/arch/x86/include/asm/cacheflush.h b/arch/x86/include/asm/cacheflush.h
+index 63feaf2a5f93d..b192d917a6d0b 100644
+--- a/arch/x86/include/asm/cacheflush.h
++++ b/arch/x86/include/asm/cacheflush.h
+@@ -2,6 +2,8 @@
+ #ifndef _ASM_X86_CACHEFLUSH_H
+ #define _ASM_X86_CACHEFLUSH_H
+ 
++#include <linux/mm.h>
++
+ /* Caches aren't brain-dead on the intel. */
+ #include <asm-generic/cacheflush.h>
+ #include <asm/special_insns.h>
+diff --git a/include/asm-generic/cacheflush.h b/include/asm-generic/cacheflush.h
+index 906277492ec59..bf9bb83e9fc8d 100644
+--- a/include/asm-generic/cacheflush.h
++++ b/include/asm-generic/cacheflush.h
+@@ -2,9 +2,6 @@
+ #ifndef _ASM_GENERIC_CACHEFLUSH_H
+ #define _ASM_GENERIC_CACHEFLUSH_H
+ 
+-/* Keep includes the same across arches.  */
+-#include <linux/mm.h>
+-
+ #define ARCH_IMPLEMENTS_FLUSH_DCACHE_PAGE 0
+ 
+ /*
 -- 
-Mike Kravetz
+2.26.2
