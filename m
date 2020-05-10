@@ -1,37 +1,60 @@
-From: Mike Kravetz <mike.kravetz@oracle.com>
-Date: Mon, 11 May 2020 18:52:34 +0000
-Subject: Re: [PATCH V3 2/3] mm/hugetlb: Define a generic fallback for is_hugepage_only_range()
-Message-Id: <ab931b52-1f1b-1ff3-47ee-377de3ed1a98@oracle.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sun, 10 May 2020 07:54:55 +0000
+Subject: [PATCH 16/31] m68knommu: use asm-generic/cacheflush.h
+Message-Id: <20200510075510.987823-17-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1588907271-11920-1-git-send-email-anshuman.khandual@arm.com>
- <1588907271-11920-3-git-send-email-anshuman.khandual@arm.com>
- <9fc622e1-45ff-b79f-ebe0-35614837456c@oracle.com>
- <c21ab871-da06-baf6-ba31-80b13402b8c9@arm.com>
-In-Reply-To: <c21ab871-da06-baf6-ba31-80b13402b8c9@arm.com>
+References: <20200510075510.987823-1-hch@lst.de>
+In-Reply-To: <20200510075510.987823-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Anshuman Khandual <anshuman.khandual@arm.com>, linux-mm@kvack.org, akpm@linux-foundation.org
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Catalin Marinas <catalin.marinas@arm.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, linux-kernel@vger.kernel.org, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Paul Mackerras <paulus@samba.org>, "H. Peter Anvin" <hpa@zytor.com>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, Helge Deller <deller@gmx.de>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Christian Borntraeger <borntraeger@de.ibm.com>, Ingo Molnar <mingo@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Fenghua Yu <fenghua.yu@intel.com>, Vasily Gorbik <gor@linux.ibm.com>, Thomas Bogendoerfer <tsbogend@a>
+To: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>
+Cc: Jessica Yu <jeyu@kernel.org>, Michal Simek <monstr@monstr.eu>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org, linux-fsdevel@vger.kernel.org
 
-On 5/10/20 8:14 PM, Anshuman Khandual wrote:
-> On 05/09/2020 03:52 AM, Mike Kravetz wrote:
->> On 5/7/20 8:07 PM, Anshuman Khandual wrote:
->>
->> Did you try building without CONFIG_HUGETLB_PAGE defined?  I'm guessing
-> 
-> Yes I did for multiple platforms (s390, arm64, ia64, x86, powerpc etc).
-> 
->> that you need a stub for is_hugepage_only_range().  Or, perhaps add this
->> to asm-generic/hugetlb.h?
->>
-> There is already a stub (include/linux/hugetlb.h) when !CONFIG_HUGETLB_PAGE.
-> 
+m68knommu needs almost no cache flushing routines of its own.  Rely on
+asm-generic/cacheflush.h for the defaults.
 
-Thanks!  I missed that stub in the existing code.  I like the removal of
-redundant code.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/m68k/include/asm/cacheflush_no.h | 19 ++-----------------
+ 1 file changed, 2 insertions(+), 17 deletions(-)
 
-Acked-by: Mike Kravetz <mike.kravetz@oracle.com>
-
+diff --git a/arch/m68k/include/asm/cacheflush_no.h b/arch/m68k/include/asm/cacheflush_no.h
+index 11e9a9dcbfb24..2731f07e7be8c 100644
+--- a/arch/m68k/include/asm/cacheflush_no.h
++++ b/arch/m68k/include/asm/cacheflush_no.h
+@@ -9,25 +9,8 @@
+ #include <asm/mcfsim.h>
+ 
+ #define flush_cache_all()			__flush_cache_all()
+-#define flush_cache_mm(mm)			do { } while (0)
+-#define flush_cache_dup_mm(mm)			do { } while (0)
+-#define flush_cache_range(vma, start, end)	do { } while (0)
+-#define flush_cache_page(vma, vmaddr)		do { } while (0)
+ #define flush_dcache_range(start, len)		__flush_dcache_all()
+-#define ARCH_IMPLEMENTS_FLUSH_DCACHE_PAGE 0
+-#define flush_dcache_page(page)			do { } while (0)
+-#define flush_dcache_mmap_lock(mapping)		do { } while (0)
+-#define flush_dcache_mmap_unlock(mapping)	do { } while (0)
+ #define flush_icache_range(start, len)		__flush_icache_all()
+-#define flush_icache_page(vma,pg)		do { } while (0)
+-#define flush_icache_user_range(vma,pg,adr,len)	do { } while (0)
+-#define flush_cache_vmap(start, end)		do { } while (0)
+-#define flush_cache_vunmap(start, end)		do { } while (0)
+-
+-#define copy_to_user_page(vma, page, vaddr, dst, src, len) \
+-	memcpy(dst, src, len)
+-#define copy_from_user_page(vma, page, vaddr, dst, src, len) \
+-	memcpy(dst, src, len)
+ 
+ void mcf_cache_push(void);
+ 
+@@ -98,4 +81,6 @@ static inline void cache_clear(unsigned long paddr, int len)
+ 	__clear_cache_all();
+ }
+ 
++#include <asm-generic/cacheflush.h>
++
+ #endif /* _M68KNOMMU_CACHEFLUSH_H */
 -- 
-Mike Kravetz
+2.26.2
