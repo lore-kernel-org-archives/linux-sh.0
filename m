@@ -1,55 +1,67 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Sun, 31 May 2020 08:03:13 +0000
-Subject: Re: [GIT PULL] sh: remove sh5 support
-Message-Id: <eea4f39c-23d4-d435-a770-652d71268f34@physik.fu-berlin.de>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sun, 10 May 2020 07:55:10 +0000
+Subject: [PATCH 31/31] module: move the set_fs hack for flush_icache_range to m68k
+Message-Id: <20200510075510.987823-32-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200424221948.1120587-1-arnd@arndb.de>
- <20200507143552.GA28683@infradead.org> <20200528054600.GA29717@infradead.org>
- <20200528161416.GY1079@brightrain.aerifal.cx>
- <20200529143059.GA25475@infradead.org>
- <20200529175335.GK1079@brightrain.aerifal.cx>
- <e86e1d78-9597-811a-da0e-42a910b0c9fe@physik.fu-berlin.de>
- <8b4ff7fe-c10c-fc8e-72bc-88ef69bdb2b4@landley.net>
-In-Reply-To: <8b4ff7fe-c10c-fc8e-72bc-88ef69bdb2b4@landley.net>
+References: <20200510075510.987823-1-hch@lst.de>
+In-Reply-To: <20200510075510.987823-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Landley <rob@landley.net>, Rich Felker <dalias@libc.org>, Christoph Hellwig <hch@infradead.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, ysato@users.sourceforge.jp, linux-kernel@vger.kernel.org, viro@zeniv.linux.org.uk, Geert Uytterhoeven <geert@linux-m68k.org>, Linus Torvalds <torvalds@linux-foundation.org>
+To: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>
+Cc: Jessica Yu <jeyu@kernel.org>, Michal Simek <monstr@monstr.eu>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org, linux-fsdevel@vger.kernel.org
 
-On 5/31/20 5:20 AM, Rob Landley wrote:
-> On 5/30/20 3:08 AM, John Paul Adrian Glaubitz wrote:
->> On 5/29/20 7:53 PM, Rich Felker wrote:
->>> Frustratingly, I _still_ don't have an official tree on kernel.org for
->>> the purpose of being the canonical place for linux-next to pull from,
->>> due to policies around pgp keys and nobody following up on signing
->>> mine. This is all really silly since there are ridiculously many
->>> independent channels I could cryptographically validate identity
->>> through with vanishing probability that they're all compromised. For
->>> the time being I'll reactivate my repo on git.musl-libc.org.
->>
->> May I suggest to pick up these patches, for example? There might be
->> more I missed, but getting these merged should already help a lot with
->> the clean-up of arch/sh.
-> 
-> Does that include the 2 fixes to build with current binutils I made puppy eyes
-> about last -rc7 (in march)?
-> 
-> https://marc.info/?l=linux-sh&m8544749818664&w=2
-Yes, listed as "[PATCH 1/2] arch/sh: vmlinux.scr".
+flush_icache_range generally operates on kernel addresses, but for some
+reason m68k needed a set_fs override.  Move that into the m68k code
+insted of keeping it in the module loader.
 
-@Rich: Do you think you can merge all those fixes in your local tree within
-       the next days and send a PR to Linus?
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/m68k/mm/cache.c | 4 ++++
+ kernel/module.c      | 8 --------
+ 2 files changed, 4 insertions(+), 8 deletions(-)
 
-Otherwise, I can volunteer to become a third maintainer for arch/sh as I have
-the hardware for testing and can accept patches and send PRs.
-
-We shouldn't let contributors to arch/sh wait for too long.
-
-Adrian
-
+diff --git a/arch/m68k/mm/cache.c b/arch/m68k/mm/cache.c
+index 7915be3a09712..5ecb3310e8745 100644
+--- a/arch/m68k/mm/cache.c
++++ b/arch/m68k/mm/cache.c
+@@ -107,7 +107,11 @@ void flush_icache_user_range(unsigned long address, unsigned long endaddr)
+ 
+ void flush_icache_range(unsigned long address, unsigned long endaddr)
+ {
++	mm_segment_t old_fs = get_fs();
++
++	set_fs(KERNEL_DS);
+ 	flush_icache_user_range(address, endaddr);
++	set_fs(old_fs);
+ }
+ EXPORT_SYMBOL(flush_icache_range);
+ 
+diff --git a/kernel/module.c b/kernel/module.c
+index 646f1e2330d2b..b1673ed49594f 100644
+--- a/kernel/module.c
++++ b/kernel/module.c
+@@ -3312,12 +3312,6 @@ static int check_module_license_and_versions(struct module *mod)
+ 
+ static void flush_module_icache(const struct module *mod)
+ {
+-	mm_segment_t old_fs;
+-
+-	/* flush the icache in correct context */
+-	old_fs = get_fs();
+-	set_fs(KERNEL_DS);
+-
+ 	/*
+ 	 * Flush the instruction cache, since we've played with text.
+ 	 * Do it before processing of module parameters, so the module
+@@ -3329,8 +3323,6 @@ static void flush_module_icache(const struct module *mod)
+ 				   + mod->init_layout.size);
+ 	flush_icache_range((unsigned long)mod->core_layout.base,
+ 			   (unsigned long)mod->core_layout.base + mod->core_layout.size);
+-
+-	set_fs(old_fs);
+ }
+ 
+ int __weak module_frob_arch_sections(Elf_Ehdr *hdr,
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+2.26.2
