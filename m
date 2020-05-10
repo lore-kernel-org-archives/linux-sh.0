@@ -1,40 +1,44 @@
-From: Nola Mary Zem <nolamarryzem@gmail.com>
-Date: Wed, 13 May 2020 00:41:20 +0000
-Subject: Dear Friend
-Message-Id: <CALaeDXOQJ=1OsjUuy90k-+OyMpNnrwOFKOpn=fAfzWotmm9UNw@mail.gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Sun, 10 May 2020 07:55:09 +0000
+Subject: [PATCH 30/31] nommu: use flush_icache_user_range in brk and mmap
+Message-Id: <20200510075510.987823-31-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200510075510.987823-1-hch@lst.de>
+In-Reply-To: <20200510075510.987823-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>
+Cc: Jessica Yu <jeyu@kernel.org>, Michal Simek <monstr@monstr.eu>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org, linux-fsdevel@vger.kernel.org
 
-Greetings
+These obviously operate on user addresses.
 
-On behalf of Almighty Jehovah and Lord Jesus Christ, who give all good
-things, we greet Calvary. I know this letter will come as a big
-surprise to you, but I beg you to take the time to read it carefully
-as the decisions you make will go a long way in determining my future
-and my existence.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ mm/nommu.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-I'm Nola Mary Zem from New Zealand, a 58-year-old widow. I have no
-children and suffer from long-term cancer disease. I have a fund that
-I inherited from my husband late for $ 9.7 million, and I need a very
-honest and God-fearing person who can withdraw this money and use it
-for charities. I would like to provide this fund for charity work.
-After praying to Jehovah, I saw your email through a personal internet
-search, and if you are willing to take care to manage this trust and
-funds to fulfill your last wishes before you die, I decided to contact
-you. I've been trying to manage this project myself for 4 years, but
-this is no longer possible.
-
-The rest hopes to use 30% of the total amount to help you carry out
-the project while doing God's work. I desperately need your help and I
-have the courage to contact you about this. Don't let me down and
-millions of poor people in the world today. There are no risks
-associated with stealing money or 100% SAFE. If your funds are
-available to charities, let us know immediately. I don't want anything
-that would jeopardize my last wish, so thanks for your utmost secrecy
-and trust in this matter to fulfill my wish for my heart.
-
-God bless you
-Nola Mary Zem
+diff --git a/mm/nommu.c b/mm/nommu.c
+index 318df4e236c99..aed7acaed2383 100644
+--- a/mm/nommu.c
++++ b/mm/nommu.c
+@@ -443,7 +443,7 @@ SYSCALL_DEFINE1(brk, unsigned long, brk)
+ 	/*
+ 	 * Ok, looks good - let it rip.
+ 	 */
+-	flush_icache_range(mm->brk, brk);
++	flush_icache_user_range(mm->brk, brk);
+ 	return mm->brk = brk;
+ }
+ 
+@@ -1287,7 +1287,7 @@ unsigned long do_mmap(struct file *file,
+ 	/* we flush the region from the icache only when the first executable
+ 	 * mapping of it is made  */
+ 	if (vma->vm_flags & VM_EXEC && !region->vm_icache_flushed) {
+-		flush_icache_range(region->vm_start, region->vm_end);
++		flush_icache_user_range(region->vm_start, region->vm_end);
+ 		region->vm_icache_flushed = true;
+ 	}
+ 
+-- 
+2.26.2
