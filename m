@@ -1,65 +1,40 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Sun, 10 May 2020 07:54:56 +0000
-Subject: [PATCH 17/31] openrisc: use asm-generic/cacheflush.h
-Message-Id: <20200510075510.987823-18-hch@lst.de>
+From: Nola Mary Zem <nolamarryzem@gmail.com>
+Date: Wed, 13 May 2020 00:41:20 +0000
+Subject: Dear Friend
+Message-Id: <CALaeDXOQJ=1OsjUuy90k-+OyMpNnrwOFKOpn=fAfzWotmm9UNw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200510075510.987823-1-hch@lst.de>
-In-Reply-To: <20200510075510.987823-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>
-Cc: Jessica Yu <jeyu@kernel.org>, Michal Simek <monstr@monstr.eu>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org, linux-fsdevel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-OpenRISC needs almost no cache flushing routines of its own.  Rely on
-asm-generic/cacheflush.h for the defaults.
+Greetings
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- arch/openrisc/include/asm/cacheflush.h | 31 +++++---------------------
- 1 file changed, 6 insertions(+), 25 deletions(-)
+On behalf of Almighty Jehovah and Lord Jesus Christ, who give all good
+things, we greet Calvary. I know this letter will come as a big
+surprise to you, but I beg you to take the time to read it carefully
+as the decisions you make will go a long way in determining my future
+and my existence.
 
-diff --git a/arch/openrisc/include/asm/cacheflush.h b/arch/openrisc/include/asm/cacheflush.h
-index 79d5d7753fe4b..74d1fce4e8839 100644
---- a/arch/openrisc/include/asm/cacheflush.h
-+++ b/arch/openrisc/include/asm/cacheflush.h
-@@ -62,31 +62,12 @@ static inline void flush_dcache_page(struct page *page)
- 	clear_bit(PG_dc_clean, &page->flags);
- }
- 
--/*
-- * Other interfaces are not required since we do not have virtually
-- * indexed or tagged caches. So we can use the default here.
-- */
--#define flush_cache_all()				do { } while (0)
--#define flush_cache_mm(mm)				do { } while (0)
--#define flush_cache_dup_mm(mm)				do { } while (0)
--#define flush_cache_range(vma, start, end)		do { } while (0)
--#define flush_cache_page(vma, vmaddr, pfn)		do { } while (0)
--#define flush_dcache_mmap_lock(mapping)			do { } while (0)
--#define flush_dcache_mmap_unlock(mapping)		do { } while (0)
--#define flush_icache_range(start, end)			do { } while (0)
--#define flush_icache_page(vma, pg)			do { } while (0)
--#define flush_icache_user_range(vma, pg, adr, len)	do { } while (0)
--#define flush_cache_vmap(start, end)			do { } while (0)
--#define flush_cache_vunmap(start, end)			do { } while (0)
--
--#define copy_to_user_page(vma, page, vaddr, dst, src, len)           \
--	do {                                                         \
--		memcpy(dst, src, len);                               \
--		if (vma->vm_flags & VM_EXEC)                         \
--			sync_icache_dcache(page);                    \
--	} while (0)
-+#define flush_icache_user_range(vma, page, addr, len)	\
-+do {							\
-+	if (vma->vm_flags & VM_EXEC)			\
-+		sync_icache_dcache(page);		\
-+} while (0)
- 
--#define copy_from_user_page(vma, page, vaddr, dst, src, len)         \
--	memcpy(dst, src, len)
-+#include <asm-generic/cacheflush.h>
- 
- #endif /* __ASM_CACHEFLUSH_H */
--- 
-2.26.2
+I'm Nola Mary Zem from New Zealand, a 58-year-old widow. I have no
+children and suffer from long-term cancer disease. I have a fund that
+I inherited from my husband late for $ 9.7 million, and I need a very
+honest and God-fearing person who can withdraw this money and use it
+for charities. I would like to provide this fund for charity work.
+After praying to Jehovah, I saw your email through a personal internet
+search, and if you are willing to take care to manage this trust and
+funds to fulfill your last wishes before you die, I decided to contact
+you. I've been trying to manage this project myself for 4 years, but
+this is no longer possible.
+
+The rest hopes to use 30% of the total amount to help you carry out
+the project while doing God's work. I desperately need your help and I
+have the courage to contact you about this. Don't let me down and
+millions of poor people in the world today. There are no risks
+associated with stealing money or 100% SAFE. If your funds are
+available to charities, let us know immediately. I don't want anything
+that would jeopardize my last wish, so thanks for your utmost secrecy
+and trust in this matter to fulfill my wish for my heart.
+
+God bless you
+Nola Mary Zem
