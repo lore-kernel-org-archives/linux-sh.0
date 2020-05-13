@@ -1,19 +1,21 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 07 May 2020 21:39:57 +0000
+Date: Wed, 13 May 2020 22:23:01 +0000
 Subject: Re: [PATCH] [RFC] media: sh_veu: Remove driver
-Message-Id: <20200507213957.GA5838@pendragon.ideasonboard.com>
+Message-Id: <20200513222301.GV5945@pendragon.ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200507122757.30119-1-geert+renesas@glider.be>
 In-Reply-To: <20200507122757.30119-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Mauro Carvalho Chehab <mchehab@kernel.org>, Guennadi@rox.of.borg, Liakhovetski@rox.of.borg, g.liakhovetski@gmx.de, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Jacopo Mondi <jacopo@jmondi.org>, linux-media@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
+To: Mauro Carvalho Chehab <mchehab@kernel.org>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Guennadi@rox.of.borg, Liakhovetski@rox.of.borg, g.liakhovetski@gmx.de, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Jacopo Mondi <jacopo@jmondi.org>, linux-media@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi Geert,
+Hi Mauro,
 
-Thank you for the patch.
+Could you please pick this patch up ? I could also send a pull request,
+bu I don't have anything else for the next merge window related to
+Renesas.
 
 On Thu, May 07, 2020 at 02:27:57PM +0200, Geert Uytterhoeven wrote:
 > Since its inclusion in v3.9, no users of the SuperH VEU mem2mem video
@@ -25,9 +27,6 @@ On Thu, May 07, 2020 at 02:27:57PM +0200, Geert Uytterhoeven wrote:
 > needed.
 > 
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
 > ---
 >  MAINTAINERS                     |    5 -
 >  drivers/media/platform/Kconfig  |    9 -
