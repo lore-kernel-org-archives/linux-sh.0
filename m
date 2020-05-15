@@ -1,47 +1,42 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 15 May 2020 14:36:17 +0000
-Subject: sort out the flush_icache_range mess v2
-Message-Id: <20200515143646.3857579-1-hch@lst.de>
+Date: Fri, 15 May 2020 14:36:22 +0000
+Subject: [PATCH 05/29] asm-generic: fix the inclusion guards for cacheflush.h
+Message-Id: <20200515143646.3857579-6-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200515143646.3857579-1-hch@lst.de>
+In-Reply-To: <20200515143646.3857579-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>
-Cc: linux-arch@vger.kernel.org, linux-xtensa@linux-xtensa.org, Michal Simek <monstr@monstr.eu>, Jessica Yu <jeyu@kernel.org>, linux-ia64@vger.kernel.org, linux-c6x-dev@linux-c6x.org, linux-sh@vger.kernel.org, linux-hexagon@vger.kernel.org, x86@kernel.org, linux-um@lists.infradead.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-mm@kvack.org, linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-riscv@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, linux-arm-kernel@lists.infradead.org
+Cc: Jessica Yu <jeyu@kernel.org>, Michal Simek <monstr@monstr.eu>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org, linux-fsdevel@vger.kernel.org
 
-Hi all,
+cacheflush.h uses a somewhat to generic include guard name that clashes
+with various arch files.  Use a more specific one.
 
-flush_icache_range is mostly used for kernel address, except for the following
-cases:
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ include/asm-generic/cacheflush.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
- - the nommu brk and mmap implementations,
- - the read_code helper that is only used for binfmt_flat, binfmt_elf_fdpic,
-   and binfmt_aout including the broken ia32 compat version
- - binfmt_flat itself,
-
-none of which really are used by a typical MMU enabled kernel, as a.out can
-only be build for alpha and m68k to start with.
-
-But strangely enough commit ae92ef8a4424 ("PATCH] flush icache in correct
-context") added a "set_fs(KERNEL_DS)" around the flush_icache_range call
-in the module loader, because apparently m68k assumed user pointers.
-
-This series first cleans up the cacheflush implementations, largely by
-switching as much as possible to the asm-generic version after a few
-preparations, then moves the misnamed current flush_icache_user_range to
-a new name, to finally introduce a real flush_icache_user_range to be used
-for the above use cases to flush the instruction cache for a userspace
-address range.  The last patch then drops the set_fs in the module code
-and moves it into the m68k implementation.
-
-A git tree is available here:
-
-    git://git.infradead.org/users/hch/misc.git flush_icache_range.2
-
-Gitweb:
-
-    http://git.infradead.org/users/hch/misc.git/shortlog/refs/heads/flush_icache_range.2
-
-Changes since v1:
- - fix pmem.c compilation on some s390 configs
- - drop two patches picked up by the arch maintainers
+diff --git a/include/asm-generic/cacheflush.h b/include/asm-generic/cacheflush.h
+index cac7404b2bdd2..906277492ec59 100644
+--- a/include/asm-generic/cacheflush.h
++++ b/include/asm-generic/cacheflush.h
+@@ -1,6 +1,6 @@
+ /* SPDX-License-Identifier: GPL-2.0 */
+-#ifndef __ASM_CACHEFLUSH_H
+-#define __ASM_CACHEFLUSH_H
++#ifndef _ASM_GENERIC_CACHEFLUSH_H
++#define _ASM_GENERIC_CACHEFLUSH_H
+ 
+ /* Keep includes the same across arches.  */
+ #include <linux/mm.h>
+@@ -109,4 +109,4 @@ static inline void flush_cache_vunmap(unsigned long start, unsigned long end)
+ 	memcpy(dst, src, len)
+ #endif
+ 
+-#endif /* __ASM_CACHEFLUSH_H */
++#endif /* _ASM_GENERIC_CACHEFLUSH_H */
+-- 
+2.26.2
