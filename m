@@ -1,94 +1,44 @@
-From: Anshuman Khandual <anshuman.khandual@arm.com>
-Date: Fri, 08 May 2020 03:19:48 +0000
-Subject: [PATCH V3 0/3] mm/hugetlb: Add some new generic fallbacks
-Message-Id: <1588907271-11920-1-git-send-email-anshuman.khandual@arm.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 15 May 2020 14:36:42 +0000
+Subject: [PATCH 25/29] exec: only build read_code when needed
+Message-Id: <20200515143646.3857579-26-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200515143646.3857579-1-hch@lst.de>
+In-Reply-To: <20200515143646.3857579-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, akpm@linux-foundation.org
-Cc: Anshuman Khandual <anshuman.khandual@arm.com>, Russell King <linux@armlinux.org.uk>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Thomas Bogendoerfer <tsbogend@alpha.franken.de>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Michael Ellerman <mpe@ellerman.id.au>, Paul Walmsley <paul.walmsley@sifive.com>, Palmer Dabbelt <palmer@dabbelt.com>, Heiko Carstens <heiko.carstens@de.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, Christian Borntraeger <borntraeger@de.ibm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>
+Cc: Jessica Yu <jeyu@kernel.org>, Michal Simek <monstr@monstr.eu>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org, linux-fsdevel@vger.kernel.org
 
-This series adds the following new generic fallbacks. Before that it drops
-__HAVE_ARCH_HUGE_PTEP_GET from arm64 platform.
+Only build read_code when binary formats that use it are built into the
+kernel.
 
-1. is_hugepage_only_range()
-2. arch_clear_hugepage_flags()
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ fs/exec.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-This has been boot tested on arm64 and x86 platforms but built tested on
-some more platforms including the changed ones here. This series applies
-on v5.7-rc4. After this arm (32 bit) remains the sole platform defining
-it's own huge_ptep_get() via __HAVE_ARCH_HUGE_PTEP_GET.
-
-Changes in V3:
-
-- Added READ_ONCE() in generic huge_ptep_get() per Will
-
-Changes in V2: (https://patchwork.kernel.org/project/linux-mm/list/?series(2947)
-
-- Adopted "#ifndef func" method (adding a single symbol to namespace) per Andrew
-- Updated the commit messages in [PATCH 2/3] and [PATCH 3/3] as required
-
-Changes in V1: (https://patchwork.kernel.org/project/linux-mm/list/?series'0677)
-
-Cc: Russell King <linux@armlinux.org.uk>
-Cc: Catalin Marinas <catalin.marinas@arm.com>
-Cc: Will Deacon <will@kernel.org>
-Cc: Tony Luck <tony.luck@intel.com>
-Cc: Fenghua Yu <fenghua.yu@intel.com>
-Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-Cc: "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>
-Cc: Helge Deller <deller@gmx.de>
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: Michael Ellerman <mpe@ellerman.id.au>
-Cc: Paul Walmsley <paul.walmsley@sifive.com>
-Cc: Palmer Dabbelt <palmer@dabbelt.com>
-Cc: Heiko Carstens <heiko.carstens@de.ibm.com>
-Cc: Vasily Gorbik <gor@linux.ibm.com>
-Cc: Christian Borntraeger <borntraeger@de.ibm.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: "David S. Miller" <davem@davemloft.net>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Borislav Petkov <bp@alien8.de>
-Cc: "H. Peter Anvin" <hpa@zytor.com>
-Cc: Mike Kravetz <mike.kravetz@oracle.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: x86@kernel.org
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-ia64@vger.kernel.org
-Cc: linux-mips@vger.kernel.org
-Cc: linux-parisc@vger.kernel.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-riscv@lists.infradead.org
-Cc: linux-s390@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: sparclinux@vger.kernel.org
-Cc: linux-mm@kvack.org
-Cc: linux-arch@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
-
-Anshuman Khandual (3):
-  arm64/mm: Drop __HAVE_ARCH_HUGE_PTEP_GET
-  mm/hugetlb: Define a generic fallback for is_hugepage_only_range()
-  mm/hugetlb: Define a generic fallback for arch_clear_hugepage_flags()
-
- arch/arm/include/asm/hugetlb.h     |  7 +------
- arch/arm64/include/asm/hugetlb.h   | 13 +------------
- arch/ia64/include/asm/hugetlb.h    |  5 +----
- arch/mips/include/asm/hugetlb.h    | 11 -----------
- arch/parisc/include/asm/hugetlb.h  | 10 ----------
- arch/powerpc/include/asm/hugetlb.h |  5 +----
- arch/riscv/include/asm/hugetlb.h   | 10 ----------
- arch/s390/include/asm/hugetlb.h    |  8 +-------
- arch/sh/include/asm/hugetlb.h      |  7 +------
- arch/sparc/include/asm/hugetlb.h   | 10 ----------
- arch/x86/include/asm/hugetlb.h     | 10 ----------
- include/asm-generic/hugetlb.h      |  2 +-
- include/linux/hugetlb.h            | 14 ++++++++++++++
- 13 files changed, 21 insertions(+), 91 deletions(-)
-
+diff --git a/fs/exec.c b/fs/exec.c
+index 06b4c550af5d9..a4f766f296f8f 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1027,6 +1027,8 @@ int kernel_read_file_from_fd(int fd, void **buf, loff_t *size, loff_t max_size,
+ }
+ EXPORT_SYMBOL_GPL(kernel_read_file_from_fd);
+ 
++#if defined(CONFIG_HAVE_AOUT) || defined(CONFIG_BINFMT_FLAT) || \
++    defined(CONFIG_BINFMT_ELF_FDPIC)
+ ssize_t read_code(struct file *file, unsigned long addr, loff_t pos, size_t len)
+ {
+ 	ssize_t res = vfs_read(file, (void __user *)addr, len, &pos);
+@@ -1035,6 +1037,7 @@ ssize_t read_code(struct file *file, unsigned long addr, loff_t pos, size_t len)
+ 	return res;
+ }
+ EXPORT_SYMBOL(read_code);
++#endif
+ 
+ /*
+  * Maps the mm_struct mm into the current task struct.
 -- 
-2.20.1
+2.26.2
