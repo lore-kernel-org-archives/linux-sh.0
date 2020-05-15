@@ -1,7 +1,7 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 15 May 2020 14:36:40 +0000
-Subject: [PATCH 23/29] arm: rename flush_cache_user_range to flush_icache_user_range
-Message-Id: <20200515143646.3857579-24-hch@lst.de>
+Date: Fri, 15 May 2020 14:36:25 +0000
+Subject: [PATCH 08/29] alpha: use asm-generic/cacheflush.h
+Message-Id: <20200515143646.3857579-9-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200515143646.3857579-1-hch@lst.de>
 In-Reply-To: <20200515143646.3857579-1-hch@lst.de>
@@ -11,45 +11,64 @@ Content-Transfer-Encoding: 7bit
 To: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>
 Cc: Jessica Yu <jeyu@kernel.org>, Michal Simek <monstr@monstr.eu>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org, linux-fsdevel@vger.kernel.org
 
-flush_icache_user_range will be the name for a generic primitive.
-Move the arm name so that arm already has an implementation.
+Alpha needs almost no cache flushing routines of its own.  Rely on
+asm-generic/cacheflush.h for the defaults.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/arm/include/asm/cacheflush.h | 4 ++--
- arch/arm/kernel/traps.c           | 2 +-
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ arch/alpha/include/asm/cacheflush.h | 28 ++++++----------------------
+ 1 file changed, 6 insertions(+), 22 deletions(-)
 
-diff --git a/arch/arm/include/asm/cacheflush.h b/arch/arm/include/asm/cacheflush.h
-index c78e14fcfb5df..2e24e765e6d3a 100644
---- a/arch/arm/include/asm/cacheflush.h
-+++ b/arch/arm/include/asm/cacheflush.h
-@@ -258,11 +258,11 @@ extern void flush_cache_page(struct vm_area_struct *vma, unsigned long user_addr
- #define flush_cache_dup_mm(mm) flush_cache_mm(mm)
+diff --git a/arch/alpha/include/asm/cacheflush.h b/arch/alpha/include/asm/cacheflush.h
+index 89128489cb598..636d7ca0d05f6 100644
+--- a/arch/alpha/include/asm/cacheflush.h
++++ b/arch/alpha/include/asm/cacheflush.h
+@@ -4,19 +4,6 @@
  
- /*
-- * flush_cache_user_range is used when we want to ensure that the
-+ * flush_icache_user_range is used when we want to ensure that the
-  * Harvard caches are synchronised for the user space address range.
-  * This is used for the ARM private sys_cacheflush system call.
-  */
--#define flush_cache_user_range(s,e)	__cpuc_coherent_user_range(s,e)
-+#define flush_icache_user_range(s,e)	__cpuc_coherent_user_range(s,e)
+ #include <linux/mm.h>
  
- /*
-  * Perform necessary cache operations to ensure that data previously
-diff --git a/arch/arm/kernel/traps.c b/arch/arm/kernel/traps.c
-index 1e70e7227f0ff..316a7687f8133 100644
---- a/arch/arm/kernel/traps.c
-+++ b/arch/arm/kernel/traps.c
-@@ -566,7 +566,7 @@ __do_cache_op(unsigned long start, unsigned long end)
- 		if (fatal_signal_pending(current))
- 			return 0;
+-/* Caches aren't brain-dead on the Alpha. */
+-#define flush_cache_all()			do { } while (0)
+-#define flush_cache_mm(mm)			do { } while (0)
+-#define flush_cache_dup_mm(mm)			do { } while (0)
+-#define flush_cache_range(vma, start, end)	do { } while (0)
+-#define flush_cache_page(vma, vmaddr, pfn)	do { } while (0)
+-#define ARCH_IMPLEMENTS_FLUSH_DCACHE_PAGE 0
+-#define flush_dcache_page(page)			do { } while (0)
+-#define flush_dcache_mmap_lock(mapping)		do { } while (0)
+-#define flush_dcache_mmap_unlock(mapping)	do { } while (0)
+-#define flush_cache_vmap(start, end)		do { } while (0)
+-#define flush_cache_vunmap(start, end)		do { } while (0)
+-
+ /* Note that the following two definitions are _highly_ dependent
+    on the contexts in which they are used in the kernel.  I personally
+    think it is criminal how loosely defined these macros are.  */
+@@ -59,20 +46,17 @@ flush_icache_user_range(struct vm_area_struct *vma, struct page *page,
+ 			mm->context[smp_processor_id()] = 0;
+ 	}
+ }
+-#else
++#define flush_icache_user_range flush_icache_user_range
++#else /* CONFIG_SMP */
+ extern void flush_icache_user_range(struct vm_area_struct *vma,
+ 		struct page *page, unsigned long addr, int len);
+-#endif
++#define flush_icache_user_range flush_icache_user_range
++#endif /* CONFIG_SMP */
  
--		ret = flush_cache_user_range(start, start + chunk);
-+		ret = flush_icache_user_range(start, start + chunk);
- 		if (ret)
- 			return ret;
+ /* This is used only in __do_fault and do_swap_page.  */
+ #define flush_icache_page(vma, page) \
+-  flush_icache_user_range((vma), (page), 0, 0)
++	flush_icache_user_range((vma), (page), 0, 0)
  
+-#define copy_to_user_page(vma, page, vaddr, dst, src, len) \
+-do { memcpy(dst, src, len); \
+-     flush_icache_user_range(vma, page, vaddr, len); \
+-} while (0)
+-#define copy_from_user_page(vma, page, vaddr, dst, src, len) \
+-	memcpy(dst, src, len)
++#include <asm-generic/cacheflush.h>
+ 
+ #endif /* _ALPHA_CACHEFLUSH_H */
 -- 
 2.26.2
