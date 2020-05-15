@@ -1,46 +1,53 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Wed, 27 May 2020 20:53:41 +0000
-Subject: [RESEND PATCH v2] sh: sh4a: Bring back tmu3_device early device
-Message-Id: <20200527205341.26232-1-krzk@kernel.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 15 May 2020 14:36:24 +0000
+Subject: [PATCH 07/29] asm-generic: improve the flush_dcache_page stub
+Message-Id: <20200515143646.3857579-8-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200515143646.3857579-1-hch@lst.de>
+In-Reply-To: <20200515143646.3857579-1-hch@lst.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Simon Horman <horms+renesas@verge.net.au>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Krzysztof Kozlowski <krzk@kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>
+Cc: Jessica Yu <jeyu@kernel.org>, Michal Simek <monstr@monstr.eu>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org, linux-fsdevel@vger.kernel.org
 
-Commit 1399c195ef50 ("sh: Switch to new style TMU device") converted
-tmu3_device platform device to new style of platform data but removed it
-from sh7786_early_devices array effectively removing last three timers
-and causing a warning:
+There is a magic ARCH_IMPLEMENTS_FLUSH_DCACHE_PAGE cpp symbol that
+guards non-stub availability of flush_dcache_pagge.  Use that to
+check if flush_dcache_pagg is implemented.
 
-    arch/sh/kernel/cpu/sh4a/setup-sh7786.c:243:31:
-        warning: ‘tmu3_device’ defined but not used [-Wunused-variable]
-
-Fixes: 1399c195ef50 ("sh: Switch to new style TMU device")
-Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
+ include/asm-generic/cacheflush.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-Changes since v1:
-1. Add tmu3_device to early device list, as suggested by Geert.
-2. Add Fixes tag.
----
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-index 4b0db8259e3d..74620f30b19b 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-@@ -391,6 +391,7 @@ static struct platform_device *sh7786_early_devices[] __initdata = {
- 	&tmu0_device,
- 	&tmu1_device,
- 	&tmu2_device,
-+	&tmu3_device,
- };
+diff --git a/include/asm-generic/cacheflush.h b/include/asm-generic/cacheflush.h
+index bf9bb83e9fc8d..bbbb4d4ef6516 100644
+--- a/include/asm-generic/cacheflush.h
++++ b/include/asm-generic/cacheflush.h
+@@ -2,8 +2,6 @@
+ #ifndef _ASM_GENERIC_CACHEFLUSH_H
+ #define _ASM_GENERIC_CACHEFLUSH_H
  
- static struct platform_device *sh7786_devices[] __initdata = {
+-#define ARCH_IMPLEMENTS_FLUSH_DCACHE_PAGE 0
+-
+ /*
+  * The cache doesn't need to be flushed when TLB entries change when
+  * the cache is mapped to physical memory, not virtual memory
+@@ -42,12 +40,14 @@ static inline void flush_cache_page(struct vm_area_struct *vma,
+ }
+ #endif
+ 
+-#ifndef flush_dcache_page
++#ifndef ARCH_IMPLEMENTS_FLUSH_DCACHE_PAGE
+ static inline void flush_dcache_page(struct page *page)
+ {
+ }
++#define ARCH_IMPLEMENTS_FLUSH_DCACHE_PAGE 0
+ #endif
+ 
++
+ #ifndef flush_dcache_mmap_lock
+ static inline void flush_dcache_mmap_lock(struct address_space *mapping)
+ {
 -- 
-2.17.1
+2.26.2
