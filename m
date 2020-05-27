@@ -1,12 +1,27 @@
-From: "manuel franco" <manuel@info.com>
-Date: Thu, 28 May 2020 16:29:55 +0000
-Subject: Spende von 2.000.000,00 Euro
-Message-Id: <20200528163007.5582238E0A19@correo.bnv.gob.ve>
+From: "Mrs.Judith Rice" <hamurafujimi@tmail.plala.or.jp>
+Date: Wed, 27 May 2020 13:08:05 +0000
+Subject: Spende
+Message-Id: <20200527220805.CF82T.792.root@mwebp13>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sctp@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: target-devel@vger.kernel.org
 
-Ich bin Manuel Franco, ich spende Ihnen 2.000.000,00 Euro. Nehmen Sie jetzt=
- Kontakt mit mir auf, damit wir fortfahren k=F6nnen.
+Attn:
+
+Es tut uns leid, dass wir Sie aufgrund eines Mismanagent of Beneficaries-Fonds von unseren ernannten Zonal Managern versp&#228;tet kontaktiert haben. Bitte beachten Sie, dass Sie qualifiziert sind, die Zahlung von 900.000,00 USD an der ATM-Karte mit neunhunderttausend Dollar zu erhalten.
+
+Als Entsch&#228;digung von WORLD BANK / IWF (Internationaler W&#228;hrungsfonds) f&#252;r die automatisch &#252;ber einen E-Mail-Wahlautomaten gezogenen, die in der Vergangenheit noch nicht abgeschlossene Transaktionen hatten.
+
+F&#252;r weitere Informationen kontaktieren Sie bitte Rev.EVANS JONES ( jonesevansje@gmail.com )
+
+Bitte senden Sie ihm Ihre pers&#246;nlichen Daten wie:
+
+Vollst&#228;ndiger Name:
+Wohnanschrift:
+Telefonnummer:
+Herkunftsland:
+
+Gr&#252;&#223;e,
+Mrs. Judith Rice
