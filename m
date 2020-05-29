@@ -1,35 +1,35 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 05 May 2020 12:15:57 +0000
-Subject: Re: [PATCH v2 1/5] binfmt_elf_fdpic: Stop using dump_emit() on user pointers on !MMU
-Message-Id: <20200505121557.GA24052@lst.de>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Fri, 29 May 2020 09:03:37 +0000
+Subject: Build fails with unknown symbol __get_user_unknown with InifiniBand enabled
+Message-Id: <8945f9b7-d4d3-851e-dc4f-2d05ed94c169@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200429214954.44866-1-jannh@google.com>
- <20200429214954.44866-2-jannh@google.com> <20200505104805.GA17400@lst.de>
- <CAG48ez3F70-UXwdHmO4CnR0bAForn-SBtstW5WAYjcrLFwS_9A@mail.gmail.com>
-In-Reply-To: <CAG48ez3F70-UXwdHmO4CnR0bAForn-SBtstW5WAYjcrLFwS_9A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jann Horn <jannh@google.com>
-Cc: Rich Felker <dalias@libc.org>, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, kernel list <linux-kernel@vger.kernel.org>, Oleg Nesterov <oleg@redhat.com>, Linux-MM <linux-mm@kvack.org>, Alexander Viro <viro@zeniv.linux.org.uk>, Mark Salter <msalter@redhat.com>, linux-fsdevel <linux-fsdevel@vger.kernel.org>, Russell King <linux@armlinux.org.uk>, Andrew Morton <akpm@linux-foundation.org>, Aurelien Jacquiot <jacquiot.aurelien@gmail.com>, Linus Torvalds <torvalds@linux-foundation.org>, Christoph Hellwig <hch@lst.de>, Linux ARM <linux-arm-kernel@lists.infradead.org>, "Eric W . Biederman" <ebiederm@xmission.com>
+To: linux-sh@vger.kernel.org
 
-On Tue, May 05, 2020 at 01:42:12PM +0200, Jann Horn wrote:
-> On Tue, May 5, 2020 at 12:48 PM Christoph Hellwig <hch@lst.de> wrote:
-> > On Wed, Apr 29, 2020 at 11:49:50PM +0200, Jann Horn wrote:
-> > > dump_emit() is for kernel pointers, and VMAs describe userspace memory.
-> > > Let's be tidy here and avoid accessing userspace pointers under KERNEL_DS,
-> > > even if it probably doesn't matter much on !MMU systems - especially given
-> > > that it looks like we can just use the same get_dump_page() as on MMU if
-> > > we move it out of the CONFIG_MMU block.
-> >
-> > Looks sensible.  Did you get a chance to test this with a nommu setup?
-> 
-> Nope. Do you happen to have a recommendation for a convenient
-> environment I can use with QEMU, or something like that? I'm guessing
-> that just running a standard armel Debian userspace with a !mmu ARM
-> kernel wouldn't work so well?
+Hi!
 
-Nommu generally needs special userspace either using uclibc-ng or musl.
-When I did the RISC-V nommu work I used buildroot for my root file
-systems.  We haven't gotten elffdpic to work on RISC-V yet, so I can't
-use that setup for testing, but it should support ARM as well.
+Trying to build the SuperH kernel on Debian currently fails with:
+
+	ERROR: "__get_user_unknown" [drivers/infiniband/core/ib_uverbs.ko] undefined!
+
+when Infiniband is enabled (which is the default in Debian) during build.
+
+I have assumed that the problem is similar to what Kuninori Morimoto fixed in the
+sh-next branch [2] but I couldn't figure out where __get_user_unknown() is actually
+defined within the kernel.
+
+Does anyone know how to fix this problem?
+
+Thanks,
+Adrian
+
+> [1] https://buildd.debian.org/status/fetch.php?pkg=linux&arch=sh4&ver=5.6.14-1&stamp90304428&raw=0
+> [2] https://osdn.net/projects/uclinux-h8/scm/git/linux/commits?branch=sh-next
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
