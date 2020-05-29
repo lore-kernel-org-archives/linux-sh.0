@@ -1,61 +1,96 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 20 May 2020 14:51:30 +0000
-Subject: Re: [PATCH] sh: include linux/time_types.h for sockios
-Message-Id: <CAMuHMdWKOZMn-pMpE6MgKo1ArL701fp4ZR65sa5yGfozf7Yu4Q@mail.gmail.com>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Fri, 29 May 2020 17:34:19 +0000
+Subject: [PATCH] sh: Implement __get_user_u64() required for 64-bit get_user()
+Message-Id: <20200529173419.4185337-2-glaubitz@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200519131327.1836482-1-arnd@arndb.de> <20200519181034.58c67eb5bea24aae24d33421@linux-foundation.org>
- <CAK8P3a281ZLKwkWCKkAdQvA6=XA4=+mKWbwEzK_BR4Uu1c5DNQ@mail.gmail.com>
- <CAMuHMdUx9zKbc7n164Gi+N9k-NhmbgXtU+Z4yZ9SvdxeCMtJKw@mail.gmail.com> <CAK8P3a0+RWNUroSAtdVazxMV=o+FYpTX9Wvkbr5gODh4=zODkQ@mail.gmail.com>
-In-Reply-To: <CAK8P3a0+RWNUroSAtdVazxMV=o+FYpTX9Wvkbr5gODh4=zODkQ@mail.gmail.com>
+References: <20200529173419.4185337-1-glaubitz@physik.fu-berlin.de>
+In-Reply-To: <20200529173419.4185337-1-glaubitz@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Linux-sh list <linux-sh@vger.kernel.org>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
+Cc: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Geert Uytterhoeven <geert@linux-m68k.org>, Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>, linux-kernel@vger.kernel.org, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
-Hi Arnd,
+Trying to build the kernel with CONFIG_INFINIBAND_USER_ACCESS enabled fails
 
-On Wed, May 20, 2020 at 4:46 PM Arnd Bergmann <arnd@arndb.de> wrote:
-> On Wed, May 20, 2020 at 1:47 PM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> > On Wed, May 20, 2020 at 10:32 AM Arnd Bergmann <arnd@arndb.de> wrote:
-> > > On Wed, May 20, 2020 at 3:10 AM Andrew Morton <akpm@linux-foundation.org> wrote:
-> > > > On Tue, 19 May 2020 15:13:13 +0200 Arnd Bergmann <arnd@arndb.de> wrote:
-> > > > > Using the socket ioctls on arch/sh (and only there) causes build
-> > > > > time problems when __kernel_old_timeval/__kernel_old_timespec are
-> > > > > not already visible to the compiler.
-> > > > >
-> > > > > Add an explict include line for the header that defines these
-> > > > > structures.
-> > > >
-> > > > I can grab this.
-> > >
-> > > Thanks!
-> > >
-> > > > > Reported-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> > > > > Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> > > > > Fixes: 8c709f9a0693 ("y2038: sh: remove timeval/timespec usage from headers")
-> > > > > Fixes: 0768e17073dc ("net: socket: implement 64-bit timestamps")
-> > > >
-> > > > cc:stable?
-> > >
-> > > Yes, I missed that.
-> >
-> > Doesn't matter, the stable bots will pick it up anyway, based on the Fixes tag.
->
-> I normally prefer to be explicit, as some bug fixes may address
-> something that has been caused by an earlier commit, but should not
-> be backported for some reason.
+     ERROR: "__get_user_unknown" [drivers/infiniband/core/ib_uverbs.ko] undefined!
 
-Which means that with the current "intelligent' backporting, you need a
-Not-for-stable tag instead...
+with on SH since the kernel misses a 64-bit implementation of get_user().
 
-Gr{oetje,eeting}s,
+Implement the missing 64-bit get_user() as __get_user_u64(), matching the
+already existing __put_user_u64() which implements the 64-bit put_user().
 
-                        Geert
+Signed-off-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+---
+ arch/sh/include/asm/uaccess_32.h | 49 ++++++++++++++++++++++++++++++++
+ 1 file changed, 49 insertions(+)
 
+diff --git a/arch/sh/include/asm/uaccess_32.h b/arch/sh/include/asm/uaccess_32.h
+index 624cf55acc27..8bc1cb50f8bf 100644
+--- a/arch/sh/include/asm/uaccess_32.h
++++ b/arch/sh/include/asm/uaccess_32.h
+@@ -26,6 +26,9 @@ do {								\
+ 	case 4:							\
+ 		__get_user_asm(x, ptr, retval, "l");		\
+ 		break;						\
++	case 8:							\
++		__get_user_u64(x, ptr, retval);			\
++		break;						\
+ 	default:						\
+ 		__get_user_unknown();				\
+ 		break;						\
+@@ -66,6 +69,52 @@ do {							\
+ 
+ extern void __get_user_unknown(void);
+ 
++#if defined(CONFIG_CPU_LITTLE_ENDIAN)
++#define __get_user_u64(x, addr, err) \
++({ \
++__asm__ __volatile__( \
++	"1:\n\t" \
++	"mov.l	%2,%R1\n\t" \
++	"mov.l	%T2,%S1\n\t" \
++	"2:\n" \
++	".section	.fixup,\"ax\"\n" \
++	"3:\n\t" \
++	"mov	#0, %1\n\t" \
++	"mov.l	4f, %0\n\t" \
++	"jmp	@%0\n\t" \
++	" mov	%3, %0\n\t" \
++	".balign	4\n" \
++	"4:	.long	2b\n\t" \
++	".previous\n" \
++	".section	__ex_table,\"a\"\n\t" \
++	".long	1b, 3b\n\t" \
++	".previous" \
++	:"=&r" (err), "=&r" (x) \
++	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
++#else
++#define __get_user_u64(x, addr, err) \
++({ \
++__asm__ __volatile__( \
++	"1:\n\t" \
++	"mov.l	%2,%S1\n\t" \
++	"mov.l	%T2,%R1\n\t" \
++	"2:\n" \
++	".section	.fixup,\"ax\"\n" \
++	"3:\n\t" \
++	"mov	#0, %1\n\t" \
++	"mov.l	4f, %0\n\t" \
++	"jmp	@%0\n\t" \
++	" mov	%3, %0\n\t" \
++	".balign	4\n" \
++	"4:	.long	2b\n\t" \
++	".previous\n" \
++	".section	__ex_table,\"a\"\n\t" \
++	".long	1b, 3b\n\t" \
++	".previous" \
++	:"=&r" (err), "=&r" (x) \
++	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
++#endif
++
+ #define __put_user_size(x,ptr,size,retval)		\
+ do {							\
+ 	retval = 0;					\
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+2.27.0.rc2
