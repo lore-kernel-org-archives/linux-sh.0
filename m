@@ -1,10 +1,10 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Fri, 29 May 2020 17:34:19 +0000
+Date: Fri, 29 May 2020 17:45:41 +0000
 Subject: [PATCH] sh: Implement __get_user_u64() required for 64-bit get_user()
-Message-Id: <20200529173419.4185337-2-glaubitz@physik.fu-berlin.de>
+Message-Id: <20200529174540.4189874-2-glaubitz@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200529173419.4185337-1-glaubitz@physik.fu-berlin.de>
-In-Reply-To: <20200529173419.4185337-1-glaubitz@physik.fu-berlin.de>
+References: <20200529174540.4189874-1-glaubitz@physik.fu-berlin.de>
+In-Reply-To: <20200529174540.4189874-1-glaubitz@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
