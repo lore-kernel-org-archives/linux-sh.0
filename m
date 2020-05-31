@@ -1,35 +1,38 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Sun, 31 May 2020 09:54:37 +0000
+Date: Sun, 31 May 2020 09:59:14 +0000
 Subject: Re: [PATCH] sh: Implement __get_user_u64() required for 64-bit get_user()
-Message-Id: <ba354e30-82ab-68c2-0771-2489463c9279@physik.fu-berlin.de>
+Message-Id: <2ad089c1-75cf-0986-c40f-c7f3f8fd6ead@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200529174540.4189874-1-glaubitz@physik.fu-berlin.de>
  <20200529174540.4189874-2-glaubitz@physik.fu-berlin.de>
  <CAMuHMdWG1wudoBP0EK8FiEj1BMEoL3r5oqJMUEbt2rqRU2gQpw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWG1wudoBP0EK8FiEj1BMEoL3r5oqJMUEbt2rqRU2gQpw@mail.gmail.com>
+ <ba354e30-82ab-68c2-0771-2489463c9279@physik.fu-berlin.de>
+In-Reply-To: <ba354e30-82ab-68c2-0771-2489463c9279@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Linux-sh list <linux-sh@vger.kernel.org>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-Hi Geert!
-
-On 5/31/20 11:52 AM, Geert Uytterhoeven wrote:
-> As this is the 64-bit variant, I think this single move should be
-> replaced by a double move:
+On 5/31/20 11:54 AM, John Paul Adrian Glaubitz wrote:
+> Hi Geert!
 > 
->        "mov  #0,%R1\n\t" \
->        "mov  #0,%S1\n\t" \
+> On 5/31/20 11:52 AM, Geert Uytterhoeven wrote:
+>> As this is the 64-bit variant, I think this single move should be
+>> replaced by a double move:
+>>
+>>        "mov  #0,%R1\n\t" \
+>>        "mov  #0,%S1\n\t" \
+>>
+>> Same for the big endian version below.
+>>
+>> Disclaimer: uncompiled, untested, no SH assembler expert.
 > 
-> Same for the big endian version below.
-> 
-> Disclaimer: uncompiled, untested, no SH assembler expert.
+> Right, this makes sense. I'll send a new patch shortly.
 
-Right, this makes sense. I'll send a new patch shortly.
+Hmm, this change is not the case for __put_user_asm() vs. __put_user_u64().
 
-As for the assembler review, I'll ask Yutaka Niibe who is a friend of mine
-and one of the original SuperH wizards ;).
+But I have to admit, I don't know what the part below "3:\n\t" is for.
 
 Adrian
 
