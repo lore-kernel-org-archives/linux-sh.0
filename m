@@ -1,28 +1,100 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Mon, 11 May 2020 15:15:35 +0000
-Subject: Re: [PATCH 02/31] arm64: fix the flush_icache_range arguments in machine_kexec
-Message-Id: <20200511151535.GC28634@lst.de>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Sun, 31 May 2020 10:47:16 +0000
+Subject: [PATCH v2] sh: Implement __get_user_u64() required for 64-bit get_user()
+Message-Id: <20200531104715.2512247-1-glaubitz@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200510075510.987823-1-hch@lst.de> <20200510075510.987823-3-hch@lst.de> <20200511075115.GA16134@willie-the-truck> <20200511110014.GA19176@gaia>
-In-Reply-To: <20200511110014.GA19176@gaia>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Catalin Marinas <catalin.marinas@arm.com>
-Cc: Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>, james.morse@arm.com, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Roman Zippel <zippel@linux-m68k.org>, Jessica Yu <jeyu@kernel.org>, Michal Simek <monstr@monstr.eu>, x86@kernel.org, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org, linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.orglinux
+To: linux-sh@vger.kernel.org
+Cc: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Geert Uytterhoeven <geert@linux-m68k.org>, Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>, linux-kernel@vger.kernel.org, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
-On Mon, May 11, 2020 at 12:00:14PM +0100, Catalin Marinas wrote:
-> Anyway, I think Christoph's patch needs to go in with a fixes tag:
-> 
-> Fixes: d28f6df1305a ("arm64/kexec: Add core kexec support")
-> Cc: <stable@vger.kernel.org> # 4.8.x-
-> 
-> and we'll change these functions/helpers going forward for arm64.
-> 
-> Happy to pick this up via the arm64 for-next/fixes branch.
+Trying to build the kernel with CONFIG_INFINIBAND_USER_ACCESS enabled fails
 
-Please do, there are no dependencies on it in this series (I originally
-planned to switch flush_icache_range to pass a kernel pointer + len
-instead of the strange unsigned long start and end.  That still looks
-very useful, but the series already is way too large, so I'm going to
-defer that change for another merge window).
+     ERROR: "__get_user_unknown" [drivers/infiniband/core/ib_uverbs.ko] undefined!
+
+with on SH since the kernel misses a 64-bit implementation of get_user().
+
+Implement the missing 64-bit get_user() as __get_user_u64(), matching the
+already existing __put_user_u64() which implements the 64-bit put_user().
+
+Signed-off-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+---
+ arch/sh/include/asm/uaccess_32.h | 51 ++++++++++++++++++++++++++++++++
+ 1 file changed, 51 insertions(+)
+
+ Changes since v1:
+ - Replace single mov instruction for exception handling
+   in case of invalid load
+
+diff --git a/arch/sh/include/asm/uaccess_32.h b/arch/sh/include/asm/uaccess_32.h
+index 624cf55acc27..35f6c1e40ec3 100644
+--- a/arch/sh/include/asm/uaccess_32.h
++++ b/arch/sh/include/asm/uaccess_32.h
+@@ -26,6 +26,9 @@ do {								\
+ 	case 4:							\
+ 		__get_user_asm(x, ptr, retval, "l");		\
+ 		break;						\
++	case 8:							\
++		__get_user_u64(x, ptr, retval);			\
++		break;						\
+ 	default:						\
+ 		__get_user_unknown();				\
+ 		break;						\
+@@ -66,6 +69,54 @@ do {							\
+ 
+ extern void __get_user_unknown(void);
+ 
++#if defined(CONFIG_CPU_LITTLE_ENDIAN)
++#define __get_user_u64(x, addr, err) \
++({ \
++__asm__ __volatile__( \
++	"1:\n\t" \
++	"mov.l	%2,%R1\n\t" \
++	"mov.l	%T2,%S1\n\t" \
++	"2:\n" \
++	".section	.fixup,\"ax\"\n" \
++	"3:\n\t" \
++	"mov  #0,%R1\n\t"   \
++	"mov  #0,%S1\n\t"   \
++	"mov.l	4f, %0\n\t" \
++	"jmp	@%0\n\t" \
++	" mov	%3, %0\n\t" \
++	".balign	4\n" \
++	"4:	.long	2b\n\t" \
++	".previous\n" \
++	".section	__ex_table,\"a\"\n\t" \
++	".long	1b, 3b\n\t" \
++	".previous" \
++	:"=&r" (err), "=&r" (x) \
++	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
++#else
++#define __get_user_u64(x, addr, err) \
++({ \
++__asm__ __volatile__( \
++	"1:\n\t" \
++	"mov.l	%2,%S1\n\t" \
++	"mov.l	%T2,%R1\n\t" \
++	"2:\n" \
++	".section	.fixup,\"ax\"\n" \
++	"3:\n\t" \
++	"mov  #0,%S1\n\t"   \
++	"mov  #0,%R1\n\t"   \
++	"mov.l	4f, %0\n\t" \
++	"jmp	@%0\n\t" \
++	" mov	%3, %0\n\t" \
++	".balign	4\n" \
++	"4:	.long	2b\n\t" \
++	".previous\n" \
++	".section	__ex_table,\"a\"\n\t" \
++	".long	1b, 3b\n\t" \
++	".previous" \
++	:"=&r" (err), "=&r" (x) \
++	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
++#endif
++
+ #define __put_user_size(x,ptr,size,retval)		\
+ do {							\
+ 	retval = 0;					\
+-- 
+2.27.0.rc2
