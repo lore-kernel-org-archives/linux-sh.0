@@ -1,41 +1,54 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Sun, 28 Jun 2020 07:24:46 +0000
-Subject: Re: [PATCH 09/10] sh: don't allow non-coherent DMA for NOMMU
-Message-Id: <20200628072446.GB16344@lst.de>
+From: Rich Felker <dalias@libc.org>
+Date: Mon, 01 Jun 2020 02:55:15 +0000
+Subject: Re: [GIT PULL] sh: remove sh5 support
+Message-Id: <20200601025514.GS1079@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200626080717.1999041-1-hch@lst.de> <20200626080717.1999041-10-hch@lst.de> <e908f620-62b8-f106-a1a8-9887f50216fd@landley.net>
-In-Reply-To: <e908f620-62b8-f106-a1a8-9887f50216fd@landley.net>
+References: <20200424221948.1120587-1-arnd@arndb.de>
+ <20200507143552.GA28683@infradead.org>
+ <20200528054600.GA29717@infradead.org>
+ <20200528161416.GY1079@brightrain.aerifal.cx>
+ <20200529143059.GA25475@infradead.org>
+ <20200529175335.GK1079@brightrain.aerifal.cx>
+ <e86e1d78-9597-811a-da0e-42a910b0c9fe@physik.fu-berlin.de>
+ <8b4ff7fe-c10c-fc8e-72bc-88ef69bdb2b4@landley.net>
+ <eea4f39c-23d4-d435-a770-652d71268f34@physik.fu-berlin.de>
+In-Reply-To: <eea4f39c-23d4-d435-a770-652d71268f34@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rob Landley <rob@landley.net>
-Cc: Christoph Hellwig <hch@lst.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Rob Landley <rob@landley.net>, Christoph Hellwig <hch@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, ysato@users.sourceforge.jp, linux-kernel@vger.kernel.org, viro@zeniv.linux.org.uk, Geert Uytterhoeven <geert@linux-m68k.org>, Linus Torvalds <torvalds@linux-foundation.org>
 
-On Sat, Jun 27, 2020 at 08:01:17PM -0500, Rob Landley wrote:
-> On 6/26/20 3:07 AM, Christoph Hellwig wrote:
-> > The code handling non-coherent DMA depends on being able to remap code
-> > as non-cached.  But that can't be done without an MMU, so using this
-> > option on NOMMU builds is broken.
+On Sun, May 31, 2020 at 10:03:13AM +0200, John Paul Adrian Glaubitz wrote:
+> On 5/31/20 5:20 AM, Rob Landley wrote:
+> > On 5/30/20 3:08 AM, John Paul Adrian Glaubitz wrote:
+> >> On 5/29/20 7:53 PM, Rich Felker wrote:
+> >>> Frustratingly, I _still_ don't have an official tree on kernel.org for
+> >>> the purpose of being the canonical place for linux-next to pull from,
+> >>> due to policies around pgp keys and nobody following up on signing
+> >>> mine. This is all really silly since there are ridiculously many
+> >>> independent channels I could cryptographically validate identity
+> >>> through with vanishing probability that they're all compromised. For
+> >>> the time being I'll reactivate my repo on git.musl-libc.org.
+> >>
+> >> May I suggest to pick up these patches, for example? There might be
+> >> more I missed, but getting these merged should already help a lot with
+> >> the clean-up of arch/sh.
+> > 
+> > Does that include the 2 fixes to build with current binutils I made puppy eyes
+> > about last -rc7 (in march)?
+> > 
+> > https://marc.info/?l=linux-sh&m8544749818664&w=2
+> Yes, listed as "[PATCH 1/2] arch/sh: vmlinux.scr".
 > 
-> I'm working on a nommu j-core board that's doing DMA behind the OS's back at the
-> moment, which I have a todo item to teach the kernel about. The DMA does not go
-> through the cache, there's currently a cache flush before looking at the result
-> instead.
+> @Rich: Do you think you can merge all those fixes in your local tree within
+>        the next days and send a PR to Linus?
 > 
-> How should this be wired up after your patch?
+> Otherwise, I can volunteer to become a third maintainer for arch/sh as I have
+> the hardware for testing and can accept patches and send PRs.
+> 
+> We shouldn't let contributors to arch/sh wait for too long.
 
-The problem with nommu and non-coherent dma is the dma_alloc_coherent
-calls.  Most platforms with an mmu set a nocache bit through the page
-tables (including sh), but that option obviously doesn't exist for
-nommu.  Some hardware has an uncached window where access is uncached
-automatically if access through specific kernel virtual addresses,
-for that the architecture needs to impement the arch_dma_set_uncached
-helper and select CONFIG_ARCH_HAS_DMA_SET_UNCACHED.  If that also
-doesn't exist you'll need some sort of pool of always uncached
-memory (set by the firmware or early startup code).  That currently
-doesn't exist in generic code, but we have a bunch of architectures
-implementing that in arch_dma_alloc.  I plan to have a common
-implementation of the pool soon hopefully.
+Yes, I'll try to get my tree ready for next/PR use tomorrow.
 
-Streaming DMA just works if you reuse the existing
-arch_sync_dma_for_device implementation.
+Rich
