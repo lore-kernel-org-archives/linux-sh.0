@@ -1,7 +1,7 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Wed, 03 Jun 2020 07:31:42 +0000
+Date: Fri, 05 Jun 2020 15:38:18 +0000
 Subject: Re: [GIT PULL] sh: remove sh5 support
-Message-Id: <09fc8de5-60c3-90db-c877-cc82b7574c29@physik.fu-berlin.de>
+Message-Id: <0af28795-b27a-2dd9-0d0f-c2a8d4b8d512@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200424221948.1120587-1-arnd@arndb.de>
  <20200507143552.GA28683@infradead.org> <20200528054600.GA29717@infradead.org>
@@ -11,34 +11,32 @@ References: <20200424221948.1120587-1-arnd@arndb.de>
  <e86e1d78-9597-811a-da0e-42a910b0c9fe@physik.fu-berlin.de>
  <20200601181259.GV1079@brightrain.aerifal.cx>
  <20200602013332.GY1079@brightrain.aerifal.cx>
- <14cfb973-fe9b-d201-dc23-e8974c0bcb68@physik.fu-berlin.de>
-In-Reply-To: <14cfb973-fe9b-d201-dc23-e8974c0bcb68@physik.fu-berlin.de>
+In-Reply-To: <20200602013332.GY1079@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Rich Felker <dalias@libc.org>
 Cc: Christoph Hellwig <hch@infradead.org>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, ysato@users.sourceforge.jp, linux-kernel@vger.kernel.org, viro@zeniv.linux.org.uk, Rob Landley <rob@landley.net>, Geert Uytterhoeven <geert@linux-m68k.org>, Linus Torvalds <torvalds@linux-foundation.org>, Andrew Morton <akpm@linux-foundation.org>
 
-On 6/3/20 9:27 AM, John Paul Adrian Glaubitz wrote:
-> On 6/2/20 3:33 AM, Rich Felker wrote:
->> Hmm, it looks like Andrew Morton just pulled most of these into -mm,
->> apparently independently of me getting them in my for-next a few hours
->> ago, since his versions lack my signed-off-by. That's ok though, as
->> long as they go up. Some details since further action is needed on a
->> few:
+Hi Rich!
+
+On 6/2/20 3:33 AM, Rich Felker wrote:
+>>>> [PATCH 1/2] arch/sh: vmlinux.scr
+>>>> https://marc.info/?l=linux-sh&m8429470120959&w=2
+>>
+>> OK.
 > 
-> I thought Andrew dropped them again since he saw you become active.
-> 
-> I can't find them in his tree.
+> Included in -mm.
 
-Ah, sorry. I missed Andrew's message here, sorry.
+I just had a look at your tree and it looks you forgot to merge the second
+patch of the series, see:
 
-In any case, I suggest merging all the patches now which have been reviewed
-and acked and send a PR to Linus.
+> https://marc.info/?l=linux-sh&m8429470221261&w=2
 
-We can then go through the list of patches needing review and merge them
-later.
+Can you include the patch as well? And would it be okay to send a PR to Linus
+after that?
 
+Thanks,
 Adrian
 
 -- 
