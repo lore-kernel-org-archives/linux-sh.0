@@ -1,110 +1,70 @@
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-Date: Sat, 27 Jun 2020 15:26:01 +0000
-Subject: Re: [PATCH] sh: Implement __get_user_u64() required for 64-bit get_user()
-Message-Id: <87bll4a5ti.wl-ysato@users.sourceforge.jp>
+From: Rich Felker <dalias@libc.org>
+Date: Sat, 06 Jun 2020 16:32:45 +0000
+Subject: Re: [PATCH] sh: remove unneeded constructor.
+Message-Id: <20200606163244.GZ1079@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200611075811.2949870-1-glaubitz@physik.fu-berlin.de>
-        <20200611075811.2949870-2-glaubitz@physik.fu-berlin.de>
-In-Reply-To: <20200611075811.2949870-2-glaubitz@physik.fu-berlin.de>
+References: <20180731051519.101249-1-ysato@users.sourceforge.jp>
+ <CAMuHMdUQReuzR=x54gnC1XdP77RrT1TaWoFFXUhUQ02A+giPqQ@mail.gmail.com>
+ <87600us5k9.wl-ysato@users.sourceforge.jp>
+ <20180804103550.GA3183@bombadil.infradead.org>
+ <CAMuHMdXsz-+zsxouaLP5tTKA46G34iAACSce+RXrD8AiiQc2+A@mail.gmail.com>
+ <20180804105149.GB3183@bombadil.infradead.org>
+In-Reply-To: <20180804105149.GB3183@bombadil.infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>, NIIBE Yutaka <gniibe@fsij.org>, linux-kernel@vger.kernel.org
+To: Matthew Wilcox <willy@infradead.org>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Rob Landley <rob@landley.net>, Linux-Arch <linux-arch@vger.kernel.org>
 
-On Thu, 11 Jun 2020 16:58:11 +0900,
-John Paul Adrian Glaubitz wrote:
+On Sat, Aug 04, 2018 at 03:51:49AM -0700, Matthew Wilcox wrote:
+> On Sat, Aug 04, 2018 at 12:47:08PM +0200, Geert Uytterhoeven wrote:
+> > You do want to readd the __GFP_ZERO flag to the second user of PGALLOC_GFP,
+> > don't you?
 > 
-> Trying to build the kernel with CONFIG_INFINIBAND_USER_ACCESS enabled fails
+> I missed that!  Probably only relevant for SH-64.  But yes ... probably better
+> to make this explicit then:
 > 
->      ERROR: "__get_user_unknown" [drivers/infiniband/core/ib_uverbs.ko] undefined!
-> 
-> with on SH since the kernel misses a 64-bit implementation of get_user().
-> 
-> Implement the missing 64-bit get_user() as __get_user_u64(), matching the
-> already existing __put_user_u64() which implements the 64-bit put_user().
-> 
-> Signed-off-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> ---
->  arch/sh/include/asm/uaccess_32.h | 53 ++++++++++++++++++++++++++++++++
->  1 file changed, 53 insertions(+)
-> 
-> diff --git a/arch/sh/include/asm/uaccess_32.h b/arch/sh/include/asm/uaccess_32.h
-> index 624cf55acc27..5d7ddc092afd 100644
-> --- a/arch/sh/include/asm/uaccess_32.h
-> +++ b/arch/sh/include/asm/uaccess_32.h
-> @@ -26,6 +26,9 @@ do {								\
->  	case 4:							\
->  		__get_user_asm(x, ptr, retval, "l");		\
->  		break;						\
-> +	case 8:							\
-> +		__get_user_u64(x, ptr, retval);			\
-> +		break;						\
->  	default:						\
->  		__get_user_unknown();				\
->  		break;						\
-> @@ -66,6 +69,56 @@ do {							\
+> +++ b/arch/sh/mm/pgtable.c
+> @@ -2,8 +2,6 @@
+>  #include <linux/mm.h>
+>  #include <linux/slab.h>
 >  
->  extern void __get_user_unknown(void);
+> -#define PGALLOC_GFP GFP_KERNEL | __GFP_ZERO
+> -
+>  static struct kmem_cache *pgd_cachep;
+>  #if PAGETABLE_LEVELS > 2
+>  static struct kmem_cache *pmd_cachep;
+> @@ -13,6 +11,7 @@ void pgd_ctor(void *x)
+>  {
+>         pgd_t *pgd = x;
 >  
-> +#if defined(CONFIG_CPU_LITTLE_ENDIAN)
-> +#define __get_user_u64(x, addr, err) \
-> +({ \
-> +__asm__ __volatile__( \
-> +	"1:\n\t" \
-> +	"mov.l	%2,%R1\n\t" \
-> +	"mov.l	%T2,%S1\n\t" \
-> +	"2:\n" \
-> +	".section	.fixup,\"ax\"\n" \
-> +	"3:\n\t" \
-> +	"mov  #0,%R1\n\t"   \
-> +	"mov  #0,%S1\n\t"   \
-> +	"mov.l	4f, %0\n\t" \
-> +	"jmp	@%0\n\t" \
-> +	" mov	%3, %0\n\t" \
-> +	".balign	4\n" \
-> +	"4:	.long	2b\n\t" \
-> +	".previous\n" \
-> +	".section	__ex_table,\"a\"\n\t" \
-> +	".long	1b, 3b\n\t" \
-> +	".long	1b + 2, 3b\n\t" \
-> +	".previous" \
-> +	:"=&r" (err), "=&r" (x) \
-> +	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
-> +#else
-> +#define __get_user_u64(x, addr, err) \
-> +({ \
-> +__asm__ __volatile__( \
-> +	"1:\n\t" \
-> +	"mov.l	%2,%S1\n\t" \
-> +	"mov.l	%T2,%R1\n\t" \
-> +	"2:\n" \
-> +	".section	.fixup,\"ax\"\n" \
-> +	"3:\n\t" \
-> +	"mov  #0,%S1\n\t"   \
-> +	"mov  #0,%R1\n\t"   \
-> +	"mov.l	4f, %0\n\t" \
-> +	"jmp	@%0\n\t" \
-> +	" mov	%3, %0\n\t" \
-> +	".balign	4\n" \
-> +	"4:	.long	2b\n\t" \
-> +	".previous\n" \
-> +	".section	__ex_table,\"a\"\n\t" \
-> +	".long	1b, 3b\n\t" \
-> +	".long	1b + 2, 3b\n\t" \
-> +	".previous" \
-> +	:"=&r" (err), "=&r" (x) \
-> +	:"m" (__m(addr)), "i" (-EFAULT), "0" (err)); })
-> +#endif
-> +
->  #define __put_user_size(x,ptr,size,retval)		\
->  do {							\
->  	retval = 0;					\
-> -- 
-> 2.27.0
+> +       memset(pgd, 0, USER_PTRS_PER_PGD * sizeof(pgd_t));
+>         memcpy(pgd + USER_PTRS_PER_PGD,
+>                swapper_pg_dir + USER_PTRS_PER_PGD,
+>                (PTRS_PER_PGD - USER_PTRS_PER_PGD) * sizeof(pgd_t));
+> @@ -32,7 +31,7 @@ void pgtable_cache_init(void)
+>  
+>  pgd_t *pgd_alloc(struct mm_struct *mm)
+>  {
+> -       return kmem_cache_alloc(pgd_cachep, PGALLOC_GFP);
+> +       return kmem_cache_alloc(pgd_cachep, GFP_KERNEL);
+>  }
+>  
+>  void pgd_free(struct mm_struct *mm, pgd_t *pgd)
+> @@ -48,7 +47,7 @@ void pud_populate(struct mm_struct *mm, pud_t *pud, pmd_t *pmd)
+>  
+>  pmd_t *pmd_alloc_one(struct mm_struct *mm, unsigned long address)
+>  {
+> -       return kmem_cache_alloc(pmd_cachep, PGALLOC_GFP);
+> +       return kmem_cache_alloc(pmd_cachep, GFP_KERNEL | __GFP_ZERO);
+>  }
+>  
+>  void pmd_free(struct mm_struct *mm, pmd_t *pmd)
 > 
+> --
 
-Acked-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+I've been asked to include this in this or next pull request, and I
+think it's right to do so, but I don't have a complete patch from you.
+Can you resubmit with a commit message and signed-off-by?
 
--- 
-Yosinori Sato
+Rich
