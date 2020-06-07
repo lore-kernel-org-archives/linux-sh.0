@@ -1,7 +1,7 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Mon, 01 Jun 2020 08:15:02 +0000
+Date: Sun, 07 Jun 2020 12:34:22 +0000
 Subject: Re: [PATCH] sh: fixup strncpy()
-Message-Id: <2d4ac135-3fed-a526-daf5-81d3b51197ed@physik.fu-berlin.de>
+Message-Id: <5a2219e9-6898-3b01-666e-94629f833f8a@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <8736dijdit.wl-kuninori.morimoto.gx@renesas.com>
  <87zhfqhyuf.wl-kuninori.morimoto.gx@renesas.com>
@@ -23,32 +23,22 @@ On 6/1/20 1:43 AM, Kuninori Morimoto wrote:
 > 
 > Actually, I had been posted it to Andrew many times [1],
 > but nothing happened.
-
-Okay, that's unfortunate.
-
 > And according to [2], it seems SH maintainers are still working,
 > thus, normal path is still them.
-
-Yes, Rich seems to be back on track.
-
+> 
 > I had been worked for SH before, and posted many fixup patches
 > for many times to both Andrew and SH maintainers.
 > But their are still not yet reviewd/accepted.
 > And unfortunately, it seems I'm judged as spam from SH maintainers [2].
 > So I can do nothing anymore...
+I think most of your patches have been merged now [1].
 
-I really appreciate your help and I would like to see more of your fixes
-come in. Please don't be let down and let's try to get your patches
-merged.
+Is there any patch that we missed? If yes, please repost them to the list.
 
-Rich has promised that he will create a new tree on his website, so I think
-your patches will be merged soon.
-
-If you have more ideas for fixes, please feel encouraged to post patches, I
-will try to help you to get all of them merged. I'm very sorry that you had
-to wait for such a long time.
-
+Thanks,
 Adrian
+
+> [1] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id;69e8b4571125bec1f77f886174fe6cab6b9d75
 
 -- 
  .''`.  John Paul Adrian Glaubitz
