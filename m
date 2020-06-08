@@ -1,63 +1,67 @@
-From: "Ms. Anita Kwassou" <samolele25@gmail.com>
-Date: Wed, 03 Jun 2020 07:28:38 +0000
-Subject: =?UTF-8?B?0KHQutGK0L8g0L/RgNC40Y/RgtC10LssIGhlbGxv?=
-Message-Id: <CAC2D0BGOmGvCTHiSf46OQrLTG0f1M0JjNYu2-q5zS38sMvOFrQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 08 Jun 2020 09:59:35 +0000
+Subject: [PATCH 3/8] spi: rspi: Clean up Bit Rate Division Setting handling
+Message-Id: <20200608095940.30516-4-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200608095940.30516-1-geert+renesas@glider.be>
+In-Reply-To: <20200608095940.30516-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Chris Brandt <chris.brandt@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-0KHQutGK0L8g0L/RgNC40Y/RgtC10LssDQoNCtCf0LjRiNCwINCy0Lgg0L7RgiDQn9Cw0YDQsNCz
-0LLQsNC5INCyINC60L7QvNCw0L3QtNC40YDQvtCy0LrQsCDRgSDQvdC+0LLQsNGC0LAg0LzQuA0K
-0L/QsNGA0YLQvdGM0L7RgCDRgdC70LXQtCDRg9GB0L/QtdGI0L3QvtGC0L4g0L/RgNC10LLQtdC2
-0LTQsNC90LUg0L3QsCDRgdGA0LXQtNGB0YLQstCw0YLQsCDQsiDRgNCw0LfQvNC10YAg0L3QsCAk
-DQo1LDUg0LzQuNC70LjQvtC90LAuDQoNCtCU0LAsINC60LDQutGC0L4g0LLQuCDQutCw0LfQsNGF
-INC/0YDQtdC00LgsINC90LUg0YHRitC8INCw0LvRh9C10L0g0YfQvtCy0LXQuiDQuCDRgdGK0YnQ
-viDQvtCx0LjRh9Cw0LwNCtGA0LDQt9C/0L7Qt9C90LDQudGC0LUg0YPRgdC40LvQuNGP0YLQsCDQ
-vdCwINC90Y/QutC+0LPQviwg0LHQtdC3INC30L3QsNGH0LXQvdC40LUg0LrQsNC60YrQsiDQvNC+
-0LbQtSDQtNCwINC1INC/0YDQvtCx0LvQtdC80YrRgiwNCtCp0LUg0LLQuCDQv9C+0LzQvtC70Y8g
-0LTQsCDRgdC1INGB0LLRitGA0LbQtdGC0LUg0YEg0LzQvtGPINGB0LXQutGA0LXRgtCw0YA6DQoN
-CtCTLdC20LAg0JDQvdC40YLQsCDQmtCy0LDRgdGDDQrQldC70LXQutGC0YDQvtC90L3QsCDQv9C+
-0YnQsDogYW5pdGt3YXNAZ21haWwuY29tDQoNCtCTLdC20LAg0JDQvdC40YLQsCDRidC1INCy0Lgg
-0LjQt9C/0YDQsNGC0Lgg0L7RgdC10LzQtNC10YHQtdGCINGF0LjQu9GP0LTQuCDQtNC+0LvQsNGA
-0LAgKDgwIDAwMC4wMCDRidCw0YLRgdC60LgNCtC00L7Qu9Cw0YDQsCksINC60L7QuNGC0L4NCtGJ
-0LUg0LHRitC00LUg0L/RgNC10YXQstGK0YDQu9C10L0g0LrRitC8INCy0LDRgSDQsiDQvNC10LbQ
-tNGD0L3QsNGA0L7QtNC90LAg0LLQuNC30L7QstCwINC60LDRgNGC0LAg0LfQsCDQsdCw0L3QutC+
-0LzQsNGCLA0KDQrQlNCw0LLQsNC8INCy0Lgg0YLQvtCy0LAg0L7QsdC10LfRidC10YLQtdC90LjQ
-tSDQt9CwINCy0YHQuNGH0LrQuCDQstCw0YjQuCDQv9GA0LXQtNC40YjQvdC4INGD0YHQuNC70LjR
-jyDQuCDRgdGD0LzQsNGC0LANCtC40L3QstC10YHRgtC40YDQsNGF0YLQtSDQsiDQv9GA0L7RhtC1
-0YHQsCDQvdCwINC/0YDQtdCy0L7QtCwg0L3QviDQvdC1INC80L7QttCw0YXRgtC1INC00LAg0LfQ
-sNCy0YrRgNGI0LjRgtC1DQrRgSDQvNC10L0g0LfQsNGA0LDQtNC4INGB0YLRgNCw0YUg0Lgg0L3Q
-tdCy0LXRgNC40LUuDQoNCtCQ0Lcg0YHRitGJ0L4g0LLQuCDQtNCw0LLQsNC8INGC0LDQt9C4INC8
-0LDQu9C60LAg0YHRg9C80LAg0LrQsNGC0L4g0L/RgNC40LfQvdCw0YLQtdC70L3QvtGB0YIg0LfQ
-sCDQkdC+0LMNCtCx0LXQt9C60YDQsNC50L3QuCDQvNC40LvQvtGB0YLQuCDQtNCwINGB0LHRitC0
-0L3QsCDQsiDRgtCw0LfQuCDQvNC+0Y8g0LzQtdGH0YLQsCwg0LAg0YHRitGJ0L4g0Lgg0LfQsA0K
-0LLQvtC00LXQudC60Lgg0LzQtSDRgdC/0L7QutC+0LnQvdC+INCyINGC0LDQt9C4INGB0YLRgNCw
-0L3QsC4NCg0K0KHQstGK0YDQttC10YLQtSDRgdC1INGBINCzLdC20LAg0JDQvdC40YLQsCDQuCDQ
-vtCx0YHRitC00LXRgtC1INGBINC90LXQs9C+INC60LDQuiDQuNGB0LrQsNGC0LUg0LHQsNC90LrQ
-vtC80LDRgtCwDQrQuNC30L/RgNCw0YLQtdC90L4g0LTQviDQstCw0YEg0Lgg0YHQtSDQvtC/0LjR
-gtCw0LnRgtC1INC00LAg0LzQtSDQuNC90YTQvtGA0LzQuNGA0LDRgtC1INCy0LXQtNC90LDQs9Cw
-INGJ0L7QvCDQv9C+0LvRg9GH0LjRgtC1INC60LDRgNGC0LDRgtCwLg0KDQrQndCw0Lkt0LTQvtCx
-0YDQuCDQv9C+0LbQtdC70LDQvdC40Y8sDQrQk9C+0YHQv9C+0LTQuNC9INCh0LDQvCDQntC70LXQ
-u9C1DQoNCg0KbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1t
-bW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tDQoNCg0KRGVhciBmcmllbmQsDQoNCkkg
-YW0gd3JpdGluZyB0byB5b3UgZnJvbSBQYXJhZ3VheSBvbiBhIGJ1c2luZXNzIHRyaXAgd2l0aCBt
-eSBuZXcNCnBhcnRuZXIgYWZ0ZXIgdGhlIHN1Y2Nlc3NmdWwgdHJhbnNmZXIgb2YgdGhlIGZ1bmRz
-IGluIHRoZSBhbW91bnQgb2YgJA0KNS41IG1pbGxpb24uDQoNClllcywgYXMgSSB0b2xkIHlvdSBi
-ZWZvcmUsIEkgYW0gbm90IGEgZ3JlZWR5IHBlcnNvbiBhbmQgYWxzbyBsaWtlIHRvDQpyZWNvZ25p
-emUgdGhlIGVmZm9ydHMgb2Ygc29tZW9uZSwgbm8gbWF0dGVyIHdoYXQgbWlnaHQgYmUgdGhlIHBy
-b2JsZW0sDQpJIHdpbGwgcmVxdWVzdCB5b3UgdG8gY29udGFjdCBteSBzZWNyZXRhcnk6DQoNCk1z
-LiBBbml0YSBLd2Fzc291DQpFLU1haWw6IGFuaXRrd2FzQGdtYWlsLmNvbQ0KDQpNcy4gQW5pdGEg
-d2lsbCBzZW5kIHlvdSBFaWdodHkgVGhvdXNhbmQgZG9sbGFycyAoVVMkODAuMDAwLjAwKSB3aGlj
-aA0KaXMgYmVlbiByb2xsZWQgdG8geW91IGludG8gYW4gaW50ZXJuYXRpb25hbCBBVE0gdmlzYSBj
-YXJkLA0KDQpJIGdpdmUgeW91IHRoaXMgY29tcGVuc2F0aW9uIGZvciBhbGwgeW91ciBwYXN0IGVm
-Zm9ydHMgYW5kIHRoZSBhbW91bnQNCnlvdSBpbnZlc3RlZCBpbiB0aGUgdHJhbnNsYXRpb24gcHJv
-Y2VzcywgYnV0IHlvdSBjb3VsZG4ndCBjb21wbGV0ZQ0Kd2l0aCBtZSBiZWNhdXNlIG9mIGZlYXIg
-YW5kIGRpc2JlbGlldmUuDQoNCkkgYW0gYWxzbyBnaXZpbmcgdG8geW91IHRoaXMgc21hbGwgYW1v
-dW50IGFzIGFuIGFwcHJlY2lhdGlvbiBmb3IgR29kJ3MNCmVuZGxlc3MgbWVyY2llcyB0byBtYWtl
-IGluIHRoaXMgbXkgZHJlYW0gY29tZSB0cnVlLCBhbmQgYWxzbyBmb3INCmxlYWRpbmcgbWUgcGVh
-Y2VmdWxseSB0byB0aGlzIGNvdW50cnkuDQoNCkNvbnRhY3QgTXMuIEFuaXRhIGFuZCBkaXNjdXNz
-IHdpdGggaGltIG9uIGhvdyB5b3Ugd2FudCB0aGUgQVRNIGNhcmQNCnNlbnQgdG8geW91IGFuZCB0
-cnkgdG8gaW5mb3JtIG1lIGFzIHNvb24gYXMgeW91IHJlY2VpdmVkIHRoZSBjYXJkLg0KDQpCZXN0
-IHdpc2hlcywNCk1yLiBTYW0gT2xlbGUNCg=
+Add a macro for configuring the Bit Rate Division Setting field in
+Command Registers, instead of open-coding the same operation using a
+hardcoded shift.
+Rename "div" to "brdv", as it is not a plain divider value, but controls
+a power-of-two divider.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/spi/spi-rspi.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 1b635d6b7881f5b9..450a42ec2141a895 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -161,6 +161,7 @@
+ #define SPCMD_SPRW		0x0010	/* SPI Read/Write Access (Dual/Quad) */
+ #define SPCMD_SSLA(i)		((i) << 4)	/* SSL Assert Signal Setting */
+ #define SPCMD_BRDV_MASK		0x000c	/* Bit Rate Division Setting */
++#define SPCMD_BRDV(brdv)	((brdv) << 2)
+ #define SPCMD_CPOL		0x0002	/* Clock Polarity Setting */
+ #define SPCMD_CPHA		0x0001	/* Clock Phase Setting */
+ 
+@@ -290,24 +291,24 @@ static int rspi_set_config_register(struct rspi_data *rspi, int access_size)
+ static int rspi_rz_set_config_register(struct rspi_data *rspi, int access_size)
+ {
+ 	int spbr;
+-	int div = 0;
++	int brdv = 0;
+ 	unsigned long clksrc;
+ 
+ 	/* Sets output mode, MOSI signal, and (optionally) loopback */
+ 	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
+ 
+ 	clksrc = clk_get_rate(rspi->clk);
+-	while (div < 3) {
++	while (brdv < 3) {
+ 		if (rspi->speed_hz >= clksrc/4) /* 4=(CLK/2)/2 */
+ 			break;
+-		div++;
++		brdv++;
+ 		clksrc /= 2;
+ 	}
+ 
+ 	/* Sets transfer bit rate */
+ 	spbr = DIV_ROUND_UP(clksrc, 2 * rspi->speed_hz) - 1;
+ 	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
+-	rspi->spcmd |= div << 2;
++	rspi->spcmd |= SPCMD_BRDV(brdv);
+ 
+ 	/* Disable dummy transmission, set byte access */
+ 	rspi_write8(rspi, SPDCR_SPLBYTE, RSPI_SPDCR);
+-- 
+2.17.1
