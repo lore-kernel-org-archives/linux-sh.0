@@ -1,147 +1,93 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Thu, 18 Jun 2020 07:59:37 +0000
-Subject: [PATCH] sh: stacktrace: Remove stacktrace_ops.stack()
-Message-Id: <20200618075937.16391-1-geert+renesas@glider.be>
+Date: Mon, 08 Jun 2020 09:59:37 +0000
+Subject: [PATCH 5/8] spi: rspi: Increase bit rate range for RSPI on SH
+Message-Id: <20200608095940.30516-6-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200608095940.30516-1-geert+renesas@glider.be>
+In-Reply-To: <20200608095940.30516-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Mark Brown <broonie@kernel.org>
+Cc: Chris Brandt <chris.brandt@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The SH implementation never called stacktrace_ops.stack().
-Presumably this was copied from the x86 implementation.
-
-Hence remove the method, and all implementations (most of them are
-dummies).
+Increase bit rate range for RSPI on legacy SH by making use of the Bit
+Rate Frequency Division Setting field in Command Registers, just like is
+already done on RZ/A.  This decreases the lower limit by a factor of 8.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/include/asm/stacktrace.h | 2 --
- arch/sh/kernel/dumpstack.c       | 7 -------
- arch/sh/kernel/perf_callchain.c  | 6 ------
- arch/sh/kernel/stacktrace.c      | 7 -------
- arch/sh/oprofile/backtrace.c     | 7 -------
- 5 files changed, 29 deletions(-)
+Untested due to lack of hardware, but the formulas in the datasheets for
+SH7753, RZ/A1H, and RZ/A2M are the same.
+---
+ drivers/spi/spi-rspi.c | 35 ++++++++++++++++++-----------------
+ 1 file changed, 18 insertions(+), 17 deletions(-)
 
-diff --git a/arch/sh/include/asm/stacktrace.h b/arch/sh/include/asm/stacktrace.h
-index 50c173c0b9f56f69..4f98cdc64ec59b1c 100644
---- a/arch/sh/include/asm/stacktrace.h
-+++ b/arch/sh/include/asm/stacktrace.h
-@@ -12,8 +12,6 @@
- 
- struct stacktrace_ops {
- 	void (*address)(void *data, unsigned long address, int reliable);
--	/* On negative return stop dumping */
--	int (*stack)(void *data, char *name);
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index ad4ac867170b101a..ea3f2680d3c13e02 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -248,19 +248,32 @@ struct spi_ops {
+ 	u8 num_hw_ss;
  };
  
- void dump_trace(struct task_struct *tsk, struct pt_regs *regs,
-diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
-index 0a69588e343f7b98..758a6c89e911bc15 100644
---- a/arch/sh/kernel/dumpstack.c
-+++ b/arch/sh/kernel/dumpstack.c
-@@ -107,12 +107,6 @@ stack_reader_dump(struct task_struct *task, struct pt_regs *regs,
- 	}
- }
- 
--static int print_trace_stack(void *data, char *name)
--{
--	printk("%s <%s> ", (char *)data, name);
--	return 0;
--}
--
++static void rspi_set_rate(struct rspi_data *rspi)
++{
++	unsigned long clksrc;
++	int brdv = 0, spbr;
++
++	clksrc = clk_get_rate(rspi->clk);
++	spbr = DIV_ROUND_UP(clksrc, 2 * rspi->speed_hz) - 1;
++	while (spbr > 255 && brdv < 3) {
++		brdv++;
++		spbr = DIV_ROUND_UP(spbr + 1, 2) - 1;
++	}
++
++	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
++	rspi->spcmd |= SPCMD_BRDV(brdv);
++}
++
  /*
-  * Print one address/symbol entries per line.
+  * functions for RSPI on legacy SH
   */
-@@ -123,7 +117,6 @@ static void print_trace_address(void *data, unsigned long addr, int reliable)
- }
- 
- static const struct stacktrace_ops print_trace_ops = {
--	.stack = print_trace_stack,
- 	.address = print_trace_address,
- };
- 
-diff --git a/arch/sh/kernel/perf_callchain.c b/arch/sh/kernel/perf_callchain.c
-index 6281f2fdf9cac906..c9d3aa18732d1d49 100644
---- a/arch/sh/kernel/perf_callchain.c
-+++ b/arch/sh/kernel/perf_callchain.c
-@@ -11,11 +11,6 @@
- #include <asm/unwinder.h>
- #include <asm/ptrace.h>
- 
--static int callchain_stack(void *data, char *name)
--{
--	return 0;
--}
--
- static void callchain_address(void *data, unsigned long addr, int reliable)
+ static int rspi_set_config_register(struct rspi_data *rspi, int access_size)
  {
- 	struct perf_callchain_entry_ctx *entry = data;
-@@ -25,7 +20,6 @@ static void callchain_address(void *data, unsigned long addr, int reliable)
- }
- 
- static const struct stacktrace_ops callchain_ops = {
--	.stack		= callchain_stack,
- 	.address	= callchain_address,
- };
- 
-diff --git a/arch/sh/kernel/stacktrace.c b/arch/sh/kernel/stacktrace.c
-index 2950b19ad0772081..daf0b53ee066fa6d 100644
---- a/arch/sh/kernel/stacktrace.c
-+++ b/arch/sh/kernel/stacktrace.c
-@@ -15,11 +15,6 @@
- #include <asm/ptrace.h>
- #include <asm/stacktrace.h>
- 
--static int save_stack_stack(void *data, char *name)
--{
--	return 0;
--}
+-	int spbr;
 -
- /*
-  * Save stack-backtrace addresses into a stack_trace buffer.
+ 	/* Sets output mode, MOSI signal, and (optionally) loopback */
+ 	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
+ 
+ 	/* Sets transfer bit rate */
+-	spbr = DIV_ROUND_UP(clk_get_rate(rspi->clk), 2 * rspi->speed_hz) - 1;
+-	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
++	rspi_set_rate(rspi);
+ 
+ 	/* Disable dummy transmission, set 16-bit word access, 1 frame */
+ 	rspi_write8(rspi, 0, RSPI_SPDCR);
+@@ -290,23 +303,11 @@ static int rspi_set_config_register(struct rspi_data *rspi, int access_size)
   */
-@@ -40,7 +35,6 @@ static void save_stack_address(void *data, unsigned long addr, int reliable)
- }
- 
- static const struct stacktrace_ops save_stack_ops = {
--	.stack = save_stack_stack,
- 	.address = save_stack_address,
- };
- 
-@@ -73,7 +67,6 @@ save_stack_address_nosched(void *data, unsigned long addr, int reliable)
- }
- 
- static const struct stacktrace_ops save_stack_ops_nosched = {
--	.stack = save_stack_stack,
- 	.address = save_stack_address_nosched,
- };
- 
-diff --git a/arch/sh/oprofile/backtrace.c b/arch/sh/oprofile/backtrace.c
-index f1205f92631df3b9..cc16cf86cd92fabe 100644
---- a/arch/sh/oprofile/backtrace.c
-+++ b/arch/sh/oprofile/backtrace.c
-@@ -19,12 +19,6 @@
- #include <asm/sections.h>
- #include <asm/stacktrace.h>
- 
--static int backtrace_stack(void *data, char *name)
--{
--	/* Yes, we want all stacks */
--	return 0;
--}
--
- static void backtrace_address(void *data, unsigned long addr, int reliable)
+ static int rspi_rz_set_config_register(struct rspi_data *rspi, int access_size)
  {
- 	unsigned int *depth = data;
-@@ -34,7 +28,6 @@ static void backtrace_address(void *data, unsigned long addr, int reliable)
- }
+-	int spbr;
+-	int brdv = 0;
+-	unsigned long clksrc;
+-
+ 	/* Sets output mode, MOSI signal, and (optionally) loopback */
+ 	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
  
- static struct stacktrace_ops backtrace_ops = {
--	.stack = backtrace_stack,
- 	.address = backtrace_address,
- };
+-	clksrc = clk_get_rate(rspi->clk);
+-	spbr = DIV_ROUND_UP(clksrc, 2 * rspi->speed_hz) - 1;
+-	while (spbr > 255 && brdv < 3) {
+-		brdv++;
+-		spbr = DIV_ROUND_UP(spbr + 1, 2) - 1;
+-	}
+-
+ 	/* Sets transfer bit rate */
+-	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
+-	rspi->spcmd |= SPCMD_BRDV(brdv);
++	rspi_set_rate(rspi);
  
+ 	/* Disable dummy transmission, set byte access */
+ 	rspi_write8(rspi, SPDCR_SPLBYTE, RSPI_SPDCR);
 -- 
 2.17.1
