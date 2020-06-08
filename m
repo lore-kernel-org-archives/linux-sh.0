@@ -1,54 +1,68 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Jun 2020 14:36:39 +0000
-Subject: [PATCH v2 9/9] sh: machvec: Modernize printing of kernel messages
-Message-Id: <20200617143639.18315-10-geert+renesas@glider.be>
+Date: Mon, 08 Jun 2020 09:59:39 +0000
+Subject: [PATCH 7/8] spi: rspi: Fill in spi_transfer.effective_speed_hz
+Message-Id: <20200608095940.30516-8-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200617143639.18315-1-geert+renesas@glider.be>
-In-Reply-To: <20200617143639.18315-1-geert+renesas@glider.be>
+References: <20200608095940.30516-1-geert+renesas@glider.be>
+In-Reply-To: <20200608095940.30516-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Mike Rapoport <rppt@linux.ibm.com>, Dmitry Safonov <0x7f454c46@gmail.com>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Mark Brown <broonie@kernel.org>
+Cc: Chris Brandt <chris.brandt@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-  - Convert from printk() to pr_*(),
-  - Add missing continuations.
+Fill in the effective bit rate used for transfers, so the SPI core can
+calculate instead of estimate delays.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Guenter Roeck <linux@roeck-us.net>
 ---
-v2:
-  - Add Tested-by.
----
- arch/sh/kernel/machvec.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/spi/spi-rspi.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/arch/sh/kernel/machvec.c b/arch/sh/kernel/machvec.c
-index beadbbdb44867759..0e9fa33a9b6ab38c 100644
---- a/arch/sh/kernel/machvec.c
-+++ b/arch/sh/kernel/machvec.c
-@@ -64,10 +64,10 @@ static int __init early_parse_mv(char *from)
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 38c0cd7febabf114..2b5334e22ae421b5 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -262,6 +262,7 @@ static void rspi_set_rate(struct rspi_data *rspi)
  
- 	mvp = get_mv_byname(mv_name);
- 	if (unlikely(!mvp)) {
--		printk("Available vectors:\n\n\t'%s', ", sh_mv.mv_name);
-+		pr_info("Available vectors:\n\n\t'%s', ", sh_mv.mv_name);
- 		for_each_mv(mvp)
--			printk("'%s', ", mvp->mv_name);
--		printk("\n\n");
-+			pr_cont("'%s', ", mvp->mv_name);
-+		pr_cont("\n\n");
- 		panic("Failed to select machvec '%s' -- halting.\n",
- 		      mv_name);
- 	} else
-@@ -104,7 +104,7 @@ void __init sh_mv_setup(void)
- 			sh_mv = *(struct sh_machine_vector *)&__machvec_start;
+ 	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
+ 	rspi->spcmd |= SPCMD_BRDV(brdv);
++	rspi->speed_hz = DIV_ROUND_UP(clksrc, (2U << brdv) * (spbr + 1));
+ }
+ 
+ /*
+@@ -344,6 +345,7 @@ static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
+ 	clksrc = clk_get_rate(rspi->clk);
+ 	if (rspi->speed_hz >= clksrc) {
+ 		spbr = 0;
++		rspi->speed_hz = clksrc;
+ 	} else {
+ 		spbr = DIV_ROUND_UP(clksrc, 2 * rspi->speed_hz);
+ 		while (spbr > 255 && brdv < 3) {
+@@ -351,6 +353,7 @@ static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
+ 			spbr = DIV_ROUND_UP(spbr, 2);
+ 		}
+ 		spbr = clamp(spbr, 0, 255);
++		rspi->speed_hz = DIV_ROUND_UP(clksrc, (2U << brdv) * spbr);
  	}
+ 	rspi_write8(rspi, spbr, RSPI_SPBR);
+ 	rspi->spcmd |= SPCMD_BRDV(brdv);
+@@ -698,6 +701,8 @@ static int rspi_common_transfer(struct rspi_data *rspi,
+ {
+ 	int ret;
  
--	printk(KERN_NOTICE "Booting machvec: %s\n", get_system_type());
-+	pr_notice("Booting machvec: %s\n", get_system_type());
++	xfer->effective_speed_hz = rspi->speed_hz;
++
+ 	ret = rspi_dma_check_then_transfer(rspi, xfer);
+ 	if (ret != -EAGAIN)
+ 		return ret;
+@@ -853,6 +858,7 @@ static int qspi_transfer_one(struct spi_controller *ctlr,
+ {
+ 	struct rspi_data *rspi = spi_controller_get_devdata(ctlr);
  
- 	/*
- 	 * Manually walk the vec, fill in anything that the board hasn't yet
++	xfer->effective_speed_hz = rspi->speed_hz;
+ 	if (spi->mode & SPI_LOOP) {
+ 		return qspi_transfer_out_in(rspi, xfer);
+ 	} else if (xfer->tx_nbits > SPI_NBITS_SINGLE) {
 -- 
 2.17.1
