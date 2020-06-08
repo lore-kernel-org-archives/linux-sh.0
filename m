@@ -1,110 +1,62 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Sat, 27 Jun 2020 14:34:48 +0000
-Subject: [PATCH 3/8] xtensa: switch to generic version of pte allocation
-Message-Id: <20200627143453.31835-4-rppt@kernel.org>
+From: Matthew Wilcox <willy@infradead.org>
+Date: Mon, 08 Jun 2020 13:04:08 +0000
+Subject: [PATCH] sh: Fix page table allocation
+Message-Id: <20200608130408.20951-1-willy@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200627143453.31835-1-rppt@kernel.org>
-In-Reply-To: <20200627143453.31835-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Abdul Haleem <abdhalee@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Andy Lutomirski <luto@kernel.org>, Arnd Bergmann <arnd@arndb.de>, Christophe Leroy <christophe.leroy@csgroup.eu>, Joerg Roedel <joro@8bytes.org>, Max Filippov <jcmvbkbc@gmail.com>, Mike Rapoport <rppt@kernel.org>, Mike Rapoport <rppt@linux.ibm.com>, Peter Zijlstra <peterz@infradead.org>, Satheesh Rajendran <sathnaga@linux.vnet.ibm.com>, Stafford Horne <shorne@gmail.com>, Stephen Rothwell <sfr@canb.auug.org.au>, Steven Rostedt <rostedt@goodmis.org>, linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.orglinux
+To: linux-sh@vger.kernel.org
 
-From: Mike Rapoport <rppt@linux.ibm.com>
+From: "Matthew Wilcox (Oracle)" <willy@infradead.org>
 
-xtensa clears PTEs during allocation of the page tables and pte_clear()
-sets the PTE to a non-zero value. Splitting ptes_clear() helper out of
-pte_alloc_one() and pte_alloc_one_kernel() allows reuse of base generic
-allocation methods (__pte_alloc_one() and __pte_alloc_one_kernel()) and the
-common GFP mask for page table allocations.
+The pgd kmem_cache allocation both specified __GFP_ZERO and had a
+constructor which makes no sense.  Remove __GFP_ZERO and zero the user
+parts of the pgd explicitly.
 
-The pte_free() and pte_free_kernel() implementations on xtensa are
-identical to the generic ones and can be dropped.
-
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
 ---
- arch/xtensa/include/asm/pgalloc.h | 41 ++++++++++++++-----------------
- 1 file changed, 19 insertions(+), 22 deletions(-)
+ arch/sh/mm/pgtable.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/arch/xtensa/include/asm/pgalloc.h b/arch/xtensa/include/asm/pgalloc.h
-index 1d38f0e755ba..60ee94b42850 100644
---- a/arch/xtensa/include/asm/pgalloc.h
-+++ b/arch/xtensa/include/asm/pgalloc.h
-@@ -8,9 +8,14 @@
- #ifndef _XTENSA_PGALLOC_H
- #define _XTENSA_PGALLOC_H
- 
-+#ifdef CONFIG_MMU
- #include <linux/highmem.h>
+diff --git a/arch/sh/mm/pgtable.c b/arch/sh/mm/pgtable.c
+index 5c8f9247c3c2..cf7ce4b57359 100644
+--- a/arch/sh/mm/pgtable.c
++++ b/arch/sh/mm/pgtable.c
+@@ -2,8 +2,6 @@
+ #include <linux/mm.h>
  #include <linux/slab.h>
  
-+#define __HAVE_ARCH_PTE_ALLOC_ONE_KERNEL
-+#define __HAVE_ARCH_PTE_ALLOC_ONE
-+#include <asm-generic/pgalloc.h>
-+
- /*
-  * Allocating and freeing a pmd is trivial: the 1-entry pmd is
-  * inside the pgd, so has no extra memory associated with it.
-@@ -33,45 +38,37 @@ static inline void pgd_free(struct mm_struct *mm, pgd_t *pgd)
- 	free_page((unsigned long)pgd);
- }
- 
-+static inline void ptes_clear(pte_t *ptep)
-+{
-+	int i;
-+
-+	for (i = 0; i < PTRS_PER_PTE; i++)
-+		pte_clear(NULL, 0, ptep + i);
-+}
-+
- static inline pte_t *pte_alloc_one_kernel(struct mm_struct *mm)
- {
- 	pte_t *ptep;
--	int i;
- 
--	ptep = (pte_t *)__get_free_page(GFP_KERNEL);
-+	ptep = (pte_t *)__pte_alloc_one_kernel(mm);
- 	if (!ptep)
- 		return NULL;
--	for (i = 0; i < 1024; i++)
--		pte_clear(NULL, 0, ptep + i);
-+	ptes_clear(ptep);
- 	return ptep;
- }
- 
- static inline pgtable_t pte_alloc_one(struct mm_struct *mm)
- {
--	pte_t *pte;
- 	struct page *page;
- 
--	pte = pte_alloc_one_kernel(mm);
--	if (!pte)
--		return NULL;
--	page = virt_to_page(pte);
--	if (!pgtable_pte_page_ctor(page)) {
--		__free_page(page);
-+	page = __pte_alloc_one(mm, GFP_PGTABLE_USER);
-+	if (!page)
- 		return NULL;
--	}
-+	ptes_clear(page_address(page));
- 	return page;
- }
- 
--static inline void pte_free_kernel(struct mm_struct *mm, pte_t *pte)
--{
--	free_page((unsigned long)pte);
--}
+-#define PGALLOC_GFP GFP_KERNEL | __GFP_ZERO
 -
--static inline void pte_free(struct mm_struct *mm, pgtable_t pte)
--{
--	pgtable_pte_page_dtor(pte);
--	__free_page(pte);
--}
- #define pmd_pgtable(pmd) pmd_page(pmd)
-+#endif CONFIG_MMU
+ static struct kmem_cache *pgd_cachep;
+ #if PAGETABLE_LEVELS > 2
+ static struct kmem_cache *pmd_cachep;
+@@ -13,6 +11,7 @@ void pgd_ctor(void *x)
+ {
+ 	pgd_t *pgd = x;
  
- #endif /* _XTENSA_PGALLOC_H */
++	memset(pgd, 0, USER_PTRS_PER_PGD * sizeof(pgd_t));
+ 	memcpy(pgd + USER_PTRS_PER_PGD,
+ 	       swapper_pg_dir + USER_PTRS_PER_PGD,
+ 	       (PTRS_PER_PGD - USER_PTRS_PER_PGD) * sizeof(pgd_t));
+@@ -32,7 +31,7 @@ void pgtable_cache_init(void)
+ 
+ pgd_t *pgd_alloc(struct mm_struct *mm)
+ {
+-	return kmem_cache_alloc(pgd_cachep, PGALLOC_GFP);
++	return kmem_cache_alloc(pgd_cachep, GFP_KERNEL);
+ }
+ 
+ void pgd_free(struct mm_struct *mm, pgd_t *pgd)
+@@ -48,7 +47,7 @@ void pud_populate(struct mm_struct *mm, pud_t *pud, pmd_t *pmd)
+ 
+ pmd_t *pmd_alloc_one(struct mm_struct *mm, unsigned long address)
+ {
+-	return kmem_cache_alloc(pmd_cachep, PGALLOC_GFP);
++	return kmem_cache_alloc(pmd_cachep, GFP_KERNEL | __GFP_ZERO);
+ }
+ 
+ void pmd_free(struct mm_struct *mm, pmd_t *pmd)
 -- 
 2.26.2
