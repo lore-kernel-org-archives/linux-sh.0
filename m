@@ -1,37 +1,48 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 29 Jun 2020 15:42:28 +0000
-Subject: Re: [PATCH 6/8] asm-generic: pgalloc: provide generic pgd_free()
-Message-Id: <CAMuHMdWP07XqvgrXjCG+n5FssH3BwdDEWA4fD9TQgvVy93uMhQ@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 08 Jun 2020 09:59:32 +0000
+Subject: [PATCH 0/8] spi: rspi: Bit rate improvements
+Message-Id: <20200608095940.30516-1-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200627143453.31835-1-rppt@kernel.org>
- <20200627143453.31835-7-rppt@kernel.org>
-In-Reply-To: <20200627143453.31835-7-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Rapoport <rppt@kernel.org>
-Cc: "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>, Max Filippov <jcmvbkbc@gmail.com>, Satheesh Rajendran <sathnaga@linux.vnet.ibm.com>, linux-csky@vger.kernel.org, sparclinux <sparclinux@vger.kernel.org>, linux-riscv <linux-riscv@lists.infradead.org>, Linux-Arch <linux-arch@vger.kernel.org>, Stephen Rothwell <sfr@canb.auug.org.au>, "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>, Joerg Roedel <joro@8bytes.org>, Mike Rapoport <rppt@linux.ibm.com>, Abdul Haleem <abdhalee@linux.vnet.ibm.com>, arcml <linux-snps-arc@lists.infradead.org>, "open list:TENSILICA XTENSA PORT (xtensa)" <linux-xtensa@linux-xtensa.org>, Arnd Bergmann <arnd@arndb.de>, linux-s390 <linux-s390@vger.kernel.org>, linux-um <linux-um@lis>
+To: Mark Brown <broonie@kernel.org>
+Cc: Chris Brandt <chris.brandt@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-On Sat, Jun 27, 2020 at 4:36 PM Mike Rapoport <rppt@kernel.org> wrote:
-> From: Mike Rapoport <rppt@linux.ibm.com>
->
-> Most architectures define pgd_free() as a wrapper for free_page().
->
-> Provide a generic version in asm-generic/pgalloc.h and enable its use for
-> most architectures.
->
-> Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+	Hi Mark,
 
-For the m68k part:
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+This patch series contains several improvements for the Renesas SPI/QSPI
+driver related to bit rate configuration.
+
+This has been tested on RSK+RZA1 (RSPI) and R-Car M2-W/Koelsch (QSPI),
+using a scope and logic analyzer, except for the by-one divider on QSPI.
+This has not been tested on legacy SuperH, due to lack of hardware.
+
+Thanks for your comments!
+
+Geert Uytterhoeven (8):
+  spi: rspi: Remove useless .set_config_register() check
+  spi: rspi: Use requested instead of maximum bit rate
+  spi: rspi: Clean up Bit Rate Division Setting handling
+  spi: rspi: Increase bit rate accuracy on RZ/A
+  spi: rspi: Increase bit rate range for RSPI on SH
+  spi: rspi: Increase bit rate range for QSPI
+  spi: rspi: Fill in spi_transfer.effective_speed_hz
+  spi: rspi: Fill in controller speed limits
+
+ drivers/spi/spi-rspi.c | 101 ++++++++++++++++++++++++++++-------------
+ 1 file changed, 69 insertions(+), 32 deletions(-)
+
+-- 
+2.17.1
 
 Gr{oetje,eeting}s,
 
-                        Geert
+						Geert
 
--- 
+--
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+							    -- Linus Torvalds
