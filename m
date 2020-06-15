@@ -1,98 +1,78 @@
-From: Greg Ungerer <gerg@linux-m68k.org>
-Date: Mon, 15 Jun 2020 07:17:28 +0000
-Subject: Re: [PATCH 04/21] mm: free_area_init: use maximal zone PFNs rather than zone sizes
-Message-Id: <24563231-ed19-6f4f-617e-4d6bfc7553e4@linux-m68k.org>
+From: Peter Xu <peterx@redhat.com>
+Date: Mon, 15 Jun 2020 22:23:06 +0000
+Subject: [PATCH 20/25] mm/sh: Use mm_fault_accounting()
+Message-Id: <20200615222306.8502-1-peterx@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200412194859.12663-5-rppt@kernel.org>
- <f53e68db-ed81-6ef6-5087-c7246d010ea2@linux-m68k.org>
- <20200615062234.GA7882@kernel.org>
-In-Reply-To: <20200615062234.GA7882@kernel.org>
+References: <20200615221607.7764-1-peterx@redhat.com>
+In-Reply-To: <20200615221607.7764-1-peterx@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Rapoport <rppt@kernel.org>
-Cc: Hoan@os.amperecomputing.com, James.Bottomley@hansenpartnership.com, akpm@linux-foundation.org, bcain@codeaurora.org, bhe@redhat.com, catalin.marinas@arm.com, corbet@lwn.net, dalias@libc.org, davem@davemloft.net, deller@gmx.de, geert@linux-m68k.org, green.hu@gmail.com, guoren@kernel.org, gxt@pku.edu.cn, heiko.carstens@de.ibm.com, jcmvbkbc@gmail.com, ley.foon.tan@intel.com, linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-csky@vger.kernel.org, linux-doc@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, linux-mm@kvack.org, linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.orglinux
+To: linux-kernel@vger.kernel.org
+Cc: Peter Xu <peterx@redhat.com>, Gerald Schaefer <gerald.schaefer@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Andrea Arcangeli <aarcange@redhat.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-Hi Mike,
+Use the new mm_fault_accounting() helper for page fault accounting.
 
-On 15/6/20 4:22 pm, Mike Rapoport wrote:
-> On Mon, Jun 15, 2020 at 01:53:42PM +1000, Greg Ungerer wrote:
->> From: Mike Rapoport <rppt@linux.ibm.com>
->>> Currently, architectures that use free_area_init() to initialize memory map
->>> and node and zone structures need to calculate zone and hole sizes. We can
->>> use free_area_init_nodes() instead and let it detect the zone boundaries
->>> while the architectures will only have to supply the possible limits for
->>> the zones.
->>>
->>> Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
->>
->> This is causing some new warnings for me on boot on at least one non-MMU m68k target:
-> 
-> There were a couple of changes that cause this. The free_area_init()
-> now relies on memblock data and architectural limits for zone sizes
-> rather than on explisit pfns calculated by the arch code. I've update
-> motorola variant and missed coldfire. Angelo sent a fix for mcfmmu.c
-> [1] and I've updated it to include nommu as well
-> 
-> [1] https://lore.kernel.org/linux-m68k/20200614225119.777702-1-angelo.dureghello@timesys.com
-> 
->>From 55b8523df2a5c4565b132c0691990f0821040fec Mon Sep 17 00:00:00 2001
-> From: Angelo Dureghello <angelo.dureghello@timesys.com>
-> Date: Mon, 15 Jun 2020 00:51:19 +0200
-> Subject: [PATCH] m68k: fix registration of memory regions with memblock
-> 
-> Commit 3f08a302f533 ("mm: remove CONFIG_HAVE_MEMBLOCK_NODE_MAP option")
-> introduced assumption that UMA systems have their memory at node 0 and
-> updated most of them, but it forgot nommu and coldfire variants of m68k.
-> 
-> The later change in free area initialization in commit fa3354e4ea39 ("mm:
-> free_area_init: use maximal zone PFNs rather than zone sizes") exposed that
-> and caused a lot of "BUG: Bad page state in process swapper" reports.
+Avoid doing page fault accounting multiple times if the page fault is retried.
 
-Even with this patch applied I am still seeing the same messages.
+CC: Yoshinori Sato <ysato@users.sourceforge.jp>
+CC: Rich Felker <dalias@libc.org>
+CC: linux-sh@vger.kernel.org
+Signed-off-by: Peter Xu <peterx@redhat.com>
+---
+ arch/sh/mm/fault.c | 15 +++------------
+ 1 file changed, 3 insertions(+), 12 deletions(-)
 
-Regards
-Greg
-
-
-
-> Using memblock_add_node() with nid = 0 to register memory banks solves the
-> problem.
-> 
-> Fixes: 3f08a302f533 ("mm: remove CONFIG_HAVE_MEMBLOCK_NODE_MAP option")
-> Fixes: fa3354e4ea39 ("mm: free_area_init: use maximal zone PFNs rather than zone sizes")
-> Signed-off-by: Angelo Dureghello <angelo.dureghello@timesys.com>
-> Co-developed-by: Mike Rapoport <rppt@linux.ibm.com>
-> Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> ---
->   arch/m68k/kernel/setup_no.c | 2 +-
->   arch/m68k/mm/mcfmmu.c       | 2 +-
->   2 files changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/m68k/kernel/setup_no.c b/arch/m68k/kernel/setup_no.c
-> index e779b19e0193..0c4589a39ba9 100644
-> --- a/arch/m68k/kernel/setup_no.c
-> +++ b/arch/m68k/kernel/setup_no.c
-> @@ -138,7 +138,7 @@ void __init setup_arch(char **cmdline_p)
->   	pr_debug("MEMORY -> ROMFS=0x%p-0x%06lx MEM=0x%06lx-0x%06lx\n ",
->   		 __bss_stop, memory_start, memory_start, memory_end);
->   
-> -	memblock_add(memory_start, memory_end - memory_start);
-> +	memblock_add_node(memory_start, memory_end - memory_start, 0);
->   
->   	/* Keep a copy of command line */
->   	*cmdline_p = &command_line[0];
-> diff --git a/arch/m68k/mm/mcfmmu.c b/arch/m68k/mm/mcfmmu.c
-> index 29f47923aa46..7d04210d34f0 100644
-> --- a/arch/m68k/mm/mcfmmu.c
-> +++ b/arch/m68k/mm/mcfmmu.c
-> @@ -174,7 +174,7 @@ void __init cf_bootmem_alloc(void)
->   	m68k_memory[0].addr = _rambase;
->   	m68k_memory[0].size = _ramend - _rambase;
->   
-> -	memblock_add(m68k_memory[0].addr, m68k_memory[0].size);
-> +	memblock_add_node(m68k_memory[0].addr, m68k_memory[0].size, 0);
->   
->   	/* compute total pages in system */
->   	num_pages = PFN_DOWN(_ramend - _rambase);
-> 
+diff --git a/arch/sh/mm/fault.c b/arch/sh/mm/fault.c
+index 5f23d7907597..06b232973488 100644
+--- a/arch/sh/mm/fault.c
++++ b/arch/sh/mm/fault.c
+@@ -379,7 +379,7 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
+ 	struct task_struct *tsk;
+ 	struct mm_struct *mm;
+ 	struct vm_area_struct * vma;
+-	vm_fault_t fault;
++	vm_fault_t fault, major = 0;
+ 	unsigned int flags = FAULT_FLAG_DEFAULT;
+ 
+ 	tsk = current;
+@@ -412,8 +412,6 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
+ 	if ((regs->sr & SR_IMASK) != SR_IMASK)
+ 		local_irq_enable();
+ 
+-	perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS, 1, regs, address);
+-
+ 	/*
+ 	 * If we're in an interrupt, have no user context or are running
+ 	 * with pagefaults disabled then we must not take the fault:
+@@ -465,21 +463,13 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
+ 	 * the fault.
+ 	 */
+ 	fault = handle_mm_fault(vma, address, flags);
++	major |= fault & VM_FAULT_MAJOR;
+ 
+ 	if (unlikely(fault & (VM_FAULT_RETRY | VM_FAULT_ERROR)))
+ 		if (mm_fault_error(regs, error_code, address, fault))
+ 			return;
+ 
+ 	if (flags & FAULT_FLAG_ALLOW_RETRY) {
+-		if (fault & VM_FAULT_MAJOR) {
+-			tsk->maj_flt++;
+-			perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MAJ, 1,
+-				      regs, address);
+-		} else {
+-			tsk->min_flt++;
+-			perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MIN, 1,
+-				      regs, address);
+-		}
+ 		if (fault & VM_FAULT_RETRY) {
+ 			flags |= FAULT_FLAG_TRIED;
+ 
+@@ -493,4 +483,5 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
+ 	}
+ 
+ 	up_read(&mm->mmap_sem);
++	mm_fault_accounting(tsk, regs, address, major);
+ }
+-- 
+2.26.2
