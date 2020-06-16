@@ -1,317 +1,169 @@
-From: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
-Date: Mon, 15 Jun 2020 06:50:21 +0000
-Subject: [PATCH 16/22] docs: sh: convert new-machine.txt to ReST
-Message-Id: <4437d379ccf201cc3a369232f9159a02754ca530.1592203650.git.mchehab+huawei@kernel.org>
+From: Jim Quinlan <james.quinlan@broadcom.com>
+Date: Tue, 16 Jun 2020 20:55:07 +0000
+Subject: [PATCH v5 00/12] PCI: brcmstb: enable PCIe for STB chips
+Message-Id: <20200616205533.3513-1-james.quinlan@broadcom.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1592203650.git.mchehab+huawei@kernel.org>
-In-Reply-To: <cover.1592203650.git.mchehab+huawei@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux Doc Mailing List <linux-doc@vger.kernel.org>
-Cc: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>, linux-kernel@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: linux-pci@vger.kernel.org, Christoph Hellwig <hch@lst.de>, Nicolas Saenz Julienne <nsaenzjulienne@suse.de>, bcm-kernel-feedback-list@broadcom.com, james.quinlan@broadcom.com
+Cc: Ulf Hansson <ulf.hansson@linaro.org>, Oliver Neukum <oneukum@suse.com>, "open list:SUPERH" <linux-sh@vger.kernel.org>, "open list:REMOTE PROCESSOR REMOTEPROC SUBSYSTEM" <linux-remoteproc@vger.kernel.org>, "open list:DRM DRIVERS FOR ALLWINNER A10" <dri-devel@lists.freedesktop.org>, "open list:LIBATA SUBSYSTEM Serial and Parallel ATA drivers" <linux-ide@vger.kernel.org>, Julien Grall <julien.grall@arm.com>, "H. Peter Anvin" <hpa@zytor.com>, "open list:STAGING SUBSYSTEM" <devel@driverdev.osuosl.org>, Florian Fainelli <f.fainelli@gmail.com>, Corey Minyard <minyard@acm.org>, Saravana Kannan <saravanak@google.com>, "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, "open list:ACPI FOR ARM64 ACPI/arm64" <linux-acpi@vger.kernel.org>, Alan Stern <stern@rowland.harvard.edu>, "open list:ALLWINNER A10 CSI DRIVER" <linux-media@vger.kernel.org>, "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE" <devicetree@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Suzuki K Poulose <suzuki.poulose@arm.com>, Hans de Goede <hdegoede@redhat.com>, Stefano Stabellini <sstabellini@kernel.org>, "moderated list:BROADCOM BCM2711/BCM2835 ARM ARCHITECTURE" <linux-rpi-kernel@lists.infradead.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>, Jens Axboe <axboe@kernel.dk>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "open list:USB SUBSYSTEM" <linux-usb@vger.kernel.org>, open list <linux-kernel@vger.kernel.org>, Wolfram Sang <wsa@kernel.org>, "open list:IOMMU DRIVERS" <iommu@lists.linux-foundation.org>, Robin Murphy <robin.murphy@arm.com>
 
-- Add a SPDX header;
-- Adjust document title to follow ReST style;
-- Mark literal blocks as such;
-- Mark a table as such;
-- Add it to sh/index.rst.
+Patchset Summary:
+  Enhance a PCIe host controller driver.  Because of its unusual design
+  we are foced to change dev->dma_pfn_offset into a more general role
+  allowing multiple offsets.
 
-Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
----
- Documentation/sh/index.rst                    |   5 +
- .../sh/{new-machine.txt => new-machine.rst}   | 195 +++++++++---------
- 2 files changed, 106 insertions(+), 94 deletions(-)
- rename Documentation/sh/{new-machine.txt => new-machine.rst} (73%)
+v5:
+  Commit "device core: Introduce multiple dma pfn offsets"
+  -- in of/address.c: "map_size = 0" => "*map_size = 0"
+  -- use kcalloc instead of kzalloc (AndyS)
+  -- use PHYS_ADDR_MAX instead of "~(phys_addr_t)0"
+  Commit "PCI: brcmstb: Set internal memory viewport sizes"
+  -- now gives error on missing dma-ranges property.
+  Commit "dt-bindings: PCI: Add bindings for more Brcmstb chips"
+  -- removed "Allof:" from brcm,scb-sizes definition (RobH)
+  All Commits:
+  -- indentation style, use max chars 100 (AndyS)
+  -- rebased to torvalds master
 
-diff --git a/Documentation/sh/index.rst b/Documentation/sh/index.rst
-index bc8db7ba894a..56c08790265d 100644
---- a/Documentation/sh/index.rst
-+++ b/Documentation/sh/index.rst
-@@ -4,6 +4,11 @@ SuperH Interfaces Guide
- 
- :Author: Paul Mundt
- 
-+.. toctree::
-+    :maxdepth: 1
-+
-+    new-machine
-+
- Memory Management
- ======== 
-diff --git a/Documentation/sh/new-machine.txt b/Documentation/sh/new-machine.rst
-similarity index 73%
-rename from Documentation/sh/new-machine.txt
-rename to Documentation/sh/new-machine.rst
-index e0961a66130b..e501c52b3b30 100644
---- a/Documentation/sh/new-machine.txt
-+++ b/Documentation/sh/new-machine.rst
-@@ -1,6 +1,8 @@
-+.. SPDX-License-Identifier: GPL-2.0
- 
--                Adding a new board to LinuxSH
--               ================
-+==============+Adding a new board to LinuxSH
-+============== 
-                Paul Mundt <lethal@linux-sh.org>
- 
-@@ -19,65 +21,67 @@ include/asm-sh/. For the new kernel, things are broken out by board type,
- companion chip type, and CPU type. Looking at a tree view of this directory
- hierarchy looks like the following:
- 
--Board-specific code:
-+Board-specific code::
- 
--.
--|-- arch
--|   `-- sh
--|       `-- boards
--|           |-- adx
--|           |   `-- board-specific files
--|           |-- bigsur
--|           |   `-- board-specific files
--|           |
--|           ... more boards here ...
--|
--`-- include
--    `-- asm-sh
--        |-- adx
--        |   `-- board-specific headers
--        |-- bigsur
--        |   `-- board-specific headers
--        |
--	.. more boards here ...
-+    .
-+    |-- arch
-+    |   `-- sh
-+    |       `-- boards
-+    |           |-- adx
-+    |           |   `-- board-specific files
-+    |           |-- bigsur
-+    |           |   `-- board-specific files
-+    |           |
-+    |           ... more boards here ...
-+    |
-+    `-- include
-+	`-- asm-sh
-+	    |-- adx
-+	    |   `-- board-specific headers
-+	    |-- bigsur
-+	    |   `-- board-specific headers
-+	    |
-+	    .. more boards here ...
- 
--Next, for companion chips:
--.
--`-- arch
--    `-- sh
--        `-- cchips
--            `-- hd6446x
--                `-- hd64461
--                    `-- cchip-specific files
-+Next, for companion chips::
-+
-+    .
-+    `-- arch
-+	`-- sh
-+	    `-- cchips
-+		`-- hd6446x
-+		    `-- hd64461
-+			`-- cchip-specific files
- 
- ... and so on. Headers for the companion chips are treated the same way as
- board-specific headers. Thus, include/asm-sh/hd64461 is home to all of the
- hd64461-specific headers.
- 
--Finally, CPU family support is also abstracted:
--.
--|-- arch
--|   `-- sh
--|       |-- kernel
--|       |   `-- cpu
--|       |       |-- sh2
--|       |       |   `-- SH-2 generic files
--|       |       |-- sh3
--|       |       |   `-- SH-3 generic files
--|       |       `-- sh4
--|       |           `-- SH-4 generic files
--|       `-- mm
--|           `-- This is also broken out per CPU family, so each family can
--|               have their own set of cache/tlb functions.
--|
--`-- include
--    `-- asm-sh
--        |-- cpu-sh2
--        |   `-- SH-2 specific headers
--        |-- cpu-sh3
--        |   `-- SH-3 specific headers
--        `-- cpu-sh4
--            `-- SH-4 specific headers
-+Finally, CPU family support is also abstracted::
-+
-+    .
-+    |-- arch
-+    |   `-- sh
-+    |       |-- kernel
-+    |       |   `-- cpu
-+    |       |       |-- sh2
-+    |       |       |   `-- SH-2 generic files
-+    |       |       |-- sh3
-+    |       |       |   `-- SH-3 generic files
-+    |       |       `-- sh4
-+    |       |           `-- SH-4 generic files
-+    |       `-- mm
-+    |           `-- This is also broken out per CPU family, so each family can
-+    |               have their own set of cache/tlb functions.
-+    |
-+    `-- include
-+	`-- asm-sh
-+	    |-- cpu-sh2
-+	    |   `-- SH-2 specific headers
-+	    |-- cpu-sh3
-+	    |   `-- SH-3 specific headers
-+	    `-- cpu-sh4
-+		`-- SH-4 specific headers
- 
- It should be noted that CPU subtypes are _not_ abstracted. Thus, these still
- need to be dealt with by the CPU family specific code.
-@@ -110,33 +114,33 @@ arch/sh/boards and the include/asm-sh/ hierarchy. In order to better
- explain this, we use some examples for adding an imaginary board. For
- setup code, we're required at the very least to provide definitions for
- get_system_type() and platform_setup(). For our imaginary board, this
--might look something like:
-+might look something like::
- 
--/*
-- * arch/sh/boards/vapor/setup.c - Setup code for imaginary board
-- */
--#include <linux/init.h>
-+    /*
-+    * arch/sh/boards/vapor/setup.c - Setup code for imaginary board
-+    */
-+    #include <linux/init.h>
- 
--const char *get_system_type(void)
--{
--	return "FooTech Vaporboard";
--}
-+    const char *get_system_type(void)
-+    {
-+	    return "FooTech Vaporboard";
-+    }
- 
--int __init platform_setup(void)
--{
--  	/*
--	 * If our hardware actually existed, we would do real
--	 * setup here. Though it's also sane to leave this empty
--	 * if there's no real init work that has to be done for
--	 * this board.
--	 */
-+    int __init platform_setup(void)
-+    {
-+	    /*
-+	    * If our hardware actually existed, we would do real
-+	    * setup here. Though it's also sane to leave this empty
-+	    * if there's no real init work that has to be done for
-+	    * this board.
-+	    */
- 
--	/* Start-up imaginary PCI ... */
-+	    /* Start-up imaginary PCI ... */
- 
--	/* And whatever else ... */
-+	    /* And whatever else ... */
- 
--	return 0;
--}
-+	    return 0;
-+    }
- 
- Our new imaginary board will also have to tie into the machvec in order for it
- to be of any use.
-@@ -172,16 +176,16 @@ sufficient.
-    vector.
- 
-    Note that these prototypes are generated automatically by setting
--   __IO_PREFIX to something sensible. A typical example would be:
-+   __IO_PREFIX to something sensible. A typical example would be::
- 
- 	#define __IO_PREFIX vapor
--   	#include <asm/io_generic.h>
-+	#include <asm/io_generic.h>
- 
-    somewhere in the board-specific header. Any boards being ported that still
-    have a legacy io.h should remove it entirely and switch to the new model.
- 
-  - Add machine vector definitions to the board's setup.c. At a bare minimum,
--   this must be defined as something like:
-+   this must be defined as something like::
- 
- 	struct sh_machine_vector mv_vapor __initmv = {
- 		.mv_name = "vapor",
-@@ -202,20 +206,20 @@ Large portions of the build system are now entirely dynamic, and merely
- require the proper entry here and there in order to get things done.
- 
- The first thing to do is to add an entry to arch/sh/Kconfig, under the
--"System type" menu:
-+"System type" menu::
- 
--config SH_VAPOR
--	bool "Vapor"
--	help
--	  select Vapor if configuring for a FooTech Vaporboard.
-+    config SH_VAPOR
-+	    bool "Vapor"
-+	    help
-+	    select Vapor if configuring for a FooTech Vaporboard.
- 
- next, this has to be added into arch/sh/Makefile. All boards require a
- machdir-y entry in order to be built. This entry needs to be the name of
- the board directory as it appears in arch/sh/boards, even if it is in a
- sub-directory (in which case, all parent directories below arch/sh/boards/
--need to be listed). For our new board, this entry can look like:
-+need to be listed). For our new board, this entry can look like::
- 
--machdir-$(CONFIG_SH_VAPOR)	+= vapor
-+    machdir-$(CONFIG_SH_VAPOR)	+= vapor
- 
- provided that we've placed everything in the arch/sh/boards/vapor/ directory.
- 
-@@ -230,7 +234,7 @@ This is done by adding an entry to the end of the arch/sh/tools/mach-types
- list. The method for doing this is self explanatory, and so we won't waste
- space restating it here. After this is done, you will be able to use
- implicit checks for your board if you need this somewhere throughout the
--common code, such as:
-+common code, such as::
- 
- 	/* Make sure we're on the FooTech Vaporboard */
- 	if (!mach_is_vapor())
-@@ -253,16 +257,19 @@ build target, and it will be implicitly listed as such in the help text.
- Looking at the 'make help' output, you should now see something like:
- 
- Architecture specific targets (sh):
--  zImage                  - Compressed kernel image (arch/sh/boot/zImage)
--  adx_defconfig           - Build for adx
--  cqreek_defconfig        - Build for cqreek
--  dreamcast_defconfig     - Build for dreamcast
--...
--  vapor_defconfig         - Build for vapor
- 
--which then allows you to do:
-+  ============   ======================+  zImage                    Compressed kernel image (arch/sh/boot/zImage)
-+  adx_defconfig             Build for adx
-+  cqreek_defconfig          Build for cqreek
-+  dreamcast_defconfig       Build for dreamcast
-+  ...
-+  vapor_defconfig           Build for vapor
-+  ============   ====================== 
--$ make ARCH=sh CROSS_COMPILE=sh4-linux- vapor_defconfig vmlinux
-+which then allows you to do::
-+
-+    $ make ARCH=sh CROSS_COMPILE=sh4-linux- vapor_defconfig vmlinux
- 
- which will in turn copy the defconfig for this board, run it through
- oldconfig (prompting you for any new options since the time of creation),
+v4:
+  Commit "device core: Introduce multiple dma pfn offsets"
+  -- of_dma_get_range() does not take a dev param but instead
+     takes two "out" params: map and map_size.  We do this so
+     that the code that parses dma-ranges is separate from
+     the code that modifies 'dev'.   (Nicolas)
+  -- the separate case of having a single pfn offset has
+     been removed and is now processed by going through the
+     map array. (Nicolas)
+  -- move attach_uniform_dma_pfn_offset() from of/address.c to
+     dma/mapping.c so that it does not depend on CONFIG_OF. (Nicolas)
+  -- devm_kcalloc => devm_kzalloc (DanC)
+  -- add/fix assignment to dev->dma_pfn_offset_map for func
+     attach_uniform_dma_pfn_offset() (DanC, Nicolas)
+  -- s/struct dma_pfn_offset_region/struct bus_dma_region/ (Nicolas)
+  -- s/attach_uniform_dma_pfn_offset/dma_attach_uniform_pfn_offset/
+  -- s/attach_dma_pfn_offset_map/dma_attach_pfn_offset_map/
+  -- More use of PFN_{PHYS,DOWN,UP}. (AndyS)
+  Commit "of: Include a dev param in of_dma_get_range()"
+  -- this commit was sqaushed with "device core: Introduce ..."
+
+v3:
+  Commit "device core: Introduce multiple dma pfn offsets"
+  Commit "arm: dma-mapping: Invoke dma offset func if needed"
+  -- The above two commits have been squashed.  More importantly,
+     the code has been modified so that the functionality for
+     multiple pfn offsets subsumes the use of dev->dma_pfn_offset.
+     In fact, dma_pfn_offset is removed and supplanted by
+     dma_pfn_offset_map, which is a pointer to an array.  The
+     more common case of a uniform offset is now handled as
+     a map with a single entry, while cases requiring multiple
+     pfn offsets use a map with multiple entries.  Code paths
+     that used to do this:
+
+         dev->dma_pfn_offset = mydrivers_pfn_offset;
+
+     have been changed to do this:
+
+         attach_uniform_dma_pfn_offset(dev, pfn_offset);
+
+  Commit "dt-bindings: PCI: Add bindings for more Brcmstb chips"
+  -- Add if/then clause for required props: resets, reset-names (RobH)
+  -- Change compatible list from const to enum (RobH)
+  -- Change list of u32-tuples to u64 (RobH)
+
+  Commit "of: Include a dev param in of_dma_get_range()"
+  -- modify of/unittests.c to add NULL param in of_dma_get_range() call.
+
+  Commit "device core: Add ability to handle multiple dma offsets"
+  -- align comment in device.h (AndyS).
+  -- s/cpu_beg/cpu_start/ and s/dma_beg/dma_start/ in struct
+     dma_pfn_offset_region (AndyS).
+
+v2:
+Commit: "device core: Add ability to handle multiple dma offsets"
+  o Added helper func attach_dma_pfn_offset_map() in address.c (Chistoph)
+  o Helpers funcs added to __phys_to_dma() & __dma_to_phys() (Christoph)
+  o Added warning when multiple offsets are needed and !DMA_PFN_OFFSET_MAP
+  o dev->dma_pfn_map => dev->dma_pfn_offset_map
+  o s/frm/from/ for dma_pfn_offset_frm_{phys,dma}_addr() (Christoph)
+  o In device.h: s/const void */const struct dma_pfn_offset_region */
+  o removed 'unlikely' from unlikely(dev->dma_pfn_offset_map) since
+    guarded by CONFIG_DMA_PFN_OFFSET_MAP (Christoph)
+  o Since dev->dma_pfn_offset is copied in usb/core/{usb,message}.c, now
+    dev->dma_pfn_offset_map is copied as well.
+  o Merged two of the DMA commits into one (Christoph).
+
+Commit "arm: dma-mapping: Invoke dma offset func if needed":
+  o Use helper functions instead of #if CONFIG_DMA_PFN_OFFSET
+
+Other commits' changes:
+  o Removed need for carrying of_id var in priv (Nicolas)
+  o Commit message rewordings (Bjorn)
+  o Commit log messages filled to 75 chars (Bjorn)
+  o devm_reset_control_get_shared())
+    => devm_reset_control_get_optional_shared (Philipp)
+  o Add call to reset_control_assert() in PCIe remove routines (Philipp)
+
+v1:
+This patchset expands the usefulness of the Broadcom Settop Box PCIe
+controller by building upon the PCIe driver used currently by the
+Raspbery Pi.  Other forms of this patchset were submitted by me years
+ago and not accepted; the major sticking point was the code required
+for the DMA remapping needed for the PCIe driver to work [1].
+
+There have been many changes to the DMA and OF subsystems since that
+time, making a cleaner and less intrusive patchset possible.  This
+patchset implements a generalization of "dev->dma_pfn_offset", except
+that instead of a single scalar offset it provides for multiple
+offsets via a function which depends upon the "dma-ranges" property of
+the PCIe host controller.  This is required for proper functionality
+of the BrcmSTB PCIe controller and possibly some other devices.
+
+[1] https://lore.kernel.org/linux-arm-kernel/1516058925-46522-5-git-send-email-jim2101024@gmail.com/
+
+Jim Quinlan (12):
+  PCI: brcmstb: PCIE_BRCMSTB depends on ARCH_BRCMSTB
+  ata: ahci_brcm: Fix use of BCM7216 reset controller
+  dt-bindings: PCI: Add bindings for more Brcmstb chips
+  PCI: brcmstb: Add bcm7278 register info
+  PCI: brcmstb: Add suspend and resume pm_ops
+  PCI: brcmstb: Add bcm7278 PERST support
+  PCI: brcmstb: Add control of rescal reset
+  device core: Introduce multiple dma pfn offsets
+  PCI: brcmstb: Set internal memory viewport sizes
+  PCI: brcmstb: Accommodate MSI for older chips
+  PCI: brcmstb: Set bus max burst size by chip type
+  PCI: brcmstb: Add bcm7211, bcm7216, bcm7445, bcm7278 to match list
+
+ .../bindings/pci/brcm,stb-pcie.yaml           |  56 ++-
+ arch/arm/include/asm/dma-mapping.h            |   9 +-
+ arch/arm/mach-keystone/keystone.c             |   8 +-
+ arch/sh/drivers/pci/pcie-sh7786.c             |   3 +-
+ arch/sh/kernel/dma-coherent.c                 |  14 +-
+ arch/x86/pci/sta2x11-fixup.c                  |   7 +-
+ drivers/acpi/arm64/iort.c                     |   4 +-
+ drivers/ata/ahci_brcm.c                       |  11 +-
+ drivers/gpu/drm/sun4i/sun4i_backend.c         |   5 +-
+ drivers/iommu/io-pgtable-arm.c                |   2 +-
+ .../platform/sunxi/sun4i-csi/sun4i_csi.c      |   5 +-
+ .../platform/sunxi/sun6i-csi/sun6i_csi.c      |   4 +-
+ drivers/of/address.c                          |  71 ++-
+ drivers/of/device.c                           |  19 +-
+ drivers/of/of_private.h                       |  11 +-
+ drivers/of/unittest.c                         |   8 +-
+ drivers/pci/controller/Kconfig                |   3 +-
+ drivers/pci/controller/pcie-brcmstb.c         | 403 +++++++++++++++---
+ drivers/remoteproc/remoteproc_core.c          |   2 +-
+ .../staging/media/sunxi/cedrus/cedrus_hw.c    |   7 +-
+ drivers/usb/core/message.c                    |   4 +-
+ drivers/usb/core/usb.c                        |   2 +-
+ include/linux/device.h                        |   4 +-
+ include/linux/dma-direct.h                    |  14 +-
+ include/linux/dma-mapping.h                   |  38 ++
+ kernel/dma/coherent.c                         |  11 +-
+ kernel/dma/mapping.c                          |  39 ++
+ 27 files changed, 632 insertions(+), 132 deletions(-)
+
 -- 
-2.26.2
+2.17.1
