@@ -1,64 +1,82 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Jun 2020 06:55:37 +0000
-Subject: [PATCH 0/2] sh: Remove Cayman board support
-Message-Id: <20200617065539.25805-1-geert+renesas@glider.be>
+Date: Wed, 17 Jun 2020 14:36:32 +0000
+Subject: [PATCH v2 2/9] Revert "sh: add loglvl to printk_address()"
+Message-Id: <20200617143639.18315-3-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200617143639.18315-1-geert+renesas@glider.be>
+In-Reply-To: <20200617143639.18315-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, Arnd Bergmann <arnd@arndb.de>
-Cc: linux-sh@vger.kernel.org, linux-input@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Mike Rapoport <rppt@linux.ibm.com>, Dmitry Safonov <0x7f454c46@gmail.com>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-	Hi all,
+This reverts commit 2deebe4d56d638269a4a728086d64de5734b460a.
 
-Commit 37744feebc086908 ("sh: remove sh5 support") removed all core SH5
-support, but forgot to remove board support for the SH5-based Hitachi
-Cayman development board.
+printk_address() is always used as a continuation of the previous
+logging, hence it should not include a log level.
 
-This patch (hopefully) completes the removal, by dropping Cayman board
-support, and Cayman-specific handling in the i8042 driver.
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - New.
+---
+ arch/sh/include/asm/kdebug.h | 3 +--
+ arch/sh/kernel/dumpstack.c   | 6 +++---
+ arch/sh/mm/fault.c           | 2 +-
+ 3 files changed, 5 insertions(+), 6 deletions(-)
 
-Both patches can be applied independently.
-The first patch is intended for the SH tree.
-The second patch is intended for the input tree, but could be merged
-through the SH tree, if acked.
-
-Thanks!
-
-Geert Uytterhoeven (2):
-  sh: Remove SH5-based Cayman platform
-  input: i8042 - Remove special Cayman handling
-
- arch/sh/Kconfig                     |   5 +-
- arch/sh/Makefile                    |   5 -
- arch/sh/boards/Kconfig              |   6 -
- arch/sh/boards/mach-cayman/Makefile |   5 -
- arch/sh/boards/mach-cayman/irq.c    | 148 -----------------------
- arch/sh/boards/mach-cayman/panic.c  |  46 -------
- arch/sh/boards/mach-cayman/setup.c  | 181 ----------------------------
- arch/sh/configs/cayman_defconfig    |  66 ----------
- arch/sh/drivers/pci/Makefile        |   1 -
- arch/sh/drivers/pci/fixups-cayman.c |  78 ------------
- arch/sh/tools/mach-types            |   1 -
- drivers/input/serio/i8042-io.h      |   2 -
- 12 files changed, 2 insertions(+), 542 deletions(-)
- delete mode 100644 arch/sh/boards/mach-cayman/Makefile
- delete mode 100644 arch/sh/boards/mach-cayman/irq.c
- delete mode 100644 arch/sh/boards/mach-cayman/panic.c
- delete mode 100644 arch/sh/boards/mach-cayman/setup.c
- delete mode 100644 arch/sh/configs/cayman_defconfig
- delete mode 100644 arch/sh/drivers/pci/fixups-cayman.c
-
+diff --git a/arch/sh/include/asm/kdebug.h b/arch/sh/include/asm/kdebug.h
+index 960545306afa4d93..de8693fabb1d95b5 100644
+--- a/arch/sh/include/asm/kdebug.h
++++ b/arch/sh/include/asm/kdebug.h
+@@ -12,8 +12,7 @@ enum die_val {
+ };
+ 
+ /* arch/sh/kernel/dumpstack.c */
+-extern void printk_address(unsigned long address, int reliable,
+-			   const char *loglvl);
++extern void printk_address(unsigned long address, int reliable);
+ extern void dump_mem(const char *str, const char *loglvl,
+ 		     unsigned long bottom, unsigned long top);
+ 
+diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
+index a13c045804ed1027..ad548fc976350c50 100644
+--- a/arch/sh/kernel/dumpstack.c
++++ b/arch/sh/kernel/dumpstack.c
+@@ -44,9 +44,9 @@ void dump_mem(const char *str, const char *loglvl,
+ 	}
+ }
+ 
+-void printk_address(unsigned long address, int reliable, const char *loglvl)
++void printk_address(unsigned long address, int reliable)
+ {
+-	printk("%s [<%p>] %s%pS\n", loglvl, (void *) address,
++	printk(" [<%p>] %s%pS\n", (void *) address,
+ 			reliable ? "" : "? ", (void *) address);
+ }
+ 
+@@ -118,7 +118,7 @@ static int print_trace_stack(void *data, char *name)
+  */
+ static void print_trace_address(void *data, unsigned long addr, int reliable)
+ {
+-	printk_address(addr, reliable, (char *)data);
++	printk_address(addr, reliable);
+ }
+ 
+ static const struct stacktrace_ops print_trace_ops = {
+diff --git a/arch/sh/mm/fault.c b/arch/sh/mm/fault.c
+index acd1c75994983825..92b1ce105f4b6c6f 100644
+--- a/arch/sh/mm/fault.c
++++ b/arch/sh/mm/fault.c
+@@ -213,7 +213,7 @@ show_fault_oops(struct pt_regs *regs, unsigned long address)
+ 				     : "paging request",
+ 		 address);
+ 	pr_alert("PC:");
+-	printk_address(regs->pc, 1, KERN_ALERT);
++	printk_address(regs->pc, 1);
+ 
+ 	show_pte(NULL, address);
+ }
 -- 
 2.17.1
-
-Gr{oetje,eeting}s,
-
-						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
