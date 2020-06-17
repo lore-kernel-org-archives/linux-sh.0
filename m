@@ -1,35 +1,54 @@
-From: Flavio Suligoi <f.suligoi@asem.it>
-Date: Mon, 15 Jun 2020 12:09:40 +0000
-Subject: [PATCH] arch: sh: smc37c93x: fix spelling mistake
-Message-Id: <20200615120940.12603-1-f.suligoi@asem.it>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2020 14:36:39 +0000
+Subject: [PATCH v2 9/9] sh: machvec: Modernize printing of kernel messages
+Message-Id: <20200617143639.18315-10-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200617143639.18315-1-geert+renesas@glider.be>
+In-Reply-To: <20200617143639.18315-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Flavio Suligoi <f.suligoi@asem.it>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Mike Rapoport <rppt@linux.ibm.com>, Dmitry Safonov <0x7f454c46@gmail.com>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Fix typo: "triger" --> "trigger"
+  - Convert from printk() to pr_*(),
+  - Add missing continuations.
 
-Signed-off-by: Flavio Suligoi <f.suligoi@asem.it>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Guenter Roeck <linux@roeck-us.net>
 ---
- arch/sh/include/asm/smc37c93x.h | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+v2:
+  - Add Tested-by.
+---
+ arch/sh/kernel/machvec.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/sh/include/asm/smc37c93x.h b/arch/sh/include/asm/smc37c93x.h
-index f054c30a171a..891f2f8f2fd0 100644
---- a/arch/sh/include/asm/smc37c93x.h
-+++ b/arch/sh/include/asm/smc37c93x.h
-@@ -112,8 +112,8 @@ typedef struct uart_reg {
- #define FCR_RFRES	0x0200	/* Receiver FIFO reset */
- #define FCR_TFRES	0x0400	/* Transmitter FIFO reset */
- #define FCR_DMA		0x0800	/* DMA mode select */
--#define FCR_RTL		0x4000	/* Receiver triger (LSB) */
--#define FCR_RTM		0x8000	/* Receiver triger (MSB) */
-+#define FCR_RTL		0x4000	/* Receiver trigger (LSB) */
-+#define FCR_RTM		0x8000	/* Receiver trigger (MSB) */
+diff --git a/arch/sh/kernel/machvec.c b/arch/sh/kernel/machvec.c
+index beadbbdb44867759..0e9fa33a9b6ab38c 100644
+--- a/arch/sh/kernel/machvec.c
++++ b/arch/sh/kernel/machvec.c
+@@ -64,10 +64,10 @@ static int __init early_parse_mv(char *from)
  
- /* Line Control Register */
+ 	mvp = get_mv_byname(mv_name);
+ 	if (unlikely(!mvp)) {
+-		printk("Available vectors:\n\n\t'%s', ", sh_mv.mv_name);
++		pr_info("Available vectors:\n\n\t'%s', ", sh_mv.mv_name);
+ 		for_each_mv(mvp)
+-			printk("'%s', ", mvp->mv_name);
+-		printk("\n\n");
++			pr_cont("'%s', ", mvp->mv_name);
++		pr_cont("\n\n");
+ 		panic("Failed to select machvec '%s' -- halting.\n",
+ 		      mv_name);
+ 	} else
+@@ -104,7 +104,7 @@ void __init sh_mv_setup(void)
+ 			sh_mv = *(struct sh_machine_vector *)&__machvec_start;
+ 	}
  
+-	printk(KERN_NOTICE "Booting machvec: %s\n", get_system_type());
++	pr_notice("Booting machvec: %s\n", get_system_type());
+ 
+ 	/*
+ 	 * Manually walk the vec, fill in anything that the board hasn't yet
 -- 
 2.17.1
