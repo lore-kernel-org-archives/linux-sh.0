@@ -1,45 +1,42 @@
-From: Mr Suleman Bello <curtismichael74@gmail.com>
-Date: Wed, 03 Jun 2020 00:02:29 +0000
-Subject: Can i trust you?
-Message-Id: <CA+A+bzd=oW8fVDJU7Ybke01YCU5CAU-9bwWnZgvtRnSbsDUHJg@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2020 14:36:31 +0000
+Subject: [PATCH v2 1/9] sh: fault: Fix duplicate printing of "PC:"
+Message-Id: <20200617143639.18315-2-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200617143639.18315-1-geert+renesas@glider.be>
+In-Reply-To: <20200617143639.18315-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Mike Rapoport <rppt@linux.ibm.com>, Dmitry Safonov <0x7f454c46@gmail.com>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Dear Friend,
+Somewhere along the patch handling path, both the old "printk(KERN_ALERT
+...)" and the new "pr_alert(...)" were retained, leading to the
+duplicate printing of "PC:".
 
-Please i want you to read this letter very carefully and i must
-apologize for berging this message into your mail box without any
-formal introduction due to the urgency and confidential of this issue
-and i know that this message will come to you as a surprise, Please
-this is not a joke and i will not like you to joke with it.I am
-Mr.Suleman Bello, a staff in African Development Bank (A.D.B)
-Ouagadougou, Burkina faso West Africa.I discovered existing dormant
-account for years. When I discovered that there had been neither
-continuation nor withdrawals from this account for this long period
-and according to the laws and constitution guiding this banking
-institution, any unserviceable account for more than (7) seven years,
-that fund will be transferred to national treasury as unclaimed fund.
+Drop the old one.
 
-I Hoped that you will not expose or betray this trust and confident
-that i am about to extablish with you for the mutual benefit of you
-and i,I need your urgent assistance in transferring the sum of $10.5
-)million usd into your account within 7 banking days. This money has
-been dormant for years in our Bank, and The request of foreigner in
-this transaction is necessary because our late customer was a
-foreigner and a burkinabe cannot stand as next of kin to a
-foreigner.Because of the static of this transaction I want you to
-stand as the next of kin so that our bank will accord you the
-recognition and have the fund transferred to your account.
+Fixes: eaabf98b0932a540 ("sh: fault: modernize printing of kernel messages")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2:
+  - New.
+---
+ arch/sh/mm/fault.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-Upon your response, I shall then provide you with further information
-and more deities that will help you understand the transaction. I am
-expecting your urgent response to enable me inform you on how the
-business will be executed. Please I would like you to keep this
-transaction confidential and as a top secret or delete if you are not
-interested.
-
-Thanks
-Mr.Suleman Bello.
+diff --git a/arch/sh/mm/fault.c b/arch/sh/mm/fault.c
+index fbe1f2fe9a8c8f55..acd1c75994983825 100644
+--- a/arch/sh/mm/fault.c
++++ b/arch/sh/mm/fault.c
+@@ -208,7 +208,6 @@ show_fault_oops(struct pt_regs *regs, unsigned long address)
+ 	if (!oops_may_print())
+ 		return;
+ 
+-	printk(KERN_ALERT "PC:");
+ 	pr_alert("BUG: unable to handle kernel %s at %08lx\n",
+ 		 address < PAGE_SIZE ? "NULL pointer dereference"
+ 				     : "paging request",
+-- 
+2.17.1
