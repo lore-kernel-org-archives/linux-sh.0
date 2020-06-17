@@ -1,87 +1,41 @@
-From: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
-Date: Mon, 15 Jun 2020 06:50:22 +0000
-Subject: [PATCH 17/22] docs: sh: convert register-banks.txt to ReST
-Message-Id: <adf117cf1edd7f43cb839ff2800f4315dfbcce13.1592203650.git.mchehab+huawei@kernel.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2020 14:36:33 +0000
+Subject: [PATCH v2 3/9] Revert "sh: remove needless printk()"
+Message-Id: <20200617143639.18315-4-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1592203650.git.mchehab+huawei@kernel.org>
-In-Reply-To: <cover.1592203650.git.mchehab+huawei@kernel.org>
+References: <20200617143639.18315-1-geert+renesas@glider.be>
+In-Reply-To: <20200617143639.18315-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux Doc Mailing List <linux-doc@vger.kernel.org>
-Cc: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>, linux-kernel@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Mike Rapoport <rppt@linux.ibm.com>, Dmitry Safonov <0x7f454c46@gmail.com>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-- Add a SPDX header;
-- Adjust document title to follow ReST style;
-- Add blank lines to make ReST markup happy
-- Add it to sh/index.rst.
+This reverts commit 8b92f34877225c8eb85e3ab7f1177fc248ba26d0.
 
-Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+"data" became the log level in commit 539e786cc37ee5cb ("sh: add loglvl
+to show_trace()"), so we do need to keep the printk() before the
+continuation in print_trace_address().
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- Documentation/sh/index.rst                          |  1 +
- .../sh/{register-banks.txt => register-banks.rst}   | 13 ++++++++++---
- arch/sh/Kconfig.cpu                                 |  2 +-
- 3 files changed, 12 insertions(+), 4 deletions(-)
- rename Documentation/sh/{register-banks.txt => register-banks.rst} (88%)
+v2:
+  - New.
+---
+ arch/sh/kernel/dumpstack.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/Documentation/sh/index.rst b/Documentation/sh/index.rst
-index 56c08790265d..580f3b17e841 100644
---- a/Documentation/sh/index.rst
-+++ b/Documentation/sh/index.rst
-@@ -8,6 +8,7 @@ SuperH Interfaces Guide
-     :maxdepth: 1
+diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
+index ad548fc976350c50..cc8063a01284bf64 100644
+--- a/arch/sh/kernel/dumpstack.c
++++ b/arch/sh/kernel/dumpstack.c
+@@ -118,6 +118,7 @@ static int print_trace_stack(void *data, char *name)
+  */
+ static void print_trace_address(void *data, unsigned long addr, int reliable)
+ {
++	printk("%s", (char *)data);
+ 	printk_address(addr, reliable);
+ }
  
-     new-machine
-+    register-banks
- 
- Memory Management
- ========diff --git a/Documentation/sh/register-banks.txt b/Documentation/sh/register-banks.rst
-similarity index 88%
-rename from Documentation/sh/register-banks.txt
-rename to Documentation/sh/register-banks.rst
-index a6719f2f6594..2bef5c8fcbbc 100644
---- a/Documentation/sh/register-banks.txt
-+++ b/Documentation/sh/register-banks.rst
-@@ -1,5 +1,8 @@
--	Notes on register bank usage in the kernel
--	=====================
-+.. SPDX-License-Identifier: GPL-2.0
-+
-+=====================
-+Notes on register bank usage in the kernel
-+=====================
- 
- Introduction
- ------------
-@@ -23,11 +26,15 @@ Presently the kernel uses several of these registers.
- 
- 	- r0_bank, r1_bank (referenced as k0 and k1, used for scratch
- 	  registers when doing exception handling).
-+
- 	- r2_bank (used to track the EXPEVT/INTEVT code)
-+
- 		- Used by do_IRQ() and friends for doing irq mapping based off
- 		  of the interrupt exception vector jump table offset
-+
- 	- r6_bank (global interrupt mask)
-+
- 		- The SR.IMASK interrupt handler makes use of this to set the
- 		  interrupt priority level (used by local_irq_enable())
-+
- 	- r7_bank (current)
--
-diff --git a/arch/sh/Kconfig.cpu b/arch/sh/Kconfig.cpu
-index 97ca35f2cd37..fff419f3d757 100644
---- a/arch/sh/Kconfig.cpu
-+++ b/arch/sh/Kconfig.cpu
-@@ -85,7 +85,7 @@ config CPU_HAS_SR_RB
- 	  that are lacking this bit must have another method in place for
- 	  accomplishing what is taken care of by the banked registers.
- 
--	  See <file:Documentation/sh/register-banks.txt> for further
-+	  See <file:Documentation/sh/register-banks.rst> for further
- 	  information on SR.RB and register banking in the kernel in general.
- 
- config CPU_HAS_PTEAEX
 -- 
-2.26.2
+2.17.1
