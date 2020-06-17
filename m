@@ -1,56 +1,72 @@
-From: Sarah Koffi <paulwiliam782@gmail.com>
-Date: Tue, 23 Jun 2020 11:16:11 +0000
-Subject: Greetings From Mrs. Sarah Koffi
-Message-Id: <CAHqcnY116USNSghJh93uuVHviw=mkwa0qLD7qnjwh-ZKmn8ukA@mail.gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2020 14:36:30 +0000
+Subject: [PATCH v2 0/9] sh: Modernize printing of kernel messages
+Message-Id: <20200617143639.18315-1-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sarahkoffi389-/E1597aS9LR3+QwDJ9on6Q@public.gmane.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Mike Rapoport <rppt@linux.ibm.com>, Dmitry Safonov <0x7f454c46@gmail.com>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Greetings From Mrs. Sarah Koffi
+	Hi all,
 
-I'm contacting you based on your good profiles I read and for a good
-reasons, I am in search of a property to buy in your country as I
-intended to come over to your
-country for investment, Though I have not meet with you before but I
-believe that one has to risk confiding in someone to succeed sometimes
-in life.
+This patch series fixes the broken lines in kernel output, which I
+presume have been happening since commit 4bcc595ccd80decb ("printk:
+reinstate KERN_CONT for printing continuat ion lines").
+Most annoying are the ones in call traces and disassembly dumps, as they
+cause lots of small bits of information to fly by your serial console.
 
-My name is Mrs. Sarah Koffi. My late husband deals on Crude Oil with
-Federal Government of Sudan and he has a personal Oil firm in Bentiu
-Oil zone town and Upper
-Nile city. What I have experience physically, I don't wish to
-experience it again in my life due to the recent civil Ethnic war
-cause by our President Mr. Salva Kiir
-and the rebel leader Mr Riek Machar, I have been Under United Nation
-refuge camp in chad to save my life and that of my little daughter.
+Changes compared to v1[1]:
+  - Add Tested-by,
+  - Drop "sh: fault: Modernize printing of kernel messages", which was
+    picked up by Mike and Andrew, but subject to an unintended mutation,
+  - Add a fix for the mutation,
+  - Rebase on top of "[PATCHv3 00/50] Add log level to show_stack()":
+      - Drop conversion of remaining printk() calls to pr_*(), as they
+	have all received a loglvl parameter,
+      - Remove loglvl parameters from continuations.
+  - Add two reverts for commits in the above series, due to people being
+    mislead by the lack of pr_cont() use,
+  - Add note about printk(KERN_DEBUG ...).
 
-Though, I do not know how you will feel to my proposal, but the truth
-is that I sneaked into Chad our neighboring country where I am living
-now as a refugee.
-I escaped with my little daughter when the rebels bust into our house
-and killed my husband as one of the big oil dealers in the country,
-ever since then, I have being on the run.
+Thanks!
 
-I left my country and move to Chad our neighboring country with the
-little ceasefire we had, due to the face to face peace meeting accord
-coordinated by the US Secretary of State, Mr John Kerry and United
-Nations in Ethiopia (Addis Ababa) between our President Mr Salva Kiir
-and the rebel leader Mr Riek Machar to stop this war.
+[1] https://lore.kernel.org/r/20191203162645.19950-1-geert+renesas@glider.be
 
-I want to solicit for your partnership with trust to invest the $8
-million dollars deposited by my late husband in Bank because my life
-is no longer safe in our country, since the rebels are looking for the
-families of all the oil business men in the country to kill, saying
-that they are they one that is milking the country dry.
+Geert Uytterhoeven (9):
+  sh: fault: Fix duplicate printing of "PC:"
+  Revert "sh: add loglvl to printk_address()"
+  Revert "sh: remove needless printk()"
+  sh: kernel: disassemble: Fix broken lines in disassembly dumps
+  sh: dump_stack: Fix broken lines and ptrval in calltrace dumps
+  sh: process: Fix broken lines in register dumps
+  sh: sh2007: Modernize printing of kernel messages
+  sh: pci: Modernize printing of kernel messages
+  sh: machvec: Modernize printing of kernel messages
 
-I will offer you 20% of the total fund for your help while I will
-partner with you for the investment in your country.
-If I get your reply.
+ arch/sh/boards/board-sh2007.c    |   4 +-
+ arch/sh/drivers/pci/common.c     |   6 +-
+ arch/sh/drivers/pci/pci-sh7780.c |  23 ++++---
+ arch/sh/drivers/pci/pci.c        |  11 ++--
+ arch/sh/include/asm/kdebug.h     |   3 +-
+ arch/sh/kernel/disassemble.c     | 103 ++++++++++++++++---------------
+ arch/sh/kernel/dumpstack.c       |  23 +++----
+ arch/sh/kernel/machvec.c         |   8 +--
+ arch/sh/kernel/process_32.c      |  38 +++++-------
+ arch/sh/mm/fault.c               |   3 +-
+ 10 files changed, 108 insertions(+), 114 deletions(-)
 
-I will wait to hear from you so as to give you details.With love from
+-- 
+2.17.1
 
- i need you to contact me here sarahkoffi389@yahoo.co.jp
+Gr{oetje,eeting}s,
 
-Mrs. Sarah Koffi
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
