@@ -1,25 +1,36 @@
-From: pr-tracker-bot@kernel.org
-Date: Sun, 07 Jun 2020 02:30:15 +0000
-Subject: Re: [GIT PULL] arch/sh updates for 5.8
-Message-Id: <159149701541.1383.17799463700548438864.pr-tracker-bot@kernel.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2020 06:55:39 +0000
+Subject: [PATCH 2/2] input: i8042 - Remove special Cayman handling
+Message-Id: <20200617065539.25805-3-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200606165610.GA28637@brightrain.aerifal.cx>
-In-Reply-To: <20200606165610.GA28637@brightrain.aerifal.cx>
+References: <20200617065539.25805-1-geert+renesas@glider.be>
+In-Reply-To: <20200617065539.25805-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Rich Felker <dalias@libc.org>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, Arnd Bergmann <arnd@arndb.de>
+Cc: linux-sh@vger.kernel.org, linux-input@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-The pull request you sent on Sat, 6 Jun 2020 12:56:22 -0400:
+As of commit 37744feebc086908 ("sh: remove sh5 support"), support for
+the SH5-based Cayman platform can no longer be selected.
 
-> git://git.libc.org/linux-sh tags/sh-for-5.8
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/input/serio/i8042-io.h | 2 --
+ 1 file changed, 2 deletions(-)
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/3b69e8b4571125bec1f77f886174fe6cab6b9d75
-
-Thank you!
-
+diff --git a/drivers/input/serio/i8042-io.h b/drivers/input/serio/i8042-io.h
+index da0bf85321de3a77..64590b86eb37ff30 100644
+--- a/drivers/input/serio/i8042-io.h
++++ b/drivers/input/serio/i8042-io.h
+@@ -21,8 +21,6 @@
+ #elif defined(__arm__)
+ /* defined in include/asm-arm/arch-xxx/irqs.h */
+ #include <asm/irq.h>
+-#elif defined(CONFIG_SH_CAYMAN)
+-#include <asm/irq.h>
+ #elif defined(CONFIG_PPC)
+ extern int of_i8042_kbd_irq;
+ extern int of_i8042_aux_irq;
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.wiki.kernel.org/userdoc/prtracker
+2.17.1
