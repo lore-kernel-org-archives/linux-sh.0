@@ -1,53 +1,64 @@
-From: Peter Xu <peterx@redhat.com>
-Date: Tue, 30 Jun 2020 20:45:51 +0000
-Subject: [PATCH v4 19/26] mm/sh: Use general page fault accounting
-Message-Id: <20200630204551.39391-1-peterx@redhat.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 17 Jun 2020 06:55:37 +0000
+Subject: [PATCH 0/2] sh: Remove Cayman board support
+Message-Id: <20200617065539.25805-1-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org
-Cc: Andrew Morton <akpm@linux-foundation.org>, peterx@redhat.com, John Hubbard <jhubbard@nvidia.com>, Michael Ellerman <mpe@ellerman.id.au>, Gerald Schaefer <gerald.schaefer@de.ibm.com>, Andrea Arcangeli <aarcange@redhat.com>, Linus Torvalds <torvalds@linux-foundation.org>, Will Deacon <will@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dmitry Torokhov <dmitry.torokhov@gmail.com>, Arnd Bergmann <arnd@arndb.de>
+Cc: linux-sh@vger.kernel.org, linux-input@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Use the general page fault accounting by passing regs into handle_mm_fault().
-It naturally solve the issue of multiple page fault accounting when page fault
-retry happened.
+	Hi all,
 
-CC: Yoshinori Sato <ysato@users.sourceforge.jp>
-CC: Rich Felker <dalias@libc.org>
-CC: linux-sh@vger.kernel.org
-Signed-off-by: Peter Xu <peterx@redhat.com>
----
- arch/sh/mm/fault.c | 11 +----------
- 1 file changed, 1 insertion(+), 10 deletions(-)
+Commit 37744feebc086908 ("sh: remove sh5 support") removed all core SH5
+support, but forgot to remove board support for the SH5-based Hitachi
+Cayman development board.
 
-diff --git a/arch/sh/mm/fault.c b/arch/sh/mm/fault.c
-index 3c0a11827f7e..482668a2f6d3 100644
---- a/arch/sh/mm/fault.c
-+++ b/arch/sh/mm/fault.c
-@@ -482,22 +482,13 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
- 	 * make sure we exit gracefully rather than endlessly redo
- 	 * the fault.
- 	 */
--	fault = handle_mm_fault(vma, address, flags, NULL);
-+	fault = handle_mm_fault(vma, address, flags, regs);
- 
- 	if (unlikely(fault & (VM_FAULT_RETRY | VM_FAULT_ERROR)))
- 		if (mm_fault_error(regs, error_code, address, fault))
- 			return;
- 
- 	if (flags & FAULT_FLAG_ALLOW_RETRY) {
--		if (fault & VM_FAULT_MAJOR) {
--			tsk->maj_flt++;
--			perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MAJ, 1,
--				      regs, address);
--		} else {
--			tsk->min_flt++;
--			perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MIN, 1,
--				      regs, address);
--		}
- 		if (fault & VM_FAULT_RETRY) {
- 			flags |= FAULT_FLAG_TRIED;
- 
+This patch (hopefully) completes the removal, by dropping Cayman board
+support, and Cayman-specific handling in the i8042 driver.
+
+Both patches can be applied independently.
+The first patch is intended for the SH tree.
+The second patch is intended for the input tree, but could be merged
+through the SH tree, if acked.
+
+Thanks!
+
+Geert Uytterhoeven (2):
+  sh: Remove SH5-based Cayman platform
+  input: i8042 - Remove special Cayman handling
+
+ arch/sh/Kconfig                     |   5 +-
+ arch/sh/Makefile                    |   5 -
+ arch/sh/boards/Kconfig              |   6 -
+ arch/sh/boards/mach-cayman/Makefile |   5 -
+ arch/sh/boards/mach-cayman/irq.c    | 148 -----------------------
+ arch/sh/boards/mach-cayman/panic.c  |  46 -------
+ arch/sh/boards/mach-cayman/setup.c  | 181 ----------------------------
+ arch/sh/configs/cayman_defconfig    |  66 ----------
+ arch/sh/drivers/pci/Makefile        |   1 -
+ arch/sh/drivers/pci/fixups-cayman.c |  78 ------------
+ arch/sh/tools/mach-types            |   1 -
+ drivers/input/serio/i8042-io.h      |   2 -
+ 12 files changed, 2 insertions(+), 542 deletions(-)
+ delete mode 100644 arch/sh/boards/mach-cayman/Makefile
+ delete mode 100644 arch/sh/boards/mach-cayman/irq.c
+ delete mode 100644 arch/sh/boards/mach-cayman/panic.c
+ delete mode 100644 arch/sh/boards/mach-cayman/setup.c
+ delete mode 100644 arch/sh/configs/cayman_defconfig
+ delete mode 100644 arch/sh/drivers/pci/fixups-cayman.c
+
 -- 
-2.26.2
+2.17.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
