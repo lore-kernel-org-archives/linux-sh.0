@@ -1,61 +1,147 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Sat, 27 Jun 2020 14:34:52 +0000
-Subject: [PATCH 7/8] mm: move lib/ioremap.c to mm/
-Message-Id: <20200627143453.31835-8-rppt@kernel.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Thu, 18 Jun 2020 07:59:37 +0000
+Subject: [PATCH] sh: stacktrace: Remove stacktrace_ops.stack()
+Message-Id: <20200618075937.16391-1-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200627143453.31835-1-rppt@kernel.org>
-In-Reply-To: <20200627143453.31835-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Abdul Haleem <abdhalee@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Andy Lutomirski <luto@kernel.org>, Arnd Bergmann <arnd@arndb.de>, Christophe Leroy <christophe.leroy@csgroup.eu>, Joerg Roedel <joro@8bytes.org>, Max Filippov <jcmvbkbc@gmail.com>, Mike Rapoport <rppt@kernel.org>, Mike Rapoport <rppt@linux.ibm.com>, Peter Zijlstra <peterz@infradead.org>, Satheesh Rajendran <sathnaga@linux.vnet.ibm.com>, Stafford Horne <shorne@gmail.com>, Stephen Rothwell <sfr@canb.auug.org.au>, Steven Rostedt <rostedt@goodmis.org>, linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.orglinux
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Mike Rapoport <rppt@linux.ibm.com>
+The SH implementation never called stacktrace_ops.stack().
+Presumably this was copied from the x86 implementation.
 
-The functionality in lib/ioremap.c deals with pagetables, vmalloc and
-caches, so it naturally belongs to mm/
-Moving it there will also allow declaring p?d_alloc_track functions in an
-header file inside mm/ rather than having those declarations in
-include/linux/mm.h
+Hence remove the method, and all implementations (most of them are
+dummies).
 
-Suggested-by: Andrew Morton <akpm@linux-foundation.org>
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- lib/Makefile          | 1 -
- mm/Makefile           | 2 +-
- {lib => mm}/ioremap.c | 0
- 3 files changed, 1 insertion(+), 2 deletions(-)
- rename {lib => mm}/ioremap.c (100%)
+ arch/sh/include/asm/stacktrace.h | 2 --
+ arch/sh/kernel/dumpstack.c       | 7 -------
+ arch/sh/kernel/perf_callchain.c  | 6 ------
+ arch/sh/kernel/stacktrace.c      | 7 -------
+ arch/sh/oprofile/backtrace.c     | 7 -------
+ 5 files changed, 29 deletions(-)
 
-diff --git a/lib/Makefile b/lib/Makefile
-index b1c42c10073b..5f9384adde9c 100644
---- a/lib/Makefile
-+++ b/lib/Makefile
-@@ -37,7 +37,6 @@ lib-y := ctype.o string.o vsprintf.o cmdline.o \
- 	 nmi_backtrace.o nodemask.o win_minmax.o memcat_p.o
+diff --git a/arch/sh/include/asm/stacktrace.h b/arch/sh/include/asm/stacktrace.h
+index 50c173c0b9f56f69..4f98cdc64ec59b1c 100644
+--- a/arch/sh/include/asm/stacktrace.h
++++ b/arch/sh/include/asm/stacktrace.h
+@@ -12,8 +12,6 @@
  
- lib-$(CONFIG_PRINTK) += dump_stack.o
--lib-$(CONFIG_MMU) += ioremap.o
- lib-$(CONFIG_SMP) += cpumask.o
+ struct stacktrace_ops {
+ 	void (*address)(void *data, unsigned long address, int reliable);
+-	/* On negative return stop dumping */
+-	int (*stack)(void *data, char *name);
+ };
  
- lib-y	+= kobject.o klist.o
-diff --git a/mm/Makefile b/mm/Makefile
-index 6e9d46b2efc9..d5649f1c12c0 100644
---- a/mm/Makefile
-+++ b/mm/Makefile
-@@ -38,7 +38,7 @@ mmu-y			:= nommu.o
- mmu-$(CONFIG_MMU)	:= highmem.o memory.o mincore.o \
- 			   mlock.o mmap.o mmu_gather.o mprotect.o mremap.o \
- 			   msync.o page_vma_mapped.o pagewalk.o \
--			   pgtable-generic.o rmap.o vmalloc.o
-+			   pgtable-generic.o rmap.o vmalloc.o ioremap.o
+ void dump_trace(struct task_struct *tsk, struct pt_regs *regs,
+diff --git a/arch/sh/kernel/dumpstack.c b/arch/sh/kernel/dumpstack.c
+index 0a69588e343f7b98..758a6c89e911bc15 100644
+--- a/arch/sh/kernel/dumpstack.c
++++ b/arch/sh/kernel/dumpstack.c
+@@ -107,12 +107,6 @@ stack_reader_dump(struct task_struct *task, struct pt_regs *regs,
+ 	}
+ }
  
+-static int print_trace_stack(void *data, char *name)
+-{
+-	printk("%s <%s> ", (char *)data, name);
+-	return 0;
+-}
+-
+ /*
+  * Print one address/symbol entries per line.
+  */
+@@ -123,7 +117,6 @@ static void print_trace_address(void *data, unsigned long addr, int reliable)
+ }
  
- ifdef CONFIG_CROSS_MEMORY_ATTACH
-diff --git a/lib/ioremap.c b/mm/ioremap.c
-similarity index 100%
-rename from lib/ioremap.c
-rename to mm/ioremap.c
+ static const struct stacktrace_ops print_trace_ops = {
+-	.stack = print_trace_stack,
+ 	.address = print_trace_address,
+ };
+ 
+diff --git a/arch/sh/kernel/perf_callchain.c b/arch/sh/kernel/perf_callchain.c
+index 6281f2fdf9cac906..c9d3aa18732d1d49 100644
+--- a/arch/sh/kernel/perf_callchain.c
++++ b/arch/sh/kernel/perf_callchain.c
+@@ -11,11 +11,6 @@
+ #include <asm/unwinder.h>
+ #include <asm/ptrace.h>
+ 
+-static int callchain_stack(void *data, char *name)
+-{
+-	return 0;
+-}
+-
+ static void callchain_address(void *data, unsigned long addr, int reliable)
+ {
+ 	struct perf_callchain_entry_ctx *entry = data;
+@@ -25,7 +20,6 @@ static void callchain_address(void *data, unsigned long addr, int reliable)
+ }
+ 
+ static const struct stacktrace_ops callchain_ops = {
+-	.stack		= callchain_stack,
+ 	.address	= callchain_address,
+ };
+ 
+diff --git a/arch/sh/kernel/stacktrace.c b/arch/sh/kernel/stacktrace.c
+index 2950b19ad0772081..daf0b53ee066fa6d 100644
+--- a/arch/sh/kernel/stacktrace.c
++++ b/arch/sh/kernel/stacktrace.c
+@@ -15,11 +15,6 @@
+ #include <asm/ptrace.h>
+ #include <asm/stacktrace.h>
+ 
+-static int save_stack_stack(void *data, char *name)
+-{
+-	return 0;
+-}
+-
+ /*
+  * Save stack-backtrace addresses into a stack_trace buffer.
+  */
+@@ -40,7 +35,6 @@ static void save_stack_address(void *data, unsigned long addr, int reliable)
+ }
+ 
+ static const struct stacktrace_ops save_stack_ops = {
+-	.stack = save_stack_stack,
+ 	.address = save_stack_address,
+ };
+ 
+@@ -73,7 +67,6 @@ save_stack_address_nosched(void *data, unsigned long addr, int reliable)
+ }
+ 
+ static const struct stacktrace_ops save_stack_ops_nosched = {
+-	.stack = save_stack_stack,
+ 	.address = save_stack_address_nosched,
+ };
+ 
+diff --git a/arch/sh/oprofile/backtrace.c b/arch/sh/oprofile/backtrace.c
+index f1205f92631df3b9..cc16cf86cd92fabe 100644
+--- a/arch/sh/oprofile/backtrace.c
++++ b/arch/sh/oprofile/backtrace.c
+@@ -19,12 +19,6 @@
+ #include <asm/sections.h>
+ #include <asm/stacktrace.h>
+ 
+-static int backtrace_stack(void *data, char *name)
+-{
+-	/* Yes, we want all stacks */
+-	return 0;
+-}
+-
+ static void backtrace_address(void *data, unsigned long addr, int reliable)
+ {
+ 	unsigned int *depth = data;
+@@ -34,7 +28,6 @@ static void backtrace_address(void *data, unsigned long addr, int reliable)
+ }
+ 
+ static struct stacktrace_ops backtrace_ops = {
+-	.stack = backtrace_stack,
+ 	.address = backtrace_address,
+ };
+ 
 -- 
-2.26.2
+2.17.1
