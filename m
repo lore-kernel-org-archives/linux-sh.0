@@ -1,102 +1,64 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 08 Jun 2020 09:59:34 +0000
-Subject: [PATCH 2/8] spi: rspi: Use requested instead of maximum bit rate
-Message-Id: <20200608095940.30516-3-geert+renesas@glider.be>
+From: Christian Brauner <christian.brauner@ubuntu.com>
+Date: Mon, 22 Jun 2020 23:43:23 +0000
+Subject: [PATCH 14/17] sh: switch to copy_thread_tls()
+Message-Id: <20200622234326.906346-15-christian.brauner@ubuntu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200608095940.30516-1-geert+renesas@glider.be>
-In-Reply-To: <20200608095940.30516-1-geert+renesas@glider.be>
+References: <20200622234326.906346-1-christian.brauner@ubuntu.com>
+In-Reply-To: <20200622234326.906346-1-christian.brauner@ubuntu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Chris Brandt <chris.brandt@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-kernel@vger.kernel.org
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, Christian Brauner <christian.brauner@ubuntu.com>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
 
-Currently, the RSPI driver always tries to use the maximum configured
-bit rate for communicating with a slave device, even if the transfer(s)
-in the current message specify a lower rate.
+Use the copy_thread_tls() calling convention which passes tls through a
+register. This is required so we can remove the copy_thread{_tls}() split
+and remove the HAVE_COPY_THREAD_TLS macro.
 
-Use the mininum rate specified in the message instead.
-Rename rspi_data.max_speed_hz accordingly.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Christian Brauner <christian.brauner@ubuntu.com>
 ---
- drivers/spi/spi-rspi.c | 28 +++++++++++++++++++++-------
- 1 file changed, 21 insertions(+), 7 deletions(-)
+ arch/sh/Kconfig             | 1 +
+ arch/sh/kernel/process_32.c | 6 +++---
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 0e786af546c9f513..1b635d6b7881f5b9 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -179,7 +179,7 @@
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 9fc2b010e938..e10118d61ce7 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -70,6 +70,7 @@ config SUPERH
+ 	select ARCH_HIBERNATION_POSSIBLE if MMU
+ 	select SPARSE_IRQ
+ 	select HAVE_STACKPROTECTOR
++	select HAVE_COPY_THREAD_TLS
+ 	help
+ 	  The SuperH is a RISC processor targeted for use in embedded systems
+ 	  and consumer electronics; it was also used in the Sega Dreamcast
+diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
+index 456cc8d171f7..537a82d80616 100644
+--- a/arch/sh/kernel/process_32.c
++++ b/arch/sh/kernel/process_32.c
+@@ -115,8 +115,8 @@ EXPORT_SYMBOL(dump_fpu);
+ asmlinkage void ret_from_fork(void);
+ asmlinkage void ret_from_kernel_thread(void);
  
- struct rspi_data {
- 	void __iomem *addr;
--	u32 max_speed_hz;
-+	u32 speed_hz;
- 	struct spi_controller *ctlr;
- 	struct platform_device *pdev;
- 	wait_queue_head_t wait;
-@@ -258,8 +258,7 @@ static int rspi_set_config_register(struct rspi_data *rspi, int access_size)
- 	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
- 
- 	/* Sets transfer bit rate */
--	spbr = DIV_ROUND_UP(clk_get_rate(rspi->clk),
--			    2 * rspi->max_speed_hz) - 1;
-+	spbr = DIV_ROUND_UP(clk_get_rate(rspi->clk), 2 * rspi->speed_hz) - 1;
- 	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
- 
- 	/* Disable dummy transmission, set 16-bit word access, 1 frame */
-@@ -299,14 +298,14 @@ static int rspi_rz_set_config_register(struct rspi_data *rspi, int access_size)
- 
- 	clksrc = clk_get_rate(rspi->clk);
- 	while (div < 3) {
--		if (rspi->max_speed_hz >= clksrc/4) /* 4=(CLK/2)/2 */
-+		if (rspi->speed_hz >= clksrc/4) /* 4=(CLK/2)/2 */
- 			break;
- 		div++;
- 		clksrc /= 2;
- 	}
- 
- 	/* Sets transfer bit rate */
--	spbr = DIV_ROUND_UP(clksrc, 2 * rspi->max_speed_hz) - 1;
-+	spbr = DIV_ROUND_UP(clksrc, 2 * rspi->speed_hz) - 1;
- 	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
- 	rspi->spcmd |= div << 2;
- 
-@@ -341,7 +340,7 @@ static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
- 	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
- 
- 	/* Sets transfer bit rate */
--	spbr = DIV_ROUND_UP(clk_get_rate(rspi->clk), 2 * rspi->max_speed_hz);
-+	spbr = DIV_ROUND_UP(clk_get_rate(rspi->clk), 2 * rspi->speed_hz);
- 	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
- 
- 	/* Disable dummy transmission, set byte access */
-@@ -949,9 +948,24 @@ static int rspi_prepare_message(struct spi_controller *ctlr,
+-int copy_thread(unsigned long clone_flags, unsigned long usp,
+-		unsigned long arg, struct task_struct *p)
++int copy_thread_tls(unsigned long clone_flags, unsigned long usp,
++		    unsigned long arg, struct task_struct *p, unsigned long tls)
  {
- 	struct rspi_data *rspi = spi_controller_get_devdata(ctlr);
- 	struct spi_device *spi = msg->spi;
-+	const struct spi_transfer *xfer;
- 	int ret;
+ 	struct thread_info *ti = task_thread_info(p);
+ 	struct pt_regs *childregs;
+@@ -158,7 +158,7 @@ int copy_thread(unsigned long clone_flags, unsigned long usp,
+ 	ti->addr_limit = USER_DS;
  
--	rspi->max_speed_hz = spi->max_speed_hz;
-+	/*
-+	 * As the Bit Rate Register must not be changed while the device is
-+	 * active, all transfers in a message must use the same bit rate.
-+	 * In theory, the sequencer could be enabled, and each Command Register
-+	 * could divide the base bit rate by a different value.
-+	 * However, most RSPI variants do not have Transfer Data Length
-+	 * Multiplier Setting Registers, so each sequence step would be limited
-+	 * to a single word, making this feature unsuitable for large
-+	 * transfers, which would gain most from it.
-+	 */
-+	rspi->speed_hz = spi->max_speed_hz;
-+	list_for_each_entry(xfer, &msg->transfers, transfer_list) {
-+		if (xfer->speed_hz < rspi->speed_hz)
-+			rspi->speed_hz = xfer->speed_hz;
-+	}
+ 	if (clone_flags & CLONE_SETTLS)
+-		childregs->gbr = childregs->regs[0];
++		childregs->gbr = tls;
  
- 	rspi->spcmd = SPCMD_SSLKP;
- 	if (spi->mode & SPI_CPOL)
+ 	childregs->regs[0] = 0; /* Set return value for child */
+ 	p->thread.pc = (unsigned long) ret_from_fork;
 -- 
-2.17.1
+2.27.0
