@@ -1,55 +1,56 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 26 Jun 2020 08:07:08 +0000
-Subject: [PATCH 01/10] sh: remove -Werror from Makefiles
-Message-Id: <20200626080717.1999041-2-hch@lst.de>
+From: Sarah Koffi <paulwiliam782@gmail.com>
+Date: Tue, 23 Jun 2020 11:16:11 +0000
+Subject: Greetings From Mrs. Sarah Koffi
+Message-Id: <CAHqcnY116USNSghJh93uuVHviw=mkwa0qLD7qnjwh-ZKmn8ukA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200626080717.1999041-1-hch@lst.de>
-In-Reply-To: <20200626080717.1999041-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: sarahkoffi389-/E1597aS9LR3+QwDJ9on6Q@public.gmane.org
 
-The sh build is full of warnings when building with gcc 9.2.1.  While
-fixing those would be great, at least avoid failing the build.
+Greetings From Mrs. Sarah Koffi
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- arch/sh/kernel/Makefile | 2 --
- arch/sh/lib/Makefile    | 2 --
- arch/sh/mm/Makefile     | 2 --
- 3 files changed, 6 deletions(-)
+I'm contacting you based on your good profiles I read and for a good
+reasons, I am in search of a property to buy in your country as I
+intended to come over to your
+country for investment, Though I have not meet with you before but I
+believe that one has to risk confiding in someone to succeed sometimes
+in life.
 
-diff --git a/arch/sh/kernel/Makefile b/arch/sh/kernel/Makefile
-index b0f5574b6228b3..aa0fbc9202b14e 100644
---- a/arch/sh/kernel/Makefile
-+++ b/arch/sh/kernel/Makefile
-@@ -47,5 +47,3 @@ obj-$(CONFIG_DWARF_UNWINDER)	+= dwarf.o
- obj-$(CONFIG_PERF_EVENTS)	+= perf_event.o perf_callchain.o
- obj-$(CONFIG_DMA_NONCOHERENT)	+= dma-coherent.o
- obj-$(CONFIG_HAVE_HW_BREAKPOINT)		+= hw_breakpoint.o
--
--ccflags-y := -Werror
-diff --git a/arch/sh/lib/Makefile b/arch/sh/lib/Makefile
-index d0abbe5e38b0f3..eb473d373ca43a 100644
---- a/arch/sh/lib/Makefile
-+++ b/arch/sh/lib/Makefile
-@@ -30,5 +30,3 @@ memset-$(CONFIG_CPU_SH4)	:= memset-sh4.o
- lib-$(CONFIG_MMU)		+= copy_page.o __clear_user.o
- lib-$(CONFIG_MCOUNT)		+= mcount.o
- lib-y				+= $(memcpy-y) $(memset-y) $(udivsi3-y)
--
--ccflags-y := -Werror
-diff --git a/arch/sh/mm/Makefile b/arch/sh/mm/Makefile
-index 487da0ff03b3a7..f69ddc70b14658 100644
---- a/arch/sh/mm/Makefile
-+++ b/arch/sh/mm/Makefile
-@@ -43,5 +43,3 @@ obj-$(CONFIG_UNCACHED_MAPPING)	+= uncached.o
- obj-$(CONFIG_HAVE_SRAM_POOL)	+= sram.o
- 
- GCOV_PROFILE_pmb.o := n
--
--ccflags-y := -Werror
--- 
-2.26.2
+My name is Mrs. Sarah Koffi. My late husband deals on Crude Oil with
+Federal Government of Sudan and he has a personal Oil firm in Bentiu
+Oil zone town and Upper
+Nile city. What I have experience physically, I don't wish to
+experience it again in my life due to the recent civil Ethnic war
+cause by our President Mr. Salva Kiir
+and the rebel leader Mr Riek Machar, I have been Under United Nation
+refuge camp in chad to save my life and that of my little daughter.
+
+Though, I do not know how you will feel to my proposal, but the truth
+is that I sneaked into Chad our neighboring country where I am living
+now as a refugee.
+I escaped with my little daughter when the rebels bust into our house
+and killed my husband as one of the big oil dealers in the country,
+ever since then, I have being on the run.
+
+I left my country and move to Chad our neighboring country with the
+little ceasefire we had, due to the face to face peace meeting accord
+coordinated by the US Secretary of State, Mr John Kerry and United
+Nations in Ethiopia (Addis Ababa) between our President Mr Salva Kiir
+and the rebel leader Mr Riek Machar to stop this war.
+
+I want to solicit for your partnership with trust to invest the $8
+million dollars deposited by my late husband in Bank because my life
+is no longer safe in our country, since the rebels are looking for the
+families of all the oil business men in the country to kill, saying
+that they are they one that is milking the country dry.
+
+I will offer you 20% of the total fund for your help while I will
+partner with you for the investment in your country.
+If I get your reply.
+
+I will wait to hear from you so as to give you details.With love from
+
+ i need you to contact me here sarahkoffi389@yahoo.co.jp
+
+Mrs. Sarah Koffi
