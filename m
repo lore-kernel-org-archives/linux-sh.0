@@ -1,81 +1,120 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 08 Jun 2020 09:59:40 +0000
-Subject: [PATCH 8/8] spi: rspi: Fill in controller speed limits
-Message-Id: <20200608095940.30516-9-geert+renesas@glider.be>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 26 Jun 2020 08:07:11 +0000
+Subject: [PATCH 04/10] sh: move ioremap_fixed details out of <asm/io.h>
+Message-Id: <20200626080717.1999041-5-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200608095940.30516-1-geert+renesas@glider.be>
-In-Reply-To: <20200608095940.30516-1-geert+renesas@glider.be>
+References: <20200626080717.1999041-1-hch@lst.de>
+In-Reply-To: <20200626080717.1999041-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Chris Brandt <chris.brandt@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Fill in the controller speed limits, so the SPI core can use them for
-validating SPI transfers, and adjusting them where needed.
+ioremap_fixed is an internal implementation detail and should not be
+exposed to drivers.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/spi/spi-rspi.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ arch/sh/include/asm/io.h   | 16 ----------------
+ arch/sh/mm/init.c          |  1 +
+ arch/sh/mm/ioremap.c       |  1 +
+ arch/sh/mm/ioremap.h       | 23 +++++++++++++++++++++++
+ arch/sh/mm/ioremap_fixed.c |  1 +
+ 5 files changed, 26 insertions(+), 16 deletions(-)
+ create mode 100644 arch/sh/mm/ioremap.h
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 2b5334e22ae421b5..e39fd38f5180efb3 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -243,6 +243,8 @@ struct spi_ops {
- 	int (*transfer_one)(struct spi_controller *ctlr,
- 			    struct spi_device *spi, struct spi_transfer *xfer);
- 	u16 extra_mode_bits;
-+	u16 min_div;
-+	u16 max_div;
- 	u16 flags;
- 	u16 fifo_size;
- 	u8 num_hw_ss;
-@@ -1181,6 +1183,8 @@ static int rspi_remove(struct platform_device *pdev)
- static const struct spi_ops rspi_ops = {
- 	.set_config_register =	rspi_set_config_register,
- 	.transfer_one =		rspi_transfer_one,
-+	.min_div =		2,
-+	.max_div =		4096,
- 	.flags =		SPI_CONTROLLER_MUST_TX,
- 	.fifo_size =		8,
- 	.num_hw_ss =		2,
-@@ -1189,6 +1193,8 @@ static const struct spi_ops rspi_ops = {
- static const struct spi_ops rspi_rz_ops = {
- 	.set_config_register =	rspi_rz_set_config_register,
- 	.transfer_one =		rspi_rz_transfer_one,
-+	.min_div =		2,
-+	.max_div =		4096,
- 	.flags =		SPI_CONTROLLER_MUST_RX | SPI_CONTROLLER_MUST_TX,
- 	.fifo_size =		8,	/* 8 for TX, 32 for RX */
- 	.num_hw_ss =		1,
-@@ -1199,6 +1205,8 @@ static const struct spi_ops qspi_ops = {
- 	.transfer_one =		qspi_transfer_one,
- 	.extra_mode_bits =	SPI_TX_DUAL | SPI_TX_QUAD |
- 				SPI_RX_DUAL | SPI_RX_QUAD,
-+	.min_div =		1,
-+	.max_div =		4080,
- 	.flags =		SPI_CONTROLLER_MUST_RX | SPI_CONTROLLER_MUST_TX,
- 	.fifo_size =		32,
- 	.num_hw_ss =		1,
-@@ -1260,6 +1268,7 @@ static int rspi_probe(struct platform_device *pdev)
- 	int ret;
- 	const struct rspi_plat_data *rspi_pd;
- 	const struct spi_ops *ops;
-+	unsigned long clksrc;
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index 1fd06ef6a19454..357a7e0c86d682 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -346,22 +346,6 @@ ioremap_prot(phys_addr_t offset, unsigned long size, unsigned long flags)
+ }
+ #endif
  
- 	ctlr = spi_alloc_master(&pdev->dev, sizeof(struct rspi_data));
- 	if (ctlr = NULL)
-@@ -1312,6 +1321,9 @@ static int rspi_probe(struct platform_device *pdev)
- 	ctlr->unprepare_message = rspi_unprepare_message;
- 	ctlr->mode_bits = SPI_CPHA | SPI_CPOL | SPI_CS_HIGH | SPI_LSB_FIRST |
- 			  SPI_LOOP | ops->extra_mode_bits;
-+	clksrc = clk_get_rate(rspi->clk);
-+	ctlr->min_speed_hz = DIV_ROUND_UP(clksrc, ops->max_div);
-+	ctlr->max_speed_hz = DIV_ROUND_UP(clksrc, ops->min_div);
- 	ctlr->flags = ops->flags;
- 	ctlr->dev.of_node = pdev->dev.of_node;
- 	ctlr->use_gpio_descriptors = true;
+-#ifdef CONFIG_IOREMAP_FIXED
+-extern void __iomem *ioremap_fixed(phys_addr_t, unsigned long, pgprot_t);
+-extern int iounmap_fixed(void __iomem *);
+-extern void ioremap_fixed_init(void);
+-#else
+-static inline void __iomem *
+-ioremap_fixed(phys_addr_t phys_addr, unsigned long size, pgprot_t prot)
+-{
+-	BUG();
+-	return NULL;
+-}
+-
+-static inline void ioremap_fixed_init(void) { }
+-static inline int iounmap_fixed(void __iomem *addr) { return -EINVAL; }
+-#endif
+-
+ #define ioremap_uc	ioremap
+ 
+ /*
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index a70ba0fdd0b382..da7ea48f9439e2 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -28,6 +28,7 @@
+ #include <asm/setup.h>
+ #include <asm/cache.h>
+ #include <linux/sizes.h>
++#include "ioremap.h"
+ 
+ pgd_t swapper_pg_dir[PTRS_PER_PGD];
+ 
+diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
+index f6d02246d665bd..d9ec85b6bb2130 100644
+--- a/arch/sh/mm/ioremap.c
++++ b/arch/sh/mm/ioremap.c
+@@ -24,6 +24,7 @@
+ #include <asm/cacheflush.h>
+ #include <asm/tlbflush.h>
+ #include <asm/mmu.h>
++#include "ioremap.h"
+ 
+ /*
+  * Remap an arbitrary physical address space into the kernel virtual
+diff --git a/arch/sh/mm/ioremap.h b/arch/sh/mm/ioremap.h
+new file mode 100644
+index 00000000000000..f2544e721a3526
+--- /dev/null
++++ b/arch/sh/mm/ioremap.h
+@@ -0,0 +1,23 @@
++#ifndef _SH_MM_IORMEMAP_H
++#define _SH_MM_IORMEMAP_H 1
++
++#ifdef CONFIG_IOREMAP_FIXED
++void __iomem *ioremap_fixed(phys_addr_t, unsigned long, pgprot_t);
++int iounmap_fixed(void __iomem *);
++void ioremap_fixed_init(void);
++#else
++static inline void __iomem *
++ioremap_fixed(phys_addr_t phys_addr, unsigned long size, pgprot_t prot)
++{
++	BUG();
++	return NULL;
++}
++static inline void ioremap_fixed_init(void)
++{
++}
++static inline int iounmap_fixed(void __iomem *addr)
++{
++	return -EINVAL;
++}
++#endif /* CONFIG_IOREMAP_FIXED */
++#endif /* _SH_MM_IORMEMAP_H */
+diff --git a/arch/sh/mm/ioremap_fixed.c b/arch/sh/mm/ioremap_fixed.c
+index 07e744d75fa01b..1914b79d1c530b 100644
+--- a/arch/sh/mm/ioremap_fixed.c
++++ b/arch/sh/mm/ioremap_fixed.c
+@@ -24,6 +24,7 @@
+ #include <asm/tlbflush.h>
+ #include <asm/mmu.h>
+ #include <asm/mmu_context.h>
++#include "ioremap.h"
+ 
+ struct ioremap_map {
+ 	void __iomem *addr;
 -- 
-2.17.1
+2.26.2
