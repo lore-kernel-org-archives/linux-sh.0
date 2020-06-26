@@ -1,46 +1,45 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 08 Jun 2020 00:57:05 +0000
-Subject: Re: [PATCH] sh: fixup strncpy()
-Message-Id: <87eeqq5q8u.wl-kuninori.morimoto.gx@renesas.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 26 Jun 2020 08:07:16 +0000
+Subject: [PATCH 09/10] sh: don't allow non-coherent DMA for NOMMU
+Message-Id: <20200626080717.1999041-10-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8736dijdit.wl-kuninori.morimoto.gx@renesas.com>
-        <87zhfqhyuf.wl-kuninori.morimoto.gx@renesas.com>
-        <b1336fcf-8b04-e16c-420c-ed7e766fef12@physik.fu-berlin.de>
-        <87eeqzzn4m.wl-kuninori.morimoto.gx@renesas.com>
-        <5a2219e9-6898-3b01-666e-94629f833f8a@physik.fu-berlin.de>
-In-Reply-To: <5a2219e9-6898-3b01-666e-94629f833f8a@physik.fu-berlin.de>
+References: <20200626080717.1999041-1-hch@lst.de>
+In-Reply-To: <20200626080717.1999041-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Karl Nasrallah <knnspeed@aol.com>, Linux-SH <linux-sh@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
+The code handling non-coherent DMA depends on being able to remap code
+as non-cached.  But that can't be done without an MMU, so using this
+option on NOMMU builds is broken.
 
-Hi John
-
-> >> Since I don't want your fixes to fall off the table, you can ask Andrew
-> >> Morton to pick up your patches which is apparently the normal path to
-> >> choose when the original maintainers are currently not available.
-> > 
-> > Actually, I had been posted it to Andrew many times [1],
-> > but nothing happened.
-> > And according to [2], it seems SH maintainers are still working,
-> > thus, normal path is still them.
-> > 
-> > I had been worked for SH before, and posted many fixup patches
-> > for many times to both Andrew and SH maintainers.
-> > But their are still not yet reviewd/accepted.
-> > And unfortunately, it seems I'm judged as spam from SH maintainers [2].
-> > So I can do nothing anymore...
-> I think most of your patches have been merged now [1].
-> 
-> Is there any patch that we missed? If yes, please repost them to the list.
-
-Nice to know.
-Thanks
-
-Thank you for your help !!
-
-Best regards
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
-Kuninori Morimoto
+ arch/sh/Kconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index f8027eee08edae..337eb496c45a0a 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -61,6 +61,7 @@ config SUPERH
+ 	select MAY_HAVE_SPARSE_IRQ
+ 	select MODULES_USE_ELF_RELA
+ 	select NEED_SG_DMA_LENGTH
++	select NO_DMA if !MMU && !DMA_COHERENT
+ 	select NO_GENERIC_PCI_IOPORT_MAP if PCI
+ 	select OLD_SIGACTION
+ 	select OLD_SIGSUSPEND
+@@ -135,7 +136,7 @@ config DMA_COHERENT
+ 	bool
+ 
+ config DMA_NONCOHERENT
+-	def_bool !DMA_COHERENT
++	def_bool !NO_DMA && !DMA_COHERENT
+ 	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
+ 
+ config PGTABLE_LEVELS
+-- 
+2.26.2
