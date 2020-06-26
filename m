@@ -1,46 +1,94 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 03 Jun 2020 07:35:12 +0000
-Subject: Re: [PATCH v2] sh: Implement __get_user_u64() required for 64-bit get_user()
-Message-Id: <CAMuHMdV-Par79SYe75HzJsEd2cwEDhGPK+Nj0zUD8eAy9aDj1A@mail.gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 26 Jun 2020 08:07:15 +0000
+Subject: [PATCH 08/10] dma-mapping: consolidate the NO_DMA definition in kernel/dma/Kconfig
+Message-Id: <20200626080717.1999041-9-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200531104715.2512247-1-glaubitz@physik.fu-berlin.de> <b6271c7a-1eaf-61d9-9eb6-061aa8a13ac8@physik.fu-berlin.de>
-In-Reply-To: <b6271c7a-1eaf-61d9-9eb6-061aa8a13ac8@physik.fu-berlin.de>
+References: <20200626080717.1999041-1-hch@lst.de>
+In-Reply-To: <20200626080717.1999041-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Adrian,
+Have a single definition that architetures can select.
 
-On Wed, Jun 3, 2020 at 9:20 AM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On 5/31/20 12:47 PM, John Paul Adrian Glaubitz wrote:
-> >  Changes since v1:
-> >  - Replace single mov instruction for exception handling
-> >    in case of invalid load
->
-> Yutaka Niibe has had a look at my patch and he says, we might have to add
-> an entry for the fault handling of the upper word.
->
-> Quote:
->
-> > (1) I think that there is possibility that the second access to user
-> > space fails (while the first access succeeds).  IIUC, it's good have
-> > an entry in __ex_tables for the second access too, like:
-> >     ".long 1b+2, 3b\n\t"
-> > I don't know if the expression "1b+2" is correct, my intention is
-> > detecting the failure in the seccond access.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/m68k/Kconfig         | 4 +---
+ arch/m68k/Kconfig.machine | 1 +
+ arch/um/Kconfig           | 4 +---
+ kernel/dma/Kconfig        | 3 +++
+ 4 files changed, 6 insertions(+), 6 deletions(-)
 
-So just add another numeric label, like is done on m68k.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
+diff --git a/arch/m68k/Kconfig b/arch/m68k/Kconfig
+index 6ad6cdac74b3dc..8e488369a7e55a 100644
+--- a/arch/m68k/Kconfig
++++ b/arch/m68k/Kconfig
+@@ -17,6 +17,7 @@ config M68K
+ 	select HAVE_COPY_THREAD_TLS
+ 	select GENERIC_IRQ_SHOW
+ 	select GENERIC_ATOMIC64
++	select NO_DMA if !MMU && !COLDFIRE
+ 	select HAVE_UID16
+ 	select VIRT_TO_BUS
+ 	select ARCH_HAVE_NMI_SAFE_CMPXCHG if RMW_INSNS
+@@ -60,9 +61,6 @@ config TIME_LOW_RES
+ config NO_IOPORT_MAP
+ 	def_bool y
+ 
+-config NO_DMA
+-	def_bool (MMU && SUN3) || (!MMU && !COLDFIRE)
+-
+ config ZONE_DMA
+ 	bool
+ 	default y
+diff --git a/arch/m68k/Kconfig.machine b/arch/m68k/Kconfig.machine
+index a82651d58af483..17e8c3a292d770 100644
+--- a/arch/m68k/Kconfig.machine
++++ b/arch/m68k/Kconfig.machine
+@@ -126,6 +126,7 @@ config SUN3
+ 	depends on MMU
+ 	depends on !MMU_MOTOROLA
+ 	select MMU_SUN3 if MMU
++	select NO_DMA
+ 	select M68020
+ 	help
+ 	  This option enables support for the Sun 3 series of workstations
+diff --git a/arch/um/Kconfig b/arch/um/Kconfig
+index 9318dc6d1a0cee..32c1d1945033ec 100644
+--- a/arch/um/Kconfig
++++ b/arch/um/Kconfig
+@@ -15,6 +15,7 @@ config UML
+ 	select HAVE_DEBUG_KMEMLEAK
+ 	select HAVE_DEBUG_BUGVERBOSE
+ 	select HAVE_COPY_THREAD_TLS
++	select NO_DMA
+ 	select GENERIC_IRQ_SHOW
+ 	select GENERIC_CPU_DEVICES
+ 	select GENERIC_CLOCKEVENTS
+@@ -168,9 +169,6 @@ config MMAPPER
+ 	  This driver allows a host file to be used as emulated IO memory inside
+ 	  UML.
+ 
+-config NO_DMA
+-	def_bool y
+-
+ config PGTABLE_LEVELS
+ 	int
+ 	default 3 if 3_LEVEL_PGTABLES
+diff --git a/kernel/dma/Kconfig b/kernel/dma/Kconfig
+index a0ce3c1494fdd2..cb05247804d9f3 100644
+--- a/kernel/dma/Kconfig
++++ b/kernel/dma/Kconfig
+@@ -1,5 +1,8 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ 
++config NO_DMA
++	bool
++
+ config HAS_DMA
+ 	bool
+ 	depends on !NO_DMA
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+2.26.2
