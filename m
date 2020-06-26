@@ -1,93 +1,55 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Mon, 08 Jun 2020 09:59:37 +0000
-Subject: [PATCH 5/8] spi: rspi: Increase bit rate range for RSPI on SH
-Message-Id: <20200608095940.30516-6-geert+renesas@glider.be>
+From: Christoph Hellwig <hch@lst.de>
+Date: Fri, 26 Jun 2020 08:07:08 +0000
+Subject: [PATCH 01/10] sh: remove -Werror from Makefiles
+Message-Id: <20200626080717.1999041-2-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200608095940.30516-1-geert+renesas@glider.be>
-In-Reply-To: <20200608095940.30516-1-geert+renesas@glider.be>
+References: <20200626080717.1999041-1-hch@lst.de>
+In-Reply-To: <20200626080717.1999041-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Chris Brandt <chris.brandt@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Increase bit rate range for RSPI on legacy SH by making use of the Bit
-Rate Frequency Division Setting field in Command Registers, just like is
-already done on RZ/A.  This decreases the lower limit by a factor of 8.
+The sh build is full of warnings when building with gcc 9.2.1.  While
+fixing those would be great, at least avoid failing the build.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
-Untested due to lack of hardware, but the formulas in the datasheets for
-SH7753, RZ/A1H, and RZ/A2M are the same.
----
- drivers/spi/spi-rspi.c | 35 ++++++++++++++++++-----------------
- 1 file changed, 18 insertions(+), 17 deletions(-)
+ arch/sh/kernel/Makefile | 2 --
+ arch/sh/lib/Makefile    | 2 --
+ arch/sh/mm/Makefile     | 2 --
+ 3 files changed, 6 deletions(-)
 
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index ad4ac867170b101a..ea3f2680d3c13e02 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -248,19 +248,32 @@ struct spi_ops {
- 	u8 num_hw_ss;
- };
- 
-+static void rspi_set_rate(struct rspi_data *rspi)
-+{
-+	unsigned long clksrc;
-+	int brdv = 0, spbr;
-+
-+	clksrc = clk_get_rate(rspi->clk);
-+	spbr = DIV_ROUND_UP(clksrc, 2 * rspi->speed_hz) - 1;
-+	while (spbr > 255 && brdv < 3) {
-+		brdv++;
-+		spbr = DIV_ROUND_UP(spbr + 1, 2) - 1;
-+	}
-+
-+	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
-+	rspi->spcmd |= SPCMD_BRDV(brdv);
-+}
-+
- /*
-  * functions for RSPI on legacy SH
-  */
- static int rspi_set_config_register(struct rspi_data *rspi, int access_size)
- {
--	int spbr;
+diff --git a/arch/sh/kernel/Makefile b/arch/sh/kernel/Makefile
+index b0f5574b6228b3..aa0fbc9202b14e 100644
+--- a/arch/sh/kernel/Makefile
++++ b/arch/sh/kernel/Makefile
+@@ -47,5 +47,3 @@ obj-$(CONFIG_DWARF_UNWINDER)	+= dwarf.o
+ obj-$(CONFIG_PERF_EVENTS)	+= perf_event.o perf_callchain.o
+ obj-$(CONFIG_DMA_NONCOHERENT)	+= dma-coherent.o
+ obj-$(CONFIG_HAVE_HW_BREAKPOINT)		+= hw_breakpoint.o
 -
- 	/* Sets output mode, MOSI signal, and (optionally) loopback */
- 	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
- 
- 	/* Sets transfer bit rate */
--	spbr = DIV_ROUND_UP(clk_get_rate(rspi->clk), 2 * rspi->speed_hz) - 1;
--	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
-+	rspi_set_rate(rspi);
- 
- 	/* Disable dummy transmission, set 16-bit word access, 1 frame */
- 	rspi_write8(rspi, 0, RSPI_SPDCR);
-@@ -290,23 +303,11 @@ static int rspi_set_config_register(struct rspi_data *rspi, int access_size)
-  */
- static int rspi_rz_set_config_register(struct rspi_data *rspi, int access_size)
- {
--	int spbr;
--	int brdv = 0;
--	unsigned long clksrc;
+-ccflags-y := -Werror
+diff --git a/arch/sh/lib/Makefile b/arch/sh/lib/Makefile
+index d0abbe5e38b0f3..eb473d373ca43a 100644
+--- a/arch/sh/lib/Makefile
++++ b/arch/sh/lib/Makefile
+@@ -30,5 +30,3 @@ memset-$(CONFIG_CPU_SH4)	:= memset-sh4.o
+ lib-$(CONFIG_MMU)		+= copy_page.o __clear_user.o
+ lib-$(CONFIG_MCOUNT)		+= mcount.o
+ lib-y				+= $(memcpy-y) $(memset-y) $(udivsi3-y)
 -
- 	/* Sets output mode, MOSI signal, and (optionally) loopback */
- 	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
+-ccflags-y := -Werror
+diff --git a/arch/sh/mm/Makefile b/arch/sh/mm/Makefile
+index 487da0ff03b3a7..f69ddc70b14658 100644
+--- a/arch/sh/mm/Makefile
++++ b/arch/sh/mm/Makefile
+@@ -43,5 +43,3 @@ obj-$(CONFIG_UNCACHED_MAPPING)	+= uncached.o
+ obj-$(CONFIG_HAVE_SRAM_POOL)	+= sram.o
  
--	clksrc = clk_get_rate(rspi->clk);
--	spbr = DIV_ROUND_UP(clksrc, 2 * rspi->speed_hz) - 1;
--	while (spbr > 255 && brdv < 3) {
--		brdv++;
--		spbr = DIV_ROUND_UP(spbr + 1, 2) - 1;
--	}
+ GCOV_PROFILE_pmb.o := n
 -
- 	/* Sets transfer bit rate */
--	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
--	rspi->spcmd |= SPCMD_BRDV(brdv);
-+	rspi_set_rate(rspi);
- 
- 	/* Disable dummy transmission, set byte access */
- 	rspi_write8(rspi, SPDCR_SPLBYTE, RSPI_SPDCR);
+-ccflags-y := -Werror
 -- 
-2.17.1
+2.26.2
