@@ -1,94 +1,82 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 26 Jun 2020 08:07:15 +0000
-Subject: [PATCH 08/10] dma-mapping: consolidate the NO_DMA definition in kernel/dma/Kconfig
-Message-Id: <20200626080717.1999041-9-hch@lst.de>
+From: Matthew Wilcox <willy@infradead.org>
+Date: Sat, 27 Jun 2020 18:46:42 +0000
+Subject: [PATCH 9/8] mm: Account PMD tables like PTE tables
+Message-Id: <20200627184642.GF25039@casper.infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200626080717.1999041-1-hch@lst.de>
-In-Reply-To: <20200626080717.1999041-1-hch@lst.de>
+References: <20200627143453.31835-1-rppt@kernel.org>
+In-Reply-To: <20200627143453.31835-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Mike Rapoport <rppt@kernel.org>
+Cc: linux-kernel@vger.kernel.org, Abdul Haleem <abdhalee@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Andy Lutomirski <luto@kernel.org>, Arnd Bergmann <arnd@arndb.de>, Christophe Leroy <christophe.leroy@csgroup.eu>, Joerg Roedel <joro@8bytes.org>, Max Filippov <jcmvbkbc@gmail.com>, Mike Rapoport <rppt@linux.ibm.com>, Peter Zijlstra <peterz@infradead.org>, Satheesh Rajendran <sathnaga@linux.vnet.ibm.com>, Stafford Horne <shorne@gmail.com>, Stephen Rothwell <sfr@canb.auug.org.au>, Steven Rostedt <rostedt@goodmis.org>, linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org, linux-mi
 
-Have a single definition that architetures can select.
+We account the PTE level of the page tables to the process in order to
+make smarter OOM decisions and help diagnose why memory is fragmented.
+For these same reasons, we should account pages allocated for PMDs.
+With larger process address spaces and ASLR, the number of PMDs in use
+is higher than it used to be so the inaccuracy is starting to matter.
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
 ---
- arch/m68k/Kconfig         | 4 +---
- arch/m68k/Kconfig.machine | 1 +
- arch/um/Kconfig           | 4 +---
- kernel/dma/Kconfig        | 3 +++
- 4 files changed, 6 insertions(+), 6 deletions(-)
+ include/linux/mm.h | 24 ++++++++++++++++++++----
+ 1 file changed, 20 insertions(+), 4 deletions(-)
 
-diff --git a/arch/m68k/Kconfig b/arch/m68k/Kconfig
-index 6ad6cdac74b3dc..8e488369a7e55a 100644
---- a/arch/m68k/Kconfig
-+++ b/arch/m68k/Kconfig
-@@ -17,6 +17,7 @@ config M68K
- 	select HAVE_COPY_THREAD_TLS
- 	select GENERIC_IRQ_SHOW
- 	select GENERIC_ATOMIC64
-+	select NO_DMA if !MMU && !COLDFIRE
- 	select HAVE_UID16
- 	select VIRT_TO_BUS
- 	select ARCH_HAVE_NMI_SAFE_CMPXCHG if RMW_INSNS
-@@ -60,9 +61,6 @@ config TIME_LOW_RES
- config NO_IOPORT_MAP
- 	def_bool y
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index dc7b87310c10..b283e25fcffa 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -2271,7 +2271,7 @@ static inline spinlock_t *pmd_lockptr(struct mm_struct *mm, pmd_t *pmd)
+ 	return ptlock_ptr(pmd_to_page(pmd));
+ }
  
--config NO_DMA
--	def_bool (MMU && SUN3) || (!MMU && !COLDFIRE)
--
- config ZONE_DMA
- 	bool
- 	default y
-diff --git a/arch/m68k/Kconfig.machine b/arch/m68k/Kconfig.machine
-index a82651d58af483..17e8c3a292d770 100644
---- a/arch/m68k/Kconfig.machine
-+++ b/arch/m68k/Kconfig.machine
-@@ -126,6 +126,7 @@ config SUN3
- 	depends on MMU
- 	depends on !MMU_MOTOROLA
- 	select MMU_SUN3 if MMU
-+	select NO_DMA
- 	select M68020
- 	help
- 	  This option enables support for the Sun 3 series of workstations
-diff --git a/arch/um/Kconfig b/arch/um/Kconfig
-index 9318dc6d1a0cee..32c1d1945033ec 100644
---- a/arch/um/Kconfig
-+++ b/arch/um/Kconfig
-@@ -15,6 +15,7 @@ config UML
- 	select HAVE_DEBUG_KMEMLEAK
- 	select HAVE_DEBUG_BUGVERBOSE
- 	select HAVE_COPY_THREAD_TLS
-+	select NO_DMA
- 	select GENERIC_IRQ_SHOW
- 	select GENERIC_CPU_DEVICES
- 	select GENERIC_CLOCKEVENTS
-@@ -168,9 +169,6 @@ config MMAPPER
- 	  This driver allows a host file to be used as emulated IO memory inside
- 	  UML.
+-static inline bool pgtable_pmd_page_ctor(struct page *page)
++static inline bool pmd_ptlock_init(struct page *page)
+ {
+ #ifdef CONFIG_TRANSPARENT_HUGEPAGE
+ 	page->pmd_huge_pte = NULL;
+@@ -2279,7 +2279,7 @@ static inline bool pgtable_pmd_page_ctor(struct page *page)
+ 	return ptlock_init(page);
+ }
  
--config NO_DMA
--	def_bool y
--
- config PGTABLE_LEVELS
- 	int
- 	default 3 if 3_LEVEL_PGTABLES
-diff --git a/kernel/dma/Kconfig b/kernel/dma/Kconfig
-index a0ce3c1494fdd2..cb05247804d9f3 100644
---- a/kernel/dma/Kconfig
-+++ b/kernel/dma/Kconfig
-@@ -1,5 +1,8 @@
- # SPDX-License-Identifier: GPL-2.0-only
+-static inline void pgtable_pmd_page_dtor(struct page *page)
++static inline void pmd_ptlock_free(struct page *page)
+ {
+ #ifdef CONFIG_TRANSPARENT_HUGEPAGE
+ 	VM_BUG_ON_PAGE(page->pmd_huge_pte, page);
+@@ -2296,8 +2296,8 @@ static inline spinlock_t *pmd_lockptr(struct mm_struct *mm, pmd_t *pmd)
+ 	return &mm->page_table_lock;
+ }
  
-+config NO_DMA
-+	bool
+-static inline bool pgtable_pmd_page_ctor(struct page *page) { return true; }
+-static inline void pgtable_pmd_page_dtor(struct page *page) {}
++static inline bool pmd_ptlock_init(struct page *page) { return true; }
++static inline void pmd_ptlock_free(struct page *page) {}
+ 
+ #define pmd_huge_pte(mm, pmd) ((mm)->pmd_huge_pte)
+ 
+@@ -2310,6 +2310,22 @@ static inline spinlock_t *pmd_lock(struct mm_struct *mm, pmd_t *pmd)
+ 	return ptl;
+ }
+ 
++static inline bool pgtable_pmd_page_ctor(struct page *page)
++{
++	if (!pmd_ptlock_init(page))
++		return false;
++	__SetPageTable(page);
++	inc_zone_page_state(page, NR_PAGETABLE);
++	return true;
++}
 +
- config HAS_DMA
- 	bool
- 	depends on !NO_DMA
++static inline void pgtable_pmd_page_dtor(struct page *page)
++{
++	pmd_ptlock_free(page);
++	__ClearPageTable(page);
++	dec_zone_page_state(page, NR_PAGETABLE);
++}
++
+ /*
+  * No scalability reason to split PUD locks yet, but follow the same pattern
+  * as the PMD locks to make it easier if we decide to.  The VM should not be
 -- 
-2.26.2
+2.27.0
