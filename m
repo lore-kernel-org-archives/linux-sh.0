@@ -1,25 +1,82 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Sun, 07 Jun 2020 12:39:23 +0000
-Subject: Re: [PATCH v3] sh: fix inline asm strncpy()
-Message-Id: <48aea87f-45f8-be4c-d1e1-c8696760a9db@physik.fu-berlin.de>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Sat, 27 Jun 2020 14:34:47 +0000
+Subject: [PATCH 2/8] opeinrisc: switch to generic version of pte allocation
+Message-Id: <20200627143453.31835-3-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20191219031914.20457-1-knnspeed@aol.com>
-In-Reply-To: <20191219031914.20457-1-knnspeed@aol.com>
+References: <20200627143453.31835-1-rppt@kernel.org>
+In-Reply-To: <20200627143453.31835-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Abdul Haleem <abdhalee@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Andy Lutomirski <luto@kernel.org>, Arnd Bergmann <arnd@arndb.de>, Christophe Leroy <christophe.leroy@csgroup.eu>, Joerg Roedel <joro@8bytes.org>, Max Filippov <jcmvbkbc@gmail.com>, Mike Rapoport <rppt@kernel.org>, Mike Rapoport <rppt@linux.ibm.com>, Peter Zijlstra <peterz@infradead.org>, Satheesh Rajendran <sathnaga@linux.vnet.ibm.com>, Stafford Horne <shorne@gmail.com>, Stephen Rothwell <sfr@canb.auug.org.au>, Steven Rostedt <rostedt@goodmis.org>, linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.orglinux
 
-On 6/7/20 2:36 PM, John Paul Adrian Glaubitz wrote:
-> I just noticed this patch that got posted without any reply.
-See also this discussion [1].
+From: Mike Rapoport <rppt@linux.ibm.com>
 
-Adrian
+Replace pte_alloc_one(), pte_free() and pte_free_kernel() with the generic
+implementation. The only actual functional change is the addition of
+__GFP_ACCOUT for the allocation of the user page tables.
 
-> [1] https://marc.info/?l=linux-sh&m7671844807760&w=2
+The pte_alloc_one_kernel() is kept back because its implementation on
+openrisc is different than the generic one.
 
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+---
+ arch/openrisc/include/asm/pgalloc.h | 33 +++--------------------------
+ 1 file changed, 3 insertions(+), 30 deletions(-)
+
+diff --git a/arch/openrisc/include/asm/pgalloc.h b/arch/openrisc/include/asm/pgalloc.h
+index da12a4c38c4b..88820299ecc4 100644
+--- a/arch/openrisc/include/asm/pgalloc.h
++++ b/arch/openrisc/include/asm/pgalloc.h
+@@ -20,6 +20,9 @@
+ #include <linux/mm.h>
+ #include <linux/memblock.h>
+ 
++#define __HAVE_ARCH_PTE_ALLOC_ONE_KERNEL
++#include <asm-generic/pgalloc.h>
++
+ extern int mem_init_done;
+ 
+ #define pmd_populate_kernel(mm, pmd, pte) \
+@@ -61,38 +64,8 @@ extern inline pgd_t *pgd_alloc(struct mm_struct *mm)
+ }
+ #endif
+ 
+-static inline void pgd_free(struct mm_struct *mm, pgd_t *pgd)
+-{
+-	free_page((unsigned long)pgd);
+-}
+-
+ extern pte_t *pte_alloc_one_kernel(struct mm_struct *mm);
+ 
+-static inline struct page *pte_alloc_one(struct mm_struct *mm)
+-{
+-	struct page *pte;
+-	pte = alloc_pages(GFP_KERNEL, 0);
+-	if (!pte)
+-		return NULL;
+-	clear_page(page_address(pte));
+-	if (!pgtable_pte_page_ctor(pte)) {
+-		__free_page(pte);
+-		return NULL;
+-	}
+-	return pte;
+-}
+-
+-static inline void pte_free_kernel(struct mm_struct *mm, pte_t *pte)
+-{
+-	free_page((unsigned long)pte);
+-}
+-
+-static inline void pte_free(struct mm_struct *mm, struct page *pte)
+-{
+-	pgtable_pte_page_dtor(pte);
+-	__free_page(pte);
+-}
+-
+ #define __pte_free_tlb(tlb, pte, addr)	\
+ do {					\
+ 	pgtable_pte_page_dtor(pte);	\
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+2.26.2
