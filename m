@@ -1,85 +1,165 @@
-From: Hans Verkuil <hverkuil-cisco@xs4all.nl>
-Date: Fri, 26 Jun 2020 13:15:24 +0000
-Subject: [PATCH] arch/sh/configs: remove obsolete CONFIG_SOC_CAMERA*
-Message-Id: <8d39ddaf-8779-3bc2-6344-a914f583ffb5@xs4all.nl>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Sat, 27 Jun 2020 14:34:50 +0000
+Subject: [PATCH 5/8] asm-generic: pgalloc: provide generic pud_alloc_one() and pud_free_one()
+Message-Id: <20200627143453.31835-6-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200626115321.1898798-1-hverkuil-cisco@xs4all.nl>
- <20200626115321.1898798-8-hverkuil-cisco@xs4all.nl>
-In-Reply-To: <20200626115321.1898798-8-hverkuil-cisco@xs4all.nl>
+References: <20200627143453.31835-1-rppt@kernel.org>
+In-Reply-To: <20200627143453.31835-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: linux-kernel@vger.kernel.org
+Cc: Abdul Haleem <abdhalee@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Andy Lutomirski <luto@kernel.org>, Arnd Bergmann <arnd@arndb.de>, Christophe Leroy <christophe.leroy@csgroup.eu>, Joerg Roedel <joro@8bytes.org>, Max Filippov <jcmvbkbc@gmail.com>, Mike Rapoport <rppt@kernel.org>, Mike Rapoport <rppt@linux.ibm.com>, Peter Zijlstra <peterz@infradead.org>, Satheesh Rajendran <sathnaga@linux.vnet.ibm.com>, Stafford Horne <shorne@gmail.com>, Stephen Rothwell <sfr@canb.auug.org.au>, Steven Rostedt <rostedt@goodmis.org>, linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.orglinux
 
-Drop all configs with the CONFIG_SOC_CAMERA prefix since those
-have been removed.
+From: Mike Rapoport <rppt@linux.ibm.com>
 
-SOC_CAMERA support for the sh architecture was removed a long time ago.
-Drop it from the configs.
+Several architectures define pud_alloc_one() as a wrapper for
+__get_free_page() and pud_free() as a wrapper for free_page().
 
-Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
+Provide a generic implementation in asm-generic/pgalloc.h and use it where
+appropriate.
+
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
 ---
- arch/sh/configs/ap325rxa_defconfig | 3 ---
- arch/sh/configs/ecovec24_defconfig | 3 ---
- arch/sh/configs/migor_defconfig    | 3 ---
- arch/sh/configs/se7724_defconfig   | 2 --
- 4 files changed, 11 deletions(-)
+ arch/arm64/include/asm/pgalloc.h | 11 -----------
+ arch/ia64/include/asm/pgalloc.h  |  9 ---------
+ arch/mips/include/asm/pgalloc.h  |  6 +-----
+ arch/x86/include/asm/pgalloc.h   | 15 ---------------
+ include/asm-generic/pgalloc.h    | 30 ++++++++++++++++++++++++++++++
+ 5 files changed, 31 insertions(+), 40 deletions(-)
 
-diff --git a/arch/sh/configs/ap325rxa_defconfig b/arch/sh/configs/ap325rxa_defconfig
-index cc6e4ce53dac..5193b3e099b9 100644
---- a/arch/sh/configs/ap325rxa_defconfig
-+++ b/arch/sh/configs/ap325rxa_defconfig
-@@ -65,9 +65,6 @@ CONFIG_VIDEO_DEV=y
- # CONFIG_VIDEO_ALLOW_V4L1 is not set
- # CONFIG_MEDIA_TUNER_CUSTOMISE is not set
- CONFIG_VIDEO_HELPER_CHIPS_AUTO=y
--CONFIG_SOC_CAMERA=y
--CONFIG_SOC_CAMERA_PLATFORM=y
--CONFIG_SOC_CAMERA_OV772X=y
- CONFIG_VIDEO_SH_MOBILE_CEU=y
- # CONFIG_RADIO_ADAPTERS is not set
- CONFIG_FB=y
-diff --git a/arch/sh/configs/ecovec24_defconfig b/arch/sh/configs/ecovec24_defconfig
-index 2fb7db4957ce..03cb916819fa 100644
---- a/arch/sh/configs/ecovec24_defconfig
-+++ b/arch/sh/configs/ecovec24_defconfig
-@@ -72,9 +72,6 @@ CONFIG_MEDIA_SUPPORT=y
- CONFIG_VIDEO_DEV=y
- # CONFIG_MEDIA_TUNER_CUSTOMISE is not set
- CONFIG_VIDEO_HELPER_CHIPS_AUTO=y
--CONFIG_SOC_CAMERA=y
--CONFIG_SOC_CAMERA_MT9T112=y
--CONFIG_SOC_CAMERA_TW9910=y
- CONFIG_VIDEO_SH_MOBILE_CEU=y
- # CONFIG_V4L_USB_DRIVERS is not set
- CONFIG_FB=y
-diff --git a/arch/sh/configs/migor_defconfig b/arch/sh/configs/migor_defconfig
-index 494a1675c226..37e9521a99e5 100644
---- a/arch/sh/configs/migor_defconfig
-+++ b/arch/sh/configs/migor_defconfig
-@@ -62,9 +62,6 @@ CONFIG_VIDEO_DEV=y
- # CONFIG_VIDEO_ALLOW_V4L1 is not set
- # CONFIG_MEDIA_TUNER_CUSTOMISE is not set
- CONFIG_VIDEO_HELPER_CHIPS_AUTO=y
--CONFIG_SOC_CAMERA=y
--CONFIG_SOC_CAMERA_TW9910=y
--CONFIG_SOC_CAMERA_OV772X=y
- CONFIG_VIDEO_SH_MOBILE_CEU=y
- # CONFIG_RADIO_ADAPTERS is not set
- CONFIG_FB=y
-diff --git a/arch/sh/configs/se7724_defconfig b/arch/sh/configs/se7724_defconfig
-index 0e8d5cc1e107..a26f7f1841c7 100644
---- a/arch/sh/configs/se7724_defconfig
-+++ b/arch/sh/configs/se7724_defconfig
-@@ -70,8 +70,6 @@ CONFIG_VIDEO_DEV=y
- CONFIG_DVB_CORE=m
- # CONFIG_MEDIA_TUNER_CUSTOMISE is not set
- CONFIG_VIDEO_HELPER_CHIPS_AUTO=y
--CONFIG_SOC_CAMERA=y
--CONFIG_SOC_CAMERA_OV772X=y
- CONFIG_VIDEO_SH_MOBILE_CEU=y
- # CONFIG_RADIO_ADAPTERS is not set
- # CONFIG_DVB_FE_CUSTOMISE is not set
+diff --git a/arch/arm64/include/asm/pgalloc.h b/arch/arm64/include/asm/pgalloc.h
+index 7246d0a662e1..0965945b595d 100644
+--- a/arch/arm64/include/asm/pgalloc.h
++++ b/arch/arm64/include/asm/pgalloc.h
+@@ -37,17 +37,6 @@ static inline void __pud_populate(pud_t *pudp, phys_addr_t pmdp, pudval_t prot)
+ 
+ #if CONFIG_PGTABLE_LEVELS > 3
+ 
+-static inline pud_t *pud_alloc_one(struct mm_struct *mm, unsigned long addr)
+-{
+-	return (pud_t *)__get_free_page(GFP_PGTABLE_USER);
+-}
+-
+-static inline void pud_free(struct mm_struct *mm, pud_t *pudp)
+-{
+-	BUG_ON((unsigned long)pudp & (PAGE_SIZE-1));
+-	free_page((unsigned long)pudp);
+-}
+-
+ static inline void __p4d_populate(p4d_t *p4dp, phys_addr_t pudp, p4dval_t prot)
+ {
+ 	set_p4d(p4dp, __p4d(__phys_to_p4d_val(pudp) | prot));
+diff --git a/arch/ia64/include/asm/pgalloc.h b/arch/ia64/include/asm/pgalloc.h
+index 5da1fc76477b..06f80358e20f 100644
+--- a/arch/ia64/include/asm/pgalloc.h
++++ b/arch/ia64/include/asm/pgalloc.h
+@@ -41,15 +41,6 @@ p4d_populate(struct mm_struct *mm, p4d_t * p4d_entry, pud_t * pud)
+ 	p4d_val(*p4d_entry) = __pa(pud);
+ }
+ 
+-static inline pud_t *pud_alloc_one(struct mm_struct *mm, unsigned long addr)
+-{
+-	return (pud_t *)__get_free_page(GFP_KERNEL | __GFP_ZERO);
+-}
+-
+-static inline void pud_free(struct mm_struct *mm, pud_t *pud)
+-{
+-	free_page((unsigned long)pud);
+-}
+ #define __pud_free_tlb(tlb, pud, address)	pud_free((tlb)->mm, pud)
+ #endif /* CONFIG_PGTABLE_LEVELS = 4 */
+ 
+diff --git a/arch/mips/include/asm/pgalloc.h b/arch/mips/include/asm/pgalloc.h
+index eed1b3e8c642..e5a840910ce0 100644
+--- a/arch/mips/include/asm/pgalloc.h
++++ b/arch/mips/include/asm/pgalloc.h
+@@ -14,6 +14,7 @@
+ #include <linux/sched.h>
+ 
+ #define __HAVE_ARCH_PMD_ALLOC_ONE
++#define __HAVE_ARCH_PUD_ALLOC_ONE
+ #include <asm-generic/pgalloc.h>
+ 
+ static inline void pmd_populate_kernel(struct mm_struct *mm, pmd_t *pmd,
+@@ -87,11 +88,6 @@ static inline pud_t *pud_alloc_one(struct mm_struct *mm, unsigned long address)
+ 	return pud;
+ }
+ 
+-static inline void pud_free(struct mm_struct *mm, pud_t *pud)
+-{
+-	free_pages((unsigned long)pud, PUD_ORDER);
+-}
+-
+ static inline void p4d_populate(struct mm_struct *mm, p4d_t *p4d, pud_t *pud)
+ {
+ 	set_p4d(p4d, __p4d((unsigned long)pud));
+diff --git a/arch/x86/include/asm/pgalloc.h b/arch/x86/include/asm/pgalloc.h
+index 25feaa117c40..3d1085a14347 100644
+--- a/arch/x86/include/asm/pgalloc.h
++++ b/arch/x86/include/asm/pgalloc.h
+@@ -123,21 +123,6 @@ static inline void p4d_populate_safe(struct mm_struct *mm, p4d_t *p4d, pud_t *pu
+ 	set_p4d_safe(p4d, __p4d(_PAGE_TABLE | __pa(pud)));
+ }
+ 
+-static inline pud_t *pud_alloc_one(struct mm_struct *mm, unsigned long addr)
+-{
+-	gfp_t gfp = GFP_KERNEL_ACCOUNT;
+-
+-	if (mm = &init_mm)
+-		gfp &= ~__GFP_ACCOUNT;
+-	return (pud_t *)get_zeroed_page(gfp);
+-}
+-
+-static inline void pud_free(struct mm_struct *mm, pud_t *pud)
+-{
+-	BUG_ON((unsigned long)pud & (PAGE_SIZE-1));
+-	free_page((unsigned long)pud);
+-}
+-
+ extern void ___pud_free_tlb(struct mmu_gather *tlb, pud_t *pud);
+ 
+ static inline void __pud_free_tlb(struct mmu_gather *tlb, pud_t *pud,
+diff --git a/include/asm-generic/pgalloc.h b/include/asm-generic/pgalloc.h
+index 1bc027891a00..d361574aaadf 100644
+--- a/include/asm-generic/pgalloc.h
++++ b/include/asm-generic/pgalloc.h
+@@ -145,6 +145,36 @@ static inline void pmd_free(struct mm_struct *mm, pmd_t *pmd)
+ 
+ #endif /* CONFIG_PGTABLE_LEVELS > 2 */
+ 
++#if CONFIG_PGTABLE_LEVELS > 3
++
++#ifndef __HAVE_ARCH_PUD_FREE
++/**
++ * pud_alloc_one - allocate a page for PUD-level page table
++ * @mm: the mm_struct of the current context
++ *
++ * Allocates a page using %GFP_PGTABLE_USER for user context and
++ * %GFP_PGTABLE_KERNEL for kernel context.
++ *
++ * Return: pointer to the allocated memory or %NULL on error
++ */
++static inline pud_t *pud_alloc_one(struct mm_struct *mm, unsigned long addr)
++{
++	gfp_t gfp = GFP_PGTABLE_USER;
++
++	if (mm = &init_mm)
++		gfp = GFP_PGTABLE_KERNEL;
++	return (pud_t *)get_zeroed_page(gfp);
++}
++#endif
++
++static inline void pud_free(struct mm_struct *mm, pud_t *pud)
++{
++	BUG_ON((unsigned long)pud & (PAGE_SIZE-1));
++	free_page((unsigned long)pud);
++}
++
++#endif /* CONFIG_PGTABLE_LEVELS > 3 */
++
+ #endif /* CONFIG_MMU */
+ 
+ #endif /* __ASM_GENERIC_PGALLOC_H */
 -- 
-2.27.0
+2.26.2
