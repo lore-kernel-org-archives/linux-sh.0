@@ -1,48 +1,53 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 17 Jun 2020 14:36:37 +0000
-Subject: [PATCH v2 7/9] sh: sh2007: Modernize printing of kernel messages
-Message-Id: <20200617143639.18315-8-geert+renesas@glider.be>
+From: Peter Xu <peterx@redhat.com>
+Date: Tue, 30 Jun 2020 20:45:51 +0000
+Subject: [PATCH v4 19/26] mm/sh: Use general page fault accounting
+Message-Id: <20200630204551.39391-1-peterx@redhat.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200617143639.18315-1-geert+renesas@glider.be>
-In-Reply-To: <20200617143639.18315-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Mike Rapoport <rppt@linux.ibm.com>, Dmitry Safonov <0x7f454c46@gmail.com>, Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org
+Cc: Andrew Morton <akpm@linux-foundation.org>, peterx@redhat.com, John Hubbard <jhubbard@nvidia.com>, Michael Ellerman <mpe@ellerman.id.au>, Gerald Schaefer <gerald.schaefer@de.ibm.com>, Andrea Arcangeli <aarcange@redhat.com>, Linus Torvalds <torvalds@linux-foundation.org>, Will Deacon <will@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-  - Convert from printk() to pr_*(),
-  - Add missing continuation.
+Use the general page fault accounting by passing regs into handle_mm_fault().
+It naturally solve the issue of multiple page fault accounting when page fault
+retry happened.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Guenter Roeck <linux@roeck-us.net>
+CC: Yoshinori Sato <ysato@users.sourceforge.jp>
+CC: Rich Felker <dalias@libc.org>
+CC: linux-sh@vger.kernel.org
+Signed-off-by: Peter Xu <peterx@redhat.com>
 ---
-v2:
-  - Add Tested-by.
----
- arch/sh/boards/board-sh2007.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/sh/mm/fault.c | 11 +----------
+ 1 file changed, 1 insertion(+), 10 deletions(-)
 
-diff --git a/arch/sh/boards/board-sh2007.c b/arch/sh/boards/board-sh2007.c
-index ef9c87deeb08828c..6ea85e4808512f94 100644
---- a/arch/sh/boards/board-sh2007.c
-+++ b/arch/sh/boards/board-sh2007.c
-@@ -126,14 +126,14 @@ static void __init sh2007_init_irq(void)
-  */
- static void __init sh2007_setup(char **cmdline_p)
- {
--	printk(KERN_INFO "SH-2007 Setup...");
-+	pr_info("SH-2007 Setup...");
+diff --git a/arch/sh/mm/fault.c b/arch/sh/mm/fault.c
+index 3c0a11827f7e..482668a2f6d3 100644
+--- a/arch/sh/mm/fault.c
++++ b/arch/sh/mm/fault.c
+@@ -482,22 +482,13 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
+ 	 * make sure we exit gracefully rather than endlessly redo
+ 	 * the fault.
+ 	 */
+-	fault = handle_mm_fault(vma, address, flags, NULL);
++	fault = handle_mm_fault(vma, address, flags, regs);
  
- 	/* setup wait control registers for area 5 */
- 	__raw_writel(CS5BCR_D, CS5BCR);
- 	__raw_writel(CS5WCR_D, CS5WCR);
- 	__raw_writel(CS5PCR_D, CS5PCR);
+ 	if (unlikely(fault & (VM_FAULT_RETRY | VM_FAULT_ERROR)))
+ 		if (mm_fault_error(regs, error_code, address, fault))
+ 			return;
  
--	printk(KERN_INFO " done.\n");
-+	pr_cont(" done.\n");
- }
+ 	if (flags & FAULT_FLAG_ALLOW_RETRY) {
+-		if (fault & VM_FAULT_MAJOR) {
+-			tsk->maj_flt++;
+-			perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MAJ, 1,
+-				      regs, address);
+-		} else {
+-			tsk->min_flt++;
+-			perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MIN, 1,
+-				      regs, address);
+-		}
+ 		if (fault & VM_FAULT_RETRY) {
+ 			flags |= FAULT_FLAG_TRIED;
  
- /*
 -- 
-2.17.1
+2.26.2
