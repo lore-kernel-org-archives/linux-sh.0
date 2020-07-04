@@ -1,70 +1,28 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Thu, 09 Jul 2020 07:28:36 +0000
-Subject: [PATCH v3 3/4] ntb: intel: Constify ioreadX() iomem argument (as in generic implementation)
-Message-Id: <20200709072837.5869-4-krzk@kernel.org>
+From: Theresa Han <serena@lantermo.it>
+Date: Sat, 04 Jul 2020 18:59:30 +0000
+Subject: =?UTF-8?Q?Ich_gr=C3=BC=C3=9Fe_dich_im_Namen_des_Herrn?=
+Message-Id: <1469227910.4479605.1593889170815@mail.yahoo.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200709072837.5869-1-krzk@kernel.org>
-In-Reply-To: <20200709072837.5869-1-krzk@kernel.org>
+References: <1469227910.4479605.1593889170815.ref@mail.yahoo.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Jakub Kicinski <kuba@kernel.org>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Geert Uytterhoeven <geert+renesas@glider.be>, Andrew Morton <akpm@linux-foundation.org>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
-Cc: Krzysztof Kozlowski <krzk@kernel.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-fbdev@vger.kernel.org
 
-The ioreadX() helpers have inconsistent interface.  On some architectures
-void *__iomem address argument is a pointer to const, on some not.
+Ich grüße dich im Namen des Herrn
 
-Implementations of ioreadX() do not modify the memory under the address
-so they can be converted to a "const" version for const-safety and
-consistency among architectures.
-
-Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Dave Jiang <dave.jiang@intel.com>
----
- drivers/ntb/hw/intel/ntb_hw_gen1.c  | 2 +-
- drivers/ntb/hw/intel/ntb_hw_gen3.h  | 2 +-
- drivers/ntb/hw/intel/ntb_hw_intel.h | 2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/drivers/ntb/hw/intel/ntb_hw_gen1.c b/drivers/ntb/hw/intel/ntb_hw_gen1.c
-index 423f9b8fbbcf..3185efeab487 100644
---- a/drivers/ntb/hw/intel/ntb_hw_gen1.c
-+++ b/drivers/ntb/hw/intel/ntb_hw_gen1.c
-@@ -1205,7 +1205,7 @@ int intel_ntb_peer_spad_write(struct ntb_dev *ntb, int pidx, int sidx,
- 			       ndev->peer_reg->spad);
- }
+Ich kann mir nicht vorstellen wie du dich fühlen wirst Sie einen plötzlichen Brief aus einem abgelegenen Land in der fernen Elfenbeinküste erhalten werden und wahrscheinlich von jemandem, mit dem Sie nicht gut verwandt sind. Ich appelliere an Sie, etwas Geduld zu üben und meinen Brief zu lesen Umgang mit Ihnen in dieser wichtigen Transaktion
  
--static u64 xeon_db_ioread(void __iomem *mmio)
-+static u64 xeon_db_ioread(const void __iomem *mmio)
- {
- 	return (u64)ioread16(mmio);
- }
-diff --git a/drivers/ntb/hw/intel/ntb_hw_gen3.h b/drivers/ntb/hw/intel/ntb_hw_gen3.h
-index 2bc5d8356045..dea93989942d 100644
---- a/drivers/ntb/hw/intel/ntb_hw_gen3.h
-+++ b/drivers/ntb/hw/intel/ntb_hw_gen3.h
-@@ -91,7 +91,7 @@
- #define GEN3_DB_TOTAL_SHIFT		33
- #define GEN3_SPAD_COUNT			16
+Ich bin Frau Theresa Han, 65 Jahre alt, in der Elfenbeinküste, an Krebsleiden leidend. Ich war mit Herrn Johnson Han verheiratet, der bei der Regierung von Elfenbeinküste als Auftragnehmer tätig war, bevor er nach einigen Tagen im Krankenhaus starb
  
--static inline u64 gen3_db_ioread(void __iomem *mmio)
-+static inline u64 gen3_db_ioread(const void __iomem *mmio)
- {
- 	return ioread64(mmio);
- }
-diff --git a/drivers/ntb/hw/intel/ntb_hw_intel.h b/drivers/ntb/hw/intel/ntb_hw_intel.h
-index d61fcd91714b..05e2335c9596 100644
---- a/drivers/ntb/hw/intel/ntb_hw_intel.h
-+++ b/drivers/ntb/hw/intel/ntb_hw_intel.h
-@@ -103,7 +103,7 @@ struct intel_ntb_dev;
- struct intel_ntb_reg {
- 	int (*poll_link)(struct intel_ntb_dev *ndev);
- 	int (*link_is_up)(struct intel_ntb_dev *ndev);
--	u64 (*db_ioread)(void __iomem *mmio);
-+	u64 (*db_ioread)(const void __iomem *mmio);
- 	void (*db_iowrite)(u64 db_bits, void __iomem *mmio);
- 	unsigned long			ntb_ctl;
- 	resource_size_t			db_size;
--- 
-2.17.1
+Mein verstorbener Ehemann hat die Summe von US$2,5 Millionen (zwei Millionen fünfhunderttausend USD) bei einer Bank in der Elfenbeinküste hinterlegt. Ich habe an Krebs gelitten. Kürzlich sagte mir mein Arzt, dass ich aufgrund der Krebserkrankungen, an denen ich leide, nur noch begrenzte Lebenstage habe. Ich möchte wissen, ob ich Ihnen vertrauen kann, diese Mittel für Wohltätigkeit / Waisenhaus zu verwenden, und 20 Prozent werden für Sie als Entschädigung sein
+ 
+Ich habe diese Entscheidung getroffen, weil ich kein Kind habe, das dieses Geld erben würde, und mein Ehemann Verwandte sind bürgerliche und sehr wohlhabende Personen und ich möchte nicht, dass mein Ehemann hart verdientes Geld missbraucht wird
+ 
+Bitte nehmen Sie Kontakt mit mir auf, damit ich Ihnen weitere Einzelheiten mitteilen kann und jede Verzögerung Ihrer Antwort mir Raum geben wird, eine weitere gute Person für diesen Zweck zu gewinnen
+ 
+Warten auf Ihre dringende Antwort Mit Gott sind alle Dinge möglich
+ 
+Deine Schwester in Christus
+ 
+Frau Theresa Han
