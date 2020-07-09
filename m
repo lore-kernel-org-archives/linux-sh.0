@@ -1,128 +1,52 @@
-From: Baoquan He <bhe@redhat.com>
-Date: Thu, 30 Jul 2020 01:54:24 +0000
-Subject: Re: [PATCH 10/15] memblock: make memblock_debug and related functionality private
-Message-Id: <20200730015424.GJ14854@MiWiFi-R3L-srv>
+From: Jia He <justin.he@arm.com>
+Date: Thu, 09 Jul 2020 02:06:27 +0000
+Subject: [PATCH v3 4/6] mm: don't export memory_add_physaddr_to_nid in arch specific directory
+Message-Id: <20200709020629.91671-5-justin.he@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200728051153.1590-1-rppt@kernel.org>
- <20200728051153.1590-11-rppt@kernel.org>
-In-Reply-To: <20200728051153.1590-11-rppt@kernel.org>
+References: <20200709020629.91671-1-justin.he@arm.com>
+In-Reply-To: <20200709020629.91671-1-justin.he@arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Rapoport <rppt@kernel.org>
-Cc: linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Hansen <dave.hansen@linux.intel.com>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, Stafford Horne <shorne@gmail.com>, Marek Szyprowski <m.szyprowski@samsung.com>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, clang-built-linux@googlegroups.com, Ingo Molnar <mingo@redhat.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Paul Walmsley <paul.walmsley@sifive.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-mm@kvack.org, linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Palmer Dabbelt <palmer@dabbelt.com>, Andrew Morton <akpm@linux-foundation.org>, Christoph Hellwig <hch@lst.de>
+To: Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, David Hildenbrand <david@redhat.com>
+Cc: Kaly Xin <Kaly.Xin@arm.com>, Michal Hocko <mhocko@suse.com>, Dave Jiang <dave.jiang@intel.com>, Baoquan He <bhe@redhat.com>, linux-sh@vger.kernel.org, Vishal Verma <vishal.l.verma@intel.com>, Masahiro Yamada <masahiroy@kernel.org>, x86@kernel.org, Chuhong Yuan <hslester96@gmail.com>, linux-kernel@vger.kernel.org, Mike Rapoport <rppt@linux.ibm.com>, linux-mm@kvack.org, linux-nvdimm@lists.01.org, Jonathan Cameron <Jonathan.Cameron@Huawei.com>, "H. Peter Anvin" <hpa@zytor.com>, linux-ia64@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Logan Gunthorpe <logang@deltatee.com>, Andrew Morton <akpm@linux-foundation.org>, linux-arm-kernel@lists.infradead.org, Jia He <justin.he@arm.com>
 
-On 07/28/20 at 08:11am, Mike Rapoport wrote:
-> From: Mike Rapoport <rppt@linux.ibm.com>
-> 
-> The only user of memblock_dbg() outside memblock was s390 setup code and it
-> is converted to use pr_debug() instead.
-> This allows to stop exposing memblock_debug and memblock_dbg() to the rest
-> of the kernel.
-> 
-> Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> ---
->  arch/s390/kernel/setup.c |  4 ++--
->  include/linux/memblock.h | 12 +-----------
->  mm/memblock.c            | 13 +++++++++++--
->  3 files changed, 14 insertions(+), 15 deletions(-)
+After a general version of __weak memory_add_physaddr_to_nid implemented
+and exported , it is no use exporting twice in arch directory even if
+e,g, ia64/x86 have their specific version.
 
-Nice clean up.
+This is to suppress the modpost warning:
+WARNING: modpost: vmlinux: 'memory_add_physaddr_to_nid' exported twice.
+Previous export was in vmlinux
 
-Reviewed-by: Baoquan He <bhe@redhat.com>
+Suggested-by: David Hildenbrand <david@redhat.com>
+Signed-off-by: Jia He <justin.he@arm.com>
+---
+ arch/ia64/mm/numa.c | 2 --
+ arch/x86/mm/numa.c  | 1 -
+ 2 files changed, 3 deletions(-)
 
-> 
-> diff --git a/arch/s390/kernel/setup.c b/arch/s390/kernel/setup.c
-> index 07aa15ba43b3..8b284cf6e199 100644
-> --- a/arch/s390/kernel/setup.c
-> +++ b/arch/s390/kernel/setup.c
-> @@ -776,8 +776,8 @@ static void __init memblock_add_mem_detect_info(void)
->  	unsigned long start, end;
->  	int i;
->  
-> -	memblock_dbg("physmem info source: %s (%hhd)\n",
-> -		     get_mem_info_source(), mem_detect.info_source);
-> +	pr_debug("physmem info source: %s (%hhd)\n",
-> +		 get_mem_info_source(), mem_detect.info_source);
->  	/* keep memblock lists close to the kernel */
->  	memblock_set_bottom_up(true);
->  	for_each_mem_detect_block(i, &start, &end) {
-> diff --git a/include/linux/memblock.h b/include/linux/memblock.h
-> index 220b5f0dad42..e6a23b3db696 100644
-> --- a/include/linux/memblock.h
-> +++ b/include/linux/memblock.h
-> @@ -90,7 +90,6 @@ struct memblock {
->  };
->  
->  extern struct memblock memblock;
-> -extern int memblock_debug;
->  
->  #ifndef CONFIG_ARCH_KEEP_MEMBLOCK
->  #define __init_memblock __meminit
-> @@ -102,9 +101,6 @@ void memblock_discard(void);
->  static inline void memblock_discard(void) {}
->  #endif
->  
-> -#define memblock_dbg(fmt, ...) \
-> -	if (memblock_debug) printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
-> -
->  phys_addr_t memblock_find_in_range(phys_addr_t start, phys_addr_t end,
->  				   phys_addr_t size, phys_addr_t align);
->  void memblock_allow_resize(void);
-> @@ -456,13 +452,7 @@ bool memblock_is_region_memory(phys_addr_t base, phys_addr_t size);
->  bool memblock_is_reserved(phys_addr_t addr);
->  bool memblock_is_region_reserved(phys_addr_t base, phys_addr_t size);
->  
-> -extern void __memblock_dump_all(void);
-> -
-> -static inline void memblock_dump_all(void)
-> -{
-> -	if (memblock_debug)
-> -		__memblock_dump_all();
-> -}
-> +void memblock_dump_all(void);
->  
->  /**
->   * memblock_set_current_limit - Set the current allocation limit to allow
-> diff --git a/mm/memblock.c b/mm/memblock.c
-> index a5b9b3df81fc..824938849f6d 100644
-> --- a/mm/memblock.c
-> +++ b/mm/memblock.c
-> @@ -134,7 +134,10 @@ struct memblock memblock __initdata_memblock = {
->  	     i < memblock_type->cnt;					\
->  	     i++, rgn = &memblock_type->regions[i])
->  
-> -int memblock_debug __initdata_memblock;
-> +#define memblock_dbg(fmt, ...) \
-> +	if (memblock_debug) printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
-> +
-> +static int memblock_debug __initdata_memblock;
->  static bool system_has_some_mirror __initdata_memblock = false;
->  static int memblock_can_resize __initdata_memblock;
->  static int memblock_memory_in_slab __initdata_memblock = 0;
-> @@ -1919,7 +1922,7 @@ static void __init_memblock memblock_dump(struct memblock_type *type)
->  	}
->  }
->  
-> -void __init_memblock __memblock_dump_all(void)
-> +static void __init_memblock __memblock_dump_all(void)
->  {
->  	pr_info("MEMBLOCK configuration:\n");
->  	pr_info(" memory size = %pa reserved size = %pa\n",
-> @@ -1933,6 +1936,12 @@ void __init_memblock __memblock_dump_all(void)
->  #endif
->  }
->  
-> +void __init_memblock memblock_dump_all(void)
-> +{
-> +	if (memblock_debug)
-> +		__memblock_dump_all();
-> +}
-> +
->  void __init memblock_allow_resize(void)
->  {
->  	memblock_can_resize = 1;
-> -- 
-> 2.26.2
-> 
-> 
+diff --git a/arch/ia64/mm/numa.c b/arch/ia64/mm/numa.c
+index 5e1015eb6d0d..f34964271101 100644
+--- a/arch/ia64/mm/numa.c
++++ b/arch/ia64/mm/numa.c
+@@ -106,7 +106,5 @@ int memory_add_physaddr_to_nid(u64 addr)
+ 		return 0;
+ 	return nid;
+ }
+-
+-EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
+ #endif
+ #endif
+diff --git a/arch/x86/mm/numa.c b/arch/x86/mm/numa.c
+index 8ee952038c80..2a6e62af4636 100644
+--- a/arch/x86/mm/numa.c
++++ b/arch/x86/mm/numa.c
+@@ -929,5 +929,4 @@ int memory_add_physaddr_to_nid(u64 start)
+ 		nid = numa_meminfo.blk[0].nid;
+ 	return nid;
+ }
+-EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
+ #endif
+-- 
+2.17.1
