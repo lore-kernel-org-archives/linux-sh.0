@@ -1,64 +1,43 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Fri, 24 Jul 2020 08:22:36 +0000
-Subject: Re: [PATCH 1/3] x86/mm: Drop unused MAX_PHYSADDR_BITS
-Message-Id: <45ec14e7-fd5b-f4f9-6f61-94a9159ec3ad@redhat.com>
+From: Jia He <justin.he@arm.com>
+Date: Thu, 09 Jul 2020 02:06:26 +0000
+Subject: [PATCH v3 3/6] sh/mm: use default dummy memory_add_physaddr_to_nid()
+Message-Id: <20200709020629.91671-4-justin.he@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200723231544.17274-1-nivedita@alum.mit.edu>
- <20200723231544.17274-2-nivedita@alum.mit.edu>
-In-Reply-To: <20200723231544.17274-2-nivedita@alum.mit.edu>
+References: <20200709020629.91671-1-justin.he@arm.com>
+In-Reply-To: <20200709020629.91671-1-justin.he@arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arvind Sankar <nivedita@alum.mit.edu>, x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, sparclinux@vger.kernel.org, "David S. Miller" <davem@davemloft.net>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org, linux-kernel@vger.kernel.org
+To: Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, David Hildenbrand <david@redhat.com>
+Cc: Kaly Xin <Kaly.Xin@arm.com>, Michal Hocko <mhocko@suse.com>, Dave Jiang <dave.jiang@intel.com>, Baoquan He <bhe@redhat.com>, linux-sh@vger.kernel.org, Vishal Verma <vishal.l.verma@intel.com>, Masahiro Yamada <masahiroy@kernel.org>, x86@kernel.org, Chuhong Yuan <hslester96@gmail.com>, linux-kernel@vger.kernel.org, Mike Rapoport <rppt@linux.ibm.com>, linux-mm@kvack.org, linux-nvdimm@lists.01.org, Jonathan Cameron <Jonathan.Cameron@Huawei.com>, "H. Peter Anvin" <hpa@zytor.com>, linux-ia64@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Logan Gunthorpe <logang@deltatee.com>, Andrew Morton <akpm@linux-foundation.org>, linux-arm-kernel@lists.infradead.org, Jia He <justin.he@arm.com>
 
-On 24.07.20 01:15, Arvind Sankar wrote:
-> The macro is not used anywhere, and has an incorrect value (going by the
-> comment) on x86_64 since commit
->   c898faf91b3e ("x86: 46 bit physical address support on 64 bits")
-> 
-> To avoid confusion, just remove the definition.
-> 
-> Signed-off-by: Arvind Sankar <nivedita@alum.mit.edu>
-> ---
->  arch/x86/include/asm/sparsemem.h | 6 +-----
->  1 file changed, 1 insertion(+), 5 deletions(-)
-> 
-> diff --git a/arch/x86/include/asm/sparsemem.h b/arch/x86/include/asm/sparsemem.h
-> index 199218719a86..6bfc878f6771 100644
-> --- a/arch/x86/include/asm/sparsemem.h
-> +++ b/arch/x86/include/asm/sparsemem.h
-> @@ -10,24 +10,20 @@
->   *    field of the struct page
->   *
->   * SECTION_SIZE_BITS		2^n: size of each section
-> - * MAX_PHYSADDR_BITS		2^n: max size of physical address space
-> - * MAX_PHYSMEM_BITS		2^n: how much memory we can have in that space
-> + * MAX_PHYSMEM_BITS		2^n: max size of physical address space
->   *
->   */
->  
->  #ifdef CONFIG_X86_32
->  # ifdef CONFIG_X86_PAE
->  #  define SECTION_SIZE_BITS	29
-> -#  define MAX_PHYSADDR_BITS	36
->  #  define MAX_PHYSMEM_BITS	36
->  # else
->  #  define SECTION_SIZE_BITS	26
-> -#  define MAX_PHYSADDR_BITS	32
->  #  define MAX_PHYSMEM_BITS	32
->  # endif
->  #else /* CONFIG_X86_32 */
->  # define SECTION_SIZE_BITS	27 /* matt - 128 is convenient right now */
-> -# define MAX_PHYSADDR_BITS	(pgtable_l5_enabled() ? 52 : 44)
->  # define MAX_PHYSMEM_BITS	(pgtable_l5_enabled() ? 52 : 46)
->  #endif
->  
-> 
+After making default memory_add_physaddr_to_nid in mm/memory_hotplug,
+there is no use to define a similar one in arch specific directory.
 
-Reviewed-by: David Hildenbrand <david@redhat.com>
+Signed-off-by: Jia He <justin.he@arm.com>
+---
+ arch/sh/mm/init.c | 9 ---------
+ 1 file changed, 9 deletions(-)
 
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index a70ba0fdd0b3..f75932ba87a6 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -430,15 +430,6 @@ int arch_add_memory(int nid, u64 start, u64 size,
+ 	return ret;
+ }
+ 
+-#ifdef CONFIG_NUMA
+-int memory_add_physaddr_to_nid(u64 addr)
+-{
+-	/* Node 0 for now.. */
+-	return 0;
+-}
+-EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
+-#endif
+-
+ void arch_remove_memory(int nid, u64 start, u64 size,
+ 			struct vmem_altmap *altmap)
+ {
 -- 
-Thanks,
-
-David / dhildenb
+2.17.1
