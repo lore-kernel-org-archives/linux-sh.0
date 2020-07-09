@@ -1,188 +1,70 @@
-From: Jim Quinlan <james.quinlan@broadcom.com>
-Date: Wed, 01 Jul 2020 21:21:30 +0000
-Subject: [PATCH v6 00/12] PCI: brcmstb: enable PCIe for STB chips
-Message-Id: <20200701212155.37830-1-james.quinlan@broadcom.com>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Thu, 09 Jul 2020 07:28:36 +0000
+Subject: [PATCH v3 3/4] ntb: intel: Constify ioreadX() iomem argument (as in generic implementation)
+Message-Id: <20200709072837.5869-4-krzk@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200709072837.5869-1-krzk@kernel.org>
+In-Reply-To: <20200709072837.5869-1-krzk@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org, Nicolas Saenz Julienne <nsaenzjulienne@suse.de>, bcm-kernel-feedback-list@broadcom.com, james.quinlan@broadcom.com
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, Heikki Krogerus <heikki.krogerus@linux.intel.com>, "open list:SUPERH" <linux-sh@vger.kernel.org>, "open list:REMOTE PROCESSOR REMOTEPROC SUBSYSTEM" <linux-remoteproc@vger.kernel.org>, "open list:DRM DRIVERS FOR ALLWINNER A10" <dri-devel@lists.freedesktop.org>, "open list:LIBATA SUBSYSTEM Serial and Parallel ATA drivers" <linux-ide@vger.kernel.org>, Julien Grall <julien.grall@arm.com>, "H. Peter Anvin" <hpa@zytor.com>, "open list:STAGING SUBSYSTEM" <devel@driverdev.osuosl.org>, Florian Fainelli <f.fainelli@gmail.com>, Saravana Kannan <saravanak@google.com>, "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, "open list:ACPI FOR ARM64 ACPI/arm64" <linux-acpi@vger.kernel.org>, Alan Stern <stern@rowland.harvard.edu>, "open list:ALLWINNER A10 CSI DRIVER" <linux-media@vger.kernel.org>, "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE" <devicetree@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>, Oliver Neukum <oneukum@suse.com>, Hans de Goede <hdegoede@redhat.com>, Stefano Stabellini <sstabellini@kernel.org>, "moderated list:BROADCOM BCM2711/BCM2835 ARM ARCHITECTURE" <linux-rpi-kernel@lists.infradead.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>, Jens Axboe <axboe@kernel.dk>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "open list:USB SUBSYSTEM" <linux-usb@vger.kernel.org>, open list <linux-kernel@vger.kernel.org>, "open list:IOMMU DRIVERS" <iommu@lists.linux-foundation.org>, Robin Murphy <robin.murphy@arm.com>, Suzuki K Poulose <suzuki.poulose@arm.com>
+To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Jakub Kicinski <kuba@kernel.org>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Geert Uytterhoeven <geert+renesas@glider.be>, Andrew Morton <akpm@linux-foundation.org>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
+Cc: Krzysztof Kozlowski <krzk@kernel.org>
 
-Patchset Summary:
-  Enhance a PCIe host controller driver.  Because of its unusual design
-  we are foced to change dev->dma_pfn_offset into a more general role
-  allowing multiple offsets.  See the 'v1' notes below for more info.
+The ioreadX() helpers have inconsistent interface.  On some architectures
+void *__iomem address argument is a pointer to const, on some not.
 
-v6:
-  Commit "device core: Introduce DMA range map":
-  -- of_dma_get_range() now takes a single argument and returns either
-     NULL, a valid map, or an ERR_PTR. (Robin)
-  -- offsets are no longer a PFN value but an actual address. (Robin)
-  -- the bus_dma_region struct stores the range size instead of
-     the cpu_end and pci_end values. (Robin)
-  -- devices that were setting a single offset with no boundaries
-     have been modified to have boundaries; in a few places
-     where this informatino was unavilable a /* FIXME: ... */
-     comment was added. (Robin)
-  -- dma_attach_offset_range() can be called when an offset
-     map already exists; if it's range is already present
-     nothing is done and success is returned. (Robin)
-  All commits:
-  -- Man name/style/corrections/etc changed (Bjorn)
-  -- rebase to Torvalds master
+Implementations of ioreadX() do not modify the memory under the address
+so they can be converted to a "const" version for const-safety and
+consistency among architectures.
 
-v5:
-  Commit "device core: Introduce multiple dma pfn offsets"
-  -- in of/address.c: "map_size = 0" => "*map_size = 0"
-  -- use kcalloc instead of kzalloc (AndyS)
-  -- use PHYS_ADDR_MAX instead of "~(phys_addr_t)0"
-  Commit "PCI: brcmstb: Set internal memory viewport sizes"
-  -- now gives error on missing dma-ranges property.
-  Commit "dt-bindings: PCI: Add bindings for more Brcmstb chips"
-  -- removed "Allof:" from brcm,scb-sizes definition (RobH)
-  All Commits:
-  -- indentation style, use max chars 100 (AndyS)
-  -- rebased to torvalds master
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Dave Jiang <dave.jiang@intel.com>
+---
+ drivers/ntb/hw/intel/ntb_hw_gen1.c  | 2 +-
+ drivers/ntb/hw/intel/ntb_hw_gen3.h  | 2 +-
+ drivers/ntb/hw/intel/ntb_hw_intel.h | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
 
-v4:
-  Commit "device core: Introduce multiple dma pfn offsets"
-  -- of_dma_get_range() does not take a dev param but instead
-     takes two "out" params: map and map_size.  We do this so
-     that the code that parses dma-ranges is separate from
-     the code that modifies 'dev'.   (Nicolas)
-  -- the separate case of having a single pfn offset has
-     been removed and is now processed by going through the
-     map array. (Nicolas)
-  -- move attach_uniform_dma_pfn_offset() from of/address.c to
-     dma/mapping.c so that it does not depend on CONFIG_OF. (Nicolas)
-  -- devm_kcalloc => devm_kzalloc (DanC)
-  -- add/fix assignment to dev->dma_pfn_offset_map for func
-     attach_uniform_dma_pfn_offset() (DanC, Nicolas)
-  -- s/struct dma_pfn_offset_region/struct bus_dma_region/ (Nicolas)
-  -- s/attach_uniform_dma_pfn_offset/dma_attach_uniform_pfn_offset/
-  -- s/attach_dma_pfn_offset_map/dma_attach_pfn_offset_map/
-  -- More use of PFN_{PHYS,DOWN,UP}. (AndyS)
-  Commit "of: Include a dev param in of_dma_get_range()"
-  -- this commit was sqaushed with "device core: Introduce ..."
-
-v3:
-  Commit "device core: Introduce multiple dma pfn offsets"
-  Commit "arm: dma-mapping: Invoke dma offset func if needed"
-  -- The above two commits have been squashed.  More importantly,
-     the code has been modified so that the functionality for
-     multiple pfn offsets subsumes the use of dev->dma_pfn_offset.
-     In fact, dma_pfn_offset is removed and supplanted by
-     dma_pfn_offset_map, which is a pointer to an array.  The
-     more common case of a uniform offset is now handled as
-     a map with a single entry, while cases requiring multiple
-     pfn offsets use a map with multiple entries.  Code paths
-     that used to do this:
-
-         dev->dma_pfn_offset = mydrivers_pfn_offset;
-
-     have been changed to do this:
-
-         attach_uniform_dma_pfn_offset(dev, pfn_offset);
-
-  Commit "dt-bindings: PCI: Add bindings for more Brcmstb chips"
-  -- Add if/then clause for required props: resets, reset-names (RobH)
-  -- Change compatible list from const to enum (RobH)
-  -- Change list of u32-tuples to u64 (RobH)
-
-  Commit "of: Include a dev param in of_dma_get_range()"
-  -- modify of/unittests.c to add NULL param in of_dma_get_range() call.
-
-  Commit "device core: Add ability to handle multiple dma offsets"
-  -- align comment in device.h (AndyS).
-  -- s/cpu_beg/cpu_start/ and s/dma_beg/dma_start/ in struct
-     dma_pfn_offset_region (AndyS).
-
-v2:
-Commit: "device core: Add ability to handle multiple dma offsets"
-  o Added helper func attach_dma_pfn_offset_map() in address.c (Chistoph)
-  o Helpers funcs added to __phys_to_dma() & __dma_to_phys() (Christoph)
-  o Added warning when multiple offsets are needed and !DMA_PFN_OFFSET_MAP
-  o dev->dma_pfn_map => dev->dma_pfn_offset_map
-  o s/frm/from/ for dma_pfn_offset_frm_{phys,dma}_addr() (Christoph)
-  o In device.h: s/const void */const struct dma_pfn_offset_region */
-  o removed 'unlikely' from unlikely(dev->dma_pfn_offset_map) since
-    guarded by CONFIG_DMA_PFN_OFFSET_MAP (Christoph)
-  o Since dev->dma_pfn_offset is copied in usb/core/{usb,message}.c, now
-    dev->dma_pfn_offset_map is copied as well.
-  o Merged two of the DMA commits into one (Christoph).
-
-Commit "arm: dma-mapping: Invoke dma offset func if needed":
-  o Use helper functions instead of #if CONFIG_DMA_PFN_OFFSET
-
-Other commits' changes:
-  o Removed need for carrying of_id var in priv (Nicolas)
-  o Commit message rewordings (Bjorn)
-  o Commit log messages filled to 75 chars (Bjorn)
-  o devm_reset_control_get_shared())
-    => devm_reset_control_get_optional_shared (Philipp)
-  o Add call to reset_control_assert() in PCIe remove routines (Philipp)
-
-v1:
-This patchset expands the usefulness of the Broadcom Settop Box PCIe
-controller by building upon the PCIe driver used currently by the
-Raspbery Pi.  Other forms of this patchset were submitted by me years
-ago and not accepted; the major sticking point was the code required
-for the DMA remapping needed for the PCIe driver to work [1].
-
-There have been many changes to the DMA and OF subsystems since that
-time, making a cleaner and less intrusive patchset possible.  This
-patchset implements a generalization of "dev->dma_pfn_offset", except
-that instead of a single scalar offset it provides for multiple
-offsets via a function which depends upon the "dma-ranges" property of
-the PCIe host controller.  This is required for proper functionality
-of the BrcmSTB PCIe controller and possibly some other devices.
-
-[1] https://lore.kernel.org/linux-arm-kernel/1516058925-46522-5-git-send-email-jim2101024@gmail.com/
-
-
-Jim Quinlan (12):
-  PCI: brcmstb: PCIE_BRCMSTB depends on ARCH_BRCMSTB
-  ata: ahci_brcm: Fix use of BCM7216 reset controller
-  dt-bindings: PCI: Add bindings for more Brcmstb chips
-  PCI: brcmstb: Add bcm7278 register info
-  PCI: brcmstb: Add suspend and resume pm_ops
-  PCI: brcmstb: Add bcm7278 PERST# support
-  PCI: brcmstb: Add control of rescal reset
-  device core: Introduce DMA range map, supplanting dma_pfn_offset
-  PCI: brcmstb: Set additional internal memory DMA viewport sizes
-  PCI: brcmstb: Accommodate MSI for older chips
-  PCI: brcmstb: Set bus max burst size by chip type
-  PCI: brcmstb: Add bcm7211, bcm7216, bcm7445, bcm7278 to match list
-
- .../bindings/pci/brcm,stb-pcie.yaml           |  56 ++-
- arch/arm/include/asm/dma-mapping.h            |   9 +-
- arch/arm/mach-keystone/keystone.c             |  17 +-
- arch/sh/drivers/pci/pcie-sh7786.c             |   9 +-
- arch/sh/kernel/dma-coherent.c                 |  14 +-
- arch/x86/pci/sta2x11-fixup.c                  |   7 +-
- drivers/acpi/arm64/iort.c                     |   5 +-
- drivers/ata/ahci_brcm.c                       |  11 +-
- drivers/gpu/drm/sun4i/sun4i_backend.c         |   7 +-
- drivers/iommu/io-pgtable-arm.c                |   2 +-
- .../platform/sunxi/sun4i-csi/sun4i_csi.c      |   6 +-
- .../platform/sunxi/sun6i-csi/sun6i_csi.c      |   5 +-
- drivers/of/address.c                          |  95 ++--
- drivers/of/device.c                           |  50 ++-
- drivers/of/of_private.h                       |   9 +-
- drivers/of/unittest.c                         |  35 +-
- drivers/pci/controller/Kconfig                |   3 +-
- drivers/pci/controller/pcie-brcmstb.c         | 408 +++++++++++++++---
- drivers/remoteproc/remoteproc_core.c          |   2 +-
- .../staging/media/sunxi/cedrus/cedrus_hw.c    |   8 +-
- drivers/usb/core/message.c                    |   4 +-
- drivers/usb/core/usb.c                        |   2 +-
- include/linux/device.h                        |   4 +-
- include/linux/dma-direct.h                    |  10 +-
- include/linux/dma-mapping.h                   |  37 ++
- kernel/dma/coherent.c                         |  11 +-
- kernel/dma/mapping.c                          |  53 +++
- 27 files changed, 684 insertions(+), 195 deletions(-)
-
+diff --git a/drivers/ntb/hw/intel/ntb_hw_gen1.c b/drivers/ntb/hw/intel/ntb_hw_gen1.c
+index 423f9b8fbbcf..3185efeab487 100644
+--- a/drivers/ntb/hw/intel/ntb_hw_gen1.c
++++ b/drivers/ntb/hw/intel/ntb_hw_gen1.c
+@@ -1205,7 +1205,7 @@ int intel_ntb_peer_spad_write(struct ntb_dev *ntb, int pidx, int sidx,
+ 			       ndev->peer_reg->spad);
+ }
+ 
+-static u64 xeon_db_ioread(void __iomem *mmio)
++static u64 xeon_db_ioread(const void __iomem *mmio)
+ {
+ 	return (u64)ioread16(mmio);
+ }
+diff --git a/drivers/ntb/hw/intel/ntb_hw_gen3.h b/drivers/ntb/hw/intel/ntb_hw_gen3.h
+index 2bc5d8356045..dea93989942d 100644
+--- a/drivers/ntb/hw/intel/ntb_hw_gen3.h
++++ b/drivers/ntb/hw/intel/ntb_hw_gen3.h
+@@ -91,7 +91,7 @@
+ #define GEN3_DB_TOTAL_SHIFT		33
+ #define GEN3_SPAD_COUNT			16
+ 
+-static inline u64 gen3_db_ioread(void __iomem *mmio)
++static inline u64 gen3_db_ioread(const void __iomem *mmio)
+ {
+ 	return ioread64(mmio);
+ }
+diff --git a/drivers/ntb/hw/intel/ntb_hw_intel.h b/drivers/ntb/hw/intel/ntb_hw_intel.h
+index d61fcd91714b..05e2335c9596 100644
+--- a/drivers/ntb/hw/intel/ntb_hw_intel.h
++++ b/drivers/ntb/hw/intel/ntb_hw_intel.h
+@@ -103,7 +103,7 @@ struct intel_ntb_dev;
+ struct intel_ntb_reg {
+ 	int (*poll_link)(struct intel_ntb_dev *ndev);
+ 	int (*link_is_up)(struct intel_ntb_dev *ndev);
+-	u64 (*db_ioread)(void __iomem *mmio);
++	u64 (*db_ioread)(const void __iomem *mmio);
+ 	void (*db_iowrite)(u64 db_bits, void __iomem *mmio);
+ 	unsigned long			ntb_ctl;
+ 	resource_size_t			db_size;
 -- 
 2.17.1
