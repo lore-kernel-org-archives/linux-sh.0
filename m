@@ -1,111 +1,114 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Fri, 17 Jul 2020 11:10:09 +0000
-Subject: [PATCH v2 04/11] sparc32/tlb: Fix __p*_free_tlb()
-Message-Id: <20200717111349.591934380@infradead.org>
+From: Jia He <justin.he@arm.com>
+Date: Fri, 10 Jul 2020 03:16:18 +0000
+Subject: [PATCH 1/2] mm/memory_hotplug: introduce default dummy memory_add_physaddr_to_nid()
+Message-Id: <20200710031619.18762-2-justin.he@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200717111005.024867618@infradead.org>
+References: <20200710031619.18762-1-justin.he@arm.com>
+In-Reply-To: <20200710031619.18762-1-justin.he@arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Will Deacon <will@kernel.org>, "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Nick Piggin <npiggin@gmail.com>, Peter Zijlstra <peterz@infradead.org>
-Cc: linux-arch@vger.kernel.org, linux-sh@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, Helge Deller <deller@gmx.de>, Geert Uytterhoeven <geert@linux-m68k.org>, Paul Burton <paulburton@kernel.org>, Tony Luck <tony.luck@intel.com>, Richard Henderson <rth@twiddle.net>, Nick Hu <nickhu@andestech.com>, Paul Walmsley <paul.walmsley@sifive.com>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Christoph Hellwig <hch@lst.de>
+To: Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, David Hildenbrand <david@redhat.com>
+Cc: Kaly Xin <Kaly.Xin@arm.com>, Michal Hocko <mhocko@suse.com>, Dave Jiang <dave.jiang@intel.com>, Baoquan He <bhe@redhat.com>, linux-sh@vger.kernel.org, Vishal Verma <vishal.l.verma@intel.com>, Masahiro Yamada <masahiroy@kernel.org>, x86@kernel.org, Chuhong Yuan <hslester96@gmail.com>, linux-kernel@vger.kernel.org, Mike Rapoport <rppt@linux.ibm.com>, linux-mm@kvack.org, linux-nvdimm@lists.01.org, Jonathan Cameron <Jonathan.Cameron@Huawei.com>, "H. Peter Anvin" <hpa@zytor.com>, linux-ia64@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Logan Gunthorpe <logang@deltatee.com>, Andrew Morton <akpm@linux-foundation.org>, linux-arm-kernel@lists.infradead.org, Jia He <justin.he@arm.com>
 
-Just like regular pages, page directories need to observe the
-following order:
+This is to introduce a general dummy helper. memory_add_physaddr_to_nid()
+is a fallback option to get the nid in case NUMA_NO_NID is detected.
 
- 1) unhook
- 2) TLB invalidate
- 3) free
+After this patch, arm64/sh/s390 can simply use the general dummy version.
+PowerPC/x86/ia64 will still use their specific version.
 
-to ensure it is safe against concurrent accesses.
+This is the preparation to set a fallback value for dev_dax->target_node.
 
-Because Sparc32 has non-page based page directories, use a custom
-table freeer.
-
-Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Reviewed-by: David Hildenbrand <david@redhat.com>
+Signed-off-by: Jia He <justin.he@arm.com>
 ---
- arch/sparc/Kconfig                  |    1 +
- arch/sparc/include/asm/pgalloc_32.h |    7 +++++--
- arch/sparc/mm/srmmu.c               |   28 ++++++++++++++++++++++++++++
- 3 files changed, 34 insertions(+), 2 deletions(-)
+ arch/arm64/mm/numa.c | 10 ----------
+ arch/ia64/mm/numa.c  |  2 --
+ arch/sh/mm/init.c    |  9 ---------
+ arch/x86/mm/numa.c   |  1 -
+ mm/memory_hotplug.c  | 10 ++++++++++
+ 5 files changed, 10 insertions(+), 22 deletions(-)
 
---- a/arch/sparc/Kconfig
-+++ b/arch/sparc/Kconfig
-@@ -57,6 +57,7 @@ config SPARC32
- 	select CLZ_TAB
- 	select HAVE_UID16
- 	select OLD_SIGACTION
-+	select MMU_GATHER_TABLE_FREE
+diff --git a/arch/arm64/mm/numa.c b/arch/arm64/mm/numa.c
+index aafcee3e3f7e..73f8b49d485c 100644
+--- a/arch/arm64/mm/numa.c
++++ b/arch/arm64/mm/numa.c
+@@ -461,13 +461,3 @@ void __init arm64_numa_init(void)
  
- config SPARC64
- 	def_bool 64BIT
---- a/arch/sparc/include/asm/pgalloc_32.h
-+++ b/arch/sparc/include/asm/pgalloc_32.h
-@@ -12,6 +12,9 @@
- 
- struct page;
- 
-+extern void pgtable_free_tlb(struct mmu_gather *tlb, void *table, int idx);
-+extern void __tlb_remove_table(void *table);
-+
- void *srmmu_get_nocache(int size, int align);
- void srmmu_free_nocache(void *addr, int size);
- 
-@@ -48,7 +51,7 @@ static inline void free_pmd_fast(pmd_t *
+ 	numa_init(dummy_numa_init);
  }
- 
- #define pmd_free(mm, pmd)		free_pmd_fast(pmd)
--#define __pmd_free_tlb(tlb, pmd, addr)	pmd_free((tlb)->mm, pmd)
-+#define __pmd_free_tlb(tlb, pmd, addr)	pgtable_free_tlb((tlb), (pmd), 1)
- 
- #define pmd_populate(mm, pmd, pte)	pmd_set(pmd, pte)
- #define pmd_pgtable(pmd)		(pgtable_t)__pmd_page(pmd)
-@@ -73,6 +76,6 @@ static inline void free_pte_fast(pte_t *
- #define pte_free_kernel(mm, pte)	free_pte_fast(pte)
- 
- void pte_free(struct mm_struct * mm, pgtable_t pte);
--#define __pte_free_tlb(tlb, pte, addr)	pte_free((tlb)->mm, pte)
-+#define __pte_free_tlb(tlb, pte, addr)	pgtable_free_tlb((tlb), (pte), 0)
- 
- #endif /* _SPARC_PGALLOC_H */
---- a/arch/sparc/mm/srmmu.c
-+++ b/arch/sparc/mm/srmmu.c
-@@ -38,6 +38,7 @@
- #include <asm/page.h>
- #include <asm/asi.h>
- #include <asm/smp.h>
-+#include <asm/tlb.h>
- #include <asm/io.h>
- 
- /* Now the cpu specific definitions. */
-@@ -1831,3 +1832,30 @@ void __init load_mmu(void)
- 		sun4m_init_smp();
+-
+-/*
+- * We hope that we will be hotplugging memory on nodes we already know about,
+- * such that acpi_get_node() succeeds and we never fall back to this...
+- */
+-int memory_add_physaddr_to_nid(u64 addr)
+-{
+-	pr_warn("Unknown node for memory at 0x%llx, assuming node 0\n", addr);
+-	return 0;
+-}
+diff --git a/arch/ia64/mm/numa.c b/arch/ia64/mm/numa.c
+index 5e1015eb6d0d..f34964271101 100644
+--- a/arch/ia64/mm/numa.c
++++ b/arch/ia64/mm/numa.c
+@@ -106,7 +106,5 @@ int memory_add_physaddr_to_nid(u64 addr)
+ 		return 0;
+ 	return nid;
+ }
+-
+-EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
  #endif
+ #endif
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index a70ba0fdd0b3..f75932ba87a6 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -430,15 +430,6 @@ int arch_add_memory(int nid, u64 start, u64 size,
+ 	return ret;
  }
-+
-+#define TLB_IDX_MASK	1UL
-+
-+void __tlb_remove_table(void *table)
+ 
+-#ifdef CONFIG_NUMA
+-int memory_add_physaddr_to_nid(u64 addr)
+-{
+-	/* Node 0 for now.. */
+-	return 0;
+-}
+-EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
+-#endif
+-
+ void arch_remove_memory(int nid, u64 start, u64 size,
+ 			struct vmem_altmap *altmap)
+ {
+diff --git a/arch/x86/mm/numa.c b/arch/x86/mm/numa.c
+index 8ee952038c80..2a6e62af4636 100644
+--- a/arch/x86/mm/numa.c
++++ b/arch/x86/mm/numa.c
+@@ -929,5 +929,4 @@ int memory_add_physaddr_to_nid(u64 start)
+ 		nid = numa_meminfo.blk[0].nid;
+ 	return nid;
+ }
+-EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
+ #endif
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index da374cd3d45b..b49ab743d914 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -350,6 +350,16 @@ int __ref __add_pages(int nid, unsigned long pfn, unsigned long nr_pages,
+ 	return err;
+ }
+ 
++#ifdef CONFIG_NUMA
++int __weak memory_add_physaddr_to_nid(u64 start)
 +{
-+	void *dir = (void *)((unsigned long)table & ~TLB_IDX_MASK);
-+	int idx = (unsigned long)table & TLB_IDX_MASK;
-+
-+	switch (idx) {
-+	case 1: /* PMD */
-+		pmd_free(NULL, dir);
-+		break;
-+	case 0: /* PTE */
-+		pte_free(NULL, dir);
-+		break;
-+	}
++	pr_info_once("Unknown target node for memory at 0x%llx, assuming node 0\n",
++			start);
++	return 0;
 +}
++EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
++#endif
 +
-+void pgtable_free_tlb(struct mmu_gather *tlb, void *table, int idx)
-+{
-+	unsigned long pgf = (unsigned long)table;
-+	BUG_ON(idx > TLB_IDX_MASK);
-+	BUG_ON(pgf & TLB_IDX_MASK);
-+	pgf |= idx;
-+	tlb_remove_table(tlb, (void *)pgf);
-+}
-+
+ /* find the smallest valid pfn in the range [start_pfn, end_pfn) */
+ static unsigned long find_smallest_section_pfn(int nid, struct zone *zone,
+ 				     unsigned long start_pfn,
+-- 
+2.17.1
