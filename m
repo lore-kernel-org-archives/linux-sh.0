@@ -1,87 +1,51 @@
-From: Justin He <Justin.He@arm.com>
-Date: Thu, 09 Jul 2020 05:13:19 +0000
-Subject: RE: [PATCH v3 5/6] device-dax: use fallback nid when numa_node is invalid
-Message-Id: <AM6PR08MB4069D206048464CFCBBFDC9EF7640@AM6PR08MB4069.eurprd08.prod.outlook.com>
+From: Jia He <justin.he@arm.com>
+Date: Fri, 10 Jul 2020 03:16:17 +0000
+Subject: [PATCH v4 0/2] Fix and enable pmem as RAM device on arm64
+Message-Id: <20200710031619.18762-1-justin.he@arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200709020629.91671-1-justin.he@arm.com>
- <20200709020629.91671-6-justin.he@arm.com>
- <CAPcyv4gfVhHyo-c=9bXd=z3=9Xqy7ato30D8p2aNsKBUONosug@mail.gmail.com>
-In-Reply-To: <CAPcyv4gfVhHyo-c=9bXd=z3=9Xqy7ato30D8p2aNsKBUONosug@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Dan Williams <dan.j.williams@intel.com>
-Cc: Rich Felker <dalias@libc.org>, "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>, David Hildenbrand <david@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <Catalin.Marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Linux MM <linux-mm@kvack.org>, Michal Hocko <mhocko@suse.com>, "H. Peter Anvin" <hpa@zytor.com>, Will Deacon <will@kernel.org>, Dave Jiang <dave.jiang@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-nvdimm <linux-nvdimm@lists.01.org>, Linux-sh <linux-sh@vger.kernel.org>, Vishal Verma <vishal.l.verma@intel.com>, Masahiro Yamada <masahiroy@kernel.org>, X86 ML <x86@kernel.org>, Mike Rapoport <rppt@linux.ibm.com>, Kaly Xin <Kaly.Xin@arm.com>, Ingo Molnar <mingo@redhat.com>, Fenghua Yu <fenghua.yu@intel.com>, Chuhong Yuan <hslester96@gmail.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Jonathan Cameron <Jonathan.Cameron@huawei.com>, Thomas Gleixner <tglx@linutronix.de>, Linux ARM <linux-arm-kernel@lists.infradead.org>, Tony Luck <tony.luck@intel.com>, Baoquan He <bhe@redhat.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Logan Gunthorpe <logang@deltatee.com>
+To: Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, David Hildenbrand <david@redhat.com>
+Cc: Kaly Xin <Kaly.Xin@arm.com>, Michal Hocko <mhocko@suse.com>, Dave Jiang <dave.jiang@intel.com>, Baoquan He <bhe@redhat.com>, linux-sh@vger.kernel.org, Vishal Verma <vishal.l.verma@intel.com>, Masahiro Yamada <masahiroy@kernel.org>, x86@kernel.org, Chuhong Yuan <hslester96@gmail.com>, linux-kernel@vger.kernel.org, Mike Rapoport <rppt@linux.ibm.com>, linux-mm@kvack.org, linux-nvdimm@lists.01.org, Jonathan Cameron <Jonathan.Cameron@Huawei.com>, "H. Peter Anvin" <hpa@zytor.com>, linux-ia64@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Logan Gunthorpe <logang@deltatee.com>, Andrew Morton <akpm@linux-foundation.org>, linux-arm-kernel@lists.infradead.org, Jia He <justin.he@arm.com>
 
-SGkgRGFuDQoNCj4gLS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCj4gRnJvbTogRGFuIFdpbGxp
-YW1zIDxkYW4uai53aWxsaWFtc0BpbnRlbC5jb20+DQo+IFNlbnQ6IFRodXJzZGF5LCBKdWx5IDks
-IDIwMjAgMTE6MzkgQU0NCj4gVG86IEp1c3RpbiBIZSA8SnVzdGluLkhlQGFybS5jb20+DQo+IENj
-OiBDYXRhbGluIE1hcmluYXMgPENhdGFsaW4uTWFyaW5hc0Bhcm0uY29tPjsgV2lsbCBEZWFjb24N
-Cj4gPHdpbGxAa2VybmVsLm9yZz47IFRvbnkgTHVjayA8dG9ueS5sdWNrQGludGVsLmNvbT47IEZl
-bmdodWEgWXUNCj4gPGZlbmdodWEueXVAaW50ZWwuY29tPjsgWW9zaGlub3JpIFNhdG8gPHlzYXRv
-QHVzZXJzLnNvdXJjZWZvcmdlLmpwPjsgUmljaA0KPiBGZWxrZXIgPGRhbGlhc0BsaWJjLm9yZz47
-IERhdmUgSGFuc2VuIDxkYXZlLmhhbnNlbkBsaW51eC5pbnRlbC5jb20+OyBBbmR5DQo+IEx1dG9t
-aXJza2kgPGx1dG9Aa2VybmVsLm9yZz47IFBldGVyIFppamxzdHJhIDxwZXRlcnpAaW5mcmFkZWFk
-Lm9yZz47DQo+IFRob21hcyBHbGVpeG5lciA8dGdseEBsaW51dHJvbml4LmRlPjsgSW5nbyBNb2xu
-YXIgPG1pbmdvQHJlZGhhdC5jb20+Ow0KPiBCb3Jpc2xhdiBQZXRrb3YgPGJwQGFsaWVuOC5kZT47
-IERhdmlkIEhpbGRlbmJyYW5kIDxkYXZpZEByZWRoYXQuY29tPjsgWDg2DQo+IE1MIDx4ODZAa2Vy
-bmVsLm9yZz47IEguIFBldGVyIEFudmluIDxocGFAenl0b3IuY29tPjsgVmlzaGFsIFZlcm1hDQo+
-IDx2aXNoYWwubC52ZXJtYUBpbnRlbC5jb20+OyBEYXZlIEppYW5nIDxkYXZlLmppYW5nQGludGVs
-LmNvbT47IEFuZHJldw0KPiBNb3J0b24gPGFrcG1AbGludXgtZm91bmRhdGlvbi5vcmc+OyBCYW9x
-dWFuIEhlIDxiaGVAcmVkaGF0LmNvbT47IENodWhvbmcNCj4gWXVhbiA8aHNsZXN0ZXI5NkBnbWFp
-bC5jb20+OyBNaWtlIFJhcG9wb3J0IDxycHB0QGxpbnV4LmlibS5jb20+OyBMb2dhbg0KPiBHdW50
-aG9ycGUgPGxvZ2FuZ0BkZWx0YXRlZS5jb20+OyBNYXNhaGlybyBZYW1hZGEgPG1hc2FoaXJveUBr
-ZXJuZWwub3JnPjsNCj4gTWljaGFsIEhvY2tvIDxtaG9ja29Ac3VzZS5jb20+OyBMaW51eCBBUk0g
-PGxpbnV4LWFybS0NCj4ga2VybmVsQGxpc3RzLmluZnJhZGVhZC5vcmc+OyBMaW51eCBLZXJuZWwg
-TWFpbGluZyBMaXN0IDxsaW51eC0NCj4ga2VybmVsQHZnZXIua2VybmVsLm9yZz47IGxpbnV4LWlh
-NjRAdmdlci5rZXJuZWwub3JnOyBMaW51eC1zaCA8bGludXgtDQo+IHNoQHZnZXIua2VybmVsLm9y
-Zz47IGxpbnV4LW52ZGltbSA8bGludXgtbnZkaW1tQGxpc3RzLjAxLm9yZz47IExpbnV4IE1NDQo+
-IDxsaW51eC1tbUBrdmFjay5vcmc+OyBKb25hdGhhbiBDYW1lcm9uIDxKb25hdGhhbi5DYW1lcm9u
-QGh1YXdlaS5jb20+OyBLYWx5DQo+IFhpbiA8S2FseS5YaW5AYXJtLmNvbT4NCj4gU3ViamVjdDog
-UmU6IFtQQVRDSCB2MyA1LzZdIGRldmljZS1kYXg6IHVzZSBmYWxsYmFjayBuaWQgd2hlbiBudW1h
-X25vZGUgaXMNCj4gaW52YWxpZA0KPiANCj4gT24gV2VkLCBKdWwgOCwgMjAyMCBhdCA3OjA3IFBN
-IEppYSBIZSA8anVzdGluLmhlQGFybS5jb20+IHdyb3RlOg0KPiA+DQo+ID4gbnVtYV9vZmYgaXMg
-c2V0IHVuY29uZGl0aW9uYWxseSBhdCB0aGUgZW5kIG9mIGR1bW15X251bWFfaW5pdCgpLA0KPiA+
-IGV2ZW4gd2l0aCBhIGZha2UgbnVtYSBub2RlLiBBQ1BJIGRldGVjdHMgbm9kZSBpZCBhcyBOVU1B
-X05PX05PREUoLTEpIGluDQo+ID4gYWNwaV9tYXBfcHhtX3RvX25vZGUoKSBiZWNhdXNlIGl0IHJl
-Z2FyZHMgbnVtYV9vZmYgYXMgdHVybmluZyBvZmYgdGhlDQo+IG51bWENCj4gPiBub2RlLiBIZW5j
-ZSBkZXZfZGF4LT50YXJnZXRfbm9kZSBpcyBOVU1BX05PX05PREUgb24gYXJtNjQgd2l0aCBmYWtl
-IG51bWEuDQo+ID4NCj4gPiBXaXRob3V0IHRoaXMgcGF0Y2gsIHBtZW0gY2FuJ3QgYmUgcHJvYmVk
-IGFzIGEgUkFNIGRldmljZSBvbiBhcm02NCBpZg0KPiBTUkFUIHRhYmxlDQo+ID4gaXNuJ3QgcHJl
-c2VudDoNCj4gPiAkbmRjdGwgY3JlYXRlLW5hbWVzcGFjZSAtZmUgbmFtZXNwYWNlMC4wIC0tbW9k
-ZT1kZXZkYXggLS1tYXA9ZGV2IC1zIDFnIC0NCj4gYSA2NEsNCj4gPiBrbWVtIGRheDAuMDogcmVq
-ZWN0aW5nIERBWCByZWdpb24gW21lbSAweDI0MDQwMDAwMC0weDJiZmZmZmZmZl0gd2l0aA0KPiBp
-bnZhbGlkIG5vZGU6IC0xDQo+ID4ga21lbTogcHJvYmUgb2YgZGF4MC4wIGZhaWxlZCB3aXRoIGVy
-cm9yIC0yMg0KPiA+DQo+ID4gVGhpcyBmaXhlcyBpdCBieSB1c2luZyBmYWxsYmFjayBtZW1vcnlf
-YWRkX3BoeXNhZGRyX3RvX25pZCgpIGFzIG5pZC4NCj4gPg0KPiA+IFN1Z2dlc3RlZC1ieTogRGF2
-aWQgSGlsZGVuYnJhbmQgPGRhdmlkQHJlZGhhdC5jb20+DQo+ID4gU2lnbmVkLW9mZi1ieTogSmlh
-IEhlIDxqdXN0aW4uaGVAYXJtLmNvbT4NCj4gPiAtLS0NCj4gPiAgZHJpdmVycy9kYXgva21lbS5j
-IHwgMjEgKysrKysrKysrKysrKy0tLS0tLS0tDQo+ID4gIDEgZmlsZSBjaGFuZ2VkLCAxMyBpbnNl
-cnRpb25zKCspLCA4IGRlbGV0aW9ucygtKQ0KPiA+DQo+ID4gZGlmZiAtLWdpdCBhL2RyaXZlcnMv
-ZGF4L2ttZW0uYyBiL2RyaXZlcnMvZGF4L2ttZW0uYw0KPiA+IGluZGV4IDI3NWFhNWY4NzM5OS4u
-MjE4ZjY2MDU3OTk0IDEwMDY0NA0KPiA+IC0tLSBhL2RyaXZlcnMvZGF4L2ttZW0uYw0KPiA+ICsr
-KyBiL2RyaXZlcnMvZGF4L2ttZW0uYw0KPiA+IEBAIC0zMSwyMiArMzEsMjMgQEAgaW50IGRldl9k
-YXhfa21lbV9wcm9iZShzdHJ1Y3QgZGV2aWNlICpkZXYpDQo+ID4gICAgICAgICBpbnQgbnVtYV9u
-b2RlOw0KPiA+ICAgICAgICAgaW50IHJjOw0KPiA+DQo+ID4gKyAgICAgICAvKiBIb3RwbHVnIHN0
-YXJ0aW5nIGF0IHRoZSBiZWdpbm5pbmcgb2YgdGhlIG5leHQgYmxvY2s6ICovDQo+ID4gKyAgICAg
-ICBrbWVtX3N0YXJ0ID0gQUxJR04ocmVzLT5zdGFydCwgbWVtb3J5X2Jsb2NrX3NpemVfYnl0ZXMo
-KSk7DQo+ID4gKw0KPiA+ICAgICAgICAgLyoNCj4gPiAgICAgICAgICAqIEVuc3VyZSBnb29kIE5V
-TUEgaW5mb3JtYXRpb24gZm9yIHRoZSBwZXJzaXN0ZW50IG1lbW9yeS4NCj4gPiAgICAgICAgICAq
-IFdpdGhvdXQgdGhpcyBjaGVjaywgdGhlcmUgaXMgYSByaXNrIHRoYXQgc2xvdyBtZW1vcnkNCj4g
-PiAgICAgICAgICAqIGNvdWxkIGJlIG1peGVkIGluIGEgbm9kZSB3aXRoIGZhc3RlciBtZW1vcnks
-IGNhdXNpbmcNCj4gPiAtICAgICAgICAqIHVuYXZvaWRhYmxlIHBlcmZvcm1hbmNlIGlzc3Vlcy4N
-Cj4gPiArICAgICAgICAqIHVuYXZvaWRhYmxlIHBlcmZvcm1hbmNlIGlzc3Vlcy4gRnVydGhlcm1v
-cmUsIGZhbGxiYWNrIG5vZGUNCj4gPiArICAgICAgICAqIGlkIGNhbiBiZSB1c2VkIHdoZW4gbnVt
-YV9ub2RlIGlzIGludmFsaWQuDQo+ID4gICAgICAgICAgKi8NCj4gPiAgICAgICAgIG51bWFfbm9k
-ZSA9IGRldl9kYXgtPnRhcmdldF9ub2RlOw0KPiA+ICAgICAgICAgaWYgKG51bWFfbm9kZSA8IDAp
-IHsNCj4gPiAtICAgICAgICAgICAgICAgZGV2X3dhcm4oZGV2LCAicmVqZWN0aW5nIERBWCByZWdp
-b24gJXBSIHdpdGggaW52YWxpZA0KPiBub2RlOiAlZFxuIiwNCj4gPiAtICAgICAgICAgICAgICAg
-ICAgICAgICAgcmVzLCBudW1hX25vZGUpOw0KPiA+IC0gICAgICAgICAgICAgICByZXR1cm4gLUVJ
-TlZBTDsNCj4gPiArICAgICAgICAgICAgICAgbnVtYV9ub2RlID0gbWVtb3J5X2FkZF9waHlzYWRk
-cl90b19uaWQoa21lbV9zdGFydCk7DQo+IA0KPiBJIHRoaW5rIHRoaXMgZml4dXAgYmVsb25ncyB0
-byB0aGUgY29yZSB0byBzZXQgYSBmYWxsYmFjayB2YWx1ZSBmb3INCj4gZGV2X2RheC0+dGFyZ2V0
-X25vZGUuDQo+IA0KPiBJJ20gY2xvc2UgdG8gaGF2aW5nIHBhdGNoZXMgdG8gcHJvdmlkZSBhIGZ1
-bmN0aW9uYWwNCj4gcGh5c19hZGRyX3RvX3RhcmdldF9ub2RlKCkgZm9yIGFybTY0Lg0KDQpTaG91
-bGQgTXkgdGhpcyBwYXRjaCg1LzYpIHdhaXQgb24geW91ciBuZXcgcGh5c19hZGRyX3RvX3Rhcmdl
-dF9ub2RlKCkgcGF0Y2g/DQpUaGFua3MgZm9yIHRoZSBjbGFyaWZpY2F0aW9uLg0KDQotLQ0KQ2hl
-ZXJzLA0KSnVzdGluIChKaWEgSGUpDQoNCg0K
+This fixies a few issues when I tried to enable pmem as RAM device on arm64.
+
+To use memory_add_physaddr_to_nid as a fallback nid, it would be better
+implement a general version (__weak) in mm/memory_hotplug. After that, arm64/
+sh/s390 can simply use the general version, and PowerPC/ia64/x86 will use
+arch specific version.
+
+Tested on ThunderX2 host/qemu "-M virt" guest with a nvdimm device. The
+memblocks from the dax pmem device can be either hot-added or hot-removed
+on arm64 guest. Also passed the compilation test on x86.
+
+Changes:
+v4: - remove "device-dax: use fallback nid when numa_node is invalid", wait
+      for Dan Williams' phys_addr_to_target_node() patch
+    - folder v3 patch1-4 into single one, no functional changes
+v3: https://lkml.org/lkml/2020/7/8/1541
+    - introduce general version memory_add_physaddr_to_nid, refine the arch
+      specific one
+    - fix an uninitialization bug in v2 device-dax patch
+v2: https://lkml.org/lkml/2020/7/7/71
+    - Drop unnecessary patch to harden try_offline_node
+    - Use new solution(by David) to fix dev->target_node=-1 during probing
+    - Refine the mem_hotplug_begin/done patch
+
+v1: https://lkml.org/lkml/2020/7/5/381
+
+Jia He (2):
+  mm/memory_hotplug: introduce default dummy
+    memory_add_physaddr_to_nid()
+  mm/memory_hotplug: fix unpaired mem_hotplug_begin/done
+
+ arch/arm64/mm/numa.c | 10 ----------
+ arch/ia64/mm/numa.c  |  2 --
+ arch/sh/mm/init.c    |  9 ---------
+ arch/x86/mm/numa.c   |  1 -
+ mm/memory_hotplug.c  | 15 ++++++++++++---
+ 5 files changed, 12 insertions(+), 25 deletions(-)
+
+-- 
+2.17.1
