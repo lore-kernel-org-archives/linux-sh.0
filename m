@@ -1,24 +1,51 @@
-From: Markus Elfring <Markus.Elfring@web.de>
-Date: Sat, 25 Jul 2020 11:27:56 +0000
-Subject: Re: [PATCH] sh: sh4: Fix reference count leak in sq_dev_add
-Message-Id: <12d84b44-96c8-ee11-fff8-b1a7ea6b0d7c@web.de>
+From: "Alexander A. Klimov" <grandmaster@al2klimov.de>
+Date: Sun, 12 Jul 2020 11:11:18 +0000
+Subject: [PATCH] sh: Replace HTTP links with HTTPS ones
+Message-Id: <20200712111118.24916-1-grandmaster@al2klimov.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1595636246-15392-1-git-send-email-wang.yi59@zte.com.cn>
-In-Reply-To: <1595636246-15392-1-git-send-email-wang.yi59@zte.com.cn>
+References: <8b008a69-e73a-43cc-3dba-c1bce90c9902@landley.net>
+In-Reply-To: <8b008a69-e73a-43cc-3dba-c1bce90c9902@landley.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Yi Wang <wang.yi59@zte.com.cn>, Liao Pingfang <liao.pingfang@zte.com.cn>, linux-sh@vger.kernel.org
-Cc: kernel-janitors@vger.kernel.org, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Peter Zijlstra <peterz@infradead.org>, Rich Felker <dalias@libc.org>, Wang Liang <wang.liang82@zte.com.cn>, Xue Zhihong <xue.zhihong@zte.com.cn>, Yoshinori Sato <ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: ysato@users.sourceforge.jp, dalias@libc.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: "Alexander A. Klimov" <grandmaster@al2klimov.de>
 
-> kobject_init_and_add() takes reference even when it fails. If this
-> function returns an error, kobject_put() must be called to properly
-> clean up the memory associated with the object.
+Rationale:
+Reduces attack surface on kernel devs opening the links for MITM
+as HTTPS traffic is much harder to manipulate.
 
-* An imperative wording can be preferred for the change description,
-  can't it?
+Deterministic algorithm:
+For each file:
+  If not .svg:
+    For each line:
+      If doesn't contain `\bxmlns\b`:
+        For each link, `\bhttp://[^# \t\r\n]*(?:\w|/)`:
+	  If neither `\bgnu\.org/license`, nor `\bmozilla\.org/MPL\b`:
+            If both the HTTP and HTTPS versions
+            return 200 OK and serve the same content:
+              Replace HTTP with HTTPS.
 
-* Would you like to add the tag “Fixes” to the commit message?
+Signed-off-by: Alexander A. Klimov <grandmaster@al2klimov.de>
+---
+ Strange... it seems something went wrong while scanning.
+ Now better?
 
-Regards,
-Markus
+ arch/sh/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 9fc2b010e938..2fb9233f031e 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -630,7 +630,7 @@ config SMP
+ 	  Y to "Enhanced Real Time Clock Support", below.
+ 
+ 	  See also <file:Documentation/admin-guide/lockup-watchdogs.rst> and the SMP-HOWTO
+-	  available at <http://www.tldp.org/docs.html#howto>.
++	  available at <https://www.tldp.org/docs.html#howto>.
+ 
+ 	  If you don't know what to do here, say N.
+ 
+-- 
+2.27.0
