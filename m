@@ -1,32 +1,74 @@
-From: Marilis Mannik <mariliis.manniik@gmail.com>
-Date: Thu, 02 Jul 2020 11:17:05 +0000
-Subject: Urgent From Hospital
-Message-Id: <1351281970.158395.1593688625919@mail.yahoo.com>
+From: "Saheed O. Bolarinwa" <refactormyself@gmail.com>
+Date: Mon, 13 Jul 2020 12:22:37 +0000
+Subject: [RFC PATCH 25/35] sh: Tidy Success/Failure checks
+Message-Id: <20200713122247.10985-26-refactormyself@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351281970.158395.1593688625919.ref@mail.yahoo.com>
+References: <20200713122247.10985-1-refactormyself@gmail.com>
+In-Reply-To: <20200713122247.10985-1-refactormyself@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: helgaas@kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, "Saheed O. Bolarinwa" <refactormyself@gmail.com>, linux-kernel@vger.kernel.org, linux-pci@vger.kernel.org, linux-kernel-mentees@lists.linuxfoundation.org
 
+Remove unnecessary check for 0.
 
+Signed-off-by: "Saheed O. Bolarinwa" <refactormyself@gmail.com>
+---
+This patch depends on PATCH 24/35
 
-Hello My Beloved
-this is Ms Marilis Mannik from Estonia writing from the hospital here in Ivory Coast;Dear I want you to know that I'm dying here in this hospital right now which i don't know if i will see some few days to come.
+ arch/sh/drivers/pci/common.c     | 3 +--
+ arch/sh/drivers/pci/ops-sh7786.c | 4 ++--
+ arch/sh/drivers/pci/pci.c        | 2 +-
+ 3 files changed, 4 insertions(+), 5 deletions(-)
 
-My Beloved, i was informed by my doctor that i got poisoned and it affected my liver and i can only live for some days. The reason why i contacted you today is because i know that my step mother wanted to kill me and take my inheritance from my late Father. I have a little adopted child named Andrew C. Mannik that i adopted in this Country when my late Father was alive and $3.5 million Dollars i inherited from my late father. My step mother and her children they are after Andrew right now because they found out that Andrew was aware of the poison, and because i handed the documents of the fund over to him the day my step Mother poisoned my food, for that reason they do not want Andrew to expose them, so they are doing everything possible to kill him.
-
-My Beloved, please i want you to help him out of this country with the money, he is the only one taking good care of me here in this hospital right now and even this email you are reading now he is the one helping me out. I want you to get back to me so that he will give you the documents of the fund and he will direct you to a well known lawyer that i have appointed, the lawyer will assist you to change the documents of the fund to your name to enable the bank transfer the money to you..
-
-This is the favor i need when you have gotten the fund:
-
-(1) Keep 30% of the money for Andrew until he finish his studies to become a man as he has been there for me as my lovely Son and i promised to support him in life to become a medical Doctor because he always desire for it with the scholarship he had won so far. I want you to take him along with you to your country and establish him as your son.
-
-(2) Give 20% of the money to handicap people and charity organization. The remaining 50% should be yours for your help to Andrew.
-
-Note; This should be a code between you and my son Andrew in this transaction "Hospital" any mail from him, the Lawyer he will direct you to, without this code "Hospital" is not from the Andrew, the Lawyer or myself as i don't know what will happen to me in the next few hours.
-
-Finally, write me back so that Andrew will send you his pictures to be sure of whom you are dealing with. Andrew is 14years now, therefore guide him. And if i don't hear from you i will look for another person or any organization.
-
-May Almighty God bless you and use you to accomplish my wish. Pray for me always.
-Ms Marilis Mannik
+diff --git a/arch/sh/drivers/pci/common.c b/arch/sh/drivers/pci/common.c
+index ee27cdfd3e68..676907e6a514 100644
+--- a/arch/sh/drivers/pci/common.c
++++ b/arch/sh/drivers/pci/common.c
+@@ -60,8 +60,7 @@ int __init pci_is_66mhz_capable(struct pci_channel *hose,
+ 		if (PCI_FUNC(pci_devfn))
+ 			continue;
+ 		if (early_read_config_word(hose, top_bus, current_bus,
+-					   pci_devfn, PCI_VENDOR_ID, &vid) !-		    0)
++					   pci_devfn, PCI_VENDOR_ID, &vid))
+ 			continue;
+ 		if (vid = 0xffff)
+ 			continue;
+diff --git a/arch/sh/drivers/pci/ops-sh7786.c b/arch/sh/drivers/pci/ops-sh7786.c
+index 7c329e467360..c1be0ac2508a 100644
+--- a/arch/sh/drivers/pci/ops-sh7786.c
++++ b/arch/sh/drivers/pci/ops-sh7786.c
+@@ -101,7 +101,7 @@ static int sh7786_pcie_read(struct pci_bus *bus, unsigned int devfn,
+ 	raw_spin_lock_irqsave(&pci_config_lock, flags);
+ 	ret = sh7786_pcie_config_access(PCI_ACCESS_READ, bus,
+ 					devfn, where, &data);
+-	if (ret != 0) {
++	if (ret) {
+ 		*val = 0xffffffff;
+ 		goto out;
+ 	}
+@@ -137,7 +137,7 @@ static int sh7786_pcie_write(struct pci_bus *bus, unsigned int devfn,
+ 	raw_spin_lock_irqsave(&pci_config_lock, flags);
+ 	ret = sh7786_pcie_config_access(PCI_ACCESS_READ, bus,
+ 					devfn, where, &data);
+-	if (ret != 0)
++	if (ret)
+ 		goto out;
+ 
+ 	dev_dbg(&bus->dev, "pcie-config-write: bus=%3d devfn=0x%04x "
+diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
+index 77130f035fdd..19e9a211c23e 100644
+--- a/arch/sh/drivers/pci/pci.c
++++ b/arch/sh/drivers/pci/pci.c
+@@ -204,7 +204,7 @@ pcibios_bus_report_status_early(struct pci_channel *hose,
+ 			continue;
+ 		ret = early_read_config_word(hose, top_bus, current_bus,
+ 					     pci_devfn, PCI_STATUS, &status);
+-		if (ret != 0)
++		if (ret)
+ 			continue;
+ 		if (status = 0xffff)
+ 			continue;
+-- 
+2.18.2
