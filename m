@@ -1,156 +1,395 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Tue, 28 Jul 2020 05:11:53 +0000
-Subject: [PATCH 15/15] memblock: remove 'type' parameter from for_each_memblock()
-Message-Id: <20200728051153.1590-16-rppt@kernel.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 14 Jul 2020 12:18:49 +0000
+Subject: [PATCH 03/10] sh: remove __KERNEL__ ifdefs from non-UAPI headers
+Message-Id: <20200714121856.955680-4-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200728051153.1590-1-rppt@kernel.org>
-In-Reply-To: <20200728051153.1590-1-rppt@kernel.org>
+References: <20200714121856.955680-1-hch@lst.de>
+In-Reply-To: <20200714121856.955680-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Hansen <dave.hansen@linux.intel.com>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, Stafford Horne <shorne@gmail.com>, Marek Szyprowski <m.szyprowski@samsung.com>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, clang-built-linux@googlegroups.com, Ingo Molnar <mingo@redhat.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Paul Walmsley <paul.walmsley@sifive.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-mm@kvack.org, linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Palmer Dabbelt <palmer@dabbelt.com>, Christoph Hellwig <hch@lst.de>, Mike Rapoport <rppt@kernel.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Mike Rapoport <rppt@linux.ibm.com>
+There is no point in having __KERNEL__ ifdefs in headers not exported to
+userspace.
 
-for_each_memblock() is used exclusively to iterate over memblock.memory in
-a few places that use data from memblock_region rather than the memory
-ranges.
-
-Remove type parameter from the for_each_memblock() iterator to improve
-encapsulation of memblock internals from its users.
-
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/arm64/kernel/setup.c      |  2 +-
- arch/arm64/mm/numa.c           |  2 +-
- arch/mips/netlogic/xlp/setup.c |  2 +-
- include/linux/memblock.h       | 10 +++++++---
- mm/memblock.c                  |  4 ++--
- mm/page_alloc.c                |  8 ++++----
- 6 files changed, 16 insertions(+), 12 deletions(-)
+ arch/sh/include/asm/adc.h          | 2 --
+ arch/sh/include/asm/addrspace.h    | 3 ---
+ arch/sh/include/asm/bitops.h       | 4 ----
+ arch/sh/include/asm/cache.h        | 2 --
+ arch/sh/include/asm/cacheflush.h   | 3 ---
+ arch/sh/include/asm/dma.h          | 2 --
+ arch/sh/include/asm/elf.h          | 2 --
+ arch/sh/include/asm/freq.h         | 2 --
+ arch/sh/include/asm/futex.h        | 3 ---
+ arch/sh/include/asm/io.h           | 3 ---
+ arch/sh/include/asm/mmu_context.h  | 2 --
+ arch/sh/include/asm/mmzone.h       | 3 ---
+ arch/sh/include/asm/pci.h          | 4 ----
+ arch/sh/include/asm/processor_32.h | 2 --
+ arch/sh/include/asm/sparsemem.h    | 3 ---
+ arch/sh/include/asm/string_32.h    | 4 ----
+ arch/sh/include/asm/syscalls_32.h  | 3 ---
+ arch/sh/include/asm/thread_info.h  | 5 -----
+ arch/sh/include/asm/watchdog.h     | 2 --
+ 19 files changed, 54 deletions(-)
 
-diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
-index 93b3844cf442..23da7908cbed 100644
---- a/arch/arm64/kernel/setup.c
-+++ b/arch/arm64/kernel/setup.c
-@@ -217,7 +217,7 @@ static void __init request_standard_resources(void)
- 	if (!standard_resources)
- 		panic("%s: Failed to allocate %zu bytes\n", __func__, res_size);
+diff --git a/arch/sh/include/asm/adc.h b/arch/sh/include/asm/adc.h
+index 99ec668495594c..feccfe639e3896 100644
+--- a/arch/sh/include/asm/adc.h
++++ b/arch/sh/include/asm/adc.h
+@@ -1,7 +1,6 @@
+ /* SPDX-License-Identifier: GPL-2.0 */
+ #ifndef __ASM_ADC_H
+ #define __ASM_ADC_H
+-#ifdef __KERNEL__
+ /*
+  * Copyright (C) 2004  Andriy Skulysh
+  */
+@@ -10,5 +9,4 @@
  
--	for_each_memblock(memory, region) {
-+	for_each_memblock(region) {
- 		res = &standard_resources[i++];
- 		if (memblock_is_nomap(region)) {
- 			res->name  = "reserved";
-diff --git a/arch/arm64/mm/numa.c b/arch/arm64/mm/numa.c
-index 0cbdbcc885fb..08721d2c0b79 100644
---- a/arch/arm64/mm/numa.c
-+++ b/arch/arm64/mm/numa.c
-@@ -350,7 +350,7 @@ static int __init numa_register_nodes(void)
- 	struct memblock_region *mblk;
+ int adc_single(unsigned int channel);
  
- 	/* Check that valid nid is set to memblks */
--	for_each_memblock(memory, mblk) {
-+	for_each_memblock(mblk) {
- 		int mblk_nid = memblock_get_region_node(mblk);
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_ADC_H */
+diff --git a/arch/sh/include/asm/addrspace.h b/arch/sh/include/asm/addrspace.h
+index 34bfbcddcce027..468fba333e896b 100644
+--- a/arch/sh/include/asm/addrspace.h
++++ b/arch/sh/include/asm/addrspace.h
+@@ -7,8 +7,6 @@
+ #ifndef __ASM_SH_ADDRSPACE_H
+ #define __ASM_SH_ADDRSPACE_H
  
- 		if (mblk_nid = NUMA_NO_NODE || mblk_nid >= MAX_NUMNODES) {
-diff --git a/arch/mips/netlogic/xlp/setup.c b/arch/mips/netlogic/xlp/setup.c
-index 1a0fc5b62ba4..e69d9fc468cf 100644
---- a/arch/mips/netlogic/xlp/setup.c
-+++ b/arch/mips/netlogic/xlp/setup.c
-@@ -70,7 +70,7 @@ static void nlm_fixup_mem(void)
- 	const int pref_backup = 512;
- 	struct memblock_region *mem;
+-#ifdef __KERNEL__
+-
+ #include <cpu/addrspace.h>
  
--	for_each_memblock(memory, mem) {
-+	for_each_memblock(mem) {
- 		memblock_remove(mem->base + mem->size - pref_backup,
- 			pref_backup);
- 	}
-diff --git a/include/linux/memblock.h b/include/linux/memblock.h
-index d70c2835e913..c901cb8ecf92 100644
---- a/include/linux/memblock.h
-+++ b/include/linux/memblock.h
-@@ -527,9 +527,13 @@ static inline unsigned long memblock_region_reserved_end_pfn(const struct memblo
- 	return PFN_UP(reg->base + reg->size);
+ /* If this CPU supports segmentation, hook up the helpers */
+@@ -62,5 +60,4 @@
+ #define P3_ADDR_MAX		P4SEG
+ #endif
+ 
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_SH_ADDRSPACE_H */
+diff --git a/arch/sh/include/asm/bitops.h b/arch/sh/include/asm/bitops.h
+index 445dd14c448a67..450b5854d7c67b 100644
+--- a/arch/sh/include/asm/bitops.h
++++ b/arch/sh/include/asm/bitops.h
+@@ -2,8 +2,6 @@
+ #ifndef __ASM_SH_BITOPS_H
+ #define __ASM_SH_BITOPS_H
+ 
+-#ifdef __KERNEL__
+-
+ #ifndef _LINUX_BITOPS_H
+ #error only <linux/bitops.h> can be included directly
+ #endif
+@@ -71,6 +69,4 @@ static inline unsigned long __ffs(unsigned long word)
+ #include <asm-generic/bitops/__fls.h>
+ #include <asm-generic/bitops/fls64.h>
+ 
+-#endif /* __KERNEL__ */
+-
+ #endif /* __ASM_SH_BITOPS_H */
+diff --git a/arch/sh/include/asm/cache.h b/arch/sh/include/asm/cache.h
+index 2408ac4873aa00..a293343456affe 100644
+--- a/arch/sh/include/asm/cache.h
++++ b/arch/sh/include/asm/cache.h
+@@ -8,7 +8,6 @@
+  */
+ #ifndef __ASM_SH_CACHE_H
+ #define __ASM_SH_CACHE_H
+-#ifdef __KERNEL__
+ 
+ #include <linux/init.h>
+ #include <cpu/cache.h>
+@@ -44,5 +43,4 @@ struct cache_info {
+ 	unsigned long flags;
+ };
+ #endif /* __ASSEMBLY__ */
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_SH_CACHE_H */
+diff --git a/arch/sh/include/asm/cacheflush.h b/arch/sh/include/asm/cacheflush.h
+index fe7400079b97b0..4486a865ff62f6 100644
+--- a/arch/sh/include/asm/cacheflush.h
++++ b/arch/sh/include/asm/cacheflush.h
+@@ -2,8 +2,6 @@
+ #ifndef __ASM_SH_CACHEFLUSH_H
+ #define __ASM_SH_CACHEFLUSH_H
+ 
+-#ifdef __KERNEL__
+-
+ #include <linux/mm.h>
+ 
+ /*
+@@ -109,5 +107,4 @@ static inline void *sh_cacheop_vaddr(void *vaddr)
+ 	return vaddr;
  }
  
--#define for_each_memblock(memblock_type, region)					\
--	for (region = memblock.memblock_type.regions;					\
--	     region < (memblock.memblock_type.regions + memblock.memblock_type.cnt);	\
-+/**
-+ * for_each_memblock - itereate over registered memory regions
-+ * @region: loop variable
-+ */
-+#define for_each_memblock(region)					\
-+	for (region = memblock.memory.regions;				\
-+	     region < (memblock.memory.regions + memblock.memory.cnt);	\
- 	     region++)
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_SH_CACHEFLUSH_H */
+diff --git a/arch/sh/include/asm/dma.h b/arch/sh/include/asm/dma.h
+index 4d5a21a891c078..17d23ae98c77a4 100644
+--- a/arch/sh/include/asm/dma.h
++++ b/arch/sh/include/asm/dma.h
+@@ -6,7 +6,6 @@
+  */
+ #ifndef __ASM_SH_DMA_H
+ #define __ASM_SH_DMA_H
+-#ifdef __KERNEL__
  
- extern void *alloc_large_system_hash(const char *tablename,
-diff --git a/mm/memblock.c b/mm/memblock.c
-index 2ad5e6e47215..550bb72cf6cb 100644
---- a/mm/memblock.c
-+++ b/mm/memblock.c
-@@ -1694,7 +1694,7 @@ static phys_addr_t __init_memblock __find_max_addr(phys_addr_t limit)
- 	 * the memory memblock regions, if the @limit exceeds the total size
- 	 * of those regions, max_addr will keep original value PHYS_ADDR_MAX
- 	 */
--	for_each_memblock(memory, r) {
-+	for_each_memblock(r) {
- 		if (limit <= r->size) {
- 			max_addr = r->base + limit;
- 			break;
-@@ -1864,7 +1864,7 @@ void __init_memblock memblock_trim_memory(phys_addr_t align)
- 	phys_addr_t start, end, orig_start, orig_end;
- 	struct memblock_region *r;
+ #include <linux/spinlock.h>
+ #include <linux/wait.h>
+@@ -144,5 +143,4 @@ extern int isa_dma_bridge_buggy;
+ #define isa_dma_bridge_buggy	(0)
+ #endif
  
--	for_each_memblock(memory, r) {
-+	for_each_memblock(r) {
- 		orig_start = r->base;
- 		orig_end = r->base + r->size;
- 		start = round_up(orig_start, align);
-diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index 95af111d69d3..8a19f46dc86e 100644
---- a/mm/page_alloc.c
-+++ b/mm/page_alloc.c
-@@ -5927,7 +5927,7 @@ overlap_memmap_init(unsigned long zone, unsigned long *pfn)
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_SH_DMA_H */
+diff --git a/arch/sh/include/asm/elf.h b/arch/sh/include/asm/elf.h
+index 7661fb5d548a08..2862d6d1cb64f1 100644
+--- a/arch/sh/include/asm/elf.h
++++ b/arch/sh/include/asm/elf.h
+@@ -90,7 +90,6 @@ typedef struct user_fpu_struct elf_fpregset_t;
+ #endif
+ #define ELF_ARCH	EM_SH
  
- 	if (mirrored_kernelcore && zone = ZONE_MOVABLE) {
- 		if (!r || *pfn >= memblock_region_memory_end_pfn(r)) {
--			for_each_memblock(memory, r) {
-+			for_each_memblock(r) {
- 				if (*pfn < memblock_region_memory_end_pfn(r))
- 					break;
- 			}
-@@ -6528,7 +6528,7 @@ static unsigned long __init zone_absent_pages_in_node(int nid,
- 		unsigned long start_pfn, end_pfn;
- 		struct memblock_region *r;
+-#ifdef __KERNEL__
+ /*
+  * This is used to ensure we don't load something for the wrong architecture.
+  */
+@@ -209,5 +208,4 @@ do {								\
+ 	NEW_AUX_ENT(AT_L2_CACHESHAPE, l2_cache_shape);		\
+ } while (0)
  
--		for_each_memblock(memory, r) {
-+		for_each_memblock(r) {
- 			start_pfn = clamp(memblock_region_memory_base_pfn(r),
- 					  zone_start_pfn, zone_end_pfn);
- 			end_pfn = clamp(memblock_region_memory_end_pfn(r),
-@@ -7122,7 +7122,7 @@ static void __init find_zone_movable_pfns_for_nodes(void)
- 	 * options.
- 	 */
- 	if (movable_node_is_enabled()) {
--		for_each_memblock(memory, r) {
-+		for_each_memblock(r) {
- 			if (!memblock_is_hotpluggable(r))
- 				continue;
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_SH_ELF_H */
+diff --git a/arch/sh/include/asm/freq.h b/arch/sh/include/asm/freq.h
+index 18133bf837386b..87c23621b7ae81 100644
+--- a/arch/sh/include/asm/freq.h
++++ b/arch/sh/include/asm/freq.h
+@@ -6,9 +6,7 @@
+  */
+ #ifndef __ASM_SH_FREQ_H
+ #define __ASM_SH_FREQ_H
+-#ifdef __KERNEL__
  
-@@ -7143,7 +7143,7 @@ static void __init find_zone_movable_pfns_for_nodes(void)
- 	if (mirrored_kernelcore) {
- 		bool mem_below_4gb_not_mirrored = false;
+ #include <cpu/freq.h>
  
--		for_each_memblock(memory, r) {
-+		for_each_memblock(r) {
- 			if (memblock_is_mirror(r))
- 				continue;
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_SH_FREQ_H */
+diff --git a/arch/sh/include/asm/futex.h b/arch/sh/include/asm/futex.h
+index b39cda09fb95cc..b70f3fce6ed77a 100644
+--- a/arch/sh/include/asm/futex.h
++++ b/arch/sh/include/asm/futex.h
+@@ -2,8 +2,6 @@
+ #ifndef __ASM_SH_FUTEX_H
+ #define __ASM_SH_FUTEX_H
  
+-#ifdef __KERNEL__
+-
+ #include <linux/futex.h>
+ #include <linux/uaccess.h>
+ #include <asm/errno.h>
+@@ -71,5 +69,4 @@ static inline int arch_futex_atomic_op_inuser(int op, u32 oparg, int *oval,
+ 	return ret;
+ }
+ 
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_SH_FUTEX_H */
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index 26f0f9b4658b20..1fd06ef6a19454 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -20,7 +20,6 @@
+ #include <linux/pgtable.h>
+ #include <asm-generic/iomap.h>
+ 
+-#ifdef __KERNEL__
+ #define __IO_PREFIX     generic
+ #include <asm/io_generic.h>
+ #include <asm/io_trapped.h>
+@@ -380,6 +379,4 @@ static inline int iounmap_fixed(void __iomem *addr) { return -EINVAL; }
+ int valid_phys_addr_range(phys_addr_t addr, size_t size);
+ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
+ 
+-#endif /* __KERNEL__ */
+-
+ #endif /* __ASM_SH_IO_H */
+diff --git a/arch/sh/include/asm/mmu_context.h b/arch/sh/include/asm/mmu_context.h
+index 48e67d544d53cf..f664e51e8a15e5 100644
+--- a/arch/sh/include/asm/mmu_context.h
++++ b/arch/sh/include/asm/mmu_context.h
+@@ -8,7 +8,6 @@
+ #ifndef __ASM_SH_MMU_CONTEXT_H
+ #define __ASM_SH_MMU_CONTEXT_H
+ 
+-#ifdef __KERNEL__
+ #include <cpu/mmu_context.h>
+ #include <asm/tlbflush.h>
+ #include <linux/uaccess.h>
+@@ -177,5 +176,4 @@ static inline void disable_mmu(void)
+ #define disable_mmu()	do { } while (0)
+ #endif
+ 
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_SH_MMU_CONTEXT_H */
+diff --git a/arch/sh/include/asm/mmzone.h b/arch/sh/include/asm/mmzone.h
+index cbaee1d1b67320..6552a088dc97ae 100644
+--- a/arch/sh/include/asm/mmzone.h
++++ b/arch/sh/include/asm/mmzone.h
+@@ -2,8 +2,6 @@
+ #ifndef __ASM_SH_MMZONE_H
+ #define __ASM_SH_MMZONE_H
+ 
+-#ifdef __KERNEL__
+-
+ #ifdef CONFIG_NEED_MULTIPLE_NODES
+ #include <linux/numa.h>
+ 
+@@ -44,5 +42,4 @@ void __init __add_active_range(unsigned int nid, unsigned long start_pfn,
+ /* arch/sh/mm/init.c */
+ void __init allocate_pgdat(unsigned int nid);
+ 
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_SH_MMZONE_H */
+diff --git a/arch/sh/include/asm/pci.h b/arch/sh/include/asm/pci.h
+index 10a36b1cf2eab1..ad22e88c6657dc 100644
+--- a/arch/sh/include/asm/pci.h
++++ b/arch/sh/include/asm/pci.h
+@@ -2,8 +2,6 @@
+ #ifndef __ASM_SH_PCI_H
+ #define __ASM_SH_PCI_H
+ 
+-#ifdef __KERNEL__
+-
+ /* Can be used to override the logic in pci_scan_bus for skipping
+    already-configured bus numbers - to be used for buggy BIOSes
+    or architectures with incomplete PCI setup by the loader */
+@@ -96,6 +94,4 @@ static inline int pci_get_legacy_ide_irq(struct pci_dev *dev, int channel)
+ 	return channel ? 15 : 14;
+ }
+ 
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_SH_PCI_H */
+-
+diff --git a/arch/sh/include/asm/processor_32.h b/arch/sh/include/asm/processor_32.h
+index d44409413418a5..aa92cc933889df 100644
+--- a/arch/sh/include/asm/processor_32.h
++++ b/arch/sh/include/asm/processor_32.h
+@@ -8,7 +8,6 @@
+ 
+ #ifndef __ASM_SH_PROCESSOR_32_H
+ #define __ASM_SH_PROCESSOR_32_H
+-#ifdef __KERNEL__
+ 
+ #include <linux/compiler.h>
+ #include <linux/linkage.h>
+@@ -203,5 +202,4 @@ static inline void prefetchw(const void *x)
+ }
+ #endif
+ 
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_SH_PROCESSOR_32_H */
+diff --git a/arch/sh/include/asm/sparsemem.h b/arch/sh/include/asm/sparsemem.h
+index 4eb899751e4590..ed287c4980bcab 100644
+--- a/arch/sh/include/asm/sparsemem.h
++++ b/arch/sh/include/asm/sparsemem.h
+@@ -2,7 +2,6 @@
+ #ifndef __ASM_SH_SPARSEMEM_H
+ #define __ASM_SH_SPARSEMEM_H
+ 
+-#ifdef __KERNEL__
+ /*
+  * SECTION_SIZE_BITS		2^N: how big each section will be
+  * MAX_PHYSADDR_BITS		2^N: how much physical address space we have
+@@ -12,6 +11,4 @@
+ #define MAX_PHYSADDR_BITS	32
+ #define MAX_PHYSMEM_BITS	32
+ 
+-#endif
+-
+ #endif /* __ASM_SH_SPARSEMEM_H */
+diff --git a/arch/sh/include/asm/string_32.h b/arch/sh/include/asm/string_32.h
+index 3558b1d7123e9c..778589e4a99dbb 100644
+--- a/arch/sh/include/asm/string_32.h
++++ b/arch/sh/include/asm/string_32.h
+@@ -2,8 +2,6 @@
+ #ifndef __ASM_SH_STRING_H
+ #define __ASM_SH_STRING_H
+ 
+-#ifdef __KERNEL__
+-
+ /*
+  * Copyright (C) 1999 Niibe Yutaka
+  * But consider these trivial functions to be public domain.
+@@ -127,6 +125,4 @@ extern void *memchr(const void *__s, int __c, size_t __n);
+ #define __HAVE_ARCH_STRLEN
+ extern size_t strlen(const char *);
+ 
+-#endif /* __KERNEL__ */
+-
+ #endif /* __ASM_SH_STRING_H */
+diff --git a/arch/sh/include/asm/syscalls_32.h b/arch/sh/include/asm/syscalls_32.h
+index 9f9faf63b48c2e..5c555b864fe092 100644
+--- a/arch/sh/include/asm/syscalls_32.h
++++ b/arch/sh/include/asm/syscalls_32.h
+@@ -2,8 +2,6 @@
+ #ifndef __ASM_SH_SYSCALLS_32_H
+ #define __ASM_SH_SYSCALLS_32_H
+ 
+-#ifdef __KERNEL__
+-
+ #include <linux/compiler.h>
+ #include <linux/linkage.h>
+ #include <linux/types.h>
+@@ -26,5 +24,4 @@ asmlinkage void do_syscall_trace_leave(struct pt_regs *regs);
+ asmlinkage void do_notify_resume(struct pt_regs *regs, unsigned int save_r0,
+ 				 unsigned long thread_info_flags);
+ 
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_SH_SYSCALLS_32_H */
+diff --git a/arch/sh/include/asm/thread_info.h b/arch/sh/include/asm/thread_info.h
+index 6404be69d5fa6b..243ea5150aa00b 100644
+--- a/arch/sh/include/asm/thread_info.h
++++ b/arch/sh/include/asm/thread_info.h
+@@ -10,8 +10,6 @@
+  *  Copyright (C) 2002  David Howells (dhowells@redhat.com)
+  *  - Incorporating suggestions made by Linus Torvalds and Dave Miller
+  */
+-#ifdef __KERNEL__
+-
+ #include <asm/page.h>
+ 
+ /*
+@@ -170,7 +168,4 @@ static inline unsigned int get_thread_fault_code(void)
+ }
+ 
+ #endif	/* !__ASSEMBLY__ */
+-
+-#endif /* __KERNEL__ */
+-
+ #endif /* __ASM_SH_THREAD_INFO_H */
+diff --git a/arch/sh/include/asm/watchdog.h b/arch/sh/include/asm/watchdog.h
+index cecd0fc507f938..b9ca4c99f046a6 100644
+--- a/arch/sh/include/asm/watchdog.h
++++ b/arch/sh/include/asm/watchdog.h
+@@ -8,7 +8,6 @@
+  */
+ #ifndef __ASM_SH_WATCHDOG_H
+ #define __ASM_SH_WATCHDOG_H
+-#ifdef __KERNEL__
+ 
+ #include <linux/types.h>
+ #include <linux/io.h>
+@@ -157,5 +156,4 @@ static inline void sh_wdt_write_csr(__u8 val)
+ 	__raw_writew((WTCSR_HIGH << 8) | (__u16)val, WTCSR);
+ }
+ #endif /* CONFIG_CPU_SUBTYPE_SH7785 || CONFIG_CPU_SUBTYPE_SH7780 */
+-#endif /* __KERNEL__ */
+ #endif /* __ASM_SH_WATCHDOG_H */
 -- 
 2.26.2
