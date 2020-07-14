@@ -1,48 +1,60 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Tue, 28 Jul 2020 05:11:45 +0000
-Subject: [PATCH 07/15] riscv: drop unneeded node initialization
-Message-Id: <20200728051153.1590-8-rppt@kernel.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 14 Jul 2020 12:18:52 +0000
+Subject: [PATCH 06/10] sh: don't include <asm/io_trapped.h> in <asm/io.h>
+Message-Id: <20200714121856.955680-7-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200728051153.1590-1-rppt@kernel.org>
-In-Reply-To: <20200728051153.1590-1-rppt@kernel.org>
+References: <20200714121856.955680-1-hch@lst.de>
+In-Reply-To: <20200714121856.955680-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Hansen <dave.hansen@linux.intel.com>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, Stafford Horne <shorne@gmail.com>, Marek Szyprowski <m.szyprowski@samsung.com>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, clang-built-linux@googlegroups.com, Ingo Molnar <mingo@redhat.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Paul Walmsley <paul.walmsley@sifive.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-mm@kvack.org, linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Palmer Dabbelt <palmer@dabbelt.com>, Christoph Hellwig <hch@lst.de>, Mike Rapoport <rppt@kernel.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Mike Rapoport <rppt@linux.ibm.com>
+No need to expose the details of trapped I/O to drivers.
 
-RISC-V does not (yet) support NUMA  and for UMA architectures node 0 is
-used implicitly during early memory initialization.
-
-There is no need to call memblock_set_node(), remove this call and the
-surrounding code.
-
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/riscv/mm/init.c | 9 ---------
- 1 file changed, 9 deletions(-)
+ arch/sh/include/asm/io.h | 1 -
+ arch/sh/kernel/ioport.c  | 1 +
+ arch/sh/mm/ioremap.c     | 1 +
+ 3 files changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/riscv/mm/init.c b/arch/riscv/mm/init.c
-index 79e9d55bdf1a..7440ba2cdaaa 100644
---- a/arch/riscv/mm/init.c
-+++ b/arch/riscv/mm/init.c
-@@ -191,15 +191,6 @@ void __init setup_bootmem(void)
- 	early_init_fdt_scan_reserved_mem();
- 	memblock_allow_resize();
- 	memblock_dump_all();
--
--	for_each_memblock(memory, reg) {
--		unsigned long start_pfn = memblock_region_memory_base_pfn(reg);
--		unsigned long end_pfn = memblock_region_memory_end_pfn(reg);
--
--		memblock_set_node(PFN_PHYS(start_pfn),
--				  PFN_PHYS(end_pfn - start_pfn),
--				  &memblock.memory, 0);
--	}
- }
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index da08a61a2f7dae..873f1399fa5962 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -22,7 +22,6 @@
  
- #ifdef CONFIG_MMU
+ #define __IO_PREFIX     generic
+ #include <asm/io_generic.h>
+-#include <asm/io_trapped.h>
+ #include <asm-generic/pci_iomap.h>
+ #include <mach/mangle-port.h>
+ 
+diff --git a/arch/sh/kernel/ioport.c b/arch/sh/kernel/ioport.c
+index 34f8cdbbcf0bee..f39446a658bdb8 100644
+--- a/arch/sh/kernel/ioport.c
++++ b/arch/sh/kernel/ioport.c
+@@ -7,6 +7,7 @@
+  */
+ #include <linux/module.h>
+ #include <linux/io.h>
++#include <asm/io_trapped.h>
+ 
+ unsigned long sh_io_port_base __read_mostly = -1;
+ EXPORT_SYMBOL(sh_io_port_base);
+diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
+index 69e55939e48a6f..21342581144dee 100644
+--- a/arch/sh/mm/ioremap.c
++++ b/arch/sh/mm/ioremap.c
+@@ -18,6 +18,7 @@
+ #include <linux/mm.h>
+ #include <linux/pci.h>
+ #include <linux/io.h>
++#include <asm/io_trapped.h>
+ #include <asm/page.h>
+ #include <asm/pgalloc.h>
+ #include <asm/addrspace.h>
 -- 
 2.26.2
