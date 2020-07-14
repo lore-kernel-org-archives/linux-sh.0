@@ -1,199 +1,224 @@
-From: Jim Quinlan <james.quinlan@broadcom.com>
-Date: Wed, 08 Jul 2020 19:31:53 +0000
-Subject: [PATCH v7 00/12] PCI: brcmstb: enable PCIe for STB chips
-Message-Id: <20200708193219.47134-1-james.quinlan@broadcom.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 14 Jul 2020 12:18:51 +0000
+Subject: [PATCH 05/10] sh: move the ioremap implementation out of line
+Message-Id: <20200714121856.955680-6-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200714121856.955680-1-hch@lst.de>
+In-Reply-To: <20200714121856.955680-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org, Nicolas Saenz Julienne <nsaenzjulienne@suse.de>, bcm-kernel-feedback-list@broadcom.com, james.quinlan@broadcom.com
-Cc: Ulf Hansson <ulf.hansson@linaro.org>, Heikki Krogerus <heikki.krogerus@linux.intel.com>, "open list:SUPERH" <linux-sh@vger.kernel.org>, "open list:REMOTE PROCESSOR REMOTEPROC SUBSYSTEM" <linux-remoteproc@vger.kernel.org>, "open list:DRM DRIVERS FOR ALLWINNER A10" <dri-devel@lists.freedesktop.org>, "open list:LIBATA SUBSYSTEM Serial and Parallel ATA drivers" <linux-ide@vger.kernel.org>, Julien Grall <julien.grall@arm.com>, "H. Peter Anvin" <hpa@zytor.com>, "open list:STAGING SUBSYSTEM" <devel@driverdev.osuosl.org>, Florian Fainelli <f.fainelli@gmail.com>, Saravana Kannan <saravanak@google.com>, "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>, "open list:ACPI FOR ARM64 ACPI/arm64" <linux-acpi@vger.kernel.org>, Alan Stern <stern@rowland.harvard.edu>, "open list:ALLWINNER A10 CSI DRIVER" <linux-media@vger.kernel.org>, "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE" <devicetree@vger.kernel.org>, Joerg Roedel <jroedel@suse.de>, Arnd Bergmann <arnd@arndb.de>, Oliver Neukum <oneukum@suse.com>, Hans de Goede <hdegoede@redhat.com>, Stefano Stabellini <sstabellini@kernel.org>, "moderated list:BROADCOM BCM2711/BCM2835 ARM ARCHITECTURE" <linux-rpi-kernel@lists.infradead.org>, Dan Williams <dan.j.williams@intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>, Jens Axboe <axboe@kernel.dk>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "open list:USB SUBSYSTEM" <linux-usb@vger.kernel.org>, open list <linux-kernel@vger.kernel.org>, "open list:IOMMU DRIVERS" <iommu@lists.linux-foundation.org>, Robin Murphy <robin.murphy@arm.com>, Suzuki K Poulose <suzuki.poulose@arm.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
+Move the internal implementation details of ioremap out of line, no need
+to expose any of this to drivers for a slow path API.
 
-Patchset Summary:
-  Enhance a PCIe host controller driver.  Because of its unusual design
-  we are foced to change dev->dma_pfn_offset into a more general role
-  allowing multiple offsets.  See the 'v1' notes below for more info.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/sh/include/asm/io.h | 101 ++++++---------------------------------
+ arch/sh/mm/ioremap.c     |  53 ++++++++++++++++++++
+ 2 files changed, 68 insertions(+), 86 deletions(-)
 
-v7:
-  Commit: "device core: Introduce DMA range map, supplanting ..."
-  -- remove second kcalloc/copy in device.c (AndyS)
-  -- use PTR_ERR_OR_ZERO() and PHYS_PFN() (AndyS)
-  -- indentation, sizeof(struct ...) => sizeof(*r) (AndyS)
-  -- add pfn.h definitions: PFN_DMA_ADDR(), DMA_ADDR_PFN() (AndyS)
-  -- Fixed compile error in "sun6i_csi.c" (kernel test robot)
-  Commit "ata: ahci_brcm: Fix use of BCM7216 reset controller"
-  -- correct name of function in the commit msg (SergeiS)
-  
-v6:
-  Commit "device core: Introduce DMA range map":
-  -- of_dma_get_range() now takes a single argument and returns either
-     NULL, a valid map, or an ERR_PTR. (Robin)
-  -- offsets are no longer a PFN value but an actual address. (Robin)
-  -- the bus_dma_region struct stores the range size instead of
-     the cpu_end and pci_end values. (Robin)
-  -- devices that were setting a single offset with no boundaries
-     have been modified to have boundaries; in a few places
-     where this informatino was unavilable a /* FIXME: ... */
-     comment was added. (Robin)
-  -- dma_attach_offset_range() can be called when an offset
-     map already exists; if it's range is already present
-     nothing is done and success is returned. (Robin)
-  All commits:
-  -- Man name/style/corrections/etc changed (Bjorn)
-  -- rebase to Torvalds master
-
-v5:
-  Commit "device core: Introduce multiple dma pfn offsets"
-  -- in of/address.c: "map_size = 0" => "*map_size = 0"
-  -- use kcalloc instead of kzalloc (AndyS)
-  -- use PHYS_ADDR_MAX instead of "~(phys_addr_t)0"
-  Commit "PCI: brcmstb: Set internal memory viewport sizes"
-  -- now gives error on missing dma-ranges property.
-  Commit "dt-bindings: PCI: Add bindings for more Brcmstb chips"
-  -- removed "Allof:" from brcm,scb-sizes definition (RobH)
-  All Commits:
-  -- indentation style, use max chars 100 (AndyS)
-  -- rebased to torvalds master
-
-v4:
-  Commit "device core: Introduce multiple dma pfn offsets"
-  -- of_dma_get_range() does not take a dev param but instead
-     takes two "out" params: map and map_size.  We do this so
-     that the code that parses dma-ranges is separate from
-     the code that modifies 'dev'.   (Nicolas)
-  -- the separate case of having a single pfn offset has
-     been removed and is now processed by going through the
-     map array. (Nicolas)
-  -- move attach_uniform_dma_pfn_offset() from of/address.c to
-     dma/mapping.c so that it does not depend on CONFIG_OF. (Nicolas)
-  -- devm_kcalloc => devm_kzalloc (DanC)
-  -- add/fix assignment to dev->dma_pfn_offset_map for func
-     attach_uniform_dma_pfn_offset() (DanC, Nicolas)
-  -- s/struct dma_pfn_offset_region/struct bus_dma_region/ (Nicolas)
-  -- s/attach_uniform_dma_pfn_offset/dma_attach_uniform_pfn_offset/
-  -- s/attach_dma_pfn_offset_map/dma_attach_pfn_offset_map/
-  -- More use of PFN_{PHYS,DOWN,UP}. (AndyS)
-  Commit "of: Include a dev param in of_dma_get_range()"
-  -- this commit was sqaushed with "device core: Introduce ..."
-
-v3:
-  Commit "device core: Introduce multiple dma pfn offsets"
-  Commit "arm: dma-mapping: Invoke dma offset func if needed"
-  -- The above two commits have been squashed.  More importantly,
-     the code has been modified so that the functionality for
-     multiple pfn offsets subsumes the use of dev->dma_pfn_offset.
-     In fact, dma_pfn_offset is removed and supplanted by
-     dma_pfn_offset_map, which is a pointer to an array.  The
-     more common case of a uniform offset is now handled as
-     a map with a single entry, while cases requiring multiple
-     pfn offsets use a map with multiple entries.  Code paths
-     that used to do this:
-
-         dev->dma_pfn_offset = mydrivers_pfn_offset;
-
-     have been changed to do this:
-
-         attach_uniform_dma_pfn_offset(dev, pfn_offset);
-
-  Commit "dt-bindings: PCI: Add bindings for more Brcmstb chips"
-  -- Add if/then clause for required props: resets, reset-names (RobH)
-  -- Change compatible list from const to enum (RobH)
-  -- Change list of u32-tuples to u64 (RobH)
-
-  Commit "of: Include a dev param in of_dma_get_range()"
-  -- modify of/unittests.c to add NULL param in of_dma_get_range() call.
-
-  Commit "device core: Add ability to handle multiple dma offsets"
-  -- align comment in device.h (AndyS).
-  -- s/cpu_beg/cpu_start/ and s/dma_beg/dma_start/ in struct
-     dma_pfn_offset_region (AndyS).
-
-v2:
-Commit: "device core: Add ability to handle multiple dma offsets"
-  o Added helper func attach_dma_pfn_offset_map() in address.c (Chistoph)
-  o Helpers funcs added to __phys_to_dma() & __dma_to_phys() (Christoph)
-  o Added warning when multiple offsets are needed and !DMA_PFN_OFFSET_MAP
-  o dev->dma_pfn_map => dev->dma_pfn_offset_map
-  o s/frm/from/ for dma_pfn_offset_frm_{phys,dma}_addr() (Christoph)
-  o In device.h: s/const void */const struct dma_pfn_offset_region */
-  o removed 'unlikely' from unlikely(dev->dma_pfn_offset_map) since
-    guarded by CONFIG_DMA_PFN_OFFSET_MAP (Christoph)
-  o Since dev->dma_pfn_offset is copied in usb/core/{usb,message}.c, now
-    dev->dma_pfn_offset_map is copied as well.
-  o Merged two of the DMA commits into one (Christoph).
-
-Commit "arm: dma-mapping: Invoke dma offset func if needed":
-  o Use helper functions instead of #if CONFIG_DMA_PFN_OFFSET
-
-Other commits' changes:
-  o Removed need for carrying of_id var in priv (Nicolas)
-  o Commit message rewordings (Bjorn)
-  o Commit log messages filled to 75 chars (Bjorn)
-  o devm_reset_control_get_shared())
-    => devm_reset_control_get_optional_shared (Philipp)
-  o Add call to reset_control_assert() in PCIe remove routines (Philipp)
-
-v1:
-This patchset expands the usefulness of the Broadcom Settop Box PCIe
-controller by building upon the PCIe driver used currently by the
-Raspbery Pi.  Other forms of this patchset were submitted by me years
-ago and not accepted; the major sticking point was the code required
-for the DMA remapping needed for the PCIe driver to work [1].
-
-There have been many changes to the DMA and OF subsystems since that
-time, making a cleaner and less intrusive patchset possible.  This
-patchset implements a generalization of "dev->dma_pfn_offset", except
-that instead of a single scalar offset it provides for multiple
-offsets via a function which depends upon the "dma-ranges" property of
-the PCIe host controller.  This is required for proper functionality
-of the BrcmSTB PCIe controller and possibly some other devices.
-
-[1] https://lore.kernel.org/linux-arm-kernel/1516058925-46522-5-git-send-email-jim2101024@gmail.com/
-
-Jim Quinlan (12):
-  PCI: brcmstb: PCIE_BRCMSTB depends on ARCH_BRCMSTB
-  ata: ahci_brcm: Fix use of BCM7216 reset controller
-  dt-bindings: PCI: Add bindings for more Brcmstb chips
-  PCI: brcmstb: Add bcm7278 register info
-  PCI: brcmstb: Add suspend and resume pm_ops
-  PCI: brcmstb: Add bcm7278 PERST# support
-  PCI: brcmstb: Add control of rescal reset
-  device core: Introduce DMA range map, supplanting dma_pfn_offset
-  PCI: brcmstb: Set additional internal memory DMA viewport sizes
-  PCI: brcmstb: Accommodate MSI for older chips
-  PCI: brcmstb: Set bus max burst size by chip type
-  PCI: brcmstb: Add bcm7211, bcm7216, bcm7445, bcm7278 to match list
-
- .../bindings/pci/brcm,stb-pcie.yaml           |  56 ++-
- arch/arm/include/asm/dma-mapping.h            |   9 +-
- arch/arm/mach-keystone/keystone.c             |  17 +-
- arch/sh/drivers/pci/pcie-sh7786.c             |   9 +-
- arch/sh/kernel/dma-coherent.c                 |  16 +-
- arch/x86/pci/sta2x11-fixup.c                  |   7 +-
- drivers/acpi/arm64/iort.c                     |   5 +-
- drivers/ata/ahci_brcm.c                       |  11 +-
- drivers/gpu/drm/sun4i/sun4i_backend.c         |   7 +-
- drivers/iommu/io-pgtable-arm.c                |   2 +-
- .../platform/sunxi/sun4i-csi/sun4i_csi.c      |   6 +-
- .../platform/sunxi/sun6i-csi/sun6i_csi.c      |   5 +-
- drivers/of/address.c                          |  95 ++--
- drivers/of/device.c                           |  47 +-
- drivers/of/of_private.h                       |   9 +-
- drivers/of/unittest.c                         |  35 +-
- drivers/pci/controller/Kconfig                |   3 +-
- drivers/pci/controller/pcie-brcmstb.c         | 408 +++++++++++++++---
- drivers/remoteproc/remoteproc_core.c          |   2 +-
- .../staging/media/sunxi/cedrus/cedrus_hw.c    |   8 +-
- drivers/usb/core/message.c                    |   4 +-
- drivers/usb/core/usb.c                        |   2 +-
- include/linux/device.h                        |   4 +-
- include/linux/dma-direct.h                    |  10 +-
- include/linux/dma-mapping.h                   |  37 ++
- include/linux/pfn.h                           |   2 +
- kernel/dma/coherent.c                         |  10 +-
- kernel/dma/mapping.c                          |  53 +++
- 28 files changed, 682 insertions(+), 197 deletions(-)
-
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index 357a7e0c86d682..da08a61a2f7dae 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -242,109 +242,38 @@ unsigned long long poke_real_address_q(unsigned long long addr,
+ #define phys_to_virt(address)	(__va(address))
+ #endif
+ 
+-/*
+- * On 32-bit SH, we traditionally have the whole physical address space
+- * mapped at all times (as MIPS does), so "ioremap()" and "iounmap()" do
+- * not need to do anything but place the address in the proper segment.
+- * This is true for P1 and P2 addresses, as well as some P3 ones.
+- * However, most of the P3 addresses and newer cores using extended
+- * addressing need to map through page tables, so the ioremap()
+- * implementation becomes a bit more complicated.
+- *
+- * See arch/sh/mm/ioremap.c for additional notes on this.
+- *
+- * We cheat a bit and always return uncachable areas until we've fixed
+- * the drivers to handle caching properly.
+- *
+- * On the SH-5 the concept of segmentation in the 1:1 PXSEG sense simply
+- * doesn't exist, so everything must go through page tables.
+- */
+ #ifdef CONFIG_MMU
++void iounmap(void __iomem *addr);
+ void __iomem *__ioremap_caller(phys_addr_t offset, unsigned long size,
+ 			       pgprot_t prot, void *caller);
+-void iounmap(void __iomem *addr);
+-
+-static inline void __iomem *
+-__ioremap(phys_addr_t offset, unsigned long size, pgprot_t prot)
+-{
+-	return __ioremap_caller(offset, size, prot, __builtin_return_address(0));
+-}
+-
+-static inline void __iomem *
+-__ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
+-{
+-#ifdef CONFIG_29BIT
+-	phys_addr_t last_addr = offset + size - 1;
+-
+-	/*
+-	 * For P1 and P2 space this is trivial, as everything is already
+-	 * mapped. Uncached access for P1 addresses are done through P2.
+-	 * In the P3 case or for addresses outside of the 29-bit space,
+-	 * mapping must be done by the PMB or by using page tables.
+-	 */
+-	if (likely(PXSEG(offset) < P3SEG && PXSEG(last_addr) < P3SEG)) {
+-		u64 flags = pgprot_val(prot);
+-
+-		/*
+-		 * Anything using the legacy PTEA space attributes needs
+-		 * to be kicked down to page table mappings.
+-		 */
+-		if (unlikely(flags & _PAGE_PCC_MASK))
+-			return NULL;
+-		if (unlikely(flags & _PAGE_CACHABLE))
+-			return (void __iomem *)P1SEGADDR(offset);
+-
+-		return (void __iomem *)P2SEGADDR(offset);
+-	}
+-
+-	/* P4 above the store queues are always mapped. */
+-	if (unlikely(offset >= P3_ADDR_MAX))
+-		return (void __iomem *)P4SEGADDR(offset);
+-#endif
+-
+-	return NULL;
+-}
+-
+-static inline void __iomem *
+-__ioremap_mode(phys_addr_t offset, unsigned long size, pgprot_t prot)
+-{
+-	void __iomem *ret;
+-
+-	ret = __ioremap_trapped(offset, size);
+-	if (ret)
+-		return ret;
+-
+-	ret = __ioremap_29bit(offset, size, prot);
+-	if (ret)
+-		return ret;
+-
+-	return __ioremap(offset, size, prot);
+-}
+-#else
+-#define __ioremap(offset, size, prot)		((void __iomem *)(offset))
+-#define __ioremap_mode(offset, size, prot)	((void __iomem *)(offset))
+-static inline void iounmap(void __iomem *addr) {}
+-#endif /* CONFIG_MMU */
+ 
+ static inline void __iomem *ioremap(phys_addr_t offset, unsigned long size)
+ {
+-	return __ioremap_mode(offset, size, PAGE_KERNEL_NOCACHE);
++	return __ioremap_caller(offset, size, PAGE_KERNEL_NOCACHE,
++			__builtin_return_address(0));
+ }
+ 
+ static inline void __iomem *
+ ioremap_cache(phys_addr_t offset, unsigned long size)
+ {
+-	return __ioremap_mode(offset, size, PAGE_KERNEL);
++	return __ioremap_caller(offset, size, PAGE_KERNEL,
++			__builtin_return_address(0));
+ }
+ #define ioremap_cache ioremap_cache
+ 
+ #ifdef CONFIG_HAVE_IOREMAP_PROT
+-static inline void __iomem *
+-ioremap_prot(phys_addr_t offset, unsigned long size, unsigned long flags)
++static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
++		unsigned long flags)
+ {
+-	return __ioremap_mode(offset, size, __pgprot(flags));
++	return __ioremap_caller(offset, size, __pgprot(flags),
++			__builtin_return_address(0));
+ }
+-#endif
++#endif /* CONFIG_HAVE_IOREMAP_PROT */
++
++#else /* CONFIG_MMU */
++#define iounmap(addr)		do { } while (0)
++#define ioremap(offset, size)	((void __iomem *)(unsigned long)(offset))
++#endif /* CONFIG_MMU */
+ 
+ #define ioremap_uc	ioremap
+ 
+diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
+index d9ec85b6bb2130..69e55939e48a6f 100644
+--- a/arch/sh/mm/ioremap.c
++++ b/arch/sh/mm/ioremap.c
+@@ -26,6 +26,51 @@
+ #include <asm/mmu.h>
+ #include "ioremap.h"
+ 
++/*
++ * On 32-bit SH, we traditionally have the whole physical address space mapped
++ * at all times (as MIPS does), so "ioremap()" and "iounmap()" do not need to do
++ * anything but place the address in the proper segment.  This is true for P1
++ * and P2 addresses, as well as some P3 ones.  However, most of the P3 addresses
++ * and newer cores using extended addressing need to map through page tables, so
++ * the ioremap() implementation becomes a bit more complicated.
++ */
++#ifdef CONFIG_29BIT
++static void __iomem *
++__ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
++{
++	phys_addr_t last_addr = offset + size - 1;
++
++	/*
++	 * For P1 and P2 space this is trivial, as everything is already
++	 * mapped. Uncached access for P1 addresses are done through P2.
++	 * In the P3 case or for addresses outside of the 29-bit space,
++	 * mapping must be done by the PMB or by using page tables.
++	 */
++	if (likely(PXSEG(offset) < P3SEG && PXSEG(last_addr) < P3SEG)) {
++		u64 flags = pgprot_val(prot);
++
++		/*
++		 * Anything using the legacy PTEA space attributes needs
++		 * to be kicked down to page table mappings.
++		 */
++		if (unlikely(flags & _PAGE_PCC_MASK))
++			return NULL;
++		if (unlikely(flags & _PAGE_CACHABLE))
++			return (void __iomem *)P1SEGADDR(offset);
++
++		return (void __iomem *)P2SEGADDR(offset);
++	}
++
++	/* P4 above the store queues are always mapped. */
++	if (unlikely(offset >= P3_ADDR_MAX))
++		return (void __iomem *)P4SEGADDR(offset);
++
++	return NULL;
++}
++#else
++#define __ioremap_29bit(offset, size, prot)		NULL
++#endif /* CONFIG_29BIT */
++
+ /*
+  * Remap an arbitrary physical address space into the kernel virtual
+  * address space. Needed when the kernel wants to access high addresses
+@@ -43,6 +88,14 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
+ 	unsigned long offset, last_addr, addr, orig_addr;
+ 	void __iomem *mapped;
+ 
++	mapped = __ioremap_trapped(phys_addr, size);
++	if (mapped)
++		return mapped;
++
++	mapped = __ioremap_29bit(phys_addr, size, pgprot);
++	if (mapped)
++		return mapped;
++
+ 	/* Don't allow wraparound or zero size */
+ 	last_addr = phys_addr + size - 1;
+ 	if (!size || last_addr < phys_addr)
 -- 
-2.17.1
+2.26.2
