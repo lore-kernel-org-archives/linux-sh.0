@@ -1,91 +1,120 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Wed, 15 Jul 2020 19:45:59 +0000
-Subject: Re: [PATCH v6 10/18] sh/tlb: Convert SH to generic mmu_gather
-Message-Id: <524b87c5-0e94-1578-4395-fd53226d02aa@physik.fu-berlin.de>
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 14 Jul 2020 12:18:50 +0000
+Subject: [PATCH 04/10] sh: move ioremap_fixed details out of <asm/io.h>
+Message-Id: <20200714121856.955680-5-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20190219103148.192029670@infradead.org>
- <20190219103233.443069009@infradead.org>
- <CAMuHMdW3nwckjA9Bt-_Dmf50B__sZH+9E5s0_ziK1U_y9onN=g@mail.gmail.com>
- <20191204104733.GR2844@hirez.programming.kicks-ass.net>
- <CAMuHMdXs_Fm93t=O9jJPLxcREZy-T53Z_U_RtHcvaWyV+ESdjg@mail.gmail.com>
-In-Reply-To: <CAMuHMdXs_Fm93t=O9jJPLxcREZy-T53Z_U_RtHcvaWyV+ESdjg@mail.gmail.com>
+References: <20200714121856.955680-1-hch@lst.de>
+In-Reply-To: <20200714121856.955680-1-hch@lst.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>, Peter Zijlstra <peterz@infradead.org>
-Cc: Will Deacon <will.deacon@arm.com>, "Aneesh Kumar K.V" <aneesh.kumar@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Nicholas Piggin <npiggin@gmail.com>, Linux-Arch <linux-arch@vger.kernel.org>, Linux MM <linux-mm@kvack.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Russell King <linux@armlinux.org.uk>, Heiko Carstens <heiko.carstens@de.ibm.com>, Rik van Riel <riel@surriel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-sh list <linux-sh@vger.kernel.org>, Guenter Roeck <linux@roeck-us.net>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi!
+ioremap_fixed is an internal implementation detail and should not be
+exposed to drivers.
 
-On 12/4/19 1:32 PM, Geert Uytterhoeven wrote:
->>>> Cc: Will Deacon <will.deacon@arm.com>
->>>> Cc: "Aneesh Kumar K.V" <aneesh.kumar@linux.vnet.ibm.com>
->>>> Cc: Andrew Morton <akpm@linux-foundation.org>
->>>> Cc: Nick Piggin <npiggin@gmail.com>
->>>> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
->>>> Cc: Rich Felker <dalias@libc.org>
->>>> Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
->>>
->>> I got remote access to an SH7722-based Migo-R again, which spews a long
->>> sequence of BUGs during userspace startup.  I've bisected this to commit
->>> c5b27a889da92f4a ("sh/tlb: Convert SH to generic mmu_gather").
->>
->> Whoopsy.. also, is this really the first time anybody booted an SH
->> kernel in over a year ?!?
-> 
-> Nah, but the v5.4-rc3 I booted recently on qemu -M r2d had
-> CONFIG_PGTABLE_LEVELS=2, so it didn't show the problem.
-> 
->>> Do you have a clue?
->>
->> Does the below help?
-> 
-> Unfortunately not.
-> 
->> diff --git a/arch/sh/include/asm/pgalloc.h b/arch/sh/include/asm/pgalloc.h
->> index 22d968bfe9bb..73a2c00de6c5 100644
->> --- a/arch/sh/include/asm/pgalloc.h
->> +++ b/arch/sh/include/asm/pgalloc.h
->> @@ -36,9 +36,8 @@ do {                                                  \
->>  #if CONFIG_PGTABLE_LEVELS > 2
->>  #define __pmd_free_tlb(tlb, pmdp, addr)                        \
->>  do {                                                   \
->> -       struct page *page = virt_to_page(pmdp);         \
->> -       pgtable_pmd_page_dtor(page);                    \
->> -       tlb_remove_page((tlb), page);                   \
->> +       pgtable_pmd_page_dtor(pmdp);                    \
-> 
-> expected ‘struct page *’ but argument is of type ‘pmd_t * {aka struct
-> <anonymous> *}’
-> 
->> +       tlb_remove_page((tlb), (pmdp));                 \
-> 
-> likewise
-> 
->>  } while (0);
->>  #endif
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/sh/include/asm/io.h   | 16 ----------------
+ arch/sh/mm/init.c          |  1 +
+ arch/sh/mm/ioremap.c       |  1 +
+ arch/sh/mm/ioremap.h       | 23 +++++++++++++++++++++++
+ arch/sh/mm/ioremap_fixed.c |  1 +
+ 5 files changed, 26 insertions(+), 16 deletions(-)
+ create mode 100644 arch/sh/mm/ioremap.h
 
-Any chance we can have another go at this? The original change
-
-commit c5b27a889da92f4a969d61df77bd4f79ffce57c9 (refs/bisect/bad)
-Author: Peter Zijlstra <peterz@infradead.org>
-Date:   Tue Sep 4 14:45:04 2018 +0200
-
-    sh/tlb: Convert SH to generic mmu_gather
-    
-    Generic mmu_gather provides everything SH needs (range tracking and
-    cache coherency).
-
-breaks systemd for me on my SH-7785LCR [1].
-
-Adrian
-
-> [1] https://marc.info/?l=linux-kernel&m9479951822677&w=2
-
-Adrian
-
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index 1fd06ef6a19454..357a7e0c86d682 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -346,22 +346,6 @@ ioremap_prot(phys_addr_t offset, unsigned long size, unsigned long flags)
+ }
+ #endif
+ 
+-#ifdef CONFIG_IOREMAP_FIXED
+-extern void __iomem *ioremap_fixed(phys_addr_t, unsigned long, pgprot_t);
+-extern int iounmap_fixed(void __iomem *);
+-extern void ioremap_fixed_init(void);
+-#else
+-static inline void __iomem *
+-ioremap_fixed(phys_addr_t phys_addr, unsigned long size, pgprot_t prot)
+-{
+-	BUG();
+-	return NULL;
+-}
+-
+-static inline void ioremap_fixed_init(void) { }
+-static inline int iounmap_fixed(void __iomem *addr) { return -EINVAL; }
+-#endif
+-
+ #define ioremap_uc	ioremap
+ 
+ /*
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index a70ba0fdd0b382..da7ea48f9439e2 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -28,6 +28,7 @@
+ #include <asm/setup.h>
+ #include <asm/cache.h>
+ #include <linux/sizes.h>
++#include "ioremap.h"
+ 
+ pgd_t swapper_pg_dir[PTRS_PER_PGD];
+ 
+diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
+index f6d02246d665bd..d9ec85b6bb2130 100644
+--- a/arch/sh/mm/ioremap.c
++++ b/arch/sh/mm/ioremap.c
+@@ -24,6 +24,7 @@
+ #include <asm/cacheflush.h>
+ #include <asm/tlbflush.h>
+ #include <asm/mmu.h>
++#include "ioremap.h"
+ 
+ /*
+  * Remap an arbitrary physical address space into the kernel virtual
+diff --git a/arch/sh/mm/ioremap.h b/arch/sh/mm/ioremap.h
+new file mode 100644
+index 00000000000000..f2544e721a3526
+--- /dev/null
++++ b/arch/sh/mm/ioremap.h
+@@ -0,0 +1,23 @@
++#ifndef _SH_MM_IORMEMAP_H
++#define _SH_MM_IORMEMAP_H 1
++
++#ifdef CONFIG_IOREMAP_FIXED
++void __iomem *ioremap_fixed(phys_addr_t, unsigned long, pgprot_t);
++int iounmap_fixed(void __iomem *);
++void ioremap_fixed_init(void);
++#else
++static inline void __iomem *
++ioremap_fixed(phys_addr_t phys_addr, unsigned long size, pgprot_t prot)
++{
++	BUG();
++	return NULL;
++}
++static inline void ioremap_fixed_init(void)
++{
++}
++static inline int iounmap_fixed(void __iomem *addr)
++{
++	return -EINVAL;
++}
++#endif /* CONFIG_IOREMAP_FIXED */
++#endif /* _SH_MM_IORMEMAP_H */
+diff --git a/arch/sh/mm/ioremap_fixed.c b/arch/sh/mm/ioremap_fixed.c
+index 07e744d75fa01b..1914b79d1c530b 100644
+--- a/arch/sh/mm/ioremap_fixed.c
++++ b/arch/sh/mm/ioremap_fixed.c
+@@ -24,6 +24,7 @@
+ #include <asm/tlbflush.h>
+ #include <asm/mmu.h>
+ #include <asm/mmu_context.h>
++#include "ioremap.h"
+ 
+ struct ioremap_map {
+ 	void __iomem *addr;
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+2.26.2
