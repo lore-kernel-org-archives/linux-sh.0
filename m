@@ -1,35 +1,41 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Tue, 14 Jul 2020 12:31:00 +0000
+From: Rich Felker <dalias@libc.org>
+Date: Tue, 14 Jul 2020 15:59:18 +0000
 Subject: Re: ioremap and dma cleanups and fixes for superh (2nd resend)
-Message-Id: <b0745e43-0ff1-58f7-70d5-60b9c8b8d81b@physik.fu-berlin.de>
+Message-Id: <20200714155914.GA24404@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200714121856.955680-1-hch@lst.de>
-In-Reply-To: <20200714121856.955680-1-hch@lst.de>
+ <b0745e43-0ff1-58f7-70d5-60b9c8b8d81b@physik.fu-berlin.de>
+In-Reply-To: <b0745e43-0ff1-58f7-70d5-60b9c8b8d81b@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Christoph Hellwig <hch@lst.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Christoph!
-
-On 7/14/20 2:18 PM, Christoph Hellwig wrote:
-> can you take a look and possibly pick up the series below that untangles
-> and sorts out minor issues with the sh ioremap and dma code?
+On Tue, Jul 14, 2020 at 02:31:00PM +0200, John Paul Adrian Glaubitz wrote:
+> Hi Christoph!
 > 
-> I sent this out a few times, but never got an answer.  If you don't
-> want to pick up the series I can also take it through one of my trees
-> if I get ACKs.
+> On 7/14/20 2:18 PM, Christoph Hellwig wrote:
+> > can you take a look and possibly pick up the series below that untangles
+> > and sorts out minor issues with the sh ioremap and dma code?
+> > 
+> > I sent this out a few times, but never got an answer.  If you don't
+> > want to pick up the series I can also take it through one of my trees
+> > if I get ACKs.
+> 
+> Rich already said he is fine with most of the changes but we need to test
+> the DMA changes first to make sure they didn't break anything.
+> 
+> Thanks again for your continued efforts.
 
-Rich already said he is fine with most of the changes but we need to test
-the DMA changes first to make sure they didn't break anything.
+Yes. Sorry I didn't also reply in the original thread.
 
-Thanks again for your continued efforts.
+I'd like to have a way to test the DMA changes or testing feedback
+from someone using an affected configuration just because they're
+sufficiently nontrivial (Adrian might be able to do this? If so that'd
+be great; if not let me know if it's testable in qemu), but the rest
+look good to go.
 
-Adrian
+Big thanks for your efforts to clean all this up!
 
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Rich
