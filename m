@@ -1,7 +1,7 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Wed, 15 Jul 2020 14:37:14 +0000
+Date: Wed, 15 Jul 2020 15:39:14 +0000
 Subject: Re: ioremap and dma cleanups and fixes for superh (2nd resend)
-Message-Id: <0322def7-fc16-c805-8f2b-c88fffce2f1e@physik.fu-berlin.de>
+Message-Id: <f10d2711-674b-50b4-cf7a-234070b3c265@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200714121856.955680-1-hch@lst.de>
  <b0745e43-0ff1-58f7-70d5-60b9c8b8d81b@physik.fu-berlin.de>
@@ -13,36 +13,61 @@ References: <20200714121856.955680-1-hch@lst.de>
  <b5f1853e-031d-c09d-57d2-fb4baffa01ea@physik.fu-berlin.de>
  <CAMuHMdW8RtJKk3u7RWQKP2tA3AYT2rB2aqhUT1KnJ4tJwWWKDA@mail.gmail.com>
  <b5cd845f-7b5e-af8e-a15d-3ede7e61ced4@physik.fu-berlin.de>
-In-Reply-To: <b5cd845f-7b5e-af8e-a15d-3ede7e61ced4@physik.fu-berlin.de>
+ <0322def7-fc16-c805-8f2b-c88fffce2f1e@physik.fu-berlin.de>
+In-Reply-To: <0322def7-fc16-c805-8f2b-c88fffce2f1e@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Geert Uytterhoeven <geert@linux-m68k.org>
 Cc: Rich Felker <dalias@libc.org>, Christoph Hellwig <hch@lst.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-Hi Geert!
+On 7/15/20 4:37 PM, John Paul Adrian Glaubitz wrote:
+> Will report once I found the bad commit that introduced the problem.
 
-On 7/15/20 10:27 AM, John Paul Adrian Glaubitz wrote:
->> Lemme gues: does commit 002ae7057069538a ("mm, dump_page(): do not crash
->> with invalid mapping pointer") in v5.8-rc1 help?
-> 
-> Hmm, it seems I already have that patch (I'm using Linus' main tree):
-> 
-> commit 002ae7057069538aa3afd500f6f60a429cb948b2
-> Author: Vlastimil Babka <vbabka@suse.cz>
-> Date:   Mon Jun 1 21:46:03 2020 -0700
-> 
->     mm, dump_page(): do not crash with invalid mapping pointer
+git bisect lead me to a merge commit:
 
-Okay, kernel 5.0.0 does not suffer from this bug. So I should be able to bisect
-this particular issue.
-
-I'm glad I don't have to start bisecting with earlier kernels because these
-won't build easily with my current toolchain based on gcc-9.
-
-Will report once I found the bad commit that introduced the problem.
-
-Adrian
+glaubitz@epyc:..glaubitz/linux> git bisect log
+git bisect start
+# good: [1c163f4c7b3f621efff9b28a47abb36f7378d783] Linux 5.0
+git bisect good 1c163f4c7b3f621efff9b28a47abb36f7378d783
+# bad: [7bc20f6563b4e117d61ca575427208e0eaa945b9] sh: Fix unneeded constructor in page table allocation
+git bisect bad 7bc20f6563b4e117d61ca575427208e0eaa945b9
+# bad: [eeb2045bb7d20fea0a242148059377cd0cb4a499] Merge branch '10GbE' of git://git.kernel.org/pub/scm/linux/kernel/git/jkirsher/next-queue
+git bisect bad eeb2045bb7d20fea0a242148059377cd0cb4a499
+# bad: [5ce40fd86cf155e0eefc73509343bb3eeaafa4bc] drm/amdgpu: add Arcturus chip_name for init sdma microcode
+git bisect bad 5ce40fd86cf155e0eefc73509343bb3eeaafa4bc
+# good: [8f14c99c7edaaba9c0bb1727d44db6ebf157cc61] netfilter: conntrack: limit sysctl setting for boolean options
+git bisect good 8f14c99c7edaaba9c0bb1727d44db6ebf157cc61
+# good: [dce45af5c2e9e85f22578f2f8065f225f5d11764] Merge tag 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/rdma/rdma
+git bisect good dce45af5c2e9e85f22578f2f8065f225f5d11764
+# bad: [60fce36afa9c77c7ccbf980c4f670f3be3651fce] mm/compaction.c: correct zone boundary handling when isolating pages from a pageblock
+git bisect bad 60fce36afa9c77c7ccbf980c4f670f3be3651fce
+# bad: [414147d99b928c574ed76e9374a5d2cb77866a29] Merge tag 'pci-v5.2-changes' of git://git.kernel.org/pub/scm/linux/kernel/git/helgaas/pci
+git bisect bad 414147d99b928c574ed76e9374a5d2cb77866a29
+# bad: [1fb3b526df3bd7647e7854915ae6b22299408baf] Merge tag 'docs-5.2a' of git://git.lwn.net/linux
+git bisect bad 1fb3b526df3bd7647e7854915ae6b22299408baf
+# bad: [ea5aee6d97fd2d4499b1eebc233861c1def70f06] Merge tag 'clk-for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/clk/linux
+git bisect bad ea5aee6d97fd2d4499b1eebc233861c1def70f06
+# bad: [45182e4e1f8ac04708ca7508c51d9103f07d81ab] Merge branch 'i2c/for-5.2' of git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux
+git bisect bad 45182e4e1f8ac04708ca7508c51d9103f07d81ab
+# good: [5940d1cf9f42f67e9cc3f7df9eda39f5888d6e9e] SUNRPC: Rebalance a kref in auth_gss.c
+git bisect good 5940d1cf9f42f67e9cc3f7df9eda39f5888d6e9e
+# bad: [abde77eb5c66b2f98539c4644b54f34b7e179e6b] Merge branch 'for-5.2' of git://git.kernel.org/pub/scm/linux/kernel/git/tj/cgroup
+git bisect bad abde77eb5c66b2f98539c4644b54f34b7e179e6b
+# bad: [7664cd6e3a0b2709f04c07435e96c7c85e7d7324] Merge branch 'next-integrity' of git://git.kernel.org/pub/scm/linux/kernel/git/jmorris/linux-security
+git bisect bad 7664cd6e3a0b2709f04c07435e96c7c85e7d7324
+# good: [3e9dfc6e1e8bce62a329f1452c7eeccbac230980] orangefs: move do_readv_writev to direct_IO
+git bisect good 3e9dfc6e1e8bce62a329f1452c7eeccbac230980
+# good: [4077a0f25b001926f86d35f6236351583bada9a4] orangefs: pass slot index back to readpage.
+git bisect good 4077a0f25b001926f86d35f6236351583bada9a4
+# good: [2bfebea90dd5e8c57ae1021a5d1bb6c1057eee6d] Merge branch 'next-integrity-for-james' of git://git.kernel.org/pub/scm/linux/kernel/git/zohar/linux-integrity into next-integrity
+git bisect good 2bfebea90dd5e8c57ae1021a5d1bb6c1057eee6d
+# good: [33713cd09ccdc1e01b10d0782ae60200d4989553] orangefs: truncate before updating size
+git bisect good 33713cd09ccdc1e01b10d0782ae60200d4989553
+# bad: [882388056194d2d4c3f589b194b6bdcc47e677e8] Merge tag 'for-linus-5.2-ofs1' of git://git.kernel.org/pub/scm/linux/kernel/git/hubcap/linux
+git bisect bad 882388056194d2d4c3f589b194b6bdcc47e677e8
+# first bad commit: [882388056194d2d4c3f589b194b6bdcc47e677e8] Merge tag 'for-linus-5.2-ofs1' of git://git.kernel.org/pub/scm/linux/kernel/git/hubcap/linux
+glaubitz@epyc:..glaubitz/linux>
 
 -- 
  .''`.  John Paul Adrian Glaubitz
