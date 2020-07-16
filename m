@@ -1,10 +1,9 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Thu, 16 Jul 2020 10:05:37 +0000
+From: peterz@infradead.org
+Date: Thu, 16 Jul 2020 10:29:34 +0000
 Subject: Re: ioremap and dma cleanups and fixes for superh (2nd resend)
-Message-Id: <c9648179-4f11-a3eb-fe3b-b06d9898a37f@physik.fu-berlin.de>
+Message-Id: <20200716102934.GC43129@hirez.programming.kicks-ass.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8cbf2963-d0e4-0ca8-4ffe-c2057694447f@physik.fu-berlin.de>
- <011f29e6-ad71-366e-dbff-bc8471f3da60@physik.fu-berlin.de>
+References: <011f29e6-ad71-366e-dbff-bc8471f3da60@physik.fu-berlin.de>
  <CAMuHMdUre2-fRgLP8YiwjAKN6J=m1vGhPSMMUdpof7jPJfcWuw@mail.gmail.com>
  <def65208-a38b-8663-492a-cae150027003@physik.fu-berlin.de>
  <b5f1853e-031d-c09d-57d2-fb4baffa01ea@physik.fu-berlin.de>
@@ -18,17 +17,15 @@ In-Reply-To: <20200716094039.GQ10769@hirez.programming.kicks-ass.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Peter Zijlstra <peterz@infradead.org>, Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Rich Felker <dalias@libc.org>, Christoph Hellwig <hch@lst.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Rich Felker <dalias@libc.org>, Christoph Hellwig <hch@lst.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-Hi Peter!
-
-On 7/16/20 11:40 AM, Peter Zijlstra wrote:
+On Thu, Jul 16, 2020 at 11:40:39AM +0200, Peter Zijlstra wrote:
 > On Wed, Jul 15, 2020 at 08:21:27PM +0200, Geert Uytterhoeven wrote:
 > 
->> Oh, we actually discussed that:
->> https://lore.kernel.org/linux-mm/20191204133454.GW2844@hirez.programming.kicks-ass.net/
->> but there was no conclusion...
+> > Oh, we actually discussed that:
+> > https://lore.kernel.org/linux-mm/20191204133454.GW2844@hirez.programming.kicks-ass.net/
+> > but there was no conclusion...
 > 
 > Urgh.. clearly that fell off the table :-(
 > 
@@ -47,16 +44,8 @@ On 7/16/20 11:40 AM, Peter Zijlstra wrote:
 > 
 > Let me rebase/refresh the rest of that and send it out again.
 
-Sounds good. Do you think this new patch set could fix the crash of systemd
-that I observed on SH that was introduced with your previous patch?
+OK, latest patches here:
 
-Thanks,
-Adrian
+  git://git.kernel.org/pub/scm/linux/kernel/git/peterz/queue.git mm/tlb
 
-> [1] https://marc.info/?l=linux-kernel&m9479951822677&w=2
-
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+I'll post once the robot is all green.
