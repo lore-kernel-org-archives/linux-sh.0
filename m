@@ -1,7 +1,7 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Thu, 16 Jul 2020 09:40:39 +0000
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Thu, 16 Jul 2020 10:05:37 +0000
 Subject: Re: ioremap and dma cleanups and fixes for superh (2nd resend)
-Message-Id: <20200716094039.GQ10769@hirez.programming.kicks-ass.net>
+Message-Id: <c9648179-4f11-a3eb-fe3b-b06d9898a37f@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <8cbf2963-d0e4-0ca8-4ffe-c2057694447f@physik.fu-berlin.de>
  <011f29e6-ad71-366e-dbff-bc8471f3da60@physik.fu-berlin.de>
@@ -13,32 +13,50 @@ References: <8cbf2963-d0e4-0ca8-4ffe-c2057694447f@physik.fu-berlin.de>
  <0322def7-fc16-c805-8f2b-c88fffce2f1e@physik.fu-berlin.de>
  <2df7ca7f-7e26-c916-b6ac-4ec1913fb8d7@physik.fu-berlin.de>
  <CAMuHMdXjfq=RjJ2doR7XyQMnZUA8ccxKc7_tyUzTX29tpyZojw@mail.gmail.com>
-In-Reply-To: <CAMuHMdXjfq=RjJ2doR7XyQMnZUA8ccxKc7_tyUzTX29tpyZojw@mail.gmail.com>
+ <20200716094039.GQ10769@hirez.programming.kicks-ass.net>
+In-Reply-To: <20200716094039.GQ10769@hirez.programming.kicks-ass.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Rich Felker <dalias@libc.org>, Christoph Hellwig <hch@lst.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: Peter Zijlstra <peterz@infradead.org>, Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Rich Felker <dalias@libc.org>, Christoph Hellwig <hch@lst.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-On Wed, Jul 15, 2020 at 08:21:27PM +0200, Geert Uytterhoeven wrote:
+Hi Peter!
 
-> Oh, we actually discussed that:
-> https://lore.kernel.org/linux-mm/20191204133454.GW2844@hirez.programming.kicks-ass.net/
-> but there was no conclusion...
+On 7/16/20 11:40 AM, Peter Zijlstra wrote:
+> On Wed, Jul 15, 2020 at 08:21:27PM +0200, Geert Uytterhoeven wrote:
+> 
+>> Oh, we actually discussed that:
+>> https://lore.kernel.org/linux-mm/20191204133454.GW2844@hirez.programming.kicks-ass.net/
+>> but there was no conclusion...
+> 
+> Urgh.. clearly that fell off the table :-(
+> 
+> So yes, that patch works, but as I wrote, I think it's still broken.
+> Then again, that particular breakage has been there for a long time.
+> 
+> Ooohh.. I have another whole patch-set that fixes that across
+> architectures which I forgot about too:
+> 
+>   https://lkml.kernel.org/r/20191211120713.360281197@infradead.org
+> 
+> that actually included the SH fix.
+> 
+> Then Aneesh got a bunch of those patches merged because he needed it for
+> Power, but the rest bitrotted again.
+> 
+> Let me rebase/refresh the rest of that and send it out again.
 
-Urgh.. clearly that fell off the table :-(
+Sounds good. Do you think this new patch set could fix the crash of systemd
+that I observed on SH that was introduced with your previous patch?
 
-So yes, that patch works, but as I wrote, I think it's still broken.
-Then again, that particular breakage has been there for a long time.
+Thanks,
+Adrian
 
-Ooohh.. I have another whole patch-set that fixes that across
-architectures which I forgot about too:
+> [1] https://marc.info/?l=linux-kernel&m9479951822677&w=2
 
-  https://lkml.kernel.org/r/20191211120713.360281197@infradead.org
-
-that actually included the SH fix.
-
-Then Aneesh got a bunch of those patches merged because he needed it for
-Power, but the rest bitrotted again.
-
-Let me rebase/refresh the rest of that and send it out again.
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
