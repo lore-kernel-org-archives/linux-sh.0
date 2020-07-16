@@ -1,12 +1,9 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Wed, 15 Jul 2020 18:27:29 +0000
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Thu, 16 Jul 2020 09:40:39 +0000
 Subject: Re: ioremap and dma cleanups and fixes for superh (2nd resend)
-Message-Id: <93b1b806-41f0-de33-ff00-0bc3b17a615f@physik.fu-berlin.de>
+Message-Id: <20200716094039.GQ10769@hirez.programming.kicks-ass.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200714121856.955680-1-hch@lst.de>
- <b0745e43-0ff1-58f7-70d5-60b9c8b8d81b@physik.fu-berlin.de>
- <20200714155914.GA24404@brightrain.aerifal.cx>
- <8cbf2963-d0e4-0ca8-4ffe-c2057694447f@physik.fu-berlin.de>
+References: <8cbf2963-d0e4-0ca8-4ffe-c2057694447f@physik.fu-berlin.de>
  <011f29e6-ad71-366e-dbff-bc8471f3da60@physik.fu-berlin.de>
  <CAMuHMdUre2-fRgLP8YiwjAKN6J=m1vGhPSMMUdpof7jPJfcWuw@mail.gmail.com>
  <def65208-a38b-8663-492a-cae150027003@physik.fu-berlin.de>
@@ -21,23 +18,27 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Rich Felker <dalias@libc.org>, Christoph Hellwig <hch@lst.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Rich Felker <dalias@libc.org>, Christoph Hellwig <hch@lst.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-On 7/15/20 8:21 PM, Geert Uytterhoeven wrote:
->> CC'ing the author (Peter Zijlstra <peterz@infradead.org>).
-> 
+On Wed, Jul 15, 2020 at 08:21:27PM +0200, Geert Uytterhoeven wrote:
+
 > Oh, we actually discussed that:
 > https://lore.kernel.org/linux-mm/20191204133454.GW2844@hirez.programming.kicks-ass.net/
 > but there was no conclusion...
 
-Aha, interesting. The question is whether someone can make use of the crash dump
-in this case. I'm surprised it affects init=/bin/systemd but not init=/bin/bash
-but maybe the problem with systemd here is a larger memory footprint.
+Urgh.. clearly that fell off the table :-(
 
-Adrian
+So yes, that patch works, but as I wrote, I think it's still broken.
+Then again, that particular breakage has been there for a long time.
 
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Ooohh.. I have another whole patch-set that fixes that across
+architectures which I forgot about too:
+
+  https://lkml.kernel.org/r/20191211120713.360281197@infradead.org
+
+that actually included the SH fix.
+
+Then Aneesh got a bunch of those patches merged because he needed it for
+Power, but the rest bitrotted again.
+
+Let me rebase/refresh the rest of that and send it out again.
