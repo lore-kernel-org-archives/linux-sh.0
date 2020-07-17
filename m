@@ -1,61 +1,82 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Tue, 28 Jul 2020 05:11:39 +0000
-Subject: [PATCH 01/15] KVM: PPC: Book3S HV: simplify kvm_cma_reserve()
-Message-Id: <20200728051153.1590-2-rppt@kernel.org>
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Fri, 17 Jul 2020 11:10:06 +0000
+Subject: [PATCH v2 01/11] asm-generic/tlb: Fix MMU_GATHER_TABLE_FREE
+Message-Id: <20200717111349.417688532@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200728051153.1590-1-rppt@kernel.org>
-In-Reply-To: <20200728051153.1590-1-rppt@kernel.org>
+References: <20200717111005.024867618@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Hansen <dave.hansen@linux.intel.com>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, Stafford Horne <shorne@gmail.com>, Marek Szyprowski <m.szyprowski@samsung.com>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, clang-built-linux@googlegroups.com, Ingo Molnar <mingo@redhat.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Paul Walmsley <paul.walmsley@sifive.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-mm@kvack.org, linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Palmer Dabbelt <palmer@dabbelt.com>, Christoph Hellwig <hch@lst.de>, Mike Rapoport <rppt@kernel.org>
+To: Will Deacon <will@kernel.org>, "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Nick Piggin <npiggin@gmail.com>, Peter Zijlstra <peterz@infradead.org>
+Cc: linux-arch@vger.kernel.org, linux-sh@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, Helge Deller <deller@gmx.de>, Geert Uytterhoeven <geert@linux-m68k.org>, Paul Burton <paulburton@kernel.org>, Tony Luck <tony.luck@intel.com>, Richard Henderson <rth@twiddle.net>, Nick Hu <nickhu@andestech.com>, Paul Walmsley <paul.walmsley@sifive.com>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Christoph Hellwig <hch@lst.de>
 
-From: Mike Rapoport <rppt@linux.ibm.com>
+The first MMU_GATHER_TABLE_FREE user showed a logic error in the
+tlb_needs_table_invalidate() definition. Make sure any TABLE_FREE has
+it defined.
 
-The memory size calculation in kvm_cma_reserve() traverses memblock.memory
-rather than simply call memblock_phys_mem_size(). The comment in that
-function suggests that at some point there should have been call to
-memblock_analyze() before memblock_phys_mem_size() could be used.
-As of now, there is no memblock_analyze() at all and
-memblock_phys_mem_size() can be used as soon as cold-plug memory is
-registerd with memblock.
-
-Replace loop over memblock.memory with a call to memblock_phys_mem_size().
-
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Fixes: 0d6e24d430ef ("asm-generic/tlb: provide MMU_GATHER_TABLE_FREE")
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
 ---
- arch/powerpc/kvm/book3s_hv_builtin.c | 11 ++---------
- 1 file changed, 2 insertions(+), 9 deletions(-)
+ include/asm-generic/tlb.h |   35 +++++++++++++++++++----------------
+ 1 file changed, 19 insertions(+), 16 deletions(-)
 
-diff --git a/arch/powerpc/kvm/book3s_hv_builtin.c b/arch/powerpc/kvm/book3s_hv_builtin.c
-index 7cd3cf3d366b..56ab0d28de2a 100644
---- a/arch/powerpc/kvm/book3s_hv_builtin.c
-+++ b/arch/powerpc/kvm/book3s_hv_builtin.c
-@@ -95,22 +95,15 @@ EXPORT_SYMBOL_GPL(kvm_free_hpt_cma);
- void __init kvm_cma_reserve(void)
- {
- 	unsigned long align_size;
--	struct memblock_region *reg;
--	phys_addr_t selected_size = 0;
-+	phys_addr_t selected_size;
+--- a/include/asm-generic/tlb.h
++++ b/include/asm-generic/tlb.h
+@@ -172,6 +172,18 @@
+  *  various ptep_get_and_clear() functions.
+  */
  
- 	/*
- 	 * We need CMA reservation only when we are in HV mode
- 	 */
- 	if (!cpu_has_feature(CPU_FTR_HVMODE))
- 		return;
--	/*
--	 * We cannot use memblock_phys_mem_size() here, because
--	 * memblock_analyze() has not been called yet.
--	 */
--	for_each_memblock(memory, reg)
--		selected_size += memblock_region_memory_end_pfn(reg) -
--				 memblock_region_memory_base_pfn(reg);
++#ifndef CONFIG_MMU_GATHER_RCU_TABLE_FREE
++
++/*
++ * Only RCU table free can override this; otherwise the TLBI is needed to
++ * provide existence guarantees for software walkers.
++ */
++#ifdef tlb_needs_table_invalidate
++#error tlb_needs_table_invalidate() requires MMU_GATHER_RCU_TABLE_FREE
++#endif
++
++#endif /* CONFIG_MMU_GATHER_RCU_TABLE_FREE */
++
+ #ifdef CONFIG_MMU_GATHER_TABLE_FREE
  
-+	selected_size = PHYS_PFN(memblock_phys_mem_size());
- 	selected_size = (selected_size * kvm_cma_resv_ratio / 100) << PAGE_SHIFT;
- 	if (selected_size) {
- 		pr_debug("%s: reserving %ld MiB for global area\n", __func__,
--- 
-2.26.2
+ struct mmu_table_batch {
+@@ -187,17 +199,6 @@ struct mmu_table_batch {
+ 
+ extern void tlb_remove_table(struct mmu_gather *tlb, void *table);
+ 
+-#else /* !CONFIG_MMU_GATHER_HAVE_TABLE_FREE */
+-
+-/*
+- * Without MMU_GATHER_TABLE_FREE the architecture is assumed to have page based
+- * page directories and we can use the normal page batching to free them.
+- */
+-#define tlb_remove_table(tlb, page) tlb_remove_page((tlb), (page))
+-
+-#endif /* CONFIG_MMU_GATHER_TABLE_FREE */
+-
+-#ifdef CONFIG_MMU_GATHER_RCU_TABLE_FREE
+ /*
+  * This allows an architecture that does not use the linux page-tables for
+  * hardware to skip the TLBI when freeing page tables.
+@@ -206,13 +207,15 @@ extern void tlb_remove_table(struct mmu_
+ #define tlb_needs_table_invalidate() (true)
+ #endif
+ 
+-#else
++#else /* !CONFIG_MMU_GATHER_HAVE_TABLE_FREE */
+ 
+-#ifdef tlb_needs_table_invalidate
+-#error tlb_needs_table_invalidate() requires MMU_GATHER_RCU_TABLE_FREE
+-#endif
++/*
++ * Without MMU_GATHER_TABLE_FREE the architecture is assumed to have page based
++ * page directories and we can use the normal page batching to free them.
++ */
++#define tlb_remove_table(tlb, page) tlb_remove_page((tlb), (page))
+ 
+-#endif /* CONFIG_MMU_GATHER_RCU_TABLE_FREE */
++#endif /* CONFIG_MMU_GATHER_TABLE_FREE */
+ 
+ 
+ #ifndef CONFIG_MMU_GATHER_NO_GATHER
