@@ -1,55 +1,65 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 14 Jul 2020 12:18:47 +0000
-Subject: [PATCH 01/10] sh: remove -Werror from Makefiles
-Message-Id: <20200714121856.955680-2-hch@lst.de>
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Fri, 17 Jul 2020 11:10:12 +0000
+Subject: [PATCH v2 07/11] ia64/tlb: Fix __p*_free_tlb()
+Message-Id: <20200717111349.766472738@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200714121856.955680-1-hch@lst.de>
-In-Reply-To: <20200714121856.955680-1-hch@lst.de>
+References: <20200717111005.024867618@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Will Deacon <will@kernel.org>, "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Nick Piggin <npiggin@gmail.com>, Peter Zijlstra <peterz@infradead.org>
+Cc: linux-arch@vger.kernel.org, linux-sh@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, Helge Deller <deller@gmx.de>, Geert Uytterhoeven <geert@linux-m68k.org>, Paul Burton <paulburton@kernel.org>, Tony Luck <tony.luck@intel.com>, Richard Henderson <rth@twiddle.net>, Nick Hu <nickhu@andestech.com>, Paul Walmsley <paul.walmsley@sifive.com>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Christoph Hellwig <hch@lst.de>
 
-The sh build is full of warnings when building with gcc 9.2.1.  While
-fixing those would be great, at least avoid failing the build.
+Just like regular pages, page directories need to observe the
+following order:
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+ 1) unhook
+ 2) TLB invalidate
+ 3) free
+
+to ensure it is safe against concurrent accesses.
+
+Since IA64 has page based P[UM]Ds, no software walkers and IPI based
+TLB invalidation, it can use the simple tlb_remove_page() based
+freeer.
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
 ---
- arch/sh/kernel/Makefile | 2 --
- arch/sh/lib/Makefile    | 2 --
- arch/sh/mm/Makefile     | 2 --
- 3 files changed, 6 deletions(-)
+ arch/ia64/include/asm/pgalloc.h |   13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/kernel/Makefile b/arch/sh/kernel/Makefile
-index b0f5574b6228b3..aa0fbc9202b14e 100644
---- a/arch/sh/kernel/Makefile
-+++ b/arch/sh/kernel/Makefile
-@@ -47,5 +47,3 @@ obj-$(CONFIG_DWARF_UNWINDER)	+= dwarf.o
- obj-$(CONFIG_PERF_EVENTS)	+= perf_event.o perf_callchain.o
- obj-$(CONFIG_DMA_NONCOHERENT)	+= dma-coherent.o
- obj-$(CONFIG_HAVE_HW_BREAKPOINT)		+= hw_breakpoint.o
--
--ccflags-y := -Werror
-diff --git a/arch/sh/lib/Makefile b/arch/sh/lib/Makefile
-index d0abbe5e38b0f3..eb473d373ca43a 100644
---- a/arch/sh/lib/Makefile
-+++ b/arch/sh/lib/Makefile
-@@ -30,5 +30,3 @@ memset-$(CONFIG_CPU_SH4)	:= memset-sh4.o
- lib-$(CONFIG_MMU)		+= copy_page.o __clear_user.o
- lib-$(CONFIG_MCOUNT)		+= mcount.o
- lib-y				+= $(memcpy-y) $(memset-y) $(udivsi3-y)
--
--ccflags-y := -Werror
-diff --git a/arch/sh/mm/Makefile b/arch/sh/mm/Makefile
-index 487da0ff03b3a7..f69ddc70b14658 100644
---- a/arch/sh/mm/Makefile
-+++ b/arch/sh/mm/Makefile
-@@ -43,5 +43,3 @@ obj-$(CONFIG_UNCACHED_MAPPING)	+= uncached.o
- obj-$(CONFIG_HAVE_SRAM_POOL)	+= sram.o
+--- a/arch/ia64/include/asm/pgalloc.h
++++ b/arch/ia64/include/asm/pgalloc.h
+@@ -50,7 +50,9 @@ static inline void pud_free(struct mm_st
+ {
+ 	free_page((unsigned long)pud);
+ }
+-#define __pud_free_tlb(tlb, pud, address)	pud_free((tlb)->mm, pud)
++
++#define __pud_free_tlb(tlb, pud, address)	\
++	tlb_remove_table((tlb), virt_to_page(pud))
+ #endif /* CONFIG_PGTABLE_LEVELS = 4 */
  
- GCOV_PROFILE_pmb.o := n
--
--ccflags-y := -Werror
--- 
-2.26.2
+ static inline void
+@@ -69,7 +71,8 @@ static inline void pmd_free(struct mm_st
+ 	free_page((unsigned long)pmd);
+ }
+ 
+-#define __pmd_free_tlb(tlb, pmd, address)	pmd_free((tlb)->mm, pmd)
++#define __pmd_free_tlb(tlb, pmd, address)	\
++	tlb_remove_table((tlb), virt_to_page(pmd)
+ 
+ static inline void
+ pmd_populate(struct mm_struct *mm, pmd_t * pmd_entry, pgtable_t pte)
+@@ -84,6 +87,10 @@ pmd_populate_kernel(struct mm_struct *mm
+ 	pmd_val(*pmd_entry) = __pa(pte);
+ }
+ 
+-#define __pte_free_tlb(tlb, pte, address)	pte_free((tlb)->mm, pte)
++#define __pte_free_tlb(tlb, pte, address)	\
++do {						\
++	pgtable_pte_page_dtor(pte);		\
++	tlb_remove_table((tlb), (pte));		\
++} while (0)
+ 
+ #endif				/* _ASM_IA64_PGALLOC_H */
