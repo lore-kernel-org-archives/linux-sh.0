@@ -1,104 +1,69 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Wed, 22 Jul 2020 23:20:00 +0000
-Subject: Re: [PATCH 2/4] sh: Rearrange blocks in entry-common.S
-Message-Id: <f9484f1b-3aee-ca1e-ce10-f3f22f636fd7@physik.fu-berlin.de>
+Date: Fri, 17 Jul 2020 07:11:49 +0000
+Subject: Suggested patches for merging
+Message-Id: <8538a950-8e21-29c7-dd0e-fa6e49e2bcef@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200722231322.419642-1-kernel@mkarcher.dialup.fu-berlin.de>
- <20200722231322.419642-2-kernel@mkarcher.dialup.fu-berlin.de>
-In-Reply-To: <20200722231322.419642-2-kernel@mkarcher.dialup.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+To: linux-sh@vger.kernel.org
 
-On 7/23/20 1:13 AM, Michael Karcher wrote:
-> This avoids out-of-range jumps that get auto-replaced by the assembler
-> and prepares for the changes needed to implement SECCOMP_FILTER cleanly.
-> 
-> Signed-off-by: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
-> ---
->  arch/sh/kernel/entry-common.S | 57 ++++++++++++++++++-----------------
->  1 file changed, 29 insertions(+), 28 deletions(-)
-> 
-> diff --git a/arch/sh/kernel/entry-common.S b/arch/sh/kernel/entry-common.S
-> index 9bac5bbb67f3..c4d88d61890d 100644
-> --- a/arch/sh/kernel/entry-common.S
-> +++ b/arch/sh/kernel/entry-common.S
-> @@ -178,34 +178,6 @@ syscall_exit_work:
->  	bra	resume_userspace
->  	 nop
->  
-> -	.align	2
-> -syscall_trace_entry:
-> -	!                     	Yes it is traced.
-> -	mov     r15, r4
-> -	mov.l	7f, r11		! Call do_syscall_trace_enter which notifies
-> -	jsr	@r11	    	! superior (will chomp R[0-7])
-> -	 nop
-> -	mov.l	r0, @(OFF_R0,r15)	! Save return value
-> -	!			Reload R0-R4 from kernel stack, where the
-> -	!   	    	    	parent may have modified them using
-> -	!   	    	    	ptrace(POKEUSR).  (Note that R0-R2 are
-> -	!   	    	    	reloaded from the kernel stack by syscall_call
-> -	!   	    	    	below, so don't need to be reloaded here.)
-> -	!   	    	    	This allows the parent to rewrite system calls
-> -	!   	    	    	and args on the fly.
-> -	mov.l	@(OFF_R4,r15), r4   ! arg0
-> -	mov.l	@(OFF_R5,r15), r5
-> -	mov.l	@(OFF_R6,r15), r6
-> -	mov.l	@(OFF_R7,r15), r7   ! arg3
-> -	mov.l	@(OFF_R3,r15), r3   ! syscall_nr
-> -	!
-> -	mov.l	6f, r10			! Number of syscalls
-> -	cmp/hs	r10, r3
-> -	bf	syscall_call
-> -	mov	#-ENOSYS, r0
-> -	bra	syscall_exit
-> -	 mov.l	r0, @(OFF_R0,r15)	! Return value
-> -
->  __restore_all:
->  	mov	#OFF_SR, r0
->  	mov.l	@(r0,r15), r0	! get status register
-> @@ -388,6 +360,35 @@ syscall_exit:
->  	bf	syscall_exit_work
->  	bra	__restore_all
->  	 nop
-> +
-> +	.align	2
-> +syscall_trace_entry:
-> +	!                     	Yes it is traced.
-> +	mov     r15, r4
-> +	mov.l	7f, r11		! Call do_syscall_trace_enter which notifies
-> +	jsr	@r11	    	! superior (will chomp R[0-7])
-> +	 nop
-> +	mov.l	r0, @(OFF_R0,r15)	! Save return value
-> +	!			Reload R0-R4 from kernel stack, where the
-> +	!   	    	    	parent may have modified them using
-> +	!   	    	    	ptrace(POKEUSR).  (Note that R0-R2 are
-> +	!   	    	    	reloaded from the kernel stack by syscall_call
-> +	!   	    	    	below, so don't need to be reloaded here.)
-> +	!   	    	    	This allows the parent to rewrite system calls
-> +	!   	    	    	and args on the fly.
-> +	mov.l	@(OFF_R4,r15), r4   ! arg0
-> +	mov.l	@(OFF_R5,r15), r5
-> +	mov.l	@(OFF_R6,r15), r6
-> +	mov.l	@(OFF_R7,r15), r7   ! arg3
-> +	mov.l	@(OFF_R3,r15), r3   ! syscall_nr
-> +	!
-> +	mov.l	6f, r10			! Number of syscalls
-> +	cmp/hs	r10, r3
-> +	bf	syscall_call
-> +	mov	#-ENOSYS, r0
-> +	bra	syscall_exit
-> +	 mov.l	r0, @(OFF_R0,r15)	! Return value
-> +
->  	.align	2
->  #if !defined(CONFIG_CPU_SH2)
->  1:	.long	TRA
-> 
+Hi Rich!
 
-Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+After updating my SH kernel to the latest git version and applying various proposed
+patches on top, my machines runs very stable. I suggest merging the following patches:
+
+> [PATCH 01/10] sh: remove -Werror from Makefiles
+> https://marc.info/?l=linux-sh&m9472940531658&w=2
+
+> [PATCH 02/10] sh: sort the selects for SUPERH alphabetically
+> https://marc.info/?l=linux-sh&m9472953631694&w=2
+
+> [PATCH 03/10] sh: remove __KERNEL__ ifdefs from non-UAPI headers
+> https://marc.info/?l=linux-sh&m9472967331732&w=2
+
+> [PATCH 04/10] sh: move ioremap_fixed details out of <asm/io.h>
+> https://marc.info/?l=linux-sh&m9472980331793&w=2
+
+> [PATCH 05/10] sh: move the ioremap implementation out of line
+> https://marc.info/?l=linux-sh&m9472993031837&w=2
+
+> [PATCH 06/10] sh: don't include <asm/io_trapped.h> in <asm/io.h>
+> https://marc.info/?l=linux-sh&m9472995331856&w=2
+
+> [PATCH 07/10] sh: unexport register_trapped_io and match_trapped_io_handler
+> https://marc.info/?l=linux-sh&m9472993331840&w=2
+
+> [PATCH 08/10] dma-mapping: consolidate the NO_DMA definition in kernel/dma/Kconfig
+> https://marc.info/?l=linux-sh&m9472994531848&w=2
+
+> [PATCH 09/10] sh: don't allow non-coherent DMA for NOMMU
+> https://marc.info/?l=linux-sh&m9472994631849&w=2
+
+> [PATCH 10/10] sh: use the generic dma coherent remap allocator
+> https://marc.info/?l=linux-sh&m9472994631850&w=2
+
+> [PATCH] sh: Implement __get_user_u64() required for 64-bit get_user()
+> https://marc.info/?l=linux-sh&m9186232702043&w=2
+
+> [PATCH v2 0/9] sh: Modernize printing of kernel messages
+> https://lore.kernel.org/lkml/20200617143639.18315-1-geert+renesas@glider.be/
+
+These patches fix multiple important issues on SH, but are most likely
+going in through different trees:
+
+> [PATCH v2] serial: core: Initialise spin lock before use in uart_configure_port()
+> https://lore.kernel.org/linux-serial/20200706143548.63985-1-andriy.shevchenko@linux.intel.com/
+
+> sh: Fix unneeded constructor in page table allocation
+> https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git/commit/?idsc348f31b63d28d176ed290eb1aa2a648f3e51e
+> You seem to have already picked this one up?
+
+> sh/tlb: Fix PGTABLE_LEVELS > 2
+> https://git.kernel.org/pub/scm/linux/kernel/git/peterz/queue.git/commit/?h=mm/tlb&id19a4bf8dcb42efc278940fb81c288c346b3eda
+
+Thanks,
+Adrian
 
 -- 
  .''`.  John Paul Adrian Glaubitz
