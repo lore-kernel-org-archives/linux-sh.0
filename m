@@ -1,120 +1,46 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 14 Jul 2020 12:18:50 +0000
-Subject: [PATCH 04/10] sh: move ioremap_fixed details out of <asm/io.h>
-Message-Id: <20200714121856.955680-5-hch@lst.de>
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Fri, 17 Jul 2020 11:10:14 +0000
+Subject: [PATCH v2 09/11] nds32/tlb: Fix __p*_free_tlb()
+Message-Id: <20200717111349.883694582@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200714121856.955680-1-hch@lst.de>
-In-Reply-To: <20200714121856.955680-1-hch@lst.de>
+References: <20200717111005.024867618@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Will Deacon <will@kernel.org>, "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Nick Piggin <npiggin@gmail.com>, Peter Zijlstra <peterz@infradead.org>
+Cc: linux-arch@vger.kernel.org, linux-sh@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, Helge Deller <deller@gmx.de>, Geert Uytterhoeven <geert@linux-m68k.org>, Paul Burton <paulburton@kernel.org>, Tony Luck <tony.luck@intel.com>, Richard Henderson <rth@twiddle.net>, Nick Hu <nickhu@andestech.com>, Paul Walmsley <paul.walmsley@sifive.com>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Christoph Hellwig <hch@lst.de>
 
-ioremap_fixed is an internal implementation detail and should not be
-exposed to drivers.
+Just like regular pages, page directories need to observe the
+following order:
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
+ 1) unhook
+ 2) TLB invalidate
+ 3) free
+
+to ensure it is safe against concurrent accesses.
+
+Even though NDS32 is UP only, we still need to observe this order
+because mmu_gather is preemptible.
+
+NDS32 does not in fact have PMDs.
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
 ---
- arch/sh/include/asm/io.h   | 16 ----------------
- arch/sh/mm/init.c          |  1 +
- arch/sh/mm/ioremap.c       |  1 +
- arch/sh/mm/ioremap.h       | 23 +++++++++++++++++++++++
- arch/sh/mm/ioremap_fixed.c |  1 +
- 5 files changed, 26 insertions(+), 16 deletions(-)
- create mode 100644 arch/sh/mm/ioremap.h
+ arch/nds32/include/asm/tlb.h |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 1fd06ef6a19454..357a7e0c86d682 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -346,22 +346,6 @@ ioremap_prot(phys_addr_t offset, unsigned long size, unsigned long flags)
- }
- #endif
+--- a/arch/nds32/include/asm/tlb.h
++++ b/arch/nds32/include/asm/tlb.h
+@@ -6,6 +6,11 @@
  
--#ifdef CONFIG_IOREMAP_FIXED
--extern void __iomem *ioremap_fixed(phys_addr_t, unsigned long, pgprot_t);
--extern int iounmap_fixed(void __iomem *);
--extern void ioremap_fixed_init(void);
--#else
--static inline void __iomem *
--ioremap_fixed(phys_addr_t phys_addr, unsigned long size, pgprot_t prot)
--{
--	BUG();
--	return NULL;
--}
--
--static inline void ioremap_fixed_init(void) { }
--static inline int iounmap_fixed(void __iomem *addr) { return -EINVAL; }
--#endif
--
- #define ioremap_uc	ioremap
+ #include <asm-generic/tlb.h>
  
- /*
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index a70ba0fdd0b382..da7ea48f9439e2 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -28,6 +28,7 @@
- #include <asm/setup.h>
- #include <asm/cache.h>
- #include <linux/sizes.h>
-+#include "ioremap.h"
- 
- pgd_t swapper_pg_dir[PTRS_PER_PGD];
- 
-diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
-index f6d02246d665bd..d9ec85b6bb2130 100644
---- a/arch/sh/mm/ioremap.c
-+++ b/arch/sh/mm/ioremap.c
-@@ -24,6 +24,7 @@
- #include <asm/cacheflush.h>
- #include <asm/tlbflush.h>
- #include <asm/mmu.h>
-+#include "ioremap.h"
- 
- /*
-  * Remap an arbitrary physical address space into the kernel virtual
-diff --git a/arch/sh/mm/ioremap.h b/arch/sh/mm/ioremap.h
-new file mode 100644
-index 00000000000000..f2544e721a3526
---- /dev/null
-+++ b/arch/sh/mm/ioremap.h
-@@ -0,0 +1,23 @@
-+#ifndef _SH_MM_IORMEMAP_H
-+#define _SH_MM_IORMEMAP_H 1
+-#define __pte_free_tlb(tlb, pte, addr)	pte_free((tlb)->mm, pte)
++#define __pte_free_tlb(tlb, pte, address)	\
++do {						\
++	pgtable_pte_page_dtor(pte);		\
++	tlb_remove_table((tlb), (pte));		\
++} while (0)
 +
-+#ifdef CONFIG_IOREMAP_FIXED
-+void __iomem *ioremap_fixed(phys_addr_t, unsigned long, pgprot_t);
-+int iounmap_fixed(void __iomem *);
-+void ioremap_fixed_init(void);
-+#else
-+static inline void __iomem *
-+ioremap_fixed(phys_addr_t phys_addr, unsigned long size, pgprot_t prot)
-+{
-+	BUG();
-+	return NULL;
-+}
-+static inline void ioremap_fixed_init(void)
-+{
-+}
-+static inline int iounmap_fixed(void __iomem *addr)
-+{
-+	return -EINVAL;
-+}
-+#endif /* CONFIG_IOREMAP_FIXED */
-+#endif /* _SH_MM_IORMEMAP_H */
-diff --git a/arch/sh/mm/ioremap_fixed.c b/arch/sh/mm/ioremap_fixed.c
-index 07e744d75fa01b..1914b79d1c530b 100644
---- a/arch/sh/mm/ioremap_fixed.c
-+++ b/arch/sh/mm/ioremap_fixed.c
-@@ -24,6 +24,7 @@
- #include <asm/tlbflush.h>
- #include <asm/mmu.h>
- #include <asm/mmu_context.h>
-+#include "ioremap.h"
  
- struct ioremap_map {
- 	void __iomem *addr;
--- 
-2.26.2
+ #endif
