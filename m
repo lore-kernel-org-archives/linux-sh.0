@@ -1,51 +1,50 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Thu, 09 Jul 2020 09:10:36 +0000
+From: Rich Felker <dalias@libc.org>
+Date: Mon, 20 Jul 2020 21:39:13 +0000
 Subject: Re: [PATCH v3 3/6] sh/mm: use default dummy memory_add_physaddr_to_nid()
-Message-Id: <f1a172b2-80c2-1ec7-483f-f3fba761ccb0@redhat.com>
+Message-Id: <20200720213913.GM14669@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200709020629.91671-1-justin.he@arm.com>
  <20200709020629.91671-4-justin.he@arm.com>
-In-Reply-To: <20200709020629.91671-4-justin.he@arm.com>
+ <f1a172b2-80c2-1ec7-483f-f3fba761ccb0@redhat.com>
+In-Reply-To: <f1a172b2-80c2-1ec7-483f-f3fba761ccb0@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jia He <justin.he@arm.com>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>
-Cc: Kaly Xin <Kaly.Xin@arm.com>, Michal Hocko <mhocko@suse.com>, Dave Jiang <dave.jiang@intel.com>, Baoquan He <bhe@redhat.com>, linux-sh@vger.kernel.org, Vishal Verma <vishal.l.verma@intel.com>, Masahiro Yamada <masahiroy@kernel.org>, x86@kernel.org, Chuhong Yuan <hslester96@gmail.com>, linux-kernel@vger.kernel.org, Mike Rapoport <rppt@linux.ibm.com>, linux-mm@kvack.org, linux-nvdimm@lists.01.org, Jonathan Cameron <Jonathan.Cameron@Huawei.com>, "H. Peter Anvin" <hpa@zytor.com>, linux-ia64@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Logan Gunthorpe <logang@deltatee.com>, Andrew Morton <akpm@linux-foundation.org>, linux-arm-kernel@lists.infradead.org
+To: David Hildenbrand <david@redhat.com>
+Cc: Michal Hocko <mhocko@suse.com>, linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, linux-mm@kvack.org, "H. Peter Anvin" <hpa@zytor.com>, Will Deacon <will@kernel.org>, Dan Williams <dan.j.williams@intel.com>, Jia He <justin.he@arm.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-nvdimm@lists.01.org, Vishal Verma <vishal.l.verma@intel.com>, Masahiro Yamada <masahiroy@kernel.org>, x86@kernel.org, Mike Rapoport <rppt@linux.ibm.com>, Kaly Xin <Kaly.Xin@arm.com>, Ingo Molnar <mingo@redhat.com>, Fenghua Yu <fenghua.yu@intel.com>, Chuhong Yuan <hslester96@gmail.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Jonathan Cameron <Jonathan.Cameron@Huawei.com>, Dave Jiang <dave.jiang@intel.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Tony Luck <tony.luck@intel.com>, Baoquan He <bhe@redhat.com>, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Logan Gunthorpe <logang@deltatee.com>
 
-On 09.07.20 04:06, Jia He wrote:
-> After making default memory_add_physaddr_to_nid in mm/memory_hotplug,
-> there is no use to define a similar one in arch specific directory.
+On Thu, Jul 09, 2020 at 11:10:36AM +0200, David Hildenbrand wrote:
+> On 09.07.20 04:06, Jia He wrote:
+> > After making default memory_add_physaddr_to_nid in mm/memory_hotplug,
+> > there is no use to define a similar one in arch specific directory.
+> > 
+> > Signed-off-by: Jia He <justin.he@arm.com>
+> > ---
+> >  arch/sh/mm/init.c | 9 ---------
+> >  1 file changed, 9 deletions(-)
+> > 
+> > diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+> > index a70ba0fdd0b3..f75932ba87a6 100644
+> > --- a/arch/sh/mm/init.c
+> > +++ b/arch/sh/mm/init.c
+> > @@ -430,15 +430,6 @@ int arch_add_memory(int nid, u64 start, u64 size,
+> >  	return ret;
+> >  }
+> >  
+> > -#ifdef CONFIG_NUMA
+> > -int memory_add_physaddr_to_nid(u64 addr)
+> > -{
+> > -	/* Node 0 for now.. */
+> > -	return 0;
+> > -}
+> > -EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
+> > -#endif
+> > -
+> >  void arch_remove_memory(int nid, u64 start, u64 size,
+> >  			struct vmem_altmap *altmap)
+> >  {
+> > 
 > 
-> Signed-off-by: Jia He <justin.he@arm.com>
-> ---
->  arch/sh/mm/init.c | 9 ---------
->  1 file changed, 9 deletions(-)
-> 
-> diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-> index a70ba0fdd0b3..f75932ba87a6 100644
-> --- a/arch/sh/mm/init.c
-> +++ b/arch/sh/mm/init.c
-> @@ -430,15 +430,6 @@ int arch_add_memory(int nid, u64 start, u64 size,
->  	return ret;
->  }
->  
-> -#ifdef CONFIG_NUMA
-> -int memory_add_physaddr_to_nid(u64 addr)
-> -{
-> -	/* Node 0 for now.. */
-> -	return 0;
-> -}
-> -EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
-> -#endif
-> -
->  void arch_remove_memory(int nid, u64 start, u64 size,
->  			struct vmem_altmap *altmap)
->  {
-> 
+> Reviewed-by: David Hildenbrand <david@redhat.com>
 
-Reviewed-by: David Hildenbrand <david@redhat.com>
-
--- 
-Thanks,
-
-David / dhildenb
+Acked-by: Rich Felker <dalias@libc.org>
