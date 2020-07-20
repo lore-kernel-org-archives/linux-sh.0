@@ -1,68 +1,85 @@
-From: Ingo Molnar <mingo@kernel.org>
-Date: Mon, 27 Jul 2020 13:17:31 +0000
-Subject: Re: [PATCH] lockdep: Fix TRACE_IRQFLAGS vs NMIs
-Message-Id: <20200727131731.GB105139@gmail.com>
+From: Rich Felker <dalias@libc.org>
+Date: Mon, 20 Jul 2020 21:25:24 +0000
+Subject: Re: [PATCH 20/25] mm/sh: Use mm_fault_accounting()
+Message-Id: <20200720212524.GL14669@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200727124852.GK119549@hirez.programming.kicks-ass.net>
-In-Reply-To: <20200727124852.GK119549@hirez.programming.kicks-ass.net>
+References: <20200615221607.7764-1-peterx@redhat.com>
+ <20200615222306.8502-1-peterx@redhat.com>
+In-Reply-To: <20200615222306.8502-1-peterx@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: peterz@infradead.org
-Cc: Will Deacon <will@kernel.org>, linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, npiggin@gmail.com, x86@kernel.org, linux-sh@vger.kernel.org, borntraeger@de.ibm.com, jcmvbkbc@gmail.com
+To: Peter Xu <peterx@redhat.com>
+Cc: linux-kernel@vger.kernel.org, Gerald Schaefer <gerald.schaefer@de.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Linus Torvalds <torvalds@linux-foundation.org>, Andrea Arcangeli <aarcange@redhat.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
 
-
-* peterz@infradead.org <peterz@infradead.org> wrote:
-
+On Mon, Jun 15, 2020 at 06:23:06PM -0400, Peter Xu wrote:
+> Use the new mm_fault_accounting() helper for page fault accounting.
 > 
-> Prior to commit 859d069ee1dd ("lockdep: Prepare for NMI IRQ state
-> tracking") IRQ state tracking was disabled in NMIs due to nmi_enter()
-> doing lockdep_off() -- with the obvious requirement that NMI entry
-> call nmi_enter() before trace_hardirqs_off().
+> Avoid doing page fault accounting multiple times if the page fault is retried.
 > 
-> [ afaict, PowerPC and SH violate this order on their NMI entry ]
-> 
-> However, that commit explicitly changed lockdep_hardirqs_*() to ignore
-> lockdep_off() and breaks every architecture that has irq-tracing in
-> it's NMI entry that hasn't been fixed up (x86 being the only fixed one
-> at this point).
-> 
-> The reason for this change is that by ignoring lockdep_off() we can:
-> 
->   - get rid of 'current->lockdep_recursion' in lockdep_assert_irqs*()
->     which was going to to give header-recursion issues with the
->     seqlock rework.
-> 
->   - allow these lockdep_assert_*() macros to function in NMI context.
-> 
-> Restore the previous state of things and allow an architecture to
-> opt-in to the NMI IRQ tracking support, however instead of relying on
-> lockdep_off(), rely on in_nmi(), both are part of nmi_enter() and so
-> over-all entry ordering doesn't need to change.
-> 
-> Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+> CC: Yoshinori Sato <ysato@users.sourceforge.jp>
+> CC: Rich Felker <dalias@libc.org>
+> CC: linux-sh@vger.kernel.org
+> Signed-off-by: Peter Xu <peterx@redhat.com>
 > ---
->  arch/x86/Kconfig.debug   |    3 +++
->  kernel/locking/lockdep.c |    8 +++++++-
->  lib/Kconfig.debug        |    6 ++++++
->  3 files changed, 16 insertions(+), 1 deletion(-)
+>  arch/sh/mm/fault.c | 15 +++------------
+>  1 file changed, 3 insertions(+), 12 deletions(-)
+> 
+> diff --git a/arch/sh/mm/fault.c b/arch/sh/mm/fault.c
+> index 5f23d7907597..06b232973488 100644
+> --- a/arch/sh/mm/fault.c
+> +++ b/arch/sh/mm/fault.c
+> @@ -379,7 +379,7 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
+>  	struct task_struct *tsk;
+>  	struct mm_struct *mm;
+>  	struct vm_area_struct * vma;
+> -	vm_fault_t fault;
+> +	vm_fault_t fault, major = 0;
+>  	unsigned int flags = FAULT_FLAG_DEFAULT;
+>  
+>  	tsk = current;
+> @@ -412,8 +412,6 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
+>  	if ((regs->sr & SR_IMASK) != SR_IMASK)
+>  		local_irq_enable();
+>  
+> -	perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS, 1, regs, address);
+> -
+>  	/*
+>  	 * If we're in an interrupt, have no user context or are running
+>  	 * with pagefaults disabled then we must not take the fault:
+> @@ -465,21 +463,13 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
+>  	 * the fault.
+>  	 */
+>  	fault = handle_mm_fault(vma, address, flags);
+> +	major |= fault & VM_FAULT_MAJOR;
+>  
+>  	if (unlikely(fault & (VM_FAULT_RETRY | VM_FAULT_ERROR)))
+>  		if (mm_fault_error(regs, error_code, address, fault))
+>  			return;
+>  
+>  	if (flags & FAULT_FLAG_ALLOW_RETRY) {
+> -		if (fault & VM_FAULT_MAJOR) {
+> -			tsk->maj_flt++;
+> -			perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MAJ, 1,
+> -				      regs, address);
+> -		} else {
+> -			tsk->min_flt++;
+> -			perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MIN, 1,
+> -				      regs, address);
+> -		}
+>  		if (fault & VM_FAULT_RETRY) {
+>  			flags |= FAULT_FLAG_TRIED;
+>  
+> @@ -493,4 +483,5 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
+>  	}
+>  
+>  	up_read(&mm->mmap_sem);
+> +	mm_fault_accounting(tsk, regs, address, major);
+>  }
+> -- 
+> 2.26.2
 
-Tree management side note: to apply this I've created a new 
-tip:locking/nmi branch, which is based off the existing NMI vs. IRQ 
-tracing commits included in locking/core:
+What's the status on the rest of this series? Do you need any action
+from my side (arch/sh) at this time?
 
-ed00495333cc: ("locking/lockdep: Fix TRACE_IRQFLAGS vs. NMIs")
-ba1f2b2eaa2a: ("x86/entry: Fix NMI vs IRQ state tracking")
-859d069ee1dd: ("lockdep: Prepare for NMI IRQ state tracking")
-248591f5d257: ("kcsan: Make KCSAN compatible with new IRQ state tracking")
-e1bcad609f5a: ("Merge branch 'tip/x86/entry'")
-b037b09b9058: ("x86/entry: Rename idtentry_enter/exit_cond_rcu() to idtentry_enter/exit()")
-dcb7fd82c75e: ("Linux 5.8-rc4")
-
-This locking/nmi branch can then be merged into irq/entry (there's a 
-bunch of conflicts between them), without coupling all of v5.9's 
-locking changes to Thomas's generic entry work.
-
-Thanks,
-
-	Ingo
+Rich
