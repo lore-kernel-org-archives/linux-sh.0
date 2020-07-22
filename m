@@ -1,72 +1,39 @@
-From: Michael Ellerman <mpe@ellerman.id.au>
-Date: Thu, 30 Jul 2020 12:15:13 +0000
-Subject: Re: [PATCH 06/15] powerpc: fadamp: simplify fadump_reserve_crash_area()
-Message-Id: <87d04d5hda.fsf@mpe.ellerman.id.au>
+From: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+Date: Wed, 22 Jul 2020 23:13:22 +0000
+Subject: [PATCH 4/4] sh: bring syscall_set_return_value in line with other architectures
+Message-Id: <20200722231322.419642-4-kernel@mkarcher.dialup.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200728051153.1590-1-rppt@kernel.org>
- <20200728051153.1590-7-rppt@kernel.org>
-In-Reply-To: <20200728051153.1590-7-rppt@kernel.org>
+References: <20200722231322.419642-1-kernel@mkarcher.dialup.fu-berlin.de>
+In-Reply-To: <20200722231322.419642-1-kernel@mkarcher.dialup.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Rapoport <rppt@kernel.org>, Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Hansen <dave.hansen@linux.intel.com>, Hari Bathini <hbathini@in.ibm.com>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, Stafford Horne <shorne@gmail.com>, Marek Szyprowski <m.szyprowski@samsung.com>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, clang-built-linux@googlegroups.com, Ingo Molnar <mingo@redhat.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Paul Walmsley <paul.walmsley@sifive.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-mm@kvack.org, linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Palmer Dabbelt <palmer@dabbelt.com>, Christoph Hellwig <hch@lst.de>
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
 
-Mike Rapoport <rppt@kernel.org> writes:
-> From: Mike Rapoport <rppt@linux.ibm.com>
->
-> fadump_reserve_crash_area() reserves memory from a specified base address
-> till the end of the RAM.
->
-> Replace iteration through the memblock.memory with a single call to
-> memblock_reserve() with appropriate  that will take care of proper memory
-                                     ^
-                                     parameters?
-> reservation.
->
-> Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> ---
->  arch/powerpc/kernel/fadump.c | 20 +-------------------
->  1 file changed, 1 insertion(+), 19 deletions(-)
+Other architectures expect that syscall_set_return_value gets an already
+negative value as error. That's also what kernel/seccomp.c provides.
 
-I think this looks OK to me, but I don't have a setup to test it easily.
-I've added Hari to Cc who might be able to.
+Signed-off-by: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+---
+ arch/sh/include/asm/syscall_32.h | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-But I'll give you an ack in the hope that it works :)
-
-Acked-by: Michael Ellerman <mpe@ellerman.id.au>
-
-
-> diff --git a/arch/powerpc/kernel/fadump.c b/arch/powerpc/kernel/fadump.c
-> index 78ab9a6ee6ac..2446a61e3c25 100644
-> --- a/arch/powerpc/kernel/fadump.c
-> +++ b/arch/powerpc/kernel/fadump.c
-> @@ -1658,25 +1658,7 @@ int __init fadump_reserve_mem(void)
->  /* Preserve everything above the base address */
->  static void __init fadump_reserve_crash_area(u64 base)
->  {
-> -	struct memblock_region *reg;
-> -	u64 mstart, msize;
-> -
-> -	for_each_memblock(memory, reg) {
-> -		mstart = reg->base;
-> -		msize  = reg->size;
-> -
-> -		if ((mstart + msize) < base)
-> -			continue;
-> -
-> -		if (mstart < base) {
-> -			msize -= (base - mstart);
-> -			mstart = base;
-> -		}
-> -
-> -		pr_info("Reserving %lluMB of memory at %#016llx for preserving crash data",
-> -			(msize >> 20), mstart);
-> -		memblock_reserve(mstart, msize);
-> -	}
-> +	memblock_reserve(base, memblock_end_of_DRAM() - base);
->  }
->  
->  unsigned long __init arch_reserved_kernel_pages(void)
-> -- 
-> 2.26.2
+diff --git a/arch/sh/include/asm/syscall_32.h b/arch/sh/include/asm/syscall_32.h
+index 0b5b8e75edac..cb51a7528384 100644
+--- a/arch/sh/include/asm/syscall_32.h
++++ b/arch/sh/include/asm/syscall_32.h
+@@ -40,10 +40,7 @@ static inline void syscall_set_return_value(struct task_struct *task,
+ 					    struct pt_regs *regs,
+ 					    int error, long val)
+ {
+-	if (error)
+-		regs->regs[0] = -error;
+-	else
+-		regs->regs[0] = val;
++	regs->regs[0] = (long) error ?: val;
+ }
+ 
+ static inline void syscall_get_arguments(struct task_struct *task,
+-- 
+2.28.0.rc1
