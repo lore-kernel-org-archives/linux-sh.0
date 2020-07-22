@@ -1,58 +1,56 @@
-From: Justin He <Justin.He@arm.com>
-Date: Thu, 09 Jul 2020 09:36:42 +0000
-Subject: RE: [PATCH v3 4/6] mm: don't export memory_add_physaddr_to_nid in arch specific directory
-Message-Id: <AM6PR08MB406932241B7FB3753B77B113F7640@AM6PR08MB4069.eurprd08.prod.outlook.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Wed, 22 Jul 2020 02:38:40 +0000
+Subject: Re: [PATCH] sh: add missing EXPORT_SYMBOL() for __delay
+Message-Id: <20200722023840.GA55317@roeck-us.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200709020629.91671-1-justin.he@arm.com>
- <20200709020629.91671-5-justin.he@arm.com>
- <20200709021104.GZ25523@casper.infradead.org>
- <20200709091815.GF781326@linux.ibm.com>
- <49a53674-f246-fdd6-009b-447a88cdb68e@redhat.com>
-In-Reply-To: <49a53674-f246-fdd6-009b-447a88cdb68e@redhat.com>
+References: <87wob2clos.wl-kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87wob2clos.wl-kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Hildenbrand <david@redhat.com>, Mike Rapoport <rppt@linux.ibm.com>, Matthew Wilcox <willy@infradead.org>
-Cc: Rich Felker <dalias@libc.org>, "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <Catalin.Marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, "linux-mm@kvack.org" <linux-mm@kvack.org>, Michal Hocko <mhocko@suse.com>, "H. Peter Anvin" <hpa@zytor.com>, Will Deacon <will@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, Dave Jiang <dave.jiang@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, "linux-nvdimm@lists.01.org" <linux-nvdimm@lists.01.org>, Vishal Verma <vishal.l.verma@intel.com>, Masahiro Yamada <masahiroy@kernel.org>, "x86@kernel.org" <x86@kernel.org>, Kaly Xin <Kaly.Xin@arm.com>, Ingo Molnar <mingo@redhat.com>, Fenghua Yu <fenghua.yu@intel.com>, Chuhong Yuan <hslester96@gmail.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Jonathan Cameron <Jonathan.Cameron@huawei.com>, Dan Williams <dan.j.williams@intel.com>, "linux-arm-kernel@lists.infradead.org" <linux-arm-kernel@lists.infradead.org>, Tony Luck <tony.luck@intel.com>, Baoquan He <bhe@redhat.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>, Logan Gunthorpe <logang@deltatee.com>
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-SGkgRGF2aWQNCg0KPiAtLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQ0KPiBGcm9tOiBEYXZpZCBI
-aWxkZW5icmFuZCA8ZGF2aWRAcmVkaGF0LmNvbT4NCj4gU2VudDogVGh1cnNkYXksIEp1bHkgOSwg
-MjAyMCA1OjE5IFBNDQo+IFRvOiBNaWtlIFJhcG9wb3J0IDxycHB0QGxpbnV4LmlibS5jb20+OyBN
-YXR0aGV3IFdpbGNveA0KPiA8d2lsbHlAaW5mcmFkZWFkLm9yZz4NCj4gQ2M6IEp1c3RpbiBIZSA8
-SnVzdGluLkhlQGFybS5jb20+OyBDYXRhbGluIE1hcmluYXMNCj4gPENhdGFsaW4uTWFyaW5hc0Bh
-cm0uY29tPjsgV2lsbCBEZWFjb24gPHdpbGxAa2VybmVsLm9yZz47IFRvbnkgTHVjaw0KPiA8dG9u
-eS5sdWNrQGludGVsLmNvbT47IEZlbmdodWEgWXUgPGZlbmdodWEueXVAaW50ZWwuY29tPjsgWW9z
-aGlub3JpIFNhdG8NCj4gPHlzYXRvQHVzZXJzLnNvdXJjZWZvcmdlLmpwPjsgUmljaCBGZWxrZXIg
-PGRhbGlhc0BsaWJjLm9yZz47IERhdmUgSGFuc2VuDQo+IDxkYXZlLmhhbnNlbkBsaW51eC5pbnRl
-bC5jb20+OyBBbmR5IEx1dG9taXJza2kgPGx1dG9Aa2VybmVsLm9yZz47IFBldGVyDQo+IFppamxz
-dHJhIDxwZXRlcnpAaW5mcmFkZWFkLm9yZz47IFRob21hcyBHbGVpeG5lciA8dGdseEBsaW51dHJv
-bml4LmRlPjsNCj4gSW5nbyBNb2xuYXIgPG1pbmdvQHJlZGhhdC5jb20+OyBCb3Jpc2xhdiBQZXRr
-b3YgPGJwQGFsaWVuOC5kZT47DQo+IHg4NkBrZXJuZWwub3JnOyBILiBQZXRlciBBbnZpbiA8aHBh
-QHp5dG9yLmNvbT47IERhbiBXaWxsaWFtcw0KPiA8ZGFuLmoud2lsbGlhbXNAaW50ZWwuY29tPjsg
-VmlzaGFsIFZlcm1hIDx2aXNoYWwubC52ZXJtYUBpbnRlbC5jb20+OyBEYXZlDQo+IEppYW5nIDxk
-YXZlLmppYW5nQGludGVsLmNvbT47IEFuZHJldyBNb3J0b24gPGFrcG1AbGludXgtZm91bmRhdGlv
-bi5vcmc+Ow0KPiBCYW9xdWFuIEhlIDxiaGVAcmVkaGF0LmNvbT47IENodWhvbmcgWXVhbiA8aHNs
-ZXN0ZXI5NkBnbWFpbC5jb20+OyBMb2dhbg0KPiBHdW50aG9ycGUgPGxvZ2FuZ0BkZWx0YXRlZS5j
-b20+OyBNYXNhaGlybyBZYW1hZGEgPG1hc2FoaXJveUBrZXJuZWwub3JnPjsNCj4gTWljaGFsIEhv
-Y2tvIDxtaG9ja29Ac3VzZS5jb20+OyBsaW51eC1hcm0ta2VybmVsQGxpc3RzLmluZnJhZGVhZC5v
-cmc7DQo+IGxpbnV4LWtlcm5lbEB2Z2VyLmtlcm5lbC5vcmc7IGxpbnV4LWlhNjRAdmdlci5rZXJu
-ZWwub3JnOyBsaW51eC0NCj4gc2hAdmdlci5rZXJuZWwub3JnOyBsaW51eC1udmRpbW1AbGlzdHMu
-MDEub3JnOyBsaW51eC1tbUBrdmFjay5vcmc7DQo+IEpvbmF0aGFuIENhbWVyb24gPEpvbmF0aGFu
-LkNhbWVyb25AaHVhd2VpLmNvbT47IEthbHkgWGluIDxLYWx5LlhpbkBhcm0uY29tPg0KPiBTdWJq
-ZWN0OiBSZTogW1BBVENIIHYzIDQvNl0gbW06IGRvbid0IGV4cG9ydCBtZW1vcnlfYWRkX3BoeXNh
-ZGRyX3RvX25pZCBpbg0KPiBhcmNoIHNwZWNpZmljIGRpcmVjdG9yeQ0KPiANCj4gT24gMDkuMDcu
-MjAgMTE6MTgsIE1pa2UgUmFwb3BvcnQgd3JvdGU6DQo+ID4gT24gVGh1LCBKdWwgMDksIDIwMjAg
-YXQgMDM6MTE6MDRBTSArMDEwMCwgTWF0dGhldyBXaWxjb3ggd3JvdGU6DQo+ID4+IE9uIFRodSwg
-SnVsIDA5LCAyMDIwIGF0IDEwOjA2OjI3QU0gKzA4MDAsIEppYSBIZSB3cm90ZToNCj4gPj4+IEFm
-dGVyIGEgZ2VuZXJhbCB2ZXJzaW9uIG9mIF9fd2VhayBtZW1vcnlfYWRkX3BoeXNhZGRyX3RvX25p
-ZA0KPiBpbXBsZW1lbnRlZA0KPiA+Pj4gYW5kIGV4cG9ydGVkICwgaXQgaXMgbm8gdXNlIGV4cG9y
-dGluZyB0d2ljZSBpbiBhcmNoIGRpcmVjdG9yeSBldmVuIGlmDQo+ID4+PiBlLGcsIGlhNjQveDg2
-IGhhdmUgdGhlaXIgc3BlY2lmaWMgdmVyc2lvbi4NCj4gPj4+DQo+ID4+PiBUaGlzIGlzIHRvIHN1
-cHByZXNzIHRoZSBtb2Rwb3N0IHdhcm5pbmc6DQo+ID4+PiBXQVJOSU5HOiBtb2Rwb3N0OiB2bWxp
-bnV4OiAnbWVtb3J5X2FkZF9waHlzYWRkcl90b19uaWQnIGV4cG9ydGVkIHR3aWNlLg0KPiA+Pj4g
-UHJldmlvdXMgZXhwb3J0IHdhcyBpbiB2bWxpbnV4DQo+ID4+DQo+ID4+IEl0J3MgYmFkIGZvcm0g
-dG8gaW50cm9kdWNlIGEgd2FybmluZyBhbmQgdGhlbiBzZW5kIGEgZm9sbG93LXVwIHBhdGNoIHRv
-DQo+ID4+IGZpeCB0aGUgd2FybmluZy4gIEp1c3QgZm9sZCB0aGlzIHBhdGNoIGludG8gcGF0Y2gg
-MS82Lg0KPiA+DQo+ID4gTW9yZW92ZXIsIEkgdGhpbmsgdGhhdCBwYXRjaGVzIDEtNCBjYW4gYmUg
-bWVyZ2VkIGludG8gb25lLg0KPiA+DQo+IA0KPiArMQ0KDQpPa2F5LCB3aWxsIHVwZGF0ZSwgdGhh
-bmtzDQoNCi0tDQpDaGVlcnMsDQpKdXN0aW4gKEppYSBIZSkNCg0KDQo
+On Thu, Dec 12, 2019 at 11:38:43AM +0900, Kuninori Morimoto wrote:
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> 
+> __delay() is used from kernel module.
+> We need EXPORT_SYMBOL(), otherwise we will get compile error.
+> 
+> ERROR: "__delay" [drivers/net/phy/mdio-cavium.ko] undefined!
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+I must admit that this patch completely baffles me. __delay was
+already exported, only elsewhere in the file. With this patch
+in place, it is exported twice, and all sh builds in -next fail
+with
+
+In file included from include/linux/linkage.h:7,
+                 from arch/sh/include/asm/bug.h:5,
+                 from include/linux/bug.h:5,
+                 from include/linux/thread_info.h:12,
+                 from include/asm-generic/current.h:5,
+                 from ./arch/sh/include/generated/asm/current.h:1,
+                 from include/linux/sched.h:12,
+                 from arch/sh/lib/delay.c:8:
+include/linux/export.h:67:36: error: redefinition of '__ksymtab___delay'
+
+Guenter
+
+> ---
+>  arch/sh/lib/delay.c | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/arch/sh/lib/delay.c b/arch/sh/lib/delay.c
+> index dad8e6a..540e670 100644
+> --- a/arch/sh/lib/delay.c
+> +++ b/arch/sh/lib/delay.c
+> @@ -29,6 +29,7 @@ void __delay(unsigned long loops)
+>  		: "0" (loops)
+>  		: "t");
+>  }
+> +EXPORT_SYMBOL(__delay);
+>  
+>  inline void __const_udelay(unsigned long xloops)
+>  {
