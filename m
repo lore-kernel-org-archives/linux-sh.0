@@ -1,34 +1,98 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Thu, 09 Jul 2020 07:32:49 +0000
-Subject: Re: [PATCH v3 1/4] iomap: Constify ioreadX() iomem argument (as in generic implementation)
-Message-Id: <20200709073249.GA6335@kozik-lap>
+From: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+Date: Wed, 22 Jul 2020 23:13:20 +0000
+Subject: [PATCH 2/4] sh: Rearrange blocks in entry-common.S
+Message-Id: <20200722231322.419642-2-kernel@mkarcher.dialup.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200709072837.5869-1-krzk@kernel.org>
- <20200709072837.5869-2-krzk@kernel.org>
-In-Reply-To: <20200709072837.5869-2-krzk@kernel.org>
+References: <20200722231322.419642-1-kernel@mkarcher.dialup.fu-berlin.de>
+In-Reply-To: <20200722231322.419642-1-kernel@mkarcher.dialup.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Jakub Kicinski <kuba@kernel.org>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Geert Uytterhoeven <geert+renesas@glider.be>, Andrew Morton <akpm@linux-foundation.org>, linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-wireless@vger.kernel.org, netdev@vger.kernel.org, linux-ntb@googlegroups.com, virtualization@lists.linux-foundation.org, linux-arch@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
 
-On Thu, Jul 09, 2020 at 09:28:34AM +0200, Krzysztof Kozlowski wrote:
-> The ioreadX() and ioreadX_rep() helpers have inconsistent interface.  On
-> some architectures void *__iomem address argument is a pointer to const,
-> on some not.
-> 
-> Implementations of ioreadX() do not modify the memory under the address
-> so they can be converted to a "const" version for const-safety and
-> consistency among architectures.
-> 
-> Suggested-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
-> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Reviewed-by: Arnd Bergmann <arnd@arndb.de>
+This avoids out-of-range jumps that get auto-replaced by the assembler
+and prepares for the changes needed to implement SECCOMP_FILTER cleanly.
 
-I forgot to put here one more Ack, for PowerPC:
-Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
+Signed-off-by: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+---
+ arch/sh/kernel/entry-common.S | 57 ++++++++++++++++++-----------------
+ 1 file changed, 29 insertions(+), 28 deletions(-)
 
-https://lore.kernel.org/lkml/87ftedj0zz.fsf@mpe.ellerman.id.au/
-
-Best regards,
-Krzysztof
+diff --git a/arch/sh/kernel/entry-common.S b/arch/sh/kernel/entry-common.S
+index 9bac5bbb67f3..c4d88d61890d 100644
+--- a/arch/sh/kernel/entry-common.S
++++ b/arch/sh/kernel/entry-common.S
+@@ -178,34 +178,6 @@ syscall_exit_work:
+ 	bra	resume_userspace
+ 	 nop
+ 
+-	.align	2
+-syscall_trace_entry:
+-	!                     	Yes it is traced.
+-	mov     r15, r4
+-	mov.l	7f, r11		! Call do_syscall_trace_enter which notifies
+-	jsr	@r11	    	! superior (will chomp R[0-7])
+-	 nop
+-	mov.l	r0, @(OFF_R0,r15)	! Save return value
+-	!			Reload R0-R4 from kernel stack, where the
+-	!   	    	    	parent may have modified them using
+-	!   	    	    	ptrace(POKEUSR).  (Note that R0-R2 are
+-	!   	    	    	reloaded from the kernel stack by syscall_call
+-	!   	    	    	below, so don't need to be reloaded here.)
+-	!   	    	    	This allows the parent to rewrite system calls
+-	!   	    	    	and args on the fly.
+-	mov.l	@(OFF_R4,r15), r4   ! arg0
+-	mov.l	@(OFF_R5,r15), r5
+-	mov.l	@(OFF_R6,r15), r6
+-	mov.l	@(OFF_R7,r15), r7   ! arg3
+-	mov.l	@(OFF_R3,r15), r3   ! syscall_nr
+-	!
+-	mov.l	6f, r10			! Number of syscalls
+-	cmp/hs	r10, r3
+-	bf	syscall_call
+-	mov	#-ENOSYS, r0
+-	bra	syscall_exit
+-	 mov.l	r0, @(OFF_R0,r15)	! Return value
+-
+ __restore_all:
+ 	mov	#OFF_SR, r0
+ 	mov.l	@(r0,r15), r0	! get status register
+@@ -388,6 +360,35 @@ syscall_exit:
+ 	bf	syscall_exit_work
+ 	bra	__restore_all
+ 	 nop
++
++	.align	2
++syscall_trace_entry:
++	!                     	Yes it is traced.
++	mov     r15, r4
++	mov.l	7f, r11		! Call do_syscall_trace_enter which notifies
++	jsr	@r11	    	! superior (will chomp R[0-7])
++	 nop
++	mov.l	r0, @(OFF_R0,r15)	! Save return value
++	!			Reload R0-R4 from kernel stack, where the
++	!   	    	    	parent may have modified them using
++	!   	    	    	ptrace(POKEUSR).  (Note that R0-R2 are
++	!   	    	    	reloaded from the kernel stack by syscall_call
++	!   	    	    	below, so don't need to be reloaded here.)
++	!   	    	    	This allows the parent to rewrite system calls
++	!   	    	    	and args on the fly.
++	mov.l	@(OFF_R4,r15), r4   ! arg0
++	mov.l	@(OFF_R5,r15), r5
++	mov.l	@(OFF_R6,r15), r6
++	mov.l	@(OFF_R7,r15), r7   ! arg3
++	mov.l	@(OFF_R3,r15), r3   ! syscall_nr
++	!
++	mov.l	6f, r10			! Number of syscalls
++	cmp/hs	r10, r3
++	bf	syscall_call
++	mov	#-ENOSYS, r0
++	bra	syscall_exit
++	 mov.l	r0, @(OFF_R0,r15)	! Return value
++
+ 	.align	2
+ #if !defined(CONFIG_CPU_SH2)
+ 1:	.long	TRA
+-- 
+2.28.0.rc1
