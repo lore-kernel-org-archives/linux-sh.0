@@ -1,32 +1,54 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Wed, 22 Jul 2020 23:31:53 +0000
-Subject: Re: Adding support for SECCOMP_FILTER
-Message-Id: <ee70ba65-e2a0-ab83-dcbd-0fb0f750a93f@physik.fu-berlin.de>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Thu, 23 Jul 2020 08:20:17 +0000
+Subject: [PATCH] sh: clk: Fix assignment from incompatible pointer type for ioreadX()
+Message-Id: <20200723082017.24053-1-krzk@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <32f7f7a2-a186-a3cc-0d03-e3380c0d21fc@physik.fu-berlin.de>
-In-Reply-To: <32f7f7a2-a186-a3cc-0d03-e3380c0d21fc@physik.fu-berlin.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Krzysztof Kozlowski <krzk@kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Andrew Morton <akpm@linux-foundation.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>
 
-On 7/21/20 8:59 PM, John Paul Adrian Glaubitz wrote:
-> Would anyone be willing to help me to implement SECCOMP_FILTER for SH? From what
-> I can see, we just need to implement the part to add syscall filtering.
+The ioreadX() helpers accept now pointer to const memory so declaration
+of read function needs updating.
 
-Patches have been posted by Michael Karcher now to this list.
+This fixes build errors like:
 
-The seccomp library code is also ready for merging, see [1].
+    drivers/sh/clk/cpg.c: In function ‘sh_clk_mstp_enable’:
+    drivers/sh/clk/cpg.c:49:9: error: assignment from incompatible pointer type [-Werror=incompatible-pointer-types]
+        read = ioread8;
 
-All tests pass as expected, including the live tests (with the exception
-of #51 which is broken on all 32-bit targets).
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
 
-Adrian
+---
 
-> [1] https://github.com/glaubitz/libseccomp/tree/superh
+Dear Andrew,
 
+This was part of my v3 patchset commit 9ab7fb303cc1 ("iomap: Constify
+ioreadX() iomem argument (as in generic implementation)") but I think it
+was skipped when applying to your tree.
+
+Maybe because it depends on commit 58c4d8659186 ("sh: clkfwk: remove
+r8/r16/r32") which landed later?  Anyway it should go through your tree,
+I think.
+---
+ drivers/sh/clk/cpg.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index a5cacfe24a42..fd72d9088bdc 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -40,7 +40,7 @@ static int sh_clk_mstp_enable(struct clk *clk)
+ {
+ 	sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
+ 	if (clk->status_reg) {
+-		unsigned int (*read)(void __iomem *addr);
++		unsigned int (*read)(const void __iomem *addr);
+ 		int i;
+ 		void __iomem *mapped_status = (phys_addr_t)clk->status_reg -
+ 			(phys_addr_t)clk->enable_reg + clk->mapped_reg;
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+2.17.1
