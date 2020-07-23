@@ -1,44 +1,34 @@
-From: Pankaj Gupta <pankaj.gupta.linux@gmail.com>
-Date: Tue, 21 Jul 2020 03:23:08 +0000
-Subject: Re: [PATCH v3 3/6] sh/mm: use default dummy memory_add_physaddr_to_nid()
-Message-Id: <CAM9Jb+i7wMqXWXdnaeXmRQN8w8305A5WRKsnE9PAkxgUs2c++Q@mail.gmail.com>
+From: Arvind Sankar <nivedita@alum.mit.edu>
+Date: Thu, 23 Jul 2020 23:15:44 +0000
+Subject: [PATCH 3/3] sparc: Drop unused MAX_PHYSADDR_BITS
+Message-Id: <20200723231544.17274-4-nivedita@alum.mit.edu>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200709020629.91671-1-justin.he@arm.com>
- <20200709020629.91671-4-justin.he@arm.com>
-In-Reply-To: <20200709020629.91671-4-justin.he@arm.com>
+References: <20200723231544.17274-1-nivedita@alum.mit.edu>
+In-Reply-To: <20200723231544.17274-1-nivedita@alum.mit.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jia He <justin.he@arm.com>
-Cc: Rich Felker <dalias@libc.org>, linux-ia64@vger.kernel.org, David Hildenbrand <david@redhat.com>, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Dave Hansen <dave.hansen@linux.intel.com>, Linux MM <linux-mm@kvack.org>, Michal Hocko <mhocko@suse.com>, "H. Peter Anvin" <hpa@zytor.com>, Will Deacon <will@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-nvdimm@lists.01.org, linux-sh@vger.kernel.org, Masahiro Yamada <masahiroy@kernel.org>, x86@kernel.org, Mike Rapoport <rppt@linux.ibm.com>, Kaly Xin <Kaly.Xin@arm.com>, Ingo Molnar <mingo@redhat.com>, Fenghua Yu <fenghua.yu@intel.com>, Chuhong Yuan <hslester96@gmail.com>, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Jonathan Cameron <Jonathan.Cameron@huawei.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Tony Luck <tony.luck@intel.com>, Baoquan He <bhe@redhat.com>, LKML <linux-kernel@vger.kernel.org>, Andrew Morton <akpm@linux-foundation.org>
+To: x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, sparclinux@vger.kernel.org, "David S. Miller" <davem@davemloft.net>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org, linux-kernel@vger.kernel.org
 
-> After making default memory_add_physaddr_to_nid in mm/memory_hotplug,
-> there is no use to define a similar one in arch specific directory.
->
-> Signed-off-by: Jia He <justin.he@arm.com>
-> ---
->  arch/sh/mm/init.c | 9 ---------
->  1 file changed, 9 deletions(-)
->
-> diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-> index a70ba0fdd0b3..f75932ba87a6 100644
-> --- a/arch/sh/mm/init.c
-> +++ b/arch/sh/mm/init.c
-> @@ -430,15 +430,6 @@ int arch_add_memory(int nid, u64 start, u64 size,
->         return ret;
->  }
->
-> -#ifdef CONFIG_NUMA
-> -int memory_add_physaddr_to_nid(u64 addr)
-> -{
-> -       /* Node 0 for now.. */
-> -       return 0;
-> -}
-> -EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
-> -#endif
-> -
->  void arch_remove_memory(int nid, u64 start, u64 size,
->                         struct vmem_altmap *altmap)
->  {
+The macro is not used anywhere, so remove the definition.
 
-Reviewed-by: Pankaj Gupta <pankaj.gupta.linux@gmail.com>
+Signed-off-by: Arvind Sankar <nivedita@alum.mit.edu>
+---
+ arch/sparc/include/asm/sparsemem.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/sparc/include/asm/sparsemem.h b/arch/sparc/include/asm/sparsemem.h
+index 1dd1b61432db..aa9a676bc341 100644
+--- a/arch/sparc/include/asm/sparsemem.h
++++ b/arch/sparc/include/asm/sparsemem.h
+@@ -7,7 +7,6 @@
+ #include <asm/page.h>
+ 
+ #define SECTION_SIZE_BITS       30
+-#define MAX_PHYSADDR_BITS       MAX_PHYS_ADDRESS_BITS
+ #define MAX_PHYSMEM_BITS        MAX_PHYS_ADDRESS_BITS
+ 
+ #endif /* !(__KERNEL__) */
+-- 
+2.26.2
