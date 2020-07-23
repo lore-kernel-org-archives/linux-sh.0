@@ -1,21 +1,56 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Fri, 17 Jul 2020 11:22:16 +0000
-Subject: Re: [PATCH v2 00/11] Fixup page directory freeing
-Message-Id: <20200717112216.GI10769@hirez.programming.kicks-ass.net>
+From: Arvind Sankar <nivedita@alum.mit.edu>
+Date: Thu, 23 Jul 2020 23:15:42 +0000
+Subject: [PATCH 1/3] x86/mm: Drop unused MAX_PHYSADDR_BITS
+Message-Id: <20200723231544.17274-2-nivedita@alum.mit.edu>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200717111005.024867618@infradead.org>
-In-Reply-To: <20200717111005.024867618@infradead.org>
+References: <20200723231544.17274-1-nivedita@alum.mit.edu>
+In-Reply-To: <20200723231544.17274-1-nivedita@alum.mit.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Will Deacon <will@kernel.org>, "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Nick Piggin <npiggin@gmail.com>
-Cc: linux-arch@vger.kernel.org, linux-sh@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, Helge Deller <deller@gmx.de>, Geert Uytterhoeven <geert@linux-m68k.org>, Paul Burton <paulburton@kernel.org>, Tony Luck <tony.luck@intel.com>, Richard Henderson <rth@twiddle.net>, Nick Hu <nickhu@andestech.com>, Paul Walmsley <paul.walmsley@sifive.com>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Christoph Hellwig <hch@lst.de>
+To: x86@kernel.org, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, sparclinux@vger.kernel.org, "David S. Miller" <davem@davemloft.net>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org, linux-kernel@vger.kernel.org
 
-On Fri, Jul 17, 2020 at 01:10:05PM +0200, Peter Zijlstra wrote:
-> Hi All,
-> 
-> While fixing a silly bug on SH (patch #1), I realized that even with the
-> trivial patch to restore prior behaviour, page directory freeing was still
-> broken.
+The macro is not used anywhere, and has an incorrect value (going by the
+comment) on x86_64 since commit
+  c898faf91b3e ("x86: 46 bit physical address support on 64 bits")
 
-*sigh*, I got patches 1 and 2 in the 'wrong' order.
+To avoid confusion, just remove the definition.
+
+Signed-off-by: Arvind Sankar <nivedita@alum.mit.edu>
+---
+ arch/x86/include/asm/sparsemem.h | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/arch/x86/include/asm/sparsemem.h b/arch/x86/include/asm/sparsemem.h
+index 199218719a86..6bfc878f6771 100644
+--- a/arch/x86/include/asm/sparsemem.h
++++ b/arch/x86/include/asm/sparsemem.h
+@@ -10,24 +10,20 @@
+  *    field of the struct page
+  *
+  * SECTION_SIZE_BITS		2^n: size of each section
+- * MAX_PHYSADDR_BITS		2^n: max size of physical address space
+- * MAX_PHYSMEM_BITS		2^n: how much memory we can have in that space
++ * MAX_PHYSMEM_BITS		2^n: max size of physical address space
+  *
+  */
+ 
+ #ifdef CONFIG_X86_32
+ # ifdef CONFIG_X86_PAE
+ #  define SECTION_SIZE_BITS	29
+-#  define MAX_PHYSADDR_BITS	36
+ #  define MAX_PHYSMEM_BITS	36
+ # else
+ #  define SECTION_SIZE_BITS	26
+-#  define MAX_PHYSADDR_BITS	32
+ #  define MAX_PHYSMEM_BITS	32
+ # endif
+ #else /* CONFIG_X86_32 */
+ # define SECTION_SIZE_BITS	27 /* matt - 128 is convenient right now */
+-# define MAX_PHYSADDR_BITS	(pgtable_l5_enabled() ? 52 : 44)
+ # define MAX_PHYSMEM_BITS	(pgtable_l5_enabled() ? 52 : 46)
+ #endif
+ 
+-- 
+2.26.2
