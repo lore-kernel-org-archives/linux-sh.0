@@ -1,114 +1,29 @@
-From: Rich Felker <dalias@libc.org>
-Date: Wed, 22 Jul 2020 00:43:28 +0000
-Subject: Re: [PATCH 08/10] dma-mapping: consolidate the NO_DMA definition in kernel/dma/Kconfig
-Message-Id: <20200722004323.GW14669@brightrain.aerifal.cx>
+From: ''Tayeb@vger.kernel.org, Souami''@vger.kernel.org
+Date: Fri, 24 Jul 2020 08:10:34 +0000
+Subject: =?utf-8?q?Covid_19_Wohlt=C3=A4tigkeitsfonds?=
+Message-Id: <9feffd6f-dceb-44dc-b3d0-5fcfe13bde87@CRONOS.itam.mx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200714121856.955680-1-hch@lst.de>
- <20200714121856.955680-9-hch@lst.de>
- <20200721031725.GO14669@brightrain.aerifal.cx>
- <20200721051134.GA9881@lst.de>
-In-Reply-To: <20200721051134.GA9881@lst.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Christoph Hellwig <hch@lst.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-On Tue, Jul 21, 2020 at 07:11:34AM +0200, Christoph Hellwig wrote:
-> On Mon, Jul 20, 2020 at 11:17:26PM -0400, Rich Felker wrote:
-> > On Tue, Jul 14, 2020 at 02:18:54PM +0200, Christoph Hellwig wrote:
-> > > Have a single definition that architetures can select.
-> > > 
-> > > Signed-off-by: Christoph Hellwig <hch@lst.de>
-> > > ---
-> > >  arch/m68k/Kconfig         | 4 +---
-> > >  arch/m68k/Kconfig.machine | 1 +
-> > >  arch/um/Kconfig           | 4 +---
-> > >  kernel/dma/Kconfig        | 3 +++
-> > >  4 files changed, 6 insertions(+), 6 deletions(-)
-> > > 
-> > > diff --git a/arch/m68k/Kconfig b/arch/m68k/Kconfig
-> > > index 6ad6cdac74b3dc..8e488369a7e55a 100644
-> > > --- a/arch/m68k/Kconfig
-> > > +++ b/arch/m68k/Kconfig
-> > > @@ -17,6 +17,7 @@ config M68K
-> > >  	select HAVE_COPY_THREAD_TLS
-> > >  	select GENERIC_IRQ_SHOW
-> > >  	select GENERIC_ATOMIC64
-> > > +	select NO_DMA if !MMU && !COLDFIRE
-> > >  	select HAVE_UID16
-> > >  	select VIRT_TO_BUS
-> > >  	select ARCH_HAVE_NMI_SAFE_CMPXCHG if RMW_INSNS
-> > > @@ -60,9 +61,6 @@ config TIME_LOW_RES
-> > >  config NO_IOPORT_MAP
-> > >  	def_bool y
-> > >  
-> > > -config NO_DMA
-> > > -	def_bool (MMU && SUN3) || (!MMU && !COLDFIRE)
-> > > -
-> > >  config ZONE_DMA
-> > >  	bool
-> > >  	default y
-> > > diff --git a/arch/m68k/Kconfig.machine b/arch/m68k/Kconfig.machine
-> > > index a82651d58af483..17e8c3a292d770 100644
-> > > --- a/arch/m68k/Kconfig.machine
-> > > +++ b/arch/m68k/Kconfig.machine
-> > > @@ -126,6 +126,7 @@ config SUN3
-> > >  	depends on MMU
-> > >  	depends on !MMU_MOTOROLA
-> > >  	select MMU_SUN3 if MMU
-> > > +	select NO_DMA
-> > >  	select M68020
-> > >  	help
-> > >  	  This option enables support for the Sun 3 series of workstations
-> > > diff --git a/arch/um/Kconfig b/arch/um/Kconfig
-> > > index 9318dc6d1a0cee..32c1d1945033ec 100644
-> > > --- a/arch/um/Kconfig
-> > > +++ b/arch/um/Kconfig
-> > > @@ -15,6 +15,7 @@ config UML
-> > >  	select HAVE_DEBUG_KMEMLEAK
-> > >  	select HAVE_DEBUG_BUGVERBOSE
-> > >  	select HAVE_COPY_THREAD_TLS
-> > > +	select NO_DMA
-> > >  	select GENERIC_IRQ_SHOW
-> > >  	select GENERIC_CPU_DEVICES
-> > >  	select GENERIC_CLOCKEVENTS
-> > > @@ -168,9 +169,6 @@ config MMAPPER
-> > >  	  This driver allows a host file to be used as emulated IO memory inside
-> > >  	  UML.
-> > >  
-> > > -config NO_DMA
-> > > -	def_bool y
-> > > -
-> > >  config PGTABLE_LEVELS
-> > >  	int
-> > >  	default 3 if 3_LEVEL_PGTABLES
-> > > diff --git a/kernel/dma/Kconfig b/kernel/dma/Kconfig
-> > > index 1da3f44f2565b4..57533d07676f4a 100644
-> > > --- a/kernel/dma/Kconfig
-> > > +++ b/kernel/dma/Kconfig
-> > > @@ -1,5 +1,8 @@
-> > >  # SPDX-License-Identifier: GPL-2.0-only
-> > >  
-> > > +config NO_DMA
-> > > +	bool
-> > > +
-> > >  config HAS_DMA
-> > >  	bool
-> > >  	depends on !NO_DMA
-> > > -- 
-> > > 2.26.2
-> > 
-> > This patch is outside the scope of what I can accept in arch/sh, and
-> > the subsequent patches in the series seem to depend on it. What would
-> > you like to do for its path upstream?
-> > 
-> > I've now picked up everything else from this series that I can.
-> 
-> As the dma-mapping maintainer:  please pick it.  I'd give you an
-> ACK, but that looks kinda silly if I'm the author as well :)
+Hallo
 
-Very well! It's now in my for-next branch along with the rest of the
-series and a lot of other stuff.
+Ich bin Charles W. Jackson aus North Carolina, Vereinigte Staaten von Ameri=
+ka, und ich bin der Gewinner des Mega-Millionen-Jackpots von 344 Millionen =
+US-Dollar. Ich spende die Summe von 2.000.000 Millionen Euro als Teil der H=
+ilfsgelder f=FCr das Corona-Virus.
 
-Rich
+Dies ist Ihr Spendencode: [CJ530342019]
+
+www.youtube.com/watch?v=3DBSr8myiLPMQ
+
+Bitte antworten Sie auf diese E-Mail mit dem SPENDERCODE:
+
+charlesjacksonjr001@gmail.com
+
+Ich hoffe, dass Sie und Ihre Familie dies durchkommen
+
+
+Herr Charles Jackson
