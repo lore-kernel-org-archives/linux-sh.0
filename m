@@ -1,22 +1,100 @@
-From: Dan Carpenter <dan.carpenter@oracle.com>
-Date: Tue, 07 Jul 2020 15:11:22 +0000
-Subject: Re: [PATCH v6 08/12] device core: Introduce DMA range map, supplanting dma_pfn_offset
-Message-Id: <20200707151122.GX2571@kadam>
+From: peterz@infradead.org
+Date: Mon, 27 Jul 2020 12:48:52 +0000
+Subject: [PATCH] lockdep: Fix TRACE_IRQFLAGS vs NMIs
+Message-Id: <20200727124852.GK119549@hirez.programming.kicks-ass.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200701212155.37830-9-james.quinlan@broadcom.com>
- <20200707132724.GT2549@kadam>
- <CA+-6iNwzQ0gn2KfdqNGwGjDgPT5op8bTCs6paMT7BwVmm+9vTw@mail.gmail.com>
-In-Reply-To: <CA+-6iNwzQ0gn2KfdqNGwGjDgPT5op8bTCs6paMT7BwVmm+9vTw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jim Quinlan <james.quinlan@broadcom.com>
-Cc: kbuild@lists.01.org, "open list:PCI NATIVE HOST BRIDGE AND ENDPOINT DRIVERS" <linux-pci@vger.kernel.org>, Nicolas Saenz Julienne <nsaenzjulienne@suse.de>, "maintainer:BROADCOM BCM7XXX ARM ARCHITECTURE" <bcm-kernel-feedback-list@broadcom.com>, lkp@intel.com, kbuild-all@lists.01.org, Ulf Hansson <ulf.hansson@linaro.org>, Rich Felker <dalias@libc.org>, "open list:SUPERH" <linux-sh@vger.kernel.org>, David Airlie <airlied@linux.ie>, Hanjun Guo <guohanjun@huawei.com>, "open list:REMOTE PROCESSOR REMOTEPROC SUBSYSTEM" <linux-remoteproc@vger.kernel.org>
+To: Ingo Molnar <mingo@kernel.org>, Will Deacon <will@kernel.org>
+Cc: linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, npiggin@gmail.com, x86@kernel.org, linux-sh@vger.kernel.org, borntraeger@de.ibm.com, jcmvbkbc@gmail.com
 
-Sorry for the noise.  Your code is correct.  I'm not 100% sure what went
-wrong.  Either the cross function database wasn't built or there is a
-bug in the published code that is fixed on my private Smatch build.  I
-will investigate.
 
-regards,
-dan carpenter
+Prior to commit 859d069ee1dd ("lockdep: Prepare for NMI IRQ state
+tracking") IRQ state tracking was disabled in NMIs due to nmi_enter()
+doing lockdep_off() -- with the obvious requirement that NMI entry
+call nmi_enter() before trace_hardirqs_off().
+
+[ afaict, PowerPC and SH violate this order on their NMI entry ]
+
+However, that commit explicitly changed lockdep_hardirqs_*() to ignore
+lockdep_off() and breaks every architecture that has irq-tracing in
+it's NMI entry that hasn't been fixed up (x86 being the only fixed one
+at this point).
+
+The reason for this change is that by ignoring lockdep_off() we can:
+
+  - get rid of 'current->lockdep_recursion' in lockdep_assert_irqs*()
+    which was going to to give header-recursion issues with the
+    seqlock rework.
+
+  - allow these lockdep_assert_*() macros to function in NMI context.
+
+Restore the previous state of things and allow an architecture to
+opt-in to the NMI IRQ tracking support, however instead of relying on
+lockdep_off(), rely on in_nmi(), both are part of nmi_enter() and so
+over-all entry ordering doesn't need to change.
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+---
+ arch/x86/Kconfig.debug   |    3 +++
+ kernel/locking/lockdep.c |    8 +++++++-
+ lib/Kconfig.debug        |    6 ++++++
+ 3 files changed, 16 insertions(+), 1 deletion(-)
+
+--- a/arch/x86/Kconfig.debug
++++ b/arch/x86/Kconfig.debug
+@@ -3,6 +3,9 @@
+ config TRACE_IRQFLAGS_SUPPORT
+ 	def_bool y
+ 
++config TRACE_IRQFLAGS_NMI_SUPPORT
++	def_bool y
++
+ config EARLY_PRINTK_USB
+ 	bool
+ 
+--- a/kernel/locking/lockdep.c
++++ b/kernel/locking/lockdep.c
+@@ -3712,6 +3712,9 @@ void noinstr lockdep_hardirqs_on(unsigne
+ 	 * and not rely on hardware state like normal interrupts.
+ 	 */
+ 	if (unlikely(in_nmi())) {
++		if (!IS_ENABLED(CONFIG_TRACE_IRQFLAGS_NMI))
++			return;
++
+ 		/*
+ 		 * Skip:
+ 		 *  - recursion check, because NMI can hit lockdep;
+@@ -3773,7 +3776,10 @@ void noinstr lockdep_hardirqs_off(unsign
+ 	 * they will restore the software state. This ensures the software
+ 	 * state is consistent inside NMIs as well.
+ 	 */
+-	if (unlikely(!in_nmi() && (current->lockdep_recursion & LOCKDEP_RECURSION_MASK)))
++	if (in_nmi()) {
++		if (!IS_ENABLED(CONFIG_TRACE_IRQFLAGS_NMI))
++			return;
++	} else if (current->lockdep_recursion & LOCKDEP_RECURSION_MASK)
+ 		return;
+ 
+ 	/*
+--- a/lib/Kconfig.debug
++++ b/lib/Kconfig.debug
+@@ -1325,11 +1325,17 @@ config WW_MUTEX_SELFTEST
+ endmenu # lock debugging
+ 
+ config TRACE_IRQFLAGS
++	depends on TRACE_IRQFLAGS_SUPPORT
+ 	bool
+ 	help
+ 	  Enables hooks to interrupt enabling and disabling for
+ 	  either tracing or lock debugging.
+ 
++config TRACE_IRQFLAGS_NMI
++	def_bool y
++	depends on TRACE_IRQFLAGS
++	depends on TRACE_IRQFLAGS_NMI_SUPPORT
++
+ config STACKTRACE
+ 	bool "Stack backtrace support"
+ 	depends on STACKTRACE_SUPPORT
