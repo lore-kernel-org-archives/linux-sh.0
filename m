@@ -1,150 +1,76 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 14 Jul 2020 12:18:48 +0000
-Subject: [PATCH 02/10] sh: sort the selects for SUPERH alphabetically
-Message-Id: <20200714121856.955680-3-hch@lst.de>
+From: Danita Farouk <Danitafarouk@gmail.com>
+Date: Mon, 27 Jul 2020 14:43:11 +0000
+Subject: Please I want your sincerely and urgent answer
+Message-Id: <CAMV8p3P=9Arf7BQmfTSE_fkO5Z8pKis4MdXO=AeR8xqjHa06-Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200714121856.955680-1-hch@lst.de>
-In-Reply-To: <20200714121856.955680-1-hch@lst.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-Ensure there is an order for the selects.  Also remove a duplicate
-one.
+May the peace of God be with you,
 
-Signed-off-by: Christoph Hellwig <hch@lst.de>
----
- arch/sh/Kconfig | 95 ++++++++++++++++++++++++-------------------------
- 1 file changed, 47 insertions(+), 48 deletions(-)
+My dear, I am writing this mail to you with heavy sorrow in my heart,
+this massage mighty comes to you as a surprise but I chose to reach
+you through this email because it still remains the fastest medium of
+communicating with you. Please give me this little chance to explain
+myself to you, I would have like to meet you in person before
+departing from this mother earth but due to the illness continue to
+deprive me the chance but even if I die on the process of this illness
+I will still praise ALMIGHTY God.
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 9fc2b010e938c9..f8027eee08edae 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -1,75 +1,74 @@
- # SPDX-License-Identifier: GPL-2.0
- config SUPERH
- 	def_bool y
-+	select ARCH_32BIT_OFF_T
-+	select ARCH_HAVE_CUSTOM_GPIO_H
-+	select ARCH_HAVE_NMI_SAFE_CMPXCHG if (GUSA_RB || CPU_SH4A)
- 	select ARCH_HAS_BINFMT_FLAT if !MMU
-+	select ARCH_HAS_GIGANTIC_PAGE
-+	select ARCH_HAS_GCOV_PROFILE_ALL
- 	select ARCH_HAS_PTE_SPECIAL
- 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
-+	select ARCH_HIBERNATION_POSSIBLE if MMU
- 	select ARCH_MIGHT_HAVE_PC_PARPORT
--	select HAVE_PATA_PLATFORM
-+	select ARCH_WANT_IPC_PARSE_VERSION
- 	select CLKDEV_LOOKUP
-+	select CPU_NO_EFFICIENT_FFS
- 	select DMA_DECLARE_COHERENT
--	select HAVE_IDE if HAS_IOPORT_MAP
--	select HAVE_OPROFILE
-+	select GENERIC_ATOMIC64
-+	select GENERIC_CLOCKEVENTS
-+	select GENERIC_CMOS_UPDATE if SH_SH03 || SH_DREAMCAST
-+	select GENERIC_IDLE_POLL_SETUP
-+	select GENERIC_IRQ_SHOW
-+	select GENERIC_PCI_IOMAP if PCI
-+	select GENERIC_SCHED_CLOCK
-+	select GENERIC_STRNCPY_FROM_USER
-+	select GENERIC_STRNLEN_USER
-+	select GENERIC_SMP_IDLE_THREAD
-+	select GUP_GET_PTE_LOW_HIGH if X2TLB
-+	select HAVE_ARCH_AUDITSYSCALL
-+	select HAVE_ARCH_KGDB
- 	select HAVE_ARCH_TRACEHOOK
--	select HAVE_PERF_EVENTS
- 	select HAVE_DEBUG_BUGVERBOSE
--	select HAVE_FAST_GUP if MMU
--	select ARCH_HAVE_CUSTOM_GPIO_H
--	select ARCH_HAVE_NMI_SAFE_CMPXCHG if (GUSA_RB || CPU_SH4A)
--	select ARCH_HAS_GCOV_PROFILE_ALL
--	select PERF_USE_VMALLOC
- 	select HAVE_DEBUG_KMEMLEAK
--	select HAVE_KERNEL_GZIP
--	select CPU_NO_EFFICIENT_FFS
-+	select HAVE_DYNAMIC_FTRACE
-+	select HAVE_FAST_GUP if MMU
-+	select HAVE_FUNCTION_GRAPH_TRACER
-+	select HAVE_FUNCTION_TRACER
-+	select HAVE_FUTEX_CMPXCHG if FUTEX
-+	select HAVE_FTRACE_MCOUNT_RECORD
-+	select HAVE_HW_BREAKPOINT
-+	select HAVE_IDE if HAS_IOPORT_MAP
-+	select HAVE_IOREMAP_PROT if MMU && !X2TLB
- 	select HAVE_KERNEL_BZIP2
-+	select HAVE_KERNEL_GZIP
- 	select HAVE_KERNEL_LZMA
--	select HAVE_KERNEL_XZ
- 	select HAVE_KERNEL_LZO
-+	select HAVE_KERNEL_XZ
-+	select HAVE_KPROBES
-+	select HAVE_KRETPROBES
-+	select HAVE_MIXED_BREAKPOINTS_REGS
-+	select HAVE_MOD_ARCH_SPECIFIC if DWARF_UNWINDER
-+	select HAVE_NMI
-+	select HAVE_OPROFILE
-+	select HAVE_PATA_PLATFORM
-+	select HAVE_PERF_EVENTS
-+	select HAVE_REGS_AND_STACK_ACCESS_API
- 	select HAVE_UID16
--	select ARCH_WANT_IPC_PARSE_VERSION
-+	select HAVE_STACKPROTECTOR
- 	select HAVE_SYSCALL_TRACEPOINTS
--	select HAVE_REGS_AND_STACK_ACCESS_API
--	select MAY_HAVE_SPARSE_IRQ
- 	select IRQ_FORCED_THREADING
--	select RTC_LIB
--	select GENERIC_ATOMIC64
--	select GENERIC_IRQ_SHOW
--	select GENERIC_SMP_IDLE_THREAD
--	select GENERIC_IDLE_POLL_SETUP
--	select GENERIC_CLOCKEVENTS
--	select GENERIC_CMOS_UPDATE if SH_SH03 || SH_DREAMCAST
--	select GENERIC_PCI_IOMAP if PCI
--	select GENERIC_SCHED_CLOCK
--	select GENERIC_STRNCPY_FROM_USER
--	select GENERIC_STRNLEN_USER
--	select HAVE_MOD_ARCH_SPECIFIC if DWARF_UNWINDER
-+	select MAY_HAVE_SPARSE_IRQ
- 	select MODULES_USE_ELF_RELA
-+	select NEED_SG_DMA_LENGTH
- 	select NO_GENERIC_PCI_IOPORT_MAP if PCI
--	select OLD_SIGSUSPEND
- 	select OLD_SIGACTION
-+	select OLD_SIGSUSPEND
- 	select PCI_DOMAINS if PCI
--	select HAVE_ARCH_AUDITSYSCALL
--	select HAVE_FUTEX_CMPXCHG if FUTEX
--	select HAVE_NMI
--	select NEED_SG_DMA_LENGTH
--	select ARCH_HAS_GIGANTIC_PAGE
--	select ARCH_32BIT_OFF_T
--	select GUP_GET_PTE_LOW_HIGH if X2TLB
--	select HAVE_KPROBES
--	select HAVE_KRETPROBES
--	select HAVE_IOREMAP_PROT if MMU && !X2TLB
--	select HAVE_FUNCTION_TRACER
--	select HAVE_FTRACE_MCOUNT_RECORD
--	select HAVE_DYNAMIC_FTRACE
--	select ARCH_WANT_IPC_PARSE_VERSION
--	select HAVE_FUNCTION_GRAPH_TRACER
--	select HAVE_ARCH_KGDB
--	select HAVE_HW_BREAKPOINT
--	select HAVE_MIXED_BREAKPOINTS_REGS
- 	select PERF_EVENTS
--	select ARCH_HIBERNATION_POSSIBLE if MMU
-+	select PERF_USE_VMALLOC
-+	select RTC_LIB
- 	select SPARSE_IRQ
--	select HAVE_STACKPROTECTOR
- 	help
- 	  The SuperH is a RISC processor targeted for use in embedded systems
- 	  and consumer electronics; it was also used in the Sega Dreamcast
--- 
-2.26.2
+First let me kindly introduce myself to you my names are Mrs. Danita
+Farouk, I am a dying woman diagnosed of cancer for about 1 year ago,
+immediately after the death of my beloved husband, who has left me
+everything he worked with and an bank deposit of the sum of (Eleven
+Million Four Hundred Thousand Dollars) with my name as the legal
+rightful appointed beneficiary to the fund. But /next of kin’s
+according to my doctor he told me that I would not last for a long
+period of time because this illness has gotten to a very bad stage.
+That is the reason why i decided to entrust my inheritance money to
+you, I hoped that you will not expose or betray this trust and
+confident that I am about to repose on you for the mutual benefit of
+the orphans and the less privileges ones, believing that you will
+utilize the money the way i am going to instruct herein as i mentioned
+above. I need you to assist me to reclaim this money from the bank
+where it's been deposited by my late husband and use the fund for
+Charity works in your position before I die, such as orphanages and
+gives justice and help to the poor, needy, elderly ones and the widow
+says The Lord." Jeremiah 22:15-16.“ to promote the word of god and the
+effort that the house of god is maintained.
+
+I do not want a situation where this money will be used in an ungodly
+manner. That's why I'm taking this decision. I'm not afraid of death,
+so I know where I'm going. I accept this decision because I do not
+have any child who will inherit this money after I die. To be very
+honest with you, this money I have opened-up to you is totally genuine
+no complications and is 100% risk-free. I am absolutely assuring you
+that no problem involved in this fund either in the short-run or in
+the long-run because i am the legal rightful appointed next of kin's
+to the fund everything is legitimate.
+
+And it will be my great pleasure to compensate you with 35 % percent
+of the total money for your personal use, 5 % percent for any expenses
+that may occur during the transaction and while 60% of the money will
+go to the charity project OR better still you can invest the total
+fund into your personal business ventures and make sure you assist the
+orphanages and the less privileged and do other Charitable works with
+the profit you will make from the business. I will appreciate your
+utmost confidentiality and trust in this matter to accomplish my heart
+desire, as I don't want anything that will jeopardize the fund my late
+husband has worked for and my last wish. Upon your reply, I will give
+you more details and the bank contact information including my late
+husband account details also a letter of authorization which will
+enable you proceed communication with the bank for the claim of the
+fund as the rightful legal present beneficiary of the fund. All I need
+from you is sincerity and ability to complete God task without any
+failure.
+
+It will be my pleasure to see that the bank has release and transfer
+the fund into your bank account therein country even before I die here
+in the hospital. Because of my present health status everything need
+to be process rapidly as soon as possible. Please kindly respond
+quickly. Thanks and God bless you,
+
+May God Bless you for your kind help.
+Yours sincerely sister Mrs. Danita Farouk.
