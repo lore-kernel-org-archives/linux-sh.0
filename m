@@ -1,56 +1,46 @@
-From: Baoquan He <bhe@redhat.com>
-Date: Thu, 30 Jul 2020 01:52:21 +0000
-Subject: Re: [PATCH 09/15] memblock: make for_each_memblock_type() iterator private
-Message-Id: <20200730015221.GI14854@MiWiFi-R3L-srv>
+From: Rich Felker <dalias@libc.org>
+Date: Mon, 27 Jul 2020 22:09:24 +0000
+Subject: [GIT PULL] arch/sh additional critical fixes 5.8
+Message-Id: <20200727220922.GP6949@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200728051153.1590-1-rppt@kernel.org>
- <20200728051153.1590-10-rppt@kernel.org>
-In-Reply-To: <20200728051153.1590-10-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Rapoport <rppt@kernel.org>
-Cc: linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Hansen <dave.hansen@linux.intel.com>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, Stafford Horne <shorne@gmail.com>, Marek Szyprowski <m.szyprowski@samsung.com>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, clang-built-linux@googlegroups.com, Ingo Molnar <mingo@redhat.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Paul Walmsley <paul.walmsley@sifive.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-mm@kvack.org, linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Palmer Dabbelt <palmer@dabbelt.com>, Andrew Morton <akpm@linux-foundation.org>, Christoph Hellwig <hch@lst.de>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
 
-On 07/28/20 at 08:11am, Mike Rapoport wrote:
-> From: Mike Rapoport <rppt@linux.ibm.com>
-> 
-> for_each_memblock_type() is not used outside mm/memblock.c, move it there
-> from include/linux/memblock.h
-> 
-> ---
->  include/linux/memblock.h | 5 -----
->  mm/memblock.c            | 5 +++++
->  2 files changed, 5 insertions(+), 5 deletions(-)
-> 
-> diff --git a/include/linux/memblock.h b/include/linux/memblock.h
-> index 017fae833d4a..220b5f0dad42 100644
-> --- a/include/linux/memblock.h
-> +++ b/include/linux/memblock.h
-> @@ -532,11 +532,6 @@ static inline unsigned long memblock_region_reserved_end_pfn(const struct memblo
->  	     region < (memblock.memblock_type.regions + memblock.memblock_type.cnt);	\
->  	     region++)
->  
-> -#define for_each_memblock_type(i, memblock_type, rgn)			\
-> -	for (i = 0, rgn = &memblock_type->regions[0];			\
-> -	     i < memblock_type->cnt;					\
-> -	     i++, rgn = &memblock_type->regions[i])
-> -
->  extern void *alloc_large_system_hash(const char *tablename,
->  				     unsigned long bucketsize,
->  				     unsigned long numentries,
-> diff --git a/mm/memblock.c b/mm/memblock.c
-> index 39aceafc57f6..a5b9b3df81fc 100644
-> --- a/mm/memblock.c
-> +++ b/mm/memblock.c
-> @@ -129,6 +129,11 @@ struct memblock memblock __initdata_memblock = {
->  	.current_limit		= MEMBLOCK_ALLOC_ANYWHERE,
->  };
->  
-> +#define for_each_memblock_type(i, memblock_type, rgn)			\
-> +	for (i = 0, rgn = &memblock_type->regions[0];			\
-> +	     i < memblock_type->cnt;					\
-> +	     i++, rgn = &memblock_type->regions[i])
-> +
+Hi Linus,
 
-Reviewed-by: Baoquan He <bhe@redhat.com>
+I have some last-minute fixes I hope you can still pull in for 5.8.
+One is for a boot regression (mmu code broken) and the other fixes a
+long-standing broken syscall number bounds check.
+
+Rich
+
+
+
+The following changes since commit 92ed301919932f777713b9172e525674157e983d:
+
+  Linux 5.8-rc7 (2020-07-26 14:14:06 -0700)
+
+are available in the Git repository at:
+
+  git://git.libc.org/linux-sh tags/sh-for-5.8-part2
+
+for you to fetch changes up to 04a8a3d0a73f51c7c2da84f494db7ec1df230e69:
+
+  sh: Fix validation of system call number (2020-07-27 16:12:49 -0400)
+
+----------------------------------------------------------------
+Fixes for major regression and longstanding bounds-checking error.
+
+----------------------------------------------------------------
+Michael Karcher (1):
+      sh: Fix validation of system call number
+
+Peter Zijlstra (1):
+      sh/tlb: Fix PGTABLE_LEVELS > 2
+
+ arch/sh/include/asm/pgalloc.h | 10 +---------
+ arch/sh/kernel/entry-common.S |  6 +++---
+ 2 files changed, 4 insertions(+), 12 deletions(-)
