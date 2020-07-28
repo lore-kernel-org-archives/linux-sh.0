@@ -1,45 +1,67 @@
-From: "Mrs. Safitaou Zoungrana" <richardlaurentdr@gmail.com>
-Date: Wed, 08 Jul 2020 12:33:28 +0000
-Subject: My Dear Beloved One,
-Message-Id: <CALJAiTVXhrKZYOHVoupnx6hmXXD0i2k4MOSO6HW+mj1BAydXhA@mail.gmail.com>
+From: Nicholas Piggin <npiggin@gmail.com>
+Date: Tue, 28 Jul 2020 03:34:00 +0000
+Subject: [PATCH 19/24] sh: use asm-generic/mmu_context.h for no-op implementations
+Message-Id: <20200728033405.78469-20-npiggin@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200728033405.78469-1-npiggin@gmail.com>
+In-Reply-To: <20200728033405.78469-1-npiggin@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arch@vger.kernel.org
+Cc: Nicholas Piggin <npiggin@gmail.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, Arnd Bergmann <arnd@arndb.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 
-My Dear Beloved One,
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Nicholas Piggin <npiggin@gmail.com>
+---
+ arch/sh/include/asm/mmu_context.h    | 5 ++---
+ arch/sh/include/asm/mmu_context_32.h | 9 ---------
+ 2 files changed, 2 insertions(+), 12 deletions(-)
 
-I greet you in the name of God almighty the givers of all good things
-in life. Please kindly pardon me for any inconvenience this letter may
-cost you because I know it may come to you as a surprise as we have no
-previous correspondence.  I sent this mail praying for it to reach you
-in good health, since I myself are in a very critical health condition
-in which I sleep every night without knowing if I may be alive to see
-the next day.
-
-I am Mrs. Safiatou Zoungrana,  the wife of late Engineer Ralph
-Alphonso Zoungrana from Paris France but based here in Burkina Faso
-West Africa since eight years ago as a business woman dealing with
-gold exportation and Sales. We have been married for years before his
-sudden death although we were childless. I have been diagnosed with
-ovarian cancer and I have been battling with the sickness when my late
-lovely husband of a blessed memory was alive. May his soul rest in
-peace, Amen.
-
-My late Husband left the sum of =E2=82=AC7.900.000.00 Seven Million Nine
-Hundred Thousand Euros in a fix/suspense account in one of the prime
-bank here in Burkina Faso. Recently, my Doctor told me that I have few
-days to live due to the cancer problem. The one that disturbs me most
-is my blood pressure sickness.
-
-Having known my health condition I decided to seek for your kind
-assistance to transfer this fund into your account and you will use it
-to establish an orphanage home in my name. I will give you more
-details about the project as soon as I receive your reply in my
-private email (mmsafiatou057@gmail.com) to handle this project because
-I do not want to state all here until I see your reply, desire and
-commitment to handle this project.
-
-My Regards to your family.
-Mrs. Safiatou Zoungrana.
+diff --git a/arch/sh/include/asm/mmu_context.h b/arch/sh/include/asm/mmu_context.h
+index 9470d17c71c2..ce40147d4a7d 100644
+--- a/arch/sh/include/asm/mmu_context.h
++++ b/arch/sh/include/asm/mmu_context.h
+@@ -85,6 +85,7 @@ static inline void get_mmu_context(struct mm_struct *mm, unsigned int cpu)
+  * Initialize the context related info for a new mm_struct
+  * instance.
+  */
++#define init_new_context init_new_context
+ static inline int init_new_context(struct task_struct *tsk,
+ 				   struct mm_struct *mm)
+ {
+@@ -121,9 +122,7 @@ static inline void switch_mm(struct mm_struct *prev,
+ 			activate_context(next, cpu);
+ }
+ 
+-#define activate_mm(prev, next)		switch_mm((prev),(next),NULL)
+-#define deactivate_mm(tsk,mm)		do { } while (0)
+-#define enter_lazy_tlb(mm,tsk)		do { } while (0)
++#include <asm-generic/mmu_context.h>
+ 
+ #else
+ 
+diff --git a/arch/sh/include/asm/mmu_context_32.h b/arch/sh/include/asm/mmu_context_32.h
+index 71bf12ef1f65..bc5034fa6249 100644
+--- a/arch/sh/include/asm/mmu_context_32.h
++++ b/arch/sh/include/asm/mmu_context_32.h
+@@ -2,15 +2,6 @@
+ #ifndef __ASM_SH_MMU_CONTEXT_32_H
+ #define __ASM_SH_MMU_CONTEXT_32_H
+ 
+-/*
+- * Destroy context related info for an mm_struct that is about
+- * to be put to rest.
+- */
+-static inline void destroy_context(struct mm_struct *mm)
+-{
+-	/* Do nothing */
+-}
+-
+ #ifdef CONFIG_CPU_HAS_PTEAEX
+ static inline void set_asid(unsigned long asid)
+ {
+-- 
+2.23.0
