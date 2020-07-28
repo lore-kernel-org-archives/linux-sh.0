@@ -1,64 +1,119 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Wed, 22 Jul 2020 23:19:46 +0000
-Subject: Re: [PATCH 1/4] sh: Fix validation of system call number
-Message-Id: <75601e2c-6631-8a98-36a0-ef58f28e50a9@physik.fu-berlin.de>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Tue, 28 Jul 2020 05:11:48 +0000
+Subject: [PATCH 10/15] memblock: make memblock_debug and related functionality private
+Message-Id: <20200728051153.1590-11-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200722231322.419642-1-kernel@mkarcher.dialup.fu-berlin.de>
-In-Reply-To: <20200722231322.419642-1-kernel@mkarcher.dialup.fu-berlin.de>
+References: <20200728051153.1590-1-rppt@kernel.org>
+In-Reply-To: <20200728051153.1590-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Hansen <dave.hansen@linux.intel.com>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, Stafford Horne <shorne@gmail.com>, Marek Szyprowski <m.szyprowski@samsung.com>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, clang-built-linux@googlegroups.com, Ingo Molnar <mingo@redhat.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Paul Walmsley <paul.walmsley@sifive.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-mm@kvack.org, linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Palmer Dabbelt <palmer@dabbelt.com>, Christoph Hellwig <hch@lst.de>, Mike Rapoport <rppt@kernel.org>
 
-On 7/23/20 1:13 AM, Michael Karcher wrote:
-> The slow path for traced system call entries accessed a wrong memory
-> location to get the number of the maximum allowed system call number.
-> Renumber the numbered "local" label for the correct location to avoid
-> collisions with actual local labels.
-> 
-> Signed-off-by: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
-> ---
->  arch/sh/kernel/entry-common.S | 6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/arch/sh/kernel/entry-common.S b/arch/sh/kernel/entry-common.S
-> index 956a7a03b0c8..9bac5bbb67f3 100644
-> --- a/arch/sh/kernel/entry-common.S
-> +++ b/arch/sh/kernel/entry-common.S
-> @@ -199,7 +199,7 @@ syscall_trace_entry:
->  	mov.l	@(OFF_R7,r15), r7   ! arg3
->  	mov.l	@(OFF_R3,r15), r3   ! syscall_nr
->  	!
-> -	mov.l	2f, r10			! Number of syscalls
-> +	mov.l	6f, r10			! Number of syscalls
->  	cmp/hs	r10, r3
->  	bf	syscall_call
->  	mov	#-ENOSYS, r0
-> @@ -353,7 +353,7 @@ ENTRY(system_call)
->  	tst	r9, r8
->  	bf	syscall_trace_entry
->  	!
-> -	mov.l	2f, r8			! Number of syscalls
-> +	mov.l	6f, r8			! Number of syscalls
->  	cmp/hs	r8, r3
->  	bt	syscall_badsys
->  	!
-> @@ -392,7 +392,7 @@ syscall_exit:
->  #if !defined(CONFIG_CPU_SH2)
->  1:	.long	TRA
->  #endif
-> -2:	.long	NR_syscalls
-> +6:	.long	NR_syscalls
->  3:	.long	sys_call_table
->  7:	.long	do_syscall_trace_enter
->  8:	.long	do_syscall_trace_leave
-> 
+From: Mike Rapoport <rppt@linux.ibm.com>
 
-Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+The only user of memblock_dbg() outside memblock was s390 setup code and it
+is converted to use pr_debug() instead.
+This allows to stop exposing memblock_debug and memblock_dbg() to the rest
+of the kernel.
 
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+---
+ arch/s390/kernel/setup.c |  4 ++--
+ include/linux/memblock.h | 12 +-----------
+ mm/memblock.c            | 13 +++++++++++--
+ 3 files changed, 14 insertions(+), 15 deletions(-)
+
+diff --git a/arch/s390/kernel/setup.c b/arch/s390/kernel/setup.c
+index 07aa15ba43b3..8b284cf6e199 100644
+--- a/arch/s390/kernel/setup.c
++++ b/arch/s390/kernel/setup.c
+@@ -776,8 +776,8 @@ static void __init memblock_add_mem_detect_info(void)
+ 	unsigned long start, end;
+ 	int i;
+ 
+-	memblock_dbg("physmem info source: %s (%hhd)\n",
+-		     get_mem_info_source(), mem_detect.info_source);
++	pr_debug("physmem info source: %s (%hhd)\n",
++		 get_mem_info_source(), mem_detect.info_source);
+ 	/* keep memblock lists close to the kernel */
+ 	memblock_set_bottom_up(true);
+ 	for_each_mem_detect_block(i, &start, &end) {
+diff --git a/include/linux/memblock.h b/include/linux/memblock.h
+index 220b5f0dad42..e6a23b3db696 100644
+--- a/include/linux/memblock.h
++++ b/include/linux/memblock.h
+@@ -90,7 +90,6 @@ struct memblock {
+ };
+ 
+ extern struct memblock memblock;
+-extern int memblock_debug;
+ 
+ #ifndef CONFIG_ARCH_KEEP_MEMBLOCK
+ #define __init_memblock __meminit
+@@ -102,9 +101,6 @@ void memblock_discard(void);
+ static inline void memblock_discard(void) {}
+ #endif
+ 
+-#define memblock_dbg(fmt, ...) \
+-	if (memblock_debug) printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
+-
+ phys_addr_t memblock_find_in_range(phys_addr_t start, phys_addr_t end,
+ 				   phys_addr_t size, phys_addr_t align);
+ void memblock_allow_resize(void);
+@@ -456,13 +452,7 @@ bool memblock_is_region_memory(phys_addr_t base, phys_addr_t size);
+ bool memblock_is_reserved(phys_addr_t addr);
+ bool memblock_is_region_reserved(phys_addr_t base, phys_addr_t size);
+ 
+-extern void __memblock_dump_all(void);
+-
+-static inline void memblock_dump_all(void)
+-{
+-	if (memblock_debug)
+-		__memblock_dump_all();
+-}
++void memblock_dump_all(void);
+ 
+ /**
+  * memblock_set_current_limit - Set the current allocation limit to allow
+diff --git a/mm/memblock.c b/mm/memblock.c
+index a5b9b3df81fc..824938849f6d 100644
+--- a/mm/memblock.c
++++ b/mm/memblock.c
+@@ -134,7 +134,10 @@ struct memblock memblock __initdata_memblock = {
+ 	     i < memblock_type->cnt;					\
+ 	     i++, rgn = &memblock_type->regions[i])
+ 
+-int memblock_debug __initdata_memblock;
++#define memblock_dbg(fmt, ...) \
++	if (memblock_debug) printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
++
++static int memblock_debug __initdata_memblock;
+ static bool system_has_some_mirror __initdata_memblock = false;
+ static int memblock_can_resize __initdata_memblock;
+ static int memblock_memory_in_slab __initdata_memblock = 0;
+@@ -1919,7 +1922,7 @@ static void __init_memblock memblock_dump(struct memblock_type *type)
+ 	}
+ }
+ 
+-void __init_memblock __memblock_dump_all(void)
++static void __init_memblock __memblock_dump_all(void)
+ {
+ 	pr_info("MEMBLOCK configuration:\n");
+ 	pr_info(" memory size = %pa reserved size = %pa\n",
+@@ -1933,6 +1936,12 @@ void __init_memblock __memblock_dump_all(void)
+ #endif
+ }
+ 
++void __init_memblock memblock_dump_all(void)
++{
++	if (memblock_debug)
++		__memblock_dump_all();
++}
++
+ void __init memblock_allow_resize(void)
+ {
+ 	memblock_can_resize = 1;
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+2.26.2
