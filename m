@@ -1,46 +1,25 @@
-From: Rich Felker <dalias@libc.org>
-Date: Mon, 27 Jul 2020 22:09:24 +0000
-Subject: [GIT PULL] arch/sh additional critical fixes 5.8
-Message-Id: <20200727220922.GP6949@brightrain.aerifal.cx>
+From: pr-tracker-bot@kernel.org
+Date: Tue, 28 Jul 2020 19:05:03 +0000
+Subject: Re: [GIT PULL] arch/sh additional critical fixes 5.8
+Message-Id: <159596310349.13897.16698050689187298046.pr-tracker-bot@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200727220922.GP6949@brightrain.aerifal.cx>
+In-Reply-To: <20200727220922.GP6949@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Rich Felker <dalias@libc.org>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
 
-Hi Linus,
+The pull request you sent on Mon, 27 Jul 2020 18:09:24 -0400:
 
-I have some last-minute fixes I hope you can still pull in for 5.8.
-One is for a boot regression (mmu code broken) and the other fixes a
-long-standing broken syscall number bounds check.
+> git://git.libc.org/linux-sh tags/sh-for-5.8-part2
 
-Rich
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/4764e61e1d57c0bc3569dbc540af8bb28e18d2e6
 
+Thank you!
 
-
-The following changes since commit 92ed301919932f777713b9172e525674157e983d:
-
-  Linux 5.8-rc7 (2020-07-26 14:14:06 -0700)
-
-are available in the Git repository at:
-
-  git://git.libc.org/linux-sh tags/sh-for-5.8-part2
-
-for you to fetch changes up to 04a8a3d0a73f51c7c2da84f494db7ec1df230e69:
-
-  sh: Fix validation of system call number (2020-07-27 16:12:49 -0400)
-
-----------------------------------------------------------------
-Fixes for major regression and longstanding bounds-checking error.
-
-----------------------------------------------------------------
-Michael Karcher (1):
-      sh: Fix validation of system call number
-
-Peter Zijlstra (1):
-      sh/tlb: Fix PGTABLE_LEVELS > 2
-
- arch/sh/include/asm/pgalloc.h | 10 +---------
- arch/sh/kernel/entry-common.S |  6 +++---
- 2 files changed, 4 insertions(+), 12 deletions(-)
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.wiki.kernel.org/userdoc/prtracker
