@@ -1,49 +1,59 @@
-From: David Hildenbrand <david@redhat.com>
-Date: Thu, 09 Jul 2020 09:10:29 +0000
-Subject: Re: [PATCH v3 2/6] arm64/mm: use default dummy memory_add_physaddr_to_nid()
-Message-Id: <ca61d0b2-7f8f-3412-f754-d89906c9c52c@redhat.com>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Tue, 28 Jul 2020 05:11:42 +0000
+Subject: [PATCH 04/15] arm64: numa: simplify dummy_numa_init()
+Message-Id: <20200728051153.1590-5-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200709020629.91671-1-justin.he@arm.com>
- <20200709020629.91671-3-justin.he@arm.com>
-In-Reply-To: <20200709020629.91671-3-justin.he@arm.com>
+References: <20200728051153.1590-1-rppt@kernel.org>
+In-Reply-To: <20200728051153.1590-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jia He <justin.he@arm.com>, Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>, Tony Luck <tony.luck@intel.com>, Fenghua Yu <fenghua.yu@intel.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Dave Hansen <dave.hansen@linux.intel.com>, Andy Lutomirski <luto@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>
-Cc: Kaly Xin <Kaly.Xin@arm.com>, Michal Hocko <mhocko@suse.com>, Dave Jiang <dave.jiang@intel.com>, Baoquan He <bhe@redhat.com>, linux-sh@vger.kernel.org, Vishal Verma <vishal.l.verma@intel.com>, Masahiro Yamada <masahiroy@kernel.org>, x86@kernel.org, Chuhong Yuan <hslester96@gmail.com>, linux-kernel@vger.kernel.org, Mike Rapoport <rppt@linux.ibm.com>, linux-mm@kvack.org, linux-nvdimm@lists.01.org, Jonathan Cameron <Jonathan.Cameron@Huawei.com>, "H. Peter Anvin" <hpa@zytor.com>, linux-ia64@vger.kernel.org, Dan Williams <dan.j.williams@intel.com>, Logan Gunthorpe <logang@deltatee.com>, Andrew Morton <akpm@linux-foundation.org>, linux-arm-kernel@lists.infradead.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Hansen <dave.hansen@linux.intel.com>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, Stafford Horne <shorne@gmail.com>, Marek Szyprowski <m.szyprowski@samsung.com>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, clang-built-linux@googlegroups.com, Ingo Molnar <mingo@redhat.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Paul Walmsley <paul.walmsley@sifive.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-mm@kvack.org, linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Palmer Dabbelt <palmer@dabbelt.com>, Christoph Hellwig <hch@lst.de>, Mike Rapoport <rppt@kernel.org>
 
-On 09.07.20 04:06, Jia He wrote:
-> After making default memory_add_physaddr_to_nid() in mm/memory_hotplug,
-> it is no use defining a similar one in arch specific directory.
-> 
-> Signed-off-by: Jia He <justin.he@arm.com>
-> ---
->  arch/arm64/mm/numa.c | 10 ----------
->  1 file changed, 10 deletions(-)
-> 
-> diff --git a/arch/arm64/mm/numa.c b/arch/arm64/mm/numa.c
-> index aafcee3e3f7e..73f8b49d485c 100644
-> --- a/arch/arm64/mm/numa.c
-> +++ b/arch/arm64/mm/numa.c
-> @@ -461,13 +461,3 @@ void __init arm64_numa_init(void)
->  
->  	numa_init(dummy_numa_init);
->  }
-> -
-> -/*
-> - * We hope that we will be hotplugging memory on nodes we already know about,
-> - * such that acpi_get_node() succeeds and we never fall back to this...
-> - */
-> -int memory_add_physaddr_to_nid(u64 addr)
-> -{
-> -	pr_warn("Unknown node for memory at 0x%llx, assuming node 0\n", addr);
-> -	return 0;
-> -}
-> 
+From: Mike Rapoport <rppt@linux.ibm.com>
 
-Reviewed-by: David Hildenbrand <david@redhat.com>
+dummy_numa_init() loops over memblock.memory and passes nid=0 to
+numa_add_memblk() which essentially wraps memblock_set_node(). However,
+memblock_set_node() can cope with entire memory span itself, so the loop
+over memblock.memory regions is redundant.
 
+Replace the loop with a single call to memblock_set_node() to the entire
+memory.
+
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+---
+ arch/arm64/mm/numa.c | 13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm64/mm/numa.c b/arch/arm64/mm/numa.c
+index aafcee3e3f7e..0cbdbcc885fb 100644
+--- a/arch/arm64/mm/numa.c
++++ b/arch/arm64/mm/numa.c
+@@ -423,19 +423,16 @@ static int __init numa_init(int (*init_func)(void))
+  */
+ static int __init dummy_numa_init(void)
+ {
++	phys_addr_t start = memblock_start_of_DRAM();
++	phys_addr_t end = memblock_end_of_DRAM();
+ 	int ret;
+-	struct memblock_region *mblk;
+ 
+ 	if (numa_off)
+ 		pr_info("NUMA disabled\n"); /* Forced off on command line. */
+-	pr_info("Faking a node at [mem %#018Lx-%#018Lx]\n",
+-		memblock_start_of_DRAM(), memblock_end_of_DRAM() - 1);
+-
+-	for_each_memblock(memory, mblk) {
+-		ret = numa_add_memblk(0, mblk->base, mblk->base + mblk->size);
+-		if (!ret)
+-			continue;
++	pr_info("Faking a node at [mem %#018Lx-%#018Lx]\n", start, end - 1);
+ 
++	ret = numa_add_memblk(0, start, end);
++	if (ret) {
+ 		pr_err("NUMA init failed\n");
+ 		return ret;
+ 	}
 -- 
-Thanks,
-
-David / dhildenb
+2.26.2
