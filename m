@@ -1,99 +1,91 @@
-From: Krzysztof Kozlowski <krzk@kernel.org>
-Date: Thu, 09 Jul 2020 07:28:33 +0000
-Subject: [PATCH v3 0/4] iomap: Constify ioreadX() iomem argument
-Message-Id: <20200709072837.5869-1-krzk@kernel.org>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Tue, 28 Jul 2020 05:11:38 +0000
+Subject: [PATCH 00/15] memblock: seasonal cleaning^w cleanup
+Message-Id: <20200728051153.1590-1-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Richard Henderson <rth@twiddle.net>, Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Kalle Valo <kvalo@codeaurora.org>, "David S. Miller" <davem@davemloft.net>, Jakub Kicinski <kuba@kernel.org>, Dave Jiang <dave.jiang@intel.com>, Jon Mason <jdmason@kudzu.us>, Allen Hubbe <allenbh@gmail.com>, "Michael S. Tsirkin" <mst@redhat.com>, Jason Wang <jasowang@redhat.com>, Arnd Bergmann <arnd@arndb.de>, Geert Uytterhoeven <geert+rene>
-Cc: Krzysztof Kozlowski <krzk@kernel.org>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Hansen <dave.hansen@linux.intel.com>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, Stafford Horne <shorne@gmail.com>, Marek Szyprowski <m.szyprowski@samsung.com>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, clang-built-linux@googlegroups.com, Ingo Molnar <mingo@redhat.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Paul Walmsley <paul.walmsley@sifive.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-mm@kvack.org, linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Palmer Dabbelt <palmer@dabbelt.com>, Christoph Hellwig <hch@lst.de>, Mike Rapoport <rppt@kernel.org>
+
+From: Mike Rapoport <rppt@linux.ibm.com>
 
 Hi,
 
-Multiple architectures are affected in the first patch and all further
-patches depend on the first.
+These patches simplify several uses of memblock iterators and hide some of
+the memblock implementation details from the rest of the system.
 
-Maybe this could go in through Andrew Morton's tree?
+The patches are on top of v5.8-rc7 + cherry-pick of "mm/sparse: cleanup the
+code surrounding memory_present()" [1] from mmotm tree.
 
+[1] http://lkml.kernel.org/r/20200712083130.22919-1-rppt@kernel.org 
 
-Changes since v2
-========
-1. Drop all non-essential patches (cleanups),
-2. Update also drivers/sh/clk/cpg.c .
+Mike Rapoport (15):
+  KVM: PPC: Book3S HV: simplify kvm_cma_reserve()
+  dma-contiguous: simplify cma_early_percent_memory()
+  arm, xtensa: simplify initialization of high memory pages
+  arm64: numa: simplify dummy_numa_init()
+  h8300, nds32, openrisc: simplify detection of memory extents
+  powerpc: fadamp: simplify fadump_reserve_crash_area()
+  riscv: drop unneeded node initialization
+  mircoblaze: drop unneeded NUMA and sparsemem initializations
+  memblock: make for_each_memblock_type() iterator private
+  memblock: make memblock_debug and related functionality private
+  memblock: reduce number of parameters in for_each_mem_range()
+  arch, mm: replace for_each_memblock() with for_each_mem_pfn_range()
+  arch, drivers: replace for_each_membock() with for_each_mem_range()
+  x86/numa: remove redundant iteration over memblock.reserved
+  memblock: remove 'type' parameter from for_each_memblock()
 
-
-Changes since v1
-========
-https://lore.kernel.org/lkml/1578415992-24054-1-git-send-email-krzk@kernel.org/
-1. Constify also ioreadX_rep() and mmio_insX(),
-2. Squash lib+alpha+powerpc+parisc+sh into one patch for bisectability,
-3. Add acks and reviews,
-4. Re-order patches so all optional driver changes are at the end.
-
-
-Description
-=====The ioread8/16/32() and others have inconsistent interface among the
-architectures: some taking address as const, some not.
-
-It seems there is nothing really stopping all of them to take
-pointer to const.
-
-Patchset was only compile tested on affected architectures.  No real
-testing.
-
-
-volatile
-====
-There is still interface inconsistency between architectures around
-"volatile" qualifier:
- - include/asm-generic/io.h:static inline u32 ioread32(const volatile void __iomem *addr)
- - include/asm-generic/iomap.h:extern unsigned int ioread32(const void __iomem *);
-
-This is still discussed and out of scope of this patchset.
-
-
-Best regards,
-Krzysztof
-
-
-Krzysztof Kozlowski (4):
-  iomap: Constify ioreadX() iomem argument (as in generic
-    implementation)
-  rtl818x: Constify ioreadX() iomem argument (as in generic
-    implementation)
-  ntb: intel: Constify ioreadX() iomem argument (as in generic
-    implementation)
-  virtio: pci: Constify ioreadX() iomem argument (as in generic
-    implementation)
-
- arch/alpha/include/asm/core_apecs.h           |  6 +-
- arch/alpha/include/asm/core_cia.h             |  6 +-
- arch/alpha/include/asm/core_lca.h             |  6 +-
- arch/alpha/include/asm/core_marvel.h          |  4 +-
- arch/alpha/include/asm/core_mcpcia.h          |  6 +-
- arch/alpha/include/asm/core_t2.h              |  2 +-
- arch/alpha/include/asm/io.h                   | 12 ++--
- arch/alpha/include/asm/io_trivial.h           | 16 ++---
- arch/alpha/include/asm/jensen.h               |  2 +-
- arch/alpha/include/asm/machvec.h              |  6 +-
- arch/alpha/kernel/core_marvel.c               |  2 +-
- arch/alpha/kernel/io.c                        | 12 ++--
- arch/parisc/include/asm/io.h                  |  4 +-
- arch/parisc/lib/iomap.c                       | 72 +++++++++----------
- arch/powerpc/kernel/iomap.c                   | 28 ++++----
- arch/sh/kernel/iomap.c                        | 22 +++---
- .../realtek/rtl818x/rtl8180/rtl8180.h         |  6 +-
- drivers/ntb/hw/intel/ntb_hw_gen1.c            |  2 +-
- drivers/ntb/hw/intel/ntb_hw_gen3.h            |  2 +-
- drivers/ntb/hw/intel/ntb_hw_intel.h           |  2 +-
- drivers/sh/clk/cpg.c                          |  2 +-
- drivers/virtio/virtio_pci_modern.c            |  6 +-
- include/asm-generic/iomap.h                   | 28 ++++----
- include/linux/io-64-nonatomic-hi-lo.h         |  4 +-
- include/linux/io-64-nonatomic-lo-hi.h         |  4 +-
- lib/iomap.c                                   | 30 ++++----
- 26 files changed, 146 insertions(+), 146 deletions(-)
+ .clang-format                            |  1 +
+ arch/arm/kernel/setup.c                  | 18 +++++---
+ arch/arm/mm/init.c                       | 59 +++++-------------------
+ arch/arm/mm/mmu.c                        | 39 ++++++----------
+ arch/arm/mm/pmsa-v7.c                    | 20 ++++----
+ arch/arm/mm/pmsa-v8.c                    | 17 ++++---
+ arch/arm/xen/mm.c                        |  7 +--
+ arch/arm64/kernel/machine_kexec_file.c   |  6 +--
+ arch/arm64/kernel/setup.c                |  2 +-
+ arch/arm64/mm/init.c                     | 11 ++---
+ arch/arm64/mm/kasan_init.c               |  8 ++--
+ arch/arm64/mm/mmu.c                      | 11 ++---
+ arch/arm64/mm/numa.c                     | 15 +++---
+ arch/c6x/kernel/setup.c                  |  9 ++--
+ arch/h8300/kernel/setup.c                |  8 ++--
+ arch/microblaze/mm/init.c                | 24 ++--------
+ arch/mips/cavium-octeon/dma-octeon.c     | 12 ++---
+ arch/mips/kernel/setup.c                 | 31 ++++++-------
+ arch/mips/netlogic/xlp/setup.c           |  2 +-
+ arch/nds32/kernel/setup.c                |  8 +---
+ arch/openrisc/kernel/setup.c             |  9 +---
+ arch/openrisc/mm/init.c                  |  8 ++--
+ arch/powerpc/kernel/fadump.c             | 58 ++++++++---------------
+ arch/powerpc/kvm/book3s_hv_builtin.c     | 11 +----
+ arch/powerpc/mm/book3s64/hash_utils.c    | 16 +++----
+ arch/powerpc/mm/book3s64/radix_pgtable.c | 11 ++---
+ arch/powerpc/mm/kasan/kasan_init_32.c    |  8 ++--
+ arch/powerpc/mm/mem.c                    | 33 +++++++------
+ arch/powerpc/mm/numa.c                   |  7 +--
+ arch/powerpc/mm/pgtable_32.c             |  8 ++--
+ arch/riscv/mm/init.c                     | 33 ++++---------
+ arch/riscv/mm/kasan_init.c               | 10 ++--
+ arch/s390/kernel/crash_dump.c            |  8 ++--
+ arch/s390/kernel/setup.c                 | 31 ++++++++-----
+ arch/s390/mm/page-states.c               |  6 +--
+ arch/s390/mm/vmem.c                      | 16 ++++---
+ arch/sh/mm/init.c                        |  9 ++--
+ arch/sparc/mm/init_64.c                  | 12 ++---
+ arch/x86/mm/numa.c                       | 26 ++++-------
+ arch/xtensa/mm/init.c                    | 55 ++++------------------
+ drivers/bus/mvebu-mbus.c                 | 12 ++---
+ drivers/s390/char/zcore.c                |  9 ++--
+ include/linux/memblock.h                 | 45 +++++++++---------
+ kernel/dma/contiguous.c                  | 11 +----
+ mm/memblock.c                            | 28 +++++++----
+ mm/page_alloc.c                          | 11 ++---
+ mm/sparse.c                              | 10 ++--
+ 47 files changed, 324 insertions(+), 485 deletions(-)
 
 -- 
-2.17.1
+2.26.2
