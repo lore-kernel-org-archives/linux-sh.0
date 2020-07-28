@@ -1,50 +1,61 @@
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Fri, 17 Jul 2020 11:10:07 +0000
-Subject: [PATCH v2 02/11] sh/tlb: Fix PGTABLE_LEVELS > 2
-Message-Id: <20200717111349.475459591@infradead.org>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Tue, 28 Jul 2020 05:11:39 +0000
+Subject: [PATCH 01/15] KVM: PPC: Book3S HV: simplify kvm_cma_reserve()
+Message-Id: <20200728051153.1590-2-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200717111005.024867618@infradead.org>
+References: <20200728051153.1590-1-rppt@kernel.org>
+In-Reply-To: <20200728051153.1590-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Will Deacon <will@kernel.org>, "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Nick Piggin <npiggin@gmail.com>, Peter Zijlstra <peterz@infradead.org>
-Cc: linux-arch@vger.kernel.org, linux-sh@vger.kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "David S. Miller" <davem@davemloft.net>, Helge Deller <deller@gmx.de>, Geert Uytterhoeven <geert@linux-m68k.org>, Paul Burton <paulburton@kernel.org>, Tony Luck <tony.luck@intel.com>, Richard Henderson <rth@twiddle.net>, Nick Hu <nickhu@andestech.com>, Paul Walmsley <paul.walmsley@sifive.com>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Christoph Hellwig <hch@lst.de>, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Hansen <dave.hansen@linux.intel.com>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, Stafford Horne <shorne@gmail.com>, Marek Szyprowski <m.szyprowski@samsung.com>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, clang-built-linux@googlegroups.com, Ingo Molnar <mingo@redhat.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Paul Walmsley <paul.walmsley@sifive.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-mm@kvack.org, linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Palmer Dabbelt <palmer@dabbelt.com>, Christoph Hellwig <hch@lst.de>, Mike Rapoport <rppt@kernel.org>
 
-Geert reported that his SH7722-based Migo-R board failed to boot after
-commit:
+From: Mike Rapoport <rppt@linux.ibm.com>
 
-  c5b27a889da9 ("sh/tlb: Convert SH to generic mmu_gather")
+The memory size calculation in kvm_cma_reserve() traverses memblock.memory
+rather than simply call memblock_phys_mem_size(). The comment in that
+function suggests that at some point there should have been call to
+memblock_analyze() before memblock_phys_mem_size() could be used.
+As of now, there is no memblock_analyze() at all and
+memblock_phys_mem_size() can be used as soon as cold-plug memory is
+registerd with memblock.
 
-That commit fell victim to copying the wrong pattern --
-__pmd_free_tlb() used to be implemented with pmd_free().
+Replace loop over memblock.memory with a call to memblock_phys_mem_size().
 
-Fixes: c5b27a889da9 ("sh/tlb: Convert SH to generic mmu_gather")
-Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
 ---
---- a/arch/sh/include/asm/pgalloc.h
-+++ b/arch/sh/include/asm/pgalloc.h
-@@ -12,6 +12,7 @@ extern void pgd_free(struct mm_struct *m
- extern void pud_populate(struct mm_struct *mm, pud_t *pudp, pmd_t *pmd);
- extern pmd_t *pmd_alloc_one(struct mm_struct *mm, unsigned long address);
- extern void pmd_free(struct mm_struct *mm, pmd_t *pmd);
-+#define __pmd_free_tlb(tlb, pmdp, addr)		pmd_free((tlb)->mm, (pmdp))
- #endif
+ arch/powerpc/kvm/book3s_hv_builtin.c | 11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
+
+diff --git a/arch/powerpc/kvm/book3s_hv_builtin.c b/arch/powerpc/kvm/book3s_hv_builtin.c
+index 7cd3cf3d366b..56ab0d28de2a 100644
+--- a/arch/powerpc/kvm/book3s_hv_builtin.c
++++ b/arch/powerpc/kvm/book3s_hv_builtin.c
+@@ -95,22 +95,15 @@ EXPORT_SYMBOL_GPL(kvm_free_hpt_cma);
+ void __init kvm_cma_reserve(void)
+ {
+ 	unsigned long align_size;
+-	struct memblock_region *reg;
+-	phys_addr_t selected_size = 0;
++	phys_addr_t selected_size;
  
- static inline void pmd_populate_kernel(struct mm_struct *mm, pmd_t *pmd,
-@@ -33,13 +34,4 @@ do {							\
- 	tlb_remove_page((tlb), (pte));			\
- } while (0)
+ 	/*
+ 	 * We need CMA reservation only when we are in HV mode
+ 	 */
+ 	if (!cpu_has_feature(CPU_FTR_HVMODE))
+ 		return;
+-	/*
+-	 * We cannot use memblock_phys_mem_size() here, because
+-	 * memblock_analyze() has not been called yet.
+-	 */
+-	for_each_memblock(memory, reg)
+-		selected_size += memblock_region_memory_end_pfn(reg) -
+-				 memblock_region_memory_base_pfn(reg);
  
--#if CONFIG_PGTABLE_LEVELS > 2
--#define __pmd_free_tlb(tlb, pmdp, addr)			\
--do {							\
--	struct page *page = virt_to_page(pmdp);		\
--	pgtable_pmd_page_dtor(page);			\
--	tlb_remove_page((tlb), page);			\
--} while (0);
--#endif
--
- #endif /* __ASM_SH_PGALLOC_H */
++	selected_size = PHYS_PFN(memblock_phys_mem_size());
+ 	selected_size = (selected_size * kvm_cma_resv_ratio / 100) << PAGE_SHIFT;
+ 	if (selected_size) {
+ 		pr_debug("%s: reserving %ld MiB for global area\n", __func__,
+-- 
+2.26.2
