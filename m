@@ -1,54 +1,54 @@
-From: Rich Felker <dalias@libc.org>
-Date: Tue, 21 Jul 2020 03:20:20 +0000
-Subject: Re: ioremap and dma cleanups and fixes for superh (2nd resend)
-Message-Id: <20200721032019.GP14669@brightrain.aerifal.cx>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Tue, 28 Jul 2020 05:11:40 +0000
+Subject: [PATCH 02/15] dma-contiguous: simplify cma_early_percent_memory()
+Message-Id: <20200728051153.1590-3-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200714121856.955680-1-hch@lst.de>
- <b0745e43-0ff1-58f7-70d5-60b9c8b8d81b@physik.fu-berlin.de>
- <20200714155914.GA24404@brightrain.aerifal.cx>
- <8cbf2963-d0e4-0ca8-4ffe-c2057694447f@physik.fu-berlin.de>
- <011f29e6-ad71-366e-dbff-bc8471f3da60@physik.fu-berlin.de>
- <20200720133800.GA3084@lst.de>
- <661f7d56-bffc-f688-54e3-291cd5e7e18d@physik.fu-berlin.de>
- <20200720145325.GK14669@brightrain.aerifal.cx>
-In-Reply-To: <20200720145325.GK14669@brightrain.aerifal.cx>
+References: <20200728051153.1590-1-rppt@kernel.org>
+In-Reply-To: <20200728051153.1590-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Christoph Hellwig <hch@lst.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Hansen <dave.hansen@linux.intel.com>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, Stafford Horne <shorne@gmail.com>, Marek Szyprowski <m.szyprowski@samsung.com>, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, clang-built-linux@googlegroups.com, Ingo Molnar <mingo@redhat.com>, Catalin Marinas <catalin.marinas@arm.com>, uclinux-h8-devel@lists.sourceforge.jp, linux-xtensa@linux-xtensa.org, openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>, Andy Lutomirski <luto@kernel.org>, Paul Walmsley <paul.walmsley@sifive.com>, Thomas Gleixner <tglx@linutronix.de>, linux-arm-kernel@lists.infradead.org, Michal Simek <monstr@monstr.eu>, linux-mm@kvack.org, linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org, iommu@lists.linux-foundation.org, Palmer Dabbelt <palmer@dabbelt.com>, Christoph Hellwig <hch@lst.de>, Mike Rapoport <rppt@kernel.org>
 
-On Mon, Jul 20, 2020 at 10:53:26AM -0400, Rich Felker wrote:
-> On Mon, Jul 20, 2020 at 03:42:38PM +0200, John Paul Adrian Glaubitz wrote:
-> > Hi Christoph!
-> > 
-> > On 7/20/20 3:38 PM, Christoph Hellwig wrote:
-> > > On Wed, Jul 15, 2020 at 01:12:33AM +0200, John Paul Adrian Glaubitz wrote:
-> > >> Hello!
-> > >>
-> > >> I have applied Christoph's full series on top of Linus' tree and I can confirm that
-> > >> the kernel boots fine on my SH-7785LCR board.
-> > >>
-> > >> Thus, for the whole series of patches:
-> > >>
-> > >> Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> > > 
-> > > Any chance we get the patches queue up while you're all sorting out
-> > > totally independent issues?
-> > 
-> > I would love to buy only Rich can do that. I'm fine with your patches
-> > and would much appreciate if Rich could queue them up.
-> > 
-> > I'm also still waiting for my patch to be queued as well.
-> 
-> I saw it looked like this is solved and I'm going to look at it later
-> today. Thanks!
+From: Mike Rapoport <rppt@linux.ibm.com>
 
-I read and replied to this from my phone this morning so I was
-mistaken about the context in the above reply, but I've now queued
-(push still pending after some cleanup of sequence and testing)
-everything I can take from this series for linux-next. Some of the
-patches seem to depend on work in other maintainers' domains that need
-clarification.
+The memory size calculation in cma_early_percent_memory() traverses
+memblock.memory rather than simply call memblock_phys_mem_size(). The
+comment in that function suggests that at some point there should have been
+call to memblock_analyze() before memblock_phys_mem_size() could be used.
+As of now, there is no memblock_analyze() at all and
+memblock_phys_mem_size() can be used as soon as cold-plug memory is
+registerd with memblock.
 
-Rich
+Replace loop over memblock.memory with a call to memblock_phys_mem_size().
+
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+---
+ kernel/dma/contiguous.c | 11 +----------
+ 1 file changed, 1 insertion(+), 10 deletions(-)
+
+diff --git a/kernel/dma/contiguous.c b/kernel/dma/contiguous.c
+index 15bc5026c485..1992afd8ca7b 100644
+--- a/kernel/dma/contiguous.c
++++ b/kernel/dma/contiguous.c
+@@ -73,16 +73,7 @@ early_param("cma", early_cma);
+ 
+ static phys_addr_t __init __maybe_unused cma_early_percent_memory(void)
+ {
+-	struct memblock_region *reg;
+-	unsigned long total_pages = 0;
+-
+-	/*
+-	 * We cannot use memblock_phys_mem_size() here, because
+-	 * memblock_analyze() has not been called yet.
+-	 */
+-	for_each_memblock(memory, reg)
+-		total_pages += memblock_region_memory_end_pfn(reg) -
+-			       memblock_region_memory_base_pfn(reg);
++	unsigned long total_pages = PHYS_PFN(memblock_phys_mem_size());
+ 
+ 	return (total_pages * CONFIG_CMA_SIZE_PERCENTAGE / 100) << PAGE_SHIFT;
+ }
+-- 
+2.26.2
