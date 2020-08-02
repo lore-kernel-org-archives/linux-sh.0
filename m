@@ -1,67 +1,55 @@
-From: Nicholas Piggin <npiggin@gmail.com>
-Date: Tue, 28 Jul 2020 03:34:00 +0000
-Subject: [PATCH 19/24] sh: use asm-generic/mmu_context.h for no-op implementations
-Message-Id: <20200728033405.78469-20-npiggin@gmail.com>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Sun, 02 Aug 2020 16:35:46 +0000
+Subject: [PATCH v2 02/17] dma-contiguous: simplify cma_early_percent_memory()
+Message-Id: <20200802163601.8189-3-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200728033405.78469-1-npiggin@gmail.com>
-In-Reply-To: <20200728033405.78469-1-npiggin@gmail.com>
+References: <20200802163601.8189-1-rppt@kernel.org>
+In-Reply-To: <20200802163601.8189-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arch@vger.kernel.org
-Cc: Nicholas Piggin <npiggin@gmail.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, Arnd Bergmann <arnd@arndb.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Nicholas Piggin <npiggin@gmail.com>
+From: Mike Rapoport <rppt@linux.ibm.com>
+
+The memory size calculation in cma_early_percent_memory() traverses
+memblock.memory rather than simply call memblock_phys_mem_size(). The
+comment in that function suggests that at some point there should have been
+call to memblock_analyze() before memblock_phys_mem_size() could be used.
+As of now, there is no memblock_analyze() at all and
+memblock_phys_mem_size() can be used as soon as cold-plug memory is
+registerd with memblock.
+
+Replace loop over memblock.memory with a call to memblock_phys_mem_size().
+
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/sh/include/asm/mmu_context.h    | 5 ++---
- arch/sh/include/asm/mmu_context_32.h | 9 ---------
- 2 files changed, 2 insertions(+), 12 deletions(-)
+ kernel/dma/contiguous.c | 11 +----------
+ 1 file changed, 1 insertion(+), 10 deletions(-)
 
-diff --git a/arch/sh/include/asm/mmu_context.h b/arch/sh/include/asm/mmu_context.h
-index 9470d17c71c2..ce40147d4a7d 100644
---- a/arch/sh/include/asm/mmu_context.h
-+++ b/arch/sh/include/asm/mmu_context.h
-@@ -85,6 +85,7 @@ static inline void get_mmu_context(struct mm_struct *mm, unsigned int cpu)
-  * Initialize the context related info for a new mm_struct
-  * instance.
-  */
-+#define init_new_context init_new_context
- static inline int init_new_context(struct task_struct *tsk,
- 				   struct mm_struct *mm)
+diff --git a/kernel/dma/contiguous.c b/kernel/dma/contiguous.c
+index 15bc5026c485..1992afd8ca7b 100644
+--- a/kernel/dma/contiguous.c
++++ b/kernel/dma/contiguous.c
+@@ -73,16 +73,7 @@ early_param("cma", early_cma);
+ 
+ static phys_addr_t __init __maybe_unused cma_early_percent_memory(void)
  {
-@@ -121,9 +122,7 @@ static inline void switch_mm(struct mm_struct *prev,
- 			activate_context(next, cpu);
- }
- 
--#define activate_mm(prev, next)		switch_mm((prev),(next),NULL)
--#define deactivate_mm(tsk,mm)		do { } while (0)
--#define enter_lazy_tlb(mm,tsk)		do { } while (0)
-+#include <asm-generic/mmu_context.h>
- 
- #else
- 
-diff --git a/arch/sh/include/asm/mmu_context_32.h b/arch/sh/include/asm/mmu_context_32.h
-index 71bf12ef1f65..bc5034fa6249 100644
---- a/arch/sh/include/asm/mmu_context_32.h
-+++ b/arch/sh/include/asm/mmu_context_32.h
-@@ -2,15 +2,6 @@
- #ifndef __ASM_SH_MMU_CONTEXT_32_H
- #define __ASM_SH_MMU_CONTEXT_32_H
- 
--/*
-- * Destroy context related info for an mm_struct that is about
-- * to be put to rest.
-- */
--static inline void destroy_context(struct mm_struct *mm)
--{
--	/* Do nothing */
--}
+-	struct memblock_region *reg;
+-	unsigned long total_pages = 0;
 -
- #ifdef CONFIG_CPU_HAS_PTEAEX
- static inline void set_asid(unsigned long asid)
- {
+-	/*
+-	 * We cannot use memblock_phys_mem_size() here, because
+-	 * memblock_analyze() has not been called yet.
+-	 */
+-	for_each_memblock(memory, reg)
+-		total_pages += memblock_region_memory_end_pfn(reg) -
+-			       memblock_region_memory_base_pfn(reg);
++	unsigned long total_pages = PHYS_PFN(memblock_phys_mem_size());
+ 
+ 	return (total_pages * CONFIG_CMA_SIZE_PERCENTAGE / 100) << PAGE_SHIFT;
+ }
 -- 
-2.23.0
+2.26.2
