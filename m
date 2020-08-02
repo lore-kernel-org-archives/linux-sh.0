@@ -1,45 +1,64 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 19 Aug 2020 12:58:58 +0000
-Subject: [PATCH v2 1/7] spi: rspi: Remove useless .set_config_register() check
-Message-Id: <20200819125904.20938-2-geert+renesas@glider.be>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Sun, 02 Aug 2020 16:35:51 +0000
+Subject: [PATCH v2 07/17] mircoblaze: drop unneeded NUMA and sparsemem initializations
+Message-Id: <20200802163601.8189-8-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200819125904.20938-1-geert+renesas@glider.be>
-In-Reply-To: <20200819125904.20938-1-geert+renesas@glider.be>
+References: <20200802163601.8189-1-rppt@kernel.org>
+In-Reply-To: <20200802163601.8189-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Chris Brandt <chris.brandt@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>
 
-Not implementing spi_ops.set_config_register() is a driver bug that
-would prevent the driver from working at all.
-Hence remove the run-time check.
+From: Mike Rapoport <rppt@linux.ibm.com>
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+microblaze does not support neither NUMA not SPARSMEM, so there is no point
+to call memblock_set_node() and sparse_memory_present_with_active_regions()
+functions during microblaze memory initialization.
+
+Remove these calls and the surrounding code.
+
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
 ---
-v2:
-  - No changes.
+ arch/microblaze/mm/init.c | 17 +----------------
+ 1 file changed, 1 insertion(+), 16 deletions(-)
 
- drivers/spi/spi-rspi.c | 7 -------
- 1 file changed, 7 deletions(-)
-
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index cbc2387d450cd4c2..1b635d6b7881f5b9 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -1261,13 +1261,6 @@ static int rspi_probe(struct platform_device *pdev)
- 			ctlr->num_chipselect = 2; /* default */
- 	}
+diff --git a/arch/microblaze/mm/init.c b/arch/microblaze/mm/init.c
+index 521b59ba716c..49e0c241f9b1 100644
+--- a/arch/microblaze/mm/init.c
++++ b/arch/microblaze/mm/init.c
+@@ -105,9 +105,8 @@ static void __init paging_init(void)
  
--	/* ops parameter check */
--	if (!ops->set_config_register) {
--		dev_err(&pdev->dev, "there is no set_config_register\n");
--		ret = -ENODEV;
--		goto error1;
+ void __init setup_memory(void)
+ {
+-	struct memblock_region *reg;
+-
+ #ifndef CONFIG_MMU
++	struct memblock_region *reg;
+ 	u32 kernel_align_start, kernel_align_size;
+ 
+ 	/* Find main memory where is the kernel */
+@@ -161,20 +160,6 @@ void __init setup_memory(void)
+ 	pr_info("%s: max_low_pfn: %#lx\n", __func__, max_low_pfn);
+ 	pr_info("%s: max_pfn: %#lx\n", __func__, max_pfn);
+ 
+-	/* Add active regions with valid PFNs */
+-	for_each_memblock(memory, reg) {
+-		unsigned long start_pfn, end_pfn;
+-
+-		start_pfn = memblock_region_memory_base_pfn(reg);
+-		end_pfn = memblock_region_memory_end_pfn(reg);
+-		memblock_set_node(start_pfn << PAGE_SHIFT,
+-				  (end_pfn - start_pfn) << PAGE_SHIFT,
+-				  &memblock.memory, 0);
 -	}
 -
- 	rspi = spi_controller_get_devdata(ctlr);
- 	platform_set_drvdata(pdev, rspi);
- 	rspi->ops = ops;
+-	/* XXX need to clip this if using highmem? */
+-	sparse_memory_present_with_active_regions(0);
+-
+ 	paging_init();
+ }
+ 
 -- 
-2.17.1
+2.26.2
