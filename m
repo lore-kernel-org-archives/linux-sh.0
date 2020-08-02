@@ -1,7 +1,7 @@
 From: Mike Rapoport <rppt@kernel.org>
-Date: Sun, 02 Aug 2020 16:35:47 +0000
-Subject: [PATCH v2 03/17] arm, xtensa: simplify initialization of high memory pages
-Message-Id: <20200802163601.8189-4-rppt@kernel.org>
+Date: Sun, 02 Aug 2020 16:35:49 +0000
+Subject: [PATCH v2 05/17] h8300, nds32, openrisc: simplify detection of memory extents
+Message-Id: <20200802163601.8189-6-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200802163601.8189-1-rppt@kernel.org>
 In-Reply-To: <20200802163601.8189-1-rppt@kernel.org>
@@ -13,176 +13,84 @@ Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Her
 
 From: Mike Rapoport <rppt@linux.ibm.com>
 
-The function free_highpages() in both arm and xtensa essentially open-code
-for_each_free_mem_range() loop to detect high memory pages that were not
-reserved and that should be initialized and passed to the buddy allocator.
-
-Replace open-coded implementation of for_each_free_mem_range() with usage
-of memblock API to simplify the code.
+Instead of traversing memblock.memory regions to find memory_start and
+memory_end, simply query memblock_{start,end}_of_DRAM().
 
 Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-Reviewed-by: Max Filippov <jcmvbkbc@gmail.com>		# xtensa
-Tested-by: Max Filippov <jcmvbkbc@gmail.com>		# xtensa
+Acked-by: Stafford Horne <shorne@gmail.com>
 ---
- arch/arm/mm/init.c    | 48 +++++++------------------------------
- arch/xtensa/mm/init.c | 55 ++++++++-----------------------------------
- 2 files changed, 18 insertions(+), 85 deletions(-)
+ arch/h8300/kernel/setup.c    | 8 +++-----
+ arch/nds32/kernel/setup.c    | 8 ++------
+ arch/openrisc/kernel/setup.c | 9 ++-------
+ 3 files changed, 7 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm/mm/init.c b/arch/arm/mm/init.c
-index 01e18e43b174..626af348eb8f 100644
---- a/arch/arm/mm/init.c
-+++ b/arch/arm/mm/init.c
-@@ -352,61 +352,29 @@ static void __init free_unused_memmap(void)
- #endif
- }
+diff --git a/arch/h8300/kernel/setup.c b/arch/h8300/kernel/setup.c
+index 28ac88358a89..0281f92eea3d 100644
+--- a/arch/h8300/kernel/setup.c
++++ b/arch/h8300/kernel/setup.c
+@@ -74,17 +74,15 @@ static void __init bootmem_init(void)
+ 	memory_end = memory_start = 0;
  
--#ifdef CONFIG_HIGHMEM
--static inline void free_area_high(unsigned long pfn, unsigned long end)
--{
--	for (; pfn < end; pfn++)
--		free_highmem_page(pfn_to_page(pfn));
--}
--#endif
--
- static void __init free_highpages(void)
- {
- #ifdef CONFIG_HIGHMEM
- 	unsigned long max_low = max_low_pfn;
--	struct memblock_region *mem, *res;
-+	phys_addr_t range_start, range_end;
-+	u64 i;
+ 	/* Find main memory where is the kernel */
+-	for_each_memblock(memory, region) {
+-		memory_start = region->base;
+-		memory_end = region->base + region->size;
+-	}
++	memory_start = memblock_start_of_DRAM();
++	memory_end = memblock_end_of_DRAM();
  
- 	/* set highmem page free */
--	for_each_memblock(memory, mem) {
--		unsigned long start = memblock_region_memory_base_pfn(mem);
--		unsigned long end = memblock_region_memory_end_pfn(mem);
-+	for_each_free_mem_range(i, NUMA_NO_NODE, MEMBLOCK_NONE,
-+				&range_start, &range_end, NULL) {
-+		unsigned long start = PHYS_PFN(range_start);
-+		unsigned long end = PHYS_PFN(range_end);
+ 	if (!memory_end)
+ 		panic("No memory!");
  
- 		/* Ignore complete lowmem entries */
- 		if (end <= max_low)
- 			continue;
+ 	/* setup bootmem globals (we use no_bootmem, but mm still depends on this) */
+ 	min_low_pfn = PFN_UP(memory_start);
+-	max_low_pfn = PFN_DOWN(memblock_end_of_DRAM());
++	max_low_pfn = PFN_DOWN(memory_end);
+ 	max_pfn = max_low_pfn;
  
--		if (memblock_is_nomap(mem))
--			continue;
--
- 		/* Truncate partial highmem entries */
- 		if (start < max_low)
- 			start = max_low;
+ 	memblock_reserve(__pa(_stext), _end - _stext);
+diff --git a/arch/nds32/kernel/setup.c b/arch/nds32/kernel/setup.c
+index a066efbe53c0..c356e484dcab 100644
+--- a/arch/nds32/kernel/setup.c
++++ b/arch/nds32/kernel/setup.c
+@@ -249,12 +249,8 @@ static void __init setup_memory(void)
+ 	memory_end = memory_start = 0;
  
--		/* Find and exclude any reserved regions */
--		for_each_memblock(reserved, res) {
--			unsigned long res_start, res_end;
--
--			res_start = memblock_region_reserved_base_pfn(res);
--			res_end = memblock_region_reserved_end_pfn(res);
--
--			if (res_end < start)
--				continue;
--			if (res_start < start)
--				res_start = start;
--			if (res_start > end)
--				res_start = end;
--			if (res_end > end)
--				res_end = end;
--			if (res_start != start)
--				free_area_high(start, res_start);
--			start = res_end;
--			if (start = end)
--				break;
--		}
--
--		/* And now free anything which remains */
--		if (start < end)
--			free_area_high(start, end);
-+		for (; start < end; start++)
-+			free_highmem_page(pfn_to_page(start));
- 	}
- #endif
- }
-diff --git a/arch/xtensa/mm/init.c b/arch/xtensa/mm/init.c
-index a05b306cf371..ad9d59d93f39 100644
---- a/arch/xtensa/mm/init.c
-+++ b/arch/xtensa/mm/init.c
-@@ -79,67 +79,32 @@ void __init zones_init(void)
- 	free_area_init(max_zone_pfn);
- }
+ 	/* Find main memory where is the kernel */
+-	for_each_memblock(memory, region) {
+-		memory_start = region->base;
+-		memory_end = region->base + region->size;
+-		pr_info("%s: Memory: 0x%x-0x%x\n", __func__,
+-			memory_start, memory_end);
+-	}
++	memory_start = memblock_start_of_DRAM();
++	memory_end = memblock_end_of_DRAM();
  
--#ifdef CONFIG_HIGHMEM
--static void __init free_area_high(unsigned long pfn, unsigned long end)
--{
--	for (; pfn < end; pfn++)
--		free_highmem_page(pfn_to_page(pfn));
--}
--
- static void __init free_highpages(void)
- {
-+#ifdef CONFIG_HIGHMEM
- 	unsigned long max_low = max_low_pfn;
--	struct memblock_region *mem, *res;
-+	phys_addr_t range_start, range_end;
-+	u64 i;
+ 	if (!memory_end) {
+ 		panic("No memory!");
+diff --git a/arch/openrisc/kernel/setup.c b/arch/openrisc/kernel/setup.c
+index 8aa438e1f51f..c5706153d3b6 100644
+--- a/arch/openrisc/kernel/setup.c
++++ b/arch/openrisc/kernel/setup.c
+@@ -48,17 +48,12 @@ static void __init setup_memory(void)
+ 	unsigned long ram_start_pfn;
+ 	unsigned long ram_end_pfn;
+ 	phys_addr_t memory_start, memory_end;
+-	struct memblock_region *region;
  
--	reset_all_zones_managed_pages();
- 	/* set highmem page free */
--	for_each_memblock(memory, mem) {
--		unsigned long start = memblock_region_memory_base_pfn(mem);
--		unsigned long end = memblock_region_memory_end_pfn(mem);
-+	for_each_free_mem_range(i, NUMA_NO_NODE, MEMBLOCK_NONE,
-+				&range_start, &range_end, NULL) {
-+		unsigned long start = PHYS_PFN(range_start);
-+		unsigned long end = PHYS_PFN(range_end);
+ 	memory_end = memory_start = 0;
  
- 		/* Ignore complete lowmem entries */
- 		if (end <= max_low)
- 			continue;
+ 	/* Find main memory where is the kernel, we assume its the only one */
+-	for_each_memblock(memory, region) {
+-		memory_start = region->base;
+-		memory_end = region->base + region->size;
+-		printk(KERN_INFO "%s: Memory: 0x%x-0x%x\n", __func__,
+-		       memory_start, memory_end);
+-	}
++	memory_start = memblock_start_of_DRAM();
++	memory_end = memblock_end_of_DRAM();
  
--		if (memblock_is_nomap(mem))
--			continue;
--
- 		/* Truncate partial highmem entries */
- 		if (start < max_low)
- 			start = max_low;
- 
--		/* Find and exclude any reserved regions */
--		for_each_memblock(reserved, res) {
--			unsigned long res_start, res_end;
--
--			res_start = memblock_region_reserved_base_pfn(res);
--			res_end = memblock_region_reserved_end_pfn(res);
--
--			if (res_end < start)
--				continue;
--			if (res_start < start)
--				res_start = start;
--			if (res_start > end)
--				res_start = end;
--			if (res_end > end)
--				res_end = end;
--			if (res_start != start)
--				free_area_high(start, res_start);
--			start = res_end;
--			if (start = end)
--				break;
--		}
--
--		/* And now free anything which remains */
--		if (start < end)
--			free_area_high(start, end);
-+		for (; start < end; start++)
-+			free_highmem_page(pfn_to_page(start));
- 	}
--}
--#else
--static void __init free_highpages(void)
--{
--}
- #endif
-+}
- 
- /*
-  * Initialize memory pages.
+ 	if (!memory_end) {
+ 		panic("No memory!");
 -- 
 2.26.2
