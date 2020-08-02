@@ -1,231 +1,108 @@
-From: Jim Quinlan <james.quinlan@broadcom.com>
-Date: Mon, 17 Aug 2020 21:53:02 +0000
-Subject: [PATCH RESEND v10 00/11] PCI: brcmstb: enable PCIe for STB chips
-Message-Id: <20200817215326.30912-1-james.quinlan@broadcom.com>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Sun, 02 Aug 2020 16:35:44 +0000
+Subject: [PATCH v2 00/17] memblock: seasonal cleaning^w cleanup
+Message-Id: <20200802163601.8189-1-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org, Nicolas Saenz Julienne <nsaenzjulienne@suse.de>, Christoph Hellwig <hch@lst.de>, Robin Murphy <robin.murphy@arm.com>, bcm-kernel-feedback-list@broadcom.com, james.quinlan@broadcom.com
-Cc: Heikki Krogerus <heikki.krogerus@linux.intel.com>, "open list:SUPERH" <linux-sh@vger.kernel.org>, "open list:REMOTE PROCESSOR REMOTEPROC SUBSYSTEM" <linux-remoteproc@vger.kernel.org>, "open list:DRM DRIVERS FOR ALLWINNER A10" <dri-devel@lists.freedesktop.org>, Julien Grall <julien.grall@arm.com>, "H. Peter Anvin" <hpa@zytor.com>, "open list:STAGING SUBSYSTEM" <devel@driverdev.osuosl.org>, Jean-Philippe Brucker <jean-philippe@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, Saravana Kannan <saravanak@google.com>, "Rafael J. Wysocki" <rafael@kernel.org>, "open list:ACPI FOR ARM64 ACPI/arm64" <linux-acpi@vger.kernel.org>, Alan Stern <stern@rowland.harvard.edu>, "open list:ALLWINNER A10 CSI DRIVER" <linux-media@vger.kernel.org>, "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE" <devicetree@vger.kernel.org>, Joerg Roedel <jroedel@suse.de>, Arnd Bergmann <arnd@arndb.de>, "moderated list:BROADCOM BCM2711/BCM2835 ARM ARCHITECTURE" <linux-rpi-kernel@lists.infradead.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "open list:USB SUBSYSTEM" <linux-usb@vger.kernel.org>, open list <linux-kernel@vger.kernel.org>, "open list:IOMMU DRIVERS" <iommu@lists.linux-foundation.org>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>
 
-Patchset Summary:
-  Enhance a PCIe host controller driver.  Because of its unusual design
-  we are foced to change dev->dma_pfn_offset into a more general role
-  allowing multiple offsets.  See the 'v1' notes below for more info.
+From: Mike Rapoport <rppt@linux.ibm.com>
 
-v10: 
-  Commit: "device-mapping: Introduce DMA range map, supplanting ..."
-  -- change title of commit; "bus core:" => "device-mapping:"
-  -- instead of allocating the DMA map with devm, use kcalloc
-     and call kfree() during device_release().  (RobH) Also,
-     for three cases that want to use the same DMA map, copy
-     the dma_range_map using a helper function.
-  -- added a missing 'return = 0;' to of_dma_get_range().  (Nicolas)
-  -- removed dma_range_overlaps(); instead return error if there
-     is an existing DMA map. (Christoph).
-  Commit: "PCI: brcmstb: Set additional internal memory DMA ..."
-  -- Changed constant 1 to 1ULL. (Nicolas)
-  Commit: "ata: ahci_brcm: Fix use of BCM7216 reset controller"
-     This commit has been removed from this patchset and will be
-     submitted on its own.
+Hi,
 
-v9:
-  Commit: "device core: Introduce DMA range map, supplanting ..."
-  -- A number of code improvements were implemented as suggested by
-     ChristophH.  Unfortunately, some of these changes reversed the
-     implemented suggestions of other reviewers; for example, the new
-     macros PFN_DMA_ADDR(), DMA_ADDR_PFN() have been pulled.
+These patches simplify several uses of memblock iterators and hide some of
+the memblock implementation details from the rest of the system.
 
-v8:
-  Commit: "device core: Introduce DMA range map, supplanting ..."
-  -- To satisfy a specific m68 compile configuration, I moved the 'struct
-     bus_dma_region; definition out of #ifdef CONFIG_HAS_DMA and also defined
-     three inline functions for !CONFIG_HAS_DMA (kernel test robot).
-  -- The sunXi drivers -- suc4i_csi, sun6i_csi, cedrus_hw -- set
-     a pfn_offset outside of_dma_configure() but the code offers no 
-     insight on the size of the translation window.  V7 had me using
-     SIZE_MAX as the size.  I have since contacted the sunXi maintainer and
-     he said that using a size of SZ_4G would cover sunXi configurations.
+The patches are on top of v5.8-rc7 + cherry-pick of "mm/sparse: cleanup the
+code surrounding memory_present()" [1] from mmotm tree.
 
-v7:
-  Commit: "device core: Introduce DMA range map, supplanting ..."
-  -- remove second kcalloc/copy in device.c (AndyS)
-  -- use PTR_ERR_OR_ZERO() and PHYS_PFN() (AndyS)
-  -- indentation, sizeof(struct ...) => sizeof(*r) (AndyS)
-  -- add pfn.h definitions: PFN_DMA_ADDR(), DMA_ADDR_PFN() (AndyS)
-  -- Fixed compile error in "sun6i_csi.c" (kernel test robot)
-  Commit "ata: ahci_brcm: Fix use of BCM7216 reset controller"
-  -- correct name of function in the commit msg (SergeiS)
-  
-v6:
-  Commit "device core: Introduce DMA range map":
-  -- of_dma_get_range() now takes a single argument and returns either
-     NULL, a valid map, or an ERR_PTR. (Robin)
-  -- offsets are no longer a PFN value but an actual address. (Robin)
-  -- the bus_dma_region struct stores the range size instead of
-     the cpu_end and pci_end values. (Robin)
-  -- devices that were setting a single offset with no boundaries
-     have been modified to have boundaries; in a few places
-     where this information was unavilable a /* FIXME: ... */
-     comment was added. (Robin)
-  -- dma_attach_offset_range() can be called when an offset
-     map already exists; if it's range is already present
-     nothing is done and success is returned. (Robin)
-  All commits:
-  -- Man name/style/corrections/etc changed (Bjorn)
-  -- rebase to Torvalds master
+v2 changes:
+* replace for_each_memblock() with two versions, one for memblock.memory
+  and another one for memblock.reserved
+* fix overzealous cleanup of powerpc fadamp: keep the traversal over the
+  memblocks, but use better suited iterators
+* don't remove traversal over memblock.reserved in x86 numa cleanup but
+  replace for_each_memblock() with new for_each_reserved_mem_region()
+* simplify ramdisk and crash kernel allocations on x86
+* drop more redundant and unused code: __next_reserved_mem_region() and
+  memblock_mem_size()
+* add description of numa initialization fix on arm64 (thanks Jonathan)
+* add Acked and Reviewed tags
 
-v5:
-  Commit "device core: Introduce multiple dma pfn offsets"
-  -- in of/address.c: "map_size = 0" => "*map_size = 0"
-  -- use kcalloc instead of kzalloc (AndyS)
-  -- use PHYS_ADDR_MAX instead of "~(phys_addr_t)0"
-  Commit "PCI: brcmstb: Set internal memory viewport sizes"
-  -- now gives error on missing dma-ranges property.
-  Commit "dt-bindings: PCI: Add bindings for more Brcmstb chips"
-  -- removed "Allof:" from brcm,scb-sizes definition (RobH)
-  All Commits:
-  -- indentation style, use max chars 100 (AndyS)
-  -- rebased to torvalds master
+[1] http://lkml.kernel.org/r/20200712083130.22919-1-rppt@kernel.org 
 
-v4:
-  Commit "device core: Introduce multiple dma pfn offsets"
-  -- of_dma_get_range() does not take a dev param but instead
-     takes two "out" params: map and map_size.  We do this so
-     that the code that parses dma-ranges is separate from
-     the code that modifies 'dev'.   (Nicolas)
-  -- the separate case of having a single pfn offset has
-     been removed and is now processed by going through the
-     map array. (Nicolas)
-  -- move attach_uniform_dma_pfn_offset() from of/address.c to
-     dma/mapping.c so that it does not depend on CONFIG_OF. (Nicolas)
-  -- devm_kcalloc => devm_kzalloc (DanC)
-  -- add/fix assignment to dev->dma_pfn_offset_map for func
-     attach_uniform_dma_pfn_offset() (DanC, Nicolas)
-  -- s/struct dma_pfn_offset_region/struct bus_dma_region/ (Nicolas)
-  -- s/attach_uniform_dma_pfn_offset/dma_attach_uniform_pfn_offset/
-  -- s/attach_dma_pfn_offset_map/dma_attach_pfn_offset_map/
-  -- More use of PFN_{PHYS,DOWN,UP}. (AndyS)
-  Commit "of: Include a dev param in of_dma_get_range()"
-  -- this commit was sqaushed with "device core: Introduce ..."
+Mike Rapoport (17):
+  KVM: PPC: Book3S HV: simplify kvm_cma_reserve()
+  dma-contiguous: simplify cma_early_percent_memory()
+  arm, xtensa: simplify initialization of high memory pages
+  arm64: numa: simplify dummy_numa_init()
+  h8300, nds32, openrisc: simplify detection of memory extents
+  riscv: drop unneeded node initialization
+  mircoblaze: drop unneeded NUMA and sparsemem initializations
+  memblock: make for_each_memblock_type() iterator private
+  memblock: make memblock_debug and related functionality private
+  memblock: reduce number of parameters in for_each_mem_range()
+  arch, mm: replace for_each_memblock() with for_each_mem_pfn_range()
+  arch, drivers: replace for_each_membock() with for_each_mem_range()
+  x86/setup: simplify initrd relocation and reservation
+  x86/setup: simplify reserve_crashkernel()
+  memblock: remove unused memblock_mem_size()
+  memblock: implement for_each_reserved_mem_region() using __next_mem_region()
+  memblock: use separate iterators for memory and reserved regions
 
-v3:
-  Commit "device core: Introduce multiple dma pfn offsets"
-  Commit "arm: dma-mapping: Invoke dma offset func if needed"
-  -- The above two commits have been squashed.  More importantly,
-     the code has been modified so that the functionality for
-     multiple pfn offsets subsumes the use of dev->dma_pfn_offset.
-     In fact, dma_pfn_offset is removed and supplanted by
-     dma_pfn_offset_map, which is a pointer to an array.  The
-     more common case of a uniform offset is now handled as
-     a map with a single entry, while cases requiring multiple
-     pfn offsets use a map with multiple entries.  Code paths
-     that used to do this:
-
-         dev->dma_pfn_offset = mydrivers_pfn_offset;
-
-     have been changed to do this:
-
-         attach_uniform_dma_pfn_offset(dev, pfn_offset);
-
-  Commit "dt-bindings: PCI: Add bindings for more Brcmstb chips"
-  -- Add if/then clause for required props: resets, reset-names (RobH)
-  -- Change compatible list from const to enum (RobH)
-  -- Change list of u32-tuples to u64 (RobH)
-
-  Commit "of: Include a dev param in of_dma_get_range()"
-  -- modify of/unittests.c to add NULL param in of_dma_get_range() call.
-
-  Commit "device core: Add ability to handle multiple dma offsets"
-  -- align comment in device.h (AndyS).
-  -- s/cpu_beg/cpu_start/ and s/dma_beg/dma_start/ in struct
-     dma_pfn_offset_region (AndyS).
-
-v2:
-Commit: "device core: Add ability to handle multiple dma offsets"
-  o Added helper func attach_dma_pfn_offset_map() in address.c (Chistoph)
-  o Helpers funcs added to __phys_to_dma() & __dma_to_phys() (Christoph)
-  o Added warning when multiple offsets are needed and !DMA_PFN_OFFSET_MAP
-  o dev->dma_pfn_map => dev->dma_pfn_offset_map
-  o s/frm/from/ for dma_pfn_offset_frm_{phys,dma}_addr() (Christoph)
-  o In device.h: s/const void */const struct dma_pfn_offset_region */
-  o removed 'unlikely' from unlikely(dev->dma_pfn_offset_map) since
-    guarded by CONFIG_DMA_PFN_OFFSET_MAP (Christoph)
-  o Since dev->dma_pfn_offset is copied in usb/core/{usb,message}.c, now
-    dev->dma_pfn_offset_map is copied as well.
-  o Merged two of the DMA commits into one (Christoph).
-
-Commit "arm: dma-mapping: Invoke dma offset func if needed":
-  o Use helper functions instead of #if CONFIG_DMA_PFN_OFFSET
-
-Other commits' changes:
-  o Removed need for carrying of_id var in priv (Nicolas)
-  o Commit message rewordings (Bjorn)
-  o Commit log messages filled to 75 chars (Bjorn)
-  o devm_reset_control_get_shared())
-    => devm_reset_control_get_optional_shared (Philipp)
-  o Add call to reset_control_assert() in PCIe remove routines (Philipp)
-
-v1:
-This patchset expands the usefulness of the Broadcom Settop Box PCIe
-controller by building upon the PCIe driver used currently by the
-Raspbery Pi.  Other forms of this patchset were submitted by me years
-ago and not accepted; the major sticking point was the code required
-for the DMA remapping needed for the PCIe driver to work [1].
-
-There have been many changes to the DMA and OF subsystems since that
-time, making a cleaner and less intrusive patchset possible.  This
-patchset implements a generalization of "dev->dma_pfn_offset", except
-that instead of a single scalar offset it provides for multiple
-offsets via a function which depends upon the "dma-ranges" property of
-the PCIe host controller.  This is required for proper functionality
-of the BrcmSTB PCIe controller and possibly some other devices.
-
-[1] https://lore.kernel.org/linux-arm-kernel/1516058925-46522-5-git-send-email-jim2101024@gmail.com/
-
-
-Jim Quinlan (11):
-  PCI: brcmstb: PCIE_BRCMSTB depends on ARCH_BRCMSTB
-  dt-bindings: PCI: Add bindings for more Brcmstb chips
-  PCI: brcmstb: Add bcm7278 register info
-  PCI: brcmstb: Add suspend and resume pm_ops
-  PCI: brcmstb: Add bcm7278 PERST# support
-  PCI: brcmstb: Add control of rescal reset
-  device-mapping: Introduce DMA range map, supplanting dma_pfn_offset
-  PCI: brcmstb: Set additional internal memory DMA viewport sizes
-  PCI: brcmstb: Accommodate MSI for older chips
-  PCI: brcmstb: Set bus max burst size by chip type
-  PCI: brcmstb: Add bcm7211, bcm7216, bcm7445, bcm7278 to match list
-
- .../bindings/pci/brcm,stb-pcie.yaml           |  56 ++-
- arch/arm/include/asm/dma-mapping.h            |  10 +-
- arch/arm/mach-keystone/keystone.c             |  17 +-
- arch/sh/drivers/pci/pcie-sh7786.c             |   9 +-
- arch/sh/kernel/dma-coherent.c                 |  15 +-
- arch/x86/pci/sta2x11-fixup.c                  |   7 +-
- drivers/acpi/arm64/iort.c                     |   5 +-
- drivers/base/core.c                           |   2 +
- drivers/gpu/drm/sun4i/sun4i_backend.c         |   5 +-
- drivers/iommu/io-pgtable-arm.c                |   2 +-
- .../platform/sunxi/sun4i-csi/sun4i_csi.c      |   5 +-
- .../platform/sunxi/sun6i-csi/sun6i_csi.c      |   4 +-
- drivers/of/address.c                          |  72 ++-
- drivers/of/device.c                           |  43 +-
- drivers/of/of_private.h                       |  10 +-
- drivers/of/unittest.c                         |  31 +-
- drivers/pci/controller/Kconfig                |   3 +-
- drivers/pci/controller/pcie-brcmstb.c         | 409 +++++++++++++++---
- drivers/remoteproc/remoteproc_core.c          |   8 +-
- .../staging/media/sunxi/cedrus/cedrus_hw.c    |   7 +-
- drivers/usb/core/message.c                    |   9 +-
- drivers/usb/core/usb.c                        |   7 +-
- include/linux/device.h                        |   4 +-
- include/linux/dma-direct.h                    |   8 +-
- include/linux/dma-mapping.h                   |  36 ++
- kernel/dma/coherent.c                         |  10 +-
- kernel/dma/mapping.c                          |  65 +++
- 27 files changed, 672 insertions(+), 187 deletions(-)
+ .clang-format                            |  4 +-
+ arch/arm/kernel/setup.c                  | 18 +++--
+ arch/arm/mm/init.c                       | 59 ++++------------
+ arch/arm/mm/mmu.c                        | 39 ++++-------
+ arch/arm/mm/pmsa-v7.c                    | 20 +++---
+ arch/arm/mm/pmsa-v8.c                    | 17 +++--
+ arch/arm/xen/mm.c                        |  7 +-
+ arch/arm64/kernel/machine_kexec_file.c   |  6 +-
+ arch/arm64/kernel/setup.c                |  4 +-
+ arch/arm64/mm/init.c                     | 11 ++-
+ arch/arm64/mm/kasan_init.c               | 10 +--
+ arch/arm64/mm/mmu.c                      | 11 +--
+ arch/arm64/mm/numa.c                     | 15 ++---
+ arch/c6x/kernel/setup.c                  |  9 +--
+ arch/h8300/kernel/setup.c                |  8 +--
+ arch/microblaze/mm/init.c                | 24 ++-----
+ arch/mips/cavium-octeon/dma-octeon.c     | 12 ++--
+ arch/mips/kernel/setup.c                 | 31 +++++----
+ arch/mips/netlogic/xlp/setup.c           |  2 +-
+ arch/nds32/kernel/setup.c                |  8 +--
+ arch/openrisc/kernel/setup.c             |  9 +--
+ arch/openrisc/mm/init.c                  |  8 ++-
+ arch/powerpc/kernel/fadump.c             | 57 ++++++++--------
+ arch/powerpc/kvm/book3s_hv_builtin.c     | 11 +--
+ arch/powerpc/mm/book3s64/hash_utils.c    | 16 ++---
+ arch/powerpc/mm/book3s64/radix_pgtable.c | 11 ++-
+ arch/powerpc/mm/kasan/kasan_init_32.c    |  8 +--
+ arch/powerpc/mm/mem.c                    | 33 +++++----
+ arch/powerpc/mm/numa.c                   |  7 +-
+ arch/powerpc/mm/pgtable_32.c             |  8 +--
+ arch/riscv/mm/init.c                     | 34 +++-------
+ arch/riscv/mm/kasan_init.c               | 10 +--
+ arch/s390/kernel/crash_dump.c            |  8 +--
+ arch/s390/kernel/setup.c                 | 31 +++++----
+ arch/s390/mm/page-states.c               |  6 +-
+ arch/s390/mm/vmem.c                      | 16 +++--
+ arch/sh/mm/init.c                        |  9 +--
+ arch/sparc/mm/init_64.c                  | 12 ++--
+ arch/x86/kernel/setup.c                  | 56 +++++-----------
+ arch/x86/mm/numa.c                       |  2 +-
+ arch/xtensa/mm/init.c                    | 55 +++------------
+ drivers/bus/mvebu-mbus.c                 | 12 ++--
+ drivers/irqchip/irq-gic-v3-its.c         |  2 +-
+ drivers/s390/char/zcore.c                |  9 +--
+ include/linux/memblock.h                 | 65 +++++++++---------
+ kernel/dma/contiguous.c                  | 11 +--
+ mm/memblock.c                            | 85 ++++++++----------------
+ mm/page_alloc.c                          | 11 ++-
+ mm/sparse.c                              | 10 ++-
+ 49 files changed, 366 insertions(+), 561 deletions(-)
 
 -- 
-2.17.1
+2.26.2
