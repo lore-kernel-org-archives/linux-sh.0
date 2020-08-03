@@ -1,112 +1,101 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Sun, 09 Aug 2020 20:26:54 +0000
-Subject: Re: [regression fix] Re: "sh: convert to ->regset_get()" breaks linux-sh build
-Message-Id: <8b71cdde-ad2a-e770-b2db-c0b5950994f8@physik.fu-berlin.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 03 Aug 2020 10:01:29 +0000
+Subject: Re: [PATCH] sh: add missing EXPORT_SYMBOL() for __delay
+Message-Id: <CAMuHMdUvSVs7vQ7GDhHx4Rp-DJZuSU2xtPVtX86+p9GptHfBhQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200809174508.GA3026725@ZenIV.linux.org.uk>
-In-Reply-To: <20200809174508.GA3026725@ZenIV.linux.org.uk>
+References: <87wob2clos.wl-kuninori.morimoto.gx@renesas.com>
+ <20200722023840.GA55317@roeck-us.net> <20200722225239.GX14669@brightrain.aerifal.cx>
+ <fa0456c9-cef0-45e7-59d7-ad652734b1d5@roeck-us.net>
+In-Reply-To: <fa0456c9-cef0-45e7-59d7-ad652734b1d5@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Guenter Roeck <linux@roeck-us.net>
+Cc: Rich Felker <dalias@libc.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Andrew Morton <akpm@linux-foundation.org>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 
-Hi Al!
+On Thu, Jul 23, 2020 at 1:53 AM Guenter Roeck <linux@roeck-us.net> wrote:
+> On 7/22/20 3:52 PM, Rich Felker wrote:
+> > On Tue, Jul 21, 2020 at 07:38:40PM -0700, Guenter Roeck wrote:
+> >> On Thu, Dec 12, 2019 at 11:38:43AM +0900, Kuninori Morimoto wrote:
+> >>> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> >>>
+> >>> __delay() is used from kernel module.
+> >>> We need EXPORT_SYMBOL(), otherwise we will get compile error.
+> >>>
+> >>> ERROR: "__delay" [drivers/net/phy/mdio-cavium.ko] undefined!
+> >>>
+> >>> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> >>
+> >> I must admit that this patch completely baffles me. __delay was
+> >> already exported, only elsewhere in the file. With this patch
+> >> in place, it is exported twice, and all sh builds in -next fail
+> >> with
+> >>
+> >> In file included from include/linux/linkage.h:7,
+> >>                  from arch/sh/include/asm/bug.h:5,
+> >>                  from include/linux/bug.h:5,
+> >>                  from include/linux/thread_info.h:12,
+> >>                  from include/asm-generic/current.h:5,
+> >>                  from ./arch/sh/include/generated/asm/current.h:1,
+> >>                  from include/linux/sched.h:12,
+> >>                  from arch/sh/lib/delay.c:8:
+> >> include/linux/export.h:67:36: error: redefinition of '__ksymtab___delay'
+> >>
+> >> Guenter
+> >>
+> >>> ---
+> >>>  arch/sh/lib/delay.c | 1 +
+> >>>  1 file changed, 1 insertion(+)
+> >>>
+> >>> diff --git a/arch/sh/lib/delay.c b/arch/sh/lib/delay.c
+> >>> index dad8e6a..540e670 100644
+> >>> --- a/arch/sh/lib/delay.c
+> >>> +++ b/arch/sh/lib/delay.c
+> >>> @@ -29,6 +29,7 @@ void __delay(unsigned long loops)
+> >>>             : "0" (loops)
+> >>>             : "t");
+> >>>  }
+> >>> +EXPORT_SYMBOL(__delay);
+> >>>
+> >>>  inline void __const_udelay(unsigned long xloops)
+> >>>  {
+> >
+> > I presently have a revert of this commit in queue for next. If it's
+> > sufficiently breaking (and especially if there are other regressions
+> > that need to be fixed, see the pmd_free thing) I could try to get it
+> > in for 5.8 still but that's getting a bit late.
+> >
+>
+> The patch in mainline is ok. It appears that it has been applied
+> again in -next.
+>
+> "git log --oneline v5.7.. arch/sh/lib/delay.c" on top of next-20200721
+> reports:
+>
+> ee0e4f15dfd4 (origin/akpm) sh: add missing EXPORT_SYMBOL() for __delay
+> d1f56f318d23 sh: add missing EXPORT_SYMBOL() for __delay
+>
+> Maybe it just needs to be dropped from the akpm tree in -next ?
 
-On 8/9/20 7:45 PM, Al Viro wrote:
-> On Sun, Aug 09, 2020 at 05:14:38PM +0100, Al Viro wrote:
-> 
->> What the... oh, I see.
->>
->> Commit in the regset followup series has fixed that, with bisect hazard unnoticed.
->> And since only the followups have not gone in, bisect hazard has turned into
->> a mainline breakage ;/
->>
->> Sorry about that.  FWIW, the commit in question is this; all per-architecture
->> parts in it are mutually independent, but I'll probably just send this one
->> to Linus - no point splitting it up.
-> 
-> FWIW, there are several ways to handle that.  One is to pull vfs.git#fixes -
-> that's the first commit of #regset.followups.  Another is to cherry-pick
-> the same.  And the minimal fix would be the subset of that commit as below.
-> Linus, what would you prefer?
-> 
-> sh: kill unused dump_fpu() instance
-> 
-> dead code now that fdpic has switched to regset coredumps.
->  
-> Fixes: 3399d90ce63e "sh: convert to ->regset_get()"
-> Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
-> ---
-> diff --git a/arch/sh/include/asm/fpu.h b/arch/sh/include/asm/fpu.h
-> index 43cfaf929aa7..04584be8986c 100644
-> --- a/arch/sh/include/asm/fpu.h
-> +++ b/arch/sh/include/asm/fpu.h
-> @@ -37,11 +37,6 @@ struct user_regset;
->  extern int do_fpu_inst(unsigned short, struct pt_regs *);
->  extern int init_fpu(struct task_struct *);
->  
-> -extern int fpregs_get(struct task_struct *target,
-> -		      const struct user_regset *regset,
-> -		      unsigned int pos, unsigned int count,
-> -		      void *kbuf, void __user *ubuf);
-> -
->  static inline void __unlazy_fpu(struct task_struct *tsk, struct pt_regs *regs)
->  {
->  	if (task_thread_info(tsk)->status & TS_USEDFPU) {
-> diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
-> index 6ab397bc47ed..7a59a63560c5 100644
-> --- a/arch/sh/kernel/process_32.c
-> +++ b/arch/sh/kernel/process_32.c
-> @@ -93,24 +93,6 @@ void release_thread(struct task_struct *dead_task)
->  	/* do nothing */
->  }
->  
-> -/* Fill in the fpu structure for a core dump.. */
-> -int dump_fpu(struct pt_regs *regs, elf_fpregset_t *fpu)
-> -{
-> -	int fpvalid = 0;
-> -
-> -#if defined(CONFIG_SH_FPU)
-> -	struct task_struct *tsk = current;
-> -
-> -	fpvalid = !!tsk_used_math(tsk);
-> -	if (fpvalid)
-> -		fpvalid = !fpregs_get(tsk, NULL,
-> -				      (struct membuf){fpu, sizeof(*fpu)});
-> -#endif
-> -
-> -	return fpvalid;
-> -}
-> -EXPORT_SYMBOL(dump_fpu);
-> -
->  asmlinkage void ret_from_fork(void);
->  asmlinkage void ret_from_kernel_thread(void);
->  
-> diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
-> index 5c93bdb6c41a..609b7c917e6e 100644
-> --- a/arch/sh/kernel/ptrace_32.c
-> +++ b/arch/sh/kernel/ptrace_32.c
-> @@ -165,7 +165,7 @@ static int genregs_set(struct task_struct *target,
->  }
->  
->  #ifdef CONFIG_SH_FPU
-> -int fpregs_get(struct task_struct *target,
-> +static int fpregs_get(struct task_struct *target,
->  	       const struct user_regset *regset,
->  	       struct membuf to)
->  {
-> 
+IMHO all of them should be dropped/reverted.
+__delay is an internal implementation detail, not to be used by drivers.
 
-Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+See also include/asm-generic/delay.h:
 
-This fixes the linux-next build on SH for me and also produces a bootable kernel image
-which boots without any issues on my SH7785LCR.
+    /* Undefined functions to get compile-time errors */
+    ...
+    extern void __delay(unsigned long loops);
 
-Thanks,
-Adrian
+Cfr. '[PATCH] Revert "sh: add missing EXPORT_SYMBOL() for __delay"'
+https://lore.kernel.org/lkml/20200608080636.27862-1-geert+renesas@glider.be/
+
+Gr{oetje,eeting}s,
+
+                        Geert
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
