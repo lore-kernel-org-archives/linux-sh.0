@@ -1,7 +1,7 @@
-From: Rich Felker <dalias@libc.org>
-Date: Fri, 07 Aug 2020 18:34:42 +0000
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Fri, 07 Aug 2020 18:35:44 +0000
 Subject: Re: Pull Request for 5.9
-Message-Id: <20200807183442.GB3265@brightrain.aerifal.cx>
+Message-Id: <8ef2d5fc-4796-538a-215d-834d5a07a22f@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <16a9b527-e05c-dcac-86bd-b79be140c053@physik.fu-berlin.de>
 In-Reply-To: <16a9b527-e05c-dcac-86bd-b79be140c053@physik.fu-berlin.de>
@@ -10,16 +10,25 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Aug 07, 2020 at 09:36:07AM +0200, John Paul Adrian Glaubitz wrote:
-> Hi Rich!
+On 8/7/20 8:34 PM, Rich Felker wrote:
+> On Fri, Aug 07, 2020 at 09:36:07AM +0200, John Paul Adrian Glaubitz wrote:
+>> Hi Rich!
+>>
+>> Any chance you can send the pull request to Linus for 5.9?
+>>
+>> I would like to see my get_user() patch merged as otherwise libsecomp upstream
+>> won't allow me to open the PR to get the userland changes merged for SECCOMP
+>> support.
 > 
-> Any chance you can send the pull request to Linus for 5.9?
-> 
-> I would like to see my get_user() patch merged as otherwise libsecomp upstream
-> won't allow me to open the PR to get the userland changes merged for SECCOMP
-> support.
+> Yep, it's on my todo for this week. I'll try to get to it today. Does
+> everything in next look good to you?
 
-Yep, it's on my todo for this week. I'll try to get to it today. Does
-everything in next look good to you?
+I haven't done testing on next yet, but I will do that by Sunday - at latest.
 
-Rich
+Adrian
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
