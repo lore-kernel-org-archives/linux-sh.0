@@ -1,29 +1,51 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Fri, 07 Aug 2020 18:35:44 +0000
+Date: Sun, 09 Aug 2020 13:37:16 +0000
 Subject: Re: Pull Request for 5.9
-Message-Id: <8ef2d5fc-4796-538a-215d-834d5a07a22f@physik.fu-berlin.de>
+Message-Id: <7ac6117a-fc51-ad6b-11b3-a4a8eed3a781@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <16a9b527-e05c-dcac-86bd-b79be140c053@physik.fu-berlin.de>
 In-Reply-To: <16a9b527-e05c-dcac-86bd-b79be140c053@physik.fu-berlin.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-sh@vger.kernel.org
 
-On 8/7/20 8:34 PM, Rich Felker wrote:
-> On Fri, Aug 07, 2020 at 09:36:07AM +0200, John Paul Adrian Glaubitz wrote:
->> Hi Rich!
->>
->> Any chance you can send the pull request to Linus for 5.9?
->>
->> I would like to see my get_user() patch merged as otherwise libsecomp upstream
->> won't allow me to open the PR to get the userland changes merged for SECCOMP
->> support.
-> 
-> Yep, it's on my todo for this week. I'll try to get to it today. Does
-> everything in next look good to you?
+Hi Rich!
 
-I haven't done testing on next yet, but I will do that by Sunday - at latest.
+Building -next on SH is currently broken:
+
+make[1]: 'include/generated/machtypes.h' is up to date.
+  CALL    scripts/checksyscalls.sh
+<stdin>:1511:2: warning: #warning syscall clone3 not implemented [-Wcpp]
+  CALL    scripts/atomic/check-atomics.sh
+  CHK     include/generated/compile.h
+  CC      arch/sh/kernel/ptrace_32.o
+arch/sh/kernel/ptrace_32.c:168:5: error: conflicting types for ‘fpregs_get’
+  168 | int fpregs_get(struct task_struct *target,
+      |     ^~~~~~~~~~
+In file included from arch/sh/kernel/ptrace_32.c:31:
+./arch/sh/include/asm/fpu.h:40:12: note: previous declaration of ‘fpregs_get’ was here
+   40 | extern int fpregs_get(struct task_struct *target,
+      |            ^~~~~~~~~~
+make[1]: *** [scripts/Makefile.build:283: arch/sh/kernel/ptrace_32.o] Error 1
+make: *** [Makefile:1789: arch/sh/kernel] Error 2
+
+This regression was introduced by:
+
+commit 3399d90ce63edf7439900db50b5c02aa822f190b
+Author: Al Viro <viro@zeniv.linux.org.uk>
+Date:   Tue Jun 16 00:54:51 2020 -0400
+
+    sh: convert to ->regset_get()
+
+    NB: there's a direct call of fpregs_get() left in dump_fpu().
+    To be taken out once we convert ELF_FDPIC to use of regset.
+
+    Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+
+ arch/sh/kernel/process_32.c |  5 ++---
+ arch/sh/kernel/ptrace_32.c  | 48 ++++++++++-----------------------------------
+ 2 files changed, 12 insertions(+), 41 deletions(-)
 
 Adrian
 
