@@ -1,62 +1,92 @@
-From: Baoquan He <bhe@redhat.com>
-Date: Wed, 05 Aug 2020 08:29:24 +0000
-Subject: Re: [PATCH v2 15/17] memblock: remove unused memblock_mem_size()
-Message-Id: <20200805082924.GV10792@MiWiFi-R3L-srv>
+From: Al Viro <viro@zeniv.linux.org.uk>
+Date: Sun, 09 Aug 2020 17:45:08 +0000
+Subject: [regression fix] Re: "sh: convert to ->regset_get()" breaks linux-sh build
+Message-Id: <20200809174508.GA3026725@ZenIV.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200802163601.8189-1-rppt@kernel.org>
- <20200802163601.8189-16-rppt@kernel.org>
-In-Reply-To: <20200802163601.8189-16-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Rapoport <rppt@kernel.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>, Russell
+To: linux-sh@vger.kernel.org
 
-On 08/02/20 at 07:35pm, Mike Rapoport wrote:
-> From: Mike Rapoport <rppt@linux.ibm.com>
-> 
-> The only user of memblock_mem_size() was x86 setup code, it is gone now and
-> memblock_mem_size() funciton can be removed.
-> 
-> Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> ---
->  include/linux/memblock.h |  1 -
->  mm/memblock.c            | 15 ---------------
->  2 files changed, 16 deletions(-)
-> 
-> diff --git a/include/linux/memblock.h b/include/linux/memblock.h
-> index d70c2835e913..ec2fd8f32a19 100644
-> --- a/include/linux/memblock.h
-> +++ b/include/linux/memblock.h
-> @@ -450,7 +450,6 @@ static inline bool memblock_bottom_up(void)
->  
->  phys_addr_t memblock_phys_mem_size(void);
->  phys_addr_t memblock_reserved_size(void);
-> -phys_addr_t memblock_mem_size(unsigned long limit_pfn);
->  phys_addr_t memblock_start_of_DRAM(void);
->  phys_addr_t memblock_end_of_DRAM(void);
->  void memblock_enforce_memory_limit(phys_addr_t memory_limit);
-> diff --git a/mm/memblock.c b/mm/memblock.c
-> index c1a4c8798973..48d614352b25 100644
-> --- a/mm/memblock.c
-> +++ b/mm/memblock.c
-> @@ -1656,21 +1656,6 @@ phys_addr_t __init_memblock memblock_reserved_size(void)
->  	return memblock.reserved.total_size;
->  }
->  
-> -phys_addr_t __init memblock_mem_size(unsigned long limit_pfn)
-> -{
-> -	unsigned long pages = 0;
-> -	unsigned long start_pfn, end_pfn;
-> -	int i;
-> -
-> -	for_each_mem_pfn_range(i, MAX_NUMNODES, &start_pfn, &end_pfn, NULL) {
-> -		start_pfn = min_t(unsigned long, start_pfn, limit_pfn);
-> -		end_pfn = min_t(unsigned long, end_pfn, limit_pfn);
-> -		pages += end_pfn - start_pfn;
-> -	}
-> -
-> -	return PFN_PHYS(pages);
-> -}
+On Sun, Aug 09, 2020 at 05:14:38PM +0100, Al Viro wrote:
 
-Reviewed-by: Baoquan He <bhe@redhat.com>
+> What the... oh, I see.
+> 
+> Commit in the regset followup series has fixed that, with bisect hazard unnoticed.
+> And since only the followups have not gone in, bisect hazard has turned into
+> a mainline breakage ;/
+> 
+> Sorry about that.  FWIW, the commit in question is this; all per-architecture
+> parts in it are mutually independent, but I'll probably just send this one
+> to Linus - no point splitting it up.
+
+FWIW, there are several ways to handle that.  One is to pull vfs.git#fixes -
+that's the first commit of #regset.followups.  Another is to cherry-pick
+the same.  And the minimal fix would be the subset of that commit as below.
+Linus, what would you prefer?
+
+sh: kill unused dump_fpu() instance
+
+dead code now that fdpic has switched to regset coredumps.
+ 
+Fixes: 3399d90ce63e "sh: convert to ->regset_get()"
+Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+---
+diff --git a/arch/sh/include/asm/fpu.h b/arch/sh/include/asm/fpu.h
+index 43cfaf929aa7..04584be8986c 100644
+--- a/arch/sh/include/asm/fpu.h
++++ b/arch/sh/include/asm/fpu.h
+@@ -37,11 +37,6 @@ struct user_regset;
+ extern int do_fpu_inst(unsigned short, struct pt_regs *);
+ extern int init_fpu(struct task_struct *);
+ 
+-extern int fpregs_get(struct task_struct *target,
+-		      const struct user_regset *regset,
+-		      unsigned int pos, unsigned int count,
+-		      void *kbuf, void __user *ubuf);
+-
+ static inline void __unlazy_fpu(struct task_struct *tsk, struct pt_regs *regs)
+ {
+ 	if (task_thread_info(tsk)->status & TS_USEDFPU) {
+diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
+index 6ab397bc47ed..7a59a63560c5 100644
+--- a/arch/sh/kernel/process_32.c
++++ b/arch/sh/kernel/process_32.c
+@@ -93,24 +93,6 @@ void release_thread(struct task_struct *dead_task)
+ 	/* do nothing */
+ }
+ 
+-/* Fill in the fpu structure for a core dump.. */
+-int dump_fpu(struct pt_regs *regs, elf_fpregset_t *fpu)
+-{
+-	int fpvalid = 0;
+-
+-#if defined(CONFIG_SH_FPU)
+-	struct task_struct *tsk = current;
+-
+-	fpvalid = !!tsk_used_math(tsk);
+-	if (fpvalid)
+-		fpvalid = !fpregs_get(tsk, NULL,
+-				      (struct membuf){fpu, sizeof(*fpu)});
+-#endif
+-
+-	return fpvalid;
+-}
+-EXPORT_SYMBOL(dump_fpu);
+-
+ asmlinkage void ret_from_fork(void);
+ asmlinkage void ret_from_kernel_thread(void);
+ 
+diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
+index 5c93bdb6c41a..609b7c917e6e 100644
+--- a/arch/sh/kernel/ptrace_32.c
++++ b/arch/sh/kernel/ptrace_32.c
+@@ -165,7 +165,7 @@ static int genregs_set(struct task_struct *target,
+ }
+ 
+ #ifdef CONFIG_SH_FPU
+-int fpregs_get(struct task_struct *target,
++static int fpregs_get(struct task_struct *target,
+ 	       const struct user_regset *regset,
+ 	       struct membuf to)
+ {
