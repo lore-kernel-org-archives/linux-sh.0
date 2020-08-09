@@ -1,64 +1,56 @@
-From: Mark Brown <broonie@kernel.org>
-Date: Thu, 20 Aug 2020 21:48:32 +0000
-Subject: Re: [PATCH v2 0/7] spi: rspi: Bit rate improvements
-Message-Id: <159796010778.44514.12060590763849397055.b4-ty@kernel.org>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Date: Sun, 09 Aug 2020 13:39:50 +0000
+Subject: "sh: convert to ->regset_get()" breaks linux-sh build
+Message-Id: <9c2d391c-6463-398e-95a1-8f238d739340@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200819125904.20938-1-geert+renesas@glider.be>
-In-Reply-To: <20200819125904.20938-1-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Chris Brandt <chris.brandt@renesas.com>, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, linux-spi@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-On Wed, 19 Aug 2020 14:58:57 +0200, Geert Uytterhoeven wrote:
-> 	Hi Mark,
-> 
-> This patch series contains several improvements for the Renesas SPI/QSPI
-> driver related to bit rate configuration.
-> 
-> Changes compared to v1
-> (https://lore.kernel.org/r/20200608095940.30516-1-geert+renesas@glider.be):
->   - Drop accepted patch.
-> 
-> [...]
+Hi Al!
 
-Applied to
+I just tried building Linux next for SH to test it on my SH7785LCR board
+but the build is currently broken due to a regression introduced by your
+change to convert SH to ->regset_get():
 
-   https://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git for-next
+make[1]: 'include/generated/machtypes.h' is up to date.
+  CALL    scripts/checksyscalls.sh
+<stdin>:1511:2: warning: #warning syscall clone3 not implemented [-Wcpp]
+  CALL    scripts/atomic/check-atomics.sh
+  CHK     include/generated/compile.h
+  CC      arch/sh/kernel/ptrace_32.o
+arch/sh/kernel/ptrace_32.c:168:5: error: conflicting types for ‘fpregs_get’
+  168 | int fpregs_get(struct task_struct *target,
+      |     ^~~~~~~~~~
+In file included from arch/sh/kernel/ptrace_32.c:31:
+./arch/sh/include/asm/fpu.h:40:12: note: previous declaration of ‘fpregs_get’ was here
+   40 | extern int fpregs_get(struct task_struct *target,
+      |            ^~~~~~~~~~
+make[1]: *** [scripts/Makefile.build:283: arch/sh/kernel/ptrace_32.o] Error 1
+make: *** [Makefile:1789: arch/sh/kernel] Error 2
 
-Thanks!
+This regression was introduced by:
 
-[1/7] spi: rspi: Remove useless .set_config_register() check
-      commit: 7ffe363bb2a25f0760127657f88243647f49bd5c
-[2/7] spi: rspi: Clean up Bit Rate Division Setting handling
-      commit: 8dd71698607f822c3675c366a8a79bc82f7621f8
-[3/7] spi: rspi: Increase bit rate accuracy on RZ/A
-      commit: feace90233a8cd44a18902216657279c3932d471
-[4/7] spi: rspi: Increase bit rate range for RSPI on SH
-      commit: 4e71d926abbe9ec23415f2ec8685a7bc26c1ceed
-[5/7] spi: rspi: Increase bit rate range for QSPI
-      commit: 6a195f24f3e88b9242268da79547fe4a61f30910
-[6/7] spi: rspi: Fill in spi_transfer.effective_speed_hz
-      commit: cb588254140802dbef0b29e4d0a1212cbe5e61e3
-[7/7] spi: rspi: Fill in controller speed limits
-      commit: c31979747b7090e8d255caecf5bb314436dd90ef
+commit 3399d90ce63edf7439900db50b5c02aa822f190b
+Author: Al Viro <viro@zeniv.linux.org.uk>
+Date:   Tue Jun 16 00:54:51 2020 -0400
 
-All being well this means that it will be integrated into the linux-next
-tree (usually sometime in the next 24 hours) and sent to Linus during
-the next merge window (or sooner if it is a bug fix), however if
-problems are discovered then the patch may be dropped or reverted.
+    sh: convert to ->regset_get()
 
-You may get further e-mails resulting from automated or manual testing
-and review of the tree, please engage with people reporting problems and
-send followup patches addressing any issues that are reported if needed.
+    NB: there's a direct call of fpregs_get() left in dump_fpu().
+    To be taken out once we convert ELF_FDPIC to use of regset.
 
-If any updates are required or you are submitting further changes they
-should be sent as incremental updates against current git, existing
-patches will not be replaced.
+    Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
 
-Please add any relevant lists and maintainers to the CCs when replying
-to this mail.
+ arch/sh/kernel/process_32.c |  5 ++---
+ arch/sh/kernel/ptrace_32.c  | 48 ++++++++++-----------------------------------
+ 2 files changed, 12 insertions(+), 41 deletions(-)
 
-Thanks,
-Mark
+Adrian
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
