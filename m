@@ -1,19 +1,28 @@
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Wed, 12 Aug 2020 10:55:17 +0000
-Subject: Ping: Pull Request for 5.9
-Message-Id: <b9ea23ec-4925-aee6-07a8-571971a42194@physik.fu-berlin.de>
+Date: Fri, 14 Aug 2020 10:49:41 +0000
+Subject: Re: Ping: Pull Request for 5.9
+Message-Id: <d0c84870-7754-d19c-136f-54022cca9886@physik.fu-berlin.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <b9ea23ec-4925-aee6-07a8-571971a42194@physik.fu-berlin.de>
+In-Reply-To: <b9ea23ec-4925-aee6-07a8-571971a42194@physik.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Rich!
+On 8/14/20 12:57 PM, Rob Landley wrote:
+> On 8/12/20 5:55 AM, John Paul Adrian Glaubitz wrote:
+>> Hi Rich!
+>>
+>> Any chances you can send the PR for 5.9 to Linus this week?
+> 
+> I spoke to him on the phone wednesday evening and he said he was working on it,
+> but then I spoke to him on the phone a week earlier and he said he was working
+> on it then too.
+> 
+> *shrug* I've been pulling daily to see if it got merged. No luck yet...
 
-Any chances you can send the PR for 5.9 to Linus this week?
-
-Thanks,
-Adrian
+The merge window will be closing soonish ...
 
 -- 
  .''`.  John Paul Adrian Glaubitz
