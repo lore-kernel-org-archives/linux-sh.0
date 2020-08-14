@@ -1,76 +1,139 @@
-From: Daniel Axtens <dja@axtens.net>
-Date: Tue, 04 Aug 2020 13:53:15 +0000
-Subject: Re: [PATCH v2 01/17] KVM: PPC: Book3S HV: simplify kvm_cma_reserve()
-Message-Id: <87tuxio6us.fsf@dja-thinkpad.axtens.net>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 14 Aug 2020 15:25:23 +0000
+Subject: Re: [PATCH] serial: sh-sci: Make sure status register SCxSR is read in correct sequence
+Message-Id: <CAMuHMdU0EiQuk_bWx1yrmbBTXg8mL-PeN2=P61xQ5Ucb5QmYYg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200802163601.8189-1-rppt@kernel.org> <20200802163601.8189-2-rppt@kernel.org>
-In-Reply-To: <20200802163601.8189-2-rppt@kernel.org>
+References: <1585333048-31828-1-git-send-email-kazuhiro.fujita.jg@renesas.com>
+ <CAMuHMdW+u5r6zyxFJsVzj21BYDrKCr=Q6Ojk5VeN+mkhvXX9Jw@mail.gmail.com>
+ <OSBPR01MB3590E3D12546BC6711CEB542AAC80@OSBPR01MB3590.jpnprd01.prod.outlook.com>
+ <CAMuHMdXmfQ0x7mCZ-E7OPQFv2z-=mFDT20hJ2_JKax=OePB8eA@mail.gmail.com>
+ <CA+V-a8vPn_z_j1Vwr_1F=dCw8H=g5UMWvWxgRqBeVR7dzHPz8Q@mail.gmail.com>
+ <CAMuHMdWc9q9NjQuAuy5M=v_x=i8XxVg5JZHswjvPsgNzhHfO0w@mail.gmail.com> <CAMuHMdUyV58t3eihBJv2xex5gW1Oef37Jo3FHoJstU=SspmpHA@mail.gmail.com>
+In-Reply-To: <CAMuHMdUyV58t3eihBJv2xex5gW1Oef37Jo3FHoJstU=SspmpHA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>
+To: "Lad, Prabhakar" <prabhakar.csengg@gmail.com>
+Cc: Prabhakar Mahadev Lad <prabhakar.mahadev-lad.rj@bp.renesas.com>, Kazuhiro Fujita <kazuhiro.fujita.jg@renesas.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, "open list:SERIAL DRIVERS" <linux-serial@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Hao Bui <hao.bui.yg@renesas.com>, KAZUMI HARADA <kazumi.harada.rh@renesas.com>, Sasha Levin <sashal@kernel.org>, Chris Brandt <Chris.Brandt@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, Rob Landley <rob@landley.net>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
-Hi Mike,
-
+On Wed, Apr 15, 2020 at 2:36 PM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> On Thu, Apr 2, 2020 at 5:24 PM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> > On Thu, Apr 2, 2020 at 1:28 PM Lad, Prabhakar
+> > <prabhakar.csengg@gmail.com> wrote:
+> > > On Wed, Apr 1, 2020 at 1:43 PM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> > > > On Tue, Mar 31, 2020 at 5:58 PM Prabhakar Mahadev Lad
+> > > > <prabhakar.mahadev-lad.rj@bp.renesas.com> wrote:
+> > > > > > -----Original Message-----
+> > > > > > From: Geert Uytterhoeven <geert@linux-m68k.org>
+> > > > > > On Fri, Mar 27, 2020 at 7:17 PM Kazuhiro Fujita
+> > > > > > <kazuhiro.fujita.jg@renesas.com> wrote:
+> > > > > > > For SCIF and HSCIF interfaces the SCxSR register holds the status of
+> > > > > > > data that is to be read next from SCxRDR register, But where as for
+> > > > > > > SCIFA and SCIFB interfaces SCxSR register holds status of data that is
+> > > > > > > previously read from SCxRDR register.
+> > > > > > >
+> > > > > > > This patch makes sure the status register is read depending on the port
+> > > > > > > types so that errors are caught accordingly.
+> > > > > > >
+> > > > > > > Cc: <stable@vger.kernel.org>
+> > > > > > > Signed-off-by: Kazuhiro Fujita <kazuhiro.fujita.jg@renesas.com>
+> > > > > > > Signed-off-by: Hao Bui <hao.bui.yg@renesas.com>
+> > > > > > > Signed-off-by: KAZUMI HARADA <kazumi.harada.rh@renesas.com>
+> > > > > > > Signed-off-by: Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
+> > > >
+> > > > > > Nevertheless, this patch will need some testing on various hardware.
+> > > > > > Do you have a test case to verify the broken/fixed behavior?
+> > > > > >
+> > > > > Agreed, its been tested on RZ/G2x & RZ/G1x  by doing a loopback test, configure one interface as CS8 mode(8-bits data, No parity) and other as CS7 mode (7-bits data, 1-bit Parity) and parity errors should be detected.
+> > > >
+> > > > This can easily be tested on the console.  Basic testing can even be
+> > > > done with an unmodified kernel, as there is already a "parity error"
+> > > > notice message in the driver.
+> > > >
+> > > > Enable even parity on the console:
+> > > >
+> > > > $ stty evenp
+> > > >
+> > > > (use "oddp" for odd parity, and invert all below)
+> > > >
+> > > > Typing e.g. a single "p" should trigger a parity error.
+> > > > Typing "o" shouldn't.
+> > > > Without this patch, no parity error is detected on SCIF.
+> > > >
+> > > > Likewise, pasting a sequence of "p" characters should trigger a lot of
+> > > > parity errors, "o" shouldn't.
+> > > > Without this patch, parity errors are detected on SCIF, except for the
+> > > > first character.
+> > > >
+> > > > For more advanced testing, make the following change to the driver:
+> > > >
+> > > > - dev_notice(port->dev, "parity error\n");
+> > > > + dev_notice(port->dev, "parity error for char 0x%02x hweight %u\n",
+> > > > c, hweight8(c));
+> > > >
+> > > > Pasting an alternating sequence of "p" and "o" characters should trigger
+> > > > parity errors for the "p" characters.
+> > > > Without this patch, they are triggered for the "o" characters instead.
+> > > >
+> > > Thank you that makes life easier.
+> > >
+> > > > With this patch, the issues above are fixed on SCIF.
+> > > > This has been verified on:
+> > > >   1. SCIF on R-Car Gen 2,
+> > > >   2. SCIF on R-Car Gen3
+> > > >   3. SCIF on RZ/A1H,
+> > > >   4. SCIF on RZ/A2M.
 >
-> The memory size calculation in kvm_cma_reserve() traverses memblock.memory
-> rather than simply call memblock_phys_mem_size(). The comment in that
-> function suggests that at some point there should have been call to
-> memblock_analyze() before memblock_phys_mem_size() could be used.
-> As of now, there is no memblock_analyze() at all and
-> memblock_phys_mem_size() can be used as soon as cold-plug memory is
-> registerd with memblock.
+> > If I disable DMA for HSCIF1 in the .dtsi, parity errors are detected
+> > as expected.
 >
-> Replace loop over memblock.memory with a call to memblock_phys_mem_size().
+> So HSCIF on R-Car Gen3 is affected, and fixed by this patch.
 >
-> Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> ---
->  arch/powerpc/kvm/book3s_hv_builtin.c | 11 ++---------
->  1 file changed, 2 insertions(+), 9 deletions(-)
+> > Hence the driver does not support parity checking when DMA is enabled.
+> > I also think it's not easy to add support for that, if possible at all.
+> >
+> > > > I haven't tested it yet on:
+> > > >   1. SCIFB on SH/R-Mobile (needs wiring up),
 >
-> diff --git a/arch/powerpc/kvm/book3s_hv_builtin.c b/arch/powerpc/kvm/book3s_hv_builtin.c
-> index 7cd3cf3d366b..56ab0d28de2a 100644
-> --- a/arch/powerpc/kvm/book3s_hv_builtin.c
-> +++ b/arch/powerpc/kvm/book3s_hv_builtin.c
-> @@ -95,22 +95,15 @@ EXPORT_SYMBOL_GPL(kvm_free_hpt_cma);
->  void __init kvm_cma_reserve(void)
->  {
->  	unsigned long align_size;
-> -	struct memblock_region *reg;
-> -	phys_addr_t selected_size = 0;
-> +	phys_addr_t selected_size;
->  
->  	/*
->  	 * We need CMA reservation only when we are in HV mode
->  	 */
->  	if (!cpu_has_feature(CPU_FTR_HVMODE))
->  		return;
-> -	/*
-> -	 * We cannot use memblock_phys_mem_size() here, because
-> -	 * memblock_analyze() has not been called yet.
-> -	 */
-> -	for_each_memblock(memory, reg)
-> -		selected_size += memblock_region_memory_end_pfn(reg) -
-> -				 memblock_region_memory_base_pfn(reg);
->  
-> +	selected_size = PHYS_PFN(memblock_phys_mem_size());
->  	selected_size = (selected_size * kvm_cma_resv_ratio / 100) << PAGE_SHIFT;
+> SCIFB on R-Mobile A1 is not affected, and works before/after, as expected.
+>
+> > > >   2. SCIFA, SCIFB, and HSCIF on R-Car Gen2 (needs wiring up),
+>
+> Same for SCIFA, SCIFB on R-Car M2-W.
+>
+> HSCIF on R-Car M2-W is affected, and fixed by this patch.
+>
+> This means the modern platforms we care about are handled fine, so
+> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+>
+> That leaves us with testing on a few legacy platforms...
+>
+> > > >   3. (H)SCIF on R-Car Gen1 (remote boards unaccessible at the moment),
+> > > >   4. SuperH (only remote Migo-R available, but unaccessible).
+> > > >
+> > > > I can test 1 and 2 (and perhaps 3 and 4) later, if needed.
+> > > probably testing this on SuperH is gonna be a pain due to lack of
+> > > hardware availability,
+> > > (it needs to be tested on 19 platforms)
+> > > how about #ifdef CONFIG_ARCH_RENESAS || CONFIG_H8300 and the fix ?
+> >
+> > I had a look at a few SuperH docs w.r.t. framing/parity error behavior:
+> >   - SCIF(A) on SH7724: similar to R-Car Gen2,
+> >   - H(SCIF) on SH7734: same as on R-Car Gen2,
+> >   - SCIF on SH7751: conflict between status register ("to be read next")
+> >     and flowchart ("read from").
 
-I think this is correct, but PHYS_PFN does x >> PAGE_SHIFT and then the
-next line does x << PAGE_SHIFT, so I think we could combine those two
-lines as:
+FTR, I gave it a try on the SH7751R-based I-O DATA USL-5P aka Landisk:
+SCIF is affected, and fixed by commit 3dc4db3662366306 ("serial: sh-sci:
+Make sure status register SCxSR is read in correct sequence").
 
-selected_size = PAGE_ALIGN(memblock_phys_mem_size() * kvm_cma_resv_ratio / 100);
+Gr{oetje,eeting}s,
 
-(I think that might technically change it from aligning down to aligning
-up but I don't think 1 page matters here.)
+                        Geert
 
-Kind regards,
-Daniel
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-
->  	if (selected_size) {
->  		pr_debug("%s: reserving %ld MiB for global area\n", __func__,
-> -- 
-> 2.26.2
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
