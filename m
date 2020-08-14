@@ -1,32 +1,75 @@
-From: syzbot <syzbot+9c1be56e9317b795e874@syzkaller.appspotmail.com>
-Date: Fri, 14 Aug 2020 02:53:05 +0000
-Subject: Re: BUG: unable to handle kernel paging request in fl_dump_key
-Message-Id: <0000000000001e967a05accd8573@google.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 14 Aug 2020 11:07:30 +0000
+Subject: [PATCH 2/3] rtc: rtc-rs5c313: Fix late hardware init
+Message-Id: <20200814110731.29029-3-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-In-Reply-To: <000000000000735f5205a5b02279@google.com>
+References: <20200814110731.29029-1-geert+renesas@glider.be>
+In-Reply-To: <20200814110731.29029-1-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: benh@kernel.crashing.org, dalias@libc.org, davem@davemloft.net, jhogan@kernel.org, jhs@mojatatu.com, jiri@mellanox.com, jiri@resnulli.us, kuba@kernel.org, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, mpe@ellerman.id.au, netdev@vger.kernel.org, paul.burton@mips.com, paulus@samba.org, ralf@linux-mips.org, shuah@kernel.org, syzkaller-bugs@googlegroups.com, xiyou.wangcong@gmail.com, ysato@users.sourceforge.jp
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Alessandro Zummo <a.zummo@towertech.it>, Alexandre Belloni <alexandre.belloni@bootlin.com>
+Cc: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, kogiidena <kogiidena@eggplant.ddo.jp>, Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, linux-rtc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-syzbot has bisected this issue to:
+rs5c313_rtc_init() calls platform_driver_register(), and initializes the
+hardware.  This is wrong because of two reasons:
+  1. As soon as the driver has been registered, the device may be
+     probed.  If devm_rtc_device_register() is called before hardware
+     initialization, reading the current time will fail:
 
-commit a51486266c3ba8e035a47fa96df67f274fe0c7d0
-Author: Jiri Pirko <jiri@mellanox.com>
-Date:   Sat Jun 15 09:03:49 2019 +0000
+	rs5c313 rs5c313: rs5c313_rtc_read_time: timeout error
+	rs5c313 rs5c313: registered as rtc0
+	rs5c313 rs5c313: rs5c313_rtc_read_time: timeout error
+	rs5c313 rs5c313: hctosys: unable to read the hardware clock
 
-    net: sched: remove NET_CLS_IND config option
+  2. If the platform device does not exist, the driver will still write
+     to a hardware device that may not be present.
 
-bisection log:  https://syzkaller.appspot.com/x/bisect.txt?x=17463509900000
-start commit:   1ca0fafd tcp: md5: allow changing MD5 keys in all socket s..
-git tree:       net
-final oops:     https://syzkaller.appspot.com/x/report.txt?x=14c63509900000
-console output: https://syzkaller.appspot.com/x/log.txt?x=10c63509900000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=BF3aec367b9ab569
-dashboard link: https://syzkaller.appspot.com/bug?extid=9C1be56e9317b795e874
-syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=1062a40b100000
+Fix this by moving the hardware initialization sequence to the driver's
+.probe() method.
 
-Reported-by: syzbot+9c1be56e9317b795e874@syzkaller.appspotmail.com
-Fixes: a51486266c3b ("net: sched: remove NET_CLS_IND config option")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+ drivers/rtc/rtc-rs5c313.c | 20 ++++++++------------
+ 1 file changed, 8 insertions(+), 12 deletions(-)
 
-For information about bisection process see: https://goo.gl/tpsmEJ#bisection
+diff --git a/drivers/rtc/rtc-rs5c313.c b/drivers/rtc/rtc-rs5c313.c
+index 00b5ef753935ec8a..af72e428b218173e 100644
+--- a/drivers/rtc/rtc-rs5c313.c
++++ b/drivers/rtc/rtc-rs5c313.c
+@@ -366,8 +366,13 @@ static const struct rtc_class_ops rs5c313_rtc_ops = {
+ 
+ static int rs5c313_rtc_probe(struct platform_device *pdev)
+ {
+-	struct rtc_device *rtc = devm_rtc_device_register(&pdev->dev, "rs5c313",
+-				&rs5c313_rtc_ops, THIS_MODULE);
++	struct rtc_device *rtc;
++
++	rs5c313_init_port();
++	rs5c313_check_xstp_bit();
++
++	rtc = devm_rtc_device_register(&pdev->dev, "rs5c313", &rs5c313_rtc_ops,
++				       THIS_MODULE);
+ 
+ 	return PTR_ERR_OR_ZERO(rtc);
+ }
+@@ -381,16 +386,7 @@ static struct platform_driver rs5c313_rtc_platform_driver = {
+ 
+ static int __init rs5c313_rtc_init(void)
+ {
+-	int err;
+-
+-	err = platform_driver_register(&rs5c313_rtc_platform_driver);
+-	if (err)
+-		return err;
+-
+-	rs5c313_init_port();
+-	rs5c313_check_xstp_bit();
+-
+-	return 0;
++	return platform_driver_register(&rs5c313_rtc_platform_driver);
+ }
+ 
+ static void __exit rs5c313_rtc_exit(void)
+-- 
+2.17.1
