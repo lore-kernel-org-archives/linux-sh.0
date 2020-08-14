@@ -1,108 +1,32 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Sun, 02 Aug 2020 16:35:48 +0000
-Subject: [PATCH v2 04/17] arm64: numa: simplify dummy_numa_init()
-Message-Id: <20200802163601.8189-5-rppt@kernel.org>
+From: syzbot <syzbot+9c1be56e9317b795e874@syzkaller.appspotmail.com>
+Date: Fri, 14 Aug 2020 02:53:05 +0000
+Subject: Re: BUG: unable to handle kernel paging request in fl_dump_key
+Message-Id: <0000000000001e967a05accd8573@google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200802163601.8189-1-rppt@kernel.org>
-In-Reply-To: <20200802163601.8189-1-rppt@kernel.org>
+In-Reply-To: <000000000000735f5205a5b02279@google.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+To: benh@kernel.crashing.org, dalias@libc.org, davem@davemloft.net, jhogan@kernel.org, jhs@mojatatu.com, jiri@mellanox.com, jiri@resnulli.us, kuba@kernel.org, linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org, linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, mpe@ellerman.id.au, netdev@vger.kernel.org, paul.burton@mips.com, paulus@samba.org, ralf@linux-mips.org, shuah@kernel.org, syzkaller-bugs@googlegroups.com, xiyou.wangcong@gmail.com, ysato@users.sourceforge.jp
 
-From: Mike Rapoport <rppt@linux.ibm.com>
+syzbot has bisected this issue to:
 
-dummy_numa_init() loops over memblock.memory and passes nid=0 to
-numa_add_memblk() which essentially wraps memblock_set_node(). However,
-memblock_set_node() can cope with entire memory span itself, so the loop
-over memblock.memory regions is redundant.
+commit a51486266c3ba8e035a47fa96df67f274fe0c7d0
+Author: Jiri Pirko <jiri@mellanox.com>
+Date:   Sat Jun 15 09:03:49 2019 +0000
 
-Using a single call to memblock_set_node() rather than a loop also fixes an
-issue with a buggy ACPI firmware in which the SRAT table covers some but
-not all of the memory in the EFI memory map.
+    net: sched: remove NET_CLS_IND config option
 
-Jonathan Cameron says:
+bisection log:  https://syzkaller.appspot.com/x/bisect.txt?x=17463509900000
+start commit:   1ca0fafd tcp: md5: allow changing MD5 keys in all socket s..
+git tree:       net
+final oops:     https://syzkaller.appspot.com/x/report.txt?x=14c63509900000
+console output: https://syzkaller.appspot.com/x/log.txt?x=10c63509900000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=BF3aec367b9ab569
+dashboard link: https://syzkaller.appspot.com/bug?extid=9C1be56e9317b795e874
+syz repro:      https://syzkaller.appspot.com/x/repro.syz?x=1062a40b100000
 
-  This issue can be easily triggered by having an SRAT table which fails
-  to cover all elements of the EFI memory map.
+Reported-by: syzbot+9c1be56e9317b795e874@syzkaller.appspotmail.com
+Fixes: a51486266c3b ("net: sched: remove NET_CLS_IND config option")
 
-  This firmware error is detected and a warning printed. e.g.
-  "NUMA: Warning: invalid memblk node 64 [mem 0x240000000-0x27fffffff]"
-  At that point we fall back to dummy_numa_init().
-
-  However, the failed ACPI init has left us with our memblocks all broken
-  up as we split them when trying to assign them to NUMA nodes.
-
-  We then iterate over the memblocks and add them to node 0.
-
-  numa_add_memblk() calls memblock_set_node() which merges regions that
-  were previously split up during the earlier attempt to add them to different
-  nodes during parsing of SRAT.
-
-  This means elements are moved in the memblock array and we can end up
-  in a different memblock after the call to numa_add_memblk().
-  Result is:
-
-  Unable to handle kernel paging request at virtual address 0000000000003a40
-  Mem abort info:
-    ESR = 0x96000004
-    EC = 0x25: DABT (current EL), IL = 32 bits
-    SET = 0, FnV = 0
-    EA = 0, S1PTW = 0
-  Data abort info:
-    ISV = 0, ISS = 0x00000004
-    CM = 0, WnR = 0
-  [0000000000003a40] user address but active_mm is swapper
-  Internal error: Oops: 96000004 [#1] PREEMPT SMP
-
-  ...
-
-  Call trace:
-    sparse_init_nid+0x5c/0x2b0
-    sparse_init+0x138/0x170
-    bootmem_init+0x80/0xe0
-    setup_arch+0x2a0/0x5fc
-    start_kernel+0x8c/0x648
-
-Replace the loop with a single call to memblock_set_node() to the entire
-memory.
-
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-Acked-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
-Acked-by: Catalin Marinas <catalin.marinas@arm.com>
----
- arch/arm64/mm/numa.c | 13 +++++--------
- 1 file changed, 5 insertions(+), 8 deletions(-)
-
-diff --git a/arch/arm64/mm/numa.c b/arch/arm64/mm/numa.c
-index aafcee3e3f7e..0cbdbcc885fb 100644
---- a/arch/arm64/mm/numa.c
-+++ b/arch/arm64/mm/numa.c
-@@ -423,19 +423,16 @@ static int __init numa_init(int (*init_func)(void))
-  */
- static int __init dummy_numa_init(void)
- {
-+	phys_addr_t start = memblock_start_of_DRAM();
-+	phys_addr_t end = memblock_end_of_DRAM();
- 	int ret;
--	struct memblock_region *mblk;
- 
- 	if (numa_off)
- 		pr_info("NUMA disabled\n"); /* Forced off on command line. */
--	pr_info("Faking a node at [mem %#018Lx-%#018Lx]\n",
--		memblock_start_of_DRAM(), memblock_end_of_DRAM() - 1);
--
--	for_each_memblock(memory, mblk) {
--		ret = numa_add_memblk(0, mblk->base, mblk->base + mblk->size);
--		if (!ret)
--			continue;
-+	pr_info("Faking a node at [mem %#018Lx-%#018Lx]\n", start, end - 1);
- 
-+	ret = numa_add_memblk(0, start, end);
-+	if (ret) {
- 		pr_err("NUMA init failed\n");
- 		return ret;
- 	}
--- 
-2.26.2
+For information about bisection process see: https://goo.gl/tpsmEJ#bisection
