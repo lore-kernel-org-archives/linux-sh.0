@@ -1,128 +1,163 @@
-From: Baoquan He <bhe@redhat.com>
-Date: Wed, 05 Aug 2020 06:00:06 +0000
-Subject: Re: [PATCH v2 14/17] x86/setup: simplify reserve_crashkernel()
-Message-Id: <20200805060006.GU10792@MiWiFi-R3L-srv>
+From: Rich Felker <dalias@libc.org>
+Date: Sat, 15 Aug 2020 19:33:04 +0000
+Subject: [GIT PULL] arch/sh updates for 5.9
+Message-Id: <20200815193255.GA23393@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200802163601.8189-1-rppt@kernel.org>
- <20200802163601.8189-15-rppt@kernel.org>
-In-Reply-To: <20200802163601.8189-15-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Rapoport <rppt@kernel.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Andy Lutomirski <luto@kernel.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>, Russell
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
 
-On 08/02/20 at 07:35pm, Mike Rapoport wrote:
-> From: Mike Rapoport <rppt@linux.ibm.com>
-> 
-> * Replace magic numbers with defines
-> * Replace memblock_find_in_range() + memblock_reserve() with
->   memblock_phys_alloc_range()
-> * Stop checking for low memory size in reserve_crashkernel_low(). The
->   allocation from limited range will anyway fail if there is no enough
->   memory, so there is no need for extra traversal of memblock.memory
-> 
-> Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> ---
->  arch/x86/kernel/setup.c | 40 ++++++++++++++--------------------------
->  1 file changed, 14 insertions(+), 26 deletions(-)
+The following changes since commit bcf876870b95592b52519ed4aafcf9d95999bc9c:
 
-Applied this patch on top of 5.8, crashkernel reservation works well.
-And the code change looks good.
+  Linux 5.8 (2020-08-02 14:21:45 -0700)
 
-Reviewed-by: Baoquan He <bhe@redhat.com>
+are available in the Git repository at:
 
-> 
-> diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
-> index d8de4053c5e8..d7ced6982524 100644
-> --- a/arch/x86/kernel/setup.c
-> +++ b/arch/x86/kernel/setup.c
-> @@ -419,13 +419,13 @@ static int __init reserve_crashkernel_low(void)
->  {
->  #ifdef CONFIG_X86_64
->  	unsigned long long base, low_base = 0, low_size = 0;
-> -	unsigned long total_low_mem;
-> +	unsigned long low_mem_limit;
->  	int ret;
->  
-> -	total_low_mem = memblock_mem_size(1UL << (32 - PAGE_SHIFT));
-> +	low_mem_limit = min(memblock_phys_mem_size(), CRASH_ADDR_LOW_MAX);
->  
->  	/* crashkernel=Y,low */
-> -	ret = parse_crashkernel_low(boot_command_line, total_low_mem, &low_size, &base);
-> +	ret = parse_crashkernel_low(boot_command_line, low_mem_limit, &low_size, &base);
->  	if (ret) {
->  		/*
->  		 * two parts from kernel/dma/swiotlb.c:
-> @@ -443,23 +443,17 @@ static int __init reserve_crashkernel_low(void)
->  			return 0;
->  	}
->  
-> -	low_base = memblock_find_in_range(0, 1ULL << 32, low_size, CRASH_ALIGN);
-> +	low_base = memblock_phys_alloc_range(low_size, CRASH_ALIGN, 0, CRASH_ADDR_LOW_MAX);
->  	if (!low_base) {
->  		pr_err("Cannot reserve %ldMB crashkernel low memory, please try smaller size.\n",
->  		       (unsigned long)(low_size >> 20));
->  		return -ENOMEM;
->  	}
->  
-> -	ret = memblock_reserve(low_base, low_size);
-> -	if (ret) {
-> -		pr_err("%s: Error reserving crashkernel low memblock.\n", __func__);
-> -		return ret;
-> -	}
-> -
-> -	pr_info("Reserving %ldMB of low memory at %ldMB for crashkernel (System low RAM: %ldMB)\n",
-> +	pr_info("Reserving %ldMB of low memory at %ldMB for crashkernel (low RAM limit: %ldMB)\n",
->  		(unsigned long)(low_size >> 20),
->  		(unsigned long)(low_base >> 20),
-> -		(unsigned long)(total_low_mem >> 20));
-> +		(unsigned long)(low_mem_limit >> 20));
->  
->  	crashk_low_res.start = low_base;
->  	crashk_low_res.end   = low_base + low_size - 1;
-> @@ -503,13 +497,13 @@ static void __init reserve_crashkernel(void)
->  		 * unless "crashkernel=size[KMG],high" is specified.
->  		 */
->  		if (!high)
-> -			crash_base = memblock_find_in_range(CRASH_ALIGN,
-> -						CRASH_ADDR_LOW_MAX,
-> -						crash_size, CRASH_ALIGN);
-> +			crash_base = memblock_phys_alloc_range(crash_size,
-> +						CRASH_ALIGN, CRASH_ALIGN,
-> +						CRASH_ADDR_LOW_MAX);
->  		if (!crash_base)
-> -			crash_base = memblock_find_in_range(CRASH_ALIGN,
-> -						CRASH_ADDR_HIGH_MAX,
-> -						crash_size, CRASH_ALIGN);
-> +			crash_base = memblock_phys_alloc_range(crash_size,
-> +						CRASH_ALIGN, CRASH_ALIGN,
-> +						CRASH_ADDR_HIGH_MAX);
->  		if (!crash_base) {
->  			pr_info("crashkernel reservation failed - No suitable area found.\n");
->  			return;
-> @@ -517,19 +511,13 @@ static void __init reserve_crashkernel(void)
->  	} else {
->  		unsigned long long start;
->  
-> -		start = memblock_find_in_range(crash_base,
-> -					       crash_base + crash_size,
-> -					       crash_size, 1 << 20);
-> +		start = memblock_phys_alloc_range(crash_size, SZ_1M, crash_base,
-> +						  crash_base + crash_size);
->  		if (start != crash_base) {
->  			pr_info("crashkernel reservation failed - memory is in use.\n");
->  			return;
->  		}
->  	}
-> -	ret = memblock_reserve(crash_base, crash_size);
-> -	if (ret) {
-> -		pr_err("%s: Error reserving crashkernel memblock.\n", __func__);
-> -		return;
-> -	}
->  
->  	if (crash_base >= (1ULL << 32) && reserve_crashkernel_low()) {
->  		memblock_free(crash_base, crash_size);
-> -- 
-> 2.26.2
-> 
+  git://git.libc.org/linux-sh tags/sh-for-5.9
+
+for you to fetch changes up to 0c64a0dce51faa9c706fdf1f957d6f19878f4b81:
+
+  sh: landisk: Add missing initialization of sh_io_port_base (2020-08-14 22:43:17 -0400)
+
+----------------------------------------------------------------
+Cleanup, SECCOMP_FILTER support, message printing fixes, and other
+changes to arch/sh.
+
+----------------------------------------------------------------
+Alexander A. Klimov (1):
+      sh: Replace HTTP links with HTTPS ones
+
+Chen Zhou (1):
+      sh: remove call to memset after dma_alloc_coherent
+
+Christian Brauner (1):
+      sh: switch to copy_thread_tls()
+
+Christoph Hellwig (10):
+      sh: remove -Werror from Makefiles
+      sh: sort the selects for SUPERH alphabetically
+      sh: remove __KERNEL__ ifdefs from non-UAPI headers
+      sh: move ioremap_fixed details out of <asm/io.h>
+      sh: move the ioremap implementation out of line
+      sh: don't include <asm/io_trapped.h> in <asm/io.h>
+      sh: unexport register_trapped_io and match_trapped_io_handler
+      dma-mapping: consolidate the NO_DMA definition in kernel/dma/Kconfig
+      sh: don't allow non-coherent DMA for NOMMU
+      sh: use the generic dma coherent remap allocator
+
+Flavio Suligoi (1):
+      arch: sh: smc37c93x: fix spelling mistake
+
+Geert Uytterhoeven (14):
+      Revert "sh: add missing EXPORT_SYMBOL() for __delay"
+      sh: Remove SH5-based Cayman platform
+      input: i8042 - Remove special Cayman handling
+      sh: fault: Fix duplicate printing of "PC:"
+      Revert "sh: add loglvl to printk_address()"
+      Revert "sh: remove needless printk()"
+      sh: kernel: disassemble: Fix broken lines in disassembly dumps
+      sh: dump_stack: Fix broken lines and ptrval in calltrace dumps
+      sh: process: Fix broken lines in register dumps
+      sh: sh2007: Modernize printing of kernel messages
+      sh: pci: Modernize printing of kernel messages
+      sh: machvec: Modernize printing of kernel messages
+      sh: stacktrace: Remove stacktrace_ops.stack()
+      sh: landisk: Add missing initialization of sh_io_port_base
+
+Hans Verkuil (1):
+      arch/sh/configs: remove obsolete CONFIG_SOC_CAMERA*
+
+John Paul Adrian Glaubitz (1):
+      sh: Implement __get_user_u64() required for 64-bit get_user()
+
+Matthew Wilcox (Oracle) (1):
+      sh: Fix unneeded constructor in page table allocation
+
+Michael Karcher (3):
+      sh: Rearrange blocks in entry-common.S
+      sh: Add SECCOMP_FILTER
+      sh: bring syscall_set_return_value in line with other architectures
+
+ arch/m68k/Kconfig                             |   4 +-
+ arch/m68k/Kconfig.machine                     |   1 +
+ arch/sh/Kconfig                               | 109 ++++++++--------
+ arch/sh/Makefile                              |   5 -
+ arch/sh/boards/Kconfig                        |   6 -
+ arch/sh/boards/board-sh2007.c                 |   4 +-
+ arch/sh/boards/mach-cayman/Makefile           |   5 -
+ arch/sh/boards/mach-cayman/irq.c              | 148 ---------------------
+ arch/sh/boards/mach-cayman/panic.c            |  46 -------
+ arch/sh/boards/mach-cayman/setup.c            | 181 --------------------------
+ arch/sh/boards/mach-landisk/setup.c           |   3 +
+ arch/sh/configs/ap325rxa_defconfig            |   3 -
+ arch/sh/configs/cayman_defconfig              |  66 ----------
+ arch/sh/configs/ecovec24_defconfig            |   3 -
+ arch/sh/configs/migor_defconfig               |   3 -
+ arch/sh/configs/se7724_defconfig              |   2 -
+ arch/sh/drivers/pci/Makefile                  |   1 -
+ arch/sh/drivers/pci/common.c                  |   6 +-
+ arch/sh/drivers/pci/fixups-cayman.c           |  78 -----------
+ arch/sh/drivers/pci/pci-sh7780.c              |  23 ++--
+ arch/sh/drivers/pci/pci.c                     |  11 +-
+ arch/sh/include/asm/adc.h                     |   2 -
+ arch/sh/include/asm/addrspace.h               |   3 -
+ arch/sh/include/asm/bitops.h                  |   4 -
+ arch/sh/include/asm/cache.h                   |   2 -
+ arch/sh/include/asm/cacheflush.h              |   3 -
+ arch/sh/include/asm/dma.h                     |   2 -
+ arch/sh/include/asm/elf.h                     |   2 -
+ arch/sh/include/asm/freq.h                    |   2 -
+ arch/sh/include/asm/futex.h                   |   3 -
+ arch/sh/include/asm/io.h                      | 119 ++---------------
+ arch/sh/include/asm/kdebug.h                  |   3 +-
+ arch/sh/include/asm/mmu_context.h             |   2 -
+ arch/sh/include/asm/mmzone.h                  |   3 -
+ arch/sh/include/asm/pci.h                     |   4 -
+ arch/sh/include/asm/processor_32.h            |   2 -
+ arch/sh/include/asm/smc37c93x.h               |   4 +-
+ arch/sh/include/asm/sparsemem.h               |   3 -
+ arch/sh/include/asm/stacktrace.h              |   2 -
+ arch/sh/include/asm/string_32.h               |   4 -
+ arch/sh/include/asm/syscall_32.h              |   5 +-
+ arch/sh/include/asm/syscalls_32.h             |   3 -
+ arch/sh/include/asm/thread_info.h             |   5 -
+ arch/sh/include/asm/uaccess_32.h              |  53 ++++++++
+ arch/sh/include/asm/watchdog.h                |   2 -
+ arch/sh/kernel/Makefile                       |   2 -
+ arch/sh/kernel/disassemble.c                  | 103 +++++++--------
+ arch/sh/kernel/dma-coherent.c                 |  51 +-------
+ arch/sh/kernel/dumpstack.c                    |  30 ++---
+ arch/sh/kernel/entry-common.S                 |  59 +++++----
+ arch/sh/kernel/io_trapped.c                   |   2 -
+ arch/sh/kernel/ioport.c                       |   1 +
+ arch/sh/kernel/machvec.c                      |   8 +-
+ arch/sh/kernel/perf_callchain.c               |   6 -
+ arch/sh/kernel/process_32.c                   |  44 +++----
+ arch/sh/kernel/ptrace_32.c                    |   5 +-
+ arch/sh/kernel/stacktrace.c                   |   7 -
+ arch/sh/lib/Makefile                          |   2 -
+ arch/sh/lib/delay.c                           |   1 -
+ arch/sh/mm/Makefile                           |   2 -
+ arch/sh/mm/consistent.c                       |   2 -
+ arch/sh/mm/fault.c                            |   3 +-
+ arch/sh/mm/init.c                             |   1 +
+ arch/sh/mm/ioremap.c                          |  55 ++++++++
+ arch/sh/mm/ioremap.h                          |  23 ++++
+ arch/sh/mm/ioremap_fixed.c                    |   1 +
+ arch/sh/mm/pgtable.c                          |   7 +-
+ arch/sh/oprofile/backtrace.c                  |   7 -
+ arch/sh/tools/mach-types                      |   1 -
+ arch/um/Kconfig                               |   4 +-
+ drivers/input/serio/i8042-io.h                |   2 -
+ kernel/dma/Kconfig                            |   3 +
+ tools/testing/selftests/seccomp/seccomp_bpf.c |   8 +-
+ 73 files changed, 373 insertions(+), 1012 deletions(-)
+ delete mode 100644 arch/sh/boards/mach-cayman/Makefile
+ delete mode 100644 arch/sh/boards/mach-cayman/irq.c
+ delete mode 100644 arch/sh/boards/mach-cayman/panic.c
+ delete mode 100644 arch/sh/boards/mach-cayman/setup.c
+ delete mode 100644 arch/sh/configs/cayman_defconfig
+ delete mode 100644 arch/sh/drivers/pci/fixups-cayman.c
+ create mode 100644 arch/sh/mm/ioremap.h
