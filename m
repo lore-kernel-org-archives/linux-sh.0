@@ -1,139 +1,140 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 14 Aug 2020 15:25:23 +0000
-Subject: Re: [PATCH] serial: sh-sci: Make sure status register SCxSR is read in correct sequence
-Message-Id: <CAMuHMdU0EiQuk_bWx1yrmbBTXg8mL-PeN2=P61xQ5Ucb5QmYYg@mail.gmail.com>
+From: Prabhakar Mahadev Lad <prabhakar.mahadev-lad.rj@bp.renesas.com>
+Date: Sun, 16 Aug 2020 16:22:17 +0000
+Subject: RE: [PATCH] serial: sh-sci: Make sure status register SCxSR is read in correct sequence
+Message-Id: <OSBPR01MB50485F5DA2F82E455DCA6B56AA5E0@OSBPR01MB5048.jpnprd01.prod.outlook.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1585333048-31828-1-git-send-email-kazuhiro.fujita.jg@renesas.com>
  <CAMuHMdW+u5r6zyxFJsVzj21BYDrKCr=Q6Ojk5VeN+mkhvXX9Jw@mail.gmail.com>
  <OSBPR01MB3590E3D12546BC6711CEB542AAC80@OSBPR01MB3590.jpnprd01.prod.outlook.com>
  <CAMuHMdXmfQ0x7mCZ-E7OPQFv2z-=mFDT20hJ2_JKax=OePB8eA@mail.gmail.com>
  <CA+V-a8vPn_z_j1Vwr_1F=dCw8H=g5UMWvWxgRqBeVR7dzHPz8Q@mail.gmail.com>
- <CAMuHMdWc9q9NjQuAuy5M=v_x=i8XxVg5JZHswjvPsgNzhHfO0w@mail.gmail.com> <CAMuHMdUyV58t3eihBJv2xex5gW1Oef37Jo3FHoJstU=SspmpHA@mail.gmail.com>
-In-Reply-To: <CAMuHMdUyV58t3eihBJv2xex5gW1Oef37Jo3FHoJstU=SspmpHA@mail.gmail.com>
+ <CAMuHMdWc9q9NjQuAuy5M=v_x=i8XxVg5JZHswjvPsgNzhHfO0w@mail.gmail.com>
+ <CAMuHMdUyV58t3eihBJv2xex5gW1Oef37Jo3FHoJstU=SspmpHA@mail.gmail.com>
+ <CAMuHMdU0EiQuk_bWx1yrmbBTXg8mL-PeN2=P61xQ5Ucb5QmYYg@mail.gmail.com>
+In-Reply-To: <CAMuHMdU0EiQuk_bWx1yrmbBTXg8mL-PeN2=P61xQ5Ucb5QmYYg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Lad, Prabhakar" <prabhakar.csengg@gmail.com>
-Cc: Prabhakar Mahadev Lad <prabhakar.mahadev-lad.rj@bp.renesas.com>, Kazuhiro Fujita <kazuhiro.fujita.jg@renesas.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, "open list:SERIAL DRIVERS" <linux-serial@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Hao Bui <hao.bui.yg@renesas.com>, KAZUMI HARADA <kazumi.harada.rh@renesas.com>, Sasha Levin <sashal@kernel.org>, Chris Brandt <Chris.Brandt@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, Rob Landley <rob@landley.net>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Geert Uytterhoeven <geert@linux-m68k.org>, "Lad, Prabhakar" <prabhakar.csengg@gmail.com>
+Cc: Kazuhiro Fujita <kazuhiro.fujita.jg@renesas.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jslaby@suse.com>, "open list:SERIAL DRIVERS" <linux-serial@vger.kernel.org>, Linux-Renesas <linux-renesas-soc@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Hao Bui <hao.bui.yg@renesas.com>, KAZUMI HARADA <kazumi.harada.rh@renesas.com>, Sasha Levin <sashal@kernel.org>, Chris Brandt <Chris.Brandt@renesas.com>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, Rob Landley <rob@landley.net>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
-On Wed, Apr 15, 2020 at 2:36 PM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> On Thu, Apr 2, 2020 at 5:24 PM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> > On Thu, Apr 2, 2020 at 1:28 PM Lad, Prabhakar
-> > <prabhakar.csengg@gmail.com> wrote:
-> > > On Wed, Apr 1, 2020 at 1:43 PM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> > > > On Tue, Mar 31, 2020 at 5:58 PM Prabhakar Mahadev Lad
-> > > > <prabhakar.mahadev-lad.rj@bp.renesas.com> wrote:
-> > > > > > -----Original Message-----
-> > > > > > From: Geert Uytterhoeven <geert@linux-m68k.org>
-> > > > > > On Fri, Mar 27, 2020 at 7:17 PM Kazuhiro Fujita
-> > > > > > <kazuhiro.fujita.jg@renesas.com> wrote:
-> > > > > > > For SCIF and HSCIF interfaces the SCxSR register holds the status of
-> > > > > > > data that is to be read next from SCxRDR register, But where as for
-> > > > > > > SCIFA and SCIFB interfaces SCxSR register holds status of data that is
-> > > > > > > previously read from SCxRDR register.
-> > > > > > >
-> > > > > > > This patch makes sure the status register is read depending on the port
-> > > > > > > types so that errors are caught accordingly.
-> > > > > > >
-> > > > > > > Cc: <stable@vger.kernel.org>
-> > > > > > > Signed-off-by: Kazuhiro Fujita <kazuhiro.fujita.jg@renesas.com>
-> > > > > > > Signed-off-by: Hao Bui <hao.bui.yg@renesas.com>
-> > > > > > > Signed-off-by: KAZUMI HARADA <kazumi.harada.rh@renesas.com>
-> > > > > > > Signed-off-by: Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
-> > > >
-> > > > > > Nevertheless, this patch will need some testing on various hardware.
-> > > > > > Do you have a test case to verify the broken/fixed behavior?
-> > > > > >
-> > > > > Agreed, its been tested on RZ/G2x & RZ/G1x  by doing a loopback test, configure one interface as CS8 mode(8-bits data, No parity) and other as CS7 mode (7-bits data, 1-bit Parity) and parity errors should be detected.
-> > > >
-> > > > This can easily be tested on the console.  Basic testing can even be
-> > > > done with an unmodified kernel, as there is already a "parity error"
-> > > > notice message in the driver.
-> > > >
-> > > > Enable even parity on the console:
-> > > >
-> > > > $ stty evenp
-> > > >
-> > > > (use "oddp" for odd parity, and invert all below)
-> > > >
-> > > > Typing e.g. a single "p" should trigger a parity error.
-> > > > Typing "o" shouldn't.
-> > > > Without this patch, no parity error is detected on SCIF.
-> > > >
-> > > > Likewise, pasting a sequence of "p" characters should trigger a lot of
-> > > > parity errors, "o" shouldn't.
-> > > > Without this patch, parity errors are detected on SCIF, except for the
-> > > > first character.
-> > > >
-> > > > For more advanced testing, make the following change to the driver:
-> > > >
-> > > > - dev_notice(port->dev, "parity error\n");
-> > > > + dev_notice(port->dev, "parity error for char 0x%02x hweight %u\n",
-> > > > c, hweight8(c));
-> > > >
-> > > > Pasting an alternating sequence of "p" and "o" characters should trigger
-> > > > parity errors for the "p" characters.
-> > > > Without this patch, they are triggered for the "o" characters instead.
-> > > >
-> > > Thank you that makes life easier.
-> > >
-> > > > With this patch, the issues above are fixed on SCIF.
-> > > > This has been verified on:
-> > > >   1. SCIF on R-Car Gen 2,
-> > > >   2. SCIF on R-Car Gen3
-> > > >   3. SCIF on RZ/A1H,
-> > > >   4. SCIF on RZ/A2M.
->
-> > If I disable DMA for HSCIF1 in the .dtsi, parity errors are detected
-> > as expected.
->
-> So HSCIF on R-Car Gen3 is affected, and fixed by this patch.
->
-> > Hence the driver does not support parity checking when DMA is enabled.
-> > I also think it's not easy to add support for that, if possible at all.
-> >
-> > > > I haven't tested it yet on:
-> > > >   1. SCIFB on SH/R-Mobile (needs wiring up),
->
-> SCIFB on R-Mobile A1 is not affected, and works before/after, as expected.
->
-> > > >   2. SCIFA, SCIFB, and HSCIF on R-Car Gen2 (needs wiring up),
->
-> Same for SCIFA, SCIFB on R-Car M2-W.
->
-> HSCIF on R-Car M2-W is affected, and fixed by this patch.
->
-> This means the modern platforms we care about are handled fine, so
-> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> That leaves us with testing on a few legacy platforms...
->
-> > > >   3. (H)SCIF on R-Car Gen1 (remote boards unaccessible at the moment),
-> > > >   4. SuperH (only remote Migo-R available, but unaccessible).
-> > > >
-> > > > I can test 1 and 2 (and perhaps 3 and 4) later, if needed.
-> > > probably testing this on SuperH is gonna be a pain due to lack of
-> > > hardware availability,
-> > > (it needs to be tested on 19 platforms)
-> > > how about #ifdef CONFIG_ARCH_RENESAS || CONFIG_H8300 and the fix ?
-> >
-> > I had a look at a few SuperH docs w.r.t. framing/parity error behavior:
-> >   - SCIF(A) on SH7724: similar to R-Car Gen2,
-> >   - H(SCIF) on SH7734: same as on R-Car Gen2,
-> >   - SCIF on SH7751: conflict between status register ("to be read next")
-> >     and flowchart ("read from").
-
-FTR, I gave it a try on the SH7751R-based I-O DATA USL-5P aka Landisk:
-SCIF is affected, and fixed by commit 3dc4db3662366306 ("serial: sh-sci:
-Make sure status register SCxSR is read in correct sequence").
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+PiAtLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQ0KPiBGcm9tOiBHZWVydCBVeXR0ZXJob2V2ZW4g
+PGdlZXJ0QGxpbnV4LW02OGsub3JnPg0KPiBTZW50OiAxNCBBdWd1c3QgMjAyMCAxNjoyNQ0KPiBU
+bzogTGFkLCBQcmFiaGFrYXIgPHByYWJoYWthci5jc2VuZ2dAZ21haWwuY29tPg0KPiBDYzogUHJh
+Ymhha2FyIE1haGFkZXYgTGFkIDxwcmFiaGFrYXIubWFoYWRldi1sYWQucmpAYnAucmVuZXNhcy5j
+b20+OyBLYXp1aGlybyBGdWppdGEgPGthenVoaXJvLmZ1aml0YS5qZ0ByZW5lc2FzLmNvbT47IEdy
+ZWcgS3JvYWgtDQo+IEhhcnRtYW4gPGdyZWdraEBsaW51eGZvdW5kYXRpb24ub3JnPjsgSmlyaSBT
+bGFieSA8anNsYWJ5QHN1c2UuY29tPjsgb3BlbiBsaXN0OlNFUklBTCBEUklWRVJTIDxsaW51eC1z
+ZXJpYWxAdmdlci5rZXJuZWwub3JnPjsgTGludXgtDQo+IFJlbmVzYXMgPGxpbnV4LXJlbmVzYXMt
+c29jQHZnZXIua2VybmVsLm9yZz47IExpbnV4IEtlcm5lbCBNYWlsaW5nIExpc3QgPGxpbnV4LWtl
+cm5lbEB2Z2VyLmtlcm5lbC5vcmc+OyBIYW8gQnVpDQo+IDxoYW8uYnVpLnlnQHJlbmVzYXMuY29t
+PjsgS0FaVU1JIEhBUkFEQSA8a2F6dW1pLmhhcmFkYS5yaEByZW5lc2FzLmNvbT47IFNhc2hhIExl
+dmluIDxzYXNoYWxAa2VybmVsLm9yZz47IENocmlzIEJyYW5kdA0KPiA8Q2hyaXMuQnJhbmR0QHJl
+bmVzYXMuY29tPjsgTWFnbnVzIERhbW0gPG1hZ251cy5kYW1tQGdtYWlsLmNvbT47IExpbnV4LXNo
+IGxpc3QgPGxpbnV4LXNoQHZnZXIua2VybmVsLm9yZz47IFJvYiBMYW5kbGV5DQo+IDxyb2JAbGFu
+ZGxleS5uZXQ+OyBKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6IDxnbGF1Yml0ekBwaHlzaWsuZnUt
+YmVybGluLmRlPg0KPiBTdWJqZWN0OiBSZTogW1BBVENIXSBzZXJpYWw6IHNoLXNjaTogTWFrZSBz
+dXJlIHN0YXR1cyByZWdpc3RlciBTQ3hTUiBpcyByZWFkIGluIGNvcnJlY3Qgc2VxdWVuY2UNCj4N
+Cj4gT24gV2VkLCBBcHIgMTUsIDIwMjAgYXQgMjozNiBQTSBHZWVydCBVeXR0ZXJob2V2ZW4gPGdl
+ZXJ0QGxpbnV4LW02OGsub3JnPiB3cm90ZToNCj4gPiBPbiBUaHUsIEFwciAyLCAyMDIwIGF0IDU6
+MjQgUE0gR2VlcnQgVXl0dGVyaG9ldmVuIDxnZWVydEBsaW51eC1tNjhrLm9yZz4gd3JvdGU6DQo+
+ID4gPiBPbiBUaHUsIEFwciAyLCAyMDIwIGF0IDE6MjggUE0gTGFkLCBQcmFiaGFrYXINCj4gPiA+
+IDxwcmFiaGFrYXIuY3NlbmdnQGdtYWlsLmNvbT4gd3JvdGU6DQo+ID4gPiA+IE9uIFdlZCwgQXBy
+IDEsIDIwMjAgYXQgMTo0MyBQTSBHZWVydCBVeXR0ZXJob2V2ZW4gPGdlZXJ0QGxpbnV4LW02OGsu
+b3JnPiB3cm90ZToNCj4gPiA+ID4gPiBPbiBUdWUsIE1hciAzMSwgMjAyMCBhdCA1OjU4IFBNIFBy
+YWJoYWthciBNYWhhZGV2IExhZA0KPiA+ID4gPiA+IDxwcmFiaGFrYXIubWFoYWRldi1sYWQucmpA
+YnAucmVuZXNhcy5jb20+IHdyb3RlOg0KPiA+ID4gPiA+ID4gPiAtLS0tLU9yaWdpbmFsIE1lc3Nh
+Z2UtLS0tLQ0KPiA+ID4gPiA+ID4gPiBGcm9tOiBHZWVydCBVeXR0ZXJob2V2ZW4gPGdlZXJ0QGxp
+bnV4LW02OGsub3JnPg0KPiA+ID4gPiA+ID4gPiBPbiBGcmksIE1hciAyNywgMjAyMCBhdCA3OjE3
+IFBNIEthenVoaXJvIEZ1aml0YQ0KPiA+ID4gPiA+ID4gPiA8a2F6dWhpcm8uZnVqaXRhLmpnQHJl
+bmVzYXMuY29tPiB3cm90ZToNCj4gPiA+ID4gPiA+ID4gPiBGb3IgU0NJRiBhbmQgSFNDSUYgaW50
+ZXJmYWNlcyB0aGUgU0N4U1IgcmVnaXN0ZXIgaG9sZHMgdGhlIHN0YXR1cyBvZg0KPiA+ID4gPiA+
+ID4gPiA+IGRhdGEgdGhhdCBpcyB0byBiZSByZWFkIG5leHQgZnJvbSBTQ3hSRFIgcmVnaXN0ZXIs
+IEJ1dCB3aGVyZSBhcyBmb3INCj4gPiA+ID4gPiA+ID4gPiBTQ0lGQSBhbmQgU0NJRkIgaW50ZXJm
+YWNlcyBTQ3hTUiByZWdpc3RlciBob2xkcyBzdGF0dXMgb2YgZGF0YSB0aGF0IGlzDQo+ID4gPiA+
+ID4gPiA+ID4gcHJldmlvdXNseSByZWFkIGZyb20gU0N4UkRSIHJlZ2lzdGVyLg0KPiA+ID4gPiA+
+ID4gPiA+DQo+ID4gPiA+ID4gPiA+ID4gVGhpcyBwYXRjaCBtYWtlcyBzdXJlIHRoZSBzdGF0dXMg
+cmVnaXN0ZXIgaXMgcmVhZCBkZXBlbmRpbmcgb24gdGhlIHBvcnQNCj4gPiA+ID4gPiA+ID4gPiB0
+eXBlcyBzbyB0aGF0IGVycm9ycyBhcmUgY2F1Z2h0IGFjY29yZGluZ2x5Lg0KPiA+ID4gPiA+ID4g
+PiA+DQo+ID4gPiA+ID4gPiA+ID4gQ2M6IDxzdGFibGVAdmdlci5rZXJuZWwub3JnPg0KPiA+ID4g
+PiA+ID4gPiA+IFNpZ25lZC1vZmYtYnk6IEthenVoaXJvIEZ1aml0YSA8a2F6dWhpcm8uZnVqaXRh
+LmpnQHJlbmVzYXMuY29tPg0KPiA+ID4gPiA+ID4gPiA+IFNpZ25lZC1vZmYtYnk6IEhhbyBCdWkg
+PGhhby5idWkueWdAcmVuZXNhcy5jb20+DQo+ID4gPiA+ID4gPiA+ID4gU2lnbmVkLW9mZi1ieTog
+S0FaVU1JIEhBUkFEQSA8a2F6dW1pLmhhcmFkYS5yaEByZW5lc2FzLmNvbT4NCj4gPiA+ID4gPiA+
+ID4gPiBTaWduZWQtb2ZmLWJ5OiBMYWQgUHJhYmhha2FyIDxwcmFiaGFrYXIubWFoYWRldi1sYWQu
+cmpAYnAucmVuZXNhcy5jb20+DQo+ID4gPiA+ID4NCj4gPiA+ID4gPiA+ID4gTmV2ZXJ0aGVsZXNz
+LCB0aGlzIHBhdGNoIHdpbGwgbmVlZCBzb21lIHRlc3Rpbmcgb24gdmFyaW91cyBoYXJkd2FyZS4N
+Cj4gPiA+ID4gPiA+ID4gRG8geW91IGhhdmUgYSB0ZXN0IGNhc2UgdG8gdmVyaWZ5IHRoZSBicm9r
+ZW4vZml4ZWQgYmVoYXZpb3I/DQo+ID4gPiA+ID4gPiA+DQo+ID4gPiA+ID4gPiBBZ3JlZWQsIGl0
+cyBiZWVuIHRlc3RlZCBvbiBSWi9HMnggJiBSWi9HMXggIGJ5IGRvaW5nIGEgbG9vcGJhY2sgdGVz
+dCwgY29uZmlndXJlIG9uZSBpbnRlcmZhY2UgYXMgQ1M4IG1vZGUoOC1iaXRzIGRhdGEsIE5vIHBh
+cml0eSkNCj4gYW5kIG90aGVyIGFzIENTNyBtb2RlICg3LWJpdHMgZGF0YSwgMS1iaXQgUGFyaXR5
+KSBhbmQgcGFyaXR5IGVycm9ycyBzaG91bGQgYmUgZGV0ZWN0ZWQuDQo+ID4gPiA+ID4NCj4gPiA+
+ID4gPiBUaGlzIGNhbiBlYXNpbHkgYmUgdGVzdGVkIG9uIHRoZSBjb25zb2xlLiAgQmFzaWMgdGVz
+dGluZyBjYW4gZXZlbiBiZQ0KPiA+ID4gPiA+IGRvbmUgd2l0aCBhbiB1bm1vZGlmaWVkIGtlcm5l
+bCwgYXMgdGhlcmUgaXMgYWxyZWFkeSBhICJwYXJpdHkgZXJyb3IiDQo+ID4gPiA+ID4gbm90aWNl
+IG1lc3NhZ2UgaW4gdGhlIGRyaXZlci4NCj4gPiA+ID4gPg0KPiA+ID4gPiA+IEVuYWJsZSBldmVu
+IHBhcml0eSBvbiB0aGUgY29uc29sZToNCj4gPiA+ID4gPg0KPiA+ID4gPiA+ICQgc3R0eSBldmVu
+cA0KPiA+ID4gPiA+DQo+ID4gPiA+ID4gKHVzZSAib2RkcCIgZm9yIG9kZCBwYXJpdHksIGFuZCBp
+bnZlcnQgYWxsIGJlbG93KQ0KPiA+ID4gPiA+DQo+ID4gPiA+ID4gVHlwaW5nIGUuZy4gYSBzaW5n
+bGUgInAiIHNob3VsZCB0cmlnZ2VyIGEgcGFyaXR5IGVycm9yLg0KPiA+ID4gPiA+IFR5cGluZyAi
+byIgc2hvdWxkbid0Lg0KPiA+ID4gPiA+IFdpdGhvdXQgdGhpcyBwYXRjaCwgbm8gcGFyaXR5IGVy
+cm9yIGlzIGRldGVjdGVkIG9uIFNDSUYuDQo+ID4gPiA+ID4NCj4gPiA+ID4gPiBMaWtld2lzZSwg
+cGFzdGluZyBhIHNlcXVlbmNlIG9mICJwIiBjaGFyYWN0ZXJzIHNob3VsZCB0cmlnZ2VyIGEgbG90
+IG9mDQo+ID4gPiA+ID4gcGFyaXR5IGVycm9ycywgIm8iIHNob3VsZG4ndC4NCj4gPiA+ID4gPiBX
+aXRob3V0IHRoaXMgcGF0Y2gsIHBhcml0eSBlcnJvcnMgYXJlIGRldGVjdGVkIG9uIFNDSUYsIGV4
+Y2VwdCBmb3IgdGhlDQo+ID4gPiA+ID4gZmlyc3QgY2hhcmFjdGVyLg0KPiA+ID4gPiA+DQo+ID4g
+PiA+ID4gRm9yIG1vcmUgYWR2YW5jZWQgdGVzdGluZywgbWFrZSB0aGUgZm9sbG93aW5nIGNoYW5n
+ZSB0byB0aGUgZHJpdmVyOg0KPiA+ID4gPiA+DQo+ID4gPiA+ID4gLSBkZXZfbm90aWNlKHBvcnQt
+PmRldiwgInBhcml0eSBlcnJvclxuIik7DQo+ID4gPiA+ID4gKyBkZXZfbm90aWNlKHBvcnQtPmRl
+diwgInBhcml0eSBlcnJvciBmb3IgY2hhciAweCUwMnggaHdlaWdodCAldVxuIiwNCj4gPiA+ID4g
+PiBjLCBod2VpZ2h0OChjKSk7DQo+ID4gPiA+ID4NCj4gPiA+ID4gPiBQYXN0aW5nIGFuIGFsdGVy
+bmF0aW5nIHNlcXVlbmNlIG9mICJwIiBhbmQgIm8iIGNoYXJhY3RlcnMgc2hvdWxkIHRyaWdnZXIN
+Cj4gPiA+ID4gPiBwYXJpdHkgZXJyb3JzIGZvciB0aGUgInAiIGNoYXJhY3RlcnMuDQo+ID4gPiA+
+ID4gV2l0aG91dCB0aGlzIHBhdGNoLCB0aGV5IGFyZSB0cmlnZ2VyZWQgZm9yIHRoZSAibyIgY2hh
+cmFjdGVycyBpbnN0ZWFkLg0KPiA+ID4gPiA+DQo+ID4gPiA+IFRoYW5rIHlvdSB0aGF0IG1ha2Vz
+IGxpZmUgZWFzaWVyLg0KPiA+ID4gPg0KPiA+ID4gPiA+IFdpdGggdGhpcyBwYXRjaCwgdGhlIGlz
+c3VlcyBhYm92ZSBhcmUgZml4ZWQgb24gU0NJRi4NCj4gPiA+ID4gPiBUaGlzIGhhcyBiZWVuIHZl
+cmlmaWVkIG9uOg0KPiA+ID4gPiA+ICAgMS4gU0NJRiBvbiBSLUNhciBHZW4gMiwNCj4gPiA+ID4g
+PiAgIDIuIFNDSUYgb24gUi1DYXIgR2VuMw0KPiA+ID4gPiA+ICAgMy4gU0NJRiBvbiBSWi9BMUgs
+DQo+ID4gPiA+ID4gICA0LiBTQ0lGIG9uIFJaL0EyTS4NCj4gPg0KPiA+ID4gSWYgSSBkaXNhYmxl
+IERNQSBmb3IgSFNDSUYxIGluIHRoZSAuZHRzaSwgcGFyaXR5IGVycm9ycyBhcmUgZGV0ZWN0ZWQN
+Cj4gPiA+IGFzIGV4cGVjdGVkLg0KPiA+DQo+ID4gU28gSFNDSUYgb24gUi1DYXIgR2VuMyBpcyBh
+ZmZlY3RlZCwgYW5kIGZpeGVkIGJ5IHRoaXMgcGF0Y2guDQo+ID4NCj4gPiA+IEhlbmNlIHRoZSBk
+cml2ZXIgZG9lcyBub3Qgc3VwcG9ydCBwYXJpdHkgY2hlY2tpbmcgd2hlbiBETUEgaXMgZW5hYmxl
+ZC4NCj4gPiA+IEkgYWxzbyB0aGluayBpdCdzIG5vdCBlYXN5IHRvIGFkZCBzdXBwb3J0IGZvciB0
+aGF0LCBpZiBwb3NzaWJsZSBhdCBhbGwuDQo+ID4gPg0KPiA+ID4gPiA+IEkgaGF2ZW4ndCB0ZXN0
+ZWQgaXQgeWV0IG9uOg0KPiA+ID4gPiA+ICAgMS4gU0NJRkIgb24gU0gvUi1Nb2JpbGUgKG5lZWRz
+IHdpcmluZyB1cCksDQo+ID4NCj4gPiBTQ0lGQiBvbiBSLU1vYmlsZSBBMSBpcyBub3QgYWZmZWN0
+ZWQsIGFuZCB3b3JrcyBiZWZvcmUvYWZ0ZXIsIGFzIGV4cGVjdGVkLg0KPiA+DQo+ID4gPiA+ID4g
+ICAyLiBTQ0lGQSwgU0NJRkIsIGFuZCBIU0NJRiBvbiBSLUNhciBHZW4yIChuZWVkcyB3aXJpbmcg
+dXApLA0KPiA+DQo+ID4gU2FtZSBmb3IgU0NJRkEsIFNDSUZCIG9uIFItQ2FyIE0yLVcuDQo+ID4N
+Cj4gPiBIU0NJRiBvbiBSLUNhciBNMi1XIGlzIGFmZmVjdGVkLCBhbmQgZml4ZWQgYnkgdGhpcyBw
+YXRjaC4NCj4gPg0KPiA+IFRoaXMgbWVhbnMgdGhlIG1vZGVybiBwbGF0Zm9ybXMgd2UgY2FyZSBh
+Ym91dCBhcmUgaGFuZGxlZCBmaW5lLCBzbw0KPiA+IFRlc3RlZC1ieTogR2VlcnQgVXl0dGVyaG9l
+dmVuIDxnZWVydCtyZW5lc2FzQGdsaWRlci5iZT4NCj4gPg0KPiA+IFRoYXQgbGVhdmVzIHVzIHdp
+dGggdGVzdGluZyBvbiBhIGZldyBsZWdhY3kgcGxhdGZvcm1zLi4uDQo+ID4NCj4gPiA+ID4gPiAg
+IDMuIChIKVNDSUYgb24gUi1DYXIgR2VuMSAocmVtb3RlIGJvYXJkcyB1bmFjY2Vzc2libGUgYXQg
+dGhlIG1vbWVudCksDQo+ID4gPiA+ID4gICA0LiBTdXBlckggKG9ubHkgcmVtb3RlIE1pZ28tUiBh
+dmFpbGFibGUsIGJ1dCB1bmFjY2Vzc2libGUpLg0KPiA+ID4gPiA+DQo+ID4gPiA+ID4gSSBjYW4g
+dGVzdCAxIGFuZCAyIChhbmQgcGVyaGFwcyAzIGFuZCA0KSBsYXRlciwgaWYgbmVlZGVkLg0KPiA+
+ID4gPiBwcm9iYWJseSB0ZXN0aW5nIHRoaXMgb24gU3VwZXJIIGlzIGdvbm5hIGJlIGEgcGFpbiBk
+dWUgdG8gbGFjayBvZg0KPiA+ID4gPiBoYXJkd2FyZSBhdmFpbGFiaWxpdHksDQo+ID4gPiA+IChp
+dCBuZWVkcyB0byBiZSB0ZXN0ZWQgb24gMTkgcGxhdGZvcm1zKQ0KPiA+ID4gPiBob3cgYWJvdXQg
+I2lmZGVmIENPTkZJR19BUkNIX1JFTkVTQVMgfHwgQ09ORklHX0g4MzAwIGFuZCB0aGUgZml4ID8N
+Cj4gPiA+DQo+ID4gPiBJIGhhZCBhIGxvb2sgYXQgYSBmZXcgU3VwZXJIIGRvY3Mgdy5yLnQuIGZy
+YW1pbmcvcGFyaXR5IGVycm9yIGJlaGF2aW9yOg0KPiA+ID4gICAtIFNDSUYoQSkgb24gU0g3NzI0
+OiBzaW1pbGFyIHRvIFItQ2FyIEdlbjIsDQo+ID4gPiAgIC0gSChTQ0lGKSBvbiBTSDc3MzQ6IHNh
+bWUgYXMgb24gUi1DYXIgR2VuMiwNCj4gPiA+ICAgLSBTQ0lGIG9uIFNINzc1MTogY29uZmxpY3Qg
+YmV0d2VlbiBzdGF0dXMgcmVnaXN0ZXIgKCJ0byBiZSByZWFkIG5leHQiKQ0KPiA+ID4gICAgIGFu
+ZCBmbG93Y2hhcnQgKCJyZWFkIGZyb20iKS4NCj4NCj4gRlRSLCBJIGdhdmUgaXQgYSB0cnkgb24g
+dGhlIFNINzc1MVItYmFzZWQgSS1PIERBVEEgVVNMLTVQIGFrYSBMYW5kaXNrOg0KPiBTQ0lGIGlz
+IGFmZmVjdGVkLCBhbmQgZml4ZWQgYnkgY29tbWl0IDNkYzRkYjM2NjIzNjYzMDYgKCJzZXJpYWw6
+IHNoLXNjaToNCj4gTWFrZSBzdXJlIHN0YXR1cyByZWdpc3RlciBTQ3hTUiBpcyByZWFkIGluIGNv
+cnJlY3Qgc2VxdWVuY2UiKS4NCj4NClRoYW5rIHlvdSBHZWVydC4NCg0KQ2hlZXJzLA0KUHJhYmhh
+a2FyDQoNCg0KUmVuZXNhcyBFbGVjdHJvbmljcyBFdXJvcGUgR21iSCwgR2VzY2hhZWZ0c2Z1ZWhy
+ZXIvUHJlc2lkZW50OiBDYXJzdGVuIEphdWNoLCBTaXR6IGRlciBHZXNlbGxzY2hhZnQvUmVnaXN0
+ZXJlZCBvZmZpY2U6IER1ZXNzZWxkb3JmLCBBcmNhZGlhc3RyYXNzZSAxMCwgNDA0NzIgRHVlc3Nl
+bGRvcmYsIEdlcm1hbnksIEhhbmRlbHNyZWdpc3Rlci9Db21tZXJjaWFsIFJlZ2lzdGVyOiBEdWVz
+c2VsZG9yZiwgSFJCIDM3MDggVVN0LUlETnIuL1RheCBpZGVudGlmaWNhdGlvbiBuby46IERFIDEx
+OTM1MzQwNiBXRUVFLVJlZy4tTnIuL1dFRUUgcmVnLiBuby46IERFIDE0OTc4NjQ3DQo
