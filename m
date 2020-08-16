@@ -1,163 +1,25 @@
-From: Rich Felker <dalias@libc.org>
-Date: Sat, 15 Aug 2020 19:33:04 +0000
-Subject: [GIT PULL] arch/sh updates for 5.9
-Message-Id: <20200815193255.GA23393@brightrain.aerifal.cx>
+From: pr-tracker-bot@kernel.org
+Date: Sun, 16 Aug 2020 01:55:38 +0000
+Subject: Re: [GIT PULL] arch/sh updates for 5.9
+Message-Id: <159754293825.18953.10322498780181033938.pr-tracker-bot@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200815193255.GA23393@brightrain.aerifal.cx>
+In-Reply-To: <20200815193255.GA23393@brightrain.aerifal.cx>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Rich Felker <dalias@libc.org>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, Linux-sh list <linux-sh@vger.kernel.org>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
 
-The following changes since commit bcf876870b95592b52519ed4aafcf9d95999bc9c:
+The pull request you sent on Sat, 15 Aug 2020 15:33:04 -0400:
 
-  Linux 5.8 (2020-08-02 14:21:45 -0700)
+> git://git.libc.org/linux-sh tags/sh-for-5.9
 
-are available in the Git repository at:
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/5bbec3cfe376ed0014d9456a9be11d5ed75d587b
 
-  git://git.libc.org/linux-sh tags/sh-for-5.9
+Thank you!
 
-for you to fetch changes up to 0c64a0dce51faa9c706fdf1f957d6f19878f4b81:
-
-  sh: landisk: Add missing initialization of sh_io_port_base (2020-08-14 22:43:17 -0400)
-
-----------------------------------------------------------------
-Cleanup, SECCOMP_FILTER support, message printing fixes, and other
-changes to arch/sh.
-
-----------------------------------------------------------------
-Alexander A. Klimov (1):
-      sh: Replace HTTP links with HTTPS ones
-
-Chen Zhou (1):
-      sh: remove call to memset after dma_alloc_coherent
-
-Christian Brauner (1):
-      sh: switch to copy_thread_tls()
-
-Christoph Hellwig (10):
-      sh: remove -Werror from Makefiles
-      sh: sort the selects for SUPERH alphabetically
-      sh: remove __KERNEL__ ifdefs from non-UAPI headers
-      sh: move ioremap_fixed details out of <asm/io.h>
-      sh: move the ioremap implementation out of line
-      sh: don't include <asm/io_trapped.h> in <asm/io.h>
-      sh: unexport register_trapped_io and match_trapped_io_handler
-      dma-mapping: consolidate the NO_DMA definition in kernel/dma/Kconfig
-      sh: don't allow non-coherent DMA for NOMMU
-      sh: use the generic dma coherent remap allocator
-
-Flavio Suligoi (1):
-      arch: sh: smc37c93x: fix spelling mistake
-
-Geert Uytterhoeven (14):
-      Revert "sh: add missing EXPORT_SYMBOL() for __delay"
-      sh: Remove SH5-based Cayman platform
-      input: i8042 - Remove special Cayman handling
-      sh: fault: Fix duplicate printing of "PC:"
-      Revert "sh: add loglvl to printk_address()"
-      Revert "sh: remove needless printk()"
-      sh: kernel: disassemble: Fix broken lines in disassembly dumps
-      sh: dump_stack: Fix broken lines and ptrval in calltrace dumps
-      sh: process: Fix broken lines in register dumps
-      sh: sh2007: Modernize printing of kernel messages
-      sh: pci: Modernize printing of kernel messages
-      sh: machvec: Modernize printing of kernel messages
-      sh: stacktrace: Remove stacktrace_ops.stack()
-      sh: landisk: Add missing initialization of sh_io_port_base
-
-Hans Verkuil (1):
-      arch/sh/configs: remove obsolete CONFIG_SOC_CAMERA*
-
-John Paul Adrian Glaubitz (1):
-      sh: Implement __get_user_u64() required for 64-bit get_user()
-
-Matthew Wilcox (Oracle) (1):
-      sh: Fix unneeded constructor in page table allocation
-
-Michael Karcher (3):
-      sh: Rearrange blocks in entry-common.S
-      sh: Add SECCOMP_FILTER
-      sh: bring syscall_set_return_value in line with other architectures
-
- arch/m68k/Kconfig                             |   4 +-
- arch/m68k/Kconfig.machine                     |   1 +
- arch/sh/Kconfig                               | 109 ++++++++--------
- arch/sh/Makefile                              |   5 -
- arch/sh/boards/Kconfig                        |   6 -
- arch/sh/boards/board-sh2007.c                 |   4 +-
- arch/sh/boards/mach-cayman/Makefile           |   5 -
- arch/sh/boards/mach-cayman/irq.c              | 148 ---------------------
- arch/sh/boards/mach-cayman/panic.c            |  46 -------
- arch/sh/boards/mach-cayman/setup.c            | 181 --------------------------
- arch/sh/boards/mach-landisk/setup.c           |   3 +
- arch/sh/configs/ap325rxa_defconfig            |   3 -
- arch/sh/configs/cayman_defconfig              |  66 ----------
- arch/sh/configs/ecovec24_defconfig            |   3 -
- arch/sh/configs/migor_defconfig               |   3 -
- arch/sh/configs/se7724_defconfig              |   2 -
- arch/sh/drivers/pci/Makefile                  |   1 -
- arch/sh/drivers/pci/common.c                  |   6 +-
- arch/sh/drivers/pci/fixups-cayman.c           |  78 -----------
- arch/sh/drivers/pci/pci-sh7780.c              |  23 ++--
- arch/sh/drivers/pci/pci.c                     |  11 +-
- arch/sh/include/asm/adc.h                     |   2 -
- arch/sh/include/asm/addrspace.h               |   3 -
- arch/sh/include/asm/bitops.h                  |   4 -
- arch/sh/include/asm/cache.h                   |   2 -
- arch/sh/include/asm/cacheflush.h              |   3 -
- arch/sh/include/asm/dma.h                     |   2 -
- arch/sh/include/asm/elf.h                     |   2 -
- arch/sh/include/asm/freq.h                    |   2 -
- arch/sh/include/asm/futex.h                   |   3 -
- arch/sh/include/asm/io.h                      | 119 ++---------------
- arch/sh/include/asm/kdebug.h                  |   3 +-
- arch/sh/include/asm/mmu_context.h             |   2 -
- arch/sh/include/asm/mmzone.h                  |   3 -
- arch/sh/include/asm/pci.h                     |   4 -
- arch/sh/include/asm/processor_32.h            |   2 -
- arch/sh/include/asm/smc37c93x.h               |   4 +-
- arch/sh/include/asm/sparsemem.h               |   3 -
- arch/sh/include/asm/stacktrace.h              |   2 -
- arch/sh/include/asm/string_32.h               |   4 -
- arch/sh/include/asm/syscall_32.h              |   5 +-
- arch/sh/include/asm/syscalls_32.h             |   3 -
- arch/sh/include/asm/thread_info.h             |   5 -
- arch/sh/include/asm/uaccess_32.h              |  53 ++++++++
- arch/sh/include/asm/watchdog.h                |   2 -
- arch/sh/kernel/Makefile                       |   2 -
- arch/sh/kernel/disassemble.c                  | 103 +++++++--------
- arch/sh/kernel/dma-coherent.c                 |  51 +-------
- arch/sh/kernel/dumpstack.c                    |  30 ++---
- arch/sh/kernel/entry-common.S                 |  59 +++++----
- arch/sh/kernel/io_trapped.c                   |   2 -
- arch/sh/kernel/ioport.c                       |   1 +
- arch/sh/kernel/machvec.c                      |   8 +-
- arch/sh/kernel/perf_callchain.c               |   6 -
- arch/sh/kernel/process_32.c                   |  44 +++----
- arch/sh/kernel/ptrace_32.c                    |   5 +-
- arch/sh/kernel/stacktrace.c                   |   7 -
- arch/sh/lib/Makefile                          |   2 -
- arch/sh/lib/delay.c                           |   1 -
- arch/sh/mm/Makefile                           |   2 -
- arch/sh/mm/consistent.c                       |   2 -
- arch/sh/mm/fault.c                            |   3 +-
- arch/sh/mm/init.c                             |   1 +
- arch/sh/mm/ioremap.c                          |  55 ++++++++
- arch/sh/mm/ioremap.h                          |  23 ++++
- arch/sh/mm/ioremap_fixed.c                    |   1 +
- arch/sh/mm/pgtable.c                          |   7 +-
- arch/sh/oprofile/backtrace.c                  |   7 -
- arch/sh/tools/mach-types                      |   1 -
- arch/um/Kconfig                               |   4 +-
- drivers/input/serio/i8042-io.h                |   2 -
- kernel/dma/Kconfig                            |   3 +
- tools/testing/selftests/seccomp/seccomp_bpf.c |   8 +-
- 73 files changed, 373 insertions(+), 1012 deletions(-)
- delete mode 100644 arch/sh/boards/mach-cayman/Makefile
- delete mode 100644 arch/sh/boards/mach-cayman/irq.c
- delete mode 100644 arch/sh/boards/mach-cayman/panic.c
- delete mode 100644 arch/sh/boards/mach-cayman/setup.c
- delete mode 100644 arch/sh/configs/cayman_defconfig
- delete mode 100644 arch/sh/drivers/pci/fixups-cayman.c
- create mode 100644 arch/sh/mm/ioremap.h
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html
