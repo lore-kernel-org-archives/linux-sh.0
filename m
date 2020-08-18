@@ -1,231 +1,219 @@
-From: Jim Quinlan <james.quinlan@broadcom.com>
-Date: Mon, 03 Aug 2020 19:45:05 +0000
-Subject: [PATCH v10 00/11] PCI: brcmstb: enable PCIe for STB chips
-Message-Id: <20200803194529.32357-1-james.quinlan@broadcom.com>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Tue, 18 Aug 2020 15:16:34 +0000
+Subject: [PATCH v3 17/17] memblock: use separate iterators for memory and reserved regions
+Message-Id: <20200818151634.14343-18-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200818151634.14343-1-rppt@kernel.org>
+In-Reply-To: <20200818151634.14343-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-pci@vger.kernel.org, Nicolas Saenz Julienne <nsaenzjulienne@suse.de>, Christoph Hellwig <hch@lst.de>, Robin Murphy <robin.murphy@arm.com>, bcm-kernel-feedback-list@broadcom.com, james.quinlan@broadcom.com
-Cc: Heikki Krogerus <heikki.krogerus@linux.intel.com>, "open list:SUPERH" <linux-sh@vger.kernel.org>, "open list:REMOTE PROCESSOR REMOTEPROC SUBSYSTEM" <linux-remoteproc@vger.kernel.org>, "open list:DRM DRIVERS FOR ALLWINNER A10" <dri-devel@lists.freedesktop.org>, Julien Grall <julien.grall@arm.com>, "H. Peter Anvin" <hpa@zytor.com>, "open list:STAGING SUBSYSTEM" <devel@driverdev.osuosl.org>, Jean-Philippe Brucker <jean-philippe@linaro.org>, Stefano Stabellini <sstabellini@kernel.org>, Saravana Kannan <saravanak@google.com>, "Rafael J. Wysocki" <rafael@kernel.org>, "open list:ACPI FOR ARM64 ACPI/arm64" <linux-acpi@vger.kernel.org>, Alan Stern <stern@rowland.harvard.edu>, "open list:ALLWINNER A10 CSI DRIVER" <linux-media@vger.kernel.org>, "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE" <devicetree@vger.kernel.org>, Joerg Roedel <jroedel@suse.de>, Arnd Bergmann <arnd@arndb.de>, "moderated list:BROADCOM BCM2711/BCM2835 ARM ARCHITECTURE" <linux-rpi-kernel@lists.infradead.org>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Oliver Neukum <oneukum@suse.com>, open list <linux-kernel@vger.kernel.org>, "open list:IOMMU DRIVERS" <iommu@lists.linux-foundation.org>, "open list:USB SUBSYSTEM" <linux-usb@vger.kernel.org>, Suzuki K Poulose <suzuki.poulose@arm.com>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Daniel Axtens <dja@axtens.net>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>, Russell King <linux@armlinux.org.uk>, Stafford Horne <shorne@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, clang-built-linux@googlegroups.com, iommu@lists.linux-foundation.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-mm@kvack.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, x86@kernel.org, Ingo Molnar <mingo@kernel.org>, Thomas Bogendoerfer <tsbogend@alpha.franken.de>, Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>
 
-Patchset Summary:
-  Enhance a PCIe host controller driver.  Because of its unusual design
-  we are foced to change dev->dma_pfn_offset into a more general role
-  allowing multiple offsets.  See the 'v1' notes below for more info.
+From: Mike Rapoport <rppt@linux.ibm.com>
 
-v10: 
-  Commit: "device-mapping: Introduce DMA range map, supplanting ..."
-  -- change title of commit; "bus core:" => "device-mapping:"
-  -- instead of allocating the DMA map with devm, use kcalloc
-     and call kfree() during device_release().  (RobH) Also,
-     for three cases that want to use the same DMA map, copy
-     the dma_range_map using a helper function.
-  -- added a missing 'return = 0;' to of_dma_get_range().  (Nicolas)
-  -- removed dma_range_overlaps(); instead return error if there
-     is an existing DMA map. (Christoph).
-  Commit: "PCI: brcmstb: Set additional internal memory DMA ..."
-  -- Changed constant 1 to 1ULL. (Nicolas)
-  Commit: "ata: ahci_brcm: Fix use of BCM7216 reset controller"
-     This commit has been removed from this patchset and will be
-     submitted on its own.
+for_each_memblock() is used to iterate over memblock.memory in
+a few places that use data from memblock_region rather than the memory
+ranges.
 
-v9:
-  Commit: "device core: Introduce DMA range map, supplanting ..."
-  -- A number of code improvements were implemented as suggested by
-     ChristophH.  Unfortunately, some of these changes reversed the
-     implemented suggestions of other reviewers; for example, the new
-     macros PFN_DMA_ADDR(), DMA_ADDR_PFN() have been pulled.
+Introduce separate for_each_mem_region() and for_each_reserved_mem_region()
+to improve encapsulation of memblock internals from its users.
 
-v8:
-  Commit: "device core: Introduce DMA range map, supplanting ..."
-  -- To satisfy a specific m68 compile configuration, I moved the 'struct
-     bus_dma_region; definition out of #ifdef CONFIG_HAS_DMA and also defined
-     three inline functions for !CONFIG_HAS_DMA (kernel test robot).
-  -- The sunXi drivers -- suc4i_csi, sun6i_csi, cedrus_hw -- set
-     a pfn_offset outside of_dma_configure() but the code offers no 
-     insight on the size of the translation window.  V7 had me using
-     SIZE_MAX as the size.  I have since contacted the sunXi maintainer and
-     he said that using a size of SZ_4G would cover sunXi configurations.
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Reviewed-by: Baoquan He <bhe@redhat.com>
+Acked-by: Ingo Molnar <mingo@kernel.org>		   # x86
+Acked-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>  # MIPS
+Acked-by: Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>   # .clang-format
+---
+ .clang-format                  |  3 ++-
+ arch/arm64/kernel/setup.c      |  2 +-
+ arch/arm64/mm/numa.c           |  2 +-
+ arch/mips/netlogic/xlp/setup.c |  2 +-
+ arch/riscv/mm/init.c           |  2 +-
+ arch/x86/mm/numa.c             |  2 +-
+ include/linux/memblock.h       | 19 ++++++++++++++++---
+ mm/memblock.c                  |  4 ++--
+ mm/page_alloc.c                |  8 ++++----
+ 9 files changed, 29 insertions(+), 15 deletions(-)
 
-v7:
-  Commit: "device core: Introduce DMA range map, supplanting ..."
-  -- remove second kcalloc/copy in device.c (AndyS)
-  -- use PTR_ERR_OR_ZERO() and PHYS_PFN() (AndyS)
-  -- indentation, sizeof(struct ...) => sizeof(*r) (AndyS)
-  -- add pfn.h definitions: PFN_DMA_ADDR(), DMA_ADDR_PFN() (AndyS)
-  -- Fixed compile error in "sun6i_csi.c" (kernel test robot)
-  Commit "ata: ahci_brcm: Fix use of BCM7216 reset controller"
-  -- correct name of function in the commit msg (SergeiS)
-  
-v6:
-  Commit "device core: Introduce DMA range map":
-  -- of_dma_get_range() now takes a single argument and returns either
-     NULL, a valid map, or an ERR_PTR. (Robin)
-  -- offsets are no longer a PFN value but an actual address. (Robin)
-  -- the bus_dma_region struct stores the range size instead of
-     the cpu_end and pci_end values. (Robin)
-  -- devices that were setting a single offset with no boundaries
-     have been modified to have boundaries; in a few places
-     where this information was unavilable a /* FIXME: ... */
-     comment was added. (Robin)
-  -- dma_attach_offset_range() can be called when an offset
-     map already exists; if it's range is already present
-     nothing is done and success is returned. (Robin)
-  All commits:
-  -- Man name/style/corrections/etc changed (Bjorn)
-  -- rebase to Torvalds master
-
-v5:
-  Commit "device core: Introduce multiple dma pfn offsets"
-  -- in of/address.c: "map_size = 0" => "*map_size = 0"
-  -- use kcalloc instead of kzalloc (AndyS)
-  -- use PHYS_ADDR_MAX instead of "~(phys_addr_t)0"
-  Commit "PCI: brcmstb: Set internal memory viewport sizes"
-  -- now gives error on missing dma-ranges property.
-  Commit "dt-bindings: PCI: Add bindings for more Brcmstb chips"
-  -- removed "Allof:" from brcm,scb-sizes definition (RobH)
-  All Commits:
-  -- indentation style, use max chars 100 (AndyS)
-  -- rebased to torvalds master
-
-v4:
-  Commit "device core: Introduce multiple dma pfn offsets"
-  -- of_dma_get_range() does not take a dev param but instead
-     takes two "out" params: map and map_size.  We do this so
-     that the code that parses dma-ranges is separate from
-     the code that modifies 'dev'.   (Nicolas)
-  -- the separate case of having a single pfn offset has
-     been removed and is now processed by going through the
-     map array. (Nicolas)
-  -- move attach_uniform_dma_pfn_offset() from of/address.c to
-     dma/mapping.c so that it does not depend on CONFIG_OF. (Nicolas)
-  -- devm_kcalloc => devm_kzalloc (DanC)
-  -- add/fix assignment to dev->dma_pfn_offset_map for func
-     attach_uniform_dma_pfn_offset() (DanC, Nicolas)
-  -- s/struct dma_pfn_offset_region/struct bus_dma_region/ (Nicolas)
-  -- s/attach_uniform_dma_pfn_offset/dma_attach_uniform_pfn_offset/
-  -- s/attach_dma_pfn_offset_map/dma_attach_pfn_offset_map/
-  -- More use of PFN_{PHYS,DOWN,UP}. (AndyS)
-  Commit "of: Include a dev param in of_dma_get_range()"
-  -- this commit was sqaushed with "device core: Introduce ..."
-
-v3:
-  Commit "device core: Introduce multiple dma pfn offsets"
-  Commit "arm: dma-mapping: Invoke dma offset func if needed"
-  -- The above two commits have been squashed.  More importantly,
-     the code has been modified so that the functionality for
-     multiple pfn offsets subsumes the use of dev->dma_pfn_offset.
-     In fact, dma_pfn_offset is removed and supplanted by
-     dma_pfn_offset_map, which is a pointer to an array.  The
-     more common case of a uniform offset is now handled as
-     a map with a single entry, while cases requiring multiple
-     pfn offsets use a map with multiple entries.  Code paths
-     that used to do this:
-
-         dev->dma_pfn_offset = mydrivers_pfn_offset;
-
-     have been changed to do this:
-
-         attach_uniform_dma_pfn_offset(dev, pfn_offset);
-
-  Commit "dt-bindings: PCI: Add bindings for more Brcmstb chips"
-  -- Add if/then clause for required props: resets, reset-names (RobH)
-  -- Change compatible list from const to enum (RobH)
-  -- Change list of u32-tuples to u64 (RobH)
-
-  Commit "of: Include a dev param in of_dma_get_range()"
-  -- modify of/unittests.c to add NULL param in of_dma_get_range() call.
-
-  Commit "device core: Add ability to handle multiple dma offsets"
-  -- align comment in device.h (AndyS).
-  -- s/cpu_beg/cpu_start/ and s/dma_beg/dma_start/ in struct
-     dma_pfn_offset_region (AndyS).
-
-v2:
-Commit: "device core: Add ability to handle multiple dma offsets"
-  o Added helper func attach_dma_pfn_offset_map() in address.c (Chistoph)
-  o Helpers funcs added to __phys_to_dma() & __dma_to_phys() (Christoph)
-  o Added warning when multiple offsets are needed and !DMA_PFN_OFFSET_MAP
-  o dev->dma_pfn_map => dev->dma_pfn_offset_map
-  o s/frm/from/ for dma_pfn_offset_frm_{phys,dma}_addr() (Christoph)
-  o In device.h: s/const void */const struct dma_pfn_offset_region */
-  o removed 'unlikely' from unlikely(dev->dma_pfn_offset_map) since
-    guarded by CONFIG_DMA_PFN_OFFSET_MAP (Christoph)
-  o Since dev->dma_pfn_offset is copied in usb/core/{usb,message}.c, now
-    dev->dma_pfn_offset_map is copied as well.
-  o Merged two of the DMA commits into one (Christoph).
-
-Commit "arm: dma-mapping: Invoke dma offset func if needed":
-  o Use helper functions instead of #if CONFIG_DMA_PFN_OFFSET
-
-Other commits' changes:
-  o Removed need for carrying of_id var in priv (Nicolas)
-  o Commit message rewordings (Bjorn)
-  o Commit log messages filled to 75 chars (Bjorn)
-  o devm_reset_control_get_shared())
-    => devm_reset_control_get_optional_shared (Philipp)
-  o Add call to reset_control_assert() in PCIe remove routines (Philipp)
-
-v1:
-This patchset expands the usefulness of the Broadcom Settop Box PCIe
-controller by building upon the PCIe driver used currently by the
-Raspbery Pi.  Other forms of this patchset were submitted by me years
-ago and not accepted; the major sticking point was the code required
-for the DMA remapping needed for the PCIe driver to work [1].
-
-There have been many changes to the DMA and OF subsystems since that
-time, making a cleaner and less intrusive patchset possible.  This
-patchset implements a generalization of "dev->dma_pfn_offset", except
-that instead of a single scalar offset it provides for multiple
-offsets via a function which depends upon the "dma-ranges" property of
-the PCIe host controller.  This is required for proper functionality
-of the BrcmSTB PCIe controller and possibly some other devices.
-
-[1] https://lore.kernel.org/linux-arm-kernel/1516058925-46522-5-git-send-email-jim2101024@gmail.com/
-
-
-Jim Quinlan (11):
-  PCI: brcmstb: PCIE_BRCMSTB depends on ARCH_BRCMSTB
-  dt-bindings: PCI: Add bindings for more Brcmstb chips
-  PCI: brcmstb: Add bcm7278 register info
-  PCI: brcmstb: Add suspend and resume pm_ops
-  PCI: brcmstb: Add bcm7278 PERST# support
-  PCI: brcmstb: Add control of rescal reset
-  device-mapping: Introduce DMA range map, supplanting dma_pfn_offset
-  PCI: brcmstb: Set additional internal memory DMA viewport sizes
-  PCI: brcmstb: Accommodate MSI for older chips
-  PCI: brcmstb: Set bus max burst size by chip type
-  PCI: brcmstb: Add bcm7211, bcm7216, bcm7445, bcm7278 to match list
-
- .../bindings/pci/brcm,stb-pcie.yaml           |  56 ++-
- arch/arm/include/asm/dma-mapping.h            |  10 +-
- arch/arm/mach-keystone/keystone.c             |  17 +-
- arch/sh/drivers/pci/pcie-sh7786.c             |   9 +-
- arch/sh/kernel/dma-coherent.c                 |  15 +-
- arch/x86/pci/sta2x11-fixup.c                  |   7 +-
- drivers/acpi/arm64/iort.c                     |   5 +-
- drivers/base/core.c                           |   2 +
- drivers/gpu/drm/sun4i/sun4i_backend.c         |   5 +-
- drivers/iommu/io-pgtable-arm.c                |   2 +-
- .../platform/sunxi/sun4i-csi/sun4i_csi.c      |   5 +-
- .../platform/sunxi/sun6i-csi/sun6i_csi.c      |   4 +-
- drivers/of/address.c                          |  72 ++-
- drivers/of/device.c                           |  43 +-
- drivers/of/of_private.h                       |  10 +-
- drivers/of/unittest.c                         |  31 +-
- drivers/pci/controller/Kconfig                |   3 +-
- drivers/pci/controller/pcie-brcmstb.c         | 409 +++++++++++++++---
- drivers/remoteproc/remoteproc_core.c          |   8 +-
- .../staging/media/sunxi/cedrus/cedrus_hw.c    |   7 +-
- drivers/usb/core/message.c                    |   9 +-
- drivers/usb/core/usb.c                        |   7 +-
- include/linux/device.h                        |   4 +-
- include/linux/dma-direct.h                    |   8 +-
- include/linux/dma-mapping.h                   |  36 ++
- kernel/dma/coherent.c                         |  10 +-
- kernel/dma/mapping.c                          |  65 +++
- 27 files changed, 672 insertions(+), 187 deletions(-)
-
+diff --git a/.clang-format b/.clang-format
+index 2b77cc419b97..a118fdde25c1 100644
+--- a/.clang-format
++++ b/.clang-format
+@@ -201,7 +201,7 @@ ForEachMacros:
+   - 'for_each_matching_node'
+   - 'for_each_matching_node_and_match'
+   - 'for_each_member'
+-  - 'for_each_memblock'
++  - 'for_each_mem_region'
+   - 'for_each_memblock_type'
+   - 'for_each_memcg_cache_index'
+   - 'for_each_mem_pfn_range'
+@@ -268,6 +268,7 @@ ForEachMacros:
+   - 'for_each_property_of_node'
+   - 'for_each_registered_fb'
+   - 'for_each_reserved_mem_range'
++  - 'for_each_reserved_mem_region'
+   - 'for_each_rtd_codec_dais'
+   - 'for_each_rtd_codec_dais_rollback'
+   - 'for_each_rtd_components'
+diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
+index a986c6f8ab42..dcce72ac072b 100644
+--- a/arch/arm64/kernel/setup.c
++++ b/arch/arm64/kernel/setup.c
+@@ -217,7 +217,7 @@ static void __init request_standard_resources(void)
+ 	if (!standard_resources)
+ 		panic("%s: Failed to allocate %zu bytes\n", __func__, res_size);
+ 
+-	for_each_memblock(memory, region) {
++	for_each_mem_region(region) {
+ 		res = &standard_resources[i++];
+ 		if (memblock_is_nomap(region)) {
+ 			res->name  = "reserved";
+diff --git a/arch/arm64/mm/numa.c b/arch/arm64/mm/numa.c
+index 8a97cd3d2dfe..5efdbd01a59c 100644
+--- a/arch/arm64/mm/numa.c
++++ b/arch/arm64/mm/numa.c
+@@ -350,7 +350,7 @@ static int __init numa_register_nodes(void)
+ 	struct memblock_region *mblk;
+ 
+ 	/* Check that valid nid is set to memblks */
+-	for_each_memblock(memory, mblk) {
++	for_each_mem_region(mblk) {
+ 		int mblk_nid = memblock_get_region_node(mblk);
+ 
+ 		if (mblk_nid = NUMA_NO_NODE || mblk_nid >= MAX_NUMNODES) {
+diff --git a/arch/mips/netlogic/xlp/setup.c b/arch/mips/netlogic/xlp/setup.c
+index 1a0fc5b62ba4..6e3102bcd2f1 100644
+--- a/arch/mips/netlogic/xlp/setup.c
++++ b/arch/mips/netlogic/xlp/setup.c
+@@ -70,7 +70,7 @@ static void nlm_fixup_mem(void)
+ 	const int pref_backup = 512;
+ 	struct memblock_region *mem;
+ 
+-	for_each_memblock(memory, mem) {
++	for_each_mem_region(mem) {
+ 		memblock_remove(mem->base + mem->size - pref_backup,
+ 			pref_backup);
+ 	}
+diff --git a/arch/riscv/mm/init.c b/arch/riscv/mm/init.c
+index 06355716d19a..1fb6a826c2fd 100644
+--- a/arch/riscv/mm/init.c
++++ b/arch/riscv/mm/init.c
+@@ -531,7 +531,7 @@ static void __init resource_init(void)
+ {
+ 	struct memblock_region *region;
+ 
+-	for_each_memblock(memory, region) {
++	for_each_mem_region(region) {
+ 		struct resource *res;
+ 
+ 		res = memblock_alloc(sizeof(struct resource), SMP_CACHE_BYTES);
+diff --git a/arch/x86/mm/numa.c b/arch/x86/mm/numa.c
+index aa76ec2d359b..b6246768479d 100644
+--- a/arch/x86/mm/numa.c
++++ b/arch/x86/mm/numa.c
+@@ -516,7 +516,7 @@ static void __init numa_clear_kernel_node_hotplug(void)
+ 	 *   memory ranges, because quirks such as trim_snb_memory()
+ 	 *   reserve specific pages for Sandy Bridge graphics. ]
+ 	 */
+-	for_each_memblock(reserved, mb_region) {
++	for_each_reserved_mem_region(mb_region) {
+ 		int nid = memblock_get_region_node(mb_region);
+ 
+ 		if (nid != MAX_NUMNODES)
+diff --git a/include/linux/memblock.h b/include/linux/memblock.h
+index 354078713cd1..ef131255cedc 100644
+--- a/include/linux/memblock.h
++++ b/include/linux/memblock.h
+@@ -553,9 +553,22 @@ static inline unsigned long memblock_region_reserved_end_pfn(const struct memblo
+ 	return PFN_UP(reg->base + reg->size);
+ }
+ 
+-#define for_each_memblock(memblock_type, region)					\
+-	for (region = memblock.memblock_type.regions;					\
+-	     region < (memblock.memblock_type.regions + memblock.memblock_type.cnt);	\
++/**
++ * for_each_mem_region - itereate over memory regions
++ * @region: loop variable
++ */
++#define for_each_mem_region(region)					\
++	for (region = memblock.memory.regions;				\
++	     region < (memblock.memory.regions + memblock.memory.cnt);	\
++	     region++)
++
++/**
++ * for_each_reserved_mem_region - itereate over reserved memory regions
++ * @region: loop variable
++ */
++#define for_each_reserved_mem_region(region)				\
++	for (region = memblock.reserved.regions;			\
++	     region < (memblock.reserved.regions + memblock.reserved.cnt); \
+ 	     region++)
+ 
+ extern void *alloc_large_system_hash(const char *tablename,
+diff --git a/mm/memblock.c b/mm/memblock.c
+index d0be57acccf2..4eacfed872c4 100644
+--- a/mm/memblock.c
++++ b/mm/memblock.c
+@@ -1664,7 +1664,7 @@ static phys_addr_t __init_memblock __find_max_addr(phys_addr_t limit)
+ 	 * the memory memblock regions, if the @limit exceeds the total size
+ 	 * of those regions, max_addr will keep original value PHYS_ADDR_MAX
+ 	 */
+-	for_each_memblock(memory, r) {
++	for_each_mem_region(r) {
+ 		if (limit <= r->size) {
+ 			max_addr = r->base + limit;
+ 			break;
+@@ -1834,7 +1834,7 @@ void __init_memblock memblock_trim_memory(phys_addr_t align)
+ 	phys_addr_t start, end, orig_start, orig_end;
+ 	struct memblock_region *r;
+ 
+-	for_each_memblock(memory, r) {
++	for_each_mem_region(r) {
+ 		orig_start = r->base;
+ 		orig_end = r->base + r->size;
+ 		start = round_up(orig_start, align);
+diff --git a/mm/page_alloc.c b/mm/page_alloc.c
+index 12da56b1cf39..366982d1a1c2 100644
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -5950,7 +5950,7 @@ overlap_memmap_init(unsigned long zone, unsigned long *pfn)
+ 
+ 	if (mirrored_kernelcore && zone = ZONE_MOVABLE) {
+ 		if (!r || *pfn >= memblock_region_memory_end_pfn(r)) {
+-			for_each_memblock(memory, r) {
++			for_each_mem_region(r) {
+ 				if (*pfn < memblock_region_memory_end_pfn(r))
+ 					break;
+ 			}
+@@ -6535,7 +6535,7 @@ static unsigned long __init zone_absent_pages_in_node(int nid,
+ 		unsigned long start_pfn, end_pfn;
+ 		struct memblock_region *r;
+ 
+-		for_each_memblock(memory, r) {
++		for_each_mem_region(r) {
+ 			start_pfn = clamp(memblock_region_memory_base_pfn(r),
+ 					  zone_start_pfn, zone_end_pfn);
+ 			end_pfn = clamp(memblock_region_memory_end_pfn(r),
+@@ -7129,7 +7129,7 @@ static void __init find_zone_movable_pfns_for_nodes(void)
+ 	 * options.
+ 	 */
+ 	if (movable_node_is_enabled()) {
+-		for_each_memblock(memory, r) {
++		for_each_mem_region(r) {
+ 			if (!memblock_is_hotpluggable(r))
+ 				continue;
+ 
+@@ -7150,7 +7150,7 @@ static void __init find_zone_movable_pfns_for_nodes(void)
+ 	if (mirrored_kernelcore) {
+ 		bool mem_below_4gb_not_mirrored = false;
+ 
+-		for_each_memblock(memory, r) {
++		for_each_mem_region(r) {
+ 			if (memblock_is_mirror(r))
+ 				continue;
+ 
 -- 
-2.17.1
+2.26.2
