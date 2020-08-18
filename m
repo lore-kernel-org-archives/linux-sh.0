@@ -1,75 +1,62 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Fri, 14 Aug 2020 11:07:30 +0000
-Subject: [PATCH 2/3] rtc: rtc-rs5c313: Fix late hardware init
-Message-Id: <20200814110731.29029-3-geert+renesas@glider.be>
+From: Mike Rapoport <rppt@kernel.org>
+Date: Tue, 18 Aug 2020 15:16:18 +0000
+Subject: [PATCH v3 01/17] KVM: PPC: Book3S HV: simplify kvm_cma_reserve()
+Message-Id: <20200818151634.14343-2-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200814110731.29029-1-geert+renesas@glider.be>
-In-Reply-To: <20200814110731.29029-1-geert+renesas@glider.be>
+References: <20200818151634.14343-1-rppt@kernel.org>
+In-Reply-To: <20200818151634.14343-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alessandro Zummo <a.zummo@towertech.it>, Alexandre Belloni <alexandre.belloni@bootlin.com>
-Cc: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, kogiidena <kogiidena@eggplant.ddo.jp>, Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, linux-rtc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Daniel Axtens <dja@axtens.net>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>, Russell King <linux@armlinux.org.uk>, Stafford Horne <shorne@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, clang-built-linux@googlegroups.com, iommu@lists.linux-foundation.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-mm@kvack.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, x86@kernel.org
 
-rs5c313_rtc_init() calls platform_driver_register(), and initializes the
-hardware.  This is wrong because of two reasons:
-  1. As soon as the driver has been registered, the device may be
-     probed.  If devm_rtc_device_register() is called before hardware
-     initialization, reading the current time will fail:
+From: Mike Rapoport <rppt@linux.ibm.com>
 
-	rs5c313 rs5c313: rs5c313_rtc_read_time: timeout error
-	rs5c313 rs5c313: registered as rtc0
-	rs5c313 rs5c313: rs5c313_rtc_read_time: timeout error
-	rs5c313 rs5c313: hctosys: unable to read the hardware clock
+The memory size calculation in kvm_cma_reserve() traverses memblock.memory
+rather than simply call memblock_phys_mem_size(). The comment in that
+function suggests that at some point there should have been call to
+memblock_analyze() before memblock_phys_mem_size() could be used.
+As of now, there is no memblock_analyze() at all and
+memblock_phys_mem_size() can be used as soon as cold-plug memory is
+registerd with memblock.
 
-  2. If the platform device does not exist, the driver will still write
-     to a hardware device that may not be present.
+Replace loop over memblock.memory with a call to memblock_phys_mem_size().
 
-Fix this by moving the hardware initialization sequence to the driver's
-.probe() method.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
 ---
- drivers/rtc/rtc-rs5c313.c | 20 ++++++++------------
- 1 file changed, 8 insertions(+), 12 deletions(-)
+ arch/powerpc/kvm/book3s_hv_builtin.c | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/rtc/rtc-rs5c313.c b/drivers/rtc/rtc-rs5c313.c
-index 00b5ef753935ec8a..af72e428b218173e 100644
---- a/drivers/rtc/rtc-rs5c313.c
-+++ b/drivers/rtc/rtc-rs5c313.c
-@@ -366,8 +366,13 @@ static const struct rtc_class_ops rs5c313_rtc_ops = {
- 
- static int rs5c313_rtc_probe(struct platform_device *pdev)
+diff --git a/arch/powerpc/kvm/book3s_hv_builtin.c b/arch/powerpc/kvm/book3s_hv_builtin.c
+index 073617ce83e0..8f58dd20b362 100644
+--- a/arch/powerpc/kvm/book3s_hv_builtin.c
++++ b/arch/powerpc/kvm/book3s_hv_builtin.c
+@@ -95,23 +95,15 @@ EXPORT_SYMBOL_GPL(kvm_free_hpt_cma);
+ void __init kvm_cma_reserve(void)
  {
--	struct rtc_device *rtc = devm_rtc_device_register(&pdev->dev, "rs5c313",
--				&rs5c313_rtc_ops, THIS_MODULE);
-+	struct rtc_device *rtc;
-+
-+	rs5c313_init_port();
-+	rs5c313_check_xstp_bit();
-+
-+	rtc = devm_rtc_device_register(&pdev->dev, "rs5c313", &rs5c313_rtc_ops,
-+				       THIS_MODULE);
+ 	unsigned long align_size;
+-	struct memblock_region *reg;
+-	phys_addr_t selected_size = 0;
++	phys_addr_t selected_size;
  
- 	return PTR_ERR_OR_ZERO(rtc);
- }
-@@ -381,16 +386,7 @@ static struct platform_driver rs5c313_rtc_platform_driver = {
+ 	/*
+ 	 * We need CMA reservation only when we are in HV mode
+ 	 */
+ 	if (!cpu_has_feature(CPU_FTR_HVMODE))
+ 		return;
+-	/*
+-	 * We cannot use memblock_phys_mem_size() here, because
+-	 * memblock_analyze() has not been called yet.
+-	 */
+-	for_each_memblock(memory, reg)
+-		selected_size += memblock_region_memory_end_pfn(reg) -
+-				 memblock_region_memory_base_pfn(reg);
  
- static int __init rs5c313_rtc_init(void)
- {
--	int err;
--
--	err = platform_driver_register(&rs5c313_rtc_platform_driver);
--	if (err)
--		return err;
--
--	rs5c313_init_port();
--	rs5c313_check_xstp_bit();
--
--	return 0;
-+	return platform_driver_register(&rs5c313_rtc_platform_driver);
- }
- 
- static void __exit rs5c313_rtc_exit(void)
+-	selected_size = (selected_size * kvm_cma_resv_ratio / 100) << PAGE_SHIFT;
++	selected_size = PAGE_ALIGN(memblock_phys_mem_size() * kvm_cma_resv_ratio / 100);
+ 	if (selected_size) {
+ 		pr_info("%s: reserving %ld MiB for global area\n", __func__,
+ 			 (unsigned long)selected_size / SZ_1M);
 -- 
-2.17.1
+2.26.2
