@@ -1,108 +1,121 @@
 From: Mike Rapoport <rppt@kernel.org>
-Date: Sun, 02 Aug 2020 16:35:44 +0000
-Subject: [PATCH v2 00/17] memblock: seasonal cleaning^w cleanup
-Message-Id: <20200802163601.8189-1-rppt@kernel.org>
+Date: Tue, 18 Aug 2020 15:16:31 +0000
+Subject: [PATCH v3 14/17] x86/setup: simplify reserve_crashkernel()
+Message-Id: <20200818151634.14343-15-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200818151634.14343-1-rppt@kernel.org>
+In-Reply-To: <20200818151634.14343-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>
+Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Daniel Axtens <dja@axtens.net>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>, Russell King <linux@armlinux.org.uk>, Stafford Horne <shorne@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, clang-built-linux@googlegroups.com, iommu@lists.linux-foundation.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-mm@kvack.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, x86@kernel.org, Ingo Molnar <mingo@kernel.org>
 
 From: Mike Rapoport <rppt@linux.ibm.com>
 
-Hi,
+* Replace magic numbers with defines
+* Replace memblock_find_in_range() + memblock_reserve() with
+  memblock_phys_alloc_range()
+* Stop checking for low memory size in reserve_crashkernel_low(). The
+  allocation from limited range will anyway fail if there is no enough
+  memory, so there is no need for extra traversal of memblock.memory
 
-These patches simplify several uses of memblock iterators and hide some of
-the memblock implementation details from the rest of the system.
+Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Acked-by: Ingo Molnar <mingo@kernel.org>
+Reviewed-by: Baoquan He <bhe@redhat.com>
+---
+ arch/x86/kernel/setup.c | 40 ++++++++++++++--------------------------
+ 1 file changed, 14 insertions(+), 26 deletions(-)
 
-The patches are on top of v5.8-rc7 + cherry-pick of "mm/sparse: cleanup the
-code surrounding memory_present()" [1] from mmotm tree.
-
-v2 changes:
-* replace for_each_memblock() with two versions, one for memblock.memory
-  and another one for memblock.reserved
-* fix overzealous cleanup of powerpc fadamp: keep the traversal over the
-  memblocks, but use better suited iterators
-* don't remove traversal over memblock.reserved in x86 numa cleanup but
-  replace for_each_memblock() with new for_each_reserved_mem_region()
-* simplify ramdisk and crash kernel allocations on x86
-* drop more redundant and unused code: __next_reserved_mem_region() and
-  memblock_mem_size()
-* add description of numa initialization fix on arm64 (thanks Jonathan)
-* add Acked and Reviewed tags
-
-[1] http://lkml.kernel.org/r/20200712083130.22919-1-rppt@kernel.org 
-
-Mike Rapoport (17):
-  KVM: PPC: Book3S HV: simplify kvm_cma_reserve()
-  dma-contiguous: simplify cma_early_percent_memory()
-  arm, xtensa: simplify initialization of high memory pages
-  arm64: numa: simplify dummy_numa_init()
-  h8300, nds32, openrisc: simplify detection of memory extents
-  riscv: drop unneeded node initialization
-  mircoblaze: drop unneeded NUMA and sparsemem initializations
-  memblock: make for_each_memblock_type() iterator private
-  memblock: make memblock_debug and related functionality private
-  memblock: reduce number of parameters in for_each_mem_range()
-  arch, mm: replace for_each_memblock() with for_each_mem_pfn_range()
-  arch, drivers: replace for_each_membock() with for_each_mem_range()
-  x86/setup: simplify initrd relocation and reservation
-  x86/setup: simplify reserve_crashkernel()
-  memblock: remove unused memblock_mem_size()
-  memblock: implement for_each_reserved_mem_region() using __next_mem_region()
-  memblock: use separate iterators for memory and reserved regions
-
- .clang-format                            |  4 +-
- arch/arm/kernel/setup.c                  | 18 +++--
- arch/arm/mm/init.c                       | 59 ++++------------
- arch/arm/mm/mmu.c                        | 39 ++++-------
- arch/arm/mm/pmsa-v7.c                    | 20 +++---
- arch/arm/mm/pmsa-v8.c                    | 17 +++--
- arch/arm/xen/mm.c                        |  7 +-
- arch/arm64/kernel/machine_kexec_file.c   |  6 +-
- arch/arm64/kernel/setup.c                |  4 +-
- arch/arm64/mm/init.c                     | 11 ++-
- arch/arm64/mm/kasan_init.c               | 10 +--
- arch/arm64/mm/mmu.c                      | 11 +--
- arch/arm64/mm/numa.c                     | 15 ++---
- arch/c6x/kernel/setup.c                  |  9 +--
- arch/h8300/kernel/setup.c                |  8 +--
- arch/microblaze/mm/init.c                | 24 ++-----
- arch/mips/cavium-octeon/dma-octeon.c     | 12 ++--
- arch/mips/kernel/setup.c                 | 31 +++++----
- arch/mips/netlogic/xlp/setup.c           |  2 +-
- arch/nds32/kernel/setup.c                |  8 +--
- arch/openrisc/kernel/setup.c             |  9 +--
- arch/openrisc/mm/init.c                  |  8 ++-
- arch/powerpc/kernel/fadump.c             | 57 ++++++++--------
- arch/powerpc/kvm/book3s_hv_builtin.c     | 11 +--
- arch/powerpc/mm/book3s64/hash_utils.c    | 16 ++---
- arch/powerpc/mm/book3s64/radix_pgtable.c | 11 ++-
- arch/powerpc/mm/kasan/kasan_init_32.c    |  8 +--
- arch/powerpc/mm/mem.c                    | 33 +++++----
- arch/powerpc/mm/numa.c                   |  7 +-
- arch/powerpc/mm/pgtable_32.c             |  8 +--
- arch/riscv/mm/init.c                     | 34 +++-------
- arch/riscv/mm/kasan_init.c               | 10 +--
- arch/s390/kernel/crash_dump.c            |  8 +--
- arch/s390/kernel/setup.c                 | 31 +++++----
- arch/s390/mm/page-states.c               |  6 +-
- arch/s390/mm/vmem.c                      | 16 +++--
- arch/sh/mm/init.c                        |  9 +--
- arch/sparc/mm/init_64.c                  | 12 ++--
- arch/x86/kernel/setup.c                  | 56 +++++-----------
- arch/x86/mm/numa.c                       |  2 +-
- arch/xtensa/mm/init.c                    | 55 +++------------
- drivers/bus/mvebu-mbus.c                 | 12 ++--
- drivers/irqchip/irq-gic-v3-its.c         |  2 +-
- drivers/s390/char/zcore.c                |  9 +--
- include/linux/memblock.h                 | 65 +++++++++---------
- kernel/dma/contiguous.c                  | 11 +--
- mm/memblock.c                            | 85 ++++++++----------------
- mm/page_alloc.c                          | 11 ++-
- mm/sparse.c                              | 10 ++-
- 49 files changed, 366 insertions(+), 561 deletions(-)
-
+diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
+index 2cac39ade2e3..52e83ba607b3 100644
+--- a/arch/x86/kernel/setup.c
++++ b/arch/x86/kernel/setup.c
+@@ -420,13 +420,13 @@ static int __init reserve_crashkernel_low(void)
+ {
+ #ifdef CONFIG_X86_64
+ 	unsigned long long base, low_base = 0, low_size = 0;
+-	unsigned long total_low_mem;
++	unsigned long low_mem_limit;
+ 	int ret;
+ 
+-	total_low_mem = memblock_mem_size(1UL << (32 - PAGE_SHIFT));
++	low_mem_limit = min(memblock_phys_mem_size(), CRASH_ADDR_LOW_MAX);
+ 
+ 	/* crashkernel=Y,low */
+-	ret = parse_crashkernel_low(boot_command_line, total_low_mem, &low_size, &base);
++	ret = parse_crashkernel_low(boot_command_line, low_mem_limit, &low_size, &base);
+ 	if (ret) {
+ 		/*
+ 		 * two parts from kernel/dma/swiotlb.c:
+@@ -444,23 +444,17 @@ static int __init reserve_crashkernel_low(void)
+ 			return 0;
+ 	}
+ 
+-	low_base = memblock_find_in_range(0, 1ULL << 32, low_size, CRASH_ALIGN);
++	low_base = memblock_phys_alloc_range(low_size, CRASH_ALIGN, 0, CRASH_ADDR_LOW_MAX);
+ 	if (!low_base) {
+ 		pr_err("Cannot reserve %ldMB crashkernel low memory, please try smaller size.\n",
+ 		       (unsigned long)(low_size >> 20));
+ 		return -ENOMEM;
+ 	}
+ 
+-	ret = memblock_reserve(low_base, low_size);
+-	if (ret) {
+-		pr_err("%s: Error reserving crashkernel low memblock.\n", __func__);
+-		return ret;
+-	}
+-
+-	pr_info("Reserving %ldMB of low memory at %ldMB for crashkernel (System low RAM: %ldMB)\n",
++	pr_info("Reserving %ldMB of low memory at %ldMB for crashkernel (low RAM limit: %ldMB)\n",
+ 		(unsigned long)(low_size >> 20),
+ 		(unsigned long)(low_base >> 20),
+-		(unsigned long)(total_low_mem >> 20));
++		(unsigned long)(low_mem_limit >> 20));
+ 
+ 	crashk_low_res.start = low_base;
+ 	crashk_low_res.end   = low_base + low_size - 1;
+@@ -504,13 +498,13 @@ static void __init reserve_crashkernel(void)
+ 		 * unless "crashkernel=size[KMG],high" is specified.
+ 		 */
+ 		if (!high)
+-			crash_base = memblock_find_in_range(CRASH_ALIGN,
+-						CRASH_ADDR_LOW_MAX,
+-						crash_size, CRASH_ALIGN);
++			crash_base = memblock_phys_alloc_range(crash_size,
++						CRASH_ALIGN, CRASH_ALIGN,
++						CRASH_ADDR_LOW_MAX);
+ 		if (!crash_base)
+-			crash_base = memblock_find_in_range(CRASH_ALIGN,
+-						CRASH_ADDR_HIGH_MAX,
+-						crash_size, CRASH_ALIGN);
++			crash_base = memblock_phys_alloc_range(crash_size,
++						CRASH_ALIGN, CRASH_ALIGN,
++						CRASH_ADDR_HIGH_MAX);
+ 		if (!crash_base) {
+ 			pr_info("crashkernel reservation failed - No suitable area found.\n");
+ 			return;
+@@ -518,19 +512,13 @@ static void __init reserve_crashkernel(void)
+ 	} else {
+ 		unsigned long long start;
+ 
+-		start = memblock_find_in_range(crash_base,
+-					       crash_base + crash_size,
+-					       crash_size, 1 << 20);
++		start = memblock_phys_alloc_range(crash_size, SZ_1M, crash_base,
++						  crash_base + crash_size);
+ 		if (start != crash_base) {
+ 			pr_info("crashkernel reservation failed - memory is in use.\n");
+ 			return;
+ 		}
+ 	}
+-	ret = memblock_reserve(crash_base, crash_size);
+-	if (ret) {
+-		pr_err("%s: Error reserving crashkernel memblock.\n", __func__);
+-		return;
+-	}
+ 
+ 	if (crash_base >= (1ULL << 32) && reserve_crashkernel_low()) {
+ 		memblock_free(crash_base, crash_size);
 -- 
 2.26.2
