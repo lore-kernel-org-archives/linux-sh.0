@@ -1,59 +1,61 @@
 From: Mike Rapoport <rppt@kernel.org>
-Date: Sun, 02 Aug 2020 16:35:52 +0000
-Subject: [PATCH v2 08/17] memblock: make for_each_memblock_type() iterator private
-Message-Id: <20200802163601.8189-9-rppt@kernel.org>
+Date: Tue, 18 Aug 2020 15:16:24 +0000
+Subject: [PATCH v3 07/17] mircoblaze: drop unneeded NUMA and sparsemem initializations
+Message-Id: <20200818151634.14343-8-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200802163601.8189-1-rppt@kernel.org>
-In-Reply-To: <20200802163601.8189-1-rppt@kernel.org>
+References: <20200818151634.14343-1-rppt@kernel.org>
+In-Reply-To: <20200818151634.14343-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>
+Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Daniel Axtens <dja@axtens.net>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>, Russell King <linux@armlinux.org.uk>, Stafford Horne <shorne@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, clang-built-linux@googlegroups.com, iommu@lists.linux-foundation.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-mm@kvack.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, x86@kernel.org
 
 From: Mike Rapoport <rppt@linux.ibm.com>
 
-for_each_memblock_type() is not used outside mm/memblock.c, move it there
-from include/linux/memblock.h
+microblaze does not support neither NUMA not SPARSMEM, so there is no point
+to call memblock_set_node() and sparse_memory_present_with_active_regions()
+functions during microblaze memory initialization.
+
+Remove these calls and the surrounding code.
 
 Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-Reviewed-by: Baoquan He <bhe@redhat.com>
 ---
- include/linux/memblock.h | 5 -----
- mm/memblock.c            | 5 +++++
- 2 files changed, 5 insertions(+), 5 deletions(-)
+ arch/microblaze/mm/init.c | 14 +-------------
+ 1 file changed, 1 insertion(+), 13 deletions(-)
 
-diff --git a/include/linux/memblock.h b/include/linux/memblock.h
-index 017fae833d4a..220b5f0dad42 100644
---- a/include/linux/memblock.h
-+++ b/include/linux/memblock.h
-@@ -532,11 +532,6 @@ static inline unsigned long memblock_region_reserved_end_pfn(const struct memblo
- 	     region < (memblock.memblock_type.regions + memblock.memblock_type.cnt);	\
- 	     region++)
+diff --git a/arch/microblaze/mm/init.c b/arch/microblaze/mm/init.c
+index 0880a003573d..49e0c241f9b1 100644
+--- a/arch/microblaze/mm/init.c
++++ b/arch/microblaze/mm/init.c
+@@ -105,9 +105,8 @@ static void __init paging_init(void)
  
--#define for_each_memblock_type(i, memblock_type, rgn)			\
--	for (i = 0, rgn = &memblock_type->regions[0];			\
--	     i < memblock_type->cnt;					\
--	     i++, rgn = &memblock_type->regions[i])
+ void __init setup_memory(void)
+ {
+-	struct memblock_region *reg;
 -
- extern void *alloc_large_system_hash(const char *tablename,
- 				     unsigned long bucketsize,
- 				     unsigned long numentries,
-diff --git a/mm/memblock.c b/mm/memblock.c
-index 39aceafc57f6..a5b9b3df81fc 100644
---- a/mm/memblock.c
-+++ b/mm/memblock.c
-@@ -129,6 +129,11 @@ struct memblock memblock __initdata_memblock = {
- 	.current_limit		= MEMBLOCK_ALLOC_ANYWHERE,
- };
+ #ifndef CONFIG_MMU
++	struct memblock_region *reg;
+ 	u32 kernel_align_start, kernel_align_size;
  
-+#define for_each_memblock_type(i, memblock_type, rgn)			\
-+	for (i = 0, rgn = &memblock_type->regions[0];			\
-+	     i < memblock_type->cnt;					\
-+	     i++, rgn = &memblock_type->regions[i])
-+
- int memblock_debug __initdata_memblock;
- static bool system_has_some_mirror __initdata_memblock = false;
- static int memblock_can_resize __initdata_memblock;
+ 	/* Find main memory where is the kernel */
+@@ -161,17 +160,6 @@ void __init setup_memory(void)
+ 	pr_info("%s: max_low_pfn: %#lx\n", __func__, max_low_pfn);
+ 	pr_info("%s: max_pfn: %#lx\n", __func__, max_pfn);
+ 
+-	/* Add active regions with valid PFNs */
+-	for_each_memblock(memory, reg) {
+-		unsigned long start_pfn, end_pfn;
+-
+-		start_pfn = memblock_region_memory_base_pfn(reg);
+-		end_pfn = memblock_region_memory_end_pfn(reg);
+-		memblock_set_node(start_pfn << PAGE_SHIFT,
+-				  (end_pfn - start_pfn) << PAGE_SHIFT,
+-				  &memblock.memory, 0);
+-	}
+-
+ 	paging_init();
+ }
+ 
 -- 
 2.26.2
