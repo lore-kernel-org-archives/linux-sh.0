@@ -1,64 +1,89 @@
 From: Mike Rapoport <rppt@kernel.org>
-Date: Sun, 02 Aug 2020 16:35:51 +0000
-Subject: [PATCH v2 07/17] mircoblaze: drop unneeded NUMA and sparsemem initializations
-Message-Id: <20200802163601.8189-8-rppt@kernel.org>
+Date: Tue, 18 Aug 2020 15:16:30 +0000
+Subject: [PATCH v3 13/17] x86/setup: simplify initrd relocation and reservation
+Message-Id: <20200818151634.14343-14-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200802163601.8189-1-rppt@kernel.org>
-In-Reply-To: <20200802163601.8189-1-rppt@kernel.org>
+References: <20200818151634.14343-1-rppt@kernel.org>
+In-Reply-To: <20200818151634.14343-1-rppt@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>
+Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Daniel Axtens <dja@axtens.net>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>, Russell King <linux@armlinux.org.uk>, Stafford Horne <shorne@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, clang-built-linux@googlegroups.com, iommu@lists.linux-foundation.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-mm@kvack.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, x86@kernel.org, Ingo Molnar <mingo@kernel.org>
 
 From: Mike Rapoport <rppt@linux.ibm.com>
 
-microblaze does not support neither NUMA not SPARSMEM, so there is no point
-to call memblock_set_node() and sparse_memory_present_with_active_regions()
-functions during microblaze memory initialization.
+Currently, initrd image is reserved very early during setup and then it
+might be relocated and re-reserved after the initial physical memory
+mapping is created. The "late" reservation of memblock verifies that mapped
+memory size exceeds the size of initrd, then checks whether the relocation
+required and, if yes, relocates inirtd to a new memory allocated from
+memblock and frees the old location.
 
-Remove these calls and the surrounding code.
+The check for memory size is excessive as memblock allocation will anyway
+fail if there is not enough memory. Besides, there is no point to allocate
+memory from memblock using memblock_find_in_range() + memblock_reserve()
+when there exists memblock_phys_alloc_range() with required functionality.
+
+Remove the redundant check and simplify memblock allocation.
 
 Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Acked-by: Ingo Molnar <mingo@kernel.org>
+Reviewed-by: Baoquan He <bhe@redhat.com>
 ---
- arch/microblaze/mm/init.c | 17 +----------------
- 1 file changed, 1 insertion(+), 16 deletions(-)
+ arch/x86/kernel/setup.c | 16 +++-------------
+ 1 file changed, 3 insertions(+), 13 deletions(-)
 
-diff --git a/arch/microblaze/mm/init.c b/arch/microblaze/mm/init.c
-index 521b59ba716c..49e0c241f9b1 100644
---- a/arch/microblaze/mm/init.c
-+++ b/arch/microblaze/mm/init.c
-@@ -105,9 +105,8 @@ static void __init paging_init(void)
+diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
+index 3511736fbc74..2cac39ade2e3 100644
+--- a/arch/x86/kernel/setup.c
++++ b/arch/x86/kernel/setup.c
+@@ -263,16 +263,12 @@ static void __init relocate_initrd(void)
+ 	u64 area_size     = PAGE_ALIGN(ramdisk_size);
  
- void __init setup_memory(void)
- {
--	struct memblock_region *reg;
+ 	/* We need to move the initrd down into directly mapped mem */
+-	relocated_ramdisk = memblock_find_in_range(0, PFN_PHYS(max_pfn_mapped),
+-						   area_size, PAGE_SIZE);
 -
- #ifndef CONFIG_MMU
-+	struct memblock_region *reg;
- 	u32 kernel_align_start, kernel_align_size;
++	relocated_ramdisk = memblock_phys_alloc_range(area_size, PAGE_SIZE, 0,
++						      PFN_PHYS(max_pfn_mapped));
+ 	if (!relocated_ramdisk)
+ 		panic("Cannot find place for new RAMDISK of size %lld\n",
+ 		      ramdisk_size);
  
- 	/* Find main memory where is the kernel */
-@@ -161,20 +160,6 @@ void __init setup_memory(void)
- 	pr_info("%s: max_low_pfn: %#lx\n", __func__, max_low_pfn);
- 	pr_info("%s: max_pfn: %#lx\n", __func__, max_pfn);
+-	/* Note: this includes all the mem currently occupied by
+-	   the initrd, we rely on that fact to keep the data intact. */
+-	memblock_reserve(relocated_ramdisk, area_size);
+ 	initrd_start = relocated_ramdisk + PAGE_OFFSET;
+ 	initrd_end   = initrd_start + ramdisk_size;
+ 	printk(KERN_INFO "Allocated new RAMDISK: [mem %#010llx-%#010llx]\n",
+@@ -299,13 +295,13 @@ static void __init early_reserve_initrd(void)
  
--	/* Add active regions with valid PFNs */
--	for_each_memblock(memory, reg) {
--		unsigned long start_pfn, end_pfn;
--
--		start_pfn = memblock_region_memory_base_pfn(reg);
--		end_pfn = memblock_region_memory_end_pfn(reg);
--		memblock_set_node(start_pfn << PAGE_SHIFT,
--				  (end_pfn - start_pfn) << PAGE_SHIFT,
--				  &memblock.memory, 0);
--	}
--
--	/* XXX need to clip this if using highmem? */
--	sparse_memory_present_with_active_regions(0);
--
- 	paging_init();
+ 	memblock_reserve(ramdisk_image, ramdisk_end - ramdisk_image);
  }
++
+ static void __init reserve_initrd(void)
+ {
+ 	/* Assume only end is not page aligned */
+ 	u64 ramdisk_image = get_ramdisk_image();
+ 	u64 ramdisk_size  = get_ramdisk_size();
+ 	u64 ramdisk_end   = PAGE_ALIGN(ramdisk_image + ramdisk_size);
+-	u64 mapped_size;
+ 
+ 	if (!boot_params.hdr.type_of_loader ||
+ 	    !ramdisk_image || !ramdisk_size)
+@@ -313,12 +309,6 @@ static void __init reserve_initrd(void)
+ 
+ 	initrd_start = 0;
+ 
+-	mapped_size = memblock_mem_size(max_pfn_mapped);
+-	if (ramdisk_size >= (mapped_size>>1))
+-		panic("initrd too large to handle, "
+-		       "disabling initrd (%lld needed, %lld available)\n",
+-		       ramdisk_size, mapped_size>>1);
+-
+ 	printk(KERN_INFO "RAMDISK: [mem %#010llx-%#010llx]\n", ramdisk_image,
+ 			ramdisk_end - 1);
  
 -- 
 2.26.2
