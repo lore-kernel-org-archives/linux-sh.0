@@ -1,7 +1,7 @@
 From: Mike Rapoport <rppt@kernel.org>
-Date: Tue, 18 Aug 2020 15:16:22 +0000
-Subject: [PATCH v3 05/17] h8300, nds32, openrisc: simplify detection of memory extents
-Message-Id: <20200818151634.14343-6-rppt@kernel.org>
+Date: Tue, 18 Aug 2020 15:16:32 +0000
+Subject: [PATCH v3 15/17] memblock: remove unused memblock_mem_size()
+Message-Id: <20200818151634.14343-16-rppt@kernel.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200818151634.14343-1-rppt@kernel.org>
 In-Reply-To: <20200818151634.14343-1-rppt@kernel.org>
@@ -13,84 +13,53 @@ Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Her
 
 From: Mike Rapoport <rppt@linux.ibm.com>
 
-Instead of traversing memblock.memory regions to find memory_start and
-memory_end, simply query memblock_{start,end}_of_DRAM().
+The only user of memblock_mem_size() was x86 setup code, it is gone now and
+memblock_mem_size() funciton can be removed.
 
 Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-Acked-by: Stafford Horne <shorne@gmail.com>
+Reviewed-by: Baoquan He <bhe@redhat.com>
 ---
- arch/h8300/kernel/setup.c    | 8 +++-----
- arch/nds32/kernel/setup.c    | 8 ++------
- arch/openrisc/kernel/setup.c | 9 ++-------
- 3 files changed, 7 insertions(+), 18 deletions(-)
+ include/linux/memblock.h |  1 -
+ mm/memblock.c            | 15 ---------------
+ 2 files changed, 16 deletions(-)
 
-diff --git a/arch/h8300/kernel/setup.c b/arch/h8300/kernel/setup.c
-index 28ac88358a89..0281f92eea3d 100644
---- a/arch/h8300/kernel/setup.c
-+++ b/arch/h8300/kernel/setup.c
-@@ -74,17 +74,15 @@ static void __init bootmem_init(void)
- 	memory_end = memory_start = 0;
+diff --git a/include/linux/memblock.h b/include/linux/memblock.h
+index 27c3b84d1615..15ed119701c1 100644
+--- a/include/linux/memblock.h
++++ b/include/linux/memblock.h
+@@ -481,7 +481,6 @@ static inline bool memblock_bottom_up(void)
  
- 	/* Find main memory where is the kernel */
--	for_each_memblock(memory, region) {
--		memory_start = region->base;
--		memory_end = region->base + region->size;
+ phys_addr_t memblock_phys_mem_size(void);
+ phys_addr_t memblock_reserved_size(void);
+-phys_addr_t memblock_mem_size(unsigned long limit_pfn);
+ phys_addr_t memblock_start_of_DRAM(void);
+ phys_addr_t memblock_end_of_DRAM(void);
+ void memblock_enforce_memory_limit(phys_addr_t memory_limit);
+diff --git a/mm/memblock.c b/mm/memblock.c
+index 567e454ce0a1..eb4f866bea34 100644
+--- a/mm/memblock.c
++++ b/mm/memblock.c
+@@ -1657,21 +1657,6 @@ phys_addr_t __init_memblock memblock_reserved_size(void)
+ 	return memblock.reserved.total_size;
+ }
+ 
+-phys_addr_t __init memblock_mem_size(unsigned long limit_pfn)
+-{
+-	unsigned long pages = 0;
+-	unsigned long start_pfn, end_pfn;
+-	int i;
+-
+-	for_each_mem_pfn_range(i, MAX_NUMNODES, &start_pfn, &end_pfn, NULL) {
+-		start_pfn = min_t(unsigned long, start_pfn, limit_pfn);
+-		end_pfn = min_t(unsigned long, end_pfn, limit_pfn);
+-		pages += end_pfn - start_pfn;
 -	}
-+	memory_start = memblock_start_of_DRAM();
-+	memory_end = memblock_end_of_DRAM();
- 
- 	if (!memory_end)
- 		panic("No memory!");
- 
- 	/* setup bootmem globals (we use no_bootmem, but mm still depends on this) */
- 	min_low_pfn = PFN_UP(memory_start);
--	max_low_pfn = PFN_DOWN(memblock_end_of_DRAM());
-+	max_low_pfn = PFN_DOWN(memory_end);
- 	max_pfn = max_low_pfn;
- 
- 	memblock_reserve(__pa(_stext), _end - _stext);
-diff --git a/arch/nds32/kernel/setup.c b/arch/nds32/kernel/setup.c
-index a066efbe53c0..c356e484dcab 100644
---- a/arch/nds32/kernel/setup.c
-+++ b/arch/nds32/kernel/setup.c
-@@ -249,12 +249,8 @@ static void __init setup_memory(void)
- 	memory_end = memory_start = 0;
- 
- 	/* Find main memory where is the kernel */
--	for_each_memblock(memory, region) {
--		memory_start = region->base;
--		memory_end = region->base + region->size;
--		pr_info("%s: Memory: 0x%x-0x%x\n", __func__,
--			memory_start, memory_end);
--	}
-+	memory_start = memblock_start_of_DRAM();
-+	memory_end = memblock_end_of_DRAM();
- 
- 	if (!memory_end) {
- 		panic("No memory!");
-diff --git a/arch/openrisc/kernel/setup.c b/arch/openrisc/kernel/setup.c
-index b18e775f8be3..5a5940f7ebb1 100644
---- a/arch/openrisc/kernel/setup.c
-+++ b/arch/openrisc/kernel/setup.c
-@@ -48,17 +48,12 @@ static void __init setup_memory(void)
- 	unsigned long ram_start_pfn;
- 	unsigned long ram_end_pfn;
- 	phys_addr_t memory_start, memory_end;
--	struct memblock_region *region;
- 
- 	memory_end = memory_start = 0;
- 
- 	/* Find main memory where is the kernel, we assume its the only one */
--	for_each_memblock(memory, region) {
--		memory_start = region->base;
--		memory_end = region->base + region->size;
--		printk(KERN_INFO "%s: Memory: 0x%x-0x%x\n", __func__,
--		       memory_start, memory_end);
--	}
-+	memory_start = memblock_start_of_DRAM();
-+	memory_end = memblock_end_of_DRAM();
- 
- 	if (!memory_end) {
- 		panic("No memory!");
+-
+-	return PFN_PHYS(pages);
+-}
+-
+ /* lowest address */
+ phys_addr_t __init_memblock memblock_start_of_DRAM(void)
+ {
 -- 
 2.26.2
