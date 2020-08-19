@@ -1,67 +1,71 @@
-From: Nicholas Piggin <npiggin@gmail.com>
-Date: Wed, 26 Aug 2020 14:52:45 +0000
-Subject: [PATCH v2 19/23] sh: use asm-generic/mmu_context.h for no-op implementations
-Message-Id: <20200826145249.745432-20-npiggin@gmail.com>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 19 Aug 2020 12:59:03 +0000
+Subject: [PATCH v2 6/7] spi: rspi: Fill in spi_transfer.effective_speed_hz
+Message-Id: <20200819125904.20938-7-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200826145249.745432-1-npiggin@gmail.com>
-In-Reply-To: <20200826145249.745432-1-npiggin@gmail.com>
+References: <20200819125904.20938-1-geert+renesas@glider.be>
+In-Reply-To: <20200819125904.20938-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arch@vger.kernel.org
-Cc: Nicholas Piggin <npiggin@gmail.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, Arnd Bergmann <arnd@arndb.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Chris Brandt <chris.brandt@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Nicholas Piggin <npiggin@gmail.com>
+Fill in the effective bit rate used for transfers, so the SPI core can
+calculate instead of estimate delays.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/include/asm/mmu_context.h    | 5 ++---
- arch/sh/include/asm/mmu_context_32.h | 9 ---------
- 2 files changed, 2 insertions(+), 12 deletions(-)
+v2:
+  - No changes.
 
-diff --git a/arch/sh/include/asm/mmu_context.h b/arch/sh/include/asm/mmu_context.h
-index 461b1304580b..78eef4e7d5df 100644
---- a/arch/sh/include/asm/mmu_context.h
-+++ b/arch/sh/include/asm/mmu_context.h
-@@ -84,6 +84,7 @@ static inline void get_mmu_context(struct mm_struct *mm, unsigned int cpu)
-  * Initialize the context related info for a new mm_struct
-  * instance.
-  */
-+#define init_new_context init_new_context
- static inline int init_new_context(struct task_struct *tsk,
- 				   struct mm_struct *mm)
- {
-@@ -120,9 +121,7 @@ static inline void switch_mm(struct mm_struct *prev,
- 			activate_context(next, cpu);
+ drivers/spi/spi-rspi.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 38c0cd7febabf114..2b5334e22ae421b5 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -262,6 +262,7 @@ static void rspi_set_rate(struct rspi_data *rspi)
+ 
+ 	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
+ 	rspi->spcmd |= SPCMD_BRDV(brdv);
++	rspi->speed_hz = DIV_ROUND_UP(clksrc, (2U << brdv) * (spbr + 1));
  }
  
--#define activate_mm(prev, next)		switch_mm((prev),(next),NULL)
--#define deactivate_mm(tsk,mm)		do { } while (0)
--#define enter_lazy_tlb(mm,tsk)		do { } while (0)
-+#include <asm-generic/mmu_context.h>
- 
- #else
- 
-diff --git a/arch/sh/include/asm/mmu_context_32.h b/arch/sh/include/asm/mmu_context_32.h
-index 71bf12ef1f65..bc5034fa6249 100644
---- a/arch/sh/include/asm/mmu_context_32.h
-+++ b/arch/sh/include/asm/mmu_context_32.h
-@@ -2,15 +2,6 @@
- #ifndef __ASM_SH_MMU_CONTEXT_32_H
- #define __ASM_SH_MMU_CONTEXT_32_H
- 
--/*
-- * Destroy context related info for an mm_struct that is about
-- * to be put to rest.
-- */
--static inline void destroy_context(struct mm_struct *mm)
--{
--	/* Do nothing */
--}
--
- #ifdef CONFIG_CPU_HAS_PTEAEX
- static inline void set_asid(unsigned long asid)
+ /*
+@@ -344,6 +345,7 @@ static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
+ 	clksrc = clk_get_rate(rspi->clk);
+ 	if (rspi->speed_hz >= clksrc) {
+ 		spbr = 0;
++		rspi->speed_hz = clksrc;
+ 	} else {
+ 		spbr = DIV_ROUND_UP(clksrc, 2 * rspi->speed_hz);
+ 		while (spbr > 255 && brdv < 3) {
+@@ -351,6 +353,7 @@ static int qspi_set_config_register(struct rspi_data *rspi, int access_size)
+ 			spbr = DIV_ROUND_UP(spbr, 2);
+ 		}
+ 		spbr = clamp(spbr, 0, 255);
++		rspi->speed_hz = DIV_ROUND_UP(clksrc, (2U << brdv) * spbr);
+ 	}
+ 	rspi_write8(rspi, spbr, RSPI_SPBR);
+ 	rspi->spcmd |= SPCMD_BRDV(brdv);
+@@ -698,6 +701,8 @@ static int rspi_common_transfer(struct rspi_data *rspi,
  {
+ 	int ret;
+ 
++	xfer->effective_speed_hz = rspi->speed_hz;
++
+ 	ret = rspi_dma_check_then_transfer(rspi, xfer);
+ 	if (ret != -EAGAIN)
+ 		return ret;
+@@ -853,6 +858,7 @@ static int qspi_transfer_one(struct spi_controller *ctlr,
+ {
+ 	struct rspi_data *rspi = spi_controller_get_devdata(ctlr);
+ 
++	xfer->effective_speed_hz = rspi->speed_hz;
+ 	if (spi->mode & SPI_LOOP) {
+ 		return qspi_transfer_out_in(rspi, xfer);
+ 	} else if (xfer->tx_nbits > SPI_NBITS_SINGLE) {
 -- 
-2.23.0
+2.17.1
