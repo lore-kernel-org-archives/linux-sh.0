@@ -1,61 +1,70 @@
-From: Mike Rapoport <rppt@kernel.org>
-Date: Tue, 18 Aug 2020 15:16:24 +0000
-Subject: [PATCH v3 07/17] mircoblaze: drop unneeded NUMA and sparsemem initializations
-Message-Id: <20200818151634.14343-8-rppt@kernel.org>
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Wed, 19 Aug 2020 12:58:59 +0000
+Subject: [PATCH v2 2/7] spi: rspi: Clean up Bit Rate Division Setting handling
+Message-Id: <20200819125904.20938-3-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200818151634.14343-1-rppt@kernel.org>
-In-Reply-To: <20200818151634.14343-1-rppt@kernel.org>
+References: <20200819125904.20938-1-geert+renesas@glider.be>
+In-Reply-To: <20200819125904.20938-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Andy Lutomirski <luto@kernel.org>, Baoquan He <bhe@redhat.com>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>, Christoph Hellwig <hch@lst.de>, Daniel Axtens <dja@axtens.net>, Dave Hansen <dave.hansen@linux.intel.com>, Emil Renner Berthing <kernel@esmil.dk>, Ingo Molnar <mingo@redhat.com>, Hari Bathini <hbathini@linux.ibm.com>, Marek Szyprowski <m.szyprowski@samsung.com>, Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>, Michal Simek <monstr@monstr.eu>, Mike Rapoport <rppt@linux.ibm.com>, Mike Rapoport <rppt@kernel.org>, Palmer Dabbelt <palmer@dabbelt.com>, Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>, Peter Zijlstra <peterz@infradead.org>, Russell King <linux@armlinux.org.uk>, Stafford Horne <shorne@gmail.com>, Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, clang-built-linux@googlegroups.com, iommu@lists.linux-foundation.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-c6x-dev@linux-c6x.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linux-mm@kvack.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org, openrisc@lists.librecores.org, sparclinux@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp, x86@kernel.org
+To: Mark Brown <broonie@kernel.org>
+Cc: Chris Brandt <chris.brandt@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-From: Mike Rapoport <rppt@linux.ibm.com>
+Add a macro for configuring the Bit Rate Division Setting field in
+Command Registers, instead of open-coding the same operation using a
+hardcoded shift.
+Rename "div" to "brdv", as it is not a plain divider value, but controls
+a power-of-two divider.
 
-microblaze does not support neither NUMA not SPARSMEM, so there is no point
-to call memblock_set_node() and sparse_memory_present_with_active_regions()
-functions during microblaze memory initialization.
-
-Remove these calls and the surrounding code.
-
-Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/microblaze/mm/init.c | 14 +-------------
- 1 file changed, 1 insertion(+), 13 deletions(-)
+v2:
+  - No changes.
 
-diff --git a/arch/microblaze/mm/init.c b/arch/microblaze/mm/init.c
-index 0880a003573d..49e0c241f9b1 100644
---- a/arch/microblaze/mm/init.c
-+++ b/arch/microblaze/mm/init.c
-@@ -105,9 +105,8 @@ static void __init paging_init(void)
+ drivers/spi/spi-rspi.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 1b635d6b7881f5b9..450a42ec2141a895 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -161,6 +161,7 @@
+ #define SPCMD_SPRW		0x0010	/* SPI Read/Write Access (Dual/Quad) */
+ #define SPCMD_SSLA(i)		((i) << 4)	/* SSL Assert Signal Setting */
+ #define SPCMD_BRDV_MASK		0x000c	/* Bit Rate Division Setting */
++#define SPCMD_BRDV(brdv)	((brdv) << 2)
+ #define SPCMD_CPOL		0x0002	/* Clock Polarity Setting */
+ #define SPCMD_CPHA		0x0001	/* Clock Phase Setting */
  
- void __init setup_memory(void)
+@@ -290,24 +291,24 @@ static int rspi_set_config_register(struct rspi_data *rspi, int access_size)
+ static int rspi_rz_set_config_register(struct rspi_data *rspi, int access_size)
  {
--	struct memblock_region *reg;
--
- #ifndef CONFIG_MMU
-+	struct memblock_region *reg;
- 	u32 kernel_align_start, kernel_align_size;
+ 	int spbr;
+-	int div = 0;
++	int brdv = 0;
+ 	unsigned long clksrc;
  
- 	/* Find main memory where is the kernel */
-@@ -161,17 +160,6 @@ void __init setup_memory(void)
- 	pr_info("%s: max_low_pfn: %#lx\n", __func__, max_low_pfn);
- 	pr_info("%s: max_pfn: %#lx\n", __func__, max_pfn);
+ 	/* Sets output mode, MOSI signal, and (optionally) loopback */
+ 	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
  
--	/* Add active regions with valid PFNs */
--	for_each_memblock(memory, reg) {
--		unsigned long start_pfn, end_pfn;
--
--		start_pfn = memblock_region_memory_base_pfn(reg);
--		end_pfn = memblock_region_memory_end_pfn(reg);
--		memblock_set_node(start_pfn << PAGE_SHIFT,
--				  (end_pfn - start_pfn) << PAGE_SHIFT,
--				  &memblock.memory, 0);
--	}
--
- 	paging_init();
- }
+ 	clksrc = clk_get_rate(rspi->clk);
+-	while (div < 3) {
++	while (brdv < 3) {
+ 		if (rspi->speed_hz >= clksrc/4) /* 4=(CLK/2)/2 */
+ 			break;
+-		div++;
++		brdv++;
+ 		clksrc /= 2;
+ 	}
  
+ 	/* Sets transfer bit rate */
+ 	spbr = DIV_ROUND_UP(clksrc, 2 * rspi->speed_hz) - 1;
+ 	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
+-	rspi->spcmd |= div << 2;
++	rspi->spcmd |= SPCMD_BRDV(brdv);
+ 
+ 	/* Disable dummy transmission, set byte access */
+ 	rspi_write8(rspi, SPDCR_SPLBYTE, RSPI_SPDCR);
 -- 
-2.26.2
+2.17.1
