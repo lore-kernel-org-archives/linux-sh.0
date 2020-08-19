@@ -1,70 +1,43 @@
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Wed, 19 Aug 2020 12:58:59 +0000
-Subject: [PATCH v2 2/7] spi: rspi: Clean up Bit Rate Division Setting handling
-Message-Id: <20200819125904.20938-3-geert+renesas@glider.be>
+Date: Wed, 19 Aug 2020 12:35:48 +0000
+Subject: [PATCH v2] sh: boards: Replace <linux/clk-provider.h> by <linux/of_clk.h>
+Message-Id: <20200819123548.19350-1-geert+renesas@glider.be>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200819125904.20938-1-geert+renesas@glider.be>
-In-Reply-To: <20200819125904.20938-1-geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@kernel.org>
-Cc: Chris Brandt <chris.brandt@renesas.com>, linux-spi@vger.kernel.org, linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>
 
-Add a macro for configuring the Bit Rate Division Setting field in
-Command Registers, instead of open-coding the same operation using a
-hardcoded shift.
-Rename "div" to "brdv", as it is not a plain divider value, but controls
-a power-of-two divider.
+The SuperH/J2 DT platform code is not a clock provider, and just needs
+to call of_clk_init().
+
+Hence it can include <linux/of_clk.h> instead of <linux/clk-provider.h>.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Stephen Boyd <sboyd@kernel.org>
 ---
 v2:
-  - No changes.
+  - Add Reviewed-by.
+---
+ arch/sh/boards/of-generic.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- drivers/spi/spi-rspi.c | 9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
-index 1b635d6b7881f5b9..450a42ec2141a895 100644
---- a/drivers/spi/spi-rspi.c
-+++ b/drivers/spi/spi-rspi.c
-@@ -161,6 +161,7 @@
- #define SPCMD_SPRW		0x0010	/* SPI Read/Write Access (Dual/Quad) */
- #define SPCMD_SSLA(i)		((i) << 4)	/* SSL Assert Signal Setting */
- #define SPCMD_BRDV_MASK		0x000c	/* Bit Rate Division Setting */
-+#define SPCMD_BRDV(brdv)	((brdv) << 2)
- #define SPCMD_CPOL		0x0002	/* Clock Polarity Setting */
- #define SPCMD_CPHA		0x0001	/* Clock Phase Setting */
+diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
+index d91065e81a4e5cff..97a536d986a23f91 100644
+--- a/arch/sh/boards/of-generic.c
++++ b/arch/sh/boards/of-generic.c
+@@ -6,10 +6,10 @@
+  */
  
-@@ -290,24 +291,24 @@ static int rspi_set_config_register(struct rspi_data *rspi, int access_size)
- static int rspi_rz_set_config_register(struct rspi_data *rspi, int access_size)
- {
- 	int spbr;
--	int div = 0;
-+	int brdv = 0;
- 	unsigned long clksrc;
+ #include <linux/of.h>
++#include <linux/of_clk.h>
+ #include <linux/of_fdt.h>
+ #include <linux/clocksource.h>
+ #include <linux/irqchip.h>
+-#include <linux/clk-provider.h>
+ #include <asm/machvec.h>
+ #include <asm/rtc.h>
  
- 	/* Sets output mode, MOSI signal, and (optionally) loopback */
- 	rspi_write8(rspi, rspi->sppcr, RSPI_SPPCR);
- 
- 	clksrc = clk_get_rate(rspi->clk);
--	while (div < 3) {
-+	while (brdv < 3) {
- 		if (rspi->speed_hz >= clksrc/4) /* 4=(CLK/2)/2 */
- 			break;
--		div++;
-+		brdv++;
- 		clksrc /= 2;
- 	}
- 
- 	/* Sets transfer bit rate */
- 	spbr = DIV_ROUND_UP(clksrc, 2 * rspi->speed_hz) - 1;
- 	rspi_write8(rspi, clamp(spbr, 0, 255), RSPI_SPBR);
--	rspi->spcmd |= div << 2;
-+	rspi->spcmd |= SPCMD_BRDV(brdv);
- 
- 	/* Disable dummy transmission, set byte access */
- 	rspi_write8(rspi, SPDCR_SPLBYTE, RSPI_SPDCR);
 -- 
 2.17.1
