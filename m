@@ -1,43 +1,80 @@
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Date: Mon, 10 Aug 2020 13:06:56 +0000
-Subject: Re: Pull Request for 5.9
-Message-Id: <937d5c16-f9bc-1bee-5f67-18746b3eddb5@physik.fu-berlin.de>
+From: Rich Felker <dalias@libc.org>
+Date: Fri, 28 Aug 2020 15:50:25 +0000
+Subject: Re: [PATCH 3/4] sh: Add SECCOMP_FILTER
+Message-Id: <20200828155024.GX3265@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <16a9b527-e05c-dcac-86bd-b79be140c053@physik.fu-berlin.de>
-In-Reply-To: <16a9b527-e05c-dcac-86bd-b79be140c053@physik.fu-berlin.de>
+References: <20200722231322.419642-1-kernel@mkarcher.dialup.fu-berlin.de>
+ <20200722231322.419642-3-kernel@mkarcher.dialup.fu-berlin.de>
+In-Reply-To: <20200722231322.419642-3-kernel@mkarcher.dialup.fu-berlin.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>, Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
-Hi Rich!
-
-On 8/7/20 8:35 PM, John Paul Adrian Glaubitz wrote:
-> On 8/7/20 8:34 PM, Rich Felker wrote:
->> On Fri, Aug 07, 2020 at 09:36:07AM +0200, John Paul Adrian Glaubitz wrote:
->>> Hi Rich!
->>>
->>> Any chance you can send the pull request to Linus for 5.9?
->>>
->>> I would like to see my get_user() patch merged as otherwise libsecomp upstream
->>> won't allow me to open the PR to get the userland changes merged for SECCOMP
->>> support.
->>
->> Yep, it's on my todo for this week. I'll try to get to it today. Does
->> everything in next look good to you?
+On Thu, Jul 23, 2020 at 01:13:21AM +0200, Michael Karcher wrote:
+> Port sh to use the new SECCOMP_FILTER code.
 > 
-> I haven't done testing on next yet, but I will do that by Sunday - at latest.
+> Signed-off-by: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+> ---
+>  arch/sh/Kconfig                               | 1 +
+>  arch/sh/kernel/entry-common.S                 | 2 ++
+>  arch/sh/kernel/ptrace_32.c                    | 5 +++--
+>  tools/testing/selftests/seccomp/seccomp_bpf.c | 8 +++++++-
+>  4 files changed, 13 insertions(+), 3 deletions(-)
+> 
+> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+> index 32d959849df9..10b510c16841 100644
+> --- a/arch/sh/Kconfig
+> +++ b/arch/sh/Kconfig
+> @@ -27,6 +27,7 @@ config SUPERH
+>  	select GENERIC_SMP_IDLE_THREAD
+>  	select GUP_GET_PTE_LOW_HIGH if X2TLB
+>  	select HAVE_ARCH_AUDITSYSCALL
+> +	select HAVE_ARCH_SECCOMP_FILTER
+>  	select HAVE_ARCH_KGDB
+>  	select HAVE_ARCH_TRACEHOOK
+>  	select HAVE_DEBUG_BUGVERBOSE
+> diff --git a/arch/sh/kernel/entry-common.S b/arch/sh/kernel/entry-common.S
+> index c4d88d61890d..ad963104d22d 100644
+> --- a/arch/sh/kernel/entry-common.S
+> +++ b/arch/sh/kernel/entry-common.S
+> @@ -368,6 +368,8 @@ syscall_trace_entry:
+>  	mov.l	7f, r11		! Call do_syscall_trace_enter which notifies
+>  	jsr	@r11	    	! superior (will chomp R[0-7])
+>  	 nop
+> +	cmp/eq	#-1, r0
+> +	bt	syscall_exit
+>  	mov.l	r0, @(OFF_R0,r15)	! Save return value
+>  	!			Reload R0-R4 from kernel stack, where the
+>  	!   	    	    	parent may have modified them using
+> diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
+> index 64bfb714943e..25ccfbd02bfa 100644
+> --- a/arch/sh/kernel/ptrace_32.c
+> +++ b/arch/sh/kernel/ptrace_32.c
+> @@ -485,8 +485,6 @@ asmlinkage long do_syscall_trace_enter(struct pt_regs *regs)
+>  {
+>  	long ret = 0;
+>  
+> -	secure_computing_strict(regs->regs[0]);
+> -
+>  	if (test_thread_flag(TIF_SYSCALL_TRACE) &&
+>  	    tracehook_report_syscall_entry(regs))
+>  		/*
+> @@ -496,6 +494,9 @@ asmlinkage long do_syscall_trace_enter(struct pt_regs *regs)
+>  		 */
+>  		ret = -1L;
+>  
+> +	if (secure_computing() = -1)
+> +		return -1;
+> +
+>  	if (unlikely(test_thread_flag(TIF_SYSCALL_TRACEPOINT)))
+>  		trace_sys_enter(regs, regs->regs[0]);
+>  
 
-From my side, everything is fine now. Al has sent a PR to Linus fixing the
-one issue I found in -next. So I think you can send out the PR now.
+This patch broke strace - it spews out bogus syscalls and gets the
+tracee hung. I suspect the last hunk is wrong and breaks all
+non-seccomp tracing. I'll follow up with further analysis and possibly
+a fix if you don't find one sooner.
 
-Then we can sort through the other patches for SH which might have not been
-picked up through any of the other trees yet.
-
-Adrian
-
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Rich
