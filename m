@@ -1,101 +1,152 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 03 Aug 2020 10:01:29 +0000
-Subject: Re: [PATCH] sh: add missing EXPORT_SYMBOL() for __delay
-Message-Id: <CAMuHMdUvSVs7vQ7GDhHx4Rp-DJZuSU2xtPVtX86+p9GptHfBhQ@mail.gmail.com>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 31 Aug 2020 13:16:36 +0000
+Subject: [PATCH] mmc: mmc_spi: Don't use dma mappings unless CONFIG_HAS_DMA is set
+Message-Id: <20200831131636.51502-1-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87wob2clos.wl-kuninori.morimoto.gx@renesas.com>
- <20200722023840.GA55317@roeck-us.net> <20200722225239.GX14669@brightrain.aerifal.cx>
- <fa0456c9-cef0-45e7-59d7-ad652734b1d5@roeck-us.net>
-In-Reply-To: <fa0456c9-cef0-45e7-59d7-ad652734b1d5@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guenter Roeck <linux@roeck-us.net>
-Cc: Rich Felker <dalias@libc.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Andrew Morton <akpm@linux-foundation.org>, Linux-sh list <linux-sh@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: linux-mmc@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>, Rich Felker <dalias@libc.org>, Christoph Hellwig <hch@lst.de>
+Cc: Mark Brown <broonie@kernel.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Thu, Jul 23, 2020 at 1:53 AM Guenter Roeck <linux@roeck-us.net> wrote:
-> On 7/22/20 3:52 PM, Rich Felker wrote:
-> > On Tue, Jul 21, 2020 at 07:38:40PM -0700, Guenter Roeck wrote:
-> >> On Thu, Dec 12, 2019 at 11:38:43AM +0900, Kuninori Morimoto wrote:
-> >>> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >>>
-> >>> __delay() is used from kernel module.
-> >>> We need EXPORT_SYMBOL(), otherwise we will get compile error.
-> >>>
-> >>> ERROR: "__delay" [drivers/net/phy/mdio-cavium.ko] undefined!
-> >>>
-> >>> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> >>
-> >> I must admit that this patch completely baffles me. __delay was
-> >> already exported, only elsewhere in the file. With this patch
-> >> in place, it is exported twice, and all sh builds in -next fail
-> >> with
-> >>
-> >> In file included from include/linux/linkage.h:7,
-> >>                  from arch/sh/include/asm/bug.h:5,
-> >>                  from include/linux/bug.h:5,
-> >>                  from include/linux/thread_info.h:12,
-> >>                  from include/asm-generic/current.h:5,
-> >>                  from ./arch/sh/include/generated/asm/current.h:1,
-> >>                  from include/linux/sched.h:12,
-> >>                  from arch/sh/lib/delay.c:8:
-> >> include/linux/export.h:67:36: error: redefinition of '__ksymtab___delay'
-> >>
-> >> Guenter
-> >>
-> >>> ---
-> >>>  arch/sh/lib/delay.c | 1 +
-> >>>  1 file changed, 1 insertion(+)
-> >>>
-> >>> diff --git a/arch/sh/lib/delay.c b/arch/sh/lib/delay.c
-> >>> index dad8e6a..540e670 100644
-> >>> --- a/arch/sh/lib/delay.c
-> >>> +++ b/arch/sh/lib/delay.c
-> >>> @@ -29,6 +29,7 @@ void __delay(unsigned long loops)
-> >>>             : "0" (loops)
-> >>>             : "t");
-> >>>  }
-> >>> +EXPORT_SYMBOL(__delay);
-> >>>
-> >>>  inline void __const_udelay(unsigned long xloops)
-> >>>  {
-> >
-> > I presently have a revert of this commit in queue for next. If it's
-> > sufficiently breaking (and especially if there are other regressions
-> > that need to be fixed, see the pmd_free thing) I could try to get it
-> > in for 5.8 still but that's getting a bit late.
-> >
->
-> The patch in mainline is ok. It appears that it has been applied
-> again in -next.
->
-> "git log --oneline v5.7.. arch/sh/lib/delay.c" on top of next-20200721
-> reports:
->
-> ee0e4f15dfd4 (origin/akpm) sh: add missing EXPORT_SYMBOL() for __delay
-> d1f56f318d23 sh: add missing EXPORT_SYMBOL() for __delay
->
-> Maybe it just needs to be dropped from the akpm tree in -next ?
+The commit cd57d07b1e4e ("sh: don't allow non-coherent DMA for NOMMU") made
+CONFIG_NO_DMA to be set for some platforms, for good reasons.
+Consequentially, CONFIG_HAS_DMA doesn't get set, which makes the DMA
+mapping interface to be built as stub functions.
 
-IMHO all of them should be dropped/reverted.
-__delay is an internal implementation detail, not to be used by drivers.
+For weird reasons this causes the mmc_spi driver to fail to ->probe(), as
+it relies on the dma mappings APIs, no matter of CONFIG_HAS_DMA is set or
+not. This is wrong, so let's fix this.
 
-See also include/asm-generic/delay.h:
+Fixes: cd57d07b1e4e ("sh: don't allow non-coherent DMA for NOMMU")
+Reported-by: Rich Felker <dalias@libc.org>
+Suggested-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ drivers/mmc/host/mmc_spi.c | 86 +++++++++++++++++++++++---------------
+ 1 file changed, 52 insertions(+), 34 deletions(-)
 
-    /* Undefined functions to get compile-time errors */
-    ...
-    extern void __delay(unsigned long loops);
-
-Cfr. '[PATCH] Revert "sh: add missing EXPORT_SYMBOL() for __delay"'
-https://lore.kernel.org/lkml/20200608080636.27862-1-geert+renesas@glider.be/
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
+diff --git a/drivers/mmc/host/mmc_spi.c b/drivers/mmc/host/mmc_spi.c
+index 39bb1e30c2d7..5055a7eb134a 100644
+--- a/drivers/mmc/host/mmc_spi.c
++++ b/drivers/mmc/host/mmc_spi.c
+@@ -1278,6 +1278,52 @@ mmc_spi_detect_irq(int irq, void *mmc)
+ 	return IRQ_HANDLED;
+ }
+ 
++#ifdef CONFIG_HAS_DMA
++static int mmc_spi_dma_alloc(struct mmc_spi_host *host)
++{
++	struct spi_device *spi = host->spi;
++	struct device *dev;
++
++	if (!spi->master->dev.parent->dma_mask)
++		return 0;
++
++	dev = spi->master->dev.parent;
++
++	host->ones_dma = dma_map_single(dev, host->ones, MMC_SPI_BLOCKSIZE,
++					DMA_TO_DEVICE);
++	if (dma_mapping_error(dev, host->ones_dma))
++		return -ENOMEM;
++
++	host->data_dma = dma_map_single(dev, host->data, sizeof(*host->data),
++					DMA_BIDIRECTIONAL);
++	if (dma_mapping_error(dev, host->data_dma)) {
++		dma_unmap_single(dev, host->ones_dma, MMC_SPI_BLOCKSIZE,
++				 DMA_TO_DEVICE);
++		return -ENOMEM;
++	}
++
++	dma_sync_single_for_cpu(dev, host->data_dma, sizeof(*host->data),
++				DMA_BIDIRECTIONAL);
++
++	host->dma_dev = dev;
++	return 0;
++}
++
++static void mmc_spi_dma_free(struct mmc_spi_host *host)
++{
++	if (!host->dma_dev)
++		return;
++
++	dma_unmap_single(host->dma_dev, host->ones_dma, MMC_SPI_BLOCKSIZE,
++			 DMA_TO_DEVICE);
++	dma_unmap_single(host->dma_dev, host->data_dma,	sizeof(*host->data),
++			 DMA_BIDIRECTIONAL);
++}
++#else
++static inline mmc_spi_dma_alloc(struct mmc_spi_host *host) { return 0; }
++static inline void mmc_spi_dma_free(struct mmc_spi_host *host) {}
++#endif
++
+ static int mmc_spi_probe(struct spi_device *spi)
+ {
+ 	void			*ones;
+@@ -1374,23 +1420,9 @@ static int mmc_spi_probe(struct spi_device *spi)
+ 	if (!host->data)
+ 		goto fail_nobuf1;
+ 
+-	if (spi->master->dev.parent->dma_mask) {
+-		struct device	*dev = spi->master->dev.parent;
+-
+-		host->dma_dev = dev;
+-		host->ones_dma = dma_map_single(dev, ones,
+-				MMC_SPI_BLOCKSIZE, DMA_TO_DEVICE);
+-		if (dma_mapping_error(dev, host->ones_dma))
+-			goto fail_ones_dma;
+-		host->data_dma = dma_map_single(dev, host->data,
+-				sizeof(*host->data), DMA_BIDIRECTIONAL);
+-		if (dma_mapping_error(dev, host->data_dma))
+-			goto fail_data_dma;
+-
+-		dma_sync_single_for_cpu(host->dma_dev,
+-				host->data_dma, sizeof(*host->data),
+-				DMA_BIDIRECTIONAL);
+-	}
++	status = mmc_spi_dma_alloc(host);
++	if (status)
++		goto fail_dma;
+ 
+ 	/* setup message for status/busy readback */
+ 	spi_message_init(&host->readback);
+@@ -1458,20 +1490,12 @@ static int mmc_spi_probe(struct spi_device *spi)
+ fail_add_host:
+ 	mmc_remove_host(mmc);
+ fail_glue_init:
+-	if (host->dma_dev)
+-		dma_unmap_single(host->dma_dev, host->data_dma,
+-				sizeof(*host->data), DMA_BIDIRECTIONAL);
+-fail_data_dma:
+-	if (host->dma_dev)
+-		dma_unmap_single(host->dma_dev, host->ones_dma,
+-				MMC_SPI_BLOCKSIZE, DMA_TO_DEVICE);
+-fail_ones_dma:
++	mmc_spi_dma_free(host);
++fail_dma:
+ 	kfree(host->data);
+-
+ fail_nobuf1:
+ 	mmc_free_host(mmc);
+ 	mmc_spi_put_pdata(spi);
+-
+ nomem:
+ 	kfree(ones);
+ 	return status;
+@@ -1489,13 +1513,7 @@ static int mmc_spi_remove(struct spi_device *spi)
+ 
+ 	mmc_remove_host(mmc);
+ 
+-	if (host->dma_dev) {
+-		dma_unmap_single(host->dma_dev, host->ones_dma,
+-			MMC_SPI_BLOCKSIZE, DMA_TO_DEVICE);
+-		dma_unmap_single(host->dma_dev, host->data_dma,
+-			sizeof(*host->data), DMA_BIDIRECTIONAL);
+-	}
+-
++	mmc_spi_dma_free(host);
+ 	kfree(host->data);
+ 	kfree(host->ones);
+ 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+2.25.1
