@@ -1,41 +1,47 @@
-From: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-Date: Wed, 05 Aug 2020 11:00:35 +0000
-Subject: Re: [PATCH v2 12/17] arch, drivers: replace for_each_membock() with for_each_mem_range()
-Message-Id: <20200805110035.GB11658@alpha.franken.de>
+From: Miss Maris Avis <marie.avis11@gmail.com>
+Date: Mon, 31 Aug 2020 13:26:18 +0000
+Subject: Hello
+Message-Id: <CADTVshNj9Ztqm75AkbunLeeRTsk07qB5LsiKLoagvmiH7TvYgQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200802163601.8189-1-rppt@kernel.org>
- <20200802163601.8189-13-rppt@kernel.org>
-In-Reply-To: <20200802163601.8189-13-rppt@kernel.org>
+References: <20190326223131.DE3F72A85C37@06d01.mspz3.gob.ec>
+In-Reply-To: <20190326223131.DE3F72A85C37@06d01.mspz3.gob.ec>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Rapoport <rppt@kernel.org>
-Cc: Thomas Gleixner <tglx@linutronix.de>, Emil Renner Berthing <kernel@esmil.dk>, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Dave Hansen <dave.hansen@linux.intel.com>, linux-mips@vger.kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Paul Mackerras <paulus@samba.org>, sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>, Christoph Hellwig <hch@lst.de>, Marek Szyprowski <m.szyprowski@samsung.com>, linux-arch@vger.kernel.org, linux-s390@vger.kernel.org, linux-c6x-dev@linux-c6x.org, Baoquan He <bhe@redhat.com>, Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org, Russell King <linux@armlinux.org.uk>, Mike Rapoport <rppt@linux.ibm.com>, clang-built-linux@googlegroups.com, Ingo Molnar <mingo@redhat.com>, linux-arm-kernel@lists.infradead.org, Catalin Marinas <catalin.mari>
+To: linux-sh@vger.kernel.org
 
-On Sun, Aug 02, 2020 at 07:35:56PM +0300, Mike Rapoport wrote:
-> From: Mike Rapoport <rppt@linux.ibm.com>
-> 
-> There are several occurrences of the following pattern:
-> 
-> 	for_each_memblock(memory, reg) {
-> 		start = __pfn_to_phys(memblock_region_memory_base_pfn(reg);
-> 		end = __pfn_to_phys(memblock_region_memory_end_pfn(reg));
-> 
-> 		/* do something with start and end */
-> 	}
-> 
-> Using for_each_mem_range() iterator is more appropriate in such cases and
-> allows simpler and cleaner code.
-> 
-> Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> ---
->  arch/mips/cavium-octeon/dma-octeon.c     | 12 +++---
->  arch/mips/kernel/setup.c                 | 31 +++++++--------
+My Dear,
 
-Acked-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+My name is Miss Marie Avis the only daughter of Mr. Gabriel Avis, my
+Father was dealing in Cocoa and Timber in this country before his
+death,  It is my pleasure to contact you for a business venture which
+I intend to establish in your country. Though I have not met with you
+before but I believe one has to risk confiding before you can succeed
+sometimes in life.
 
-Thomas.
+I can confide in you for my brighter future since you are a human
+being like me. There is this huge amount of Ten Million five hundred
+thousand United States dollars. ($10.500.000.00) which my late Father
+kept for me in a suspense account with one of the bank here in Abidjan
+Cote d'Ivoire before he was assassinated by unknown persons, Now I
+have decided to invest these money in your country or anywhere safe
+enough for me.
 
--- 
-Crap can work. Given enough thrust pigs will fly, but it's not necessarily a
-good idea.                                                [ RFC1925, 2.3 ]
+I want you to help me claim this fund from the bank and have it
+transfer into your personal account in your country for investment
+purposes in your country in these areas:
+
+1). Telecommunication
+2). The transport Industry
+3). Five Star Hotel
+4). Tourism
+5). Real Estate
+
+If you can be of assistance to me I will be pleased to offer you 20%
+of the total fund.
+
+I await your soonest response.
+
+Respectfully yours,
+Miss Marie Evis
+Tel: +225597438528
