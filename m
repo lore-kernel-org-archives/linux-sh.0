@@ -1,34 +1,175 @@
-From: santosh.shilimkar@oracle.com
-Date: Fri, 11 Sep 2020 18:00:52 +0000
-Subject: Re: [PATCH 2/3] ARM/keystone: move the DMA offset handling under ifdef CONFIG_ARM_LPAE
-Message-Id: <f13c72b9-9efa-7b9d-6c23-19f87b151bc4@oracle.com>
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Tue, 01 Sep 2020 15:04:38 +0000
+Subject: [PATCH v2] mmc: mmc_spi: Allow the driver to be built when CONFIG_HAS_DMA is unset
+Message-Id: <20200901150438.228887-1-ulf.hansson@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200910054038.324517-1-hch@lst.de>
- <20200910054038.324517-3-hch@lst.de>
- <20200911111551.GG1551@shell.armlinux.org.uk>
-In-Reply-To: <20200911111551.GG1551@shell.armlinux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Russell King - ARM Linux admin <linux@armlinux.org.uk>, Christoph Hellwig <hch@lst.de>
-Cc: iommu@lists.linux-foundation.org, Santosh Shilimkar <ssantosh@kernel.org>, Jim Quinlan <james.quinlan@broadcom.com>, Nathan Chancellor <natechancellor@gmail.com>, Florian Fainelli <f.fainelli@gmail.com>, Robin Murphy <robin.murphy@arm.com>, Rob Herring <robh+dt@kernel.org>, Frank Rowand <frowand.list@gmail.com>, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, devicetree@vger.kernel.org, linux-usb@vger.kernel.org
+To: linux-mmc@vger.kernel.org, Ulf Hansson <ulf.hansson@linaro.org>, Rich Felker <dalias@libc.org>, Christoph Hellwig <hch@lst.de>
+Cc: Mark Brown <broonie@kernel.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 9/11/20 4:15 AM, Russell King - ARM Linux admin wrote:
-> On Thu, Sep 10, 2020 at 07:40:37AM +0200, Christoph Hellwig wrote:
->> The DMA offset notifier can only be used if PHYS_OFFSET is at least
->> KEYSTONE_HIGH_PHYS_START, which can't be represented by a 32-bit
->> phys_addr_t.  Currently the code compiles fine despite that, a pending
->> change to the DMA offset handling would create a compiler warning for
->> this case.  Add an ifdef to not compile the code except for LPAE
->> configs.
-> 
-> However, to have use of the high physical offset, LPAE needs to be
-> enabled, which ensures that phys_addr_t is 64-bit.
-> 
-> I believe that DMA is non-coherent on this platform unless the high
-> physical address is used. Or something like that.
-> 
-Exactly. Higher address ranges needs to be used for DMA coherency.
+The commit cd57d07b1e4e ("sh: don't allow non-coherent DMA for NOMMU") made
+CONFIG_NO_DMA to be set for some platforms, for good reasons.
+Consequentially, CONFIG_HAS_DMA doesn't get set, which makes the DMA
+mapping interface to be built as stub functions, but also prevent the
+mmc_spi driver from being built as it depends on CONFIG_HAS_DMA.
 
-Regards,
-Santosh
+It turns out that for some odd cases, the driver still relied on the DMA
+mapping interface, even if the DMA was not actively being used.
+
+To fixup the behaviour, let's drop the build dependency for CONFIG_HAS_DMA.
+Moreover, as to allow the driver to succeed probing, let's move the DMA
+initializations behind "#ifdef CONFIG_HAS_DMA".
+
+Fixes: cd57d07b1e4e ("sh: don't allow non-coherent DMA for NOMMU")
+Reported-by: Rich Felker <dalias@libc.org>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+
+Changes in v2:
+	- Drop build dependency to CONFIG_HAS_DMA.
+	- Rephrase commit message and its header, to reflect the updated change.
+
+---
+ drivers/mmc/host/Kconfig   |  2 +-
+ drivers/mmc/host/mmc_spi.c | 86 +++++++++++++++++++++++---------------
+ 2 files changed, 53 insertions(+), 35 deletions(-)
+
+diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
+index 9c89a5b780e8..9a34c827c96e 100644
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -602,7 +602,7 @@ config MMC_GOLDFISH
+ 
+ config MMC_SPI
+ 	tristate "MMC/SD/SDIO over SPI"
+-	depends on SPI_MASTER && HAS_DMA
++	depends on SPI_MASTER
+ 	select CRC7
+ 	select CRC_ITU_T
+ 	help
+diff --git a/drivers/mmc/host/mmc_spi.c b/drivers/mmc/host/mmc_spi.c
+index 39bb1e30c2d7..5055a7eb134a 100644
+--- a/drivers/mmc/host/mmc_spi.c
++++ b/drivers/mmc/host/mmc_spi.c
+@@ -1278,6 +1278,52 @@ mmc_spi_detect_irq(int irq, void *mmc)
+ 	return IRQ_HANDLED;
+ }
+ 
++#ifdef CONFIG_HAS_DMA
++static int mmc_spi_dma_alloc(struct mmc_spi_host *host)
++{
++	struct spi_device *spi = host->spi;
++	struct device *dev;
++
++	if (!spi->master->dev.parent->dma_mask)
++		return 0;
++
++	dev = spi->master->dev.parent;
++
++	host->ones_dma = dma_map_single(dev, host->ones, MMC_SPI_BLOCKSIZE,
++					DMA_TO_DEVICE);
++	if (dma_mapping_error(dev, host->ones_dma))
++		return -ENOMEM;
++
++	host->data_dma = dma_map_single(dev, host->data, sizeof(*host->data),
++					DMA_BIDIRECTIONAL);
++	if (dma_mapping_error(dev, host->data_dma)) {
++		dma_unmap_single(dev, host->ones_dma, MMC_SPI_BLOCKSIZE,
++				 DMA_TO_DEVICE);
++		return -ENOMEM;
++	}
++
++	dma_sync_single_for_cpu(dev, host->data_dma, sizeof(*host->data),
++				DMA_BIDIRECTIONAL);
++
++	host->dma_dev = dev;
++	return 0;
++}
++
++static void mmc_spi_dma_free(struct mmc_spi_host *host)
++{
++	if (!host->dma_dev)
++		return;
++
++	dma_unmap_single(host->dma_dev, host->ones_dma, MMC_SPI_BLOCKSIZE,
++			 DMA_TO_DEVICE);
++	dma_unmap_single(host->dma_dev, host->data_dma,	sizeof(*host->data),
++			 DMA_BIDIRECTIONAL);
++}
++#else
++static inline mmc_spi_dma_alloc(struct mmc_spi_host *host) { return 0; }
++static inline void mmc_spi_dma_free(struct mmc_spi_host *host) {}
++#endif
++
+ static int mmc_spi_probe(struct spi_device *spi)
+ {
+ 	void			*ones;
+@@ -1374,23 +1420,9 @@ static int mmc_spi_probe(struct spi_device *spi)
+ 	if (!host->data)
+ 		goto fail_nobuf1;
+ 
+-	if (spi->master->dev.parent->dma_mask) {
+-		struct device	*dev = spi->master->dev.parent;
+-
+-		host->dma_dev = dev;
+-		host->ones_dma = dma_map_single(dev, ones,
+-				MMC_SPI_BLOCKSIZE, DMA_TO_DEVICE);
+-		if (dma_mapping_error(dev, host->ones_dma))
+-			goto fail_ones_dma;
+-		host->data_dma = dma_map_single(dev, host->data,
+-				sizeof(*host->data), DMA_BIDIRECTIONAL);
+-		if (dma_mapping_error(dev, host->data_dma))
+-			goto fail_data_dma;
+-
+-		dma_sync_single_for_cpu(host->dma_dev,
+-				host->data_dma, sizeof(*host->data),
+-				DMA_BIDIRECTIONAL);
+-	}
++	status = mmc_spi_dma_alloc(host);
++	if (status)
++		goto fail_dma;
+ 
+ 	/* setup message for status/busy readback */
+ 	spi_message_init(&host->readback);
+@@ -1458,20 +1490,12 @@ static int mmc_spi_probe(struct spi_device *spi)
+ fail_add_host:
+ 	mmc_remove_host(mmc);
+ fail_glue_init:
+-	if (host->dma_dev)
+-		dma_unmap_single(host->dma_dev, host->data_dma,
+-				sizeof(*host->data), DMA_BIDIRECTIONAL);
+-fail_data_dma:
+-	if (host->dma_dev)
+-		dma_unmap_single(host->dma_dev, host->ones_dma,
+-				MMC_SPI_BLOCKSIZE, DMA_TO_DEVICE);
+-fail_ones_dma:
++	mmc_spi_dma_free(host);
++fail_dma:
+ 	kfree(host->data);
+-
+ fail_nobuf1:
+ 	mmc_free_host(mmc);
+ 	mmc_spi_put_pdata(spi);
+-
+ nomem:
+ 	kfree(ones);
+ 	return status;
+@@ -1489,13 +1513,7 @@ static int mmc_spi_remove(struct spi_device *spi)
+ 
+ 	mmc_remove_host(mmc);
+ 
+-	if (host->dma_dev) {
+-		dma_unmap_single(host->dma_dev, host->ones_dma,
+-			MMC_SPI_BLOCKSIZE, DMA_TO_DEVICE);
+-		dma_unmap_single(host->dma_dev, host->data_dma,
+-			sizeof(*host->data), DMA_BIDIRECTIONAL);
+-	}
+-
++	mmc_spi_dma_free(host);
+ 	kfree(host->data);
+ 	kfree(host->ones);
+ 
+-- 
+2.25.1
