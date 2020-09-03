@@ -1,80 +1,81 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Wed, 16 Sep 2020 06:14:58 +0000
-Subject: [PATCH 5/6] usb: don't inherity DMA properties for USB devices
-Message-Id: <20200916061500.1970090-6-hch@lst.de>
+From: Rich Felker <dalias@libc.org>
+Date: Thu, 03 Sep 2020 05:48:07 +0000
+Subject: [PATCH] sh: fix syscall tracing
+Message-Id: <20200903054803.GX3265@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200916061500.1970090-1-hch@lst.de>
-In-Reply-To: <20200916061500.1970090-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: iommu@lists.linux-foundation.org, Russell King <linux@armlinux.org.uk>, Santosh Shilimkar <ssantosh@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Jim Quinlan <james.quinlan@broadcom.com>, Nathan Chancellor <natechancellor@gmail.com>, Florian Fainelli <f.fainelli@gmail.com>, Robin Murphy <robin.murphy@arm.com>, Rob Herring <robh+dt@kernel.org>, Frank Rowand <frowand.list@gmail.com>, Ohad Ben-Cohen <ohad@wizery.com>, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-remoteproc@vger.kernel.org, linux-usb@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, devicetree@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
 
-As the comment in usb_alloc_dev correctly states, drivers can't use
-the DMA API on usb device, and at least calling dma_set_mask on them
-is highly dangerous.  Unlike what the comment states upper level drivers
-also can't really use the presence of a dma mask to check for DMA
-support, as the dma_mask is set by default for most busses.
+Addition of SECCOMP_FILTER exposed a longstanding bug in
+do_syscall_trace_enter, whereby r0 (the 5th argument register) was
+mistakenly used where r3 (syscall_nr) was intended. By overwriting r0
+rather than r3 with -1 when attempting to block a syscall, the
+existing code would instead have caused the syscall to execute with an
+argument clobbered.
 
-Setting the dma_mask comes from "[PATCH] usbcore dma updates (and doc)"
-in BitKeeper times, as it seems like it was primarily for setting the
-NETIF_F_HIGHDMA flag in USB drivers, something that has long been
-fixed up since.
+Commit 0bb605c2c7f2b4b3 then introduced skipping of the syscall when
+do_syscall_trace_enter returns -1, so that the return value set by
+seccomp filters would not be clobbered by -ENOSYS. This eliminated the
+clobbering of the 5th argument register, but instead caused syscalls
+made with a 5th argument of -1 to be misinterpreted as a request by
+do_syscall_trace_enter to suppress the syscall.
 
-Setting the dma_pfn_offset comes from commit b44bbc46a8bb
-("usb: core: setup dma_pfn_offset for USB devices and, interfaces"),
-which worked around the fact that the scsi_calculate_bounce_limits
-functions wasn't going through the proper driver interface to query
-DMA information, but that function was removed in commit 21e07dba9fb1
-("scsi: reduce use of block bounce buffers") years ago.
-
-Signed-off-by: Christoph Hellwig <hch@lst.de>
-Reviewed-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Fixes: 0bb605c2c7f2b4b3 ("sh: Add SECCOMP_FILTER")
+Fixes: ab99c733ae73cce3 ("sh: Make syscall tracer use tracehook notifiers, add TIF_NOTIFY_RESUME.")
+Signed-off-by: Rich Felker <dalias@libc.org>
 ---
- drivers/usb/core/message.c |  6 ------
- drivers/usb/core/usb.c     | 12 ------------
- 2 files changed, 18 deletions(-)
+ arch/sh/kernel/entry-common.S |  1 -
+ arch/sh/kernel/ptrace_32.c    | 15 +++++----------
+ 2 files changed, 5 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/usb/core/message.c b/drivers/usb/core/message.c
-index 6197938dcc2d8f..9e45732dc1d1d1 100644
---- a/drivers/usb/core/message.c
-+++ b/drivers/usb/core/message.c
-@@ -1954,12 +1954,6 @@ int usb_set_configuration(struct usb_device *dev, int configuration)
- 		intf->dev.bus = &usb_bus_type;
- 		intf->dev.type = &usb_if_device_type;
- 		intf->dev.groups = usb_interface_groups;
+diff --git a/arch/sh/kernel/entry-common.S b/arch/sh/kernel/entry-common.S
+index ad963104d22d..91ab2607a1ff 100644
+--- a/arch/sh/kernel/entry-common.S
++++ b/arch/sh/kernel/entry-common.S
+@@ -370,7 +370,6 @@ syscall_trace_entry:
+ 	 nop
+ 	cmp/eq	#-1, r0
+ 	bt	syscall_exit
+-	mov.l	r0, @(OFF_R0,r15)	! Save return value
+ 	!			Reload R0-R4 from kernel stack, where the
+ 	!   	    	    	parent may have modified them using
+ 	!   	    	    	ptrace(POKEUSR).  (Note that R0-R2 are
+diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
+index b05bf92f9c32..5281685f6ad1 100644
+--- a/arch/sh/kernel/ptrace_32.c
++++ b/arch/sh/kernel/ptrace_32.c
+@@ -455,16 +455,11 @@ long arch_ptrace(struct task_struct *child, long request,
+ 
+ asmlinkage long do_syscall_trace_enter(struct pt_regs *regs)
+ {
+-	long ret = 0;
+-
+ 	if (test_thread_flag(TIF_SYSCALL_TRACE) &&
+-	    tracehook_report_syscall_entry(regs))
 -		/*
--		 * Please refer to usb_alloc_dev() to see why we set
--		 * dma_mask and dma_pfn_offset.
+-		 * Tracing decided this syscall should not happen.
+-		 * We'll return a bogus call number to get an ENOSYS
+-		 * error, but leave the original number in regs->regs[0].
 -		 */
--		intf->dev.dma_mask = dev->dev.dma_mask;
--		intf->dev.dma_pfn_offset = dev->dev.dma_pfn_offset;
- 		INIT_WORK(&intf->reset_ws, __usb_queue_reset_device);
- 		intf->minor = -1;
- 		device_initialize(&intf->dev);
-diff --git a/drivers/usb/core/usb.c b/drivers/usb/core/usb.c
-index bafc113f2b3ef3..9b4ac4415f1a47 100644
---- a/drivers/usb/core/usb.c
-+++ b/drivers/usb/core/usb.c
-@@ -599,18 +599,6 @@ struct usb_device *usb_alloc_dev(struct usb_device *parent,
- 	dev->dev.bus = &usb_bus_type;
- 	dev->dev.type = &usb_device_type;
- 	dev->dev.groups = usb_device_groups;
--	/*
--	 * Fake a dma_mask/offset for the USB device:
--	 * We cannot really use the dma-mapping API (dma_alloc_* and
--	 * dma_map_*) for USB devices but instead need to use
--	 * usb_alloc_coherent and pass data in 'urb's, but some subsystems
--	 * manually look into the mask/offset pair to determine whether
--	 * they need bounce buffers.
--	 * Note: calling dma_set_mask() on a USB device would set the
--	 * mask for the entire HCD, so don't do that.
--	 */
--	dev->dev.dma_mask = bus->sysdev->dma_mask;
--	dev->dev.dma_pfn_offset = bus->sysdev->dma_pfn_offset;
- 	set_dev_node(&dev->dev, dev_to_node(bus->sysdev));
- 	dev->state = USB_STATE_ATTACHED;
- 	dev->lpm_disable_count = 1;
+-		ret = -1L;
++	    tracehook_report_syscall_entry(regs)) {
++		regs->regs[0] = -ENOSYS;
++		return -1;
++	}
+ 
+ 	if (secure_computing() = -1)
+ 		return -1;
+@@ -475,7 +470,7 @@ asmlinkage long do_syscall_trace_enter(struct pt_regs *regs)
+ 	audit_syscall_entry(regs->regs[3], regs->regs[4], regs->regs[5],
+ 			    regs->regs[6], regs->regs[7]);
+ 
+-	return ret ?: regs->regs[0];
++	return 0;
+ }
+ 
+ asmlinkage void do_syscall_trace_leave(struct pt_regs *regs)
 -- 
-2.28.0
+2.21.0
