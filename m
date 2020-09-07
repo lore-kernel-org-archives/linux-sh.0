@@ -1,52 +1,48 @@
-From: Rich Felker <dalias@libc.org>
-Date: Thu, 03 Sep 2020 06:17:19 +0000
-Subject: Re: [PATCH 3/4] sh: Add SECCOMP_FILTER
-Message-Id: <20200903061718.GZ3265@brightrain.aerifal.cx>
+From: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
+Date: Mon, 07 Sep 2020 09:16:49 +0000
+Subject: Re: [PATCH v11 00/11] PCI: brcmstb: enable PCIe for STB chips
+Message-Id: <20200907091649.GA6428@e121166-lin.cambridge.arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200722231322.419642-3-kernel@mkarcher.dialup.fu-berlin.de>
- <20200828155024.GX3265@brightrain.aerifal.cx>
- <20200828163057.GY3265@brightrain.aerifal.cx>
- <82b625c2-23cb-69a4-7495-39427430c306@physik.fu-berlin.de>
- <20200828170259.GZ3265@brightrain.aerifal.cx>
- <20200829004939.GB3265@brightrain.aerifal.cx>
- <b0e38ede-3860-eb83-615e-ad77f619a3a6@physik.fu-berlin.de>
- <20200903035603.GV3265@brightrain.aerifal.cx>
- <20200903054617.GW3265@brightrain.aerifal.cx>
- <c871e590-7027-0470-b112-667ec8437a25@physik.fu-berlin.de>
-In-Reply-To: <c871e590-7027-0470-b112-667ec8437a25@physik.fu-berlin.de>
+References: <20200824193036.6033-1-james.quinlan@broadcom.com>
+ <b19bc982-a0c4-c6ff-d8f5-650f2b3a83c8@gmail.com>
+ <20200827063517.GA4637@lst.de>
+ <CA+-6iNy3U9pO0Bykzgvb9n9fcsBi6FiatLdpA1s0HgQNWZ49mg@mail.gmail.com>
+In-Reply-To: <CA+-6iNy3U9pO0Bykzgvb9n9fcsBi6FiatLdpA1s0HgQNWZ49mg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Jim Quinlan <james.quinlan@broadcom.com>
+Cc: "open list:SUPERH" <linux-sh@vger.kernel.org>, "open list:PCI NATIVE HOST BRIDGE AND ENDPOINT DRIVERS" <linux-pci@vger.kernel.org>, "open list:REMOTE PROCESSOR (REMOTEPROC) SUBSYSTEM" <linux-remoteproc@vger.kernel.org>, "open list:DRM DRIVERS FOR ALLWINNER A10" <dri-devel@lists.freedesktop.org>, Julien Grall <julien.grall@arm.com>, "H. Peter Anvin" <hpa@zytor.com>, Christoph Hellwig <hch@lst.de>, "open list:STAGING SUBSYSTEM" <devel@driverdev.osuosl.org>, Florian Fainelli <f.fainelli@gmail.com>, Saravana Kannan <saravanak@google.com>, Bartosz Golaszewski <bgolaszewski@baylibre.com>, "Rafael J. Wysocki" <rafael@kernel.org>, "open list:ACPI FOR ARM64 (ACPI/arm64)" <linux-acpi@vger.kernel.org>, "maintainer:BROADCOM BCM7XXX ARM ARCHITECTURE" <bcm-kernel-feedback-list@broadcom.com>, Alan Stern <stern@rowland.harvard.edu>, "open list:ALLWINNER A10 CSI DRIVER" <linux-media@vger.kernel.org>, "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE" <devicetree@vger.kernel.org>, Joerg Roedel <jroedel@suse.de>, Stefano Stabellini <sstabellini@kernel.org>, "moderated list:BROADCOM BCM2711/BCM2835 ARM ARCHITECTURE" <linux-rpi-kernel@lists.infradead.org>, Dan Williams <dan.j.williams@intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>, Felipe Balbi <balbi@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "open list:USB SUBSYSTEM" <linux-usb@vger.kernel.org>, open list <linux-kernel@vger.kernel.org>, "open list:IOMMU DRIVERS" <iommu@lists.linux-foundation.org>, Robin Murphy <robin.murphy@arm.com>, Nicolas Saenz Julienne <nsaenzjulienne@suse.de>
 
-On Thu, Sep 03, 2020 at 08:04:44AM +0200, John Paul Adrian Glaubitz wrote:
-> On 9/3/20 7:46 AM, Rich Felker wrote:
-> > 
-> > OK, I think I have an explanation for the mechanism of the bug, and it
-> > really is a combination of the 2008 bug (confusion of r0 vs r3) and
-> > the SECCOMP_FILTER commit. When the syscall_trace_entry code path is
-> > in use, a syscall with argument 5 having value -1 causes
-> > do_syscall_trace_enter to return -1 (because it returns regs[0], which
-> > contains argument 5), which the change in entry-common.S interprets as
-> > a sign to skip the syscall and jump to syscall_exit, and things blow
-> > up from there. In particular, SYS_mmap2 is almost always called with
-> > -1 as the 5th argument (fd), and this is even more common on nommu
-> > where SYS_brk does not work.
-> > 
-> > I'll follow up with a new proposed patch.
-> 
-> I'm not sure whether we need another revision of your first patch. Your
-> previous analysis was at least right regarding the tests 51 and 58
-> but those have been fixed now.
-> 
-> But there were two other tests failing, weren't there?
-> 
-> I have to recheck later, I just got up (it's 8 AM CEST).
+On Thu, Aug 27, 2020 at 09:29:59AM -0400, Jim Quinlan wrote:
+> On Thu, Aug 27, 2020 at 2:35 AM Christoph Hellwig <hch@lst.de> wrote:
+> >
+> > On Tue, Aug 25, 2020 at 10:40:27AM -0700, Florian Fainelli wrote:
+> > > Hi,
+> > >
+> > > On 8/24/2020 12:30 PM, Jim Quinlan wrote:
+> > >>
+> > >> Patchset Summary:
+> > >>    Enhance a PCIe host controller driver.  Because of its unusual design
+> > >>    we are foced to change dev->dma_pfn_offset into a more general role
+> > >>    allowing multiple offsets.  See the 'v1' notes below for more info.
+> > >
+> > > We are version 11 and counting, and it is not clear to me whether there is
+> > > any chance of getting these patches reviewed and hopefully merged for the
+> > > 5.10 merge window.
+> > >
+> > > There are a lot of different files being touched, so what would be the
+> > > ideal way of routing those changes towards inclusion?
+> >
+> > FYI, I offered to take the dma-mapping bits through the dma-mapping tree.
+> > I have a bit of a backlog, but plan to review and if Jim is ok with that
+> > apply the current version.
+> Sounds good to me.
 
-The first patch was surely not right; setting syscall_nr to -1 and
-letting it -ENOSYS clobbered any return value set by the seccomp
-filters. The one I've sent now should be right. I'll follow up after
-testing with libseccomp test cases.
+Hi Jim,
 
-Rich
+is the dependency now solved ? Should we review/take this series as
+is for v5.10 through the PCI tree ?
+
+Thanks,
+Lorenzo
