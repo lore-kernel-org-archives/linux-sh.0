@@ -1,34 +1,57 @@
-From: Emin Ghuliev <eminusgh@gmail.com>
-Date: Sat, 29 Aug 2020 18:38:38 +0000
-Subject: [PATCH] sh: use kmem_cache_zalloc instead of kmem_cache_alloc with GFP_ZERO flag
-Message-Id: <20200829183838.10166-1-eminusgh@gmail.com>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 10 Sep 2020 05:40:37 +0000
+Subject: [PATCH 2/3] ARM/keystone: move the DMA offset handling under ifdef CONFIG_ARM_LPAE
+Message-Id: <20200910054038.324517-3-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20200910054038.324517-1-hch@lst.de>
+In-Reply-To: <20200910054038.324517-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ysato@users.sourceforge.jp
-Cc: dalias@libc.org, eminusgh@gmail.com, linux-kernel@vger.kernel.org, willy@infradead.org, linux-sh@vger.kernel.org
+To: iommu@lists.linux-foundation.org, Russell King <linux@armlinux.org.uk>, Santosh Shilimkar <ssantosh@kernel.org>
+Cc: Jim Quinlan <james.quinlan@broadcom.com>, Nathan Chancellor <natechancellor@gmail.com>, Florian Fainelli <f.fainelli@gmail.com>, Robin Murphy <robin.murphy@arm.com>, Rob Herring <robh+dt@kernel.org>, Frank Rowand <frowand.list@gmail.com>, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, devicetree@vger.kernel.org, linux-usb@vger.kernel.org
 
-use kmem_cache_zalloc function which does kmem_cache_alloc and zero out
-instead of manually setting kmem_cache_alloc with GFP_ZERO flag.
+The DMA offset notifier can only be used if PHYS_OFFSET is at least
+KEYSTONE_HIGH_PHYS_START, which can't be represented by a 32-bit
+phys_addr_t.  Currently the code compiles fine despite that, a pending
+change to the DMA offset handling would create a compiler warning for
+this case.  Add an ifdef to not compile the code except for LPAE
+configs.
 
-Signed-off-by: Emin Ghuliev <eminusgh@gmail.com>
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- arch/sh/mm/pgtable.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-keystone/keystone.c | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/sh/mm/pgtable.c b/arch/sh/mm/pgtable.c
-index cf7ce4b57359..6e17d921f5f5 100644
---- a/arch/sh/mm/pgtable.c
-+++ b/arch/sh/mm/pgtable.c
-@@ -47,7 +47,7 @@ void pud_populate(struct mm_struct *mm, pud_t *pud, pmd_t *pmd)
+diff --git a/arch/arm/mach-keystone/keystone.c b/arch/arm/mach-keystone/keystone.c
+index 638808c4e12247..dcd031ba84c2e0 100644
+--- a/arch/arm/mach-keystone/keystone.c
++++ b/arch/arm/mach-keystone/keystone.c
+@@ -24,6 +24,7 @@
  
- pmd_t *pmd_alloc_one(struct mm_struct *mm, unsigned long address)
+ #include "keystone.h"
+ 
++#ifdef CONFIG_ARM_LPAE
+ static unsigned long keystone_dma_pfn_offset __read_mostly;
+ 
+ static int keystone_platform_notifier(struct notifier_block *nb,
+@@ -48,14 +49,17 @@ static int keystone_platform_notifier(struct notifier_block *nb,
+ static struct notifier_block platform_nb = {
+ 	.notifier_call = keystone_platform_notifier,
+ };
++#endif /* CONFIG_ARM_LPAE */
+ 
+ static void __init keystone_init(void)
  {
--	return kmem_cache_alloc(pmd_cachep, GFP_KERNEL | __GFP_ZERO);
-+	return kmem_cache_zalloc(pmd_cachep, GFP_KERNEL);
++#ifdef CONFIG_ARM_LPAE
+ 	if (PHYS_OFFSET >= KEYSTONE_HIGH_PHYS_START) {
+ 		keystone_dma_pfn_offset = PFN_DOWN(KEYSTONE_HIGH_PHYS_START -
+ 						   KEYSTONE_LOW_PHYS_START);
+ 		bus_register_notifier(&platform_bus_type, &platform_nb);
+ 	}
++#endif
+ 	keystone_pm_runtime_init();
  }
  
- void pmd_free(struct mm_struct *mm, pmd_t *pmd)
 -- 
-2.17.1
+2.28.0
