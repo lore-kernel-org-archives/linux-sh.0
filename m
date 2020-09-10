@@ -1,32 +1,208 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Tue, 08 Sep 2020 12:20:45 +0000
-Subject: Re: [PATCH v11 00/11] PCI: brcmstb: enable PCIe for STB chips
-Message-Id: <20200908122045.GA31727@lst.de>
+Date: Thu, 10 Sep 2020 05:40:36 +0000
+Subject: [PATCH 1/3] ARM/dma-mapping: move various helpers from dma-mapping.h to dma-direct.h
+Message-Id: <20200910054038.324517-2-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200824193036.6033-1-james.quinlan@broadcom.com>
- <b19bc982-a0c4-c6ff-d8f5-650f2b3a83c8@gmail.com>
- <20200827063517.GA4637@lst.de>
- <CA+-6iNy3U9pO0Bykzgvb9n9fcsBi6FiatLdpA1s0HgQNWZ49mg@mail.gmail.com>
- <20200907091649.GA6428@e121166-lin.cambridge.arm.com>
- <CA+-6iNzoz3pM2pJksXogeuou6wB9W-59rN-amCLERFLuY5zLMg@mail.gmail.com>
- <00e49acb-c659-de10-3e87-76bfd82e4a76@gmail.com>
- <20200908104226.GB22909@e121166-lin.cambridge.arm.com>
-In-Reply-To: <20200908104226.GB22909@e121166-lin.cambridge.arm.com>
+References: <20200910054038.324517-1-hch@lst.de>
+In-Reply-To: <20200910054038.324517-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
-Cc: "open list:SUPERH" <linux-sh@vger.kernel.org>, "open list:PCI NATIVE HOST BRIDGE AND ENDPOINT DRIVERS" <linux-pci@vger.kernel.org>, "open list:REMOTE PROCESSOR (REMOTEPROC) SUBSYSTEM" <linux-remoteproc@vger.kernel.org>, "open list:DRM DRIVERS FOR ALLWINNER A10" <dri-devel@lists.freedesktop.org>, Julien Grall <julien.grall@arm.com>, "H. Peter Anvin" <hpa@zytor.com>, Christoph Hellwig <hch@lst.de>, "open list:STAGING SUBSYSTEM" <devel@driverdev.osuosl.org>, Rob Herring <robh@kernel.org>, Florian Fainelli <f.fainelli@gmail.com>, Saravana Kannan <saravanak@google.com>, Bartosz Golaszewski <bgolaszewski@baylibre.com>, "Rafael J. Wysocki" <rafael@kernel.org>, "open list:ACPI FOR ARM64 (ACPI/arm64)" <linux-acpi@vger.kernel.org>, "maintainer:BROADCOM BCM7XXX ARM ARCHITECTURE" <bcm-kernel-feedback-list@broadcom.com>, Alan Stern <stern@rowland.harvard.edu>, "open list:ALLWINNER A10 CSI DRIVER" <linux-media@vger.kernel.org>, "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE" <devicetree@vger.kernel.org>, Joerg Roedel <jroedel@suse.de>, Stefano Stabellini <sstabellini@kernel.org>, "moderated list:BROADCOM BCM2711/BCM2835 ARM ARCHITECTURE" <linux-rpi-kernel@lists.infradead.org>, Dan Williams <dan.j.williams@intel.com>, Andy Shevchenko <andriy.shevchenko@linux.intel.com>, "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>, Felipe Balbi <balbi@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, "open list:USB SUBSYSTEM" <linux-usb@vger.kernel.org>, open list <linux-kernel@vger.kernel.org>, "open list:IOMMU DRIVERS" <iommu@lists.linux-foundation.org>, Jim Quinlan <james.quinlan@broadcom.com>, Robin Murphy <robin.murphy@arm.com>, Nicolas Saenz Julienne <nsaenzjulienne@suse.de>
+To: iommu@lists.linux-foundation.org, Russell King <linux@armlinux.org.uk>, Santosh Shilimkar <ssantosh@kernel.org>
+Cc: Jim Quinlan <james.quinlan@broadcom.com>, Nathan Chancellor <natechancellor@gmail.com>, Florian Fainelli <f.fainelli@gmail.com>, Robin Murphy <robin.murphy@arm.com>, Rob Herring <robh+dt@kernel.org>, Frank Rowand <frowand.list@gmail.com>, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, devicetree@vger.kernel.org, linux-usb@vger.kernel.org
 
-On Tue, Sep 08, 2020 at 11:42:26AM +0100, Lorenzo Pieralisi wrote:
-> > Maybe we can parallelize the PCIe driver review while the DMA changes
-> > are being worked on in Christoph's branch. Lorenzo, are you fine with
-> > the PCIe changes proper?
-> 
-> I will have a look - the main contentious point was about the DMA
-> changes - if Christoph is happy with them I am OK with them
-> too - I hope there is not anything controversial in the host
-> bridge driver itself but I will look into it.
+Move the helpers to translate to and from direct mapping DMA addresses
+to dma-direct.h.  This not only is the most logical place, but the new
+placement also avoids dependency loops with pending commits.
 
-I'm pretty happy with the overall shape.  Now we just need to squeeze
-out the regressions..
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/arm/common/dmabounce.c        |  2 +-
+ arch/arm/include/asm/dma-direct.h  | 70 ++++++++++++++++++++++++++++++
+ arch/arm/include/asm/dma-mapping.h | 70 ------------------------------
+ 3 files changed, 71 insertions(+), 71 deletions(-)
+
+diff --git a/arch/arm/common/dmabounce.c b/arch/arm/common/dmabounce.c
+index f4b719bde76367..d3e00ea9208834 100644
+--- a/arch/arm/common/dmabounce.c
++++ b/arch/arm/common/dmabounce.c
+@@ -24,7 +24,7 @@
+ #include <linux/slab.h>
+ #include <linux/page-flags.h>
+ #include <linux/device.h>
+-#include <linux/dma-mapping.h>
++#include <linux/dma-direct.h>
+ #include <linux/dmapool.h>
+ #include <linux/list.h>
+ #include <linux/scatterlist.h>
+diff --git a/arch/arm/include/asm/dma-direct.h b/arch/arm/include/asm/dma-direct.h
+index 7c3001a6a775bf..de0f4ff9279615 100644
+--- a/arch/arm/include/asm/dma-direct.h
++++ b/arch/arm/include/asm/dma-direct.h
+@@ -2,6 +2,76 @@
+ #ifndef ASM_ARM_DMA_DIRECT_H
+ #define ASM_ARM_DMA_DIRECT_H 1
+ 
++#include <asm/memory.h>
++
++#ifdef __arch_page_to_dma
++#error Please update to __arch_pfn_to_dma
++#endif
++
++/*
++ * dma_to_pfn/pfn_to_dma/dma_to_virt/virt_to_dma are architecture private
++ * functions used internally by the DMA-mapping API to provide DMA
++ * addresses. They must not be used by drivers.
++ */
++#ifndef __arch_pfn_to_dma
++static inline dma_addr_t pfn_to_dma(struct device *dev, unsigned long pfn)
++{
++	if (dev)
++		pfn -= dev->dma_pfn_offset;
++	return (dma_addr_t)__pfn_to_bus(pfn);
++}
++
++static inline unsigned long dma_to_pfn(struct device *dev, dma_addr_t addr)
++{
++	unsigned long pfn = __bus_to_pfn(addr);
++
++	if (dev)
++		pfn += dev->dma_pfn_offset;
++
++	return pfn;
++}
++
++static inline void *dma_to_virt(struct device *dev, dma_addr_t addr)
++{
++	if (dev) {
++		unsigned long pfn = dma_to_pfn(dev, addr);
++
++		return phys_to_virt(__pfn_to_phys(pfn));
++	}
++
++	return (void *)__bus_to_virt((unsigned long)addr);
++}
++
++static inline dma_addr_t virt_to_dma(struct device *dev, void *addr)
++{
++	if (dev)
++		return pfn_to_dma(dev, virt_to_pfn(addr));
++
++	return (dma_addr_t)__virt_to_bus((unsigned long)(addr));
++}
++
++#else
++static inline dma_addr_t pfn_to_dma(struct device *dev, unsigned long pfn)
++{
++	return __arch_pfn_to_dma(dev, pfn);
++}
++
++static inline unsigned long dma_to_pfn(struct device *dev, dma_addr_t addr)
++{
++	return __arch_dma_to_pfn(dev, addr);
++}
++
++static inline void *dma_to_virt(struct device *dev, dma_addr_t addr)
++{
++	return __arch_dma_to_virt(dev, addr);
++}
++
++static inline dma_addr_t virt_to_dma(struct device *dev, void *addr)
++{
++	return __arch_virt_to_dma(dev, addr);
++}
++#endif
++
+ static inline dma_addr_t __phys_to_dma(struct device *dev, phys_addr_t paddr)
+ {
+ 	unsigned int offset = paddr & ~PAGE_MASK;
+diff --git a/arch/arm/include/asm/dma-mapping.h b/arch/arm/include/asm/dma-mapping.h
+index bdd80ddbca3451..0a1a536368c3a4 100644
+--- a/arch/arm/include/asm/dma-mapping.h
++++ b/arch/arm/include/asm/dma-mapping.h
+@@ -8,8 +8,6 @@
+ #include <linux/scatterlist.h>
+ #include <linux/dma-debug.h>
+ 
+-#include <asm/memory.h>
+-
+ #include <xen/xen.h>
+ #include <asm/xen/hypervisor.h>
+ 
+@@ -23,74 +21,6 @@ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+ 	return NULL;
+ }
+ 
+-#ifdef __arch_page_to_dma
+-#error Please update to __arch_pfn_to_dma
+-#endif
+-
+-/*
+- * dma_to_pfn/pfn_to_dma/dma_to_virt/virt_to_dma are architecture private
+- * functions used internally by the DMA-mapping API to provide DMA
+- * addresses. They must not be used by drivers.
+- */
+-#ifndef __arch_pfn_to_dma
+-static inline dma_addr_t pfn_to_dma(struct device *dev, unsigned long pfn)
+-{
+-	if (dev)
+-		pfn -= dev->dma_pfn_offset;
+-	return (dma_addr_t)__pfn_to_bus(pfn);
+-}
+-
+-static inline unsigned long dma_to_pfn(struct device *dev, dma_addr_t addr)
+-{
+-	unsigned long pfn = __bus_to_pfn(addr);
+-
+-	if (dev)
+-		pfn += dev->dma_pfn_offset;
+-
+-	return pfn;
+-}
+-
+-static inline void *dma_to_virt(struct device *dev, dma_addr_t addr)
+-{
+-	if (dev) {
+-		unsigned long pfn = dma_to_pfn(dev, addr);
+-
+-		return phys_to_virt(__pfn_to_phys(pfn));
+-	}
+-
+-	return (void *)__bus_to_virt((unsigned long)addr);
+-}
+-
+-static inline dma_addr_t virt_to_dma(struct device *dev, void *addr)
+-{
+-	if (dev)
+-		return pfn_to_dma(dev, virt_to_pfn(addr));
+-
+-	return (dma_addr_t)__virt_to_bus((unsigned long)(addr));
+-}
+-
+-#else
+-static inline dma_addr_t pfn_to_dma(struct device *dev, unsigned long pfn)
+-{
+-	return __arch_pfn_to_dma(dev, pfn);
+-}
+-
+-static inline unsigned long dma_to_pfn(struct device *dev, dma_addr_t addr)
+-{
+-	return __arch_dma_to_pfn(dev, addr);
+-}
+-
+-static inline void *dma_to_virt(struct device *dev, dma_addr_t addr)
+-{
+-	return __arch_dma_to_virt(dev, addr);
+-}
+-
+-static inline dma_addr_t virt_to_dma(struct device *dev, void *addr)
+-{
+-	return __arch_virt_to_dma(dev, addr);
+-}
+-#endif
+-
+ /**
+  * arm_dma_alloc - allocate consistent memory for DMA
+  * @dev: valid struct device pointer, or NULL for ISA and EISA-like devices
+-- 
+2.28.0
