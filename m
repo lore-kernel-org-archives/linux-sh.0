@@ -1,70 +1,36 @@
-From: Christoph Hellwig <hch@lst.de>
-Date: Fri, 11 Sep 2020 06:25:12 +0000
-Subject: Re: [PATCH 1/3] ARM/dma-mapping: move various helpers from dma-mapping.h to dma-direct.h
-Message-Id: <20200911062512.GC21597@lst.de>
+From: Rich Felker <dalias@libc.org>
+Date: Thu, 10 Sep 2020 14:19:36 +0000
+Subject: [PATCH] sh: remove spurious circular inclusion from asm/smp.h
+Message-Id: <20200910141934.GF3265@brightrain.aerifal.cx>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200910054038.324517-1-hch@lst.de> <20200910054038.324517-2-hch@lst.de> <42497691-ec93-1e93-d3e5-e841eaf8247a@arm.com>
-In-Reply-To: <42497691-ec93-1e93-d3e5-e841eaf8247a@arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Robin Murphy <robin.murphy@arm.com>
-Cc: Christoph Hellwig <hch@lst.de>, iommu@lists.linux-foundation.org, Russell King <linux@armlinux.org.uk>, Santosh Shilimkar <ssantosh@kernel.org>, devicetree@vger.kernel.org, Florian Fainelli <f.fainelli@gmail.com>, linux-sh@vger.kernel.org, Frank Rowand <frowand.list@gmail.com>, linux-usb@vger.kernel.org, linux-kernel@vger.kernel.org, linux-acpi@vger.kernel.org, Rob Herring <robh+dt@kernel.org>, Jim Quinlan <james.quinlan@broadcom.com>, linux-pci@vger.kernel.org, Nathan Chancellor <natechancellor@gmail.com>, linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Rob Landley <rob@landley.net>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
 
-On Thu, Sep 10, 2020 at 07:02:23PM +0100, Robin Murphy wrote:
-> On 2020-09-10 06:40, Christoph Hellwig wrote:
->> Move the helpers to translate to and from direct mapping DMA addresses
->> to dma-direct.h.  This not only is the most logical place, but the new
->> placement also avoids dependency loops with pending commits.
->
-> For the straightforward move as it should be,
->
-> Reviewed-by: Robin Murphy <robin.murphy@arm.com>
->
-> However I do wonder how much of this could be cleaned up further...
->> +
->> +#ifdef __arch_page_to_dma
->> +#error Please update to __arch_pfn_to_dma
->> +#endif
->
-> This must be long, long dead by now.
+Commit 0cd39f4600ed4de8 added inclusion of smp.h to lockdep.h,
+creating a circular include dependency where arch/sh's asm/smp.h in
+turn includes spinlock.h which depends on lockdep.h. Since our
+asm/smp.h does not actually need spinlock.h, just remove it.
 
-Yeah.  I had a patch to remove this which lead me into the rabbit
-hole your described later.  A few patches in I decided to give up
-and just do the trivial move.  But it probably makes sense to pick
-up at least the two trivial dead code removal patches..
+Fixes: 0cd39f4600ed4de8 ("locking/seqlock, headers: Untangle the spaghetti monster")
+Signed-off-by: Rich Felker <dalias@libc.org>
+---
+ arch/sh/include/asm/smp.h | 1 -
+ 1 file changed, 1 deletion(-)
 
->> +static inline unsigned long dma_to_pfn(struct device *dev, dma_addr_t addr)
->> +{
->> +	unsigned long pfn = __bus_to_pfn(addr);
->> +
->> +	if (dev)
->> +		pfn += dev->dma_pfn_offset;
->> +
->> +	return pfn;
->> +}
->
-> These are only overridden for OMAP1510, and it looks like it wouldn't take 
-> much for the platform code or ohci-omap driver to set up a generic DMA 
-> offset for the relevant device.
-
-I sent a ping to the omap maintainers earlier this week to ask for that :)
-
->> +static inline dma_addr_t virt_to_dma(struct device *dev, void *addr)
->> +{
->> +	if (dev)
->> +		return pfn_to_dma(dev, virt_to_pfn(addr));
->> +
->> +	return (dma_addr_t)__virt_to_bus((unsigned long)(addr));
->> +}
->
-> And this is only used for some debug prints in dmabounce.
->
-> Similarly the __bus_to_*()/__*_to_bus() calls themselves only appear 
-> significant to mach-footbridge any more, and could probably also be evolved 
-> into regular DMA offsets now that all API calls must have a non-NULL 
-> device. I think I might come back and take a closer look at all this at 
-> some point in future... :)
-
-Yes,  pretty much all of this should eventually go away.  I just don't
-want to bock the ranges work on all kinds of random arm cleanups..
+diff --git a/arch/sh/include/asm/smp.h b/arch/sh/include/asm/smp.h
+index 1a0d7cf71c10..100bf241340b 100644
+--- a/arch/sh/include/asm/smp.h
++++ b/arch/sh/include/asm/smp.h
+@@ -8,7 +8,6 @@
+ 
+ #ifdef CONFIG_SMP
+ 
+-#include <linux/spinlock.h>
+ #include <linux/atomic.h>
+ #include <asm/current.h>
+ #include <asm/percpu.h>
+-- 
+2.21.0
