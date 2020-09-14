@@ -1,40 +1,37 @@
-From: Rich Felker <dalias@libc.org>
-Date: Fri, 18 Sep 2020 19:29:42 +0000
-Subject: Re: [PATCH] sh: fix syscall tracing
-Message-Id: <20200918192942.GA3265@brightrain.aerifal.cx>
+From: Christoph Hellwig <hch@lst.de>
+Date: Mon, 14 Sep 2020 07:33:38 +0000
+Subject: [PATCH 1/6] ARM/dma-mapping: remove a __arch_page_to_dma #error
+Message-Id: <20200914073343.1579578-2-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200903054803.GX3265@brightrain.aerifal.cx>
- <e456a455-62cd-4f76-a69a-84d1e5b4d153@physik.fu-berlin.de>
- <20200903161639.GE3265@brightrain.aerifal.cx>
- <1a3f0f7e-f6e6-db4e-06ad-9c7d560a6265@physik.fu-berlin.de>
- <20200907174436.GK3265@brightrain.aerifal.cx>
- <3b8d5e6a-38d6-6eca-a49a-69e06680ec1c@physik.fu-berlin.de>
- <c0685f0b-e997-39e9-8ae9-ee22c8e74a01@landley.net>
- <20200910133751.GE3265@brightrain.aerifal.cx>
- <d641f6a0-0c2d-d7ea-c5e6-b02506200bb5@physik.fu-berlin.de>
- <20200916002843.GR3265@brightrain.aerifal.cx>
-In-Reply-To: <20200916002843.GR3265@brightrain.aerifal.cx>
+References: <20200914073343.1579578-1-hch@lst.de>
+In-Reply-To: <20200914073343.1579578-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Rob Landley <rob@landley.net>, linux-sh@vger.kernel.org, Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>, linux-kernel@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
+To: iommu@lists.linux-foundation.org, Russell King <linux@armlinux.org.uk>, Santosh Shilimkar <ssantosh@kernel.org>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Jim Quinlan <james.quinlan@broadcom.com>, Nathan Chancellor <natechancellor@gmail.com>, Florian Fainelli <f.fainelli@gmail.com>, Robin Murphy <robin.murphy@arm.com>, Rob Herring <robh+dt@kernel.org>, Frank Rowand <frowand.list@gmail.com>, Ohad Ben-Cohen <ohad@wizery.com>, Bjorn Andersson <bjorn.andersson@linaro.org>, linux-remoteproc@vger.kernel.org, linux-usb@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linux-pci@vger.kernel.org, linux-acpi@vger.kernel.org, devicetree@vger.kernel.org
 
-On Tue, Sep 15, 2020 at 08:28:45PM -0400, Rich Felker wrote:
-> On Tue, Sep 15, 2020 at 12:35:28PM +0200, John Paul Adrian Glaubitz wrote:
-> > Hi Rich!
-> > 
-> > On 9/10/20 3:37 PM, Rich Felker wrote:
-> > >> Which I reported to Rich on the 2nd and he had me test a one line patch fixing
-> > >> it (adding an extra #include) on the 3rd, but I just did a fresh pull and the
-> > >> j2_defconfig build still broke a week later.
-> > > 
-> > > Yes, that's presently the other regression fix I have queued for the
-> > > second pull request.
-> > 
-> > Any news on this? Seems like Linus just tagged -rc5 this week.
-> 
-> I rebased against -rc5 and pushed for-next a couple days ago. It
-> doesn't look like there are any problems so I'll proceed with the PR.
+The __arch_page_to_dma hook is long gone.
 
-It's now been merged.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+---
+ arch/arm/include/asm/dma-mapping.h | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/arch/arm/include/asm/dma-mapping.h b/arch/arm/include/asm/dma-mapping.h
+index bdd80ddbca3451..70d95677656044 100644
+--- a/arch/arm/include/asm/dma-mapping.h
++++ b/arch/arm/include/asm/dma-mapping.h
+@@ -23,10 +23,6 @@ static inline const struct dma_map_ops *get_arch_dma_ops(struct bus_type *bus)
+ 	return NULL;
+ }
+ 
+-#ifdef __arch_page_to_dma
+-#error Please update to __arch_pfn_to_dma
+-#endif
+-
+ /*
+  * dma_to_pfn/pfn_to_dma/dma_to_virt/virt_to_dma are architecture private
+  * functions used internally by the DMA-mapping API to provide DMA
+-- 
+2.28.0
