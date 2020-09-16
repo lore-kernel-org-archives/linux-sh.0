@@ -1,10 +1,10 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Mon, 14 Sep 2020 07:33:39 +0000
+Date: Wed, 16 Sep 2020 06:14:55 +0000
 Subject: [PATCH 2/6] ARM/dma-mapping: remove dma_to_virt
-Message-Id: <20200914073343.1579578-3-hch@lst.de>
+Message-Id: <20200916061500.1970090-3-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20200914073343.1579578-1-hch@lst.de>
-In-Reply-To: <20200914073343.1579578-1-hch@lst.de>
+References: <20200916061500.1970090-1-hch@lst.de>
+In-Reply-To: <20200916061500.1970090-1-hch@lst.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
