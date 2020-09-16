@@ -1,7 +1,7 @@
 From: Christoph Hellwig <hch@lst.de>
-Date: Mon, 14 Sep 2020 07:33:37 +0000
-Subject: support range based offsets in dma-direct v2
-Message-Id: <20200914073343.1579578-1-hch@lst.de>
+Date: Wed, 16 Sep 2020 06:14:53 +0000
+Subject: support range based offsets in dma-direct v3
+Message-Id: <20200916061500.1970090-1-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20200910054038.324517-1-hch@lst.de>
 In-Reply-To: <20200910054038.324517-1-hch@lst.de>
@@ -16,6 +16,11 @@ Hi all,
 this series adds range-based offsets to the dma-direct implementation.  The
 guts of the change are a patch from Jim with some modifications from me,
 but to do it nicely we need to ARM patches to prepare for it as well.
+
+Changes since v2:
+ - fix a mismerge
+ - return (phys_addr_t)-1 from translate_dma_to_phys when there is no
+   matching range to fix dma_capable checks
 
 Changes since v1:
  - rebased on top of the latests dma-mapping for-next tree
