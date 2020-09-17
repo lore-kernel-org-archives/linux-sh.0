@@ -1,55 +1,53 @@
-From: Qinglang Miao <miaoqinglang@huawei.com>
-Date: Sat, 19 Sep 2020 02:52:06 +0000
-Subject: [PATCH -next v2] sh: intc: Convert to DEFINE_SHOW_ATTRIBUTE
-Message-Id: <20200919025206.17729-1-miaoqinglang@huawei.com>
+From: Necip Fazil Yildiran <fazilyildiran@gmail.com>
+Date: Thu, 17 Sep 2020 15:45:48 +0000
+Subject: [PATCH] sh: dma: fix kconfig dependency for G2_DMA
+Message-Id: <20200917154547.139019-1-fazilyildiran@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Qinglang Miao <miaoqinglang@huawei.com>
+To: dalias@libc.org
+Cc: lethal@linux-sh.org, iwamatsu.nobuhiro@renesas.com, ysato@users.sourceforge.jp, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, paul@pgazz.com, jeho@cs.utexas.edu, Necip Fazil Yildiran <fazilyildiran@gmail.com>
 
-Use DEFINE_SHOW_ATTRIBUTE macro to simplify the code.
+When G2_DMA is enabled and SH_DMA is disabled, it results in the following
+Kbuild warning:
 
-Signed-off-by: Qinglang Miao <miaoqinglang@huawei.com>
+WARNING: unmet direct dependencies detected for SH_DMA_API
+  Depends on [n]: SH_DMA [=n]
+  Selected by [y]:
+  - G2_DMA [=y] && SH_DREAMCAST [=y]
+
+The reason is that G2_DMA selects SH_DMA_API without depending on or
+selecting SH_DMA while SH_DMA_API depends on SH_DMA.
+
+When G2_DMA was first introduced with commit 40f49e7ed77f
+("sh: dma: Make G2 DMA configurable."), this wasn't an issue since
+SH_DMA_API didn't have such dependency, and this way was the only way to
+enable it since SH_DMA_API was non-visible. However, later SH_DMA_API was
+made visible and dependent on SH_DMA with commit d8902adcc1a9
+("dmaengine: sh: Add Support SuperH DMA Engine driver").
+
+Let G2_DMA depend on SH_DMA_API instead to avoid Kbuild issues.
+
+Fixes: d8902adcc1a9 ("dmaengine: sh: Add Support SuperH DMA Engine driver")
+Signed-off-by: Necip Fazil Yildiran <fazilyildiran@gmail.com>
 ---
-v2: based on linux-next(20200917), and can be applied to
-    mainline cleanly now.
+ arch/sh/drivers/dma/Kconfig | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
- drivers/sh/intc/virq-debugfs.c | 14 ++------------
- 1 file changed, 2 insertions(+), 12 deletions(-)
-
-diff --git a/drivers/sh/intc/virq-debugfs.c b/drivers/sh/intc/virq-debugfs.c
-index 9e62ba931..939915a07 100644
---- a/drivers/sh/intc/virq-debugfs.c
-+++ b/drivers/sh/intc/virq-debugfs.c
-@@ -16,7 +16,7 @@
- #include <linux/debugfs.h>
- #include "internals.h"
+diff --git a/arch/sh/drivers/dma/Kconfig b/arch/sh/drivers/dma/Kconfig
+index d0de378beefe..7d54f284ce10 100644
+--- a/arch/sh/drivers/dma/Kconfig
++++ b/arch/sh/drivers/dma/Kconfig
+@@ -63,8 +63,7 @@ config PVR2_DMA
  
--static int intc_irq_xlate_debug(struct seq_file *m, void *priv)
-+static int intc_irq_xlate_show(struct seq_file *m, void *priv)
- {
- 	int i;
- 
-@@ -37,17 +37,7 @@ static int intc_irq_xlate_debug(struct seq_file *m, void *priv)
- 	return 0;
- }
- 
--static int intc_irq_xlate_open(struct inode *inode, struct file *file)
--{
--	return single_open(file, intc_irq_xlate_debug, inode->i_private);
--}
--
--static const struct file_operations intc_irq_xlate_fops = {
--	.open = intc_irq_xlate_open,
--	.read = seq_read,
--	.llseek = seq_lseek,
--	.release = single_release,
--};
-+DEFINE_SHOW_ATTRIBUTE(intc_irq_xlate);
- 
- static int __init intc_irq_xlate_init(void)
- {
+ config G2_DMA
+ 	tristate "G2 Bus DMA support"
+-	depends on SH_DREAMCAST
+-	select SH_DMA_API
++	depends on SH_DREAMCAST && SH_DMA_API
+ 	help
+ 	  This enables support for the DMA controller for the Dreamcast's
+ 	  G2 bus. Drivers that want this will generally enable this on
 -- 
-2.23.0
+2.25.1
