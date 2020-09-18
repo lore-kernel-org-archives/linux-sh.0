@@ -1,34 +1,37 @@
-From: Blue Oak Mortgage and Loans <em@rusoil.net>
-Date: Mon, 21 Sep 2020 23:08:09 +0000
-Subject: Wir finanzieren Projekte und Unternehmen
-Message-Id: <2020026523.907101.1600729689731.JavaMail.zimbra@rusoil.net>
+From: Randy Dunlap <rdunlap@infradead.org>
+Date: Fri, 18 Sep 2020 02:14:04 +0000
+Subject: [PATCH v2 RESEND +TRIVIAL] arch/sh: hyphenate Non-Uniform in Kconfig prompt
+Message-Id: <93d98bab-01dd-5530-9fdb-76faf8dcdd41@infradead.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-fbdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: LKML <linux-kernel@vger.kernel.org>, Jiri Kosina <trivial@kernel.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Linux-sh list <linux-sh@vger.kernel.org>
 
+From: Randy Dunlap <rdunlap@infradead.org>
 
+Hyphenate Non-Uniform in the NUMA kconfig prompt.
 
-Dies ist ein Newsletter von Blue Oak Mortgage and Loans. Bitte melden Sie sich ab, wenn Sie keine E-Mail mehr von uns erhalten möchten.
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Cc: Jiri Kosina <trivial@kernel.org>
+---
+v2: rebase from JAN-2020 to current.
 
+ arch/sh/mm/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Eine kurze Einführung.
-
-Wir sind ein führendes Finanzierungsunternehmen in Europa. Wir finanzieren Startups / etablierte Unternehmen, finanzieren Großprojekte (Bau, Landwirtschaft, Immobilien und dergleichen) zu einem niedrigen Zinssatz von 2% pro Jahr.
-
-
-Darlehensverfahren
-
-1. Sie müssen das Online-Bewerbungsformular ausfüllen und eine ordnungsgemäß unterschriebene Kopie an uns zurücksenden.
-
-2. Möglicherweise müssen Sie Finanzdokumente als unterstützenden Nachweis für die Fähigkeit zur Rückzahlung von Krediten vorlegen.
-
-3. Wenn Ihr Darlehen genehmigt wurde, müssen Sie eine Versicherungsgarantie für die Darlehenssicherheit vorlegen. Wir empfehlen eine Versicherungsgesellschaft. Sie sind allein verantwortlich für die Zahlung und den Erwerb der Anleihe, die als Sicherheit dienen. Die Höhe der Anleihe hängt von Ihrem Darlehensbetrag ab. Die Versicherungsgesellschaft wird Sie durch den Prozess führen. (Für Großprojekte)
-
-4. Ihr Überweisungsprozess wird eingeleitet, sobald die Versicherungsanleihe überprüft wurde. Ihr Darlehensrückzahlungsplan wird im NC-Darlehensvertragsformular aufgeführt.
-
-Wenn die Bedingungen Sie beruhigen, können Sie uns über die WhatsApp-Nummer / E-Mail kontaktieren und auch unsere Website besuchen, um weitere Informationen zu erhalten. Wir freuen uns darauf, von Ihnen zu hören.
-
-WhatsApp: + 90-552-365-3483
-E-Mail: info@bluelmtg.net
+--- linux-next-20200917.orig/arch/sh/mm/Kconfig
++++ linux-next-20200917/arch/sh/mm/Kconfig
+@@ -105,7 +105,7 @@ config VSYSCALL
+ 	  (the default value) say Y.
+ 
+ config NUMA
+-	bool "Non Uniform Memory Access (NUMA) Support"
++	bool "Non-Uniform Memory Access (NUMA) Support"
+ 	depends on MMU && SYS_SUPPORTS_NUMA
+ 	select ARCH_WANT_NUMA_VARIABLE_LOCALITY
+ 	default n
