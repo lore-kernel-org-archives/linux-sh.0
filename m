@@ -1,26 +1,127 @@
-From: Christoph Hellwig <hch@infradead.org>
-Date: Thu, 10 Sep 2020 05:51:12 +0000
-Subject: Re: [PATCH v4 3/4] mm/pageblock: work around multiple arch's cmpxchg support issue
-Message-Id: <20200910055112.GA11727@infradead.org>
+From: Christoph Hellwig <hch@lst.de>
+Date: Thu, 24 Sep 2020 04:31:39 +0000
+Subject: [PATCH] sh: remove CONFIG_IDE from most defconfig
+Message-Id: <20200924043139.522028-1-hch@lst.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1599116482-7410-1-git-send-email-alex.shi@linux.alibaba.com>
- <1599116482-7410-3-git-send-email-alex.shi@linux.alibaba.com>
-In-Reply-To: <1599116482-7410-3-git-send-email-alex.shi@linux.alibaba.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Alex Shi <alex.shi@linux.alibaba.com>
-Cc: linux-arm-kernel@lists.infradead.org, Chris Zankel <chris@zankel.net>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, David Hildenbrand <david@redhat.com>, linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org, Anshuman Khandual <anshuman.khandual@arm.com>, Russell King <linux@armlinux.org.uk>, Alexander Duyck <alexander.duyck@gmail.com>, linux-kernel@vger.kernel.org, linux-mm@kvack.org, Max Filippov <jcmvbkbc@gmail.com>, Matthew Wilcox <willy@infradead.org>, Baolin Wang <baolin.wang@linux.alibaba.com>, sparclinux@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, "David S. Miller" <davem@davemloft.net>, Vlastimil Babka <vbabka@suse.cz>
+To: linux-sh@vger.kernel.org
 
-On Thu, Sep 03, 2020 at 03:01:22PM +0800, Alex Shi wrote:
-> Armv6, sh2, sparc32 and xtensa can not do cmpxchg1, so we have to use
-> cmpxchg4 on it.
-> 
-> Here we mark above 4 arch's NO_CMPXCHG_BYTE, and would add more if we
-> found.
-> 
-> This is the first usages of cmpxchg flase sharing change. We'd better
-> check more cmpxchg usages in current kernel...
+Remove CONFIG_IDE from defconfigs that did not actually select chipset
+drivers, and switch ones that have libata drivers to libata.
 
-I think a positive symbol, e.g. HAVE_CMPXCHG_BYTE is a lot easier to
-understand, and also fool-proof.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+diff --git a/arch/sh/configs/sh03_defconfig b/arch/sh/configs/sh03_defconfig
+index f0073ed3994771..48b457d59e790a 100644
+--- a/arch/sh/configs/sh03_defconfig
++++ b/arch/sh/configs/sh03_defconfig
+---
+ arch/sh/configs/landisk_defconfig  | 9 ++++-----
+ arch/sh/configs/microdev_defconfig | 2 --
+ arch/sh/configs/sdk7780_defconfig  | 6 ++----
+ arch/sh/configs/sdk7786_defconfig  | 3 ---
+ arch/sh/configs/se7750_defconfig   | 1 -
+ arch/sh/configs/sh03_defconfig     | 3 ---
+ 6 files changed, 6 insertions(+), 18 deletions(-)
+
+diff --git a/arch/sh/configs/landisk_defconfig b/arch/sh/configs/landisk_defconfig
+index ba6ec042606f5d..e6c5ddf070c008 100644
+--- a/arch/sh/configs/landisk_defconfig
++++ b/arch/sh/configs/landisk_defconfig
+@@ -27,13 +27,12 @@ CONFIG_NETFILTER=y
+ CONFIG_ATALK=m
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+-CONFIG_IDE=y
+-CONFIG_BLK_DEV_IDECD=y
+-CONFIG_BLK_DEV_OFFBOARD=y
+-CONFIG_BLK_DEV_GENERIC=y
+-CONFIG_BLK_DEV_AEC62XX=y
++CONFIG_ATA=y
++CONFIG_ATA_GENERIC=y
++CONFIG_PATA_ATP867X=y
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
++CONFIG_BLK_DEV_SR=y
+ CONFIG_SCSI_MULTI_LUN=y
+ CONFIG_MD=y
+ CONFIG_BLK_DEV_MD=m
+diff --git a/arch/sh/configs/microdev_defconfig b/arch/sh/configs/microdev_defconfig
+index c65667d00313ba..e9825196dd66af 100644
+--- a/arch/sh/configs/microdev_defconfig
++++ b/arch/sh/configs/microdev_defconfig
+@@ -20,8 +20,6 @@ CONFIG_IP_PNP=y
+ # CONFIG_IPV6 is not set
+ # CONFIG_FW_LOADER is not set
+ CONFIG_BLK_DEV_RAM=y
+-CONFIG_IDE=y
+-CONFIG_BLK_DEV_IDECD=y
+ CONFIG_NETDEVICES=y
+ CONFIG_NET_ETHERNET=y
+ CONFIG_SMC91X=y
+diff --git a/arch/sh/configs/sdk7780_defconfig b/arch/sh/configs/sdk7780_defconfig
+index d10a0414123a51..d00376eb044f8a 100644
+--- a/arch/sh/configs/sdk7780_defconfig
++++ b/arch/sh/configs/sdk7780_defconfig
+@@ -44,16 +44,14 @@ CONFIG_NET_SCHED=y
+ CONFIG_PARPORT=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+-CONFIG_IDE=y
+-CONFIG_BLK_DEV_IDECD=y
+-CONFIG_BLK_DEV_PLATFORM=y
+-CONFIG_BLK_DEV_GENERIC=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_BLK_DEV_SR=y
+ CONFIG_CHR_DEV_SG=y
+ CONFIG_SCSI_SPI_ATTRS=y
+ CONFIG_SCSI_FC_ATTRS=y
+ CONFIG_ATA=y
++CONFIG_ATA_GENERIC=y
++CONFIG_PATA_PLATFORM=y
+ CONFIG_MD=y
+ CONFIG_BLK_DEV_DM=y
+ CONFIG_NETDEVICES=y
+diff --git a/arch/sh/configs/sdk7786_defconfig b/arch/sh/configs/sdk7786_defconfig
+index 61bec46ebd66a8..4a44cac640bc94 100644
+--- a/arch/sh/configs/sdk7786_defconfig
++++ b/arch/sh/configs/sdk7786_defconfig
+@@ -116,9 +116,6 @@ CONFIG_MTD_UBI_GLUEBI=m
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_CRYPTOLOOP=y
+ CONFIG_BLK_DEV_RAM=y
+-CONFIG_IDE=y
+-CONFIG_BLK_DEV_IDECD=y
+-CONFIG_BLK_DEV_PLATFORM=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_BLK_DEV_SR=y
+ CONFIG_SCSI_MULTI_LUN=y
+diff --git a/arch/sh/configs/se7750_defconfig b/arch/sh/configs/se7750_defconfig
+index 3f1c13799d799c..4defc7628a498a 100644
+--- a/arch/sh/configs/se7750_defconfig
++++ b/arch/sh/configs/se7750_defconfig
+@@ -29,7 +29,6 @@ CONFIG_MTD_BLOCK=y
+ CONFIG_MTD_CFI=y
+ CONFIG_MTD_CFI_AMDSTD=y
+ CONFIG_MTD_ROM=y
+-CONFIG_IDE=y
+ CONFIG_SCSI=y
+ CONFIG_NETDEVICES=y
+ CONFIG_NET_ETHERNET=y
+diff --git a/arch/sh/configs/sh03_defconfig b/arch/sh/configs/sh03_defconfig
+index f0073ed3994771..48b457d59e790a 100644
+--- a/arch/sh/configs/sh03_defconfig
++++ b/arch/sh/configs/sh03_defconfig
+@@ -39,9 +39,6 @@ CONFIG_IP_PNP_RARP=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_NBD=y
+ CONFIG_BLK_DEV_RAM=y
+-CONFIG_IDE=y
+-CONFIG_BLK_DEV_IDECD=m
+-CONFIG_BLK_DEV_IDETAPE=m
+ CONFIG_SCSI=m
+ CONFIG_BLK_DEV_SD=m
+ CONFIG_BLK_DEV_SR=m
+-- 
+2.28.0
