@@ -1,239 +1,202 @@
-From: Petr Vorel <petr.vorel@gmail.com>
-Date: Fri, 02 Oct 2020 20:24:16 +0000
-Subject: [PATCH 1/1] cacheflush01: Rewrite into new API
-Message-Id: <20201002202416.28972-1-petr.vorel@gmail.com>
+From: Vineet Gupta <Vineet.Gupta1@synopsys.com>
+Date: Fri, 02 Oct 2020 23:38:26 +0000
+Subject: Re: [PATCH 1/1] cacheflush01: Rewrite into new API
+Message-Id: <6b5f52e8-0c0c-f83f-d7aa-6ab307d5621f@synopsys.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20201002202416.28972-1-petr.vorel@gmail.com>
+In-Reply-To: <20201002202416.28972-1-petr.vorel@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: ltp@lists.linux.it
-Cc: Petr Vorel <petr.vorel@gmail.com>, Vineet Gupta <vgupta@synopsys.com>, Ofer Levi <oferle@nvidia.com>, Guo Ren <guoren@kernel.org>, linux-csky@vger.kernel.org, "Maciej W . Rozycki" <macro@linux-mips.org>, linux-mips@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>, linux-m68k@lists.linux-m68k.org, Nick Hu <nickhu@andestech.com>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+To: Petr Vorel <petr.vorel@gmail.com>, "ltp@lists.linux.it" <ltp@lists.linux.it>
+Cc: Ofer Levi <oferle@nvidia.com>, Guo Ren <guoren@kernel.org>, "linux-csky@vger.kernel.org" <linux-csky@vger.kernel.org>, "Maciej W . Rozycki" <macro@linux-mips.org>, "linux-mips@vger.kernel.org" <linux-mips@vger.kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "linux-m68k@lists.linux-m68k.org" <linux-m68k@lists.linux-m68k.org>, Nick Hu <nickhu@andestech.com>, Greentime Hu <green.hu@gmail.com>, Vincent Chen <deanbo422@gmail.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, arcml <linux-snps-arc@lists.infradead.org>
 
-This syscall is currently (v5.9) supported on these architectures:
-arc, csky, mips, m68k, nds32, sh
-
-constants are missing for m68k, not sure if the testcase is valid for it.
-Untested.
-
-Test for __LTP__NR_INVALID_SYSCALL saves adding autotools check for
-<asm/cachectl.h>.
-
-Signed-off-by: Petr Vorel <petr.vorel@gmail.com>
----
-Hi,
-
-FYI: I was going to ask for removal of this test, but all these archs are
-still supported. This test compiles on all archs now, but I haven't run
-it (I don't have access to none of these archs, not sure if LTP is even
-tested on these archs).
-
-Kind regards,
-Petr
-
- .../kernel/syscalls/cacheflush/cacheflush01.c | 173 ++++--------------
- 1 file changed, 40 insertions(+), 133 deletions(-)
-
-diff --git a/testcases/kernel/syscalls/cacheflush/cacheflush01.c b/testcases/kernel/syscalls/cacheflush/cacheflush01.c
-index 29cf2014a..85125f2ee 100644
---- a/testcases/kernel/syscalls/cacheflush/cacheflush01.c
-+++ b/testcases/kernel/syscalls/cacheflush/cacheflush01.c
-@@ -1,157 +1,64 @@
--/******************************************************************************/
--/* Copyright (c) Maxin John <maxin.john@gmail.com>, 2009                      */
--/* LKML Reference: http://lkml.org/lkml/2009/4/9/203                          */
--/* This program is free software;  you can redistribute it and/or modify      */
--/* it under the terms of the GNU General Public License as published by       */
--/* the Free Software Foundation; either version 2 of the License, or          */
--/* (at your option) any later version.                                        */
--/*                                                                            */
--/* This program is distributed in the hope that it will be useful,            */
--/* but WITHOUT ANY WARRANTY;  without even the implied warranty of            */
--/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See                  */
--/* the GNU General Public License for more details.                           */
--/*                                                                            */
--/* You should have received a copy of the GNU General Public License          */
--/* along with this program;  if not, write to the Free Software               */
--/* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA    */
--/*                                                                            */
--/******************************************************************************/
--/******************************************************************************/
--/*                                                                            */
--/* File:        cacheflush01.c                                                */
--/*                                                                            */
--/* Description: The cacheflush_check() syscall                     	      */
--/*		Tests EINVAL error of cacheflush system call.		      */
--/* 		Its expected behaviour is cacheflush() should return -EINVAL  */
--/*		when cache parameter is not one of ICACHE, DCACHE, or BCACHE. */
--/*                                                                            */
--/* Usage:  <for command-line>                                                 */
--/* cacheflush01 [-c n] [-e][-i n] [-I x] [-p x] [-t]                          */
--/*      where,  -c n : Run n copies concurrently.                             */
--/*              -e   : Turn on errno logging.                                 */
--/*              -i n : Execute test n times.                                  */
--/*              -I x : Execute test for x seconds.                            */
--/*              -P x : Pause for x seconds between iterations.                */
--/*              -t   : Turn on syscall timing.                                */
--/*                                                                            */
--/* Total Tests: 1                                                             */
--/*                                                                            */
--/* Test Name:   cacheflush01                                                  */
--/******************************************************************************/
-+// SPDX-License-Identifier: GPL-2.0-or-later
- 
--#include <unistd.h>
--#include <stdio.h>
--#include <stdlib.h>
--#include <errno.h>
--
--#include "test.h"
-+#include "tst_test.h"
- #include "lapi/syscalls.h"
- 
- #if __NR_cacheflush != __LTP__NR_INVALID_SYSCALL
-+
- #include <asm/cachectl.h>
--#else
-+
-+/*
-+ * m68k does not have these constants
-+ */
-+
- #ifndef   ICACHE
--#define   ICACHE   (1<<0)	/* flush instruction cache        */
-+# define   ICACHE   (1<<0)
- #endif
-+
- #ifndef   DCACHE
--#define   DCACHE   (1<<1)	/* writeback and flush data cache */
-+# define   DCACHE   (1<<1)
- #endif
-+
- #ifndef   BCACHE
--#define   BCACHE   (ICACHE|DCACHE)	/* flush both caches              */
--#endif
-+# define   BCACHE   (ICACHE|DCACHE)
- #endif
- 
--char *TCID = "cacheflush01";
--int TST_TOTAL = 1;
-+#define CACHE_DESC(x) .cache = x, .desc = #x
- 
--/* Extern Global Functions */
--/******************************************************************************/
--/*                                                                            */
--/* Function:    cleanup                                                       */
--/*                                                                            */
--/* Description: Performs all one time clean up for this test on successful    */
--/*              completion,  premature exit or  failure. Closes all temporary */
--/*              files, removes all temporary directories exits the test with  */
--/*              appropriate return code by calling tst_exit() function.       */
--/*                                                                            */
--/* Input:       None.                                                         */
--/*                                                                            */
--/* Output:      None.                                                         */
--/*                                                                            */
--/* Return:      On failure - Exits calling tst_exit(). Non '0' return code.   */
--/*              On success - Exits calling tst_exit(). With '0' return code.  */
--/*                                                                            */
--/******************************************************************************/
--void cleanup(void)
--{
-+static struct test_case_t {
-+	int cache;
-+	const char *desc;
-+} test_cases[] = {
-+	{ CACHE_DESC(ICACHE) },
-+	{ CACHE_DESC(DCACHE) },
-+	{ CACHE_DESC(BCACHE) },
-+};
- 
--	tst_rmdir();
--}
-+static char *addr;
- 
--/* Local  Functions */
--/******************************************************************************/
--/*                                                                            */
--/* Function:    setup                                                         */
--/*                                                                            */
--/* Description: Performs all one time setup for this test. This function is   */
--/*              typically used to capture signals, create temporary dirs      */
--/*              and temporary files that may be used in the course of this    */
--/*              test.                                                         */
--/*                                                                            */
--/* Input:       None.                                                         */
--/*                                                                            */
--/* Output:      None.                                                         */
--/*                                                                            */
--/* Return:      On failure - Exits by calling cleanup().                      */
--/*              On success - returns 0.                                       */
--/*                                                                            */
--/******************************************************************************/
--void setup(void)
-+static void setup(void)
- {
--	/* Capture signals if any */
--	/* Create temporary directories */
--	TEST_PAUSE;
--	tst_tmpdir();
-+	addr = SAFE_MALLOC(getpagesize());
- }
- 
--int main(int ac, char **av)
-+static void test_cacheflush(unsigned int i)
- {
-+	struct test_case_t *tc = &test_cases[i];
- 
--	char *addr = NULL;
--
--	tst_parse_opts(ac, av, NULL, NULL);
--
--	setup();
--
--	tst_count = 0;
--	/* Create some user address range */
--	addr = malloc(getpagesize());
--	if (addr = NULL) {
--		tst_brkm(TFAIL | TTERRNO, cleanup, "malloc failed");
--	}
--
--	/* Invokes cacheflush() with proper parameters */
--	TEST(ltp_syscall(__NR_cacheflush, addr, getpagesize(), ICACHE));
--	if (TEST_RETURN = 0) {
--		tst_resm(TPASS, "passed with no errno");
--	} else {
--		tst_resm(TFAIL, "failed with unexpected errno");
--	}
--
--	TEST(ltp_syscall(__NR_cacheflush, addr, getpagesize(), DCACHE));
--	if (TEST_RETURN = 0) {
--		tst_resm(TPASS, "passed with no errno");
-+	TEST(tst_syscall(__NR_cacheflush, addr, getpagesize(), tc->cache));
-+	if (TST_RET = 0) {
-+		tst_res(TPASS, "%s passed", tc->desc);
- 	} else {
--		tst_resm(TFAIL, "failed with unexpected errno");
-+		tst_res(TFAIL | TTERRNO, "%s failed", tc->desc);
- 	}
-+}
- 
--	TEST(ltp_syscall(__NR_cacheflush, addr, getpagesize(), BCACHE));
--	if (TEST_RETURN = 0) {
--		tst_resm(TPASS, "passed with no errno");
--	} else {
--		tst_resm(TFAIL, "failed with unexpected errno");
--	}
-+static struct tst_test test = {
-+	.setup = setup,
-+	.test = test_cacheflush,
-+	.tcnt = ARRAY_SIZE(test_cases),
-+};
- 
--	cleanup();
--	tst_exit();
--}
-+#else
-+	TST_TEST_TCONF("system doesn't support cacheflush()");
-+#endif
--- 
-2.28.0
+SGkgUGV0ciwNCg0KT24gMTAvMi8yMCAxOjI0IFBNLCBQZXRyIFZvcmVsIHdyb3RlOg0KPiBUaGlz
+IHN5c2NhbGwgaXMgY3VycmVudGx5ICh2NS45KSBzdXBwb3J0ZWQgb24gdGhlc2UgYXJjaGl0ZWN0
+dXJlczoNCj4gYXJjLCBjc2t5LCBtaXBzLCBtNjhrLCBuZHMzMiwgc2gNCj4NCj4gY29uc3RhbnRz
+IGFyZSBtaXNzaW5nIGZvciBtNjhrLCBub3Qgc3VyZSBpZiB0aGUgdGVzdGNhc2UgaXMgdmFsaWQg
+Zm9yIGl0Lg0KPiBVbnRlc3RlZC4NCj4NCj4gVGVzdCBmb3IgX19MVFBfX05SX0lOVkFMSURfU1lT
+Q0FMTCBzYXZlcyBhZGRpbmcgYXV0b3Rvb2xzIGNoZWNrIGZvcg0KPiA8YXNtL2NhY2hlY3RsLmg+
+Lg0KPg0KPiBTaWduZWQtb2ZmLWJ5OiBQZXRyIFZvcmVsIDxwZXRyLnZvcmVsQGdtYWlsLmNvbT4N
+Cj4gLS0tDQo+IEhpLA0KPg0KPiBGWUk6IEkgd2FzIGdvaW5nIHRvIGFzayBmb3IgcmVtb3ZhbCBv
+ZiB0aGlzIHRlc3QsIGJ1dCBhbGwgdGhlc2UgYXJjaHMgYXJlDQo+IHN0aWxsIHN1cHBvcnRlZC4g
+VGhpcyB0ZXN0IGNvbXBpbGVzIG9uIGFsbCBhcmNocyBub3csIGJ1dCBJIGhhdmVuJ3QgcnVuDQo+
+IGl0IChJIGRvbid0IGhhdmUgYWNjZXNzIHRvIG5vbmUgb2YgdGhlc2UgYXJjaHMsIG5vdCBzdXJl
+IGlmIExUUCBpcyBldmVuDQo+IHRlc3RlZCBvbiB0aGVzZSBhcmNocykuDQoNCkxUUCBpcyBwcmV0
+dHkgbXVjaCByZWd1bGFybHkgdGVzdGVkIG9uIEFSQyBhbmQgeWVzIHdlIGRvIHN1cHBvcnQvbmVl
+ZCB0aGUNCmNhY2hmbHVzaCBzeXNjYWxsIHRlc3QuDQoNClRoeCwNCi1WaW5lZXQNCg0KPg0KPiBL
+aW5kIHJlZ2FyZHMsDQo+IFBldHINCj4NCj4gIC4uLi9rZXJuZWwvc3lzY2FsbHMvY2FjaGVmbHVz
+aC9jYWNoZWZsdXNoMDEuYyB8IDE3MyArKysrLS0tLS0tLS0tLS0tLS0NCj4gIDEgZmlsZSBjaGFu
+Z2VkLCA0MCBpbnNlcnRpb25zKCspLCAxMzMgZGVsZXRpb25zKC0pDQo+DQo+IGRpZmYgLS1naXQg
+YS90ZXN0Y2FzZXMva2VybmVsL3N5c2NhbGxzL2NhY2hlZmx1c2gvY2FjaGVmbHVzaDAxLmMgYi90
+ZXN0Y2FzZXMva2VybmVsL3N5c2NhbGxzL2NhY2hlZmx1c2gvY2FjaGVmbHVzaDAxLmMNCj4gaW5k
+ZXggMjljZjIwMTRhLi44NTEyNWYyZWUgMTAwNjQ0DQo+IC0tLSBhL3Rlc3RjYXNlcy9rZXJuZWwv
+c3lzY2FsbHMvY2FjaGVmbHVzaC9jYWNoZWZsdXNoMDEuYw0KPiArKysgYi90ZXN0Y2FzZXMva2Vy
+bmVsL3N5c2NhbGxzL2NhY2hlZmx1c2gvY2FjaGVmbHVzaDAxLmMNCj4gQEAgLTEsMTU3ICsxLDY0
+IEBADQo+IC0vKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioq
+KioqKioqKioqKioqKioqKioqKioqKioqKioqKioqLw0KPiAtLyogQ29weXJpZ2h0IChjKSBNYXhp
+biBKb2huIDxtYXhpbi5qb2huQGdtYWlsLmNvbT4sIDIwMDkgICAgICAgICAgICAgICAgICAgICAg
+Ki8NCj4gLS8qIExLTUwgUmVmZXJlbmNlOiBodHRwczovL3VybGRlZmVuc2UuY29tL3YzL19faHR0
+cDovL2xrbWwub3JnL2xrbWwvMjAwOS80LzkvMjAzX187ISFBNEYyUjlHX3BnIU12V3BtckNIUksz
+NlJPWGNQOC1xdzNCMWxDd2loOFJ4SW9qd0tXMTFUSnowaUw3RXZubG9CSUh3STV6cjhtMWMkICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgKi8NCj4gLS8qIFRoaXMgcHJvZ3JhbSBpcyBmcmVlIHNv
+ZnR3YXJlOyAgeW91IGNhbiByZWRpc3RyaWJ1dGUgaXQgYW5kL29yIG1vZGlmeSAgICAgICovDQo+
+IC0vKiBpdCB1bmRlciB0aGUgdGVybXMgb2YgdGhlIEdOVSBHZW5lcmFsIFB1YmxpYyBMaWNlbnNl
+IGFzIHB1Ymxpc2hlZCBieSAgICAgICAqLw0KPiAtLyogdGhlIEZyZWUgU29mdHdhcmUgRm91bmRh
+dGlvbjsgZWl0aGVyIHZlcnNpb24gMiBvZiB0aGUgTGljZW5zZSwgb3IgICAgICAgICAgKi8NCj4g
+LS8qIChhdCB5b3VyIG9wdGlvbikgYW55IGxhdGVyIHZlcnNpb24uICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICovDQo+IC0vKiAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAqLw0KPiAt
+LyogVGhpcyBwcm9ncmFtIGlzIGRpc3RyaWJ1dGVkIGluIHRoZSBob3BlIHRoYXQgaXQgd2lsbCBi
+ZSB1c2VmdWwsICAgICAgICAgICAgKi8NCj4gLS8qIGJ1dCBXSVRIT1VUIEFOWSBXQVJSQU5UWTsg
+IHdpdGhvdXQgZXZlbiB0aGUgaW1wbGllZCB3YXJyYW50eSBvZiAgICAgICAgICAgICovDQo+IC0v
+KiBNRVJDSEFOVEFCSUxJVFkgb3IgRklUTkVTUyBGT1IgQSBQQVJUSUNVTEFSIFBVUlBPU0UuICBT
+ZWUgICAgICAgICAgICAgICAgICAqLw0KPiAtLyogdGhlIEdOVSBHZW5lcmFsIFB1YmxpYyBMaWNl
+bnNlIGZvciBtb3JlIGRldGFpbHMuICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8NCj4gLS8q
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICovDQo+IC0vKiBZb3Ugc2hvdWxkIGhhdmUgcmVjZWl2ZWQgYSBj
+b3B5IG9mIHRoZSBHTlUgR2VuZXJhbCBQdWJsaWMgTGljZW5zZSAgICAgICAgICAqLw0KPiAtLyog
+YWxvbmcgd2l0aCB0aGlzIHByb2dyYW07ICBpZiBub3QsIHdyaXRlIHRvIHRoZSBGcmVlIFNvZnR3
+YXJlICAgICAgICAgICAgICAgKi8NCj4gLS8qIEZvdW5kYXRpb24sIEluYy4sIDUxIEZyYW5rbGlu
+IFN0cmVldCwgRmlmdGggRmxvb3IsIEJvc3RvbiwgTUEgMDIxMTAtMTMwMSBVU0EgICAgKi8NCj4g
+LS8qICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICovDQo+IC0vKioqKioqKioqKioqKioqKioqKioqKioqKioq
+KioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqLw0KPiAt
+LyoqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioq
+KioqKioqKioqKioqKioqKioqKioqKi8NCj4gLS8qICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICovDQo+IC0v
+KiBGaWxlOiAgICAgICAgY2FjaGVmbHVzaDAxLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAqLw0KPiAtLyogICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8NCj4gLS8q
+IERlc2NyaXB0aW9uOiBUaGUgY2FjaGVmbHVzaF9jaGVjaygpIHN5c2NhbGwgICAgICAgICAgICAg
+ICAgICAgICAJICAgICAgKi8NCj4gLS8qCQlUZXN0cyBFSU5WQUwgZXJyb3Igb2YgY2FjaGVmbHVz
+aCBzeXN0ZW0gY2FsbC4JCSAgICAgICovDQo+IC0vKiAJCUl0cyBleHBlY3RlZCBiZWhhdmlvdXIg
+aXMgY2FjaGVmbHVzaCgpIHNob3VsZCByZXR1cm4gLUVJTlZBTCAgKi8NCj4gLS8qCQl3aGVuIGNh
+Y2hlIHBhcmFtZXRlciBpcyBub3Qgb25lIG9mIElDQUNIRSwgRENBQ0hFLCBvciBCQ0FDSEUuICov
+DQo+IC0vKiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAqLw0KPiAtLyogVXNhZ2U6ICA8Zm9yIGNvbW1hbmQt
+bGluZT4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8N
+Cj4gLS8qIGNhY2hlZmx1c2gwMSBbLWMgbl0gWy1lXVstaSBuXSBbLUkgeF0gWy1wIHhdIFstdF0g
+ICAgICAgICAgICAgICAgICAgICAgICAgICovDQo+IC0vKiAgICAgIHdoZXJlLCAgLWMgbiA6IFJ1
+biBuIGNvcGllcyBjb25jdXJyZW50bHkuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAqLw0K
+PiAtLyogICAgICAgICAgICAgIC1lICAgOiBUdXJuIG9uIGVycm5vIGxvZ2dpbmcuICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgKi8NCj4gLS8qICAgICAgICAgICAgICAtaSBuIDogRXhl
+Y3V0ZSB0ZXN0IG4gdGltZXMuICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICovDQo+
+IC0vKiAgICAgICAgICAgICAgLUkgeCA6IEV4ZWN1dGUgdGVzdCBmb3IgeCBzZWNvbmRzLiAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAqLw0KPiAtLyogICAgICAgICAgICAgIC1QIHggOiBQYXVz
+ZSBmb3IgeCBzZWNvbmRzIGJldHdlZW4gaXRlcmF0aW9ucy4gICAgICAgICAgICAgICAgKi8NCj4g
+LS8qICAgICAgICAgICAgICAtdCAgIDogVHVybiBvbiBzeXNjYWxsIHRpbWluZy4gICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICovDQo+IC0vKiAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAqLw0KPiAt
+LyogVG90YWwgVGVzdHM6IDEgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgKi8NCj4gLS8qICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICovDQo+IC0v
+KiBUZXN0IE5hbWU6ICAgY2FjaGVmbHVzaDAxICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAqLw0KPiAtLyoqKioqKioqKioqKioqKioqKioqKioqKioqKioq
+KioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKi8NCj4gKy8v
+IFNQRFgtTGljZW5zZS1JZGVudGlmaWVyOiBHUEwtMi4wLW9yLWxhdGVyDQo+ICANCj4gLSNpbmNs
+dWRlIDx1bmlzdGQuaD4NCj4gLSNpbmNsdWRlIDxzdGRpby5oPg0KPiAtI2luY2x1ZGUgPHN0ZGxp
+Yi5oPg0KPiAtI2luY2x1ZGUgPGVycm5vLmg+DQo+IC0NCj4gLSNpbmNsdWRlICJ0ZXN0LmgiDQo+
+ICsjaW5jbHVkZSAidHN0X3Rlc3QuaCINCj4gICNpbmNsdWRlICJsYXBpL3N5c2NhbGxzLmgiDQo+
+ICANCj4gICNpZiBfX05SX2NhY2hlZmx1c2ggIT0gX19MVFBfX05SX0lOVkFMSURfU1lTQ0FMTA0K
+PiArDQo+ICAjaW5jbHVkZSA8YXNtL2NhY2hlY3RsLmg+DQo+IC0jZWxzZQ0KPiArDQo+ICsvKg0K
+PiArICogbTY4ayBkb2VzIG5vdCBoYXZlIHRoZXNlIGNvbnN0YW50cw0KPiArICovDQo+ICsNCj4g
+ICNpZm5kZWYgICBJQ0FDSEUNCj4gLSNkZWZpbmUgICBJQ0FDSEUgICAoMTw8MCkJLyogZmx1c2gg
+aW5zdHJ1Y3Rpb24gY2FjaGUgICAgICAgICovDQo+ICsjIGRlZmluZSAgIElDQUNIRSAgICgxPDww
+KQ0KPiAgI2VuZGlmDQo+ICsNCj4gICNpZm5kZWYgICBEQ0FDSEUNCj4gLSNkZWZpbmUgICBEQ0FD
+SEUgICAoMTw8MSkJLyogd3JpdGViYWNrIGFuZCBmbHVzaCBkYXRhIGNhY2hlICovDQo+ICsjIGRl
+ZmluZSAgIERDQUNIRSAgICgxPDwxKQ0KPiAgI2VuZGlmDQo+ICsNCj4gICNpZm5kZWYgICBCQ0FD
+SEUNCj4gLSNkZWZpbmUgICBCQ0FDSEUgICAoSUNBQ0hFfERDQUNIRSkJLyogZmx1c2ggYm90aCBj
+YWNoZXMgICAgICAgICAgICAgICovDQo+IC0jZW5kaWYNCj4gKyMgZGVmaW5lICAgQkNBQ0hFICAg
+KElDQUNIRXxEQ0FDSEUpDQo+ICAjZW5kaWYNCj4gIA0KPiAtY2hhciAqVENJRCA9ICJjYWNoZWZs
+dXNoMDEiOw0KPiAtaW50IFRTVF9UT1RBTCA9IDE7DQo+ICsjZGVmaW5lIENBQ0hFX0RFU0MoeCkg
+LmNhY2hlID0geCwgLmRlc2MgPSAjeA0KPiAgDQo+IC0vKiBFeHRlcm4gR2xvYmFsIEZ1bmN0aW9u
+cyAqLw0KPiAtLyoqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioq
+KioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKi8NCj4gLS8qICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICovDQo+IC0vKiBGdW5jdGlvbjogICAgY2xlYW51cCAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAqLw0KPiAtLyogICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+Ki8NCj4gLS8qIERlc2NyaXB0aW9uOiBQZXJmb3JtcyBhbGwgb25lIHRpbWUgY2xlYW4gdXAgZm9y
+IHRoaXMgdGVzdCBvbiBzdWNjZXNzZnVsICAgICovDQo+IC0vKiAgICAgICAgICAgICAgY29tcGxl
+dGlvbiwgIHByZW1hdHVyZSBleGl0IG9yICBmYWlsdXJlLiBDbG9zZXMgYWxsIHRlbXBvcmFyeSAq
+Lw0KPiAtLyogICAgICAgICAgICAgIGZpbGVzLCByZW1vdmVzIGFsbCB0ZW1wb3JhcnkgZGlyZWN0
+b3JpZXMgZXhpdHMgdGhlIHRlc3Qgd2l0aCAgKi8NCj4gLS8qICAgICAgICAgICAgICBhcHByb3By
+aWF0ZSByZXR1cm4gY29kZSBieSBjYWxsaW5nIHRzdF9leGl0KCkgZnVuY3Rpb24uICAgICAgICov
+DQo+IC0vKiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAqLw0KPiAtLyogSW5wdXQ6ICAgICAgIE5vbmUuICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8N
+Cj4gLS8qICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICovDQo+IC0vKiBPdXRwdXQ6ICAgICAgTm9uZS4gICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAqLw0K
+PiAtLyogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgKi8NCj4gLS8qIFJldHVybjogICAgICBPbiBmYWlsdXJl
+IC0gRXhpdHMgY2FsbGluZyB0c3RfZXhpdCgpLiBOb24gJzAnIHJldHVybiBjb2RlLiAgICovDQo+
+IC0vKiAgICAgICAgICAgICAgT24gc3VjY2VzcyAtIEV4aXRzIGNhbGxpbmcgdHN0X2V4aXQoKS4g
+V2l0aCAnMCcgcmV0dXJuIGNvZGUuICAqLw0KPiAtLyogICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8NCj4g
+LS8qKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioq
+KioqKioqKioqKioqKioqKioqKioqKiovDQo+IC12b2lkIGNsZWFudXAodm9pZCkNCj4gLXsNCj4g
+K3N0YXRpYyBzdHJ1Y3QgdGVzdF9jYXNlX3Qgew0KPiArCWludCBjYWNoZTsNCj4gKwljb25zdCBj
+aGFyICpkZXNjOw0KPiArfSB0ZXN0X2Nhc2VzW10gPSB7DQo+ICsJeyBDQUNIRV9ERVNDKElDQUNI
+RSkgfSwNCj4gKwl7IENBQ0hFX0RFU0MoRENBQ0hFKSB9LA0KPiArCXsgQ0FDSEVfREVTQyhCQ0FD
+SEUpIH0sDQo+ICt9Ow0KPiAgDQo+IC0JdHN0X3JtZGlyKCk7DQo+IC19DQo+ICtzdGF0aWMgY2hh
+ciAqYWRkcjsNCj4gIA0KPiAtLyogTG9jYWwgIEZ1bmN0aW9ucyAqLw0KPiAtLyoqKioqKioqKioq
+KioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioq
+KioqKioqKioqKi8NCj4gLS8qICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICovDQo+IC0vKiBGdW5jdGlvbjog
+ICAgc2V0dXAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAqLw0KPiAtLyogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8NCj4gLS8qIERlc2NyaXB0aW9u
+OiBQZXJmb3JtcyBhbGwgb25lIHRpbWUgc2V0dXAgZm9yIHRoaXMgdGVzdC4gVGhpcyBmdW5jdGlv
+biBpcyAgICovDQo+IC0vKiAgICAgICAgICAgICAgdHlwaWNhbGx5IHVzZWQgdG8gY2FwdHVyZSBz
+aWduYWxzLCBjcmVhdGUgdGVtcG9yYXJ5IGRpcnMgICAgICAqLw0KPiAtLyogICAgICAgICAgICAg
+IGFuZCB0ZW1wb3JhcnkgZmlsZXMgdGhhdCBtYXkgYmUgdXNlZCBpbiB0aGUgY291cnNlIG9mIHRo
+aXMgICAgKi8NCj4gLS8qICAgICAgICAgICAgICB0ZXN0LiAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICovDQo+IC0vKiAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAqLw0KPiAtLyogSW5wdXQ6ICAgICAgIE5vbmUuICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8NCj4gLS8qICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICovDQo+IC0vKiBPdXRwdXQ6ICAgICAgTm9uZS4gICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAqLw0KPiAtLyogICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgKi8NCj4gLS8qIFJldHVybjogICAgICBPbiBmYWlsdXJlIC0gRXhpdHMgYnkgY2FsbGluZyBj
+bGVhbnVwKCkuICAgICAgICAgICAgICAgICAgICAgICovDQo+IC0vKiAgICAgICAgICAgICAgT24g
+c3VjY2VzcyAtIHJldHVybnMgMC4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAqLw0KPiAtLyogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKi8NCj4gLS8qKioqKioqKioqKioqKioqKioq
+KioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioq
+KiovDQo+IC12b2lkIHNldHVwKHZvaWQpDQo+ICtzdGF0aWMgdm9pZCBzZXR1cCh2b2lkKQ0KPiAg
+ew0KPiAtCS8qIENhcHR1cmUgc2lnbmFscyBpZiBhbnkgKi8NCj4gLQkvKiBDcmVhdGUgdGVtcG9y
+YXJ5IGRpcmVjdG9yaWVzICovDQo+IC0JVEVTVF9QQVVTRTsNCj4gLQl0c3RfdG1wZGlyKCk7DQo+
+ICsJYWRkciA9IFNBRkVfTUFMTE9DKGdldHBhZ2VzaXplKCkpOw0KPiAgfQ0KPiAgDQo+IC1pbnQg
+bWFpbihpbnQgYWMsIGNoYXIgKiphdikNCj4gK3N0YXRpYyB2b2lkIHRlc3RfY2FjaGVmbHVzaCh1
+bnNpZ25lZCBpbnQgaSkNCj4gIHsNCj4gKwlzdHJ1Y3QgdGVzdF9jYXNlX3QgKnRjID0gJnRlc3Rf
+Y2FzZXNbaV07DQo+ICANCj4gLQljaGFyICphZGRyID0gTlVMTDsNCj4gLQ0KPiAtCXRzdF9wYXJz
+ZV9vcHRzKGFjLCBhdiwgTlVMTCwgTlVMTCk7DQo+IC0NCj4gLQlzZXR1cCgpOw0KPiAtDQo+IC0J
+dHN0X2NvdW50ID0gMDsNCj4gLQkvKiBDcmVhdGUgc29tZSB1c2VyIGFkZHJlc3MgcmFuZ2UgKi8N
+Cj4gLQlhZGRyID0gbWFsbG9jKGdldHBhZ2VzaXplKCkpOw0KPiAtCWlmIChhZGRyID09IE5VTEwp
+IHsNCj4gLQkJdHN0X2Jya20oVEZBSUwgfCBUVEVSUk5PLCBjbGVhbnVwLCAibWFsbG9jIGZhaWxl
+ZCIpOw0KPiAtCX0NCj4gLQ0KPiAtCS8qIEludm9rZXMgY2FjaGVmbHVzaCgpIHdpdGggcHJvcGVy
+IHBhcmFtZXRlcnMgKi8NCj4gLQlURVNUKGx0cF9zeXNjYWxsKF9fTlJfY2FjaGVmbHVzaCwgYWRk
+ciwgZ2V0cGFnZXNpemUoKSwgSUNBQ0hFKSk7DQo+IC0JaWYgKFRFU1RfUkVUVVJOID09IDApIHsN
+Cj4gLQkJdHN0X3Jlc20oVFBBU1MsICJwYXNzZWQgd2l0aCBubyBlcnJubyIpOw0KPiAtCX0gZWxz
+ZSB7DQo+IC0JCXRzdF9yZXNtKFRGQUlMLCAiZmFpbGVkIHdpdGggdW5leHBlY3RlZCBlcnJubyIp
+Ow0KPiAtCX0NCj4gLQ0KPiAtCVRFU1QobHRwX3N5c2NhbGwoX19OUl9jYWNoZWZsdXNoLCBhZGRy
+LCBnZXRwYWdlc2l6ZSgpLCBEQ0FDSEUpKTsNCj4gLQlpZiAoVEVTVF9SRVRVUk4gPT0gMCkgew0K
+PiAtCQl0c3RfcmVzbShUUEFTUywgInBhc3NlZCB3aXRoIG5vIGVycm5vIik7DQo+ICsJVEVTVCh0
+c3Rfc3lzY2FsbChfX05SX2NhY2hlZmx1c2gsIGFkZHIsIGdldHBhZ2VzaXplKCksIHRjLT5jYWNo
+ZSkpOw0KPiArCWlmIChUU1RfUkVUID09IDApIHsNCj4gKwkJdHN0X3JlcyhUUEFTUywgIiVzIHBh
+c3NlZCIsIHRjLT5kZXNjKTsNCj4gIAl9IGVsc2Ugew0KPiAtCQl0c3RfcmVzbShURkFJTCwgImZh
+aWxlZCB3aXRoIHVuZXhwZWN0ZWQgZXJybm8iKTsNCj4gKwkJdHN0X3JlcyhURkFJTCB8IFRURVJS
+Tk8sICIlcyBmYWlsZWQiLCB0Yy0+ZGVzYyk7DQo+ICAJfQ0KPiArfQ0KPiAgDQo+IC0JVEVTVChs
+dHBfc3lzY2FsbChfX05SX2NhY2hlZmx1c2gsIGFkZHIsIGdldHBhZ2VzaXplKCksIEJDQUNIRSkp
+Ow0KPiAtCWlmIChURVNUX1JFVFVSTiA9PSAwKSB7DQo+IC0JCXRzdF9yZXNtKFRQQVNTLCAicGFz
+c2VkIHdpdGggbm8gZXJybm8iKTsNCj4gLQl9IGVsc2Ugew0KPiAtCQl0c3RfcmVzbShURkFJTCwg
+ImZhaWxlZCB3aXRoIHVuZXhwZWN0ZWQgZXJybm8iKTsNCj4gLQl9DQo+ICtzdGF0aWMgc3RydWN0
+IHRzdF90ZXN0IHRlc3QgPSB7DQo+ICsJLnNldHVwID0gc2V0dXAsDQo+ICsJLnRlc3QgPSB0ZXN0
+X2NhY2hlZmx1c2gsDQo+ICsJLnRjbnQgPSBBUlJBWV9TSVpFKHRlc3RfY2FzZXMpLA0KPiArfTsN
+Cj4gIA0KPiAtCWNsZWFudXAoKTsNCj4gLQl0c3RfZXhpdCgpOw0KPiAtfQ0KPiArI2Vsc2UNCj4g
+KwlUU1RfVEVTVF9UQ09ORigic3lzdGVtIGRvZXNuJ3Qgc3VwcG9ydCBjYWNoZWZsdXNoKCkiKTsN
+Cj4gKyNlbmRpZg0KDQo
