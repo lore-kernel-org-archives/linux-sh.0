@@ -1,43 +1,23 @@
-From: Petr Vorel <petr.vorel@gmail.com>
-Date: Thu, 08 Oct 2020 20:04:06 +0000
-Subject: Re: [LTP] [PATCH 1/1] cacheflush01: Rewrite into new API
-Message-Id: <20201008200406.GA18136@dell5510>
+From: "Mr. Hashim Bin" <financialcapability6@gmail.com>
+Date: Fri, 02 Oct 2020 19:17:06 +0000
+Subject: Low Rate Loan.
+Message-Id: <20201002191721.135745E8DD@mx.metalurgs.lv>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20201002202416.28972-1-petr.vorel@gmail.com>
- <1478290725.17134142.1602069275205.JavaMail.zimbra@redhat.com>
-In-Reply-To: <1478290725.17134142.1602069275205.JavaMail.zimbra@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jan Stancek <jstancek@redhat.com>
-Cc: ltp@lists.linux.it, Ofer Levi <oferle@nvidia.com>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org, Vineet Gupta <vgupta@synopsys.com>, linux-mips@vger.kernel.org, linux-csky@vger.kernel.org, linux-m68k@lists.linux-m68k.org, Guo Ren <guoren@kernel.org>, Greentime Hu <green.hu@gmail.com>, "Maciej W . Rozycki" <macro@linux-mips.org>, Geert Uytterhoeven <geert@linux-m68k.org>, Vincent Chen <deanbo422@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Hi Jan,
+Hello Dear,
 
-> ----- Original Message -----
-> > This syscall is currently (v5.9) supported on these architectures:
-> > arc, csky, mips, m68k, nds32, sh
+We are Investment Company offering Corporate and Personal
+Loan at 3% Interest Rate for a duration of 10Years.
 
-> > constants are missing for m68k, not sure if the testcase is valid for it.
-> > Untested.
+We also pay 1% commission to brokers, who introduce project
+owners for finance or other opportunities.
 
-> > Test for __LTP__NR_INVALID_SYSCALL saves adding autotools check for
-> > <asm/cachectl.h>.
+Please get back to me if you are interested for more
+details.
 
-> > Signed-off-by: Petr Vorel <petr.vorel@gmail.com>
-> > ---
-> > Hi,
-
-> > FYI: I was going to ask for removal of this test, but all these archs are
-> > still supported. This test compiles on all archs now, but I haven't run
-> > it (I don't have access to none of these archs, not sure if LTP is even
-> > tested on these archs).
-
-> I haven't tested it too, but rewrite looks good.
-
-> Acked-by: Jan Stancek <jstancek@redhat.com>
-
-Thanks for your review, merged.
-
-Kind regards,
-Petr
+Yours faithfully,
+Hashim Bin 
