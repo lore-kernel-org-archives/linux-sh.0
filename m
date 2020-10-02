@@ -1,20 +1,28 @@
-From: "Razali Zamri Ahmad" <office5@suncor.com>
-Date: Thu, 29 Oct 2020 10:06:34 +0000
-Subject: RE: Investment Partner Needed ASAP...
-Message-Id: <20201029030634.013678E600EA825D@suncor.com>
+From: "Mr. Marvin" <chi1grant22@gmail.com>
+Date: Fri, 02 Oct 2020 17:49:36 +0000
+Subject: Gute Nachrichten !
+Message-Id: <31ebd277-b7f6-43c6-bc5d-4cff788d314c@VMMAIL2010.pompeya.local>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-I am Mr. Razali Zamri Ahmad  a staff of a reputable financial 
-institution in Malaysia. An investment was placed under my 
-management. I need your assistance in investing the fund in your 
-country into a good business. If you are interested kindly 
-respond so I can forward you with more details. 
+Die letzten Monate waren nicht gut f=FCr Unternehmen, Institutionen und Ein=
+zelpersonen auf der ganzen Welt. Die globale Epidemie (Covid-19) hat alle f=
+inanziell ersch=F6pft und Sie wurden nicht freigestellt. Ihr Hilferuf wurde=
+ geh=F6rt und wir sind bereit, Ihnen unsere freundliche Geste anzubieten. S=
+ie geh=F6ren zu den 3. Chargen, die von unserem Fondsprogramm profitieren, =
+und ich muss aufrichtig sagen, dass die 1. und 2. Charge f=FCr die von uns =
+geleistete Hilfe dankbar ist. Sie haben erfolgreich die kumulierte Gesamtsu=
+mme von (50.000,00 USD) als Gemeinschaftsspende von Oxfam Aid erhalten. Ant=
+worten Sie zur=FCck, um weitere Informationen und Anweisungen zur Beantragu=
+ng Ihres Zuschusses zu erhalten.
 
-Reply via my private Email:  razalijan@live.com
+Denken Sie daran, immer in Sicherheit zu bleiben und soziale Distanzierung =
+zu =FCben. Befolgen Sie immer die Anweisungen der =F6rtlichen Beh=F6rden.
 
-Regards 
-Razali Zamri Ahmad.  
+Herr Marvin Sims,
+
+Supervisor (Oxfam Finanzabteilung)
+Oxfam International Inc
