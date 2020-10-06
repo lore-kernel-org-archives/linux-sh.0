@@ -1,23 +1,13 @@
-From: "Mr. Hashim Bin" <financialcapability6@gmail.com>
-Date: Fri, 02 Oct 2020 19:17:06 +0000
-Subject: Low Rate Loan.
-Message-Id: <20201002191721.135745E8DD@mx.metalurgs.lv>
+From: SgtKayla Manthey <baldemaimouna01@gmail.com>
+Date: Tue, 06 Oct 2020 10:55:45 +0000
+Subject: Hello,
+Message-Id: <CAC5XXA6gZnw3Ag7yhurDQo1QR5Cx8ZMOC3qDqJvDSz=PtoWqng@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello Dear,
-
-We are Investment Company offering Corporate and Personal
-Loan at 3% Interest Rate for a duration of 10Years.
-
-We also pay 1% commission to brokers, who introduce project
-owners for finance or other opportunities.
-
-Please get back to me if you are interested for more
-details.
-
-Yours faithfully,
-Hashim Bin 
+2KrYrdmK2Kkg2LfZitio2KnYjA0K2KfYs9mF2Yog2YPYp9mK2YTYpyDZhdmGINmB2LbZhNmDINmH
+2YQg2YjYtdmE2KrZgyDYp9mE2LHYs9in2YTYqSDYp9mE2LPYp9io2YLYqdifINin2YPYqtioINmE
+2YoNCtin2YTYudmI2K/YqSDYtNmD2LHYpyDZhNmDLg0K
