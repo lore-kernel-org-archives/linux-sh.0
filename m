@@ -1,22 +1,31 @@
-From: Kim Leang <mechanik@kilargo.pl>
-Date: Thu, 15 Oct 2020 12:54:59 +0000
-Subject: Greeting! !!
-Message-Id: <4f8e309dade94ae8bac1d709c3e7bb19@mail.kilargo.pl>
+From: Jinyang He <hejinyang@loongson.cn>
+Date: Mon, 12 Oct 2020 03:50:24 +0000
+Subject: [PATCH] sh: Remove unused HAVE_COPY_THREAD_TLS macro
+Message-Id: <1602474624-3225-1-git-send-email-hejinyang@loongson.cn>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Christian Brauner <christian.brauner@ubuntu.com>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Greeting!
+Fixes: 	e1cc9d8d596e ("sh: switch to copy_thread_tls()")
+Signed-off-by: Jinyang He <hejinyang@loongson.cn>
+---
+ arch/sh/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-I am contacting you to receive and share with me an abandoned fund ( $21,537.000.00 ) left in our bank by a deceased customer. I was going through the Internet search when I found your email address. My name is Mr. Kim Leang.
-
-I want to utilize this opportunity and make use of this fund if I should present your name to the bank to stand as his business associate/ trustee for the fund to be released to you via Visa card for easy withdrawals in any VISA ATM machine anywhere in the World.
-
-The bank will also give you international online transfer options. With these you can transfer the funds without any risk.
-
-Should you be interested in working with me in this project? Please reply back and let's benefit from this golden opportunity.You are my first contact. I shall wait a few days and if I do not hear from you, I shall look for another person.
-
-Thanks and have a nice day,
-Mr. Kim Leang.
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index d209271..165f291 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -30,7 +30,6 @@ config SUPERH
+ 	select HAVE_ARCH_KGDB
+ 	select HAVE_ARCH_SECCOMP_FILTER
+ 	select HAVE_ARCH_TRACEHOOK
+-	select HAVE_COPY_THREAD_TLS
+ 	select HAVE_DEBUG_BUGVERBOSE
+ 	select HAVE_DEBUG_KMEMLEAK
+ 	select HAVE_DYNAMIC_FTRACE
+-- 
+2.1.0
