@@ -1,35 +1,47 @@
-From: Liliane Abel <k.griest04@gmail.com>
-Date: Fri, 30 Oct 2020 14:59:34 +0000
-Subject: 
-Message-Id: <CABAZL7=b-NWks3DKb=fdDjnu_xt_-CcJCqf-F5s0yQCFVH73-A@mail.gmail.com>
+From: "Mrs. Roonie Holbrook" <n.saffar@doe.ir>
+Date: Tue, 13 Oct 2020 08:43:36 +0000
+Subject: From Mrs. Roonie Holbrook !!
+Message-Id: <20201013014335.3178A5DBB183DD51@doe.ir>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Dearest
+Attention,
 
-Greeting my dear, I am Liliane Abel by name, The only daughter of late
-Mr.Benson Abel. My father is one of the top Politician in our country
-and my mother is a farmers and cocoa merchant when they were both
-alive. After the death of my mother, long ago, my father was
-controlling their business until he was poisoned by his business
-associates which he suffered and died.
+Nice day and Congratulations !!!.
 
-Before the death of my father, He told me about (two million five
-hundred thousand united states dollars) which he deposited in the bank
-in Lome-Togo, It was the money he intended to transfer overseas for
-investment before he was poisoned. He also instructed me that I should
-seek for foreign partners in any country of my choice who will assist
-me transfer this money in overseas account where the money will be
-wisely invested.
-I am seeking for your kind assistance in the following ways:  (1) to
-provide a safe bank account into where the money will be transferred
-for investment. (2) To serve as a guardian of this fund since I am a
-girl of 19 years old. (3) To make arrangement for me to come over to
-your country to further my education. This is my reason for writing to
-you. Please if you are willing to assist me I will offer you 25% of
-the total money. Reply if  you are interested
-Best regards.
-Liliane Abel.
+You are qualified for the IMFC Covid 19 grant of $750,000.00 
+dollars to support the people in your community. Now respond to 
+details to claim your money.
+
+You are directed to contact the below Office of Paymaster General 
+immediately through his contact details below:
+
+Mr. Williams Fox
+Email: claim.dept@mail2finance.com 
+
+This is to avoid mistake while transferring your overdue payment 
+to you, You have to forward to him below details of yours to 
+start processing your payment file and this ref: 
+UN/FM14/WB/Covid-19:
+ 
+Your Full Name:
+Your Contact Address:
+State:
+Country:
+Telephone and Fax Number:
+Occupation:
+Age:
+ 
+Kindly get back to Mr. Williams Fox  as soon as possible so that 
+he will direct you on what to do for the claims through our 
+Affiliated Bank.
+ 
+
+Best regards
+
+Mrs. Roonie Holbrook
+IMFC Grant Claim Department
+Email: imfc@mail2washington.com
