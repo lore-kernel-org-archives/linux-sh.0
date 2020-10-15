@@ -1,27 +1,22 @@
-From: "Mr. Hashim Bin" <financialcapability6@gmail.com>
-Date: Wed, 07 Oct 2020 10:52:03 +0000
-Subject: Low Rate Loan./mmm,
-Message-Id: <20201007105217.5D87866ACA@mx.metalurgs.lv>
+From: Kim Leang <mechanik@kilargo.pl>
+Date: Thu, 15 Oct 2020 12:54:59 +0000
+Subject: Greeting! !!
+Message-Id: <4f8e309dade94ae8bac1d709c3e7bb19@mail.kilargo.pl>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello Dear,
+Greeting!
 
+I am contacting you to receive and share with me an abandoned fund ( $21,537.000.00 ) left in our bank by a deceased customer. I was going through the Internet search when I found your email address. My name is Mr. Kim Leang.
 
-We are Base Investment Company offering Corporate and Personal Loan at 3% Interest Rate for a duration of 10Years.
+I want to utilize this opportunity and make use of this fund if I should present your name to the bank to stand as his business associate/ trustee for the fund to be released to you via Visa card for easy withdrawals in any VISA ATM machine anywhere in the World.
 
+The bank will also give you international online transfer options. With these you can transfer the funds without any risk.
 
-We also pay 1% commission to brokers, who introduce project owners for finance or other opportunities.
+Should you be interested in working with me in this project? Please reply back and let's benefit from this golden opportunity.You are my first contact. I shall wait a few days and if I do not hear from you, I shall look for another person.
 
-
-Please get back to me if you are interested for more
-
-details.
-
-
-Yours faithfully,
-
-Hashim Murrah
+Thanks and have a nice day,
+Mr. Kim Leang.
