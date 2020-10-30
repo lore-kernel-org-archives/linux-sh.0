@@ -1,28 +1,35 @@
-From: "Mr. Marvin" <chi1grant22@gmail.com>
-Date: Fri, 02 Oct 2020 17:49:36 +0000
-Subject: Gute Nachrichten !
-Message-Id: <31ebd277-b7f6-43c6-bc5d-4cff788d314c@VMMAIL2010.pompeya.local>
+From: Liliane Abel <k.griest04@gmail.com>
+Date: Fri, 30 Oct 2020 14:59:34 +0000
+Subject: 
+Message-Id: <CABAZL7=b-NWks3DKb=fdDjnu_xt_-CcJCqf-F5s0yQCFVH73-A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Die letzten Monate waren nicht gut f=FCr Unternehmen, Institutionen und Ein=
-zelpersonen auf der ganzen Welt. Die globale Epidemie (Covid-19) hat alle f=
-inanziell ersch=F6pft und Sie wurden nicht freigestellt. Ihr Hilferuf wurde=
- geh=F6rt und wir sind bereit, Ihnen unsere freundliche Geste anzubieten. S=
-ie geh=F6ren zu den 3. Chargen, die von unserem Fondsprogramm profitieren, =
-und ich muss aufrichtig sagen, dass die 1. und 2. Charge f=FCr die von uns =
-geleistete Hilfe dankbar ist. Sie haben erfolgreich die kumulierte Gesamtsu=
-mme von (50.000,00 USD) als Gemeinschaftsspende von Oxfam Aid erhalten. Ant=
-worten Sie zur=FCck, um weitere Informationen und Anweisungen zur Beantragu=
-ng Ihres Zuschusses zu erhalten.
+Dearest
 
-Denken Sie daran, immer in Sicherheit zu bleiben und soziale Distanzierung =
-zu =FCben. Befolgen Sie immer die Anweisungen der =F6rtlichen Beh=F6rden.
+Greeting my dear, I am Liliane Abel by name, The only daughter of late
+Mr.Benson Abel. My father is one of the top Politician in our country
+and my mother is a farmers and cocoa merchant when they were both
+alive. After the death of my mother, long ago, my father was
+controlling their business until he was poisoned by his business
+associates which he suffered and died.
 
-Herr Marvin Sims,
-
-Supervisor (Oxfam Finanzabteilung)
-Oxfam International Inc
+Before the death of my father, He told me about (two million five
+hundred thousand united states dollars) which he deposited in the bank
+in Lome-Togo, It was the money he intended to transfer overseas for
+investment before he was poisoned. He also instructed me that I should
+seek for foreign partners in any country of my choice who will assist
+me transfer this money in overseas account where the money will be
+wisely invested.
+I am seeking for your kind assistance in the following ways:  (1) to
+provide a safe bank account into where the money will be transferred
+for investment. (2) To serve as a guardian of this fund since I am a
+girl of 19 years old. (3) To make arrangement for me to come over to
+your country to further my education. This is my reason for writing to
+you. Please if you are willing to assist me I will offer you 25% of
+the total money. Reply if  you are interested
+Best regards.
+Liliane Abel.
