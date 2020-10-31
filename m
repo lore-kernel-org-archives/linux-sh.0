@@ -1,47 +1,22 @@
-From: "Mrs. Roonie Holbrook" <n.saffar@doe.ir>
-Date: Tue, 13 Oct 2020 08:43:36 +0000
-Subject: From Mrs. Roonie Holbrook !!
-Message-Id: <20201013014335.3178A5DBB183DD51@doe.ir>
+From: "JOHN PHIL" <gerradfinancialplanning@gmail.com>
+Date: Sat, 31 Oct 2020 01:27:12 +0000
+Subject: November Equity Investment 20-20
+Message-Id: <ur-dehw$u-v8-$q8xj2j$n5t4uc@bcyg0.39fe.ck7>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="07B_9ED_4_"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Attention,
 
-Nice day and Congratulations !!!.
+--07B_9ED_4_
+Content-Type: text/plain;
+Content-Transfer-Encoding: quoted-printable
 
-You are qualified for the IMFC Covid 19 grant of $750,000.00 
-dollars to support the people in your community. Now respond to 
-details to claim your money.
+How are you doing today I have a proposal which i think may interest you a=
+nd benefit you.I will like to give you full details of this via email:  ge=
+rradfinancialplanning@gmail.com
+Thanks.
 
-You are directed to contact the below Office of Paymaster General 
-immediately through his contact details below:
+John PHIL
 
-Mr. Williams Fox
-Email: claim.dept@mail2finance.com 
-
-This is to avoid mistake while transferring your overdue payment 
-to you, You have to forward to him below details of yours to 
-start processing your payment file and this ref: 
-UN/FM14/WB/Covid-19:
- 
-Your Full Name:
-Your Contact Address:
-State:
-Country:
-Telephone and Fax Number:
-Occupation:
-Age:
- 
-Kindly get back to Mr. Williams Fox  as soon as possible so that 
-he will direct you on what to do for the claims through our 
-Affiliated Bank.
- 
-
-Best regards
-
-Mrs. Roonie Holbrook
-IMFC Grant Claim Department
-Email: imfc@mail2washington.com
+--07B_9ED_4_--
