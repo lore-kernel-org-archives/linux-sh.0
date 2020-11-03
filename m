@@ -1,22 +1,60 @@
-From: "JOHN PHIL" <gerradfinancialplanning@gmail.com>
-Date: Sat, 31 Oct 2020 01:27:12 +0000
-Subject: November Equity Investment 20-20
-Message-Id: <ur-dehw$u-v8-$q8xj2j$n5t4uc@bcyg0.39fe.ck7>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="07B_9ED_4_"
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+Date: Tue, 03 Nov 2020 13:42:56 +0000
+Subject: [PATCH seccomp 0/8] seccomp: add bitmap cache support on remaining arches and report cache in procfs
+Message-Id: <cover.1604410035.git.yifeifz2@illinois.edu>
 List-Id: <linux-sh.vger.kernel.org>
-To: linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: containers@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>, linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>, linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>, linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>, Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, Andy Lutomirski <luto@amacapital.net>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, David Laight <David.Laight@aculab.com>, Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
+
+From: YiFei Zhu <yifeifz2@illinois.edu>
+
+This patch series enables bitmap cache for the remaining arches with
+SECCOMP_FILTER, other than MIPS.
+
+I was unable to find any of the arches having subarch-specific NR_syscalls
+macros, so generic NR_syscalls is used. SH's syscall_get_arch seems to
+only have the 32-bit subarch implementation. I'm not sure if this is
+expected.
+
+This series has not been tested; I have not built all the cross compilers
+necessary to build test, let alone run the kernel or benchmark the
+performance, so help on making sure the bitmap cache works as expected
+would be appreciated. The series applies on top of Kees's for-next/seccomp
+branch.
+
+YiFei Zhu (8):
+  csky: Enable seccomp architecture tracking
+  parisc: Enable seccomp architecture tracking
+  powerpc: Enable seccomp architecture tracking
+  riscv: Enable seccomp architecture tracking
+  s390: Enable seccomp architecture tracking
+  sh: Enable seccomp architecture tracking
+  xtensa: Enable seccomp architecture tracking
+  seccomp/cache: Report cache data through /proc/pid/seccomp_cache
+
+ arch/Kconfig                       | 15 ++++++++
+ arch/csky/include/asm/Kbuild       |  1 -
+ arch/csky/include/asm/seccomp.h    | 11 ++++++
+ arch/parisc/include/asm/Kbuild     |  1 -
+ arch/parisc/include/asm/seccomp.h  | 22 +++++++++++
+ arch/powerpc/include/asm/seccomp.h | 21 +++++++++++
+ arch/riscv/include/asm/seccomp.h   | 10 +++++
+ arch/s390/include/asm/seccomp.h    |  9 +++++
+ arch/sh/include/asm/seccomp.h      | 10 +++++
+ arch/xtensa/include/asm/Kbuild     |  1 -
+ arch/xtensa/include/asm/seccomp.h  | 11 ++++++
+ fs/proc/base.c                     |  6 +++
+ include/linux/seccomp.h            |  7 ++++
+ kernel/seccomp.c                   | 59 ++++++++++++++++++++++++++++++
+ 14 files changed, 181 insertions(+), 3 deletions(-)
+ create mode 100644 arch/csky/include/asm/seccomp.h
+ create mode 100644 arch/parisc/include/asm/seccomp.h
+ create mode 100644 arch/xtensa/include/asm/seccomp.h
 
 
---07B_9ED_4_
-Content-Type: text/plain;
-Content-Transfer-Encoding: quoted-printable
-
-How are you doing today I have a proposal which i think may interest you a=
-nd benefit you.I will like to give you full details of this via email:  ge=
-rradfinancialplanning@gmail.com
-Thanks.
-
-John PHIL
-
---07B_9ED_4_--
+base-commit: 38c37e8fd3d2590c4234d8cfbc22158362f0eb04
+--
+2.29.2
