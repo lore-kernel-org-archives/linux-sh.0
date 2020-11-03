@@ -1,50 +1,45 @@
-From: Thomas Gleixner <tglx@linutronix.de>
-Date: Fri, 13 Nov 2020 14:02:11 +0000
-Subject: [patch 04/19] um/irqstat: Get rid of the duplicated declarations
-Message-Id: <20201113141733.156361337@linutronix.de>
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+Date: Tue, 03 Nov 2020 13:43:02 +0000
+Subject: [PATCH seccomp 6/8] sh: Enable seccomp architecture tracking
+Message-Id: <46d7f8d02bdaadf364a59db2d60f43466227b3af.1604410035.git.yifeifz2@illinois.edu>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20201113140207.499353218@linutronix.de>
+References: <cover.1604410035.git.yifeifz2@illinois.edu>
+In-Reply-To: <cover.1604410035.git.yifeifz2@illinois.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Rich Felker <dalias@libc.org>, Marc Zyngier <maz@kernel.org>, Paul McKenney <paulmck@kernel.org>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Richard Weinberger <richard@nod.at>, Frederic Weisbecker <frederic@kernel.org>, Valentin Schneider <valentin.schneider@arm.com>, Jeff Dike <jdike@addtoit.com>, Russell King <linux@armlinux.org.uk>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-um@lists.infradead.org, Will Deacon <will@kernel.org>, linux-parisc@vger.kernel.org, Helge Deller <deller@gmx.de>, Catalin Marinas <catalin.marinas@arm.com>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, linux-arm-kernel@lists.infradead.org, Anton Ivanov <anton.ivanov@cambridgegreys.com>
+To: containers@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>, linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>, linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>, linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>, Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, Andy Lutomirski <luto@amacapital.net>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, David Laight <David.Laight@aculab.com>, Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
 
-irq_cpustat_t and ack_bad_irq() are exactly the same as the asm-generic
-ones.
+From: YiFei Zhu <yifeifz2@illinois.edu>
 
-Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Cc: Jeff Dike <jdike@addtoit.com>
-Cc: Richard Weinberger <richard@nod.at>
-Cc: Anton Ivanov <anton.ivanov@cambridgegreys.com>
-Cc: linux-um@lists.infradead.org
+To enable seccomp constant action bitmaps, we need to have a static
+mapping to the audit architecture and system call table size. Add these
+for sh.
+
+Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 ---
- arch/um/include/asm/hardirq.h |   17 +----------------
- 1 file changed, 1 insertion(+), 16 deletions(-)
+ arch/sh/include/asm/seccomp.h | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
---- a/arch/um/include/asm/hardirq.h
-+++ b/arch/um/include/asm/hardirq.h
-@@ -2,22 +2,7 @@
- #ifndef __ASM_UM_HARDIRQ_H
- #define __ASM_UM_HARDIRQ_H
+diff --git a/arch/sh/include/asm/seccomp.h b/arch/sh/include/asm/seccomp.h
+index 54111e4d32b8..b8d169292a34 100644
+--- a/arch/sh/include/asm/seccomp.h
++++ b/arch/sh/include/asm/seccomp.h
+@@ -8,4 +8,14 @@
+ #define __NR_seccomp_exit __NR_exit
+ #define __NR_seccomp_sigreturn __NR_rt_sigreturn
  
--#include <linux/cache.h>
--#include <linux/threads.h>
--
--typedef struct {
--	unsigned int __softirq_pending;
--} ____cacheline_aligned irq_cpustat_t;
--
--#include <linux/irq_cpustat.h>	/* Standard mappings for irq_cpustat_t above */
--#include <linux/irq.h>
--
--#ifndef ack_bad_irq
--static inline void ack_bad_irq(unsigned int irq)
--{
--	printk(KERN_CRIT "unexpected IRQ trap at vector %02x\n", irq);
--}
--#endif
-+#include <asm-generic/hardirq.h>
- 
- #define __ARCH_IRQ_EXIT_IRQS_DISABLED 1
- 
++#ifdef CONFIG_CPU_LITTLE_ENDIAN
++#define __SECCOMP_ARCH_LE_BIT		__AUDIT_ARCH_LE
++#else
++#define __SECCOMP_ARCH_LE_BIT		0
++#endif
++
++#define SECCOMP_ARCH_NATIVE		(AUDIT_ARCH_SH | __SECCOMP_ARCH_LE)
++#define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
++#define SECCOMP_ARCH_NATIVE_NAME	"sh"
++
+ #endif /* __ASM_SECCOMP_H */
+-- 
+2.29.2
