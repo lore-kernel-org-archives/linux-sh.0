@@ -1,83 +1,55 @@
-From: Michael Ellerman <mpe@ellerman.id.au>
-Date: Wed, 04 Nov 2020 10:22:28 +0000
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+Date: Wed, 04 Nov 2020 11:48:21 +0000
 Subject: Re: [PATCH seccomp 3/8] powerpc: Enable seccomp architecture tracking
-Message-Id: <87wnz1to9n.fsf@mpe.ellerman.id.au>
+Message-Id: <CABqSeAQ+3sjLXH7GVt_tZrFT_e0nNMm8QgT+FBNQYSOc8viM=A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1604410035.git.yifeifz2@illinois.edu>
  <4ec2970fcc819eb4d5dac2bd35233ccdadfda845.1604410035.git.yifeifz2@illinois.edu>
-In-Reply-To: <4ec2970fcc819eb4d5dac2bd35233ccdadfda845.1604410035.git.yifeifz2@illinois.edu>
+ <87wnz1to9n.fsf@mpe.ellerman.id.au>
+In-Reply-To: <87wnz1to9n.fsf@mpe.ellerman.id.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: YiFei Zhu <zhuyifei1999@gmail.com>, containers@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>, linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>, linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>, linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>, Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, Andy Lutomirski <luto@amacapital.net>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, David Laight <David.Laight@aculab.com>, Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
+To: Michael Ellerman <mpe@ellerman.id.au>
+Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>, linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>, linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>, linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>, Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org, Linux Containers <containers@lists.linux-foundation.org>, kernel list <linux-kernel@vger.kernel.org>, Andy Lutomirski <luto@amacapital.net>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, David Laight <David.Laight@aculab.com>, Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
 
-YiFei Zhu <zhuyifei1999@gmail.com> writes:
-> From: YiFei Zhu <yifeifz2@illinois.edu>
+On Wed, Nov 4, 2020 at 4:22 AM Michael Ellerman <mpe@ellerman.id.au> wrote:
+> > +#ifdef __LITTLE_ENDIAN__
 >
-> To enable seccomp constant action bitmaps, we need to have a static
-> mapping to the audit architecture and system call table size. Add these
-> for powerpc.
+> As Kees mentioned this should (must?!) match the configured endian.
 >
-> Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
-> ---
->  arch/powerpc/include/asm/seccomp.h | 21 +++++++++++++++++++++
->  1 file changed, 21 insertions(+)
+> But I think it would still be better to use the CONFIG symbol, which is
+> CONFIG_CPU_LITTLE_ENDIAN.
+
+My attempt here is to be consistent with asm/syscall.h
+syscall_get_arch [1]. Would it make sense to change that to
+CONFIG_CPU_LITTLE_ENDIAN then?
+
+[1] https://elixir.bootlin.com/linux/latest/source/arch/powerpc/include/asm/syscall.h#L116
+
+> > +# define SECCOMP_ARCH_NATIVE         (AUDIT_ARCH_PPC64 | __SECCOMP_ARCH_LE)
 >
-> diff --git a/arch/powerpc/include/asm/seccomp.h b/arch/powerpc/include/asm/seccomp.h
-> index 51209f6071c5..3efcc83e9cc6 100644
-> --- a/arch/powerpc/include/asm/seccomp.h
-> +++ b/arch/powerpc/include/asm/seccomp.h
-> @@ -8,4 +8,25 @@
->  
->  #include <asm-generic/seccomp.h>
->  
-> +#ifdef __LITTLE_ENDIAN__
+> You use __SECCOMP_ARCH_LE there, but previously you only defined
+> __SECCOMP_ARCH_LE_BIT.
+>
+> Is there some magic somewhere that defines __SECCOMP_ARCH_LE based on
+> __SECCOMP_ARCH_LE_BIT ?
 
-As Kees mentioned this should (must?!) match the configured endian.
+Oops, my bad here.
 
-But I think it would still be better to use the CONFIG symbol, which is
-CONFIG_CPU_LITTLE_ENDIAN.
+> > +# define SECCOMP_ARCH_NATIVE_NR              NR_syscalls
+> > +# define SECCOMP_ARCH_NATIVE_NAME    "ppc64"
+>
+> What's the name used for?
 
-> +#define __SECCOMP_ARCH_LE_BIT		__AUDIT_ARCH_LE
-> +#else
-> +#define __SECCOMP_ARCH_LE_BIT		0
-> +#endif
-> +
-> +#ifdef CONFIG_PPC64
-> +# define SECCOMP_ARCH_NATIVE		(AUDIT_ARCH_PPC64 | __SECCOMP_ARCH_LE)
+This is used in the last patch in this series to report in procfs the
+name of each architecture tracked by the bitmap cache.
 
-You use __SECCOMP_ARCH_LE there, but previously you only defined
-__SECCOMP_ARCH_LE_BIT.
+> Usually we use "ppc64" for 64-bit big endian and "ppc64le" for 64-bit
+> little endian.
+>
+> And usually we use "ppc" for 32-bit.
 
-Is there some magic somewhere that defines __SECCOMP_ARCH_LE based on
-__SECCOMP_ARCH_LE_BIT ?
+Ok.
 
-> +# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
-> +# define SECCOMP_ARCH_NATIVE_NAME	"ppc64"
-
-What's the name used for?
-
-Usually we use "ppc64" for 64-bit big endian and "ppc64le" for 64-bit
-little endian.
-
-> +# ifdef CONFIG_COMPAT
-> +#  define SECCOMP_ARCH_COMPAT		(AUDIT_ARCH_PPC | __SECCOMP_ARCH_LE)
-> +#  define SECCOMP_ARCH_COMPAT_NR	NR_syscalls
-> +#  define SECCOMP_ARCH_COMPAT_NAME	"powerpc"
-
-And usually we use "ppc" for 32-bit.
-
-> +# endif
-> +#else /* !CONFIG_PPC64 */
-> +# define SECCOMP_ARCH_NATIVE		(AUDIT_ARCH_PPC | __SECCOMP_ARCH_LE)
-> +# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
-> +# define SECCOMP_ARCH_NATIVE_NAME	"powerpc"
-> +#endif
-> +
->  #endif	/* _ASM_POWERPC_SECCOMP_H */
-> -- 
-> 2.29.2
-
-
-cheers
+YiFei Zhu
