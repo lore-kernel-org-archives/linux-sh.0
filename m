@@ -1,66 +1,94 @@
-From: Michael Ellerman <mpe@ellerman.id.au>
-Date: Thu, 05 Nov 2020 11:26:44 +0000
-Subject: Re: [PATCH seccomp 3/8] powerpc: Enable seccomp architecture tracking
-Message-Id: <87ft5ot56z.fsf@mpe.ellerman.id.au>
+From: Jens Axboe <axboe@kernel.dk>
+Date: Thu, 05 Nov 2020 16:17:44 +0000
+Subject: Re: [PATCH] sh: add support for TIF_NOTIFY_SIGNAL
+Message-Id: <ae29ab73-ee7a-2bb7-3fd8-3037f40c1cbd@kernel.dk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1604410035.git.yifeifz2@illinois.edu>
- <4ec2970fcc819eb4d5dac2bd35233ccdadfda845.1604410035.git.yifeifz2@illinois.edu>
- <87wnz1to9n.fsf@mpe.ellerman.id.au>
- <CABqSeAQ+3sjLXH7GVt_tZrFT_e0nNMm8QgT+FBNQYSOc8viM=A@mail.gmail.com>
-In-Reply-To: <CABqSeAQ+3sjLXH7GVt_tZrFT_e0nNMm8QgT+FBNQYSOc8viM=A@mail.gmail.com>
+References: <5fcc82b4-89ae-3bca-10ab-6ad933565cee@kernel.dk>
+In-Reply-To: <5fcc82b4-89ae-3bca-10ab-6ad933565cee@kernel.dk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: YiFei Zhu <zhuyifei1999@gmail.com>
-Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>, linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>, linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>, linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>, Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org, Linux Containers <containers@lists.linux-foundation.org>, kernel list <linux-kernel@vger.kernel.org>, Andy Lutomirski <luto@amacapital.net>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, David Laight <David.Laight@aculab.com>, Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
+To: linux-sh@vger.kernel.org
 
-YiFei Zhu <zhuyifei1999@gmail.com> writes:
-> On Wed, Nov 4, 2020 at 4:22 AM Michael Ellerman <mpe@ellerman.id.au> wrote:
->> > +#ifdef __LITTLE_ENDIAN__
->>
->> As Kees mentioned this should (must?!) match the configured endian.
->>
->> But I think it would still be better to use the CONFIG symbol, which is
->> CONFIG_CPU_LITTLE_ENDIAN.
->
-> My attempt here is to be consistent with asm/syscall.h
-> syscall_get_arch [1]. Would it make sense to change that to
-> CONFIG_CPU_LITTLE_ENDIAN then?
->
-> [1] https://elixir.bootlin.com/linux/latest/source/arch/powerpc/include/asm/syscall.h#L116
+Gentle nudge on this one.
 
-Looking across the tree with have thousands of usages of
-__LITTLE_ENDIAN__, so it's probably not worth converting to
-CONFIG_CPU_LITTLE_ENDIAN.
+On 10/29/20 10:21 AM, Jens Axboe wrote:
+> Wire up TIF_NOTIFY_SIGNAL handling for sh.
+> 
+> Cc: linux-sh@vger.kernel.org
+> Signed-off-by: Jens Axboe <axboe@kernel.dk>
+> ---
+> 
+> 5.11 has support queued up for TIF_NOTIFY_SIGNAL, see this posting
+> for details:
+> 
+> https://lore.kernel.org/io-uring/20201026203230.386348-1-axboe@kernel.dk/
+> 
+> As part of that work, I'm adding TIF_NOTIFY_SIGNAL support to all archs,
+> as that will enable a set of cleanups once all of them support it. I'm
+> happy carrying this patch if need be, or it can be funelled through the
+> arch tree. Let me know.
+> 
+>  arch/sh/include/asm/thread_info.h | 4 +++-
+>  arch/sh/kernel/signal_32.c        | 7 +++++--
+>  2 files changed, 8 insertions(+), 3 deletions(-)
+> 
+> diff --git a/arch/sh/include/asm/thread_info.h b/arch/sh/include/asm/thread_info.h
+> index 243ea5150aa0..598d0184ffea 100644
+> --- a/arch/sh/include/asm/thread_info.h
+> +++ b/arch/sh/include/asm/thread_info.h
+> @@ -105,6 +105,7 @@ extern void init_thread_xstate(void);
+>  #define TIF_SYSCALL_TRACE	0	/* syscall trace active */
+>  #define TIF_SIGPENDING		1	/* signal pending */
+>  #define TIF_NEED_RESCHED	2	/* rescheduling necessary */
+> +#define TIF_NOTIFY_SIGNAL	3	/* signal notifications exist */
+>  #define TIF_SINGLESTEP		4	/* singlestepping active */
+>  #define TIF_SYSCALL_AUDIT	5	/* syscall auditing active */
+>  #define TIF_SECCOMP		6	/* secure computing */
+> @@ -116,6 +117,7 @@ extern void init_thread_xstate(void);
+>  #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
+>  #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
+>  #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
+> +#define _TIF_NOTIFY_SIGNAL	(1 << TIF_NOTIFY_SIGNAL)
+>  #define _TIF_SINGLESTEP		(1 << TIF_SINGLESTEP)
+>  #define _TIF_SYSCALL_AUDIT	(1 << TIF_SYSCALL_AUDIT)
+>  #define _TIF_SECCOMP		(1 << TIF_SECCOMP)
+> @@ -132,7 +134,7 @@ extern void init_thread_xstate(void);
+>  #define _TIF_ALLWORK_MASK	(_TIF_SYSCALL_TRACE | _TIF_SIGPENDING      | \
+>  				 _TIF_NEED_RESCHED  | _TIF_SYSCALL_AUDIT   | \
+>  				 _TIF_SINGLESTEP    | _TIF_NOTIFY_RESUME   | \
+> -				 _TIF_SYSCALL_TRACEPOINT)
+> +				 _TIF_SYSCALL_TRACEPOINT | _TIF_NOTIFY_SIGNAL)
+>  
+>  /* work to do on interrupt/exception return */
+>  #define _TIF_WORK_MASK		(_TIF_ALLWORK_MASK & ~(_TIF_SYSCALL_TRACE | \
+> diff --git a/arch/sh/kernel/signal_32.c b/arch/sh/kernel/signal_32.c
+> index 1add47fd31f6..8cfae5a75edb 100644
+> --- a/arch/sh/kernel/signal_32.c
+> +++ b/arch/sh/kernel/signal_32.c
+> @@ -466,7 +466,10 @@ static void do_signal(struct pt_regs *regs, unsigned int save_r0)
+>  	if (!user_mode(regs))
+>  		return;
+>  
+> -	if (get_signal(&ksig)) {
+> +	if (ti_work & _TIF_NOTIFY_SIGNAL)
+> +		tracehook_notify_signal();
+> +
+> +	if ((ti_work & _TIF_SIGPENDING) && get_signal(&ksig)) {
+>  		handle_syscall_restart(save_r0, regs, &ksig.ka.sa);
+>  
+>  		/* Whee!  Actually deliver the signal.  */
+> @@ -499,7 +502,7 @@ asmlinkage void do_notify_resume(struct pt_regs *regs, unsigned int save_r0,
+>  				 unsigned long thread_info_flags)
+>  {
+>  	/* deal with pending signal delivery */
+> -	if (thread_info_flags & _TIF_SIGPENDING)
+> +	if (thread_info_flags & (_TIF_SIGPENDING | _TIF_NOTIFY_SIGNAL))
+>  		do_signal(regs, save_r0);
+>  
+>  	if (thread_info_flags & _TIF_NOTIFY_RESUME)
+> 
 
->> > +# define SECCOMP_ARCH_NATIVE         (AUDIT_ARCH_PPC64 | __SECCOMP_ARCH_LE)
->>
->> You use __SECCOMP_ARCH_LE there, but previously you only defined
->> __SECCOMP_ARCH_LE_BIT.
->>
->> Is there some magic somewhere that defines __SECCOMP_ARCH_LE based on
->> __SECCOMP_ARCH_LE_BIT ?
->
-> Oops, my bad here.
 
-OK :)
-
->> > +# define SECCOMP_ARCH_NATIVE_NR              NR_syscalls
->> > +# define SECCOMP_ARCH_NATIVE_NAME    "ppc64"
->>
->> What's the name used for?
->
-> This is used in the last patch in this series to report in procfs the
-> name of each architecture tracked by the bitmap cache.
-
-OK, yeah I think it would be better if the matched the uname -m values.
-
->> Usually we use "ppc64" for 64-bit big endian and "ppc64le" for 64-bit
->> little endian.
->>
->> And usually we use "ppc" for 32-bit.
->
-> Ok.
-
-
-cheers
+-- 
+Jens Axboe
