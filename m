@@ -1,109 +1,31 @@
-From: Thomas Gleixner <tglx@linutronix.de>
-Date: Fri, 13 Nov 2020 14:02:26 +0000
-Subject: [patch 19/19] tasklets: Prevent kill/unlock_wait deadlock on RT
-Message-Id: <20201113141734.907075915@linutronix.de>
+From: Wang Qing <wangqing@vivo.com>
+Date: Mon, 09 Nov 2020 02:45:51 +0000
+Subject: [PATCH] arch: sh: remove duplicate include
+Message-Id: <1604889952-30841-1-git-send-email-wangqing@vivo.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20201113140207.499353218@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Marc Zyngier <maz@kernel.org>, Rich Felker <dalias@libc.org>, Catalin Marinas <catalin.marinas@arm.com>, Paul McKenney <paulmck@kernel.org>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Richard Weinberger <richard@nod.at>, Frederic Weisbecker <frederic@kernel.org>, Valentin Schneider <valentin.schneider@arm.com>, Jeff Dike <jdike@addtoit.com>, Russell King <linux@armlinux.org.uk>, Yoshinori Sato <ysato@users.sourceforge.jp>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, linux-parisc@vger.kernel.org, Helge Deller <deller@gmx.de>, linux-um@lists.infradead.org, Will Deacon <will@kernel.org>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, linux-arm-kernel@lists.infradead.org, Anton Ivanov <anton.ivanov@cambridgegreys.com>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Wang Qing <wangqing@vivo.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-tasklet_kill() and tasklet_unlock_wait() spin and wait for the
-TASKLET_STATE_SCHED resp. TASKLET_STATE_RUN bit in the tasklet state to be
-cleared. This works on !RT nicely because the corresponding execution can
-only happen on a different CPU.
+Remove duplicate header which is included twice.
 
-On RT softirq processing is preemptible, therefore a task preempting the
-softirq processing thread can spin forever. Prevent this by invoking
-local_bh_disable()/enable() inside the loop. In case that the softirq
-processing thread was preempted by the current task, current will block on
-the local lock which yields the CPU to the preempted softirq processing
-thread. If the tasklet is processed on a different CPU then the
-local_bh_disable()/enable() pair is just a waste of processor cycles.
-
-Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Wang Qing <wangqing@vivo.com>
 ---
- include/linux/interrupt.h |    8 ++------
- kernel/softirq.c          |   38 +++++++++++++++++++++++++++++++++++++-
- 2 files changed, 39 insertions(+), 7 deletions(-)
+ arch/sh/kernel/cpu/sh3/entry.S | 1 -
+ 1 file changed, 1 deletion(-)
 
---- a/include/linux/interrupt.h
-+++ b/include/linux/interrupt.h
-@@ -654,7 +654,7 @@ enum
- 	TASKLET_STATE_RUN	/* Tasklet is running (SMP only) */
- };
+diff --git a/arch/sh/kernel/cpu/sh3/entry.S b/arch/sh/kernel/cpu/sh3/entry.S
+index 25eb809..e48b3dd
+--- a/arch/sh/kernel/cpu/sh3/entry.S
++++ b/arch/sh/kernel/cpu/sh3/entry.S
+@@ -14,7 +14,6 @@
+ #include <cpu/mmu_context.h>
+ #include <asm/page.h>
+ #include <asm/cache.h>
+-#include <asm/thread_info.h>
  
--#ifdef CONFIG_SMP
-+#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT)
- static inline int tasklet_trylock(struct tasklet_struct *t)
- {
- 	return !test_and_set_bit(TASKLET_STATE_RUN, &(t)->state);
-@@ -666,11 +666,7 @@ static inline void tasklet_unlock(struct
- 	clear_bit(TASKLET_STATE_RUN, &(t)->state);
- }
- 
--static inline void tasklet_unlock_wait(struct tasklet_struct *t)
--{
--	while (test_bit(TASKLET_STATE_RUN, &(t)->state))
--		cpu_relax();
--}
-+void tasklet_unlock_wait(struct tasklet_struct *t);
- #else
- static inline int tasklet_trylock(struct tasklet_struct *t) { return 1; }
- static inline void tasklet_unlock(struct tasklet_struct *t) { }
---- a/kernel/softirq.c
-+++ b/kernel/softirq.c
-@@ -851,6 +851,29 @@ void tasklet_init(struct tasklet_struct
- }
- EXPORT_SYMBOL(tasklet_init);
- 
-+#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT)
-+
-+void tasklet_unlock_wait(struct tasklet_struct *t)
-+{
-+	while (test_bit(TASKLET_STATE_RUN, &(t)->state)) {
-+		if (IS_ENABLED(CONFIG_PREEMPT_RT)) {
-+			/*
-+			 * Prevent a live lock when current preempted soft
-+			 * interrupt processing or prevents ksoftirqd from
-+			 * running. If the tasklet runs on a different CPU
-+			 * then this has no effect other than doing the BH
-+			 * disable/enable dance for nothing.
-+			 */
-+			local_bh_disable();
-+			local_bh_enable();
-+		} else {
-+			cpu_relax();
-+		}
-+	}
-+}
-+EXPORT_SYMBOL(tasklet_unlock_wait);
-+#endif
-+
- void tasklet_kill(struct tasklet_struct *t)
- {
- 	if (in_interrupt())
-@@ -858,7 +881,20 @@ void tasklet_kill(struct tasklet_struct
- 
- 	while (test_and_set_bit(TASKLET_STATE_SCHED, &t->state)) {
- 		do {
--			yield();
-+			if (IS_ENABLED(CONFIG_PREEMPT_RT)) {
-+				/*
-+				 * Prevent a live lock when current
-+				 * preempted soft interrupt processing or
-+				 * prevents ksoftirqd from running. If the
-+				 * tasklet runs on a different CPU then
-+				 * this has no effect other than doing the
-+				 * BH disable/enable dance for nothing.
-+				 */
-+				local_bh_disable();
-+				local_bh_enable();
-+			} else {
-+				yield();
-+			}
- 		} while (test_bit(TASKLET_STATE_SCHED, &t->state));
- 	}
- 	tasklet_unlock_wait(t);
+ ! NOTE:
+ ! GNU as (as of 2.9.1) changes bf/s into bt/s and bra, when the address
+-- 
+2.7.4
