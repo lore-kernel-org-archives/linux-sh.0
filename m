@@ -1,7 +1,7 @@
 From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Wed, 11 Nov 2020 13:33:51 +0000
-Subject: [PATCH seccomp v2 5/8] s390: Enable seccomp architecture tracking
-Message-Id: <a381b10aa2c5b1e583642f3cd46ced842d9d4ce5.1605101222.git.yifeifz2@illinois.edu>
+Date: Wed, 11 Nov 2020 13:33:52 +0000
+Subject: [PATCH seccomp v2 6/8] sh: Enable seccomp architecture tracking
+Message-Id: <61ae084cd4783b9b50860d9dedb4a348cf1b7b6f.1605101222.git.yifeifz2@illinois.edu>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1605101222.git.yifeifz2@illinois.edu>
 In-Reply-To: <cover.1605101222.git.yifeifz2@illinois.edu>
@@ -15,30 +15,31 @@ From: YiFei Zhu <yifeifz2@illinois.edu>
 
 To enable seccomp constant action bitmaps, we need to have a static
 mapping to the audit architecture and system call table size. Add these
-for s390.
+for sh.
 
 Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 ---
- arch/s390/include/asm/seccomp.h | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ arch/sh/include/asm/seccomp.h | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/arch/s390/include/asm/seccomp.h b/arch/s390/include/asm/seccomp.h
-index 795bbe0d7ca6..71d46f0ba97b 100644
---- a/arch/s390/include/asm/seccomp.h
-+++ b/arch/s390/include/asm/seccomp.h
-@@ -16,4 +16,13 @@
+diff --git a/arch/sh/include/asm/seccomp.h b/arch/sh/include/asm/seccomp.h
+index 54111e4d32b8..d4578395fd66 100644
+--- a/arch/sh/include/asm/seccomp.h
++++ b/arch/sh/include/asm/seccomp.h
+@@ -8,4 +8,14 @@
+ #define __NR_seccomp_exit __NR_exit
+ #define __NR_seccomp_sigreturn __NR_rt_sigreturn
  
- #include <asm-generic/seccomp.h>
- 
-+#define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_S390X
-+#define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
-+#define SECCOMP_ARCH_NATIVE_NAME	"s390x"
-+#ifdef CONFIG_COMPAT
-+# define SECCOMP_ARCH_COMPAT		AUDIT_ARCH_S390
-+# define SECCOMP_ARCH_COMPAT_NR		NR_syscalls
-+# define SECCOMP_ARCH_COMPAT_NAME	"s390"
++#ifdef CONFIG_CPU_LITTLE_ENDIAN
++#define __SECCOMP_ARCH_LE		__AUDIT_ARCH_LE
++#else
++#define __SECCOMP_ARCH_LE		0
 +#endif
 +
- #endif	/* _ASM_S390_SECCOMP_H */
++#define SECCOMP_ARCH_NATIVE		(AUDIT_ARCH_SH | __SECCOMP_ARCH_LE)
++#define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
++#define SECCOMP_ARCH_NATIVE_NAME	"sh"
++
+ #endif /* __ASM_SECCOMP_H */
 -- 
 2.29.2
