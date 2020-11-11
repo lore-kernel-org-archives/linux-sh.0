@@ -1,7 +1,7 @@
 From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Wed, 11 Nov 2020 13:33:47 +0000
-Subject: [PATCH seccomp v2 1/8] csky: Enable seccomp architecture tracking
-Message-Id: <f9219026d4803b22f3e57e3768b4e42e004ef236.1605101222.git.yifeifz2@illinois.edu>
+Date: Wed, 11 Nov 2020 13:33:53 +0000
+Subject: [PATCH seccomp v2 7/8] xtensa: Enable seccomp architecture tracking
+Message-Id: <79669648ba167d668ea6ffb4884250abcd5ed254.1605101222.git.yifeifz2@illinois.edu>
 List-Id: <linux-sh.vger.kernel.org>
 References: <cover.1605101222.git.yifeifz2@illinois.edu>
 In-Reply-To: <cover.1605101222.git.yifeifz2@illinois.edu>
@@ -15,31 +15,30 @@ From: YiFei Zhu <yifeifz2@illinois.edu>
 
 To enable seccomp constant action bitmaps, we need to have a static
 mapping to the audit architecture and system call table size. Add these
-for csky.
+for xtensa.
 
 Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 ---
- arch/csky/include/asm/Kbuild    |  1 -
- arch/csky/include/asm/seccomp.h | 11 +++++++++++
+ arch/xtensa/include/asm/Kbuild    |  1 -
+ arch/xtensa/include/asm/seccomp.h | 11 +++++++++++
  2 files changed, 11 insertions(+), 1 deletion(-)
- create mode 100644 arch/csky/include/asm/seccomp.h
+ create mode 100644 arch/xtensa/include/asm/seccomp.h
 
-diff --git a/arch/csky/include/asm/Kbuild b/arch/csky/include/asm/Kbuild
-index 64876e59e2ef..93372255984d 100644
---- a/arch/csky/include/asm/Kbuild
-+++ b/arch/csky/include/asm/Kbuild
-@@ -4,6 +4,5 @@ generic-y += gpio.h
- generic-y += kvm_para.h
- generic-y += local64.h
+diff --git a/arch/xtensa/include/asm/Kbuild b/arch/xtensa/include/asm/Kbuild
+index c59c42a1221a..9718e9593564 100644
+--- a/arch/xtensa/include/asm/Kbuild
++++ b/arch/xtensa/include/asm/Kbuild
+@@ -7,5 +7,4 @@ generic-y += mcs_spinlock.h
+ generic-y += param.h
  generic-y += qrwlock.h
+ generic-y += qspinlock.h
 -generic-y += seccomp.h
  generic-y += user.h
- generic-y += vmlinux.lds.h
-diff --git a/arch/csky/include/asm/seccomp.h b/arch/csky/include/asm/seccomp.h
+diff --git a/arch/xtensa/include/asm/seccomp.h b/arch/xtensa/include/asm/seccomp.h
 new file mode 100644
-index 000000000000..d33e758126fb
+index 000000000000..f1cb6b0a9e1f
 --- /dev/null
-+++ b/arch/csky/include/asm/seccomp.h
++++ b/arch/xtensa/include/asm/seccomp.h
 @@ -0,0 +1,11 @@
 +/* SPDX-License-Identifier: GPL-2.0-only */
 +#ifndef _ASM_SECCOMP_H
@@ -47,9 +46,9 @@ index 000000000000..d33e758126fb
 +
 +#include <asm-generic/seccomp.h>
 +
-+#define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_CSKY
++#define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_XTENSA
 +#define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
-+#define SECCOMP_ARCH_NATIVE_NAME	"csky"
++#define SECCOMP_ARCH_NATIVE_NAME	"xtensa"
 +
 +#endif /* _ASM_SECCOMP_H */
 -- 
