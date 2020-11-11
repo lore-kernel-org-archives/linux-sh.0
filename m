@@ -1,128 +1,66 @@
-From: Thomas Gleixner <tglx@linutronix.de>
-Date: Fri, 13 Nov 2020 14:02:20 +0000
-Subject: [patch 13/19] softirq: Move various protections into inline helpers
-Message-Id: <20201113141734.207605126@linutronix.de>
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+Date: Wed, 11 Nov 2020 13:33:48 +0000
+Subject: [PATCH seccomp v2 2/8] parisc: Enable seccomp architecture tracking
+Message-Id: <9bb86c546eda753adf5270425e7353202dbce87c.1605101222.git.yifeifz2@illinois.edu>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20201113140207.499353218@linutronix.de>
+References: <cover.1605101222.git.yifeifz2@illinois.edu>
+In-Reply-To: <cover.1605101222.git.yifeifz2@illinois.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Marc Zyngier <maz@kernel.org>, Rich Felker <dalias@libc.org>, Catalin Marinas <catalin.marinas@arm.com>, Paul McKenney <paulmck@kernel.org>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Richard Weinberger <richard@nod.at>, Frederic Weisbecker <frederic@kernel.org>, Valentin Schneider <valentin.schneider@arm.com>, Jeff Dike <jdike@addtoit.com>, Russell King <linux@armlinux.org.uk>, Yoshinori Sato <ysato@users.sourceforge.jp>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, linux-parisc@vger.kernel.org, Helge Deller <deller@gmx.de>, linux-um@lists.infradead.org, Will Deacon <will@kernel.org>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, linux-arm-kernel@lists.infradead.org, Anton Ivanov <anton.ivanov@cambridgegreys.com>
+To: containers@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>, linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>, linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>, linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>, Aleksa Sarai <cyphar@cyphar.com>, Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, Andy Lutomirski <luto@amacapital.net>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, David Laight <David.Laight@aculab.com>, Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
 
-To allow reuse of the bulk of softirq processing code for RT and to avoid
-#ifdeffery all over the place, split protections for various code sections
-out into inline helpers so the RT variant can just replace them in one go.
+From: YiFei Zhu <yifeifz2@illinois.edu>
 
-Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+To enable seccomp constant action bitmaps, we need to have a static
+mapping to the audit architecture and system call table size. Add these
+for parisc.
+
+Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 ---
- kernel/softirq.c |   53 ++++++++++++++++++++++++++++++++++++++++++++---------
- 1 file changed, 44 insertions(+), 9 deletions(-)
+ arch/parisc/include/asm/Kbuild    |  1 -
+ arch/parisc/include/asm/seccomp.h | 22 ++++++++++++++++++++++
+ 2 files changed, 22 insertions(+), 1 deletion(-)
+ create mode 100644 arch/parisc/include/asm/seccomp.h
 
---- a/kernel/softirq.c
-+++ b/kernel/softirq.c
-@@ -204,6 +204,42 @@ void __local_bh_enable_ip(unsigned long
- }
- EXPORT_SYMBOL(__local_bh_enable_ip);
- 
-+static inline void local_bh_disable_irq_enter(void)
-+{
-+	local_bh_disable();
-+}
+diff --git a/arch/parisc/include/asm/Kbuild b/arch/parisc/include/asm/Kbuild
+index e3ee5c0bfe80..f16c4db80116 100644
+--- a/arch/parisc/include/asm/Kbuild
++++ b/arch/parisc/include/asm/Kbuild
+@@ -5,5 +5,4 @@ generated-y += syscall_table_c32.h
+ generic-y += kvm_para.h
+ generic-y += local64.h
+ generic-y += mcs_spinlock.h
+-generic-y += seccomp.h
+ generic-y += user.h
+diff --git a/arch/parisc/include/asm/seccomp.h b/arch/parisc/include/asm/seccomp.h
+new file mode 100644
+index 000000000000..b058b2220322
+--- /dev/null
++++ b/arch/parisc/include/asm/seccomp.h
+@@ -0,0 +1,22 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef _ASM_SECCOMP_H
++#define _ASM_SECCOMP_H
 +
-+static inline void local_bh_enable_irq_enter(void)
-+{
-+	_local_bh_enable();
-+}
++#include <asm-generic/seccomp.h>
 +
-+static inline void softirq_handle_begin(void)
-+{
-+	__local_bh_disable_ip(_RET_IP_, SOFTIRQ_OFFSET);
-+}
++#ifdef CONFIG_64BIT
++# define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_PARISC64
++# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
++# define SECCOMP_ARCH_NATIVE_NAME	"parisc64"
++# ifdef CONFIG_COMPAT
++#  define SECCOMP_ARCH_COMPAT		AUDIT_ARCH_PARISC
++#  define SECCOMP_ARCH_COMPAT_NR	NR_syscalls
++#  define SECCOMP_ARCH_COMPAT_NAME	"parisc"
++# endif
++#else /* !CONFIG_64BIT */
++# define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_PARISC
++# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
++# define SECCOMP_ARCH_NATIVE_NAME	"parisc"
++#endif
 +
-+static inline void softirq_handle_end(void)
-+{
-+	__local_bh_enable(SOFTIRQ_OFFSET);
-+	WARN_ON_ONCE(in_interrupt());
-+}
-+
-+static inline void ksoftirqd_run_begin(void)
-+{
-+	local_irq_disable();
-+}
-+
-+static inline void ksoftirqd_run_end(void)
-+{
-+	local_irq_enable();
-+}
-+
-+static inline bool should_wake_ksoftirqd(void)
-+{
-+	return true;
-+}
-+
- static inline void invoke_softirq(void)
- {
- 	if (ksoftirqd_running(local_softirq_pending()))
-@@ -317,7 +353,7 @@ asmlinkage __visible void __softirq_entr
- 	pending = local_softirq_pending();
- 	account_irq_enter_time(current);
- 
--	__local_bh_disable_ip(_RET_IP_, SOFTIRQ_OFFSET);
-+	softirq_handle_begin();
- 	in_hardirq = lockdep_softirq_start();
- 
- restart:
-@@ -367,8 +403,7 @@ asmlinkage __visible void __softirq_entr
- 
- 	lockdep_softirq_end(in_hardirq);
- 	account_irq_exit_time(current);
--	__local_bh_enable(SOFTIRQ_OFFSET);
--	WARN_ON_ONCE(in_interrupt());
-+	softirq_handle_end();
- 	current_restore_flags(old_flags, PF_MEMALLOC);
- }
- 
-@@ -382,9 +417,9 @@ void irq_enter_rcu(void)
- 		 * Prevent raise_softirq from needlessly waking up ksoftirqd
- 		 * here, as softirq will be serviced on return from interrupt.
- 		 */
--		local_bh_disable();
-+		local_bh_disable_irq_enter();
- 		tick_irq_enter();
--		_local_bh_enable();
-+		local_bh_enable_irq_enter();
- 	}
- 	__irq_enter();
- }
-@@ -467,7 +502,7 @@ inline void raise_softirq_irqoff(unsigne
- 	 * Otherwise we wake up ksoftirqd to make sure we
- 	 * schedule the softirq soon.
- 	 */
--	if (!in_interrupt())
-+	if (!in_interrupt() && should_wake_ksoftirqd())
- 		wakeup_softirqd();
- }
- 
-@@ -645,18 +680,18 @@ static int ksoftirqd_should_run(unsigned
- 
- static void run_ksoftirqd(unsigned int cpu)
- {
--	local_irq_disable();
-+	ksoftirqd_run_begin();
- 	if (local_softirq_pending()) {
- 		/*
- 		 * We can safely run softirq on inline stack, as we are not deep
- 		 * in the task stack here.
- 		 */
- 		__do_softirq();
--		local_irq_enable();
-+		ksoftirqd_run_end();
- 		cond_resched();
- 		return;
- 	}
--	local_irq_enable();
-+	ksoftirqd_run_end();
- }
- 
- #ifdef CONFIG_HOTPLUG_CPU
++#endif /* _ASM_SECCOMP_H */
+-- 
+2.29.2
