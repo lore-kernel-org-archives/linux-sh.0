@@ -1,58 +1,45 @@
-From: Thomas Gleixner <tglx@linutronix.de>
-Date: Fri, 13 Nov 2020 14:02:12 +0000
-Subject: [patch 05/19] ARM: irqstat: Get rid of duplicated declaration
-Message-Id: <20201113141733.276505871@linutronix.de>
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+Date: Wed, 11 Nov 2020 13:33:50 +0000
+Subject: [PATCH seccomp v2 4/8] riscv: Enable seccomp architecture tracking
+Message-Id: <58ef925d00505cbb77478fa6bd2b48ab2d902460.1605101222.git.yifeifz2@illinois.edu>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20201113140207.499353218@linutronix.de>
+References: <cover.1605101222.git.yifeifz2@illinois.edu>
+In-Reply-To: <cover.1605101222.git.yifeifz2@illinois.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Rich Felker <dalias@libc.org>, Catalin Marinas <catalin.marinas@arm.com>, Paul McKenney <paulmck@kernel.org>, Arnd Bergmann <arnd@arndb.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Peter Zijlstra <peterz@infradead.org>, Marc Zyngier <maz@kernel.org>, Frederic Weisbecker <frederic@kernel.org>, linux-sh@vger.kernel.org, Jeff Dike <jdike@addtoit.com>, Russell King <linux@armlinux.org.uk>, Valentin Schneider <valentin.schneider@arm.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Richard Weinberger <richard@nod.at>, linux-parisc@vger.kernel.org, Helge Deller <deller@gmx.de>, linux-um@lists.infradead.org, Will Deacon <will@kernel.org>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, linux-arm-kernel@lists.infradead.org, Anton Ivanov <anton.ivanov@cambridgegreys.com>
+To: containers@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>, linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>, linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>, linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>, Aleksa Sarai <cyphar@cyphar.com>, Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, Andy Lutomirski <luto@amacapital.net>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, David Laight <David.Laight@aculab.com>, Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
 
-irq_cpustat_t is exactly the same as the asm-generic one. Define
-ack_bad_irq so the generic header does not emit the generic version of it.
+From: YiFei Zhu <yifeifz2@illinois.edu>
 
-Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Cc: Russell King <linux@armlinux.org.uk>
-Cc: Marc Zyngier <maz@kernel.org>
-Cc: Valentin Schneider <valentin.schneider@arm.com>
-Cc: linux-arm-kernel@lists.infradead.org
+To enable seccomp constant action bitmaps, we need to have a static
+mapping to the audit architecture and system call table size. Add these
+for riscv.
+
+Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 ---
- arch/arm/include/asm/hardirq.h |   11 +++--------
- arch/arm/include/asm/irq.h     |    2 ++
- 2 files changed, 5 insertions(+), 8 deletions(-)
+ arch/riscv/include/asm/seccomp.h | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
---- a/arch/arm/include/asm/hardirq.h
-+++ b/arch/arm/include/asm/hardirq.h
-@@ -2,16 +2,11 @@
- #ifndef __ASM_HARDIRQ_H
- #define __ASM_HARDIRQ_H
+diff --git a/arch/riscv/include/asm/seccomp.h b/arch/riscv/include/asm/seccomp.h
+index bf7744ee3b3d..c7ee6a3507be 100644
+--- a/arch/riscv/include/asm/seccomp.h
++++ b/arch/riscv/include/asm/seccomp.h
+@@ -7,4 +7,14 @@
  
--#include <linux/cache.h>
--#include <linux/threads.h>
- #include <asm/irq.h>
+ #include <asm-generic/seccomp.h>
  
--typedef struct {
--	unsigned int __softirq_pending;
--} ____cacheline_aligned irq_cpustat_t;
--
--#include <linux/irq_cpustat.h>	/* Standard mappings for irq_cpustat_t above */
--
- #define __ARCH_IRQ_EXIT_IRQS_DISABLED	1
-+#define ack_bad_irq ack_bad_irq
++#ifdef CONFIG_64BIT
++# define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_RISCV64
++# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
++# define SECCOMP_ARCH_NATIVE_NAME	"riscv64"
++#else /* !CONFIG_64BIT */
++# define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_RISCV32
++# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
++# define SECCOMP_ARCH_NATIVE_NAME	"riscv32"
++#endif
 +
-+#include <asm-generic/hardirq.h>
- 
- #endif /* __ASM_HARDIRQ_H */
---- a/arch/arm/include/asm/irq.h
-+++ b/arch/arm/include/asm/irq.h
-@@ -31,6 +31,8 @@ void handle_IRQ(unsigned int, struct pt_
- void init_IRQ(void);
- 
- #ifdef CONFIG_SMP
-+#include <linux/cpumask.h>
-+
- extern void arch_trigger_cpumask_backtrace(const cpumask_t *mask,
- 					   bool exclude_self);
- #define arch_trigger_cpumask_backtrace arch_trigger_cpumask_backtrace
+ #endif /* _ASM_SECCOMP_H */
+-- 
+2.29.2
