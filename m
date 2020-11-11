@@ -1,31 +1,56 @@
-From: Wang Qing <wangqing@vivo.com>
-Date: Mon, 09 Nov 2020 02:45:51 +0000
-Subject: [PATCH] arch: sh: remove duplicate include
-Message-Id: <1604889952-30841-1-git-send-email-wangqing@vivo.com>
+From: YiFei Zhu <zhuyifei1999@gmail.com>
+Date: Wed, 11 Nov 2020 13:33:47 +0000
+Subject: [PATCH seccomp v2 1/8] csky: Enable seccomp architecture tracking
+Message-Id: <f9219026d4803b22f3e57e3768b4e42e004ef236.1605101222.git.yifeifz2@illinois.edu>
 List-Id: <linux-sh.vger.kernel.org>
+References: <cover.1605101222.git.yifeifz2@illinois.edu>
+In-Reply-To: <cover.1605101222.git.yifeifz2@illinois.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Wang Qing <wangqing@vivo.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: containers@lists.linux-foundation.org
+Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>, linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>, linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>, linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>, Aleksa Sarai <cyphar@cyphar.com>, Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, Andy Lutomirski <luto@amacapital.net>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, David Laight <David.Laight@aculab.com>, Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
 
-Remove duplicate header which is included twice.
+From: YiFei Zhu <yifeifz2@illinois.edu>
 
-Signed-off-by: Wang Qing <wangqing@vivo.com>
+To enable seccomp constant action bitmaps, we need to have a static
+mapping to the audit architecture and system call table size. Add these
+for csky.
+
+Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
 ---
- arch/sh/kernel/cpu/sh3/entry.S | 1 -
- 1 file changed, 1 deletion(-)
+ arch/csky/include/asm/Kbuild    |  1 -
+ arch/csky/include/asm/seccomp.h | 11 +++++++++++
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+ create mode 100644 arch/csky/include/asm/seccomp.h
 
-diff --git a/arch/sh/kernel/cpu/sh3/entry.S b/arch/sh/kernel/cpu/sh3/entry.S
-index 25eb809..e48b3dd
---- a/arch/sh/kernel/cpu/sh3/entry.S
-+++ b/arch/sh/kernel/cpu/sh3/entry.S
-@@ -14,7 +14,6 @@
- #include <cpu/mmu_context.h>
- #include <asm/page.h>
- #include <asm/cache.h>
--#include <asm/thread_info.h>
- 
- ! NOTE:
- ! GNU as (as of 2.9.1) changes bf/s into bt/s and bra, when the address
+diff --git a/arch/csky/include/asm/Kbuild b/arch/csky/include/asm/Kbuild
+index 64876e59e2ef..93372255984d 100644
+--- a/arch/csky/include/asm/Kbuild
++++ b/arch/csky/include/asm/Kbuild
+@@ -4,6 +4,5 @@ generic-y += gpio.h
+ generic-y += kvm_para.h
+ generic-y += local64.h
+ generic-y += qrwlock.h
+-generic-y += seccomp.h
+ generic-y += user.h
+ generic-y += vmlinux.lds.h
+diff --git a/arch/csky/include/asm/seccomp.h b/arch/csky/include/asm/seccomp.h
+new file mode 100644
+index 000000000000..d33e758126fb
+--- /dev/null
++++ b/arch/csky/include/asm/seccomp.h
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#ifndef _ASM_SECCOMP_H
++#define _ASM_SECCOMP_H
++
++#include <asm-generic/seccomp.h>
++
++#define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_CSKY
++#define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
++#define SECCOMP_ARCH_NATIVE_NAME	"csky"
++
++#endif /* _ASM_SECCOMP_H */
 -- 
-2.7.4
+2.29.2
