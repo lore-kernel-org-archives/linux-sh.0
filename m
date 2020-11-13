@@ -1,43 +1,58 @@
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-Date: Tue, 10 Nov 2020 15:50:29 +0000
-Subject: [PATCH resend v2] sh: boards: Replace <linux/clk-provider.h> by <linux/of_clk.h>
-Message-Id: <20201110155029.3286090-1-geert+renesas@glider.be>
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 13 Nov 2020 14:02:12 +0000
+Subject: [patch 05/19] ARM: irqstat: Get rid of duplicated declaration
+Message-Id: <20201113141733.276505871@linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20201113140207.499353218@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org, linux-clk@vger.kernel.org, linux-kernel@vger.kernel.org, Geert Uytterhoeven <geert+renesas@glider.be>, Stephen Boyd <sboyd@kernel.org>
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Rich Felker <dalias@libc.org>, Catalin Marinas <catalin.marinas@arm.com>, Paul McKenney <paulmck@kernel.org>, Arnd Bergmann <arnd@arndb.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, Peter Zijlstra <peterz@infradead.org>, Marc Zyngier <maz@kernel.org>, Frederic Weisbecker <frederic@kernel.org>, linux-sh@vger.kernel.org, Jeff Dike <jdike@addtoit.com>, Russell King <linux@armlinux.org.uk>, Valentin Schneider <valentin.schneider@arm.com>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Richard Weinberger <richard@nod.at>, linux-parisc@vger.kernel.org, Helge Deller <deller@gmx.de>, linux-um@lists.infradead.org, Will Deacon <will@kernel.org>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, linux-arm-kernel@lists.infradead.org, Anton Ivanov <anton.ivanov@cambridgegreys.com>
 
-The SuperH/J2 DT platform code is not a clock provider, and just needs
-to call of_clk_init().
+irq_cpustat_t is exactly the same as the asm-generic one. Define
+ack_bad_irq so the generic header does not emit the generic version of it.
 
-Hence it can include <linux/of_clk.h> instead of <linux/clk-provider.h>.
-
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Stephen Boyd <sboyd@kernel.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Russell King <linux@armlinux.org.uk>
+Cc: Marc Zyngier <maz@kernel.org>
+Cc: Valentin Schneider <valentin.schneider@arm.com>
+Cc: linux-arm-kernel@lists.infradead.org
 ---
-v2:
-  - Add Reviewed-by.
----
- arch/sh/boards/of-generic.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/include/asm/hardirq.h |   11 +++--------
+ arch/arm/include/asm/irq.h     |    2 ++
+ 2 files changed, 5 insertions(+), 8 deletions(-)
 
-diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
-index bffbe69b2236a1ee..921d76fc33583f78 100644
---- a/arch/sh/boards/of-generic.c
-+++ b/arch/sh/boards/of-generic.c
-@@ -6,10 +6,10 @@
-  */
+--- a/arch/arm/include/asm/hardirq.h
++++ b/arch/arm/include/asm/hardirq.h
+@@ -2,16 +2,11 @@
+ #ifndef __ASM_HARDIRQ_H
+ #define __ASM_HARDIRQ_H
  
- #include <linux/of.h>
-+#include <linux/of_clk.h>
- #include <linux/of_fdt.h>
- #include <linux/clocksource.h>
- #include <linux/irqchip.h>
--#include <linux/clk-provider.h>
- #include <asm/machvec.h>
- #include <asm/rtc.h>
+-#include <linux/cache.h>
+-#include <linux/threads.h>
+ #include <asm/irq.h>
  
--- 
-2.25.1
+-typedef struct {
+-	unsigned int __softirq_pending;
+-} ____cacheline_aligned irq_cpustat_t;
+-
+-#include <linux/irq_cpustat.h>	/* Standard mappings for irq_cpustat_t above */
+-
+ #define __ARCH_IRQ_EXIT_IRQS_DISABLED	1
++#define ack_bad_irq ack_bad_irq
++
++#include <asm-generic/hardirq.h>
+ 
+ #endif /* __ASM_HARDIRQ_H */
+--- a/arch/arm/include/asm/irq.h
++++ b/arch/arm/include/asm/irq.h
+@@ -31,6 +31,8 @@ void handle_IRQ(unsigned int, struct pt_
+ void init_IRQ(void);
+ 
+ #ifdef CONFIG_SMP
++#include <linux/cpumask.h>
++
+ extern void arch_trigger_cpumask_backtrace(const cpumask_t *mask,
+ 					   bool exclude_self);
+ #define arch_trigger_cpumask_backtrace arch_trigger_cpumask_backtrace
