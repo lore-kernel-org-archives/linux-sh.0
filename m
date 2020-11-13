@@ -1,55 +1,42 @@
-From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Tue, 03 Nov 2020 13:43:03 +0000
-Subject: [PATCH seccomp 7/8] xtensa: Enable seccomp architecture tracking
-Message-Id: <eab25a03fbf296e65e5292c7a25d15285e93e6de.1604410035.git.yifeifz2@illinois.edu>
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 13 Nov 2020 14:02:07 +0000
+Subject: [patch 00/19] softirq: Cleanups and RT awareness
+Message-Id: <20201113140207.499353218@linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1604410035.git.yifeifz2@illinois.edu>
-In-Reply-To: <cover.1604410035.git.yifeifz2@illinois.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: containers@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>, linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>, linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>, linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>, Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, Andy Lutomirski <luto@amacapital.net>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, David Laight <David.Laight@aculab.com>, Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Marc Zyngier <maz@kernel.org>, Rich Felker <dalias@libc.org>, Catalin Marinas <catalin.marinas@arm.com>, Paul McKenney <paulmck@kernel.org>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Richard Weinberger <richard@nod.at>, Frederic Weisbecker <frederic@kernel.org>, Valentin Schneider <valentin.schneider@arm.com>, Jeff Dike <jdike@addtoit.com>, Russell King <linux@armlinux.org.uk>, Yoshinori Sato <ysato@users.sourceforge.jp>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, linux-parisc@vger.kernel.org, Helge Deller <deller@gmx.de>, linux-um@lists.infradead.org, Will Deacon <will@kernel.org>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, linux-arm-kernel@lists.infradead.org, Anton Ivanov <anton.ivanov@cambridgegreys.com>
 
-From: YiFei Zhu <yifeifz2@illinois.edu>
-
-To enable seccomp constant action bitmaps, we need to have a static
-mapping to the audit architecture and system call table size. Add these
-for xtensa.
-
-Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
----
- arch/xtensa/include/asm/Kbuild    |  1 -
- arch/xtensa/include/asm/seccomp.h | 11 +++++++++++
- 2 files changed, 11 insertions(+), 1 deletion(-)
- create mode 100644 arch/xtensa/include/asm/seccomp.h
-
-diff --git a/arch/xtensa/include/asm/Kbuild b/arch/xtensa/include/asm/Kbuild
-index c59c42a1221a..9718e9593564 100644
---- a/arch/xtensa/include/asm/Kbuild
-+++ b/arch/xtensa/include/asm/Kbuild
-@@ -7,5 +7,4 @@ generic-y += mcs_spinlock.h
- generic-y += param.h
- generic-y += qrwlock.h
- generic-y += qspinlock.h
--generic-y += seccomp.h
- generic-y += user.h
-diff --git a/arch/xtensa/include/asm/seccomp.h b/arch/xtensa/include/asm/seccomp.h
-new file mode 100644
-index 000000000000..f1cb6b0a9e1f
---- /dev/null
-+++ b/arch/xtensa/include/asm/seccomp.h
-@@ -0,0 +1,11 @@
-+/* SPDX-License-Identifier: GPL-2.0-only */
-+#ifndef _ASM_SECCOMP_H
-+#define _ASM_SECCOMP_H
-+
-+#include <asm-generic/seccomp.h>
-+
-+#define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_XTENSA
-+#define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
-+#define SECCOMP_ARCH_NATIVE_NAME	"xtensa"
-+
-+#endif /* _ASM_SECCOMP_H */
--- 
-2.29.2
+UlQgcnVucyBzb2Z0aXJxIHByb2Nlc3NpbmcgYWx3YXlzIGluIHRocmVhZCBjb250ZXh0IGFuZCBp
+dCByZXF1aXJlcyB0aGF0CmJvdGggdGhlIHNvZnRpcnEgZXhlY3V0aW9uIGFuZCB0aGUgQkggZGlz
+YWJsZWQgc2VjdGlvbnMgYXJlIHByZWVtcHRpYmxlLgoKVGhpcyBpcyBhY2hpZXZlZCBieSBzZXJp
+YWxpemF0aW9uIHRocm91Z2ggcGVyIENQVSBsb2NhbCBsb2NrcyBhbmQKc3Vic3RpdHV0aW5nIGEg
+ZmV3IHBhcnRzIG9mIHRoZSBleGlzdGluZyBzb2Z0aXJxIHByb2Nlc3NpbmcgY29kZSB3aXRoCmhl
+bHBlciBmdW5jdGlvbnMuCgpUaGUgZm9sbG93aW5nIHNlcmllcyBoYXMgdHdvIHBhcnRzOgoKICAg
+IDEpIENsZWFudXAgaXJxX2NwdXN0YXRzIGFuZCBjb25zb2xpZGF0aW9uIG9mIHRoZSBwcmVlbXB0
+IGNvdW50IG1hemUKICAgICAgIHNvIHNvZnRpcnFfY291bnQoKSBhbmQgcmVsYXRlZCBwYXJ0cyBj
+YW4gYmUgc3Vic3RpdHV0ZWQgZm9yIFJUCgogICAgMikgVGhlIGFjdHVhbCBjb3JlIGltcGxlbWVu
+dGF0aW9uIGluY2x1ZGluZyB0aGUgcmVxdWlyZWQgZml4dXBzIGZvcgogICAgICAgTk9IWiwgUkNV
+IGFuZCB0YXNrbGV0cy4KClRoZSBzZXJpZXMgaXMgYWxzbyBhdmFpbGFibGUgZnJvbSBnaXQ6Cgog
+IGdpdDovL2dpdC5rZXJuZWwub3JnL3B1Yi9zY20vbGludXgva2VybmVsL2dpdC90Z2x4L2RldmVs
+LmdpdCBzb2Z0aXJxCgpUaGUgUlQgdmFyaWFudCBoYXMgc3VjZXNzZnVsbHkgYmVlbiB0ZXN0ZWQg
+aW4gdGhlIGN1cnJlbnQgNS4xMC1ydApwYXRjaGVzLiBGb3Igbm9uLVJUIGtlcm5lbHMgdGhlcmUg
+aXMgbm8gZnVuY3Rpb25hbCBjaGFuZ2UuCgpUaGFua3MsCgoJdGdseAotLS0KIGIvYXJjaC9hcm0v
+aW5jbHVkZS9hc20vaGFyZGlycS5oICAgIHwgICAxMSAKIGIvYXJjaC9hcm0vaW5jbHVkZS9hc20v
+aXJxLmggICAgICAgIHwgICAgMiAKIGIvYXJjaC9hcm02NC9pbmNsdWRlL2FzbS9oYXJkaXJxLmgg
+IHwgICAgNyAKIGIvYXJjaC9wYXJpc2MvaW5jbHVkZS9hc20vaGFyZGlycS5oIHwgICAgMSAKIGIv
+YXJjaC9zaC9pbmNsdWRlL2FzbS9oYXJkaXJxLmggICAgIHwgICAxNCAtCiBiL2FyY2gvc2gva2Vy
+bmVsL2lycS5jICAgICAgICAgICAgICB8ICAgIDIgCiBiL2FyY2gvc2gva2VybmVsL3RyYXBzLmMg
+ICAgICAgICAgICB8ICAgIDIgCiBiL2FyY2gvdW0vaW5jbHVkZS9hc20vaGFyZGlycS5oICAgICB8
+ICAgMTcgLQogYi9pbmNsdWRlL2FzbS1nZW5lcmljL2hhcmRpcnEuaCAgICAgfCAgICA2IAogYi9p
+bmNsdWRlL2xpbnV4L2JvdHRvbV9oYWxmLmggICAgICAgfCAgICA4IAogYi9pbmNsdWRlL2xpbnV4
+L2hhcmRpcnEuaCAgICAgICAgICAgfCAgICAxIAogYi9pbmNsdWRlL2xpbnV4L2ludGVycnVwdC5o
+ICAgICAgICAgfCAgIDEzIC0KIGIvaW5jbHVkZS9saW51eC9wcmVlbXB0LmggICAgICAgICAgIHwg
+ICAzNiArLS0KIGIvaW5jbHVkZS9saW51eC9yY3VwZGF0ZS5oICAgICAgICAgIHwgICAgMyAKIGIv
+aW5jbHVkZS9saW51eC9zY2hlZC5oICAgICAgICAgICAgIHwgICAgMyAKIGIva2VybmVsL3NvZnRp
+cnEuYyAgICAgICAgICAgICAgICAgIHwgIDQxMiArKysrKysrKysrKysrKysrKysrKysrKysrKysr
+KystLS0tLS0KIGIva2VybmVsL3RpbWUvdGljay1zY2hlZC5jICAgICAgICAgIHwgICAgMiAKIGlu
+Y2x1ZGUvbGludXgvaXJxX2NwdXN0YXQuaCAgICAgICAgIHwgICAyOCAtLQogMTggZmlsZXMgY2hh
+bmdlZCwgNDA1IGluc2VydGlvbnMoKyksIDE2MyBkZWxldGlvbnMoLSkKCgoKCgoK
