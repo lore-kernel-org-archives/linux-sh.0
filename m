@@ -1,65 +1,167 @@
-From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Wed, 11 Nov 2020 13:33:46 +0000
-Subject: [PATCH seccomp v2 0/8] seccomp: add bitmap cache support on remaining arches and report cache in pro
-Message-Id: <cover.1605101222.git.yifeifz2@illinois.edu>
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 13 Nov 2020 14:02:18 +0000
+Subject: [patch 11/19] softirq: Move related code into one section
+Message-Id: <20201113141733.974214480@linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20201113140207.499353218@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: containers@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>, linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>, linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>, linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>, Aleksa Sarai <cyphar@cyphar.com>, Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, Andy Lutomirski <luto@amacapital.net>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, David Laight <David.Laight@aculab.com>, Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Marc Zyngier <maz@kernel.org>, Rich Felker <dalias@libc.org>, Catalin Marinas <catalin.marinas@arm.com>, Paul McKenney <paulmck@kernel.org>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Richard Weinberger <richard@nod.at>, Frederic Weisbecker <frederic@kernel.org>, Valentin Schneider <valentin.schneider@arm.com>, Jeff Dike <jdike@addtoit.com>, Russell King <linux@armlinux.org.uk>, Yoshinori Sato <ysato@users.sourceforge.jp>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, linux-parisc@vger.kernel.org, Helge Deller <deller@gmx.de>, linux-um@lists.infradead.org, Will Deacon <will@kernel.org>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, linux-arm-kernel@lists.infradead.org, Anton Ivanov <anton.ivanov@cambridgegreys.com>
 
-From: YiFei Zhu <yifeifz2@illinois.edu>
+To prepare for adding a RT aware variant of softirq serialization and
+processing move related code into one section so the necessary #ifdeffery
+is reduced to one.
 
-This patch series enables bitmap cache for the remaining arches with
-SECCOMP_FILTER, other than MIPS.
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ kernel/softirq.c |  107 +++++++++++++++++++++++++++----------------------------
+ 1 file changed, 54 insertions(+), 53 deletions(-)
 
-I was unable to find any of the arches having subarch-specific NR_syscalls
-macros, so generic NR_syscalls is used. SH's syscall_get_arch seems to
-only have the 32-bit subarch implementation. I'm not sure if this is
-expected.
-
-This series has not been tested; I have not built all the cross compilers
-necessary to build test, let alone run the kernel or benchmark the
-performance, so help on making sure the bitmap cache works as expected
-(selftests/seccomp/{seccomp_benchmark,seccomp_bpf}) would be appreciated.
-The series applies on top of Kees's for-next/seccomp branch.
-
-v1 -> v2:
-* ppc, sh: s/__SECCOMP_ARCH_LE_BIT/__SECCOMP_ARCH_LE/
-* ppc: add "le" suffix to arch name when the arch is little endian.
-* ppc: add explanation of why __LITTLE_ENDIAN__ is used to commit message.
-
-YiFei Zhu (8):
-  csky: Enable seccomp architecture tracking
-  parisc: Enable seccomp architecture tracking
-  powerpc: Enable seccomp architecture tracking
-  riscv: Enable seccomp architecture tracking
-  s390: Enable seccomp architecture tracking
-  sh: Enable seccomp architecture tracking
-  xtensa: Enable seccomp architecture tracking
-  seccomp/cache: Report cache data through /proc/pid/seccomp_cache
-
- arch/Kconfig                       | 15 ++++++++
- arch/csky/include/asm/Kbuild       |  1 -
- arch/csky/include/asm/seccomp.h    | 11 ++++++
- arch/parisc/include/asm/Kbuild     |  1 -
- arch/parisc/include/asm/seccomp.h  | 22 +++++++++++
- arch/powerpc/include/asm/seccomp.h | 23 ++++++++++++
- arch/riscv/include/asm/seccomp.h   | 10 +++++
- arch/s390/include/asm/seccomp.h    |  9 +++++
- arch/sh/include/asm/seccomp.h      | 10 +++++
- arch/xtensa/include/asm/Kbuild     |  1 -
- arch/xtensa/include/asm/seccomp.h  | 11 ++++++
- fs/proc/base.c                     |  6 +++
- include/linux/seccomp.h            |  7 ++++
- kernel/seccomp.c                   | 59 ++++++++++++++++++++++++++++++
- 14 files changed, 183 insertions(+), 3 deletions(-)
- create mode 100644 arch/csky/include/asm/seccomp.h
- create mode 100644 arch/parisc/include/asm/seccomp.h
- create mode 100644 arch/xtensa/include/asm/seccomp.h
-
-
-base-commit: 38c37e8fd3d2590c4234d8cfbc22158362f0eb04
---
-2.29.2
+--- a/kernel/softirq.c
++++ b/kernel/softirq.c
+@@ -92,6 +92,13 @@ static bool ksoftirqd_running(unsigned l
+ 		!__kthread_should_park(tsk);
+ }
+ 
++#ifdef CONFIG_TRACE_IRQFLAGS
++DEFINE_PER_CPU(int, hardirqs_enabled);
++DEFINE_PER_CPU(int, hardirq_context);
++EXPORT_PER_CPU_SYMBOL_GPL(hardirqs_enabled);
++EXPORT_PER_CPU_SYMBOL_GPL(hardirq_context);
++#endif
++
+ /*
+  * preempt_count and SOFTIRQ_OFFSET usage:
+  * - preempt_count is changed by SOFTIRQ_OFFSET on entering or leaving
+@@ -102,17 +109,11 @@ static bool ksoftirqd_running(unsigned l
+  * softirq and whether we just have bh disabled.
+  */
+ 
++#ifdef CONFIG_TRACE_IRQFLAGS
+ /*
+- * This one is for softirq.c-internal use,
+- * where hardirqs are disabled legitimately:
++ * This is for softirq.c-internal use, where hardirqs are disabled
++ * legitimately:
+  */
+-#ifdef CONFIG_TRACE_IRQFLAGS
+-
+-DEFINE_PER_CPU(int, hardirqs_enabled);
+-DEFINE_PER_CPU(int, hardirq_context);
+-EXPORT_PER_CPU_SYMBOL_GPL(hardirqs_enabled);
+-EXPORT_PER_CPU_SYMBOL_GPL(hardirq_context);
+-
+ void __local_bh_disable_ip(unsigned long ip, unsigned int cnt)
+ {
+ 	unsigned long flags;
+@@ -203,6 +204,50 @@ void __local_bh_enable_ip(unsigned long
+ }
+ EXPORT_SYMBOL(__local_bh_enable_ip);
+ 
++static inline void invoke_softirq(void)
++{
++	if (ksoftirqd_running(local_softirq_pending()))
++		return;
++
++	if (!force_irqthreads) {
++#ifdef CONFIG_HAVE_IRQ_EXIT_ON_IRQ_STACK
++		/*
++		 * We can safely execute softirq on the current stack if
++		 * it is the irq stack, because it should be near empty
++		 * at this stage.
++		 */
++		__do_softirq();
++#else
++		/*
++		 * Otherwise, irq_exit() is called on the task stack that can
++		 * be potentially deep already. So call softirq in its own stack
++		 * to prevent from any overrun.
++		 */
++		do_softirq_own_stack();
++#endif
++	} else {
++		wakeup_softirqd();
++	}
++}
++
++asmlinkage __visible void do_softirq(void)
++{
++	__u32 pending;
++	unsigned long flags;
++
++	if (in_interrupt())
++		return;
++
++	local_irq_save(flags);
++
++	pending = local_softirq_pending();
++
++	if (pending && !ksoftirqd_running(pending))
++		do_softirq_own_stack();
++
++	local_irq_restore(flags);
++}
++
+ /*
+  * We restart softirq processing for at most MAX_SOFTIRQ_RESTART times,
+  * but break the loop if need_resched() is set or after 2 ms.
+@@ -327,24 +372,6 @@ asmlinkage __visible void __softirq_entr
+ 	current_restore_flags(old_flags, PF_MEMALLOC);
+ }
+ 
+-asmlinkage __visible void do_softirq(void)
+-{
+-	__u32 pending;
+-	unsigned long flags;
+-
+-	if (in_interrupt())
+-		return;
+-
+-	local_irq_save(flags);
+-
+-	pending = local_softirq_pending();
+-
+-	if (pending && !ksoftirqd_running(pending))
+-		do_softirq_own_stack();
+-
+-	local_irq_restore(flags);
+-}
+-
+ /**
+  * irq_enter_rcu - Enter an interrupt context with RCU watching
+  */
+@@ -371,32 +398,6 @@ void irq_enter(void)
+ 	irq_enter_rcu();
+ }
+ 
+-static inline void invoke_softirq(void)
+-{
+-	if (ksoftirqd_running(local_softirq_pending()))
+-		return;
+-
+-	if (!force_irqthreads) {
+-#ifdef CONFIG_HAVE_IRQ_EXIT_ON_IRQ_STACK
+-		/*
+-		 * We can safely execute softirq on the current stack if
+-		 * it is the irq stack, because it should be near empty
+-		 * at this stage.
+-		 */
+-		__do_softirq();
+-#else
+-		/*
+-		 * Otherwise, irq_exit() is called on the task stack that can
+-		 * be potentially deep already. So call softirq in its own stack
+-		 * to prevent from any overrun.
+-		 */
+-		do_softirq_own_stack();
+-#endif
+-	} else {
+-		wakeup_softirqd();
+-	}
+-}
+-
+ static inline void tick_irq_exit(void)
+ {
+ #ifdef CONFIG_NO_HZ_COMMON
