@@ -1,35 +1,40 @@
-From: Jens Axboe <axboe@kernel.dk>
-Date: Tue, 17 Nov 2020 15:06:30 +0000
-Subject: Re: [PATCH] sh: add support for TIF_NOTIFY_SIGNAL
-Message-Id: <1047f3e5-4599-c34f-3176-9f41d2e1246b@kernel.dk>
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 13 Nov 2020 14:02:13 +0000
+Subject: [patch 06/19] arm64: irqstat: Get rid of duplicated declaration
+Message-Id: <20201113141733.392015387@linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5fcc82b4-89ae-3bca-10ab-6ad933565cee@kernel.dk>
-In-Reply-To: <5fcc82b4-89ae-3bca-10ab-6ad933565cee@kernel.dk>
+References: <20201113140207.499353218@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Rich Felker <dalias@libc.org>, Paul McKenney <paulmck@kernel.org>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Catalin Marinas <catalin.marinas@arm.com>, Frederic Weisbecker <frederic@kernel.org>, Valentin Schneider <valentin.schneider@arm.com>, Jeff Dike <jdike@addtoit.com>, Russell King <linux@armlinux.org.uk>, Yoshinori Sato <ysato@users.sourceforge.jp>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, Richard Weinberger <richard@nod.at>, linux-parisc@vger.kernel.org, Helge Deller <deller@gmx.de>, Marc Zyngier <maz@kernel.org>, linux-um@lists.infradead.org, Will Deacon <will@kernel.org>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, linux-arm-kernel@lists.infradead.org, Anton Ivanov <anton.ivanov@cambridgegreys.com>
 
-On 11/16/20 10:26 PM, John Paul Adrian Glaubitz wrote:
-> Hi Jens!
-> 
-> On 11/9/20 3:14 PM, Jens Axboe wrote:
->>> Sorry for the delay. I'm busy at the moment and my SH board is currently
->>> building the Perl 5.32 package for Debian. Will try to test your patches
->>> by tomorrow, also ia64.
->>
->> Thanks, both would be appreciated! Just CC'ed you on the updated patch
->> for sh.
-> 
-> Is this still relevant for testing? I'm ready to test now, much later than
-> I thought, sorry.
-> 
-> I'm going to build Linus' latest kernel for my SH and IA64 machines now
-> and then I can test additional patches on top of it.
+irq_cpustat_t is exactly the same as the asm-generic one. Define
+ack_bad_irq so the generic header does not emit the generic version of it.
 
-Thanks, would definitely still appreciate testing. You can just run
-linux-next if you want, it's got everything in there. Or apply the
-separate patches to -git, either approach is fine.
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Will Deacon <will@kernel.org>
+Cc: Marc Zyngier <maz@kernel.org>
+Cc: linux-arm-kernel@lists.infradead.org
+---
+ arch/arm64/include/asm/hardirq.h |    7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
--- 
-Jens Axboe
+--- a/arch/arm64/include/asm/hardirq.h
++++ b/arch/arm64/include/asm/hardirq.h
+@@ -13,11 +13,8 @@
+ #include <asm/kvm_arm.h>
+ #include <asm/sysreg.h>
+ 
+-typedef struct {
+-	unsigned int __softirq_pending;
+-} ____cacheline_aligned irq_cpustat_t;
+-
+-#include <linux/irq_cpustat.h>	/* Standard mappings for irq_cpustat_t above */
++#define ack_bad_irq ack_bad_irq
++#include <asm-generic/hardirq.h>
+ 
+ #define __ARCH_IRQ_EXIT_IRQS_DISABLED	1
+ 
