@@ -1,45 +1,60 @@
-From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Tue, 03 Nov 2020 13:43:02 +0000
-Subject: [PATCH seccomp 6/8] sh: Enable seccomp architecture tracking
-Message-Id: <46d7f8d02bdaadf364a59db2d60f43466227b3af.1604410035.git.yifeifz2@illinois.edu>
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 13 Nov 2020 14:02:16 +0000
+Subject: [patch 09/19] irqstat: Move declaration into asm-generic/hardirq.h
+Message-Id: <20201113141733.737377332@linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1604410035.git.yifeifz2@illinois.edu>
-In-Reply-To: <cover.1604410035.git.yifeifz2@illinois.edu>
+References: <20201113140207.499353218@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: containers@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>, linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>, linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>, linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>, Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, Andy Lutomirski <luto@amacapital.net>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, David Laight <David.Laight@aculab.com>, Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Marc Zyngier <maz@kernel.org>, Rich Felker <dalias@libc.org>, Catalin Marinas <catalin.marinas@arm.com>, Paul McKenney <paulmck@kernel.org>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Richard Weinberger <richard@nod.at>, Frederic Weisbecker <frederic@kernel.org>, Valentin Schneider <valentin.schneider@arm.com>, Jeff Dike <jdike@addtoit.com>, Russell King <linux@armlinux.org.uk>, Yoshinori Sato <ysato@users.sourceforge.jp>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, linux-parisc@vger.kernel.org, Helge Deller <deller@gmx.de>, linux-um@lists.infradead.org, Will Deacon <will@kernel.org>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, linux-arm-kernel@lists.infradead.org, Anton Ivanov <anton.ivanov@cambridgegreys.com>
 
-From: YiFei Zhu <yifeifz2@illinois.edu>
+Move the declaration of the irq_cpustat per cpu variable to
+asm-generic/hardirq.h and remove the now empty linux/irq_cpustat.h header.
 
-To enable seccomp constant action bitmaps, we need to have a static
-mapping to the audit architecture and system call table size. Add these
-for sh.
-
-Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
- arch/sh/include/asm/seccomp.h | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ include/asm-generic/hardirq.h |    3 ++-
+ include/linux/irq_cpustat.h   |   24 ------------------------
+ 2 files changed, 2 insertions(+), 25 deletions(-)
 
-diff --git a/arch/sh/include/asm/seccomp.h b/arch/sh/include/asm/seccomp.h
-index 54111e4d32b8..b8d169292a34 100644
---- a/arch/sh/include/asm/seccomp.h
-+++ b/arch/sh/include/asm/seccomp.h
-@@ -8,4 +8,14 @@
- #define __NR_seccomp_exit __NR_exit
- #define __NR_seccomp_sigreturn __NR_rt_sigreturn
+--- a/include/asm-generic/hardirq.h
++++ b/include/asm-generic/hardirq.h
+@@ -12,7 +12,8 @@ typedef struct {
+ #endif
+ } ____cacheline_aligned irq_cpustat_t;
  
-+#ifdef CONFIG_CPU_LITTLE_ENDIAN
-+#define __SECCOMP_ARCH_LE_BIT		__AUDIT_ARCH_LE
-+#else
-+#define __SECCOMP_ARCH_LE_BIT		0
-+#endif
+-#include <linux/irq_cpustat.h>	/* Standard mappings for irq_cpustat_t above */
++DECLARE_PER_CPU_ALIGNED(irq_cpustat_t, irq_stat);
 +
-+#define SECCOMP_ARCH_NATIVE		(AUDIT_ARCH_SH | __SECCOMP_ARCH_LE)
-+#define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
-+#define SECCOMP_ARCH_NATIVE_NAME	"sh"
-+
- #endif /* __ASM_SECCOMP_H */
--- 
-2.29.2
+ #include <linux/irq.h>
+ 
+ #ifndef ack_bad_irq
+--- a/include/linux/irq_cpustat.h
++++ /dev/null
+@@ -1,24 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0 */
+-#ifndef __irq_cpustat_h
+-#define __irq_cpustat_h
+-
+-/*
+- * Contains default mappings for irq_cpustat_t, used by almost every
+- * architecture.  Some arch (like s390) have per cpu hardware pages and
+- * they define their own mappings for irq_stat.
+- *
+- * Keith Owens <kaos@ocs.com.au> July 2000.
+- */
+-
+-
+-/*
+- * Simple wrappers reducing source bloat.  Define all irq_stat fields
+- * here, even ones that are arch dependent.  That way we get common
+- * definitions instead of differing sets for each arch.
+- */
+-
+-#ifndef __ARCH_IRQ_STAT
+-DECLARE_PER_CPU_ALIGNED(irq_cpustat_t, irq_stat);	/* defined in asm/hardirq.h */
+-#endif
+-
+-#endif	/* __irq_cpustat_h */
