@@ -1,89 +1,76 @@
-From: Kees Cook <keescook@chromium.org>
-Date: Wed, 04 Nov 2020 00:11:40 +0000
-Subject: Re: [PATCH seccomp 0/8] seccomp: add bitmap cache support on remaining arches and report cache in pr
-Message-Id: <202011031606.423EC9E@keescook>
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 13 Nov 2020 14:02:17 +0000
+Subject: [patch 10/19] preempt: Cleanup the macro maze a bit
+Message-Id: <20201113141733.864469886@linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1604410035.git.yifeifz2@illinois.edu>
-In-Reply-To: <cover.1604410035.git.yifeifz2@illinois.edu>
+References: <20201113140207.499353218@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: YiFei Zhu <zhuyifei1999@gmail.com>
-Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>, linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>, linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>, linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>, linux-xtensa@linux-xtensa.org, Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>, Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org, containers@lists.linux-foundation.org, linux-kernel@vger.kernel.org, Andy Lutomirski <luto@amacapital.net>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, David Laight <David.Laight@aculab.com>, Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Marc Zyngier <maz@kernel.org>, Rich Felker <dalias@libc.org>, Catalin Marinas <catalin.marinas@arm.com>, Paul McKenney <paulmck@kernel.org>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Richard Weinberger <richard@nod.at>, Frederic Weisbecker <frederic@kernel.org>, Valentin Schneider <valentin.schneider@arm.com>, Jeff Dike <jdike@addtoit.com>, Russell King <linux@armlinux.org.uk>, Yoshinori Sato <ysato@users.sourceforge.jp>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, linux-parisc@vger.kernel.org, Helge Deller <deller@gmx.de>, linux-um@lists.infradead.org, Will Deacon <will@kernel.org>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, linux-arm-kernel@lists.infradead.org, Anton Ivanov <anton.ivanov@cambridgegreys.com>
 
-On Tue, Nov 03, 2020 at 07:42:56AM -0600, YiFei Zhu wrote:
-> From: YiFei Zhu <yifeifz2@illinois.edu>
-> 
-> This patch series enables bitmap cache for the remaining arches with
-> SECCOMP_FILTER, other than MIPS.
-> 
-> I was unable to find any of the arches having subarch-specific NR_syscalls
-> macros, so generic NR_syscalls is used. SH's syscall_get_arch seems to
-> only have the 32-bit subarch implementation. I'm not sure if this is
-> expected.
-> 
-> This series has not been tested; I have not built all the cross compilers
-> necessary to build test, let alone run the kernel or benchmark the
-> performance, so help on making sure the bitmap cache works as expected
-> would be appreciated. The series applies on top of Kees's for-next/seccomp
-> branch.
+Make the macro maze consistent and prepare it for adding the RT variant for
+BH accounting.
 
-Thank you! This looks good. I wonder if the different handling of little
-endian is worth solving -- I'm suspicious about powerpc's use of
-__LITTLE_ENDIAN__ vs a CONFIG, but I guess the compiler would match the
-target endian-ness. Regardless, it captures what the architectures are
-doing, and gets things standardized.
+ - Use nmi_count() for the NMI portion of preempt count
+ - Introduce in_hardirq() to make the naming consistent and non-ambiguos
+ - Use the macros to create combined checks (e.g. in_task()) so the
+   softirq representation for RT just falls into place.
+ - Update comments and move the deprecated macros aside
 
-> 
-> YiFei Zhu (8):
->   csky: Enable seccomp architecture tracking
->   parisc: Enable seccomp architecture tracking
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/preempt.h |   30 ++++++++++++++++--------------
+ 1 file changed, 16 insertions(+), 14 deletions(-)
 
-I don't have compilers for these.
-
->   powerpc: Enable seccomp architecture tracking
->   riscv: Enable seccomp architecture tracking
->   s390: Enable seccomp architecture tracking
-
-These I can build-test immediately.
-
->   sh: Enable seccomp architecture tracking
->   xtensa: Enable seccomp architecture tracking
-
-These two are available in Ubuntu's cross compiler set, so I'll get them
-added to my cross-builders.
-
->   seccomp/cache: Report cache data through /proc/pid/seccomp_cache
-
-In the meantime, I'll wait a bit to see if we can get some Acks/Reviews
-from arch maintainers. :)
-
--Kees
-
-> 
->  arch/Kconfig                       | 15 ++++++++
->  arch/csky/include/asm/Kbuild       |  1 -
->  arch/csky/include/asm/seccomp.h    | 11 ++++++
->  arch/parisc/include/asm/Kbuild     |  1 -
->  arch/parisc/include/asm/seccomp.h  | 22 +++++++++++
->  arch/powerpc/include/asm/seccomp.h | 21 +++++++++++
->  arch/riscv/include/asm/seccomp.h   | 10 +++++
->  arch/s390/include/asm/seccomp.h    |  9 +++++
->  arch/sh/include/asm/seccomp.h      | 10 +++++
->  arch/xtensa/include/asm/Kbuild     |  1 -
->  arch/xtensa/include/asm/seccomp.h  | 11 ++++++
->  fs/proc/base.c                     |  6 +++
->  include/linux/seccomp.h            |  7 ++++
->  kernel/seccomp.c                   | 59 ++++++++++++++++++++++++++++++
->  14 files changed, 181 insertions(+), 3 deletions(-)
->  create mode 100644 arch/csky/include/asm/seccomp.h
->  create mode 100644 arch/parisc/include/asm/seccomp.h
->  create mode 100644 arch/xtensa/include/asm/seccomp.h
-> 
-> 
-> base-commit: 38c37e8fd3d2590c4234d8cfbc22158362f0eb04
-> --
-> 2.29.2
-
--- 
-Kees Cook
+--- a/include/linux/preempt.h
++++ b/include/linux/preempt.h
+@@ -77,31 +77,33 @@
+ /* preempt_count() and related functions, depends on PREEMPT_NEED_RESCHED */
+ #include <asm/preempt.h>
+ 
++#define nmi_count()	(preempt_count() & NMI_MASK)
+ #define hardirq_count()	(preempt_count() & HARDIRQ_MASK)
+ #define softirq_count()	(preempt_count() & SOFTIRQ_MASK)
+-#define irq_count()	(preempt_count() & (HARDIRQ_MASK | SOFTIRQ_MASK \
+-				 | NMI_MASK))
++#define irq_count()	(nmi_count() | hardirq_count() | softirq_count())
+ 
+ /*
+- * Are we doing bottom half or hardware interrupt processing?
++ * Macros to retrieve the current execution context:
+  *
+- * in_irq()       - We're in (hard) IRQ context
++ * in_nmi()		- We're in NMI context
++ * in_hardirq()		- We're in hard IRQ context
++ * in_serving_softirq()	- We're in softirq context
++ * in_task()		- We're in task context
++ */
++#define in_nmi()		(nmi_count())
++#define in_hardirq()		(hardirq_count())
++#define in_serving_softirq()	(softirq_count() & SOFTIRQ_OFFSET)
++#define in_task()		(!(in_nmi() | in_hardirq() | in_serving_softirq()))
++
++/*
++ * The following macros are deprecated and should not be used in new code:
++ * in_irq()       - Obsolete version of in_hardirq()
+  * in_softirq()   - We have BH disabled, or are processing softirqs
+  * in_interrupt() - We're in NMI,IRQ,SoftIRQ context or have BH disabled
+- * in_serving_softirq() - We're in softirq context
+- * in_nmi()       - We're in NMI context
+- * in_task()	  - We're in task context
+- *
+- * Note: due to the BH disabled confusion: in_softirq(),in_interrupt() really
+- *       should not be used in new code.
+  */
+ #define in_irq()		(hardirq_count())
+ #define in_softirq()		(softirq_count())
+ #define in_interrupt()		(irq_count())
+-#define in_serving_softirq()	(softirq_count() & SOFTIRQ_OFFSET)
+-#define in_nmi()		(preempt_count() & NMI_MASK)
+-#define in_task()		(!(preempt_count() & \
+-				   (NMI_MASK | HARDIRQ_MASK | SOFTIRQ_OFFSET)))
+ 
+ /*
+  * The preempt_count offset after preempt_disable();
