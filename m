@@ -1,45 +1,109 @@
-From: YiFei Zhu <zhuyifei1999@gmail.com>
-Date: Tue, 03 Nov 2020 13:43:00 +0000
-Subject: [PATCH seccomp 4/8] riscv: Enable seccomp architecture tracking
-Message-Id: <c2a5b127d7b52557bca6526eeaa73c91fa989816.1604410035.git.yifeifz2@illinois.edu>
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 13 Nov 2020 14:02:26 +0000
+Subject: [patch 19/19] tasklets: Prevent kill/unlock_wait deadlock on RT
+Message-Id: <20201113141734.907075915@linutronix.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1604410035.git.yifeifz2@illinois.edu>
-In-Reply-To: <cover.1604410035.git.yifeifz2@illinois.edu>
+References: <20201113140207.499353218@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: containers@lists.linux-foundation.org
-Cc: linux-sh@vger.kernel.org, Tobin Feldman-Fitzthum <tobin@ibm.com>, Hubertus Franke <frankeh@us.ibm.com>, Jack Chen <jianyan2@illinois.edu>, linux-riscv@lists.infradead.org, Andrea Arcangeli <aarcange@redhat.com>, linux-s390@vger.kernel.org, YiFei Zhu <yifeifz2@illinois.edu>, linux-csky@vger.kernel.org, Tianyin Xu <tyxu@illinois.edu>, linux-xtensa@linux-xtensa.org, Kees Cook <keescook@chromium.org>, Jann Horn <jannh@google.com>, Valentin Rothberg <vrothber@redhat.com>, Josep Torrellas <torrella@illinois.edu>, Will Drewry <wad@chromium.org>, linux-parisc@vger.kernel.org, linux-kernel@vger.kernel.org, Andy Lutomirski <luto@amacapital.net>, Dimitrios Skarlatos <dskarlat@cs.cmu.edu>, David Laight <David.Laight@aculab.com>, Giuseppe Scrivano <gscrivan@redhat.com>, linuxppc-dev@lists.ozlabs.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Marc Zyngier <maz@kernel.org>, Rich Felker <dalias@libc.org>, Catalin Marinas <catalin.marinas@arm.com>, Paul McKenney <paulmck@kernel.org>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>, Richard Weinberger <richard@nod.at>, Frederic Weisbecker <frederic@kernel.org>, Valentin Schneider <valentin.schneider@arm.com>, Jeff Dike <jdike@addtoit.com>, Russell King <linux@armlinux.org.uk>, Yoshinori Sato <ysato@users.sourceforge.jp>, "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, linux-parisc@vger.kernel.org, Helge Deller <deller@gmx.de>, linux-um@lists.infradead.org, Will Deacon <will@kernel.org>, Sebastian Andrzej Siewior <bigeasy@linutronix.de>, linux-arm-kernel@lists.infradead.org, Anton Ivanov <anton.ivanov@cambridgegreys.com>
 
-From: YiFei Zhu <yifeifz2@illinois.edu>
+tasklet_kill() and tasklet_unlock_wait() spin and wait for the
+TASKLET_STATE_SCHED resp. TASKLET_STATE_RUN bit in the tasklet state to be
+cleared. This works on !RT nicely because the corresponding execution can
+only happen on a different CPU.
 
-To enable seccomp constant action bitmaps, we need to have a static
-mapping to the audit architecture and system call table size. Add these
-for riscv.
+On RT softirq processing is preemptible, therefore a task preempting the
+softirq processing thread can spin forever. Prevent this by invoking
+local_bh_disable()/enable() inside the loop. In case that the softirq
+processing thread was preempted by the current task, current will block on
+the local lock which yields the CPU to the preempted softirq processing
+thread. If the tasklet is processed on a different CPU then the
+local_bh_disable()/enable() pair is just a waste of processor cycles.
 
-Signed-off-by: YiFei Zhu <yifeifz2@illinois.edu>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
- arch/riscv/include/asm/seccomp.h | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ include/linux/interrupt.h |    8 ++------
+ kernel/softirq.c          |   38 +++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 39 insertions(+), 7 deletions(-)
 
-diff --git a/arch/riscv/include/asm/seccomp.h b/arch/riscv/include/asm/seccomp.h
-index bf7744ee3b3d..c7ee6a3507be 100644
---- a/arch/riscv/include/asm/seccomp.h
-+++ b/arch/riscv/include/asm/seccomp.h
-@@ -7,4 +7,14 @@
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -654,7 +654,7 @@ enum
+ 	TASKLET_STATE_RUN	/* Tasklet is running (SMP only) */
+ };
  
- #include <asm-generic/seccomp.h>
+-#ifdef CONFIG_SMP
++#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT)
+ static inline int tasklet_trylock(struct tasklet_struct *t)
+ {
+ 	return !test_and_set_bit(TASKLET_STATE_RUN, &(t)->state);
+@@ -666,11 +666,7 @@ static inline void tasklet_unlock(struct
+ 	clear_bit(TASKLET_STATE_RUN, &(t)->state);
+ }
  
-+#ifdef CONFIG_64BIT
-+# define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_RISCV64
-+# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
-+# define SECCOMP_ARCH_NATIVE_NAME	"riscv64"
-+#else /* !CONFIG_64BIT */
-+# define SECCOMP_ARCH_NATIVE		AUDIT_ARCH_RISCV32
-+# define SECCOMP_ARCH_NATIVE_NR		NR_syscalls
-+# define SECCOMP_ARCH_NATIVE_NAME	"riscv32"
+-static inline void tasklet_unlock_wait(struct tasklet_struct *t)
+-{
+-	while (test_bit(TASKLET_STATE_RUN, &(t)->state))
+-		cpu_relax();
+-}
++void tasklet_unlock_wait(struct tasklet_struct *t);
+ #else
+ static inline int tasklet_trylock(struct tasklet_struct *t) { return 1; }
+ static inline void tasklet_unlock(struct tasklet_struct *t) { }
+--- a/kernel/softirq.c
++++ b/kernel/softirq.c
+@@ -851,6 +851,29 @@ void tasklet_init(struct tasklet_struct
+ }
+ EXPORT_SYMBOL(tasklet_init);
+ 
++#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT)
++
++void tasklet_unlock_wait(struct tasklet_struct *t)
++{
++	while (test_bit(TASKLET_STATE_RUN, &(t)->state)) {
++		if (IS_ENABLED(CONFIG_PREEMPT_RT)) {
++			/*
++			 * Prevent a live lock when current preempted soft
++			 * interrupt processing or prevents ksoftirqd from
++			 * running. If the tasklet runs on a different CPU
++			 * then this has no effect other than doing the BH
++			 * disable/enable dance for nothing.
++			 */
++			local_bh_disable();
++			local_bh_enable();
++		} else {
++			cpu_relax();
++		}
++	}
++}
++EXPORT_SYMBOL(tasklet_unlock_wait);
 +#endif
 +
- #endif /* _ASM_SECCOMP_H */
--- 
-2.29.2
+ void tasklet_kill(struct tasklet_struct *t)
+ {
+ 	if (in_interrupt())
+@@ -858,7 +881,20 @@ void tasklet_kill(struct tasklet_struct
+ 
+ 	while (test_and_set_bit(TASKLET_STATE_SCHED, &t->state)) {
+ 		do {
+-			yield();
++			if (IS_ENABLED(CONFIG_PREEMPT_RT)) {
++				/*
++				 * Prevent a live lock when current
++				 * preempted soft interrupt processing or
++				 * prevents ksoftirqd from running. If the
++				 * tasklet runs on a different CPU then
++				 * this has no effect other than doing the
++				 * BH disable/enable dance for nothing.
++				 */
++				local_bh_disable();
++				local_bh_enable();
++			} else {
++				yield();
++			}
+ 		} while (test_bit(TASKLET_STATE_SCHED, &t->state));
+ 	}
+ 	tasklet_unlock_wait(t);
