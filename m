@@ -2,124 +2,102 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4853DC56202
-	for <linux-sh@archiver.kernel.org>; Fri, 20 Nov 2020 13:27:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6D551C5519F
+	for <linux-sh@archiver.kernel.org>; Sun, 22 Nov 2020 14:59:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E1E09222BA
-	for <linux-sh@archiver.kernel.org>; Fri, 20 Nov 2020 13:27:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2A9AE20771
+	for <linux-sh@archiver.kernel.org>; Sun, 22 Nov 2020 14:59:22 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="HEhswiIm";
-	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="RZkuXUkt"
+	dkim=pass (2048-bit key) header.d=landley-net.20150623.gappssmtp.com header.i=@landley-net.20150623.gappssmtp.com header.b="w8hh9Rym"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726719AbgKTN1V (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 20 Nov 2020 08:27:21 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50730 "EHLO
+        id S1727825AbgKVO7B (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 22 Nov 2020 09:59:01 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55588 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726640AbgKTN1U (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 20 Nov 2020 08:27:20 -0500
-Received: from galois.linutronix.de (Galois.linutronix.de [IPv6:2a0a:51c0:0:12e:550::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 68F35C0613CF;
-        Fri, 20 Nov 2020 05:27:20 -0800 (PST)
-From:   Thomas Gleixner <tglx@linutronix.de>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020; t=1605878838;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=cHqHNj7D5d9Cv8EzyvHSjgSpDYg4ETCAPafLpAfo//Q=;
-        b=HEhswiImS/dENygnbZ2I5TlKQ+4kWcihUrziVeV1d3qqfS3S26UnHRv/Ped0aUKXHjC9Nx
-        DgwT754SAUbLML1w4KO9RwBfh4sQ2O3PSAV5pp6fY0aRCPMDk+Ryzev4plDG17YzlQhCFN
-        dqjGb9veqbjv5/eG77x99PMJN/E0iPrxWkOOXMljHyyxsQXrY5Kjc24r2mEGZtvBSokEmc
-        +wT4EvfQN1L+I+rTB/YyTlA9HawaS+cC7iosldQh5dV51/fJq8R7Kzu0OdcAxdEJcpNSd6
-        zzvupz6s5Mp5GkbewQvx7NRr/TQ8pUfDtBascYj+a0qodcbS7k6TmB+sk3flmw==
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020e; t=1605878838;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=cHqHNj7D5d9Cv8EzyvHSjgSpDYg4ETCAPafLpAfo//Q=;
-        b=RZkuXUktbRUflzdqY4fITcI9dyb3o37qGwy9CStVW1rfFicwzfXkw4b0liQC4o1VRZpd5V
-        cwwxQS4BdJvQIABw==
-To:     Frederic Weisbecker <frederic@kernel.org>
-Cc:     LKML <linux-kernel@vger.kernel.org>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Paul McKenney <paulmck@kernel.org>,
-        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
-        Arnd Bergmann <arnd@arndb.de>,
-        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-        Helge Deller <deller@gmx.de>, linux-parisc@vger.kernel.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        Jeff Dike <jdike@addtoit.com>,
-        Richard Weinberger <richard@nod.at>,
-        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-        linux-um@lists.infradead.org, Russell King <linux@armlinux.org.uk>,
-        Marc Zyngier <maz@kernel.org>,
-        Valentin Schneider <valentin.schneider@arm.com>,
-        linux-arm-kernel@lists.infradead.org,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>
-Subject: Re: [patch 14/19] softirq: Make softirq control and processing RT aware
-In-Reply-To: <20201120002621.GA32792@lothringen>
-References: <20201113140207.499353218@linutronix.de> <20201113141734.324061522@linutronix.de> <20201120002621.GA32792@lothringen>
-Date:   Fri, 20 Nov 2020 14:27:18 +0100
-Message-ID: <87o8jsnop5.fsf@nanos.tec.linutronix.de>
+        with ESMTP id S1727817AbgKVO7B (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 22 Nov 2020 09:59:01 -0500
+Received: from mail-pg1-x529.google.com (mail-pg1-x529.google.com [IPv6:2607:f8b0:4864:20::529])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D6A79C0613CF
+        for <linux-sh@vger.kernel.org>; Sun, 22 Nov 2020 06:58:59 -0800 (PST)
+Received: by mail-pg1-x529.google.com with SMTP id v21so11841301pgi.2
+        for <linux-sh@vger.kernel.org>; Sun, 22 Nov 2020 06:58:59 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20150623.gappssmtp.com; s=20150623;
+        h=subject:from:to:references:message-id:date:user-agent:mime-version
+         :in-reply-to:content-language:content-transfer-encoding;
+        bh=kCKnqpS4v1c6yYr/H2VANlA8vsESB1rYjGCx5rncfR8=;
+        b=w8hh9RymH64lFx8F+tAB4aflaL4SmPk/GuLgv1/nOaiudatFgp80F/HoWWlRhuUWhV
+         qjJ1MXsNqa1qLzD/IriZjzZnexh1u85hDqjAJzXbK8ELq3B2C9A6qCNnYNJdiIsKTcSc
+         5i4tuMeRAp+11uL4H/UVbzsJQmZLxurhvSXdRzj12gC3BGrbpW22V6FlMe32pNsuWEhI
+         vZ+wrsQuVJzhSwNDfKFvf9PkJES4xkHxoOrrRP/Xr+ixTq3dwCV7YrelZ7huAorzMwZA
+         iIP6ZQc/FR/ZSKd8/IoW+5P3GeYG2iMTg8PABIH8VVa5P5DPdDABM/2RyiFxQ0Wx6szD
+         Mc0w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:from:to:references:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=kCKnqpS4v1c6yYr/H2VANlA8vsESB1rYjGCx5rncfR8=;
+        b=pqfB5QagaVc2qrSPg/NcHSJIYv8G3x+aX1WJDKQ6loDgBI38SQnDC0xK1viQTh8Kw8
+         laIYcTJ9p3C7LP2HmpcYw/xZOEKBUCS8KqaA1ItN0Lc2qSy6eMeA1Nc06gN4M4KJWXFy
+         KWJprWuAhXUU2LQGtzonSrm//fzLfVlK0nouUzqunodcXzOoexF40jcsHXcHQSoOpDN/
+         RwydloDo/mi8gl7mNsWSb0Rankirrnp8OpSRJ8U0Cr9gklvn+BQgQkCgTzThBw2eaRJH
+         bR2jCXA5ykQa158gSk/N5two22AjTS86La5IBLh9NAOMOdBrskAog9eSeVjLemXNh1KT
+         kIzQ==
+X-Gm-Message-State: AOAM530vObG+QvuxIbl3yKveqKyyBlCIIt2lv7nlDymLVAMPGnVQPaeO
+        Oe2L1rK2cWyZGxmUlXyYOW2eQjJqTD8taLcz
+X-Google-Smtp-Source: ABdhPJx2n7B13ERxrk/xtKZ0MVfwmUxUGGdkN9ZtNwtQY+xN/FpLU7ZZvjPQD5xn15RMh8CCEXcTCg==
+X-Received: by 2002:a63:4956:: with SMTP id y22mr24451135pgk.266.1606057138984;
+        Sun, 22 Nov 2020 06:58:58 -0800 (PST)
+Received: from [192.168.11.16] (softbank126112255110.biz.bbtec.net. [126.112.255.110])
+        by smtp.gmail.com with ESMTPSA id e8sm9366427pfj.157.2020.11.22.06.58.56
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 22 Nov 2020 06:58:57 -0800 (PST)
+Subject: Re: message ids
+From:   Rob Landley <rob@landley.net>
+To:     Rich Felker <dalias@libc.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>
+References: <401c48c1-ccf1-8177-d45b-eb632ba799df@landley.net>
+Message-ID: <e43e6569-99bb-4e24-e9c5-45f9c3244d86@landley.net>
+Date:   Sun, 22 Nov 2020 09:10:08 -0600
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.12.0
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <401c48c1-ccf1-8177-d45b-eb632ba799df@landley.net>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Nov 20 2020 at 01:26, Frederic Weisbecker wrote:
-> On Fri, Nov 13, 2020 at 03:02:21PM +0100, Thomas Gleixner wrote:
->> +void __local_bh_disable_ip(unsigned long ip, unsigned int cnt)
->> +{
->> +	unsigned long flags;
->> +	int newcnt;
->> +
->> +	WARN_ON_ONCE(in_hardirq());
->> +
->> +	/* First entry of a task into a BH disabled section? */
->> +	if (!current->softirq_disable_cnt) {
->> +		if (preemptible()) {
->> +			local_lock(&softirq_ctrl.lock);
->> +			rcu_read_lock();
->
-> Ah you lock RCU because local_bh_disable() implies it and
-> since it doesn't disable preemption anymore, you must do it
-> explicitly?
->
-> Perhaps local_lock() should itself imply rcu_read_lock() ?
+On 11/12/20 1:47 AM, Rob Landley wrote:
+> Message-Id: <20200917154547.139019-1-fazilyildiran@gmail.com>
+> Message-ID: <93d98bab-01dd-5530-9fdb-76faf8dcdd41@infradead.org>
+> Message-ID: <20200919025206.17729-1-miaoqinglang@huawei.com>
+> Message-Id: <20200924043139.522028-1-hch@lst.de> # does not apply with git am???
+> Message-Id: <1602474624-3225-1-git-send-email-hejinyang@loongson.cn>
+> Message-Id: <20201012154050.68039-1-andriy.shevchenko@linux.intel.com>
+> Message-Id: <1604889952-30841-1-git-send-email-wangqing@vivo.com>
+> Message-Id: <1604889303-26722-1-git-send-email-wangqing@vivo.com>
+> Message-ID: <66582445-4ec9-86d0-e286-8e21590f608a@kernel.dk>
+> Message-Id: <20201110154939.3285928-1-geert+renesas@glider.be>
+> Message-Id: <20201110155029.3286090-1-geert+renesas@glider.be>
+> 
+> I have no idea why the hch@lst.de one applies with "patch -p1" but not with
+> "git am", that's where I ran out of brain. But they all apply as patches and the
+> result boots.
 
-It's really only required for local_bh_disable(). Lemme add a comment.
+FYI here are the patches from this list I forwarded to Rich right after -rc3
+came out. They built in my local tree, the result booted, and I didn't spot
+obvious regressions.
 
->> +		} else {
->> +			DEBUG_LOCKS_WARN_ON(this_cpu_read(softirq_ctrl.cnt));
->> +		}
->> +	}
->> +
->> +	preempt_disable();
->
-> Do you really need to disable preemption here? Migration is disabled by local_lock()
-> and I can't figure out a scenario where the below can conflict with a
-> preempting task.
+If anybody else wants to try them, I can put them in a -git tree or attach them
+to an email?
 
-Indeed it's pointless.
-
->> +	/*
->> +	 * Track the per CPU softirq disabled state. On RT this is per CPU
->> +	 * state to allow preemption of bottom half disabled sections.
->> +	 */
->> +	newcnt = this_cpu_add_return(softirq_ctrl.cnt, cnt);
->
-> __this_cpu_add_return() ?
-
-Yep.
-
-Thanks,
-
-        tglx
+Rob
