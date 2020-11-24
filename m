@@ -2,39 +2,46 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 75640C2D0E4
-	for <linux-sh@archiver.kernel.org>; Tue, 24 Nov 2020 00:14:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 381B7C63697
+	for <linux-sh@archiver.kernel.org>; Tue, 24 Nov 2020 00:22:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 105F32075A
-	for <linux-sh@archiver.kernel.org>; Tue, 24 Nov 2020 00:14:14 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BB82C20758
+	for <linux-sh@archiver.kernel.org>; Tue, 24 Nov 2020 00:22:40 +0000 (UTC)
 Authentication-Results: mail.kernel.org;
-	dkim=pass (1024-bit key) header.d=kernel.org header.i=@kernel.org header.b="qUq69Hdg"
+	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="GnsHHxDV";
+	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="R5Nrqf5g"
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728680AbgKXANx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 23 Nov 2020 19:13:53 -0500
-Received: from mail.kernel.org ([198.145.29.99]:37490 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1725287AbgKXANx (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Mon, 23 Nov 2020 19:13:53 -0500
-Received: from localhost (unknown [176.167.152.233])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 1A3D120757;
-        Tue, 24 Nov 2020 00:13:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=default; t=1606176832;
-        bh=H1q3NdPA5XVVHKGEKjYQ4s3GAIDuBwFKucV9+lLeoqI=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=qUq69HdgxnvYd/CJdPSIQdLBWDLXZ4EpnV9+8BlBqGhsbsp6ElmI/dbTn82zkagdx
-         0Yu1OR5EQaVImLPlvD3ZmBwEIUt3b9L/qQoGV4RfIbNQGjQg6vTJ2w9wXaCHMHXORr
-         8ABQTbt0lirfodCOB9pGRMQLt4bC7NbrsKUSZ3sQ=
-Date:   Tue, 24 Nov 2020 01:13:50 +0100
-From:   Frederic Weisbecker <frederic@kernel.org>
-To:     Thomas Gleixner <tglx@linutronix.de>
+        id S1729220AbgKXAWT (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 23 Nov 2020 19:22:19 -0500
+Received: from Galois.linutronix.de ([193.142.43.55]:39356 "EHLO
+        galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1729147AbgKXAWS (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 23 Nov 2020 19:22:18 -0500
+From:   Thomas Gleixner <tglx@linutronix.de>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
+        s=2020; t=1606177336;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=6lNWG1qtA7G9hsXhDsP3MLyuLVDI6XyrC+5IMdQxT6I=;
+        b=GnsHHxDVlgVk9jhbfel6mUdbSJviiStSsYo8URmgtLjUwigsSaEnFEZVczVC9zmZx9bLsk
+        qw25m4y6TgB1ZeXycueSktHBq26BiSEIvCd2KSJIoAvJiEbG6erl60+Ikvl4P4XcIy4V0N
+        SD4BOfGbwXB6RLWXYfnoEzY4AGhaI5VpFBZJ+7omzKLIh5fuZOgox/raDnxgXngOdEAcWS
+        +23U8DIcpeANt0FBdY2n2RikNrgGZKGfW5V43WqEoyVKjm8IW1Mudr6JsWItXH+rf71ZRo
+        mlFudGebOnhpdGuFgMzmhzdimfucYMEkIW1zOzBhZax23CJRM7IiSnLdkDEDjQ==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
+        s=2020e; t=1606177336;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=6lNWG1qtA7G9hsXhDsP3MLyuLVDI6XyrC+5IMdQxT6I=;
+        b=R5Nrqf5gfiZGYJaIxbHMfpdUIrkuH70SVcO+mrIvTHKAoADJPzDVJZb2ure/dUCXkzLuEJ
+        gYnuVRoafusac5DA==
+To:     Frederic Weisbecker <frederic@kernel.org>
 Cc:     LKML <linux-kernel@vger.kernel.org>,
         Peter Zijlstra <peterz@infradead.org>,
         Paul McKenney <paulmck@kernel.org>,
@@ -53,64 +60,43 @@ Cc:     LKML <linux-kernel@vger.kernel.org>,
         linux-arm-kernel@lists.infradead.org,
         Catalin Marinas <catalin.marinas@arm.com>,
         Will Deacon <will@kernel.org>
-Subject: Re: [patch 14/19] softirq: Make softirq control and processing RT
- aware
-Message-ID: <20201124001350.GF1751@lothringen>
-References: <20201113140207.499353218@linutronix.de>
- <20201113141734.324061522@linutronix.de>
- <20201123134437.GA95787@lothringen>
- <87r1ojnaai.fsf@nanos.tec.linutronix.de>
- <20201123235801.GE1751@lothringen>
- <87wnyblitk.fsf@nanos.tec.linutronix.de>
+Subject: Re: [patch 14/19] softirq: Make softirq control and processing RT aware
+In-Reply-To: <20201124001350.GF1751@lothringen>
+References: <20201113140207.499353218@linutronix.de> <20201113141734.324061522@linutronix.de> <20201123134437.GA95787@lothringen> <87r1ojnaai.fsf@nanos.tec.linutronix.de> <20201123235801.GE1751@lothringen> <87wnyblitk.fsf@nanos.tec.linutronix.de> <20201124001350.GF1751@lothringen>
+Date:   Tue, 24 Nov 2020 01:22:16 +0100
+Message-ID: <87r1ojli2v.fsf@nanos.tec.linutronix.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <87wnyblitk.fsf@nanos.tec.linutronix.de>
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Nov 24, 2020 at 01:06:15AM +0100, Thomas Gleixner wrote:
-> On Tue, Nov 24 2020 at 00:58, Frederic Weisbecker wrote:
-> > On Mon, Nov 23, 2020 at 08:27:33PM +0100, Thomas Gleixner wrote:
-> >> On Mon, Nov 23 2020 at 14:44, Frederic Weisbecker wrote:
-> >> > On Fri, Nov 13, 2020 at 03:02:21PM +0100, Thomas Gleixner wrote:
-> >> >> +	/*
-> >> >> +	 * Adjust softirq count to SOFTIRQ_OFFSET which makes
-> >> >> +	 * in_serving_softirq() become true.
-> >> >> +	 */
-> >> >> +	cnt = SOFTIRQ_OFFSET;
-> >> >> +	__local_bh_enable(cnt, false);
-> >> >
-> >> > But then you enter __do_softirq() with softirq_count() == SOFTIRQ_OFFSET.
-> >> > __do_softirq() calls softirq_handle_begin() which then sets it back to
-> >> > SOFTIRQ_DISABLE_OFFSET...
-> >> 
-> >> The RT variant of it added in this very same patch
-> >> > +static inline void softirq_handle_begin(void) { }
-> >> > +static inline void softirq_handle_end(void) { }
-> >
-> > Ah but then account_irq_enter_time() is called with SOFTIRQ_OFFSET (it's
-> > currently called with softirq_count == 0 at this point) and that may mess
-> > up irqtime accounting which relies on it. It could spuriously account all
-> > the time between the last (soft-)IRQ exit until now as softirq time.
-> 
-> Good point. Haven't thought about that. Let me have a look again.
+Frederic,
 
-But I'm cooking a patchset which moves account_irq_enter_time() after
-HARDIRQ_OFFSET or SOFTIRQ_OFFSET is incremented. This will allow us to move
-tick_irq_enter() under this layout:
+On Tue, Nov 24 2020 at 01:13, Frederic Weisbecker wrote:
+> On Tue, Nov 24, 2020 at 01:06:15AM +0100, Thomas Gleixner wrote:
+>> Good point. Haven't thought about that. Let me have a look again.
+>
+> But I'm cooking a patchset which moves account_irq_enter_time() after
+> HARDIRQ_OFFSET or SOFTIRQ_OFFSET is incremented. This will allow us to move
+> tick_irq_enter() under this layout:
+>
+> 		 preempt_count_add(HARDIRQ_OFFSET)
+> 		 lockdep_hardirq_enter()
+> 		 tick_irq_enter()
+> 		 account_irq_enter_time()
+>
+> This way tick_irq_enter() can be correctly handled by lockdep and we can remove
+> the nasty hack which temporarily disables softirqs around it.
+>
+> And as a side effect it should also fix your issue.
+>
+> I should have that ready soonish.
 
-		 preempt_count_add(HARDIRQ_OFFSET)
-		 lockdep_hardirq_enter()
-		 tick_irq_enter()
-		 account_irq_enter_time()
+Sounds to good to be true :)
 
-This way tick_irq_enter() can be correctly handled by lockdep and we can remove
-the nasty hack which temporarily disables softirqs around it.
+Looking forward to it!
 
-And as a side effect it should also fix your issue.
+Thanks for taking care of that!
 
-I should have that ready soonish.
-
-Thanks.
+       tglx
