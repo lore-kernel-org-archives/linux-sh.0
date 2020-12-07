@@ -2,113 +2,61 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E30B2C4361A
-	for <linux-sh@archiver.kernel.org>; Thu,  3 Dec 2020 22:37:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2370DC0018C
+	for <linux-sh@archiver.kernel.org>; Mon,  7 Dec 2020 22:01:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A13E822483
-	for <linux-sh@archiver.kernel.org>; Thu,  3 Dec 2020 22:37:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C8E14238EF
+	for <linux-sh@archiver.kernel.org>; Mon,  7 Dec 2020 22:01:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1729482AbgLCWh1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 3 Dec 2020 17:37:27 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59500 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727664AbgLCWh1 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 3 Dec 2020 17:37:27 -0500
-Received: from ms.lwn.net (ms.lwn.net [IPv6:2600:3c01:e000:3a1::42])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D1166C061A51;
-        Thu,  3 Dec 2020 14:36:46 -0800 (PST)
-Received: from lwn.net (localhost [127.0.0.1])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ms.lwn.net (Postfix) with ESMTPSA id A638F2204;
-        Thu,  3 Dec 2020 22:36:43 +0000 (UTC)
-Date:   Thu, 3 Dec 2020 15:36:42 -0700
-From:   Jonathan Corbet <corbet@lwn.net>
-To:     Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
-Cc:     Linux Doc Mailing List <linux-doc@vger.kernel.org>,
-        linux-kernel@vger.kernel.org,
-        "Daniel W. S. Almeida" <dwlsalmeida@gmail.com>,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-        Jonathan =?UTF-8?B?TmV1c2Now6RmZXI=?= <j.neuschaefer@gmx.net>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Andrew Cooper <andrew.cooper3@citrix.com>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Borislav Petkov <bp@alien8.de>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Christian Borntraeger <borntraeger@de.ibm.com>,
-        Fenghua Yu <fenghua.yu@intel.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Helge Deller <deller@gmx.de>, Ingo Molnar <mingo@redhat.com>,
-        Jonas Bonn <jonas@southpole.se>,
-        Kees Cook <keescook@chromium.org>,
-        Masami Hiramatsu <mhiramat@kernel.org>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Paul Mackerras <paulus@samba.org>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Rich Felker <dalias@libc.org>,
-        Stafford Horne <shorne@gmail.com>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Tony Luck <tony.luck@intel.com>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Will Deacon <will@kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        openrisc@lists.librecores.org, x86@kernel.org
-Subject: Re: [PATCH 0/6] Add documentation for Documentation/features at the
- built docs
-Message-ID: <20201203153642.594afd85@lwn.net>
-In-Reply-To: <cover.1606748711.git.mchehab+huawei@kernel.org>
-References: <cover.1606748711.git.mchehab+huawei@kernel.org>
-Organization: LWN.net
+        id S1727763AbgLGWBi (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 7 Dec 2020 17:01:38 -0500
+Received: from mail.kernel.org ([198.145.29.99]:49714 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1727758AbgLGWBi (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Mon, 7 Dec 2020 17:01:38 -0500
+Content-Type: text/plain; charset="utf-8"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1607378457;
+        bh=ROj2E/DNz95dJeF/4hZqYnmHeYGnEnlXg8LBxRmkrTw=;
+        h=In-Reply-To:References:Subject:From:Cc:To:Date:From;
+        b=omaR4Cu98x+zL2ZGHihgajNvL70pOGbcA3YhpZfeHG95ak5Y4JhXDCm88xYBUkMGU
+         C4JGpkf+Q+pUyFjEdkodzz2+Dp8rcmN1yZFnE3YJpP8W+8X4UhkNeCBgPAuEFM9yRV
+         SkBSM/gE731bY0yi1IwrQ5//C6o7lS/S3wYkRxd7xsdWD7GaO5E7nF4XnnzYOObLIz
+         dwxaDZAbyaTdca5v2MCuV0h5F2qVBYDUfo1Q7BYQlNRM7PI3VpAmxtOIxjBOozqHB6
+         9Tbvl24NqCv5D4dJ6rIeqP17y6VrgmfRiJiNN6X7lwW4NL9ku4Jtq9hvzBWaou4Dig
+         cOE+ZzI7wHEEg==
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <20201110155029.3286090-1-geert+renesas@glider.be>
+References: <20201110155029.3286090-1-geert+renesas@glider.be>
+Subject: Re: [PATCH resend v2] sh: boards: Replace <linux/clk-provider.h> by <linux/of_clk.h>
+From:   Stephen Boyd <sboyd@kernel.org>
+Cc:     linux-sh@vger.kernel.org, linux-clk@vger.kernel.org,
+        linux-kernel@vger.kernel.org,
+        Geert Uytterhoeven <geert+renesas@glider.be>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>,
+        Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+Date:   Mon, 07 Dec 2020 14:00:56 -0800
+Message-ID: <160737845618.1580929.560371999645128087@swboyd.mtv.corp.google.com>
+User-Agent: alot/0.9.1
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, 30 Nov 2020 16:36:29 +0100
-Mauro Carvalho Chehab <mchehab+huawei@kernel.org> wrote:
+Quoting Geert Uytterhoeven (2020-11-10 07:50:29)
+> The SuperH/J2 DT platform code is not a clock provider, and just needs
+> to call of_clk_init().
+>=20
+> Hence it can include <linux/of_clk.h> instead of <linux/clk-provider.h>.
+>=20
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Reviewed-by: Stephen Boyd <sboyd@kernel.org>
+> ---
 
-> This series got already submitted last year:
-> 
->    https://lore.kernel.org/lkml/cover.1561222784.git.mchehab+samsung@kernel.org/
-> 
-> Yet, on that time, there were too many other patches related to ReST
-> conversion floating around. So, at the end, I guess this one got missed.
-> 
-> So, I did a rebase on the top of upstream, and added a few new changes.
-
-OK, I've gone ahead and applied these; it gains me a new trivial conflict
-with x86, but so be it...
-
-That said, I think that the RST table formatting could be *way* improved.
-The current tables are all white space and hard to make sense of.  What if
-we condensed the information?  Just looking at the first entry in
-Documentation/admin-guide/features.html, perhaps it could look like:
-
-    FEATURE	KCONFIG/DESCRIPTION		STATUS
-
-    cBPF-JIT	HAVE_CBPF_JIT			TODO: alpha, arc, arm...
-    						ok: mips, powerpc, ...
-		arch supports cBPF JIT
-		optimizations
-
-The result would be far more compact and easy to read, IMO.  I may get
-around to giving this a try if (hint :) nobody else gets there first.
-
-Thanks,
-
-jon
+Applied to clk-next
