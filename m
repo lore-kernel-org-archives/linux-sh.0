@@ -2,166 +2,111 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51D7CC433FE
-	for <linux-sh@archiver.kernel.org>; Tue,  8 Dec 2020 20:39:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 59EB8C433FE
+	for <linux-sh@archiver.kernel.org>; Wed,  9 Dec 2020 17:28:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 22D63239FD
-	for <linux-sh@archiver.kernel.org>; Tue,  8 Dec 2020 20:39:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2E30823B6B
+	for <linux-sh@archiver.kernel.org>; Wed,  9 Dec 2020 17:28:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728745AbgLHUjY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 8 Dec 2020 15:39:24 -0500
-Received: from mx2.suse.de ([195.135.220.15]:56748 "EHLO mx2.suse.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726694AbgLHUjY (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Tue, 8 Dec 2020 15:39:24 -0500
-X-Virus-Scanned: by amavisd-new at test-mx.suse.de
-Received: from relay2.suse.de (unknown [195.135.221.27])
-        by mx2.suse.de (Postfix) with ESMTP id CED2EAD26;
-        Tue,  8 Dec 2020 18:52:51 +0000 (UTC)
-Subject: Re: [PATCH] sh: Fix set but not used warnings with !CONFIG_MMU
-To:     Sam Ravnborg <sam@ravnborg.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Cc:     kernel test robot <lkp@intel.com>,
-        Lee Jones <lee.jones@linaro.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Mike Rapoport <rppt@kernel.org>,
-        Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Andrew Morton <akpm@linux-foundation.org>
-References: <20201208182117.163642-1-sam@ravnborg.org>
- <20201208182117.163642-2-sam@ravnborg.org>
-From:   Thomas Zimmermann <tzimmermann@suse.de>
-Message-ID: <07774d98-ada5-ecc6-229b-d5a2a60f86ee@suse.de>
-Date:   Tue, 8 Dec 2020 19:52:49 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.5.0
+        id S1732788AbgLIR14 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 9 Dec 2020 12:27:56 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35762 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732750AbgLIR1f (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 9 Dec 2020 12:27:35 -0500
+Received: from mail-ed1-x541.google.com (mail-ed1-x541.google.com [IPv6:2a00:1450:4864:20::541])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 99568C0613CF
+        for <linux-sh@vger.kernel.org>; Wed,  9 Dec 2020 09:26:54 -0800 (PST)
+Received: by mail-ed1-x541.google.com with SMTP id u19so2446501edx.2
+        for <linux-sh@vger.kernel.org>; Wed, 09 Dec 2020 09:26:54 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linaro.org; s=google;
+        h=mime-version:from:date:message-id:subject:to:cc;
+        bh=SbpP1XQ1shPBp8DaFALcEJRwJn/qLid/T4j1wfzXX2o=;
+        b=RX/3O64wEoA8L5MH4PpczX1DZlxGQaB+9SAa011g5eFqqIvulSZZtV9MPQ1tEUQnki
+         0mNybMGkFsBxQl6ei1ZepCoPCgpqoCLHHydoOy1jLf5HJpTROpiBPBmHlt3ed5F6K6Sl
+         NxUAdwkIMXrJxrwQd5+z9I/AujZMb6/VnMkcL84PBecYOagcC0wF7maC5LP5OS/RXbA3
+         uBHNvUm5NKsAHgC254QDtXXkm6cFpMB1Msxj7yG7yeEvxT8UjdPiGXGlZnWqXYhgszEp
+         snm2BZ27CeKdjtJ1U6LjlKQeymX+KjO37ZUufaVA+xIq2ogLR1l/BbZP4yp9oTzU0PhV
+         Wyig==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:from:date:message-id:subject:to:cc;
+        bh=SbpP1XQ1shPBp8DaFALcEJRwJn/qLid/T4j1wfzXX2o=;
+        b=Y+kpT1WYEtICH/DLcBVFMHhv+6zrUSowGuy+fVHe+X5I1i0+s1s5mOxBSIZFmLrFQ5
+         aLp5NRsfLCeV1V+cP3g4K5GCkyzUiHVZObPqiSem7Y/5a2Wbr7LDVFW07ASqwUNoi768
+         xuDE/dIOkoDYDluPWhsh69G2530/4puxC5Ee5u0WvCyj/dQnO8RMBhJ/+3xX8Fi/PjCN
+         EFESU8wmlVtR1fdqAMwdWG10SW2GXtGRGhTwe5eRx7uQvSODI4YUrvGHRRxo21k10oIJ
+         WSMspj5MUern9ziQqs9A1pqwz9FqDVEog9RMtPPcs08w3NRY2SlqjpabqPsrJ1JzVyl7
+         C8lQ==
+X-Gm-Message-State: AOAM532wJRq6sCBwg687a/MiC00vnil3vqBiHsQFQMC5gtDhggew3mKE
+        HRSkYcGcMRO9GWsnW8cj7iW9Rw+7MjF8kA0T5Gki7fzy3Qy84JM5
+X-Google-Smtp-Source: ABdhPJxtFSQIIMnrBsJ0bpGv4WvcU1daI5mAFaXtkcrw7IxWFgjZZ1oHf1G7LYYXJd2CgIGahoa8K9Jf5BHuyZLhA7k=
+X-Received: by 2002:aa7:d75a:: with SMTP id a26mr2931708eds.230.1607534813254;
+ Wed, 09 Dec 2020 09:26:53 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20201208182117.163642-2-sam@ravnborg.org>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="lKhDewu2fZP8HjR2zeyXNlGk9ZQ1fpt9J"
+From:   Naresh Kamboju <naresh.kamboju@linaro.org>
+Date:   Wed, 9 Dec 2020 22:56:42 +0530
+Message-ID: <CA+G9fYuNKqyvku1im6_zS5PjK9nG3Jf6qNwpQjaB8WRWO5BXzA@mail.gmail.com>
+Subject: [sh] smp-shx3.c: error: ignoring return value of 'request_irq',
+ declared with attribute warn_unused_result
+To:     open list <linux-kernel@vger.kernel.org>, linux-sh@vger.kernel.org,
+        lkft-triage@lists.linaro.org
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---lKhDewu2fZP8HjR2zeyXNlGk9ZQ1fpt9J
-Content-Type: multipart/mixed; boundary="Ie3GU21dNwjjJ57Gkh5MKptsw3mbG7OEJ";
- protected-headers="v1"
-From: Thomas Zimmermann <tzimmermann@suse.de>
-To: Sam Ravnborg <sam@ravnborg.org>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
- linux-sh@vger.kernel.org
-Cc: kernel test robot <lkp@intel.com>, Lee Jones <lee.jones@linaro.org>,
- Arnd Bergmann <arnd@arndb.de>, Geert Uytterhoeven <geert+renesas@glider.be>,
- Mike Rapoport <rppt@kernel.org>,
- Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>,
- Peter Zijlstra <peterz@infradead.org>,
- Andrew Morton <akpm@linux-foundation.org>
-Message-ID: <07774d98-ada5-ecc6-229b-d5a2a60f86ee@suse.de>
-Subject: Re: [PATCH] sh: Fix set but not used warnings with !CONFIG_MMU
-References: <20201208182117.163642-1-sam@ravnborg.org>
- <20201208182117.163642-2-sam@ravnborg.org>
-In-Reply-To: <20201208182117.163642-2-sam@ravnborg.org>
+Linux next 20201209 tag the arch 'sh' defconfig build failed to build with
+gcc-8, gcc-9 and gcc-10.
 
---Ie3GU21dNwjjJ57Gkh5MKptsw3mbG7OEJ
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: quoted-printable
+arch/sh/kernel/cpu/sh4a/smp-shx3.c: In function 'shx3_prepare_cpus':
+arch/sh/kernel/cpu/sh4a/smp-shx3.c:76:3: error: ignoring return value
+of 'request_irq', declared with attribute warn_unused_result
+[-Werror=unused-result]
+   request_irq(104 + i, ipi_interrupt_handler,
+   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        IRQF_PERCPU, "IPI", (void *)(long)i);
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Reported-by: Naresh Kamboju <naresh.kamboju@linaro.org>
 
+steps to reproduce:
+-------------------
+# TuxMake is a command line tool and Python library that provides
+# portable and repeatable Linux kernel builds across a variety of
+# architectures, toolchains, kernel configurations, and make targets.
+#
+# TuxMake supports the concept of runtimes.
+# See https://docs.tuxmake.org/runtimes/, for that to work it requires
+# that you install podman or docker on your system.
+#
+# To install tuxmake on your system globally:
+# sudo pip3 install -U tuxmake
+#
+# See https://docs.tuxmake.org/ for complete documentation.
 
-Am 08.12.20 um 19:21 schrieb Sam Ravnborg:
-> Building fbdev drivers for sh with W=3D1 produces the following warning=
-:
->=20
->      tmiofb.c: In function =E2=80=98tmiofb_remove=E2=80=99:
->      tmiofb.c:805:21: warning: variable =E2=80=98par=E2=80=99 set but n=
-ot used
->=20
-> This is with allmodconfig and ARCH=3Dsh
->=20
-> This boiled down to iounmap() defined as empty for !CONFIG_MMU.
-> Fix this by by adding "(void)addr;" to tell the compiler the
-> argument to iounmap() should be considered used.
->=20
-> v4:
->    - Fix build error of ethernet driver (kernel test robot)
->      Added missing () around macro parameter
->=20
-> Signed-off-by: Sam Ravnborg <sam@ravnborg.org>
-> Cc: kernel test robot <lkp@intel.com>
-> Cc: Thomas Zimmermann <tzimmermann@suse.de>
-> Cc: Lee Jones <lee.jones@linaro.org>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: Arnd Bergmann <arnd@arndb.de>
-> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-> Cc: Mike Rapoport <rppt@kernel.org>
-> Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Cc: Peter Zijlstra <peterz@infradead.org>
-> Cc: Sam Ravnborg <sam@ravnborg.org>
-> Cc: Andrew Morton <akpm@linux-foundation.org>
+tuxmake --runtime docker --target-arch sh --toolchain gcc-9 --kconfig defconfig
 
-Acked-by: Thomas Zimmermann <tzimmermann@suse.de>
+metadata:
+    git_repo: https://gitlab.com/Linaro/lkft/mirrors/next/linux-next
+    target_arch: sh
+    toolchain: gcc-9
+    git_short_log: 2f1d5c77f13f (\Add linux-next specific files for 20201209\)
+    git_sha: 2f1d5c77f13fe64497c2e2601605f7d7ec4da9b1
+    git_describe: next-20201209
+    download_url: https://builds.tuxbuild.com/1lPwmsuPj4eW5gsLeObYvbXC3fw/
 
-> ---
->   arch/sh/include/asm/io.h | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
->=20
-> diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-> index 6d5c6463bc07..45082bcbd9aa 100644
-> --- a/arch/sh/include/asm/io.h
-> +++ b/arch/sh/include/asm/io.h
-> @@ -271,7 +271,7 @@ static inline void __iomem *ioremap_prot(phys_addr_=
-t offset, unsigned long size,
->   #endif /* CONFIG_HAVE_IOREMAP_PROT */
->  =20
->   #else /* CONFIG_MMU */
-> -#define iounmap(addr)		do { } while (0)
-> +#define iounmap(addr)		do { (void)(addr); } while (0)
->   #define ioremap(offset, size)	((void __iomem *)(unsigned long)(offset=
-))
->   #endif /* CONFIG_MMU */
->  =20
->=20
+Full build log,
+https://gitlab.com/Linaro/lkft/mirrors/next/linux-next/-/jobs/899463251
 
---=20
-Thomas Zimmermann
-Graphics Driver Developer
-SUSE Software Solutions Germany GmbH
-Maxfeldstr. 5, 90409 N=C3=BCrnberg, Germany
-(HRB 36809, AG N=C3=BCrnberg)
-Gesch=C3=A4ftsf=C3=BChrer: Felix Imend=C3=B6rffer
-
-
---Ie3GU21dNwjjJ57Gkh5MKptsw3mbG7OEJ--
-
---lKhDewu2fZP8HjR2zeyXNlGk9ZQ1fpt9J
-Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="OpenPGP_signature"
-
------BEGIN PGP SIGNATURE-----
-
-wsF5BAABCAAjFiEExndm/fpuMUdwYFFolh/E3EQov+AFAl/Py4IFAwAAAAAACgkQlh/E3EQov+Av
-KBAAr66DDuBRExQ1Cgw3Ic0LjpAuOAve7okt8zI2G1xnbP95x7PHs1u4kjUDYpP3miHYyOKT48FO
-PRb23OqafLdQ41GEHaGUOzlxC8EiMMuPkmhNViOKIuMxc0ZvRfIUnd3lzj2bQWygPzMW0niRv/QC
-9OGXui4irzsHJJ1ZI4wUgOTuJZPDo3ggc3vjYj9WXBZdX3qRU7x+QyYXXOHF6CRrhdCqIEbEvvhN
-Hd/wG8sdBTiijqOjw+SKNHYHND5dZqKDpZJH8YXh2JvQ85QC5KxZDYVCMlVS0zWHO00KDUgZJsYd
-BYAV5WaWU5UDFmFmVWGJhiyR+kLxFVojQkERHkU2kBWavdZbc/Yvj8jgInevPPG5x+FvAWzdZPIz
-/Id6ikZovJ9MY7qsjwE055hkEFAynDQbcDqzVIzr58tClifAoYxb78gSc3MYTm/rB30y8Hn1PH5P
-oTV0TCx1iwuXQPbrWW7vmuNhyK97FrObDjLKrYH3hmZLdNE430gHjoju/S34h0dThfZo9XpBXXmm
-PLdq+LFRmAqKDceygBp6jRJRHD1fYxXaQepieiVfDm4frqUC7JUqJdcQRbl3l+Qe2cvg8H5b6tQN
-sHvFzOGyTZO7dVS1ciSjN2pT0L7rEzoa2bDgOdEyWmGfAKSDHiVXBd10eCJ9tk+2hFZqy7HAHQVn
-r5c=
-=TRTT
------END PGP SIGNATURE-----
-
---lKhDewu2fZP8HjR2zeyXNlGk9ZQ1fpt9J--
+-- 
+Linaro LKFT
+https://lkft.linaro.org
