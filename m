@@ -2,77 +2,93 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.0 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D18BC433FE
-	for <linux-sh@archiver.kernel.org>; Fri, 11 Dec 2020 13:39:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 99984C4361B
+	for <linux-sh@archiver.kernel.org>; Sun, 13 Dec 2020 14:12:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2D73723E26
-	for <linux-sh@archiver.kernel.org>; Fri, 11 Dec 2020 13:39:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6705C22D2C
+	for <linux-sh@archiver.kernel.org>; Sun, 13 Dec 2020 14:12:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2391294AbgLKNjU (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 11 Dec 2020 08:39:20 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36738 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1728273AbgLKNiv (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 11 Dec 2020 08:38:51 -0500
-Received: from baptiste.telenet-ops.be (baptiste.telenet-ops.be [IPv6:2a02:1800:120:4::f00:13])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 97FB7C0613CF
-        for <linux-sh@vger.kernel.org>; Fri, 11 Dec 2020 05:38:10 -0800 (PST)
-Received: from ramsan.of.borg ([84.195.186.194])
-        by baptiste.telenet-ops.be with bizsmtp
-        id 31e9240094C55Sk011e9iK; Fri, 11 Dec 2020 14:38:09 +0100
-Received: from rox.of.borg ([192.168.97.57])
-        by ramsan.of.borg with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.93)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1knica-009iH8-TV; Fri, 11 Dec 2020 14:38:08 +0100
-Received: from geert by rox.of.borg with local (Exim 4.93)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1knica-00CSir-Dw; Fri, 11 Dec 2020 14:38:08 +0100
-From:   Geert Uytterhoeven <geert+renesas@glider.be>
-To:     Mauro Carvalho Chehab <mchehab@kernel.org>,
-        Hans Verkuil <hverkuil-cisco@xs4all.nl>
-Cc:     linux-media@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org,
-        Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH] media: sh_vou: Drop bogus __refdata annotation
-Date:   Fri, 11 Dec 2020 14:38:06 +0100
-Message-Id: <20201211133806.2970300-1-geert+renesas@glider.be>
-X-Mailer: git-send-email 2.25.1
+        id S2437034AbgLMOLu (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 13 Dec 2020 09:11:50 -0500
+Received: from mail.kernel.org ([198.145.29.99]:37708 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S2395199AbgLMOLL (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Sun, 13 Dec 2020 09:11:11 -0500
+Date:   Sun, 13 Dec 2020 09:10:29 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1607868630;
+        bh=S0NZCKTHXO1/XgTBibTeHKY2NyaV+jWp9oZjgvuSOZg=;
+        h=From:To:Cc:Subject:References:In-Reply-To:From;
+        b=nFttyLKxDFdTzDqG+uV+ZMYwIDraCwmT1csa8RGjNQtB2KNQuC3CWvsr8XvQHFTkX
+         bOVfEZ3hZGq/q87besC+Bjzp/UHT9BZ6/avesb9g234GUTyQ6mz9ZdKVWLvvWayKcR
+         5IsZC3of1cWOok1XpWOR2jKmC5sWYP7UWQbjwfCJNcyT1mEousS3/8Iz7qmQngrF+E
+         UBfwNFX/Xim1w8qNAQxV89tayOf16Xozhta7DOpqMYNyp+n+eIU7Y985xkZoMGJ7UI
+         W/Q6SnFz+H4jXIWSjxGFg8FVH/fANHjQkaleEJRhOabM6QD83DoUX7CgAE554wRsQU
+         Zom91bCLKheaA==
+From:   Sasha Levin <sashal@kernel.org>
+To:     Peter Zijlstra <peterz@infradead.org>
+Cc:     Heiko Carstens <hca@linux.ibm.com>, linux-kernel@vger.kernel.org,
+        stable@vger.kernel.org, Sven Schnelle <svens@linux.ibm.com>,
+        Mark Rutland <mark.rutland@arm.com>,
+        linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org
+Subject: Re: [PATCH AUTOSEL 5.9 27/39] sched/idle: Fix arch_cpu_idle() vs
+ tracing
+Message-ID: <20201213141029.GQ643756@sasha-vm>
+References: <20201203132834.930999-1-sashal@kernel.org>
+ <20201203132834.930999-27-sashal@kernel.org>
+ <20201203145442.GC9994@osiris>
+ <20201203171015.GN2414@hirez.programming.kicks-ass.net>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Disposition: inline
+In-Reply-To: <20201203171015.GN2414@hirez.programming.kicks-ass.net>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Since commit 4c62e9764ab403d4 ("Drivers: media: remove __dev*
-attributes.") in v3.8, the SuperH Video Output Unit driver no longer has
-any code or data located in initmem, hence there is no need to annotate
-the sh_vou structure with __refdata.  Drop the annotation, to avoid
-suppressing future section warnings.
+On Thu, Dec 03, 2020 at 06:10:15PM +0100, Peter Zijlstra wrote:
+>On Thu, Dec 03, 2020 at 03:54:42PM +0100, Heiko Carstens wrote:
+>> On Thu, Dec 03, 2020 at 08:28:21AM -0500, Sasha Levin wrote:
+>> > From: Peter Zijlstra <peterz@infradead.org>
+>> >
+>> > [ Upstream commit 58c644ba512cfbc2e39b758dd979edd1d6d00e27 ]
+>> >
+>> > We call arch_cpu_idle() with RCU disabled, but then use
+>> > local_irq_{en,dis}able(), which invokes tracing, which relies on RCU.
+>> >
+>> > Switch all arch_cpu_idle() implementations to use
+>> > raw_local_irq_{en,dis}able() and carefully manage the
+>> > lockdep,rcu,tracing state like we do in entry.
+>> >
+>> > (XXX: we really should change arch_cpu_idle() to not return with
+>> > interrupts enabled)
+>> >
+>> > Reported-by: Sven Schnelle <svens@linux.ibm.com>
+>> > Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+>> > Reviewed-by: Mark Rutland <mark.rutland@arm.com>
+>> > Tested-by: Mark Rutland <mark.rutland@arm.com>
+>> > Link: https://lkml.kernel.org/r/20201120114925.594122626@infradead.org
+>> > Signed-off-by: Sasha Levin <sashal@kernel.org>
+>>
+>> This patch broke s390 irq state tracing. A patch to fix this is
+>> scheduled to be merged upstream today (hopefully).
+>> Therefore I think this patch should not yet go into 5.9 stable.
+>
+>Agreed.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/media/platform/sh_vou.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+I'll also grab b1cae1f84a0f ("s390: fix irq state tracing"). Thanks!
 
-diff --git a/drivers/media/platform/sh_vou.c b/drivers/media/platform/sh_vou.c
-index b22dc1d725276f61..4ac48441f22c44a3 100644
---- a/drivers/media/platform/sh_vou.c
-+++ b/drivers/media/platform/sh_vou.c
-@@ -1355,7 +1355,7 @@ static int sh_vou_remove(struct platform_device *pdev)
- 	return 0;
- }
- 
--static struct platform_driver __refdata sh_vou = {
-+static struct platform_driver sh_vou = {
- 	.remove  = sh_vou_remove,
- 	.driver  = {
- 		.name	= "sh-vou",
 -- 
-2.25.1
-
+Thanks,
+Sasha
