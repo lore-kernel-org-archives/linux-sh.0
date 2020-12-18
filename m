@@ -2,100 +2,101 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.5 required=3.0 tests=BAYES_00,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 780FAC3526D
-	for <linux-sh@archiver.kernel.org>; Wed, 16 Dec 2020 00:03:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 68C3DC4361B
+	for <linux-sh@archiver.kernel.org>; Fri, 18 Dec 2020 06:29:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 63A1922D02
-	for <linux-sh@archiver.kernel.org>; Wed, 16 Dec 2020 00:03:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 175A123405
+	for <linux-sh@archiver.kernel.org>; Fri, 18 Dec 2020 06:29:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726316AbgLPABe (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 15 Dec 2020 19:01:34 -0500
-Received: from sonic305-21.consmr.mail.gq1.yahoo.com ([98.137.64.84]:43820
-        "EHLO sonic305-21.consmr.mail.gq1.yahoo.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726185AbgLOXkh (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 15 Dec 2020 18:40:37 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoo.ca; s=s2048; t=1608075561; bh=ZkwtcN1Znn8ElcNfcf+qBswC+LM15JB4pYSZu2ijlTk=; h=Date:From:Subject:To:References:In-Reply-To:From:Subject; b=bsOksqOjy08JRuM1vNMYKY63ugniz6HKC1zmUhBC5VKH2e12SAHB008RzBECewMo+icMFJI6NYQhG4/OH7Z/GLk5hLZgxT6F8kZiz5UMvuAYx2D/hINMWnQtozRzOnLfAyfg4lGjSjjFIIidoNVJcMiw2bwjvwedEWRGxpRnyM3Ldt3qrWOgqFbOOiBgI3BZuVeYXjfeaWjeGeT0MBIBWTGZika6x6BAqY+x1IAlvkfZB4WTzvSUQjuyI/HEv0kpieYrUu5GWR9OVUjFxGsut6hwHVFFNYOj3DlUB/PQIYAldTAgtvZgISakZfFzJiNQVM/20ujq6L1prYQ3+1aTYw==
-X-SONIC-DKIM-SIGN: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yahoo.com; s=s2048; t=1608075561; bh=sa9UqAHRB7t41f/GLWfHt+ZwGcZHRuwzz9vsWaaIuHi=; h=Date:From:Subject:To:From:Subject; b=jBqLOED7uPJH+hPV5WVZNIV/P86RjHeCPnWryS+Z+teP5vUvDvppKa/KgpFjsDGAyX9x5IVqe+MNZRFJB5wO7GjSO7NrcrdbtS1i1Cme4DGBGEmM0jUIHuBXr+OHecGvV7frx91OwbA8b5xY+qrzhHM/5e4s7p781cSM5YNwfIKpYsLgKfnFNg83UyrBfJWg4ioEuMwW13uUB7hTvBTivVGYHzSpMaP5scMnwuPq4A0xgJH7L62FGyU7yxofnHAZEjRZVoCzfy4+YdMpUhltJUNVEe2aZs4O59gIQy2zlFm0AkPZB1YIqvAWU3PE6Sh8JQefZqwhHUv/kiFoAQioAQ==
-X-YMail-OSG: JulUi2QVM1nOM7VAg5vRbxJvcPrCfaXBKUng8mGlePCsxSIq3rtbyl96cSN5qFK
- 7.h4Aa88liq6HVnGOUXcsPeXL74TBWciCtyW_KeIQUDxofTYYXt5IHkQm_umaVImY3W8liebEIU4
- szvNP5o2H3HY3PIhLLi9iNOUkBJ2yguyZZ4umprzcIXvxROcjUkrtUF8dVFU5Y3xwGuCdvPCLPqj
- mLREEVIFTPri8ysQqktoHfLQdaQYt8xV18xWtfZtrMrOK_JzwXGk7SW7sYwSNosu9uwQQJEIYp25
- cTHfIxdQVf4lWmsA.CIzdUsg8QPSpTavYfCr6LO0SfIZRWuzGApiP8U6LWearQZG1UoSMaGOlmvV
- QK3kWN4RGWv9HSH1Hg82mcZreKjG.nLZe.u_SHz2u_rWetzTpPUsB1yRuKpBnteJnWvrO.qum9.z
- mv0L0fE0DATM5I0.NwaT7tn2NiCPFmwsqfsc9.kyWtiASArq.zAo2RpYFPlBPXhEbPBlCENQEQKv
- s5QeeeNSDN1OwLxmgN5B5wiM7K_r72En.FDRAtdIxWMRCAOJKiCjmnzIEoMIk3FFRaoSWD9jNBrW
- Oax9cagl6c79yx1SMZUw7ySAIVUiSnngUQlsee9F1VF7DviJZxvYlHBMNbteIpirbYjbC6Z9rvGd
- uIH6K0NPiK9DtjyFmrZzLewFlF_wE_jjzO.nvjjRG5DkZVtY4xYLtBfRNyfvz.5E4gb6oRmifOoI
- yfzOfhS68sbdmcv.z2QoB95lDfu3Lh2usQc9_iLkRfF2x0fJZKLWl5yMHJXhjqc5CL0OBrD_Quwn
- vlJyTIvFRHi9cuQOYThWQ7mmLMLJno6OSpcAiAh_Ov4rS_62MmN5bX.L_8AtKoD663erfbVNhRAK
- _rkXoHsNSR41yhY_.keMq9DQU_iI2kQWkNUYGpVI5GpnJWjdlBqWagg20f40YxDoPHDa6tXsqhlb
- ZZA.yEr0wXymIX4mjuMRnTLupT1nD4oq_M65fcyBFE.nyrW3Fet4XndSxEbOE.bwMM60PNwxD1Nz
- eJvvTM6.CqVT_feH0fVAhigwiI4l.YfplONEEAyRsLwhS_HH6gbt4JPTz6fLQWku6QOq5lpehXsZ
- KUeYwDTIJkmNzjjmCeg3GbP4xFEhYYaUIg42LJ.97ldAT9iYf8g.c7P.7KUMMArV5ypQrnw1j6CD
- 0JxTjhsdTnF49PUfrYa0s_MEKYvrly5B2WyCbpAcG9EFoTFhU.LWSbdyHz8C.Dcva4VHJIgt8XYf
- Gi5MaKoYfAvOC4MAgTmJ4ZOg0q3eMDsHGs.gyr.XUwV6rOJIFsQkmWHe5rSAMGlXIPUW8t8tg3dJ
- EvwOP9NXlwMJ566bOyAKEwOMCM34ICqvVjQsUOrkPwQ4lyO74vG6CfNeJQLhgtteaNJckXbbMYom
- 0JTVZbosF0m5qEi1TVusHClEGP7Z4xbDXarz8NRWZI_ZNZFL.tIYlsO22EHLzE22YQPFWcWAkth1
- NZ_M2bnWezpO5GVnUliz65SktX_0SpmT5rqk7GR_19caN3LB.MaDOkY4ecZ0XcBRN8uEIFI64YWy
- 1My91erfKvO3oXGTtA7m7jZSqJjGz3K7Il_Tb_XdT8YVxK._qI6DnY0Qp4Yh0m5nj4k9R6JN.Ikx
- VasRMIlnL.xwcgifvV.4GjcKSJahPRp5GpCTEBPcurH1zDt9QwztI3Zv07uC5koUrcwqGNtnc3XD
- gFmL1quC.BGbahu9v8eRrCAEIppDmZO.72mlMtzLhZENeSQiSuo4cPtoMsGBJN_KUy8VeztqYzFD
- EfxCmL21bPq.A4QLIFTpRzDhKirGiOWr0Bq2IHZfHT5ijhUpfqv5K.6JgXPa1IMg7DM_Gow4vzuP
- SeW27Y0P4zHN3SxUy2r61UDe1ZbNJ9k4MwzC6YoC_d6QOi46NjldipKhbIqHo6o71_eEjH9uwL_i
- _zgJQIT_J3itRCrREf451k4iZvlUlSyX5IczmCMYrOsE7cfoqb0Nyc7DTrbKJHMnBwBJix09Ckpz
- .teceLV2ymIU0aOOwiX.44MLRrUl5Wg7YYqY8CI2J7cC3fPw5cIxg5O4UXv7pvPyVvE2W3hJgO9F
- wrGwyKCcY0bXQu3GN6OoCkX6jNSHTPoYu5k7WLYoK7tcL3eS0LE5PG9xVEoyy7oXWUlyZshME2qI
- KO_DK.c_1z4S77qdx7g5kAF.OHVQX6ndSiRlwpiBBGFE2ThKR.xWlfNg8OtjD_wkPzbb8jPOhVmZ
- _pWEzmIMWTGML6UG6XRrr26iSpK.L_5qJkOWiU_JTnF0dRNmoQeW6JpP_jzs8qwn3izwaxkDlldY
- 4.oHtiHpqde8T4uIl9ob33_.aMuSa_PkLK9CJYHa7_B_gmqr37Xx9ToobzNTJjlOlg5SwfFGAHk7
- 3vK2RZcMYwoQjAmf3xX38T1lWinVefLaW4ivnACyz9UikzJX0SBJKjQLkSc_afdyIjXARY_Urvn_
- QMkkwGljA8VbvJ2CWPJ0BMEmUwiCYzPtTyHlmQiOv9yAAxhuCg32.jgPJVuvGU7Iet6xroUXpqsM
- t99A9lEGlYWGE_SBf56PyMeXAk.yv3NBa7T4I43u.X.xjVy7D01r4ED5lpaQ7RCnx.XfVJFK6Btg
- sQRdIz_UER_rNkMUrGDlzs8dnJMpxICv7gh0fSIrB4JgTsIn9g3Oy5eZZvHp5d6lEj6PgrUHyrSu
- qCDbrnZdiqIFiE3TS9ywhnHJKOP31TMCVzhypQtBC9KPedUuZe0GGlqPLWBVgc2E6nm8L4s2b56N
- UlyZdlKFUyeBoFy8vhS8Q1XuFHcLinhhwKHbG8s60WOAZAmRNkYJ1AEtD_trNzcKQ7a8f.oS6a8I
- _UgJD1jFuMJeAjp4Nd2zY.fTu_1t5CBIPBgaVlesmI_6dUDjGS5M6zjHuoD.IHF5YAwJNQW764XX
- hYuc-
-Received: from sonic.gate.mail.ne1.yahoo.com by sonic305.consmr.mail.gq1.yahoo.com with HTTP; Tue, 15 Dec 2020 23:39:21 +0000
-Received: by smtp409.mail.ne1.yahoo.com (VZM Hermes SMTP Server) with ESMTPA ID 7f42f66753ff764add4cd34d24e29391;
-          Tue, 15 Dec 2020 23:39:20 +0000 (UTC)
-Date:   Tue, 15 Dec 2020 18:39:17 -0500
-From:   "Alex Xu (Hello71)" <alex_y_xu@yahoo.ca>
-Subject: Re: [RFC PATCH] treewide: remove bzip2 compression support
-To:     linux-kernel@vger.kernel.org, linux-kbuild@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org,
-        linux-aspeed@lists.ozlabs.org, linux-mips@vger.kernel.org,
-        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org
-References: <20201215190315.8681-1-alex_y_xu.ref@yahoo.ca>
-        <20201215190315.8681-1-alex_y_xu@yahoo.ca>
-In-Reply-To: <20201215190315.8681-1-alex_y_xu@yahoo.ca>
+        id S1732787AbgLRG3k (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 18 Dec 2020 01:29:40 -0500
+Received: from mail-ej1-f41.google.com ([209.85.218.41]:46139 "EHLO
+        mail-ej1-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1732785AbgLRG3k (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 18 Dec 2020 01:29:40 -0500
+Received: by mail-ej1-f41.google.com with SMTP id j22so1536927eja.13;
+        Thu, 17 Dec 2020 22:29:23 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=p6sm2ullPipX+R/2HJtHxedMHLdzpauKOUOn9DVVdT8=;
+        b=dJG99sQ7OL1ymqsTTsfMkHutNGV39lxr7fRVn85akTw7VHGJQIeWfk30VR1W9tsHp2
+         15V/ekI0DLgm2L07y4IbQi0KiQ3NNBURlwUovJ8prj48LtnwJHSUvINb3cQktog4xzeq
+         tKBajXfr7mrXrLI+cuZTacOfk1dufFFiiqzH9m4wf1CLMHxUn93C4+rtE3g3BX56TZR6
+         cxZcwLw0P36bXS0yLaJBk493cweXuSudd8KZJMNNdVm/pPdMB5IhMRH1tnkBF1s0hWzc
+         viD1Mp4huErlfs+QxZq9Lrq2XIIfINdMoO19HQRloYGek/74o5oPvKcqDv7v56XiY23w
+         G/Xg==
+X-Gm-Message-State: AOAM531FDhn/ZVqaK5AABPG7OFRWof06ZSzvMaYaBGSZZQ5vNmJ4/BI4
+        wAI1wWGJkTudptEo95aMHeyco4qtXuGfLQ==
+X-Google-Smtp-Source: ABdhPJy8KzXwbeQ2Z7Fm533YgLBAeDCIsXDcMF6eUW8TwtokjArP5irJekuzQETsVnVHbz3pAjpKhQ==
+X-Received: by 2002:a17:907:d28:: with SMTP id gn40mr2461175ejc.33.1608272938017;
+        Thu, 17 Dec 2020 22:28:58 -0800 (PST)
+Received: from ?IPv6:2a0b:e7c0:0:107::ee2? ([2a0b:e7c0:0:107::ee2])
+        by smtp.gmail.com with ESMTPSA id ch30sm25195262edb.8.2020.12.17.22.28.56
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 17 Dec 2020 22:28:57 -0800 (PST)
+Subject: Re: drivers/tty/vt/keyboard.c:2037:13: sparse: sparse: incorrect type
+ in initializer (different address spaces)
+To:     kernel test robot <lkp@intel.com>
+Cc:     kbuild-all@lists.01.org, linux-kernel@vger.kernel.org,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>
+References: <202012162048.l1ovj8ga-lkp@intel.com>
+From:   Jiri Slaby <jirislaby@kernel.org>
+Message-ID: <877c5461-aa67-3d19-b353-ff902742a6ce@kernel.org>
+Date:   Fri, 18 Dec 2020 07:28:55 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.5.0
 MIME-Version: 1.0
-Message-Id: <1608075451.ootu1tx25o.none@localhost>
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-X-Mailer: WebService/1.1.17278 mail.backend.jedi.jws.acl:role.jedi.acl.token.atz.jws.hermes.yahoo Apache-HttpAsyncClient/4.1.4 (Java/11.0.8)
+In-Reply-To: <202012162048.l1ovj8ga-lkp@intel.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Excerpts from Alex Xu (Hello71)'s message of December 15, 2020 2:03 pm:
-> bzip2 is either slower or larger than every other supported algorithm,
-> according to benchmarks at [0]. It is far slower to decompress than any
-> other algorithm, and still larger than lzma, xz, and zstd.
->=20
-> [0] https://lore.kernel.org/lkml/1588791882.08g1378g67.none@localhost/
->=20
-> Signed-off-by: Alex Xu (Hello71) <alex_y_xu@yahoo.ca>
+On 16. 12. 20, 13:07, kernel test robot wrote:
+> tree:   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git master
+> head:   d01e7f10dae29eba0f9ada82b65d24e035d5b2f9
+> commit: 07edff9265204e15c9fc8d07cc69e38c4c484e15 vt: keyboard, reorder user buffer handling in vt_do_kdgkb_ioctl
+> date:   6 weeks ago
+> config: sh-randconfig-s032-20201216 (attached as .config)
+> compiler: sh4-linux-gcc (GCC) 9.3.0
+> reproduce:
+>          wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
+>          chmod +x ~/bin/make.cross
+>          # apt-get install sparse
+>          # sparse version: v0.6.3-184-g1b896707-dirty
+>          # https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=07edff9265204e15c9fc8d07cc69e38c4c484e15
+>          git remote add linus https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+>          git fetch --no-tags linus master
+>          git checkout 07edff9265204e15c9fc8d07cc69e38c4c484e15
+>          # save the attached .config to linux build tree
+>          COMPILER_INSTALL_PATH=$HOME/0day COMPILER=gcc-9.3.0 make.cross C=1 CF='-fdiagnostic-prefix -D__CHECK_ENDIAN__' ARCH=sh
+> 
+> If you fix the issue, kindly add following tag as appropriate
+> Reported-by: kernel test robot <lkp@intel.com>
+> 
+> 
+> "sparse warnings: (new ones prefixed by >>)"
+>     drivers/tty/vt/keyboard.c:1745:21: sparse: sparse: incorrect type in initializer (different address spaces) @@     expected unsigned int const *__gu_addr @@     got unsigned int [noderef] __user * @@
+>     drivers/tty/vt/keyboard.c:1745:21: sparse:     expected unsigned int const *__gu_addr
+>     drivers/tty/vt/keyboard.c:1745:21: sparse:     got unsigned int [noderef] __user *
+>     drivers/tty/vt/keyboard.c:1745:21: sparse: sparse: incorrect type in argument 1 (different address spaces) @@     
 
-Upon further research, I found that bzip2 removal was already=20
-implemented as part of zstd addition, but were apparently abandoned in=20
-an effort to get zstd in. I will check those patches and try sending=20
-those instead. Thanks to all reviewers for comments on this patch.
+Guys,
+
+any idea why __gu_addr in superH's __get_user_check is not marked as __user?
+
+thanks,
+-- 
+js
+suse labs
