@@ -2,49 +2,29 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-17.8 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C1BFEC433E0
-	for <linux-sh@archiver.kernel.org>; Tue, 22 Dec 2020 18:55:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8DD5FC433E6
+	for <linux-sh@archiver.kernel.org>; Tue, 22 Dec 2020 20:18:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8DDC122AAE
-	for <linux-sh@archiver.kernel.org>; Tue, 22 Dec 2020 18:55:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 47B5F229C5
+	for <linux-sh@archiver.kernel.org>; Tue, 22 Dec 2020 20:18:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726756AbgLVSzl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 22 Dec 2020 13:55:41 -0500
-Received: from mail-oi1-f169.google.com ([209.85.167.169]:42686 "EHLO
-        mail-oi1-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1726161AbgLVSzk (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 22 Dec 2020 13:55:40 -0500
-Received: by mail-oi1-f169.google.com with SMTP id l200so15746325oig.9;
-        Tue, 22 Dec 2020 10:55:24 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=la43jOzGT8cpDZH0lHbZ8yczIDIlNNAQ1oOndJF72r4=;
-        b=AtCcSb0o7lY006L2GZrR5UPwPilzq/kC67NLyMjTZtASTReROhfjHPSy0RutWkOlKG
-         RqbP27tGmReskQxNo0K1qfHhQcg6BAW8uhUbqOHdmm5hEmtBJFuenLd5NptgWQUOCKDz
-         kjBCjoZCLZnH3k1wGg9YY432uIFwhpY+r6MsQXLuVC5Lukiq3687e0tzgaR02AiCPgSA
-         hUQ6TnjAbNzY2zv/Q8ZK4fhOAFRbv50TPGQ5gIf6Z0+69bzjLuL3yZL4SdU0w7FOj1Nr
-         53m1eQRxRsaWSphjOgaFwTgtkYz5JW6aTdzGIVgfIfPX0m1eiIDBLzh63umJaoDlvgAe
-         kNQA==
-X-Gm-Message-State: AOAM533zU2Uk2Mcr8ixJ0xDbGVLBXHLupoRPMNp6erY+S1JCHptXTjXn
-        D0tMUPgu9lUdRtq9T2gSPgh66ssty+unEomxCjk=
-X-Google-Smtp-Source: ABdhPJy5EVY7T6HE7RxxJ9AoKr5usE9gCbUG5HZ1gWiHgPXdK9RZjFwARYSd7qSwoUdfSw0ANGyqV1mRCh80XLruDv8=
-X-Received: by 2002:aca:3cc5:: with SMTP id j188mr14009921oia.54.1608663299046;
- Tue, 22 Dec 2020 10:54:59 -0800 (PST)
-MIME-Version: 1.0
-References: <20201222184510.19415-1-info@metux.net>
-In-Reply-To: <20201222184510.19415-1-info@metux.net>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Tue, 22 Dec 2020 19:54:48 +0100
-Message-ID: <CAMuHMdVze3oaWmzvzn8ROjpP6h6Tsv2SFLiV7T1Cnej36X445g@mail.gmail.com>
+        id S1727831AbgLVUSD (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 22 Dec 2020 15:18:03 -0500
+Received: from mout.kundenserver.de ([212.227.126.131]:55051 "EHLO
+        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726319AbgLVUSC (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 22 Dec 2020 15:18:02 -0500
+Received: from [192.168.1.155] ([95.118.68.26]) by mrelayeu.kundenserver.de
+ (mreue011 [212.227.15.167]) with ESMTPSA (Nemesis) id
+ 1N5FtF-1jtguL3EaD-0118EC; Tue, 22 Dec 2020 21:14:24 +0100
 Subject: Re: [PATCH] arch: consolidate pm_power_off callback
-To:     "Enrico Weigelt, metux IT consult" <info@metux.net>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        "Enrico Weigelt, metux IT consult" <info@metux.net>
 Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
         Catalin Marinas <catalin.marinas@arm.com>,
         Will Deacon <will@kernel.org>,
@@ -63,7 +43,7 @@ Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
         Rich Felker <dalias@libc.org>,
         Thomas Gleixner <tglx@linutronix.de>,
         Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        "the arch/x86 maintainers" <x86@kernel.org>,
+        the arch/x86 maintainers <x86@kernel.org>,
         "H. Peter Anvin" <hpa@zytor.com>,
         Stefano Stabellini <sstabellini@kernel.org>,
         Chris Zankel <chris@zankel.net>,
@@ -85,45 +65,81 @@ Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
         "open list:TENSILICA XTENSA PORT (xtensa)" 
         <linux-xtensa@linux-xtensa.org>,
         Linux PM list <linux-pm@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+References: <20201222184510.19415-1-info@metux.net>
+ <CAMuHMdVze3oaWmzvzn8ROjpP6h6Tsv2SFLiV7T1Cnej36X445g@mail.gmail.com>
+From:   "Enrico Weigelt, metux IT consult" <lkml@metux.net>
+Message-ID: <2f1d53e9-0dbb-78ef-22d5-ab230438ddf0@metux.net>
+Date:   Tue, 22 Dec 2020 21:14:19 +0100
+User-Agent: Mozilla/5.0 (X11; Linux i686 on x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.12.0
+MIME-Version: 1.0
+In-Reply-To: <CAMuHMdVze3oaWmzvzn8ROjpP6h6Tsv2SFLiV7T1Cnej36X445g@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: tl
+Content-Transfer-Encoding: 8bit
+X-Provags-ID: V03:K1:UpSPX5SjSxB2JTjoTNk4sWDtA2g9Ks1Ix8dKZhB/ESwn1jWfyhx
+ EoQG8feaYKyQLnGwygV2naaePTeCvGl6q4M5FCoVvWDzd5IDw7I4++spAXF1Cn7hlWYDZ9i
+ kl7Eptzr5sffhmk6uqoQvQuMaJH6WbEHZSp8VbRZESTCM8tqF2liTqVeSG60D5ct0JeRFXM
+ C/vRJPf10ZNRyihx6OQ7A==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:4rmsxPbYFfk=:r6XlGr1qgoUDdOPZvl+EZB
+ Tvvn/+E+IBfJxp8NYxN6kmODEYBvHcxpBa91h8yz4H6rftNQGPPvhJG9K3iz7sa8U3axvH9gb
+ k8MQxF8AkxpsOIqgXUvRf2/UkUWU0UyTVaNY4yxFyPXaJ5HZGvdBlHztqC0ROOQbfPfvuc9EL
+ FxgUfcgonSSkeeYMjRiTB3zJbeFMtXOTHkBa2rvNba1MQtk+fNt8bwxkcg/16D1kNX6CaQa6R
+ /HjaLu8M8eiwjXWLzppTMleqwd3hE1HiIRNtfJF9qFLMDQKH5ELRRUKQxUmk7wwJOm6jAqUoz
+ DxOEn9gjBP8Krn67rCBumevzsK7LiZ8dtcUh+n3F3XTZoxMWvkNcvhbeCfAuF95ukrIWyQBXn
+ H8gIR89lqyF1p5Egw7NhgnSoXyIbQAraihthZryjzaPuyq4jPkP8GrsbXJIV3
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Enrico,
+On 22.12.20 19:54, Geert Uytterhoeven wrote:
 
-On Tue, Dec 22, 2020 at 7:46 PM Enrico Weigelt, metux IT consult
-<info@metux.net> wrote:
-> Move the pm_power_off callback into one global place and also add an
-> function for conditionally calling it (when not NULL), in order to remove
-> code duplication in all individual archs.
->
-> Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+Hi,
 
-Thanks for your patch!
+> On Tue, Dec 22, 2020 at 7:46 PM Enrico Weigelt, metux IT consult
+> <info@metux.net> wrote:
+>> Move the pm_power_off callback into one global place and also add an
+>> function for conditionally calling it (when not NULL), in order to remove
+>> code duplication in all individual archs.
+>>
+>> Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+> 
+> Thanks for your patch!
+> 
+>> --- a/arch/alpha/kernel/process.c
+>> +++ b/arch/alpha/kernel/process.c
+>> @@ -43,12 +43,6 @@
+>>  #include "proto.h"
+>>  #include "pci_impl.h"
+>>
+>> -/*
+>> - * Power off function, if any
+>> - */
+>> -void (*pm_power_off)(void) = machine_power_off;
+> 
+> Assignments like these are lost in the conversion.
 
-> --- a/arch/alpha/kernel/process.c
-> +++ b/arch/alpha/kernel/process.c
-> @@ -43,12 +43,6 @@
->  #include "proto.h"
->  #include "pci_impl.h"
->
-> -/*
-> - * Power off function, if any
-> - */
-> -void (*pm_power_off)(void) = machine_power_off;
+Yes, but this doesn't seem to be ever called anyways. (in arch/alpha)
+And, BTW, letting it point to machine_power_off() doesn't make much
+sense, since it's the arch's machine_power_off() function, who're
+calling pm_power_off().
 
-Assignments like these are lost in the conversion.
+Actually, we could remove pm_power_off completely from here, assuming
+nobody would *build* any drivers that register themselves into
+pm_power_off.
 
-> -EXPORT_SYMBOL(pm_power_off);
+If you feel better with it, I could post a patch that just removes
+pm_power_off from arch/alpha.
 
-Gr{oetje,eeting}s,
 
-                        Geert
+--mtx
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+---
+Hinweis: unverschlüsselte E-Mails können leicht abgehört und manipuliert
+werden ! Für eine vertrauliche Kommunikation senden Sie bitte ihren
+GPG/PGP-Schlüssel zu.
+---
+Enrico Weigelt, metux IT consult
+Free software and Linux embedded engineering
+info@metux.net -- +49-151-27565287
