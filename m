@@ -2,120 +2,151 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-14.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-13.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CE415C433DB
-	for <linux-sh@archiver.kernel.org>; Wed, 23 Dec 2020 06:51:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 67977C4332B
+	for <linux-sh@archiver.kernel.org>; Wed, 23 Dec 2020 10:39:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6FE1E207AA
-	for <linux-sh@archiver.kernel.org>; Wed, 23 Dec 2020 06:51:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 319402246B
+	for <linux-sh@archiver.kernel.org>; Wed, 23 Dec 2020 10:39:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727050AbgLWGvH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 23 Dec 2020 01:51:07 -0500
-Received: from condef-10.nifty.com ([202.248.20.75]:29208 "EHLO
-        condef-10.nifty.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727030AbgLWGvH (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 23 Dec 2020 01:51:07 -0500
-X-Greylist: delayed 461 seconds by postgrey-1.27 at vger.kernel.org; Wed, 23 Dec 2020 01:51:06 EST
-Received: from conssluserg-06.nifty.com ([10.126.8.85])by condef-10.nifty.com with ESMTP id 0BN6Z9gE009478
-        for <linux-sh@vger.kernel.org>; Wed, 23 Dec 2020 15:35:09 +0900
-Received: from mail-pl1-f171.google.com (mail-pl1-f171.google.com [209.85.214.171]) (authenticated)
-        by conssluserg-06.nifty.com with ESMTP id 0BN6YEvV020406;
-        Wed, 23 Dec 2020 15:34:14 +0900
-DKIM-Filter: OpenDKIM Filter v2.10.3 conssluserg-06.nifty.com 0BN6YEvV020406
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com;
-        s=dec2015msa; t=1608705254;
-        bh=wn59jeOCTy7mMAcAiQw9aRHlYpJopLoesfRO+zLZGnY=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=gMak6dDKLKahNXbVW6rctA05eQ/6TleikJCSXd/ecjZGevmvf/EcTwD5Ot08/6+8/
-         zcFFe/0l/gQGuprromwWi+t9b40fXyjbLvBGKanNIv95e4OYTfHap/2OsPWuTEql9H
-         qj6DP2hLVe/1msYsGioltctco3ct58aqhpu6RM6A0VbTo6NyVf2RTpHJQ+2NjODD4I
-         jsFFcVXASzSwoUbf5zDAYlUdknu0hxH0cfCKc7Mkz4WyVU5IxZfGJzd1a1EuQifHz4
-         tcvO3zNJhoWiZIEdg4bm93SsJYyF8/sudfvm6PT5jE7JBKINMgI5fvH/KO3h0I/S7X
-         ZUbAQ/rDhkyqA==
-X-Nifty-SrcIP: [209.85.214.171]
-Received: by mail-pl1-f171.google.com with SMTP id s15so4216344plr.9;
-        Tue, 22 Dec 2020 22:34:14 -0800 (PST)
-X-Gm-Message-State: AOAM532Z3rrsxSrgZYW7A+oDkunUYxgGnn4lrs0XGT9bWbOiS8itRWZh
-        XE9BhqUqwZwWq5KXA4S1jTkExDh+d/0p9HnPD2w=
-X-Google-Smtp-Source: ABdhPJxaUQJ/9o1CK/l9arsWooi5Hqd5sg6UwENurfCRKX0OhO3Lvyw8z3z32FCD95KGbcUl6BlA7UnwzjXR4+TWmfM=
-X-Received: by 2002:a17:902:521:b029:dc:2836:ec17 with SMTP id
- 30-20020a1709020521b02900dc2836ec17mr1426470plf.47.1608705253707; Tue, 22 Dec
- 2020 22:34:13 -0800 (PST)
+        id S1728414AbgLWKiu (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 23 Dec 2020 05:38:50 -0500
+Received: from mail-oo1-f48.google.com ([209.85.161.48]:43468 "EHLO
+        mail-oo1-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728301AbgLWKit (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 23 Dec 2020 05:38:49 -0500
+Received: by mail-oo1-f48.google.com with SMTP id y14so3596101oom.10;
+        Wed, 23 Dec 2020 02:38:33 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=KihTF5JbxFD42cY1wA7aOsNP35ZO1n0Na3DWL4feoYk=;
+        b=YtfyJEtQ4Rx4GvXp2eCDN4oh3m7hdqGWJADE3nw4LO1Ll7HDCWRZUH9D6OTb0bvpOH
+         5YmSxqr4Ha9PCyYA5k772eYiOI2XkIZPURNfBieet9dpOU0vky3rzioiMoaxri/NpzBi
+         1Dub65HZkJ0GSLrIF0VIZU0gGZ2HNhD71pQuoAPxwT0CkdTSZrduwwA3lHXK/+ypLQom
+         TK97J9BwtFx8xSfswkSSE/y3eGFdBz/V1Vw19meTB2freUlcWrN/X0o2B4TBIR82lYBV
+         t64AvVZGsj64LzytClXqQLCJZ4jUj21jb0UtEM6gh3xLjyd6bYPp1kHo7bgQBrNMJaWx
+         m/ig==
+X-Gm-Message-State: AOAM531wM6DnKV6u3yODJnxzHR2nAmxnnTxrmc2HfQgTCgiBUjSjgDxe
+        BqilVeehe93fg1HlFcb6neaJDSuO+izDToDHEwDBh5K2
+X-Google-Smtp-Source: ABdhPJy9U98CPLOM9qWfCFZui6dO/PQYCRjI00tgXXUEHSfVAWiteZLCs+U7EpAO2soA/tWzSTNFmBBqnM2RmfJo+z4=
+X-Received: by 2002:a4a:c191:: with SMTP id w17mr18070553oop.1.1608719888011;
+ Wed, 23 Dec 2020 02:38:08 -0800 (PST)
 MIME-Version: 1.0
-References: <20201212161831.GA28098@roeck-us.net> <20201222205402.2269377-1-ndesaulniers@google.com>
-In-Reply-To: <20201222205402.2269377-1-ndesaulniers@google.com>
-From:   Masahiro Yamada <masahiroy@kernel.org>
-Date:   Wed, 23 Dec 2020 15:33:36 +0900
-X-Gmail-Original-Message-ID: <CAK7LNASGT9fw59-s9Tz-cA7zNt6TVdPdB5WMSea55U3qETDphw@mail.gmail.com>
-Message-ID: <CAK7LNASGT9fw59-s9Tz-cA7zNt6TVdPdB5WMSea55U3qETDphw@mail.gmail.com>
-Subject: Re: [PATCH] sh: check return code of request_irq
-To:     Nick Desaulniers <ndesaulniers@google.com>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+References: <20201222184510.19415-1-info@metux.net> <CAMuHMdVze3oaWmzvzn8ROjpP6h6Tsv2SFLiV7T1Cnej36X445g@mail.gmail.com>
+ <2f1d53e9-0dbb-78ef-22d5-ab230438ddf0@metux.net>
+In-Reply-To: <2f1d53e9-0dbb-78ef-22d5-ab230438ddf0@metux.net>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Wed, 23 Dec 2020 11:37:56 +0100
+Message-ID: <CAMuHMdXoHVPwqC_v6DL2MTi2j_tgnCqy9eiuLHvmZ9cB5scbQA@mail.gmail.com>
+Subject: Re: [PATCH] arch: consolidate pm_power_off callback
+To:     "Enrico Weigelt, metux IT consult" <lkml@metux.net>
+Cc:     "Enrico Weigelt, metux IT consult" <info@metux.net>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
+        Mark Salter <msalter@redhat.com>,
+        Aurelien Jacquiot <jacquiot.aurelien@gmail.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Ley Foon Tan <ley.foon.tan@intel.com>,
+        Jonas Bonn <jonas@southpole.se>,
+        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+        Stafford Horne <shorne@gmail.com>,
+        James Bottomley <James.Bottomley@hansenpartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
         Rich Felker <dalias@libc.org>,
-        Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>,
-        Paul Mundt <lethal@linux-sh.org>,
-        Guenter Roeck <linux@roeck-us.net>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        "the arch/x86 maintainers" <x86@kernel.org>,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        Stefano Stabellini <sstabellini@kernel.org>,
+        Chris Zankel <chris@zankel.net>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Christian Brauner <christian@brauner.io>,
+        alpha <linux-alpha@vger.kernel.org>,
+        arcml <linux-snps-arc@lists.infradead.org>,
+        linux-c6x-dev@linux-c6x.org, linux-csky@vger.kernel.org,
+        "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>,
+        "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
+        Openrisc <openrisc@lists.librecores.org>,
+        Parisc List <linux-parisc@vger.kernel.org>,
+        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
+        linux-riscv <linux-riscv@lists.infradead.org>,
+        linux-s390 <linux-s390@vger.kernel.org>,
         Linux-sh list <linux-sh@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+        "open list:TENSILICA XTENSA PORT (xtensa)" 
+        <linux-xtensa@linux-xtensa.org>,
+        Linux PM list <linux-pm@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Dec 23, 2020 at 5:54 AM Nick Desaulniers
-<ndesaulniers@google.com> wrote:
+Hi Enrico,
+
+On Tue, Dec 22, 2020 at 9:15 PM Enrico Weigelt, metux IT consult
+<lkml@metux.net> wrote:
+> On 22.12.20 19:54, Geert Uytterhoeven wrote:
+> > On Tue, Dec 22, 2020 at 7:46 PM Enrico Weigelt, metux IT consult
+> > <info@metux.net> wrote:
+> >> Move the pm_power_off callback into one global place and also add an
+> >> function for conditionally calling it (when not NULL), in order to remove
+> >> code duplication in all individual archs.
+> >>
+> >> Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+> >
+> > Thanks for your patch!
+> >
+> >> --- a/arch/alpha/kernel/process.c
+> >> +++ b/arch/alpha/kernel/process.c
+> >> @@ -43,12 +43,6 @@
+> >>  #include "proto.h"
+> >>  #include "pci_impl.h"
+> >>
+> >> -/*
+> >> - * Power off function, if any
+> >> - */
+> >> -void (*pm_power_off)(void) = machine_power_off;
+> >
+> > Assignments like these are lost in the conversion.
 >
-> request_irq is marked __must_check, but the call in shx3_prepare_cpus
-> has a void return type, so it can't propagate failure to the caller.
-> Follow cues from hexagon and just print an error.
+> Yes, but this doesn't seem to be ever called anyways. (in arch/alpha)
+> And, BTW, letting it point to machine_power_off() doesn't make much
+> sense, since it's the arch's machine_power_off() function, who're
+> calling pm_power_off().
 >
-> Fixes: c7936b9abcf5 ("sh: smp: Hook in to the generic IPI handler for SH-X3 SMP.")
-> Cc: Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>
-> Cc: Paul Mundt <lethal@linux-sh.org>
-> Reported-by: Guenter Roeck <linux@roeck-us.net>
-> Signed-off-by: Nick Desaulniers <ndesaulniers@google.com>
-
-
-Thanks for the patch, Nick.
-
-I just wondered if there was a better error handling than
-printing the message. I have no idea if the system will
-boot up correctly when the request_irq() fails here.
-
-I hope the maintainers will suggest something, if any.
-
-
-
-
-> ---
->  arch/sh/kernel/cpu/sh4a/smp-shx3.c | 5 +++--
->  1 file changed, 3 insertions(+), 2 deletions(-)
+> Actually, we could remove pm_power_off completely from here, assuming
+> nobody would *build* any drivers that register themselves into
+> pm_power_off.
 >
-> diff --git a/arch/sh/kernel/cpu/sh4a/smp-shx3.c b/arch/sh/kernel/cpu/sh4a/smp-shx3.c
-> index f8a2bec0f260..1261dc7b84e8 100644
-> --- a/arch/sh/kernel/cpu/sh4a/smp-shx3.c
-> +++ b/arch/sh/kernel/cpu/sh4a/smp-shx3.c
-> @@ -73,8 +73,9 @@ static void shx3_prepare_cpus(unsigned int max_cpus)
->         BUILD_BUG_ON(SMP_MSG_NR >= 8);
->
->         for (i = 0; i < SMP_MSG_NR; i++)
-> -               request_irq(104 + i, ipi_interrupt_handler,
-> -                           IRQF_PERCPU, "IPI", (void *)(long)i);
-> +               if (request_irq(104 + i, ipi_interrupt_handler,
-> +                           IRQF_PERCPU, "IPI", (void *)(long)i))
-> +                       pr_err("Failed to request irq %d\n", i);
->
->         for (i = 0; i < max_cpus; i++)
->                 set_cpu_present(i, true);
-> --
-> 2.29.2.729.g45daf8777d-goog
->
+> If you feel better with it, I could post a patch that just removes
+> pm_power_off from arch/alpha.
 
+This is not limited to alpha, there are similar initializations on
+m68k, openrisc,
+and s390.
+If none of these are called, they can be removed, but you should mention
+that in the patch description.
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
 
 -- 
-Best Regards
-Masahiro Yamada
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
