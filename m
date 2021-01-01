@@ -2,52 +2,53 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-18.0 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.0 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
+	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C8B6C433DB
-	for <linux-sh@archiver.kernel.org>; Fri,  1 Jan 2021 13:51:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 432FAC433DB
+	for <linux-sh@archiver.kernel.org>; Fri,  1 Jan 2021 13:52:43 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0D280221FE
-	for <linux-sh@archiver.kernel.org>; Fri,  1 Jan 2021 13:51:24 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 08ED2221F2
+	for <linux-sh@archiver.kernel.org>; Fri,  1 Jan 2021 13:52:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726798AbhAANvJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 1 Jan 2021 08:51:09 -0500
-Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:45561 "EHLO
+        id S1727118AbhAANw1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 1 Jan 2021 08:52:27 -0500
+Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:36725 "EHLO
         outpost1.zedat.fu-berlin.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726747AbhAANvJ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 1 Jan 2021 08:51:09 -0500
+        by vger.kernel.org with ESMTP id S1726747AbhAANw1 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 1 Jan 2021 08:52:27 -0500
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.94)
           with esmtps (TLS1.2)
           tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1kvKp0-001cjd-BP; Fri, 01 Jan 2021 14:50:25 +0100
+          id 1kvKqH-001d1n-CR; Fri, 01 Jan 2021 14:51:45 +0100
 Received: from p5b13a2ad.dip0.t-ipconnect.de ([91.19.162.173] helo=[192.168.178.139])
           by inpost2.zedat.fu-berlin.de (Exim 4.94)
           with esmtpsa (TLS1.2)
           tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1kvKoz-003BdA-JL; Fri, 01 Jan 2021 14:50:25 +0100
-Subject: Re: [PATCH] sh: check return code of request_irq
-To:     Nick Desaulniers <ndesaulniers@google.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-Cc:     Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>,
-        Paul Mundt <lethal@linux-sh.org>,
-        Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <20201212161831.GA28098@roeck-us.net>
- <20201222205402.2269377-1-ndesaulniers@google.com>
+          id 1kvKqG-003BkT-KQ; Fri, 01 Jan 2021 14:51:44 +0100
+Subject: Re: [PATCH v1] sh: Drop ARCH_NR_GPIOS definition
+To:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Rob Landley <rob@landley.net>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        Bartosz Golaszewski <bgolaszewski@baylibre.com>,
+        linux-gpio <linux-gpio@vger.kernel.org>
+References: <20201012154050.68039-1-andriy.shevchenko@linux.intel.com>
+ <20201109121333.GC4077@smile.fi.intel.com>
+ <10b4dc8e-db87-3f78-3ab7-e08469b9fe55@landley.net>
+ <20201228213615.GF4077@smile.fi.intel.com>
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Message-ID: <fe77cdc9-7ef1-a300-259b-65b451b2551a@physik.fu-berlin.de>
-Date:   Fri, 1 Jan 2021 14:50:25 +0100
+Message-ID: <3a20bc0f-cbdf-6498-5527-e7fd53c3b84d@physik.fu-berlin.de>
+Date:   Fri, 1 Jan 2021 14:51:44 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
  Thunderbird/78.6.0
 MIME-Version: 1.0
-In-Reply-To: <20201222205402.2269377-1-ndesaulniers@google.com>
+In-Reply-To: <20201228213615.GF4077@smile.fi.intel.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -57,43 +58,30 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Nick!
+Hi Andy!
 
-On 12/22/20 9:54 PM, Nick Desaulniers wrote:
-> request_irq is marked __must_check, but the call in shx3_prepare_cpus
-> has a void return type, so it can't propagate failure to the caller.
-> Follow cues from hexagon and just print an error.
+On 12/28/20 10:36 PM, Andy Shevchenko wrote:
+> On Wed, Nov 11, 2020 at 10:45:38AM -0600, Rob Landley wrote:
+>> On 11/9/20 6:13 AM, Andy Shevchenko wrote:
+>>> On Mon, Oct 12, 2020 at 06:40:50PM +0300, Andy Shevchenko wrote:
+>>>> The default by generic header is the same, hence drop unnecessary definition.
+>>>
+>>> Any comment on this?
+>>
+>> Acked-by: Rob Landley <rob@landley.net>
 > 
-> Fixes: c7936b9abcf5 ("sh: smp: Hook in to the generic IPI handler for SH-X3 SMP.")
-> Cc: Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>
-> Cc: Paul Mundt <lethal@linux-sh.org>
-> Reported-by: Guenter Roeck <linux@roeck-us.net>
-> Signed-off-by: Nick Desaulniers <ndesaulniers@google.com>
-> ---
->  arch/sh/kernel/cpu/sh4a/smp-shx3.c | 5 +++--
->  1 file changed, 3 insertions(+), 2 deletions(-)
+> Thanks!
 > 
-> diff --git a/arch/sh/kernel/cpu/sh4a/smp-shx3.c b/arch/sh/kernel/cpu/sh4a/smp-shx3.c
-> index f8a2bec0f260..1261dc7b84e8 100644
-> --- a/arch/sh/kernel/cpu/sh4a/smp-shx3.c
-> +++ b/arch/sh/kernel/cpu/sh4a/smp-shx3.c
-> @@ -73,8 +73,9 @@ static void shx3_prepare_cpus(unsigned int max_cpus)
->  	BUILD_BUG_ON(SMP_MSG_NR >= 8);
->  
->  	for (i = 0; i < SMP_MSG_NR; i++)
-> -		request_irq(104 + i, ipi_interrupt_handler,
-> -			    IRQF_PERCPU, "IPI", (void *)(long)i);
-> +		if (request_irq(104 + i, ipi_interrupt_handler,
-> +			    IRQF_PERCPU, "IPI", (void *)(long)i))
-> +			pr_err("Failed to request irq %d\n", i);
->  
->  	for (i = 0; i < max_cpus; i++)
->  		set_cpu_present(i, true);
+>> It's in the stack I forwarded to Rich to look at this weekend.
 > 
+> Unfortunately I still do not see this in the latest Linux Next.
 
-Verified on my SH-7785LCR board. Boots fine.
+Rich already mentioned that he planned to pick up any patches the next
+weeks/days.
 
-Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+I'm currently testing all the patches recently posted for any regressions.
+
+Adrian
 
 -- 
  .''`.  John Paul Adrian Glaubitz
