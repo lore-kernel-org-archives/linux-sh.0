@@ -2,98 +2,70 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.0 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 656BCC433E0
-	for <linux-sh@archiver.kernel.org>; Fri,  1 Jan 2021 14:07:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 790C5C433DB
+	for <linux-sh@archiver.kernel.org>; Fri,  1 Jan 2021 14:20:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 27D03221F2
-	for <linux-sh@archiver.kernel.org>; Fri,  1 Jan 2021 14:07:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3409D221FE
+	for <linux-sh@archiver.kernel.org>; Fri,  1 Jan 2021 14:20:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726779AbhAAOHD (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 1 Jan 2021 09:07:03 -0500
-Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:49047 "EHLO
-        outpost1.zedat.fu-berlin.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1726257AbhAAOHD (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 1 Jan 2021 09:07:03 -0500
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.94)
-          with esmtps (TLS1.2)
-          tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1kvL4P-001faf-R3; Fri, 01 Jan 2021 15:06:21 +0100
-Received: from p5b13a2ad.dip0.t-ipconnect.de ([91.19.162.173] helo=[192.168.178.139])
-          by inpost2.zedat.fu-berlin.de (Exim 4.94)
-          with esmtpsa (TLS1.2)
-          tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1kvL4P-003DXN-30; Fri, 01 Jan 2021 15:06:21 +0100
-Subject: Re: [PATCH] sh: add support for TIF_NOTIFY_SIGNAL
-To:     Jens Axboe <axboe@kernel.dk>
-Cc:     linux-sh@vger.kernel.org,
-        "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>
-References: <5fcc82b4-89ae-3bca-10ab-6ad933565cee@kernel.dk>
- <ae29ab73-ee7a-2bb7-3fd8-3037f40c1cbd@kernel.dk>
- <5611bde9-67e7-6ff6-defc-9b02ea830fac@physik.fu-berlin.de>
- <9ea14eb3-d698-5499-ba4c-c6a3c35cd8d4@kernel.dk>
- <47f79645-53b7-b11c-167a-f5721b53df02@physik.fu-berlin.de>
- <9d9acec6-1e8c-2d68-5dfa-d58c11cf5cc4@kernel.dk>
- <070780c4-445e-6373-c8f4-1c72d0f3b4e0@physik.fu-berlin.de>
- <1047f3e5-4599-c34f-3176-9f41d2e1246b@kernel.dk>
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Message-ID: <31b34cfc-8d6e-d3b4-e29f-1ec485f5b368@physik.fu-berlin.de>
-Date:   Fri, 1 Jan 2021 15:06:20 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.6.0
+        id S1726747AbhAAOUV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 1 Jan 2021 09:20:21 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40108 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726257AbhAAOUV (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 1 Jan 2021 09:20:21 -0500
+Received: from mail-out.m-online.net (mail-out.m-online.net [IPv6:2001:a60:0:28:0:1:25:1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 38545C061573;
+        Fri,  1 Jan 2021 06:19:25 -0800 (PST)
+Received: from frontend01.mail.m-online.net (unknown [192.168.8.182])
+        by mail-out.m-online.net (Postfix) with ESMTP id 4D6nG26jzQz1rx7v;
+        Fri,  1 Jan 2021 15:19:17 +0100 (CET)
+Received: from localhost (dynscan1.mnet-online.de [192.168.6.70])
+        by mail.m-online.net (Postfix) with ESMTP id 4D6nFx6224z1qr4s;
+        Fri,  1 Jan 2021 15:19:17 +0100 (CET)
+X-Virus-Scanned: amavisd-new at mnet-online.de
+Received: from mail.mnet-online.de ([192.168.8.182])
+        by localhost (dynscan1.mail.m-online.net [192.168.6.70]) (amavisd-new, port 10024)
+        with ESMTP id BIltP4p3Udx1; Fri,  1 Jan 2021 15:19:17 +0100 (CET)
+X-Auth-Info: 1/GNeLCdYALz3a6mX2XzgaEhotv3PN6I0esOTNVZI7jHH/udBpqogP7WlVEmMKUQ
+Received: from igel.home (ppp-46-244-163-100.dynamic.mnet-online.de [46.244.163.100])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.mnet-online.de (Postfix) with ESMTPSA;
+        Fri,  1 Jan 2021 15:19:17 +0100 (CET)
+Received: by igel.home (Postfix, from userid 1000)
+        id 9807B2C3621; Fri,  1 Jan 2021 15:19:16 +0100 (CET)
+From:   Andreas Schwab <schwab@linux-m68k.org>
+To:     Tang Bin <tangbin@cmss.chinamobile.com>
+Cc:     ysato@users.sourceforge.jp, dalias@libc.org,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] sh: boards: Fix the cacography in irq.c
+References: <20201119105656.11068-1-tangbin@cmss.chinamobile.com>
+X-Yow:  Either CONFESS now or we go to ``PEOPLE'S COURT''!!
+Date:   Fri, 01 Jan 2021 15:19:16 +0100
+In-Reply-To: <20201119105656.11068-1-tangbin@cmss.chinamobile.com> (Tang Bin's
+        message of "Thu, 19 Nov 2020 18:56:56 +0800")
+Message-ID: <87sg7k7na3.fsf@igel.home>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/27.1.90 (gnu/linux)
 MIME-Version: 1.0
-In-Reply-To: <1047f3e5-4599-c34f-3176-9f41d2e1246b@kernel.dk>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 91.19.162.173
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Jens!
+On Nov 19 2020, Tang Bin wrote:
 
-On 11/17/20 4:06 PM, Jens Axboe wrote:
-> On 11/16/20 10:26 PM, John Paul Adrian Glaubitz wrote:
->> Hi Jens!
->>
->> On 11/9/20 3:14 PM, Jens Axboe wrote:
->>>> Sorry for the delay. I'm busy at the moment and my SH board is currently
->>>> building the Perl 5.32 package for Debian. Will try to test your patches
->>>> by tomorrow, also ia64.
->>>
->>> Thanks, both would be appreciated! Just CC'ed you on the updated patch
->>> for sh.
->>
->> Is this still relevant for testing? I'm ready to test now, much later than
->> I thought, sorry.
->>
->> I'm going to build Linus' latest kernel for my SH and IA64 machines now
->> and then I can test additional patches on top of it.
-> 
-> Thanks, would definitely still appreciate testing. You can just run
-> linux-next if you want, it's got everything in there. Or apply the
-> separate patches to -git, either approach is fine.
+> The world 'swtich' is wrong, so fix it.
 
-Apologies for the late reply.
+s/world/word/
 
-I just pulled Linus' latest tree today with your patch for SH included and
-I'm not seeing any regressions.
-
-Is there away to test the change itself?
-
-Adrian
+Andreas.
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
-
+Andreas Schwab, schwab@linux-m68k.org
+GPG Key fingerprint = 7578 EB47 D4E5 4D69 2510  2552 DF73 E780 A9DA AEC1
+"And now for something completely different."
