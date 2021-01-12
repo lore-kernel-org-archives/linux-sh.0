@@ -2,197 +2,106 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B222AC4332D
-	for <linux-sh@archiver.kernel.org>; Tue, 12 Jan 2021 00:26:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CB3AC43381
+	for <linux-sh@archiver.kernel.org>; Tue, 12 Jan 2021 00:52:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 969EF22D57
-	for <linux-sh@archiver.kernel.org>; Tue, 12 Jan 2021 00:26:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3E1A22253A
+	for <linux-sh@archiver.kernel.org>; Tue, 12 Jan 2021 00:52:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2404168AbhALA0G (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 11 Jan 2021 19:26:06 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50802 "EHLO
+        id S1728263AbhALAvl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 11 Jan 2021 19:51:41 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58846 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2404250AbhALAOy (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Jan 2021 19:14:54 -0500
-Received: from mail-oi1-x230.google.com (mail-oi1-x230.google.com [IPv6:2607:f8b0:4864:20::230])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7DD85C061795
-        for <linux-sh@vger.kernel.org>; Mon, 11 Jan 2021 16:14:14 -0800 (PST)
-Received: by mail-oi1-x230.google.com with SMTP id s2so563305oij.2
-        for <linux-sh@vger.kernel.org>; Mon, 11 Jan 2021 16:14:14 -0800 (PST)
+        with ESMTP id S1727995AbhALAvk (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Jan 2021 19:51:40 -0500
+Received: from mail-ej1-x62b.google.com (mail-ej1-x62b.google.com [IPv6:2a00:1450:4864:20::62b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AE7FEC061575;
+        Mon, 11 Jan 2021 16:50:59 -0800 (PST)
+Received: by mail-ej1-x62b.google.com with SMTP id d17so1026190ejy.9;
+        Mon, 11 Jan 2021 16:50:59 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20150623.gappssmtp.com; s=20150623;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=RK9+ZwGuMfadOja4DSavfCGwo/bU8cgsSne+yBSfP5I=;
-        b=PmoCQ3JAQBDfUOPLeqpIBoUCHTaKS6Ax/xOjX1tp+OSU1h8xuoD8lCX5h6cRqJVuQB
-         a3JVdDmbEgUkuQXET5DjI4/LSD0gMLwrEr6a8m7AsJM2DzYrDhB7onjt+tUfcMg9kx5w
-         EphVF3F3OMjLoK4ymjJh3Z1rNVXwgnZvwiJQ2/bgxqG7b6e0zuOpNNSLNJwvMi/SrTcF
-         XcGv+8qcVOZ1jTsQrW/kpoUezZK6k7ovyBQ82XL5X53KWMluXVVPQEuSzLXU43qPxJmI
-         EtbyikGvZKqZv49MkCfhyEFOV0OAIwWcn2q1LgvdHlr6lhMg0S+CH0MeTBO9DFqi8GsF
-         221A==
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=G5DIxSZetsXeR2X3GAYIsmKuc4e0LX+pB1h8al42nGA=;
+        b=j+w8cAPmi1ouSNkB0JqJUkdXD2VJoqYoycV8eQYOpVz5VF8TwAYOQnJu4l6qSpe1TP
+         l7cC9+RmbUcKXbqnWzgLDa+qn60MdYylKKNyOM2Y3aYHPOqg45Q7c2vcm5mofHVVOnWW
+         BhwCQrkXbjWXz4C7+VJWYTGrFCHl2Onjd1rasxY4Tze0mPYJnVEeqWVwXrnP3jFbtpAG
+         hhy+ITv2iGARdXt0IgayP4e7IkWKy/y1Qv/3GkoDzqJUyn1XKHXO+0D83Mz/Xr/TEUEd
+         ee7W91Ay8q4dNbSafyg4ABdEc88Nh6n9FXIKHIe77FLIeiDzpDJ2KT9ADfJFVO1SEbQo
+         KrsQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=RK9+ZwGuMfadOja4DSavfCGwo/bU8cgsSne+yBSfP5I=;
-        b=JJYUG8Bm+aCfmKmJAjM5IEYWG3pIvHyK822XrzjlVsqcypDQvn5xdcenbXx/WcdT0+
-         RqxzDSjwC0Rer90cnWieY7isq1rUUGE06qm7WzdEaPGLpTlFjqziuya7PyOsAqv4fhQi
-         r65r9BOpPtZy+6ikEGDLnVX5UqboKed7ksFMNPTu3toasJUBeyu3+E9YhyRqP4PHt/v5
-         rRaOYjXtXbvyn9dpIqc3RXq1W0/QP8LXKf+m4GoyVbvOV869BZp5IENzbupxgvLWRm3P
-         jgdYmoKWnL50dKYvLFSFpNbETj2Dnj3ISHeGWA2OAy7TVKKHagW0MGDv85KmVQJehk1l
-         u7pg==
-X-Gm-Message-State: AOAM532NkWqONVqyDQIVkWMaY0LLtOug0LQoIud0vcuWgS6cxHRY2igR
-        zIOkd2N9cOVqkr9/X/n8UbV+eTRT9zI25CtN
-X-Google-Smtp-Source: ABdhPJw6piuaPwUMUchBCRSbIdi0zKD8EACiWsGF0x0DrZiZAM+GfyutPQZNvR59AScBlTxwEgRYng==
-X-Received: by 2002:aca:3145:: with SMTP id x66mr796346oix.29.1610410453359;
-        Mon, 11 Jan 2021 16:14:13 -0800 (PST)
-Received: from [192.168.86.73] ([136.62.4.88])
-        by smtp.gmail.com with ESMTPSA id e10sm287777otr.73.2021.01.11.16.14.12
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 11 Jan 2021 16:14:12 -0800 (PST)
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=G5DIxSZetsXeR2X3GAYIsmKuc4e0LX+pB1h8al42nGA=;
+        b=cOUhRoc7NRNwlcEQZls6MRmBkwzFyvk5ArEZ4mPfezciLavdZ6fTzaBmsU5TaA5kBd
+         6mYaJmX4gfJ3CYEflQbP7tCma0wNP8hp4JcZ7YtcU9qm/A7e2vfo2AhV9eQhiQpSXoTS
+         S15+r7SiY1X1ZvgRSOcRMDWYAYKrk5UnvGgo5c4U3kzwi20B+NuUvujtb/P6rOe3bKOD
+         Hs2klR5nOTrzc4meT2te+pvx15hgvYUXHdBRMK0mbJ6Oqmf8LvKbY7Yfg5eeZFQmdDap
+         ZrSTC1Bv/ObLVUEFshCm7Y9dWYTBqYRC/BNh3YX4CFw6F+iuUjMaSzw0sadzqMujySlj
+         VZlQ==
+X-Gm-Message-State: AOAM533DctozyEpwyuf0BW8nb2itWlLwvtubQVT3Z6iDAFRW/fmh4XxE
+        JazHxXIfNOisDxZjddBsD8FOoixlsYBumIwESsISUvapTus=
+X-Google-Smtp-Source: ABdhPJzLOupF2EAqOuP41DKkzhcSVFM9yIFN4BjqQCM5peWAM46JF+3fPJTzZ1sn4B2uQLYl7RFtxyYMab7dSCaZUh4=
+X-Received: by 2002:a17:906:7c49:: with SMTP id g9mr1408341ejp.185.1610412658411;
+ Mon, 11 Jan 2021 16:50:58 -0800 (PST)
+MIME-Version: 1.0
+References: <CAK8P3a2VW8T+yYUG1pn1yR-5eU4jJXe1+M_ot6DAvfr2KyXCzQ@mail.gmail.com>
+ <ef1dc21f-694b-2433-e1c6-aa121320173e@physik.fu-berlin.de>
+ <20210110214653.GA1693373@ravnborg.org> <df42946e-5b1f-c433-fc6b-a2950f3d8dab@physik.fu-berlin.de>
+ <CACwypyNS+fVoPVspSr36v8YjFbkrnYb+amcYRqVmA2kD2uD1Wg@mail.gmail.com> <1f6e936c-4947-4952-fae2-c05d03e0cd2c@landley.net>
+In-Reply-To: <1f6e936c-4947-4952-fae2-c05d03e0cd2c@landley.net>
+From:   chase rayfield <cusbrar1@gmail.com>
+Date:   Mon, 11 Jan 2021 19:50:48 -0500
+Message-ID: <CACwypyNVibQby75dZek=P1oBkcHQYMx-kbria9Y6NnBpERh+qQ@mail.gmail.com>
 Subject: Re: Old platforms: bring out your dead
-To:     chase rayfield <cusbrar1@gmail.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Sam Ravnborg <sam@ravnborg.org>, Arnd Bergmann <arnd@arndb.de>,
+To:     Rob Landley <rob@landley.net>
+Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Sam Ravnborg <sam@ravnborg.org>, Arnd Bergmann <arnd@arndb.de>,
         Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
         linux-m68k <linux-m68k@lists.linux-m68k.org>,
         Sparc kernel list <sparclinux@vger.kernel.org>,
         Linux-sh list <linux-sh@vger.kernel.org>
-References: <CAK8P3a2VW8T+yYUG1pn1yR-5eU4jJXe1+M_ot6DAvfr2KyXCzQ@mail.gmail.com>
- <ef1dc21f-694b-2433-e1c6-aa121320173e@physik.fu-berlin.de>
- <20210110214653.GA1693373@ravnborg.org>
- <df42946e-5b1f-c433-fc6b-a2950f3d8dab@physik.fu-berlin.de>
- <CACwypyNS+fVoPVspSr36v8YjFbkrnYb+amcYRqVmA2kD2uD1Wg@mail.gmail.com>
-From:   Rob Landley <rob@landley.net>
-Message-ID: <1f6e936c-4947-4952-fae2-c05d03e0cd2c@landley.net>
-Date:   Mon, 11 Jan 2021 18:26:38 -0600
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.12.0
-MIME-Version: 1.0
-In-Reply-To: <CACwypyNS+fVoPVspSr36v8YjFbkrnYb+amcYRqVmA2kD2uD1Wg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 1/11/21 8:55 AM, chase rayfield wrote:
-> On Mon, Jan 11, 2021 at 3:09 AM John Paul Adrian Glaubitz
-> <glaubitz@physik.fu-berlin.de> wrote:
-> 
->>
->> I'm not sure I understand the reasoning for doing this. The SPARC architecture
->> isn't going to see any new hardware developments in the future after Oracle
->> let go of most of the SPARC developers. So it's not that we need to make room
->> for new hardware.
->>
-> My take is that there *would* be more interest in Sparc sun4m / Sun4d
-> from enthusiasts at the very least if it was possible to actually boot
-> the bloat hog that is Linux these days in a fully usable configuration
-> that probably means some modifications to SILO and Linux required.
+> Sparc has a runtime relocation I've never understood but did manage to break
+> once, resulting in a long thread to fix:
+>
+> http://lists.landley.net/pipermail/aboriginal-landley.net/2011-December/001964.html
+>
+> Between that and the weird save half the stack register thing with function
+> calls on some sort of "wheel"... there's a _reason_ I haven't been able to talk
+> Rich into adding support for it to musl.
+>
+Register windowing, with parts of each window overlapping for function
+arguments etc... you can kind of think of it as a ring buffer of
+overlapping register files that's an oversimplification but it was
+originally intended to accelerate and improve register file usage.
+MIPS and the rest of the industry abandoned this for improved compile
+time allocation. I think you might be more likely on MIPS to incur
+more interrupt latency though since you have to spill to memory (at
+least on MIPS contemporary to Sparc V8) instead of just switching
+register windows mileage varies greatly.... From what I remember
+overflowing the register file is implemented with hardware traps that
+spill to memory etc... since you don't know that information at
+compile time. on Sparc so yeah it's quite involved to understand and I
+certainly don't grasp it fully. So on MIPS you spill the register file
+to memory, on Sparc you spill register windows to memory... if you
+have exceeded the supported call depth (which is rather expensive
+since all the register windows go at once). Note spilling a single
+variable within a register window is a separate issue.
 
-You can trim current linux down a bit, it's just non-obvious how. Unfortunately
-there's an "expert" menu and CONFIG_EMBEDDED and if you touch anything there's
-suddenly a hundred extra options in your config with no explanation of what they do.
+Amazing, a link that actually works and is informative:
+https://blogs.oracle.com/d/flush-register-windows
 
-At least 50% of what you want is probably disabling the printk strings that
-aren't visible at your default verbosity level, but alas you must open pandora's
-box to access those options...
 
-> The problem is as I understand it, SILO only sets up a 16Mb mapping
-> (either due to having to assume 4MB minimum dram stick size or due to
-> mapping limitations not sure, most of these machines have at least
-> 16MB in slot one...these days though that wasn't the case for sun4c),
-> loads Linux into it and says good Luck. This isn't enough for a modern
-> kernel with any  hardware support built in. So you might for instance
-> get a kernel to fit but only if you dropped all of networking support
-> etc... I'm guessing the fix for this would be to modify silo to map a
-> larger amount in a way that Linux expects so it can remap it as it
-> likes, or just have SILO map the full memory as Linux would. Anyway
-> that is THE main demotivation for these architectures.... otherwise
-> they have plenty of ram and performance to do basic router/server
-> tasks sans SSL.
-
-A lot of people with hardware like this haven't stopped using it, they've just
-stopped fighting with kernel upgrades. (Common issue in the embedded world. Not
-really a fun thing for security, but )
-
-> This has been the status quo for since the last of the 2.6 series of
-> kernels which it was still possible to just barely squeeze a usable
-> kernel out of... If someone wanted to take a few hours and fix this
-> issue, and keep these architectures around I'd be happy to "buy them a
-> round of pizza", though I recognize that many people that work on this
-> already have nice jobs, and just don't have time.
-
-My https://github.com/landley/toybox/blob/master/scripts/mkroot.sh ~250 line
-bash script generates the simplest kernel configs for a bunch of platforms to
-boot qemu to a shell prompt, but you then have to open the "expert" menu and
-_disable_ stuff in order to get the size down from there.
-
-> Also Sparc would probably be a good project for someone to extend/test
-
-Sparc has a runtime relocation I've never understood but did manage to break
-once, resulting in a long thread to fix:
-
-http://lists.landley.net/pipermail/aboriginal-landley.net/2011-December/001964.html
-
-Between that and the weird save half the stack register thing with function
-calls on some sort of "wheel"... there's a _reason_ I haven't been able to talk
-Rich into adding support for it to musl.
-
-> Andi Keen's Linux LTO patch set so we could reduce the kernel binary
-> size that way also even if sun4 architectures are dropped, it would
-> still be useful for embedded sparc. Also there is a port of Temlib to
-> the Mister hardware now, 3 cores roughly equivalent to a mid 90s
-> machine, at least 128MB ram is possible ( more if a way to map the ARM
-> system memory also 1GB is available there, it would have higher
-> latency though).
-> 
-> It is perfectly viable to build Sparc v7 or v8 32bit binaries in a
-> chroot on a fast machine also, and I would recommend this if you wish
-> to retain sanity rather than attempting cross compiler voodoo, unless
-> that is your thing.
-
-It is, sadly, my thing. The above 250 line bash script builds:
-
-aarch64  armv7l  i686        mips    powerpc      s390x  x86_64
-armv4l   armv7m  m68k        mips64  powerpc64    sh2eb
-armv5l   i486    microblaze  mipsel  powerpc64le  sh4
-
-That's toybox booting to a shell prompt and a linux kernel configured for qemu
-for each target. Adding new targets looks something like:
-
-elif [ "$TARGET" == m68k ]; then
-  QEMU="m68k -M q800" KARCH=m68k KARGS=ttyS0 VMLINUX=vmlinux
-KCONF=MMU,M68040,M68KFPU_EMU,MAC,SCSI_MAC_ESP,MACINTOSH_DRIVERS,ADB,ADB_MACII,NET_CORE,MACSONIC,SERIAL_PMACZILOG,SERIAL_PMACZILOG_TTYS,SERIAL_PMACZILOG_CONSOLE
-elif [ "$TARGET" = s390x ]; then
-  QEMU="s390x" KARCH=s390 VMLINUX=arch/s390/boot/bzImage
-KCONF=MARCH_Z900,PACK_STACK,NET_CORE,VIRTIO_NET,VIRTIO_BLK,SCLP_TTY,SCLP_CONSOLE,SCLP_VT220_TTY,SCLP_VT220_CONSOLE,S390_GUEST
-
-(Well, modulo thunderbird being unable to an indent a line that goes off the
-right edge of the screen. The mozilla foundation somehow managed to spend half a
-billion dollars in 2019 but it wasn't on thunderbird, I can tell you that.)
-
-Anyway, I wrote a couple FAQ entries trying to explain the worst of it:
-
-  https://landley.net/toybox/faq.html#cross
-  https://landley.net/toybox/faq.html#mkroot
-
-> Anyways it could be that people that want this get around to fixing
-> SILO eventually and just sit on this last kernel version... *shrugs*
-
-They're never sitting on the _last_ kernel version. They're generally way back
-from there. Been true forever off of x86 (and now arm):
-
-https://lore.kernel.org/lkml/201002211025.11588.rob@landley.net/T/
-
-> Chase
-
-Rob
+Chase
