@@ -2,106 +2,98 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-17.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CB3AC43381
-	for <linux-sh@archiver.kernel.org>; Tue, 12 Jan 2021 00:52:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AAAA7C433E9
+	for <linux-sh@archiver.kernel.org>; Tue, 12 Jan 2021 14:06:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3E1A22253A
-	for <linux-sh@archiver.kernel.org>; Tue, 12 Jan 2021 00:52:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7D3F823122
+	for <linux-sh@archiver.kernel.org>; Tue, 12 Jan 2021 14:06:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728263AbhALAvl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 11 Jan 2021 19:51:41 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58846 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727995AbhALAvk (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Jan 2021 19:51:40 -0500
-Received: from mail-ej1-x62b.google.com (mail-ej1-x62b.google.com [IPv6:2a00:1450:4864:20::62b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AE7FEC061575;
-        Mon, 11 Jan 2021 16:50:59 -0800 (PST)
-Received: by mail-ej1-x62b.google.com with SMTP id d17so1026190ejy.9;
-        Mon, 11 Jan 2021 16:50:59 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=G5DIxSZetsXeR2X3GAYIsmKuc4e0LX+pB1h8al42nGA=;
-        b=j+w8cAPmi1ouSNkB0JqJUkdXD2VJoqYoycV8eQYOpVz5VF8TwAYOQnJu4l6qSpe1TP
-         l7cC9+RmbUcKXbqnWzgLDa+qn60MdYylKKNyOM2Y3aYHPOqg45Q7c2vcm5mofHVVOnWW
-         BhwCQrkXbjWXz4C7+VJWYTGrFCHl2Onjd1rasxY4Tze0mPYJnVEeqWVwXrnP3jFbtpAG
-         hhy+ITv2iGARdXt0IgayP4e7IkWKy/y1Qv/3GkoDzqJUyn1XKHXO+0D83Mz/Xr/TEUEd
-         ee7W91Ay8q4dNbSafyg4ABdEc88Nh6n9FXIKHIe77FLIeiDzpDJ2KT9ADfJFVO1SEbQo
-         KrsQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=G5DIxSZetsXeR2X3GAYIsmKuc4e0LX+pB1h8al42nGA=;
-        b=cOUhRoc7NRNwlcEQZls6MRmBkwzFyvk5ArEZ4mPfezciLavdZ6fTzaBmsU5TaA5kBd
-         6mYaJmX4gfJ3CYEflQbP7tCma0wNP8hp4JcZ7YtcU9qm/A7e2vfo2AhV9eQhiQpSXoTS
-         S15+r7SiY1X1ZvgRSOcRMDWYAYKrk5UnvGgo5c4U3kzwi20B+NuUvujtb/P6rOe3bKOD
-         Hs2klR5nOTrzc4meT2te+pvx15hgvYUXHdBRMK0mbJ6Oqmf8LvKbY7Yfg5eeZFQmdDap
-         ZrSTC1Bv/ObLVUEFshCm7Y9dWYTBqYRC/BNh3YX4CFw6F+iuUjMaSzw0sadzqMujySlj
-         VZlQ==
-X-Gm-Message-State: AOAM533DctozyEpwyuf0BW8nb2itWlLwvtubQVT3Z6iDAFRW/fmh4XxE
-        JazHxXIfNOisDxZjddBsD8FOoixlsYBumIwESsISUvapTus=
-X-Google-Smtp-Source: ABdhPJzLOupF2EAqOuP41DKkzhcSVFM9yIFN4BjqQCM5peWAM46JF+3fPJTzZ1sn4B2uQLYl7RFtxyYMab7dSCaZUh4=
-X-Received: by 2002:a17:906:7c49:: with SMTP id g9mr1408341ejp.185.1610412658411;
- Mon, 11 Jan 2021 16:50:58 -0800 (PST)
+        id S2387561AbhALOFw (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 12 Jan 2021 09:05:52 -0500
+Received: from mail.kernel.org ([198.145.29.99]:48934 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S1730158AbhALOFv (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Tue, 12 Jan 2021 09:05:51 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id A42AE22CE3;
+        Tue, 12 Jan 2021 14:05:03 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1610460310;
+        bh=YIZSFd4ngdBu3d+V+tCrhUDlUF7epBaWbFsCZCkzGJs=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=S+ljzYYL3QMPhhApX5VwhFNyceVrA27EHM0FStNvwzUR1cQ7GFOIPOcEYTO0fdDaA
+         Kj7O7lmy0yWuWK+AZisJL2LrmlkoM/j63MxdM7S787vyvaT4LD71jTgKDStmGrzxuQ
+         L0/NqqEzqp6wU8ndgl0gsmTuxMJL2Vz98cUyPebone1iHGoyH3HLXEv/yY8kVzE9/C
+         3JxXpkug6tFhHh2/KJ9Ii5coAgelm+gr542ObqppAE3GEOphOgXDNiAJFxaofg4s3u
+         N68pjfATVrUXDVMPlwIcydiug5iK5JLd2AIK2alwIqlmLf7Si7Qy4TLd2kqk9nbCgG
+         c2IYKYoLXP3bw==
+Date:   Tue, 12 Jan 2021 14:05:00 +0000
+From:   Will Deacon <will@kernel.org>
+To:     "Enrico Weigelt, metux IT consult" <info@metux.net>
+Cc:     linux-kernel@vger.kernel.org, catalin.marinas@arm.com,
+        msalter@redhat.com, jacquiot.aurelien@gmail.com,
+        ysato@users.sourceforge.jp, geert@linux-m68k.org,
+        tsbogend@alpha.franken.de, ley.foon.tan@intel.com,
+        jonas@southpole.se, stefan.kristiansson@saunalahti.fi,
+        shorne@gmail.com, James.Bottomley@HansenPartnership.com,
+        deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org,
+        dalias@libc.org, tglx@linutronix.de, mingo@redhat.com,
+        bp@alien8.de, x86@kernel.org, hpa@zytor.com,
+        sstabellini@kernel.org, chris@zankel.net, jcmvbkbc@gmail.com,
+        christian@brauner.io, linux-alpha@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org,
+        linux-pm@vger.kernel.org
+Subject: Re: [PATCH v2] arch: consolidate pm_power_off callback
+Message-ID: <20210112140459.GC9277@willie-the-truck>
+References: <20201227140129.19932-1-info@metux.net>
 MIME-Version: 1.0
-References: <CAK8P3a2VW8T+yYUG1pn1yR-5eU4jJXe1+M_ot6DAvfr2KyXCzQ@mail.gmail.com>
- <ef1dc21f-694b-2433-e1c6-aa121320173e@physik.fu-berlin.de>
- <20210110214653.GA1693373@ravnborg.org> <df42946e-5b1f-c433-fc6b-a2950f3d8dab@physik.fu-berlin.de>
- <CACwypyNS+fVoPVspSr36v8YjFbkrnYb+amcYRqVmA2kD2uD1Wg@mail.gmail.com> <1f6e936c-4947-4952-fae2-c05d03e0cd2c@landley.net>
-In-Reply-To: <1f6e936c-4947-4952-fae2-c05d03e0cd2c@landley.net>
-From:   chase rayfield <cusbrar1@gmail.com>
-Date:   Mon, 11 Jan 2021 19:50:48 -0500
-Message-ID: <CACwypyNVibQby75dZek=P1oBkcHQYMx-kbria9Y6NnBpERh+qQ@mail.gmail.com>
-Subject: Re: Old platforms: bring out your dead
-To:     Rob Landley <rob@landley.net>
-Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Sam Ravnborg <sam@ravnborg.org>, Arnd Bergmann <arnd@arndb.de>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-m68k <linux-m68k@lists.linux-m68k.org>,
-        Sparc kernel list <sparclinux@vger.kernel.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20201227140129.19932-1-info@metux.net>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-> Sparc has a runtime relocation I've never understood but did manage to break
-> once, resulting in a long thread to fix:
->
-> http://lists.landley.net/pipermail/aboriginal-landley.net/2011-December/001964.html
->
-> Between that and the weird save half the stack register thing with function
-> calls on some sort of "wheel"... there's a _reason_ I haven't been able to talk
-> Rich into adding support for it to musl.
->
-Register windowing, with parts of each window overlapping for function
-arguments etc... you can kind of think of it as a ring buffer of
-overlapping register files that's an oversimplification but it was
-originally intended to accelerate and improve register file usage.
-MIPS and the rest of the industry abandoned this for improved compile
-time allocation. I think you might be more likely on MIPS to incur
-more interrupt latency though since you have to spill to memory (at
-least on MIPS contemporary to Sparc V8) instead of just switching
-register windows mileage varies greatly.... From what I remember
-overflowing the register file is implemented with hardware traps that
-spill to memory etc... since you don't know that information at
-compile time. on Sparc so yeah it's quite involved to understand and I
-certainly don't grasp it fully. So on MIPS you spill the register file
-to memory, on Sparc you spill register windows to memory... if you
-have exceeded the supported call depth (which is rather expensive
-since all the register windows go at once). Note spilling a single
-variable within a register window is a separate issue.
+On Sun, Dec 27, 2020 at 03:01:28PM +0100, Enrico Weigelt, metux IT consult wrote:
+> Move the pm_power_off callback into one global place and also add an
+> function for conditionally calling it (when not NULL), in order to remove
+> code duplication in all individual archs.
+> 
+> Reported-by: kernel test robot <lkp@intel.com>
+> Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
 
-Amazing, a link that actually works and is informative:
-https://blogs.oracle.com/d/flush-register-windows
+[...]
 
+> diff --git a/kernel/reboot.c b/kernel/reboot.c
+> index eb1b15850761..ec4cd66dd1ae 100644
+> --- a/kernel/reboot.c
+> +++ b/kernel/reboot.c
+> @@ -53,6 +53,16 @@ int reboot_force;
+>  void (*pm_power_off_prepare)(void);
+>  EXPORT_SYMBOL_GPL(pm_power_off_prepare);
+>  
+> +void (*pm_power_off)(void);
+> +EXPORT_SYMBOL_GPL(pm_power_off);
+> +
+> +void do_power_off(void)
+> +{
+> +	if (pm_power_off)
+> +		pm_power_off();
+> +}
+> +EXPORT_SYMBOL_GPL(do_power_off);
 
-Chase
+Could this just live as a static inline in pm.h to avoid having to export
+the extra symbol?
+
+Will
