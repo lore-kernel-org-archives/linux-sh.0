@@ -2,98 +2,130 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-17.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AAAA7C433E9
-	for <linux-sh@archiver.kernel.org>; Tue, 12 Jan 2021 14:06:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 89576C433E6
+	for <linux-sh@archiver.kernel.org>; Tue, 12 Jan 2021 14:38:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7D3F823122
-	for <linux-sh@archiver.kernel.org>; Tue, 12 Jan 2021 14:06:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 55C582312E
+	for <linux-sh@archiver.kernel.org>; Tue, 12 Jan 2021 14:38:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S2387561AbhALOFw (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 12 Jan 2021 09:05:52 -0500
-Received: from mail.kernel.org ([198.145.29.99]:48934 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1730158AbhALOFv (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Tue, 12 Jan 2021 09:05:51 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id A42AE22CE3;
-        Tue, 12 Jan 2021 14:05:03 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1610460310;
-        bh=YIZSFd4ngdBu3d+V+tCrhUDlUF7epBaWbFsCZCkzGJs=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=S+ljzYYL3QMPhhApX5VwhFNyceVrA27EHM0FStNvwzUR1cQ7GFOIPOcEYTO0fdDaA
-         Kj7O7lmy0yWuWK+AZisJL2LrmlkoM/j63MxdM7S787vyvaT4LD71jTgKDStmGrzxuQ
-         L0/NqqEzqp6wU8ndgl0gsmTuxMJL2Vz98cUyPebone1iHGoyH3HLXEv/yY8kVzE9/C
-         3JxXpkug6tFhHh2/KJ9Ii5coAgelm+gr542ObqppAE3GEOphOgXDNiAJFxaofg4s3u
-         N68pjfATVrUXDVMPlwIcydiug5iK5JLd2AIK2alwIqlmLf7Si7Qy4TLd2kqk9nbCgG
-         c2IYKYoLXP3bw==
-Date:   Tue, 12 Jan 2021 14:05:00 +0000
-From:   Will Deacon <will@kernel.org>
-To:     "Enrico Weigelt, metux IT consult" <info@metux.net>
-Cc:     linux-kernel@vger.kernel.org, catalin.marinas@arm.com,
-        msalter@redhat.com, jacquiot.aurelien@gmail.com,
-        ysato@users.sourceforge.jp, geert@linux-m68k.org,
-        tsbogend@alpha.franken.de, ley.foon.tan@intel.com,
-        jonas@southpole.se, stefan.kristiansson@saunalahti.fi,
-        shorne@gmail.com, James.Bottomley@HansenPartnership.com,
-        deller@gmx.de, benh@kernel.crashing.org, paulus@samba.org,
-        dalias@libc.org, tglx@linutronix.de, mingo@redhat.com,
-        bp@alien8.de, x86@kernel.org, hpa@zytor.com,
-        sstabellini@kernel.org, chris@zankel.net, jcmvbkbc@gmail.com,
-        christian@brauner.io, linux-alpha@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org, linux-c6x-dev@linux-c6x.org,
-        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org,
-        linux-pm@vger.kernel.org
-Subject: Re: [PATCH v2] arch: consolidate pm_power_off callback
-Message-ID: <20210112140459.GC9277@willie-the-truck>
-References: <20201227140129.19932-1-info@metux.net>
+        id S1728429AbhALOiR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 12 Jan 2021 09:38:17 -0500
+Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:38941 "EHLO
+        outpost1.zedat.fu-berlin.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1726329AbhALOiR (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 12 Jan 2021 09:38:17 -0500
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.94)
+          with esmtps (TLS1.2)
+          tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1kzKne-000o6B-Ed; Tue, 12 Jan 2021 15:37:34 +0100
+Received: from p5b13a61e.dip0.t-ipconnect.de ([91.19.166.30] helo=[192.168.178.139])
+          by inpost2.zedat.fu-berlin.de (Exim 4.94)
+          with esmtpsa (TLS1.2)
+          tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1kzKnd-001CLC-9K; Tue, 12 Jan 2021 15:37:33 +0100
+Subject: Re: Old platforms: bring out your dead
+To:     chase rayfield <cusbrar1@gmail.com>
+Cc:     Sam Ravnborg <sam@ravnborg.org>, Arnd Bergmann <arnd@arndb.de>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        Sparc kernel list <sparclinux@vger.kernel.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>
+References: <CAK8P3a2VW8T+yYUG1pn1yR-5eU4jJXe1+M_ot6DAvfr2KyXCzQ@mail.gmail.com>
+ <ef1dc21f-694b-2433-e1c6-aa121320173e@physik.fu-berlin.de>
+ <20210110214653.GA1693373@ravnborg.org>
+ <df42946e-5b1f-c433-fc6b-a2950f3d8dab@physik.fu-berlin.de>
+ <CACwypyNS+fVoPVspSr36v8YjFbkrnYb+amcYRqVmA2kD2uD1Wg@mail.gmail.com>
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Message-ID: <4c42f2ce-7702-55cd-a2c0-558d3dd208f2@physik.fu-berlin.de>
+Date:   Tue, 12 Jan 2021 15:37:32 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.6.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20201227140129.19932-1-info@metux.net>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+In-Reply-To: <CACwypyNS+fVoPVspSr36v8YjFbkrnYb+amcYRqVmA2kD2uD1Wg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.19.166.30
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Sun, Dec 27, 2020 at 03:01:28PM +0100, Enrico Weigelt, metux IT consult wrote:
-> Move the pm_power_off callback into one global place and also add an
-> function for conditionally calling it (when not NULL), in order to remove
-> code duplication in all individual archs.
+Hello!
+
+On 1/11/21 3:55 PM, chase rayfield wrote:
+> My take is that there *would* be more interest in Sparc sun4m / Sun4d
+> from enthusiasts at the very least if it was possible to actually boot
+> the bloat hog that is Linux these days in a fully usable configuration
+> that probably means some modifications to SILO and Linux required.
+
+The Linux kernel is configurable. If you want a small kernel, then just
+configure one. No one expects you to boot a fully-fledged distribution
+kernel on these machines.
+
+> The problem is as I understand it, SILO only sets up a 16Mb mapping
+> (either due to having to assume 4MB minimum dram stick size or due to
+> mapping limitations not sure, most of these machines have at least
+> 16MB in slot one...these days though that wasn't the case for sun4c),
+> loads Linux into it and says good Luck. This isn't enough for a modern
+> kernel with any  hardware support built in. So you might for instance
+> get a kernel to fit but only if you dropped all of networking support
+> etc...
+
+That makes no sense. It worked in the past, why shouldn't it work nowadays?
+
+As I said, you disable everything you don't need. I'm booting my SH-7785LCR
+SuperH board with a kernel that is less than 4 MB in size and which includes
+everything I need.
+
+> I'm guessing the fix for this would be to modify silo to map a
+> larger amount in a way that Linux expects so it can remap it as it
+> likes, or just have SILO map the full memory as Linux would. Anyway
+> that is THE main demotivation for these architectures.... otherwise
+> they have plenty of ram and performance to do basic router/server
+> tasks sans SSL.
+
+Or just configure a smaller kernel.
+
+> This has been the status quo for since the last of the 2.6 series of
+> kernels which it was still possible to just barely squeeze a usable
+> kernel out of... If someone wanted to take a few hours and fix this
+> issue, and keep these architectures around I'd be happy to "buy them a
+> round of pizza", though I recognize that many people that work on this
+> already have nice jobs, and just don't have time.
+
+I haven't gotten around to setup my SPARCstation 5 yet, but I will certainly
+going to do that later this year to give it a try.
+
+> Also Sparc would probably be a good project for someone to extend/test
+> Andi Keen's Linux LTO patch set so we could reduce the kernel binary
+> size that way also even if sun4 architectures are dropped, it would
+> still be useful for embedded sparc. Also there is a port of Temlib to
+> the Mister hardware now, 3 cores roughly equivalent to a mid 90s
+> machine, at least 128MB ram is possible ( more if a way to map the ARM
+> system memory also 1GB is available there, it would have higher
+> latency though).
 > 
-> Reported-by: kernel test robot <lkp@intel.com>
-> Signed-off-by: Enrico Weigelt, metux IT consult <info@metux.net>
+> It is perfectly viable to build Sparc v7 or v8 32bit binaries in a
+> chroot on a fast machine also, and I would recommend this if you wish
+> to retain sanity rather than attempting cross compiler voodoo, unless
+> that is your thing.
 
-[...]
+We build anything SPARC on a SPARC T5 that we have for Debian, no need
+for cross-compilation and that machine is actually quite fast.
 
-> diff --git a/kernel/reboot.c b/kernel/reboot.c
-> index eb1b15850761..ec4cd66dd1ae 100644
-> --- a/kernel/reboot.c
-> +++ b/kernel/reboot.c
-> @@ -53,6 +53,16 @@ int reboot_force;
->  void (*pm_power_off_prepare)(void);
->  EXPORT_SYMBOL_GPL(pm_power_off_prepare);
->  
-> +void (*pm_power_off)(void);
-> +EXPORT_SYMBOL_GPL(pm_power_off);
-> +
-> +void do_power_off(void)
-> +{
-> +	if (pm_power_off)
-> +		pm_power_off();
-> +}
-> +EXPORT_SYMBOL_GPL(do_power_off);
+Adrian
 
-Could this just live as a static inline in pm.h to avoid having to export
-the extra symbol?
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
 
-Will
