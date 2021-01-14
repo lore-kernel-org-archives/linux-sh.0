@@ -2,88 +2,98 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.2 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,
-	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F402C433E6
-	for <linux-sh@archiver.kernel.org>; Wed, 13 Jan 2021 15:30:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 86ACBC433DB
+	for <linux-sh@archiver.kernel.org>; Thu, 14 Jan 2021 03:54:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id C5697233EA
-	for <linux-sh@archiver.kernel.org>; Wed, 13 Jan 2021 15:30:00 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3E91623877
+	for <linux-sh@archiver.kernel.org>; Thu, 14 Jan 2021 03:54:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727171AbhAMP3u (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 13 Jan 2021 10:29:50 -0500
-Received: from mail.kernel.org ([198.145.29.99]:33916 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1726779AbhAMP3u (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Wed, 13 Jan 2021 10:29:50 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id EF0332339F;
-        Wed, 13 Jan 2021 15:29:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1610551749;
-        bh=tigmSALSmnpPhwSMEXEk1CkqDvI2zvR/FIet9q8saxs=;
-        h=From:To:Cc:In-Reply-To:References:Subject:Date:From;
-        b=MoKBqM/0cAcRdDNmglVs+rFdRPUNbzgcXYCqbrdI0E8S7QxdvYgDlOI+H5/EMcuwM
-         bxDx42I8DuZCQKpR34X1vfjGwAUecMfNeTynJiV/t3TZ9U+wQ5bpquctU7F9aIClX9
-         2rbjacg/OlVcf01A7TzO6TXp0E49uU3KaYvyyRfhpVcurQc6PpKzpyGstOh0K3ToYJ
-         25fczjxS9wZCXQbAlYTdHA6cE8OzAa/KFCmBPlrojktAMXvKZKz1hLoIRXk8mBETlM
-         CQuA4Iz6WKlS2qfshnANjPSgAkJRyiaA0MYKhl6ARPFryq54zanQks0Z+S7zSRa3d0
-         PGVGIkwD4Cmyw==
-From:   Mark Brown <broonie@kernel.org>
-To:     Geert Uytterhoeven <geert+renesas@glider.be>
-Cc:     linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-spi@vger.kernel.org
-In-Reply-To: <20210113101916.1147695-1-geert+renesas@glider.be>
-References: <20210113101916.1147695-1-geert+renesas@glider.be>
-Subject: Re: [PATCH 0/2] spi: sh-msiof: Advertize bit rate limits and actual speed
-Message-Id: <161055171029.21847.2841921385275436977.b4-ty@kernel.org>
-Date:   Wed, 13 Jan 2021 15:28:30 +0000
+        id S1726686AbhANDyu (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 13 Jan 2021 22:54:50 -0500
+Received: from kvm5.telegraphics.com.au ([98.124.60.144]:42344 "EHLO
+        kvm5.telegraphics.com.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1726003AbhANDyu (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 13 Jan 2021 22:54:50 -0500
+Received: from localhost (localhost.localdomain [127.0.0.1])
+        by kvm5.telegraphics.com.au (Postfix) with ESMTP id 6503D22D2C;
+        Wed, 13 Jan 2021 22:54:06 -0500 (EST)
+Date:   Thu, 14 Jan 2021 14:54:04 +1100 (AEDT)
+From:   Finn Thain <fthain@telegraphics.com.au>
+To:     Arnd Bergmann <arnd@kernel.org>
+cc:     Linus Walleij <linus.walleij@linaro.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Gerhard Pircher <gerhard_pircher@gmx.net>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        Sparc kernel list <sparclinux@vger.kernel.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>
+Subject: New platforms: bring out your dead, was Re: Old platforms: bring
+ out your dead
+In-Reply-To: <CAK8P3a3hKSVXZEjQEbkOLhtAO0oR0+UP1dL10S3jQM72EsmsWA@mail.gmail.com>
+Message-ID: <alpine.LNX.2.23.453.2101141451370.7@nippy.intranet>
+References: <ef1dc21f-694b-2433-e1c6-aa121320173e@physik.fu-berlin.de> <f48bcf43-9dcc-e48b-d29d-f75f3814398b@gmx.net> <cb5a2e11-d423-96ec-3d43-3568a109e37f@physik.fu-berlin.de> <CACRpkda4E2NwNw29J7x5gehtqn_m3M_Z2dHpc7xRgvb0b-p22A@mail.gmail.com>
+ <CAK8P3a3hKSVXZEjQEbkOLhtAO0oR0+UP1dL10S3jQM72EsmsWA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=US-ASCII
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, 13 Jan 2021 11:19:14 +0100, Geert Uytterhoeven wrote:
-> 	Hi Mark,
+On Wed, 13 Jan 2021, Arnd Bergmann wrote:
+
 > 
-> This patch series makes the Renesas MSIOF SPI driver fill in actual
-> transfer speeds and controller limits, so the SPI core can take them
-> into account.
+> It's usually one of two things that happened before a platform gets
+> deleted for good:
 > 
-> This has been tested on R-Car Gen2 and Gen3.
-> Thanks!
+> * The platform port was (almost) exclusively done by one company
+>    with a commercial interest in it, and the company shifts its priorities
+>    for some reason (acquisition, bankruptcy, product cancellation,
+>    accidentally laying off all competent developers, ...) that causes it to
+>    stop working on it. Sometimes the previously paid maintainers
+>    keep up their upstream position, but without someone pushing the
+>    last missing bits into an official release, users are stuck on an old
+>    BSP kernel.
 > 
-> [...]
 
-Applied to
+Yes, that's the typical product life cycle. It presumes a short window of 
+opportunity for sales (suggesting that demand is not organic).
 
-   https://git.kernel.org/pub/scm/linux/kernel/git/broonie/spi.git for-next
+Most vendors like to avoid having to compete with their own prior product 
+lines. Hence the constrained lifespan that we get from devices with 
+out-of-tree Linux ports.
 
-Thanks!
+AFAICS open source licenses cannot really prevent this (no matter how many 
+freedoms the FSF would like to confer on people). However, consumer law 
+could do it, if it were to disallow products which were not servicable.
 
-[1/2] spi: sh-msiof: Fill in spi_transfer.effective_speed_hz
-      commit: 9a133f7b72f0b8d8896cbc7e4149c763b59168bb
-[2/2] spi: sh-msiof: Fill in controller speed limits
-      commit: 81f68479ec4ec91c0b0d7fb20db433be28e00497
+> * A platform port is done in the open and actually works for upstream
+>   users, but over time the last active maintainers move on in their
+>   lives. Complex platforms inevitably break when a treewide change
+>   goes wrong, so we rely on users that are able to bisect and report
+>   bugs when they happen. 
 
-All being well this means that it will be integrated into the linux-next
-tree (usually sometime in the next 24 hours) and sent to Linus during
-the next merge window (or sooner if it is a bug fix), however if
-problems are discovered then the patch may be dropped or reverted.
+And without bug reports, breakage gets leveraged into deletion, using the 
+bogus argument that "broken" code is proof of zero potential users.
 
-You may get further e-mails resulting from automated or manual testing
-and review of the tree, please engage with people reporting problems and
-send followup patches addressing any issues that are reported if needed.
+>   After a platform has been broken for too long, even competent users 
+>   may decide to just give up and stay on their last working kernel. Some 
+>   of these platforms eventually recover when a new maintainer steps up 
+>   or someone discovers they depend on newer kernels for products, but 
+>   after a few years it's usually beyond repair.
+> 
 
-If any updates are required or you are submitting further changes they
-should be sent as incremental updates against current git, existing
-patches will not be replaced.
+So all a vendor has to do is make maintenance a bit too difficult for 
+competent users e.g. by depriving them of access to existing 
+documentation.
 
-Please add any relevant lists and maintainers to the CCs when replying
-to this mail.
+It was only a few decades ago that every applicance you bought came with a 
+printed circuit schematic. These days, every device you buy comes with 
+built-in obsolescence and a customer lock-in strategy.
 
-Thanks,
-Mark
+>       Arnd
+> 
