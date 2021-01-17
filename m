@@ -2,58 +2,81 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-17.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 13B36C4332B
-	for <linux-sh@archiver.kernel.org>; Sat, 16 Jan 2021 23:23:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A76DEC433E0
+	for <linux-sh@archiver.kernel.org>; Sun, 17 Jan 2021 11:20:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E764F2255F
-	for <linux-sh@archiver.kernel.org>; Sat, 16 Jan 2021 23:23:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6668E206EC
+	for <linux-sh@archiver.kernel.org>; Sun, 17 Jan 2021 11:20:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727446AbhAPXXB (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 16 Jan 2021 18:23:01 -0500
-Received: from kvm5.telegraphics.com.au ([98.124.60.144]:60458 "EHLO
-        kvm5.telegraphics.com.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727363AbhAPXXA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 16 Jan 2021 18:23:00 -0500
-Received: from localhost (localhost.localdomain [127.0.0.1])
-        by kvm5.telegraphics.com.au (Postfix) with ESMTP id E5B7922598;
-        Sat, 16 Jan 2021 18:22:15 -0500 (EST)
-Date:   Sun, 17 Jan 2021 10:22:15 +1100 (AEDT)
-From:   Finn Thain <fthain@telegraphics.com.au>
-To:     Rob Landley <rob@landley.net>
-cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Gerhard Pircher <gerhard_pircher@gmx.net>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-m68k <linux-m68k@lists.linux-m68k.org>,
-        Sparc kernel list <sparclinux@vger.kernel.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>
-Subject: Re: Old platforms never die, was Re: Old platforms: bring out your
- dead
-In-Reply-To: <897dbd50-ce42-8fdb-8777-fab08185e324@landley.net>
-Message-ID: <alpine.LNX.2.23.453.2101171017320.6@nippy.intranet>
-References: <ef1dc21f-694b-2433-e1c6-aa121320173e@physik.fu-berlin.de> <f48bcf43-9dcc-e48b-d29d-f75f3814398b@gmx.net> <cb5a2e11-d423-96ec-3d43-3568a109e37f@physik.fu-berlin.de> <alpine.LNX.2.23.453.2101131035500.6@nippy.intranet>
- <897dbd50-ce42-8fdb-8777-fab08185e324@landley.net>
+        id S1728474AbhAQLUS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 17 Jan 2021 06:20:18 -0500
+Received: from condef-01.nifty.com ([202.248.20.66]:62422 "EHLO
+        condef-01.nifty.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1728453AbhAQLUR (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 17 Jan 2021 06:20:17 -0500
+Received: from conuserg-10.nifty.com ([10.126.8.73])by condef-01.nifty.com with ESMTP id 10HBI1AM004965
+        for <linux-sh@vger.kernel.org>; Sun, 17 Jan 2021 20:18:01 +0900
+Received: from oscar.flets-west.jp (softbank126026094251.bbtec.net [126.26.94.251]) (authenticated)
+        by conuserg-10.nifty.com with ESMTP id 10HBGXEL004053;
+        Sun, 17 Jan 2021 20:16:33 +0900
+DKIM-Filter: OpenDKIM Filter v2.10.3 conuserg-10.nifty.com 10HBGXEL004053
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com;
+        s=dec2015msa; t=1610882194;
+        bh=mDGcqBe4GubK8SZYhFUOU4mOtTxrvJNR8QEIK9mA4JE=;
+        h=From:To:Cc:Subject:Date:From;
+        b=uRubQVESizv1JcVWK18rxQkxwW78tBZRJDjRU0UFjLbxoa1DYXdwKW3T1mKXMxAmq
+         s4aXJatVgTlsnGJQ0vm2pAYmIxsEO4aq9lFOz0yFWk2CQAMCVeItDaCBiktG+Hnqwj
+         TL9PabmCM+6k023E6MEmxLiqunWGQ/t+Z/2MkLfAmdZwXV12Ctib6umZtOpLON9TLP
+         LtioelFOAdQFvxZRcLeB9apa17iqqNLC5D1yGirLvi6uvBivA42APJfXW6DFC4uWFG
+         dUMZOyRT+Fy5bCiL7J9D6LaJgSNAzym+r+gNzB7LoG3sbqHWuV13BvCNymICirA+3Q
+         ti1sV72NTQtqQ==
+X-Nifty-SrcIP: [126.26.94.251]
+From:   Masahiro Yamada <masahiroy@kernel.org>
+To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Cc:     Masahiro Yamada <masahiroy@kernel.org>,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH 1/2] sh: boot: add intermediate vmlinux.bin* to targets instead of extra-y
+Date:   Sun, 17 Jan 2021 20:16:31 +0900
+Message-Id: <20210117111632.2392635-1-masahiroy@kernel.org>
+X-Mailer: git-send-email 2.27.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Sat, 16 Jan 2021, Rob Landley wrote:
+You do not need to build all of vmlinux.bin*
 
-> Speaking of which, my qemu m68k system has failed to boot ever since commit:
-> 
-> commit f93bfeb55255bddaa16597e187a99ae6131b964a
-> Author: Finn Thain <fthain@telegraphics.com.au>
-> Date:   Sun Jun 28 14:23:12 2020 +1000
-> 
->     macintosh/via-macii: Poll the device most likely to respond
-> 
+They are built on demand as prerequsites of uImage.bin*, hence should
+be added to targets instead of extra-y.
 
-Yes, that patch series broke your emulator by fixing kernel bugs. Please 
-refer to this message for some background and some solutions--
-https://lore.kernel.org/linux-m68k/alpine.LNX.2.23.453.2008100844450.8@nippy.intranet/
+Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
+---
+
+ arch/sh/boot/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/boot/Makefile b/arch/sh/boot/Makefile
+index 58592dfa5cb6..dded61296c9a 100644
+--- a/arch/sh/boot/Makefile
++++ b/arch/sh/boot/Makefile
+@@ -27,8 +27,8 @@ suffix-$(CONFIG_KERNEL_XZ)	:= xz
+ suffix-$(CONFIG_KERNEL_LZO)	:= lzo
+ 
+ targets := zImage vmlinux.srec romImage uImage uImage.srec uImage.gz \
+-	   uImage.bz2 uImage.lzma uImage.xz uImage.lzo uImage.bin
+-extra-y += vmlinux.bin vmlinux.bin.gz vmlinux.bin.bz2 vmlinux.bin.lzma \
++	   uImage.bz2 uImage.lzma uImage.xz uImage.lzo uImage.bin \
++	   vmlinux.bin vmlinux.bin.gz vmlinux.bin.bz2 vmlinux.bin.lzma \
+ 	   vmlinux.bin.xz vmlinux.bin.lzo
+ subdir- := compressed romimage
+ 
+-- 
+2.27.0
+
