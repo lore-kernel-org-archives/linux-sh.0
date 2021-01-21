@@ -8,54 +8,54 @@ X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 66469C4332E
-	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 00:59:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BD34C433E9
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 01:47:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 42FC723602
-	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 00:59:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DAA4523788
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 01:47:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1733111AbhAUA6W (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 20 Jan 2021 19:58:22 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36954 "EHLO
+        id S1732524AbhAUA5n (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 20 Jan 2021 19:57:43 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36300 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2392380AbhAUAKV (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Jan 2021 19:10:21 -0500
-Received: from mail-qt1-x832.google.com (mail-qt1-x832.google.com [IPv6:2607:f8b0:4864:20::832])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BBF35C061798;
-        Wed, 20 Jan 2021 16:06:42 -0800 (PST)
-Received: by mail-qt1-x832.google.com with SMTP id r9so360682qtp.11;
-        Wed, 20 Jan 2021 16:06:42 -0800 (PST)
+        with ESMTP id S1729634AbhAUAHX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Jan 2021 19:07:23 -0500
+Received: from mail-qk1-x729.google.com (mail-qk1-x729.google.com [IPv6:2607:f8b0:4864:20::729])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BA1A2C0613D3;
+        Wed, 20 Jan 2021 16:06:37 -0800 (PST)
+Received: by mail-qk1-x729.google.com with SMTP id 19so94770qkm.8;
+        Wed, 20 Jan 2021 16:06:37 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=EJvVbTcrFXhal00Em+TPrjdhMeNVT/fqvfLLy70dJMA=;
-        b=vWXwiNJ+21L5NEAcfTJmnhSL+ca7W/dNzSA0tHOF6ctG1i3z5n4FSbFYnxtaZrR9Kh
-         QjVy8Jh2Am8Z92TXHZRypNlqkefGFQtSusL0K++LpxONvZDQo0eFqK0oJ2lEl/45CRM1
-         u+pm8Va4XWVGO98mkSD0pse4jEYTHvwGD4OpmsCDndOSgyLTmdLPsYNKy5TQeJKlnZiU
-         cOj2LpXcBUQxU9GLNF1y7Ow0FoeuexvQ9aJoIesaEW0rOnSykNBIVw4hcnehcN9f02h3
-         4ixz1k+SkNiIJDj6EREawv9zhd17ejqFPmosZtYBPyBNPcps75wadIV5QKB3IX0TgQDW
-         n+vQ==
+        bh=VJyAeNkICLzobewilotYyvHX3yTrS03Tp5qJyqqjL0g=;
+        b=irEJfFhw75j0zxYyv1AJTNPEoITdlEq7ViAShlWlaluOp16XsYOBe6kv5B7Gs1yMLk
+         Bz23HPNwKq9hVgiS9Lw7ph5GtM0TcGmHGx+oH45vktz+664CXPQi1TO/hEq9zM6h9NZq
+         Lwr3XWL12PINo5J6vj1wK5NrvFfXCIORz9SJ8bFDJvoSm1w2qvvgNAoGaUcd3IEzHNkF
+         ZL5nkVm220A+txnXZm4wu7L+y3gptXZ/92SG1hq1S4viIF8WD5qSDGqgvgBCl8NJzPcC
+         aq4ZTVsaLNOM3QREMOhSzOhjSQ24ZjeKjWnlUCytjGkn3cF9+HIS6gVrTTedDSNAqdhe
+         HGhw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=EJvVbTcrFXhal00Em+TPrjdhMeNVT/fqvfLLy70dJMA=;
-        b=RdbEY0Wz9gyhu0zdEWBmgd+ttu6FLfMO0QAKKNKt4mI9mKpbJiCfv8zwdo+/pPYG9M
-         5bmyRMf+vD59IBIy4ea/RYhtKzSAIjQp/2GOEEaGwm1HoGnSNFjHxUVDTmy9zT0JDlow
-         CpV0wDyn4WlNeVKEYqilQALcIMIqiXPD/da4j6HHzrKeUKRRPW2564R3Fxwy4lMAwtNk
-         VD/c9/UeTtJPWkeNWfCbD5c+0wvZqffkfKM2IC83LKyQ+ytbMF+qmiMJZDvy95zJW79Y
-         z9iff+Ye1RHM6lc0GZVw77IickfdvZ66SjQ0mXsZ/4IuxxI+WKmy1WEC7urUs2vAekh+
-         unkg==
-X-Gm-Message-State: AOAM531Z/+i7/8jR7tLRpJaH8O7M036wAPFAvByjVw2EBl5I/wQ0cZ6e
-        UbWDrPTFOHNxno3wR4xHhMM=
-X-Google-Smtp-Source: ABdhPJzyA0gTkmmj57pbH5DOx/IkC97OqDS83dP13BmJv9Nnz4vmLR/AQG7HSaZwFjqG70KYKkP4DA==
-X-Received: by 2002:ac8:5e83:: with SMTP id r3mr11322397qtx.261.1611187601929;
-        Wed, 20 Jan 2021 16:06:41 -0800 (PST)
+        bh=VJyAeNkICLzobewilotYyvHX3yTrS03Tp5qJyqqjL0g=;
+        b=VMEjCdl2RT1bj9Cf96mLdproxdrqH3B7bw80CJrb4z/JK30Est0yLEZcbeb3Of/frk
+         OxWD+K/NLT0KMAf65ir7rhyCNNlj+O25hzgzcdlD8s0+dfdXdpba+AjScQRDpCYNsBys
+         +flD6HbgP8VPS8zs4n7Hgh/QwIJ1jCpGr8Kp1jbmp/QAO1Uq0sE0Rpvi7uXw0oowaZ5D
+         X0D2K2W78Mg5Deh9jAZqdQ8dmS08ydcrt0hmd8a2ztP10Mujsrz96eOpSaVZH1aeZKba
+         soPABRJTWDtc87OkaqHm8Ngp0mTFVSL+9cQCJXGJOe2dpy2q27jU6dk0lzdBHwc+hlUa
+         7FRg==
+X-Gm-Message-State: AOAM531m4FMs5BJdqqvqOe8OkiZSDAQveWxntZ1WY4yc3+T6COJsnyqC
+        xtarV26HYQ45seoU4m7S4zY=
+X-Google-Smtp-Source: ABdhPJwK96z5HSohBB4jgawql1ys9+J+U8m5f6SbrirOJTJj1+oKcKeFV63KJtEdZZ6RU5gOTh2EvA==
+X-Received: by 2002:a37:4286:: with SMTP id p128mr3589516qka.337.1611187597005;
+        Wed, 20 Jan 2021 16:06:37 -0800 (PST)
 Received: from localhost (d27-96-190-162.evv.wideopenwest.com. [96.27.162.190])
-        by smtp.gmail.com with ESMTPSA id i41sm2421673qtc.33.2021.01.20.16.06.41
+        by smtp.gmail.com with ESMTPSA id j124sm2505020qkf.113.2021.01.20.16.06.36
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 20 Jan 2021 16:06:41 -0800 (PST)
+        Wed, 20 Jan 2021 16:06:36 -0800 (PST)
 From:   Yury Norov <yury.norov@gmail.com>
 To:     linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
         linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
@@ -73,9 +73,9 @@ Cc:     Yury Norov <yury.norov@gmail.com>,
         Wei Yang <richard.weiyang@linux.alibaba.com>,
         Josh Poimboeuf <jpoimboe@redhat.com>,
         Rasmus Villemoes <rasmus.villemoes@prevas.dk>
-Subject: [PATCH 5/6] lib: add fast path for find_next_*_bit()
-Date:   Wed, 20 Jan 2021 16:06:29 -0800
-Message-Id: <20210121000630.371883-6-yury.norov@gmail.com>
+Subject: [PATCH 1/6] arch: rearrahge headers inclusion order in asm/bitops for m68k and sh
+Date:   Wed, 20 Jan 2021 16:06:25 -0800
+Message-Id: <20210121000630.371883-2-yury.norov@gmail.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210121000630.371883-1-yury.norov@gmail.com>
 References: <20210121000630.371883-1-yury.norov@gmail.com>
@@ -85,134 +85,56 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Similarly to bitmap functions, find_next_*_bit() users will benefit
-if we'll handle a case of bitmaps that fit into a single word. In the
-very best case, the compiler may replace a function call with a
-single ffs or ffz instruction.
+m68k and sh include bitmap/find.h prior to ffs/fls headers. New
+fast-path implementation in find.h requires ffs/fls. Reordering
+the order of headers inclusion helps to prevent compile-time
+implicit-function-declaration error.
 
 Signed-off-by: Yury Norov <yury.norov@gmail.com>
 ---
- include/asm-generic/bitops/find.h | 39 +++++++++++++++++++++++++++++++
- include/asm-generic/bitops/le.h   | 28 ++++++++++++++++++++++
- 2 files changed, 67 insertions(+)
+ arch/m68k/include/asm/bitops.h | 4 ++--
+ arch/sh/include/asm/bitops.h   | 3 ++-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
 
-diff --git a/include/asm-generic/bitops/find.h b/include/asm-generic/bitops/find.h
-index 7ad70dab8e93..d45096069011 100644
---- a/include/asm-generic/bitops/find.h
-+++ b/include/asm-generic/bitops/find.h
-@@ -20,6 +20,18 @@ static inline
- unsigned long find_next_bit(const unsigned long *addr, unsigned long size,
- 			    unsigned long offset)
- {
-+	if (small_const_nbits(size)) {
-+		unsigned long val;
-+
-+		if (unlikely(offset >= size))
-+			return size;
-+
-+		val = *addr & BITMAP_FIRST_WORD_MASK(offset)
-+				& BITMAP_LAST_WORD_MASK(size);
-+
-+		return val ? __ffs(val) : size;
-+	}
-+
- 	return _find_next_bit(addr, NULL, size, offset, 0UL, 0);
- }
- #endif
-@@ -40,6 +52,18 @@ unsigned long find_next_and_bit(const unsigned long *addr1,
- 		const unsigned long *addr2, unsigned long size,
- 		unsigned long offset)
- {
-+	if (small_const_nbits(size)) {
-+		unsigned long val;
-+
-+		if (unlikely(offset >= size))
-+			return size;
-+
-+		val = *addr1 & *addr2 & BITMAP_FIRST_WORD_MASK(offset)
-+				      & BITMAP_LAST_WORD_MASK(size);
-+
-+		return val ? __ffs(val) : size;
-+	}
-+
- 	return _find_next_bit(addr1, addr2, size, offset, 0UL, 0);
- }
- #endif
-@@ -58,6 +82,21 @@ static inline
- unsigned long find_next_zero_bit(const unsigned long *addr, unsigned long size,
- 				 unsigned long offset)
- {
-+	if (small_const_nbits(size)) {
-+		unsigned long val, idx;
-+
-+		if (unlikely(offset >= size))
-+			return size;
-+
-+		val = *addr | ~BITMAP_FIRST_WORD_MASK(offset);
-+		if (val == ~0UL)
-+			return size;
-+
-+		idx = ffz(val);
-+
-+		return idx < size ? idx : size;
-+	}
-+
- 	return _find_next_bit(addr, NULL, size, offset, ~0UL, 0);
- }
- #endif
-diff --git a/include/asm-generic/bitops/le.h b/include/asm-generic/bitops/le.h
-index 4cf44ea16ec0..f4a76d3d145f 100644
---- a/include/asm-generic/bitops/le.h
-+++ b/include/asm-generic/bitops/le.h
-@@ -5,6 +5,7 @@
- #include <asm/types.h>
- #include <asm/byteorder.h>
- #include <asm-generic/bitops/find.h>
-+#include <linux/swab.h>
+diff --git a/arch/m68k/include/asm/bitops.h b/arch/m68k/include/asm/bitops.h
+index 10133a968c8e..093590c9e70f 100644
+--- a/arch/m68k/include/asm/bitops.h
++++ b/arch/m68k/include/asm/bitops.h
+@@ -440,8 +440,6 @@ static inline unsigned long ffz(unsigned long word)
  
- #if defined(__LITTLE_ENDIAN)
+ #endif
  
-@@ -37,6 +38,21 @@ static inline
- unsigned long find_next_zero_bit_le(const void *addr, unsigned
- 		long size, unsigned long offset)
- {
-+	if (small_const_nbits(size)) {
-+		unsigned long val = *(const unsigned long *)addr, idx;
+-#include <asm-generic/bitops/find.h>
+-
+ #ifdef __KERNEL__
+ 
+ #if defined(CONFIG_CPU_HAS_NO_BITFIELDS)
+@@ -531,4 +529,6 @@ static inline int __fls(int x)
+ #include <asm-generic/bitops/hweight.h>
+ #endif /* __KERNEL__ */
+ 
++#include <asm-generic/bitops/find.h>
 +
-+		if (unlikely(offset >= size))
-+			return size;
-+
-+		val = swab(val) | ~BITMAP_FIRST_WORD_MASK(offset);
-+		if (val == ~0UL)
-+			return size;
-+
-+		idx = ffz(val);
-+
-+		return idx < size ? idx : size;
-+	}
-+
- 	return _find_next_bit(addr, NULL, size, offset, ~0UL, 1);
+ #endif /* _M68K_BITOPS_H */
+diff --git a/arch/sh/include/asm/bitops.h b/arch/sh/include/asm/bitops.h
+index 450b5854d7c6..792bbe1237dc 100644
+--- a/arch/sh/include/asm/bitops.h
++++ b/arch/sh/include/asm/bitops.h
+@@ -58,7 +58,6 @@ static inline unsigned long __ffs(unsigned long word)
+ 	return result;
  }
- #endif
-@@ -46,6 +62,18 @@ static inline
- unsigned long find_next_bit_le(const void *addr, unsigned
- 		long size, unsigned long offset)
- {
-+	if (small_const_nbits(size)) {
-+		unsigned long val = *(const unsigned long *)addr;
+ 
+-#include <asm-generic/bitops/find.h>
+ #include <asm-generic/bitops/ffs.h>
+ #include <asm-generic/bitops/hweight.h>
+ #include <asm-generic/bitops/lock.h>
+@@ -69,4 +68,6 @@ static inline unsigned long __ffs(unsigned long word)
+ #include <asm-generic/bitops/__fls.h>
+ #include <asm-generic/bitops/fls64.h>
+ 
++#include <asm-generic/bitops/find.h>
 +
-+		if (unlikely(offset >= size))
-+			return size;
-+
-+		val = swab(val) & BITMAP_FIRST_WORD_MASK(offset)
-+				& BITMAP_LAST_WORD_MASK(size);
-+
-+		return val ? __ffs(val) : size;
-+	}
-+
- 	return _find_next_bit(addr, NULL, size, offset, 0UL, 1);
- }
- #endif
+ #endif /* __ASM_SH_BITOPS_H */
 -- 
 2.25.1
 
