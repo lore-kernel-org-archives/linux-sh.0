@@ -2,101 +2,90 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72872C433DB
-	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 13:20:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 14548C433DB
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 18:51:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2055C23A01
-	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 13:20:31 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ADA9F23A1C
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 18:51:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1731652AbhAUNTS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 21 Jan 2021 08:19:18 -0500
-Received: from mga07.intel.com ([134.134.136.100]:40972 "EHLO mga07.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1729337AbhAUK3D (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Thu, 21 Jan 2021 05:29:03 -0500
-IronPort-SDR: TUATUDGwUn7VaKLb5yV24oEW+7xMrYOXYvC5urHuNGHCU5ysvc2W2/py6L9O+UuVnADY9efPH7
- aLdhT+dAzCYQ==
-X-IronPort-AV: E=McAfee;i="6000,8403,9870"; a="243321049"
-X-IronPort-AV: E=Sophos;i="5.79,363,1602572400"; 
-   d="scan'208";a="243321049"
-Received: from orsmga005.jf.intel.com ([10.7.209.41])
-  by orsmga105.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 21 Jan 2021 02:27:04 -0800
-IronPort-SDR: QgeIy8Ssun2hy6R9w17UY0Ll/AXBiBRb1BeFr667ljwzuCW2rJkpwHDq8WPMolQ61OBDnrLG/t
- VJau4CgcO5fw==
-X-IronPort-AV: E=Sophos;i="5.79,363,1602572400"; 
-   d="scan'208";a="570684050"
-Received: from smile.fi.intel.com (HELO smile) ([10.237.68.40])
-  by orsmga005-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 21 Jan 2021 02:27:00 -0800
-Received: from andy by smile with local (Exim 4.94)
-        (envelope-from <andriy.shevchenko@linux.intel.com>)
-        id 1l2XC6-007Nsw-Be; Thu, 21 Jan 2021 12:28:02 +0200
-Date:   Thu, 21 Jan 2021 12:28:02 +0200
-From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To:     Yury Norov <yury.norov@gmail.com>
-Cc:     linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
-        linux-sh@vger.kernel.org, linux-arch@vger.kernel.org,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
+        id S1726758AbhAUSvR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 21 Jan 2021 13:51:17 -0500
+Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:35073 "EHLO
+        outpost1.zedat.fu-berlin.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1727975AbhAUItD (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Jan 2021 03:49:03 -0500
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.94)
+          with esmtps (TLS1.2)
+          tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1l2Vd9-002Y9D-Lp; Thu, 21 Jan 2021 09:47:51 +0100
+Received: from p5b13a61e.dip0.t-ipconnect.de ([91.19.166.30] helo=[192.168.178.139])
+          by inpost2.zedat.fu-berlin.de (Exim 4.94)
+          with esmtpsa (TLS1.2)
+          tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1l2Vd9-000TGF-0k; Thu, 21 Jan 2021 09:47:51 +0100
+Subject: Re: [PATCH 1/6] arch: rearrahge headers inclusion order in asm/bitops
+ for m68k and sh
+To:     Yury Norov <yury.norov@gmail.com>, linux-m68k@lists.linux-m68k.org,
+        linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
+        linux-arch@vger.kernel.org
+Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
         Dennis Zhou <dennis@kernel.org>,
         Andrew Morton <akpm@linux-foundation.org>,
         Wolfram Sang <wsa+renesas@sang-engineering.com>,
         David Sterba <dsterba@suse.com>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         Stefano Brivio <sbrivio@redhat.com>,
         "Ma, Jianpeng" <jianpeng.ma@intel.com>,
         Wei Yang <richard.weiyang@linux.alibaba.com>,
         Josh Poimboeuf <jpoimboe@redhat.com>,
         Rasmus Villemoes <rasmus.villemoes@prevas.dk>
-Subject: Re: [PATCH 4/6] lib: inline _find_next_bit() wrappers
-Message-ID: <YAlXMj7sIoPjZP3W@smile.fi.intel.com>
 References: <20210121000630.371883-1-yury.norov@gmail.com>
- <20210121000630.371883-5-yury.norov@gmail.com>
+ <20210121000630.371883-2-yury.norov@gmail.com>
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Message-ID: <464fa4c5-5a21-0a9b-61c3-a5fc85472b0a@physik.fu-berlin.de>
+Date:   Thu, 21 Jan 2021 09:47:50 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.6.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210121000630.371883-5-yury.norov@gmail.com>
-Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
+In-Reply-To: <20210121000630.371883-2-yury.norov@gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.19.166.30
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Jan 20, 2021 at 04:06:28PM -0800, Yury Norov wrote:
-> lib/find_bit.c declares five single-line wrappers for _find_next_bit().
-> We may turn those wrappers to inline functions. It eliminates
-> unneeded function calls and opens room for compile-time optimizations.
+Hi Yury!
 
-...
+On 1/21/21 1:06 AM, Yury Norov wrote:
+> m68k and sh include bitmap/find.h prior to ffs/fls headers. New
+> fast-path implementation in find.h requires ffs/fls. Reordering
+> the order of headers inclusion helps to prevent compile-time
+> implicit-function-declaration error.
 
-> --- a/include/asm-generic/bitops/le.h
-> +++ b/include/asm-generic/bitops/le.h
-> @@ -4,6 +4,7 @@
->  
->  #include <asm/types.h>
->  #include <asm/byteorder.h>
-> +#include <asm-generic/bitops/find.h>
+Can you fix the commit message?
 
-I'm wondering if generic header inclusion should go before arch-dependent ones.
+"arch: rearrahge headers inclusion order in asm/bitops for m68k and sh"
+       ^^^^^^^^^
+       rearrange
 
-...
-
-> -#ifndef find_next_bit
-
-> -#ifndef find_next_zero_bit
-
-> -#if !defined(find_next_and_bit)
-
-> -#ifndef find_next_zero_bit_le
-
-> -#ifndef find_next_bit_le
-
-Shouldn't you leave these in new wrappers as well?
+Adrian
 
 -- 
-With Best Regards,
-Andy Shevchenko
-
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
 
