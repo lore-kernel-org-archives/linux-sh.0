@@ -2,91 +2,90 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 95666C433DB
-	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 03:52:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 12000C433DB
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 08:05:31 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4C7C82071C
-	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 03:52:12 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id AE6BA238E2
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 08:05:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1727208AbhAUDvt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 20 Jan 2021 22:51:49 -0500
-Received: from brightrain.aerifal.cx ([216.12.86.13]:49868 "EHLO
-        brightrain.aerifal.cx" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S2392380AbhAUBnT (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Jan 2021 20:43:19 -0500
-Date:   Wed, 20 Jan 2021 20:42:23 -0500
-From:   Rich Felker <dalias@libc.org>
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Rob Landley <rob@landley.net>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Subject: Re: Pending patches for linux-sh
-Message-ID: <20210121014222.GM23432@brightrain.aerifal.cx>
-References: <133f8171-09ec-39b3-0660-de780cd879d6@physik.fu-berlin.de>
+        id S1727935AbhAUIFH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 21 Jan 2021 03:05:07 -0500
+Received: from mail-ot1-f44.google.com ([209.85.210.44]:38078 "EHLO
+        mail-ot1-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727782AbhAUIEn (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Jan 2021 03:04:43 -0500
+Received: by mail-ot1-f44.google.com with SMTP id 34so820110otd.5;
+        Thu, 21 Jan 2021 00:04:15 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=F2IYvzXGwV6xHNM+MUo0hPQb7UzsectWR0FG/X10PkI=;
+        b=UgisBm4bsiYzChzcOGyaUXwFq2wf7WhRfmxP7hu2p32VPlPMXG72OQYUYWMtpj2Ztf
+         jfTm/TgUtWXwI3zTt40BxXdRbv516nFwM2buugq2f8dZN6h9hP7jq+byI1f3SIXqUwpY
+         pq+KBLOcVUADZaUra2ntFuGfQYoDRrKeVwRiCggCuQZVjWycqX9J7Tm5B9VO2euGtXxU
+         105b6llUrtzoCrkYKBA3McHFPDz2bYcuCNkmyjBNkkeeZjdUP2szZeww5+vd7BId3OjX
+         eT2W1hUi31cSdIteBsFdOQz2LpBIClNoHN0dRmB+n4PwdtbsIP9GHFz6zJ2149+tQpuv
+         B4Mw==
+X-Gm-Message-State: AOAM530Jr4xl+tF5dS9fLVlYJgJRBZD9G1Dp0Bg1Tv/eH/9sBF+oFkVA
+        dcfe56KV2n+qcEs8WMgI6wSPx0mEbbYbsQj+JcU=
+X-Google-Smtp-Source: ABdhPJzSbca3ijAzNOm3Ms2SefSVDK4WWVoOOJl2SDNzMRneWPfF/x1Lgdp8kPfgBqgJdeUvPiwJBD9V4y25u0g6aww=
+X-Received: by 2002:a9d:c01:: with SMTP id 1mr9472201otr.107.1611216229592;
+ Thu, 21 Jan 2021 00:03:49 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <133f8171-09ec-39b3-0660-de780cd879d6@physik.fu-berlin.de>
-User-Agent: Mutt/1.5.21 (2010-09-15)
+References: <20210121000630.371883-1-yury.norov@gmail.com> <20210121000630.371883-2-yury.norov@gmail.com>
+In-Reply-To: <20210121000630.371883-2-yury.norov@gmail.com>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Thu, 21 Jan 2021 09:03:38 +0100
+Message-ID: <CAMuHMdWe3Mx2q7WJvZa+Wt+TbG7ER086ph8UCSR6yR+Wj73HWg@mail.gmail.com>
+Subject: Re: [PATCH 1/6] arch: rearrahge headers inclusion order in asm/bitops
+ for m68k and sh
+To:     Yury Norov <yury.norov@gmail.com>
+Cc:     linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        Linux-Arch <linux-arch@vger.kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
+        Dennis Zhou <dennis@kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        David Sterba <dsterba@suse.com>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Stefano Brivio <sbrivio@redhat.com>,
+        "Ma, Jianpeng" <jianpeng.ma@intel.com>,
+        Wei Yang <richard.weiyang@linux.alibaba.com>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
+        Rasmus Villemoes <rasmus.villemoes@prevas.dk>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Jan 20, 2021 at 12:32:16PM +0100, John Paul Adrian Glaubitz wrote:
-> Hi Rich!
-> 
-> I have tested or acked the following patches which are fine from my point of view.
-> 
-> "Tested" means I have built and booted a current kernel with the patch in question,
-> "acked" means, I have looked over the patch and consider the changes to be correct
-> in the case where testing was not possible since the changes affect other SH hardware
-> I cannot test at the moment.
-> 
-> Here the list:
-> 
-> - [PATCH] [sh] fix trivial misannotations
-> - https://marc.info/?l=linux-kernel&m=160945707001399&w=2
-> 
-> - [PATCH] sh: check return code of request_irq
-> - https://marc.info/?l=linux-kernel&m=160867050030140&w=2
-> 
-> - [PATCH] sh: boards: Fix the cacography in irq.c
-> - https://marc.info/?l=linux-sh&m=160578410511403&w=2
-> 
-> - [PATCH v1] sh: Drop ARCH_NR_GPIOS definition
-> - https://marc.info/?l=linux-sh&m=160578410511403&w=2
-> 
-> - [PATCH 1/2] sh: boot: add intermediate vmlinux.bin* to targets instead of extra-y
-> - https://marc.info/?l=linux-kernel&m=161088234517301&w=2
-> 
-> - [PATCH 2/2] sh: boot: avoid unneeded rebuilds under arch/sh/boot/compressed/
-> - https://marc.info/?l=linux-kernel&m=161088245817344&w=2
-> 
-> - [PATCH] arch: sh: remove duplicate include
-> - https://marc.info/?l=linux-kernel&m=160488997017438&w=2
-> 
-> - [PATCH] maple: fix wrong return value of maple_bus_init().
-> - https://marc.info/?l=linux-kernel&m=160635878212678&w=2
-> 
-> - [PATCH] sh: kdump: add some attribute to function
-> - https://marc.info/?l=linux-kernel&m=160758311622653&w=2
-> 
-> - [PATCH] sh: kernel: traps: remove unused variable
-> - https://marc.info/?l=linux-kernel&m=160760435528709&w=2
-> 
-> - [PATCH] sh: Remove unused HAVE_COPY_THREAD_TLS macro
-> - https://marc.info/?l=linux-kernel&m=160247465514800&w=2
-> 
-> I will check later whether there are more patches we might have forgotten.
+On Thu, Jan 21, 2021 at 1:06 AM Yury Norov <yury.norov@gmail.com> wrote:
+> m68k and sh include bitmap/find.h prior to ffs/fls headers. New
+> fast-path implementation in find.h requires ffs/fls. Reordering
+> the order of headers inclusion helps to prevent compile-time
+> implicit-function-declaration error.
+>
+> Signed-off-by: Yury Norov <yury.norov@gmail.com>
+> ---
+>  arch/m68k/include/asm/bitops.h | 4 ++--
 
-Hi! Thanks for the list. From the names, I think some overlap with the
-pending set in linux-next (ending at a118584e7e60) that I'm about to
-send as a PR.
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-Rich
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
