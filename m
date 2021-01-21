@@ -2,106 +2,116 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D238C433DB
-	for <linux-sh@archiver.kernel.org>; Wed, 20 Jan 2021 12:48:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E4882C433E0
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 00:59:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E5E2A2336D
-	for <linux-sh@archiver.kernel.org>; Wed, 20 Jan 2021 12:48:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B114223888
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 00:59:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1728737AbhATMsJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 20 Jan 2021 07:48:09 -0500
-Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:57825 "EHLO
-        outpost1.zedat.fu-berlin.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1725827AbhATLdW (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Jan 2021 06:33:22 -0500
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.94)
-          with esmtps (TLS1.2)
-          tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1l2Bij-0012CR-NZ; Wed, 20 Jan 2021 12:32:17 +0100
-Received: from p5b13a61e.dip0.t-ipconnect.de ([91.19.166.30] helo=[192.168.178.139])
-          by inpost2.zedat.fu-berlin.de (Exim 4.94)
-          with esmtpsa (TLS1.2)
-          tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1l2Bij-0029PC-3y; Wed, 20 Jan 2021 12:32:17 +0100
-To:     Rich Felker <dalias@libc.org>
-Cc:     Rob Landley <rob@landley.net>,
+        id S1730476AbhAUA5x (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 20 Jan 2021 19:57:53 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36292 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1727499AbhAUAHX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Jan 2021 19:07:23 -0500
+Received: from mail-qv1-xf33.google.com (mail-qv1-xf33.google.com [IPv6:2607:f8b0:4864:20::f33])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B44AEC0613C1;
+        Wed, 20 Jan 2021 16:06:36 -0800 (PST)
+Received: by mail-qv1-xf33.google.com with SMTP id j18so131808qvu.3;
+        Wed, 20 Jan 2021 16:06:36 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=Xq2mU7OrVeGPTcxA188YnFoob4ru+nBZ6S/huK+o6i0=;
+        b=H6+23XVfkVA18ccIGaJGJhR+g280khYkE3BxT7jrGwkiTdVD/r+g+WOjI+A8wd/HQe
+         w4WRcHwotkQ6hK7UldM8ZDqP9GbBt9RidoOK7q/G9WJCuq7JbnZW3Oii2Y9FvQq3OIr0
+         lLjYFFFl9Qeep2e49ViwNzpHkojD+5WIgkAn/8bWdujhIUQqRbN1+sOPy1oGS5HC9fQY
+         2hj/sr5NtoKme2y3NaRAS/a79cTxaqE66Su6Az1RzRMXvoTXV1vmYcllV5t8En/kOcXU
+         BmoXYba5u/UAZ1CgsJmUkQ74golR7cct+jMMWnLcFnDWFNwr8IGFsCNnRZ49RqqMkIuc
+         Jhtw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=Xq2mU7OrVeGPTcxA188YnFoob4ru+nBZ6S/huK+o6i0=;
+        b=Zgi1DFt0VgI8sc1hixcHEUUvVWDepcNvYOxp1c6CKFL4gvUBsJ9A3szVlT7CCW5svV
+         tgyFpYKRjes8QE0gmw41xwkTenbIYuatjKb2r7CNAQmtv18uxMxSU7+iVlsiMJmN99yh
+         rkBgVhYdpWlGm6F/terdaqMEhT8JRIAmyAKXsmA44X8C0SOBCWNvX2lOwuzT7rkAb92+
+         lXupySM1rqybzjY1sA7x8P9oILeHRGyXoVPUU3lMVmFNmrfYyPD0n9I6KcQ6ghbs13uM
+         HFKtl25I0zFAOaI66i1U1C50C96yKHU3gJRI38Cf0eHRrNpGjMPxuT8KwJL6GmZE7lzN
+         rsyQ==
+X-Gm-Message-State: AOAM531nq5g3ul4UhLE/AwXyUDUZuugnpa1hggC8v525gtg6D7fFbw5E
+        Qbt+FH0CIxzPPD3sADwQqgU=
+X-Google-Smtp-Source: ABdhPJxpoAehXDqLMJQECWz6+rWOBFDlP1o9TdiUvJhrl51jSOmANePT/DqVuAJyhHr1sxiCymASyw==
+X-Received: by 2002:ad4:46a1:: with SMTP id br1mr12152632qvb.28.1611187595785;
+        Wed, 20 Jan 2021 16:06:35 -0800 (PST)
+Received: from localhost (d27-96-190-162.evv.wideopenwest.com. [96.27.162.190])
+        by smtp.gmail.com with ESMTPSA id x28sm2235985qtv.8.2021.01.20.16.06.34
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 20 Jan 2021 16:06:34 -0800 (PST)
+From:   Yury Norov <yury.norov@gmail.com>
+To:     linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
+Cc:     Yury Norov <yury.norov@gmail.com>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Subject: Pending patches for linux-sh
-Message-ID: <133f8171-09ec-39b3-0660-de780cd879d6@physik.fu-berlin.de>
-Date:   Wed, 20 Jan 2021 12:32:16 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.6.1
+        Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
+        Dennis Zhou <dennis@kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        David Sterba <dsterba@suse.com>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Stefano Brivio <sbrivio@redhat.com>,
+        "Ma, Jianpeng" <jianpeng.ma@intel.com>,
+        Wei Yang <richard.weiyang@linux.alibaba.com>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
+        Rasmus Villemoes <rasmus.villemoes@prevas.dk>
+Subject: [PATCH 0/6] lib/find_bit: fast path for small bitmaps
+Date:   Wed, 20 Jan 2021 16:06:24 -0800
+Message-Id: <20210121000630.371883-1-yury.norov@gmail.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 91.19.166.30
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Rich!
+Bitmap operations are much simpler and faster in case of small bitmaps,
+whicn fit into a single word. In linux/bitmap.h we have a machinery that
+allows compiler to replace actual function call with a few instructions
+if bitmaps passed into the function is small and its size is known at
+compile time.
 
-I have tested or acked the following patches which are fine from my point of view.
+find_next_*_bit() lacks this functionality; despite users will
+benefit from it a lot. One important example is cpumask subsystem if
+NR_CPUS <= BITS_PER_LONG. In the very best case, the compiler may replace
+a find_*_bit() call for such a bitmap with a single ffs or ffz instruction.
 
-"Tested" means I have built and booted a current kernel with the patch in question,
-"acked" means, I have looked over the patch and consider the changes to be correct
-in the case where testing was not possible since the changes affect other SH hardware
-I cannot test at the moment.
+Yury Norov (6):
+  arch: rearrahge headers inclusion order in asm/bitops for m68k and sh
+  bitmap: move some macros from linux/bitmap.h to linux/bitops.h
+  tools: sync bitops macro definitions with the kernel
+  lib: inline _find_next_bit() wrappers
+  lib: add fast path for find_next_*_bit()
+  lib: add fast path for find_first_*_bit() and find_last_bit()
 
-Here the list:
-
-- [PATCH] [sh] fix trivial misannotations
-- https://marc.info/?l=linux-kernel&m=160945707001399&w=2
-
-- [PATCH] sh: check return code of request_irq
-- https://marc.info/?l=linux-kernel&m=160867050030140&w=2
-
-- [PATCH] sh: boards: Fix the cacography in irq.c
-- https://marc.info/?l=linux-sh&m=160578410511403&w=2
-
-- [PATCH v1] sh: Drop ARCH_NR_GPIOS definition
-- https://marc.info/?l=linux-sh&m=160578410511403&w=2
-
-- [PATCH 1/2] sh: boot: add intermediate vmlinux.bin* to targets instead of extra-y
-- https://marc.info/?l=linux-kernel&m=161088234517301&w=2
-
-- [PATCH 2/2] sh: boot: avoid unneeded rebuilds under arch/sh/boot/compressed/
-- https://marc.info/?l=linux-kernel&m=161088245817344&w=2
-
-- [PATCH] arch: sh: remove duplicate include
-- https://marc.info/?l=linux-kernel&m=160488997017438&w=2
-
-- [PATCH] maple: fix wrong return value of maple_bus_init().
-- https://marc.info/?l=linux-kernel&m=160635878212678&w=2
-
-- [PATCH] sh: kdump: add some attribute to function
-- https://marc.info/?l=linux-kernel&m=160758311622653&w=2
-
-- [PATCH] sh: kernel: traps: remove unused variable
-- https://marc.info/?l=linux-kernel&m=160760435528709&w=2
-
-- [PATCH] sh: Remove unused HAVE_COPY_THREAD_TLS macro
-- https://marc.info/?l=linux-kernel&m=160247465514800&w=2
-
-I will check later whether there are more patches we might have forgotten.
-
-Adrian
+ arch/m68k/include/asm/bitops.h    |   4 +-
+ arch/sh/include/asm/bitops.h      |   3 +-
+ include/asm-generic/bitops/find.h | 123 +++++++++++++++++++++++++++---
+ include/asm-generic/bitops/le.h   |  45 ++++++++++-
+ include/linux/bitmap.h            |  11 ---
+ include/linux/bitops.h            |  23 +++---
+ lib/find_bit.c                    |  68 ++---------------
+ tools/include/linux/bitmap.h      |  11 ---
+ tools/include/linux/bitops.h      |  11 +++
+ 9 files changed, 188 insertions(+), 111 deletions(-)
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+2.25.1
+
