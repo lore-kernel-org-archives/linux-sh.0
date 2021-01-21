@@ -8,54 +8,54 @@ X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BD34C433E9
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4BB15C43381
 	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 01:47:51 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DAA4523788
-	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 01:47:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0AE0D2388B
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Jan 2021 01:47:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1732524AbhAUA5n (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 20 Jan 2021 19:57:43 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36300 "EHLO
+        id S1732649AbhAUA6J (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 20 Jan 2021 19:58:09 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36648 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1729634AbhAUAHX (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Jan 2021 19:07:23 -0500
-Received: from mail-qk1-x729.google.com (mail-qk1-x729.google.com [IPv6:2607:f8b0:4864:20::729])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BA1A2C0613D3;
-        Wed, 20 Jan 2021 16:06:37 -0800 (PST)
-Received: by mail-qk1-x729.google.com with SMTP id 19so94770qkm.8;
-        Wed, 20 Jan 2021 16:06:37 -0800 (PST)
+        with ESMTP id S2388272AbhAUAI4 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Jan 2021 19:08:56 -0500
+Received: from mail-qt1-x835.google.com (mail-qt1-x835.google.com [IPv6:2607:f8b0:4864:20::835])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 05450C0613ED;
+        Wed, 20 Jan 2021 16:06:39 -0800 (PST)
+Received: by mail-qt1-x835.google.com with SMTP id h19so350990qtq.13;
+        Wed, 20 Jan 2021 16:06:38 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=VJyAeNkICLzobewilotYyvHX3yTrS03Tp5qJyqqjL0g=;
-        b=irEJfFhw75j0zxYyv1AJTNPEoITdlEq7ViAShlWlaluOp16XsYOBe6kv5B7Gs1yMLk
-         Bz23HPNwKq9hVgiS9Lw7ph5GtM0TcGmHGx+oH45vktz+664CXPQi1TO/hEq9zM6h9NZq
-         Lwr3XWL12PINo5J6vj1wK5NrvFfXCIORz9SJ8bFDJvoSm1w2qvvgNAoGaUcd3IEzHNkF
-         ZL5nkVm220A+txnXZm4wu7L+y3gptXZ/92SG1hq1S4viIF8WD5qSDGqgvgBCl8NJzPcC
-         aq4ZTVsaLNOM3QREMOhSzOhjSQ24ZjeKjWnlUCytjGkn3cF9+HIS6gVrTTedDSNAqdhe
-         HGhw==
+        bh=PLzDDsb43NyMx0AvE6OrGjVNnyH2PAQsA/iidjpcD/E=;
+        b=OuPs6iN5DNL3e4a0wi5/M6GUhCYOFv7vYm1pW29MUWITn3Ao17PBRlFphOLfb3AUP+
+         wKADPHJSHBkrXY4UDmFXuOvgHOXchkk29iQt0nVWV9qbWTLdP77KQvv5NN2Wb1IB1y7b
+         ZZUncR1F1faGkm6WPt7F0fSGjuOiLMJnGzO4oJcaXYVGCnN5sxABXgW6RP2Y1//7cNnb
+         LhpozcCLY74/7m17FnqAiOlE8DsDMlPCOJ1dwy3tIrkvTPUrH/fB26MEePjjPBQu9IN/
+         Aqaf3PT7zLl29GgzKBepaIswcL4foYFDUdA2q6byv/7VGw3LH4xsxn1htTa1AOLu1Jpt
+         v2lQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=VJyAeNkICLzobewilotYyvHX3yTrS03Tp5qJyqqjL0g=;
-        b=VMEjCdl2RT1bj9Cf96mLdproxdrqH3B7bw80CJrb4z/JK30Est0yLEZcbeb3Of/frk
-         OxWD+K/NLT0KMAf65ir7rhyCNNlj+O25hzgzcdlD8s0+dfdXdpba+AjScQRDpCYNsBys
-         +flD6HbgP8VPS8zs4n7Hgh/QwIJ1jCpGr8Kp1jbmp/QAO1Uq0sE0Rpvi7uXw0oowaZ5D
-         X0D2K2W78Mg5Deh9jAZqdQ8dmS08ydcrt0hmd8a2ztP10Mujsrz96eOpSaVZH1aeZKba
-         soPABRJTWDtc87OkaqHm8Ngp0mTFVSL+9cQCJXGJOe2dpy2q27jU6dk0lzdBHwc+hlUa
-         7FRg==
-X-Gm-Message-State: AOAM531m4FMs5BJdqqvqOe8OkiZSDAQveWxntZ1WY4yc3+T6COJsnyqC
-        xtarV26HYQ45seoU4m7S4zY=
-X-Google-Smtp-Source: ABdhPJwK96z5HSohBB4jgawql1ys9+J+U8m5f6SbrirOJTJj1+oKcKeFV63KJtEdZZ6RU5gOTh2EvA==
-X-Received: by 2002:a37:4286:: with SMTP id p128mr3589516qka.337.1611187597005;
-        Wed, 20 Jan 2021 16:06:37 -0800 (PST)
+        bh=PLzDDsb43NyMx0AvE6OrGjVNnyH2PAQsA/iidjpcD/E=;
+        b=Qo8UXQMBYtHDYD/sDq+/ZJ49zRnUKux+/rOh/dwUIvCEMKqH2XoDSRLWlNMYZqLkHZ
+         B3C7PxhEW0p9r3UtijSqAsAQrCeJJXp/pVBvdgp76Nzo4NJpiCeTPICJiU5ykyk1EOCm
+         ZzVHJDRxiMXza8q1WX6yAfwrYyrLZL/GD0iEsDVbb8xRg1kb0Im2OdrPAzCzG5rjbSiW
+         JZxfnRPT5C252IZrAjM1xI4alxJMNdONxB8Q/BFuaYz84fb0G/wjKusDQlSbajPQA0Hi
+         Ag7zbzphDzwYRkiYNJRJggj+Z9I0Xf6I+o6WMnMAEhhO1yG7kV/7cz/yQv+DZ2Vz22Xy
+         UZrg==
+X-Gm-Message-State: AOAM531PoZTRGb/XmGCBlfLgNu+8x4KtwKDNcQy547wXHyGyjDAUR/5/
+        9GcpRk6DFFppE4de0HDZDMc=
+X-Google-Smtp-Source: ABdhPJzDAtae1ksWkHrhXovCS3XTS6Wj+QkJyM8BOP2ByMYHXOIPvEX7HVJIB1jrXMK8dV5JEOtqng==
+X-Received: by 2002:ac8:36e2:: with SMTP id b31mr11511989qtc.19.1611187598218;
+        Wed, 20 Jan 2021 16:06:38 -0800 (PST)
 Received: from localhost (d27-96-190-162.evv.wideopenwest.com. [96.27.162.190])
-        by smtp.gmail.com with ESMTPSA id j124sm2505020qkf.113.2021.01.20.16.06.36
+        by smtp.gmail.com with ESMTPSA id b12sm2346703qtt.74.2021.01.20.16.06.37
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 20 Jan 2021 16:06:36 -0800 (PST)
+        Wed, 20 Jan 2021 16:06:37 -0800 (PST)
 From:   Yury Norov <yury.norov@gmail.com>
 To:     linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
         linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
@@ -73,9 +73,9 @@ Cc:     Yury Norov <yury.norov@gmail.com>,
         Wei Yang <richard.weiyang@linux.alibaba.com>,
         Josh Poimboeuf <jpoimboe@redhat.com>,
         Rasmus Villemoes <rasmus.villemoes@prevas.dk>
-Subject: [PATCH 1/6] arch: rearrahge headers inclusion order in asm/bitops for m68k and sh
-Date:   Wed, 20 Jan 2021 16:06:25 -0800
-Message-Id: <20210121000630.371883-2-yury.norov@gmail.com>
+Subject: [PATCH 2/6] bitmap: move some macros from linux/bitmap.h to linux/bitops.h
+Date:   Wed, 20 Jan 2021 16:06:26 -0800
+Message-Id: <20210121000630.371883-3-yury.norov@gmail.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210121000630.371883-1-yury.norov@gmail.com>
 References: <20210121000630.371883-1-yury.norov@gmail.com>
@@ -85,56 +85,59 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-m68k and sh include bitmap/find.h prior to ffs/fls headers. New
-fast-path implementation in find.h requires ffs/fls. Reordering
-the order of headers inclusion helps to prevent compile-time
-implicit-function-declaration error.
+In the following patches of the series they are used by
+find_bit subsystem.
 
 Signed-off-by: Yury Norov <yury.norov@gmail.com>
 ---
- arch/m68k/include/asm/bitops.h | 4 ++--
- arch/sh/include/asm/bitops.h   | 3 ++-
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ include/linux/bitmap.h | 11 -----------
+ include/linux/bitops.h | 11 +++++++++++
+ 2 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/arch/m68k/include/asm/bitops.h b/arch/m68k/include/asm/bitops.h
-index 10133a968c8e..093590c9e70f 100644
---- a/arch/m68k/include/asm/bitops.h
-+++ b/arch/m68k/include/asm/bitops.h
-@@ -440,8 +440,6 @@ static inline unsigned long ffz(unsigned long word)
+diff --git a/include/linux/bitmap.h b/include/linux/bitmap.h
+index 70a932470b2d..5bacbc8785eb 100644
+--- a/include/linux/bitmap.h
++++ b/include/linux/bitmap.h
+@@ -219,17 +219,6 @@ extern unsigned int bitmap_ord_to_pos(const unsigned long *bitmap, unsigned int
+ extern int bitmap_print_to_pagebuf(bool list, char *buf,
+ 				   const unsigned long *maskp, int nmaskbits);
  
- #endif
- 
--#include <asm-generic/bitops/find.h>
+-#define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) & (BITS_PER_LONG - 1)))
+-#define BITMAP_LAST_WORD_MASK(nbits) (~0UL >> (-(nbits) & (BITS_PER_LONG - 1)))
 -
- #ifdef __KERNEL__
+-/*
+- * The static inlines below do not handle constant nbits==0 correctly,
+- * so make such users (should any ever turn up) call the out-of-line
+- * versions.
+- */
+-#define small_const_nbits(nbits) \
+-	(__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG && (nbits) > 0)
+-
+ static inline void bitmap_zero(unsigned long *dst, unsigned int nbits)
+ {
+ 	unsigned int len = BITS_TO_LONGS(nbits) * sizeof(unsigned long);
+diff --git a/include/linux/bitops.h b/include/linux/bitops.h
+index a5a48303b0f1..a0e138bbb8ce 100644
+--- a/include/linux/bitops.h
++++ b/include/linux/bitops.h
+@@ -7,6 +7,17 @@
  
- #if defined(CONFIG_CPU_HAS_NO_BITFIELDS)
-@@ -531,4 +529,6 @@ static inline int __fls(int x)
- #include <asm-generic/bitops/hweight.h>
- #endif /* __KERNEL__ */
+ #include <uapi/linux/kernel.h>
  
-+#include <asm-generic/bitops/find.h>
++#define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) & (BITS_PER_LONG - 1)))
++#define BITMAP_LAST_WORD_MASK(nbits) (~0UL >> (-(nbits) & (BITS_PER_LONG - 1)))
 +
- #endif /* _M68K_BITOPS_H */
-diff --git a/arch/sh/include/asm/bitops.h b/arch/sh/include/asm/bitops.h
-index 450b5854d7c6..792bbe1237dc 100644
---- a/arch/sh/include/asm/bitops.h
-+++ b/arch/sh/include/asm/bitops.h
-@@ -58,7 +58,6 @@ static inline unsigned long __ffs(unsigned long word)
- 	return result;
- }
- 
--#include <asm-generic/bitops/find.h>
- #include <asm-generic/bitops/ffs.h>
- #include <asm-generic/bitops/hweight.h>
- #include <asm-generic/bitops/lock.h>
-@@ -69,4 +68,6 @@ static inline unsigned long __ffs(unsigned long word)
- #include <asm-generic/bitops/__fls.h>
- #include <asm-generic/bitops/fls64.h>
- 
-+#include <asm-generic/bitops/find.h>
++/*
++ * The static inlines below do not handle constant nbits==0 correctly,
++ * so make such users (should any ever turn up) call the out-of-line
++ * versions.
++ */
++#define small_const_nbits(nbits) \
++	(__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG && (nbits) > 0)
 +
- #endif /* __ASM_SH_BITOPS_H */
+ /* Set bits in the first 'n' bytes when loaded from memory */
+ #ifdef __LITTLE_ENDIAN
+ #  define aligned_byte_mask(n) ((1UL << 8*(n))-1)
 -- 
 2.25.1
 
