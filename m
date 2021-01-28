@@ -2,101 +2,209 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-17.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no
+X-Spam-Status: No, score=-12.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 533F6C43381
-	for <linux-sh@archiver.kernel.org>; Mon, 25 Jan 2021 10:07:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A98D4C433E0
+	for <linux-sh@archiver.kernel.org>; Thu, 28 Jan 2021 00:54:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 11A9522240
-	for <linux-sh@archiver.kernel.org>; Mon, 25 Jan 2021 10:07:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 72B3E61492
+	for <linux-sh@archiver.kernel.org>; Thu, 28 Jan 2021 00:54:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1726885AbhAYKHy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 25 Jan 2021 05:07:54 -0500
-Received: from mo4-p00-ob.smtp.rzone.de ([85.215.255.25]:32263 "EHLO
-        mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1727320AbhAYKCg (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 25 Jan 2021 05:02:36 -0500
-X-Greylist: delayed 307 seconds by postgrey-1.27 at vger.kernel.org; Mon, 25 Jan 2021 05:02:34 EST
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; t=1611568669;
-        s=strato-dkim-0002; d=hartkopp.net;
-        h=In-Reply-To:Date:Message-ID:From:References:Cc:To:Subject:From:
-        Subject:Sender;
-        bh=RKpYXMZtHAVytssmr8eSFrV8Qp7aV1k2+6gtB3yYm8M=;
-        b=cfYZjtADTTRTcB9qqhsk8e5QMUJPAYiZEN7Ge7w7vI/+paftbLWxu+WNRx0Zvc2qwu
-        47Oc5gTY+MZL5WQBcn8HN96NXJADyeApvp4mUaSh+xduQT4y7zHH7kjHBGr3tjyQUGPn
-        Ks4tANsQG9RjL2tDrXBQsID+dtUO/yxnfzgTIcmNxGrp0IQhXBKyKpKXCv0pU6FhniGz
-        9sC4EA8RczeTRQaG8dwySlASJyOEgag7sRe3+NNLZGrye77yuNtFz/VNHbu8t79VeKY7
-        Lp8ArtWWnYWpsqexjh09UdtsEHA63MG62nsCExM5mcoP0yNw2Biu8aycOAnHqcIL61Wi
-        Bl+g==
-X-RZG-AUTH: ":P2MHfkW8eP4Mre39l357AZT/I7AY/7nT2yrDxb8mjG14FZxedJy6qgO1o3TMaFqTEVR/J8xty10="
-X-RZG-CLASS-ID: mo00
-Received: from [192.168.10.137]
-        by smtp.strato.de (RZmta 47.12.1 DYNA|AUTH)
-        with ESMTPSA id k075acx0P9pSxEa
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256 bits))
-        (Client did not present a certificate);
-        Mon, 25 Jan 2021 10:51:28 +0100 (CET)
-Subject: Re: [PATCH] sh: fix sparse annotation in SH's __get_user_check()
-To:     Luc Van Oostenryck <luc.vanoostenryck@gmail.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        kernel test robot <lkp@intel.com>
-References: <20210123173237.91670-1-luc.vanoostenryck@gmail.com>
-From:   Oliver Hartkopp <socketcan@hartkopp.net>
-Message-ID: <3ad4b001-0aed-bbca-b57a-9957091b64e7@hartkopp.net>
-Date:   Mon, 25 Jan 2021 10:51:23 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.6.1
+        id S229551AbhA1AyJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 27 Jan 2021 19:54:09 -0500
+Received: from conuserg-12.nifty.com ([210.131.2.79]:28376 "EHLO
+        conuserg-12.nifty.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231126AbhA1AyE (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 27 Jan 2021 19:54:04 -0500
+Received: from oscar.flets-west.jp (softbank126026094251.bbtec.net [126.26.94.251]) (authenticated)
+        by conuserg-12.nifty.com with ESMTP id 10S0pjIV024172;
+        Thu, 28 Jan 2021 09:51:45 +0900
+DKIM-Filter: OpenDKIM Filter v2.10.3 conuserg-12.nifty.com 10S0pjIV024172
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com;
+        s=dec2015msa; t=1611795106;
+        bh=jQK2la2Ui/cbd7OVnHnnldJT4VCvoMGBdUZ9L0a9brw=;
+        h=From:To:Cc:Subject:Date:From;
+        b=RCDhaLrSacWGW2jMoA/CnF0PXcaoEGBb/27Iq340URIjyF5oOdKIioy3xHP3gsabi
+         mw2ZoaQYGVOEzsCJagmyEeYa+/en2HXL/VNwpblpu+H4HmQiy3FuHey7xwIHawrWhz
+         J046GTpD7glj5cXJqXMwWZMnKHaOG7PR+D6EQTv69ORhiD33OFaqqBEEw0u6JdDmdu
+         GOthXjVErdPRXsvNFscEIJJkwb+kD+1TCC1UM6286+BXL8saw9gPf83J7mGkOtYG0m
+         pEFy1183wEobPYroWAor8uPgimvicQp7OOAgunUeDJfA8jTaVxyFcGYh5N2AWxcL+E
+         4y0JIaJgjdFmg==
+X-Nifty-SrcIP: [126.26.94.251]
+From:   Masahiro Yamada <masahiroy@kernel.org>
+To:     linux-arch@vger.kernel.org, x86@kernel.org
+Cc:     linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-um@lists.infradead.org,
+        linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org,
+        sparclinux@vger.kernel.org, Masahiro Yamada <masahiroy@kernel.org>
+Subject: [PATCH 00/27] arch: syscalls: unifiy all syscalltbl.sh into scripts/syscalltbl.sh
+Date:   Thu, 28 Jan 2021 09:50:42 +0900
+Message-Id: <20210128005110.2613902-1-masahiroy@kernel.org>
+X-Mailer: git-send-email 2.27.0
 MIME-Version: 1.0
-In-Reply-To: <20210123173237.91670-1-luc.vanoostenryck@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 23.01.21 18:32, Luc Van Oostenryck wrote:
-> The pointer in get_user() and friends is supposed to be a __user pointer.
-> But in SH's implementation of __get_user_check(), the pointer is
-> assigned to a local variable __gu_addr which is lacking the __user
-> annotation. As consequence, a warning is issued for every of its uses.
-> 
-> So, add the missing __user annotation (this remove ~700 warnings when
-> using defconfig).
 
-Many thanks that you were able to spot this issue, Luc!
+As of v5.11-rc1, 12 architectures duplicate similar shell scripts:
 
-Best regards,
-Oliver
+  $ find arch -name syscalltbl.sh | sort
+  arch/alpha/kernel/syscalls/syscalltbl.sh
+  arch/arm/tools/syscalltbl.sh
+  arch/ia64/kernel/syscalls/syscalltbl.sh
+  arch/m68k/kernel/syscalls/syscalltbl.sh
+  arch/microblaze/kernel/syscalls/syscalltbl.sh
+  arch/mips/kernel/syscalls/syscalltbl.sh
+  arch/parisc/kernel/syscalls/syscalltbl.sh
+  arch/powerpc/kernel/syscalls/syscalltbl.sh
+  arch/sh/kernel/syscalls/syscalltbl.sh
+  arch/sparc/kernel/syscalls/syscalltbl.sh
+  arch/x86/entry/syscalls/syscalltbl.sh
+  arch/xtensa/kernel/syscalls/syscalltbl.sh
 
-> 
-> Link: https://lore.kernel.org/r/202101141753.ropIZ9nh-lkp@intel.com
-> Reported-by: kernel test robot <lkp@intel.com>
-> Reported-by: Oliver Hartkopp <socketcan@hartkopp.net>
-> Signed-off-by: Luc Van Oostenryck <luc.vanoostenryck@gmail.com>
-> ---
->   arch/sh/include/asm/uaccess.h | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/sh/include/asm/uaccess.h b/arch/sh/include/asm/uaccess.h
-> index 73f3b48d4a34..e2623fe2ac09 100644
-> --- a/arch/sh/include/asm/uaccess.h
-> +++ b/arch/sh/include/asm/uaccess.h
-> @@ -68,7 +68,7 @@ struct __large_struct { unsigned long buf[100]; };
->   ({									\
->   	long __gu_err = -EFAULT;					\
->   	unsigned long __gu_val = 0;					\
-> -	const __typeof__(*(ptr)) *__gu_addr = (ptr);			\
-> +	const __typeof__(*(ptr)) __user *__gu_addr = (ptr);		\
->   	if (likely(access_ok(__gu_addr, (size))))		\
->   		__get_user_size(__gu_val, __gu_addr, (size), __gu_err);	\
->   	(x) = (__force __typeof__(*(ptr)))__gu_val;			\
-> 
-> base-commit: 5c8fe583cce542aa0b84adc939ce85293de36e5e
-> 
+This patch set unifies all of them into a single file,
+scripts/syscalltbl.sh.
+
+The code-diff is attractive:
+
+ 51 files changed, 254 insertions(+), 674 deletions(-)
+ delete mode 100644 arch/alpha/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/arm/tools/syscalltbl.sh
+ delete mode 100644 arch/ia64/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/m68k/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/microblaze/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/mips/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/parisc/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/powerpc/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/sh/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/sparc/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/x86/entry/syscalls/syscalltbl.sh
+ delete mode 100644 arch/xtensa/kernel/syscalls/syscalltbl.sh
+ create mode 100644 scripts/syscalltbl.sh
+
+Also, this includes Makefile fixes, and some x86 fixes and cleanups.
+
+My question is, how to merge this series.
+
+I am touching all architectures, but the first patch is a prerequisite
+of the rest of this series.
+
+One possibility is to ask the x86 maintainers to pickup the first 5
+patches for v5.12-rc1, and then send the rest for v5.13-rc1,
+splitting per-arch.
+
+I want the x86 maintainers to check the first 5 patches because
+I cleaned up the x32 code.
+
+I know x32 was considered for deprecation, but my motivation is to
+clean-up scripts across the tree without changing the functionality.
+
+
+
+Masahiro Yamada (27):
+  scripts: add generic syscalltbl.sh
+  x86/syscalls: fix -Wmissing-prototypes warnings from COND_SYSCALL()
+  x86/build: add missing FORCE and fix 'targets' to make if_changed work
+  x86/entry/x32: rename __x32_compat_sys_* to __x64_compat_sys_*
+  x86/syscalls: switch to generic syscalltbl.sh
+  ARM: syscalls: switch to generic syscalltbl.sh
+  alpha: add missing FORCE and fix 'targets' to make if_changed work
+  alpha: syscalls: switch to generic syscalltbl.sh
+  ia64: add missing FORCE and fix 'targets' to make if_changed work
+  ia64: syscalls: switch to generic syscalltbl.sh
+  m68k: add missing FORCE and fix 'targets' to make if_changed work
+  m68k: syscalls: switch to generic syscalltbl.sh
+  microblaze: add missing FORCE and fix 'targets' to make if_changed
+    work
+  microblaze: syscalls: switch to generic syscalltbl.sh
+  mips: add missing FORCE and fix 'targets' to make if_changed work
+  mips: syscalls: switch to generic syscalltbl.sh
+  parisc: add missing FORCE and fix 'targets' to make if_changed work
+  parisc: syscalls: switch to generic syscalltbl.sh
+  sh: add missing FORCE and fix 'targets' to make if_changed work
+  sh: syscalls: switch to generic syscalltbl.sh
+  sparc: remove wrong comment from arch/sparc/include/asm/Kbuild
+  sparc: add missing FORCE and fix 'targets' to make if_changed work
+  sparc: syscalls: switch to generic syscalltbl.sh
+  powerpc: add missing FORCE and fix 'targets' to make if_changed work
+  powerpc: syscalls: switch to generic syscalltbl.sh
+  xtensa: add missing FORCE and fix 'targets' to make if_changed work
+  xtensa: syscalls: switch to generic syscalltbl.sh
+
+ arch/alpha/kernel/syscalls/Makefile           | 18 +++----
+ arch/alpha/kernel/syscalls/syscalltbl.sh      | 32 -----------
+ arch/alpha/kernel/systbls.S                   |  3 +-
+ arch/arm/kernel/entry-common.S                |  8 +--
+ arch/arm/tools/Makefile                       |  9 ++--
+ arch/arm/tools/syscalltbl.sh                  | 22 --------
+ arch/ia64/kernel/entry.S                      |  3 +-
+ arch/ia64/kernel/syscalls/Makefile            | 19 +++----
+ arch/ia64/kernel/syscalls/syscalltbl.sh       | 32 -----------
+ arch/m68k/kernel/syscalls/Makefile            | 18 +++----
+ arch/m68k/kernel/syscalls/syscalltbl.sh       | 32 -----------
+ arch/m68k/kernel/syscalltable.S               |  3 +-
+ arch/microblaze/kernel/syscall_table.S        |  3 +-
+ arch/microblaze/kernel/syscalls/Makefile      | 18 +++----
+ arch/microblaze/kernel/syscalls/syscalltbl.sh | 32 -----------
+ arch/mips/include/asm/Kbuild                  |  7 ++-
+ arch/mips/kernel/scall32-o32.S                |  4 +-
+ arch/mips/kernel/scall64-n32.S                |  3 +-
+ arch/mips/kernel/scall64-n64.S                |  3 +-
+ arch/mips/kernel/scall64-o32.S                |  4 +-
+ arch/mips/kernel/syscalls/Makefile            | 53 ++++++++-----------
+ arch/mips/kernel/syscalls/syscalltbl.sh       | 36 -------------
+ arch/parisc/include/asm/Kbuild                |  1 -
+ arch/parisc/kernel/syscall.S                  | 16 +++---
+ arch/parisc/kernel/syscalls/Makefile          | 34 +++++-------
+ arch/parisc/kernel/syscalls/syscalltbl.sh     | 36 -------------
+ arch/powerpc/include/asm/Kbuild               |  1 -
+ arch/powerpc/kernel/syscalls/Makefile         | 39 +++++---------
+ arch/powerpc/kernel/syscalls/syscalltbl.sh    | 36 -------------
+ arch/powerpc/kernel/systbl.S                  |  5 +-
+ arch/powerpc/platforms/cell/spu_callbacks.c   |  2 +-
+ arch/sh/kernel/syscalls/Makefile              | 18 +++----
+ arch/sh/kernel/syscalls/syscalltbl.sh         | 32 -----------
+ arch/sparc/include/asm/Kbuild                 |  3 --
+ arch/sparc/kernel/syscalls/Makefile           | 34 +++++-------
+ arch/sparc/kernel/syscalls/syscalltbl.sh      | 36 -------------
+ arch/sparc/kernel/systbls_32.S                |  4 +-
+ arch/sparc/kernel/systbls_64.S                |  8 +--
+ arch/x86/entry/syscall_32.c                   | 12 +++--
+ arch/x86/entry/syscall_64.c                   |  9 ++--
+ arch/x86/entry/syscall_x32.c                  | 27 ++--------
+ arch/x86/entry/syscalls/Makefile              | 33 +++++++-----
+ arch/x86/entry/syscalls/syscalltbl.sh         | 46 ----------------
+ arch/x86/include/asm/Kbuild                   |  1 +
+ arch/x86/include/asm/syscall_wrapper.h        | 11 ++--
+ arch/x86/um/sys_call_table_32.c               |  8 +--
+ arch/x86/um/sys_call_table_64.c               |  9 ++--
+ arch/xtensa/kernel/syscall.c                  |  3 +-
+ arch/xtensa/kernel/syscalls/Makefile          | 18 +++----
+ arch/xtensa/kernel/syscalls/syscalltbl.sh     | 32 -----------
+ scripts/syscalltbl.sh                         | 52 ++++++++++++++++++
+ 51 files changed, 254 insertions(+), 674 deletions(-)
+ delete mode 100644 arch/alpha/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/arm/tools/syscalltbl.sh
+ delete mode 100644 arch/ia64/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/m68k/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/microblaze/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/mips/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/parisc/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/powerpc/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/sh/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/sparc/kernel/syscalls/syscalltbl.sh
+ delete mode 100644 arch/x86/entry/syscalls/syscalltbl.sh
+ delete mode 100644 arch/xtensa/kernel/syscalls/syscalltbl.sh
+ create mode 100644 scripts/syscalltbl.sh
+
+-- 
+2.27.0
+
