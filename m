@@ -2,66 +2,69 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-7.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 41E5EC433E9
-	for <linux-sh@archiver.kernel.org>; Fri, 29 Jan 2021 20:53:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A658C433E9
+	for <linux-sh@archiver.kernel.org>; Fri, 29 Jan 2021 21:11:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E536664DE3
-	for <linux-sh@archiver.kernel.org>; Fri, 29 Jan 2021 20:53:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EE68764E0A
+	for <linux-sh@archiver.kernel.org>; Fri, 29 Jan 2021 21:11:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233106AbhA2UxS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 29 Jan 2021 15:53:18 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38346 "EHLO
+        id S233420AbhA2VLt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 29 Jan 2021 16:11:49 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42488 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233200AbhA2Uw0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 29 Jan 2021 15:52:26 -0500
-Received: from mail-il1-x130.google.com (mail-il1-x130.google.com [IPv6:2607:f8b0:4864:20::130])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D6B77C061574;
-        Fri, 29 Jan 2021 12:51:43 -0800 (PST)
-Received: by mail-il1-x130.google.com with SMTP id m20so2217141ilj.13;
-        Fri, 29 Jan 2021 12:51:43 -0800 (PST)
+        with ESMTP id S233405AbhA2VLn (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 29 Jan 2021 16:11:43 -0500
+Received: from mail-pf1-x42a.google.com (mail-pf1-x42a.google.com [IPv6:2607:f8b0:4864:20::42a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3D10FC06174A;
+        Fri, 29 Jan 2021 13:11:03 -0800 (PST)
+Received: by mail-pf1-x42a.google.com with SMTP id y205so7005666pfc.5;
+        Fri, 29 Jan 2021 13:11:03 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc;
-        bh=mMkNpB7P7wAGZeelGpg3x5YT9WR7p90psVnGkZ1+cMI=;
-        b=tf3Bddwgv9t9fxK9tg/yvd75F/KodcmXzau36lm2p8Shxwuvn/R/due/oPAfAukohu
-         CidEl+RDPDSEhc9nAKSGBTK+cIMFEsZsOb7thH0pgEn0LJWSRylqOtNj9F2Atat+6evM
-         hllUbgpv3RgDobsO0gru7aiJgDtJmU13WPl+fMDn2Fk7R25iiskMrX1pfLd/omznVclR
-         BeXg+tJieTc8gCGfcG91Xfi0xm/btTUjpNi/19Fn3kBb4fbH7QULWOY0FQWheUlZDpjz
-         muLa+dN0ynK2eF2qM2y9Gf+gFA5GPgPQfah62ujljUo0AAhXNTgX41zvo5FlIibLk1cO
-         eRig==
+        bh=6lLJH6wGpbFuj0IJWQQeHITjZneLVulSJuUvdnDWMbY=;
+        b=QtRKN8NH/DzC+3SzwtpiiqfC2nryUUmnIkvftX8d3jsJEq/87GLpMN2GT5qMpiCFm4
+         MYUkAoaB3/nZDk5BTvXQJWAKTIJQGfJkBKAnOyK52eo70mngbvfhqPFEyTk5QdhlxZ21
+         zXA0275SvvFMvNI1gXOPhhpzWS2Za/aEwmmdTgc9i3YObBnPbdozv6WJ3mtJeKSw23RG
+         zhUlD6ylcWKX6dXIDjeqtnQqlFOTs22LRBzoY1JLaXW8Ne3LUhaq8xfyId9CLge/WStT
+         GSTEEGc1SAc6XKPpd5hukBrrzhIgrXZMdnfiCv8DXRDQlkPSgnnH0JNDGqtUcANuEsAm
+         jUyA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=mMkNpB7P7wAGZeelGpg3x5YT9WR7p90psVnGkZ1+cMI=;
-        b=FWyqyP0JV2L3MZbYja74aZeMo3r6eexZV6xElLsJXWbaq5puApCvRdoWERVPv6Bfyw
-         tCiXAcXGM1+opjsSXq0TQfEuW0Q1SBAUDdsMkJb+87KPHxxJxtl4dKI0l84OLJx1SMUi
-         BDX+BP1E1m8zEn4iX2yGAAk9pqbKL2fWE/2N+BlPVEjO/iYhxDm49Kfbev3bDrt7TiUc
-         NedhslNJcsqKs0R6nM5AeMMKqGAkJ1PNEBcPnQus/m5saCbKQ6p9sAZ1Uj5tIItr65+Y
-         2veUh1rfp+aP5CGOzT+gg+EKqc17Ba4PEAUhzPXew374YkWtPouNgV99ruWvDwVjqGxI
-         zTUA==
-X-Gm-Message-State: AOAM532WABjYQQZex8TRjWxnNplaX40WoJgX4Ck05OQwQfuV8kiajLJP
-        lOEyoRlSNw+HfZprMzBIiBmd1Z7wnQTKDwUvY3I=
-X-Google-Smtp-Source: ABdhPJw5Y5GTPIY1EISus1LdQ3B8aosCndj4hIpDKWbA8VFnRmkSAUW2Fj7uIN8KKLhwC/bnePlxrZV9SlFR+Ulem4c=
-X-Received: by 2002:a05:6e02:cb:: with SMTP id r11mr5828814ilq.116.1611953503379;
- Fri, 29 Jan 2021 12:51:43 -0800 (PST)
+        bh=6lLJH6wGpbFuj0IJWQQeHITjZneLVulSJuUvdnDWMbY=;
+        b=lOSYR5r2apsCG7r4Ihl+Kt/5PGiNSNFa2bdxh07xnvhJXhMZmQM2gEDyqA+MHFtxs5
+         hnf0TqulbZOK6yMlHeNHyt5Ca1mAmLNBepi/IM9+qmN+RF1gD390iPSgQxr6ZaQ9ZioJ
+         3gS8UHtU2alLEAB6Pf0Tc5AQekEYoEyifSNdJYPAB4JSgsT2NY65sbzzMVBy5bTiUJni
+         oXKRlu9AplEv7FG1Cimi+qRM4fLZAr+xmKm+EEJ3BS9ftr0hKO8sYohNzwpkq0JpBRFP
+         EqoszCC1ocF28R0TGS7h0qu5Gd/3YtVVxC7V9wJ5bVxDVq2QeEtOhe8QQ7SiLlftIdv2
+         ulcw==
+X-Gm-Message-State: AOAM531QUbZELXNPnGBwek+eZhYI+4ryND1ABvH/GCTiwrcZB/AniGT9
+        Tzu6LkJh8WcClBb45uLJ4pOi7z2dTDz2SxPHLNo=
+X-Google-Smtp-Source: ABdhPJyKW6Z/95t+hHhCZW1namNNCkIlh//UBqOWDRX49nhShezelkJMtz0JqWU9szoU6YK4ygAc/WnsuNls9IwVCBQ=
+X-Received: by 2002:a62:5a86:0:b029:1ae:6b45:b6a9 with SMTP id
+ o128-20020a625a860000b02901ae6b45b6a9mr5965005pfb.7.1611954662708; Fri, 29
+ Jan 2021 13:11:02 -0800 (PST)
 MIME-Version: 1.0
-References: <20210129204528.2118168-1-yury.norov@gmail.com>
-In-Reply-To: <20210129204528.2118168-1-yury.norov@gmail.com>
-From:   Yury Norov <yury.norov@gmail.com>
-Date:   Fri, 29 Jan 2021 12:51:32 -0800
-Message-ID: <CAAH8bW8cZYG0HxqVAK4HxZDP3abxkHXsqfhSzJ-amQ_S6yDY_w@mail.gmail.com>
-Subject: Re: [PATCH 0/6] lib/find_bit: fast path for small bitmaps
-To:     linux-m68k@lists.linux-m68k.org,
+References: <20210129204528.2118168-1-yury.norov@gmail.com> <20210129204528.2118168-4-yury.norov@gmail.com>
+In-Reply-To: <20210129204528.2118168-4-yury.norov@gmail.com>
+From:   Andy Shevchenko <andy.shevchenko@gmail.com>
+Date:   Fri, 29 Jan 2021 23:10:46 +0200
+Message-ID: <CAHp75VcSc=myrcvyBOkaUDguR6aPjJAFFXi2iSvmU21+1664Hw@mail.gmail.com>
+Subject: Re: [PATCH 2/5] bits_per_long.h: introduce SMALL_CONST() macro
+To:     Yury Norov <yury.norov@gmail.com>
+Cc:     linux-m68k <linux-m68k@lists.linux-m68k.org>,
         Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
-Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Linux-SH <linux-sh@vger.kernel.org>,
+        Linux-Arch <linux-arch@vger.kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
         Dennis Zhou <dennis@kernel.org>,
@@ -79,19 +82,56 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Jan 29, 2021 at 12:45 PM Yury Norov <yury.norov@gmail.com> wrote:
+On Fri, Jan 29, 2021 at 10:49 PM Yury Norov <yury.norov@gmail.com> wrote:
 >
-> Bitmap operations are much simpler and faster in case of small bitmaps, whicn
-> fit into a single word. In linux/bitmap.h we have a machinery that allows
-> compiler to replace actual function call with a few instructions if bitmaps
-> passed into the function is small and its size is known at compile time.
->
-> find_*_bit() API lacks this functionality; despite users will benefit from it
-> a lot. One important example is cpumask subsystem, when NR_CPUS <= BITS_PER_LONG.
-> In the very best case, the compiler may replace a find_*_bit() call for such a
-> bitmap with a single ffs or ffz instruction.
->
-> Tools is synchronized with new implementation where needed.
+> Many algorithms become simplier if they are passed with relatively small
 
-Sorry for the broken enumeration . If it's too confusing, please let me know
-and I'll resend.
+simpler
+
+> input values. One example is bitmap operations when the whole bitmap fits
+> into one word. To implement such simplifications, linux/bitmap.h declares
+> small_const_nbits() macro.
+>
+> Other subsystems may also benefit from optimizations of this sort, like
+> find_bit API in the following patches. So it looks helpful to generalize
+> the macro and extend it's visibility.
+
+> It should probably go to linux/kernel.h, but doing that creates circular
+> dependencies. So put it in asm-generic/bitsperlong.h.
+
+No, no, please leave kernel.h alone. It's already quite a mess.
+
+And this shouldn't be in the commit message either.
+
+...
+
+> -       if (small_const_nbits(nbits))
+> +       if (SMALL_CONST(nbits - 1))
+
+Not sure if we need to rename it.
+
+...
+
+> --- a/include/linux/bits.h
+> +++ b/include/linux/bits.h
+> @@ -37,7 +37,7 @@
+>  #define GENMASK(h, l) \
+>         (GENMASK_INPUT_CHECK(h, l) + __GENMASK(h, l))
+>
+> -#define BITS_FIRST(nr)         GENMASK(nr), 0)
+> +#define BITS_FIRST(nr)         GENMASK((nr), 0)
+
+How come?!
+
+...
+
+> diff --git a/tools/include/asm-generic/bitsperlong.h b/tools/include/asm-generic/bitsperlong.h
+> index 8f2283052333..432d272baf27 100644
+> --- a/tools/include/asm-generic/bitsperlong.h
+> +++ b/tools/include/asm-generic/bitsperlong.h
+
+I think a tools update would be better to have in a separate patch.
+
+-- 
+With Best Regards,
+Andy Shevchenko
