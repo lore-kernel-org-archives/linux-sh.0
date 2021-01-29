@@ -2,92 +2,121 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.8 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-7.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 32E27C433E0
-	for <linux-sh@archiver.kernel.org>; Thu, 28 Jan 2021 18:11:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1D6A5C433E6
+	for <linux-sh@archiver.kernel.org>; Fri, 29 Jan 2021 06:43:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F25E064E13
-	for <linux-sh@archiver.kernel.org>; Thu, 28 Jan 2021 18:11:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DD0D464DFD
+	for <linux-sh@archiver.kernel.org>; Fri, 29 Jan 2021 06:43:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231480AbhA1SLG (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 28 Jan 2021 13:11:06 -0500
-Received: from mail.kernel.org ([198.145.29.99]:36204 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231760AbhA1SJx (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Thu, 28 Jan 2021 13:09:53 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 9A10D64E1C;
-        Thu, 28 Jan 2021 18:09:10 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1611857352;
-        bh=I9b2CY9oG+7j/Q9+LnonZv0tg8jELW8RgIxY4SKAgPQ=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=h6cdOo6dNdavRRc1d40577CbEq9Qqz9G09q2/4hlPc8DLukSHRWlv4Dc2CYTCxJOl
-         nfv0op4q3Fe+JORysXvTXKyvEAHLwIW/VgwlkFyT3iPkTW2Gi1rz3mYx3jZU0PTWXj
-         iWXCKW1qDk+ivaxS7i2LPmqMipiuMriqVOSSvbjULFZBoA4ROstn0q0wMAN/VY/z1u
-         Dgda/l5Z5A2faJ7etE2Z3GbEHJGsud7dU2XAY8XC+ph61sn+BaE044NsVvsjsRaPXM
-         ju0yR9cDjUPL2/zkhveVojdpEBV/mbkHWbGphlUVoNXg7+puEx7LqGfaZqK7ZciRhn
-         ez5F8XCG5tqgg==
-Date:   Thu, 28 Jan 2021 18:09:07 +0000
-From:   Will Deacon <will@kernel.org>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Naresh Kamboju <naresh.kamboju@linaro.org>,
-        linux-mm <linux-mm@kvack.org>,
-        open list <linux-kernel@vger.kernel.org>,
-        Linux-Next Mailing List <linux-next@vger.kernel.org>,
-        lkft-triage@lists.linaro.org,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        linux-riscv <linux-riscv@lists.infradead.org>,
-        Stephen Rothwell <sfr@canb.auug.org.au>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        "Kirill A . Shutemov" <kirill.shutemov@linux.intel.com>
-Subject: Re: [next] mm/nommu.c:1671:6: error: conflicting types for
- 'filemap_map_pages'
-Message-ID: <20210128180906.GA2678@willie-the-truck>
-References: <CA+G9fYta_uOLktmMnZHUTK9Uqx-rjtmQSSvHFCsvQsVdZDdm8A@mail.gmail.com>
- <CAMuHMdUzCFuuUcgMwh+numoCnr_p0tfTucybytymUceyPV0TBQ@mail.gmail.com>
+        id S232207AbhA2GnJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 29 Jan 2021 01:43:09 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53958 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229656AbhA2Gm5 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 29 Jan 2021 01:42:57 -0500
+Received: from mail-io1-xd36.google.com (mail-io1-xd36.google.com [IPv6:2607:f8b0:4864:20::d36])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 87597C061574;
+        Thu, 28 Jan 2021 22:41:57 -0800 (PST)
+Received: by mail-io1-xd36.google.com with SMTP id p72so8197130iod.12;
+        Thu, 28 Jan 2021 22:41:57 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=iVAMGV92J/f/CkteAMcDz3wL9cSpiXqRvqsJUAbs4+w=;
+        b=pdaI6T09b4/35M8LZtfd5am6EJAi2hkvXoRBPVsi32LE8VBjR2dU2H7w8K9Ql8iAgf
+         VrbhUdwoVGL2ljic5eUiSCFsmaiCNtoueptBpiOAX8TLmIpI5z6pB8qdLSczv34d+Nv8
+         ZJSHqxyJgDo/rpNrzFxWaOCty38aakVFP7Gg6NzCpVwtv2hvrjgjoprP8QmvdZ1CRALU
+         xoi4Vdjt7+GltZVxJ8M5qAFeboZsNzHSZtxopPNx0cHM2nEGvt9LKCdEkZSm1R12TMPt
+         /OgMU7DX0mEN8j+431T3Mddp5jaf+1bIjJ8a/hYU8wjo8+OOE9ho17+xgpFYiKAeldfy
+         lk5Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=iVAMGV92J/f/CkteAMcDz3wL9cSpiXqRvqsJUAbs4+w=;
+        b=DEz8nersf7WcMfA/jQJREYVeDRZBIH1Pk3+Nov5rEVjyG2sIKSRJD4u7NYwn41R2PE
+         uxM7OycgimJjmAd85cTKHUXeRVMmu7bEo9uNg0E6Awq1xsHOEviPBG0R7oIHyJPhhjIF
+         rtMqVcaeReaPOv6APYqqf0FiC9aZWRFlnTCPK8h3qjKt1gpPAWZQaRXj4D2UxJKq49WH
+         O2Zp2ne6JwvJo5HUp0dIV1UzwWsMI6jOU27sDG8/MMVqL99hp//WPCM6E1Cj/1VzRT9M
+         FaiBMvLzOPMQOS6+Z4BfhH4f1E08z5aMFFmMVVA2xGRwbfyqcUiiqNuaMhdILHEaquIg
+         gqLg==
+X-Gm-Message-State: AOAM530Gg6ej69XmeCtgsgsolyXQviLY8RHXw+uflt3BxsbUQ57EL8Vm
+        dFIYVVmVaDIV2moJPG0VLERq3FmZUVWeZ8HGmqM=
+X-Google-Smtp-Source: ABdhPJxBYeN3I1wdA2fWrBSBowJmYe8hGPdJD45A7zJciUI858z9CrZbB7j0UfSZvdn/5JVuocI+7v+FXFR9WB/DEtw=
+X-Received: by 2002:a6b:8f58:: with SMTP id r85mr2296622iod.132.1611902516781;
+ Thu, 28 Jan 2021 22:41:56 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAMuHMdUzCFuuUcgMwh+numoCnr_p0tfTucybytymUceyPV0TBQ@mail.gmail.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+References: <20210121000630.371883-1-yury.norov@gmail.com> <20210121000630.371883-5-yury.norov@gmail.com>
+ <YAlXMj7sIoPjZP3W@smile.fi.intel.com>
+In-Reply-To: <YAlXMj7sIoPjZP3W@smile.fi.intel.com>
+From:   Yury Norov <yury.norov@gmail.com>
+Date:   Thu, 28 Jan 2021 22:41:45 -0800
+Message-ID: <CAAH8bW8LSk4Jr_T0TZqfmzgXPQ4MMGJoN6OF664F+SGLYJG+Eg@mail.gmail.com>
+Subject: Re: [PATCH 4/6] lib: inline _find_next_bit() wrappers
+To:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Cc:     linux-m68k@lists.linux-m68k.org,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-sh@vger.kernel.org, linux-arch@vger.kernel.org,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
+        Dennis Zhou <dennis@kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        David Sterba <dsterba@suse.com>,
+        Stefano Brivio <sbrivio@redhat.com>,
+        "Ma, Jianpeng" <jianpeng.ma@intel.com>,
+        Wei Yang <richard.weiyang@linux.alibaba.com>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
+        Rasmus Villemoes <rasmus.villemoes@prevas.dk>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Jan 28, 2021 at 04:26:09PM +0100, Geert Uytterhoeven wrote:
-> Hi Naresh,
-> 
-> On Thu, Jan 28, 2021 at 3:25 PM Naresh Kamboju
-> <naresh.kamboju@linaro.org> wrote:
-> > arm, sh and riscv architecture build failed on today's Linux next tag 20210128.
+On Thu, Jan 21, 2021 at 2:27 AM Andy Shevchenko
+<andriy.shevchenko@linux.intel.com> wrote:
+>
+> On Wed, Jan 20, 2021 at 04:06:28PM -0800, Yury Norov wrote:
+> > lib/find_bit.c declares five single-line wrappers for _find_next_bit().
+> > We may turn those wrappers to inline functions. It eliminates
+> > unneeded function calls and opens room for compile-time optimizations.
+>
+> ...
+>
+> > --- a/include/asm-generic/bitops/le.h
+> > +++ b/include/asm-generic/bitops/le.h
+> > @@ -4,6 +4,7 @@
 > >
-> > FYI,
-> > # CONFIG_MMU is not set on these failed configs.
-> > config file attached to this email.
-> >
-> > make --silent --keep-going --jobs=8 O=/home/tux  -
-> > build/.cache/tuxmake/builds/1/tmp ARCH=arm
-> > CROSS_COMPILE=arm-linux-gnueabihf- 'CC=sccache
-> > arm-linux-gnueabihf-gcc' 'HOSTCC=sccache gcc'
-> > mm/nommu.c:1671:6: error: conflicting types for 'filemap_map_pages'
-> >  1671 | void filemap_map_pages(struct vm_fault *vmf,
-> >       |      ^~~~~~~~~~~~~~~~~
-> > In file included from mm/nommu.c:20:
-> > include/linux/mm.h:2578:19: note: previous declaration of
-> > 'filemap_map_pages' was here
-> >  2578 | extern vm_fault_t filemap_map_pages(struct vm_fault *vmf,
-> >       |                   ^~~~~~~~~~~~~~~~~
-> 
-> Care to give "[PATCH -next] mm/nommu: Fix return type of
-> filemap_map_pages()" a try?
-> https://lore.kernel.org/lkml/20210128100626.2257638-1-geert@linux-m68k.org/
+> >  #include <asm/types.h>
+> >  #include <asm/byteorder.h>
+> > +#include <asm-generic/bitops/find.h>
+>
+> I'm wondering if generic header inclusion should go before arch-dependent ones.
+>
+> ...
+>
+> > -#ifndef find_next_bit
+>
+> > -#ifndef find_next_zero_bit
+>
+> > -#if !defined(find_next_and_bit)
+>
+> > -#ifndef find_next_zero_bit_le
+>
+> > -#ifndef find_next_bit_le
+>
+> Shouldn't you leave these in new wrappers as well?
+>
+> --
+> With Best Regards,
+> Andy Shevchenko
 
-I'll go queue that now, cheers,
-
-Will
+Could you please elaborate? Wrappers in find.h are protected, functions
+in lib/find_bit.c too. Maybe I misunderstood you?..
