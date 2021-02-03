@@ -2,147 +2,138 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.4 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CD2A5C433E9
-	for <linux-sh@archiver.kernel.org>; Wed,  3 Feb 2021 19:56:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 203C7C433DB
+	for <linux-sh@archiver.kernel.org>; Wed,  3 Feb 2021 23:55:27 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A8D6D64F60
-	for <linux-sh@archiver.kernel.org>; Wed,  3 Feb 2021 19:56:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C3D8164E50
+	for <linux-sh@archiver.kernel.org>; Wed,  3 Feb 2021 23:55:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231301AbhBCT4U (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 3 Feb 2021 14:56:20 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41176 "EHLO
+        id S233918AbhBCXzK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 3 Feb 2021 18:55:10 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36114 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230122AbhBCT4R (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 3 Feb 2021 14:56:17 -0500
-Received: from merlin.infradead.org (merlin.infradead.org [IPv6:2001:8b0:10b:1231::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 906A7C061573;
-        Wed,  3 Feb 2021 11:55:37 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=merlin.20170209; h=Content-Transfer-Encoding:Content-Type:
-        In-Reply-To:MIME-Version:Date:Message-ID:From:References:Cc:To:Subject:Sender
-        :Reply-To:Content-ID:Content-Description;
-        bh=lZIM2DPH255woCpuEYzpAbqOgqBRxAkE8W2SBU4ewJE=; b=ceCUCEaJD39WM5gPnzKJ8wCMMB
-        luJoynXfntKH0PrBYD0kV1boOM9EYOyikVf1bjeNLMp+UGrLsgPi/id7egUyvAw1XP2smeHy1aHvB
-        THbPIkej5ErUCXA1NJhHsy9Sy58pIDNM5U1INSPEEMp3hay4Mzyul/jY5dhFLyIux8lRst/i7Xhff
-        eN0djcpHrWSFX4bf2MlxDBJEtxfjmeXnDyZkydj3I+GPHP5y5kGCdEbAbjI/wEBSZpwvhfi7qh6LY
-        ZRkz88wlLjuctiw2HWUek5QMoiFZmg4e630jPWnPaXnaL+b9dY3em0hinWaB7lFlsH9QUOY5EWGWB
-        6Hg+KPqQ==;
-Received: from [2601:1c0:6280:3f0::aec2]
-        by merlin.infradead.org with esmtpsa (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1l7OFM-0003dU-EK; Wed, 03 Feb 2021 19:55:28 +0000
-Subject: Re: memory_model.h:64:14: error: implicit declaration of function
- 'page_to_section'
-To:     Naresh Kamboju <naresh.kamboju@linaro.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Linux Next Mailing List <linux-next@vger.kernel.org>,
-        linux-mm <linux-mm@kvack.org>,
-        Linux-Arch <linux-arch@vger.kernel.org>,
-        lkft-triage@lists.linaro.org, linux-mips@vger.kernel.org,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        Mike Rapoport <rppt@kernel.org>
-Cc:     Stephen Rothwell <sfr@canb.auug.org.au>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Pavel Tatashin <pasha.tatashin@oracle.com>
-References: <CA+G9fYv-=GdpLK3-6M9P4J1N-4ypS=GO8T2N15JFWXSmsG1adQ@mail.gmail.com>
-From:   Randy Dunlap <rdunlap@infradead.org>
-Message-ID: <201a2712-d708-7f83-9272-730b32e7a842@infradead.org>
-Date:   Wed, 3 Feb 2021 11:55:22 -0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.4.0
+        with ESMTP id S233915AbhBCXzF (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 3 Feb 2021 18:55:05 -0500
+Received: from mail-qt1-x82f.google.com (mail-qt1-x82f.google.com [IPv6:2607:f8b0:4864:20::82f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7390BC061573;
+        Wed,  3 Feb 2021 15:54:25 -0800 (PST)
+Received: by mail-qt1-x82f.google.com with SMTP id z32so1149919qtd.8;
+        Wed, 03 Feb 2021 15:54:25 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=date:from:to:cc:subject:message-id:mail-followup-to:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=OUI1E35qY/dHj3kcH37Zi8kcJp7vpT/9jcqiIwQAQvE=;
+        b=TxEh/JreknrjRSNDom2j5/kMNVU7wh21VYavcbJvG0BD/dn7T/528rdhp15EIkOETH
+         4QaBU7AfwVIW+eQmj+nOjqt7x8oolTX9mOyLbaI8bKU2lvo5+G+XRqscQ52/RirtpwUi
+         +prCYIWAZH4wQPEgxPqPqv9zJbQslJ15LbZ0Gott3tcWmr38VctPv9w+U7hlC/SM3BPQ
+         yir0lDZYd1Pmx/c59UQxvJAmVJ9GiqY3LpNLib3i2QOx3fii0WJ6HK7EnNXRAVRIH8xA
+         odq8UPI8BXOXfyLMsaEECd1K5b+egPSXNPkGE5fSfwG2g9YtiG2VxtWUP2FWfd7uePF0
+         rd2g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id
+         :mail-followup-to:references:mime-version:content-disposition
+         :in-reply-to;
+        bh=OUI1E35qY/dHj3kcH37Zi8kcJp7vpT/9jcqiIwQAQvE=;
+        b=G7Xo08TcwS/z5zqN8n8nAOZztdSpDvSx94A5O3aKzpnEdIj3ZFDZlCRm5bL3GPrRkk
+         BONKYd5GKh8R9OhX1tTD00cYg8hN9loer9Rslyjcb3rqB75xKgVT0LrYsrgrESdf1fy0
+         8IjBfgAU/CdUSVklRTWia5QzXGTaLPTD3hbFLDcAVJeL5NgoTTws9GneLsJTHwKpozso
+         IOAxX0AdBeGruRVO7NvSPeMLAvlM0fD8/WrpoT2jNZfIZT2aD1J7MMKeBdPfrB9rrvae
+         yK7vDObuehwxoKDQiQE5nyFRmWL/8PNGmYITaLgNSzPEIaXiiDVnx1sghku3fN+b0DIm
+         2MHw==
+X-Gm-Message-State: AOAM530RdL1tHis2NgbL6KrgcVhBmVoe7fw1rXla1QUFbTP7Ic6IN4hn
+        bXVk8SFApfHA9He2p49K2Zc=
+X-Google-Smtp-Source: ABdhPJwmC6TaVPyOk1l55Ge1hcsD88Zrat52GUmn3fp+Ua/83f8TjE4XRr4p5uLzR5CO6D5y3dBlbg==
+X-Received: by 2002:aed:212d:: with SMTP id 42mr4825134qtc.106.1612396464784;
+        Wed, 03 Feb 2021 15:54:24 -0800 (PST)
+Received: from Gentoo ([138.199.13.179])
+        by smtp.gmail.com with ESMTPSA id o5sm3375672qko.85.2021.02.03.15.54.21
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 03 Feb 2021 15:54:23 -0800 (PST)
+Date:   Thu, 4 Feb 2021 05:24:14 +0530
+From:   Bhaskar Chowdhury <unixbhaskar@gmail.com>
+To:     Randy Dunlap <rdunlap@infradead.org>
+Cc:     ysato@users.sourceforge.jp, dalias@libc.org,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] arch: sh: kernel: Change to correct spelling archtecture
+ to architecture in the file relocate_kernel.S
+Message-ID: <YBs3pgKHxqMqH8sf@Gentoo>
+Mail-Followup-To: Bhaskar Chowdhury <unixbhaskar@gmail.com>,
+        Randy Dunlap <rdunlap@infradead.org>, ysato@users.sourceforge.jp,
+        dalias@libc.org, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+References: <20210203152521.16776-1-unixbhaskar@gmail.com>
+ <31ad117d-b025-2214-cccb-deeaee6036be@infradead.org>
 MIME-Version: 1.0
-In-Reply-To: <CA+G9fYv-=GdpLK3-6M9P4J1N-4ypS=GO8T2N15JFWXSmsG1adQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg=pgp-sha256;
+        protocol="application/pgp-signature"; boundary="sUL2F4YP//m70vi0"
+Content-Disposition: inline
+In-Reply-To: <31ad117d-b025-2214-cccb-deeaee6036be@infradead.org>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 2/3/21 7:51 AM, Naresh Kamboju wrote:
-> Linux next tag 20210203 the mips and sh builds failed due to below errors.
-> Following builds failed with gcc-8, gcc-9 and gcc-10,
->   - mips (cavium_octeon_defconfig)
->   - sh (defconfig)
->   - sh (shx3_defconfig)
-> 
-> make --silent --keep-going --jobs=8
-> O=/home/tuxbuild/.cache/tuxmake/builds/1/tmp ARCH=mips
-> CROSS_COMPILE=mips-linux-gnu- 'CC=sccache mips-linux-gnu-gcc'
-> 'HOSTCC=sccache gcc' uImage.gz
-> In file included from arch/mips/include/asm/page.h:258,
->                  from arch/mips/include/asm/io.h:29,
->                  from include/linux/io.h:13,
->                  from arch/mips/include/asm/mips-cps.h:10,
->                  from arch/mips/include/asm/smp-ops.h:16,
->                  from arch/mips/include/asm/smp.h:21,
->                  from include/linux/smp.h:84,
->                  from arch/mips/include/asm/cpu-type.h:12,
->                  from arch/mips/include/asm/timex.h:19,
->                  from include/linux/timex.h:65,
->                  from include/linux/time32.h:13,
->                  from include/linux/time.h:60,
->                  from include/linux/compat.h:10,
->                  from arch/mips/kernel/asm-offsets.c:12:
-> include/linux/mm.h: In function 'is_pinnable_page':
-> include/asm-generic/memory_model.h:64:14: error: implicit declaration
-> of function 'page_to_section'; did you mean 'present_section'?
-> [-Werror=implicit-function-declaration]
->   int __sec = page_to_section(__pg);   \
->               ^~~~~~~~~~~~~~~
-> include/asm-generic/memory_model.h:81:21: note: in expansion of macro
-> '__page_to_pfn'
->  #define page_to_pfn __page_to_pfn
->                      ^~~~~~~~~~~~~
-> include/linux/mm.h:1135:15: note: in expansion of macro 'page_to_pfn'
->    is_zero_pfn(page_to_pfn(page));
->                ^~~~~~~~~~~
-> In file included from arch/mips/kernel/asm-offsets.c:15:
-> include/linux/mm.h: At top level:
-> include/linux/mm.h:1512:29: error: conflicting types for 'page_to_section'
->  static inline unsigned long page_to_section(const struct page *page)
->                              ^~~~~~~~~~~~~~~
-> Steps to reproduce:
-> --------------------------
-> # TuxMake is a command line tool and Python library that provides
-> # portable and repeatable Linux kernel builds across a variety of
-> # architectures, toolchains, kernel configurations, and make targets.
-> #
-> # TuxMake supports the concept of runtimes.
-> # See https://docs.tuxmake.org/runtimes/, for that to work it requires
-> # that you install podman or docker on your system.
-> #
-> # To install tuxmake on your system globally:
-> # sudo pip3 install -U tuxmake
-> #
-> # See https://docs.tuxmake.org/ for complete documentation.
-> 
-> 
-> tuxmake --runtime podman --target-arch mips --toolchain gcc-10
-> --kconfig cavium_octeon_defconfig
 
-Looks to me like this is due to <linux/mm.h>:
+--sUL2F4YP//m70vi0
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Disposition: inline
 
-#if defined(CONFIG_SPARSEMEM) && !defined(CONFIG_SPARSEMEM_VMEMMAP)
-#define SECTION_IN_PAGE_FLAGS
-#endif
+On 09:58 Wed 03 Feb 2021, Randy Dunlap wrote:
+>On 2/3/21 7:25 AM, Bhaskar Chowdhury wrote:
+>
+>Normally a patch description is required <here>.
+>
+>If the patch committer wants to take it as is, the typo
+>fix LGTM.
+>
 
+I am so sorry..will fix this ...thank you Randy
 
-with
-CONFIG_SPARSEMEM=y
-CONFIG_SPARSEMEM_EXTREME=y
-CONFIG_SPARSEMEM_VMEMMAP_ENABLE=y
-# CONFIG_SPARSEMEM_VMEMMAP is not set
+>> Signed-off-by: Bhaskar Chowdhury <unixbhaskar@gmail.com>
+>> ---
+>>  arch/sh/kernel/relocate_kernel.S | 2 +-
+>>  1 file changed, 1 insertion(+), 1 deletion(-)
+>>
+>> diff --git a/arch/sh/kernel/relocate_kernel.S b/arch/sh/kernel/relocate_kernel.S
+>> index d9bf2b727b42..deda2f60a8f2 100644
+>> --- a/arch/sh/kernel/relocate_kernel.S
+>> +++ b/arch/sh/kernel/relocate_kernel.S
+>> @@ -3,7 +3,7 @@
+>>   * relocate_kernel.S - put the kernel image in place to boot
+>>   * 2005.9.17 kogiidena@eggplant.ddo.jp
+>>   *
+>> - * LANDISK/sh4 is supported. Maybe, SH archtecture works well.
+>> + * LANDISK/sh4 is supported. Maybe, SH architecture works well.
+>>   *
+>>   * 2009-03-18 Magnus Damm - Added Kexec Jump support
+>>   */
+>> --
+>> 2.26.2
+>
+>--
+>~Randy
+>
 
+--sUL2F4YP//m70vi0
+Content-Type: application/pgp-signature; name="signature.asc"
 
-I'm still digging.
+-----BEGIN PGP SIGNATURE-----
 
--- 
-~Randy
+iQEzBAABCAAdFiEEnwF+nWawchZUPOuwsjqdtxFLKRUFAmAbN6UACgkQsjqdtxFL
+KRWqxQgAlvfgVshKcHUWP1D4isG7NUbTKOpSPEOt6ZoKhPmVijuq/3Vqi37cbYVK
+qqsFJkF7GcsTLFrok86JZeYsiGv8TWAPaU1HG8OUhb5o9IIxFxH1S+nwJj8VY1kO
+QznLrzi9tRlX4KEYelwgGji9OeI3XCSF0BxShhrmbsB6kd99tP7bqmhVBa6ZfRK+
+VbYg/SiAU3jMDKt4VOQxvOLdKXYP1kQNhy2SVBkIFmAOUH/1TrxEDZMlD80RfwJF
+tm2MBC4Aj7RMHZAiUyKl937snhMakB2aGMeNZLPq8MYtetgpsnV3M+RQ0GN/Iff6
+mWP2U2hWqJPz6YeDPcE4iRh/NvP2cw==
+=ZeJX
+-----END PGP SIGNATURE-----
 
+--sUL2F4YP//m70vi0--
