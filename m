@@ -2,94 +2,130 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-17.4 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.1 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
+	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,MSGID_FROM_MTA_HEADER,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D643DC433E0
-	for <linux-sh@archiver.kernel.org>; Thu,  4 Feb 2021 00:59:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AC463C433DB
+	for <linux-sh@archiver.kernel.org>; Fri,  5 Feb 2021 20:12:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8B31964F55
-	for <linux-sh@archiver.kernel.org>; Thu,  4 Feb 2021 00:59:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 69D4D64E30
+	for <linux-sh@archiver.kernel.org>; Fri,  5 Feb 2021 20:12:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234385AbhBDA7w (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 3 Feb 2021 19:59:52 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50134 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234366AbhBDA7s (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 3 Feb 2021 19:59:48 -0500
-Received: from merlin.infradead.org (merlin.infradead.org [IPv6:2001:8b0:10b:1231::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 321CFC0613D6;
-        Wed,  3 Feb 2021 16:59:07 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=merlin.20170209; h=Content-Transfer-Encoding:Content-Type:
-        In-Reply-To:MIME-Version:Date:Message-ID:From:References:To:Subject:Sender:
-        Reply-To:Cc:Content-ID:Content-Description;
-        bh=0HeVTQ+ZGeks5Sti3IrPW/lfwuJJN8fuz7nNyWizFOE=; b=Ka0djaTGy5uImi1hQ8/bXZ5s75
-        L/nwAJ23L/hV6+wWhm1MkgM5dA/TzlJmePp7DxjAUxv4d0uxeJjshKwLRS849RvuNwsrxAqt68J7o
-        5Dvw0PrwuaKW6y3gdmbCuhMKhfIZCTIc36ZG78a92xoIwllrwLQXdnXsmtX7p+JuNan4+6YplIsmb
-        sQVsFh6Ppv9+p893BkNzw1OVAA2CjcX3t3SOUxbV+JSGtm69jLeOGngVgT2EqvgnNJbivZVpDeCNt
-        Ktj8LKXvtzWMD4VlMyZ3DqfAH4rbBGoHpnnDybGDzt+ZA5+bBnyuAi02ohV+eqMNfzg4cPyDv3o9j
-        0QxN6UXg==;
-Received: from [2601:1c0:6280:3f0::aec2]
-        by merlin.infradead.org with esmtpsa (Exim 4.92.3 #3 (Red Hat Linux))
-        id 1l7SzA-0005OT-2T; Thu, 04 Feb 2021 00:59:04 +0000
-Subject: Re: [PATCH V2] arch: sh: kernel: Fix a spelling archtecture to
- architecture in the file relocate_kernel.S
-To:     Bhaskar Chowdhury <unixbhaskar@gmail.com>,
-        ysato@users.sourceforge.jp, dalias@libc.org,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20210204005046.21462-1-unixbhaskar@gmail.com>
-From:   Randy Dunlap <rdunlap@infradead.org>
-Message-ID: <934fea12-0d1f-fc4c-3f73-70874fa2e2ca@infradead.org>
-Date:   Wed, 3 Feb 2021 16:59:00 -0800
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.4.0
+        id S233114AbhBES3D (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 5 Feb 2021 13:29:03 -0500
+Received: from hqnvemgate24.nvidia.com ([216.228.121.143]:4297 "EHLO
+        hqnvemgate24.nvidia.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230307AbhBEPNQ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 5 Feb 2021 10:13:16 -0500
+Received: from hqmail.nvidia.com (Not Verified[216.228.121.13]) by hqnvemgate24.nvidia.com (using TLS: TLSv1.2, AES256-SHA)
+        id <B601d778b0000>; Fri, 05 Feb 2021 08:51:23 -0800
+Received: from HKMAIL101.nvidia.com (10.18.16.10) by HQMAIL101.nvidia.com
+ (172.20.187.10) with Microsoft SMTP Server (TLS) id 15.0.1473.3; Fri, 5 Feb
+ 2021 16:51:22 +0000
+Received: from HKMAIL104.nvidia.com (10.18.16.13) by HKMAIL101.nvidia.com
+ (10.18.16.10) with Microsoft SMTP Server (TLS) id 15.0.1473.3; Fri, 5 Feb
+ 2021 16:51:18 +0000
+Received: from NAM12-DM6-obe.outbound.protection.outlook.com (104.47.59.172)
+ by HKMAIL104.nvidia.com (10.18.16.13) with Microsoft SMTP Server (TLS) id
+ 15.0.1473.3 via Frontend Transport; Fri, 5 Feb 2021 16:51:18 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=BrKMI8+DM+eoH6up4Cz7WmTU+VMziCYUNlYcJyjKO+wYt8heEPCRoVuv3kQ+3B1RyGwRACvQFekPdcg/jzo1ggUaGfFMPeF3yZ84zxHVJba4bkvGaGc59l0ispnMKulc52LXKQm1+KB0EU/Uv8DSweZHYHQg1+EzUViW+DmVEaeXj481AEQVFV9NXJmPp7z7BPYJLrdC2iuIsIa+4a4gokiwHKnGB+wXxh1Lwn57WOOiPvhooHliX/S0FRVB+AuSJOVXv6ZxmHY29LDGLOkPoQlXAqFK25uIokmzVgiYsDxzS6D/iKFe/mGJ43vFVOsGjKrs7eg/1fmJvMhXJuYAQA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=1LS3cG1cQTFsLvem3P2GfggAuj5MfjtrblP3tNTGmuw=;
+ b=SREeU8bOiqbx43hTeVCbPWNha6PgZCn5RjBMUhXvheVotXWci1e/2gSiDz26NQMLUHOTegObhRvyE2Opsf9Hi7+SwzBBYunIUgWU5vMiulziwBQCP+5hbb8bmSedhPpZ3mfcssuBc16YEuAaahnu0fv+VfxTepPbamh8G5kXkEpP3QsTyH6v/1qhSFHJVyhHZ+A2Exyty6P8Lgijh2jQdw+eemzp1kYW5rwVavlfMQdbrlHhsOVbGfUet04elRDk56SwDCvaB4dOGCv4A4jSQUvjbrZ3uF85ix4zwND2+r6pUN2jwcZDknwwt5Qk1tVV/bRl7HMEdZ6LqDZAVlW+aw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=nvidia.com; dmarc=pass action=none header.from=nvidia.com;
+ dkim=pass header.d=nvidia.com; arc=none
+Received: from DM6PR12MB3834.namprd12.prod.outlook.com (2603:10b6:5:14a::12)
+ by DM6PR12MB2812.namprd12.prod.outlook.com (2603:10b6:5:44::27) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3805.24; Fri, 5 Feb
+ 2021 16:51:15 +0000
+Received: from DM6PR12MB3834.namprd12.prod.outlook.com
+ ([fe80::d6b:736:fa28:5e4]) by DM6PR12MB3834.namprd12.prod.outlook.com
+ ([fe80::d6b:736:fa28:5e4%7]) with mapi id 15.20.3825.025; Fri, 5 Feb 2021
+ 16:51:15 +0000
+Date:   Fri, 5 Feb 2021 12:51:13 -0400
+From:   Jason Gunthorpe <jgg@nvidia.com>
+To:     kernel test robot <lkp@intel.com>
+CC:     Avihai Horon <avihaih@nvidia.com>, <kbuild-all@lists.01.org>,
+        <linux-kernel@vger.kernel.org>,
+        Leon Romanovsky <leonro@nvidia.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, <linux-sh@vger.kernel.org>
+Subject: Re: drivers/infiniband/core/uverbs_std_types_device.c:299:29:
+ sparse: sparse: incorrect type in argument 1 (different address spaces)
+Message-ID: <20210205165113.GV4247@nvidia.com>
+References: <202102020130.LmreFXR5-lkp@intel.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Disposition: inline
+In-Reply-To: <202102020130.LmreFXR5-lkp@intel.com>
+X-ClientProxiedBy: BL0PR02CA0063.namprd02.prod.outlook.com
+ (2603:10b6:207:3d::40) To DM6PR12MB3834.namprd12.prod.outlook.com
+ (2603:10b6:5:14a::12)
 MIME-Version: 1.0
-In-Reply-To: <20210204005046.21462-1-unixbhaskar@gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+X-MS-Exchange-MessageSentRepresentingType: 1
+Received: from mlx.ziepe.ca (142.162.115.133) by BL0PR02CA0063.namprd02.prod.outlook.com (2603:10b6:207:3d::40) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3825.20 via Frontend Transport; Fri, 5 Feb 2021 16:51:14 +0000
+Received: from jgg by mlx with local (Exim 4.94)        (envelope-from <jgg@nvidia.com>)        id 1l84K9-003xMG-Lh; Fri, 05 Feb 2021 12:51:13 -0400
+X-Header: ProcessedBy-CMR-outbound
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nvidia.com; s=n1;
+        t=1612543883; bh=1LS3cG1cQTFsLvem3P2GfggAuj5MfjtrblP3tNTGmuw=;
+        h=ARC-Seal:ARC-Message-Signature:ARC-Authentication-Results:Date:
+         From:To:CC:Subject:Message-ID:References:Content-Type:
+         Content-Disposition:In-Reply-To:X-ClientProxiedBy:MIME-Version:
+         X-MS-Exchange-MessageSentRepresentingType:X-Header;
+        b=lIMD1UdrafM6UqUYoqsf3cJmfwcoJVmbTkiCyHZXs6GSvxxifYeZPEN46CBRqQCgf
+         nGPJgDvyNaB8y3M6VN89ysmHrorlrmd1Yggnc7EYZdRxF9WmOqVncsfAmG+Qdi2acd
+         zZlTp1fSqhmSIDeYEjwB2Dhuewq1qpCq8woa5/VsWFW9Y7Kq9Pfp6cGv7zu7tPManh
+         mAO0ga3af6/E2F7fOeIzmCf39aWcnnuE4sMUZvNYwFb4dEiP9lXdXI25IN0NgfBqS8
+         XXdZ1akLwQqukEApksqOsm1F8iG5oE9vpH//9+YksDWVK0FZ14ojg1qhf+NYOmId5q
+         BATk3BGfFHm4A==
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 2/3/21 4:50 PM, Bhaskar Chowdhury wrote:
+On Tue, Feb 02, 2021 at 01:40:33AM +0800, kernel test robot wrote:
+> tree:   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git master
+> head:   1048ba83fb1c00cd24172e23e8263972f6b5d9ac
+> commit: 9f85cbe50aa044a46f0a22fda323fa27b80c82da RDMA/uverbs: Expose the new GID query API to user space
+> date:   4 months ago
+> config: sh-randconfig-s031-20210201 (attached as .config)
+> compiler: sh4-linux-gcc (GCC) 9.3.0
+> reproduce:
+>         wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
+>         chmod +x ~/bin/make.cross
+>         # apt-get install sparse
+>         # sparse version: v0.6.3-215-g0fb77bb6-dirty
+>         # https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=9f85cbe50aa044a46f0a22fda323fa27b80c82da
+>         git remote add linus https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+>         git fetch --no-tags linus master
+>         git checkout 9f85cbe50aa044a46f0a22fda323fa27b80c82da
+>         # save the attached .config to linux build tree
+>         COMPILER_INSTALL_PATH=$HOME/0day COMPILER=gcc-9.3.0 make.cross C=1 CF='-fdiagnostic-prefix -D__CHECK_ENDIAN__' ARCH=sh 
 > 
-> s/archtecture/architecture/
+> If you fix the issue, kindly add following tag as appropriate
+> Reported-by: kernel test robot <lkp@intel.com>
 > 
-> Signed-off-by: Bhaskar Chowdhury <unixbhaskar@gmail.com>
-
-Acked-by: Randy Dunlap <rdunlap@infradead.org>
-
-Thanks.
-
-> ---
->  Changes from V1 :
->   Missed the changelog text,now included
 > 
->  arch/sh/kernel/relocate_kernel.S | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/sh/kernel/relocate_kernel.S b/arch/sh/kernel/relocate_kernel.S
-> index d9bf2b727b42..deda2f60a8f2 100644
-> --- a/arch/sh/kernel/relocate_kernel.S
-> +++ b/arch/sh/kernel/relocate_kernel.S
-> @@ -3,7 +3,7 @@
->   * relocate_kernel.S - put the kernel image in place to boot
->   * 2005.9.17 kogiidena@eggplant.ddo.jp
->   *
-> - * LANDISK/sh4 is supported. Maybe, SH archtecture works well.
-> + * LANDISK/sh4 is supported. Maybe, SH architecture works well.
->   *
->   * 2009-03-18 Magnus Damm - Added Kexec Jump support
->   */
-> --
-> 2.26.2
-> 
+> "sparse warnings: (new ones prefixed by >>)"
+> >> drivers/infiniband/core/uverbs_std_types_device.c:299:29: sparse: sparse: incorrect type in argument 1 (different address spaces) @@     expected void *addr @@     got void [noderef] __user *__cl_addr @@
+>    drivers/infiniband/core/uverbs_std_types_device.c:299:29: sparse:     expected void *addr
+>    drivers/infiniband/core/uverbs_std_types_device.c:299:29: sparse:     got void [noderef] __user *__cl_addr
+>    drivers/infiniband/core/uverbs_std_types_device.c:115:15: sparse: sparse: cast truncates bits from constant value (ffff0001 becomes 1)
+>    drivers/infiniband/core/uverbs_std_types_device.c:195:15: sparse: sparse: cast truncates bits from constant value (ffffff01 becomes 1)
 
+This is a bug in  arch/sh/include/asm/page.h:
 
--- 
-~Randy
+__kernel_size_t __clear_user(void *addr, __kernel_size_t size);
 
+#define clear_user(addr,n)						\
+...
+		__cl_size = __clear_user(__cl_addr, __cl_size);		\
+
+__clear_user() needs to take a void __user *addr
+
+Jason
