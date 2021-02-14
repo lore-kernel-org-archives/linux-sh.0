@@ -2,91 +2,103 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-14.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29330C433E0
-	for <linux-sh@archiver.kernel.org>; Wed, 10 Feb 2021 15:06:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 72004C43381
+	for <linux-sh@archiver.kernel.org>; Sun, 14 Feb 2021 17:02:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DE66F64E87
-	for <linux-sh@archiver.kernel.org>; Wed, 10 Feb 2021 15:06:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 43DD861493
+	for <linux-sh@archiver.kernel.org>; Sun, 14 Feb 2021 17:02:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231180AbhBJPGh (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 10 Feb 2021 10:06:37 -0500
-Received: from mga11.intel.com ([192.55.52.93]:14915 "EHLO mga11.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231559AbhBJPGg (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Wed, 10 Feb 2021 10:06:36 -0500
-IronPort-SDR: OjUBjc1I7rxLmkBhCJLhNlYmL8TrZFAX8XF/PA1AZ+t7EdyeyKWE7SRxhvqWK/al/lCN45sWdI
- UzTFkvIHIO2w==
-X-IronPort-AV: E=McAfee;i="6000,8403,9890"; a="178576650"
-X-IronPort-AV: E=Sophos;i="5.81,168,1610438400"; 
-   d="scan'208";a="178576650"
-Received: from orsmga008.jf.intel.com ([10.7.209.65])
-  by fmsmga102.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Feb 2021 07:05:54 -0800
-IronPort-SDR: rvUTR4zO9Ac9wFCiTUQocCV13qof0FpfmL9rDz62UdS09OMAz7hT//IDYUybY1Dv4FczTQrnYI
- RGo8Szcvv+iA==
-X-IronPort-AV: E=Sophos;i="5.81,168,1610438400"; 
-   d="scan'208";a="396736359"
-Received: from shao2-debian.sh.intel.com (HELO localhost) ([10.239.13.11])
-  by orsmga008-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Feb 2021 07:05:52 -0800
-From:   Rong Chen <rong.a.chen@intel.com>
-To:     Andrew Morton <akpm@linux-foundation.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Rong Chen <rong.a.chen@intel.com>,
-        kernel test robot <lkp@intel.com>
-Subject: [PATCH] scripts/recordmcount.pl: support big endian for ARCH sh
-Date:   Wed, 10 Feb 2021 23:04:35 +0800
-Message-Id: <20210210150435.2171567-1-rong.a.chen@intel.com>
-X-Mailer: git-send-email 2.20.1
-In-Reply-To: <202101261118.GbbYSlHu-lkp@intel.com>
-References: <202101261118.GbbYSlHu-lkp@intel.com>
+        id S229829AbhBNRCR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 14 Feb 2021 12:02:17 -0500
+Received: from conssluserg-03.nifty.com ([210.131.2.82]:58612 "EHLO
+        conssluserg-03.nifty.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229637AbhBNRCP (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 14 Feb 2021 12:02:15 -0500
+Received: from mail-pf1-f181.google.com (mail-pf1-f181.google.com [209.85.210.181]) (authenticated)
+        by conssluserg-03.nifty.com with ESMTP id 11EH1DmW022819;
+        Mon, 15 Feb 2021 02:01:13 +0900
+DKIM-Filter: OpenDKIM Filter v2.10.3 conssluserg-03.nifty.com 11EH1DmW022819
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com;
+        s=dec2015msa; t=1613322074;
+        bh=SP1sGJk9Sz6Zv6lJ9Wi/Vff8sScxvUIuNUkChOHpFR8=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=eW5SCVd/ORO2ykDHxnNRrd0j5pNeofX24lJWfc1sAWEZK87VwCvlyBONkk1p+q0pw
+         n9urDcCM7JXO/83SDgjvjWIuq0kCzJpxghQ0kdEY/9lSUqF57fsB4kVM44LTekaoBL
+         2K5usgTVkdb+i9kzobmJV+tecZNrbgkAygUEWwX3cvMZxzFNtx08+4IWsN9L58B4V9
+         msLNld5lBI4A8trmLyO3EgTzKOINsLN5xgyvh+eWnDvPTyAVb6rNcHXCo6xnYQ8S9l
+         7hdmlhpR1RGeMV1AEHEn5ADueffOKPk44du6buIJ89LAEEs34fToTGEhTLY+vWrQY3
+         BiMMNZH6MaRbw==
+X-Nifty-SrcIP: [209.85.210.181]
+Received: by mail-pf1-f181.google.com with SMTP id d26so2778301pfn.5;
+        Sun, 14 Feb 2021 09:01:13 -0800 (PST)
+X-Gm-Message-State: AOAM533clch37dk64kSPjlB2+UzCYJ2WwCkw3YGVARLYTXnzf3SZiAY5
+        Tzj3X9RmE4N8rzRkjvZlSrTCVbRotG+c+HSmbvQ=
+X-Google-Smtp-Source: ABdhPJynyvRuko2AvW0s/Rsmpz6hR6NWNFNxrImHm+1o7F+Y7g0dNzPk8oFZuEX0oJ2YCILzMn7MQK6BnXeqMrnP+x0=
+X-Received: by 2002:a63:1f1d:: with SMTP id f29mr11945438pgf.47.1613322073045;
+ Sun, 14 Feb 2021 09:01:13 -0800 (PST)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20210128005110.2613902-1-masahiroy@kernel.org> <20210128005110.2613902-22-masahiroy@kernel.org>
+In-Reply-To: <20210128005110.2613902-22-masahiroy@kernel.org>
+From:   Masahiro Yamada <masahiroy@kernel.org>
+Date:   Mon, 15 Feb 2021 02:00:35 +0900
+X-Gmail-Original-Message-ID: <CAK7LNAQDcfqSCsCeG9+ytrJNfD5mS8OLS2uZS8WRBuTHRL1qRg@mail.gmail.com>
+Message-ID: <CAK7LNAQDcfqSCsCeG9+ytrJNfD5mS8OLS2uZS8WRBuTHRL1qRg@mail.gmail.com>
+Subject: Re: [PATCH 21/27] sparc: remove wrong comment from arch/sparc/include/asm/Kbuild
+To:     linux-arch <linux-arch@vger.kernel.org>, X86 ML <x86@kernel.org>
+Cc:     Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-alpha@vger.kernel.org,
+        linux-arm-kernel <linux-arm-kernel@lists.infradead.org>,
+        linux-ia64@vger.kernel.org,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        linux-um@lists.infradead.org,
+        "open list:TENSILICA XTENSA PORT (xtensa)" 
+        <linux-xtensa@linux-xtensa.org>,
+        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
+        sparclinux <sparclinux@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The kernel test robot reported the following issue:
-    CC [M]  drivers/soc/litex/litex_soc_ctrl.o
-  sh4-linux-objcopy: Unable to change endianness of input file(s)
-  sh4-linux-ld: cannot find drivers/soc/litex/.tmp_gl_litex_soc_ctrl.o: No such file or directory
-  sh4-linux-objcopy: 'drivers/soc/litex/.tmp_mx_litex_soc_ctrl.o': No such file
+On Thu, Jan 28, 2021 at 9:52 AM Masahiro Yamada <masahiroy@kernel.org> wrote:
+>
+> These are NOT exported to userspace.
+>
+> The headers listed in arch/sparc/include/uapi/asm/Kbuild are exported.
+>
+> Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
 
-The problem is that the format of input file is elf32-shbig-linux,
-but sh4-linux-objcopy wants to output a file which format is elf32-sh-linux:
+Applied to linux-kbuild/fixes.
 
-  $ sh4-linux-objdump -d drivers/soc/litex/litex_soc_ctrl.o | grep format
-  drivers/soc/litex/litex_soc_ctrl.o:     file format elf32-shbig-linux
 
-Reported-by: kernel test robot <lkp@intel.com>
-Link: https://lore.kernel.org/linux-mm/202101261118.GbbYSlHu-lkp@intel.com
-Signed-off-by: Rong Chen <rong.a.chen@intel.com>
----
- scripts/recordmcount.pl | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+> ---
+>
+>  arch/sparc/include/asm/Kbuild | 2 --
+>  1 file changed, 2 deletions(-)
+>
+> diff --git a/arch/sparc/include/asm/Kbuild b/arch/sparc/include/asm/Kbuild
+> index 3688fdae50e4..aec20406145e 100644
+> --- a/arch/sparc/include/asm/Kbuild
+> +++ b/arch/sparc/include/asm/Kbuild
+> @@ -1,6 +1,4 @@
+>  # SPDX-License-Identifier: GPL-2.0
+> -# User exported sparc header files
+> -
+>  generated-y += syscall_table_32.h
+>  generated-y += syscall_table_64.h
+>  generated-y += syscall_table_c32.h
+> --
+> 2.27.0
+>
 
-diff --git a/scripts/recordmcount.pl b/scripts/recordmcount.pl
-index 56c801502b9a..867860ea57da 100755
---- a/scripts/recordmcount.pl
-+++ b/scripts/recordmcount.pl
-@@ -265,7 +265,11 @@ if ($arch eq "x86_64") {
- 
-     # force flags for this arch
-     $ld .= " -m shlelf_linux";
--    $objcopy .= " -O elf32-sh-linux";
-+    if ($endian eq "big") {
-+        $objcopy .= " -O elf32-shbig-linux";
-+    } else {
-+        $objcopy .= " -O elf32-sh-linux";
-+    }
- 
- } elsif ($arch eq "powerpc") {
-     my $ldemulation;
+
 -- 
-2.20.1
-
+Best Regards
+Masahiro Yamada
