@@ -2,264 +2,247 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-17.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3AD6EC433E6
-	for <linux-sh@archiver.kernel.org>; Mon, 15 Feb 2021 00:57:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7C8CC433E0
+	for <linux-sh@archiver.kernel.org>; Mon, 15 Feb 2021 12:05:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 05ACB64DDA
-	for <linux-sh@archiver.kernel.org>; Mon, 15 Feb 2021 00:57:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A6E7D64E26
+	for <linux-sh@archiver.kernel.org>; Mon, 15 Feb 2021 12:05:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230300AbhBOA4x (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 14 Feb 2021 19:56:53 -0500
-Received: from conuserg-08.nifty.com ([210.131.2.75]:34310 "EHLO
-        conuserg-08.nifty.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230182AbhBOAzV (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 14 Feb 2021 19:55:21 -0500
-Received: from oscar.flets-west.jp (softbank126026094251.bbtec.net [126.26.94.251]) (authenticated)
-        by conuserg-08.nifty.com with ESMTP id 11F0mqgC009582;
-        Mon, 15 Feb 2021 09:48:57 +0900
-DKIM-Filter: OpenDKIM Filter v2.10.3 conuserg-08.nifty.com 11F0mqgC009582
+        id S230152AbhBOMFZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 15 Feb 2021 07:05:25 -0500
+Received: from conssluserg-01.nifty.com ([210.131.2.80]:64105 "EHLO
+        conssluserg-01.nifty.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230060AbhBOMFV (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 15 Feb 2021 07:05:21 -0500
+Received: from mail-pf1-f175.google.com (mail-pf1-f175.google.com [209.85.210.175]) (authenticated)
+        by conssluserg-01.nifty.com with ESMTP id 11FC4JgH005056;
+        Mon, 15 Feb 2021 21:04:19 +0900
+DKIM-Filter: OpenDKIM Filter v2.10.3 conssluserg-01.nifty.com 11FC4JgH005056
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com;
-        s=dec2015msa; t=1613350139;
-        bh=Do58g+fIWucUZ2Hl9cDGQ5X6Gc6bjsY9y84cwfGvMEs=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=SM2AX/TTCgabZcepPaY+EzPWlVFG07BHed4+vVXzs76ahyRHkYdvjiMaxbo4SciNk
-         99V7vAau2v1CJZ3KHHFtlsyvo6HAayFKsqyE45QYBEFlto50Klgio1cy4dCikELgg4
-         jXzbhQlcLnoMztNUY+qoz6gF3IiQTs6LZQECNhrQ3SgQk+5ZjIEOVkvEjNe0kLdvQy
-         5lnx8xIDULhJNVq2q/XmnUdcQ2NkNa26MnbkcPi1iQ03oyTXDlmPZELJWBN+zT1pYk
-         2YZu+JYUWZc3XOFM1ST+sDLb1bwtcZGRc02Yve6q1UW7Z2EZW/5av6DrunsU9tIhyS
-         NiEpgCG0PPQ4w==
-X-Nifty-SrcIP: [126.26.94.251]
-From:   Masahiro Yamada <masahiroy@kernel.org>
-To:     linux-kbuild@vger.kernel.org
-Cc:     Masahiro Yamada <masahiroy@kernel.org>,
-        Andy Lutomirski <luto@kernel.org>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Borislav Petkov <bp@alien8.de>,
-        Chris Zankel <chris@zankel.net>,
-        "David S. Miller" <davem@davemloft.net>,
-        Fenghua Yu <fenghua.yu@intel.com>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        "H. Peter Anvin" <hpa@zytor.com>, Helge Deller <deller@gmx.de>,
-        Ingo Molnar <mingo@redhat.com>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-        Matt Turner <mattst88@gmail.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Michal Simek <monstr@monstr.eu>,
-        Paul Mackerras <paulus@samba.org>,
-        Rich Felker <dalias@libc.org>,
-        Richard Henderson <rth@twiddle.net>,
-        Russell King <linux@armlinux.org.uk>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Tony Luck <tony.luck@intel.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org,
-        sparclinux@vger.kernel.org, x86@kernel.org
-Subject: [PATCH 2/2] arch: syscalls: remove $(srctree)/ prefix from syscall tables
-Date:   Mon, 15 Feb 2021 09:48:23 +0900
-Message-Id: <20210215004823.440102-2-masahiroy@kernel.org>
-X-Mailer: git-send-email 2.27.0
-In-Reply-To: <20210215004823.440102-1-masahiroy@kernel.org>
-References: <20210215004823.440102-1-masahiroy@kernel.org>
+        s=dec2015msa; t=1613390660;
+        bh=t+cDCI9ijwWCflMyf3HDaiArNB9qVsEf2A2CaoV+044=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=v9acLhbXPPB+XF0EA8XDIgH7r3wlY83CiYt6x+cqseVMlte0TA3RtTnirrlnNjiTr
+         jA68dM/v07+mFKYr5hhJJ86sLpsw1zXAAFWG0nZmD2UgbdqI5dP+4gqjF1Qz7xbVfa
+         TYfiSHRgbmbc9lW8zQRzsdMz3jjzYVDKfFB4cxTgYynvM51/dVbyA9i2oOH7gV2ovM
+         YtIWQQNzBAV80fb0gzeEX8gtOpBFZ35VCH4Vwyh7yA0R4ZVlykAJvDHNQVEJvjuJ9i
+         HE2MhAudNBtepEg/tb2vcKjd/p8qpJ98nhcyuqlk4YI7eTVYjVMGPnzoxSWA17pJYO
+         YzUleR5my8veQ==
+X-Nifty-SrcIP: [209.85.210.175]
+Received: by mail-pf1-f175.google.com with SMTP id k13so4033606pfh.13;
+        Mon, 15 Feb 2021 04:04:19 -0800 (PST)
+X-Gm-Message-State: AOAM533P7+Vr3H1h0x8Q1YoCUIfoUjqGcgaRU6QnBdJ5EHIogHhMyydM
+        6rmHKAMnqMAq0J966TVtYBvI6yQfpcWrPmRbAgQ=
+X-Google-Smtp-Source: ABdhPJy8ziEWdbM9CrYgfTkv/bGLkaQWPoSZQQUddzH9UeCJB7fr30mJz6zKbkpruiTgtMQliWenGO50uCpdbS2IR0g=
+X-Received: by 2002:a63:1f1d:: with SMTP id f29mr14654997pgf.47.1613390659105;
+ Mon, 15 Feb 2021 04:04:19 -0800 (PST)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20210128005110.2613902-1-masahiroy@kernel.org>
+In-Reply-To: <20210128005110.2613902-1-masahiroy@kernel.org>
+From:   Masahiro Yamada <masahiroy@kernel.org>
+Date:   Mon, 15 Feb 2021 21:03:42 +0900
+X-Gmail-Original-Message-ID: <CAK7LNATgZ2xYFV-ow2VrSn_-NWZOjPeZRzrXLdCP8t5OQbC4+w@mail.gmail.com>
+Message-ID: <CAK7LNATgZ2xYFV-ow2VrSn_-NWZOjPeZRzrXLdCP8t5OQbC4+w@mail.gmail.com>
+Subject: Re: [PATCH 00/27] arch: syscalls: unifiy all syscalltbl.sh into scripts/syscalltbl.sh
+To:     linux-arch <linux-arch@vger.kernel.org>, X86 ML <x86@kernel.org>
+Cc:     Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-alpha@vger.kernel.org,
+        linux-arm-kernel <linux-arm-kernel@lists.infradead.org>,
+        linux-ia64@vger.kernel.org,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        linux-um@lists.infradead.org,
+        "open list:TENSILICA XTENSA PORT (xtensa)" 
+        <linux-xtensa@linux-xtensa.org>,
+        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
+        sparclinux <sparclinux@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The 'syscall' variables are not directly used in the commands.
-Remove the $(srctree)/ prefix because we can rely on VPATH.
+On Thu, Jan 28, 2021 at 9:51 AM Masahiro Yamada <masahiroy@kernel.org> wrote:
+>
+>
+> As of v5.11-rc1, 12 architectures duplicate similar shell scripts:
+>
+>   $ find arch -name syscalltbl.sh | sort
+>   arch/alpha/kernel/syscalls/syscalltbl.sh
+>   arch/arm/tools/syscalltbl.sh
+>   arch/ia64/kernel/syscalls/syscalltbl.sh
+>   arch/m68k/kernel/syscalls/syscalltbl.sh
+>   arch/microblaze/kernel/syscalls/syscalltbl.sh
+>   arch/mips/kernel/syscalls/syscalltbl.sh
+>   arch/parisc/kernel/syscalls/syscalltbl.sh
+>   arch/powerpc/kernel/syscalls/syscalltbl.sh
+>   arch/sh/kernel/syscalls/syscalltbl.sh
+>   arch/sparc/kernel/syscalls/syscalltbl.sh
+>   arch/x86/entry/syscalls/syscalltbl.sh
+>   arch/xtensa/kernel/syscalls/syscalltbl.sh
+>
+> This patch set unifies all of them into a single file,
+> scripts/syscalltbl.sh.
+>
+> The code-diff is attractive:
+>
+>  51 files changed, 254 insertions(+), 674 deletions(-)
+>  delete mode 100644 arch/alpha/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/arm/tools/syscalltbl.sh
+>  delete mode 100644 arch/ia64/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/m68k/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/microblaze/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/mips/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/parisc/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/powerpc/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/sh/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/sparc/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/x86/entry/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/xtensa/kernel/syscalls/syscalltbl.sh
+>  create mode 100644 scripts/syscalltbl.sh
+>
+> Also, this includes Makefile fixes, and some x86 fixes and cleanups.
+>
+> My question is, how to merge this series.
+>
+> I am touching all architectures, but the first patch is a prerequisite
+> of the rest of this series.
+>
+> One possibility is to ask the x86 maintainers to pickup the first 5
+> patches for v5.12-rc1, and then send the rest for v5.13-rc1,
+> splitting per-arch.
+>
+> I want the x86 maintainers to check the first 5 patches because
+> I cleaned up the x32 code.
 
-Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
----
 
- arch/alpha/kernel/syscalls/Makefile      | 2 +-
- arch/arm/tools/Makefile                  | 2 +-
- arch/ia64/kernel/syscalls/Makefile       | 2 +-
- arch/m68k/kernel/syscalls/Makefile       | 2 +-
- arch/microblaze/kernel/syscalls/Makefile | 2 +-
- arch/mips/kernel/syscalls/Makefile       | 6 +++---
- arch/parisc/kernel/syscalls/Makefile     | 2 +-
- arch/powerpc/kernel/syscalls/Makefile    | 2 +-
- arch/sh/kernel/syscalls/Makefile         | 2 +-
- arch/sparc/kernel/syscalls/Makefile      | 2 +-
- arch/x86/entry/syscalls/Makefile         | 4 ++--
- arch/xtensa/kernel/syscalls/Makefile     | 2 +-
- 12 files changed, 15 insertions(+), 15 deletions(-)
+Never mind.
 
-diff --git a/arch/alpha/kernel/syscalls/Makefile b/arch/alpha/kernel/syscalls/Makefile
-index 1c42d2d2926d..285aaba832d9 100644
---- a/arch/alpha/kernel/syscalls/Makefile
-+++ b/arch/alpha/kernel/syscalls/Makefile
-@@ -5,7 +5,7 @@ uapi := arch/$(SRCARCH)/include/generated/uapi/asm
- _dummy := $(shell [ -d '$(uapi)' ] || mkdir -p '$(uapi)')	\
- 	  $(shell [ -d '$(kapi)' ] || mkdir -p '$(kapi)')
- 
--syscall := $(srctree)/$(src)/syscall.tbl
-+syscall := $(src)/syscall.tbl
- syshdr := $(srctree)/$(src)/syscallhdr.sh
- systbl := $(srctree)/$(src)/syscalltbl.sh
- 
-diff --git a/arch/arm/tools/Makefile b/arch/arm/tools/Makefile
-index 27d8beb7c941..3654f979851b 100644
---- a/arch/arm/tools/Makefile
-+++ b/arch/arm/tools/Makefile
-@@ -11,7 +11,7 @@ uapi := $(gen)/uapi/asm
- syshdr := $(srctree)/$(src)/syscallhdr.sh
- sysnr := $(srctree)/$(src)/syscallnr.sh
- systbl := $(srctree)/$(src)/syscalltbl.sh
--syscall := $(srctree)/$(src)/syscall.tbl
-+syscall := $(src)/syscall.tbl
- 
- gen-y := $(gen)/calls-oabi.S
- gen-y += $(gen)/calls-eabi.S
-diff --git a/arch/ia64/kernel/syscalls/Makefile b/arch/ia64/kernel/syscalls/Makefile
-index b9bfd186295f..bf4bda0f63eb 100644
---- a/arch/ia64/kernel/syscalls/Makefile
-+++ b/arch/ia64/kernel/syscalls/Makefile
-@@ -5,7 +5,7 @@ uapi := arch/$(SRCARCH)/include/generated/uapi/asm
- _dummy := $(shell [ -d '$(uapi)' ] || mkdir -p '$(uapi)')	\
- 	  $(shell [ -d '$(kapi)' ] || mkdir -p '$(kapi)')
- 
--syscall := $(srctree)/$(src)/syscall.tbl
-+syscall := $(src)/syscall.tbl
- syshdr := $(srctree)/$(src)/syscallhdr.sh
- systbl := $(srctree)/$(src)/syscalltbl.sh
- 
-diff --git a/arch/m68k/kernel/syscalls/Makefile b/arch/m68k/kernel/syscalls/Makefile
-index 1c42d2d2926d..285aaba832d9 100644
---- a/arch/m68k/kernel/syscalls/Makefile
-+++ b/arch/m68k/kernel/syscalls/Makefile
-@@ -5,7 +5,7 @@ uapi := arch/$(SRCARCH)/include/generated/uapi/asm
- _dummy := $(shell [ -d '$(uapi)' ] || mkdir -p '$(uapi)')	\
- 	  $(shell [ -d '$(kapi)' ] || mkdir -p '$(kapi)')
- 
--syscall := $(srctree)/$(src)/syscall.tbl
-+syscall := $(src)/syscall.tbl
- syshdr := $(srctree)/$(src)/syscallhdr.sh
- systbl := $(srctree)/$(src)/syscalltbl.sh
- 
-diff --git a/arch/microblaze/kernel/syscalls/Makefile b/arch/microblaze/kernel/syscalls/Makefile
-index 1c42d2d2926d..285aaba832d9 100644
---- a/arch/microblaze/kernel/syscalls/Makefile
-+++ b/arch/microblaze/kernel/syscalls/Makefile
-@@ -5,7 +5,7 @@ uapi := arch/$(SRCARCH)/include/generated/uapi/asm
- _dummy := $(shell [ -d '$(uapi)' ] || mkdir -p '$(uapi)')	\
- 	  $(shell [ -d '$(kapi)' ] || mkdir -p '$(kapi)')
- 
--syscall := $(srctree)/$(src)/syscall.tbl
-+syscall := $(src)/syscall.tbl
- syshdr := $(srctree)/$(src)/syscallhdr.sh
- systbl := $(srctree)/$(src)/syscalltbl.sh
- 
-diff --git a/arch/mips/kernel/syscalls/Makefile b/arch/mips/kernel/syscalls/Makefile
-index f15842bda464..ed22b711ccb7 100644
---- a/arch/mips/kernel/syscalls/Makefile
-+++ b/arch/mips/kernel/syscalls/Makefile
-@@ -5,9 +5,9 @@ uapi := arch/$(SRCARCH)/include/generated/uapi/asm
- _dummy := $(shell [ -d '$(uapi)' ] || mkdir -p '$(uapi)')	\
- 	  $(shell [ -d '$(kapi)' ] || mkdir -p '$(kapi)')
- 
--syscalln32 := $(srctree)/$(src)/syscall_n32.tbl
--syscalln64 := $(srctree)/$(src)/syscall_n64.tbl
--syscallo32 := $(srctree)/$(src)/syscall_o32.tbl
-+syscalln32 := $(src)/syscall_n32.tbl
-+syscalln64 := $(src)/syscall_n64.tbl
-+syscallo32 := $(src)/syscall_o32.tbl
- syshdr := $(srctree)/$(src)/syscallhdr.sh
- sysnr := $(srctree)/$(src)/syscallnr.sh
- systbl := $(srctree)/$(src)/syscalltbl.sh
-diff --git a/arch/parisc/kernel/syscalls/Makefile b/arch/parisc/kernel/syscalls/Makefile
-index 556fe30a6c8f..283f64407b07 100644
---- a/arch/parisc/kernel/syscalls/Makefile
-+++ b/arch/parisc/kernel/syscalls/Makefile
-@@ -5,7 +5,7 @@ uapi := arch/$(SRCARCH)/include/generated/uapi/asm
- _dummy := $(shell [ -d '$(uapi)' ] || mkdir -p '$(uapi)')	\
- 	  $(shell [ -d '$(kapi)' ] || mkdir -p '$(kapi)')
- 
--syscall := $(srctree)/$(src)/syscall.tbl
-+syscall := $(src)/syscall.tbl
- syshdr := $(srctree)/$(src)/syscallhdr.sh
- systbl := $(srctree)/$(src)/syscalltbl.sh
- 
-diff --git a/arch/powerpc/kernel/syscalls/Makefile b/arch/powerpc/kernel/syscalls/Makefile
-index d609f0040b2a..9e3be295dbba 100644
---- a/arch/powerpc/kernel/syscalls/Makefile
-+++ b/arch/powerpc/kernel/syscalls/Makefile
-@@ -5,7 +5,7 @@ uapi := arch/$(SRCARCH)/include/generated/uapi/asm
- _dummy := $(shell [ -d '$(uapi)' ] || mkdir -p '$(uapi)')	\
- 	  $(shell [ -d '$(kapi)' ] || mkdir -p '$(kapi)')
- 
--syscall := $(srctree)/$(src)/syscall.tbl
-+syscall := $(src)/syscall.tbl
- syshdr := $(srctree)/$(src)/syscallhdr.sh
- systbl := $(srctree)/$(src)/syscalltbl.sh
- 
-diff --git a/arch/sh/kernel/syscalls/Makefile b/arch/sh/kernel/syscalls/Makefile
-index 1c42d2d2926d..285aaba832d9 100644
---- a/arch/sh/kernel/syscalls/Makefile
-+++ b/arch/sh/kernel/syscalls/Makefile
-@@ -5,7 +5,7 @@ uapi := arch/$(SRCARCH)/include/generated/uapi/asm
- _dummy := $(shell [ -d '$(uapi)' ] || mkdir -p '$(uapi)')	\
- 	  $(shell [ -d '$(kapi)' ] || mkdir -p '$(kapi)')
- 
--syscall := $(srctree)/$(src)/syscall.tbl
-+syscall := $(src)/syscall.tbl
- syshdr := $(srctree)/$(src)/syscallhdr.sh
- systbl := $(srctree)/$(src)/syscalltbl.sh
- 
-diff --git a/arch/sparc/kernel/syscalls/Makefile b/arch/sparc/kernel/syscalls/Makefile
-index 556fe30a6c8f..283f64407b07 100644
---- a/arch/sparc/kernel/syscalls/Makefile
-+++ b/arch/sparc/kernel/syscalls/Makefile
-@@ -5,7 +5,7 @@ uapi := arch/$(SRCARCH)/include/generated/uapi/asm
- _dummy := $(shell [ -d '$(uapi)' ] || mkdir -p '$(uapi)')	\
- 	  $(shell [ -d '$(kapi)' ] || mkdir -p '$(kapi)')
- 
--syscall := $(srctree)/$(src)/syscall.tbl
-+syscall := $(src)/syscall.tbl
- syshdr := $(srctree)/$(src)/syscallhdr.sh
- systbl := $(srctree)/$(src)/syscalltbl.sh
- 
-diff --git a/arch/x86/entry/syscalls/Makefile b/arch/x86/entry/syscalls/Makefile
-index e1c7ddb7546b..cf388e9e8989 100644
---- a/arch/x86/entry/syscalls/Makefile
-+++ b/arch/x86/entry/syscalls/Makefile
-@@ -6,8 +6,8 @@ uapi := arch/$(SRCARCH)/include/generated/uapi/asm
- _dummy := $(shell [ -d '$(out)' ] || mkdir -p '$(out)') \
- 	  $(shell [ -d '$(uapi)' ] || mkdir -p '$(uapi)')
- 
--syscall32 := $(srctree)/$(src)/syscall_32.tbl
--syscall64 := $(srctree)/$(src)/syscall_64.tbl
-+syscall32 := $(src)/syscall_32.tbl
-+syscall64 := $(src)/syscall_64.tbl
- 
- syshdr := $(srctree)/$(src)/syscallhdr.sh
- systbl := $(srctree)/$(src)/syscalltbl.sh
-diff --git a/arch/xtensa/kernel/syscalls/Makefile b/arch/xtensa/kernel/syscalls/Makefile
-index 1c42d2d2926d..285aaba832d9 100644
---- a/arch/xtensa/kernel/syscalls/Makefile
-+++ b/arch/xtensa/kernel/syscalls/Makefile
-@@ -5,7 +5,7 @@ uapi := arch/$(SRCARCH)/include/generated/uapi/asm
- _dummy := $(shell [ -d '$(uapi)' ] || mkdir -p '$(uapi)')	\
- 	  $(shell [ -d '$(kapi)' ] || mkdir -p '$(kapi)')
- 
--syscall := $(srctree)/$(src)/syscall.tbl
-+syscall := $(src)/syscall.tbl
- syshdr := $(srctree)/$(src)/syscallhdr.sh
- systbl := $(srctree)/$(src)/syscalltbl.sh
- 
+Sending too big patch set tends to fail.
+
+I will apply the generic script parts to my tree,
+then split the rest per arch in the next development cycle
+(aim for v5.13-rc1)
+
+
+
+
+
+
+
+
+
+> I know x32 was considered for deprecation, but my motivation is to
+> clean-up scripts across the tree without changing the functionality.
+>
+>
+>
+> Masahiro Yamada (27):
+>   scripts: add generic syscalltbl.sh
+>   x86/syscalls: fix -Wmissing-prototypes warnings from COND_SYSCALL()
+>   x86/build: add missing FORCE and fix 'targets' to make if_changed work
+>   x86/entry/x32: rename __x32_compat_sys_* to __x64_compat_sys_*
+>   x86/syscalls: switch to generic syscalltbl.sh
+>   ARM: syscalls: switch to generic syscalltbl.sh
+>   alpha: add missing FORCE and fix 'targets' to make if_changed work
+>   alpha: syscalls: switch to generic syscalltbl.sh
+>   ia64: add missing FORCE and fix 'targets' to make if_changed work
+>   ia64: syscalls: switch to generic syscalltbl.sh
+>   m68k: add missing FORCE and fix 'targets' to make if_changed work
+>   m68k: syscalls: switch to generic syscalltbl.sh
+>   microblaze: add missing FORCE and fix 'targets' to make if_changed
+>     work
+>   microblaze: syscalls: switch to generic syscalltbl.sh
+>   mips: add missing FORCE and fix 'targets' to make if_changed work
+>   mips: syscalls: switch to generic syscalltbl.sh
+>   parisc: add missing FORCE and fix 'targets' to make if_changed work
+>   parisc: syscalls: switch to generic syscalltbl.sh
+>   sh: add missing FORCE and fix 'targets' to make if_changed work
+>   sh: syscalls: switch to generic syscalltbl.sh
+>   sparc: remove wrong comment from arch/sparc/include/asm/Kbuild
+>   sparc: add missing FORCE and fix 'targets' to make if_changed work
+>   sparc: syscalls: switch to generic syscalltbl.sh
+>   powerpc: add missing FORCE and fix 'targets' to make if_changed work
+>   powerpc: syscalls: switch to generic syscalltbl.sh
+>   xtensa: add missing FORCE and fix 'targets' to make if_changed work
+>   xtensa: syscalls: switch to generic syscalltbl.sh
+>
+>  arch/alpha/kernel/syscalls/Makefile           | 18 +++----
+>  arch/alpha/kernel/syscalls/syscalltbl.sh      | 32 -----------
+>  arch/alpha/kernel/systbls.S                   |  3 +-
+>  arch/arm/kernel/entry-common.S                |  8 +--
+>  arch/arm/tools/Makefile                       |  9 ++--
+>  arch/arm/tools/syscalltbl.sh                  | 22 --------
+>  arch/ia64/kernel/entry.S                      |  3 +-
+>  arch/ia64/kernel/syscalls/Makefile            | 19 +++----
+>  arch/ia64/kernel/syscalls/syscalltbl.sh       | 32 -----------
+>  arch/m68k/kernel/syscalls/Makefile            | 18 +++----
+>  arch/m68k/kernel/syscalls/syscalltbl.sh       | 32 -----------
+>  arch/m68k/kernel/syscalltable.S               |  3 +-
+>  arch/microblaze/kernel/syscall_table.S        |  3 +-
+>  arch/microblaze/kernel/syscalls/Makefile      | 18 +++----
+>  arch/microblaze/kernel/syscalls/syscalltbl.sh | 32 -----------
+>  arch/mips/include/asm/Kbuild                  |  7 ++-
+>  arch/mips/kernel/scall32-o32.S                |  4 +-
+>  arch/mips/kernel/scall64-n32.S                |  3 +-
+>  arch/mips/kernel/scall64-n64.S                |  3 +-
+>  arch/mips/kernel/scall64-o32.S                |  4 +-
+>  arch/mips/kernel/syscalls/Makefile            | 53 ++++++++-----------
+>  arch/mips/kernel/syscalls/syscalltbl.sh       | 36 -------------
+>  arch/parisc/include/asm/Kbuild                |  1 -
+>  arch/parisc/kernel/syscall.S                  | 16 +++---
+>  arch/parisc/kernel/syscalls/Makefile          | 34 +++++-------
+>  arch/parisc/kernel/syscalls/syscalltbl.sh     | 36 -------------
+>  arch/powerpc/include/asm/Kbuild               |  1 -
+>  arch/powerpc/kernel/syscalls/Makefile         | 39 +++++---------
+>  arch/powerpc/kernel/syscalls/syscalltbl.sh    | 36 -------------
+>  arch/powerpc/kernel/systbl.S                  |  5 +-
+>  arch/powerpc/platforms/cell/spu_callbacks.c   |  2 +-
+>  arch/sh/kernel/syscalls/Makefile              | 18 +++----
+>  arch/sh/kernel/syscalls/syscalltbl.sh         | 32 -----------
+>  arch/sparc/include/asm/Kbuild                 |  3 --
+>  arch/sparc/kernel/syscalls/Makefile           | 34 +++++-------
+>  arch/sparc/kernel/syscalls/syscalltbl.sh      | 36 -------------
+>  arch/sparc/kernel/systbls_32.S                |  4 +-
+>  arch/sparc/kernel/systbls_64.S                |  8 +--
+>  arch/x86/entry/syscall_32.c                   | 12 +++--
+>  arch/x86/entry/syscall_64.c                   |  9 ++--
+>  arch/x86/entry/syscall_x32.c                  | 27 ++--------
+>  arch/x86/entry/syscalls/Makefile              | 33 +++++++-----
+>  arch/x86/entry/syscalls/syscalltbl.sh         | 46 ----------------
+>  arch/x86/include/asm/Kbuild                   |  1 +
+>  arch/x86/include/asm/syscall_wrapper.h        | 11 ++--
+>  arch/x86/um/sys_call_table_32.c               |  8 +--
+>  arch/x86/um/sys_call_table_64.c               |  9 ++--
+>  arch/xtensa/kernel/syscall.c                  |  3 +-
+>  arch/xtensa/kernel/syscalls/Makefile          | 18 +++----
+>  arch/xtensa/kernel/syscalls/syscalltbl.sh     | 32 -----------
+>  scripts/syscalltbl.sh                         | 52 ++++++++++++++++++
+>  51 files changed, 254 insertions(+), 674 deletions(-)
+>  delete mode 100644 arch/alpha/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/arm/tools/syscalltbl.sh
+>  delete mode 100644 arch/ia64/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/m68k/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/microblaze/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/mips/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/parisc/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/powerpc/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/sh/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/sparc/kernel/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/x86/entry/syscalls/syscalltbl.sh
+>  delete mode 100644 arch/xtensa/kernel/syscalls/syscalltbl.sh
+>  create mode 100644 scripts/syscalltbl.sh
+>
+> --
+> 2.27.0
+>
+
+
 -- 
-2.27.0
-
+Best Regards
+Masahiro Yamada
