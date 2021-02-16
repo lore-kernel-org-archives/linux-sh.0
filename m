@@ -2,71 +2,50 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 84539C433DB
-	for <linux-sh@archiver.kernel.org>; Mon, 15 Feb 2021 21:31:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DFE91C433E6
+	for <linux-sh@archiver.kernel.org>; Tue, 16 Feb 2021 09:16:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5A0B364DE8
-	for <linux-sh@archiver.kernel.org>; Mon, 15 Feb 2021 21:31:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A47DB64D8F
+	for <linux-sh@archiver.kernel.org>; Tue, 16 Feb 2021 09:16:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229764AbhBOVbc (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 15 Feb 2021 16:31:32 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59598 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229682AbhBOVb0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 15 Feb 2021 16:31:26 -0500
-Received: from mail-qk1-x731.google.com (mail-qk1-x731.google.com [IPv6:2607:f8b0:4864:20::731])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 95283C061574;
-        Mon, 15 Feb 2021 13:30:46 -0800 (PST)
-Received: by mail-qk1-x731.google.com with SMTP id m144so7662971qke.10;
-        Mon, 15 Feb 2021 13:30:46 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=/ZVUXlIXARs+8uXUZ4VUGe97t/0+FH4zGariG/23quw=;
-        b=oYNPrcJWdwYDcjfr7BRtAMS1ZsIXADGqMxANcWv4k/DopQuXeqYdiTElcc49nNE8qY
-         Yk1qhDCBEziQr03O3cdRQxqrMoCXCuyUhJh+t/9tAsP2rJTyzUk4iL0HbQwt5ZkDsORd
-         QO3GwJHoN1hy01k8G8HRQ0jiJYumQo2qotPTWeCY+c/o4NJ8SCuMt6le81Wl+BHDOFSJ
-         NMUxmsOF3Qi81GJU27WtG8bwB/0POcex15oXQRskGeXUcEhrxkXNX2oyBx24M2MMslET
-         XZC0wGQLpf1OV3jgX2AkouJ6ZDdqMePIuj7AFc0JFZkwwqyZTIUuDkIfFOortZX59Aoq
-         Kzug==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=/ZVUXlIXARs+8uXUZ4VUGe97t/0+FH4zGariG/23quw=;
-        b=tqHUt9Eoya4Nlf9mX3MOH5oRMQq29jrGm9bWnDn4E8rZkWoZ/spgzpwg2HU/o9Q5W5
-         7MgQ/DEW3kf0lOcuW7hadO3E2iLa4/EYmnwAFsSF4jWga81B1hFr9EGJmtwsg1jGkTH2
-         RjMjUgAGbgYORZEpoI/h7M28M3J37bHPj38y0XsgCxOjHTdmbIxZGPhJ+ytcCHq2I70+
-         mr7FIPt0WMgB371RQT0WSqMUaH/neiEqfustDYX+8TXxhnDAX2IcQQjSu5HhGt7fAb7/
-         eXtO1ink/lvtKcgPUrzb29w/nBAZy0wBd4eGtTfCrsrz58z/ZtgjeetMDFxx+2vXo1OY
-         hdrQ==
-X-Gm-Message-State: AOAM533E0V675nSk6VG7U0eJPjy7ZHKy+KqAVU3anhm2UPzmMYMqNxtc
-        5X7yIhO1nwiBaFewqD8dA2g=
-X-Google-Smtp-Source: ABdhPJww+HEbybVa+NuUj1pReo4TCwVy8br4xX0cmIo5Fn/aZvp3joZCCkrRkQAmV1/YWqIfdDubsQ==
-X-Received: by 2002:a37:8a04:: with SMTP id m4mr16638337qkd.78.1613424645583;
-        Mon, 15 Feb 2021 13:30:45 -0800 (PST)
-Received: from localhost (d27-96-190-162.evv.wideopenwest.com. [96.27.162.190])
-        by smtp.gmail.com with ESMTPSA id a145sm7038704qkc.125.2021.02.15.13.30.45
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 15 Feb 2021 13:30:45 -0800 (PST)
-Date:   Mon, 15 Feb 2021 13:30:44 -0800
-From:   Yury Norov <yury.norov@gmail.com>
-To:     linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
-        linux-sh@vger.kernel.org, linux-arch@vger.kernel.org
-Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        id S229767AbhBPJQd (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 16 Feb 2021 04:16:33 -0500
+Received: from mga07.intel.com ([134.134.136.100]:8550 "EHLO mga07.intel.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S229676AbhBPJQT (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Tue, 16 Feb 2021 04:16:19 -0500
+IronPort-SDR: YwQi6r+UXddcEZs6XG7AK9mOKvQjmJEvJiUniJRZpUFnYhXtEPBmfddgR/LUMUow4RrTaMCtV+
+ 3U37Zus2uMVg==
+X-IronPort-AV: E=McAfee;i="6000,8403,9896"; a="246904649"
+X-IronPort-AV: E=Sophos;i="5.81,183,1610438400"; 
+   d="scan'208";a="246904649"
+Received: from orsmga004.jf.intel.com ([10.7.209.38])
+  by orsmga105.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 16 Feb 2021 01:14:32 -0800
+IronPort-SDR: tPkmKh2OTx4znumaJmxTa2l2vBJfWMkEjT34Z+L3rFz0la3AfJcfUFiM2BL5vE5rYPheUPAQ7d
+ zf7ZUrYkEr1A==
+X-IronPort-AV: E=Sophos;i="5.81,183,1610438400"; 
+   d="scan'208";a="512455158"
+Received: from smile.fi.intel.com (HELO smile) ([10.237.68.40])
+  by orsmga004-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 16 Feb 2021 01:14:27 -0800
+Received: from andy by smile with local (Exim 4.94)
+        (envelope-from <andriy.shevchenko@linux.intel.com>)
+        id 1lBwR5-005Qf3-SD; Tue, 16 Feb 2021 11:14:23 +0200
+Date:   Tue, 16 Feb 2021 11:14:23 +0200
+From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+To:     Yury Norov <yury.norov@gmail.com>
+Cc:     linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-arch@vger.kernel.org,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
         Dennis Zhou <dennis@kernel.org>,
         Andrew Morton <akpm@linux-foundation.org>,
         Wolfram Sang <wsa+renesas@sang-engineering.com>,
         David Sterba <dsterba@suse.com>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         Stefano Brivio <sbrivio@redhat.com>,
         "Ma, Jianpeng" <jianpeng.ma@intel.com>,
         Wei Yang <richard.weiyang@linux.alibaba.com>,
@@ -74,40 +53,53 @@ Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         Joe Perches <joe@perches.com>
 Subject: Re: [RESEND PATCH v2 0/6] lib/find_bit: fast path for small bitmaps
-Message-ID: <20210215213044.GB394846@yury-ThinkPad>
+Message-ID: <YCuM7yzMoXjpuj8Y@smile.fi.intel.com>
 References: <20210130191719.7085-1-yury.norov@gmail.com>
+ <20210215213044.GB394846@yury-ThinkPad>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20210130191719.7085-1-yury.norov@gmail.com>
+In-Reply-To: <20210215213044.GB394846@yury-ThinkPad>
+Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-[add David Laight <David.Laight@ACULAB.COM> ]
-
-On Sat, Jan 30, 2021 at 11:17:11AM -0800, Yury Norov wrote:
-> Bitmap operations are much simpler and faster in case of small bitmaps
-> which fit into a single word. In linux/bitmap.h we have a machinery that
-> allows compiler to replace actual function call with a few instructions
-> if bitmaps passed into the function are small and their size is known at
-> compile time.
+On Mon, Feb 15, 2021 at 01:30:44PM -0800, Yury Norov wrote:
+> [add David Laight <David.Laight@ACULAB.COM> ]
 > 
-> find_*_bit() API lacks this functionality; despite users will benefit from
-> it a lot. One important example is cpumask subsystem when
-> NR_CPUS <= BITS_PER_LONG. In the very best case, the compiler may replace
-> a find_*_bit() call for such a bitmap with a single ffs or ffz instruction.
+> On Sat, Jan 30, 2021 at 11:17:11AM -0800, Yury Norov wrote:
+> > Bitmap operations are much simpler and faster in case of small bitmaps
+> > which fit into a single word. In linux/bitmap.h we have a machinery that
+> > allows compiler to replace actual function call with a few instructions
+> > if bitmaps passed into the function are small and their size is known at
+> > compile time.
+> > 
+> > find_*_bit() API lacks this functionality; despite users will benefit from
+> > it a lot. One important example is cpumask subsystem when
+> > NR_CPUS <= BITS_PER_LONG. In the very best case, the compiler may replace
+> > a find_*_bit() call for such a bitmap with a single ffs or ffz instruction.
+> > 
+> > Tools is synchronized with new implementation where needed.
+> > 
+> > v1: https://www.spinics.net/lists/kernel/msg3804727.html
+> > v2: - employ GENMASK() for bitmaps;
+> >     - unify find_bit inliners in;
+> >     - address comments to v1;
 > 
-> Tools is synchronized with new implementation where needed.
-> 
-> v1: https://www.spinics.net/lists/kernel/msg3804727.html
-> v2: - employ GENMASK() for bitmaps;
->     - unify find_bit inliners in;
->     - address comments to v1;
+> Comments so far:
+>  - increased image size (patch #8) - addressed by introducing
+>    CONFIG_FAST_PATH;
 
-Comments so far:
- - increased image size (patch #8) - addressed by introducing
-   CONFIG_FAST_PATH;
- - split tools and kernel parts - not clear why it's better.
+>  - split tools and kernel parts - not clear why it's better.
 
- Anything else?
+Because tools are user space programs and sometimes may not follow kernel
+specifics, so they are different logically and changes should be separated.
+
+>  Anything else?
+
+-- 
+With Best Regards,
+Andy Shevchenko
+
+
