@@ -2,58 +2,58 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-17.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DA490C433E6
-	for <linux-sh@archiver.kernel.org>; Thu, 18 Feb 2021 22:52:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E5FCC433E6
+	for <linux-sh@archiver.kernel.org>; Thu, 18 Feb 2021 23:08:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8C5DB64E22
-	for <linux-sh@archiver.kernel.org>; Thu, 18 Feb 2021 22:52:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 49DA564EC0
+	for <linux-sh@archiver.kernel.org>; Thu, 18 Feb 2021 23:08:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229752AbhBRWw2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 18 Feb 2021 17:52:28 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41100 "EHLO
+        id S230048AbhBRXIM (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 18 Feb 2021 18:08:12 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44448 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229908AbhBRWw0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 18 Feb 2021 17:52:26 -0500
-Received: from mail-ej1-x62b.google.com (mail-ej1-x62b.google.com [IPv6:2a00:1450:4864:20::62b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 82CACC061788
-        for <linux-sh@vger.kernel.org>; Thu, 18 Feb 2021 14:51:46 -0800 (PST)
-Received: by mail-ej1-x62b.google.com with SMTP id e13so5178327ejl.8
-        for <linux-sh@vger.kernel.org>; Thu, 18 Feb 2021 14:51:46 -0800 (PST)
+        with ESMTP id S229959AbhBRXIK (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 18 Feb 2021 18:08:10 -0500
+Received: from mail-ej1-x62d.google.com (mail-ej1-x62d.google.com [IPv6:2a00:1450:4864:20::62d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2E0EBC0613D6
+        for <linux-sh@vger.kernel.org>; Thu, 18 Feb 2021 15:07:30 -0800 (PST)
+Received: by mail-ej1-x62d.google.com with SMTP id d8so8466191ejc.4
+        for <linux-sh@vger.kernel.org>; Thu, 18 Feb 2021 15:07:30 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=rasmusvillemoes.dk; s=google;
         h=subject:to:cc:references:from:message-id:date:user-agent
          :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=Vrc627xbuX2TMgkXGGkkQoTFvSmbGef3PT5dPjYaHq4=;
-        b=G+VppJXi/ZOG8gHCQ6TFEVZSG0VMgwjTbKRWl1GBBX3e9vwfVqsXJnB+Swrbm9Mbki
-         HeZGAKA758jQl1Wchle/AFqcf2AjQAMFFj13bi28/2IH0R2ELAAHaO0ZWoqacamBBtzs
-         uUGJ8VNz+ZknAy1z21qDfTSQ4nYI2gdZIrkck=
+        bh=sJ5d0ZObxlJmFwJLKE12O8RmYqwub+T3UwgmplQq6AE=;
+        b=Jo5g6iOuyD0BqTUzqL5h57SSH+EeNnhpMwvLvFVX6MxUWBTDBsqzDxkvg8FpT/imeV
+         liNLub0Tlg4eSf0srTc9b7UGVY2O8Njj4v1Pg1ZuNmLScVnb1WDVaszWS5AJZwbQt33H
+         qp17CzaTpYHW1EsfgC4jpRW4lgndPH6DdJYhs=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:subject:to:cc:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=Vrc627xbuX2TMgkXGGkkQoTFvSmbGef3PT5dPjYaHq4=;
-        b=AAKgCgHDqMAUt5SanQ8AMdc5C87ivxLmLM/qWP94Q3sivaLreFNXV9fQahWaPNQhIt
-         wSEMu0tmcl0xLwzevAWnMYkQWJ06VlgGgk/UQjWg9tGZm/tTdJzZ5TKfFdLmZ0zdeEo9
-         1xns4rEdK8Msd46s3wRCoLGkbQ9taglXhMMwq6Nc9tnKYyksfx4ShNbLIB84yQ/Xm25O
-         7ulB9muUFwj5yRwnnbfuIWRRkufTAn54X2kIzqrOjuuKu2NWcm+dXvFBM6tMAt8suMFV
-         gdHydCo4XV7x48Q3b63REw0xzMDURxF+rrA8Oy4gr0qQuSgr5eeSgX5jFoHWjIJvsd38
-         w5ew==
-X-Gm-Message-State: AOAM531XDvuXMmUnkLII4GerpDYNoESI/uLnmaqdN7MQW+KFx/Lq8+D7
-        0YRH0J0lV5QC0/doBMSde1s12w==
-X-Google-Smtp-Source: ABdhPJyKhm7W7GiwYBIDb8MWNmpDRdcqaFasH1pPiX6+4A01bLs1vLg+znuOAZacAYcYbAiyu87wIA==
-X-Received: by 2002:a17:906:301b:: with SMTP id 27mr2584079ejz.230.1613688705192;
-        Thu, 18 Feb 2021 14:51:45 -0800 (PST)
+        bh=sJ5d0ZObxlJmFwJLKE12O8RmYqwub+T3UwgmplQq6AE=;
+        b=L9zBVOt87SkNul1Y4OaE2gJWPs35+k/cEofvoKWVf5VWkiHu12c8kd4YQ1da6ovZAr
+         BZPvlo/924HWyJzrldvC5mz5MuC3LzVmpvWN/HsV+ldUlnA48GaB5ke3EqIZNKwQhrA/
+         T4lNb8PoQEpwwyAYbhXR5R5CSCHiGOZtjI3tb/iXlzQmK9z+7iWhTDVZr3wsNeMTcYk6
+         ZOMj3LMQ0IUWNLnOvhCuVIe2YZ4QS3qUwXSpkFaExgGMLM7FvQ0jm3800v8C70V9tK23
+         Pn9M5niltWb8qDdwC4DeSleraOxYTjG4GdinyhAE02Nvfs2/urs/E8U1X1Ly2wJn7rzo
+         0WjA==
+X-Gm-Message-State: AOAM532vkGgSuEC78a+VnmLAuKbrtnB0pOuvMF+gIq+2Rm6CJV46tonq
+        Q90q7b8IDPPe+R0314OIqwEfxw==
+X-Google-Smtp-Source: ABdhPJzYHdNT9GqXgfQD21oEC7iYSyGizicKOn318FZ+K56DF/69E5Vl8IATzjttfzUAWvPTfps3Mw==
+X-Received: by 2002:a17:906:2a8b:: with SMTP id l11mr6170970eje.1.1613689648835;
+        Thu, 18 Feb 2021 15:07:28 -0800 (PST)
 Received: from [192.168.1.149] ([80.208.71.141])
-        by smtp.gmail.com with ESMTPSA id m7sm3279119ejk.52.2021.02.18.14.51.43
+        by smtp.gmail.com with ESMTPSA id a23sm3383140ejy.60.2021.02.18.15.07.27
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 18 Feb 2021 14:51:44 -0800 (PST)
-Subject: Re: [PATCH 04/14] lib: introduce BITS_{FIRST,LAST} macro
+        Thu, 18 Feb 2021 15:07:28 -0800 (PST)
+Subject: Re: [PATCH 06/14] bitsperlong.h: introduce SMALL_CONST() macro
 To:     Yury Norov <yury.norov@gmail.com>, linux-kernel@vger.kernel.org
 Cc:     linux-m68k@lists.linux-m68k.org, linux-arch@vger.kernel.org,
         linux-sh@vger.kernel.org, Alexey Klimov <aklimov@redhat.com>,
@@ -72,14 +72,14 @@ Cc:     linux-m68k@lists.linux-m68k.org, linux-arch@vger.kernel.org,
         Wolfram Sang <wsa+renesas@sang-engineering.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>
 References: <20210218040512.709186-1-yury.norov@gmail.com>
- <20210218040512.709186-5-yury.norov@gmail.com>
+ <20210218040512.709186-7-yury.norov@gmail.com>
 From:   Rasmus Villemoes <linux@rasmusvillemoes.dk>
-Message-ID: <b371c94c-7480-5af4-d2bd-481436f535eb@rasmusvillemoes.dk>
-Date:   Thu, 18 Feb 2021 23:51:43 +0100
+Message-ID: <55f1e25a-3211-8247-9dd3-3777e29287db@rasmusvillemoes.dk>
+Date:   Fri, 19 Feb 2021 00:07:27 +0100
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
  Thunderbird/68.10.0
 MIME-Version: 1.0
-In-Reply-To: <20210218040512.709186-5-yury.norov@gmail.com>
+In-Reply-To: <20210218040512.709186-7-yury.norov@gmail.com>
 Content-Type: text/plain; charset=windows-1252
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -88,17 +88,80 @@ List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
 On 18/02/2021 05.05, Yury Norov wrote:
-> BITMAP_{LAST,FIRST}_WORD_MASK() in linux/bitmap.h duplicates the
-> functionality of GENMASK(). The scope of there macros is wider
-> than just bitmap. This patch defines 4 new macros: BITS_FIRST(),
-> BITS_LAST(), BITS_FIRST_MASK() and BITS_LAST_MASK() in linux/bits.h
-> on top of GENMASK() and replaces BITMAP_{LAST,FIRST}_WORD_MASK()
-> to avoid duplication and increase the scope of the macros.
+> Many algorithms become simpler if they are passed with relatively small
+> input values. One example is bitmap operations when the whole bitmap fits
+> into one word. To implement such simplifications, linux/bitmap.h declares
+> small_const_nbits() macro.
 > 
+> Other subsystems may also benefit from optimizations of this sort, like
+> find_bit API in the following patches. So it looks helpful to generalize
+> the macro and extend it's visibility.
 
-Please include some info on changes in generated code, if any. When the
-parameter to the macro is a constant I'm sure it all folds to a
-compile-time constant either way, but when it's not, I'm not sure gcc
-can do the same optimizations when the expressions become more complicated.
+Perhaps, but SMALL_CONST is too generic a name, it needs to keep "bits"
+somewhere in there. So why not just keep it at small_const_nbits?
+
+> Signed-off-by: Yury Norov <yury.norov@gmail.com>
+> ---
+>  include/asm-generic/bitsperlong.h |  2 ++
+>  include/linux/bitmap.h            | 33 ++++++++++++++-----------------
+>  2 files changed, 17 insertions(+), 18 deletions(-)
+> 
+> diff --git a/include/asm-generic/bitsperlong.h b/include/asm-generic/bitsperlong.h
+> index 3905c1c93dc2..0eeb77544f1d 100644
+> --- a/include/asm-generic/bitsperlong.h
+> +++ b/include/asm-generic/bitsperlong.h
+> @@ -23,4 +23,6 @@
+>  #define BITS_PER_LONG_LONG 64
+>  #endif
+>  
+> +#define SMALL_CONST(n) (__builtin_constant_p(n) && (unsigned long)(n) < BITS_PER_LONG)
+> +
+>  #endif /* __ASM_GENERIC_BITS_PER_LONG */
+> diff --git a/include/linux/bitmap.h b/include/linux/bitmap.h
+> index adf7bd9f0467..e89f1dace846 100644
+> --- a/include/linux/bitmap.h
+> +++ b/include/linux/bitmap.h
+> @@ -224,9 +224,6 @@ extern int bitmap_print_to_pagebuf(bool list, char *buf,
+>   * so make such users (should any ever turn up) call the out-of-line
+>   * versions.
+>   */
+> -#define small_const_nbits(nbits) \
+> -	(__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG && (nbits) > 0)
+> -
+>  static inline void bitmap_zero(unsigned long *dst, unsigned int nbits)
+>  {
+>  	unsigned int len = BITS_TO_LONGS(nbits) * sizeof(unsigned long);
+> @@ -278,7 +275,7 @@ extern void bitmap_to_arr32(u32 *buf, const unsigned long *bitmap,
+>  static inline int bitmap_and(unsigned long *dst, const unsigned long *src1,
+>  			const unsigned long *src2, unsigned int nbits)
+>  {
+> -	if (small_const_nbits(nbits))
+> +	if (SMALL_CONST(nbits - 1))
+
+Please don't force most users to be changed to something less readable.
+What's wrong with just keeping small_const_nbits() the way it is,
+avoiding all this churn and keeping the readability?
+
+At a quick reading, one of the very few places where you end up not
+passing nbits-1 but just nbits is this
+
+ unsigned long find_next_zero_bit_le(const void *addr, unsigned
+ 		long size, unsigned long offset)
+ {
++	if (SMALL_CONST(size)) {
++		unsigned long val = *(const unsigned long *)addr;
++
++		if (unlikely(offset >= size))
++			return size;
+
+which is a regression, for much the same reason the nbits==0 case was
+excluded from small_const_nbits in the first place. If size is 0, we
+used to just return 0 early in _find_next_bit. But you've introduced a
+dereference of addr before that check is now done, which is
+theoretically an oops.
+
+If find_next_zero_bit_le cannot handle nbits==BITS_PER_LONG efficiently
+but requires one off-limits bit position, fine, so be it, add an extra
+"small_const_nbits() && nbits < BITS_PER_LONG" (and a comment).
 
 Rasmus
