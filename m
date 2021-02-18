@@ -2,67 +2,45 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BFCAFC433E0
-	for <linux-sh@archiver.kernel.org>; Thu, 18 Feb 2021 04:09:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 427E2C433E6
+	for <linux-sh@archiver.kernel.org>; Thu, 18 Feb 2021 16:48:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9845F64E28
-	for <linux-sh@archiver.kernel.org>; Thu, 18 Feb 2021 04:09:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E614C64EB2
+	for <linux-sh@archiver.kernel.org>; Thu, 18 Feb 2021 16:48:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231152AbhBREJY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 17 Feb 2021 23:09:24 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54154 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230122AbhBREHG (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 17 Feb 2021 23:07:06 -0500
-Received: from mail-qt1-x835.google.com (mail-qt1-x835.google.com [IPv6:2607:f8b0:4864:20::835])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 39421C0611C3;
-        Wed, 17 Feb 2021 20:05:32 -0800 (PST)
-Received: by mail-qt1-x835.google.com with SMTP id f17so525096qth.7;
-        Wed, 17 Feb 2021 20:05:32 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=84gBY6rinb7deZXraCF0UsTbJivw5Olo0gL8/eJ63tU=;
-        b=KxfSS6niVzijRzEtdP/DC9eQUkwlu1PvxSxEgcuFub2GuTOz4WaJzl7H/fCoy3S4+a
-         eY4RldJTLxIdrBcLG0vRW7OXyBIjEZFa7saILAydNPEBgUNEHizOdS7B/TEiEx0rbstR
-         rev03iKVpZhbH2hPkQYiQIqUWyIcgRFiVWM1RG12hesTBatJevDd7loVlToiG+B1atGS
-         rGcBdPLVhqF6B8ANXWe6OR4SLeGgwF4iP707XgAkmtbFwUetmpHypCVFnhwUR5kfALT5
-         tlH5Sd+YLHI0F27k+7ecClMw1Obo98OnA0M042LYX8TCbWfoaLW7/YKRMUA+KYUrLYwI
-         MPnQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=84gBY6rinb7deZXraCF0UsTbJivw5Olo0gL8/eJ63tU=;
-        b=Wc8ZQJ0jPvOcl+LG0wzPl4ISJmS6kNHMtELuDmslnDuDzhK0ptsp5NEb/8fs1td6xN
-         YfRTg2TnrtVgOdhd1VOZBSvwgHI4t6mUh3zIpddiAUqfCbaZuLZopBVA5kw2dFzvqvQ6
-         XrMb/gZ13i15ABOT61fGqgIFXGQ97BT+SIU81U8a/0wMaPcKjnM73wn8nZ73dHZrwKTI
-         0wahFeM94f0XCmSTCJBlvxCxvQhwskhxBXVNc7xGyZmUFlg26vA1Ltc9rVYl8QvkmdbX
-         UCS1pq0rgXJ3VHkTcU0w6c0eVJV07fsASeRXDwqTabkQsXbtci8PRgudltgr2kSx41Hh
-         dfkg==
-X-Gm-Message-State: AOAM531by5KdfynW+pi0UFePdp8Hb5qVH1GH1UU2vghBBpBjs4vkRBX4
-        bpNYXaRDsbXU/ODuUm6Be7v01vpI2RCHhg==
-X-Google-Smtp-Source: ABdhPJwZifiZxE3P8q/lcvCbxJp+cC2M2zwuZmUjKMFL5WEt9kpRarYcAFb6PR4VznGQdSPl6yydfw==
-X-Received: by 2002:ac8:5d44:: with SMTP id g4mr2660798qtx.93.1613621131027;
-        Wed, 17 Feb 2021 20:05:31 -0800 (PST)
-Received: from localhost (d27-96-190-162.evv.wideopenwest.com. [96.27.162.190])
-        by smtp.gmail.com with ESMTPSA id b20sm2748495qto.45.2021.02.17.20.05.30
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 17 Feb 2021 20:05:30 -0800 (PST)
-From:   Yury Norov <yury.norov@gmail.com>
-To:     linux-kernel@vger.kernel.org
-Cc:     Yury Norov <yury.norov@gmail.com>, linux-m68k@lists.linux-m68k.org,
+        id S233478AbhBRQra (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 18 Feb 2021 11:47:30 -0500
+Received: from mga04.intel.com ([192.55.52.120]:9026 "EHLO mga04.intel.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S231735AbhBRPVj (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Thu, 18 Feb 2021 10:21:39 -0500
+IronPort-SDR: UsQO0CCBNUu+Z2JvOLJ95sfu/DwkYysC77PY8iyjTUHXMwHXeFpA2Jpc/+T4GOspSsJWs39QS0
+ aQOX/7JGYuSg==
+X-IronPort-AV: E=McAfee;i="6000,8403,9898"; a="180967427"
+X-IronPort-AV: E=Sophos;i="5.81,187,1610438400"; 
+   d="scan'208";a="180967427"
+Received: from fmsmga004.fm.intel.com ([10.253.24.48])
+  by fmsmga104.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 18 Feb 2021 07:15:52 -0800
+IronPort-SDR: ySyCeo3hHhVVssiuUa+dRq9sIUiHvTQ7v6KnjniuxwRD5SNHv0Bk1sNKh61kvbmQF2g5rC7u+o
+ ruQSlJ1pKQLw==
+X-IronPort-AV: E=Sophos;i="5.81,187,1610438400"; 
+   d="scan'208";a="419537155"
+Received: from smile.fi.intel.com (HELO smile) ([10.237.68.40])
+  by fmsmga004-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 18 Feb 2021 07:15:47 -0800
+Received: from andy by smile with local (Exim 4.94)
+        (envelope-from <andriy.shevchenko@linux.intel.com>)
+        id 1lCl1r-005yaq-Oq; Thu, 18 Feb 2021 17:15:43 +0200
+Date:   Thu, 18 Feb 2021 17:15:43 +0200
+From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+To:     Yury Norov <yury.norov@gmail.com>
+Cc:     linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
         linux-arch@vger.kernel.org, linux-sh@vger.kernel.org,
         Alexey Klimov <aklimov@redhat.com>,
         Andrew Morton <akpm@linux-foundation.org>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         Arnd Bergmann <arnd@arndb.de>, David Sterba <dsterba@suse.com>,
         Dennis Zhou <dennis@kernel.org>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
@@ -76,54 +54,74 @@ Cc:     Yury Norov <yury.norov@gmail.com>, linux-m68k@lists.linux-m68k.org,
         Wei Yang <richard.weiyang@linux.alibaba.com>,
         Wolfram Sang <wsa+renesas@sang-engineering.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>
-Subject: [PATCH 14/14] MAINTAINERS: Add entry for the bitmap API
-Date:   Wed, 17 Feb 2021 20:05:12 -0800
-Message-Id: <20210218040512.709186-15-yury.norov@gmail.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20210218040512.709186-1-yury.norov@gmail.com>
+Subject: Re: [PATCH 08/14] lib/Kconfig: introduce FAST_PATH option
+Message-ID: <YC6EnzFUXDuroy0+@smile.fi.intel.com>
 References: <20210218040512.709186-1-yury.norov@gmail.com>
+ <20210218040512.709186-9-yury.norov@gmail.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210218040512.709186-9-yury.norov@gmail.com>
+Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Add myself as maintainer for bitmap API.
+On Wed, Feb 17, 2021 at 08:05:06PM -0800, Yury Norov wrote:
+> This series introduces fast paths for find_bit() routines. It is
+> beneficial for typical systems, but those who limited in I-cache
+> may be concerned about increasing the .text size of the Image.
+> 
+> To address this concern, one can disable FAST_PATH option in the config
+> and some save memory.
+> 
+> The effect of this option on my arm64 next-20210217 build is:
 
-I'm an author of current implementation of lib/find_bit and an
-active contributor to lib/bitmap. It was spotted that there's no
-maintainer for bitmap API. I'm willing to maintain it.
+(Maybe bloat-o-meter will give better view on this, i.e. more human-readable)
 
-Signed-off-by: Yury Norov <yury.norov@gmail.com>
----
- MAINTAINERS | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
+> Before:
+> 	Sections:
+> 	Idx Name          Size      VMA               LMA               File off  Algn
+> 	  0 .head.text    00010000  ffff800010000000  ffff800010000000  00010000  2**16
+> 			  CONTENTS, ALLOC, LOAD, READONLY, CODE
+> 	  1 .text         0115e3a8  ffff800010010000  ffff800010010000  00020000  2**16
+> 			  CONTENTS, ALLOC, LOAD, READONLY, CODE
+> 	  2 .got.plt      00000018  ffff80001116e3a8  ffff80001116e3a8  0117e3a8  2**3
+> 			  CONTENTS, ALLOC, LOAD, DATA
+> 	  3 .rodata       007a72ca  ffff800011170000  ffff800011170000  01180000  2**12
+> 			  CONTENTS, ALLOC, LOAD, DATA
+> 	  ...
+> 
+> After:
+> 	Sections:
+> 	Idx Name          Size      VMA               LMA               File off  Algn
+> 	  0 .head.text    00010000  ffff800010000000  ffff800010000000  00010000  2**16
+> 			  CONTENTS, ALLOC, LOAD, READONLY, CODE
+> 	  1 .text         011623a8  ffff800010010000  ffff800010010000  00020000  2**16
+> 			  CONTENTS, ALLOC, LOAD, READONLY, CODE
+> 	  2 .got.plt      00000018  ffff8000111723a8  ffff8000111723a8  011823a8  2**3
+> 			  CONTENTS, ALLOC, LOAD, DATA
+> 	  3 .rodata       007a772a  ffff800011180000  ffff800011180000  01190000  2**12
+> 			  CONTENTS, ALLOC, LOAD, DATA
+> 	  ...
+> 
+> Notice that this is the cumulive effect on already existing fast paths
+> controlled by SMALL_CONST() together with ones added by this series.
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 7bdf12d3e0a8..9f8540a9dabf 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -3146,6 +3146,20 @@ F:	Documentation/filesystems/bfs.rst
- F:	fs/bfs/
- F:	include/uapi/linux/bfs_fs.h
- 
-+BITMAP API
-+M:	Yury Norov <yury.norov@gmail.com>
-+S:	Maintained
-+F:	include/asm-generic/bitops/find.h
-+F:	include/linux/bitmap.h
-+F:	lib/bitmap.c
-+F:	lib/find_bit.c
-+F:	lib/find_find_bit_benchmark.c
-+F:	lib/test_bitmap.c
-+F:	tools/include/asm-generic/bitops/find.h
-+F:	tools/include/linux/bitmap.h
-+F:	tools/lib/bitmap.c
-+F:	tools/lib/find_bit.c
-+
- BLINKM RGB LED DRIVER
- M:	Jan-Simon Moeller <jansimon.moeller@gmx.de>
- S:	Maintained
+...
+
+> +config FAST_PATH
+
+I think the name is to broad for this cases, perhaps BITS_FAST_PATH? or BITMAP?
+
+> +	bool "Enable fast path code generation"
+> +	default y
+> +	help
+> +	  This option enables fast path optimization with the cost of increasing
+> +	  the text section.
+
 -- 
-2.25.1
+With Best Regards,
+Andy Shevchenko
+
 
