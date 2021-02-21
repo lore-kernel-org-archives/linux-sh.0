@@ -2,88 +2,108 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 26CF1C433DB
-	for <linux-sh@archiver.kernel.org>; Sun, 21 Feb 2021 09:43:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C198C433E6
+	for <linux-sh@archiver.kernel.org>; Sun, 21 Feb 2021 17:16:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D60A764EB2
-	for <linux-sh@archiver.kernel.org>; Sun, 21 Feb 2021 09:43:43 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6410D64E5C
+	for <linux-sh@archiver.kernel.org>; Sun, 21 Feb 2021 17:16:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229925AbhBUJnl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 21 Feb 2021 04:43:41 -0500
-Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:50079 "EHLO
-        outpost1.zedat.fu-berlin.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S229844AbhBUJnh (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 21 Feb 2021 04:43:37 -0500
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.94)
-          with esmtps (TLS1.2)
-          tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1lDlGP-001eYC-QS; Sun, 21 Feb 2021 10:42:53 +0100
-Received: from x4dbf9e82.dyn.telefonica.de ([77.191.158.130] helo=[192.168.1.10])
-          by inpost2.zedat.fu-berlin.de (Exim 4.94)
-          with esmtpsa (TLS1.2)
-          tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1lDlGP-003mvi-HH; Sun, 21 Feb 2021 10:42:53 +0100
-To:     Linux-sh list <linux-sh@vger.kernel.org>
-Cc:     Rob Landley <rob@landley.net>, Rich Felker <dalias@libc.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Subject: SH patches for 5.12
-Message-ID: <31ba6e66-71f3-381c-076b-c9d9b0c5d264@physik.fu-berlin.de>
-Date:   Sun, 21 Feb 2021 10:42:52 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.7.1
+        id S230171AbhBURQZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 21 Feb 2021 12:16:25 -0500
+Received: from conssluserg-06.nifty.com ([210.131.2.91]:33446 "EHLO
+        conssluserg-06.nifty.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229970AbhBURQX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 21 Feb 2021 12:16:23 -0500
+Received: from mail-pl1-f175.google.com (mail-pl1-f175.google.com [209.85.214.175]) (authenticated)
+        by conssluserg-06.nifty.com with ESMTP id 11LHFQMn029412;
+        Mon, 22 Feb 2021 02:15:26 +0900
+DKIM-Filter: OpenDKIM Filter v2.10.3 conssluserg-06.nifty.com 11LHFQMn029412
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com;
+        s=dec2015msa; t=1613927726;
+        bh=+E+JRgKeitH5eFBx4Z/rh8FyWasix1MSTNAEXqizMQU=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=fY8q6G98uh1+un5PrwsG4Zb3rSAd52PO9NSoxDJ8nwquEkzuJdR6rBF5sZrJUQbe9
+         KWCT8wBjnWUfz7vheSDo+fWEVgovNo9SHlNVuFyQQj0HmV7nB2ApBNZANPZVurwuRE
+         OPvztrgFoeH+fOxkb4nxTbw8JucqU5hHRx4mF3+AMVhL15XIswHkujGL0xSI8cL6QI
+         Ii+CzdqSBbptV3imDDdvgz94e1uZBko1b579roKG6OFciJ/jTRWVIx1O7HbRt/m0Tc
+         pLkXdi0thvqyabjecA6KbCP/kR2SvsJ0NPIVn7afYMW4aobGgVsdv/ZSnZtoPqwJ1E
+         OSXLJ0vAyyr9A==
+X-Nifty-SrcIP: [209.85.214.175]
+Received: by mail-pl1-f175.google.com with SMTP id u11so6119214plg.13;
+        Sun, 21 Feb 2021 09:15:26 -0800 (PST)
+X-Gm-Message-State: AOAM530f3OWgCXm+QZ167geaZY82/Uo9+39wdJo5pmm4HsKG5QmkcNNT
+        mL1vjaSkpRTYyM05el/V9QycQ4fsrEROqr66210=
+X-Google-Smtp-Source: ABdhPJxczjkYYwfFedULPavyehBQNlTo4yyE2oDz3aAz68ppY9EMF/VKLUDXMsDnW+fSNSL17VJtx2kpM0VX1zgRRK4=
+X-Received: by 2002:a17:90a:609:: with SMTP id j9mr19512007pjj.198.1613927724902;
+ Sun, 21 Feb 2021 09:15:24 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 77.191.158.130
+References: <20210215004823.440102-1-masahiroy@kernel.org>
+In-Reply-To: <20210215004823.440102-1-masahiroy@kernel.org>
+From:   Masahiro Yamada <masahiroy@kernel.org>
+Date:   Mon, 22 Feb 2021 02:14:47 +0900
+X-Gmail-Original-Message-ID: <CAK7LNATvCAyHSUQNTdSck3JM1MfHNFcanjn0i4835okWE9Km5w@mail.gmail.com>
+Message-ID: <CAK7LNATvCAyHSUQNTdSck3JM1MfHNFcanjn0i4835okWE9Km5w@mail.gmail.com>
+Subject: Re: [PATCH 1/2] arch: syscalls: add missing FORCE and fix 'targets'
+ to make if_changed work
+To:     Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>
+Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Andy Lutomirski <luto@kernel.org>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Borislav Petkov <bp@alien8.de>,
+        Chris Zankel <chris@zankel.net>,
+        "David S. Miller" <davem@davemloft.net>,
+        Fenghua Yu <fenghua.yu@intel.com>,
+        "H. Peter Anvin" <hpa@zytor.com>, Helge Deller <deller@gmx.de>,
+        Ingo Molnar <mingo@redhat.com>,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+        Matt Turner <mattst88@gmail.com>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Michal Simek <monstr@monstr.eu>,
+        Paul Mackerras <paulus@samba.org>,
+        Rich Felker <dalias@libc.org>,
+        Richard Henderson <rth@twiddle.net>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Tony Luck <tony.luck@intel.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        "open list:TENSILICA XTENSA PORT (xtensa)" 
+        <linux-xtensa@linux-xtensa.org>,
+        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
+        sparclinux <sparclinux@vger.kernel.org>, X86 ML <x86@kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi!
+On Mon, Feb 15, 2021 at 9:50 AM Masahiro Yamada <masahiroy@kernel.org> wrote:
+>
+> The rules in these Makefiles cannot detect the command line change
+> because the prerequisite 'FORCE' is missing.
+>
+> Adding 'FORCE' will result in the headers being rebuilt every time
+> because the 'targets' additions are also wrong; the file paths in
+> 'targets' must be relative to the current Makefile.
+>
+> Fix all of them so the if_changed rules work correctly.
+>
+> Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
+> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-Could we get the following patches picked up for 5.12?
 
-> - [PATCH] [sh] fix trivial misannotations
-> - https://marc.info/?l=linux-kernel&m=160945707001399&w=2
->
-> - [PATCH] sh: check return code of request_irq
-> - https://marc.info/?l=linux-kernel&m=160867050030140&w=2
->
-> - [PATCH] sh: boards: Fix the cacography in irq.c
-> - https://marc.info/?l=linux-sh&m=160578410511403&w=2
->
-> - [PATCH 1/2] sh: boot: add intermediate vmlinux.bin* to targets instead of extra-y
-> - https://marc.info/?l=linux-kernel&m=161088234517301&w=2
->
-> - [PATCH 2/2] sh: boot: avoid unneeded rebuilds under arch/sh/boot/compressed/
-> - https://marc.info/?l=linux-kernel&m=161088245817344&w=2
->
-> - [PATCH] maple: fix wrong return value of maple_bus_init().
-> - https://marc.info/?l=linux-kernel&m=160635878212678&w=2
->
-> - [PATCH] sh: kdump: add some attribute to function
-> - https://marc.info/?l=linux-kernel&m=160758311622653&w=2
->
-> - [PATCH] sh: kernel: traps: remove unused variable
-> - https://marc.info/?l=linux-kernel&m=160760435528709&w=2
->
-> - [PATCH] scripts/recordmcount.pl: support big endian for ARCH sh
-> - https://marc.info/?l=linux-sh&m=161296964604229&w=2
+Both applied to linux-kbuild.
 
-Adrian
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Best Regards
+Masahiro Yamada
