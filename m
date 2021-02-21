@@ -2,108 +2,100 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C198C433E6
-	for <linux-sh@archiver.kernel.org>; Sun, 21 Feb 2021 17:16:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 676DCC433DB
+	for <linux-sh@archiver.kernel.org>; Sun, 21 Feb 2021 19:31:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6410D64E5C
-	for <linux-sh@archiver.kernel.org>; Sun, 21 Feb 2021 17:16:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 323F764DD3
+	for <linux-sh@archiver.kernel.org>; Sun, 21 Feb 2021 19:31:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230171AbhBURQZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 21 Feb 2021 12:16:25 -0500
-Received: from conssluserg-06.nifty.com ([210.131.2.91]:33446 "EHLO
-        conssluserg-06.nifty.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229970AbhBURQX (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 21 Feb 2021 12:16:23 -0500
-Received: from mail-pl1-f175.google.com (mail-pl1-f175.google.com [209.85.214.175]) (authenticated)
-        by conssluserg-06.nifty.com with ESMTP id 11LHFQMn029412;
-        Mon, 22 Feb 2021 02:15:26 +0900
-DKIM-Filter: OpenDKIM Filter v2.10.3 conssluserg-06.nifty.com 11LHFQMn029412
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com;
-        s=dec2015msa; t=1613927726;
-        bh=+E+JRgKeitH5eFBx4Z/rh8FyWasix1MSTNAEXqizMQU=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=fY8q6G98uh1+un5PrwsG4Zb3rSAd52PO9NSoxDJ8nwquEkzuJdR6rBF5sZrJUQbe9
-         KWCT8wBjnWUfz7vheSDo+fWEVgovNo9SHlNVuFyQQj0HmV7nB2ApBNZANPZVurwuRE
-         OPvztrgFoeH+fOxkb4nxTbw8JucqU5hHRx4mF3+AMVhL15XIswHkujGL0xSI8cL6QI
-         Ii+CzdqSBbptV3imDDdvgz94e1uZBko1b579roKG6OFciJ/jTRWVIx1O7HbRt/m0Tc
-         pLkXdi0thvqyabjecA6KbCP/kR2SvsJ0NPIVn7afYMW4aobGgVsdv/ZSnZtoPqwJ1E
-         OSXLJ0vAyyr9A==
-X-Nifty-SrcIP: [209.85.214.175]
-Received: by mail-pl1-f175.google.com with SMTP id u11so6119214plg.13;
-        Sun, 21 Feb 2021 09:15:26 -0800 (PST)
-X-Gm-Message-State: AOAM530f3OWgCXm+QZ167geaZY82/Uo9+39wdJo5pmm4HsKG5QmkcNNT
-        mL1vjaSkpRTYyM05el/V9QycQ4fsrEROqr66210=
-X-Google-Smtp-Source: ABdhPJxczjkYYwfFedULPavyehBQNlTo4yyE2oDz3aAz68ppY9EMF/VKLUDXMsDnW+fSNSL17VJtx2kpM0VX1zgRRK4=
-X-Received: by 2002:a17:90a:609:: with SMTP id j9mr19512007pjj.198.1613927724902;
- Sun, 21 Feb 2021 09:15:24 -0800 (PST)
+        id S230290AbhBUTbg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 21 Feb 2021 14:31:36 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42004 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229956AbhBUTba (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 21 Feb 2021 14:31:30 -0500
+Received: from mail-ot1-x330.google.com (mail-ot1-x330.google.com [IPv6:2607:f8b0:4864:20::330])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 864B0C061786
+        for <linux-sh@vger.kernel.org>; Sun, 21 Feb 2021 11:30:50 -0800 (PST)
+Received: by mail-ot1-x330.google.com with SMTP id h22so1789964otr.6
+        for <linux-sh@vger.kernel.org>; Sun, 21 Feb 2021 11:30:50 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=g5UTIa9InNIBkuT94ogtQK2y5EXdGrdRe0gMG++D8V4=;
+        b=ninjvy1lz0nYYZnjrEBeevjo/jojfAC0+K8ySY81KtjgquGq+J4LFZIpJob7E2yA2U
+         6TDrv+idGCmSjhyQosG9n0weK99OZquYTShuxymUgaowIj9+Sn45aWl48bCjQilapnsV
+         nlHXSfo+J4mXh09Er/KJZAMwhgF5tHl3yOTaQQXE4nmtjEpPh5ajLluxVLb6lOyLckIj
+         R6qBn0VVwN32MAJKHiB6Q3xSsa1Yd3pSJH0EMHwL5HBovbdi+iZNtUlzyKmjl8L4OCCj
+         YjhRa4U+mBU/tBzQYFYtifVlt0Eolbhcm3U18jldYJE1C+1OayD/5FR3mUbx4SDnL23z
+         Z+pg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=g5UTIa9InNIBkuT94ogtQK2y5EXdGrdRe0gMG++D8V4=;
+        b=gLmd4pzF2fVG8fQNW9zRrxje/o6mV8Vqd5y0JCaVeB2H1FG0kQV0iGiUH3CSovUwS0
+         yxCSJ9fAQRDLbgJxoPZbQziuzOISGfCbX8jdkvRMpp0RT3eN//wDK+LnYKt2Fg46o1Et
+         jeiBFaV2r3t+10RrCEElxgNvpnl1cbkBtNy8h/89d1Yn8HeckSAfNz3F+3zMIhQz6BeO
+         W3mS1yxQZjJZxCCkj6FhAPpR58xUcxj9EFRnjW5BJxk4lqDfJRR7k097pNborT0fQv59
+         iHL2vwvm3Y0Ahl9/WhYdeD0h/wrXEiqgCGen896aQ5PzknRFhXz1MHcLk2amIIHIfFhz
+         1Mmw==
+X-Gm-Message-State: AOAM532n3cFWJqUKeYDn7bbMT3yQPF+60dyckaCfL2jNvsL9OmCrG2lw
+        ePA4yAijw7ub26nxYSsVhsBXDUK5j7i8265T
+X-Google-Smtp-Source: ABdhPJwUurRnazr2GoxU1jsk06X+SOGDh4S697uO1eA9QM4S7U42s8T6LYmETs74PNH5Yp5fsdJLjA==
+X-Received: by 2002:a05:6830:2106:: with SMTP id i6mr14286657otc.260.1613935849983;
+        Sun, 21 Feb 2021 11:30:49 -0800 (PST)
+Received: from [192.168.86.73] ([136.62.4.88])
+        by smtp.gmail.com with ESMTPSA id 4sm3185905otp.4.2021.02.21.11.30.49
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 21 Feb 2021 11:30:49 -0800 (PST)
+Subject: Re: SH patches for 5.12
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Linux-sh list <linux-sh@vger.kernel.org>
+Cc:     Rich Felker <dalias@libc.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>
+References: <31ba6e66-71f3-381c-076b-c9d9b0c5d264@physik.fu-berlin.de>
+From:   Rob Landley <rob@landley.net>
+Message-ID: <d13218aa-dbc6-4d44-d2f7-b6020f6b902d@landley.net>
+Date:   Sun, 21 Feb 2021 13:44:21 -0600
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.12.0
 MIME-Version: 1.0
-References: <20210215004823.440102-1-masahiroy@kernel.org>
-In-Reply-To: <20210215004823.440102-1-masahiroy@kernel.org>
-From:   Masahiro Yamada <masahiroy@kernel.org>
-Date:   Mon, 22 Feb 2021 02:14:47 +0900
-X-Gmail-Original-Message-ID: <CAK7LNATvCAyHSUQNTdSck3JM1MfHNFcanjn0i4835okWE9Km5w@mail.gmail.com>
-Message-ID: <CAK7LNATvCAyHSUQNTdSck3JM1MfHNFcanjn0i4835okWE9Km5w@mail.gmail.com>
-Subject: Re: [PATCH 1/2] arch: syscalls: add missing FORCE and fix 'targets'
- to make if_changed work
-To:     Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>
-Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
-        Andy Lutomirski <luto@kernel.org>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Borislav Petkov <bp@alien8.de>,
-        Chris Zankel <chris@zankel.net>,
-        "David S. Miller" <davem@davemloft.net>,
-        Fenghua Yu <fenghua.yu@intel.com>,
-        "H. Peter Anvin" <hpa@zytor.com>, Helge Deller <deller@gmx.de>,
-        Ingo Molnar <mingo@redhat.com>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Matt Turner <mattst88@gmail.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Michal Simek <monstr@monstr.eu>,
-        Paul Mackerras <paulus@samba.org>,
-        Rich Felker <dalias@libc.org>,
-        Richard Henderson <rth@twiddle.net>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Tony Luck <tony.luck@intel.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-alpha@vger.kernel.org, linux-ia64@vger.kernel.org,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-m68k <linux-m68k@lists.linux-m68k.org>,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        "open list:TENSILICA XTENSA PORT (xtensa)" 
-        <linux-xtensa@linux-xtensa.org>,
-        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
-        sparclinux <sparclinux@vger.kernel.org>, X86 ML <x86@kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <31ba6e66-71f3-381c-076b-c9d9b0c5d264@physik.fu-berlin.de>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Feb 15, 2021 at 9:50 AM Masahiro Yamada <masahiroy@kernel.org> wrote:
->
-> The rules in these Makefiles cannot detect the command line change
-> because the prerequisite 'FORCE' is missing.
->
-> Adding 'FORCE' will result in the headers being rebuilt every time
-> because the 'targets' additions are also wrong; the file paths in
-> 'targets' must be relative to the current Makefile.
->
-> Fix all of them so the if_changed rules work correctly.
->
-> Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
-> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+On 2/21/21 3:42 AM, John Paul Adrian Glaubitz wrote:
+> Hi!
+> 
+> Could we get the following patches picked up for 5.12?
 
+I still have your previous email on this open in a window on my desktop, but the
+weather in Austin's been a bit distracting recently. :)
 
-Both applied to linux-kbuild.
+>> - [PATCH] [sh] fix trivial misannotations
+>> - https://marc.info/?l=linux-kernel&m=160945707001399&w=2
 
+That is an _impressively_ broken archive. Even the 'raw' links screw up the
+From: lines with despamming crap, and it corrupts them on top of that:
 
--- 
-Best Regards
-Masahiro Yamada
+  $ wget  https://marc.info/?l=linux-kernel&m=160945707001399&q=mbox -O 1.patch
+  $ git am ../sh/1.patch
+  Applying: fix trivial misannotations
+  error: corrupt patch at line 110
+
+That's why I hadn't dealt with this faster, I have to track them down elsewhere
+to get copies I can actually apply and test...
+
+Rob
