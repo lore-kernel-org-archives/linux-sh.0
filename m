@@ -2,49 +2,71 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 23221C4361B
-	for <linux-sh@archiver.kernel.org>; Wed,  3 Mar 2021 03:36:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 97DBBC433E0
+	for <linux-sh@archiver.kernel.org>; Thu,  4 Mar 2021 13:22:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E27F76023B
-	for <linux-sh@archiver.kernel.org>; Wed,  3 Mar 2021 03:36:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7222A64F21
+	for <linux-sh@archiver.kernel.org>; Thu,  4 Mar 2021 13:22:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1352271AbhCCDal (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 2 Mar 2021 22:30:41 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50134 "EHLO
+        id S236480AbhCDNVY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 4 Mar 2021 08:21:24 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47934 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241386AbhCBRiu (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 2 Mar 2021 12:38:50 -0500
-Received: from michel.telenet-ops.be (michel.telenet-ops.be [IPv6:2a02:1800:110:4::f00:18])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A33A0C0617AB
-        for <linux-sh@vger.kernel.org>; Tue,  2 Mar 2021 08:21:54 -0800 (PST)
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed20:d15e:6060:f6a9:3ce5])
-        by michel.telenet-ops.be with bizsmtp
-        id bUMs240080v3pQi06UMsDp; Tue, 02 Mar 2021 17:21:53 +0100
-Received: from rox.of.borg ([192.168.97.57])
-        by ramsan.of.borg with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.93)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1lH7mQ-004Cqp-92; Tue, 02 Mar 2021 17:21:50 +0100
-Received: from geert by rox.of.borg with local (Exim 4.93)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1lH7mP-00FwaM-B5; Tue, 02 Mar 2021 17:21:49 +0100
-From:   Geert Uytterhoeven <geert+renesas@glider.be>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-Cc:     Masahiro Yamada <masahiroy@kernel.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Palmer Dabbelt <palmer@dabbelt.com>, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org,
-        Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH v2] sh: Use generic GCC library routines
-Date:   Tue,  2 Mar 2021 17:21:48 +0100
-Message-Id: <20210302162148.3800079-1-geert+renesas@glider.be>
+        with ESMTP id S232942AbhCDNVJ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 4 Mar 2021 08:21:09 -0500
+Received: from mail-pj1-x1042.google.com (mail-pj1-x1042.google.com [IPv6:2607:f8b0:4864:20::1042])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A31A2C06175F;
+        Thu,  4 Mar 2021 05:20:29 -0800 (PST)
+Received: by mail-pj1-x1042.google.com with SMTP id jx13so6569208pjb.1;
+        Thu, 04 Mar 2021 05:20:29 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=7TuebsGZ7PfFLh+7VtFFI1adnwVCzaRy+r3d2bkdQFc=;
+        b=ezgmgckKXwMf1XnQDpICKsBKNtIMTaEjBtWq2osVrPLrJBXdavfge9eoYCtdZCCzSa
+         MCH+ayceOvwj0c2+KGgjKphFRufEr1GqkU5H20NTxwuLtZcMQ19p7e8t+y1oL4SyqoFk
+         /Werxajx3XgBNvxdAJH+WqIlW5wuRAZ8f8owXo3hBvLGqQ6wnJc5lQeEH1m3yCyvGDAY
+         0QnpMK0qOJJivxyCm8QrYhlVrFg3bt5spfQsoEZGavewM5F4hOPsIZa+8ipbGxUsZmq4
+         Asfb0undkcPDPe916S51XllzdpWRW9av5aTC/zC/vz2idEcyEdOCZ2T4nTBsWlo30r6c
+         4/6Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=7TuebsGZ7PfFLh+7VtFFI1adnwVCzaRy+r3d2bkdQFc=;
+        b=X12+b5l5ox1mlljXQM1GTP8xD6/r2Yvw9FGWHISnWK6OPel/K7Um+4ulQM+UT7nl0T
+         NNDUbRuT+YDMTGMLs3jFCAK0ZDxWKdcFMyFGyOtfs6QT9o7kfmp759YhMEX+238cQlq2
+         fFpdIJQsTMP44q7IraoaxDC7dNHbIXUPjKnjFgaeRJUvZK8c4N1TGDkY2DZZVeglTOC0
+         /xI2xmOeX+NwE+QIkJXObWnkaH230DUlaU44zSLW9PCChpN1xuKdH3OQyvJpMr4jwPTA
+         Q6eSntJgIgDD5rDMUp0ANv4atyiQvl5oB1VRLN6xhEOofH6TVj1NAtk0QieK7xzSDtta
+         DhAQ==
+X-Gm-Message-State: AOAM53392WLCEjyMORQ3NJYOp7tskhf+ePAN7Jp1txU5XEyAx+ZthulX
+        puJ6H4BmZ1fD6AaYCxSdSC8=
+X-Google-Smtp-Source: ABdhPJw5mop7Q05iwGPVDPv/TV7muVAYEl+QpfM+dzp7wGwLuxJ9xrmHLzyFf9+5Z90KHfNnJQiWeA==
+X-Received: by 2002:a17:902:ea09:b029:e3:a720:b83 with SMTP id s9-20020a170902ea09b02900e3a7200b83mr4023689plg.51.1614864028293;
+        Thu, 04 Mar 2021 05:20:28 -0800 (PST)
+Received: from localhost.localdomain ([178.236.46.205])
+        by smtp.gmail.com with ESMTPSA id u9sm26809374pgc.59.2021.03.04.05.20.25
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 04 Mar 2021 05:20:27 -0800 (PST)
+From:   menglong8.dong@gmail.com
+X-Google-Original-From: zhang.yunkai@zte.com.cn
+To:     aneesh.kumar@linux.ibm.com
+Cc:     will@kernel.org, akpm@linux-foundation.org, npiggin@gmail.com,
+        peterz@infradead.org, ysato@users.sourceforge.jp, dalias@libc.org,
+        linux-arch@vger.kernel.org, linux-mm@kvack.org,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Zhang Yunkai <zhang.yunkai@zte.com.cn>
+Subject: [PATCH] sh: remove duplicate include in tlb.h
+Date:   Thu,  4 Mar 2021 05:20:20 -0800
+Message-Id: <20210304132020.196811-1-zhang.yunkai@zte.com.cn>
 X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
@@ -52,191 +74,47 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The C implementations of __ashldi3(), __ashrdi3__(), and __lshrdi3() in
-arch/sh/lib/ are identical to the generic C implementations in lib/.
-Reduce duplication by switching SH to the generic versions.
+From: Zhang Yunkai <zhang.yunkai@zte.com.cn>
 
-Update the include path in arch/sh/boot/compressed accordingly.
+'asm-generic/tlb.h' included in 'asm/tlb.h' is duplicated.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Zhang Yunkai <zhang.yunkai@zte.com.cn>
 ---
-v2:
-  - Fix silly typo in subject.
+ arch/sh/include/asm/tlb.h | 10 ++--------
+ 1 file changed, 2 insertions(+), 8 deletions(-)
 
-Against sh/for-next, tested on landisk and qemu/rts7751r2d.
-
-Note that it also works without the change to arch/sh/boot/compressed/,
-as lib/ashldi3.c can be reached via both include/uapi/../../lib/ashldi3.c
-and arch/sh/boot/compressed/../../../../lib/ashldi3.c.
-
-Palmer tried a similar thing before:
-https://lore.kernel.org/linux-arch/20170523220546.16758-1-palmer@dabbelt.com/
-but initially it broke the SH build due to a missing change to
-arch/sh/boot/compressed/, and the later update never got picked up.
-In the mean time, arch/sh/boot/compressed/ was changed, so his patch no
-longer applies.
-
-Similar for the other architectures, I guess?
----
- arch/sh/Kconfig                   |  3 +++
- arch/sh/boot/compressed/ashldi3.c |  4 ++--
- arch/sh/lib/Makefile              |  4 +---
- arch/sh/lib/ashldi3.c             | 30 -----------------------------
- arch/sh/lib/ashrdi3.c             | 32 -------------------------------
- arch/sh/lib/lshrdi3.c             | 30 -----------------------------
- 6 files changed, 6 insertions(+), 97 deletions(-)
- delete mode 100644 arch/sh/lib/ashldi3.c
- delete mode 100644 arch/sh/lib/ashrdi3.c
- delete mode 100644 arch/sh/lib/lshrdi3.c
-
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index e798e55915c2337f..468e475c02d184bd 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -19,6 +19,9 @@ config SUPERH
- 	select GENERIC_CMOS_UPDATE if SH_SH03 || SH_DREAMCAST
- 	select GENERIC_IDLE_POLL_SETUP
- 	select GENERIC_IRQ_SHOW
-+	select GENERIC_LIB_ASHLDI3
-+	select GENERIC_LIB_ASHRDI3
-+	select GENERIC_LIB_LSHRDI3
- 	select GENERIC_PCI_IOMAP if PCI
- 	select GENERIC_SCHED_CLOCK
- 	select GENERIC_STRNCPY_FROM_USER
-diff --git a/arch/sh/boot/compressed/ashldi3.c b/arch/sh/boot/compressed/ashldi3.c
-index 7cebd646df839b48..7c12121702309e8c 100644
---- a/arch/sh/boot/compressed/ashldi3.c
-+++ b/arch/sh/boot/compressed/ashldi3.c
-@@ -1,2 +1,2 @@
--// SPDX-License-Identifier: GPL-2.0-only
--#include "../../lib/ashldi3.c"
-+// SPDX-License-Identifier: GPL-2.0-or-later
-+#include "../../../../lib/ashldi3.c"
-diff --git a/arch/sh/lib/Makefile b/arch/sh/lib/Makefile
-index eb473d373ca43a4b..d20a0768b31fa2b6 100644
---- a/arch/sh/lib/Makefile
-+++ b/arch/sh/lib/Makefile
-@@ -7,9 +7,7 @@ lib-y  = delay.o memmove.o memchr.o \
- 	 checksum.o strlen.o div64.o div64-generic.o
+diff --git a/arch/sh/include/asm/tlb.h b/arch/sh/include/asm/tlb.h
+index 360f713d009b..aeb8915e9254 100644
+--- a/arch/sh/include/asm/tlb.h
++++ b/arch/sh/include/asm/tlb.h
+@@ -4,12 +4,11 @@
  
- # Extracted from libgcc
--obj-y += movmem.o ashldi3.o ashrdi3.o lshrdi3.o \
--	 ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o \
--	 udiv_qrnnd.o
-+obj-y += movmem.o ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o udiv_qrnnd.o
+ #ifndef __ASSEMBLY__
+ #include <linux/pagemap.h>
++#include <asm-generic/tlb.h>
  
- udivsi3-y			:= udivsi3_i4i-Os.o
+ #ifdef CONFIG_MMU
+ #include <linux/swap.h>
  
-diff --git a/arch/sh/lib/ashldi3.c b/arch/sh/lib/ashldi3.c
-deleted file mode 100644
-index e5afe0935847427f..0000000000000000
---- a/arch/sh/lib/ashldi3.c
-+++ /dev/null
-@@ -1,30 +0,0 @@
--// SPDX-License-Identifier: GPL-2.0
--#include <linux/module.h>
+-#include <asm-generic/tlb.h>
 -
--#include "libgcc.h"
+ #if defined(CONFIG_CPU_SH4)
+ extern void tlb_wire_entry(struct vm_area_struct *, unsigned long, pte_t);
+ extern void tlb_unwire_entry(void);
+@@ -24,12 +23,7 @@ static inline void tlb_unwire_entry(void)
+ {
+ 	BUG();
+ }
+-#endif
 -
--long long __ashldi3(long long u, word_type b)
--{
--	DWunion uu, w;
--	word_type bm;
+-#else /* CONFIG_MMU */
 -
--	if (b == 0)
--		return u;
+-#include <asm-generic/tlb.h>
 -
--	uu.ll = u;
--	bm = 32 - b;
--
--	if (bm <= 0) {
--		w.s.low = 0;
--		w.s.high = (unsigned int) uu.s.low << -bm;
--	} else {
--		const unsigned int carries = (unsigned int) uu.s.low >> bm;
--
--		w.s.low = (unsigned int) uu.s.low << b;
--		w.s.high = ((unsigned int) uu.s.high << b) | carries;
--	}
--
--	return w.ll;
--}
--
--EXPORT_SYMBOL(__ashldi3);
-diff --git a/arch/sh/lib/ashrdi3.c b/arch/sh/lib/ashrdi3.c
-deleted file mode 100644
-index ae263fbf25383b70..0000000000000000
---- a/arch/sh/lib/ashrdi3.c
-+++ /dev/null
-@@ -1,32 +0,0 @@
--// SPDX-License-Identifier: GPL-2.0
--#include <linux/module.h>
--
--#include "libgcc.h"
--
--long long __ashrdi3(long long u, word_type b)
--{
--	DWunion uu, w;
--	word_type bm;
--
--	if (b == 0)
--		return u;
--
--	uu.ll = u;
--	bm = 32 - b;
--
--	if (bm <= 0) {
--		/* w.s.high = 1..1 or 0..0 */
--		w.s.high =
--		    uu.s.high >> 31;
--		w.s.low = uu.s.high >> -bm;
--	} else {
--		const unsigned int carries = (unsigned int) uu.s.high << bm;
--
--		w.s.high = uu.s.high >> b;
--		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
--	}
--
--	return w.ll;
--}
--
--EXPORT_SYMBOL(__ashrdi3);
-diff --git a/arch/sh/lib/lshrdi3.c b/arch/sh/lib/lshrdi3.c
-deleted file mode 100644
-index 33eaa1edbc3c0656..0000000000000000
---- a/arch/sh/lib/lshrdi3.c
-+++ /dev/null
-@@ -1,30 +0,0 @@
--// SPDX-License-Identifier: GPL-2.0
--#include <linux/module.h>
--
--#include "libgcc.h"
--
--long long __lshrdi3(long long u, word_type b)
--{
--	DWunion uu, w;
--	word_type bm;
--
--	if (b == 0)
--		return u;
--
--	uu.ll = u;
--	bm = 32 - b;
--
--	if (bm <= 0) {
--		w.s.high = 0;
--		w.s.low = (unsigned int) uu.s.high >> -bm;
--	} else {
--		const unsigned int carries = (unsigned int) uu.s.high << bm;
--
--		w.s.high = (unsigned int) uu.s.high >> b;
--		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
--	}
--
--	return w.ll;
--}
--
--EXPORT_SYMBOL(__lshrdi3);
++#endif /* CONFIG_CPU_SH4 */
+ #endif /* CONFIG_MMU */
+ #endif /* __ASSEMBLY__ */
+ #endif /* __ASM_SH_TLB_H */
 -- 
 2.25.1
 
