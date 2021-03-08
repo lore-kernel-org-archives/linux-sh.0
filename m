@@ -1,120 +1,93 @@
-Return-Path: <linux-sh-owner@kernel.org>
+Return-Path: <SRS0=DdoM=IG=vger.kernel.org=linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 97DBBC433E0
-	for <linux-sh@archiver.kernel.org>; Thu,  4 Mar 2021 13:22:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 60F4EC4332B
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Mar 2021 06:42:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7222A64F21
-	for <linux-sh@archiver.kernel.org>; Thu,  4 Mar 2021 13:22:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3DB85651FC
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Mar 2021 06:42:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236480AbhCDNVY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 4 Mar 2021 08:21:24 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47934 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232942AbhCDNVJ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 4 Mar 2021 08:21:09 -0500
-Received: from mail-pj1-x1042.google.com (mail-pj1-x1042.google.com [IPv6:2607:f8b0:4864:20::1042])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A31A2C06175F;
-        Thu,  4 Mar 2021 05:20:29 -0800 (PST)
-Received: by mail-pj1-x1042.google.com with SMTP id jx13so6569208pjb.1;
-        Thu, 04 Mar 2021 05:20:29 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=7TuebsGZ7PfFLh+7VtFFI1adnwVCzaRy+r3d2bkdQFc=;
-        b=ezgmgckKXwMf1XnQDpICKsBKNtIMTaEjBtWq2osVrPLrJBXdavfge9eoYCtdZCCzSa
-         MCH+ayceOvwj0c2+KGgjKphFRufEr1GqkU5H20NTxwuLtZcMQ19p7e8t+y1oL4SyqoFk
-         /Werxajx3XgBNvxdAJH+WqIlW5wuRAZ8f8owXo3hBvLGqQ6wnJc5lQeEH1m3yCyvGDAY
-         0QnpMK0qOJJivxyCm8QrYhlVrFg3bt5spfQsoEZGavewM5F4hOPsIZa+8ipbGxUsZmq4
-         Asfb0undkcPDPe916S51XllzdpWRW9av5aTC/zC/vz2idEcyEdOCZ2T4nTBsWlo30r6c
-         4/6Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=7TuebsGZ7PfFLh+7VtFFI1adnwVCzaRy+r3d2bkdQFc=;
-        b=X12+b5l5ox1mlljXQM1GTP8xD6/r2Yvw9FGWHISnWK6OPel/K7Um+4ulQM+UT7nl0T
-         NNDUbRuT+YDMTGMLs3jFCAK0ZDxWKdcFMyFGyOtfs6QT9o7kfmp759YhMEX+238cQlq2
-         fFpdIJQsTMP44q7IraoaxDC7dNHbIXUPjKnjFgaeRJUvZK8c4N1TGDkY2DZZVeglTOC0
-         /xI2xmOeX+NwE+QIkJXObWnkaH230DUlaU44zSLW9PCChpN1xuKdH3OQyvJpMr4jwPTA
-         Q6eSntJgIgDD5rDMUp0ANv4atyiQvl5oB1VRLN6xhEOofH6TVj1NAtk0QieK7xzSDtta
-         DhAQ==
-X-Gm-Message-State: AOAM53392WLCEjyMORQ3NJYOp7tskhf+ePAN7Jp1txU5XEyAx+ZthulX
-        puJ6H4BmZ1fD6AaYCxSdSC8=
-X-Google-Smtp-Source: ABdhPJw5mop7Q05iwGPVDPv/TV7muVAYEl+QpfM+dzp7wGwLuxJ9xrmHLzyFf9+5Z90KHfNnJQiWeA==
-X-Received: by 2002:a17:902:ea09:b029:e3:a720:b83 with SMTP id s9-20020a170902ea09b02900e3a7200b83mr4023689plg.51.1614864028293;
-        Thu, 04 Mar 2021 05:20:28 -0800 (PST)
-Received: from localhost.localdomain ([178.236.46.205])
-        by smtp.gmail.com with ESMTPSA id u9sm26809374pgc.59.2021.03.04.05.20.25
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 04 Mar 2021 05:20:27 -0800 (PST)
-From:   menglong8.dong@gmail.com
-X-Google-Original-From: zhang.yunkai@zte.com.cn
-To:     aneesh.kumar@linux.ibm.com
-Cc:     will@kernel.org, akpm@linux-foundation.org, npiggin@gmail.com,
-        peterz@infradead.org, ysato@users.sourceforge.jp, dalias@libc.org,
-        linux-arch@vger.kernel.org, linux-mm@kvack.org,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Zhang Yunkai <zhang.yunkai@zte.com.cn>
-Subject: [PATCH] sh: remove duplicate include in tlb.h
-Date:   Thu,  4 Mar 2021 05:20:20 -0800
-Message-Id: <20210304132020.196811-1-zhang.yunkai@zte.com.cn>
-X-Mailer: git-send-email 2.25.1
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        id S234977AbhCHGlo (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 8 Mar 2021 01:41:44 -0500
+Received: from foss.arm.com ([217.140.110.172]:60292 "EHLO foss.arm.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S234961AbhCHGl2 (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Mon, 8 Mar 2021 01:41:28 -0500
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 29A34ED1;
+        Sun,  7 Mar 2021 22:41:28 -0800 (PST)
+Received: from p8cg001049571a15.arm.com (unknown [10.163.67.19])
+        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPA id 4E5973F73C;
+        Sun,  7 Mar 2021 22:41:23 -0800 (PST)
+From:   Anshuman Khandual <anshuman.khandual@arm.com>
+To:     linux-mm@kvack.org
+Cc:     Anshuman Khandual <anshuman.khandual@arm.com>, x86@kernel.org,
+        linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH 0/6] mm: some config cleanups
+Date:   Mon,  8 Mar 2021 12:11:39 +0530
+Message-Id: <1615185706-24342-1-git-send-email-anshuman.khandual@arm.com>
+X-Mailer: git-send-email 2.7.4
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Zhang Yunkai <zhang.yunkai@zte.com.cn>
+This series contains config cleanup patches which reduces code duplication
+across platforms and also improves maintainability. There is no functional
+change intended with this series. This has been boot tested on arm64 but
+only build tested on some other platforms.
 
-'asm-generic/tlb.h' included in 'asm/tlb.h' is duplicated.
+This applies on 5.12-rc2
 
-Signed-off-by: Zhang Yunkai <zhang.yunkai@zte.com.cn>
----
- arch/sh/include/asm/tlb.h | 10 ++--------
- 1 file changed, 2 insertions(+), 8 deletions(-)
+Cc: x86@kernel.org
+Cc: linux-ia64@vger.kernel.org
+Cc: linux-s390@vger.kernel.org
+Cc: linux-snps-arc@lists.infradead.org
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-mips@vger.kernel.org
+Cc: linux-parisc@vger.kernel.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-riscv@lists.infradead.org
+Cc: linux-sh@vger.kernel.org
+Cc: linux-fsdevel@vger.kernel.org
+Cc: linux-mm@kvack.org
+Cc: linux-kernel@vger.kernel.org
 
-diff --git a/arch/sh/include/asm/tlb.h b/arch/sh/include/asm/tlb.h
-index 360f713d009b..aeb8915e9254 100644
---- a/arch/sh/include/asm/tlb.h
-+++ b/arch/sh/include/asm/tlb.h
-@@ -4,12 +4,11 @@
- 
- #ifndef __ASSEMBLY__
- #include <linux/pagemap.h>
-+#include <asm-generic/tlb.h>
- 
- #ifdef CONFIG_MMU
- #include <linux/swap.h>
- 
--#include <asm-generic/tlb.h>
--
- #if defined(CONFIG_CPU_SH4)
- extern void tlb_wire_entry(struct vm_area_struct *, unsigned long, pte_t);
- extern void tlb_unwire_entry(void);
-@@ -24,12 +23,7 @@ static inline void tlb_unwire_entry(void)
- {
- 	BUG();
- }
--#endif
--
--#else /* CONFIG_MMU */
--
--#include <asm-generic/tlb.h>
--
-+#endif /* CONFIG_CPU_SH4 */
- #endif /* CONFIG_MMU */
- #endif /* __ASSEMBLY__ */
- #endif /* __ASM_SH_TLB_H */
+Anshuman Khandual (6):
+  mm: Generalize ARCH_HAS_CACHE_LINE_SIZE
+  mm: Generalize SYS_SUPPORTS_HUGETLBFS (rename as ARCH_SUPPORTS_HUGETLBFS)
+  mm: Generalize ARCH_ENABLE_MEMORY_[HOTPLUG|HOTREMOVE]
+  mm: Drop redundant ARCH_ENABLE_[HUGEPAGE|THP]_MIGRATION
+  mm: Drop redundant ARCH_ENABLE_SPLIT_PMD_PTLOCK
+  mm: Drop redundant HAVE_ARCH_TRANSPARENT_HUGEPAGE
+
+ arch/arc/Kconfig                       |  9 ++------
+ arch/arm/Kconfig                       | 10 ++-------
+ arch/arm64/Kconfig                     | 30 ++++++--------------------
+ arch/ia64/Kconfig                      |  8 ++-----
+ arch/mips/Kconfig                      |  6 +-----
+ arch/parisc/Kconfig                    |  5 +----
+ arch/powerpc/Kconfig                   | 11 ++--------
+ arch/powerpc/platforms/Kconfig.cputype | 16 +++++---------
+ arch/riscv/Kconfig                     |  5 +----
+ arch/s390/Kconfig                      | 12 +++--------
+ arch/sh/Kconfig                        |  7 +++---
+ arch/sh/mm/Kconfig                     |  8 -------
+ arch/x86/Kconfig                       | 29 ++++++-------------------
+ fs/Kconfig                             |  5 ++++-
+ mm/Kconfig                             |  9 ++++++++
+ 15 files changed, 48 insertions(+), 122 deletions(-)
+
 -- 
-2.25.1
+2.20.1
 
