@@ -1,88 +1,89 @@
-Return-Path: <SRS0=DdoM=IG=vger.kernel.org=linux-sh-owner@kernel.org>
+Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A074AC433E0
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Mar 2021 08:28:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5F582C433DB
+	for <linux-sh@archiver.kernel.org>; Tue,  9 Mar 2021 03:33:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 520C5650F3
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Mar 2021 08:28:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 174EA65165
+	for <linux-sh@archiver.kernel.org>; Tue,  9 Mar 2021 03:33:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231653AbhCHI1g (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 8 Mar 2021 03:27:36 -0500
-Received: from mout.kundenserver.de ([212.227.126.130]:60311 "EHLO
-        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231825AbhCHI1G (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 8 Mar 2021 03:27:06 -0500
-Received: from mail-ot1-f49.google.com ([209.85.210.49]) by
- mrelayeu.kundenserver.de (mreue012 [213.165.67.97]) with ESMTPSA (Nemesis) id
- 1N14xe-1lm92r3ngI-012ZXy; Mon, 08 Mar 2021 09:26:56 +0100
-Received: by mail-ot1-f49.google.com with SMTP id f8so3375432otp.8;
-        Mon, 08 Mar 2021 00:26:54 -0800 (PST)
-X-Gm-Message-State: AOAM531LaElb2wKXlmPxBPFispTGcWriwK2bx+4Msgh5GKbIpqkdM+pZ
-        xDzIhUbYlo+WZX3TpFepct/1/NXGTZ9y1Jzo+58=
-X-Google-Smtp-Source: ABdhPJz7WzRENGkqrJauNt4Eu43tE41OHtOy5Pi18b4rc5onlz+3B0QPZSg6kqLhqT6QwccMllOlz9JudYJqhcYI0w4=
-X-Received: by 2002:a9d:2f24:: with SMTP id h33mr8386599otb.305.1615192013989;
- Mon, 08 Mar 2021 00:26:53 -0800 (PST)
+        id S229688AbhCIDcf (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 8 Mar 2021 22:32:35 -0500
+Received: from foss.arm.com ([217.140.110.172]:46402 "EHLO foss.arm.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S229379AbhCIDc2 (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Mon, 8 Mar 2021 22:32:28 -0500
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 9D5F731B;
+        Mon,  8 Mar 2021 19:32:27 -0800 (PST)
+Received: from [192.168.0.130] (unknown [172.31.20.19])
+        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 33EE63F71B;
+        Mon,  8 Mar 2021 19:32:22 -0800 (PST)
+Subject: Re: [PATCH 0/6] mm: some config cleanups
+To:     linux-mm@kvack.org
+Cc:     x86@kernel.org, linux-ia64@vger.kernel.org,
+        linux-s390@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <1615185706-24342-1-git-send-email-anshuman.khandual@arm.com>
+From:   Anshuman Khandual <anshuman.khandual@arm.com>
+Message-ID: <af8d16b3-aff7-6f17-a777-2ce4a264227d@arm.com>
+Date:   Tue, 9 Mar 2021 09:02:58 +0530
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.10.0
 MIME-Version: 1.0
-References: <1615185706-24342-1-git-send-email-anshuman.khandual@arm.com> <1615185706-24342-7-git-send-email-anshuman.khandual@arm.com>
-In-Reply-To: <1615185706-24342-7-git-send-email-anshuman.khandual@arm.com>
-From:   Arnd Bergmann <arnd@arndb.de>
-Date:   Mon, 8 Mar 2021 09:26:37 +0100
-X-Gmail-Original-Message-ID: <CAK8P3a3Jp6wgGWJ9UDoiN5joOYSONaoHoH=S--i=3SQpm_f4JQ@mail.gmail.com>
-Message-ID: <CAK8P3a3Jp6wgGWJ9UDoiN5joOYSONaoHoH=S--i=3SQpm_f4JQ@mail.gmail.com>
-Subject: Re: [PATCH 6/6] mm: Drop redundant HAVE_ARCH_TRANSPARENT_HUGEPAGE
-To:     Anshuman Khandual <anshuman.khandual@arm.com>
-Cc:     Linux-MM <linux-mm@kvack.org>,
-        linux-s390 <linux-s390@vger.kernel.org>,
-        linux-ia64@vger.kernel.org,
-        Parisc List <linux-parisc@vger.kernel.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        Vineet Gupta <vgupta@synopsys.com>,
-        "the arch/x86 maintainers" <x86@kernel.org>,
-        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Linux FS-devel Mailing List <linux-fsdevel@vger.kernel.org>,
-        Russell King <linux@armlinux.org.uk>,
-        linux-riscv <linux-riscv@lists.infradead.org>,
-        "open list:SYNOPSYS ARC ARCHITECTURE" 
-        <linux-snps-arc@lists.infradead.org>,
-        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>
-Content-Type: text/plain; charset="UTF-8"
-X-Provags-ID: V03:K1:ac4dihqGbl6+jEr5hvaPprARfRMzuV5tBYOBcFJxgQ6aBn/E5bB
- GXJneuWlAVcyxI+vkcYXKvB59uv/eQ/yEWQvV6WRLKsNnEdMV5MskvBED6sSsQ8qHPsIH8i
- y6VJacjLbXY0SqD78Sae+4qmfdMIGK+K98OMV41tNtw4SHA0l5PG6NwGxEv0snlgh6NxhFf
- SZxZyOLGtxotQuru+ZhsA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:TKJ0E/7wbKk=:Fdb8DFUaXWhjSNhmzGd9sT
- 2Oskqmgzab+15xMwBwvePuCPlbxv5TQSAFFU2I/KB7Yi3nUJuGSP/1HzArwwnLSDS2ouNNzxP
- AT4xNWkrH/VUqa1YSKKUWz79eAhjJeIrJ7GdIgGd6H7ko0taezSY4Q6PxHTY0uN5MsW8Uc1lS
- pNp7n7EEWFKqXbJO8ob0V466m/8bL3U8Aex43XxNtnJhkeSfU8w42bIRmIKxlMUGA9Sb5+lT7
- snIDbhue2uQNnyUZASM2Tmf4Xr8gf2SgHUH++IMIP9LVevIJRZxX87pAUkWrgKLRpeJeWtDFz
- m4kFsbkxzrCu1U6vI1+odbEHJD8fGQfyiUp7E8vqld1Ccv6hUGPYfMP4PfjCLo50NSlYqe5Ea
- 4tJO8A/es+NhTOyAw4HUh/qt4+foFDfenv9YX7FhxF21WJKcv4w6z3/lAbwnw
+In-Reply-To: <1615185706-24342-1-git-send-email-anshuman.khandual@arm.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Mar 8, 2021 at 7:41 AM Anshuman Khandual
-<anshuman.khandual@arm.com> wrote:
->
-> HAVE_ARCH_TRANSPARENT_HUGEPAGE has duplicate definitions on platforms that
-> subscribe it. Drop these reduntant definitions and instead just select it
-> on applicable platforms.
->
-> Cc: Vineet Gupta <vgupta@synopsys.com>
-> Cc: Russell King <linux@armlinux.org.uk>
-> Cc: Arnd Bergmann <arnd@arndb.de>
+On 3/8/21 12:11 PM, Anshuman Khandual wrote:
+> This series contains config cleanup patches which reduces code duplication
+> across platforms and also improves maintainability. There is no functional
+> change intended with this series. This has been boot tested on arm64 but
+> only build tested on some other platforms.
+> 
+> This applies on 5.12-rc2
+> 
+> Cc: x86@kernel.org
+> Cc: linux-ia64@vger.kernel.org
+> Cc: linux-s390@vger.kernel.org
 > Cc: linux-snps-arc@lists.infradead.org
 > Cc: linux-arm-kernel@lists.infradead.org
+> Cc: linux-mips@vger.kernel.org
+> Cc: linux-parisc@vger.kernel.org
+> Cc: linuxppc-dev@lists.ozlabs.org
+> Cc: linux-riscv@lists.infradead.org
+> Cc: linux-sh@vger.kernel.org
+> Cc: linux-fsdevel@vger.kernel.org
+> Cc: linux-mm@kvack.org
 > Cc: linux-kernel@vger.kernel.org
-> Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
+> 
+> Anshuman Khandual (6):
+>   mm: Generalize ARCH_HAS_CACHE_LINE_SIZE
+>   mm: Generalize SYS_SUPPORTS_HUGETLBFS (rename as ARCH_SUPPORTS_HUGETLBFS)
+>   mm: Generalize ARCH_ENABLE_MEMORY_[HOTPLUG|HOTREMOVE]
+>   mm: Drop redundant ARCH_ENABLE_[HUGEPAGE|THP]_MIGRATION
+>   mm: Drop redundant ARCH_ENABLE_SPLIT_PMD_PTLOCK
+>   mm: Drop redundant HAVE_ARCH_TRANSPARENT_HUGEPAGE
 
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Seems like there was a problem during the email because some patches
+might not have hit the mailing list. Although git send-email never
+really reported any problem. Not sure what happened here.
+
+https://patchwork.kernel.org/project/linux-mm/list/?series=443619
+https://lore.kernel.org/linux-mm/1615185706-24342-1-git-send-email-anshuman.khandual@arm.com/
+
+Will probably resend the series.
+
+- Anshuman
