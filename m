@@ -2,64 +2,68 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=ham autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C2802C43381
-	for <linux-sh@archiver.kernel.org>; Fri, 12 Mar 2021 09:16:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5F448C433DB
+	for <linux-sh@archiver.kernel.org>; Fri, 12 Mar 2021 21:54:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A9EAA64FD9
-	for <linux-sh@archiver.kernel.org>; Fri, 12 Mar 2021 09:16:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 24C4064DAF
+	for <linux-sh@archiver.kernel.org>; Fri, 12 Mar 2021 21:54:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232623AbhCLJPV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 12 Mar 2021 04:15:21 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47386 "EHLO
+        id S235466AbhCLVxl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 12 Mar 2021 16:53:41 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42450 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232375AbhCLJPD (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 12 Mar 2021 04:15:03 -0500
-Received: from mail-ed1-x52f.google.com (mail-ed1-x52f.google.com [IPv6:2a00:1450:4864:20::52f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AA562C061761
-        for <linux-sh@vger.kernel.org>; Fri, 12 Mar 2021 01:15:02 -0800 (PST)
-Received: by mail-ed1-x52f.google.com with SMTP id j3so6923106edp.11
-        for <linux-sh@vger.kernel.org>; Fri, 12 Mar 2021 01:15:02 -0800 (PST)
+        with ESMTP id S235488AbhCLVxi (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 12 Mar 2021 16:53:38 -0500
+Received: from mail-qk1-x734.google.com (mail-qk1-x734.google.com [IPv6:2607:f8b0:4864:20::734])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5840AC061574;
+        Fri, 12 Mar 2021 13:53:38 -0800 (PST)
+Received: by mail-qk1-x734.google.com with SMTP id d20so25968370qkc.2;
+        Fri, 12 Mar 2021 13:53:38 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=rasmusvillemoes.dk; s=google;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=Vr0Lv80xX3Xl1L8m7N3BWIS/MyIzX8iL/K8kW4thpIU=;
-        b=CqF/Vmp9d1IQSuSoyVR1p1PonzxnRC7YVWCuT73D3c7/UoVTQwfy4d3lTqaj04mPUQ
-         w6sDy8AQC/jxvaSTTu0yKndZ7nBoRAi41EFLCvhlDfC8iVzFOPC/8fvKvRQIeAiQgh5V
-         KRZ+w8tWAPqNUkdW2da/uoIpNh1yN0K7orKRo=
+        d=gmail.com; s=20161025;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=9Ef5EY2WMrKCR6YQJjvJccCPLCTaOpepUxDNfS7WTGo=;
+        b=tjjBW8j2bo/jen8nkSMnG+TdHfhLmzrUK7o1rk3vK96G0IpIxYfAwtS4Wtq1p3NUWg
+         WbZy4AB7w0vnRvtXc5mbl+/aY9FUBRS94KHCWupN3J6saDc3KnMEvsKcJRPPdhFypfYj
+         ZZHTLijqqGENsbuC356dpSkGNcySYXCcKLMyPqsNcTORKfpXvohtdsIT+UBXeA3JyGrD
+         0KJ5xP4c2oPFv6rWr3osEdndh860EXuZ3FU/t/p+Hy+Cp2AkYNP2fFHKgkvCi1mHwhCd
+         57LJ66TvNRjJuGyTrcZH1XKT/5piUQPPT+zCNujfJ2e9/SISYPTv9jt59NXJdejKi/oh
+         jUPg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=Vr0Lv80xX3Xl1L8m7N3BWIS/MyIzX8iL/K8kW4thpIU=;
-        b=Zj0gMLawUfNx9kjiGqsgJ+BCg98MEanD9ekOWj8NVotkeuYg29v7TPUEo5GcI/R/zV
-         /mO4w1cZf+BO/8fI24NpbwwoDgGJROSJACdb4ANZgjC84OXN7qY0n5HoNLOktbw4URIQ
-         wxsx8U2yMmiRsUmTcMg5NqpiZ79NTZYGto2QicU2CXP/cfcpFqUayjTIfK7h/7s0zM1y
-         A48xPLoKZxpJNLteCT/TzK56KR9JzHX9Zear+t+9vxm+1zbS1CCWvSTQPiEWQEAfAWoV
-         xc/VzLagoVBr/R2Q8bJAQdyJYG5S6qYNHHEXzRwIlyU0m21hT5hpJ7xY6X7uRD8UKGz2
-         WG6g==
-X-Gm-Message-State: AOAM5329vt6kMA0NH2ZR0c4ciNFl4fpRQyLrTlJX8eF4wYQiu/OpQNkH
-        h0i6g0VCxPBEQxznThcvtN6fYg==
-X-Google-Smtp-Source: ABdhPJzojpw5MISuvwhn5uCj+GlJAixi2DNi1NCX+H/oDGcpqgnrVUfFvP7Bn2/KE8Wd2h5/no6lTw==
-X-Received: by 2002:a05:6402:57:: with SMTP id f23mr12757182edu.323.1615540501369;
-        Fri, 12 Mar 2021 01:15:01 -0800 (PST)
-Received: from [192.168.1.149] ([80.208.71.248])
-        by smtp.gmail.com with ESMTPSA id rs24sm2493668ejb.75.2021.03.12.01.15.00
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 12 Mar 2021 01:15:01 -0800 (PST)
-Subject: Re: [PATCH 14/14] MAINTAINERS: Add entry for the bitmap API
-To:     Yury Norov <yury.norov@gmail.com>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=9Ef5EY2WMrKCR6YQJjvJccCPLCTaOpepUxDNfS7WTGo=;
+        b=ixMvB4XbjAoSOQWbCokZ8GtgM1eULI6A4sENMZVzmgmzVupfSUp4mQG479GzC3kyMH
+         lT35vFh8nPf4RmaMigXvT0+wbD6cb0UsnjfpxFXtBsbqzvXKG3YRRCGjAhwvwyv5eCqk
+         UOHsfqk3putof8fNQjJBpRW15ycbNlt09R2U6onhfH0bI72CbdOpD3ODLohEx+XYmxcE
+         n7hGJwVXu99pUFuBr5urpetgOypmiDGlY8QXL1OoRfr6N00EVBt2fHf8LowlMBCDFg4v
+         3JeOSCshfd07TWPhLxwHbqO4sFmRw9laQ3I/Eq34WyWgI4aDjbG7JTbOS+Z57twngwTx
+         bdEQ==
+X-Gm-Message-State: AOAM533p0RDGJlNZPl7rPdYrDOzteFFyUpjpX50qUL6Y5vmL6G5a/UDE
+        HpwxcbdijbFzwmNEcc4c/MM=
+X-Google-Smtp-Source: ABdhPJyB61QmOAM1xkM7zp9iyyydvZwe9L+k8hjEI9bjJ/F+iikmGnqQCe8EI+Cnk01d/LQ/tIOHfg==
+X-Received: by 2002:a37:9b01:: with SMTP id d1mr12132300qke.337.1615586017485;
+        Fri, 12 Mar 2021 13:53:37 -0800 (PST)
+Received: from localhost ([76.73.146.210])
+        by smtp.gmail.com with ESMTPSA id 66sm5319791qkk.18.2021.03.12.13.53.36
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 12 Mar 2021 13:53:37 -0800 (PST)
+Date:   Fri, 12 Mar 2021 13:53:36 -0800
+From:   Yury Norov <yury.norov@gmail.com>
+To:     Rasmus Villemoes <linux@rasmusvillemoes.dk>
 Cc:     linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
         linux-arch@vger.kernel.org, linux-sh@vger.kernel.org,
         Alexey Klimov <aklimov@redhat.com>,
         Andrew Morton <akpm@linux-foundation.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         Arnd Bergmann <arnd@arndb.de>, David Sterba <dsterba@suse.com>,
         Dennis Zhou <dennis@kernel.org>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
@@ -72,41 +76,107 @@ Cc:     linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
         Wei Yang <richard.weiyang@linux.alibaba.com>,
         Wolfram Sang <wsa+renesas@sang-engineering.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>
+Subject: Re: [PATCH 06/14] bitsperlong.h: introduce SMALL_CONST() macro
+Message-ID: <20210312215336.GA249694@yury-ThinkPad>
 References: <20210218040512.709186-1-yury.norov@gmail.com>
- <20210218040512.709186-15-yury.norov@gmail.com>
- <YC6HoF2lhSlrYs3j@smile.fi.intel.com> <20210218153424.GA701246@yury-ThinkPad>
-From:   Rasmus Villemoes <linux@rasmusvillemoes.dk>
-Message-ID: <d677abac-ad3e-7483-b808-4b826d3afd66@rasmusvillemoes.dk>
-Date:   Fri, 12 Mar 2021 10:15:00 +0100
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.7.1
+ <20210218040512.709186-7-yury.norov@gmail.com>
+ <55f1e25a-3211-8247-9dd3-3777e29287db@rasmusvillemoes.dk>
+ <20210312052812.GB137474@yury-ThinkPad>
+ <c672b661-1921-f61c-a118-d51c650e41f4@rasmusvillemoes.dk>
 MIME-Version: 1.0
-In-Reply-To: <20210218153424.GA701246@yury-ThinkPad>
-Content-Type: text/plain; charset=windows-1252
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <c672b661-1921-f61c-a118-d51c650e41f4@rasmusvillemoes.dk>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 18/02/2021 16.34, Yury Norov wrote:
-> On Thu, Feb 18, 2021 at 05:28:32PM +0200, Andy Shevchenko wrote:
->> On Wed, Feb 17, 2021 at 08:05:12PM -0800, Yury Norov wrote:
->>> Add myself as maintainer for bitmap API.
->>>
->>> I'm an author of current implementation of lib/find_bit and an
->>> active contributor to lib/bitmap. It was spotted that there's no
->>> maintainer for bitmap API. I'm willing to maintain it.
->>
->> Perhaps reviewers as well, like Rasmus, if he is okay with that, of course?
+On Fri, Mar 12, 2021 at 10:12:22AM +0100, Rasmus Villemoes wrote:
+> On 12/03/2021 06.28, Yury Norov wrote:
+> > On Fri, Feb 19, 2021 at 12:07:27AM +0100, Rasmus Villemoes wrote:
+> >> On 18/02/2021 05.05, Yury Norov wrote:
+> >>> Many algorithms become simpler if they are passed with relatively small
+> >>> input values. One example is bitmap operations when the whole bitmap fits
+> >>> into one word. To implement such simplifications, linux/bitmap.h declares
+> >>> small_const_nbits() macro.
+> >>>
+> >>> Other subsystems may also benefit from optimizations of this sort, like
+> >>> find_bit API in the following patches. So it looks helpful to generalize
+> >>> the macro and extend it's visibility.
+> >>
+> >> Perhaps, but SMALL_CONST is too generic a name, it needs to keep "bits"
+> >> somewhere in there. So why not just keep it at small_const_nbits?
+> >>
+> >>> Signed-off-by: Yury Norov <yury.norov@gmail.com>
+> >>> ---
+> >>>  include/asm-generic/bitsperlong.h |  2 ++
+> >>>  include/linux/bitmap.h            | 33 ++++++++++++++-----------------
+> >>>  2 files changed, 17 insertions(+), 18 deletions(-)
+> >>>
+> >>> diff --git a/include/asm-generic/bitsperlong.h b/include/asm-generic/bitsperlong.h
+> >>> index 3905c1c93dc2..0eeb77544f1d 100644
+> >>> --- a/include/asm-generic/bitsperlong.h
+> >>> +++ b/include/asm-generic/bitsperlong.h
+> >>> @@ -23,4 +23,6 @@
+> >>>  #define BITS_PER_LONG_LONG 64
+> >>>  #endif
+> >>>  
+> >>> +#define SMALL_CONST(n) (__builtin_constant_p(n) && (unsigned long)(n) < BITS_PER_LONG)
+> >>> +
+> >>>  #endif /* __ASM_GENERIC_BITS_PER_LONG */
+> >>> diff --git a/include/linux/bitmap.h b/include/linux/bitmap.h
+> >>> index adf7bd9f0467..e89f1dace846 100644
+> >>> --- a/include/linux/bitmap.h
+> >>> +++ b/include/linux/bitmap.h
+> >>> @@ -224,9 +224,6 @@ extern int bitmap_print_to_pagebuf(bool list, char *buf,
+> >>>   * so make such users (should any ever turn up) call the out-of-line
+> >>>   * versions.
+> >>>   */
+> >>> -#define small_const_nbits(nbits) \
+> >>> -	(__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG && (nbits) > 0)
+> >>> -
+> >>>  static inline void bitmap_zero(unsigned long *dst, unsigned int nbits)
+> >>>  {
+> >>>  	unsigned int len = BITS_TO_LONGS(nbits) * sizeof(unsigned long);
+> >>> @@ -278,7 +275,7 @@ extern void bitmap_to_arr32(u32 *buf, const unsigned long *bitmap,
+> >>>  static inline int bitmap_and(unsigned long *dst, const unsigned long *src1,
+> >>>  			const unsigned long *src2, unsigned int nbits)
+> >>>  {
+> >>> -	if (small_const_nbits(nbits))
+> >>> +	if (SMALL_CONST(nbits - 1))
+> >>
+> >> Please don't force most users to be changed to something less readable.
+> >> What's wrong with just keeping small_const_nbits() the way it is,
+> >> avoiding all this churn and keeping the readability?
+> > 
+> > The wrong thing is that it's defined in include/linux/bitmap.h, and I
+> > cannot use it in include/asm-generic/bitops/find.h, so I have to either
+> > move it to a separate header, or generalize and share with find.h and
+> > other users this way. I prefer the latter option, thougt it's more
+> > verbose.
 > 
-> I'll be happy if you and Rasmus join the team. :) Guys, just let me
-> know and I'll update the patch.
->  
->> Otherwise, why not?
->> Acked-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+> The logical place would be the same place the BITS_PER_LONG macro is
+> defined, no?
 
-Sure, you can add my name/email as an R: line (or whatever means
-reviewer), and consider this patch (with or without that addition) acked.
+Yes. This where I placed SMALL_CONST() in current version.
 
-Rasmus
+> No need to introduce a new header for that, and all current
+> users of small_const_nbits() must already (very possibly indirectly)
+> include asm-generic/bitsperlong.h.
+> 
+> I do prefer to keep both the name small_const_nbits() and its current
+> semantics, which, although not currently spelled out that way anywhere,
+> is "is BITMAP_SIZE(nbits) known at compile time and equal to 1", which
+> is precisely what allows the static inlines to unconditionally
+> dereference the pointer (that's the "exclude the 0 case") and just deal
+> with that one word.
+> 
+> I don't like either SMALL_CONST or small_const_size, because nothing in
+> there says it has anything to do with bit ops. As I said, if you have
+> some special place that for some reason cannot handle
+> nbits==BITS_PER_LONG, then just add that as an additional constraint
+> with a comment why.
+
+OK, I'll move small_const_nbits() to the bitsperlong header and
+resubmit shortly. My concern still is that nbits is too specific 
+for bitsperlong.h, but if you're good with it, I'm OK as well.
