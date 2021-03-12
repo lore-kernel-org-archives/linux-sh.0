@@ -2,116 +2,119 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-2.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 03C5AC43381
-	for <linux-sh@archiver.kernel.org>; Wed, 10 Mar 2021 05:21:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6AF4BC4332B
+	for <linux-sh@archiver.kernel.org>; Fri, 12 Mar 2021 04:31:49 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D197C64FF7
-	for <linux-sh@archiver.kernel.org>; Wed, 10 Mar 2021 05:21:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4324C64F93
+	for <linux-sh@archiver.kernel.org>; Fri, 12 Mar 2021 04:31:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229808AbhCJFUy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 10 Mar 2021 00:20:54 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53604 "EHLO
+        id S232065AbhCLEbN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 11 Mar 2021 23:31:13 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43116 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229570AbhCJFUh (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 10 Mar 2021 00:20:37 -0500
-Received: from ozlabs.org (bilbo.ozlabs.org [IPv6:2401:3900:2:1::2])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 51753C06174A;
-        Tue,  9 Mar 2021 21:20:37 -0800 (PST)
-Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange ECDHE (P-256) server-signature RSA-PSS (4096 bits) server-digest SHA256)
-        (No client certificate requested)
-        by mail.ozlabs.org (Postfix) with ESMTPSA id 4DwL4j4Sq1z9sVt;
-        Wed, 10 Mar 2021 16:20:21 +1100 (AEDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=ellerman.id.au;
-        s=201909; t=1615353635;
-        bh=hRcUlrx6WVs6H6bysWKFjU5tqR/J0nyX9yzAP97GJsQ=;
-        h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
-        b=J7tJEgWYlgdvVYjfzFG1g90s1EOtAnSSXBRLQ734Q2HRbgzt8b5qMsfcT75CaJw/5
-         k2iXGDhutq9tOyXtkr9ZdT6+Kw3xBnr49WyYm1ThfwbSXS49oSisxLyUici9Us3TE5
-         HtEU/wSHCFC/s0gViktBCnLKaTQ6q/J6g7vI7Yf82084Vpw7jSTqhvDbOhMgyxxI9w
-         06Bw6yZRBta9uSCCaIQ2c7wKj4hZxuCWKQRB2mMVm8bhHalhKoBF9ueKaVIbelzwFf
-         39/YMJZ9zGzrte7RuLUNxyCLzwS8ZoBCqvCyhYy1dJsJ4rr7rf2eQnVXaCuVc8iu5b
-         xcUsluM3pIA9g==
-From:   Michael Ellerman <mpe@ellerman.id.au>
-To:     Anshuman Khandual <anshuman.khandual@arm.com>, linux-mm@kvack.org
-Cc:     Anshuman Khandual <anshuman.khandual@arm.com>, x86@kernel.org,
-        linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        with ESMTP id S232146AbhCLEbA (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 11 Mar 2021 23:31:00 -0500
+Received: from mail-qv1-xf2c.google.com (mail-qv1-xf2c.google.com [IPv6:2607:f8b0:4864:20::f2c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 57A6AC061761;
+        Thu, 11 Mar 2021 20:31:00 -0800 (PST)
+Received: by mail-qv1-xf2c.google.com with SMTP id by2so3695545qvb.11;
+        Thu, 11 Mar 2021 20:31:00 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=j5mqxb2fJvI18WxMVykNNWwtGK4f4IdAZVdlsREXq2A=;
+        b=t3OnvI3+xdtmiQNGZYbtyw43YCbTK6k3T2/7/VrtGwPTvV6NVnEG5NcbH2zMkRl5SL
+         rTpnEF0W91oi+A/6qWQjK6l4usDXIaVyR92Mo/bK+7+tAdCGg3vG1+fcMW+doVhm6/er
+         gRzOrh/T9PwfECFY+lR/2AVyEF6ljzJiWPAh5guzrSg4XBFhb5+ywGA3hVFaC9ePhrRd
+         tThT8zgVaCnOyFPSgIQQKgTn0mo7cLRrnrtmUaGY5ZdQeBOzok1dfKcnBwTQYqL4ZI9L
+         jBACFbNcRpcwLZGli3Fz3xe9D4AOLMH7A0RJYsUV4ibIVEvDmO2TVa/5FZj1pMOuUcUP
+         jRxA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=j5mqxb2fJvI18WxMVykNNWwtGK4f4IdAZVdlsREXq2A=;
+        b=b5KxpfEgGTWXUA4CGOjZW3GjspV9W0PLOOzA8SgK3WQBraXlXUoTtwPsBj1vtU5uOo
+         XvzVchAdQ92CSl6KWnR/G6gsoyNX2pyC0VJ8r5eqKzeuuwwLUNnmyqByHN4u74v+saOU
+         OxahhFqgre6iwFnpb0EghxZ0zNnXvZA+eU98tWE08f3UaQLdkBiQ6jBuDGJBG1HwDvGS
+         /Ix44OR5hOjoW2/ztjdEDtmn/qHD0G9I8SnUZLZRgcAokKG19+RzA5qkeCDTpiEw2dRX
+         gfTq2AYREclOnnOAIdY4nUhMVKtYyS9+giga1hZT6wuTQLHZ1oJG2NY5PpPcJrTIleEl
+         T4vw==
+X-Gm-Message-State: AOAM533ad/ZCkvqm6jzT13WNMNEQjOxORRkWZSAddrswhDOvOPpURei2
+        MZVFwANiYpTr9he4EpljnurffO9cWR8=
+X-Google-Smtp-Source: ABdhPJwa8RuHIuqTiEI8+dfw2OazKTk2V6cz9i/XK+FP+De8yfp3HLruKdvg5xzlrBrYGYVuw2pu3A==
+X-Received: by 2002:a0c:8f1a:: with SMTP id z26mr10220826qvd.51.1615523459297;
+        Thu, 11 Mar 2021 20:30:59 -0800 (PST)
+Received: from localhost ([76.73.146.210])
+        by smtp.gmail.com with ESMTPSA id g7sm3263894qti.20.2021.03.11.20.30.58
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 11 Mar 2021 20:30:58 -0800 (PST)
+Date:   Thu, 11 Mar 2021 20:30:57 -0800
+From:   Yury Norov <yury.norov@gmail.com>
+To:     Rasmus Villemoes <linux@rasmusvillemoes.dk>
+Cc:     linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-arch@vger.kernel.org, linux-sh@vger.kernel.org,
+        Alexey Klimov <aklimov@redhat.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Arnd Bergmann <arnd@arndb.de>, David Sterba <dsterba@suse.com>,
+        Dennis Zhou <dennis@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Jianpeng Ma <jianpeng.ma@intel.com>,
+        Joe Perches <joe@perches.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
         Rich Felker <dalias@libc.org>,
-        Alexander Viro <viro@zeniv.linux.org.uk>
-Subject: Re: [PATCH 2/6] mm: Generalize SYS_SUPPORTS_HUGETLBFS (rename as
- ARCH_SUPPORTS_HUGETLBFS)
-In-Reply-To: <1615185706-24342-3-git-send-email-anshuman.khandual@arm.com>
-References: <1615185706-24342-1-git-send-email-anshuman.khandual@arm.com>
- <1615185706-24342-3-git-send-email-anshuman.khandual@arm.com>
-Date:   Wed, 10 Mar 2021 16:20:19 +1100
-Message-ID: <874khjr3e4.fsf@mpe.ellerman.id.au>
+        Stefano Brivio <sbrivio@redhat.com>,
+        Wei Yang <richard.weiyang@linux.alibaba.com>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+Subject: Re: [PATCH 04/14] lib: introduce BITS_{FIRST,LAST} macro
+Message-ID: <20210312043057.GA137474@yury-ThinkPad>
+References: <20210218040512.709186-1-yury.norov@gmail.com>
+ <20210218040512.709186-5-yury.norov@gmail.com>
+ <b371c94c-7480-5af4-d2bd-481436f535eb@rasmusvillemoes.dk>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <b371c94c-7480-5af4-d2bd-481436f535eb@rasmusvillemoes.dk>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Anshuman Khandual <anshuman.khandual@arm.com> writes:
-> SYS_SUPPORTS_HUGETLBFS config has duplicate definitions on platforms that
-> subscribe it. Instead, just make it a generic option which can be selected
-> on applicable platforms. Also rename it as ARCH_SUPPORTS_HUGETLBFS instead.
-> This reduces code duplication and makes it cleaner.
->
-> Cc: Russell King <linux@armlinux.org.uk>
-> Cc: Catalin Marinas <catalin.marinas@arm.com>
-> Cc: Will Deacon <will@kernel.org>
-> Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-> Cc: "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>
-> Cc: Helge Deller <deller@gmx.de>
-> Cc: Michael Ellerman <mpe@ellerman.id.au>
-> Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-> Cc: Paul Mackerras <paulus@samba.org>
-> Cc: Paul Walmsley <paul.walmsley@sifive.com>
-> Cc: Palmer Dabbelt <palmer@dabbelt.com>
-> Cc: Albert Ou <aou@eecs.berkeley.edu>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: Alexander Viro <viro@zeniv.linux.org.uk>
-> Cc: linux-arm-kernel@lists.infradead.org
-> Cc: linux-mips@vger.kernel.org
-> Cc: linux-parisc@vger.kernel.org
-> Cc: linuxppc-dev@lists.ozlabs.org
-> Cc: linux-riscv@lists.infradead.org
-> Cc: linux-sh@vger.kernel.org
-> Cc: linux-fsdevel@vger.kernel.org
-> Cc: linux-kernel@vger.kernel.org
-> Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
-> ---
->  arch/arm/Kconfig                       | 5 +----
->  arch/arm64/Kconfig                     | 4 +---
->  arch/mips/Kconfig                      | 6 +-----
->  arch/parisc/Kconfig                    | 5 +----
->  arch/powerpc/Kconfig                   | 3 ---
->  arch/powerpc/platforms/Kconfig.cputype | 6 +++---
+On Thu, Feb 18, 2021 at 11:51:43PM +0100, Rasmus Villemoes wrote:
+> On 18/02/2021 05.05, Yury Norov wrote:
+> > BITMAP_{LAST,FIRST}_WORD_MASK() in linux/bitmap.h duplicates the
+> > functionality of GENMASK(). The scope of there macros is wider
+> > than just bitmap. This patch defines 4 new macros: BITS_FIRST(),
+> > BITS_LAST(), BITS_FIRST_MASK() and BITS_LAST_MASK() in linux/bits.h
+> > on top of GENMASK() and replaces BITMAP_{LAST,FIRST}_WORD_MASK()
+> > to avoid duplication and increase the scope of the macros.
+> > 
+> 
+> Please include some info on changes in generated code, if any. When the
+> parameter to the macro is a constant I'm sure it all folds to a
+> compile-time constant either way, but when it's not, I'm not sure gcc
+> can do the same optimizations when the expressions become more complicated.
 
-Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
+After applying all patches till "tools: introduce SMALL_CONST() macro",
+there's no visible changes in code generation:
 
-cheers
+scripts/bloat-o-meter vmlinux.before vmlinux
+add/remove: 1/2 grow/shrink: 2/0 up/down: 17/-16 (1)
+Function                                     old     new   delta
+ethtool_get_drvinfo                          900     908      +8
+e843419@0cf2_0001309d_7f0                      -       8      +8
+vermagic                                      48      49      +1
+e843419@0d45_000138bb_f68                      8       -      -8
+e843419@0cc9_00012bce_198c                     8       -      -8
+Total: Before=26092016, After=26092017, chg +0.00%
+
+The build is arm64, and the compilerr is:
+aarch64-linux-gnu-gcc (Linaro GCC 7.3-2018.05) 7.3.1 20180425
