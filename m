@@ -2,65 +2,61 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-17.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AD0A0C2BB4C
-	for <linux-sh@archiver.kernel.org>; Tue, 16 Mar 2021 01:55:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 09C2FC433DB
+	for <linux-sh@archiver.kernel.org>; Tue, 16 Mar 2021 08:18:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 833A66502F
-	for <linux-sh@archiver.kernel.org>; Tue, 16 Mar 2021 01:55:40 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C5AC364FEA
+	for <linux-sh@archiver.kernel.org>; Tue, 16 Mar 2021 08:18:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234389AbhCPBzN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 15 Mar 2021 21:55:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58380 "EHLO
+        id S234338AbhCPIRv (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 16 Mar 2021 04:17:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55928 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234326AbhCPByn (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 15 Mar 2021 21:54:43 -0400
-Received: from mail-qk1-x734.google.com (mail-qk1-x734.google.com [IPv6:2607:f8b0:4864:20::734])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3835DC06174A;
-        Mon, 15 Mar 2021 18:54:43 -0700 (PDT)
-Received: by mail-qk1-x734.google.com with SMTP id 130so33772107qkh.11;
-        Mon, 15 Mar 2021 18:54:43 -0700 (PDT)
+        with ESMTP id S234331AbhCPIR2 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 16 Mar 2021 04:17:28 -0400
+Received: from mail-ej1-x62c.google.com (mail-ej1-x62c.google.com [IPv6:2a00:1450:4864:20::62c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ABADCC06174A
+        for <linux-sh@vger.kernel.org>; Tue, 16 Mar 2021 01:17:27 -0700 (PDT)
+Received: by mail-ej1-x62c.google.com with SMTP id dx17so70667545ejb.2
+        for <linux-sh@vger.kernel.org>; Tue, 16 Mar 2021 01:17:27 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=XeKeCrL0MI2F9lqPgByT6M0Kwx7kgFjWSejiRp+cD7A=;
-        b=HXxgkHr0JvsTJ5Wa9sQlGiMHMihYzgGAFCnL3MQ+2qXeYhptuIiviUUmyiEfleDf0j
-         v+i+d2cqL3mT7r6O8VtPkORDY5JNnmZS7ZJ3fj1roGEEjMHHnod506svTGGx/d09JlOq
-         4arQtiVKR4Amn2nf/sBf/NDLZ0pee8rvp/siORsD69EYEV+a83eY+jszpaXmqS3gm2P5
-         g4tuFNAS+FyMaSRkxZYh9Ad5DxBkUd8jaRKwazX39QtsNRSvzYhQ7/Ha5jwImTX+REGi
-         QbHlfQaeCRJ4/jEUSmUX01gGMfG653h7+hM7PcYlKI4PWGQAii74F+YuJCH6XXa59aVq
-         OJ4Q==
+        d=rasmusvillemoes.dk; s=google;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=p9kC/FfaYsWrKdpd44ySqOr9EeItGYJ7tqAoRplpcIw=;
+        b=EFjyEtLu7bg1hNv+88oPUzWFOq+7jZJ1JjL06HqzKU/TlfkEl1+HRe4/aFCgmsHASK
+         l4L9IRJYPnHUI5TnHzB51mEyaEH2wA1K+JGeag2qgdeECYLIpkSEFh70xoCt/tTGodcd
+         8ACpxYRZgaf4XJHaxUUuyAvrWxr92vlxsRsFQ=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=XeKeCrL0MI2F9lqPgByT6M0Kwx7kgFjWSejiRp+cD7A=;
-        b=I9JaKypicqZ4lMDO7GQBWxSxFl/axn3QLK96OX/I/zLbTbUOen0pSBa7GP5bA8QVBC
-         4PxZJyiHqKDh+FOkkXq2qHSXBHSMfUhS0jhqTRmxbwn0PzMHaiF5bzeCSVFTBF2d8Wxw
-         TXQ/9/IM4RNL2HrgbvKj5IUpQASskY9dftZxftAsOY7QH+sabyRSKRhQUxlSIukU1Uml
-         /P46gFORIk5WV1wt1uBRSVn76UGMRr+U41CeKBkBhKwXlWnQsW3URThKevdbbomgUrM8
-         bXsDqijJbwKmBPolYF7g47VDV5jovcg4RBviH+J920DPrUCUD5i35gh7OpDR8OH/U1V8
-         b5Sw==
-X-Gm-Message-State: AOAM530NLPjQ4c6HiG9uFePMhib2eNqgPl0WmVyl5R2hmTC2FFE+9fI8
-        j2PBt7e5HhkSY3cdajsskb7My0b1vGA=
-X-Google-Smtp-Source: ABdhPJy9Co64mtp6x2Wrb+LisAdAzh/bbO6eoIq/TEYaLoLBTtHdk+xfgISLKdYg2BBKazo07rRKfA==
-X-Received: by 2002:a05:620a:1477:: with SMTP id j23mr26829500qkl.416.1615859682248;
-        Mon, 15 Mar 2021 18:54:42 -0700 (PDT)
-Received: from localhost ([76.73.146.210])
-        by smtp.gmail.com with ESMTPSA id f136sm14189503qke.24.2021.03.15.18.54.41
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 15 Mar 2021 18:54:42 -0700 (PDT)
-From:   Yury Norov <yury.norov@gmail.com>
-To:     linux-kernel@vger.kernel.org
-Cc:     Yury Norov <yury.norov@gmail.com>, linux-m68k@lists.linux-m68k.org,
-        linux-arch@vger.kernel.org, linux-sh@vger.kernel.org,
-        Alexey Klimov <aklimov@redhat.com>,
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=p9kC/FfaYsWrKdpd44ySqOr9EeItGYJ7tqAoRplpcIw=;
+        b=a3zsQmDP8+VdB5Hdm0mM3OU5ICwlp4Fj3Uqx5Jo1//IBfiD39zoxYNkkZf8GbjyO+h
+         f2DaehqbySh9lt+mbSOs1sgQpGctKbD5VpQVPGQsRB6wo5brXcVrXXPKTNvNDpVK533y
+         p9uIoX6UzkqHN60xCyyglaP2M2v+1di7csAsxFuNTj9dFUifJpgsOOER4REaLHpL4/H3
+         UmJtJVf7zvOkNL/OEHW/u3hrhSjP1ycGSZF9Sy+coSBi9Dj3Bc+vhQ3ZrxwxDeJEAQQU
+         7phTJuAmHa0IWO/DssMkfxW3yo4WKCkMrxJ2YUYixvklUlQDW+IalpV2vTgfRiOw8HLm
+         nJyA==
+X-Gm-Message-State: AOAM531NqAEBfu0EeSMVYbn9vdnSTGA4AzUQ5Ay9IkTmwkhv2qqjQ7CD
+        Wt6Lux2raTvIsjMD+WIIVU3NGQ==
+X-Google-Smtp-Source: ABdhPJwhMeO22Wisys4V+O8q3o0fM/7YfKkWeuBs/dpVq2nKIcG5cqRzvmDIEMex6Byh+X4q3Gsohw==
+X-Received: by 2002:a17:906:5902:: with SMTP id h2mr28099654ejq.416.1615882646474;
+        Tue, 16 Mar 2021 01:17:26 -0700 (PDT)
+Received: from [192.168.1.149] ([80.208.71.248])
+        by smtp.gmail.com with ESMTPSA id u13sm8931351ejy.31.2021.03.16.01.17.25
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 16 Mar 2021 01:17:26 -0700 (PDT)
+Subject: Re: [PATCH 01/13] tools: disable -Wno-type-limits
+To:     Yury Norov <yury.norov@gmail.com>, linux-kernel@vger.kernel.org
+Cc:     linux-m68k@lists.linux-m68k.org, linux-arch@vger.kernel.org,
+        linux-sh@vger.kernel.org, Alexey Klimov <aklimov@redhat.com>,
         Andrew Morton <akpm@linux-foundation.org>,
         Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         Arnd Bergmann <arnd@arndb.de>, David Sterba <dsterba@suse.com>,
@@ -70,64 +66,61 @@ Cc:     Yury Norov <yury.norov@gmail.com>, linux-m68k@lists.linux-m68k.org,
         Joe Perches <joe@perches.com>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         Josh Poimboeuf <jpoimboe@redhat.com>,
-        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
         Rich Felker <dalias@libc.org>,
         Stefano Brivio <sbrivio@redhat.com>,
         Wei Yang <richard.weiyang@linux.alibaba.com>,
         Wolfram Sang <wsa+renesas@sang-engineering.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>
-Subject: [PATCH 13/13] MAINTAINERS: Add entry for the bitmap API
-Date:   Mon, 15 Mar 2021 18:54:24 -0700
-Message-Id: <20210316015424.1999082-14-yury.norov@gmail.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20210316015424.1999082-1-yury.norov@gmail.com>
 References: <20210316015424.1999082-1-yury.norov@gmail.com>
+ <20210316015424.1999082-2-yury.norov@gmail.com>
+From:   Rasmus Villemoes <linux@rasmusvillemoes.dk>
+Message-ID: <2ec71f83-f903-2775-bf04-7f0a83c9f4cb@rasmusvillemoes.dk>
+Date:   Tue, 16 Mar 2021 09:17:24 +0100
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.7.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20210316015424.1999082-2-yury.norov@gmail.com>
+Content-Type: text/plain; charset=windows-1252
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Add myself as maintainer for bitmap API and Andy and Rasmus as reviewers.
+On 16/03/2021 02.54, Yury Norov wrote:
+> GENMASK(h, l) may be passed with unsigned types. In such case, type-limits
+> warning is generated for example in case of GENMASK(h, 0).
+> 
+> Signed-off-by: Yury Norov <yury.norov@gmail.com>
+> ---
+>  tools/scripts/Makefile.include | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/tools/scripts/Makefile.include b/tools/scripts/Makefile.include
+> index 84dbf61a7eca..15e99905cb7d 100644
+> --- a/tools/scripts/Makefile.include
+> +++ b/tools/scripts/Makefile.include
+> @@ -38,6 +38,7 @@ EXTRA_WARNINGS += -Wswitch-enum
+>  EXTRA_WARNINGS += -Wundef
+>  EXTRA_WARNINGS += -Wwrite-strings
+>  EXTRA_WARNINGS += -Wformat
+> +EXTRA_WARNINGS += -Wno-type-limits
+>
 
-I'm an author of current implementation of lib/find_bit and an active
-contributor to lib/bitmap. It was spotted that there's no maintainer for
-bitmap API. I'm willing to maintain it.
+I don't like that kind of collateral damage. I seem to recall another
+instance where a macro was instead rewritten to avoid triggering the
+type-limits warning (with a comment explaining the uglyness). Something like
 
-Signed-off-by: Yury Norov <yury.norov@gmail.com>
-Acked-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Acked-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
----
- MAINTAINERS | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+foo > bar      is the same as
+!(foo <= bar)  which is the same as
+!(foo == bar || foo < bar)
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 3dd20015696e..44f94cdd5a20 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -3151,6 +3151,22 @@ F:	Documentation/filesystems/bfs.rst
- F:	fs/bfs/
- F:	include/uapi/linux/bfs_fs.h
- 
-+BITMAP API
-+M:	Yury Norov <yury.norov@gmail.com>
-+R:	Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-+R:	Rasmus Villemoes <linux@rasmusvillemoes.dk>
-+S:	Maintained
-+F:	include/asm-generic/bitops/find.h
-+F:	include/linux/bitmap.h
-+F:	lib/bitmap.c
-+F:	lib/find_bit.c
-+F:	lib/find_find_bit_benchmark.c
-+F:	lib/test_bitmap.c
-+F:	tools/include/asm-generic/bitops/find.h
-+F:	tools/include/linux/bitmap.h
-+F:	tools/lib/bitmap.c
-+F:	tools/lib/find_bit.c
-+
- BLINKM RGB LED DRIVER
- M:	Jan-Simon Moeller <jansimon.moeller@gmx.de>
- S:	Maintained
--- 
-2.25.1
+Dunno if that would work here, but if it did, it would have the bonus
+that when somebody builds the kernel proper with Wtype-limits enabled
+(maybe W=1 or W=2) there would be no false positives from GENMASK to
+wade through.
 
+Alternatively, we really should consider making use of _Pragma to
+locally disable/re-enable certain warnings.
+
+Rasmus
