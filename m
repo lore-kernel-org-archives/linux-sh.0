@@ -2,148 +2,151 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.3 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 434ADC43332
-	for <linux-sh@archiver.kernel.org>; Wed, 17 Mar 2021 05:59:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EA445C43333
+	for <linux-sh@archiver.kernel.org>; Wed, 17 Mar 2021 06:41:10 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 23D7D64FB1
-	for <linux-sh@archiver.kernel.org>; Wed, 17 Mar 2021 05:59:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CFF8264F99
+	for <linux-sh@archiver.kernel.org>; Wed, 17 Mar 2021 06:41:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230137AbhCQF6b (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 17 Mar 2021 01:58:31 -0400
-Received: from szxga04-in.huawei.com ([45.249.212.190]:13637 "EHLO
-        szxga04-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230055AbhCQF6K (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 17 Mar 2021 01:58:10 -0400
-Received: from DGGEMS410-HUB.china.huawei.com (unknown [172.30.72.59])
-        by szxga04-in.huawei.com (SkyGuard) with ESMTP id 4F0fXm6M3nz17M4p;
-        Wed, 17 Mar 2021 13:56:08 +0800 (CST)
-Received: from [10.174.177.244] (10.174.177.244) by
- DGGEMS410-HUB.china.huawei.com (10.3.19.210) with Microsoft SMTP Server id
- 14.3.498.0; Wed, 17 Mar 2021 13:57:58 +0800
-Subject: Re: [PATCH v2] mm: Move mem_init_print_info() into mm_init()
-To:     Christophe Leroy <christophe.leroy@csgroup.eu>,
-        <linux-kernel@vger.kernel.org>,
-        Andrew Morton <akpm@linux-foundation.org>
-CC:     <linux-ia64@vger.kernel.org>, <linux-sh@vger.kernel.org>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        "Dave Hansen" <dave.hansen@linux.intel.com>, <linux-mm@kvack.org>,
-        Guo Ren <guoren@kernel.org>, <sparclinux@vger.kernel.org>,
-        <linux-riscv@lists.infradead.org>, Jonas Bonn <jonas@southpole.se>,
-        <linux-s390@vger.kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        <linux-hexagon@vger.kernel.org>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        "Russell King" <linux@armlinux.org.uk>,
-        <linux-csky@vger.kernel.org>, Ingo Molnar <mingo@redhat.com>,
-        <linux-snps-arc@lists.infradead.org>,
-        <linux-xtensa@linux-xtensa.org>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        <linux-um@lists.infradead.org>, <linux-m68k@lists.linux-m68k.org>,
-        <openrisc@lists.librecores.org>,
-        <linux-arm-kernel@lists.infradead.org>,
-        Richard Henderson <rth@twiddle.net>,
-        <linux-parisc@vger.kernel.org>, <linux-mips@vger.kernel.org>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        <linux-alpha@vger.kernel.org>, <linuxppc-dev@lists.ozlabs.org>,
-        "David S. Miller" <davem@davemloft.net>
-References: <4d488195-7281-9238-b30d-9f89a6100fb9@csgroup.eu>
- <20210317015210.33641-1-wangkefeng.wang@huawei.com>
- <3f6959d6-1f37-8baf-a12e-3fbda6a17c7d@csgroup.eu>
-From:   Kefeng Wang <wangkefeng.wang@huawei.com>
-Message-ID: <fef8ca3b-97ae-5c19-69ea-bb1dfe88cf9c@huawei.com>
-Date:   Wed, 17 Mar 2021 13:57:57 +0800
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.7.0
+        id S230453AbhCQGkk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 17 Mar 2021 02:40:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37064 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230469AbhCQGkP (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 17 Mar 2021 02:40:15 -0400
+Received: from mail-io1-xd30.google.com (mail-io1-xd30.google.com [IPv6:2607:f8b0:4864:20::d30])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 95B04C06174A;
+        Tue, 16 Mar 2021 23:40:15 -0700 (PDT)
+Received: by mail-io1-xd30.google.com with SMTP id y20so21516372iot.4;
+        Tue, 16 Mar 2021 23:40:15 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=BbxV8FFQ5+F/TxA4Io3PIpeBpLDxtoC/hF5K9QMF6D8=;
+        b=dBwe7vj/pgCDOU7q9uxw1w+siPNNDQQsm4MyExCl/kteM++nkzsTx2wozYZ/Q0EWyA
+         XMN1jCSEU405emTKJrJnDONCHpGjWC/jqS0JV+Jq0/CFyIqQ88bwF2EmqppVFFI0599Z
+         pYjNmC3YLG7G22QTontqrzwzb9QKXzH57W9DOHXP0TMoaXamCtuNSam/mHQrcHnhJ5zp
+         Rtx/3ZRbeFDfMNYjCN2CJAX8ysvwRFhYRCd0Y3EPJ4d951qeMSxZ7dfFRxQb2qR76YCr
+         ostjb3petHIqVMjgqRa3yZB2cpHFZIJvTFfy0Hrv2ipMRb3Y/wm1OMb77T0LtthsLdTx
+         chyw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=BbxV8FFQ5+F/TxA4Io3PIpeBpLDxtoC/hF5K9QMF6D8=;
+        b=gn9Yvhde4cxF/FYJRKxeRIoeZ/EyCYhMNqZgSu+io5QO4du1QgAo4v6eU7Mgtlrplr
+         7+4M8TILg/LbTWPPWyuXHdbMEi/X+S66vRS8L8frMSrqxFXMdI7F18YeP0RpbJzrH79e
+         gDhRpjTWf8djNvPEhs7vrFfemeWD6A1iP4RHmT4mf6f/92YfnxurFqBHrewxN+FhZedY
+         mWaonpAOwRyoXeKyngJqkmXAC5rkX+wrNT4DYRT9wA+fqc7oZxjxWmCsvV06A2z/Blcc
+         qgXdrSyi2RdlVfjUo+QUTDqlUBHGuTcD5YkpzN05TzPzjrYuTh64TraZ0lESfnFytfzg
+         lEnQ==
+X-Gm-Message-State: AOAM533jQQTQJ7MNF0XY2lG8ClQfpwsPtdnWFVT3bDgj2S3pk1g5Jpz9
+        HNFwFIaECqkdoSdjkla8XxIUHbbv+HcqfRcIHxk=
+X-Google-Smtp-Source: ABdhPJzUIIrtKmaGZhfubqNTun6mLmQTTiaCQn1hOdTlRDX13D1LRT2tUa9aLsENTsdq0kdQm1GNr4/QneFvG5WX3sY=
+X-Received: by 2002:a05:6638:2bb:: with SMTP id d27mr1681142jaq.98.1615963214856;
+ Tue, 16 Mar 2021 23:40:14 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <3f6959d6-1f37-8baf-a12e-3fbda6a17c7d@csgroup.eu>
-Content-Type: text/plain; charset="utf-8"; format=flowed
-Content-Transfer-Encoding: 8bit
-Content-Language: en-US
-X-Originating-IP: [10.174.177.244]
-X-CFilter-Loop: Reflected
+References: <20210316015424.1999082-1-yury.norov@gmail.com>
+ <20210316015424.1999082-14-yury.norov@gmail.com> <YFCabyt9pfPtoQiZ@smile.fi.intel.com>
+ <20210317044759.GA2114775@yury-ThinkPad> <eff989d0ceaede15216f1046c24829f1113c035f.camel@perches.com>
+In-Reply-To: <eff989d0ceaede15216f1046c24829f1113c035f.camel@perches.com>
+From:   Lukas Bulwahn <lukas.bulwahn@gmail.com>
+Date:   Wed, 17 Mar 2021 07:40:04 +0100
+Message-ID: <CAKXUXMx9SFAxT_GoRw+Un7XyAuXh4LY0+RFwcKVOCG0vr2XUxw@mail.gmail.com>
+Subject: Re: [PATCH 13/13] MAINTAINERS: Add entry for the bitmap API
+To:     Joe Perches <joe@perches.com>
+Cc:     Yury Norov <yury.norov@gmail.com>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-m68k@lists.linux-m68k.org, linux-arch@vger.kernel.org,
+        linux-sh@vger.kernel.org, Alexey Klimov <aklimov@redhat.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Arnd Bergmann <arnd@arndb.de>, David Sterba <dsterba@suse.com>,
+        Dennis Zhou <dennis@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Jianpeng Ma <jianpeng.ma@intel.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
+        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+        Rich Felker <dalias@libc.org>,
+        Stefano Brivio <sbrivio@redhat.com>,
+        Wei Yang <richard.weiyang@linux.alibaba.com>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Andy Whitcroft <apw@canonical.com>,
+        Dwaipayan Ray <dwaipayanray1@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+On Wed, Mar 17, 2021 at 5:57 AM Joe Perches <joe@perches.com> wrote:
+>
+> On Tue, 2021-03-16 at 21:47 -0700, Yury Norov wrote:
+> > [CC Andy Whitcroft, Joe Perches, Dwaipayan Ray, Lukas Bulwahn]
+> >
+> > On Tue, Mar 16, 2021 at 01:45:51PM +0200, Andy Shevchenko wrote:
+> > > On Mon, Mar 15, 2021 at 06:54:24PM -0700, Yury Norov wrote:
+> > > > Add myself as maintainer for bitmap API and Andy and Rasmus as reviewers.
+> > > >
+> > > > I'm an author of current implementation of lib/find_bit and an active
+> > > > contributor to lib/bitmap. It was spotted that there's no maintainer for
+> > > > bitmap API. I'm willing to maintain it.
+> > > >
+> > > > Signed-off-by: Yury Norov <yury.norov@gmail.com>
+> > > > Acked-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+> > > > Acked-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+> > > > ---
+> > > >  MAINTAINERS | 16 ++++++++++++++++
+> > > >  1 file changed, 16 insertions(+)
+> > > >
+> > > > diff --git a/MAINTAINERS b/MAINTAINERS
+> > > > index 3dd20015696e..44f94cdd5a20 100644
+> > > > --- a/MAINTAINERS
+> > > > +++ b/MAINTAINERS
+> > > > @@ -3151,6 +3151,22 @@ F: Documentation/filesystems/bfs.rst
+> > > >  F:       fs/bfs/
+> > > >  F:       include/uapi/linux/bfs_fs.h
+> > > >
+> > > >
+> > > > +BITMAP API
+> > > > +M:       Yury Norov <yury.norov@gmail.com>
+> > > > +R:       Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+> > > > +R:       Rasmus Villemoes <linux@rasmusvillemoes.dk>
+> > > > +S:       Maintained
+> > > > +F:       include/asm-generic/bitops/find.h
+> > > > +F:       include/linux/bitmap.h
+> > > > +F:       lib/bitmap.c
+> > > > +F:       lib/find_bit.c
+> > >
+> > > > +F:       lib/find_find_bit_benchmark.c
+> > >
+> > > Does this file exist?
+> > > I guess checkpatch.pl nowadays has a MAINTAINER data base validation.
+> >
+> > No lib/find_find_bit_benchmark.c doesn't exist. It's a typo, it should
+> > be lib/find_bit_benchmark.c. Checkpatch doesn't warn:
+> >
+> > yury:linux$ scripts/checkpatch.pl 0013-MAINTAINERS-Add-entry-for-the-bitmap-API.patch
+> > total: 0 errors, 0 warnings, 22 lines checked
+>
+> checkpatch does not validate filenames for each patch.
+>
+> checkpatch does have a --self-test=patterns capability that does
+> validate file accessibility.
 
-On 2021/3/17 13:48, Christophe Leroy wrote:
->
->
-> Le 17/03/2021 à 02:52, Kefeng Wang a écrit :
->> mem_init_print_info() is called in mem_init() on each architecture,
->> and pass NULL argument, so using void argument and move it into 
->> mm_init().
->>
->> Acked-by: Dave Hansen <dave.hansen@linux.intel.com>
->> Signed-off-by: Kefeng Wang <wangkefeng.wang@huawei.com>
->> ---
->> v2:
->> - Cleanup 'str' line suggested by Christophe and ACK
->>
->>   arch/alpha/mm/init.c             |  1 -
->>   arch/arc/mm/init.c               |  1 -
->>   arch/arm/mm/init.c               |  2 --
->>   arch/arm64/mm/init.c             |  2 --
->>   arch/csky/mm/init.c              |  1 -
->>   arch/h8300/mm/init.c             |  2 --
->>   arch/hexagon/mm/init.c           |  1 -
->>   arch/ia64/mm/init.c              |  1 -
->>   arch/m68k/mm/init.c              |  1 -
->>   arch/microblaze/mm/init.c        |  1 -
->>   arch/mips/loongson64/numa.c      |  1 -
->>   arch/mips/mm/init.c              |  1 -
->>   arch/mips/sgi-ip27/ip27-memory.c |  1 -
->>   arch/nds32/mm/init.c             |  1 -
->>   arch/nios2/mm/init.c             |  1 -
->>   arch/openrisc/mm/init.c          |  2 --
->>   arch/parisc/mm/init.c            |  2 --
->>   arch/powerpc/mm/mem.c            |  1 -
->>   arch/riscv/mm/init.c             |  1 -
->>   arch/s390/mm/init.c              |  2 --
->>   arch/sh/mm/init.c                |  1 -
->>   arch/sparc/mm/init_32.c          |  2 --
->>   arch/sparc/mm/init_64.c          |  1 -
->>   arch/um/kernel/mem.c             |  1 -
->>   arch/x86/mm/init_32.c            |  2 --
->>   arch/x86/mm/init_64.c            |  2 --
->>   arch/xtensa/mm/init.c            |  1 -
->>   include/linux/mm.h               |  2 +-
->>   init/main.c                      |  1 +
->>   mm/page_alloc.c                  | 10 +++++-----
->>   30 files changed, 7 insertions(+), 42 deletions(-)
->>
->
->> diff --git a/include/linux/mm.h b/include/linux/mm.h
->> index 89314651dd62..c2e0b3495c5a 100644
->> --- a/include/linux/mm.h
->> +++ b/include/linux/mm.h
->> @@ -2373,7 +2373,7 @@ extern unsigned long free_reserved_area(void 
->> *start, void *end,
->>                       int poison, const char *s);
->>     extern void adjust_managed_page_count(struct page *page, long 
->> count);
->> -extern void mem_init_print_info(const char *str);
->> +extern void mem_init_print_info(void);
->
-> Sorry I didn't see that in previous patch.
->
-> 'extern' keyword is pointless for function prototypes and is 
-> deprecated, you should remove it.
->
-> That said,
->
-> Reviewed-by: Christophe Leroy <christophe.leroy@c-s.fr> # focussed on 
-> powerpc
-Thanks, let's wait for more feedback from other architectures, if 
-necessary,  will send a new one.
->
->>     extern void reserve_bootmem_region(phys_addr_t start, phys_addr_t 
->> end);
-> .
->
+Joe meant: get_maintainers does have a --self-test=patterns capability
+that does validate file accessibility.
+
+You can run that before patch submission; otherwise, I run that script
+on linux-next once a week and send out correction patches as far as my
+"spare" time allows to do so.
+
+Lukas
