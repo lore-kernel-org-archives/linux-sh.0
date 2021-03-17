@@ -2,162 +2,148 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-15.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 70739C433E6
-	for <linux-sh@archiver.kernel.org>; Wed, 17 Mar 2021 05:41:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84AA0C433E0
+	for <linux-sh@archiver.kernel.org>; Wed, 17 Mar 2021 05:49:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2B06364F92
-	for <linux-sh@archiver.kernel.org>; Wed, 17 Mar 2021 05:41:44 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 60C9F64F8C
+	for <linux-sh@archiver.kernel.org>; Wed, 17 Mar 2021 05:49:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229712AbhCQFlK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 17 Mar 2021 01:41:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52640 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229472AbhCQFlA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 17 Mar 2021 01:41:00 -0400
-Received: from mail-qk1-x72e.google.com (mail-qk1-x72e.google.com [IPv6:2607:f8b0:4864:20::72e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BD6FDC06175F;
-        Tue, 16 Mar 2021 22:40:59 -0700 (PDT)
-Received: by mail-qk1-x72e.google.com with SMTP id s7so37771127qkg.4;
-        Tue, 16 Mar 2021 22:40:59 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=CPSm56QZARIcAtzs4AWdlVXD+HaI2HudQhNYE/bwf0c=;
-        b=eNX3/KkKYyE3gNciNxHG2jxNlfRRTV+efiSSrXTJLEM9BLy+T+ER7gUr4lbPR8OQ0R
-         kz1iTGN6ch8aqMmCfJKh14wJlkFwDUIynaDTDRD6k1Nj/RQJh5kcusufWUXLk5zVnAwv
-         8ua6/rTO3DrDQz7lwNDLuD/e93zzpogPQE+qRZHL471WVAsthqat3wUYnrJyGHHCkLjM
-         jungnJ5I9JqlfAb00NcmdfSXlJVR/yRSh3MOrw4WSfPlS+QU+pwVI/N/sUggJAk4xFkD
-         xKCt2Di1rIp3seeJrwyS3fF7cOVBKASIm4rQW50jfxw0+qVnUNRn6dDN2w9kwqE1M6Rc
-         r3uA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=CPSm56QZARIcAtzs4AWdlVXD+HaI2HudQhNYE/bwf0c=;
-        b=gINIYZK2RYg15aCb2ZZFv8wy/GNHe1WI8MBt9imONGJvM0uH1ZlB92eZXNyr8+r/W8
-         3FS5SbqQyf3T8MC5O3NrClOZs6ZmCqQYRZsVSZXS5qe+gVKt7iNZOj9DeZFgv9oTYq5H
-         DysviNHjkLhY4u6OftgIpQxZwP04kRAMvk2+OjGfPDCGaUO4sphTXp3hs0AQdjPtjuo8
-         MP18T0MzmsdPXHURLJNNcx2INxOVWlFlMehIQXuFcc2vd3XAAYPXHK3HoqkgoLBh/Sz3
-         BWNfOYMhtUE7cFDi58GawlcB1hH84DByUdw07FIIop2nji/1NdapXXclacomsNURiBtr
-         +kLA==
-X-Gm-Message-State: AOAM532CIx6+9m2bFW2V0cndigkkk+V9VXLk1hcXv3DVQ/6iC6lFijuA
-        3BRQtyq2o8KcOyFilKbBJKQ=
-X-Google-Smtp-Source: ABdhPJx92GrckxUs3tyhYdiw3DknldvYvJ6QoejNd2Zc615/JMAkBxamhbbk2bzbYKYBbc0fPf+VLg==
-X-Received: by 2002:a37:274f:: with SMTP id n76mr2939792qkn.15.1615959658716;
-        Tue, 16 Mar 2021 22:40:58 -0700 (PDT)
-Received: from localhost ([76.73.146.210])
-        by smtp.gmail.com with ESMTPSA id z2sm17499506qkg.22.2021.03.16.22.40.57
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 16 Mar 2021 22:40:58 -0700 (PDT)
-Date:   Tue, 16 Mar 2021 22:40:57 -0700
-From:   Yury Norov <yury.norov@gmail.com>
-To:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Cc:     Rasmus Villemoes <linux@rasmusvillemoes.dk>,
-        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-arch@vger.kernel.org, linux-sh@vger.kernel.org,
-        Alexey Klimov <aklimov@redhat.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>, David Sterba <dsterba@suse.com>,
-        Dennis Zhou <dennis@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Jianpeng Ma <jianpeng.ma@intel.com>,
-        Joe Perches <joe@perches.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Josh Poimboeuf <jpoimboe@redhat.com>,
-        Rich Felker <dalias@libc.org>,
-        Stefano Brivio <sbrivio@redhat.com>,
-        Wei Yang <richard.weiyang@linux.alibaba.com>,
-        Wolfram Sang <wsa+renesas@sang-engineering.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>
-Subject: Re: [PATCH 04/13] lib: introduce BITS_{FIRST,LAST} macro
-Message-ID: <20210317054057.GC2114775@yury-ThinkPad>
-References: <20210316015424.1999082-1-yury.norov@gmail.com>
- <20210316015424.1999082-5-yury.norov@gmail.com>
- <8021faab-e592-9587-329b-817ae007b89a@rasmusvillemoes.dk>
- <YFCZtUuMYVNeNlUO@smile.fi.intel.com>
+        id S229994AbhCQFss (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 17 Mar 2021 01:48:48 -0400
+Received: from pegase1.c-s.fr ([93.17.236.30]:28234 "EHLO pegase1.c-s.fr"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S229953AbhCQFsf (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Wed, 17 Mar 2021 01:48:35 -0400
+Received: from localhost (mailhub1-int [192.168.12.234])
+        by localhost (Postfix) with ESMTP id 4F0fMz3RQ5z9vBLs;
+        Wed, 17 Mar 2021 06:48:31 +0100 (CET)
+X-Virus-Scanned: Debian amavisd-new at c-s.fr
+Received: from pegase1.c-s.fr ([192.168.12.234])
+        by localhost (pegase1.c-s.fr [192.168.12.234]) (amavisd-new, port 10024)
+        with ESMTP id 5HAfcpzaS9zh; Wed, 17 Mar 2021 06:48:31 +0100 (CET)
+Received: from messagerie.si.c-s.fr (messagerie.si.c-s.fr [192.168.25.192])
+        by pegase1.c-s.fr (Postfix) with ESMTP id 4F0fMz2JZBz9vBLr;
+        Wed, 17 Mar 2021 06:48:31 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+        by messagerie.si.c-s.fr (Postfix) with ESMTP id 434728B7F7;
+        Wed, 17 Mar 2021 06:48:31 +0100 (CET)
+X-Virus-Scanned: amavisd-new at c-s.fr
+Received: from messagerie.si.c-s.fr ([127.0.0.1])
+        by localhost (messagerie.si.c-s.fr [127.0.0.1]) (amavisd-new, port 10023)
+        with ESMTP id G8uQhGY3jGja; Wed, 17 Mar 2021 06:48:30 +0100 (CET)
+Received: from [192.168.4.90] (unknown [192.168.4.90])
+        by messagerie.si.c-s.fr (Postfix) with ESMTP id 82F468B768;
+        Wed, 17 Mar 2021 06:48:18 +0100 (CET)
+Subject: Re: [PATCH v2] mm: Move mem_init_print_info() into mm_init()
+To:     Kefeng Wang <wangkefeng.wang@huawei.com>,
+        linux-kernel@vger.kernel.org,
+        Andrew Morton <akpm@linux-foundation.org>
+Cc:     linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org,
+        Peter Zijlstra <peterz@infradead.org>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Dave Hansen <dave.hansen@linux.intel.com>, linux-mm@kvack.org,
+        Guo Ren <guoren@kernel.org>, sparclinux@vger.kernel.org,
+        linux-riscv@lists.infradead.org, Jonas Bonn <jonas@southpole.se>,
+        linux-s390@vger.kernel.org,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-hexagon@vger.kernel.org, Huacai Chen <chenhuacai@kernel.org>,
+        Russell King <linux@armlinux.org.uk>,
+        linux-csky@vger.kernel.org, Ingo Molnar <mingo@redhat.com>,
+        linux-snps-arc@lists.infradead.org, linux-xtensa@linux-xtensa.org,
+        Heiko Carstens <hca@linux.ibm.com>,
+        linux-um@lists.infradead.org, linux-m68k@lists.linux-m68k.org,
+        openrisc@lists.librecores.org,
+        linux-arm-kernel@lists.infradead.org,
+        Richard Henderson <rth@twiddle.net>,
+        linux-parisc@vger.kernel.org, linux-mips@vger.kernel.org,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        "David S. Miller" <davem@davemloft.net>
+References: <4d488195-7281-9238-b30d-9f89a6100fb9@csgroup.eu>
+ <20210317015210.33641-1-wangkefeng.wang@huawei.com>
+From:   Christophe Leroy <christophe.leroy@csgroup.eu>
+Message-ID: <3f6959d6-1f37-8baf-a12e-3fbda6a17c7d@csgroup.eu>
+Date:   Wed, 17 Mar 2021 06:48:15 +0100
+User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:78.0) Gecko/20100101
+ Thunderbird/78.8.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <YFCZtUuMYVNeNlUO@smile.fi.intel.com>
+In-Reply-To: <20210317015210.33641-1-wangkefeng.wang@huawei.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: fr
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Mar 16, 2021 at 01:42:45PM +0200, Andy Shevchenko wrote:
-> On Tue, Mar 16, 2021 at 09:35:35AM +0100, Rasmus Villemoes wrote:
-> > On 16/03/2021 02.54, Yury Norov wrote:
-> > > BITMAP_{LAST,FIRST}_WORD_MASK() in linux/bitmap.h duplicates the
-> > > functionality of GENMASK(). The scope of BITMAP* macros is wider
-> > > than just bitmaps. This patch defines 4 new macros: BITS_FIRST(),
-> > > BITS_LAST(), BITS_FIRST_MASK() and BITS_LAST_MASK() in linux/bits.h
-> > > on top of GENMASK() and replaces BITMAP_{LAST,FIRST}_WORD_MASK()
-> > > to avoid duplication and increase the scope of the macros.
-> > > 
-> > > This change doesn't affect code generation. On ARM64:
-> > > scripts/bloat-o-meter vmlinux.before vmlinux
-> > > add/remove: 1/2 grow/shrink: 2/0 up/down: 17/-16 (1)
-> > > Function                                     old     new   delta
-> > > ethtool_get_drvinfo                          900     908      +8
-> > > e843419@0cf2_0001309d_7f0                      -       8      +8
-> > > vermagic                                      48      49      +1
-> > > e843419@0d45_000138bb_f68                      8       -      -8
-> > > e843419@0cc9_00012bce_198c                     8       -      -8
-> > 
-> > [what on earth are those weird symbols?]
-> > 
-> > 
-> > > diff --git a/include/linux/bits.h b/include/linux/bits.h
-> > > index 7f475d59a097..8c191c29506e 100644
-> > > --- a/include/linux/bits.h
-> > > +++ b/include/linux/bits.h
-> > > @@ -37,6 +37,12 @@
-> > >  #define GENMASK(h, l) \
-> > >  	(GENMASK_INPUT_CHECK(h, l) + __GENMASK(h, l))
-> > >  
-> > > +#define BITS_FIRST(nr)		GENMASK((nr), 0)
-> > > +#define BITS_LAST(nr)		GENMASK(BITS_PER_LONG - 1, (nr))
-> > > +
-> > > +#define BITS_FIRST_MASK(nr)	BITS_FIRST((nr) % BITS_PER_LONG)
-> > > +#define BITS_LAST_MASK(nr)	BITS_LAST((nr) % BITS_PER_LONG)
-> > 
-> > I don't think it's a good idea to propagate the unusual closed-range
-> > semantics of GENMASK to those wrappers. Almost all C and kernel code
-> > uses the 'inclusive lower bound, exclusive upper bound', and I'd expect
-> > BITS_FIRST(5) to result in a word with five bits set, not six. So I
-> > think these changes as-is make the code much harder to read and understand.
-> > 
-> > Regardless, please add some comments on the valid input ranges to the
-> > macros, whether that ends up being 0 <= nr < BITS_PER_LONG or 0 < nr <=
-> > BITS_PER_LONG or whatnot.
-> > 
-> > It would also be much easier to review if you just redefined the
-> > BITMAP_LAST_WORD_MASK macros etc. in terms of these new things, so you
-> > wouldn't have to do a lot of mechanical changes at the same time as
-> > introducing the new ones - especially when those mechanical changes
-> > involve adding a "minus 1" everywhere.
+
+
+Le 17/03/2021 à 02:52, Kefeng Wang a écrit :
+> mem_init_print_info() is called in mem_init() on each architecture,
+> and pass NULL argument, so using void argument and move it into mm_init().
 > 
-> I tend to agree with Rasmus here.
+> Acked-by: Dave Hansen <dave.hansen@linux.intel.com>
+> Signed-off-by: Kefeng Wang <wangkefeng.wang@huawei.com>
+> ---
+> v2:
+> - Cleanup 'str' line suggested by Christophe and ACK
+> 
+>   arch/alpha/mm/init.c             |  1 -
+>   arch/arc/mm/init.c               |  1 -
+>   arch/arm/mm/init.c               |  2 --
+>   arch/arm64/mm/init.c             |  2 --
+>   arch/csky/mm/init.c              |  1 -
+>   arch/h8300/mm/init.c             |  2 --
+>   arch/hexagon/mm/init.c           |  1 -
+>   arch/ia64/mm/init.c              |  1 -
+>   arch/m68k/mm/init.c              |  1 -
+>   arch/microblaze/mm/init.c        |  1 -
+>   arch/mips/loongson64/numa.c      |  1 -
+>   arch/mips/mm/init.c              |  1 -
+>   arch/mips/sgi-ip27/ip27-memory.c |  1 -
+>   arch/nds32/mm/init.c             |  1 -
+>   arch/nios2/mm/init.c             |  1 -
+>   arch/openrisc/mm/init.c          |  2 --
+>   arch/parisc/mm/init.c            |  2 --
+>   arch/powerpc/mm/mem.c            |  1 -
+>   arch/riscv/mm/init.c             |  1 -
+>   arch/s390/mm/init.c              |  2 --
+>   arch/sh/mm/init.c                |  1 -
+>   arch/sparc/mm/init_32.c          |  2 --
+>   arch/sparc/mm/init_64.c          |  1 -
+>   arch/um/kernel/mem.c             |  1 -
+>   arch/x86/mm/init_32.c            |  2 --
+>   arch/x86/mm/init_64.c            |  2 --
+>   arch/xtensa/mm/init.c            |  1 -
+>   include/linux/mm.h               |  2 +-
+>   init/main.c                      |  1 +
+>   mm/page_alloc.c                  | 10 +++++-----
+>   30 files changed, 7 insertions(+), 42 deletions(-)
+> 
 
-OK. All this plus terrible GENMASK(high, low) design, when high goes
-first, makes me feel like we need to deprecate GENMASK and propose a
-new interface.
+> diff --git a/include/linux/mm.h b/include/linux/mm.h
+> index 89314651dd62..c2e0b3495c5a 100644
+> --- a/include/linux/mm.h
+> +++ b/include/linux/mm.h
+> @@ -2373,7 +2373,7 @@ extern unsigned long free_reserved_area(void *start, void *end,
+>   					int poison, const char *s);
+>   
+>   extern void adjust_managed_page_count(struct page *page, long count);
+> -extern void mem_init_print_info(const char *str);
+> +extern void mem_init_print_info(void);
 
-What do you think about this:
-BITS_FIRST(bitnum)      -> [0, bitnum)
-BITS_LAST(bitnum)       -> [bitnum, BITS_PER_LONG)
-BITS_RANGE(begin, end)  -> [begin, end)
+Sorry I didn't see that in previous patch.
 
-We can pick BITS_{LAST,FIRST} implementation from existing BITMAP_*_WORD_MASK
-analogues, and make the BITS_RANGE like:
-        #define BITS_RANGE(begin, end) BITS_FIRST(end) & BITS_LAST(begin)
+'extern' keyword is pointless for function prototypes and is deprecated, you should remove it.
 
-Regarding BITMAP_*_WORD_MASK, I can save them in bitmap.h as aliases
-to BITS_{LAST,FIRST} to avoid massive renaming. (Should I?)
+That said,
 
-Would this all work for you?
+Reviewed-by: Christophe Leroy <christophe.leroy@c-s.fr> # focussed on powerpc
+
+>   
+>   extern void reserve_bootmem_region(phys_addr_t start, phys_addr_t end);
+>   
