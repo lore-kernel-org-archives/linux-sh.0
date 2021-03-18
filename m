@@ -2,87 +2,95 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
-	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A5F46C433E6
-	for <linux-sh@archiver.kernel.org>; Thu, 18 Mar 2021 01:03:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 521ECC433DB
+	for <linux-sh@archiver.kernel.org>; Thu, 18 Mar 2021 10:47:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 640AA64EF2
-	for <linux-sh@archiver.kernel.org>; Thu, 18 Mar 2021 01:03:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 07A6464F3B
+	for <linux-sh@archiver.kernel.org>; Thu, 18 Mar 2021 10:47:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230215AbhCRBCf (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 17 Mar 2021 21:02:35 -0400
-Received: from szxga04-in.huawei.com ([45.249.212.190]:13185 "EHLO
-        szxga04-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229720AbhCRBCF (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 17 Mar 2021 21:02:05 -0400
-Received: from DGGEMS412-HUB.china.huawei.com (unknown [172.30.72.59])
-        by szxga04-in.huawei.com (SkyGuard) with ESMTP id 4F17w73LVNzmZ6G;
-        Thu, 18 Mar 2021 08:59:35 +0800 (CST)
-Received: from [10.174.177.244] (10.174.177.244) by
- DGGEMS412-HUB.china.huawei.com (10.3.19.212) with Microsoft SMTP Server id
- 14.3.498.0; Thu, 18 Mar 2021 09:01:56 +0800
-Subject: Re: [PATCH v2] mm: Move mem_init_print_info() into mm_init()
-To:     Dave Hansen <dave.hansen@intel.com>,
-        <linux-kernel@vger.kernel.org>,
-        Andrew Morton <akpm@linux-foundation.org>
-CC:     Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Richard Henderson <rth@twiddle.net>,
-        Guo Ren <guoren@kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        Jonas Bonn <jonas@southpole.se>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        "David S. Miller" <davem@davemloft.net>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        "Peter Zijlstra" <peterz@infradead.org>,
-        Ingo Molnar <mingo@redhat.com>, <linux-alpha@vger.kernel.org>,
-        <linux-snps-arc@lists.infradead.org>,
-        <linux-arm-kernel@lists.infradead.org>,
-        <linux-csky@vger.kernel.org>, <linux-hexagon@vger.kernel.org>,
-        <linux-ia64@vger.kernel.org>, <linux-m68k@lists.linux-m68k.org>,
-        <linux-mips@vger.kernel.org>, <openrisc@lists.librecores.org>,
-        <linux-parisc@vger.kernel.org>, <linuxppc-dev@lists.ozlabs.org>,
-        <linux-riscv@lists.infradead.org>, <linux-s390@vger.kernel.org>,
-        <linux-sh@vger.kernel.org>, <sparclinux@vger.kernel.org>,
-        <linux-um@lists.infradead.org>, <linux-xtensa@linux-xtensa.org>,
-        <linux-mm@kvack.org>
-References: <4d488195-7281-9238-b30d-9f89a6100fb9@csgroup.eu>
- <20210317015210.33641-1-wangkefeng.wang@huawei.com>
- <2a7d6e39-b293-7422-87b0-741f1ab0c22c@intel.com>
-From:   Kefeng Wang <wangkefeng.wang@huawei.com>
-Message-ID: <190f5356-f947-d474-a9fe-bc8e622a426e@huawei.com>
-Date:   Thu, 18 Mar 2021 09:01:54 +0800
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:60.0) Gecko/20100101
- Thunderbird/60.7.0
+        id S230094AbhCRKqz (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 18 Mar 2021 06:46:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34650 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230079AbhCRKqs (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 18 Mar 2021 06:46:48 -0400
+Received: from mail-qt1-x834.google.com (mail-qt1-x834.google.com [IPv6:2607:f8b0:4864:20::834])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 169B0C06174A;
+        Thu, 18 Mar 2021 03:46:48 -0700 (PDT)
+Received: by mail-qt1-x834.google.com with SMTP id j7so3663789qtx.5;
+        Thu, 18 Mar 2021 03:46:47 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=jhUQnpQN5W/tA9Wcg9rEDDeKuG8HI0NowlOsbYyX73M=;
+        b=gw/bd6B/y+5rYoX8wrkX7aPu1rvous/7chlMKJlUVROit+etGoawRuOVK6WsGPbnlu
+         7WMoQqUGkfsVTfUskGWqTo4Ysb5MknXJXfB70C5ZowQkWG+kyCrklQU7PiEthDYs0mew
+         vBtKg68fgiJwPxOeBy0UiG8N/3YQ4fmCvpkKHJVb0xm8hrmNFJO03xk+e7mu6f8uLgvv
+         lv64p2vQieGtmDdFSqJ2VS4p5oW2stc2SqyM8hgXDo1+Eadu0YeDkMT1ALFT7A4GauEB
+         GWpzGrSfgzZX9c1vpxTJJcZ1jzfRhAjoF73w7QENWMIy14XnvAkA7vJrzE8+njER//Me
+         WE6g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=jhUQnpQN5W/tA9Wcg9rEDDeKuG8HI0NowlOsbYyX73M=;
+        b=oDI447dU7W9a/YKEgyHoiuL0c7kXby0QFf+AKi6KJLYD52j/waJhWPVahy9uVEkZJY
+         ROuYH8TsC1JGtGkCpKZKTiIzDUeylJ++je7MWvjcedsUmPq7gwsYS+Ug+/K2B0s6hp9q
+         G1RNJj07BNxZ8KQK2lI+I5RKDLN7Ip37SQ1zXcdlXgSAnFjwWhLRtpEWtwh1U6j5WOdw
+         WEp5aLxkSb9DZhE7YOP/FeZECxkqM5p/7e+acx4z9chYn3yLxAUG9nHTetYXG+F9oBnf
+         Gvag0eqcXXV6rhMHXLDTTz7l35IwGxRiGz/CZzT7vS/N6yXRnDJ7NgCj0A55zP69O5A+
+         1sog==
+X-Gm-Message-State: AOAM532jLakg+o+c0gErnw6IfKFunGWmLFOmWO8vsqh+uwSJjIOS2zEC
+        rH3uPJA4t4DtcROD7R4IN8A=
+X-Google-Smtp-Source: ABdhPJxNYDSuqVaPiGOjr4bLR3exGbz9HyB9Acn8xML+XqvG0/J5wqbtCrnBcna0aK1ot7AuitArVw==
+X-Received: by 2002:aed:3023:: with SMTP id 32mr3041059qte.173.1616064407217;
+        Thu, 18 Mar 2021 03:46:47 -0700 (PDT)
+Received: from localhost.localdomain ([156.146.54.246])
+        by smtp.gmail.com with ESMTPSA id z89sm1129783qtd.5.2021.03.18.03.46.43
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 18 Mar 2021 03:46:46 -0700 (PDT)
+From:   Bhaskar Chowdhury <unixbhaskar@gmail.com>
+To:     ysato@users.sourceforge.jp, dalias@libc.org, unixbhaskar@gmail.com,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc:     rdunlap@infradead.org
+Subject: [PATCH] sh: kernel: Fix a typo
+Date:   Thu, 18 Mar 2021 16:14:37 +0530
+Message-Id: <20210318104437.21793-1-unixbhaskar@gmail.com>
+X-Mailer: git-send-email 2.26.2
 MIME-Version: 1.0
-In-Reply-To: <2a7d6e39-b293-7422-87b0-741f1ab0c22c@intel.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
-Content-Transfer-Encoding: 7bit
-Content-Language: en-US
-X-Originating-IP: [10.174.177.244]
-X-CFilter-Loop: Reflected
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
 
-On 2021/3/18 2:48, Dave Hansen wrote:
-> On 3/16/21 6:52 PM, Kefeng Wang wrote:
->> mem_init_print_info() is called in mem_init() on each architecture,
->> and pass NULL argument, so using void argument and move it into mm_init().
->>
->> Acked-by: Dave Hansen <dave.hansen@linux.intel.com>
-> It's not a big deal but you might want to say something like:
->
-> Acked-by: Dave Hansen <dave.hansen@linux.intel.com> # x86 bits
->
-> Just to make it clear that I didn't look at the alpha bits at all. :)
-Get it, will be careful, thanks.
-> .
->
+s/archtecture/architecture/
+
+Signed-off-by: Bhaskar Chowdhury <unixbhaskar@gmail.com>
+---
+ arch/sh/kernel/relocate_kernel.S | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/sh/kernel/relocate_kernel.S b/arch/sh/kernel/relocate_kernel.S
+index d9bf2b727b42..deda2f60a8f2 100644
+--- a/arch/sh/kernel/relocate_kernel.S
++++ b/arch/sh/kernel/relocate_kernel.S
+@@ -3,7 +3,7 @@
+  * relocate_kernel.S - put the kernel image in place to boot
+  * 2005.9.17 kogiidena@eggplant.ddo.jp
+  *
+- * LANDISK/sh4 is supported. Maybe, SH archtecture works well.
++ * LANDISK/sh4 is supported. Maybe, SH architecture works well.
+  *
+  * 2009-03-18 Magnus Damm - Added Kexec Jump support
+  */
+--
+2.26.2
+
