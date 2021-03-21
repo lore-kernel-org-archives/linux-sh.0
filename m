@@ -2,80 +2,112 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.2 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E96C4C433DB
-	for <linux-sh@archiver.kernel.org>; Fri, 19 Mar 2021 18:36:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8AAADC433E0
+	for <linux-sh@archiver.kernel.org>; Sun, 21 Mar 2021 21:56:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id CD3A66191B
-	for <linux-sh@archiver.kernel.org>; Fri, 19 Mar 2021 18:36:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 382CF61943
+	for <linux-sh@archiver.kernel.org>; Sun, 21 Mar 2021 21:56:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230483AbhCSSgO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 19 Mar 2021 14:36:14 -0400
-Received: from mail.kernel.org ([198.145.29.99]:58406 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S230453AbhCSSfy (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Fri, 19 Mar 2021 14:35:54 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id D2EE661980;
-        Fri, 19 Mar 2021 18:35:51 +0000 (UTC)
-Date:   Fri, 19 Mar 2021 18:35:49 +0000
-From:   Catalin Marinas <catalin.marinas@arm.com>
-To:     Anshuman Khandual <anshuman.khandual@arm.com>
-Cc:     linux-mm@kvack.org, x86@kernel.org, linux-ia64@vger.kernel.org,
-        linux-s390@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 0/6] mm: some config cleanups
-Message-ID: <20210319183548.GH6832@arm.com>
-References: <1615278790-18053-1-git-send-email-anshuman.khandual@arm.com>
+        id S231450AbhCUVze (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 21 Mar 2021 17:55:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60490 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231418AbhCUVzC (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 21 Mar 2021 17:55:02 -0400
+Received: from mail-qk1-x72b.google.com (mail-qk1-x72b.google.com [IPv6:2607:f8b0:4864:20::72b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 05CF2C061574;
+        Sun, 21 Mar 2021 14:55:02 -0700 (PDT)
+Received: by mail-qk1-x72b.google.com with SMTP id c3so8742230qkc.5;
+        Sun, 21 Mar 2021 14:55:01 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=a7JdQMPMgs8V6p2mIbAAMliZc+Q/jwU8V02vmoeVTgc=;
+        b=i8nKqZlbUpoWJrvA3SGtK3S4Wou/OIZTIBqJKR2kMwz57vvwN260GX9fz7ZKc/Oi7W
+         Oukvw0Lzn4khAl7Wa9hsqTxkyqeR6WuClBj+5Dp0p6Z5zsi6URFoDMD0Oqyk32+ittC+
+         q9dVt88Ppi5tjEA1uXwij/Mk8/HpX5YN18Yb2tM5M/tSKb/wV1rLBDo3F4h3kZREtI41
+         BPeQlUVdBsTzjl/ULZUpHP9SIGLooSSUT2l/UmILOkCX61J52d6CVvWiUlUIOiKIk3M7
+         Wk79OQtKwAPqq765O+tlhjw/LGOOm/ddQ4qZZXzD6gHmyTkcTqSuEKKrD1oM48cKXKNY
+         xL2w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=a7JdQMPMgs8V6p2mIbAAMliZc+Q/jwU8V02vmoeVTgc=;
+        b=C9IdFAmxIGFFrQ7wtiff8pgNjMKiwzdK70EqhlCCY53u8nmALyvA3GqU4j6MCOWQSv
+         l0uH2zNK8Plu0xvOd1nsOLTMbV3ycA+DQGKTOrqOa8oNh77gAJnh19FQTQO+/o0gNREF
+         SvD59MLTIBedSZtHw7AL+UR6+99uzboNpwECFO7luwZiS4nBO+K1zr0yrci9CqKHD3S2
+         C4T6ZadL+2CcMCRSnvx+MfFBaxeb13NQX9PIOmC9nWpzBkOG9DtuO0UeqGvQpBn06LcK
+         do302ujhOHkLHcl/B7Rfb9fpTImfL8gPo/AxkwhyLJ0vh8mneJzqx9XpfKovi9FmOphT
+         T5Pg==
+X-Gm-Message-State: AOAM533n+Jtg/ETeVUrJQqLWZJcd7L2ZB5ngHRfyGLM+IUvzeMnfsUb0
+        w00t+6FjNWUw528VJDdR9cO46ACrHKA=
+X-Google-Smtp-Source: ABdhPJxaXv9Xf37vBcTUmnfJmYRsajKHGinABLTlOhmsEfI1G0L3rHUlebwGQFQrpLkVUe5VpYtLfQ==
+X-Received: by 2002:ae9:eb58:: with SMTP id b85mr8274855qkg.168.1616363701088;
+        Sun, 21 Mar 2021 14:55:01 -0700 (PDT)
+Received: from localhost ([76.73.146.210])
+        by smtp.gmail.com with ESMTPSA id s19sm9365819qks.130.2021.03.21.14.55.00
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 21 Mar 2021 14:55:00 -0700 (PDT)
+From:   Yury Norov <yury.norov@gmail.com>
+To:     linux-kernel@vger.kernel.org
+Cc:     Yury Norov <yury.norov@gmail.com>, linux-m68k@lists.linux-m68k.org,
+        linux-arch@vger.kernel.org, linux-sh@vger.kernel.org,
+        Alexey Klimov <aklimov@redhat.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Arnd Bergmann <arnd@arndb.de>, David Sterba <dsterba@suse.com>,
+        Dennis Zhou <dennis@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Jianpeng Ma <jianpeng.ma@intel.com>,
+        Joe Perches <joe@perches.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
+        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+        Rich Felker <dalias@libc.org>,
+        Stefano Brivio <sbrivio@redhat.com>,
+        Wei Yang <richard.weiyang@linux.alibaba.com>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+Subject: [PATCH 01/12] tools: disable -Wno-type-limits
+Date:   Sun, 21 Mar 2021 14:54:46 -0700
+Message-Id: <20210321215457.588554-2-yury.norov@gmail.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20210321215457.588554-1-yury.norov@gmail.com>
+References: <20210321215457.588554-1-yury.norov@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1615278790-18053-1-git-send-email-anshuman.khandual@arm.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Mar 09, 2021 at 02:03:04PM +0530, Anshuman Khandual wrote:
-> This series contains config cleanup patches which reduces code duplication
-> across platforms and also improves maintainability. There is no functional
-> change intended with this series. This has been boot tested on arm64 but
-> only build tested on some other platforms.
-> 
-> This applies on 5.12-rc2
-> 
-> Cc: x86@kernel.org
-> Cc: linux-ia64@vger.kernel.org
-> Cc: linux-s390@vger.kernel.org
-> Cc: linux-snps-arc@lists.infradead.org
-> Cc: linux-arm-kernel@lists.infradead.org
-> Cc: linux-mips@vger.kernel.org
-> Cc: linux-parisc@vger.kernel.org
-> Cc: linuxppc-dev@lists.ozlabs.org
-> Cc: linux-riscv@lists.infradead.org
-> Cc: linux-sh@vger.kernel.org
-> Cc: linux-fsdevel@vger.kernel.org
-> Cc: linux-mm@kvack.org
-> Cc: linux-kernel@vger.kernel.org
-> 
-> Anshuman Khandual (6):
->   mm: Generalize ARCH_HAS_CACHE_LINE_SIZE
->   mm: Generalize SYS_SUPPORTS_HUGETLBFS (rename as ARCH_SUPPORTS_HUGETLBFS)
->   mm: Generalize ARCH_ENABLE_MEMORY_[HOTPLUG|HOTREMOVE]
->   mm: Drop redundant ARCH_ENABLE_[HUGEPAGE|THP]_MIGRATION
->   mm: Drop redundant ARCH_ENABLE_SPLIT_PMD_PTLOCK
->   mm: Drop redundant HAVE_ARCH_TRANSPARENT_HUGEPAGE
-> 
->  arch/arc/Kconfig                       |  9 ++------
->  arch/arm/Kconfig                       | 10 ++-------
->  arch/arm64/Kconfig                     | 30 ++++++--------------------
+GENMASK(h, l) may be passed with unsigned types. In such case, type-limits
+warning is generated for example in case of GENMASK(h, 0).
 
-For arm64:
+Signed-off-by: Yury Norov <yury.norov@gmail.com>
+---
+ tools/scripts/Makefile.include | 1 +
+ 1 file changed, 1 insertion(+)
 
-Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+diff --git a/tools/scripts/Makefile.include b/tools/scripts/Makefile.include
+index 84dbf61a7eca..15e99905cb7d 100644
+--- a/tools/scripts/Makefile.include
++++ b/tools/scripts/Makefile.include
+@@ -38,6 +38,7 @@ EXTRA_WARNINGS += -Wswitch-enum
+ EXTRA_WARNINGS += -Wundef
+ EXTRA_WARNINGS += -Wwrite-strings
+ EXTRA_WARNINGS += -Wformat
++EXTRA_WARNINGS += -Wno-type-limits
+ 
+ CC_NO_CLANG := $(shell $(CC) -dM -E -x c /dev/null | grep -Fq "__clang__"; echo $$?)
+ 
+-- 
+2.25.1
+
