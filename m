@@ -2,59 +2,60 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_GIT autolearn=unavailable autolearn_force=no version=3.4.0
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D5954C433E3
-	for <linux-sh@archiver.kernel.org>; Sun, 21 Mar 2021 21:56:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 27377C433E8
+	for <linux-sh@archiver.kernel.org>; Sun, 21 Mar 2021 21:56:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9E16161943
+	by mail.kernel.org (Postfix) with ESMTP id EE0E261947
 	for <linux-sh@archiver.kernel.org>; Sun, 21 Mar 2021 21:56:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230297AbhCUVzf (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 21 Mar 2021 17:55:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60480 "EHLO
+        id S231472AbhCUVzh (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 21 Mar 2021 17:55:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60496 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231394AbhCUVzC (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 21 Mar 2021 17:55:02 -0400
-Received: from mail-qt1-x835.google.com (mail-qt1-x835.google.com [IPv6:2607:f8b0:4864:20::835])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B776EC061762;
-        Sun, 21 Mar 2021 14:55:01 -0700 (PDT)
-Received: by mail-qt1-x835.google.com with SMTP id s2so11007021qtx.10;
-        Sun, 21 Mar 2021 14:55:01 -0700 (PDT)
+        with ESMTP id S231421AbhCUVzD (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 21 Mar 2021 17:55:03 -0400
+Received: from mail-qk1-x729.google.com (mail-qk1-x729.google.com [IPv6:2607:f8b0:4864:20::729])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 10DBFC061574;
+        Sun, 21 Mar 2021 14:55:03 -0700 (PDT)
+Received: by mail-qk1-x729.google.com with SMTP id y5so7193400qkl.9;
+        Sun, 21 Mar 2021 14:55:03 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=TGGguKzNak6Uoi+lTdEQVN7MNykqtu7qxWcIlRIb74o=;
-        b=rMLzOMxLuXQEi3UHBZcUeZZxAWgMP0tOvnatwVNMbcZkdF2ORgrZgH3ZL4KNV7Sfn4
-         KfWxYK/dna0/kia7D+wGozOpyo3lwvUyEhnn1qztWtjOsdQwHPGcKUZuukZwI/G0WXeD
-         H0+zIPMjQKpNs4mIew98JUFj3lXIhx7K6KCPJz/tdFVVVVufGDH/2zqyBcG7Q62G3yBX
-         rwd550XXYCG2lGVS+AgtJu/4r6bTB968vDZNnXpn79QblaARrOyA5LRW6WfOaAGbqCqW
-         2XsXYXN81PKoq7rxj1rY9T+IAS4D+szI2qs9BsW2Xxc6WISFmVYjQ3h/tmDUsjL4UUZ2
-         VXow==
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=zuXeb5K9/k1b38lIaOCwwXbJ1mWAiSIXqXWCN5QCoNc=;
+        b=s9lHSs3gRQ3E5zlhoby0kbBKeodG6IcrIuXOXnz4Tcg0a9ICdpK47OrLHhCYftehWU
+         yN0Bsr6/mFDNtPjCgIHYF+iX0uPLOymv06rMmEVxL+oP0yEND01oAWPkM55rXuMDNatG
+         aJUXNIlDxD2dr2Liq+fIi/7tBQdOq9do0um6YUkfku4pFaFiUFWthPp1A4igmxmrZzIz
+         TyPhVdmcmN8/Wg7M+6VZH1xZSFlNQz/EZnS7jFPkWXSEKH06rnCIVe7OTqGluXGUNZgk
+         U4vg2pkG1zWTbkKD7RWgLk+8HfW46tAsGvD8Gic6gcqqH/9EXT4xYg2zqjNj53LqeBdq
+         xDyA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=TGGguKzNak6Uoi+lTdEQVN7MNykqtu7qxWcIlRIb74o=;
-        b=UY+t4jGr3aD7rloeIE5w4U4oyXgxwXntynAsk3Ye2dMplQJdd4RFVJfpFHDq3u09PR
-         fmb4rNWhTJZRXFuHuTvjvy/4T6/sJ0MGESBo4Gvi5mLPUx7s6PcIeW/kP07eOn25I1q9
-         vFjrufG/cfeXb5HWBOiBFEVPundDhbIdxBlJzF7RCknO8WvdCaJHH6tFrs2YA0s7hbgs
-         zCjAsA5fLcgqVWAGELR5MaZTiLFARN4cq9GJ2bR+xsXT5Hj9jnQz4BwlfobGW9hNR/zR
-         k8Zqmt8Tp6/ahtbhBgARebl3tvmHuNQL0BWZjU9wwgljqkWswGzBJ65PRvEjex8rC6Pj
-         0yHg==
-X-Gm-Message-State: AOAM532ndpO3bklVOrh/ruk6ADs7gBVN6IBV2F1Ydb9/NZbn58XtpfrF
-        lMeHkf+tTbwcqR1edCqwOYRNN0+4e1s=
-X-Google-Smtp-Source: ABdhPJwMBGjc3F8XwcbsAX31INg7pNJB1AE2nrf7PzUnb0oZYb2TsEmvuHoF4FkbohehMt9ldfnvFA==
-X-Received: by 2002:ac8:6044:: with SMTP id k4mr7282617qtm.4.1616363700246;
-        Sun, 21 Mar 2021 14:55:00 -0700 (PDT)
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=zuXeb5K9/k1b38lIaOCwwXbJ1mWAiSIXqXWCN5QCoNc=;
+        b=Lwzon79AHYPRX8WgI4fkvLfPhLmq0BD90+eUAUdzj7+3IHs7GiEsRR4JZsYcdg+Xs4
+         K/9AIVpGlgr8m4N6it62TBUexW242dW6qP2LiHNy0BmTbDc5F6VmrmKxJEwLrYoUqbjy
+         6knJoVgdaSsW9XJhibaoaeIEZsdgF1S1Hi9YAXTcjLlUz+yCrIauI72fx32LB/9yGYZ+
+         GsH+8Qv1SsknFOmJ0r7jNBfXnhEUHozYF7pcJ4ydjhf7QMY53xM5cgbuN4hHK7nw8ooe
+         c19es2ehTKhK5kGCaXyeSXufUKguV4N8toxyrnQJUCPqBHJP//tK0b/xUeerdM4gB/TV
+         LOvQ==
+X-Gm-Message-State: AOAM5308hO127/2nHC24HqBUZxkSXKzdJYUowwC/9uxTjQv5PfMZamZs
+        cOcXX0KyYpn+1fjrp0nEYBmW7FEnGyY=
+X-Google-Smtp-Source: ABdhPJzJOLQpna/mX/nLEN4dIo3troWR35bku2fgESfH5U1+gnu4l1WyiaPvZMXy3mstXRwAkZZM6A==
+X-Received: by 2002:a37:b6c4:: with SMTP id g187mr8447635qkf.162.1616363702099;
+        Sun, 21 Mar 2021 14:55:02 -0700 (PDT)
 Received: from localhost ([76.73.146.210])
-        by smtp.gmail.com with ESMTPSA id k7sm7760220qtm.10.2021.03.21.14.54.59
+        by smtp.gmail.com with ESMTPSA id h8sm9359220qkk.116.2021.03.21.14.55.01
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 21 Mar 2021 14:54:59 -0700 (PDT)
+        Sun, 21 Mar 2021 14:55:01 -0700 (PDT)
 From:   Yury Norov <yury.norov@gmail.com>
 To:     linux-kernel@vger.kernel.org
 Cc:     Yury Norov <yury.norov@gmail.com>, linux-m68k@lists.linux-m68k.org,
@@ -75,65 +76,86 @@ Cc:     Yury Norov <yury.norov@gmail.com>, linux-m68k@lists.linux-m68k.org,
         Wei Yang <richard.weiyang@linux.alibaba.com>,
         Wolfram Sang <wsa+renesas@sang-engineering.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>
-Subject: [PATCH v5 00/12] lib/find_bit: fast path for small bitmaps
-Date:   Sun, 21 Mar 2021 14:54:45 -0700
-Message-Id: <20210321215457.588554-1-yury.norov@gmail.com>
+Subject: [PATCH 02/12] tools: bitmap: sync function declarations with the kernel
+Date:   Sun, 21 Mar 2021 14:54:47 -0700
+Message-Id: <20210321215457.588554-3-yury.norov@gmail.com>
 X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20210321215457.588554-1-yury.norov@gmail.com>
+References: <20210321215457.588554-1-yury.norov@gmail.com>
 MIME-Version: 1.0
-X-Mailer: git-send-email 2.25.1
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Bitmap operations are much simpler and faster in case of small bitmaps
-which fit into a single word. In linux/bitmap.c we have a machinery that
-allows compiler to replace actual function call with a few instructions
-if bitmaps passed into the function are small and their size is known at
-compile time.
+Some functions in tools/include/linux/bitmap.h declare nbits as int. In the
+kernel nbits is declared as unsigned int.
 
-find_*_bit() API lacks this functionality; but users will benefit from it
-a lot. One important example is cpumask subsystem when
-NR_CPUS <= BITS_PER_LONG.
+Signed-off-by: Yury Norov <yury.norov@gmail.com>
+Acked-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+---
+ tools/include/linux/bitmap.h | 8 ++++----
+ tools/lib/bitmap.c           | 4 ++--
+ 2 files changed, 6 insertions(+), 6 deletions(-)
 
-v1: https://www.spinics.net/lists/kernel/msg3804727.html
-v2: https://www.spinics.net/lists/linux-m68k/msg16945.html
-v3: https://www.spinics.net/lists/kernel/msg3837020.html
-v4: https://patchwork.kernel.org/project/linux-sh/cover/20210316015424.1999082-1-yury.norov@gmail.com/
-v5: - drop BITS_{FIRST,LAST} patch;
-    - minor changes.
-
-Yury Norov (12):
-  tools: disable -Wno-type-limits
-  tools: bitmap: sync function declarations with the kernel
-  tools: sync BITMAP_LAST_WORD_MASK() macro with the kernel
-  arch: rearrange headers inclusion order in asm/bitops for m68k and sh
-  lib: extend the scope of small_const_nbits() macro
-  tools: sync small_const_nbits() macro with the kernel
-  lib: inline _find_next_bit() wrappers
-  tools: sync find_next_bit implementation
-  lib: add fast path for find_next_*_bit()
-  lib: add fast path for find_first_*_bit() and find_last_bit()
-  tools: sync lib/find_bit implementation
-  MAINTAINERS: Add entry for the bitmap API
-
- MAINTAINERS                             |  16 ++++
- arch/m68k/include/asm/bitops.h          |   6 +-
- arch/sh/include/asm/bitops.h            |   5 +-
- include/asm-generic/bitops/find.h       | 108 +++++++++++++++++++++---
- include/asm-generic/bitops/le.h         |  38 ++++++++-
- include/asm-generic/bitsperlong.h       |  12 +++
- include/linux/bitmap.h                  |   8 --
- include/linux/bitops.h                  |  12 ---
- lib/find_bit.c                          |  68 ++-------------
- tools/include/asm-generic/bitops/find.h |  85 +++++++++++++++++--
- tools/include/asm-generic/bitsperlong.h |   3 +
- tools/include/linux/bitmap.h            |  18 ++--
- tools/lib/bitmap.c                      |   4 +-
- tools/lib/find_bit.c                    |  56 +++++-------
- tools/scripts/Makefile.include          |   1 +
- 15 files changed, 284 insertions(+), 156 deletions(-)
-
+diff --git a/tools/include/linux/bitmap.h b/tools/include/linux/bitmap.h
+index 477a1cae513f..7cbd23e56d48 100644
+--- a/tools/include/linux/bitmap.h
++++ b/tools/include/linux/bitmap.h
+@@ -30,7 +30,7 @@ void bitmap_clear(unsigned long *map, unsigned int start, int len);
+ #define small_const_nbits(nbits) \
+ 	(__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG)
+ 
+-static inline void bitmap_zero(unsigned long *dst, int nbits)
++static inline void bitmap_zero(unsigned long *dst, unsigned int nbits)
+ {
+ 	if (small_const_nbits(nbits))
+ 		*dst = 0UL;
+@@ -66,7 +66,7 @@ static inline int bitmap_full(const unsigned long *src, unsigned int nbits)
+ 	return find_first_zero_bit(src, nbits) == nbits;
+ }
+ 
+-static inline int bitmap_weight(const unsigned long *src, int nbits)
++static inline int bitmap_weight(const unsigned long *src, unsigned int nbits)
+ {
+ 	if (small_const_nbits(nbits))
+ 		return hweight_long(*src & BITMAP_LAST_WORD_MASK(nbits));
+@@ -74,7 +74,7 @@ static inline int bitmap_weight(const unsigned long *src, int nbits)
+ }
+ 
+ static inline void bitmap_or(unsigned long *dst, const unsigned long *src1,
+-			     const unsigned long *src2, int nbits)
++			     const unsigned long *src2, unsigned int nbits)
+ {
+ 	if (small_const_nbits(nbits))
+ 		*dst = *src1 | *src2;
+@@ -141,7 +141,7 @@ static inline void bitmap_free(unsigned long *bitmap)
+  * @buf: buffer to store output
+  * @size: size of @buf
+  */
+-size_t bitmap_scnprintf(unsigned long *bitmap, int nbits,
++size_t bitmap_scnprintf(unsigned long *bitmap, unsigned int nbits,
+ 			char *buf, size_t size);
+ 
+ /**
+diff --git a/tools/lib/bitmap.c b/tools/lib/bitmap.c
+index 5043747ef6c5..f4e914712b6f 100644
+--- a/tools/lib/bitmap.c
++++ b/tools/lib/bitmap.c
+@@ -28,11 +28,11 @@ void __bitmap_or(unsigned long *dst, const unsigned long *bitmap1,
+ 		dst[k] = bitmap1[k] | bitmap2[k];
+ }
+ 
+-size_t bitmap_scnprintf(unsigned long *bitmap, int nbits,
++size_t bitmap_scnprintf(unsigned long *bitmap, unsigned int nbits,
+ 			char *buf, size_t size)
+ {
+ 	/* current bit is 'cur', most recently seen range is [rbot, rtop] */
+-	int cur, rbot, rtop;
++	unsigned int cur, rbot, rtop;
+ 	bool first = true;
+ 	size_t ret = 0;
+ 
 -- 
 2.25.1
 
