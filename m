@@ -2,46 +2,54 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.2 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 69A6CC433E1
-	for <linux-sh@archiver.kernel.org>; Fri, 26 Mar 2021 15:56:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 70375C433E0
+	for <linux-sh@archiver.kernel.org>; Fri, 26 Mar 2021 18:23:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 41D9361A3F
-	for <linux-sh@archiver.kernel.org>; Fri, 26 Mar 2021 15:56:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 21B4761A45
+	for <linux-sh@archiver.kernel.org>; Fri, 26 Mar 2021 18:23:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230237AbhCZPzz (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 26 Mar 2021 11:55:55 -0400
-Received: from pegase1.c-s.fr ([93.17.236.30]:24186 "EHLO pegase1.c-s.fr"
+        id S230237AbhCZSW2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 26 Mar 2021 14:22:28 -0400
+Received: from mail.kernel.org ([198.145.29.99]:33874 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S230372AbhCZPzf (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Fri, 26 Mar 2021 11:55:35 -0400
-Received: from localhost (mailhub1-int [192.168.12.234])
-        by localhost (Postfix) with ESMTP id 4F6RQB6DtPz9v0Mx;
-        Fri, 26 Mar 2021 16:55:30 +0100 (CET)
-X-Virus-Scanned: Debian amavisd-new at c-s.fr
-Received: from pegase1.c-s.fr ([192.168.12.234])
-        by localhost (pegase1.c-s.fr [192.168.12.234]) (amavisd-new, port 10024)
-        with ESMTP id fRfLPhr5ARx4; Fri, 26 Mar 2021 16:55:30 +0100 (CET)
-Received: from messagerie.si.c-s.fr (messagerie.si.c-s.fr [192.168.25.192])
-        by pegase1.c-s.fr (Postfix) with ESMTP id 4F6RQB5JGZz9v0Mw;
-        Fri, 26 Mar 2021 16:55:30 +0100 (CET)
-Received: from localhost (localhost [127.0.0.1])
-        by messagerie.si.c-s.fr (Postfix) with ESMTP id 354458B8CF;
-        Fri, 26 Mar 2021 16:55:32 +0100 (CET)
-X-Virus-Scanned: amavisd-new at c-s.fr
-Received: from messagerie.si.c-s.fr ([127.0.0.1])
-        by localhost (messagerie.si.c-s.fr [127.0.0.1]) (amavisd-new, port 10023)
-        with ESMTP id o-ftwDSIO1we; Fri, 26 Mar 2021 16:55:32 +0100 (CET)
-Received: from [192.168.4.90] (unknown [192.168.4.90])
-        by messagerie.si.c-s.fr (Postfix) with ESMTP id 249F98B8C7;
-        Fri, 26 Mar 2021 16:55:31 +0100 (CET)
-Subject: Re: [PATCH v3 01/17] cmdline: Add generic function to build command
- line.
-To:     Rob Herring <robh@kernel.org>
+        id S230213AbhCZSWT (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Fri, 26 Mar 2021 14:22:19 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id E74AC61A42;
+        Fri, 26 Mar 2021 18:22:17 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1616782938;
+        bh=jLGR+NyehSUNZVl5kh+mHpluJzlAfSJXFMkJ5QFHPLQ=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=FGNMBA2S+sqoHCfdgN2xPFLdvY7w1ubfGycnYplAm5Xuh33eTfteivyAovekbWA9w
+         yfld9bMxHjPtk6Hhklpu7oYZIbdFL1ljaGBXqC5JDt9yKBlTX7kAx1myFZ7wuAQTTU
+         jVdlWWeH+3FguNaGmIau3X7NuPSKeRLNaH0udlAHqHLaTI2Nh59I0ILOAppKs8o8/D
+         19qHEC4fCaQI1gejM6rW9sLEbEJ8sx1EuiN8eQS9UBjNdK2v5TM+H9geJCe0fg2Uua
+         hTXju+20flSq1dpCUtji3RjvYCP8L0pwpr+4Ldr1Bi1ZJpawqdb9WedZVTTF9eqZAI
+         +O7oIbfohruuw==
+Received: by mail-ed1-f43.google.com with SMTP id z1so7357057edb.8;
+        Fri, 26 Mar 2021 11:22:17 -0700 (PDT)
+X-Gm-Message-State: AOAM531NN1LxYZLJOxCneNWdSgtk6d+MKHDjSzrgTmSVmvn9CQTFQ7W7
+        qmCMJiyxN2fCYXZ7HmhCfaumQr7mc30XpZJJ6Q==
+X-Google-Smtp-Source: ABdhPJzge00Chol2o+zcxsCiGngmRlWpn0gXJpTNd7PjgqCsH3Y9wanEoRXm0NadwDvEZ6TqBdnoQxNSvLg0UG9tpaw=
+X-Received: by 2002:a05:6402:c0f:: with SMTP id co15mr16452718edb.373.1616782936426;
+ Fri, 26 Mar 2021 11:22:16 -0700 (PDT)
+MIME-Version: 1.0
+References: <cover.1616765869.git.christophe.leroy@csgroup.eu>
+ <7362e4f6a5f5b79e6ad3fd3cec3183a4a283f7fc.1616765870.git.christophe.leroy@csgroup.eu>
+ <CAL_Jsq+LF-s5K4Jwd5jCHrU8271L5WCiGb0tR7aTUa8ddHF1YQ@mail.gmail.com> <c18ef8f7-8e79-a9d3-3853-f8b992a4fc93@csgroup.eu>
+In-Reply-To: <c18ef8f7-8e79-a9d3-3853-f8b992a4fc93@csgroup.eu>
+From:   Rob Herring <robh@kernel.org>
+Date:   Fri, 26 Mar 2021 12:22:04 -0600
+X-Gmail-Original-Message-ID: <CAL_JsqJOFHmfRNAXgm6Gbe3qTUwnUTroxPzPmmLJUN7ciM2z9g@mail.gmail.com>
+Message-ID: <CAL_JsqJOFHmfRNAXgm6Gbe3qTUwnUTroxPzPmmLJUN7ciM2z9g@mail.gmail.com>
+Subject: Re: [PATCH v3 05/17] arm: Convert to GENERIC_CMDLINE
+To:     Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Nicolas Pitre <nico@fluxnic.net>
 Cc:     Will Deacon <will@kernel.org>, Daniel Walker <danielwa@cisco.com>,
         Daniel Gimpelevich <daniel@gimpelevich.san-francisco.ca.us>,
         "open list:GENERIC INCLUDE/ASM HEADER FILES" 
@@ -58,147 +66,74 @@ Cc:     Will Deacon <will@kernel.org>, Daniel Walker <danielwa@cisco.com>,
         X86 ML <x86@kernel.org>, linux-xtensa@linux-xtensa.org,
         SH-Linux <linux-sh@vger.kernel.org>,
         sparclinux <sparclinux@vger.kernel.org>
-References: <cover.1616765869.git.christophe.leroy@csgroup.eu>
- <878228ad88df38f8914c7aa25dede3ed05c50f48.1616765869.git.christophe.leroy@csgroup.eu>
- <CAL_JsqKr3xekKSo3DtQvOOw_VoGC=FUTagZGY5g=CGGGdUZSMQ@mail.gmail.com>
-From:   Christophe Leroy <christophe.leroy@csgroup.eu>
-Message-ID: <58834b01-aad5-fa1e-554e-6417b2357202@csgroup.eu>
-Date:   Fri, 26 Mar 2021 16:55:31 +0100
-User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:78.0) Gecko/20100101
- Thunderbird/78.9.0
-MIME-Version: 1.0
-In-Reply-To: <CAL_JsqKr3xekKSo3DtQvOOw_VoGC=FUTagZGY5g=CGGGdUZSMQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: fr
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
++Nico who added the line in question.
 
+On Fri, Mar 26, 2021 at 9:50 AM Christophe Leroy
+<christophe.leroy@csgroup.eu> wrote:
+>
+>
+>
+> Le 26/03/2021 =C3=A0 16:47, Rob Herring a =C3=A9crit :
+> > On Fri, Mar 26, 2021 at 7:44 AM Christophe Leroy
+> > <christophe.leroy@csgroup.eu> wrote:
+> >>
+> >> This converts the architecture to GENERIC_CMDLINE.
+> >>
+> >> Signed-off-by: Christophe Leroy <christophe.leroy@csgroup.eu>
+> >> ---
+> >>   arch/arm/Kconfig              | 38 +--------------------------------=
+--
+> >>   arch/arm/kernel/atags_parse.c | 15 +++++---------
+> >>   2 files changed, 6 insertions(+), 47 deletions(-)
+> >>
+> >> diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+> >> index 5da96f5df48f..67bc75f2da81 100644
+> >> --- a/arch/arm/Kconfig
+> >> +++ b/arch/arm/Kconfig
+> >> @@ -50,6 +50,7 @@ config ARM
+> >>          select GENERIC_ARCH_TOPOLOGY if ARM_CPU_TOPOLOGY
+> >>          select GENERIC_ATOMIC64 if CPU_V7M || CPU_V6 || !CPU_32v6K ||=
+ !AEABI
+> >>          select GENERIC_CLOCKEVENTS_BROADCAST if SMP
+> >> +       select GENERIC_CMDLINE if ATAGS
+> >
+> > Don't we need this enabled for !ATAGS (i.e. DT boot)?
+> >
+> > Can we always enable GENERIC_CMDLINE for OF_EARLY_FLATTREE?
+> >
+>
+> Don't know.
+>
+> Today ARM has:
+>
+> choice
+>         prompt "Kernel command line type" if CMDLINE !=3D ""
+>         default CMDLINE_FROM_BOOTLOADER
+>         depends on ATAGS
 
-Le 26/03/2021 à 16:42, Rob Herring a écrit :
-> On Fri, Mar 26, 2021 at 7:44 AM Christophe Leroy
-> <christophe.leroy@csgroup.eu> wrote:
->>
->> This code provides architectures with a way to build command line
->> based on what is built in the kernel and what is handed over by the
->> bootloader, based on selected compile-time options.
-> 
-> Note that I have this patch pending:
-> 
-> https://patchwork.ozlabs.org/project/devicetree-bindings/patch/20210316193820.3137-1-alex@ghiti.fr/
-> 
-> It's going to need to be adapted for this. I've held off applying to
-> see if this gets settled.
+I think that's a mistake. In a DT only case (no ATAGS), we'll get
+different behaviour (in fdt.c) depending if CONFIG_ATAGS is enabled or
+not. Note that at the time (2012) the above was added, the DT code
+only supported CONFIG_CMDLINE and CONFIG_CMDLINE_FORCE.
+CONFIG_CMDLINE_EXTEND was only added in 2016. And that has different
+behavior for ATAGS vs. DT. In summary, it's a mess. We should drop the
+depends either before this patch or just as part of this patch IMO.
+I'd go with the latter given CONFIG_ATAGS is default y and enabled for
+common configs. Without that, it looks like CONFIG_CMDLINE disappears
+from menuconfig for at91_dt_defconfig.
 
-good point.
+Also, I think this code should be refactored a bit to eliminate
+default_command_line. Instead, we should just save a pointer to the
+ATAGS command line string, and then call cmdline_build here instead of
+doing the extra copy:
 
-Hope we can't have things like
+        /* parse_early_param needs a boot_command_line */
+        strlcpy(boot_command_line, from, COMMAND_LINE_SIZE);
 
-	option="beautiful weather"
-
-> 
->>
->> Signed-off-by: Christophe Leroy <christophe.leroy@csgroup.eu>
->> ---
->> v3:
->> - Addressed comments from Will
->> - Added capability to have src == dst
->> ---
->>   include/linux/cmdline.h | 57 +++++++++++++++++++++++++++++++++++++++++
->>   1 file changed, 57 insertions(+)
->>   create mode 100644 include/linux/cmdline.h
->>
->> diff --git a/include/linux/cmdline.h b/include/linux/cmdline.h
->> new file mode 100644
->> index 000000000000..dea87edd41be
->> --- /dev/null
->> +++ b/include/linux/cmdline.h
->> @@ -0,0 +1,57 @@
->> +/* SPDX-License-Identifier: GPL-2.0 */
->> +#ifndef _LINUX_CMDLINE_H
->> +#define _LINUX_CMDLINE_H
->> +
->> +#include <linux/string.h>
->> +
->> +/* Allow architectures to override strlcat, powerpc can't use strings so early */
->> +#ifndef cmdline_strlcat
->> +#define cmdline_strlcat strlcat
->> +#endif
->> +
->> +/*
->> + * This function will append or prepend a builtin command line to the command
->> + * line provided by the bootloader. Kconfig options can be used to alter
->> + * the behavior of this builtin command line.
->> + * @dst: The destination of the final appended/prepended string.
->> + * @src: The starting string or NULL if there isn't one.
->> + * @len: the length of dest buffer.
->> + */
->> +static __always_inline void __cmdline_build(char *dst, const char *src, size_t len)
->> +{
->> +       if (!len || src == dst)
->> +               return;
->> +
->> +       if (IS_ENABLED(CONFIG_CMDLINE_FORCE) || !src) {
->> +               dst[0] = 0;
->> +               cmdline_strlcat(dst, CONFIG_CMDLINE, len);
->> +               return;
->> +       }
->> +
->> +       if (dst != src)
->> +               dst[0] = 0;
->> +
->> +       if (IS_ENABLED(CONFIG_CMDLINE_PREPEND))
->> +               cmdline_strlcat(dst, CONFIG_CMDLINE " ", len);
->> +
->> +       cmdline_strlcat(dst, src, len);
->> +
->> +       if (IS_ENABLED(CONFIG_CMDLINE_EXTEND))
-> 
-> Should be APPEND.
-
-Not yet. For the time being all architectures use EXTEND only.
-
-In patch 3 it is changed to:
-
--	if (IS_ENABLED(CONFIG_CMDLINE_EXTEND))
-+	if (IS_ENABLED(CONFIG_CMDLINE_EXTEND) || IS_ENABLED(CONFIG_CMDLINE_APPEND))
-
-Then in last patch, I forgot but I should have done:
-
--	if (IS_ENABLED(CONFIG_CMDLINE_EXTEND) || IS_ENABLED(CONFIG_CMDLINE_APPEND))
-+	if (IS_ENABLED(CONFIG_CMDLINE_APPEND))
-
-
-> 
->> +               cmdline_strlcat(dst, " " CONFIG_CMDLINE, len);
->> +}
->> +
->> +#define cmdline_build(dst, src, len) do {                              \
-> 
-> Perhaps a comment why we need this to be a define.
-
-Probably we don't need anymore as I finally decided to use COMMAND_LINE_SIZE instead of 'len' as the 
-size of the temporary buffer.
-
-> 
->> +       char *__c_dst = (dst);                                          \
->> +       const char *__c_src = (src);                                    \
->> +                                                                       \
->> +       if (__c_src == __c_dst) {                                       \
->> +               static char __c_tmp[COMMAND_LINE_SIZE] __initdata = ""; \
->> +                                                                       \
->> +               cmdline_strlcat(__c_tmp, __c_src, COMMAND_LINE_SIZE);   \
->> +               __cmdline_build(__c_dst, __c_tmp, (len));               \
->> +       } else {                                                        \
->> +               __cmdline_build(__c_dst, __c_src, (len));               \
->> +       }                                                               \
->> +} while (0)
->> +
->> +#endif /* _LINUX_CMDLINE_H */
->> --
->> 2.25.0
->>
-
-Christophe
+Rob
