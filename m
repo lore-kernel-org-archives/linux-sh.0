@@ -2,278 +2,143 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,PDS_BAD_THREAD_QP_64,SPF_HELO_NONE,SPF_PASS
+X-Spam-Status: No, score=-13.6 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C8D70C433C1
-	for <linux-sh@archiver.kernel.org>; Mon, 29 Mar 2021 01:36:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A1D1C433DB
+	for <linux-sh@archiver.kernel.org>; Tue, 30 Mar 2021 01:11:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6B416600EF
-	for <linux-sh@archiver.kernel.org>; Mon, 29 Mar 2021 01:36:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 508586198A
+	for <linux-sh@archiver.kernel.org>; Tue, 30 Mar 2021 01:11:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230292AbhC2Bfk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 28 Mar 2021 21:35:40 -0400
-Received: from mga04.intel.com ([192.55.52.120]:9888 "EHLO mga04.intel.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S230209AbhC2BfY (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Sun, 28 Mar 2021 21:35:24 -0400
-IronPort-SDR: BRoDK96CPyFbcNjiCvLWg45CcrNFuxzxn+q5jWwNKCmRDBayVKlN6KoMcyKDkwarh+nZmZbgrw
- rdarzxtR43HQ==
-X-IronPort-AV: E=McAfee;i="6000,8403,9937"; a="189204133"
-X-IronPort-AV: E=Sophos;i="5.81,285,1610438400"; 
-   d="scan'208";a="189204133"
-Received: from fmsmga006.fm.intel.com ([10.253.24.20])
-  by fmsmga104.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 28 Mar 2021 18:35:24 -0700
-IronPort-SDR: 3OnYc4reE3mBx0xx2TBrBEdlwziLi7HjDKDFWRUBHfunsKIJDM1QQWrb+BVf58G1M5KJOojGGq
- lI3XkuczvN6g==
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.81,285,1610438400"; 
-   d="scan'208";a="606193074"
-Received: from orsmsx606.amr.corp.intel.com ([10.22.229.19])
-  by fmsmga006.fm.intel.com with ESMTP; 28 Mar 2021 18:35:23 -0700
-Received: from orsmsx609.amr.corp.intel.com (10.22.229.22) by
- ORSMSX606.amr.corp.intel.com (10.22.229.19) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2106.2; Sun, 28 Mar 2021 18:35:23 -0700
-Received: from orsedg603.ED.cps.intel.com (10.7.248.4) by
- orsmsx609.amr.corp.intel.com (10.22.229.22) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id 15.1.2106.2
- via Frontend Transport; Sun, 28 Mar 2021 18:35:23 -0700
-Received: from NAM11-DM6-obe.outbound.protection.outlook.com (104.47.57.169)
- by edgegateway.intel.com (134.134.137.100) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.1.2106.2; Sun, 28 Mar 2021 18:35:23 -0700
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=VbvUume1AMZG1bMZ0EK31cV+xchex/cexicm6ztwC/xZQYIxuWC3o4YUu7oHbxu/kHDEEmd/olcsjLAhiwq3Fhc6TViO/G1kPfyz5Ka+rVkb6thfa4HZO7qNvsKBMIss978mmIrc4tSSOumCgtDMARLObK9r89v7Y7S4wzaJEUZSqb3OShD+DrStEdzrbBZEj+PMEPmDSeefTN7NmVlB35fZzE8Fis/0D3kCeT4cxZqUWKkqnxZcyJOKx9xJS7SG7J2MdXygv01DECh8W77ogJXQxoLJm5pyK1NZZJw4cHPd/wKcGdDCQM81/PNEgrfHq0sR6UBUzPwlXx3giicIMQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=/ay8TMmJ++2GJdBf7EWjPTAnf1cCb7gNzJ19byz4mjw=;
- b=YVzKE4WosVRut8kCQTTj//0akhjfIfLdr3SC/zO8EYIzRo14v+nIzzwakYtF5jg9ud6s0tKOyeT+KBiDQqOxF76CRrHWZhZgjv4HgZ7KEqQYRv8ajy8r9UgSDnZdBOhKUh+PgN5oEG0snHNB4/gkXt8mtWFpoO6ymY6j280eW+qqQtp+nQTR5GdT6q+5yZYTbSWMtTs6zMVPTBfeduCwzYekECwGNRlRshEG3kKCZi+DoA6RfX7XLxxpP3XOYEPF0scVyw+I1+h+Y8VD+5/EYafnBHN07rS5Tu4ZS9TxV3ECAom+dKzfKLWC3keo8Nl8ESAfz3OpPj8ff6MbCssBIg==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=intel.com; dmarc=pass action=none header.from=intel.com;
- dkim=pass header.d=intel.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=intel.onmicrosoft.com;
- s=selector2-intel-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=/ay8TMmJ++2GJdBf7EWjPTAnf1cCb7gNzJ19byz4mjw=;
- b=u/DX/kYhvaEdHbMUGTBhNPannLaSs2aqRDefhuYJOx8lA/ZONkC9mEysKJnE+KwH2IjHkNftja78aAwafaR7E8gNsMHdrjIzHD3+J+lcX49p94nISQoVItvKvzdZBu7WyCxMsAZ6S5ZXkhnnag3f8xpqZNyQyU361husRYP8uwY=
-Received: from BY5PR11MB3893.namprd11.prod.outlook.com (2603:10b6:a03:183::26)
- by BYAPR11MB3253.namprd11.prod.outlook.com (2603:10b6:a03:77::31) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.3977.26; Mon, 29 Mar
- 2021 01:35:22 +0000
-Received: from BY5PR11MB3893.namprd11.prod.outlook.com
- ([fe80::297b:a818:3bfb:f897]) by BY5PR11MB3893.namprd11.prod.outlook.com
- ([fe80::297b:a818:3bfb:f897%6]) with mapi id 15.20.3977.033; Mon, 29 Mar 2021
- 01:35:22 +0000
-From:   "Tan, Ley Foon" <ley.foon.tan@intel.com>
-To:     Christophe Leroy <christophe.leroy@csgroup.eu>,
-        "will@kernel.org" <will@kernel.org>,
-        "danielwa@cisco.com" <danielwa@cisco.com>,
-        "robh@kernel.org" <robh@kernel.org>,
-        "daniel@gimpelevich.san-francisco.ca.us" 
-        <daniel@gimpelevich.san-francisco.ca.us>
-CC:     "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>,
-        "devicetree@vger.kernel.org" <devicetree@vger.kernel.org>,
-        "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>,
-        "linux-arm-kernel@lists.infradead.org" 
-        <linux-arm-kernel@lists.infradead.org>,
-        microblaze <monstr@monstr.eu>,
-        "linux-mips@vger.kernel.org" <linux-mips@vger.kernel.org>,
-        "openrisc@lists.librecores.org" <openrisc@lists.librecores.org>,
-        "linux-hexagon@vger.kernel.org" <linux-hexagon@vger.kernel.org>,
-        "linux-riscv@lists.infradead.org" <linux-riscv@lists.infradead.org>,
-        "x86@kernel.org" <x86@kernel.org>,
-        "linux-xtensa@linux-xtensa.org" <linux-xtensa@linux-xtensa.org>,
-        "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>,
-        "sparclinux@vger.kernel.org" <sparclinux@vger.kernel.org>
-Subject: RE: [PATCH v3 09/17] nios2: Convert to GENERIC_CMDLINE
-Thread-Topic: [PATCH v3 09/17] nios2: Convert to GENERIC_CMDLINE
-Thread-Index: AQHXIkY9EWGkIZwlLUepcXMICy4iU6qaMsdw
-Date:   Mon, 29 Mar 2021 01:35:21 +0000
-Message-ID: <BY5PR11MB38934E74AF74D40379E46AB9CC7E9@BY5PR11MB3893.namprd11.prod.outlook.com>
-References: <cover.1616765869.git.christophe.leroy@csgroup.eu>
- <85b1dc6339351cbc46d179e8fdb9dfc398e58303.1616765870.git.christophe.leroy@csgroup.eu>
-In-Reply-To: <85b1dc6339351cbc46d179e8fdb9dfc398e58303.1616765870.git.christophe.leroy@csgroup.eu>
-Accept-Language: en-US
-Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-dlp-reaction: no-action
-dlp-version: 11.5.1.3
-dlp-product: dlpe-windows
-authentication-results: csgroup.eu; dkim=none (message not signed)
- header.d=none;csgroup.eu; dmarc=none action=none header.from=intel.com;
-x-originating-ip: [42.189.153.48]
-x-ms-publictraffictype: Email
-x-ms-office365-filtering-correlation-id: 3136e626-5230-45dc-23e7-08d8f252eb33
-x-ms-traffictypediagnostic: BYAPR11MB3253:
-x-microsoft-antispam-prvs: <BYAPR11MB325308E3D7134732CEAD512ECC7E9@BYAPR11MB3253.namprd11.prod.outlook.com>
-x-ms-oob-tlc-oobclassifiers: OLM:6430;
-x-ms-exchange-senderadcheck: 1
-x-microsoft-antispam: BCL:0;
-x-microsoft-antispam-message-info: sp4Dol+Ce3nl3hU/fv/D/GUIKDOUypkeJE/zMbaTQm+QnbmSVuL0jjK/ZMXtf2p7SdDLd0pSfuuiImYjWC2pohxUpt1MyaTp/n5BOxXpfN/WBOGp7vCgEznkbRin7gx1gHK5syIi7vYCGx6bo5oW/nQregC+QI2Lc8qopP2qA9DfcDk3t/JvlXYMZq4TEgdN/mJvI6XjsorSmY5zyom8Avm/HFtuAaNjka1tiEhIxIcZtUHfq4l9WC7+J8KYLdl5+olfQCFc7XfDN1T1MZmR4UU/UjID50WgHr/PtQ8N6gYizCrfwNDixADhfDSQmwqUI7NDVT4gWSrBU2L7yDNup4v7Yen8cG9V88vMkCYCborUb5Qdlz75Vsvyu5KuZNQ2okqrZO6KQOXbl3Q128Z8hMeMGBYzb6U58EGDrj1E6cStukiiNcoI0lkl5pLZ+yN7XKJb0yPfvQAC0nSLee/lB67769TkYbOvzbF3t6xeeG6FaLrn+6Fj/1YuIOjE3EZWL50BepT7041SZs3mEYdPjSb4c6g89nDqa70MC1WmyfoN3C38OC8qu38D4qSZqlMzrMkf2AsBvH+HkXAXJLE7g/ve9C0e351D1SjDMD7041qURhXVi7FyjSKfVIDn/IS6p73+6cVBrCMoSjHQPrx7A941nQU7qd0TUDdLvhlRXmqOh3fDsFehe9OH42eV9GNu
-x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BY5PR11MB3893.namprd11.prod.outlook.com;PTR:;CAT:NONE;SFS:(39860400002)(346002)(136003)(396003)(366004)(376002)(8936002)(38100700001)(316002)(83380400001)(54906003)(76116006)(66946007)(66446008)(5660300002)(8676002)(66556008)(64756008)(66476007)(7416002)(478600001)(4326008)(110136005)(53546011)(2906002)(55016002)(9686003)(52536014)(86362001)(71200400001)(26005)(33656002)(186003)(7696005)(6506007)(41533002);DIR:OUT;SFP:1102;
-x-ms-exchange-antispam-messagedata: =?us-ascii?Q?qG30XGx1ArCsOPyfjuxDCzCGIxsdK9sVdtWTrycEB0bBZl1DAzQSe6MJaEOw?=
- =?us-ascii?Q?fKwOr7ob9iSZmk4lSHK+dVaRvtzc1/vvfzbQuvGjjq8Acx2Uzjj4QOCsAMA4?=
- =?us-ascii?Q?6DobvsLMhKufv6PsBcV3FoHHUqhSWwUzakvMWneHFqoyBFMiM5DcQPkxEM+V?=
- =?us-ascii?Q?eoArLPer2IGntmEqs8mNnmHIWABfd2uDS5oWEMD13fIoX9Schn07FRRHAotI?=
- =?us-ascii?Q?RXTrVZaAFm1qOg8y4JPH/YtfoxlbbS1lgxPRBi4ny36JeHdFCW77OFP1D8ua?=
- =?us-ascii?Q?lSB0vBoDd2qIhw8PXL3tiYfAkmy0ET/r/MeWMvWtX0gjZFD2rckSu3fd/4yZ?=
- =?us-ascii?Q?6d6P/njxZCCFWAyZl6DFrlJClVFIf2Lu1DP7hRNLwM4eQuz3fqzEHDed87Lk?=
- =?us-ascii?Q?ZvDH5sav+GwpUUjw1RAbwi16nHC5xwxiL1uiYiamrbDrv/ra4h2lXmCmF/yk?=
- =?us-ascii?Q?TzrhiYhxuYTgLsRxNJ5HZv7WzkEigvdq0QsCLlqyDgdkj+/0z/cLrVNeb80W?=
- =?us-ascii?Q?2wSvn8REbgHtejy1n3/b3om8NSEe+R7xgkTseEnFIbhj+aFJe7qKZdmBkiY5?=
- =?us-ascii?Q?do1zP2icP3vdavYhTj81JRCeI5R1Y13JoAJpEQnx/Cu9tdAQJx9fhM8luiyn?=
- =?us-ascii?Q?6mV3ygmDJvjUTGSknoQWLBNjAO7C7lNzb0t0MHV6qNi45QV+YMyMBpBsuiMp?=
- =?us-ascii?Q?AK0rEuaMuYOvSZZwWdMjwLjULKPtX65KFgs7u0H4QZG+lIyfESMcu5K4mKfO?=
- =?us-ascii?Q?ljfN4MHne8IAXdoQUU8SvOodGvEAnDT9H1PJetgxUfiC7oa04tEGtEt1KG7c?=
- =?us-ascii?Q?aia5+lQEMGpVKDQPNDi2d0OyKUjRJ+J1uth0georYToydJMdG0wIY4rb5xgB?=
- =?us-ascii?Q?HXQJUFQfhTpHiTUAMD1fBoD9QkAyKkRiByUTj5AyqM4vWkUnO7K4+XZpwNVk?=
- =?us-ascii?Q?LjomyGnfjOrMIfrLfAIysCBW3G6xwqnpWtPjgV9mcvUMDP9+JDlNMmaKQlEp?=
- =?us-ascii?Q?+x9xQ/mpCxZu0BeG/6dE9aBUXXPxCI4MSTFbcnMKDa+snCvmFI+KMamONbGC?=
- =?us-ascii?Q?JU6yudXQYXtJqOUIWiSTlokL9qu1xx/vgyDTMcL8u2ArLjpFJbp2ScplBcPT?=
- =?us-ascii?Q?S2lWf5mcn0q83OUpHuGioRBeopGLkqtbHsweMOEpW5EDjXkz5U/gBcGfkI8J?=
- =?us-ascii?Q?00xd41Yk5sgyWZfN1omxCwnXbq2CVn2RXoaeI9MP2NYS5GKpAuj4U4wm6Zsd?=
- =?us-ascii?Q?0FbDXcF1H84zchNGCeIKFBgW6tI18NFXDiOExz+Ra5daCgTs2LyAEDCfdxMR?=
- =?us-ascii?Q?J2gtbbxgIAD8YK/c+DHzOsrf?=
-x-ms-exchange-transport-forked: True
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+        id S229483AbhC3BKg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 29 Mar 2021 21:10:36 -0400
+Received: from mailgate.ics.forth.gr ([139.91.1.2]:58694 "EHLO
+        mailgate.ics.forth.gr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230202AbhC3BKZ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 29 Mar 2021 21:10:25 -0400
+X-Greylist: delayed 1077 seconds by postgrey-1.27 at vger.kernel.org; Mon, 29 Mar 2021 21:10:25 EDT
+Received: from av3.ics.forth.gr (av3in.ics.forth.gr [139.91.1.77])
+        by mailgate.ics.forth.gr (8.15.2/ICS-FORTH/V10-1.8-GATE) with ESMTP id 12U0qOxk066167
+        for <linux-sh@vger.kernel.org>; Tue, 30 Mar 2021 03:52:24 +0300 (EEST)
+DKIM-Signature: v=1; a=rsa-sha256; d=ics.forth.gr; s=av; c=relaxed/simple;
+        q=dns/txt; i=@ics.forth.gr; t=1617065539; x=1619657539;
+        h=From:Sender:Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:Content-Type:
+        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:Resent-From:
+        Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:In-Reply-To:References:List-Id:
+        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+        bh=4Ytp87wkA+alvM5YO/7dlXgP5/jZJBWXepwASfozGUU=;
+        b=CXdKG8AeuRZiwZ+qSuU9itQVeS+S6jzZD+LSRTjBq4uIMwy1EtYl2LFohFQ3P0aL
+        1snhQLBfGMnJPLlMUvta1R1ExG60xpMGjvqAzE108mPHfXrfMlKUizgfR2G3CWnj
+        dKei0YP7+vI+q9xmsTyWmdWtYdS0hBwgkfMMp+y/DHsFRhQlCWvNoRqg2neDGsDy
+        A/MbNsCxbPucEdxZvgGboLEud/obw/iKdEC8cDqcfAJRCeFRpho58PpEswmR8XMQ
+        DBZlttMlmL7pkMgUDfZroBTVf9b7EC2+ikG/v595zLMuOGi9LkWZ5Pgiy0gLVEtB
+        d2DVMQG/q9QvZWbAMsyDiw==;
+X-AuditID: 8b5b014d-a4c337000000209f-f6-60627642ff7a
+Received: from enigma.ics.forth.gr (enigma-2.ics.forth.gr [139.91.151.35])
+        by av3.ics.forth.gr (Symantec Messaging Gateway) with SMTP id 86.6D.08351.24672606; Tue, 30 Mar 2021 03:52:18 +0300 (EEST)
+X-ICS-AUTH-INFO: Authenticated user:  at ics.forth.gr
 MIME-Version: 1.0
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-AuthSource: BY5PR11MB3893.namprd11.prod.outlook.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 3136e626-5230-45dc-23e7-08d8f252eb33
-X-MS-Exchange-CrossTenant-originalarrivaltime: 29 Mar 2021 01:35:21.8933
- (UTC)
-X-MS-Exchange-CrossTenant-fromentityheader: Hosted
-X-MS-Exchange-CrossTenant-id: 46c98d88-e344-4ed4-8496-4ed7712e255d
-X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
-X-MS-Exchange-CrossTenant-userprincipalname: EORUlTAMEmVGyPJ9IXxT10ifW8qQlyWaELYLStNmnpr+Szh6mpMwUAPTHgqsnwEvoe/BmzqwOe5+1m1EIpQbUA==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: BYAPR11MB3253
-X-OriginatorOrg: intel.com
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Content-Transfer-Encoding: 8bit
+Date:   Tue, 30 Mar 2021 03:52:17 +0300
+From:   Nick Kossifidis <mick@ics.forth.gr>
+To:     Rob Herring <robh@kernel.org>
+Cc:     Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Andreas Schwab <schwab@linux-m68k.org>,
+        Will Deacon <will@kernel.org>,
+        Daniel Walker <danielwa@cisco.com>,
+        Daniel Gimpelevich <daniel@gimpelevich.san-francisco.ca.us>,
+        "open list:GENERIC INCLUDE/ASM HEADER FILES" 
+        <linux-arch@vger.kernel.org>, devicetree@vger.kernel.org,
+        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
+        linux-kernel@vger.kernel.org,
+        linux-arm-kernel <linux-arm-kernel@lists.infradead.org>,
+        microblaze <monstr@monstr.eu>,
+        "open list:MIPS" <linux-mips@vger.kernel.org>,
+        nios2 <ley.foon.tan@intel.com>,
+        Openrisc <openrisc@lists.librecores.org>,
+        linux-hexagon@vger.kernel.org,
+        linux-riscv <linux-riscv@lists.infradead.org>,
+        X86 ML <x86@kernel.org>, linux-xtensa@linux-xtensa.org,
+        SH-Linux <linux-sh@vger.kernel.org>,
+        sparclinux <sparclinux@vger.kernel.org>, paul.walmsley@sifive.com
+Subject: Re: [PATCH v3 11/17] riscv: Convert to GENERIC_CMDLINE
+Organization: FORTH
+In-Reply-To: <CAL_JsqK2TT=j1QjiRgTYQvwHqivE-3HgYo2JzxTJSWO2wvK69Q@mail.gmail.com>
+References: <cover.1616765869.git.christophe.leroy@csgroup.eu>
+ <46745e07b04139a22b5bd01dc37df97e6981e643.1616765870.git.christophe.leroy@csgroup.eu>
+ <87zgyqdn3d.fsf@igel.home> <81a7e63f-57d4-5c81-acc5-35278fe5bb04@csgroup.eu>
+ <CAL_JsqK2TT=j1QjiRgTYQvwHqivE-3HgYo2JzxTJSWO2wvK69Q@mail.gmail.com>
+Message-ID: <3ae0c2faa08f76efb8a446f262b712df@mailhost.ics.forth.gr>
+X-Sender: mick@mailhost.ics.forth.gr
+User-Agent: Roundcube Webmail/1.3.16
+X-Brightmail-Tracker: H4sIAAAAAAAAA+NgFjrCIsWRmVeSWpSXmKPExsXSHT1dWde5LCnB4AO/xZ1Jz9ktjh7vZbZo
+        XriE2WL+kXOsFvd3NzJadOz6ymKx6fE1Vov3LTvYLC7vmsNm0blpK6PFts8tbBZz/kxhtlh5
+        di27xe/v/1gtnnw8DVTceZnNom0Wv8X/PTvYLfqXdrBZNJxcwWrRcsfU4seGx6wOYh5Tfm9k
+        9fh68xyTx/0Hz1k9Fu95yeSxaVUnm8ehwx2MHi8Obmf22Lyk3mP9hm2MHudnLGT0+Ns1hdnj
+        UvN1do/Pm+QCeKO4bFJSczLLUov07RK4MpqW3GYuuMdT8eD2fOYGxrVcXYycHBICJhKb5j1j
+        72Lk4hASOM4ocWFHFwtEwlRi9t5ORhCbV0BQ4uTMJ2BxZgELialX9jNC2PISzVtnM4PYLAKq
+        Els+QMTZBDQl5l86CFYvIqAo8bttGivIAmaBz+wSj242AhVxcAgL2Essn2UHUsMvICzx6e5F
+        VhCbUyBQ4uqL32wQB61hkjh69A8zxBEuEv8+TmeFOE5F4sPvB+wgc0SB7M1zlSYwCs5Ccuos
+        JKfOQnLqAkbmVYwCiWXGepnJxXpp+UUlGXrpRZsYwRHN6LuD8fbmt3qHGJk4GA8xSnAwK4nw
+        Ch9ITBDiTUmsrEotyo8vKs1JLT7EKM3BoiTOy6s3IV5IID2xJDU7NbUgtQgmy8TBKdXAZDF7
+        Ibu7bpJ0S056lY5T1mb7vUI9xyRZInM7SjMP8ahbfi7Uu/0qNq1njospX8DU78dj3x2SfDtV
+        xHr+FbGLEcWvzua/LQj7ONkr3DCLIUHfakKWSpDXwry3fhOKIt/ODEo56nXrAdt29SnP+nMU
+        /0fe/8z4TdbTnDN88c+XOWxtenuYQhzmfH6zlLlrvXps4O6P71n8I2qa5vKWSe5VsPzLdTHu
+        SsfRmr9zrF4xMis2pC6wc3hy+6X3kX3s6p2BTRKZ765un2UqyV7ZejbXdqbCqqDP7v8XdzH4
+        y8tEl3xTvfqpobI9Nip3m3ir+7L5W7548iblXFzk8i1x838fU8lVvJ6yk1SXnTbzEFViKc5I
+        NNRiLipOBAC7YhWKVwMAAA==
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+Στις 2021-03-26 17:26, Rob Herring έγραψε:
+> On Fri, Mar 26, 2021 at 8:20 AM Christophe Leroy
+> <christophe.leroy@csgroup.eu> wrote:
+>> 
+>> 
+>> 
+>> Le 26/03/2021 à 15:08, Andreas Schwab a écrit :
+>> > On Mär 26 2021, Christophe Leroy wrote:
+>> >
+>> >> diff --git a/arch/riscv/kernel/setup.c b/arch/riscv/kernel/setup.c
+>> >> index f8f15332caa2..e7c91ee478d1 100644
+>> >> --- a/arch/riscv/kernel/setup.c
+>> >> +++ b/arch/riscv/kernel/setup.c
+>> >> @@ -20,6 +20,7 @@
+>> >>   #include <linux/swiotlb.h>
+>> >>   #include <linux/smp.h>
+>> >>   #include <linux/efi.h>
+>> >> +#include <linux/cmdline.h>
+>> >>
+>> >>   #include <asm/cpu_ops.h>
+>> >>   #include <asm/early_ioremap.h>
+>> >> @@ -228,10 +229,8 @@ static void __init parse_dtb(void)
+>> >>      }
+>> >>
+>> >>      pr_err("No DTB passed to the kernel\n");
+>> >> -#ifdef CONFIG_CMDLINE_FORCE
+>> >> -    strlcpy(boot_command_line, CONFIG_CMDLINE, COMMAND_LINE_SIZE);
+>> >> +    cmdline_build(boot_command_line, NULL, COMMAND_LINE_SIZE);
+>> >>      pr_info("Forcing kernel command line to: %s\n", boot_command_line);
+>> >
+>> > Shouldn't that message become conditional in some way?
+>> >
+>> 
+>> You are right, I did something similar on ARM but looks like I missed 
+>> it on RISCV.
+> 
+> How is this hunk even useful? Under what conditions can you boot
+> without a DTB? Even with a built-in DTB, the DT cmdline handling would
+> be called.
+> 
+> Rob
+> 
 
-
-> -----Original Message-----
-> From: Christophe Leroy <christophe.leroy@csgroup.eu>
-> Sent: Friday, March 26, 2021 9:45 PM
-> To: will@kernel.org; danielwa@cisco.com; robh@kernel.org;
-> daniel@gimpelevich.san-francisco.ca.us
-> Cc: linux-arch@vger.kernel.org; devicetree@vger.kernel.org; linuxppc-
-> dev@lists.ozlabs.org; linux-kernel@vger.kernel.org; linuxppc-
-> dev@lists.ozlabs.org; linux-arm-kernel@lists.infradead.org; microblaze
-> <monstr@monstr.eu>; linux-mips@vger.kernel.org; Tan, Ley Foon
-> <ley.foon.tan@intel.com>; openrisc@lists.librecores.org; linux-
-> hexagon@vger.kernel.org; linux-riscv@lists.infradead.org; x86@kernel.org;
-> linux-xtensa@linux-xtensa.org; linux-sh@vger.kernel.org;
-> sparclinux@vger.kernel.org
-> Subject: [PATCH v3 09/17] nios2: Convert to GENERIC_CMDLINE
->=20
-> This converts the architecture to GENERIC_CMDLINE.
->=20
-> Signed-off-by: Christophe Leroy <christophe.leroy@csgroup.eu>
-> ---
->  arch/nios2/Kconfig        | 24 +-----------------------
->  arch/nios2/kernel/setup.c | 13 ++++---------
->  2 files changed, 5 insertions(+), 32 deletions(-)
->=20
-> diff --git a/arch/nios2/Kconfig b/arch/nios2/Kconfig index
-> c24955c81c92..f66c97b15813 100644
-> --- a/arch/nios2/Kconfig
-> +++ b/arch/nios2/Kconfig
-> @@ -90,31 +90,9 @@ config NIOS2_ALIGNMENT_TRAP
->=20
->  comment "Boot options"
->=20
-> -config CMDLINE_BOOL
-> -	bool "Default bootloader kernel arguments"
-> -	default y
-> -
-> -config CMDLINE
-> -	string "Default kernel command string"
-> -	default ""
-> -	depends on CMDLINE_BOOL
-> -	help
-> -	  On some platforms, there is currently no way for the boot loader to
-> -	  pass arguments to the kernel. For these platforms, you can supply
-> -	  some command-line options at build time by entering them here.  In
-> -	  other cases you can specify kernel args so that you don't have
-> -	  to set them up in board prom initialization routines.
-> -
-> -config CMDLINE_FORCE
-> -	bool "Force default kernel command string"
-> -	depends on CMDLINE_BOOL
-> -	help
-> -	  Set this to have arguments from the default kernel command string
-> -	  override those passed by the boot loader.
-> -
->  config NIOS2_CMDLINE_IGNORE_DTB
->  	bool "Ignore kernel command string from DTB"
-> -	depends on CMDLINE_BOOL
-> +	depends on CMDLINE !=3D ""
->  	depends on !CMDLINE_FORCE
->  	default y
->  	help
-
-Missing " select GENERIC_CMDLINE" ?
-
-
-
-
-> diff --git a/arch/nios2/kernel/setup.c b/arch/nios2/kernel/setup.c index
-> d2f21957e99c..42464f457a6d 100644
-> --- a/arch/nios2/kernel/setup.c
-> +++ b/arch/nios2/kernel/setup.c
-> @@ -20,6 +20,7 @@
->  #include <linux/initrd.h>
->  #include <linux/of_fdt.h>
->  #include <linux/screen_info.h>
-> +#include <linux/cmdline.h>
->=20
->  #include <asm/mmu_context.h>
->  #include <asm/sections.h>
-> @@ -108,7 +109,7 @@ asmlinkage void __init nios2_boot_init(unsigned r4,
-> unsigned r5, unsigned r6,
->  				       unsigned r7)
->  {
->  	unsigned dtb_passed =3D 0;
-> -	char cmdline_passed[COMMAND_LINE_SIZE] __maybe_unused =3D
-> { 0, };
-> +	char cmdline_passed[COMMAND_LINE_SIZE] =3D { 0, };
->=20
->  #if defined(CONFIG_NIOS2_PASS_CMDLINE)
->  	if (r4 =3D=3D 0x534f494e) { /* r4 is magic NIOS */ @@ -127,14 +128,8 @@
-> asmlinkage void __init nios2_boot_init(unsigned r4, unsigned r5, unsigned=
- r6,
->=20
->  	early_init_devtree((void *)dtb_passed);
->=20
-> -#ifndef CONFIG_CMDLINE_FORCE
-> -	if (cmdline_passed[0])
-> -		strlcpy(boot_command_line, cmdline_passed,
-> COMMAND_LINE_SIZE);
-> -#ifdef CONFIG_NIOS2_CMDLINE_IGNORE_DTB
-> -	else
-> -		strlcpy(boot_command_line, CONFIG_CMDLINE,
-> COMMAND_LINE_SIZE);
-> -#endif
-> -#endif
-> +	if (cmdline_passed[0] ||
-> IS_ENABLED(CONFIG_NIOS2_CMDLINE_IGNORE_DTB))
-> +		cmdline_build(boot_command_line, cmdline_passed,
-> COMMAND_LINE_SIZE);
->=20
->  	parse_early_param();
->  }
-> --
-> 2.25.0
+cced Paul who introduced this:
+https://git.kernel.org/pub/scm/linux/kernel/git/riscv/linux.git/commit/arch/riscv/kernel/setup.c?id=8fd6e05c7463b635e51ec7df0a1858c1b5a6e350
 
