@@ -2,94 +2,113 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-10.1 required=3.0 tests=BAYES_00,DKIM_INVALID,
-	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E2CFC433E3
-	for <linux-sh@archiver.kernel.org>; Wed, 31 Mar 2021 09:36:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8D7B7C433B4
+	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 00:33:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 418D461874
-	for <linux-sh@archiver.kernel.org>; Wed, 31 Mar 2021 09:36:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4F51160FEC
+	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 00:33:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234813AbhCaJf3 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 31 Mar 2021 05:35:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38426 "EHLO
+        id S233113AbhDAAc1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 31 Mar 2021 20:32:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35064 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234796AbhCaJe5 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 31 Mar 2021 05:34:57 -0400
-Received: from pandora.armlinux.org.uk (pandora.armlinux.org.uk [IPv6:2001:4d48:ad52:32c8:5054:ff:fe00:142])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ABB81C061574;
-        Wed, 31 Mar 2021 02:34:50 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=armlinux.org.uk; s=pandora-2019; h=Sender:In-Reply-To:Content-Type:
-        MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-         bh=g5jil2A5p1wkLzsVeTmgtclSOGELktvkEXEKlZIjYVg=; b=XiJ+OxK9qQFp9pb3iCkwBlOXp
-        SMJ3LhDQZ76ImMGs1+23oQ/WioU0hWz9YYebFqQSGNvQ9UoNd6HpZZO1Sjlw6ufxhQGjsXhlyq1yL
-        Rg135ndoOTaxrliAkRSdtcBfX2vfDfUyJu5lpt9Qx1ISZiGbjOFZL9lbJbIgPizvs5nTWoRI4FLnx
-        IITtjbSu3y+aMQU0qpykWL/nQFeQEL15bN2ggOwffKUuT89Wrfg/HzYa88LdxJKrx3C6YUip0LQa6
-        pzMLGWk3w8Fc3V7dXGDMahXGdpM/gmApUuTa+Zg5+b0cW019JI5maq8g7N3s6BN2W+w/Or1ItM82H
-        Rqn3lcuqg==;
-Received: from shell.armlinux.org.uk ([fd8f:7570:feb6:1:5054:ff:fe00:4ec]:51970)
-        by pandora.armlinux.org.uk with esmtpsa (TLS1.3:ECDHE_RSA_AES_256_GCM_SHA384:256)
-        (Exim 4.92)
-        (envelope-from <linux@armlinux.org.uk>)
-        id 1lRXFB-0001b6-Rl; Wed, 31 Mar 2021 10:34:33 +0100
-Received: from linux by shell.armlinux.org.uk with local (Exim 4.92)
-        (envelope-from <linux@shell.armlinux.org.uk>)
-        id 1lRXF0-0003oo-SH; Wed, 31 Mar 2021 10:34:22 +0100
-Date:   Wed, 31 Mar 2021 10:34:22 +0100
-From:   Russell King - ARM Linux admin <linux@armlinux.org.uk>
-To:     Kefeng Wang <wangkefeng.wang@huawei.com>
-Cc:     linux-kernel@vger.kernel.org,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Richard Henderson <rth@twiddle.net>,
-        Guo Ren <guoren@kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        Jonas Bonn <jonas@southpole.se>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        "David S. Miller" <davem@davemloft.net>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Ingo Molnar <mingo@redhat.com>, linux-alpha@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
-        linux-xtensa@linux-xtensa.org, linux-mm@kvack.org
-Subject: Re: [PATCH v2] mm: Move mem_init_print_info() into mm_init()
-Message-ID: <20210331093422.GU1463@shell.armlinux.org.uk>
-References: <4d488195-7281-9238-b30d-9f89a6100fb9@csgroup.eu>
- <20210317015210.33641-1-wangkefeng.wang@huawei.com>
+        with ESMTP id S229812AbhDAAb6 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 31 Mar 2021 20:31:58 -0400
+Received: from mail-qv1-xf2b.google.com (mail-qv1-xf2b.google.com [IPv6:2607:f8b0:4864:20::f2b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2BF25C061761;
+        Wed, 31 Mar 2021 17:31:58 -0700 (PDT)
+Received: by mail-qv1-xf2b.google.com with SMTP id t5so249973qvs.5;
+        Wed, 31 Mar 2021 17:31:58 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=aaWFnvO5mlS7gtqbzZ/Rzs0v3x5NZRxF7C+mMsnpKHk=;
+        b=uPbjMAV4Y2EBSJ+JfaHmNGDYq5zqdqKOAZHbsb0VSPsGNd+nTGfoYrf1P5k0poyuPw
+         tpXpTqMoGwF7zx1knsS0ta5QmIUHxI1FN0437vyb7HR5bPI6WkQfADd/aLuXjYWQM7ZA
+         3Ka68CkZN0/ZcSMGzk4H4PNwVn/vc1/0YH8FpDTEBAlosT9aFdk6iNcIHQuegLwYVeMH
+         xI8ImgUTUgpmN0rhJhAh7UDzyUvdCpilKdzP9dCajfj4Wzo3xj2oLaH6i6VOqW/3M4EJ
+         OrXxIW+Ur2NKaxX/swQTPQcfFlSgXp3UDdZWJ2CUCkYHJBRs596j6K99oqbRTXTmMY+R
+         TSsA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=aaWFnvO5mlS7gtqbzZ/Rzs0v3x5NZRxF7C+mMsnpKHk=;
+        b=szQIKd4fb1/DJI/acOL3IlDOyv4HldAT8usBrZzvTybr0uNrs70fngRhvExNM3xdq2
+         JNELR1L3DZH0yMKDw73i/59OrSXfy4P2dJK8CzUthUD5rLbEmZtD3d3a3Te6IyRKr/RY
+         cKJGsQ4ZilehfyWbwtQ9omALF9boTUkkmlq01v8zopNK9BwVqndPTkOdDr95MoP/j9mI
+         /otPCmi8vQuTLFp0qW89udKNpfoKA/8hwjWAvN3PhKCRnOKrhJN7ZUit9MfSnZUkOSdW
+         AgUmVqn+eee7iDM20ariwsJy7DLkq1zT+dcASRtsvsmsPT7yYuOay9c00AvgA8wlqB1j
+         qzXQ==
+X-Gm-Message-State: AOAM531FWTYIt6H/d/Z1WisbKNTfiNE8SrZSEEtMBF02WG3KdDMFN13W
+        bLkIXm28diidbLhuvjMw9+DTMJ4FwdF1QQ==
+X-Google-Smtp-Source: ABdhPJx3TATPye1tKmcmsqyRcYujzF4mgS5d9QwIHuUiHq4KtN5wUxqV7hHXZewX29Hk2iSsHq6Ckg==
+X-Received: by 2002:a0c:f54d:: with SMTP id p13mr5641362qvm.32.1617237116796;
+        Wed, 31 Mar 2021 17:31:56 -0700 (PDT)
+Received: from localhost ([207.98.216.60])
+        by smtp.gmail.com with ESMTPSA id j6sm2771537qkl.84.2021.03.31.17.31.56
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 31 Mar 2021 17:31:56 -0700 (PDT)
+From:   Yury Norov <yury.norov@gmail.com>
+To:     linux-kernel@vger.kernel.org,
+        Andrew Morton <akpm@linux-foundation.org>
+Cc:     Yury Norov <yury.norov@gmail.com>, linux-m68k@lists.linux-m68k.org,
+        linux-arch@vger.kernel.org, linux-sh@vger.kernel.org,
+        Alexey Klimov <aklimov@redhat.com>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Arnd Bergmann <arnd@arndb.de>, David Sterba <dsterba@suse.com>,
+        Dennis Zhou <dennis@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Jianpeng Ma <jianpeng.ma@intel.com>,
+        Joe Perches <joe@perches.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
+        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+        Rich Felker <dalias@libc.org>,
+        Stefano Brivio <sbrivio@redhat.com>,
+        Wei Yang <richard.weiyang@linux.alibaba.com>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+Subject: [PATCH 01/12] tools: disable -Wno-type-limits
+Date:   Wed, 31 Mar 2021 17:31:42 -0700
+Message-Id: <20210401003153.97325-2-yury.norov@gmail.com>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20210401003153.97325-1-yury.norov@gmail.com>
+References: <20210401003153.97325-1-yury.norov@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210317015210.33641-1-wangkefeng.wang@huawei.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
-Sender: Russell King - ARM Linux admin <linux@armlinux.org.uk>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Mar 17, 2021 at 09:52:10AM +0800, Kefeng Wang wrote:
-> mem_init_print_info() is called in mem_init() on each architecture,
-> and pass NULL argument, so using void argument and move it into mm_init().
-> 
-> Acked-by: Dave Hansen <dave.hansen@linux.intel.com>
-> Signed-off-by: Kefeng Wang <wangkefeng.wang@huawei.com>
+GENMASK(h, l) may be passed with unsigned types. In such case, type-limits
+warning is generated for example in case of GENMASK(h, 0).
 
-Acked-by: Russell King <rmk+kernel@armlinux.org.uk> # for arm bits
+Signed-off-by: Yury Norov <yury.norov@gmail.com>
+Acked-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+---
+ tools/scripts/Makefile.include | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/tools/scripts/Makefile.include b/tools/scripts/Makefile.include
+index 84dbf61a7eca..15e99905cb7d 100644
+--- a/tools/scripts/Makefile.include
++++ b/tools/scripts/Makefile.include
+@@ -38,6 +38,7 @@ EXTRA_WARNINGS += -Wswitch-enum
+ EXTRA_WARNINGS += -Wundef
+ EXTRA_WARNINGS += -Wwrite-strings
+ EXTRA_WARNINGS += -Wformat
++EXTRA_WARNINGS += -Wno-type-limits
+ 
+ CC_NO_CLANG := $(shell $(CC) -dM -E -x c /dev/null | grep -Fq "__clang__"; echo $$?)
+ 
 -- 
-RMK's Patch system: https://www.armlinux.org.uk/developer/patches/
-FTTP is here! 40Mbps down 10Mbps up. Decent connectivity at last!
+2.25.1
+
