@@ -2,287 +2,151 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C23BFC433ED
-	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 06:44:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F3749C433ED
+	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 08:36:47 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 94A8C6105A
-	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 06:44:39 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BA024610CD
+	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 08:36:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233394AbhDAGoI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 1 Apr 2021 02:44:08 -0400
-Received: from foss.arm.com ([217.140.110.172]:59966 "EHLO foss.arm.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233195AbhDAGnu (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Thu, 1 Apr 2021 02:43:50 -0400
-Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id AE312D6E;
-        Wed, 31 Mar 2021 23:43:49 -0700 (PDT)
-Received: from p8cg001049571a15.arm.com (unknown [10.163.70.228])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPA id 183EF3F719;
-        Wed, 31 Mar 2021 23:43:42 -0700 (PDT)
-From:   Anshuman Khandual <anshuman.khandual@arm.com>
-To:     linux-mm@kvack.org, akpm@linux-foundation.org
-Cc:     linux-kernel@vger.kernel.org,
-        Anshuman Khandual <anshuman.khandual@arm.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@de.ibm.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        id S233504AbhDAIgR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 1 Apr 2021 04:36:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54324 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S233592AbhDAIfs (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 1 Apr 2021 04:35:48 -0400
+Received: from mail-pg1-x530.google.com (mail-pg1-x530.google.com [IPv6:2607:f8b0:4864:20::530])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2CCE0C0613E6;
+        Thu,  1 Apr 2021 01:35:48 -0700 (PDT)
+Received: by mail-pg1-x530.google.com with SMTP id f10so1101300pgl.9;
+        Thu, 01 Apr 2021 01:35:48 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=XVWxBV7AAcEU+9GV07Fj7VLJdKFcDyXYfOYCJpN3/Vw=;
+        b=R0SX9ZHt4mk0/lyKsmkproGfhH9a2F/mQbKzjw5o5yJQjwY+F1zwV8PQA3FJ/pyXOu
+         6gUnMFePtYjKX9l7A1g9jeNliSZku4IaeHDwKOsHFpzd0Q/zl51sdTOWb1VC/nowQ+BJ
+         bb8eEqS6618xUhOHQ99O6QKNkzgCXSOS+wEayuvjsqpYOYEHKGRrSsnmxmPhbRMdtx01
+         yQsZ3OdcEUkF9JqIvQiog89sYu4j/0UyGW+2HKEQ4KocIrfMj8XeGq03nNpkN7w8e0Rl
+         vT44K0k6vDvutPyo+BfCYZFc6hNocrNmfwucin2RtRcMuawcOwuaxsfwRn0jUCrWECqg
+         Vt+g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=XVWxBV7AAcEU+9GV07Fj7VLJdKFcDyXYfOYCJpN3/Vw=;
+        b=O4MEp9+Ho9tUAfzD0bq0pgTYzRXS2UIL6zfpwzUnMkQwHdUGD4lFl2xr38eWrwFq/a
+         DnUhw41U325gD5anV3vmQHjYpKAutHqB0yPpwmA6lNg/SJwVIJYqzxC8qhQzqzuO/pAg
+         m2rLW9NFJt38iGG8pBUfblqnybTbisXpjHwzxzAMN+V+lwZfvg1D2DNJUDpmRT+Hf6Jb
+         hZ3qfAje+O+dSOjYUdnYq3nuMSvkzkiQjUAf5RQbe41cP7h2PJ0jqM9iUJxqMW9UuxsX
+         4PKzpMvmuy1HspYfr+9RhMtQKwcfMCAOgjcLpgOkE006HTFrjBh8wwpJD96nvbe+cf6A
+         4iaQ==
+X-Gm-Message-State: AOAM532d8TUts41e4t8ZccufoEeJ89cii2Z1GOKUXiwklgkOop6fkmaY
+        KhCOE6aJd8Fq9ZEPqjFPh7MPcJk/e0gru1pvQ09u1WcMYLY=
+X-Google-Smtp-Source: ABdhPJxJ0LERe+QskxE4j9CC+8mm9/t+p7kYOj9gx8UnJVa90NEQL87WRUv6loCfopemfWX1wM7oOMVRATjPvqA9WXY=
+X-Received: by 2002:a62:528e:0:b029:1f5:c5ee:a487 with SMTP id
+ g136-20020a62528e0000b02901f5c5eea487mr6410772pfb.7.1617266147657; Thu, 01
+ Apr 2021 01:35:47 -0700 (PDT)
+MIME-Version: 1.0
+References: <20210401003153.97325-1-yury.norov@gmail.com> <20210401003153.97325-6-yury.norov@gmail.com>
+In-Reply-To: <20210401003153.97325-6-yury.norov@gmail.com>
+From:   Andy Shevchenko <andy.shevchenko@gmail.com>
+Date:   Thu, 1 Apr 2021 11:35:31 +0300
+Message-ID: <CAHp75Veq1ghvLq0Ms77ANx3Lb-QMWOq0CnxPeL0X7V-XeipUAA@mail.gmail.com>
+Subject: Re: [PATCH 05/12] lib: extend the scope of small_const_nbits() macro
+To:     Yury Norov <yury.norov@gmail.com>
+Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        Linux-Arch <linux-arch@vger.kernel.org>,
+        Linux-SH <linux-sh@vger.kernel.org>,
+        Alexey Klimov <aklimov@redhat.com>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Arnd Bergmann <arnd@arndb.de>, David Sterba <dsterba@suse.com>,
+        Dennis Zhou <dennis@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Jianpeng Ma <jianpeng.ma@intel.com>,
+        Joe Perches <joe@perches.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
+        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
         Rich Felker <dalias@libc.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, x86@kernel.org,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org
-Subject: [PATCH V2 3/6] mm: Generalize ARCH_ENABLE_MEMORY_[HOTPLUG|HOTREMOVE]
-Date:   Thu,  1 Apr 2021 12:14:05 +0530
-Message-Id: <1617259448-22529-4-git-send-email-anshuman.khandual@arm.com>
-X-Mailer: git-send-email 2.7.4
-In-Reply-To: <1617259448-22529-1-git-send-email-anshuman.khandual@arm.com>
-References: <1617259448-22529-1-git-send-email-anshuman.khandual@arm.com>
+        Stefano Brivio <sbrivio@redhat.com>,
+        Wei Yang <richard.weiyang@linux.alibaba.com>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-ARCH_ENABLE_MEMORY_[HOTPLUG|HOTREMOVE] configs have duplicate definitions
-on platforms that subscribe them. Instead, just make them generic options
-which can be selected on applicable platforms.
+On Thu, Apr 1, 2021 at 3:41 AM Yury Norov <yury.norov@gmail.com> wrote:
+>
+> find_bit would also benefit from small_const_nbits() optimizations.
+> The detailed comment is provided by Rasmus Villemoes.
 
-Cc: Catalin Marinas <catalin.marinas@arm.com>
-Cc: Will Deacon <will@kernel.org>
-Cc: Michael Ellerman <mpe@ellerman.id.au>
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: Heiko Carstens <hca@linux.ibm.com>
-Cc: Vasily Gorbik <gor@linux.ibm.com>
-Cc: Christian Borntraeger <borntraeger@de.ibm.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: x86@kernel.org
-Cc: "H. Peter Anvin" <hpa@zytor.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-ia64@vger.kernel.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-s390@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: linux-mm@kvack.org
-Cc: linux-kernel@vger.kernel.org
-Acked-by: Catalin Marinas <catalin.marinas@arm.com> (arm64)
-Acked-by: Heiko Carstens <hca@linux.ibm.com> (s390)
-Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
----
- arch/arm64/Kconfig   |  8 ++------
- arch/ia64/Kconfig    |  8 ++------
- arch/powerpc/Kconfig |  8 ++------
- arch/s390/Kconfig    |  8 ++------
- arch/sh/Kconfig      |  2 ++
- arch/sh/mm/Kconfig   |  8 --------
- arch/x86/Kconfig     | 10 ++--------
- mm/Kconfig           |  6 ++++++
- 8 files changed, 18 insertions(+), 40 deletions(-)
+Thanks, now it looks good!
+Acked-by: Andy Shevchenko <andy.shevchenko@gmail.com>
 
-diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
-index c86b28ef6ac0..48355c5519c3 100644
---- a/arch/arm64/Kconfig
-+++ b/arch/arm64/Kconfig
-@@ -11,6 +11,8 @@ config ARM64
- 	select ACPI_PPTT if ACPI
- 	select ARCH_HAS_DEBUG_WX
- 	select ARCH_BINFMT_ELF_STATE
-+	select ARCH_ENABLE_MEMORY_HOTPLUG
-+	select ARCH_ENABLE_MEMORY_HOTREMOVE
- 	select ARCH_HAS_CACHE_LINE_SIZE
- 	select ARCH_HAS_DEBUG_VIRTUAL
- 	select ARCH_HAS_DEBUG_VM_PGTABLE
-@@ -305,12 +307,6 @@ config ZONE_DMA32
- 	bool "Support DMA32 zone" if EXPERT
- 	default y
- 
--config ARCH_ENABLE_MEMORY_HOTPLUG
--	def_bool y
--
--config ARCH_ENABLE_MEMORY_HOTREMOVE
--	def_bool y
--
- config SMP
- 	def_bool y
- 
-diff --git a/arch/ia64/Kconfig b/arch/ia64/Kconfig
-index 2ad7a8d29fcc..96ce53ad5c9d 100644
---- a/arch/ia64/Kconfig
-+++ b/arch/ia64/Kconfig
-@@ -13,6 +13,8 @@ config IA64
- 	select ARCH_MIGHT_HAVE_PC_SERIO
- 	select ACPI
- 	select ACPI_NUMA if NUMA
-+	select ARCH_ENABLE_MEMORY_HOTPLUG
-+	select ARCH_ENABLE_MEMORY_HOTREMOVE
- 	select ARCH_SUPPORTS_ACPI
- 	select ACPI_SYSTEM_POWER_STATES_SUPPORT if ACPI
- 	select ARCH_MIGHT_HAVE_ACPI_PDC if ACPI
-@@ -250,12 +252,6 @@ config HOTPLUG_CPU
- 	  can be controlled through /sys/devices/system/cpu/cpu#.
- 	  Say N if you want to disable CPU hotplug.
- 
--config ARCH_ENABLE_MEMORY_HOTPLUG
--	def_bool y
--
--config ARCH_ENABLE_MEMORY_HOTREMOVE
--	def_bool y
--
- config SCHED_SMT
- 	bool "SMT scheduler support"
- 	depends on SMP
-diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
-index a74c211e55b1..02a05a24659d 100644
---- a/arch/powerpc/Kconfig
-+++ b/arch/powerpc/Kconfig
-@@ -118,6 +118,8 @@ config PPC
- 	# Please keep this list sorted alphabetically.
- 	#
- 	select ARCH_32BIT_OFF_T if PPC32
-+	select ARCH_ENABLE_MEMORY_HOTPLUG
-+	select ARCH_ENABLE_MEMORY_HOTREMOVE
- 	select ARCH_HAS_DEBUG_VIRTUAL
- 	select ARCH_HAS_DEVMEM_IS_ALLOWED
- 	select ARCH_HAS_ELF_RANDOMIZE
-@@ -515,12 +517,6 @@ config ARCH_CPU_PROBE_RELEASE
- 	def_bool y
- 	depends on HOTPLUG_CPU
- 
--config ARCH_ENABLE_MEMORY_HOTPLUG
--	def_bool y
--
--config ARCH_ENABLE_MEMORY_HOTREMOVE
--	def_bool y
--
- config PPC64_SUPPORTS_MEMORY_FAILURE
- 	bool "Add support for memory hwpoison"
- 	depends on PPC_BOOK3S_64
-diff --git a/arch/s390/Kconfig b/arch/s390/Kconfig
-index c1ff874e6c2e..f8b356550daa 100644
---- a/arch/s390/Kconfig
-+++ b/arch/s390/Kconfig
-@@ -60,6 +60,8 @@ config S390
- 	imply IMA_SECURE_AND_OR_TRUSTED_BOOT
- 	select ARCH_32BIT_USTAT_F_TINODE
- 	select ARCH_BINFMT_ELF_STATE
-+	select ARCH_ENABLE_MEMORY_HOTPLUG if SPARSEMEM
-+	select ARCH_ENABLE_MEMORY_HOTREMOVE
- 	select ARCH_HAS_DEBUG_VM_PGTABLE
- 	select ARCH_HAS_DEBUG_WX
- 	select ARCH_HAS_DEVMEM_IS_ALLOWED
-@@ -626,12 +628,6 @@ config ARCH_SPARSEMEM_ENABLE
- config ARCH_SPARSEMEM_DEFAULT
- 	def_bool y
- 
--config ARCH_ENABLE_MEMORY_HOTPLUG
--	def_bool y if SPARSEMEM
--
--config ARCH_ENABLE_MEMORY_HOTREMOVE
--	def_bool y
--
- config ARCH_ENABLE_SPLIT_PMD_PTLOCK
- 	def_bool y
- 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index a54b0c5de37b..68129537e350 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -2,6 +2,8 @@
- config SUPERH
- 	def_bool y
- 	select ARCH_32BIT_OFF_T
-+	select ARCH_ENABLE_MEMORY_HOTPLUG if SPARSEMEM && MMU
-+	select ARCH_ENABLE_MEMORY_HOTREMOVE if SPARSEMEM && MMU
- 	select ARCH_HAVE_CUSTOM_GPIO_H
- 	select ARCH_HAVE_NMI_SAFE_CMPXCHG if (GUSA_RB || CPU_SH4A)
- 	select ARCH_HAS_BINFMT_FLAT if !MMU
-diff --git a/arch/sh/mm/Kconfig b/arch/sh/mm/Kconfig
-index 77aa2f802d8d..d551a9cac41e 100644
---- a/arch/sh/mm/Kconfig
-+++ b/arch/sh/mm/Kconfig
-@@ -136,14 +136,6 @@ config ARCH_SPARSEMEM_DEFAULT
- config ARCH_SELECT_MEMORY_MODEL
- 	def_bool y
- 
--config ARCH_ENABLE_MEMORY_HOTPLUG
--	def_bool y
--	depends on SPARSEMEM && MMU
--
--config ARCH_ENABLE_MEMORY_HOTREMOVE
--	def_bool y
--	depends on SPARSEMEM && MMU
--
- config ARCH_MEMORY_PROBE
- 	def_bool y
- 	depends on MEMORY_HOTPLUG
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 51d171abb57a..503d8b2e8676 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -60,6 +60,8 @@ config X86
- 	select ACPI_SYSTEM_POWER_STATES_SUPPORT	if ACPI
- 	select ARCH_32BIT_OFF_T			if X86_32
- 	select ARCH_CLOCKSOURCE_INIT
-+	select ARCH_ENABLE_MEMORY_HOTPLUG if X86_64 || (X86_32 && HIGHMEM)
-+	select ARCH_ENABLE_MEMORY_HOTREMOVE if MEMORY_HOTPLUG
- 	select ARCH_HAS_ACPI_TABLE_UPGRADE	if ACPI
- 	select ARCH_HAS_CACHE_LINE_SIZE
- 	select ARCH_HAS_DEBUG_VIRTUAL
-@@ -2423,14 +2425,6 @@ config ARCH_HAS_ADD_PAGES
- 	def_bool y
- 	depends on X86_64 && ARCH_ENABLE_MEMORY_HOTPLUG
- 
--config ARCH_ENABLE_MEMORY_HOTPLUG
--	def_bool y
--	depends on X86_64 || (X86_32 && HIGHMEM)
--
--config ARCH_ENABLE_MEMORY_HOTREMOVE
--	def_bool y
--	depends on MEMORY_HOTPLUG
--
- config USE_PERCPU_NUMA_NODE_ID
- 	def_bool y
- 	depends on NUMA
-diff --git a/mm/Kconfig b/mm/Kconfig
-index 1c9a37fc651a..9b58fa08847d 100644
---- a/mm/Kconfig
-+++ b/mm/Kconfig
-@@ -149,6 +149,9 @@ config MEMORY_ISOLATION
- config HAVE_BOOTMEM_INFO_NODE
- 	def_bool n
- 
-+config ARCH_ENABLE_MEMORY_HOTPLUG
-+	bool
-+
- # eventually, we can have this option just 'select SPARSEMEM'
- config MEMORY_HOTPLUG
- 	bool "Allow for memory hot-add"
-@@ -177,6 +180,9 @@ config MEMORY_HOTPLUG_DEFAULT_ONLINE
- 	  Say N here if you want the default policy to keep all hot-plugged
- 	  memory blocks in 'offline' state.
- 
-+config ARCH_ENABLE_MEMORY_HOTREMOVE
-+	bool
-+
- config MEMORY_HOTREMOVE
- 	bool "Allow for memory hot remove"
- 	select HAVE_BOOTMEM_INFO_NODE if (X86_64 || PPC64)
+> Suggested-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+> Signed-off-by: Yury Norov <yury.norov@gmail.com>
+> Acked-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+> ---
+>  include/asm-generic/bitsperlong.h | 12 ++++++++++++
+>  include/linux/bitmap.h            |  8 --------
+>  2 files changed, 12 insertions(+), 8 deletions(-)
+>
+> diff --git a/include/asm-generic/bitsperlong.h b/include/asm-generic/bitsperlong.h
+> index 3905c1c93dc2..1023e2a4bd37 100644
+> --- a/include/asm-generic/bitsperlong.h
+> +++ b/include/asm-generic/bitsperlong.h
+> @@ -23,4 +23,16 @@
+>  #define BITS_PER_LONG_LONG 64
+>  #endif
+>
+> +/*
+> + * small_const_nbits(n) is true precisely when it is known at compile-time
+> + * that BITMAP_SIZE(n) is 1, i.e. 1 <= n <= BITS_PER_LONG. This allows
+> + * various bit/bitmap APIs to provide a fast inline implementation. Bitmaps
+> + * of size 0 are very rare, and a compile-time-known-size 0 is most likely
+> + * a sign of error. They will be handled correctly by the bit/bitmap APIs,
+> + * but using the out-of-line functions, so that the inline implementations
+> + * can unconditionally dereference the pointer(s).
+> + */
+> +#define small_const_nbits(nbits) \
+> +       (__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG && (nbits) > 0)
+> +
+>  #endif /* __ASM_GENERIC_BITS_PER_LONG */
+> diff --git a/include/linux/bitmap.h b/include/linux/bitmap.h
+> index 2cb1d7cfe8f9..a36cfcec4e77 100644
+> --- a/include/linux/bitmap.h
+> +++ b/include/linux/bitmap.h
+> @@ -230,14 +230,6 @@ int bitmap_print_to_pagebuf(bool list, char *buf,
+>  #define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) & (BITS_PER_LONG - 1)))
+>  #define BITMAP_LAST_WORD_MASK(nbits) (~0UL >> (-(nbits) & (BITS_PER_LONG - 1)))
+>
+> -/*
+> - * The static inlines below do not handle constant nbits==0 correctly,
+> - * so make such users (should any ever turn up) call the out-of-line
+> - * versions.
+> - */
+> -#define small_const_nbits(nbits) \
+> -       (__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG && (nbits) > 0)
+> -
+>  static inline void bitmap_zero(unsigned long *dst, unsigned int nbits)
+>  {
+>         unsigned int len = BITS_TO_LONGS(nbits) * sizeof(unsigned long);
+> --
+> 2.25.1
+>
+
+
 -- 
-2.20.1
-
+With Best Regards,
+Andy Shevchenko
