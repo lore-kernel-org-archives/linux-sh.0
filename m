@@ -2,227 +2,287 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D4D06C001BF
-	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 00:33:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C23BFC433ED
+	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 06:44:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id ABC2B61139
-	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 00:33:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 94A8C6105A
+	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 06:44:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233195AbhDAAci (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 31 Mar 2021 20:32:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35140 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233092AbhDAAcJ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 31 Mar 2021 20:32:09 -0400
-Received: from mail-qk1-x72e.google.com (mail-qk1-x72e.google.com [IPv6:2607:f8b0:4864:20::72e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F3EB2C06175F;
-        Wed, 31 Mar 2021 17:32:08 -0700 (PDT)
-Received: by mail-qk1-x72e.google.com with SMTP id y5so637203qkl.9;
-        Wed, 31 Mar 2021 17:32:08 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=OWHXje7aHb+2OQQ4sHpfObqcJeqb3/Y1e6oZgl+21cA=;
-        b=sGTprdvoKyvEb9K8hmpQFNDJghLuuObLQ3aVFTwZ1kcFbQbug7Dz+45o7BxuQxAIQI
-         bxBrIH8azroqP7QDqIKe8uUhoAE1YRqASRwt17TGmchjQBQPWEnawwZ2VkEaanK1VQEu
-         SifRP4gzpH0Cs7JQYlDPmz1rl4gOgkk3qD8UUf8vPhhiplQLiv2wlIpqGqpXeync8JyA
-         Ri5n/7RGCyf8DRC1gwnXc3Aj1LYjrRWhCrFziiGE5VC1qOqv+IogU3Oi+xJFkedJLf7V
-         Akm9eIrg0rbyyah5vzNWpTaXW0fH+N0dw51Pg0AIEbZ+yj8T36o6U/3A2SdLrQ33Hdoj
-         1vIw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=OWHXje7aHb+2OQQ4sHpfObqcJeqb3/Y1e6oZgl+21cA=;
-        b=oT6HNi0ANGg15a7EFxvnRodULDInP7d0fxDmVedbu8lBvd/VSXSH1/TS3DBvj2OP+D
-         OCMN4rzVdAVOf3MzU0uEaJA5K/8p3kPKwj68jwgyrZNanoEfEt/42Mf/gWu6auwEYgWt
-         O7jo4OoQqDCROK+CombTXs7TVCkwBV8kCP7sIbcVBMB8qdlh1quJWlxI8vPW0eOtUESN
-         au+boszwhVnUBpplZgkoI+iU7/ao9z4kzzzRz+WD12IaW/oxq+Yt6b/GFwY/tVOrGKrH
-         Nv4GabwhOUZ7YkyK+DKP7Ub2bVyuwMa8FTn/g542p65Suy43iksUSy3tVp68LAzOtbvw
-         ZVoQ==
-X-Gm-Message-State: AOAM532czKamIm0HYxpPeA01M5R50Lj/hVOeI0s6g1vDPYh7gtpl6wFm
-        f6iRpuiQNTT7hXsWTtQASsRRiUd8HLOH6g==
-X-Google-Smtp-Source: ABdhPJzfXvFWj5mMG8ykN+Zn8l46W+R1ArWFHf1M6eYUJklnBNeB+OQG48RDKLL5uIEBQpRMk97BHw==
-X-Received: by 2002:a05:620a:144a:: with SMTP id i10mr5950253qkl.431.1617237127874;
-        Wed, 31 Mar 2021 17:32:07 -0700 (PDT)
-Received: from localhost ([207.98.216.60])
-        by smtp.gmail.com with ESMTPSA id k8sm2379342qth.74.2021.03.31.17.32.07
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 31 Mar 2021 17:32:07 -0700 (PDT)
-From:   Yury Norov <yury.norov@gmail.com>
-To:     linux-kernel@vger.kernel.org,
-        Andrew Morton <akpm@linux-foundation.org>
-Cc:     Yury Norov <yury.norov@gmail.com>, linux-m68k@lists.linux-m68k.org,
-        linux-arch@vger.kernel.org, linux-sh@vger.kernel.org,
-        Alexey Klimov <aklimov@redhat.com>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Arnd Bergmann <arnd@arndb.de>, David Sterba <dsterba@suse.com>,
-        Dennis Zhou <dennis@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Jianpeng Ma <jianpeng.ma@intel.com>,
-        Joe Perches <joe@perches.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Josh Poimboeuf <jpoimboe@redhat.com>,
-        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+        id S233394AbhDAGoI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 1 Apr 2021 02:44:08 -0400
+Received: from foss.arm.com ([217.140.110.172]:59966 "EHLO foss.arm.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S233195AbhDAGnu (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Thu, 1 Apr 2021 02:43:50 -0400
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id AE312D6E;
+        Wed, 31 Mar 2021 23:43:49 -0700 (PDT)
+Received: from p8cg001049571a15.arm.com (unknown [10.163.70.228])
+        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPA id 183EF3F719;
+        Wed, 31 Mar 2021 23:43:42 -0700 (PDT)
+From:   Anshuman Khandual <anshuman.khandual@arm.com>
+To:     linux-mm@kvack.org, akpm@linux-foundation.org
+Cc:     linux-kernel@vger.kernel.org,
+        Anshuman Khandual <anshuman.khandual@arm.com>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Vasily Gorbik <gor@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@de.ibm.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
-        Stefano Brivio <sbrivio@redhat.com>,
-        Wei Yang <richard.weiyang@linux.alibaba.com>,
-        Wolfram Sang <wsa+renesas@sang-engineering.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>
-Subject: [PATCH 11/12] tools: sync lib/find_bit implementation
-Date:   Wed, 31 Mar 2021 17:31:52 -0700
-Message-Id: <20210401003153.97325-12-yury.norov@gmail.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20210401003153.97325-1-yury.norov@gmail.com>
-References: <20210401003153.97325-1-yury.norov@gmail.com>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, x86@kernel.org,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org
+Subject: [PATCH V2 3/6] mm: Generalize ARCH_ENABLE_MEMORY_[HOTPLUG|HOTREMOVE]
+Date:   Thu,  1 Apr 2021 12:14:05 +0530
+Message-Id: <1617259448-22529-4-git-send-email-anshuman.khandual@arm.com>
+X-Mailer: git-send-email 2.7.4
+In-Reply-To: <1617259448-22529-1-git-send-email-anshuman.khandual@arm.com>
+References: <1617259448-22529-1-git-send-email-anshuman.khandual@arm.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Add fast paths to find_*_bit() functions as per kernel implementation.
+ARCH_ENABLE_MEMORY_[HOTPLUG|HOTREMOVE] configs have duplicate definitions
+on platforms that subscribe them. Instead, just make them generic options
+which can be selected on applicable platforms.
 
-Signed-off-by: Yury Norov <yury.norov@gmail.com>
-Acked-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Will Deacon <will@kernel.org>
+Cc: Michael Ellerman <mpe@ellerman.id.au>
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: Paul Mackerras <paulus@samba.org>
+Cc: Heiko Carstens <hca@linux.ibm.com>
+Cc: Vasily Gorbik <gor@linux.ibm.com>
+Cc: Christian Borntraeger <borntraeger@de.ibm.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: x86@kernel.org
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-ia64@vger.kernel.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-s390@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: linux-mm@kvack.org
+Cc: linux-kernel@vger.kernel.org
+Acked-by: Catalin Marinas <catalin.marinas@arm.com> (arm64)
+Acked-by: Heiko Carstens <hca@linux.ibm.com> (s390)
+Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
 ---
- tools/include/asm-generic/bitops/find.h | 58 +++++++++++++++++++++++--
- tools/lib/find_bit.c                    |  4 +-
- 2 files changed, 57 insertions(+), 5 deletions(-)
+ arch/arm64/Kconfig   |  8 ++------
+ arch/ia64/Kconfig    |  8 ++------
+ arch/powerpc/Kconfig |  8 ++------
+ arch/s390/Kconfig    |  8 ++------
+ arch/sh/Kconfig      |  2 ++
+ arch/sh/mm/Kconfig   |  8 --------
+ arch/x86/Kconfig     | 10 ++--------
+ mm/Kconfig           |  6 ++++++
+ 8 files changed, 18 insertions(+), 40 deletions(-)
 
-diff --git a/tools/include/asm-generic/bitops/find.h b/tools/include/asm-generic/bitops/find.h
-index 9fe62d10b084..6481fd11012a 100644
---- a/tools/include/asm-generic/bitops/find.h
-+++ b/tools/include/asm-generic/bitops/find.h
-@@ -5,6 +5,9 @@
- extern unsigned long _find_next_bit(const unsigned long *addr1,
- 		const unsigned long *addr2, unsigned long nbits,
- 		unsigned long start, unsigned long invert, unsigned long le);
-+extern unsigned long _find_first_bit(const unsigned long *addr, unsigned long size);
-+extern unsigned long _find_first_zero_bit(const unsigned long *addr, unsigned long size);
-+extern unsigned long _find_last_bit(const unsigned long *addr, unsigned long size);
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index c86b28ef6ac0..48355c5519c3 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -11,6 +11,8 @@ config ARM64
+ 	select ACPI_PPTT if ACPI
+ 	select ARCH_HAS_DEBUG_WX
+ 	select ARCH_BINFMT_ELF_STATE
++	select ARCH_ENABLE_MEMORY_HOTPLUG
++	select ARCH_ENABLE_MEMORY_HOTREMOVE
+ 	select ARCH_HAS_CACHE_LINE_SIZE
+ 	select ARCH_HAS_DEBUG_VIRTUAL
+ 	select ARCH_HAS_DEBUG_VM_PGTABLE
+@@ -305,12 +307,6 @@ config ZONE_DMA32
+ 	bool "Support DMA32 zone" if EXPERT
+ 	default y
  
- #ifndef find_next_bit
- /**
-@@ -20,6 +23,16 @@ static inline
- unsigned long find_next_bit(const unsigned long *addr, unsigned long size,
- 			    unsigned long offset)
- {
-+	if (small_const_nbits(size)) {
-+		unsigned long val;
-+
-+		if (unlikely(offset >= size))
-+			return size;
-+
-+		val = *addr & GENMASK(size - 1, offset);
-+		return val ? __ffs(val) : size;
-+	}
-+
- 	return _find_next_bit(addr, NULL, size, offset, 0UL, 0);
- }
- #endif
-@@ -40,6 +53,16 @@ unsigned long find_next_and_bit(const unsigned long *addr1,
- 		const unsigned long *addr2, unsigned long size,
- 		unsigned long offset)
- {
-+	if (small_const_nbits(size)) {
-+		unsigned long val;
-+
-+		if (unlikely(offset >= size))
-+			return size;
-+
-+		val = *addr1 & *addr2 & GENMASK(size - 1, offset);
-+		return val ? __ffs(val) : size;
-+	}
-+
- 	return _find_next_bit(addr1, addr2, size, offset, 0UL, 0);
- }
- #endif
-@@ -58,6 +81,16 @@ static inline
- unsigned long find_next_zero_bit(const unsigned long *addr, unsigned long size,
- 				 unsigned long offset)
- {
-+	if (small_const_nbits(size)) {
-+		unsigned long val;
-+
-+		if (unlikely(offset >= size))
-+			return size;
-+
-+		val = *addr | ~GENMASK(size - 1, offset);
-+		return val == ~0UL ? size : ffz(val);
-+	}
-+
- 	return _find_next_bit(addr, NULL, size, offset, ~0UL, 0);
- }
- #endif
-@@ -72,8 +105,17 @@ unsigned long find_next_zero_bit(const unsigned long *addr, unsigned long size,
-  * Returns the bit number of the first set bit.
-  * If no bits are set, returns @size.
-  */
--extern unsigned long find_first_bit(const unsigned long *addr,
--				    unsigned long size);
-+static inline
-+unsigned long find_first_bit(const unsigned long *addr, unsigned long size)
-+{
-+	if (small_const_nbits(size)) {
-+		unsigned long val = *addr & GENMASK(size - 1, 0);
-+
-+		return val ? __ffs(val) : size;
-+	}
-+
-+	return _find_first_bit(addr, size);
-+}
+-config ARCH_ENABLE_MEMORY_HOTPLUG
+-	def_bool y
+-
+-config ARCH_ENABLE_MEMORY_HOTREMOVE
+-	def_bool y
+-
+ config SMP
+ 	def_bool y
  
- #endif /* find_first_bit */
+diff --git a/arch/ia64/Kconfig b/arch/ia64/Kconfig
+index 2ad7a8d29fcc..96ce53ad5c9d 100644
+--- a/arch/ia64/Kconfig
++++ b/arch/ia64/Kconfig
+@@ -13,6 +13,8 @@ config IA64
+ 	select ARCH_MIGHT_HAVE_PC_SERIO
+ 	select ACPI
+ 	select ACPI_NUMA if NUMA
++	select ARCH_ENABLE_MEMORY_HOTPLUG
++	select ARCH_ENABLE_MEMORY_HOTREMOVE
+ 	select ARCH_SUPPORTS_ACPI
+ 	select ACPI_SYSTEM_POWER_STATES_SUPPORT if ACPI
+ 	select ARCH_MIGHT_HAVE_ACPI_PDC if ACPI
+@@ -250,12 +252,6 @@ config HOTPLUG_CPU
+ 	  can be controlled through /sys/devices/system/cpu/cpu#.
+ 	  Say N if you want to disable CPU hotplug.
  
-@@ -87,7 +129,17 @@ extern unsigned long find_first_bit(const unsigned long *addr,
-  * Returns the bit number of the first cleared bit.
-  * If no bits are zero, returns @size.
-  */
--unsigned long find_first_zero_bit(const unsigned long *addr, unsigned long size);
-+static inline
-+unsigned long find_first_zero_bit(const unsigned long *addr, unsigned long size)
-+{
-+	if (small_const_nbits(size)) {
-+		unsigned long val = *addr | ~GENMASK(size - 1, 0);
+-config ARCH_ENABLE_MEMORY_HOTPLUG
+-	def_bool y
+-
+-config ARCH_ENABLE_MEMORY_HOTREMOVE
+-	def_bool y
+-
+ config SCHED_SMT
+ 	bool "SMT scheduler support"
+ 	depends on SMP
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index a74c211e55b1..02a05a24659d 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -118,6 +118,8 @@ config PPC
+ 	# Please keep this list sorted alphabetically.
+ 	#
+ 	select ARCH_32BIT_OFF_T if PPC32
++	select ARCH_ENABLE_MEMORY_HOTPLUG
++	select ARCH_ENABLE_MEMORY_HOTREMOVE
+ 	select ARCH_HAS_DEBUG_VIRTUAL
+ 	select ARCH_HAS_DEVMEM_IS_ALLOWED
+ 	select ARCH_HAS_ELF_RANDOMIZE
+@@ -515,12 +517,6 @@ config ARCH_CPU_PROBE_RELEASE
+ 	def_bool y
+ 	depends on HOTPLUG_CPU
+ 
+-config ARCH_ENABLE_MEMORY_HOTPLUG
+-	def_bool y
+-
+-config ARCH_ENABLE_MEMORY_HOTREMOVE
+-	def_bool y
+-
+ config PPC64_SUPPORTS_MEMORY_FAILURE
+ 	bool "Add support for memory hwpoison"
+ 	depends on PPC_BOOK3S_64
+diff --git a/arch/s390/Kconfig b/arch/s390/Kconfig
+index c1ff874e6c2e..f8b356550daa 100644
+--- a/arch/s390/Kconfig
++++ b/arch/s390/Kconfig
+@@ -60,6 +60,8 @@ config S390
+ 	imply IMA_SECURE_AND_OR_TRUSTED_BOOT
+ 	select ARCH_32BIT_USTAT_F_TINODE
+ 	select ARCH_BINFMT_ELF_STATE
++	select ARCH_ENABLE_MEMORY_HOTPLUG if SPARSEMEM
++	select ARCH_ENABLE_MEMORY_HOTREMOVE
+ 	select ARCH_HAS_DEBUG_VM_PGTABLE
+ 	select ARCH_HAS_DEBUG_WX
+ 	select ARCH_HAS_DEVMEM_IS_ALLOWED
+@@ -626,12 +628,6 @@ config ARCH_SPARSEMEM_ENABLE
+ config ARCH_SPARSEMEM_DEFAULT
+ 	def_bool y
+ 
+-config ARCH_ENABLE_MEMORY_HOTPLUG
+-	def_bool y if SPARSEMEM
+-
+-config ARCH_ENABLE_MEMORY_HOTREMOVE
+-	def_bool y
+-
+ config ARCH_ENABLE_SPLIT_PMD_PTLOCK
+ 	def_bool y
+ 
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index a54b0c5de37b..68129537e350 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -2,6 +2,8 @@
+ config SUPERH
+ 	def_bool y
+ 	select ARCH_32BIT_OFF_T
++	select ARCH_ENABLE_MEMORY_HOTPLUG if SPARSEMEM && MMU
++	select ARCH_ENABLE_MEMORY_HOTREMOVE if SPARSEMEM && MMU
+ 	select ARCH_HAVE_CUSTOM_GPIO_H
+ 	select ARCH_HAVE_NMI_SAFE_CMPXCHG if (GUSA_RB || CPU_SH4A)
+ 	select ARCH_HAS_BINFMT_FLAT if !MMU
+diff --git a/arch/sh/mm/Kconfig b/arch/sh/mm/Kconfig
+index 77aa2f802d8d..d551a9cac41e 100644
+--- a/arch/sh/mm/Kconfig
++++ b/arch/sh/mm/Kconfig
+@@ -136,14 +136,6 @@ config ARCH_SPARSEMEM_DEFAULT
+ config ARCH_SELECT_MEMORY_MODEL
+ 	def_bool y
+ 
+-config ARCH_ENABLE_MEMORY_HOTPLUG
+-	def_bool y
+-	depends on SPARSEMEM && MMU
+-
+-config ARCH_ENABLE_MEMORY_HOTREMOVE
+-	def_bool y
+-	depends on SPARSEMEM && MMU
+-
+ config ARCH_MEMORY_PROBE
+ 	def_bool y
+ 	depends on MEMORY_HOTPLUG
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index 51d171abb57a..503d8b2e8676 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -60,6 +60,8 @@ config X86
+ 	select ACPI_SYSTEM_POWER_STATES_SUPPORT	if ACPI
+ 	select ARCH_32BIT_OFF_T			if X86_32
+ 	select ARCH_CLOCKSOURCE_INIT
++	select ARCH_ENABLE_MEMORY_HOTPLUG if X86_64 || (X86_32 && HIGHMEM)
++	select ARCH_ENABLE_MEMORY_HOTREMOVE if MEMORY_HOTPLUG
+ 	select ARCH_HAS_ACPI_TABLE_UPGRADE	if ACPI
+ 	select ARCH_HAS_CACHE_LINE_SIZE
+ 	select ARCH_HAS_DEBUG_VIRTUAL
+@@ -2423,14 +2425,6 @@ config ARCH_HAS_ADD_PAGES
+ 	def_bool y
+ 	depends on X86_64 && ARCH_ENABLE_MEMORY_HOTPLUG
+ 
+-config ARCH_ENABLE_MEMORY_HOTPLUG
+-	def_bool y
+-	depends on X86_64 || (X86_32 && HIGHMEM)
+-
+-config ARCH_ENABLE_MEMORY_HOTREMOVE
+-	def_bool y
+-	depends on MEMORY_HOTPLUG
+-
+ config USE_PERCPU_NUMA_NODE_ID
+ 	def_bool y
+ 	depends on NUMA
+diff --git a/mm/Kconfig b/mm/Kconfig
+index 1c9a37fc651a..9b58fa08847d 100644
+--- a/mm/Kconfig
++++ b/mm/Kconfig
+@@ -149,6 +149,9 @@ config MEMORY_ISOLATION
+ config HAVE_BOOTMEM_INFO_NODE
+ 	def_bool n
+ 
++config ARCH_ENABLE_MEMORY_HOTPLUG
++	bool
 +
-+		return val == ~0UL ? size : ffz(val);
-+	}
+ # eventually, we can have this option just 'select SPARSEMEM'
+ config MEMORY_HOTPLUG
+ 	bool "Allow for memory hot-add"
+@@ -177,6 +180,9 @@ config MEMORY_HOTPLUG_DEFAULT_ONLINE
+ 	  Say N here if you want the default policy to keep all hot-plugged
+ 	  memory blocks in 'offline' state.
+ 
++config ARCH_ENABLE_MEMORY_HOTREMOVE
++	bool
 +
-+	return _find_first_zero_bit(addr, size);
-+}
- #endif
- 
- #endif /*_TOOLS_LINUX_ASM_GENERIC_BITOPS_FIND_H_ */
-diff --git a/tools/lib/find_bit.c b/tools/lib/find_bit.c
-index 589fd2f26f94..109aa7ffcf97 100644
---- a/tools/lib/find_bit.c
-+++ b/tools/lib/find_bit.c
-@@ -83,7 +83,7 @@ unsigned long _find_next_bit(const unsigned long *addr1,
- /*
-  * Find the first set bit in a memory region.
-  */
--unsigned long find_first_bit(const unsigned long *addr, unsigned long size)
-+unsigned long _find_first_bit(const unsigned long *addr, unsigned long size)
- {
- 	unsigned long idx;
- 
-@@ -100,7 +100,7 @@ unsigned long find_first_bit(const unsigned long *addr, unsigned long size)
- /*
-  * Find the first cleared bit in a memory region.
-  */
--unsigned long find_first_zero_bit(const unsigned long *addr, unsigned long size)
-+unsigned long _find_first_zero_bit(const unsigned long *addr, unsigned long size)
- {
- 	unsigned long idx;
- 
+ config MEMORY_HOTREMOVE
+ 	bool "Allow for memory hot remove"
+ 	select HAVE_BOOTMEM_INFO_NODE if (X86_64 || PPC64)
 -- 
-2.25.1
+2.20.1
 
