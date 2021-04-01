@@ -8,54 +8,54 @@ X-Spam-Status: No, score=-15.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
 	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
 	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 09A56C433B4
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3037EC4361A
 	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 00:33:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DB10261029
-	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 00:33:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1ED0461029
+	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 00:33:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233048AbhDAAc3 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 31 Mar 2021 20:32:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35080 "EHLO
+        id S233129AbhDAAce (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 31 Mar 2021 20:32:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35094 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232901AbhDAAcA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 31 Mar 2021 20:32:00 -0400
-Received: from mail-qk1-x735.google.com (mail-qk1-x735.google.com [IPv6:2607:f8b0:4864:20::735])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0B9DEC06175F;
-        Wed, 31 Mar 2021 17:32:00 -0700 (PDT)
-Received: by mail-qk1-x735.google.com with SMTP id g15so672381qkl.4;
-        Wed, 31 Mar 2021 17:32:00 -0700 (PDT)
+        with ESMTP id S232951AbhDAAcC (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 31 Mar 2021 20:32:02 -0400
+Received: from mail-qt1-x82a.google.com (mail-qt1-x82a.google.com [IPv6:2607:f8b0:4864:20::82a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 73508C06175F;
+        Wed, 31 Mar 2021 17:32:02 -0700 (PDT)
+Received: by mail-qt1-x82a.google.com with SMTP id l13so330187qtu.9;
+        Wed, 31 Mar 2021 17:32:02 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20161025;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=GLaToynb34vCY0WsqTIIvNMqMj7JroWGIPG2ZoVyHKE=;
-        b=svkDk5mWqO3glvN3JvTdqGbhsPi1i3X4XIYG7cJ3lkcUxRrO56OK5a8GY9lHQ1GFC7
-         t1NyPdS1otoqYLAtMg+kil+wqOyRUYljX8ciwBerwR1q/+iUIMl+V+Cv4sOru3GKvmdU
-         te23D4roPnb64Hwg+Cz5t8X0QqDN1/yugozifB5rsRiOpfFFPYxVPYwZ1cUlOAQz4qgw
-         70wj4PZ0rW3nfeSUKllDAy5LZ6yg2xyJYR3lXPg6mF8DSiE7d5ew4etnMvXBl0FM5gQB
-         kQJC2wf+kKUvdflRzsSNmO8hmTvUQC3V0O+CabwXR6rRyF5agZExh/XDQdJEupAjov9M
-         Oqfg==
+        bh=HxiIrO7CcOWW+YKPCypAlUNqNdBbXqeX5zuWqSw+DMQ=;
+        b=mG22wbdhb7xF2gheTlnlQSG5RK/t7zmbLSOc/ZGUjVeU41jGunxWNr7iwBIa/Vs0LN
+         rl3FtoUPOWAo0h3PgE7AQX3+Rm7TLAlYxueffRx70dxy9b0w8VcQ2AFVGSIYlhWhlsRU
+         64cQLNksvFeag4Xj9uN+Su4AawXhKWG090Ey+v/zablanyWTP+h9VwzkXjEm8mC/mDNI
+         blwvi3jx2o4eds0/zY58cUh2xechNeZ0eyBO0DEAOAgHTOwMZAekKeNn7wdk6QYocaz7
+         o32AOtGrp2NgFIjyrjY6XCm/C2a3zhhHR87nRREoYOYODOE2Gbm1e6eVaj4aECIvvvrV
+         kmTg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=GLaToynb34vCY0WsqTIIvNMqMj7JroWGIPG2ZoVyHKE=;
-        b=A5Nmc8xOAqkJERnEiX74SvQqgDUidYX+xAnruAGYh9TKwYjZN0zYNog3NvE/Ze0lzG
-         x3WTqPZtYK+USm07WD/Mx/5zDrLvtZwRCndST/C+Pl/ZYLQB6PjjLApP5L2HOXtCO9Fv
-         sVuyUFI1j3eFlcRYDcWB8DAr5+IUaQTXgJHTfUhrKWUMyt/VNL2GdMziKzYlAd8z0q/E
-         JoFiuxFJ6cwv/+yU4x3PmPF2AxKmMfwZut0RI1ZSTUHlBBkQdqZFNAvTzmRvxhXYVGVg
-         2OQk1fFbJLflN+6xtQkycbIKsWbm7S5bkB5xtHFWmLojzInBx1SAQkdZb3XHvdE7+Gu1
-         IzuA==
-X-Gm-Message-State: AOAM531OUUetbGlZ11EEqBgNhGMebVcc27fB6c42E7eZuswMNMGA02qp
-        7Hw/WdgABmWQnDiPk7tFRVC70UDSrHgh0A==
-X-Google-Smtp-Source: ABdhPJw97coW5dsJBqtNTv97nAQBCkwgRk5f6eH1cuZ+xulBrprB+U0oPI85rsK+uupFWl2CK1Gsww==
-X-Received: by 2002:a37:42cb:: with SMTP id p194mr5536925qka.213.1617237119002;
-        Wed, 31 Mar 2021 17:31:59 -0700 (PDT)
+        bh=HxiIrO7CcOWW+YKPCypAlUNqNdBbXqeX5zuWqSw+DMQ=;
+        b=Z0SsUbtLtsy0qbPTnhLIRe3VU2a3QJgW2K44L1NiviSU8A/uk9ilYv5UOKWE7Ttny+
+         ZdQtiFWDY64qXxnukp2aF39dCWL1zFjoVb+j5QbpTKCufhdpzdaoDMt/fh91wOXdYtR9
+         V5zF12cF+aRgyUr7TyUN1C7dxSBPW0dVmFSI6qvbAmZT52tB5/14pe17yZdfVo3D74AV
+         tsbXZaG2Hperp16Jk+ZMyrq8WX9yIW9bnhcxYQ5oSa+pU8sktQpQIeSVb5aWrd4I3LZ9
+         X+2X1VybWX3FNb/ewWa1uD7AHckQsug4KACqvqF0IF4/6vd7qMEXx9j88sdCtjvLvMOS
+         1Rkg==
+X-Gm-Message-State: AOAM532C84koq1wWwDKrGg4NYciQupU8NpaYQQXYBmCVUqTsoau27CcH
+        SJoLc7RTI2DmY7wSuu7YwnQm6vte90qVng==
+X-Google-Smtp-Source: ABdhPJyuML+5m6sZfTOHCEwaS3AisYfUUeplssl0OLCVb/nzAAAje0xruiT+nYwBMs7QCiRxzqfGvw==
+X-Received: by 2002:ac8:58cb:: with SMTP id u11mr4932645qta.348.1617237121389;
+        Wed, 31 Mar 2021 17:32:01 -0700 (PDT)
 Received: from localhost ([207.98.216.60])
-        by smtp.gmail.com with ESMTPSA id q125sm2785567qkf.68.2021.03.31.17.31.58
+        by smtp.gmail.com with ESMTPSA id v7sm2297774qtw.51.2021.03.31.17.32.00
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 31 Mar 2021 17:31:58 -0700 (PDT)
+        Wed, 31 Mar 2021 17:32:01 -0700 (PDT)
 From:   Yury Norov <yury.norov@gmail.com>
 To:     linux-kernel@vger.kernel.org,
         Andrew Morton <akpm@linux-foundation.org>
@@ -76,9 +76,9 @@ Cc:     Yury Norov <yury.norov@gmail.com>, linux-m68k@lists.linux-m68k.org,
         Wei Yang <richard.weiyang@linux.alibaba.com>,
         Wolfram Sang <wsa+renesas@sang-engineering.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>
-Subject: [PATCH 03/12] tools: sync BITMAP_LAST_WORD_MASK() macro with the kernel
-Date:   Wed, 31 Mar 2021 17:31:44 -0700
-Message-Id: <20210401003153.97325-4-yury.norov@gmail.com>
+Subject: [PATCH 05/12] lib: extend the scope of small_const_nbits() macro
+Date:   Wed, 31 Mar 2021 17:31:46 -0700
+Message-Id: <20210401003153.97325-6-yury.norov@gmail.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210401003153.97325-1-yury.norov@gmail.com>
 References: <20210401003153.97325-1-yury.norov@gmail.com>
@@ -88,32 +88,57 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Kernel version generates better code.
+find_bit would also benefit from small_const_nbits() optimizations.
+The detailed comment is provided by Rasmus Villemoes.
 
+Suggested-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
 Signed-off-by: Yury Norov <yury.norov@gmail.com>
 Acked-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
 ---
- tools/include/linux/bitmap.h | 7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
+ include/asm-generic/bitsperlong.h | 12 ++++++++++++
+ include/linux/bitmap.h            |  8 --------
+ 2 files changed, 12 insertions(+), 8 deletions(-)
 
-diff --git a/tools/include/linux/bitmap.h b/tools/include/linux/bitmap.h
-index 7cbd23e56d48..4aabc23ec747 100644
---- a/tools/include/linux/bitmap.h
-+++ b/tools/include/linux/bitmap.h
-@@ -20,12 +20,7 @@ int __bitmap_equal(const unsigned long *bitmap1,
- void bitmap_clear(unsigned long *map, unsigned int start, int len);
+diff --git a/include/asm-generic/bitsperlong.h b/include/asm-generic/bitsperlong.h
+index 3905c1c93dc2..1023e2a4bd37 100644
+--- a/include/asm-generic/bitsperlong.h
++++ b/include/asm-generic/bitsperlong.h
+@@ -23,4 +23,16 @@
+ #define BITS_PER_LONG_LONG 64
+ #endif
  
++/*
++ * small_const_nbits(n) is true precisely when it is known at compile-time
++ * that BITMAP_SIZE(n) is 1, i.e. 1 <= n <= BITS_PER_LONG. This allows
++ * various bit/bitmap APIs to provide a fast inline implementation. Bitmaps
++ * of size 0 are very rare, and a compile-time-known-size 0 is most likely
++ * a sign of error. They will be handled correctly by the bit/bitmap APIs,
++ * but using the out-of-line functions, so that the inline implementations
++ * can unconditionally dereference the pointer(s).
++ */
++#define small_const_nbits(nbits) \
++	(__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG && (nbits) > 0)
++
+ #endif /* __ASM_GENERIC_BITS_PER_LONG */
+diff --git a/include/linux/bitmap.h b/include/linux/bitmap.h
+index 2cb1d7cfe8f9..a36cfcec4e77 100644
+--- a/include/linux/bitmap.h
++++ b/include/linux/bitmap.h
+@@ -230,14 +230,6 @@ int bitmap_print_to_pagebuf(bool list, char *buf,
  #define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) & (BITS_PER_LONG - 1)))
--
--#define BITMAP_LAST_WORD_MASK(nbits)					\
--(									\
--	((nbits) % BITS_PER_LONG) ?					\
--		(1UL<<((nbits) % BITS_PER_LONG))-1 : ~0UL		\
--)
-+#define BITMAP_LAST_WORD_MASK(nbits) (~0UL >> (-(nbits) & (BITS_PER_LONG - 1)))
+ #define BITMAP_LAST_WORD_MASK(nbits) (~0UL >> (-(nbits) & (BITS_PER_LONG - 1)))
  
- #define small_const_nbits(nbits) \
- 	(__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG)
+-/*
+- * The static inlines below do not handle constant nbits==0 correctly,
+- * so make such users (should any ever turn up) call the out-of-line
+- * versions.
+- */
+-#define small_const_nbits(nbits) \
+-	(__builtin_constant_p(nbits) && (nbits) <= BITS_PER_LONG && (nbits) > 0)
+-
+ static inline void bitmap_zero(unsigned long *dst, unsigned int nbits)
+ {
+ 	unsigned int len = BITS_TO_LONGS(nbits) * sizeof(unsigned long);
 -- 
 2.25.1
 
