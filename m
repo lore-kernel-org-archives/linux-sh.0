@@ -2,69 +2,38 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-2.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
-	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A34CC43461
-	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 09:51:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 055FEC43460
+	for <linux-sh@archiver.kernel.org>; Fri,  2 Apr 2021 00:33:03 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 2DE19610CB
-	for <linux-sh@archiver.kernel.org>; Thu,  1 Apr 2021 09:51:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id BF90E601FC
+	for <linux-sh@archiver.kernel.org>; Fri,  2 Apr 2021 00:33:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233616AbhDAJvC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 1 Apr 2021 05:51:02 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42846 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233383AbhDAJus (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 1 Apr 2021 05:50:48 -0400
-Received: from mail-pf1-x42e.google.com (mail-pf1-x42e.google.com [IPv6:2607:f8b0:4864:20::42e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 317C4C0613E6;
-        Thu,  1 Apr 2021 02:50:48 -0700 (PDT)
-Received: by mail-pf1-x42e.google.com with SMTP id 11so1063936pfn.9;
-        Thu, 01 Apr 2021 02:50:48 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=8rfhvrhvTSo4JLkNVbcKkmfjeWHgVESw491Efee+3BA=;
-        b=DgZNbxa2Nf9HfWBlDfyrAYIIyoODQOGfK33DUNfoe/5yf/0CPsXXiUeOU1zdlWL3DY
-         Lj1pM/R2SN13dSDU0P+q8KSQvr299Q8/szD0H0xnneBKoZpxONZ0yNLM0F68VdN6VFNt
-         YABDidfiKPZxkLjJgPGsSWkPKR44UcG06kYu3+XppXpgMgo+/OlNwY+aw4JBiAF3Y19H
-         50TG32w/hAKgMqvgDUIuIeEvE4ILakado5t9ECcby1HvAtcUqGVCuf7jCArDD+pJB3JY
-         li4K1RPo6fCDbYQmCSUB1QzQ2ddSEo8qY8rEo3zaSJ0wMF0iAH9l7THDgq7nab3SksqI
-         3wuw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=8rfhvrhvTSo4JLkNVbcKkmfjeWHgVESw491Efee+3BA=;
-        b=KfXgwwyG11tqNlQhS0tE5mL22qjFXQmzSbtAAgAXdOw5MDj0b3KzAlPfJY5/lJ1YJO
-         6p85ujrdaBfOkFRQT/YY1Ho8zNM/MzYTif/KhRwwo5G/ot8ip0HdS0PAM8Xk4oD4aFHT
-         oMHkNXtrImbe8g0eia9jGHMpsUOK23Xh8TeGIT8E63SIjEAA31dgVubhgkG9FzfDZqB9
-         O1lziya8UwFDnhKSWWdx2bD7CnTZ9ZXM686Yk/u55xng6ZyLSrQjRdqwifT7G+rP4VwA
-         HLjYNZLw+JzR/qqNTFiJz/5wEGF61GjLlzNJB2ucW+s4JuJfnMi1Boxb2yBRrnZlzkU3
-         SyzQ==
-X-Gm-Message-State: AOAM531BQwYQPM3R0EDadJIy/cu9yKXvrYb0HrnjetPT8zsS5zGrKLS3
-        fiEzkL8dfFj0iaN5AmCnj33bYqhhmxO/G7lHB6U=
-X-Google-Smtp-Source: ABdhPJz7j2nNz9qv2IrtVW/D1sczbGytNy6sUXKazkSOyi/BCDvfs085s+kcA1f8g4roqF80H2yZItYyeLaoK65/of8=
-X-Received: by 2002:a62:7c43:0:b029:1ef:20ce:ba36 with SMTP id
- x64-20020a627c430000b02901ef20ceba36mr6887135pfc.40.1617270647711; Thu, 01
- Apr 2021 02:50:47 -0700 (PDT)
-MIME-Version: 1.0
-References: <20210401003153.97325-1-yury.norov@gmail.com> <CAHp75VdzRXPsQ7Jvivm5UU+mfkgQ_0rmnegp04v-v9fwrjdrqg@mail.gmail.com>
- <CAK8P3a2EGc4BS7UTyC6=ySgLEoyqbswh1Gh_=M21NmhRThssYQ@mail.gmail.com>
-In-Reply-To: <CAK8P3a2EGc4BS7UTyC6=ySgLEoyqbswh1Gh_=M21NmhRThssYQ@mail.gmail.com>
-From:   Andy Shevchenko <andy.shevchenko@gmail.com>
-Date:   Thu, 1 Apr 2021 12:50:31 +0300
-Message-ID: <CAHp75VdTndAD1gyLE_e8m9AaxrRMCNpYEu22+tWe1xrAz8oKBw@mail.gmail.com>
-Subject: Re: [PATCH v6 00/12] lib/find_bit: fast path for small bitmaps
-To:     Arnd Bergmann <arnd@arndb.de>
-Cc:     Yury Norov <yury.norov@gmail.com>,
+        id S235702AbhDBAdB (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 1 Apr 2021 20:33:01 -0400
+Received: from mail.kernel.org ([198.145.29.99]:35780 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S233677AbhDBAdB (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Thu, 1 Apr 2021 20:33:01 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 2111D6100C;
+        Fri,  2 Apr 2021 00:32:59 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
+        s=korg; t=1617323580;
+        bh=l5OBmZolqQt7kxKdrbukEJTSt9ja/UZ2NhAmGHQ3zxU=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+        b=kG/JulKQ/j7q300El8hcUdl9djvCOTMS316bPRU5+zmo9B22mCs+usRR8Evbkkn3N
+         vA22n5vywmXywzyPXhGzM0UbJXdoQ9BA2ttE7BZclCb+sTtuAmm/YGdbm35L7i53EV
+         glVlMEwvdxswxe9y/dSTG3XBRgE8mCchA/H3Kpqg=
+Date:   Thu, 1 Apr 2021 17:32:58 -0700
+From:   Andrew Morton <akpm@linux-foundation.org>
+To:     Andy Shevchenko <andy.shevchenko@gmail.com>
+Cc:     Arnd Bergmann <arnd@arndb.de>, Yury Norov <yury.norov@gmail.com>,
         Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        linux-m68k <linux-m68k@vger.kernel.org>,
         Linux-Arch <linux-arch@vger.kernel.org>,
         Linux-SH <linux-sh@vger.kernel.org>,
         Alexey Klimov <aklimov@redhat.com>,
@@ -81,55 +50,36 @@ Cc:     Yury Norov <yury.norov@gmail.com>,
         Stefano Brivio <sbrivio@redhat.com>,
         Wei Yang <richard.weiyang@linux.alibaba.com>,
         Wolfram Sang <wsa+renesas@sang-engineering.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>
-Content-Type: text/plain; charset="UTF-8"
+        Yoshinori Sato <ysato@users.osdn.me>
+Subject: Re: [PATCH v6 00/12] lib/find_bit: fast path for small bitmaps
+Message-Id: <20210401173258.1f9a107ef13f210fb4896780@linux-foundation.org>
+In-Reply-To: <CAHp75VdTndAD1gyLE_e8m9AaxrRMCNpYEu22+tWe1xrAz8oKBw@mail.gmail.com>
+References: <20210401003153.97325-1-yury.norov@gmail.com>
+        <CAHp75VdzRXPsQ7Jvivm5UU+mfkgQ_0rmnegp04v-v9fwrjdrqg@mail.gmail.com>
+        <CAK8P3a2EGc4BS7UTyC6=ySgLEoyqbswh1Gh_=M21NmhRThssYQ@mail.gmail.com>
+        <CAHp75VdTndAD1gyLE_e8m9AaxrRMCNpYEu22+tWe1xrAz8oKBw@mail.gmail.com>
+X-Mailer: Sylpheed 3.5.1 (GTK+ 2.24.31; x86_64-pc-linux-gnu)
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Apr 1, 2021 at 12:29 PM Arnd Bergmann <arnd@arndb.de> wrote:
->
-> On Thu, Apr 1, 2021 at 11:16 AM Andy Shevchenko
-> <andy.shevchenko@gmail.com> wrote:
-> >
-> > On Thu, Apr 1, 2021 at 3:36 AM Yury Norov <yury.norov@gmail.com> wrote:
-> > >
-> > > Bitmap operations are much simpler and faster in case of small bitmaps
-> > > which fit into a single word. In linux/bitmap.c we have a machinery that
-> > > allows compiler to replace actual function call with a few instructions
-> > > if bitmaps passed into the function are small and their size is known at
-> > > compile time.
-> > >
-> > > find_*_bit() API lacks this functionality; but users will benefit from it
-> > > a lot. One important example is cpumask subsystem when
-> > > NR_CPUS <= BITS_PER_LONG.
-> >
-> > Cool, thanks!
-> >
-> > I guess it's assumed to go via Andrew's tree.
-> >
-> > But after that since you are about to be a maintainer of this, I think
-> > it would make sense to send PRs directly to Linus. I would recommend
-> > creating an official tree (followed by an update in the MAINTAINERS)
-> > and connecting it to Linux next (usually done by email to Stephen).
->
-> It depends on how often we expect to see updates to this. I have not
-> followed the changes as closely as I should have, but I can also
-> merge them through the asm-generic tree for this time so Andrew
-> has to carry fewer patches for this.
->
-> I normally don't have a lot of material for asm-generic either, half
-> the time there are no pull requests at all for a given release. I would
-> expect future changes to the bitmap implementation to only need
-> an occasional bugfix, which could go through either the asm-generic
-> tree or through mm and doesn't need another separate pull request.
->
-> If it turns out to be a tree that needs regular updates every time,
-> then having a top level repository in linux-next would be appropriate.
+On Thu, 1 Apr 2021 12:50:31 +0300 Andy Shevchenko <andy.shevchenko@gmail.com> wrote:
 
-Agree. asm-generic may serve for this. My worries are solely about how
-much burden we add on Andrew's shoulders.
+> > I normally don't have a lot of material for asm-generic either, half
+> > the time there are no pull requests at all for a given release. I would
+> > expect future changes to the bitmap implementation to only need
+> > an occasional bugfix, which could go through either the asm-generic
+> > tree or through mm and doesn't need another separate pull request.
+> >
+> > If it turns out to be a tree that needs regular updates every time,
+> > then having a top level repository in linux-next would be appropriate.
+> 
+> Agree. asm-generic may serve for this. My worries are solely about how
+> much burden we add on Andrew's shoulders.
 
--- 
-With Best Regards,
-Andy Shevchenko
+Is fine.  Saving other developers from having to maintain tiny trees is
+a thing I do.
+
