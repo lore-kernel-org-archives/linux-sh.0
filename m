@@ -4,48 +4,48 @@ X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 X-Spam-Level: 
 X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A62F8C4361A
-	for <linux-sh@archiver.kernel.org>; Fri,  2 Apr 2021 15:18:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F290CC001E3
+	for <linux-sh@archiver.kernel.org>; Fri,  2 Apr 2021 15:18:30 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8264D61167
-	for <linux-sh@archiver.kernel.org>; Fri,  2 Apr 2021 15:18:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D56A560FD7
+	for <linux-sh@archiver.kernel.org>; Fri,  2 Apr 2021 15:18:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236052AbhDBPS3 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 2 Apr 2021 11:18:29 -0400
-Received: from pegase1.c-s.fr ([93.17.236.30]:51006 "EHLO pegase1.c-s.fr"
+        id S236102AbhDBPSb (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 2 Apr 2021 11:18:31 -0400
+Received: from pegase1.c-s.fr ([93.17.236.30]:61689 "EHLO pegase1.c-s.fr"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S235304AbhDBPSV (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Fri, 2 Apr 2021 11:18:21 -0400
+        id S235952AbhDBPS0 (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Fri, 2 Apr 2021 11:18:26 -0400
 Received: from localhost (mailhub1-int [192.168.12.234])
-        by localhost (Postfix) with ESMTP id 4FBkFz0Y09z9v2mB;
-        Fri,  2 Apr 2021 17:18:15 +0200 (CEST)
+        by localhost (Postfix) with ESMTP id 4FBkG52l3Hz9v2lx;
+        Fri,  2 Apr 2021 17:18:21 +0200 (CEST)
 X-Virus-Scanned: Debian amavisd-new at c-s.fr
 Received: from pegase1.c-s.fr ([192.168.12.234])
         by localhost (pegase1.c-s.fr [192.168.12.234]) (amavisd-new, port 10024)
-        with ESMTP id TNsWx4HFdgfR; Fri,  2 Apr 2021 17:18:14 +0200 (CEST)
+        with ESMTP id GzDR9N0g0Rpg; Fri,  2 Apr 2021 17:18:21 +0200 (CEST)
 Received: from messagerie.si.c-s.fr (messagerie.si.c-s.fr [192.168.25.192])
-        by pegase1.c-s.fr (Postfix) with ESMTP id 4FBkFy6Rvjz9v2ls;
-        Fri,  2 Apr 2021 17:18:14 +0200 (CEST)
+        by pegase1.c-s.fr (Postfix) with ESMTP id 4FBkG519y8z9v2ls;
+        Fri,  2 Apr 2021 17:18:21 +0200 (CEST)
 Received: from localhost (localhost [127.0.0.1])
-        by messagerie.si.c-s.fr (Postfix) with ESMTP id BA3E68BB79;
-        Fri,  2 Apr 2021 17:18:16 +0200 (CEST)
+        by messagerie.si.c-s.fr (Postfix) with ESMTP id F0A0F8BB7C;
+        Fri,  2 Apr 2021 17:18:22 +0200 (CEST)
 X-Virus-Scanned: amavisd-new at c-s.fr
 Received: from messagerie.si.c-s.fr ([127.0.0.1])
         by localhost (messagerie.si.c-s.fr [127.0.0.1]) (amavisd-new, port 10023)
-        with ESMTP id kXdNH-tnbrin; Fri,  2 Apr 2021 17:18:16 +0200 (CEST)
+        with ESMTP id JBXhU7_Qtg1N; Fri,  2 Apr 2021 17:18:22 +0200 (CEST)
 Received: from po16121vm.idsi0.si.c-s.fr (unknown [192.168.4.90])
-        by messagerie.si.c-s.fr (Postfix) with ESMTP id 3C7018BB7C;
-        Fri,  2 Apr 2021 17:18:16 +0200 (CEST)
+        by messagerie.si.c-s.fr (Postfix) with ESMTP id 789078BB7D;
+        Fri,  2 Apr 2021 17:18:22 +0200 (CEST)
 Received: by po16121vm.idsi0.si.c-s.fr (Postfix, from userid 0)
-        id 12AC46798A; Fri,  2 Apr 2021 15:18:16 +0000 (UTC)
-Message-Id: <9590d262050923a22d434358a9037131f67fcaae.1617375802.git.christophe.leroy@csgroup.eu>
+        id 5513E67989; Fri,  2 Apr 2021 15:18:22 +0000 (UTC)
+Message-Id: <349128c2baa37dfcafb61a10d4e6c62f93cfe881.1617375803.git.christophe.leroy@csgroup.eu>
 In-Reply-To: <cover.1617375802.git.christophe.leroy@csgroup.eu>
 References: <cover.1617375802.git.christophe.leroy@csgroup.eu>
 From:   Christophe Leroy <christophe.leroy@csgroup.eu>
-Subject: [PATCH v4 14/20] riscv: Convert to GENERIC_CMDLINE
+Subject: [PATCH v4 20/20] cmdline: Remove CONFIG_CMDLINE_EXTEND
 To:     will@kernel.org, danielwa@cisco.com, robh@kernel.org,
         daniel@gimpelevich.san-francisco.ca.us, arnd@kernel.org,
         akpm@linux-foundation.org
@@ -59,108 +59,52 @@ Cc:     linux-arch@vger.kernel.org, devicetree@vger.kernel.org,
         x86@kernel.org, linux-xtensa@linux-xtensa.org,
         linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
         linux-mm@kvack.org
-Date:   Fri,  2 Apr 2021 15:18:16 +0000 (UTC)
+Date:   Fri,  2 Apr 2021 15:18:22 +0000 (UTC)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-This converts the architecture to GENERIC_CMDLINE.
+All architectures providing CONFIG_CMDLINE_EXTEND
+are now converted to GENERIC_CMDLINE.
+
+This configuration item is not used anymore, drop it.
 
 Signed-off-by: Christophe Leroy <christophe.leroy@csgroup.eu>
 ---
-v4: Remove the message when forcing
----
- arch/riscv/Kconfig        | 44 +--------------------------------------
- arch/riscv/kernel/setup.c |  7 +++----
- 2 files changed, 4 insertions(+), 47 deletions(-)
+ include/linux/cmdline.h | 2 +-
+ init/Kconfig            | 6 ------
+ 2 files changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/arch/riscv/Kconfig b/arch/riscv/Kconfig
-index 87d7b52f278f..3dbd50bed037 100644
---- a/arch/riscv/Kconfig
-+++ b/arch/riscv/Kconfig
-@@ -39,6 +39,7 @@ config RISCV
- 	select EDAC_SUPPORT
- 	select GENERIC_ARCH_TOPOLOGY if SMP
- 	select GENERIC_ATOMIC64 if !64BIT
-+	select GENERIC_CMDLINE
- 	select GENERIC_EARLY_IOREMAP
- 	select GENERIC_GETTIMEOFDAY if HAVE_GENERIC_VDSO
- 	select GENERIC_IOREMAP
-@@ -390,49 +391,6 @@ endmenu
+diff --git a/include/linux/cmdline.h b/include/linux/cmdline.h
+index a0773dc365c7..020028e2bdf0 100644
+--- a/include/linux/cmdline.h
++++ b/include/linux/cmdline.h
+@@ -36,7 +36,7 @@ static __always_inline bool __cmdline_build(char *dst, const char *src)
  
- menu "Boot options"
+ 	len = cmdline_strlcat(dst, src, COMMAND_LINE_SIZE);
  
--config CMDLINE
--	string "Built-in kernel command line"
--	help
--	  For most platforms, the arguments for the kernel's command line
--	  are provided at run-time, during boot. However, there are cases
--	  where either no arguments are being provided or the provided
--	  arguments are insufficient or even invalid.
--
--	  When that occurs, it is possible to define a built-in command
--	  line here and choose how the kernel should use it later on.
--
--choice
--	prompt "Built-in command line usage" if CMDLINE != ""
--	default CMDLINE_FALLBACK
--	help
--	  Choose how the kernel will handle the provided built-in command
--	  line.
--
--config CMDLINE_FALLBACK
--	bool "Use bootloader kernel arguments if available"
--	help
--	  Use the built-in command line as fallback in case we get nothing
--	  during boot. This is the default behaviour.
--
+-	if (IS_ENABLED(CONFIG_CMDLINE_EXTEND))
++	if (IS_ENABLED(CONFIG_CMDLINE_APPEND))
+ 		len = cmdline_strlcat(dst, " " CONFIG_CMDLINE, COMMAND_LINE_SIZE);
+ 
+ 	if (len < COMMAND_LINE_SIZE - 1)
+diff --git a/init/Kconfig b/init/Kconfig
+index af0d84662cc2..fa002e3765ab 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -163,12 +163,6 @@ config CMDLINE_FORCE
+ 	  arguments provided by the bootloader.
+ endchoice
+ 
 -config CMDLINE_EXTEND
--	bool "Extend bootloader kernel arguments"
+-	bool
+-	default CMDLINE_APPEND
 -	help
--	  The command-line arguments provided during boot will be
--	  appended to the built-in command line. This is useful in
--	  cases where the provided arguments are insufficient and
--	  you don't want to or cannot modify them.
+-	  To be removed once all architectures are converted to generic CMDLINE
 -
--
--config CMDLINE_FORCE
--	bool "Always use the default kernel command string"
--	help
--	  Always use the built-in command line, even if we get one during
--	  boot. This is useful in case you need to override the provided
--	  command line on systems where you don't have or want control
--	  over it.
--
--endchoice
--
- config EFI_STUB
- 	bool
- 
-diff --git a/arch/riscv/kernel/setup.c b/arch/riscv/kernel/setup.c
-index f8f15332caa2..d4f16a9c1762 100644
---- a/arch/riscv/kernel/setup.c
-+++ b/arch/riscv/kernel/setup.c
-@@ -20,6 +20,7 @@
- #include <linux/swiotlb.h>
- #include <linux/smp.h>
- #include <linux/efi.h>
-+#include <linux/cmdline.h>
- 
- #include <asm/cpu_ops.h>
- #include <asm/early_ioremap.h>
-@@ -228,10 +229,8 @@ static void __init parse_dtb(void)
- 	}
- 
- 	pr_err("No DTB passed to the kernel\n");
--#ifdef CONFIG_CMDLINE_FORCE
--	strlcpy(boot_command_line, CONFIG_CMDLINE, COMMAND_LINE_SIZE);
--	pr_info("Forcing kernel command line to: %s\n", boot_command_line);
--#endif
-+
-+	cmdline_build(boot_command_line, NULL);
- }
- 
- void __init setup_arch(char **cmdline_p)
+ config COMPILE_TEST
+ 	bool "Compile also drivers which will not load"
+ 	depends on HAS_IOMEM
 -- 
 2.25.0
 
