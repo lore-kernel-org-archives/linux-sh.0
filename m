@@ -2,52 +2,55 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-9.0 required=3.0 tests=BAYES_00,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-14.0 required=3.0 tests=BAYES_00,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B19BC43461
-	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 12:12:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C513DC433B4
+	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 13:02:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5897F613C4
-	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 12:12:59 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 78519613CC
+	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 13:02:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236171AbhDFMNG convert rfc822-to-8bit (ORCPT
+        id S242309AbhDFNCw convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 6 Apr 2021 08:13:06 -0400
-Received: from mail.kernel.org ([198.145.29.99]:38052 "EHLO mail.kernel.org"
+        Tue, 6 Apr 2021 09:02:52 -0400
+Received: from mail.kernel.org ([198.145.29.99]:52512 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S235680AbhDFMNF (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Tue, 6 Apr 2021 08:13:05 -0400
+        id S233048AbhDFNCw (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Tue, 6 Apr 2021 09:02:52 -0400
 Received: from disco-boy.misterjones.org (disco-boy.misterjones.org [51.254.78.96])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 0BC03613C2;
-        Tue,  6 Apr 2021 12:12:58 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 19E9F613CA;
+        Tue,  6 Apr 2021 13:02:44 +0000 (UTC)
 Received: from 78.163-31-62.static.virginmediabusiness.co.uk ([62.31.163.78] helo=why.misterjones.org)
         by disco-boy.misterjones.org with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
         (Exim 4.94)
         (envelope-from <maz@kernel.org>)
-        id 1lTkZk-005qpW-3r; Tue, 06 Apr 2021 13:12:56 +0100
-Date:   Tue, 06 Apr 2021 13:12:55 +0100
-Message-ID: <87lf9vpq60.wl-maz@kernel.org>
+        id 1lTlLu-005rUM-0s; Tue, 06 Apr 2021 14:02:42 +0100
+Date:   Tue, 06 Apr 2021 14:02:41 +0100
+Message-ID: <87im4zpnv2.wl-maz@kernel.org>
 From:   Marc Zyngier <maz@kernel.org>
-To:     Christophe Leroy <christophe.leroy@csgroup.eu>
-Cc:     linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-sh@vger.kernel.org,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Haojian Zhuang <haojian.zhuang@gmail.com>,
-        Rich Felker <dalias@libc.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
+        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        Daniel Mack <daniel@zonque.org>,
         Robert Jarzmik <robert.jarzmik@free.fr>,
-        Daniel Mack <daniel@zonque.org>
-Subject: Re: [PATCH 1/9] irqdomain: Reimplement irq_linear_revmap() with irq_find_mapping()
-In-Reply-To: <15be426f-4429-ebeb-1b4a-8342bce391e5@csgroup.eu>
+        Haojian Zhuang <haojian.zhuang@gmail.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Thomas Gleixner <tglx@linutronix.de>
+Subject: Re: [PATCH 4/9] sh: intc: Drop the use of irq_create_identity_mapping()
+In-Reply-To: <CAMuHMdU3vo1AWuDr69WK8-1w38+Q7KturAoL=cFpspZiYr2ssA@mail.gmail.com>
 References: <20210406093557.1073423-1-maz@kernel.org>
-        <20210406093557.1073423-2-maz@kernel.org>
-        <15be426f-4429-ebeb-1b4a-8342bce391e5@csgroup.eu>
+        <20210406093557.1073423-5-maz@kernel.org>
+        <CAMuHMdU3vo1AWuDr69WK8-1w38+Q7KturAoL=cFpspZiYr2ssA@mail.gmail.com>
 User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
  FLIM-LB/1.14.9 (=?UTF-8?B?R29qxY0=?=) APEL-LB/10.8 EasyPG/1.0.0 Emacs/27.1
  (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
@@ -55,84 +58,97 @@ MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8BIT
 X-SA-Exim-Connect-IP: 62.31.163.78
-X-SA-Exim-Rcpt-To: christophe.leroy@csgroup.eu, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, tsbogend@alpha.franken.de, ysato@users.sourceforge.jp, haojian.zhuang@gmail.com, dalias@libc.org, tglx@linutronix.de, robert.jarzmik@free.fr, daniel@zonque.org
+X-SA-Exim-Rcpt-To: geert@linux-m68k.org, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, daniel@zonque.org, robert.jarzmik@free.fr, haojian.zhuang@gmail.com, ysato@users.sourceforge.jp, dalias@libc.org, tsbogend@alpha.franken.de, mpe@ellerman.id.au, tglx@linutronix.de
 X-SA-Exim-Mail-From: maz@kernel.org
 X-SA-Exim-Scanned: No (on disco-boy.misterjones.org); SAEximRunCond expanded to false
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Christophe,
+On Tue, 06 Apr 2021 11:32:13 +0100,
+Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> 
+> Hi Marc,
+> 
+> On Tue, Apr 6, 2021 at 11:44 AM Marc Zyngier <maz@kernel.org> wrote:
+> > Instead of playing games with using irq_create_identity_mapping()
+> > and irq_domain_associate(), drop the use of the former and only
+> > use the latter, together with the allocation of the irq_desc
+> > as needed.
+> >
+> > It doesn't make the code less awful, but at least the intent
+> > is clearer.
+> >
+> > Signed-off-by: Marc Zyngier <maz@kernel.org>
+> 
+> Thanks for your patch!
+> 
+> > --- a/drivers/sh/intc/core.c
+> > +++ b/drivers/sh/intc/core.c
+> > @@ -179,6 +179,23 @@ static unsigned int __init save_reg(struct intc_desc_int *d,
+> >         return 0;
+> >  }
+> >
+> > +static bool __init intc_map(struct irq_domain *domain, int irq)
+> > +{
+> > +       int res;
+> 
+> warning: unused variable ‘res’ [-Wunused-variable]
+> 
+> > +
+> > +       if (!irq_to_desc(irq) && irq_alloc_desc_at(irq, NUMA_NO_NODE) != irq) {
+> > +               pr_err("uname to allocate IRQ %d\n", irq);
+> > +               return false;
+> > +       }
+> > +
+> > +       if (irq_domain_associate(domain, irq, irq)) {
+> > +               pr_err("domain association failure\n");
+> > +               return false;
+> > +       }
+> > +
+> > +       return true;
+> > +}
+> > +
+> >  int __init register_intc_controller(struct intc_desc *desc)
+> >  {
+> >         unsigned int i, k, smp;
+> > @@ -316,19 +333,8 @@ int __init register_intc_controller(struct intc_desc *desc)
+> 
+> warning: unused variable ‘res’ [-Wunused-variable]
 
-On Tue, 06 Apr 2021 12:21:33 +0100,
-Christophe Leroy <christophe.leroy@csgroup.eu> wrote:
+Ah, thanks for spotting these.
+
+> 
+> >                 if (!vect->enum_id)
+> >                         continue;
+> >
+> > -               res = irq_create_identity_mapping(d->domain, irq);
 > 
 > 
+> > -               if (unlikely(res)) {
+> > -                       if (res == -EEXIST) {
+> > -                               res = irq_domain_associate(d->domain, irq, irq);
+> > -                               if (unlikely(res)) {
+> > -                                       pr_err("domain association failure\n");
+> > -                                       continue;
+> > -                               }
+> > -                       } else {
+> > -                               pr_err("can't identity map IRQ %d\n", irq);
+> > -                               continue;
+> > -                       }
+> > -               }
+> > +               if (!intc_map(d->domain, irq))
+> > +                       continue;
+> >
+> >                 intc_irq_xlate_set(irq, vect->enum_id, d);
+> >                 intc_register_irq(desc, d, vect->enum_id, irq);
 > 
-> Le 06/04/2021 à 11:35, Marc Zyngier a écrit :
-> > irq_linear_revmap() is supposed to be a fast path for domain
-> > lookups, but it only exposes low-level details of the irqdomain
-> > implementation, details which are better kept private.
+> Otherwise this seems to work fine on real hardware (landisk) and qemu
+> (rts7751r2d).  I did verify that the new function intc_map() is called.
 > 
-> Can you elaborate with more details ?
+> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Things like directly picking into the revmap are positively awful, and
-doesn't work if the domain has been constructed using the radix
-tree. Which on its own is totally broken, because things like
-irq_domain_create_hierarchy() will pick an implementation or the
-other.
-
-> 
-> > 
-> > The *overhead* between the two is only a function call and
-> > a couple of tests, so it is likely that noone can show any
-> > meaningful difference compared to the cost of taking an
-> > interrupt.
-> 
-> Do you have any measurement ?
-
-I did measure things on arm64, and couldn't come up with any
-difference other than noise.
-
-> Can you make the "likely" a certitude ?
-
-Of course not. You can always come up with an artificial CPU
-implementation that has a very small exception entry overhead, and a
-ridiculously slow memory subsystem. Do I care about these? No.
-
-If you can come up with realistic platforms that show a regression
-with this patch, I'm all ears.
-
-> 
-> > 
-> > Reimplement irq_linear_revmap() with irq_find_mapping()
-> > in order to preserve source code compatibility, and
-> > rename the internal field for a measure.
-> 
-> This is in complete contradiction with commit https://github.com/torvalds/linux/commit/d3dcb436
-> 
-> At that time, irq_linear_revmap() was less complex than what
-> irq_find_mapping() is today, and nevertheless it was considered worth
-> restoring in as a fast path. What has changed since then ?
-
-Over 8 years? Plenty. The use of irqdomains has been generalised, we
-have domain hierarchies, and if anything, this commit introduces the
-buggy behaviour I was mentioning above. I also don't see any mention
-of actual performance in that commit.
-
-And if we're worried about a fast path, being able to directly cache
-the irq_data in the revmap, hence skipping the irq_desc lookup that
-inevitable follows, is a much more interesting prospect than the "get
-useless data quick" that irq_linear_revmap() implements.
-
-This latter optimisation is what I am after.
-
-> Can you also explain the reason for the renaming of "linear_revmap"
-> into "revmap" ? What is that "measure" ?
-
-To catch the potential direct use of the reverse map field.
-
-Thanks,
+Awesome, thanks Geert.
 
 	M.
 
