@@ -2,155 +2,280 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-14.0 required=3.0 tests=BAYES_00,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-15.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C513DC433B4
-	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 13:02:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B1BC8C433ED
+	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 16:03:33 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 78519613CC
-	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 13:02:45 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8897E613BD
+	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 16:03:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242309AbhDFNCw convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 6 Apr 2021 09:02:52 -0400
-Received: from mail.kernel.org ([198.145.29.99]:52512 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233048AbhDFNCw (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Tue, 6 Apr 2021 09:02:52 -0400
-Received: from disco-boy.misterjones.org (disco-boy.misterjones.org [51.254.78.96])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 19E9F613CA;
-        Tue,  6 Apr 2021 13:02:44 +0000 (UTC)
-Received: from 78.163-31-62.static.virginmediabusiness.co.uk ([62.31.163.78] helo=why.misterjones.org)
-        by disco-boy.misterjones.org with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.94)
-        (envelope-from <maz@kernel.org>)
-        id 1lTlLu-005rUM-0s; Tue, 06 Apr 2021 14:02:42 +0100
-Date:   Tue, 06 Apr 2021 14:02:41 +0100
-Message-ID: <87im4zpnv2.wl-maz@kernel.org>
-From:   Marc Zyngier <maz@kernel.org>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
-        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        Daniel Mack <daniel@zonque.org>,
-        Robert Jarzmik <robert.jarzmik@free.fr>,
-        Haojian Zhuang <haojian.zhuang@gmail.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        id S1346154AbhDFQDk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 6 Apr 2021 12:03:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36004 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1346130AbhDFQDk (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 6 Apr 2021 12:03:40 -0400
+Received: from mail-oi1-x22d.google.com (mail-oi1-x22d.google.com [IPv6:2607:f8b0:4864:20::22d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8BA24C06174A;
+        Tue,  6 Apr 2021 09:03:30 -0700 (PDT)
+Received: by mail-oi1-x22d.google.com with SMTP id m13so15605007oiw.13;
+        Tue, 06 Apr 2021 09:03:30 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=sender:date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to:user-agent;
+        bh=DXuMvybWpRt4PM+Qgqf16jsNWFOgCO9JLNdluWmfwc4=;
+        b=rSCmibMZ1dZuqDCb7K7iRXGaa8DLdSW4UpceS/oPeHg+aAa3Z5dA+LFLCLjP+BjCFr
+         pzg8FZHT4DPAPK5dQ5Hqx7gh6IraXjbGQl/mWrYWcEJhOpuDuNQnkLc8cEVurIJ+7qbc
+         ZDTTh7llH8wy3gRD8aGWRRRHICrI1AnHgo3Di5+K0fiPTayiM9VJzzrrDeikkbgndhoi
+         b9bBgIPbHAYOfmCffNl/DyIday9v8t4AuQ559y4y8zEQEbVM8uK/XLMobgkBuExjzARa
+         XilwGSaxZ4wGJKOwVg60GyAT7QLU9T8/g8beUCVGMhoO9xsC7SaLIIsI9oswNuEFVOvD
+         tWHw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:sender:date:from:to:cc:subject:message-id
+         :references:mime-version:content-disposition:in-reply-to:user-agent;
+        bh=DXuMvybWpRt4PM+Qgqf16jsNWFOgCO9JLNdluWmfwc4=;
+        b=pFeapIRO+AR1GyIJnjkmLFrttRnz5TNpb8gnY2bBG8cmGMUOWizcG26UiWb/Mnr8Bp
+         UzXvHvHxye7BPy8E4EqtYc8zbDWMHgEyQiQKza7XufVsj+CJzbyo+WKTdI29qKK+mYCC
+         6tY7VItm+cXaLqdbYN2XEDFFHtIS9iM7ISqAYCJ35S+kVkHeyZnvP3SUBcleN+wzI/R0
+         mQjZYOFhIWj9wnRCX+7zOk6ZZVBxi9bQ0ADFHaOkOdyEXLgYilL8EkfrI7gP8cFGsNcC
+         v2dzVPpn32Y665AcoCq39iMztxNrKApLwETd6puxxntCLNQFLRteyT6pMshMEJuAyl4M
+         Xo/w==
+X-Gm-Message-State: AOAM530IONOdKkTEPmnB7pPyO6MiMzqfKawyphLkdss3vmoaT/TKGTw0
+        W5zd0DC5t69aJIpiBXB0OiU=
+X-Google-Smtp-Source: ABdhPJwtPQ3FMWZbLH53D6bk91CTQ7Dnfs4MpY6aB20C8cA1Che99rkav8rsszNojUM6Cj43TZKsGw==
+X-Received: by 2002:aca:1b01:: with SMTP id b1mr3652063oib.177.1617725009996;
+        Tue, 06 Apr 2021 09:03:29 -0700 (PDT)
+Received: from localhost ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
+        by smtp.gmail.com with ESMTPSA id f8sm4630528otp.71.2021.04.06.09.03.28
+        (version=TLS1_2 cipher=ECDHE-ECDSA-CHACHA20-POLY1305 bits=256/256);
+        Tue, 06 Apr 2021 09:03:29 -0700 (PDT)
+Sender: Guenter Roeck <groeck7@gmail.com>
+Date:   Tue, 6 Apr 2021 09:03:27 -0700
+From:   Guenter Roeck <linux@roeck-us.net>
+To:     Yury Norov <yury.norov@gmail.com>
+Cc:     linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-arch@vger.kernel.org, linux-sh@vger.kernel.org,
+        Alexey Klimov <aklimov@redhat.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Arnd Bergmann <arnd@arndb.de>, David Sterba <dsterba@suse.com>,
+        Dennis Zhou <dennis@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Jianpeng Ma <jianpeng.ma@intel.com>,
+        Joe Perches <joe@perches.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
+        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
         Rich Felker <dalias@libc.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Thomas Gleixner <tglx@linutronix.de>
-Subject: Re: [PATCH 4/9] sh: intc: Drop the use of irq_create_identity_mapping()
-In-Reply-To: <CAMuHMdU3vo1AWuDr69WK8-1w38+Q7KturAoL=cFpspZiYr2ssA@mail.gmail.com>
-References: <20210406093557.1073423-1-maz@kernel.org>
-        <20210406093557.1073423-5-maz@kernel.org>
-        <CAMuHMdU3vo1AWuDr69WK8-1w38+Q7KturAoL=cFpspZiYr2ssA@mail.gmail.com>
-User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
- FLIM-LB/1.14.9 (=?UTF-8?B?R29qxY0=?=) APEL-LB/10.8 EasyPG/1.0.0 Emacs/27.1
- (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
-MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8BIT
-X-SA-Exim-Connect-IP: 62.31.163.78
-X-SA-Exim-Rcpt-To: geert@linux-m68k.org, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, daniel@zonque.org, robert.jarzmik@free.fr, haojian.zhuang@gmail.com, ysato@users.sourceforge.jp, dalias@libc.org, tsbogend@alpha.franken.de, mpe@ellerman.id.au, tglx@linutronix.de
-X-SA-Exim-Mail-From: maz@kernel.org
-X-SA-Exim-Scanned: No (on disco-boy.misterjones.org); SAEximRunCond expanded to false
+        Stefano Brivio <sbrivio@redhat.com>,
+        Wei Yang <richard.weiyang@linux.alibaba.com>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+Subject: Re: [PATCH 11/13] lib: add fast path for find_first_*_bit() and
+ find_last_bit()
+Message-ID: <20210406160327.GA180841@roeck-us.net>
+References: <20210316015424.1999082-1-yury.norov@gmail.com>
+ <20210316015424.1999082-12-yury.norov@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210316015424.1999082-12-yury.norov@gmail.com>
+User-Agent: Mutt/1.9.4 (2018-02-28)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, 06 Apr 2021 11:32:13 +0100,
-Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+On Mon, Mar 15, 2021 at 06:54:22PM -0700, Yury Norov wrote:
+> Similarly to bitmap functions, users would benefit if we'll handle
+> a case of small-size bitmaps that fit into a single word.
 > 
-> Hi Marc,
+> While here, move the find_last_bit() declaration to bitops/find.h
+> where other find_*_bit() functions sit.
 > 
-> On Tue, Apr 6, 2021 at 11:44 AM Marc Zyngier <maz@kernel.org> wrote:
-> > Instead of playing games with using irq_create_identity_mapping()
-> > and irq_domain_associate(), drop the use of the former and only
-> > use the latter, together with the allocation of the irq_desc
-> > as needed.
-> >
-> > It doesn't make the code less awful, but at least the intent
-> > is clearer.
-> >
-> > Signed-off-by: Marc Zyngier <maz@kernel.org>
+> Signed-off-by: Yury Norov <yury.norov@gmail.com>
+> ---
+>  include/asm-generic/bitops/find.h | 50 ++++++++++++++++++++++++++++---
+>  include/linux/bitops.h            | 12 --------
+>  lib/find_bit.c                    | 12 ++++----
+>  3 files changed, 52 insertions(+), 22 deletions(-)
 > 
-> Thanks for your patch!
-> 
-> > --- a/drivers/sh/intc/core.c
-> > +++ b/drivers/sh/intc/core.c
-> > @@ -179,6 +179,23 @@ static unsigned int __init save_reg(struct intc_desc_int *d,
-> >         return 0;
-> >  }
-> >
-> > +static bool __init intc_map(struct irq_domain *domain, int irq)
-> > +{
-> > +       int res;
-> 
-> warning: unused variable ‘res’ [-Wunused-variable]
-> 
-> > +
-> > +       if (!irq_to_desc(irq) && irq_alloc_desc_at(irq, NUMA_NO_NODE) != irq) {
-> > +               pr_err("uname to allocate IRQ %d\n", irq);
-> > +               return false;
-> > +       }
-> > +
-> > +       if (irq_domain_associate(domain, irq, irq)) {
-> > +               pr_err("domain association failure\n");
-> > +               return false;
-> > +       }
-> > +
-> > +       return true;
-> > +}
-> > +
-> >  int __init register_intc_controller(struct intc_desc *desc)
-> >  {
-> >         unsigned int i, k, smp;
-> > @@ -316,19 +333,8 @@ int __init register_intc_controller(struct intc_desc *desc)
-> 
-> warning: unused variable ‘res’ [-Wunused-variable]
+> diff --git a/include/asm-generic/bitops/find.h b/include/asm-generic/bitops/find.h
+> index 4148c74a1e4d..8d818b304869 100644
+> --- a/include/asm-generic/bitops/find.h
+> +++ b/include/asm-generic/bitops/find.h
+> @@ -5,6 +5,9 @@
+>  extern unsigned long _find_next_bit(const unsigned long *addr1,
+>  		const unsigned long *addr2, unsigned long nbits,
+>  		unsigned long start, unsigned long invert, unsigned long le);
+> +extern unsigned long _find_first_bit(const unsigned long *addr, unsigned long size);
+> +extern unsigned long _find_first_zero_bit(const unsigned long *addr, unsigned long size);
+> +extern unsigned long _find_last_bit(const unsigned long *addr, unsigned long size);
+>  
+>  #ifndef find_next_bit
+>  /**
+> @@ -102,8 +105,17 @@ unsigned long find_next_zero_bit(const unsigned long *addr, unsigned long size,
+>   * Returns the bit number of the first set bit.
+>   * If no bits are set, returns @size.
+>   */
+> -extern unsigned long find_first_bit(const unsigned long *addr,
+> -				    unsigned long size);
+> +static inline
+> +unsigned long find_first_bit(const unsigned long *addr, unsigned long size)
+> +{
+> +	if (small_const_nbits(size)) {
+> +		unsigned long val = *addr & BITS_FIRST(size - 1);
+> +
+> +		return val ? __ffs(val) : size;
 
-Ah, thanks for spotting these.
+This patch results in:
 
-> 
-> >                 if (!vect->enum_id)
-> >                         continue;
-> >
-> > -               res = irq_create_identity_mapping(d->domain, irq);
-> 
-> 
-> > -               if (unlikely(res)) {
-> > -                       if (res == -EEXIST) {
-> > -                               res = irq_domain_associate(d->domain, irq, irq);
-> > -                               if (unlikely(res)) {
-> > -                                       pr_err("domain association failure\n");
-> > -                                       continue;
-> > -                               }
-> > -                       } else {
-> > -                               pr_err("can't identity map IRQ %d\n", irq);
-> > -                               continue;
-> > -                       }
-> > -               }
-> > +               if (!intc_map(d->domain, irq))
-> > +                       continue;
-> >
-> >                 intc_irq_xlate_set(irq, vect->enum_id, d);
-> >                 intc_register_irq(desc, d, vect->enum_id, irq);
-> 
-> Otherwise this seems to work fine on real hardware (landisk) and qemu
-> (rts7751r2d).  I did verify that the new function intc_map() is called.
-> 
-> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+include/asm-generic/bitops/find.h: In function 'find_last_bit':
+include/asm-generic/bitops/find.h:164:16: error: implicit declaration of function '__fls'; did you mean '__ffs'?
 
-Awesome, thanks Geert.
+and:
 
-	M.
+./include/asm-generic/bitops/__fls.h: At top level:
+./include/asm-generic/bitops/__fls.h:13:38: error: conflicting types for '__fls'
 
--- 
-Without deviation from the norm, progress is not possible.
+when building scripts/mod/devicetable-offsets.o.
+
+Seen with h8300 builds.
+
+Guenter
+
+> +	}
+> +
+> +	return _find_first_bit(addr, size);
+> +}
+>  
+>  /**
+>   * find_first_zero_bit - find the first cleared bit in a memory region
+> @@ -113,8 +125,17 @@ extern unsigned long find_first_bit(const unsigned long *addr,
+>   * Returns the bit number of the first cleared bit.
+>   * If no bits are zero, returns @size.
+>   */
+> -extern unsigned long find_first_zero_bit(const unsigned long *addr,
+> -					 unsigned long size);
+> +static inline
+> +unsigned long find_first_zero_bit(const unsigned long *addr, unsigned long size)
+> +{
+> +	if (small_const_nbits(size)) {
+> +		unsigned long val = *addr | ~BITS_FIRST(size - 1);
+> +
+> +		return val == ~0UL ? size : ffz(val);
+> +	}
+> +
+> +	return _find_first_zero_bit(addr, size);
+> +}
+>  #else /* CONFIG_GENERIC_FIND_FIRST_BIT */
+>  
+>  #ifndef find_first_bit
+> @@ -126,6 +147,27 @@ extern unsigned long find_first_zero_bit(const unsigned long *addr,
+>  
+>  #endif /* CONFIG_GENERIC_FIND_FIRST_BIT */
+>  
+> +#ifndef find_last_bit
+> +/**
+> + * find_last_bit - find the last set bit in a memory region
+> + * @addr: The address to start the search at
+> + * @size: The number of bits to search
+> + *
+> + * Returns the bit number of the last set bit, or size.
+> + */
+> +static inline
+> +unsigned long find_last_bit(const unsigned long *addr, unsigned long size)
+> +{
+> +	if (small_const_nbits(size)) {
+> +		unsigned long val = *addr & BITS_FIRST(size - 1);
+> +
+> +		return val ? __fls(val) : size;
+> +	}
+> +
+> +	return _find_last_bit(addr, size);
+> +}
+> +#endif
+> +
+>  /**
+>   * find_next_clump8 - find next 8-bit clump with set bits in a memory region
+>   * @clump: location to store copy of found clump
+> diff --git a/include/linux/bitops.h b/include/linux/bitops.h
+> index a5a48303b0f1..26bf15e6cd35 100644
+> --- a/include/linux/bitops.h
+> +++ b/include/linux/bitops.h
+> @@ -286,17 +286,5 @@ static __always_inline void __assign_bit(long nr, volatile unsigned long *addr,
+>  })
+>  #endif
+>  
+> -#ifndef find_last_bit
+> -/**
+> - * find_last_bit - find the last set bit in a memory region
+> - * @addr: The address to start the search at
+> - * @size: The number of bits to search
+> - *
+> - * Returns the bit number of the last set bit, or size.
+> - */
+> -extern unsigned long find_last_bit(const unsigned long *addr,
+> -				   unsigned long size);
+> -#endif
+> -
+>  #endif /* __KERNEL__ */
+>  #endif
+> diff --git a/lib/find_bit.c b/lib/find_bit.c
+> index 2470ae390f3c..e2c301d28568 100644
+> --- a/lib/find_bit.c
+> +++ b/lib/find_bit.c
+> @@ -75,7 +75,7 @@ EXPORT_SYMBOL(_find_next_bit);
+>  /*
+>   * Find the first set bit in a memory region.
+>   */
+> -unsigned long find_first_bit(const unsigned long *addr, unsigned long size)
+> +unsigned long _find_first_bit(const unsigned long *addr, unsigned long size)
+>  {
+>  	unsigned long idx;
+>  
+> @@ -86,14 +86,14 @@ unsigned long find_first_bit(const unsigned long *addr, unsigned long size)
+>  
+>  	return size;
+>  }
+> -EXPORT_SYMBOL(find_first_bit);
+> +EXPORT_SYMBOL(_find_first_bit);
+>  #endif
+>  
+>  #ifndef find_first_zero_bit
+>  /*
+>   * Find the first cleared bit in a memory region.
+>   */
+> -unsigned long find_first_zero_bit(const unsigned long *addr, unsigned long size)
+> +unsigned long _find_first_zero_bit(const unsigned long *addr, unsigned long size)
+>  {
+>  	unsigned long idx;
+>  
+> @@ -104,11 +104,11 @@ unsigned long find_first_zero_bit(const unsigned long *addr, unsigned long size)
+>  
+>  	return size;
+>  }
+> -EXPORT_SYMBOL(find_first_zero_bit);
+> +EXPORT_SYMBOL(_find_first_zero_bit);
+>  #endif
+>  
+>  #ifndef find_last_bit
+> -unsigned long find_last_bit(const unsigned long *addr, unsigned long size)
+> +unsigned long _find_last_bit(const unsigned long *addr, unsigned long size)
+>  {
+>  	if (size) {
+>  		unsigned long val = BITS_FIRST_MASK(size - 1);
+> @@ -124,7 +124,7 @@ unsigned long find_last_bit(const unsigned long *addr, unsigned long size)
+>  	}
+>  	return size;
+>  }
+> -EXPORT_SYMBOL(find_last_bit);
+> +EXPORT_SYMBOL(_find_last_bit);
+>  #endif
+>  
+>  unsigned long find_next_clump8(unsigned long *clump, const unsigned long *addr,
