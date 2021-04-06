@@ -2,112 +2,156 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.3 required=3.0 tests=BAYES_00,DKIMWL_WL_MED,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_IN_DEF_DKIM_WL autolearn=no
+X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
 	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7704BC43462
-	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 17:38:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C6ECC433ED
+	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 18:15:46 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 451A5613E6
-	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 17:38:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 539A46124C
+	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 18:15:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1346996AbhDFRit (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 6 Apr 2021 13:38:49 -0400
-Received: from rcdn-iport-5.cisco.com ([173.37.86.76]:4421 "EHLO
-        rcdn-iport-5.cisco.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S244714AbhDFRit (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 6 Apr 2021 13:38:49 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=cisco.com; i=@cisco.com; l=1449; q=dns/txt; s=iport;
-  t=1617730721; x=1618940321;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=wHC75exw7z/XvWxaqurh75hAcW+P/hc1Ce2AN8KLAVE=;
-  b=G8CemyZRO1sUomjCmS+YE/C6uWze7voF3/OnkJPzCjlApsHtQw/NACu6
-   IbzaOOj9YEiobtqOgYiAKbgbugARDCXIRPa+ZrNQSpdtmv1Zjt672WTLx
-   0k1ILORDVGZtFP7Z+NpOxvDGSwgPkZcfBivMfAolYWZryTkHbcjWyFPfw
-   w=;
-IronPort-HdrOrdr: =?us-ascii?q?A9a23=3Ad70PFKyAZuY1VAyfgTLAKrPwkb1zdoIgy1?=
- =?us-ascii?q?knxilNYDZeG/b2q+mFmvMH2RjozBsQQmgng9CcOK+GKEmskKJdy48XILukQU?=
- =?us-ascii?q?3aqHKlRbsSj7fK7jX8F0TFnNJ1+rxnd8FFZeHYLV8/tsri5Rn9LtBI+qjizI?=
- =?us-ascii?q?mNpcPzi0hgVhtrbaYI1XYbNi++HldtTAdLQboVfaD82uN9qzCteWsaY62Abx?=
- =?us-ascii?q?FvY8H5q9LGj57gaxIdbiRG1CC1kTiq5LTmeiL34j4iVVp0rYsKwCzijxHz4L?=
- =?us-ascii?q?mlvrWdzBLRvlWjiah+qZ/G1sZJAtCKh4wuDgjUziysZIhnRtS5zVcInN0=3D?=
-X-IronPort-Anti-Spam-Filtered: true
-X-IronPort-Anti-Spam-Result: =?us-ascii?q?A0AGAAAsnGxg/4YNJK1aGgEBAQEBAQE?=
- =?us-ascii?q?BAQEDAQEBARIBAQEBAgIBAQEBQIE+BQEBAQELAYIqgU0BOY0XiTGQDYpcgXw?=
- =?us-ascii?q?LAQEBDQEBNAQBAYRQAoF2AiU0CQ4CAwEBDAEBBQEBAQIBBgRxE4VdhkUBBTo?=
- =?us-ascii?q?6BRALGC48GwaGDKtXdYE0gQGIH4FEIoEXAY1MJxyBSUKBE4MiPoo5BIJHghe?=
- =?us-ascii?q?gOZwpgxWBJptHMhCkYS24EQIEBgUCFoFUOoFZMxoIGxWDJU8ZDo4rFo5HIQN?=
- =?us-ascii?q?nAgYKAQEDCYw0XQEB?=
-X-IronPort-AV: E=Sophos;i="5.82,201,1613433600"; 
-   d="scan'208";a="611888528"
-Received: from alln-core-12.cisco.com ([173.36.13.134])
-  by rcdn-iport-5.cisco.com with ESMTP/TLS/DHE-RSA-SEED-SHA; 06 Apr 2021 17:38:39 +0000
-Received: from zorba ([10.24.14.212])
-        by alln-core-12.cisco.com (8.15.2/8.15.2) with ESMTPS id 136HcajD016593
-        (version=TLSv1.2 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=NO);
-        Tue, 6 Apr 2021 17:38:37 GMT
-Date:   Tue, 6 Apr 2021 10:38:36 -0700
-From:   Daniel Walker <danielwa@cisco.com>
-To:     Christophe Leroy <christophe.leroy@csgroup.eu>
-Cc:     will@kernel.org, robh@kernel.org,
-        daniel@gimpelevich.san-francisco.ca.us, arnd@kernel.org,
-        akpm@linux-foundation.org, linux-arch@vger.kernel.org,
-        devicetree@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        microblaze <monstr@monstr.eu>, linux-mips@vger.kernel.org,
-        nios2 <ley.foon.tan@intel.com>, openrisc@lists.librecores.org,
-        linux-hexagon@vger.kernel.org, linux-riscv@lists.infradead.org,
-        x86@kernel.org, linux-xtensa@linux-xtensa.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-mm@kvack.org
-Subject: Re: [PATCH v4 19/20] mips: Convert to GENERIC_CMDLINE
-Message-ID: <20210406173836.GW2469518@zorba>
-References: <cover.1617375802.git.christophe.leroy@csgroup.eu>
- <a01b6cdbae01fff77e26f7a5c40ee5260e1952b5.1617375802.git.christophe.leroy@csgroup.eu>
+        id S236902AbhDFSPx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 6 Apr 2021 14:15:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36848 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S236823AbhDFSPw (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 6 Apr 2021 14:15:52 -0400
+Received: from mail-qv1-xf35.google.com (mail-qv1-xf35.google.com [IPv6:2607:f8b0:4864:20::f35])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CC6EAC061756;
+        Tue,  6 Apr 2021 11:15:44 -0700 (PDT)
+Received: by mail-qv1-xf35.google.com with SMTP id j3so5593116qvs.1;
+        Tue, 06 Apr 2021 11:15:44 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=SM97r+t3B/0Sl/bYA0tAxXDl/DGgw9Hc/stwzaVm5lI=;
+        b=YOnnxLVuQaP7gy9jJQJLgrNK82zoXWf8BKOEjRJ7IknEJnviHryc81DEfIrUQ2knNP
+         t7CWrMmMQ/nSJ3DSO7ARiS/oVSwoh6DfpmQdW4bP5zqOl9UPAYoNH8AzMdrhse9M1CPg
+         eTatcmId3o1g/amVnAm+GCwV3fz5Ulrn6qrcTqmCy7jyBQenHfp9njNJNZYBjxTIMXYi
+         YvOqNe8/p6M4/7VLBZ/cXo+5NVQxtvrgMbPCnKBopU/mP1ulBJmHZQ+WxKbfcW7CMJ4t
+         EzH6Gnws74T25wZJ5mXDXiXgOnlm5SLanoUas2KBieAwKiYhG/+F6yKSSray6shbE5xV
+         ITAw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=SM97r+t3B/0Sl/bYA0tAxXDl/DGgw9Hc/stwzaVm5lI=;
+        b=CL49Cs5hqFnVG/MWPgcHiimqhwkazJTH5fCBqMQ3zpd8HxcsUi34O85uteuV6SryHx
+         JQXx1QgVmjqO+2NyTyAZo6Bf6fsP15OMvx7JtHSj9pRGYE5JxS3CH7UbnYUqounmNHo9
+         UY5+UQBNq6+PxI3vxopvc5nY+ujKZ1sEAhQVwmiYQCCWegO+EHHVnFsMuuzJMCzmmmUf
+         KxAjWyM3je6IXp6+5x0dWXOR8TUdaksEDslF/9L3eoyB13NTRvPFSU6ioBXvWljHoELA
+         2ENJWye7TdgmT1/jLniKgqyw7XLmdbDXTtihaOm0VwtnZ7Oyr/d9dBQuHWcXuvCpD/Qd
+         H2MA==
+X-Gm-Message-State: AOAM5309Gk8HZLpY9ZrGlKyeQdE5cS77b3HujlYciMh/2hcFR9l9YG70
+        adxKKAzYVH4dSYMPnI6Z6ro=
+X-Google-Smtp-Source: ABdhPJxZVb3/MGOAQygSnVOhur7hk5+nMcz2n4FNAYRLIh6ssKrcLFMnM34XpTY2HYgow8rrUtppdg==
+X-Received: by 2002:a0c:eda7:: with SMTP id h7mr19509145qvr.26.1617732943021;
+        Tue, 06 Apr 2021 11:15:43 -0700 (PDT)
+Received: from localhost ([2601:4c0:104:d5fc:c1b1:fa44:c411:7822])
+        by smtp.gmail.com with ESMTPSA id w5sm16371237qkc.85.2021.04.06.11.15.42
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 06 Apr 2021 11:15:42 -0700 (PDT)
+Date:   Tue, 6 Apr 2021 11:15:41 -0700
+From:   Yury Norov <yury.norov@gmail.com>
+To:     Guenter Roeck <linux@roeck-us.net>
+Cc:     linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-arch@vger.kernel.org, linux-sh@vger.kernel.org,
+        Alexey Klimov <aklimov@redhat.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Arnd Bergmann <arnd@arndb.de>, David Sterba <dsterba@suse.com>,
+        Dennis Zhou <dennis@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Jianpeng Ma <jianpeng.ma@intel.com>,
+        Joe Perches <joe@perches.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
+        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+        Rich Felker <dalias@libc.org>,
+        Stefano Brivio <sbrivio@redhat.com>,
+        Wei Yang <richard.weiyang@linux.alibaba.com>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+Subject: Re: [PATCH 11/13] lib: add fast path for find_first_*_bit() and
+ find_last_bit()
+Message-ID: <20210406181541.GA792963@yury-ThinkPad>
+References: <20210316015424.1999082-1-yury.norov@gmail.com>
+ <20210316015424.1999082-12-yury.norov@gmail.com>
+ <20210406160327.GA180841@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <a01b6cdbae01fff77e26f7a5c40ee5260e1952b5.1617375802.git.christophe.leroy@csgroup.eu>
-X-Outbound-SMTP-Client: 10.24.14.212, [10.24.14.212]
-X-Outbound-Node: alln-core-12.cisco.com
+In-Reply-To: <20210406160327.GA180841@roeck-us.net>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Apr 02, 2021 at 03:18:21PM +0000, Christophe Leroy wrote:
-> -config CMDLINE_BOOL
-> -	bool "Built-in kernel command line"
-> -	help
-> -	  For most systems, it is firmware or second stage bootloader that
-> -	  by default specifies the kernel command line options.  However,
-> -	  it might be necessary or advantageous to either override the
-> -	  default kernel command line or add a few extra options to it.
-> -	  For such cases, this option allows you to hardcode your own
-> -	  command line options directly into the kernel.  For that, you
-> -	  should choose 'Y' here, and fill in the extra boot arguments
-> -	  in CONFIG_CMDLINE.
-> -
-> -	  The built-in options will be concatenated to the default command
-> -	  line if CMDLINE_OVERRIDE is set to 'N'. Otherwise, the default
-> -	  command line will be ignored and replaced by the built-in string.
-> -
-> -	  Most MIPS systems will normally expect 'N' here and rely upon
-> -	  the command line from the firmware or the second-stage bootloader.
-> -
+On Tue, Apr 06, 2021 at 09:03:27AM -0700, Guenter Roeck wrote:
+> On Mon, Mar 15, 2021 at 06:54:22PM -0700, Yury Norov wrote:
+> > Similarly to bitmap functions, users would benefit if we'll handle
+> > a case of small-size bitmaps that fit into a single word.
+> > 
+> > While here, move the find_last_bit() declaration to bitops/find.h
+> > where other find_*_bit() functions sit.
+> > 
+> > Signed-off-by: Yury Norov <yury.norov@gmail.com>
+> > ---
+> >  include/asm-generic/bitops/find.h | 50 ++++++++++++++++++++++++++++---
+> >  include/linux/bitops.h            | 12 --------
+> >  lib/find_bit.c                    | 12 ++++----
+> >  3 files changed, 52 insertions(+), 22 deletions(-)
+> > 
+> > diff --git a/include/asm-generic/bitops/find.h b/include/asm-generic/bitops/find.h
+> > index 4148c74a1e4d..8d818b304869 100644
+> > --- a/include/asm-generic/bitops/find.h
+> > +++ b/include/asm-generic/bitops/find.h
+> > @@ -5,6 +5,9 @@
+> >  extern unsigned long _find_next_bit(const unsigned long *addr1,
+> >  		const unsigned long *addr2, unsigned long nbits,
+> >  		unsigned long start, unsigned long invert, unsigned long le);
+> > +extern unsigned long _find_first_bit(const unsigned long *addr, unsigned long size);
+> > +extern unsigned long _find_first_zero_bit(const unsigned long *addr, unsigned long size);
+> > +extern unsigned long _find_last_bit(const unsigned long *addr, unsigned long size);
+> >  
+> >  #ifndef find_next_bit
+> >  /**
+> > @@ -102,8 +105,17 @@ unsigned long find_next_zero_bit(const unsigned long *addr, unsigned long size,
+> >   * Returns the bit number of the first set bit.
+> >   * If no bits are set, returns @size.
+> >   */
+> > -extern unsigned long find_first_bit(const unsigned long *addr,
+> > -				    unsigned long size);
+> > +static inline
+> > +unsigned long find_first_bit(const unsigned long *addr, unsigned long size)
+> > +{
+> > +	if (small_const_nbits(size)) {
+> > +		unsigned long val = *addr & BITS_FIRST(size - 1);
+> > +
+> > +		return val ? __ffs(val) : size;
+> 
+> This patch results in:
+> 
+> include/asm-generic/bitops/find.h: In function 'find_last_bit':
+> include/asm-generic/bitops/find.h:164:16: error: implicit declaration of function '__fls'; did you mean '__ffs'?
+> 
+> and:
+> 
+> ./include/asm-generic/bitops/__fls.h: At top level:
+> ./include/asm-generic/bitops/__fls.h:13:38: error: conflicting types for '__fls'
+> 
+> when building scripts/mod/devicetable-offsets.o.
+> 
+> Seen with h8300 builds.
+> 
+> Guenter
 
+The patch is here:
 
-See how you complained that I have CMDLINE_BOOL in my changed, and you think it
-shouldn't exist.
-
-Yet here mips has it, and you just deleted it with no feature parity in your
-changes for this.
-
-In my changes I tried to maintain as much feature parity as I could with the
-architectures. I did the same huge conversion a long time ago you've done here to be sure all
-platforms have the features needed.
-
-Daniel
+https://lkml.org/lkml/2021/4/1/1184
+ 
+Yury
