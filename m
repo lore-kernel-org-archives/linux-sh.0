@@ -2,32 +2,32 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.0 required=3.0 tests=BAYES_00,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-17.0 required=3.0 tests=BAYES_00,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 37A8CC433ED
-	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 09:36:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 85335C433B4
+	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 09:36:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EE520613E2
-	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 09:36:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 43E7D613E2
+	for <linux-sh@archiver.kernel.org>; Tue,  6 Apr 2021 09:36:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244888AbhDFJg4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 6 Apr 2021 05:36:56 -0400
-Received: from mail.kernel.org ([198.145.29.99]:54972 "EHLO mail.kernel.org"
+        id S244901AbhDFJg6 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 6 Apr 2021 05:36:58 -0400
+Received: from mail.kernel.org ([198.145.29.99]:55026 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S241239AbhDFJgc (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        id S244879AbhDFJgc (ORCPT <rfc822;linux-sh@vger.kernel.org>);
         Tue, 6 Apr 2021 05:36:32 -0400
 Received: from disco-boy.misterjones.org (disco-boy.misterjones.org [51.254.78.96])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 58EED6135D;
-        Tue,  6 Apr 2021 09:36:24 +0000 (UTC)
+        by mail.kernel.org (Postfix) with ESMTPSA id 197BC613C3;
+        Tue,  6 Apr 2021 09:36:25 +0000 (UTC)
 Received: from 78.163-31-62.static.virginmediabusiness.co.uk ([62.31.163.78] helo=why.lan)
         by disco-boy.misterjones.org with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
         (Exim 4.94)
         (envelope-from <maz@kernel.org>)
-        id 1lTi8E-005owA-4b; Tue, 06 Apr 2021 10:36:22 +0100
+        id 1lTi8F-005owA-CS; Tue, 06 Apr 2021 10:36:23 +0100
 From:   Marc Zyngier <maz@kernel.org>
 To:     linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
         linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
@@ -40,10 +40,12 @@ Cc:     Daniel Mack <daniel@zonque.org>,
         Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
         Michael Ellerman <mpe@ellerman.id.au>,
         Thomas Gleixner <tglx@linutronix.de>
-Subject: [PATCH 0/9] Cleaning up some of the irqdomain features
-Date:   Tue,  6 Apr 2021 10:35:48 +0100
-Message-Id: <20210406093557.1073423-1-maz@kernel.org>
+Subject: [PATCH 2/9] ARM: PXA: Kill use of irq_create_strict_mappings()
+Date:   Tue,  6 Apr 2021 10:35:50 +0100
+Message-Id: <20210406093557.1073423-3-maz@kernel.org>
 X-Mailer: git-send-email 2.29.2
+In-Reply-To: <20210406093557.1073423-1-maz@kernel.org>
+References: <20210406093557.1073423-1-maz@kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 X-SA-Exim-Connect-IP: 62.31.163.78
@@ -54,69 +56,53 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The irqdomain subsystem has grown quite a lot over the years, and some
-of its features are either oddly used or just pretty useless. Some
-other helpers expose internals that are likely to change soon.
+irq_create_strict_mappings() is a poor way to allow the use of
+a linear IRQ domain as a legacy one. Let's be upfront about
+it and use a legacy domain when appropriate.
 
-Here are the bits that I'm trying to get rid of:
+Signed-off-by: Marc Zyngier <maz@kernel.org>
+---
+ arch/arm/mach-pxa/pxa_cplds_irqs.c | 24 +++++++++++-------------
+ 1 file changed, 11 insertions(+), 13 deletions(-)
 
-- irq_linear_revmap exposes the internals of the domains, and only
-  works for linear domains. The supposed speed improvement really
-  isn't an argument, as it gets in the way of more significant
-  optimisations. Reimplemented in terms of irq_find_mapping, which
-  always works, and will eventually go at some point.
-
-- irq_create_strict_mappings is just a way to constraint the
-  allocation of irqdescs into a given range, which is better served by
-  creating a legacy irqdomain, and shows that the platform really
-  needs to catch up with the 21st century.
-
-- irq_create_identity mapping is just a variation on the above, with
-  irq==hwirq, although the way it is used is a gross hack in the SH
-  code that needs to go.
-
-- irq_domain_add_legacy_isa is, as the names shows, a variation on
-  irq_domain_add_legacy with a reservation of 16 interrupts. This is
-  only used in the PPC code.
-
-The patches address all of the above, touching some of the ARM, PPC,
-and SH code that is affected. Another couple of patches address a MIPS
-platform that could use the generic code, and clean some of the
-comments in the irqdomain code.
-
-Unless anyone shouts, I'd like to take this into 5.13, as it is the
-basis of some further (and deeper) changes in the way irqdomains work.
-
-	M.
-
-Marc Zyngier (9):
-  irqdomain: Reimplement irq_linear_revmap() with irq_find_mapping()
-  ARM: PXA: Kill use of irq_create_strict_mappings()
-  irqchip/jcore-aic: Kill use of irq_create_strict_mappings()
-  sh: intc: Drop the use of irq_create_identity_mapping()
-  irqdomain: Kill
-    irq_create_strict_mappings()/irq_create_identity_mapping()
-  mips: netlogic: Use irq_domain_simple_ops for XLP PIC
-  irqdomain: Drop references to recusive irqdomain setup
-  powerpc: Convert irq_domain_add_legacy_isa use to
-    irq_domain_add_legacy
-  irqdomain: Kill irq_domain_add_legacy_isa
-
- Documentation/core-api/irq/irq-domain.rst |  1 -
- arch/arm/mach-pxa/pxa_cplds_irqs.c        | 24 +++++------
- arch/mips/netlogic/common/irq.c           |  6 +--
- arch/powerpc/include/asm/irq.h            |  4 +-
- arch/powerpc/platforms/ps3/interrupt.c    |  4 +-
- arch/powerpc/sysdev/i8259.c               |  3 +-
- arch/powerpc/sysdev/mpic.c                |  2 +-
- arch/powerpc/sysdev/tsi108_pci.c          |  3 +-
- arch/powerpc/sysdev/xics/xics-common.c    |  2 +-
- drivers/irqchip/irq-jcore-aic.c           |  4 +-
- drivers/sh/intc/core.c                    | 50 ++++++++++-------------
- include/linux/irqdomain.h                 | 42 ++++---------------
- kernel/irq/irqdomain.c                    | 49 +++-------------------
- 13 files changed, 59 insertions(+), 135 deletions(-)
-
+diff --git a/arch/arm/mach-pxa/pxa_cplds_irqs.c b/arch/arm/mach-pxa/pxa_cplds_irqs.c
+index 45c19ca96f7a..ec0d9b094744 100644
+--- a/arch/arm/mach-pxa/pxa_cplds_irqs.c
++++ b/arch/arm/mach-pxa/pxa_cplds_irqs.c
+@@ -147,22 +147,20 @@ static int cplds_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	irq_set_irq_wake(fpga->irq, 1);
+-	fpga->irqdomain = irq_domain_add_linear(pdev->dev.of_node,
+-					       CPLDS_NB_IRQ,
+-					       &cplds_irq_domain_ops, fpga);
++	if (base_irq)
++		fpga->irqdomain = irq_domain_add_legacy(pdev->dev.of_node,
++							CPLDS_NB_IRQ,
++							base_irq, 0,
++							&cplds_irq_domain_ops,
++							fpga);
++	else
++		fpga->irqdomain = irq_domain_add_linear(pdev->dev.of_node,
++							CPLDS_NB_IRQ,
++							&cplds_irq_domain_ops,
++							fpga);
+ 	if (!fpga->irqdomain)
+ 		return -ENODEV;
+ 
+-	if (base_irq) {
+-		ret = irq_create_strict_mappings(fpga->irqdomain, base_irq, 0,
+-						 CPLDS_NB_IRQ);
+-		if (ret) {
+-			dev_err(&pdev->dev, "couldn't create the irq mapping %d..%d\n",
+-				base_irq, base_irq + CPLDS_NB_IRQ);
+-			return ret;
+-		}
+-	}
+-
+ 	return 0;
+ }
+ 
 -- 
 2.29.2
 
