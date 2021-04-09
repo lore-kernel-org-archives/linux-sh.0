@@ -2,70 +2,135 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-15.3 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=ham autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
+	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 79608C433ED
-	for <linux-sh@archiver.kernel.org>; Fri,  9 Apr 2021 07:12:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 27B25C433B4
+	for <linux-sh@archiver.kernel.org>; Fri,  9 Apr 2021 10:21:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 4B4CA61165
-	for <linux-sh@archiver.kernel.org>; Fri,  9 Apr 2021 07:12:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E138C61165
+	for <linux-sh@archiver.kernel.org>; Fri,  9 Apr 2021 10:21:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233487AbhDIHMx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 9 Apr 2021 03:12:53 -0400
-Received: from mail-m17635.qiye.163.com ([59.111.176.35]:26968 "EHLO
-        mail-m17635.qiye.163.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231679AbhDIHMx (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 9 Apr 2021 03:12:53 -0400
-Received: from wanjb-virtual-machine.localdomain (unknown [36.152.145.182])
-        by mail-m17635.qiye.163.com (Hmail) with ESMTPA id ADF43400160;
-        Fri,  9 Apr 2021 15:12:38 +0800 (CST)
-From:   Wan Jiabing <wanjiabing@vivo.com>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Wan Jiabing <wanjiabing@vivo.com>,
-        Al Viro <viro@zeniv.linux.org.uk>, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Cc:     kael_w@yeah.net
-Subject: [PATCH] sh: boards: Remove unnecessary break
-Date:   Fri,  9 Apr 2021 15:12:11 +0800
-Message-Id: <20210409071222.1097104-1-wanjiabing@vivo.com>
-X-Mailer: git-send-email 2.25.1
+        id S233631AbhDIKVS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 9 Apr 2021 06:21:18 -0400
+Received: from pegase1.c-s.fr ([93.17.236.30]:29555 "EHLO pegase1.c-s.fr"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S232990AbhDIKVN (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Fri, 9 Apr 2021 06:21:13 -0400
+Received: from localhost (mailhub1-int [192.168.12.234])
+        by localhost (Postfix) with ESMTP id 4FGvKd22R6z9vBmN;
+        Fri,  9 Apr 2021 12:20:53 +0200 (CEST)
+X-Virus-Scanned: Debian amavisd-new at c-s.fr
+Received: from pegase1.c-s.fr ([192.168.12.234])
+        by localhost (pegase1.c-s.fr [192.168.12.234]) (amavisd-new, port 10024)
+        with ESMTP id U6kaT8vyPDk2; Fri,  9 Apr 2021 12:20:53 +0200 (CEST)
+Received: from messagerie.si.c-s.fr (messagerie.si.c-s.fr [192.168.25.192])
+        by pegase1.c-s.fr (Postfix) with ESMTP id 4FGvKd0qpkz9vBmM;
+        Fri,  9 Apr 2021 12:20:53 +0200 (CEST)
+Received: from localhost (localhost [127.0.0.1])
+        by messagerie.si.c-s.fr (Postfix) with ESMTP id 449288B7E3;
+        Fri,  9 Apr 2021 12:20:54 +0200 (CEST)
+X-Virus-Scanned: amavisd-new at c-s.fr
+Received: from messagerie.si.c-s.fr ([127.0.0.1])
+        by localhost (messagerie.si.c-s.fr [127.0.0.1]) (amavisd-new, port 10023)
+        with ESMTP id 20mYPqZcSrF8; Fri,  9 Apr 2021 12:20:54 +0200 (CEST)
+Received: from [192.168.4.90] (unknown [192.168.4.90])
+        by messagerie.si.c-s.fr (Postfix) with ESMTP id 0866D8B7E1;
+        Fri,  9 Apr 2021 12:20:52 +0200 (CEST)
+Subject: Re: [PATCH v4 18/20] x86: Convert to GENERIC_CMDLINE
+To:     Rob Herring <robh@kernel.org>
+Cc:     will@kernel.org, danielwa@cisco.com,
+        daniel@gimpelevich.san-francisco.ca.us, arnd@kernel.org,
+        akpm@linux-foundation.org, linux-arch@vger.kernel.org,
+        devicetree@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        microblaze <monstr@monstr.eu>, linux-mips@vger.kernel.org,
+        nios2 <ley.foon.tan@intel.com>, openrisc@lists.librecores.org,
+        linux-hexagon@vger.kernel.org, linux-riscv@lists.infradead.org,
+        x86@kernel.org, linux-xtensa@linux-xtensa.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-mm@kvack.org
+References: <cover.1617375802.git.christophe.leroy@csgroup.eu>
+ <ab0fd4477964cdbf99e3dd2965a455aa3e738e4b.1617375802.git.christophe.leroy@csgroup.eu>
+ <20210408194148.GB1724284@robh.at.kernel.org>
+From:   Christophe Leroy <christophe.leroy@csgroup.eu>
+Message-ID: <834c4850-5541-b5c2-0b7b-d7d960ab2629@csgroup.eu>
+Date:   Fri, 9 Apr 2021 12:20:49 +0200
+User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:78.0) Gecko/20100101
+ Thunderbird/78.9.0
 MIME-Version: 1.0
+In-Reply-To: <20210408194148.GB1724284@robh.at.kernel.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: fr
 Content-Transfer-Encoding: 8bit
-X-HM-Spam-Status: e1kfGhgUHx5ZQUtXWQgYFAkeWUFZS1VLWVdZKFlBSE83V1ktWUFJV1kPCR
-        oVCBIfWUFZGktITFYaHhpJHUpOH0hPGh9VEwETFhoSFyQUDg9ZV1kWGg8SFR0UWUFZT0tIVUpKS0
-        hKQ1VLWQY+
-X-HM-Sender-Digest: e1kMHhlZQR0aFwgeV1kSHx4VD1lBWUc6ODY6PTo6HT8NGhoOVkoyNhUJ
-        LTMaCyhVSlVKTUpMQk5JSE5CSk5OVTMWGhIXVQwaFRESGhkSFRw7DRINFFUYFBZFWVdZEgtZQVlI
-        TVVKTklVSk9OVUpDSVlXWQgBWUFKTk5LNwY+
-X-HM-Tid: 0a78b579c1b4d991kuwsadf43400160
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-There is a return above the break.
-The break here is unnecessary. Remove it.
 
-Signed-off-by: Wan Jiabing <wanjiabing@vivo.com>
----
- arch/sh/boards/mach-landisk/gio.c | 1 -
- 1 file changed, 1 deletion(-)
 
-diff --git a/arch/sh/boards/mach-landisk/gio.c b/arch/sh/boards/mach-landisk/gio.c
-index ff2200fec29a..fd7a3283942f 100644
---- a/arch/sh/boards/mach-landisk/gio.c
-+++ b/arch/sh/boards/mach-landisk/gio.c
-@@ -106,7 +106,6 @@ static long gio_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
- 		break;
- 	default:
- 		return -EFAULT;
--		break;
- 	}
- 
- 	if ((cmd & 0x01) == 0) {	/* read */
--- 
-2.25.1
+Le 08/04/2021 à 21:41, Rob Herring a écrit :
+> On Fri, Apr 02, 2021 at 03:18:20PM +0000, Christophe Leroy wrote:
+>> This converts the architecture to GENERIC_CMDLINE.
+>>
+>> Signed-off-by: Christophe Leroy <christophe.leroy@csgroup.eu>
+>> ---
+>>   arch/x86/Kconfig        | 45 ++---------------------------------------
+>>   arch/x86/kernel/setup.c | 17 ++--------------
+>>   2 files changed, 4 insertions(+), 58 deletions(-)
+>>
+>> diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+>> index a20684d56b4b..66b384228ca3 100644
+>> --- a/arch/x86/Kconfig
+>> +++ b/arch/x86/Kconfig
+>> @@ -104,6 +104,7 @@ config X86
+>>   	select ARCH_USE_QUEUED_SPINLOCKS
+>>   	select ARCH_USE_SYM_ANNOTATIONS
+>>   	select ARCH_WANT_BATCHED_UNMAP_TLB_FLUSH
+>> +	select ARCH_WANT_CMDLINE_PREPEND_BY_DEFAULT
+> 
+> Seems to be non-existent kconfig option.
 
+Oops. Added in v5.
+
+>> @@ -883,18 +881,7 @@ void __init setup_arch(char **cmdline_p)
+>>   	bss_resource.start = __pa_symbol(__bss_start);
+>>   	bss_resource.end = __pa_symbol(__bss_stop)-1;
+>>   
+>> -#ifdef CONFIG_CMDLINE_BOOL
+>> -#ifdef CONFIG_CMDLINE_FORCE
+>> -	strlcpy(boot_command_line, builtin_cmdline, COMMAND_LINE_SIZE);
+>> -#else
+>> -	if (builtin_cmdline[0]) {
+>> -		/* append boot loader cmdline to builtin */
+>> -		strlcat(builtin_cmdline, " ", COMMAND_LINE_SIZE);
+>> -		strlcat(builtin_cmdline, boot_command_line, COMMAND_LINE_SIZE);
+>> -		strlcpy(boot_command_line, builtin_cmdline, COMMAND_LINE_SIZE);
+>> -	}
+>> -#endif
+>> -#endif
+>> +	cmdline_build(boot_command_line, boot_command_line);
+>>   
+>>   	strlcpy(command_line, boot_command_line, COMMAND_LINE_SIZE);
+>>   	*cmdline_p = command_line;
+> 
+> Once this is all done, I wonder if we can get rid of the strlcpy and
+> perhaps also cmdline_p.
+> 
+
+It seems rather complicated, in init/main.c you have heavy manipulations of command lines which 
+seems to be done in setup_command_line() which seems to add stuff in front of command lines, at the 
+end we end up with several command lines:
+
+/* Untouched saved command line (eg. for /proc) */
+char *saved_command_line;
+/* Command line for parameter parsing */
+static char *static_command_line;
+/* Untouched extra command line */
+static char *extra_command_line;
+
+Some of them come from the cmdline_p which others are from boot_command_line.
+
+I think a cleanup on all that stuff would be worth it as a further step.
