@@ -2,135 +2,184 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,
-	USER_AGENT_SANE_1 autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-17.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=unavailable
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27B25C433B4
-	for <linux-sh@archiver.kernel.org>; Fri,  9 Apr 2021 10:21:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A94DDC433B4
+	for <linux-sh@archiver.kernel.org>; Sun, 11 Apr 2021 14:05:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E138C61165
-	for <linux-sh@archiver.kernel.org>; Fri,  9 Apr 2021 10:21:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6CC2F6101B
+	for <linux-sh@archiver.kernel.org>; Sun, 11 Apr 2021 14:05:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233631AbhDIKVS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 9 Apr 2021 06:21:18 -0400
-Received: from pegase1.c-s.fr ([93.17.236.30]:29555 "EHLO pegase1.c-s.fr"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232990AbhDIKVN (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Fri, 9 Apr 2021 06:21:13 -0400
-Received: from localhost (mailhub1-int [192.168.12.234])
-        by localhost (Postfix) with ESMTP id 4FGvKd22R6z9vBmN;
-        Fri,  9 Apr 2021 12:20:53 +0200 (CEST)
-X-Virus-Scanned: Debian amavisd-new at c-s.fr
-Received: from pegase1.c-s.fr ([192.168.12.234])
-        by localhost (pegase1.c-s.fr [192.168.12.234]) (amavisd-new, port 10024)
-        with ESMTP id U6kaT8vyPDk2; Fri,  9 Apr 2021 12:20:53 +0200 (CEST)
-Received: from messagerie.si.c-s.fr (messagerie.si.c-s.fr [192.168.25.192])
-        by pegase1.c-s.fr (Postfix) with ESMTP id 4FGvKd0qpkz9vBmM;
-        Fri,  9 Apr 2021 12:20:53 +0200 (CEST)
-Received: from localhost (localhost [127.0.0.1])
-        by messagerie.si.c-s.fr (Postfix) with ESMTP id 449288B7E3;
-        Fri,  9 Apr 2021 12:20:54 +0200 (CEST)
-X-Virus-Scanned: amavisd-new at c-s.fr
-Received: from messagerie.si.c-s.fr ([127.0.0.1])
-        by localhost (messagerie.si.c-s.fr [127.0.0.1]) (amavisd-new, port 10023)
-        with ESMTP id 20mYPqZcSrF8; Fri,  9 Apr 2021 12:20:54 +0200 (CEST)
-Received: from [192.168.4.90] (unknown [192.168.4.90])
-        by messagerie.si.c-s.fr (Postfix) with ESMTP id 0866D8B7E1;
-        Fri,  9 Apr 2021 12:20:52 +0200 (CEST)
-Subject: Re: [PATCH v4 18/20] x86: Convert to GENERIC_CMDLINE
-To:     Rob Herring <robh@kernel.org>
-Cc:     will@kernel.org, danielwa@cisco.com,
-        daniel@gimpelevich.san-francisco.ca.us, arnd@kernel.org,
-        akpm@linux-foundation.org, linux-arch@vger.kernel.org,
-        devicetree@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        microblaze <monstr@monstr.eu>, linux-mips@vger.kernel.org,
-        nios2 <ley.foon.tan@intel.com>, openrisc@lists.librecores.org,
-        linux-hexagon@vger.kernel.org, linux-riscv@lists.infradead.org,
-        x86@kernel.org, linux-xtensa@linux-xtensa.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-mm@kvack.org
-References: <cover.1617375802.git.christophe.leroy@csgroup.eu>
- <ab0fd4477964cdbf99e3dd2965a455aa3e738e4b.1617375802.git.christophe.leroy@csgroup.eu>
- <20210408194148.GB1724284@robh.at.kernel.org>
-From:   Christophe Leroy <christophe.leroy@csgroup.eu>
-Message-ID: <834c4850-5541-b5c2-0b7b-d7d960ab2629@csgroup.eu>
-Date:   Fri, 9 Apr 2021 12:20:49 +0200
-User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:78.0) Gecko/20100101
- Thunderbird/78.9.0
+        id S235386AbhDKOGA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 11 Apr 2021 10:06:00 -0400
+Received: from condef-07.nifty.com ([202.248.20.72]:41896 "EHLO
+        condef-07.nifty.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235407AbhDKOGA (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 11 Apr 2021 10:06:00 -0400
+X-Greylist: delayed 338 seconds by postgrey-1.27 at vger.kernel.org; Sun, 11 Apr 2021 10:05:59 EDT
+Received: from conuserg-07.nifty.com ([10.126.8.70])by condef-07.nifty.com with ESMTP id 13BDv60G003330
+        for <linux-sh@vger.kernel.org>; Sun, 11 Apr 2021 22:57:06 +0900
+Received: from localhost.localdomain (133-32-232-101.west.xps.vectant.ne.jp [133.32.232.101]) (authenticated)
+        by conuserg-07.nifty.com with ESMTP id 13BDtZpj024906;
+        Sun, 11 Apr 2021 22:55:36 +0900
+DKIM-Filter: OpenDKIM Filter v2.10.3 conuserg-07.nifty.com 13BDtZpj024906
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com;
+        s=dec2015msa; t=1618149336;
+        bh=vS8e0SLZkCBy0RmRBkXW9rD3CCXXaiE+fv8+9wtNFcQ=;
+        h=From:To:Cc:Subject:Date:From;
+        b=T4auvfUkLCtH1xfy+3/BrGcOzcfBKdffBrAXk4ktteZcBCINybIlbpHd9u+FXgcif
+         RO7XzBcc9p98FwTRNy8JybHK2F1kD5uOTKziM8txSjy2xhfOkbGIf/yytdOE+0jpI8
+         KviylrePITI/U3uMXnTZgwZjolQgFonocj7FYZytyy/PjeAFIk4d+ZnlqNcz82TC5w
+         YlRMzOSoLaSCC1uOkHx7R065zcm6947UcUG2em5S3RDI+7PnZJcADDKJj5uN27osZQ
+         9HFOIw4qnFiaxSzmdf0tITxyKAxAA/2oJKzo5VUOhdMB6iiBQ1EhXsj3PC5YdEkMlh
+         RRIP4+C1tEq2Q==
+X-Nifty-SrcIP: [133.32.232.101]
+From:   Masahiro Yamada <masahiroy@kernel.org>
+To:     linux-kbuild@vger.kernel.org
+Cc:     Masahiro Yamada <masahiroy@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Helge Deller <deller@gmx.de>,
+        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        Rich Felker <dalias@libc.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Vineet Gupta <vgupta@synopsys.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+        uclinux-h8-devel@lists.sourceforge.jp
+Subject: [PATCH] kbuild: use ?= to assign CROSS_COMPILE by arch-Makefile
+Date:   Sun, 11 Apr 2021 22:55:32 +0900
+Message-Id: <20210411135532.219797-1-masahiroy@kernel.org>
+X-Mailer: git-send-email 2.27.0
 MIME-Version: 1.0
-In-Reply-To: <20210408194148.GB1724284@robh.at.kernel.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: fr
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+Use ?= operator to let arch/*/Makefile to assign CROSS_COMPILE only
+when CROSS_COMPILE is undefined.
 
+This allows arch-Makefiles to drop the ifeq ($(CROSS_COMPILE),)
+conditional.
 
-Le 08/04/2021 à 21:41, Rob Herring a écrit :
-> On Fri, Apr 02, 2021 at 03:18:20PM +0000, Christophe Leroy wrote:
->> This converts the architecture to GENERIC_CMDLINE.
->>
->> Signed-off-by: Christophe Leroy <christophe.leroy@csgroup.eu>
->> ---
->>   arch/x86/Kconfig        | 45 ++---------------------------------------
->>   arch/x86/kernel/setup.c | 17 ++--------------
->>   2 files changed, 4 insertions(+), 58 deletions(-)
->>
->> diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
->> index a20684d56b4b..66b384228ca3 100644
->> --- a/arch/x86/Kconfig
->> +++ b/arch/x86/Kconfig
->> @@ -104,6 +104,7 @@ config X86
->>   	select ARCH_USE_QUEUED_SPINLOCKS
->>   	select ARCH_USE_SYM_ANNOTATIONS
->>   	select ARCH_WANT_BATCHED_UNMAP_TLB_FLUSH
->> +	select ARCH_WANT_CMDLINE_PREPEND_BY_DEFAULT
-> 
-> Seems to be non-existent kconfig option.
+This slightly changes the behavior; the arch-Makefile previously
+overrode CROSS_COMPILE when CROSS_COMPILE has already been made empty
+via an environment variable as in 'export CROSS_COMPILE='.
 
-Oops. Added in v5.
+With this commit, arch-Makefle will respect the user's environment
+set-up, which seems to be a more correct behavior.
 
->> @@ -883,18 +881,7 @@ void __init setup_arch(char **cmdline_p)
->>   	bss_resource.start = __pa_symbol(__bss_start);
->>   	bss_resource.end = __pa_symbol(__bss_stop)-1;
->>   
->> -#ifdef CONFIG_CMDLINE_BOOL
->> -#ifdef CONFIG_CMDLINE_FORCE
->> -	strlcpy(boot_command_line, builtin_cmdline, COMMAND_LINE_SIZE);
->> -#else
->> -	if (builtin_cmdline[0]) {
->> -		/* append boot loader cmdline to builtin */
->> -		strlcat(builtin_cmdline, " ", COMMAND_LINE_SIZE);
->> -		strlcat(builtin_cmdline, boot_command_line, COMMAND_LINE_SIZE);
->> -		strlcpy(boot_command_line, builtin_cmdline, COMMAND_LINE_SIZE);
->> -	}
->> -#endif
->> -#endif
->> +	cmdline_build(boot_command_line, boot_command_line);
->>   
->>   	strlcpy(command_line, boot_command_line, COMMAND_LINE_SIZE);
->>   	*cmdline_p = command_line;
-> 
-> Once this is all done, I wonder if we can get rid of the strlcpy and
-> perhaps also cmdline_p.
-> 
+Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
+---
 
-It seems rather complicated, in init/main.c you have heavy manipulations of command lines which 
-seems to be done in setup_command_line() which seems to add stuff in front of command lines, at the 
-end we end up with several command lines:
+ arch/arc/Makefile    | 4 +---
+ arch/h8300/Makefile  | 4 +---
+ arch/m68k/Makefile   | 4 +---
+ arch/mips/Makefile   | 4 +---
+ arch/parisc/Makefile | 6 ++----
+ arch/sh/Makefile     | 4 +---
+ 6 files changed, 7 insertions(+), 19 deletions(-)
 
-/* Untouched saved command line (eg. for /proc) */
-char *saved_command_line;
-/* Command line for parameter parsing */
-static char *static_command_line;
-/* Untouched extra command line */
-static char *extra_command_line;
+diff --git a/arch/arc/Makefile b/arch/arc/Makefile
+index 4392c9c189c4..bd5a9daa3461 100644
+--- a/arch/arc/Makefile
++++ b/arch/arc/Makefile
+@@ -5,9 +5,7 @@
+ 
+ KBUILD_DEFCONFIG := haps_hs_smp_defconfig
+ 
+-ifeq ($(CROSS_COMPILE),)
+-CROSS_COMPILE := $(call cc-cross-prefix, arc-linux- arceb-linux-)
+-endif
++CROSS_COMPILE ?= $(call cc-cross-prefix, arc-linux- arceb-linux-)
+ 
+ cflags-y	+= -fno-common -pipe -fno-builtin -mmedium-calls -D__linux__
+ 
+diff --git a/arch/h8300/Makefile b/arch/h8300/Makefile
+index ba0f26cfad61..d6e466dbfc00 100644
+--- a/arch/h8300/Makefile
++++ b/arch/h8300/Makefile
+@@ -26,9 +26,7 @@ KBUILD_LDFLAGS += $(ldflags-y)
+ 
+ CHECKFLAGS += -msize-long
+ 
+-ifeq ($(CROSS_COMPILE),)
+-CROSS_COMPILE := $(call cc-cross-prefix, h8300-unknown-linux- h8300-linux-)
+-endif
++CROSS_COMPILE ?= $(call cc-cross-prefix, h8300-unknown-linux- h8300-linux-)
+ 
+ core-y	+= arch/$(ARCH)/kernel/ arch/$(ARCH)/mm/
+ core-y	+= arch/$(ARCH)/boot/dts/
+diff --git a/arch/m68k/Makefile b/arch/m68k/Makefile
+index ea14f2046fb4..79208ad7a355 100644
+--- a/arch/m68k/Makefile
++++ b/arch/m68k/Makefile
+@@ -17,10 +17,8 @@
+ KBUILD_DEFCONFIG := multi_defconfig
+ 
+ ifneq ($(SUBARCH),$(ARCH))
+-	ifeq ($(CROSS_COMPILE),)
+-		CROSS_COMPILE := $(call cc-cross-prefix, \
++	CROSS_COMPILE ?= $(call cc-cross-prefix, \
+ 			m68k-linux-gnu- m68k-linux- m68k-unknown-linux-gnu-)
+-	endif
+ endif
+ 
+ #
+diff --git a/arch/mips/Makefile b/arch/mips/Makefile
+index e71d587af49c..75e4e46532a4 100644
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -51,9 +51,7 @@ UTS_MACHINE		:= mips64
+ endif
+ 
+ ifneq ($(SUBARCH),$(ARCH))
+-  ifeq ($(CROSS_COMPILE),)
+-    CROSS_COMPILE := $(call cc-cross-prefix, $(tool-archpref)-linux-  $(tool-archpref)-linux-gnu-  $(tool-archpref)-unknown-linux-gnu-)
+-  endif
++  CROSS_COMPILE ?= $(call cc-cross-prefix, $(tool-archpref)-linux-  $(tool-archpref)-linux-gnu-  $(tool-archpref)-unknown-linux-gnu-)
+ endif
+ 
+ ifdef CONFIG_FUNCTION_GRAPH_TRACER
+diff --git a/arch/parisc/Makefile b/arch/parisc/Makefile
+index 7d9f71aa829a..62272cb3513c 100644
+--- a/arch/parisc/Makefile
++++ b/arch/parisc/Makefile
+@@ -42,12 +42,10 @@ endif
+ export LD_BFD
+ 
+ ifneq ($(SUBARCH),$(UTS_MACHINE))
+-	ifeq ($(CROSS_COMPILE),)
+-		CC_SUFFIXES = linux linux-gnu unknown-linux-gnu
+-		CROSS_COMPILE := $(call cc-cross-prefix, \
++	CC_SUFFIXES = linux linux-gnu unknown-linux-gnu
++	CROSS_COMPILE ?= $(call cc-cross-prefix, \
+ 			$(foreach a,$(CC_ARCHES), \
+ 			$(foreach s,$(CC_SUFFIXES),$(a)-$(s)-)))
+-	endif
+ endif
+ 
+ ifdef CONFIG_DYNAMIC_FTRACE
+diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+index 3bcbf52fb30e..0e8277be362e 100644
+--- a/arch/sh/Makefile
++++ b/arch/sh/Makefile
+@@ -10,9 +10,7 @@
+ # for more details.
+ #
+ ifneq ($(SUBARCH),$(ARCH))
+-  ifeq ($(CROSS_COMPILE),)
+-    CROSS_COMPILE := $(call cc-cross-prefix, sh-linux- sh-linux-gnu- sh-unknown-linux-gnu-)
+-  endif
++  CROSS_COMPILE ?= $(call cc-cross-prefix, sh-linux- sh-linux-gnu- sh-unknown-linux-gnu-)
+ endif
+ 
+ KBUILD_DEFCONFIG	:= shx3_defconfig
+-- 
+2.27.0
 
-Some of them come from the cmdline_p which others are from boot_command_line.
-
-I think a cleanup on all that stuff would be worth it as a further step.
