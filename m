@@ -2,38 +2,55 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-17.0 required=3.0 tests=BAYES_00,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 06B67C04FCD
-	for <linux-sh@archiver.kernel.org>; Wed, 14 Apr 2021 13:44:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 219DCC433B4
+	for <linux-sh@archiver.kernel.org>; Wed, 14 Apr 2021 19:10:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D0817611B0
-	for <linux-sh@archiver.kernel.org>; Wed, 14 Apr 2021 13:44:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E168861177
+	for <linux-sh@archiver.kernel.org>; Wed, 14 Apr 2021 19:10:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1351617AbhDNNor (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 14 Apr 2021 09:44:47 -0400
-Received: from mail.kernel.org ([198.145.29.99]:52378 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1351611AbhDNNor (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Wed, 14 Apr 2021 09:44:47 -0400
-Received: from disco-boy.misterjones.org (disco-boy.misterjones.org [51.254.78.96])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 9BEFC611C9;
-        Wed, 14 Apr 2021 13:44:25 +0000 (UTC)
-Received: from 78.163-31-62.static.virginmediabusiness.co.uk ([62.31.163.78] helo=why.lan)
-        by disco-boy.misterjones.org with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.94)
-        (envelope-from <maz@kernel.org>)
-        id 1lWfod-007RSZ-Vw; Wed, 14 Apr 2021 14:44:24 +0100
-From:   Marc Zyngier <maz@kernel.org>
-To:     kvm@vger.kernel.org, kvmarm@lists.cs.columbia.edu,
-        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org
-Cc:     Mark Rutland <mark.rutland@arm.com>, Will Deacon <will@kernel.org>,
-        Rich Felker <dalias@libc.org>,
+        id S234650AbhDNTKZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 14 Apr 2021 15:10:25 -0400
+Received: from mail-vs1-f48.google.com ([209.85.217.48]:42773 "EHLO
+        mail-vs1-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S234613AbhDNTKY (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 14 Apr 2021 15:10:24 -0400
+Received: by mail-vs1-f48.google.com with SMTP id 66so10870653vsk.9;
+        Wed, 14 Apr 2021 12:10:02 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=Z3hnQcI7xgmsUuxItoue27NrG4aaS9+tEraOADPkosg=;
+        b=KrGxujkCDokuUGN/ReAyrgbtaaoF9OgSrdt+vXPM/hS99xNPWr3L7skUAi7532xC9t
+         +54QuzHCnClLvsC5eIibRDW0j7Jip3PwShxKmQaJHbP1E3HbCpMWl8sHQK6P2KWDROgB
+         15j6Acm8gx1mZhVIr6gUXqyZu1peUYkEBVvv16JeqkcUCV+RvkC60O5xZK2zYqGTZsJy
+         ldxOTewIc4kzSf9GiaHgRRb7WLyGzHAj2O47NihiTDaew5kHXlHGonnGJU4CdHlECKIz
+         +ZuW5mEyxUkQHC1aXYcCrbsrJ5VW/dA+ANz4aqtCtwVkoSWCGs6DVhbFctxzVRyNQpTP
+         xd5w==
+X-Gm-Message-State: AOAM533VJzrRMsHdgPyTFM3FpFAv3/p0D158UKF0ohgXmgIM9AKYZZon
+        w/ERdMbp6TnO+H/UJLyqHDps6L5Y9HKA6ZIYUZw=
+X-Google-Smtp-Source: ABdhPJxJbGWB0l+pI+e+zsAVHVBLwrtdJbfPrWC2SKJve8ijlw7H6jw/dP0+aFP/QglhH1BBHAHmIOlyMsd9AxB04yU=
+X-Received: by 2002:a67:80c4:: with SMTP id b187mr29948111vsd.42.1618427401975;
+ Wed, 14 Apr 2021 12:10:01 -0700 (PDT)
+MIME-Version: 1.0
+References: <20210414134409.1266357-1-maz@kernel.org> <20210414134409.1266357-5-maz@kernel.org>
+In-Reply-To: <20210414134409.1266357-5-maz@kernel.org>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Wed, 14 Apr 2021 21:09:50 +0200
+Message-ID: <CAMuHMdVfwRv_66mMz79rvszdgXnovrS_FZzPRK9fqOMH5Npu5A@mail.gmail.com>
+Subject: Re: [PATCH 4/5] sh: Get rid of oprofile leftovers
+To:     Marc Zyngier <maz@kernel.org>
+Cc:     KVM list <kvm@vger.kernel.org>, kvmarm@lists.cs.columbia.edu,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-s390 <linux-s390@vger.kernel.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Will Deacon <will@kernel.org>, Rich Felker <dalias@libc.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Peter Zijlstra <peterz@infradead.org>,
         Arnaldo Carvalho de Melo <acme@kernel.org>,
@@ -43,62 +60,26 @@ Cc:     Mark Rutland <mark.rutland@arm.com>, Will Deacon <will@kernel.org>,
         James Morse <james.morse@arm.com>,
         Suzuki K Poulose <suzuki.poulose@arm.com>,
         Alexandru Elisei <alexandru.elisei@arm.com>,
-        kernel-team@android.com
-Subject: [PATCH 3/5] s390: Get rid of oprofile leftovers
-Date:   Wed, 14 Apr 2021 14:44:07 +0100
-Message-Id: <20210414134409.1266357-4-maz@kernel.org>
-X-Mailer: git-send-email 2.29.2
-In-Reply-To: <20210414134409.1266357-1-maz@kernel.org>
-References: <20210414134409.1266357-1-maz@kernel.org>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-SA-Exim-Connect-IP: 62.31.163.78
-X-SA-Exim-Rcpt-To: kvm@vger.kernel.org, kvmarm@lists.cs.columbia.edu, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, mark.rutland@arm.com, will@kernel.org, dalias@libc.org, ysato@users.sourceforge.jp, peterz@infradead.org, acme@kernel.org, borntraeger@de.ibm.com, hca@linux.ibm.com, nathan@kernel.org, viresh.kumar@linaro.org, james.morse@arm.com, suzuki.poulose@arm.com, alexandru.elisei@arm.com, kernel-team@android.com
-X-SA-Exim-Mail-From: maz@kernel.org
-X-SA-Exim-Scanned: No (on disco-boy.misterjones.org); SAEximRunCond expanded to false
+        Android Kernel Team <kernel-team@android.com>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-perf_pmu_name() and perf_num_counters() are unused. Drop them.
+On Wed, Apr 14, 2021 at 3:53 PM Marc Zyngier <maz@kernel.org> wrote:
+> perf_pmu_name() and perf_num_counters() are unused. Drop them.
+>
+> Signed-off-by: Marc Zyngier <maz@kernel.org>
 
-Signed-off-by: Marc Zyngier <maz@kernel.org>
----
- arch/s390/kernel/perf_event.c | 21 ---------------------
- 1 file changed, 21 deletions(-)
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/arch/s390/kernel/perf_event.c b/arch/s390/kernel/perf_event.c
-index 1e75cc983546..ea7729bebaa0 100644
---- a/arch/s390/kernel/perf_event.c
-+++ b/arch/s390/kernel/perf_event.c
-@@ -23,27 +23,6 @@
- #include <asm/sysinfo.h>
- #include <asm/unwind.h>
- 
--const char *perf_pmu_name(void)
--{
--	if (cpum_cf_avail() || cpum_sf_avail())
--		return "CPU-Measurement Facilities (CPU-MF)";
--	return "pmu";
--}
--EXPORT_SYMBOL(perf_pmu_name);
--
--int perf_num_counters(void)
--{
--	int num = 0;
--
--	if (cpum_cf_avail())
--		num += PERF_CPUM_CF_MAX_CTR;
--	if (cpum_sf_avail())
--		num += PERF_CPUM_SF_MAX_CTR;
--
--	return num;
--}
--EXPORT_SYMBOL(perf_num_counters);
--
- static struct kvm_s390_sie_block *sie_block(struct pt_regs *regs)
- {
- 	struct stack_frame *stack = (struct stack_frame *) regs->gprs[15];
+Gr{oetje,eeting}s,
+
+                        Geert
+
 -- 
-2.29.2
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
