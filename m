@@ -2,179 +2,94 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.3 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-12.0 required=3.0 tests=BAYES_00,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT autolearn=ham
+	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BFC4AC43462
-	for <linux-sh@archiver.kernel.org>; Wed, 14 Apr 2021 06:10:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F3777C43460
+	for <linux-sh@archiver.kernel.org>; Wed, 14 Apr 2021 13:44:24 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8F23061166
-	for <linux-sh@archiver.kernel.org>; Wed, 14 Apr 2021 06:10:56 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CCFDA611B0
+	for <linux-sh@archiver.kernel.org>; Wed, 14 Apr 2021 13:44:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1349084AbhDNGLQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 14 Apr 2021 02:11:16 -0400
-Received: from pegase1.c-s.fr ([93.17.236.30]:22095 "EHLO pegase1.c-s.fr"
+        id S1351591AbhDNNop (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 14 Apr 2021 09:44:45 -0400
+Received: from mail.kernel.org ([198.145.29.99]:52252 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229840AbhDNGLP (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Wed, 14 Apr 2021 02:11:15 -0400
-Received: from localhost (mailhub1-int [192.168.12.234])
-        by localhost (Postfix) with ESMTP id 4FKsXp6CPzzB09bD;
-        Wed, 14 Apr 2021 08:10:50 +0200 (CEST)
-X-Virus-Scanned: Debian amavisd-new at c-s.fr
-Received: from pegase1.c-s.fr ([192.168.12.234])
-        by localhost (pegase1.c-s.fr [192.168.12.234]) (amavisd-new, port 10024)
-        with ESMTP id bgEX-Y99N3ka; Wed, 14 Apr 2021 08:10:50 +0200 (CEST)
-Received: from messagerie.si.c-s.fr (messagerie.si.c-s.fr [192.168.25.192])
-        by pegase1.c-s.fr (Postfix) with ESMTP id 4FKsXp513xzB09bB;
-        Wed, 14 Apr 2021 08:10:50 +0200 (CEST)
-Received: from localhost (localhost [127.0.0.1])
-        by messagerie.si.c-s.fr (Postfix) with ESMTP id 8F6CC8B7B6;
-        Wed, 14 Apr 2021 08:10:51 +0200 (CEST)
-X-Virus-Scanned: amavisd-new at c-s.fr
-Received: from messagerie.si.c-s.fr ([127.0.0.1])
-        by localhost (messagerie.si.c-s.fr [127.0.0.1]) (amavisd-new, port 10023)
-        with ESMTP id 8t_hMitD6rsU; Wed, 14 Apr 2021 08:10:51 +0200 (CEST)
-Received: from [192.168.4.90] (unknown [192.168.4.90])
-        by messagerie.si.c-s.fr (Postfix) with ESMTP id 62A328B75F;
-        Wed, 14 Apr 2021 08:10:50 +0200 (CEST)
-Subject: Re: [PATCH] mm: Define ARCH_HAS_FIRST_USER_ADDRESS
-To:     Anshuman Khandual <anshuman.khandual@arm.com>, linux-mm@kvack.org,
-        akpm@linux-foundation.org
-Cc:     linux-s390@vger.kernel.org, x86@kernel.org,
-        linux-ia64@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-xtensa@linux-xtensa.org,
-        linux-sh@vger.kernel.org, linux-um@lists.infradead.org,
-        linux-mips@vger.kernel.org, linux-csky@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        openrisc@lists.librecores.org, linux-alpha@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org,
-        linux-snps-arc@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
-        linux-arm-kernel@lists.infradead.org
-References: <1618368899-20311-1-git-send-email-anshuman.khandual@arm.com>
- <f29ba8e2-3071-c963-1e9f-e8c88526ed8d@csgroup.eu>
- <6d24d3cc-b2df-f0d7-f4bf-f505f679c77e@arm.com>
-From:   Christophe Leroy <christophe.leroy@csgroup.eu>
-Message-ID: <ec7bbb30-dbbd-197b-4d65-eb3600fe6413@csgroup.eu>
-Date:   Wed, 14 Apr 2021 08:10:49 +0200
-User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:78.0) Gecko/20100101
- Thunderbird/78.9.1
+        id S1351586AbhDNNoo (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Wed, 14 Apr 2021 09:44:44 -0400
+Received: from disco-boy.misterjones.org (disco-boy.misterjones.org [51.254.78.96])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id B363A611AD;
+        Wed, 14 Apr 2021 13:44:23 +0000 (UTC)
+Received: from 78.163-31-62.static.virginmediabusiness.co.uk ([62.31.163.78] helo=why.lan)
+        by disco-boy.misterjones.org with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        (Exim 4.94)
+        (envelope-from <maz@kernel.org>)
+        id 1lWfob-007RSZ-Jm; Wed, 14 Apr 2021 14:44:21 +0100
+From:   Marc Zyngier <maz@kernel.org>
+To:     kvm@vger.kernel.org, kvmarm@lists.cs.columbia.edu,
+        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org
+Cc:     Mark Rutland <mark.rutland@arm.com>, Will Deacon <will@kernel.org>,
+        Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Arnaldo Carvalho de Melo <acme@kernel.org>,
+        Christian Borntraeger <borntraeger@de.ibm.com>,
+        Heiko Carstens <hca@linux.ibm.com>, nathan@kernel.org,
+        Viresh Kumar <viresh.kumar@linaro.org>,
+        James Morse <james.morse@arm.com>,
+        Suzuki K Poulose <suzuki.poulose@arm.com>,
+        Alexandru Elisei <alexandru.elisei@arm.com>,
+        kernel-team@android.com
+Subject: [PATCH 0/5] perf: oprofile spring cleanup
+Date:   Wed, 14 Apr 2021 14:44:04 +0100
+Message-Id: <20210414134409.1266357-1-maz@kernel.org>
+X-Mailer: git-send-email 2.29.2
 MIME-Version: 1.0
-In-Reply-To: <6d24d3cc-b2df-f0d7-f4bf-f505f679c77e@arm.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: fr
 Content-Transfer-Encoding: 8bit
+X-SA-Exim-Connect-IP: 62.31.163.78
+X-SA-Exim-Rcpt-To: kvm@vger.kernel.org, kvmarm@lists.cs.columbia.edu, linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, mark.rutland@arm.com, will@kernel.org, dalias@libc.org, ysato@users.sourceforge.jp, peterz@infradead.org, acme@kernel.org, borntraeger@de.ibm.com, hca@linux.ibm.com, nathan@kernel.org, viresh.kumar@linaro.org, james.morse@arm.com, suzuki.poulose@arm.com, alexandru.elisei@arm.com, kernel-team@android.com
+X-SA-Exim-Mail-From: maz@kernel.org
+X-SA-Exim-Scanned: No (on disco-boy.misterjones.org); SAEximRunCond expanded to false
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+This small series builds on top of the work that was started with [1].
 
+It recently became apparent that KVM/arm64 is the last bit of the
+kernel that still uses perf_num_counters().
 
-Le 14/04/2021 à 07:59, Anshuman Khandual a écrit :
-> 
-> 
-> On 4/14/21 10:52 AM, Christophe Leroy wrote:
->>
->>
->> Le 14/04/2021 à 04:54, Anshuman Khandual a écrit :
->>> Currently most platforms define FIRST_USER_ADDRESS as 0UL duplicating the
->>> same code all over. Instead define a new option ARCH_HAS_FIRST_USER_ADDRESS
->>> for those platforms which would override generic default FIRST_USER_ADDRESS
->>> value 0UL. This makes it much cleaner with reduced code.
->>>
->>> Cc: linux-alpha@vger.kernel.org
->>> Cc: linux-snps-arc@lists.infradead.org
->>> Cc: linux-arm-kernel@lists.infradead.org
->>> Cc: linux-csky@vger.kernel.org
->>> Cc: linux-hexagon@vger.kernel.org
->>> Cc: linux-ia64@vger.kernel.org
->>> Cc: linux-m68k@lists.linux-m68k.org
->>> Cc: linux-mips@vger.kernel.org
->>> Cc: openrisc@lists.librecores.org
->>> Cc: linux-parisc@vger.kernel.org
->>> Cc: linuxppc-dev@lists.ozlabs.org
->>> Cc: linux-riscv@lists.infradead.org
->>> Cc: linux-s390@vger.kernel.org
->>> Cc: linux-sh@vger.kernel.org
->>> Cc: sparclinux@vger.kernel.org
->>> Cc: linux-um@lists.infradead.org
->>> Cc: linux-xtensa@linux-xtensa.org
->>> Cc: x86@kernel.org
->>> Cc: linux-mm@kvack.org
->>> Cc: linux-kernel@vger.kernel.org
->>> Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
->>> ---
->>>    arch/alpha/include/asm/pgtable.h             | 1 -
->>>    arch/arc/include/asm/pgtable.h               | 6 ------
->>>    arch/arm/Kconfig                             | 1 +
->>>    arch/arm64/include/asm/pgtable.h             | 2 --
->>>    arch/csky/include/asm/pgtable.h              | 1 -
->>>    arch/hexagon/include/asm/pgtable.h           | 3 ---
->>>    arch/ia64/include/asm/pgtable.h              | 1 -
->>>    arch/m68k/include/asm/pgtable_mm.h           | 1 -
->>>    arch/microblaze/include/asm/pgtable.h        | 2 --
->>>    arch/mips/include/asm/pgtable-32.h           | 1 -
->>>    arch/mips/include/asm/pgtable-64.h           | 1 -
->>>    arch/nds32/Kconfig                           | 1 +
->>>    arch/nios2/include/asm/pgtable.h             | 2 --
->>>    arch/openrisc/include/asm/pgtable.h          | 1 -
->>>    arch/parisc/include/asm/pgtable.h            | 2 --
->>>    arch/powerpc/include/asm/book3s/pgtable.h    | 1 -
->>>    arch/powerpc/include/asm/nohash/32/pgtable.h | 1 -
->>>    arch/powerpc/include/asm/nohash/64/pgtable.h | 2 --
->>>    arch/riscv/include/asm/pgtable.h             | 2 --
->>>    arch/s390/include/asm/pgtable.h              | 2 --
->>>    arch/sh/include/asm/pgtable.h                | 2 --
->>>    arch/sparc/include/asm/pgtable_32.h          | 1 -
->>>    arch/sparc/include/asm/pgtable_64.h          | 3 ---
->>>    arch/um/include/asm/pgtable-2level.h         | 1 -
->>>    arch/um/include/asm/pgtable-3level.h         | 1 -
->>>    arch/x86/include/asm/pgtable_types.h         | 2 --
->>>    arch/xtensa/include/asm/pgtable.h            | 1 -
->>>    include/linux/mm.h                           | 4 ++++
->>>    mm/Kconfig                                   | 4 ++++
->>>    29 files changed, 10 insertions(+), 43 deletions(-)
->>>
->>> diff --git a/include/linux/mm.h b/include/linux/mm.h
->>> index 8ba434287387..47098ccd715e 100644
->>> --- a/include/linux/mm.h
->>> +++ b/include/linux/mm.h
->>> @@ -46,6 +46,10 @@ extern int sysctl_page_lock_unfairness;
->>>      void init_mm_internals(void);
->>>    +#ifndef ARCH_HAS_FIRST_USER_ADDRESS
->>
->> I guess you didn't test it ..... :)
-> 
-> In fact I did :) Though just booted it on arm64 and cross compiled on
-> multiple others platforms.
-> 
->>
->> should be #ifndef CONFIG_ARCH_HAS_FIRST_USER_ADDRESS
-> 
-> Right, meant that instead.
-> 
->>
->>> +#define FIRST_USER_ADDRESS    0UL
->>> +#endif
->>
->> But why do we need a config option at all for that ?
->>
->> Why not just:
->>
->> #ifndef FIRST_USER_ADDRESS
->> #define FIRST_USER_ADDRESS    0UL
->> #endif
-> 
-> This sounds simpler. But just wondering, would not there be any possibility
-> of build problems due to compilation sequence between arch and generic code ?
-> 
+As I went ahead to address this, it became obvious that all traces of
+oprofile had been eradicated from all architectures but arm64, s390
+and sh (plus a bit of cruft in the core perf code). With KVM fixed,
+perf_num_counters() and perf_pmu_name() are finally gone.
 
-For sure it has to be addresses carefully, but there are already a lot of stuff like that around 
-pgtables.h
+Thanks,
 
-For instance, pte_offset_kernel() has a generic definition in linux/pgtables.h based on whether it 
-is already defined or not.
+	M.
 
-Taking into account that FIRST_USER_ADDRESS is today in the architectures's asm/pgtables.h, I think 
-putting the fallback definition in linux/pgtable.h would do the trick.
+[1] https://lore.kernel.org/lkml/20210215050618.hgftdmfmslbdrg3j@vireshk-i7
+
+Marc Zyngier (5):
+  KVM: arm64: Divorce the perf code from oprofile helpers
+  arm64: Get rid of oprofile leftovers
+  s390: Get rid of oprofile leftovers
+  sh: Get rid of oprofile leftovers
+  perf: Get rid of oprofile leftovers
+
+ arch/arm64/kvm/perf.c         |  7 +------
+ arch/arm64/kvm/pmu-emul.c     |  2 +-
+ arch/s390/kernel/perf_event.c | 21 ---------------------
+ arch/sh/kernel/perf_event.c   | 18 ------------------
+ drivers/perf/arm_pmu.c        | 30 ------------------------------
+ include/kvm/arm_pmu.h         |  4 ++++
+ include/linux/perf_event.h    |  2 --
+ kernel/events/core.c          |  5 -----
+ 8 files changed, 6 insertions(+), 83 deletions(-)
+
+-- 
+2.29.2
