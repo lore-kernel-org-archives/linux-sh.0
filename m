@@ -2,116 +2,162 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EEA9C433ED
-	for <linux-sh@archiver.kernel.org>; Thu, 15 Apr 2021 12:12:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A7BAC43461
+	for <linux-sh@archiver.kernel.org>; Tue, 20 Apr 2021 16:05:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1839061152
-	for <linux-sh@archiver.kernel.org>; Thu, 15 Apr 2021 12:12:33 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 6957161003
+	for <linux-sh@archiver.kernel.org>; Tue, 20 Apr 2021 16:05:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232642AbhDOMMy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 15 Apr 2021 08:12:54 -0400
-Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:1868 "EHLO
-        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S231590AbhDOMMy (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 15 Apr 2021 08:12:54 -0400
-Received: from pps.filterd (m0098414.ppops.net [127.0.0.1])
-        by mx0b-001b2d01.pphosted.com (8.16.0.43/8.16.0.43) with SMTP id 13FC4982064386;
-        Thu, 15 Apr 2021 08:12:17 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=date : from : to : cc :
- subject : message-id : references : mime-version : content-type :
- in-reply-to; s=pp1; bh=0qmyfG6khRpUOKcXpSEaC/J9TizHeX8zVO1F8w3sqWk=;
- b=joVs24R/42uPu6TAZl2eclklMxA31xdJPYE3bnVojAVNlLlmuCn/T+gxGAbCj1xALnMD
- BnGRroXfmU7QqX4j6AOj2BlraPJ0PxJz5Hy3Lee9ltHLDfvttJuFhTjMukZNU2DIsjtj
- MBJq25gtWdgS5GrCuFRwdO3ESuwnrIh+a4z8P1+WsncktYlGaYnSLU36c/EFay/thW/3
- sSs3/Jb1eJH0+AQUASbvpBKHIPHv2LoWRyRobQI1WCghg9uJGid4K5+0j8qIFhUfF5I5
- +gbHiv85aRMdgwb5GhAAHF7fzMRv4UtRYUIfR1IdLAiR2DWKyTev1sSR8qtWloR23zCq CA== 
-Received: from ppma03ams.nl.ibm.com (62.31.33a9.ip4.static.sl-reverse.com [169.51.49.98])
-        by mx0b-001b2d01.pphosted.com with ESMTP id 37xbqb6dv5-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-        Thu, 15 Apr 2021 08:12:16 -0400
-Received: from pps.filterd (ppma03ams.nl.ibm.com [127.0.0.1])
-        by ppma03ams.nl.ibm.com (8.16.0.43/8.16.0.43) with SMTP id 13FC7YAO007426;
-        Thu, 15 Apr 2021 12:12:15 GMT
-Received: from b06cxnps3075.portsmouth.uk.ibm.com (d06relay10.portsmouth.uk.ibm.com [9.149.109.195])
-        by ppma03ams.nl.ibm.com with ESMTP id 37u3n8bv3s-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-        Thu, 15 Apr 2021 12:12:14 +0000
-Received: from d06av24.portsmouth.uk.ibm.com (mk.ibm.com [9.149.105.60])
-        by b06cxnps3075.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 13FCCCQV26018220
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Thu, 15 Apr 2021 12:12:12 GMT
-Received: from d06av24.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-        by IMSVA (Postfix) with ESMTP id 86AB042041;
-        Thu, 15 Apr 2021 12:12:12 +0000 (GMT)
-Received: from d06av24.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-        by IMSVA (Postfix) with ESMTP id AC84E4203F;
-        Thu, 15 Apr 2021 12:12:11 +0000 (GMT)
-Received: from osiris (unknown [9.171.3.254])
-        by d06av24.portsmouth.uk.ibm.com (Postfix) with ESMTPS;
-        Thu, 15 Apr 2021 12:12:11 +0000 (GMT)
-Date:   Thu, 15 Apr 2021 14:12:10 +0200
-From:   Heiko Carstens <hca@linux.ibm.com>
-To:     Marc Zyngier <maz@kernel.org>
-Cc:     kvm@vger.kernel.org, kvmarm@lists.cs.columbia.edu,
-        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        Mark Rutland <mark.rutland@arm.com>,
-        Will Deacon <will@kernel.org>, Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Arnaldo Carvalho de Melo <acme@kernel.org>,
-        Christian Borntraeger <borntraeger@de.ibm.com>,
-        nathan@kernel.org, Viresh Kumar <viresh.kumar@linaro.org>,
-        James Morse <james.morse@arm.com>,
-        Suzuki K Poulose <suzuki.poulose@arm.com>,
-        Alexandru Elisei <alexandru.elisei@arm.com>,
-        kernel-team@android.com
-Subject: Re: [PATCH 3/5] s390: Get rid of oprofile leftovers
-Message-ID: <YHgtmjjtk9dDa7/R@osiris>
-References: <20210414134409.1266357-1-maz@kernel.org>
- <20210414134409.1266357-4-maz@kernel.org>
- <YHgXvFCLh0Ls0b9t@osiris>
- <87fszrn7sx.wl-maz@kernel.org>
+        id S233060AbhDTQGW (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 20 Apr 2021 12:06:22 -0400
+Received: from pegase1.c-s.fr ([93.17.236.30]:23168 "EHLO pegase1.c-s.fr"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S232174AbhDTQGV (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Tue, 20 Apr 2021 12:06:21 -0400
+Received: from localhost (mailhub1-int [192.168.12.234])
+        by localhost (Postfix) with ESMTP id 4FPpST5fYSz9tyMJ;
+        Tue, 20 Apr 2021 18:05:45 +0200 (CEST)
+X-Virus-Scanned: Debian amavisd-new at c-s.fr
+Received: from pegase1.c-s.fr ([192.168.12.234])
+        by localhost (pegase1.c-s.fr [192.168.12.234]) (amavisd-new, port 10024)
+        with ESMTP id 6qTfVqAOsH66; Tue, 20 Apr 2021 18:05:45 +0200 (CEST)
+Received: from messagerie.si.c-s.fr (messagerie.si.c-s.fr [192.168.25.192])
+        by pegase1.c-s.fr (Postfix) with ESMTP id 4FPpST4Shgz9tyMF;
+        Tue, 20 Apr 2021 18:05:45 +0200 (CEST)
+Received: from localhost (localhost [127.0.0.1])
+        by messagerie.si.c-s.fr (Postfix) with ESMTP id 2B5AD8B807;
+        Tue, 20 Apr 2021 18:05:47 +0200 (CEST)
+X-Virus-Scanned: amavisd-new at c-s.fr
+Received: from messagerie.si.c-s.fr ([127.0.0.1])
+        by localhost (messagerie.si.c-s.fr [127.0.0.1]) (amavisd-new, port 10023)
+        with ESMTP id ZiEcE-0Tlz-R; Tue, 20 Apr 2021 18:05:47 +0200 (CEST)
+Received: from [192.168.4.90] (unknown [192.168.4.90])
+        by messagerie.si.c-s.fr (Postfix) with ESMTP id 0267E8B7ED;
+        Tue, 20 Apr 2021 18:05:45 +0200 (CEST)
+Subject: Re: [PATCH v4 19/20] mips: Convert to GENERIC_CMDLINE
+To:     Daniel Walker <danielwa@cisco.com>, Rob Herring <robh@kernel.org>
+Cc:     will@kernel.org, daniel@gimpelevich.san-francisco.ca.us,
+        arnd@kernel.org, akpm@linux-foundation.org,
+        linux-arch@vger.kernel.org, devicetree@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-kernel@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org,
+        microblaze <monstr@monstr.eu>, linux-mips@vger.kernel.org,
+        nios2 <ley.foon.tan@intel.com>, openrisc@lists.librecores.org,
+        linux-hexagon@vger.kernel.org, linux-riscv@lists.infradead.org,
+        x86@kernel.org, linux-xtensa@linux-xtensa.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-mm@kvack.org
+References: <cover.1617375802.git.christophe.leroy@csgroup.eu>
+ <a01b6cdbae01fff77e26f7a5c40ee5260e1952b5.1617375802.git.christophe.leroy@csgroup.eu>
+ <20210406173836.GW2469518@zorba>
+ <20210408190408.GA1724284@robh.at.kernel.org>
+ <20210409012349.GG3981976@zorba>
+From:   Christophe Leroy <christophe.leroy@csgroup.eu>
+Message-ID: <d92f99bf-20b7-a4b6-3d86-5b859e42cad8@csgroup.eu>
+Date:   Tue, 20 Apr 2021 18:05:44 +0200
+User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:78.0) Gecko/20100101
+ Thunderbird/78.9.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <87fszrn7sx.wl-maz@kernel.org>
-X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: vARCqOoco7d3n4Ke2RUPNWmaue1niUQS
-X-Proofpoint-ORIG-GUID: vARCqOoco7d3n4Ke2RUPNWmaue1niUQS
-X-Proofpoint-Virus-Version: vendor=fsecure engine=2.50.10434:6.0.391,18.0.761
- definitions=2021-04-15_04:2021-04-15,2021-04-15 signatures=0
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 adultscore=0 mlxlogscore=714
- suspectscore=0 phishscore=0 mlxscore=0 clxscore=1015 spamscore=0
- impostorscore=0 malwarescore=0 priorityscore=1501 lowpriorityscore=0
- bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2104060000 definitions=main-2104150081
+In-Reply-To: <20210409012349.GG3981976@zorba>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: fr
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Apr 15, 2021 at 11:47:26AM +0100, Marc Zyngier wrote:
-> On Thu, 15 Apr 2021 11:38:52 +0100,
-> Heiko Carstens <hca@linux.ibm.com> wrote:
-> > 
-> > On Wed, Apr 14, 2021 at 02:44:07PM +0100, Marc Zyngier wrote:
-> > > perf_pmu_name() and perf_num_counters() are unused. Drop them.
-> > > 
-> > > Signed-off-by: Marc Zyngier <maz@kernel.org>
-> > > ---
-> > >  arch/s390/kernel/perf_event.c | 21 ---------------------
-> > >  1 file changed, 21 deletions(-)
-> > 
-> > Acked-by: Heiko Carstens <hca@linux.ibm.com>
-> > 
-> > ...or do you want me to pick this up and route via the s390 tree(?).
-> 
-> Either way work for me, but I just want to make sure the last patch
-> doesn't get applied before the previous ones.
 
-Ok, I applied this one to the s390 tree. Thanks!
+
+Le 09/04/2021 à 03:23, Daniel Walker a écrit :
+> On Thu, Apr 08, 2021 at 02:04:08PM -0500, Rob Herring wrote:
+>> On Tue, Apr 06, 2021 at 10:38:36AM -0700, Daniel Walker wrote:
+>>> On Fri, Apr 02, 2021 at 03:18:21PM +0000, Christophe Leroy wrote:
+>>>> -config CMDLINE_BOOL
+>>>> -	bool "Built-in kernel command line"
+>>>> -	help
+>>>> -	  For most systems, it is firmware or second stage bootloader that
+>>>> -	  by default specifies the kernel command line options.  However,
+>>>> -	  it might be necessary or advantageous to either override the
+>>>> -	  default kernel command line or add a few extra options to it.
+>>>> -	  For such cases, this option allows you to hardcode your own
+>>>> -	  command line options directly into the kernel.  For that, you
+>>>> -	  should choose 'Y' here, and fill in the extra boot arguments
+>>>> -	  in CONFIG_CMDLINE.
+>>>> -
+>>>> -	  The built-in options will be concatenated to the default command
+>>>> -	  line if CMDLINE_OVERRIDE is set to 'N'. Otherwise, the default
+>>>> -	  command line will be ignored and replaced by the built-in string.
+>>>> -
+>>>> -	  Most MIPS systems will normally expect 'N' here and rely upon
+>>>> -	  the command line from the firmware or the second-stage bootloader.
+>>>> -
+>>>
+>>>
+>>> See how you complained that I have CMDLINE_BOOL in my changed, and you think it
+>>> shouldn't exist.
+>>>
+>>> Yet here mips has it, and you just deleted it with no feature parity in your
+>>> changes for this.
+>>
+>> AFAICT, CMDLINE_BOOL equates to a non-empty or empty CONFIG_CMDLINE. You
+>> seem to need it just because you have CMDLINE_PREPEND and
+>> CMDLINE_APPEND. If that's not it, what feature is missing? CMDLINE_BOOL
+>> is not a feature, but an implementation detail.
+> 
+> Not true.
+> 
+> It makes it easier to turn it all off inside the Kconfig , so it's for usability
+> and multiple architecture have it even with just CMDLINE as I was commenting
+> here.
+> 
+
+Among the 13 architectures having CONFIG_CMDLINE, todayb only 6 have a CONFIG_CMDLINE_BOOL in addition:
+
+arch/arm/Kconfig:config CMDLINE
+arch/arm64/Kconfig:config CMDLINE
+arch/hexagon/Kconfig:config CMDLINE
+arch/microblaze/Kconfig:config CMDLINE
+arch/mips/Kconfig.debug:config CMDLINE
+arch/nios2/Kconfig:config CMDLINE
+arch/openrisc/Kconfig:config CMDLINE
+arch/powerpc/Kconfig:config CMDLINE
+arch/riscv/Kconfig:config CMDLINE
+arch/sh/Kconfig:config CMDLINE
+arch/sparc/Kconfig:config CMDLINE
+arch/x86/Kconfig:config CMDLINE
+arch/xtensa/Kconfig:config CMDLINE
+
+arch/microblaze/Kconfig:config CMDLINE_BOOL
+arch/mips/Kconfig.debug:config CMDLINE_BOOL
+arch/nios2/Kconfig:config CMDLINE_BOOL
+arch/sparc/Kconfig:config CMDLINE_BOOL
+arch/x86/Kconfig:config CMDLINE_BOOL
+arch/xtensa/Kconfig:config CMDLINE_BOOL
+
+
+In the begining I hesitated about the CMDLINE_BOOL, at the end I decided to go the same way as what 
+is done today in the kernel for initramfs with CONFIG_INITRAMFS_SOURCE.
+
+The problem I see within adding CONFIG_CMDLINE_BOOL for every architecture which don't have it today 
+is that when doing a "make oldconfig" on their custom configs, thousands of users will loose their 
+CMDLINE without notice.
+
+When we do the other way round, removing CONFIG_CMDLINE_BOOL on the 6 architectures that have it 
+today will have no impact on existing config.
+
+Also, in order to avoid tons of #ifdefs in the code as mandated by Kernel Codying Style §21, we have 
+to have CONFIG_CMDLINE defined at all time, so at the end CONFIG_CMDLINE_BOOL is really redundant 
+with an empty CONFIG_CMDLINE.
+
+Unlike you, the approach I took for my series is to minimise the impact on existing implementation 
+and existing configurations as much as possible.
+
+I know you have a different approach where you break every existing config anyway.
+
+https://www.kernel.org/doc/html/latest/process/coding-style.html#conditional-compilation
+
+Christophe
