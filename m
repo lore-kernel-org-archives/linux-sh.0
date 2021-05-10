@@ -1,77 +1,111 @@
 Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
-X-Spam-Level: *
-X-Spam-Status: No, score=1.0 required=3.0 tests=BAYES_50,DKIMWL_BL,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Level: 
+X-Spam-Status: No, score=-15.3 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 49840C433ED
-	for <linux-sh@archiver.kernel.org>; Mon, 10 May 2021 19:08:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F670C433B4
+	for <linux-sh@archiver.kernel.org>; Mon, 10 May 2021 20:55:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 27FCE61492
-	for <linux-sh@archiver.kernel.org>; Mon, 10 May 2021 19:08:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 451B1613B6
+	for <linux-sh@archiver.kernel.org>; Mon, 10 May 2021 20:55:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231223AbhEJTJZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 10 May 2021 15:09:25 -0400
-Received: from flippiebeckerswealth.xyz ([62.173.147.206]:59370 "EHLO
-        host.flippiebeckerswealth.xyz" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S232417AbhEJTJX (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 10 May 2021 15:09:23 -0400
-X-Greylist: delayed 15652 seconds by postgrey-1.27 at vger.kernel.org; Mon, 10 May 2021 15:09:23 EDT
-Received: from flippiebeckerswealth.xyz (ec2-3-142-218-249.us-east-2.compute.amazonaws.com [3.142.218.249])
-        by host.flippiebeckerswealth.xyz (Postfix) with ESMTPA id 34C9016C263
-        for <linux-sh@vger.kernel.org>; Mon, 10 May 2021 17:06:52 +0300 (MSK)
-DKIM-Filter: OpenDKIM Filter v2.11.0 host.flippiebeckerswealth.xyz 34C9016C263
+        id S232345AbhEJU4X (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 10 May 2021 16:56:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37832 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S232463AbhEJU4W (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 10 May 2021 16:56:22 -0400
+Received: from mail-oi1-x22e.google.com (mail-oi1-x22e.google.com [IPv6:2607:f8b0:4864:20::22e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B08B0C061574
+        for <linux-sh@vger.kernel.org>; Mon, 10 May 2021 13:55:15 -0700 (PDT)
+Received: by mail-oi1-x22e.google.com with SMTP id i81so17063449oif.6
+        for <linux-sh@vger.kernel.org>; Mon, 10 May 2021 13:55:15 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=flippiebeckerswealth.xyz; s=default; t=1620655612;
-        bh=Lxx5rGQCX/MQzrwE9epz1Mb5yPYRqDyEupWj6GReobo=;
-        h=Reply-To:From:To:Subject:Date:From;
-        b=m9WAm5y3tGDKosymmet80qbq/TwhQdbBfe3hZ9Pe2FRecARemQ5Pm6X3Mb1VZ2B+0
-         mjSLNBKH8iWyAHaRp1jHWzgj/qqZGP7Z8Vamv08cXH8RwPFBQAgPspq4qRzzyXnRcH
-         IDCVcf/Dqz7GOgn+9unNWM1FwK9kYin4SodQz57k=
-DKIM-Filter: OpenDKIM Filter v2.11.0 host.flippiebeckerswealth.xyz 34C9016C263
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=flippiebeckerswealth.xyz; s=default; t=1620655612;
-        bh=Lxx5rGQCX/MQzrwE9epz1Mb5yPYRqDyEupWj6GReobo=;
-        h=Reply-To:From:To:Subject:Date:From;
-        b=m9WAm5y3tGDKosymmet80qbq/TwhQdbBfe3hZ9Pe2FRecARemQ5Pm6X3Mb1VZ2B+0
-         mjSLNBKH8iWyAHaRp1jHWzgj/qqZGP7Z8Vamv08cXH8RwPFBQAgPspq4qRzzyXnRcH
-         IDCVcf/Dqz7GOgn+9unNWM1FwK9kYin4SodQz57k=
-Reply-To: cpavlides@flippiebeckerwealthservices.com
-From:   Chris Pavlides <cpavlides@flippiebeckerswealth.xyz>
-To:     linux-sh@vger.kernel.org
-Subject: Personal
-Date:   10 May 2021 14:06:51 +0000
-Message-ID: <20210510140651.00F69FD412A9A7DD@flippiebeckerswealth.xyz>
-Mime-Version: 1.0
-Content-Type: text/plain;
-        charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+        d=landley-net.20150623.gappssmtp.com; s=20150623;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=9u1bWm+wMG0wleduKDsfRD/ISspIfmoacCqdbEduS70=;
+        b=07VWv3bG3mqPHl9O5DXepUYWpD3EvEfNY28LK1KB/UH2Kwt0GjhNrqdbJkHRvWPjJM
+         hWx4RDSwmmwIS/oBRuTkVfA+khJ21cY7Cult/tXugu2B9aa1P2q8WsPpePMq5r6cy1PB
+         yIsSaO6Deosd2gedOK7qUjMnGDR3Z1Ull7qY/0vGXgPfqoT1Few0vCD9k1rqzfpX6Ymq
+         E9MCLGiKtTflzLg1xHy6+tRe8QXRyxfKg7nmGmA6sLOCp383eEOk625RCGdh4k5MI0Gv
+         N9UrdmdmlwtsB78O0Z/6LtER9DuDgzBGsRiWATjw85lGWG8M3N9C63eoOkpshD22lxeU
+         Zwcw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=9u1bWm+wMG0wleduKDsfRD/ISspIfmoacCqdbEduS70=;
+        b=uOkGr+c1CrnZrtXmTiaQPlbTcLBYGKtd7WH7+AZqAH3Hm8lK6AZQDzOECNHPpANt4H
+         0TTwSiQIW8Ew8tOJsR+ZU0VjPfHa/lBDdA9htqPvt3x1142Ce3fA0ngaBLQIIixmnBGG
+         bEWZ8dQ6pvBjdBt2/EIOGK8xD8egmxaFoBE1rWHX6d71u1UN908QZEt4mqQiRyyt0krL
+         f0G8psDFTU9MRFPSwFNP/L2FfE6rGBt1XN3Z79/gMyWnxix8i5gOlPTZ+ZldW75f9LyL
+         gVzoXsz195qsEMjlWx5ekIlB3HkrRQkwI+je+CSxRdKH90DfKiR4slCo7nKnnpnPZ13x
+         e9oA==
+X-Gm-Message-State: AOAM5322ZuflqSf8yit02+nS1jzABLa21k0R8+pQ5KoqIK/T3/xp4YZ/
+        M1v8mjwnSFhJ4zcefUrYked9cg==
+X-Google-Smtp-Source: ABdhPJyTPwx7ky+oR8zThuZFUp77XsFOUzbz1Vb//R9BLsN8RXAAbggqn6oYnI1nsj+RrSN84lWqbQ==
+X-Received: by 2002:aca:5b86:: with SMTP id p128mr19761737oib.127.1620680115142;
+        Mon, 10 May 2021 13:55:15 -0700 (PDT)
+Received: from [192.168.86.122] ([136.62.4.88])
+        by smtp.gmail.com with ESMTPSA id c65sm2799334oia.47.2021.05.10.13.55.14
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 10 May 2021 13:55:14 -0700 (PDT)
+Subject: Re: [RFC 03/12] sh: remove unaligned access for sh4a
+To:     Arnd Bergmann <arnd@kernel.org>, linux-arch@vger.kernel.org
+Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
+        Vineet Gupta <vgupta@synopsys.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+References: <20210507220813.365382-1-arnd@kernel.org>
+ <20210507220813.365382-4-arnd@kernel.org>
+From:   Rob Landley <rob@landley.net>
+Message-ID: <1b1d34a8-d170-7287-1c99-40d2af83d1b9@landley.net>
+Date:   Mon, 10 May 2021 16:11:03 -0500
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
+ Thunderbird/68.12.0
+MIME-Version: 1.0
+In-Reply-To: <20210507220813.365382-4-arnd@kernel.org>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hello there,
+On 5/7/21 5:07 PM, Arnd Bergmann wrote:
+> From: Arnd Bergmann <arnd@arndb.de>
+> 
+> Unlike every other architecture, sh4a uses an inline asm implementation
+> for get_unaligned(). I have shown that this produces better object
+> code than the asm-generic version. However, there are very few users of
+> arch/sh/ overall, and most of those seem to use sh4 rather than sh4a CPU
 
-I hope this message finds you in good spirits especially during=20
-this challenging time of coronavirus pandemic. I hope you and=20
-your family are well and keeping safe. Anyway, I am Chris=20
-Pavlides, a broker working with Flippiebecker Wealth. I got your=20
-contact (along with few other contacts) through an online=20
-business directory and I thought I should contact you to see if=20
-you are interested in this opportunity. I am contacting you=20
-because one of my high profile clients is interested in investing=20
-abroad and has asked me to look for individuals and companies=20
-with interesting business ideas and projects that he can invest=20
-in. He wants to invest a substantial amount of asset abroad.
+Hitachi's sh4, sh3, and sh2 are all out of patent, and have been cloned as open
+hardware. (Modulo the sh4 clone uses a different mmu design, but lots of
+regression testing gets done against qemu-system-sh4 and sh4 hardware using the
+original mmu.) Plus superh was the bestselling CPU architecture in the world for
+3 years back in the 1990s, and there's a remaining userbase from that.
 
-Please kindly respond back to this email if you are interested in=20
-this opportunity. Once I receive your response, I will give you=20
-more details and we can plan a strategy that will be beneficial=20
-to all parties.
+sh5 and the "a" designs like sh4a were created by renesas after hitachi spun off
+the IP to them, and are not out of patent. I do not have access to an sh4a test
+system.
 
-Best regards
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> ---
+>  arch/sh/include/asm/unaligned-sh4a.h | 199 ---------------------------
+>  arch/sh/include/asm/unaligned.h      |  13 --
 
-C Pavlides
-Flippiebecker Wealth
+All I can test is that it didn't cause regressions on my sh4 and j-core systems,
+which it (unsurprisingly) did not.
+
+Acked-by: Rob Landley <rob@landley.net>
+
+Rob
