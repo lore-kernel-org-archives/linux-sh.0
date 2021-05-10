@@ -2,220 +2,197 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-19.7 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-10.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,NICE_REPLY_A,
+	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=ham autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A13CBC43460
-	for <linux-sh@archiver.kernel.org>; Fri,  7 May 2021 22:12:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C645AC433ED
+	for <linux-sh@archiver.kernel.org>; Mon, 10 May 2021 15:29:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7C5F86135F
-	for <linux-sh@archiver.kernel.org>; Fri,  7 May 2021 22:12:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 9E06C61139
+	for <linux-sh@archiver.kernel.org>; Mon, 10 May 2021 15:29:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230112AbhEGWNg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 7 May 2021 18:13:36 -0400
-Received: from mail.kernel.org ([198.145.29.99]:60322 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S230159AbhEGWNe (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Fri, 7 May 2021 18:13:34 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 1AD8261164;
-        Fri,  7 May 2021 22:12:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1620425553;
-        bh=pLN/AlAGxiGZnqtkHzoskF1g1y+Og1zx70nNd/gvob8=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=pBsqGsNNIzjK+PGIuts/XJxLGOfdWKWNQVtev9dvJeI9RqUXAPVHM6cB4lC4k81Hl
-         28ml/1Uop7UbH/8srSlLCVXory4QCnr6iBhIRfAakrAY4KDvqUgFcZzG4l9KjWsqLZ
-         1ILyYT6adToShnPi3qkl/uIOVl0ZGZbipmb17NNa+nXxicmvENBPr96/1hcOQ5PZVP
-         BRn98uSDpeE3wKOZc/l6L72CW9sbzwnplXYrD23MZ+JmEHxEl7SRHqKVHkxNPgfVIc
-         XrHB4s6umTZIX5a0bj91HFX0XMUHeGCXDfaVxxZ2OFTngzRJkxGXNYwougNvu/FeJP
-         hIgVgry1MeXrg==
-From:   Arnd Bergmann <arnd@kernel.org>
-To:     linux-arch@vger.kernel.org
-Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
-        Vineet Gupta <vgupta@synopsys.com>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Amitkumar Karwar <amitkarwar@gmail.com>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Borislav Petkov <bp@alien8.de>,
-        Eric Dumazet <edumazet@google.com>,
-        Florian Fainelli <f.fainelli@gmail.com>,
-        Ganapathi Bhat <ganapathi017@gmail.com>,
+        id S234825AbhEJPaG (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 10 May 2021 11:30:06 -0400
+Received: from www262.sakura.ne.jp ([202.181.97.72]:54306 "EHLO
+        www262.sakura.ne.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S232090AbhEJP3E (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 10 May 2021 11:29:04 -0400
+Received: from fsav303.sakura.ne.jp (fsav303.sakura.ne.jp [153.120.85.134])
+        by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTP id 14AFRtfE007232;
+        Tue, 11 May 2021 00:27:56 +0900 (JST)
+        (envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Received: from www262.sakura.ne.jp (202.181.97.72)
+ by fsav303.sakura.ne.jp (F-Secure/fsigk_smtp/550/fsav303.sakura.ne.jp);
+ Tue, 11 May 2021 00:27:55 +0900 (JST)
+X-Virus-Status: clean(F-Secure/fsigk_smtp/550/fsav303.sakura.ne.jp)
+Received: from [192.168.1.9] (M106072142033.v4.enabler.ne.jp [106.72.142.33])
+        (authenticated bits=0)
+        by www262.sakura.ne.jp (8.15.2/8.15.2) with ESMTPSA id 14AFRtnu007228
+        (version=TLSv1.2 cipher=AES256-GCM-SHA384 bits=256 verify=NO);
+        Tue, 11 May 2021 00:27:55 +0900 (JST)
+        (envelope-from penguin-kernel@I-love.SAKURA.ne.jp)
+Subject: Re: [PATCH 11/12] tools: sync lib/find_bit implementation
+To:     Yury Norov <yury.norov@gmail.com>, linux-kernel@vger.kernel.org,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Rasmus Villemoes <linux@rasmusvillemoes.dk>
+Cc:     linux-m68k@lists.linux-m68k.org, linux-arch@vger.kernel.org,
+        linux-sh@vger.kernel.org, Alexey Klimov <aklimov@redhat.com>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Arnd Bergmann <arnd@arndb.de>, David Sterba <dsterba@suse.com>,
+        Dennis Zhou <dennis@kernel.org>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
-        "H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@redhat.com>,
-        Jakub Kicinski <kuba@kernel.org>,
-        James Morris <jmorris@namei.org>, Jens Axboe <axboe@kernel.dk>,
-        John Johansen <john.johansen@canonical.com>,
-        Jonas Bonn <jonas@southpole.se>,
-        Kalle Valo <kvalo@codeaurora.org>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Paul Mackerras <paulus@samba.org>,
+        Jianpeng Ma <jianpeng.ma@intel.com>,
+        Joe Perches <joe@perches.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Josh Poimboeuf <jpoimboe@redhat.com>,
         Rich Felker <dalias@libc.org>,
-        "Richard Russon (FlatCap)" <ldm@flatcap.org>,
-        Russell King <linux@armlinux.org.uk>,
-        "Serge E. Hallyn" <serge@hallyn.com>,
-        Sharvari Harisangam <sharvari.harisangam@nxp.com>,
-        Stafford Horne <shorne@gmail.com>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Vladimir Oltean <vladimir.oltean@nxp.com>,
-        Xinming Hu <huxinming820@gmail.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>, x86@kernel.org,
-        linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-m68k@lists.linux-m68k.org, linux-crypto@vger.kernel.org,
-        openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-ntfs-dev@lists.sourceforge.net, linux-block@vger.kernel.org,
-        linux-wireless@vger.kernel.org, netdev@vger.kernel.org,
-        linux-security-module@vger.kernel.org
-Subject: [RFC 0/12] Unify asm/unaligned.h around struct helper
-Date:   Sat,  8 May 2021 00:07:58 +0200
-Message-Id: <20210507220813.365382-14-arnd@kernel.org>
-X-Mailer: git-send-email 2.29.2
-In-Reply-To: <20210507220813.365382-1-arnd@kernel.org>
-References: <20210507220813.365382-1-arnd@kernel.org>
+        Stefano Brivio <sbrivio@redhat.com>,
+        Wei Yang <richard.weiyang@linux.alibaba.com>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+References: <20210401003153.97325-1-yury.norov@gmail.com>
+ <20210401003153.97325-12-yury.norov@gmail.com>
+From:   Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
+Message-ID: <1ac7bbc2-45d9-26ed-0b33-bf382b8d858b@I-love.SAKURA.ne.jp>
+Date:   Tue, 11 May 2021 00:27:51 +0900
+User-Agent: Mozilla/5.0 (Windows NT 6.3; Win64; x64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <20210401003153.97325-12-yury.norov@gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+Commit eaae7841ba83bb42 ("tools: sync lib/find_bit implementation") broke
+build of 5.13-rc1 using gcc (GCC) 8.3.1 20190311 (Red Hat 8.3.1-3).
 
-The get_unaligned()/put_unaligned() helpers are traditionally architecture
-specific, with the two main variants being the "access-ok.h" version
-that assumes unaligned pointer accesses always work on a particular
-architecture, and the "le-struct.h" version that casts the data to a
-byte aligned type before dereferencing, for architectures that cannot
-always do unaligned accesses in hardware.
+  DESCEND  objtool
+  CC       /usr/src/linux/tools/objtool/exec-cmd.o
+  CC       /usr/src/linux/tools/objtool/help.o
+  CC       /usr/src/linux/tools/objtool/pager.o
+  CC       /usr/src/linux/tools/objtool/parse-options.o
+  CC       /usr/src/linux/tools/objtool/run-command.o
+  CC       /usr/src/linux/tools/objtool/sigchain.o
+  CC       /usr/src/linux/tools/objtool/subcmd-config.o
+  LD       /usr/src/linux/tools/objtool/libsubcmd-in.o
+  AR       /usr/src/linux/tools/objtool/libsubcmd.a
+  CC       /usr/src/linux/tools/objtool/arch/x86/special.o
+In file included from /usr/src/linux/tools/include/linux/kernel.h:8:0,
+                 from /usr/src/linux/tools/include/linux/list.h:7,
+                 from /usr/src/linux/tools/objtool/include/objtool/arch.h:10,
+                 from /usr/src/linux/tools/objtool/include/objtool/check.h:11,
+                 from /usr/src/linux/tools/objtool/include/objtool/special.h:10,
+                 from arch/x86/special.c:4:
+/usr/src/linux/tools/include/asm-generic/bitops/find.h: In function 'find_next_bit':
+/usr/src/linux/tools/include/linux/bits.h:24:21: error: first argument to '__builtin_choose_expr' not a constant
+  (BUILD_BUG_ON_ZERO(__builtin_choose_expr( \
+                     ^
+/usr/src/linux/tools/include/linux/build_bug.h:16:62: note: in definition of macro 'BUILD_BUG_ON_ZERO'
+ #define BUILD_BUG_ON_ZERO(e) ((int)(sizeof(struct { int:(-!!(e)); })))
+                                                              ^
+/usr/src/linux/tools/include/linux/bits.h:38:3: note: in expansion of macro 'GENMASK_INPUT_CHECK'
+  (GENMASK_INPUT_CHECK(h, l) + __GENMASK(h, l))
+   ^
+/usr/src/linux/tools/include/asm-generic/bitops/find.h:32:17: note: in expansion of macro 'GENMASK'
+   val = *addr & GENMASK(size - 1, offset);
+                 ^
+/usr/src/linux/tools/include/linux/build_bug.h:16:51: error: bit-field '<anonymous>' width not an integer constant
+ #define BUILD_BUG_ON_ZERO(e) ((int)(sizeof(struct { int:(-!!(e)); })))
+                                                   ^
+/usr/src/linux/tools/include/linux/bits.h:24:3: note: in expansion of macro 'BUILD_BUG_ON_ZERO'
+  (BUILD_BUG_ON_ZERO(__builtin_choose_expr( \
+   ^
+/usr/src/linux/tools/include/linux/bits.h:38:3: note: in expansion of macro 'GENMASK_INPUT_CHECK'
+  (GENMASK_INPUT_CHECK(h, l) + __GENMASK(h, l))
+   ^
+/usr/src/linux/tools/include/asm-generic/bitops/find.h:32:17: note: in expansion of macro 'GENMASK'
+   val = *addr & GENMASK(size - 1, offset);
+                 ^
+/usr/src/linux/tools/include/asm-generic/bitops/find.h: In function 'find_next_and_bit':
+/usr/src/linux/tools/include/linux/bits.h:24:21: error: first argument to '__builtin_choose_expr' not a constant
+  (BUILD_BUG_ON_ZERO(__builtin_choose_expr( \
+                     ^
+/usr/src/linux/tools/include/linux/build_bug.h:16:62: note: in definition of macro 'BUILD_BUG_ON_ZERO'
+ #define BUILD_BUG_ON_ZERO(e) ((int)(sizeof(struct { int:(-!!(e)); })))
+                                                              ^
+/usr/src/linux/tools/include/linux/bits.h:38:3: note: in expansion of macro 'GENMASK_INPUT_CHECK'
+  (GENMASK_INPUT_CHECK(h, l) + __GENMASK(h, l))
+   ^
+/usr/src/linux/tools/include/asm-generic/bitops/find.h:62:27: note: in expansion of macro 'GENMASK'
+   val = *addr1 & *addr2 & GENMASK(size - 1, offset);
+                           ^
+/usr/src/linux/tools/include/linux/build_bug.h:16:51: error: bit-field '<anonymous>' width not an integer constant
+ #define BUILD_BUG_ON_ZERO(e) ((int)(sizeof(struct { int:(-!!(e)); })))
+                                                   ^
+/usr/src/linux/tools/include/linux/bits.h:24:3: note: in expansion of macro 'BUILD_BUG_ON_ZERO'
+  (BUILD_BUG_ON_ZERO(__builtin_choose_expr( \
+   ^
+/usr/src/linux/tools/include/linux/bits.h:38:3: note: in expansion of macro 'GENMASK_INPUT_CHECK'
+  (GENMASK_INPUT_CHECK(h, l) + __GENMASK(h, l))
+   ^
+/usr/src/linux/tools/include/asm-generic/bitops/find.h:62:27: note: in expansion of macro 'GENMASK'
+   val = *addr1 & *addr2 & GENMASK(size - 1, offset);
+                           ^
+/usr/src/linux/tools/include/asm-generic/bitops/find.h: In function 'find_next_zero_bit':
+/usr/src/linux/tools/include/linux/bits.h:24:21: error: first argument to '__builtin_choose_expr' not a constant
+  (BUILD_BUG_ON_ZERO(__builtin_choose_expr( \
+                     ^
+/usr/src/linux/tools/include/linux/build_bug.h:16:62: note: in definition of macro 'BUILD_BUG_ON_ZERO'
+ #define BUILD_BUG_ON_ZERO(e) ((int)(sizeof(struct { int:(-!!(e)); })))
+                                                              ^
+/usr/src/linux/tools/include/linux/bits.h:38:3: note: in expansion of macro 'GENMASK_INPUT_CHECK'
+  (GENMASK_INPUT_CHECK(h, l) + __GENMASK(h, l))
+   ^
+/usr/src/linux/tools/include/asm-generic/bitops/find.h:90:18: note: in expansion of macro 'GENMASK'
+   val = *addr | ~GENMASK(size - 1, offset);
+                  ^
+/usr/src/linux/tools/include/linux/build_bug.h:16:51: error: bit-field '<anonymous>' width not an integer constant
+ #define BUILD_BUG_ON_ZERO(e) ((int)(sizeof(struct { int:(-!!(e)); })))
+                                                   ^
+/usr/src/linux/tools/include/linux/bits.h:24:3: note: in expansion of macro 'BUILD_BUG_ON_ZERO'
+  (BUILD_BUG_ON_ZERO(__builtin_choose_expr( \
+   ^
+/usr/src/linux/tools/include/linux/bits.h:38:3: note: in expansion of macro 'GENMASK_INPUT_CHECK'
+  (GENMASK_INPUT_CHECK(h, l) + __GENMASK(h, l))
+   ^
+/usr/src/linux/tools/include/asm-generic/bitops/find.h:90:18: note: in expansion of macro 'GENMASK'
+   val = *addr | ~GENMASK(size - 1, offset);
+                  ^
+make[5]: *** [/usr/src/linux/tools/objtool/arch/x86/special.o] Error 1
+make[4]: *** [arch/x86] Error 2
+make[3]: *** [/usr/src/linux/tools/objtool/objtool-in.o] Error 2
+make[2]: *** [objtool] Error 2
+make[1]: *** [tools/objtool] Error 2
+make: *** [__sub-make] Error 2
 
-Based on the discussion linked below, it appears that the access-ok
-version is not realiable on any architecture, but the struct version
-probably has no downsides. This series changes the code to use the
-same implementation on all architectures, addressing the few exceptions
-separately.
 
-I've pushed the patches to the asm-generic git tree for testing.
 
-	Arnd
+Applying below diff seems to solve the build failure.
+Do we need to use BUILD_BUG_ON_ZERO() here?
 
-Link: https://lore.kernel.org/lkml/75d07691-1e4f-741f-9852-38c0b4f520bc@synopsys.com/
-Link: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=100363
-Link: git://git.kernel.org/pub/scm/linux/kernel/git/arnd/asm-generic.git unaligned-rework
+diff --git a/tools/include/linux/bits.h b/tools/include/linux/bits.h
+index 7f475d59a097..0aba9294f29d 100644
+--- a/tools/include/linux/bits.h
++++ b/tools/include/linux/bits.h
+@@ -21,8 +21,7 @@
+ #if !defined(__ASSEMBLY__)
+ #include <linux/build_bug.h>
+ #define GENMASK_INPUT_CHECK(h, l) \
+-	(BUILD_BUG_ON_ZERO(__builtin_choose_expr( \
+-		__builtin_constant_p((l) > (h)), (l) > (h), 0)))
++	({ BUILD_BUG_ON(__builtin_constant_p((l) > (h)) && ((l) > (h))); 0; })
+ #else
+ /*
+  * BUILD_BUG_ON_ZERO is not available in h files included from asm files,
 
-Arnd Bergmann (12):
-  asm-generic: use asm-generic/unaligned.h for most architectures
-  openrisc: always use unaligned-struct header
-  sh: remove unaligned access for sh4a
-  m68k: select CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS
-  powerpc: use linux/unaligned/le_struct.h on LE power7
-  asm-generic: unaligned: remove byteshift helpers
-  asm-generic: unaligned always use struct helpers
-  partitions: msdos: fix one-byte get_unaligned()
-  apparmor: use get_unaligned() only for multi-byte words
-  mwifiex: re-fix for unaligned accesses
-  netpoll: avoid put_unaligned() on single character
-  asm-generic: simplify asm/unaligned.h
 
- arch/alpha/include/asm/unaligned.h          |  12 --
- arch/arm/include/asm/unaligned.h            |  27 ---
- arch/ia64/include/asm/unaligned.h           |  12 --
- arch/m68k/Kconfig                           |   1 +
- arch/m68k/include/asm/unaligned.h           |  26 ---
- arch/microblaze/include/asm/unaligned.h     |  27 ---
- arch/mips/crypto/crc32-mips.c               |   2 +-
- arch/openrisc/include/asm/unaligned.h       |  47 -----
- arch/parisc/include/asm/unaligned.h         |   6 +-
- arch/powerpc/include/asm/unaligned.h        |  22 ---
- arch/sh/include/asm/unaligned-sh4a.h        | 199 --------------------
- arch/sh/include/asm/unaligned.h             |  13 --
- arch/sparc/include/asm/unaligned.h          |  11 --
- arch/x86/include/asm/unaligned.h            |  15 --
- arch/xtensa/include/asm/unaligned.h         |  29 ---
- block/partitions/ldm.h                      |   2 +-
- block/partitions/msdos.c                    |   2 +-
- drivers/net/wireless/marvell/mwifiex/pcie.c |  10 +-
- include/asm-generic/unaligned.h             | 149 ++++++++++++---
- include/linux/unaligned/access_ok.h         |  68 -------
- include/linux/unaligned/be_byteshift.h      |  71 -------
- include/linux/unaligned/be_memmove.h        |  37 ----
- include/linux/unaligned/be_struct.h         |  37 ----
- include/linux/unaligned/generic.h           | 115 -----------
- include/linux/unaligned/le_byteshift.h      |  71 -------
- include/linux/unaligned/le_memmove.h        |  37 ----
- include/linux/unaligned/le_struct.h         |  37 ----
- include/linux/unaligned/memmove.h           |  46 -----
- net/core/netpoll.c                          |   4 +-
- security/apparmor/policy_unpack.c           |   2 +-
- 30 files changed, 137 insertions(+), 1000 deletions(-)
- delete mode 100644 arch/alpha/include/asm/unaligned.h
- delete mode 100644 arch/arm/include/asm/unaligned.h
- delete mode 100644 arch/ia64/include/asm/unaligned.h
- delete mode 100644 arch/m68k/include/asm/unaligned.h
- delete mode 100644 arch/microblaze/include/asm/unaligned.h
- delete mode 100644 arch/openrisc/include/asm/unaligned.h
- delete mode 100644 arch/powerpc/include/asm/unaligned.h
- delete mode 100644 arch/sh/include/asm/unaligned-sh4a.h
- delete mode 100644 arch/sh/include/asm/unaligned.h
- delete mode 100644 arch/sparc/include/asm/unaligned.h
- delete mode 100644 arch/x86/include/asm/unaligned.h
- delete mode 100644 arch/xtensa/include/asm/unaligned.h
- delete mode 100644 include/linux/unaligned/access_ok.h
- delete mode 100644 include/linux/unaligned/be_byteshift.h
- delete mode 100644 include/linux/unaligned/be_memmove.h
- delete mode 100644 include/linux/unaligned/be_struct.h
- delete mode 100644 include/linux/unaligned/generic.h
- delete mode 100644 include/linux/unaligned/le_byteshift.h
- delete mode 100644 include/linux/unaligned/le_memmove.h
- delete mode 100644 include/linux/unaligned/le_struct.h
- delete mode 100644 include/linux/unaligned/memmove.h
 
-Cc: Amitkumar Karwar <amitkarwar@gmail.com>
-Cc: Arnd Bergmann <arnd@arndb.de>
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Borislav Petkov <bp@alien8.de>
-Cc: Eric Dumazet <edumazet@google.com>
-Cc: Florian Fainelli <f.fainelli@gmail.com>
-Cc: Ganapathi Bhat <ganapathi017@gmail.com>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: "H. Peter Anvin" <hpa@zytor.com>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Jakub Kicinski <kuba@kernel.org>
-Cc: James Morris <jmorris@namei.org>
-Cc: Jens Axboe <axboe@kernel.dk>
-Cc: John Johansen <john.johansen@canonical.com>
-Cc: Jonas Bonn <jonas@southpole.se>
-Cc: Kalle Valo <kvalo@codeaurora.org>
-Cc: Michael Ellerman <mpe@ellerman.id.au>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: Rich Felker <dalias@libc.org>
-Cc: "Richard Russon (FlatCap)" <ldm@flatcap.org>
-Cc: Russell King <linux@armlinux.org.uk>
-Cc: "Serge E. Hallyn" <serge@hallyn.com>
-Cc: Sharvari Harisangam <sharvari.harisangam@nxp.com>
-Cc: Stafford Horne <shorne@gmail.com>
-Cc: Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: Vladimir Oltean <vladimir.oltean@nxp.com>
-Cc: Xinming Hu <huxinming820@gmail.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: x86@kernel.org
-Cc: linux-kernel@vger.kernel.org
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-m68k@lists.linux-m68k.org
-Cc: linux-crypto@vger.kernel.org
-Cc: openrisc@lists.librecores.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Cc: linux-sh@vger.kernel.org
-Cc: sparclinux@vger.kernel.org
-Cc: linux-ntfs-dev@lists.sourceforge.net
-Cc: linux-block@vger.kernel.org
-Cc: linux-wireless@vger.kernel.org
-Cc: netdev@vger.kernel.org
-Cc: linux-arch@vger.kernel.org
-Cc: linux-security-module@vger.kernel.org
-
--- 
-2.29.2
+Also, why the fast path of find_*_bit() functions does not check
+__builtin_constant_p(offset) as well as small_const_nbits(size), for the fast
+path fails to catch BUILD_BUG_ON_ZERO() when offset argument is not a constant.
 
