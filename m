@@ -2,99 +2,132 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.7 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 279F6C433ED
-	for <linux-sh@archiver.kernel.org>; Fri, 14 May 2021 12:24:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E6C8C433B4
+	for <linux-sh@archiver.kernel.org>; Fri, 14 May 2021 17:33:07 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0049061285
-	for <linux-sh@archiver.kernel.org>; Fri, 14 May 2021 12:24:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id EC0FC613EC
+	for <linux-sh@archiver.kernel.org>; Fri, 14 May 2021 17:33:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233014AbhENMZM (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 14 May 2021 08:25:12 -0400
-Received: from mail.kernel.org ([198.145.29.99]:39692 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232968AbhENMZL (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Fri, 14 May 2021 08:25:11 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 800DA613CD;
-        Fri, 14 May 2021 12:24:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1620995040;
-        bh=wbxGv9t6GbRKjxv6rSslyvniGKsYirDLOL8luJLhqnk=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=U8RD4a6z1w6XaGa8ekohGmVHORARKCNldy0gUnyY2EqA4yJIydt/e79qIxr1+UoyW
-         VUC877n7ZwbBEK6O7s8oDpWSl3Ycbe9UEM6sXBZnRvSCMhVSnsu+IEJUaLVbCnEDZd
-         hJR0tbTj7eeAAa81AzZizDS42VIq3Oc8JZT7q/C1k2wuSRZIm3ePWQBeYaeta0ZdYj
-         kjNLiKAppuu/sn3XW5v1pndVul0Kyn+cxoxbmrVJ86k6NKvsxbr1AQQpfOCHEZ5fEG
-         JZP1QHPgOEvsdanB/NuSDHkvd/N83HebpVEsUfIL6PWCtPUzKZDZyVFUlwRsshqVsJ
-         3GexNN4/yWKrA==
-Received: by mail-ot1-f54.google.com with SMTP id v19-20020a0568301413b0290304f00e3d88so5143328otp.4;
-        Fri, 14 May 2021 05:24:00 -0700 (PDT)
-X-Gm-Message-State: AOAM531d3+9D9XeJhUn54U5tjSWsha9vQ06jhPdHw3L1OICH8qH/KG5H
-        XScxqN64Ii0oDV2rb78cM2Hdfbfr/jNxtLzU4JU=
-X-Google-Smtp-Source: ABdhPJzROl7Fjyj6XasZO8+BKHJUHE5O/PN10u+bqcgEIYgEvw0o6mBqLsX7pHbqhU/n94ZuitW4NB9Oem1Vvp+o28k=
-X-Received: by 2002:a9d:222a:: with SMTP id o39mr38555525ota.246.1620995039855;
- Fri, 14 May 2021 05:23:59 -0700 (PDT)
+        id S235124AbhENReR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 14 May 2021 13:34:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37296 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235093AbhENReR (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 14 May 2021 13:34:17 -0400
+Received: from mail-ed1-x52e.google.com (mail-ed1-x52e.google.com [IPv6:2a00:1450:4864:20::52e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6A461C061574
+        for <linux-sh@vger.kernel.org>; Fri, 14 May 2021 10:33:05 -0700 (PDT)
+Received: by mail-ed1-x52e.google.com with SMTP id df21so8305449edb.3
+        for <linux-sh@vger.kernel.org>; Fri, 14 May 2021 10:33:05 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=3bmbAftPboaY7hu+DnMgt2b6hH50EmPqKJHrC7bAGn8=;
+        b=OCUpNcjguSpqlmqGqLclnsNCOhgzU3pBtJ+0aWvCc2SR59QNIHWTyn2iHNnFIXoHb/
+         IlrJnYgxa3QKa7TD5DPjuhh0hv9dsnnG2SJC44eepw5A/YU6NsZQR/5smJrlWciM7Uz7
+         oY/UTgSqeb9/fYqELWpyA+6END7cpdJzA1bkA=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=3bmbAftPboaY7hu+DnMgt2b6hH50EmPqKJHrC7bAGn8=;
+        b=s319YTOUj+AJsPnO1jkjpDAF+GUG/XKroFZAuaWwGbisUf9NZhJWt/GcCLUIog2E9x
+         6H2+aF2EEOSxH/4t4X2mKx66GPucVgCpmrq+/YbXIyPocmxoWipetZb+G//hfK99X8XW
+         3nGtrOiS490uc4bMd/o61uEBtwXQE36GnTzKf/YoQVJKp/Hi6El6YvohkSLHGDygiB+v
+         czrKkrqhE5mx3gIdWEwNj3Yj692SODdyqhD2uP57S8RJYquUvp3os6Fhq567ljSwO9Rj
+         /0tdUs7gkB5U5BEbn2RTdyWag0rWZ8qSjmrAWf03Tp2ywAtQVjybR9rj9WvhDScQb7HT
+         0AYA==
+X-Gm-Message-State: AOAM530qzSE899jkfA+85bDRGA9qQqdVMtclv20KlFrqrFOI/R7l19rG
+        TNUJWyss1nrzSFh58Ze0lBAH5nUCCv3k6M4mf70=
+X-Google-Smtp-Source: ABdhPJysWITZeN2172VBOc3VisXz9AipjF16Wk1y8KCX0FtM/JIBYe5C3I1ekjsMu5/Rt6KTh2rR7w==
+X-Received: by 2002:a05:6402:1511:: with SMTP id f17mr2782341edw.201.1621013583980;
+        Fri, 14 May 2021 10:33:03 -0700 (PDT)
+Received: from mail-wr1-f47.google.com (mail-wr1-f47.google.com. [209.85.221.47])
+        by smtp.gmail.com with ESMTPSA id d7sm3883633ejk.55.2021.05.14.10.33.03
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 14 May 2021 10:33:03 -0700 (PDT)
+Received: by mail-wr1-f47.google.com with SMTP id l14so34484wrx.5
+        for <linux-sh@vger.kernel.org>; Fri, 14 May 2021 10:33:03 -0700 (PDT)
+X-Received: by 2002:a2e:9251:: with SMTP id v17mr38807472ljg.507.1621013573543;
+ Fri, 14 May 2021 10:32:53 -0700 (PDT)
 MIME-Version: 1.0
-References: <20210514100106.3404011-1-arnd@kernel.org> <20210514100106.3404011-4-arnd@kernel.org>
- <3d70eb2a-2969-197e-63e8-f3e0a6a8ddd8@physik.fu-berlin.de>
-In-Reply-To: <3d70eb2a-2969-197e-63e8-f3e0a6a8ddd8@physik.fu-berlin.de>
-From:   Arnd Bergmann <arnd@kernel.org>
-Date:   Fri, 14 May 2021 14:22:58 +0200
-X-Gmail-Original-Message-ID: <CAK8P3a1oO_moABCtNqLkM9ccVh9c=andfz+qiSucTCXcqJkYVA@mail.gmail.com>
-Message-ID: <CAK8P3a1oO_moABCtNqLkM9ccVh9c=andfz+qiSucTCXcqJkYVA@mail.gmail.com>
-Subject: Re: [PATCH v2 03/13] sh: remove unaligned access for sh4a
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+References: <20210514100106.3404011-1-arnd@kernel.org>
+In-Reply-To: <20210514100106.3404011-1-arnd@kernel.org>
+From:   Linus Torvalds <torvalds@linux-foundation.org>
+Date:   Fri, 14 May 2021 10:32:37 -0700
+X-Gmail-Original-Message-ID: <CAHk-=whGObOKruA_bU3aPGZfoDqZM1_9wBkwREp0H0FgR-90uQ@mail.gmail.com>
+Message-ID: <CAHk-=whGObOKruA_bU3aPGZfoDqZM1_9wBkwREp0H0FgR-90uQ@mail.gmail.com>
+Subject: Re: [PATCH v2 00/13] Unify asm/unaligned.h around struct helper
+To:     Arnd Bergmann <arnd@kernel.org>
 Cc:     linux-arch <linux-arch@vger.kernel.org>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
         Vineet Gupta <vgupta@synopsys.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Amitkumar Karwar <amitkarwar@gmail.com>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Borislav Petkov <bp@alien8.de>,
+        Eric Dumazet <edumazet@google.com>,
+        Florian Fainelli <f.fainelli@gmail.com>,
+        Ganapathi Bhat <ganapathi017@gmail.com>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        "H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@redhat.com>,
+        Jakub Kicinski <kuba@kernel.org>,
+        James Morris <jmorris@namei.org>, Jens Axboe <axboe@kernel.dk>,
+        John Johansen <john.johansen@canonical.com>,
+        Jonas Bonn <jonas@southpole.se>,
+        Kalle Valo <kvalo@codeaurora.org>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Paul Mackerras <paulus@samba.org>,
         Rich Felker <dalias@libc.org>,
+        "Richard Russon (FlatCap)" <ldm@flatcap.org>,
+        Russell King <linux@armlinux.org.uk>,
+        "Serge E. Hallyn" <serge@hallyn.com>,
+        Sharvari Harisangam <sharvari.harisangam@nxp.com>,
+        Stafford Horne <shorne@gmail.com>,
+        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Vladimir Oltean <vladimir.oltean@nxp.com>,
+        Xinming Hu <huxinming820@gmail.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        "the arch/x86 maintainers" <x86@kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        Linux Crypto Mailing List <linux-crypto@vger.kernel.org>,
+        openrisc@lists.librecores.org,
+        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
         Linux-sh list <linux-sh@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+        linux-sparc <sparclinux@vger.kernel.org>,
+        linux-ntfs-dev@lists.sourceforge.net,
+        linux-block <linux-block@vger.kernel.org>,
+        linux-wireless <linux-wireless@vger.kernel.org>,
+        Netdev <netdev@vger.kernel.org>,
+        LSM List <linux-security-module@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, May 14, 2021 at 12:34 PM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
+On Fri, May 14, 2021 at 3:02 AM Arnd Bergmann <arnd@kernel.org> wrote:
 >
-> Hi Arnd!
->
-> On 5/14/21 12:00 PM, Arnd Bergmann wrote:
-> > Unlike every other architecture, sh4a uses an inline asm implementation
-> > for get_unaligned(). I have shown that this produces better object
-> > code than the asm-generic version. However, there are very few users of
-> > arch/sh/ overall, and most of those seem to use sh4 rather than sh4a CPU
-> > cores, so it seems not worth keeping the complexity in the architecture
-> > independent code.
->
-> My Renesas SH4-Boards actually run an sh4a-Kernel, not an sh4-Kernel:
->
-> root@tirpitz:~> uname -a
-> Linux tirpitz 5.11.0-rc4-00012-g10c03c5bf422 #161 PREEMPT Mon Jan 18 21:10:17 CET 2021 sh4a GNU/Linux
-> root@tirpitz:~>
->
-> So, if this change reduces performance on sh4a, I would rather not merge it.
+> I've included this version in the asm-generic tree for 5.14 already,
+> addressing the few issues that were pointed out in the RFC. If there
+> are any remaining problems, I hope those can be addressed as follow-up
+> patches.
 
-It only makes a difference in very specific scenarios in which unaligned
-accesses are done in a fast path, e.g. when forwarding network packet
-at a high rate on a big-endian kernel (little-endian kernels wouldn't run into
-this on IP headers). If you have a use case for this machine on which the
-you can show a performance regression, I can add a patch on top to put
-the optimized sh4a get_unaligned_le32() back. Dropping this patch
-altogether would make the series much more complex because most of
-the associated code gets removed in the end.
+This continues to look great to me, and now has the even simpler
+remaining implementation.
 
-As I mentioned, supporting "movua" in the compiler likely has a much
-larger impact on performance, as it would also help in user space, and
-it should improve the networking case on little-endian kernels by replacing
-the four separate byte loads/shift pairs with a movua plus a byteswap.
+I'd be tempted to just pull it in for 5.13, but I guess we don't
+actually have any _outstanding_ bug in this area (the bug was in our
+zlib code, required -O3 to trigger, has been fixed now, and the biggy
+case didn't even use "get_unaligned()").
 
-Not sure if there are gcc developers that have an active interest in sh4a
-support any more.
+So I guess your 5.14 timing is the right thing to do.
 
-      Arnd
+        Linus
