@@ -2,159 +2,65 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 09929C47092
-	for <linux-sh@archiver.kernel.org>; Wed,  2 Jun 2021 14:03:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E27FC4708F
+	for <linux-sh@archiver.kernel.org>; Wed,  2 Jun 2021 23:14:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E5267613BA
-	for <linux-sh@archiver.kernel.org>; Wed,  2 Jun 2021 14:03:16 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D2BC4613E9
+	for <linux-sh@archiver.kernel.org>; Wed,  2 Jun 2021 23:14:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230185AbhFBOE7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 2 Jun 2021 10:04:59 -0400
-Received: from mail.kernel.org ([198.145.29.99]:46842 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229654AbhFBOE6 (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Wed, 2 Jun 2021 10:04:58 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 8CE12613B8;
-        Wed,  2 Jun 2021 14:03:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1622642595;
-        bh=rVTIekozkKZiHFO8KV73KQ3u8bmmogfis0wnY/V9zMk=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=j8vmJNJ02mTS2qujW9AuK34CyGewsKEQa3NJI4x54mI/kZ6TFkXgNShYSldLi9wwR
-         iVZIZpo10XmlpdD1gKCLSxI2hAconHrCrMCgpriX/VTH8VoFXTo8owedKrPE/jIZ0c
-         D0z4cOoqJMINruzqON7gaCTnozO9ZlPYtavKjKyFVVT2dZ+EtfNVi3gYHbuLNepcSX
-         +gq/yzfSnUELMMLNTwhQ6DbA0qs/Rfv2LkuAbudO4aFFo53imu8k7hO2V3DMiMK48/
-         BPzuDC2hRRaPw3diNLbn7YRlcBUV1pB+YMb1s77Dpt31JAkWDkRc6hv1mITOzdI2oz
-         pUQhhp2WADSpA==
-Date:   Wed, 2 Jun 2021 17:03:01 +0300
-From:   Mike Rapoport <rppt@kernel.org>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Jonathan Corbet <corbet@lwn.net>,
-        Matt Turner <mattst88@gmail.com>,
-        Mike Rapoport <rppt@linux.ibm.com>,
-        Richard Henderson <rth@twiddle.net>,
-        Vineet Gupta <vgupta@synopsys.com>, kexec@lists.infradead.org,
-        alpha <linux-alpha@vger.kernel.org>,
-        Linux-Arch <linux-arch@vger.kernel.org>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        "open list:DOCUMENTATION" <linux-doc@vger.kernel.org>,
-        "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-m68k <linux-m68k@lists.linux-m68k.org>,
-        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
-        Linux MM <linux-mm@kvack.org>,
-        linux-riscv <linux-riscv@lists.infradead.org>,
-        linux-s390 <linux-s390@vger.kernel.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        arcml <linux-snps-arc@lists.infradead.org>,
-        "open list:TENSILICA XTENSA PORT (xtensa)" 
-        <linux-xtensa@linux-xtensa.org>,
-        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
-        sparclinux <sparclinux@vger.kernel.org>
-Subject: Re: [PATCH 4/9] m68k: remove support for DISCONTIGMEM
-Message-ID: <YLePlSaXR0XvtZki@kernel.org>
-References: <20210602105348.13387-1-rppt@kernel.org>
- <20210602105348.13387-5-rppt@kernel.org>
- <CAMuHMdUUzMNcWNXCjwZmH-VBC+jH1ShBpeg6EBCdRXv3mwHxsQ@mail.gmail.com>
+        id S229736AbhFBXQa (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 2 Jun 2021 19:16:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42590 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229667AbhFBXQa (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 2 Jun 2021 19:16:30 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 58B3DC061756;
+        Wed,  2 Jun 2021 16:14:46 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
+        Content-ID:Content-Description:In-Reply-To:References;
+        bh=iMYHPfxhqjuRpDflG9IVpKwulTFrTouXC10oTDpgEso=; b=FWemzFjsnZnyBq9L1v7yuoCKgG
+        pA6aiH09ehNICgouz+eF4/oXtL3jqCvfz/NsHVGU585rLZET+kULl/dSfLSh1IxJO5pfyACA2/o32
+        5IHl8iXm87MHtOl1p3yEXg8KHA/dF6qLNmZi7mblLACLGbvFE4PuSRGOgDg/f4SjTLN0QkB2HXCff
+        FeHqTT7DH4ohB04EhkdZvnRZqrzCdl/ISsLHpClHop8Ha+7va9NcjSnDAo9+vzr91WVzZu6IdKZPQ
+        pLj/R0+b89RXUxS27UImZy2+eUdaj26bhBtLI1EXs9YmnrBajtvRXc4ANP0ZHZ75mGqrdsI0NETKB
+        Jf+8WblA==;
+Received: from [2601:1c0:6280:3f0::ce7d] (helo=bombadil.infradead.org)
+        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1loa4T-006Rln-EL; Wed, 02 Jun 2021 23:14:45 +0000
+From:   Randy Dunlap <rdunlap@infradead.org>
+To:     linux-kernel@vger.kernel.org
+Cc:     Randy Dunlap <rdunlap@infradead.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Subject: [PATCH 0/3] sh: fixes for various build warnings
+Date:   Wed,  2 Jun 2021 16:14:40 -0700
+Message-Id: <20210602231443.4670-1-rdunlap@infradead.org>
+X-Mailer: git-send-email 2.26.2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAMuHMdUUzMNcWNXCjwZmH-VBC+jH1ShBpeg6EBCdRXv3mwHxsQ@mail.gmail.com>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Jun 02, 2021 at 01:25:24PM +0200, Geert Uytterhoeven wrote:
-> Hi Mike,
-> 
-> On Wed, Jun 2, 2021 at 12:54 PM Mike Rapoport <rppt@kernel.org> wrote:
-> > From: Mike Rapoport <rppt@linux.ibm.com>
-> >
-> > DISCONTIGMEM was replaced by FLATMEM with freeing of the unused memory map
-> > in v5.11.
-> >
-> > Remove the support for DISCONTIGMEM entirely.
-> >
-> > Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> 
-> Thanks for your patch!
-> 
-> Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> 
-> > --- a/arch/m68k/include/asm/page_mm.h
-> > +++ b/arch/m68k/include/asm/page_mm.h
-> > @@ -126,25 +126,7 @@ static inline void *__va(unsigned long x)
-> >
-> >  extern int m68k_virt_to_node_shift;
-> >
-> > -#ifndef CONFIG_DISCONTIGMEM
-> >  #define __virt_to_node(addr)   (&pg_data_map[0])
-> 
-> With pg_data_map[] removed, this definition can go as well.
-> Seems to be a leftover from 1008a11590b966b4 ("m68k: switch to MEMBLOCK
->  + NO_BOOTMEM")
-> 
-> There are a few more:
-> arch/m68k/include/asm/mmzone.h:extern pg_data_t pg_data_map[];
-> arch/m68k/include/asm/mmzone.h:#define NODE_DATA(nid)
-> (&pg_data_map[nid])
+Fix a few build warnings on SUPERH.
 
-It seems that arch/m68k/include/asm/mmzone.h can be simply removed.
- 
-> > -#else
-> > -extern struct pglist_data *pg_data_table[];
-> > -
-> > -static inline __attribute_const__ int __virt_to_node_shift(void)
-> > -{
-> > -       int shift;
-> > -
-> > -       asm (
-> > -               "1:     moveq   #0,%0\n"
-> > -               m68k_fixup(%c1, 1b)
-> > -               : "=d" (shift)
-> > -               : "i" (m68k_fixup_vnode_shift));
-> > -       return shift;
-> > -}
-> > -
-> > -#define __virt_to_node(addr)   (pg_data_table[(unsigned long)(addr) >> __virt_to_node_shift()])
-> > -#endif
-> 
-> > --- a/arch/m68k/mm/init.c
-> > +++ b/arch/m68k/mm/init.c
-> > @@ -44,28 +44,8 @@ EXPORT_SYMBOL(empty_zero_page);
-> >
-> >  int m68k_virt_to_node_shift;
-> >
-> > -#ifdef CONFIG_DISCONTIGMEM
-> > -pg_data_t pg_data_map[MAX_NUMNODES];
-> > -EXPORT_SYMBOL(pg_data_map);
-> > -
-> > -pg_data_t *pg_data_table[65];
-> > -EXPORT_SYMBOL(pg_data_table);
-> > -#endif
-> > -
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
 
--- 
-Sincerely yours,
-Mike.
+[PATCH 1/3] sh: convert xchg() to a statement expression
+[RFC PATCH 2/3] sh: define __BIG_ENDIAN for math-emu
+[PATCH 3/3] sh: fix READ/WRITE redefinition warnings
+
+ arch/sh/include/asm/cmpxchg.h |    2 -
+ arch/sh/math-emu/math.c       |   44 ++++++++++++++++----------------
+ arch/sh/math-emu/sfp-util.h   |    2 -
+ 3 files changed, 24 insertions(+), 24 deletions(-)
