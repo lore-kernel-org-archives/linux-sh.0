@@ -2,215 +2,127 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-21.4 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-11.2 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
+	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D20F6C47083
-	for <linux-sh@archiver.kernel.org>; Fri,  4 Jun 2021 14:49:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0EC79C4743F
+	for <linux-sh@archiver.kernel.org>; Sun,  6 Jun 2021 21:29:23 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B65146140F
-	for <linux-sh@archiver.kernel.org>; Fri,  4 Jun 2021 14:49:54 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E2ED3613EF
+	for <linux-sh@archiver.kernel.org>; Sun,  6 Jun 2021 21:29:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230030AbhFDOvk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 4 Jun 2021 10:51:40 -0400
-Received: from mail.kernel.org ([198.145.29.99]:48878 "EHLO mail.kernel.org"
+        id S230294AbhFFVbJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 6 Jun 2021 17:31:09 -0400
+Received: from mail.kernel.org ([198.145.29.99]:51778 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229656AbhFDOvj (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Fri, 4 Jun 2021 10:51:39 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 3F7C46140B;
-        Fri,  4 Jun 2021 14:49:46 +0000 (UTC)
+        id S230270AbhFFVbJ (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Sun, 6 Jun 2021 17:31:09 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 953E4613B6;
+        Sun,  6 Jun 2021 21:29:14 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1622818193;
-        bh=rnFSlNaPq8u6wC/6QmquuOa136Onpb4MOEGa2hLgk9I=;
+        s=k20201202; t=1623014959;
+        bh=4t5DawWhLmQPAFGRKhX1jFE4WEqbArxXgmERWe2C0xQ=;
         h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=LwwJaCK2IwLxB9kyXGjYKVF9yzkzn7XRMKeQ8X72ltVfnmPF5p41UBu+e+05a9DAy
-         tZKeaBQHBAcKLB2Qe5TMvMpTImanf/IJol37sjCQauBE3/upu93O1L0ehCiz24v3Eo
-         sgkxYEhJA2jhJ1hXN8nOKaMM///ktUE3ni2XrsbrjomrPUTFManqUNJ/xUZvLqqjSH
-         FSVnaCBtBJhMvzfd0MKLff525QxHTp7w4mkKBDT0KOaGgN/fy/0yJ+Z0e/so6SnMiQ
-         P2u25M6Qqug84oEiWVQUttGG0bIXa2/7x8ISySiIyeKQCCUonmeBlNLWKV2nP78fa3
-         67XpLaAb4EoHQ==
-Date:   Fri, 4 Jun 2021 17:49:41 +0300
+        b=Wu/fyJA4UR/3OsXx5PdnZuKJmqUDl6cQ0I5qOPmOobYB/YwD3loa7CHDMxmjDs7+O
+         /+vTonUI3DKMDg+OJCEqqvIqeoGeqCBaFfCM6MGkwmW6KvTZO5CLkleOMNy5KmfR4d
+         PteqC/M3+gPE1uiUsTSHvYSMYrpSkJ75a30BXywU3cSKzUfAv/A0+aJ76/IGuUYyhl
+         S6LUi9EmnHUL5lEcDnAewWs8EsYomaOBUCef/cImLCqjaabNrEeHJoCWkyMWvCEGV1
+         9+bVS1xXN0QGlOiLh2r3UXefQeesEuK/PQnscumw1S0RmHISk2eF6NrfUP8ytWcSpP
+         sTzKK7DJdkKEw==
+Date:   Mon, 7 Jun 2021 00:29:09 +0300
 From:   Mike Rapoport <rppt@kernel.org>
-To:     Vineet Gupta <Vineet.Gupta1@synopsys.com>
+To:     Kefeng Wang <wangkefeng.wang@huawei.com>
 Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Jonathan Corbet <corbet@lwn.net>,
-        Matt Turner <mattst88@gmail.com>,
-        Mike Rapoport <rppt@linux.ibm.com>,
-        Richard Henderson <rth@twiddle.net>,
-        "kexec@lists.infradead.org" <kexec@lists.infradead.org>,
-        "linux-alpha@vger.kernel.org" <linux-alpha@vger.kernel.org>,
-        "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>,
-        "linux-arm-kernel@lists.infradead.org" 
-        <linux-arm-kernel@lists.infradead.org>,
-        "linux-doc@vger.kernel.org" <linux-doc@vger.kernel.org>,
-        "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-m68k@lists.linux-m68k.org" <linux-m68k@lists.linux-m68k.org>,
-        "linux-mips@vger.kernel.org" <linux-mips@vger.kernel.org>,
-        "linux-mm@kvack.org" <linux-mm@kvack.org>,
-        "linux-riscv@lists.infradead.org" <linux-riscv@lists.infradead.org>,
-        "linux-s390@vger.kernel.org" <linux-s390@vger.kernel.org>,
-        "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>,
-        "linux-snps-arc@lists.infradead.org" 
-        <linux-snps-arc@lists.infradead.org>,
-        "linux-xtensa@linux-xtensa.org" <linux-xtensa@linux-xtensa.org>,
-        "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>,
-        "sparclinux@vger.kernel.org" <sparclinux@vger.kernel.org>
-Subject: Re: [PATCH v2 3/9] arc: remove support for DISCONTIGMEM
-Message-ID: <YLo9hb3yTeh3LBMg@kernel.org>
-References: <20210604064916.26580-1-rppt@kernel.org>
- <20210604064916.26580-4-rppt@kernel.org>
- <f1616f95-f99c-c387-4ed4-88961457a7c6@synopsys.com>
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        uclinux-h8-devel@lists.sourceforge.jp,
+        linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org, linux-s390@vger.kernel.org
+Subject: Re: [PATCH v2 00/15] init_mm: cleanup ARCH's text/data/brk setup code
+Message-ID: <YL0+Jargm+y9aqx1@kernel.org>
+References: <20210604070633.32363-1-wangkefeng.wang@huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <f1616f95-f99c-c387-4ed4-88961457a7c6@synopsys.com>
+In-Reply-To: <20210604070633.32363-1-wangkefeng.wang@huawei.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Jun 04, 2021 at 02:07:39PM +0000, Vineet Gupta wrote:
-> On 6/3/21 11:49 PM, Mike Rapoport wrote:
-> > From: Mike Rapoport <rppt@linux.ibm.com>
-> >
-> > DISCONTIGMEM was replaced by FLATMEM with freeing of the unused memory map
-> > in v5.11.
-> >
-> > Remove the support for DISCONTIGMEM entirely.
-> >
-> > Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+Hello Kefeng,
+
+On Fri, Jun 04, 2021 at 03:06:18PM +0800, Kefeng Wang wrote:
+> Add setup_initial_init_mm() helper, then use it
+> to cleanup the text, data and brk setup code.
 > 
-> Looks non intrusive, but I'd still like to give this a spin on hardware 
-> - considering highmem on ARC has tendency to go sideways ;-)
-> Can you please share a branch !
+> v2:
+> - change argument from "char *" to "void *" setup_initial_init_mm()
+>   suggested by Geert Uytterhoeven
+> - use NULL instead of (void *)0 on h8300 and m68k
+> - collect ACKs
+> 
+> Cc: linux-snps-arc@lists.infradead.org
+> Cc: linux-arm-kernel@lists.infradead.org
+> Cc: linux-csky@vger.kernel.org
+> Cc: uclinux-h8-devel@lists.sourceforge.jp
+> Cc: linux-m68k@lists.linux-m68k.org
+> Cc: openrisc@lists.librecores.org
+> Cc: linuxppc-dev@lists.ozlabs.org
+> Cc: linux-riscv@lists.infradead.org
+> Cc: linux-sh@vger.kernel.org
+> Cc: linux-s390@vger.kernel.org
+> Kefeng Wang (15):
+>   mm: add setup_initial_init_mm() helper
+>   arc: convert to setup_initial_init_mm()
+>   arm: convert to setup_initial_init_mm()
+>   arm64: convert to setup_initial_init_mm()
+>   csky: convert to setup_initial_init_mm()
+>   h8300: convert to setup_initial_init_mm()
+>   m68k: convert to setup_initial_init_mm()
+>   nds32: convert to setup_initial_init_mm()
+>   nios2: convert to setup_initial_init_mm()
+>   openrisc: convert to setup_initial_init_mm()
+>   powerpc: convert to setup_initial_init_mm()
+>   riscv: convert to setup_initial_init_mm()
+>   s390: convert to setup_initial_init_mm()
+>   sh: convert to setup_initial_init_mm()
+>   x86: convert to setup_initial_init_mm()
 
-Sure:
-
-https://git.kernel.org/pub/scm/linux/kernel/git/rppt/linux.git/log/?h=memory-models/rm-discontig/v2
+I might be missing something, but AFAIU the init_mm.start_code and other
+fields are not used really early so the new setup_initial_init_mm()
+function can be called in the generic code outside setup_arch(), e.g in
+mm_init().
  
-> Acked-by: Vineet Gupta <vgupta@synopsys.com>
-
-Thanks!
- 
-> Thx,
-> -Vineet
+>  arch/arc/mm/init.c                 | 5 +----
+>  arch/arm/kernel/setup.c            | 5 +----
+>  arch/arm64/kernel/setup.c          | 5 +----
+>  arch/csky/kernel/setup.c           | 5 +----
+>  arch/h8300/kernel/setup.c          | 5 +----
+>  arch/m68k/kernel/setup_mm.c        | 5 +----
+>  arch/m68k/kernel/setup_no.c        | 5 +----
+>  arch/nds32/kernel/setup.c          | 5 +----
+>  arch/nios2/kernel/setup.c          | 5 +----
+>  arch/openrisc/kernel/setup.c       | 5 +----
+>  arch/powerpc/kernel/setup-common.c | 5 +----
+>  arch/riscv/kernel/setup.c          | 5 +----
+>  arch/s390/kernel/setup.c           | 5 +----
+>  arch/sh/kernel/setup.c             | 5 +----
+>  arch/x86/kernel/setup.c            | 5 +----
+>  include/linux/mm_types.h           | 8 ++++++++
+>  16 files changed, 23 insertions(+), 60 deletions(-)
 > 
-> > ---
-> >   arch/arc/Kconfig              | 13 ------------
-> >   arch/arc/include/asm/mmzone.h | 40 -----------------------------------
-> >   arch/arc/mm/init.c            |  8 -------
-> >   3 files changed, 61 deletions(-)
-> >   delete mode 100644 arch/arc/include/asm/mmzone.h
-> >
-> > diff --git a/arch/arc/Kconfig b/arch/arc/Kconfig
-> > index 2d98501c0897..d8f51eb8963b 100644
-> > --- a/arch/arc/Kconfig
-> > +++ b/arch/arc/Kconfig
-> > @@ -62,10 +62,6 @@ config SCHED_OMIT_FRAME_POINTER
-> >   config GENERIC_CSUM
-> >   	def_bool y
-> >   
-> > -config ARCH_DISCONTIGMEM_ENABLE
-> > -	def_bool n
-> > -	depends on BROKEN
-> > -
-> >   config ARCH_FLATMEM_ENABLE
-> >   	def_bool y
-> >   
-> > @@ -344,15 +340,6 @@ config ARC_HUGEPAGE_16M
-> >   
-> >   endchoice
-> >   
-> > -config NODES_SHIFT
-> > -	int "Maximum NUMA Nodes (as a power of 2)"
-> > -	default "0" if !DISCONTIGMEM
-> > -	default "1" if DISCONTIGMEM
-> > -	depends on NEED_MULTIPLE_NODES
-> > -	help
-> > -	  Accessing memory beyond 1GB (with or w/o PAE) requires 2 memory
-> > -	  zones.
-> > -
-> >   config ARC_COMPACT_IRQ_LEVELS
-> >   	depends on ISA_ARCOMPACT
-> >   	bool "Setup Timer IRQ as high Priority"
-> > diff --git a/arch/arc/include/asm/mmzone.h b/arch/arc/include/asm/mmzone.h
-> > deleted file mode 100644
-> > index b86b9d1e54dc..000000000000
-> > --- a/arch/arc/include/asm/mmzone.h
-> > +++ /dev/null
-> > @@ -1,40 +0,0 @@
-> > -/* SPDX-License-Identifier: GPL-2.0-only */
-> > -/*
-> > - * Copyright (C) 2016 Synopsys, Inc. (www.synopsys.com)
-> > - */
-> > -
-> > -#ifndef _ASM_ARC_MMZONE_H
-> > -#define _ASM_ARC_MMZONE_H
-> > -
-> > -#ifdef CONFIG_DISCONTIGMEM
-> > -
-> > -extern struct pglist_data node_data[];
-> > -#define NODE_DATA(nid) (&node_data[nid])
-> > -
-> > -static inline int pfn_to_nid(unsigned long pfn)
-> > -{
-> > -	int is_end_low = 1;
-> > -
-> > -	if (IS_ENABLED(CONFIG_ARC_HAS_PAE40))
-> > -		is_end_low = pfn <= virt_to_pfn(0xFFFFFFFFUL);
-> > -
-> > -	/*
-> > -	 * node 0: lowmem:             0x8000_0000   to 0xFFFF_FFFF
-> > -	 * node 1: HIGHMEM w/o  PAE40: 0x0           to 0x7FFF_FFFF
-> > -	 *         HIGHMEM with PAE40: 0x1_0000_0000 to ...
-> > -	 */
-> > -	if (pfn >= ARCH_PFN_OFFSET && is_end_low)
-> > -		return 0;
-> > -
-> > -	return 1;
-> > -}
-> > -
-> > -static inline int pfn_valid(unsigned long pfn)
-> > -{
-> > -	int nid = pfn_to_nid(pfn);
-> > -
-> > -	return (pfn <= node_end_pfn(nid));
-> > -}
-> > -#endif /* CONFIG_DISCONTIGMEM  */
-> > -
-> > -#endif
-> > diff --git a/arch/arc/mm/init.c b/arch/arc/mm/init.c
-> > index 397a201adfe3..abfeef7bf6f8 100644
-> > --- a/arch/arc/mm/init.c
-> > +++ b/arch/arc/mm/init.c
-> > @@ -32,11 +32,6 @@ unsigned long arch_pfn_offset;
-> >   EXPORT_SYMBOL(arch_pfn_offset);
-> >   #endif
-> >   
-> > -#ifdef CONFIG_DISCONTIGMEM
-> > -struct pglist_data node_data[MAX_NUMNODES] __read_mostly;
-> > -EXPORT_SYMBOL(node_data);
-> > -#endif
-> > -
-> >   long __init arc_get_mem_sz(void)
-> >   {
-> >   	return low_mem_sz;
-> > @@ -147,9 +142,6 @@ void __init setup_arch_memory(void)
-> >   	 * to the hole is freed and ARC specific version of pfn_valid()
-> >   	 * handles the hole in the memory map.
-> >   	 */
-> > -#ifdef CONFIG_DISCONTIGMEM
-> > -	node_set_online(1);
-> > -#endif
-> >   
-> >   	min_high_pfn = PFN_DOWN(high_mem_start);
-> >   	max_high_pfn = PFN_DOWN(high_mem_start + high_mem_sz);
+> -- 
+> 2.26.2
 > 
+> 
+> _______________________________________________
+> linux-riscv mailing list
+> linux-riscv@lists.infradead.org
+> http://lists.infradead.org/mailman/listinfo/linux-riscv
 
 -- 
 Sincerely yours,
