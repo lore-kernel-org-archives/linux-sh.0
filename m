@@ -2,129 +2,87 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.1 required=3.0 tests=BAYES_00,DKIM_INVALID,
+	DKIM_SIGNED,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BBB10C48BD1
-	for <linux-sh@archiver.kernel.org>; Mon,  7 Jun 2021 08:53:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AFB38C4743F
+	for <linux-sh@archiver.kernel.org>; Mon,  7 Jun 2021 09:31:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9E1EE61078
-	for <linux-sh@archiver.kernel.org>; Mon,  7 Jun 2021 08:53:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 980A660FF1
+	for <linux-sh@archiver.kernel.org>; Mon,  7 Jun 2021 09:31:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230324AbhFGIzM (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 7 Jun 2021 04:55:12 -0400
-Received: from mail-ua1-f50.google.com ([209.85.222.50]:38531 "EHLO
-        mail-ua1-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230252AbhFGIzL (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 7 Jun 2021 04:55:11 -0400
-Received: by mail-ua1-f50.google.com with SMTP id d13so8588144uav.5;
-        Mon, 07 Jun 2021 01:53:19 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=y7XwbZyFAy9rqQo5J7t8DRS+d/mueoOLl5p+cSQb+8Y=;
-        b=c1QgfpCrjDUVTkAyyBp8WpGyHfrCmwlqwtVXwHahbmua8An8O/eClybf1j+oMHclTg
-         rMIvMWrYrB9Gj2TD3pRIwvdsxkB7d9icqIhx+1ZvDF7Hagiw9U5kXikrzk61x3JjITC7
-         8pG70uh9P/71b9Fu0L2APErbzHJ58IttG/qzIbOqza9sBBKYsJ3QPxRl1kmblPcGDkaK
-         NPkTJVaQoCn/VaRb1KszZ/Q39MTWlQvqB+mnpFRoIOjOQUQjsnSYUteF7Dj4qVL9u+Xb
-         ECq++QQ7vbqY3EDwo1oBHc8szh/J74Mct3oP7UWWUTuzXWOG+5vhy1QPhID0bwAgs6ws
-         QMyA==
-X-Gm-Message-State: AOAM532XV40qPaFsEC/GJkAhhxOwX05CIufouWf1JTWpIJDVLxJyQyBP
-        gmz4WkdAf7f5Mky/jxlESS/KPFB5bvNH7j6p8/o=
-X-Google-Smtp-Source: ABdhPJw70xfmNroh3KIu5QGmqKsYwQ+PKLyHQ50n7DeatYgE4iGl6TNz+FWGTOL2BBcrgRRRH99rMYwIPPT469OpB6M=
-X-Received: by 2002:ab0:63d9:: with SMTP id i25mr6682382uap.106.1623055999326;
- Mon, 07 Jun 2021 01:53:19 -0700 (PDT)
+        id S230271AbhFGJd0 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 7 Jun 2021 05:33:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43396 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230242AbhFGJd0 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 7 Jun 2021 05:33:26 -0400
+Received: from pandora.armlinux.org.uk (pandora.armlinux.org.uk [IPv6:2001:4d48:ad52:32c8:5054:ff:fe00:142])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E386EC061766;
+        Mon,  7 Jun 2021 02:31:34 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=armlinux.org.uk; s=pandora-2019; h=Sender:In-Reply-To:Content-Type:
+        MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
+        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
+        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+         bh=MlvkgxFcyawWgLbaD1anFAhejhA4mPswAd0WEOPLbd0=; b=cetr6/k8ZHIlURSNkBDEkxOd3
+        puNo+HwooQUeJn9AaPBl4regJ9NkcXwohGBb5OPUoX7XTTODh5d6IsuhC8Hnw3taLmVn0F8+4hF1o
+        ArioCmyKCJRUZ5c5W9Ct8Cw0Zpb4xNWdK87xHBWnc3daFNyrTg9aLL7A/E6TbbFPNgdTXMtoLpPh1
+        VNTboFgYQtPgYxGziLgboqSm+C9rc0zETM+h5ZE5kg+2kGPOkoZAIe8MZfd5JZNTDNazJFXr/S6Gm
+        YDi+dqX3d1L4b71QKMOqk7jvcXPp8QSgQdX3C28GtCjdiTWKtuBWWAYuFwAi7GnVSCXRZB8Zx7iVW
+        ALDutps2w==;
+Received: from shell.armlinux.org.uk ([fd8f:7570:feb6:1:5054:ff:fe00:4ec]:44784)
+        by pandora.armlinux.org.uk with esmtpsa (TLS1.3:ECDHE_RSA_AES_256_GCM_SHA384:256)
+        (Exim 4.92)
+        (envelope-from <linux@armlinux.org.uk>)
+        id 1lqBbS-0000Eu-Fv; Mon, 07 Jun 2021 10:31:26 +0100
+Received: from linux by shell.armlinux.org.uk with local (Exim 4.92)
+        (envelope-from <linux@shell.armlinux.org.uk>)
+        id 1lqBbN-0005oE-UB; Mon, 07 Jun 2021 10:31:21 +0100
+Date:   Mon, 7 Jun 2021 10:31:21 +0100
+From:   "Russell King (Oracle)" <linux@armlinux.org.uk>
+To:     Christophe Leroy <christophe.leroy@csgroup.eu>
+Cc:     Kefeng Wang <wangkefeng.wang@huawei.com>,
+        Mike Rapoport <rppt@kernel.org>,
+        uclinux-h8-devel@lists.sourceforge.jp, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-csky@vger.kernel.org, linux-mm@kvack.org,
+        linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org,
+        Andrew Morton <akpm@linux-foundation.org>,
+        linux-snps-arc@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org
+Subject: Re: [PATCH v2 00/15] init_mm: cleanup ARCH's text/data/brk setup code
+Message-ID: <20210607093121.GC22278@shell.armlinux.org.uk>
+References: <20210604070633.32363-1-wangkefeng.wang@huawei.com>
+ <YL0+Jargm+y9aqx1@kernel.org>
+ <481056ab-686e-9f42-3b8a-b31941f58af6@huawei.com>
+ <006eb573-5a20-1ac7-6234-338d11346a08@csgroup.eu>
 MIME-Version: 1.0
-References: <20210604064916.26580-1-rppt@kernel.org> <20210604064916.26580-9-rppt@kernel.org>
-In-Reply-To: <20210604064916.26580-9-rppt@kernel.org>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 7 Jun 2021 10:53:08 +0200
-Message-ID: <CAMuHMdVa29gUQAdHjKh-qDNpOJaoGwXtUkBM2qnOTi1DWV70xA@mail.gmail.com>
-Subject: Re: [PATCH v2 8/9] mm: replace CONFIG_NEED_MULTIPLE_NODES with CONFIG_NUMA
-To:     Mike Rapoport <rppt@kernel.org>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Jonathan Corbet <corbet@lwn.net>,
-        Matt Turner <mattst88@gmail.com>,
-        Mike Rapoport <rppt@linux.ibm.com>,
-        Richard Henderson <rth@twiddle.net>,
-        Vineet Gupta <vgupta@synopsys.com>, kexec@lists.infradead.org,
-        alpha <linux-alpha@vger.kernel.org>,
-        Linux-Arch <linux-arch@vger.kernel.org>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        "open list:DOCUMENTATION" <linux-doc@vger.kernel.org>,
-        "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-m68k <linux-m68k@lists.linux-m68k.org>,
-        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
-        Linux MM <linux-mm@kvack.org>,
-        linux-riscv <linux-riscv@lists.infradead.org>,
-        linux-s390 <linux-s390@vger.kernel.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        arcml <linux-snps-arc@lists.infradead.org>,
-        "open list:TENSILICA XTENSA PORT (xtensa)" 
-        <linux-xtensa@linux-xtensa.org>,
-        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
-        sparclinux <sparclinux@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <006eb573-5a20-1ac7-6234-338d11346a08@csgroup.eu>
+User-Agent: Mutt/1.10.1 (2018-07-13)
+Sender: Russell King (Oracle) <linux@armlinux.org.uk>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Mike,
+On Mon, Jun 07, 2021 at 07:48:54AM +0200, Christophe Leroy wrote:
+> Hi Kefeng,
+> 
+> What you could do is to define a __weak function that architectures can
+> override and call that function from mm_init() as suggested by Mike,
 
-On Fri, Jun 4, 2021 at 8:50 AM Mike Rapoport <rppt@kernel.org> wrote:
-> From: Mike Rapoport <rppt@linux.ibm.com>
->
-> After removal of DISCINTIGMEM the NEED_MULTIPLE_NODES and NUMA
-> configuration options are equivalent.
->
-> Drop CONFIG_NEED_MULTIPLE_NODES and use CONFIG_NUMA instead.
->
-> Done with
->
->         $ sed -i 's/CONFIG_NEED_MULTIPLE_NODES/CONFIG_NUMA/' \
->                 $(git grep -wl CONFIG_NEED_MULTIPLE_NODES)
->         $ sed -i 's/NEED_MULTIPLE_NODES/NUMA/' \
->                 $(git grep -wl NEED_MULTIPLE_NODES)
->
-> with manual tweaks afterwards.
->
-> Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
+The problem with weak functions is that they bloat the kernel. Each
+time a weak function is overriden, it becomes dead unreachable code
+within the kernel image.
 
-Thanks for your patch!
-
-As you dropped the following hunk from v2 of PATCH 5/9, there's now
-one reference left of CONFIG_NEED_MULTIPLE_NODES
-(plus the discontigmem comment):
-
--diff --git a/mm/memory.c b/mm/memory.c
--index f3ffab9b9e39157b..fd0ebb63be3304f5 100644
----- a/mm/memory.c
--+++ b/mm/memory.c
--@@ -90,8 +90,7 @@
-- #warning Unfortunate NUMA and NUMA Balancing config, growing
-page-frame for last_cpupid.
-- #endif
--
---#ifndef CONFIG_NEED_MULTIPLE_NODES
---/* use the per-pgdat data instead for discontigmem - mbligh */
--+#ifdef CONFIG_FLATMEM
-- unsigned long max_mapnr;
-- EXPORT_SYMBOL(max_mapnr);
--
-
-Gr{oetje,eeting}s,
-
-                        Geert
+At some point we're probabily going to have to enable -ffunction-sections
+to (hopefully) allow the dead code to be discarded.
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+RMK's Patch system: https://www.armlinux.org.uk/developer/patches/
+FTTP is here! 40Mbps down 10Mbps up. Decent connectivity at last!
