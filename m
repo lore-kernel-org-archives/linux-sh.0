@@ -2,182 +2,136 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-9.9 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,UNWANTED_LANGUAGE_BODY,
+	URIBL_BLOCKED autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E70EBC4743D
-	for <linux-sh@archiver.kernel.org>; Tue,  8 Jun 2021 10:50:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DE49EC4743F
+	for <linux-sh@archiver.kernel.org>; Tue,  8 Jun 2021 14:53:55 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D4AF56128E
-	for <linux-sh@archiver.kernel.org>; Tue,  8 Jun 2021 10:50:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C9DE661078
+	for <linux-sh@archiver.kernel.org>; Tue,  8 Jun 2021 14:53:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232032AbhFHKwa (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 8 Jun 2021 06:52:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39262 "EHLO
+        id S233403AbhFHOzr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 8 Jun 2021 10:55:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36684 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232014AbhFHKw2 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 8 Jun 2021 06:52:28 -0400
-Received: from ozlabs.org (ozlabs.org [IPv6:2401:3900:2:1::2])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 461ABC061574;
-        Tue,  8 Jun 2021 03:50:35 -0700 (PDT)
-Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange ECDHE (P-256) server-signature RSA-PSS (4096 bits) server-digest SHA256)
-        (No client certificate requested)
-        by mail.ozlabs.org (Postfix) with ESMTPSA id 4Fzn7y5K2nz9sWD;
-        Tue,  8 Jun 2021 20:50:22 +1000 (AEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=ellerman.id.au;
-        s=201909; t=1623149433;
-        bh=NVJds1JqDdvUNi6IIF04B9NNA8p7bimnBo/PySiuSGY=;
-        h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
-        b=dmWfdjkq3B0tQV5U9PlicwvqK+CzZtXQo+RWOkJMobSguyPCdaxH8FOB0P0xSNwGG
-         kzBmLIL/3l1d5Lx9v0p32+Xp7rdshT87UFxKDJww54QibI+qq4dmXFlavK1KPW8Tsz
-         dUKZXqG2GwRnDynud4L7w4YtXmgdcXNy+qE6biXfnBwJHQW3APgGUseowAb7Phc/J1
-         RtcfvLp/YiY4LeCxXv+MSoNodSETzNtOKwxhTJMHwXnGR7TkvnT3KIK5zxfAMuMfBO
-         6yW38YAPuyM3sra+BhVQpgjmnPJiZLGZj8ZV+9x0I5LTEki8Itf4nuvmZFrThs88Kv
-         9SqrvDJWcNdUA==
-From:   Michael Ellerman <mpe@ellerman.id.au>
-To:     David Hildenbrand <david@redhat.com>, linux-kernel@vger.kernel.org
-Cc:     David Hildenbrand <david@redhat.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Vitaly Kuznetsov <vkuznets@redhat.com>,
-        "Michael S. Tsirkin" <mst@redhat.com>,
-        Jason Wang <jasowang@redhat.com>,
-        Marek Kedzierski <mkedzier@redhat.com>,
-        Hui Zhu <teawater@gmail.com>,
-        Pankaj Gupta <pankaj.gupta.linux@gmail.com>,
-        Wei Yang <richard.weiyang@linux.alibaba.com>,
-        Oscar Salvador <osalvador@suse.de>,
-        Michal Hocko <mhocko@kernel.org>,
-        Dan Williams <dan.j.williams@intel.com>,
-        Anshuman Khandual <anshuman.khandual@arm.com>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        Vlastimil Babka <vbabka@suse.cz>,
-        Mike Rapoport <rppt@kernel.org>,
-        "Rafael J. Wysocki" <rjw@rjwysocki.net>,
-        Len Brown <lenb@kernel.org>,
-        Pavel Tatashin <pasha.tatashin@soleen.com>,
-        virtualization@lists.linux-foundation.org, linux-mm@kvack.org,
-        linux-acpi@vger.kernel.org,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@de.ibm.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Andy Lutomirski <luto@kernel.org>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>,
-        Ard Biesheuvel <ardb@kernel.org>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Baoquan He <bhe@redhat.com>,
-        Laurent Dufour <ldufour@linux.ibm.com>,
-        Sergei Trofimovich <slyfox@gentoo.org>,
-        Kefeng Wang <wangkefeng.wang@huawei.com>,
-        Michel Lespinasse <michel@lespinasse.org>,
-        Christophe Leroy <christophe.leroy@c-s.fr>,
-        "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
-        Thiago Jung Bauermann <bauerman@linux.ibm.com>,
-        Joe Perches <joe@perches.com>,
-        Pierre Morel <pmorel@linux.ibm.com>,
-        Jia He <justin.he@arm.com>,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org
-Subject: Re: [PATCH v1 04/12] mm/memory_hotplug: remove nid parameter from
- arch_remove_memory()
-In-Reply-To: <20210607195430.48228-5-david@redhat.com>
-References: <20210607195430.48228-1-david@redhat.com>
- <20210607195430.48228-5-david@redhat.com>
-Date:   Tue, 08 Jun 2021 20:50:21 +1000
-Message-ID: <871r9cfx5e.fsf@mpe.ellerman.id.au>
+        with ESMTP id S232833AbhFHOzq (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 8 Jun 2021 10:55:46 -0400
+Received: from mail-vs1-xe2f.google.com (mail-vs1-xe2f.google.com [IPv6:2607:f8b0:4864:20::e2f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AA078C061787;
+        Tue,  8 Jun 2021 07:53:53 -0700 (PDT)
+Received: by mail-vs1-xe2f.google.com with SMTP id f11so11019880vst.0;
+        Tue, 08 Jun 2021 07:53:53 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20161025;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=2AJ2s6Swi7DKePDYPTjpM9W7XfKGuXx2NmxnXLQgYSU=;
+        b=rU2pKJ75Y3/QHhh8al8WEHFkA1xcRM5SZMWEuWTFwhfJJj/V+31x/44DQ1/ocvOPg+
+         HHLB+cX2JzVE7e8VyhwDv4Qz2FVNR+zh+m0OixPYjyc4fzjuukhztIpMy0r4QCqs9ENM
+         rx2wn2LyftAjOv4hRMViR3COc1TqDPy9Jwcq9YGNqCboxfBQc5R+uHuQkEmoWcUMg/uD
+         GgTRTBH9LOsD2SMP7YGpIDk7kjlQlU6IpzX1idxEjiKF6VTF7R6q/SsI4HkaBei2kO/c
+         foGKHLzxbvnAfZr24OLQ0mXOUtMYfCqu0p3aPHXa31jtaApPg9eDz4MFF332lbCsxpOF
+         vhTQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=2AJ2s6Swi7DKePDYPTjpM9W7XfKGuXx2NmxnXLQgYSU=;
+        b=D4riTu+GYWyLpk4htmmpUOp//a4v0AguE0Z0xrLAcTS4VYON/XHr2P917+FNf7oe/6
+         JstzC4vbnA9ocx6zWvuDO+iUwBNqMnQjhR1AGfYIU5Z14HNW2zWoAgLkvl9KJbmTKWV9
+         66Bluy+vYTZd5Q5bPgtLaIV9iBA6DwmuXBSvuNCVfDbPPDxhP+fj1l0kPG3OWU7nstXM
+         /jWm+2hFhu+safn732hzQR4ClEk55qByl0iPT7dfF/Ut40/PQkXng0LlXRxkyqYeFB+9
+         fBTfyRbGZm0Bx4tvgdFoE5zrXaHPQfryJc6ieTF5IPp2d5zABdTzQ6COvuDOfk7s8wnZ
+         /ofg==
+X-Gm-Message-State: AOAM530niIKkmnn81rPS+u1KlNCItTSihfYBSoqGD1/fzjisqJQRTV0n
+        95Jf382kH8y3U3dM5UvUlANZOD3Jr0NiVXHD+Bw=
+X-Google-Smtp-Source: ABdhPJyRLWrfWEbRY82WKzbAaqxe+Tz0Rq9l4OoSLSgaPe9ZQ71sH6V/8n9uYyj4peJXY7ySMuwi8lVHUHfIxXWhTlU=
+X-Received: by 2002:a67:ed5a:: with SMTP id m26mr149235vsp.59.1623164030307;
+ Tue, 08 Jun 2021 07:53:50 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+References: <20210608083418.137226-1-wangkefeng.wang@huawei.com> <20210608083418.137226-2-wangkefeng.wang@huawei.com>
+In-Reply-To: <20210608083418.137226-2-wangkefeng.wang@huawei.com>
+From:   Souptick Joarder <jrdr.linux@gmail.com>
+Date:   Tue, 8 Jun 2021 20:23:38 +0530
+Message-ID: <CAFqt6zYmCQ=wxEjnOJ6fgJWYQyFajBuxWD=UT_D-WjWUS_4pcw@mail.gmail.com>
+Subject: Re: [PATCH v3 resend 01/15] mm: add setup_initial_init_mm() helper
+To:     Kefeng Wang <wangkefeng.wang@huawei.com>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        linux-kernel@vger.kernel.org, Linux-MM <linux-mm@kvack.org>,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        uclinux-h8-devel@lists.sourceforge.jp,
+        linux-m68k@lists.linux-m68k.org, openrisc@lists.librecores.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org, linux-s390@vger.kernel.org,
+        X86 ML <x86@kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-David Hildenbrand <david@redhat.com> writes:
-
-> The parameter is unused, let's remove it.
+On Tue, Jun 8, 2021 at 1:56 PM Kefeng Wang <wangkefeng.wang@huawei.com> wrote:
 >
-> Cc: Catalin Marinas <catalin.marinas@arm.com>
-> Cc: Will Deacon <will@kernel.org>
-> Cc: Michael Ellerman <mpe@ellerman.id.au>
-> Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-> Cc: Paul Mackerras <paulus@samba.org>
-> Cc: Heiko Carstens <hca@linux.ibm.com>
-> Cc: Vasily Gorbik <gor@linux.ibm.com>
-> Cc: Christian Borntraeger <borntraeger@de.ibm.com>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: Dave Hansen <dave.hansen@linux.intel.com>
-> Cc: Andy Lutomirski <luto@kernel.org>
-> Cc: Peter Zijlstra <peterz@infradead.org>
-> Cc: Thomas Gleixner <tglx@linutronix.de>
-> Cc: Ingo Molnar <mingo@redhat.com>
-> Cc: Borislav Petkov <bp@alien8.de>
-> Cc: x86@kernel.org
-> Cc: "H. Peter Anvin" <hpa@zytor.com>
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: Anshuman Khandual <anshuman.khandual@arm.com>
-> Cc: Ard Biesheuvel <ardb@kernel.org>
-> Cc: Mike Rapoport <rppt@kernel.org>
-> Cc: Nicholas Piggin <npiggin@gmail.com>
-> Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
-> Cc: Baoquan He <bhe@redhat.com>
-> Cc: Laurent Dufour <ldufour@linux.ibm.com>
-> Cc: Sergei Trofimovich <slyfox@gentoo.org>
-> Cc: Kefeng Wang <wangkefeng.wang@huawei.com>
-> Cc: Michel Lespinasse <michel@lespinasse.org>
-> Cc: Christophe Leroy <christophe.leroy@c-s.fr>
-> Cc: "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>
-> Cc: Thiago Jung Bauermann <bauerman@linux.ibm.com>
-> Cc: Joe Perches <joe@perches.com>
-> Cc: Pierre Morel <pmorel@linux.ibm.com>
-> Cc: Jia He <justin.he@arm.com>
+> Add setup_initial_init_mm() helper to setup kernel text,
+> data and brk.
+>
+> Cc: linux-snps-arc@lists.infradead.org
 > Cc: linux-arm-kernel@lists.infradead.org
-> Cc: linux-ia64@vger.kernel.org
+> Cc: linux-csky@vger.kernel.org
+> Cc: uclinux-h8-devel@lists.sourceforge.jp
+> Cc: linux-m68k@lists.linux-m68k.org
+> Cc: openrisc@lists.librecores.org
 > Cc: linuxppc-dev@lists.ozlabs.org
-> Cc: linux-s390@vger.kernel.org
+> Cc: linux-riscv@lists.infradead.org
 > Cc: linux-sh@vger.kernel.org
-> Signed-off-by: David Hildenbrand <david@redhat.com>
+> Cc: linux-s390@vger.kernel.org
+> Cc: x86@kernel.org
+> Signed-off-by: Kefeng Wang <wangkefeng.wang@huawei.com>
 > ---
->  arch/arm64/mm/mmu.c            | 3 +--
->  arch/ia64/mm/init.c            | 3 +--
->  arch/powerpc/mm/mem.c          | 3 +--
->  arch/s390/mm/init.c            | 3 +--
->  arch/sh/mm/init.c              | 3 +--
->  arch/x86/mm/init_32.c          | 3 +--
->  arch/x86/mm/init_64.c          | 3 +--
->  include/linux/memory_hotplug.h | 3 +--
->  mm/memory_hotplug.c            | 4 ++--
->  mm/memremap.c                  | 5 +----
->  10 files changed, 11 insertions(+), 22 deletions(-)
+>  include/linux/mm.h | 3 +++
+>  mm/init-mm.c       | 9 +++++++++
+>  2 files changed, 12 insertions(+)
 >
-...
-> diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
-> index 043bbeaf407c..fc5c36189c26 100644
-> --- a/arch/powerpc/mm/mem.c
-> +++ b/arch/powerpc/mm/mem.c
-> @@ -115,8 +115,7 @@ int __ref arch_add_memory(int nid, u64 start, u64 size,
->  	return rc;
->  }
->  
-> -void __ref arch_remove_memory(int nid, u64 start, u64 size,
-> -			      struct vmem_altmap *altmap)
-> +void __ref arch_remove_memory(u64 start, u64 size, struct vmem_altmap *altmap)
->  {
->  	unsigned long start_pfn = start >> PAGE_SHIFT;
->  	unsigned long nr_pages = size >> PAGE_SHIFT;
+> diff --git a/include/linux/mm.h b/include/linux/mm.h
+> index c274f75efcf9..02aa057540b7 100644
+> --- a/include/linux/mm.h
+> +++ b/include/linux/mm.h
+> @@ -244,6 +244,9 @@ int __add_to_page_cache_locked(struct page *page, struct address_space *mapping,
+>
+>  #define lru_to_page(head) (list_entry((head)->prev, struct page, lru))
+>
+> +void setup_initial_init_mm(void *start_code, void *end_code,
+> +                          void *end_data, void *brk);
+> +
 
-Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
+Gentle query -> is there any limitation to add inline functions in
+setup_arch() functions ?
 
-cheers
+>  /*
+>   * Linux kernel virtual memory manager primitives.
+>   * The idea being to have a "virtual" mm in the same way
+> diff --git a/mm/init-mm.c b/mm/init-mm.c
+> index 153162669f80..b4a6f38fb51d 100644
+> --- a/mm/init-mm.c
+> +++ b/mm/init-mm.c
+> @@ -40,3 +40,12 @@ struct mm_struct init_mm = {
+>         .cpu_bitmap     = CPU_BITS_NONE,
+>         INIT_MM_CONTEXT(init_mm)
+>  };
+> +
+> +void setup_initial_init_mm(void *start_code, void *end_code,
+> +                          void *end_data, void *brk)
+> +{
+> +       init_mm.start_code = (unsigned long)start_code;
+> +       init_mm.end_code = (unsigned long)end_code;
+> +       init_mm.end_data = (unsigned long)end_data;
+> +       init_mm.brk = (unsigned long)brk;
+> +}
+> --
+> 2.26.2
+>
+>
