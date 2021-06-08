@@ -2,138 +2,83 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.2 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F37AC48BCD
-	for <linux-sh@archiver.kernel.org>; Tue,  8 Jun 2021 05:45:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3622EC48BDF
+	for <linux-sh@archiver.kernel.org>; Tue,  8 Jun 2021 08:26:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 59B966127A
-	for <linux-sh@archiver.kernel.org>; Tue,  8 Jun 2021 05:45:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1CD9A6128E
+	for <linux-sh@archiver.kernel.org>; Tue,  8 Jun 2021 08:26:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230212AbhFHFrN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 8 Jun 2021 01:47:13 -0400
-Received: from mail.kernel.org ([198.145.29.99]:55326 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229507AbhFHFrL (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Tue, 8 Jun 2021 01:47:11 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id C5D8361029;
-        Tue,  8 Jun 2021 05:45:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1623131119;
-        bh=49fVzdt4MSY+UspP64EgJQ791zimRP1gxTciSlJZXt4=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=G0Rtshf8pvTrv3vEhpsoWQuj5JjeNYokUzfYJ5STkCXI/OnFwZ+jzE319giZq9upk
-         Ip6wZYmg/mXX1RsKoBHJISuKRrHfu3i7LKK8o6lrdj3F/wsMYKU4KSiTq0yf0Te/9Y
-         EXkEDnDuymhI/7Es9g0unojNazWzSj6FWZpsSVsuRv7SkD+TKqrUPOkH42sn/s2o3k
-         YyeAtmie679nER7vSNNhYu+t0T8vpaLE8THVLmZUT2dI3k363OIVX5xgUfeXV7EiTs
-         ihyAaoDmjCZhWOCiJEmXQBaJ0yMnS1SK6yRX7SpN+JL1ZvqVGV5DXW68K81QTP/SNc
-         ubRqN6fNQU7pg==
-Date:   Tue, 8 Jun 2021 08:45:07 +0300
-From:   Mike Rapoport <rppt@kernel.org>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Jonathan Corbet <corbet@lwn.net>,
-        Matt Turner <mattst88@gmail.com>,
-        Mike Rapoport <rppt@linux.ibm.com>,
-        Richard Henderson <rth@twiddle.net>,
-        Vineet Gupta <vgupta@synopsys.com>, kexec@lists.infradead.org,
-        alpha <linux-alpha@vger.kernel.org>,
-        Linux-Arch <linux-arch@vger.kernel.org>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        "open list:DOCUMENTATION" <linux-doc@vger.kernel.org>,
-        "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-m68k <linux-m68k@lists.linux-m68k.org>,
-        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
-        Linux MM <linux-mm@kvack.org>,
-        linux-riscv <linux-riscv@lists.infradead.org>,
-        linux-s390 <linux-s390@vger.kernel.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        arcml <linux-snps-arc@lists.infradead.org>,
-        "open list:TENSILICA XTENSA PORT (xtensa)" 
-        <linux-xtensa@linux-xtensa.org>,
-        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
-        sparclinux <sparclinux@vger.kernel.org>
-Subject: Re: [PATCH v2 8/9] mm: replace CONFIG_NEED_MULTIPLE_NODES with
- CONFIG_NUMA
-Message-ID: <YL8D47Ty8iXZJsK3@kernel.org>
-References: <20210604064916.26580-1-rppt@kernel.org>
- <20210604064916.26580-9-rppt@kernel.org>
- <CAMuHMdVa29gUQAdHjKh-qDNpOJaoGwXtUkBM2qnOTi1DWV70xA@mail.gmail.com>
+        id S231164AbhFHI1z (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 8 Jun 2021 04:27:55 -0400
+Received: from szxga01-in.huawei.com ([45.249.212.187]:3796 "EHLO
+        szxga01-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231177AbhFHI1x (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 8 Jun 2021 04:27:53 -0400
+Received: from dggemv711-chm.china.huawei.com (unknown [172.30.72.53])
+        by szxga01-in.huawei.com (SkyGuard) with ESMTP id 4Fzjqm6mFCzWsrl;
+        Tue,  8 Jun 2021 16:21:08 +0800 (CST)
+Received: from dggpemm500001.china.huawei.com (7.185.36.107) by
+ dggemv711-chm.china.huawei.com (10.1.198.66) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2176.2; Tue, 8 Jun 2021 16:25:59 +0800
+Received: from localhost.localdomain.localdomain (10.175.113.25) by
+ dggpemm500001.china.huawei.com (7.185.36.107) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2176.2; Tue, 8 Jun 2021 16:25:59 +0800
+From:   Kefeng Wang <wangkefeng.wang@huawei.com>
+To:     Andrew Morton <akpm@linux-foundation.org>,
+        <linux-kernel@vger.kernel.org>
+CC:     <linux-mm@kvack.org>, Kefeng Wang <wangkefeng.wang@huawei.com>,
+        "Yoshinori Sato" <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, <linux-sh@vger.kernel.org>
+Subject: [PATCH v3 resend 14/15] sh: convert to setup_initial_init_mm()
+Date:   Tue, 8 Jun 2021 16:34:17 +0800
+Message-ID: <20210608083418.137226-15-wangkefeng.wang@huawei.com>
+X-Mailer: git-send-email 2.26.2
+In-Reply-To: <20210608083418.137226-1-wangkefeng.wang@huawei.com>
+References: <20210608083418.137226-1-wangkefeng.wang@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAMuHMdVa29gUQAdHjKh-qDNpOJaoGwXtUkBM2qnOTi1DWV70xA@mail.gmail.com>
+Content-Transfer-Encoding: 7BIT
+Content-Type:   text/plain; charset=US-ASCII
+X-Originating-IP: [10.175.113.25]
+X-ClientProxiedBy: dggems702-chm.china.huawei.com (10.3.19.179) To
+ dggpemm500001.china.huawei.com (7.185.36.107)
+X-CFilter-Loop: Reflected
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi,
+Use setup_initial_init_mm() helper to simplify code.
 
-On Mon, Jun 07, 2021 at 10:53:08AM +0200, Geert Uytterhoeven wrote:
-> Hi Mike,
-> 
-> On Fri, Jun 4, 2021 at 8:50 AM Mike Rapoport <rppt@kernel.org> wrote:
-> > From: Mike Rapoport <rppt@linux.ibm.com>
-> >
-> > After removal of DISCINTIGMEM the NEED_MULTIPLE_NODES and NUMA
-> > configuration options are equivalent.
-> >
-> > Drop CONFIG_NEED_MULTIPLE_NODES and use CONFIG_NUMA instead.
-> >
-> > Done with
-> >
-> >         $ sed -i 's/CONFIG_NEED_MULTIPLE_NODES/CONFIG_NUMA/' \
-> >                 $(git grep -wl CONFIG_NEED_MULTIPLE_NODES)
-> >         $ sed -i 's/NEED_MULTIPLE_NODES/NUMA/' \
-> >                 $(git grep -wl NEED_MULTIPLE_NODES)
-> >
-> > with manual tweaks afterwards.
-> >
-> > Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> 
-> Thanks for your patch!
-> 
-> As you dropped the following hunk from v2 of PATCH 5/9, there's now
-> one reference left of CONFIG_NEED_MULTIPLE_NODES
-> (plus the discontigmem comment):
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Kefeng Wang <wangkefeng.wang@huawei.com>
+---
+ arch/sh/kernel/setup.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-Aargh, indeed. Thanks for catching this.
-
-And I wondered why you suggested to fix spelling in cover letter for v3 :)
+diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+index 4144be650d41..1fcb6659822a 100644
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -294,10 +294,7 @@ void __init setup_arch(char **cmdline_p)
  
-> -diff --git a/mm/memory.c b/mm/memory.c
-> -index f3ffab9b9e39157b..fd0ebb63be3304f5 100644
-> ---- a/mm/memory.c
-> -+++ b/mm/memory.c
-> -@@ -90,8 +90,7 @@
-> - #warning Unfortunate NUMA and NUMA Balancing config, growing
-> page-frame for last_cpupid.
-> - #endif
-> -
-> --#ifndef CONFIG_NEED_MULTIPLE_NODES
-> --/* use the per-pgdat data instead for discontigmem - mbligh */
-> -+#ifdef CONFIG_FLATMEM
-> - unsigned long max_mapnr;
-> - EXPORT_SYMBOL(max_mapnr);
-> -
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> -- 
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
-
+ 	if (!MOUNT_ROOT_RDONLY)
+ 		root_mountflags &= ~MS_RDONLY;
+-	init_mm.start_code = (unsigned long) _text;
+-	init_mm.end_code = (unsigned long) _etext;
+-	init_mm.end_data = (unsigned long) _edata;
+-	init_mm.brk = (unsigned long) _end;
++	setup_initial_init_mm(_text, _etext, _edata, _end);
+ 
+ 	code_resource.start = virt_to_phys(_text);
+ 	code_resource.end = virt_to_phys(_etext)-1;
 -- 
-Sincerely yours,
-Mike.
+2.26.2
+
