@@ -2,77 +2,96 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-5.4 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1ACF7C48BE5
-	for <linux-sh@archiver.kernel.org>; Wed, 16 Jun 2021 10:42:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B8D8C49EA2
+	for <linux-sh@archiver.kernel.org>; Wed, 16 Jun 2021 11:18:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 074206128B
-	for <linux-sh@archiver.kernel.org>; Wed, 16 Jun 2021 10:42:18 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 24BEB61351
+	for <linux-sh@archiver.kernel.org>; Wed, 16 Jun 2021 11:18:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232480AbhFPKoW (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 16 Jun 2021 06:44:22 -0400
-Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:42257 "EHLO
-        outpost1.zedat.fu-berlin.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S232443AbhFPKoT (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 16 Jun 2021 06:44:19 -0400
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.94)
-          with esmtps (TLS1.2)
-          tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1ltSzq-002My5-Iz; Wed, 16 Jun 2021 12:42:10 +0200
-Received: from suse-laptop.physik.fu-berlin.de ([160.45.32.140])
-          by inpost2.zedat.fu-berlin.de (Exim 4.94)
-          with esmtpsa (TLS1.2)
-          tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1ltSzq-002Bca-Cr; Wed, 16 Jun 2021 12:42:10 +0200
-Subject: Re: [PATCH 0/3] Remove shdma DT support
-To:     Geert Uytterhoeven <geert+renesas@glider.be>,
-        Rob Herring <robh+dt@kernel.org>,
-        Vinod Koul <vkoul@kernel.org>,
-        Magnus Damm <magnus.damm@gmail.com>
-Cc:     Guennadi Liakhovetski <guennadi.liakhovetski@linux.intel.com>,
-        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
-        devicetree@vger.kernel.org, dmaengine@vger.kernel.org,
-        linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org
-References: <cover.1623405675.git.geert+renesas@glider.be>
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Message-ID: <0c6bdd6a-826c-6831-1477-3a1e782cced3@physik.fu-berlin.de>
-Date:   Wed, 16 Jun 2021 12:42:10 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.11.0
+        id S231922AbhFPLUg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 16 Jun 2021 07:20:36 -0400
+Received: from mail-ua1-f50.google.com ([209.85.222.50]:45728 "EHLO
+        mail-ua1-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231741AbhFPLUg (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 16 Jun 2021 07:20:36 -0400
+Received: by mail-ua1-f50.google.com with SMTP id v17so627201uar.12;
+        Wed, 16 Jun 2021 04:18:28 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=KFppgdT7CLKOLDaLJGeivAUUwv8mpERUMDgjR5mFX2Q=;
+        b=BBeVsvoZ4AVSy+Y8yHwdEmm5VnqLTJRxB/oarkG9s8C2HRFpJvpV+Y7+gkXdhdzCYt
+         u4gaF3RUWOnSk7QWmQPj7ejeGSlZAeTfbC28/PXrdt8awQpGrlkRIoEhANUrvvRxSoyw
+         3eVOo93+6DEDuBDZ/KwPQHg++XM7nzuLRTtUggwGA+FqHWeU1femrCrTUarsi5PLXOf6
+         GcmwOWzKQsjK5jwTp2qkrJW7XbmWyRyHPOPTvkQ97OnIMc62PmAbzh7UsxsdoJ9f2ZEA
+         TZvaW2iEjYkB3/73sZqNGjJZQ6RjwwzWNqg+mp2U7n6mF48qBWrN2dxUZmKY34MKnAag
+         jY3Q==
+X-Gm-Message-State: AOAM530+WmRtpWEfnV0XLLJs/TZZdUYqwriS8gjlBz5xfdYJ1RlZxr6d
+        aDD8hRf3fwcCqIOFf6l9dyjmAdY/YbBvXisARXk=
+X-Google-Smtp-Source: ABdhPJy9W5ndu5bvPys51QNrj75YVXl0pvjisg4IJQA0U4LMfMINRJyD7Z5sYALWQifxuYErXQHn1iBe9VLGxsU9S+A=
+X-Received: by 2002:ab0:647:: with SMTP id f65mr3978118uaf.4.1623842308529;
+ Wed, 16 Jun 2021 04:18:28 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <cover.1623405675.git.geert+renesas@glider.be>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 160.45.32.140
+References: <cover.1623405675.git.geert+renesas@glider.be> <0c6bdd6a-826c-6831-1477-3a1e782cced3@physik.fu-berlin.de>
+In-Reply-To: <0c6bdd6a-826c-6831-1477-3a1e782cced3@physik.fu-berlin.de>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Wed, 16 Jun 2021 13:18:17 +0200
+Message-ID: <CAMuHMdU_B4pRyaz4nhp3k0dtXy3A8tRYbdCpmYYaSpzeZCeWOw@mail.gmail.com>
+Subject: Re: [PATCH 0/3] Remove shdma DT support
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Rob Herring <robh+dt@kernel.org>, Vinod Koul <vkoul@kernel.org>,
+        Magnus Damm <magnus.damm@gmail.com>,
+        Guennadi Liakhovetski <guennadi.liakhovetski@linux.intel.com>,
+        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+        "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE BINDINGS" 
+        <devicetree@vger.kernel.org>,
+        dmaengine <dmaengine@vger.kernel.org>,
+        Linux-Renesas <linux-renesas-soc@vger.kernel.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        Chris Brandt <Chris.Brandt@renesas.com>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Geert!
+Hi Adrian,
 
-On 6/11/21 12:18 PM, Geert Uytterhoeven wrote:
-> Hence this series removes the Renesas SHDMA Device Tree bindings, the
-> SHDMA DMA multiplexer driver, and the corresponding description in the
-> R-Mobile APE6 DTS.
-Do these changes make life harder in case we want to convert SH to device
-tree as already prepared by Yoshinori Sato? [1]
+On Wed, Jun 16, 2021 at 12:42 PM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> On 6/11/21 12:18 PM, Geert Uytterhoeven wrote:
+> > Hence this series removes the Renesas SHDMA Device Tree bindings, the
+> > SHDMA DMA multiplexer driver, and the corresponding description in the
+> > R-Mobile APE6 DTS.
+> Do these changes make life harder in case we want to convert SH to device
+> tree as already prepared by Yoshinori Sato? [1]
 
-Adrian
+Probably not. The only modern DT-aware DMAC drivers for Renesas
+hardware are drivers/dma/sh/{rcar,usb}-dmac.c.  Soon there will be
+drivers/dma/sh/rz-dmac.c, for RZ/G2L (and RZ/A1 and RZ/A2 later).
+Given the R-Car DMAC is very similar to the SH/R-Mobile DMAC, the
+latter may be made to work with rcar-dmac.c, if anyone is willing
+to spend cycles on that.  Likewise, the RZ/A DMAC probably has its
+roots in older SH SoCs, so that may be helpful for you, too.
 
-> [1] https://lore.kernel.org/patchwork/cover/693910/
+Chris (CCed) may know better...
 
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+> > [1] https://lore.kernel.org/patchwork/cover/693910/
+
+None of these handle DMA?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
