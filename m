@@ -2,74 +2,77 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.2 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,MAILING_LIST_MULTI,SPF_HELO_NONE,
-	SPF_PASS autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.4 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F79FC49361
-	for <linux-sh@archiver.kernel.org>; Wed, 16 Jun 2021 10:39:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1ACF7C48BE5
+	for <linux-sh@archiver.kernel.org>; Wed, 16 Jun 2021 10:42:19 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id E646E6135C
-	for <linux-sh@archiver.kernel.org>; Wed, 16 Jun 2021 10:39:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 074206128B
+	for <linux-sh@archiver.kernel.org>; Wed, 16 Jun 2021 10:42:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232220AbhFPKlJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 16 Jun 2021 06:41:09 -0400
-Received: from mail.kernel.org ([198.145.29.99]:52366 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231769AbhFPKlI (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Wed, 16 Jun 2021 06:41:08 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id D0AB361245;
-        Wed, 16 Jun 2021 10:39:01 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1623839942;
-        bh=MImfvo4eQR1r8uo+tH8braW8LKg4STkJAk+MyC8vGwA=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=r9lbvXtQi8vx+y3JEPjs+IOHgtOc/QcmlZta9fMtY+N99sFo2nH8AN4zMl1rnL9nU
-         LccQT8TRjvWTtEcfVdzfIFTc4LRDEcl2CKEju0a1XJkmrfxDzRCWRClnrBK3b+yjbN
-         FizReZp32xwWXsrHjhA3S1Cb0vDriJs0hUNVvJ1PyNbR33Q2CRVxFAOwb6phzGRPvW
-         zELBnxjNOjjXrkO/pauqLEJqH39X7gVtSquglgsnKtEIxnOXsse/lF1kkMEgvCoAOS
-         ZObsg3PeVtHWtZ7DiA2tGW/NQihT/bV5sW+Ak8shZqkBDX1rfaYPyl+drb9TTtk2e5
-         fRoeqkvLenJxg==
-Date:   Wed, 16 Jun 2021 16:08:59 +0530
-From:   Vinod Koul <vkoul@kernel.org>
-To:     Geert Uytterhoeven <geert+renesas@glider.be>
-Cc:     Rob Herring <robh+dt@kernel.org>,
-        Magnus Damm <magnus.damm@gmail.com>,
-        Guennadi Liakhovetski <guennadi.liakhovetski@linux.intel.com>,
+        id S232480AbhFPKoW (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 16 Jun 2021 06:44:22 -0400
+Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:42257 "EHLO
+        outpost1.zedat.fu-berlin.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S232443AbhFPKoT (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 16 Jun 2021 06:44:19 -0400
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.94)
+          with esmtps (TLS1.2)
+          tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1ltSzq-002My5-Iz; Wed, 16 Jun 2021 12:42:10 +0200
+Received: from suse-laptop.physik.fu-berlin.de ([160.45.32.140])
+          by inpost2.zedat.fu-berlin.de (Exim 4.94)
+          with esmtpsa (TLS1.2)
+          tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1ltSzq-002Bca-Cr; Wed, 16 Jun 2021 12:42:10 +0200
+Subject: Re: [PATCH 0/3] Remove shdma DT support
+To:     Geert Uytterhoeven <geert+renesas@glider.be>,
+        Rob Herring <robh+dt@kernel.org>,
+        Vinod Koul <vkoul@kernel.org>,
+        Magnus Damm <magnus.damm@gmail.com>
+Cc:     Guennadi Liakhovetski <guennadi.liakhovetski@linux.intel.com>,
         Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
         devicetree@vger.kernel.org, dmaengine@vger.kernel.org,
         linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org,
         linux-arm-kernel@lists.infradead.org
-Subject: Re: [PATCH 0/3] Remove shdma DT support
-Message-ID: <YMnUw80/rUCFtO24@vkoul-mobl>
 References: <cover.1623405675.git.geert+renesas@glider.be>
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Message-ID: <0c6bdd6a-826c-6831-1477-3a1e782cced3@physik.fu-berlin.de>
+Date:   Wed, 16 Jun 2021 12:42:10 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.11.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
 In-Reply-To: <cover.1623405675.git.geert+renesas@glider.be>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 160.45.32.140
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 11-06-21, 12:18, Geert Uytterhoeven wrote:
-> 	Hi all,
-> 
-> Documentation/devicetree/bindings/dma/renesas,shdma.txt is one of the
-> few^W57% of the DT bindings that haven't been converted to json-schema
-> yet.  These bindings were originally intended to cover all SH/R-Mobile
-> SoCs, but the DMA multiplexer node and one DMA controller instance were
-> only ever added to one .dtsi file, for R-Mobile APE6.  Still, DMA
-> support for R-Mobile APE6 was never completed to the point that it would
-> actually work, cfr. commit a19788612f51b787 ("dmaengine: sh: Remove
-> R-Mobile APE6 support").  Later, the mux idea was dropped when
-> implementing support for DMA on (very similar) R-Car Gen2, cfr.
-> renesas,rcar-dmac.yaml.
-> 
+Hi Geert!
+
+On 6/11/21 12:18 PM, Geert Uytterhoeven wrote:
 > Hence this series removes the Renesas SHDMA Device Tree bindings, the
 > SHDMA DMA multiplexer driver, and the corresponding description in the
 > R-Mobile APE6 DTS.
+Do these changes make life harder in case we want to convert SH to device
+tree as already prepared by Yoshinori Sato? [1]
 
-Applied 1 & 2, thanks
+Adrian
+
+> [1] https://lore.kernel.org/patchwork/cover/693910/
 
 -- 
-~Vinod
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
