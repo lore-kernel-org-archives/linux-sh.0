@@ -2,73 +2,72 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
-	autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.3 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
+	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4CAC3C4743C
-	for <linux-sh@archiver.kernel.org>; Wed, 23 Jun 2021 13:36:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B4864C4743C
+	for <linux-sh@archiver.kernel.org>; Wed, 23 Jun 2021 13:36:20 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 35FCB61026
-	for <linux-sh@archiver.kernel.org>; Wed, 23 Jun 2021 13:36:11 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 92A5B61026
+	for <linux-sh@archiver.kernel.org>; Wed, 23 Jun 2021 13:36:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230182AbhFWNi1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 23 Jun 2021 09:38:27 -0400
-Received: from mail-vk1-f173.google.com ([209.85.221.173]:33454 "EHLO
-        mail-vk1-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230163AbhFWNi1 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 23 Jun 2021 09:38:27 -0400
-Received: by mail-vk1-f173.google.com with SMTP id f2so520408vkc.0;
-        Wed, 23 Jun 2021 06:36:08 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=rRwGVTRnG0zW3NttzH7gOF+9Sju3wYweP6tlvzlLQAw=;
-        b=KDaQcY78z4L9VpJw7FO1bRFDdNaz4oCnrQbL4GjPG3Rp8In3UDSt7ETYrTaufKu9Qh
-         a8lRxP3TGMBaMh7Fh3TaLhNlXR+pp2usB9pMGN8z7fbeGSC6hnJUHF1Hv52Q4XK41nsQ
-         PPjp0yNQhwCRZc4X3/ZvCw/flZygulbgyvASgKp/MhJ14dIBwGlR8ZHffzTt/lmg/f+t
-         WJn5QFpy7b0RBLIXQ/kQjpeoEyGUxK4Kj1jU0w7Ey8/5LBoJ4B3Uol6dpyRBlskUzbnA
-         xDZPP7tT+81sGZx68/QAcCLDjW6y3Su6ASXDw8dzOmOElMnWxyOEITDm3gu51fFU6N7N
-         xSUA==
-X-Gm-Message-State: AOAM532Jf5CA8gGoWj3oypcL/fpwSL2OzJKQn0chA+RY0/OxkMuMJCDe
-        gYj+puYQTZeW+p4Je0U8vWd62oy7is9LxeJtsTGkHUBBDaE=
-X-Google-Smtp-Source: ABdhPJx4nCb36+ndIPmUN591CUcdm1WQ2GBX3PfSOPNz/3zIgcTQud2Oanma2GZ9hqCdlPH4vE12pCCf+AykNT6UF18=
-X-Received: by 2002:ac5:cf08:: with SMTP id y8mr24080869vke.2.1624455368505;
- Wed, 23 Jun 2021 06:36:08 -0700 (PDT)
-MIME-Version: 1.0
-References: <20210623133205.GA28589@lst.de>
-In-Reply-To: <20210623133205.GA28589@lst.de>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Wed, 23 Jun 2021 15:35:57 +0200
-Message-ID: <CAMuHMdVXN3NGyLqJKNwTOEGSQTm1PahMGBmLLH5yhEEnPiD=EQ@mail.gmail.com>
+        id S230512AbhFWNih (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 23 Jun 2021 09:38:37 -0400
+Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:57579 "EHLO
+        outpost1.zedat.fu-berlin.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S230163AbhFWNig (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 23 Jun 2021 09:38:36 -0400
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.94)
+          with esmtps (TLS1.2)
+          tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1lw33B-001fsV-BD; Wed, 23 Jun 2021 15:36:17 +0200
+Received: from suse-laptop.physik.fu-berlin.de ([160.45.32.140])
+          by inpost2.zedat.fu-berlin.de (Exim 4.94)
+          with esmtpsa (TLS1.2)
+          tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1lw33B-00340a-5U; Wed, 23 Jun 2021 15:36:17 +0200
 Subject: Re: dma_declare_coherent_memory and SuperH
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+To:     Christoph Hellwig <hch@lst.de>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>
+Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <20210623133205.GA28589@lst.de>
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Message-ID: <9d12d2e3-3faf-3b2f-0265-2baee85c3ead@physik.fu-berlin.de>
+Date:   Wed, 23 Jun 2021 15:36:16 +0200
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.11.0
+MIME-Version: 1.0
+In-Reply-To: <20210623133205.GA28589@lst.de>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 160.45.32.140
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Christoph,
+Hi Christoph!
 
-On Wed, Jun 23, 2021 at 3:33 PM Christoph Hellwig <hch@lst.de> wrote:
+On 6/23/21 3:32 PM, Christoph Hellwig wrote:
 > I have a vague recollection that you were planning on dropping support
 > for non-devicetree platforms, is that still the case?
+I guess you are talking about this patch set [1].
 
-There are no devicetree SuperH platforms upstream, only J2, so that
-means dropping support for all SuperH platforms?
+Would be great if we could get this rebased and merged. Since Geert has access
+to SH hardware as well, he might be able to help.
 
-Gr{oetje,eeting}s,
+Adrian
 
-                        Geert
+> [1] https://lore.kernel.org/patchwork/cover/693910/
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
