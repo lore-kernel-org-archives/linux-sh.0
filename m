@@ -2,72 +2,104 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-7.0 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,SPF_HELO_NONE,
-	SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E25BC49EA6
-	for <linux-sh@archiver.kernel.org>; Sun, 27 Jun 2021 08:33:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A71DC48BC2
+	for <linux-sh@archiver.kernel.org>; Sun, 27 Jun 2021 22:05:53 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F07DB619D1
-	for <linux-sh@archiver.kernel.org>; Sun, 27 Jun 2021 08:33:15 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0D4DD6144E
+	for <linux-sh@archiver.kernel.org>; Sun, 27 Jun 2021 22:05:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229534AbhF0Iff (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 27 Jun 2021 04:35:35 -0400
-Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:56721 "EHLO
-        outpost1.zedat.fu-berlin.de" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S229507AbhF0Iff (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 27 Jun 2021 04:35:35 -0400
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.94)
-          with esmtps (TLS1.2)
-          tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1lxQDz-001KP2-HR; Sun, 27 Jun 2021 10:33:07 +0200
-Received: from p57ae5209.dip0.t-ipconnect.de ([87.174.82.9] helo=[192.168.178.35])
-          by inpost2.zedat.fu-berlin.de (Exim 4.94)
-          with esmtpsa (TLS1.2)
-          tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1lxQDz-002ANq-AR; Sun, 27 Jun 2021 10:33:07 +0200
-Subject: Re: dma_declare_coherent_memory and SuperH
-To:     Daniel Palmer <daniel@0x0f.com>, Christoph Hellwig <hch@lst.de>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        id S231723AbhF0WIM (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 27 Jun 2021 18:08:12 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45152 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231700AbhF0WIM (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 27 Jun 2021 18:08:12 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 845FBC061574;
+        Sun, 27 Jun 2021 15:05:47 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
+        :Reply-To:Content-Type:Content-ID:Content-Description;
+        bh=Vu/ndYQMOJqJecFoLuEz9EoLGp5oGErVJi8DQQBuTNw=; b=eTM90/y9eLAQstZ+ed1mUhE905
+        nPD8zjgzD1UX37bqcMnh70jmXq+itKiLNVI4iFoU1//cUBY/OYy0XjJ3ClL3NqQLxVuB1d0LjxtKQ
+        4gk9xX02RFenHUpA4MI3IGov/VuVpHp4B/y4JNPlod8q/RJkJ/005oFsRKorgTmO91QNZ+Zuji63J
+        SBBLTHtHpHg/rV3UyIdKKvwAOHiWlvZsvk/G8YN94hbbamqsEbWL28q3oK/x5dl+xMtr/CXIUYkDW
+        2tzPWY3ORhSpyxMnj4Kv9TC0hPvFc0driWSehkACcMeX3/LkB4dD2sDimQyUDnStAZQFmg7D/Vmaz
+        REMPRfCw==;
+Received: from [2601:1c0:6280:3f0::aefb] (helo=bombadil.infradead.org)
+        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1lxcuQ-006CHh-BY; Sun, 27 Jun 2021 22:05:46 +0000
+From:   Randy Dunlap <rdunlap@infradead.org>
+To:     linux-kernel@vger.kernel.org
+Cc:     Randy Dunlap <rdunlap@infradead.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-References: <20210623133205.GA28589@lst.de>
- <CAFr9PXk84aejj186UNizftwK_w5G1RXLMsSvAEVEYsXi8=yCoA@mail.gmail.com>
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Message-ID: <27c78c11-b230-a5b5-6648-6b93daf6afda@physik.fu-berlin.de>
-Date:   Sun, 27 Jun 2021 10:33:06 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.11.0
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Geert Uytterhoeven <geert+renesas@glider.be>
+Subject: [PATCH 2/3 v2] sh: define __BIG_ENDIAN for math-emu
+Date:   Sun, 27 Jun 2021 15:05:43 -0700
+Message-Id: <20210627220544.8757-3-rdunlap@infradead.org>
+X-Mailer: git-send-email 2.26.2
+In-Reply-To: <20210627220544.8757-1-rdunlap@infradead.org>
+References: <20210627220544.8757-1-rdunlap@infradead.org>
 MIME-Version: 1.0
-In-Reply-To: <CAFr9PXk84aejj186UNizftwK_w5G1RXLMsSvAEVEYsXi8=yCoA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.174.82.9
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 6/27/21 5:08 AM, Daniel Palmer wrote:
-> On Wed, 23 Jun 2021 at 22:32, Christoph Hellwig <hch@lst.de> wrote
->> I have a vague recollection that you were planning on dropping support
->> for non-devicetree platforms, is that still the case?
-> 
-> Are there any SH4 boards that actually support DT?
-> I'm still using an ecovec24 board(SH7724). I'd love to use DT if
-> that's possible.
+Fix this by defining both ENDIAN macros in
+<asm/sfp-machine.h> so that they can be utilized in
+<math-emu/soft-fp.h> according to the latter's comment:
+/* Allow sfp-machine to have its own byte order definitions. */
 
-There is an unmerged patch set by Yoshinori Sato that adds device tree support for SH.
+(This is what is done in arch/nds32/include/asm/sfp-machine.h.)
 
-Adrian
+This placates these build warnings:
 
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer - glaubitz@debian.org
-`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+In file included from ../arch/sh/math-emu/math.c:23:
+../include/math-emu/single.h:50:21: warning: "__BIG_ENDIAN" is not defined, evaluates to 0 [-Wundef]
+   50 | #if __BYTE_ORDER == __BIG_ENDIAN
+In file included from ../arch/sh/math-emu/math.c:24:
+../include/math-emu/double.h:59:21: warning: "__BIG_ENDIAN" is not defined, evaluates to 0 [-Wundef]
+   59 | #if __BYTE_ORDER == __BIG_ENDIAN
+
+Fixes: 4b565680d163 ("sh: math-emu support")
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+v2: use same preprocessor method that nds32 does;
+    add Geert's Reviewed-by;
+    renumber patches;
+    add more Cc's;
+
+ arch/sh/include/asm/sfp-machine.h |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- linux-next-20210625.orig/arch/sh/include/asm/sfp-machine.h
++++ linux-next-20210625/arch/sh/include/asm/sfp-machine.h
+@@ -13,6 +13,14 @@
+ #ifndef _SFP_MACHINE_H
+ #define _SFP_MACHINE_H
+ 
++#ifdef __BIG_ENDIAN__
++#define __BYTE_ORDER __BIG_ENDIAN
++#define __LITTLE_ENDIAN 0
++#else
++#define __BYTE_ORDER __LITTLE_ENDIAN
++#define __BIG_ENDIAN 0
++#endif
++
+ #define _FP_W_TYPE_SIZE		32
+ #define _FP_W_TYPE		unsigned long
+ #define _FP_WS_TYPE		signed long
