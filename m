@@ -7,43 +7,43 @@ X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,
 	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
 	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 68810C2B9F4
-	for <linux-sh@archiver.kernel.org>; Mon, 28 Jun 2021 08:44:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF95DC2B9F4
+	for <linux-sh@archiver.kernel.org>; Mon, 28 Jun 2021 08:46:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 473E861C2F
-	for <linux-sh@archiver.kernel.org>; Mon, 28 Jun 2021 08:44:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A6CC36108B
+	for <linux-sh@archiver.kernel.org>; Mon, 28 Jun 2021 08:46:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232214AbhF1Iqp (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 28 Jun 2021 04:46:45 -0400
-Received: from mail-ua1-f45.google.com ([209.85.222.45]:40798 "EHLO
-        mail-ua1-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230294AbhF1Iqo (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 28 Jun 2021 04:46:44 -0400
-Received: by mail-ua1-f45.google.com with SMTP id r9so6684663ual.7;
-        Mon, 28 Jun 2021 01:44:18 -0700 (PDT)
+        id S231683AbhF1Isr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 28 Jun 2021 04:48:47 -0400
+Received: from mail-ua1-f54.google.com ([209.85.222.54]:41776 "EHLO
+        mail-ua1-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229692AbhF1Isq (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 28 Jun 2021 04:48:46 -0400
+Received: by mail-ua1-f54.google.com with SMTP id k20so1064018uao.8;
+        Mon, 28 Jun 2021 01:46:20 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=gnjjBiBTzk19PQgZ7pULK/I0EN+YsN+LEBoRJwvHTvs=;
-        b=YYkw5a6fIgpOxUTZLT9Gka+FmxOeTf9TNQgJt5hLF7mBZOmGL+p1BpLVGZnV0rlCIz
-         eA8dGuqBi6YAUepTlIJhOxW2I56XTR+AKfamFMiJSiXuUIfI360u1DI+b48JG0O+YvGr
-         SzHCYNawxKJEBVRFtTe3+LlHObMuB/EqZnGs+CwYMoPwAJPrYAMFPhuw0xycntmH8fzW
-         e4gpjVWBwIzf7MVPbTUG5a6azsbsroTcYUOFLMOGZMThx5HRcCxLFieNl5IqZdkhwgWr
-         IVVoVnyJl7CFkhEXzW8erH9Y/TEbLBwAc7oAI1rmNjINqxnaJeHmaZlMTClAHLao0qE2
-         shCA==
-X-Gm-Message-State: AOAM532xCS3aPSokrw3gOXOlnKEkaDwX7rOfS42k8akMMAykjUWidCnL
-        6kh0gxoWPy6YJ1pZdLVzpZCL+qAyDBMI3dNW/a2qnSbzNaw=
-X-Google-Smtp-Source: ABdhPJxXD07jNGgGLX3ccOdFX8wtDfXF9xgIoJ7q/cK73I9P3YZMQj1Vr1NuKJCUpUjx5Es7/uu/8fWrb/Noxqg1Gc4=
-X-Received: by 2002:ab0:484b:: with SMTP id c11mr19775050uad.100.1624869858377;
- Mon, 28 Jun 2021 01:44:18 -0700 (PDT)
+        bh=voFOBLuBCRHfRZtqFDsbwOOLuWD6cccWT5LVlSTJ9/E=;
+        b=V1PSg/s9BEyq7XdFlFzsMCmc/MT8apuLVVobBRdPx+MAWuY1GY33gkzF8TYVmSSR/Q
+         laFG+/YS0gR+YrIAsPKimZSGMfRpE78S9qFtj1AxLDrT00SHLCTkWkc1M14gfhGTng9/
+         B1tBp6yqKTXIxz3RNpfkLN74qRp6HgDU3kyTUbd6Mi7pCmzkV6OTtD+Hau5z3cUryKdG
+         d34S+tqX0Sy7TWN2omBOec3A2u/gUZGcyDLemIIXkfbQ5TKH0ewJ8sMjuJpBqpm1Av+q
+         G9Ln6TBs9pgNIoQgcfSW4qQ8wvx5fcaBNB3DT9ErasTkdQyL0gHxv2BMQvuxZFlPT97N
+         sYrg==
+X-Gm-Message-State: AOAM532BitQnzcDiXD29z3cUjhqCopRNOFQL7BaUaGymp7MzfHu2Pxjn
+        ULMu91JeasR/PIknP5If3oOVcvOf1pFfAA0NchM=
+X-Google-Smtp-Source: ABdhPJwVXfTuV2raA/UpFLfgr6WGkyTil4P5EnmOS9K8wTMCPE7QgpLc6qhsa/1lAXx/CUqhVm3cgty9oQ6kiOcC1mc=
+X-Received: by 2002:ab0:1e4c:: with SMTP id n12mr19387183uak.58.1624869979919;
+ Mon, 28 Jun 2021 01:46:19 -0700 (PDT)
 MIME-Version: 1.0
-References: <20210627220544.8757-1-rdunlap@infradead.org> <20210627220544.8757-2-rdunlap@infradead.org>
-In-Reply-To: <20210627220544.8757-2-rdunlap@infradead.org>
+References: <20210627220544.8757-1-rdunlap@infradead.org> <20210627220544.8757-4-rdunlap@infradead.org>
+In-Reply-To: <20210627220544.8757-4-rdunlap@infradead.org>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 28 Jun 2021 10:44:07 +0200
-Message-ID: <CAMuHMdUPsTTdH7024=46-3c6Z9j1DVj5nxSjDwVRvNgwAvRFzQ@mail.gmail.com>
-Subject: Re: [PATCH 1/3 v2] sh: fix kconfig unmet dependency warning for FRAME_POINTER
+Date:   Mon, 28 Jun 2021 10:46:08 +0200
+Message-ID: <CAMuHMdXPRyyWaoVB=sekEprg5ReDp=rTAoSii0-BYtOu8nkM7w@mail.gmail.com>
+Subject: Re: [PATCH 3/3 v2] sh: fix READ/WRITE redefinition warnings
 To:     Randy Dunlap <rdunlap@infradead.org>
 Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
@@ -51,23 +51,30 @@ Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
         Linux-sh list <linux-sh@vger.kernel.org>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         Geert Uytterhoeven <geert+renesas@glider.be>,
-        Matt Fleming <matt@console-pimps.org>,
-        Matt Fleming <matt@codeblueprint.co.uk>
+        Takashi YOSHII <takasi-y@ops.dti.ne.jp>
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
 On Mon, Jun 28, 2021 at 12:05 AM Randy Dunlap <rdunlap@infradead.org> wrote:
-> FRAME_POINTER depends on DEBUG_KERNEL so DWARF_UNWINDER should
-> depend on DEBUG_KERNEL before selecting FRAME_POINTER.
+> kernel.h defines READ and WRITE, so rename the SH math-emu macros
+> to MREAD and MWRITE.
 >
-> WARNING: unmet direct dependencies detected for FRAME_POINTER
->   Depends on [n]: DEBUG_KERNEL [=n] && (M68K || UML || SUPERH [=y]) || ARCH_WANT_FRAME_POINTERS [=n]
->   Selected by [y]:
->   - DWARF_UNWINDER [=y]
+> Fixes these warnings:
 >
-> Fixes: bd353861c735 ("sh: dwarf unwinder support.")
+> ../arch/sh/math-emu/math.c:54: warning: "WRITE" redefined
+>    54 | #define WRITE(d,a) ({if(put_user(d, (typeof (d) __user *)a)) return -EFAULT;})
+> In file included from ../arch/sh/math-emu/math.c:10:
+> ../include/linux/kernel.h:37: note: this is the location of the previous definition
+>    37 | #define WRITE   1
+> ../arch/sh/math-emu/math.c:55: warning: "READ" redefined
+>    55 | #define READ(d,a) ({if(get_user(d, (typeof (d) __user *)a)) return -EFAULT;})
+> In file included from ../arch/sh/math-emu/math.c:10:
+> ../include/linux/kernel.h:36: note: this is the location of the previous definition
+>    36 | #define READ   0
+>
+> Fixes: 4b565680d163 ("sh: math-emu support")
 > Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
 
 Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
