@@ -2,82 +2,84 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-8.8 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=ham autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CF95DC2B9F4
-	for <linux-sh@archiver.kernel.org>; Mon, 28 Jun 2021 08:46:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E180DC2B9F4
+	for <linux-sh@archiver.kernel.org>; Mon, 28 Jun 2021 08:57:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id A6CC36108B
-	for <linux-sh@archiver.kernel.org>; Mon, 28 Jun 2021 08:46:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B7BE461C29
+	for <linux-sh@archiver.kernel.org>; Mon, 28 Jun 2021 08:57:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231683AbhF1Isr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 28 Jun 2021 04:48:47 -0400
-Received: from mail-ua1-f54.google.com ([209.85.222.54]:41776 "EHLO
-        mail-ua1-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229692AbhF1Isq (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 28 Jun 2021 04:48:46 -0400
-Received: by mail-ua1-f54.google.com with SMTP id k20so1064018uao.8;
-        Mon, 28 Jun 2021 01:46:20 -0700 (PDT)
+        id S232282AbhF1I7r (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 28 Jun 2021 04:59:47 -0400
+Received: from mail-ua1-f48.google.com ([209.85.222.48]:37789 "EHLO
+        mail-ua1-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231698AbhF1I7r (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 28 Jun 2021 04:59:47 -0400
+Received: by mail-ua1-f48.google.com with SMTP id f34so6678076uae.4;
+        Mon, 28 Jun 2021 01:57:20 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=voFOBLuBCRHfRZtqFDsbwOOLuWD6cccWT5LVlSTJ9/E=;
-        b=V1PSg/s9BEyq7XdFlFzsMCmc/MT8apuLVVobBRdPx+MAWuY1GY33gkzF8TYVmSSR/Q
-         laFG+/YS0gR+YrIAsPKimZSGMfRpE78S9qFtj1AxLDrT00SHLCTkWkc1M14gfhGTng9/
-         B1tBp6yqKTXIxz3RNpfkLN74qRp6HgDU3kyTUbd6Mi7pCmzkV6OTtD+Hau5z3cUryKdG
-         d34S+tqX0Sy7TWN2omBOec3A2u/gUZGcyDLemIIXkfbQ5TKH0ewJ8sMjuJpBqpm1Av+q
-         G9Ln6TBs9pgNIoQgcfSW4qQ8wvx5fcaBNB3DT9ErasTkdQyL0gHxv2BMQvuxZFlPT97N
-         sYrg==
-X-Gm-Message-State: AOAM532BitQnzcDiXD29z3cUjhqCopRNOFQL7BaUaGymp7MzfHu2Pxjn
-        ULMu91JeasR/PIknP5If3oOVcvOf1pFfAA0NchM=
-X-Google-Smtp-Source: ABdhPJwVXfTuV2raA/UpFLfgr6WGkyTil4P5EnmOS9K8wTMCPE7QgpLc6qhsa/1lAXx/CUqhVm3cgty9oQ6kiOcC1mc=
-X-Received: by 2002:ab0:1e4c:: with SMTP id n12mr19387183uak.58.1624869979919;
- Mon, 28 Jun 2021 01:46:19 -0700 (PDT)
+        bh=bXqLoP2FXOdZG3CXN8aleAZhe9QJ9MkT7PLOdMxuHcg=;
+        b=c8HKmm/yuEVID70En8VK62wzJsJrJWZMHBHBHWOrwTaADDos9QMeL6qxWT7MXmxahO
+         UUpI/Su5be83X9zAcPVKKijLMazBTQRpqRZnBB0F5PLMrvjxiSbOQeTi/SGnd9rt0mCX
+         /rilyxwaOfj2iT3iRTmjdRzGZ6MlQWQKm3D+bmF2kKXbJmfSv+JpwgMvo1sJzqdNFD+Z
+         STUKsju9yWA2E8SGH4mXuNxdoEYSePLxAxWkeidPtqS6+qQc+OkvcsR3yAxMF7cPKqFZ
+         pMwbV1XUcHhkr0lTDnxKVY2ub0BHk10d+fGtaPCxOtXvRKuRBkloPmRYxLmko4zajCTv
+         s4Nw==
+X-Gm-Message-State: AOAM533FA2AP3f/7ce4U+iewWwEx3kTkj1ymNUEwx8Cyz/E+QvmIQYjz
+        C/yjky7RpiDGHybFLmCCfCBrMzbMARvfbUbjPqw=
+X-Google-Smtp-Source: ABdhPJxIO1uSDuPU0jECuUQjwacpxDqSqoH0YnfDjNKu6msc+wOMzWK1D7PrExo6WZB0LVIl85K9DUvBjd6hYdRnnAY=
+X-Received: by 2002:ab0:70b3:: with SMTP id q19mr19550415ual.2.1624870640448;
+ Mon, 28 Jun 2021 01:57:20 -0700 (PDT)
 MIME-Version: 1.0
-References: <20210627220544.8757-1-rdunlap@infradead.org> <20210627220544.8757-4-rdunlap@infradead.org>
-In-Reply-To: <20210627220544.8757-4-rdunlap@infradead.org>
+References: <20210623133205.GA28589@lst.de> <CAFr9PXk84aejj186UNizftwK_w5G1RXLMsSvAEVEYsXi8=yCoA@mail.gmail.com>
+ <27c78c11-b230-a5b5-6648-6b93daf6afda@physik.fu-berlin.de>
+In-Reply-To: <27c78c11-b230-a5b5-6648-6b93daf6afda@physik.fu-berlin.de>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 28 Jun 2021 10:46:08 +0200
-Message-ID: <CAMuHMdXPRyyWaoVB=sekEprg5ReDp=rTAoSii0-BYtOu8nkM7w@mail.gmail.com>
-Subject: Re: [PATCH 3/3 v2] sh: fix READ/WRITE redefinition warnings
-To:     Randy Dunlap <rdunlap@infradead.org>
-Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+Date:   Mon, 28 Jun 2021 10:57:09 +0200
+Message-ID: <CAMuHMdV+SmxUtvAptYfVgy04jCHeABmsEpn3mcUfFQ_RfTF7eA@mail.gmail.com>
+Subject: Re: dma_declare_coherent_memory and SuperH
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Daniel Palmer <daniel@0x0f.com>
+Cc:     Christoph Hellwig <hch@lst.de>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         Linux-sh list <linux-sh@vger.kernel.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Takashi YOSHII <takasi-y@ops.dti.ne.jp>
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Jun 28, 2021 at 12:05 AM Randy Dunlap <rdunlap@infradead.org> wrote:
-> kernel.h defines READ and WRITE, so rename the SH math-emu macros
-> to MREAD and MWRITE.
->
-> Fixes these warnings:
->
-> ../arch/sh/math-emu/math.c:54: warning: "WRITE" redefined
->    54 | #define WRITE(d,a) ({if(put_user(d, (typeof (d) __user *)a)) return -EFAULT;})
-> In file included from ../arch/sh/math-emu/math.c:10:
-> ../include/linux/kernel.h:37: note: this is the location of the previous definition
->    37 | #define WRITE   1
-> ../arch/sh/math-emu/math.c:55: warning: "READ" redefined
->    55 | #define READ(d,a) ({if(get_user(d, (typeof (d) __user *)a)) return -EFAULT;})
-> In file included from ../arch/sh/math-emu/math.c:10:
-> ../include/linux/kernel.h:36: note: this is the location of the previous definition
->    36 | #define READ   0
->
-> Fixes: 4b565680d163 ("sh: math-emu support")
-> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Hi Adrian, Daniel,
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On Sun, Jun 27, 2021 at 10:48 AM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> On 6/27/21 5:08 AM, Daniel Palmer wrote:
+> > On Wed, 23 Jun 2021 at 22:32, Christoph Hellwig <hch@lst.de> wrote
+> >> I have a vague recollection that you were planning on dropping support
+> >> for non-devicetree platforms, is that still the case?
+> >
+> > Are there any SH4 boards that actually support DT?
+> > I'm still using an ecovec24 board(SH7724). I'd love to use DT if
+> > that's possible.
+>
+> There is an unmerged patch set by Yoshinori Sato that adds device tree support for SH.
+
+But it does not include support for SH7724 yet, only for SH775[01]
+(note to myself: still have to try it on my landisk).
+Fortunately most core devices on SH7724 and Ecovec should already
+have DT support in their drivers. The main missing pieces are
+interrupt and clock support.
+The SH7750 INTC seems to be a simpler derivative of the SH7724 INTC.
+The SH7724 clock controller is very similar to those used on later
+ARM-based SH/R-Mobile and even R-Car SoCs, so adding support for it
+to the renesas-cpg-mssr.c driver framework shouldn't be that difficult.
 
 Gr{oetje,eeting}s,
 
