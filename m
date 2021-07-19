@@ -2,342 +2,184 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,
+	MSGID_FROM_MTA_HEADER,SPF_HELO_NONE,SPF_PASS autolearn=no autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 426E6C12002
-	for <linux-sh@archiver.kernel.org>; Wed, 14 Jul 2021 20:47:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DDE96C636CB
+	for <linux-sh@archiver.kernel.org>; Mon, 19 Jul 2021 01:51:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 248CD613C0
-	for <linux-sh@archiver.kernel.org>; Wed, 14 Jul 2021 20:47:51 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C748761181
+	for <linux-sh@archiver.kernel.org>; Mon, 19 Jul 2021 01:51:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230508AbhGNUum (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 14 Jul 2021 16:50:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37328 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230352AbhGNUul (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 14 Jul 2021 16:50:41 -0400
-Received: from mail-il1-x136.google.com (mail-il1-x136.google.com [IPv6:2607:f8b0:4864:20::136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CB707C06175F;
-        Wed, 14 Jul 2021 13:47:49 -0700 (PDT)
-Received: by mail-il1-x136.google.com with SMTP id e2so2935945ilu.5;
-        Wed, 14 Jul 2021 13:47:49 -0700 (PDT)
+        id S234138AbhGSBxx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 18 Jul 2021 21:53:53 -0400
+Received: from mx0a-00069f02.pphosted.com ([205.220.165.32]:37864 "EHLO
+        mx0a-00069f02.pphosted.com" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S233713AbhGSBxv (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 18 Jul 2021 21:53:51 -0400
+Received: from pps.filterd (m0246617.ppops.net [127.0.0.1])
+        by mx0b-00069f02.pphosted.com (8.16.0.43/8.16.0.43) with SMTP id 16J1fvZj016519;
+        Mon, 19 Jul 2021 01:50:10 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=to : cc : subject :
+ from : message-id : references : date : in-reply-to : content-type :
+ mime-version; s=corp-2021-07-09;
+ bh=fmtO7EbrFpbOQTjcm+Yt+hEmi/dfY+4EO8avVhNP2ZU=;
+ b=B2v9Psylqv2q1fen8B1+DgeQn29xXB6/Bwqdgf3YyL6awkid2zMs1RB0KLEuFTLFO/0g
+ lZeTua+iM5VXtTCT0+YECvzXcMBE2gOOcBFQPIQ/lBSD/egV+MSQJQ532kf7M/Z/GZoK
+ V7BwPWIxWrsOzho13mzkcVIr7rYJd+i6VJ9D3yw48iBZaSJ7yRAOieq2NfFcniUxvdch
+ oAXMLdY0gPFG841VEFwL0HtUwvt9KOk7k7TUoA9iyPGozYd2MpxaVST1zZ8G9WbhqCxn
+ 8I0LianvYi11Xq0PQu7jCbHgln+xemaFhRQKsbtc01t2Iira4aHOUiOEIH8mA2Ba/IXT Cw== 
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=to : cc : subject :
+ from : message-id : references : date : in-reply-to : content-type :
+ mime-version; s=corp-2020-01-29;
+ bh=fmtO7EbrFpbOQTjcm+Yt+hEmi/dfY+4EO8avVhNP2ZU=;
+ b=t97p8S/ZfNthp8IbBjzqBoDjjEYGkXw+hXTfifvqTp0CAK/xb2LxVZWbf/XCbUlYnspD
+ O+a4OHPb204jTLwgRs5g95yI6trB+0CdSbKPCMz3OjIwys3bpuT2fIfweYnVNorznVzw
+ J9/7tSYfgB47aIgIpjVNTap9UEHN6NyQE0ngKlUFqV/4vh3Io575Eurt1X7V7J9i6p3i
+ xkFM0moj371shzZlrT69iisctL4CjPU0wH3ESpDmAKfvkZQaCbcGy/tYFjROhZxnYykC
+ ZjrGo6S+DQgFbJeycQBztY9c2Wy6stH6YvDvnm4YGtqhbe1vUtrKFx1tqs3ys/WOfWn6 LQ== 
+Received: from aserp3020.oracle.com (aserp3020.oracle.com [141.146.126.70])
+        by mx0b-00069f02.pphosted.com with ESMTP id 39uqrthu4t-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 19 Jul 2021 01:50:10 +0000
+Received: from pps.filterd (aserp3020.oracle.com [127.0.0.1])
+        by aserp3020.oracle.com (8.16.0.42/8.16.0.42) with SMTP id 16J1ex0v080415;
+        Mon, 19 Jul 2021 01:50:09 GMT
+Received: from nam04-dm6-obe.outbound.protection.outlook.com (mail-dm6nam08lp2046.outbound.protection.outlook.com [104.47.73.46])
+        by aserp3020.oracle.com with ESMTP id 39uq13t6st-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 19 Jul 2021 01:50:09 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=IPYnkqYlqfUH6Hov1aFjA2d5HCbCtgTGzjui3kW13ghulEFBlcF85T/FaFhvV/B86ImTEn34r0uva39FWhXDZHCkPeS0tCrkBHWE7415zxJj5FNLo+MVeu4tY7yZw+zAabvwpcb+BV+RPWPuOfkoRYLn5Cfxa4eC2Wfa8XYsCnGnrxO3041H6lR1ZuOQ88rNL++BaMZdIHG4pVPGMHJJeRletyaZWEKrPtMKefL/GnJOmasiuZDOQcwsHltRdg0m+aZOps3u+Mh8jWbgJKEXPOF3kHisD6SFWxJVyZIkS7xGwd/74b0lIFjhqbqFSWmAPbTsuxeLyNErB3D35xhGvQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=fmtO7EbrFpbOQTjcm+Yt+hEmi/dfY+4EO8avVhNP2ZU=;
+ b=MxyHzZg/pFmHKGL0SWxGMshhf4ycel75D4ezdcy+JtSCfvhxpBwfO2pjC4OcmE/fDX65v9pQXM1/z/xR2JREPIQ55g2J+5cUOroMqNBfBXIhHE9ltrBfM54r5+Hw0+pIAq4i0o++cOM4gN1masA8I6jWO5Sla7weyoZnJmcOMaR8katDQvqZa5uhhDCpuXmc8lxIifI70ULZzVnwVfjbLuHjrnjEtN3HTxveOekLbB3Ame5+sylZcHqAZYDiHlhgnH5DxeqFSpO3g8bi/wuxLDIBGGFrzDCt8SPBspc1lzuX6OPGPA9OQAIkvRAIO3LuwnHWINrwPEN5iEuIQpSuMw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
+ dkim=pass header.d=oracle.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=hvhFUaJpsKWtTEeD2+NVxurp5yWKuTzZW3b3jtSmo5Y=;
-        b=UUnwQaua/H8rwEJ46wBGu21VE3YZ4bJWf1X9TiXDo9vh0gjpsjTI69qTz8pUIOeQmZ
-         87sYgU7NQ2/IywPIyzuJgPagS9NB5ilUObP1yaPA/AaIMC2BENX2XW8OmvNHcjIZzcqQ
-         lCJKYYFk7pgPjzvPFxoMU8RBALA3Hs5cTmm/buog1pLIyQXWBKa5ks+NtYkm7Xs9p1/4
-         9bfr6Tuk3tiShJOZYSkFcJbqC1a6xfK4TJacBP5OeWgIBt7iJpXiEuB2Btyl4Pu/1mqs
-         QL/3W25VvEP2vW3CnG/H9MMRVuhf6MAjCdkOTJ68fiKoyj5Vp4y4pfExBy7Ej62pduDV
-         nCew==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=hvhFUaJpsKWtTEeD2+NVxurp5yWKuTzZW3b3jtSmo5Y=;
-        b=UovxUEIqcNVlFrKSnN2F6eUcHEyYlrcCQj0LEifdTr7udouVGuppmOOq5F3lE1qmeF
-         IGDAudpEo4LaGQCvNsxuXQJfejo13W4Cvoa8qw1mNVO0CNxZNoJLjrsCUsk5jouzl0sZ
-         vIl5DvrYG6pF9s8/ap+V67kYD45bkA9onRKZc5Yo9HZQ1V2xXA7/8+SSwLPUeooIwWCr
-         VUNw8Y+wk8sJ1KbNUV8skVdaQxxSipY0esYAEWPGTXj6jvvxkP73cg5Sy1ocZRVqb2Rh
-         FFYy0JO0wivBW/BPLm4FBSMB37Y7Xr/hPwwBx/VHlqtXwMhOIpqdD91AOHAu2sHougaD
-         cwuQ==
-X-Gm-Message-State: AOAM533BASkU180L7vOshtV+bxhepW7FJ5MFHfOVN/bky3qZYGyKr13T
-        58kD0N+4e6quVAeKMA+h6NPu61CijRnYCwXx6xw=
-X-Google-Smtp-Source: ABdhPJzWAUEodW2mYSrVgx/aVrQIoBL1nE+ROg1S3BgzAtNQwXY0vhRs5znC0NaRsIBHIP11yL7l0nkY7pQ1qsdr6E4=
-X-Received: by 2002:a92:a005:: with SMTP id e5mr7715143ili.22.1626295669171;
- Wed, 14 Jul 2021 13:47:49 -0700 (PDT)
-MIME-Version: 1.0
-References: <20210712124052.26491-1-david@redhat.com> <20210712124052.26491-3-david@redhat.com>
-In-Reply-To: <20210712124052.26491-3-david@redhat.com>
-From:   Pankaj Gupta <pankaj.gupta.linux@gmail.com>
-Date:   Wed, 14 Jul 2021 22:47:38 +0200
-Message-ID: <CAM9Jb+hj8uGc0N16Guui9kaA6W46QHzAET44Zt8C7kRdRAXMOA@mail.gmail.com>
-Subject: Re: [PATCH v1 2/4] mm/memory_hotplug: remove nid parameter from arch_remove_memory()
-To:     David Hildenbrand <david@redhat.com>
-Cc:     LKML <linux-kernel@vger.kernel.org>, Linux MM <linux-mm@kvack.org>,
+ d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=fmtO7EbrFpbOQTjcm+Yt+hEmi/dfY+4EO8avVhNP2ZU=;
+ b=JFI847G9/nWDoOUBAaUsP4Pb9bGYrvsaj40pDdkLIBV6I362yF/0s/uISGq24a6jfEtS92ZmEegphOV7LaXrBPFIwY1KxG5f2C2XiQnCZytfmLDkduOUDVuWYiMLjVhHmVSwnOBcBFKIMYqDGbTjGwuf+Y9SMX7/8oOEHuYRtZ8=
+Authentication-Results: lst.de; dkim=none (message not signed)
+ header.d=none;lst.de; dmarc=none action=none header.from=oracle.com;
+Received: from PH0PR10MB4759.namprd10.prod.outlook.com (2603:10b6:510:3d::12)
+ by PH0PR10MB4757.namprd10.prod.outlook.com (2603:10b6:510:3f::17) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4331.23; Mon, 19 Jul
+ 2021 01:50:07 +0000
+Received: from PH0PR10MB4759.namprd10.prod.outlook.com
+ ([fe80::153e:22d1:d177:d4f1]) by PH0PR10MB4759.namprd10.prod.outlook.com
+ ([fe80::153e:22d1:d177:d4f1%8]) with mapi id 15.20.4331.032; Mon, 19 Jul 2021
+ 01:50:07 +0000
+To:     Christoph Hellwig <hch@lst.de>
+Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
         Andrew Morton <akpm@linux-foundation.org>,
-        Vitaly Kuznetsov <vkuznets@redhat.com>,
-        "Michael S. Tsirkin" <mst@redhat.com>,
-        Jason Wang <jasowang@redhat.com>,
-        Wei Yang <richard.weiyang@linux.alibaba.com>,
-        Oscar Salvador <osalvador@suse.de>,
-        Michal Hocko <mhocko@kernel.org>,
-        Dan Williams <dan.j.williams@intel.com>,
-        Anshuman Khandual <anshuman.khandual@arm.com>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        Vlastimil Babka <vbabka@suse.cz>,
-        Mike Rapoport <rppt@kernel.org>,
-        "Rafael J. Wysocki" <rjw@rjwysocki.net>,
-        Len Brown <lenb@kernel.org>,
-        Pavel Tatashin <pasha.tatashin@soleen.com>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        virtualization@lists.linux-foundation.org,
-        linux-acpi@vger.kernel.org, Andy Lutomirski <luto@kernel.org>,
-        "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
-        Anton Blanchard <anton@ozlabs.org>,
-        Ard Biesheuvel <ardb@kernel.org>, Baoquan He <bhe@redhat.com>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Borislav Petkov <bp@alien8.de>,
-        Christian Borntraeger <borntraeger@de.ibm.com>,
-        Christophe Leroy <christophe.leroy@c-s.fr>,
-        Dave Jiang <dave.jiang@intel.com>,
-        "H. Peter Anvin" <hpa@zytor.com>, Ingo Molnar <mingo@redhat.com>,
-        Jia He <justin.he@arm.com>, Joe Perches <joe@perches.com>,
-        Kefeng Wang <wangkefeng.wang@huawei.com>,
-        Laurent Dufour <ldufour@linux.ibm.com>,
-        Michel Lespinasse <michel@lespinasse.org>,
-        Nathan Lynch <nathanl@linux.ibm.com>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Paul Mackerras <paulus@samba.org>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Pierre Morel <pmorel@linux.ibm.com>,
-        "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
-        Rich Felker <dalias@libc.org>,
-        Scott Cheloha <cheloha@linux.ibm.com>,
-        Sergei Trofimovich <slyfox@gentoo.org>,
-        Thiago Jung Bauermann <bauerman@linux.ibm.com>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Vishal Verma <vishal.l.verma@intel.com>,
-        Will Deacon <will@kernel.org>,
+        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Guo Ren <guoren@kernel.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Nick Hu <nickhu@andestech.com>,
+        Greentime Hu <green.hu@gmail.com>,
+        Vincent Chen <deanbo422@gmail.com>,
+        Helge Deller <deller@gmx.de>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        "maintainer:X86 ARCHITECTURE (32-BIT AND 64-BIT)" <x86@kernel.org>,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+        Rich Felker <dalias@libc.org>,
+        Geoff Levand <geoff@infradead.org>,
+        Paul Cercueil <paul@crapouillou.net>,
+        Ulf Hansson <ulf.hansson@linaro.org>,
+        Alex Shi <alexs@kernel.org>, linux-kernel@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org,
+        linux-scsi@vger.kernel.org, linux-mm@kvack.org,
+        linux-doc@vger.kernel.org
+Subject: Re: [PATCH 5/6] aacraid: remove an unused include
+From:   "Martin K. Petersen" <martin.petersen@oracle.com>
+Organization: Oracle Corporation
+Message-ID: <yq14kcr13ct.fsf@ca-mkp.ca.oracle.com>
+References: <20210712060928.4161649-1-hch@lst.de>
+        <20210712060928.4161649-6-hch@lst.de>
+Date:   Sun, 18 Jul 2021 21:50:05 -0400
+In-Reply-To: <20210712060928.4161649-6-hch@lst.de> (Christoph Hellwig's
+        message of "Mon, 12 Jul 2021 08:09:27 +0200")
+Content-Type: text/plain
+X-ClientProxiedBy: SJ0PR05CA0155.namprd05.prod.outlook.com
+ (2603:10b6:a03:339::10) To PH0PR10MB4759.namprd10.prod.outlook.com
+ (2603:10b6:510:3d::12)
+MIME-Version: 1.0
+X-MS-Exchange-MessageSentRepresentingType: 1
+Received: from ca-mkp.ca.oracle.com (138.3.200.58) by SJ0PR05CA0155.namprd05.prod.outlook.com (2603:10b6:a03:339::10) with Microsoft SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.4352.13 via Frontend Transport; Mon, 19 Jul 2021 01:50:06 +0000
+X-MS-PublicTrafficType: Email
+X-MS-Office365-Filtering-Correlation-Id: 4e9e7cae-65cc-4aa5-9006-08d94a578908
+X-MS-TrafficTypeDiagnostic: PH0PR10MB4757:
+X-MS-Exchange-Transport-Forked: True
+X-Microsoft-Antispam-PRVS: <PH0PR10MB47576FF2613401CA21FCBD728EE19@PH0PR10MB4757.namprd10.prod.outlook.com>
+X-MS-Oob-TLC-OOBClassifiers: OLM:5797;
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: 31h11GO4np8awU6eAtWzyNK7umdHz50XUs8/F/u5jlzMMa89j7QhHTrXOu7MRHvn2+foUrihtnxDpM+WmgcUzHv4U5gFVNc5/Zhgb29N2TLjhU51TBEllXDZRxY8cLx/GYM0V4zDc3JHr52Lx5i67AWGe0WoPgDLh4SuABk6SxDZdOmyQzbIi53vX7GUgmwGkYNnvFnyXCwzAtR0I91C2yMEyWu4CCuIdD+92RDu2pImcRJPqE4QYW56NKD7K8fapq7YcXLSUNaZXTFeE9AqvcokiXEgiVv4e7uMszLO7n+qL58EFjGQzRBjXggQd6xDfHKPcZzfc4Eq5NRSWzGQYbmbB04XQXMa47cfMiWCzjm4AeGFlmTbbR7dhBfnwv720AXJ/KdvDMCAOaPqDeQycmE/bE4CPATW1bCFPv/dWA4kRnQvkQWtHLsN5Py3afgLvhS3qxvuiOM1E/bcP5k6doANitBtfkEtOCpABEcXKb9Tv6lj195mcvWO2J58xr3XqyuJaeYJFDnO8Dg14nUJBwjsPw0HYIPyJ553grhBVlv+OjeVkTeyI8ZYql22RUSXLZI4gdbSaVwqHmzZJvjex1kudxNdckAJdBhqcYaG8s3xTtScTVgvz8iiebV5QonRsvc3Lu5qTsEwGmeuQZ7woUpQAZhsIAz+dYXl1I43ucJEbaZPLAVMqkw9AsKZCJALwPBAjZnTLCoNRNzxdIdp2w==
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR10MB4759.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(39860400002)(346002)(376002)(396003)(136003)(366004)(5660300002)(86362001)(956004)(8676002)(4326008)(478600001)(66946007)(66556008)(66476007)(8936002)(6916009)(26005)(36916002)(316002)(7696005)(7416002)(38350700002)(38100700002)(54906003)(55016002)(558084003)(52116002)(83380400001)(186003)(2906002);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?us-ascii?Q?VCchRnAGVIGosJPD0HYZ46M3risa+SIOIlW+nRpFhzLWPw0bgKKozRJ7vJs+?=
+ =?us-ascii?Q?UdLMtNHF3g6WztcXB8CpiGACQZfTfTgplsN2whqpzVWe9Js5W+0nqbdixICf?=
+ =?us-ascii?Q?6Vvi4uEOvirjKG68cVHzGq+tnktKgx04aQIBCugLrZvcsiojuB3y99twNxJr?=
+ =?us-ascii?Q?ItAmuqnYSoxVL+07AEduIKzUUoXusftanz/QEtE9QVnRfveIOjnrlRloOCi9?=
+ =?us-ascii?Q?sPBTBk7O8/PdWvXD5/x3s43mxjFgBM+qLNJ5xl0jXntu6SQDNu2vL6dQ0N2A?=
+ =?us-ascii?Q?YTstfh3QVAYRRpT8no4nObeLlJpvshe6JfcbL3RaE8DbC+UgqcCbDqSwPDO/?=
+ =?us-ascii?Q?rY2LMk/zW5XGNYXxW3z/41XfOrn8s+gzYDZcPeLQnVBSsxVZnOhn/ZeKuHnc?=
+ =?us-ascii?Q?4wWY0DJYoFBgwasGBuDrg6SenIiIuwjO7imo7/arvgadQEXS/k+XF87dy/PY?=
+ =?us-ascii?Q?w5TtDHXGwqGXdg9zvaBqEXGd/VvcAgXWan54Axz4F1+CDv0oubknpAjCn4qA?=
+ =?us-ascii?Q?qanZrcvplZvIzPrgv4WmNBl3I7+xEoBOCGKvY+rF6CD/z16H+z2VebAGz7mA?=
+ =?us-ascii?Q?Ee3jb8spZo8/OhX7JgyMqEprOFb7NmvZhg58FSTAw1CsN2gd3AkuIFkQDg7l?=
+ =?us-ascii?Q?eX7ElXQKFB9OqEc+rlgecf724BxllImt/EW8Jp3f3PqfuMAbmrlxFfiXMTuw?=
+ =?us-ascii?Q?/frodsBgtP0/VepmTOCvZMbxJxeNA20jEE/XTfYcHbkNgjYXlD1j0/aNsA1D?=
+ =?us-ascii?Q?M3KS6hzmfv6xruIU6QjjNWdBp2vi4jWapbZ4N/BYUyvdNf+YM5TAiZcbMjBZ?=
+ =?us-ascii?Q?72PRkn9pl3nUKHKoCazUAS1a1pjUomXlREDiCjkWumkQCgTZWKvvU13+Vb3X?=
+ =?us-ascii?Q?fFNUGoRNwXeEr7arZSva907+PlpFjnLo0e9hdP/MsDUCw2mBCIkh77NMwyKL?=
+ =?us-ascii?Q?CQV24fFNcU/0jFzf57zT+bVMMNc4MVaBa4MqJoIxEhUWIo/6yFt91qRof6C4?=
+ =?us-ascii?Q?65Fq1V9wgeUwOmXCm+Ey8mSXXrX0fcKisWgh49KtFumBb9vRWV2BRcZERQ8c?=
+ =?us-ascii?Q?6LeqUHfBU1b69ntj1+UGEz4RgXAHR7ZIaDczpfLTuKC9wJe0A4bgMpDYgu7v?=
+ =?us-ascii?Q?zjDHa269s+2S4kn/a4QHVZiQBeRatGV5OzrT8KRwKefg2iBQb7duhsr1okRs?=
+ =?us-ascii?Q?gbv95g5ygNdGluwtckN/TRFMPv0htnIkcnr+XLdwSy/K6FCyTyISB3pQpyEv?=
+ =?us-ascii?Q?6VV9k02n9vAppb/DNER6p2CrbocU10TKUMlP4t0FmKrxjBNP1fMpPgmhy4MW?=
+ =?us-ascii?Q?iLfVPP8eGeRdzDUw81ziw7wJ?=
+X-OriginatorOrg: oracle.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 4e9e7cae-65cc-4aa5-9006-08d94a578908
+X-MS-Exchange-CrossTenant-AuthSource: PH0PR10MB4759.namprd10.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 19 Jul 2021 01:50:07.2420
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: L/EQtFgers+yA/op8VhvubSGRLnGWnZvwgb8cA2fh107ioLt/LYQNLuRlklavkFQ2wtTwwZ7slYxbuAlFyaueX6XX2ajCNSbxa3fB6nfcN0=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH0PR10MB4757
+X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=10049 signatures=668682
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 adultscore=0 malwarescore=0
+ mlxlogscore=619 suspectscore=0 bulkscore=0 spamscore=0 phishscore=0
+ mlxscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2104190000 definitions=main-2107190008
+X-Proofpoint-ORIG-GUID: SYAvASKiSg8mLHOpHSxOuPyl8cXUHAX3
+X-Proofpoint-GUID: SYAvASKiSg8mLHOpHSxOuPyl8cXUHAX3
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-> The parameter is unused, let's remove it.
->
-> Acked-by: Catalin Marinas <catalin.marinas@arm.com>
-> Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
-> Acked-by: Heiko Carstens <hca@linux.ibm.com> (s390)
-> Cc: Catalin Marinas <catalin.marinas@arm.com>
-> Cc: Will Deacon <will@kernel.org>
-> Cc: Michael Ellerman <mpe@ellerman.id.au>
-> Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-> Cc: Paul Mackerras <paulus@samba.org>
-> Cc: Heiko Carstens <hca@linux.ibm.com>
-> Cc: Vasily Gorbik <gor@linux.ibm.com>
-> Cc: Christian Borntraeger <borntraeger@de.ibm.com>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: Dave Hansen <dave.hansen@linux.intel.com>
-> Cc: Andy Lutomirski <luto@kernel.org>
-> Cc: Peter Zijlstra <peterz@infradead.org>
-> Cc: Thomas Gleixner <tglx@linutronix.de>
-> Cc: Ingo Molnar <mingo@redhat.com>
-> Cc: Borislav Petkov <bp@alien8.de>
-> Cc: x86@kernel.org
-> Cc: "H. Peter Anvin" <hpa@zytor.com>
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: Anshuman Khandual <anshuman.khandual@arm.com>
-> Cc: Ard Biesheuvel <ardb@kernel.org>
-> Cc: Mike Rapoport <rppt@kernel.org>
-> Cc: Nicholas Piggin <npiggin@gmail.com>
-> Cc: Pavel Tatashin <pasha.tatashin@soleen.com>
-> Cc: Baoquan He <bhe@redhat.com>
-> Cc: Laurent Dufour <ldufour@linux.ibm.com>
-> Cc: Sergei Trofimovich <slyfox@gentoo.org>
-> Cc: Kefeng Wang <wangkefeng.wang@huawei.com>
-> Cc: Michel Lespinasse <michel@lespinasse.org>
-> Cc: Christophe Leroy <christophe.leroy@c-s.fr>
-> Cc: "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>
-> Cc: Thiago Jung Bauermann <bauerman@linux.ibm.com>
-> Cc: Joe Perches <joe@perches.com>
-> Cc: Pierre Morel <pmorel@linux.ibm.com>
-> Cc: Jia He <justin.he@arm.com>
-> Cc: linux-arm-kernel@lists.infradead.org
-> Cc: linux-ia64@vger.kernel.org
-> Cc: linuxppc-dev@lists.ozlabs.org
-> Cc: linux-s390@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org
-> Signed-off-by: David Hildenbrand <david@redhat.com>
-> ---
->  arch/arm64/mm/mmu.c            | 3 +--
->  arch/ia64/mm/init.c            | 3 +--
->  arch/powerpc/mm/mem.c          | 3 +--
->  arch/s390/mm/init.c            | 3 +--
->  arch/sh/mm/init.c              | 3 +--
->  arch/x86/mm/init_32.c          | 3 +--
->  arch/x86/mm/init_64.c          | 3 +--
->  include/linux/memory_hotplug.h | 3 +--
->  mm/memory_hotplug.c            | 4 ++--
->  mm/memremap.c                  | 5 +----
->  10 files changed, 11 insertions(+), 22 deletions(-)
->
-> diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
-> index d74586508448..af8ab553a268 100644
-> --- a/arch/arm64/mm/mmu.c
-> +++ b/arch/arm64/mm/mmu.c
-> @@ -1506,8 +1506,7 @@ int arch_add_memory(int nid, u64 start, u64 size,
->         return ret;
->  }
->
-> -void arch_remove_memory(int nid, u64 start, u64 size,
-> -                       struct vmem_altmap *altmap)
-> +void arch_remove_memory(u64 start, u64 size, struct vmem_altmap *altmap)
->  {
->         unsigned long start_pfn = start >> PAGE_SHIFT;
->         unsigned long nr_pages = size >> PAGE_SHIFT;
-> diff --git a/arch/ia64/mm/init.c b/arch/ia64/mm/init.c
-> index 064a967a7b6e..5c6da8d83c1a 100644
-> --- a/arch/ia64/mm/init.c
-> +++ b/arch/ia64/mm/init.c
-> @@ -484,8 +484,7 @@ int arch_add_memory(int nid, u64 start, u64 size,
->         return ret;
->  }
->
-> -void arch_remove_memory(int nid, u64 start, u64 size,
-> -                       struct vmem_altmap *altmap)
-> +void arch_remove_memory(u64 start, u64 size, struct vmem_altmap *altmap)
->  {
->         unsigned long start_pfn = start >> PAGE_SHIFT;
->         unsigned long nr_pages = size >> PAGE_SHIFT;
-> diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
-> index ad198b439222..c3c4e31462ec 100644
-> --- a/arch/powerpc/mm/mem.c
-> +++ b/arch/powerpc/mm/mem.c
-> @@ -119,8 +119,7 @@ int __ref arch_add_memory(int nid, u64 start, u64 size,
->         return rc;
->  }
->
-> -void __ref arch_remove_memory(int nid, u64 start, u64 size,
-> -                             struct vmem_altmap *altmap)
-> +void __ref arch_remove_memory(u64 start, u64 size, struct vmem_altmap *altmap)
->  {
->         unsigned long start_pfn = start >> PAGE_SHIFT;
->         unsigned long nr_pages = size >> PAGE_SHIFT;
-> diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
-> index 8ac710de1ab1..d85bd7f5d8dc 100644
-> --- a/arch/s390/mm/init.c
-> +++ b/arch/s390/mm/init.c
-> @@ -306,8 +306,7 @@ int arch_add_memory(int nid, u64 start, u64 size,
->         return rc;
->  }
->
-> -void arch_remove_memory(int nid, u64 start, u64 size,
-> -                       struct vmem_altmap *altmap)
-> +void arch_remove_memory(u64 start, u64 size, struct vmem_altmap *altmap)
->  {
->         unsigned long start_pfn = start >> PAGE_SHIFT;
->         unsigned long nr_pages = size >> PAGE_SHIFT;
-> diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-> index ce26c7f8950a..506784702430 100644
-> --- a/arch/sh/mm/init.c
-> +++ b/arch/sh/mm/init.c
-> @@ -414,8 +414,7 @@ int arch_add_memory(int nid, u64 start, u64 size,
->         return ret;
->  }
->
-> -void arch_remove_memory(int nid, u64 start, u64 size,
-> -                       struct vmem_altmap *altmap)
-> +void arch_remove_memory(u64 start, u64 size, struct vmem_altmap *altmap)
->  {
->         unsigned long start_pfn = PFN_DOWN(start);
->         unsigned long nr_pages = size >> PAGE_SHIFT;
-> diff --git a/arch/x86/mm/init_32.c b/arch/x86/mm/init_32.c
-> index 74b78840182d..bd90b8fe81e4 100644
-> --- a/arch/x86/mm/init_32.c
-> +++ b/arch/x86/mm/init_32.c
-> @@ -801,8 +801,7 @@ int arch_add_memory(int nid, u64 start, u64 size,
->         return __add_pages(nid, start_pfn, nr_pages, params);
->  }
->
-> -void arch_remove_memory(int nid, u64 start, u64 size,
-> -                       struct vmem_altmap *altmap)
-> +void arch_remove_memory(u64 start, u64 size, struct vmem_altmap *altmap)
->  {
->         unsigned long start_pfn = start >> PAGE_SHIFT;
->         unsigned long nr_pages = size >> PAGE_SHIFT;
-> diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
-> index ddeaba947eb3..a6e11763763f 100644
-> --- a/arch/x86/mm/init_64.c
-> +++ b/arch/x86/mm/init_64.c
-> @@ -1255,8 +1255,7 @@ kernel_physical_mapping_remove(unsigned long start, unsigned long end)
->         remove_pagetable(start, end, true, NULL);
->  }
->
-> -void __ref arch_remove_memory(int nid, u64 start, u64 size,
-> -                             struct vmem_altmap *altmap)
-> +void __ref arch_remove_memory(u64 start, u64 size, struct vmem_altmap *altmap)
->  {
->         unsigned long start_pfn = start >> PAGE_SHIFT;
->         unsigned long nr_pages = size >> PAGE_SHIFT;
-> diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-> index d01b504ce06f..010a192298b5 100644
-> --- a/include/linux/memory_hotplug.h
-> +++ b/include/linux/memory_hotplug.h
-> @@ -130,8 +130,7 @@ static inline bool movable_node_is_enabled(void)
->         return movable_node_enabled;
->  }
->
-> -extern void arch_remove_memory(int nid, u64 start, u64 size,
-> -                              struct vmem_altmap *altmap);
-> +extern void arch_remove_memory(u64 start, u64 size, struct vmem_altmap *altmap);
->  extern void __remove_pages(unsigned long start_pfn, unsigned long nr_pages,
->                            struct vmem_altmap *altmap);
->
-> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-> index 93b3abaf9828..f2a9af3af184 100644
-> --- a/mm/memory_hotplug.c
-> +++ b/mm/memory_hotplug.c
-> @@ -1106,7 +1106,7 @@ int __ref add_memory_resource(int nid, struct resource *res, mhp_t mhp_flags)
->         /* create memory block devices after memory was added */
->         ret = create_memory_block_devices(start, size, mhp_altmap.alloc);
->         if (ret) {
-> -               arch_remove_memory(nid, start, size, NULL);
-> +               arch_remove_memory(start, size, NULL);
->                 goto error;
->         }
->
-> @@ -1892,7 +1892,7 @@ static int __ref try_remove_memory(int nid, u64 start, u64 size)
->
->         mem_hotplug_begin();
->
-> -       arch_remove_memory(nid, start, size, altmap);
-> +       arch_remove_memory(start, size, altmap);
->
->         if (IS_ENABLED(CONFIG_ARCH_KEEP_MEMBLOCK)) {
->                 memblock_free(start, size);
-> diff --git a/mm/memremap.c b/mm/memremap.c
-> index 15a074ffb8d7..ed593bf87109 100644
-> --- a/mm/memremap.c
-> +++ b/mm/memremap.c
-> @@ -140,14 +140,11 @@ static void pageunmap_range(struct dev_pagemap *pgmap, int range_id)
->  {
->         struct range *range = &pgmap->ranges[range_id];
->         struct page *first_page;
-> -       int nid;
->
->         /* make sure to access a memmap that was actually initialized */
->         first_page = pfn_to_page(pfn_first(pgmap, range_id));
->
->         /* pages are dead and unused, undo the arch mapping */
-> -       nid = page_to_nid(first_page);
-> -
->         mem_hotplug_begin();
->         remove_pfn_range_from_zone(page_zone(first_page), PHYS_PFN(range->start),
->                                    PHYS_PFN(range_len(range)));
-> @@ -155,7 +152,7 @@ static void pageunmap_range(struct dev_pagemap *pgmap, int range_id)
->                 __remove_pages(PHYS_PFN(range->start),
->                                PHYS_PFN(range_len(range)), NULL);
->         } else {
-> -               arch_remove_memory(nid, range->start, range_len(range),
-> +               arch_remove_memory(range->start, range_len(range),
->                                 pgmap_altmap(pgmap));
->                 kasan_remove_zero_shadow(__va(range->start), range_len(range));
->         }
 
-Reviewed-by: Pankaj Gupta <pankaj.gupta@ionos.com>
+Christoph,
+
+> flush_kernel_dcache_page is not used by aacraid, and this header
+> already comes in through the scatterlist/block headers anyway.
+
+Seems orthogonal to the rest of your series. Applied to
+5.15/scsi-staging, thanks!
+
+-- 
+Martin K. Petersen	Oracle Linux Engineering
