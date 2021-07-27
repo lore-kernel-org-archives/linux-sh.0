@@ -2,280 +2,115 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-16.7 required=3.0 tests=BAYES_00,DKIMWL_WL_HIGH,
-	DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	MENTIONS_GIT_HOSTING,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 13D40C4320A
-	for <linux-sh@archiver.kernel.org>; Mon, 26 Jul 2021 21:43:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A3C0C432BE
+	for <linux-sh@archiver.kernel.org>; Tue, 27 Jul 2021 08:10:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EA72460F9B
-	for <linux-sh@archiver.kernel.org>; Mon, 26 Jul 2021 21:43:47 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4109D611F2
+	for <linux-sh@archiver.kernel.org>; Tue, 27 Jul 2021 08:10:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231820AbhGZVDT (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 26 Jul 2021 17:03:19 -0400
-Received: from mail.kernel.org ([198.145.29.99]:44758 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231787AbhGZVDS (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Mon, 26 Jul 2021 17:03:18 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id A4E5260F94;
-        Mon, 26 Jul 2021 21:43:46 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1627335827;
-        bh=dBX7fIHWCiOh57pPoZiCCdXb5SlCraznstvQ/Ghyeyk=;
-        h=Date:From:To:Cc:Subject:From;
-        b=BGxbg+DkR9D1cy3KQhuXS5YzIIzwWDlpwvuudr9Nnj65VZHe5NxXX/rB98+XUf1y7
-         ABdnFs5TWlxBHlqAy5NMV5xi/a5JrGgESy96kDBNXB11Ea620/9t3SuD2AdTAA4SNJ
-         ccctpJ63SGBfdmsS+4AAK92Sjh1xOXZkTLMzVFV7Kzna/QjXua8f2QRi8lLDm5Qyhf
-         NRVE3aUYn+fBGGzXAxBBNYmIrmEYk3GPxa82THGXisiQQNBXXluEDKeD9BzNhu5auw
-         fVnNnYPrTguCBtp4otVvyLNZtpS1eb2ahXtRqcBYT24Qg+KhvIIR5AQB8e49mxdh7i
-         3Ok+urmkpYDwA==
-Date:   Mon, 26 Jul 2021 16:43:45 -0500
-From:   Bjorn Helgaas <helgaas@kernel.org>
-To:     Guo Ren <guoren@kernel.org>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
+        id S235948AbhG0IKh (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 27 Jul 2021 04:10:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46098 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235919AbhG0IKf (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 27 Jul 2021 04:10:35 -0400
+Received: from metis.ext.pengutronix.de (metis.ext.pengutronix.de [IPv6:2001:67c:670:201:290:27ff:fe1d:cc33])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EE8F8C061757
+        for <linux-sh@vger.kernel.org>; Tue, 27 Jul 2021 01:10:35 -0700 (PDT)
+Received: from drehscheibe.grey.stw.pengutronix.de ([2a0a:edc0:0:c01:1d::a2])
+        by metis.ext.pengutronix.de with esmtps (TLS1.3:ECDHE_RSA_AES_256_GCM_SHA384:256)
+        (Exim 4.92)
+        (envelope-from <ukl@pengutronix.de>)
+        id 1m8I92-0006l5-74; Tue, 27 Jul 2021 10:08:56 +0200
+Received: from [2a0a:edc0:0:900:1d::77] (helo=ptz.office.stw.pengutronix.de)
+        by drehscheibe.grey.stw.pengutronix.de with esmtp (Exim 4.92)
+        (envelope-from <ukl@pengutronix.de>)
+        id 1m8I8u-0005sq-D8; Tue, 27 Jul 2021 10:08:48 +0200
+Received: from ukl by ptz.office.stw.pengutronix.de with local (Exim 4.92)
+        (envelope-from <ukl@pengutronix.de>)
+        id 1m8I8u-0004Ek-Be; Tue, 27 Jul 2021 10:08:48 +0200
+From:   =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= 
+        <u.kleine-koenig@pengutronix.de>
+To:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc:     linux-kernel@vger.kernel.org, kernel@pengutronix.de,
+        Finn Thain <fthain@linux-m68k.org>,
+        linux-m68k@lists.linux-m68k.org,
+        "David S. Miller" <davem@davemloft.net>,
+        Jakub Kicinski <kuba@kernel.org>,
+        Zhang Qilong <zhangqilong3@huawei.com>,
+        Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
+        netdev@vger.kernel.org,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
-        "David S. Miller" <davem@davemloft.net>
-Cc:     linux-csky@vger.kernel.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
-Subject: [helgaas@kernel.org: Re: aarch64 efi boot failures with qemu 6.0+]
-Message-ID: <20210726214345.GA645499@bjorn-Precision-5520>
+        =?UTF-8?q?Samuel=20Iglesias=20Gons=C3=A1lvez?= 
+        <siglesias@igalia.com>,
+        Dmitry Torokhov <dmitry.torokhov@gmail.com>,
+        Chen-Yu Tsai <wens@csie.org>,
+        =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>,
+        linux-sh@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
+Subject: [PATCH 0/5] Some cleanups after making bus_type::remove return void
+Date:   Tue, 27 Jul 2021 10:08:35 +0200
+Message-Id: <20210727080840.3550927-1-u.kleine-koenig@pengutronix.de>
+X-Mailer: git-send-email 2.30.2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
+X-SA-Exim-Connect-IP: 2a0a:edc0:0:c01:1d::a2
+X-SA-Exim-Mail-From: ukl@pengutronix.de
+X-SA-Exim-Scanned: No (on metis.ext.pengutronix.de); SAEximRunCond expanded to false
+X-PTX-Original-Recipient: linux-sh@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Just FYI.
+Hello,
 
-Guenter tripped over a problem with an I/O BAR set to zero.  I think
-your arches allow that (at least they "#define PCIBIOS_MIN_IO 0"), and
-some drivers don't handle such BARs.  More details below.
+while working on the patch set that made bus_type::remove return void I
+noticed a few things that could be improved. This series addresses
+these. Apart from a simple conflict between the two zorro patches there
+are no interdependencies between these patches. I created them on top of
+Greg's bus_remove_return_void-5.15 tag[1]. There might be further
+(probably simple) conflicts if they are applied based on an earlier
+commit.
 
-Note that I didn't actually cc you on the thread, mostly because I
-forgot but partly to avoid exploding the cc list with people who
-probably don't care.  If you want to respond directly to the thread,
-you can use this:
+So it should be easily possible to let these patches go in through their
+usual maintainer trees. So please if you're a maintainer state if you
+prefer to take the patches yourself or if you prefer that Greg takes
+them together.
 
-https://lore.kernel.org/qemu-devel/20210724185234.GA2265457@roeck-us.net/
+Best regards
+Uwe
 
------ Forwarded message from Bjorn Helgaas <helgaas@kernel.org> -----
+[1] available at
 
-Date: Mon, 26 Jul 2021 16:16:29 -0500
-From: Bjorn Helgaas <helgaas@kernel.org>
-To: Ard Biesheuvel <ardb@kernel.org>
-Cc: Philippe Mathieu-Daudé <philmd@redhat.com>, Bjorn Helgaas
-	<bhelgaas@google.com>, Jiahui Cen <cenjiahui@huawei.com>, "Michael S.
-	Tsirkin" <mst@redhat.com>, Ard Biesheuvel <ardb+tianocore@kernel.org>,
-	qemu-devel@nongnu.org, Igor Mammedov <imammedo@redhat.com>, Guenter
-	Roeck <linux@roeck-us.net>
-Subject: Re: aarch64 efi boot failures with qemu 6.0+
-Message-ID: <20210726211628.GA640636@bjorn-Precision-5520>
+	git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/driver-core.git tags/bus_remove_return_void-5.15
 
-On Mon, Jul 26, 2021 at 06:00:57PM +0200, Ard Biesheuvel wrote:
-> (cc Bjorn)
-> 
-> On Mon, 26 Jul 2021 at 11:08, Philippe Mathieu-Daudé <philmd@redhat.com> wrote:
-> > On 7/26/21 12:56 AM, Guenter Roeck wrote:
-> > > On 7/25/21 3:14 PM, Michael S. Tsirkin wrote:
-> > >> On Sat, Jul 24, 2021 at 11:52:34AM -0700, Guenter Roeck wrote:
-> > >>> Hi all,
-> > >>>
-> > >>> starting with qemu v6.0, some of my aarch64 efi boot tests no longer
-> > >>> work. Analysis shows that PCI devices with IO ports do not instantiate
-> > >>> in qemu v6.0 (or v6.1-rc0) when booting through efi. The problem affects
-> > >>> (at least) ne2k_pci, tulip, dc390, and am53c974. The problem only
-> > >>> affects
-> > >>> aarch64, not x86/x86_64.
-> > >>>
-> > >>> I bisected the problem to commit 0cf8882fd0 ("acpi/gpex: Inform os to
-> > >>> keep firmware resource map"). Since this commit, PCI device BAR
-> > >>> allocation has changed. Taking tulip as example, the kernel reports
-> > >>> the following PCI bar assignments when running qemu v5.2.
-> > >>>
-> > >>> [    3.921801] pci 0000:00:01.0: [1011:0019] type 00 class 0x020000
-> > >>> [    3.922207] pci 0000:00:01.0: reg 0x10: [io  0x0000-0x007f]
-> > >>> [    3.922505] pci 0000:00:01.0: reg 0x14: [mem 0x10000000-0x1000007f]
-> 
-> IIUC, these lines are read back from the BARs
-> 
-> > >>> [    3.927111] pci 0000:00:01.0: BAR 0: assigned [io  0x1000-0x107f]
-> > >>> [    3.927455] pci 0000:00:01.0: BAR 1: assigned [mem
-> > >>> 0x10000000-0x1000007f]
-> > >>>
-> 
-> ... and this is the assignment created by the kernel.
-> 
-> > >>> With qemu v6.0, the assignment is reported as follows.
-> > >>>
-> > >>> [    3.922887] pci 0000:00:01.0: [1011:0019] type 00 class 0x020000
-> > >>> [    3.923278] pci 0000:00:01.0: reg 0x10: [io  0x0000-0x007f]
-> > >>> [    3.923451] pci 0000:00:01.0: reg 0x14: [mem 0x10000000-0x1000007f]
-> 
-> The problem here is that Linux, for legacy reasons, does not support
-> I/O ports <= 0x1000 on PCI, so the I/O assignment created by EFI is
-> rejected.
-> 
-> This might make sense on x86, where legacy I/O ports may exist, but on
-> other architectures, this makes no sense.
+    see https://lore.kernel.org/lkml/YPkwQwf0dUKnGA7L@kroah.com
 
-I guess this is the "#define PCIBIOS_MIN_IO 0x1000" in
-arm64/include/asm/pci.h.  From a PCI point of view, I'm not opposed to
-changing that to 0, as it is on csky, riscv, sh, sparc, um.  But it's
-really an arch question, so the arm64 folks would have to weigh in.
+Uwe Kleine-KÃ¶nig (5):
+  nubus: Simplify check in remove callback
+  nubus: Make struct nubus_driver::remove return void
+  sh: superhyway: Simplify check in remove callback
+  zorro: Simplify remove callback
+  zorro: Drop useless (and hardly used) .driver member in struct
+    zorro_dev
 
-But I don't think that would fix this.  PCIBIOS_MIN_IO is mainly used
-when we assign or reassign resources to a BAR, and if firmware tells
-us to preserve the assignments done by firmware, Linux shouldn't be
-doing any assignment or reassignment.
-
-Linux received 00:01.0 BAR 0 as [io 0x0000-0x007f], and Guenter didn't
-report any reassignment, so I assume Linux saw the
-DSM_PCI_PRESERVE_BOOT_CONFIG [1] and didn't change anything.
-
-Could this be due to drivers assuming that an I/O BAR of 0 is invalid?
-I see that at least ne2k_pci_init_one() [2] seems to assume that.  And
-tulip_init_one() [3] and pci_esp_probe_one() (am53c974.c, [4]) use
-pci_iomap() [5], which fails if the resource starts at 0.
-
-So pci_iomap() is probably already broken on the arches above that
-allow I/O BARs to be zero.  Maybe pci_iomap() should only fail on
-"!start" for *memory* BARs, e.g.,
-
-diff --git a/lib/pci_iomap.c b/lib/pci_iomap.c
-index 2d3eb1cb73b8..77455e702a3e 100644
---- a/lib/pci_iomap.c
-+++ b/lib/pci_iomap.c
-@@ -34,7 +34,9 @@ void __iomem *pci_iomap_range(struct pci_dev *dev,
- 	resource_size_t len = pci_resource_len(dev, bar);
- 	unsigned long flags = pci_resource_flags(dev, bar);
- 
--	if (len <= offset || !start)
-+	if (flags & IORESOURCE_MEM && !start)
-+		return NULL;
-+	if (len <= offset)
- 		return NULL;
- 	len -= offset;
- 	start += offset;
+ drivers/net/ethernet/8390/mac8390.c     |  3 +--
+ drivers/net/ethernet/natsemi/macsonic.c |  4 +---
+ drivers/nubus/bus.c                     |  2 +-
+ drivers/sh/superhyway/superhyway.c      |  2 +-
+ drivers/zorro/zorro-driver.c            | 13 ++++---------
+ include/linux/nubus.h                   |  2 +-
+ include/linux/zorro.h                   |  1 -
+ 7 files changed, 9 insertions(+), 18 deletions(-)
 
 
-[1] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/acpi/pci_root.c?id=v5.13#n915
-[2] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/net/ethernet/8390/ne2k-pci.c?id=v5.13#n247
-[3] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/net/ethernet/dec/tulip/tulip_core.c?id=v5.13#n1418
-[4] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/scsi/am53c974.c?id=v5.13#n431
-[5] https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/lib/pci_iomap.c?id=v5.13#n37
+base-commit: fc7a6209d5710618eb4f72a77cd81b8d694ecf89
+-- 
+2.30.2
 
-> > >>> and the controller does not instantiate. The problem disapears after
-> > >>> reverting commit 0cf8882fd0.
-> > >>>
-> > >>> Attached is a summary of test runs with various devices and qemu v5.2
-> > >>> as well as qemu v6.0, and the command line I use for efi boots.
-> > >>>
-> > >>> Did commit 0cf8882fd0 introduce a bug, do I now need need some different
-> > >>> command line to instantiate PCI devices with io ports, or are such
-> > >>> devices
-> > >>> simply no longer supported if the system is booted with efi support ?
-> > >>>
-> > >>> Thanks,
-> > >>> Guenter
-> > >>
-> > >>
-> > >> So that commit basically just says don't ignore what efi did.
-> > >>
-> > >> The issue's thus likely efi.
-> > >>
-> > >
-> > > I don't see the problem with efi boots on x86 and x86_64.
-> > > Any idea why that might be the case ?
-> > >
-> > > Thanks,
-> > > Guenter
-> > >
-> > >> Cc the maintainer. Philippe can you comment pls?
-> >
-> > I'll have a look. Cc'ing Ard for EDK2/Aarch64.
-> 
-> So a potential workaround would be to use a different I/O resource
-> window for ArmVirtPkg, that starts at 0x1000. But I would prefer to
-> fix Linux instead.
-> 
-> 
-> > >>
-> > >>> ---
-> > >>> Command line (tulip network interface):
-> > >>>
-> > >>> CMDLINE="root=/dev/vda console=ttyAMA0"
-> > >>> ROOTFS="rootfs.ext2"
-> > >>>
-> > >>> qemu-system-aarch64 -M virt -kernel arch/arm64/boot/Image -no-reboot \
-> > >>>          -m 512 -cpu cortex-a57 -no-reboot \
-> > >>>          -device tulip,netdev=net0 -netdev user,id=net0 \
-> > >>>          -bios QEMU_EFI-aarch64.fd \
-> > >>>          -snapshot \
-> > >>>          -device virtio-blk-device,drive=d0 \
-> > >>>          -drive file=${ROOTFS},if=none,id=d0,format=raw \
-> > >>>          -nographic -serial stdio -monitor none \
-> > >>>          --append "${CMDLINE}"
-> > >>>
-> > >>> ---
-> > >>> Boot tests with various devices known to work in qemu v5.2.
-> > >>>
-> > >>>         v5.2    v6.0    v6.0
-> > >>>         efi    non-efi    efi
-> > >>> e1000        pass    pass    pass
-> > >>> e1000-82544gc    pass    pass    pass
-> > >>> e1000-82545em    pass    pass    pass
-> > >>> e1000e        pass    pass    pass
-> > >>> i82550        pass    pass    pass
-> > >>> i82557a        pass    pass    pass
-> > >>> i82557b        pass    pass    pass
-> > >>> i82557c        pass    pass    pass
-> > >>> i82558a        pass    pass    pass
-> > >>> i82559b        pass    pass    pass
-> > >>> i82559c        pass    pass    pass
-> > >>> i82559er    pass    pass    pass
-> > >>> i82562        pass    pass    pass
-> > >>> i82801        pass    pass    pass
-> > >>> ne2k_pci    pass    pass    fail    <--
-> > >>> pcnet        pass    pass    pass
-> > >>> rtl8139        pass    pass    pass
-> > >>> tulip        pass    pass    fail    <--
-> > >>> usb-net        pass    pass    pass
-> > >>> virtio-net-device
-> > >>>         pass    pass    pass
-> > >>> virtio-net-pci    pass    pass    pass
-> > >>> virtio-net-pci-non-transitional
-> > >>>         pass    pass    pass
-> > >>>
-> > >>> usb-xhci    pass    pass    pass
-> > >>> usb-ehci    pass    pass    pass
-> > >>> usb-ohci    pass    pass    pass
-> > >>> usb-uas-xhci    pass    pass    pass
-> > >>> virtio        pass    pass    pass
-> > >>> virtio-blk-pci    pass    pass    pass
-> > >>> virtio-blk-device
-> > >>>         pass    pass    pass
-> > >>> nvme        pass    pass    pass
-> > >>> sdhci        pass    pass    pass
-> > >>> dc390        pass    pass    fail    <--
-> > >>> am53c974    pass    pass    fail    <--
-> > >>> lsi53c895ai    pass    pass    pass
-> > >>> mptsas1068    pass    pass    pass
-> > >>> lsi53c810    pass    pass    pass
-> > >>> megasas        pass    pass    pass
-> > >>> megasas-gen2    pass    pass    pass
-> > >>> virtio-scsi-device
-> > >>>         pass    pass    pass
-> > >>> virtio-scsi-pci    pass    pass    pass
-> > >>
-> > >
-> >
-> 
-
------ End forwarded message -----
