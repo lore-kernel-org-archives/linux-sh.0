@@ -2,97 +2,91 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,
+X-Spam-Status: No, score=-16.8 required=3.0 tests=BAYES_00,
 	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F2BDFC432BE
-	for <linux-sh@archiver.kernel.org>; Fri, 30 Jul 2021 11:54:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 70135C4338F
+	for <linux-sh@archiver.kernel.org>; Fri, 30 Jul 2021 19:10:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D3E4560EE6
-	for <linux-sh@archiver.kernel.org>; Fri, 30 Jul 2021 11:54:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 41CF660720
+	for <linux-sh@archiver.kernel.org>; Fri, 30 Jul 2021 19:10:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238626AbhG3LyM (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 30 Jul 2021 07:54:12 -0400
-Received: from mail-vs1-f43.google.com ([209.85.217.43]:44557 "EHLO
-        mail-vs1-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238687AbhG3LyJ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 30 Jul 2021 07:54:09 -0400
-Received: by mail-vs1-f43.google.com with SMTP id t2so5247878vsa.11;
-        Fri, 30 Jul 2021 04:54:03 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=10AbK6xK8RHobfuB2T0I9ydjpvpHcTKY9gPukwHCGGA=;
-        b=YmhSWe4ysVoxpkFxv01nZcYjbowvxAt4AmXoLUb1J5l/9+OVzYtM/U91iSFuVd4j1T
-         OOh41vU1X7Q5YEO2iFZlnSlMyK8akuCce5aqJaFeb4HurZk5i/1LZIHnxTCeF8Fjwtop
-         KUappP524ABfwUd2AFwE09lg8Mmuo06WYnD5+apwUDyOJO5MIUq+Jvy/N2IttQwvOgF3
-         R3LydwxxLjPTHCsCKY7xgLlYA4CXleO5UPOae10xxjHpDHHgznosWs8JvYeCihUtzmTY
-         3duBjo7i7c1jqowm3jL2a8f78hL5inxsc9ylnmUxBqxfWiZUdlSJjQ3TXUE3/9wK14Pc
-         H5vw==
-X-Gm-Message-State: AOAM5303d4WMe9j/oJTT97blA0+lnvq55eCvWzmCWUDxkPK+X74oFZj1
-        hH9ZuWXv8hGKrJNelNzFSAfwu74ds1W7dXLHTiM=
-X-Google-Smtp-Source: ABdhPJz4vdafBihdMrOKEMxBFoPjbpJQjxu69DET98mge7/3K8Au1C7Ct04O+Z9CWQAOZ0tklY4nnHzuyfbZq+wo9hQ=
-X-Received: by 2002:a05:6102:321c:: with SMTP id r28mr1030174vsf.40.1627646043462;
- Fri, 30 Jul 2021 04:54:03 -0700 (PDT)
+        id S231214AbhG3TLA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 30 Jul 2021 15:11:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58224 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231172AbhG3TK7 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 30 Jul 2021 15:10:59 -0400
+Received: from metis.ext.pengutronix.de (metis.ext.pengutronix.de [IPv6:2001:67c:670:201:290:27ff:fe1d:cc33])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E0265C06175F
+        for <linux-sh@vger.kernel.org>; Fri, 30 Jul 2021 12:10:54 -0700 (PDT)
+Received: from drehscheibe.grey.stw.pengutronix.de ([2a0a:edc0:0:c01:1d::a2])
+        by metis.ext.pengutronix.de with esmtps (TLS1.3:ECDHE_RSA_AES_256_GCM_SHA384:256)
+        (Exim 4.92)
+        (envelope-from <ukl@pengutronix.de>)
+        id 1m9Xu8-00068i-Au; Fri, 30 Jul 2021 21:10:44 +0200
+Received: from [2a0a:edc0:0:900:1d::77] (helo=ptz.office.stw.pengutronix.de)
+        by drehscheibe.grey.stw.pengutronix.de with esmtp (Exim 4.92)
+        (envelope-from <ukl@pengutronix.de>)
+        id 1m9Xu6-0005yn-4D; Fri, 30 Jul 2021 21:10:42 +0200
+Received: from ukl by ptz.office.stw.pengutronix.de with local (Exim 4.92)
+        (envelope-from <ukl@pengutronix.de>)
+        id 1m9Xu6-0007Ke-3E; Fri, 30 Jul 2021 21:10:42 +0200
+From:   =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= 
+        <u.kleine-koenig@pengutronix.de>
+To:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc:     linux-kernel@vger.kernel.org, kernel@pengutronix.de,
+        Rich Felker <dalias@libc.org>,
+        =?UTF-8?q?Samuel=20Iglesias=20Gons=C3=A1lvez?= 
+        <siglesias@igalia.com>,
+        Dmitry Torokhov <dmitry.torokhov@gmail.com>,
+        Chen-Yu Tsai <wens@csie.org>,
+        =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>,
+        linux-sh@vger.kernel.org
+Subject: [PATCH v2 2/4] sh: superhyway: Simplify check in remove callback
+Date:   Fri, 30 Jul 2021 21:10:33 +0200
+Message-Id: <20210730191035.1455248-3-u.kleine-koenig@pengutronix.de>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20210730191035.1455248-1-u.kleine-koenig@pengutronix.de>
+References: <20210730191035.1455248-1-u.kleine-koenig@pengutronix.de>
 MIME-Version: 1.0
-References: <20210728182115.4401-1-lukas.bulwahn@gmail.com>
-In-Reply-To: <20210728182115.4401-1-lukas.bulwahn@gmail.com>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Fri, 30 Jul 2021 13:53:52 +0200
-Message-ID: <CAMuHMdXt4tYHcgPNUZ0ZQ9iKhmZ_dC=ub=Ha35xDy+jR2-CroQ@mail.gmail.com>
-Subject: Re: [PATCH] arch: Kconfig: clean up obsolete use of HAVE_IDE
-To:     Lukas Bulwahn <lukas.bulwahn@gmail.com>
-Cc:     Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>,
-        Randy Dunlap <rdunlap@infradead.org>,
-        "the arch/x86 maintainers" <x86@kernel.org>,
-        alpha <linux-alpha@vger.kernel.org>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        "moderated list:H8/300 ARCHITECTURE" 
-        <uclinux-h8-devel@lists.sourceforge.jp>,
-        "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>,
-        linux-m68k <linux-m68k@lists.linux-m68k.org>,
-        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
-        Parisc List <linux-parisc@vger.kernel.org>,
-        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        sparclinux <sparclinux@vger.kernel.org>,
-        "open list:TENSILICA XTENSA PORT (xtensa)" 
-        <linux-xtensa@linux-xtensa.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        kernel-janitors@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=UTF-8
+X-Patch-Hashes: v=1; h=sha256; i=RI6GBOcwaT/YqLauV9PR/s+g33ul7kmjbz/l8bF0LdQ=; m=Jckb/3cKtVVMbGmghSGQQ0azpY4z4Lj4Rosk4zfdvSg=; p=t6rnEvMxvPF/adrQkDOYow4gALaPv+ywQx6bUC5qg+Q=; g=2dc54acdd2fd4631e007d1a263badb652279fe9f
+X-Patch-Sig: m=pgp; i=u.kleine-koenig@pengutronix.de; s=0x0D2511F322BFAB1C1580266BE2DCDD9132669BD6; b=iQEzBAABCgAdFiEEfnIqFpAYrP8+dKQLwfwUeK3K7AkFAmEETqIACgkQwfwUeK3K7AkIVAf+LfF 0vOPnYsdxAocnVR+xaAR/6TX+XBiVHrXuq0QGK1RnXV275HWgj7JuNzzI+m5kjmO+cZIy9TvSIkRU 5AYlKOlxq2rJT3S4/2HAxX2BMhBoU3kRzOhQFjRAdd3u664ukGnFtyT/3jMebZYfpW5ackzh6cfOY X7Q+wm0uDOdPQsNNNhUcNQPERnHOaJMF5NE7Y+2rDWZ3nkljePt6DCq3x1tuQGa3ZyvgVTOeqnm3W 2g9UvENIL/t63iKGtBQb7nzJW5UyYZPhO7/FJiGxQw6PyUnbsOYJ2jEAt/+1v8tq1u1tnP604Bxn3 dp2ve9ytsSKVZziNfqtcXPU2cJYJ8mw==
+Content-Transfer-Encoding: 8bit
+X-SA-Exim-Connect-IP: 2a0a:edc0:0:c01:1d::a2
+X-SA-Exim-Mail-From: ukl@pengutronix.de
+X-SA-Exim-Scanned: No (on metis.ext.pengutronix.de); SAEximRunCond expanded to false
+X-PTX-Original-Recipient: linux-sh@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Jul 28, 2021 at 8:21 PM Lukas Bulwahn <lukas.bulwahn@gmail.com> wrote:
-> The arch-specific Kconfig files use HAVE_IDE to indicate if IDE is
-> supported.
->
-> As IDE support and the HAVE_IDE config vanishes with commit b7fb14d3ac63
-> ("ide: remove the legacy ide driver"), there is no need to mention
-> HAVE_IDE in all those arch-specific Kconfig files.
->
-> The issue was identified with ./scripts/checkkconfigsymbols.py.
->
-> Fixes: b7fb14d3ac63 ("ide: remove the legacy ide driver")
-> Suggested-by: Randy Dunlap <rdunlap@infradead.org>
-> Signed-off-by: Lukas Bulwahn <lukas.bulwahn@gmail.com>
+The driver core only calls a remove callback when the device was
+successfully bound (aka probed) before. So dev->driver is never NULL.
 
->  arch/m68k/Kconfig             | 1 -
+(And even if it was NULL, to_superhyway_driver(NULL) isn't ...)
 
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Signed-off-by: Uwe Kleine-König <u.kleine-koenig@pengutronix.de>
+---
+ drivers/sh/superhyway/superhyway.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
+diff --git a/drivers/sh/superhyway/superhyway.c b/drivers/sh/superhyway/superhyway.c
+index c0ab904c76ec..44324abe21da 100644
+--- a/drivers/sh/superhyway/superhyway.c
++++ b/drivers/sh/superhyway/superhyway.c
+@@ -155,7 +155,7 @@ static void superhyway_device_remove(struct device *dev)
+ 	struct superhyway_device *shyway_dev = to_superhyway_device(dev);
+ 	struct superhyway_driver *shyway_drv = to_superhyway_driver(dev->driver);
+ 
+-	if (shyway_drv && shyway_drv->remove)
++	if (shyway_drv->remove)
+ 		shyway_drv->remove(shyway_dev);
+ }
+ 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+2.30.2
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
