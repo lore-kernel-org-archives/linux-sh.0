@@ -2,147 +2,127 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-11.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	FROM_LOCAL_NOVOWEL,HEADER_FROM_DIFFERENT_DOMAINS,HK_RANDOM_FROM,
-	INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS
+X-Spam-Status: No, score=-15.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED
 	autolearn=unavailable autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 23A0CC43214
-	for <linux-sh@archiver.kernel.org>; Mon,  2 Aug 2021 18:04:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E0D8EC4320E
+	for <linux-sh@archiver.kernel.org>; Wed,  4 Aug 2021 11:13:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 076CE60F36
-	for <linux-sh@archiver.kernel.org>; Mon,  2 Aug 2021 18:04:13 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C4CBE61029
+	for <linux-sh@archiver.kernel.org>; Wed,  4 Aug 2021 11:13:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230182AbhHBSEW (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 2 Aug 2021 14:04:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46760 "EHLO
+        id S236871AbhHDLNa (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 4 Aug 2021 07:13:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38120 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229537AbhHBSEU (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 2 Aug 2021 14:04:20 -0400
-Received: from mail-ej1-x62a.google.com (mail-ej1-x62a.google.com [IPv6:2a00:1450:4864:20::62a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7E8A3C06175F;
-        Mon,  2 Aug 2021 11:04:10 -0700 (PDT)
-Received: by mail-ej1-x62a.google.com with SMTP id hs10so23585135ejc.0;
-        Mon, 02 Aug 2021 11:04:10 -0700 (PDT)
+        with ESMTP id S235606AbhHDLNZ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 4 Aug 2021 07:13:25 -0400
+Received: from mail-vs1-xe33.google.com (mail-vs1-xe33.google.com [IPv6:2607:f8b0:4864:20::e33])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3D3EEC0613D5
+        for <linux-sh@vger.kernel.org>; Wed,  4 Aug 2021 04:13:09 -0700 (PDT)
+Received: by mail-vs1-xe33.google.com with SMTP id n22so779560vsq.11
+        for <linux-sh@vger.kernel.org>; Wed, 04 Aug 2021 04:13:09 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
+        d=linaro.org; s=google;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc;
-        bh=KpOmQ9FDFdEDp1DRxCOS4/jNxSUC+b7VQifrd/M4FUE=;
-        b=bllfssUh1l3Cfof1I9S9zG5MovjfwF9CypWcpRvDmWpOEx759rPpO8GjtwWqnstMf2
-         1QwJGh+kGvZKoMFQKf6FhnPOMkpo3JEJzP0z2jokepgekez40su6FDqDQO76azQW4aaY
-         ndpMqrh8QhqQUbO9PB7UVTzGgkGjnuiB8BDrnOUlo6IfpOOOD5wRbVnNH3nzFEb8Jlvv
-         f2sHv6d82OwwrINjEhGy7L8YhBy8Uq7x29x9aN5cqnZAFpZ+YseiNvbNJLRthMaSdJt+
-         GNYBQGlDLHbH2bDQodG8T6OzjQiYO36wOgJ2MGUlCkSsxnL4jcZpqW+jXXGFabstpv3T
-         roTQ==
+        bh=/dX/3b6FaOpNMT7IFaiEI2CzG67GUq50nJlfaoXU0vc=;
+        b=p3UYl4lwRYQ8i6YCOMkHtc48l6wq9BUGMWtu2TO7tzj1xahiMx00Oos7dic6R6BbO+
+         4cel/SAZhBaKH+iX3y23G1VudRcqzh7HoW4YrzHmF9QJMC84fC3xrrulPDTSlTD7UJy2
+         FYoQf9R/6NS7CatGztyAxD612su759huCsMDs739/b+IJ5I3dW8a2Bvat8+WUXlKf1a9
+         vQi8/OePC1Vl+Y9tKEGshTh1lBbL2UpR9yCIJIW3jBQS7GaE5Wlw5oUlXF7DafPq1RGY
+         OkG2pKiuExUU2ELE9P/7zjN/yPHJliZ4CtZ8AXP7GuTO43GZUZY2bTr33Cq3u4eOuFvn
+         7QWQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20161025;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=KpOmQ9FDFdEDp1DRxCOS4/jNxSUC+b7VQifrd/M4FUE=;
-        b=PjNcQwlRjxVa2YwO23EZZMXn5H79DHlbuuAWiZ+1YxpF44VSe9lptdak9uFQ6OiL8A
-         VoVdsiBq/bJoOjs0xeyf6EuEm9ZgA7Ww5nnCCfmJJt3mBnd3aTt/E6OO8AnvGex9ndtN
-         CHEUxRErukckZSef2TzHc2lrnSL4MsK7tkxZmtaNTkVlAAk9d9QIv29MsuOWh4EDuTXi
-         rQ/wTnJnrQ01M/OofmC8O0eC9dCE9GA5I3neDjCRxcIOdbBkyW4+FcZseM6r64WGgqT+
-         rBVKBgCvhVRWtMgkvUFc4qMyu0a0rxDoEen1EKlvxVnWAuXfHN2mBLm3s8w3iRkeHs+/
-         jGOg==
-X-Gm-Message-State: AOAM533PYzYdnpnM1+6CVaz8TkKfxInhWHXHPq1WS+kKbQqR/6qDTZpd
-        SwOkg9orqEUrAncKP8LQhthxt7p8BNS+/W/Ou4I=
-X-Google-Smtp-Source: ABdhPJx4CTYoE1N/7r5r3Yv59NCnUgpiXyVEWPBrQR2H8OPpQmdyOckhCi7flWDeCgEu3pc8T6+GCYt+gQKqcxApyio=
-X-Received: by 2002:a17:906:34da:: with SMTP id h26mr16470323ejb.376.1627927449046;
- Mon, 02 Aug 2021 11:04:09 -0700 (PDT)
+        bh=/dX/3b6FaOpNMT7IFaiEI2CzG67GUq50nJlfaoXU0vc=;
+        b=cnkPLssvWXhuUrQQYPgXqiwo5GVxArp6XVc6wjt0OVEZ3nc3zN5EvkXdBjH7zH90Tc
+         7wR4nyrkRKEpRuyuse4xaDXprFTGxhop9uqm3qULxsBNFCAAkVi0tpnVHT20G1LW/DoN
+         km5n9cGtOpEOgZv54ibtlVL4gi5he8ZrYHj8S45ZQ7rEeLFzqg8NwuGjsI8zGI+0P48B
+         E/pB0nTBRxYSputvlEcLNvZYmnRwtbLe8c/AAEjGeuZWu9C5r6FtCU/lFoiz8Kbe4K2u
+         BLtIyAKHLiCJlAAzbGTJJM26vQ6SSgx4ucPjcB1NbG5mi/K/loVrW6kawdVhKjjJ2VBO
+         FWNQ==
+X-Gm-Message-State: AOAM5339xxxO601+Q2iri714KFtDK7Gvqyz9VzPgQFyTE2Ezb4aF6HY4
+        rjTXcJPk/uSw29lPa9zxSE/wncW0phtIb8pPsvVKjQ==
+X-Google-Smtp-Source: ABdhPJwrTsv+EJti/ieeyYQU1ct+fkSyCA7cqQ3UPyE7N/qRbEbq7Ua3AgaG4AZzN10UYbosHfeOoqJNO5hws8N0JeY=
+X-Received: by 2002:a67:f6d8:: with SMTP id v24mr18598001vso.48.1628075588257;
+ Wed, 04 Aug 2021 04:13:08 -0700 (PDT)
 MIME-Version: 1.0
-References: <20210731052233.4703-1-masahiroy@kernel.org> <20210731052233.4703-2-masahiroy@kernel.org>
-In-Reply-To: <20210731052233.4703-2-masahiroy@kernel.org>
-From:   Max Filippov <jcmvbkbc@gmail.com>
-Date:   Mon, 2 Aug 2021 11:03:57 -0700
-Message-ID: <CAMo8BfLDjw71xiCDo8uk4pQFuOzqAoak0k3R4YJDnRsA2hoCtw@mail.gmail.com>
-Subject: Re: [PATCH 2/3] trace: refactor TRACE_IRQFLAGS_SUPPORT in Kconfig
-To:     Masahiro Yamada <masahiroy@kernel.org>
-Cc:     Steven Rostedt <rostedt@goodmis.org>,
-        Ingo Molnar <mingo@redhat.com>, Arnd Bergmann <arnd@arndb.de>,
-        Ard Biesheuvel <ardb@kernel.org>,
-        Borislav Petkov <bp@alien8.de>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Ley Foon Tan <ley.foon.tan@intel.com>,
-        "maintainer:X86 ARCHITECTURE..." <x86@kernel.org>,
-        linux-mips@vger.kernel.org,
-        "open list:SPARC + UltraSPAR..." <sparclinux@vger.kernel.org>,
-        Anshuman Khandual <anshuman.khandual@arm.com>,
-        Nick Hu <nickhu@andestech.com>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Mike Rapoport <rppt@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        linux-riscv@lists.infradead.org, YiFei Zhu <yifeifz2@illinois.edu>,
-        Greentime Hu <green.hu@gmail.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Michal Simek <monstr@monstr.eu>, Helge Deller <deller@gmx.de>,
-        "open list:SUPERH" <linux-sh@vger.kernel.org>,
-        Vineet Gupta <vgupta@synopsys.com>,
-        =?UTF-8?Q?Uwe_Kleine=2DK=C3=B6nig?= 
-        <u.kleine-koenig@pengutronix.de>, Guo Ren <guoren@kernel.org>,
-        Sami Tolvanen <samitolvanen@google.com>,
-        Richard Weinberger <richard@nod.at>,
-        Christian Borntraeger <borntraeger@de.ibm.com>,
-        Rich Felker <dalias@libc.org>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Jeff Dike <jdike@addtoit.com>,
-        "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>,
-        "open list:TENSILICA XTENSA PORT (xtensa)" 
-        <linux-xtensa@linux-xtensa.org>, "H. Peter Anvin" <hpa@zytor.com>,
-        Will Deacon <will@kernel.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        linux-s390 <linux-s390@vger.kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-        linux-um@lists.infradead.org,
-        Andrey Konovalov <andreyknvl@gmail.com>,
-        Frederic Weisbecker <frederic@kernel.org>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Brian Cain <bcain@codeaurora.org>, linux-csky@vger.kernel.org,
-        Stafford Horne <shorne@gmail.com>,
-        Russell King <linux@armlinux.org.uk>,
-        linux-arm-kernel@lists.infradead.org,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Chris Zankel <chris@zankel.net>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        linux-snps-arc@lists.infradead.org,
-        Jonas Bonn <jonas@southpole.se>,
-        "open list:PARISC ARCHITECTURE" <linux-parisc@vger.kernel.org>,
-        Kees Cook <keescook@chromium.org>,
-        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
-        Colin Ian King <colin.king@canonical.com>,
-        "David S. Miller" <davem@davemloft.net>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Vincent Chen <deanbo422@gmail.com>,
-        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+References: <20210712060928.4161649-1-hch@lst.de> <20210712060928.4161649-2-hch@lst.de>
+In-Reply-To: <20210712060928.4161649-2-hch@lst.de>
+From:   Ulf Hansson <ulf.hansson@linaro.org>
+Date:   Wed, 4 Aug 2021 13:12:31 +0200
+Message-ID: <CAPDyKFq2hqPYR-m3+mo7Gwu1421f_faE0jRpK4nJ8CDe=jHsjw@mail.gmail.com>
+Subject: Re: [PATCH 1/6] mmc: JZ4740: remove the flush_kernel_dcache_page call
+ in jz4740_mmc_read_data
+To:     Christoph Hellwig <hch@lst.de>
+Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
         Andrew Morton <akpm@linux-foundation.org>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Paul Mackerras <paulus@samba.org>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Viresh Kumar <viresh.kumar@linaro.org>,
-        linuxppc-dev@lists.ozlabs.org, openrisc@lists.librecores.org
+        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Guo Ren <guoren@kernel.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Nick Hu <nickhu@andestech.com>,
+        Greentime Hu <green.hu@gmail.com>,
+        Vincent Chen <deanbo422@gmail.com>,
+        Helge Deller <deller@gmx.de>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Geoff Levand <geoff@infradead.org>,
+        Paul Cercueil <paul@crapouillou.net>,
+        Alex Shi <alexs@kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        linux-csky@vger.kernel.org,
+        linux-mips <linux-mips@vger.kernel.org>,
+        linux-parisc@vger.kernel.org,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        linux-mmc <linux-mmc@vger.kernel.org>,
+        linux-scsi <linux-scsi@vger.kernel.org>, linux-mm@kvack.org,
+        Linux Documentation <linux-doc@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Jul 30, 2021 at 10:24 PM Masahiro Yamada <masahiroy@kernel.org> wrote:
+On Mon, 12 Jul 2021 at 08:10, Christoph Hellwig <hch@lst.de> wrote:
 >
-> Make architectures select TRACE_IRQFLAGS_SUPPORT instead of
-> having many defines.
+> MIPS now implements flush_kernel_dcache_page (as an alias to
+> flush_dcache_page).
 >
-> Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
-> ---
->  arch/xtensa/Kconfig           | 4 +---
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
 
-Acked-by: Max Filippov <jcmvbkbc@gmail.com>
--- 
-Thanks.
--- Max
+Apologies for the delay!
+
+Acked-by: Ulf Hansson <ulf.hansson@linaro.org>
+
+Kind regards
+Uffe
+
+
+> ---
+>  drivers/mmc/host/jz4740_mmc.c | 4 ----
+>  1 file changed, 4 deletions(-)
+>
+> diff --git a/drivers/mmc/host/jz4740_mmc.c b/drivers/mmc/host/jz4740_mmc.c
+> index 0db17bcc9c16..aa2240c83510 100644
+> --- a/drivers/mmc/host/jz4740_mmc.c
+> +++ b/drivers/mmc/host/jz4740_mmc.c
+> @@ -578,10 +578,6 @@ static bool jz4740_mmc_read_data(struct jz4740_mmc_host *host,
+>                         }
+>                 }
+>                 data->bytes_xfered += miter->length;
+> -
+> -               /* This can go away once MIPS implements
+> -                * flush_kernel_dcache_page */
+> -               flush_dcache_page(miter->page);
+>         }
+>         sg_miter_stop(miter);
+>
+> --
+> 2.30.2
+>
