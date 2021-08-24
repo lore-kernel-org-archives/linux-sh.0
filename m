@@ -2,94 +2,157 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FORGED_FROMDOMAIN,FREEMAIL_FROM,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable
-	autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-14.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,
+	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
+	version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C446C4320A
-	for <linux-sh@archiver.kernel.org>; Mon, 16 Aug 2021 06:00:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B7A7C4338F
+	for <linux-sh@archiver.kernel.org>; Tue, 24 Aug 2021 15:26:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EE8AF61A02
-	for <linux-sh@archiver.kernel.org>; Mon, 16 Aug 2021 06:00:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7C27B61165
+	for <linux-sh@archiver.kernel.org>; Tue, 24 Aug 2021 15:26:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233100AbhHPGAt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 16 Aug 2021 02:00:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59532 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232381AbhHPGAt (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 16 Aug 2021 02:00:49 -0400
-Received: from mail-il1-x130.google.com (mail-il1-x130.google.com [IPv6:2607:f8b0:4864:20::130])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3AEFBC0613C1;
-        Sun, 15 Aug 2021 23:00:10 -0700 (PDT)
-Received: by mail-il1-x130.google.com with SMTP id r6so16329767ilt.13;
-        Sun, 15 Aug 2021 23:00:10 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20161025;
-        h=mime-version:from:date:message-id:subject:to:cc;
-        bh=R1jdHxIic6IG0RZ15JYwb6SfB1Sny3U++9rwdVIMbpc=;
-        b=N538Qf00OU/4MWr9VhpTTwjjz9SYrRUmU+wweQpx/CiKvUYR0DsUPYVrZ0Gaksnecr
-         g9S3DbjA10e6/LhX03Q/YEuVx7RHctOucgZpKaBB7OQroEHtp6WiVYtwY4j4uBOM7Dep
-         aFZsxPg/cYmc5Ut7MvhXTrJM9q6FbUgp3exaV7LJJzmrc3OpHlKU5u3MRxiTyseN/6Ic
-         mmgmuGTxF9gTnkL9m1yvSwe1+CXLnmKJJJ05ESWdilvokS4Sz4miG7SxykpEyUx7Of/4
-         vUqe2wHvTZTk8YkBtUa/GSPjEYWKqmJjK+nBKwWI7v4pCVpX6LbT71N1X+gvY44bbg9c
-         t8JQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20161025;
-        h=x-gm-message-state:mime-version:from:date:message-id:subject:to:cc;
-        bh=R1jdHxIic6IG0RZ15JYwb6SfB1Sny3U++9rwdVIMbpc=;
-        b=HCfioveJLEQSit8a2I4rn02e59M6iDTNUT8I5EXVprG6lr58EsmTfAM0fUriEUsaji
-         CiFuInYoqo4Zmw+0OCii3av3GvV+UhlcuBnkVIfPrJYKXiqzcgPWLhPfmKuugkrJxfHp
-         tEBe4zTnWxbPA8OHAAyIsF9eZS6YWcKvn9B1L0faGG0T4ghsfZyqpP7OUvcPc9jrOZAN
-         uvcQTFl3Vn4VRzhVrgeQt7EVxs7Wl/UkARgk7R8SnyaCfRtYv8lWR2V4ZE03QNivQWE9
-         aKrz/Sj7MxkbMyNdriccD5XXgkrFC5sFW1pdpvQSVVQCE4CULv4rHWtXuW3++pVOrVb2
-         z6CQ==
-X-Gm-Message-State: AOAM531vL9JFyVlulwCkQb/PPPqREJhf7eAXLEE9duTV470Ol9IUSmLS
-        fo9HQkVzgKZLaALmrt+zMdrvN0ExqeP0H6WvoWk=
-X-Google-Smtp-Source: ABdhPJxuEkukUOLBjIDa/Icne46+DbUoaLu1NrME7byItKN9OCgmA6jjCgnGn4HltxvhYkzwKVtCj7g9cFdJ35NR5EQ=
-X-Received: by 2002:a92:3607:: with SMTP id d7mr10713042ila.5.1629093604163;
- Sun, 15 Aug 2021 23:00:04 -0700 (PDT)
+        id S238204AbhHXP0w (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 24 Aug 2021 11:26:52 -0400
+Received: from condef-04.nifty.com ([202.248.20.69]:36245 "EHLO
+        condef-04.nifty.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S238162AbhHXP0w (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 24 Aug 2021 11:26:52 -0400
+Received: from conssluserg-04.nifty.com ([10.126.8.83])by condef-04.nifty.com with ESMTP id 17OFNIOI020737
+        for <linux-sh@vger.kernel.org>; Wed, 25 Aug 2021 00:23:18 +0900
+Received: from mail-pg1-f182.google.com (mail-pg1-f182.google.com [209.85.215.182]) (authenticated)
+        by conssluserg-04.nifty.com with ESMTP id 17OFMfa6016562;
+        Wed, 25 Aug 2021 00:22:42 +0900
+DKIM-Filter: OpenDKIM Filter v2.10.3 conssluserg-04.nifty.com 17OFMfa6016562
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com;
+        s=dec2015msa; t=1629818562;
+        bh=S+OncbYervpFyf36q1qMQ/cK2RuBY42Jax+g4KEinBk=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=ZcH8Mol3zFOfA82L2ktXpSfndCTVIm8sSN5WhvCF0nkR7lfzciGFhUJXETjlXjtPX
+         zJh+MUJ/Ewjk16dZQ1gny5f5e7a9UEa8Y4ew4QsRa2f8+XDPL4zy7TRkyQPCCGuQBR
+         HtPcktDDii+gXrd9c6Y/+n2IDAqMdutuYAV8w4MCt5+cnVSpw8AKUX2Ib7Ibo6FD2q
+         Ohh6UGM+07Qonx5uLAq8xTeCFAPzEUUH7JfX0G/OTHgFnWD/VUkraTi5Z03rF1LVlI
+         S9HUYx9frUuL/nuZq9/KuCBWLzyvJI5ic9YGRufpg399QFVGzpWMzh0y6+RyOdbiCs
+         U/uVLdyiGdKjg==
+X-Nifty-SrcIP: [209.85.215.182]
+Received: by mail-pg1-f182.google.com with SMTP id e7so20084678pgk.2;
+        Tue, 24 Aug 2021 08:22:41 -0700 (PDT)
+X-Gm-Message-State: AOAM532kurLktu58pwqpHuXIw8lHovCfniN5blvX1moEtQVIcV7LHn01
+        PUcoRr6FGo3YJvxRRhzqkBZgYNDXJOe0Ioj8nm8=
+X-Google-Smtp-Source: ABdhPJxOp9dnA/3wndoHqVeBS+wD5iSN8I9DS95FoFt5pEdVV9c/uEMA3l6IFAOsje6soli60G91Ls2TkIcdXGUYgjE=
+X-Received: by 2002:aa7:8e56:0:b029:3cd:c2ec:6c1c with SMTP id
+ d22-20020aa78e560000b02903cdc2ec6c1cmr39028324pfr.80.1629818561184; Tue, 24
+ Aug 2021 08:22:41 -0700 (PDT)
 MIME-Version: 1.0
-From:   zhao xc <xinchao.zhao.kernelz@gmail.com>
-Date:   Sun, 15 Aug 2021 22:59:53 -0700
-Message-ID: <CAP7CzPfRFSfUka1Wjo1+KNSdhYjR2n59g2yvEFGRyfYwNFNy1A@mail.gmail.com>
-Subject: 
-To:     ysato@users.sourceforge.jp
-Cc:     dalias@libc.org, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Content-Type: multipart/mixed; boundary="000000000000957ea705c9a6e97d"
+References: <20210407053419.449796-1-gregkh@linuxfoundation.org> <20210407053419.449796-19-gregkh@linuxfoundation.org>
+In-Reply-To: <20210407053419.449796-19-gregkh@linuxfoundation.org>
+From:   Masahiro Yamada <masahiroy@kernel.org>
+Date:   Wed, 25 Aug 2021 00:22:03 +0900
+X-Gmail-Original-Message-ID: <CAK7LNAQ07ycpjJQGwbtq1ii3k9rh2CZVN6MVxkfMb=+Vgs9zqw@mail.gmail.com>
+Message-ID: <CAK7LNAQ07ycpjJQGwbtq1ii3k9rh2CZVN6MVxkfMb=+Vgs9zqw@mail.gmail.com>
+Subject: Re: [PATCH 18/20] kbuild: sh: remove unused install script
+To:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc:     Michal Marek <michal.lkml@markovi.net>,
+        Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>,
+        linux-arch <linux-arch@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
---000000000000957ea705c9a6e97d
-Content-Type: text/plain; charset="UTF-8"
+On Wed, Apr 7, 2021 at 2:35 PM Greg Kroah-Hartman
+<gregkh@linuxfoundation.org> wrote:
+>
+> The sh arch has a install.sh script, but no Makefile actually calls it.
+> Remove it to keep anyone from accidentally calling it in the future.
+>
+> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+> Cc: Rich Felker <dalias@libc.org>
+> Cc: linux-sh@vger.kernel.org
+> Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+> ---
+>  arch/sh/boot/compressed/install.sh | 56 ------------------------------
+>  1 file changed, 56 deletions(-)
+>  delete mode 100644 arch/sh/boot/compressed/install.sh
+>
+> diff --git a/arch/sh/boot/compressed/install.sh b/arch/sh/boot/compressed/install.sh
+> deleted file mode 100644
+> index f9f41818b17e..000000000000
+> --- a/arch/sh/boot/compressed/install.sh
+> +++ /dev/null
+> @@ -1,56 +0,0 @@
+> -#!/bin/sh
+> -#
+> -# arch/sh/boot/install.sh
+> -#
+> -# This file is subject to the terms and conditions of the GNU General Public
+> -# License.  See the file "COPYING" in the main directory of this archive
+> -# for more details.
+> -#
+> -# Copyright (C) 1995 by Linus Torvalds
+> -#
+> -# Adapted from code in arch/i386/boot/Makefile by H. Peter Anvin
+> -# Adapted from code in arch/i386/boot/install.sh by Russell King
+> -# Adapted from code in arch/arm/boot/install.sh by Stuart Menefy
+> -#
+> -# "make install" script for sh architecture
+> -#
+> -# Arguments:
+> -#   $1 - kernel version
+> -#   $2 - kernel image file
+> -#   $3 - kernel map file
+> -#   $4 - default install path (blank if root directory)
+> -#
+> -
+> -# User may have a custom install script
+> -
+> -if [ -x /sbin/${INSTALLKERNEL} ]; then
+> -  exec /sbin/${INSTALLKERNEL} "$@"
+> -fi
+> -
+> -if [ "$2" = "zImage" ]; then
+> -# Compressed install
+> -  echo "Installing compressed kernel"
+> -  if [ -f $4/vmlinuz-$1 ]; then
+> -    mv $4/vmlinuz-$1 $4/vmlinuz.old
+> -  fi
+> -
+> -  if [ -f $4/System.map-$1 ]; then
+> -    mv $4/System.map-$1 $4/System.old
+> -  fi
+> -
+> -  cat $2 > $4/vmlinuz-$1
+> -  cp $3 $4/System.map-$1
+> -else
+> -# Normal install
+> -  echo "Installing normal kernel"
+> -  if [ -f $4/vmlinux-$1 ]; then
+> -    mv $4/vmlinux-$1 $4/vmlinux.old
+> -  fi
+> -
+> -  if [ -f $4/System.map ]; then
+> -    mv $4/System.map $4/System.old
+> -  fi
+> -
+> -  cat $2 > $4/vmlinux-$1
+> -  cp $3 $4/System.map
+> -fi
+> --
+> 2.31.1
+>
+
+
+This one is applicable independently.
+
+Applied to linux-kbuild. Thanks.
 
 
 
---000000000000957ea705c9a6e97d
-Content-Type: text/x-patch; charset="US-ASCII"; 
-	name="0001-CONFIG_IP_NF_TARGET_LOG-Configuration-does-not-exist.patch"
-Content-Disposition: attachment; 
-	filename="0001-CONFIG_IP_NF_TARGET_LOG-Configuration-does-not-exist.patch"
-Content-Transfer-Encoding: base64
-Content-ID: <f_kse89bun0>
-X-Attachment-Id: f_kse89bun0
-
-RnJvbSBmN2EyYWJkMWM0Y2U0ZjQ2ZDk1NWIxZmEwMDA2MzExMzM1MmRlMzliIE1vbiBTZXAgMTcg
-MDA6MDA6MDAgMjAwMQpGcm9tOiB6aGFveGluY2hhbyA8eGluY2hhby56aGFvQHVjYXMuY29tLmNu
-PgpEYXRlOiBTdW4sIDE1IEF1ZyAyMDIxIDIwOjM1OjE2IC0wNzAwClN1YmplY3Q6IFtQQVRDSF0g
-Q09ORklHX0lQX05GX1RBUkdFVF9MT0cgQ29uZmlndXJhdGlvbiBkb2VzIG5vdCBleGlzdAoKU2ln
-bmVkLW9mZi1ieTogemhhb3hpbmNoYW8gPHhpbmNoYW8uemhhb0B1Y2FzLmNvbS5jbj4KLS0tCiBh
-cmNoL3NoL2NvbmZpZ3MvdGl0YW5fZGVmY29uZmlnIHwgMiArLQogMSBmaWxlIGNoYW5nZWQsIDEg
-aW5zZXJ0aW9uKCspLCAxIGRlbGV0aW9uKC0pCgpkaWZmIC0tZ2l0IGEvYXJjaC9zaC9jb25maWdz
-L3RpdGFuX2RlZmNvbmZpZyBiL2FyY2gvc2gvY29uZmlncy90aXRhbl9kZWZjb25maWcKaW5kZXgg
-YmE4ODdmMTM1MWJlLi5hOGI0YTlkMzkzYmUgMTAwNjQ0Ci0tLSBhL2FyY2gvc2gvY29uZmlncy90
-aXRhbl9kZWZjb25maWcKKysrIGIvYXJjaC9zaC9jb25maWdzL3RpdGFuX2RlZmNvbmZpZwpAQCAt
-ODMsNyArODMsNyBAQCBDT05GSUdfSVBfTkZfTUFUQ0hfRUNOPW0KIENPTkZJR19JUF9ORl9NQVRD
-SF9UVEw9bQogQ09ORklHX0lQX05GX0ZJTFRFUj1tCiBDT05GSUdfSVBfTkZfVEFSR0VUX1JFSkVD
-VD1tCi1DT05GSUdfSVBfTkZfVEFSR0VUX0xPRz1tCitDT05GSUdfTkVURklMVEVSX1hUX1RBUkdF
-VF9MT0c9bQogQ09ORklHX0lQX05GX01BTkdMRT1tCiBDT05GSUdfSVBfTkZfVEFSR0VUX0VDTj1t
-CiBDT05GSUdfSVBfTkZfVEFSR0VUX1RUTD1tCi0tIAoyLjE3LjEKCg==
---000000000000957ea705c9a6e97d--
+-- 
+Best Regards
+Masahiro Yamada
