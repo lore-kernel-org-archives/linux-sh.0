@@ -2,119 +2,141 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-15.2 required=3.0 tests=BAYES_00,
-	HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_2
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-18.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	INCLUDES_PATCH,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,USER_AGENT_GIT
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 35C06C43217
-	for <linux-sh@archiver.kernel.org>; Thu,  9 Sep 2021 23:39:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A81FAC433EF
+	for <linux-sh@archiver.kernel.org>; Fri, 10 Sep 2021 17:18:01 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 1CA5B61179
-	for <linux-sh@archiver.kernel.org>; Thu,  9 Sep 2021 23:39:17 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 875816120F
+	for <linux-sh@archiver.kernel.org>; Fri, 10 Sep 2021 17:18:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230144AbhIIXkY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 9 Sep 2021 19:40:24 -0400
-Received: from mail.kernel.org ([198.145.29.99]:54360 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232591AbhIIXiK (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Thu, 9 Sep 2021 19:38:10 -0400
-Received: from gandalf.local.home (cpe-66-24-58-225.stny.res.rr.com [66.24.58.225])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id 2AF536108D;
-        Thu,  9 Sep 2021 23:36:57 +0000 (UTC)
-Date:   Thu, 9 Sep 2021 19:36:55 -0400
-From:   Steven Rostedt <rostedt@goodmis.org>
-To:     Weizhao Ouyang <o451686892@gmail.com>
-Cc:     Ingo Molnar <mingo@redhat.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Nick Hu <nickhu@andestech.com>,
-        Greentime Hu <green.hu@gmail.com>,
-        Vincent Chen <deanbo422@gmail.com>,
-        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@de.ibm.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Borislav Petkov <bp@alien8.de>, x86@kernel.org,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org
-Subject: Re: [PATCH v4] ftrace: Cleanup ftrace_dyn_arch_init()
-Message-ID: <20210909193655.7bc715af@gandalf.local.home>
-In-Reply-To: <20210909090216.1955240-1-o451686892@gmail.com>
-References: <20210909090216.1955240-1-o451686892@gmail.com>
-X-Mailer: Claws Mail 3.17.8 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
+        id S230203AbhIJRTH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 10 Sep 2021 13:19:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39218 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231235AbhIJRTG (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 10 Sep 2021 13:19:06 -0400
+Received: from mail-pj1-x1033.google.com (mail-pj1-x1033.google.com [IPv6:2607:f8b0:4864:20::1033])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6E941C061756
+        for <linux-sh@vger.kernel.org>; Fri, 10 Sep 2021 10:17:55 -0700 (PDT)
+Received: by mail-pj1-x1033.google.com with SMTP id m21-20020a17090a859500b00197688449c4so1937010pjn.0
+        for <linux-sh@vger.kernel.org>; Fri, 10 Sep 2021 10:17:55 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=itbhu.ac.in; s=google;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=xYD2n/bm80yFsEOIoHqmRvRvE9j03/5QQwdCIDeVouU=;
+        b=g6xs6P54IkYtF5FK7SspjiY78aJPPYvQRHcCJm6RP9CLyvtXFOfksrkurUDezPMuK1
+         5UwrSybwYWU7b9Z2PgFR8SW91AExhnMPaFN5cxwEEuUHKiSmSpboXNy5BLlrFY2Gq7sQ
+         Ha+aYR3mkliESuWELCSfFMaXv0g71tBGrVkJk=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=xYD2n/bm80yFsEOIoHqmRvRvE9j03/5QQwdCIDeVouU=;
+        b=PmGLt2plqXck6BSjGyDYCais6aiHJCdFdkDRNV9lvg94dWDtcow57wMcsxPcP10FKd
+         hDHS4IxJSqdmOn6CNGxuNCdEZl5hbE/0U/QVXGpzNb0SV0mxgGLvKlUadlYfFEsc7vGp
+         yGloxnnX7BMrIrYns04MTlLMAHFZGMl9SkIMNNkOMzeT2o/i7z2JKwAZa/nbDgjMQ1pF
+         MoR3bkdASAnNfu+nyojW4JpNlbQsREOeq5CNIA1/S/NjIKVZwc5FcqsdU9F8vLoPtCBx
+         jVfazfnnhp3W174VekYEKNGnNMwlVUpTOZml5/2XqX2fRE51w+vWFv/LFuyAVjEDGcZQ
+         rBaw==
+X-Gm-Message-State: AOAM533eGK4BnAyAOtfNH3+PA/eESzgc+zsiTR3ki4XDDjlVqTtYvwca
+        R4k+7hYepQRnLhImcn/rmdvcFA==
+X-Google-Smtp-Source: ABdhPJzWk0gtuIYMobzAVCVYLNT+B7v6FD3bl44SoFprjDvseTdwAb1XRDNu/8GxxYCQ4eCwwoGAiw==
+X-Received: by 2002:a17:90a:c89:: with SMTP id v9mr10519405pja.71.1631294274829;
+        Fri, 10 Sep 2021 10:17:54 -0700 (PDT)
+Received: from localhost.localdomain ([2405:201:8015:105a:2a52:f3e7:aa6a:4b8a])
+        by smtp.gmail.com with ESMTPSA id a194sm5541181pfa.119.2021.09.10.10.17.51
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 10 Sep 2021 10:17:54 -0700 (PDT)
+From:   Siddhartha Das <siddhartha.das.min19@itbhu.ac.in>
+To:     ysato@users.sourceforge.jp
+Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Siddhartha Das <siddhartha.das.min19@itbhu.ac.in>
+Subject: [PATCH] arch: sh: drivers: dma: dma-api.c: Changed preferred function strscpy over strlcpy issue arch: sh: drivers: dma: dma-sysfs.c: Changed preferred function simple_strtoul over kstrtout issue arch: sh: drivers: dma: dmabrg.c: Fixed pointer declaration code issue arch: sh: drivers: heartbeat.c: Fixed preferred unsigned int over unsigned issue
+Date:   Fri, 10 Sep 2021 22:47:33 +0530
+Message-Id: <20210910171733.105486-1-siddhartha.das.min19@itbhu.ac.in>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu,  9 Sep 2021 17:02:16 +0800
-Weizhao Ouyang <o451686892@gmail.com> wrote:
+Fixed Code style issues and prefer cases
 
-> Most of ARCHs use empty ftrace_dyn_arch_init(), introduce a weak common
-> ftrace_dyn_arch_init() to cleanup them.
+Signed-off-by: Siddhartha Das <siddhartha.das.min19@itbhu.ac.in>
+---
+ arch/sh/drivers/dma/dma-api.c   | 2 +-
+ arch/sh/drivers/dma/dma-sysfs.c | 2 +-
+ arch/sh/drivers/dma/dmabrg.c    | 2 +-
+ arch/sh/drivers/heartbeat.c     | 4 ++--
+ 4 files changed, 5 insertions(+), 5 deletions(-)
 
-FYI,
+diff --git a/arch/sh/drivers/dma/dma-api.c b/arch/sh/drivers/dma/dma-api.c
+index ab9170494dcc..89cd4a3b4cca 100644
+--- a/arch/sh/drivers/dma/dma-api.c
++++ b/arch/sh/drivers/dma/dma-api.c
+@@ -198,7 +198,7 @@ int request_dma(unsigned int chan, const char *dev_id)
+ 	if (atomic_xchg(&channel->busy, 1))
+ 		return -EBUSY;
+ 
+-	strlcpy(channel->dev_id, dev_id, sizeof(channel->dev_id));
++	strscpy(channel->dev_id, dev_id, sizeof(channel->dev_id));
+ 
+ 	if (info->ops->request) {
+ 		result = info->ops->request(channel);
+diff --git a/arch/sh/drivers/dma/dma-sysfs.c b/arch/sh/drivers/dma/dma-sysfs.c
+index 8ef318150f84..6d20f2ed3b7a 100644
+--- a/arch/sh/drivers/dma/dma-sysfs.c
++++ b/arch/sh/drivers/dma/dma-sysfs.c
+@@ -80,7 +80,7 @@ static ssize_t dma_store_config(struct device *dev,
+ 	struct dma_channel *channel = to_dma_channel(dev);
+ 	unsigned long config;
+ 
+-	config = simple_strtoul(buf, NULL, 0);
++	config = kstrtoul(buf, NULL, 0);
+ 	dma_configure_channel(channel->vchan, config);
+ 
+ 	return count;
+diff --git a/arch/sh/drivers/dma/dmabrg.c b/arch/sh/drivers/dma/dmabrg.c
+index 5b2c1fd254d7..04c66a8d893f 100644
+--- a/arch/sh/drivers/dma/dmabrg.c
++++ b/arch/sh/drivers/dma/dmabrg.c
+@@ -122,7 +122,7 @@ static void dmabrg_enable_irq(unsigned int dmairq)
+ 	__raw_writel(dcr, DMABRGCR);
+ }
+ 
+-int dmabrg_request_irq(unsigned int dmairq, void(*handler)(void*),
++int dmabrg_request_irq(unsigned int dmairq, void(*handler)(void *),
+ 		       void *data)
+ {
+ 	if ((dmairq > 9) || !handler)
+diff --git a/arch/sh/drivers/heartbeat.c b/arch/sh/drivers/heartbeat.c
+index 24391b444b28..07f04ed0d517 100644
+--- a/arch/sh/drivers/heartbeat.c
++++ b/arch/sh/drivers/heartbeat.c
+@@ -30,7 +30,7 @@
+ static unsigned char default_bit_pos[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+ 
+ static inline void heartbeat_toggle_bit(struct heartbeat_data *hd,
+-					unsigned bit, unsigned int inverted)
++					unsigned int bit, unsigned int inverted)
+ {
+ 	unsigned int new;
+ 
+@@ -59,7 +59,7 @@ static inline void heartbeat_toggle_bit(struct heartbeat_data *hd,
+ static void heartbeat_timer(struct timer_list *t)
+ {
+ 	struct heartbeat_data *hd = from_timer(hd, t, timer);
+-	static unsigned bit = 0, up = 1;
++	static unsigned int bit = 0, up = 1;
+ 
+ 	heartbeat_toggle_bit(hd, bit, hd->flags & HEARTBEAT_INVERTED);
+ 
+-- 
+2.25.1
 
-I'm not ignoring this patch. I just wont be able to look at it until the
-merge window is over.
-
--- Steve
-
-
-> 
-> Signed-off-by: Weizhao Ouyang <o451686892@gmail.com>
-> Acked-by: Heiko Carstens <hca@linux.ibm.com> (s390)
-> Acked-by: Helge Deller <deller@gmx.de> (parisc)
-> 
-> ---
-> Changes in v4:
-> -- revert the generic declaration
-> 
-> Changes in v3:
-> -- fix unrecognized opcode on PowerPC
-> 
-> Changes in v2:
-> -- correct CONFIG_DYNAMIC_FTRACE on PowerPC
-> -- add Acked-by tag
-> 
-> ---
->  arch/arm/kernel/ftrace.c        | 5 -----
->  arch/arm64/kernel/ftrace.c      | 5 -----
->  arch/csky/kernel/ftrace.c       | 5 -----
->  arch/ia64/kernel/ftrace.c       | 6 ------
->  arch/microblaze/kernel/ftrace.c | 5 -----
->  arch/nds32/kernel/ftrace.c      | 5 -----
->  arch/parisc/kernel/ftrace.c     | 5 -----
->  arch/riscv/kernel/ftrace.c      | 5 -----
->  arch/s390/kernel/ftrace.c       | 5 -----
->  arch/sh/kernel/ftrace.c         | 5 -----
->  arch/sparc/kernel/ftrace.c      | 5 -----
->  arch/x86/kernel/ftrace.c        | 5 -----
->  kernel/trace/ftrace.c           | 5 +++++
->  13 files changed, 5 insertions(+), 61 deletions(-)
-> 
->
