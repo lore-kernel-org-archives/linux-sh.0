@@ -2,97 +2,109 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-6.7 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,NICE_REPLY_A,
-	SPF_HELO_NONE,SPF_PASS,USER_AGENT_SANE_1 autolearn=no autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-3.7 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	URIBL_BLOCKED autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2AAAEC433EF
-	for <linux-sh@archiver.kernel.org>; Fri, 17 Sep 2021 01:12:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AE398C433EF
+	for <linux-sh@archiver.kernel.org>; Fri, 17 Sep 2021 09:24:16 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 103386120F
-	for <linux-sh@archiver.kernel.org>; Fri, 17 Sep 2021 01:12:58 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8AB0E611EE
+	for <linux-sh@archiver.kernel.org>; Fri, 17 Sep 2021 09:24:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242091AbhIQBOS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 16 Sep 2021 21:14:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53150 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242082AbhIQBOR (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 16 Sep 2021 21:14:17 -0400
-Received: from mail-io1-xd30.google.com (mail-io1-xd30.google.com [IPv6:2607:f8b0:4864:20::d30])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D21D0C061756
-        for <linux-sh@vger.kernel.org>; Thu, 16 Sep 2021 18:12:56 -0700 (PDT)
-Received: by mail-io1-xd30.google.com with SMTP id g9so10173858ioq.11
-        for <linux-sh@vger.kernel.org>; Thu, 16 Sep 2021 18:12:56 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20210112.gappssmtp.com; s=20210112;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=COgu+Smzr2YqzR6tkm3PXZN/dACB/9XYE3hlM4YA6dw=;
-        b=cV4WEVACT1XlzzF99FIFhp8x5uYBhSgMe7jqweUbWVmc1Ry9Tr/CEjKSNdLYNE3aqG
-         AgovWF3HfeOjv/aLlDvNZe2sMbZaUhQCbPK7KKdNi3Pkp2jiJWLlg/QrBiyLBU1yWKCl
-         we25+Dwpx+oGwkkPGprDKrERAXzmTjbmaY6esh8vk7xKKBvTgkA+ql7KCPJ5U9sGUzW9
-         STNUpFpQ5OSqzlwTEZnRUJU/gvDdpAXCfJLZg0noYSkNHx2A0medx5FSSDcR198qtrF+
-         MNs/du/6gPDaqPw2Qm9kWpIddxIVyXH69lrR4DMgpCMGhfBQ8iWtBZIhJ9ScJXkwB6Un
-         tKRg==
+        id S245701AbhIQJZg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 17 Sep 2021 05:25:36 -0400
+Received: from mail-ua1-f46.google.com ([209.85.222.46]:41827 "EHLO
+        mail-ua1-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S245705AbhIQJWu (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 17 Sep 2021 05:22:50 -0400
+Received: by mail-ua1-f46.google.com with SMTP id f24so5688272uav.8;
+        Fri, 17 Sep 2021 02:21:21 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=COgu+Smzr2YqzR6tkm3PXZN/dACB/9XYE3hlM4YA6dw=;
-        b=27LYVlJzJ+DjfkVe4BIXx1jv+imqIv0Y3C/kQHSNSnTf4TFxMJhnCWpK94cOijsPJd
-         KCfw0B1JiiDD9y0lAhPmYhY5Ozu4ZYWivmT+ckHp3/7ZH3q8Gx7BwewliwqA1X2ARTJS
-         fKSV5aJhUgAelZdYAM5A2HbfUmZBw0tJWZNX1qj8vya45ErxnvzcvsV0MUbbSvoXWPyO
-         z3L0HaEKN/Kjr/E7P53q3htMQ3dt6oP6sF21gO0O1MwFnZnVywTr/3NpdVE+t0+WZa1X
-         PT+jRF1CClo1Nx87fU9u9jEjh5Rw577YfqsVFNYI+SZrGQZ4JL68roisIMLPJyfQzRqu
-         GHjQ==
-X-Gm-Message-State: AOAM5315p2w1mnkq194URK3taVCEZr+4GZ/eyN41EtBIx1XAWUrZ+4sF
-        x/zKRDS/CuYd0Q4di4OMZqvqOg==
-X-Google-Smtp-Source: ABdhPJy9lqKWDc2vVJ1gP4OMkSbqb54JEPrZrf+SC60tX+YO99loypj7WK7n8H+TA7khKxnjc+uaTQ==
-X-Received: by 2002:a5e:a70c:: with SMTP id b12mr6478854iod.119.1631841176222;
-        Thu, 16 Sep 2021 18:12:56 -0700 (PDT)
-Received: from [192.168.5.221] ([172.58.140.85])
-        by smtp.gmail.com with ESMTPSA id x16sm2561006ile.63.2021.09.16.18.12.54
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 16 Sep 2021 18:12:55 -0700 (PDT)
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=8I/7meg9hzcw7tEZzqH2YXfTn0DbCHMjtqTubXnUYqM=;
+        b=dbhbZ3+ULfqp1/spGZK77yrmQQ+jygp00REsOYh9oi4neYqM9nvykqIFxeJoQ04+mp
+         g6r4nidWmC+hm8zPUQbD4hOT1HEXJv4zET6K7WayjjpQUO7SUhxXll9FCZzhGO9tpOwb
+         gU0N0p/HEvfkj+La1qsvdNVr8AWKTf7sOsWKMAr1JnZhYmgF9gmTiImoZAL8CPoK+RBK
+         NfGERpaN8Uh7dzvk4zW7C5yMkIG1z+Va3Q7LOXS4wWwK6KeLnx4av8gZS+iNtSosAiHU
+         2CriEHjBdbSJEFdx90Y9ehnuxvMMOL6nYkjnB3Jdf8aitQEgWQxtJ3X2YqJrCsYpaRxT
+         a/6w==
+X-Gm-Message-State: AOAM531FJERQQ+EyppXfuTFbrzVL0k0cKemm7zBKywJBy6RIu7cK+/NS
+        FxSGxDN3TVJcJjSHvKHqTeWC5TZ2McQy11d1KDs=
+X-Google-Smtp-Source: ABdhPJwDxvombQXM8qDAYdgzwqm9pCHR3qlDCJ/FLgNppzCu2UdGidrdzoe/gRoxmK+GNur1xSzAvGWKBs1rxvDGBGw=
+X-Received: by 2002:ab0:6dc7:: with SMTP id r7mr3590208uaf.14.1631870481125;
+ Fri, 17 Sep 2021 02:21:21 -0700 (PDT)
+MIME-Version: 1.0
+References: <2c2eef3c9a2f57e5609100a4864715ccf253d30f.1631713483.git.geert+renesas@glider.be>
+ <1acace03-4273-a5ad-50b4-5ab8e3baa551@landley.net>
+In-Reply-To: <1acace03-4273-a5ad-50b4-5ab8e3baa551@landley.net>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Fri, 17 Sep 2021 11:21:09 +0200
+Message-ID: <CAMuHMdUYUbjPSitt3wTi-YY5CEKwDJNJKPp9Pbfewm7B0CXP2A@mail.gmail.com>
 Subject: Re: [PATCH] sh: pgtable-3level: Fix cast to pointer from integer of
  different size
-To:     Geert Uytterhoeven <geert+renesas@glider.be>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+To:     Rob Landley <rob@landley.net>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         "Aneesh Kumar K . V" <aneesh.kumar@linux.ibm.com>,
-        Andrew Morton <akpm@linux-foundation.org>
-Cc:     Jacopo Mondi <jacopo+renesas@jmondi.org>,
-        Daniel Palmer <daniel@0x0f.com>, linux-sh@vger.kernel.org,
-        linux-mm@kvack.org, linux-kernel@vger.kernel.org
-References: <2c2eef3c9a2f57e5609100a4864715ccf253d30f.1631713483.git.geert+renesas@glider.be>
-From:   Rob Landley <rob@landley.net>
-Message-ID: <1acace03-4273-a5ad-50b4-5ab8e3baa551@landley.net>
-Date:   Thu, 16 Sep 2021 20:32:20 -0500
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.12.0
-MIME-Version: 1.0
-In-Reply-To: <2c2eef3c9a2f57e5609100a4864715ccf253d30f.1631713483.git.geert+renesas@glider.be>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+        Andrew Morton <akpm@linux-foundation.org>,
+        Jacopo Mondi <jacopo+renesas@jmondi.org>,
+        Daniel Palmer <daniel@0x0f.com>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        Linux MM <linux-mm@kvack.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 9/15/21 8:50 AM, Geert Uytterhoeven wrote:
->     arch/sh/include/asm/pgtable-3level.h:37:9: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
-...
-> The truncation to "unsigned long" has been there since forever, so
-> probably it still works fine ;-)
+Hi Rob,
 
-1) Linux is LP64 so sizeof(long) and sizeof(pointer) always match, so it's not
-truncating.
+On Fri, Sep 17, 2021 at 3:12 AM Rob Landley <rob@landley.net> wrote:
+> On 9/15/21 8:50 AM, Geert Uytterhoeven wrote:
+> >     arch/sh/include/asm/pgtable-3level.h:37:9: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
+> ...
+> > The truncation to "unsigned long" has been there since forever, so
+> > probably it still works fine ;-)
+>
+> 1) Linux is LP64 so sizeof(long) and sizeof(pointer) always match, so it's not
+> truncating.
+>
+> 2) The sh5 only ever shipped evaluation units, it never had a production run,
+> and we haven't implemented j64 yet, so all superh targets are currently 32 bit.
+> (I.E. it's complaining about _expanding_ the pointer, which shouldn't be a
+> problem as long as endianness is respected.)
 
-2) The sh5 only ever shipped evaluation units, it never had a production run,
-and we haven't implemented j64 yet, so all superh targets are currently 32 bit.
-(I.E. it's complaining about _expanding_ the pointer, which shouldn't be a
-problem as long as endianness is respected.)
+The build error is for 32-bit.
+If CONFIG_X2TLB=y, pgd_t.pgd is "unsigned long long", i.e. 64-bit, so
+casting it to a pointer needs an intermediate cast to "unsigned long".
+See arch/sh/include/asm/page.h:
 
-Rob
+#ifdef CONFIG_X2TLB
+typedef struct { unsigned long pte_low, pte_high; } pte_t;
+typedef struct { unsigned long long pgprot; } pgprot_t;
+typedef struct { unsigned long long pgd; } pgd_t;
+#define pte_val(x) \
+        ((x).pte_low | ((unsigned long long)(x).pte_high << 32))
+#define __pte(x) \
+        ({ pte_t __pte = {(x), ((unsigned long long)(x)) >> 32}; __pte; })
+#else
+typedef struct { unsigned long pte_low; } pte_t;
+typedef struct { unsigned long pgprot; } pgprot_t;
+typedef struct { unsigned long pgd; } pgd_t;
+#define pte_val(x)      ((x).pte_low)
+#define __pte(x)        ((pte_t) { (x) } )
+#endif
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
