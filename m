@@ -2,134 +2,90 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-14.0 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,INCLUDES_CR_TRAILER,INCLUDES_PATCH,MAILING_LIST_MULTI,
-	SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED autolearn=unavailable autolearn_force=no
-	version=3.4.0
+X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
+	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
+	autolearn=ham autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 67471C433EF
-	for <linux-sh@archiver.kernel.org>; Sun, 19 Sep 2021 02:05:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 007A6C433F5
+	for <linux-sh@archiver.kernel.org>; Tue, 21 Sep 2021 12:33:06 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3C282610A8
-	for <linux-sh@archiver.kernel.org>; Sun, 19 Sep 2021 02:05:02 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D102160F0F
+	for <linux-sh@archiver.kernel.org>; Tue, 21 Sep 2021 12:33:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230377AbhISCGZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 18 Sep 2021 22:06:25 -0400
-Received: from condef-03.nifty.com ([202.248.20.68]:35164 "EHLO
-        condef-03.nifty.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229460AbhISCGV (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 18 Sep 2021 22:06:21 -0400
-Received: from conssluserg-05.nifty.com ([10.126.8.84])by condef-03.nifty.com with ESMTP id 18J2358c023225
-        for <linux-sh@vger.kernel.org>; Sun, 19 Sep 2021 11:03:05 +0900
-Received: from mail-pj1-f45.google.com (mail-pj1-f45.google.com [209.85.216.45]) (authenticated)
-        by conssluserg-05.nifty.com with ESMTP id 18J22fC3001853;
-        Sun, 19 Sep 2021 11:02:41 +0900
-DKIM-Filter: OpenDKIM Filter v2.10.3 conssluserg-05.nifty.com 18J22fC3001853
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com;
-        s=dec2015msa; t=1632016962;
-        bh=eZ4UqEzoFbcU1gxopsAWucOOsR8Keeo3LyleujdCQ2c=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=Gp1X0Imnhk25xHygSuIwJ39zKa8vRJuxluKs09ZphVNtqFxqjCXHuiAVP4u/+Dibz
-         t07RNv3PmHeauIY6sGZITWOCDQERx2Cgs6Rh+eqwAvVjDZf2q+xFSrP4IIEwt4zVSG
-         eG1eIL9l1QUHqtu/HJBJjC4qt0D/OYKQSM1z6mLeOf6P1xKivEA3/wmojiNj2GmWY6
-         DxGx+Yh7sEsDFXYroT6HntEq52ee02o4bCoW8gvEncOaAtYJOkHwwfCqfxeYExPZs3
-         0Gj46GNBVAjb1YRKZ2fBFgFs6ZdMH6sZNtUlHm0tCyWJVSevqxMOP1J92tTDmtgmmT
-         2oPHK+OuoXSzw==
-X-Nifty-SrcIP: [209.85.216.45]
-Received: by mail-pj1-f45.google.com with SMTP id me5-20020a17090b17c500b0019af76b7bb4so12055419pjb.2;
-        Sat, 18 Sep 2021 19:02:41 -0700 (PDT)
-X-Gm-Message-State: AOAM530O8iVnwCGqL7i1ueGA7qMOUXhwo2gu5kctyTqS0BIsxxl7SVxw
-        6bNeyX2r/s5axsWhAZBgpmMweYi5pNO+juvvVEE=
-X-Google-Smtp-Source: ABdhPJzEdjq35ZjkW0hHIL1UUG+LNy7qC1HsCpAIiK3J6D7N5kbSKfCC5cTPRhOBcUI7G4hghXCQ6KRSxa0DGFrJnd8=
-X-Received: by 2002:a17:90b:314a:: with SMTP id ip10mr9609133pjb.77.1632016960976;
- Sat, 18 Sep 2021 19:02:40 -0700 (PDT)
-MIME-Version: 1.0
-References: <0771f164fcbba2fb425bf525400b8fab7079e539.1631781770.git.geert+renesas@glider.be>
-In-Reply-To: <0771f164fcbba2fb425bf525400b8fab7079e539.1631781770.git.geert+renesas@glider.be>
-From:   Masahiro Yamada <masahiroy@kernel.org>
-Date:   Sun, 19 Sep 2021 11:02:04 +0900
-X-Gmail-Original-Message-ID: <CAK7LNARTCU12W=nKOrjM8_5aGhkUPhiOqWBgwROsLKcZ80fy3Q@mail.gmail.com>
-Message-ID: <CAK7LNARTCU12W=nKOrjM8_5aGhkUPhiOqWBgwROsLKcZ80fy3Q@mail.gmail.com>
-Subject: Re: [PATCH] sh: Add missing FORCE prerequisites in Makefile
+        id S232542AbhIUMed (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 21 Sep 2021 08:34:33 -0400
+Received: from smtp-out1.suse.de ([195.135.220.28]:56006 "EHLO
+        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S232179AbhIUMec (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Sep 2021 08:34:32 -0400
+Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
+        by smtp-out1.suse.de (Postfix) with ESMTP id B644D22113;
+        Tue, 21 Sep 2021 12:33:02 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1632227582; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=tHYjB+PylponO9o3SOyjJk7Ga4SEkTKyJ/ThM4qiWO8=;
+        b=XnKlOhrb1DP7in/DcBC+5HImoKYcpvy/Rlz9IMaeQ+IWjzo7fXUdJZn84bBc2adMHD5EkZ
+        4H3OCK+CEjxyxxLK28ylUncFXgIUS1t/qjr4Cnmc8jOBJjYDWwBeEjwHNyMqLFMo+Yk02L
+        Nq4UWodnw6FRfn1W4EEsl6t6LmkzjQU=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1632227582;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=tHYjB+PylponO9o3SOyjJk7Ga4SEkTKyJ/ThM4qiWO8=;
+        b=wmhPEEBO/+QmAG2MzcQc1bcfrMpKA4YSM9IWxWxJoDhXuOMIOWt9OEqltpqdVQhW3x4kYu
+        l7JQ/fDY8reHtbAw==
+Received: from suse.de (unknown [10.163.32.246])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by relay2.suse.de (Postfix) with ESMTPS id 203F8A3BA0;
+        Tue, 21 Sep 2021 12:33:01 +0000 (UTC)
+Date:   Tue, 21 Sep 2021 13:32:58 +0100
+From:   Mel Gorman <mgorman@suse.de>
 To:     Geert Uytterhoeven <geert+renesas@glider.be>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Cc:     Matt Fleming <matt@codeblueprint.co.uk>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Ingo Molnar <mingo@redhat.com>,
+        Juri Lelli <juri.lelli@redhat.com>,
+        Vincent Guittot <vincent.guittot@linaro.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Vlastimil Babka <vbabka@suse.cz>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, Gon Solo <gonsolo@gmail.com>,
+        linux-mm@kvack.org, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 1/2] mm: Move node_reclaim_distance to fix NUMA without
+ SMP
+Message-ID: <20210921123258.GE3891@suse.de>
+References: <cover.1631781495.git.geert+renesas@glider.be>
+ <6432666a648dde85635341e6c918cee97c97d264.1631781495.git.geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-15
+Content-Disposition: inline
+In-Reply-To: <6432666a648dde85635341e6c918cee97c97d264.1631781495.git.geert+renesas@glider.be>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Sep 16, 2021 at 5:43 PM Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
->
-> make:
->
->     arch/sh/boot/Makefile:87: FORCE prerequisite is missing
->
-> Add the missing FORCE prerequisites for all build targets identified by
-> "make help".
->
-> Fixes: e1f86d7b4b2a5213 ("kbuild: warn if FORCE is missing for if_changed(_dep,_rule) and filechk")
+On Thu, Sep 16, 2021 at 10:42:42AM +0200, Geert Uytterhoeven wrote:
+> If CONFIG_NUMA=y, but CONFIG_SMP=n (e.g. sh/migor_defconfig):
+> 
+>     sh4-linux-gnu-ld: mm/page_alloc.o: in function `get_page_from_freelist':
+>     page_alloc.c:(.text+0x2c24): undefined reference to `node_reclaim_distance'
+> 
+> Fix this by moving the declaration of node_reclaim_distance from an
+> SMP-only to a generic file.
+> 
+> Fixes: a55c7454a8c887b2 ("sched/topology: Improve load balancing on AMD EPYC systems")
+> Suggested-by: Matt Fleming <matt@codeblueprint.co.uk>
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
 
-
-Applied to linux-kbuild. Thanks.
-
->  arch/sh/boot/Makefile | 16 ++++++++--------
->  1 file changed, 8 insertions(+), 8 deletions(-)
->
-> diff --git a/arch/sh/boot/Makefile b/arch/sh/boot/Makefile
-> index dded61296c9a00da..5c123f5b2797c08a 100644
-> --- a/arch/sh/boot/Makefile
-> +++ b/arch/sh/boot/Makefile
-> @@ -80,30 +80,30 @@ $(obj)/vmlinux.bin.xz: $(obj)/vmlinux.bin FORCE
->  $(obj)/vmlinux.bin.lzo: $(obj)/vmlinux.bin FORCE
->         $(call if_changed,lzo)
->
-> -$(obj)/uImage.bz2: $(obj)/vmlinux.bin.bz2
-> +$(obj)/uImage.bz2: $(obj)/vmlinux.bin.bz2 FORCE
->         $(call if_changed,uimage,bzip2)
->
-> -$(obj)/uImage.gz: $(obj)/vmlinux.bin.gz
-> +$(obj)/uImage.gz: $(obj)/vmlinux.bin.gz FORCE
->         $(call if_changed,uimage,gzip)
->
-> -$(obj)/uImage.lzma: $(obj)/vmlinux.bin.lzma
-> +$(obj)/uImage.lzma: $(obj)/vmlinux.bin.lzma FORCE
->         $(call if_changed,uimage,lzma)
->
-> -$(obj)/uImage.xz: $(obj)/vmlinux.bin.xz
-> +$(obj)/uImage.xz: $(obj)/vmlinux.bin.xz FORCE
->         $(call if_changed,uimage,xz)
->
-> -$(obj)/uImage.lzo: $(obj)/vmlinux.bin.lzo
-> +$(obj)/uImage.lzo: $(obj)/vmlinux.bin.lzo FORCE
->         $(call if_changed,uimage,lzo)
->
-> -$(obj)/uImage.bin: $(obj)/vmlinux.bin
-> +$(obj)/uImage.bin: $(obj)/vmlinux.bin FORCE
->         $(call if_changed,uimage,none)
->
->  OBJCOPYFLAGS_vmlinux.srec := -I binary -O srec
-> -$(obj)/vmlinux.srec: $(obj)/compressed/vmlinux
-> +$(obj)/vmlinux.srec: $(obj)/compressed/vmlinux FORCE
->         $(call if_changed,objcopy)
->
->  OBJCOPYFLAGS_uImage.srec := -I binary -O srec
-> -$(obj)/uImage.srec: $(obj)/uImage
-> +$(obj)/uImage.srec: $(obj)/uImage FORCE
->         $(call if_changed,objcopy)
->
->  $(obj)/uImage: $(obj)/uImage.$(suffix-y)
-> --
-> 2.25.1
->
-
+Acked-by: Mel Gorman <mgorman@suse.de>
 
 -- 
-Best Regards
-Masahiro Yamada
+Mel Gorman
+SUSE Labs
