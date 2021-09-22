@@ -2,92 +2,72 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 X-Spam-Level: 
-X-Spam-Status: No, score=-12.2 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,DKIM_VALID_AU,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,URIBL_BLOCKED,USER_AGENT_SANE_1
-	autolearn=unavailable autolearn_force=no version=3.4.0
+X-Spam-Status: No, score=-5.2 required=3.0 tests=BAYES_00,
+	HEADER_FROM_DIFFERENT_DOMAINS,MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS,
+	USER_AGENT_SANE_1 autolearn=no autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5C63C433FE
-	for <linux-sh@archiver.kernel.org>; Tue, 21 Sep 2021 12:33:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0AC9EC433EF
+	for <linux-sh@archiver.kernel.org>; Wed, 22 Sep 2021 02:45:45 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 924FA61100
-	for <linux-sh@archiver.kernel.org>; Tue, 21 Sep 2021 12:33:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DEA076112F
+	for <linux-sh@archiver.kernel.org>; Wed, 22 Sep 2021 02:45:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232704AbhIUMew (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 21 Sep 2021 08:34:52 -0400
-Received: from smtp-out2.suse.de ([195.135.220.29]:47432 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232179AbhIUMev (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Sep 2021 08:34:51 -0400
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 558291FEDB;
-        Tue, 21 Sep 2021 12:33:22 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1632227602; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=dGhjX1N6cpuHN9JM5age1eJWWQj7mw2/HE+0xi+w5u0=;
-        b=pVdylClFBGkW3WyeYifQUVuXVQ/2kPQaMspUwZ/tBz2guwht1jqWe73fpr3ZGImdp6+0Cw
-        +5X72kFCo197jSQmT2L2g/dYouWsF5VbVP6gNkiSYeaOM6V1ioaA4fEJCEbcdZdPwVyagl
-        KBZEzsG9go33o/Tcq5bV3582gC4RAgg=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1632227602;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=dGhjX1N6cpuHN9JM5age1eJWWQj7mw2/HE+0xi+w5u0=;
-        b=AMwbQlAgp+HJ+7o2oEwCyBXim06tHvUZtgkPef/P5ZUadebTKvW8d5qUclQb/EMyqALFOE
-        HBunvcRdtDVL6XAQ==
-Received: from suse.de (unknown [10.163.32.246])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by relay2.suse.de (Postfix) with ESMTPS id 28FBEA3B96;
-        Tue, 21 Sep 2021 12:33:21 +0000 (UTC)
-Date:   Tue, 21 Sep 2021 13:33:19 +0100
-From:   Mel Gorman <mgorman@suse.de>
-To:     Geert Uytterhoeven <geert+renesas@glider.be>
-Cc:     Matt Fleming <matt@codeblueprint.co.uk>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Ingo Molnar <mingo@redhat.com>,
-        Juri Lelli <juri.lelli@redhat.com>,
-        Vincent Guittot <vincent.guittot@linaro.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Vlastimil Babka <vbabka@suse.cz>,
+        id S229945AbhIVCrN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 21 Sep 2021 22:47:13 -0400
+Received: from brightrain.aerifal.cx ([216.12.86.13]:55592 "EHLO
+        brightrain.aerifal.cx" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230180AbhIVCrM (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Sep 2021 22:47:12 -0400
+Date:   Tue, 21 Sep 2021 22:45:41 -0400
+From:   Rich Felker <dalias@libc.org>
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Daniel Palmer <daniel@0x0f.com>,
+        Randy Dunlap <rdunlap@infradead.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, Gon Solo <gonsolo@gmail.com>,
-        linux-mm@kvack.org, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 2/2] mm: Move fold_vm_numa_events() to fix NUMA without
- SMP
-Message-ID: <20210921123319.GF3891@suse.de>
-References: <cover.1631781495.git.geert+renesas@glider.be>
- <9d16ccdd9ef32803d7100c84f737de6a749314fb.1631781495.git.geert+renesas@glider.be>
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        Geert Uytterhoeven <geert+renesas@glider.be>, j-core@j-core.org
+Subject: Re: [PATCH 0/3 v2] sh: fixes for various build and kconfig warnings
+Message-ID: <20210922024537.GA27465@brightrain.aerifal.cx>
+References: <20210627220544.8757-1-rdunlap@infradead.org>
+ <2bae95d0-0932-847c-c105-a333e9956dff@infradead.org>
+ <f63694aa-85b3-0238-5228-eb35a52bf360@physik.fu-berlin.de>
+ <CAFr9PXn5S_3mpJBF0bNo+S1US=Z5s89rbO-OhhqGk=zqPGWXoQ@mail.gmail.com>
+ <20210912015740.GJ13220@brightrain.aerifal.cx>
+ <5aa5301e-9b01-4e96-e185-13c2d4d7b675@physik.fu-berlin.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <9d16ccdd9ef32803d7100c84f737de6a749314fb.1631781495.git.geert+renesas@glider.be>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+In-Reply-To: <5aa5301e-9b01-4e96-e185-13c2d4d7b675@physik.fu-berlin.de>
+User-Agent: Mutt/1.5.21 (2010-09-15)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Sep 16, 2021 at 10:42:43AM +0200, Geert Uytterhoeven wrote:
-> If CONFIG_NUMA=y, but CONFIG_SMP=n (e.g. sh/migor_defconfig):
+On Sun, Sep 12, 2021 at 12:36:38PM +0200, John Paul Adrian Glaubitz wrote:
+> Hi Rich!
 > 
->     sh4-linux-gnu-ld: mm/vmstat.o: in function `vmstat_start':
->     vmstat.c:(.text+0x97c): undefined reference to `fold_vm_numa_events'
->     sh4-linux-gnu-ld: drivers/base/node.o: in function `node_read_vmstat':
->     node.c:(.text+0x140): undefined reference to `fold_vm_numa_events'
->     sh4-linux-gnu-ld: drivers/base/node.o: in function `node_read_numastat':
->     node.c:(.text+0x1d0): undefined reference to `fold_vm_numa_events'
+> On 9/12/21 03:57, Rich Felker wrote:
+> > Hi. I see there's a situation that needs my attention here. I will
+> > plan to review and merge anything important/blocking that doesn't have
+> > problems this week.
 > 
-> Fix this by moving fold_vm_numa_events() outside the SMP-only section.
-> 
-> Fixes: f19298b9516c1a03 ("mm/vmstat: convert NUMA statistics to basic NUMA counters")
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> I'm glad to here that you're still active. I will try to help assembling
+> the list of patches. I won't be able to test them though as I'm not at
+> home so I'm unable to reset the machine in case it crashes due to a bad
+> kernel patch. So, basically, I just have one shot free.
 
-Acked-by: Mel Gorman <mgorman@suse.de>
+I didn't get through that yet, but I have rebased the patches that
+were pending in for-next onto v5.15-rc1 (no conflicts) and
+smoke-tested that a sh4 build runs in my qemu environment. linux-next
+pulled them 27 hours ago and hasn't complained yet either.
 
--- 
-Mel Gorman
-SUSE Labs
+I started going through the list/patch backlog, but didn't make it
+nearly as far as I'd like yet. If you have even a vague list of what's
+important (warnings breaking the build, unapplied changes blocking
+removal of cruft from other parts of the kernel and making people
+unhappy with us, etc.) that would be really helpful.
+
+I'll follow up again soon.
+
+Rich
