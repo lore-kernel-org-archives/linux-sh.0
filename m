@@ -1,170 +1,143 @@
 Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
-X-Spam-Level: 
-X-Spam-Status: No, score=-13.8 required=3.0 tests=BAYES_00,DKIM_SIGNED,
-	DKIM_VALID,HEADER_FROM_DIFFERENT_DOMAINS,INCLUDES_CR_TRAILER,INCLUDES_PATCH,
-	MAILING_LIST_MULTI,SPF_HELO_NONE,SPF_PASS autolearn=unavailable
-	autolearn_force=no version=3.4.0
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8BA30C4332F
-	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 05:32:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B1CFC433EF
+	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 17:06:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7735561039
-	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 05:32:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7388B60EE9
+	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 17:06:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244141AbhIXFeV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 24 Sep 2021 01:34:21 -0400
-Received: from mx0b-001b2d01.pphosted.com ([148.163.158.5]:51076 "EHLO
-        mx0a-001b2d01.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-        by vger.kernel.org with ESMTP id S243369AbhIXFeU (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 24 Sep 2021 01:34:20 -0400
-Received: from pps.filterd (m0098419.ppops.net [127.0.0.1])
-        by mx0b-001b2d01.pphosted.com (8.16.1.2/8.16.1.2) with SMTP id 18O4TxLE003727;
-        Fri, 24 Sep 2021 01:32:30 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=date : from : to : cc :
- subject : message-id : references : content-type : in-reply-to :
- content-transfer-encoding : mime-version; s=pp1;
- bh=LcclFexTC3W4CGWQ05F30N7TENmKQs3CWJF8lIJhAyA=;
- b=fM5r0pOd7rJd2mnURChsSfJfJrX/C+3BofObflhTYGzVXv/HEJS9Aw8BgIC//ggGIR4j
- CZ5JxdcP59VcALFL5IzVij2oY4zwlRyWWbJs8bYZFXoi5eLF6aEHqAyx0sRU0twQi+Nx
- uTzT35Ud5rz3mMLTSHcDte6njyO8gAKbwGxAXdnivxmbV3hoFkXGse9K5ImTnY3FP/yx
- Dcg6IMAClTzZSYBturZR2pFZSHk8drui/RqjiPVFtbOoDuEmvxDYqAtOWfweNAxqZrTZ
- HQI3Eeh+Tf3jj5APaqHV6+/E8KJV71sFQyUh51zWXPgx91EVjartcf89ESTdpFpWq0zU zQ== 
-Received: from ppma03ams.nl.ibm.com (62.31.33a9.ip4.static.sl-reverse.com [169.51.49.98])
-        by mx0b-001b2d01.pphosted.com with ESMTP id 3b97px199p-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-        Fri, 24 Sep 2021 01:32:30 -0400
-Received: from pps.filterd (ppma03ams.nl.ibm.com [127.0.0.1])
-        by ppma03ams.nl.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 18O5WBU3010032;
-        Fri, 24 Sep 2021 05:32:28 GMT
-Received: from b06avi18878370.portsmouth.uk.ibm.com (b06avi18878370.portsmouth.uk.ibm.com [9.149.26.194])
-        by ppma03ams.nl.ibm.com with ESMTP id 3b93gb1yvs-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-        Fri, 24 Sep 2021 05:32:28 +0000
-Received: from d06av22.portsmouth.uk.ibm.com (d06av22.portsmouth.uk.ibm.com [9.149.105.58])
-        by b06avi18878370.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 18O5RWr150528586
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Fri, 24 Sep 2021 05:27:32 GMT
-Received: from d06av22.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-        by IMSVA (Postfix) with ESMTP id A77234C04E;
-        Fri, 24 Sep 2021 05:32:25 +0000 (GMT)
-Received: from d06av22.portsmouth.uk.ibm.com (unknown [127.0.0.1])
-        by IMSVA (Postfix) with ESMTP id 26CB04C050;
-        Fri, 24 Sep 2021 05:32:23 +0000 (GMT)
-Received: from linux.ibm.com (unknown [9.145.159.121])
-        by d06av22.portsmouth.uk.ibm.com (Postfix) with ESMTPS;
-        Fri, 24 Sep 2021 05:32:23 +0000 (GMT)
-Date:   Fri, 24 Sep 2021 08:32:21 +0300
-From:   Mike Rapoport <rppt@linux.ibm.com>
-To:     Christophe Leroy <christophe.leroy@csgroup.eu>
-Cc:     Mike Rapoport <rppt@kernel.org>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        devicetree@vger.kernel.org, linux-efi@vger.kernel.org,
-        kvm@vger.kernel.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, linux-um@lists.infradead.org,
-        linux-kernel@vger.kernel.org, kasan-dev@googlegroups.com,
-        linux-mips@vger.kernel.org, linux-mm@kvack.org,
-        iommu@lists.linux-foundation.org, linux-usb@vger.kernel.org,
-        linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org,
-        xen-devel@lists.xenproject.org,
+        id S1343627AbhIXRI0 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 24 Sep 2021 13:08:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46750 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1343589AbhIXRIZ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 24 Sep 2021 13:08:25 -0400
+Received: from mail-pj1-x102c.google.com (mail-pj1-x102c.google.com [IPv6:2607:f8b0:4864:20::102c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E4D98C061571;
+        Fri, 24 Sep 2021 10:06:51 -0700 (PDT)
+Received: by mail-pj1-x102c.google.com with SMTP id r7so6846656pjo.3;
+        Fri, 24 Sep 2021 10:06:51 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=+YjwIWJI4WiAn9JNxOIpnfCCCasVO98funIc1i+sVZU=;
+        b=VnMUs10Z64fc5MnVVxLinqRw/2GxbPDll7a5uePijYe/MslkvCiW1ndNQj0FitH6lI
+         L4BBNv+3dOWei2NvatRDoERayU5wubGsmkCZeTa8k+lEl4Eri2rO1vA28nTfrGxqFZWQ
+         wJNltvIFRdXnF6ugGRn92SQujfIpiyym1qbFcSHH6hZnjZeVhsgjrKsLJlbLriarAEfr
+         7iZNHrh9/D2z+rUAwLojzjo2Ls+xk4brbjGBNjNyNLWIAaFbwhuRR0wzlpllm3YcMF0v
+         vyMyiq71nebQB3gE/F5+OYD4NN8ubVzAKu10oGqBK7T4Jxe+e42LpXvkSnSa/aDIZ3h0
+         W6FA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=+YjwIWJI4WiAn9JNxOIpnfCCCasVO98funIc1i+sVZU=;
+        b=fn9DWMy8k1pxcMY7GnWzoC1YMXzoXbcN8MOsX9vZ3dpiIPYr726P7VhxIRkScfQQox
+         SoHNk17bTapnFEdfpW3OJ7Khpygc9NUrpIeOBMZkHI0dlsUVsxr5PdgBGMvthD39h4/W
+         uE5nUcYuuudyCu/K40pq41Fdj5GyKOGYxXIfwx0kN6jwtvvcF1CXEAyBjryg8lTdx1fc
+         BFqVLW6/Zj8J5Xod8AWxO3DF/OWLvI84jfzt6HHV18Iiq+DxnP9K5YJ751j3s/wVW4Cb
+         +1Wzq/+Fpjz5sJkzBG/Yz0SrXPiGyiCob2Kus51BGl34Vf6GeAvlQCDQ64QlHvmGxVx0
+         xwEg==
+X-Gm-Message-State: AOAM533a4eb4VWWcrh4+SEw0FGCUUZdXIv5XLFxtHjFkgKA+W9i41xaa
+        TcTvx5R9BM+G7YBzYkKV0STD8o29dv8=
+X-Google-Smtp-Source: ABdhPJwf14SoPtN5f+4wd2sMqO/DEVoPO9wlvGAdbWPcx5dSdBoP8h9nyv5Dpp4gy1POcQWhFpxlBw==
+X-Received: by 2002:a17:902:ba8d:b0:13d:cb44:369c with SMTP id k13-20020a170902ba8d00b0013dcb44369cmr9981136pls.40.1632503211086;
+        Fri, 24 Sep 2021 10:06:51 -0700 (PDT)
+Received: from fainelli-desktop.igp.broadcom.net ([192.19.223.252])
+        by smtp.gmail.com with ESMTPSA id k22sm9659312pfi.149.2021.09.24.10.06.49
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 24 Sep 2021 10:06:50 -0700 (PDT)
+From:   Florian Fainelli <f.fainelli@gmail.com>
+To:     linux-kernel@vger.kernel.org
+Cc:     Florian Fainelli <f.fainelli@gmail.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Ray Jui <rjui@broadcom.com>,
+        Scott Branden <sbranden@broadcom.com>,
+        bcm-kernel-feedback-list@broadcom.com (maintainer:BROADCOM
+        BCM281XX/BCM11XXX/BCM216XX ARM ARCHITE...),
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Marc Zyngier <maz@kernel.org>,
+        Rob Herring <robh+dt@kernel.org>,
+        Frank Rowand <frowand.list@gmail.com>,
+        Ard Biesheuvel <ardb@kernel.org>,
+        Mike Rapoport <rppt@kernel.org>,
+        Linus Walleij <linus.walleij@linaro.org>,
         Andrew Morton <akpm@linux-foundation.org>,
-        linux-snps-arc@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org
-Subject: Re: [PATCH 3/3] memblock: cleanup memblock_free interface
-Message-ID: <YU1i5YyldfS1HH0j@linux.ibm.com>
-References: <20210923074335.12583-1-rppt@kernel.org>
- <20210923074335.12583-4-rppt@kernel.org>
- <1101e3c7-fcb7-a632-8e22-47f4a01ea02e@csgroup.eu>
- <YUxsgN/uolhn1Ok+@linux.ibm.com>
- <96e3da9f-70ff-e5c0-ef2e-cf0b636e5695@csgroup.eu>
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-In-Reply-To: <96e3da9f-70ff-e5c0-ef2e-cf0b636e5695@csgroup.eu>
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: EYYWPQtbK60SNKLXoEtnrAemGAQvCJn5
-X-Proofpoint-GUID: EYYWPQtbK60SNKLXoEtnrAemGAQvCJn5
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-UnRewURL: 0 URL was un-rewritten
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Kefeng Wang <wangkefeng.wang@huawei.com>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Andrey Konovalov <andreyknvl@gmail.com>,
+        Anshuman Khandual <anshuman.khandual@arm.com>,
+        Valentin Schneider <valentin.schneider@arm.com>,
+        Ingo Molnar <mingo@kernel.org>,
+        Peter Zijlstra <peterz@infradead.org>,
+        linux-arm-kernel@lists.infradead.org (moderated list:ARM PORT),
+        linux-sh@vger.kernel.org (open list:SUPERH),
+        linux-mips@vger.kernel.org (open list:BROADCOM BMIPS MIPS ARCHITECTURE),
+        devicetree@vger.kernel.org (open list:OPEN FIRMWARE AND FLATTENED
+        DEVICE TREE)
+Subject: [PATCH 00/11] Modular Broadcom irqchip drivers
+Date:   Fri, 24 Sep 2021 10:05:35 -0700
+Message-Id: <20210924170546.805663-1-f.fainelli@gmail.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.182.1,Aquarius:18.0.790,Hydra:6.0.391,FMLib:17.0.607.475
- definitions=2021-09-24_01,2021-09-23_01,2020-04-07_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 malwarescore=0
- impostorscore=0 mlxscore=0 lowpriorityscore=0 bulkscore=0 spamscore=0
- clxscore=1015 mlxlogscore=856 adultscore=0 phishscore=0 suspectscore=0
- priorityscore=1501 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2109230001 definitions=main-2109240031
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Sep 23, 2021 at 03:54:46PM +0200, Christophe Leroy wrote:
-> 
-> Le 23/09/2021 à 14:01, Mike Rapoport a écrit :
-> > On Thu, Sep 23, 2021 at 11:47:48AM +0200, Christophe Leroy wrote:
-> > > 
-> > > 
-> > > Le 23/09/2021 à 09:43, Mike Rapoport a écrit :
-> > > > From: Mike Rapoport <rppt@linux.ibm.com>
-> > > > 
-> > > > For ages memblock_free() interface dealt with physical addresses even
-> > > > despite the existence of memblock_alloc_xx() functions that return a
-> > > > virtual pointer.
-> > > > 
-> > > > Introduce memblock_phys_free() for freeing physical ranges and repurpose
-> > > > memblock_free() to free virtual pointers to make the following pairing
-> > > > abundantly clear:
-> > > > 
-> > > > 	int memblock_phys_free(phys_addr_t base, phys_addr_t size);
-> > > > 	phys_addr_t memblock_phys_alloc(phys_addr_t base, phys_addr_t size);
-> > > > 
-> > > > 	void *memblock_alloc(phys_addr_t size, phys_addr_t align);
-> > > > 	void memblock_free(void *ptr, size_t size);
-> > > > 
-> > > > Replace intermediate memblock_free_ptr() with memblock_free() and drop
-> > > > unnecessary aliases memblock_free_early() and memblock_free_early_nid().
-> > > > 
-> > > > Suggested-by: Linus Torvalds <torvalds@linux-foundation.org>
-> > > > Signed-off-by: Mike Rapoport <rppt@linux.ibm.com>
-> > > > ---
-> > > 
-> > > > diff --git a/arch/s390/kernel/smp.c b/arch/s390/kernel/smp.c
-> > > > index 1a04e5bdf655..37826d8c4f74 100644
-> > > > --- a/arch/s390/kernel/smp.c
-> > > > +++ b/arch/s390/kernel/smp.c
-> > > > @@ -723,7 +723,7 @@ void __init smp_save_dump_cpus(void)
-> > > >    			/* Get the CPU registers */
-> > > >    			smp_save_cpu_regs(sa, addr, is_boot_cpu, page);
-> > > >    	}
-> > > > -	memblock_free(page, PAGE_SIZE);
-> > > > +	memblock_phys_free(page, PAGE_SIZE);
-> > > >    	diag_amode31_ops.diag308_reset();
-> > > >    	pcpu_set_smt(0);
-> > > >    }
-> > > > @@ -880,7 +880,7 @@ void __init smp_detect_cpus(void)
-> > > >    	/* Add CPUs present at boot */
-> > > >    	__smp_rescan_cpus(info, true);
-> > > > -	memblock_free_early((unsigned long)info, sizeof(*info));
-> > > > +	memblock_free(info, sizeof(*info));
-> > > >    }
-> > > >    /*
-> > > 
-> > > I'm a bit lost. IIUC memblock_free_early() and memblock_free() where
-> > > identical.
-> > 
-> > Yes, they were, but all calls to memblock_free_early() were using
-> > __pa(vaddr) because they had a virtual address at hand.
-> 
-> I'm still not following. In the above memblock_free_early() was taking
-> (unsigned long)info . Was it a bug ? 
+Hi Thomas, Marc,
 
-Not really because s390 has pa == va:
+This patch series aims at allowing the 3 interrupt controller drivers
+used on Broadcom STB platforms to be built as modules in order for those
+to be shipped in a GKI enabled system (Android).
 
-https://elixir.bootlin.com/linux/latest/source/arch/s390/include/asm/page.h#L169
+The irq-bcm7038-l1 requires us to export a number of symbols, which is
+not great, but there are not obvious solutions other than adding
+accessor functions to get the same information.
 
+Assuming you are happy with the changes though, please do take the last
+two changes as well through your tree.
+
+Thanks!
+
+Florian Fainelli (11):
+  arch: Export cpu_logical_map to modules
+  genirq: Export irq_to_desc() again to modules
+  genirq: Export irq_set_affinity_locked()
+  irqchip/irq-bcm7038-l1: Switch to IRQCHIP_PLATFORM_DRIVER
+  irqchip/irq-brcmstb-l2: Switch to IRQCHIP_PLATFORM_DRIVER
+  genirq: Export irq_gc_{unmask_enable,mask_disable}_reg
+  of/irq: Export of_irq_count to drivers
+  genirq: Export irq_gc_noop()
+  irqchip/irq-bcm7120-l2: Switch to IRQCHIP_PLATFORM_DRIVER
+  arm64: broadcom: Removed forced select of interrupt controllers
+  ARM: bcm: Removed forced select of interrupt controllers
+
+ arch/arm/kernel/setup.c          |  1 +
+ arch/arm/mach-bcm/Kconfig        |  4 ----
+ arch/arm64/Kconfig.platforms     |  3 ---
+ arch/arm64/kernel/setup.c        |  1 +
+ arch/sh/kernel/smp.c             |  1 +
+ drivers/irqchip/Kconfig          | 12 +++++++++---
+ drivers/irqchip/irq-bcm7038-l1.c |  6 +++++-
+ drivers/irqchip/irq-bcm7120-l2.c | 11 ++++++-----
+ drivers/irqchip/irq-brcmstb-l2.c | 16 +++++++++-------
+ drivers/of/irq.c                 |  1 +
+ kernel/irq/generic-chip.c        |  3 +++
+ kernel/irq/irqdesc.c             |  2 --
+ kernel/irq/manage.c              |  1 +
+ 13 files changed, 37 insertions(+), 25 deletions(-)
 
 -- 
-Sincerely yours,
-Mike.
+2.25.1
+
