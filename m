@@ -2,54 +2,54 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CA18CC4321E
-	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 17:07:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E4BAC4167D
+	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 17:07:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id ADCE060EE9
-	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 17:07:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 19EE960EE9
+	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 17:07:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1347460AbhIXRJF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 24 Sep 2021 13:09:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46814 "EHLO
+        id S235048AbhIXRJH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 24 Sep 2021 13:09:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46778 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344492AbhIXRIk (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 24 Sep 2021 13:08:40 -0400
-Received: from mail-pj1-x1033.google.com (mail-pj1-x1033.google.com [IPv6:2607:f8b0:4864:20::1033])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0B499C061767;
-        Fri, 24 Sep 2021 10:07:02 -0700 (PDT)
-Received: by mail-pj1-x1033.google.com with SMTP id me1so7395653pjb.4;
-        Fri, 24 Sep 2021 10:07:02 -0700 (PDT)
+        with ESMTP id S1344766AbhIXRIl (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 24 Sep 2021 13:08:41 -0400
+Received: from mail-pg1-x536.google.com (mail-pg1-x536.google.com [IPv6:2607:f8b0:4864:20::536])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 44F54C061571;
+        Fri, 24 Sep 2021 10:07:08 -0700 (PDT)
+Received: by mail-pg1-x536.google.com with SMTP id r2so10432383pgl.10;
+        Fri, 24 Sep 2021 10:07:08 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20210112;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=9fJWAIDZMBnqyaJKloz+swm+vHzzjwQ8q/tXjCn73F0=;
-        b=SyHll5tjtjFteeY+yNZa2zfZ4UGyoZgXgoVIOtQU98UGY9Bu9FIqQgcrh5jw34ofDU
-         HS8R2uGWjKol9427ShrRJHXSXRzR89+5e/5JLsWj5jD55VFQXhN536zdIudI0f2vE8lO
-         hwU0ccCw1denAoHHWK5ZSsTDn/OqqugDI7e8W5Wc8wfoM1IekqcDvKKYz/sJw/+Qol7j
-         kl1nI3EaGsUL+XP8ITwpn8sUiUkz2WKFUSGfGOuv/49sT018ldV47ElU2PBbKyK3N+T2
-         ltppUVH2RstPd8xsISig5C4LHlAYLva7SKlZ9wcjGJvL4SVGzDgWFsqjUvbAzylGBrED
-         NbLg==
+        bh=HFON70fhXDszaD5v9yYPo/8gY6ecjeQthvGng5DXIkI=;
+        b=p9/Xdxmso3Xm/qtL+MqVDXpgCgoFff6i5El9II2B9P95NvBEwq0iZfFqWsZz4C03Wx
+         1gLLWHS5WgtPjt8k8/zsdhlQQh06P0GZHW84uYInNhzO+MktccGpsPwZIOvikSg6DGIW
+         UxKXHGPJqUSgyajF1N96Ra7vEkFJbbb7xdwngjFAgX1Dmz1LnWdzrbh6fyPe5HvdYEnq
+         3xhjL2L/B+HA9hd3iEJSyzho2Xm6QqX1Y/2zeud9Iu6V4sFVtmVZkmvmXMshq2wn36UU
+         voYqt4LRugDBN080c1tX0z3KoyGDVgmbOfGVkviRzD8W7lKB3cFTWMN+bTe5Q+D3nUb4
+         Foeg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=9fJWAIDZMBnqyaJKloz+swm+vHzzjwQ8q/tXjCn73F0=;
-        b=t3isVXw/Ixup0pxyhEVpL6UNNetlPYnKL8EqTYQUtzuLRxMri2Ec2B6Q+Ky7jBevE1
-         1nVmECvDk2mntnzzDCgkeb/jKjCetnvIO/MNEz1iVC/OxYpfBkA5Hl0p/5Pb3OzJxC3T
-         7mbkt8YncoHH2KI2Qg5eaC0WKvmDzWvtJoPUxyVVeL/lpVkKt5FW189wr6S7x/81ziip
-         PBcFMKJH+yVDZX0GtLsYcrIWuH58ytD+lvGdodbQpckT4JRlkN4Aym0i3+Pq+Ju50vzm
-         0JI2zyDC+6b3yx4E4944hQMr+Grzi1g5BlGyzogzXeYnS1Ff3tved73VDdI9DHYSlLcD
-         Ulbw==
-X-Gm-Message-State: AOAM532Y5WM2iBnBweTSJk/YBNZpQk+PgMEhn8e757uBt3odra+gnmvS
-        fziX2mwfPXCMGzuSrFA4gdbi63I7ZnQ=
-X-Google-Smtp-Source: ABdhPJymRrvQcwMm3TdMU5msjtmRB+vmxzsXl2PoMBpul3iAkZ1lkT+OXFuRZtScg3u9auXwb2UdEQ==
-X-Received: by 2002:a17:902:684c:b0:13a:709b:dfaa with SMTP id f12-20020a170902684c00b0013a709bdfaamr9882250pln.61.1632503221414;
-        Fri, 24 Sep 2021 10:07:01 -0700 (PDT)
+        bh=HFON70fhXDszaD5v9yYPo/8gY6ecjeQthvGng5DXIkI=;
+        b=zN5IDbp6TyWwFTnSp0d3UkTmlskCUQcJOGB6rp2A/XMHWcvt/DujOxEMj+qbWB/PMU
+         2gIqxCt3XtEuU8b8RQ+GfrnPCnkjjJXenrDiFqSzCPwqPxbxGTq1sEnFEaesuOGQGeFF
+         ZGO0SPetMmtWdb5kP/mTg/WkpD1aaNiRW19HMAvDo79uYEKxAJio4nIC8GfqGWREF7kc
+         1AZdxm5Xf/JnS1CFWXMfI15HqkxOpQxcFGSs5sQskrfTsrATBq3qJ0F/WSLE4EzGk8PB
+         reOs8nOX0Mtck4lln7WYp7jbQcK5/Ye3bx9gw5fMavzkeskCB/8EfiG6s/UcTy/roQDY
+         182g==
+X-Gm-Message-State: AOAM531QgB9lkfkUzeu8NbPRbX88xoGJDurDvBG9RhPG9EXstzFu6D2K
+        car3ykxRTTy4i2b2xgMVqU+3Wgd8o8w=
+X-Google-Smtp-Source: ABdhPJxvu4S59caJY73Fi8OniOxfyNWURdEFUc9YYwCqTozmK6Cc87FKJnmIffCWzyZ8Rk5U09TUPQ==
+X-Received: by 2002:a63:5fd8:: with SMTP id t207mr4641623pgb.123.1632503227515;
+        Fri, 24 Sep 2021 10:07:07 -0700 (PDT)
 Received: from fainelli-desktop.igp.broadcom.net ([192.19.223.252])
-        by smtp.gmail.com with ESMTPSA id k22sm9659312pfi.149.2021.09.24.10.06.59
+        by smtp.gmail.com with ESMTPSA id k22sm9659312pfi.149.2021.09.24.10.07.05
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 24 Sep 2021 10:07:01 -0700 (PDT)
+        Fri, 24 Sep 2021 10:07:07 -0700 (PDT)
 From:   Florian Fainelli <f.fainelli@gmail.com>
 To:     linux-kernel@vger.kernel.org
 Cc:     Florian Fainelli <f.fainelli@gmail.com>,
@@ -85,9 +85,9 @@ Cc:     Florian Fainelli <f.fainelli@gmail.com>,
         linux-mips@vger.kernel.org (open list:BROADCOM BMIPS MIPS ARCHITECTURE),
         devicetree@vger.kernel.org (open list:OPEN FIRMWARE AND FLATTENED
         DEVICE TREE)
-Subject: [PATCH 05/11] irqchip/irq-brcmstb-l2: Switch to IRQCHIP_PLATFORM_DRIVER
-Date:   Fri, 24 Sep 2021 10:05:40 -0700
-Message-Id: <20210924170546.805663-6-f.fainelli@gmail.com>
+Subject: [PATCH 08/11] genirq: Export irq_gc_noop()
+Date:   Fri, 24 Sep 2021 10:05:43 -0700
+Message-Id: <20210924170546.805663-9-f.fainelli@gmail.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210924170546.805663-1-f.fainelli@gmail.com>
 References: <20210924170546.805663-1-f.fainelli@gmail.com>
@@ -97,62 +97,26 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Allow the user selection and building of this interrupt controller
-driver as a module since it is used on ARM/ARM64 based systems as a
-second level interrupt controller hanging off the ARM GIC and is
-therefore loadable during boot.
+In order to build drivers/irqchip/irq-bcm7120-l2.c as a module which
+references irq_gc_noop(), we need to export it towards modules.
 
 Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
- drivers/irqchip/Kconfig          |  4 +++-
- drivers/irqchip/irq-brcmstb-l2.c | 16 +++++++++-------
- 2 files changed, 12 insertions(+), 8 deletions(-)
+ kernel/irq/generic-chip.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
-index 3022f6137096..dfe54bf9b35f 100644
---- a/drivers/irqchip/Kconfig
-+++ b/drivers/irqchip/Kconfig
-@@ -128,7 +128,9 @@ config BCM7120_L2_IRQ
- 	select IRQ_DOMAIN
- 
- config BRCMSTB_L2_IRQ
--	bool
-+	tristate "Broadcom STB generic L2 interrupt controller driver"
-+	depends on ARCH_BCM2835 || ARCH_BRCMSTB || BMIPS_GENERIC
-+	default ARCH_BCM2835 || ARCH_BRCMSTB || BMIPS_GENERIC
- 	select GENERIC_IRQ_CHIP
- 	select IRQ_DOMAIN
- 
-diff --git a/drivers/irqchip/irq-brcmstb-l2.c b/drivers/irqchip/irq-brcmstb-l2.c
-index 8e0911561f2d..e4efc08ac594 100644
---- a/drivers/irqchip/irq-brcmstb-l2.c
-+++ b/drivers/irqchip/irq-brcmstb-l2.c
-@@ -275,16 +275,18 @@ static int __init brcmstb_l2_edge_intc_of_init(struct device_node *np,
+diff --git a/kernel/irq/generic-chip.c b/kernel/irq/generic-chip.c
+index 4c011c21bb1a..6f29bf4c8515 100644
+--- a/kernel/irq/generic-chip.c
++++ b/kernel/irq/generic-chip.c
+@@ -25,6 +25,7 @@ static DEFINE_RAW_SPINLOCK(gc_lock);
+ void irq_gc_noop(struct irq_data *d)
  {
- 	return brcmstb_l2_intc_of_init(np, parent, &l2_edge_intc_init);
  }
--IRQCHIP_DECLARE(brcmstb_l2_intc, "brcm,l2-intc", brcmstb_l2_edge_intc_of_init);
--IRQCHIP_DECLARE(brcmstb_hif_spi_l2_intc, "brcm,hif-spi-l2-intc",
--		brcmstb_l2_edge_intc_of_init);
--IRQCHIP_DECLARE(brcmstb_upg_aux_aon_l2_intc, "brcm,upg-aux-aon-l2-intc",
--		brcmstb_l2_edge_intc_of_init);
++EXPORT_SYMBOL_GPL(irq_gc_noop);
  
- static int __init brcmstb_l2_lvl_intc_of_init(struct device_node *np,
- 	struct device_node *parent)
- {
- 	return brcmstb_l2_intc_of_init(np, parent, &l2_lvl_intc_init);
- }
--IRQCHIP_DECLARE(bcm7271_l2_intc, "brcm,bcm7271-l2-intc",
--	brcmstb_l2_lvl_intc_of_init);
-+
-+IRQCHIP_PLATFORM_DRIVER_BEGIN(brcmstb_l2)
-+IRQCHIP_MATCH("brcm,l2-intc", brcmstb_l2_edge_intc_of_init)
-+IRQCHIP_MATCH("brcm,hif-spi-l2-intc", brcmstb_l2_edge_intc_of_init)
-+IRQCHIP_MATCH("brcm,upg-aux-aon-l2-intc", brcmstb_l2_edge_intc_of_init)
-+IRQCHIP_MATCH("brcm,bcm7271-l2-intc", brcmstb_l2_lvl_intc_of_init)
-+IRQCHIP_PLATFORM_DRIVER_END(brcmstb_l2)
-+MODULE_DESCRIPTION("Broadcom STB generic L2 interrupt controller");
-+MODULE_LICENSE("GPL v2");
+ /**
+  * irq_gc_mask_disable_reg - Mask chip via disable register
 -- 
 2.25.1
 
