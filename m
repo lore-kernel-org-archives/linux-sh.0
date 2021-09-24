@@ -2,54 +2,54 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02231C433EF
-	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 17:07:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 948B3C433EF
+	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 17:07:32 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id DB9FD6124B
-	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 17:07:06 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 80F0A6124B
+	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 17:07:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344408AbhIXRIg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 24 Sep 2021 13:08:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46764 "EHLO
+        id S1343666AbhIXRJA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 24 Sep 2021 13:09:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46796 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235048AbhIXRI3 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 24 Sep 2021 13:08:29 -0400
-Received: from mail-pj1-x1033.google.com (mail-pj1-x1033.google.com [IPv6:2607:f8b0:4864:20::1033])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 01478C061571;
-        Fri, 24 Sep 2021 10:06:56 -0700 (PDT)
-Received: by mail-pj1-x1033.google.com with SMTP id k23so7437998pji.0;
-        Fri, 24 Sep 2021 10:06:55 -0700 (PDT)
+        with ESMTP id S1343779AbhIXRIk (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 24 Sep 2021 13:08:40 -0400
+Received: from mail-pf1-x434.google.com (mail-pf1-x434.google.com [IPv6:2607:f8b0:4864:20::434])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EAC75C061571;
+        Fri, 24 Sep 2021 10:07:05 -0700 (PDT)
+Received: by mail-pf1-x434.google.com with SMTP id 203so9386492pfy.13;
+        Fri, 24 Sep 2021 10:07:05 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20210112;
         h=from:to:cc:subject:date:message-id:in-reply-to:references
          :mime-version:content-transfer-encoding;
-        bh=hAt2r11zGETPJhbWDBDQJtoDxq6DGq80xQa/wYZCvjA=;
-        b=lff3kYOYoDs+CCWEsvmA2HuIBTzYIpIEkFnWK3y6YbOXrnQPt5ILd19qTZJcBt/nL4
-         3/mVv54pKrWeCTmw/u7qzfheVmu/4i2Xujwt0nmX449fE2Wz+lrxjZxNpfNc3gO3KGnh
-         ywie+jUsQQmfK+dqLwz1nIclg89CvufeEo5qg5lA/FO2pIj+rM6G++frwAEp8sbvKQus
-         ygKptAaGjZaCIAkFrZKHR2PVRAMrWoT3p+7cnydkN/yQkIDs8KXvL7mxQutAbBolTEhd
-         6nBb5pDBJHwLQkNZL27kb8nWPEYVEfdnVr/OZ4pEMCrCVKZA+lIyeOEkvaV72mNF50yy
-         zyGA==
+        bh=IR7iGEsWM4mxjXZfoqo7m6j++9do1uNMuo9CMR/SQ9I=;
+        b=dpaXvMxmrnZDzjRDG9vbsfni6n6vmDUCD89VGU81gKtDOqTLjKtg8uV/3eiVRrid8f
+         rXt6qppCsAjL34efPgePlTfKz0b5R2UOyuTAx9P1KiI8U+SuVsdd39zGjb/Zj5MArhSS
+         yKD9fMsBnd6l/4zqxKsvshmtg7ZNzRb9AtYkuSfwkkvmBZTyCfTqv1UKag5ABLK+lDR9
+         AY4WJOIVxI9NOMeuAklIkPyFQ39i8iklJEVCLlFe63iRt73kOzxuRYhgbkOksNJldLdn
+         mtlAjy6P4B4KyEHPOONAviOSvhuF8RM6u6WI3aU+o3pdQp1DI/hDKBsGC+rmQ8CWJSK/
+         3S4Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=hAt2r11zGETPJhbWDBDQJtoDxq6DGq80xQa/wYZCvjA=;
-        b=lQCi5ZetEpEZWthxJniSJHunl4+Lm/Qtr062IVGDW+umeEydLkYqMbxwPbPIlYye5o
-         gCRM6+2kb/Xx/LlHV2nwRlhPfKNxc3eDnBwN3jlJOR+P7X+/AAf9sC/0jt1M+tK2vYzB
-         55U/SW0RJtIQFvO04ainmx3AiviJH2AD5AULL3VjA0O6MJa9UlYK2J9Xna9FVNOv0WMH
-         v4sIS9cE8F6RoY+owCnNOXG7ZaIK1T4iGudDw0cSrqQAYep8mWZCimY9F8R6kgPoSJo4
-         LdPWoVqpm2B+tm+YkM7WY1X2EXUjBBgEB4YsNC91esnzkVphbtLUVltIifcxKqMKaG7H
-         s1cA==
-X-Gm-Message-State: AOAM532WUYCqAKbhHA9ZUVgtSKUzKXRb96QT9PP2fyXWVQ25e7FljXZf
-        WfAslNuc2Y6HpLVWu1WgTktrx4GEn70=
-X-Google-Smtp-Source: ABdhPJxLx4ndIFs8WwGMmBVw3tfDmXNvV2JZPukBeAlAI1kQMLB4cqYAWC7Ly9tK7SYz6iKQ2PHPPA==
-X-Received: by 2002:a17:902:b18b:b0:13a:354a:3e9d with SMTP id s11-20020a170902b18b00b0013a354a3e9dmr9944422plr.36.1632503215315;
-        Fri, 24 Sep 2021 10:06:55 -0700 (PDT)
+        bh=IR7iGEsWM4mxjXZfoqo7m6j++9do1uNMuo9CMR/SQ9I=;
+        b=cGLCB/8y+iyGiP1ZrAGulcMp/3nz8auwB6AnDEs5c1YRwnyi8GdPY1lOp70Yn0Iv0q
+         GQOY8GF7D4YOLIgIPEQnUqppKVpKAYWeESHEyiZJ3CjHrtGnmAVKClLPk5urNz6nf2EG
+         TX5PMSEdonEA1IvpKa28P959bcBo6qtGcTmIdoSZG2Wh8ug06eAG72N9Q31JLB1dKAeO
+         +cwwlv5hubwtqWC+EmyvAwNhmcdHOpHtHGYLGfxsJkH+MlGk4v3XKiJwbqOZWi4wFTDP
+         LUQjSrCLW2/TiC63R2HBR5jRzpsAfarO+fu79fhaht0Psl8HwbRJom8H4BxgrA/3NM10
+         SDNw==
+X-Gm-Message-State: AOAM530M3Mn8rL3Hlu3OaBcYAi0ye5Rwg0GKe8ijvli+o2OGa+Xwi2vp
+        kj0NoghAeFjlnTP5rve7KCzmNmAw9GI=
+X-Google-Smtp-Source: ABdhPJzUN9zJeKx+S71xh2ThXQH6aSN/EG/ft/rg0Z82gwjCLfZSlTo2cDLYBDJZo1sgwxvrgJlqBg==
+X-Received: by 2002:a62:750e:0:b0:446:d467:3620 with SMTP id q14-20020a62750e000000b00446d4673620mr10711357pfc.80.1632503225363;
+        Fri, 24 Sep 2021 10:07:05 -0700 (PDT)
 Received: from fainelli-desktop.igp.broadcom.net ([192.19.223.252])
-        by smtp.gmail.com with ESMTPSA id k22sm9659312pfi.149.2021.09.24.10.06.53
+        by smtp.gmail.com with ESMTPSA id k22sm9659312pfi.149.2021.09.24.10.07.03
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 24 Sep 2021 10:06:54 -0700 (PDT)
+        Fri, 24 Sep 2021 10:07:05 -0700 (PDT)
 From:   Florian Fainelli <f.fainelli@gmail.com>
 To:     linux-kernel@vger.kernel.org
 Cc:     Florian Fainelli <f.fainelli@gmail.com>,
@@ -85,9 +85,9 @@ Cc:     Florian Fainelli <f.fainelli@gmail.com>,
         linux-mips@vger.kernel.org (open list:BROADCOM BMIPS MIPS ARCHITECTURE),
         devicetree@vger.kernel.org (open list:OPEN FIRMWARE AND FLATTENED
         DEVICE TREE)
-Subject: [PATCH 02/11] genirq: Export irq_to_desc() again to modules
-Date:   Fri, 24 Sep 2021 10:05:37 -0700
-Message-Id: <20210924170546.805663-3-f.fainelli@gmail.com>
+Subject: [PATCH 07/11] of/irq: Export of_irq_count to drivers
+Date:   Fri, 24 Sep 2021 10:05:42 -0700
+Message-Id: <20210924170546.805663-8-f.fainelli@gmail.com>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20210924170546.805663-1-f.fainelli@gmail.com>
 References: <20210924170546.805663-1-f.fainelli@gmail.com>
@@ -97,34 +97,26 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-In order to build drivers/irqchip/irq-bcm7038-l1.c as a module (for use
-in GKI), we need to export_to_desc() which is used in this snippet of
-code:
-
-	irqd_set_single_target(irq_desc_get_irq_data(irq_to_desc(virq)));
-
-This effectively reverts 64a1b95bb9fe ("genirq: Restrict export of
-irq_to_desc()").
+In order to build drivers/irqchip/irq-bcm7120-l2.c as a module, we will
+need to have of_irq_count() exported to modules.
 
 Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
- kernel/irq/irqdesc.c | 2 --
- 1 file changed, 2 deletions(-)
+ drivers/of/irq.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/kernel/irq/irqdesc.c b/kernel/irq/irqdesc.c
-index 4e3c29bb603c..5bc231036042 100644
---- a/kernel/irq/irqdesc.c
-+++ b/kernel/irq/irqdesc.c
-@@ -352,9 +352,7 @@ struct irq_desc *irq_to_desc(unsigned int irq)
- {
- 	return radix_tree_lookup(&irq_desc_tree, irq);
- }
--#ifdef CONFIG_KVM_BOOK3S_64_HV_MODULE
- EXPORT_SYMBOL_GPL(irq_to_desc);
--#endif
+diff --git a/drivers/of/irq.c b/drivers/of/irq.c
+index 352e14b007e7..949b9d1f8729 100644
+--- a/drivers/of/irq.c
++++ b/drivers/of/irq.c
+@@ -440,6 +440,7 @@ int of_irq_count(struct device_node *dev)
  
- static void delete_irq_desc(unsigned int irq)
- {
+ 	return nr;
+ }
++EXPORT_SYMBOL_GPL(of_irq_count);
+ 
+ /**
+  * of_irq_to_resource_table - Fill in resource table with node's IRQ info
 -- 
 2.25.1
 
