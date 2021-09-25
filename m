@@ -2,58 +2,33 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D106C433F5
-	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 17:07:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E88EC433F5
+	for <linux-sh@archiver.kernel.org>; Sat, 25 Sep 2021 11:49:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id EA76E60EE9
-	for <linux-sh@archiver.kernel.org>; Fri, 24 Sep 2021 17:07:42 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 76AE96127C
+	for <linux-sh@archiver.kernel.org>; Sat, 25 Sep 2021 11:49:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1347575AbhIXRJM (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 24 Sep 2021 13:09:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46782 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235333AbhIXRIb (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 24 Sep 2021 13:08:31 -0400
-Received: from mail-pg1-x52b.google.com (mail-pg1-x52b.google.com [IPv6:2607:f8b0:4864:20::52b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F423AC061613;
-        Fri, 24 Sep 2021 10:06:57 -0700 (PDT)
-Received: by mail-pg1-x52b.google.com with SMTP id h3so10440488pgb.7;
-        Fri, 24 Sep 2021 10:06:57 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=fSt/2Dj/eenIaIrKzQI+svTjzoFaPyRPoy7PzUBgu/Q=;
-        b=PL8rk6aoND2MN3aHn1KJLrj+1n+Rs+ui8XwXbyU3+rvm2kBBqPT3fHzwBDg54gksSh
-         8Ny7BkgQL9nte2Yje47c4M0PK9m2agAkZ40jHr5ukre+ZCUVkgEASA9nt0Qe6v1IQHCv
-         ndBssQF4zOuPqaH1LcSjAgV285rFvFF5ms5mlqg+vcQD9ER2xaG+5Rj22plPNWmotS9G
-         +TCsH0qz4R7l/SfuKW0SDhqPCvuRLiLnswNB/G3fni3/V0fPDfa7/4nGQ3iKW8YZoNyl
-         sOR2nkcz5yAY65kthq/akRmE8QuNEbS372cPkj4ZFoUpJJoYx5tJaWaDojOE5X/Pm8r3
-         Uxig==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=fSt/2Dj/eenIaIrKzQI+svTjzoFaPyRPoy7PzUBgu/Q=;
-        b=LMNvp14APXaiBIr6XHO1L8dmF7lJdrv6nD03JpzuVwB3T5VIt645R59zLCQ79D4N0Z
-         3Uupg70YgdrObIoPLsrNFsBmI5KQLHHG1n1U4u6hK40oK+JCsgGMV8Yd5BmEaDnEaO/7
-         QjnRDkjvqFmJWJXrfTuz8IZuDgefDy0I/AY1gyvQHeOy+Lf50Xn1FlBjX19EuybM09GS
-         r/pWJP1lwSd8Hk9B0ic2jMIlzf5V9XHwuZZG/GwXIodf791KTbzsJnxZPESRj3egezHO
-         hzGFik402PdM+A7LO0JQokwkJsIjQeeeTLdlUHdjZ3XT4Yyciu1CR/w8P84Q0ELeTYGr
-         1hNA==
-X-Gm-Message-State: AOAM532W0ZKhZ4M3m4Q/oYs+Te6IFCbSvWoHU4WR4IbAeVMi5roiFMAi
-        iaSGbqmK8P9pTSU3y1zka1nrnfxI1cY=
-X-Google-Smtp-Source: ABdhPJw9i/MXr3hPaw9fCxL4glXqdtYlk2E9G0McC+C7pit5nnMjKwn5fL2HUiGsbDopFLroVze4OA==
-X-Received: by 2002:a62:2f45:0:b0:44b:3961:2a21 with SMTP id v66-20020a622f45000000b0044b39612a21mr10176283pfv.82.1632503217306;
-        Fri, 24 Sep 2021 10:06:57 -0700 (PDT)
-Received: from fainelli-desktop.igp.broadcom.net ([192.19.223.252])
-        by smtp.gmail.com with ESMTPSA id k22sm9659312pfi.149.2021.09.24.10.06.55
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 24 Sep 2021 10:06:56 -0700 (PDT)
-From:   Florian Fainelli <f.fainelli@gmail.com>
-To:     linux-kernel@vger.kernel.org
-Cc:     Florian Fainelli <f.fainelli@gmail.com>,
-        Russell King <linux@armlinux.org.uk>,
+        id S244666AbhIYLue (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 25 Sep 2021 07:50:34 -0400
+Received: from mail.kernel.org ([198.145.29.99]:36878 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S232363AbhIYLud (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Sat, 25 Sep 2021 07:50:33 -0400
+Received: from disco-boy.misterjones.org (disco-boy.misterjones.org [51.254.78.96])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id 4F20361051;
+        Sat, 25 Sep 2021 11:48:59 +0000 (UTC)
+Received: from sofa.misterjones.org ([185.219.108.64] helo=why.misterjones.org)
+        by disco-boy.misterjones.org with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        (Exim 4.94.2)
+        (envelope-from <maz@kernel.org>)
+        id 1mU6Ar-00Cval-A0; Sat, 25 Sep 2021 12:48:57 +0100
+Date:   Sat, 25 Sep 2021 12:48:56 +0100
+Message-ID: <87tui8ub87.wl-maz@kernel.org>
+From:   Marc Zyngier <maz@kernel.org>
+To:     Florian Fainelli <f.fainelli@gmail.com>
+Cc:     linux-kernel@vger.kernel.org, Russell King <linux@armlinux.org.uk>,
         Ray Jui <rjui@broadcom.com>,
         Scott Branden <sbranden@broadcom.com>,
         bcm-kernel-feedback-list@broadcom.com (maintainer:BROADCOM
@@ -63,7 +38,6 @@ Cc:     Florian Fainelli <f.fainelli@gmail.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         Thomas Gleixner <tglx@linutronix.de>,
-        Marc Zyngier <maz@kernel.org>,
         Rob Herring <robh+dt@kernel.org>,
         Frank Rowand <frowand.list@gmail.com>,
         Ard Biesheuvel <ardb@kernel.org>,
@@ -85,38 +59,60 @@ Cc:     Florian Fainelli <f.fainelli@gmail.com>,
         linux-mips@vger.kernel.org (open list:BROADCOM BMIPS MIPS ARCHITECTURE),
         devicetree@vger.kernel.org (open list:OPEN FIRMWARE AND FLATTENED
         DEVICE TREE)
-Subject: [PATCH 03/11] genirq: Export irq_set_affinity_locked()
-Date:   Fri, 24 Sep 2021 10:05:38 -0700
-Message-Id: <20210924170546.805663-4-f.fainelli@gmail.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20210924170546.805663-1-f.fainelli@gmail.com>
+Subject: Re: [PATCH 03/11] genirq: Export irq_set_affinity_locked()
+In-Reply-To: <20210924170546.805663-4-f.fainelli@gmail.com>
 References: <20210924170546.805663-1-f.fainelli@gmail.com>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        <20210924170546.805663-4-f.fainelli@gmail.com>
+User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
+ FLIM-LB/1.14.9 (=?UTF-8?B?R29qxY0=?=) APEL-LB/10.8 EasyPG/1.0.0 Emacs/27.1
+ (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
+MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
+Content-Type: text/plain; charset=US-ASCII
+X-SA-Exim-Connect-IP: 185.219.108.64
+X-SA-Exim-Rcpt-To: f.fainelli@gmail.com, linux-kernel@vger.kernel.org, linux@armlinux.org.uk, rjui@broadcom.com, sbranden@broadcom.com, bcm-kernel-feedback-list@broadcom.com, catalin.marinas@arm.com, will@kernel.org, ysato@users.sourceforge.jp, dalias@libc.org, tglx@linutronix.de, robh+dt@kernel.org, frowand.list@gmail.com, ardb@kernel.org, rppt@kernel.org, linus.walleij@linaro.org, akpm@linux-foundation.org, geert+renesas@glider.be, arnd@arndb.de, linux@roeck-us.net, wangkefeng.wang@huawei.com, mark.rutland@arm.com, andreyknvl@gmail.com, anshuman.khandual@arm.com, valentin.schneider@arm.com, mingo@kernel.org, peterz@infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, linux-mips@vger.kernel.org, devicetree@vger.kernel.org
+X-SA-Exim-Mail-From: maz@kernel.org
+X-SA-Exim-Scanned: No (on disco-boy.misterjones.org); SAEximRunCond expanded to false
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-irq-bcm7038-l1 uses that symbol and we want to make it a loadable module
-in subsequent changes.
+On Fri, 24 Sep 2021 18:05:38 +0100,
+Florian Fainelli <f.fainelli@gmail.com> wrote:
+> 
+> irq-bcm7038-l1 uses that symbol and we want to make it a loadable module
+> in subsequent changes.
+> 
+> Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+> ---
+>  kernel/irq/manage.c | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
+> index 7405e384e5ed..e0c573e5d249 100644
+> --- a/kernel/irq/manage.c
+> +++ b/kernel/irq/manage.c
+> @@ -369,6 +369,7 @@ int irq_set_affinity_locked(struct irq_data *data, const struct cpumask *mask,
+>  
+>  	return ret;
+>  }
+> +EXPORT_SYMBOL_GPL(irq_set_affinity_locked);
+>  
+>  /**
+>   * irq_update_affinity_desc - Update affinity management for an interrupt
 
-Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
----
- kernel/irq/manage.c | 1 +
- 1 file changed, 1 insertion(+)
+This doesn't seem right.
 
-diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index 7405e384e5ed..e0c573e5d249 100644
---- a/kernel/irq/manage.c
-+++ b/kernel/irq/manage.c
-@@ -369,6 +369,7 @@ int irq_set_affinity_locked(struct irq_data *data, const struct cpumask *mask,
- 
- 	return ret;
- }
-+EXPORT_SYMBOL_GPL(irq_set_affinity_locked);
- 
- /**
-  * irq_update_affinity_desc - Update affinity management for an interrupt
+This driver seem to try and move interrupts on its own when the CPU
+goes down. Why can't it rely on the normal CPU hotplug infrastructure
+to do so like all the other drivers (bar some Cavium driver that does
+the same thing)?
+
+I'd rather you take this opportunity to move these drivers into the
+21st century, so that we can kill irq_cpu_offline() and co altogether.
+
+Thanks,
+
+	M.
+
 -- 
-2.25.1
-
+Without deviation from the norm, progress is not possible.
