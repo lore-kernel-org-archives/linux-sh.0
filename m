@@ -2,40 +2,44 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C4DFC433F5
-	for <linux-sh@archiver.kernel.org>; Sat, 25 Sep 2021 17:46:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 13F9EC433EF
+	for <linux-sh@archiver.kernel.org>; Sat, 25 Sep 2021 21:00:09 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5364D60241
-	for <linux-sh@archiver.kernel.org>; Sat, 25 Sep 2021 17:46:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DB553610A3
+	for <linux-sh@archiver.kernel.org>; Sat, 25 Sep 2021 21:00:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229608AbhIYRr7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 25 Sep 2021 13:47:59 -0400
-Received: from mout.kundenserver.de ([212.227.17.10]:42563 "EHLO
-        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229513AbhIYRr7 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 25 Sep 2021 13:47:59 -0400
-Received: from mail-wr1-f51.google.com ([209.85.221.51]) by
- mrelayeu.kundenserver.de (mreue109 [213.165.67.113]) with ESMTPSA (Nemesis)
- id 1N2m7O-1mrKnS16K4-0133dE; Sat, 25 Sep 2021 19:46:22 +0200
-Received: by mail-wr1-f51.google.com with SMTP id t8so37583160wri.1;
-        Sat, 25 Sep 2021 10:46:22 -0700 (PDT)
-X-Gm-Message-State: AOAM531LitsS4VfzUFhSsR5JRLxeKSPfuukWBhVIybQI6Jwal8b2JE0q
-        l/PyCNQTAdGFqzLkZnwc70PtPwLkQIvFPaoVhMY=
-X-Google-Smtp-Source: ABdhPJw4AC++CUgGftyBEQQ1PqMHK2UxvHDhOv0IVrP5JJG7i4nuvnhKaRpsibhTISXsdFjvIezzm7yDZOhM7MC91sk=
-X-Received: by 2002:a1c:23cb:: with SMTP id j194mr7846290wmj.1.1632591981794;
- Sat, 25 Sep 2021 10:46:21 -0700 (PDT)
-MIME-Version: 1.0
-References: <20210924170546.805663-1-f.fainelli@gmail.com> <20210924170546.805663-11-f.fainelli@gmail.com>
- <87sfxsua9l.wl-maz@kernel.org>
-In-Reply-To: <87sfxsua9l.wl-maz@kernel.org>
-From:   Arnd Bergmann <arnd@arndb.de>
-Date:   Sat, 25 Sep 2021 19:46:05 +0200
-X-Gmail-Original-Message-ID: <CAK8P3a2yJwE3fbG5t41eN+N_vVzWdnDuDEi6vi32aRYX+mXX3g@mail.gmail.com>
-Message-ID: <CAK8P3a2yJwE3fbG5t41eN+N_vVzWdnDuDEi6vi32aRYX+mXX3g@mail.gmail.com>
-Subject: Re: [PATCH 10/11] arm64: broadcom: Removed forced select of interrupt controllers
-To:     Marc Zyngier <maz@kernel.org>
+        id S229934AbhIYVBl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 25 Sep 2021 17:01:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46726 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229842AbhIYVBk (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 25 Sep 2021 17:01:40 -0400
+Received: from galois.linutronix.de (Galois.linutronix.de [IPv6:2a0a:51c0:0:12e:550::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 987BAC061570;
+        Sat, 25 Sep 2021 14:00:05 -0700 (PDT)
+From:   Thomas Gleixner <tglx@linutronix.de>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
+        s=2020; t=1632603603;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=OqJbVc4PIkymdexYtCAgR5HPDd/Rii+ka465iyNfbT8=;
+        b=17gAUXwaAhZ2CO+nNGbNkCTPFMKm+VW1yCZuwdbvIQ2oukZjdFGnJwRYdxyYHh2YPixMzo
+        SAwQlb94yQKH+ydYtnfFtXHi1sf6FFgtr/Lx62zBgE3R3hj9agl8rmBpM7lmdLZ/BxuCvi
+        sE5Aht6E3ZS/pFaVVnWAbsH9thQxn1bZ0YYWF0D3zDUSDpdrvZncWPK8cr1nc9SuHz2Cg1
+        ToQQuEz7eA2JgkMb8DD6jubGmUN7zea4a7gs5lLHGGW2qdsXls6ySJAh3GohuyG6yqEb8m
+        /3AMGdvdU6ckvZOOdOQdEaAUQFDLXY9x0ewhndhQbLOqlvM+I5YjLR47igA+EQ==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
+        s=2020e; t=1632603603;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=OqJbVc4PIkymdexYtCAgR5HPDd/Rii+ka465iyNfbT8=;
+        b=/0Gpe0hIKdMNR/SsUg0H+azUWSxbSDChe7GSX5Xpfgqab86WMqTQ0i0YSmYRl5ZpcgLVP1
+        fNrzWdOWqpSyxIAg==
+To:     Florian Fainelli <f.fainelli@gmail.com>,
+        linux-kernel@vger.kernel.org
 Cc:     Florian Fainelli <f.fainelli@gmail.com>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
         Russell King <linux@armlinux.org.uk>,
         Ray Jui <rjui@broadcom.com>,
         Scott Branden <sbranden@broadcom.com>,
@@ -44,8 +48,7 @@ Cc:     Florian Fainelli <f.fainelli@gmail.com>,
         Catalin Marinas <catalin.marinas@arm.com>,
         Will Deacon <will@kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
+        Rich Felker <dalias@libc.org>, Marc Zyngier <maz@kernel.org>,
         Rob Herring <robh+dt@kernel.org>,
         Frank Rowand <frowand.list@gmail.com>,
         Ard Biesheuvel <ardb@kernel.org>,
@@ -68,47 +71,34 @@ Cc:     Florian Fainelli <f.fainelli@gmail.com>,
         <linux-mips@vger.kernel.org>,
         "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE" 
         <devicetree@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-X-Provags-ID: V03:K1:rWH4hivfycKeWeQsl22K7IKMBeMDH7SwCpqK/AzeiSwpYSsopVz
- 79satCGijFSVwWBbPjMyCxhXEAd94DMowRiPP0q09AJ/d1WjsBCU/q32QClzKdBuUpwX1w8
- Ui/NTH2geziacN1RZtsCT+n6LDXzGMsmuW2gI6Yg/3vCgalbeGvyiNKwYByfabzIfaxXCez
- DtJMlwWUAfX8lH+OIjEYA==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:YgcIQgk0EWM=:6OmkmHeCeTvSksfKp/8jhs
- 0lQb7X6tgBdRlunafpzJ6OVOt+LkkDgiWdNiRr5qtH3fQuTgCr9t1YYzIWy8MzKGUJ7V7e2pH
- S/SbroPOhwwfLq/jyCU79KszPfh7q7MHXltbz3M63DiTHSC4pM9AGj8VfAiYw+ujaZ9M7rVXC
- H1pYx8xkIpBfXx5oVGRI3+pGENwEpNMw4J+J3ohQotmKPqE9KCYqEH/ANeBHjr9xd050DEYet
- ChhUz/4h8CI/fIZserY2GDCT3/U4a/bqcQL7oNpn7NktLlBUA7PBq6JMVe9w1okVsOqc29Q3l
- gH5+vxU978bh90rDHp1MJVvg8zQ4lgp7qPNfq75Ag34SZowHr8dr2dx+c/7r8W8x/VtgtJen4
- hokoAaqRcQgM0jAoW9Zj4eda/UoCfXaEpKdCu+JxTzl6j1EXtcX/dBDTgkKqg0GSWyMI67zCb
- 2GLgCA/iSDwZCM//kXPM/KgFDgYi8E2Ras3CyBAnTu65r0fz+1Pz5pNMK1H5WPR9fAM1d79gg
- dZOEB1BKvrS+pqWm9ugGhzEofqaSPUPwnPvjhxh0ts0ZQVI8P4HA9VTHdVRAUg+06xTFnV96I
- Fteso6+TDU53NIXvATt5n97UXstmEyGcIWa83/1ogM/xFQPXN/i3IKNh+xZ1ZGSKNkSiEftcN
- D4YsamW7E1Vc5CvBibPPqdyxHjzlzY4BWZ1HZbs6pJqaLgvtOS0lotoGOTNiRh4tqYmdNOoq/
- CuTkh8qrGEG9h0rQF5huCQMU1mXaNsrnniKnPaqDk40mi44jT64r3LClwcH5kZzbISSHQd7Gr
- j9EQ/8pH7MJ9eOljFOlqHovnfWuY7rLU9BASw7+OvAXZ6kEAnCgx+GLySMY76/Z6mbYpgIw7V
- 087CsAHCLpVcAJb9HYzQ==
+Subject: Re: [PATCH 02/11] genirq: Export irq_to_desc() again to modules
+In-Reply-To: <20210924170546.805663-3-f.fainelli@gmail.com>
+References: <20210924170546.805663-1-f.fainelli@gmail.com>
+ <20210924170546.805663-3-f.fainelli@gmail.com>
+Date:   Sat, 25 Sep 2021 23:00:02 +0200
+Message-ID: <87wnn4cqwd.ffs@tglx>
+MIME-Version: 1.0
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Sat, Sep 25, 2021 at 2:10 PM Marc Zyngier <maz@kernel.org> wrote:
-> On Fri, 24 Sep 2021 18:05:45 +0100, Florian Fainelli <f.fainelli@gmail.com> wrote:
+On Fri, Sep 24 2021 at 10:05, Florian Fainelli wrote:
+> In order to build drivers/irqchip/irq-bcm7038-l1.c as a module (for use
+> in GKI), we need to export_to_desc() which is used in this snippet of
+> code:
 >
-> How does the user know about that? People will build a kernel
-> selecting their platform, and find out it doesn't work. This seems
-> terribly counter-productive to me.
+> 	irqd_set_single_target(irq_desc_get_irq_data(irq_to_desc(virq)));
+>
+> This effectively reverts 64a1b95bb9fe ("genirq: Restrict export of
+> irq_to_desc()").
 
-It's default-enabled on the platforms that need it, see one of the
-earlier patches.
+No. I'm not reexporting this. We've spent quite some time to prevent all
+kind of drivers for fiddle with irq descriptors and I'm not going
+to reopen that can of worms.
 
-Having the option to make it a loadable module is a definite benefit as
-far as I'm concerned, and I generally like the idea of having individually
-selectable symbols for consistency as that is what we have in other
-subsystems as well.
+irq_get_irq_data() is exported and provides you what you need.
 
-Ideally I'd do away with all the 'select' statements for the platforms and
-only have them control dependencies as we do for most other subsystems.
-irqchip is one of the few exceptions here, though I understand the reason
-for having the most important drivers tied to the platform more closely.
+Thanks,
 
-       Arnd
+        tglx
