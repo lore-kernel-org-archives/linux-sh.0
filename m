@@ -2,37 +2,45 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 82A9CC433EF
-	for <linux-sh@archiver.kernel.org>; Sat, 25 Sep 2021 12:09:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C4DFC433F5
+	for <linux-sh@archiver.kernel.org>; Sat, 25 Sep 2021 17:46:25 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5868161268
-	for <linux-sh@archiver.kernel.org>; Sat, 25 Sep 2021 12:09:46 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5364D60241
+	for <linux-sh@archiver.kernel.org>; Sat, 25 Sep 2021 17:46:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244760AbhIYMLT (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 25 Sep 2021 08:11:19 -0400
-Received: from mail.kernel.org ([198.145.29.99]:43860 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S236977AbhIYMLT (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Sat, 25 Sep 2021 08:11:19 -0400
-Received: from disco-boy.misterjones.org (disco-boy.misterjones.org [51.254.78.96])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.kernel.org (Postfix) with ESMTPSA id BCC8E61260;
-        Sat, 25 Sep 2021 12:09:44 +0000 (UTC)
-Received: from sofa.misterjones.org ([185.219.108.64] helo=why.misterjones.org)
-        by disco-boy.misterjones.org with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.94.2)
-        (envelope-from <maz@kernel.org>)
-        id 1mU6Uw-00CvjL-Mv; Sat, 25 Sep 2021 13:09:42 +0100
-Date:   Sat, 25 Sep 2021 13:09:42 +0100
-Message-ID: <87sfxsua9l.wl-maz@kernel.org>
-From:   Marc Zyngier <maz@kernel.org>
-To:     Florian Fainelli <f.fainelli@gmail.com>
-Cc:     linux-kernel@vger.kernel.org, Russell King <linux@armlinux.org.uk>,
+        id S229608AbhIYRr7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 25 Sep 2021 13:47:59 -0400
+Received: from mout.kundenserver.de ([212.227.17.10]:42563 "EHLO
+        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229513AbhIYRr7 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 25 Sep 2021 13:47:59 -0400
+Received: from mail-wr1-f51.google.com ([209.85.221.51]) by
+ mrelayeu.kundenserver.de (mreue109 [213.165.67.113]) with ESMTPSA (Nemesis)
+ id 1N2m7O-1mrKnS16K4-0133dE; Sat, 25 Sep 2021 19:46:22 +0200
+Received: by mail-wr1-f51.google.com with SMTP id t8so37583160wri.1;
+        Sat, 25 Sep 2021 10:46:22 -0700 (PDT)
+X-Gm-Message-State: AOAM531LitsS4VfzUFhSsR5JRLxeKSPfuukWBhVIybQI6Jwal8b2JE0q
+        l/PyCNQTAdGFqzLkZnwc70PtPwLkQIvFPaoVhMY=
+X-Google-Smtp-Source: ABdhPJw4AC++CUgGftyBEQQ1PqMHK2UxvHDhOv0IVrP5JJG7i4nuvnhKaRpsibhTISXsdFjvIezzm7yDZOhM7MC91sk=
+X-Received: by 2002:a1c:23cb:: with SMTP id j194mr7846290wmj.1.1632591981794;
+ Sat, 25 Sep 2021 10:46:21 -0700 (PDT)
+MIME-Version: 1.0
+References: <20210924170546.805663-1-f.fainelli@gmail.com> <20210924170546.805663-11-f.fainelli@gmail.com>
+ <87sfxsua9l.wl-maz@kernel.org>
+In-Reply-To: <87sfxsua9l.wl-maz@kernel.org>
+From:   Arnd Bergmann <arnd@arndb.de>
+Date:   Sat, 25 Sep 2021 19:46:05 +0200
+X-Gmail-Original-Message-ID: <CAK8P3a2yJwE3fbG5t41eN+N_vVzWdnDuDEi6vi32aRYX+mXX3g@mail.gmail.com>
+Message-ID: <CAK8P3a2yJwE3fbG5t41eN+N_vVzWdnDuDEi6vi32aRYX+mXX3g@mail.gmail.com>
+Subject: Re: [PATCH 10/11] arm64: broadcom: Removed forced select of interrupt controllers
+To:     Marc Zyngier <maz@kernel.org>
+Cc:     Florian Fainelli <f.fainelli@gmail.com>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Russell King <linux@armlinux.org.uk>,
         Ray Jui <rjui@broadcom.com>,
         Scott Branden <sbranden@broadcom.com>,
-        bcm-kernel-feedback-list@broadcom.com (maintainer:BROADCOM
-        BCM281XX/BCM11XXX/BCM216XX ARM ARCHITE...),
+        "maintainer:BROADCOM BCM281XX/BCM11XXX/BCM216XX ARM ARCHITE..." 
+        <bcm-kernel-feedback-list@broadcom.com>,
         Catalin Marinas <catalin.marinas@arm.com>,
         Will Deacon <will@kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
@@ -54,68 +62,53 @@ Cc:     linux-kernel@vger.kernel.org, Russell King <linux@armlinux.org.uk>,
         Valentin Schneider <valentin.schneider@arm.com>,
         Ingo Molnar <mingo@kernel.org>,
         Peter Zijlstra <peterz@infradead.org>,
-        linux-arm-kernel@lists.infradead.org (moderated list:ARM PORT),
-        linux-sh@vger.kernel.org (open list:SUPERH),
-        linux-mips@vger.kernel.org (open list:BROADCOM BMIPS MIPS ARCHITECTURE),
-        devicetree@vger.kernel.org (open list:OPEN FIRMWARE AND FLATTENED
-        DEVICE TREE)
-Subject: Re: [PATCH 10/11] arm64: broadcom: Removed forced select of interrupt controllers
-In-Reply-To: <20210924170546.805663-11-f.fainelli@gmail.com>
-References: <20210924170546.805663-1-f.fainelli@gmail.com>
-        <20210924170546.805663-11-f.fainelli@gmail.com>
-User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
- FLIM-LB/1.14.9 (=?UTF-8?B?R29qxY0=?=) APEL-LB/10.8 EasyPG/1.0.0 Emacs/27.1
- (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
-MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
-Content-Type: text/plain; charset=US-ASCII
-X-SA-Exim-Connect-IP: 185.219.108.64
-X-SA-Exim-Rcpt-To: f.fainelli@gmail.com, linux-kernel@vger.kernel.org, linux@armlinux.org.uk, rjui@broadcom.com, sbranden@broadcom.com, bcm-kernel-feedback-list@broadcom.com, catalin.marinas@arm.com, will@kernel.org, ysato@users.sourceforge.jp, dalias@libc.org, tglx@linutronix.de, robh+dt@kernel.org, frowand.list@gmail.com, ardb@kernel.org, rppt@kernel.org, linus.walleij@linaro.org, akpm@linux-foundation.org, geert+renesas@glider.be, arnd@arndb.de, linux@roeck-us.net, wangkefeng.wang@huawei.com, mark.rutland@arm.com, andreyknvl@gmail.com, anshuman.khandual@arm.com, valentin.schneider@arm.com, mingo@kernel.org, peterz@infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, linux-mips@vger.kernel.org, devicetree@vger.kernel.org
-X-SA-Exim-Mail-From: maz@kernel.org
-X-SA-Exim-Scanned: No (on disco-boy.misterjones.org); SAEximRunCond expanded to false
+        "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>,
+        "open list:SUPERH" <linux-sh@vger.kernel.org>,
+        "open list:BROADCOM BMIPS MIPS ARCHITECTURE" 
+        <linux-mips@vger.kernel.org>,
+        "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE" 
+        <devicetree@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+X-Provags-ID: V03:K1:rWH4hivfycKeWeQsl22K7IKMBeMDH7SwCpqK/AzeiSwpYSsopVz
+ 79satCGijFSVwWBbPjMyCxhXEAd94DMowRiPP0q09AJ/d1WjsBCU/q32QClzKdBuUpwX1w8
+ Ui/NTH2geziacN1RZtsCT+n6LDXzGMsmuW2gI6Yg/3vCgalbeGvyiNKwYByfabzIfaxXCez
+ DtJMlwWUAfX8lH+OIjEYA==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:YgcIQgk0EWM=:6OmkmHeCeTvSksfKp/8jhs
+ 0lQb7X6tgBdRlunafpzJ6OVOt+LkkDgiWdNiRr5qtH3fQuTgCr9t1YYzIWy8MzKGUJ7V7e2pH
+ S/SbroPOhwwfLq/jyCU79KszPfh7q7MHXltbz3M63DiTHSC4pM9AGj8VfAiYw+ujaZ9M7rVXC
+ H1pYx8xkIpBfXx5oVGRI3+pGENwEpNMw4J+J3ohQotmKPqE9KCYqEH/ANeBHjr9xd050DEYet
+ ChhUz/4h8CI/fIZserY2GDCT3/U4a/bqcQL7oNpn7NktLlBUA7PBq6JMVe9w1okVsOqc29Q3l
+ gH5+vxU978bh90rDHp1MJVvg8zQ4lgp7qPNfq75Ag34SZowHr8dr2dx+c/7r8W8x/VtgtJen4
+ hokoAaqRcQgM0jAoW9Zj4eda/UoCfXaEpKdCu+JxTzl6j1EXtcX/dBDTgkKqg0GSWyMI67zCb
+ 2GLgCA/iSDwZCM//kXPM/KgFDgYi8E2Ras3CyBAnTu65r0fz+1Pz5pNMK1H5WPR9fAM1d79gg
+ dZOEB1BKvrS+pqWm9ugGhzEofqaSPUPwnPvjhxh0ts0ZQVI8P4HA9VTHdVRAUg+06xTFnV96I
+ Fteso6+TDU53NIXvATt5n97UXstmEyGcIWa83/1ogM/xFQPXN/i3IKNh+xZ1ZGSKNkSiEftcN
+ D4YsamW7E1Vc5CvBibPPqdyxHjzlzY4BWZ1HZbs6pJqaLgvtOS0lotoGOTNiRh4tqYmdNOoq/
+ CuTkh8qrGEG9h0rQF5huCQMU1mXaNsrnniKnPaqDk40mi44jT64r3LClwcH5kZzbISSHQd7Gr
+ j9EQ/8pH7MJ9eOljFOlqHovnfWuY7rLU9BASw7+OvAXZ6kEAnCgx+GLySMY76/Z6mbYpgIw7V
+ 087CsAHCLpVcAJb9HYzQ==
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, 24 Sep 2021 18:05:45 +0100,
-Florian Fainelli <f.fainelli@gmail.com> wrote:
-> 
-> Now that the various second level interrupt controllers have been moved
-> to IRQCHIP_PLATFORM_DRIVER and they do default to ARCH_BRCMSTB and
-> ARCH_BCM2835 where relevant, remove their forced selection from the
-> machine entry to allow an user to build them as modules.
-> 
-> Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
-> ---
->  arch/arm64/Kconfig.platforms | 3 ---
->  1 file changed, 3 deletions(-)
-> 
-> diff --git a/arch/arm64/Kconfig.platforms b/arch/arm64/Kconfig.platforms
-> index b0ce18d4cc98..2e9440f2da22 100644
-> --- a/arch/arm64/Kconfig.platforms
-> +++ b/arch/arm64/Kconfig.platforms
-> @@ -44,7 +44,6 @@ config ARCH_BCM2835
->  	select ARM_AMBA
->  	select ARM_GIC
->  	select ARM_TIMER_SP804
-> -	select BRCMSTB_L2_IRQ
->  	help
->  	  This enables support for the Broadcom BCM2837 and BCM2711 SoC.
->  	  These SoCs are used in the Raspberry Pi 3 and 4 devices.
-> @@ -82,8 +81,6 @@ config ARCH_BITMAIN
->  config ARCH_BRCMSTB
->  	bool "Broadcom Set-Top-Box SoCs"
->  	select ARCH_HAS_RESET_CONTROLLER
-> -	select BCM7038_L1_IRQ
-> -	select BRCMSTB_L2_IRQ
->  	select GENERIC_IRQ_CHIP
->  	select PINCTRL
->  	help
+On Sat, Sep 25, 2021 at 2:10 PM Marc Zyngier <maz@kernel.org> wrote:
+> On Fri, 24 Sep 2021 18:05:45 +0100, Florian Fainelli <f.fainelli@gmail.com> wrote:
+>
+> How does the user know about that? People will build a kernel
+> selecting their platform, and find out it doesn't work. This seems
+> terribly counter-productive to me.
 
-How does the user know about that? People will build a kernel
-selecting their platform, and find out it doesn't work. This seems
-terribly counter-productive to me.
+It's default-enabled on the platforms that need it, see one of the
+earlier patches.
 
-	M.
+Having the option to make it a loadable module is a definite benefit as
+far as I'm concerned, and I generally like the idea of having individually
+selectable symbols for consistency as that is what we have in other
+subsystems as well.
 
--- 
-Without deviation from the norm, progress is not possible.
+Ideally I'd do away with all the 'select' statements for the platforms and
+only have them control dependencies as we do for most other subsystems.
+irqchip is one of the few exceptions here, though I understand the reason
+for having the most important drivers tied to the platform more closely.
+
+       Arnd
