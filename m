@@ -2,88 +2,69 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D7C03C433FE
-	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 05:09:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A1D97C433FE
+	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 05:43:21 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B97C6611C3
-	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 05:09:52 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 84251611C7
+	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 05:43:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234067AbhI1FLa (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 28 Sep 2021 01:11:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34296 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229493AbhI1FLa (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Sep 2021 01:11:30 -0400
-Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4B3DEC061575;
-        Mon, 27 Sep 2021 22:09:51 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=oOd9LxoociUm+XQt9zv+ciORRiD3WJaBIAs9vhJ/RBU=; b=QEti/cNOWw+cTSUuHKYv5niedv
-        OTE+5bQlj2w39HoDBdfnfzLOSKu3EaUm7Uqwg6U53WWuCvTB+l9Wr1XV7dfgAJfLqlK9hDJl9wW1q
-        kEV2OpRJabiiPgPlsptDYH2oN85MbCfbHnm56jZD4kw0ZoGv+k6luGN2seSqXnQnsexa9JiHqlO44
-        qqz4L4UZUi/24mUjAqJfskHIrxCGp46f2SpYytuhL0YpYSSJpkk3zq0cwCMlT1RCWMI7Db9NtC8p6
-        PqkdY0xfj1B0qU8f2iFHlK14HB7hq0PHB7GrLJPeLXI8/2Qliro4TT6O06ecWmzeIpgz4uGrR6ni3
-        38wNVRIQ==;
-Received: from hch by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1mV5MJ-00AVbC-Nz; Tue, 28 Sep 2021 05:09:00 +0000
-Date:   Tue, 28 Sep 2021 06:08:51 +0100
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Florian Fainelli <f.fainelli@gmail.com>
-Cc:     linux-kernel@vger.kernel.org, Russell King <linux@armlinux.org.uk>,
-        Ray Jui <rjui@broadcom.com>,
-        Scott Branden <sbranden@broadcom.com>,
-        "maintainer:BROADCOM BCM281XX/BCM11XXX/BCM216XX ARM ARCHITE..." 
-        <bcm-kernel-feedback-list@broadcom.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Marc Zyngier <maz@kernel.org>,
-        Rob Herring <robh+dt@kernel.org>,
-        Frank Rowand <frowand.list@gmail.com>,
-        Ard Biesheuvel <ardb@kernel.org>,
-        Mike Rapoport <rppt@kernel.org>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Kefeng Wang <wangkefeng.wang@huawei.com>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Andrey Konovalov <andreyknvl@gmail.com>,
-        Anshuman Khandual <anshuman.khandual@arm.com>,
-        Valentin Schneider <valentin.schneider@arm.com>,
-        Ingo Molnar <mingo@kernel.org>,
-        Peter Zijlstra <peterz@infradead.org>,
-        "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>,
-        "open list:SUPERH" <linux-sh@vger.kernel.org>,
-        "open list:BROADCOM BMIPS MIPS ARCHITECTURE" 
-        <linux-mips@vger.kernel.org>,
-        "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE" 
-        <devicetree@vger.kernel.org>
-Subject: Re: [PATCH v2 01/12] arch: Export cpu_logical_map to modules
-Message-ID: <YVKjYxf5bzJzWJDb@infradead.org>
-References: <20210928022715.369160-1-f.fainelli@gmail.com>
- <20210928022715.369160-2-f.fainelli@gmail.com>
+        id S234243AbhI1Fo7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 28 Sep 2021 01:44:59 -0400
+Received: from szxga01-in.huawei.com ([45.249.212.187]:26922 "EHLO
+        szxga01-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235647AbhI1Fo7 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Sep 2021 01:44:59 -0400
+Received: from dggemv703-chm.china.huawei.com (unknown [172.30.72.56])
+        by szxga01-in.huawei.com (SkyGuard) with ESMTP id 4HJSx14wHkzbmQH;
+        Tue, 28 Sep 2021 13:39:01 +0800 (CST)
+Received: from dggpemm500001.china.huawei.com (7.185.36.107) by
+ dggemv703-chm.china.huawei.com (10.3.19.46) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2308.8; Tue, 28 Sep 2021 13:43:17 +0800
+Received: from [10.174.177.243] (10.174.177.243) by
+ dggpemm500001.china.huawei.com (7.185.36.107) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256) id
+ 15.1.2308.8; Tue, 28 Sep 2021 13:43:17 +0800
+Message-ID: <3cd69b8f-c1af-baaa-31aa-f2e61e4c84b6@huawei.com>
+Date:   Tue, 28 Sep 2021 13:43:16 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20210928022715.369160-2-f.fainelli@gmail.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by casper.infradead.org. See http://www.infradead.org/rpr.html
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
+ Thunderbird/91.1.1
+Subject: Re: [PATCH 0/3] Cleanup MAY_HAVE_SPARSE_IRQ
+Content-Language: en-US
+To:     Guo Ren <guoren@kernel.org>
+CC:     Thomas Gleixner <tglx@linutronix.de>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, <linux-sh@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        <linux-csky@vger.kernel.org>
+References: <20210927081402.191717-1-wangkefeng.wang@huawei.com>
+ <CAJF2gTRoXWqcMTkuu=L6gkF2cL79GonN6XBj86BMMptJnmz3zw@mail.gmail.com>
+From:   Kefeng Wang <wangkefeng.wang@huawei.com>
+In-Reply-To: <CAJF2gTRoXWqcMTkuu=L6gkF2cL79GonN6XBj86BMMptJnmz3zw@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
+Content-Transfer-Encoding: 7bit
+X-Originating-IP: [10.174.177.243]
+X-ClientProxiedBy: dggeme702-chm.china.huawei.com (10.1.199.98) To
+ dggpemm500001.china.huawei.com (7.185.36.107)
+X-CFilter-Loop: Reflected
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Sep 27, 2021 at 07:27:04PM -0700, Florian Fainelli wrote:
-> In order to allow drivers/irqchip/irq-bcm7038-l1.c to be built as a
-> module and usable in GKI, export cpu_logical_map or __cpu_logical_map
-> towards the modules. This follows what MIPS has been doing since
-> 2dc2ae344e0e ("MIPS: Export __cpu_number_map and __cpu_logical_map.")
 
-This seems like a pretty bad idea.  For one you should export an
-accessor instead of the data structure.  And this probably should be an
-EXPORT_SYMBOL_GPL.
+On 2021/9/28 13:08, Guo Ren wrote:
+> On Mon, Sep 27, 2021 at 4:11 PM Kefeng Wang <wangkefeng.wang@huawei.com> wrote:
+>> Most ARCHs support SPARSE_IRQ, and MAY_HAVE_SPARSE_IRQ is useless, and
+>> only sh and csky select it, but the could use SPARSE_IRQ too, let's
+>> kill MAY_HAVE_SPARSE_IRQ, also cleanup the kernel/irq/Kconfig a little.
+> Can you elaborate the reason on why we need to kill MAY_HAVE_SPARSE_IRQ?
+> What are the benefits after the patch? (As you know we couldn't drop
+> "!SPARSE_IRQ".)
+
+If csky want to keep MAY_HAVE_SPARSE_IRQ, then I won't kill it, or no 
+one use it,
+
+then cleanup it.
+
+
