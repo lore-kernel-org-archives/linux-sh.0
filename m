@@ -2,69 +2,136 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A1D97C433FE
-	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 05:43:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EDEF9C433F5
+	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 08:10:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 84251611C7
-	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 05:43:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id CC11E61159
+	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 08:10:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234243AbhI1Fo7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 28 Sep 2021 01:44:59 -0400
-Received: from szxga01-in.huawei.com ([45.249.212.187]:26922 "EHLO
-        szxga01-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235647AbhI1Fo7 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Sep 2021 01:44:59 -0400
-Received: from dggemv703-chm.china.huawei.com (unknown [172.30.72.56])
-        by szxga01-in.huawei.com (SkyGuard) with ESMTP id 4HJSx14wHkzbmQH;
-        Tue, 28 Sep 2021 13:39:01 +0800 (CST)
-Received: from dggpemm500001.china.huawei.com (7.185.36.107) by
- dggemv703-chm.china.huawei.com (10.3.19.46) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2308.8; Tue, 28 Sep 2021 13:43:17 +0800
-Received: from [10.174.177.243] (10.174.177.243) by
- dggpemm500001.china.huawei.com (7.185.36.107) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256) id
- 15.1.2308.8; Tue, 28 Sep 2021 13:43:17 +0800
-Message-ID: <3cd69b8f-c1af-baaa-31aa-f2e61e4c84b6@huawei.com>
-Date:   Tue, 28 Sep 2021 13:43:16 +0800
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
- Thunderbird/91.1.1
-Subject: Re: [PATCH 0/3] Cleanup MAY_HAVE_SPARSE_IRQ
-Content-Language: en-US
-To:     Guo Ren <guoren@kernel.org>
-CC:     Thomas Gleixner <tglx@linutronix.de>,
+        id S239330AbhI1IMS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 28 Sep 2021 04:12:18 -0400
+Received: from mail.kernel.org ([198.145.29.99]:40418 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S239043AbhI1IMR (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Tue, 28 Sep 2021 04:12:17 -0400
+Received: from disco-boy.misterjones.org (disco-boy.misterjones.org [51.254.78.96])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.kernel.org (Postfix) with ESMTPSA id CD42560F9B;
+        Tue, 28 Sep 2021 08:10:37 +0000 (UTC)
+Received: from sofa.misterjones.org ([185.219.108.64] helo=why.misterjones.org)
+        by disco-boy.misterjones.org with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        (Exim 4.94.2)
+        (envelope-from <maz@kernel.org>)
+        id 1mV8CB-00DRl2-M2; Tue, 28 Sep 2021 09:10:35 +0100
+Date:   Tue, 28 Sep 2021 09:10:34 +0100
+Message-ID: <87pmstt91h.wl-maz@kernel.org>
+From:   Marc Zyngier <maz@kernel.org>
+To:     Florian Fainelli <f.fainelli@gmail.com>
+Cc:     Rob Herring <robh+dt@kernel.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Ray Jui <rjui@broadcom.com>,
+        Scott Branden <sbranden@broadcom.com>,
+        "maintainer:BROADCOM BCM281XX/BCM11XXX/BCM216XX ARM ARCHITE..." 
+        <bcm-kernel-feedback-list@broadcom.com>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, <linux-sh@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        <linux-csky@vger.kernel.org>
-References: <20210927081402.191717-1-wangkefeng.wang@huawei.com>
- <CAJF2gTRoXWqcMTkuu=L6gkF2cL79GonN6XBj86BMMptJnmz3zw@mail.gmail.com>
-From:   Kefeng Wang <wangkefeng.wang@huawei.com>
-In-Reply-To: <CAJF2gTRoXWqcMTkuu=L6gkF2cL79GonN6XBj86BMMptJnmz3zw@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-Content-Transfer-Encoding: 7bit
-X-Originating-IP: [10.174.177.243]
-X-ClientProxiedBy: dggeme702-chm.china.huawei.com (10.1.199.98) To
- dggpemm500001.china.huawei.com (7.185.36.107)
-X-CFilter-Loop: Reflected
+        Rich Felker <dalias@libc.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Frank Rowand <frowand.list@gmail.com>,
+        Ard Biesheuvel <ardb@kernel.org>,
+        Mike Rapoport <rppt@kernel.org>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Kefeng Wang <wangkefeng.wang@huawei.com>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Andrey Konovalov <andreyknvl@gmail.com>,
+        Anshuman Khandual <anshuman.khandual@arm.com>,
+        Valentin Schneider <valentin.schneider@arm.com>,
+        Ingo Molnar <mingo@kernel.org>,
+        Peter Zijlstra <peterz@infradead.org>,
+        "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>,
+        "open list:SUPERH" <linux-sh@vger.kernel.org>,
+        "open list:BROADCOM BMIPS MIPS ARCHITECTURE" 
+        <linux-mips@vger.kernel.org>,
+        "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE" 
+        <devicetree@vger.kernel.org>
+Subject: Re: [PATCH 07/11] of/irq: Export of_irq_count to drivers
+In-Reply-To: <ec13207a-08b4-cbc4-7f29-1ce25ce1ebd0@gmail.com>
+References: <20210924170546.805663-1-f.fainelli@gmail.com>
+        <20210924170546.805663-8-f.fainelli@gmail.com>
+        <CAL_JsqLSiCb7-tHW3VTOTdMt=qahAij77zF2us-CZqXYAi0jmg@mail.gmail.com>
+        <b9bf844c-b6c0-9277-07e0-7592527ce4e4@gmail.com>
+        <CAL_JsqLv+RrmtDPTuMxtjbqAbGvEeAY_oOE5GqrPdP9ZpNGzqw@mail.gmail.com>
+        <ec13207a-08b4-cbc4-7f29-1ce25ce1ebd0@gmail.com>
+User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
+ FLIM-LB/1.14.9 (=?UTF-8?B?R29qxY0=?=) APEL-LB/10.8 EasyPG/1.0.0 Emacs/27.1
+ (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
+MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
+Content-Type: text/plain; charset=US-ASCII
+X-SA-Exim-Connect-IP: 185.219.108.64
+X-SA-Exim-Rcpt-To: f.fainelli@gmail.com, robh+dt@kernel.org, linux-kernel@vger.kernel.org, linux@armlinux.org.uk, rjui@broadcom.com, sbranden@broadcom.com, bcm-kernel-feedback-list@broadcom.com, catalin.marinas@arm.com, will@kernel.org, ysato@users.sourceforge.jp, dalias@libc.org, tglx@linutronix.de, frowand.list@gmail.com, ardb@kernel.org, rppt@kernel.org, linus.walleij@linaro.org, akpm@linux-foundation.org, geert+renesas@glider.be, arnd@arndb.de, linux@roeck-us.net, wangkefeng.wang@huawei.com, mark.rutland@arm.com, andreyknvl@gmail.com, anshuman.khandual@arm.com, valentin.schneider@arm.com, mingo@kernel.org, peterz@infradead.org, linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org, linux-mips@vger.kernel.org, devicetree@vger.kernel.org
+X-SA-Exim-Mail-From: maz@kernel.org
+X-SA-Exim-Scanned: No (on disco-boy.misterjones.org); SAEximRunCond expanded to false
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+On Mon, 27 Sep 2021 20:49:46 +0100,
+Florian Fainelli <f.fainelli@gmail.com> wrote:
+> 
+> On 9/27/21 12:43 PM, Rob Herring wrote:
+> > On Mon, Sep 27, 2021 at 2:28 PM Florian Fainelli <f.fainelli@gmail.com> wrote:
+> >>
+> >> On 9/27/21 12:08 PM, Rob Herring wrote:
+> >>> On Fri, Sep 24, 2021 at 12:07 PM Florian Fainelli <f.fainelli@gmail.com> wrote:
+> >>>>
+> >>>> In order to build drivers/irqchip/irq-bcm7120-l2.c as a module, we will
+> >>>> need to have of_irq_count() exported to modules.
+> >>>>
+> >>>> Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+> >>>> ---
+> >>>>  drivers/of/irq.c | 1 +
+> >>>>  1 file changed, 1 insertion(+)
+> >>>>
+> >>>> diff --git a/drivers/of/irq.c b/drivers/of/irq.c
+> >>>> index 352e14b007e7..949b9d1f8729 100644
+> >>>> --- a/drivers/of/irq.c
+> >>>> +++ b/drivers/of/irq.c
+> >>>> @@ -440,6 +440,7 @@ int of_irq_count(struct device_node *dev)
+> >>>>
+> >>>>         return nr;
+> >>>>  }
+> >>>> +EXPORT_SYMBOL_GPL(of_irq_count);
+> >>>
+> >>> Please convert to use platform_irq_count() instead.
+> >>
+> >> That requires a platform_device to be passed to platform_irq_count(),
+> >> will that work even when the drivers remain built into the kernel and
+> >> get initialized early on?
+> > 
+> > No, does your irqchip using this do both? Looks to me like it is
+> > always a platform_device.
+> 
+> On ARM/ARM64 not using GKI as well as MIPS, we would want the module to
+> be built into the kernel image, however when using GKI that driver would
+> become a module. How do you suggest reconciling both usages?
 
-On 2021/9/28 13:08, Guo Ren wrote:
-> On Mon, Sep 27, 2021 at 4:11 PM Kefeng Wang <wangkefeng.wang@huawei.com> wrote:
->> Most ARCHs support SPARSE_IRQ, and MAY_HAVE_SPARSE_IRQ is useless, and
->> only sh and csky select it, but the could use SPARSE_IRQ too, let's
->> kill MAY_HAVE_SPARSE_IRQ, also cleanup the kernel/irq/Kconfig a little.
-> Can you elaborate the reason on why we need to kill MAY_HAVE_SPARSE_IRQ?
-> What are the benefits after the patch? (As you know we couldn't drop
-> "!SPARSE_IRQ".)
+I don't see what GKI has to do with anything. Either the driver can be
+built as a module (and it is in this case a platform device at all
+times, built-in or not), or it cannot, and it falls into the
+IRQCHIP_DECLARE() category (and there is no export problem).
 
-If csky want to keep MAY_HAVE_SPARSE_IRQ, then I won't kill it, or no 
-one use it,
+Pick your poison!
 
-then cleanup it.
+Thanks,
 
+	M.
 
+-- 
+Without deviation from the norm, progress is not possible.
