@@ -2,61 +2,69 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27403C433EF
-	for <linux-sh@archiver.kernel.org>; Mon, 27 Sep 2021 20:09:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B63C9C433EF
+	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 02:27:42 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 0FC596101A
-	for <linux-sh@archiver.kernel.org>; Mon, 27 Sep 2021 20:09:25 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id A0EAF6124B
+	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 02:27:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236783AbhI0ULC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 27 Sep 2021 16:11:02 -0400
-Received: from mail.kernel.org ([198.145.29.99]:59614 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S236750AbhI0ULC (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Mon, 27 Sep 2021 16:11:02 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id C2F8F6103B;
-        Mon, 27 Sep 2021 20:09:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1632773363;
-        bh=J4WKzNfsIiazj7H7fCzN53GkjN+q2BUUdv7RdPQ+jvs=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=iz+rXT9iurX/Sbwxr0JiSOuhKGhkSJ/ZvA9uw914KWJpvAANWwMdb/MtedCiS54lS
-         O4dVlseh6GqrUxg1YD+XyKKd+SwGAuj8FFf5ji70+pHdB4/pRrUxxo8jf8IudGCDtu
-         LtBnr3LkhDr5Hfzmbruf/81BbM7+KWYfUt9oMhE2sH/EqooPTEMF5VjZ5LXEAAh9hO
-         z2CiZ7lgLXGHXi7oXi2Td1tROFYJz/ERayeCuMoOF7473nW6Y0xZlsqx5Zblamfymm
-         5XKvXVyLbE8UF++l1RJyUg7RBYeHIXiU6vEP5mRK5UT5zlQq7jHKbA1wRxDbH0Wixx
-         nRXT2zqo1kryQ==
-Received: by mail-ed1-f41.google.com with SMTP id v18so38724181edc.11;
-        Mon, 27 Sep 2021 13:09:23 -0700 (PDT)
-X-Gm-Message-State: AOAM531QT4+7eR985DjBPxx7rdtJt9rzt0fInld5E3uodnIFioP8EpAR
-        i6/mC//ZFMbiFAx31iJcZp3aTs8w/7n66+C/PQ==
-X-Google-Smtp-Source: ABdhPJxbTiYP0k9mhq1FBUZhdcuB5HPJYzGx22XyKvmETyk5vs8udAVSQV3XRcc2g52kNbQN3yNH7Cekm4PkAhhcRnQ=
-X-Received: by 2002:a17:906:7217:: with SMTP id m23mr2177174ejk.466.1632773362346;
- Mon, 27 Sep 2021 13:09:22 -0700 (PDT)
-MIME-Version: 1.0
-References: <20210924170546.805663-1-f.fainelli@gmail.com> <20210924170546.805663-8-f.fainelli@gmail.com>
- <CAL_JsqLSiCb7-tHW3VTOTdMt=qahAij77zF2us-CZqXYAi0jmg@mail.gmail.com>
- <b9bf844c-b6c0-9277-07e0-7592527ce4e4@gmail.com> <CAL_JsqLv+RrmtDPTuMxtjbqAbGvEeAY_oOE5GqrPdP9ZpNGzqw@mail.gmail.com>
- <ec13207a-08b4-cbc4-7f29-1ce25ce1ebd0@gmail.com>
-In-Reply-To: <ec13207a-08b4-cbc4-7f29-1ce25ce1ebd0@gmail.com>
-From:   Rob Herring <robh+dt@kernel.org>
-Date:   Mon, 27 Sep 2021 15:09:10 -0500
-X-Gmail-Original-Message-ID: <CAL_JsqKyFeSn=6PiFHNZR7oTy9A5VdmD7U3=Za0qyofPB6aoMA@mail.gmail.com>
-Message-ID: <CAL_JsqKyFeSn=6PiFHNZR7oTy9A5VdmD7U3=Za0qyofPB6aoMA@mail.gmail.com>
-Subject: Re: [PATCH 07/11] of/irq: Export of_irq_count to drivers
-To:     Florian Fainelli <f.fainelli@gmail.com>
-Cc:     "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        id S238612AbhI1C3U (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 27 Sep 2021 22:29:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54602 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S238545AbhI1C3T (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 27 Sep 2021 22:29:19 -0400
+Received: from mail-pf1-x42c.google.com (mail-pf1-x42c.google.com [IPv6:2607:f8b0:4864:20::42c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5F837C061575;
+        Mon, 27 Sep 2021 19:27:41 -0700 (PDT)
+Received: by mail-pf1-x42c.google.com with SMTP id k17so17625443pff.8;
+        Mon, 27 Sep 2021 19:27:41 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=sdoc9RGE6gS4jaJ958J2ofqibe80c4VFSM+XdfrkDLA=;
+        b=mtX21lszSTfglc2i3EQDgr62JNajWdAY+JjGhXstTLqdg6lDiHN9h/TRcPu/dhq2oh
+         Psj9h/SiYSS/PlFx2pjhludMpLWHw8OeRvHBrmDR7+6/E0qRZM8KD+HZlWD2C9K7CQvD
+         jGjL4o7rHwJY46jyecF3GatRFaX0YOHs12+RxX+ODXBvLv/8h0SEXHOwiJ9wHUd+uVq5
+         LxW9Stdt58ETnay+iafY+Yj4iI7NNJGjf+YZIeznWpljqUHRDi+sMo5zbsqs8y47Bic2
+         Pu0fR4wbAbBJ3i+0S0KV0Sf6BLN0dPzAo7H7H+59+A7tZ0XU2SKY0wDNkIIOGDpU5cln
+         ZeQQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=sdoc9RGE6gS4jaJ958J2ofqibe80c4VFSM+XdfrkDLA=;
+        b=xGRyhcEnNBiWAlmUq2ryDdH/4tGb/SWdklvoCbZb+39FosMtR/TZV+ZQKZ1t2cFHMV
+         91nqZZMEFDx8Rdit0YEZNQyuNgciONAW8MEa83/AXZEYTjoOc9i6z1rtuC4nbEDKajBF
+         rs4Lu/qoZu3i0eBlIy0gvPxUBbNd541kuIHrjKiclME0ObowKoHp6bzwZDbY4JnFwtkf
+         z92Wv3uWTmPKc/bt6sOlQHyLXC1tT5M84evdnn3M/z3yRlYrjRE5tpWV5OWUVE1XOcx7
+         oeyNByECiKiX85gaM1G8AapoTh7BsQ2+GVrRrnx55vdXGfWI5eO2WpVLkRu1jIMgjkLT
+         TsjA==
+X-Gm-Message-State: AOAM533yteBQiHLFYxJkAyjFC3S1B6UrsH1/oGCyiWVdzoShTx5Y/rOm
+        VCVn2/G/XpCPFVOPcAFd8k03cDXBg0g=
+X-Google-Smtp-Source: ABdhPJwLwl8KZAeBw6t/iXisbwEJ73khi+8+AhiS7gDicWv/Y/8Gt+bOyV8q5MpFH7fpuSBWUqh7fg==
+X-Received: by 2002:a65:6a15:: with SMTP id m21mr1603064pgu.415.1632796060297;
+        Mon, 27 Sep 2021 19:27:40 -0700 (PDT)
+Received: from fainelli-desktop.igp.broadcom.net ([192.19.223.252])
+        by smtp.gmail.com with ESMTPSA id k14sm633261pji.45.2021.09.27.19.27.28
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 27 Sep 2021 19:27:39 -0700 (PDT)
+From:   Florian Fainelli <f.fainelli@gmail.com>
+To:     linux-kernel@vger.kernel.org
+Cc:     Florian Fainelli <f.fainelli@gmail.com>,
         Russell King <linux@armlinux.org.uk>,
         Ray Jui <rjui@broadcom.com>,
         Scott Branden <sbranden@broadcom.com>,
-        "maintainer:BROADCOM BCM281XX/BCM11XXX/BCM216XX ARM ARCHITE..." 
-        <bcm-kernel-feedback-list@broadcom.com>,
+        bcm-kernel-feedback-list@broadcom.com (maintainer:BROADCOM
+        BCM281XX/BCM11XXX/BCM216XX ARM ARCHITE...),
         Catalin Marinas <catalin.marinas@arm.com>,
         Will Deacon <will@kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         Thomas Gleixner <tglx@linutronix.de>,
         Marc Zyngier <maz@kernel.org>,
+        Rob Herring <robh+dt@kernel.org>,
         Frank Rowand <frowand.list@gmail.com>,
         Ard Biesheuvel <ardb@kernel.org>,
         Mike Rapoport <rppt@kernel.org>,
@@ -72,66 +80,78 @@ Cc:     "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
         Valentin Schneider <valentin.schneider@arm.com>,
         Ingo Molnar <mingo@kernel.org>,
         Peter Zijlstra <peterz@infradead.org>,
-        "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>,
-        "open list:SUPERH" <linux-sh@vger.kernel.org>,
-        "open list:BROADCOM BMIPS MIPS ARCHITECTURE" 
-        <linux-mips@vger.kernel.org>,
-        "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE" 
-        <devicetree@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        linux-arm-kernel@lists.infradead.org (moderated list:ARM PORT),
+        linux-sh@vger.kernel.org (open list:SUPERH),
+        linux-mips@vger.kernel.org (open list:BROADCOM BMIPS MIPS ARCHITECTURE),
+        devicetree@vger.kernel.org (open list:OPEN FIRMWARE AND FLATTENED
+        DEVICE TREE)
+Subject: [PATCH v2 00/12] Modular Broadcom irqchip drivers
+Date:   Mon, 27 Sep 2021 19:27:03 -0700
+Message-Id: <20210928022715.369160-1-f.fainelli@gmail.com>
+X-Mailer: git-send-email 2.25.1
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Sep 27, 2021 at 2:49 PM Florian Fainelli <f.fainelli@gmail.com> wrote:
->
-> On 9/27/21 12:43 PM, Rob Herring wrote:
-> > On Mon, Sep 27, 2021 at 2:28 PM Florian Fainelli <f.fainelli@gmail.com> wrote:
-> >>
-> >> On 9/27/21 12:08 PM, Rob Herring wrote:
-> >>> On Fri, Sep 24, 2021 at 12:07 PM Florian Fainelli <f.fainelli@gmail.com> wrote:
-> >>>>
-> >>>> In order to build drivers/irqchip/irq-bcm7120-l2.c as a module, we will
-> >>>> need to have of_irq_count() exported to modules.
-> >>>>
-> >>>> Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
-> >>>> ---
-> >>>>  drivers/of/irq.c | 1 +
-> >>>>  1 file changed, 1 insertion(+)
-> >>>>
-> >>>> diff --git a/drivers/of/irq.c b/drivers/of/irq.c
-> >>>> index 352e14b007e7..949b9d1f8729 100644
-> >>>> --- a/drivers/of/irq.c
-> >>>> +++ b/drivers/of/irq.c
-> >>>> @@ -440,6 +440,7 @@ int of_irq_count(struct device_node *dev)
-> >>>>
-> >>>>         return nr;
-> >>>>  }
-> >>>> +EXPORT_SYMBOL_GPL(of_irq_count);
-> >>>
-> >>> Please convert to use platform_irq_count() instead.
-> >>
-> >> That requires a platform_device to be passed to platform_irq_count(),
-> >> will that work even when the drivers remain built into the kernel and
-> >> get initialized early on?
-> >
-> > No, does your irqchip using this do both? Looks to me like it is
-> > always a platform_device.
->
-> On ARM/ARM64 not using GKI as well as MIPS, we would want the module to
-> be built into the kernel image, however when using GKI that driver would
-> become a module. How do you suggest reconciling both usages?
+Hi Thomas, Marc,
 
-What's there to resolve? Every driver that works as a module can be
-built-in. Is there something special about irqchip drivers?
+This patch series aims at allowing the 3 interrupt controller drivers
+used on Broadcom STB platforms to be built as modules in order for those
+to be shipped in a GKI enabled system (Android).
 
-The only issue I see here is platform_irqchip_probe() doesn't pass the
-platform_device pointer to the irq_init_cb function. There's 3 ways to
-fix that. Add a platform_device pointer to the init hook. That's a
-global change though. That's the right thing to do IMO. Or you can use
-of_find_device_by_node(). That's fairly expensive, but easy and
-isolated. You could also set device_node.data pointer to the
-platform_device, but ideally I'd like to get rid of that pointer as
-it's hardly used.
+The irq-bcm7038-l1 requires us to export a number of symbols, which is
+not great, but there are not obvious solutions other than adding
+accessor functions to get the same information.
 
-Rob
+Assuming you are happy with the changes though, please do take the last
+two changes as well through your tree.
+
+Thanks!
+
+Changes in v2:
+
+- avoid using irq_to_desc() and use irq_get_irq_data() instead
+- re-order patches to avoid linking failure for irq-brcmstb-l2
+- removed the use of .irq_cpu_offline() and converted BMIPS to use
+  irq_migrate_all_off_this_cpu()
+- avoid exporting of_irq_count() and use a platform device passed
+  down from the irqchip platform driver registration code instead
+- added kernel-doc fix
+
+Florian Fainelli (12):
+  arch: Export cpu_logical_map to modules
+  MIPS: BMIPS: Remove use of irq_cpu_offline
+  irqchip/irq-bcm7038-l1: Remove .irq_cpu_offline()
+  irqchip/irq-bcm7038-l1: Use irq_get_irq_data()
+  irqchip/irq-bcm7038-l1: Switch to IRQCHIP_PLATFORM_DRIVER
+  genirq: Export irq_gc_{unmask_enable,mask_disable}_reg
+  irqchip/irq-brcmstb-l2: Switch to IRQCHIP_PLATFORM_DRIVER
+  irqchip: Provide platform_device to of_irq_init_cb_t
+  irqchip/irq-bcm7120-l2: Switch to IRQCHIP_PLATFORM_DRIVER
+  arm64: broadcom: Removed forced select of interrupt controllers
+  ARM: bcm: Removed forced select of interrupt controllers
+  irqchip: Fix kernel-doc parameter typo for IRQCHIP_DECLARE
+
+ arch/arm/kernel/setup.c          |  1 +
+ arch/arm/mach-bcm/Kconfig        |  4 ----
+ arch/arm64/Kconfig.platforms     |  3 ---
+ arch/arm64/kernel/setup.c        |  1 +
+ arch/mips/Kconfig                |  1 +
+ arch/mips/kernel/smp-bmips.c     |  3 ++-
+ arch/sh/kernel/smp.c             |  1 +
+ drivers/irqchip/Kconfig          | 12 +++++++---
+ drivers/irqchip/irq-bcm7038-l1.c | 38 +++++---------------------------
+ drivers/irqchip/irq-bcm7120-l2.c | 28 +++++++++++++----------
+ drivers/irqchip/irq-brcmstb-l2.c | 16 ++++++++------
+ drivers/irqchip/irqchip.c        |  2 +-
+ drivers/of/irq.c                 |  2 +-
+ include/linux/irqchip.h          |  2 +-
+ include/linux/of_irq.h           |  5 ++++-
+ kernel/irq/generic-chip.c        |  2 ++
+ 16 files changed, 55 insertions(+), 66 deletions(-)
+
+-- 
+2.25.1
+
