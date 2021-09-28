@@ -2,84 +2,88 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 61F53C433EF
-	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 05:09:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7C03C433FE
+	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 05:09:52 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 36068611C7
-	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 05:09:10 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id B97C6611C3
+	for <linux-sh@archiver.kernel.org>; Tue, 28 Sep 2021 05:09:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233146AbhI1FKs (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 28 Sep 2021 01:10:48 -0400
-Received: from mail.kernel.org ([198.145.29.99]:57102 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S229493AbhI1FKr (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Tue, 28 Sep 2021 01:10:47 -0400
-Received: by mail.kernel.org (Postfix) with ESMTPSA id CBABF61139;
-        Tue, 28 Sep 2021 05:09:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1632805748;
-        bh=wxiEQE4HfYuGo22M9COVJdqHjGkdxglZYjdK21SKD1c=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=TMuhghflXMo6tvXMBH8DwdnzXOp7D44+ZzLjkxcibSt5GcVF4aM1kJRCcbuLdJX/N
-         ceeIMajuBUjgn8YmoYm7G23JBYq0Cg7wokWIqtmAcEJVZ2KbLgTW0rkx4yBFERb1t3
-         2BBNLP0V1zZ47+4RK4IbRnWmsCgiR1mOpKqUpARA0Dxq3Ek9OnSTHgSd2ssbsLN7z2
-         Y1IAGTtf/Zq/jqeAq/6cTQc5dcNwrVIVqq1QgfGJtmLn7pK55qHxERN7LjtqJ7iWgj
-         qybdsfaNOJOCN3tgekAKFw0HC0NXh1k2vWQwe8RQJuyW78LaOjO+RPZWtgv5tpR1Ho
-         3eYJpUa3SOF+w==
-Received: by mail-ua1-f51.google.com with SMTP id 37so5866965uaq.11;
-        Mon, 27 Sep 2021 22:09:08 -0700 (PDT)
-X-Gm-Message-State: AOAM5316lSXj+ObzQjJUa1fAjrW9lsfx55610IZ4JFXUyoScQWpW2O/g
-        nl9Jt3atz//Qa6iKHkBNeiND2Bz7LofTdCObrkM=
-X-Google-Smtp-Source: ABdhPJzFDBLdxqwLp4ZawHUkPXwOGB4Pixh9LgqRTDXynfixA0A7azNL5SZmYyEGVVt43Oc5tQnW2sWCHSqP36Gz9HI=
-X-Received: by 2002:ab0:5b59:: with SMTP id v25mr3336009uae.57.1632805747980;
- Mon, 27 Sep 2021 22:09:07 -0700 (PDT)
-MIME-Version: 1.0
-References: <20210927081402.191717-1-wangkefeng.wang@huawei.com>
-In-Reply-To: <20210927081402.191717-1-wangkefeng.wang@huawei.com>
-From:   Guo Ren <guoren@kernel.org>
-Date:   Tue, 28 Sep 2021 13:08:56 +0800
-X-Gmail-Original-Message-ID: <CAJF2gTRoXWqcMTkuu=L6gkF2cL79GonN6XBj86BMMptJnmz3zw@mail.gmail.com>
-Message-ID: <CAJF2gTRoXWqcMTkuu=L6gkF2cL79GonN6XBj86BMMptJnmz3zw@mail.gmail.com>
-Subject: Re: [PATCH 0/3] Cleanup MAY_HAVE_SPARSE_IRQ
-To:     Kefeng Wang <wangkefeng.wang@huawei.com>
-Cc:     Thomas Gleixner <tglx@linutronix.de>,
+        id S234067AbhI1FLa (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 28 Sep 2021 01:11:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34296 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229493AbhI1FLa (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Sep 2021 01:11:30 -0400
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4B3DEC061575;
+        Mon, 27 Sep 2021 22:09:51 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=oOd9LxoociUm+XQt9zv+ciORRiD3WJaBIAs9vhJ/RBU=; b=QEti/cNOWw+cTSUuHKYv5niedv
+        OTE+5bQlj2w39HoDBdfnfzLOSKu3EaUm7Uqwg6U53WWuCvTB+l9Wr1XV7dfgAJfLqlK9hDJl9wW1q
+        kEV2OpRJabiiPgPlsptDYH2oN85MbCfbHnm56jZD4kw0ZoGv+k6luGN2seSqXnQnsexa9JiHqlO44
+        qqz4L4UZUi/24mUjAqJfskHIrxCGp46f2SpYytuhL0YpYSSJpkk3zq0cwCMlT1RCWMI7Db9NtC8p6
+        PqkdY0xfj1B0qU8f2iFHlK14HB7hq0PHB7GrLJPeLXI8/2Qliro4TT6O06ecWmzeIpgz4uGrR6ni3
+        38wNVRIQ==;
+Received: from hch by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1mV5MJ-00AVbC-Nz; Tue, 28 Sep 2021 05:09:00 +0000
+Date:   Tue, 28 Sep 2021 06:08:51 +0100
+From:   Christoph Hellwig <hch@infradead.org>
+To:     Florian Fainelli <f.fainelli@gmail.com>
+Cc:     linux-kernel@vger.kernel.org, Russell King <linux@armlinux.org.uk>,
+        Ray Jui <rjui@broadcom.com>,
+        Scott Branden <sbranden@broadcom.com>,
+        "maintainer:BROADCOM BCM281XX/BCM11XXX/BCM216XX ARM ARCHITE..." 
+        <bcm-kernel-feedback-list@broadcom.com>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-csky@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+        Rich Felker <dalias@libc.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Marc Zyngier <maz@kernel.org>,
+        Rob Herring <robh+dt@kernel.org>,
+        Frank Rowand <frowand.list@gmail.com>,
+        Ard Biesheuvel <ardb@kernel.org>,
+        Mike Rapoport <rppt@kernel.org>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Kefeng Wang <wangkefeng.wang@huawei.com>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Andrey Konovalov <andreyknvl@gmail.com>,
+        Anshuman Khandual <anshuman.khandual@arm.com>,
+        Valentin Schneider <valentin.schneider@arm.com>,
+        Ingo Molnar <mingo@kernel.org>,
+        Peter Zijlstra <peterz@infradead.org>,
+        "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>,
+        "open list:SUPERH" <linux-sh@vger.kernel.org>,
+        "open list:BROADCOM BMIPS MIPS ARCHITECTURE" 
+        <linux-mips@vger.kernel.org>,
+        "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE" 
+        <devicetree@vger.kernel.org>
+Subject: Re: [PATCH v2 01/12] arch: Export cpu_logical_map to modules
+Message-ID: <YVKjYxf5bzJzWJDb@infradead.org>
+References: <20210928022715.369160-1-f.fainelli@gmail.com>
+ <20210928022715.369160-2-f.fainelli@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20210928022715.369160-2-f.fainelli@gmail.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by casper.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Sep 27, 2021 at 4:11 PM Kefeng Wang <wangkefeng.wang@huawei.com> wrote:
->
-> Most ARCHs support SPARSE_IRQ, and MAY_HAVE_SPARSE_IRQ is useless, and
-> only sh and csky select it, but the could use SPARSE_IRQ too, let's
-> kill MAY_HAVE_SPARSE_IRQ, also cleanup the kernel/irq/Kconfig a little.
-Can you elaborate the reason on why we need to kill MAY_HAVE_SPARSE_IRQ?
-What are the benefits after the patch? (As you know we couldn't drop
-"!SPARSE_IRQ".)
+On Mon, Sep 27, 2021 at 07:27:04PM -0700, Florian Fainelli wrote:
+> In order to allow drivers/irqchip/irq-bcm7038-l1.c to be built as a
+> module and usable in GKI, export cpu_logical_map or __cpu_logical_map
+> towards the modules. This follows what MIPS has been doing since
+> 2dc2ae344e0e ("MIPS: Export __cpu_number_map and __cpu_logical_map.")
 
->
-> Kefeng Wang (3):
->   sh: Cleanup about SPARSE_IRQ
->   csky: Use SPARSE_IRQ
->   genirq: Cleanup Kconfig
->
->  arch/csky/Kconfig         |  2 +-
->  arch/sh/Kconfig           |  1 -
->  arch/sh/include/asm/irq.h |  9 -------
->  kernel/irq/Kconfig        | 50 ++++++++++++++++-----------------------
->  4 files changed, 21 insertions(+), 41 deletions(-)
->
-> --
-> 2.26.2
->
-
-
--- 
-Best Regards
- Guo Ren
-
-ML: https://lore.kernel.org/linux-csky/
+This seems like a pretty bad idea.  For one you should export an
+accessor instead of the data structure.  And this probably should be an
+EXPORT_SYMBOL_GPL.
