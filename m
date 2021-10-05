@@ -2,34 +2,34 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9BE7DC433EF
-	for <linux-sh@archiver.kernel.org>; Tue,  5 Oct 2021 00:19:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A4038C433EF
+	for <linux-sh@archiver.kernel.org>; Tue,  5 Oct 2021 00:19:22 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 826ED613AC
-	for <linux-sh@archiver.kernel.org>; Tue,  5 Oct 2021 00:19:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8833461247
+	for <linux-sh@archiver.kernel.org>; Tue,  5 Oct 2021 00:19:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230234AbhJEAVI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 4 Oct 2021 20:21:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46242 "EHLO
+        id S230254AbhJEAVJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 4 Oct 2021 20:21:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46248 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230105AbhJEAVH (ORCPT
+        with ESMTP id S230189AbhJEAVH (ORCPT
         <rfc822;linux-sh@vger.kernel.org>); Mon, 4 Oct 2021 20:21:07 -0400
 Received: from bombadil.infradead.org (unknown [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 76BD0C061745;
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EF05CC061749;
         Mon,  4 Oct 2021 17:19:17 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=vsKe9UWyhtw4LqDXqkhd7Dlz2yQ8HnD8Ggqg0cwCms8=; b=CLI0kUDVGj3h11GXz4duhSgG95
-        lDJ8UxNeHrjJjRsRI4W+JM11uxbnhK3rIKWWB8YEua0SvSGY1sVBsOmrCpiuZ+Cer/vrUNjvkmqXa
-        lxB1DvncVG6PKvgOdCTftt3hb7twtQKvBL5y7Mcqw3TM2Iambmytt+aHDkwaRxVucERIGgXzWN1tA
-        MQF/NUdJhGBoEFHfLYHFSp8CeTiP4hxm0Im42xDv7EXzwSg1vA4THKZLMJNdyGOXjfGB2tRSVJlOf
-        DTWEC9hTTyRJHvJZOLQmi2rOxNTDtiYAGJORO72EM944EflNnh7QROk1gStGV7De16TvnFx6dAbWW
-        TBs84Lgw==;
+        bh=M0GxxOUNM2NCgc5+UlE92aSv5qcyndOY+ydhMBjsJuA=; b=M+samDPbBs8WEBQlqyC8UWsnso
+        INCEEuWpzxdztDVkEkDFALllDIhLEKOPKjtTuukoxlVvHLGoFybt7rNachompFDKZml05SSXoak5r
+        FbhV85DZu4RtQOBuBPEYun553dRabsESNB/rmeKuay40gpvCclDfl6wsii8lIRNDgm6S+kukWAXl6
+        yAXqLn//QbBzuuXYSdO98dEhs8MCFMojhIoKi4iSV3YyeIw0vt5upSiu7dajuyC6S5WZiWB+tmwb9
+        wUlrNSJfDYQrZoklRhhcAEEbiiQBgyWUcopSsUVMAE36hB4/42HeLtF3tigAD9LCZdI6EfJG3E78E
+        tI3oyb/A==;
 Received: from [2601:1c0:6280:3f0::aa0b] (helo=bombadil.infradead.org)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1mXYAt-008SGi-FB; Tue, 05 Oct 2021 00:19:15 +0000
+        id 1mXYAv-008SGi-GY; Tue, 05 Oct 2021 00:19:17 +0000
 From:   Randy Dunlap <rdunlap@infradead.org>
 To:     linux-kernel@vger.kernel.org
 Cc:     Randy Dunlap <rdunlap@infradead.org>,
@@ -37,11 +37,10 @@ Cc:     Randy Dunlap <rdunlap@infradead.org>,
         Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         Geert Uytterhoeven <geert+renesas@glider.be>,
-        Matt Fleming <matt@console-pimps.org>,
-        Matt Fleming <matt@codeblueprint.co.uk>
-Subject: [PATCH 1/5 v3] sh: fix kconfig unmet dependency warning for FRAME_POINTER
-Date:   Mon,  4 Oct 2021 17:19:10 -0700
-Message-Id: <20211005001914.28574-2-rdunlap@infradead.org>
+        Takashi YOSHII <takasi-y@ops.dti.ne.jp>
+Subject: [PATCH 5/5 v3] sh: fix READ/WRITE redefinition warnings
+Date:   Mon,  4 Oct 2021 17:19:14 -0700
+Message-Id: <20211005001914.28574-6-rdunlap@infradead.org>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20211005001914.28574-1-rdunlap@infradead.org>
 References: <20211005001914.28574-1-rdunlap@infradead.org>
@@ -51,42 +50,155 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-FRAME_POINTER depends on DEBUG_KERNEL so DWARF_UNWINDER should
-depend on DEBUG_KERNEL before selecting FRAME_POINTER.
+kernel.h defines READ and WRITE, so rename the SH math-emu macros
+to MREAD and MWRITE.
 
-WARNING: unmet direct dependencies detected for FRAME_POINTER
-  Depends on [n]: DEBUG_KERNEL [=n] && (M68K || UML || SUPERH [=y]) || ARCH_WANT_FRAME_POINTERS [=n]
-  Selected by [y]:
-  - DWARF_UNWINDER [=y]
+Fixes these warnings:
 
-Fixes: bd353861c735 ("sh: dwarf unwinder support.")
+../arch/sh/math-emu/math.c:54: warning: "WRITE" redefined
+   54 | #define WRITE(d,a) ({if(put_user(d, (typeof (d) __user *)a)) return -EFAULT;})
+In file included from ../arch/sh/math-emu/math.c:10:
+../include/linux/kernel.h:37: note: this is the location of the previous definition
+   37 | #define WRITE   1
+../arch/sh/math-emu/math.c:55: warning: "READ" redefined
+   55 | #define READ(d,a) ({if(get_user(d, (typeof (d) __user *)a)) return -EFAULT;})
+In file included from ../arch/sh/math-emu/math.c:10:
+../include/linux/kernel.h:36: note: this is the location of the previous definition
+   36 | #define READ   0
+
+Fixes: 4b565680d163 ("sh: math-emu support")
 Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-Cc: Matt Fleming <matt@console-pimps.org>
-Cc: Matt Fleming <matt@codeblueprint.co.uk>
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc: Rich Felker <dalias@libc.org>
 Cc: linux-sh@vger.kernel.org
+Cc: Takashi YOSHII <takasi-y@ops.dti.ne.jp>
 Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 Cc: Geert Uytterhoeven <geert+renesas@glider.be>
 Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 ---
-v2: drop Paul Mundt from Cc: list;
-    add this previously sent patch to the series;
-    add more Cc's;
-v3: renumber, rebase, and resend;
-    add Rev-by and Tested-by;
+v2: renumber patches, otherwise no change;
+v3: renumber, rebase, & resend;
+    add Rev-by: Geert;
 
- arch/sh/Kconfig.debug |    1 +
- 1 file changed, 1 insertion(+)
+ arch/sh/math-emu/math.c |   44 +++++++++++++++++++-------------------
+ 1 file changed, 22 insertions(+), 22 deletions(-)
 
---- linux-next-20211001.orig/arch/sh/Kconfig.debug
-+++ linux-next-20211001/arch/sh/Kconfig.debug
-@@ -54,6 +54,7 @@ config DUMP_CODE
+--- linux-next-20211001.orig/arch/sh/math-emu/math.c
++++ linux-next-20211001/arch/sh/math-emu/math.c
+@@ -51,8 +51,8 @@
+ #define Rn	(regs->regs[n])
+ #define Rm	(regs->regs[m])
  
- config DWARF_UNWINDER
- 	bool "Enable the DWARF unwinder for stacktraces"
-+	depends on DEBUG_KERNEL
- 	select FRAME_POINTER
- 	default n
- 	help
+-#define WRITE(d,a)	({if(put_user(d, (typeof (d) __user *)a)) return -EFAULT;})
+-#define READ(d,a)	({if(get_user(d, (typeof (d) __user *)a)) return -EFAULT;})
++#define MWRITE(d,a)	({if(put_user(d, (typeof (d) __user *)a)) return -EFAULT;})
++#define MREAD(d,a)	({if(get_user(d, (typeof (d) __user *)a)) return -EFAULT;})
+ 
+ #define PACK_S(r,f)	FP_PACK_SP(&r,f)
+ #define UNPACK_S(f,r)	FP_UNPACK_SP(f,&r)
+@@ -157,11 +157,11 @@ fmov_idx_reg(struct sh_fpu_soft_struct *
+ {
+ 	if (FPSCR_SZ) {
+ 		FMOV_EXT(n);
+-		READ(FRn, Rm + R0 + 4);
++		MREAD(FRn, Rm + R0 + 4);
+ 		n++;
+-		READ(FRn, Rm + R0);
++		MREAD(FRn, Rm + R0);
+ 	} else {
+-		READ(FRn, Rm + R0);
++		MREAD(FRn, Rm + R0);
+ 	}
+ 
+ 	return 0;
+@@ -173,11 +173,11 @@ fmov_mem_reg(struct sh_fpu_soft_struct *
+ {
+ 	if (FPSCR_SZ) {
+ 		FMOV_EXT(n);
+-		READ(FRn, Rm + 4);
++		MREAD(FRn, Rm + 4);
+ 		n++;
+-		READ(FRn, Rm);
++		MREAD(FRn, Rm);
+ 	} else {
+-		READ(FRn, Rm);
++		MREAD(FRn, Rm);
+ 	}
+ 
+ 	return 0;
+@@ -189,12 +189,12 @@ fmov_inc_reg(struct sh_fpu_soft_struct *
+ {
+ 	if (FPSCR_SZ) {
+ 		FMOV_EXT(n);
+-		READ(FRn, Rm + 4);
++		MREAD(FRn, Rm + 4);
+ 		n++;
+-		READ(FRn, Rm);
++		MREAD(FRn, Rm);
+ 		Rm += 8;
+ 	} else {
+-		READ(FRn, Rm);
++		MREAD(FRn, Rm);
+ 		Rm += 4;
+ 	}
+ 
+@@ -207,11 +207,11 @@ fmov_reg_idx(struct sh_fpu_soft_struct *
+ {
+ 	if (FPSCR_SZ) {
+ 		FMOV_EXT(m);
+-		WRITE(FRm, Rn + R0 + 4);
++		MWRITE(FRm, Rn + R0 + 4);
+ 		m++;
+-		WRITE(FRm, Rn + R0);
++		MWRITE(FRm, Rn + R0);
+ 	} else {
+-		WRITE(FRm, Rn + R0);
++		MWRITE(FRm, Rn + R0);
+ 	}
+ 
+ 	return 0;
+@@ -223,11 +223,11 @@ fmov_reg_mem(struct sh_fpu_soft_struct *
+ {
+ 	if (FPSCR_SZ) {
+ 		FMOV_EXT(m);
+-		WRITE(FRm, Rn + 4);
++		MWRITE(FRm, Rn + 4);
+ 		m++;
+-		WRITE(FRm, Rn);
++		MWRITE(FRm, Rn);
+ 	} else {
+-		WRITE(FRm, Rn);
++		MWRITE(FRm, Rn);
+ 	}
+ 
+ 	return 0;
+@@ -240,12 +240,12 @@ fmov_reg_dec(struct sh_fpu_soft_struct *
+ 	if (FPSCR_SZ) {
+ 		FMOV_EXT(m);
+ 		Rn -= 8;
+-		WRITE(FRm, Rn + 4);
++		MWRITE(FRm, Rn + 4);
+ 		m++;
+-		WRITE(FRm, Rn);
++		MWRITE(FRm, Rn);
+ 	} else {
+ 		Rn -= 4;
+-		WRITE(FRm, Rn);
++		MWRITE(FRm, Rn);
+ 	}
+ 
+ 	return 0;
+@@ -445,11 +445,11 @@ id_sys(struct sh_fpu_soft_struct *fregs,
+ 	case 0x4052:
+ 	case 0x4062:
+ 		Rn -= 4;
+-		WRITE(*reg, Rn);
++		MWRITE(*reg, Rn);
+ 		break;
+ 	case 0x4056:
+ 	case 0x4066:
+-		READ(*reg, Rn);
++		MREAD(*reg, Rn);
+ 		Rn += 4;
+ 		break;
+ 	default:
