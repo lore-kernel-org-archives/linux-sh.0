@@ -2,40 +2,40 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 11327C4332F
-	for <linux-sh@archiver.kernel.org>; Wed,  6 Oct 2021 16:44:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 43525C433EF
+	for <linux-sh@archiver.kernel.org>; Wed,  6 Oct 2021 16:44:14 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id F0A6A61130
-	for <linux-sh@archiver.kernel.org>; Wed,  6 Oct 2021 16:44:08 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2EE9461131
+	for <linux-sh@archiver.kernel.org>; Wed,  6 Oct 2021 16:44:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239496AbhJFQqA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 6 Oct 2021 12:46:00 -0400
-Received: from mail-oi1-f173.google.com ([209.85.167.173]:38636 "EHLO
-        mail-oi1-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239425AbhJFQpt (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 6 Oct 2021 12:45:49 -0400
-Received: by mail-oi1-f173.google.com with SMTP id t4so3023591oie.5;
-        Wed, 06 Oct 2021 09:43:57 -0700 (PDT)
+        id S239510AbhJFQqC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 6 Oct 2021 12:46:02 -0400
+Received: from mail-ot1-f47.google.com ([209.85.210.47]:37639 "EHLO
+        mail-ot1-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S239473AbhJFQpv (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 6 Oct 2021 12:45:51 -0400
+Received: by mail-ot1-f47.google.com with SMTP id r43-20020a05683044ab00b0054716b40005so3860784otv.4;
+        Wed, 06 Oct 2021 09:43:59 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=hDUPVdWmFpBgvCkQTCBoljrAdHSMkkZBVQWsyUTyf5E=;
-        b=HVHty+JRfnGzPW9Uo8hUF9uAy0GUQ5hz+A6ojh62JFPwD8ymg62r9rc2xuHrOoXyBO
-         kqra0WEDPi6OI/C/+x8ZdLw2w70WbtbNaySVHimH3UEgapdR9m9bnAUBgXdz7iU4nvNN
-         dEvPW3Z7JXx85jC+Xnt6JN/M2scp096213JrhH++5GRkHPZPGd3kdwa1gdWluq+KaO0v
-         JSb64lC0btDt80WXbRfaGa2ExGKQjrbqJfQ53m4B8m4e6ARAIiU3DppHbMc0RYSPpa0q
-         8n049PdDBPwHiwCPsWyJ0NH3Z370lYqevWnd+u97uc1PLN2HsT9Firntb4y7X6sv860T
-         iBEA==
-X-Gm-Message-State: AOAM531RbW6CdzG/XJfep5n9ukX1jAmRuE7puVac4087rNta6Ywgo7W0
-        nKQYVTW6x/+Q7d7S2XVhww==
-X-Google-Smtp-Source: ABdhPJzdKu+vPdU6QOPaibRhZZ8V3BXWev73rJIyB9NkWGThVarWr5zcXuesMdXl3XDSlz8SwXuIcg==
-X-Received: by 2002:a54:4f8f:: with SMTP id g15mr7727342oiy.178.1633538636692;
-        Wed, 06 Oct 2021 09:43:56 -0700 (PDT)
+        bh=ODdwkiH4tXq9GvyXH7/gt65PfkKCS+62hrrbhfBOAKY=;
+        b=KjVsZlxx2i4DNdKl4plQ7nquC69f93FQm8Z8JNSY/+Jeif9it35gDBSFUpOamO4Kfy
+         Sh8VqPOHRHNQjJvpdQvavgc/MpFrpG85PnWD1GsLbIsR3kt+WWRaYC9ND0k8j/yME2Kt
+         350QGD0gNz0yQBrWlgVUeliy0h3SSIU0wI1KXj03GXf5XiOB1Hcs9oDz/jGtz6jW7KAk
+         tT046I82ScmDM7729vVDQq3orDhfgKsWAQJC4XWtxeyjX2boA65FGbEREl5Auc/id+2Z
+         s8GYN+MupuutmZHYVWDtRIoQZwB7e2qBlkYxLsBiYywHgrtI1iR+kmE33FFMauKtrvCD
+         3jPw==
+X-Gm-Message-State: AOAM530mQ60mKh0xHJFsGFNudKEAeyKedbJL21F82tHwLS+xnuz58fGb
+        wauKdYjBaXpvaBGbYiXjWw==
+X-Google-Smtp-Source: ABdhPJyKbg8/vmyrEytsmwBD61hnJT/KfL8RD1L+0+jj33vwvFOqRG7dPOrAYWXK5lnk+W9TvgzSoQ==
+X-Received: by 2002:a05:6830:1ad3:: with SMTP id r19mr19253078otc.98.1633538638626;
+        Wed, 06 Oct 2021 09:43:58 -0700 (PDT)
 Received: from xps15.herring.priv (66-90-148-213.dyn.grandenetworks.net. [66.90.148.213])
-        by smtp.googlemail.com with ESMTPSA id s29sm4236628otg.60.2021.10.06.09.43.55
+        by smtp.googlemail.com with ESMTPSA id s29sm4236628otg.60.2021.10.06.09.43.56
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 06 Oct 2021 09:43:56 -0700 (PDT)
+        Wed, 06 Oct 2021 09:43:57 -0700 (PDT)
 From:   Rob Herring <robh@kernel.org>
 To:     Russell King <linux@armlinux.org.uk>,
         James Morse <james.morse@arm.com>,
@@ -66,9 +66,9 @@ Cc:     Florian Fainelli <f.fainelli@gmail.com>,
         linux-csky@vger.kernel.org, openrisc@lists.librecores.org,
         linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
         linux-sh@vger.kernel.org, devicetree@vger.kernel.org
-Subject: [PATCH 11/12] cacheinfo: Allow for >32-bit cache 'id'
-Date:   Wed,  6 Oct 2021 11:43:31 -0500
-Message-Id: <20211006164332.1981454-12-robh@kernel.org>
+Subject: [PATCH 12/12] cacheinfo: Set cache 'id' based on DT data
+Date:   Wed,  6 Oct 2021 11:43:32 -0500
+Message-Id: <20211006164332.1981454-13-robh@kernel.org>
 X-Mailer: git-send-email 2.30.2
 In-Reply-To: <20211006164332.1981454-1-robh@kernel.org>
 References: <20211006164332.1981454-1-robh@kernel.org>
@@ -78,56 +78,63 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-In preparation to set the cache 'id' based on the CPU h/w ids, allow for
-64-bit bit 'id' value. The only case that needs this is arm64, so
-unsigned long is sufficient.
+Use the minimum CPU h/w id of the CPUs associated with the cache for the
+cache 'id'. This will provide a stable id value for a given system. As
+we need to check all possible CPUs, we can't use the shared_cpu_map
+which is just online CPUs. As there's not a cache to CPUs mapping in DT,
+we have to walk all CPU nodes and then walk cache levels.
 
 Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Cc: "Rafael J. Wysocki" <rafael@kernel.org>
 Signed-off-by: Rob Herring <robh@kernel.org>
 ---
- drivers/base/cacheinfo.c  | 8 +++++++-
- include/linux/cacheinfo.h | 2 +-
- 2 files changed, 8 insertions(+), 2 deletions(-)
+ drivers/base/cacheinfo.c | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
 
 diff --git a/drivers/base/cacheinfo.c b/drivers/base/cacheinfo.c
-index dad296229161..66d10bdb863b 100644
+index 66d10bdb863b..44547fd96f72 100644
 --- a/drivers/base/cacheinfo.c
 +++ b/drivers/base/cacheinfo.c
-@@ -366,13 +366,19 @@ static ssize_t file_name##_show(struct device *dev,		\
- 	return sysfs_emit(buf, "%u\n", this_leaf->object);	\
+@@ -136,6 +136,31 @@ static bool cache_node_is_unified(struct cacheinfo *this_leaf,
+ 	return of_property_read_bool(np, "cache-unified");
  }
  
--show_one(id, id);
- show_one(level, level);
- show_one(coherency_line_size, coherency_line_size);
- show_one(number_of_sets, number_of_sets);
- show_one(physical_line_partition, physical_line_partition);
- show_one(ways_of_associativity, ways_of_associativity);
- 
-+static ssize_t id_show(struct device *dev, struct device_attribute *attr, char *buf)
++static void cache_of_set_id(struct cacheinfo *this_leaf, struct device_node *np)
 +{
-+	struct cacheinfo *this_leaf = dev_get_drvdata(dev);
++	struct device_node *cpu;
++	unsigned long min_id = ~0UL;
 +
-+	return sysfs_emit(buf, "%lu\n", this_leaf->id);
++	for_each_of_cpu_node(cpu) {
++		struct device_node *cache_node = cpu;
++		u64 id = of_get_cpu_hwid(cache_node, 0);
++
++		while ((cache_node = of_find_next_cache_node(cache_node))) {
++			if ((cache_node == np) && (id < min_id)) {
++				min_id = id;
++				of_node_put(cache_node);
++				break;
++			}
++			of_node_put(cache_node);
++		}
++	}
++
++	if (min_id != ~0UL) {
++		this_leaf->id = min_id;
++		this_leaf->attributes |= CACHE_ID;
++	}
 +}
 +
- static ssize_t size_show(struct device *dev,
- 			 struct device_attribute *attr, char *buf)
+ static void cache_of_set_props(struct cacheinfo *this_leaf,
+ 			       struct device_node *np)
  {
-diff --git a/include/linux/cacheinfo.h b/include/linux/cacheinfo.h
-index 2f909ed084c6..b2e7f3e40204 100644
---- a/include/linux/cacheinfo.h
-+++ b/include/linux/cacheinfo.h
-@@ -48,7 +48,7 @@ extern unsigned int coherency_max_size;
-  * keeping, the remaining members form the core properties of the cache
-  */
- struct cacheinfo {
--	unsigned int id;
-+	unsigned long id;
- 	enum cache_type type;
- 	unsigned int level;
- 	unsigned int coherency_line_size;
+@@ -151,6 +176,7 @@ static void cache_of_set_props(struct cacheinfo *this_leaf,
+ 	cache_get_line_size(this_leaf, np);
+ 	cache_nr_sets(this_leaf, np);
+ 	cache_associativity(this_leaf);
++	cache_of_set_id(this_leaf, np);
+ }
+ 
+ static int cache_setup_of_node(unsigned int cpu)
 -- 
 2.30.2
 
