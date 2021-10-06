@@ -2,93 +2,121 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4651EC433F5
-	for <linux-sh@archiver.kernel.org>; Wed,  6 Oct 2021 01:06:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A40BCC433F5
+	for <linux-sh@archiver.kernel.org>; Wed,  6 Oct 2021 16:43:39 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 141DE604E9
-	for <linux-sh@archiver.kernel.org>; Wed,  6 Oct 2021 01:06:34 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 87237610E5
+	for <linux-sh@archiver.kernel.org>; Wed,  6 Oct 2021 16:43:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231582AbhJFBIY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 5 Oct 2021 21:08:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52476 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230218AbhJFBIY (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 5 Oct 2021 21:08:24 -0400
-Received: from bombadil.infradead.org (unknown [IPv6:2607:7c80:54:e::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 966A5C061749;
-        Tue,  5 Oct 2021 18:06:32 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:MIME-Version:Date:Message-ID:From:References:Cc:To:
-        Subject:Sender:Reply-To:Content-ID:Content-Description;
-        bh=+vWBHl1EvmMiSu6+JjZhRe8Jw+YmxOZ94aEmbzilIbI=; b=Da/e5LMYCYkiyu2IOmDMfH/+Ne
-        2hpxm9k3+mI0LypXmrAhfXHwzMLhvWkWaY+mkyHIZXwp1OUDtwx8eH3vCiqgHTMInuvfGLppQ5GNz
-        UhIPLuRTQj0hsokf8xzmhtwtkKODfaErYFd45bZps78IszlkLSUKMIvTsVedDRHbckgrXTTLOdaA9
-        0K/DrYcroRklJ2+m0XnU3FN8cRmgtp9nhhfOK+hZ2MdBBS3Xuup6cDHWszadlcWrjJFyQSH0bUm+m
-        qZaKz4IQ9HLnF9LnGAAb3PWsWfHoL89W/VtAAtnWJ7fTtf25d5KZO691sakA96RN0ZcxCBMkvPgHs
-        q67bNanQ==;
-Received: from [2601:1c0:6280:3f0::aa0b]
-        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1mXvO3-00CUaB-3C; Wed, 06 Oct 2021 01:06:23 +0000
-Subject: Re: [PATCH 3/5 v3] sh: math-emu: drop unused functions
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        id S232807AbhJFQpa (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 6 Oct 2021 12:45:30 -0400
+Received: from mail-oi1-f175.google.com ([209.85.167.175]:42793 "EHLO
+        mail-oi1-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231484AbhJFQp2 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 6 Oct 2021 12:45:28 -0400
+Received: by mail-oi1-f175.google.com with SMTP id x187so2464276oix.9;
+        Wed, 06 Oct 2021 09:43:35 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=jBzMvIMgnR7M/3yhI7B+vslrQk5E3C0Pdi0d+USOXmM=;
+        b=lKAeLC9r17NMcHj0W2tJAF27RAB1XfMR5afeQawc9v55LcLokP8Q3ou8GzO7qSBm0y
+         cM4kwUZOwBsCnieLBo0vkzBSQYa2saturs8bXxE2benYdciWglT7e2IG0nwB2PHUyVU/
+         YnIIpJYDQbFIDOQivrp+skZmgZnpVY4CTW8pvYKNLy25LuKJHidKSgNEPx7goAn4OGLo
+         1tq48eaytUxxezZd2xCzMahOly8TEYixkecUZAORcIrv1PGVX1osBBA5psSxReGyFJt2
+         YqLI+8nc4zfyDYt1XEykLqsFIYICT6Szq9iph7gpp/3z1dEP48qEp0ZsCrrEvDLFGaiD
+         H78w==
+X-Gm-Message-State: AOAM532najdQMh0/57fxxP1ii9hOgyyftOHITSqh8tILxG1UFe+ejvJ/
+        FDu4pNeAg80YxkqOX+vjTg==
+X-Google-Smtp-Source: ABdhPJx7CXhXT5M1W0CAhtBp2h8eMcQ5I0cRndKVwy8olo5SejcUQh3JemHdw8Jrz5VsbxC5vFcqCA==
+X-Received: by 2002:a05:6808:2221:: with SMTP id bd33mr8117373oib.64.1633538615382;
+        Wed, 06 Oct 2021 09:43:35 -0700 (PDT)
+Received: from xps15.herring.priv (66-90-148-213.dyn.grandenetworks.net. [66.90.148.213])
+        by smtp.googlemail.com with ESMTPSA id s29sm4236628otg.60.2021.10.06.09.43.32
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 06 Oct 2021 09:43:34 -0700 (PDT)
+From:   Rob Herring <robh@kernel.org>
+To:     Russell King <linux@armlinux.org.uk>,
+        James Morse <james.morse@arm.com>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+        Jonas Bonn <jonas@southpole.se>,
+        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+        Stafford Horne <shorne@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Takashi YOSHII <takasi-y@ops.dti.ne.jp>
-References: <20211005001914.28574-1-rdunlap@infradead.org>
- <20211005001914.28574-4-rdunlap@infradead.org>
- <CAMuHMdUwkOwLgbxjSwO0QCq+=jBL+e1z8X6NZHrrx0bv_zFq1A@mail.gmail.com>
-From:   Randy Dunlap <rdunlap@infradead.org>
-Message-ID: <d5f5735a-ab8b-0da6-c530-06426dbb2457@infradead.org>
-Date:   Tue, 5 Oct 2021 18:06:21 -0700
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.13.0
+        Rich Felker <dalias@libc.org>, x86@kernel.org,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc:     Florian Fainelli <f.fainelli@gmail.com>,
+        Ray Jui <rjui@broadcom.com>,
+        Scott Branden <sbranden@broadcom.com>,
+        bcm-kernel-feedback-list@broadcom.com,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        "Rafael J. Wysocki" <rafael@kernel.org>,
+        Frank Rowand <frowand.list@gmail.com>,
+        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
+        linux-csky@vger.kernel.org, openrisc@lists.librecores.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+Subject: [PATCH 00/12] DT: CPU h/w id parsing clean-ups and cacheinfo id support
+Date:   Wed,  6 Oct 2021 11:43:20 -0500
+Message-Id: <20211006164332.1981454-1-robh@kernel.org>
+X-Mailer: git-send-email 2.30.2
 MIME-Version: 1.0
-In-Reply-To: <CAMuHMdUwkOwLgbxjSwO0QCq+=jBL+e1z8X6NZHrrx0bv_zFq1A@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 10/5/21 12:26 AM, Geert Uytterhoeven wrote:
-> Hi Randy,
-> 
-> Thanks for your patch!
-> 
-> On Tue, Oct 5, 2021 at 2:19 AM Randy Dunlap <rdunlap@infradead.org> wrote:
->> Delete ieee_fpe_handler() since it is not used. After that is done,
->> delete denormal_to_double() since it is not used:
->>
->> ../arch/sh/math-emu/math.c:505:12: error: 'ieee_fpe_handler' defined but not used [-Werror=unused-function]
->>    505 | static int ieee_fpe_handler(struct pt_regs *regs)
->>
->> ../arch/sh/math-emu/math.c:477:13: error: 'denormal_to_double' defined but not used [-Werror=unused-function]
->>    477 | static void denormal_to_double(struct sh_fpu_soft_struct *fpu, int n)
->>
->> Fixes: 4b565680d163 ("sh: math-emu support")
-> 
-> Shouldn't that be
-> Fixes: 7caf62de25554da3 ("sh: remove unused do_fpu_error")
-> ?
+The first 10 patches add a new function, of_get_cpu_hwid(), which parses
+CPU DT node 'reg' property, and then use it to replace all the open
+coded versions of parsing CPU node 'reg' properties.
 
-oh, ah, um. Yes, it should. Thanks!
+The last 2 patches add support for populating the cacheinfo 'id' on DT
+platforms. The minimum associated CPU hwid is used for the id. The id is
+optional, but necessary for resctrl which is being adapted for Arm MPAM.
 
-> 
->> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-> 
-> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> Gr{oetje,eeting}s,
-> 
->                          Geert
-> 
+Tested on arm64. Compile tested on arm, x86 and powerpc.
 
+Rob
+
+Rob Herring (12):
+  of: Add of_get_cpu_hwid() to read hardware ID from CPU nodes
+  ARM: Use of_get_cpu_hwid()
+  ARM: broadcom: Use of_get_cpu_hwid()
+  arm64: Use of_get_cpu_hwid()
+  csky: Use of_get_cpu_hwid()
+  openrisc: Use of_get_cpu_hwid()
+  powerpc: Use of_get_cpu_hwid()
+  riscv: Use of_get_cpu_hwid()
+  sh: Use of_get_cpu_hwid()
+  x86: dt: Use of_get_cpu_hwid()
+  cacheinfo: Allow for >32-bit cache 'id'
+  cacheinfo: Set cache 'id' based on DT data
+
+ arch/arm/kernel/devtree.c       | 22 ++-------------------
+ arch/arm/mach-bcm/bcm63xx_pmb.c |  6 +++---
+ arch/arm64/kernel/smp.c         | 31 ++----------------------------
+ arch/csky/kernel/smp.c          |  6 ++----
+ arch/openrisc/kernel/smp.c      |  6 +-----
+ arch/powerpc/kernel/smp.c       |  7 +------
+ arch/riscv/kernel/cpu.c         |  3 ++-
+ arch/sh/boards/of-generic.c     |  5 ++---
+ arch/x86/kernel/devicetree.c    |  5 ++---
+ drivers/base/cacheinfo.c        | 34 ++++++++++++++++++++++++++++++++-
+ drivers/of/base.c               | 22 +++++++++++++++++++++
+ include/linux/cacheinfo.h       |  2 +-
+ include/linux/of.h              |  1 +
+ 13 files changed, 74 insertions(+), 76 deletions(-)
 
 -- 
-~Randy
+2.30.2
+
