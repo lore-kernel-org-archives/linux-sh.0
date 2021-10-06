@@ -2,44 +2,36 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA6EEC433EF
-	for <linux-sh@archiver.kernel.org>; Tue,  5 Oct 2021 07:26:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4651EC433F5
+	for <linux-sh@archiver.kernel.org>; Wed,  6 Oct 2021 01:06:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BC8B4613B5
-	for <linux-sh@archiver.kernel.org>; Tue,  5 Oct 2021 07:26:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 141DE604E9
+	for <linux-sh@archiver.kernel.org>; Wed,  6 Oct 2021 01:06:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231816AbhJEH2M (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 5 Oct 2021 03:28:12 -0400
-Received: from mail-ua1-f49.google.com ([209.85.222.49]:35684 "EHLO
-        mail-ua1-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232365AbhJEH2L (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 5 Oct 2021 03:28:11 -0400
-Received: by mail-ua1-f49.google.com with SMTP id q13so2150336uaq.2;
-        Tue, 05 Oct 2021 00:26:18 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=5B8guYb5WtEG1DfSQkNHuh8hV3bBqGM6XN/MlDSJq6g=;
-        b=Wo3h2a1j3ucRsdu8bnoUcvVumzVyNDaqP2LqUhAWgRFHap/ZmpkRVvY2ceXyVvENBC
-         eYVCgfV33oT4TTjWKXPw4LYpdNxxXCMEwIbrzprXNOOsoNvVdjZzCFO2ZBOkJmtigv3R
-         cYpBUH+2NRURvNDvM4+NjWIn5YYFmO3vWvnS1elIf6upl/mrSfARtmx5ONTwuqKXhsnu
-         1dM+qBL6qbda1wEplISZFQHjXkpLBP0XS1Rg3UPORrzPJVBQLIapKsaxd/O+Lyx1STi1
-         +fRNXBAHu+OvVdfir6tBPcQR71wCqKGaMKje+gMbj3B8K//lGtXKA6434rEnS0JvqGKT
-         S82g==
-X-Gm-Message-State: AOAM530ELi83pr4qRWlA3sx4kUD0vvSicHbccMXlFhoNhmOSHJ0svlfy
-        ghH8vyvp9HzdZWqIr8AguCiLNjl+405iCSoJfUE=
-X-Google-Smtp-Source: ABdhPJwitoHm5NqIklNf3C/vTIwhdJEaTtzOd1JmOOF/GJsBSk+HnFu5BWxGe3wzWFhlUDtnlcmU/pjMaReCJlRtJqI=
-X-Received: by 2002:ab0:540d:: with SMTP id n13mr10811903uaa.78.1633418777896;
- Tue, 05 Oct 2021 00:26:17 -0700 (PDT)
-MIME-Version: 1.0
-References: <20211005001914.28574-1-rdunlap@infradead.org> <20211005001914.28574-4-rdunlap@infradead.org>
-In-Reply-To: <20211005001914.28574-4-rdunlap@infradead.org>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Tue, 5 Oct 2021 09:26:06 +0200
-Message-ID: <CAMuHMdUwkOwLgbxjSwO0QCq+=jBL+e1z8X6NZHrrx0bv_zFq1A@mail.gmail.com>
+        id S231582AbhJFBIY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 5 Oct 2021 21:08:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52476 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230218AbhJFBIY (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 5 Oct 2021 21:08:24 -0400
+Received: from bombadil.infradead.org (unknown [IPv6:2607:7c80:54:e::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 966A5C061749;
+        Tue,  5 Oct 2021 18:06:32 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        Content-Type:In-Reply-To:MIME-Version:Date:Message-ID:From:References:Cc:To:
+        Subject:Sender:Reply-To:Content-ID:Content-Description;
+        bh=+vWBHl1EvmMiSu6+JjZhRe8Jw+YmxOZ94aEmbzilIbI=; b=Da/e5LMYCYkiyu2IOmDMfH/+Ne
+        2hpxm9k3+mI0LypXmrAhfXHwzMLhvWkWaY+mkyHIZXwp1OUDtwx8eH3vCiqgHTMInuvfGLppQ5GNz
+        UhIPLuRTQj0hsokf8xzmhtwtkKODfaErYFd45bZps78IszlkLSUKMIvTsVedDRHbckgrXTTLOdaA9
+        0K/DrYcroRklJ2+m0XnU3FN8cRmgtp9nhhfOK+hZ2MdBBS3Xuup6cDHWszadlcWrjJFyQSH0bUm+m
+        qZaKz4IQ9HLnF9LnGAAb3PWsWfHoL89W/VtAAtnWJ7fTtf25d5KZO691sakA96RN0ZcxCBMkvPgHs
+        q67bNanQ==;
+Received: from [2601:1c0:6280:3f0::aa0b]
+        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1mXvO3-00CUaB-3C; Wed, 06 Oct 2021 01:06:23 +0000
 Subject: Re: [PATCH 3/5 v3] sh: math-emu: drop unused functions
-To:     Randy Dunlap <rdunlap@infradead.org>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
 Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
@@ -47,42 +39,56 @@ Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         Geert Uytterhoeven <geert+renesas@glider.be>,
         Takashi YOSHII <takasi-y@ops.dti.ne.jp>
-Content-Type: text/plain; charset="UTF-8"
+References: <20211005001914.28574-1-rdunlap@infradead.org>
+ <20211005001914.28574-4-rdunlap@infradead.org>
+ <CAMuHMdUwkOwLgbxjSwO0QCq+=jBL+e1z8X6NZHrrx0bv_zFq1A@mail.gmail.com>
+From:   Randy Dunlap <rdunlap@infradead.org>
+Message-ID: <d5f5735a-ab8b-0da6-c530-06426dbb2457@infradead.org>
+Date:   Tue, 5 Oct 2021 18:06:21 -0700
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.13.0
+MIME-Version: 1.0
+In-Reply-To: <CAMuHMdUwkOwLgbxjSwO0QCq+=jBL+e1z8X6NZHrrx0bv_zFq1A@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Randy,
+On 10/5/21 12:26 AM, Geert Uytterhoeven wrote:
+> Hi Randy,
+> 
+> Thanks for your patch!
+> 
+> On Tue, Oct 5, 2021 at 2:19 AM Randy Dunlap <rdunlap@infradead.org> wrote:
+>> Delete ieee_fpe_handler() since it is not used. After that is done,
+>> delete denormal_to_double() since it is not used:
+>>
+>> ../arch/sh/math-emu/math.c:505:12: error: 'ieee_fpe_handler' defined but not used [-Werror=unused-function]
+>>    505 | static int ieee_fpe_handler(struct pt_regs *regs)
+>>
+>> ../arch/sh/math-emu/math.c:477:13: error: 'denormal_to_double' defined but not used [-Werror=unused-function]
+>>    477 | static void denormal_to_double(struct sh_fpu_soft_struct *fpu, int n)
+>>
+>> Fixes: 4b565680d163 ("sh: math-emu support")
+> 
+> Shouldn't that be
+> Fixes: 7caf62de25554da3 ("sh: remove unused do_fpu_error")
+> ?
 
-Thanks for your patch!
+oh, ah, um. Yes, it should. Thanks!
 
-On Tue, Oct 5, 2021 at 2:19 AM Randy Dunlap <rdunlap@infradead.org> wrote:
-> Delete ieee_fpe_handler() since it is not used. After that is done,
-> delete denormal_to_double() since it is not used:
->
-> ../arch/sh/math-emu/math.c:505:12: error: 'ieee_fpe_handler' defined but not used [-Werror=unused-function]
->   505 | static int ieee_fpe_handler(struct pt_regs *regs)
->
-> ../arch/sh/math-emu/math.c:477:13: error: 'denormal_to_double' defined but not used [-Werror=unused-function]
->   477 | static void denormal_to_double(struct sh_fpu_soft_struct *fpu, int n)
->
-> Fixes: 4b565680d163 ("sh: math-emu support")
+> 
+>> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+> 
+> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> 
+> Gr{oetje,eeting}s,
+> 
+>                          Geert
+> 
 
-Shouldn't that be
-Fixes: 7caf62de25554da3 ("sh: remove unused do_fpu_error")
-?
-
-> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Gr{oetje,eeting}s,
-
-                        Geert
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+~Randy
