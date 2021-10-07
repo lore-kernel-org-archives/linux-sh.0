@@ -2,123 +2,118 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FFF5C43219
-	for <linux-sh@archiver.kernel.org>; Wed,  6 Oct 2021 22:38:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E4E92C433F5
+	for <linux-sh@archiver.kernel.org>; Thu,  7 Oct 2021 02:25:12 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 18DFB603E9
-	for <linux-sh@archiver.kernel.org>; Wed,  6 Oct 2021 22:38:37 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C6AAF61248
+	for <linux-sh@archiver.kernel.org>; Thu,  7 Oct 2021 02:25:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239792AbhJFWk2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 6 Oct 2021 18:40:28 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38340 "EHLO
+        id S232223AbhJGC1E (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 6 Oct 2021 22:27:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33000 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239859AbhJFWkX (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 6 Oct 2021 18:40:23 -0400
-Received: from mail-pj1-x1031.google.com (mail-pj1-x1031.google.com [IPv6:2607:f8b0:4864:20::1031])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2E81BC06177C;
-        Wed,  6 Oct 2021 15:37:43 -0700 (PDT)
-Received: by mail-pj1-x1031.google.com with SMTP id np13so3309234pjb.4;
-        Wed, 06 Oct 2021 15:37:43 -0700 (PDT)
+        with ESMTP id S232191AbhJGC1D (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 6 Oct 2021 22:27:03 -0400
+Received: from mail-pg1-x52f.google.com (mail-pg1-x52f.google.com [IPv6:2607:f8b0:4864:20::52f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EDC0EC061746;
+        Wed,  6 Oct 2021 19:25:09 -0700 (PDT)
+Received: by mail-pg1-x52f.google.com with SMTP id 75so4217273pga.3;
+        Wed, 06 Oct 2021 19:25:09 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20210112;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=u2ABEJkCd1WJjIKZz+HrMsC2GEgILkJNEDXWHfmz6WM=;
-        b=FIrtOed5QowKUvESH0rG0wvV+3jKddQCuuIuBfhHRTk8T8VmPDFwv1/sTJAAFMgoXe
-         HXkN7YWXjhF/zrR2F/U+/MkjdMr28Eiiif61PM8lgdzeGlwKVNoy3cZO3oVwxlf1y4Qq
-         ML0Zxd6olLxMEd7tbUGjRpK/R7cb1ynklKOEnOsKGuHS+AR9eM3gQhrSgwrpbIXxDltH
-         O/Ru0l0Mwm5WP0mW7srNV2jrlVjnmHbcXmHAwvScFtyDBwPixATxWKZZPvwE9Leemq7b
-         /FuyLrO0jdPkAaWnvyISUJPK4unL1H92dmReVh6yyqBPX6EVv7yFmcldM3IfxchdNGsR
-         dHOw==
+        h=message-id:date:mime-version:user-agent:subject:content-language:to
+         :cc:references:from:in-reply-to:content-transfer-encoding;
+        bh=6Fbp2oLqg5VLyJhPP2UoprEyUpjt3vE+k1k8NDwLMpk=;
+        b=fVpVXChAwZh74Yak5ikdgyaoheURY4K/ccbznO6zTnIB1AbJR+bIgOAW5/cSxWFoOZ
+         cY0eBdVYRQP1/jK52zezVr0uzpqaKqL4UT7RQvBZyhmKIcoiByFnE72l/T/lAzTh60PX
+         2ZZ2YfXaMMnXi99HoWBLG5uUJUaMAp+mwPmSs0A9L0wSZq5MBqIGrLe/fQpBMPOxvPnK
+         4rfWTUo7RKXBeIwus/mUrNTfwOqbla5PIcLbJRJuwd6IvqLGvZcPe9NmM60QdmCBRqmR
+         sMF0mjWUQFOWNx2GTwfCL5Ktgovulw8+KnJ+87QvW6vVfTE6IVfRZKsoah2Gd8VJ0NWK
+         +Eww==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=u2ABEJkCd1WJjIKZz+HrMsC2GEgILkJNEDXWHfmz6WM=;
-        b=jr36hr+unBUX+e4+RGzWWTFxCJhgO3Fr69AyfZx0/qnL4AbdGpovcQmx8qb+mq2qcx
-         zaqEsjAKpMQwuJBDRxngvfagIQKGHCXSsSW026teLJ1VwBgRfsNoUbtKubJmfBCR0Xbd
-         CFzI0tgly7kWIzDUEAz5NLN84DkgRBefTqfQMCLIqMbeck2l+qrbojF+qbDm1aXfMdyc
-         hTfwIC54m1LMYnmv1ndvJWx8Bwmq7lNsTxEV1SCOlpmdtpIv1j3zb5Kn03Xl+VuJM4g6
-         sEoPQ8OQQ4t8IDWVMQMbpIUIKA+l4lPz8euC7x2pibF6qUxshVDJczhQYfwAVaVAHCf3
-         Nokg==
-X-Gm-Message-State: AOAM533cszsY5tQvaPc/ZDtulmvXyNRfQjXtjZdAknV81ul7zdb5AUNB
-        TEIL3CKgB2QhRf7H4HajJe4=
-X-Google-Smtp-Source: ABdhPJz4BaWTMOr4ZP31Nn4C5AszSnkpRS3L0Y1gfKAehJA2FRUXByCD1kztbcVi2shP0MV6GW1oQQ==
-X-Received: by 2002:a17:90b:1804:: with SMTP id lw4mr830200pjb.174.1633559862671;
-        Wed, 06 Oct 2021 15:37:42 -0700 (PDT)
-Received: from localhost ([2409:10:24a0:4700:e8ad:216a:2a9d:6d0c])
-        by smtp.gmail.com with ESMTPSA id c18sm20848814pge.69.2021.10.06.15.37.41
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 06 Oct 2021 15:37:41 -0700 (PDT)
-Date:   Thu, 7 Oct 2021 07:37:39 +0900
-From:   Stafford Horne <shorne@gmail.com>
-To:     Segher Boessenkool <segher@kernel.crashing.org>
-Cc:     Rob Herring <robh@kernel.org>, Rich Felker <dalias@libc.org>,
-        "Rafael J. Wysocki" <rafael@kernel.org>,
-        linux-kernel@vger.kernel.org, Guo Ren <guoren@kernel.org>,
-        "H. Peter Anvin" <hpa@zytor.com>, linux-riscv@lists.infradead.org,
-        Will Deacon <will@kernel.org>, Jonas Bonn <jonas@southpole.se>,
-        Florian Fainelli <f.fainelli@gmail.com>,
-        Yoshinori Sato <ysato@users.osdn.me>, linux-sh@vger.kernel.org,
-        x86@kernel.org, Russell King <linux@armlinux.org.uk>,
-        linux-csky@vger.kernel.org, Ingo Molnar <mingo@redhat.com>,
-        bcm-kernel-feedback-list@broadcom.com,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        devicetree@vger.kernel.org, Albert Ou <aou@eecs.berkeley.edu>,
-        Ray Jui <rjui@broadcom.com>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        openrisc@lists.librecores.org, Borislav Petkov <bp@alien8.de>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        linux-arm-kernel@lists.infradead.org,
-        Scott Branden <sbranden@broadcom.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Frank Rowand <frowand.list@gmail.com>,
-        James Morse <james.morse@arm.com>,
-        Paul Mackerras <paulus@samba.org>,
-        linuxppc-dev@lists.ozlabs.org
-Subject: Re: [PATCH 06/12] openrisc: Use of_get_cpu_hwid()
-Message-ID: <YV4lM/YJ4V4EAlZb@antec>
-References: <20211006164332.1981454-1-robh@kernel.org>
- <20211006164332.1981454-7-robh@kernel.org>
- <YV4KkAC2p9D4yCnH@antec>
- <20211006212728.GM10333@gate.crashing.org>
+        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
+         :content-language:to:cc:references:from:in-reply-to
+         :content-transfer-encoding;
+        bh=6Fbp2oLqg5VLyJhPP2UoprEyUpjt3vE+k1k8NDwLMpk=;
+        b=dgs77bupENCFjzUry8FnJvPNsP97YcOzSZBsySEOKWw75LM8zIM4p5yU6bz3akj8X+
+         aKXVx74urTu+PtXpFAkkAhu9YJVp1paZ67os9LnhPveV5wUOI13m5G23KCFEdb9YPx42
+         y/B9dllFz4zv6V+wAADgIA+y8SMtDgVDWnQara2V5C4H36KtwpX9Af+Mzspcr743hfqX
+         lTEEXz5sIvsuI2iX2eArq0+xUDjA7O9QtJXj7XLt4/nBz9awADhajyMPjlROGuiyOG7o
+         OPNAopWnR334KM2HyoJeghXDQ4LjGci4IkuYWxCx3eCL/LKx30a7vcWO50954pr/0sIO
+         BeIA==
+X-Gm-Message-State: AOAM533TzoTodtjpZGHABOIJbcSEVHmd1zGVsts71IusFZ+099ywy3EN
+        a20eHAZlDuFtYl/gv49F1JU=
+X-Google-Smtp-Source: ABdhPJys1HdOqewyun+C+iToAvx9hnErbBSMfwtBGQraooU+JJaijDbgzG5Y0UhUonum+9KpDmz8JA==
+X-Received: by 2002:a63:ed4a:: with SMTP id m10mr1303051pgk.448.1633573509317;
+        Wed, 06 Oct 2021 19:25:09 -0700 (PDT)
+Received: from [10.230.29.137] ([192.19.223.252])
+        by smtp.gmail.com with ESMTPSA id g23sm22285369pfu.71.2021.10.06.19.24.54
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 06 Oct 2021 19:25:08 -0700 (PDT)
+Message-ID: <1a15bbef-cf3d-33c6-b6c1-3dd607d71d1d@gmail.com>
+Date:   Wed, 6 Oct 2021 19:24:50 -0700
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20211006212728.GM10333@gate.crashing.org>
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
+ Thunderbird/91.1.2
+Subject: Re: [PATCH 00/12] DT: CPU h/w id parsing clean-ups and cacheinfo id
+ support
+Content-Language: en-US
+To:     Rob Herring <robh@kernel.org>,
+        Russell King <linux@armlinux.org.uk>,
+        James Morse <james.morse@arm.com>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+        Jonas Bonn <jonas@southpole.se>,
+        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+        Stafford Horne <shorne@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, x86@kernel.org,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc:     Ray Jui <rjui@broadcom.com>, Scott Branden <sbranden@broadcom.com>,
+        bcm-kernel-feedback-list@broadcom.com,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        "Rafael J. Wysocki" <rafael@kernel.org>,
+        Frank Rowand <frowand.list@gmail.com>,
+        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
+        linux-csky@vger.kernel.org, openrisc@lists.librecores.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org, devicetree@vger.kernel.org
+References: <20211006164332.1981454-1-robh@kernel.org>
+From:   Florian Fainelli <f.fainelli@gmail.com>
+In-Reply-To: <20211006164332.1981454-1-robh@kernel.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Segher,
 
-On Wed, Oct 06, 2021 at 04:27:28PM -0500, Segher Boessenkool wrote:
-> On Thu, Oct 07, 2021 at 05:44:00AM +0900, Stafford Horne wrote:
-> > You have defined of_get_cpu_hwid to return u64, will this create compiler
-> > warnings when since we are storing a u64 into a u32?
-> > 
-> > It seems only if we make with W=3.
+
+On 10/6/2021 9:43 AM, Rob Herring wrote:
+> The first 10 patches add a new function, of_get_cpu_hwid(), which parses
+> CPU DT node 'reg' property, and then use it to replace all the open
+> coded versions of parsing CPU node 'reg' properties.
 > 
-> Yes.  This is done by -Wconversion, "Warn for implicit conversions that
-> may alter a value."
-
-Yeah, that is what I found out when I looked into it.
-
-> > I thought we usually warned on this.
+> The last 2 patches add support for populating the cacheinfo 'id' on DT
+> platforms. The minimum associated CPU hwid is used for the id. The id is
+> optional, but necessary for resctrl which is being adapted for Arm MPAM.
 > 
-> This warning is not in -Wall or -Wextra either, it suffers too much from
-> false positives.  It is very natural to just ignore the high bits of
-> modulo types (which is what "unsigned" types *are*).  Or the bits that
-> "fall off" on a conversion.  The C standard makes this required
-> behaviour, it is useful, and it is the only convenient way of getting
-> this!
+> Tested on arm64. Compile tested on arm, x86 and powerpc.
 
-Thanks for the background, It does make sense. I guess I was confused with java
-which requires casting when you store to a smaller size.  I.e.
+On ARM and ARM64:
 
-    Test.java:5: error: incompatible types: possible lossy conversion from int to short
-	s = i;
+Tested-by: Florian Fainelli <f.fainelli@gmail.com>
 
--Stafford
+lscpu -C continues to work on ARM64 as before with cache properties 
+provided in the FDT.
+-- 
+Florian
