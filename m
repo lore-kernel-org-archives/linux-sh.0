@@ -2,121 +2,135 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8605DC433EF
-	for <linux-sh@archiver.kernel.org>; Fri,  8 Oct 2021 11:01:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E5B67C4332F
+	for <linux-sh@archiver.kernel.org>; Fri,  8 Oct 2021 11:54:34 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6A85B61027
-	for <linux-sh@archiver.kernel.org>; Fri,  8 Oct 2021 11:01:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C970160F43
+	for <linux-sh@archiver.kernel.org>; Fri,  8 Oct 2021 11:54:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240141AbhJHLDZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 8 Oct 2021 07:03:25 -0400
-Received: from gandalf.ozlabs.org ([150.107.74.76]:34297 "EHLO
-        gandalf.ozlabs.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240117AbhJHLDY (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 8 Oct 2021 07:03:24 -0400
-Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange ECDHE (P-256) server-signature RSA-PSS (4096 bits) server-digest SHA256)
-        (No client certificate requested)
-        by mail.ozlabs.org (Postfix) with ESMTPSA id 4HQlcH5cyHz4xbV;
-        Fri,  8 Oct 2021 22:01:19 +1100 (AEDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ellerman.id.au;
-        s=201909; t=1633690887;
-        bh=B4qzHAigKKJHhzM+dPDATq6BWHA36ShynfcFOX354Uw=;
-        h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
-        b=ecgb6jGX08YbAx5B1reNn4h/kU3Gen7kievibOO69w+92xKGfimzG9blAbi2wPVuT
-         bzRQvpw1Gsq6L5OISVmfgRGEMrtpfffTD3SxPCSAMjCA7BaSe9z1Uwt8UhxvwagCXt
-         RG8jZ9yVbHmz/oZlWgdyytG8dpN+zilnWPdwvHzOrKK+z9cUFtnbh9EiaF6DvYThDq
-         y+nA3s2Jr7OnqG1H9G2arDaiYJ9T+Ocn4v009hMVegWkEyhfV3tBa+fnPnVWJ1bKT9
-         NTxKKbhG9DIb5b2JYg+QufFs7CUHZN2G28KnkHe3XTX54qxanjx0qe1ihehNmLNt3p
-         OX9W1GxfbYAzQ==
-From:   Michael Ellerman <mpe@ellerman.id.au>
-To:     Rob Herring <robh@kernel.org>,
-        Russell King <linux@armlinux.org.uk>,
-        James Morse <james.morse@arm.com>,
+        id S240731AbhJHL40 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 8 Oct 2021 07:56:26 -0400
+Received: from foss.arm.com ([217.140.110.172]:46280 "EHLO foss.arm.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S240334AbhJHL4Z (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Fri, 8 Oct 2021 07:56:25 -0400
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 672C4ED1;
+        Fri,  8 Oct 2021 04:54:29 -0700 (PDT)
+Received: from e113632-lin.cambridge.arm.com (e113632-lin.cambridge.arm.com [10.1.196.57])
+        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPA id B0B9C3F766;
+        Fri,  8 Oct 2021 04:54:21 -0700 (PDT)
+From:   Valentin Schneider <valentin.schneider@arm.com>
+To:     linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-ia64@vger.kernel.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org
+Cc:     Peter Zijlstra <peterz@infradead.org>, aubrey.li@linux.intel.com,
+        song.bao.hua@hisilicon.com, tim.c.chen@linux.intel.com,
+        jonathan.cameron@huawei.com, Russell King <linux@armlinux.org.uk>,
         Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Jonas Bonn <jonas@southpole.se>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        Stafford Horne <shorne@gmail.com>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, x86@kernel.org,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc:     Florian Fainelli <f.fainelli@gmail.com>,
-        Ray Jui <rjui@broadcom.com>,
-        Scott Branden <sbranden@broadcom.com>,
-        bcm-kernel-feedback-list@broadcom.com,
+        Will Deacon <will@kernel.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
         Benjamin Herrenschmidt <benh@kernel.crashing.org>,
         Paul Mackerras <paulus@samba.org>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Vasily Gorbik <gor@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@de.ibm.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        "David S. Miller" <davem@davemloft.net>,
         Thomas Gleixner <tglx@linutronix.de>,
         Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        "Rafael J. Wysocki" <rafael@kernel.org>,
-        Frank Rowand <frowand.list@gmail.com>,
-        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-csky@vger.kernel.org, openrisc@lists.librecores.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org, devicetree@vger.kernel.org
-Subject: Re: [PATCH 07/12] powerpc: Use of_get_cpu_hwid()
-In-Reply-To: <20211006164332.1981454-8-robh@kernel.org>
-References: <20211006164332.1981454-1-robh@kernel.org>
- <20211006164332.1981454-8-robh@kernel.org>
-Date:   Fri, 08 Oct 2021 22:01:15 +1100
-Message-ID: <8735pbok5g.fsf@mpe.ellerman.id.au>
+        x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>,
+        Juri Lelli <juri.lelli@redhat.com>,
+        Vincent Guittot <vincent.guittot@linaro.org>,
+        Dietmar Eggemann <dietmar.eggemann@arm.com>,
+        Steven Rostedt <rostedt@goodmis.org>,
+        Ben Segall <bsegall@google.com>, Mel Gorman <mgorman@suse.de>,
+        Daniel Bristot de Oliveira <bristot@redhat.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Anshuman Khandual <anshuman.khandual@arm.com>,
+        Mike Rapoport <rppt@kernel.org>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Ard Biesheuvel <ardb@kernel.org>,
+        YiFei Zhu <yifeifz2@illinois.edu>,
+        =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= 
+        <u.kleine-koenig@pengutronix.de>,
+        Kefeng Wang <wangkefeng.wang@huawei.com>,
+        Sergei Trofimovich <slyfox@gentoo.org>,
+        David Hildenbrand <david@redhat.com>,
+        Randy Dunlap <rdunlap@infradead.org>,
+        Masahiro Yamada <masahiroy@kernel.org>,
+        Kees Cook <keescook@chromium.org>,
+        Nathan Chancellor <nathan@kernel.org>,
+        Nick Desaulniers <ndesaulniers@google.com>,
+        Chris Down <chris@chrisdown.name>,
+        Vipin Sharma <vipinsh@google.com>,
+        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+        Daniel Borkmann <daniel@iogearbox.net>,
+        Vlastimil Babka <vbabka@suse.cz>,
+        Frederic Weisbecker <frederic@kernel.org>,
+        Hugh Dickins <hughd@google.com>,
+        Michal Hocko <mhocko@kernel.org>
+Subject: [PATCH 0/2] sched: cleanup CONFIG_SCHED_MC & friends
+Date:   Fri,  8 Oct 2021 12:53:45 +0100
+Message-Id: <20211008115347.425234-1-valentin.schneider@arm.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Rob Herring <robh@kernel.org> writes:
-> Replace open coded parsing of CPU nodes' 'reg' property with
-> of_get_cpu_hwid().
->
-> Cc: Michael Ellerman <mpe@ellerman.id.au>
-> Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-> Cc: Paul Mackerras <paulus@samba.org>
-> Cc: linuxppc-dev@lists.ozlabs.org
-> Signed-off-by: Rob Herring <robh@kernel.org>
-> ---
->  arch/powerpc/kernel/smp.c | 7 +------
->  1 file changed, 1 insertion(+), 6 deletions(-)
->
-> diff --git a/arch/powerpc/kernel/smp.c b/arch/powerpc/kernel/smp.c
-> index 9cc7d3dbf439..d96b0e361a73 100644
-> --- a/arch/powerpc/kernel/smp.c
-> +++ b/arch/powerpc/kernel/smp.c
-> @@ -1313,18 +1313,13 @@ int __cpu_up(unsigned int cpu, struct task_struct *tidle)
->  int cpu_to_core_id(int cpu)
->  {
->  	struct device_node *np;
-> -	const __be32 *reg;
->  	int id = -1;
->  
->  	np = of_get_cpu_node(cpu, NULL);
->  	if (!np)
->  		goto out;
->  
-> -	reg = of_get_property(np, "reg", NULL);
-> -	if (!reg)
-> -		goto out;
-> -
-> -	id = be32_to_cpup(reg);
-> +	id = of_get_cpu_hwid(np, 0);
->  out:
->  	of_node_put(np);
->  	return id;
+Hi folks,
 
-This looks OK to me.
+This stems from Barry introducing a new CONFIG_SCHED_CLUSTER which highlighted
+the current state of similar Kconfigs isn't great:
+  http://lore.kernel.org/r/CAGsJ_4xZD0sG0Df666f0bvHOzuPMjnw0dN_mArER5k1pJ6LPLw@mail.gmail.com
 
-All the systems I can find have a /cpus/#address-cells of 1, so the
-change to use of_n_addr_cells() in of_get_cpu_hwid() should be fine.
+The changes happen all in one big patch; the alternative would be to have one
+patch per arch that adds the ARCH_SUPPORTS_SCHED_* selection, then a final patch
+that adds the generic definitions and removes the arch ones (which I can do if
+that's a preferred approach).
 
-I booted it on a bunch of systems with no issues.
+Briefly tested by setting ARCH=foo and playing around with menuconfig.
 
-Acked-by: Michael Ellerman <mpe@ellerman.id.au>
+Based on top of Peter's queue:
+  git://git.kernel.org/pub/scm/linux/kernel/git/peterz/queue.git -b sched/next
 
-cheers
+Patches are also available at:
+  https://git.gitlab.arm.com/linux-arm/linux-vs.git -b mainline/sched/topo_kconfig_cleanup
+
+Cheers,
+Valentin
+
+Valentin Schneider (2):
+  sched: Move Kconfig.preempt to sched/Kconfig
+  sched: Centralize SCHED_{SMT, MC, CLUSTER} definitions
+
+ arch/arm/Kconfig                          | 18 ++--------
+ arch/arm64/Kconfig                        | 26 ++------------
+ arch/ia64/Kconfig                         |  9 +----
+ arch/mips/Kconfig                         | 10 +-----
+ arch/parisc/Kconfig                       |  9 +----
+ arch/powerpc/Kconfig                      |  9 +----
+ arch/s390/Kconfig                         |  8 ++---
+ arch/sh/Kconfig                           |  1 +
+ arch/sh/mm/Kconfig                        |  9 -----
+ arch/sparc/Kconfig                        | 20 ++---------
+ arch/x86/Kconfig                          | 26 ++------------
+ init/Kconfig                              |  2 +-
+ kernel/{Kconfig.preempt => sched/Kconfig} | 41 +++++++++++++++++++++++
+ 13 files changed, 59 insertions(+), 129 deletions(-)
+ rename kernel/{Kconfig.preempt => sched/Kconfig} (79%)
+
+--
+2.25.1
+
