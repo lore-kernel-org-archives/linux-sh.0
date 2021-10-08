@@ -2,134 +2,97 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A537EC43219
-	for <linux-sh@archiver.kernel.org>; Fri,  8 Oct 2021 15:22:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AF5F6C433F5
+	for <linux-sh@archiver.kernel.org>; Fri,  8 Oct 2021 18:19:05 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8B90F6101A
-	for <linux-sh@archiver.kernel.org>; Fri,  8 Oct 2021 15:22:41 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 8A0B960F44
+	for <linux-sh@archiver.kernel.org>; Fri,  8 Oct 2021 18:19:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242950AbhJHPYf (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 8 Oct 2021 11:24:35 -0400
-Received: from foss.arm.com ([217.140.110.172]:58598 "EHLO foss.arm.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S242780AbhJHPYd (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Fri, 8 Oct 2021 11:24:33 -0400
-Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id EF3811063;
-        Fri,  8 Oct 2021 08:22:37 -0700 (PDT)
-Received: from e113632-lin (usa-sjc-imap-foss1.foss.arm.com [10.121.207.14])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 9B44F3F66F;
-        Fri,  8 Oct 2021 08:22:29 -0700 (PDT)
-From:   Valentin Schneider <valentin.schneider@arm.com>
-To:     Barry Song <21cnbao@gmail.com>
-Cc:     LKML <linux-kernel@vger.kernel.org>,
-        LAK <linux-arm-kernel@lists.infradead.org>,
-        linux-ia64@vger.kernel.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>,
-        Aubrey Li <aubrey.li@linux.intel.com>,
-        Barry Song <song.bao.hua@hisilicon.com>,
-        Tim Chen <tim.c.chen@linux.intel.com>,
-        Jonathan Cameron <jonathan.cameron@huawei.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@de.ibm.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        x86 <x86@kernel.org>, "H. Peter Anvin" <hpa@zytor.com>,
-        Juri Lelli <juri.lelli@redhat.com>,
-        Vincent Guittot <vincent.guittot@linaro.org>,
-        Dietmar Eggemann <dietmar.eggemann@arm.com>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Ben Segall <bsegall@google.com>, Mel Gorman <mgorman@suse.de>,
-        Daniel Bristot de Oliveira <bristot@redhat.com>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Linus Walleij <linus.walleij@linaro.org>,
+        id S231308AbhJHSU7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 8 Oct 2021 14:20:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43500 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S238481AbhJHSU5 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 8 Oct 2021 14:20:57 -0400
+Received: from mail-ot1-x333.google.com (mail-ot1-x333.google.com [IPv6:2607:f8b0:4864:20::333])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9E5AFC061764
+        for <linux-sh@vger.kernel.org>; Fri,  8 Oct 2021 11:19:01 -0700 (PDT)
+Received: by mail-ot1-x333.google.com with SMTP id 5-20020a9d0685000000b0054706d7b8e5so12726871otx.3
+        for <linux-sh@vger.kernel.org>; Fri, 08 Oct 2021 11:19:01 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20210112.gappssmtp.com; s=20210112;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=Wvco89YLBu0DEdVBRR/EZqf56tHvQxnFA9DIAVgf/4Q=;
+        b=CCbppUTIUQvTjkPUaUNiIHgqJbgfmRNPXmRT0POd8fNlqCBD/ASCphs6/oyKfJ3/L/
+         +3wrqJqEKdzzsG+oz2MqRyT2Bq2Tk7YsMgbAGe26W0XPv1PV3WI+65G/rIhv3eZG7p5s
+         R69vHTlKA/zlGfIKR9E7JHwqWRMJNPTgPC6ssQ0JzuqMCMPYPH/BReAN8eSCIBnl8QwZ
+         KoL6rBwxW3SNsQRVbaqjqr1RlLUuozfgwyXifXrnr283vkw61czYE3gCi8MGKRKuSYXK
+         aa6kcjdCnWHA5Bwj3jHBcFlaUowp+vnjYlibtNIaf70uh0MUZeVxaMBwlKd+iLf9p93O
+         kJ4w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=Wvco89YLBu0DEdVBRR/EZqf56tHvQxnFA9DIAVgf/4Q=;
+        b=SFp0aUbWiP2Dr0qUXIXb03seTClzS2lTkBUYVJ6W95zU1L8DhJLFLHIiggBT87TdPu
+         8NK3zmBGrqy8cjuXR75t4AKVK653vXo0rrvOmSU5/Nev63jkzkfrQTT+Qa3hGNygfLDs
+         el9DzzLRHKvdc7pVDaEuhYNLxJmln314K4ZXtBOJekXL5mSONVlXYtXa/jfFgAlDMtBf
+         xJ7uD6LC+EwHvDAknelGJ/t0e+3QoIAvVrofpvICtBbUCQDJ5GZmASDPIg6n6legBoUL
+         Ue1Oi8lFJhMQrDumY4jtGU/Q5YnG+vD0DcwRJON0nFhc9Mirk6g2V2iwD00PF2e5Q8AU
+         TUBg==
+X-Gm-Message-State: AOAM532ZdQqvbWs8hJXNoMVHeSn9Spy+eFBgygrWNIjDyy498JZPa7Tw
+        Mf/iXAkOgxoEufgGqWKhhngSbg==
+X-Google-Smtp-Source: ABdhPJyUheagIg/hKhzvfZcpPOdSHlnIcX7BlEOe1hmwytswtWoq7wiueZrmeNbi1o5kX5XDLaGFNQ==
+X-Received: by 2002:a05:6830:95:: with SMTP id a21mr10280463oto.43.1633717141031;
+        Fri, 08 Oct 2021 11:19:01 -0700 (PDT)
+Received: from [192.168.248.11] ([172.58.83.190])
+        by smtp.gmail.com with ESMTPSA id bj33sm33556oib.31.2021.10.08.11.18.58
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 08 Oct 2021 11:19:00 -0700 (PDT)
+Subject: Re: [PATCH 5/5 v3] sh: fix READ/WRITE redefinition warnings
+To:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         Geert Uytterhoeven <geert+renesas@glider.be>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Anshuman Khandual <anshuman.khandual@arm.com>,
-        Mike Rapoport <rppt@kernel.org>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Ard Biesheuvel <ardb@kernel.org>,
-        YiFei Zhu <yifeifz2@illinois.edu>,
-        Uwe =?utf-8?Q?Kleine-K=C3=B6nig?= 
-        <u.kleine-koenig@pengutronix.de>,
-        Kefeng Wang <wangkefeng.wang@huawei.com>,
-        Sergei Trofimovich <slyfox@gentoo.org>,
-        David Hildenbrand <david@redhat.com>,
-        Randy Dunlap <rdunlap@infradead.org>,
-        Masahiro Yamada <masahiroy@kernel.org>,
-        Kees Cook <keescook@chromium.org>,
-        Nathan Chancellor <nathan@kernel.org>,
-        Nick Desaulniers <ndesaulniers@google.com>,
-        Chris Down <chris@chrisdown.name>,
-        Vipin Sharma <vipinsh@google.com>,
-        Rasmus Villemoes <linux@rasmusvillemoes.dk>,
-        Daniel Borkmann <daniel@iogearbox.net>,
-        Vlastimil Babka <vbabka@suse.cz>,
-        Frederic Weisbecker <frederic@kernel.org>,
-        Hugh Dickins <hughd@google.com>,
-        Michal Hocko <mhocko@kernel.org>
-Subject: Re: [PATCH 2/2] sched: Centralize SCHED_{SMT, MC, CLUSTER} definitions
-In-Reply-To: <CAGsJ_4wqtcOdsFDzR98PFbjxRyTqzf7P3p3erup84SXESYonYw@mail.gmail.com>
-References: <20211008115347.425234-1-valentin.schneider@arm.com> <20211008115347.425234-3-valentin.schneider@arm.com> <CAGsJ_4wqtcOdsFDzR98PFbjxRyTqzf7P3p3erup84SXESYonYw@mail.gmail.com>
-Date:   Fri, 08 Oct 2021 16:22:27 +0100
-Message-ID: <87bl3zlex8.mognet@arm.com>
+        Takashi YOSHII <takasi-y@ops.dti.ne.jp>
+References: <20211005001914.28574-1-rdunlap@infradead.org>
+ <20211005001914.28574-6-rdunlap@infradead.org>
+From:   Rob Landley <rob@landley.net>
+Message-ID: <1191978c-be37-87b1-bbc9-f0aa128d0961@landley.net>
+Date:   Fri, 8 Oct 2021 13:39:00 -0500
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.12.0
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <20211005001914.28574-6-rdunlap@infradead.org>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 09/10/21 01:37, Barry Song wrote:
-> On Sat, Oct 9, 2021 at 12:54 AM Valentin Schneider
-> <valentin.schneider@arm.com> wrote:
->>
->> Barry recently introduced a new CONFIG_SCHED_CLUSTER, and discussions
->> around that highlighted that every architecture redefines its own help text
->> and dependencies for CONFIG_SCHED_SMT and CONFIG_SCHED_MC.
->>
->> Move the definition of those to scheduler's Kconfig to centralize help text
->> and generic dependencies (i.e. SMP). Make them depend on a matching
->> ARCH_SUPPORTS_SCHED_* which the architectures can select with the relevant
->> architecture-specific dependency.
->>
->> s390 uses its own topology table (set_sched_topology()) and doesn't seem to
->> cope without SCHED_MC or SCHED_SMT, so those remain untogglable.
->>
->
-> Hi Valentin,
-> Thanks!
-> I believe this is a cleaner way for Kconfig itself. But I am not quite sure this
-> is always beneficial of all platforms. It would be perfect if the patch has no
-> side effects and doesn't change the existing behaviour. But it has side effects
-> by changing the default N to Y on a couple of platforms.
->
+On 10/4/21 7:19 PM, Randy Dunlap wrote:
+> kernel.h defines READ and WRITE, so rename the SH math-emu macros
+> to MREAD and MWRITE.
 
-So x86 has it default yes, and a lot of others (e.g. arm64) have it default
-no.
+This one doesn't apply for me. My file has:
 
-IMO you don't gain much by disabling them. SCHED_MC and SCHED_CLUSTER only
-control the presence of a sched_domain_topology_level - if it's useless it
-gets degenerated at domain build time. Some valid reasons for not using
-them is if the architecture defines its own topology table (e.g. powerpc
-has CACHE and MC levels which are not gated behind any CONFIG).
+#define WRITE(d,a)      ({if(put_user(d, (typeof (d)*)a)) return -EFAULT;})
 
-SCHED_SMT has an impact on code generated in sched/core.c, but that is also
-gated by a static key.
+But your patch tries to remove:
 
-So I'd say having them default yes is sensible. I'd even say we should
-change the "If unsure say N here." to "Y".
+-#define WRITE(d,a)     ({if(put_user(d, (typeof (d) __user *)a)) return -EFAULT;})
+
+Which is odd because git log says my tree is current as of today, but git log on
+this file says it was last updated:
+
+commit 2e1661d2673667d886cd40ad9f414cb6db48d8da
+Author: Eric W. Biederman <ebiederm@xmission.com>
+Date:   Thu May 23 11:04:24 2019 -0500
+
+What did I miss?
+
+Rob
