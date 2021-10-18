@@ -2,31 +2,31 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 45B6BC433F5
-	for <linux-sh@archiver.kernel.org>; Mon, 18 Oct 2021 13:32:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0FDA6C4332F
+	for <linux-sh@archiver.kernel.org>; Mon, 18 Oct 2021 13:33:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 31D8D61407
-	for <linux-sh@archiver.kernel.org>; Mon, 18 Oct 2021 13:32:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id ED819613A0
+	for <linux-sh@archiver.kernel.org>; Mon, 18 Oct 2021 13:33:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232492AbhJRNeM (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 18 Oct 2021 09:34:12 -0400
-Received: from foss.arm.com ([217.140.110.172]:37618 "EHLO foss.arm.com"
+        id S233130AbhJRNfR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 18 Oct 2021 09:35:17 -0400
+Received: from foss.arm.com ([217.140.110.172]:37726 "EHLO foss.arm.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S232633AbhJRNcZ (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Mon, 18 Oct 2021 09:32:25 -0400
+        id S232523AbhJRNdt (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Mon, 18 Oct 2021 09:33:49 -0400
 Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 967F8113E;
-        Mon, 18 Oct 2021 06:30:13 -0700 (PDT)
+        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id DF88911B3;
+        Mon, 18 Oct 2021 06:31:37 -0700 (PDT)
 Received: from bogus (unknown [10.57.25.56])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 1A02F3F73D;
-        Mon, 18 Oct 2021 06:30:06 -0700 (PDT)
-Date:   Mon, 18 Oct 2021 14:30:04 +0100
+        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 0BFB93F73D;
+        Mon, 18 Oct 2021 06:31:30 -0700 (PDT)
+Date:   Mon, 18 Oct 2021 14:31:27 +0100
 From:   Sudeep Holla <sudeep.holla@arm.com>
 To:     Rob Herring <robh@kernel.org>
 Cc:     Russell King <linux@armlinux.org.uk>,
         James Morse <james.morse@arm.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
         Sudeep Holla <sudeep.holla@arm.com>,
+        Catalin Marinas <catalin.marinas@arm.com>,
         Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
         Jonas Bonn <jonas@southpole.se>,
         Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
@@ -53,25 +53,27 @@ Cc:     Russell King <linux@armlinux.org.uk>,
         linux-csky@vger.kernel.org, openrisc@lists.librecores.org,
         linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
         linux-sh@vger.kernel.org, devicetree@vger.kernel.org
-Subject: Re: [PATCH 11/12] cacheinfo: Allow for >32-bit cache 'id'
-Message-ID: <20211018133004.7pcbfdsvrjgjitpj@bogus>
+Subject: Re: [PATCH 12/12] cacheinfo: Set cache 'id' based on DT data
+Message-ID: <20211018133127.4oenrvzxwzn73s3k@bogus>
 References: <20211006164332.1981454-1-robh@kernel.org>
- <20211006164332.1981454-12-robh@kernel.org>
+ <20211006164332.1981454-13-robh@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20211006164332.1981454-12-robh@kernel.org>
+In-Reply-To: <20211006164332.1981454-13-robh@kernel.org>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Oct 06, 2021 at 11:43:31AM -0500, Rob Herring wrote:
-> In preparation to set the cache 'id' based on the CPU h/w ids, allow for
-> 64-bit bit 'id' value. The only case that needs this is arm64, so
-> unsigned long is sufficient.
+On Wed, Oct 06, 2021 at 11:43:32AM -0500, Rob Herring wrote:
+> Use the minimum CPU h/w id of the CPUs associated with the cache for the
+> cache 'id'. This will provide a stable id value for a given system. As
+> we need to check all possible CPUs, we can't use the shared_cpu_map
+> which is just online CPUs. As there's not a cache to CPUs mapping in DT,
+> we have to walk all CPU nodes and then walk cache levels.
 > 
 
-Reviewed-by: Sudeep Holla <sudeep.holla@arm.com>
+Acked-by: Sudeep Holla <sudeep.holla@arm.com>
 
 -- 
 Regards,
