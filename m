@@ -2,85 +2,210 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 883FDC433F5
-	for <linux-sh@archiver.kernel.org>; Wed, 20 Oct 2021 19:58:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 43551C433F5
+	for <linux-sh@archiver.kernel.org>; Wed, 20 Oct 2021 21:52:13 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 6FA24610EA
-	for <linux-sh@archiver.kernel.org>; Wed, 20 Oct 2021 19:58:21 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0F77F611ED
+	for <linux-sh@archiver.kernel.org>; Wed, 20 Oct 2021 21:52:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231671AbhJTUAf (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 20 Oct 2021 16:00:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43250 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231622AbhJTUAe (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Oct 2021 16:00:34 -0400
-Received: from mail-lj1-x22a.google.com (mail-lj1-x22a.google.com [IPv6:2a00:1450:4864:20::22a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 21F12C06161C
-        for <linux-sh@vger.kernel.org>; Wed, 20 Oct 2021 12:58:19 -0700 (PDT)
-Received: by mail-lj1-x22a.google.com with SMTP id g8so158377ljn.4
-        for <linux-sh@vger.kernel.org>; Wed, 20 Oct 2021 12:58:19 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=Sg0o6MwSr5cVKhIKZL14YkinrZh0wp6xkfDKA7tp+7w=;
-        b=FLcpWYGZhutnNkkuvkw53ygCMmmg9LwqTbT6ZB9EQ+0BzZdpzhVrWJpY+Ah74l6Fo3
-         fKf8k8NzXJylaUyv4Ra6xGmCX2vWkERwH8CUBgfCgiM8z7LawcVJNAlJdfqFLr3ydLCn
-         VVaz28NJzgchYxZ7U6J+aXnVc+mjIfIDWQ7Hw=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=Sg0o6MwSr5cVKhIKZL14YkinrZh0wp6xkfDKA7tp+7w=;
-        b=Yeqncc1uyZSC8sx4M62o1/p2yldsZm1IB+aC0MuVtkGUBkbI/S6ythIWIMo6lhsq3E
-         d371y/gyRwbbJ/jCnpMs/ZWOtYJNPcTc5DdPJ3EOIgmGa/PfAjfREU9lBRJw9g/nQt7z
-         YNkpZ8D/DqtBLYMlZ4hO7eh1hjERAkfoSFJQoFqAZOBU/jUr1PuiyDttz7RNmwENR/1s
-         GsE9BG0RGdJx67ci8tBxDk0geZE+vFEccH39XDn96QsRjqxAtvjKo4VMBtUheWy8PZlL
-         GXF8Ksmp3KRwz85IdTQiT4jHrDxCwoB68kwq9d2cZZipPdUZFhO5uFHyYmmjmbqdIV3W
-         Xd0g==
-X-Gm-Message-State: AOAM532I3Hx+/u+bwqHdpe7Vx5aRNS0WM8At3c/hrmyIQg8c1FrzD1+y
-        S8QbUcu5ql/+xfXRuY85tP9xnHZuJVlpqds/
-X-Google-Smtp-Source: ABdhPJzeLSl9Rqf/H53kiX8GuKB3pCDajiD8tlxPJ5XnJp1fRUNNYNas5IUxsd49r/Tr1R62h7mVUQ==
-X-Received: by 2002:a2e:9751:: with SMTP id f17mr1127463ljj.343.1634759897311;
-        Wed, 20 Oct 2021 12:58:17 -0700 (PDT)
-Received: from mail-lj1-f179.google.com (mail-lj1-f179.google.com. [209.85.208.179])
-        by smtp.gmail.com with ESMTPSA id r2sm265586lfi.152.2021.10.20.12.58.14
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 20 Oct 2021 12:58:15 -0700 (PDT)
-Received: by mail-lj1-f179.google.com with SMTP id e19so12564ljk.12
-        for <linux-sh@vger.kernel.org>; Wed, 20 Oct 2021 12:58:14 -0700 (PDT)
-X-Received: by 2002:a2e:934d:: with SMTP id m13mr1155978ljh.191.1634759894116;
- Wed, 20 Oct 2021 12:58:14 -0700 (PDT)
-MIME-Version: 1.0
-References: <87y26nmwkb.fsf@disp2133> <20211020174406.17889-6-ebiederm@xmission.com>
-In-Reply-To: <20211020174406.17889-6-ebiederm@xmission.com>
-From:   Linus Torvalds <torvalds@linux-foundation.org>
-Date:   Wed, 20 Oct 2021 09:57:58 -1000
-X-Gmail-Original-Message-ID: <CAHk-=whjqWwo16jtLduxb+0nbNetp8jNAz+go01wB4HGKX=jEQ@mail.gmail.com>
-Message-ID: <CAHk-=whjqWwo16jtLduxb+0nbNetp8jNAz+go01wB4HGKX=jEQ@mail.gmail.com>
-Subject: Re: [PATCH 06/20] signal/sh: Use force_sig(SIGKILL) instead of do_group_exit(SIGKILL)
-To:     "Eric W. Biederman" <ebiederm@xmission.com>
-Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-arch <linux-arch@vger.kernel.org>,
+        id S230317AbhJTVy1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 20 Oct 2021 17:54:27 -0400
+Received: from out01.mta.xmission.com ([166.70.13.231]:51492 "EHLO
+        out01.mta.xmission.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229842AbhJTVy0 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Oct 2021 17:54:26 -0400
+Received: from in02.mta.xmission.com ([166.70.13.52]:40000)
+        by out01.mta.xmission.com with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        (Exim 4.93)
+        (envelope-from <ebiederm@xmission.com>)
+        id 1mdJVD-00FiWe-CQ; Wed, 20 Oct 2021 15:52:03 -0600
+Received: from ip68-227-160-95.om.om.cox.net ([68.227.160.95]:59328 helo=email.xmission.com)
+        by in02.mta.xmission.com with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        (Exim 4.93)
+        (envelope-from <ebiederm@xmission.com>)
+        id 1mdJVA-002PXD-JP; Wed, 20 Oct 2021 15:52:02 -0600
+From:   ebiederm@xmission.com (Eric W. Biederman)
+To:     <linux-kernel@vger.kernel.org>
+Cc:     <linux-arch@vger.kernel.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
         Oleg Nesterov <oleg@redhat.com>,
-        Al Viro <viro@zeniv.linux.org.uk>,
+        Al Viro <viro@ZenIV.linux.org.uk>,
         Kees Cook <keescook@chromium.org>,
+        Andy Lutomirski <luto@kernel.org>,
+        Jonas Bonn <jonas@southpole.se>,
+        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+        Stafford Horne <shorne@gmail.com>,
+        openrisc@lists.librecores.org, Nick Hu <nickhu@andestech.com>,
+        Greentime Hu <green.hu@gmail.com>,
+        Vincent Chen <deanbo422@gmail.com>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Vasily Gorbik <gor@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@de.ibm.com>,
+        linux-s390@vger.kernel.org,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org, Chris Zankel <chris@zankel.net>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        David Miller <davem@davemloft.net>, sparclinux@vger.kernel.org,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Maciej Rozycki <macro@orcam.me.uk>, linux-mips@vger.kernel.org,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        linuxppc-dev@lists.ozlabs.org,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        H Peter Anvin <hpa@zytor.com>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+References: <87y26nmwkb.fsf@disp2133>
+Date:   Wed, 20 Oct 2021 16:51:52 -0500
+In-Reply-To: <87y26nmwkb.fsf@disp2133> (Eric W. Biederman's message of "Wed,
+        20 Oct 2021 12:32:20 -0500")
+Message-ID: <877de7jrev.fsf@disp2133>
+User-Agent: Gnus/5.13 (Gnus v5.13) Emacs/26.1 (gnu/linux)
+MIME-Version: 1.0
+Content-Type: text/plain
+X-XM-SPF: eid=1mdJVA-002PXD-JP;;;mid=<877de7jrev.fsf@disp2133>;;;hst=in02.mta.xmission.com;;;ip=68.227.160.95;;;frm=ebiederm@xmission.com;;;spf=neutral
+X-XM-AID: U2FsdGVkX18ePEKUK1liVK4VGBQcsP6jPz9QJs+YQsA=
+X-SA-Exim-Connect-IP: 68.227.160.95
+X-SA-Exim-Mail-From: ebiederm@xmission.com
+Subject: [PATCH 21/20] signal: Replace force_sigsegv(SIGSEGV) with force_fatal_sig(SIGSEGV)
+X-SA-Exim-Version: 4.2.1 (built Sat, 08 Feb 2020 21:53:50 +0000)
+X-SA-Exim-Scanned: Yes (on in02.mta.xmission.com)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Oct 20, 2021 at 7:44 AM Eric W. Biederman <ebiederm@xmission.com> wrote:
->
-> +                       force_sig(SIGKILL);
 
-I wonder if SIGFPE would be a more intuitive thing.
+Now that force_fatal_sig exists it is unnecessary and a bit confusing
+to use force_sigsegv in cases where the simpler force_fatal_sig is
+wanted.  So change every instance we can to make the code clearer.
 
-Doesn't really matter, this is a "doesn't happen" event anyway, but
-that was just my reaction to reading the patch.
+Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+---
+ arch/arc/kernel/process.c       | 2 +-
+ arch/m68k/kernel/traps.c        | 2 +-
+ arch/powerpc/kernel/signal_32.c | 2 +-
+ arch/powerpc/kernel/signal_64.c | 4 ++--
+ arch/s390/kernel/traps.c        | 2 +-
+ arch/um/kernel/trap.c           | 2 +-
+ arch/x86/kernel/vm86_32.c       | 2 +-
+ fs/exec.c                       | 2 +-
+ 8 files changed, 9 insertions(+), 9 deletions(-)
 
-            Linus
+diff --git a/arch/arc/kernel/process.c b/arch/arc/kernel/process.c
+index 3793876f42d9..8e90052f6f05 100644
+--- a/arch/arc/kernel/process.c
++++ b/arch/arc/kernel/process.c
+@@ -294,7 +294,7 @@ int elf_check_arch(const struct elf32_hdr *x)
+ 	eflags = x->e_flags;
+ 	if ((eflags & EF_ARC_OSABI_MSK) != EF_ARC_OSABI_CURRENT) {
+ 		pr_err("ABI mismatch - you need newer toolchain\n");
+-		force_sigsegv(SIGSEGV);
++		force_fatal_sig(SIGSEGV);
+ 		return 0;
+ 	}
+ 
+diff --git a/arch/m68k/kernel/traps.c b/arch/m68k/kernel/traps.c
+index 5b19fcdcd69e..74045d164ddb 100644
+--- a/arch/m68k/kernel/traps.c
++++ b/arch/m68k/kernel/traps.c
+@@ -1150,7 +1150,7 @@ asmlinkage void set_esp0(unsigned long ssp)
+  */
+ asmlinkage void fpsp040_die(void)
+ {
+-	force_sigsegv(SIGSEGV);
++	force_fatal_sig(SIGSEGV);
+ }
+ 
+ #ifdef CONFIG_M68KFPU_EMU
+diff --git a/arch/powerpc/kernel/signal_32.c b/arch/powerpc/kernel/signal_32.c
+index 666f3da41232..933ab95805a6 100644
+--- a/arch/powerpc/kernel/signal_32.c
++++ b/arch/powerpc/kernel/signal_32.c
+@@ -1063,7 +1063,7 @@ SYSCALL_DEFINE3(swapcontext, struct ucontext __user *, old_ctx,
+ 	 * We kill the task with a SIGSEGV in this situation.
+ 	 */
+ 	if (do_setcontext(new_ctx, regs, 0)) {
+-		force_sigsegv(SIGSEGV);
++		force_fatal_sig(SIGSEGV);
+ 		return -EFAULT;
+ 	}
+ 
+diff --git a/arch/powerpc/kernel/signal_64.c b/arch/powerpc/kernel/signal_64.c
+index d8de622c9e4a..8ead9b3f47c6 100644
+--- a/arch/powerpc/kernel/signal_64.c
++++ b/arch/powerpc/kernel/signal_64.c
+@@ -704,7 +704,7 @@ SYSCALL_DEFINE3(swapcontext, struct ucontext __user *, old_ctx,
+ 	 */
+ 
+ 	if (__get_user_sigset(&set, &new_ctx->uc_sigmask)) {
+-		force_sigsegv(SIGSEGV);
++		force_fatal_sig(SIGSEGV);
+ 		return -EFAULT;
+ 	}
+ 	set_current_blocked(&set);
+@@ -713,7 +713,7 @@ SYSCALL_DEFINE3(swapcontext, struct ucontext __user *, old_ctx,
+ 		return -EFAULT;
+ 	if (__unsafe_restore_sigcontext(current, NULL, 0, &new_ctx->uc_mcontext)) {
+ 		user_read_access_end();
+-		force_sigsegv(SIGSEGV);
++		force_fatal_sig(SIGSEGV);
+ 		return -EFAULT;
+ 	}
+ 	user_read_access_end();
+diff --git a/arch/s390/kernel/traps.c b/arch/s390/kernel/traps.c
+index 51729ea2cf8e..01a7c68dcfb6 100644
+--- a/arch/s390/kernel/traps.c
++++ b/arch/s390/kernel/traps.c
+@@ -84,7 +84,7 @@ static void default_trap_handler(struct pt_regs *regs)
+ {
+ 	if (user_mode(regs)) {
+ 		report_user_fault(regs, SIGSEGV, 0);
+-		force_sigsegv(SIGSEGV);
++		force_fatal_sig(SIGSEGV);
+ 	} else
+ 		die(regs, "Unknown program exception");
+ }
+diff --git a/arch/um/kernel/trap.c b/arch/um/kernel/trap.c
+index 3198c4767387..c32efb09db21 100644
+--- a/arch/um/kernel/trap.c
++++ b/arch/um/kernel/trap.c
+@@ -158,7 +158,7 @@ static void bad_segv(struct faultinfo fi, unsigned long ip)
+ 
+ void fatal_sigsegv(void)
+ {
+-	force_sigsegv(SIGSEGV);
++	force_fatal_sig(SIGSEGV);
+ 	do_signal(&current->thread.regs);
+ 	/*
+ 	 * This is to tell gcc that we're not returning - do_signal
+diff --git a/arch/x86/kernel/vm86_32.c b/arch/x86/kernel/vm86_32.c
+index 040fd01be8b3..7ff0f622abd4 100644
+--- a/arch/x86/kernel/vm86_32.c
++++ b/arch/x86/kernel/vm86_32.c
+@@ -159,7 +159,7 @@ void save_v86_state(struct kernel_vm86_regs *regs, int retval)
+ 	user_access_end();
+ Efault:
+ 	pr_alert("could not access userspace vm86 info\n");
+-	force_sigsegv(SIGSEGV);
++	force_fatal_sig(SIGSEGV);
+ }
+ 
+ static int do_vm86_irq_handling(int subfunction, int irqnumber);
+diff --git a/fs/exec.c b/fs/exec.c
+index a098c133d8d7..ac7b51b51f38 100644
+--- a/fs/exec.c
++++ b/fs/exec.c
+@@ -1852,7 +1852,7 @@ static int bprm_execve(struct linux_binprm *bprm,
+ 	 * SIGSEGV.
+ 	 */
+ 	if (bprm->point_of_no_return && !fatal_signal_pending(current))
+-		force_sigsegv(SIGSEGV);
++		force_fatal_sig(SIGSEGV);
+ 
+ out_unmark:
+ 	current->fs->in_exec = 0;
+-- 
+2.20.1
+
