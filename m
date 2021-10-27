@@ -2,91 +2,71 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 75691C433FE
-	for <linux-sh@archiver.kernel.org>; Wed, 27 Oct 2021 14:27:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B10EC433EF
+	for <linux-sh@archiver.kernel.org>; Wed, 27 Oct 2021 20:54:36 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5E6F360F39
-	for <linux-sh@archiver.kernel.org>; Wed, 27 Oct 2021 14:27:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 7EB3F610C7
+	for <linux-sh@archiver.kernel.org>; Wed, 27 Oct 2021 20:54:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242548AbhJ0O3Z (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 27 Oct 2021 10:29:25 -0400
-Received: from brightrain.aerifal.cx ([216.12.86.13]:40224 "EHLO
+        id S244117AbhJ0U5B (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 27 Oct 2021 16:57:01 -0400
+Received: from brightrain.aerifal.cx ([216.12.86.13]:40554 "EHLO
         brightrain.aerifal.cx" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242530AbhJ0O3W (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 27 Oct 2021 10:29:22 -0400
-Date:   Wed, 27 Oct 2021 10:26:54 -0400
+        with ESMTP id S244130AbhJ0U5A (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 27 Oct 2021 16:57:00 -0400
+Date:   Wed, 27 Oct 2021 16:54:32 -0400
 From:   Rich Felker <dalias@libc.org>
-To:     Rob Herring <robh@kernel.org>
-Cc:     Russell King <linux@armlinux.org.uk>,
-        James Morse <james.morse@arm.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Jonas Bonn <jonas@southpole.se>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        Stafford Horne <shorne@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>, x86@kernel.org,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Florian Fainelli <f.fainelli@gmail.com>,
-        Ray Jui <rjui@broadcom.com>,
-        Scott Branden <sbranden@broadcom.com>,
-        bcm-kernel-feedback-list@broadcom.com,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        "Rafael J. Wysocki" <rafael@kernel.org>,
-        Frank Rowand <frowand.list@gmail.com>,
-        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-csky@vger.kernel.org, openrisc@lists.librecores.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org, devicetree@vger.kernel.org
-Subject: Re: [PATCH 09/12] sh: Use of_get_cpu_hwid()
-Message-ID: <20211027142651.GW7074@brightrain.aerifal.cx>
-References: <20211006164332.1981454-1-robh@kernel.org>
- <20211006164332.1981454-10-robh@kernel.org>
+To:     Randy Dunlap <rdunlap@infradead.org>
+Cc:     linux-kernel@vger.kernel.org,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Geert Uytterhoeven <geert+renesas@glider.be>
+Subject: Re: [PATCH 2/5 v3] sh: add git tree to MAINTAINERS
+Message-ID: <20211027205431.GX7074@brightrain.aerifal.cx>
+References: <20211005001914.28574-1-rdunlap@infradead.org>
+ <20211005001914.28574-3-rdunlap@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20211006164332.1981454-10-robh@kernel.org>
+In-Reply-To: <20211005001914.28574-3-rdunlap@infradead.org>
 User-Agent: Mutt/1.5.21 (2010-09-15)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Oct 06, 2021 at 11:43:29AM -0500, Rob Herring wrote:
-> Replace open coded parsing of CPU nodes' 'reg' property with
-> of_get_cpu_hwid().
+On Mon, Oct 04, 2021 at 05:19:11PM -0700, Randy Dunlap wrote:
+> Add the git tree location for linux-sh.
 > 
+> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
 > Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 > Cc: Rich Felker <dalias@libc.org>
 > Cc: linux-sh@vger.kernel.org
-> Signed-off-by: Rob Herring <robh@kernel.org>
+> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
 > ---
->  arch/sh/boards/of-generic.c | 5 ++---
->  1 file changed, 2 insertions(+), 3 deletions(-)
+> v3: new patch in this series
 > 
-> diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
-> index 921d76fc3358..f7f3e618e85b 100644
-> --- a/arch/sh/boards/of-generic.c
-> +++ b/arch/sh/boards/of-generic.c
-> @@ -62,9 +62,8 @@ static void sh_of_smp_probe(void)
->  	init_cpu_possible(cpumask_of(0));
->  
->  	for_each_of_cpu_node(np) {
-> -		const __be32 *cell = of_get_property(np, "reg", NULL);
-> -		u64 id = -1;
-> -		if (cell) id = of_read_number(cell, of_n_addr_cells(np));
-> +		u64 id = of_get_cpu_hwid(np, 0);
-> +
->  		if (id < NR_CPUS) {
->  			if (!method)
->  				of_property_read_string(np, "enable-method", &method);
-> -- 
-> 2.30.2
+>  MAINTAINERS |    1 +
+>  1 file changed, 1 insertion(+)
+> 
+> --- linux-next-20211001.orig/MAINTAINERS
+> +++ linux-next-20211001/MAINTAINERS
+> @@ -18047,6 +18047,7 @@ M:	Yoshinori Sato <ysato@users.sourcefor
+>  M:	Rich Felker <dalias@libc.org>
+>  L:	linux-sh@vger.kernel.org
+>  S:	Maintained
+> +T:	git git://git.libc.org/linux-sh
+>  Q:	http://patchwork.kernel.org/project/linux-sh/list/
+>  F:	Documentation/sh/
+>  F:	arch/sh/
 
-Acked-by: Rich Felker <dalias@libc.org>
+I'm omitting this for now since (as noted on the cgit description)
+this server is not provisioned adequately for cloning from scratch,
+and should only be used for fetch into an already-populated mainline
+repo clone. If that's a problem I can see about getting it moved
+somewhere more appropriate.
+
+The rest of this series should appear in next shortly.
+
+Rich
