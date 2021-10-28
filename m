@@ -2,311 +2,102 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F7F4C43219
-	for <linux-sh@archiver.kernel.org>; Thu, 28 Oct 2021 07:35:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39555C433F5
+	for <linux-sh@archiver.kernel.org>; Thu, 28 Oct 2021 08:34:08 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 093ED61100
-	for <linux-sh@archiver.kernel.org>; Thu, 28 Oct 2021 07:35:53 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 0E428610CF
+	for <linux-sh@archiver.kernel.org>; Thu, 28 Oct 2021 08:34:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230061AbhJ1HiS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 28 Oct 2021 03:38:18 -0400
-Received: from smtp-out1.suse.de ([195.135.220.28]:45484 "EHLO
-        smtp-out1.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229800AbhJ1HiP (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 28 Oct 2021 03:38:15 -0400
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 399DF2177B;
-        Thu, 28 Oct 2021 07:35:46 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1635406546; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=6B5pmyQNFFGuA4GPECyRE5zg2HYL2//T1yApmd7nsM0=;
-        b=r6yeWDlMsEfA0y5YFT2WvCIkR54aJfsk2BjD1k73An8Lpr9mBWZehdxnBWG0AsAvfvNmwI
-        MnonR7NMALwwPFGOhAwXYUyYDhujPU8bNxWRam4ZnSksywP0T/oIpzAMXVbgdvII+AA6d1
-        h1svOAaQoBSAgC2+n2bt/LD5oO+njA0=
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7F48A13ABD;
-        Thu, 28 Oct 2021 07:35:43 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 1yyyHc9SemEoHwAAMHmgww
-        (envelope-from <jgross@suse.com>); Thu, 28 Oct 2021 07:35:43 +0000
-Subject: Re: [PATCH v2 09/45] xen/x86: Use do_kernel_power_off()
-To:     Dmitry Osipenko <digetx@gmail.com>,
-        Thierry Reding <thierry.reding@gmail.com>,
-        Jonathan Hunter <jonathanh@nvidia.com>,
-        Lee Jones <lee.jones@linaro.org>,
-        "Rafael J . Wysocki" <rafael@kernel.org>,
-        Mark Brown <broonie@kernel.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Russell King <linux@armlinux.org.uk>,
-        Daniel Lezcano <daniel.lezcano@linaro.org>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Ulf Hansson <ulf.hansson@linaro.org>
-Cc:     Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Joshua Thompson <funaho@jurai.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Nick Hu <nickhu@andestech.com>,
-        Greentime Hu <green.hu@gmail.com>,
-        Vincent Chen <deanbo422@gmail.com>,
-        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        Len Brown <lenb@kernel.org>,
-        Santosh Shilimkar <ssantosh@kernel.org>,
-        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Chen-Yu Tsai <wens@csie.org>,
-        =?UTF-8?Q?Jonathan_Neusch=c3=a4fer?= <j.neuschaefer@gmx.net>,
-        Tony Lindgren <tony@atomide.com>,
-        Liam Girdwood <lgirdwood@gmail.com>,
-        Philipp Zabel <p.zabel@pengutronix.de>,
-        Vladimir Zapolskiy <vz@mleia.com>,
-        Avi Fishman <avifishman70@gmail.com>,
-        Tomer Maimon <tmaimon77@gmail.com>,
-        Tali Perry <tali.perry1@gmail.com>,
-        Patrick Venture <venture@google.com>,
-        Nancy Yuen <yuenn@google.com>,
-        Benjamin Fair <benjaminfair@google.com>,
-        Pavel Machek <pavel@ucw.cz>,
-        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
-        xen-devel@lists.xenproject.org, linux-acpi@vger.kernel.org,
-        linux-omap@vger.kernel.org, openbmc@lists.ozlabs.org,
-        linux-tegra@vger.kernel.org, linux-pm@vger.kernel.org
-References: <20211027211715.12671-1-digetx@gmail.com>
- <20211027211715.12671-10-digetx@gmail.com>
-From:   Juergen Gross <jgross@suse.com>
-Message-ID: <0a9e42a1-c179-0d0c-99e3-f355b5db5aa1@suse.com>
-Date:   Thu, 28 Oct 2021 09:35:42 +0200
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.12.0
+        id S229791AbhJ1Igd (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 28 Oct 2021 04:36:33 -0400
+Received: from mail-ua1-f47.google.com ([209.85.222.47]:43872 "EHLO
+        mail-ua1-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229626AbhJ1Igd (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 28 Oct 2021 04:36:33 -0400
+Received: by mail-ua1-f47.google.com with SMTP id v3so10001403uam.10;
+        Thu, 28 Oct 2021 01:34:06 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=BYbaXCUYNWuEm6VFzPPAR1kV9z1lrK0IXCwkfP1SadA=;
+        b=CYzzkop7dRZE4eMMbeQXAov/bGioCy9Vt2iQQo7NEMYOSjzlawqGYZNUpHzifso/Pz
+         YtPcDnzLNbF+fGVNtgtxu4jpFTetyfANZUcPoxRu85e4rRErbykvUhy3EEOtNS9rpl0T
+         wYD5kVjXrj5o1NaZkD/LOegZfA2K6hxGShWnxB5g9ttRbyJmw6nq9LtloR/vabXDqsGV
+         aR4WdRpu6VdbYVzqR3j/97XYCPuflf0KLDv2A0TlpJKOlxgxdVPOjSmXHZPPtUkX86bA
+         cN1cjrQn558HOalE/sxjnZcM7WY/ZrWDb6l+tbJxGwTI6Ze2FnuPUhGUnKWtUB02QQAJ
+         +5tA==
+X-Gm-Message-State: AOAM530ClTACY7IG5IfUGh0klMmlKDceIZimSQpNOqi/eOvSz90gSGSt
+        1R4DYOKYWlTWR+V163USJYj4seAeSYds/Q==
+X-Google-Smtp-Source: ABdhPJy7dwNsDkMlFGm70cwUIGaZe5jNg5oeikWbOuZRRL7EdVAVPjQ4CqAAPliqbdh8uGEXtdU6nQ==
+X-Received: by 2002:a9f:3881:: with SMTP id t1mr2733578uaf.127.1635410046224;
+        Thu, 28 Oct 2021 01:34:06 -0700 (PDT)
+Received: from mail-ua1-f46.google.com (mail-ua1-f46.google.com. [209.85.222.46])
+        by smtp.gmail.com with ESMTPSA id q24sm253216vkn.20.2021.10.28.01.34.06
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 28 Oct 2021 01:34:06 -0700 (PDT)
+Received: by mail-ua1-f46.google.com with SMTP id s4so10174581uaq.0;
+        Thu, 28 Oct 2021 01:34:06 -0700 (PDT)
+X-Received: by 2002:ab0:2bd2:: with SMTP id s18mr2843638uar.78.1635410045974;
+ Thu, 28 Oct 2021 01:34:05 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20211027211715.12671-10-digetx@gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="gFqi6FeylFrTW5XaUARAuOXV5Sz4QEf7K"
+References: <20211005001914.28574-1-rdunlap@infradead.org> <20211005001914.28574-3-rdunlap@infradead.org>
+ <20211027205431.GX7074@brightrain.aerifal.cx>
+In-Reply-To: <20211027205431.GX7074@brightrain.aerifal.cx>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Thu, 28 Oct 2021 10:33:54 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdWUQkhYxXfrG4MG-Ghi62P_XVxkCMb_6qijP-MMgn-JWg@mail.gmail.com>
+Message-ID: <CAMuHMdWUQkhYxXfrG4MG-Ghi62P_XVxkCMb_6qijP-MMgn-JWg@mail.gmail.com>
+Subject: Re: [PATCH 2/5 v3] sh: add git tree to MAINTAINERS
+To:     Rich Felker <dalias@libc.org>
+Cc:     Randy Dunlap <rdunlap@infradead.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---gFqi6FeylFrTW5XaUARAuOXV5Sz4QEf7K
-Content-Type: multipart/mixed; boundary="s6NO7De5nnKdkPBqWk386oADRqxtp9b1f";
- protected-headers="v1"
-From: Juergen Gross <jgross@suse.com>
-To: Dmitry Osipenko <digetx@gmail.com>,
- Thierry Reding <thierry.reding@gmail.com>,
- Jonathan Hunter <jonathanh@nvidia.com>, Lee Jones <lee.jones@linaro.org>,
- "Rafael J . Wysocki" <rafael@kernel.org>, Mark Brown <broonie@kernel.org>,
- Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck
- <linux@roeck-us.net>, Russell King <linux@armlinux.org.uk>,
- Daniel Lezcano <daniel.lezcano@linaro.org>,
- Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
- Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>,
- Guo Ren <guoren@kernel.org>, Geert Uytterhoeven <geert@linux-m68k.org>,
- Greg Ungerer <gerg@linux-m68k.org>, Joshua Thompson <funaho@jurai.org>,
- Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
- Nick Hu <nickhu@andestech.com>, Greentime Hu <green.hu@gmail.com>,
- Vincent Chen <deanbo422@gmail.com>,
- "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
- Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>,
- Benjamin Herrenschmidt <benh@kernel.crashing.org>,
- Paul Mackerras <paulus@samba.org>, Paul Walmsley <paul.walmsley@sifive.com>,
- Palmer Dabbelt <palmer@dabbelt.com>, Albert Ou <aou@eecs.berkeley.edu>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
- Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>,
- Borislav Petkov <bp@alien8.de>, Dave Hansen <dave.hansen@linux.intel.com>,
- x86@kernel.org, "H. Peter Anvin" <hpa@zytor.com>,
- Boris Ostrovsky <boris.ostrovsky@oracle.com>,
- Stefano Stabellini <sstabellini@kernel.org>, Len Brown <lenb@kernel.org>,
- Santosh Shilimkar <ssantosh@kernel.org>,
- Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
- Linus Walleij <linus.walleij@linaro.org>, Chen-Yu Tsai <wens@csie.org>,
- =?UTF-8?Q?Jonathan_Neusch=c3=a4fer?= <j.neuschaefer@gmx.net>,
- Tony Lindgren <tony@atomide.com>, Liam Girdwood <lgirdwood@gmail.com>,
- Philipp Zabel <p.zabel@pengutronix.de>, Vladimir Zapolskiy <vz@mleia.com>,
- Avi Fishman <avifishman70@gmail.com>, Tomer Maimon <tmaimon77@gmail.com>,
- Tali Perry <tali.perry1@gmail.com>, Patrick Venture <venture@google.com>,
- Nancy Yuen <yuenn@google.com>, Benjamin Fair <benjaminfair@google.com>,
- Pavel Machek <pavel@ucw.cz>, linux-arm-kernel@lists.infradead.org,
- linux-kernel@vger.kernel.org, linux-csky@vger.kernel.org,
- linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
- linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
- linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
- linux-sh@vger.kernel.org, xen-devel@lists.xenproject.org,
- linux-acpi@vger.kernel.org, linux-omap@vger.kernel.org,
- openbmc@lists.ozlabs.org, linux-tegra@vger.kernel.org,
- linux-pm@vger.kernel.org
-Message-ID: <0a9e42a1-c179-0d0c-99e3-f355b5db5aa1@suse.com>
-Subject: Re: [PATCH v2 09/45] xen/x86: Use do_kernel_power_off()
-References: <20211027211715.12671-1-digetx@gmail.com>
- <20211027211715.12671-10-digetx@gmail.com>
-In-Reply-To: <20211027211715.12671-10-digetx@gmail.com>
+Hi Rich,
 
---s6NO7De5nnKdkPBqWk386oADRqxtp9b1f
-Content-Type: multipart/mixed;
- boundary="------------58F2BFF62DC0576B4BD13AA9"
-Content-Language: en-US
+On Wed, Oct 27, 2021 at 10:54 PM Rich Felker <dalias@libc.org> wrote:
+> On Mon, Oct 04, 2021 at 05:19:11PM -0700, Randy Dunlap wrote:
+> > Add the git tree location for linux-sh.
+> >
+> > Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
 
-This is a multi-part message in MIME format.
---------------58F2BFF62DC0576B4BD13AA9
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
+> > --- linux-next-20211001.orig/MAINTAINERS
+> > +++ linux-next-20211001/MAINTAINERS
+> > @@ -18047,6 +18047,7 @@ M:    Yoshinori Sato <ysato@users.sourcefor
+> >  M:   Rich Felker <dalias@libc.org>
+> >  L:   linux-sh@vger.kernel.org
+> >  S:   Maintained
+> > +T:   git git://git.libc.org/linux-sh
+> >  Q:   http://patchwork.kernel.org/project/linux-sh/list/
+> >  F:   Documentation/sh/
+> >  F:   arch/sh/
+>
+> I'm omitting this for now since (as noted on the cgit description)
+> this server is not provisioned adequately for cloning from scratch,
+> and should only be used for fetch into an already-populated mainline
+> repo clone. If that's a problem I can see about getting it moved
+> somewhere more appropriate.
 
-On 27.10.21 23:16, Dmitry Osipenko wrote:
-> Kernel now supports chained power-off handlers. Use do_kernel_power_off=
-()
-> that invokes chained power-off handlers. It also invokes legacy
-> pm_power_off() for now, which will be removed once all drivers will
-> be converted to the new power-off API.
->=20
-> Signed-off-by: Dmitry Osipenko <digetx@gmail.com>
+Perhaps you can move it to kernel.org?
 
-Acked-by: Juergen Gross <jgross@suse.com>
+> The rest of this series should appear in next shortly.
 
+Thanks a lot!
 
-Juergen
+Gr{oetje,eeting}s,
 
+                        Geert
 
---------------58F2BFF62DC0576B4BD13AA9
-Content-Type: application/pgp-keys;
- name="OpenPGP_0xB0DE9DD628BF132F.asc"
-Content-Transfer-Encoding: quoted-printable
-Content-Description: OpenPGP public key
-Content-Disposition: attachment;
- filename="OpenPGP_0xB0DE9DD628BF132F.asc"
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
------BEGIN PGP PUBLIC KEY BLOCK-----
-
-xsBNBFOMcBYBCACgGjqjoGvbEouQZw/ToiBg9W98AlM2QHV+iNHsEs7kxWhKMjrioyspZKOBy=
-cWx
-w3ie3j9uvg9EOB3aN4xiTv4qbnGiTr3oJhkB1gsb6ToJQZ8uxGq2kaV2KL9650I1SJvedYm8O=
-f8Z
-d621lSmoKOwlNClALZNew72NjJLEzTalU1OdT7/i1TXkH09XSSI8mEQ/ouNcMvIJNwQpd369y=
-9bf
-IhWUiVXEK7MlRgUG6MvIj6Y3Am/BBLUVbDa4+gmzDC9ezlZkTZG2t14zWPvxXP3FAp2pkW0xq=
-G7/
-377qptDmrk42GlSKN4z76ELnLxussxc7I2hx18NUcbP8+uty4bMxABEBAAHNHEp1ZXJnZW4gR=
-3Jv
-c3MgPGpnQHBmdXBmLm5ldD7CwHkEEwECACMFAlOMcBYCGwMHCwkIBwMCAQYVCAIJCgsEFgIDA=
-QIe
-AQIXgAAKCRCw3p3WKL8TL0KdB/93FcIZ3GCNwFU0u3EjNbNjmXBKDY4FUGNQH2lvWAUy+dnyT=
-hpw
-dtF/jQ6j9RwE8VP0+NXcYpGJDWlNb9/JmYqLiX2Q3TyevpB0CA3dbBQp0OW0fgCetToGIQrg0=
-MbD
-1C/sEOv8Mr4NAfbauXjZlvTj30H2jO0u+6WGM6nHwbh2l5O8ZiHkH32iaSTfN7Eu5RnNVUJbv=
-oPH
-Z8SlM4KWm8rG+lIkGurqqu5gu8q8ZMKdsdGC4bBxdQKDKHEFExLJK/nRPFmAuGlId1E3fe10v=
-5QL
-+qHI3EIPtyfE7i9Hz6rVwi7lWKgh7pe0ZvatAudZ+JNIlBKptb64FaiIOAWDCx1SzR9KdWVyZ=
-2Vu
-IEdyb3NzIDxqZ3Jvc3NAc3VzZS5jb20+wsB5BBMBAgAjBQJTjHCvAhsDBwsJCAcDAgEGFQgCC=
-QoL
-BBYCAwECHgECF4AACgkQsN6d1ii/Ey/HmQf/RtI7kv5A2PS4RF7HoZhPVPogNVbC4YA6lW7Dr=
-Wf0
-teC0RR3MzXfy6pJ+7KLgkqMlrAbN/8Dvjoz78X+5vhH/rDLa9BuZQlhFmvcGtCF8eR0T1v0nC=
-/nu
-AFVGy+67q2DH8As3KPu0344TBDpAvr2uYM4tSqxK4DURx5INz4ZZ0WNFHcqsfvlGJALDeE0Lh=
-ITT
-d9jLzdDad1pQSToCnLl6SBJZjDOX9QQcyUigZFtCXFst4dlsvddrxyqT1f17+2cFSdu7+ynLm=
-XBK
-7abQ3rwJY8SbRO2iRulogc5vr/RLMMlscDAiDkaFQWLoqHHOdfO9rURssHNN8WkMnQfvUewRz=
-80h
-SnVlcmdlbiBHcm9zcyA8amdyb3NzQG5vdmVsbC5jb20+wsB5BBMBAgAjBQJTjHDXAhsDBwsJC=
-AcD
-AgEGFQgCCQoLBBYCAwECHgECF4AACgkQsN6d1ii/Ey8PUQf/ehmgCI9jB9hlgexLvgOtf7PJn=
-FOX
-gMLdBQgBlVPO3/D9R8LtF9DBAFPNhlrsfIG/SqICoRCqUcJ96Pn3P7UUinFG/I0ECGF4EvTE1=
-jnD
-kfJZr6jrbjgyoZHiw/4BNwSTL9rWASyLgqlA8u1mf+c2yUwcGhgkRAd1gOwungxcwzwqgljf0=
-N51
-N5JfVRHRtyfwq/ge+YEkDGcTU6Y0sPOuj4Dyfm8fJzdfHNQsWq3PnczLVELStJNdapwPOoE+l=
-otu
-fe3AM2vAEYJ9rTz3Cki4JFUsgLkHFqGZarrPGi1eyQcXeluldO3m91NK/1xMI3/+8jbO0tsn1=
-tqS
-EUGIJi7ox80eSnVlcmdlbiBHcm9zcyA8amdyb3NzQHN1c2UuZGU+wsB5BBMBAgAjBQJTjHDrA=
-hsD
-BwsJCAcDAgEGFQgCCQoLBBYCAwECHgECF4AACgkQsN6d1ii/Ey+LhQf9GL45eU5vOowA2u5N3=
-g3O
-ZUEBmDHVVbqMtzwlmNC4k9Kx39r5s2vcFl4tXqW7g9/ViXYuiDXb0RfUpZiIUW89siKrkzmQ5=
-dM7
-wRqzgJpJwK8Bn2MIxAKArekWpiCKvBOB/Cc+3EXE78XdlxLyOi/NrmSGRIov0karw2RzMNOu5=
-D+j
-LRZQd1Sv27AR+IP3I8U4aqnhLpwhK7MEy9oCILlgZ1QZe49kpcumcZKORmzBTNh30FVKK1Evm=
-V2x
-AKDoaEOgQB4iFQLhJCdP1I5aSgM5IVFdn7v5YgEYuJYx37IoN1EblHI//x/e2AaIHpzK5h88N=
-Eaw
-QsaNRpNSrcfbFmAg987ATQRTjHAWAQgAyzH6AOODMBjgfWE9VeCgsrwH3exNAU32gLq2xvjpW=
-nHI
-s98ndPUDpnoxWQugJ6MpMncr0xSwFmHEgnSEjK/PAjppgmyc57BwKII3sV4on+gDVFJR6Y8ZR=
-wgn
-BC5mVM6JjQ5xDk8WRXljExRfUX9pNhdE5eBOZJrDRoLUmmjDtKzWaDhIg/+1Hzz93X4fCQkNV=
-bVF
-LELU9bMaLPBG/x5q4iYZ2k2ex6d47YE1ZFdMm6YBYMOljGkZKwYde5ldM9mo45mmwe0icXKLk=
-pEd
-IXKTZeKDO+Hdv1aqFuAcccTg9RXDQjmwhC3yEmrmcfl0+rPghO0Iv3OOImwTEe4co3c1mwARA=
-QAB
-wsBfBBgBAgAJBQJTjHAWAhsMAAoJELDendYovxMvQ/gH/1ha96vm4P/L+bQpJwrZ/dneZcmEw=
-Tbe
-8YFsw2V/Buv6Z4Mysln3nQK5ZadD534CF7TDVft7fC4tU4PONxF5D+/tvgkPfDAfF77zy2AH1=
-vJz
-Q1fOU8lYFpZXTXIHb+559UqvIB8AdgR3SAJGHHt4RKA0F7f5ipYBBrC6cyXJyyoprT10EMvU8=
-VGi
-wXvTyJz3fjoYsdFzpWPlJEBRMedCot60g5dmbdrZ5DWClAr0yau47zpWj3enf1tLWaqcsuylW=
-svi
-uGjKGw7KHQd3bxALOknAp4dN3QwBYCKuZ7AddY9yjynVaD5X7nF9nO5BjR/i1DG86lem3iBDX=
-zXs
-ZDn8R38=3D
-=3D2wuH
------END PGP PUBLIC KEY BLOCK-----
-
---------------58F2BFF62DC0576B4BD13AA9--
-
---s6NO7De5nnKdkPBqWk386oADRqxtp9b1f--
-
---gFqi6FeylFrTW5XaUARAuOXV5Sz4QEf7K
-Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="OpenPGP_signature"
-
------BEGIN PGP SIGNATURE-----
-
-wsB5BAABCAAjFiEEhRJncuj2BJSl0Jf3sN6d1ii/Ey8FAmF6Us4FAwAAAAAACgkQsN6d1ii/Ey81
-RQf+O3ya1tE8Z6tv0yRGBRxJKsYIhum0plUzBYr4KjAMitS51HL7pjN2SqE+kRW8tC6fvz4MBV4Z
-Bz+M8arbbC/asIjQfOQZb7/Bq5fDArNCDorqYSn/pVKT1f6Q41/74k05FMlTVVrl+SGj3w59z4uY
-Lf6z5wnewjYkuZOCAGfe2tfxDRlwSaSa2FVHQWI6NNjxysvYLSr3UBBBsh09j8+adx17Q0C5vRvK
-EX1Ik8bZJIw/xEyUzVkwRgpBlMmvnTyQEpLqBoXCH3VyiSymWybl0lJR43bhuZXd44FWcs7GGxnX
-mwHRqP+ks0TmdWNmGx98oQFP3LVC0zx8uBRZBZBycA==
-=NnyJ
------END PGP SIGNATURE-----
-
---gFqi6FeylFrTW5XaUARAuOXV5Sz4QEf7K--
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
