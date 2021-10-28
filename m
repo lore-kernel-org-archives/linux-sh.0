@@ -2,127 +2,167 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A7280C433F5
-	for <linux-sh@archiver.kernel.org>; Thu, 28 Oct 2021 13:38:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 71BF5C433EF
+	for <linux-sh@archiver.kernel.org>; Thu, 28 Oct 2021 21:32:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 8A83960527
-	for <linux-sh@archiver.kernel.org>; Thu, 28 Oct 2021 13:38:01 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 5BAA360FE3
+	for <linux-sh@archiver.kernel.org>; Thu, 28 Oct 2021 21:32:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229887AbhJ1Nk1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 28 Oct 2021 09:40:27 -0400
-Received: from mail-vk1-f176.google.com ([209.85.221.176]:45689 "EHLO
-        mail-vk1-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229945AbhJ1Nk1 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 28 Oct 2021 09:40:27 -0400
-Received: by mail-vk1-f176.google.com with SMTP id n201so2984906vkn.12;
-        Thu, 28 Oct 2021 06:38:00 -0700 (PDT)
+        id S231518AbhJ1VfS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 28 Oct 2021 17:35:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43760 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S231468AbhJ1VfJ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 28 Oct 2021 17:35:09 -0400
+Received: from mail-lj1-x22b.google.com (mail-lj1-x22b.google.com [IPv6:2a00:1450:4864:20::22b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 229FEC061227;
+        Thu, 28 Oct 2021 14:32:42 -0700 (PDT)
+Received: by mail-lj1-x22b.google.com with SMTP id l2so13056363lji.6;
+        Thu, 28 Oct 2021 14:32:42 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=FNhb8m0Up8WrlODFU5XusWNjgw7FYM5tGcizMhHIPzY=;
+        b=USVIOuLFNftY9TSlAv8GQB7acWI1sWWXinRBTyt58drm2RaLh5La11nG4ixMTMewfR
+         mX32BgQ2N30EhppM8q0HGzyhqJFMUCJMnblCfs4t5KonQ44KE0wlYv2W8rFYqs4V2koj
+         XX371v1ONZUx01vnBeB6kBqd5XtkGxjVTj1e6iP0L3n7qnRFNsZrpRBj/O9TAqf3J13f
+         DVFT1FMABW5ltJOUpFKPkQHX+APbXjkM1X+NMw4LCmok7h64fUY8hoIatZpEbYmauo9R
+         3tzIe6iUnZRzMnNPnMBZ+KjZo2BGgmZ8KUvvaXZMV9Llm3C259zfQ4YRn+8CQPkkCOFN
+         RJzA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=z3bhZg2q8rGPgVnYFAWcAuG3eiVVloGlaqKG4qPQIPg=;
-        b=cQ0jUHIhTDi9oTpqgXG441S+hJ0iuyMx9DrFDxaTOskrPR6T1yzQ4n2OFM1x7O/DPI
-         aaV+r/C6K0uk3RL5oIRZ+WsaQpjVD67dgrthWoj6h4WlVBMWikm1JhCLUlzfSDUSHtnX
-         +ywK3cwJS/3CDIfEe9v1YRIpTuACtD9t7cySZATyjqBwz19QzIciNSuLiLHzMY8So9f5
-         LMN15c6XDIQA0PeszzpzLkADFGai8YhMfBsWwFKvOlmrgSE09k4IOjmyU20yaabJBQJw
-         KLetR+xB5v3NRzI9gMp3rXmwCEKM/x+CLDr4i4+PDI3RIcM+ueHEHuicT8u+QwLWCt8k
-         DgJQ==
-X-Gm-Message-State: AOAM532CqOfJmCYfD9tDqQst3AIWrdEr8lsY1q6YnQv6rEGenRuTf4Lp
-        W0Y9mBw61cExNH4jEt44Z7VnS9zVhPKG/w==
-X-Google-Smtp-Source: ABdhPJxpX8F1cR0UMjl51bxRqKkOkIwObcf/VwwxmvJZqyciAksEmxMnAKNmOuf406JKcyYXM1Sntg==
-X-Received: by 2002:a05:6122:881:: with SMTP id 1mr4353111vkf.19.1635428279527;
-        Thu, 28 Oct 2021 06:37:59 -0700 (PDT)
-Received: from mail-vk1-f176.google.com (mail-vk1-f176.google.com. [209.85.221.176])
-        by smtp.gmail.com with ESMTPSA id a8sm452549vko.51.2021.10.28.06.37.58
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=FNhb8m0Up8WrlODFU5XusWNjgw7FYM5tGcizMhHIPzY=;
+        b=x1/SikoFEcrTbmPz93P/kN5wRqho0t39OVDAJv+OHPpejl3BDkhaQa+Q9zEimY+lTG
+         pkmzIEiDMujGUPeupqDWi3XMPXC96Px1Jxizh+kdbxxNsUO7bOtSnkm7FzjaSeDbR7tF
+         al46WibVXIEkI5bzTADQl/TbhehmBadMq/7qTE0YlWDMUetLZYpVygysz6pjV4tE1iIs
+         H2Vra42snnaOazZwAVdNz84+0KUKOu/7i+LOsK2rmMd1q04WGPxoXq66L7XX3/eWxPdu
+         OXFkwYpBBn8m8whifSIt3NH8bLkW+cFeJQJIABshOqUEDc3smi2IznpVKm0USjFTNCzs
+         RRww==
+X-Gm-Message-State: AOAM532nyuVTlKEcTJTTLcJNf+3yw3C5RkKuj29rxy1FGshrRdwapLvb
+        Zf8n43psf8yToj5DIHTaLofjTTmfMmI=
+X-Google-Smtp-Source: ABdhPJwcWGds1J/UVngHunSwfN7ztb9W9OVxlAX827dktWLGe1JrS01AY9nWnDg96vqg3wWMmL+l6Q==
+X-Received: by 2002:a2e:9b0e:: with SMTP id u14mr7220400lji.247.1635456760396;
+        Thu, 28 Oct 2021 14:32:40 -0700 (PDT)
+Received: from [192.168.2.145] (46-138-44-18.dynamic.spd-mgts.ru. [46.138.44.18])
+        by smtp.googlemail.com with ESMTPSA id bi14sm474384lfb.290.2021.10.28.14.32.38
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 28 Oct 2021 06:37:59 -0700 (PDT)
-Received: by mail-vk1-f176.google.com with SMTP id s201so2990064vke.6;
-        Thu, 28 Oct 2021 06:37:58 -0700 (PDT)
-X-Received: by 2002:a05:6122:a12:: with SMTP id 18mr4280175vkn.15.1635428278667;
- Thu, 28 Oct 2021 06:37:58 -0700 (PDT)
-MIME-Version: 1.0
-References: <20211005001914.28574-1-rdunlap@infradead.org> <20211005001914.28574-3-rdunlap@infradead.org>
- <20211027205431.GX7074@brightrain.aerifal.cx> <CAMuHMdWUQkhYxXfrG4MG-Ghi62P_XVxkCMb_6qijP-MMgn-JWg@mail.gmail.com>
- <20211028133049.GY7074@brightrain.aerifal.cx>
-In-Reply-To: <20211028133049.GY7074@brightrain.aerifal.cx>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Thu, 28 Oct 2021 15:37:47 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdUw=6RMF4gEhROMBwQALNmmKJgiKQLYymV4m75EZV+DJQ@mail.gmail.com>
-Message-ID: <CAMuHMdUw=6RMF4gEhROMBwQALNmmKJgiKQLYymV4m75EZV+DJQ@mail.gmail.com>
-Subject: Re: [PATCH 2/5 v3] sh: add git tree to MAINTAINERS
-To:     Rich Felker <dalias@libc.org>
-Cc:     Randy Dunlap <rdunlap@infradead.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Thu, 28 Oct 2021 14:32:39 -0700 (PDT)
+Subject: Re: [PATCH v2 03/45] notifier: Add
+ atomic/blocking_notifier_has_unique_priority()
+To:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Cc:     Thierry Reding <thierry.reding@gmail.com>,
+        Jonathan Hunter <jonathanh@nvidia.com>,
+        Lee Jones <lee.jones@linaro.org>,
+        "Rafael J . Wysocki" <rafael@kernel.org>,
+        Mark Brown <broonie@kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Russell King <linux@armlinux.org.uk>,
+        Daniel Lezcano <daniel.lezcano@linaro.org>,
+        Ulf Hansson <ulf.hansson@linaro.org>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Joshua Thompson <funaho@jurai.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Nick Hu <nickhu@andestech.com>,
+        Greentime Hu <green.hu@gmail.com>,
+        Vincent Chen <deanbo422@gmail.com>,
+        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Konstantin Ryabitsev <konstantin@linuxfoundation.org>
-Content-Type: text/plain; charset="UTF-8"
+        Rich Felker <dalias@libc.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
+        Juergen Gross <jgross@suse.com>,
+        Stefano Stabellini <sstabellini@kernel.org>,
+        Len Brown <lenb@kernel.org>,
+        Santosh Shilimkar <ssantosh@kernel.org>,
+        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Chen-Yu Tsai <wens@csie.org>,
+        =?UTF-8?Q?Jonathan_Neusch=c3=a4fer?= <j.neuschaefer@gmx.net>,
+        Tony Lindgren <tony@atomide.com>,
+        Liam Girdwood <lgirdwood@gmail.com>,
+        Philipp Zabel <p.zabel@pengutronix.de>,
+        Vladimir Zapolskiy <vz@mleia.com>,
+        Avi Fishman <avifishman70@gmail.com>,
+        Tomer Maimon <tmaimon77@gmail.com>,
+        Tali Perry <tali.perry1@gmail.com>,
+        Patrick Venture <venture@google.com>,
+        Nancy Yuen <yuenn@google.com>,
+        Benjamin Fair <benjaminfair@google.com>,
+        Pavel Machek <pavel@ucw.cz>,
+        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
+        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
+        xen-devel@lists.xenproject.org, linux-acpi@vger.kernel.org,
+        linux-omap@vger.kernel.org, openbmc@lists.ozlabs.org,
+        linux-tegra@vger.kernel.org, linux-pm@vger.kernel.org
+References: <20211027211715.12671-1-digetx@gmail.com>
+ <20211027211715.12671-4-digetx@gmail.com>
+ <YXqCz/utp2DFJJ45@smile.fi.intel.com>
+From:   Dmitry Osipenko <digetx@gmail.com>
+Message-ID: <c5fb7590-03a7-0eea-4040-07472a5c9710@gmail.com>
+Date:   Fri, 29 Oct 2021 00:32:37 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.14.0
+MIME-Version: 1.0
+In-Reply-To: <YXqCz/utp2DFJJ45@smile.fi.intel.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Rich,
+28.10.2021 14:00, Andy Shevchenko пишет:
+> On Thu, Oct 28, 2021 at 12:16:33AM +0300, Dmitry Osipenko wrote:
+>> Add atomic/blocking_notifier_has_unique_priority() helpers which return
+>> true if given handler has unique priority.
+> 
+> ...
+> 
+>> +/**
+>> + *	atomic_notifier_has_unique_priority - Checks whether notifier's priority is unique
+>> + *	@nh: Pointer to head of the atomic notifier chain
+>> + *	@n: Entry in notifier chain to check
+>> + *
+>> + *	Checks whether there is another notifier in the chain with the same priority.
+>> + *	Must be called in process context.
+>> + *
+>> + *	Returns true if priority is unique, false otherwise.
+> 
+> Why this indentation?
 
-CC Konstantin
+This is the same doc-comment style used by this file in general. I
+haven't tried to invent anything new.
 
-On Thu, Oct 28, 2021 at 3:30 PM Rich Felker <dalias@libc.org> wrote:
-> On Thu, Oct 28, 2021 at 10:33:54AM +0200, Geert Uytterhoeven wrote:
-> > On Wed, Oct 27, 2021 at 10:54 PM Rich Felker <dalias@libc.org> wrote:
-> > > On Mon, Oct 04, 2021 at 05:19:11PM -0700, Randy Dunlap wrote:
-> > > > Add the git tree location for linux-sh.
-> > > >
-> > > > Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-> >
-> > > > --- linux-next-20211001.orig/MAINTAINERS
-> > > > +++ linux-next-20211001/MAINTAINERS
-> > > > @@ -18047,6 +18047,7 @@ M:    Yoshinori Sato <ysato@users.sourcefor
-> > > >  M:   Rich Felker <dalias@libc.org>
-> > > >  L:   linux-sh@vger.kernel.org
-> > > >  S:   Maintained
-> > > > +T:   git git://git.libc.org/linux-sh
-> > > >  Q:   http://patchwork.kernel.org/project/linux-sh/list/
-> > > >  F:   Documentation/sh/
-> > > >  F:   arch/sh/
-> > >
-> > > I'm omitting this for now since (as noted on the cgit description)
-> > > this server is not provisioned adequately for cloning from scratch,
-> > > and should only be used for fetch into an already-populated mainline
-> > > repo clone. If that's a problem I can see about getting it moved
-> > > somewhere more appropriate.
-> >
-> > Perhaps you can move it to kernel.org?
->
-> I would love to. This was my hope years ago, but I got bogged down in
-> the GPG key signing requirements and folks not following through with
-> signing my key. Has any of that been streamlined since?
 
-I'll let Konstantin respond...
+> ...
+> 
+>> +	/*
+>> +	 * This code gets used during boot-up, when task switching is
+>> +	 * not yet working and interrupts must remain disabled.  At
+> 
+> One space is enough.
 
-> > > The rest of this series should appear in next shortly.
-> >
-> > Thanks a lot!
->
-> Looks like it's been pulled by next now with no reports of anything
-> going wrong. I know it's late in the release cycle but should I
-
-Good!
-
-> probably go ahead and send a PR?
-
-Actually you're right on time ;-)
-Your tree is based on v5.15-rc1, and the merge window for v5.16 is
-expected to open on Monday. So you can send the PR right away.
-
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+This comment is replicated multiple times over this source file. You can
+find it before each down_write(). I borrowed the text as-is, for
+consistency.
