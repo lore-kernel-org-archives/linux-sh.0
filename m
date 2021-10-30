@@ -2,145 +2,184 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0428EC4321E
-	for <linux-sh@archiver.kernel.org>; Thu, 28 Oct 2021 23:28:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 06839C433F5
+	for <linux-sh@archiver.kernel.org>; Sat, 30 Oct 2021 17:57:15 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id D6248610CA
-	for <linux-sh@archiver.kernel.org>; Thu, 28 Oct 2021 23:28:22 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id D9DC460E09
+	for <linux-sh@archiver.kernel.org>; Sat, 30 Oct 2021 17:57:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231539AbhJ1Xat (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 28 Oct 2021 19:30:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41956 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229804AbhJ1Xap (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 28 Oct 2021 19:30:45 -0400
-Received: from mail-lf1-x133.google.com (mail-lf1-x133.google.com [IPv6:2a00:1450:4864:20::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 850AFC061745;
-        Thu, 28 Oct 2021 16:28:17 -0700 (PDT)
-Received: by mail-lf1-x133.google.com with SMTP id c28so16877445lfv.13;
-        Thu, 28 Oct 2021 16:28:17 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=subject:from:to:cc:references:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=g1ASowQL1SYh3xyvjjnrsnFWzhxhuZ1FkP7TdHa31mE=;
-        b=or9I8eXmdc6hOUu3ilMz+ymgHlGQQmwFfcjANI787MFy3461r29Qlx4Drko3A82jiZ
-         /Dxbh+rXJkVd+vSmZQz7ByF21FNMWE7Msuh2tmQH7FzEaAaJykw/79BGIIrJtKwboRDm
-         04V8OvO+c+XCXlI7f4QRPE7cqx6GZulezk5I+0MnmugoyzWrW9wGp3T/sQ+0YL50opsM
-         PEj+17btedXyPtu3l7DUltlj+rCIDD63O2gZoZwfDEKUeboD39P9kLuxM5uqsYcKe9n/
-         MuNWRD7sUlbhLEou6B/xsQNLsenMP/929SI9uvSZZXHuqFx/YvhRAZPMrz7X4+YxCerI
-         /TgQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:subject:from:to:cc:references:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=g1ASowQL1SYh3xyvjjnrsnFWzhxhuZ1FkP7TdHa31mE=;
-        b=cOkqdGeNEuZcAHnpdUXk1+5EmFZRDGpC5tRffGYu/vF24A+jKJL7M9mnRkN7nhE4Y/
-         LlIOgzW7RGRIJLf6h/kSoUNlwyZ7r+bA3TrLtwBqHtuMzlXD/f4ggUxwqYZRPJpIHsIb
-         HuGEwaz/RCE2Gy2MXOoZ2zktFpQ5HhPFbSh1cbImIdWP/A+HLdqoy5buIrsEyfkUkJKZ
-         2tHzxnOJ/HcMzTARcchnIxOCgLkWturaRU9Za11tsOnWz0gkufF/9iFPnwYjiT0RUJa0
-         aZJ8hVZGX/ODzwg7U52cNmRwEUG18a+RScItWUvS/hh1vxdhHaTsYpYo/cRUMnMWPcmr
-         YeFg==
-X-Gm-Message-State: AOAM533VU1mbUz4A00epD7HQENnplQUD31uOpugw3cw/JurTbdWCBjVV
-        F8WtTJ0H/i4piMeiXBS1RTNW4VX7J48=
-X-Google-Smtp-Source: ABdhPJwV2hV4le461ll7P/MiVtzPzva4GF7PaVejAVvhmYPc9uewsxLl7FIVcxk+rSnnrtvlDg/jfg==
-X-Received: by 2002:a19:760a:: with SMTP id c10mr6627861lff.302.1635463695803;
-        Thu, 28 Oct 2021 16:28:15 -0700 (PDT)
-Received: from [192.168.2.145] (46-138-44-18.dynamic.spd-mgts.ru. [46.138.44.18])
-        by smtp.googlemail.com with ESMTPSA id bn3sm414682ljb.7.2021.10.28.16.28.13
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 28 Oct 2021 16:28:15 -0700 (PDT)
-Subject: Re: [PATCH v2 03/45] notifier: Add
- atomic/blocking_notifier_has_unique_priority()
-From:   Dmitry Osipenko <digetx@gmail.com>
-To:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Cc:     Thierry Reding <thierry.reding@gmail.com>,
-        Jonathan Hunter <jonathanh@nvidia.com>,
-        Lee Jones <lee.jones@linaro.org>,
-        "Rafael J . Wysocki" <rafael@kernel.org>,
-        Mark Brown <broonie@kernel.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Russell King <linux@armlinux.org.uk>,
-        Daniel Lezcano <daniel.lezcano@linaro.org>,
-        Ulf Hansson <ulf.hansson@linaro.org>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Joshua Thompson <funaho@jurai.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Nick Hu <nickhu@andestech.com>,
-        Greentime Hu <green.hu@gmail.com>,
-        Vincent Chen <deanbo422@gmail.com>,
-        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        id S229788AbhJ3R7o (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 30 Oct 2021 13:59:44 -0400
+Received: from conuserg-09.nifty.com ([210.131.2.76]:44890 "EHLO
+        conuserg-09.nifty.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229694AbhJ3R7n (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 30 Oct 2021 13:59:43 -0400
+Received: from grover.. (133-32-232-101.west.xps.vectant.ne.jp [133.32.232.101]) (authenticated)
+        by conuserg-09.nifty.com with ESMTP id 19UHu9ZN031733;
+        Sun, 31 Oct 2021 02:56:09 +0900
+DKIM-Filter: OpenDKIM Filter v2.10.3 conuserg-09.nifty.com 19UHu9ZN031733
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com;
+        s=dec2015msa; t=1635616570;
+        bh=qkGeLWQC26K1A738fV8OMPZP57XqUFsp45igjPTx/bg=;
+        h=From:To:Cc:Subject:Date:From;
+        b=r347laL2nS42a2UnSdjwFIWAJZPlL7JdUQ0HRPBC6zkd4u0Lr3rMlJekr4+Oi57Jk
+         H7FVwmUorrRuwiGn1u5+BcdbknzZw1VAVJ9mMKuo004rgpojvEMs3/Ih4eYUuIxAiR
+         L0og2PtGWKdGT7fv0SVg7QlDLvKBMUpZCp+Ux9a/eMG5EZvhmo7/qcinVHfuYDUHV2
+         n0CniivUkMj/HenAMuvjUlwCZqQSZuqf88e4XqB9mCIYx0p1HNjQXDYiFNjGctYYCy
+         UcW2ILIMjNUqBU1Z0LHr+7RSbOB44BqySJcVygqWDw4z104GsDvvIccInt9sw3iysU
+         y41UwOJDXQ1kQ==
+X-Nifty-SrcIP: [133.32.232.101]
+From:   Masahiro Yamada <masahiroy@kernel.org>
+To:     linux-kbuild@vger.kernel.org, patches@arm.linux.org.uk
+Cc:     Masahiro Yamada <masahiroy@kernel.org>,
         Rich Felker <dalias@libc.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
-        Juergen Gross <jgross@suse.com>,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        Len Brown <lenb@kernel.org>,
-        Santosh Shilimkar <ssantosh@kernel.org>,
-        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Chen-Yu Tsai <wens@csie.org>,
-        =?UTF-8?Q?Jonathan_Neusch=c3=a4fer?= <j.neuschaefer@gmx.net>,
-        Tony Lindgren <tony@atomide.com>,
-        Liam Girdwood <lgirdwood@gmail.com>,
-        Philipp Zabel <p.zabel@pengutronix.de>,
-        Vladimir Zapolskiy <vz@mleia.com>,
-        Avi Fishman <avifishman70@gmail.com>,
-        Tomer Maimon <tmaimon77@gmail.com>,
-        Tali Perry <tali.perry1@gmail.com>,
-        Patrick Venture <venture@google.com>,
-        Nancy Yuen <yuenn@google.com>,
-        Benjamin Fair <benjaminfair@google.com>,
-        Pavel Machek <pavel@ucw.cz>,
-        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
-        xen-devel@lists.xenproject.org, linux-acpi@vger.kernel.org,
-        linux-omap@vger.kernel.org, openbmc@lists.ozlabs.org,
-        linux-tegra@vger.kernel.org, linux-pm@vger.kernel.org
-References: <20211027211715.12671-1-digetx@gmail.com>
- <20211027211715.12671-4-digetx@gmail.com>
- <YXqCz/utp2DFJJ45@smile.fi.intel.com>
- <c5fb7590-03a7-0eea-4040-07472a5c9710@gmail.com>
-Message-ID: <8a9c4a9a-ea0d-4bc9-cf57-9bd99b211d47@gmail.com>
-Date:   Fri, 29 Oct 2021 02:28:13 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.14.0
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Subject: [PATCH] sh: decompressor: do not copy source files while building
+Date:   Sun, 31 Oct 2021 02:56:04 +0900
+Message-Id: <20211030175604.1716611-1-masahiroy@kernel.org>
+X-Mailer: git-send-email 2.30.2
 MIME-Version: 1.0
-In-Reply-To: <c5fb7590-03a7-0eea-4040-07472a5c9710@gmail.com>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-29.10.2021 00:32, Dmitry Osipenko пишет:
->>> +	/*
->>> +	 * This code gets used during boot-up, when task switching is
->>> +	 * not yet working and interrupts must remain disabled.  At
->> One space is enough.
-> This comment is replicated multiple times over this source file. You can
-> find it before each down_write(). I borrowed the text as-is, for
-> consistency.
+As commit 7ae4a78daacf ("ARM: 8969/1: decompressor: simplify libfdt
+builds") stated, copying source files during the build time may not
+end up with as clean code as expected.
 
-Actually, it should be down_read() here since there are no writes. I'll
-correct it in v3.
+Do similar for sh to clean up the Makefile and .gitignore.
+
+Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
+---
+
+ arch/sh/boot/compressed/.gitignore |  5 -----
+ arch/sh/boot/compressed/Makefile   | 24 ++++++------------------
+ arch/sh/boot/compressed/ashiftrt.S |  2 ++
+ arch/sh/boot/compressed/ashldi3.c  |  2 ++
+ arch/sh/boot/compressed/ashlsi3.S  |  2 ++
+ arch/sh/boot/compressed/ashrsi3.S  |  2 ++
+ arch/sh/boot/compressed/lshrsi3.S  |  2 ++
+ scripts/remove-stale-files         |  5 +++++
+ 8 files changed, 21 insertions(+), 23 deletions(-)
+ create mode 100644 arch/sh/boot/compressed/ashiftrt.S
+ create mode 100644 arch/sh/boot/compressed/ashldi3.c
+ create mode 100644 arch/sh/boot/compressed/ashlsi3.S
+ create mode 100644 arch/sh/boot/compressed/ashrsi3.S
+ create mode 100644 arch/sh/boot/compressed/lshrsi3.S
+
+diff --git a/arch/sh/boot/compressed/.gitignore b/arch/sh/boot/compressed/.gitignore
+index 37aa53057369..cd16663bc7c8 100644
+--- a/arch/sh/boot/compressed/.gitignore
++++ b/arch/sh/boot/compressed/.gitignore
+@@ -1,7 +1,2 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+-ashiftrt.S
+-ashldi3.c
+-ashlsi3.S
+-ashrsi3.S
+-lshrsi3.S
+ vmlinux.bin.*
+diff --git a/arch/sh/boot/compressed/Makefile b/arch/sh/boot/compressed/Makefile
+index 589d2d8a573d..2f53babd9249 100644
+--- a/arch/sh/boot/compressed/Makefile
++++ b/arch/sh/boot/compressed/Makefile
+@@ -5,12 +5,12 @@
+ # create a compressed vmlinux image from the original vmlinux
+ #
+ 
++OBJECTS := head_32.o misc.o cache.o piggy.o \
++	   ashiftrt.o ashldi3.o ashrsi3.o ashlsi3.o lshrsi3.o
++
+ targets		:= vmlinux vmlinux.bin vmlinux.bin.gz \
+ 		   vmlinux.bin.bz2 vmlinux.bin.lzma \
+-		   vmlinux.bin.xz vmlinux.bin.lzo \
+-		   head_32.o misc.o piggy.o
+-
+-OBJECTS = $(obj)/head_32.o $(obj)/misc.o $(obj)/cache.o
++		   vmlinux.bin.xz vmlinux.bin.lzo $(OBJECTS)
+ 
+ GCOV_PROFILE := n
+ 
+@@ -33,21 +33,9 @@ ccflags-remove-$(CONFIG_MCOUNT) += -pg
+ LDFLAGS_vmlinux := --oformat $(ld-bfd) -Ttext $(IMAGE_OFFSET) -e startup \
+ 		   -T $(obj)/../../kernel/vmlinux.lds
+ 
+-#
+-# Pull in the necessary libgcc bits from the in-kernel implementation.
+-#
+-lib1funcs-y	:= ashiftrt.S ashldi3.c ashrsi3.S ashlsi3.S lshrsi3.S
+-lib1funcs-obj   := \
+-	$(addsuffix .o, $(basename $(addprefix $(obj)/, $(lib1funcs-y))))
+-
+-lib1funcs-dir		:= $(srctree)/arch/$(SRCARCH)/lib
+-
+-KBUILD_CFLAGS += -I$(lib1funcs-dir) -DDISABLE_BRANCH_PROFILING
+-
+-$(addprefix $(obj)/,$(lib1funcs-y)): $(obj)/%: $(lib1funcs-dir)/% FORCE
+-	$(call cmd,shipped)
++KBUILD_CFLAGS += -DDISABLE_BRANCH_PROFILING
+ 
+-$(obj)/vmlinux: $(OBJECTS) $(obj)/piggy.o $(lib1funcs-obj) FORCE
++$(obj)/vmlinux: $(addprefix $(obj)/, $(OBJECTS)) FORCE
+ 	$(call if_changed,ld)
+ 
+ $(obj)/vmlinux.bin: vmlinux FORCE
+diff --git a/arch/sh/boot/compressed/ashiftrt.S b/arch/sh/boot/compressed/ashiftrt.S
+new file mode 100644
+index 000000000000..0f3b291a3f4b
+--- /dev/null
++++ b/arch/sh/boot/compressed/ashiftrt.S
+@@ -0,0 +1,2 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#include "../../lib/ashiftrt.S"
+diff --git a/arch/sh/boot/compressed/ashldi3.c b/arch/sh/boot/compressed/ashldi3.c
+new file mode 100644
+index 000000000000..7cebd646df83
+--- /dev/null
++++ b/arch/sh/boot/compressed/ashldi3.c
+@@ -0,0 +1,2 @@
++// SPDX-License-Identifier: GPL-2.0-only
++#include "../../lib/ashldi3.c"
+diff --git a/arch/sh/boot/compressed/ashlsi3.S b/arch/sh/boot/compressed/ashlsi3.S
+new file mode 100644
+index 000000000000..e354262b275f
+--- /dev/null
++++ b/arch/sh/boot/compressed/ashlsi3.S
+@@ -0,0 +1,2 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#include "../../lib/ashlsi3.S"
+diff --git a/arch/sh/boot/compressed/ashrsi3.S b/arch/sh/boot/compressed/ashrsi3.S
+new file mode 100644
+index 000000000000..e564be9a4dcd
+--- /dev/null
++++ b/arch/sh/boot/compressed/ashrsi3.S
+@@ -0,0 +1,2 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#include "../../lib/ashrsi3.S"
+diff --git a/arch/sh/boot/compressed/lshrsi3.S b/arch/sh/boot/compressed/lshrsi3.S
+new file mode 100644
+index 000000000000..5a8281b7e516
+--- /dev/null
++++ b/arch/sh/boot/compressed/lshrsi3.S
+@@ -0,0 +1,2 @@
++/* SPDX-License-Identifier: GPL-2.0-only */
++#include "../../lib/lshrsi3.S"
+diff --git a/scripts/remove-stale-files b/scripts/remove-stale-files
+index eb630ee287c3..ad5ba3ee1f5e 100755
+--- a/scripts/remove-stale-files
++++ b/scripts/remove-stale-files
+@@ -28,4 +28,9 @@ if [ -n "${building_out_of_srctree}" ]; then
+ 	do
+ 		rm -f arch/arm/boot/compressed/${f}
+ 	done
++
++	for f in ashiftrt.S ashldi3.c ashrsi3.S ashlsi3.S lshrsi3.S
++	do
++		rm -f arch/sh/boot/compressed/${f}
++	done
+ fi
+-- 
+2.30.2
+
