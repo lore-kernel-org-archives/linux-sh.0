@@ -2,90 +2,159 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B6CFC433F5
-	for <linux-sh@archiver.kernel.org>; Sat, 30 Oct 2021 19:03:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4AB9AC4321E
+	for <linux-sh@archiver.kernel.org>; Mon,  1 Nov 2021 01:57:37 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7B4B260EB1
-	for <linux-sh@archiver.kernel.org>; Sat, 30 Oct 2021 19:03:09 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 2BFBA6108D
+	for <linux-sh@archiver.kernel.org>; Mon,  1 Nov 2021 01:57:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229694AbhJ3TFj (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 30 Oct 2021 15:05:39 -0400
-Received: from conssluserg-02.nifty.com ([210.131.2.81]:22528 "EHLO
-        conssluserg-02.nifty.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229641AbhJ3TFi (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 30 Oct 2021 15:05:38 -0400
-Received: from mail-pj1-f53.google.com (mail-pj1-f53.google.com [209.85.216.53]) (authenticated)
-        by conssluserg-02.nifty.com with ESMTP id 19UJ2fZ7008930;
-        Sun, 31 Oct 2021 04:02:41 +0900
-DKIM-Filter: OpenDKIM Filter v2.10.3 conssluserg-02.nifty.com 19UJ2fZ7008930
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=nifty.com;
-        s=dec2015msa; t=1635620562;
-        bh=VHv3+uAVSmOcJ7Q+/oSeDmUgWjj1CdtLJ7CGK6H5By0=;
+        id S230451AbhKACAG (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 31 Oct 2021 22:00:06 -0400
+Received: from mail.kernel.org ([198.145.29.99]:38910 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S230234AbhKACAF (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Sun, 31 Oct 2021 22:00:05 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 96C77610E5;
+        Mon,  1 Nov 2021 01:57:32 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1635731852;
+        bh=fuaUan8WpsO3AU0Pd876OqdiQB5S59Rz/RFmfxHCqFo=;
         h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=V/XE66sF4dJv0rRN7UWJFEAw5H9YkKa9VsbI8tY1AJymwzcGWZmc9rdl3B1ko3mlq
-         cF/d7FEj5g7+og3FH8V1uqf3CmN4bmvCkFgXTzieKt/wSkOrLI10ntRjv8tS7gZLwu
-         KRuK2LOdXvDb3s98f1hDQQHZz92Tgl2YzOhNHCPqcwkCdIyhKxLOoiFBX+pZHItVT6
-         cM5ikT3yuh1fVsewpnTVIuxQl9+5XA8dCO24KgYQiWC8xLZMciKTkDEuqu9qDm1+E7
-         BC48j5QVMvLLsdO6Piver9MS3cLEmLOUUc0wk9zus/C9wZwl+0mvi5BQO24S35p/U/
-         nyxbiGTQ7VuVw==
-X-Nifty-SrcIP: [209.85.216.53]
-Received: by mail-pj1-f53.google.com with SMTP id nn3-20020a17090b38c300b001a03bb6c4ebso9714081pjb.1;
-        Sat, 30 Oct 2021 12:02:41 -0700 (PDT)
-X-Gm-Message-State: AOAM533JvNin9OPab6cab+uBvQ2rh7Bhw5+elftxrkSR6su6X0h1GWgc
-        FuRhOO19lmSdidc4OtlgaWCLZLjpIUEOAdr1nXM=
-X-Google-Smtp-Source: ABdhPJyqfuvV/CmwUM6JcQlCVNajsUWt4uUkwK4fYHTm/UCMiwLGNuRoDNJPa5q7akhDjTP3ZFUL1MDlmQJLO8zzXJk=
-X-Received: by 2002:a17:90a:ce02:: with SMTP id f2mr15295663pju.77.1635620560734;
- Sat, 30 Oct 2021 12:02:40 -0700 (PDT)
+        b=WTZ2r/aqsZBJ/SEMp/W5aRRvu0wWWG+qZmM8hZPwjrObwwMpW1TgXwf1zWnw0Qa9i
+         Zv/YGYWGYxl7myNvWxfw0CIgJUc9b2/XePq2AH0H37XLuqx44GHHVjgkb3ys6UwuYH
+         QFUJSlyCI2x3AldpppHi6cKlbUrpf5epTIwYkQ0LyIddZNVrNNmKUj9pq1nkh3vhav
+         ePFznWLS5KXHwuBhRZexeraVkFwzXRLP/38HX/OFwy/5mrR8Hs9LdC9PbwjoOwqbNV
+         ADgrJu7beLvyyJTcpsvn3lAsea5miSCymSsM2dL/H4uMyDHc1oqmdVcUWCHL7cYIF+
+         w+SQ6/88DMfNA==
+Received: by mail-yb1-f173.google.com with SMTP id q74so34927729ybq.11;
+        Sun, 31 Oct 2021 18:57:32 -0700 (PDT)
+X-Gm-Message-State: AOAM532NZZipZ4PmQd8aebdgMaPN+5gcICkzFLd/y8dVP59BicYUBfRR
+        GiO3PJt2T6KiHFhFuW8wOniKZgqQn/AFtYLfgjc=
+X-Google-Smtp-Source: ABdhPJwLzr48xvkbPUYNSwW4wG4jcRHULAsaxHDgvLOaeOhiDi1MY+7mZCeP1WaifSe+QfUYgjKQrdu4XIYT2pTMgvI=
+X-Received: by 2002:ab0:6883:: with SMTP id t3mr16913634uar.66.1635731841194;
+ Sun, 31 Oct 2021 18:57:21 -0700 (PDT)
 MIME-Version: 1.0
-References: <20211030175604.1716611-1-masahiroy@kernel.org> <20211030185339.GD7074@brightrain.aerifal.cx>
-In-Reply-To: <20211030185339.GD7074@brightrain.aerifal.cx>
-From:   Masahiro Yamada <masahiroy@kernel.org>
-Date:   Sun, 31 Oct 2021 04:02:03 +0900
-X-Gmail-Original-Message-ID: <CAK7LNARyg7t5Dz_bZwnv7CoOrEDiNkY6CVPoxPHSnBT8wARZqQ@mail.gmail.com>
-Message-ID: <CAK7LNARyg7t5Dz_bZwnv7CoOrEDiNkY6CVPoxPHSnBT8wARZqQ@mail.gmail.com>
-Subject: Re: [PATCH] sh: decompressor: do not copy source files while building
-To:     Rich Felker <dalias@libc.org>
-Cc:     Linux Kbuild mailing list <linux-kbuild@vger.kernel.org>,
-        patches@arm.linux.org.uk,
+References: <20211027211715.12671-1-digetx@gmail.com> <20211027211715.12671-13-digetx@gmail.com>
+In-Reply-To: <20211027211715.12671-13-digetx@gmail.com>
+From:   Guo Ren <guoren@kernel.org>
+Date:   Mon, 1 Nov 2021 09:57:10 +0800
+X-Gmail-Original-Message-ID: <CAJF2gTT+EsLt+pnYyTw_B0C8isho=E4tfOWROe9h-GZpYjET=w@mail.gmail.com>
+Message-ID: <CAJF2gTT+EsLt+pnYyTw_B0C8isho=E4tfOWROe9h-GZpYjET=w@mail.gmail.com>
+Subject: Re: [PATCH v2 12/45] csky: Use do_kernel_power_off()
+To:     Dmitry Osipenko <digetx@gmail.com>
+Cc:     Thierry Reding <thierry.reding@gmail.com>,
+        Jonathan Hunter <jonathanh@nvidia.com>,
+        Lee Jones <lee.jones@linaro.org>,
+        "Rafael J . Wysocki" <rafael@kernel.org>,
+        Mark Brown <broonie@kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Russell King <linux@armlinux.org.uk>,
+        Daniel Lezcano <daniel.lezcano@linaro.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Ulf Hansson <ulf.hansson@linaro.org>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Joshua Thompson <funaho@jurai.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Nick Hu <nickhu@andestech.com>,
+        Greentime Hu <green.hu@gmail.com>,
+        Vincent Chen <deanbo422@gmail.com>,
+        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
+        Juergen Gross <jgross@suse.com>,
+        Stefano Stabellini <sstabellini@kernel.org>,
+        Len Brown <lenb@kernel.org>,
+        Santosh Shilimkar <ssantosh@kernel.org>,
+        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Chen-Yu Tsai <wens@csie.org>,
+        =?UTF-8?Q?Jonathan_Neusch=C3=A4fer?= <j.neuschaefer@gmx.net>,
+        Tony Lindgren <tony@atomide.com>,
+        Liam Girdwood <lgirdwood@gmail.com>,
+        Philipp Zabel <p.zabel@pengutronix.de>,
+        Vladimir Zapolskiy <vz@mleia.com>,
+        Avi Fishman <avifishman70@gmail.com>,
+        Tomer Maimon <tmaimon77@gmail.com>,
+        Tali Perry <tali.perry1@gmail.com>,
+        Patrick Venture <venture@google.com>,
+        Nancy Yuen <yuenn@google.com>,
+        Benjamin Fair <benjaminfair@google.com>,
+        Pavel Machek <pavel@ucw.cz>,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
         Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>
+        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv <linux-riscv@lists.infradead.org>,
+        linux-sh@vger.kernel.org, xen-devel@lists.xenproject.org,
+        linux-acpi@vger.kernel.org, linux-omap@vger.kernel.org,
+        openbmc@lists.ozlabs.org, linux-tegra@vger.kernel.org,
+        linux-pm@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Sun, Oct 31, 2021 at 3:55 AM Rich Felker <dalias@libc.org> wrote:
+Only for this patch, Acked-by: Guo Ren <guoren@kernel.org>
+
+On Thu, Oct 28, 2021 at 5:18 AM Dmitry Osipenko <digetx@gmail.com> wrote:
 >
-> On Sun, Oct 31, 2021 at 02:56:04AM +0900, Masahiro Yamada wrote:
-> > As commit 7ae4a78daacf ("ARM: 8969/1: decompressor: simplify libfdt
-> > builds") stated, copying source files during the build time may not
-> > end up with as clean code as expected.
-> >
-> > Do similar for sh to clean up the Makefile and .gitignore.
-> >
-> > Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
-> > ---
+> Kernel now supports chained power-off handlers. Use do_kernel_power_off()
+> that invokes chained power-off handlers. It also invokes legacy
+> pm_power_off() for now, which will be removed once all drivers will
+> be converted to the new power-off API.
 >
-> I think this is the same as "sh: boot: avoid unneeded rebuilds under
-> arch/sh/boot/compressed/" in commit 7fe859eef9 in linux-next, which
-> I've had in next but with no pull request sent for embarrassingly
-> long. It will be included in the PR for the new release cycle.
+> Signed-off-by: Dmitry Osipenko <digetx@gmail.com>
+> ---
+>  arch/csky/kernel/power.c | 6 ++----
+>  1 file changed, 2 insertions(+), 4 deletions(-)
 >
-> Sorry about the long delay. Let me know if there's anything else I
-> need to know about it. And thanks for the patch.
+> diff --git a/arch/csky/kernel/power.c b/arch/csky/kernel/power.c
+> index 923ee4e381b8..86ee202906f8 100644
+> --- a/arch/csky/kernel/power.c
+> +++ b/arch/csky/kernel/power.c
+> @@ -9,16 +9,14 @@ EXPORT_SYMBOL(pm_power_off);
+>  void machine_power_off(void)
+>  {
+>         local_irq_disable();
+> -       if (pm_power_off)
+> -               pm_power_off();
+> +       do_kernel_power_off();
+>         asm volatile ("bkpt");
+>  }
 >
-> Rich
-
-Oh, I had forgotten it completely.
-
-That's good to hear you will send a pull req in the next MW.
-
-Thanks.
-
-
+>  void machine_halt(void)
+>  {
+>         local_irq_disable();
+> -       if (pm_power_off)
+> -               pm_power_off();
+> +       do_kernel_power_off();
+>         asm volatile ("bkpt");
+>  }
+>
+> --
+> 2.33.1
+>
 
 
 -- 
 Best Regards
-Masahiro Yamada
+ Guo Ren
+
+ML: https://lore.kernel.org/linux-csky/
