@@ -2,98 +2,185 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7563CC433EF
-	for <linux-sh@archiver.kernel.org>; Mon,  1 Nov 2021 19:10:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 91B5CC433EF
+	for <linux-sh@archiver.kernel.org>; Fri,  5 Nov 2021 13:03:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5D09260EBB
-	for <linux-sh@archiver.kernel.org>; Mon,  1 Nov 2021 19:10:26 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 77DEF60F38
+	for <linux-sh@archiver.kernel.org>; Fri,  5 Nov 2021 13:03:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231702AbhKATM7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 1 Nov 2021 15:12:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35418 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231378AbhKATM6 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 1 Nov 2021 15:12:58 -0400
-Received: from mail-qv1-xf30.google.com (mail-qv1-xf30.google.com [IPv6:2607:f8b0:4864:20::f30])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7E266C061764
-        for <linux-sh@vger.kernel.org>; Mon,  1 Nov 2021 12:10:24 -0700 (PDT)
-Received: by mail-qv1-xf30.google.com with SMTP id t1so11904555qvb.1
-        for <linux-sh@vger.kernel.org>; Mon, 01 Nov 2021 12:10:24 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linuxfoundation.org; s=google;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=9Yh5KAej115BOsmnCnzIqo/9ygAgu2wASV/OBA3KQsg=;
-        b=NqfKD7yCrDyqZTAqLkfFLKlHoQpuxs9uJpelMw1xnHrchWNzWIp/ea8Yze1viJ/TMn
-         KcB+8uaaJPnsstlTcnAZvZsI51p8dFpj8C3mHYQUUGUy8+zNacN16D1Lc6yJuz2Y3xiy
-         wj0qigu7U6IO0fnmq70SneI9wX2FqqDpJevU0=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=9Yh5KAej115BOsmnCnzIqo/9ygAgu2wASV/OBA3KQsg=;
-        b=fU+fk1Jw08OH7rIzSyGH4ZPGXekwYMxw4yrQ2V9GjbqokCxBhQtJp5VnfQy60haZHV
-         22RS+kTus0iT7ioeDsL3zVD0SuC+cz2YDYrQyG7y4pi+n/m0xvpqH4yzD9aYJY9xoZ3l
-         EqVg6lbhZc4vGs0wklTfAP9hIfmbpX4jmMsjo3hNyje/hfXE+s//iJ0D1Jxu4CK4Bbsh
-         nxA++o81z+rL2o8gMQw02abVlM+Z5b1HGKZtNCcu0Thc8XKZCyqmTJnb3Bthq6VT2OGX
-         kviErEDpXgigAQy3yPzQUuVB+h6cWNTSj1b7pcHniB/NM+B+xQMMY0Mj9bBl0xiSe2vf
-         qPOA==
-X-Gm-Message-State: AOAM532QYUs1Kw0Bk02wH4Ql5vIERQdGmlq3g75InJlvFxz2C4wZg6ae
-        mwzBA2UVINRDltDPiH8YPhrHmg==
-X-Google-Smtp-Source: ABdhPJxpBnWPwguqPFlWIYe36uOS4iP9xRrY7Mw/91d7GMwtvxUCMEDoyWLmmNZNaH8/dQEDvUjhGw==
-X-Received: by 2002:ad4:5b86:: with SMTP id 6mr11153060qvp.25.1635793823542;
-        Mon, 01 Nov 2021 12:10:23 -0700 (PDT)
-Received: from meerkat.local (bras-base-mtrlpq5031w-grc-32-216-209-220-181.dsl.bell.ca. [216.209.220.181])
-        by smtp.gmail.com with ESMTPSA id br17sm10815417qkb.10.2021.11.01.12.10.22
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 01 Nov 2021 12:10:23 -0700 (PDT)
-Date:   Mon, 1 Nov 2021 15:10:21 -0400
-From:   Konstantin Ryabitsev <konstantin@linuxfoundation.org>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Rich Felker <dalias@libc.org>,
-        Randy Dunlap <rdunlap@infradead.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Subject: Re: [PATCH 2/5 v3] sh: add git tree to MAINTAINERS
-Message-ID: <20211101191021.h674kgeuqi4qyhdu@meerkat.local>
-References: <20211005001914.28574-1-rdunlap@infradead.org>
- <20211005001914.28574-3-rdunlap@infradead.org>
- <20211027205431.GX7074@brightrain.aerifal.cx>
- <CAMuHMdWUQkhYxXfrG4MG-Ghi62P_XVxkCMb_6qijP-MMgn-JWg@mail.gmail.com>
- <20211028133049.GY7074@brightrain.aerifal.cx>
- <CAMuHMdUw=6RMF4gEhROMBwQALNmmKJgiKQLYymV4m75EZV+DJQ@mail.gmail.com>
+        id S232105AbhKENG1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 5 Nov 2021 09:06:27 -0400
+Received: from mail.kernel.org ([198.145.29.99]:60544 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S231239AbhKENG0 (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Fri, 5 Nov 2021 09:06:26 -0400
+Received: by mail.kernel.org (Postfix) with ESMTPSA id A43D160F9B;
+        Fri,  5 Nov 2021 13:03:43 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1636117427;
+        bh=GGdaqM4ZLemAr74nj3CO0oh8DGXzHO2ZiWpz2bA/Q3Q=;
+        h=From:To:Cc:Subject:Date:From;
+        b=u6myhAUt2cjOuDDabk6BRgRVtQ2o4mLVAZ4UlYg3DPrxXDPfMHXM1jsVdjGiBHxT9
+         XXJpwoesp2JI2fnL0o/BMzHzH24tn8VWwCELASFCiqGXao8YP+xDf67DurV72/c649
+         LVlfV/FgdsF9SguO9mRmIk/wkC6fO7D011U2+gy7TN25iXfGOL9NRyhOX6L2Qg5isx
+         VoWPnwMxoRp1gURGnAWZCjveQmd7MX9ObAsf9w16Z9AsWGfCKQHkALBcFE3KG03ziD
+         E9h0cGoY1kBdMGJ/JMj82kaORNJXT56Olfwo2tWTotYekHW9AaSO5n8cIJ6S6me1DC
+         EI2UBZMXpx/ug==
+From:   Arnd Bergmann <arnd@kernel.org>
+To:     linux-gpio@vger.kernel.org, Bartosz Golaszewski <brgl@bgdev.pl>,
+        Linus Walleij <linus.walleij@linaro.org>
+Cc:     linux-m68k@lists.linux-m68k.org, geert@linux-m68k.org,
+        gerg@linux-m68k.org, linux@armlinux.org.uk,
+        linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org,
+        dalias@libc.org, ysato@users.sourceforge.jp,
+        Arnd Bergmann <arnd@arndb.de>,
+        Fu Wei <tekkamanninja@gmail.com>, Alex Shi <alexs@kernel.org>,
+        Hu Haowen <src.res@email.cn>,
+        linux-doc-tw-discuss@lists.sourceforge.net,
+        Jonathan Corbet <corbet@lwn.net>,
+        Drew Fustini <drew@beagleboard.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [RFC 1/3] gpiolib: remove irq_to_gpio() definition
+Date:   Fri,  5 Nov 2021 14:03:03 +0100
+Message-Id: <20211105130338.241100-1-arnd@kernel.org>
+X-Mailer: git-send-email 2.29.2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <CAMuHMdUw=6RMF4gEhROMBwQALNmmKJgiKQLYymV4m75EZV+DJQ@mail.gmail.com>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Oct 28, 2021 at 03:37:47PM +0200, Geert Uytterhoeven wrote:
-> > > > I'm omitting this for now since (as noted on the cgit description)
-> > > > this server is not provisioned adequately for cloning from scratch,
-> > > > and should only be used for fetch into an already-populated mainline
-> > > > repo clone. If that's a problem I can see about getting it moved
-> > > > somewhere more appropriate.
-> > >
-> > > Perhaps you can move it to kernel.org?
-> >
-> > I would love to. This was my hope years ago, but I got bogged down in
-> > the GPG key signing requirements and folks not following through with
-> > signing my key. Has any of that been streamlined since?
-> 
-> I'll let Konstantin respond...
+From: Arnd Bergmann <arnd@arndb.de>
 
-We still require a valid web of trust before we can issue an account, so
-things haven't really changed in that regard. You have to get a PGP signature
-from at least 2 other people who already have an account on kernel.org.
+All implementations other than coldfire have returned an error since
+the avr32 and blackfin architectures got removed, and the last user in
+driver code was removed in 2016, so just remove this old interface.
 
-If you just need to host your git tree for hosting and sending pull requests,
-then there's really no lack of options. Any large commercial git forge will
-do just fine, including github, gitlab, gitea, sourcehut, etc. There's nothing
-really special about kernel.org in this regard.
+The only reference is now in the Chinese documentation, which should be
+changed to remove this reference as well.
 
--K
+Cc: Fu Wei <tekkamanninja@gmail.com>
+Cc: Alex Shi <alexs@kernel.org>
+Cc: Hu Haowen <src.res@email.cn>
+Cc: linux-doc-tw-discuss@lists.sourceforge.net
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ Documentation/driver-api/gpio/legacy.rst | 20 +++++---------------
+ arch/m68k/include/asm/gpio.h             |  7 -------
+ arch/sh/include/asm/gpio.h               |  5 -----
+ include/linux/gpio.h                     | 12 ------------
+ 4 files changed, 5 insertions(+), 39 deletions(-)
+
+diff --git a/Documentation/driver-api/gpio/legacy.rst b/Documentation/driver-api/gpio/legacy.rst
+index 9b12eeb89170..06c05e2d62c1 100644
+--- a/Documentation/driver-api/gpio/legacy.rst
++++ b/Documentation/driver-api/gpio/legacy.rst
+@@ -382,22 +382,18 @@ GPIOs mapped to IRQs
+ --------------------
+ GPIO numbers are unsigned integers; so are IRQ numbers.  These make up
+ two logically distinct namespaces (GPIO 0 need not use IRQ 0).  You can
+-map between them using calls like::
++map between them using::
+ 
+ 	/* map GPIO numbers to IRQ numbers */
+ 	int gpio_to_irq(unsigned gpio);
+ 
+-	/* map IRQ numbers to GPIO numbers (avoid using this) */
+-	int irq_to_gpio(unsigned irq);
+-
+-Those return either the corresponding number in the other namespace, or
++This returns an irq number corresponding to the gpio number, or
+ else a negative errno code if the mapping can't be done.  (For example,
+ some GPIOs can't be used as IRQs.)  It is an unchecked error to use a GPIO
+-number that wasn't set up as an input using gpio_direction_input(), or
+-to use an IRQ number that didn't originally come from gpio_to_irq().
++number that wasn't set up as an input using gpio_direction_input().
+ 
+-These two mapping calls are expected to cost on the order of a single
+-addition or subtraction.  They're not allowed to sleep.
++The mapping call is expected to cost on the order of a single
++addition or subtraction.  It is not allowed to sleep.
+ 
+ Non-error values returned from gpio_to_irq() can be passed to request_irq()
+ or free_irq().  They will often be stored into IRQ resources for platform
+@@ -405,12 +401,6 @@ devices, by the board-specific initialization code.  Note that IRQ trigger
+ options are part of the IRQ interface, e.g. IRQF_TRIGGER_FALLING, as are
+ system wakeup capabilities.
+ 
+-Non-error values returned from irq_to_gpio() would most commonly be used
+-with gpio_get_value(), for example to initialize or update driver state
+-when the IRQ is edge-triggered.  Note that some platforms don't support
+-this reverse mapping, so you should avoid using it.
+-
+-
+ Emulating Open Drain Signals
+ ----------------------------
+ Sometimes shared signals need to use "open drain" signaling, where only the
+diff --git a/arch/m68k/include/asm/gpio.h b/arch/m68k/include/asm/gpio.h
+index a50b27719a58..5cfc0996ba94 100644
+--- a/arch/m68k/include/asm/gpio.h
++++ b/arch/m68k/include/asm/gpio.h
+@@ -66,13 +66,6 @@ static inline int gpio_to_irq(unsigned gpio)
+ 		return __gpio_to_irq(gpio);
+ }
+ 
+-static inline int irq_to_gpio(unsigned irq)
+-{
+-	return (irq >= MCFGPIO_IRQ_VECBASE &&
+-		irq < (MCFGPIO_IRQ_VECBASE + MCFGPIO_IRQ_MAX)) ?
+-		irq - MCFGPIO_IRQ_VECBASE : -ENXIO;
+-}
+-
+ static inline int gpio_cansleep(unsigned gpio)
+ {
+ 	return gpio < MCFGPIO_PIN_MAX ? 0 : __gpio_cansleep(gpio);
+diff --git a/arch/sh/include/asm/gpio.h b/arch/sh/include/asm/gpio.h
+index d643250f0a0f..588c1380e4cb 100644
+--- a/arch/sh/include/asm/gpio.h
++++ b/arch/sh/include/asm/gpio.h
+@@ -40,11 +40,6 @@ static inline int gpio_to_irq(unsigned gpio)
+ 	return __gpio_to_irq(gpio);
+ }
+ 
+-static inline int irq_to_gpio(unsigned int irq)
+-{
+-	return -ENOSYS;
+-}
+-
+ #endif /* CONFIG_GPIOLIB */
+ 
+ #endif /* __ASM_SH_GPIO_H */
+diff --git a/include/linux/gpio.h b/include/linux/gpio.h
+index 008ad3ee56b7..d8d7daa7eb94 100644
+--- a/include/linux/gpio.h
++++ b/include/linux/gpio.h
+@@ -81,11 +81,6 @@ static inline int gpio_to_irq(unsigned int gpio)
+ 	return __gpio_to_irq(gpio);
+ }
+ 
+-static inline int irq_to_gpio(unsigned int irq)
+-{
+-	return -EINVAL;
+-}
+-
+ #endif /* ! CONFIG_ARCH_HAVE_CUSTOM_GPIO_H */
+ 
+ /* CONFIG_GPIOLIB: bindings for managed devices that want to request gpios */
+@@ -219,13 +214,6 @@ static inline int gpio_to_irq(unsigned gpio)
+ 	return -EINVAL;
+ }
+ 
+-static inline int irq_to_gpio(unsigned irq)
+-{
+-	/* irq can never have been returned from gpio_to_irq() */
+-	WARN_ON(1);
+-	return -EINVAL;
+-}
+-
+ static inline int devm_gpio_request(struct device *dev, unsigned gpio,
+ 				    const char *label)
+ {
+-- 
+2.29.2
+
