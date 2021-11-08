@@ -2,103 +2,83 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E2B8CC433FE
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 08:24:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3FF9EC433F5
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 10:13:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id BFB5D6124D
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 08:24:38 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 259B2611C4
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 10:13:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235718AbhKHI1V (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 8 Nov 2021 03:27:21 -0500
-Received: from mail-ua1-f51.google.com ([209.85.222.51]:39585 "EHLO
-        mail-ua1-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231292AbhKHI1V (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 8 Nov 2021 03:27:21 -0500
-Received: by mail-ua1-f51.google.com with SMTP id i6so29850951uae.6;
-        Mon, 08 Nov 2021 00:24:37 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=w9sUPN7cAUF5xiuU1BT+J3vFbVAyYdqsKrT0vTW8DYQ=;
-        b=uZqLMOjQrLUJGbG3IMqPkSxems3Ik37chOGEpo1QwvJRYZIplxF4INVk83wrfibMPA
-         AMkQuvyAyRGlrf8YdS8F59y+YhfSk9+iqpEgRN5SB6Sei/aNmsnIwZhmvT2grDpHeuF+
-         1+bZ8Hjn+OSE8GFhT94QzY39ob1g2DhY/+G2a5Enm11U+5gBxspLYToDICuKo6Ydi/GS
-         jJ3XxnDd+pM6AN6RQHbhH+gHR/besGXSNtxHK9g7dyLCo6PVcPPtpIEBt1xqxB/qocyV
-         oT38+RwluhxGVWO47VoakFZof/Z9T88t57F2CSsVK+FLtA3d21ndQlk15teXCz6whE8J
-         SalQ==
-X-Gm-Message-State: AOAM5314NkmXRonQT02UYzV1G8A39NC/nzW/LTObYrKPCy6u+kZMN/M1
-        8zj+4/69ASTd3NRYFcpUljAtT6vfQ5cXuw==
-X-Google-Smtp-Source: ABdhPJwDks120mr2eiKe41A7Y1SWFITuBei9Pr+JkPC4GlOLr1ctMM3zZpRY2540A+Rp1Zbqywi3Ig==
-X-Received: by 2002:a05:6102:2910:: with SMTP id cz16mr35829503vsb.9.1636359876423;
-        Mon, 08 Nov 2021 00:24:36 -0800 (PST)
-Received: from mail-ua1-f49.google.com (mail-ua1-f49.google.com. [209.85.222.49])
-        by smtp.gmail.com with ESMTPSA id k185sm3010770vsc.21.2021.11.08.00.24.35
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 08 Nov 2021 00:24:36 -0800 (PST)
-Received: by mail-ua1-f49.google.com with SMTP id b3so29940201uam.1;
-        Mon, 08 Nov 2021 00:24:35 -0800 (PST)
-X-Received: by 2002:a67:c38f:: with SMTP id s15mr38275693vsj.50.1636359875569;
- Mon, 08 Nov 2021 00:24:35 -0800 (PST)
+        id S234158AbhKHKP7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 8 Nov 2021 05:15:59 -0500
+Received: from mail.skyhub.de ([5.9.137.197]:38518 "EHLO mail.skyhub.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S237913AbhKHKPV (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Mon, 8 Nov 2021 05:15:21 -0500
+Received: from zn.tnic (p200300ec2f33110088892b77bd117736.dip0.t-ipconnect.de [IPv6:2003:ec:2f33:1100:8889:2b77:bd11:7736])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.skyhub.de (SuperMail on ZX Spectrum 128k) with ESMTPSA id DA9DC1EC0523;
+        Mon,  8 Nov 2021 11:12:35 +0100 (CET)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=alien8.de; s=dkim;
+        t=1636366356;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=6udaEpyG8h+J9wXmKHEY7Likmk6gPzBuHNHMnjS5i9I=;
+        b=G70gieGbrDi80a4ea+alShmWaZEh/CzfR9/ZMcmuuUX2GmpeyZsCEhKNpUW9ELcwZBC6Tf
+        tPumkuqo9DxF2gxOQi3DakERJnbJCkSh87UubytVLuva0Eoyp3J+taG4aMAzuYA98iqCmS
+        +lGzt7IMi0DoDp1t+FC4ceXTSuaUywo=
+From:   Borislav Petkov <bp@alien8.de>
+To:     LKML <linux-kernel@vger.kernel.org>
+Cc:     linux-sh@vger.kernel.org
+Subject: [PATCH v0 35/42] sh: Check notifier registration return value
+Date:   Mon,  8 Nov 2021 11:11:50 +0100
+Message-Id: <20211108101157.15189-36-bp@alien8.de>
+X-Mailer: git-send-email 2.29.2
+In-Reply-To: <20211108101157.15189-1-bp@alien8.de>
+References: <20211108101157.15189-1-bp@alien8.de>
 MIME-Version: 1.0
-References: <20211105130338.241100-1-arnd@kernel.org> <20211105130338.241100-3-arnd@kernel.org>
-In-Reply-To: <20211105130338.241100-3-arnd@kernel.org>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 8 Nov 2021 09:24:24 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdX=e5HB8gh25DMbrbUHagS9eOQokbjneJTY6HrSSf4Njw@mail.gmail.com>
-Message-ID: <CAMuHMdX=e5HB8gh25DMbrbUHagS9eOQokbjneJTY6HrSSf4Njw@mail.gmail.com>
-Subject: Re: [RFC 3/3] gpiolib: coldfire: remove custom asm/gpio.h
-To:     Arnd Bergmann <arnd@kernel.org>
-Cc:     "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>,
-        Bartosz Golaszewski <brgl@bgdev.pl>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        linux-m68k <linux-m68k@lists.linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Arnd,
+From: Borislav Petkov <bp@suse.de>
 
-On Fri, Nov 5, 2021 at 2:05 PM Arnd Bergmann <arnd@kernel.org> wrote:
-> From: Arnd Bergmann <arnd@arndb.de>
->
-> Now that coldfire is the only user of a custom asm/gpio.h, it seems
-> better to remove this as well, and have the same interface everywhere.
->
-> For the gpio_get_value()/gpio_set_value()/gpio_to_irq(), gpio_cansleep()
-> functions, the custom version is only a micro-optimization to inline the
-> function for constant GPIO numbers. However, in the coldfire defconfigs,
-> I was unable to find a single instance where this micro-optimization
-> was even used, so to my best knowledge removing this has no downsides.
+Avoid homegrown notifier registration checks.
 
-The only user seems to be QSPI chip select handling (not bit-banged
-data transfer) in arch/m68k/coldfire/device.c, but that indeed depends
-on CONFIG_SPI_COLDFIRE_QSPI, which is not set in any of the defconfigs.
-That doesn't mean there were/are no real users, though ;-)
+No functional changes.
 
-> The custom gpio_request_one() function is even less useful, as it is
-> guarded by an #ifdef that is never true.
->
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Borislav Petkov <bp@suse.de>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
 
-Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index 0d990ab1ba2a..8dfbb8149f66 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -1277,11 +1277,14 @@ static struct notifier_block sh7724_post_sleep_notifier = {
+ 
+ static int __init sh7724_sleep_setup(void)
+ {
+-	atomic_notifier_chain_register(&sh_mobile_pre_sleep_notifier_list,
+-				       &sh7724_pre_sleep_notifier);
++	if (atomic_notifier_chain_register(&sh_mobile_pre_sleep_notifier_list,
++					   &sh7724_pre_sleep_notifier))
++		pr_warn("SH7724 pre-sleep notifier already registered\n");
++
++	if (atomic_notifier_chain_register(&sh_mobile_post_sleep_notifier_list,
++					   &sh7724_post_sleep_notifier))
++		pr_warn("SH7724 pre-sleep notifier already registered\n");
+ 
+-	atomic_notifier_chain_register(&sh_mobile_post_sleep_notifier_list,
+-				       &sh7724_post_sleep_notifier);
+ 	return 0;
+ }
+ arch_initcall(sh7724_sleep_setup);
+-- 
+2.29.2
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
