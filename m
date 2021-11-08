@@ -2,105 +2,63 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A3783C433F5
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 13:31:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E347C433F5
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 13:49:41 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 83633611C0
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 13:31:57 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 82D6C6124D
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 13:49:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236934AbhKHNej (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 8 Nov 2021 08:34:39 -0500
-Received: from mail-ua1-f51.google.com ([209.85.222.51]:42832 "EHLO
-        mail-ua1-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235098AbhKHNei (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 8 Nov 2021 08:34:38 -0500
-Received: by mail-ua1-f51.google.com with SMTP id t13so16130248uad.9;
-        Mon, 08 Nov 2021 05:31:54 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=917ou4i0m8XwTRLtSzLNb+jh838cky8jWcxVoB+CqOM=;
-        b=Pw3i+weyc7+jUFjiqgja4nmIGiQYkp+hTDI9tUVPtfM/z0qZ/4yhUYz846TFW/iUJE
-         8aZiIZxOJIJtcYDjBO0eZw31R4ld/ywvH5oMBRjH8uCeCTGw3OIYAu0TUmEvL6ueUne/
-         1HnChVid6if+SoM/P5I3r6J8pUDJWBSnVKgaEaJiHHeVunGHmT7XqkpyWVFVRUqup7eq
-         /e8uYLF186k+tLqbbRBuWImk5nNh91VBdX1tOA/TDh1l8a3+yBJBR/VZfxG0HOV2YmLi
-         CUKZC9kmBWQP4XrfpDcHA4DirB+LRlijSkYt4jGKbYlX9gm8pPWYVqmwv7U5uBDD/314
-         XFTg==
-X-Gm-Message-State: AOAM532clrUNDaatOchmCe/ok3705337hD8ueOonSizazkXGJ/I7V0Af
-        9ehEs0k4btdHQNvPPOA8Nl/0LxreMt2R3g==
-X-Google-Smtp-Source: ABdhPJw47zlIxwJ71J54+Vg0Z9l+bDbF+0CIPJ1roBry8M2Jopz/D+M+TAU28p0fM6RDPn+bbdJIiA==
-X-Received: by 2002:a67:5f47:: with SMTP id t68mr33706564vsb.56.1636378313578;
-        Mon, 08 Nov 2021 05:31:53 -0800 (PST)
-Received: from mail-ua1-f44.google.com (mail-ua1-f44.google.com. [209.85.222.44])
-        by smtp.gmail.com with ESMTPSA id q9sm1026020vkn.44.2021.11.08.05.31.53
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 08 Nov 2021 05:31:53 -0800 (PST)
-Received: by mail-ua1-f44.google.com with SMTP id l43so31453031uad.4;
-        Mon, 08 Nov 2021 05:31:53 -0800 (PST)
-X-Received: by 2002:a67:c38f:: with SMTP id s15mr40867953vsj.50.1636378313058;
- Mon, 08 Nov 2021 05:31:53 -0800 (PST)
-MIME-Version: 1.0
-References: <20211108101157.15189-1-bp@alien8.de> <20211108101157.15189-36-bp@alien8.de>
-In-Reply-To: <20211108101157.15189-36-bp@alien8.de>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 8 Nov 2021 14:31:41 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdW4fv4LN6oDS6qgYodf74_NvbzMxQfRbtnS-mn_D+u7Kg@mail.gmail.com>
-Message-ID: <CAMuHMdW4fv4LN6oDS6qgYodf74_NvbzMxQfRbtnS-mn_D+u7Kg@mail.gmail.com>
-Subject: Re: [PATCH v0 35/42] sh: Check notifier registration return value
-To:     Borislav Petkov <bp@alien8.de>
+        id S237949AbhKHNwZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 8 Nov 2021 08:52:25 -0500
+Received: from mail.skyhub.de ([5.9.137.197]:45032 "EHLO mail.skyhub.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S237802AbhKHNwY (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Mon, 8 Nov 2021 08:52:24 -0500
+Received: from zn.tnic (p200300ec2f33110093973d8dfcf40fd9.dip0.t-ipconnect.de [IPv6:2003:ec:2f33:1100:9397:3d8d:fcf4:fd9])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mail.skyhub.de (SuperMail on ZX Spectrum 128k) with ESMTPSA id 467971EC0464;
+        Mon,  8 Nov 2021 14:49:39 +0100 (CET)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=alien8.de; s=dkim;
+        t=1636379379;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:in-reply-to:in-reply-to:  references:references;
+        bh=rKv0RtlSLo3j/2hTxdXNr6Rql/ET5rRqLoq4AI6m/cg=;
+        b=iYTDXbpYg9a2gtqmYlY4XP7MM39DNh4FCx9OFVWowie0Z5HxAnSB/na2Gj3dQrxt0efOZr
+        KBnyTmpi7qVEquTydmA9RQJX9cp3wt2QPeJvnC8UueJ0cyUP5W3iGMt1qITSW0ZkJvDggY
+        rteuXDaJZhJ6Xbm8KjNI1Lft43gSrsc=
+Date:   Mon, 8 Nov 2021 14:49:33 +0100
+From:   Borislav Petkov <bp@alien8.de>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
 Cc:     LKML <linux-kernel@vger.kernel.org>,
         Linux-sh list <linux-sh@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Subject: Re: [PATCH v0 35/42] sh: Check notifier registration return value
+Message-ID: <YYkq7WbmNXNgiqv9@zn.tnic>
+References: <20211108101157.15189-1-bp@alien8.de>
+ <20211108101157.15189-36-bp@alien8.de>
+ <CAMuHMdW4fv4LN6oDS6qgYodf74_NvbzMxQfRbtnS-mn_D+u7Kg@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <CAMuHMdW4fv4LN6oDS6qgYodf74_NvbzMxQfRbtnS-mn_D+u7Kg@mail.gmail.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Borislav,
+On Mon, Nov 08, 2021 at 02:31:41PM +0100, Geert Uytterhoeven wrote:
+> Do you think these can actually fail?
 
-On Mon, Nov 8, 2021 at 1:50 PM Borislav Petkov <bp@alien8.de> wrote:
-> From: Borislav Petkov <bp@suse.de>
->
-> Avoid homegrown notifier registration checks.
->
-> No functional changes.
->
-> Signed-off-by: Borislav Petkov <bp@suse.de>
+Hmm, maybe you missed the 0th message. Does this explain it:
 
-Thanks for your patch!
+https://lore.kernel.org/r/20211108101924.15759-1-bp@alien8.de
 
-> --- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-> +++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-> @@ -1277,11 +1277,14 @@ static struct notifier_block sh7724_post_sleep_notifier = {
->
->  static int __init sh7724_sleep_setup(void)
->  {
-> -       atomic_notifier_chain_register(&sh_mobile_pre_sleep_notifier_list,
-> -                                      &sh7724_pre_sleep_notifier);
-> +       if (atomic_notifier_chain_register(&sh_mobile_pre_sleep_notifier_list,
-> +                                          &sh7724_pre_sleep_notifier))
-> +               pr_warn("SH7724 pre-sleep notifier already registered\n");
-> +
-> +       if (atomic_notifier_chain_register(&sh_mobile_post_sleep_notifier_list,
-> +                                          &sh7724_post_sleep_notifier))
-> +               pr_warn("SH7724 pre-sleep notifier already registered\n");
+?
 
-Do you think these can actually fail?
+Thx.
 
->
-> -       atomic_notifier_chain_register(&sh_mobile_post_sleep_notifier_list,
-> -                                      &sh7724_post_sleep_notifier);
->         return 0;
->  }
->  arch_initcall(sh7724_sleep_setup);
+-- 
+Regards/Gruss,
+    Boris.
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+https://people.kernel.org/tglx/notes-about-netiquette
