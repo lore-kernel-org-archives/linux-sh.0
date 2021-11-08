@@ -2,123 +2,94 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7125CC4167B
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 07:47:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 09011C433F5
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 07:52:02 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 5710E61075
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 07:47:35 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DAA3961208
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 07:52:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236579AbhKHHuR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 8 Nov 2021 02:50:17 -0500
-Received: from mail-qk1-f170.google.com ([209.85.222.170]:46929 "EHLO
-        mail-qk1-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235081AbhKHHuQ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 8 Nov 2021 02:50:16 -0500
-Received: by mail-qk1-f170.google.com with SMTP id bl12so14637691qkb.13;
-        Sun, 07 Nov 2021 23:47:32 -0800 (PST)
+        id S229813AbhKHHyo (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 8 Nov 2021 02:54:44 -0500
+Received: from mail-ua1-f43.google.com ([209.85.222.43]:36555 "EHLO
+        mail-ua1-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S234532AbhKHHyo (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 8 Nov 2021 02:54:44 -0500
+Received: by mail-ua1-f43.google.com with SMTP id e10so29773371uab.3;
+        Sun, 07 Nov 2021 23:52:00 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=niQCVpji9nu8a8Mfie3ofua8MkF1HzpLuS22ys5pvwg=;
-        b=QxhKC3BH6UKmsf+en5LDsE2LBeZaA/X8MZ852CifiBk7lxKwvvQ8DvQzVCJxpn5NLP
-         sUafxXkCujdPkXdjCp08V3qdDG7N1+RyuQ4yRaYSXr9VC8emQREANOjzOZyjMa/6MyZ1
-         ebyXOdDFecNFXOnOI9KCznfXjls9NSdbdlYPIqzXgQKeYmXawyeNbqPk+wpw/iM3p8Qz
-         GYnZJI/gOifPb+tn1N/ez25v3Z+EZKbOTcnsyGCUaB1vQAwldUQHRYwqwJ4JsbCGpA52
-         q/cZpzUYpazcuYCAjvlNWmBhpUmXw2FumJQh7RMmwOl9AidSO6dCrA3Tw6e+d4XChmpJ
-         S2qQ==
-X-Gm-Message-State: AOAM533Ndj5HCg9s4l2OPPgz513/MnYueo8JLiwpRssuUn55AVtH5Ycg
-        pSYGW71BTe5t90Ouy0Kgyqyh+38S0qx3Jg==
-X-Google-Smtp-Source: ABdhPJwQvMewvRjNbN/c0TXq4JonZhcv8d7XAj6/kChLjlMOwqYn6iZDfJo4XDnr1yHj+M1GgRMQ2Q==
-X-Received: by 2002:a05:620a:752:: with SMTP id i18mr6713068qki.453.1636357651412;
-        Sun, 07 Nov 2021 23:47:31 -0800 (PST)
-Received: from mail-qv1-f41.google.com (mail-qv1-f41.google.com. [209.85.219.41])
-        by smtp.gmail.com with ESMTPSA id s13sm5045006qtw.33.2021.11.07.23.47.31
+        bh=xKY+F1Oxez66TS15siDD/nDvyuOA050VB5MhJkhC4js=;
+        b=dS4E3Q/o2uDX2Y20IG2eiVT+nM4T5emZXzNaFAbZXVmxJp6olBgUXjpknAAUnqCswc
+         s5um4aIGj4wvaCZ22PmKhsVayZl/Fuma2e7HgnbXku/mSbFN2lj7NrUe649GDwL7eG48
+         9EA06Iu+AFIaR7l916gKtSkDZHAShmB8T+wfOqxoyfwOLq/CzFLJzJqjJ4iGzHb+WSZw
+         EP4ItqAzlJ6cs5IXGgRJCWpYxY6Kwnn/ErCHv+DM7xn+ety+xr1Q6El4xmLIwEVqdUHK
+         ROqH7l0D48x4Hyhcc5je1b0KznTRH8OR9quQs0OAxqcgRp2drjCQLI308pwlcfhpUoms
+         gmSQ==
+X-Gm-Message-State: AOAM533Yz2UNjF7LM9fNMUv79PHalRFGLc6se0FeEsBAqRJKMdX1RBLO
+        Gicm066+9SsYc8/T7eUmbYw+wY+WBinHFg==
+X-Google-Smtp-Source: ABdhPJy8Sgy5mQ0bQ8+gCYfiHg+QxjFLV/yedV5iZInDh2rqcNrK93e2xaaev7lEvbk5Hs3unKnchA==
+X-Received: by 2002:a67:ca92:: with SMTP id a18mr10177211vsl.11.1636357919693;
+        Sun, 07 Nov 2021 23:51:59 -0800 (PST)
+Received: from mail-ua1-f54.google.com (mail-ua1-f54.google.com. [209.85.222.54])
+        by smtp.gmail.com with ESMTPSA id t12sm2452517vkk.52.2021.11.07.23.51.57
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 07 Nov 2021 23:47:31 -0800 (PST)
-Received: by mail-qv1-f41.google.com with SMTP id gh1so11375219qvb.8;
-        Sun, 07 Nov 2021 23:47:31 -0800 (PST)
-X-Received: by 2002:a05:6102:3a07:: with SMTP id b7mr71214037vsu.35.1636357641114;
- Sun, 07 Nov 2021 23:47:21 -0800 (PST)
+        Sun, 07 Nov 2021 23:51:58 -0800 (PST)
+Received: by mail-ua1-f54.google.com with SMTP id q13so29786374uaq.2;
+        Sun, 07 Nov 2021 23:51:57 -0800 (PST)
+X-Received: by 2002:a67:c38f:: with SMTP id s15mr38079054vsj.50.1636357917661;
+ Sun, 07 Nov 2021 23:51:57 -0800 (PST)
 MIME-Version: 1.0
-References: <20211108004524.29465-1-digetx@gmail.com> <20211108004524.29465-22-digetx@gmail.com>
-In-Reply-To: <20211108004524.29465-22-digetx@gmail.com>
+References: <20211105130338.241100-1-arnd@kernel.org>
+In-Reply-To: <20211105130338.241100-1-arnd@kernel.org>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 8 Nov 2021 08:47:10 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdXpW0389_uJR2xg+HCstXanutPxrcRdvgu8kxH1J9T++w@mail.gmail.com>
-Message-ID: <CAMuHMdXpW0389_uJR2xg+HCstXanutPxrcRdvgu8kxH1J9T++w@mail.gmail.com>
-Subject: Re: [PATCH v3 21/25] m68k: Switch to new sys-off handler API
-To:     Dmitry Osipenko <digetx@gmail.com>
-Cc:     Thierry Reding <thierry.reding@gmail.com>,
-        Jonathan Hunter <jonathanh@nvidia.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+Date:   Mon, 8 Nov 2021 08:51:46 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdX+jb+aZHPcJ1XeEawjEwwT+VJ=YVtQnVcr=kJtnG_shw@mail.gmail.com>
+Message-ID: <CAMuHMdX+jb+aZHPcJ1XeEawjEwwT+VJ=YVtQnVcr=kJtnG_shw@mail.gmail.com>
+Subject: Re: [RFC 1/3] gpiolib: remove irq_to_gpio() definition
+To:     Arnd Bergmann <arnd@kernel.org>
+Cc:     "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>,
+        Bartosz Golaszewski <brgl@bgdev.pl>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
         Greg Ungerer <gerg@linux-m68k.org>,
-        Joshua Thompson <funaho@jurai.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Nick Hu <nickhu@andestech.com>,
-        Greentime Hu <green.hu@gmail.com>,
-        Vincent Chen <deanbo422@gmail.com>,
-        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Russell King <linux@armlinux.org.uk>,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
         Rich Felker <dalias@libc.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        "the arch/x86 maintainers" <x86@kernel.org>,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
-        Juergen Gross <jgross@suse.com>,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        "Rafael J. Wysocki" <rafael@kernel.org>,
-        Len Brown <lenb@kernel.org>,
-        Santosh Shilimkar <ssantosh@kernel.org>,
-        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
-        Liam Girdwood <lgirdwood@gmail.com>,
-        Mark Brown <broonie@kernel.org>, Pavel Machek <pavel@ucw.cz>,
-        Lee Jones <lee.jones@linaro.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Daniel Lezcano <daniel.lezcano@linaro.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Fu Wei <tekkamanninja@gmail.com>, Alex Shi <alexs@kernel.org>,
+        Hu Haowen <src.res@email.cn>,
+        linux-doc-tw-discuss@lists.sourceforge.net,
+        Jonathan Corbet <corbet@lwn.net>,
+        Drew Fustini <drew@beagleboard.org>,
         Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Ulf Hansson <ulf.hansson@linaro.org>,
-        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
-        xen-devel@lists.xenproject.org, linux-acpi@vger.kernel.org,
-        linux-pm@vger.kernel.org, linux-tegra@vger.kernel.org
+        "open list:DOCUMENTATION" <linux-doc@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Nov 8, 2021 at 1:48 AM Dmitry Osipenko <digetx@gmail.com> wrote:
-> Kernel now supports chained power-off handlers. Use
-> register_power_off_handler() that registers power-off handlers and
-> do_kernel_power_off() that invokes chained power-off handlers. Legacy
-> pm_power_off() will be removed once all drivers will be converted to
-> the new power-off API.
+On Fri, Nov 5, 2021 at 2:03 PM Arnd Bergmann <arnd@kernel.org> wrote:
+> From: Arnd Bergmann <arnd@arndb.de>
 >
-> Normally arch code should adopt only the do_kernel_power_off() at first,
-> but m68k is a special case because it uses pm_power_off() "inside out",
-> i.e. pm_power_off() invokes machine_power_off() [in fact it does nothing],
-> while it's machine_power_off() that should invoke the pm_power_off(), and
-> thus, we can't convert platforms to the new API separately. There are only
-> two platforms changed here, so it's not a big deal.
+> All implementations other than coldfire have returned an error since
+> the avr32 and blackfin architectures got removed, and the last user in
+> driver code was removed in 2016, so just remove this old interface.
 >
-> Signed-off-by: Dmitry Osipenko <digetx@gmail.com>
+> The only reference is now in the Chinese documentation, which should be
+> changed to remove this reference as well.
+>
+> Cc: Fu Wei <tekkamanninja@gmail.com>
+> Cc: Alex Shi <alexs@kernel.org>
+> Cc: Hu Haowen <src.res@email.cn>
+> Cc: linux-doc-tw-discuss@lists.sourceforge.net
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
 Gr{oetje,eeting}s,
 
