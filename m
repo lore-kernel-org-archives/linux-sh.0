@@ -2,148 +2,105 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E9A3C43217
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 11:36:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A3783C433F5
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 13:31:57 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 3603261159
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 11:36:50 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 83633611C0
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 13:31:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239264AbhKHLjc (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 8 Nov 2021 06:39:32 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57994 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230235AbhKHLja (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 8 Nov 2021 06:39:30 -0500
-Received: from mail-lj1-x232.google.com (mail-lj1-x232.google.com [IPv6:2a00:1450:4864:20::232])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 31329C061714;
-        Mon,  8 Nov 2021 03:36:46 -0800 (PST)
-Received: by mail-lj1-x232.google.com with SMTP id d11so7696680ljg.8;
-        Mon, 08 Nov 2021 03:36:46 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=X+QlLlo/0/3EVdBxA2kw9RSD+7dI68j0akmWtlfHVoc=;
-        b=aZVzW8uInA8LU/x+WSDcs8GL423pa/2TbHlNFMZCd9U6UTTINhRxHwWgMG+VIGRFXX
-         YHsHS1Zp8SLg7g0I8x9US08hxM80ZghlJabXZBFwbjt/NZTi8D93A6u3DdWQsriGAEMv
-         bFmB7LTf3DQwVbSm6WogHRt9oYdTZJJwV6Cdja/STeDW7/10QbzkyuPD5z+/FAuGPwej
-         XDOG6vFO/moWThDJAR559rbcfRfK+AgOLrilun42rQLGkujwn1pckpcm4TgSB3WIb1LP
-         WWP0u+S7lmnv27N0vKhUH9Av/RJV5C0NJsxi8Lo9cU/Zh/pB4HH/qd8XqYWZNDXsqTHX
-         YlNA==
+        id S236934AbhKHNej (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 8 Nov 2021 08:34:39 -0500
+Received: from mail-ua1-f51.google.com ([209.85.222.51]:42832 "EHLO
+        mail-ua1-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235098AbhKHNei (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 8 Nov 2021 08:34:38 -0500
+Received: by mail-ua1-f51.google.com with SMTP id t13so16130248uad.9;
+        Mon, 08 Nov 2021 05:31:54 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=X+QlLlo/0/3EVdBxA2kw9RSD+7dI68j0akmWtlfHVoc=;
-        b=KWZdk7RIX27jzq4RWHkl++6p6t82eepplG51Hg6iBlvnXdeiNGg5mWFtBTgM55fD7r
-         XaIcxM0I9HVYSuwEcBCiArXlfnjus7cT9ZZ6iMzQF2pJKl4TpaiZpgKqRZH7d3DEo4Dn
-         uvhpIT2CpKXKxDgJ/yBdCo1CWE8bTJqe7wdeVeEhl5iwBR/NsMnhlMhwyIJKj8NKcQrq
-         IWba0h+ROl9jelRGhDswgqd4dLCsuPegDv//UT7Hzc6OQKftauIME2n+0p/8opchtOcN
-         QJ8Z+DkbR+WsvH7yCQBhWIuqXTl3AYGiG0kohknrg8xW+MA86Ja7rV7VJQDBR6pi66gG
-         09dA==
-X-Gm-Message-State: AOAM5318fCuZW4f5bQvwbv1aWwofiCGjZ7druMr/mD/F+riYA9nvuZM9
-        B6LlG+MxfE+0FzcGt1tuJcOi/G4F1CM=
-X-Google-Smtp-Source: ABdhPJzzWZ+q13ptoCU5JHKLBozyl2qyG0di7fj7GC0x6tQVXWEZ5utjk3vHuuOVClKYY3WCOwTKiw==
-X-Received: by 2002:a2e:bd88:: with SMTP id o8mr69963654ljq.197.1636371404363;
-        Mon, 08 Nov 2021 03:36:44 -0800 (PST)
-Received: from [192.168.2.145] (79-139-188-96.dynamic.spd-mgts.ru. [79.139.188.96])
-        by smtp.googlemail.com with ESMTPSA id q6sm1523591ljh.1.2021.11.08.03.36.42
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=917ou4i0m8XwTRLtSzLNb+jh838cky8jWcxVoB+CqOM=;
+        b=Pw3i+weyc7+jUFjiqgja4nmIGiQYkp+hTDI9tUVPtfM/z0qZ/4yhUYz846TFW/iUJE
+         8aZiIZxOJIJtcYDjBO0eZw31R4ld/ywvH5oMBRjH8uCeCTGw3OIYAu0TUmEvL6ueUne/
+         1HnChVid6if+SoM/P5I3r6J8pUDJWBSnVKgaEaJiHHeVunGHmT7XqkpyWVFVRUqup7eq
+         /e8uYLF186k+tLqbbRBuWImk5nNh91VBdX1tOA/TDh1l8a3+yBJBR/VZfxG0HOV2YmLi
+         CUKZC9kmBWQP4XrfpDcHA4DirB+LRlijSkYt4jGKbYlX9gm8pPWYVqmwv7U5uBDD/314
+         XFTg==
+X-Gm-Message-State: AOAM532clrUNDaatOchmCe/ok3705337hD8ueOonSizazkXGJ/I7V0Af
+        9ehEs0k4btdHQNvPPOA8Nl/0LxreMt2R3g==
+X-Google-Smtp-Source: ABdhPJw47zlIxwJ71J54+Vg0Z9l+bDbF+0CIPJ1roBry8M2Jopz/D+M+TAU28p0fM6RDPn+bbdJIiA==
+X-Received: by 2002:a67:5f47:: with SMTP id t68mr33706564vsb.56.1636378313578;
+        Mon, 08 Nov 2021 05:31:53 -0800 (PST)
+Received: from mail-ua1-f44.google.com (mail-ua1-f44.google.com. [209.85.222.44])
+        by smtp.gmail.com with ESMTPSA id q9sm1026020vkn.44.2021.11.08.05.31.53
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 08 Nov 2021 03:36:44 -0800 (PST)
-Subject: Re: [PATCH v2 27/45] mfd: ntxec: Use devm_register_power_handler()
-To:     =?UTF-8?Q?Jonathan_Neusch=c3=a4fer?= <j.neuschaefer@gmx.net>
-Cc:     Guenter Roeck <linux@roeck-us.net>,
-        Thierry Reding <thierry.reding@gmail.com>,
-        Jonathan Hunter <jonathanh@nvidia.com>,
-        Lee Jones <lee.jones@linaro.org>,
-        "Rafael J . Wysocki" <rafael@kernel.org>,
-        Mark Brown <broonie@kernel.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Daniel Lezcano <daniel.lezcano@linaro.org>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Ulf Hansson <ulf.hansson@linaro.org>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Joshua Thompson <funaho@jurai.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Nick Hu <nickhu@andestech.com>,
-        Greentime Hu <green.hu@gmail.com>,
-        Vincent Chen <deanbo422@gmail.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
-        Juergen Gross <jgross@suse.com>,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        Len Brown <lenb@kernel.org>,
-        Santosh Shilimkar <ssantosh@kernel.org>,
-        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Chen-Yu Tsai <wens@csie.org>, Tony Lindgren <tony@atomide.com>,
-        Liam Girdwood <lgirdwood@gmail.com>,
-        Philipp Zabel <p.zabel@pengutronix.de>,
-        Vladimir Zapolskiy <vz@mleia.com>,
-        Avi Fishman <avifishman70@gmail.com>,
-        Tomer Maimon <tmaimon77@gmail.com>,
-        Tali Perry <tali.perry1@gmail.com>,
-        Patrick Venture <venture@google.com>,
-        Nancy Yuen <yuenn@google.com>,
-        Benjamin Fair <benjaminfair@google.com>,
-        Pavel Machek <pavel@ucw.cz>,
-        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
-        xen-devel@lists.xenproject.org, linux-acpi@vger.kernel.org,
-        linux-omap@vger.kernel.org, openbmc@lists.ozlabs.org,
-        linux-tegra@vger.kernel.org, linux-pm@vger.kernel.org
-References: <20211027211715.12671-1-digetx@gmail.com>
- <20211027211715.12671-28-digetx@gmail.com> <YYbqlmOM95q7Hbjo@latitude>
- <be0c74c6-05a9-cad5-c285-6626d05f8860@gmail.com>
- <9a22c22d-94b1-f519-27a2-ae0b8bbf6e99@roeck-us.net>
- <658cf796-e3b1-f816-1e15-9e9e08b8ade0@gmail.com>
- <5a17fee3-4214-c2b9-abc1-ab9d6071591b@roeck-us.net>
- <c0b52994-51f5-806b-b07e-3e70d8217ffc@gmail.com> <YYkIeBSCFka9yrqC@latitude>
-From:   Dmitry Osipenko <digetx@gmail.com>
-Message-ID: <04103df3-1ef4-b560-a5cb-fa51737d28ad@gmail.com>
-Date:   Mon, 8 Nov 2021 14:36:42 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.14.0
+        Mon, 08 Nov 2021 05:31:53 -0800 (PST)
+Received: by mail-ua1-f44.google.com with SMTP id l43so31453031uad.4;
+        Mon, 08 Nov 2021 05:31:53 -0800 (PST)
+X-Received: by 2002:a67:c38f:: with SMTP id s15mr40867953vsj.50.1636378313058;
+ Mon, 08 Nov 2021 05:31:53 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <YYkIeBSCFka9yrqC@latitude>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 8bit
+References: <20211108101157.15189-1-bp@alien8.de> <20211108101157.15189-36-bp@alien8.de>
+In-Reply-To: <20211108101157.15189-36-bp@alien8.de>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Mon, 8 Nov 2021 14:31:41 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdW4fv4LN6oDS6qgYodf74_NvbzMxQfRbtnS-mn_D+u7Kg@mail.gmail.com>
+Message-ID: <CAMuHMdW4fv4LN6oDS6qgYodf74_NvbzMxQfRbtnS-mn_D+u7Kg@mail.gmail.com>
+Subject: Re: [PATCH v0 35/42] sh: Check notifier registration return value
+To:     Borislav Petkov <bp@alien8.de>
+Cc:     LKML <linux-kernel@vger.kernel.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-08.11.2021 14:22, Jonathan Neuschäfer пишет:
-> On Sun, Nov 07, 2021 at 08:42:33PM +0300, Dmitry Osipenko wrote:
-> [...]
->> EC drivers tend to use higher priority in general. Jonathan, could you
->> please confirm that NTXEC driver is a more preferable restart method
->> than the watchdog?
-> 
-> Yes. The original firmware uses the NTXEC to restart, and it works well,
-> so I do think it's preferable.
+Hi Borislav,
 
-Thank you, then I'll update the NTXEC patch like this:
+On Mon, Nov 8, 2021 at 1:50 PM Borislav Petkov <bp@alien8.de> wrote:
+> From: Borislav Petkov <bp@suse.de>
+>
+> Avoid homegrown notifier registration checks.
+>
+> No functional changes.
+>
+> Signed-off-by: Borislav Petkov <bp@suse.de>
 
-https://github.com/grate-driver/linux/commit/22da3d91f1734d9a0ed036220ad4ea28465af988
+Thanks for your patch!
 
+> --- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+> +++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+> @@ -1277,11 +1277,14 @@ static struct notifier_block sh7724_post_sleep_notifier = {
+>
+>  static int __init sh7724_sleep_setup(void)
+>  {
+> -       atomic_notifier_chain_register(&sh_mobile_pre_sleep_notifier_list,
+> -                                      &sh7724_pre_sleep_notifier);
+> +       if (atomic_notifier_chain_register(&sh_mobile_pre_sleep_notifier_list,
+> +                                          &sh7724_pre_sleep_notifier))
+> +               pr_warn("SH7724 pre-sleep notifier already registered\n");
+> +
+> +       if (atomic_notifier_chain_register(&sh_mobile_post_sleep_notifier_list,
+> +                                          &sh7724_post_sleep_notifier))
+> +               pr_warn("SH7724 pre-sleep notifier already registered\n");
+
+Do you think these can actually fail?
+
+>
+> -       atomic_notifier_chain_register(&sh_mobile_post_sleep_notifier_list,
+> -                                      &sh7724_post_sleep_notifier);
+>         return 0;
+>  }
+>  arch_initcall(sh7724_sleep_setup);
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
