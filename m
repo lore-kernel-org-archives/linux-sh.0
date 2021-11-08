@@ -2,130 +2,99 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E27AC433F5
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 14:21:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 02DAAC433F5
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 14:21:54 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 58F4A610A8
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 14:21:27 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id E238561101
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 14:21:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240465AbhKHOYH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 8 Nov 2021 09:24:07 -0500
-Received: from mail.skyhub.de ([5.9.137.197]:49490 "EHLO mail.skyhub.de"
+        id S237861AbhKHOYh (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 8 Nov 2021 09:24:37 -0500
+Received: from mail.kernel.org ([198.145.29.99]:60592 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S240432AbhKHOX6 (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Mon, 8 Nov 2021 09:23:58 -0500
-Received: from zn.tnic (p200300ec2f33110093973d8dfcf40fd9.dip0.t-ipconnect.de [IPv6:2003:ec:2f33:1100:9397:3d8d:fcf4:fd9])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.skyhub.de (SuperMail on ZX Spectrum 128k) with ESMTPSA id D08561EC04E4;
-        Mon,  8 Nov 2021 15:21:09 +0100 (CET)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=alien8.de; s=dkim;
-        t=1636381269;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:in-reply-to:in-reply-to:  references:references;
-        bh=oWsCJGhsvF17zUFafKKKz1XGvPrCUoTgLb0x72qzY0w=;
-        b=DvalVyPWlBMIVGIell7SDhnTX9Q86iHxoTdmXzPxorrW7sqlHpzQzwtFgZEI1KmHXq30Gs
-        yOE/y0FWs3djKZaj7cQDtIyWYYD5AKtdhjFE5l3EWLo8DNcP+YE1HL9C5d3kHwZrzRPHP8
-        xiS/nYCk2AFbtbv/wLq5RqiIdGlMN38=
-Date:   Mon, 8 Nov 2021 15:21:04 +0100
-From:   Borislav Petkov <bp@alien8.de>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     LKML <linux-kernel@vger.kernel.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Ayush Sawal <ayush.sawal@chelsio.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Rohit Maheshwari <rohitm@chelsio.com>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Vinay Kumar Yadav <vinay.yadav@chelsio.com>,
-        ALSA Development Mailing List <alsa-devel@alsa-project.org>,
-        bcm-kernel-feedback-list <bcm-kernel-feedback-list@broadcom.com>,
-        Intel Graphics Development <intel-gfx@lists.freedesktop.org>,
-        intel-gvt-dev@lists.freedesktop.org,
-        alpha <linux-alpha@vger.kernel.org>,
+        id S235502AbhKHOYh (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Mon, 8 Nov 2021 09:24:37 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 2971D610E9;
+        Mon,  8 Nov 2021 14:21:49 +0000 (UTC)
+Subject: Re: [RFC 3/3] gpiolib: coldfire: remove custom asm/gpio.h
+To:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Arnd Bergmann <arnd@kernel.org>
+Cc:     "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>,
+        Bartosz Golaszewski <brgl@bgdev.pl>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        Russell King <linux@armlinux.org.uk>,
         Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        linux-clk <linux-clk@vger.kernel.org>,
-        Linux Crypto Mailing List <linux-crypto@vger.kernel.org>,
-        linux-edac@vger.kernel.org,
-        Linux Fbdev development list <linux-fbdev@vger.kernel.org>,
-        linux-hyperv@vger.kernel.org, linux-iio@vger.kernel.org,
-        linux-leds <linux-leds@vger.kernel.org>,
-        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
-        Parisc List <linux-parisc@vger.kernel.org>,
-        Linux PM list <linux-pm@vger.kernel.org>,
-        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
-        "open list:REMOTE PROCESSOR (REMOTEPROC) SUBSYSTEM" 
-        <linux-remoteproc@vger.kernel.org>,
-        Linux-Renesas <linux-renesas-soc@vger.kernel.org>,
-        linux-s390 <linux-s390@vger.kernel.org>,
-        scsi <linux-scsi@vger.kernel.org>,
         Linux-sh list <linux-sh@vger.kernel.org>,
-        linux-staging@lists.linux.dev,
-        linux-tegra <linux-tegra@vger.kernel.org>,
-        linux-um <linux-um@lists.infradead.org>,
-        USB list <linux-usb@vger.kernel.org>,
-        "open list:TENSILICA XTENSA PORT (xtensa)" 
-        <linux-xtensa@linux-xtensa.org>, netdev <netdev@vger.kernel.org>,
-        openipmi-developer@lists.sourceforge.net, rcu@vger.kernel.org,
-        sparclinux <sparclinux@vger.kernel.org>,
-        the arch/x86 maintainers <x86@kernel.org>,
-        xen-devel@lists.xenproject.org
-Subject: Re: [PATCH v0 42/42] notifier: Return an error when callback is
- already registered
-Message-ID: <YYkyUEqcsOwQMb1S@zn.tnic>
-References: <20211108101157.15189-1-bp@alien8.de>
- <20211108101157.15189-43-bp@alien8.de>
- <CAMuHMdWH+txiSP_d7Jc4f_bU8Lf9iWpT4E3o5o7BJr-YdA6-VA@mail.gmail.com>
+        Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+References: <20211105130338.241100-1-arnd@kernel.org>
+ <20211105130338.241100-3-arnd@kernel.org>
+ <CAMuHMdX=e5HB8gh25DMbrbUHagS9eOQokbjneJTY6HrSSf4Njw@mail.gmail.com>
+From:   Greg Ungerer <gerg@linux-m68k.org>
+Message-ID: <b45d970e-c02b-a843-4c38-dc7aee3cf8d3@linux-m68k.org>
+Date:   Tue, 9 Nov 2021 00:21:46 +1000
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.13.0
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <CAMuHMdWH+txiSP_d7Jc4f_bU8Lf9iWpT4E3o5o7BJr-YdA6-VA@mail.gmail.com>
+In-Reply-To: <CAMuHMdX=e5HB8gh25DMbrbUHagS9eOQokbjneJTY6HrSSf4Njw@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Nov 08, 2021 at 03:07:03PM +0100, Geert Uytterhoeven wrote:
-> I think the addition of __must_check is overkill, leading to the
-> addition of useless error checks and message printing.
+Hi arnd, Geert,
 
-See the WARN in notifier_chain_register() - it will already do "message
-printing".
+On 8/11/21 6:24 pm, Geert Uytterhoeven wrote:
+> Hi Arnd,
+> 
+> On Fri, Nov 5, 2021 at 2:05 PM Arnd Bergmann <arnd@kernel.org> wrote:
+>> From: Arnd Bergmann <arnd@arndb.de>
+>>
+>> Now that coldfire is the only user of a custom asm/gpio.h, it seems
+>> better to remove this as well, and have the same interface everywhere.
+>>
+>> For the gpio_get_value()/gpio_set_value()/gpio_to_irq(), gpio_cansleep()
+>> functions, the custom version is only a micro-optimization to inline the
+>> function for constant GPIO numbers. However, in the coldfire defconfigs,
+>> I was unable to find a single instance where this micro-optimization
+>> was even used, so to my best knowledge removing this has no downsides.
+> 
+> The only user seems to be QSPI chip select handling (not bit-banged
+> data transfer) in arch/m68k/coldfire/device.c, but that indeed depends
+> on CONFIG_SPI_COLDFIRE_QSPI, which is not set in any of the defconfigs.
+> That doesn't mean there were/are no real users, though ;-)
 
-> Many callers call this where it cannot fail, and where nothing can
-> be done in the very unlikely event that the call would ever start to
-> fail.
+That is definitely used by some.
+But the generalization and removal of the special casing seems like a win to me.
 
-This is an attempt to remove this WARN() hack in
-notifier_chain_register() and have the function return a proper error
-value instead of this "Currently always returns zero." which is bad
-design.
 
-Some of the registration functions around the tree check that retval and
-some don't. So if "it cannot fail" those registration either should not
-return a value or callers should check that return value - what we have
-now doesn't make a whole lot of sense.
+>> The custom gpio_request_one() function is even less useful, as it is
+>> guarded by an #ifdef that is never true.
+>>
+>> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> 
+> Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
 
-Oh, and then fixing this should avoid stuff like:
+Reviewed-by: Greg Ungerer <gerg@linux-m68k.org>
 
-+	if (notifier_registered == false) {
-+		mce_register_decode_chain(&amdgpu_bad_page_nb);
-+		notifier_registered = true;
-+	}
+Regards
+Greg
 
-from propagating in the code.
 
-The other idea I have is to add another indirection in
-notifier_chain_register() which will check the *proper* return value of
-a lower level __notifier_chain_register() and then issue that warning.
-That would definitely avoid touch so many call sites.
 
-Bottom line is: what we have now needs cleaning up.
-
-Thx.
-
--- 
-Regards/Gruss,
-    Boris.
-
-https://people.kernel.org/tglx/notes-about-netiquette
+> Gr{oetje,eeting}s,
+> 
+>                          Geert
+> 
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> 
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                  -- Linus Torvalds
+> 
