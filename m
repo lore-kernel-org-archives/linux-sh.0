@@ -2,135 +2,85 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 88202C43219
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 14:36:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A2FEC433F5
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 14:48:28 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 7104C6120A
-	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 14:36:03 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 4AC6C61361
+	for <linux-sh@archiver.kernel.org>; Mon,  8 Nov 2021 14:48:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240546AbhKHOip (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 8 Nov 2021 09:38:45 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42784 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239345AbhKHOim (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 8 Nov 2021 09:38:42 -0500
-Received: from mail.skyhub.de (mail.skyhub.de [IPv6:2a01:4f8:190:11c2::b:1457])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D0AEAC061570;
-        Mon,  8 Nov 2021 06:35:57 -0800 (PST)
-Received: from zn.tnic (p200300ec2f331100b486bab6e60d7aaf.dip0.t-ipconnect.de [IPv6:2003:ec:2f33:1100:b486:bab6:e60d:7aaf])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by mail.skyhub.de (SuperMail on ZX Spectrum 128k) with ESMTPSA id 1A75E1EC01FC;
-        Mon,  8 Nov 2021 15:35:56 +0100 (CET)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=alien8.de; s=dkim;
-        t=1636382156;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:in-reply-to:in-reply-to:  references:references;
-        bh=B6oOQ1q4gjLTOu5usgfET43xDRmf4tLazw1TZ6CRXFw=;
-        b=Upd25HzfEqhrG5TAXmV4X7VLTXjG+2mbIZvAcNaA5XdFGwWxC22cjGdH367SqKuC2YI35V
-        XePkT+plNO8Rcdx9qRLbflORPHDjzc4q/HfinrM2oVoUmKJ3f3FbXqZbeiIVI7zzNRafCc
-        NDGlsVX5pxz7i7hCYlNzvvCrAxbHbAs=
-Date:   Mon, 8 Nov 2021 15:35:50 +0100
-From:   Borislav Petkov <bp@alien8.de>
-To:     Alan Stern <stern@rowland.harvard.edu>,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     LKML <linux-kernel@vger.kernel.org>, Arnd Bergmann <arnd@arndb.de>,
-        Ayush Sawal <ayush.sawal@chelsio.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Rohit Maheshwari <rohitm@chelsio.com>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Vinay Kumar Yadav <vinay.yadav@chelsio.com>,
-        alsa-devel@alsa-project.org, bcm-kernel-feedback-list@broadcom.com,
-        intel-gfx@lists.freedesktop.org,
-        intel-gvt-dev@lists.freedesktop.org, linux-alpha@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org, linux-clk@vger.kernel.org,
-        linux-crypto@vger.kernel.org, linux-edac@vger.kernel.org,
-        linux-fbdev@vger.kernel.org, linux-hyperv@vger.kernel.org,
-        linux-iio@vger.kernel.org, linux-leds@vger.kernel.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linux-pm@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-remoteproc@vger.kernel.org,
-        linux-renesas-soc@vger.kernel.org, linux-s390@vger.kernel.org,
-        linux-scsi@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-staging@lists.linux.dev, linux-tegra@vger.kernel.org,
-        linux-um@lists.infradead.org, linux-usb@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org, netdev@vger.kernel.org,
-        openipmi-developer@lists.sourceforge.net, rcu@vger.kernel.org,
-        sparclinux@vger.kernel.org, x86@kernel.org,
-        xen-devel@lists.xenproject.org
-Subject: Re: [PATCH v0 00/42] notifiers: Return an error when callback is
- already registered
-Message-ID: <YYk1xi3eJdMJdjHC@zn.tnic>
-References: <20211108101157.15189-1-bp@alien8.de>
- <20211108101924.15759-1-bp@alien8.de>
- <20211108141703.GB1666297@rowland.harvard.edu>
- <YYkzJ3+faVga2Tl3@zn.tnic>
+        id S240581AbhKHOvL (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 8 Nov 2021 09:51:11 -0500
+Received: from mxout01.lancloud.ru ([45.84.86.81]:37842 "EHLO
+        mxout01.lancloud.ru" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S237063AbhKHOvK (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 8 Nov 2021 09:51:10 -0500
+Received: from LanCloud
+DKIM-Filter: OpenDKIM Filter v2.11.0 mxout01.lancloud.ru 9841620E927D
+Received: from LanCloud
+Received: from LanCloud
+Received: from LanCloud
+Message-ID: <ea08bd47-63cc-459f-4703-fc60c728bd02@omp.ru>
+Date:   Mon, 8 Nov 2021 17:48:11 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <YYkzJ3+faVga2Tl3@zn.tnic>
+User-Agent: Mozilla/5.0 (Windows NT 6.3; Win64; x64; rv:91.0) Gecko/20100101
+ Thunderbird/91.3.0
+Subject: Re: [PATCH v0 35/42] sh: Check notifier registration return value
+Content-Language: en-US
+To:     Borislav Petkov <bp@alien8.de>, LKML <linux-kernel@vger.kernel.org>
+CC:     <linux-sh@vger.kernel.org>
+References: <20211108101157.15189-1-bp@alien8.de>
+ <20211108101157.15189-36-bp@alien8.de>
+From:   Sergey Shtylyov <s.shtylyov@omp.ru>
+Organization: Open Mobile Platform
+In-Reply-To: <20211108101157.15189-36-bp@alien8.de>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
+Content-Transfer-Encoding: 7bit
+X-Originating-IP: [192.168.11.198]
+X-ClientProxiedBy: LFEXT02.lancloud.ru (fd00:f066::142) To
+ LFEX1907.lancloud.ru (fd00:f066::207)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Nov 08, 2021 at 03:24:39PM +0100, Borislav Petkov wrote:
-> I guess I can add another indirection to notifier_chain_register() and
-> avoid touching all the call sites.
+On 08.11.2021 13:11, Borislav Petkov wrote:
 
-IOW, something like this below.
+> From: Borislav Petkov <bp@suse.de>
+> 
+> Avoid homegrown notifier registration checks.
+> 
+> No functional changes.
+> 
+> Signed-off-by: Borislav Petkov <bp@suse.de>
+> Cc: linux-sh@vger.kernel.org
+> ---
+>   arch/sh/kernel/cpu/sh4a/setup-sh7724.c | 11 +++++++----
+>   1 file changed, 7 insertions(+), 4 deletions(-)
+> 
+> diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+> index 0d990ab1ba2a..8dfbb8149f66 100644
+> --- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+> +++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+> @@ -1277,11 +1277,14 @@ static struct notifier_block sh7724_post_sleep_notifier = {
+>   
+>   static int __init sh7724_sleep_setup(void)
+>   {
+> -	atomic_notifier_chain_register(&sh_mobile_pre_sleep_notifier_list,
+> -				       &sh7724_pre_sleep_notifier);
+> +	if (atomic_notifier_chain_register(&sh_mobile_pre_sleep_notifier_list,
+> +					   &sh7724_pre_sleep_notifier))
+> +		pr_warn("SH7724 pre-sleep notifier already registered\n");
+> +
+> +	if (atomic_notifier_chain_register(&sh_mobile_post_sleep_notifier_list,
+> +					   &sh7724_post_sleep_notifier))
+> +		pr_warn("SH7724 pre-sleep notifier already registered\n");
 
-This way I won't have to touch all the callsites and the registration
-routines would still return a proper value instead of returning 0
-unconditionally.
+   s/pre/post/? :-)
 
----
-diff --git a/kernel/notifier.c b/kernel/notifier.c
-index b8251dc0bc0f..04f08b2ef17f 100644
---- a/kernel/notifier.c
-+++ b/kernel/notifier.c
-@@ -19,14 +19,12 @@ BLOCKING_NOTIFIER_HEAD(reboot_notifier_list);
-  *	are layered on top of these, with appropriate locking added.
-  */
- 
--static int notifier_chain_register(struct notifier_block **nl,
--		struct notifier_block *n)
-+static int __notifier_chain_register(struct notifier_block **nl,
-+				     struct notifier_block *n)
- {
- 	while ((*nl) != NULL) {
--		if (unlikely((*nl) == n)) {
--			WARN(1, "double register detected");
--			return 0;
--		}
-+		if (unlikely((*nl) == n))
-+			return -EEXIST;
- 		if (n->priority > (*nl)->priority)
- 			break;
- 		nl = &((*nl)->next);
-@@ -36,6 +34,18 @@ static int notifier_chain_register(struct notifier_block **nl,
- 	return 0;
- }
- 
-+static int notifier_chain_register(struct notifier_block **nl,
-+				   struct notifier_block *n)
-+{
-+	int ret = __notifier_chain_register(nl, n);
-+
-+	if (ret == -EEXIST)
-+		WARN(1, "double register of notifier callback %ps detected",
-+			n->notifier_call);
-+
-+	return ret;
-+}
-+
- static int notifier_chain_unregister(struct notifier_block **nl,
- 		struct notifier_block *n)
- {
+>   
+> -	atomic_notifier_chain_register(&sh_mobile_post_sleep_notifier_list,
+> -				       &sh7724_post_sleep_notifier);
+>   	return 0;
+>   }
+>   arch_initcall(sh7724_sleep_setup);
 
-
--- 
-Regards/Gruss,
-    Boris.
-
-https://people.kernel.org/tglx/notes-about-netiquette
+MBR, Sergey
