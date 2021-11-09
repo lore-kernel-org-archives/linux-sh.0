@@ -2,87 +2,88 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62372C433F5
-	for <linux-sh@archiver.kernel.org>; Tue,  9 Nov 2021 12:21:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3001DC433EF
+	for <linux-sh@archiver.kernel.org>; Tue,  9 Nov 2021 20:07:58 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 49A696103B
-	for <linux-sh@archiver.kernel.org>; Tue,  9 Nov 2021 12:21:07 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 1148F61168
+	for <linux-sh@archiver.kernel.org>; Tue,  9 Nov 2021 20:07:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240868AbhKIMXw (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 9 Nov 2021 07:23:52 -0500
-Received: from mail.kernel.org ([198.145.29.99]:45692 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S230463AbhKIMXv (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Tue, 9 Nov 2021 07:23:51 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id 2355260524;
-        Tue,  9 Nov 2021 12:21:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1636460466;
-        bh=dozVN3aXN7KzW/dp21NF6YI8jGJeBazvwDtTr2omBIY=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=nfDEQhckfaxD53crGajiQtff4xCwpZzAGEs/yzif2M0ep8JqlNF10uIYSgZasHbQ8
-         GgO3NqVpRVE73RABBBrFXncgsWairiiOV7h62nnV42ReoBEDhgvLxpMfMd/uSH/nZh
-         0wiJbJ79vouveEuESn1wfSgsv9FnrthLF93Hk1NPd9etWxi1bHWXgoduJjQYvlWHsJ
-         HE91+fWO67fCcW1xSHs8KwfmSLnH1Y6v62Y8okF/1Ie6Ats8TynqfycZ+ckSpQ4A9q
-         5WqUSYmqKEtlyImPjsNB92XOaADqHVvHH4GnRpofjREjsjPGOnGuUou9k5Ggb8i6t5
-         wrASUUPx/4BhQ==
-Received: by mail-wr1-f48.google.com with SMTP id i5so32691173wrb.2;
-        Tue, 09 Nov 2021 04:21:06 -0800 (PST)
-X-Gm-Message-State: AOAM530b2se7Wu71FsgNYR79QfzJY6ytdefsGLbX3cTteCIQC03JYX3E
-        Y09tAyRjunjYc1f60UJdNFvvoMxkMotdaNgla+U=
-X-Google-Smtp-Source: ABdhPJzZui+hgh9BnKtwF34B9Efj54GbCHBg7w4r8zquI5Y/PkFCYyTJ48uRwwFKD0z5vxSlU9IYQUvcMgi7nLU9XQM=
-X-Received: by 2002:a05:6000:10cb:: with SMTP id b11mr8887374wrx.71.1636460464585;
- Tue, 09 Nov 2021 04:21:04 -0800 (PST)
+        id S244159AbhKIUKn (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 9 Nov 2021 15:10:43 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49504 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S244156AbhKIUKm (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 9 Nov 2021 15:10:42 -0500
+Received: from mail-ot1-x329.google.com (mail-ot1-x329.google.com [IPv6:2607:f8b0:4864:20::329])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 98A28C061767
+        for <linux-sh@vger.kernel.org>; Tue,  9 Nov 2021 12:07:56 -0800 (PST)
+Received: by mail-ot1-x329.google.com with SMTP id r10-20020a056830080a00b0055c8fd2cebdso419104ots.6
+        for <linux-sh@vger.kernel.org>; Tue, 09 Nov 2021 12:07:56 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linaro.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=jay4bvn1CHVbECfZlQ8rRUGomUTSbkN+CtKVdn6fLuw=;
+        b=UjmZ16XdSJmMTk1B1Q+5+jygX0AQnxVwiZ8nHytzix8JWJdKkHA1DfCyxpMIn+LvEH
+         8oizt36qlO9lPjxYa3z2hdYSazQstIsTha8sWrMq1ruzMdEPbGL3u5PuxcO4nDQuLaUq
+         pyPzmwEP8ypf51mZzOYgHlTUGmWAcNvmbj4GcHgW1Le9W2SMDQpIoZkZurFoTaWpkMxJ
+         KQz5SeJ7AjGA+PDdbqbJvFDXxQh0CLR4VQuTMWpxCcQ3rpPXPUIZctwdhI5NK9/3E07a
+         B+zKCrYOIohAOeNfqN7g2oTnYVPNaqsaqUv23gFcCRUKzyRNzVLCPBqc2W48WHrcvU7O
+         WOGw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=jay4bvn1CHVbECfZlQ8rRUGomUTSbkN+CtKVdn6fLuw=;
+        b=oxibJ9Lh94TVRzAF25+ZlmqVVnbJAwtoXUhEupBcblMCF1ZFVDp98voLgQX+djrat6
+         QWtqUOU06cVqAWrgQsKhU5/oP17SHoPxjeD6LedowAohSY6NA/nS1zXgOX7VPr1Fm2BS
+         b4gmPd62AQAA1hAwz5zExuMG8SnWVQuagcdn7z5QgF/BEs9Jnn3kUSa6Jb2LNJ9nA8kQ
+         TxZ1qsSqw1euve4sy0//D4bUfgr6LGhpXU5LbmgxIBtCq3X36Dj9YIh5PZaevtQe8BQD
+         zbV8GeqhHroWM+25GHqVP6DkQRFHbOTNijtJ9do5xnUviEh1XxiiuVpNTIBPjGqdLEqg
+         zIAA==
+X-Gm-Message-State: AOAM531f/bdb8G/Kgm7uFrpqg5YS63QU53jOVH8v+1HpleyQuuE5+pJA
+        CZzGtF5PAyU9vnvhr9X3KO3GiRWnqbw+5qxeCOgUMA==
+X-Google-Smtp-Source: ABdhPJxNipPZr7+vmyXXCN9McHMGmga6b23qum9RT+SVZQNWx6aLiAtMH8PkORDzg0FIgBHPXVE6XphIIe1qjYrStiM=
+X-Received: by 2002:a9d:6348:: with SMTP id y8mr8389289otk.179.1636488475884;
+ Tue, 09 Nov 2021 12:07:55 -0800 (PST)
 MIME-Version: 1.0
-References: <20211105130338.241100-1-arnd@kernel.org> <20211105130338.241100-2-arnd@kernel.org>
- <CACRpkdZ=z2YZ0rtD3=xqEQOMbwph-BEb-3xP_LajCzykmpYgSg@mail.gmail.com>
-In-Reply-To: <CACRpkdZ=z2YZ0rtD3=xqEQOMbwph-BEb-3xP_LajCzykmpYgSg@mail.gmail.com>
-From:   Arnd Bergmann <arnd@kernel.org>
-Date:   Tue, 9 Nov 2021 13:20:48 +0100
-X-Gmail-Original-Message-ID: <CAK8P3a1OhwZx0k0gnnwvdL=0cTUX9YneHdyuRWL98vZv0gErcA@mail.gmail.com>
-Message-ID: <CAK8P3a1OhwZx0k0gnnwvdL=0cTUX9YneHdyuRWL98vZv0gErcA@mail.gmail.com>
-Subject: Re: [RFC 2/3] gpiolib: remove empty asm/gpio.h files
-To:     Linus Walleij <linus.walleij@linaro.org>
-Cc:     "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>,
-        Bartosz Golaszewski <brgl@bgdev.pl>,
-        linux-m68k <linux-m68k@lists.linux-m68k.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Russell King - ARM Linux <linux@armlinux.org.uk>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+References: <20211105130338.241100-1-arnd@kernel.org> <20211105130338.241100-3-arnd@kernel.org>
+In-Reply-To: <20211105130338.241100-3-arnd@kernel.org>
+From:   Linus Walleij <linus.walleij@linaro.org>
+Date:   Tue, 9 Nov 2021 21:07:44 +0100
+Message-ID: <CACRpkdYdrm_YnwvxjqLBrJfOF07_nDyu1g0xggRMJ9_x2S+LJA@mail.gmail.com>
+Subject: Re: [RFC 3/3] gpiolib: coldfire: remove custom asm/gpio.h
+To:     Arnd Bergmann <arnd@kernel.org>
+Cc:     linux-gpio@vger.kernel.org, Bartosz Golaszewski <brgl@bgdev.pl>,
+        linux-m68k@lists.linux-m68k.org, geert@linux-m68k.org,
+        gerg@linux-m68k.org, linux@armlinux.org.uk,
+        linux-arm-kernel@lists.infradead.org, linux-sh@vger.kernel.org,
+        dalias@libc.org, ysato@users.sourceforge.jp,
+        Arnd Bergmann <arnd@arndb.de>, linux-kernel@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Nov 9, 2021 at 12:51 PM Linus Walleij <linus.walleij@linaro.org> wrote:
->
-> On Fri, Nov 5, 2021 at 2:04 PM Arnd Bergmann <arnd@kernel.org> wrote:
->
-> > From: Arnd Bergmann <arnd@arndb.de>
-> >
-> > The arm and sh versions of this file are identical to the generic
-> > versions and can just be removed.
-> >
-> > The drivers that actually use the sh3 specific version also include
-> > cpu/gpio.h directly. This leaves coldfire as the only gpio driver
-> > that needs something custom for gpiolib.
-> >
-> > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
->
-> Excellent!
-> Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
->
-> I suggest Bartosz can queue this in the GPIO tree.
+On Fri, Nov 5, 2021 at 2:05 PM Arnd Bergmann <arnd@kernel.org> wrote:
 
-I just sent v2 with slightly updated changelog texts and additional patches
-but without your Reviewed-by:. I suppose I'll have a v3 after the merge window,
-let's use that.
+> From: Arnd Bergmann <arnd@arndb.de>
+>
+> Now that coldfire is the only user of a custom asm/gpio.h, it seems
+> better to remove this as well, and have the same interface everywhere.
+>
+> For the gpio_get_value()/gpio_set_value()/gpio_to_irq(), gpio_cansleep()
+> functions, the custom version is only a micro-optimization to inline the
+> function for constant GPIO numbers. However, in the coldfire defconfigs,
+> I was unable to find a single instance where this micro-optimization
+> was even used, so to my best knowledge removing this has no downsides.
+>
+> The custom gpio_request_one() function is even less useful, as it is
+> guarded by an #ifdef that is never true.
+>
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 
-      Arnd
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+
+Yours,
+Linus Walleij
