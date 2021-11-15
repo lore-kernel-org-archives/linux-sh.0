@@ -2,27 +2,27 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B37EEC433EF
-	for <linux-sh@archiver.kernel.org>; Tue, 16 Nov 2021 01:13:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D44AC433F5
+	for <linux-sh@archiver.kernel.org>; Tue, 16 Nov 2021 01:57:00 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 9C34163260
-	for <linux-sh@archiver.kernel.org>; Tue, 16 Nov 2021 01:13:32 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 3915061AA5
+	for <linux-sh@archiver.kernel.org>; Tue, 16 Nov 2021 01:57:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1349761AbhKPBQ1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 15 Nov 2021 20:16:27 -0500
-Received: from mail.kernel.org ([198.145.29.99]:44606 "EHLO mail.kernel.org"
+        id S240517AbhKPB7z (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 15 Nov 2021 20:59:55 -0500
+Received: from mail.kernel.org ([198.145.29.99]:50070 "EHLO mail.kernel.org"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S244659AbhKOTRJ (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Mon, 15 Nov 2021 14:17:09 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPSA id D523F60C4A;
-        Mon, 15 Nov 2021 18:22:44 +0000 (UTC)
+        id S240241AbhKOSJQ (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Mon, 15 Nov 2021 13:09:16 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 3DCFC632A0;
+        Mon, 15 Nov 2021 17:46:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1637000565;
+        s=korg; t=1636998398;
         bh=XmzqHL0Z0tJSw6FXl0JzN3xJCCpGMGmK9Cp/EP+0nkA=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=m/sF9VPlJv/On9LmOOTsYWP1jAlUtm8yF6Xs6+cUeGRBgOxa5GyLKzv4zhyUe8kGd
-         QaMuCqm3H6GmePEwdAuPhu2SBCo+a/IdftTjqLxhBkni1QxF+mHpw1C0onS36miZr6
-         G7jgV0y1H5WFAkuwfD/Be3fFP0RgOnbhYSYVKq6M=
+        b=VqIatroVuls5Yi3kNYX/9INkLgwmX8trJ6phk0Zs1HcytdpOjJmanrD0Vd2KJdNBj
+         ASoFO1YhxUN480zvhzhvxawyE3YwiRIOmNq7IcCQMFM/Nryd1y4MJf6Qj/z+F+VsQ0
+         gHVoU/9BOmeoFwHl18vPlG9QbMhrLClsTNMX0VEY=
 From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 To:     linux-kernel@vger.kernel.org
 Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
@@ -31,12 +31,12 @@ Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
         "Eric W. Biederman" <ebiederm@xmission.com>,
         Sasha Levin <sashal@kernel.org>
-Subject: [PATCH 5.14 706/849] signal/sh: Use force_sig(SIGKILL) instead of do_group_exit(SIGKILL)
-Date:   Mon, 15 Nov 2021 18:03:09 +0100
-Message-Id: <20211115165444.146868366@linuxfoundation.org>
+Subject: [PATCH 5.10 494/575] signal/sh: Use force_sig(SIGKILL) instead of do_group_exit(SIGKILL)
+Date:   Mon, 15 Nov 2021 18:03:39 +0100
+Message-Id: <20211115165400.773094958@linuxfoundation.org>
 X-Mailer: git-send-email 2.33.1
-In-Reply-To: <20211115165419.961798833@linuxfoundation.org>
-References: <20211115165419.961798833@linuxfoundation.org>
+In-Reply-To: <20211115165343.579890274@linuxfoundation.org>
+References: <20211115165343.579890274@linuxfoundation.org>
 User-Agent: quilt/0.66
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
