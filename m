@@ -2,62 +2,90 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 48933C433EF
-	for <linux-sh@archiver.kernel.org>; Sun, 14 Nov 2021 19:56:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 09830C433F5
+	for <linux-sh@archiver.kernel.org>; Mon, 15 Nov 2021 06:33:04 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 25F4461177
-	for <linux-sh@archiver.kernel.org>; Sun, 14 Nov 2021 19:56:36 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id DE51F61AF0
+	for <linux-sh@archiver.kernel.org>; Mon, 15 Nov 2021 06:33:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234738AbhKNT70 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 14 Nov 2021 14:59:26 -0500
-Received: from mail.kernel.org ([198.145.29.99]:54182 "EHLO mail.kernel.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S233916AbhKNT70 (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Sun, 14 Nov 2021 14:59:26 -0500
-Received: by mail.kernel.org (Postfix) with ESMTPS id 1D55E6112E;
-        Sun, 14 Nov 2021 19:56:26 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1636919786;
-        bh=RWMa0mbgQ/y4ZWCE7akp0t7p8q+43ZK+EArSlQqCEfc=;
-        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
-        b=V3UbGUtM7JP5fWfUtiSAnIjkjxjUuH5bCTC1kWL/E3/xmqgalFpF84a1VK4WIfdJB
-         wMN1dHhzyw7rxiAkpZZ0KBvdlNHVTGJ3RlKkUrDK0n8NvuEX/rASrXHKAsSjEy2cBg
-         zhJeYDDxsYvsgGNkftd3tgemiM56L0LogkhdQ0ejxOrM3Nc6lt8Uerx+6D779ms4UH
-         +ISBwqmdTFrWetyLMz6QwJZJiQ95MrbMXnfr00paCJ17iN4HXh1WkHUKuHIEW782Sg
-         mhAw2PkYkth2KUDuQcvJXtz0bP3YUBuTBhT7TItUValmQ1qPQN5Fhc9ddjTD188mld
-         zt7OVmr/DjhlA==
-Subject: Re: [PULL] arch/sh updates for 5.16
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <20211114185302.GA13363@brightrain.aerifal.cx>
-References: <20211114185302.GA13363@brightrain.aerifal.cx>
-X-PR-Tracked-List-Id: <linux-sh.vger.kernel.org>
-X-PR-Tracked-Message-Id: <20211114185302.GA13363@brightrain.aerifal.cx>
-X-PR-Tracked-Remote: git://git.libc.org/linux-sh tags/sh-for-5.16
-X-PR-Tracked-Commit-Id: 8518e694203d0bfd202ea4a80356785b6992322e
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 24318ae80d1705acc50f0d70ece543345336a6e1
-Message-Id: <163691978608.22669.3984782290572659640.pr-tracker-bot@kernel.org>
-Date:   Sun, 14 Nov 2021 19:56:26 +0000
-To:     Rich Felker <dalias@libc.org>
-Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        linux-kernel@vger.kernel.org,
+        id S229922AbhKOGf4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 15 Nov 2021 01:35:56 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59570 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229935AbhKOGf4 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 15 Nov 2021 01:35:56 -0500
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A438CC061746;
+        Sun, 14 Nov 2021 22:33:01 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
+        Content-ID:Content-Description:In-Reply-To:References;
+        bh=h5X8gcsyL1WxSZzJUqESom9+PnxuV9JPbXOEEk5fPhs=; b=uWgnClOH7zriUsMz06ItcAyvnn
+        fp6rtbr2KqzYV84LtRji4VAhAO9pMCwi2d/Oenphzj8GT82m3GRPf2SWXyQ0hpXJMXI1QZc61h3+/
+        dHRYQ6lU2eWVMJ8RLjYMABFF9PoluQREcsn9Evl95AP+pbT6FEwjl0osYnkxVgiP+w6N5TumIxp0Z
+        RYUsB8rlv7xgN6Ae/6+t3FLQUNjGRyNTkp30SHzqoAANvzbUOhsfvYb9QmxeuKrNSS/cQ+13y490z
+        oiYmyVKlQpf9YoG7ypO1xaBsUre4GilNoMbwYTKcAndrhDL/yhVxXWgIimvOnv/7QA0wt/lCjkEDa
+        b5taH/Kw==;
+Received: from [2601:1c0:6280:3f0::aa0b] (helo=bombadil.infradead.org)
+        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1mmVY3-00ESW0-32; Mon, 15 Nov 2021 06:32:59 +0000
+From:   Randy Dunlap <rdunlap@infradead.org>
+To:     linux-kernel@vger.kernel.org
+Cc:     Randy Dunlap <rdunlap@infradead.org>,
+        "Gustavo A. R. Silva" <gustavoars@kernel.org>,
+        Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>,
+        Manuel Lauss <mano@roarinelk.homelinux.net>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org
+Subject: [PATCH] fbdev: sh7760fb: document fallthrough cases
+Date:   Sun, 14 Nov 2021 22:32:57 -0800
+Message-Id: <20211115063257.14369-1-rdunlap@infradead.org>
+X-Mailer: git-send-email 2.31.1
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The pull request you sent on Sun, 14 Nov 2021 13:53:04 -0500:
+Fix fallthrough warnings in sh776fb.c:
 
-> git://git.libc.org/linux-sh tags/sh-for-5.16
+../drivers/video/fbdev/sh7760fb.c: In function 'sh7760fb_get_color_info':
+../drivers/video/fbdev/sh7760fb.c:138:23: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  138 |                 lgray = 1;
+../drivers/video/fbdev/sh7760fb.c:143:23: warning: this statement may fall through [-Wimplicit-fallthrough=]
+  143 |                 lgray = 1;
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/24318ae80d1705acc50f0d70ece543345336a6e1
+Just document the current state of code execution/flow.
 
-Thank you!
+Fixes: 4a25e41831ee ("video: sh7760fb: SH7760/SH7763 LCDC framebuffer driver")
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Cc: "Gustavo A. R. Silva" <gustavoars@kernel.org>
+Cc: Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
+Cc: Manuel Lauss <mano@roarinelk.homelinux.net>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Cc: linux-fbdev@vger.kernel.org
+Cc: dri-devel@lists.freedesktop.org
+---
+ drivers/video/fbdev/sh7760fb.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
--- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+--- linux-next-20211112.orig/drivers/video/fbdev/sh7760fb.c
++++ linux-next-20211112/drivers/video/fbdev/sh7760fb.c
+@@ -136,11 +136,13 @@ static int sh7760fb_get_color_info(struc
+ 		break;
+ 	case LDDFR_4BPP_MONO:
+ 		lgray = 1;
++		fallthrough;
+ 	case LDDFR_4BPP:
+ 		lbpp = 4;
+ 		break;
+ 	case LDDFR_6BPP_MONO:
+ 		lgray = 1;
++		fallthrough;
+ 	case LDDFR_8BPP:
+ 		lbpp = 8;
+ 		break;
