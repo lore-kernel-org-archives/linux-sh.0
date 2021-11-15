@@ -2,116 +2,106 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6AA28C433EF
-	for <linux-sh@archiver.kernel.org>; Mon, 15 Nov 2021 10:11:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AA976C433FE
+	for <linux-sh@archiver.kernel.org>; Mon, 15 Nov 2021 17:31:56 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 549E963211
-	for <linux-sh@archiver.kernel.org>; Mon, 15 Nov 2021 10:11:29 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id 938B663241
+	for <linux-sh@archiver.kernel.org>; Mon, 15 Nov 2021 17:31:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237554AbhKOKOS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 15 Nov 2021 05:14:18 -0500
-Received: from mail-ua1-f46.google.com ([209.85.222.46]:38608 "EHLO
-        mail-ua1-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237588AbhKOKNx (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 15 Nov 2021 05:13:53 -0500
-Received: by mail-ua1-f46.google.com with SMTP id w23so10708731uao.5;
-        Mon, 15 Nov 2021 02:10:55 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=uczNj+JRGNzcNZDnUARVSzMZZa6FtWsEl77y1g5axMY=;
-        b=RGYfHjYonx3hsjWTuJpM+6U7LQkv7t1vCfjrkTdm9rwyLiHAGkyV/4yZ+5Fp7kq8l5
-         hhh8/03c6/xFJBmEQUQEUqkvo+qSAqlGh1StYjixtkU1xTtjsgJEOWDt4a6cxFOYu+1N
-         XxYxdH/OhZGipjEK/rm553d8hoae3/ciZnR9BwhcGRlVpI7hibraMv0qBwSG5aFPBHj1
-         AnhT0tof2wIiw7x5733EOYgaG/X8QMKi7vsxZA2IaXFClycGlY2qKpx0zCAZgWIysknG
-         es7xtlQMDc3ccPxfnr28noYXl4nVFg2LDcE0nlpNeKE2Z9QiAOLs8nFJLnKKgK+3bTl+
-         vkDQ==
-X-Gm-Message-State: AOAM532uLGStkxj4ZN/1OwBsJ8EMMzYLzkPu4WY3eR/u6ErwjiKnuZha
-        PaaDICZiEiM+Hmr9HV3OVS/NonWMb2XXbw==
-X-Google-Smtp-Source: ABdhPJzIW2+6vIsDVErFpZ8bdIkWNqdcfWrUF7xVzZwZxss56IYTacdHJs+Riu+1iFSCDE2Dav8prA==
-X-Received: by 2002:a67:e050:: with SMTP id n16mr40869277vsl.44.1636971054324;
-        Mon, 15 Nov 2021 02:10:54 -0800 (PST)
-Received: from mail-vk1-f179.google.com (mail-vk1-f179.google.com. [209.85.221.179])
-        by smtp.gmail.com with ESMTPSA id f188sm8623117vsc.16.2021.11.15.02.10.53
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 15 Nov 2021 02:10:54 -0800 (PST)
-Received: by mail-vk1-f179.google.com with SMTP id k83so7952348vke.7;
-        Mon, 15 Nov 2021 02:10:53 -0800 (PST)
-X-Received: by 2002:a1f:f24f:: with SMTP id q76mr56909184vkh.11.1636971053697;
- Mon, 15 Nov 2021 02:10:53 -0800 (PST)
-MIME-Version: 1.0
-References: <20211115064128.9896-1-rdunlap@infradead.org>
-In-Reply-To: <20211115064128.9896-1-rdunlap@infradead.org>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 15 Nov 2021 11:10:42 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdULwWi6hEUGY7vA3Nc7DhYLp_dH0o-sVdijWg6Z54GijQ@mail.gmail.com>
-Message-ID: <CAMuHMdULwWi6hEUGY7vA3Nc7DhYLp_dH0o-sVdijWg6Z54GijQ@mail.gmail.com>
-Subject: Re: [PATCH 1/2] sh: mcount.S: fix build error when PRINTK is not enabled
-To:     Randy Dunlap <rdunlap@infradead.org>
-Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        id S238053AbhKORee (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 15 Nov 2021 12:34:34 -0500
+Received: from mail.kernel.org ([198.145.29.99]:46730 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S238178AbhKORdi (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Mon, 15 Nov 2021 12:33:38 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 88D7863248;
+        Mon, 15 Nov 2021 17:21:39 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+        s=korg; t=1636996900;
+        bh=XmzqHL0Z0tJSw6FXl0JzN3xJCCpGMGmK9Cp/EP+0nkA=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=KaoACGz5jQJjuatCI6RAlwwv5jgVkNYzVfbnzYLbWDmvyE5Lf0UOAVflrNkH1FLdd
+         fE+jUJbebc+g7OKjcK/tlLLtHxqsFnvo3mARkxFnzORfxnkQw52OHACfH+AkDazLBK
+         EbPMzMpTIhJH2LyTXyn7L6cqWcCBL3oycKZIiYKI=
+From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To:     linux-kernel@vger.kernel.org
+Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        stable@vger.kernel.org,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        Paul Mundt <lethal@linux-sh.org>
-Content-Type: text/plain; charset="UTF-8"
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        "Eric W. Biederman" <ebiederm@xmission.com>,
+        Sasha Levin <sashal@kernel.org>
+Subject: [PATCH 5.4 307/355] signal/sh: Use force_sig(SIGKILL) instead of do_group_exit(SIGKILL)
+Date:   Mon, 15 Nov 2021 18:03:51 +0100
+Message-Id: <20211115165323.653076217@linuxfoundation.org>
+X-Mailer: git-send-email 2.33.1
+In-Reply-To: <20211115165313.549179499@linuxfoundation.org>
+References: <20211115165313.549179499@linuxfoundation.org>
+User-Agent: quilt/0.66
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Randy,
+From: Eric W. Biederman <ebiederm@xmission.com>
 
-On Mon, Nov 15, 2021 at 7:41 AM Randy Dunlap <rdunlap@infradead.org> wrote:
-> Fix a build error in mcount.S when CONFIG_PRINTK is not enabled.
-> Fixes this build error:
->
-> sh2-linux-ld: arch/sh/lib/mcount.o: in function `stack_panic':
-> (.text+0xec): undefined reference to `dump_stack'
->
-> Fixes: e460ab27b6c3e ("sh: Fix up stack overflow check with ftrace disabled.")
-> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+[ Upstream commit ce0ee4e6ac99606f3945f4d47775544edc3f7985 ]
 
-Thanks for your patch!
+Today the sh code allocates memory the first time a process uses
+the fpu.  If that memory allocation fails, kill the affected task
+with force_sig(SIGKILL) rather than do_group_exit(SIGKILL).
 
-> Possibly even more of this function should conditionally not be built...
+Calling do_group_exit from an exception handler can potentially lead
+to dead locks as do_group_exit is not designed to be called from
+interrupt context.  Instead use force_sig(SIGKILL) to kill the
+userspace process.  Sending signals in general and force_sig in
+particular has been tested from interrupt context so there should be
+no problems.
 
-What about making STACK_DEBUG depend on PRINTK instead?
-It doesn't make much sense to enable the former, if you won't print
-any output...
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Fixes: 0ea820cf9bf5 ("sh: Move over to dynamically allocated FPU context.")
+Link: https://lkml.kernel.org/r/20211020174406.17889-6-ebiederm@xmission.com
+Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ arch/sh/kernel/cpu/fpu.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
 
-> --- linux-next-20211112.orig/arch/sh/lib/mcount.S
-> +++ linux-next-20211112/arch/sh/lib/mcount.S
-> @@ -257,9 +257,11 @@ return_to_handler:
->  #ifdef CONFIG_STACK_DEBUG
->         .globl  stack_panic
->  stack_panic:
-> +#ifdef CONFIG_PRINTK
->         mov.l   .Ldump_stack, r0
->         jsr     @r0
->          nop
-> +#endif
->
->         mov.l   .Lpanic, r0
->         jsr     @r0
-> @@ -277,8 +279,10 @@ stack_panic:
->         .long   panic
->  .Lpanic_s:
->         .long   .Lpanic_str
-> +#ifdef CONFIG_PRINTK
->  .Ldump_stack:
->         .long   dump_stack
-> +#endif
->
->         .section        .rodata
->         .align 2
+diff --git a/arch/sh/kernel/cpu/fpu.c b/arch/sh/kernel/cpu/fpu.c
+index ae354a2931e7e..fd6db0ab19288 100644
+--- a/arch/sh/kernel/cpu/fpu.c
++++ b/arch/sh/kernel/cpu/fpu.c
+@@ -62,18 +62,20 @@ void fpu_state_restore(struct pt_regs *regs)
+ 	}
+ 
+ 	if (!tsk_used_math(tsk)) {
+-		local_irq_enable();
++		int ret;
+ 		/*
+ 		 * does a slab alloc which can sleep
+ 		 */
+-		if (init_fpu(tsk)) {
++		local_irq_enable();
++		ret = init_fpu(tsk);
++		local_irq_disable();
++		if (ret) {
+ 			/*
+ 			 * ran out of memory!
+ 			 */
+-			do_group_exit(SIGKILL);
++			force_sig(SIGKILL);
+ 			return;
+ 		}
+-		local_irq_disable();
+ 	}
+ 
+ 	grab_fpu(regs);
+-- 
+2.33.0
 
-Gr{oetje,eeting}s,
 
-                        Geert
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
