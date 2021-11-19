@@ -2,56 +2,35 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D6D3CC433EF
-	for <linux-sh@archiver.kernel.org>; Fri, 19 Nov 2021 08:02:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E439AC433F5
+	for <linux-sh@archiver.kernel.org>; Fri, 19 Nov 2021 09:58:48 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id B947561B43
-	for <linux-sh@archiver.kernel.org>; Fri, 19 Nov 2021 08:02:20 +0000 (UTC)
+	by mail.kernel.org (Postfix) with ESMTP id C9C7C6054F
+	for <linux-sh@archiver.kernel.org>; Fri, 19 Nov 2021 09:58:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231146AbhKSIFV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 19 Nov 2021 03:05:21 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55962 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229879AbhKSIFU (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 19 Nov 2021 03:05:20 -0500
-Received: from mail-pj1-x102a.google.com (mail-pj1-x102a.google.com [IPv6:2607:f8b0:4864:20::102a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 13434C061574;
-        Fri, 19 Nov 2021 00:02:19 -0800 (PST)
-Received: by mail-pj1-x102a.google.com with SMTP id np6-20020a17090b4c4600b001a90b011e06so8132322pjb.5;
-        Fri, 19 Nov 2021 00:02:19 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=qOCx5sFVE+zhsZMFm7VYYi5j9KabUFYLGScDeGkNxio=;
-        b=nzW89fNZIaeGG7iFC/anmbyYxdYeiIPsY0WyiJL9dBOt/8uw3ODbBglPEFVbBiYTFV
-         0pv6LksmsP2oSI7akfzeUVVDy20WgJ8k3Rv/wn0P8mO0aNHHtrwk7Uq1DAm2tz0pk8FA
-         pyHsLEzmZnvO6aptkJL6vJeOlrnGVjQ8DlD967ddxsYJ1T8QRmI3cN0eGcPyOLxdkh7J
-         JFWJebETXfh0MEmv7iOioLeT+GLXWL8dQGOU7S+PWH74qRoFtdGbVE6oXI0KrvG0FTVd
-         +teDlDj3djGGS3rhXtJn8bFeiCJlF9gtWq6C9oZE6cyVc4LO5QXagcnEvn69nlQBAycU
-         pkgQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=qOCx5sFVE+zhsZMFm7VYYi5j9KabUFYLGScDeGkNxio=;
-        b=Or/zsPK1wi4mdi+WX5LKyzzasmMEHIcWIqCQKbMDRBf/PeHPN81krtUEJOsuHgyd0E
-         5tVYqtGbcva+TjH/xHuS1nahHgLTaq8fstDFFsFW6UMJ9QD6V465XAvTCYtNzht820sy
-         KBXmCBDxNnbVtz6CX0JeSpZLLWCeHug0GrXvRzlu+IkZjHegOnFqVOvREfxR+4NjbYj/
-         0gtYdGtSxhaT9fIzakg3WXquwjl6bdrPFbd2m4J00BExm8NY+RY5xDhFy/ZC4VcCD7zT
-         XtlWmq3u2zkbM8HhfcTasrKrqZehscvqk3uKDn/1qVjzZ+5RctQcbgRsHyr5GCT6kyDk
-         hI8A==
-X-Gm-Message-State: AOAM532oKIz0FRaE+V5g9pGocBw7DJZNHsHUEr8VJLCYsSItqk1LBQMh
-        ko0y81YlL7dQX5HR2rb9PN0=
-X-Google-Smtp-Source: ABdhPJxD8TG96sq1MtTt8E+2ENWTqJbXT9h5ZtPUFFHaIxmjzzibkl/E4Joc49HUY6kx/0RfviZh7Q==
-X-Received: by 2002:a17:902:f209:b0:141:99d1:7cef with SMTP id m9-20020a170902f20900b0014199d17cefmr75711457plc.70.1637308938491;
-        Fri, 19 Nov 2021 00:02:18 -0800 (PST)
-Received: from localhost.localdomain ([103.99.179.247])
-        by smtp.gmail.com with ESMTPSA id o6sm1791259pfh.70.2021.11.19.00.01.46
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 19 Nov 2021 00:02:18 -0800 (PST)
-From:   Calvin Zhang <calvinzhang.cool@gmail.com>
-To:     Vineet Gupta <vgupta@kernel.org>,
+        id S231231AbhKSKBt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 19 Nov 2021 05:01:49 -0500
+Received: from mga04.intel.com ([192.55.52.120]:17003 "EHLO mga04.intel.com"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S229974AbhKSKBs (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Fri, 19 Nov 2021 05:01:48 -0500
+X-IronPort-AV: E=McAfee;i="6200,9189,10172"; a="233110022"
+X-IronPort-AV: E=Sophos;i="5.87,247,1631602800"; 
+   d="scan'208";a="233110022"
+Received: from fmsmga004.fm.intel.com ([10.253.24.48])
+  by fmsmga104.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 19 Nov 2021 01:58:47 -0800
+X-IronPort-AV: E=Sophos;i="5.87,247,1631602800"; 
+   d="scan'208";a="568845492"
+Received: from smile.fi.intel.com ([10.237.72.184])
+  by fmsmga004-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 19 Nov 2021 01:58:31 -0800
+Received: from andy by smile.fi.intel.com with local (Exim 4.95)
+        (envelope-from <andriy.shevchenko@linux.intel.com>)
+        id 1mo0cr-008Uqj-60;
+        Fri, 19 Nov 2021 11:56:09 +0200
+Date:   Fri, 19 Nov 2021 11:56:08 +0200
+From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+To:     Calvin Zhang <calvinzhang.cool@gmail.com>
+Cc:     Vineet Gupta <vgupta@kernel.org>,
         Russell King <linux@armlinux.org.uk>,
         Catalin Marinas <catalin.marinas@arm.com>,
         Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
@@ -79,7 +58,6 @@ To:     Vineet Gupta <vgupta@kernel.org>,
         David Hildenbrand <david@redhat.com>,
         Kefeng Wang <wangkefeng.wang@huawei.com>,
         Vladimir Isaev <isaev@synopsys.com>,
-        Calvin Zhang <calvinzhang.cool@gmail.com>,
         Arnd Bergmann <arnd@arndb.de>,
         "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>,
         "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
@@ -103,14 +81,13 @@ To:     Vineet Gupta <vgupta@kernel.org>,
         Christophe Leroy <christophe.leroy@c-s.fr>,
         Ganesh Goudar <ganeshgr@linux.ibm.com>,
         Markus Elfring <elfring@users.sourceforge.net>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
         Atish Patra <atish.patra@wdc.com>,
         Anup Patel <anup.patel@wdc.com>,
         Nick Kossifidis <mick@ics.forth.gr>,
         Alexandre Ghiti <alex@ghiti.fr>,
-        Vitaly Wool <vitaly.wool@konsulko.com>
-Cc:     Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Vitaly Wool <vitaly.wool@konsulko.com>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
         Lee Jones <lee.jones@linaro.org>,
         Guo Ren <guoren@linux.alibaba.com>,
         Rob Herring <robh@kernel.org>,
@@ -122,456 +99,47 @@ Cc:     Wolfram Sang <wsa+renesas@sang-engineering.com>,
         openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org,
         linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
         linux-xtensa@linux-xtensa.org, devicetree@vger.kernel.org
-Subject: [PATCH 2/2] of: reserved_mem: Remove reserved regions count restriction
-Date:   Fri, 19 Nov 2021 15:58:19 +0800
-Message-Id: <20211119075844.2902592-3-calvinzhang.cool@gmail.com>
-X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20211119075844.2902592-1-calvinzhang.cool@gmail.com>
+Subject: Re: [PATCH 2/2] of: reserved_mem: Remove reserved regions count
+ restriction
+Message-ID: <YZd0uEWNH6Def3+8@smile.fi.intel.com>
 References: <20211119075844.2902592-1-calvinzhang.cool@gmail.com>
+ <20211119075844.2902592-3-calvinzhang.cool@gmail.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20211119075844.2902592-3-calvinzhang.cool@gmail.com>
+Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Change to allocate reserved_mems dynamically. Static reserved regions
-must be reserved before any memblock allocations. The reserved_mems
-array couldn't be allocated until memblock and linear mapping are ready.
+On Fri, Nov 19, 2021 at 03:58:19PM +0800, Calvin Zhang wrote:
+> Change to allocate reserved_mems dynamically. Static reserved regions
+> must be reserved before any memblock allocations. The reserved_mems
+> array couldn't be allocated until memblock and linear mapping are ready.
+> 
+> So move the allocation and initialization of records and reserved memory
+> from early_init_fdt_scan_reserved_mem() to of_reserved_mem_init().
 
-So move the allocation and initialization of records and reserved memory
-from early_init_fdt_scan_reserved_mem() to of_reserved_mem_init().
+>  arch/arc/mm/init.c                 |  3 ++
+>  arch/arm/kernel/setup.c            |  2 +
+>  arch/arm64/kernel/setup.c          |  3 ++
+>  arch/csky/kernel/setup.c           |  3 ++
+>  arch/h8300/kernel/setup.c          |  2 +
+>  arch/mips/kernel/setup.c           |  3 ++
+>  arch/nds32/kernel/setup.c          |  3 ++
+>  arch/nios2/kernel/setup.c          |  2 +
+>  arch/openrisc/kernel/setup.c       |  3 ++
+>  arch/powerpc/kernel/setup-common.c |  3 ++
+>  arch/riscv/kernel/setup.c          |  2 +
+>  arch/sh/kernel/setup.c             |  3 ++
+>  arch/xtensa/kernel/setup.c         |  2 +
 
-Signed-off-by: Calvin Zhang <calvinzhang.cool@gmail.com>
----
- arch/arc/mm/init.c                 |  3 ++
- arch/arm/kernel/setup.c            |  2 +
- arch/arm64/kernel/setup.c          |  3 ++
- arch/csky/kernel/setup.c           |  3 ++
- arch/h8300/kernel/setup.c          |  2 +
- arch/mips/kernel/setup.c           |  3 ++
- arch/nds32/kernel/setup.c          |  3 ++
- arch/nios2/kernel/setup.c          |  2 +
- arch/openrisc/kernel/setup.c       |  3 ++
- arch/powerpc/kernel/setup-common.c |  3 ++
- arch/riscv/kernel/setup.c          |  2 +
- arch/sh/kernel/setup.c             |  3 ++
- arch/xtensa/kernel/setup.c         |  2 +
- drivers/of/fdt.c                   |  1 -
- drivers/of/of_reserved_mem.c       | 66 ++++++++++++++++++++----------
- 15 files changed, 79 insertions(+), 22 deletions(-)
+Isn't x86 missed? Is it on purpose?
+Would be nice to have this in the commit message or fixed accordingly.
 
-diff --git a/arch/arc/mm/init.c b/arch/arc/mm/init.c
-index ce4e939a7f07..a75f0e693f37 100644
---- a/arch/arc/mm/init.c
-+++ b/arch/arc/mm/init.c
-@@ -10,6 +10,7 @@
- #include <linux/initrd.h>
- #endif
- #include <linux/of_fdt.h>
-+#include <linux/of_reserved_mem.h>
- #include <linux/swap.h>
- #include <linux/module.h>
- #include <linux/highmem.h>
-@@ -165,6 +166,8 @@ void __init setup_arch_memory(void)
- 
- #endif /* CONFIG_HIGHMEM */
- 
-+	of_reserved_mem_init();
-+
- 	free_area_init(max_zone_pfn);
- }
- 
-diff --git a/arch/arm/kernel/setup.c b/arch/arm/kernel/setup.c
-index 284a80c0b6e1..e76737effbf4 100644
---- a/arch/arm/kernel/setup.c
-+++ b/arch/arm/kernel/setup.c
-@@ -20,6 +20,7 @@
- #include <linux/kexec.h>
- #include <linux/libfdt.h>
- #include <linux/of_fdt.h>
-+#include <linux/of_reserved_mem.h>
- #include <linux/cpu.h>
- #include <linux/interrupt.h>
- #include <linux/smp.h>
-@@ -1153,6 +1154,7 @@ void __init setup_arch(char **cmdline_p)
- 	early_ioremap_reset();
- 
- 	paging_init(mdesc);
-+	of_reserved_mem_init();
- 	kasan_init();
- 	request_standard_resources(mdesc);
- 
-diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
-index be5f85b0a24d..4624e5193d6e 100644
---- a/arch/arm64/kernel/setup.c
-+++ b/arch/arm64/kernel/setup.c
-@@ -27,6 +27,7 @@
- #include <linux/proc_fs.h>
- #include <linux/memblock.h>
- #include <linux/of_fdt.h>
-+#include <linux/of_reserved_mem.h>
- #include <linux/efi.h>
- #include <linux/psci.h>
- #include <linux/sched/task.h>
-@@ -339,6 +340,8 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
- 
- 	paging_init();
- 
-+	of_reserved_mem_init();
-+
- 	acpi_table_upgrade();
- 
- 	/* Parse the ACPI tables for possible boot-time configuration */
-diff --git a/arch/csky/kernel/setup.c b/arch/csky/kernel/setup.c
-index c64e7be2045b..40878906644d 100644
---- a/arch/csky/kernel/setup.c
-+++ b/arch/csky/kernel/setup.c
-@@ -6,6 +6,7 @@
- #include <linux/initrd.h>
- #include <linux/of.h>
- #include <linux/of_fdt.h>
-+#include <linux/of_reserved_mem.h>
- #include <linux/start_kernel.h>
- #include <linux/dma-map-ops.h>
- #include <linux/screen_info.h>
-@@ -64,6 +65,8 @@ static void __init csky_memblock_init(void)
- #endif
- 	memblock_set_current_limit(PFN_PHYS(max_low_pfn));
- 
-+	of_reserved_mem_init();
-+
- 	dma_contiguous_reserve(0);
- 
- 	free_area_init(max_zone_pfn);
-diff --git a/arch/h8300/kernel/setup.c b/arch/h8300/kernel/setup.c
-index 61091a76eb7e..0f0ec72a260e 100644
---- a/arch/h8300/kernel/setup.c
-+++ b/arch/h8300/kernel/setup.c
-@@ -24,6 +24,7 @@
- #include <linux/of.h>
- #include <linux/of_fdt.h>
- #include <linux/of_address.h>
-+#include <linux/of_reserved_mem.h>
- #include <linux/clk-provider.h>
- #include <linux/memblock.h>
- #include <linux/screen_info.h>
-@@ -87,6 +88,7 @@ static void __init bootmem_init(void)
- 
- 	early_init_fdt_reserve_self();
- 	early_init_fdt_scan_reserved_mem();
-+	of_reserved_mem_init();
- 
- 	memblock_dump_all();
- }
-diff --git a/arch/mips/kernel/setup.c b/arch/mips/kernel/setup.c
-index f979adfd4fc2..053a10d80cb9 100644
---- a/arch/mips/kernel/setup.c
-+++ b/arch/mips/kernel/setup.c
-@@ -27,6 +27,7 @@
- #include <linux/dma-map-ops.h>
- #include <linux/decompress/generic.h>
- #include <linux/of_fdt.h>
-+#include <linux/of_reserved_mem.h>
- #include <linux/dmi.h>
- #include <linux/crash_dump.h>
- 
-@@ -776,6 +777,8 @@ void __init setup_arch(char **cmdline_p)
- 	cpu_cache_init();
- 	paging_init();
- 
-+	of_reserved_mem_init();
-+
- 	memblock_dump_all();
- }
- 
-diff --git a/arch/nds32/kernel/setup.c b/arch/nds32/kernel/setup.c
-index b3d34d646652..1054804526c5 100644
---- a/arch/nds32/kernel/setup.c
-+++ b/arch/nds32/kernel/setup.c
-@@ -10,6 +10,7 @@
- #include <linux/dma-mapping.h>
- #include <linux/of_fdt.h>
- #include <linux/of_platform.h>
-+#include <linux/of_reserved_mem.h>
- #include <asm/setup.h>
- #include <asm/sections.h>
- #include <asm/proc-fns.h>
-@@ -301,6 +302,8 @@ void __init setup_arch(char **cmdline_p)
- 	/* paging_init() sets up the MMU and marks all pages as reserved */
- 	paging_init();
- 
-+	of_reserved_mem_init();
-+
- 	/* invalidate all TLB entries because the new mapping is created */
- 	__nds32__tlbop_flua();
- 
-diff --git a/arch/nios2/kernel/setup.c b/arch/nios2/kernel/setup.c
-index 40bc8fb75e0b..7e40e90bc3cd 100644
---- a/arch/nios2/kernel/setup.c
-+++ b/arch/nios2/kernel/setup.c
-@@ -19,6 +19,7 @@
- #include <linux/memblock.h>
- #include <linux/initrd.h>
- #include <linux/of_fdt.h>
-+#include <linux/of_reserved_mem.h>
- #include <linux/screen_info.h>
- 
- #include <asm/mmu_context.h>
-@@ -173,6 +174,7 @@ void __init setup_arch(char **cmdline_p)
- 
- 	early_init_fdt_reserve_self();
- 	early_init_fdt_scan_reserved_mem();
-+	of_reserved_mem_init();
- 
- 	unflatten_and_copy_device_tree();
- 
-diff --git a/arch/openrisc/kernel/setup.c b/arch/openrisc/kernel/setup.c
-index 0cd04d936a7a..6830bd110ac4 100644
---- a/arch/openrisc/kernel/setup.c
-+++ b/arch/openrisc/kernel/setup.c
-@@ -32,6 +32,7 @@
- #include <linux/initrd.h>
- #include <linux/of_fdt.h>
- #include <linux/of.h>
-+#include <linux/of_reserved_mem.h>
- #include <linux/device.h>
- 
- #include <asm/sections.h>
-@@ -299,6 +300,8 @@ void __init setup_arch(char **cmdline_p)
- 	/* paging_init() sets up the MMU and marks all pages as reserved */
- 	paging_init();
- 
-+	of_reserved_mem_init();
-+
- 	*cmdline_p = boot_command_line;
- 
- 	printk(KERN_INFO "OpenRISC Linux -- http://openrisc.io\n");
-diff --git a/arch/powerpc/kernel/setup-common.c b/arch/powerpc/kernel/setup-common.c
-index 4f1322b65760..1902b4472991 100644
---- a/arch/powerpc/kernel/setup-common.c
-+++ b/arch/powerpc/kernel/setup-common.c
-@@ -31,6 +31,7 @@
- #include <linux/percpu.h>
- #include <linux/memblock.h>
- #include <linux/of_platform.h>
-+#include <linux/of_reserved_mem.h>
- #include <linux/hugetlb.h>
- #include <linux/pgtable.h>
- #include <asm/io.h>
-@@ -840,6 +841,8 @@ void __init setup_arch(char **cmdline_p)
- 	/* Set a half-reasonable default so udelay does something sensible */
- 	loops_per_jiffy = 500000000 / HZ;
- 
-+	of_reserved_mem_init();
-+
- 	/* Unflatten the device-tree passed by prom_init or kexec */
- 	unflatten_device_tree();
- 
-diff --git a/arch/riscv/kernel/setup.c b/arch/riscv/kernel/setup.c
-index b42bfdc67482..e3a211cdf5e1 100644
---- a/arch/riscv/kernel/setup.c
-+++ b/arch/riscv/kernel/setup.c
-@@ -16,6 +16,7 @@
- #include <linux/screen_info.h>
- #include <linux/of_fdt.h>
- #include <linux/of_platform.h>
-+#include <linux/of_reserved_mem.h>
- #include <linux/sched/task.h>
- #include <linux/smp.h>
- #include <linux/efi.h>
-@@ -273,6 +274,7 @@ void __init setup_arch(char **cmdline_p)
- 
- 	efi_init();
- 	paging_init();
-+	of_reserved_mem_init();
- #if IS_ENABLED(CONFIG_BUILTIN_DTB)
- 	unflatten_and_copy_device_tree();
- #else
-diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-index 1fcb6659822a..51e85a17c202 100644
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -31,6 +31,7 @@
- #include <linux/memblock.h>
- #include <linux/of.h>
- #include <linux/of_fdt.h>
-+#include <linux/of_reserved_mem.h>
- #include <linux/uaccess.h>
- #include <uapi/linux/mount.h>
- #include <asm/io.h>
-@@ -326,6 +327,8 @@ void __init setup_arch(char **cmdline_p)
- 	/* Let earlyprintk output early console messages */
- 	sh_early_platform_driver_probe("earlyprintk", 1, 1);
- 
-+	of_reserved_mem_init();
-+
- #ifdef CONFIG_OF_FLATTREE
- #ifdef CONFIG_USE_BUILTIN_DTB
- 	unflatten_and_copy_device_tree();
-diff --git a/arch/xtensa/kernel/setup.c b/arch/xtensa/kernel/setup.c
-index 8db20cfb44ab..527d425490fd 100644
---- a/arch/xtensa/kernel/setup.c
-+++ b/arch/xtensa/kernel/setup.c
-@@ -25,6 +25,7 @@
- #include <linux/cpu.h>
- #include <linux/of.h>
- #include <linux/of_fdt.h>
-+#include <linux/of_reserved_mem.h>
- 
- #if defined(CONFIG_VGA_CONSOLE) || defined(CONFIG_DUMMY_CONSOLE)
- # include <linux/console.h>
-@@ -356,6 +357,7 @@ void __init setup_arch(char **cmdline_p)
- 	parse_early_param();
- 	bootmem_init();
- 	kasan_init();
-+	of_reserved_mem_init();
- 	unflatten_and_copy_device_tree();
- 
- #ifdef CONFIG_SMP
-diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
-index 445af4e69300..715ce8ec6ac6 100644
---- a/drivers/of/fdt.c
-+++ b/drivers/of/fdt.c
-@@ -540,7 +540,6 @@ void __init early_init_fdt_scan_reserved_mem(void)
- 	}
- 
- 	fdt_scan_reserved_mem();
--	of_reserved_mem_init();
- 	fdt_reserve_elfcorehdr();
- }
- 
-diff --git a/drivers/of/of_reserved_mem.c b/drivers/of/of_reserved_mem.c
-index 784cfc5cd251..6dc22a1ad472 100644
---- a/drivers/of/of_reserved_mem.c
-+++ b/drivers/of/of_reserved_mem.c
-@@ -26,9 +26,8 @@
- 
- #include "of_private.h"
- 
--#define MAX_RESERVED_REGIONS	64
--static struct reserved_mem reserved_mems[MAX_RESERVED_REGIONS];
--static int reserved_mem_count;
-+static struct reserved_mem *reserved_mems;
-+static int reserved_mem_count, reserved_mem_max_count;
- 
- static int __init early_init_dt_alloc_reserved_memory_arch(phys_addr_t size,
- 	phys_addr_t align, phys_addr_t start, phys_addr_t end, bool nomap,
-@@ -62,7 +61,7 @@ static void __init fdt_reserved_mem_save_node(unsigned long node, const char *un
- {
- 	struct reserved_mem *rmem = &reserved_mems[reserved_mem_count];
- 
--	if (reserved_mem_count == ARRAY_SIZE(reserved_mems)) {
-+	if (reserved_mem_count == reserved_mem_max_count) {
- 		pr_err("not enough space for all defined regions.\n");
- 		return;
- 	}
-@@ -200,13 +199,12 @@ static int __init __reserved_mem_check_root(unsigned long node)
-  * __reserved_mem_reserve_reg() - reserve all memory described in 'reg' property
-  */
- static int __init __reserved_mem_reserve_reg(unsigned long node,
--					     const char *uname)
-+					     const char *uname, bool reserve_only)
- {
- 	int t_len = (dt_root_addr_cells + dt_root_size_cells) * sizeof(__be32);
- 	phys_addr_t base, size;
- 	int len;
- 	const __be32 *prop;
--	int first = 1;
- 	bool nomap;
- 
- 	prop = of_get_flat_dt_prop(node, "reg", &len);
-@@ -225,30 +223,35 @@ static int __init __reserved_mem_reserve_reg(unsigned long node,
- 		base = dt_mem_next_cell(dt_root_addr_cells, &prop);
- 		size = dt_mem_next_cell(dt_root_size_cells, &prop);
- 
--		if (size &&
--		    early_init_dt_reserve_memory_arch(base, size, nomap) == 0)
--			pr_debug("Reserved memory: reserved region for node '%s': base %pa, size %lu MiB\n",
--				uname, &base, (unsigned long)(size / SZ_1M));
--		else
--			pr_info("Reserved memory: failed to reserve memory for node '%s': base %pa, size %lu MiB\n",
--				uname, &base, (unsigned long)(size / SZ_1M));
--
--		len -= t_len;
--		if (first) {
-+		if (reserve_only) {
-+			if (size &&
-+				early_init_dt_reserve_memory_arch(base, size, nomap) == 0)
-+				pr_debug("Reserved memory: reserved region for node '%s': base %pa, size %lu MiB\n",
-+					uname, &base, (unsigned long)(size / SZ_1M));
-+			else
-+				pr_info("Reserved memory: failed to reserve memory for node '%s': base %pa, size %lu MiB\n",
-+					uname, &base, (unsigned long)(size / SZ_1M));
-+		} else {
- 			fdt_reserved_mem_save_node(node, uname, base, size);
--			first = 0;
-+			break;
- 		}
-+		len -= t_len;
- 	}
- 	return 0;
- }
- 
- /*
-- * fdt_scan_reserved_mem() - scan a single FDT node for reserved memory
-+ * fdt_scan_reserved_mem() - scan /reserved-memory node
-+ *
-+ * Get the max count of regions in the first pass. Early allocator is
-+ * not fully available yet. Store information of reserved region to
-+ * reserved_mems array in the second pass.
-  */
- int __init fdt_scan_reserved_mem(void)
- {
--	int node, child;
-+	int node, child, regions = 0;
- 	const void *fdt = initial_boot_params;
-+	static bool first = true;
- 
- 	node = fdt_path_offset(fdt, "/reserved-memory");
- 	if (node < 0)
-@@ -266,12 +269,19 @@ int __init fdt_scan_reserved_mem(void)
- 		if (!of_fdt_device_is_available(fdt, child))
- 			continue;
- 
-+		regions++;
- 		uname = fdt_get_name(fdt, child, NULL);
- 
--		err = __reserved_mem_reserve_reg(child, uname);
--		if (err == -ENOENT && of_get_flat_dt_prop(child, "size", NULL))
-+		err = __reserved_mem_reserve_reg(child, uname, first);
-+		if (err == -ENOENT && of_get_flat_dt_prop(child, "size", NULL) && !first)
- 			fdt_reserved_mem_save_node(child, uname, 0, 0);
- 	}
-+
-+	if (first) {
-+		reserved_mem_max_count = regions;
-+		first = false;
-+	}
-+
- 	return 0;
- }
- 
-@@ -358,6 +368,20 @@ void __init of_reserved_mem_init(void)
- {
- 	int i;
- 
-+	if (!reserved_mem_max_count)
-+		return;
-+
-+	reserved_mems = memblock_alloc(
-+			sizeof(struct reserved_mem) * reserved_mem_max_count,
-+			SMP_CACHE_BYTES);
-+	if (!reserved_mems) {
-+		reserved_mem_max_count = 0;
-+		pr_err("failed to allocate reserved_mems array.\n");
-+		return;
-+	}
-+
-+	fdt_scan_reserved_mem();
-+
- 	/* check for overlapping reserved regions */
- 	__rmem_check_for_overlap();
- 
 -- 
-2.30.2
+With Best Regards,
+Andy Shevchenko
+
 
