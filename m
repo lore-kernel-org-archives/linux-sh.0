@@ -1,60 +1,32 @@
 Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
-Received: from mail.kernel.org (mail.kernel.org [198.145.29.99])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C287C4332F
-	for <linux-sh@archiver.kernel.org>; Fri, 19 Nov 2021 10:30:18 +0000 (UTC)
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by mail.kernel.org (Postfix) with ESMTP id 42CBD610A1
-	for <linux-sh@archiver.kernel.org>; Fri, 19 Nov 2021 10:30:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DEC95C4332F
+	for <linux-sh@archiver.kernel.org>; Sun, 21 Nov 2021 06:44:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234615AbhKSKdS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 19 Nov 2021 05:33:18 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32928 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234698AbhKSKdQ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 19 Nov 2021 05:33:16 -0500
-Received: from mail-pj1-x1033.google.com (mail-pj1-x1033.google.com [IPv6:2607:f8b0:4864:20::1033])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B9AADC061574;
-        Fri, 19 Nov 2021 02:30:14 -0800 (PST)
-Received: by mail-pj1-x1033.google.com with SMTP id nh10-20020a17090b364a00b001a69adad5ebso8458683pjb.2;
-        Fri, 19 Nov 2021 02:30:14 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=mI6KtEpWF619oecwW9ziIW9hw+HsMKzn28OULpWVurc=;
-        b=KPFYp17Oy/uF3pbSIvlZbA7tgtmLiBC3HIruVIaKeBTx1ALHk1wBHI9RWH4Y/TRiM2
-         hAq35CyJOhqjAvnIz+XnfBNiKxqvsUzF8MUMqrbb+qoLapa3GCOHgXxaI6x9Km0AlL0K
-         2wG7B8CCYpBSr+ZNFswMkvUZagoAlzcdTSS//NHNiGf8CdixgEqb6uKPGS2QpTEgcUAp
-         yArb+GP+Q+XhbKyaqKWupK7SJqNy6AAI7qZH/W5TKcSo7ZV4POw8PNPyAsvkQzKhD740
-         EiMIWTjA0fXMyULJynwnTQN6Kgk/iWbRQ1iPpWyGjz39JFmP0lOhp61wqe2NJVi1cPEy
-         0utQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
-         :mime-version:content-disposition:in-reply-to;
-        bh=mI6KtEpWF619oecwW9ziIW9hw+HsMKzn28OULpWVurc=;
-        b=cwJLLMTNvO00pR8CmpzKLxJqptfILtE6FW5yGdDI0ZRZTJJenCalNdDJU5iby6fS2P
-         8cbiiThNbuoAPpccyaMgu9A661i7Pk0J4auSTIZbYyH/D/Y8cD0J5sILDq+ZpeVkeCPf
-         Tv6BjX84TrRErPblCgGAKs6y4SKRHT0pb1cfK5wjlzu7haBVUJaa4X/XNvA2dMQyYS85
-         GESe94zF9ZltHuQOkq2aHro8mSTePyeaeJ2CQX9zeqGi9PGsrGSSqcPjBP3cmXJ06wjz
-         ZtPAsi1JK0GVDUHh17YSpTKP1iS+Edhrg9Sjllw/0TuTRf15HNp+cIvD4GVRVedme74j
-         x7tA==
-X-Gm-Message-State: AOAM532UK6twORoNzF7EqMqkgQ99eW0G6y4MyRvi1i8JzOpPf0bcBSza
-        +EWGuWxl9rhVjhYDyMMUcEU=
-X-Google-Smtp-Source: ABdhPJwCL45zphX6sAUQpCTH2XR0MI6TO3LxQucz8xUZnsL94laUGiXdLG1KlgE2xhwPB5DYkk54PQ==
-X-Received: by 2002:a17:902:bc85:b0:143:954e:8548 with SMTP id bb5-20020a170902bc8500b00143954e8548mr73204786plb.82.1637317814262;
-        Fri, 19 Nov 2021 02:30:14 -0800 (PST)
-Received: from localhost ([103.99.179.247])
-        by smtp.gmail.com with ESMTPSA id u22sm2537834pfk.148.2021.11.19.02.30.13
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 19 Nov 2021 02:30:14 -0800 (PST)
-Date:   Fri, 19 Nov 2021 18:30:09 +0800
-From:   Calvin Zhang <calvinzhang.cool@gmail.com>
-To:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Cc:     Calvin Zhang <calvinzhang.cool@gmail.com>,
-        Vineet Gupta <vgupta@kernel.org>,
+        id S236906AbhKUGrU (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 21 Nov 2021 01:47:20 -0500
+Received: from mail.kernel.org ([198.145.29.99]:58642 "EHLO mail.kernel.org"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S229621AbhKUGrT (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Sun, 21 Nov 2021 01:47:19 -0500
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 60B98604AC;
+        Sun, 21 Nov 2021 06:43:52 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1637477055;
+        bh=fF0qMHEWbaZWbEit/VvNjQKirKtWS4o0c8b9dFvtOFg=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=o40YeyKWlss6qPqzIaBC1BRaoNsy8h4lRluMS6PA711BRFcqyhJOnzbksEMtKtJO/
+         8jbTZZa3TfDTwFyR4bB+BvkwZH8B4Lq6zUtBDhL0B4WDBH9OrnY/ZIAuUCLySCed3G
+         BY0pW/832nzdNqDcLtde/+ux9ozmIiM3YLALWMwekxe0nZCbZ8Eac9fyNJkYF8xblI
+         zzUk/gDwJpgD0wAYRzlFYo+zhx5+msTuR9KF/8/1WOgKdEL1RlhcobAeHzb+LuS7g/
+         jBCVo5DEsOze9uLZm95vmKlvgKfjbEPyxEhw1wZAFN+rxMTmDM0V/oXbaGrjJoZ0t1
+         JqBkAezCYdBnA==
+Date:   Sun, 21 Nov 2021 08:43:47 +0200
+From:   Mike Rapoport <rppt@kernel.org>
+To:     Calvin Zhang <calvinzhang.cool@gmail.com>
+Cc:     Vineet Gupta <vgupta@kernel.org>,
         Russell King <linux@armlinux.org.uk>,
         Catalin Marinas <catalin.marinas@arm.com>,
         Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
@@ -77,45 +49,46 @@ Cc:     Calvin Zhang <calvinzhang.cool@gmail.com>,
         Max Filippov <jcmvbkbc@gmail.com>,
         Rob Herring <robh+dt@kernel.org>,
         Frank Rowand <frowand.list@gmail.com>,
-        Mike Rapoport <rppt@kernel.org>,
         Andrew Morton <akpm@linux-foundation.org>,
         David Hildenbrand <david@redhat.com>,
+        Arnd Bergmann <arnd@arndb.de>,
         Kefeng Wang <wangkefeng.wang@huawei.com>,
         Vladimir Isaev <isaev@synopsys.com>,
-        Arnd Bergmann <arnd@arndb.de>,
         "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>,
-        "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
+        "Kirill A. Shutemov" <kirill.shtuemov@linux.intel.com>,
         Guenter Roeck <linux@roeck-us.net>,
         Marc Zyngier <maz@kernel.org>,
         David Brazdil <dbrazdil@google.com>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Andrey Konovalov <andreyknvl@gmail.com>,
         Anshuman Khandual <anshuman.khandual@arm.com>,
+        Andrey Konovalov <andreyknvl@gmail.com>,
+        Mark Rutland <mark.rutland@arm.com>,
         Souptick Joarder <jrdr.linux@gmail.com>,
         Jinyang He <hejinyang@loongson.cn>,
-        Mauri Sandberg <sandberg@mailfence.com>,
-        Tiezhu Yang <yangtiezhu@loongson.cn>,
+        "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
         Serge Semin <Sergey.Semin@baikalelectronics.ru>,
-        Alexander Sverdlin <alexander.sverdlin@nokia.com>,
+        Tiezhu Yang <yangtiezhu@loongson.cn>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
         Randy Dunlap <rdunlap@infradead.org>,
         Ley Foon Tan <ley.foon.tan@intel.com>,
         Andreas Oetken <andreas.oetken@siemens.com>,
         Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
         Christophe Leroy <christophe.leroy@c-s.fr>,
-        Ganesh Goudar <ganeshgr@linux.ibm.com>,
+        Zhang Yunkai <zhang.yunkai@zte.com.cn>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         Markus Elfring <elfring@users.sourceforge.net>,
+        Ganesh Goudar <ganeshgr@linux.ibm.com>,
         "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
         Atish Patra <atish.patra@wdc.com>,
         Anup Patel <anup.patel@wdc.com>,
         Nick Kossifidis <mick@ics.forth.gr>,
         Alexandre Ghiti <alex@ghiti.fr>,
         Vitaly Wool <vitaly.wool@konsulko.com>,
-        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Thierry Reding <treding@nvidia.com>,
         Lee Jones <lee.jones@linaro.org>,
         Guo Ren <guoren@linux.alibaba.com>,
-        Rob Herring <robh@kernel.org>,
-        Zhang Yunkai <zhang.yunkai@zte.com.cn>,
+        Alexander Sverdlin <alexander.sverdlin@nokia.com>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Mauri Sandberg <sandberg@mailfence.com>,
         Palmer Dabbelt <palmerdabbelt@google.com>,
         linux-snps-arc@lists.infradead.org, linux-kernel@vger.kernel.org,
         linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
@@ -123,54 +96,66 @@ Cc:     Calvin Zhang <calvinzhang.cool@gmail.com>,
         openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org,
         linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
         linux-xtensa@linux-xtensa.org, devicetree@vger.kernel.org
-Subject: Re: [PATCH 2/2] of: reserved_mem: Remove reserved regions count
- restriction
-Message-ID: <YZd8sc6E0bgNA9ag@debian>
+Subject: Re: [PATCH 0/2] of: remove reserved regions count restriction
+Message-ID: <YZnqo3oA7srQik4N@kernel.org>
 References: <20211119075844.2902592-1-calvinzhang.cool@gmail.com>
- <20211119075844.2902592-3-calvinzhang.cool@gmail.com>
- <YZd0uEWNH6Def3+8@smile.fi.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <YZd0uEWNH6Def3+8@smile.fi.intel.com>
+In-Reply-To: <20211119075844.2902592-1-calvinzhang.cool@gmail.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Nov 19, 2021 at 11:56:08AM +0200, Andy Shevchenko wrote:
->On Fri, Nov 19, 2021 at 03:58:19PM +0800, Calvin Zhang wrote:
->> Change to allocate reserved_mems dynamically. Static reserved regions
->> must be reserved before any memblock allocations. The reserved_mems
->> array couldn't be allocated until memblock and linear mapping are ready.
->> 
->> So move the allocation and initialization of records and reserved memory
->> from early_init_fdt_scan_reserved_mem() to of_reserved_mem_init().
->
->>  arch/arc/mm/init.c                 |  3 ++
->>  arch/arm/kernel/setup.c            |  2 +
->>  arch/arm64/kernel/setup.c          |  3 ++
->>  arch/csky/kernel/setup.c           |  3 ++
->>  arch/h8300/kernel/setup.c          |  2 +
->>  arch/mips/kernel/setup.c           |  3 ++
->>  arch/nds32/kernel/setup.c          |  3 ++
->>  arch/nios2/kernel/setup.c          |  2 +
->>  arch/openrisc/kernel/setup.c       |  3 ++
->>  arch/powerpc/kernel/setup-common.c |  3 ++
->>  arch/riscv/kernel/setup.c          |  2 +
->>  arch/sh/kernel/setup.c             |  3 ++
->>  arch/xtensa/kernel/setup.c         |  2 +
->
->Isn't x86 missed? Is it on purpose?
->Would be nice to have this in the commit message or fixed accordingly.
-AFAIK, x86 doesn't reserve memory through "/reserved-memory" node until now.
-Actually, I got the arch list from callers of
-early_init_fdt_scan_reserved_mem().
->
->-- 
->With Best Regards,
->Andy Shevchenko
->
->
->
-Thanks,
-Calvin
+On Fri, Nov 19, 2021 at 03:58:17PM +0800, Calvin Zhang wrote:
+> The count of reserved regions in /reserved-memory was limited because
+> the struct reserved_mem array was defined statically. This series sorts
+> out reserved memory code and allocates that array from early allocator.
+> 
+> Note: reserved region with fixed location must be reserved before any
+> memory allocation. While struct reserved_mem array should be allocated
+> after allocator is activated. We make early_init_fdt_scan_reserved_mem()
+> do reservation only and add another call to initialize reserved memory.
+> So arch code have to change for it.
+
+I think much simpler would be to use the same constant for sizing
+memblock.reserved and reserved_mem arrays.
+
+If there is too much reserved regions in the device tree, reserving them in
+memblock will fail anyway because memblock also starts with static array
+for memblock.reserved, so doing one pass with memblock_reserve() and
+another to set up reserved_mem wouldn't help anyway.
+
+> I'm only familiar with arm and arm64 architectures. Approvals from arch
+> maintainers are required. Thank you all.
+> 
+> Calvin Zhang (2):
+>   of: Sort reserved_mem related code
+>   of: reserved_mem: Remove reserved regions count restriction
+> 
+>  arch/arc/mm/init.c                 |   3 +
+>  arch/arm/kernel/setup.c            |   2 +
+>  arch/arm64/kernel/setup.c          |   3 +
+>  arch/csky/kernel/setup.c           |   3 +
+>  arch/h8300/kernel/setup.c          |   2 +
+>  arch/mips/kernel/setup.c           |   3 +
+>  arch/nds32/kernel/setup.c          |   3 +
+>  arch/nios2/kernel/setup.c          |   2 +
+>  arch/openrisc/kernel/setup.c       |   3 +
+>  arch/powerpc/kernel/setup-common.c |   3 +
+>  arch/riscv/kernel/setup.c          |   2 +
+>  arch/sh/kernel/setup.c             |   3 +
+>  arch/xtensa/kernel/setup.c         |   2 +
+>  drivers/of/fdt.c                   | 107 +---------------
+>  drivers/of/of_private.h            |  12 +-
+>  drivers/of/of_reserved_mem.c       | 189 ++++++++++++++++++++++++-----
+>  include/linux/of_reserved_mem.h    |   4 +
+>  17 files changed, 207 insertions(+), 139 deletions(-)
+> 
+> -- 
+> 2.30.2
+> 
+
+-- 
+Sincerely yours,
+Mike.
