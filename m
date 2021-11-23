@@ -2,35 +2,53 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5954FC4332F
-	for <linux-sh@archiver.kernel.org>; Tue, 23 Nov 2021 13:20:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 709A1C433FE
+	for <linux-sh@archiver.kernel.org>; Tue, 23 Nov 2021 14:48:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233072AbhKWNXW (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 23 Nov 2021 08:23:22 -0500
-Received: from mout.kundenserver.de ([212.227.126.135]:48117 "EHLO
-        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234825AbhKWNXW (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 23 Nov 2021 08:23:22 -0500
-Received: from mail-wr1-f42.google.com ([209.85.221.42]) by
- mrelayeu.kundenserver.de (mreue011 [213.165.67.97]) with ESMTPSA (Nemesis) id
- 1M58zc-1moPmr0U2G-001B4f; Tue, 23 Nov 2021 14:20:13 +0100
-Received: by mail-wr1-f42.google.com with SMTP id b12so38929177wrh.4;
-        Tue, 23 Nov 2021 05:20:13 -0800 (PST)
-X-Gm-Message-State: AOAM531HmzQSFTWVqVgaWTzcaH0ukhr6FR3HGqHjJYKsC8Qi7WpQ/zUl
-        C0syFIzcVigBfglFBq4dHyWRhWPABUKnhx9Lppo=
-X-Google-Smtp-Source: ABdhPJwpT1iqgZ3/dEvpqaazlpfCJQIb+joipxiKMUpjkoh/lL7fOj6hF1e58ZtQ4eRqkzavbf1frnwH+VQGmHXqrGo=
-X-Received: by 2002:adf:f7c2:: with SMTP id a2mr7393084wrq.71.1637673612679;
- Tue, 23 Nov 2021 05:20:12 -0800 (PST)
+        id S229719AbhKWOv4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 23 Nov 2021 09:51:56 -0500
+Received: from mail-ua1-f41.google.com ([209.85.222.41]:40840 "EHLO
+        mail-ua1-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S238191AbhKWOv4 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 23 Nov 2021 09:51:56 -0500
+Received: by mail-ua1-f41.google.com with SMTP id y5so44229220ual.7;
+        Tue, 23 Nov 2021 06:48:47 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=0Fbef1Cr65IM390r0xwl+UzRI+j+QyCypi+gIUcKWUM=;
+        b=HtzboajwH/TqNiwt/QAZ1KYwWW/QnrUgQ9xg/a9SaYQBPl+1rvDQkJZnmlTRxSLZO2
+         kNY7Nx0GijqdxNjen3gqkq9o98ire3QAiVq/dpqEoWj4IHUFmZxfpcaEpY+9eLuPeFHa
+         bo2yZvWVzl01/F8EWmamCUwNkJ/W205YOa1cotAVJyy3XYLemLO8WtK0V5+3zX3NqB7R
+         nencB4qi2UR99e55wY/BH3JpiwNuSt3BtHmXWdH3IHAlQoweoSXiXLiILGrkItwAHUan
+         vDT/oYsBa0p9G/E0XotxMm6VEk2PI9vJqkjT1NmvcRXN0I0KTulRARU5RTpSWz7KLGxB
+         2qHg==
+X-Gm-Message-State: AOAM531O8SM9v0TVut681XscXbHt7svYKQeRC6BiBmBuhaQ8nB9ndml2
+        FtavBGYBcJflaPWU4avGF/Jyem9VKjB8dw==
+X-Google-Smtp-Source: ABdhPJyS6XkSxGVgbrswvmZXDhDhyzXGUKewNbBjZQB5L9F2eYoOWVi1DbK07SxhaTaFByhCaXn8ag==
+X-Received: by 2002:a67:db0b:: with SMTP id z11mr9183327vsj.59.1637678927188;
+        Tue, 23 Nov 2021 06:48:47 -0800 (PST)
+Received: from mail-ua1-f44.google.com (mail-ua1-f44.google.com. [209.85.222.44])
+        by smtp.gmail.com with ESMTPSA id s22sm6378792vkm.28.2021.11.23.06.48.45
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 23 Nov 2021 06:48:46 -0800 (PST)
+Received: by mail-ua1-f44.google.com with SMTP id w23so44224346uao.5;
+        Tue, 23 Nov 2021 06:48:45 -0800 (PST)
+X-Received: by 2002:a05:6102:e82:: with SMTP id l2mr10294794vst.37.1637678925680;
+ Tue, 23 Nov 2021 06:48:45 -0800 (PST)
 MIME-Version: 1.0
 References: <CA+G9fYtH2JR=L0cPoOEqsEGrZW_uOJgX6qLGMe_hbLpBtjVBwA@mail.gmail.com>
-In-Reply-To: <CA+G9fYtH2JR=L0cPoOEqsEGrZW_uOJgX6qLGMe_hbLpBtjVBwA@mail.gmail.com>
-From:   Arnd Bergmann <arnd@arndb.de>
-Date:   Tue, 23 Nov 2021 14:19:56 +0100
-X-Gmail-Original-Message-ID: <CAK8P3a1NhpNxWfj3gDnuf4bWK_fiE8cjcRyN7e8j95NmvOzbGw@mail.gmail.com>
-Message-ID: <CAK8P3a1NhpNxWfj3gDnuf4bWK_fiE8cjcRyN7e8j95NmvOzbGw@mail.gmail.com>
+ <CAK8P3a1NhpNxWfj3gDnuf4bWK_fiE8cjcRyN7e8j95NmvOzbGw@mail.gmail.com>
+In-Reply-To: <CAK8P3a1NhpNxWfj3gDnuf4bWK_fiE8cjcRyN7e8j95NmvOzbGw@mail.gmail.com>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Tue, 23 Nov 2021 15:48:34 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdVuoUAM-6H2BXYtUH++4yXhRCGLAdbzx2GqAJk64FYO=A@mail.gmail.com>
+Message-ID: <CAMuHMdVuoUAM-6H2BXYtUH++4yXhRCGLAdbzx2GqAJk64FYO=A@mail.gmail.com>
 Subject: Re: spinlock.c:306:9: error: implicit declaration of function '__raw_write_lock_nested'
-To:     Naresh Kamboju <naresh.kamboju@linaro.org>
-Cc:     Linux-Next Mailing List <linux-next@vger.kernel.org>,
+To:     Arnd Bergmann <arnd@arndb.de>
+Cc:     Naresh Kamboju <naresh.kamboju@linaro.org>,
+        Linux-Next Mailing List <linux-next@vger.kernel.org>,
         open list <linux-kernel@vger.kernel.org>,
         Linux-sh list <linux-sh@vger.kernel.org>,
         Stephen Rothwell <sfr@canb.auug.org.au>,
@@ -39,7 +57,6 @@ Cc:     Linux-Next Mailing List <linux-next@vger.kernel.org>,
         Waiman Long <longman@redhat.com>,
         Boqun Feng <boqun.feng@gmail.com>,
         Minchan Kim <minchan@kernel.org>,
-        Arnd Bergmann <arnd@arndb.de>,
         Andrew Morton <akpm@linux-foundation.org>,
         Mike Galbraith <umgwanakikbuti@gmail.com>,
         Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
@@ -47,52 +64,41 @@ Cc:     Linux-Next Mailing List <linux-next@vger.kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, lkft-triage@lists.linaro.org
 Content-Type: text/plain; charset="UTF-8"
-X-Provags-ID: V03:K1:QFR7kDgsfDVE5/Y1R44YWOjmAmELgyRKIYn8qWLSlk62H3gjKF/
- sGvCLqNIgchzlvOg1pQC2GaRsKKBdwapxT7ozfAfZWaKwvpt+OfqoNrTRmDcQFpXB8elwsv
- cjvHGPhUnJdjSCI+NFtzDMd6Ytn8Py4wZLMdcvDd8WaukoO2ivObS//U+JMzwhq7Moa5Abl
- FSow+B0oIv9GgptWlV6ag==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:T3aMy9ahu+o=:QbmUyLL2o9tz0g05IFRDbj
- JJo1D8uHYqbAtA1/PLsn48FcGjyzFWe+GxCeRcyzC9st52G2JkPwUQgL6FiaY0CPYyUMAeZM5
- VedOWv+WbQ0glDwDKcWddcC3qMZuWGSDKmvSMUEMXjOaX//kRYJT0W7o7G8uSQUYCQH9c6WyK
- pcZEH+RJU9T/g/Kxd4ge722ZrlRLKqYmf4ccolf7914qjX97ZDkiG/h4Xphd3j9D8QMk8HO9H
- iDDHNQgSpuDIs8yObv2IRHY+B0sXTlYkNxkcSVmuimQhrcm5YBMwQPfG5MHzVWWcS280Z1O60
- p8cGXGcALT0AclhlHk05pYSWs3F8Q+j3Vpkx0oEiTfFcMWPcAtVhuZEri52/zj79WxQyPvEoZ
- eF70jmt0rtoK/qWILzVV4F3SB1n4Nm+RetmpQv8SA6rzIhg9WtBJovlk78AYj49VFNxlxV0Et
- uVLGrWQhQjrDH5sieLxvrckkzpAfSVgFV9ANi9+rO08ybW6uinblp6gkNlss8KUenY+UwSm0o
- vAxwtB8LcQ+MQFSFhybaZSwWrG3454G0Kig6JIRrcBotXDJw2JSXPGBwDAAFAZNOixS0AZ85o
- qK7pJEKAB7P+Spiqik6Qo5Jf2uupFxpbgy2cS/BXXlzSpSDuKY58WRzNr56K0Am+9dMq2oEPY
- ZURqkmoKb16m4UyhmnRUU5bh8Xnp0o5dykPKsTVQKxeYsvESsLFzxiHi9ajJaDI3K05E=
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Nov 23, 2021 at 12:38 PM Naresh Kamboju
-<naresh.kamboju@linaro.org> wrote:
+Hi Arnd,
+
+On Tue, Nov 23, 2021 at 2:50 PM Arnd Bergmann <arnd@arndb.de> wrote:
+> On Tue, Nov 23, 2021 at 12:38 PM Naresh Kamboju
+> <naresh.kamboju@linaro.org> wrote:
+> >
+> > While building Linux next 20211123 tag for sh with gcc-11
+> > following warnings / errors noticed.
 >
-> While building Linux next 20211123 tag for sh with gcc-11
-> following warnings / errors noticed.
+> Nothing in here looks like a recent regression from either the kernel
+> or gcc-11.
 
-Nothing in here looks like a recent regression from either the kernel
-or gcc-11.
+Except for:
 
-> make --silent --keep-going --jobs=8
-> O=/home/tuxbuild/.cache/tuxmake/builds/current ARCH=sh
-> CROSS_COMPILE=sh4-linux-gnu- 'CC=sccache sh4-linux-gnu-gcc'
-> 'HOSTCC=sccache gcc'
->   Generating include/generated/machtypes.h
-> <stdin>:1517:2: warning: #warning syscall clone3 not implemented [-Wcpp]
-> <stdin>:1559:2: warning: #warning syscall futex_waitv not implemented [-Wcpp]
+    kernel/locking/spinlock.c:306:9: error: implicit declaration of
+    function '__raw_write_lock_nested'; did you mean
+    '_raw_write_lock_nested'? [-Werror=implicit-function-declaration]
+      306 |         __raw_write_lock_nested(lock, subclass);
+          |         ^~~~~~~~~~~~~~~~~~~~~~~
+          |         _raw_write_lock_nested
 
-These happen with any compiler version, someone needs to write the correct
-entry code for clone3 and hook up futex_waitv().
+Which was also reported for other architectures:
+https://lore.kernel.org/all/202111201111.c2ApGeHR-lkp@intel.com/
 
-> include/linux/sh_intc.h:100:63: warning: division 'sizeof (void *) / sizeof (void)' does not compute the number of array elements
+Gr{oetje,eeting}s,
 
-These are old bugs, they show up in any kernel version with gcc-8 or higher.
+                        Geert
 
-> fs/mpage.c:336:1: warning: the frame size of 1092 bytes is larger than
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-I see these going back to gcc-6, it looks like this is caused by
-CONFIG_PAGE_SIZE_64KB.
-
-     Arnd
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
