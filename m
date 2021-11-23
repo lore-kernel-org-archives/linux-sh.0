@@ -2,42 +2,37 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2CC32C433F5
-	for <linux-sh@archiver.kernel.org>; Tue, 23 Nov 2021 17:01:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E6170C433EF
+	for <linux-sh@archiver.kernel.org>; Tue, 23 Nov 2021 22:52:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235249AbhKWREq (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 23 Nov 2021 12:04:46 -0500
-Received: from Galois.linutronix.de ([193.142.43.55]:39342 "EHLO
-        galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236804AbhKWREq (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 23 Nov 2021 12:04:46 -0500
-Date:   Tue, 23 Nov 2021 18:01:34 +0100
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020; t=1637686896;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=5jFMme/04un1MC+akjG19ft3gjyZIh6NNG67wIsGBMo=;
-        b=DWS4D674L2kcCxpVr2gQnGTSt089zQTRUODvs710sbsaPBVwWxmkwNuKrbOy4wEJK0FWXr
-        viw6gpMlbmrxzNVhr93KpKqgAvWb8TX1jnwVSG1DvDw+aesfYj/H+PY/PmHS04sttfAb7R
-        /pVrAtYs5SX5tJxLDjYlft9xh4yE5RzAdIJUJ7uNZg2l4A1Ku8YSHmTImfr4ZstCAWq551
-        3hHZH54+sfMEERCJRTLCS2u7YgK6YlUrxSU70yDE/iWEGvguh2OEJDXwxor5KulIF9X3/V
-        v/tHoKbLPgJyYH1eT+tnSRW2155Wdz1aLrRPJ8NIfylnH/5XZD0IXOP4mOVP5Q==
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020e; t=1637686896;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=5jFMme/04un1MC+akjG19ft3gjyZIh6NNG67wIsGBMo=;
-        b=5NQ/WwFssLtEYCocJv/AX/sNqGciWZW0BXPldn61pNctmEPKDPC4pRCTVR21gg89alilv0
-        ZVHPUVGpYAMa7bBg==
-From:   Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        id S234275AbhKWWze (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 23 Nov 2021 17:55:34 -0500
+Received: from gandalf.ozlabs.org ([150.107.74.76]:46377 "EHLO
+        gandalf.ozlabs.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229574AbhKWWzd (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 23 Nov 2021 17:55:33 -0500
+Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange ECDHE (P-256) server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        (No client certificate requested)
+        by mail.ozlabs.org (Postfix) with ESMTPSA id 4HzKCS0FC6z4xR9;
+        Wed, 24 Nov 2021 09:52:19 +1100 (AEDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=canb.auug.org.au;
+        s=201702; t=1637707942;
+        bh=nJ3v47D44xi4bEAxxkbK0bqu4F1ye/w5S9LdQhDunn4=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+        b=lO6/hCKdQwbOUH0oetFG7UsGnAgEIqnJOQapPnQBGFzu8nlcwbpSTESmOzrme/9m3
+         0hl8HHecNnVoZvfQx6LtrT5wOrpPUmsmBVk8TDExdJIN5N0Im3QvkVjli6yGgCvEWW
+         tIiaAVYIJJQXTB07OD/S+Mq+An0KshvUC1nIWBIXo/mLc7h88IML8yzXu34DQW9oZu
+         GaYxGuHSBM/VawRO2vBrH/tRmrwo4sMo+yMmYV7aZWdx9/6k6v9mT9bLaXrgnczRYW
+         4CltoMs7jzL4q/0Z5OrX+JZcACdXY5I0Aic+K3zBKS1VkS6KTtQ2mVJwLq+rOfW4j9
+         bSV6sMZdpBLGQ==
+Date:   Wed, 24 Nov 2021 09:52:18 +1100
+From:   Stephen Rothwell <sfr@canb.auug.org.au>
+To:     Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
         Andrew Morton <akpm@linux-foundation.org>,
-        Stephen Rothwell <sfr@canb.auug.org.au>
-Cc:     Arnd Bergmann <arnd@arndb.de>,
+        Arnd Bergmann <arnd@arndb.de>,
         Naresh Kamboju <naresh.kamboju@linaro.org>,
         Linux-Next Mailing List <linux-next@vger.kernel.org>,
         open list <linux-kernel@vger.kernel.org>,
@@ -51,69 +46,103 @@ Cc:     Arnd Bergmann <arnd@arndb.de>,
         Sergey Senozhatsky <senozhatsky@chromium.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, lkft-triage@lists.linaro.org
-Subject: [PATCH v2] locking: Fixup write_lock_nested() implementation.
-Message-ID: <20211123170134.y6xb7pmpgdn4m3bn@linutronix.de>
+Subject: Re: [PATCH v2] locking: Fixup write_lock_nested() implementation.
+Message-ID: <20211124095218.4a83f39e@canb.auug.org.au>
+In-Reply-To: <20211123170134.y6xb7pmpgdn4m3bn@linutronix.de>
 References: <CA+G9fYtH2JR=L0cPoOEqsEGrZW_uOJgX6qLGMe_hbLpBtjVBwA@mail.gmail.com>
- <CAK8P3a1NhpNxWfj3gDnuf4bWK_fiE8cjcRyN7e8j95NmvOzbGw@mail.gmail.com>
- <CAMuHMdVuoUAM-6H2BXYtUH++4yXhRCGLAdbzx2GqAJk64FYO=A@mail.gmail.com>
- <20211123145006.bon3usz4ilhw6ymg@linutronix.de>
- <20211123160712.fssioyabln5erx2u@linutronix.de>
+        <CAK8P3a1NhpNxWfj3gDnuf4bWK_fiE8cjcRyN7e8j95NmvOzbGw@mail.gmail.com>
+        <CAMuHMdVuoUAM-6H2BXYtUH++4yXhRCGLAdbzx2GqAJk64FYO=A@mail.gmail.com>
+        <20211123145006.bon3usz4ilhw6ymg@linutronix.de>
+        <20211123160712.fssioyabln5erx2u@linutronix.de>
+        <20211123170134.y6xb7pmpgdn4m3bn@linutronix.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-In-Reply-To: <20211123160712.fssioyabln5erx2u@linutronix.de>
+Content-Type: multipart/signed; boundary="Sig_/w9K6C0uM4PeS2VBEioL/GRL";
+ protocol="application/pgp-signature"; micalg=pgp-sha256
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Andrew, please merge it into:
-  locking/rwlocks: introduce write_lock_nested
-  locking-rwlocks-introduce-write_lock_nested.patch
+--Sig_/w9K6C0uM4PeS2VBEioL/GRL
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-And if someone could test it, I get sh4 defconfig built with and without
-lockdep. x86 seems still to build, too. So it can't be that bad.
+Hi all,
 
-v1=E2=80=A6v2: I noticed a typo in _raw_write_lock_nested() and decided tha=
-t it
-is no needed so now it is removed for !CONFIG_INLINE_WRITE_LOCK.
+On Tue, 23 Nov 2021 18:01:34 +0100 Sebastian Andrzej Siewior <bigeasy@linut=
+ronix.de> wrote:
+>
+> Andrew, please merge it into:
+>   locking/rwlocks: introduce write_lock_nested
+>   locking-rwlocks-introduce-write_lock_nested.patch
+>=20
+> And if someone could test it, I get sh4 defconfig built with and without
+> lockdep. x86 seems still to build, too. So it can't be that bad.
+>=20
+> v1=E2=80=A6v2: I noticed a typo in _raw_write_lock_nested() and decided t=
+hat it
+> is no needed so now it is removed for !CONFIG_INLINE_WRITE_LOCK.
+>=20
+> Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+> ---
+>  include/linux/rwlock_api_smp.h | 1 -
+>  kernel/locking/spinlock.c      | 4 ++++
+>  2 files changed, 4 insertions(+), 1 deletion(-)
+>=20
+> diff --git a/include/linux/rwlock_api_smp.h b/include/linux/rwlock_api_sm=
+p.h
+> index f0c535ec4e654..dceb0a59b6927 100644
+> --- a/include/linux/rwlock_api_smp.h
+> +++ b/include/linux/rwlock_api_smp.h
+> @@ -47,7 +47,6 @@ _raw_write_unlock_irqrestore(rwlock_t *lock, unsigned l=
+ong flags)
+> =20
+>  #ifdef CONFIG_INLINE_WRITE_LOCK
+>  #define _raw_write_lock(lock) __raw_write_lock(lock)
+> -#define _raw_write_lock_nested(lock, subclass) __raw_write_lock_nested(l=
+ock, subclass)
+>  #endif
+> =20
+>  #ifdef CONFIG_INLINE_READ_LOCK_BH
+> diff --git a/kernel/locking/spinlock.c b/kernel/locking/spinlock.c
+> index 996811efa6d6e..7f49baaa49793 100644
+> --- a/kernel/locking/spinlock.c
+> +++ b/kernel/locking/spinlock.c
+> @@ -301,6 +301,10 @@ void __lockfunc _raw_write_lock(rwlock_t *lock)
+>  }
+>  EXPORT_SYMBOL(_raw_write_lock);
+> =20
+> +#ifndef CONFIG_DEBUG_LOCK_ALLOC
+> +#define __raw_write_lock_nested(lock, subclass)	__raw_write_lock(((void)=
+(subclass), (lock)))
+> +#endif
+> +
+>  void __lockfunc _raw_write_lock_nested(rwlock_t *lock, int subclass)
+>  {
+>  	__raw_write_lock_nested(lock, subclass);
+> --=20
+> 2.34.0
+>=20
 
-Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
----
- include/linux/rwlock_api_smp.h | 1 -
- kernel/locking/spinlock.c      | 4 ++++
- 2 files changed, 4 insertions(+), 1 deletion(-)
+I have added that patch to iinux-next today.
 
-diff --git a/include/linux/rwlock_api_smp.h b/include/linux/rwlock_api_smp.h
-index f0c535ec4e654..dceb0a59b6927 100644
---- a/include/linux/rwlock_api_smp.h
-+++ b/include/linux/rwlock_api_smp.h
-@@ -47,7 +47,6 @@ _raw_write_unlock_irqrestore(rwlock_t *lock, unsigned lon=
-g flags)
-=20
- #ifdef CONFIG_INLINE_WRITE_LOCK
- #define _raw_write_lock(lock) __raw_write_lock(lock)
--#define _raw_write_lock_nested(lock, subclass) __raw_write_lock_nested(loc=
-k, subclass)
- #endif
-=20
- #ifdef CONFIG_INLINE_READ_LOCK_BH
-diff --git a/kernel/locking/spinlock.c b/kernel/locking/spinlock.c
-index 996811efa6d6e..7f49baaa49793 100644
---- a/kernel/locking/spinlock.c
-+++ b/kernel/locking/spinlock.c
-@@ -301,6 +301,10 @@ void __lockfunc _raw_write_lock(rwlock_t *lock)
- }
- EXPORT_SYMBOL(_raw_write_lock);
-=20
-+#ifndef CONFIG_DEBUG_LOCK_ALLOC
-+#define __raw_write_lock_nested(lock, subclass)	__raw_write_lock(((void)(s=
-ubclass), (lock)))
-+#endif
-+
- void __lockfunc _raw_write_lock_nested(rwlock_t *lock, int subclass)
- {
- 	__raw_write_lock_nested(lock, subclass);
 --=20
-2.34.0
+Cheers,
+Stephen Rothwell
 
+--Sig_/w9K6C0uM4PeS2VBEioL/GRL
+Content-Type: application/pgp-signature
+Content-Description: OpenPGP digital signature
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEENIC96giZ81tWdLgKAVBC80lX0GwFAmGdcKIACgkQAVBC80lX
+0GxcKwf8DSXSQ4vFx8KZgCNUsRDvQY9k0L1Anncmc+YDBzHVLsGNp1y16KV8RnFG
+EH3z7YUHfQXJw+IuwV+zVx4sScskhe0rsnYeevnobC9sYlBR1FWNczzXVL9l2Cy5
+VT3OOvp3pP9voolA0ESmtt2jvROTpjX0jzIbDPE/kfkAwbzeypsp7oNPKRnc/19E
+h3oVYUIRteF/Z/ix3b5WEXhByTlVyHsTtvhnifDaIMY8GwERfpsVg86s159FTpgc
+DxpjChCd5a82fz/Xu8/4FgU97YAoJi8xchXIv+xwQU3Np6Z891N4dK8blRsk4ZSJ
+4TE4qakICK1UDliAhxUa6Ec4DWnokg==
+=TnkZ
+-----END PGP SIGNATURE-----
+
+--Sig_/w9K6C0uM4PeS2VBEioL/GRL--
