@@ -2,38 +2,37 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A83B6C433EF
-	for <linux-sh@archiver.kernel.org>; Tue, 23 Nov 2021 16:07:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2CC32C433F5
+	for <linux-sh@archiver.kernel.org>; Tue, 23 Nov 2021 17:01:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229646AbhKWQK1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 23 Nov 2021 11:10:27 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57542 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236886AbhKWQKZ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 23 Nov 2021 11:10:25 -0500
-Received: from galois.linutronix.de (Galois.linutronix.de [IPv6:2a0a:51c0:0:12e:550::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 246CBC061574;
-        Tue, 23 Nov 2021 08:07:16 -0800 (PST)
-Date:   Tue, 23 Nov 2021 17:07:12 +0100
+        id S235249AbhKWREq (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 23 Nov 2021 12:04:46 -0500
+Received: from Galois.linutronix.de ([193.142.43.55]:39342 "EHLO
+        galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S236804AbhKWREq (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 23 Nov 2021 12:04:46 -0500
+Date:   Tue, 23 Nov 2021 18:01:34 +0100
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020; t=1637683634;
+        s=2020; t=1637686896;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=OTviq26mvkL4rPATaB+abRymVFXFwD9tRbumEynRgzg=;
-        b=YqVUgvYRN0d4r+rQUoFScnuQ9b8XFxDG/UkWUEHnNGaEBa015eqhIT2rcDutN2AQ9Hp9BL
-        6wOV5hJcX/KALUlDDdClZ53l9MOZ2E18Z1CioK+LjhRz5ppe9eUDMURr8teYqKnbKzCJpi
-        AcmS62Loz7ZSp0jlHjJJHL44MxqY6JxKA6axFbdPT1lA0/Gzwqtkp/SBX11+a2E4mXjUUH
-        6/IdizzzRX65pOl1mjZXq+3qWebT7n9Y3KvGpWrPHe34OJBALuKJABlvjGRg7a5bLhEVTQ
-        FZkN2iul7Xp5KfqtpTQlImR0UBCZHUuw31nIwjpaTjci4xjA65ObPTxvQn83Gw==
+        bh=5jFMme/04un1MC+akjG19ft3gjyZIh6NNG67wIsGBMo=;
+        b=DWS4D674L2kcCxpVr2gQnGTSt089zQTRUODvs710sbsaPBVwWxmkwNuKrbOy4wEJK0FWXr
+        viw6gpMlbmrxzNVhr93KpKqgAvWb8TX1jnwVSG1DvDw+aesfYj/H+PY/PmHS04sttfAb7R
+        /pVrAtYs5SX5tJxLDjYlft9xh4yE5RzAdIJUJ7uNZg2l4A1Ku8YSHmTImfr4ZstCAWq551
+        3hHZH54+sfMEERCJRTLCS2u7YgK6YlUrxSU70yDE/iWEGvguh2OEJDXwxor5KulIF9X3/V
+        v/tHoKbLPgJyYH1eT+tnSRW2155Wdz1aLrRPJ8NIfylnH/5XZD0IXOP4mOVP5Q==
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020e; t=1637683634;
+        s=2020e; t=1637686896;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=OTviq26mvkL4rPATaB+abRymVFXFwD9tRbumEynRgzg=;
-        b=pzTXGZ/HgJ3NxxdWWe2UBAO9DlaEYHvjg5WNesuPexs3u+2aO/Vv3zxI4o47acPyAPSZdH
-        CgOmFrVA1BEvmBDg==
+        bh=5jFMme/04un1MC+akjG19ft3gjyZIh6NNG67wIsGBMo=;
+        b=5NQ/WwFssLtEYCocJv/AX/sNqGciWZW0BXPldn61pNctmEPKDPC4pRCTVR21gg89alilv0
+        ZVHPUVGpYAMa7bBg==
 From:   Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 To:     Geert Uytterhoeven <geert@linux-m68k.org>,
         Andrew Morton <akpm@linux-foundation.org>,
@@ -52,16 +51,18 @@ Cc:     Arnd Bergmann <arnd@arndb.de>,
         Sergey Senozhatsky <senozhatsky@chromium.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, lkft-triage@lists.linaro.org
-Subject: [PATCH] locking: Fixup write_lock_nested() implementation.
-Message-ID: <20211123160712.fssioyabln5erx2u@linutronix.de>
+Subject: [PATCH v2] locking: Fixup write_lock_nested() implementation.
+Message-ID: <20211123170134.y6xb7pmpgdn4m3bn@linutronix.de>
 References: <CA+G9fYtH2JR=L0cPoOEqsEGrZW_uOJgX6qLGMe_hbLpBtjVBwA@mail.gmail.com>
  <CAK8P3a1NhpNxWfj3gDnuf4bWK_fiE8cjcRyN7e8j95NmvOzbGw@mail.gmail.com>
  <CAMuHMdVuoUAM-6H2BXYtUH++4yXhRCGLAdbzx2GqAJk64FYO=A@mail.gmail.com>
  <20211123145006.bon3usz4ilhw6ymg@linutronix.de>
+ <20211123160712.fssioyabln5erx2u@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20211123145006.bon3usz4ilhw6ymg@linutronix.de>
+Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <20211123160712.fssioyabln5erx2u@linutronix.de>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
@@ -73,24 +74,29 @@ Andrew, please merge it into:
 And if someone could test it, I get sh4 defconfig built with and without
 lockdep. x86 seems still to build, too. So it can't be that bad.
 
+v1=E2=80=A6v2: I noticed a typo in _raw_write_lock_nested() and decided tha=
+t it
+is no needed so now it is removed for !CONFIG_INLINE_WRITE_LOCK.
+
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- include/linux/rwlock_api_smp.h | 2 +-
+ include/linux/rwlock_api_smp.h | 1 -
  kernel/locking/spinlock.c      | 4 ++++
- 2 files changed, 5 insertions(+), 1 deletion(-)
+ 2 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/rwlock_api_smp.h b/include/linux/rwlock_api_smp.h
-index f0c535ec4e654..60049df00532d 100644
+index f0c535ec4e654..dceb0a59b6927 100644
 --- a/include/linux/rwlock_api_smp.h
 +++ b/include/linux/rwlock_api_smp.h
-@@ -47,7 +47,7 @@ _raw_write_unlock_irqrestore(rwlock_t *lock, unsigned long flags)
- 
+@@ -47,7 +47,6 @@ _raw_write_unlock_irqrestore(rwlock_t *lock, unsigned lon=
+g flags)
+=20
  #ifdef CONFIG_INLINE_WRITE_LOCK
  #define _raw_write_lock(lock) __raw_write_lock(lock)
--#define _raw_write_lock_nested(lock, subclass) __raw_write_lock_nested(lock, subclass)
-+#define _raw_write_lock_nested(lock) __raw_write_lock(lock)
+-#define _raw_write_lock_nested(lock, subclass) __raw_write_lock_nested(loc=
+k, subclass)
  #endif
- 
+=20
  #ifdef CONFIG_INLINE_READ_LOCK_BH
 diff --git a/kernel/locking/spinlock.c b/kernel/locking/spinlock.c
 index 996811efa6d6e..7f49baaa49793 100644
@@ -99,14 +105,15 @@ index 996811efa6d6e..7f49baaa49793 100644
 @@ -301,6 +301,10 @@ void __lockfunc _raw_write_lock(rwlock_t *lock)
  }
  EXPORT_SYMBOL(_raw_write_lock);
- 
+=20
 +#ifndef CONFIG_DEBUG_LOCK_ALLOC
-+#define __raw_write_lock_nested(lock, subclass)	__raw_write_lock(((void)(subclass), (lock)))
++#define __raw_write_lock_nested(lock, subclass)	__raw_write_lock(((void)(s=
+ubclass), (lock)))
 +#endif
 +
  void __lockfunc _raw_write_lock_nested(rwlock_t *lock, int subclass)
  {
  	__raw_write_lock_nested(lock, subclass);
--- 
+--=20
 2.34.0
 
