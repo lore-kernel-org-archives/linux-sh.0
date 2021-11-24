@@ -2,103 +2,88 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 318CAC433F5
-	for <linux-sh@archiver.kernel.org>; Wed, 24 Nov 2021 14:29:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4EB24C433F5
+	for <linux-sh@archiver.kernel.org>; Wed, 24 Nov 2021 14:31:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1354675AbhKXOc6 convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 24 Nov 2021 09:32:58 -0500
-Received: from mout.kundenserver.de ([217.72.192.74]:59847 "EHLO
-        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1354115AbhKXOcv (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 24 Nov 2021 09:32:51 -0500
-Received: from mail-wm1-f41.google.com ([209.85.128.41]) by
- mrelayeu.kundenserver.de (mreue107 [213.165.67.113]) with ESMTPSA (Nemesis)
- id 1MpUpW-1mHyAx34ma-00pvQs; Wed, 24 Nov 2021 15:29:39 +0100
-Received: by mail-wm1-f41.google.com with SMTP id g191-20020a1c9dc8000000b0032fbf912885so2231897wme.4;
-        Wed, 24 Nov 2021 06:29:39 -0800 (PST)
-X-Gm-Message-State: AOAM530yNL3jrtHkduBFvkDR2sWhrUTZ0bzbMxhcZ9vE3yaHcMWjMBsX
-        hJG8EBnWrPTwYFQS6TbjsY2S5Vgd/thrI7Gkn20=
-X-Google-Smtp-Source: ABdhPJw9AuDVJPcPk5QwMaNIqLG+Gyph350xYhCGSeBIHw0tMZdjTjgs4734tAKvoxeRwyygv81r33HtARNOkWqIoYo=
-X-Received: by 2002:a1c:1c1:: with SMTP id 184mr15657228wmb.1.1637764179209;
- Wed, 24 Nov 2021 06:29:39 -0800 (PST)
+        id S1355525AbhKXOeo (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 24 Nov 2021 09:34:44 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48174 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1355440AbhKXOem (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 24 Nov 2021 09:34:42 -0500
+Received: from bhuna.collabora.co.uk (bhuna.collabora.co.uk [IPv6:2a00:1098:0:82:1000:25:2eeb:e3e3])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D41C3C09B199;
+        Wed, 24 Nov 2021 05:16:04 -0800 (PST)
+Received: from [127.0.0.1] (localhost [127.0.0.1])
+        (Authenticated sender: tonyk)
+        with ESMTPSA id BCBDA1F459B3
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=collabora.com; s=mail;
+        t=1637759762; bh=w5NCl88uIb7DXyRTvcGFerOK5HHq7D6Czyq4czemG7I=;
+        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+        b=g5ex+td+/1EaqpvGy26pVFRXUqSPBFspuYS9FJ0LfcdO1Kgv4fuz/AbrbGM6ISEBL
+         YC7KKFAbJNuN35fOti/SpTPj0SG/lLP71koRTX3m5XS4IaHUO6+lprXaUK94iDpmCy
+         WzArE+65mEsXtyUX+UDqIGwADkyhTMy1xOzNDh4EeRBubvybpuNTjLuk1xifbGiJIf
+         wl5T9fh5Rr4YEqnk1skSx3JPVMX+QM8Cc2gRBk4XwZc8vVzMEWu3CRFyNCAeIniAAG
+         6IwPzGQpe5d2s3wy4+UCuIdURQF5ao/WhGMW5cSIBqaLolNp26c4MAN4y1ctrPt2PB
+         BjMZ26LbvnlOQ==
+Message-ID: <4dd8a108-013f-8d68-b5d5-138d3cf3bff0@collabora.com>
+Date:   Wed, 24 Nov 2021 10:15:52 -0300
 MIME-Version: 1.0
-References: <CAK8P3a3pQW59NVF=5P+ZiBjNJmnWh+iTZUHvqHBrXkHA6pMd4g@mail.gmail.com>
- <20211124132112.11641-1-andrealmeid@collabora.com>
-In-Reply-To: <20211124132112.11641-1-andrealmeid@collabora.com>
-From:   Arnd Bergmann <arnd@arndb.de>
-Date:   Wed, 24 Nov 2021 15:29:23 +0100
-X-Gmail-Original-Message-ID: <CAK8P3a2BXefTw68yoZ9U0F=ASC3=EZDc5PDQCJ16MmXtynd59g@mail.gmail.com>
-Message-ID: <CAK8P3a2BXefTw68yoZ9U0F=ASC3=EZDc5PDQCJ16MmXtynd59g@mail.gmail.com>
-Subject: Re: [PATCH 1/1] futex: Wireup futex_waitv syscall
-To:     =?UTF-8?Q?Andr=C3=A9_Almeida?= <andrealmeid@collabora.com>
-Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        David Miller <davem@davemloft.net>,
-        Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        alpha <linux-alpha@vger.kernel.org>, linux-ia64@vger.kernel.org,
-        linux-m68k <linux-m68k@lists.linux-m68k.org>,
-        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        sparclinux <sparclinux@vger.kernel.org>,
-        "open list:TENSILICA XTENSA PORT (xtensa)" 
-        <linux-xtensa@linux-xtensa.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
-        Boqun Feng <boqun.feng@gmail.com>,
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.3.0
+Subject: Re: spinlock.c:306:9: error: implicit declaration of function
+ '__raw_write_lock_nested'
+Content-Language: en-US
+To:     Arnd Bergmann <arnd@arndb.de>, Rob Landley <rob@landley.net>
+Cc:     Naresh Kamboju <naresh.kamboju@linaro.org>,
         Linux-Next Mailing List <linux-next@vger.kernel.org>,
-        lkft-triage@lists.linaro.org, Waiman Long <longman@redhat.com>,
-        Minchan Kim <minchan@kernel.org>,
-        Ingo Molnar <mingo@redhat.com>,
-        Naresh Kamboju <naresh.kamboju@linaro.org>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Rob Landley <rob@landley.net>,
-        Sergey Senozhatsky <senozhatsky@chromium.org>,
+        open list <linux-kernel@vger.kernel.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
         Stephen Rothwell <sfr@canb.auug.org.au>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Ingo Molnar <mingo@redhat.com>, Will Deacon <will@kernel.org>,
+        Waiman Long <longman@redhat.com>,
+        Boqun Feng <boqun.feng@gmail.com>,
+        Minchan Kim <minchan@kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
         Mike Galbraith <umgwanakikbuti@gmail.com>,
-        Will Deacon <will@kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-X-Provags-ID: V03:K1:kvvewp4q1FAJ0MpoEGLwlB/PLxdOuKA98DDx3lRTLAhAuq5r1SN
- dVZaqtNj0rA00O2+5JDEOGH8vjanLTQElNCCNl6U0Iqm8HgwM3c6UDI559OUKgPBVSABsMw
- iAIon5HwE76VX1rzX0antRkE4Q6+NGzFoQsReQkFpGViMvrKnm3yur2/LEgWNGL22CDn9bM
- OCbRa680oc4Mprhu2iDRQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:bfkJl6olqZs=:nyRsJ+I2PqfghoWMv+L5WY
- rNENJgajXYgywGXastal3DkWfSXJk+X3WrfMzc/0bRFD3a9e3yPpcGSqmdF/9nh6YDBl6Goqy
- hWpLndeoJQRsgm/UKJfaT5PYJqHq/rNwJQ4cO+S/k448jtS0JMd/ViqN/t45r39mD60tL3G0w
- oRcQEcMIVoon+6F4A1ZBvk2XLry0Cd8LkQ+uI7N1aFd5PyLFgVHi1xJ0ZSRB1S1jJiPkEcgvL
- tpNVj/4JW002slhnQdwZ4I1/TSi8WJiB/tz9xBRnFwmM/3Y9o6V+gz4Ab3Hf8664ixHIwZBW8
- Jcptb9H07gG1eBkNbxtIbJ+fVa4nnam4eFzlRMwvs5+nubM9SoB69uoadpgcE7m8nuLU7ysAi
- a7A0dxWEMVKTbQLoneg4qq98OtTugcmxVZ6csevj32vQv4AtAKNVkY9g0M2NSxsX3ugDdtK0j
- nbeC4Y6YTZpL/ohmFHsF75dmRQYjWOygCO/s8uSF+TYhfFZX9oYLvrna3gpDzsjPLjiW3Cwmc
- mfTzqhggRL8F74hHyLoQVtfbAFpLTjghxxjdHOK7WnT8SgLJklipwIQpchtIFIUOfPZsUyCL3
- E4M4TBzGBB4Rp5dbDTwW8RblHi0G/wZo44egZsybEPss3BC1iB2wdV8OPUxM89t0fIy7Pv5UC
- 7g2JaMrxohfx6xT9iTxzUh9LrrG12+77192oJL5xGuyOF/UiYfptrWJXBkTvVxuxU74xUqQsL
- wQNf6oC4eCK9+QVTko0likL3JxZuSvir3b+Itp/KoKko/mu6Tj8SA8C6jpb+DNf/YQHIuXRte
- CgfR662CM8Nv59n2Aze8QH5RY2uvk73/GxQjzH2ozp02IHJH8g=
+        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
+        Sergey Senozhatsky <senozhatsky@chromium.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, lkft-triage@lists.linaro.org
+References: <CA+G9fYtH2JR=L0cPoOEqsEGrZW_uOJgX6qLGMe_hbLpBtjVBwA@mail.gmail.com>
+ <41206fc7-f8ce-98aa-3718-ba3e1431e320@landley.net>
+ <CAK8P3a3pQW59NVF=5P+ZiBjNJmnWh+iTZUHvqHBrXkHA6pMd4g@mail.gmail.com>
+From:   =?UTF-8?Q?Andr=c3=a9_Almeida?= <andrealmeid@collabora.com>
+In-Reply-To: <CAK8P3a3pQW59NVF=5P+ZiBjNJmnWh+iTZUHvqHBrXkHA6pMd4g@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Nov 24, 2021 at 2:21 PM André Almeida <andrealmeid@collabora.com> wrote:
->
-> Wireup futex_waitv syscall for all remaining archs.
->
-> Signed-off-by: André Almeida <andrealmeid@collabora.com>
+Hi Arnd,
 
-Reviewed-by: Arnd Bergmann <arnd@arndb.de>
+Às 04:49 de 24/11/21, Arnd Bergmann escreveu:
+> On Wed, Nov 24, 2021 at 8:31 AM Rob Landley <rob@landley.net> wrote:
+>> On 11/23/21 5:38 AM, Naresh Kamboju wrote:
+>> @@ -451,3 +451,4 @@
+>>  446    common  landlock_restrict_self          sys_landlock_restrict_self
+>>  # 447 reserved for memfd_secret
+>>  448    common  process_mrelease                sys_process_mrelease
+>> +449    common  futex_waitv                     sys_futex_waitv
+> 
+> I don't know what's going on with this one, I don't actually see
+> a reason why it isn't already wired up on all architectures. If we add
+> this, it should probably be done for all architectures at once as a
+> bugfix, but it's possible that this is intentionally only used on
+> x86 and arm.
+> 
+> André, can you comment on this?
+> 
+>       Arnd
+> 
 
-I double-checked that futex_waitv() doesn't need any architecture specific
-hacks, and that the list above is complete.
-
-Should I take this through the asm-generic tree, or would you send it
-through the
-tip tree?
-
-        Arnd
+I've added entries for the archs that I've actually tested, but there
+should not be any arch-specific problems in futex_waitv. I'll submit a
+patch to wire it up for the remaining architectures.
