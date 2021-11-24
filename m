@@ -2,147 +2,128 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E6170C433EF
-	for <linux-sh@archiver.kernel.org>; Tue, 23 Nov 2021 22:52:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 825A6C433F5
+	for <linux-sh@archiver.kernel.org>; Wed, 24 Nov 2021 07:31:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234275AbhKWWze (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 23 Nov 2021 17:55:34 -0500
-Received: from gandalf.ozlabs.org ([150.107.74.76]:46377 "EHLO
-        gandalf.ozlabs.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229574AbhKWWzd (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 23 Nov 2021 17:55:33 -0500
-Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange ECDHE (P-256) server-signature RSA-PSS (4096 bits) server-digest SHA256)
-        (No client certificate requested)
-        by mail.ozlabs.org (Postfix) with ESMTPSA id 4HzKCS0FC6z4xR9;
-        Wed, 24 Nov 2021 09:52:19 +1100 (AEDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=canb.auug.org.au;
-        s=201702; t=1637707942;
-        bh=nJ3v47D44xi4bEAxxkbK0bqu4F1ye/w5S9LdQhDunn4=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
-        b=lO6/hCKdQwbOUH0oetFG7UsGnAgEIqnJOQapPnQBGFzu8nlcwbpSTESmOzrme/9m3
-         0hl8HHecNnVoZvfQx6LtrT5wOrpPUmsmBVk8TDExdJIN5N0Im3QvkVjli6yGgCvEWW
-         tIiaAVYIJJQXTB07OD/S+Mq+An0KshvUC1nIWBIXo/mLc7h88IML8yzXu34DQW9oZu
-         GaYxGuHSBM/VawRO2vBrH/tRmrwo4sMo+yMmYV7aZWdx9/6k6v9mT9bLaXrgnczRYW
-         4CltoMs7jzL4q/0Z5OrX+JZcACdXY5I0Aic+K3zBKS1VkS6KTtQ2mVJwLq+rOfW4j9
-         bSV6sMZdpBLGQ==
-Date:   Wed, 24 Nov 2021 09:52:18 +1100
-From:   Stephen Rothwell <sfr@canb.auug.org.au>
-To:     Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Naresh Kamboju <naresh.kamboju@linaro.org>,
+        id S241071AbhKXHez (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 24 Nov 2021 02:34:55 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40146 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S241066AbhKXHez (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 24 Nov 2021 02:34:55 -0500
+Received: from mail-oi1-x235.google.com (mail-oi1-x235.google.com [IPv6:2607:f8b0:4864:20::235])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3E73CC06173E
+        for <linux-sh@vger.kernel.org>; Tue, 23 Nov 2021 23:31:46 -0800 (PST)
+Received: by mail-oi1-x235.google.com with SMTP id be32so3524435oib.11
+        for <linux-sh@vger.kernel.org>; Tue, 23 Nov 2021 23:31:46 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20210112.gappssmtp.com; s=20210112;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=TFx3IBl/Jop5ea0OYsSPnC+3ISSzd9CI/4cFejYkTF8=;
+        b=hFYsgXsfFQLU1ueWwuL3G0aFwfSOp5XyUPofqd041MOj7wOgcvHqeyv0qTc6TVuISC
+         nwKAGEn2YWLuXhNZZAFSFtDkwOIo+zgNZ3DxtSzGiyvsufWTMu++tbXpPIM7ndezHl0n
+         BXs4k9vd+4iivYz4FR9AiiH3PW+UHGNfd3IZODGoGnRGGJh9XIhezt0zcShTvOoim7MQ
+         7RSsLU/XhvNPVJXaQhPCwdjRlLMLzZqWBMUfJt76eJGsWXMveJ4vM4saV3EX6nUaxXY1
+         H4II6mB3AaejftVHmcHNEMtiXxi79D6ELIwXQWTY+EbTUX8TMztK3OCpVaO7oiqr/lLS
+         e/ww==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=TFx3IBl/Jop5ea0OYsSPnC+3ISSzd9CI/4cFejYkTF8=;
+        b=lZApDQoFA3B03O4w7he76cDEtTv0Zoqk/cl7dBaMIyMLsAM9Wg3Hvxk2NUvfhb0Owy
+         OVLyb6CfATsElABJKcetWD4RkR80r33gCCsZmxU5MkO7/Jnw8kbwdLta9yUAP5r6W+7A
+         ZF11ZHrHNgNZDbJ+9l/XLSidwjORBXUfjpLhpCWPvBZX/k/i5WYOiiGDjUX9AUsnftXI
+         a+ot5WkfX/Iq+roqf0ZAa5l9rrW9My29v+l2XI3P8qaEcaG7Hg4ZvXRSmFJACsR52jfh
+         b4FbWJlK2pFt9SUDuk8LWTCv1wv2S3dmXRefUZnwbPQkjGOq3xwAhrzn0jDSPg7/JWLr
+         u32g==
+X-Gm-Message-State: AOAM533Jej8nG1sI31Tvt3OtR41YfHzk1upv0odZUzguJRazU1V7CK1Z
+        Y/+DvOnmsB3c1vWwAF89Z4u2gA==
+X-Google-Smtp-Source: ABdhPJx+o9wkZrcwirn9tgycTBKsKGSg9imAa7huU6/t4dK5wrtPZzW/r4+oQdSaRYL2SRFlzJuNjw==
+X-Received: by 2002:a05:6808:a08:: with SMTP id n8mr3824603oij.148.1637739104000;
+        Tue, 23 Nov 2021 23:31:44 -0800 (PST)
+Received: from [192.168.86.163] ([136.62.4.88])
+        by smtp.gmail.com with ESMTPSA id t12sm2413684ood.22.2021.11.23.23.31.42
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 23 Nov 2021 23:31:43 -0800 (PST)
+Subject: Re: spinlock.c:306:9: error: implicit declaration of function
+ '__raw_write_lock_nested'
+To:     Naresh Kamboju <naresh.kamboju@linaro.org>,
         Linux-Next Mailing List <linux-next@vger.kernel.org>,
         open list <linux-kernel@vger.kernel.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>
+Cc:     Stephen Rothwell <sfr@canb.auug.org.au>,
         Peter Zijlstra <peterz@infradead.org>,
         Ingo Molnar <mingo@redhat.com>, Will Deacon <will@kernel.org>,
         Waiman Long <longman@redhat.com>,
         Boqun Feng <boqun.feng@gmail.com>,
         Minchan Kim <minchan@kernel.org>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Andrew Morton <akpm@linux-foundation.org>,
         Mike Galbraith <umgwanakikbuti@gmail.com>,
+        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
         Sergey Senozhatsky <senozhatsky@chromium.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, lkft-triage@lists.linaro.org
-Subject: Re: [PATCH v2] locking: Fixup write_lock_nested() implementation.
-Message-ID: <20211124095218.4a83f39e@canb.auug.org.au>
-In-Reply-To: <20211123170134.y6xb7pmpgdn4m3bn@linutronix.de>
 References: <CA+G9fYtH2JR=L0cPoOEqsEGrZW_uOJgX6qLGMe_hbLpBtjVBwA@mail.gmail.com>
-        <CAK8P3a1NhpNxWfj3gDnuf4bWK_fiE8cjcRyN7e8j95NmvOzbGw@mail.gmail.com>
-        <CAMuHMdVuoUAM-6H2BXYtUH++4yXhRCGLAdbzx2GqAJk64FYO=A@mail.gmail.com>
-        <20211123145006.bon3usz4ilhw6ymg@linutronix.de>
-        <20211123160712.fssioyabln5erx2u@linutronix.de>
-        <20211123170134.y6xb7pmpgdn4m3bn@linutronix.de>
+From:   Rob Landley <rob@landley.net>
+Message-ID: <41206fc7-f8ce-98aa-3718-ba3e1431e320@landley.net>
+Date:   Wed, 24 Nov 2021 01:31:57 -0600
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.14.0
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="Sig_/w9K6C0uM4PeS2VBEioL/GRL";
- protocol="application/pgp-signature"; micalg=pgp-sha256
+In-Reply-To: <CA+G9fYtH2JR=L0cPoOEqsEGrZW_uOJgX6qLGMe_hbLpBtjVBwA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
---Sig_/w9K6C0uM4PeS2VBEioL/GRL
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+On 11/23/21 5:38 AM, Naresh Kamboju wrote:
+> While building Linux next 20211123 tag for sh with gcc-11
+> following warnings / errors noticed.
+> 
+> make --silent --keep-going --jobs=8
+> O=/home/tuxbuild/.cache/tuxmake/builds/current ARCH=sh
+> CROSS_COMPILE=sh4-linux-gnu- 'CC=sccache sh4-linux-gnu-gcc'
+> 'HOSTCC=sccache gcc'
+>   Generating include/generated/machtypes.h
+> <stdin>:1517:2: warning: #warning syscall clone3 not implemented [-Wcpp]
+> <stdin>:1559:2: warning: #warning syscall futex_waitv not implemented [-Wcpp]
 
-Hi all,
+Here's a fix for those first two:
 
-On Tue, 23 Nov 2021 18:01:34 +0100 Sebastian Andrzej Siewior <bigeasy@linut=
-ronix.de> wrote:
->
-> Andrew, please merge it into:
->   locking/rwlocks: introduce write_lock_nested
->   locking-rwlocks-introduce-write_lock_nested.patch
->=20
-> And if someone could test it, I get sh4 defconfig built with and without
-> lockdep. x86 seems still to build, too. So it can't be that bad.
->=20
-> v1=E2=80=A6v2: I noticed a typo in _raw_write_lock_nested() and decided t=
-hat it
-> is no needed so now it is removed for !CONFIG_INLINE_WRITE_LOCK.
->=20
-> Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-> ---
->  include/linux/rwlock_api_smp.h | 1 -
->  kernel/locking/spinlock.c      | 4 ++++
->  2 files changed, 4 insertions(+), 1 deletion(-)
->=20
-> diff --git a/include/linux/rwlock_api_smp.h b/include/linux/rwlock_api_sm=
-p.h
-> index f0c535ec4e654..dceb0a59b6927 100644
-> --- a/include/linux/rwlock_api_smp.h
-> +++ b/include/linux/rwlock_api_smp.h
-> @@ -47,7 +47,6 @@ _raw_write_unlock_irqrestore(rwlock_t *lock, unsigned l=
-ong flags)
-> =20
->  #ifdef CONFIG_INLINE_WRITE_LOCK
->  #define _raw_write_lock(lock) __raw_write_lock(lock)
-> -#define _raw_write_lock_nested(lock, subclass) __raw_write_lock_nested(l=
-ock, subclass)
->  #endif
-> =20
->  #ifdef CONFIG_INLINE_READ_LOCK_BH
-> diff --git a/kernel/locking/spinlock.c b/kernel/locking/spinlock.c
-> index 996811efa6d6e..7f49baaa49793 100644
-> --- a/kernel/locking/spinlock.c
-> +++ b/kernel/locking/spinlock.c
-> @@ -301,6 +301,10 @@ void __lockfunc _raw_write_lock(rwlock_t *lock)
->  }
->  EXPORT_SYMBOL(_raw_write_lock);
-> =20
-> +#ifndef CONFIG_DEBUG_LOCK_ALLOC
-> +#define __raw_write_lock_nested(lock, subclass)	__raw_write_lock(((void)=
-(subclass), (lock)))
-> +#endif
-> +
->  void __lockfunc _raw_write_lock_nested(rwlock_t *lock, int subclass)
->  {
->  	__raw_write_lock_nested(lock, subclass);
-> --=20
-> 2.34.0
->=20
+From: Rob Landley <rob@landley.net>
 
-I have added that patch to iinux-next today.
+Wire up clone3 and futex_waitv syscalls for arch/sh
 
---=20
-Cheers,
-Stephen Rothwell
+Signed-off-by: Rob Landley <rob@landley.net>
+---
 
---Sig_/w9K6C0uM4PeS2VBEioL/GRL
-Content-Type: application/pgp-signature
-Content-Description: OpenPGP digital signature
+ arch/sh/kernel/syscalls/syscall.tbl |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
------BEGIN PGP SIGNATURE-----
+diff --git a/arch/sh/kernel/syscalls/syscall.tbl
+b/arch/sh/kernel/syscalls/syscall.tbl
+index 208f131659c5..65c3a94bff48 100644
+--- a/arch/sh/kernel/syscalls/syscall.tbl
++++ b/arch/sh/kernel/syscalls/syscall.tbl
+@@ -437,7 +437,7 @@
+ 432	common	fsmount				sys_fsmount
+ 433	common	fspick				sys_fspick
+ 434	common	pidfd_open			sys_pidfd_open
+-# 435 reserved for clone3
++435	common	clone3				sys_clone3
+ 436	common	close_range			sys_close_range
+ 437	common	openat2				sys_openat2
+ 438	common	pidfd_getfd			sys_pidfd_getfd
+@@ -451,3 +451,4 @@
+ 446	common	landlock_restrict_self		sys_landlock_restrict_self
+ # 447 reserved for memfd_secret
+ 448	common	process_mrelease		sys_process_mrelease
++449	common	futex_waitv			sys_futex_waitv
 
-iQEzBAEBCAAdFiEENIC96giZ81tWdLgKAVBC80lX0GwFAmGdcKIACgkQAVBC80lX
-0GxcKwf8DSXSQ4vFx8KZgCNUsRDvQY9k0L1Anncmc+YDBzHVLsGNp1y16KV8RnFG
-EH3z7YUHfQXJw+IuwV+zVx4sScskhe0rsnYeevnobC9sYlBR1FWNczzXVL9l2Cy5
-VT3OOvp3pP9voolA0ESmtt2jvROTpjX0jzIbDPE/kfkAwbzeypsp7oNPKRnc/19E
-h3oVYUIRteF/Z/ix3b5WEXhByTlVyHsTtvhnifDaIMY8GwERfpsVg86s159FTpgc
-DxpjChCd5a82fz/Xu8/4FgU97YAoJi8xchXIv+xwQU3Np6Z891N4dK8blRsk4ZSJ
-4TE4qakICK1UDliAhxUa6Ec4DWnokg==
-=TnkZ
------END PGP SIGNATURE-----
-
---Sig_/w9K6C0uM4PeS2VBEioL/GRL--
+Rob
