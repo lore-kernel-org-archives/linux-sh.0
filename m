@@ -2,99 +2,156 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 86665C4167D
-	for <linux-sh@archiver.kernel.org>; Fri, 26 Nov 2021 18:25:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C361C4167E
+	for <linux-sh@archiver.kernel.org>; Fri, 26 Nov 2021 18:25:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241092AbhKZS2R (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 26 Nov 2021 13:28:17 -0500
-Received: from ivanoab7.miniserver.com ([37.128.132.42]:59112 "EHLO
-        www.kot-begemot.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231614AbhKZS0C (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 26 Nov 2021 13:26:02 -0500
-Received: from [192.168.18.6] (helo=jain.kot-begemot.co.uk)
-        by www.kot-begemot.co.uk with esmtps (TLS1.3:ECDHE_RSA_AES_256_GCM_SHA384:256)
-        (Exim 4.92)
-        (envelope-from <anton.ivanov@cambridgegreys.com>)
-        id 1mqfrn-0002RG-Qw; Fri, 26 Nov 2021 18:22:40 +0000
-Received: from madding.kot-begemot.co.uk ([192.168.3.98])
-        by jain.kot-begemot.co.uk with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-        (Exim 4.94.2)
-        (envelope-from <anton.ivanov@cambridgegreys.com>)
-        id 1mqfri-00637Z-Mx; Fri, 26 Nov 2021 18:22:33 +0000
-Subject: Re: [PATCH 4.9] hugetlbfs: flush TLBs correctly after
- huge_pmd_unshare
-To:     Nadav Amit <nadav.amit@gmail.com>
-Cc:     Nick Piggin <npiggin@gmail.com>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Will Deacon <will@kernel.org>,
-        "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Linux-MM <linux-mm@kvack.org>,
-        linux-s390 <linux-s390@vger.kernel.org>,
-        linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-um@lists.infradead.org, linux-arm-kernel@lists.infradead.org,
-        linux-arch <linux-arch@vger.kernel.org>,
-        Mike Kravetz <mike.kravetz@oracle.com>
-References: <3BD89231-2CB9-4CE5-B0FA-5B58419D7CB8@gmail.com>
- <7a2feed4-7c73-c7ad-881e-c980235c8293@cambridgegreys.com>
- <C1607574-0A6F-4CEC-B488-795750EEF968@gmail.com>
-From:   Anton Ivanov <anton.ivanov@cambridgegreys.com>
-Organization: Cambridge Greys
-Message-ID: <5e2db11a-46ac-9b15-7b76-f27b718606c5@cambridgegreys.com>
-Date:   Fri, 26 Nov 2021 18:22:30 +0000
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.14.0
+        id S241465AbhKZS2S (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 26 Nov 2021 13:28:18 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57824 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S241401AbhKZS0D (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 26 Nov 2021 13:26:03 -0500
+Received: from mail-lj1-x22b.google.com (mail-lj1-x22b.google.com [IPv6:2a00:1450:4864:20::22b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1E1C7C07E5DC;
+        Fri, 26 Nov 2021 10:02:23 -0800 (PST)
+Received: by mail-lj1-x22b.google.com with SMTP id p8so6764691ljo.5;
+        Fri, 26 Nov 2021 10:02:23 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=gu1TeBm+2e/G5RkADOFU3cJrqp3hDioEihnrKvJEWzw=;
+        b=btNqE7qj3gxEiDVofvmyjyd5e7+E6dC5EvozkZ3YONorP6vNKMDK/arxDxAc+ltG7R
+         TI/OKrB+ElUSGJggS6fR+VvabEemoQpP54QSf8icDIcXqsN3cetkl+MJM3Uv83OU/ua5
+         YnrqP6SpxE3RilnmapTLWdFynEqGWoF9UKLd/DifHXHRRJENB4MJ8bZKGXsja5FQh/Ln
+         Gn1mmiKEwmPfkV+5o1Qx1UHHE5Ho0OF5Lv2UTxiT+KLX82V7SYEs1ZWnthM6isYJwRQ9
+         tdU5PDbvVk5b/rhIUQRngDxoQRVVJQlBNfOWOrEip1niZaJKsE7C6PZqI9A924a269T1
+         nFWw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=gu1TeBm+2e/G5RkADOFU3cJrqp3hDioEihnrKvJEWzw=;
+        b=X5TNc80pr6dEKUab80k2QRU+68u31vVieVFxQl2Ax7renHfQINyimJUPSG02Y1+Fps
+         0d8YijGF7lKetfmyuNjsluO+Pq1hZrq+ianwkxFVPu4Iq+UN0J0eXHjXPbahDcSDp5QA
+         6ROWG0ReUqir8v1umvo5GsK/oxU9JuaQUIdW3b2WZc7/Fb5J9MJknx/umX9jG7qeIyG1
+         t++xNaykgxqobG2/MITO21dKOElhWIFVQQlKCfOFbuIXZpBinKcvqJFbi5155cr8gd4g
+         zF8FnmCUys2Q5IfoirAmVx9EHCbG43WCRrLgVarTShZkDGKcMJrv/urh5OzN7w0YOheo
+         /4HA==
+X-Gm-Message-State: AOAM5328rrdg+/ImuSo9e8rjBmqVCtluMd6PJ6E2geM301RcvbkV2+eg
+        KKicPSZwPDIHyBGbcpil+hE=
+X-Google-Smtp-Source: ABdhPJyqXZVO64K86xv5JIX/t9zYDjx1u3F4bWT4GBdKatrIZNjie6T+K7n3Ac1v1Jvn5JGF+DNcxQ==
+X-Received: by 2002:a2e:7d0a:: with SMTP id y10mr33852017ljc.259.1637949741369;
+        Fri, 26 Nov 2021 10:02:21 -0800 (PST)
+Received: from localhost.localdomain (94-29-48-99.dynamic.spd-mgts.ru. [94.29.48.99])
+        by smtp.gmail.com with ESMTPSA id i32sm553831lfv.295.2021.11.26.10.02.19
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 26 Nov 2021 10:02:20 -0800 (PST)
+From:   Dmitry Osipenko <digetx@gmail.com>
+To:     Thierry Reding <thierry.reding@gmail.com>,
+        Jonathan Hunter <jonathanh@nvidia.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Joshua Thompson <funaho@jurai.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Sebastian Reichel <sre@kernel.org>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Philipp Zabel <p.zabel@pengutronix.de>,
+        Greentime Hu <green.hu@gmail.com>,
+        Vincent Chen <deanbo422@gmail.com>,
+        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
+        Juergen Gross <jgross@suse.com>,
+        Stefano Stabellini <sstabellini@kernel.org>,
+        "Rafael J. Wysocki" <rafael@kernel.org>,
+        Len Brown <lenb@kernel.org>,
+        Santosh Shilimkar <ssantosh@kernel.org>,
+        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
+        Liam Girdwood <lgirdwood@gmail.com>,
+        Mark Brown <broonie@kernel.org>, Pavel Machek <pavel@ucw.cz>,
+        Lee Jones <lee.jones@linaro.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Daniel Lezcano <daniel.lezcano@linaro.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Ulf Hansson <ulf.hansson@linaro.org>, alankao@andestech.com,
+        "K . C . Kuen-Chern Lin" <kclin@andestech.com>
+Cc:     linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
+        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
+        xen-devel@lists.xenproject.org, linux-acpi@vger.kernel.org,
+        linux-pm@vger.kernel.org, linux-tegra@vger.kernel.org
+Subject: [PATCH v4 15/25] powerpc: Use do_kernel_power_off()
+Date:   Fri, 26 Nov 2021 21:00:51 +0300
+Message-Id: <20211126180101.27818-16-digetx@gmail.com>
+X-Mailer: git-send-email 2.33.1
+In-Reply-To: <20211126180101.27818-1-digetx@gmail.com>
+References: <20211126180101.27818-1-digetx@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <C1607574-0A6F-4CEC-B488-795750EEF968@gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Clacks-Overhead: GNU Terry Pratchett
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 26/11/2021 17:49, Nadav Amit wrote:
-> 
->> On Nov 26, 2021, at 2:21 AM, Anton Ivanov <anton.ivanov@cambridgegreys.com> wrote:
->>
->>
->>
->> On 26/11/2021 06:08, Nadav Amit wrote:
->>> Below is a patch to address CVE-2021-4002 [1] that I created to backport
->>> to 4.9. The stable kernels of 4.14 and prior ones do not have unified
->>> TLB flushing code, and I managed to mess up the arch code a couple of
->>> times.
->>> Now that the CVE is public, I would appreciate your review of this
->>> patch. I send 4.9 for review - the other ones (4.14 and prior) are
->>> pretty similar.
->>> [1] https://www.openwall.com/lists/oss-security/2021/11/25/1
->>> Thanks,
->>> Nadav
->>
->> I do not quite see the rationale for patching um
->>
->> It supports only standard size pages. You should not be able to map a huge page there (and hugetlbfs).
->>
->> I have "non-standard page size" somewhere towards the end of my queue, but it keeps falling through - not enough spare time to work on it.
-> 
-> Thanks for your review.
-> 
-> I did not look at the dependencies, so I did not even look if
-> hugetlbfs depends on !um.
-> 
-> Do you prefer that for um, I will just do a BUG()? I prefer
-> to have a stub just to avoid potential build issues.
-> 
-> 
+Kernel now supports chained power-off handlers. Use do_kernel_power_off()
+that invokes chained power-off handlers. It also invokes legacy
+pm_power_off() for now, which will be removed once all drivers will
+be converted to the new power-off API.
 
-Stub will be fine.
+Acked-by: Michael Ellerman <mpe@ellerman.id.au>
+Signed-off-by: Dmitry Osipenko <digetx@gmail.com>
+---
+ arch/powerpc/kernel/setup-common.c | 4 +---
+ arch/powerpc/xmon/xmon.c           | 3 +--
+ 2 files changed, 2 insertions(+), 5 deletions(-)
 
-I was just checking in case I missed something.
-
-Brgds,
-
+diff --git a/arch/powerpc/kernel/setup-common.c b/arch/powerpc/kernel/setup-common.c
+index 4f1322b65760..71c4ccd9bbb1 100644
+--- a/arch/powerpc/kernel/setup-common.c
++++ b/arch/powerpc/kernel/setup-common.c
+@@ -161,9 +161,7 @@ void machine_restart(char *cmd)
+ void machine_power_off(void)
+ {
+ 	machine_shutdown();
+-	if (pm_power_off)
+-		pm_power_off();
+-
++	do_kernel_power_off();
+ 	smp_send_stop();
+ 	machine_hang();
+ }
+diff --git a/arch/powerpc/xmon/xmon.c b/arch/powerpc/xmon/xmon.c
+index 83100c6524cc..759e167704e6 100644
+--- a/arch/powerpc/xmon/xmon.c
++++ b/arch/powerpc/xmon/xmon.c
+@@ -1243,8 +1243,7 @@ static void bootcmds(void)
+ 	} else if (cmd == 'h') {
+ 		ppc_md.halt();
+ 	} else if (cmd == 'p') {
+-		if (pm_power_off)
+-			pm_power_off();
++		do_kernel_power_off();
+ 	}
+ }
+ 
 -- 
-Anton R. Ivanov
-Cambridgegreys Limited. Registered in England. Company Number 10273661
-https://www.cambridgegreys.com/
+2.33.1
+
