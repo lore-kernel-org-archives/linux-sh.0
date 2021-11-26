@@ -2,165 +2,137 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C226FC433F5
-	for <linux-sh@archiver.kernel.org>; Fri, 26 Nov 2021 18:26:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3EDD5C433F5
+	for <linux-sh@archiver.kernel.org>; Fri, 26 Nov 2021 23:53:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243184AbhKZSaK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 26 Nov 2021 13:30:10 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59136 "EHLO
+        id S234653AbhKZX46 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 26 Nov 2021 18:56:58 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45452 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243255AbhKZS2E (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 26 Nov 2021 13:28:04 -0500
-Received: from mail-lj1-x233.google.com (mail-lj1-x233.google.com [IPv6:2a00:1450:4864:20::233])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B3E59C061370;
-        Fri, 26 Nov 2021 10:02:45 -0800 (PST)
-Received: by mail-lj1-x233.google.com with SMTP id z8so20239314ljz.9;
-        Fri, 26 Nov 2021 10:02:45 -0800 (PST)
+        with ESMTP id S231326AbhKZXy6 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 26 Nov 2021 18:54:58 -0500
+Received: from mail-pj1-x1029.google.com (mail-pj1-x1029.google.com [IPv6:2607:f8b0:4864:20::1029])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0A181C061574;
+        Fri, 26 Nov 2021 15:51:45 -0800 (PST)
+Received: by mail-pj1-x1029.google.com with SMTP id o6-20020a17090a0a0600b001a64b9a11aeso8999329pjo.3;
+        Fri, 26 Nov 2021 15:51:44 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20210112;
-        h=from:to:cc:subject:date:message-id:in-reply-to:references
-         :mime-version:content-transfer-encoding;
-        bh=Ghk8UhoJL9jY8/O2iNT2jlf6L/Wn8kxWwQZa55OiZz4=;
-        b=ZtU3y8ZBLbgg4lFcoxmy2KRv9A+Ii+W7F/YNfA4hr5aGa2A8h1XOOQ+3ZkaoAuRI8r
-         vp3WDQpWqaUbrqJl5k89WHPfQrEQ/Ltq03M1Jmy8OPuRkuVfHuw43GDACIGadH395ZCu
-         hF1Tkx6Ym4O70rPhvu86hz5l/K9yL/cfenkaUfwTVHJ2tIac4a6CVsjFFcBSCjPbyEN2
-         gfILQUaZObJE5x+CtC3RAwLsx67a+c6/n129TlnphmsaDSRSL+mpCIUkrNZHM2IDnaAh
-         eZuToqizQ4ETYDJrMJcfU5n8RucoyvMFRHyF/5zQGpSCtU8DU2FKn4QQ8sg+eWOVU7gM
-         usKg==
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=GFpvS+bi1uk3g1Gyat/MvY/bTvPGds7VDTcr4Wgfqmo=;
+        b=jF7enbC7CiJ/vIMAcwwYYIgi5ShZ//6pV4vhfWWm9UzXW0BSVrNUTUWUgPBjhpEnZ9
+         lxAjBpl3vqLYMsDH+9f9+VpGvTyCfkYk/yh+Ne9t7wQKIxFIgswvhmqPYDv8UVuCSkya
+         jV7J26vyIRBwIpWLcgIKy6Hl0/jCAduDRAdweaFGMMn5KpcpRYswACSHBlK2j74b3RKv
+         mXwuGO3AMekvYyQR59ud785fk9uAK7m9Ew8GHdV7Hul9dlj85oDI48RDu/3NHzOU+OUU
+         p0XQMeQvJZUB42DFual1ddgTP5uzoQe1wlsxJYkux1awpDuHfWxlYIcFV1yljtXKSVjJ
+         hKhA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
-         :references:mime-version:content-transfer-encoding;
-        bh=Ghk8UhoJL9jY8/O2iNT2jlf6L/Wn8kxWwQZa55OiZz4=;
-        b=XVU0gy66yBzRLE9uA11EzRrcJS1joz/A9yii55L0bp7zQ4+0u7UVIZCSMDfBs5PjJe
-         rwFJZESF2syQ+78fA+qCXIUSofkm5Czy96Ejsie46HS31JuDieAViRrhj9FcAJgvVcXz
-         FnuftP5/Ws65+g7zcu+AMx5sW3F935IdX0fknRZVx0LQr0GXBUyCOKBmE9Nols9Jd63o
-         SsLJvHiQuWl++tgFLFyO031oKS4Fh/pTNz9FL6zFvahorVoGLWmGvyR4eYIAp8Q0Rm0l
-         DzRi3jgmJ9Wp420f5rJaGlDIBtAJ8OFORmLK9edsnioCCk2t2F67RWlXy3dsQXsrDD+D
-         669A==
-X-Gm-Message-State: AOAM530+5s9H5qB0hyglFrJUcTlZrcNPOTHd0RLGLlL4lZWaoCd+DEtg
-        c7vZnDn5hk7rzX8GOg8Bg6c=
-X-Google-Smtp-Source: ABdhPJwe+PZD5fugCmFfxz+jK98d8FG+5T7bYBVi5cf4oriJg0nQW1ZXKn9ET9XQ9fmBMy14JpwgMg==
-X-Received: by 2002:a2e:97c5:: with SMTP id m5mr33717502ljj.503.1637949763992;
-        Fri, 26 Nov 2021 10:02:43 -0800 (PST)
-Received: from localhost.localdomain (94-29-48-99.dynamic.spd-mgts.ru. [94.29.48.99])
-        by smtp.gmail.com with ESMTPSA id i32sm553831lfv.295.2021.11.26.10.02.42
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=GFpvS+bi1uk3g1Gyat/MvY/bTvPGds7VDTcr4Wgfqmo=;
+        b=o8vFot3v36PsIyZTtXgdZ2CxifoH7s7yVmA5GzTKNBInTpPhiuXB6mEJoLc8Zxfm2N
+         MS71c+/bQb0luXfUP9Sf29tyBIihtfQSR4EJjBF2zumKTNBxQ/D4QpBuDyJn/uZ+WeLQ
+         6QITZ/ZGgJJFaeSQ54FQ5O5tVhajdNmyF9B9lxFdElH4OTN9BLJh/rjmWPxIxkxJg5FZ
+         7Hv3/UAAH+VCBpW7Gy7JCpdW1WiWiJnuOt2ujvXU33VJ2DnNvBpFoNsUjVm3YNDmTL+e
+         XEIoJRJh+TVCtkCEqfhg5Vg+uQ7CXriqWsz0rN/C9JQvQr6YZAJDTSKc9S5jih/DElIj
+         6npw==
+X-Gm-Message-State: AOAM5333oMLIZYMa6hWCYV2o55AYw8cLgUWpKNviRgokdaoqMQk/pvna
+        0+APbhS/vIGVzQOvXKXkozs=
+X-Google-Smtp-Source: ABdhPJx/hGyPnA2YMqcLNFxTMdfi5LiHIA8Kwsl4OgBcNo+Zgi4sT1HdRD0MYylhNYD7dxqosSL3Og==
+X-Received: by 2002:a17:90a:e005:: with SMTP id u5mr18897194pjy.17.1637970704323;
+        Fri, 26 Nov 2021 15:51:44 -0800 (PST)
+Received: from localhost ([2409:10:24a0:4700:e8ad:216a:2a9d:6d0c])
+        by smtp.gmail.com with ESMTPSA id mm22sm6397313pjb.28.2021.11.26.15.51.43
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 26 Nov 2021 10:02:43 -0800 (PST)
-From:   Dmitry Osipenko <digetx@gmail.com>
-To:     Thierry Reding <thierry.reding@gmail.com>,
-        Jonathan Hunter <jonathanh@nvidia.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Joshua Thompson <funaho@jurai.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Sebastian Reichel <sre@kernel.org>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Philipp Zabel <p.zabel@pengutronix.de>,
-        Greentime Hu <green.hu@gmail.com>,
-        Vincent Chen <deanbo422@gmail.com>,
-        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
-        Juergen Gross <jgross@suse.com>,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        "Rafael J. Wysocki" <rafael@kernel.org>,
-        Len Brown <lenb@kernel.org>,
-        Santosh Shilimkar <ssantosh@kernel.org>,
-        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
-        Liam Girdwood <lgirdwood@gmail.com>,
-        Mark Brown <broonie@kernel.org>, Pavel Machek <pavel@ucw.cz>,
-        Lee Jones <lee.jones@linaro.org>,
+        Fri, 26 Nov 2021 15:51:43 -0800 (PST)
+Date:   Sat, 27 Nov 2021 08:51:41 +0900
+From:   Stafford Horne <shorne@gmail.com>
+To:     Rob Landley <rob@landley.net>
+Cc:     Arnd Bergmann <arnd@arndb.de>,
+        Naresh Kamboju <naresh.kamboju@linaro.org>,
+        Linux-Next Mailing List <linux-next@vger.kernel.org>,
+        open list <linux-kernel@vger.kernel.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        Stephen Rothwell <sfr@canb.auug.org.au>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Ingo Molnar <mingo@redhat.com>, Will Deacon <will@kernel.org>,
+        Waiman Long <longman@redhat.com>,
+        Boqun Feng <boqun.feng@gmail.com>,
+        Minchan Kim <minchan@kernel.org>,
         Andrew Morton <akpm@linux-foundation.org>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Daniel Lezcano <daniel.lezcano@linaro.org>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Ulf Hansson <ulf.hansson@linaro.org>, alankao@andestech.com,
-        "K . C . Kuen-Chern Lin" <kclin@andestech.com>
-Cc:     linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
-        xen-devel@lists.xenproject.org, linux-acpi@vger.kernel.org,
-        linux-pm@vger.kernel.org, linux-tegra@vger.kernel.org
-Subject: [PATCH v4 25/25] reboot: Remove pm_power_off_prepare()
-Date:   Fri, 26 Nov 2021 21:01:01 +0300
-Message-Id: <20211126180101.27818-26-digetx@gmail.com>
-X-Mailer: git-send-email 2.33.1
-In-Reply-To: <20211126180101.27818-1-digetx@gmail.com>
-References: <20211126180101.27818-1-digetx@gmail.com>
+        Mike Galbraith <umgwanakikbuti@gmail.com>,
+        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
+        Sergey Senozhatsky <senozhatsky@chromium.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, lkft-triage@lists.linaro.org,
+        =?iso-8859-1?Q?Andr=E9?= Almeida <andrealmeid@collabora.com>
+Subject: Re: spinlock.c:306:9: error: implicit declaration of function
+ '__raw_write_lock_nested'
+Message-ID: <YaFzDW+n0n7qQ7hm@antec>
+References: <CA+G9fYtH2JR=L0cPoOEqsEGrZW_uOJgX6qLGMe_hbLpBtjVBwA@mail.gmail.com>
+ <41206fc7-f8ce-98aa-3718-ba3e1431e320@landley.net>
+ <CAK8P3a3pQW59NVF=5P+ZiBjNJmnWh+iTZUHvqHBrXkHA6pMd4g@mail.gmail.com>
+ <7d5a5249-40ee-9a42-c6a0-a5defa3703c1@landley.net>
+ <CAK8P3a0XGz=F0nPAW8T-VvfH5bPuGTNiPZ18N+Z6Sj_M_6TrPA@mail.gmail.com>
+ <eef6670c-1fb7-2d01-72ed-258d49227de1@landley.net>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <eef6670c-1fb7-2d01-72ed-258d49227de1@landley.net>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-All pm_power_off_prepare() users were converted to sys-off handler API.
-Remove the obsolete callback.
+On Thu, Nov 25, 2021 at 06:10:54AM -0600, Rob Landley wrote:
+> On 11/25/21 1:25 AM, Arnd Bergmann wrote:
+...
+> > 
+> > The best reference I could find is:
+> > 
+> > https://lore.kernel.org/linux-api/20190604160944.4058-2-christian@brauner.io/
+> 
+> Does not say what the special handling is. Does not provide an example of said
+> special handling. Implied that only three do NOT need special handling, two of
+> which are x86 and arm, which seems... convenient.
+> 
+> Right, let's see what "grep -r clone arch/" says:
+> 
+> m68k/kernel/process.c is obviously overriding
+> arc/include/syscalls.h has sys_clone_wrapper()
+> nios2/kernel/process.c has nios2_clone()
+> openrisc/kernel/entry.S has __sys_clone()
+> sparc/kernel/process.c has sparce_clone()
+> h8300/kernel/process.c has its own sys_clone()
+> ia64/kernel/process.c has ia64_clone()
+> user mode linux is just weird.
+> 
+> So the architectures that wrap clone are m68k, arc, nios2, openrisc, sparc,
+> h8300, and ia64.
 
-Signed-off-by: Dmitry Osipenko <digetx@gmail.com>
----
- include/linux/pm.h |  1 -
- kernel/reboot.c    | 11 -----------
- 2 files changed, 12 deletions(-)
+This got me reading/refreshing my memory, we have a wrapper for clone in
+openrisc, but not clone3.  The wrapper ensures we save registers which get
+clobbered by switch hence we need it for clone/fork.
 
-diff --git a/include/linux/pm.h b/include/linux/pm.h
-index 1d8209c09686..d9bf1426f81e 100644
---- a/include/linux/pm.h
-+++ b/include/linux/pm.h
-@@ -20,7 +20,6 @@
-  * Callbacks for platform drivers to implement.
-  */
- extern void (*pm_power_off)(void);
--extern void (*pm_power_off_prepare)(void);
- 
- struct device; /* we have a circular dep with device.h */
- #ifdef CONFIG_VT_CONSOLE_SLEEP
-diff --git a/kernel/reboot.c b/kernel/reboot.c
-index 4884204f9a31..a832bb660040 100644
---- a/kernel/reboot.c
-+++ b/kernel/reboot.c
-@@ -48,13 +48,6 @@ int reboot_cpu;
- enum reboot_type reboot_type = BOOT_ACPI;
- int reboot_force;
- 
--/*
-- * If set, this is used for preparing the system to power off.
-- */
--
--void (*pm_power_off_prepare)(void);
--EXPORT_SYMBOL_GPL(pm_power_off_prepare);
--
- /**
-  *	emergency_restart - reboot the system
-  *
-@@ -807,10 +800,6 @@ void do_kernel_power_off(void)
- 
- static void do_kernel_power_off_prepare(void)
- {
--	/* legacy pm_power_off_prepare() is unchained and has highest priority */
--	if (pm_power_off_prepare)
--		return pm_power_off_prepare();
--
- 	blocking_notifier_call_chain(&power_off_handler_list, POWEROFF_PREPARE,
- 				     NULL);
- }
--- 
-2.33.1
+It looks like clone3 missing this wrapper may be an issue.  Though, I have been
+running the whole glibc test suite on this without seeing any issues.
 
+I will patch this anyway.
+
+> Implying that the ones that DON'T are alpha, arm64, hexagon, nds32, parisc,
+> s390, csky, microblaze, powerpc, sh, x86, arm, mips, riscv, and xtensa.
+> 
+> Which would mean 2/3 of architectures don't wrap clone, and thus arch/sh not
+> doing so isn't unusual.
+> 
+> > If fork() and clone() don't need special handling on arch/sh, then
+> > clone3 shouldn't
+> > need it either, unless the existing ones are also wrong. It looks like
+> > some architectures
+> > override these to avoid leaking register state from the kernel to the
+> > child process.
+
+I would agree with this.
+
+-Stafford
