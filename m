@@ -2,435 +2,575 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 02247C433FE
-	for <linux-sh@archiver.kernel.org>; Mon, 29 Nov 2021 17:50:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 076A0C433F5
+	for <linux-sh@archiver.kernel.org>; Tue, 30 Nov 2021 00:02:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344991AbhK2Rxz (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 29 Nov 2021 12:53:55 -0500
-Received: from Galois.linutronix.de ([193.142.43.55]:55256 "EHLO
-        galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242755AbhK2Rvv (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 29 Nov 2021 12:51:51 -0500
-From:   Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020; t=1638208111;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=Tbl3+zAOEmpP6ZGCt/BD/PG2cZ3xnDr+Tb2+yq81oZo=;
-        b=arWwcpj6Q/D6pvkRJiP142R5s1arQMXkHQxn/zOjEbHQImbzvbopydkHkJVlZU1LyU8wcj
-        lfTHFIczOSU8/AxvkV7RlMv59UNEsq07wTaCjGR0hhzFxAJqBfsG+RQLUCnFd9mRROoZHy
-        oM36Hu/i3jaiMslNkMd8KSiGnZnfD6E9OtVayofH2faDlnYttgS8ROCBpOUjRvircInDcE
-        D7QYx/vTcwEIm1WQMEwbO3ryNqgSOcogR0awZvPqk+/4Ssex92D191dUHP56nk8LNkAmH/
-        ofoyFF9VV4Dvtt12/JcPQ5Oupu94FrnmDjslyjx9Wa1m2kjHBmo475RB/hQL+w==
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020e; t=1638208111;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=Tbl3+zAOEmpP6ZGCt/BD/PG2cZ3xnDr+Tb2+yq81oZo=;
-        b=5xRw1Cp/h/haoQhJAxftFnjCbEc9UKH/scHgQVSdL5qC+aJRF+i0MC2mtjiyiG1rOEKaPZ
-        igMovB8jTE5WtwCQ==
-To:     linux-kernel@vger.kernel.org
-Cc:     Ben Segall <bsegall@google.com>, Boqun Feng <boqun.feng@gmail.com>,
-        Daniel Bristot de Oliveira <bristot@redhat.com>,
-        Dietmar Eggemann <dietmar.eggemann@arm.com>,
-        Ingo Molnar <mingo@redhat.com>,
-        Juri Lelli <juri.lelli@redhat.com>,
-        Mel Gorman <mgorman@suse.de>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Vincent Guittot <vincent.guittot@linaro.org>,
-        Waiman Long <longman@redhat.com>,
-        Will Deacon <will@kernel.org>,
-        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Alexander Gordeev <agordeev@linux.ibm.com>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Brian Cain <bcain@codeaurora.org>,
+        id S230313AbhK3AFP (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 29 Nov 2021 19:05:15 -0500
+Received: from mail-ot1-f50.google.com ([209.85.210.50]:46609 "EHLO
+        mail-ot1-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229446AbhK3AFN (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 29 Nov 2021 19:05:13 -0500
+Received: by mail-ot1-f50.google.com with SMTP id 98-20020a9d086b000000b0057a403bbd4eso3223502oty.13;
+        Mon, 29 Nov 2021 16:01:55 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=aV2EodJh346t+Wbm3YErslm1vIVsKkg3za0JyncYukQ=;
+        b=SzEGo+6wb8eNtc0a0u6yQLkR/iKGSiIo1g4os4KiTWEWOjj1TFWgzX3OR//h1yKLxV
+         jnsGzLV0saeU/zVUpm6Pyvb6dXgEeswQrTaOucciK7VkcVzAbb2isdSH5CcKs+cJWBQC
+         XxsD0LFQ2N4w/ggPQqEyPHv2EJDV/t9bBxpTLQKIF5w+A6aryh+DtzRkx0R4ALC67p/x
+         QjOLvnFhjDtnSPbgzGwV4A7xptkXG3fcWdxlEE4NJKZhdMU7wjm7NylJJ2SRsgaOKqpv
+         /mG8M9g6W62P3qT/KLYzfjnzetbuZ29XhRtMJQYe8kqCDxDnjmhFGdFyoGpPuCBHJnOj
+         ItRw==
+X-Gm-Message-State: AOAM530e30EH5JPjLH+2hURaWisVjo8ZapDPM4HS1LixLnQGgYa3cmeX
+        YOshBVcxseIq1xovFokmiQ==
+X-Google-Smtp-Source: ABdhPJxGmP7W+hR5b8+EQ325tbSTlD38AnnrDu+nyHVAQB1cJ7/x12F1fry2XTHV2cl6Sy01eQGOWA==
+X-Received: by 2002:a05:6830:4389:: with SMTP id s9mr47068865otv.97.1638230514850;
+        Mon, 29 Nov 2021 16:01:54 -0800 (PST)
+Received: from robh.at.kernel.org (66-90-148-213.dyn.grandenetworks.net. [66.90.148.213])
+        by smtp.gmail.com with ESMTPSA id s17sm2465101ooj.42.2021.11.29.16.01.51
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 29 Nov 2021 16:01:53 -0800 (PST)
+Received: (nullmailer pid 855745 invoked by uid 1000);
+        Tue, 30 Nov 2021 00:01:51 -0000
+Date:   Mon, 29 Nov 2021 18:01:50 -0600
+From:   Rob Herring <robh@kernel.org>
+To:     Calvin Zhang <calvinzhang.cool@gmail.com>
+Cc:     Vineet Gupta <vgupta@kernel.org>,
+        Russell King <linux@armlinux.org.uk>,
         Catalin Marinas <catalin.marinas@arm.com>,
-        Chris Zankel <chris@zankel.net>,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Guo Ren <guoren@kernel.org>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
+        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Nick Hu <nickhu@andestech.com>,
+        Greentime Hu <green.hu@gmail.com>,
+        Vincent Chen <deanbo422@gmail.com>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        Jonas Bonn <jonas@southpole.se>,
+        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+        Stafford Horne <shorne@gmail.com>,
         Michael Ellerman <mpe@ellerman.id.au>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
         Paul Mackerras <paulus@samba.org>,
         Paul Walmsley <paul.walmsley@sifive.com>,
-        Rich Felker <dalias@libc.org>,
-        Richard Henderson <rth@twiddle.net>,
-        Russell King <linux@armlinux.org.uk>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org
-Subject: [PATCH 11/11] locking: Allow to include asm/spinlock_types.h from linux/spinlock_types_raw.h
-Date:   Mon, 29 Nov 2021 18:46:54 +0100
-Message-Id: <20211129174654.668506-12-bigeasy@linutronix.de>
-In-Reply-To: <20211129174654.668506-1-bigeasy@linutronix.de>
-References: <20211129174654.668506-1-bigeasy@linutronix.de>
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Rich Felker <dalias@libc.org>, Chris Zankel <chris@zankel.net>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Frank Rowand <frowand.list@gmail.com>,
+        Mike Rapoport <rppt@kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        David Hildenbrand <david@redhat.com>,
+        Kefeng Wang <wangkefeng.wang@huawei.com>,
+        Vladimir Isaev <isaev@synopsys.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Marc Zyngier <maz@kernel.org>,
+        David Brazdil <dbrazdil@google.com>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Andrey Konovalov <andreyknvl@gmail.com>,
+        Anshuman Khandual <anshuman.khandual@arm.com>,
+        Souptick Joarder <jrdr.linux@gmail.com>,
+        Jinyang He <hejinyang@loongson.cn>,
+        Alexander Sverdlin <alexander.sverdlin@nokia.com>,
+        Serge Semin <Sergey.Semin@baikalelectronics.ru>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Ley Foon Tan <ley.foon.tan@intel.com>,
+        Andreas Oetken <andreas.oetken@siemens.com>,
+        Randy Dunlap <rdunlap@infradead.org>,
+        Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
+        Christophe Leroy <christophe.leroy@c-s.fr>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Zhang Yunkai <zhang.yunkai@zte.com.cn>,
+        Markus Elfring <elfring@users.sourceforge.net>,
+        Ganesh Goudar <ganeshgr@linux.ibm.com>,
+        "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
+        Atish Patra <atish.patra@wdc.com>,
+        Anup Patel <anup.patel@wdc.com>,
+        Nick Kossifidis <mick@ics.forth.gr>,
+        Alexandre Ghiti <alex@ghiti.fr>,
+        Vitaly Wool <vitaly.wool@konsulko.com>,
+        "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
+        Guo Ren <guoren@linux.alibaba.com>,
+        Tiezhu Yang <yangtiezhu@loongson.cn>,
+        Mauri Sandberg <sandberg@mailfence.com>,
+        Palmer Dabbelt <palmerdabbelt@google.com>,
+        linux-snps-arc@lists.infradead.org, linux-kernel@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        uclinux-h8-devel@lists.sourceforge.jp, linux-mips@vger.kernel.org,
+        openrisc@lists.librecores.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org, devicetree@vger.kernel.org
+Subject: Re: [PATCH 1/2] of: Sort reserved_mem related code
+Message-ID: <YaVp7ubpCLN1xWfF@robh.at.kernel.org>
+References: <20211119075844.2902592-1-calvinzhang.cool@gmail.com>
+ <20211119075844.2902592-2-calvinzhang.cool@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20211119075844.2902592-2-calvinzhang.cool@gmail.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The printk header file includes ratelimit_types.h for its __ratelimit()
-based usage. It is required for the static initializer used in
-printk_ratelimited(). It uses a raw_spinlock_t and includes the
-spinlock_types.h.
+On Fri, Nov 19, 2021 at 03:58:18PM +0800, Calvin Zhang wrote:
+> Move code about parsing /reserved-memory and initializing of
+> reserved_mems array to of_reserved_mem.c for better modularity.
+> 
+> Rename array name from reserved_mem to reserved_mems to distinguish
+> from type definition.
+> 
+> Signed-off-by: Calvin Zhang <calvinzhang.cool@gmail.com>
+> ---
+>  drivers/of/fdt.c                | 108 +--------------------
+>  drivers/of/of_private.h         |  12 ++-
+>  drivers/of/of_reserved_mem.c    | 163 ++++++++++++++++++++++++++------
+>  include/linux/of_reserved_mem.h |   4 +
+>  4 files changed, 149 insertions(+), 138 deletions(-)
+> 
+> diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
+> index bdca35284ceb..445af4e69300 100644
+> --- a/drivers/of/fdt.c
+> +++ b/drivers/of/fdt.c
+> @@ -80,7 +80,7 @@ void __init of_fdt_limit_memory(int limit)
+>  	}
+>  }
+>  
+> -static bool of_fdt_device_is_available(const void *blob, unsigned long node)
+> +bool of_fdt_device_is_available(const void *blob, unsigned long node)
+>  {
+>  	const char *status = fdt_getprop(blob, node, "status", NULL);
+>  
+> @@ -476,7 +476,7 @@ void *initial_boot_params __ro_after_init;
+>  
+>  static u32 of_fdt_crc32;
+>  
+> -static int __init early_init_dt_reserve_memory_arch(phys_addr_t base,
+> +int __init early_init_dt_reserve_memory_arch(phys_addr_t base,
+>  					phys_addr_t size, bool nomap)
 
-PREEMPT_RT substitutes spinlock_t with a rtmutex based implementation and so
-its spinlock_t implmentation (provided by spinlock_rt.h) includes rtmutex.h=
- and
-atomic.h which leads to recursive includes where defines are missing.
+I think you can move this function too if you change the nomap==false 
+callers to just call memblock_reserve directly.
 
-By including only the raw_spinlock_t defines it avoids the atomic.h
-related includes at this stage.
 
-An example on powerpc:
+>  {
+>  	if (nomap) {
+> @@ -492,108 +492,6 @@ static int __init early_init_dt_reserve_memory_arch(phys_addr_t base,
+>  	return memblock_reserve(base, size);
+>  }
+>  
+> -/*
+> - * __reserved_mem_reserve_reg() - reserve all memory described in 'reg' property
+> - */
+> -static int __init __reserved_mem_reserve_reg(unsigned long node,
+> -					     const char *uname)
+> -{
+> -	int t_len = (dt_root_addr_cells + dt_root_size_cells) * sizeof(__be32);
+> -	phys_addr_t base, size;
+> -	int len;
+> -	const __be32 *prop;
+> -	int first = 1;
+> -	bool nomap;
+> -
+> -	prop = of_get_flat_dt_prop(node, "reg", &len);
+> -	if (!prop)
+> -		return -ENOENT;
+> -
+> -	if (len && len % t_len != 0) {
+> -		pr_err("Reserved memory: invalid reg property in '%s', skipping node.\n",
+> -		       uname);
+> -		return -EINVAL;
+> -	}
+> -
+> -	nomap = of_get_flat_dt_prop(node, "no-map", NULL) != NULL;
+> -
+> -	while (len >= t_len) {
+> -		base = dt_mem_next_cell(dt_root_addr_cells, &prop);
+> -		size = dt_mem_next_cell(dt_root_size_cells, &prop);
+> -
+> -		if (size &&
+> -		    early_init_dt_reserve_memory_arch(base, size, nomap) == 0)
+> -			pr_debug("Reserved memory: reserved region for node '%s': base %pa, size %lu MiB\n",
+> -				uname, &base, (unsigned long)(size / SZ_1M));
+> -		else
+> -			pr_info("Reserved memory: failed to reserve memory for node '%s': base %pa, size %lu MiB\n",
+> -				uname, &base, (unsigned long)(size / SZ_1M));
+> -
+> -		len -= t_len;
+> -		if (first) {
+> -			fdt_reserved_mem_save_node(node, uname, base, size);
+> -			first = 0;
+> -		}
+> -	}
+> -	return 0;
+> -}
+> -
+> -/*
+> - * __reserved_mem_check_root() - check if #size-cells, #address-cells provided
+> - * in /reserved-memory matches the values supported by the current implementation,
+> - * also check if ranges property has been provided
+> - */
+> -static int __init __reserved_mem_check_root(unsigned long node)
+> -{
+> -	const __be32 *prop;
+> -
+> -	prop = of_get_flat_dt_prop(node, "#size-cells", NULL);
+> -	if (!prop || be32_to_cpup(prop) != dt_root_size_cells)
+> -		return -EINVAL;
+> -
+> -	prop = of_get_flat_dt_prop(node, "#address-cells", NULL);
+> -	if (!prop || be32_to_cpup(prop) != dt_root_addr_cells)
+> -		return -EINVAL;
+> -
+> -	prop = of_get_flat_dt_prop(node, "ranges", NULL);
+> -	if (!prop)
+> -		return -EINVAL;
+> -	return 0;
+> -}
+> -
+> -/*
+> - * fdt_scan_reserved_mem() - scan a single FDT node for reserved memory
+> - */
+> -static int __init fdt_scan_reserved_mem(void)
+> -{
+> -	int node, child;
+> -	const void *fdt = initial_boot_params;
+> -
+> -	node = fdt_path_offset(fdt, "/reserved-memory");
+> -	if (node < 0)
+> -		return -ENODEV;
+> -
+> -	if (__reserved_mem_check_root(node) != 0) {
+> -		pr_err("Reserved memory: unsupported node format, ignoring\n");
+> -		return -EINVAL;
+> -	}
+> -
+> -	fdt_for_each_subnode(child, fdt, node) {
+> -		const char *uname;
+> -		int err;
+> -
+> -		if (!of_fdt_device_is_available(fdt, child))
+> -			continue;
+> -
+> -		uname = fdt_get_name(fdt, child, NULL);
+> -
+> -		err = __reserved_mem_reserve_reg(child, uname);
+> -		if (err == -ENOENT && of_get_flat_dt_prop(child, "size", NULL))
+> -			fdt_reserved_mem_save_node(child, uname, 0, 0);
+> -	}
+> -	return 0;
+> -}
+> -
+>  /*
+>   * fdt_reserve_elfcorehdr() - reserves memory for elf core header
+>   *
+> @@ -642,7 +540,7 @@ void __init early_init_fdt_scan_reserved_mem(void)
+>  	}
+>  
+>  	fdt_scan_reserved_mem();
+> -	fdt_init_reserved_mem();
+> +	of_reserved_mem_init();
+>  	fdt_reserve_elfcorehdr();
+>  }
+>  
+> diff --git a/drivers/of/of_private.h b/drivers/of/of_private.h
+> index 9324483397f6..88b67f8ed698 100644
+> --- a/drivers/of/of_private.h
+> +++ b/drivers/of/of_private.h
+> @@ -163,8 +163,14 @@ static inline int of_dma_get_range(struct device_node *np,
+>  }
+>  #endif
+>  
+> -void fdt_init_reserved_mem(void);
+> -void fdt_reserved_mem_save_node(unsigned long node, const char *uname,
+> -			       phys_addr_t base, phys_addr_t size);
+> +bool of_fdt_device_is_available(const void *blob, unsigned long node);
+> +int early_init_dt_reserve_memory_arch(phys_addr_t base,
+> +					phys_addr_t size, bool nomap);
+> +#ifdef CONFIG_OF_RESERVED_MEM
+> +int fdt_scan_reserved_mem(void);
+> +#else
+> +static inline int fdt_scan_reserved_mem(void) { }
+> +#endif
+> +
+>  
+>  #endif /* _LINUX_OF_PRIVATE_H */
+> diff --git a/drivers/of/of_reserved_mem.c b/drivers/of/of_reserved_mem.c
+> index 9c0fb962c22b..784cfc5cd251 100644
+> --- a/drivers/of/of_reserved_mem.c
+> +++ b/drivers/of/of_reserved_mem.c
+> @@ -20,13 +20,14 @@
+>  #include <linux/of_reserved_mem.h>
+>  #include <linux/sort.h>
+>  #include <linux/slab.h>
+> +#include <linux/libfdt.h>
+>  #include <linux/memblock.h>
+>  #include <linux/kmemleak.h>
+>  
+>  #include "of_private.h"
+>  
+>  #define MAX_RESERVED_REGIONS	64
+> -static struct reserved_mem reserved_mem[MAX_RESERVED_REGIONS];
+> +static struct reserved_mem reserved_mems[MAX_RESERVED_REGIONS];
 
-|  CALL    scripts/atomic/check-atomics.sh
-|In file included from include/linux/bug.h:5,
-|                 from include/linux/page-flags.h:10,
-|                 from kernel/bounds.c:10:
-|arch/powerpc/include/asm/page_32.h: In function =E2=80=98clear_page=E2=80=
-=99:
-|arch/powerpc/include/asm/bug.h:87:4: error: implicit declaration of functi=
-on =E2=80=98__WARN=E2=80=99 [-Werror=3Dimplicit-function-declaration]
-|   87 |    __WARN();    \
-|      |    ^~~~~~
-|arch/powerpc/include/asm/page_32.h:48:2: note: in expansion of macro =E2=
-=80=98WARN_ON=E2=80=99
-|   48 |  WARN_ON((unsigned long)addr & (L1_CACHE_BYTES - 1));
-|      |  ^~~~~~~
-|arch/powerpc/include/asm/bug.h:58:17: error: invalid application of =E2=80=
-=98sizeof=E2=80=99 to incomplete type =E2=80=98struct bug_entry=E2=80=99
-|   58 |     "i" (sizeof(struct bug_entry)), \
-|      |                 ^~~~~~
-|arch/powerpc/include/asm/bug.h:89:3: note: in expansion of macro =E2=80=98=
-BUG_ENTRY=E2=80=99
-|   89 |   BUG_ENTRY(PPC_TLNEI " %4, 0",   \
-|      |   ^~~~~~~~~
-|arch/powerpc/include/asm/page_32.h:48:2: note: in expansion of macro =E2=
-=80=98WARN_ON=E2=80=99
-|   48 |  WARN_ON((unsigned long)addr & (L1_CACHE_BYTES - 1));
-|      |  ^~~~~~~
-|In file included from arch/powerpc/include/asm/ptrace.h:298,
-|                 from arch/powerpc/include/asm/hw_irq.h:12,
-|                 from arch/powerpc/include/asm/irqflags.h:12,
-|                 from include/linux/irqflags.h:16,
-|                 from include/asm-generic/cmpxchg-local.h:6,
-|                 from arch/powerpc/include/asm/cmpxchg.h:526,
-|                 from arch/powerpc/include/asm/atomic.h:11,
-|                 from include/linux/atomic.h:7,
-|                 from include/linux/rwbase_rt.h:6,
-|                 from include/linux/rwlock_types.h:55,
-|                 from include/linux/spinlock_types.h:74,
-|                 from include/linux/ratelimit_types.h:7,
-|                 from include/linux/printk.h:10,
-|                 from include/asm-generic/bug.h:22,
-|                 from arch/powerpc/include/asm/bug.h:109,
-|                 from include/linux/bug.h:5,
-|                 from include/linux/page-flags.h:10,
-|                 from kernel/bounds.c:10:
-|include/linux/thread_info.h: In function =E2=80=98copy_overflow=E2=80=99:
-|include/linux/thread_info.h:210:2: error: implicit declaration of function=
- =E2=80=98WARN=E2=80=99 [-Werror=3Dimplicit-function-declaration]
-|  210 |  WARN(1, "Buffer overflow detected (%d < %lu)!\n", size, count);
-|      |  ^~~~
+Would be a bit easier to review without the rename.
 
-The WARN / BUG include pulls in printk.h and then ptrace.h expects WARN
-(from bug.h) which is not yet complete. Even hw_irq.h has WARN_ON()
-statements.
 
-On POWERPC64 there are missing atomic64 defines while building 32bit
-VDSO:
-|  VDSO32C arch/powerpc/kernel/vdso32/vgettimeofday.o
-|In file included from include/linux/atomic.h:80,
-|                 from include/linux/rwbase_rt.h:6,
-|                 from include/linux/rwlock_types.h:55,
-|                 from include/linux/spinlock_types.h:74,
-|                 from include/linux/ratelimit_types.h:7,
-|                 from include/linux/printk.h:10,
-|                 from include/linux/kernel.h:19,
-|                 from arch/powerpc/include/asm/page.h:11,
-|                 from arch/powerpc/include/asm/vdso/gettimeofday.h:5,
-|                 from include/vdso/datapage.h:137,
-|                 from lib/vdso/gettimeofday.c:5,
-|                 from <command-line>:
-|include/linux/atomic-arch-fallback.h: In function =E2=80=98arch_atomic64_i=
-nc=E2=80=99:
-|include/linux/atomic-arch-fallback.h:1447:2: error: implicit declaration o=
-f function =E2=80=98arch_atomic64_add=E2=80=99; did you mean =E2=80=98arch_=
-atomic_add=E2=80=99? [-Werror=3Dimpl
-|icit-function-declaration]
-| 1447 |  arch_atomic64_add(1, v);
-|      |  ^~~~~~~~~~~~~~~~~
-|      |  arch_atomic_add
-
-The generic fallback is not included, atomics itself are not used. If
-kernel.h does not include printk.h then it comes later from the bug.h
-include.
-
-Allow asm/spinlock_types.h to be included from
-linux/spinlock_types_raw.h.
-
-Cc: Albert Ou <aou@eecs.berkeley.edu>
-Cc: Alexander Gordeev <agordeev@linux.ibm.com>
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Brian Cain <bcain@codeaurora.org>
-Cc: Catalin Marinas <catalin.marinas@arm.com>
-Cc: Chris Zankel <chris@zankel.net>
-Cc: Christian Borntraeger <borntraeger@linux.ibm.com>
-Cc: Guo Ren <guoren@kernel.org>
-Cc: Heiko Carstens <hca@linux.ibm.com>
-Cc: Ivan Kokshaysky <ink@jurassic.park.msu.ru>
-Cc: Matt Turner <mattst88@gmail.com>
-Cc: Max Filippov <jcmvbkbc@gmail.com>
-Cc: Michael Ellerman <mpe@ellerman.id.au>
-Cc: Palmer Dabbelt <palmer@dabbelt.com>
-Cc: Paul Mackerras <paulus@samba.org>
-Cc: Paul Walmsley <paul.walmsley@sifive.com>
-Cc: Rich Felker <dalias@libc.org>
-Cc: Richard Henderson <rth@twiddle.net>
-Cc: Russell King <linux@armlinux.org.uk>
-Cc: Vasily Gorbik <gor@linux.ibm.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-alpha@vger.kernel.org
-Cc: linux-arm-kernel@lists.infradead.org
-Cc: linux-csky@vger.kernel.org
-Cc: linux-hexagon@vger.kernel.org
-Cc: linux-ia64@vger.kernel.org
-Cc: linux-riscv@lists.infradead.org
-Cc: linux-s390@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Cc: linux-xtensa@linux-xtensa.org
-Cc: linuxppc-dev@lists.ozlabs.org
-Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
----
- arch/alpha/include/asm/spinlock_types.h          | 2 +-
- arch/arm/include/asm/spinlock_types.h            | 2 +-
- arch/arm64/include/asm/spinlock_types.h          | 2 +-
- arch/csky/include/asm/spinlock_types.h           | 2 +-
- arch/hexagon/include/asm/spinlock_types.h        | 2 +-
- arch/ia64/include/asm/spinlock_types.h           | 2 +-
- arch/powerpc/include/asm/simple_spinlock_types.h | 2 +-
- arch/powerpc/include/asm/spinlock_types.h        | 2 +-
- arch/riscv/include/asm/spinlock_types.h          | 2 +-
- arch/s390/include/asm/spinlock_types.h           | 2 +-
- arch/sh/include/asm/spinlock_types.h             | 2 +-
- arch/xtensa/include/asm/spinlock_types.h         | 2 +-
- include/linux/ratelimit_types.h                  | 2 +-
- include/linux/spinlock_types_up.h                | 2 +-
- 14 files changed, 14 insertions(+), 14 deletions(-)
-
-diff --git a/arch/alpha/include/asm/spinlock_types.h b/arch/alpha/include/a=
-sm/spinlock_types.h
-index 1d5716bc060be..2526fd3be5fd7 100644
---- a/arch/alpha/include/asm/spinlock_types.h
-+++ b/arch/alpha/include/asm/spinlock_types.h
-@@ -2,7 +2,7 @@
- #ifndef _ALPHA_SPINLOCK_TYPES_H
- #define _ALPHA_SPINLOCK_TYPES_H
-=20
--#ifndef __LINUX_SPINLOCK_TYPES_H
-+#ifndef __LINUX_SPINLOCK_TYPES_RAW_H
- # error "please don't include this file directly"
- #endif
-=20
-diff --git a/arch/arm/include/asm/spinlock_types.h b/arch/arm/include/asm/s=
-pinlock_types.h
-index 5976958647fe1..0c14b36ef1013 100644
---- a/arch/arm/include/asm/spinlock_types.h
-+++ b/arch/arm/include/asm/spinlock_types.h
-@@ -2,7 +2,7 @@
- #ifndef __ASM_SPINLOCK_TYPES_H
- #define __ASM_SPINLOCK_TYPES_H
-=20
--#ifndef __LINUX_SPINLOCK_TYPES_H
-+#ifndef __LINUX_SPINLOCK_TYPES_RAW_H
- # error "please don't include this file directly"
- #endif
-=20
-diff --git a/arch/arm64/include/asm/spinlock_types.h b/arch/arm64/include/a=
-sm/spinlock_types.h
-index 18782f0c47212..11ab1c0776977 100644
---- a/arch/arm64/include/asm/spinlock_types.h
-+++ b/arch/arm64/include/asm/spinlock_types.h
-@@ -5,7 +5,7 @@
- #ifndef __ASM_SPINLOCK_TYPES_H
- #define __ASM_SPINLOCK_TYPES_H
-=20
--#if !defined(__LINUX_SPINLOCK_TYPES_H) && !defined(__ASM_SPINLOCK_H)
-+#if !defined(__LINUX_SPINLOCK_TYPES_RAW_H) && !defined(__ASM_SPINLOCK_H)
- # error "please don't include this file directly"
- #endif
-=20
-diff --git a/arch/csky/include/asm/spinlock_types.h b/arch/csky/include/asm=
-/spinlock_types.h
-index 8ff0f6ff3a006..db87a12c3827d 100644
---- a/arch/csky/include/asm/spinlock_types.h
-+++ b/arch/csky/include/asm/spinlock_types.h
-@@ -3,7 +3,7 @@
- #ifndef __ASM_CSKY_SPINLOCK_TYPES_H
- #define __ASM_CSKY_SPINLOCK_TYPES_H
-=20
--#ifndef __LINUX_SPINLOCK_TYPES_H
-+#ifndef __LINUX_SPINLOCK_TYPES_RAW_H
- # error "please don't include this file directly"
- #endif
-=20
-diff --git a/arch/hexagon/include/asm/spinlock_types.h b/arch/hexagon/inclu=
-de/asm/spinlock_types.h
-index 19d233497ba52..d5f66495b670f 100644
---- a/arch/hexagon/include/asm/spinlock_types.h
-+++ b/arch/hexagon/include/asm/spinlock_types.h
-@@ -8,7 +8,7 @@
- #ifndef _ASM_SPINLOCK_TYPES_H
- #define _ASM_SPINLOCK_TYPES_H
-=20
--#ifndef __LINUX_SPINLOCK_TYPES_H
-+#ifndef __LINUX_SPINLOCK_TYPES_RAW_H
- # error "please don't include this file directly"
- #endif
-=20
-diff --git a/arch/ia64/include/asm/spinlock_types.h b/arch/ia64/include/asm=
-/spinlock_types.h
-index 6e345fefcdcab..14b8a161c1652 100644
---- a/arch/ia64/include/asm/spinlock_types.h
-+++ b/arch/ia64/include/asm/spinlock_types.h
-@@ -2,7 +2,7 @@
- #ifndef _ASM_IA64_SPINLOCK_TYPES_H
- #define _ASM_IA64_SPINLOCK_TYPES_H
-=20
--#ifndef __LINUX_SPINLOCK_TYPES_H
-+#ifndef __LINUX_SPINLOCK_TYPES_RAW_H
- # error "please don't include this file directly"
- #endif
-=20
-diff --git a/arch/powerpc/include/asm/simple_spinlock_types.h b/arch/powerp=
-c/include/asm/simple_spinlock_types.h
-index 0f3cdd8faa959..08243338069d2 100644
---- a/arch/powerpc/include/asm/simple_spinlock_types.h
-+++ b/arch/powerpc/include/asm/simple_spinlock_types.h
-@@ -2,7 +2,7 @@
- #ifndef _ASM_POWERPC_SIMPLE_SPINLOCK_TYPES_H
- #define _ASM_POWERPC_SIMPLE_SPINLOCK_TYPES_H
-=20
--#ifndef __LINUX_SPINLOCK_TYPES_H
-+#ifndef __LINUX_SPINLOCK_TYPES_RAW_H
- # error "please don't include this file directly"
- #endif
-=20
-diff --git a/arch/powerpc/include/asm/spinlock_types.h b/arch/powerpc/inclu=
-de/asm/spinlock_types.h
-index c5d742f18021d..d5f8a74ed2e8c 100644
---- a/arch/powerpc/include/asm/spinlock_types.h
-+++ b/arch/powerpc/include/asm/spinlock_types.h
-@@ -2,7 +2,7 @@
- #ifndef _ASM_POWERPC_SPINLOCK_TYPES_H
- #define _ASM_POWERPC_SPINLOCK_TYPES_H
-=20
--#ifndef __LINUX_SPINLOCK_TYPES_H
-+#ifndef __LINUX_SPINLOCK_TYPES_RAW_H
- # error "please don't include this file directly"
- #endif
-=20
-diff --git a/arch/riscv/include/asm/spinlock_types.h b/arch/riscv/include/a=
-sm/spinlock_types.h
-index f398e7638dd63..5a35a49505da2 100644
---- a/arch/riscv/include/asm/spinlock_types.h
-+++ b/arch/riscv/include/asm/spinlock_types.h
-@@ -6,7 +6,7 @@
- #ifndef _ASM_RISCV_SPINLOCK_TYPES_H
- #define _ASM_RISCV_SPINLOCK_TYPES_H
-=20
--#ifndef __LINUX_SPINLOCK_TYPES_H
-+#ifndef __LINUX_SPINLOCK_TYPES_RAW_H
- # error "please don't include this file directly"
- #endif
-=20
-diff --git a/arch/s390/include/asm/spinlock_types.h b/arch/s390/include/asm=
-/spinlock_types.h
-index a2bbfd7df85fa..b69695e399574 100644
---- a/arch/s390/include/asm/spinlock_types.h
-+++ b/arch/s390/include/asm/spinlock_types.h
-@@ -2,7 +2,7 @@
- #ifndef __ASM_SPINLOCK_TYPES_H
- #define __ASM_SPINLOCK_TYPES_H
-=20
--#ifndef __LINUX_SPINLOCK_TYPES_H
-+#ifndef __LINUX_SPINLOCK_TYPES_RAW_H
- # error "please don't include this file directly"
- #endif
-=20
-diff --git a/arch/sh/include/asm/spinlock_types.h b/arch/sh/include/asm/spi=
-nlock_types.h
-index e82369f286a20..907bda4b1619a 100644
---- a/arch/sh/include/asm/spinlock_types.h
-+++ b/arch/sh/include/asm/spinlock_types.h
-@@ -2,7 +2,7 @@
- #ifndef __ASM_SH_SPINLOCK_TYPES_H
- #define __ASM_SH_SPINLOCK_TYPES_H
-=20
--#ifndef __LINUX_SPINLOCK_TYPES_H
-+#ifndef __LINUX_SPINLOCK_TYPES_RAW_H
- # error "please don't include this file directly"
- #endif
-=20
-diff --git a/arch/xtensa/include/asm/spinlock_types.h b/arch/xtensa/include=
-/asm/spinlock_types.h
-index 64c9389254f13..797aed7df3dd8 100644
---- a/arch/xtensa/include/asm/spinlock_types.h
-+++ b/arch/xtensa/include/asm/spinlock_types.h
-@@ -2,7 +2,7 @@
- #ifndef __ASM_SPINLOCK_TYPES_H
- #define __ASM_SPINLOCK_TYPES_H
-=20
--#if !defined(__LINUX_SPINLOCK_TYPES_H) && !defined(__ASM_SPINLOCK_H)
-+#if !defined(__LINUX_SPINLOCK_TYPES_RAW_H) && !defined(__ASM_SPINLOCK_H)
- # error "please don't include this file directly"
- #endif
-=20
-diff --git a/include/linux/ratelimit_types.h b/include/linux/ratelimit_type=
-s.h
-index b676aa419eef8..c21c7f8103e2b 100644
---- a/include/linux/ratelimit_types.h
-+++ b/include/linux/ratelimit_types.h
-@@ -4,7 +4,7 @@
-=20
- #include <linux/bits.h>
- #include <linux/param.h>
--#include <linux/spinlock_types.h>
-+#include <linux/spinlock_types_raw.h>
-=20
- #define DEFAULT_RATELIMIT_INTERVAL	(5 * HZ)
- #define DEFAULT_RATELIMIT_BURST		10
-diff --git a/include/linux/spinlock_types_up.h b/include/linux/spinlock_typ=
-es_up.h
-index c09b6407ae1b3..7f86a2016ac5c 100644
---- a/include/linux/spinlock_types_up.h
-+++ b/include/linux/spinlock_types_up.h
-@@ -1,7 +1,7 @@
- #ifndef __LINUX_SPINLOCK_TYPES_UP_H
- #define __LINUX_SPINLOCK_TYPES_UP_H
-=20
--#ifndef __LINUX_SPINLOCK_TYPES_H
-+#ifndef __LINUX_SPINLOCK_TYPES_RAW_H
- # error "please don't include this file directly"
- #endif
-=20
---=20
-2.34.0
-
+>  static int reserved_mem_count;
+>  
+>  static int __init early_init_dt_alloc_reserved_memory_arch(phys_addr_t size,
+> @@ -56,12 +57,12 @@ static int __init early_init_dt_alloc_reserved_memory_arch(phys_addr_t size,
+>  /*
+>   * fdt_reserved_mem_save_node() - save fdt node for second pass initialization
+>   */
+> -void __init fdt_reserved_mem_save_node(unsigned long node, const char *uname,
+> +static void __init fdt_reserved_mem_save_node(unsigned long node, const char *uname,
+>  				      phys_addr_t base, phys_addr_t size)
+>  {
+> -	struct reserved_mem *rmem = &reserved_mem[reserved_mem_count];
+> +	struct reserved_mem *rmem = &reserved_mems[reserved_mem_count];
+>  
+> -	if (reserved_mem_count == ARRAY_SIZE(reserved_mem)) {
+> +	if (reserved_mem_count == ARRAY_SIZE(reserved_mems)) {
+>  		pr_err("not enough space for all defined regions.\n");
+>  		return;
+>  	}
+> @@ -173,29 +174,105 @@ static const struct of_device_id __rmem_of_table_sentinel
+>  	__used __section("__reservedmem_of_table_end");
+>  
+>  /*
+> - * __reserved_mem_init_node() - call region specific reserved memory init code
+> + * __reserved_mem_check_root() - check if #size-cells, #address-cells provided
+> + * in /reserved-memory matches the values supported by the current implementation,
+> + * also check if ranges property has been provided
+>   */
+> -static int __init __reserved_mem_init_node(struct reserved_mem *rmem)
+> +static int __init __reserved_mem_check_root(unsigned long node)
+>  {
+> -	extern const struct of_device_id __reservedmem_of_table[];
+> -	const struct of_device_id *i;
+> -	int ret = -ENOENT;
+> +	const __be32 *prop;
+>  
+> -	for (i = __reservedmem_of_table; i < &__rmem_of_table_sentinel; i++) {
+> -		reservedmem_of_init_fn initfn = i->data;
+> -		const char *compat = i->compatible;
+> +	prop = of_get_flat_dt_prop(node, "#size-cells", NULL);
+> +	if (!prop || be32_to_cpup(prop) != dt_root_size_cells)
+> +		return -EINVAL;
+>  
+> -		if (!of_flat_dt_is_compatible(rmem->fdt_node, compat))
+> -			continue;
+> +	prop = of_get_flat_dt_prop(node, "#address-cells", NULL);
+> +	if (!prop || be32_to_cpup(prop) != dt_root_addr_cells)
+> +		return -EINVAL;
+>  
+> -		ret = initfn(rmem);
+> -		if (ret == 0) {
+> -			pr_info("initialized node %s, compatible id %s\n",
+> -				rmem->name, compat);
+> -			break;
+> +	prop = of_get_flat_dt_prop(node, "ranges", NULL);
+> +	if (!prop)
+> +		return -EINVAL;
+> +	return 0;
+> +}
+> +
+> +/*
+> + * __reserved_mem_reserve_reg() - reserve all memory described in 'reg' property
+> + */
+> +static int __init __reserved_mem_reserve_reg(unsigned long node,
+> +					     const char *uname)
+> +{
+> +	int t_len = (dt_root_addr_cells + dt_root_size_cells) * sizeof(__be32);
+> +	phys_addr_t base, size;
+> +	int len;
+> +	const __be32 *prop;
+> +	int first = 1;
+> +	bool nomap;
+> +
+> +	prop = of_get_flat_dt_prop(node, "reg", &len);
+> +	if (!prop)
+> +		return -ENOENT;
+> +
+> +	if (len && len % t_len != 0) {
+> +		pr_err("Reserved memory: invalid reg property in '%s', skipping node.\n",
+> +		       uname);
+> +		return -EINVAL;
+> +	}
+> +
+> +	nomap = of_get_flat_dt_prop(node, "no-map", NULL) != NULL;
+> +
+> +	while (len >= t_len) {
+> +		base = dt_mem_next_cell(dt_root_addr_cells, &prop);
+> +		size = dt_mem_next_cell(dt_root_size_cells, &prop);
+> +
+> +		if (size &&
+> +		    early_init_dt_reserve_memory_arch(base, size, nomap) == 0)
+> +			pr_debug("Reserved memory: reserved region for node '%s': base %pa, size %lu MiB\n",
+> +				uname, &base, (unsigned long)(size / SZ_1M));
+> +		else
+> +			pr_info("Reserved memory: failed to reserve memory for node '%s': base %pa, size %lu MiB\n",
+> +				uname, &base, (unsigned long)(size / SZ_1M));
+> +
+> +		len -= t_len;
+> +		if (first) {
+> +			fdt_reserved_mem_save_node(node, uname, base, size);
+> +			first = 0;
+>  		}
+>  	}
+> -	return ret;
+> +	return 0;
+> +}
+> +
+> +/*
+> + * fdt_scan_reserved_mem() - scan a single FDT node for reserved memory
+> + */
+> +int __init fdt_scan_reserved_mem(void)
+> +{
+> +	int node, child;
+> +	const void *fdt = initial_boot_params;
+> +
+> +	node = fdt_path_offset(fdt, "/reserved-memory");
+> +	if (node < 0)
+> +		return -ENODEV;
+> +
+> +	if (__reserved_mem_check_root(node) != 0) {
+> +		pr_err("Reserved memory: unsupported node format, ignoring\n");
+> +		return -EINVAL;
+> +	}
+> +
+> +	fdt_for_each_subnode(child, fdt, node) {
+> +		const char *uname;
+> +		int err;
+> +
+> +		if (!of_fdt_device_is_available(fdt, child))
+> +			continue;
+> +
+> +		uname = fdt_get_name(fdt, child, NULL);
+> +
+> +		err = __reserved_mem_reserve_reg(child, uname);
+> +		if (err == -ENOENT && of_get_flat_dt_prop(child, "size", NULL))
+> +			fdt_reserved_mem_save_node(child, uname, 0, 0);
+> +	}
+> +	return 0;
+>  }
+>  
+>  static int __init __rmem_cmp(const void *a, const void *b)
+> @@ -228,13 +305,13 @@ static void __init __rmem_check_for_overlap(void)
+>  	if (reserved_mem_count < 2)
+>  		return;
+>  
+> -	sort(reserved_mem, reserved_mem_count, sizeof(reserved_mem[0]),
+> +	sort(reserved_mems, reserved_mem_count, sizeof(reserved_mems[0]),
+>  	     __rmem_cmp, NULL);
+>  	for (i = 0; i < reserved_mem_count - 1; i++) {
+>  		struct reserved_mem *this, *next;
+>  
+> -		this = &reserved_mem[i];
+> -		next = &reserved_mem[i + 1];
+> +		this = &reserved_mems[i];
+> +		next = &reserved_mems[i + 1];
+>  
+>  		if (this->base + this->size > next->base) {
+>  			phys_addr_t this_end, next_end;
+> @@ -248,10 +325,36 @@ static void __init __rmem_check_for_overlap(void)
+>  	}
+>  }
+>  
+> +/*
+> + * __reserved_mem_init_node() - call region specific reserved memory init code
+> + */
+> +static int __init __reserved_mem_init_node(struct reserved_mem *rmem)
+> +{
+> +	extern const struct of_device_id __reservedmem_of_table[];
+> +	const struct of_device_id *i;
+> +	int ret = -ENOENT;
+> +
+> +	for (i = __reservedmem_of_table; i < &__rmem_of_table_sentinel; i++) {
+> +		reservedmem_of_init_fn initfn = i->data;
+> +		const char *compat = i->compatible;
+> +
+> +		if (!of_flat_dt_is_compatible(rmem->fdt_node, compat))
+> +			continue;
+> +
+> +		ret = initfn(rmem);
+> +		if (ret == 0) {
+> +			pr_info("initialized node %s, compatible id %s\n",
+> +				rmem->name, compat);
+> +			break;
+> +		}
+> +	}
+> +	return ret;
+> +}
+> +
+>  /**
+> - * fdt_init_reserved_mem() - allocate and init all saved reserved memory regions
+> + * of_reserved_mem_init() - allocate and init all saved reserved memory regions
+>   */
+> -void __init fdt_init_reserved_mem(void)
+> +void __init of_reserved_mem_init(void)
+>  {
+>  	int i;
+>  
+> @@ -259,7 +362,7 @@ void __init fdt_init_reserved_mem(void)
+>  	__rmem_check_for_overlap();
+>  
+>  	for (i = 0; i < reserved_mem_count; i++) {
+> -		struct reserved_mem *rmem = &reserved_mem[i];
+> +		struct reserved_mem *rmem = &reserved_mems[i];
+>  		unsigned long node = rmem->fdt_node;
+>  		int len;
+>  		const __be32 *prop;
+> @@ -299,8 +402,8 @@ static inline struct reserved_mem *__find_rmem(struct device_node *node)
+>  		return NULL;
+>  
+>  	for (i = 0; i < reserved_mem_count; i++)
+> -		if (reserved_mem[i].phandle == node->phandle)
+> -			return &reserved_mem[i];
+> +		if (reserved_mems[i].phandle == node->phandle)
+> +			return &reserved_mems[i];
+>  	return NULL;
+>  }
+>  
+> @@ -442,8 +545,8 @@ struct reserved_mem *of_reserved_mem_lookup(struct device_node *np)
+>  
+>  	name = kbasename(np->full_name);
+>  	for (i = 0; i < reserved_mem_count; i++)
+> -		if (!strcmp(reserved_mem[i].name, name))
+> -			return &reserved_mem[i];
+> +		if (!strcmp(reserved_mems[i].name, name))
+> +			return &reserved_mems[i];
+>  
+>  	return NULL;
+>  }
+> diff --git a/include/linux/of_reserved_mem.h b/include/linux/of_reserved_mem.h
+> index 4de2a24cadc9..34e134bec606 100644
+> --- a/include/linux/of_reserved_mem.h
+> +++ b/include/linux/of_reserved_mem.h
+> @@ -32,6 +32,8 @@ typedef int (*reservedmem_of_init_fn)(struct reserved_mem *rmem);
+>  #define RESERVEDMEM_OF_DECLARE(name, compat, init)			\
+>  	_OF_DECLARE(reservedmem, name, compat, init, reservedmem_of_init_fn)
+>  
+> +void of_reserved_mem_init(void);
+> +
+>  int of_reserved_mem_device_init_by_idx(struct device *dev,
+>  				       struct device_node *np, int idx);
+>  int of_reserved_mem_device_init_by_name(struct device *dev,
+> @@ -45,6 +47,8 @@ struct reserved_mem *of_reserved_mem_lookup(struct device_node *np);
+>  #define RESERVEDMEM_OF_DECLARE(name, compat, init)			\
+>  	_OF_DECLARE_STUB(reservedmem, name, compat, init, reservedmem_of_init_fn)
+>  
+> +static inline void of_reserved_mem_init(void) { }
+> +
+>  static inline int of_reserved_mem_device_init_by_idx(struct device *dev,
+>  					struct device_node *np, int idx)
+>  {
+> -- 
+> 2.30.2
+> 
+> 
