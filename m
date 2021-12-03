@@ -2,108 +2,234 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BEFCBC43217
-	for <linux-sh@archiver.kernel.org>; Fri,  3 Dec 2021 10:43:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7FAABC433F5
+	for <linux-sh@archiver.kernel.org>; Fri,  3 Dec 2021 13:52:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1380100AbhLCKqx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 3 Dec 2021 05:46:53 -0500
-Received: from foss.arm.com ([217.140.110.172]:47044 "EHLO foss.arm.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S1380122AbhLCKqw (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Fri, 3 Dec 2021 05:46:52 -0500
-Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id F0B571596;
-        Fri,  3 Dec 2021 02:43:27 -0800 (PST)
-Received: from a077416.arm.com (unknown [10.163.33.180])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPA id 5D81C3F5A1;
-        Fri,  3 Dec 2021 02:43:24 -0800 (PST)
-From:   Amit Daniel Kachhap <amit.kachhap@arm.com>
-To:     linux-kernel@vger.kernel.org
-Cc:     Christoph Hellwig <hch@lst.de>,
-        Vincenzo Frascino <Vincenzo.Frascino@arm.com>,
-        Kevin Brodsky <kevin.brodsky@arm.com>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        kexec <kexec@lists.infradead.org>,
-        Amit Daniel Kachhap <amit.kachhap@arm.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        id S244239AbhLCNz5 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 3 Dec 2021 08:55:57 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44938 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S1352198AbhLCNz5 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 3 Dec 2021 08:55:57 -0500
+Received: from michel.telenet-ops.be (michel.telenet-ops.be [IPv6:2a02:1800:110:4::f00:18])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 66F35C06173E
+        for <linux-sh@vger.kernel.org>; Fri,  3 Dec 2021 05:52:33 -0800 (PST)
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed10:3191:9890:620a:6f4])
+        by michel.telenet-ops.be with bizsmtp
+        id RpsV2600Z3eLghq06psVj9; Fri, 03 Dec 2021 14:52:31 +0100
+Received: from rox.of.borg ([192.168.97.57])
+        by ramsan.of.borg with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        (Exim 4.93)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1mt8zF-002Le9-2u; Fri, 03 Dec 2021 14:52:29 +0100
+Received: from geert by rox.of.borg with local (Exim 4.93)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1mt8zE-000lOe-JZ; Fri, 03 Dec 2021 14:52:28 +0100
+From:   Geert Uytterhoeven <geert+renesas@glider.be>
+To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
-        linux-sh <linux-sh@vger.kernel.org>
-Subject: [RFC PATCH 09/14] sh/crash_dump: Use the new interface copy_oldmem_page_buf
-Date:   Fri,  3 Dec 2021 16:12:26 +0530
-Message-Id: <20211203104231.17597-10-amit.kachhap@arm.com>
-X-Mailer: git-send-email 2.17.1
-In-Reply-To: <20211203104231.17597-1-amit.kachhap@arm.com>
-References: <20211203104231.17597-1-amit.kachhap@arm.com>
+        Masahiro Yamada <masahiroy@kernel.org>
+Cc:     Rob Landley <rob@landley.net>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Palmer Dabbelt <palmer@dabbelt.com>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org,
+        Geert Uytterhoeven <geert+renesas@glider.be>
+Subject: [PATCH v2 resend] sh: Use generic GCC library routines
+Date:   Fri,  3 Dec 2021 14:52:27 +0100
+Message-Id: <411814148d311d5a545672cdd2b0721195e53252.1638539376.git.geert+renesas@glider.be>
+X-Mailer: git-send-email 2.25.1
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The current interface copy_oldmem_page() passes user pointer without
-__user annotation and hence does unnecessary user/kernel pointer
-conversions during its implementation.
+The C implementations of __ashldi3(), __ashrdi3__(), and __lshrdi3() in
+arch/sh/lib/ are identical to the generic C implementations in lib/.
+Reduce duplication by switching SH to the generic versions.
 
-Use the interface copy_oldmem_page_buf() to avoid this issue.
+Update the include path in arch/sh/boot/compressed accordingly.
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-CC: linux-sh <linux-sh@vger.kernel.org>
-Signed-off-by: Amit Daniel Kachhap <amit.kachhap@arm.com>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/kernel/crash_dump.c | 25 +++++++++++++------------
- 1 file changed, 13 insertions(+), 12 deletions(-)
+v2:
+  - Fix silly typo in subject.
 
-diff --git a/arch/sh/kernel/crash_dump.c b/arch/sh/kernel/crash_dump.c
-index 5b41b59698c1..a80dedf1ace5 100644
---- a/arch/sh/kernel/crash_dump.c
-+++ b/arch/sh/kernel/crash_dump.c
-@@ -11,20 +11,21 @@
- #include <linux/uaccess.h>
+Tested on landisk and qemu/rts7751r2d.
+
+Note that it also works without the change to arch/sh/boot/compressed/,
+as lib/ashldi3.c can be reached via both include/uapi/../../lib/ashldi3.c
+and arch/sh/boot/compressed/../../../../lib/ashldi3.c.
+
+Palmer tried a similar thing before:
+https://lore.kernel.org/linux-arch/20170523220546.16758-1-palmer@dabbelt.com/
+but initially it broke the SH build due to a missing change to
+arch/sh/boot/compressed/, and the later update never got picked up.
+In the mean time, arch/sh/boot/compressed/ was changed, so his patch no
+longer applies.
+
+Similar for the other architectures, I guess?
+---
+ arch/sh/Kconfig                   |  3 +++
+ arch/sh/boot/compressed/ashldi3.c |  4 ++--
+ arch/sh/lib/Makefile              |  4 +---
+ arch/sh/lib/ashldi3.c             | 30 -----------------------------
+ arch/sh/lib/ashrdi3.c             | 32 -------------------------------
+ arch/sh/lib/lshrdi3.c             | 30 -----------------------------
+ 6 files changed, 6 insertions(+), 97 deletions(-)
+ delete mode 100644 arch/sh/lib/ashldi3.c
+ delete mode 100644 arch/sh/lib/ashrdi3.c
+ delete mode 100644 arch/sh/lib/lshrdi3.c
+
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 70afb30e0b321183..b10c4d852c22852a 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -20,6 +20,9 @@ config SUPERH
+ 	select GENERIC_CMOS_UPDATE if SH_SH03 || SH_DREAMCAST
+ 	select GENERIC_IDLE_POLL_SETUP
+ 	select GENERIC_IRQ_SHOW
++	select GENERIC_LIB_ASHLDI3
++	select GENERIC_LIB_ASHRDI3
++	select GENERIC_LIB_LSHRDI3
+ 	select GENERIC_PCI_IOMAP if PCI
+ 	select GENERIC_SCHED_CLOCK
+ 	select GENERIC_SMP_IDLE_THREAD
+diff --git a/arch/sh/boot/compressed/ashldi3.c b/arch/sh/boot/compressed/ashldi3.c
+index 7cebd646df839b48..7c12121702309e8c 100644
+--- a/arch/sh/boot/compressed/ashldi3.c
++++ b/arch/sh/boot/compressed/ashldi3.c
+@@ -1,2 +1,2 @@
+-// SPDX-License-Identifier: GPL-2.0-only
+-#include "../../lib/ashldi3.c"
++// SPDX-License-Identifier: GPL-2.0-or-later
++#include "../../../../lib/ashldi3.c"
+diff --git a/arch/sh/lib/Makefile b/arch/sh/lib/Makefile
+index eb473d373ca43a4b..d20a0768b31fa2b6 100644
+--- a/arch/sh/lib/Makefile
++++ b/arch/sh/lib/Makefile
+@@ -7,9 +7,7 @@ lib-y  = delay.o memmove.o memchr.o \
+ 	 checksum.o strlen.o div64.o div64-generic.o
  
- /**
-- * copy_oldmem_page - copy one page from "oldmem"
-+ * copy_oldmem_page_buf - copy one page from "oldmem"
-  * @pfn: page frame number to be copied
-- * @buf: target memory address for the copy; this can be in kernel address
-- *	space or user address space (see @userbuf)
-+ * @ubuf: target user memory pointer for the copy; use copy_to_user() if this
-+ * pointer is not NULL
-+ * @kbuf: target kernel memory pointer for the copy; use memcpy() if this
-+ * pointer is not NULL
-  * @csize: number of bytes to copy
-  * @offset: offset in bytes into the page (based on pfn) to begin the copy
-- * @userbuf: if set, @buf is in user address space, use copy_to_user(),
-- *	otherwise @buf is in kernel address space, use memcpy().
-  *
-- * Copy a page from "oldmem". For this page, there is no pte mapped
-- * in the current kernel. We stitch up a pte, similar to kmap_atomic.
-+ * Copy a page from "oldmem" into the buffer pointed by either @ubuf or @kbuf.
-+ * For this page, there is no pte mapped in the current kernel. We stitch up a
-+ * pte, similar to kmap_atomic.
-  */
--ssize_t copy_oldmem_page(unsigned long pfn, char *buf,
--                               size_t csize, unsigned long offset, int userbuf)
-+ssize_t copy_oldmem_page_buf(unsigned long pfn, char __user *ubuf, char *kbuf,
-+			     size_t csize, unsigned long offset)
- {
- 	void  __iomem *vaddr;
+ # Extracted from libgcc
+-obj-y += movmem.o ashldi3.o ashrdi3.o lshrdi3.o \
+-	 ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o \
+-	 udiv_qrnnd.o
++obj-y += movmem.o ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o udiv_qrnnd.o
  
-@@ -33,13 +34,13 @@ ssize_t copy_oldmem_page(unsigned long pfn, char *buf,
+ udivsi3-y			:= udivsi3_i4i-Os.o
  
- 	vaddr = ioremap(pfn << PAGE_SHIFT, PAGE_SIZE);
- 
--	if (userbuf) {
--		if (copy_to_user((void __user *)buf, (vaddr + offset), csize)) {
-+	if (ubuf) {
-+		if (copy_to_user(ubuf, (vaddr + offset), csize)) {
- 			iounmap(vaddr);
- 			return -EFAULT;
- 		}
- 	} else
--	memcpy(buf, (vaddr + offset), csize);
-+		memcpy(kbuf, (vaddr + offset), csize);
- 
- 	iounmap(vaddr);
- 	return csize;
+diff --git a/arch/sh/lib/ashldi3.c b/arch/sh/lib/ashldi3.c
+deleted file mode 100644
+index e5afe0935847427f..0000000000000000
+--- a/arch/sh/lib/ashldi3.c
++++ /dev/null
+@@ -1,30 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0
+-#include <linux/module.h>
+-
+-#include "libgcc.h"
+-
+-long long __ashldi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b == 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		w.s.low = 0;
+-		w.s.high = (unsigned int) uu.s.low << -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.low >> bm;
+-
+-		w.s.low = (unsigned int) uu.s.low << b;
+-		w.s.high = ((unsigned int) uu.s.high << b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-
+-EXPORT_SYMBOL(__ashldi3);
+diff --git a/arch/sh/lib/ashrdi3.c b/arch/sh/lib/ashrdi3.c
+deleted file mode 100644
+index ae263fbf25383b70..0000000000000000
+--- a/arch/sh/lib/ashrdi3.c
++++ /dev/null
+@@ -1,32 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0
+-#include <linux/module.h>
+-
+-#include "libgcc.h"
+-
+-long long __ashrdi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b == 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		/* w.s.high = 1..1 or 0..0 */
+-		w.s.high =
+-		    uu.s.high >> 31;
+-		w.s.low = uu.s.high >> -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.high << bm;
+-
+-		w.s.high = uu.s.high >> b;
+-		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-
+-EXPORT_SYMBOL(__ashrdi3);
+diff --git a/arch/sh/lib/lshrdi3.c b/arch/sh/lib/lshrdi3.c
+deleted file mode 100644
+index 33eaa1edbc3c0656..0000000000000000
+--- a/arch/sh/lib/lshrdi3.c
++++ /dev/null
+@@ -1,30 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0
+-#include <linux/module.h>
+-
+-#include "libgcc.h"
+-
+-long long __lshrdi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b == 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		w.s.high = 0;
+-		w.s.low = (unsigned int) uu.s.high >> -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.high << bm;
+-
+-		w.s.high = (unsigned int) uu.s.high >> b;
+-		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-
+-EXPORT_SYMBOL(__lshrdi3);
 -- 
-2.17.1
+2.25.1
 
