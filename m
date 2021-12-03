@@ -2,131 +2,108 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DD67CC433F5
-	for <linux-sh@archiver.kernel.org>; Wed,  1 Dec 2021 11:51:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BEFCBC43217
+	for <linux-sh@archiver.kernel.org>; Fri,  3 Dec 2021 10:43:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243039AbhLALy3 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 1 Dec 2021 06:54:29 -0500
-Received: from foss.arm.com ([217.140.110.172]:34882 "EHLO foss.arm.com"
+        id S1380100AbhLCKqx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 3 Dec 2021 05:46:53 -0500
+Received: from foss.arm.com ([217.140.110.172]:47044 "EHLO foss.arm.com"
         rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S242696AbhLALy2 (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Wed, 1 Dec 2021 06:54:28 -0500
+        id S1380122AbhLCKqw (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Fri, 3 Dec 2021 05:46:52 -0500
 Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id CF60A11B3;
-        Wed,  1 Dec 2021 03:51:07 -0800 (PST)
-Received: from [10.57.0.220] (unknown [10.57.0.220])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 0E8A13F694;
-        Wed,  1 Dec 2021 03:51:04 -0800 (PST)
-Subject: Re: [PATCH] percpu: km: ensure it is used with NOMMU (either UP or
- SMP)
-To:     Dennis Zhou <dennis@kernel.org>
-Cc:     linux-arch-owner@vger.kernel.org, linux-mm@kvack.org,
-        tj@kernel.org, cl@linux.com, akpm@linux-foundation.org,
-        npiggin@gmail.com, hch@lst.de, arnd@arndb.de,
-        linux-sh@vger.kernel.org, dalias@libc.org,
-        linux-riscv@lists.infradead.org
-References: <20211130172954.129587-1-vladimir.murzin@arm.com>
- <20211130172954.129587-2-vladimir.murzin@arm.com> <YaZiOnNd6fAnLcxz@fedora>
-From:   Vladimir Murzin <vladimir.murzin@arm.com>
-Message-ID: <8c2b4666-cf13-3735-be1e-b8a1c71df113@arm.com>
-Date:   Wed, 1 Dec 2021 11:51:04 +0000
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
-MIME-Version: 1.0
-In-Reply-To: <YaZiOnNd6fAnLcxz@fedora>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id F0B571596;
+        Fri,  3 Dec 2021 02:43:27 -0800 (PST)
+Received: from a077416.arm.com (unknown [10.163.33.180])
+        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPA id 5D81C3F5A1;
+        Fri,  3 Dec 2021 02:43:24 -0800 (PST)
+From:   Amit Daniel Kachhap <amit.kachhap@arm.com>
+To:     linux-kernel@vger.kernel.org
+Cc:     Christoph Hellwig <hch@lst.de>,
+        Vincenzo Frascino <Vincenzo.Frascino@arm.com>,
+        Kevin Brodsky <kevin.brodsky@arm.com>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        kexec <kexec@lists.infradead.org>,
+        Amit Daniel Kachhap <amit.kachhap@arm.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        linux-sh <linux-sh@vger.kernel.org>
+Subject: [RFC PATCH 09/14] sh/crash_dump: Use the new interface copy_oldmem_page_buf
+Date:   Fri,  3 Dec 2021 16:12:26 +0530
+Message-Id: <20211203104231.17597-10-amit.kachhap@arm.com>
+X-Mailer: git-send-email 2.17.1
+In-Reply-To: <20211203104231.17597-1-amit.kachhap@arm.com>
+References: <20211203104231.17597-1-amit.kachhap@arm.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi,
+The current interface copy_oldmem_page() passes user pointer without
+__user annotation and hence does unnecessary user/kernel pointer
+conversions during its implementation.
 
-On 11/30/21 5:41 PM, Dennis Zhou wrote:
-> Hello,
-> 
-> On Tue, Nov 30, 2021 at 05:29:54PM +0000, Vladimir Murzin wrote:
->> Currently, NOMMU pull km allocator via !SMP dependency because most of
->> them are UP, yet for SMP+NOMMU vm allocator gets pulled which:
->>
->> * may lead to broken build [1]
->> * ...or not working runtime due to [2]
->>
->> It looks like SMP+NOMMU case was overlooked in bbddff054587 ("percpu:
->> use percpu allocator on UP too") so restore that.
->>
->> [1]
->> For ARM SMP+NOMMU (R-class cores)
->>
->> arm-none-linux-gnueabihf-ld: mm/percpu.o: in function `pcpu_post_unmap_tlb_flush':
->> mm/percpu-vm.c:188: undefined reference to `flush_tlb_kernel_range'
->>
->> [2]
->> static inline
->> int vmap_pages_range_noflush(unsigned long addr, unsigned long end,
->>                 pgprot_t prot, struct page **pages, unsigned int page_shift)
->> {
->>        return -EINVAL;
->> }
->>
->> Signed-off-by: Vladimir Murzin <vladimir.murzin@arm.com>
->> ---
->>  mm/Kconfig | 3 +--
->>  1 file changed, 1 insertion(+), 2 deletions(-)
->>
->> diff --git a/mm/Kconfig b/mm/Kconfig
->> index d16ba92..66331e0 100644
->> --- a/mm/Kconfig
->> +++ b/mm/Kconfig
->> @@ -425,9 +425,8 @@ config THP_SWAP
->>  # UP and nommu archs use km based percpu allocator
->>  #
->>  config NEED_PER_CPU_KM
->> -	depends on !SMP
->>  	bool
->> -	default y
->> +	default !SMP || !MMU
->>  
-> 
-> Should this be `depends on !SMP || !MMU` with default yes? Because with
-> SMP && MMU, it shouldn't be an option to run with percpu-km.
+Use the interface copy_oldmem_page_buf() to avoid this issue.
 
-IIUC these are equivalent, truth table would not change if is under "depends"
-or "default"
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+CC: linux-sh <linux-sh@vger.kernel.org>
+Signed-off-by: Amit Daniel Kachhap <amit.kachhap@arm.com>
+---
+ arch/sh/kernel/crash_dump.c | 25 +++++++++++++------------
+ 1 file changed, 13 insertions(+), 12 deletions(-)
 
-SMP    MMU   NEED_PER_CPU_KM
- y      y    !y || !y => n || n => n
- y      n    !y || !n => n || y => y
- n      y    !n || !y => y || n => y
- n      n    !n || !n => y || y => y
-
-> 
->>  config CLEANCACHE
->>  	bool "Enable cleancache driver to cache clean pages if tmem is present"
->> -- 
->> 2.7.4
->>
-> 
-> It's interesting to me that this is all coming up at once. Earlier this
-> month I had the same conversation with people involved with sh [1].
-> 
-> [1] https://lore.kernel.org/linux-sh/YY7tp5attRyK42Zk@fedora/
-> 
-> I can pull this shortly once I see whatever happened to linux-sh.
-
-Ahh, good to know! Adding SH folks here (start of discussion [0]). I see you came
-to the same conclusion, right? 
-
-IIRC, RISC-V also have SMP+NOMMU, so adding them as well.
-
-[0] https://lore.kernel.org/linux-mm/20211130172954.129587-1-vladimir.murzin@arm.com/T/
-
-Cheers
-Vladimir
-
-> 
-> Thanks,
-> Dennis
-> 
+diff --git a/arch/sh/kernel/crash_dump.c b/arch/sh/kernel/crash_dump.c
+index 5b41b59698c1..a80dedf1ace5 100644
+--- a/arch/sh/kernel/crash_dump.c
++++ b/arch/sh/kernel/crash_dump.c
+@@ -11,20 +11,21 @@
+ #include <linux/uaccess.h>
+ 
+ /**
+- * copy_oldmem_page - copy one page from "oldmem"
++ * copy_oldmem_page_buf - copy one page from "oldmem"
+  * @pfn: page frame number to be copied
+- * @buf: target memory address for the copy; this can be in kernel address
+- *	space or user address space (see @userbuf)
++ * @ubuf: target user memory pointer for the copy; use copy_to_user() if this
++ * pointer is not NULL
++ * @kbuf: target kernel memory pointer for the copy; use memcpy() if this
++ * pointer is not NULL
+  * @csize: number of bytes to copy
+  * @offset: offset in bytes into the page (based on pfn) to begin the copy
+- * @userbuf: if set, @buf is in user address space, use copy_to_user(),
+- *	otherwise @buf is in kernel address space, use memcpy().
+  *
+- * Copy a page from "oldmem". For this page, there is no pte mapped
+- * in the current kernel. We stitch up a pte, similar to kmap_atomic.
++ * Copy a page from "oldmem" into the buffer pointed by either @ubuf or @kbuf.
++ * For this page, there is no pte mapped in the current kernel. We stitch up a
++ * pte, similar to kmap_atomic.
+  */
+-ssize_t copy_oldmem_page(unsigned long pfn, char *buf,
+-                               size_t csize, unsigned long offset, int userbuf)
++ssize_t copy_oldmem_page_buf(unsigned long pfn, char __user *ubuf, char *kbuf,
++			     size_t csize, unsigned long offset)
+ {
+ 	void  __iomem *vaddr;
+ 
+@@ -33,13 +34,13 @@ ssize_t copy_oldmem_page(unsigned long pfn, char *buf,
+ 
+ 	vaddr = ioremap(pfn << PAGE_SHIFT, PAGE_SIZE);
+ 
+-	if (userbuf) {
+-		if (copy_to_user((void __user *)buf, (vaddr + offset), csize)) {
++	if (ubuf) {
++		if (copy_to_user(ubuf, (vaddr + offset), csize)) {
+ 			iounmap(vaddr);
+ 			return -EFAULT;
+ 		}
+ 	} else
+-	memcpy(buf, (vaddr + offset), csize);
++		memcpy(kbuf, (vaddr + offset), csize);
+ 
+ 	iounmap(vaddr);
+ 	return csize;
+-- 
+2.17.1
 
