@@ -2,254 +2,119 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BFE68C4332F
-	for <linux-sh@archiver.kernel.org>; Fri, 10 Dec 2021 13:36:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BEE8CC433F5
+	for <linux-sh@archiver.kernel.org>; Fri, 10 Dec 2021 16:59:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242138AbhLJNkZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 10 Dec 2021 08:40:25 -0500
-Received: from mail.loongson.cn ([114.242.206.163]:59978 "EHLO loongson.cn"
-        rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-        id S242123AbhLJNjw (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Fri, 10 Dec 2021 08:39:52 -0500
-Received: from linux.localdomain (unknown [113.200.148.30])
-        by mail.loongson.cn (Coremail) with SMTP id AQAAf9AxusjBV7Nh3OEFAA--.12281S4;
-        Fri, 10 Dec 2021 21:36:03 +0800 (CST)
-From:   Tiezhu Yang <yangtiezhu@loongson.cn>
-To:     Dave Young <dyoung@redhat.com>, Baoquan He <bhe@redhat.com>,
+        id S236129AbhLJRCo (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 10 Dec 2021 12:02:44 -0500
+Received: from sin.source.kernel.org ([145.40.73.55]:34994 "EHLO
+        sin.source.kernel.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235987AbhLJRCo (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 10 Dec 2021 12:02:44 -0500
+Received: from mail.kernel.org (unknown [198.145.29.99])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by sin.source.kernel.org (Postfix) with ESMTPS id 141D5CE2C1E;
+        Fri, 10 Dec 2021 16:59:07 +0000 (UTC)
+Received: by mail.kernel.org (Postfix) with ESMTPSA id 0827A60C4B;
+        Fri, 10 Dec 2021 16:59:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
+        s=korg; t=1639155545;
+        bh=kRdyzfTbRlA8Q6o9ozYIflNqTTqb1/yyQ+Zhl1bc2hI=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+        b=qehFagygXXv8bbpl27U/7B/DcP1tIA/U/cWnuj39slg4mxEcbhuXFsss1NddlzBIE
+         6PkBZYce8BgviUP9YWNtqY/WCPQTLOyw84eVboaBBjEOQla5+S27wj9ObPzqFGeOTI
+         VhCCu+m1sjz5CsY/rSDNoqZ/fnHwKR72obNaOkn8=
+Date:   Fri, 10 Dec 2021 08:59:03 -0800
+From:   Andrew Morton <akpm@linux-foundation.org>
+To:     Tiezhu Yang <yangtiezhu@loongson.cn>
+Cc:     Dave Young <dyoung@redhat.com>, Baoquan He <bhe@redhat.com>,
         Vivek Goyal <vgoyal@redhat.com>,
-        Andrew Morton <akpm@linux-foundation.org>
-Cc:     linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
         linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
         linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
         x86@kernel.org, linux-fsdevel@vger.kernel.org,
         kexec@lists.infradead.org, linux-kernel@vger.kernel.org
-Subject: [PATCH 2/2] kdump: crashdump: use copy_to() to simplify the related code
-Date:   Fri, 10 Dec 2021 21:36:01 +0800
-Message-Id: <1639143361-17773-3-git-send-email-yangtiezhu@loongson.cn>
-X-Mailer: git-send-email 2.1.0
-In-Reply-To: <1639143361-17773-1-git-send-email-yangtiezhu@loongson.cn>
+Subject: Re: [PATCH 1/2] kdump: vmcore: move copy_to() from vmcore.c to
+ uaccess.h
+Message-Id: <20211210085903.e7820815e738d7dc6da06050@linux-foundation.org>
+In-Reply-To: <1639143361-17773-2-git-send-email-yangtiezhu@loongson.cn>
 References: <1639143361-17773-1-git-send-email-yangtiezhu@loongson.cn>
-X-CM-TRANSID: AQAAf9AxusjBV7Nh3OEFAA--.12281S4
-X-Coremail-Antispam: 1UD129KBjvJXoW3XrW5CF1rtr1fXr4fJF17Awb_yoW7KF13pr
-        1vk39ayr4Ig3Z8GasrtrnrWFW0qwn7G3W7J3yDC3WrZwnaqwnFvw1kJas2g3yjqr15KryF
-        yF95Kr4Yy3y8W3DanT9S1TB71UUUUUUqnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
-        9KBjDU0xBIdaVrnRJUUUPab7Iv0xC_Kw4lb4IE77IF4wAFF20E14v26rWj6s0DM7CY07I2
-        0VC2zVCF04k26cxKx2IYs7xG6rWj6s0DM7CIcVAFz4kK6r1j6r18M28IrcIa0xkI8VA2jI
-        8067AKxVWUXwA2048vs2IY020Ec7CjxVAFwI0_Xr0E3s1l8cAvFVAK0II2c7xJM28CjxkF
-        64kEwVA0rcxSw2x7M28EF7xvwVC0I7IYx2IY67AKxVWUCVW8JwA2z4x0Y4vE2Ix0cI8IcV
-        CY1x0267AKxVWxJVW8Jr1l84ACjcxK6I8E87Iv67AKxVW0oVCq3wA2z4x0Y4vEx4A2jsIE
-        c7CjxVAFwI0_GcCE3s1le2I262IYc4CY6c8Ij28IcVAaY2xG8wAqx4xG64xvF2IEw4CE5I
-        8CrVC2j2WlYx0E2Ix0cI8IcVAFwI0_Jr0_Jr4lYx0Ex4A2jsIE14v26r4j6F4UMcvjeVCF
-        s4IE7xkEbVWUJVW8JwACjcxG0xvY0x0EwIxGrwACI402YVCY1x02628vn2kIc2xKxwCY02
-        Avz4vE14v_Xr4l42xK82IYc2Ij64vIr41l4I8I3I0E4IkC6x0Yz7v_Jr0_Gr1lx2IqxVAq
-        x4xG67AKxVWUJVWUGwC20s026x8GjcxK67AKxVWUGVWUWwC2zVAF1VAY17CE14v26r1q6r
-        43MIIYrxkI7VAKI48JMIIF0xvE2Ix0cI8IcVAFwI0_Jr0_JF4lIxAIcVC0I7IYx2IY6xkF
-        7I0E14v26r4j6F4UMIIF0xvE42xK8VAvwI8IcIk0rVWUJVWUCwCI42IY6I8E87Iv67AKxV
-        WUJVW8JwCI42IY6I8E87Iv6xkF7I0E14v26r4j6r4UJbIYCTnIWIevJa73UjIFyTuYvjxU
-        yuWlDUUUU
-X-CM-SenderInfo: p1dqw3xlh2x3gn0dqz5rrqw2lrqou0/
+        <1639143361-17773-2-git-send-email-yangtiezhu@loongson.cn>
+X-Mailer: Sylpheed 3.5.1 (GTK+ 2.24.31; x86_64-pc-linux-gnu)
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Use copy_to() to simplify the related code about copy_oldmem_page()
-in arch/*/kernel/crash_dump*.c files.
+On Fri, 10 Dec 2021 21:36:00 +0800 Tiezhu Yang <yangtiezhu@loongson.cn> wrote:
 
-Signed-off-by: Tiezhu Yang <yangtiezhu@loongson.cn>
----
- arch/arm/kernel/crash_dump.c     | 10 ++--------
- arch/arm64/kernel/crash_dump.c   | 10 ++--------
- arch/ia64/kernel/crash_dump.c    | 10 ++++------
- arch/mips/kernel/crash_dump.c    |  9 ++-------
- arch/powerpc/kernel/crash_dump.c |  7 ++-----
- arch/riscv/kernel/crash_dump.c   |  9 ++-------
- arch/sh/kernel/crash_dump.c      |  9 ++-------
- arch/x86/kernel/crash_dump_32.c  |  9 ++-------
- arch/x86/kernel/crash_dump_64.c  |  9 ++-------
- 9 files changed, 20 insertions(+), 62 deletions(-)
+> In arch/*/kernel/crash_dump*.c, there exist similar code about
+> copy_oldmem_page(), move copy_to() from vmcore.c to uaccess.h,
+> and then we can use copy_to() to simplify the related code.
+> 
+> ...
+>
+> --- a/fs/proc/vmcore.c
+> +++ b/fs/proc/vmcore.c
+> @@ -238,20 +238,6 @@ copy_oldmem_page_encrypted(unsigned long pfn, char *buf, size_t csize,
+>  	return copy_oldmem_page(pfn, buf, csize, offset, userbuf);
+>  }
+>  
+> -/*
+> - * Copy to either kernel or user space
+> - */
+> -static int copy_to(void *target, void *src, size_t size, int userbuf)
+> -{
+> -	if (userbuf) {
+> -		if (copy_to_user((char __user *) target, src, size))
+> -			return -EFAULT;
+> -	} else {
+> -		memcpy(target, src, size);
+> -	}
+> -	return 0;
+> -}
+> -
+>  #ifdef CONFIG_PROC_VMCORE_DEVICE_DUMP
+>  static int vmcoredd_copy_dumps(void *dst, u64 start, size_t size, int userbuf)
+>  {
+> diff --git a/include/linux/uaccess.h b/include/linux/uaccess.h
+> index ac03940..4a6c3e4 100644
+> --- a/include/linux/uaccess.h
+> +++ b/include/linux/uaccess.h
+> @@ -201,6 +201,20 @@ copy_to_user(void __user *to, const void *from, unsigned long n)
+>  	return n;
+>  }
+>  
+> +/*
+> + * Copy to either kernel or user space
+> + */
+> +static inline int copy_to(void *target, void *src, size_t size, int userbuf)
+> +{
+> +	if (userbuf) {
+> +		if (copy_to_user((char __user *) target, src, size))
+> +			return -EFAULT;
+> +	} else {
+> +		memcpy(target, src, size);
+> +	}
+> +	return 0;
+> +}
+> +
 
-diff --git a/arch/arm/kernel/crash_dump.c b/arch/arm/kernel/crash_dump.c
-index 53cb924..6491f1d 100644
---- a/arch/arm/kernel/crash_dump.c
-+++ b/arch/arm/kernel/crash_dump.c
-@@ -40,14 +40,8 @@ ssize_t copy_oldmem_page(unsigned long pfn, char *buf,
- 	if (!vaddr)
- 		return -ENOMEM;
- 
--	if (userbuf) {
--		if (copy_to_user(buf, vaddr + offset, csize)) {
--			iounmap(vaddr);
--			return -EFAULT;
--		}
--	} else {
--		memcpy(buf, vaddr + offset, csize);
--	}
-+	if (copy_to(buf, vaddr + offset, csize, userbuf))
-+		csize = -EFAULT;
- 
- 	iounmap(vaddr);
- 	return csize;
-diff --git a/arch/arm64/kernel/crash_dump.c b/arch/arm64/kernel/crash_dump.c
-index 58303a9..496e6a5 100644
---- a/arch/arm64/kernel/crash_dump.c
-+++ b/arch/arm64/kernel/crash_dump.c
-@@ -38,14 +38,8 @@ ssize_t copy_oldmem_page(unsigned long pfn, char *buf,
- 	if (!vaddr)
- 		return -ENOMEM;
- 
--	if (userbuf) {
--		if (copy_to_user((char __user *)buf, vaddr + offset, csize)) {
--			memunmap(vaddr);
--			return -EFAULT;
--		}
--	} else {
--		memcpy(buf, vaddr + offset, csize);
--	}
-+	if (copy_to(buf, vaddr + offset, csize, userbuf))
-+		csize = -EFAULT;
- 
- 	memunmap(vaddr);
- 
-diff --git a/arch/ia64/kernel/crash_dump.c b/arch/ia64/kernel/crash_dump.c
-index 0ed3c3d..20f4c4e 100644
---- a/arch/ia64/kernel/crash_dump.c
-+++ b/arch/ia64/kernel/crash_dump.c
-@@ -39,13 +39,11 @@ copy_oldmem_page(unsigned long pfn, char *buf,
- 
- 	if (!csize)
- 		return 0;
-+
- 	vaddr = __va(pfn<<PAGE_SHIFT);
--	if (userbuf) {
--		if (copy_to_user(buf, (vaddr + offset), csize)) {
--			return -EFAULT;
--		}
--	} else
--		memcpy(buf, (vaddr + offset), csize);
-+	if (copy_to(buf, vaddr + offset, csize, userbuf))
-+		return -EFAULT;
-+
- 	return csize;
- }
- 
-diff --git a/arch/mips/kernel/crash_dump.c b/arch/mips/kernel/crash_dump.c
-index 2e50f551..80704dc 100644
---- a/arch/mips/kernel/crash_dump.c
-+++ b/arch/mips/kernel/crash_dump.c
-@@ -24,13 +24,8 @@ ssize_t copy_oldmem_page(unsigned long pfn, char *buf,
- 		return 0;
- 
- 	vaddr = kmap_local_pfn(pfn);
--
--	if (!userbuf) {
--		memcpy(buf, vaddr + offset, csize);
--	} else {
--		if (copy_to_user(buf, vaddr + offset, csize))
--			csize = -EFAULT;
--	}
-+	if (copy_to(buf, vaddr + offset, csize, userbuf))
-+		csize = -EFAULT;
- 
- 	kunmap_local(vaddr);
- 
-diff --git a/arch/powerpc/kernel/crash_dump.c b/arch/powerpc/kernel/crash_dump.c
-index 5693e1c67..43b2658 100644
---- a/arch/powerpc/kernel/crash_dump.c
-+++ b/arch/powerpc/kernel/crash_dump.c
-@@ -71,11 +71,8 @@ void __init setup_kdump_trampoline(void)
- static size_t copy_oldmem_vaddr(void *vaddr, char *buf, size_t csize,
-                                unsigned long offset, int userbuf)
- {
--	if (userbuf) {
--		if (copy_to_user((char __user *)buf, (vaddr + offset), csize))
--			return -EFAULT;
--	} else
--		memcpy(buf, (vaddr + offset), csize);
-+	if (copy_to(buf, vaddr + offset, csize, userbuf))
-+		return -EFAULT;
- 
- 	return csize;
- }
-diff --git a/arch/riscv/kernel/crash_dump.c b/arch/riscv/kernel/crash_dump.c
-index 86cc0ad..707fbc1 100644
---- a/arch/riscv/kernel/crash_dump.c
-+++ b/arch/riscv/kernel/crash_dump.c
-@@ -33,13 +33,8 @@ ssize_t copy_oldmem_page(unsigned long pfn, char *buf,
- 	if (!vaddr)
- 		return -ENOMEM;
- 
--	if (userbuf) {
--		if (copy_to_user((char __user *)buf, vaddr + offset, csize)) {
--			memunmap(vaddr);
--			return -EFAULT;
--		}
--	} else
--		memcpy(buf, vaddr + offset, csize);
-+	if (copy_to(buf, vaddr + offset, csize, userbuf))
-+		csize = -EFAULT;
- 
- 	memunmap(vaddr);
- 	return csize;
-diff --git a/arch/sh/kernel/crash_dump.c b/arch/sh/kernel/crash_dump.c
-index 5b41b59..2af9286 100644
---- a/arch/sh/kernel/crash_dump.c
-+++ b/arch/sh/kernel/crash_dump.c
-@@ -33,13 +33,8 @@ ssize_t copy_oldmem_page(unsigned long pfn, char *buf,
- 
- 	vaddr = ioremap(pfn << PAGE_SHIFT, PAGE_SIZE);
- 
--	if (userbuf) {
--		if (copy_to_user((void __user *)buf, (vaddr + offset), csize)) {
--			iounmap(vaddr);
--			return -EFAULT;
--		}
--	} else
--	memcpy(buf, (vaddr + offset), csize);
-+	if (copy_to(buf, vaddr + offset, csize, userbuf))
-+		csize = -EFAULT;
- 
- 	iounmap(vaddr);
- 	return csize;
-diff --git a/arch/x86/kernel/crash_dump_32.c b/arch/x86/kernel/crash_dump_32.c
-index 5fcac46..731658b 100644
---- a/arch/x86/kernel/crash_dump_32.c
-+++ b/arch/x86/kernel/crash_dump_32.c
-@@ -54,13 +54,8 @@ ssize_t copy_oldmem_page(unsigned long pfn, char *buf, size_t csize,
- 		return -EFAULT;
- 
- 	vaddr = kmap_local_pfn(pfn);
--
--	if (!userbuf) {
--		memcpy(buf, vaddr + offset, csize);
--	} else {
--		if (copy_to_user(buf, vaddr + offset, csize))
--			csize = -EFAULT;
--	}
-+	if (copy_to(buf, vaddr + offset, csize, userbuf))
-+		csize = -EFAULT;
- 
- 	kunmap_local(vaddr);
- 
-diff --git a/arch/x86/kernel/crash_dump_64.c b/arch/x86/kernel/crash_dump_64.c
-index a7f617a..8e7c192 100644
---- a/arch/x86/kernel/crash_dump_64.c
-+++ b/arch/x86/kernel/crash_dump_64.c
-@@ -29,13 +29,8 @@ static ssize_t __copy_oldmem_page(unsigned long pfn, char *buf, size_t csize,
- 	if (!vaddr)
- 		return -ENOMEM;
- 
--	if (userbuf) {
--		if (copy_to_user((void __user *)buf, vaddr + offset, csize)) {
--			iounmap((void __iomem *)vaddr);
--			return -EFAULT;
--		}
--	} else
--		memcpy(buf, vaddr + offset, csize);
-+	if (copy_to(buf, vaddr + offset, csize, userbuf))
-+		csize = -EFAULT;
- 
- 	set_iounmap_nonlazy();
- 	iounmap((void __iomem *)vaddr);
--- 
-2.1.0
+Ordinarily I'd say "this is too large to be inlined".  But the function
+has only a single callsite per architecture so inlining it won't cause
+bloat at present.
+
+But hopefully copy_to() will get additional callers in the future, in
+which case it shouldn't be inlined.  So I'm thinking it would be best
+to start out with this as a regular non-inlined function, in
+lib/usercopy.c.
+
+Also, copy_to() is a very poor name for a globally-visible helper
+function.  Better would be copy_to_user_or_kernel(), although that's
+perhaps a bit long.
+
+And the `userbuf' arg should have type bool, yes?
 
