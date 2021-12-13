@@ -2,225 +2,84 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 17166C4332F
-	for <linux-sh@archiver.kernel.org>; Mon, 13 Dec 2021 09:23:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6F00C433EF
+	for <linux-sh@archiver.kernel.org>; Mon, 13 Dec 2021 14:44:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233684AbhLMJXl convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 13 Dec 2021 04:23:41 -0500
-Received: from mail-vk1-f179.google.com ([209.85.221.179]:38527 "EHLO
-        mail-vk1-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233673AbhLMJXh (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 13 Dec 2021 04:23:37 -0500
-Received: by mail-vk1-f179.google.com with SMTP id s17so9966812vka.5;
-        Mon, 13 Dec 2021 01:23:36 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=7JQ6xhDuC8UGs/jm3YR6x8QoCCs8KyehtdxluDCRZKo=;
-        b=s1vr4fKxoqXExk3EECIfYm4XnjnYCI9FntQ4nfRSKG1qDpqNF9Ln+oyQ+8AlkOmNZY
-         4VKiBsJuu+BAAMm6QtPPMfTP8l403QFB9Uc1hR/hLkkeUmz4NOq9DyGh796m9mNutLIJ
-         9dmGJIbRxcCMcWHcqcjslDyjrICWEIGHiLxUaU8S5YF6QkMz/C+jXeqnTPmQjjJqG5dJ
-         DmyRVHmFe1uRt/Nbgr8f/fqhsR3JckM0CbT/qJL8nxByU6P2aCObAAE9k9LrHm8V4BZI
-         O4fstT3MvC/FSeM0K6PLkHUslGnIIUAADonm70KDKHyXKuxJLmFh91rJ3HnUgrPDo6BS
-         4mKQ==
-X-Gm-Message-State: AOAM5329nOcx31Hc48LnBiGEsDoJpYJbc+mLykjJXH6bvW5Y9lmtzdhi
-        W+mLuBR5yt3KD2Q9Z9wXEnGVb9ZOGT4H6g==
-X-Google-Smtp-Source: ABdhPJy36iwzFCGQ3/LfaGF4Odlhfj2OLNrCWA4IlVb15gm8DIeNRZjtFj9sldbBl2GYTgKVUkSP6A==
-X-Received: by 2002:a05:6122:20a7:: with SMTP id i39mr29371339vkd.15.1639387415861;
-        Mon, 13 Dec 2021 01:23:35 -0800 (PST)
-Received: from mail-ua1-f49.google.com (mail-ua1-f49.google.com. [209.85.222.49])
-        by smtp.gmail.com with ESMTPSA id t20sm3875484vsj.27.2021.12.13.01.23.34
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 13 Dec 2021 01:23:35 -0800 (PST)
-Received: by mail-ua1-f49.google.com with SMTP id ay21so27952890uab.12;
-        Mon, 13 Dec 2021 01:23:34 -0800 (PST)
-X-Received: by 2002:a67:c106:: with SMTP id d6mr26074577vsj.77.1639387403608;
- Mon, 13 Dec 2021 01:23:23 -0800 (PST)
-MIME-Version: 1.0
-References: <20211126180101.27818-1-digetx@gmail.com> <20211126180101.27818-6-digetx@gmail.com>
- <YaLNOJTM+lVq+YNS@qmqm.qmqm.pl> <033ddf2a-6223-1a82-ec64-30f17c891f67@gmail.com>
- <YaQeQgbW+CjEdsqG@qmqm.qmqm.pl> <091321ea-4919-0579-88a8-23d05871575d@gmail.com>
- <CAJZ5v0jMvdhfBqjY+V9h_Z6EH1ohuJH+KjuGiOw_Jor1Tnp7vg@mail.gmail.com>
- <45025b2d-4be1-f694-be61-31903795cf5d@gmail.com> <CAJZ5v0ieTwnBVjW8R_VTdPFH3yr5AwLc+ZEG5N3KrpTH+j8qZw@mail.gmail.com>
-In-Reply-To: <CAJZ5v0ieTwnBVjW8R_VTdPFH3yr5AwLc+ZEG5N3KrpTH+j8qZw@mail.gmail.com>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 13 Dec 2021 10:23:12 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdXW1bCLkJhC1Jnf2rkS1rBnXsMX=4LMVdXDvMV5HOzrLw@mail.gmail.com>
-Message-ID: <CAMuHMdXW1bCLkJhC1Jnf2rkS1rBnXsMX=4LMVdXDvMV5HOzrLw@mail.gmail.com>
-Subject: Re: [PATCH v4 05/25] reboot: Warn if restart handler has duplicated priority
-To:     "Rafael J. Wysocki" <rafael@kernel.org>
-Cc:     Dmitry Osipenko <digetx@gmail.com>,
-        =?UTF-8?B?TWljaGHFgiBNaXJvc8WCYXc=?= <mirq-linux@rere.qmqm.pl>,
-        Thierry Reding <thierry.reding@gmail.com>,
-        Jonathan Hunter <jonathanh@nvidia.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Joshua Thompson <funaho@jurai.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Sebastian Reichel <sre@kernel.org>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Philipp Zabel <p.zabel@pengutronix.de>,
-        Greentime Hu <green.hu@gmail.com>,
-        Vincent Chen <deanbo422@gmail.com>,
-        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        "the arch/x86 maintainers" <x86@kernel.org>,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
-        Juergen Gross <jgross@suse.com>,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        Len Brown <lenb@kernel.org>,
-        Santosh Shilimkar <ssantosh@kernel.org>,
-        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
-        Liam Girdwood <lgirdwood@gmail.com>,
-        Mark Brown <broonie@kernel.org>, Pavel Machek <pavel@ucw.cz>,
-        Lee Jones <lee.jones@linaro.org>,
+        id S239711AbhLMOoC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 13 Dec 2021 09:44:02 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44258 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S234143AbhLMOoB (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 13 Dec 2021 09:44:01 -0500
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AD9BBC061574;
+        Mon, 13 Dec 2021 06:44:01 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=WN0UBRQSaVnqth1lPLeu1h3m2LsiDV8FPn8ylQJCtw8=; b=p3RXvBFb2so3jcvbNtFm9YqLoy
+        Db6NHe524T07Hi4ZiyLaxSrQxikXMESk//fQ258u8C8HwL4tvSiBf9GqWsbjwUJj0MpZb99Q3r7Gn
+        U8I4uIl0lJmqmxhPuXIO2nSstlKIwd5Iq6DRxuuB+XewafpJUhhMkxy8nn3Di3UE6QlKKR/tkzwqN
+        82AY01mLzM89zRBTPtsel1HfkWhp0iwheQwoshPsb7I7IaBR/GEnNFzI6tMIojo9QsGW9FNyl0q0u
+        8cNlSbM2lT2wank3wbXnRWxj4TWJs6JahqJ/E/e+nJSdtlRCOOK0S/1TpqDLQhR1BBCV9fSEeWv7a
+        TVTjir2Q==;
+Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1mwmYS-00Csn8-Vy; Mon, 13 Dec 2021 14:43:53 +0000
+Date:   Mon, 13 Dec 2021 14:43:52 +0000
+From:   Matthew Wilcox <willy@infradead.org>
+To:     David Laight <David.Laight@aculab.com>
+Cc:     'Tiezhu Yang' <yangtiezhu@loongson.cn>,
+        Dave Young <dyoung@redhat.com>, Baoquan He <bhe@redhat.com>,
+        Vivek Goyal <vgoyal@redhat.com>,
         Andrew Morton <akpm@linux-foundation.org>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Daniel Lezcano <daniel.lezcano@linaro.org>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Ulf Hansson <ulf.hansson@linaro.org>, alankao@andestech.com,
-        "K . C . Kuen-Chern Lin" <kclin@andestech.com>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org,
-        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
-        linux-riscv@lists.infradead.org,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        xen-devel@lists.xenproject.org,
-        ACPI Devel Maling List <linux-acpi@vger.kernel.org>,
-        Linux PM <linux-pm@vger.kernel.org>,
-        linux-tegra <linux-tegra@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+        "linux-arm-kernel@lists.infradead.org" 
+        <linux-arm-kernel@lists.infradead.org>,
+        "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>,
+        "linux-mips@vger.kernel.org" <linux-mips@vger.kernel.org>,
+        "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>,
+        "linux-riscv@lists.infradead.org" <linux-riscv@lists.infradead.org>,
+        "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>,
+        "x86@kernel.org" <x86@kernel.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "kexec@lists.infradead.org" <kexec@lists.infradead.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        Xuefeng Li <lixuefeng@loongson.cn>
+Subject: Re: [PATCH v2 0/2] kdump: simplify code
+Message-ID: <YbdcKK3Cq6ITTg/l@casper.infradead.org>
+References: <1639193588-7027-1-git-send-email-yangtiezhu@loongson.cn>
+ <0c5cb37139af4f3e85cc2c5115d7d006@AcuMS.aculab.com>
+ <YbXhVxRJfjvKw++W@casper.infradead.org>
+ <b7a75ae9253445af81ff2fedd5268af4@AcuMS.aculab.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <b7a75ae9253445af81ff2fedd5268af4@AcuMS.aculab.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Dec 10, 2021 at 8:14 PM Rafael J. Wysocki <rafael@kernel.org> wrote:
-> On Fri, Dec 10, 2021 at 8:04 PM Dmitry Osipenko <digetx@gmail.com> wrote:
-> > 10.12.2021 21:27, Rafael J. Wysocki пишет:
-> > > On Mon, Nov 29, 2021 at 12:34 PM Dmitry Osipenko <digetx@gmail.com> wrote:
-> > >> 29.11.2021 03:26, Michał Mirosław пишет:
-> > >>> On Mon, Nov 29, 2021 at 12:06:19AM +0300, Dmitry Osipenko wrote:
-> > >>>> 28.11.2021 03:28, Michał Mirosław пишет:
-> > >>>>> On Fri, Nov 26, 2021 at 09:00:41PM +0300, Dmitry Osipenko wrote:
-> > >>>>>> Add sanity check which ensures that there are no two restart handlers
-> > >>>>>> registered with the same priority. Normally it's a direct sign of a
-> > >>>>>> problem if two handlers use the same priority.
-> > >>>>>
-> > >>>>> The patch doesn't ensure the property that there are no duplicated-priority
-> > >>>>> entries on the chain.
-> > >>>>
-> > >>>> It's not the exact point of this patch.
-> > >>>>
-> > >>>>> I'd rather see a atomic_notifier_chain_register_unique() that returns
-> > >>>>> -EBUSY or something istead of adding an entry with duplicate priority.
-> > >>>>> That way it would need only one list traversal unless you want to
-> > >>>>> register the duplicate anyway (then you would call the older
-> > >>>>> atomic_notifier_chain_register() after reporting the error).
-> > >>>>
-> > >>>> The point of this patch is to warn developers about the problem that
-> > >>>> needs to be fixed. We already have such troubling drivers in mainline.
-> > >>>>
-> > >>>> It's not critical to register different handlers with a duplicated
-> > >>>> priorities, but such cases really need to be corrected. We shouldn't
-> > >>>> break users' machines during transition to the new API, meanwhile
-> > >>>> developers should take action of fixing theirs drivers.
-> > >>>>
-> > >>>>> (Or you could return > 0 when a duplicate is registered in
-> > >>>>> atomic_notifier_chain_register() if the callers are prepared
-> > >>>>> for that. I don't really like this way, though.)
-> > >>>>
-> > >>>> I had a similar thought at some point before and decided that I'm not in
-> > >>>> favor of this approach. It's nicer to have a dedicated function that
-> > >>>> verifies the uniqueness, IMO.
-> > >>>
-> > >>> I don't like the part that it traverses the list second time to check
-> > >>> the uniqueness. But actually you could avoid that if
-> > >>> notifier_chain_register() would always add equal-priority entries in
-> > >>> reverse order:
-> > >>>
-> > >>>  static int notifier_chain_register(struct notifier_block **nl,
-> > >>>               struct notifier_block *n)
-> > >>>  {
-> > >>>       while ((*nl) != NULL) {
-> > >>>               if (unlikely((*nl) == n)) {
-> > >>>                       WARN(1, "double register detected");
-> > >>>                       return 0;
-> > >>>               }
-> > >>> -             if (n->priority > (*nl)->priority)
-> > >>> +             if (n->priority >= (*nl)->priority)
-> > >>>                       break;
-> > >>>               nl = &((*nl)->next);
-> > >>>       }
-> > >>>       n->next = *nl;
-> > >>>       rcu_assign_pointer(*nl, n);
-> > >>>       return 0;
-> > >>>  }
-> > >>>
-> > >>> Then the check for uniqueness after adding would be:
-> > >>>
-> > >>>  WARN(nb->next && nb->priority == nb->next->priority);
-> > >>
-> > >> We can't just change the registration order because invocation order of
-> > >> the call chain depends on the registration order
+On Mon, Dec 13, 2021 at 08:30:33AM +0000, David Laight wrote:
+> From: Matthew Wilcox
+> > Sent: 12 December 2021 11:48
+> > 
+> > On Sat, Dec 11, 2021 at 05:53:46PM +0000, David Laight wrote:
+> > > From: Tiezhu Yang
+> > > > Sent: 11 December 2021 03:33
+> > > >
+> > > > v2:
+> > > >   -- add copy_to_user_or_kernel() in lib/usercopy.c
+> > > >   -- define userbuf as bool type
 > > >
-> > > It doesn't if unique priorities are required and isn't that what you want?
-> > >
-> > >> and some of current
-> > >> users may rely on that order. I'm pretty sure that changing the order
-> > >> will have unfortunate consequences.
-> > >
-> > > Well, the WARN() doesn't help much then.
-> > >
-> > > Either you can make all of the users register with unique priorities,
-> > > and then you can make the registration reject non-unique ones, or you
-> > > cannot assume them to be unique.
-> >
-> > There is no strong requirement for priorities to be unique, the reboot.c
-> > code will work properly.
->
-> In which case adding the WARN() is not appropriate IMV.
->
-> Also I've looked at the existing code and at least in some cases the
-> order in which the notifiers run doesn't matter.  I'm not sure what
-> the purpose of this patch is TBH.
->
-> > The potential problem is on the user's side and the warning is intended
-> > to aid the user.
->
-> Unless somebody has the panic_on_warn mentioned previously set and
-> really the user need not understand what the WARN() is about.  IOW,
-> WARN() helps developers, not users.
+> > > Instead of having a flag to indicate whether the buffer is user or kernel,
+> > > would it be better to have two separate buffer pointers.
+> > > One for a user space buffer, the other for a kernel space buffer.
+> > > Exactly one of the buffers should always be NULL.
+> > 
+> > No.  You should be using an iov_iter instead.  See
+> > https://lore.kernel.org/all/Ya4bdB0UBJCZhUSo@casper.infradead.org/
+> > for a start on this.
+> 
+> iov_iter gets horribly expensive...
 
-Do panic_on_warn and reboot_on_panic play well with having a WARN()
-in the reboot notifier handling?
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Oh, right.  Reading the kcore is a high-performance path, my mistake.
