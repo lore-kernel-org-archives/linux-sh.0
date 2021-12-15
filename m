@@ -2,164 +2,119 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D779C433F5
-	for <linux-sh@archiver.kernel.org>; Wed, 15 Dec 2021 07:56:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AD57DC433F5
+	for <linux-sh@archiver.kernel.org>; Wed, 15 Dec 2021 21:49:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236110AbhLOH4j (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 15 Dec 2021 02:56:39 -0500
-Received: from mail-vk1-f170.google.com ([209.85.221.170]:46661 "EHLO
-        mail-vk1-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235928AbhLOH4i (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 15 Dec 2021 02:56:38 -0500
-Received: by mail-vk1-f170.google.com with SMTP id m16so13914849vkl.13;
-        Tue, 14 Dec 2021 23:56:38 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=cVQUCRhJvXZRgFxiFcRA88PjQcq5cJWHq/xScnHpVHY=;
-        b=IZGG+PnMRlTqJF7GecR8Uh/rl7XNBFlHffiseJ7yBNtC3HrYlYhbh7ToeRh08Z/ANX
-         1m5UnPDRAn86dwKWv/+ymH6wH4noG/u5SDa8R4HM2b/5bJKNWOuK3ynP+X0SANrP7RzN
-         lAH4T6NVI28ksJeK7bjGazvA7LKAvWuKdjLHN/e3kfsbe5pB0Q6ZJi0R7jC5sP//OY9V
-         gILzyoizMzVyhJGRcmUy3CHyqHuP/RC54utl12EwwVzLyw0OZ9jrSjWFwqgErHUm2N/k
-         0M5SBfMYGwQsvIcspsfiOrWDg2uJWVdQ3P6Jv6l0bxqh+k115AZbeKpnUOtcFfgc+NcM
-         ul1w==
-X-Gm-Message-State: AOAM532e0BTt/zzaw/KTLIsGrk0gWEkfkw40ORmYHJImOF5mQi25lGey
-        AXa6OEdMpOvjcDFMi/3gZh/hU/Gub6Q3BQ==
-X-Google-Smtp-Source: ABdhPJyWEhXr8Jesb4/lV+pb/9e8JvFOfpssrLSQTkCyHQAqzoGFPTXNvsmFxqS7x5u1/T1kntFYsg==
-X-Received: by 2002:a05:6122:c9b:: with SMTP id ba27mr2651173vkb.14.1639554997600;
-        Tue, 14 Dec 2021 23:56:37 -0800 (PST)
-Received: from mail-ua1-f46.google.com (mail-ua1-f46.google.com. [209.85.222.46])
-        by smtp.gmail.com with ESMTPSA id x21sm305800ual.11.2021.12.14.23.56.36
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 14 Dec 2021 23:56:37 -0800 (PST)
-Received: by mail-ua1-f46.google.com with SMTP id 30so39428660uag.13;
-        Tue, 14 Dec 2021 23:56:36 -0800 (PST)
-X-Received: by 2002:a9f:248b:: with SMTP id 11mr8960109uar.14.1639554996714;
- Tue, 14 Dec 2021 23:56:36 -0800 (PST)
+        id S230044AbhLOVtm (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 15 Dec 2021 16:49:42 -0500
+Received: from mout.kundenserver.de ([217.72.192.73]:57705 "EHLO
+        mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229957AbhLOVtl (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 15 Dec 2021 16:49:41 -0500
+Received: from mail-wr1-f51.google.com ([209.85.221.51]) by
+ mrelayeu.kundenserver.de (mreue107 [213.165.67.113]) with ESMTPSA (Nemesis)
+ id 1MdeKd-1mOpV42v2n-00ZhgC; Wed, 15 Dec 2021 22:49:39 +0100
+Received: by mail-wr1-f51.google.com with SMTP id t9so40561711wrx.7;
+        Wed, 15 Dec 2021 13:49:39 -0800 (PST)
+X-Gm-Message-State: AOAM5303tLyEPqp+DZ1578ZBUv0l3AaCo/05okCaN1m84A3lHkG1tIqw
+        gK/D+e5EuNSxXoCwBGrO8BAOqfdEiWyFcr8Yzm4=
+X-Google-Smtp-Source: ABdhPJyI4sFfqi3WV9r3gOmk1U//npIrS4nf8wBAkc7GviXMWmaD3dsHGyhZUXFZ+uysDsSwkLsuIqVlj3CoEC95hIQ=
+X-Received: by 2002:a5d:530e:: with SMTP id e14mr6188596wrv.12.1639604979240;
+ Wed, 15 Dec 2021 13:49:39 -0800 (PST)
 MIME-Version: 1.0
-References: <20211130172954.129587-1-vladimir.murzin@arm.com>
- <20211130172954.129587-2-vladimir.murzin@arm.com> <YaZiOnNd6fAnLcxz@fedora>
- <8c2b4666-cf13-3735-be1e-b8a1c71df113@arm.com> <CAMuHMdXA73EuFC6e-pEz1Ovc9ySNk-mt-6O0L7KbO28PvqratA@mail.gmail.com>
- <YbjTuOhNxaPirK1L@fedora> <CAMuHMdUaLTbS_20t7jfPkkHqYV=9JNQf-XQ80UppZcrHGOoTfA@mail.gmail.com>
- <YbjuGhPTjuTCSu+m@fedora> <CAMuHMdW8Besfp3Pbj1tRJ4gKKUbR59pU1ACuUNnn4RXkgVo5Qw@mail.gmail.com>
- <YbkDfyTbI/M6gaOw@fedora>
-In-Reply-To: <YbkDfyTbI/M6gaOw@fedora>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Wed, 15 Dec 2021 08:56:25 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdXBYaz6N0vkA+oP3Cf4iBiWs=bEn0Y9z=JHg3u3wmc1Rg@mail.gmail.com>
-Message-ID: <CAMuHMdXBYaz6N0vkA+oP3Cf4iBiWs=bEn0Y9z=JHg3u3wmc1Rg@mail.gmail.com>
-Subject: Re: [PATCH] percpu: km: ensure it is used with NOMMU (either UP or SMP)
-To:     Dennis Zhou <dennis@kernel.org>
-Cc:     Vladimir Murzin <vladimir.murzin@arm.com>,
-        linux-arch-owner@vger.kernel.org, Linux MM <linux-mm@kvack.org>,
-        Tejun Heo <tj@kernel.org>, Christoph Lameter <cl@linux.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Christoph Hellwig <hch@lst.de>, Arnd Bergmann <arnd@arndb.de>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
+References: <20211105154334.1841927-1-alexandre.ghiti@canonical.com>
+ <CAK8P3a2AnLJgGNBFvjUQqXd-Az9vjgE7yJQXGDwCav5E0btSsg@mail.gmail.com> <CA+zEjCtajRJhs8zSdR_oFBOO3P5FWWZJ3L6N-GK+JnUjdymTiA@mail.gmail.com>
+In-Reply-To: <CA+zEjCtajRJhs8zSdR_oFBOO3P5FWWZJ3L6N-GK+JnUjdymTiA@mail.gmail.com>
+From:   Arnd Bergmann <arnd@arndb.de>
+Date:   Wed, 15 Dec 2021 22:49:23 +0100
+X-Gmail-Original-Message-ID: <CAK8P3a3aJJYcONV9JMcn47=mW4P4kvYFdwnTdyZfRqeo+eGndQ@mail.gmail.com>
+Message-ID: <CAK8P3a3aJJYcONV9JMcn47=mW4P4kvYFdwnTdyZfRqeo+eGndQ@mail.gmail.com>
+Subject: Re: [PATCH 0/7] Cleanup after removal of configs
+To:     Alexandre Ghiti <alexandre.ghiti@canonical.com>
+Cc:     Arnd Bergmann <arnd@arndb.de>, Steve French <sfrench@samba.org>,
+        Jonathan Corbet <corbet@lwn.net>,
+        David Howells <dhowells@redhat.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
-        linux-riscv <linux-riscv@lists.infradead.org>
+        Matti Vaittinen <matti.vaittinen@fi.rohmeurope.com>,
+        Lee Jones <lee.jones@linaro.org>,
+        Jeff Layton <jlayton@kernel.org>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Ronnie Sahlberg <lsahlber@redhat.com>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Wim Van Sebroeck <wim@linux-watchdog.org>,
+        Lukas Bulwahn <lukas.bulwahn@gmail.com>,
+        Luis Chamberlain <mcgrof@kernel.org>,
+        Kalle Valo <kvalo@codeaurora.org>, linux-cifs@vger.kernel.org,
+        samba-technical@lists.samba.org,
+        "open list:DOCUMENTATION" <linux-doc@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-cachefs@redhat.com,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
+        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        linux-power@fi.rohmeurope.com
 Content-Type: text/plain; charset="UTF-8"
+X-Provags-ID: V03:K1:Io+rAnOukRGsESnCj52tUXFsPjVCtRLppZBZmKntlAeVeXpSrHi
+ qcxK9k04dshwgrWQYiw878XedRH47AsrLy4n/gdfxwlX7u2EYvjqUjIKEXIjY0tuCEb4D4b
+ LwE4dKpbjXgggXVUh7oHMARa5sG2Nx8fzgjtBBQhJLpcxn/XzSdD2djB3j6dwZlyKw7hv1G
+ drYUyPNFv42Qoql8UBrlg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:c07D+hGrL+w=:9x8C/icw8ntMTFqTZrSJrn
+ 6fyDDf4A/Q11iHr55nqwsGbPmkNrTebx43qkhrG1kKn+QweoG2MdgmEAMiSPsM0a18L18+Aur
+ rWclUKaX1DLwnkMvBTMNEBclBZYir8NYTvXSxZkzrJqynEv8CDsIwVEO73ysx3dkU79TaUJqq
+ ZGIEJjiEnuGE16rReyAdFECgxf6LmiGPDDLM/iBKdx9uO4BQGoXW18Cr/4+W/93SFzg8KuPCl
+ 4cO5C618BYZCT/TM34l2u/+7s0zYwWnnG5DneRm5zATDIaOpzQmASCntR1+q10bQ5shpFWfQ9
+ 349jAEyhYcUS51FiqkwWtW9U8nugU7PtrsLIOoJvF9O6RLHenDq4UhSZ+4wLl69agk/IGFwdY
+ e1pmV61H6prVazhtH0IJav8Tq+SlZA9eEL9ciwmNKDoqBq2UMGDU6NsiVlBC5IBfmFFwwW6vp
+ KnJgdSRkvw5StV8PRak8JngW4z38sMAssrPaLhMZnB58ohEI8vyai/WrofA3ZMAhqSXdUVHVW
+ MA94AVgnaRrqkS4aBiCwQXpehyyIGYzmaYvHQ5t5Rmcze8cs9pcwXtBm5NMjHJ7zQZh/sjcvD
+ 3VDHt9JKKeJ+17u9vpzBc/CqU/JYO47NgWL88LV8n1MafnwPo9YqI9ttnCx66ln9cZui2m3f0
+ bGWS9lZmArQRHp8q2TygJ//o8TTWVCEP5dbnuH3rBp3ln7RSib74/2lkOGLR1fuMQcLY=
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Dennis,
-
-On Tue, Dec 14, 2021 at 9:50 PM Dennis Zhou <dennis@kernel.org> wrote:
-> On Tue, Dec 14, 2021 at 09:12:06PM +0100, Geert Uytterhoeven wrote:
-> > On Tue, Dec 14, 2021 at 8:18 PM Dennis Zhou <dennis@kernel.org> wrote:
-> > > On Tue, Dec 14, 2021 at 08:02:58PM +0100, Geert Uytterhoeven wrote:
-> > > > On Tue, Dec 14, 2021 at 6:26 PM Dennis Zhou <dennis@kernel.org> wrote:
-> > > > > On Tue, Dec 14, 2021 at 05:29:22PM +0100, Geert Uytterhoeven wrote:
-> > > > > > On Wed, Dec 1, 2021 at 12:53 PM Vladimir Murzin <vladimir.murzin@arm.com> wrote:
-> > > > > > > On 11/30/21 5:41 PM, Dennis Zhou wrote:
-> > > > > > > > On Tue, Nov 30, 2021 at 05:29:54PM +0000, Vladimir Murzin wrote:
-> > > > > > > >> Currently, NOMMU pull km allocator via !SMP dependency because most of
-> > > > > > > >> them are UP, yet for SMP+NOMMU vm allocator gets pulled which:
-> > > > > > > >>
-> > > > > > > >> * may lead to broken build [1]
-> > > > > > > >> * ...or not working runtime due to [2]
-> > > > > > > >>
-> > > > > > > >> It looks like SMP+NOMMU case was overlooked in bbddff054587 ("percpu:
-> > > > > > > >> use percpu allocator on UP too") so restore that.
-> > > > > > > >>
-> > > > > > > >> [1]
-> > > > > > > >> For ARM SMP+NOMMU (R-class cores)
-> > > > > > > >>
-> > > > > > > >> arm-none-linux-gnueabihf-ld: mm/percpu.o: in function `pcpu_post_unmap_tlb_flush':
-> > > > > > > >> mm/percpu-vm.c:188: undefined reference to `flush_tlb_kernel_range'
-> > > > > > > >>
-> > > > > > > >> [2]
-> > > > > > > >> static inline
-> > > > > > > >> int vmap_pages_range_noflush(unsigned long addr, unsigned long end,
-> > > > > > > >>                 pgprot_t prot, struct page **pages, unsigned int page_shift)
-> > > > > > > >> {
-> > > > > > > >>        return -EINVAL;
-> > > > > > > >> }
-> > > > > > > >>
-> > > > > > > >> Signed-off-by: Vladimir Murzin <vladimir.murzin@arm.com>
-> >
-> > > > > > > IIRC, RISC-V also have SMP+NOMMU, so adding them as well.
-> > > > > >
-> > > > > > I had seen the j-Core thread, but completely forgot about
-> > > > > > Canaan K210 (RV64 SMP+NOMMU).
-> > > > > >
-> > > > > > This became commit 3583521aabac76e5 ("percpu: km: ensure it is used
-> > > > > > with NOMMU (either UP or SMP)").  And now booting K210 prints:
-> > > > > >
-> > > > > >     percpu: wasting 10 pages per chunk
-> > > > > >
-> > > > > > a) Is this bad?
-> > > > >
-> > > > > It's not great.. Can you share the line on boot with the following
-> > > > > prefix: pcpu-alloc [1].
-> > > >
-> > > > There are no such lines.
-> > > > "make mm/percpu.i mm/percpu.s" and inspecting the generated files,
-> > > > and vmlinux, proves the code is there. But apparently it's not called.
-> > > >
-> > > > So there may be no issue on my system?
-> > >
-> > > I might be missing something, but that can't be right. Percpu calls
-> > > pcpu_dump_alloc_info() from pcpu_setup_first_chunk() which is called by
-> > > both embed/page first chunk code.
-> > >
-> > > Ummm. That can't be right. Percpu call pcpu_dump_alloc_info() from
-> > > pcpu_setup_first_chunk() which everyone should call. On my machine:
-> > >
-> > > $ dmesg | grep "pcpu-alloc"
-> > > [    0.065118] pcpu-alloc: s184320 r8192 d28672 u262144 alloc=1*2097152
-> >
-> > Doh, it wasn't printed to the console, due to KERN_DEBUG. Dmesg
-> > does have it:
-> >
-> > <7>[    0.000000] pcpu-alloc: s15520 r0 d29536 u45056 alloc=11*4096
-> > <7>[    0.000000] pcpu-alloc: [0] 0 [0] 1
-> >
+On Fri, Dec 10, 2021 at 9:38 PM Alexandre Ghiti
+<alexandre.ghiti@canonical.com> wrote:
 >
-> I see, so what's happening is we're allocating 11 pages * 2, and due to
-> percpu-km we round up to a contiguous 32 pages for backing pages. This
-> results in the warning of wasting 10 pages. Given the size of the static
-> region, I'm not too worried for now. I can't imagine the config would
-> use that much percpu memory.
+> On Fri, Nov 5, 2021 at 4:56 PM Arnd Bergmann <arnd@arndb.de> wrote:
+> >
+> > On Fri, Nov 5, 2021 at 4:43 PM Alexandre Ghiti
+> > <alexandre.ghiti@canonical.com> wrote:
+> > >
+> > > While bumping from 5.13 to 5.15, I found that a few deleted configs had
+> > > left some pieces here and there: this patchset cleans that.
+> > >
+> > > Alexandre Ghiti (7):
+> > >   Documentation, arch: Remove leftovers from fscache/cachefiles
+> > >     histograms
+> > >   Documentation, arch: Remove leftovers from raw device
+> > >   Documentation, arch: Remove leftovers from CIFS_WEAK_PW_HASH
+> > >   arch: Remove leftovers from mandatory file locking
+> > >   Documentation, arch, fs: Remove leftovers from fscache object list
+> > >   include: mfd: Remove leftovers from bd70528 watchdog
+> > >   arch: Remove leftovers from prism54 wireless driver
+> >
+> > Looks all good to me, thanks a lot for the cleanup!
+> >
+> > For arch/arm/configs:
+> >
+> > Acked-by: Arnd Bergmann <arnd@arndb.de>
+> >
+> > assuming this goes through someone else's tree. Let me know if you need me
+> > to pick up the patches in the asm-generic tree for cross-architecture work.
 >
-> We can massage the discrepancy for-v5.17. Basically in percpu-km, we
-> align to 4k even though our allocation gets rounded up to the next power
-> of 2. I don't have a lot of bandwidth right now, but I might be able to
-> think about it over the next few weeks.
+> Arnd, do you mind taking the whole series except patch 6 ("include:
+> mfd: Remove leftovers from bd70528 watchdog") as this will be handled
+> separately. I can ask Jonathan for the doc patches if needed.
 
-Note that K210 has only 8 MiB of SRAM, so wasting 10 pages means
-wasting 0.5% of RAM.
+I tried to apply them, but only three of the patches applied cleanly. Can you
+resend them based on v5.16-rc1?
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+        Arnd
