@@ -2,29 +2,29 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3AE1C43217
-	for <linux-sh@archiver.kernel.org>; Thu, 16 Dec 2021 14:17:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F034C4167B
+	for <linux-sh@archiver.kernel.org>; Thu, 16 Dec 2021 14:17:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237839AbhLPORm (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        id S234987AbhLPORm (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
         Thu, 16 Dec 2021 09:17:42 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40780 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40800 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234987AbhLPORk (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 16 Dec 2021 09:17:40 -0500
-Received: from michel.telenet-ops.be (michel.telenet-ops.be [IPv6:2a02:1800:110:4::f00:18])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7C4C4C061401
+        with ESMTP id S237840AbhLPORl (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 16 Dec 2021 09:17:41 -0500
+Received: from albert.telenet-ops.be (albert.telenet-ops.be [IPv6:2a02:1800:110:4::f00:1a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D01BFC061757
         for <linux-sh@vger.kernel.org>; Thu, 16 Dec 2021 06:17:40 -0800 (PST)
 Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed20:d13f:527c:5504:a743])
-        by michel.telenet-ops.be with bizsmtp
-        id X2He2600j250X30062HeXH; Thu, 16 Dec 2021 15:17:39 +0100
+        by albert.telenet-ops.be with bizsmtp
+        id X2He2600V250X30062HeVJ; Thu, 16 Dec 2021 15:17:39 +0100
 Received: from rox.of.borg ([192.168.97.57])
         by ramsan.of.borg with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
         (Exim 4.93)
         (envelope-from <geert@linux-m68k.org>)
-        id 1mxrZi-005QZi-9M; Thu, 16 Dec 2021 15:17:38 +0100
+        id 1mxrZi-005QZg-BF; Thu, 16 Dec 2021 15:17:38 +0100
 Received: from geert by rox.of.borg with local (Exim 4.93)
         (envelope-from <geert@linux-m68k.org>)
-        id 1mxrZh-009yo4-K7; Thu, 16 Dec 2021 15:17:37 +0100
+        id 1mxrZh-009ynu-IY; Thu, 16 Dec 2021 15:17:37 +0100
 From:   Geert Uytterhoeven <geert+renesas@glider.be>
 To:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         Jiri Slaby <jirislaby@kernel.org>
@@ -34,49 +34,43 @@ Cc:     Wolfram Sang <wsa+renesas@sang-engineering.com>,
         linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
         linux-sh@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp,
         Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH 2/3] serial: sh-sci: Use dev_err_probe()
-Date:   Thu, 16 Dec 2021 15:17:33 +0100
-Message-Id: <5c4dd8df1f8d0d14786f26ee80b77f3eb8e06cd5.1639663832.git.geert+renesas@glider.be>
+Subject: [PATCH 0/3] serial: sh-sci: Clock handling improvements
+Date:   Thu, 16 Dec 2021 15:17:31 +0100
+Message-Id: <cover.1639663832.git.geert+renesas@glider.be>
 X-Mailer: git-send-email 2.25.1
-In-Reply-To: <cover.1639663832.git.geert+renesas@glider.be>
-References: <cover.1639663832.git.geert+renesas@glider.be>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Use the dev_err_probe() helper to streamline error handling.
+	Hi Greg, Jiri,
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/tty/serial/sh-sci.c | 11 ++++-------
- 1 file changed, 4 insertions(+), 7 deletions(-)
+This patch series contains a legacy cleanup and two small improvements
+for the Renesas (H)SCI(F) serial driver.
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 686ca1777222b1d4..5f6d85b8e3dd4173 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2790,15 +2790,12 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
- 			 * global "peripheral_clk" clock.
- 			 */
- 			clk = devm_clk_get(dev, "peripheral_clk");
--			if (!IS_ERR(clk))
--				goto found;
--
--			dev_err(dev, "failed to get %s (%ld)\n", clk_names[i],
--				PTR_ERR(clk));
--			return PTR_ERR(clk);
-+			if (IS_ERR(clk))
-+				return dev_err_probe(dev, PTR_ERR(clk),
-+						     "failed to get %s\n",
-+						     clk_names[i]);
- 		}
- 
--found:
- 		if (IS_ERR(clk))
- 			dev_dbg(dev, "failed to get %s (%ld)\n", clk_names[i],
- 				PTR_ERR(clk));
+This been tested on a various of Renesas (SuperH and ARM) SoCs.
+
+Thanks!
+
+Geert Uytterhoeven (3):
+  serial: sh-sci: Drop support for "sci_ick" clock
+  serial: sh-sci: Use dev_err_probe()
+  serial: sh-sci: Use devm_clk_get_optional()
+
+ drivers/tty/serial/sh-sci.c | 37 +++++++++++--------------------------
+ 1 file changed, 11 insertions(+), 26 deletions(-)
+
 -- 
 2.25.1
 
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
