@@ -2,115 +2,88 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ED44DC433F5
-	for <linux-sh@archiver.kernel.org>; Thu, 16 Dec 2021 10:41:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C396C433F5
+	for <linux-sh@archiver.kernel.org>; Thu, 16 Dec 2021 14:17:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236151AbhLPKlS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 16 Dec 2021 05:41:18 -0500
-Received: from elvis.franken.de ([193.175.24.41]:50245 "EHLO elvis.franken.de"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S230467AbhLPKlS (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Thu, 16 Dec 2021 05:41:18 -0500
-Received: from uucp (helo=alpha)
-        by elvis.franken.de with local-bsmtp (Exim 3.36 #1)
-        id 1mxoC2-00089d-00; Thu, 16 Dec 2021 11:40:58 +0100
-Received: by alpha.franken.de (Postfix, from userid 1000)
-        id 5AA86C075D; Thu, 16 Dec 2021 11:40:49 +0100 (CET)
-Date:   Thu, 16 Dec 2021 11:40:49 +0100
-From:   Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-To:     Alexandre Ghiti <alexandre.ghiti@canonical.com>
-Cc:     Steve French <sfrench@samba.org>, Jonathan Corbet <corbet@lwn.net>,
-        David Howells <dhowells@redhat.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Matti Vaittinen <matti.vaittinen@fi.rohmeurope.com>,
-        Lee Jones <lee.jones@linaro.org>,
-        Jeff Layton <jlayton@kernel.org>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Ronnie Sahlberg <lsahlber@redhat.com>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Wim Van Sebroeck <wim@linux-watchdog.org>,
-        Lukas Bulwahn <lukas.bulwahn@gmail.com>,
-        Luis Chamberlain <mcgrof@kernel.org>,
-        Kalle Valo <kvalo@codeaurora.org>, linux-cifs@vger.kernel.org,
-        samba-technical@lists.samba.org, linux-doc@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-cachefs@redhat.com,
-        linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
-        linux-power@fi.rohmeurope.com
-Subject: Re: [PATCH v2 0/6] Cleanup after removal of configs
-Message-ID: <20211216104049.GA10578@alpha.franken.de>
-References: <20211216094426.2083802-1-alexandre.ghiti@canonical.com>
+        id S237846AbhLPORl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 16 Dec 2021 09:17:41 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40774 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S234938AbhLPORk (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 16 Dec 2021 09:17:40 -0500
+Received: from michel.telenet-ops.be (michel.telenet-ops.be [IPv6:2a02:1800:110:4::f00:18])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4BAD5C061574
+        for <linux-sh@vger.kernel.org>; Thu, 16 Dec 2021 06:17:40 -0800 (PST)
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed20:d13f:527c:5504:a743])
+        by michel.telenet-ops.be with bizsmtp
+        id X2He2600G250X30062HeX9; Thu, 16 Dec 2021 15:17:38 +0100
+Received: from rox.of.borg ([192.168.97.57])
+        by ramsan.of.borg with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        (Exim 4.93)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1mxrZh-005QZh-VV; Thu, 16 Dec 2021 15:17:37 +0100
+Received: from geert by rox.of.borg with local (Exim 4.93)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1mxrZh-009yny-JS; Thu, 16 Dec 2021 15:17:37 +0100
+From:   Geert Uytterhoeven <geert+renesas@glider.be>
+To:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Jiri Slaby <jirislaby@kernel.org>
+Cc:     Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Ulrich Hecht <uli+renesas@fpond.eu>,
+        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+        linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+        linux-sh@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp,
+        Geert Uytterhoeven <geert+renesas@glider.be>
+Subject: [PATCH 1/3] serial: sh-sci: Drop support for "sci_ick" clock
+Date:   Thu, 16 Dec 2021 15:17:32 +0100
+Message-Id: <b4103e44d6ac46b6c1c264e2aeac80b39941fe74.1639663832.git.geert+renesas@glider.be>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <cover.1639663832.git.geert+renesas@glider.be>
+References: <cover.1639663832.git.geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20211216094426.2083802-1-alexandre.ghiti@canonical.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Dec 16, 2021 at 10:44:20AM +0100, Alexandre Ghiti wrote:
-> While bumping from 5.13 to 5.15, I found that a few deleted configs had
-> left some pieces here and there: this patchset cleans that.
-> 
-> Changes in v2:
-> - Rebase on top of v5.16-rc1
-> - Removed patch 6 since Matti said he would take care of that
-> - Added AB, RB
-> 
-> Alexandre Ghiti (6):
->   Documentation, arch: Remove leftovers from fscache/cachefiles
->     histograms
->   Documentation, arch: Remove leftovers from raw device
->   Documentation, arch: Remove leftovers from CIFS_WEAK_PW_HASH
->   arch: Remove leftovers from mandatory file locking
->   Documentation, arch, fs: Remove leftovers from fscache object list
->   arch: Remove leftovers from prism54 wireless driver
-> 
->  Documentation/admin-guide/cifs/usage.rst      |   7 +-
->  Documentation/admin-guide/devices.txt         |   8 +-
->  .../filesystems/caching/cachefiles.rst        |  34 -----
->  Documentation/filesystems/caching/fscache.rst | 123 +-----------------
->  arch/arm/configs/axm55xx_defconfig            |   3 -
->  arch/arm/configs/cm_x300_defconfig            |   1 -
->  arch/arm/configs/ezx_defconfig                |   1 -
->  arch/arm/configs/imote2_defconfig             |   1 -
->  arch/arm/configs/nhk8815_defconfig            |   1 -
->  arch/arm/configs/pxa_defconfig                |   1 -
->  arch/arm/configs/spear13xx_defconfig          |   1 -
->  arch/arm/configs/spear3xx_defconfig           |   1 -
->  arch/arm/configs/spear6xx_defconfig           |   1 -
->  arch/mips/configs/decstation_64_defconfig     |   1 -
->  arch/mips/configs/decstation_defconfig        |   1 -
->  arch/mips/configs/decstation_r4k_defconfig    |   1 -
->  arch/mips/configs/fuloong2e_defconfig         |   1 -
->  arch/mips/configs/ip27_defconfig              |   1 -
->  arch/mips/configs/malta_defconfig             |   1 -
->  arch/mips/configs/malta_kvm_defconfig         |   1 -
->  arch/mips/configs/malta_qemu_32r6_defconfig   |   1 -
->  arch/mips/configs/maltaaprp_defconfig         |   1 -
->  arch/mips/configs/maltasmvp_defconfig         |   1 -
->  arch/mips/configs/maltasmvp_eva_defconfig     |   1 -
->  arch/mips/configs/maltaup_defconfig           |   1 -
->  arch/mips/configs/maltaup_xpa_defconfig       |   1 -
->  arch/powerpc/configs/pmac32_defconfig         |   1 -
->  arch/powerpc/configs/ppc6xx_defconfig         |   1 -
->  arch/powerpc/configs/pseries_defconfig        |   1 -
->  arch/sh/configs/titan_defconfig               |   1 -
->  fs/fscache/object.c                           |   3 -
->  fs/fscache/proc.c                             |  12 --
->  32 files changed, 6 insertions(+), 209 deletions(-)
+Since commit 1b463bd51042927e ("ARM: dts: r8a7794: Rename the serial
+port clock to fck") in v4.6, all upstream DTS files call the SCIF
+functional clock "fck".
 
-for the MIPS parts:
+Hence the time is ripe to drop backward-compatibility with old DTBs that
+use the old "sci_ick" name.
 
-Acked-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Note that such old DTBs have stopped working anyway since commit
+58256143cff7c2e0 ("clk: renesas: Remove R-Car Gen2 legacy DT clock
+support") in v5.5.
+---
+ drivers/tty/serial/sh-sci.c | 11 -----------
+ 1 file changed, 11 deletions(-)
 
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 88005d2fc2a00b0b..686ca1777222b1d4 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2784,17 +2784,6 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
+ 			return -EPROBE_DEFER;
+ 
+ 		if (IS_ERR(clk) && i == SCI_FCK) {
+-			/*
+-			 * "fck" used to be called "sci_ick", and we need to
+-			 * maintain DT backward compatibility.
+-			 */
+-			clk = devm_clk_get(dev, "sci_ick");
+-			if (PTR_ERR(clk) == -EPROBE_DEFER)
+-				return -EPROBE_DEFER;
+-
+-			if (!IS_ERR(clk))
+-				goto found;
+-
+ 			/*
+ 			 * Not all SH platforms declare a clock lookup entry
+ 			 * for SCI devices, in which case we need to get the
 -- 
-Crap can work. Given enough thrust pigs will fly, but it's not necessarily a
-good idea.                                                [ RFC1925, 2.3 ]
+2.25.1
+
