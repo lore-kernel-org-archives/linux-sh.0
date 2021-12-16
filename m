@@ -2,108 +2,97 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8228C433FE
-	for <linux-sh@archiver.kernel.org>; Thu, 16 Dec 2021 14:54:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB7EFC4332F
+	for <linux-sh@archiver.kernel.org>; Thu, 16 Dec 2021 15:17:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237989AbhLPOyA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 16 Dec 2021 09:54:00 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49244 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235059AbhLPOx7 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 16 Dec 2021 09:53:59 -0500
-Received: from perceval.ideasonboard.com (perceval.ideasonboard.com [IPv6:2001:4b98:dc2:55:216:3eff:fef7:d647])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A87DCC06173E;
-        Thu, 16 Dec 2021 06:53:59 -0800 (PST)
-Received: from pendragon.ideasonboard.com (62-78-145-57.bb.dnainternet.fi [62.78.145.57])
-        by perceval.ideasonboard.com (Postfix) with ESMTPSA id 26B483F6;
-        Thu, 16 Dec 2021 15:53:58 +0100 (CET)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=ideasonboard.com;
-        s=mail; t=1639666438;
-        bh=LCgyCIFjvDLvFwIifCwiILneQWUk+R/rzgaJ8vk99YA=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=NX8xNu/ODaRhOLdINyRjNY++zmkC2MaVZSmiGrc+W4+5vm5pHll34mmpFmJnfBM2G
-         P+20i2SsvDjRpg1N930Lx3N+2H5QKmU7/v8RQkLzOHaJ5sJpS/xx3rugBTOILkWi/T
-         3Hm8DZnSgSzoDkfhhSSj5GAKFymov1HRFXzbGSN0=
-Date:   Thu, 16 Dec 2021 16:53:56 +0200
-From:   Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+        id S238342AbhLPPRE (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 16 Dec 2021 10:17:04 -0500
+Received: from www.zeus03.de ([194.117.254.33]:48314 "EHLO mail.zeus03.de"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S230228AbhLPPRE (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Thu, 16 Dec 2021 10:17:04 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=simple; d=sang-engineering.com; h=
+        date:from:to:cc:subject:message-id:references:mime-version
+        :content-type:in-reply-to; s=k1; bh=+8LH1JXZc3vVd15/5ty3P8fj5Rbw
+        53Xz5kFME0Bh0qY=; b=c3/f4Ypw2I69OX+zLiJ+bbjxByGJD77YE2IL9ZXOA+Pd
+        FkJ7l04PgWmP7bmOAVQpgLl1yb2XyyWh/giYR+RndwxqIGYOmqbvDCWo3WOBewnd
+        EuUg9uL3hwEpcl4Hoc9fB+4AgfTr6XoJ/gJYhJi3Olq9VbSDqd2gOYsb6uzkb4c=
+Received: (qmail 3751849 invoked from network); 16 Dec 2021 16:17:01 +0100
+Received: by mail.zeus03.de with ESMTPSA (TLS_AES_256_GCM_SHA384 encrypted, authenticated); 16 Dec 2021 16:17:01 +0100
+X-UD-Smtp-Session: l3s3148p1@0GkJ6kTT9JkgAQnoAGshAMNCcCooTOTk
+Date:   Thu, 16 Dec 2021 16:17:01 +0100
+From:   Wolfram Sang <wsa+renesas@sang-engineering.com>
 To:     Geert Uytterhoeven <geert+renesas@glider.be>
 Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         Jiri Slaby <jirislaby@kernel.org>,
-        Wolfram Sang <wsa+renesas@sang-engineering.com>,
         Ulrich Hecht <uli+renesas@fpond.eu>,
+        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
         linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
         linux-sh@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp
-Subject: Re: [PATCH 3/3] serial: sh-sci: Use devm_clk_get_optional()
-Message-ID: <YbtTBN2OrKPOfXmR@pendragon.ideasonboard.com>
+Subject: Re: [PATCH 1/3] serial: sh-sci: Drop support for "sci_ick" clock
+Message-ID: <YbtYbeybi2t6oEPz@kunai>
+Mail-Followup-To: Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Jiri Slaby <jirislaby@kernel.org>,
+        Ulrich Hecht <uli+renesas@fpond.eu>,
+        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+        linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+        linux-sh@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp
 References: <cover.1639663832.git.geert+renesas@glider.be>
- <bce27288cb570952dd96b441e1af8768ad8b4870.1639663832.git.geert+renesas@glider.be>
+ <b4103e44d6ac46b6c1c264e2aeac80b39941fe74.1639663832.git.geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha512;
+        protocol="application/pgp-signature"; boundary="JfXCO/GGNuYOvHmo"
 Content-Disposition: inline
-In-Reply-To: <bce27288cb570952dd96b441e1af8768ad8b4870.1639663832.git.geert+renesas@glider.be>
+In-Reply-To: <b4103e44d6ac46b6c1c264e2aeac80b39941fe74.1639663832.git.geert+renesas@glider.be>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Geert,
 
-Thank you for the patch.
+--JfXCO/GGNuYOvHmo
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Thu, Dec 16, 2021 at 03:17:34PM +0100, Geert Uytterhoeven wrote:
-> The sh-sci driver supports up to four input clocks, of which only the
-> first one is mandatory.
-> 
-> Replace devm_clk_get() and custom error checking by
-> devm_clk_get_optional(), to simplify the code and to catch all real
-> errors.
-> 
+On Thu, Dec 16, 2021 at 03:17:32PM +0100, Geert Uytterhoeven wrote:
+> Since commit 1b463bd51042927e ("ARM: dts: r8a7794: Rename the serial
+> port clock to fck") in v4.6, all upstream DTS files call the SCIF
+> functional clock "fck".
+>=20
+> Hence the time is ripe to drop backward-compatibility with old DTBs that
+> use the old "sci_ick" name.
+>=20
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
 > ---
->  drivers/tty/serial/sh-sci.c | 15 +++++++--------
->  1 file changed, 7 insertions(+), 8 deletions(-)
-> 
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index 5f6d85b8e3dd4173..bb3adf0a109324ca 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -2779,11 +2779,11 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
->  		clk_names[SCI_SCK] = "hsck";
->  
->  	for (i = 0; i < SCI_NUM_CLKS; i++) {
-> -		clk = devm_clk_get(dev, clk_names[i]);
-> -		if (PTR_ERR(clk) == -EPROBE_DEFER)
-> -			return -EPROBE_DEFER;
-> +		clk = devm_clk_get_optional(dev, clk_names[i]);
-> +		if (IS_ERR(clk))
-> +			return PTR_ERR(clk);
->  
-> -		if (IS_ERR(clk) && i == SCI_FCK) {
-> +		if (!clk && i == SCI_FCK) {
->  			/*
->  			 * Not all SH platforms declare a clock lookup entry
->  			 * for SCI devices, in which case we need to get the
-> @@ -2796,13 +2796,12 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
->  						     clk_names[i]);
->  		}
->  
-> -		if (IS_ERR(clk))
-> -			dev_dbg(dev, "failed to get %s (%ld)\n", clk_names[i],
-> -				PTR_ERR(clk));
-> +		if (!clk)
-> +			dev_dbg(dev, "failed to get %s\n", clk_names[i]);
->  		else
->  			dev_dbg(dev, "clk %s is %pC rate %lu\n", clk_names[i],
->  				clk, clk_get_rate(clk));
-> -		sci_port->clks[i] = IS_ERR(clk) ? NULL : clk;
-> +		sci_port->clks[i] = clk;
->  	}
->  	return 0;
->  }
+> Note that such old DTBs have stopped working anyway since commit
+> 58256143cff7c2e0 ("clk: renesas: Remove R-Car Gen2 legacy DT clock
+> support") in v5.5.
 
--- 
-Regards,
+Ah, with that paragraph in mind:
 
-Laurent Pinchart
+Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+
+
+--JfXCO/GGNuYOvHmo
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCgAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAmG7WG0ACgkQFA3kzBSg
+KbZWrw//ZU3WSAi08e8sQG4QdKB7eDQTGeCSgoFDLkGViP99ixeOMvupRZw7pcFj
+J5R9YeMzXqoJbw+C42yN7upxuhMCtYQ1jks9YP3uYrWwGCeEbelg4WRWh0KSLC8g
+GafTINh1pek3Gado9acyUsyCK0U9IG+DgIkZ+RQ8aoB/fY02lLIHPKtl/R1Gyg9n
+O54I1YdwLaUci2zoF5a6dAYAnJctlrVuNwCIxMiuyX0hoigaY9fh6p/D5338v6Gh
+g4H4VvoPsiIvM/Op7ZZgDJZ6R91V82e5MAtU/W0Fk48fJ36zcETB8g7U57KVuB6v
+/bSD9OXHcvTLsvwv5bcs/dS75aKZCQiFCLBwd6qJ+AISHPAQWDsKRfcOeyfaLVeE
+gVIx6T6pykavAcbMiG8eCDKNzBbnajLsJf7GZozk1iLA1aDP5+M7luDfWZkyfgVH
+LG5D6DyFvGqQKkgqLpnyDVAe0YDzhuwmIqWD5l4xFcONLxJb5ZQVKIJ6678UpT/0
++B4O7O76wVRVFoIoHoYSpxnW1gAG2cjrmlAf3lqj6uvPdgy2C5OhQLPz6Igy84/t
+4Y6JkzFjF8uKI5FnZjIXqzrJEu+lFkOha4ku31mP73RUSEwrFdCAJJG/h0JyhFp8
+na29UH0NpJzSvJXIm/fDQ8eIIV4RZB7BLD6Vwm8GsTc1ILvPg+I=
+=b7Ic
+-----END PGP SIGNATURE-----
+
+--JfXCO/GGNuYOvHmo--
