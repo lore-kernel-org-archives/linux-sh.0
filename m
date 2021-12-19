@@ -2,155 +2,85 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0AA5AC433F5
-	for <linux-sh@archiver.kernel.org>; Fri, 17 Dec 2021 13:54:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D62AC433EF
+	for <linux-sh@archiver.kernel.org>; Sun, 19 Dec 2021 10:34:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236884AbhLQNyW (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 17 Dec 2021 08:54:22 -0500
-Received: from gate.crashing.org ([63.228.1.57]:60104 "EHLO gate.crashing.org"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S231667AbhLQNyV (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Fri, 17 Dec 2021 08:54:21 -0500
-Received: from gate.crashing.org (localhost.localdomain [127.0.0.1])
-        by gate.crashing.org (8.14.1/8.14.1) with ESMTP id 1BHDZQmf021580;
-        Fri, 17 Dec 2021 07:35:26 -0600
-Received: (from segher@localhost)
-        by gate.crashing.org (8.14.1/8.14.1/Submit) id 1BHDZJZQ021573;
-        Fri, 17 Dec 2021 07:35:19 -0600
-X-Authentication-Warning: gate.crashing.org: segher set sender to segher@kernel.crashing.org using -f
-Date:   Fri, 17 Dec 2021 07:35:18 -0600
-From:   Segher Boessenkool <segher@kernel.crashing.org>
-To:     David Laight <David.Laight@aculab.com>
-Cc:     Ard Biesheuvel <ardb@kernel.org>,
-        "linux-wireless@vger.kernel.org" <linux-wireless@vger.kernel.org>,
-        "Jason A. Donenfeld" <Jason@zx2c4.com>,
-        Rich Felker <dalias@libc.org>,
-        "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>,
-        "Richard Russon (FlatCap)" <ldm@flatcap.org>,
-        X86 ML <x86@kernel.org>,
-        Amitkumar Karwar <amitkarwar@gmail.com>,
-        James Morris <jmorris@namei.org>,
-        Eric Dumazet <edumazet@google.com>,
-        Paul Mackerras <paulus@samba.org>,
-        linux-m68k <linux-m68k@vger.kernel.org>,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        "open list:SPARC + UltraSPARC (sparc/sparc64)" 
-        <sparclinux@vger.kernel.org>, Stafford Horne <shorne@gmail.com>,
-        linux-arch <linux-arch@vger.kernel.org>,
-        Florian Fainelli <f.fainelli@gmail.com>,
-        Yoshinori Sato <ysato@users.osdn.me>,
-        Russell King <linux@armlinux.org.uk>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        Ingo Molnar <mingo@redhat.com>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Kalle Valo <kvalo@codeaurora.org>,
-        Vladimir Oltean <vladimir.oltean@nxp.com>,
-        Jakub Kicinski <kuba@kernel.org>,
-        "Serge E. Hallyn" <serge@hallyn.com>,
-        Jonas Bonn <jonas@southpole.se>,
-        Kees Cook <keescook@chromium.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Ganapathi Bhat <ganapathi017@gmail.com>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        "linux-block@vger.kernel.org" <linux-block@vger.kernel.org>,
-        "openrisc@lists.librecores.org" <openrisc@lists.librecores.org>,
-        Borislav Petkov <bp@alien8.de>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        Jens Axboe <axboe@kernel.dk>, Arnd Bergmann <arnd@kernel.org>,
-        John Johansen <john.johansen@canonical.com>,
-        Xinming Hu <huxinming820@gmail.com>,
-        Vineet Gupta <vgupta@synopsys.com>,
-        Nick Desaulniers <ndesaulniers@google.com>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        "linux-ntfs-dev@lists.sourceforge.net" 
-        <linux-ntfs-dev@lists.sourceforge.net>,
-        "linux-security-module@vger.kernel.org" 
-        <linux-security-module@vger.kernel.org>,
-        Linux Crypto Mailing List <linux-crypto@vger.kernel.org>,
-        "open list:BPF JIT for MIPS (32-BIT AND 64-BIT)" 
-        <netdev@vger.kernel.org>,
-        "johannes@sipsolutions.net" <johannes@sipsolutions.net>,
-        "open list:LINUX FOR POWERPC (32-BIT AND 64-BIT)" 
-        <linuxppc-dev@lists.ozlabs.org>,
-        Sharvari Harisangam <sharvari.harisangam@nxp.com>
-Subject: Re: [PATCH v2 00/13] Unify asm/unaligned.h around struct helper
-Message-ID: <20211217133518.GR614@gate.crashing.org>
-References: <20210514100106.3404011-1-arnd@kernel.org> <CAMj1kXG0CNomZ0aXxh_4094fT+g4bVWFCkrd7QwgTQgiqoxMWA@mail.gmail.com> <20211216185620.GP614@gate.crashing.org> <698cfc52a0d441f7b9f29424be82b2e8@AcuMS.aculab.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <698cfc52a0d441f7b9f29424be82b2e8@AcuMS.aculab.com>
-User-Agent: Mutt/1.4.2.3i
+        id S231683AbhLSKep (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 19 Dec 2021 05:34:45 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57290 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229801AbhLSKeo (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 19 Dec 2021 05:34:44 -0500
+Received: from mail-oi1-x235.google.com (mail-oi1-x235.google.com [IPv6:2607:f8b0:4864:20::235])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 13EB5C061574
+        for <linux-sh@vger.kernel.org>; Sun, 19 Dec 2021 02:34:44 -0800 (PST)
+Received: by mail-oi1-x235.google.com with SMTP id u74so11166564oie.8
+        for <linux-sh@vger.kernel.org>; Sun, 19 Dec 2021 02:34:44 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20210112.gappssmtp.com; s=20210112;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=pFU92apYAvOiDgemoMKCF8lI/J5BTvrn5LAkNJ5Lc+Q=;
+        b=6jyafL3WnyPHvnRov0EkqpVnS67kASRtzX3BTUeCWVpnIbYjILTsdwD/ZiNVuGq2S8
+         qd+f1U5SszDNTsNOgZSwLOiAOgW6R/DcIMO9LwpKkNs9v2JfFxxsBm47QYIxi0IDunpK
+         ZFc9a+U5/ZXJ68hjkFwPjebzjhkiimJ3KxYQX8fDMZvGPwCIACLvMbmksxZ39LszbjTQ
+         niRDZApbbb5840Xt3112Z78RUh930C8scpv1At4jqijzA7Sm9FjOPlCW2VGiKwxir8Vd
+         ohfsRKc9XLh/yzctnJyRotaTt5cvQlbO1WmQ0E9eTmiAEmGc/Y0gKcz4dB0akaRI+O+J
+         Uuxw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=pFU92apYAvOiDgemoMKCF8lI/J5BTvrn5LAkNJ5Lc+Q=;
+        b=NTIUPO4JghIfNO1saF/GggL9c4BBYhCY4u0BhfWV7OsfDRAN+pODIdBlf4E7vrvffU
+         KUS3OR1VI6QzBTgZtR9DfhZUpwkfmtP4ZM5IuFkVtw99vdAa3457CN0fR4EPkP/F2wrT
+         IF47QHpJEdWZGWk9pqysqhKlNWhdo3RiXNmnQYYq4XVPHz2dVoHUN5hUAQ4Lq44ZjbgC
+         U1b5RFQcacdF4WCgcDeshs082Jhj3ShTtIRJycXeI+MyHM7fUp5Ja6gisHENiPABpnBD
+         0eqjVQaIGvW9xRX04IU6xoMqkCm8ie+FE6sUIHntruL59vTPhGwwJYxG5Ce6WjBy76+h
+         cGBw==
+X-Gm-Message-State: AOAM533mliD5uVvaIjggKGK3yn9xs74shIe3Ivp2rTQlgD7TRkuCwDUI
+        jQd9zaxd9JnPDmm1HfhZ6YHHcloHPzCQDw==
+X-Google-Smtp-Source: ABdhPJwkz64GEp/3bR0EmpxAFoR/eSwzbqJ1wNpRSWEBhu44cGdNx5YCKHDBrP8TYcAFz5rQt2XsPw==
+X-Received: by 2002:a05:6808:1aa8:: with SMTP id bm40mr13294933oib.38.1639910082479;
+        Sun, 19 Dec 2021 02:34:42 -0800 (PST)
+Received: from [192.168.86.166] ([136.62.4.88])
+        by smtp.gmail.com with ESMTPSA id t3sm2677741otk.44.2021.12.19.02.34.41
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 19 Dec 2021 02:34:41 -0800 (PST)
+Subject: Re: [PATCH 0/3] serial: sh-sci: Clock handling improvements
+To:     Geert Uytterhoeven <geert+renesas@glider.be>,
+        Jiri Slaby <jirislaby@kernel.org>
+Cc:     Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Ulrich Hecht <uli+renesas@fpond.eu>,
+        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+        linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+        linux-sh@vger.kernel.org, uclinux-h8-devel@lists.sourceforge.jp
+References: <cover.1639663832.git.geert+renesas@glider.be>
+From:   Rob Landley <rob@landley.net>
+Message-ID: <7cbec488-01d1-1ee2-006a-a3835d42a0a7@landley.net>
+Date:   Sun, 19 Dec 2021 04:35:44 -0600
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.14.0
+MIME-Version: 1.0
+In-Reply-To: <cover.1639663832.git.geert+renesas@glider.be>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Dec 17, 2021 at 12:34:53PM +0000, David Laight wrote:
-> From: Segher Boessenkool
-> > Sent: 16 December 2021 18:56
-> ...
-> > > The only remaining problem here is reinterpreting a char* pointer to a
-> > > u32*, e.g., for accessing the IP address in an Ethernet frame when
-> > > NET_IP_ALIGN == 2, which could suffer from the same UB problem again,
-> > > as I understand it.
-> > 
-> > The problem is never casting a pointer to pointer to character type, and
-> > then later back to an appriopriate pointer type.
-> > These things are both required to work.
+On 12/16/21 8:17 AM, Geert Uytterhoeven wrote:
+> 	Hi Greg, Jiri,
 > 
-> I think that is true of 'void *', not 'char *'.
+> This patch series contains a legacy cleanup and two small improvements
+> for the Renesas (H)SCI(F) serial driver.
 
-No, see 6.3.2.3/7.  Both are allowed (and behave the same in fact).
+Tested-by: Rob Landley <rob@landley.net>
 
-> 'char' is special in that 'strict aliasing' doesn't apply to it.
-> (Which is actually a pain sometimes.)
+By the way, did you ever figure out how to get the first serial port to work on
+qemu so qemu-system-sh4 doesn't have to "-serial null -serial mon:stdio" to get
+a serial console?
 
-That has nothing to do with it.  Yes, you can validly access any memory
-as a character type, but that has nothing to do with what pointer casts
-are allowed and which are not.
-
-> > The problem always is accessing something as if it
-> > was something of another type, which is not valid C.  This however is
-> > exactly what -fno-strict-aliasing allows, so that works as well.
-> 
-> IIRC the C language only allows you to have pointers to valid data items.
-> (Since they can only be generated by the & operator on a valid item.)
-
-Not so.  For example you are explicitly allowed to have pointers one
-past the last element of an array (and do arithmetic on that!), and of
-course null pointers are a thing.
-
-C allows you to make up pointers from integers as well.  This is
-perfectly fine to do.  Accessing anything via such pointers might well
-be not standard C, of course.
-
-> Indirecting any other pointer is probably UB!
-
-If a pointer points to an object, indirecting it gives an lvalue of that
-object.  It does not matter how you got that pointer, all that matters
-is that it points at a valid object.
-
-> This (sort of) allows the compiler to 'look through' casts to find
-> what the actual type is (or might be).
-> It can then use that information to make optimisation choices.
-> This has caused grief with memcpy() calls that are trying to copy
-> a structure that the coder knows is misaligned to an aligned buffer.
-
-This is 6.5/7.
-
-Alignment is 6.2.8 but it doesn't actually come into play at all here.
-
-> So while *(unaligned_ptr *)char_ptr probably has to work.
-
-Only if the original pointer points to an object that is correct
-(including correctly aligned) for such an lvalue.
-
-> If the compiler can see *(unaligned_ptr *)(char *)int_ptr it can
-> assume the alignment of the 'int_ptr' and do a single aligned access.
-
-It is undefined behaviour to have an address in int_ptr that is not
-correctly aligned for whatever type it points to.
-
-
-Segher
+Rob
