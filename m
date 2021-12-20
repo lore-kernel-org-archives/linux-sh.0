@@ -2,171 +2,107 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 623F9C433F5
-	for <linux-sh@archiver.kernel.org>; Mon, 20 Dec 2021 10:18:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E6A57C433FE
+	for <linux-sh@archiver.kernel.org>; Mon, 20 Dec 2021 10:28:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230526AbhLTKSG (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 20 Dec 2021 05:18:06 -0500
-Received: from mail-vk1-f175.google.com ([209.85.221.175]:43564 "EHLO
-        mail-vk1-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230057AbhLTKSG (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 20 Dec 2021 05:18:06 -0500
-Received: by mail-vk1-f175.google.com with SMTP id u1so2765460vkn.10;
-        Mon, 20 Dec 2021 02:18:06 -0800 (PST)
+        id S231276AbhLTK2V (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 20 Dec 2021 05:28:21 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58070 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229533AbhLTK2U (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 20 Dec 2021 05:28:20 -0500
+Received: from mail-oi1-x22b.google.com (mail-oi1-x22b.google.com [IPv6:2607:f8b0:4864:20::22b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A5A14C06173E
+        for <linux-sh@vger.kernel.org>; Mon, 20 Dec 2021 02:28:20 -0800 (PST)
+Received: by mail-oi1-x22b.google.com with SMTP id m6so15099581oim.2
+        for <linux-sh@vger.kernel.org>; Mon, 20 Dec 2021 02:28:20 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20210112.gappssmtp.com; s=20210112;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=L4Sw67BXpIx21OZ/G/pQTCNTjSKUb09oaSZld1KnM60=;
+        b=wc4jConf2OyeQ5jgnUR8S55Kdd7aN73I/SDTcr37sMq7QH1MkC+Yq/9MVRpd4661HX
+         2LIG+VhT3VNMC7Pk+04MoTAxamrok6ffsbp7fYGsmcWMljKvDwqCKkcRjAi8n2y9HWqg
+         YsNR+DDAdompWe1+Y5WHRvLmdmXE9wDYMw51M/fPwgW+uZd10DY5mH4H7ikf0OCDNBvv
+         kremqXx8AB5QFabeF25for/DsWbViQfkOeFUsRKWBK7DHq2QLZMzBCOT0UUceCfJTJpA
+         UuoT2HxozkknP4jf8xZEyMOCyqltfd/+1u3L4gbRoWNQWoOJkOpzZfV5TXchc8EYWgHt
+         m5OA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=gWZeNP8DUHqqAPmXQI4X/CPyv8FN0UIhm7TiEmIly/k=;
-        b=MqX9yRohFFNss5cxtDLNFKEWZiUyNT9s2kDxiTYENf9jgU62FzpPLqCK3rs0P7LImS
-         Un463KJp7zJeTXh8iFa4KfJRNOUq0stIKc4+IWsmT7HPBwKjWTfApjpTqoPAJ2M0WzoQ
-         axaK/+vp6/o7LW5ImevziacaYFOasnrXltzgzROCxHQyKpgsJHC5LrqA7l4gdAqCDuLn
-         0MR73zOs1PO5NErloJVfQjVf/b/Hk8ZLYXkRUqgT/LRt74y2Ea0oLEwEh6RgIXytp92j
-         h+Wpjq4kkoQkVcPzUEZ6PLPT8MpsEOqJKR7lYhKQdx+l3tkffvcjoaQOGe76kUDY8dVO
-         g4cg==
-X-Gm-Message-State: AOAM53016lw/cjORY3/kPkS9acRLGR5WgpZVcCslC9iz2p6OOpzSvSYW
-        X17XqLfajV4X7Y1OPi4PkfQaeFE+NMRD4g==
-X-Google-Smtp-Source: ABdhPJzymXCIrWYiTxjG8eqNgwKA/3IM9NUqb/TQ6v1OVoDGmlW0Xv52Jh6xo6Cae7ONJiMFqhUPQw==
-X-Received: by 2002:a05:6122:906:: with SMTP id j6mr1894275vka.18.1639995485479;
-        Mon, 20 Dec 2021 02:18:05 -0800 (PST)
-Received: from mail-vk1-f175.google.com (mail-vk1-f175.google.com. [209.85.221.175])
-        by smtp.gmail.com with ESMTPSA id m25sm10292vsl.34.2021.12.20.02.18.04
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=L4Sw67BXpIx21OZ/G/pQTCNTjSKUb09oaSZld1KnM60=;
+        b=Yq/ZdlZUwlbfh2W7s1/IIn2P2Qw/vcDkYh24GwIGfY8zyVm+B60NsP8c2N4OSlETt0
+         XjVNVyFOz2+NEnuzFM4/ZxSaUtStsfLgUo5WFiL5n4MUbTteMJe5xwAEENzF06nBVXY0
+         EBhJYgnqi4Z0sQu0RSwOUMZCc3Y7MpUCDWRVwh8ppqG+j5kEuAfifXlDHa5+FYRqg7D8
+         JBjrkGk3etcw6/T/y4HTIiqHrZg35r+G6TzdOXw3zNQoR82ODzLYUYZP2CZNAEG+CK6h
+         5X98F8E17m6mM7Q9wnjjSKGalEn/cigKPJHQ4mszrDjBfKDILe1ffK+tiSPbZleQ1Pdy
+         6Oaw==
+X-Gm-Message-State: AOAM533uuvhGGPgIXfnE/3lrvMwGBcxZqytKluHb500xBaKSauCmymle
+        iu0g5IbErOwMBTgkeI4lMt1U+w==
+X-Google-Smtp-Source: ABdhPJxM7qO+4A2xJGs0I+14CmJKtx1V0TJOtS9RMiaqVDw4lLLizmC2YIlgoVc5+2YSj6Smi0rxqw==
+X-Received: by 2002:aca:230b:: with SMTP id e11mr17073975oie.22.1639996100050;
+        Mon, 20 Dec 2021 02:28:20 -0800 (PST)
+Received: from [192.168.86.166] ([136.62.4.88])
+        by smtp.gmail.com with ESMTPSA id 9sm3263578oij.16.2021.12.20.02.28.19
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 20 Dec 2021 02:18:05 -0800 (PST)
-Received: by mail-vk1-f175.google.com with SMTP id c10so3020467vkn.2;
-        Mon, 20 Dec 2021 02:18:04 -0800 (PST)
-X-Received: by 2002:a1f:9f04:: with SMTP id i4mr5112747vke.33.1639995484506;
- Mon, 20 Dec 2021 02:18:04 -0800 (PST)
-MIME-Version: 1.0
-References: <20211218165258.16716-1-prabhakar.mahadev-lad.rj@bp.renesas.com> <20211218165258.16716-3-prabhakar.mahadev-lad.rj@bp.renesas.com>
-In-Reply-To: <20211218165258.16716-3-prabhakar.mahadev-lad.rj@bp.renesas.com>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 20 Dec 2021 11:17:53 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdUg3=q7gyaVHP0XcYUOo3PQUUv8Hc8wp5faVQ+bTBpg4A@mail.gmail.com>
-Message-ID: <CAMuHMdUg3=q7gyaVHP0XcYUOo3PQUUv8Hc8wp5faVQ+bTBpg4A@mail.gmail.com>
-Subject: Re: [PATCH 2/3] i2c: sh_mobile: Use platform_get_irq_optional() to
- get the interrupt
-To:     Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
-Cc:     Rob Herring <robh+dt@kernel.org>,
-        Nicolas Saenz Julienne <nsaenz@kernel.org>,
-        Florian Fainelli <f.fainelli@gmail.com>,
-        Ray Jui <rjui@broadcom.com>,
-        Scott Branden <sbranden@broadcom.com>,
-        bcm-kernel-feedback-list <bcm-kernel-feedback-list@broadcom.com>,
-        Chris Brandt <chris.brandt@renesas.com>,
+        Mon, 20 Dec 2021 02:28:19 -0800 (PST)
+Subject: Re: [PATCH 0/3] serial: sh-sci: Clock handling improvements
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     Jiri Slaby <jirislaby@kernel.org>,
         Wolfram Sang <wsa+renesas@sang-engineering.com>,
-        Linux I2C <linux-i2c@vger.kernel.org>,
-        linux-rpi-kernel <linux-rpi-kernel@lists.infradead.org>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Ulrich Hecht <uli+renesas@fpond.eu>,
+        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+        "open list:SERIAL DRIVERS" <linux-serial@vger.kernel.org>,
         Linux-Renesas <linux-renesas-soc@vger.kernel.org>,
-        Prabhakar <prabhakar.csengg@gmail.com>,
-        Linux-sh list <linux-sh@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        "moderated list:H8/300 ARCHITECTURE" 
+        <uclinux-h8-devel@lists.sourceforge.jp>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Magnus Damm <magnus.damm@gmail.com>
+References: <cover.1639663832.git.geert+renesas@glider.be>
+ <7cbec488-01d1-1ee2-006a-a3835d42a0a7@landley.net>
+ <CAMuHMdUYu4hOjZMHy+bPrLpJ6=3tja0kJ7WwJ5TFhHivvi0DNQ@mail.gmail.com>
+From:   Rob Landley <rob@landley.net>
+Message-ID: <ffd9ed49-69eb-0508-d2fa-5585a1421d78@landley.net>
+Date:   Mon, 20 Dec 2021 04:29:24 -0600
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.14.0
+MIME-Version: 1.0
+In-Reply-To: <CAMuHMdUYu4hOjZMHy+bPrLpJ6=3tja0kJ7WwJ5TFhHivvi0DNQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Prabhakar,
+On 12/19/21 4:53 AM, Geert Uytterhoeven wrote:
+>> By the way, did you ever figure out how to get the first serial port to work on
+>> qemu so qemu-system-sh4 doesn't have to "-serial null -serial mon:stdio" to get
+>> a serial console?
+> 
+> Nope, same as last time you asked ;-)
 
-On Sat, Dec 18, 2021 at 5:59 PM Lad Prabhakar
-<prabhakar.mahadev-lad.rj@bp.renesas.com> wrote:
-> platform_get_resource(pdev, IORESOURCE_IRQ, ..) relies on static
-> allocation of IRQ resources in DT core code, this causes an issue
-> when using hierarchical interrupt domains using "interrupts" property
-> in the node as this bypasses the hierarchical setup and messes up the
-> irq chaining.
+Well it had been a couple years, you never know...
 
-Thanks for your patch!
+> However, upon a fresh look at linux/arch/sh/boards/mach-r2d/setup.c,
+> I noticed something I missed before: the SCI port is not available
+> as a UART, as it is used to talk SPI to an RTC.
 
-> In preparation for removal of static setup of IRQ resource from DT core
-> code use platform_get_irq_optional() for DT users only.
+/* Single Epson RTC-9701JE attached on CS0 */
 
-Why only for DT users?
-Plenty of driver code shared by Renesas ARM (DT-based) on SuperH
-(non-DT) SoCs already uses platform_get_irq_optional(), so I expect
-that to work for both.
+Huh. That does explain the CONFIG_RTC_DRV_R9701=y in rts7751r2d*_defconfig.
+(And also SPI SPI_SH_SCI MFD_SM501 RTC_CLASS and RTC_DRV_SH RTC_HCTOSYS which
+I've never gotten connected to QEMU.)
 
-> Signed-off-by: Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
+> So that means qemu
+> has the hardware description wrong?
 
-> --- a/drivers/i2c/busses/i2c-sh_mobile.c
-> +++ b/drivers/i2c/busses/i2c-sh_mobile.c
-> @@ -830,20 +830,41 @@ static void sh_mobile_i2c_release_dma(struct sh_mobile_i2c_data *pd)
->
->  static int sh_mobile_i2c_hook_irqs(struct platform_device *dev, struct sh_mobile_i2c_data *pd)
->  {
-> -       struct resource *res;
-> -       resource_size_t n;
-> +       struct device_node *np = dev_of_node(&dev->dev);
->         int k = 0, ret;
->
-> -       while ((res = platform_get_resource(dev, IORESOURCE_IRQ, k))) {
-> -               for (n = res->start; n <= res->end; n++) {
-> -                       ret = devm_request_irq(&dev->dev, n, sh_mobile_i2c_isr,
-> -                                         0, dev_name(&dev->dev), pd);
-> +       if (!np) {
-> +               struct resource *res;
-> +               resource_size_t n;
-> +
-> +               while ((res = platform_get_resource(dev, IORESOURCE_IRQ, k))) {
-> +                       for (n = res->start; n <= res->end; n++) {
-> +                               ret = devm_request_irq(&dev->dev, n, sh_mobile_i2c_isr,
-> +                                                      0, dev_name(&dev->dev), pd);
-> +                               if (ret) {
-> +                                       dev_err(&dev->dev, "cannot request IRQ %pa\n", &n);
-> +                                       return ret;
-> +                               }
-> +                       }
-> +                       k++;
-> +               }
-> +       } else {
-> +               int irq;
-> +
-> +               do {
-> +                       irq = platform_get_irq_optional(dev, k);
+It would be nice if qemu-system-sh4 grew an RTC. Looks like Sato-san and Magnus
+Damm are the qemu-system-sh4 maintainers? (cc'd)
 
-Check for irq == -ENXIO first, to simplify the checks below?
+Thanks,
 
-> +                       if (irq <= 0 && irq != -ENXIO)
-> +                               return irq ? irq : -ENXIO;
-
-Can irq == 0 really happen?
-
-All SuperH users of the "i2c-sh_mobile" platform device use an
-evt2irq() value that is non-zero.
-
-I might have missed something, but it seems the only user of IRQ 0 on
-SuperH is smsc911x Ethernet in arch/sh/boards/board-apsh4a3a.c and
-arch/sh/boards/board-apsh4ad0a.c, which use evt2irq(0x200).
-These should have been seeing the "0 is an invalid IRQ number"
-warning splat since it was introduced in commit a85a6c86c25be2d2
-("driver core: platform: Clarify that IRQ 0 is invalid"). Or not:
-the rare users may not have upgraded their kernels beyond v5.8 yet...
-
-> +                       if (irq == -ENXIO)
-> +                               break;
-> +                       ret = devm_request_irq(&dev->dev, irq, sh_mobile_i2c_isr,
-> +                                              0, dev_name(&dev->dev), pd);
->                         if (ret) {
-> -                               dev_err(&dev->dev, "cannot request IRQ %pa\n", &n);
-> +                               dev_err(&dev->dev, "cannot request IRQ %d\n", irq);
->                                 return ret;
->                         }
-> -               }
-> -               k++;
-> +                       k++;
-> +               } while (irq);
->         }
->
->         return k > 0 ? 0 : -ENOENT;
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Rob
