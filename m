@@ -2,57 +2,53 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20A8FC433EF
-	for <linux-sh@archiver.kernel.org>; Mon, 20 Dec 2021 11:56:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3AF01C433EF
+	for <linux-sh@archiver.kernel.org>; Mon, 20 Dec 2021 12:54:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232212AbhLTL4B (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 20 Dec 2021 06:56:01 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50276 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232119AbhLTL4A (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 20 Dec 2021 06:56:00 -0500
-Received: from mail-yb1-xb30.google.com (mail-yb1-xb30.google.com [IPv6:2607:f8b0:4864:20::b30])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A925EC061574;
-        Mon, 20 Dec 2021 03:56:00 -0800 (PST)
-Received: by mail-yb1-xb30.google.com with SMTP id y68so28053050ybe.1;
-        Mon, 20 Dec 2021 03:56:00 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=5/crEyEqm9JXUuy5rjWxQ+CMQQRqWO7tHqYVFHQvrBs=;
-        b=mXrhHqYHkn5WA7ONhl0448/qRonQDH308gWLxvXXjOj5BwqAJ5ce7EKjpyzKs/C2xu
-         acpRVM+USp+1N0Tx8VhwuySoFbC9axrKCU7f5sk1h781KOrvwHIt7XsRGNOYHcdHtxNr
-         8xGRDvTpZu1JccymjbSsD3rDkwZi3nHVWkIjKduwU1GDJZ8a7vQaxL9pM73AJ9LGY31T
-         WWjcmZ3nfgdLz4N+c5MU3Sgc72NQ9f8Or2TtAJKd1DP4iqWDAk9nVWBXD5AUqDMd0qie
-         swl7tZrd/LMJrFBh9CaoyjVSlcr5pLRaf/YqIYq++3Wv3jj4cwr7QjMeAuz3myO2R52f
-         McuA==
+        id S231617AbhLTMyX (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 20 Dec 2021 07:54:23 -0500
+Received: from mail-vk1-f175.google.com ([209.85.221.175]:35763 "EHLO
+        mail-vk1-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S230262AbhLTMyX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 20 Dec 2021 07:54:23 -0500
+Received: by mail-vk1-f175.google.com with SMTP id c10so3275607vkn.2;
+        Mon, 20 Dec 2021 04:54:22 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=5/crEyEqm9JXUuy5rjWxQ+CMQQRqWO7tHqYVFHQvrBs=;
-        b=w99VnqXRQoK91BhE4tUN29Qmd0iFmp1GiaE/nOeT8UHhY1Jgje+tTObNAg7YyQnrj/
-         vOmCJ+ViJOy8d1mXf2LqUfQ+Ohu1Le6g0f3VIA12j/F1l92p5d8kWd/bUM+ykMWXslkY
-         00lZyHW7iwa6AmowB9Bhkju0ugWTyscB/BPHduAyS6zK4Ge2hfHT3Q7fKHjj2wY8cYpY
-         cu8JklXk0wzPWdGnDs1dVh2aTnOBVBjPzsKuZfIEEAL6bmLtfFFFMZR14XHZl7S/F9v7
-         mhpgRwPUXVsjO3MRFcPHc98YKj+vV4SI/SKFNKWu1uAXL04FotFg+b7PHr7OzLk1NqE+
-         LZ6g==
-X-Gm-Message-State: AOAM531lwXTFpc/27utsF+fsFzsxoKeBha62qIUjHA6m6z1u4pyXrQQX
-        4Z4Kqx8a9DzwbI4/A3XDR2Bitm6R4aoBod5lEmE=
-X-Google-Smtp-Source: ABdhPJysWqs3UIISqCAQj4ffQ5qMe9Bpl2EXfUC7zH6b93AKzhohiEKwF4Ewph//Iz3ChGcjfDKCLckgOCL2PP+4gd8=
-X-Received: by 2002:a25:84c1:: with SMTP id x1mr22282261ybm.690.1640001359897;
- Mon, 20 Dec 2021 03:55:59 -0800 (PST)
+        bh=Ar2itvRaNRINX/GSg9lQ6GgUsoNPXNM6Gu4E6uHHTfw=;
+        b=HnGh5hYaUt7q/BtgK4hgy4gfljMcLdbv/Y54BNLyl4JqN9oKk7We7mnBpZjRsUjvE0
+         6FGScxMEV/5T3jzP7G2CVHI7T+HtqoZYw/j3VON2U2d7O1PJnwZfsNUitwyifwuNQm8W
+         +l21WPrpF0qptz4OM7EPooUo7IY4z0ibzPTWNd95PK+rNSrpshQ+udCZoSEoceosUovD
+         uFesNs6hzuTBHBsEBdN8vhXRPntJ1TKhRnVF3VuhlD9XKg5YDMr1FyfO80TNx1CmSMUW
+         mzLCouBDk7UNpLL5XEFYQhq3Ka9kwSTyftkmVPrAERsHH5t3+7VKrqnmMltAzoPQdIjA
+         vAow==
+X-Gm-Message-State: AOAM532XwGUwbCiaBFNCBXmPIjYrhP8qMHhivc5yaiolAaGsbl0dJWdl
+        fwpjRJZMTZ1RgiqRrYTnay/d6rH3AJ3aZA==
+X-Google-Smtp-Source: ABdhPJybL8p0es+ZM9gs/Ftai694BvQ/Lu/xq19E+1vkG1UIMUzBsayA9qdU2RCHdhLuoyAgisIjUg==
+X-Received: by 2002:a05:6122:8d1:: with SMTP id 17mr5319101vkg.24.1640004862346;
+        Mon, 20 Dec 2021 04:54:22 -0800 (PST)
+Received: from mail-ua1-f54.google.com (mail-ua1-f54.google.com. [209.85.222.54])
+        by smtp.gmail.com with ESMTPSA id x34sm2357363uac.12.2021.12.20.04.54.21
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 20 Dec 2021 04:54:21 -0800 (PST)
+Received: by mail-ua1-f54.google.com with SMTP id t13so17417193uad.9;
+        Mon, 20 Dec 2021 04:54:21 -0800 (PST)
+X-Received: by 2002:a67:c81c:: with SMTP id u28mr4062311vsk.38.1640004860988;
+ Mon, 20 Dec 2021 04:54:20 -0800 (PST)
 MIME-Version: 1.0
 References: <20211218165258.16716-1-prabhakar.mahadev-lad.rj@bp.renesas.com>
- <20211218165258.16716-3-prabhakar.mahadev-lad.rj@bp.renesas.com> <CAMuHMdUg3=q7gyaVHP0XcYUOo3PQUUv8Hc8wp5faVQ+bTBpg4A@mail.gmail.com>
-In-Reply-To: <CAMuHMdUg3=q7gyaVHP0XcYUOo3PQUUv8Hc8wp5faVQ+bTBpg4A@mail.gmail.com>
-From:   "Lad, Prabhakar" <prabhakar.csengg@gmail.com>
-Date:   Mon, 20 Dec 2021 11:55:33 +0000
-Message-ID: <CA+V-a8t7S2t94Tm7y8is1fJ2G0Es=xnKQQaj-7DJ53sF6zzJog@mail.gmail.com>
+ <20211218165258.16716-3-prabhakar.mahadev-lad.rj@bp.renesas.com>
+ <CAMuHMdUg3=q7gyaVHP0XcYUOo3PQUUv8Hc8wp5faVQ+bTBpg4A@mail.gmail.com> <CA+V-a8t7S2t94Tm7y8is1fJ2G0Es=xnKQQaj-7DJ53sF6zzJog@mail.gmail.com>
+In-Reply-To: <CA+V-a8t7S2t94Tm7y8is1fJ2G0Es=xnKQQaj-7DJ53sF6zzJog@mail.gmail.com>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Mon, 20 Dec 2021 13:54:09 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdVxcjJtcBoMCYAZyGCcLAmxeN=mWJSyJ+g9bHjJ1kYrPw@mail.gmail.com>
+Message-ID: <CAMuHMdVxcjJtcBoMCYAZyGCcLAmxeN=mWJSyJ+g9bHjJ1kYrPw@mail.gmail.com>
 Subject: Re: [PATCH 2/3] i2c: sh_mobile: Use platform_get_irq_optional() to
  get the interrupt
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
+To:     "Lad, Prabhakar" <prabhakar.csengg@gmail.com>
 Cc:     Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>,
         Rob Herring <robh+dt@kernel.org>,
         Nicolas Saenz Julienne <nsaenz@kernel.org>,
@@ -73,130 +69,69 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Geert,
+Hi Prabhakar,
 
-Thank you for the review.
-
-On Mon, Dec 20, 2021 at 10:18 AM Geert Uytterhoeven
-<geert@linux-m68k.org> wrote:
->
-> Hi Prabhakar,
->
-> On Sat, Dec 18, 2021 at 5:59 PM Lad Prabhakar
-> <prabhakar.mahadev-lad.rj@bp.renesas.com> wrote:
-> > platform_get_resource(pdev, IORESOURCE_IRQ, ..) relies on static
-> > allocation of IRQ resources in DT core code, this causes an issue
-> > when using hierarchical interrupt domains using "interrupts" property
-> > in the node as this bypasses the hierarchical setup and messes up the
-> > irq chaining.
->
-> Thanks for your patch!
->
-> > In preparation for removal of static setup of IRQ resource from DT core
-> > code use platform_get_irq_optional() for DT users only.
->
-> Why only for DT users?
-> Plenty of driver code shared by Renesas ARM (DT-based) on SuperH
-> (non-DT) SoCs already uses platform_get_irq_optional(), so I expect
-> that to work for both.
->
-For the non DT users the IRQ resource is passed as a range [0] and not
-a single interrupt so I went with this approach. Is there a way I'm
-missing where we could still use platform_get_irq_xyz() variants for
-such cases?
-
-> > Signed-off-by: Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
->
-> > --- a/drivers/i2c/busses/i2c-sh_mobile.c
-> > +++ b/drivers/i2c/busses/i2c-sh_mobile.c
-> > @@ -830,20 +830,41 @@ static void sh_mobile_i2c_release_dma(struct sh_mobile_i2c_data *pd)
+On Mon, Dec 20, 2021 at 12:56 PM Lad, Prabhakar
+<prabhakar.csengg@gmail.com> wrote:
+> On Mon, Dec 20, 2021 at 10:18 AM Geert Uytterhoeven
+> <geert@linux-m68k.org> wrote:
+> > On Sat, Dec 18, 2021 at 5:59 PM Lad Prabhakar
+> > <prabhakar.mahadev-lad.rj@bp.renesas.com> wrote:
+> > > platform_get_resource(pdev, IORESOURCE_IRQ, ..) relies on static
+> > > allocation of IRQ resources in DT core code, this causes an issue
+> > > when using hierarchical interrupt domains using "interrupts" property
+> > > in the node as this bypasses the hierarchical setup and messes up the
+> > > irq chaining.
 > >
-> >  static int sh_mobile_i2c_hook_irqs(struct platform_device *dev, struct sh_mobile_i2c_data *pd)
-> >  {
-> > -       struct resource *res;
-> > -       resource_size_t n;
-> > +       struct device_node *np = dev_of_node(&dev->dev);
-> >         int k = 0, ret;
+> > Thanks for your patch!
 > >
-> > -       while ((res = platform_get_resource(dev, IORESOURCE_IRQ, k))) {
-> > -               for (n = res->start; n <= res->end; n++) {
-> > -                       ret = devm_request_irq(&dev->dev, n, sh_mobile_i2c_isr,
-> > -                                         0, dev_name(&dev->dev), pd);
-> > +       if (!np) {
-> > +               struct resource *res;
-> > +               resource_size_t n;
-> > +
-> > +               while ((res = platform_get_resource(dev, IORESOURCE_IRQ, k))) {
-> > +                       for (n = res->start; n <= res->end; n++) {
-> > +                               ret = devm_request_irq(&dev->dev, n, sh_mobile_i2c_isr,
-> > +                                                      0, dev_name(&dev->dev), pd);
-> > +                               if (ret) {
-> > +                                       dev_err(&dev->dev, "cannot request IRQ %pa\n", &n);
-> > +                                       return ret;
-> > +                               }
-> > +                       }
-> > +                       k++;
-> > +               }
-> > +       } else {
-> > +               int irq;
-> > +
-> > +               do {
-> > +                       irq = platform_get_irq_optional(dev, k);
->
-> Check for irq == -ENXIO first, to simplify the checks below?
->
-OK.
-
-> > +                       if (irq <= 0 && irq != -ENXIO)
-> > +                               return irq ? irq : -ENXIO;
->
-> Can irq == 0 really happen?
->
-> All SuperH users of the "i2c-sh_mobile" platform device use an
-> evt2irq() value that is non-zero.
->
-> I might have missed something, but it seems the only user of IRQ 0 on
-> SuperH is smsc911x Ethernet in arch/sh/boards/board-apsh4a3a.c and
-> arch/sh/boards/board-apsh4ad0a.c, which use evt2irq(0x200).
->
-I'll keep that in mind if the Ethernet driver falls in the convection
-patch changes.
-
-> These should have been seeing the "0 is an invalid IRQ number"
-> warning splat since it was introduced in commit a85a6c86c25be2d2
-> ("driver core: platform: Clarify that IRQ 0 is invalid"). Or not:
-> the rare users may not have upgraded their kernels beyond v5.8 yet...
->
-Might be users have not updated their kernels.
-
-[0] https://elixir.bootlin.com/linux/v5.16-rc6/source/arch/sh/kernel/cpu/sh4a/setup-sh7724.c#L454
-
-Cheers,
-Prabhakar
-> > +                       if (irq == -ENXIO)
-> > +                               break;
-> > +                       ret = devm_request_irq(&dev->dev, irq, sh_mobile_i2c_isr,
-> > +                                              0, dev_name(&dev->dev), pd);
-> >                         if (ret) {
-> > -                               dev_err(&dev->dev, "cannot request IRQ %pa\n", &n);
-> > +                               dev_err(&dev->dev, "cannot request IRQ %d\n", irq);
-> >                                 return ret;
-> >                         }
-> > -               }
-> > -               k++;
-> > +                       k++;
-> > +               } while (irq);
-> >         }
+> > > In preparation for removal of static setup of IRQ resource from DT core
+> > > code use platform_get_irq_optional() for DT users only.
 > >
-> >         return k > 0 ? 0 : -ENOENT;
->
-> Gr{oetje,eeting}s,
->
->                         Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+> > Why only for DT users?
+> > Plenty of driver code shared by Renesas ARM (DT-based) on SuperH
+> > (non-DT) SoCs already uses platform_get_irq_optional(), so I expect
+> > that to work for both.
+> >
+> For the non DT users the IRQ resource is passed as a range [0] and not
+> a single interrupt so I went with this approach. Is there a way I'm
+> missing where we could still use platform_get_irq_xyz() variants for
+> such cases?
+
+Oh, I didn't realize it used a single resource with a range.
+Is this common, i.e. would it make sense to add support for this to
+platform_get_irq_optional()?
+
+> > > --- a/drivers/i2c/busses/i2c-sh_mobile.c
+> > > +++ b/drivers/i2c/busses/i2c-sh_mobile.c
+
+> > > +                       if (irq <= 0 && irq != -ENXIO)
+> > > +                               return irq ? irq : -ENXIO;
+> >
+> > Can irq == 0 really happen?
+> >
+> > All SuperH users of the "i2c-sh_mobile" platform device use an
+> > evt2irq() value that is non-zero.
+> >
+> > I might have missed something, but it seems the only user of IRQ 0 on
+> > SuperH is smsc911x Ethernet in arch/sh/boards/board-apsh4a3a.c and
+> > arch/sh/boards/board-apsh4ad0a.c, which use evt2irq(0x200).
+> >
+> I'll keep that in mind if the Ethernet driver falls in the convection
+> patch changes.
+
+The Ethernet driver was converted 6 years ago, cfr. commit
+965b2aa78fbcb831 ("net/smsc911x: fix irq resource allocation failure").
+
+> [0] https://elixir.bootlin.com/linux/v5.16-rc6/source/arch/sh/kernel/cpu/sh4a/setup-sh7724.c#L454
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
