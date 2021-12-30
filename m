@@ -2,59 +2,54 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 81B6EC433EF
-	for <linux-sh@archiver.kernel.org>; Wed, 29 Dec 2021 04:15:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C98A8C4332F
+	for <linux-sh@archiver.kernel.org>; Thu, 30 Dec 2021 01:48:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238714AbhL2EPx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 28 Dec 2021 23:15:53 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41258 "EHLO
+        id S234216AbhL3Bsl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 29 Dec 2021 20:48:41 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41828 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234127AbhL2EPv (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Dec 2021 23:15:51 -0500
-Received: from mail-pj1-x1032.google.com (mail-pj1-x1032.google.com [IPv6:2607:f8b0:4864:20::1032])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C8C94C061574;
-        Tue, 28 Dec 2021 20:15:50 -0800 (PST)
-Received: by mail-pj1-x1032.google.com with SMTP id y16-20020a17090a6c9000b001b13ffaa625so23422714pjj.2;
-        Tue, 28 Dec 2021 20:15:50 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=subject:to:references:cc:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-transfer-encoding;
-        bh=oo7gGMOkpKZtsifyQrF9uAkP4p/YBx2m/GIQa4Tq0YE=;
-        b=SgUGGN6VhsGuSJ4+x7BV8WmUFGnq6AU/S3MGIbRuvgcmK5iemLDPInHX4HtGqsDBOP
-         X+ShdKiY6WGvZxZzGll6Lp9gXc9Iofh3zmxzNCmw3Dn3KgxWg++og+5/hcFLsP9lz2Xr
-         2GF2kpRya+BTKsokuDFYluzgdLN+9R6oDmfEeq5seHlKkuDQoWmHZpB5lsfFQJLsHHhA
-         J+6fOy7KSqTSf4RHl5+/z/3kvG8PPaQjjUrbxIO/1twWStmOPd1O5hfeFSFRI+7/1KDQ
-         V6duyLcOszOYryU8sc+sZAK9TuMnZyNEumxgE9K0xpEM2ht/1sy9t9bhV6U0QsHIl9qG
-         4r0w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:subject:to:references:cc:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-transfer-encoding;
-        bh=oo7gGMOkpKZtsifyQrF9uAkP4p/YBx2m/GIQa4Tq0YE=;
-        b=KBzGL3s6jpYh+zXFhoNlooew1/s2GIKYj5wfouCPH52rXnr7OLq4aIlM9+vyDkDQCd
-         IpiAzfROzeAL+RaHmxRt4fQg0ufpGoqkoc+B7E1ztllRb0oZRIn0Fuqwikmg5sTDz7UX
-         auuBwKPJy1Zw7LwGNj/yBVs1wB0NX7XhKCpQ/+3PZjfpx1qjNThDu6bb9jBB17m+E4OD
-         J+IX+YHJSHEZ3odqwLIYkjOr1a9rduBLYr2MDq9pv/a8dboDTFxQo0tYvmlWi56MKCLB
-         r84H/bcbmM29qT19TbQ1N72096xP2NTeXQbo3fWS48Zk44qUqT7Ar/nYZsdw97ZbOd9g
-         aKEA==
-X-Gm-Message-State: AOAM531I4wokCnYgtKI2zEtEXZOhBV7RmIehnSoVPQ5d3n7itvOZeaVa
-        X8yVj//7LWOtrWR33DZPFyg=
-X-Google-Smtp-Source: ABdhPJyjCqGNhQip5lk1bKe/Q9ifrO91rL0XFrD4WiMDGXXaVLZjRe+Yr2Tq1lIfNgSSQkzYLSFwkQ==
-X-Received: by 2002:a17:902:d48a:b0:148:a8ae:7ab7 with SMTP id c10-20020a170902d48a00b00148a8ae7ab7mr24900237plg.171.1640751350387;
-        Tue, 28 Dec 2021 20:15:50 -0800 (PST)
-Received: from [10.1.1.24] (222-155-5-102-adsl.sparkbb.co.nz. [222.155.5.102])
-        by smtp.gmail.com with ESMTPSA id k9sm13406563pgr.47.2021.12.28.20.15.25
-        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 28 Dec 2021 20:15:49 -0800 (PST)
-Subject: Re: [RFC 02/32] Kconfig: introduce HAS_IOPORT option and select it as
- necessary
-To:     Arnd Bergmann <arnd@kernel.org>
+        with ESMTP id S232602AbhL3Bsj (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 29 Dec 2021 20:48:39 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2C1D7C061574;
+        Wed, 29 Dec 2021 17:48:39 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 86D2E6153E;
+        Thu, 30 Dec 2021 01:48:38 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E9B23C36AE1;
+        Thu, 30 Dec 2021 01:48:37 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1640828918;
+        bh=81MO7TacqQe8I5ko0Q8CwbDD4h/99BabB8aCDnWo0lQ=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=jV/ycMyovnmu9pbcNLGboBsGNIaWSzFTvzZh+Mx9BwCcRQ4wkFdLiGVgRkSKcn1av
+         ACLs6uhvkNBtfi0XHerEvqHG9aDTvnP0DnkZJ23UYJg1+rpYpog6ujNkprLhWymjWQ
+         hVule2DRwuMYA/yBJYRWrQwKgFOWg5pmJP5humJTKlsctrnxGtyKKZV5MSDWgxD4iF
+         I5CuYOMx73K52jL6eCERvW0K/qJG/CffLHmjFLJmfkBjIdmKueJ2GntN8tpN5P6Axu
+         +/iJu6EgjHsacUxqabHsXc98pimqrGXyEBPg4rn/eSXczdd7VTgu9//4yKsbFR5Bjg
+         v0Y95G8jR3CDw==
+Received: by mail-ed1-f51.google.com with SMTP id z29so92390390edl.7;
+        Wed, 29 Dec 2021 17:48:37 -0800 (PST)
+X-Gm-Message-State: AOAM530OpLJ1IYviklCTU8VkdA4pUW5FJ1KdT+R3XO0MKZs3RJLmTmzG
+        dtm/uwS2c5wclM3VztcRc9KsNAhfDVWfcqgCzoA=
+X-Google-Smtp-Source: ABdhPJzYCdRT3l8EecUhPG5EkJz2cutHHKG9LloyzIQNKSKV94+pfG1Ig6YswCjGB6BOha4SzAwDhMxmrauWo4kartQ=
+X-Received: by 2002:a5d:6989:: with SMTP id g9mr22454231wru.12.1640828906053;
+ Wed, 29 Dec 2021 17:48:26 -0800 (PST)
+MIME-Version: 1.0
 References: <20211227164317.4146918-1-schnelle@linux.ibm.com>
- <20211227164317.4146918-3-schnelle@linux.ibm.com>
- <CAMuHMdXk6VcDryekkMJ3aGFnw4LLWOWMi8M2PwjT81PsOsOBMQ@mail.gmail.com>
- <d406b93a-0f76-d056-3380-65d459d05ea9@gmail.com>
- <CAK8P3a2j-OFUUp+haHoV4PyL-On4EASZ9+59SDqNqmL8Gv_k7Q@mail.gmail.com>
+ <20211227164317.4146918-3-schnelle@linux.ibm.com> <CAMuHMdXk6VcDryekkMJ3aGFnw4LLWOWMi8M2PwjT81PsOsOBMQ@mail.gmail.com>
+ <d406b93a-0f76-d056-3380-65d459d05ea9@gmail.com> <CAK8P3a2j-OFUUp+haHoV4PyL-On4EASZ9+59SDqNqmL8Gv_k7Q@mail.gmail.com>
+ <1f90f145-219e-1cad-6162-9959d43a27ad@gmail.com>
+In-Reply-To: <1f90f145-219e-1cad-6162-9959d43a27ad@gmail.com>
+From:   Arnd Bergmann <arnd@kernel.org>
+Date:   Wed, 29 Dec 2021 20:48:23 -0500
+X-Gmail-Original-Message-ID: <CAK8P3a3NqU-3nUZ9ve=QyPPB5Uep3eK+_hicjjSiP8VuL4FYfA@mail.gmail.com>
+Message-ID: <CAK8P3a3NqU-3nUZ9ve=QyPPB5Uep3eK+_hicjjSiP8VuL4FYfA@mail.gmail.com>
+Subject: Re: [RFC 02/32] Kconfig: introduce HAS_IOPORT option and select it as necessary
+To:     Michael Schmitz <schmitzmic@gmail.com>
 Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
         Niklas Schnelle <schnelle@linux.ibm.com>,
         Bjorn Helgaas <bhelgaas@google.com>,
@@ -101,94 +96,41 @@ Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
         linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
         linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
         Greg Ungerer <gerg@linux-m68k.org>
-From:   Michael Schmitz <schmitzmic@gmail.com>
-Message-ID: <1f90f145-219e-1cad-6162-9959d43a27ad@gmail.com>
-Date:   Wed, 29 Dec 2021 17:15:23 +1300
-User-Agent: Mozilla/5.0 (X11; Linux ppc; rv:45.0) Gecko/20100101
- Icedove/45.4.0
-MIME-Version: 1.0
-In-Reply-To: <CAK8P3a2j-OFUUp+haHoV4PyL-On4EASZ9+59SDqNqmL8Gv_k7Q@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Arnd,
+On Tue, Dec 28, 2021 at 11:15 PM Michael Schmitz <schmitzmic@gmail.com> wrote:
+> Am 29.12.2021 um 16:41 schrieb Arnd Bergmann:
+> > On Tue, Dec 28, 2021 at 8:20 PM Michael Schmitz <schmitzmic@gmail.com> wrote:
+> I'd hope not - we spent some effort to make sure setting ATARI_ROM_ISA
+> does not affect other m68k platforms when e.g. building multiplatform
+> kernels.
 
-Am 29.12.2021 um 16:41 schrieb Arnd Bergmann:
-> On Tue, Dec 28, 2021 at 8:20 PM Michael Schmitz <schmitzmic@gmail.com> wrote:
->> Am 28.12.2021 um 23:08 schrieb Geert Uytterhoeven:
->>> On Mon, Dec 27, 2021 at 5:44 PM Niklas Schnelle <schnelle@linux.ibm.com> wrote:
->>>> We introduce a new HAS_IOPORT Kconfig option to gate support for
->>>> I/O port access. In a future patch HAS_IOPORT=n will disable compilation
->>>> of the I/O accessor functions inb()/outb() and friends on architectures
->>>> which can not meaningfully support legacy I/O spaces. On these platforms
->>>> inb()/outb() etc are currently just stubs in asm-generic/io.h which when
->>>> called will cause a NULL pointer access which some compilers actually
->>>> detect and warn about.
->>>>
->>>> The dependencies on HAS_IOPORT in drivers as well as ifdefs for
->>>> HAS_IOPORT specific sections will be added in subsequent patches on
->>>> a per subsystem basis. Then a final patch will ifdef the I/O access
->>>> functions on HAS_IOPORT thus turning any use not gated by HAS_IOPORT
->>>> into a compile-time warning.
->>>>
->>>> Link: https://lore.kernel.org/lkml/CAHk-=wg80je=K7madF4e7WrRNp37e3qh6y10Svhdc7O8SZ_-8g@mail.gmail.com/
->>>> Co-developed-by: Arnd Bergmann <arnd@kernel.org>
->>>> Signed-off-by: Arnd Bergmann <arnd@kernel.org>
->>>> Signed-off-by: Niklas Schnelle <schnelle@linux.ibm.com>
->>>
->>> Thanks for your patch!
->>>
->>>> --- a/arch/m68k/Kconfig
->>>> +++ b/arch/m68k/Kconfig
->>>> @@ -16,6 +16,7 @@ config M68K
->>>>         select GENERIC_CPU_DEVICES
->>>>         select GENERIC_IOMAP
->>>>         select GENERIC_IRQ_SHOW
->>>> +       select HAS_IOPORT
->>>>         select HAVE_AOUT if MMU
->>>>         select HAVE_ASM_MODVERSIONS
->>>>         select HAVE_DEBUG_BUGVERBOSE
->>>
->>> This looks way too broad to me: most m68k platform do not have I/O
->>> port access support.
->>>
->>> My gut feeling says:
->>>
->>>     select HAS_IOPORT if PCI || ISA
->>>
->>> but that might miss some intricate details...
->>
->> In particular, this misses the Atari ROM port ISA adapter case -
->>
->>         select HAS_IOPORT if PCI || ISA || ATARI_ROM_ISA
->>
->> might do instead.
->
-> Right, makes sense. I had suggested to go the easy way and assume that
-> each architecture would select HAS_IOPORT if any configuration supports
-> it, but it looks like for m68k there is a clearly defined set of platforms that
-> do.
->
-> Note that for the platforms that don't set any of the three symbols, the
-> fallback makes inb() an alias for readb() with a different argument type,
-> so there may be m68k specific drivers that rely on this, but those would
-> already be broken if ATARI_ROM_ISA is set.
+Ok
 
-I'd hope not - we spent some effort to make sure setting ATARI_ROM_ISA 
-does not affect other m68k platforms when e.g. building multiplatform 
-kernels.
+> Replacing inb() by readb() without any address translation won't do much
+> good for m68k though - addresses in the traditional ISA I/O port range
+> would hit the (unmapped) zero page.
 
-Replacing inb() by readb() without any address translation won't do much 
-good for m68k though - addresses in the traditional ISA I/O port range 
-would hit the (unmapped) zero page.
+Correct, this is exactly the problem that Niklas is trying to solve here:
+we do have drivers that hit this bug, and on s390 clang actually produces
+a compile-time error for drivers that cause a NULL pointer dereference
+this way.
 
-Cheers,
+What some other architectures do is to rely on inb()/outb() to have a
+zero-based offset, and use an io_offset in PCI buses to ensure that a
+low port number on the bus gets translated into a pointer value for the
+virtual mapping in the kernel, which is then represented as an unsigned
+int.
 
-	Michael
+As this is indistinguishable from architectures that just don't have
+a base address for I/O ports (we unfortunately picked 0 as the default
+PCI_IOBASE value), my suggestion was to start marking architectures
+that may have this problem as using HAS_IOPORT in order to keep
+the existing behavior unchanged. If m68k does not suffer from this,
+making HAS_IOPORT conditional on those config options that actually
+need it would of course be best.
 
->
->           Arnd
->
+         Arnd
