@@ -2,99 +2,85 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A57DC433EF
-	for <linux-sh@archiver.kernel.org>; Wed,  5 Jan 2022 08:59:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5388DC433F5
+	for <linux-sh@archiver.kernel.org>; Wed,  5 Jan 2022 17:44:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232615AbiAEI7Z (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 5 Jan 2022 03:59:25 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51498 "EHLO
+        id S242477AbiAERox (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 5 Jan 2022 12:44:53 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58782 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230087AbiAEI7Z (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 5 Jan 2022 03:59:25 -0500
-Received: from metis.ext.pengutronix.de (metis.ext.pengutronix.de [IPv6:2001:67c:670:201:290:27ff:fe1d:cc33])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D455EC061761
-        for <linux-sh@vger.kernel.org>; Wed,  5 Jan 2022 00:59:24 -0800 (PST)
-Received: from gallifrey.ext.pengutronix.de ([2001:67c:670:201:5054:ff:fe8d:eefb] helo=bjornoya.blackshift.org)
-        by metis.ext.pengutronix.de with esmtps (TLS1.3:ECDHE_RSA_AES_256_GCM_SHA384:256)
-        (Exim 4.92)
-        (envelope-from <mkl@pengutronix.de>)
-        id 1n528h-0005wh-Bz
-        for linux-sh@vger.kernel.org; Wed, 05 Jan 2022 09:59:23 +0100
-Received: from dspam.blackshift.org (localhost [127.0.0.1])
-        by bjornoya.blackshift.org (Postfix) with SMTP id 2620E6D17A6
-        for <linux-sh@vger.kernel.org>; Wed,  5 Jan 2022 08:59:22 +0000 (UTC)
-Received: from hardanger.blackshift.org (unknown [172.20.34.65])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-        (Client did not present a certificate)
-        by bjornoya.blackshift.org (Postfix) with ESMTPS id 803EE6D179F;
-        Wed,  5 Jan 2022 08:59:21 +0000 (UTC)
-Received: from blackshift.org (localhost [::1])
-        by hardanger.blackshift.org (OpenSMTPD) with ESMTP id b9cd842b;
-        Wed, 5 Jan 2022 08:59:21 +0000 (UTC)
-From:   Marc Kleine-Budde <mkl@pengutronix.de>
-To:     linux-sh@vger.kernel.org
-Cc:     Marc Kleine-Budde <mkl@pengutronix.de>,
-        Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>,
-        Sam Ravnborg <sam@ravnborg.org>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>
-Subject: [PATCH] sh: make iounmap() a static inline again
-Date:   Wed,  5 Jan 2022 09:57:47 +0100
-Message-Id: <20220105085746.1116726-1-mkl@pengutronix.de>
-X-Mailer: git-send-email 2.34.1
+        with ESMTP id S242475AbiAERox (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 5 Jan 2022 12:44:53 -0500
+Received: from mail-oi1-x233.google.com (mail-oi1-x233.google.com [IPv6:2607:f8b0:4864:20::233])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6BE29C0611FD
+        for <linux-sh@vger.kernel.org>; Wed,  5 Jan 2022 09:44:53 -0800 (PST)
+Received: by mail-oi1-x233.google.com with SMTP id s127so46321oig.2
+        for <linux-sh@vger.kernel.org>; Wed, 05 Jan 2022 09:44:53 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20210112.gappssmtp.com; s=20210112;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=CYkxlfgv45mqTZADc0Kifg55ygD2FGzQIL6sFuK7qLc=;
+        b=8J5Y+EYV/p4WRjI6UeE/U4rLd23xUQXQHMxZY2dziV7p38HniCS9/GD8MOzZYADJmz
+         I3Fzy/ruyj7TX1FJatMP8LTuIZfHcybsP/rSeCImRdtGbhgA3ZHHfXO+3lSoBbOag8bE
+         6XPYJzrj9hZjCii9MsycFuW5OtVvEwZEOJgT3erMsuhVkpu9inH2AZNZkHTwwNT9J7kI
+         cKE8HGcjzB9JThX0V4wIVdy+XR5IHaw16QF2RjsSTLuVASD2aLWtWS/ETGpbl+K2xoAb
+         49Az626oI52/jENAeGZckV6JiCSsIYom9bbK7rqoFqKuFbZnuA2Pyuz6z98Hb1TGYPOQ
+         pF3g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=CYkxlfgv45mqTZADc0Kifg55ygD2FGzQIL6sFuK7qLc=;
+        b=xz9REhfXeMswgNLUrdg5c/nMG8ET1Ynwivs8w//6c4uogGqXSZ4LHawbtEOSog7oSK
+         PUYCCIks1GYWYrVbPpbJjFkHaCVhSSfSQqK7TfHlbBuNtK53rO0uPxHZq4nJwdGupwSQ
+         +4QQmz7UAFTqS+Ch0a+OniLM6udxPeSmSegG2DVL0R8r6bXYkcgdMCvUatn27kFualvD
+         j0DsuGz+GTzK/yJ+e3TjUqXjgqj48ta3+ZrLYblbBVnNL/+5w63cX1QJNrgfUTgPGZ3A
+         lgc4PhoGRz1HScNbcdC7rxOwqlScZd1E+1nf5dTZmAlqMZh1ZzQd1KcaEIFwWrKDYO49
+         3EmA==
+X-Gm-Message-State: AOAM530RKMLvIqzISJeek3z9LARyfIPfyHY4XZtuk9pi7l2f612whg0E
+        RQYZFFBo6COAjs9OO8dYQKabtMU9PPFSVQ==
+X-Google-Smtp-Source: ABdhPJw7Vo+HXAvCcuQGUd58gCnDJV8yHSr52quHXZxS8lB1Hnf5ir7hrJCS9RaR54CbAbIfZFdKLA==
+X-Received: by 2002:aca:4b49:: with SMTP id y70mr460547oia.41.1641404692516;
+        Wed, 05 Jan 2022 09:44:52 -0800 (PST)
+Received: from [192.168.86.166] ([136.62.4.88])
+        by smtp.gmail.com with ESMTPSA id g2sm255418oos.47.2022.01.05.09.44.51
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 05 Jan 2022 09:44:52 -0800 (PST)
+Subject: Re: [PATCH] sh: sq: use default_groups in kobj_type
+To:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        linux-kernel@vger.kernel.org
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+References: <20220104162240.1309639-1-gregkh@linuxfoundation.org>
+From:   Rob Landley <rob@landley.net>
+Message-ID: <4622e641-1423-e72a-4f6d-5f2cc747a148@landley.net>
+Date:   Wed, 5 Jan 2022 11:46:28 -0600
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.14.0
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-SA-Exim-Connect-IP: 2001:67c:670:201:5054:ff:fe8d:eefb
-X-SA-Exim-Mail-From: mkl@pengutronix.de
-X-SA-Exim-Scanned: No (on metis.ext.pengutronix.de); SAEximRunCond expanded to false
-X-PTX-Original-Recipient: linux-sh@vger.kernel.org
+In-Reply-To: <20220104162240.1309639-1-gregkh@linuxfoundation.org>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The patch
+On 1/4/22 10:22 AM, Greg Kroah-Hartman wrote:
+> There are currently 2 ways to create a set of sysfs files for a
+> kobj_type, through the default_attrs field, and the default_groups
+> field.  Move the sh sq sysfs code to use default_groups field which has
+> been the preferred way since aa30f47cf666 ("kobject: Add support for
+> default attribute groups to kobj_type") so that we can soon get rid of
+> the obsolete default_attrs field.
 
-| 98c90e5ea34e sh: remove __iounmap
+Let's see, sh4-specific, depends on CONFIG_SH_STORE_QUEUES... it built but I'm
+not finding an "sq" entry under /proc. (Or anything with "mapping" in it...)
 
-removed the __iounmap macro for the NOMMU case, but also converted the
-static inline no-op iounmap() to a macro, resulting in lots of unused
-variable warnings.
+Oh well, probably right? Didn't break anything for me:
 
-This patch coverts the macro into a static inline function, similar to
-previous patches in the sh arch:
+Tested-by: Rob Landley <rob@landley.net>
 
-| 4580ba4ad2e6 sh: Convert iounmap() macros to inline functions
-| 733f0025f0fb sh: prevent warnings when using iounmap
-
-Fixes: 98c90e5ea34e ("sh: remove __iounmap")
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Sam Ravnborg <sam@ravnborg.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Rich Felker <dalias@libc.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
----
- arch/sh/include/asm/io.h | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index cf9a3ec32406..4960b8ff1ad4 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -271,7 +271,9 @@ static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
- #endif /* CONFIG_HAVE_IOREMAP_PROT */
- 
- #else /* CONFIG_MMU */
--#define iounmap(addr)		do { } while (0)
-+static inline void iounmap(void __iomem *addr)
-+{
-+}
- #define ioremap(offset, size)	((void __iomem *)(unsigned long)(offset))
- #endif /* CONFIG_MMU */
- 
--- 
-2.34.1
-
-
+Rob
