@@ -2,85 +2,99 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BD96AC433F5
-	for <linux-sh@archiver.kernel.org>; Tue,  4 Jan 2022 16:22:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A57DC433EF
+	for <linux-sh@archiver.kernel.org>; Wed,  5 Jan 2022 08:59:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235239AbiADQWs (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 4 Jan 2022 11:22:48 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52972 "EHLO
+        id S232615AbiAEI7Z (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 5 Jan 2022 03:59:25 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51498 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230389AbiADQWr (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 4 Jan 2022 11:22:47 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A7E89C061761;
-        Tue,  4 Jan 2022 08:22:47 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 6690BB81219;
-        Tue,  4 Jan 2022 16:22:46 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8BE1CC36AED;
-        Tue,  4 Jan 2022 16:22:44 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1641313365;
-        bh=wAmOVR9T9kyBtatsOPxWi2y7XzvNVY3MrgYex4P3wCM=;
-        h=From:To:Cc:Subject:Date:From;
-        b=fylmKqvxzFxnInU8kzn7jQampyiZTVLSzie5jFAIa0yL/k+RqMySaeprVz/UoXT/S
-         XYe89jBgRuSzUsYnmch/B7KrnkunJssJQyGt3T557ecB3V7hp956+ncsTd6X/MYyXG
-         GoRpXAXn0qHbn9FJnjeiGAZzLe3ofakukWxjkgeM=
-From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To:     linux-kernel@vger.kernel.org
-Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Subject: [PATCH] sh: sq: use default_groups in kobj_type
-Date:   Tue,  4 Jan 2022 17:22:40 +0100
-Message-Id: <20220104162240.1309639-1-gregkh@linuxfoundation.org>
+        with ESMTP id S230087AbiAEI7Z (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 5 Jan 2022 03:59:25 -0500
+Received: from metis.ext.pengutronix.de (metis.ext.pengutronix.de [IPv6:2001:67c:670:201:290:27ff:fe1d:cc33])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D455EC061761
+        for <linux-sh@vger.kernel.org>; Wed,  5 Jan 2022 00:59:24 -0800 (PST)
+Received: from gallifrey.ext.pengutronix.de ([2001:67c:670:201:5054:ff:fe8d:eefb] helo=bjornoya.blackshift.org)
+        by metis.ext.pengutronix.de with esmtps (TLS1.3:ECDHE_RSA_AES_256_GCM_SHA384:256)
+        (Exim 4.92)
+        (envelope-from <mkl@pengutronix.de>)
+        id 1n528h-0005wh-Bz
+        for linux-sh@vger.kernel.org; Wed, 05 Jan 2022 09:59:23 +0100
+Received: from dspam.blackshift.org (localhost [127.0.0.1])
+        by bjornoya.blackshift.org (Postfix) with SMTP id 2620E6D17A6
+        for <linux-sh@vger.kernel.org>; Wed,  5 Jan 2022 08:59:22 +0000 (UTC)
+Received: from hardanger.blackshift.org (unknown [172.20.34.65])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        (Client did not present a certificate)
+        by bjornoya.blackshift.org (Postfix) with ESMTPS id 803EE6D179F;
+        Wed,  5 Jan 2022 08:59:21 +0000 (UTC)
+Received: from blackshift.org (localhost [::1])
+        by hardanger.blackshift.org (OpenSMTPD) with ESMTP id b9cd842b;
+        Wed, 5 Jan 2022 08:59:21 +0000 (UTC)
+From:   Marc Kleine-Budde <mkl@pengutronix.de>
+To:     linux-sh@vger.kernel.org
+Cc:     Marc Kleine-Budde <mkl@pengutronix.de>,
+        Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>,
+        Sam Ravnborg <sam@ravnborg.org>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+Subject: [PATCH] sh: make iounmap() a static inline again
+Date:   Wed,  5 Jan 2022 09:57:47 +0100
+Message-Id: <20220105085746.1116726-1-mkl@pengutronix.de>
 X-Mailer: git-send-email 2.34.1
 MIME-Version: 1.0
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1372; h=from:subject; bh=wAmOVR9T9kyBtatsOPxWi2y7XzvNVY3MrgYex4P3wCM=; b=owGbwMvMwCRo6H6F97bub03G02pJDIlXSvwPJ5rHTF2TOGnm7ma1dJaYHD2O158PnDi/1uPN+cMT fvind8SyMAgyMciKKbJ82cZzdH/FIUUvQ9vTMHNYmUCGMHBxCsBEKr8zzBXVDLymu9FskrYY020zId vY5Xk6bgzzTLQ21Hi2PTXMUBYOvX/1Wofu6u3/AQ==
-X-Developer-Key: i=gregkh@linuxfoundation.org; a=openpgp; fpr=F4B60CC5BF78C2214A313DCB3147D40DDB2DFB29
 Content-Transfer-Encoding: 8bit
+X-SA-Exim-Connect-IP: 2001:67c:670:201:5054:ff:fe8d:eefb
+X-SA-Exim-Mail-From: mkl@pengutronix.de
+X-SA-Exim-Scanned: No (on metis.ext.pengutronix.de); SAEximRunCond expanded to false
+X-PTX-Original-Recipient: linux-sh@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-There are currently 2 ways to create a set of sysfs files for a
-kobj_type, through the default_attrs field, and the default_groups
-field.  Move the sh sq sysfs code to use default_groups field which has
-been the preferred way since aa30f47cf666 ("kobject: Add support for
-default attribute groups to kobj_type") so that we can soon get rid of
-the obsolete default_attrs field.
+The patch
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+| 98c90e5ea34e sh: remove __iounmap
+
+removed the __iounmap macro for the NOMMU case, but also converted the
+static inline no-op iounmap() to a macro, resulting in lots of unused
+variable warnings.
+
+This patch coverts the macro into a static inline function, similar to
+previous patches in the sh arch:
+
+| 4580ba4ad2e6 sh: Convert iounmap() macros to inline functions
+| 733f0025f0fb sh: prevent warnings when using iounmap
+
+Fixes: 98c90e5ea34e ("sh: remove __iounmap")
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Sam Ravnborg <sam@ravnborg.org>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>
 Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Signed-off-by: Marc Kleine-Budde <mkl@pengutronix.de>
 ---
- arch/sh/kernel/cpu/sh4/sq.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/sh/include/asm/io.h | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4/sq.c b/arch/sh/kernel/cpu/sh4/sq.c
-index d432164b23b7..a76b94e41e91 100644
---- a/arch/sh/kernel/cpu/sh4/sq.c
-+++ b/arch/sh/kernel/cpu/sh4/sq.c
-@@ -324,6 +324,7 @@ static struct attribute *sq_sysfs_attrs[] = {
- 	&mapping_attr.attr,
- 	NULL,
- };
-+ATTRIBUTE_GROUPS(sq_sysfs);
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index cf9a3ec32406..4960b8ff1ad4 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -271,7 +271,9 @@ static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
+ #endif /* CONFIG_HAVE_IOREMAP_PROT */
  
- static const struct sysfs_ops sq_sysfs_ops = {
- 	.show	= sq_sysfs_show,
-@@ -332,7 +333,7 @@ static const struct sysfs_ops sq_sysfs_ops = {
+ #else /* CONFIG_MMU */
+-#define iounmap(addr)		do { } while (0)
++static inline void iounmap(void __iomem *addr)
++{
++}
+ #define ioremap(offset, size)	((void __iomem *)(unsigned long)(offset))
+ #endif /* CONFIG_MMU */
  
- static struct kobj_type ktype_percpu_entry = {
- 	.sysfs_ops	= &sq_sysfs_ops,
--	.default_attrs	= sq_sysfs_attrs,
-+	.default_groups	= sq_sysfs_groups,
- };
- 
- static int sq_dev_add(struct device *dev, struct subsys_interface *sif)
 -- 
 2.34.1
+
 
