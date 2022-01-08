@@ -2,76 +2,191 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 95D59C433F5
-	for <linux-sh@archiver.kernel.org>; Wed,  5 Jan 2022 18:13:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3987EC433F5
+	for <linux-sh@archiver.kernel.org>; Sat,  8 Jan 2022 23:35:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242736AbiAESN2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 5 Jan 2022 13:13:28 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37150 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242792AbiAESN0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 5 Jan 2022 13:13:26 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 93D30C061201;
-        Wed,  5 Jan 2022 10:13:26 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 0840761803;
-        Wed,  5 Jan 2022 18:13:25 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E6910C36AE0;
-        Wed,  5 Jan 2022 18:13:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1641406404;
-        bh=zhplsuu66hz6tRG+gx2Tb2xspbLyWTB04cTwrjsM9aQ=;
+        id S234976AbiAHXfg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 8 Jan 2022 18:35:36 -0500
+Received: from rere.qmqm.pl ([91.227.64.183]:6635 "EHLO rere.qmqm.pl"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S230502AbiAHXfe (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Sat, 8 Jan 2022 18:35:34 -0500
+Received: from remote.user (localhost [127.0.0.1])
+        by rere.qmqm.pl (Postfix) with ESMTPSA id 4JWbzn6Bf4z9c;
+        Sun,  9 Jan 2022 00:35:17 +0100 (CET)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=rere.qmqm.pl; s=1;
+        t=1641684931; bh=PlUOfTOJmz/Ue3/EDBlVUxJ2DxqecfDU18/1xQbQtoA=;
         h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=rnPysyYOGBEvDCD83fCpLiRYaIGvY/GUIu2Ooq5os4IxEdAedWD6mJUOz3x0zFsyf
-         L2jbbF4mkEZuc/KZvN+83pkT94nLVVkzzzSvHRbIILN+arKDJpmXfpdQMVW3LnymPA
-         80Tb3euxv++XzZ2X+xsAuLB63yYPmsBVZYqkDsY4=
-Date:   Wed, 5 Jan 2022 19:13:22 +0100
-From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To:     Rob Landley <rob@landley.net>
-Cc:     linux-kernel@vger.kernel.org,
+        b=FscL30pAUhiOa20r1Aci5nnOyAPPM7+JoY4I/TdvClRTh0U4D6S+wg1hl5DP6lTxY
+         uXsR1x49ZX58OBDSXL5QGeKh44OE5Qx3HX+fhAHnzzl6d2Bb3RMolFLW/CZs7ANyT9
+         2B2bqDVSaDvrnFLV9W4laov2KVjSpYZyXNNSx0uhvIf6/Ty/Jc6im2Ya6WtOK+mKnU
+         8tBa912YBdNEWU6kN5XGlGndW+KwbfYMSoJHIv4OJWOXoW7NdW+vFlXd5iG2C0Sl5t
+         yLjrrdYJpGeB9xfuugFJFXVZkd4+VRh97hWFY+LEwPEsT5kUEeN00fOMl2F0IbFH2g
+         x9nJQfgC6GmfA==
+X-Virus-Status: Clean
+X-Virus-Scanned: clamav-milter 0.103.4 at mail
+Date:   Sun, 9 Jan 2022 00:35:15 +0100
+From:   =?iso-8859-2?Q?Micha=B3_Miros=B3aw?= <mirq-linux@rere.qmqm.pl>
+To:     Dmitry Osipenko <digetx@gmail.com>
+Cc:     Thierry Reding <thierry.reding@gmail.com>,
+        Jonathan Hunter <jonathanh@nvidia.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Joshua Thompson <funaho@jurai.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Sebastian Reichel <sre@kernel.org>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Philipp Zabel <p.zabel@pengutronix.de>,
+        Greentime Hu <green.hu@gmail.com>,
+        Vincent Chen <deanbo422@gmail.com>,
+        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Subject: Re: [PATCH] sh: sq: use default_groups in kobj_type
-Message-ID: <YdXfwnAnAvrcTQhk@kroah.com>
-References: <20220104162240.1309639-1-gregkh@linuxfoundation.org>
- <4622e641-1423-e72a-4f6d-5f2cc747a148@landley.net>
- <YdXa7y+3seYoV85z@kroah.com>
- <616fabc9-cf79-4c84-a1cc-6ecede77fa9c@landley.net>
+        Rich Felker <dalias@libc.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
+        Juergen Gross <jgross@suse.com>,
+        Stefano Stabellini <sstabellini@kernel.org>,
+        "Rafael J. Wysocki" <rafael@kernel.org>,
+        Len Brown <lenb@kernel.org>,
+        Santosh Shilimkar <ssantosh@kernel.org>,
+        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
+        Liam Girdwood <lgirdwood@gmail.com>,
+        Mark Brown <broonie@kernel.org>, Pavel Machek <pavel@ucw.cz>,
+        Lee Jones <lee.jones@linaro.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Daniel Lezcano <daniel.lezcano@linaro.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Ulf Hansson <ulf.hansson@linaro.org>, alankao@andestech.com,
+        "K . C . Kuen-Chern Lin" <kclin@andestech.com>,
+        linux-kernel@vger.kernel.org, linux-csky@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org, xen-devel@lists.xenproject.org,
+        linux-acpi@vger.kernel.org, linux-pm@vger.kernel.org,
+        linux-tegra@vger.kernel.org
+Subject: Re: [PATCH v5 04/21] kernel: Add combined power-off+restart handler
+ call chain API
+Message-ID: <Ydofs2CIfA+r5KAz@qmqm.qmqm.pl>
+References: <20211212210309.9851-1-digetx@gmail.com>
+ <20211212210309.9851-5-digetx@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=iso-8859-2
 Content-Disposition: inline
-In-Reply-To: <616fabc9-cf79-4c84-a1cc-6ecede77fa9c@landley.net>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <20211212210309.9851-5-digetx@gmail.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Jan 05, 2022 at 12:11:25PM -0600, Rob Landley wrote:
-> On 1/5/22 11:52 AM, Greg Kroah-Hartman wrote:
-> > On Wed, Jan 05, 2022 at 11:46:28AM -0600, Rob Landley wrote:
-> >> On 1/4/22 10:22 AM, Greg Kroah-Hartman wrote:
-> >> > There are currently 2 ways to create a set of sysfs files for a
-> >> > kobj_type, through the default_attrs field, and the default_groups
-> >> > field.  Move the sh sq sysfs code to use default_groups field which has
-> >> > been the preferred way since aa30f47cf666 ("kobject: Add support for
-> >> > default attribute groups to kobj_type") so that we can soon get rid of
-> >> > the obsolete default_attrs field.
-> >> 
-> >> Let's see, sh4-specific, depends on CONFIG_SH_STORE_QUEUES... it built but I'm
-> >> not finding an "sq" entry under /proc. (Or anything with "mapping" in it...)
-> >> 
-> >> Oh well, probably right? Didn't break anything for me:
-> >> 
-> >> Tested-by: Rob Landley <rob@landley.net>
-> > 
-> > Thanks!  Seems to pass 0-day testing as well :)
-> > 
-> > Should I take this in my tree?
-> 
-> Yes please.
+On Mon, Dec 13, 2021 at 12:02:52AM +0300, Dmitry Osipenko wrote:
+[...]
+> +/**
+> + * struct power_off_data - Power-off callback argument
+> + *
+> + * @cb_data: Callback data.
+> + */
+> +struct power_off_data {
+> +	void *cb_data;
+> +};
+> +
+> +/**
+> + * struct power_off_prep_data - Power-off preparation callback argument
+> + *
+> + * @cb_data: Callback data.
+> + */
+> +struct power_off_prep_data {
+> +	void *cb_data;
+> +};
 
-Wonderful, will go do that now.
+Why two exactly same structures? Why only a single pointer instead? If
+it just to enable type-checking callbacks, then thouse could be opaque
+or zero-sized structs that would be embedded or casted away in
+respective callbacks.
 
-greg k-h
+> +
+> +/**
+> + * struct restart_data - Restart callback argument
+> + *
+> + * @cb_data: Callback data.
+> + * @cmd: Restart command string.
+> + * @stop_chain: Further lower priority callbacks won't be executed if set to
+> + *		true. Can be changed within callback. Default is false.
+> + * @mode: Reboot mode ID.
+> + */
+> +struct restart_data {
+> +	void *cb_data;
+> +	const char *cmd;
+> +	bool stop_chain;
+> +	enum reboot_mode mode;
+> +};
+> +
+> +/**
+> + * struct reboot_prep_data - Reboot and shutdown preparation callback argument
+> + *
+> + * @cb_data: Callback data.
+> + * @cmd: Restart command string.
+> + * @stop_chain: Further lower priority callbacks won't be executed if set to
+> + *		true. Can be changed within callback. Default is false.
+
+Why would we want to stop power-off or erboot chain? If the callback
+succeded, then further calls won't be made. If it doesn't succeed, but
+possibly breaks the system somehow, it shouldn't return. Then the only
+case left would be to just try the next method of shutting down.
+
+> + * @mode: Preparation mode ID.
+> + */
+> +struct reboot_prep_data {
+> +	void *cb_data;
+> +	const char *cmd;
+> +	bool stop_chain;
+> +	enum reboot_prepare_mode mode;
+> +};
+> +
+> +struct sys_off_handler_private_data {
+> +	struct notifier_block power_off_nb;
+> +	struct notifier_block restart_nb;
+> +	struct notifier_block reboot_nb;
+
+What's the difference between restart and reboot?
+
+> +	void (*platform_power_off_cb)(void);
+> +	void (*simple_power_off_cb)(void *data);
+> +	void *simple_power_off_cb_data;
+> +	bool registered;
+> +};
+
+BTW, I couldn't find a right description of my idea of unifying the
+chains before, so let me sketch it now.
+
+The idea is to have a single system-off chain in which the callback
+gets a mode ({QUERY_*, PREP_*, DO_*} for each of {*_REBOOT, *_POWEROFF, ...?).
+The QUERY_* calls would be made in can_kernel_reboot/poweroff(): all
+would be called, and if at least one returned true, then the shutdown
+mode would continue. All of PREP_* would be called then. After that
+all DO_* would be tried until one doesn't return (succeeded or broke
+the system hard). Classic for(;;); could be a final fallback for the
+case where arch/machine (lowest priority) call would return instead
+of halting the system in machine-dependent way. The QUERY and PREP
+stages could be combined, but I haven't thought about it enough to
+see what conditions would need to be imposed on the callbacks in
+that case (maybe it's not worth the trouble, since it isn't a fast
+path anyway?). The goal here is to have less (duplicated) code in
+kernel, but otherwise it seems equivalent to your API proposal.
+
+Best Regards
+Micha³ Miros³aw
