@@ -2,77 +2,90 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B32E9C433EF
-	for <linux-sh@archiver.kernel.org>; Tue, 11 Jan 2022 11:24:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DFD2AC433F5
+	for <linux-sh@archiver.kernel.org>; Tue, 11 Jan 2022 11:31:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238265AbiAKLYD (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 11 Jan 2022 06:24:03 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42046 "EHLO
-        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238392AbiAKLX5 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 11 Jan 2022 06:23:57 -0500
-Received: from mail-oo1-xc30.google.com (mail-oo1-xc30.google.com [IPv6:2607:f8b0:4864:20::c30])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 558C5C06173F
-        for <linux-sh@vger.kernel.org>; Tue, 11 Jan 2022 03:23:56 -0800 (PST)
-Received: by mail-oo1-xc30.google.com with SMTP id y13-20020a4a624d000000b002daae38b0b5so4338687oog.9
-        for <linux-sh@vger.kernel.org>; Tue, 11 Jan 2022 03:23:56 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=swiecki.net; s=google;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :content-transfer-encoding;
-        bh=TL+aaQnHJ+YQDGa4PA70hqqn94yrQ4T94+aueUELYWM=;
-        b=ZemixStDd4Z46Dgb04Ynl6+SshuesEoduBjnoO+T8ogYipMBq/lmL4IwOmLQ1hZYry
-         QgAF+iIWHhnQvGLLbBWjsWeTzXquRxO+w49pva9puFlPKTEBn6otXSoArc3oCLPNdGfR
-         wmgm4R4Uq7lBL7jshFQ3PERXS0K7ggBpkRP8E=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:content-transfer-encoding;
-        bh=TL+aaQnHJ+YQDGa4PA70hqqn94yrQ4T94+aueUELYWM=;
-        b=Hs/aprcyjwrJHRgmLldEKIlh8TneLKg+7X/JUl+h8WJ8r+jU6n7MBxZf+mdgcsUChn
-         rqMXHtVYwjs4ov4LQfV+JQPzQ9TKyTG+M5LPuHu04MKhdk61TfDc+Nx0u7nm/YE2C9Fo
-         Vez2KcbYPASdb23esKvqPtL16L0NG7bNz27fb3cCBiOI1q6WXVNtZZW++FDRoLca0wUV
-         2doKGQxqQj8fAcPvWg71ExeX2I+UCtTqAirrG1Tu8CkTLDA1vDkd/gWDZAwaqVxPTHyw
-         yir5y4KU8R0UWGUo2lc7nBAOtTRaFSWP0TdyHNnYr+jsbzo0xljWd8P6r90XUJE8PS1j
-         0CHA==
-X-Gm-Message-State: AOAM531qk2GzKNIHkLY0cc728L+fXvEV9XcV4/sPDCmsjUwE4B95R9cy
-        49pBCWtXKyUKlrvnCjUqhzZ1WuTIlNpwXsOiPGGDxGNkAGp7Ng==
-X-Google-Smtp-Source: ABdhPJzw1Ykux+Liq0zg/PQ2UL1dAZyC589UGSIBhvc87txMePOWlG32fDr5uykTyPnITQvHEN4Sd8eoTgqow3MHH/g=
-X-Received: by 2002:a05:6820:319:: with SMTP id l25mr602425ooe.97.1641900235289;
- Tue, 11 Jan 2022 03:23:55 -0800 (PST)
+        id S1349497AbiAKLbx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 11 Jan 2022 06:31:53 -0500
+Received: from outpost1.zedat.fu-berlin.de ([130.133.4.66]:59855 "EHLO
+        outpost1.zedat.fu-berlin.de" rhost-flags-OK-OK-OK-OK)
+        by vger.kernel.org with ESMTP id S1349484AbiAKLbx (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 11 Jan 2022 06:31:53 -0500
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.94)
+          with esmtps (TLS1.2)
+          tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1n7FNX-003WFv-U4; Tue, 11 Jan 2022 12:31:51 +0100
+Received: from suse-laptop.physik.fu-berlin.de ([160.45.32.140])
+          by inpost2.zedat.fu-berlin.de (Exim 4.94)
+          with esmtpsa (TLS1.2)
+          tls TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1n7FNX-0011Io-Os; Tue, 11 Jan 2022 12:31:51 +0100
+Message-ID: <c947a46b-7c5e-6ca3-fabe-ce648d9c182c@physik.fu-berlin.de>
+Date:   Tue, 11 Jan 2022 12:31:51 +0100
 MIME-Version: 1.0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.4.1
+Subject: Re: Fwd: Debian on Linux-SH4
+Content-Language: en-US
+To:     =?UTF-8?Q?Robert_=c5=9awi=c4=99cki?= <robert@swiecki.net>
 References: <CAP145pjk471P9pUzhf-rpZiQvjd499i-VpL8iRECDWkSKM_cyA@mail.gmail.com>
-In-Reply-To: <CAP145pjk471P9pUzhf-rpZiQvjd499i-VpL8iRECDWkSKM_cyA@mail.gmail.com>
-From:   =?UTF-8?B?Um9iZXJ0IMWad2nEmWNraQ==?= <robert@swiecki.net>
-Date:   Tue, 11 Jan 2022 12:23:44 +0100
-Message-ID: <CAP145pjjyXs40Disg3QhFkkEp8CFXeBCHjn_8Hu=s1cxEjCUQg@mail.gmail.com>
-Subject: Fwd: Debian on Linux-SH4
-To:     linux-sh@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+ <CAP145pjjyXs40Disg3QhFkkEp8CFXeBCHjn_8Hu=s1cxEjCUQg@mail.gmail.com>
+Cc:     linux-sh@vger.kernel.org, debian-superh@lists.debian.org
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+In-Reply-To: <CAP145pjjyXs40Disg3QhFkkEp8CFXeBCHjn_8Hu=s1cxEjCUQg@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 160.45.32.140
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-+fwd linux-sh@vger.kernel.org
+Hi Robert!
 
----------- Forwarded message ---------
-Od: Robert =C5=9Awi=C4=99cki <robert@swiecki.net>
-Date: wt., 11 sty 2022 o 12:18
-Subject: Debian on Linux-SH4
-To: <debian-superh@lists.debian.org>
+On 1/11/22 12:23, Robert Święcki wrote:
+> Recently I tried to create a working modern disk image for Linux-SH4.
+> There were many problems, but I finally managed to pull it off.
+> 
+> If anyone needs a working Debian (unstable/experimental) + kernel
+> 5.15.0 - here're the images/kernels/scripts
 
-Hi,
+You could also create a Debian unstable environment for the sh4 architecture
+using debootstrap:
 
-Recently I tried to create a working modern disk image for Linux-SH4.
-There were many problems, but I finally managed to pull it off.
+suse-laptop:/tmp # debootstrap --no-check-gpg --arch=sh4 --foreign unstable debian-sh4-root http://ftp.ports.debian.org/debian-ports
+I: Retrieving InRelease 
+I: Retrieving Packages 
+I: Validating Packages 
+I: Resolving dependencies of required packages...
+(...)
+I: Extracting login...
+I: Extracting logsave...
+I: Extracting mawk...
+I: Extracting mount...
+I: Extracting ncurses-bin...
+I: Extracting passwd...
+I: Extracting perl-base...
+I: Extracting sed...
+I: Extracting sysvinit-utils...
+I: Extracting tar...
+I: Extracting util-linux...
+I: Extracting zlib1g...
+suse-laptop:/tmp #
 
-If anyone needs a working Debian (unstable/experimental) + kernel
-5.15.0 - here're the images/kernels/scripts
+Then run "./debootstrap/debootstrap --second-stage" on the target system.
 
-https://drive.google.com/drive/u/1/folders/1QE59v4goTG-IxMkuev5AB1b-PVhUZq_=
-B
+If your qemu-user is properly set up to use binfmt (which is currently not the case on my
+system), you can omit the "--foreign" option and get a ready-to-boot chroot for Debian sh4.
 
-Usernames/Passwords:
-root / ds
-ds / ds
+Adrian
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer - glaubitz@debian.org
+`. `'   Freie Universitaet Berlin - glaubitz@physik.fu-berlin.de
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+
