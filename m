@@ -2,144 +2,128 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E17D7C433F5
-	for <linux-sh@archiver.kernel.org>; Mon, 24 Jan 2022 12:58:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C5248C63697
+	for <linux-sh@archiver.kernel.org>; Wed, 26 Jan 2022 13:45:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242795AbiAXM6Y (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 24 Jan 2022 07:58:24 -0500
-Received: from foss.arm.com ([217.140.110.172]:33084 "EHLO foss.arm.com"
-        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-        id S242832AbiAXM6T (ORCPT <rfc822;linux-sh@vger.kernel.org>);
-        Mon, 24 Jan 2022 07:58:19 -0500
-Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 4C05D101E;
-        Mon, 24 Jan 2022 04:58:18 -0800 (PST)
-Received: from p8cg001049571a15.arm.com (unknown [10.163.43.190])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPA id 666CB3F7F5;
-        Mon, 24 Jan 2022 04:58:14 -0800 (PST)
-From:   Anshuman Khandual <anshuman.khandual@arm.com>
-To:     linux-mm@kvack.org
-Cc:     linux-kernel@vger.kernel.org, hch@infradead.org,
-        akpm@linux-foundation.org,
-        Anshuman Khandual <anshuman.khandual@arm.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Subject: [RFC V1 17/31] sh/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
-Date:   Mon, 24 Jan 2022 18:26:54 +0530
-Message-Id: <1643029028-12710-18-git-send-email-anshuman.khandual@arm.com>
-X-Mailer: git-send-email 2.7.4
-In-Reply-To: <1643029028-12710-1-git-send-email-anshuman.khandual@arm.com>
-References: <1643029028-12710-1-git-send-email-anshuman.khandual@arm.com>
+        id S241113AbiAZNpf (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 26 Jan 2022 08:45:35 -0500
+Received: from ams.source.kernel.org ([145.40.68.75]:58226 "EHLO
+        ams.source.kernel.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S235305AbiAZNpe (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 26 Jan 2022 08:45:34 -0500
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 7CE77B81E0F;
+        Wed, 26 Jan 2022 13:45:32 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A9195C340E3;
+        Wed, 26 Jan 2022 13:45:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+        s=korg; t=1643204731;
+        bh=aXQde9wq7cWvdCRLRrI1FIQr3++bEQ4exG2q/lhqD3E=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=v+g8gUQjIt/c0ktBUQcit03sTj8G5mLw8FT+LXQqudlxh2iXfgafDrgsKIgJcd+6A
+         KW7BP0Pf7wtiKC9gzDKJw1Q0VKMx5apmABXH/60JK3d2VK/Sw93FHWeCcfYpb1QPrC
+         cxProUa3b1FFVLRT4j2tOajkb4EpxDNqSymszfjw=
+Date:   Wed, 26 Jan 2022 14:45:28 +0100
+From:   Greg KH <gregkh@linuxfoundation.org>
+To:     Walt Drummond <walt@drummond.us>
+Cc:     agordeev@linux.ibm.com, arnd@arndb.de, benh@kernel.crashing.org,
+        borntraeger@linux.ibm.com, chris@zankel.net, davem@davemloft.net,
+        hca@linux.ibm.com, deller@gmx.de, ink@jurassic.park.msu.ru,
+        James.Bottomley@hansenpartnership.com, jirislaby@kernel.org,
+        mattst88@gmail.com, jcmvbkbc@gmail.com, mpe@ellerman.id.au,
+        paulus@samba.org, rth@twiddle.net, dalias@libc.org,
+        tsbogend@alpha.franken.de, gor@linux.ibm.com, ysato@users.osdn.me,
+        linux-kernel@vger.kernel.org, ar@cs.msu.ru,
+        linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org, sparclinux@vger.kernel.org
+Subject: Re: [PATCH 0/3] status: TTY status message request
+Message-ID: <YfFQeC1cUVFmISMK@kroah.com>
+References: <20220118044259.764945-1-walt@drummond.us>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220118044259.764945-1-walt@drummond.us>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-This defines and exports a platform specific custom vm_get_page_prot() via
-subscribing ARCH_HAS_VM_GET_PAGE_PROT. Subsequently all __SXXX and __PXXX
-macros can be dropped which are no longer needed.
+On Mon, Jan 17, 2022 at 08:42:57PM -0800, Walt Drummond wrote:
+> This patchset adds TTY status message request feature to the n_tty
+> line dicipline.  This feature prints a brief message containing basic
+> system and process group information to a user's TTY in response to a
+> new control character in the line dicipline (default Ctrl-T) or the
+> TIOCSTAT ioctl.  The message contains the current system load, the
+> name and PID of an interesting process in the forground process group,
+> it's run time, percent CPU usage and RSS.  An example of this message
+> is:
+> 
+>   load: 0.31  cmd: sleep 3616843 [sleeping] 0.36r 0.00u 0.00s 0% 696k
+> 
+> User API visible changes are limited to:
+>  - The addition of VSTATUS in termios.c_cc[]
+>  - The addition of NOKERNINFO bit in termios.l_cflags
+>  - The addition of the TIOCSTAT ioctl number
+> 
+> None of these changes break the existing kernel api as the termios
+> structure on all architectures has enough space in the control
+> character array (.c_cc) for the new character, and the other changes
+> are space agnostic.
+> 
+> This feature is in many other Unix-like systems, both current and
+> historical.  In other implementations, this feature would also send
+> SIGINFO to the process group; this implementation does not.
+> 
+> Walt Drummond (3):
+>   vstatus: Allow the n_tty line dicipline to write to a user tty
+>   vstatus: Add user space API definitions for VSTATUS, NOKERNINFO and
+>     TIOCSTAT
+>   status: Display an informational message when the VSTATUS character is
+>     pressed or TIOCSTAT ioctl is called.
+> 
+>  arch/alpha/include/asm/termios.h         |   4 +-
+>  arch/alpha/include/uapi/asm/ioctls.h     |   1 +
+>  arch/alpha/include/uapi/asm/termbits.h   |  34 ++---
+>  arch/ia64/include/asm/termios.h          |   4 +-
+>  arch/ia64/include/uapi/asm/termbits.h    |  34 ++---
+>  arch/mips/include/asm/termios.h          |   4 +-
+>  arch/mips/include/uapi/asm/ioctls.h      |   1 +
+>  arch/mips/include/uapi/asm/termbits.h    |  36 ++---
+>  arch/parisc/include/asm/termios.h        |   4 +-
+>  arch/parisc/include/uapi/asm/ioctls.h    |   1 +
+>  arch/parisc/include/uapi/asm/termbits.h  |  34 ++---
+>  arch/powerpc/include/asm/termios.h       |   4 +-
+>  arch/powerpc/include/uapi/asm/ioctls.h   |   2 +
+>  arch/powerpc/include/uapi/asm/termbits.h |  34 ++---
+>  arch/s390/include/asm/termios.h          |   4 +-
+>  arch/sh/include/uapi/asm/ioctls.h        |   1 +
+>  arch/sparc/include/uapi/asm/ioctls.h     |   1 +
+>  arch/sparc/include/uapi/asm/termbits.h   |  38 +++---
+>  arch/xtensa/include/uapi/asm/ioctls.h    |   1 +
+>  drivers/tty/Makefile                     |   2 +-
+>  drivers/tty/n_tty.c                      | 113 +++++++++++-----
+>  drivers/tty/n_tty_status.c               | 162 +++++++++++++++++++++++
+>  drivers/tty/tty_io.c                     |   2 +-
+>  include/asm-generic/termios.h            |   4 +-
+>  include/linux/tty.h                      | 123 ++++++++---------
+>  include/uapi/asm-generic/ioctls.h        |   1 +
+>  include/uapi/asm-generic/termbits.h      |  34 ++---
+>  27 files changed, 461 insertions(+), 222 deletions(-)
+>  create mode 100644 drivers/tty/n_tty_status.c
+> 
+> -- 
+> 2.30.2
+> 
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
-Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
----
- arch/sh/Kconfig               |  1 +
- arch/sh/include/asm/pgtable.h | 17 --------------
- arch/sh/mm/mmap.c             | 43 +++++++++++++++++++++++++++++++++++
- 3 files changed, 44 insertions(+), 17 deletions(-)
+You forgot to cc: me on patch 2/3, which would be needed if I was to
+take them all.
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 2474a04ceac4..f3fcd1c5e002 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -11,6 +11,7 @@ config SUPERH
- 	select ARCH_HAS_GCOV_PROFILE_ALL
- 	select ARCH_HAS_PTE_SPECIAL
- 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
-+	select ARCH_HAS_VM_GET_PAGE_PROT
- 	select ARCH_HIBERNATION_POSSIBLE if MMU
- 	select ARCH_MIGHT_HAVE_PC_PARPORT
- 	select ARCH_WANT_IPC_PARSE_VERSION
-diff --git a/arch/sh/include/asm/pgtable.h b/arch/sh/include/asm/pgtable.h
-index d7ddb1ec86a0..6fb9ec54cf9b 100644
---- a/arch/sh/include/asm/pgtable.h
-+++ b/arch/sh/include/asm/pgtable.h
-@@ -89,23 +89,6 @@ static inline unsigned long phys_addr_mask(void)
-  * completely separate permission bits for user and kernel space.
-  */
- 	 /*xwr*/
--#define __P000	PAGE_NONE
--#define __P001	PAGE_READONLY
--#define __P010	PAGE_COPY
--#define __P011	PAGE_COPY
--#define __P100	PAGE_EXECREAD
--#define __P101	PAGE_EXECREAD
--#define __P110	PAGE_COPY
--#define __P111	PAGE_COPY
--
--#define __S000	PAGE_NONE
--#define __S001	PAGE_READONLY
--#define __S010	PAGE_WRITEONLY
--#define __S011	PAGE_SHARED
--#define __S100	PAGE_EXECREAD
--#define __S101	PAGE_EXECREAD
--#define __S110	PAGE_RWX
--#define __S111	PAGE_RWX
- 
- typedef pte_t *pte_addr_t;
- 
-diff --git a/arch/sh/mm/mmap.c b/arch/sh/mm/mmap.c
-index 6a1a1297baae..21b3fae77a4e 100644
---- a/arch/sh/mm/mmap.c
-+++ b/arch/sh/mm/mmap.c
-@@ -162,3 +162,46 @@ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size)
- {
- 	return 1;
- }
-+
-+#ifdef CONFIG_MMU
-+pgprot_t vm_get_page_prot(unsigned long vm_flags)
-+{
-+	switch (vm_flags & (VM_READ | VM_WRITE | VM_EXEC | VM_SHARED)) {
-+	case VM_NONE:
-+		return PAGE_NONE;
-+	case VM_READ:
-+		return PAGE_READONLY;
-+	case VM_WRITE:
-+		return PAGE_COPY;
-+	case VM_READ | VM_WRITE:
-+		return PAGE_COPY;
-+	case VM_EXEC:
-+		return PAGE_EXECREAD;
-+	case VM_EXEC | VM_READ:
-+		return PAGE_EXECREAD;
-+	case VM_EXEC | VM_WRITE:
-+		return PAGE_COPY;
-+	case VM_EXEC | VM_READ | VM_WRITE:
-+		return PAGE_COPY;
-+	case VM_SHARED:
-+		return PAGE_COPY;
-+	case VM_SHARED | VM_READ:
-+		return PAGE_READONLY;
-+	case VM_SHARED | VM_WRITE:
-+		return PAGE_WRITEONLY;
-+	case VM_SHARED | VM_READ | VM_WRITE:
-+		return PAGE_SHARED;
-+	case VM_SHARED | VM_EXEC:
-+		return PAGE_EXECREAD;
-+	case VM_SHARED | VM_EXEC | VM_READ:
-+		return PAGE_EXECREAD;
-+	case VM_SHARED | VM_EXEC | VM_WRITE:
-+		return PAGE_RWX;
-+	case VM_SHARED | VM_EXEC | VM_READ | VM_WRITE:
-+		return PAGE_RWX;
-+	default:
-+		BUILD_BUG();
-+	}
-+}
-+EXPORT_SYMBOL(vm_get_page_prot);
-+#endif
--- 
-2.25.1
+Please fix up patch 2 and resend the whole series.
 
+thanks,
+
+greg k-h
