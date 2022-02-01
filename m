@@ -2,54 +2,62 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B65E2C433EF
-	for <linux-sh@archiver.kernel.org>; Mon, 31 Jan 2022 09:41:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D2BAC4332F
+	for <linux-sh@archiver.kernel.org>; Tue,  1 Feb 2022 10:03:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241046AbiAaJlc (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 31 Jan 2022 04:41:32 -0500
-Received: from smtp-out2.suse.de ([195.135.220.29]:37216 "EHLO
-        smtp-out2.suse.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238819AbiAaJlb (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 31 Jan 2022 04:41:31 -0500
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id D40441F386;
-        Mon, 31 Jan 2022 09:41:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1643622089; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=JzKQsvVlnpndbALvMTXcll7uzoa8T8eje3Q/bEI6mLM=;
-        b=whj9BP6WhckdM25U/uFRLjh/5qEA3XBP2rJPmH/OFUiuQqSEmH4Kse73Ly2XNl7aeGy0D3
-        01nHUqxo5dFMLh/5OT1osDi6I//FYqxJOBWDlV7Pa2kDxDqS7SZU6eGFbFwhiIxa2yrWJn
-        q2KzYMXrYzBSbk968nxUdzIBj5Xav5c=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1643622089;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=JzKQsvVlnpndbALvMTXcll7uzoa8T8eje3Q/bEI6mLM=;
-        b=hfnhf0Ax+T4HdOjPQUboSd+ahGSEWUJYPr8iA9X+hUzJN0iQJC+aThno6atUOIFQQBrLSh
-        W6EpHbrVTLIU+YBw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 366CE13B68;
-        Mon, 31 Jan 2022 09:41:28 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id 2RKbCsiu92FODwAAMHmgww
-        (envelope-from <osalvador@suse.de>); Mon, 31 Jan 2022 09:41:28 +0000
-Date:   Mon, 31 Jan 2022 10:41:26 +0100
-From:   Oscar Salvador <osalvador@suse.de>
+        id S236246AbiBAKDA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 1 Feb 2022 05:03:00 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48728 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S234247AbiBAKDA (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 1 Feb 2022 05:03:00 -0500
+Received: from mail-ej1-x62a.google.com (mail-ej1-x62a.google.com [IPv6:2a00:1450:4864:20::62a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4EC79C061714;
+        Tue,  1 Feb 2022 02:03:00 -0800 (PST)
+Received: by mail-ej1-x62a.google.com with SMTP id s5so52213096ejx.2;
+        Tue, 01 Feb 2022 02:03:00 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=mClIZuGiU90N8/wVEGuz0kPrT8HDVsO1SF0mMBp9TKA=;
+        b=m8l3iizy6m+bL/jBYQ1WY3ATqWzlyg2KTCyNULM3eVNvkC5wqKTucOmaIxZWFKKHKC
+         O4vEtqtNwuq399PL5WPFG5Z7vCu6zPPjoimtCnr8vb/5lojlVqjvZJwxMJzVd0Vk35+r
+         ZVAR+4L1KqtGJhgkD+zr3U76KGUGG1P7/BPweFRor+Y6JBV2yCS0CX+UFmYJA0lC10As
+         KSMXOwfQMpM5C1cOo7NxFB454lv8KZ0AWzZzM/pxNJiKv31JpTcyWfsVCUPzCl573dFS
+         WOqZrDF8DuO60afmvVeUg1FCdgzqdmHYIJrUyRb6laaV9nlyKLCU0X2qcosie45x9Rgc
+         yezw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=mClIZuGiU90N8/wVEGuz0kPrT8HDVsO1SF0mMBp9TKA=;
+        b=AjJnTwOTz4vQWsalBUistg/e6KCqcUfSw6yBKo6WhEm4kjQkqSqmSfYN4bRDCIoUmJ
+         nazF20oNS3SSaIGS6zyx00FESNliOYJiXb2yMkyDCIAy3GNDuHqm7i2qYM/h15YhvFq9
+         NlFxQq6uEGixCPYsbXru822uL536p1G19p6X2sKqSb+/72o/SDIba0WLU+07dMW55gSP
+         Dx4Vxvnu2Fk4Ps2vJT+shObijSRHz7a92x1T9G5qqq/YYnXYa3OqW1uQ5iCLVHzZADz6
+         /CpJkCDPdrZiD+BpzcgoscbJsSKll6M7a8VrgssNyf07zzwW1p6H3BwNt+T7ecye0V2z
+         luHg==
+X-Gm-Message-State: AOAM530Yxswqg3PeicJhuNMg8ZwE75fDf/cd+2pDttVOqlXoGDSsWccA
+        ax2IsivtFZ0XbBS6NubsjIb3QENKQWVEd2PGoKU=
+X-Google-Smtp-Source: ABdhPJyfD5PfJ3o2DgbfikfmuisQ6IDuSCV1txCGADlAID79HMnZ8k2HT/445aAlBSn/3Hrxj9wDnw0NxNHNH60hLfE=
+X-Received: by 2002:a17:907:1c1c:: with SMTP id nc28mr20280513ejc.651.1643709778741;
+ Tue, 01 Feb 2022 02:02:58 -0800 (PST)
+MIME-Version: 1.0
+References: <20220128151540.164759-1-david@redhat.com>
+In-Reply-To: <20220128151540.164759-1-david@redhat.com>
+From:   Anatoly Pugachev <matorola@gmail.com>
+Date:   Tue, 1 Feb 2022 13:02:45 +0300
+Message-ID: <CADxRZqx_rAkwFVwSc1ohm-RqKD=-pcBsR+rBrRaw9KazQncANQ@mail.gmail.com>
+Subject: Re: [PATCH RFC v1] drivers/base/node: consolidate node device
+ subsystem initialization in node_dev_init()
 To:     David Hildenbrand <david@redhat.com>
-Cc:     linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+Cc:     Linux Kernel list <linux-kernel@vger.kernel.org>,
+        linux-mm <linux-mm@kvack.org>,
         Andrew Morton <akpm@linux-foundation.org>,
         Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         Michal Hocko <mhocko@suse.com>,
+        Oscar Salvador <osalvador@suse.de>,
         Catalin Marinas <catalin.marinas@arm.com>,
         Will Deacon <will@kernel.org>,
         Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
@@ -70,77 +78,36 @@ Cc:     linux-kernel@vger.kernel.org, linux-mm@kvack.org,
         "Rafael J. Wysocki" <rafael@kernel.org>, x86@kernel.org,
         linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
         linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
-Subject: Re: [PATCH RFC v1] drivers/base/node: consolidate node device
- subsystem initialization in node_dev_init()
-Message-ID: <20220131094125.GB15392@linux>
-References: <20220128151540.164759-1-david@redhat.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220128151540.164759-1-david@redhat.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+        linux-riscv@lists.infradead.org,
+        linux-s390 <linux-s390@vger.kernel.org>,
+        linux-sh@vger.kernel.org,
+        Sparc kernel list <sparclinux@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Jan 28, 2022 at 04:15:40PM +0100, David Hildenbrand wrote:
+On Mon, Jan 31, 2022 at 2:11 PM David Hildenbrand <david@redhat.com> wrote:
+>
 > ... and call node_dev_init() after memory_dev_init() from driver_init(),
 > so before any of the existing arch/subsys calls. All online nodes should
 > be known at that point.
-> 
+>
 > This is in line with memory_dev_init(), which initializes the memory
 > device subsystem and creates all memory block devices.
-> 
+>
 > Similar to memory_dev_init(), panic() if anything goes wrong, we don't
 > want to continue with such basic initialization errors.
-> 
+>
 > The important part is that node_dev_init() gets called after
 > memory_dev_init() and after cpu_dev_init(), but before any of the
 > relevant archs call register_cpu() to register the new cpu device under
 > the node device. The latter should be the case for the current users
 > of topology_init().
-> 
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> Cc: Michal Hocko <mhocko@suse.com>
-> Cc: Oscar Salvador <osalvador@suse.de>
-> Cc: Catalin Marinas <catalin.marinas@arm.com>
-> Cc: Will Deacon <will@kernel.org>
-> Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-> Cc: Michael Ellerman <mpe@ellerman.id.au>
-> Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-> Cc: Paul Mackerras <paulus@samba.org>
-> Cc: Paul Walmsley <paul.walmsley@sifive.com>
-> Cc: Palmer Dabbelt <palmer@dabbelt.com>
-> Cc: Albert Ou <aou@eecs.berkeley.edu>
-> Cc: Heiko Carstens <hca@linux.ibm.com>
-> Cc: Vasily Gorbik <gor@linux.ibm.com>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: "David S. Miller" <davem@davemloft.net>
-> Cc: Thomas Gleixner <tglx@linutronix.de>
-> Cc: Ingo Molnar <mingo@redhat.com>
-> Cc: Borislav Petkov <bp@alien8.de>
-> Cc: Dave Hansen <dave.hansen@linux.intel.com>
-> Cc: "Rafael J. Wysocki" <rafael@kernel.org>
-> Cc: x86@kernel.org
-> Cc: linux-arm-kernel@lists.infradead.org
-> Cc: linux-kernel@vger.kernel.org
-> Cc: linux-ia64@vger.kernel.org
-> Cc: linux-mips@vger.kernel.org
-> Cc: linuxppc-dev@lists.ozlabs.org
-> Cc: linux-riscv@lists.infradead.org
-> Cc: linux-s390@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org
-> Cc: sparclinux@vger.kernel.org
-> Cc: linux-mm@kvack.org
-> Signed-off-by: David Hildenbrand <david@redhat.com>
+>
+> RFC because I tested only on x86-64 and s390x, I think I cross-compiled all
+> applicable architectures except riscv and sparc.
 
-Reviewed-by: Oscar Salvador <osalvador@suse.de>
+Compiled and boot tested on sparc.
 
-
--- 
-Oscar Salvador
-SUSE Labs
+Tested-by: Anatoly Pugachev <matorola@gmail.com> (sparc64)
