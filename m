@@ -2,68 +2,46 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14173C43217
-	for <linux-sh@archiver.kernel.org>; Wed,  2 Feb 2022 13:45:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 319DEC433FE
+	for <linux-sh@archiver.kernel.org>; Thu,  3 Feb 2022 10:52:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230494AbiBBNp4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 2 Feb 2022 08:45:56 -0500
-Received: from us-smtp-delivery-124.mimecast.com ([170.10.133.124]:24967 "EHLO
+        id S1345324AbiBCKwn (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 3 Feb 2022 05:52:43 -0500
+Received: from us-smtp-delivery-124.mimecast.com ([170.10.129.124]:46492 "EHLO
         us-smtp-delivery-124.mimecast.com" rhost-flags-OK-OK-OK-OK)
-        by vger.kernel.org with ESMTP id S1344404AbiBBNpz (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 2 Feb 2022 08:45:55 -0500
+        by vger.kernel.org with ESMTP id S239714AbiBCKwn (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 3 Feb 2022 05:52:43 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1643809555;
+        s=mimecast20190719; t=1643885563;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=YxruncnGKSYEtQADjLUNkNWhCcGBbzpK2sbDwkeQUpo=;
-        b=IvlHLOIoAfjxqUryG5VtmgReaCtzLoMtgEAAKndnl8Lqi914pDdVatgXRntOsQovBp53GE
-        EyeC3I9hFv8V8pRcIotB0VS/+D0GazCr7QtuFhOA16z9du7/fUdOXcleb1D3uDxp0yBjcv
-        uKzYQh460kzzs7wa0ybeaECp/Y3LALQ=
-Received: from mail-ej1-f69.google.com (mail-ej1-f69.google.com
- [209.85.218.69]) by relay.mimecast.com with ESMTP with STARTTLS
+         to:to:cc:cc:mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=0nUhFDS2VVNBtWmr5UL6MxVLGL6ZahCobZOHDmafTBo=;
+        b=AOcjfWJ9g7BuxLk5Kwf8dlSYiG8A6rXau4tD0kCc593l3AlQS65vQWb7jeymgDKziJIuNb
+        7tL3dsXB2Y9ZF/+YaJxMkc4x6uW096sAlwS+7i819mZuT6qrPoiU8R0qid/2qklKP2SaBh
+        Ti9ipM5odMokFTjUjiT52R97rdtQOP0=
+Received: from mimecast-mx01.redhat.com (mimecast-mx01.redhat.com
+ [209.132.183.4]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-644-2y8QkQryN9KWtJ8GOY02Qg-1; Wed, 02 Feb 2022 08:45:54 -0500
-X-MC-Unique: 2y8QkQryN9KWtJ8GOY02Qg-1
-Received: by mail-ej1-f69.google.com with SMTP id kw5-20020a170907770500b006ba314a753eso8138417ejc.21
-        for <linux-sh@vger.kernel.org>; Wed, 02 Feb 2022 05:45:53 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
-         :content-language:to:cc:references:from:organization:in-reply-to
-         :content-transfer-encoding;
-        bh=YxruncnGKSYEtQADjLUNkNWhCcGBbzpK2sbDwkeQUpo=;
-        b=jL8pQIvBB6pgDMA/64SV2tDFrCtPg38ljZY8jspBZIrWbkyUJPLLmgR4TFd6V7RzuG
-         5ggAirRVE7WECJ10sMYP6/3O8PeKnCfaaFC6U3f2JPzEnKJPZUSnUeJ2eOozxj6y94q5
-         emT8nAgKDDnI9FZMLm7LuhrHY0itBY9MhmHJvscAEn0qy8zdF0seJ1HzsLGUJaHvImjk
-         YtdgbVICtXXOGVSeFXTOCYiLpOKAz0PqVsUYvVkyiYgaSvR8Tg/mydBu03zVrhIGb3Cw
-         yTSnaiBzqjl88jaovZaCMWYbeI+RL2sE1/9Z3xLLnNaTYcwcltetKRquz/AbxZEBvFHz
-         +4Pw==
-X-Gm-Message-State: AOAM532LsJ1yqizfIWYSVaiVJYpvLdAMOLF2xPRmCagVoi4VAwr+iEO2
-        HTQWhih5LNRIXICrJQcncGnwREPonOp/U2FgNM0ZZmLj/DV+ZYkyomnMjAtrjS5zPSLX+aojs20
-        ZgxqEBOwpRysrI5U446U=
-X-Received: by 2002:a05:6402:5248:: with SMTP id t8mr30084271edd.14.1643809552843;
-        Wed, 02 Feb 2022 05:45:52 -0800 (PST)
-X-Google-Smtp-Source: ABdhPJxqE4L2UK0676VaeKIuCkwGMt3tw/zzsCSLR83dbtSZbWUp25WGEt3s5690JhdDTieh82ha0w==
-X-Received: by 2002:a05:6402:5248:: with SMTP id t8mr30084241edd.14.1643809552570;
-        Wed, 02 Feb 2022 05:45:52 -0800 (PST)
-Received: from ?IPV6:2003:cb:c709:f800:a55c:e484:3cd9:3632? (p200300cbc709f800a55ce4843cd93632.dip0.t-ipconnect.de. [2003:cb:c709:f800:a55c:e484:3cd9:3632])
-        by smtp.gmail.com with ESMTPSA id z8sm15746580ejc.151.2022.02.02.05.45.50
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 02 Feb 2022 05:45:52 -0800 (PST)
-Message-ID: <c25ad11e-6700-3a11-1a44-f69b4a7fc9e2@redhat.com>
-Date:   Wed, 2 Feb 2022 14:45:50 +0100
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.4.0
-Subject: Re: [PATCH RFC v1] drivers/base/node: consolidate node device
- subsystem initialization in node_dev_init()
+ us-mta-601-qhQFYVz6OwyACj3fUT9yiQ-1; Thu, 03 Feb 2022 05:52:39 -0500
+X-MC-Unique: qhQFYVz6OwyACj3fUT9yiQ-1
+Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx01.redhat.com (Postfix) with ESMTPS id 71F4A640A1;
+        Thu,  3 Feb 2022 10:52:34 +0000 (UTC)
+Received: from t480s.redhat.com (unknown [10.39.194.64])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id 9F12766E18;
+        Thu,  3 Feb 2022 10:52:13 +0000 (UTC)
+From:   David Hildenbrand <david@redhat.com>
 To:     linux-kernel@vger.kernel.org
-Cc:     linux-mm@kvack.org, Andrew Morton <akpm@linux-foundation.org>,
+Cc:     David Hildenbrand <david@redhat.com>,
+        Oscar Salvador <osalvador@suse.de>,
+        Anatoly Pugachev <matorola@gmail.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
         Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         Michal Hocko <mhocko@suse.com>,
-        Oscar Salvador <osalvador@suse.de>,
+        Mike Rapoport <rppt@kernel.org>,
         Catalin Marinas <catalin.marinas@arm.com>,
         Will Deacon <will@kernel.org>,
         Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
@@ -85,81 +63,360 @@ Cc:     linux-mm@kvack.org, Andrew Morton <akpm@linux-foundation.org>,
         linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
         linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
         linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
-References: <20220128151540.164759-1-david@redhat.com>
-From:   David Hildenbrand <david@redhat.com>
-Organization: Red Hat
-In-Reply-To: <20220128151540.164759-1-david@redhat.com>
-Authentication-Results: relay.mimecast.com;
-        auth=pass smtp.auth=CUSA124A263 smtp.mailfrom=david@redhat.com
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: redhat.com
-Content-Language: en-US
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-mm@kvack.org
+Subject: [PATCH v1] drivers/base/node: consolidate node device subsystem initialization in node_dev_init()
+Date:   Thu,  3 Feb 2022 11:52:12 +0100
+Message-Id: <20220203105212.30385-1-david@redhat.com>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-Scanned-By: MIMEDefang 2.79 on 10.5.11.11
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 28.01.22 16:15, David Hildenbrand wrote:
-> ... and call node_dev_init() after memory_dev_init() from driver_init(),
-> so before any of the existing arch/subsys calls. All online nodes should
-> be known at that point.
-> 
-> This is in line with memory_dev_init(), which initializes the memory
-> device subsystem and creates all memory block devices.
-> 
-> Similar to memory_dev_init(), panic() if anything goes wrong, we don't
-> want to continue with such basic initialization errors.
-> 
-> The important part is that node_dev_init() gets called after
-> memory_dev_init() and after cpu_dev_init(), but before any of the
-> relevant archs call register_cpu() to register the new cpu device under
-> the node device. The latter should be the case for the current users
-> of topology_init().
-> 
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> Cc: Michal Hocko <mhocko@suse.com>
-> Cc: Oscar Salvador <osalvador@suse.de>
-> Cc: Catalin Marinas <catalin.marinas@arm.com>
-> Cc: Will Deacon <will@kernel.org>
-> Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-> Cc: Michael Ellerman <mpe@ellerman.id.au>
-> Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-> Cc: Paul Mackerras <paulus@samba.org>
-> Cc: Paul Walmsley <paul.walmsley@sifive.com>
-> Cc: Palmer Dabbelt <palmer@dabbelt.com>
-> Cc: Albert Ou <aou@eecs.berkeley.edu>
-> Cc: Heiko Carstens <hca@linux.ibm.com>
-> Cc: Vasily Gorbik <gor@linux.ibm.com>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: "David S. Miller" <davem@davemloft.net>
-> Cc: Thomas Gleixner <tglx@linutronix.de>
-> Cc: Ingo Molnar <mingo@redhat.com>
-> Cc: Borislav Petkov <bp@alien8.de>
-> Cc: Dave Hansen <dave.hansen@linux.intel.com>
-> Cc: "Rafael J. Wysocki" <rafael@kernel.org>
-> Cc: x86@kernel.org
-> Cc: linux-arm-kernel@lists.infradead.org
-> Cc: linux-kernel@vger.kernel.org
-> Cc: linux-ia64@vger.kernel.org
-> Cc: linux-mips@vger.kernel.org
-> Cc: linuxppc-dev@lists.ozlabs.org
-> Cc: linux-riscv@lists.infradead.org
-> Cc: linux-s390@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org
-> Cc: sparclinux@vger.kernel.org
-> Cc: linux-mm@kvack.org
-> Signed-off-by: David Hildenbrand <david@redhat.com>
+... and call node_dev_init() after memory_dev_init() from driver_init(),
+so before any of the existing arch/subsys calls. All online nodes should
+be known at that point: early during boot, arch code determines node and
+zone ranges and sets the relevant nodes online; usually this happens in
+setup_arch().
 
-If there are no further comments, then I'll resend as !RFC with a
-slightly extended patch description, testing at least under arm64 and
-ppc64 as they are relatively easy to test for me.
+This is in line with memory_dev_init(), which initializes the memory
+device subsystem and creates all memory block devices.
 
+Similar to memory_dev_init(), panic() if anything goes wrong, we don't
+want to continue with such basic initialization errors.
+
+The important part is that node_dev_init() gets called after
+memory_dev_init() and after cpu_dev_init(), but before any of the
+relevant archs call register_cpu() to register the new cpu device under
+the node device. The latter should be the case for the current users
+of topology_init().
+
+Reviewed-by: Oscar Salvador <osalvador@suse.de>
+Tested-by: Anatoly Pugachev <matorola@gmail.com> (sparc64)
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Michal Hocko <mhocko@suse.com>
+Cc: Oscar Salvador <osalvador@suse.de>
+Cc: Mike Rapoport <rppt@kernel.org>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Will Deacon <will@kernel.org>
+Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+Cc: Michael Ellerman <mpe@ellerman.id.au>
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: Paul Mackerras <paulus@samba.org>
+Cc: Paul Walmsley <paul.walmsley@sifive.com>
+Cc: Palmer Dabbelt <palmer@dabbelt.com>
+Cc: Albert Ou <aou@eecs.berkeley.edu>
+Cc: Heiko Carstens <hca@linux.ibm.com>
+Cc: Vasily Gorbik <gor@linux.ibm.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Borislav Petkov <bp@alien8.de>
+Cc: Dave Hansen <dave.hansen@linux.intel.com>
+Cc: "Rafael J. Wysocki" <rafael@kernel.org>
+Cc: x86@kernel.org
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-kernel@vger.kernel.org
+Cc: linux-ia64@vger.kernel.org
+Cc: linux-mips@vger.kernel.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: linux-riscv@lists.infradead.org
+Cc: linux-s390@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
+Cc: sparclinux@vger.kernel.org
+Cc: linux-mm@kvack.org
+Signed-off-by: David Hildenbrand <david@redhat.com>
+---
+
+RFC v1 -> v1:
+* Extended patch description slighly
+* Tested on x86-64, s390x, ppc64 and aarch64
+* Added Rb and Tested-by.
+
+---
+ arch/arm64/kernel/setup.c   |  3 ---
+ arch/ia64/kernel/topology.c | 10 ----------
+ arch/mips/kernel/topology.c |  5 -----
+ arch/powerpc/kernel/sysfs.c | 17 -----------------
+ arch/riscv/kernel/setup.c   |  3 ---
+ arch/s390/kernel/numa.c     |  7 -------
+ arch/sh/kernel/topology.c   |  5 -----
+ arch/sparc/kernel/sysfs.c   | 12 ------------
+ arch/x86/kernel/topology.c  |  5 -----
+ drivers/base/init.c         |  1 +
+ drivers/base/node.c         | 30 +++++++++++++++++-------------
+ include/linux/node.h        |  4 ++++
+ 12 files changed, 22 insertions(+), 80 deletions(-)
+
+diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
+index f70573928f1b..3505789cf4bd 100644
+--- a/arch/arm64/kernel/setup.c
++++ b/arch/arm64/kernel/setup.c
+@@ -406,9 +406,6 @@ static int __init topology_init(void)
+ {
+ 	int i;
+ 
+-	for_each_online_node(i)
+-		register_one_node(i);
+-
+ 	for_each_possible_cpu(i) {
+ 		struct cpu *cpu = &per_cpu(cpu_data.cpu, i);
+ 		cpu->hotpluggable = cpu_can_disable(i);
+diff --git a/arch/ia64/kernel/topology.c b/arch/ia64/kernel/topology.c
+index e4992917a24b..94a848b06f15 100644
+--- a/arch/ia64/kernel/topology.c
++++ b/arch/ia64/kernel/topology.c
+@@ -70,16 +70,6 @@ static int __init topology_init(void)
+ {
+ 	int i, err = 0;
+ 
+-#ifdef CONFIG_NUMA
+-	/*
+-	 * MCD - Do we want to register all ONLINE nodes, or all POSSIBLE nodes?
+-	 */
+-	for_each_online_node(i) {
+-		if ((err = register_one_node(i)))
+-			goto out;
+-	}
+-#endif
+-
+ 	sysfs_cpus = kcalloc(NR_CPUS, sizeof(struct ia64_cpu), GFP_KERNEL);
+ 	if (!sysfs_cpus)
+ 		panic("kzalloc in topology_init failed - NR_CPUS too big?");
+diff --git a/arch/mips/kernel/topology.c b/arch/mips/kernel/topology.c
+index 08ad6371fbe0..9429d85a4703 100644
+--- a/arch/mips/kernel/topology.c
++++ b/arch/mips/kernel/topology.c
+@@ -12,11 +12,6 @@ static int __init topology_init(void)
+ {
+ 	int i, ret;
+ 
+-#ifdef CONFIG_NUMA
+-	for_each_online_node(i)
+-		register_one_node(i);
+-#endif /* CONFIG_NUMA */
+-
+ 	for_each_present_cpu(i) {
+ 		struct cpu *c = &per_cpu(cpu_devices, i);
+ 
+diff --git a/arch/powerpc/kernel/sysfs.c b/arch/powerpc/kernel/sysfs.c
+index d45a415d5374..2069bbb90a9a 100644
+--- a/arch/powerpc/kernel/sysfs.c
++++ b/arch/powerpc/kernel/sysfs.c
+@@ -1110,14 +1110,6 @@ EXPORT_SYMBOL_GPL(cpu_remove_dev_attr_group);
+ /* NUMA stuff */
+ 
+ #ifdef CONFIG_NUMA
+-static void __init register_nodes(void)
+-{
+-	int i;
+-
+-	for (i = 0; i < MAX_NUMNODES; i++)
+-		register_one_node(i);
+-}
+-
+ int sysfs_add_device_to_node(struct device *dev, int nid)
+ {
+ 	struct node *node = node_devices[nid];
+@@ -1132,13 +1124,6 @@ void sysfs_remove_device_from_node(struct device *dev, int nid)
+ 	sysfs_remove_link(&node->dev.kobj, kobject_name(&dev->kobj));
+ }
+ EXPORT_SYMBOL_GPL(sysfs_remove_device_from_node);
+-
+-#else
+-static void __init register_nodes(void)
+-{
+-	return;
+-}
+-
+ #endif
+ 
+ /* Only valid if CPU is present. */
+@@ -1155,8 +1140,6 @@ static int __init topology_init(void)
+ {
+ 	int cpu, r;
+ 
+-	register_nodes();
+-
+ 	for_each_possible_cpu(cpu) {
+ 		struct cpu *c = &per_cpu(cpu_devices, cpu);
+ 
+diff --git a/arch/riscv/kernel/setup.c b/arch/riscv/kernel/setup.c
+index b42bfdc67482..834eb652a7b9 100644
+--- a/arch/riscv/kernel/setup.c
++++ b/arch/riscv/kernel/setup.c
+@@ -301,9 +301,6 @@ static int __init topology_init(void)
+ {
+ 	int i, ret;
+ 
+-	for_each_online_node(i)
+-		register_one_node(i);
+-
+ 	for_each_possible_cpu(i) {
+ 		struct cpu *cpu = &per_cpu(cpu_devices, i);
+ 
+diff --git a/arch/s390/kernel/numa.c b/arch/s390/kernel/numa.c
+index 51c5a9f6e525..23ab9f02f278 100644
+--- a/arch/s390/kernel/numa.c
++++ b/arch/s390/kernel/numa.c
+@@ -33,10 +33,3 @@ void __init numa_setup(void)
+ 	NODE_DATA(0)->node_spanned_pages = memblock_end_of_DRAM() >> PAGE_SHIFT;
+ 	NODE_DATA(0)->node_id = 0;
+ }
+-
+-static int __init numa_init_late(void)
+-{
+-	register_one_node(0);
+-	return 0;
+-}
+-arch_initcall(numa_init_late);
+diff --git a/arch/sh/kernel/topology.c b/arch/sh/kernel/topology.c
+index 76af6db9daa2..2d2a7509b565 100644
+--- a/arch/sh/kernel/topology.c
++++ b/arch/sh/kernel/topology.c
+@@ -46,11 +46,6 @@ static int __init topology_init(void)
+ {
+ 	int i, ret;
+ 
+-#ifdef CONFIG_NUMA
+-	for_each_online_node(i)
+-		register_one_node(i);
+-#endif
+-
+ 	for_each_present_cpu(i) {
+ 		struct cpu *c = &per_cpu(cpu_devices, i);
+ 
+diff --git a/arch/sparc/kernel/sysfs.c b/arch/sparc/kernel/sysfs.c
+index 6d60d416f0dd..f19487e4cc71 100644
+--- a/arch/sparc/kernel/sysfs.c
++++ b/arch/sparc/kernel/sysfs.c
+@@ -244,22 +244,10 @@ static void __init check_mmu_stats(void)
+ 		mmu_stats_supported = 1;
+ }
+ 
+-static void register_nodes(void)
+-{
+-#ifdef CONFIG_NUMA
+-	int i;
+-
+-	for (i = 0; i < MAX_NUMNODES; i++)
+-		register_one_node(i);
+-#endif
+-}
+-
+ static int __init topology_init(void)
+ {
+ 	int cpu, ret;
+ 
+-	register_nodes();
+-
+ 	check_mmu_stats();
+ 
+ 	for_each_possible_cpu(cpu) {
+diff --git a/arch/x86/kernel/topology.c b/arch/x86/kernel/topology.c
+index bd83748e2bde..8617d1ed9d31 100644
+--- a/arch/x86/kernel/topology.c
++++ b/arch/x86/kernel/topology.c
+@@ -154,11 +154,6 @@ static int __init topology_init(void)
+ {
+ 	int i;
+ 
+-#ifdef CONFIG_NUMA
+-	for_each_online_node(i)
+-		register_one_node(i);
+-#endif
+-
+ 	for_each_present_cpu(i)
+ 		arch_register_cpu(i);
+ 
+diff --git a/drivers/base/init.c b/drivers/base/init.c
+index a9f57c22fb9e..d8d0fe687111 100644
+--- a/drivers/base/init.c
++++ b/drivers/base/init.c
+@@ -35,5 +35,6 @@ void __init driver_init(void)
+ 	auxiliary_bus_init();
+ 	cpu_dev_init();
+ 	memory_dev_init();
++	node_dev_init();
+ 	container_dev_init();
+ }
+diff --git a/drivers/base/node.c b/drivers/base/node.c
+index 87acc47e8951..a133981a12fc 100644
+--- a/drivers/base/node.c
++++ b/drivers/base/node.c
+@@ -1065,26 +1065,30 @@ static const struct attribute_group *cpu_root_attr_groups[] = {
+ };
+ 
+ #define NODE_CALLBACK_PRI	2	/* lower than SLAB */
+-static int __init register_node_type(void)
++void __init node_dev_init(void)
+ {
+-	int ret;
++	static struct notifier_block node_memory_callback_nb = {
++		.notifier_call = node_memory_callback,
++		.priority = NODE_CALLBACK_PRI,
++	};
++	int ret, i;
+ 
+  	BUILD_BUG_ON(ARRAY_SIZE(node_state_attr) != NR_NODE_STATES);
+  	BUILD_BUG_ON(ARRAY_SIZE(node_state_attrs)-1 != NR_NODE_STATES);
+ 
+ 	ret = subsys_system_register(&node_subsys, cpu_root_attr_groups);
+-	if (!ret) {
+-		static struct notifier_block node_memory_callback_nb = {
+-			.notifier_call = node_memory_callback,
+-			.priority = NODE_CALLBACK_PRI,
+-		};
+-		register_hotmemory_notifier(&node_memory_callback_nb);
+-	}
++	if (ret)
++		panic("%s() failed to register subsystem: %d\n", __func__, ret);
++
++	register_hotmemory_notifier(&node_memory_callback_nb);
+ 
+ 	/*
+-	 * Note:  we're not going to unregister the node class if we fail
+-	 * to register the node state class attribute files.
++	 * Create all node devices, which will properly link the node
++	 * to applicable memory block devices and already created cpu devices.
+ 	 */
+-	return ret;
++	for_each_online_node(i) {
++		ret = register_one_node(i);
++		if (ret)
++			panic("%s() failed to add node: %d\n", __func__, ret);
++	}
+ }
+-postcore_initcall(register_node_type);
+diff --git a/include/linux/node.h b/include/linux/node.h
+index bb21fd631b16..f3be6ccfebed 100644
+--- a/include/linux/node.h
++++ b/include/linux/node.h
+@@ -112,6 +112,7 @@ static inline void link_mem_sections(int nid, unsigned long start_pfn,
+ 
+ extern void unregister_node(struct node *node);
+ #ifdef CONFIG_NUMA
++extern void node_dev_init(void);
+ /* Core of the node registration - only memory hotplug should use this */
+ extern int __register_one_node(int nid);
+ 
+@@ -149,6 +150,9 @@ extern void register_hugetlbfs_with_node(node_registration_func_t doregister,
+ 					 node_registration_func_t unregister);
+ #endif
+ #else
++static inline void node_dev_init(void)
++{
++}
+ static inline int __register_one_node(int nid)
+ {
+ 	return 0;
+
+base-commit: 26291c54e111ff6ba87a164d85d4a4e134b7315c
 -- 
-Thanks,
-
-David / dhildenb
+2.34.1
 
