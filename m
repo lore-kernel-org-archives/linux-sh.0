@@ -2,106 +2,90 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FEE9C433F5
-	for <linux-sh@archiver.kernel.org>; Mon,  7 Feb 2022 06:24:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A68AC433F5
+	for <linux-sh@archiver.kernel.org>; Mon,  7 Feb 2022 22:13:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232027AbiBGGWp (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 7 Feb 2022 01:22:45 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33492 "EHLO
+        id S243837AbiBGWNX (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 7 Feb 2022 17:13:23 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44244 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239061AbiBGFiW (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 7 Feb 2022 00:38:22 -0500
-Received: from mail-wr1-f49.google.com (mail-wr1-f49.google.com [209.85.221.49])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3E9C5C043181;
-        Sun,  6 Feb 2022 21:38:21 -0800 (PST)
-Received: by mail-wr1-f49.google.com with SMTP id k18so22618586wrg.11;
-        Sun, 06 Feb 2022 21:38:21 -0800 (PST)
+        with ESMTP id S238671AbiBGWNX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 7 Feb 2022 17:13:23 -0500
+Received: from mail-lj1-x236.google.com (mail-lj1-x236.google.com [IPv6:2a00:1450:4864:20::236])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 56424C061355;
+        Mon,  7 Feb 2022 14:13:22 -0800 (PST)
+Received: by mail-lj1-x236.google.com with SMTP id a25so21729040lji.9;
+        Mon, 07 Feb 2022 14:13:22 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=from:to:cc:subject:date:message-id:mime-version
+         :content-transfer-encoding;
+        bh=wdbWjM8eoz1rtM3sTLi8IH/lKU9rb0SeE8VSMizMzlI=;
+        b=O781Yilo70eyNuBaD3ol/8LC5JHsl6oyoxnIJZ/zGE7Plk/6adJoGSPpbPCP7D4Snx
+         qtievuPLVZOVevfBTXXnABJK4J1jN4/fc3XFPt5EV7aggTBqi5BMtIgkKseCLSMTs4HD
+         DQoQsRqlgxIHQ8flNQ1Ouv/gqIHkiZJlB8G6y6wBmA/sfki0+diNoZJ09ymYOIzBJp6e
+         MuYi9AwYJ9YNdKnV7A1wTopgfVSSUEUGH9ZaqCW4wpGksJ/W1ushd/4PjH2J2GbrTDr0
+         VQdpCzNcMPBJQbh/usgOu96tmFUw2sllNwMbRZGNtB4YqLbDjeQrMTzCD4syKNejfHTe
+         XOWw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
-         :content-language:to:cc:references:from:in-reply-to
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
          :content-transfer-encoding;
-        bh=byr958ymnG7EGtbbRHy8FEsvmnA+OZjvX3uXRPh6Z4E=;
-        b=xWqxHPzWfiPnCRWqMX0G6nt9K63YEHMlaBJcreR7keWoEHD6lSiv6awVPqd4pJ0qCe
-         W2x50WA2xEAyPlRDIWz4fLCwvHhXiVTL5af2TxBKrfTDnaiyn3k1VFkbivInnHdQoCgG
-         hoYQMb4tN+lgoXs+wCsCWIxQqedEdi6kLntDz3mMwoKocuvxtkkS5kzkUao1xTDkhpRC
-         EEwIDc7f0hz+a9E10R32pV3K591aB+EOVFTXIZKQwF9qvvsRZaTdmMkr5BnL7kOeG0nR
-         ZHwgU4ouzdxx6vBpNGAGzkIyVEu+zCWvS2OmeXNwySP94WLWifeLjXg545u09mBuMtM6
-         UdXQ==
-X-Gm-Message-State: AOAM533OjWGYDqkxFfHGpPwHdf0tfpLoK/fS3ax+bLKS0jjOfIXqSDZk
-        2LHuRrgKfZ1VEwmWDfYOEnlkAukmZLV4ag==
-X-Google-Smtp-Source: ABdhPJwPLsGKwDunoy8I0Myez3SxQ6VYLq3bfG33of6vYqoVy/EKGY4dAvht6XnNrJZEz+OnSQ488A==
-X-Received: by 2002:adf:d1c6:: with SMTP id b6mr8399158wrd.669.1644212299712;
-        Sun, 06 Feb 2022 21:38:19 -0800 (PST)
-Received: from ?IPV6:2a0b:e7c0:0:107::70f? ([2a0b:e7c0:0:107::70f])
-        by smtp.gmail.com with ESMTPSA id f14sm8693006wmq.40.2022.02.06.21.38.17
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 06 Feb 2022 21:38:18 -0800 (PST)
-Message-ID: <35f29dbd-04ec-037e-007c-7a079caf0d5b@kernel.org>
-Date:   Mon, 7 Feb 2022 06:38:16 +0100
+        bh=wdbWjM8eoz1rtM3sTLi8IH/lKU9rb0SeE8VSMizMzlI=;
+        b=ADlLwMCvSb6EBcXUVIV8D+tNIfP1fs0IWQfxCNFAsuJUS1YsFCQPvm7/r4y0ve678M
+         yj6GsM9ivGBr/666VILLc8ThgSkdWPfWmA9uQYOR08shvoUJGrgcbSTB4TqyKvdxZQWi
+         0CxFyDKtN0JaezBF3doIz4izYqfRfn9xUzJbhVBC7Nug5ZmjlQamoUaccm1w36LIXhWh
+         skipzIHeCFM0k2VWPOHrjuaalzYllK5FL9EDcEIABgiv2OCJCKLPpw59wDkGplbbEbjH
+         nVhHkZMWf9SjYZYxH20vKbmKn3ZSI+qcVN8GXbAtRIvnZEtwVL65mxVJk9anD+aKV0hG
+         yztg==
+X-Gm-Message-State: AOAM533M1zA/dJkA0UFPuNQCSNSOigBhUAo4e9R6cm54FeN+89Ad9N/x
+        X8N97v9vaXFimYpqZynKVuw=
+X-Google-Smtp-Source: ABdhPJw8Da4PWG2Lr6PzhVtKx/qzH1WM4bMJfczUsdOChFZM32xp1YwyIDy7SqYdPPn3IRYIkeQ3yA==
+X-Received: by 2002:a2e:9090:: with SMTP id l16mr987967ljg.366.1644272000720;
+        Mon, 07 Feb 2022 14:13:20 -0800 (PST)
+Received: from localhost.localdomain (h-155-4-221-129.NA.cust.bahnhof.se. [155.4.221.129])
+        by smtp.gmail.com with ESMTPSA id o17sm1662503lfl.16.2022.02.07.14.13.19
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 07 Feb 2022 14:13:20 -0800 (PST)
+From:   Rikard Falkeborn <rikard.falkeborn@gmail.com>
+To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>
+Cc:     Marc Zyngier <maz@kernel.org>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org,
+        Rikard Falkeborn <rikard.falkeborn@gmail.com>
+Subject: [PATCH] sh: mach-x3proto: Constify static irq_domain_ops
+Date:   Mon,  7 Feb 2022 23:13:14 +0100
+Message-Id: <20220207221314.97788-1-rikard.falkeborn@gmail.com>
+X-Mailer: git-send-email 2.35.1
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.5.0
-Subject: Re: [PATCH v2 3/3] vstatus: Display an informational message when the
- VSTATUS character is pressed or TIOCSTAT ioctl is called.
-Content-Language: en-US
-To:     Walt Drummond <walt@drummond.us>, agordeev@linux.ibm.com,
-        arnd@arndb.de, benh@kernel.crashing.org, borntraeger@de.ibm.com,
-        chris@zankel.net, davem@davemloft.net, gregkh@linuxfoundation.org,
-        hca@linux.ibm.com, deller@gmx.de, ink@jurassic.park.msu.ru,
-        James.Bottomley@HansenPartnership.com, mattst88@gmail.com,
-        jcmvbkbc@gmail.com, mpe@ellerman.id.au, paulus@samba.org,
-        rth@twiddle.net, dalias@libc.org, tsbogend@alpha.franken.de,
-        gor@linux.ibm.com, ysato@users.osdn.me
-Cc:     linux-kernel@vger.kernel.org, ar@cs.msu.ru,
-        linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org, sparclinux@vger.kernel.org
-References: <20220206154856.2355838-1-walt@drummond.us>
- <20220206154856.2355838-4-walt@drummond.us>
-From:   Jiri Slaby <jirislaby@kernel.org>
-In-Reply-To: <20220206154856.2355838-4-walt@drummond.us>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 06. 02. 22, 16:48, Walt Drummond wrote:
-> When triggered by pressing the VSTATUS key or calling the TIOCSTAT
-> ioctl, the n_tty line discipline will display a message on the user's
-> tty that provides basic information about the system and an
-> 'interesting' process in the current foreground process group, eg:
-> 
->    load: 0.58  cmd: sleep 744474 [sleeping] 0.36r 0.00u 0.00s 0% 772k
-> 
-> The status message provides:
->   - System load average
->   - Command name and process id (from the perspective of the session)
->   - Scheduler state
->   - Total wall-clock run time
->   - User space run time
->   - System space run time
->   - Percentage of on-cpu time
->   - Resident set size
-> 
-> The message is only displayed when the tty has the VSTATUS character
-> set, the local flags ICANON and IEXTEN are enabled and NOKERNINFO is
-> disabled; it is always displayed when TIOCSTAT is called regardless of
-> tty settings.
-> 
-> Signed-off-by: Walt Drummond <walt@drummond.us>
-> ---
+The only usage of x3proto_gpio_irq_ops is to pass its address to
+irq_domain_add_linear() which takes a pointer to const struct
+irq_domain_ops. Make it const to allow the compiler to put it in
+read-only memory
 
-It looks like my comments were addressed. However you did not document 
-the chances since v1 here. IOW, [v2] tag missing here.
+Signed-off-by: Rikard Falkeborn <rikard.falkeborn@gmail.com>
+---
+ arch/sh/boards/mach-x3proto/gpio.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-And please add the CCs I added last time, so that relevant people still 
-can comment.
-
-thanks,
+diff --git a/arch/sh/boards/mach-x3proto/gpio.c b/arch/sh/boards/mach-x3proto/gpio.c
+index f82d3a6a844a..dd8ef41e5562 100644
+--- a/arch/sh/boards/mach-x3proto/gpio.c
++++ b/arch/sh/boards/mach-x3proto/gpio.c
+@@ -91,7 +91,7 @@ static int x3proto_gpio_irq_map(struct irq_domain *domain, unsigned int virq,
+ 	return 0;
+ }
+ 
+-static struct irq_domain_ops x3proto_gpio_irq_ops = {
++static const struct irq_domain_ops x3proto_gpio_irq_ops = {
+ 	.map	= x3proto_gpio_irq_map,
+ 	.xlate	= irq_domain_xlate_twocell,
+ };
 -- 
-js
-suse labs
+2.35.1
+
