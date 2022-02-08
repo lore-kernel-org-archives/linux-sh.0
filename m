@@ -2,90 +2,100 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A68AC433F5
-	for <linux-sh@archiver.kernel.org>; Mon,  7 Feb 2022 22:13:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 14A97C4707E
+	for <linux-sh@archiver.kernel.org>; Tue,  8 Feb 2022 13:16:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243837AbiBGWNX (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 7 Feb 2022 17:13:23 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44244 "EHLO
+        id S1350103AbiBHNQK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 8 Feb 2022 08:16:10 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57586 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238671AbiBGWNX (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 7 Feb 2022 17:13:23 -0500
-Received: from mail-lj1-x236.google.com (mail-lj1-x236.google.com [IPv6:2a00:1450:4864:20::236])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 56424C061355;
-        Mon,  7 Feb 2022 14:13:22 -0800 (PST)
-Received: by mail-lj1-x236.google.com with SMTP id a25so21729040lji.9;
-        Mon, 07 Feb 2022 14:13:22 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=wdbWjM8eoz1rtM3sTLi8IH/lKU9rb0SeE8VSMizMzlI=;
-        b=O781Yilo70eyNuBaD3ol/8LC5JHsl6oyoxnIJZ/zGE7Plk/6adJoGSPpbPCP7D4Snx
-         qtievuPLVZOVevfBTXXnABJK4J1jN4/fc3XFPt5EV7aggTBqi5BMtIgkKseCLSMTs4HD
-         DQoQsRqlgxIHQ8flNQ1Ouv/gqIHkiZJlB8G6y6wBmA/sfki0+diNoZJ09ymYOIzBJp6e
-         MuYi9AwYJ9YNdKnV7A1wTopgfVSSUEUGH9ZaqCW4wpGksJ/W1ushd/4PjH2J2GbrTDr0
-         VQdpCzNcMPBJQbh/usgOu96tmFUw2sllNwMbRZGNtB4YqLbDjeQrMTzCD4syKNejfHTe
-         XOWw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=wdbWjM8eoz1rtM3sTLi8IH/lKU9rb0SeE8VSMizMzlI=;
-        b=ADlLwMCvSb6EBcXUVIV8D+tNIfP1fs0IWQfxCNFAsuJUS1YsFCQPvm7/r4y0ve678M
-         yj6GsM9ivGBr/666VILLc8ThgSkdWPfWmA9uQYOR08shvoUJGrgcbSTB4TqyKvdxZQWi
-         0CxFyDKtN0JaezBF3doIz4izYqfRfn9xUzJbhVBC7Nug5ZmjlQamoUaccm1w36LIXhWh
-         skipzIHeCFM0k2VWPOHrjuaalzYllK5FL9EDcEIABgiv2OCJCKLPpw59wDkGplbbEbjH
-         nVhHkZMWf9SjYZYxH20vKbmKn3ZSI+qcVN8GXbAtRIvnZEtwVL65mxVJk9anD+aKV0hG
-         yztg==
-X-Gm-Message-State: AOAM533M1zA/dJkA0UFPuNQCSNSOigBhUAo4e9R6cm54FeN+89Ad9N/x
-        X8N97v9vaXFimYpqZynKVuw=
-X-Google-Smtp-Source: ABdhPJw8Da4PWG2Lr6PzhVtKx/qzH1WM4bMJfczUsdOChFZM32xp1YwyIDy7SqYdPPn3IRYIkeQ3yA==
-X-Received: by 2002:a2e:9090:: with SMTP id l16mr987967ljg.366.1644272000720;
-        Mon, 07 Feb 2022 14:13:20 -0800 (PST)
-Received: from localhost.localdomain (h-155-4-221-129.NA.cust.bahnhof.se. [155.4.221.129])
-        by smtp.gmail.com with ESMTPSA id o17sm1662503lfl.16.2022.02.07.14.13.19
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 07 Feb 2022 14:13:20 -0800 (PST)
-From:   Rikard Falkeborn <rikard.falkeborn@gmail.com>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-Cc:     Marc Zyngier <maz@kernel.org>, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org,
-        Rikard Falkeborn <rikard.falkeborn@gmail.com>
-Subject: [PATCH] sh: mach-x3proto: Constify static irq_domain_ops
-Date:   Mon,  7 Feb 2022 23:13:14 +0100
-Message-Id: <20220207221314.97788-1-rikard.falkeborn@gmail.com>
-X-Mailer: git-send-email 2.35.1
+        with ESMTP id S1347086AbiBHMgh (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 8 Feb 2022 07:36:37 -0500
+X-Greylist: delayed 306 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 08 Feb 2022 04:36:32 PST
+Received: from mout.kundenserver.de (mout.kundenserver.de [212.227.126.131])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A163CC03FEC0;
+        Tue,  8 Feb 2022 04:36:32 -0800 (PST)
+Received: from mail-wr1-f54.google.com ([209.85.221.54]) by
+ mrelayeu.kundenserver.de (mreue010 [213.165.67.97]) with ESMTPSA (Nemesis) id
+ 1MeCd5-1nrZkY0I59-00bKxJ; Tue, 08 Feb 2022 13:31:25 +0100
+Received: by mail-wr1-f54.google.com with SMTP id i15so8045233wrb.3;
+        Tue, 08 Feb 2022 04:31:24 -0800 (PST)
+X-Gm-Message-State: AOAM533fnZdpP2AwchPqGk1Dbv8V5VnCruO3LQjkRqZX4uJOuWdES+Ae
+        x3QtpAS4A7jKgoPGlnzmPhCQkD0GVWPC5FFv6is=
+X-Google-Smtp-Source: ABdhPJwjh+iPDutKVoomV+unhCPIxYaBfo3+/C6V9s9/YsnzEY7RKbIpI3TmFrilYu/3zyKr/YPI7OskgWVLlPCf7Is=
+X-Received: by 2002:a05:6000:3c6:: with SMTP id b6mr3354375wrg.12.1644323484543;
+ Tue, 08 Feb 2022 04:31:24 -0800 (PST)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20211218165258.16716-1-prabhakar.mahadev-lad.rj@bp.renesas.com>
+ <20211218165258.16716-3-prabhakar.mahadev-lad.rj@bp.renesas.com>
+ <CAMuHMdUg3=q7gyaVHP0XcYUOo3PQUUv8Hc8wp5faVQ+bTBpg4A@mail.gmail.com> <042a2183-3f04-088c-1861-656de870337d@gmail.com>
+In-Reply-To: <042a2183-3f04-088c-1861-656de870337d@gmail.com>
+From:   Arnd Bergmann <arnd@arndb.de>
+Date:   Tue, 8 Feb 2022 13:31:08 +0100
+X-Gmail-Original-Message-ID: <CAK8P3a3owi7YWmq-tckD-C7NK5HaX+swGNW-QBkWQuQgVsVWrA@mail.gmail.com>
+Message-ID: <CAK8P3a3owi7YWmq-tckD-C7NK5HaX+swGNW-QBkWQuQgVsVWrA@mail.gmail.com>
+Subject: Re: [PATCH 2/3] i2c: sh_mobile: Use platform_get_irq_optional() to
+ get the interrupt
+To:     Sergei Shtylyov <sergei.shtylyov@gmail.com>
+Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>,
+        Rob Herring <robh+dt@kernel.org>,
+        Nicolas Saenz Julienne <nsaenz@kernel.org>,
+        Florian Fainelli <f.fainelli@gmail.com>,
+        Ray Jui <rjui@broadcom.com>,
+        Scott Branden <sbranden@broadcom.com>,
+        bcm-kernel-feedback-list <bcm-kernel-feedback-list@broadcom.com>,
+        Chris Brandt <chris.brandt@renesas.com>,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Linux I2C <linux-i2c@vger.kernel.org>,
+        linux-rpi-kernel <linux-rpi-kernel@lists.infradead.org>,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Linux-Renesas <linux-renesas-soc@vger.kernel.org>,
+        Prabhakar <prabhakar.csengg@gmail.com>,
+        Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+X-Provags-ID: V03:K1:OW1Lh6CTJ007cKq7X22hpR29N5b9uv6n+9VwIxZK1DM7wwzUNob
+ vPVIWoa3wrrTa/U0a+QDJvjUjmfBvH3QI+oUIxVpqyP5XAbeqLNhIGhbj6/jF6RwHTnt3sW
+ gkYhtJcZvLODUNSzoR9lWTr31flYOPvSjfokiNaC0uwvG+OAhqdc8QiBX8K2YRCPEY4TPd0
+ 58TB51npdbZ5KDSlCb25w==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:vRHoiAS8jqE=:xYejVhw5wpobxIC1gYyBRA
+ ER0znej4HBEw1Xan1dD8GNvpukMTiBKmAhJZqtdaCfgufrI7t8ysgoFyUWZqDhOprip2wqSl5
+ 3Sj+7aeKCCG2VmGAG228oo5CzSp6w9owFrYIR1Cfk8dfSnZMIeeu3hHXLX5KupFMNtBRsoYPJ
+ fK0L1pNx/QldLHdYdBUnfcBOKNApG06EKAhlly3up/4D/S9ddjr0/BCCV0e95sTqemx4OB++F
+ 5jV6XMX4djyYwKap9lYRtXAiqZaUr559nSX/QpTSnshKSBKiQzZhRkCYOwdOTj1d+xWsDM/By
+ X5b6UxwCo7oxQMwNuY6g9NeK4+1aspGYDepcCKWcbo7AwkuE9bdmSzrUr+63RADdBB8Q83huk
+ j/sYeD0v0sYFrWnGrYtkCiXUi1rbF+GRm0rwYws/XMKd4Y7yYTdvGvDZjY6fzyEW4JToBkkI2
+ erQ5/AtuIPr5xuIJPwIJT18sH6PhAA8PX3KhEOX6N2SBOiJuDOu74J0LfGz2o6zydulbvWX/k
+ xJlVrD25cfMXmRh31e2tAbKiKsR6W/hK2lobL5GP+Jz7L6GhnJ+jpzqgtarjv4xCCBzlSXoLR
+ YFzkEMWgBiLXlD/ZG4/PXRPZ7tkuTLjFmmLilbvlFejOGOd2o4SYJQRSnPSxHACJMmwvT0spo
+ ClCbn9S3zbEHHajGzZZuZeyzDvYtyhPnVHz9IsO+MzhGTuz7Jm4qd01qE3cmYQnSclcSMyjfq
+ QlysV+lrVSTDfKETnhveMZpRVZcmBYWUwciuQHGQkJaDP/ZouMgKE8Zh1PzXlIaH2cYK8c6ts
+ tqsCSQpWReHj+OBbNCb2dWs8wOB8H+dNosmOpt4QbZwKKhwFqE=
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The only usage of x3proto_gpio_irq_ops is to pass its address to
-irq_domain_add_linear() which takes a pointer to const struct
-irq_domain_ops. Make it const to allow the compiler to put it in
-read-only memory
+On Mon, Dec 20, 2021 at 12:53 PM Sergei Shtylyov
+<sergei.shtylyov@gmail.com> wrote:
+> On 20.12.2021 13:17, Geert Uytterhoeven wrote:
+>
+> > I might have missed something, but it seems the only user of IRQ 0 on
+> > SuperH is smsc911x Ethernet in arch/sh/boards/board-apsh4a3a.c and
+> > arch/sh/boards/board-apsh4ad0a.c, which use evt2irq(0x200).
+> > These should have been seeing the "0 is an invalid IRQ number"
+> > warning splat since it was introduced in commit a85a6c86c25be2d2
+> > ("driver core: platform: Clarify that IRQ 0 is invalid"). Or not:
+>
+>     Warning or no warning, 0 is still returned. :-/
+>     My attempt to put an end to this has stuck waiting a review from the IRQ
+> people...
 
-Signed-off-by: Rikard Falkeborn <rikard.falkeborn@gmail.com>
----
- arch/sh/boards/mach-x3proto/gpio.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+I had another look at this after you asked about it on IRC. I don't
+know much SH assembly, but I suspect IRQ 0 has not been delivered
+since 2009 after 1e1030dccb10 ("sh: nmi_debug support."). On a
+related note, CONFIG_INTC_BALANCING was broken in 2be6bb0c79c7
+("sh: intc: Split up the INTC code.") by inadvertently removing the Kconfig
+symbol.
 
-diff --git a/arch/sh/boards/mach-x3proto/gpio.c b/arch/sh/boards/mach-x3proto/gpio.c
-index f82d3a6a844a..dd8ef41e5562 100644
---- a/arch/sh/boards/mach-x3proto/gpio.c
-+++ b/arch/sh/boards/mach-x3proto/gpio.c
-@@ -91,7 +91,7 @@ static int x3proto_gpio_irq_map(struct irq_domain *domain, unsigned int virq,
- 	return 0;
- }
- 
--static struct irq_domain_ops x3proto_gpio_irq_ops = {
-+static const struct irq_domain_ops x3proto_gpio_irq_ops = {
- 	.map	= x3proto_gpio_irq_map,
- 	.xlate	= irq_domain_xlate_twocell,
- };
--- 
-2.35.1
-
+        Arnd
