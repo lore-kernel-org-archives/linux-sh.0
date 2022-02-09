@@ -2,53 +2,52 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A4CEC433F5
-	for <linux-sh@archiver.kernel.org>; Wed,  9 Feb 2022 15:48:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D44FFC433EF
+	for <linux-sh@archiver.kernel.org>; Wed,  9 Feb 2022 16:08:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236266AbiBIPs2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 9 Feb 2022 10:48:28 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59730 "EHLO
+        id S236590AbiBIQI1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 9 Feb 2022 11:08:27 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43098 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236279AbiBIPsZ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 9 Feb 2022 10:48:25 -0500
-Received: from mail-lf1-x12d.google.com (mail-lf1-x12d.google.com [IPv6:2a00:1450:4864:20::12d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E28B1C05CB82;
-        Wed,  9 Feb 2022 07:48:28 -0800 (PST)
-Received: by mail-lf1-x12d.google.com with SMTP id i34so5057964lfv.2;
-        Wed, 09 Feb 2022 07:48:28 -0800 (PST)
+        with ESMTP id S231704AbiBIQIW (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 9 Feb 2022 11:08:22 -0500
+Received: from mail-lj1-x22f.google.com (mail-lj1-x22f.google.com [IPv6:2a00:1450:4864:20::22f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4DFDBC0613C9;
+        Wed,  9 Feb 2022 08:08:25 -0800 (PST)
+Received: by mail-lj1-x22f.google.com with SMTP id k10so1121850ljq.2;
+        Wed, 09 Feb 2022 08:08:25 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20210112;
-        h=from:subject:to:cc:references:message-id:date:user-agent
+        h=subject:to:cc:references:from:message-id:date:user-agent
          :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=82DwdajpDNDBqVPVvon+Lp7fZFYchqTwnP7OnaqMXhA=;
-        b=ZOkWhnlTBnzqrCpWvyLu4YD7jOCU7hGFKGq6WCfRVdhxmTbBTYIQG8rMNK93Kuf10u
-         1ZzuxSt8qLrH/DHbop68m20FsgNUQBBJZQet7nDoNej3g7GDVjLaXArFIRy3Xp3dZ8PI
-         oGVVrR1548ktVnF4a8IZK+6mgLS+8KpaGogK3XwYJoReaZ9N4gWaDOIz4aGP91gGUeaC
-         rGeO3HC/i3L0oV6fDRw0dKedzCghrlk5X6d/cqD8ncs4Munz7zBKtlQtSEGVgdBkfg5r
-         mjYm4Yr95o6wCrb8+Vf4nqQO8QkOOcI1viia+oVy6pXgCSEusij2UzqN4/CUFUpXA7YT
-         E6iA==
+        bh=3LjZkfsnvFgUjcgFV9sB8nTwuBZrwGSMIL1VSbtAcMs=;
+        b=YyOQ+mqZzIkGZSYXQT5D4k2YHmoQkHau7yq2V43cGra3NFxDvDz0T+383EQ3fNTsm4
+         l+R03EqeEp4P7ZVu2utZxiyp6P0lGX6FE9GqsAnP/B9wEOudXOJGZSolz9hbLIHPKICZ
+         HXRECwP6WDfkaTEj4Dbudg9ZfcSf+OKFGkdOX4LTAU/esjpRm96mGuMgBnGu7qF8zemz
+         lXghhWestDkhs+kgAhDJ618gf2lBKcmNe2ip381kq7JRdjPF/1mUIKpw+l/XMAPJlqSS
+         57V5KYOSjTIvPUl/bg06ZaVpr+q0AW6ZWQwXyAkwjT1DnCc7eAAnz56BBBCcLs+BEPpw
+         Br4A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:subject:to:cc:references:message-id:date
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=82DwdajpDNDBqVPVvon+Lp7fZFYchqTwnP7OnaqMXhA=;
-        b=HVCvqzSENLWpifCYGS47JwZNpEyQ4wZaRZ8D8MP2Pf8AlaBWWcTMtuZP8sZLuZP5Oq
-         qbZD5vDsGqw3fUUx9qrAfKf/oJVljxDPHcNZsCuRvB0qEIY6KFZuJuQH0P7m+Kq0NSFy
-         p/HCDB6nmSgY1Deo3mNJ4W7/z8RwXZ9aUZcHU7FkStqsfyhL6IR3K0dqNYFBBTo/x9t1
-         Y083afP9KUTsH5cyjFUH9jzTdEskCpGB3g7fWnu9CilDwHWHH1TJoTtfO5hIUZw0RSHC
-         hNMe+2lDSsHE9/497y4sYHHCxfcbzqHXdhr9yGMTbpYlaFn3HP34xAnASLWjj4PgDsRe
-         cT7Q==
-X-Gm-Message-State: AOAM531+LND9D78pfPQzipNeFGsOMjw+dNM5o0VAcGIxaUB0z8cOupPB
-        hcqo7mPWqpY8A8hxm4HHmCguwzK+CWJaqg==
-X-Google-Smtp-Source: ABdhPJzOm978Gkpt9GdyeIqflw6RUzXCclEoSV+vfQH7V5jKfnEkSPwqXRFfDJFIqi8RsajP0cS8Ug==
-X-Received: by 2002:a05:6512:33ce:: with SMTP id d14mr2058147lfg.264.1644421706987;
-        Wed, 09 Feb 2022 07:48:26 -0800 (PST)
+        bh=3LjZkfsnvFgUjcgFV9sB8nTwuBZrwGSMIL1VSbtAcMs=;
+        b=X5dBDClwqLJeQQBSuquXZVb113XlgIfOPeY3BcHV1hppFiZUexgUeTPzOZv8/mZIgW
+         qcceTP33f+PrkH0aZ/elyEqiEfFJTbTDrxlMISMEMzrJKsizd28Y79XH+sJp/0/ouMlP
+         +cjtjBti1z1YPWyaRrFP8KtpXdsQktjoefZ5n5MsGZ1hS6ZI3M1afAoLIGGOIOGY5YGV
+         Jy9k2nUrpNhANJmyXZVKjXnykFtevP+LwQdBVJ6oOEyL1UWN7JUQ4vnpv2r21oKi2dtd
+         OO42+h8iNlwT7CpeczT4Fnf03x3lSfHLZxrGi3BtwfGX428kdpy2D9Z5kioOCdy9Iidh
+         Zf3w==
+X-Gm-Message-State: AOAM5309YEjhwZPa92v2N8iF3mnxMsIzux+OOlA96Ky7yHnOZav5j9xM
+        AVGqSW5FGH1A9AwC87+j99eLyY8wxsdnDQ==
+X-Google-Smtp-Source: ABdhPJwJWSHIOJjXRlxqiBv7Mp09gR3VoqOHH7ZwVhTUHB69AxeeU/vDtYmpDFh3c4iLVL2uIGUU2A==
+X-Received: by 2002:a2e:93c9:: with SMTP id p9mr2009723ljh.397.1644422902208;
+        Wed, 09 Feb 2022 08:08:22 -0800 (PST)
 Received: from [192.168.1.103] ([178.176.73.27])
-        by smtp.gmail.com with ESMTPSA id d20sm2521958ljl.25.2022.02.09.07.48.25
+        by smtp.gmail.com with ESMTPSA id s13sm2421825lfs.223.2022.02.09.08.08.20
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 09 Feb 2022 07:48:26 -0800 (PST)
-From:   Sergei Shtylyov <sergei.shtylyov@gmail.com>
+        Wed, 09 Feb 2022 08:08:21 -0800 (PST)
 Subject: Re: [PATCH 2/3] i2c: sh_mobile: Use platform_get_irq_optional() to
  get the interrupt
 To:     Arnd Bergmann <arnd@arndb.de>
@@ -76,12 +75,15 @@ References: <20211218165258.16716-1-prabhakar.mahadev-lad.rj@bp.renesas.com>
  <CAK8P3a3owi7YWmq-tckD-C7NK5HaX+swGNW-QBkWQuQgVsVWrA@mail.gmail.com>
  <d74ab454-9337-d168-9b21-842569431b4a@gmail.com>
  <CAK8P3a20mwJXN4Mb063zQG+HAevj_Odpj58EzPHkX-p6pbtnGA@mail.gmail.com>
-Message-ID: <7c47ce67-88ee-9cba-3356-a530b0d3e657@gmail.com>
-Date:   Wed, 9 Feb 2022 18:48:24 +0300
+ <7c47ce67-88ee-9cba-3356-a530b0d3e657@gmail.com>
+ <CAK8P3a0gf6TeK2vZ+u3NZ2VrrvrGUohAPz5WiZ4Mbk5QQg9FFg@mail.gmail.com>
+From:   Sergei Shtylyov <sergei.shtylyov@gmail.com>
+Message-ID: <9a07be5a-914b-cec9-f6bc-8c1b0ecef766@gmail.com>
+Date:   Wed, 9 Feb 2022 19:08:20 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
  Thunderbird/78.10.1
 MIME-Version: 1.0
-In-Reply-To: <CAK8P3a20mwJXN4Mb063zQG+HAevj_Odpj58EzPHkX-p6pbtnGA@mail.gmail.com>
+In-Reply-To: <CAK8P3a0gf6TeK2vZ+u3NZ2VrrvrGUohAPz5WiZ4Mbk5QQg9FFg@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -89,43 +91,42 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 2/9/22 6:18 PM, Arnd Bergmann wrote:
-> On Wed, Feb 9, 2022 at 4:11 PM Sergei Shtylyov
-> <sergei.shtylyov@gmail.com> wrote:
->>
->> On 2/8/22 3:31 PM, Arnd Bergmann wrote:
->>
->> [...]
->>>>> I might have missed something, but it seems the only user of IRQ 0 on
->>>>> SuperH is smsc911x Ethernet in arch/sh/boards/board-apsh4a3a.c and
->>>>> arch/sh/boards/board-apsh4ad0a.c, which use evt2irq(0x200).
->>>>> These should have been seeing the "0 is an invalid IRQ number"
->>>>> warning splat since it was introduced in commit a85a6c86c25be2d2
->>>>> ("driver core: platform: Clarify that IRQ 0 is invalid"). Or not:
+On 2/9/22 7:02 PM, Arnd Bergmann wrote:
+
+>>>>> since 2009 after 1e1030dccb10 ("sh: nmi_debug support."). On a
 >>>>
->>>>     Warning or no warning, 0 is still returned. :-/
->>>>     My attempt to put an end to this has stuck waiting a review from the IRQ
->>>> people...
+>>>>    Mhm... this commit changes the SH3 code while SH778x are SH4A, no?
 >>>
->>> I had another look at this after you asked about it on IRC. I don't
->>> know much SH assembly, but I suspect IRQ 0 has not been delivered
-
-   Neither do I, sigh...
-   I do know the instuctions are 16-bit and so there are no immediate
-opperands... :-)
-
->>> since 2009 after 1e1030dccb10 ("sh: nmi_debug support."). On a
+>>> This code is shared between both:
+>>>
+>>> arch/sh/kernel/cpu/sh4/Makefile:common-y        += $(addprefix
+>>> ../sh3/, entry.o ex.o)
 >>
->>    Mhm... this commit changes the SH3 code while SH778x are SH4A, no?
+>>    Ah, quite convoluted! :-)
+>>    So you mean thet broke the delivery of EVT 0x200 when mucking with NMI?
 > 
-> This code is shared between both:
+> Yes, exactly: If I read this right, the added code:
 > 
-> arch/sh/kernel/cpu/sh4/Makefile:common-y        += $(addprefix
-> ../sh3/, entry.o ex.o)
+> +       shlr2   r4
+> +       shlr    r4
+> +       mov     r4, r0          ! save vector->jmp table offset for later
+> +
+> +       shlr2   r4              ! vector to IRQ# conversion
+> +       add     #-0x10, r4
+> +
+> +       cmp/pz  r4              ! is it a valid IRQ?
+> +       bt      10f
+> 
+> gets the vector (0x200 for this device), shifts it five bits to 0x10,
+> and subtracts 0x10,
+> then branches to do_IRQ if the interrupt number is non-zero, otherwise it goes
+> through the exception_handling_table.
 
-   Ah, quite convoluted! :-)
-   So you mean thet broke the delivery of EVT 0x200 when mucking with NMI?
+   The SH4 manual I found on my disk (have it from MontaVista times) tells me cmp/pz
+sets T if Rn is >= 0, then bt branches if T = 1. So I do think the code is correct.
+   One more thing: the board code for those boards was added in 2011, we can assume
+it was working back then, right? :-_
 
->        Arnd
+>          Arnd
 
 MBR, Sergey
