@@ -2,41 +2,41 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 39664C433EF
-	for <linux-sh@archiver.kernel.org>; Wed,  9 Feb 2022 16:15:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F1C90C433EF
+	for <linux-sh@archiver.kernel.org>; Wed,  9 Feb 2022 22:57:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231614AbiBIQPr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 9 Feb 2022 11:15:47 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47954 "EHLO
+        id S236712AbiBIW5V (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 9 Feb 2022 17:57:21 -0500
+Received: from gmail-smtp-in.l.google.com ([23.128.96.19]:38772 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230307AbiBIQPr (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 9 Feb 2022 11:15:47 -0500
-X-Greylist: delayed 763 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 09 Feb 2022 08:15:48 PST
-Received: from mout.kundenserver.de (mout.kundenserver.de [212.227.17.24])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8DB00C0613C9;
-        Wed,  9 Feb 2022 08:15:48 -0800 (PST)
-Received: from mail-wm1-f44.google.com ([209.85.128.44]) by
- mrelayeu.kundenserver.de (mreue106 [213.165.67.113]) with ESMTPSA (Nemesis)
- id 1MZCOl-1nmGTJ08sz-00VAKE; Wed, 09 Feb 2022 17:03:04 +0100
-Received: by mail-wm1-f44.google.com with SMTP id j5-20020a05600c1c0500b0034d2e956aadso1934394wms.4;
-        Wed, 09 Feb 2022 08:03:03 -0800 (PST)
-X-Gm-Message-State: AOAM530akN/TDGCXa5H0nGdasan9Ro+71bb/LQDY1pnVcYUhawDwHwb9
-        gq6rLjysbFb+UNGjvsAnhAHnYvcYyLQaK9OqEeg=
-X-Google-Smtp-Source: ABdhPJxHAcHzTkMru4eEbqCHHWwDwZqYvTFbBt81TVOW87gLftYxW0tO+QQP3beMBCNrl8y6eFs1QMk5c63m/k04/W8=
-X-Received: by 2002:a1c:f309:: with SMTP id q9mr3200865wmq.173.1644422583536;
- Wed, 09 Feb 2022 08:03:03 -0800 (PST)
+        with ESMTP id S236730AbiBIW5U (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 9 Feb 2022 17:57:20 -0500
+Received: from mout.kundenserver.de (mout.kundenserver.de [212.227.126.133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D0791E04FF0E;
+        Wed,  9 Feb 2022 14:57:17 -0800 (PST)
+Received: from mail-wr1-f50.google.com ([209.85.221.50]) by
+ mrelayeu.kundenserver.de (mreue012 [213.165.67.97]) with ESMTPSA (Nemesis) id
+ 1MJFpj-1ncUka4Bwp-00Kg3E; Wed, 09 Feb 2022 23:57:16 +0100
+Received: by mail-wr1-f50.google.com with SMTP id k1so6462532wrd.8;
+        Wed, 09 Feb 2022 14:57:15 -0800 (PST)
+X-Gm-Message-State: AOAM531OxbqUDbiD8ccEUA6VLQ5DtT2saq1TFCuWx+hNsGSz0C0UgMO8
+        9Rpy7XZpSVSNUwmaSi46bjAW7lkKdUPxKguXHvM=
+X-Google-Smtp-Source: ABdhPJx6k5SzHUiKxbi22X3ArFfHWnfD1uhdVPHGLwKUVBYNri0Ph5zCMFRBWOFFi/ShRb6G6dCKxmJXRqnm6B99V9s=
+X-Received: by 2002:a05:6000:178d:: with SMTP id e13mr3797888wrg.317.1644447435616;
+ Wed, 09 Feb 2022 14:57:15 -0800 (PST)
 MIME-Version: 1.0
 References: <20211218165258.16716-1-prabhakar.mahadev-lad.rj@bp.renesas.com>
  <20211218165258.16716-3-prabhakar.mahadev-lad.rj@bp.renesas.com>
  <CAMuHMdUg3=q7gyaVHP0XcYUOo3PQUUv8Hc8wp5faVQ+bTBpg4A@mail.gmail.com>
  <042a2183-3f04-088c-1861-656de870337d@gmail.com> <CAK8P3a3owi7YWmq-tckD-C7NK5HaX+swGNW-QBkWQuQgVsVWrA@mail.gmail.com>
  <d74ab454-9337-d168-9b21-842569431b4a@gmail.com> <CAK8P3a20mwJXN4Mb063zQG+HAevj_Odpj58EzPHkX-p6pbtnGA@mail.gmail.com>
- <7c47ce67-88ee-9cba-3356-a530b0d3e657@gmail.com>
-In-Reply-To: <7c47ce67-88ee-9cba-3356-a530b0d3e657@gmail.com>
+ <7c47ce67-88ee-9cba-3356-a530b0d3e657@gmail.com> <CAK8P3a0gf6TeK2vZ+u3NZ2VrrvrGUohAPz5WiZ4Mbk5QQg9FFg@mail.gmail.com>
+ <9a07be5a-914b-cec9-f6bc-8c1b0ecef766@gmail.com>
+In-Reply-To: <9a07be5a-914b-cec9-f6bc-8c1b0ecef766@gmail.com>
 From:   Arnd Bergmann <arnd@arndb.de>
-Date:   Wed, 9 Feb 2022 17:02:47 +0100
-X-Gmail-Original-Message-ID: <CAK8P3a0gf6TeK2vZ+u3NZ2VrrvrGUohAPz5WiZ4Mbk5QQg9FFg@mail.gmail.com>
-Message-ID: <CAK8P3a0gf6TeK2vZ+u3NZ2VrrvrGUohAPz5WiZ4Mbk5QQg9FFg@mail.gmail.com>
+Date:   Wed, 9 Feb 2022 23:56:59 +0100
+X-Gmail-Original-Message-ID: <CAK8P3a3wOxRdGJfDx86WiNwFvbK=wXYCtPoS-DQKqyYfHZiMjw@mail.gmail.com>
+Message-ID: <CAK8P3a3wOxRdGJfDx86WiNwFvbK=wXYCtPoS-DQKqyYfHZiMjw@mail.gmail.com>
 Subject: Re: [PATCH 2/3] i2c: sh_mobile: Use platform_get_irq_optional() to
  get the interrupt
 To:     Sergei Shtylyov <sergei.shtylyov@gmail.com>
@@ -59,57 +59,50 @@ Cc:     Arnd Bergmann <arnd@arndb.de>,
         Prabhakar <prabhakar.csengg@gmail.com>,
         Linux-sh list <linux-sh@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
-X-Provags-ID: V03:K1:oOnrIzxPcdoamCYqgJO/oc+l7Sjc2zyhd85HLNkgXcpsHQkF/b5
- RQh6FcYRuouqCm/fB4eenwPLcJvQbZTwxqZyA2xQ23XoSWQfp5eMgeAT9BO9Y7fiL2itSCJ
- i8k1NyxUoTjzMc7H8usXDRkXVBOPXWi53tNF5LopqmentlqSKiOr6vVxu9DM6CUoOdqOAUI
- eSQQ0eg3GmWVBtrz5tLYg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:zRg5TrnoYmQ=:TFD1uUkQxnj/tb9YU03Nq6
- vkX8MQjrVHdrepckONzp1hySe00h1M8MFXQbq9zF6rjM/ycXPldgZzPd68/ic/2IxthVFUQZe
- tulZqiKbNXciHS+q80fCC+cRp8qe3S7FEt+jKcB7D3+cJ/9PeSq1uplTYt+onan6ELg3MGOuq
- m0NHngYvGn8rLVmfwB2tlNdJjzvR32iwnGZRW8difHtirsDEyDVHuOc+sAYcScONJsSVx1WvB
- IbGGlq5SCsUKiYi8u81L5ILepxrn3PagTpm1HDlWzt/sFMqIvRcVRIO0768Putm0vi3f24sZy
- MeDUDXekmpaoSrsWCjxNPKMmDcMbOy1pfB7wRbbvhgFxo1x0zClBC29zy0/EnPWB+5nihIf6I
- 9Mk/B+OSB6ss5DR81TCpC14LkBH9YZotehjmGngBCJiIkl5YppnwLb/oL6gtvY61uF0FpGZJb
- 1r3qFOVUpPssv7mdu11DmX06EfNSHqmpZGNWuVwxyWZPIwhPT+mbVRfeRv6j6Y1IEq8c9hrlq
- f1q9rQCv2JxCbxc2jBe/awshUqU80Yl2LUrPBm+oMMyryiTZgcrFnQPAZ6lkK0kfo7Md/5CCj
- Ru+PGF+6Y8Qpq+6lQzDxw5y5EL6pLDNIvcHuAzvLDfYjCnz/1n8siN9Jm7UcZoa+wygNqhOkj
- BK2Lt+niDzlYZy+xXGhrpD1HpL8DfylS/wIWBitgvI1rH47L0PCoKK7DAFc/gW+XoiF1eSLKk
- UVVyYL2YP3Oj1PhRvXvDP/xjkA+k1Z2CL/ewTVAsZ68g82udmTV3qXkB2TViDdqZDZBERAYKn
- Cjvloncv12/0NcWlEIo7UL5w2SdWSEMku+F3+k3UHLQtv5zDIQ=
+X-Provags-ID: V03:K1:iz4osL0LS/CVwD/e5yrQnoMN5iG7QTanvYybME2u+hzIbUJrl8k
+ SXJurOPxymVZf+kuK3k8lwyHGylgPOYeAGSXatMOAxPCIn96aBYoB4Qgh2cQIHjghA7uNsp
+ UlcLVhcoGpZBirw9Yo12SkJK453F/fRkQ3tcAtNgRBleprYmqdtKHE+f4xjX36ThU14tpGz
+ /Kk+J+w4EtklWFEXlJajQ==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:fsFsCFBlECc=:RkXJd5cyMagMVbYd1HFAmX
+ VPWo5iFnBW6yuIUnu0wlIx01Lur2D9szeda7iwfPXy7gavOpIk7L2jPgXaUG3Y8B9JzWlsODo
+ cwXN/TavqXTZH7rwWN93xxWnpiBEW44Ybf+z4Eo48byU9A6wu2YyfZTiTC94pI6JzNgT2xziL
+ vMXnntK6A8Ux1xd4x3aEWGJZa3giFHe0Aso5TgtNUuPs66YmVFuXTGtGV91SEmmYpe4+hH8bA
+ sboyRG8ztwE++qAnoK1BMmWTcuwf3bOQfJHUkwReJzcJeRlkePAmEq6dK29wwGXGk82RsFj2Z
+ lEeWhOSgWm3YyhdKJinVBOhBbsaimilPafvScJ0Pgb5LapmR4LgWOTykyWMOpGipsUueI7mkO
+ 9N5Uu6xG8jcpysphDIBupP/z74J0K2k19ZpBjO+6PeWMvXisR1RswYs4EM30khVjjKFAdW3+1
+ q7pczo1+T6NFnREnTdo/80fnIhgMZsCWxSy3L9GVosl6SSebQQOoarSeKxrmmgG8QKA6okuCL
+ gAfYEGDLoUfJZZzo/73cbZ3t0oLoxZF31aGYD7J2+1hTg9jWm/cxc5LXYwgZQZLJS3QFHOA9l
+ ediB0FUmDK3BlRtuxtkfAXHbO02+kBaESaYTCxbXQRo7blTcinhhuxnXWi3kFbEKIA9yrpbgX
+ bKOewf6sDaEaKBxOc8+EWDZJk/9hj5r8kVGMAxHkkn8Lr9Sxv3T5/kWfP7JdrSW7IdPY=
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Feb 9, 2022 at 4:48 PM Sergei Shtylyov
+On Wed, Feb 9, 2022 at 5:08 PM Sergei Shtylyov
 <sergei.shtylyov@gmail.com> wrote:
-> On 2/9/22 6:18 PM, Arnd Bergmann wrote:
-> >>> since 2009 after 1e1030dccb10 ("sh: nmi_debug support."). On a
-> >>
-> >>    Mhm... this commit changes the SH3 code while SH778x are SH4A, no?
+> On 2/9/22 7:02 PM, Arnd Bergmann wrote:
 > >
-> > This code is shared between both:
+> > +       shlr2   r4
+> > +       shlr    r4
+> > +       mov     r4, r0          ! save vector->jmp table offset for later
+> > +
+> > +       shlr2   r4              ! vector to IRQ# conversion
+> > +       add     #-0x10, r4
+> > +
+> > +       cmp/pz  r4              ! is it a valid IRQ?
+> > +       bt      10f
 > >
-> > arch/sh/kernel/cpu/sh4/Makefile:common-y        += $(addprefix
-> > ../sh3/, entry.o ex.o)
+> > gets the vector (0x200 for this device), shifts it five bits to 0x10,
+> > and subtracts 0x10,
+> > then branches to do_IRQ if the interrupt number is non-zero, otherwise it goes
+> > through the exception_handling_table.
 >
->    Ah, quite convoluted! :-)
->    So you mean thet broke the delivery of EVT 0x200 when mucking with NMI?
+>    The SH4 manual I found on my disk (have it from MontaVista times) tells me cmp/pz
+> sets T if Rn is >= 0, then bt branches if T = 1. So I do think the code is correct.
+>    One more thing: the board code for those boards was added in 2011, we can assume
+> it was working back then, right? :-_
 
-Yes, exactly: If I read this right, the added code:
-
-+       shlr2   r4
-+       shlr    r4
-+       mov     r4, r0          ! save vector->jmp table offset for later
-+
-+       shlr2   r4              ! vector to IRQ# conversion
-+       add     #-0x10, r4
-+
-+       cmp/pz  r4              ! is it a valid IRQ?
-+       bt      10f
-
-gets the vector (0x200 for this device), shifts it five bits to 0x10,
-and subtracts 0x10,
-then branches to do_IRQ if the interrupt number is non-zero, otherwise it goes
-through the exception_handling_table.
+Indeed, this does make more sense, I had not realized that the numbers could get
+negative here.
 
          Arnd
