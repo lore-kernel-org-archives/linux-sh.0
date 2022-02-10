@@ -2,28 +2,44 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F1C90C433EF
-	for <linux-sh@archiver.kernel.org>; Wed,  9 Feb 2022 22:57:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB1D1C433F5
+	for <linux-sh@archiver.kernel.org>; Thu, 10 Feb 2022 08:55:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236712AbiBIW5V (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 9 Feb 2022 17:57:21 -0500
-Received: from gmail-smtp-in.l.google.com ([23.128.96.19]:38772 "EHLO
+        id S238018AbiBJIzJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 10 Feb 2022 03:55:09 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:53502 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236730AbiBIW5U (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 9 Feb 2022 17:57:20 -0500
-Received: from mout.kundenserver.de (mout.kundenserver.de [212.227.126.133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D0791E04FF0E;
-        Wed,  9 Feb 2022 14:57:17 -0800 (PST)
-Received: from mail-wr1-f50.google.com ([209.85.221.50]) by
- mrelayeu.kundenserver.de (mreue012 [213.165.67.97]) with ESMTPSA (Nemesis) id
- 1MJFpj-1ncUka4Bwp-00Kg3E; Wed, 09 Feb 2022 23:57:16 +0100
-Received: by mail-wr1-f50.google.com with SMTP id k1so6462532wrd.8;
-        Wed, 09 Feb 2022 14:57:15 -0800 (PST)
-X-Gm-Message-State: AOAM531OxbqUDbiD8ccEUA6VLQ5DtT2saq1TFCuWx+hNsGSz0C0UgMO8
-        9Rpy7XZpSVSNUwmaSi46bjAW7lkKdUPxKguXHvM=
-X-Google-Smtp-Source: ABdhPJx6k5SzHUiKxbi22X3ArFfHWnfD1uhdVPHGLwKUVBYNri0Ph5zCMFRBWOFFi/ShRb6G6dCKxmJXRqnm6B99V9s=
-X-Received: by 2002:a05:6000:178d:: with SMTP id e13mr3797888wrg.317.1644447435616;
- Wed, 09 Feb 2022 14:57:15 -0800 (PST)
+        with ESMTP id S238013AbiBJIzI (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 10 Feb 2022 03:55:08 -0500
+Received: from mail-vk1-f174.google.com (mail-vk1-f174.google.com [209.85.221.174])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D616BD4A;
+        Thu, 10 Feb 2022 00:55:09 -0800 (PST)
+Received: by mail-vk1-f174.google.com with SMTP id w207so2142594vkd.2;
+        Thu, 10 Feb 2022 00:55:09 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=3WoIIEMj24t8PFRjDuDzok8HeC1xxHYqU5dE7ucu2Ks=;
+        b=ANtY4mZeTE0nJoQ+Qcmz4cBd5ftxgavmaCB+A2pFhOGdoGeQW9l/jLl6uf3n/gskUQ
+         YXYCQSVPHWBPnrNbWFH//z6SCo50wy/eLbSHH+vcoV7WLPN4ApbCl92mCDZGF32JafOk
+         /4J/f6ZZI2Ea4ofpHqO9QCi5PBHQau7vPJhCgwyAkmGunbO8+GgL1woH1XzpAgCdi+E6
+         qS0gVWoLf5IkGKXw5dcWGkzWwP8+xBocBVFWkPn1I9kSBhNXTqfalKO2aLxyM1gcAnNn
+         W0wAISuChQB9TWloRlj/IVGZ5i1auiiQQhqNqBBIJfU34efA0KB3mLM3B5mpYMzoyc72
+         bKog==
+X-Gm-Message-State: AOAM530CmS+yPa10uDfuaqZxS85ErMdS1QtkCn6gd+cDl2rReavVor3v
+        Xatdq/f9/kdc+adkizplU1F1ubmISu47gA==
+X-Google-Smtp-Source: ABdhPJzJMqj51Kru2IrMKdWHNU2o+sXqHfY9Ui+79DN8JUppbZBPxlNZKjZ0Ak3hpEZHr4NakPTzIg==
+X-Received: by 2002:a05:6122:507:: with SMTP id x7mr2178276vko.14.1644483308822;
+        Thu, 10 Feb 2022 00:55:08 -0800 (PST)
+Received: from mail-vk1-f175.google.com (mail-vk1-f175.google.com. [209.85.221.175])
+        by smtp.gmail.com with ESMTPSA id 66sm902864vsh.33.2022.02.10.00.55.08
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 10 Feb 2022 00:55:08 -0800 (PST)
+Received: by mail-vk1-f175.google.com with SMTP id w207so2142554vkd.2;
+        Thu, 10 Feb 2022 00:55:08 -0800 (PST)
+X-Received: by 2002:a1f:2ac3:: with SMTP id q186mr1408230vkq.33.1644483307856;
+ Thu, 10 Feb 2022 00:55:07 -0800 (PST)
 MIME-Version: 1.0
 References: <20211218165258.16716-1-prabhakar.mahadev-lad.rj@bp.renesas.com>
  <20211218165258.16716-3-prabhakar.mahadev-lad.rj@bp.renesas.com>
@@ -33,15 +49,14 @@ References: <20211218165258.16716-1-prabhakar.mahadev-lad.rj@bp.renesas.com>
  <7c47ce67-88ee-9cba-3356-a530b0d3e657@gmail.com> <CAK8P3a0gf6TeK2vZ+u3NZ2VrrvrGUohAPz5WiZ4Mbk5QQg9FFg@mail.gmail.com>
  <9a07be5a-914b-cec9-f6bc-8c1b0ecef766@gmail.com>
 In-Reply-To: <9a07be5a-914b-cec9-f6bc-8c1b0ecef766@gmail.com>
-From:   Arnd Bergmann <arnd@arndb.de>
-Date:   Wed, 9 Feb 2022 23:56:59 +0100
-X-Gmail-Original-Message-ID: <CAK8P3a3wOxRdGJfDx86WiNwFvbK=wXYCtPoS-DQKqyYfHZiMjw@mail.gmail.com>
-Message-ID: <CAK8P3a3wOxRdGJfDx86WiNwFvbK=wXYCtPoS-DQKqyYfHZiMjw@mail.gmail.com>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Thu, 10 Feb 2022 09:54:56 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdV-zBMqHV4aC58E925Aiyqag4TModL8dR1SA8Cwg1Drkw@mail.gmail.com>
+Message-ID: <CAMuHMdV-zBMqHV4aC58E925Aiyqag4TModL8dR1SA8Cwg1Drkw@mail.gmail.com>
 Subject: Re: [PATCH 2/3] i2c: sh_mobile: Use platform_get_irq_optional() to
  get the interrupt
 To:     Sergei Shtylyov <sergei.shtylyov@gmail.com>
 Cc:     Arnd Bergmann <arnd@arndb.de>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
         Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>,
         Rob Herring <robh+dt@kernel.org>,
         Nicolas Saenz Julienne <nsaenz@kernel.org>,
@@ -59,50 +74,27 @@ Cc:     Arnd Bergmann <arnd@arndb.de>,
         Prabhakar <prabhakar.csengg@gmail.com>,
         Linux-sh list <linux-sh@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
-X-Provags-ID: V03:K1:iz4osL0LS/CVwD/e5yrQnoMN5iG7QTanvYybME2u+hzIbUJrl8k
- SXJurOPxymVZf+kuK3k8lwyHGylgPOYeAGSXatMOAxPCIn96aBYoB4Qgh2cQIHjghA7uNsp
- UlcLVhcoGpZBirw9Yo12SkJK453F/fRkQ3tcAtNgRBleprYmqdtKHE+f4xjX36ThU14tpGz
- /Kk+J+w4EtklWFEXlJajQ==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:fsFsCFBlECc=:RkXJd5cyMagMVbYd1HFAmX
- VPWo5iFnBW6yuIUnu0wlIx01Lur2D9szeda7iwfPXy7gavOpIk7L2jPgXaUG3Y8B9JzWlsODo
- cwXN/TavqXTZH7rwWN93xxWnpiBEW44Ybf+z4Eo48byU9A6wu2YyfZTiTC94pI6JzNgT2xziL
- vMXnntK6A8Ux1xd4x3aEWGJZa3giFHe0Aso5TgtNUuPs66YmVFuXTGtGV91SEmmYpe4+hH8bA
- sboyRG8ztwE++qAnoK1BMmWTcuwf3bOQfJHUkwReJzcJeRlkePAmEq6dK29wwGXGk82RsFj2Z
- lEeWhOSgWm3YyhdKJinVBOhBbsaimilPafvScJ0Pgb5LapmR4LgWOTykyWMOpGipsUueI7mkO
- 9N5Uu6xG8jcpysphDIBupP/z74J0K2k19ZpBjO+6PeWMvXisR1RswYs4EM30khVjjKFAdW3+1
- q7pczo1+T6NFnREnTdo/80fnIhgMZsCWxSy3L9GVosl6SSebQQOoarSeKxrmmgG8QKA6okuCL
- gAfYEGDLoUfJZZzo/73cbZ3t0oLoxZF31aGYD7J2+1hTg9jWm/cxc5LXYwgZQZLJS3QFHOA9l
- ediB0FUmDK3BlRtuxtkfAXHbO02+kBaESaYTCxbXQRo7blTcinhhuxnXWi3kFbEKIA9yrpbgX
- bKOewf6sDaEaKBxOc8+EWDZJk/9hj5r8kVGMAxHkkn8Lr9Sxv3T5/kWfP7JdrSW7IdPY=
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+Hi Sergei,
+
 On Wed, Feb 9, 2022 at 5:08 PM Sergei Shtylyov
 <sergei.shtylyov@gmail.com> wrote:
-> On 2/9/22 7:02 PM, Arnd Bergmann wrote:
-> >
-> > +       shlr2   r4
-> > +       shlr    r4
-> > +       mov     r4, r0          ! save vector->jmp table offset for later
-> > +
-> > +       shlr2   r4              ! vector to IRQ# conversion
-> > +       add     #-0x10, r4
-> > +
-> > +       cmp/pz  r4              ! is it a valid IRQ?
-> > +       bt      10f
-> >
-> > gets the vector (0x200 for this device), shifts it five bits to 0x10,
-> > and subtracts 0x10,
-> > then branches to do_IRQ if the interrupt number is non-zero, otherwise it goes
-> > through the exception_handling_table.
->
->    The SH4 manual I found on my disk (have it from MontaVista times) tells me cmp/pz
-> sets T if Rn is >= 0, then bt branches if T = 1. So I do think the code is correct.
 >    One more thing: the board code for those boards was added in 2011, we can assume
 > it was working back then, right? :-_
 
-Indeed, this does make more sense, I had not realized that the numbers could get
-negative here.
+This assumption may not be true: there is plenty of driver/board
+support that was only upstreamed partially.
 
-         Arnd
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
