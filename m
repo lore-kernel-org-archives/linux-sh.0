@@ -2,39 +2,34 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EEF38C433F5
-	for <linux-sh@archiver.kernel.org>; Fri, 11 Feb 2022 20:46:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 64C1AC433EF
+	for <linux-sh@archiver.kernel.org>; Fri, 11 Feb 2022 20:51:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232014AbiBKUqg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 11 Feb 2022 15:46:36 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:42218 "EHLO
+        id S1353531AbiBKUvv (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 11 Feb 2022 15:51:51 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:45362 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229988AbiBKUqg (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 11 Feb 2022 15:46:36 -0500
-Received: from mxout01.lancloud.ru (mxout01.lancloud.ru [45.84.86.81])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7D8B61A2;
-        Fri, 11 Feb 2022 12:46:33 -0800 (PST)
+        with ESMTP id S1353502AbiBKUv1 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 11 Feb 2022 15:51:27 -0500
+Received: from mxout03.lancloud.ru (mxout03.lancloud.ru [45.84.86.113])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4D266D81;
+        Fri, 11 Feb 2022 12:51:25 -0800 (PST)
 Received: from LanCloud
-DKIM-Filter: OpenDKIM Filter v2.11.0 mxout01.lancloud.ru CF85C20AC19D
+DKIM-Filter: OpenDKIM Filter v2.11.0 mxout03.lancloud.ru 8E9F120A91FA
 Received: from LanCloud
 Received: from LanCloud
 Received: from LanCloud
-Subject: Re: [PATCH] sh: avoid using IRQ0 on SH3/4
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Rich Felker <dalias@libc.org>, <linux-sh@vger.kernel.org>,
+From:   Sergey Shtylyov <s.shtylyov@omp.ru>
+Subject: [PATCH v2] sh: avoid using IRQ0 on SH3/4
+To:     Rich Felker <dalias@libc.org>, <linux-sh@vger.kernel.org>,
         <linux-kernel@vger.kernel.org>
 CC:     Yoshinori Sato <ysato@users.sourceforge.jp>
-References: <2f419ed2-66b8-4098-7cd3-0fe698d341c9@omp.ru>
- <63f06bf0-fc7b-3c5c-8af9-5adfd7628354@omp.ru>
- <dde846f0-1324-7fde-ef92-eb72d4200b50@physik.fu-berlin.de>
-From:   Sergey Shtylyov <s.shtylyov@omp.ru>
 Organization: Open Mobile Platform
-Message-ID: <e4c1aec0-e8a0-4577-d12b-8e4efedbf7e6@omp.ru>
-Date:   Fri, 11 Feb 2022 23:46:30 +0300
+Message-ID: <9382f3ca-b49a-e900-7f21-3f10b267ee4a@omp.ru>
+Date:   Fri, 11 Feb 2022 23:51:22 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
  Thunderbird/78.10.1
 MIME-Version: 1.0
-In-Reply-To: <dde846f0-1324-7fde-ef92-eb72d4200b50@physik.fu-berlin.de>
 Content-Type: text/plain; charset="utf-8"
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -45,49 +40,54 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 2/11/22 11:30 PM, John Paul Adrian Glaubitz wrote:
+Using IRQ0 by the platform devices is going to be disallowed soon (see [1])
+and the code supporting SH3/4 SoCs maps the IRQ #s starting at 0 -- modify
+that code to start the IRQ #s from 16 instead.
 
-[...]
->>> Using IRQ0 by the platform devices is going to be disallowed soon (see [1])
->>> and the code supporting SH3/4 SoCs maps the IRQ #s starting at 0 -- modify
->>> that code to start the IRQ #s from 16 instead.
->>>
->>> [1] https://lore.kernel.org/all/5e001ec1-d3f1-bcb8-7f30-a6301fd9930c@omp.ru/
->>>
->>> Signed-off-by: Sergey Shtylyov <s.shtylyov@omp.ru>
->>>
->>> ---
->>> The patch is against Linus Torvalds' 'linux.git' repo.
->>>
->>>  arch/sh/kernel/cpu/sh3/entry.S |    4 ++--
->>>  include/linux/sh_intc.h        |    6 +++---
->>>  2 files changed, 5 insertions(+), 5 deletions(-)
->>>
->>> Index: linux/arch/sh/kernel/cpu/sh3/entry.S
->>> ===================================================================
->>> --- linux.orig/arch/sh/kernel/cpu/sh3/entry.S
->>> +++ linux/arch/sh/kernel/cpu/sh3/entry.S
->>> @@ -470,9 +470,9 @@ ENTRY(handle_interrupt)
->>>  	mov	r4, r0		! save vector->jmp table offset for later
->>>  
->>>  	shlr2	r4		! vector to IRQ# conversion
->>> -	add	#-0x10, r4
->>>  
->>> -	cmp/pz	r4		! is it a valid IRQ?
->>> +	mov	#0x10, r5
->>> +	cmp/ge	r5, r4		! is it a valid IRQ?
->>
->>    Maybe I should've used cmp/hs... my 1st try at SH assembly! :-)
+[1] https://lore.kernel.org/all/5e001ec1-d3f1-bcb8-7f30-a6301fd9930c@omp.ru/
 
-   Yeah, cmp/hs seems m ore correct as we don't subtract any more...
+Signed-off-by: Sergey Shtylyov <s.shtylyov@omp.ru>
 
-> I can test your revised patch next week on my SH7785LCR.
+---
+The patch is against Linus Torvalds' 'linux.git' repo.
 
-   Please do, although testing on the AP-SH4A* bords would be a bit more
-interesting, as they actually use IRQ0 for the SMSC911x chip...
-   Maybe you have SH7786 base board, by chance? 
+Changes in version 2:
+- changed cmp/ge to cmp/hs in the assembly code.
 
-> Thanks,
-> Adrian
+ arch/sh/kernel/cpu/sh3/entry.S |    4 ++--
+ include/linux/sh_intc.h        |    6 +++---
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-MBR, Sergey
+Index: linux/arch/sh/kernel/cpu/sh3/entry.S
+===================================================================
+--- linux.orig/arch/sh/kernel/cpu/sh3/entry.S
++++ linux/arch/sh/kernel/cpu/sh3/entry.S
+@@ -470,9 +470,9 @@ ENTRY(handle_interrupt)
+ 	mov	r4, r0		! save vector->jmp table offset for later
+ 
+ 	shlr2	r4		! vector to IRQ# conversion
+-	add	#-0x10, r4
+ 
+-	cmp/pz	r4		! is it a valid IRQ?
++	mov	#0x10, r5
++	cmp/hs	r5, r4		! is it a valid IRQ?
+ 	bt	10f
+ 
+ 	/*
+Index: linux/include/linux/sh_intc.h
+===================================================================
+--- linux.orig/include/linux/sh_intc.h
++++ linux/include/linux/sh_intc.h
+@@ -13,9 +13,9 @@
+ /*
+  * Convert back and forth between INTEVT and IRQ values.
+  */
+-#ifdef CONFIG_CPU_HAS_INTEVT
+-#define evt2irq(evt)		(((evt) >> 5) - 16)
+-#define irq2evt(irq)		(((irq) + 16) << 5)
++#ifdef CONFIG_CPU_HAS_INTEVT	/* Avoid IRQ0 (invalid for platform devices) */
++#define evt2irq(evt)		((evt) >> 5)
++#define irq2evt(irq)		((irq) << 5)
+ #else
+ #define evt2irq(evt)		(evt)
+ #define irq2evt(irq)		(irq)
