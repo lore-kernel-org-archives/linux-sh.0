@@ -2,112 +2,90 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A21ADC433FE
-	for <linux-sh@archiver.kernel.org>; Thu, 10 Feb 2022 09:46:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9BBD9C433F5
+	for <linux-sh@archiver.kernel.org>; Fri, 11 Feb 2022 20:23:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238972AbiBJJqs (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 10 Feb 2022 04:46:48 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:35356 "EHLO
+        id S243706AbiBKUXF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 11 Feb 2022 15:23:05 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:58854 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238777AbiBJJqs (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 10 Feb 2022 04:46:48 -0500
-Received: from mail-lj1-x22b.google.com (mail-lj1-x22b.google.com [IPv6:2a00:1450:4864:20::22b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E0C191B9;
-        Thu, 10 Feb 2022 01:46:44 -0800 (PST)
-Received: by mail-lj1-x22b.google.com with SMTP id a25so7114240lji.9;
-        Thu, 10 Feb 2022 01:46:44 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=bzXIWUuEbkmSgm24Zd3fx9RlrQU/IKnMPvoFEkNX03M=;
-        b=OxYqw+gZKLJQeJz3jFBGsCM1bhqj9nnq4eWKG2MhTkrs849X2MlNousMPwkTVvS398
-         12kY9Z2eAnQ4DT7b6poT0X+Y7N1MMYFdCOQ5PlnZXA4xWBIhOUMw3I+iOol58CoDIIP3
-         j+Q33e1tx8AbnCQYOtVOHWU8W5kpmUHSJTamY1sLO30dmL4hBaA9fw045CH6OgJMcPoE
-         icUYJe2sr+0CR3sqC7WIRn7L3mtMIK14JlAvvI5tNWFDSMGZZZgpyxr75YCSFGX6Hru0
-         Q3c5mqT2Vg0Rbf9OtyF+UGq6TDhxBX+YUWDBTzS7OqUDGwUuqxV8rwwRRuslNEYw4uPf
-         LcuQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-language
-         :content-transfer-encoding;
-        bh=bzXIWUuEbkmSgm24Zd3fx9RlrQU/IKnMPvoFEkNX03M=;
-        b=03p8x4AgOP/1ptWP1ro1xzBKwYMZZoqMWywRAe8ATP05xM+rJkdO51mIxA8tBl77iT
-         aAx2uiJuzrIzzqQvMXSbeXty9pWy7ulBO8zmCnVTCm3CPghuFMO1B7mqVBYgQ/b4cIo9
-         E8Ho4ceSRlPf7XZWcw6goh6SZYcP6pejhXt+w0tcXwuRemnlkCNKzN6tag34lUx6JCkn
-         9jxaHfn0O2ub95HQ9gE+/ml5p3srwEZz764MQfiLHq24q6y58IrqUKOmHbmRaXFw7NKd
-         PtE5E/pucp5taylZPTLqkdwLC/3uxvtLsvXYLsYGRHc4UyTQH0/cSOLIlaZ4KkApOtTY
-         TY/w==
-X-Gm-Message-State: AOAM533qVyHdO3KzZOPNWKipGAghgZG/ef7t1qAdvmbTS+74Fr39XpXg
-        LytjMQ4sRZVZSJRM0oG1oNBAS8cGxKMzqw==
-X-Google-Smtp-Source: ABdhPJxMqskafQcsNnZ1THj9gslNIOUlvh9+XXDJ4CYcBrRSTLRMZIxqhHO+SAv1yJ3S0bFfEK4QcQ==
-X-Received: by 2002:a2e:8756:: with SMTP id q22mr4236837ljj.93.1644486402772;
-        Thu, 10 Feb 2022 01:46:42 -0800 (PST)
-Received: from [192.168.1.103] ([31.173.82.75])
-        by smtp.gmail.com with ESMTPSA id i8sm2744520lfj.226.2022.02.10.01.46.41
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 10 Feb 2022 01:46:42 -0800 (PST)
-Subject: Re: [PATCH 2/3] i2c: sh_mobile: Use platform_get_irq_optional() to
- get the interrupt
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Arnd Bergmann <arnd@arndb.de>,
-        Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>,
-        Rob Herring <robh+dt@kernel.org>,
-        Nicolas Saenz Julienne <nsaenz@kernel.org>,
-        Florian Fainelli <f.fainelli@gmail.com>,
-        Ray Jui <rjui@broadcom.com>,
-        Scott Branden <sbranden@broadcom.com>,
-        bcm-kernel-feedback-list <bcm-kernel-feedback-list@broadcom.com>,
-        Chris Brandt <chris.brandt@renesas.com>,
-        Wolfram Sang <wsa+renesas@sang-engineering.com>,
-        Linux I2C <linux-i2c@vger.kernel.org>,
-        linux-rpi-kernel <linux-rpi-kernel@lists.infradead.org>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Linux-Renesas <linux-renesas-soc@vger.kernel.org>,
-        Prabhakar <prabhakar.csengg@gmail.com>,
-        Linux-sh list <linux-sh@vger.kernel.org>
-References: <20211218165258.16716-1-prabhakar.mahadev-lad.rj@bp.renesas.com>
- <20211218165258.16716-3-prabhakar.mahadev-lad.rj@bp.renesas.com>
- <CAMuHMdUg3=q7gyaVHP0XcYUOo3PQUUv8Hc8wp5faVQ+bTBpg4A@mail.gmail.com>
- <042a2183-3f04-088c-1861-656de870337d@gmail.com>
- <CAK8P3a3owi7YWmq-tckD-C7NK5HaX+swGNW-QBkWQuQgVsVWrA@mail.gmail.com>
- <d74ab454-9337-d168-9b21-842569431b4a@gmail.com>
- <CAK8P3a20mwJXN4Mb063zQG+HAevj_Odpj58EzPHkX-p6pbtnGA@mail.gmail.com>
- <7c47ce67-88ee-9cba-3356-a530b0d3e657@gmail.com>
- <CAMuHMdXEXjsea1DmebALTNwAQnJeJt4qV_0xkQ-5_OWx7ziF1g@mail.gmail.com>
-From:   Sergei Shtylyov <sergei.shtylyov@gmail.com>
-Message-ID: <aae11858-9a63-c5ad-21c2-910a7f87160f@gmail.com>
-Date:   Thu, 10 Feb 2022 12:46:40 +0300
+        with ESMTP id S1353190AbiBKUXE (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 11 Feb 2022 15:23:04 -0500
+X-Greylist: delayed 432 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Fri, 11 Feb 2022 12:23:02 PST
+Received: from mxout01.lancloud.ru (mxout01.lancloud.ru [45.84.86.81])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B317CCEF
+        for <linux-sh@vger.kernel.org>; Fri, 11 Feb 2022 12:23:02 -0800 (PST)
+Received: from LanCloud
+DKIM-Filter: OpenDKIM Filter v2.11.0 mxout01.lancloud.ru 1C5E020A00B0
+Received: from LanCloud
+Received: from LanCloud
+Received: from LanCloud
+To:     Rich Felker <dalias@libc.org>, <linux-sh@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>
+CC:     Yoshinori Sato <ysato@users.sourceforge.jp>
+From:   Sergey Shtylyov <s.shtylyov@omp.ru>
+Subject: [PATCH] sh: avoid using IRQ0 on SH3/4
+Organization: Open Mobile Platform
+Message-ID: <2f419ed2-66b8-4098-7cd3-0fe698d341c9@omp.ru>
+Date:   Fri, 11 Feb 2022 23:15:46 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
  Thunderbird/78.10.1
 MIME-Version: 1.0
-In-Reply-To: <CAMuHMdXEXjsea1DmebALTNwAQnJeJt4qV_0xkQ-5_OWx7ziF1g@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="utf-8"
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
+X-Originating-IP: [192.168.11.198]
+X-ClientProxiedBy: LFEXT01.lancloud.ru (fd00:f066::141) To
+ LFEX1907.lancloud.ru (fd00:f066::207)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 2/10/22 12:32 PM, Geert Uytterhoeven wrote:
+Using IRQ0 by the platform devices is going to be disallowed soon (see [1])
+and the code supporting SH3/4 SoCs maps the IRQ #s starting at 0 -- modify
+that code to start the IRQ #s from 16 instead.
 
-[...]
+[1] https://lore.kernel.org/all/5e001ec1-d3f1-bcb8-7f30-a6301fd9930c@omp.ru/
 
->>>>> I had another look at this after you asked about it on IRC. I don't
->>>>> know much SH assembly, but I suspect IRQ 0 has not been delivered
->>
->>    Neither do I, sigh...
->>    I do know the instuctions are 16-bit and so there are no immediate
->> opperands... :-)
-> 
-> There is byte immediate data (TIL).
+Signed-off-by: Sergey Shtylyov <s.shtylyov@omp.ru>
 
-    Yeah, I figured. :-)
+---
+The patch is against Linus Torvalds' 'linux.git' repo.
 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
+ arch/sh/kernel/cpu/sh3/entry.S |    4 ++--
+ include/linux/sh_intc.h        |    6 +++---
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-MBR, Sergey
+Index: linux/arch/sh/kernel/cpu/sh3/entry.S
+===================================================================
+--- linux.orig/arch/sh/kernel/cpu/sh3/entry.S
++++ linux/arch/sh/kernel/cpu/sh3/entry.S
+@@ -470,9 +470,9 @@ ENTRY(handle_interrupt)
+ 	mov	r4, r0		! save vector->jmp table offset for later
+ 
+ 	shlr2	r4		! vector to IRQ# conversion
+-	add	#-0x10, r4
+ 
+-	cmp/pz	r4		! is it a valid IRQ?
++	mov	#0x10, r5
++	cmp/ge	r5, r4		! is it a valid IRQ?
+ 	bt	10f
+ 
+ 	/*
+Index: linux/include/linux/sh_intc.h
+===================================================================
+--- linux.orig/include/linux/sh_intc.h
++++ linux/include/linux/sh_intc.h
+@@ -13,9 +13,9 @@
+ /*
+  * Convert back and forth between INTEVT and IRQ values.
+  */
+-#ifdef CONFIG_CPU_HAS_INTEVT
+-#define evt2irq(evt)		(((evt) >> 5) - 16)
+-#define irq2evt(irq)		(((irq) + 16) << 5)
++#ifdef CONFIG_CPU_HAS_INTEVT	/* Avoid IRQ0 (invalid for platform devices) */
++#define evt2irq(evt)		((evt) >> 5)
++#define irq2evt(irq)		((irq) << 5)
+ #else
+ #define evt2irq(evt)		(evt)
+ #define irq2evt(irq)		(irq)
