@@ -2,94 +2,120 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1DEB2C433EF
-	for <linux-sh@archiver.kernel.org>; Mon, 14 Feb 2022 11:27:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CD39AC433EF
+	for <linux-sh@archiver.kernel.org>; Mon, 14 Feb 2022 15:19:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1351349AbiBNL15 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 14 Feb 2022 06:27:57 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:57324 "EHLO
+        id S231538AbiBNPTW (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 14 Feb 2022 10:19:22 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:45984 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1351205AbiBNL1W (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 14 Feb 2022 06:27:22 -0500
-Received: from mail-ua1-f53.google.com (mail-ua1-f53.google.com [209.85.222.53])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 11A142AE3;
-        Mon, 14 Feb 2022 03:04:03 -0800 (PST)
-Received: by mail-ua1-f53.google.com with SMTP id w18so7905646uar.8;
-        Mon, 14 Feb 2022 03:04:03 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=rp0B1fei6v9T28LSqNLRZlACCfpViLDLxNd62kYmmtU=;
-        b=Zhs51U5Pc4S2qQ5r38L6lfXMqWqLdlbyC/hZtQESnMwqzByM0KHEJVPIMILz3Vt+ZA
-         miA5YDnY8wvSF/pOU127DXwv3SYvZ3xzHmydlPOwOMN+r81LFCgcAwMspjc17eRjiU0g
-         OJBO8n8uap4eh5aQVw/G128Fn6LZfMHYFzAk+lKtf8Fw9kFswWimRY2O4p2bxHmxOqnq
-         2mensGqGNXZqrwA7cI8jP/VqoKczZvX60wCKGgIRJzrNwF5OXWjxQfxEgtWby9s5RVOy
-         +zpN9LcSVfdfI8nJw0YwBEbFH1u1LBj9O0wLtTCsW/q5xxY+Or20c3vCTMOFRfeFHTZb
-         NpZw==
-X-Gm-Message-State: AOAM530iTCIQMeV6v0dFNODOmYafHoKTJRFdmesCoMuhxY3qvxbcRRnn
-        NNr5vNWpn5XteZkCTVUSEen0SONJclZPRg==
-X-Google-Smtp-Source: ABdhPJxizCVdcM8K3JForQeIf4vuvRe59ANPp5AIbN8KJKprqyQ5a9sXPzo/svbk0mxQIX0y6fu4Hg==
-X-Received: by 2002:a05:6130:10c:: with SMTP id h12mr1779257uag.120.1644836642141;
-        Mon, 14 Feb 2022 03:04:02 -0800 (PST)
-Received: from mail-vs1-f45.google.com (mail-vs1-f45.google.com. [209.85.217.45])
-        by smtp.gmail.com with ESMTPSA id g9sm526657vkg.28.2022.02.14.03.04.01
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 14 Feb 2022 03:04:02 -0800 (PST)
-Received: by mail-vs1-f45.google.com with SMTP id g20so6094833vsb.9;
-        Mon, 14 Feb 2022 03:04:01 -0800 (PST)
-X-Received: by 2002:a05:6102:440d:: with SMTP id df13mr1073580vsb.5.1644836640828;
- Mon, 14 Feb 2022 03:04:00 -0800 (PST)
+        with ESMTP id S1355749AbiBNPTU (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 14 Feb 2022 10:19:20 -0500
+Received: from frasgout.his.huawei.com (frasgout.his.huawei.com [185.176.79.56])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DC14A5BD24;
+        Mon, 14 Feb 2022 07:19:09 -0800 (PST)
+Received: from fraeml735-chm.china.huawei.com (unknown [172.18.147.207])
+        by frasgout.his.huawei.com (SkyGuard) with ESMTP id 4Jy7CD6Xbbz6899G;
+        Mon, 14 Feb 2022 23:18:16 +0800 (CST)
+Received: from lhreml710-chm.china.huawei.com (10.201.108.61) by
+ fraeml735-chm.china.huawei.com (10.206.15.216) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2308.21; Mon, 14 Feb 2022 16:19:07 +0100
+Received: from localhost (10.202.226.41) by lhreml710-chm.china.huawei.com
+ (10.201.108.61) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id 15.1.2308.21; Mon, 14 Feb
+ 2022 15:19:06 +0000
+Date:   Mon, 14 Feb 2022 15:19:05 +0000
+From:   Jonathan Cameron <Jonathan.Cameron@Huawei.com>
+To:     kernel test robot <lkp@intel.com>
+CC:     Anand Ashok Dumbre <anand.ashok.dumbre@xilinx.com>,
+        <kbuild-all@lists.01.org>, <linux-kernel@vger.kernel.org>,
+        Manish Narani <manish.narani@xilinx.com>,
+        <linux-sh@vger.kernel.org>
+Subject: Re: drivers/iio/adc/xilinx-ams.c:1195:21: error: unused variable
+ 'ams'
+Message-ID: <20220214151905.00005a27@Huawei.com>
+In-Reply-To: <202202142203.4ofqbic9-lkp@intel.com>
+References: <202202142203.4ofqbic9-lkp@intel.com>
+Organization: Huawei Technologies Research and Development (UK) Ltd.
+X-Mailer: Claws Mail 4.0.0 (GTK+ 3.24.29; i686-w64-mingw32)
 MIME-Version: 1.0
-References: <9382f3ca-b49a-e900-7f21-3f10b267ee4a@omp.ru>
-In-Reply-To: <9382f3ca-b49a-e900-7f21-3f10b267ee4a@omp.ru>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 14 Feb 2022 12:03:49 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdWv-ZuHttvXM7kAOeM1NoRUxita0ttXcAbHHzA9UvO4KA@mail.gmail.com>
-Message-ID: <CAMuHMdWv-ZuHttvXM7kAOeM1NoRUxita0ttXcAbHHzA9UvO4KA@mail.gmail.com>
-Subject: Re: [PATCH v2] sh: avoid using IRQ0 on SH3/4
-To:     Sergey Shtylyov <s.shtylyov@omp.ru>
-Cc:     Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="US-ASCII"
+Content-Transfer-Encoding: 7bit
+X-Originating-IP: [10.202.226.41]
+X-ClientProxiedBy: lhreml718-chm.china.huawei.com (10.201.108.69) To
+ lhreml710-chm.china.huawei.com (10.201.108.61)
+X-CFilter-Loop: Reflected
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Sergey,
+On Mon, 14 Feb 2022 22:47:14 +0800
+kernel test robot <lkp@intel.com> wrote:
 
-On Mon, Feb 14, 2022 at 9:32 AM Sergey Shtylyov <s.shtylyov@omp.ru> wrote:
-> Using IRQ0 by the platform devices is going to be disallowed soon (see [1])
-> and the code supporting SH3/4 SoCs maps the IRQ #s starting at 0 -- modify
-> that code to start the IRQ #s from 16 instead.
->
-> [1] https://lore.kernel.org/all/5e001ec1-d3f1-bcb8-7f30-a6301fd9930c@omp.ru/
->
-> Signed-off-by: Sergey Shtylyov <s.shtylyov@omp.ru>
->
+> tree:   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git master
+> head:   754e0b0e35608ed5206d6a67a791563c631cec07
+> commit: d5c70627a79455154f5f636096abe6fe57510605 iio: adc: Add Xilinx AMS driver
+> date:   8 weeks ago
+> config: sh-allmodconfig (https://download.01.org/0day-ci/archive/20220214/202202142203.4ofqbic9-lkp@intel.com/config)
+> compiler: sh4-linux-gcc (GCC) 11.2.0
+> reproduce (this is a W=1 build):
+>         wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
+>         chmod +x ~/bin/make.cross
+>         # https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=d5c70627a79455154f5f636096abe6fe57510605
+>         git remote add linus https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+>         git fetch --no-tags linus master
+>         git checkout d5c70627a79455154f5f636096abe6fe57510605
+>         # save the config file to linux build tree
+>         mkdir build_dir
+>         COMPILER_INSTALL_PATH=$HOME/0day COMPILER=gcc-11.2.0 make.cross O=build_dir ARCH=sh SHELL=/bin/bash drivers/iio/adc/ drivers/net/ethernet/freescale/
+> 
+> If you fix the issue, kindly add following tag as appropriate
+> Reported-by: kernel test robot <lkp@intel.com>
+
+I'm very tempted to say won't fix on this at least not in the IIO code.
+
+The issue I think is the stub for iounmap on sh with no MMU not using the argument because it's
+defined as a while loop rather than as an empty static inline function which is what we'd
+get it it wasn't defined at all (AFAICT).
+
+If anyone wants to take this on, my guess is drop
+https://elixir.bootlin.com/linux/latest/source/arch/sh/include/asm/io.h#L274
+and see if everything still works and the warning goes away.
+
++CC linux-sh for inputs.
+
+Thanks,
+
+Jonathan
+
+
+> 
+> All errors (new ones prefixed by >>):
+> 
+>    drivers/iio/adc/xilinx-ams.c: In function 'ams_iounmap_ps':
+> >> drivers/iio/adc/xilinx-ams.c:1195:21: error: unused variable 'ams' [-Werror=unused-variable]  
+>     1195 |         struct ams *ams = data;
+>          |                     ^~~
+>    drivers/iio/adc/xilinx-ams.c: In function 'ams_iounmap_pl':
+>    drivers/iio/adc/xilinx-ams.c:1202:21: error: unused variable 'ams' [-Werror=unused-variable]
+>     1202 |         struct ams *ams = data;
+>          |                     ^~~
+>    cc1: all warnings being treated as errors
+> 
+> 
+> vim +/ams +1195 drivers/iio/adc/xilinx-ams.c
+> 
+>   1192	
+>   1193	static void ams_iounmap_ps(void *data)
+>   1194	{
+> > 1195		struct ams *ams = data;  
+>   1196	
+>   1197		iounmap(ams->ps_base);
+>   1198	}
+>   1199	
+> 
 > ---
-> The patch is against Linus Torvalds' 'linux.git' repo.
->
-> Changes in version 2:
-> - changed cmp/ge to cmp/hs in the assembly code.
+> 0-DAY CI Kernel Test Service, Intel Corporation
+> https://lists.01.org/hyperkitty/list/kbuild-all@lists.01.org
 
-Thanks for the update!
-
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Works fine on rts7751r2d (qemu) and landisk (real).
-None of them had IRQ0, though, but dmesg and /proc/interrupts
-confirm the shift by 16.
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
