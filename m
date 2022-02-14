@@ -2,144 +2,94 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 35F8DC433EF
-	for <linux-sh@archiver.kernel.org>; Mon, 14 Feb 2022 02:32:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1DEB2C433EF
+	for <linux-sh@archiver.kernel.org>; Mon, 14 Feb 2022 11:27:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239499AbiBNCcp (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 13 Feb 2022 21:32:45 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:45956 "EHLO
+        id S1351349AbiBNL15 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 14 Feb 2022 06:27:57 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:57324 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239468AbiBNCcD (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 13 Feb 2022 21:32:03 -0500
-Received: from foss.arm.com (foss.arm.com [217.140.110.172])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 58ABB56C32;
-        Sun, 13 Feb 2022 18:31:55 -0800 (PST)
-Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 2907C1396;
-        Sun, 13 Feb 2022 18:31:55 -0800 (PST)
-Received: from p8cg001049571a15.arm.com (unknown [10.163.47.15])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPA id 60B973F718;
-        Sun, 13 Feb 2022 18:31:52 -0800 (PST)
-From:   Anshuman Khandual <anshuman.khandual@arm.com>
-To:     linux-mm@kvack.org
-Cc:     linux-kernel@vger.kernel.org,
-        Anshuman Khandual <anshuman.khandual@arm.com>,
-        Christoph Hellwig <hch@infradead.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        linux-arch@vger.kernel.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Subject: [PATCH 17/30] sh/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
-Date:   Mon, 14 Feb 2022 08:00:40 +0530
-Message-Id: <1644805853-21338-18-git-send-email-anshuman.khandual@arm.com>
-X-Mailer: git-send-email 2.7.4
-In-Reply-To: <1644805853-21338-1-git-send-email-anshuman.khandual@arm.com>
-References: <1644805853-21338-1-git-send-email-anshuman.khandual@arm.com>
+        with ESMTP id S1351205AbiBNL1W (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 14 Feb 2022 06:27:22 -0500
+Received: from mail-ua1-f53.google.com (mail-ua1-f53.google.com [209.85.222.53])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 11A142AE3;
+        Mon, 14 Feb 2022 03:04:03 -0800 (PST)
+Received: by mail-ua1-f53.google.com with SMTP id w18so7905646uar.8;
+        Mon, 14 Feb 2022 03:04:03 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=rp0B1fei6v9T28LSqNLRZlACCfpViLDLxNd62kYmmtU=;
+        b=Zhs51U5Pc4S2qQ5r38L6lfXMqWqLdlbyC/hZtQESnMwqzByM0KHEJVPIMILz3Vt+ZA
+         miA5YDnY8wvSF/pOU127DXwv3SYvZ3xzHmydlPOwOMN+r81LFCgcAwMspjc17eRjiU0g
+         OJBO8n8uap4eh5aQVw/G128Fn6LZfMHYFzAk+lKtf8Fw9kFswWimRY2O4p2bxHmxOqnq
+         2mensGqGNXZqrwA7cI8jP/VqoKczZvX60wCKGgIRJzrNwF5OXWjxQfxEgtWby9s5RVOy
+         +zpN9LcSVfdfI8nJw0YwBEbFH1u1LBj9O0wLtTCsW/q5xxY+Or20c3vCTMOFRfeFHTZb
+         NpZw==
+X-Gm-Message-State: AOAM530iTCIQMeV6v0dFNODOmYafHoKTJRFdmesCoMuhxY3qvxbcRRnn
+        NNr5vNWpn5XteZkCTVUSEen0SONJclZPRg==
+X-Google-Smtp-Source: ABdhPJxizCVdcM8K3JForQeIf4vuvRe59ANPp5AIbN8KJKprqyQ5a9sXPzo/svbk0mxQIX0y6fu4Hg==
+X-Received: by 2002:a05:6130:10c:: with SMTP id h12mr1779257uag.120.1644836642141;
+        Mon, 14 Feb 2022 03:04:02 -0800 (PST)
+Received: from mail-vs1-f45.google.com (mail-vs1-f45.google.com. [209.85.217.45])
+        by smtp.gmail.com with ESMTPSA id g9sm526657vkg.28.2022.02.14.03.04.01
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 14 Feb 2022 03:04:02 -0800 (PST)
+Received: by mail-vs1-f45.google.com with SMTP id g20so6094833vsb.9;
+        Mon, 14 Feb 2022 03:04:01 -0800 (PST)
+X-Received: by 2002:a05:6102:440d:: with SMTP id df13mr1073580vsb.5.1644836640828;
+ Mon, 14 Feb 2022 03:04:00 -0800 (PST)
+MIME-Version: 1.0
+References: <9382f3ca-b49a-e900-7f21-3f10b267ee4a@omp.ru>
+In-Reply-To: <9382f3ca-b49a-e900-7f21-3f10b267ee4a@omp.ru>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Mon, 14 Feb 2022 12:03:49 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdWv-ZuHttvXM7kAOeM1NoRUxita0ttXcAbHHzA9UvO4KA@mail.gmail.com>
+Message-ID: <CAMuHMdWv-ZuHttvXM7kAOeM1NoRUxita0ttXcAbHHzA9UvO4KA@mail.gmail.com>
+Subject: Re: [PATCH v2] sh: avoid using IRQ0 on SH3/4
+To:     Sergey Shtylyov <s.shtylyov@omp.ru>
+Cc:     Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org,
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-This defines and exports a platform specific custom vm_get_page_prot() via
-subscribing ARCH_HAS_VM_GET_PAGE_PROT. Subsequently all __SXXX and __PXXX
-macros can be dropped which are no longer needed.
+Hi Sergey,
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
-Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
----
- arch/sh/Kconfig               |  1 +
- arch/sh/include/asm/pgtable.h | 17 ----------------
- arch/sh/mm/mmap.c             | 38 +++++++++++++++++++++++++++++++++++
- 3 files changed, 39 insertions(+), 17 deletions(-)
+On Mon, Feb 14, 2022 at 9:32 AM Sergey Shtylyov <s.shtylyov@omp.ru> wrote:
+> Using IRQ0 by the platform devices is going to be disallowed soon (see [1])
+> and the code supporting SH3/4 SoCs maps the IRQ #s starting at 0 -- modify
+> that code to start the IRQ #s from 16 instead.
+>
+> [1] https://lore.kernel.org/all/5e001ec1-d3f1-bcb8-7f30-a6301fd9930c@omp.ru/
+>
+> Signed-off-by: Sergey Shtylyov <s.shtylyov@omp.ru>
+>
+> ---
+> The patch is against Linus Torvalds' 'linux.git' repo.
+>
+> Changes in version 2:
+> - changed cmp/ge to cmp/hs in the assembly code.
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 2474a04ceac4..f3fcd1c5e002 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -11,6 +11,7 @@ config SUPERH
- 	select ARCH_HAS_GCOV_PROFILE_ALL
- 	select ARCH_HAS_PTE_SPECIAL
- 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
-+	select ARCH_HAS_VM_GET_PAGE_PROT
- 	select ARCH_HIBERNATION_POSSIBLE if MMU
- 	select ARCH_MIGHT_HAVE_PC_PARPORT
- 	select ARCH_WANT_IPC_PARSE_VERSION
-diff --git a/arch/sh/include/asm/pgtable.h b/arch/sh/include/asm/pgtable.h
-index d7ddb1ec86a0..6fb9ec54cf9b 100644
---- a/arch/sh/include/asm/pgtable.h
-+++ b/arch/sh/include/asm/pgtable.h
-@@ -89,23 +89,6 @@ static inline unsigned long phys_addr_mask(void)
-  * completely separate permission bits for user and kernel space.
-  */
- 	 /*xwr*/
--#define __P000	PAGE_NONE
--#define __P001	PAGE_READONLY
--#define __P010	PAGE_COPY
--#define __P011	PAGE_COPY
--#define __P100	PAGE_EXECREAD
--#define __P101	PAGE_EXECREAD
--#define __P110	PAGE_COPY
--#define __P111	PAGE_COPY
--
--#define __S000	PAGE_NONE
--#define __S001	PAGE_READONLY
--#define __S010	PAGE_WRITEONLY
--#define __S011	PAGE_SHARED
--#define __S100	PAGE_EXECREAD
--#define __S101	PAGE_EXECREAD
--#define __S110	PAGE_RWX
--#define __S111	PAGE_RWX
- 
- typedef pte_t *pte_addr_t;
- 
-diff --git a/arch/sh/mm/mmap.c b/arch/sh/mm/mmap.c
-index 6a1a1297baae..cad14af6c8e6 100644
---- a/arch/sh/mm/mmap.c
-+++ b/arch/sh/mm/mmap.c
-@@ -162,3 +162,41 @@ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size)
- {
- 	return 1;
- }
-+
-+#ifdef CONFIG_MMU
-+pgprot_t vm_get_page_prot(unsigned long vm_flags)
-+{
-+	switch (vm_flags & (VM_READ | VM_WRITE | VM_EXEC | VM_SHARED)) {
-+	case VM_NONE:
-+		return PAGE_NONE;
-+	case VM_READ:
-+		return PAGE_READONLY;
-+	case VM_WRITE:
-+	case VM_WRITE | VM_READ:
-+		return PAGE_COPY;
-+	case VM_EXEC:
-+	case VM_EXEC | VM_READ:
-+		return PAGE_EXECREAD;
-+	case VM_EXEC | VM_WRITE:
-+	case VM_EXEC | VM_WRITE | VM_READ:
-+		return PAGE_COPY;
-+	case VM_SHARED:
-+		return PAGE_NONE;
-+	case VM_SHARED | VM_READ:
-+		return PAGE_READONLY;
-+	case VM_SHARED | VM_WRITE:
-+		return PAGE_WRITEONLY;
-+	case VM_SHARED | VM_WRITE | VM_READ:
-+		return PAGE_SHARED;
-+	case VM_SHARED | VM_EXEC:
-+	case VM_SHARED | VM_EXEC | VM_READ:
-+		return PAGE_EXECREAD;
-+	case VM_SHARED | VM_EXEC | VM_WRITE:
-+	case VM_SHARED | VM_EXEC | VM_WRITE | VM_READ:
-+		return PAGE_RWX;
-+	default:
-+		BUILD_BUG();
-+	}
-+}
-+EXPORT_SYMBOL(vm_get_page_prot);
-+#endif
--- 
-2.25.1
+Thanks for the update!
 
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Works fine on rts7751r2d (qemu) and landisk (real).
+None of them had IRQ0, though, but dmesg and /proc/interrupts
+confirm the shift by 16.
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
