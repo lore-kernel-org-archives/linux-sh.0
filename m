@@ -2,104 +2,63 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 418DDC35272
-	for <linux-sh@archiver.kernel.org>; Tue, 15 Feb 2022 19:13:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F92BC433F5
+	for <linux-sh@archiver.kernel.org>; Tue, 15 Feb 2022 19:16:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243451AbiBOTNv (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 15 Feb 2022 14:13:51 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:34870 "EHLO
+        id S236712AbiBOTQX (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 15 Feb 2022 14:16:23 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:39396 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229844AbiBOTNs (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 15 Feb 2022 14:13:48 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 66F9F107A91;
-        Tue, 15 Feb 2022 11:13:38 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 1449BB81C63;
-        Tue, 15 Feb 2022 19:13:37 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id CA149C340EB;
-        Tue, 15 Feb 2022 19:13:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1644952415;
-        bh=aWKfLj+OcuQ7ORm2NzKcSLdWPXwTMvCyCCSlhItZJdc=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=Pb9b+lIl3czsbILZx4JGaHKfxai5nhmkbafSdXIePkm1+42+PtZWRvtnxsIxieHjT
-         9ekyHuwvisvcr9fVX07+lClUNa2p0vhktIvKZSAjwuXs2gg0KwuzJxVI1eJwsCEsx9
-         QAqj6xuEKLMkpaRxHB9Jbh5UZNn3lhP/U/32rVpI9FJi1e5LJ0Z2HLVW0p7KctTIZB
-         uH0ohVDX/Qm561zC5FzYDM+alYJWObfXnSGwWXg348TFcT9AqtFzE3U54RAksJmBj5
-         t03G17WjapCI9e95mge26r6O7cubp0cNepLCQdTnroGWEV76h8vqtZwzBmUYMX3S66
-         UcWCeciahTo0A==
-Date:   Tue, 15 Feb 2022 13:21:10 -0600
-From:   "Gustavo A. R. Silva" <gustavoars@kernel.org>
-To:     Kees Cook <keescook@chromium.org>
-Cc:     GR-QLogic-Storage-Upstream@marvell.com,
-        linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
-        linux-crypto@vger.kernel.org, intel-gfx@lists.freedesktop.org,
-        dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org,
-        coresight@lists.linaro.org, linux-arm-kernel@lists.infradead.org,
-        bcm-kernel-feedback-list@broadcom.com, netdev@vger.kernel.org,
-        linux-omap@vger.kernel.org, linux-scsi@vger.kernel.org,
-        target-devel@vger.kernel.org, mpi3mr-linuxdrv.pdl@broadcom.com,
-        linux-staging@lists.linux.dev,
-        linux-rpi-kernel@lists.infradead.org, sparmaintainer@unisys.com,
-        linux-cifs@vger.kernel.org, samba-technical@lists.samba.org,
-        linux-ext4@vger.kernel.org, linux-acpi@vger.kernel.org,
-        devel@acpica.org, linux-arch@vger.kernel.org, linux-mm@kvack.org,
-        greybus-dev@lists.linaro.org, linux-i3c@lists.infradead.org,
-        linux-rdma@vger.kernel.org, linux-bluetooth@vger.kernel.org,
-        alsa-devel@alsa-project.org, devicetree@vger.kernel.org,
-        linux-perf-users@vger.kernel.org, linux-hardening@vger.kernel.org
-Subject: Re: [PATCH][next] treewide: Replace zero-length arrays with
- flexible-array members
-Message-ID: <20220215192110.GA883653@embeddedor>
-References: <20220215174743.GA878920@embeddedor>
- <202202151016.C0471D6E@keescook>
+        with ESMTP id S234514AbiBOTQW (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 15 Feb 2022 14:16:22 -0500
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7C19F108BD4;
+        Tue, 15 Feb 2022 11:16:12 -0800 (PST)
+Received: by verein.lst.de (Postfix, from userid 2407)
+        id A03A268AA6; Tue, 15 Feb 2022 20:16:08 +0100 (CET)
+Date:   Tue, 15 Feb 2022 20:16:08 +0100
+From:   Christoph Hellwig <hch@lst.de>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, Christoph Hellwig <hch@lst.de>,
+        Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>,
+        kernel test robot <lkp@intel.com>,
+        Jonathan Cameron <Jonathan.Cameron@huawei.com>,
+        Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] sh: Convert nommu io{re,un}map() to static inline
+ functions
+Message-ID: <20220215191608.GA25076@lst.de>
+References: <4ed0a7a0d3fa912a5b44c451884818f2c138ef42.1644914600.git.geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <202202151016.C0471D6E@keescook>
+In-Reply-To: <4ed0a7a0d3fa912a5b44c451884818f2c138ef42.1644914600.git.geert+renesas@glider.be>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Feb 15, 2022 at 10:17:40AM -0800, Kees Cook wrote:
-> On Tue, Feb 15, 2022 at 11:47:43AM -0600, Gustavo A. R. Silva wrote:
-> > There is a regular need in the kernel to provide a way to declare
-> > having a dynamically sized set of trailing elements in a structure.
-> > Kernel code should always use “flexible array members”[1] for these
-> > cases. The older style of one-element or zero-length arrays should
-> > no longer be used[2].
-> > 
-> > This code was transformed with the help of Coccinelle:
-> > (next-20220214$ spatch --jobs $(getconf _NPROCESSORS_ONLN) --sp-file script.cocci --include-headers --dir . > output.patch)
-> > 
-> > @@
-> > identifier S, member, array;
-> > type T1, T2;
-> > @@
-> > 
-> > struct S {
-> >   ...
-> >   T1 member;
-> >   T2 array[
-> > - 0
-> >   ];
-> > };
+On Tue, Feb 15, 2022 at 09:51:05AM +0100, Geert Uytterhoeven wrote:
 > 
-> These all look trivially correct to me. Only two didn't have the end of
-> the struct visible in the patch, and checking those showed them to be
-> trailing members as well, so:
+> Reported-by: kernel test robot <lkp@intel.com>
+> Reported-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+> Fixes: 13f1fc870dd74713 ("sh: move the ioremap implementation out of line")
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Looks good:
+
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+
+> ---
+> This is actually the third time this change was made, as Christoph
+> converted iounmap() to a macro before in commit 98c90e5ea34e98bd ("sh:
+> remove __iounmap"), reverting commit 733f0025f0fb43e3 ("sh: prevent
+> warnings when using iounmap").
 > 
-> Reviewed-by: Kees Cook <keescook@chromium.org>
+> Probably sh-nommu should include <asm-generic/io.h>, but that would
+> require a lot more changes.
 
-I'll add this to my -next tree.
-
-Thanks!
---
-Gustavo
+I don't think it would be all that bad.  But between the breakage and
+the fact that sh is almost unmaintained let's get the quick fix in if
+we can..
