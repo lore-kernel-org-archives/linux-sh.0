@@ -2,92 +2,151 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 06B97C35275
-	for <linux-sh@archiver.kernel.org>; Tue, 15 Feb 2022 19:24:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1891BC4332F
+	for <linux-sh@archiver.kernel.org>; Tue, 15 Feb 2022 22:00:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243654AbiBOTZA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 15 Feb 2022 14:25:00 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:58104 "EHLO
+        id S242217AbiBOWA6 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 15 Feb 2022 17:00:58 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:56626 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230290AbiBOTY6 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 15 Feb 2022 14:24:58 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B79308566E;
-        Tue, 15 Feb 2022 11:24:47 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 513F3617CB;
-        Tue, 15 Feb 2022 19:24:47 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8127AC340EB;
-        Tue, 15 Feb 2022 19:24:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1644953086;
-        bh=kUCZYr9eynBGfoyFNpGztKhdR0TjeWfPR20goAdEojo=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=pgheRwOAKjRlXMfJul10RwEjs5CBKHR/i0QEhyIM79774uc0ovg3u5myvyhB8s/qu
-         xkZdoun6Ve/NuXn1+qZDB9F/trYlid+yq9euKiwm3PP7bJ4zoGvDfPTjgfeWCzsH6f
-         Z5GtGABFqXnkSAxbAOokUuetZQuukvg8GogLN1PAUilOeXNWgORbaiYjI/aeCr++5W
-         YWvZj7f6KVH+xfahOEVmZaopl52rdr1jj6eaQg39ut/UgM8cVQWsEKIq8K1eRZzAAa
-         TaPAe7uN1AmbZCmz+9XMV8T/S9ihvGxGOcJfBqdWD8uwk44Sq4S7ITZBKug7wSeC6N
-         S7tHpNRHJfaSA==
-Date:   Tue, 15 Feb 2022 13:32:21 -0600
-From:   "Gustavo A. R. Silva" <gustavoars@kernel.org>
-To:     Leon Romanovsky <leon@kernel.org>
-Cc:     Kees Cook <keescook@chromium.org>,
-        GR-QLogic-Storage-Upstream@marvell.com,
-        linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
-        linux-crypto@vger.kernel.org, intel-gfx@lists.freedesktop.org,
-        dri-devel@lists.freedesktop.org, nouveau@lists.freedesktop.org,
-        coresight@lists.linaro.org, linux-arm-kernel@lists.infradead.org,
-        bcm-kernel-feedback-list@broadcom.com, netdev@vger.kernel.org,
-        linux-omap@vger.kernel.org, linux-scsi@vger.kernel.org,
-        target-devel@vger.kernel.org, mpi3mr-linuxdrv.pdl@broadcom.com,
-        linux-staging@lists.linux.dev,
-        linux-rpi-kernel@lists.infradead.org, sparmaintainer@unisys.com,
-        linux-cifs@vger.kernel.org, samba-technical@lists.samba.org,
-        linux-ext4@vger.kernel.org, linux-acpi@vger.kernel.org,
-        devel@acpica.org, linux-arch@vger.kernel.org, linux-mm@kvack.org,
-        greybus-dev@lists.linaro.org, linux-i3c@lists.infradead.org,
-        linux-rdma@vger.kernel.org, linux-bluetooth@vger.kernel.org,
-        alsa-devel@alsa-project.org, devicetree@vger.kernel.org,
-        linux-perf-users@vger.kernel.org, linux-hardening@vger.kernel.org
-Subject: Re: [PATCH][next] treewide: Replace zero-length arrays with
- flexible-array members
-Message-ID: <20220215193221.GA884407@embeddedor>
-References: <20220215174743.GA878920@embeddedor>
- <202202151016.C0471D6E@keescook>
- <20220215192110.GA883653@embeddedor>
- <Ygv8wY75hNqS7zO6@unreal>
+        with ESMTP id S243036AbiBOWAs (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 15 Feb 2022 17:00:48 -0500
+Received: from mail-lf1-x133.google.com (mail-lf1-x133.google.com [IPv6:2a00:1450:4864:20::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7E9207679;
+        Tue, 15 Feb 2022 14:00:37 -0800 (PST)
+Received: by mail-lf1-x133.google.com with SMTP id d23so156794lfv.13;
+        Tue, 15 Feb 2022 14:00:37 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=message-id:date:mime-version:user-agent:subject:content-language
+         :from:cc:references:to:in-reply-to:content-transfer-encoding;
+        bh=DVulEGE2JpmKCAwv+Z9nIfk2u5ZwvRtSEnvF0++tohE=;
+        b=eAbTUd8SWrkduWMDvYSL9PCIMvTyx1/PDNq+g34U5a6HTO/JfyDazuc/276Sm7ld7f
+         RQAUjz9KnJpaex/eozKDcsnVqqRwA5Fj5CSlNJHiQfzBkJVLCc7y3vw02lxihPY3TExU
+         lYcUYoYFkQWAG/XD2qnNsvTl5P4zqH6pcaasqRB1LojAt2IN4Q9BVX82FHrNStE8wYB4
+         mmhCvKeDI7YjVSy4dXfgCBsx8WWHAoaLNoouUIXdBuim6buHAqSq3/5veKqw8hxrEwEf
+         aYlaoKh86/GFDdT8ghhsvoX3tr735feUL8boUX68tZ9vbfpFMdKPrE/wFw8zC0NNEmPZ
+         ssKw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
+         :content-language:from:cc:references:to:in-reply-to
+         :content-transfer-encoding;
+        bh=DVulEGE2JpmKCAwv+Z9nIfk2u5ZwvRtSEnvF0++tohE=;
+        b=wTomICDpoIwEpCbz/72bMDFaEmVWU7jQc/NuRAsg5bofzOt+vrWhjPQ2iKSRqFWatq
+         2nn/6InANIri5CuyLP57qbEDM9mNc+5oZNOvgWA5aUbfkk3r9wDjbUSkFFER2DeqtH/a
+         bADUAVck22cpEUHFrfulL2xsLu64LIqrFQ+00XUn0A7FBhLtpL22/xqTllsHNe4eEPm7
+         g1Fru5sO0wB860IhOJJiDRGaDBtpzxBNQqYE73Et7s+bciz4Ih7cIC4g6X8+IJ3dqZ+K
+         17whSiQLXyb07yrqfCubnrkgnA7Ks4PppPUCaKBYPiXtyTFtzwoLKHoc68JFMAcjRFuF
+         yOWA==
+X-Gm-Message-State: AOAM531oZB9VDs53ngcnjqCct//CiNbyr8ZzJgloNmrvVFVlHGjuR1ts
+        zMznJoIsXh+/1v7IepFIBTg=
+X-Google-Smtp-Source: ABdhPJyJtWqeT1e2wzvijosINOm/qc6wwzWUL/FDa9uqhHR32CJOoO1KF1UaVLhHtHEQQhQBEaQuLQ==
+X-Received: by 2002:a05:6512:96d:: with SMTP id v13mr790998lft.343.1644962435902;
+        Tue, 15 Feb 2022 14:00:35 -0800 (PST)
+Received: from [192.168.2.145] (109-252-138-165.dynamic.spd-mgts.ru. [109.252.138.165])
+        by smtp.googlemail.com with ESMTPSA id k3sm66075lfo.10.2022.02.15.14.00.33
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 15 Feb 2022 14:00:35 -0800 (PST)
+Message-ID: <635e8121-fca4-580c-6af5-d9317a2eee1b@gmail.com>
+Date:   Wed, 16 Feb 2022 01:00:33 +0300
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <Ygv8wY75hNqS7zO6@unreal>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.5.0
+Subject: Re: [PATCH v6 00/21] Introduce power-off+restart call chain API
+Content-Language: en-US
+From:   Dmitry Osipenko <digetx@gmail.com>
+Cc:     linux-kernel@vger.kernel.org, linux-csky@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
+        xen-devel@lists.xenproject.org, linux-acpi@vger.kernel.org,
+        linux-pm@vger.kernel.org, linux-tegra@vger.kernel.org,
+        Thierry Reding <thierry.reding@gmail.com>,
+        Jonathan Hunter <jonathanh@nvidia.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Joshua Thompson <funaho@jurai.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Sebastian Reichel <sre@kernel.org>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Philipp Zabel <p.zabel@pengutronix.de>,
+        Greentime Hu <green.hu@gmail.com>,
+        Vincent Chen <deanbo422@gmail.com>,
+        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
+        Juergen Gross <jgross@suse.com>,
+        Stefano Stabellini <sstabellini@kernel.org>,
+        Len Brown <lenb@kernel.org>,
+        Santosh Shilimkar <ssantosh@kernel.org>,
+        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
+        Liam Girdwood <lgirdwood@gmail.com>,
+        Mark Brown <broonie@kernel.org>, Pavel Machek <pavel@ucw.cz>,
+        Lee Jones <lee.jones@linaro.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Daniel Lezcano <daniel.lezcano@linaro.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Ulf Hansson <ulf.hansson@linaro.org>, alankao@andestech.com,
+        "K . C . Kuen-Chern Lin" <kclin@andestech.com>,
+        =?UTF-8?B?TWljaGHFgiBNaXJvc8WCYXc=?= <mirq-linux@rere.qmqm.pl>
+References: <20220130233718.21544-1-digetx@gmail.com>
+To:     "Rafael J. Wysocki" <rafael@kernel.org>
+In-Reply-To: <20220130233718.21544-1-digetx@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Feb 15, 2022 at 09:19:29PM +0200, Leon Romanovsky wrote:
-> On Tue, Feb 15, 2022 at 01:21:10PM -0600, Gustavo A. R. Silva wrote:
-> > On Tue, Feb 15, 2022 at 10:17:40AM -0800, Kees Cook wrote:
-> > > On Tue, Feb 15, 2022 at 11:47:43AM -0600, Gustavo A. R. Silva wrote:
-> > > 
-> > > These all look trivially correct to me. Only two didn't have the end of
-> > > the struct visible in the patch, and checking those showed them to be
-> > > trailing members as well, so:
-> > > 
-> > > Reviewed-by: Kees Cook <keescook@chromium.org>
-> > 
-> > I'll add this to my -next tree.
+31.01.2022 02:36, Dmitry Osipenko пишет:
+> Problem
+> -------
 > 
-> I would like to ask you to send mlx5 patch separately to netdev. We are working
-> to delete that file completely and prefer to avoid from unnecessary merge conflicts.
+> SoC devices require power-off call chaining functionality from kernel.
+> We have a widely used restart chaining provided by restart notifier API,
+> but nothing for power-off.
+> 
+> Solution
+> --------
+> 
+> Introduce new API that provides both restart and power-off call chains.
+> 
+> Why combine restart with power-off? Because drivers often do both.
+> More practical to have API that provides both under the same roof.
+> 
+> The new API is designed with simplicity and extensibility in mind.
+> It's built upon the existing restart and reboot APIs. The simplicity
+> is in new helper functions that are convenient for drivers. The
+> extensibility is in the design that doesn't hardcode callback
+> arguments, making easy to add new parameters and remove old.
+> 
+> This is a third attempt to introduce the new API. First was made by
+> Guenter Roeck back in 2014, second was made by Thierry Reding in 2017.
+> In fact the work didn't stop and recently arm_pm_restart() was removed
+> from v5.14 kernel, which was a part of preparatory work started by
+> Guenter Roeck. I took into account experience and ideas from the
+> previous attempts, extended and polished them.
 
-Oh OK. Sure thing; I will do so.
 
-Thanks
---
-Gustavo
+Rafael and all, do you see anything critical that needs to be improved
+in this v6?
+
+Will be great if you could take this patchset via the power tree if it
+looks okay, or give an ack.
