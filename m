@@ -2,113 +2,135 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E75C1C433F5
-	for <linux-sh@archiver.kernel.org>; Tue, 15 Feb 2022 12:03:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D66C3C4321E
+	for <linux-sh@archiver.kernel.org>; Tue, 15 Feb 2022 13:17:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237438AbiBOMDh convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 15 Feb 2022 07:03:37 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:40294 "EHLO
+        id S238161AbiBONRX (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 15 Feb 2022 08:17:23 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:48250 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237403AbiBOMDg (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 15 Feb 2022 07:03:36 -0500
-Received: from frasgout.his.huawei.com (frasgout.his.huawei.com [185.176.79.56])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 74A1ED0B5B;
-        Tue, 15 Feb 2022 04:03:24 -0800 (PST)
-Received: from fraeml710-chm.china.huawei.com (unknown [172.18.147.201])
-        by frasgout.his.huawei.com (SkyGuard) with ESMTP id 4Jyfpt0tBJz67xgN;
-        Tue, 15 Feb 2022 20:02:30 +0800 (CST)
-Received: from lhreml710-chm.china.huawei.com (10.201.108.61) by
- fraeml710-chm.china.huawei.com (10.206.15.59) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2308.21; Tue, 15 Feb 2022 13:03:21 +0100
-Received: from localhost (10.202.226.41) by lhreml710-chm.china.huawei.com
- (10.201.108.61) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256) id 15.1.2308.21; Tue, 15 Feb
- 2022 12:03:21 +0000
-Date:   Tue, 15 Feb 2022 12:03:19 +0000
-From:   Jonathan Cameron <Jonathan.Cameron@Huawei.com>
-To:     Geert Uytterhoeven <geert+renesas@glider.be>
-CC:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, Christoph Hellwig <hch@lst.de>,
-        Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>,
-        kernel test robot <lkp@intel.com>,
-        "Arnd Bergmann" <arnd@arndb.de>, <linux-sh@vger.kernel.org>,
-        <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH] sh: Convert nommu io{re,un}map() to static inline
- functions
-Message-ID: <20220215120319.00004feb@Huawei.com>
-In-Reply-To: <4ed0a7a0d3fa912a5b44c451884818f2c138ef42.1644914600.git.geert+renesas@glider.be>
-References: <4ed0a7a0d3fa912a5b44c451884818f2c138ef42.1644914600.git.geert+renesas@glider.be>
-Organization: Huawei Technologies Research and Development (UK) Ltd.
-X-Mailer: Claws Mail 4.0.0 (GTK+ 3.24.29; i686-w64-mingw32)
+        with ESMTP id S238160AbiBONRV (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 15 Feb 2022 08:17:21 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 394D2D10A6;
+        Tue, 15 Feb 2022 05:17:11 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id D2493B819C2;
+        Tue, 15 Feb 2022 13:17:09 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 75858C340FA;
+        Tue, 15 Feb 2022 13:17:08 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1644931028;
+        bh=yV4ORJd5b6IZao4Zu1H2u9bAD/0nkvfeGMC8j+boEO0=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=Y1UbQDYKVd/W55uCfVo2WGlgo3dfDZUC0yTFtlZUY0DOBzt83pgV9/7gMxh05e3AH
+         lgukd8DqmxPwxja7mK4vtMYnDC6X4AvagIoktla5uPG7vSSfPBtEQFLrXn9FMcdgHH
+         E1qEJeHLjvJUuBL6dqkrwsbxdH4jW8atiF/scjZBMC9lLF7Ype1WGnPRnqUer24JD8
+         tu4gGKuwZtD0+Nibza1Ys9PPtyZzsqg7g90GGNebDRKc+NU4HRCxVmDtvM0+9S5mSP
+         qhfZT5HIgJ8aWSTxW8hfUnfgxShZHe3y/AzzhEX87Jyr/ToKwZr4yc1EXWSuI0q6BQ
+         u0/dxkrR5dDfA==
+Received: by mail-wm1-f52.google.com with SMTP id l67-20020a1c2546000000b00353951c3f62so1379952wml.5;
+        Tue, 15 Feb 2022 05:17:08 -0800 (PST)
+X-Gm-Message-State: AOAM531nWLz2K8rL/bc46tYq+Deksn/ZiXUMR8HxJ4KV/G/F9pyHwQOj
+        z0x5V3QvmmSWc4VSjahm5CFqvuHjNvNkD91335I=
+X-Google-Smtp-Source: ABdhPJzhbiTSvbv50mQWSJ7smaLZnr2q978YJ0F6+MeQ3SrwEp5s0NrkvRE5+WnWUVexqYiFblH5E9BGGqHgxsxWGyI=
+X-Received: by 2002:a05:600c:4ecb:: with SMTP id g11mr3088436wmq.98.1644931026534;
+ Tue, 15 Feb 2022 05:17:06 -0800 (PST)
 MIME-Version: 1.0
+References: <20220214163452.1568807-1-arnd@kernel.org> <20220214163452.1568807-6-arnd@kernel.org>
+ <Ygr0eAA+ZR1eX0wb@zeniv-ca.linux.org.uk>
+In-Reply-To: <Ygr0eAA+ZR1eX0wb@zeniv-ca.linux.org.uk>
+From:   Arnd Bergmann <arnd@kernel.org>
+Date:   Tue, 15 Feb 2022 14:16:50 +0100
+X-Gmail-Original-Message-ID: <CAK8P3a2+qG=Q9Si_2D7wjM7Qao2JCnYqKgU=W-SFwoG+fT-U3A@mail.gmail.com>
+Message-ID: <CAK8P3a2+qG=Q9Si_2D7wjM7Qao2JCnYqKgU=W-SFwoG+fT-U3A@mail.gmail.com>
+Subject: Re: [PATCH 05/14] uaccess: add generic __{get,put}_kernel_nofault
+To:     Al Viro <viro@zeniv.linux.org.uk>
+Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
+        Christoph Hellwig <hch@lst.de>,
+        linux-arch <linux-arch@vger.kernel.org>,
+        Linux-MM <linux-mm@kvack.org>,
+        Linux API <linux-api@vger.kernel.org>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Russell King - ARM Linux <linux@armlinux.org.uk>,
+        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+        Brian Cain <bcain@codeaurora.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Michal Simek <monstr@monstr.eu>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Nick Hu <nickhu@andestech.com>,
+        Greentime Hu <green.hu@gmail.com>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        Stafford Horne <shorne@gmail.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Ingo Molnar <mingo@redhat.com>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Rich Felker <dalias@libc.org>,
+        David Miller <davem@davemloft.net>,
+        Richard Weinberger <richard@nod.at>,
+        "the arch/x86 maintainers" <x86@kernel.org>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        "Eric W . Biederman" <ebiederm@xmission.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Ard Biesheuvel <ardb@kernel.org>,
+        alpha <linux-alpha@vger.kernel.org>,
+        "open list:SYNOPSYS ARC ARCHITECTURE" 
+        <linux-snps-arc@lists.infradead.org>,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        linux-csky@vger.kernel.org,
+        "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>,
+        linux-ia64@vger.kernel.org,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
+        Openrisc <openrisc@lists.librecores.org>,
+        Parisc List <linux-parisc@vger.kernel.org>,
+        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
+        linux-riscv <linux-riscv@lists.infradead.org>,
+        linux-s390 <linux-s390@vger.kernel.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        sparclinux <sparclinux@vger.kernel.org>,
+        linux-um <linux-um@lists.infradead.org>,
+        "open list:TENSILICA XTENSA PORT (xtensa)" 
+        <linux-xtensa@linux-xtensa.org>
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-X-Originating-IP: [10.202.226.41]
-X-ClientProxiedBy: lhreml701-chm.china.huawei.com (10.201.108.50) To
- lhreml710-chm.china.huawei.com (10.201.108.61)
-X-CFilter-Loop: Reflected
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, 15 Feb 2022 09:51:05 +0100
-Geert Uytterhoeven <geert+renesas@glider.be> wrote:
+On Tue, Feb 15, 2022 at 1:31 AM Al Viro <viro@zeniv.linux.org.uk> wrote:
+>
+> On Mon, Feb 14, 2022 at 05:34:43PM +0100, Arnd Bergmann wrote:
+> > From: Arnd Bergmann <arnd@arndb.de>
+> >
+> > All architectures that don't provide __{get,put}_kernel_nofault() yet
+> > can implement this on top of __{get,put}_user.
+> >
+> > Add a generic version that lets everything use the normal
+> > copy_{from,to}_kernel_nofault() code based on these, removing the last
+> > use of get_fs()/set_fs() from architecture-independent code.
+>
+> I'd put the list of those architectures (AFAICS, that's alpha, ia64,
+> microblaze, nds32, nios2, openrisc, sh, sparc32, xtensa) into commit
+> message - it's not that hard to find out, but...
 
-> Recently, nommu iounmap() was converted from a static inline function to
-> a macro again, basically reverting commit 4580ba4ad2e6b8dd ("sh: Convert
-> iounmap() macros to inline functions").  With -Werror, this leads to
-> build failures like:
-> 
->     drivers/iio/adc/xilinx-ams.c: In function ‘ams_iounmap_ps’:
->     drivers/iio/adc/xilinx-ams.c:1195:14: error: unused variable ‘ams’ [-Werror=unused-variable]
->      1195 |  struct ams *ams = data;
-> 	  |              ^~~
-> 
-> Fix this by replacing the macros for ioremap() and iounmap() by static
-> inline functions, based on <asm-generic/io.h>.
-> 
-> Reported-by: kernel test robot <lkp@intel.com>
-> Reported-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
-> Fixes: 13f1fc870dd74713 ("sh: move the ioremap implementation out of line")
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+done.
 
-Looks good.
+> And AFAICS, you've missed nios2 - see
+> #define __put_user(x, ptr) put_user(x, ptr)
+> in there.  nds32 oddities are dealt with earlier in the series, this
+> one is not...
 
-Thanks for the quick response.
+Ok, fixed my bug in nios2 __put_user() as well now. This one is not nearly
+as bad as nds32, at least without my patches it should work as expected.
 
-Acked-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+Unfortunately I also noticed that __get_user() on microblaze and nios2
+is completely broken for 64-bit arguments, where these copy eight bytes
+into a four byte buffer. I'll try to come up with a fix for this as well then.
 
-> ---
-> This is actually the third time this change was made, as Christoph
-> converted iounmap() to a macro before in commit 98c90e5ea34e98bd ("sh:
-> remove __iounmap"), reverting commit 733f0025f0fb43e3 ("sh: prevent
-> warnings when using iounmap").
-> 
-> Probably sh-nommu should include <asm-generic/io.h>, but that would
-> require a lot more changes.
-> ---
->  arch/sh/include/asm/io.h | 8 ++++++--
->  1 file changed, 6 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-> index cf9a3ec32406f856..fba90e670ed41d48 100644
-> --- a/arch/sh/include/asm/io.h
-> +++ b/arch/sh/include/asm/io.h
-> @@ -271,8 +271,12 @@ static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
->  #endif /* CONFIG_HAVE_IOREMAP_PROT */
->  
->  #else /* CONFIG_MMU */
-> -#define iounmap(addr)		do { } while (0)
-> -#define ioremap(offset, size)	((void __iomem *)(unsigned long)(offset))
-> +static inline void __iomem *ioremap(phys_addr_t offset, size_t size)
-> +{
-> +	return (void __iomem *)(unsigned long)offset;
-> +}
-> +
-> +static inline void iounmap(volatile void __iomem *addr) { }
->  #endif /* CONFIG_MMU */
->  
->  #define ioremap_uc	ioremap
-
+         Arnd
