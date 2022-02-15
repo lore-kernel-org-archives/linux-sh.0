@@ -2,98 +2,124 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AE51EC433EF
-	for <linux-sh@archiver.kernel.org>; Tue, 15 Feb 2022 08:51:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C8F5C433F5
+	for <linux-sh@archiver.kernel.org>; Tue, 15 Feb 2022 08:53:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232387AbiBOIvV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 15 Feb 2022 03:51:21 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:33320 "EHLO
+        id S229948AbiBOIxZ convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 15 Feb 2022 03:53:25 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:34656 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230347AbiBOIvV (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 15 Feb 2022 03:51:21 -0500
-Received: from andre.telenet-ops.be (andre.telenet-ops.be [IPv6:2a02:1800:120:4::f00:15])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 772CD1133FC
-        for <linux-sh@vger.kernel.org>; Tue, 15 Feb 2022 00:51:11 -0800 (PST)
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:8c73:faf1:1d11:4a47])
-        by andre.telenet-ops.be with bizsmtp
-        id vLr72600J3BmCM301Lr7lU; Tue, 15 Feb 2022 09:51:09 +0100
-Received: from rox.of.borg ([192.168.97.57])
-        by ramsan.of.borg with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.93)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1nJtYB-000rJO-4t; Tue, 15 Feb 2022 09:51:07 +0100
-Received: from geert by rox.of.borg with local (Exim 4.93)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1nJtYA-00AkYi-Ko; Tue, 15 Feb 2022 09:51:06 +0100
-From:   Geert Uytterhoeven <geert+renesas@glider.be>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-Cc:     Christoph Hellwig <hch@lst.de>,
-        Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>,
-        kernel test robot <lkp@intel.com>,
-        Jonathan Cameron <Jonathan.Cameron@huawei.com>,
-        Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org,
-        Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH] sh: Convert nommu io{re,un}map() to static inline functions
-Date:   Tue, 15 Feb 2022 09:51:05 +0100
-Message-Id: <4ed0a7a0d3fa912a5b44c451884818f2c138ef42.1644914600.git.geert+renesas@glider.be>
-X-Mailer: git-send-email 2.25.1
+        with ESMTP id S229851AbiBOIxY (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 15 Feb 2022 03:53:24 -0500
+Received: from mail-vs1-f43.google.com (mail-vs1-f43.google.com [209.85.217.43])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DAB31113AE0;
+        Tue, 15 Feb 2022 00:53:14 -0800 (PST)
+Received: by mail-vs1-f43.google.com with SMTP id g21so9113768vsp.6;
+        Tue, 15 Feb 2022 00:53:14 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=Q1Y32bFnV0z6s8wKFyvVq+8Pc0+YZ2m9QE+RjlAqL5Q=;
+        b=ctnr9E90JBq/cYX3xON8GfHtqVU6nPm39DTEPo4rPLk8MdGpCFu4e8Iee7aF+Cj5XS
+         GpvKB7V3zaX6ml/EyMP6KgRmvdnQ8DMiAzrUdUx93gB84cQ7myqwWCCjp2OZkQsisXWJ
+         pr5Er6fyuN7zuS2Ho3olGRk0sDLtNaObZrsTLtdyG24sPDejMJ3XzdOvmPZuf/WQQS8I
+         wi1PZZs789xZa3p5M+eP9gv/MO0iWhkLtC5yP8WT+3n7bB4NOnw4f4B9PyQtP+MDZrep
+         grmx+Tt9xTZD1hU6uhyPkqJAXvxtBV1NY8p+chOFbWQaWzFY8u1A4pmKZN1uJft5AwzY
+         lclA==
+X-Gm-Message-State: AOAM530R6uer0Lyj31kZOD6R/mSAfTmjmaj7i5wyAwXQ1uYRslTjxc2v
+        wZ+xx64uXav2+MizhlfrxplCPbJVhSXbJn2R
+X-Google-Smtp-Source: ABdhPJyEmLquwoqosW7UUF/FbbEblNRNQP82tFipva5yMt6IUx49LpDA11heQ82vRy1PHRPOy+IBoA==
+X-Received: by 2002:a05:6102:38cc:: with SMTP id k12mr1020867vst.31.1644915193861;
+        Tue, 15 Feb 2022 00:53:13 -0800 (PST)
+Received: from mail-vs1-f42.google.com (mail-vs1-f42.google.com. [209.85.217.42])
+        by smtp.gmail.com with ESMTPSA id w2sm668793vkw.40.2022.02.15.00.53.13
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 15 Feb 2022 00:53:13 -0800 (PST)
+Received: by mail-vs1-f42.google.com with SMTP id g20so9638470vsb.9;
+        Tue, 15 Feb 2022 00:53:13 -0800 (PST)
+X-Received: by 2002:a05:6102:440d:: with SMTP id df13mr971256vsb.5.1644915193078;
+ Tue, 15 Feb 2022 00:53:13 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+References: <202202142203.4ofqbic9-lkp@intel.com> <20220214151905.00005a27@Huawei.com>
+ <CAMuHMdWYHWVroOdqP6+tx_zj+63OG77EcizdnpGsmfto=6SeDw@mail.gmail.com>
+In-Reply-To: <CAMuHMdWYHWVroOdqP6+tx_zj+63OG77EcizdnpGsmfto=6SeDw@mail.gmail.com>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Tue, 15 Feb 2022 09:53:01 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdVNQ=Y9uSS=9GSgu35gHLfsdVTNgxyyu2U5XKqPZYZs3A@mail.gmail.com>
+Message-ID: <CAMuHMdVNQ=Y9uSS=9GSgu35gHLfsdVTNgxyyu2U5XKqPZYZs3A@mail.gmail.com>
+Subject: Re: drivers/iio/adc/xilinx-ams.c:1195:21: error: unused variable 'ams'
+To:     Jonathan Cameron <Jonathan.Cameron@huawei.com>
+Cc:     kernel test robot <lkp@intel.com>,
+        Anand Ashok Dumbre <anand.ashok.dumbre@xilinx.com>,
+        kbuild-all@lists.01.org, linux-kernel@vger.kernel.org,
+        Manish Narani <manish.narani@xilinx.com>,
+        linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Recently, nommu iounmap() was converted from a static inline function to
-a macro again, basically reverting commit 4580ba4ad2e6b8dd ("sh: Convert
-iounmap() macros to inline functions").  With -Werror, this leads to
-build failures like:
+On Tue, Feb 15, 2022 at 9:33 AM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> On Mon, Feb 14, 2022 at 8:17 PM Jonathan Cameron
+> <Jonathan.Cameron@huawei.com> wrote:
+> > On Mon, 14 Feb 2022 22:47:14 +0800
+> > kernel test robot <lkp@intel.com> wrote:
+> >
+> > > tree:   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git master
+> > > head:   754e0b0e35608ed5206d6a67a791563c631cec07
+> > > commit: d5c70627a79455154f5f636096abe6fe57510605 iio: adc: Add Xilinx AMS driver
+> > > date:   8 weeks ago
+> > > config: sh-allmodconfig (https://download.01.org/0day-ci/archive/20220214/202202142203.4ofqbic9-lkp@intel.com/config)
+> > > compiler: sh4-linux-gcc (GCC) 11.2.0
+> > > reproduce (this is a W=1 build):
+> > >         wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
+> > >         chmod +x ~/bin/make.cross
+> > >         # https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=d5c70627a79455154f5f636096abe6fe57510605
+> > >         git remote add linus https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+> > >         git fetch --no-tags linus master
+> > >         git checkout d5c70627a79455154f5f636096abe6fe57510605
+> > >         # save the config file to linux build tree
+> > >         mkdir build_dir
+> > >         COMPILER_INSTALL_PATH=$HOME/0day COMPILER=gcc-11.2.0 make.cross O=build_dir ARCH=sh SHELL=/bin/bash drivers/iio/adc/ drivers/net/ethernet/freescale/
+> > >
+> > > If you fix the issue, kindly add following tag as appropriate
+> > > Reported-by: kernel test robot <lkp@intel.com>
+> >
+> > I'm very tempted to say won't fix on this at least not in the IIO code.
+> >
+> > The issue I think is the stub for iounmap on sh with no MMU not using the argument because it's
+>
+> Indeed.
+>
+> > defined as a while loop rather than as an empty static inline function which is what we'd
+> > get it it wasn't defined at all (AFAICT).
+>
+> We would get that only if <asm-generic/io.h> would be included...
+>
+> > If anyone wants to take this on, my guess is drop
+> > https://elixir.bootlin.com/linux/latest/source/arch/sh/include/asm/io.h#L274
+> > and see if everything still works and the warning goes away.
+>
+> Nope:
+>
+>     error: implicit declaration of function ‘iounmap’
+>
+> > +CC linux-sh for inputs.
+>
+> Thanks, I'll post a fix.
 
-    drivers/iio/adc/xilinx-ams.c: In function ‘ams_iounmap_ps’:
-    drivers/iio/adc/xilinx-ams.c:1195:14: error: unused variable ‘ams’ [-Werror=unused-variable]
-     1195 |  struct ams *ams = data;
-	  |              ^~~
+https://lore.kernel.org/r/4ed0a7a0d3fa912a5b44c451884818f2c138ef42.1644914600.git.geert+renesas@glider.be/
 
-Fix this by replacing the macros for ioremap() and iounmap() by static
-inline functions, based on <asm-generic/io.h>.
+Gr{oetje,eeting}s,
 
-Reported-by: kernel test robot <lkp@intel.com>
-Reported-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
-Fixes: 13f1fc870dd74713 ("sh: move the ioremap implementation out of line")
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
-This is actually the third time this change was made, as Christoph
-converted iounmap() to a macro before in commit 98c90e5ea34e98bd ("sh:
-remove __iounmap"), reverting commit 733f0025f0fb43e3 ("sh: prevent
-warnings when using iounmap").
+                        Geert
 
-Probably sh-nommu should include <asm-generic/io.h>, but that would
-require a lot more changes.
----
- arch/sh/include/asm/io.h | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index cf9a3ec32406f856..fba90e670ed41d48 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -271,8 +271,12 @@ static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
- #endif /* CONFIG_HAVE_IOREMAP_PROT */
- 
- #else /* CONFIG_MMU */
--#define iounmap(addr)		do { } while (0)
--#define ioremap(offset, size)	((void __iomem *)(unsigned long)(offset))
-+static inline void __iomem *ioremap(phys_addr_t offset, size_t size)
-+{
-+	return (void __iomem *)(unsigned long)offset;
-+}
-+
-+static inline void iounmap(volatile void __iomem *addr) { }
- #endif /* CONFIG_MMU */
- 
- #define ioremap_uc	ioremap
--- 
-2.25.1
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
