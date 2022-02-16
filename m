@@ -2,155 +2,149 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C7027C433F5
-	for <linux-sh@archiver.kernel.org>; Wed, 16 Feb 2022 01:34:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A650EC43217
+	for <linux-sh@archiver.kernel.org>; Wed, 16 Feb 2022 12:25:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245505AbiBPBex (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 15 Feb 2022 20:34:53 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:33092 "EHLO
+        id S233153AbiBPM0H convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 16 Feb 2022 07:26:07 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:48638 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S245502AbiBPBeu (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 15 Feb 2022 20:34:50 -0500
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 3FCA6F70DA
-        for <linux-sh@vger.kernel.org>; Tue, 15 Feb 2022 17:34:39 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1644975278;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding;
-        bh=TxaBIMaSmpGvEpUN6pnfgExDYJwGH+sDt4Nge7L+SbE=;
-        b=TbJphcHfG4w4kmT5FIjNovFMUbt6+7wpfOtueb8e55n3W7ahslubEcK9/uEeka/VYDyp6c
-        xeQXIYKA4DK53y/eB9AEWtJAmHSVFEivCpNH61I5spGa2yaB/bJUusneDbn0FLDIQmNADM
-        QLR1nDjujJ58m4IexFM+TIyvDWNSnE4=
-Received: from mail-ot1-f69.google.com (mail-ot1-f69.google.com
- [209.85.210.69]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-66-fF7EfT21MZaO7N9k-02aaA-1; Tue, 15 Feb 2022 20:34:37 -0500
-X-MC-Unique: fF7EfT21MZaO7N9k-02aaA-1
-Received: by mail-ot1-f69.google.com with SMTP id q8-20020a056830232800b005ab75f5e906so419067otg.18
-        for <linux-sh@vger.kernel.org>; Tue, 15 Feb 2022 17:34:37 -0800 (PST)
+        with ESMTP id S229643AbiBPM0F (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 16 Feb 2022 07:26:05 -0500
+Received: from mail-yb1-f173.google.com (mail-yb1-f173.google.com [209.85.219.173])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DC0B027AA10;
+        Wed, 16 Feb 2022 04:25:53 -0800 (PST)
+Received: by mail-yb1-f173.google.com with SMTP id bt13so5538742ybb.2;
+        Wed, 16 Feb 2022 04:25:53 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:from:to:cc:subject:date:message-id:mime-version
-         :content-transfer-encoding;
-        bh=TxaBIMaSmpGvEpUN6pnfgExDYJwGH+sDt4Nge7L+SbE=;
-        b=W3WctQ7iMcNEpLxH47EIQgR6jw5rlAwsm5hvuA28myEuZ95jwLV2gp22wxBhl5WCcr
-         ygbIFPp6ya+v9zTO/aTHUiNMfytb9yFE2IEFhiC2xOW8r1iZ0hLhpIyr9qlGx9tw7XsA
-         P9G/NC6qKy6tVG4Ea9H52Zc/yBzAy5sRpVWX/dyu4W+DmizCD2LWzlYQBZ+ej8fNKpJv
-         VDSE7Shf5HCh24N1tmQWIIZq9DAXQWx3To0V7ZlaiDa58UJqe/XqNXijvjjF3duQPpQT
-         nc22yD9NsPvB+Eyc7Wr+pPPv6gFHvOyMPQkqsRkVqfsS3sY3NEg7vM7yFbjHMLQOAGNi
-         vuEg==
-X-Gm-Message-State: AOAM533iPpwsai7oC7mPJU498mcA2G74bsI8T4Zl0aIkGu+rIONGaNY0
-        DoB6OkgpEReFUAyJQsz8wZOdCn2ETXDdcA7Ir9qatQuSUekplaaHwtFRqXbFCD2fSIAd33txhI+
-        SHTQIcHwsz679DywB5+Q=
-X-Received: by 2002:a05:6870:e749:b0:d3:4ada:380e with SMTP id t9-20020a056870e74900b000d34ada380emr244592oak.206.1644975276261;
-        Tue, 15 Feb 2022 17:34:36 -0800 (PST)
-X-Google-Smtp-Source: ABdhPJxIWFPq8WR/J0ftst2Qc1PQDGPtfYiYgOJVkBhQLwJvoEFneclhBD3/SN4zuCWYCBqLlE5zJw==
-X-Received: by 2002:a05:6870:e749:b0:d3:4ada:380e with SMTP id t9-20020a056870e74900b000d34ada380emr244588oak.206.1644975276058;
-        Tue, 15 Feb 2022 17:34:36 -0800 (PST)
-Received: from localhost.localdomain.com (024-205-208-113.res.spectrum.com. [24.205.208.113])
-        by smtp.gmail.com with ESMTPSA id 100sm14574391oth.75.2022.02.15.17.34.34
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 15 Feb 2022 17:34:35 -0800 (PST)
-From:   trix@redhat.com
-To:     ysato@users.sourceforge.jp, dalias@libc.org
-Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Tom Rix <trix@redhat.com>
-Subject: [PATCH] sh: cleanup comments
-Date:   Tue, 15 Feb 2022 17:34:24 -0800
-Message-Id: <20220216013424.3062140-1-trix@redhat.com>
-X-Mailer: git-send-email 2.26.3
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=ZzgKkF+Qi9uD0PohBja9X66WgBtIRyDp12JGMxNBcpY=;
+        b=SmFG6cMNn2WzcalJa27s9eH1YqlUBva1gEkgs99/RkIpoUz6kxJSHUIqIP7IRJx6zM
+         2cEsy4f2xS3oirL8EQeh/CI1NAiwXnbQvdfzVfu02n721tJsL2/AuNc1vM7QZ9KWhAMM
+         WVoauxya1DfWyx/5DmjnV0NDxwqzmH2YKw2Yf+t6ZUXasSFFCXZg/7BG+1ZKrGzN0umZ
+         uZiKTrlruhxGMLpVdVQZOkREYLBpFIp/tUz71rL7dD2XPupu+bXIk//dgX5JMg6Q5/VF
+         nRn8ocKmLjm8+2xI1oA4PniZi16eW6h9mhgr9cdwwmrT84vYCT32ceA88etkK8vxNX1n
+         zXpw==
+X-Gm-Message-State: AOAM531dUfwXvaobtSMX/InoOCL/yhv4RMB/74kpsaF6OhowM7VW9glf
+        GHM3ooZHTWYtAdEvXiLHWpd23aAcTie6I4M2hkA=
+X-Google-Smtp-Source: ABdhPJzgB2WXDlMNWyEW279no9A0knLc+PLldmsjtAqBW5sJWGuZ+ouM0fPGPUzKV7R9c8p8BV9gaIDPnZPFqeD/pjM=
+X-Received: by 2002:a81:f008:0:b0:2d0:cd72:74e5 with SMTP id
+ p8-20020a81f008000000b002d0cd7274e5mr2135032ywm.301.1645014353165; Wed, 16
+ Feb 2022 04:25:53 -0800 (PST)
 MIME-Version: 1.0
-Authentication-Results: relay.mimecast.com;
-        auth=pass smtp.auth=CUSA124A263 smtp.mailfrom=trix@redhat.com
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: redhat.com
-Content-Transfer-Encoding: 8bit
-Content-Type: text/plain; charset="US-ASCII"
+References: <20220130233718.21544-1-digetx@gmail.com> <635e8121-fca4-580c-6af5-d9317a2eee1b@gmail.com>
+In-Reply-To: <635e8121-fca4-580c-6af5-d9317a2eee1b@gmail.com>
+From:   "Rafael J. Wysocki" <rafael@kernel.org>
+Date:   Wed, 16 Feb 2022 13:25:39 +0100
+Message-ID: <CAJZ5v0g0MrBm2+GwctkB7kUyBEt6HTAexRCFFRmTF1UKDrVQ-g@mail.gmail.com>
+Subject: Re: [PATCH v6 00/21] Introduce power-off+restart call chain API
+To:     Dmitry Osipenko <digetx@gmail.com>
+Cc:     "Rafael J. Wysocki" <rafael@kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org,
+        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
+        linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        xen-devel@lists.xenproject.org,
+        ACPI Devel Maling List <linux-acpi@vger.kernel.org>,
+        Linux PM <linux-pm@vger.kernel.org>,
+        linux-tegra <linux-tegra@vger.kernel.org>,
+        Thierry Reding <thierry.reding@gmail.com>,
+        Jonathan Hunter <jonathanh@nvidia.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Joshua Thompson <funaho@jurai.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Sebastian Reichel <sre@kernel.org>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Philipp Zabel <p.zabel@pengutronix.de>,
+        Greentime Hu <green.hu@gmail.com>,
+        Vincent Chen <deanbo422@gmail.com>,
+        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        "the arch/x86 maintainers" <x86@kernel.org>,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
+        Juergen Gross <jgross@suse.com>,
+        Stefano Stabellini <sstabellini@kernel.org>,
+        Len Brown <lenb@kernel.org>,
+        Santosh Shilimkar <ssantosh@kernel.org>,
+        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
+        Liam Girdwood <lgirdwood@gmail.com>,
+        Mark Brown <broonie@kernel.org>, Pavel Machek <pavel@ucw.cz>,
+        Lee Jones <lee.jones@linaro.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Daniel Lezcano <daniel.lezcano@linaro.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Ulf Hansson <ulf.hansson@linaro.org>, alankao@andestech.com,
+        "K . C . Kuen-Chern Lin" <kclin@andestech.com>,
+        =?UTF-8?B?TWljaGHFgiBNaXJvc8WCYXc=?= <mirq-linux@rere.qmqm.pl>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Tom Rix <trix@redhat.com>
+On Tue, Feb 15, 2022 at 11:00 PM Dmitry Osipenko <digetx@gmail.com> wrote:
+>
+> 31.01.2022 02:36, Dmitry Osipenko пишет:
+> > Problem
+> > -------
+> >
+> > SoC devices require power-off call chaining functionality from kernel.
+> > We have a widely used restart chaining provided by restart notifier API,
+> > but nothing for power-off.
+> >
+> > Solution
+> > --------
+> >
+> > Introduce new API that provides both restart and power-off call chains.
+> >
+> > Why combine restart with power-off? Because drivers often do both.
+> > More practical to have API that provides both under the same roof.
+> >
+> > The new API is designed with simplicity and extensibility in mind.
+> > It's built upon the existing restart and reboot APIs. The simplicity
+> > is in new helper functions that are convenient for drivers. The
+> > extensibility is in the design that doesn't hardcode callback
+> > arguments, making easy to add new parameters and remove old.
+> >
+> > This is a third attempt to introduce the new API. First was made by
+> > Guenter Roeck back in 2014, second was made by Thierry Reding in 2017.
+> > In fact the work didn't stop and recently arm_pm_restart() was removed
+> > from v5.14 kernel, which was a part of preparatory work started by
+> > Guenter Roeck. I took into account experience and ideas from the
+> > previous attempts, extended and polished them.
+>
+>
+> Rafael and all, do you see anything critical that needs to be improved
+> in this v6?
+>
+> Will be great if you could take this patchset via the power tree if it
+> looks okay, or give an ack.
 
-Replacements:
-SPDX--License-Identifier to SPDX-License-Identifier
-incase to in case
-Adaptor to Adapter
-overruning to overrunning
+I need some more time for this, sorry.
 
-Signed-off-by: Tom Rix <trix@redhat.com>
----
- arch/sh/drivers/dma/dma-sh.c           | 2 +-
- arch/sh/drivers/pci/fixups-dreamcast.c | 2 +-
- arch/sh/drivers/pci/pci-dreamcast.c    | 2 +-
- arch/sh/drivers/pci/pci-sh7751.c       | 2 +-
- arch/sh/drivers/platform_early.c       | 2 +-
- 5 files changed, 5 insertions(+), 5 deletions(-)
+I'm a bit concerned about seeing no response to this set from anyone.
 
-diff --git a/arch/sh/drivers/dma/dma-sh.c b/arch/sh/drivers/dma/dma-sh.c
-index 96c626c2cd0a..38e2d62c330c 100644
---- a/arch/sh/drivers/dma/dma-sh.c
-+++ b/arch/sh/drivers/dma/dma-sh.c
-@@ -261,7 +261,7 @@ static inline int dmaor_reset(int no)
- {
- 	unsigned long dmaor = dmaor_read_reg(no);
- 
--	/* Try to clear the error flags first, incase they are set */
-+	/* Try to clear the error flags first, in case they are set */
- 	dmaor &= ~(DMAOR_NMIF | DMAOR_AE);
- 	dmaor_write_reg(no, dmaor);
- 
-diff --git a/arch/sh/drivers/pci/fixups-dreamcast.c b/arch/sh/drivers/pci/fixups-dreamcast.c
-index 41e4daee8f04..2e8a1e2233a3 100644
---- a/arch/sh/drivers/pci/fixups-dreamcast.c
-+++ b/arch/sh/drivers/pci/fixups-dreamcast.c
-@@ -9,7 +9,7 @@
-  *
-  * This file originally bore the message (with enclosed-$):
-  *	Id: pci.c,v 1.3 2003/05/04 19:29:46 lethal Exp
-- *	Dreamcast PCI: Supports SEGA Broadband Adaptor only.
-+ *	Dreamcast PCI: Supports SEGA Broadband Adapter only.
-  */
- 
- #include <linux/sched.h>
-diff --git a/arch/sh/drivers/pci/pci-dreamcast.c b/arch/sh/drivers/pci/pci-dreamcast.c
-index 4cff2a8107bf..c48ae4576d24 100644
---- a/arch/sh/drivers/pci/pci-dreamcast.c
-+++ b/arch/sh/drivers/pci/pci-dreamcast.c
-@@ -7,7 +7,7 @@
-  *
-  * This file originally bore the message (with enclosed-$):
-  *	Id: pci.c,v 1.3 2003/05/04 19:29:46 lethal Exp
-- *	Dreamcast PCI: Supports SEGA Broadband Adaptor only.
-+ *	Dreamcast PCI: Supports SEGA Broadband Adapter only.
-  */
- 
- #include <linux/sched.h>
-diff --git a/arch/sh/drivers/pci/pci-sh7751.c b/arch/sh/drivers/pci/pci-sh7751.c
-index 11ed21c2e9bb..0324ab2564d8 100644
---- a/arch/sh/drivers/pci/pci-sh7751.c
-+++ b/arch/sh/drivers/pci/pci-sh7751.c
-@@ -170,7 +170,7 @@ static int __init sh7751_pci_init(void)
- 	pci_fixup_pcic(chan);
- 
- 	/* SH7751 init done, set central function init complete */
--	/* use round robin mode to stop a device starving/overruning */
-+	/* use round robin mode to stop a device starving/overrunning */
- 	word = SH4_PCICR_PREFIX | SH4_PCICR_CFIN | SH4_PCICR_ARBM;
- 	pci_write_reg(chan, word, SH4_PCICR);
- 
-diff --git a/arch/sh/drivers/platform_early.c b/arch/sh/drivers/platform_early.c
-index 143747c45206..1c2a571a8ab8 100644
---- a/arch/sh/drivers/platform_early.c
-+++ b/arch/sh/drivers/platform_early.c
-@@ -1,4 +1,4 @@
--// SPDX--License-Identifier: GPL-2.0
-+// SPDX-License-Identifier: GPL-2.0
- 
- #include <asm/platform_early.h>
- #include <linux/mod_devicetable.h>
--- 
-2.26.3
-
+It looks like multiple platforms may be affected by it in principle,
+so doesn't anyone care?
