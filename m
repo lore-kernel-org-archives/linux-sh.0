@@ -2,187 +2,113 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9C263C4321E
-	for <linux-sh@archiver.kernel.org>; Thu, 17 Feb 2022 10:13:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2D114C43219
+	for <linux-sh@archiver.kernel.org>; Thu, 17 Feb 2022 19:15:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239055AbiBQKNQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 17 Feb 2022 05:13:16 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:55988 "EHLO
+        id S242075AbiBQTPl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 17 Feb 2022 14:15:41 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:36232 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236012AbiBQKNP (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 17 Feb 2022 05:13:15 -0500
-Received: from mail-lj1-x22e.google.com (mail-lj1-x22e.google.com [IPv6:2a00:1450:4864:20::22e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 140AB143469;
-        Thu, 17 Feb 2022 02:13:01 -0800 (PST)
-Received: by mail-lj1-x22e.google.com with SMTP id n24so7474925ljj.10;
-        Thu, 17 Feb 2022 02:13:00 -0800 (PST)
+        with ESMTP id S245035AbiBQTPj (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 17 Feb 2022 14:15:39 -0500
+Received: from mail-ej1-x62e.google.com (mail-ej1-x62e.google.com [IPv6:2a00:1450:4864:20::62e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 311D990CE4
+        for <linux-sh@vger.kernel.org>; Thu, 17 Feb 2022 11:15:24 -0800 (PST)
+Received: by mail-ej1-x62e.google.com with SMTP id qk11so9623361ejb.2
+        for <linux-sh@vger.kernel.org>; Thu, 17 Feb 2022 11:15:24 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=message-id:date:mime-version:user-agent:subject:content-language:to
-         :cc:references:from:in-reply-to:content-transfer-encoding;
-        bh=OO8O5AkWPhI/5yGYSTEQp+LjZetKZnyQ+pZ7++XrzEA=;
-        b=X8w7in6JtN9+vwIDY375tbKdJ6/kAXjQzoJEMNX/aRNZ/xldyGjWjXODYmSy5mi1RE
-         IVBvYSJ5Q0hWoh3euDgluS6hajxAwota0SjPBhdLfholDQzq33VHuJfcHHzCkXGyz8tb
-         MDBzs6ibY/EGdDqB/ff2GewtKr6TpYHNqvy5y4L9nhOeKSaVrEEfVSAdHs3oIc8/KGvy
-         BUoC/Ntz4HLIebyoKI3bup9qeurRZrprpsOzzaMBNquRHtxpasWvx6s1xD7yjJ47gW7a
-         aqMUkT2VhDOvjwLmzIlZFje3GuDLrgVXuDJcvjJJbqm/WRU77L4UMZYg+2nxY7fnS64M
-         8wzw==
+        d=amacapital-net.20210112.gappssmtp.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=+RZ8CAgnGa1bk5gBxds4oezzFjZLQMV+wOvrmesI1Hw=;
+        b=aC4vKGs+W+TwIvfSuol31sXb0DdwmBd+7ynpizLCKhXxCJFdEAZpxJvcWGa/FztIyE
+         kaM//DxAJXCDh5aNx4GSOgCqArnp/pPXpeZOwL6NCOz09LePB9aHf9rLmhVNdEQhmOfG
+         zcHXwBp2FYlRXI6tXnhZ/KCBgXws1BhNZED9tFrHvUNz3V476fnXQSLMeM+Shpqaev6m
+         W07DvhrokY4sorGqrqwhi0S/cnzs7UTqO0cIGR6WWEAN8VmZadQ9VO/+zsTblOwHPeWg
+         SsUN3Cw66rH7ga20AFYG5KTR6BdWsnByVkv9VANJJ9bhC1jZcqQ2NhN41BgDZLcdhMyk
+         TY3g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
-         :content-language:to:cc:references:from:in-reply-to
-         :content-transfer-encoding;
-        bh=OO8O5AkWPhI/5yGYSTEQp+LjZetKZnyQ+pZ7++XrzEA=;
-        b=7pr47jE/gdAdaDrCCfyYmBUiEIX35Jia+LTn+J6qHiHUFJ3a6Bm/wYJfBtMgD80XM7
-         08+9aZXK57FDzfN0oNQNxysoi9K3/Z9SCmgPPmMAqi5DvgiNWbWGtT1Psubir4+SXU+o
-         gRV+UCMI/bHhNXyFqqq4EYldR+1mU0vky+FWzW805Nb6ZzUABhsqUHBgWy3W64kJuagb
-         xrQofwp652Cdq7wqG1Ppo7wdJLFt4fCdhv7dcE/6F5zEC0gt38PkKdGWMDRMUqoHH14A
-         Lbe+x56E4n+G+Qrx8fdAHjTSmjCd/nzEYPt6JB/gtxXm0ufp6JJ870vKPi7kBlYpJT/q
-         PKYw==
-X-Gm-Message-State: AOAM531lg7CNRkr5GP49SV/u3DBjyETkU9AirEe1YGwbGmOKQGR7AOrk
-        mSTXBVd88G2R12+sHTThCSLVPemO/hU=
-X-Google-Smtp-Source: ABdhPJzppLbwPh7ryO4JRMtpJc/4Lz2rbVquaymBUgCgBO2OneSkA3o02raf386TVCaqFDiGA98BPg==
-X-Received: by 2002:a05:651c:1544:b0:246:1887:cf4c with SMTP id y4-20020a05651c154400b002461887cf4cmr917179ljp.118.1645092779295;
-        Thu, 17 Feb 2022 02:12:59 -0800 (PST)
-Received: from [192.168.2.145] (109-252-138-165.dynamic.spd-mgts.ru. [109.252.138.165])
-        by smtp.googlemail.com with ESMTPSA id o10sm5079173lfl.116.2022.02.17.02.12.57
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 17 Feb 2022 02:12:58 -0800 (PST)
-Message-ID: <4f0d1b50-9f55-dd81-f0c7-f5e0dfd75c2a@gmail.com>
-Date:   Thu, 17 Feb 2022 13:12:57 +0300
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=+RZ8CAgnGa1bk5gBxds4oezzFjZLQMV+wOvrmesI1Hw=;
+        b=kunmNdFTFeugwf31hom4ftXvAE9NNXgc+Q1xx12eBiCa7zy1ItxVVuhHbolQio+Nm+
+         pnXm8ENgQ/MP1w1Zg82Qz7zYCOTa8gMX8UwdfMGNvgw5IUGUiUREKNPR41GFp/bx5zhW
+         mi3DSpCwfirLFoGdgB0/5heEzK+AAAmVJ2WABEuzoZEXGPqxNgkcm8NDrL1ehlmyi9N9
+         OQrZ2vEy61X+ctzrL/pFvruJ85sT+Y60WgdcF2lKHO225EOy3X09TCvXST+xZfZMaaY/
+         2/HHv+qxvX3uzMAzK+za0EukXpPKtcGQbKU6FxvPwP9G4+mFQuQLOK6Msk8S7/qhGmGj
+         NDbQ==
+X-Gm-Message-State: AOAM531hVpeG1Rwe6UjGP4pm9UZ484TrWGB9ZtrrdDSd0a9M4HUDj9bW
+        w/zaktJ5SH2dlt6J2lrLs5Ig1u8LEXNop4mY+J+nlg==
+X-Google-Smtp-Source: ABdhPJw48Oadf8QR2zY/o5TdRU0UiMjXS1n08+Rvo/jef0cepMooOXBMnDr3m4SH0a9wsDyMLo89s3cuvktj12QRONA=
+X-Received: by 2002:a17:906:4b52:b0:6cd:3863:b35e with SMTP id
+ j18-20020a1709064b5200b006cd3863b35emr3488094ejv.415.1645125322737; Thu, 17
+ Feb 2022 11:15:22 -0800 (PST)
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.5.0
-Subject: Re: [PATCH v6 00/21] Introduce power-off+restart call chain API
-Content-Language: en-US
-To:     Helge Deller <deller@gmx.de>,
-        "Rafael J. Wysocki" <rafael@kernel.org>
-Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org,
-        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
-        linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        xen-devel@lists.xenproject.org,
-        ACPI Devel Maling List <linux-acpi@vger.kernel.org>,
-        Linux PM <linux-pm@vger.kernel.org>,
-        linux-tegra <linux-tegra@vger.kernel.org>,
-        Thierry Reding <thierry.reding@gmail.com>,
-        Jonathan Hunter <jonathanh@nvidia.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Joshua Thompson <funaho@jurai.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Sebastian Reichel <sre@kernel.org>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Philipp Zabel <p.zabel@pengutronix.de>,
-        Greentime Hu <green.hu@gmail.com>,
-        Vincent Chen <deanbo422@gmail.com>,
-        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        the arch/x86 maintainers <x86@kernel.org>,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
-        Juergen Gross <jgross@suse.com>,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        Len Brown <lenb@kernel.org>,
-        Santosh Shilimkar <ssantosh@kernel.org>,
-        Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>,
-        Liam Girdwood <lgirdwood@gmail.com>,
-        Mark Brown <broonie@kernel.org>, Pavel Machek <pavel@ucw.cz>,
-        Lee Jones <lee.jones@linaro.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Daniel Lezcano <daniel.lezcano@linaro.org>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Ulf Hansson <ulf.hansson@linaro.org>, alankao@andestech.com,
-        "K . C . Kuen-Chern Lin" <kclin@andestech.com>,
-        =?UTF-8?B?TWljaGHFgiBNaXJvc8WCYXc=?= <mirq-linux@rere.qmqm.pl>
-References: <20220130233718.21544-1-digetx@gmail.com>
- <635e8121-fca4-580c-6af5-d9317a2eee1b@gmail.com>
- <CAJZ5v0g0MrBm2+GwctkB7kUyBEt6HTAexRCFFRmTF1UKDrVQ-g@mail.gmail.com>
- <de2cbd2a-8d0d-8678-e514-b153d04546cc@gmx.de>
-From:   Dmitry Osipenko <digetx@gmail.com>
-In-Reply-To: <de2cbd2a-8d0d-8678-e514-b153d04546cc@gmx.de>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+References: <20220216131332.1489939-1-arnd@kernel.org> <20220216131332.1489939-14-arnd@kernel.org>
+In-Reply-To: <20220216131332.1489939-14-arnd@kernel.org>
+From:   Andy Lutomirski <luto@amacapital.net>
+Date:   Thu, 17 Feb 2022 11:15:11 -0800
+Message-ID: <CALCETrVOvYPN4_6hS8wpm2v9bGZupZ5x4=vZAseG57OUgvLGfw@mail.gmail.com>
+Subject: Re: [PATCH v2 13/18] uaccess: generalize access_ok()
+To:     Arnd Bergmann <arnd@kernel.org>
+Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
+        Christoph Hellwig <hch@lst.de>, linux-arch@vger.kernel.org,
+        linux-mm@kvack.org, linux-api@vger.kernel.org, arnd@arndb.de,
+        linux-kernel@vger.kernel.org, viro@zeniv.linux.org.uk,
+        linux@armlinux.org.uk, will@kernel.org, guoren@kernel.org,
+        bcain@codeaurora.org, geert@linux-m68k.org, monstr@monstr.eu,
+        tsbogend@alpha.franken.de, nickhu@andestech.com,
+        green.hu@gmail.com, dinguyen@kernel.org, shorne@gmail.com,
+        deller@gmx.de, mpe@ellerman.id.au, peterz@infradead.org,
+        mingo@redhat.com, mark.rutland@arm.com, hca@linux.ibm.com,
+        dalias@libc.org, davem@davemloft.net, richard@nod.at,
+        x86@kernel.org, jcmvbkbc@gmail.com, ebiederm@xmission.com,
+        akpm@linux-foundation.org, ardb@kernel.org,
+        linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-16.02.2022 23:30, Helge Deller пишет:
-> On 2/16/22 13:25, Rafael J. Wysocki wrote:
->> On Tue, Feb 15, 2022 at 11:00 PM Dmitry Osipenko <digetx@gmail.com> wrote:
->>>
->>> 31.01.2022 02:36, Dmitry Osipenko пишет:
->>>> Problem
->>>> -------
->>>>
->>>> SoC devices require power-off call chaining functionality from kernel.
->>>> We have a widely used restart chaining provided by restart notifier API,
->>>> but nothing for power-off.
->>>>
->>>> Solution
->>>> --------
->>>>
->>>> Introduce new API that provides both restart and power-off call chains.
->>>>
->>>> Why combine restart with power-off? Because drivers often do both.
->>>> More practical to have API that provides both under the same roof.
->>>>
->>>> The new API is designed with simplicity and extensibility in mind.
->>>> It's built upon the existing restart and reboot APIs. The simplicity
->>>> is in new helper functions that are convenient for drivers. The
->>>> extensibility is in the design that doesn't hardcode callback
->>>> arguments, making easy to add new parameters and remove old.
->>>>
->>>> This is a third attempt to introduce the new API. First was made by
->>>> Guenter Roeck back in 2014, second was made by Thierry Reding in 2017.
->>>> In fact the work didn't stop and recently arm_pm_restart() was removed
->>>> from v5.14 kernel, which was a part of preparatory work started by
->>>> Guenter Roeck. I took into account experience and ideas from the
->>>> previous attempts, extended and polished them.
->>>
->>>
->>> Rafael and all, do you see anything critical that needs to be improved
->>> in this v6?
->>>
->>> Will be great if you could take this patchset via the power tree if it
->>> looks okay, or give an ack.
->>
->> I need some more time for this, sorry.
+On Wed, Feb 16, 2022 at 5:19 AM Arnd Bergmann <arnd@kernel.org> wrote:
+>
+> From: Arnd Bergmann <arnd@arndb.de>
+>
+> There are many different ways that access_ok() is defined across
+> architectures, but in the end, they all just compare against the
+> user_addr_max() value or they accept anything.
+>
+> Provide one definition that works for most architectures, checking
+> against TASK_SIZE_MAX for user processes or skipping the check inside
+> of uaccess_kernel() sections.
+>
+> For architectures without CONFIG_SET_FS(), this should be the fastest
+> check, as it comes down to a single comparison of a pointer against a
+> compile-time constant, while the architecture specific versions tend to
+> do something more complex for historic reasons or get something wrong.
 
-No worries, we're not in a rush.
+This isn't actually optimal.  On x86, TASK_SIZE_MAX is a bizarre
+constant that has a very specific value to work around a bug^Wdesign
+error^Wfeature of Intel CPUs.  TASK_SIZE_MAX is the maximum address at
+which userspace is permitted to allocate memory, but there is a huge
+gap between user and kernel addresses, and any value in the gap would
+be adequate for the comparison.  If we wanted to optimize this, simply
+checking the high bit (which x86 can do without any immediate
+constants at all) would be sufficient and, for an access known to fit
+in 32 bits, one could get even fancier and completely ignore the size
+of the access.  (For accesses not known to fit in 32 bits, I suspect
+some creativity could still come up with a construction that's
+substantially faster than the one in your patch.)
 
->> I'm a bit concerned about seeing no response to this set from anyone.
->>
->> It looks like multiple platforms may be affected by it in principle,
->> so doesn't anyone care?
+So there's plenty of room for optimization here.
 
-The platforms that didn't provide ack so far are: SH, x86, IA64, MIPS
-and NDS32. At least x86 and MIPS are alive, not sure why maintainers
-didn't bother to answer yet.
-
-> I did looked into the whole patch set after applying it locally.
-> 
-> While I agree a new combined API is good, and the beginning looked promising,
-> after some time I started to ask myself if the whole infrastructure might
-> be a little overdesigned.
-> 
-> Anyway, I tested it and it works for me on parisc.
-> And it's probably better than what we have today.
-
-Thank you!
+(This is not in any respect a NAK -- it's just an observation that
+this could be even better.)
