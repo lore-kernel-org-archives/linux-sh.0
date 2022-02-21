@@ -2,143 +2,113 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A695C433F5
-	for <linux-sh@archiver.kernel.org>; Mon, 21 Feb 2022 06:41:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AD499C433FE
+	for <linux-sh@archiver.kernel.org>; Mon, 21 Feb 2022 13:47:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1345347AbiBUGlx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 21 Feb 2022 01:41:53 -0500
-Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:41570 "EHLO
+        id S238406AbiBUNsT (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 21 Feb 2022 08:48:19 -0500
+Received: from mxb-00190b01.gslb.pphosted.com ([23.128.96.19]:42644 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345411AbiBUGkf (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 21 Feb 2022 01:40:35 -0500
-Received: from foss.arm.com (foss.arm.com [217.140.110.172])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 4C2C7427FB;
-        Sun, 20 Feb 2022 22:39:44 -0800 (PST)
-Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 1B5161476;
-        Sun, 20 Feb 2022 22:39:44 -0800 (PST)
-Received: from p8cg001049571a15.arm.com (unknown [10.163.49.67])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPA id E13593F70D;
-        Sun, 20 Feb 2022 22:39:40 -0800 (PST)
-From:   Anshuman Khandual <anshuman.khandual@arm.com>
-To:     linux-mm@kvack.org, akpm@linux-foundation.org
-Cc:     linux-kernel@vger.kernel.org,
-        Anshuman Khandual <anshuman.khandual@arm.com>,
-        Christoph Hellwig <hch@infradead.org>,
-        linux-arch@vger.kernel.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Subject: [PATCH V2 17/30] sh/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
-Date:   Mon, 21 Feb 2022 12:08:26 +0530
-Message-Id: <1645425519-9034-18-git-send-email-anshuman.khandual@arm.com>
-X-Mailer: git-send-email 2.7.4
-In-Reply-To: <1645425519-9034-1-git-send-email-anshuman.khandual@arm.com>
-References: <1645425519-9034-1-git-send-email-anshuman.khandual@arm.com>
+        with ESMTP id S230090AbiBUNsS (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 21 Feb 2022 08:48:18 -0500
+X-Greylist: delayed 1331 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Mon, 21 Feb 2022 05:47:55 PST
+Received: from elvis.franken.de (elvis.franken.de [193.175.24.41])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 5FAAE5FAA;
+        Mon, 21 Feb 2022 05:47:55 -0800 (PST)
+Received: from uucp (helo=alpha)
+        by elvis.franken.de with local-bsmtp (Exim 3.36 #1)
+        id 1nM8h9-0001Eo-00; Mon, 21 Feb 2022 14:25:39 +0100
+Received: by alpha.franken.de (Postfix, from userid 1000)
+        id E4525C25DD; Mon, 21 Feb 2022 14:24:56 +0100 (CET)
+Date:   Mon, 21 Feb 2022 14:24:56 +0100
+From:   Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+To:     Arnd Bergmann <arnd@kernel.org>
+Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
+        Christoph Hellwig <hch@lst.de>, linux-arch@vger.kernel.org,
+        linux-mm@kvack.org, linux-api@vger.kernel.org, arnd@arndb.de,
+        linux-kernel@vger.kernel.org, viro@zeniv.linux.org.uk,
+        linux@armlinux.org.uk, will@kernel.org, guoren@kernel.org,
+        bcain@codeaurora.org, geert@linux-m68k.org, monstr@monstr.eu,
+        nickhu@andestech.com, green.hu@gmail.com, dinguyen@kernel.org,
+        shorne@gmail.com, deller@gmx.de, mpe@ellerman.id.au,
+        peterz@infradead.org, mingo@redhat.com, mark.rutland@arm.com,
+        hca@linux.ibm.com, dalias@libc.org, davem@davemloft.net,
+        richard@nod.at, x86@kernel.org, jcmvbkbc@gmail.com,
+        ebiederm@xmission.com, akpm@linux-foundation.org, ardb@kernel.org,
+        linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org
+Subject: Re: [PATCH v2 09/18] mips: use simpler access_ok()
+Message-ID: <20220221132456.GA7139@alpha.franken.de>
+References: <20220216131332.1489939-1-arnd@kernel.org>
+ <20220216131332.1489939-10-arnd@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220216131332.1489939-10-arnd@kernel.org>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-This defines and exports a platform specific custom vm_get_page_prot() via
-subscribing ARCH_HAS_VM_GET_PAGE_PROT. Subsequently all __SXXX and __PXXX
-macros can be dropped which are no longer needed.
+On Wed, Feb 16, 2022 at 02:13:23PM +0100, Arnd Bergmann wrote:
+> 
+> diff --git a/arch/mips/include/asm/uaccess.h b/arch/mips/include/asm/uaccess.h
+> index db9a8e002b62..d7c89dc3426c 100644
+> --- a/arch/mips/include/asm/uaccess.h
+> +++ b/arch/mips/include/asm/uaccess.h
+> @@ -19,6 +19,7 @@
+>  #ifdef CONFIG_32BIT
+>  
+>  #define __UA_LIMIT 0x80000000UL
+> +#define TASK_SIZE_MAX	__UA_LIMIT
+>  
+>  #define __UA_ADDR	".word"
+>  #define __UA_LA		"la"
+> @@ -33,6 +34,7 @@
+>  extern u64 __ua_limit;
+>  
+>  #define __UA_LIMIT	__ua_limit
+> +#define TASK_SIZE_MAX	XKSSEG
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
-Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
----
- arch/sh/Kconfig               |  1 +
- arch/sh/include/asm/pgtable.h | 17 ----------------
- arch/sh/mm/mmap.c             | 38 +++++++++++++++++++++++++++++++++++
- 3 files changed, 39 insertions(+), 17 deletions(-)
+this doesn't work. For every access above maximum implemented virtual address
+space of the CPU an address error will be issued, but not a TLB miss.
+And address error isn't able to handle this situation.
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 2474a04ceac4..f3fcd1c5e002 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -11,6 +11,7 @@ config SUPERH
- 	select ARCH_HAS_GCOV_PROFILE_ALL
- 	select ARCH_HAS_PTE_SPECIAL
- 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
-+	select ARCH_HAS_VM_GET_PAGE_PROT
- 	select ARCH_HIBERNATION_POSSIBLE if MMU
- 	select ARCH_MIGHT_HAVE_PC_PARPORT
- 	select ARCH_WANT_IPC_PARSE_VERSION
-diff --git a/arch/sh/include/asm/pgtable.h b/arch/sh/include/asm/pgtable.h
-index d7ddb1ec86a0..6fb9ec54cf9b 100644
---- a/arch/sh/include/asm/pgtable.h
-+++ b/arch/sh/include/asm/pgtable.h
-@@ -89,23 +89,6 @@ static inline unsigned long phys_addr_mask(void)
-  * completely separate permission bits for user and kernel space.
-  */
- 	 /*xwr*/
--#define __P000	PAGE_NONE
--#define __P001	PAGE_READONLY
--#define __P010	PAGE_COPY
--#define __P011	PAGE_COPY
--#define __P100	PAGE_EXECREAD
--#define __P101	PAGE_EXECREAD
--#define __P110	PAGE_COPY
--#define __P111	PAGE_COPY
--
--#define __S000	PAGE_NONE
--#define __S001	PAGE_READONLY
--#define __S010	PAGE_WRITEONLY
--#define __S011	PAGE_SHARED
--#define __S100	PAGE_EXECREAD
--#define __S101	PAGE_EXECREAD
--#define __S110	PAGE_RWX
--#define __S111	PAGE_RWX
- 
- typedef pte_t *pte_addr_t;
- 
-diff --git a/arch/sh/mm/mmap.c b/arch/sh/mm/mmap.c
-index 6a1a1297baae..cad14af6c8e6 100644
---- a/arch/sh/mm/mmap.c
-+++ b/arch/sh/mm/mmap.c
-@@ -162,3 +162,41 @@ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size)
- {
- 	return 1;
- }
+With this patch
+
+diff --git a/arch/mips/kernel/unaligned.c b/arch/mips/kernel/unaligned.c
+index df4b708c04a9..3911f1481f3d 100644
+--- a/arch/mips/kernel/unaligned.c
++++ b/arch/mips/kernel/unaligned.c
+@@ -1480,6 +1480,13 @@ asmlinkage void do_ade(struct pt_regs *regs)
+ 	prev_state = exception_enter();
+ 	perf_sw_event(PERF_COUNT_SW_ALIGNMENT_FAULTS,
+ 			1, regs, regs->cp0_badvaddr);
 +
-+#ifdef CONFIG_MMU
-+pgprot_t vm_get_page_prot(unsigned long vm_flags)
-+{
-+	switch (vm_flags & (VM_READ | VM_WRITE | VM_EXEC | VM_SHARED)) {
-+	case VM_NONE:
-+		return PAGE_NONE;
-+	case VM_READ:
-+		return PAGE_READONLY;
-+	case VM_WRITE:
-+	case VM_WRITE | VM_READ:
-+		return PAGE_COPY;
-+	case VM_EXEC:
-+	case VM_EXEC | VM_READ:
-+		return PAGE_EXECREAD;
-+	case VM_EXEC | VM_WRITE:
-+	case VM_EXEC | VM_WRITE | VM_READ:
-+		return PAGE_COPY;
-+	case VM_SHARED:
-+		return PAGE_NONE;
-+	case VM_SHARED | VM_READ:
-+		return PAGE_READONLY;
-+	case VM_SHARED | VM_WRITE:
-+		return PAGE_WRITEONLY;
-+	case VM_SHARED | VM_WRITE | VM_READ:
-+		return PAGE_SHARED;
-+	case VM_SHARED | VM_EXEC:
-+	case VM_SHARED | VM_EXEC | VM_READ:
-+		return PAGE_EXECREAD;
-+	case VM_SHARED | VM_EXEC | VM_WRITE:
-+	case VM_SHARED | VM_EXEC | VM_WRITE | VM_READ:
-+		return PAGE_RWX;
-+	default:
-+		BUILD_BUG();
++	/* Are we prepared to handle this kernel fault?	 */
++	if (fixup_exception(regs)) {
++		current->thread.cp0_baduaddr = regs->cp0_badvaddr;
++		return;
 +	}
-+}
-+EXPORT_SYMBOL(vm_get_page_prot);
-+#endif
--- 
-2.25.1
++
+ 	/*
+ 	 * Did we catch a fault trying to load an instruction?
+ 	 */
 
+I at least get my simple test cases fixed, but I'm not sure this is
+correct.
+
+Is there a reason to not also #define TASK_SIZE_MAX   __UA_LIMIT like
+for the 32bit case ?
+
+Thomas.
+
+-- 
+Crap can work. Given enough thrust pigs will fly, but it's not necessarily a
+good idea.                                                [ RFC1925, 2.3 ]
