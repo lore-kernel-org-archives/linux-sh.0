@@ -2,55 +2,65 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42C97C43219
-	for <linux-sh@archiver.kernel.org>; Wed, 23 Feb 2022 09:27:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 57A4CC433EF
+	for <linux-sh@archiver.kernel.org>; Wed, 23 Feb 2022 20:11:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236689AbiBWJ1j (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 23 Feb 2022 04:27:39 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54372 "EHLO
+        id S235526AbiBWULw (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 23 Feb 2022 15:11:52 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42396 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235331AbiBWJ1g (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 23 Feb 2022 04:27:36 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EA632AE58;
-        Wed, 23 Feb 2022 01:27:08 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 3CA406169C;
-        Wed, 23 Feb 2022 09:27:08 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9BF46C340F9;
-        Wed, 23 Feb 2022 09:27:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1645608427;
-        bh=D2jUPs6ryRSFqPbSylqUkNdDZuOthbzsmeMEmvziyjY=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=Qprkztvt/vehYNHRcEK8aqRshRS+P9DBpcRom+Ea4pnSLocGv1eBVL2v483vi1brP
-         yniMjXK/S41L4Xb5GxmMolqLanH2PfdtLhr4aslEr3qRf3FRgZXiElzFJkvdC4w2nN
-         JS6y8Uxpo3q6QV2cYcl6Kk1+VLa3u1w7dstKq6JdbSKRuvb7qsDfR1olUXgTRiM4lW
-         h9gXptbf8SQ/Kn95+tqUCiEvk6NU1742fRGNTdgV5FXZ+Nd86Q2w5JlwL02OxgP5C1
-         +ol87y0DUBe7bzeKEkX3OWQML5KSSUNMqefzAhTnHd6BCu3L5B6sV9dAoeIrCnSrMr
-         hGVco4bZ15heQ==
-Received: by mail-wm1-f51.google.com with SMTP id p4so3139192wmg.1;
-        Wed, 23 Feb 2022 01:27:07 -0800 (PST)
-X-Gm-Message-State: AOAM533rjH2d5XuwiAcxoxjxPHchWShU53/wM3Yax8XoRhTZ4LMUtHmz
-        eSTAI3Q94+vqKovfLZNqqD5cgnhheiiFvMqGvbc=
-X-Google-Smtp-Source: ABdhPJwtMkGkHNVPhtWq1LOTi2OcT9JVNmxiOoaUyabWMpAtHbaXvG0B+oJZMTvLmHy/MuDTQEaSkGsJ6B3oEOPptXw=
-X-Received: by 2002:a05:600c:1d27:b0:37c:74bb:2b4d with SMTP id
- l39-20020a05600c1d2700b0037c74bb2b4dmr6779098wms.82.1645608425823; Wed, 23
- Feb 2022 01:27:05 -0800 (PST)
+        with ESMTP id S233325AbiBWULu (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 23 Feb 2022 15:11:50 -0500
+Received: from mail-lf1-x12a.google.com (mail-lf1-x12a.google.com [IPv6:2a00:1450:4864:20::12a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0FA504C7AD
+        for <linux-sh@vger.kernel.org>; Wed, 23 Feb 2022 12:11:22 -0800 (PST)
+Received: by mail-lf1-x12a.google.com with SMTP id b9so208206lfv.7
+        for <linux-sh@vger.kernel.org>; Wed, 23 Feb 2022 12:11:21 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=+S6BFzj6o5ckty5iXSThNrfkPsdFE94/fVb8NP4+aFs=;
+        b=F/2f/aEUKxSuzDdCknAbug+t8clrlE0v7gj9NkhphhHftuFg6XGIjvpJXVx+ZHKhn9
+         jOIdz4l7lK+/F1JhXkxR/PARyehOhzu1/S93ijWQKe7fGKOKTiRs9R81aIq3OYNVOgnf
+         G4UcKLBEtMgH8cssPIzV42vV3R64/Z0YRVhdY=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=+S6BFzj6o5ckty5iXSThNrfkPsdFE94/fVb8NP4+aFs=;
+        b=059PgUpnJ4gO2NT6nF6tc/J1D+F8FiLWoqbyYzZ2ZrQ2HNCMiKatoN0/kom4CoG0qp
+         ao5o2HNe7hwR6w1k8m0EhuXZG5g4gdrZiU/QuqluuI7MP0LbVC3y9MnFKdpquTm9sOR4
+         F9fd7hHGxzeauCOqAbCNaQNoaIFoWyvHvlVDNA8wR5EB/ssJlfWWtlFkCemKYAEvdNBs
+         Q/yV0Tx2x1cHBjYzSiluB/rbDTjbTTOx6KtA8Wwu/BNPLOilRrUSjHWmsvWUM4nvybGB
+         krIAJF2Q/y+himIbmE1us1uT8eF3dMSNZdBBKxWdwvjLxpKPbFXDtNJszEZYil6lx7FH
+         vHww==
+X-Gm-Message-State: AOAM5329GpYknVAxlghqS48MkAybEDV3D5JlXYqogIng3s8JCUNNaMW5
+        feBeUb04SIUpvWinYrmBZeGsx5ZaX/PAYBgFtYw=
+X-Google-Smtp-Source: ABdhPJzdhIkI4s7l9dInb2gHWj1XzpdnBG86i+oQLm7YDO8hyNDK3LlSl8AW5BaJR1qMGiyudFTI+Q==
+X-Received: by 2002:ac2:4835:0:b0:443:5db5:9332 with SMTP id 21-20020ac24835000000b004435db59332mr836870lft.308.1645647080152;
+        Wed, 23 Feb 2022 12:11:20 -0800 (PST)
+Received: from mail-lj1-f169.google.com (mail-lj1-f169.google.com. [209.85.208.169])
+        by smtp.gmail.com with ESMTPSA id p22sm42347lfa.56.2022.02.23.12.11.19
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 23 Feb 2022 12:11:19 -0800 (PST)
+Received: by mail-lj1-f169.google.com with SMTP id s25so4152545lji.5
+        for <linux-sh@vger.kernel.org>; Wed, 23 Feb 2022 12:11:19 -0800 (PST)
+X-Received: by 2002:a05:6512:130b:b0:443:c2eb:399d with SMTP id
+ x11-20020a056512130b00b00443c2eb399dmr822016lfu.27.1645646720244; Wed, 23 Feb
+ 2022 12:05:20 -0800 (PST)
 MIME-Version: 1.0
 References: <20220216131332.1489939-1-arnd@kernel.org> <20220216131332.1489939-10-arnd@kernel.org>
- <20220223074127.GA8287@alpha.franken.de>
-In-Reply-To: <20220223074127.GA8287@alpha.franken.de>
-From:   Arnd Bergmann <arnd@kernel.org>
-Date:   Wed, 23 Feb 2022 10:26:49 +0100
-X-Gmail-Original-Message-ID: <CAK8P3a1nM3yPhjhMtUQyd5srgB99OkUvmapWv13KCuJXsf=euw@mail.gmail.com>
-Message-ID: <CAK8P3a1nM3yPhjhMtUQyd5srgB99OkUvmapWv13KCuJXsf=euw@mail.gmail.com>
+ <20220221132456.GA7139@alpha.franken.de>
+In-Reply-To: <20220221132456.GA7139@alpha.franken.de>
+From:   Linus Torvalds <torvalds@linux-foundation.org>
+Date:   Wed, 23 Feb 2022 12:05:04 -0800
+X-Gmail-Original-Message-ID: <CAHk-=wjdHz6OU3M9T5zE9Fc9SNdDs52iOE+eVn-wuUT6UDpBLg@mail.gmail.com>
+Message-ID: <CAHk-=wjdHz6OU3M9T5zE9Fc9SNdDs52iOE+eVn-wuUT6UDpBLg@mail.gmail.com>
 Subject: Re: [PATCH v2 09/18] mips: use simpler access_ok()
 To:     Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
-        Christoph Hellwig <hch@lst.de>,
+Cc:     Arnd Bergmann <arnd@kernel.org>, Christoph Hellwig <hch@lst.de>,
         linux-arch <linux-arch@vger.kernel.org>,
         Linux-MM <linux-mm@kvack.org>,
         Linux API <linux-api@vger.kernel.org>,
@@ -77,23 +87,23 @@ Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
         Richard Weinberger <richard@nod.at>,
         "the arch/x86 maintainers" <x86@kernel.org>,
         Max Filippov <jcmvbkbc@gmail.com>,
-        "Eric W . Biederman" <ebiederm@xmission.com>,
+        "Eric W. Biederman" <ebiederm@xmission.com>,
         Andrew Morton <akpm@linux-foundation.org>,
         Ard Biesheuvel <ardb@kernel.org>,
         alpha <linux-alpha@vger.kernel.org>,
         "open list:SYNOPSYS ARC ARCHITECTURE" 
         <linux-snps-arc@lists.infradead.org>, linux-csky@vger.kernel.org,
-        "open list:QUALCOMM HEXAGON..." <linux-hexagon@vger.kernel.org>,
+        linux-hexagon <linux-hexagon@vger.kernel.org>,
         linux-ia64@vger.kernel.org,
         linux-m68k <linux-m68k@lists.linux-m68k.org>,
         "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
         Openrisc <openrisc@lists.librecores.org>,
-        Parisc List <linux-parisc@vger.kernel.org>,
+        linux-parisc <linux-parisc@vger.kernel.org>,
         linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
         linux-riscv <linux-riscv@lists.infradead.org>,
         linux-s390 <linux-s390@vger.kernel.org>,
         Linux-sh list <linux-sh@vger.kernel.org>,
-        sparclinux <sparclinux@vger.kernel.org>,
+        linux-sparc <sparclinux@vger.kernel.org>,
         linux-um <linux-um@lists.infradead.org>,
         "open list:TENSILICA XTENSA PORT (xtensa)" 
         <linux-xtensa@linux-xtensa.org>
@@ -102,23 +112,39 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Feb 23, 2022 at 8:41 AM Thomas Bogendoerfer
+On Mon, Feb 21, 2022 at 5:25 AM Thomas Bogendoerfer
 <tsbogend@alpha.franken.de> wrote:
 >
-> On Wed, Feb 16, 2022 at 02:13:23PM +0100, Arnd Bergmann wrote:
-> > diff --git a/arch/mips/include/asm/uaccess.h b/arch/mips/include/asm/uaccess.h
-> > index db9a8e002b62..d7c89dc3426c 100644
-> > --- a/arch/mips/include/asm/uaccess.h
-> > +++ b/arch/mips/include/asm/uaccess.h
-> > @@ -19,6 +19,7 @@
-> >  #ifdef CONFIG_32BIT
-> >
-> >  #define __UA_LIMIT 0x80000000UL
-> > +#define TASK_SIZE_MAX        __UA_LIMIT
->
-> using KSEG0 instead would IMHO be the better choice. This gives the
-> chance to remove __UA_LIMIT completly after cleaning up ptrace.c
+> With this patch
+[ .. snip snip ..]
+> I at least get my simple test cases fixed, but I'm not sure this is
+> correct.
 
-Ok, changed now.
+I think you really want to do that anyway, just to get things like
+wild kernel pointers right (ie think get_kernel_nofault() and friends
+for ftrace etc).
 
-      Arnd
+They shouldn't happen in any normal situation, but those kinds of
+unverified pointers is why we _have_ get_kernel_nofault() in the first
+place.
+
+On x86-64, the roughly equivalent situation is that addresses that
+aren't in canonical format do not take a #PF (page fault), they take a
+#GP (general protection) fault.
+
+So I think you want to do that fixup_exception() for any possible addresses.
+
+> Is there a reason to not also #define TASK_SIZE_MAX   __UA_LIMIT like
+> for the 32bit case ?
+
+I would suggest against using a non-constant TASK_SIZE_MAX. Being
+constant is literally one reason why it exists, when TASK_SIZE itself
+has often been about other things (ie "32-bit process").
+
+Having to load variables for things like get_user() is annoying, if
+you could do it with a simple constant instead (where that "simple"
+part is to avoid having to load big values from a constant pool -
+often constants like "high bit set" can be loaded and compared against
+more efficiently).
+
+               Linus
