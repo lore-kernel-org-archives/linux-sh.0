@@ -2,134 +2,207 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 26602C433EF
-	for <linux-sh@archiver.kernel.org>; Thu, 24 Feb 2022 08:58:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BD4CEC4167B
+	for <linux-sh@archiver.kernel.org>; Fri, 25 Feb 2022 04:28:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232382AbiBXI7Q convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 24 Feb 2022 03:59:16 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53432 "EHLO
+        id S237370AbiBYE3R (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 24 Feb 2022 23:29:17 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57364 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232527AbiBXI7I (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 24 Feb 2022 03:59:08 -0500
-Received: from eu-smtp-delivery-151.mimecast.com (eu-smtp-delivery-151.mimecast.com [185.58.85.151])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id B3B39268344
-        for <linux-sh@vger.kernel.org>; Thu, 24 Feb 2022 00:58:24 -0800 (PST)
-Received: from AcuMS.aculab.com (156.67.243.121 [156.67.243.121]) by
- relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id
- uk-mta-216-yFNLSyvJPDmN2lh--r6gzg-1; Thu, 24 Feb 2022 08:58:21 +0000
-X-MC-Unique: yFNLSyvJPDmN2lh--r6gzg-1
-Received: from AcuMS.Aculab.com (fd9f:af1c:a25b:0:994c:f5c2:35d6:9b65) by
- AcuMS.aculab.com (fd9f:af1c:a25b:0:994c:f5c2:35d6:9b65) with Microsoft SMTP
- Server (TLS) id 15.0.1497.28; Thu, 24 Feb 2022 08:58:20 +0000
-Received: from AcuMS.Aculab.com ([fe80::994c:f5c2:35d6:9b65]) by
- AcuMS.aculab.com ([fe80::994c:f5c2:35d6:9b65%12]) with mapi id
- 15.00.1497.028; Thu, 24 Feb 2022 08:58:20 +0000
-From:   David Laight <David.Laight@ACULAB.COM>
-To:     'Kees Cook' <keescook@chromium.org>,
-        Matthew Wilcox <willy@infradead.org>
-CC:     Josh Poimboeuf <jpoimboe@redhat.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        "linux-mm@kvack.org" <linux-mm@kvack.org>,
-        Muhammad Usama Anjum <usama.anjum@collabora.com>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "x86@kernel.org" <x86@kernel.org>,
-        "linux-arm-kernel@lists.infradead.org" 
-        <linux-arm-kernel@lists.infradead.org>,
-        "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>,
-        "linux-s390@vger.kernel.org" <linux-s390@vger.kernel.org>,
-        "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>,
-        "linux-hardening@vger.kernel.org" <linux-hardening@vger.kernel.org>
-Subject: RE: [PATCH v2] usercopy: Check valid lifetime via stack depth
-Thread-Topic: [PATCH v2] usercopy: Check valid lifetime via stack depth
-Thread-Index: AQHYKUROaYEZJJ15GkKlMpPMpHZgQKyiZK3w
-Date:   Thu, 24 Feb 2022 08:58:20 +0000
-Message-ID: <85d42900efaa4fdb8c20de2147d938c7@AcuMS.aculab.com>
-References: <20220224060342.1855457-1-keescook@chromium.org>
-In-Reply-To: <20220224060342.1855457-1-keescook@chromium.org>
-Accept-Language: en-GB, en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-x-ms-exchange-transport-fromentityheader: Hosted
-x-originating-ip: [10.202.205.107]
+        with ESMTP id S229702AbiBYE3O (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 24 Feb 2022 23:29:14 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7D6CA1AAA77;
+        Thu, 24 Feb 2022 20:28:43 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 00B44B82AC2;
+        Fri, 25 Feb 2022 04:28:42 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 905E7C340E8;
+        Fri, 25 Feb 2022 04:28:34 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1645763320;
+        bh=7SThN/utKX/p0lzUCmG6ocQvEAx3lLFOHF56GsXqmkg=;
+        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+        b=QDYtR8NlrGKuoQjmYA8kyhZOE9M5T1r29vrwrzKtqeW8ZEboLFyE9tpTLIHZrIsc2
+         nruqaf44dOGvL9m0YF8yy/0GnP7bjsDnUbUqIRzmMJPfXE0DXeAhxVhfed4IaeshxM
+         3dBB3rRybvVICiYVW2EwE6UiyRp2P0hHIB0n0MePLyot8SwYrU2i+wAnXsNlJLOQZg
+         JdbB1DfWOrhGY/Jb/JrlNhbdzjO74CuLFiFEukShPqlCb0VjpFFv/dEFsnilhkTnnf
+         /2HYT2lkEsKGxWybS9oRJ8pGnuvkqQGXNVQBnHCXm5s98tF2QqOVujOWC0O/sTxEOf
+         zPy8zKCde1DGg==
+Message-ID: <f6c34635-533f-8b63-b27b-15835b93e6d4@kernel.org>
+Date:   Thu, 24 Feb 2022 22:28:32 -0600
 MIME-Version: 1.0
-Authentication-Results: relay.mimecast.com;
-        auth=pass smtp.auth=C51A453 smtp.mailfrom=david.laight@aculab.com
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: aculab.com
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.5.0
+Subject: Re: [PATCH v2 02/18] uaccess: fix nios2 and microblaze get_user_8()
 Content-Language: en-US
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8BIT
+To:     Arnd Bergmann <arnd@kernel.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        Christoph Hellwig <hch@lst.de>, linux-arch@vger.kernel.org,
+        linux-mm@kvack.org, linux-api@vger.kernel.org, arnd@arndb.de,
+        linux-kernel@vger.kernel.org, viro@zeniv.linux.org.uk
+Cc:     linux@armlinux.org.uk, will@kernel.org, guoren@kernel.org,
+        bcain@codeaurora.org, geert@linux-m68k.org, monstr@monstr.eu,
+        tsbogend@alpha.franken.de, nickhu@andestech.com,
+        green.hu@gmail.com, shorne@gmail.com, deller@gmx.de,
+        mpe@ellerman.id.au, peterz@infradead.org, mingo@redhat.com,
+        mark.rutland@arm.com, hca@linux.ibm.com, dalias@libc.org,
+        davem@davemloft.net, richard@nod.at, x86@kernel.org,
+        jcmvbkbc@gmail.com, ebiederm@xmission.com,
+        akpm@linux-foundation.org, ardb@kernel.org,
+        linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org
+References: <20220216131332.1489939-1-arnd@kernel.org>
+ <20220216131332.1489939-3-arnd@kernel.org>
+From:   Dinh Nguyen <dinguyen@kernel.org>
+In-Reply-To: <20220216131332.1489939-3-arnd@kernel.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Kees Cook
-> Sent: 24 February 2022 06:04
-> 
-> Under CONFIG_HARDENED_USERCOPY=y, when exact stack frame boundary checking
-> is not available (i.e. everything except x86 with FRAME_POINTER), check
-> a stack object as being at least "current depth valid", in the sense
-> that any object within the stack region but not between start-of-stack
-> and current_stack_pointer should be considered unavailable (i.e. its
-> lifetime is from a call no longer present on the stack).
-> 
-...
-> diff --git a/mm/usercopy.c b/mm/usercopy.c
-> index d0d268135d96..5d28725af95f 100644
-> --- a/mm/usercopy.c
-> +++ b/mm/usercopy.c
-> @@ -22,6 +22,30 @@
->  #include <asm/sections.h>
->  #include "slab.h"
-> 
-> +/*
-> + * Only called if obj is within stack/stackend bounds. Determine if within
-> + * current stack depth.
-> + */
-> +static inline int check_stack_object_depth(const void *obj,
-> +					   unsigned long len)
-> +{
-> +#ifdef CONFIG_ARCH_HAS_CURRENT_STACK_POINTER
-> +#ifndef CONFIG_STACK_GROWSUP
 
-Pointless negation
 
-> +	const void * const high = stackend;
-> +	const void * const low = (void *)current_stack_pointer;
-> +#else
-> +	const void * const high = (void *)current_stack_pointer;
-> +	const void * const low = stack;
-> +#endif
+On 2/16/22 07:13, Arnd Bergmann wrote:
+> From: Arnd Bergmann <arnd@arndb.de>
+> 
+> These two architectures implement 8-byte get_user() through
+> a memcpy() into a four-byte variable, which won't fit.
+> 
+> Use a temporary 64-bit variable instead here, and use a double
+> cast the way that risc-v and openrisc do to avoid compile-time
+> warnings.
+> 
+> Fixes: 6a090e97972d ("arch/microblaze: support get_user() of size 8 bytes")
+> Fixes: 5ccc6af5e88e ("nios2: Memory management")
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> ---
+>   arch/microblaze/include/asm/uaccess.h | 18 +++++++++---------
+>   arch/nios2/include/asm/uaccess.h      | 26 ++++++++++++++++----------
+>   2 files changed, 25 insertions(+), 19 deletions(-)
+> 
+> diff --git a/arch/microblaze/include/asm/uaccess.h b/arch/microblaze/include/asm/uaccess.h
+> index 5b6e0e7788f4..3fe96979d2c6 100644
+> --- a/arch/microblaze/include/asm/uaccess.h
+> +++ b/arch/microblaze/include/asm/uaccess.h
+> @@ -130,27 +130,27 @@ extern long __user_bad(void);
+>   
+>   #define __get_user(x, ptr)						\
+>   ({									\
+> -	unsigned long __gu_val = 0;					\
+>   	long __gu_err;							\
+>   	switch (sizeof(*(ptr))) {					\
+>   	case 1:								\
+> -		__get_user_asm("lbu", (ptr), __gu_val, __gu_err);	\
+> +		__get_user_asm("lbu", (ptr), x, __gu_err);		\
+>   		break;							\
+>   	case 2:								\
+> -		__get_user_asm("lhu", (ptr), __gu_val, __gu_err);	\
+> +		__get_user_asm("lhu", (ptr), x, __gu_err);		\
+>   		break;							\
+>   	case 4:								\
+> -		__get_user_asm("lw", (ptr), __gu_val, __gu_err);	\
+> +		__get_user_asm("lw", (ptr), x, __gu_err);		\
+>   		break;							\
+> -	case 8:								\
+> -		__gu_err = __copy_from_user(&__gu_val, ptr, 8);		\
+> -		if (__gu_err)						\
+> -			__gu_err = -EFAULT;				\
+> +	case 8: {							\
+> +		__u64 __x = 0;						\
+> +		__gu_err = raw_copy_from_user(&__x, ptr, 8) ?		\
+> +							-EFAULT : 0;	\
+> +		(x) = (typeof(x))(typeof((x) - (x)))__x;		\
+>   		break;							\
+> +	}								\
+>   	default:							\
+>   		/* __gu_val = 0; __gu_err = -EINVAL;*/ __gu_err = __user_bad();\
+>   	}								\
+> -	x = (__force __typeof__(*(ptr))) __gu_val;			\
+>   	__gu_err;							\
+>   })
+>   
+> diff --git a/arch/nios2/include/asm/uaccess.h b/arch/nios2/include/asm/uaccess.h
+> index ba9340e96fd4..ca9285a915ef 100644
+> --- a/arch/nios2/include/asm/uaccess.h
+> +++ b/arch/nios2/include/asm/uaccess.h
+> @@ -88,6 +88,7 @@ extern __must_check long strnlen_user(const char __user *s, long n);
+>   /* Optimized macros */
+>   #define __get_user_asm(val, insn, addr, err)				\
+>   {									\
+> +	unsigned long __gu_val;						\
+>   	__asm__ __volatile__(						\
+>   	"       movi    %0, %3\n"					\
+>   	"1:   " insn " %1, 0(%2)\n"					\
+> @@ -96,14 +97,20 @@ extern __must_check long strnlen_user(const char __user *s, long n);
+>   	"       .section __ex_table,\"a\"\n"				\
+>   	"       .word 1b, 2b\n"						\
+>   	"       .previous"						\
+> -	: "=&r" (err), "=r" (val)					\
+> +	: "=&r" (err), "=r" (__gu_val)					\
+>   	: "r" (addr), "i" (-EFAULT));					\
+> +	val = (__force __typeof__(*(addr)))__gu_val;			\
+>   }
+>   
+> -#define __get_user_unknown(val, size, ptr, err) do {			\
+> +extern void __get_user_unknown(void);
 > +
-> +	/* Reject: object not within current stack depth. */
-> +	if (obj < low || high < obj + len)
-> +		return BAD_STACK;
-> +
-> +#endif
-> +	return GOOD_STACK;
-> +}
+> +#define __get_user_8(val, ptr, err) do {				\
+> +	u64 __val = 0;							\
+>   	err = 0;							\
+> -	if (__copy_from_user(&(val), ptr, size)) {			\
+> +	if (raw_copy_from_user(&(__val), ptr, sizeof(val))) {		\
+>   		err = -EFAULT;						\
+> +	} else {							\
+> +		val = (typeof(val))(typeof((val) - (val)))__val;	\
+>   	}								\
+>   	} while (0)
+>   
+> @@ -119,8 +126,11 @@ do {									\
+>   	case 4:								\
+>   		__get_user_asm(val, "ldw", ptr, err);			\
+>   		break;							\
+> +	case 8:								\
+> +		__get_user_8(val, ptr, err);				\
+> +		break;							\
+>   	default:							\
+> -		__get_user_unknown(val, size, ptr, err);		\
+> +		__get_user_unknown();					\
+>   		break;							\
+>   	}								\
+>   } while (0)
+> @@ -129,9 +139,7 @@ do {									\
+>   	({								\
+>   	long __gu_err = -EFAULT;					\
+>   	const __typeof__(*(ptr)) __user *__gu_ptr = (ptr);		\
+> -	unsigned long __gu_val = 0;					\
+> -	__get_user_common(__gu_val, sizeof(*(ptr)), __gu_ptr, __gu_err);\
+> -	(x) = (__force __typeof__(x))__gu_val;				\
+> +	__get_user_common(x, sizeof(*(ptr)), __gu_ptr, __gu_err);	\
+>   	__gu_err;							\
+>   	})
+>   
+> @@ -139,11 +147,9 @@ do {									\
+>   ({									\
+>   	long __gu_err = -EFAULT;					\
+>   	const __typeof__(*(ptr)) __user *__gu_ptr = (ptr);		\
+> -	unsigned long __gu_val = 0;					\
+>   	if (access_ok( __gu_ptr, sizeof(*__gu_ptr)))	\
+> -		__get_user_common(__gu_val, sizeof(*__gu_ptr),		\
+> +		__get_user_common(x, sizeof(*__gu_ptr),			\
+>   			__gu_ptr, __gu_err);				\
+> -	(x) = (__force __typeof__(x))__gu_val;				\
+>   	__gu_err;							\
+>   })
+>   
 
-If the comment at the top of the function is correct then
-only a single test for the correct end of the buffer against
-the current stack pointer is needed.
-Something like:
-#ifdef CONFIG_STACK_GROWSUP
-	if ((void *)current_stack_pointer < obj + len)
-		return BAD_STACK;
-#else
-	if (obj < (void *)current_stack_pointer)
-		return BAD_STACK;
-#endif
-	return GOOD_STACK;
-
-Although it may depend on exactly where the stack pointer
-points to - especially for GROWSUP.
-
-	David
-
--
-Registered Address Lakeside, Bramley Road, Mount Farm, Milton Keynes, MK1 1PT, UK
-Registration No: 1397386 (Wales)
-
+Acked-by: Dinh Nguyen <dinguyen@kernel.org>
