@@ -2,24 +2,24 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 46B1DC43217
-	for <linux-sh@archiver.kernel.org>; Mon, 28 Feb 2022 10:50:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0EB72C4167B
+	for <linux-sh@archiver.kernel.org>; Mon, 28 Feb 2022 10:50:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235097AbiB1KvS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 28 Feb 2022 05:51:18 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47012 "EHLO
+        id S235122AbiB1Kv2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 28 Feb 2022 05:51:28 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46798 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235007AbiB1Ku0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 28 Feb 2022 05:50:26 -0500
+        with ESMTP id S234937AbiB1Kuo (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 28 Feb 2022 05:50:44 -0500
 Received: from foss.arm.com (foss.arm.com [217.140.110.172])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id BE11F64BC1;
-        Mon, 28 Feb 2022 02:49:44 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 6102666628;
+        Mon, 28 Feb 2022 02:50:02 -0800 (PST)
 Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 77F3A1063;
-        Mon, 28 Feb 2022 02:49:44 -0800 (PST)
+        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 2CB0012FC;
+        Mon, 28 Feb 2022 02:50:02 -0800 (PST)
 Received: from p8cg001049571a15.arm.com (unknown [10.163.47.185])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPA id BC64A3F73D;
-        Mon, 28 Feb 2022 02:49:36 -0800 (PST)
+        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPA id 417303F73D;
+        Mon, 28 Feb 2022 02:49:53 -0800 (PST)
 From:   Anshuman Khandual <anshuman.khandual@arm.com>
 To:     linux-mm@kvack.org, akpm@linux-foundation.org
 Cc:     linux-kernel@vger.kernel.org, geert@linux-m68k.org,
@@ -34,11 +34,11 @@ Cc:     linux-kernel@vger.kernel.org, geert@linux-m68k.org,
         linux-xtensa@linux-xtensa.org, linux-parisc@vger.kernel.org,
         openrisc@lists.librecores.org, linux-um@lists.infradead.org,
         linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-arch@vger.kernel.org,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-Subject: [PATCH V3 07/30] mips/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
-Date:   Mon, 28 Feb 2022 16:17:30 +0530
-Message-Id: <1646045273-9343-8-git-send-email-anshuman.khandual@arm.com>
+        linux-arch@vger.kernel.org, Russell King <linux@armlinux.org.uk>,
+        Arnd Bergmann <arnd@arndb.de>
+Subject: [PATCH V3 09/30] arm/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+Date:   Mon, 28 Feb 2022 16:17:32 +0530
+Message-Id: <1646045273-9343-10-git-send-email-anshuman.khandual@arm.com>
 X-Mailer: git-send-email 2.7.4
 In-Reply-To: <1646045273-9343-1-git-send-email-anshuman.khandual@arm.com>
 References: <1646045273-9343-1-git-send-email-anshuman.khandual@arm.com>
@@ -50,139 +50,157 @@ This defines and exports a platform specific custom vm_get_page_prot() via
 subscribing ARCH_HAS_VM_GET_PAGE_PROT. Subsequently all __SXXX and __PXXX
 macros can be dropped which are no longer needed.
 
-Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-Cc: linux-mips@vger.kernel.org
+Cc: Russell King <linux@armlinux.org.uk>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: linux-arm-kernel@lists.infradead.org
 Cc: linux-kernel@vger.kernel.org
-Acked-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
 Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
 ---
- arch/mips/Kconfig               |  1 +
- arch/mips/include/asm/pgtable.h | 22 ------------
- arch/mips/mm/cache.c            | 60 +++++++++++++++++++--------------
- 3 files changed, 36 insertions(+), 47 deletions(-)
+ arch/arm/Kconfig                   |  1 +
+ arch/arm/include/asm/pgtable.h     | 20 +-------------
+ arch/arm/lib/uaccess_with_memcpy.c |  2 +-
+ arch/arm/mm/mmu.c                  | 44 ++++++++++++++++++++++++++----
+ 4 files changed, 41 insertions(+), 26 deletions(-)
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 058446f01487..fcbfc52a1567 100644
---- a/arch/mips/Kconfig
-+++ b/arch/mips/Kconfig
-@@ -13,6 +13,7 @@ config MIPS
- 	select ARCH_HAS_STRNLEN_USER
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 4c97cb40eebb..87b2e89ef3d6 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -23,6 +23,7 @@ config ARM
+ 	select ARCH_HAS_SYNC_DMA_FOR_CPU if SWIOTLB || !MMU
+ 	select ARCH_HAS_TEARDOWN_DMA_OPS if MMU
  	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
- 	select ARCH_HAS_UBSAN_SANITIZE_ALL
 +	select ARCH_HAS_VM_GET_PAGE_PROT
+ 	select ARCH_HAVE_CUSTOM_GPIO_H
+ 	select ARCH_HAVE_NMI_SAFE_CMPXCHG if CPU_V7 || CPU_V7M || CPU_V6K
  	select ARCH_HAS_GCOV_PROFILE_ALL
- 	select ARCH_KEEP_MEMBLOCK
- 	select ARCH_SUPPORTS_UPROBES
-diff --git a/arch/mips/include/asm/pgtable.h b/arch/mips/include/asm/pgtable.h
-index 7b8037f25d9e..bf193ad4f195 100644
---- a/arch/mips/include/asm/pgtable.h
-+++ b/arch/mips/include/asm/pgtable.h
-@@ -41,28 +41,6 @@ struct vm_area_struct;
-  * by reasonable means..
+diff --git a/arch/arm/include/asm/pgtable.h b/arch/arm/include/asm/pgtable.h
+index cd1f84bb40ae..64711716cd84 100644
+--- a/arch/arm/include/asm/pgtable.h
++++ b/arch/arm/include/asm/pgtable.h
+@@ -70,7 +70,7 @@ extern void __pgd_error(const char *file, int line, pgd_t);
+ #endif
+ 
+ /*
+- * The pgprot_* and protection_map entries will be fixed up in runtime
++ * The pgprot_* entries will be fixed up in runtime in vm_get_page_prot()
+  * to include the cachable and bufferable bits based on memory policy,
+  * as well as any architecture dependent bits like global/ASID and SMP
+  * shared mapping bits.
+@@ -137,24 +137,6 @@ extern pgprot_t phys_mem_access_prot(struct file *file, unsigned long pfn,
+  *  2) If we could do execute protection, then read is implied
+  *  3) write implies read permissions
   */
+-#define __P000  __PAGE_NONE
+-#define __P001  __PAGE_READONLY
+-#define __P010  __PAGE_COPY
+-#define __P011  __PAGE_COPY
+-#define __P100  __PAGE_READONLY_EXEC
+-#define __P101  __PAGE_READONLY_EXEC
+-#define __P110  __PAGE_COPY_EXEC
+-#define __P111  __PAGE_COPY_EXEC
+-
+-#define __S000  __PAGE_NONE
+-#define __S001  __PAGE_READONLY
+-#define __S010  __PAGE_SHARED
+-#define __S011  __PAGE_SHARED
+-#define __S100  __PAGE_READONLY_EXEC
+-#define __S101  __PAGE_READONLY_EXEC
+-#define __S110  __PAGE_SHARED_EXEC
+-#define __S111  __PAGE_SHARED_EXEC
+-
+ #ifndef __ASSEMBLY__
+ /*
+  * ZERO_PAGE is a global shared page that is always zero: used
+diff --git a/arch/arm/lib/uaccess_with_memcpy.c b/arch/arm/lib/uaccess_with_memcpy.c
+index 106f83a5ea6d..12d8d9794a28 100644
+--- a/arch/arm/lib/uaccess_with_memcpy.c
++++ b/arch/arm/lib/uaccess_with_memcpy.c
+@@ -247,7 +247,7 @@ static int __init test_size_treshold(void)
+ 	if (!dst_page)
+ 		goto no_dst;
+ 	kernel_ptr = page_address(src_page);
+-	user_ptr = vmap(&dst_page, 1, VM_IOREMAP, __pgprot(__P010));
++	user_ptr = vmap(&dst_page, 1, VM_IOREMAP, __pgprot(__PAGE_COPY));
+ 	if (!user_ptr)
+ 		goto no_vmap;
  
--/*
-- * Dummy values to fill the table in mmap.c
-- * The real values will be generated at runtime
-- */
--#define __P000 __pgprot(0)
--#define __P001 __pgprot(0)
--#define __P010 __pgprot(0)
--#define __P011 __pgprot(0)
--#define __P100 __pgprot(0)
--#define __P101 __pgprot(0)
--#define __P110 __pgprot(0)
--#define __P111 __pgprot(0)
--
--#define __S000 __pgprot(0)
--#define __S001 __pgprot(0)
--#define __S010 __pgprot(0)
--#define __S011 __pgprot(0)
--#define __S100 __pgprot(0)
--#define __S101 __pgprot(0)
--#define __S110 __pgprot(0)
--#define __S111 __pgprot(0)
--
- extern unsigned long _page_cachable_default;
- extern void __update_cache(unsigned long address, pte_t pte);
+diff --git a/arch/arm/mm/mmu.c b/arch/arm/mm/mmu.c
+index 274e4f73fd33..9cdf45da57de 100644
+--- a/arch/arm/mm/mmu.c
++++ b/arch/arm/mm/mmu.c
+@@ -403,6 +403,8 @@ void __set_fixmap(enum fixed_addresses idx, phys_addr_t phys, pgprot_t prot)
+ 	local_flush_tlb_kernel_range(vaddr, vaddr + PAGE_SIZE);
+ }
  
-diff --git a/arch/mips/mm/cache.c b/arch/mips/mm/cache.c
-index 830ab91e574f..9f33ce4fb105 100644
---- a/arch/mips/mm/cache.c
-+++ b/arch/mips/mm/cache.c
-@@ -159,30 +159,6 @@ EXPORT_SYMBOL(_page_cachable_default);
- 
- #define PM(p)	__pgprot(_page_cachable_default | (p))
- 
--static inline void setup_protection_map(void)
--{
--	protection_map[0]  = PM(_PAGE_PRESENT | _PAGE_NO_EXEC | _PAGE_NO_READ);
--	protection_map[1]  = PM(_PAGE_PRESENT | _PAGE_NO_EXEC);
--	protection_map[2]  = PM(_PAGE_PRESENT | _PAGE_NO_EXEC | _PAGE_NO_READ);
--	protection_map[3]  = PM(_PAGE_PRESENT | _PAGE_NO_EXEC);
--	protection_map[4]  = PM(_PAGE_PRESENT);
--	protection_map[5]  = PM(_PAGE_PRESENT);
--	protection_map[6]  = PM(_PAGE_PRESENT);
--	protection_map[7]  = PM(_PAGE_PRESENT);
--
--	protection_map[8]  = PM(_PAGE_PRESENT | _PAGE_NO_EXEC | _PAGE_NO_READ);
--	protection_map[9]  = PM(_PAGE_PRESENT | _PAGE_NO_EXEC);
--	protection_map[10] = PM(_PAGE_PRESENT | _PAGE_NO_EXEC | _PAGE_WRITE |
--				_PAGE_NO_READ);
--	protection_map[11] = PM(_PAGE_PRESENT | _PAGE_NO_EXEC | _PAGE_WRITE);
--	protection_map[12] = PM(_PAGE_PRESENT);
--	protection_map[13] = PM(_PAGE_PRESENT);
--	protection_map[14] = PM(_PAGE_PRESENT | _PAGE_WRITE);
--	protection_map[15] = PM(_PAGE_PRESENT | _PAGE_WRITE);
--}
--
--#undef PM
--
- void cpu_cache_init(void)
++static pteval_t user_pgprot;
++
+ /*
+  * Adjust the PMD section entries according to the CPU in use.
+  */
+@@ -410,7 +412,7 @@ static void __init build_mem_type_table(void)
  {
- 	if (cpu_has_3k_cache) {
-@@ -206,6 +182,40 @@ void cpu_cache_init(void)
+ 	struct cachepolicy *cp;
+ 	unsigned int cr = get_cr();
+-	pteval_t user_pgprot, kern_pgprot, vecs_pgprot;
++	pteval_t kern_pgprot, vecs_pgprot;
+ 	int cpu_arch = cpu_architecture();
+ 	int i;
  
- 		octeon_cache_init();
+@@ -627,11 +629,6 @@ static void __init build_mem_type_table(void)
+ 	user_pgprot |= PTE_EXT_PXN;
+ #endif
+ 
+-	for (i = 0; i < 16; i++) {
+-		pteval_t v = pgprot_val(protection_map[i]);
+-		protection_map[i] = __pgprot(v | user_pgprot);
+-	}
+-
+ 	mem_types[MT_LOW_VECTORS].prot_pte |= vecs_pgprot;
+ 	mem_types[MT_HIGH_VECTORS].prot_pte |= vecs_pgprot;
+ 
+@@ -670,6 +667,41 @@ static void __init build_mem_type_table(void)
  	}
-+}
+ }
  
--	setup_protection_map();
 +pgprot_t vm_get_page_prot(unsigned long vm_flags)
 +{
 +	switch (vm_flags & (VM_READ | VM_WRITE | VM_EXEC | VM_SHARED)) {
 +	case VM_NONE:
-+		return PM(_PAGE_PRESENT | _PAGE_NO_EXEC | _PAGE_NO_READ);
++		return __pgprot(pgprot_val(__PAGE_NONE) | user_pgprot);
 +	case VM_READ:
-+		return PM(_PAGE_PRESENT | _PAGE_NO_EXEC);
++		return __pgprot(pgprot_val(__PAGE_READONLY) | user_pgprot);
 +	case VM_WRITE:
-+		return PM(_PAGE_PRESENT | _PAGE_NO_EXEC | _PAGE_NO_READ);
 +	case VM_WRITE | VM_READ:
-+		return PM(_PAGE_PRESENT | _PAGE_NO_EXEC);
++		return __pgprot(pgprot_val(__PAGE_COPY) | user_pgprot);
 +	case VM_EXEC:
 +	case VM_EXEC | VM_READ:
++		return __pgprot(pgprot_val(__PAGE_READONLY_EXEC) | user_pgprot);
 +	case VM_EXEC | VM_WRITE:
 +	case VM_EXEC | VM_WRITE | VM_READ:
-+		return PM(_PAGE_PRESENT);
++		return __pgprot(pgprot_val(__PAGE_COPY_EXEC) | user_pgprot);
 +	case VM_SHARED:
-+		return PM(_PAGE_PRESENT | _PAGE_NO_EXEC | _PAGE_NO_READ);
++		return __pgprot(pgprot_val(__PAGE_NONE) | user_pgprot);
 +	case VM_SHARED | VM_READ:
-+		return PM(_PAGE_PRESENT | _PAGE_NO_EXEC);
++		return __pgprot(pgprot_val(__PAGE_READONLY) | user_pgprot);
 +	case VM_SHARED | VM_WRITE:
-+		return PM(_PAGE_PRESENT | _PAGE_NO_EXEC | _PAGE_WRITE | _PAGE_NO_READ);
 +	case VM_SHARED | VM_WRITE | VM_READ:
-+		return PM(_PAGE_PRESENT | _PAGE_NO_EXEC | _PAGE_WRITE);
++		return __pgprot(pgprot_val(__PAGE_SHARED) | user_pgprot);
 +	case VM_SHARED | VM_EXEC:
 +	case VM_SHARED | VM_EXEC | VM_READ:
-+		return PM(_PAGE_PRESENT);
++		return __pgprot(pgprot_val(__PAGE_READONLY_EXEC) | user_pgprot);
 +	case VM_SHARED | VM_EXEC | VM_WRITE:
 +	case VM_SHARED | VM_EXEC | VM_WRITE | VM_READ:
-+		return PM(_PAGE_PRESENT | _PAGE_WRITE);
++		return __pgprot(pgprot_val(__PAGE_SHARED_EXEC) | user_pgprot);
 +	default:
 +		BUILD_BUG();
 +	}
- }
++}
 +EXPORT_SYMBOL(vm_get_page_prot);
++
+ #ifdef CONFIG_ARM_DMA_MEM_BUFFERABLE
+ pgprot_t phys_mem_access_prot(struct file *file, unsigned long pfn,
+ 			      unsigned long size, pgprot_t vma_prot)
 -- 
 2.25.1
 
