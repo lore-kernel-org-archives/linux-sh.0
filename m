@@ -2,120 +2,220 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 27B55C352AA
-	for <linux-sh@archiver.kernel.org>; Mon,  7 Mar 2022 10:02:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 55259C433FE
+	for <linux-sh@archiver.kernel.org>; Wed,  9 Mar 2022 11:31:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239600AbiCGKDd (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 7 Mar 2022 05:03:33 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40592 "EHLO
+        id S232198AbiCILcP (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 9 Mar 2022 06:32:15 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41936 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240442AbiCGKBC (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 7 Mar 2022 05:01:02 -0500
-Received: from mga05.intel.com (mga05.intel.com [192.55.52.43])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 58372205FE;
-        Mon,  7 Mar 2022 01:48:12 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1646646492; x=1678182492;
-  h=date:from:to:cc:subject:in-reply-to:message-id:
-   references:mime-version:content-id;
-  bh=zC3EygN9B67AQNPvzALqT8NwONoTEFy8bHC2L1G4njc=;
-  b=JstJxVGBbUqE7vEW33wQJkXrLylT4VHJHp2qZByUKOt5Ea7DtujQMZh8
-   eD4/p7aAvS7znQV2M4cLJCV3289l50yZljmgVJegACGGpfsnYkNK4iwEv
-   6Rq23GvPRKd9xdGv+/0yFzkXAu32KlTEIdIVlLnEKFwtmE1a8PlsK9Gv9
-   S5Vy0eNpJ1dwLCb9fVBk5sTsC5VDt96c4+53HwmmVr/stwhCVPE8BChgM
-   H0zS0ozy1z+ffacOSmiAbdAftg5+tnLSBZJ6qerHsv/n+0tvGrKgJ70Fr
-   gtaq25O0hr0Fd+5X5xvgw3//4ynct9C8buIMAbJVhuf23vJHpzDFbVSuv
-   g==;
-X-IronPort-AV: E=McAfee;i="6200,9189,10278"; a="340782145"
-X-IronPort-AV: E=Sophos;i="5.90,161,1643702400"; 
-   d="scan'208";a="340782145"
-Received: from orsmga008.jf.intel.com ([10.7.209.65])
-  by fmsmga105.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 07 Mar 2022 01:48:11 -0800
-X-IronPort-AV: E=Sophos;i="5.90,161,1643702400"; 
-   d="scan'208";a="553088602"
-Received: from rabl-mobl2.ger.corp.intel.com ([10.252.54.114])
-  by orsmga008-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 07 Mar 2022 01:48:03 -0800
-Date:   Mon, 7 Mar 2022 11:48:01 +0200 (EET)
-From:   =?ISO-8859-15?Q?Ilpo_J=E4rvinen?= <ilpo.jarvinen@linux.intel.com>
-To:     Lukas Wunner <lukas@wunner.de>
-cc:     linux-serial <linux-serial@vger.kernel.org>,
-        Jiri Slaby <jirislaby@kernel.org>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Johan Hovold <johan@kernel.org>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Heikki Krogerus <heikki.krogerus@linux.intel.com>,
-        linux-api@vger.kernel.org, Richard Henderson <rth@twiddle.net>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>, linux-alpha@vger.kernel.org,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        linux-mips@vger.kernel.org,
-        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-        Helge Deller <deller@gmx.de>, linux-parisc@vger.kernel.org,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        linuxppc-dev@lists.ozlabs.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        "David S. Miller" <davem@davemloft.net>,
-        sparclinux@vger.kernel.org, Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        linux-xtensa@linux-xtensa.org, Arnd Bergmann <arnd@arndb.de>,
-        linux-arch@vger.kernel.org, linux-doc@vger.kernel.org
-Subject: Re: [RFC PATCH 6/7] serial: General support for multipoint
- addresses
-In-Reply-To: <20220306194001.GD19394@wunner.de>
-Message-ID: <ab43569c-6488-12a6-823-3ef09f2849d@linux.intel.com>
-References: <20220302095606.14818-1-ilpo.jarvinen@linux.intel.com> <20220302095606.14818-7-ilpo.jarvinen@linux.intel.com> <20220306194001.GD19394@wunner.de>
+        with ESMTP id S230468AbiCILcO (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 9 Mar 2022 06:32:14 -0500
+Received: from foss.arm.com (foss.arm.com [217.140.110.172])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 6A83F14FFD4;
+        Wed,  9 Mar 2022 03:31:15 -0800 (PST)
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 233BF1655;
+        Wed,  9 Mar 2022 03:31:15 -0800 (PST)
+Received: from [10.163.33.203] (unknown [10.163.33.203])
+        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id EFA443FA4D;
+        Wed,  9 Mar 2022 03:31:03 -0800 (PST)
+Message-ID: <f1b4dbb5-7cd4-7513-4b18-169b97745a0a@arm.com>
+Date:   Wed, 9 Mar 2022 17:01:02 +0530
 MIME-Version: 1.0
-Content-Type: multipart/mixed; BOUNDARY="8323329-971395012-1646646016=:1677"
-Content-ID: <cbee2ae-83f0-872e-34dd-cb9866dd3f6e@linux.intel.com>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.5.0
+Subject: Re: [PATCH V3 05/30] arm64/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+Content-Language: en-US
+To:     Catalin Marinas <catalin.marinas@arm.com>
+Cc:     linux-mm@kvack.org, akpm@linux-foundation.org,
+        linux-kernel@vger.kernel.org, geert@linux-m68k.org,
+        Christoph Hellwig <hch@infradead.org>,
+        linuxppc-dev@lists.ozlabs.org,
+        linux-arm-kernel@lists.infradead.org, sparclinux@vger.kernel.org,
+        linux-mips@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-s390@vger.kernel.org, linux-riscv@lists.infradead.org,
+        linux-alpha@vger.kernel.org, linux-sh@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org, linux-parisc@vger.kernel.org,
+        openrisc@lists.librecores.org, linux-um@lists.infradead.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-arch@vger.kernel.org, Will Deacon <will@kernel.org>
+References: <1646045273-9343-1-git-send-email-anshuman.khandual@arm.com>
+ <1646045273-9343-6-git-send-email-anshuman.khandual@arm.com>
+ <YiDessYDSt060Euc@arm.com>
+From:   Anshuman Khandual <anshuman.khandual@arm.com>
+In-Reply-To: <YiDessYDSt060Euc@arm.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-  This message is in MIME format.  The first part should be readable text,
-  while the remaining parts are likely unreadable without MIME-aware tools.
 
---8323329-971395012-1646646016=:1677
-Content-Type: text/plain; CHARSET=ISO-8859-15
-Content-Transfer-Encoding: 8BIT
-Content-ID: <07d5f9f-7fe3-3c54-6566-1873a5191970@linux.intel.com>
 
-On Sun, 6 Mar 2022, Lukas Wunner wrote:
-
-> On Wed, Mar 02, 2022 at 11:56:05AM +0200, Ilpo Järvinen wrote:
+On 3/3/22 20:58, Catalin Marinas wrote:
+> Hi Anshuman,
 > 
-> > This change is necessary for supporting devices with RS485
-> > multipoint addressing [*].
+> On Mon, Feb 28, 2022 at 04:17:28PM +0530, Anshuman Khandual wrote:
+>> +static inline pgprot_t __vm_get_page_prot(unsigned long vm_flags)
+>> +{
+>> +	switch (vm_flags & (VM_READ | VM_WRITE | VM_EXEC | VM_SHARED)) {
+>> +	case VM_NONE:
+>> +		return PAGE_NONE;
+>> +	case VM_READ:
+>> +	case VM_WRITE:
+>> +	case VM_WRITE | VM_READ:
+>> +		return PAGE_READONLY;
+>> +	case VM_EXEC:
+>> +		return PAGE_EXECONLY;
+>> +	case VM_EXEC | VM_READ:
+>> +	case VM_EXEC | VM_WRITE:
+>> +	case VM_EXEC | VM_WRITE | VM_READ:
+>> +		return PAGE_READONLY_EXEC;
+>> +	case VM_SHARED:
+>> +		return PAGE_NONE;
+>> +	case VM_SHARED | VM_READ:
+>> +		return PAGE_READONLY;
+>> +	case VM_SHARED | VM_WRITE:
+>> +	case VM_SHARED | VM_WRITE | VM_READ:
+>> +		return PAGE_SHARED;
+>> +	case VM_SHARED | VM_EXEC:
+>> +		return PAGE_EXECONLY;
+>> +	case VM_SHARED | VM_EXEC | VM_READ:
+>> +		return PAGE_READONLY_EXEC;
+>> +	case VM_SHARED | VM_EXEC | VM_WRITE:
+>> +	case VM_SHARED | VM_EXEC | VM_WRITE | VM_READ:
+>> +		return PAGE_SHARED_EXEC;
+>> +	default:
+>> +		BUILD_BUG();
+>> +	}
+>> +}
 > 
-> If this is only used with RS485, why can't we just store the
-> addresses in struct serial_rs485 and use the existing TIOCSRS485
-> and TIOCGRS485 ioctls?  There's 20 bytes of padding left in
-> struct serial_rs485 which you could use.  No need to add more
-> user-space ABI.
+> I'd say ack for trying to get of the extra arch_vm_get_page_prot() and
+> arch_filter_pgprot() but, TBH, I'm not so keen on the outcome. I haven't
+> built the code to see what's generated but I suspect it's no significant
+> improvement. As for the code readability, the arm64 parts don't look
+> much better either. The only advantage with this patch is that all
+> functions have been moved under arch/arm64.
 
-It could if it is agreed that serial multipoint addressing is just
-a thing in RS-485 and nowhere else? In that case, there is no point
-in adding more generic support for it.
+Got it.
 
-> > [*] Technically, RS485 is just an electronic spec and does not
-> > itself specify the 9th bit addressing mode but 9th bit seems
-> > at least "semi-standard" way to do addressing with RS485.
 > 
-> Is 9th bit addressing actually used by an Intel customer or was
-> it implemented just for feature completeness? I think this mode
-> isn't used often (I've never seen a use case myself), primarily
-> because it requires disabling parity.
+> I'd keep most architectures that don't have own arch_vm_get_page_prot()
+> or arch_filter_pgprot() unchanged and with a generic protection_map[]
+> array. For architectures that need fancier stuff, add a
+> CONFIG_ARCH_HAS_VM_GET_PAGE_PROT (as you do) and allow them to define
+> vm_get_page_prot() while getting rid of arch_vm_get_page_prot() and
+> arch_filter_pgprot(). I think you could also duplicate protection_map[]
+> for architectures with own vm_get_page_prot() (make it static) and
+> #ifdef it out in mm/mmap.c.
+> 
+> If later you have more complex needs or a switch statement generates
+> better code, go for it, but for this series I'd keep things simple, only
+> focus on getting rid of arch_vm_get_page_prot() and
+> arch_filter_pgprot().
 
-On what basis? ...The datasheet I'm looking at has a timing diagram 
-with both D8 (9th bit) and parity so I think your information must be
-incorrect. I don't have direct contacts with customers but I'm told
-it's important for other org's customers.
+Got it.
 
+> 
+> If I grep'ed correctly, there are only 4 architectures that have own
+> arch_vm_get_page_prot() (arm64, powerpc, sparc, x86) and 2 that have own
+> arch_filter_pgprot() (arm64, x86). Try to only change these for the time
+> being, together with the other generic mm cleanups you have in this
+> series. I think there are a couple more that touch protection_map[]
+> (arm, m68k). You can leave the generic protection_map[] global if the
+> arch does not select ARCH_HAS_VM_GET_PAGE_PROT.
 
--- 
- i.
---8323329-971395012-1646646016=:1677--
+Okay, I will probably split the series into two parts.
+
+-  Drop arch_vm_get_page_prot() and arch_filter_pgprot() on relevant
+   platforms i.e arm64, powerpc, sparc and x86 via this new config
+   ARCH_HAS_VM_GET_PAGE_PROT, keeping the generic protection_map[]
+   since platform __SXXX/__PXX macros would be still around.
+
+-  Drop __SXXX/__PXXX across all platforms via just initializing
+   protection_map[] early during boot in the platform OR moving
+   both vm_get_page_prot() via ARCH_HAS_VM_GET_PAGE_PROT and the
+   generic protection_map[] inside the platform.
+
+   There were some objections with respect to switch case code in
+   comparison to the array based table look up.
+
+> 
+>> +static pgprot_t arm64_arch_filter_pgprot(pgprot_t prot)
+>> +{
+>> +	if (cpus_have_const_cap(ARM64_HAS_EPAN))
+>> +		return prot;
+>> +
+>> +	if (pgprot_val(prot) != pgprot_val(PAGE_EXECONLY))
+>> +		return prot;
+>> +
+>> +	return PAGE_READONLY_EXEC;
+>> +}
+>> +
+>> +static pgprot_t arm64_arch_vm_get_page_prot(unsigned long vm_flags)
+>> +{
+>> +	pteval_t prot = 0;
+>> +
+>> +	if (vm_flags & VM_ARM64_BTI)
+>> +		prot |= PTE_GP;
+>> +
+>> +	/*
+>> +	 * There are two conditions required for returning a Normal Tagged
+>> +	 * memory type: (1) the user requested it via PROT_MTE passed to
+>> +	 * mmap() or mprotect() and (2) the corresponding vma supports MTE. We
+>> +	 * register (1) as VM_MTE in the vma->vm_flags and (2) as
+>> +	 * VM_MTE_ALLOWED. Note that the latter can only be set during the
+>> +	 * mmap() call since mprotect() does not accept MAP_* flags.
+>> +	 * Checking for VM_MTE only is sufficient since arch_validate_flags()
+>> +	 * does not permit (VM_MTE & !VM_MTE_ALLOWED).
+>> +	 */
+>> +	if (vm_flags & VM_MTE)
+>> +		prot |= PTE_ATTRINDX(MT_NORMAL_TAGGED);
+>> +
+>> +	return __pgprot(prot);
+>> +}
+>> +
+>> +pgprot_t vm_get_page_prot(unsigned long vm_flags)
+>> +{
+>> +	pgprot_t ret = __pgprot(pgprot_val(__vm_get_page_prot(vm_flags)) |
+>> +			pgprot_val(arm64_arch_vm_get_page_prot(vm_flags)));
+>> +
+>> +	return arm64_arch_filter_pgprot(ret);
+>> +}
+> 
+> If we kept the array, we can have everything in a single function
+> (untested and with my own comments for future changes):
+
+Got it.
+
+> 
+> pgprot_t vm_get_page_prot(unsigned long vm_flags)
+> {
+> 	pgprot_t prot = __pgprot(pgprot_val(protection_map[vm_flags &
+> 				(VM_READ|VM_WRITE|VM_EXEC|VM_SHARED)]));
+> 
+> 	/*
+> 	 * We could get rid of this test if we updated protection_map[]
+> 	 * to turn exec-only into read-exec during boot.
+> 	 */
+> 	if (!cpus_have_const_cap(ARM64_HAS_EPAN) &&
+> 	    pgprot_val(prot) == pgprot_val(PAGE_EXECONLY))
+> 		prot = PAGE_READONLY_EXEC;
+> 
+> 	if (vm_flags & VM_ARM64_BTI)
+> 		prot != PTE_GP;
+> 
+> 	/*
+> 	 * We can get rid of the requirement for PROT_NORMAL to be 0
+> 	 * since here we can mask out PTE_ATTRINDX_MASK.
+> 	 */
+> 	if (vm_flags & VM_MTE) {
+> 		prot &= ~PTE_ATTRINDX_MASK;
+> 		prot |= PTE_ATTRINDX(MT_NORMAL_TAGGED);
+> 	}
+> 
+> 	return prot;
+> }
+> 
