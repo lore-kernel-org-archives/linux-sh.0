@@ -2,29 +2,44 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9463AC43217
-	for <linux-sh@archiver.kernel.org>; Wed,  9 Mar 2022 19:05:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6431C4167B
+	for <linux-sh@archiver.kernel.org>; Thu, 10 Mar 2022 12:29:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237261AbiCITGY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 9 Mar 2022 14:06:24 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48398 "EHLO
+        id S242013AbiCJMaf (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 10 Mar 2022 07:30:35 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47790 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237222AbiCITGX (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 9 Mar 2022 14:06:23 -0500
-Received: from bmailout3.hostsharing.net (bmailout3.hostsharing.net [IPv6:2a01:4f8:150:2161:1:b009:f23e:0])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 78AC16F482;
-        Wed,  9 Mar 2022 11:05:23 -0800 (PST)
-Received: from h08.hostsharing.net (h08.hostsharing.net [IPv6:2a01:37:1000::53df:5f1c:0])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (Client CN "*.hostsharing.net", Issuer "RapidSSL TLS DV RSA Mixed SHA256 2020 CA-1" (verified OK))
-        by bmailout3.hostsharing.net (Postfix) with ESMTPS id 4A151100BA624;
-        Wed,  9 Mar 2022 20:05:21 +0100 (CET)
-Received: by h08.hostsharing.net (Postfix, from userid 100393)
-        id 278F54C5886; Wed,  9 Mar 2022 20:05:21 +0100 (CET)
-Date:   Wed, 9 Mar 2022 20:05:21 +0100
-From:   Lukas Wunner <lukas@wunner.de>
-To:     Ilpo =?iso-8859-1?Q?J=E4rvinen?= <ilpo.jarvinen@linux.intel.com>
-Cc:     linux-serial <linux-serial@vger.kernel.org>,
+        with ESMTP id S233734AbiCJMae (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 10 Mar 2022 07:30:34 -0500
+Received: from mga07.intel.com (mga07.intel.com [134.134.136.100])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7266A818A5;
+        Thu, 10 Mar 2022 04:29:33 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1646915373; x=1678451373;
+  h=date:from:to:cc:subject:in-reply-to:message-id:
+   references:mime-version;
+  bh=KpU7qHsFQttScVYV4Sy+C7cKf/dHAGOyV91juLQL6gk=;
+  b=NgFY8eRdD81ohSejE1d5DO20LjYbv3RY7ET76nPkYeMlSHg+aTstckek
+   S8/ctGS3G1ijTVnjn2V2MsmQBDECfd/WZvpxEVm2IgscOkJs+vKOoW2R1
+   Tg5/RbkIrbMIVpdK/CSoAwz4XaaVqm/BSVs7q72b21hpCQNN2lU//vuSh
+   KrvPemzpbYV7jvLCigfVO/dNhbya2kQUeWEN3/Dclbug8ZNYwZd4FyuZW
+   fQTUUJSUa5eBvBFgNovM0f5gwecjeXRZKDkfFUsU6KY5xe+PUvF7W7awO
+   v+fMUYdLsZ5fp5+4hzDD/MyQsKaGsAhe6tFIDP6zC3mCuyqEtSCIUS5B/
+   g==;
+X-IronPort-AV: E=McAfee;i="6200,9189,10281"; a="318459313"
+X-IronPort-AV: E=Sophos;i="5.90,170,1643702400"; 
+   d="scan'208";a="318459313"
+Received: from orsmga008.jf.intel.com ([10.7.209.65])
+  by orsmga105.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Mar 2022 04:29:31 -0800
+X-IronPort-AV: E=Sophos;i="5.90,170,1643702400"; 
+   d="scan'208";a="554624288"
+Received: from mborg-mobl.ger.corp.intel.com ([10.252.33.144])
+  by orsmga008-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Mar 2022 04:29:23 -0800
+Date:   Thu, 10 Mar 2022 14:29:21 +0200 (EET)
+From:   =?ISO-8859-15?Q?Ilpo_J=E4rvinen?= <ilpo.jarvinen@linux.intel.com>
+To:     Lukas Wunner <lukas@wunner.de>
+cc:     linux-serial <linux-serial@vger.kernel.org>,
         Jiri Slaby <jirislaby@kernel.org>,
         Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         LKML <linux-kernel@vger.kernel.org>,
@@ -49,70 +64,65 @@ Cc:     linux-serial <linux-serial@vger.kernel.org>,
         Max Filippov <jcmvbkbc@gmail.com>,
         linux-xtensa@linux-xtensa.org, Arnd Bergmann <arnd@arndb.de>,
         linux-arch@vger.kernel.org, linux-doc@vger.kernel.org
-Subject: Re: [RFC PATCH 6/7] serial: General support for multipoint addresses
-Message-ID: <20220309190521.GA9832@wunner.de>
-References: <20220302095606.14818-1-ilpo.jarvinen@linux.intel.com>
- <20220302095606.14818-7-ilpo.jarvinen@linux.intel.com>
- <20220306194001.GD19394@wunner.de>
- <ab43569c-6488-12a6-823-3ef09f2849d@linux.intel.com>
+Subject: Re: [RFC PATCH 6/7] serial: General support for multipoint
+ addresses
+In-Reply-To: <20220309190521.GA9832@wunner.de>
+Message-ID: <6feb796a-ea58-9a6-f2f9-a11ca72acfd@linux.intel.com>
+References: <20220302095606.14818-1-ilpo.jarvinen@linux.intel.com> <20220302095606.14818-7-ilpo.jarvinen@linux.intel.com> <20220306194001.GD19394@wunner.de> <ab43569c-6488-12a6-823-3ef09f2849d@linux.intel.com> <20220309190521.GA9832@wunner.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <ab43569c-6488-12a6-823-3ef09f2849d@linux.intel.com>
-User-Agent: Mutt/1.10.1 (2018-07-13)
+Content-Type: multipart/mixed; boundary="8323329-24784813-1646915371=:1973"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Mar 07, 2022 at 11:48:01AM +0200, Ilpo Järvinen wrote:
-> On Sun, 6 Mar 2022, Lukas Wunner wrote:
-> > On Wed, Mar 02, 2022 at 11:56:05AM +0200, Ilpo Järvinen wrote:
-> > > This change is necessary for supporting devices with RS485
-> > > multipoint addressing [*].
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
+
+--8323329-24784813-1646915371=:1973
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8BIT
+
+On Wed, 9 Mar 2022, Lukas Wunner wrote:
+
+> On Mon, Mar 07, 2022 at 11:48:01AM +0200, Ilpo Järvinen wrote:
+> > On Sun, 6 Mar 2022, Lukas Wunner wrote:
+> > > On Wed, Mar 02, 2022 at 11:56:05AM +0200, Ilpo Järvinen wrote:
+> > > > This change is necessary for supporting devices with RS485
+> > > > multipoint addressing [*].
+> > > 
+> > > If this is only used with RS485, why can't we just store the
+> > > addresses in struct serial_rs485 and use the existing TIOCSRS485
+> > > and TIOCGRS485 ioctls?  There's 20 bytes of padding left in
+> > > struct serial_rs485 which you could use.  No need to add more
+> > > user-space ABI.
 > > 
-> > If this is only used with RS485, why can't we just store the
-> > addresses in struct serial_rs485 and use the existing TIOCSRS485
-> > and TIOCGRS485 ioctls?  There's 20 bytes of padding left in
-> > struct serial_rs485 which you could use.  No need to add more
-> > user-space ABI.
+> > It could if it is agreed that serial multipoint addressing is just
+> > a thing in RS-485 and nowhere else? In that case, there is no point
+> > in adding more generic support for it.
 > 
-> It could if it is agreed that serial multipoint addressing is just
-> a thing in RS-485 and nowhere else? In that case, there is no point
-> in adding more generic support for it.
+> It's just that the above-quoted sentence in the commit message
+> specifically mentions RS485.
 
-It's just that the above-quoted sentence in the commit message
-specifically mentions RS485.  If you intend to use it with RS232
-as well, that should be made explicit, otherwise one wonders why
-it wasn't integrated into struct serial_rs485.
+That sentence is just to justify why addressing mode is needed,
+not to take a stance on whether it is only used with RS485 or not.
 
-I have no idea how common 9th bit addressing mode is with RS232.
-Goggle turns up links saying it's mainly used with RS485, "but also
-RS232".  Since RS232 isn't a bus but a point-to-point link,
-9th bit addressing doesn't seem to make as much sense.
-
-
-> > > [*] Technically, RS485 is just an electronic spec and does not
-> > > itself specify the 9th bit addressing mode but 9th bit seems
-> > > at least "semi-standard" way to do addressing with RS485.
-> > 
-> > Is 9th bit addressing actually used by an Intel customer or was
-> > it implemented just for feature completeness? I think this mode
-> > isn't used often (I've never seen a use case myself), primarily
-> > because it requires disabling parity.
+> If you intend to use it with RS232
+> as well, that should be made explicit, otherwise one wonders why
+> it wasn't integrated into struct serial_rs485.
 > 
-> On what basis? ...The datasheet I'm looking at has a timing diagram 
-> with both D8 (9th bit) and parity so I think your information must be
-> incorrect.
+> I have no idea how common 9th bit addressing mode is with RS232.
+> Goggle turns up links saying it's mainly used with RS485, "but also
+> RS232".  Since RS232 isn't a bus but a point-to-point link,
+> 9th bit addressing doesn't seem to make as much sense.
 
-E.g. the discussion here says that 9th bit addressing requires that
-parity is disabled or the character size is reduced to 7-bit:
+While I don't know any better, I can image though that with an 
+RS232-to-RS485 converter, it could make some sense.
 
-https://www.microchip.com/forums/m299904.aspx
+If I put them back to serial_rs485 / rs485 config, it's basically just 
+where I initially started from with this patchset (offlist).
 
-I guess that applies only to some UARTs, the Synopsys databook doesn't
-mention any such constraints.
 
-Thanks,
+-- 
+ i.
 
-Lukas
+--8323329-24784813-1646915371=:1973--
