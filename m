@@ -2,122 +2,81 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0AACC4321E
-	for <linux-sh@archiver.kernel.org>; Thu, 10 Mar 2022 14:10:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3FECDC433EF
+	for <linux-sh@archiver.kernel.org>; Sat, 12 Mar 2022 06:14:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242884AbiCJOLy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 10 Mar 2022 09:11:54 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50890 "EHLO
+        id S229980AbiCLGQA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 12 Mar 2022 01:16:00 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46292 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242756AbiCJOLZ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 10 Mar 2022 09:11:25 -0500
-Received: from mga01.intel.com (mga01.intel.com [192.55.52.88])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 730F2137012;
-        Thu, 10 Mar 2022 06:10:23 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1646921423; x=1678457423;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:content-transfer-encoding:in-reply-to;
-  bh=Vi9TQW28iAGVT+9VTJCeUAtR3L2XgA27dHLozP1I8zM=;
-  b=G27wyBmWvNEAVSPYPdfrwrw+qFtSOgN9J0kMPS6K/D+VmhuYIzqR1hbC
-   p9bJdKmSO6uC8JCtOBta+bjGdVF+yIluIHkAi1VYR23x6XUKsLfIbWQUx
-   8vbvo20B+2ak6a7Uav7VcfPjbUHU7Jc+Bb66v0a6QDuuCXDHyGikMH9UW
-   Fczl5/I3uDFul2r3tp176PE3A3q63e/J7OzLrDmd6TuLLSycxbCud80oQ
-   9I2bOGvifIglHMBsvwzyESSnITNeg8Uar+8S8KZUbKv6h/BKsix/9ianu
-   0lA3j+sZ1VoUOkGAmoQ/FC3BmimF5cRcludSbtHSMJ0k3JwbGK35jpcQH
-   g==;
-X-IronPort-AV: E=McAfee;i="6200,9189,10281"; a="279993773"
-X-IronPort-AV: E=Sophos;i="5.90,170,1643702400"; 
-   d="scan'208";a="279993773"
-Received: from fmsmga002.fm.intel.com ([10.253.24.26])
-  by fmsmga101.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Mar 2022 06:10:23 -0800
-X-IronPort-AV: E=Sophos;i="5.90,170,1643702400"; 
-   d="scan'208";a="642568750"
-Received: from smile.fi.intel.com ([10.237.72.59])
-  by fmsmga002-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Mar 2022 06:10:15 -0800
-Received: from andy by smile.fi.intel.com with local (Exim 4.95)
-        (envelope-from <andriy.shevchenko@linux.intel.com>)
-        id 1nSJTv-00EjUS-6x;
-        Thu, 10 Mar 2022 16:09:31 +0200
-Date:   Thu, 10 Mar 2022 16:09:30 +0200
-From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To:     Lukas Wunner <lukas@wunner.de>
-Cc:     Ilpo =?iso-8859-1?Q?J=E4rvinen?= <ilpo.jarvinen@linux.intel.com>,
-        linux-serial <linux-serial@vger.kernel.org>,
-        Jiri Slaby <jirislaby@kernel.org>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Johan Hovold <johan@kernel.org>,
-        Heikki Krogerus <heikki.krogerus@linux.intel.com>,
-        linux-api@vger.kernel.org, Richard Henderson <rth@twiddle.net>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>, linux-alpha@vger.kernel.org,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        linux-mips@vger.kernel.org,
-        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Helge Deller <deller@gmx.de>, linux-parisc@vger.kernel.org,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        linuxppc-dev@lists.ozlabs.org,
+        with ESMTP id S229379AbiCLGP7 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 12 Mar 2022 01:15:59 -0500
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:e::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 281C3210D4A;
+        Fri, 11 Mar 2022 22:14:53 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
+        Content-ID:Content-Description:In-Reply-To:References;
+        bh=HDJyrHj1AaE/N2JHmkP+7shkgaIsuKnGFuwt2ikYqoc=; b=rcCJmxebZY7F1zWhrKcA2l/9zq
+        YOW95V2m+5mPIeyd0BlIix+khkiPYPhmZ1gVmI1Ats+crYhwqtW/pHbG9KtXpmC2ONSYTbDgf6lCC
+        AWRXb+hwWnA0sWotoGYZZOdl1Cp8AVUd2uHks91SoZFpEyQFZaFpg+VsWrUI3j3AhnuddeUNICAXO
+        VZGtqGOPj02cDtefX+XBKYZ3cKEILDGsr95tYq8Cg/uq33L1wFTEGAiOGhfxkgQaPNqYf+cyVWS7l
+        5nOxrHoSt6uNY1DTXuaoqzNdoh9SH1oV3W/i6dildc7mKgF2AQeoCwDKYMh8NboWWoQ37bHnvseGp
+        qyEbh9kQ==;
+Received: from [2601:1c0:6280:3f0::aa0b] (helo=bombadil.infradead.org)
+        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1nSv1f-000pK4-Ez; Sat, 12 Mar 2022 06:14:51 +0000
+From:   Randy Dunlap <rdunlap@infradead.org>
+To:     linux-kernel@vger.kernel.org
+Cc:     Randy Dunlap <rdunlap@infradead.org>,
+        Paul Mundt <lethal@linux-sh.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        "David S. Miller" <davem@davemloft.net>,
-        sparclinux@vger.kernel.org, Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        linux-xtensa@linux-xtensa.org, Arnd Bergmann <arnd@arndb.de>,
-        linux-arch@vger.kernel.org, linux-doc@vger.kernel.org
-Subject: Re: [RFC PATCH 6/7] serial: General support for multipoint addresses
-Message-ID: <YioGmu+KC9WT0KoG@smile.fi.intel.com>
-References: <20220302095606.14818-1-ilpo.jarvinen@linux.intel.com>
- <20220302095606.14818-7-ilpo.jarvinen@linux.intel.com>
- <20220306194001.GD19394@wunner.de>
- <ab43569c-6488-12a6-823-3ef09f2849d@linux.intel.com>
- <20220309190521.GA9832@wunner.de>
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Subject: [PATCH] sh: nmi_debug: fix return value of __setup handler
+Date:   Fri, 11 Mar 2022 22:14:50 -0800
+Message-Id: <20220312061450.24876-1-rdunlap@infradead.org>
+X-Mailer: git-send-email 2.34.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <20220309190521.GA9832@wunner.de>
-Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Mar 09, 2022 at 08:05:21PM +0100, Lukas Wunner wrote:
-> On Mon, Mar 07, 2022 at 11:48:01AM +0200, Ilpo Järvinen wrote:
-> > On Sun, 6 Mar 2022, Lukas Wunner wrote:
-> > > On Wed, Mar 02, 2022 at 11:56:05AM +0200, Ilpo Järvinen wrote:
-> > > > This change is necessary for supporting devices with RS485
-> > > > multipoint addressing [*].
-> > > 
-> > > If this is only used with RS485, why can't we just store the
-> > > addresses in struct serial_rs485 and use the existing TIOCSRS485
-> > > and TIOCGRS485 ioctls?  There's 20 bytes of padding left in
-> > > struct serial_rs485 which you could use.  No need to add more
-> > > user-space ABI.
-> > 
-> > It could if it is agreed that serial multipoint addressing is just
-> > a thing in RS-485 and nowhere else? In that case, there is no point
-> > in adding more generic support for it.
-> 
-> It's just that the above-quoted sentence in the commit message
-> specifically mentions RS485.  If you intend to use it with RS232
-> as well, that should be made explicit, otherwise one wonders why
-> it wasn't integrated into struct serial_rs485.
-> 
-> I have no idea how common 9th bit addressing mode is with RS232.
-> Goggle turns up links saying it's mainly used with RS485, "but also
-> RS232".  Since RS232 isn't a bus but a point-to-point link,
-> 9th bit addressing doesn't seem to make as much sense.
+__setup() handlers should return 1 to obsolete_checksetup() in
+init/main.c to indicate that the boot option has been handled.
+A return of 0 causes the boot option/value to be listed as an Unknown
+kernel parameter and added to init's (limited) argument or environment
+strings. Also, error return codes don't mean anything to
+obsolete_checksetup() -- only non-zero (usually 1) or zero.
+So return 1 from nmi_debug_setup().
 
-In my student years I have an exercise to use 9-bit addressing mode on RS232.
-Obviously I forgot all of the details, but I remember that that has a practical
-application.
+Fixes: 1e1030dccb10 ("sh: nmi_debug support.")
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/sh/kernel/nmi_debug.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
--- 
-With Best Regards,
-Andy Shevchenko
-
-
+--- linux-next-20220310.orig/arch/sh/kernel/nmi_debug.c
++++ linux-next-20220310/arch/sh/kernel/nmi_debug.c
+@@ -49,7 +49,7 @@ static int __init nmi_debug_setup(char *
+ 	register_die_notifier(&nmi_debug_nb);
+ 
+ 	if (*str != '=')
+-		return 0;
++		return 1;
+ 
+ 	for (p = str + 1; *p; p = sep + 1) {
+ 		sep = strchr(p, ',');
+@@ -70,6 +70,6 @@ static int __init nmi_debug_setup(char *
+ 			break;
+ 	}
+ 
+-	return 0;
++	return 1;
+ }
+ __setup("nmi_debug", nmi_debug_setup);
