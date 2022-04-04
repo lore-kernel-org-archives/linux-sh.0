@@ -2,59 +2,56 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 28230C3526F
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BC0FEC3527E
 	for <linux-sh@archiver.kernel.org>; Mon,  4 Apr 2022 21:39:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1387111AbiDDVk3 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 4 Apr 2022 17:40:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54470 "EHLO
+        id S1387129AbiDDVkc (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 4 Apr 2022 17:40:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48568 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1380675AbiDDU6p (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 4 Apr 2022 16:58:45 -0400
-Received: from mail-ej1-x629.google.com (mail-ej1-x629.google.com [IPv6:2a00:1450:4864:20::629])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3C62430F6D;
-        Mon,  4 Apr 2022 13:56:49 -0700 (PDT)
-Received: by mail-ej1-x629.google.com with SMTP id bg10so22574945ejb.4;
-        Mon, 04 Apr 2022 13:56:49 -0700 (PDT)
+        with ESMTP id S1380223AbiDDTQm (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 4 Apr 2022 15:16:42 -0400
+Received: from mail-ed1-x530.google.com (mail-ed1-x530.google.com [IPv6:2a00:1450:4864:20::530])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5506C33E0A;
+        Mon,  4 Apr 2022 12:14:45 -0700 (PDT)
+Received: by mail-ed1-x530.google.com with SMTP id d10so7511250edj.0;
+        Mon, 04 Apr 2022 12:14:45 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20210112;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc;
-        bh=bVlKvULZm2JgZ5AGytzLrLB0CSLrK0ggDRTo65+yxyA=;
-        b=ku1Mni2YP6skEb4UzKwM1qgc933zwKLIlMM21YZAd7k4Ios0mzpOc/rIaiQVjhFQSY
-         G+txssoqd3A6QKy5AZVACJTlGPSO1le+tQYos/vc/E2PB8bCCueGVPQ5Scvt5bZZ0s2f
-         I52BoNzvPo67Aqv6eXqqyFzU1vQDqrs2VWVcVapC6o/pGzwkb1H3txizNNHwVD4d6ScG
-         2eIDS0ScxBnD2FZzrF1d1lKbTPDJ8/l3KKd8gewI19+L9UviMfXxa0WaQTj9+PHYcB7I
-         7cJb+/UH9X0jvg07Ut3LmEkLNSOS7IFE/S9dHP7d26coaZhJq40PwzaU1UKeGEFNTonV
-         YiIQ==
+        bh=e+espoYszSZp1p1WHrGyTvFNDm47vVsucL53VCJGbNQ=;
+        b=hoh3dyC3FDOpHs0Oa9MtXNEdb6T+MPU/rE4E97vtjQ0kFHrfOquVsSfCT02pnpdOSV
+         UyvQyXxSUBW3xQaMhklyAsx+cI6YgpDwo6Od5vyv2DXvZJjXbkK+zPEFIo1Kj9WuKE40
+         sj0TSnCHCztoC2luqCmQsVaZ9xcMzSpppRbkv6J9Pi7fWZWikcAavtIJ0+2Fj0GavDhK
+         N+I/fFIREY/ExKnSiGF4Io2lqewR0hKdHvFw5GsWZrxBzB4D+BbVZKpaqrlipMVNNbLa
+         9dYSzYeNIUeFyHb/O/hJUhfcQFnUIA1mrgDYcW6k+UXPwRMZUg9/3SgljqUAVB8jbvRY
+         A3jA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=bVlKvULZm2JgZ5AGytzLrLB0CSLrK0ggDRTo65+yxyA=;
-        b=ADpGwSD2J3Ly+6ODxHl337T+g8oWZTx2PZ3zU49l6o/xvzRODv9nx9nQV+abr+jPK1
-         4QgB1M0hR+TJfiCil8X6v+le+V+njcTlHPlXbj+nA6716xVsQTlEXW1j8GrE1Ex7hmXV
-         BAqxTavkO759OTbrW6hw66hWZqz6TfRQiCpm0pCwfOkyLWd+NAg1RmFs0WFGi9tnyLBk
-         sT4Y/dHaPudG7t/kX1chw8OURNqnuWm8lX3n8Z8WmBPRsXL2Qrg7tetTEz58Cz3o+VqN
-         HjQ12vjDbhJpdR61SLFixyEd31HkkoberI2vJKeVogTwj0QkUk3+T7xGOOTZLrOVrCx1
-         9N6g==
-X-Gm-Message-State: AOAM532p0QLx0Om0oA3qug+ZlJ/gCGkAqDEjIGu6xPgI3hcu5ix33ik9
-        X65GOOYNZ8mAVMLJISe0Kde6e+u6wL4RnYTQ/ClAfvlb7Vc=
-X-Google-Smtp-Source: ABdhPJxR6ykDRFXeBPhlCfq09GQEDxUi37N3Qk4mgFJMv7QLL7sMtSVvzSM8nSllVj9W6nUE0impfg7PMyukPyB4+IQ=
-X-Received: by 2002:a17:906:f75a:b0:6e6:e3f1:c946 with SMTP id
- jp26-20020a170906f75a00b006e6e3f1c946mr67964ejb.676.1649105807881; Mon, 04
- Apr 2022 13:56:47 -0700 (PDT)
+        bh=e+espoYszSZp1p1WHrGyTvFNDm47vVsucL53VCJGbNQ=;
+        b=UkEcYtmquKnuJp1eFkvfCezCwAsE3xM1wP//0y37w1g1Yjh7zgcL7xczBUtP2Q9cMQ
+         omp+6H41t0Xscs5GIdNq3cSntcv+VbrhA1Ocb7RAf/KeOqVSZgGp8bqb2+zUCrzWEUMP
+         iZzlOn98KKZTFhoMOXffqtBOogwmhEQ5P4GCDgL5MRsnT+dwwq1093HJNPSiUYYXdnDf
+         eeVxBEnLpAJ+CZSWFgAbD86gFnIZ1GR9OSyi67BbR+5IzAN0L+vWe5by1cK6ZTlpQSfL
+         Oed+GY9gsAKD6BnEJlLEJPu9VtV+funqEG6rMT+SISM8OggUfaMNoJB0jT/mAuGfDcGl
+         pcpw==
+X-Gm-Message-State: AOAM531L7KCRo0qkPBNFCl4lLjtxmzT5wfY0sbmAR6tLEu/p50R4hz51
+        dDa1ryEc+hHZRvbAGMPSR3kxmpRQvhdO/xq7Ujs=
+X-Google-Smtp-Source: ABdhPJzQP+hf5SuJlHqDSZUr7Fy6SznLH3ME81HEeqGLMYxs1Q1hlk7PXHj0e2EC/UWg5Jyw7UYqSwUbEdHC+883sYE=
+X-Received: by 2002:a05:6402:1941:b0:413:2b5f:9074 with SMTP id
+ f1-20020a056402194100b004132b5f9074mr1704694edz.414.1649099683759; Mon, 04
+ Apr 2022 12:14:43 -0700 (PDT)
 MIME-Version: 1.0
 References: <Yib9F5SqKda/nH9c@infradead.org> <CAK8P3a1dUVsZzhAe81usLSkvH29zHgiV9fhEkWdq7_W+nQBWbg@mail.gmail.com>
  <YkmWh2tss8nXKqc5@infradead.org> <CAK8P3a0QdFOJbM72geYTWOKumeKPSCVD8Nje5pBpZWazX0GEnQ@mail.gmail.com>
- <CAMo8BfKgn0T5RtUTb89fPvygNJJYLy7r1=RZTmTTm=jiDfx1hQ@mail.gmail.com>
- <CAK8P3a0J1--WSyWY+TptFa0nn5d-mOxapadCE1csGRkfhSPbVw@mail.gmail.com>
- <CAMo8BfLT8vMw3aGQPs1+9ry7W63SQphmDc4Tt4A3JvADHJhxiQ@mail.gmail.com>
- <CAK8P3a3iFb+ZacZ40d8PC_xcJpLVFXT0Qc-oYEZNkFqXdsfNZw@mail.gmail.com> <CAK8P3a1goN3c772xiFtz13kHZs0XEDSxfXX=ub7OH3S98Mddsw@mail.gmail.com>
-In-Reply-To: <CAK8P3a1goN3c772xiFtz13kHZs0XEDSxfXX=ub7OH3S98Mddsw@mail.gmail.com>
+ <CAMo8BfKgn0T5RtUTb89fPvygNJJYLy7r1=RZTmTTm=jiDfx1hQ@mail.gmail.com> <CAK8P3a0J1--WSyWY+TptFa0nn5d-mOxapadCE1csGRkfhSPbVw@mail.gmail.com>
+In-Reply-To: <CAK8P3a0J1--WSyWY+TptFa0nn5d-mOxapadCE1csGRkfhSPbVw@mail.gmail.com>
 From:   Max Filippov <jcmvbkbc@gmail.com>
-Date:   Mon, 4 Apr 2022 13:56:36 -0700
-Message-ID: <CAMo8BfJ5oqq3DXGf31uy8ab01EXqfzsO8hA2Tia=F1fBGiznKw@mail.gmail.com>
+Date:   Mon, 4 Apr 2022 12:14:32 -0700
+Message-ID: <CAMo8BfLT8vMw3aGQPs1+9ry7W63SQphmDc4Tt4A3JvADHJhxiQ@mail.gmail.com>
 Subject: Re: [RFC PULL] remove arch/h8300
 To:     Arnd Bergmann <arnd@arndb.de>
 Cc:     Christoph Hellwig <hch@infradead.org>,
@@ -76,19 +73,35 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Apr 4, 2022 at 12:44 PM Arnd Bergmann <arnd@arndb.de> wrote:
-> Let me know if I need to enable additional options to get a compiler
-> that works for all xtensa targets. Usually the --enable-targets=all
-> is meant to be sufficient.
+On Mon, Apr 4, 2022 at 12:01 PM Arnd Bergmann <arnd@arndb.de> wrote:
+> On Mon, Apr 4, 2022 at 7:57 PM Max Filippov <jcmvbkbc@gmail.com> wrote:
+> > Please let me know if you observe any specific build/runtime issues.
+>
+> This is what I get:
+>
+> $ make ARCH=xtensa O=build/xtensa nommu_kc705_defconfig vmlinux V=1
+> ....
+> xtensa-linux-gcc-11.1.0 -DKCONFIG_SEED=
+...
+> /git/arm-soc/arch/xtensa/kernel/head.S: Assembler messages:
+> /git/arm-soc/arch/xtensa/kernel/head.S:87: Error: invalid register
+> 'atomctl' for 'wsr' instruction
 
-This is not possible with the current design of the xtensa toolchain port.
-There's an effort to make switching between the core configurations easy
-(without the whole toolchain rebuild:
- https://github.com/jcmvbkbc/xtensa-dynconfig
- https://github.com/jcmvbkbc/gcc-xtensa/tree/xtensa-dynconfig
- https://github.com/jcmvbkbc/binutils-gdb-xtensa/tree/xtensa-plugin-env ),
-but it still involves building plugins for the parts of the toolchain
-for each new xtensa core.
+Sure, one cannot use an arbitrary xtensa compiler for the kernel
+build, the compiler configuration must match the core variant selected
+in the linux configuration. Specifically, for the nommu_kc705_defconfig
+the following compiler can be used:
+
+https://github.com/foss-xtensa/toolchain/releases/download/2020.07/x86_64-2020.07-xtensa-de212-elf.tar.gz
+
+If you build the toolchain yourself using crosstool-ng or buildroot they
+accept the 'configuration overlay' parameter that does the compiler
+customization.
+
+Perhaps the documentation for this part is what needs to be improved.
+
+> I think there were other errors in the past, but every time I tried
+> it, the build failed for me.
 
 -- 
 Thanks.
