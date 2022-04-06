@@ -2,46 +2,61 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B96D4C433FE
-	for <linux-sh@archiver.kernel.org>; Wed,  6 Apr 2022 05:11:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BE253C433EF
+	for <linux-sh@archiver.kernel.org>; Wed,  6 Apr 2022 21:42:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229726AbiDFFMv (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 6 Apr 2022 01:12:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35348 "EHLO
+        id S229821AbiDFVoR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 6 Apr 2022 17:44:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33366 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236368AbiDEX2I (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 5 Apr 2022 19:28:08 -0400
-X-Greylist: delayed 1442 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 05 Apr 2022 14:51:00 PDT
-Received: from gateway30.websitewelcome.com (gateway30.websitewelcome.com [192.185.184.48])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 364FB6F48C
-        for <linux-sh@vger.kernel.org>; Tue,  5 Apr 2022 14:50:58 -0700 (PDT)
-Received: from cm12.websitewelcome.com (cm12.websitewelcome.com [100.42.49.8])
-        by gateway30.websitewelcome.com (Postfix) with ESMTP id 43095CFD5
-        for <linux-sh@vger.kernel.org>; Tue,  5 Apr 2022 16:26:55 -0500 (CDT)
-Received: from 162-215-252-75.unifiedlayer.com ([208.91.199.152])
-        by cmsmtp with SMTP
-        id bqhTndoed9AGSbqhTnEslZ; Tue, 05 Apr 2022 16:26:55 -0500
-X-Authority-Reason: nr=8
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=roeck-us.net; s=default; h=In-Reply-To:Content-Type:MIME-Version:References
-        :Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:Content-Transfer-Encoding
-        :Content-ID:Content-Description:Resent-Date:Resent-From:Resent-Sender:
-        Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:List-Unsubscribe:
-        List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=etLRv605waIPx1DCrS1r2FtQdxwRWlTwRr0MCFi87mQ=; b=sDX58Fsb0AiIgrUpsTvhohwTrE
-        XQ1vZUwbXi1u2XKNWkOabkdtvSY+nJsJnq0jEJWOR2pWup9lL6B1Mma1ENz8pF3G+ncnOQDMBWueO
-        XHkI5kIBI84YfYzO74YAyKDyDKe2FjwoGqgSZffJ5D+JJXb2Jq5ETNOBfe4fmt1CjLYkwcQ+vhYYD
-        Mp+MjiO2y0hQtXtTYWaQgBv5t2HUUiMwf4OS56xwETZ1BcjgDwyOR2rvANhkO7vmxLAVlqJQlomJS
-        A1LWi97vunmvbWJ2N78LVU+fj8RDpGNVebNiU4xgOzx9rtMLQ/EktX2AhgIrfrya8pzpfhsWoBVtB
-        klltifqw==;
-Received: from 108-223-40-66.lightspeed.sntcca.sbcglobal.net ([108.223.40.66]:57870 helo=localhost)
-        by bh-25.webhostbox.net with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.94.2)
-        (envelope-from <linux@roeck-us.net>)
-        id 1nbqhS-003NqP-K5; Tue, 05 Apr 2022 21:26:54 +0000
-Date:   Tue, 5 Apr 2022 14:26:53 -0700
-From:   Guenter Roeck <linux@roeck-us.net>
-To:     Arnd Bergmann <arnd@arndb.de>
+        with ESMTP id S237447AbiDFVni (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 6 Apr 2022 17:43:38 -0400
+Received: from mail-ot1-x332.google.com (mail-ot1-x332.google.com [IPv6:2607:f8b0:4864:20::332])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8F62CF9550
+        for <linux-sh@vger.kernel.org>; Wed,  6 Apr 2022 14:21:50 -0700 (PDT)
+Received: by mail-ot1-x332.google.com with SMTP id i11-20020a9d4a8b000000b005cda3b9754aso2567974otf.12
+        for <linux-sh@vger.kernel.org>; Wed, 06 Apr 2022 14:21:50 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20210112.gappssmtp.com; s=20210112;
+        h=message-id:date:mime-version:user-agent:subject:content-language:to
+         :cc:references:from:in-reply-to:content-transfer-encoding;
+        bh=HfFrcmd70k7cFbm2ZXnWFiX/H5FhSCRXyrLZ2pjFPSI=;
+        b=JWAdKKIGlR2GXRY2EyBHJpOHb12AGoA/GSAiazO0z3sUuJl2pbLq3y8f2LLZRiK7ag
+         jF0pPAE80m/StQPAn0HI9Jocd1N932K40FWD3K+6jyCPxSDW85yi+b5RM+j3udvxF4+j
+         4zvhIFli6DskhDlP9Zev4QI97hRqVRtIMcyyKrm7nX3owwnxPNDHJhwIikd2t2FloXmA
+         Wk/pQwPT1sVLvBHFuFUW6X+vOB/f3di+0I5KpQAE5mktFyy59esdv+bNVlWExchHjewr
+         ahjX/NWsjkK4v6+AkxwjmUhoWZbdfC6ilBaig9EYYETbKicXqqZULA+yUUodPHV8EKDI
+         QR8g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
+         :content-language:to:cc:references:from:in-reply-to
+         :content-transfer-encoding;
+        bh=HfFrcmd70k7cFbm2ZXnWFiX/H5FhSCRXyrLZ2pjFPSI=;
+        b=aczr4aBbZTZCG1JbsCEXcxURVFeo7uytnvQpfcaxDKS6PMYjxhgAvJoTCB7PQG6JcT
+         cDRkS9BlIMh9VSuobrQpDd6X/x1+xD8fHhRIGFofZRdp95XLHw6qoEl/endWD4if3+wb
+         jgDrntLld4MWMHomzAiJVnJ6PI+1pML/zfcBSeGuTIVLRyXo4BsgBrPJwCpHWSHlI/Hl
+         KSrSJ8QwUwJuMQ9yGodwId5a6DpLKkikLizmDg9+TaL+swQwhI2stqkDFEC4842iOZ5z
+         yaT5YgsucMcseoOdl8GVmRPNy0lQrY3q1tVfD3mX28N+1RLjrd9G9G5pPt1wwxQHklT9
+         erBQ==
+X-Gm-Message-State: AOAM532auKVfEedwQhZDuWYSWeq0FDXVn6lyQo8GHDl/cWMXxwyOnBBZ
+        DOG7nBQPgRoVSvytto+wA4HWgQ==
+X-Google-Smtp-Source: ABdhPJxZn7W+k8uRxWVFozQX95YWH7+EoUvtnn2OqSRwx2HUCEvYG912nG22JE+OWDU4RAdahCRb6g==
+X-Received: by 2002:a9d:4d12:0:b0:5c9:4997:452c with SMTP id n18-20020a9d4d12000000b005c94997452cmr3741105otf.127.1649280109270;
+        Wed, 06 Apr 2022 14:21:49 -0700 (PDT)
+Received: from [192.168.86.186] ([136.62.4.88])
+        by smtp.gmail.com with ESMTPSA id e12-20020a4aa60c000000b00324bb45d7ecsm6352052oom.48.2022.04.06.14.21.48
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 06 Apr 2022 14:21:48 -0700 (PDT)
+Message-ID: <c3e7ee64-68fc-ed53-4a90-9f9296583d7c@landley.net>
+Date:   Wed, 6 Apr 2022 16:25:48 -0500
+MIME-Version: 1.0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.6.2
+Subject: Re: [RFC PULL] remove arch/h8300
+Content-Language: en-US
+To:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Arnd Bergmann <arnd@arndb.de>
 Cc:     Christoph Hellwig <hch@infradead.org>,
         Linus Torvalds <torvalds@linux-foundation.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
@@ -55,88 +70,124 @@ Cc:     Christoph Hellwig <hch@infradead.org>,
         linux-m68k <linux-m68k@lists.linux-m68k.org>,
         Greg Ungerer <gerg@linux-m68k.org>,
         Damien Le Moal <damien.lemoal@wdc.com>,
-        linux-riscv <linux-riscv@lists.infradead.org>
-Subject: Re: [RFC PULL] remove arch/h8300
-Message-ID: <20220405212653.GA2482665@roeck-us.net>
+        linux-riscv <linux-riscv@lists.infradead.org>,
+        Rich Felker <dalias@libc.org>
 References: <Yib9F5SqKda/nH9c@infradead.org>
  <CAK8P3a1dUVsZzhAe81usLSkvH29zHgiV9fhEkWdq7_W+nQBWbg@mail.gmail.com>
  <YkmWh2tss8nXKqc5@infradead.org>
  <CAK8P3a0QdFOJbM72geYTWOKumeKPSCVD8Nje5pBpZWazX0GEnQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAK8P3a0QdFOJbM72geYTWOKumeKPSCVD8Nje5pBpZWazX0GEnQ@mail.gmail.com>
-X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
-X-AntiAbuse: Primary Hostname - bh-25.webhostbox.net
-X-AntiAbuse: Original Domain - vger.kernel.org
-X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
-X-AntiAbuse: Sender Address Domain - roeck-us.net
-X-BWhitelist: no
-X-Source-IP: 108.223.40.66
-X-Source-L: No
-X-Exim-ID: 1nbqhS-003NqP-K5
-X-Source: 
-X-Source-Args: 
-X-Source-Dir: 
-X-Source-Sender: 108-223-40-66.lightspeed.sntcca.sbcglobal.net (localhost) [108.223.40.66]:57870
-X-Source-Auth: guenter@roeck-us.net
-X-Email-Count: 15
-X-Source-Cap: cm9lY2s7YWN0aXZzdG07YmgtMjUud2ViaG9zdGJveC5uZXQ=
-X-Local-Domain: yes
+ <CAMuHMdWcg+171ggdVC4gwbQ=RUf+cYrX3o9uSpDxo-XXEJ5Qgw@mail.gmail.com>
+From:   Rob Landley <rob@landley.net>
+In-Reply-To: <CAMuHMdWcg+171ggdVC4gwbQ=RUf+cYrX3o9uSpDxo-XXEJ5Qgw@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Apr 04, 2022 at 03:07:06PM +0200, Arnd Bergmann wrote:
-> On Sun, Apr 3, 2022 at 2:43 PM Christoph Hellwig <hch@infradead.org> wrote:
-> >
-> > On Tue, Mar 08, 2022 at 09:19:16AM +0100, Arnd Bergmann wrote:
-> > > If there are no other objections, I'll just queue this up for 5.18 in
-> > > the asm-generic
-> > > tree along with the nds32 removal.
-> >
-> > So it is the last day of te merge window and arch/h8300 is till there.
-> > And checking nw the removal has also not made it to linux-next.  Looks
-> > like it is so stale that even the removal gets ignored :(
+On 4/4/22 08:22, Geert Uytterhoeven wrote:
+> Hi Arnd,
 > 
-> I was really hoping that someone else would at least comment.
-> I've queued it up now for 5.19.
+> On Mon, Apr 4, 2022 at 3:09 PM Arnd Bergmann <arnd@arndb.de> wrote:
+>> On Sun, Apr 3, 2022 at 2:43 PM Christoph Hellwig <hch@infradead.org> wrote:
+>> > On Tue, Mar 08, 2022 at 09:19:16AM +0100, Arnd Bergmann wrote:
+>> > > If there are no other objections, I'll just queue this up for 5.18 in
+>> > > the asm-generic
+>> > > tree along with the nds32 removal.
+>> >
+>> > So it is the last day of te merge window and arch/h8300 is till there.
+>> > And checking nw the removal has also not made it to linux-next.  Looks
+>> > like it is so stale that even the removal gets ignored :(
+>>
+>> I was really hoping that someone else would at least comment.
 > 
-> Should we garbage-collect some of the other nommu platforms where
-> we're here? Some of them are just as stale:
-> 
-> 1. xtensa nommu has does not compile in mainline and as far as I can
-> tell never did
->    (there was https://github.com/jcmvbkbc/linux-xtensa/tree/xtensa-5.6-esp32,
-> which
->    worked at some point, but I don't think there was enough interest
-> to get in merged)
+> Doh, I hadn't seen this patch before ;-)
+> Nevertheless, I do not have access to H8/300 hardware.
 
-Hmm, I build and test nommu_kc705_defconfig in my test system.
+The 8300 never got qemu support but I had lunch with the maintainer in Tokyo a
+few years back and he showed me how to use gdb to simulate it, which included
+booting Linux under the gdb simulation (built-in initramfs talking to serial
+console). Here's somebody else using gdb simulation for h8/300:
 
-> 
-> 2. arch/sh Hitachi/Renesas sh2 (non-j2) support appears to be in a similar state
->     to h8300, I don't think anyone would miss it
-> 
-> 8<----- This may we where we want to draw the line ----
-> 
-> 3. arch/sh j2 support was added in 2016 and doesn't see a lot of
-> changes, but I think
->     Rich still cares about it and wants to add J32 support (with MMU)
-> in the future
-> 
-> 4. m68k Dragonball, Coldfire v2 and Coldfire v3 are just as obsolete as SH2 as
->    hardware is concerned, but Greg Ungerer keeps maintaining it, along with the
->    newer Coldfire v4 (with MMU)
-> 
-> 5. K210 was added in 2020. I assume you still want to keep it.
-> 
-> 7. Arm32 has several Cortex-M based platforms that are mainly kept for
->     legacy users (in particular stm32) or educational value.
-> 
-I do build and test mps2_defconfig with qemu's mps2-an385 emulation.
+https://www4.cs.fau.de/~felser/RCXSimulator/
 
-I am not saying that those are actively used, and I don't mind dropping
-them, but they do still work.
+I'm interested in H8300 because it's a tiny architecture (under 6k lines total,
+in 93 files) and thus a good way to see what a minimal Linux port looks like. If
+somebody would like to suggest a different one for that...
 
-Guenter
+>> 3. arch/sh j2 support was added in 2016 and doesn't see a lot of
+>> changes, but I think
+>>     Rich still cares about it and wants to add J32 support (with MMU)
+>> in the future
+> 
+> Yep, when the SH4 patents will have expired.
+
+They've had a working J32 on FPGA for a while now, the problem is porting Linux
+to it. The MMU design they went with wasn't compatible with sh3/sh4. (Userspace
+is, kernel side needs some tweaking.) And they don't want to finalize the design
+until they have proper test loads running on it, and then they went off to do
+VPN hardware and such during the pandemic...
+
+> I believe that's planned for 2016 (Islamic calendar? ;-)
+
+The website's kind of archived and needs to be completely redone. (It moved
+hosts and I lost access to update it for a while, and I got sucked into other
+projects since. The mailing list server is also mothballed. Ask Jeff, I brought
+it up every weekly call for 6 months...)
+
+Jeff's team is working on making a J2 asic this year (through sky130), and
+everything else is queued up after that. They've been grabbing various I/O
+subsystems (like the GPS correlators and crypto engine and such) and doing work
+on them to make go/no-go decisions for the asic inclusion. (Lots of activity
+goes by on the Signal channel, but I can't even get cut and paste to work in
+that thing's Android app, and I don't really have the domain expertise to help
+out with that part.)
+
+> BTW, the unresponsiveness of the SH maintainers is also annoying.
+> Patches are sent to the list (sometimes multiple people are solving
+> the same recurring issue), but ignored.
+
+I mailed four or five turtle boards out to people last year, in hopes of getting
+wider testing, but everybody I sent one to seems to have vanished. (The pandemic
+chip shortage kinda derailed plans to productize that...)
+
+I tested 5.17 on J2 FPGA when it came out, and it booted with two local patches:
+
+1) Commit 790eb67374 needs to be reverted or the j2 boot just hangs before
+producing any console output. Dunno why, it seems COMPLETELY unrelated, and yet.
+(Wild guess: disturbs the alignment of some important piece of data? Rich knows
+and it's in queue.)
+
+2) This patch from Rich stops the j2 boot messages from being a thousand lines
+of IRQ warnings, but he called it a hack when he sent it to me and I have no
+clue what a "proper" fix would look like (or why that isn't)?
+
+diff --git a/drivers/irqchip/irq-jcore-aic.c b/drivers/irqchip/irq-jcore-aic.c
+index 5f47d8ee4ae3..730252cb7b08 100644
+--- a/drivers/irqchip/irq-jcore-aic.c
++++ b/drivers/irqchip/irq-jcore-aic.c
+@@ -68,6 +68,7 @@ static int __init aic_irq_of_init(struct device_node *node,
+ 	unsigned min_irq = JCORE_AIC2_MIN_HWIRQ;
+ 	unsigned dom_sz = JCORE_AIC_MAX_HWIRQ+1;
+ 	struct irq_domain *domain;
++	int rc;
+
+ 	pr_info("Initializing J-Core AIC\n");
+
+@@ -100,6 +101,11 @@ static int __init aic_irq_of_init(struct device_node *node,
+ 	jcore_aic.irq_unmask = noop;
+ 	jcore_aic.name = "AIC";
+
++	rc = irq_alloc_descs(min_irq, min_irq, dom_sz - min_irq,
++			     of_node_to_nid(node));
++	if (rc < 0)
++		pr_info("Cannot allocate irq_descs @ IRQ%d, assuming pre-allocated\n",
++			min_irq);
+ 	domain = irq_domain_add_legacy(node, dom_sz - min_irq, min_irq, min_irq,
+ 				       &jcore_aic_irqdomain_ops,
+ 				       &jcore_aic);
+
+I'm spinning too many plates to reliably reply to stuff, but I try to check in
+as often as I can, and at LEAST regression test each new release.
+
+Rob
