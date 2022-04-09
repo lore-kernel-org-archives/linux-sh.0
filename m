@@ -2,187 +2,148 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 809DFC433F5
-	for <linux-sh@archiver.kernel.org>; Thu,  7 Apr 2022 13:07:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 03CBDC4332F
+	for <linux-sh@archiver.kernel.org>; Sat,  9 Apr 2022 00:20:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1343578AbiDGNJk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 7 Apr 2022 09:09:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36572 "EHLO
+        id S230295AbiDIAWV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 8 Apr 2022 20:22:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49558 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1343563AbiDGNJi (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 7 Apr 2022 09:09:38 -0400
-Received: from mail.zeus03.de (www.zeus03.de [194.117.254.33])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0DFB119BFFE
-        for <linux-sh@vger.kernel.org>; Thu,  7 Apr 2022 06:07:34 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple; d=sang-engineering.com; h=
-        date:from:to:cc:subject:message-id:references:mime-version
-        :content-type:in-reply-to; s=k1; bh=UAAeRw/mrk7O3bhKzq8mX5tt5+Br
-        2r8MkovWLITZ4ZU=; b=PLSxKdNR/UqyuJhxxOIvxUZv4rjLLccMXKhgPZfXAl8O
-        l4qszW9Ouq81W5W/AmibcTffZ54TIjbwpgrjJWHdImFVPLpjbHkzGjRW3GQFAfHN
-        peJfYfwe0nnWHbQGie5h2Y403QcHU9UJG6m+8cUcLUE+ZrKF+SQrK5/mhQubUCM=
-Received: (qmail 3188138 invoked from network); 7 Apr 2022 15:07:32 +0200
-Received: by mail.zeus03.de with ESMTPSA (TLS_AES_256_GCM_SHA384 encrypted, authenticated); 7 Apr 2022 15:07:32 +0200
-X-UD-Smtp-Session: l3s3148p1@h3g2KRDcAtAgAQnoAEUrAF1rv4rSPqUC
-Date:   Thu, 7 Apr 2022 15:07:32 +0200
-From:   Wolfram Sang <wsa+renesas@sang-engineering.com>
-To:     Ulf Hansson <ulf.hansson@linaro.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-Cc:     linux-mmc@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
-        linux-sh@vger.kernel.org
-Subject: Re: [PATCH] mmc: sh_mmcif: move platform_data header to proper
- location
-Message-ID: <Yk7iFM39j+qda5Yz@shikoro>
-Mail-Followup-To: Wolfram Sang <wsa+renesas@sang-engineering.com>,
-        Ulf Hansson <ulf.hansson@linaro.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-mmc@vger.kernel.org,
-        linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
-References: <20220407063114.1433-1-wsa+renesas@sang-engineering.com>
- <CAPDyKFp6_3_pQTtNpOA56QM6s2tvUKa_gZn=JCYY0kKTAoe49w@mail.gmail.com>
+        with ESMTP id S236924AbiDIAWT (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 8 Apr 2022 20:22:19 -0400
+Received: from mail-oi1-x22e.google.com (mail-oi1-x22e.google.com [IPv6:2607:f8b0:4864:20::22e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 78EE2BF967
+        for <linux-sh@vger.kernel.org>; Fri,  8 Apr 2022 17:20:14 -0700 (PDT)
+Received: by mail-oi1-x22e.google.com with SMTP id w127so10417628oig.10
+        for <linux-sh@vger.kernel.org>; Fri, 08 Apr 2022 17:20:14 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20210112.gappssmtp.com; s=20210112;
+        h=message-id:date:mime-version:user-agent:subject:content-language:to
+         :cc:references:from:in-reply-to:content-transfer-encoding;
+        bh=kku2i+uKWNnFd73jChiOeIEKCfjIgc7cEViNkZfQ8l0=;
+        b=MvmX4LKI4DyQDgAaqj6D5BFwEshu/LnG+BxDPDDz7Qeqpx5yulnQb0cgGdCjkR9q36
+         VpaPcgCUj3yaOiquaSfgEX4IdXJwB8lNNAtJixiKalOPG8IS2v7x1kbXjIxsFVr+IpDH
+         2Mk4wxROIpeQzkoWtnHQzZd/qwCsaaE2lOuS+0lsC0gpWLI8Tv/e6/QWMrf74Q0KZ1jC
+         3QlmXnTkrUpepdAe0RQZHwbtqfSsFVN6YNfuTxXtvuiHZ61SuiyOHGYBcG4eoXYJXOCQ
+         sATmsP+kQl2mRatJE+nSXCnEagEoc6G6ci0p1uOhU3T5aOwSiYys6MaO7qWhJNngpGSk
+         PtHQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
+         :content-language:to:cc:references:from:in-reply-to
+         :content-transfer-encoding;
+        bh=kku2i+uKWNnFd73jChiOeIEKCfjIgc7cEViNkZfQ8l0=;
+        b=CxnnSb+ZmutoDq/0itejWwWHV+WR/SENSrOZryAeQ9aif0C2kCjGPOdAFztIv/OsYW
+         Wi7DBb8j5vdcZMiVGZsT7/OfBJWnoaqodPNuaeF0DP9JknTEKlulnmCWWPWAsoPEaxXm
+         UExx4MrF7ma2L4vfh1C/j4fvLmDbjXhpvHRhTbwwW5aNQbttTaJFsuVxuup+jNzSxffS
+         tHaso1K2OCMnVeSlN2Xk+wzRIrkNNCIXKk7Q+pt0JvM4uW7rpqbkxDrkyS/TelOnK0/A
+         fx3HzX85ASpqYewrwGXWSTcV1oWlMwlnWtNIW0KYBLgTxMuVOkFewPetFGGIYU5v0W6G
+         z7pg==
+X-Gm-Message-State: AOAM531wXPdR53Du+ik/E7WY6HhB7ATS97CHvt7cCeciHAJIMnvNDVfm
+        Qlt/637keuliA1CDA2nrmUO0xw==
+X-Google-Smtp-Source: ABdhPJzZe++rWaqfq9aV2dHyOIwxVl53YuTt+2x8aiaE6fJ5qXUhiElHKi0cEmeQsIJ8z1Fpr0L9uA==
+X-Received: by 2002:a05:6808:616:b0:2ef:3773:44d5 with SMTP id y22-20020a056808061600b002ef377344d5mr989393oih.156.1649463613856;
+        Fri, 08 Apr 2022 17:20:13 -0700 (PDT)
+Received: from [192.168.86.187] ([136.62.4.88])
+        by smtp.gmail.com with ESMTPSA id b25-20020a0568301df900b005cf87029ee8sm9164623otj.67.2022.04.08.17.20.12
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 08 Apr 2022 17:20:12 -0700 (PDT)
+Message-ID: <8f9be869-7244-d92a-4683-f9c53da97755@landley.net>
+Date:   Fri, 8 Apr 2022 19:24:17 -0500
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-        protocol="application/pgp-signature"; boundary="oZJj7ygSEM7YQ2pf"
-Content-Disposition: inline
-In-Reply-To: <CAPDyKFp6_3_pQTtNpOA56QM6s2tvUKa_gZn=JCYY0kKTAoe49w@mail.gmail.com>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.6.2
+Subject: Re: [RFC PULL] remove arch/h8300
+Content-Language: en-US
+To:     Greg Ungerer <gerg@linux-m68k.org>, Daniel Palmer <daniel@0x0f.com>
+Cc:     Arnd Bergmann <arnd@arndb.de>,
+        Christoph Hellwig <hch@infradead.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-arch <linux-arch@vger.kernel.org>,
+        "moderated list:H8/300 ARCHITECTURE" 
+        <uclinux-h8-devel@lists.sourceforge.jp>,
+        "open list:TENSILICA XTENSA PORT (xtensa)" 
+        <linux-xtensa@linux-xtensa.org>, Max Filippov <jcmvbkbc@gmail.com>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        Damien Le Moal <damien.lemoal@wdc.com>,
+        linux-riscv <linux-riscv@lists.infradead.org>
+References: <Yib9F5SqKda/nH9c@infradead.org>
+ <CAK8P3a1dUVsZzhAe81usLSkvH29zHgiV9fhEkWdq7_W+nQBWbg@mail.gmail.com>
+ <YkmWh2tss8nXKqc5@infradead.org>
+ <CAK8P3a0QdFOJbM72geYTWOKumeKPSCVD8Nje5pBpZWazX0GEnQ@mail.gmail.com>
+ <6a38e8b8-7ccc-afba-6826-cb6e4f92af83@linux-m68k.org>
+ <CAFr9PXkk=8HOxPwVvFRzqHZteRREWxSOOcdjrcOPe0d=9AW2yQ@mail.gmail.com>
+ <5b7687d4-8ba5-ad79-8a74-33fc2496a3db@linux-m68k.org>
+From:   Rob Landley <rob@landley.net>
+In-Reply-To: <5b7687d4-8ba5-ad79-8a74-33fc2496a3db@linux-m68k.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+On 4/5/22 08:07, Greg Ungerer wrote:
+> Hi Daniel,
+> 
+> On 5/4/22 13:23, Daniel Palmer wrote:
+>> On Mon, 4 Apr 2022 at 22:42, Greg Ungerer <gerg@linux-m68k.org> wrote:
+>>> But we could consider the Dragonball support for removal. I keep it compiling,
+>>> but I don't use it and can't test that it actually works. Not sure that it
+>>> has been used for a very long time now. And I didn't even realize but its
+>>> serial driver (68328serial.c) was removed in 2015. No one seems too have
+>>> noticed and complained.
+>> 
+>> I noticed this and I am working on fixing it up for a new Dragonball
+>> homebrew machine.
+>> I'm trying to add a 68000 machine to QEMU to make the development
+>> easier because I'm currently waiting an hour or more for a kernel to
+>> load over serial.
+>> It might be a few months.
 
---oZJj7ygSEM7YQ2pf
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I've been booting Linux on qemu-system-m68k -M q800 for a couple years now? (The
+CROSS=m68k target of mkroot in toybox?)
 
-On Thu, Apr 07, 2022 at 11:41:45AM +0200, Ulf Hansson wrote:
-> On Thu, 7 Apr 2022 at 08:31, Wolfram Sang
-> <wsa+renesas@sang-engineering.com> wrote:
-> >
-> > We have a dedicated directory for platform_data meanwhile, don't spoil
-> > the MMC directory with it.
-> >
-> > Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
->=20
-> I can pick this up through my mmc tree, but I need an ack from the
-> sh-maintainers to do it.
+# cat /proc/cpuinfo
+CPU:		68040
+MMU:		68040
+FPU:		68040
+Clocking:	1261.9MHz
+BogoMips:	841.31
+Calibration:	4206592 loops
 
-Right, I forgot to CC them :( Sato-san, Rich are you OK with the below
-change?
+It certainly THINKS it's got m68000...
 
-> > ---
-> >
-> > I don't have the HW to test this but the buildbots are happy with this
-> > change. I checked that they actually tested the SH builds. To make the
-> > patch more readable, I used the -M (rename) feature of git-format-patch.
-> >
-> >  arch/sh/boards/board-sh7757lcr.c                | 2 +-
-> >  arch/sh/boards/mach-ecovec24/setup.c            | 2 +-
-> >  arch/sh/boot/romimage/mmcif-sh7724.c            | 2 +-
-> >  drivers/mmc/host/sh_mmcif.c                     | 2 +-
-> >  include/linux/{mmc =3D> platform_data}/sh_mmcif.h | 2 --
-> >  5 files changed, 4 insertions(+), 6 deletions(-)
-> >  rename include/linux/{mmc =3D> platform_data}/sh_mmcif.h (99%)
-> >
-> > diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh=
-7757lcr.c
-> > index c32b4c6229d3..f39c8196efdf 100644
-> > --- a/arch/sh/boards/board-sh7757lcr.c
-> > +++ b/arch/sh/boards/board-sh7757lcr.c
-> > @@ -16,7 +16,7 @@
-> >  #include <linux/io.h>
-> >  #include <linux/mfd/tmio.h>
-> >  #include <linux/mmc/host.h>
-> > -#include <linux/mmc/sh_mmcif.h>
-> > +#include <linux/platform_data/sh_mmcif.h>
-> >  #include <linux/sh_eth.h>
-> >  #include <linux/sh_intc.h>
-> >  #include <linux/usb/renesas_usbhs.h>
-> > diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach=
--ecovec24/setup.c
-> > index 4c9522dd351f..674da7ebd8b7 100644
-> > --- a/arch/sh/boards/mach-ecovec24/setup.c
-> > +++ b/arch/sh/boards/mach-ecovec24/setup.c
-> > @@ -19,7 +19,7 @@
-> >  #include <linux/memblock.h>
-> >  #include <linux/mfd/tmio.h>
-> >  #include <linux/mmc/host.h>
-> > -#include <linux/mmc/sh_mmcif.h>
-> > +#include <linux/platform_data/sh_mmcif.h>
-> >  #include <linux/mtd/physmap.h>
-> >  #include <linux/gpio.h>
-> >  #include <linux/gpio/machine.h>
-> > diff --git a/arch/sh/boot/romimage/mmcif-sh7724.c b/arch/sh/boot/romima=
-ge/mmcif-sh7724.c
-> > index 6595b6b45bf1..d30123d859e0 100644
-> > --- a/arch/sh/boot/romimage/mmcif-sh7724.c
-> > +++ b/arch/sh/boot/romimage/mmcif-sh7724.c
-> > @@ -8,7 +8,7 @@
-> >   * for more details.
-> >   */
-> >
-> > -#include <linux/mmc/sh_mmcif.h>
-> > +#include <linux/platform_data/sh_mmcif.h>
-> >  #include <mach/romimage.h>
-> >
-> >  #define MMCIF_BASE      (void __iomem *)0xa4ca0000
-> > diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-> > index 5f9ebf045b1c..dc17bf5bc3b4 100644
-> > --- a/drivers/mmc/host/sh_mmcif.c
-> > +++ b/drivers/mmc/host/sh_mmcif.c
-> > @@ -43,13 +43,13 @@
-> >  #include <linux/mmc/host.h>
-> >  #include <linux/mmc/mmc.h>
-> >  #include <linux/mmc/sdio.h>
-> > -#include <linux/mmc/sh_mmcif.h>
-> >  #include <linux/mmc/slot-gpio.h>
-> >  #include <linux/mod_devicetable.h>
-> >  #include <linux/mutex.h>
-> >  #include <linux/of_device.h>
-> >  #include <linux/pagemap.h>
-> >  #include <linux/platform_device.h>
-> > +#include <linux/platform_data/sh_mmcif.h>
-> >  #include <linux/pm_qos.h>
-> >  #include <linux/pm_runtime.h>
-> >  #include <linux/sh_dma.h>
-> > diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/platform_data=
-/sh_mmcif.h
-> > similarity index 99%
-> > rename from include/linux/mmc/sh_mmcif.h
-> > rename to include/linux/platform_data/sh_mmcif.h
-> > index e25533b95d9f..6eb914f958f9 100644
-> > --- a/include/linux/mmc/sh_mmcif.h
-> > +++ b/include/linux/platform_data/sh_mmcif.h
-> > @@ -1,7 +1,5 @@
-> >  /* SPDX-License-Identifier: GPL-2.0-only */
-> >  /*
-> > - * include/linux/mmc/sh_mmcif.h
-> > - *
-> >   * platform data for eMMC driver
-> >   *
-> >   * Copyright (C) 2010 Renesas Solutions Corp.
-> > --
-> > 2.30.2
-> >
+$ qemu-system-m68k -cpu ?
+cfv4e
+m5206
+m5208
+m68000
+m68010
+m68020
+m68030
+m68040
+m68060
+any
 
---oZJj7ygSEM7YQ2pf
-Content-Type: application/pgp-signature; name="signature.asc"
+(I'd love to get an m68k nommu system working but never sat down and worked out
+a kernel .config qemu agreed to run, plus compiler and libc. Musl added m68k
+support but I dunno if that includes coldfire?)
 
------BEGIN PGP SIGNATURE-----
+>> It looked like 68328serial.c was removed because someone tried to
+>> clean it up and it was decided that no one was using it and it was
+>> best to delete it.
+>> My plan was to at some point send a series to fix up the issues with
+>> the Dragonball support, revert removing the serial driver and adding
+>> the patch that cleaned it up.
+> 
+> Nice. I will leave all the 68000/68328 code alone for now then.
 
-iQIzBAABCgAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAmJO4hQACgkQFA3kzBSg
-KbYFrA//f7l5xWdWnvry9xQFLJwJaCzNVgfa6USh6ikDMst92idpDXKEOLWYLkJB
-cK7lHXyQ/drlDSRyg6f0aht2MwdcWVdM9tNsQjHFZnydPmxi5ntdynVUlfZwjnWr
-SVXan9oD01mCH8MSML/lcl94OrwWfkoj7OUe47t5jISPZVhdhEahlLdvlNXTfclu
-npAEWvtrSp93qewDm0jzDZccRx2Hj8D6jACd2PD3CnL/7hfATJE7oD7QxJR2qkfe
-gN4FzkTFpNqzWYTz5VXoOGaH1JQDRUhwCsaBlHjwYBlxAknxA85MzaHBvSapmeuu
-3pOFOlRTAaFyq5DFSit3Zcy8ydKsAc9PXa2beDkOUNAUqN3F5QYGgz9PNsLq+J9D
-Lj9wzMW+1vpGh/rHuqsB9Blf/wQ5qoKsY/BDZyPSDAgVPNR1F9gy3A1zdCcC/L+X
-fpTIwRpx0PKRCzP7jA5R5skdVGoNQfb8i0gruW3DhPxRgB4klWGEhMtbUpUGBwTq
-RhSoA/ndr/ZeWK3uDg6n8jk0t1xoz+OJib4Y+TWZ7b5Nidocaq8Hgo/okR/MuJ3G
-Lyxc8zyMyemlfbkLGv3ntLJNhqubpVj+b6SVxyn5XO1rdsd/rjAn9zzvxxlLLOwk
-3yC/LrXX9G5AvD6AvAdv7Rn02BvAUo+GYlDLC9AuYETxrR7MgR4=
-=tizf
------END PGP SIGNATURE-----
+The q800 config uses CONFIG_SERIAL_PMACZILOG. Seems to work fine?
 
---oZJj7ygSEM7YQ2pf--
+> Regards
+> Greg
+
+Rob
