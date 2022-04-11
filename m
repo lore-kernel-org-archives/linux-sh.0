@@ -2,31 +2,31 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C552EC4332F
-	for <linux-sh@archiver.kernel.org>; Mon, 11 Apr 2022 23:41:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E5BAC433F5
+	for <linux-sh@archiver.kernel.org>; Mon, 11 Apr 2022 23:41:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231912AbiDKXm1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 11 Apr 2022 19:42:27 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52362 "EHLO
+        id S234364AbiDKXno (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 11 Apr 2022 19:43:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52284 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237345AbiDKXlt (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Apr 2022 19:41:49 -0400
+        with ESMTP id S236437AbiDKXmI (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Apr 2022 19:42:08 -0400
 Received: from bhuna.collabora.co.uk (bhuna.collabora.co.uk [46.235.227.227])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9AC741FA57;
-        Mon, 11 Apr 2022 16:39:33 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B6AEA220F8;
+        Mon, 11 Apr 2022 16:39:41 -0700 (PDT)
 Received: from [127.0.0.1] (localhost [127.0.0.1])
         (Authenticated sender: dmitry.osipenko)
-        with ESMTPSA id 6295A1F43D17
+        with ESMTPSA id 909861F43D1D
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=collabora.com;
-        s=mail; t=1649720372;
-        bh=SXdQ9+3ZNp9SJwX0lrMJ1vhpvKSj1tt3zF1mvSxRlFU=;
+        s=mail; t=1649720380;
+        bh=AnjrhaHENsX+9TktlKasoiUkGDZC8u25pvM/oDIQuBM=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=n6hRSKlZnLN3htvFR6EvjIJdAujT9TSW8cxEcD0RZ7sF0YHbjnd4oyQRxsOhYkMzu
-         u3wNpzu3o4CHDNt/+CwxpRUeqL1AwjnGxYgajWyiIP02taeMmrbmomyq7LxxfhZzFc
-         zXyp9HcMoxL9Rzw0/ARRO1lwxKJFQCad9CnHfzRA1IK3JOWz6H+rljb09BRQ9Difx9
-         j/2K4nMonxy1ck0Gw21YsKpKK4nOd1Ue2Ws03uqm8NNnMet0oXM7v3ei6drEo8Q5cg
-         3V7NLaq0v+/Sp+mksC2CwvedKsXZSKE83wJoq67yAYMCN8Wbkm9OdSUwtfkkCfHNAK
-         v8/AR0uPzoeBA==
+        b=mCs0xXKXBGwKhSNizz+CrsN6ijBgTwnfXqn6tYSvyJZmHSD5olRTei4LE/G7coxYf
+         CdB+dreJDhlfyN9XCDD4SviS0SmWim/cg7mtN04vs2oHnCtGBVPT6ckS3CZtoWmbEA
+         I/gc8aKseKuzeqxAjIsqUT+GOOhAiTI3UhnDIbn6WTaQ5HgsqbEwXHY1aJyLFAveRz
+         nKPagL8xhkJk3dLCpGc+JnYLWLB19jnsaWShwat50U3lRK/VSm8lo8REWhKYt0uv5+
+         WvePNPqDKrlZanfab8M+cTo/qPdH4ci3OwDczmWuAhAKwJRpU2wR8ZAyEQyeG2SlI6
+         aILbZj82gIeeQ==
 From:   Dmitry Osipenko <dmitry.osipenko@collabora.com>
 To:     Thierry Reding <thierry.reding@gmail.com>,
         Jonathan Hunter <jonathanh@nvidia.com>,
@@ -78,9 +78,9 @@ Cc:     linux-kernel@vger.kernel.org, linux-csky@vger.kernel.org,
         linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
         xen-devel@lists.xenproject.org, linux-acpi@vger.kernel.org,
         linux-pm@vger.kernel.org, linux-tegra@vger.kernel.org
-Subject: [PATCH v7 09/20] parisc: Use do_kernel_power_off()
-Date:   Tue, 12 Apr 2022 02:38:21 +0300
-Message-Id: <20220411233832.391817-10-dmitry.osipenko@collabora.com>
+Subject: [PATCH v7 11/20] powerpc: Use do_kernel_power_off()
+Date:   Tue, 12 Apr 2022 02:38:23 +0300
+Message-Id: <20220411233832.391817-12-dmitry.osipenko@collabora.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20220411233832.391817-1-dmitry.osipenko@collabora.com>
 References: <20220411233832.391817-1-dmitry.osipenko@collabora.com>
@@ -95,34 +95,42 @@ that invokes chained power-off handlers. It also invokes legacy
 pm_power_off() for now, which will be removed once all drivers will
 be converted to the new power-off API.
 
-Acked-by: Helge Deller <deller@gmx.de> # parisc
+Acked-by: Michael Ellerman <mpe@ellerman.id.au>
 Signed-off-by: Dmitry Osipenko <dmitry.osipenko@collabora.com>
 ---
- arch/parisc/kernel/process.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/powerpc/kernel/setup-common.c | 4 +---
+ arch/powerpc/xmon/xmon.c           | 3 +--
+ 2 files changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/arch/parisc/kernel/process.c b/arch/parisc/kernel/process.c
-index 28b6a2a5574c..d145184696ea 100644
---- a/arch/parisc/kernel/process.c
-+++ b/arch/parisc/kernel/process.c
-@@ -26,6 +26,7 @@
- #include <linux/module.h>
- #include <linux/personality.h>
- #include <linux/ptrace.h>
-+#include <linux/reboot.h>
- #include <linux/sched.h>
- #include <linux/sched/debug.h>
- #include <linux/sched/task.h>
-@@ -116,8 +117,7 @@ void machine_power_off(void)
- 	pdc_chassis_send_status(PDC_CHASSIS_DIRECT_SHUTDOWN);
- 
- 	/* ipmi_poweroff may have been installed. */
+diff --git a/arch/powerpc/kernel/setup-common.c b/arch/powerpc/kernel/setup-common.c
+index 518ae5aa9410..1b586577e75b 100644
+--- a/arch/powerpc/kernel/setup-common.c
++++ b/arch/powerpc/kernel/setup-common.c
+@@ -161,9 +161,7 @@ void machine_restart(char *cmd)
+ void machine_power_off(void)
+ {
+ 	machine_shutdown();
 -	if (pm_power_off)
 -		pm_power_off();
+-
 +	do_kernel_power_off();
- 		
- 	/* It seems we have no way to power the system off via
- 	 * software. The user has to press the button himself. */
+ 	smp_send_stop();
+ 	machine_hang();
+ }
+diff --git a/arch/powerpc/xmon/xmon.c b/arch/powerpc/xmon/xmon.c
+index fd72753e8ad5..c916bf250796 100644
+--- a/arch/powerpc/xmon/xmon.c
++++ b/arch/powerpc/xmon/xmon.c
+@@ -1243,8 +1243,7 @@ static void bootcmds(void)
+ 	} else if (cmd == 'h') {
+ 		ppc_md.halt();
+ 	} else if (cmd == 'p') {
+-		if (pm_power_off)
+-			pm_power_off();
++		do_kernel_power_off();
+ 	}
+ }
+ 
 -- 
 2.35.1
 
