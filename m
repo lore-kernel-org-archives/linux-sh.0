@@ -2,143 +2,141 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 46333C433F5
-	for <linux-sh@archiver.kernel.org>; Tue, 12 Apr 2022 09:49:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6220CC433F5
+	for <linux-sh@archiver.kernel.org>; Tue, 12 Apr 2022 10:34:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234578AbiDLJvQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 12 Apr 2022 05:51:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42860 "EHLO
+        id S234532AbiDLKhC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 12 Apr 2022 06:37:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53714 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1355164AbiDLH1M (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 12 Apr 2022 03:27:12 -0400
-Received: from mail-oi1-f170.google.com (mail-oi1-f170.google.com [209.85.167.170])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E9A0A48310;
-        Tue, 12 Apr 2022 00:07:07 -0700 (PDT)
-Received: by mail-oi1-f170.google.com with SMTP id q129so18154845oif.4;
-        Tue, 12 Apr 2022 00:07:07 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=G5mglcYZA42FcZWexfT//Na3N8U+QShWNDx9HhSMVxo=;
-        b=kKJ3nUEWMsvrLSEjjffpnmiZNTAKv4on5YariZdK09oUTFOOJbZgu5tA8vQBAtZ18r
-         E6+Qe32az2p2EwxkK9oA6ePWtoGjE9TH4px3ydOd0WeV+0op0Bd5IGPncnasrC2wKODI
-         XAVk01tIA0D4Nf6u79H0lCf8YKJLt4ka3SqsukAN5aBC6LlNhYZYF8EQNWa2+HxY1EV8
-         cyQmoiJUPBvSfAp1f93p+HrJEHl3CPPt/YpcmaEwE8NROh4cxi7nTZYnY2NdvgO4eQBW
-         EwBgsDhtUy0/k+Oqkn6ck6Nes7LsIXLcms7SD81Cl41lekQ+RqseMzrcZRKQi3GL7BLY
-         UBNA==
-X-Gm-Message-State: AOAM532Gum91u170rACXcmlIBzrzy9KmXNpCRz3aU0vGcRwzZEMgiOSG
-        z2ER9oFvaFzXpGSJ43yLVTvkqZpwxi9zAxu9
-X-Google-Smtp-Source: ABdhPJyY2799smUiwIFdgvJoeCM6WpcXcNi2SOOE90czIXyqPS95bARZpvHXARvzQOeftsWIVQC/BQ==
-X-Received: by 2002:a05:6808:bc2:b0:2ec:e1c2:bd3f with SMTP id o2-20020a0568080bc200b002ece1c2bd3fmr1212821oik.161.1649747226236;
-        Tue, 12 Apr 2022 00:07:06 -0700 (PDT)
-Received: from mail-ot1-f50.google.com (mail-ot1-f50.google.com. [209.85.210.50])
-        by smtp.gmail.com with ESMTPSA id p16-20020a05680811d000b002d72ec3a921sm12272220oiv.21.2022.04.12.00.07.05
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 12 Apr 2022 00:07:05 -0700 (PDT)
-Received: by mail-ot1-f50.google.com with SMTP id a17-20020a9d3e11000000b005cb483c500dso12828738otd.6;
-        Tue, 12 Apr 2022 00:07:05 -0700 (PDT)
-X-Received: by 2002:a25:c049:0:b0:634:6751:e8d2 with SMTP id
- c70-20020a25c049000000b006346751e8d2mr25945732ybf.6.1649747214062; Tue, 12
- Apr 2022 00:06:54 -0700 (PDT)
-MIME-Version: 1.0
-References: <20220411233832.391817-1-dmitry.osipenko@collabora.com>
-In-Reply-To: <20220411233832.391817-1-dmitry.osipenko@collabora.com>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Tue, 12 Apr 2022 09:06:42 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdVfOpGvF5FR6vFD-3a1h-7Kc_yAKQzWV71PD6mDy6BmZw@mail.gmail.com>
-Message-ID: <CAMuHMdVfOpGvF5FR6vFD-3a1h-7Kc_yAKQzWV71PD6mDy6BmZw@mail.gmail.com>
-Subject: Re: [PATCH v7 00/20] Introduce power-off+restart call chain API
-To:     Dmitry Osipenko <dmitry.osipenko@collabora.com>
-Cc:     Thierry Reding <thierry.reding@gmail.com>,
-        Jonathan Hunter <jonathanh@nvidia.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Joshua Thompson <funaho@jurai.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Sebastian Reichel <sre@kernel.org>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Philipp Zabel <p.zabel@pengutronix.de>,
-        Greentime Hu <green.hu@gmail.com>,
-        Vincent Chen <deanbo422@gmail.com>,
-        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
+        with ESMTP id S1381418AbiDLK3T (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 12 Apr 2022 06:29:19 -0400
+Received: from mail.zeus03.de (www.zeus03.de [194.117.254.33])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 78C3F580CA
+        for <linux-sh@vger.kernel.org>; Tue, 12 Apr 2022 02:31:32 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple; d=sang-engineering.com; h=
+        from:to:cc:subject:date:message-id:mime-version
+        :content-transfer-encoding; s=k1; bh=pXpt/O0wt40ELy2VjiVcNMr4U+X
+        Bfk5SDzhV9fM2Egk=; b=JonB2GfC1bYb3hU/Pm+B/VVayEli2jf5gVR+JuHgVI9
+        0QU1Z1rg+w/ylhmfkssV9mzymBRYToStQ9jqBqjrgUPM2KkGAqoTwbnK1plACiO9
+        nVMgRySQ10W7FikM2QDbyLs5FNnesUrNhNVnvAK8KOyXHkF1EnZXwkwM0UAObKtc
+        =
+Received: (qmail 981999 invoked from network); 12 Apr 2022 11:31:30 +0200
+Received: by mail.zeus03.de with ESMTPSA (TLS_AES_256_GCM_SHA384 encrypted, authenticated); 12 Apr 2022 11:31:30 +0200
+X-UD-Smtp-Session: l3s3148p1@jLPGuXHcAucgAQnoAGZ4AFi7qjeMIP6q
+From:   Wolfram Sang <wsa+renesas@sang-engineering.com>
+To:     linux-mmc@vger.kernel.org
+Cc:     linux-renesas-soc@vger.kernel.org,
+        Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        "the arch/x86 maintainers" <x86@kernel.org>,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
-        Juergen Gross <jgross@suse.com>,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        "Rafael J. Wysocki" <rafael@kernel.org>,
-        Len Brown <lenb@kernel.org>,
-        Santosh Shilimkar <ssantosh@kernel.org>,
-        Krzysztof Kozlowski <krzk@kernel.org>,
-        Liam Girdwood <lgirdwood@gmail.com>,
-        Mark Brown <broonie@kernel.org>, Pavel Machek <pavel@ucw.cz>,
-        Lee Jones <lee.jones@linaro.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Daniel Lezcano <daniel.lezcano@linaro.org>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Ulf Hansson <ulf.hansson@linaro.org>,
-        =?UTF-8?B?TWljaGHFgiBNaXJvc8WCYXc=?= <mirq-linux@rere.qmqm.pl>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-csky@vger.kernel.org,
-        "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>,
-        linux-m68k <linux-m68k@lists.linux-m68k.org>,
-        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
-        Parisc List <linux-parisc@vger.kernel.org>,
-        linux-riscv <linux-riscv@lists.infradead.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        xen-devel@lists.xenproject.org,
-        ACPI Devel Maling List <linux-acpi@vger.kernel.org>,
-        Linux PM list <linux-pm@vger.kernel.org>,
-        linux-tegra <linux-tegra@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+        Ulf Hansson <ulf.hansson@linaro.org>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH v2] mmc: sh_mmcif: move platform_data header to proper location
+Date:   Tue, 12 Apr 2022 11:31:02 +0200
+Message-Id: <20220412093102.3428-1-wsa+renesas@sang-engineering.com>
+X-Mailer: git-send-email 2.30.2
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Dmitry,
+We have a dedicated directory for platform_data meanwhile, don't spoil
+the MMC directory with it.
 
-On Tue, Apr 12, 2022 at 1:38 AM Dmitry Osipenko
-<dmitry.osipenko@collabora.com> wrote:
-> Problem
-> -------
->
-> SoC devices require power-off call chaining functionality from kernel.
-> We have a widely used restart chaining provided by restart notifier API,
-> but nothing for power-off.
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
 
-> Changelog:
->
-> v7: - Rebased on a recent linux-next. Dropped the recently removed
->       NDS32 architecture. Only SH and x86 arches left un-acked.
->
->     - Added acks from Thomas Bogendoerfer and Krzysztof Kozlowski
->       to the MIPS and memory/emif patches respectively.
+Change since v1: fixed sorting of includes in the MMCIF driver
+		 (Thanks Geert!)
 
-Looks like you forgot to add the actual acks?
+I don't have the HW to test this but the buildbots are happy with this
+change. I checked that they actually tested the SH builds. To make the
+patch more readable, I used the -M (rename) feature of git-format-patch.
 
-Gr{oetje,eeting}s,
+ arch/sh/boards/board-sh7757lcr.c                | 2 +-
+ arch/sh/boards/mach-ecovec24/setup.c            | 2 +-
+ arch/sh/boot/romimage/mmcif-sh7724.c            | 2 +-
+ drivers/mmc/host/sh_mmcif.c                     | 2 +-
+ include/linux/{mmc => platform_data}/sh_mmcif.h | 2 --
+ 5 files changed, 4 insertions(+), 6 deletions(-)
+ rename include/linux/{mmc => platform_data}/sh_mmcif.h (99%)
 
-                        Geert
+diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
+index c32b4c6229d3..f39c8196efdf 100644
+--- a/arch/sh/boards/board-sh7757lcr.c
++++ b/arch/sh/boards/board-sh7757lcr.c
+@@ -16,7 +16,7 @@
+ #include <linux/io.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+-#include <linux/mmc/sh_mmcif.h>
++#include <linux/platform_data/sh_mmcif.h>
+ #include <linux/sh_eth.h>
+ #include <linux/sh_intc.h>
+ #include <linux/usb/renesas_usbhs.h>
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 4c9522dd351f..674da7ebd8b7 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -19,7 +19,7 @@
+ #include <linux/memblock.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
+-#include <linux/mmc/sh_mmcif.h>
++#include <linux/platform_data/sh_mmcif.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio/machine.h>
+diff --git a/arch/sh/boot/romimage/mmcif-sh7724.c b/arch/sh/boot/romimage/mmcif-sh7724.c
+index 6595b6b45bf1..d30123d859e0 100644
+--- a/arch/sh/boot/romimage/mmcif-sh7724.c
++++ b/arch/sh/boot/romimage/mmcif-sh7724.c
+@@ -8,7 +8,7 @@
+  * for more details.
+  */
+ 
+-#include <linux/mmc/sh_mmcif.h>
++#include <linux/platform_data/sh_mmcif.h>
+ #include <mach/romimage.h>
+ 
+ #define MMCIF_BASE      (void __iomem *)0xa4ca0000
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 5f9ebf045b1c..0fd4c9d644dd 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -43,12 +43,12 @@
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/mmc.h>
+ #include <linux/mmc/sdio.h>
+-#include <linux/mmc/sh_mmcif.h>
+ #include <linux/mmc/slot-gpio.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/mutex.h>
+ #include <linux/of_device.h>
+ #include <linux/pagemap.h>
++#include <linux/platform_data/sh_mmcif.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_qos.h>
+ #include <linux/pm_runtime.h>
+diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/platform_data/sh_mmcif.h
+similarity index 99%
+rename from include/linux/mmc/sh_mmcif.h
+rename to include/linux/platform_data/sh_mmcif.h
+index e25533b95d9f..6eb914f958f9 100644
+--- a/include/linux/mmc/sh_mmcif.h
++++ b/include/linux/platform_data/sh_mmcif.h
+@@ -1,7 +1,5 @@
+ /* SPDX-License-Identifier: GPL-2.0-only */
+ /*
+- * include/linux/mmc/sh_mmcif.h
+- *
+  * platform data for eMMC driver
+  *
+  * Copyright (C) 2010 Renesas Solutions Corp.
+-- 
+2.30.2
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
