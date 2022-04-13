@@ -2,40 +2,47 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 10CF8C4332F
-	for <linux-sh@archiver.kernel.org>; Tue, 12 Apr 2022 11:08:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9DA03C43219
+	for <linux-sh@archiver.kernel.org>; Wed, 13 Apr 2022 18:48:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344806AbiDLLKe (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 12 Apr 2022 07:10:34 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36508 "EHLO
+        id S237822AbiDMSuz (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 13 Apr 2022 14:50:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35890 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1354088AbiDLLFC (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 12 Apr 2022 07:05:02 -0400
-Received: from bhuna.collabora.co.uk (bhuna.collabora.co.uk [46.235.227.227])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F37A73C48E;
-        Tue, 12 Apr 2022 02:56:53 -0700 (PDT)
-Received: from [127.0.0.1] (localhost [127.0.0.1])
-        (Authenticated sender: dmitry.osipenko)
-        with ESMTPSA id B9CA61F444DB
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=collabora.com;
-        s=mail; t=1649757412;
-        bh=ta29d4wnkNjIs8vxiW+spXtMVlKSVX42O2OgeMWUE4M=;
-        h=Date:Subject:From:To:Cc:References:In-Reply-To:From;
-        b=kvhz7L+WR7F9HsP7+DAE1iJ09kPWZRmi5f2q6+wTFMWAjrPkNWY3Jzpgqp30kF162
-         9ej87DkBRElok2belFURZJE+6KAffcONlx+uSragUy+EKLYmrLe+OmnInaVU38Utnj
-         oGDfaSbiVVHQL6Yf2olT656ydNf9P6W4M76WukTbNC94PbuWprXpn8hcs1neMp19bi
-         iNzDzyCfCh2mIdCCNxP2XuZopGSbEx58bF1q1D3kWpmOuMeUlqToTVLTBXzlWDyGYS
-         beMdM6XO+lz1xQI7S8U0f+hcwzSbrlRYbQ5mvoaXJTg3bPRXH5hIYNcxpGgH7YbXoc
-         9fEZqqnyfRE+w==
-Message-ID: <2b603d3d-c6c1-13d7-8f77-042317a41d00@collabora.com>
-Date:   Tue, 12 Apr 2022 12:56:46 +0300
+        with ESMTP id S231590AbiDMSuy (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 13 Apr 2022 14:50:54 -0400
+Received: from mail-yw1-f181.google.com (mail-yw1-f181.google.com [209.85.128.181])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B50A75DA0F;
+        Wed, 13 Apr 2022 11:48:32 -0700 (PDT)
+Received: by mail-yw1-f181.google.com with SMTP id 00721157ae682-2ec04a2ebadso32319057b3.12;
+        Wed, 13 Apr 2022 11:48:32 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=J1rErWVySlUxlEFN2u18NGS5Qm0qvXYHGlMsYpGhhEY=;
+        b=o889vKxSZtxv8BEV2OoNHeUSIVSxACJe8n0x+KvpxDr0kg3lDSg1g8LoUE9Bu4dAAe
+         I0iUyDRgqQM+YxT7ev9JMk18DB7xCsm0NBYY0yKziHMpPBVYhoEIuHPE0y3+tOiIghU0
+         QHrGU+pFLYAbtd6x535V+cs7nmE3stGixEEx91f8SUrxCGmEZ0B4NPXCTsEfdbCexJso
+         vN1rL0p+hRNdjj6uBwjtVnohxcEFxd7GQNFhlNHOO2UF1hIvohxjUdbrpOBY+8T8/y0d
+         BY3aa+4w9VV3v6CY9Vt8NvvoNMllq5JBLzAtEZiZR4w9pAAAbivq/5mzW1QjjZn3A3Ob
+         eqpg==
+X-Gm-Message-State: AOAM532UuvfMXcYmQn930+JWT3B73Q7VMEmbT5Qiq10V4IGHVmHDg4AO
+        YQUeiVjdulu07zQKtE0HLZsgtYUCjcWXGlEgZG4=
+X-Google-Smtp-Source: ABdhPJz9BfsA7QIGi43YRDlzzrWhVjbeGEMJOs01j9nA3vXXWXOOPKhq5d8EhdtGHqqQ5dYXQmK91VGL/RQnfnI1jKs=
+X-Received: by 2002:a81:7c45:0:b0:2eb:4759:cc32 with SMTP id
+ x66-20020a817c45000000b002eb4759cc32mr224284ywc.515.1649875711933; Wed, 13
+ Apr 2022 11:48:31 -0700 (PDT)
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.7.0
-Subject: Re: [PATCH v7 17/20] memory: emif: Use kernel_can_power_off()
-Content-Language: en-US
-From:   Dmitry Osipenko <dmitry.osipenko@collabora.com>
-To:     Thierry Reding <thierry.reding@gmail.com>,
+References: <20220411233832.391817-1-dmitry.osipenko@collabora.com> <20220411233832.391817-4-dmitry.osipenko@collabora.com>
+In-Reply-To: <20220411233832.391817-4-dmitry.osipenko@collabora.com>
+From:   "Rafael J. Wysocki" <rafael@kernel.org>
+Date:   Wed, 13 Apr 2022 20:48:20 +0200
+Message-ID: <CAJZ5v0gf1J+yPW14TAdLGLGfO+-2s=r0DDP7d+Rgop3=dB0gaQ@mail.gmail.com>
+Subject: Re: [PATCH v7 03/20] reboot: Print error message if restart handler
+ has duplicated priority
+To:     Dmitry Osipenko <dmitry.osipenko@collabora.com>
+Cc:     Thierry Reding <thierry.reding@gmail.com>,
         Jonathan Hunter <jonathanh@nvidia.com>,
         Russell King <linux@armlinux.org.uk>,
         Catalin Marinas <catalin.marinas@arm.com>,
@@ -49,7 +56,7 @@ To:     Thierry Reding <thierry.reding@gmail.com>,
         Philipp Zabel <p.zabel@pengutronix.de>,
         Greentime Hu <green.hu@gmail.com>,
         Vincent Chen <deanbo422@gmail.com>,
-        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
         Helge Deller <deller@gmx.de>,
         Michael Ellerman <mpe@ellerman.id.au>,
         Benjamin Herrenschmidt <benh@kernel.crashing.org>,
@@ -61,7 +68,8 @@ To:     Thierry Reding <thierry.reding@gmail.com>,
         Rich Felker <dalias@libc.org>,
         Thomas Gleixner <tglx@linutronix.de>,
         Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        "the arch/x86 maintainers" <x86@kernel.org>,
         "H. Peter Anvin" <hpa@zytor.com>,
         Boris Ostrovsky <boris.ostrovsky@oracle.com>,
         Juergen Gross <jgross@suse.com>,
@@ -78,47 +86,66 @@ To:     Thierry Reding <thierry.reding@gmail.com>,
         Daniel Lezcano <daniel.lezcano@linaro.org>,
         Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         Ulf Hansson <ulf.hansson@linaro.org>,
-        =?UTF-8?B?TWljaGHFgiBNaXJvc8WCYXc=?= <mirq-linux@rere.qmqm.pl>
-Cc:     linux-kernel@vger.kernel.org, linux-csky@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
-        xen-devel@lists.xenproject.org, linux-acpi@vger.kernel.org,
-        linux-pm@vger.kernel.org, linux-tegra@vger.kernel.org
-References: <20220411233832.391817-1-dmitry.osipenko@collabora.com>
- <20220411233832.391817-18-dmitry.osipenko@collabora.com>
-In-Reply-To: <20220411233832.391817-18-dmitry.osipenko@collabora.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+        =?UTF-8?B?TWljaGHFgiBNaXJvc8WCYXc=?= <mirq-linux@rere.qmqm.pl>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org,
+        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
+        linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        xen-devel@lists.xenproject.org,
+        ACPI Devel Maling List <linux-acpi@vger.kernel.org>,
+        Linux PM <linux-pm@vger.kernel.org>,
+        linux-tegra <linux-tegra@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-
-On 4/12/22 02:38, Dmitry Osipenko wrote:
-> Replace legacy pm_power_off with kernel_can_power_off() helper that
-> is aware about chained power-off handlers.
-> 
+On Tue, Apr 12, 2022 at 1:39 AM Dmitry Osipenko
+<dmitry.osipenko@collabora.com> wrote:
+>
+> Add sanity check which ensures that there are no two restart handlers
+> registered using the same priority. This requirement will become mandatory
+> once all drivers will be converted to the new API and such errors will be
+> fixed.
+>
 > Signed-off-by: Dmitry Osipenko <dmitry.osipenko@collabora.com>
+
+The first two patches in the series are fine with me and there's only
+one minor nit regarding this one (below).
+
 > ---
->  drivers/memory/emif.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/memory/emif.c b/drivers/memory/emif.c
-> index edf3ba7447ed..fa6845313a43 100644
-> --- a/drivers/memory/emif.c
-> +++ b/drivers/memory/emif.c
-> @@ -630,7 +630,7 @@ static irqreturn_t emif_threaded_isr(int irq, void *dev_id)
->  		dev_emerg(emif->dev, "SDRAM temperature exceeds operating limit.. Needs shut down!!!\n");
->  
->  		/* If we have Power OFF ability, use it, else try restarting */
-> -		if (pm_power_off) {
-> +		if (kernel_can_power_off()) {
->  			kernel_power_off();
->  		} else {
->  			WARN(1, "FIXME: NO pm_power_off!!! trying restart\n");
+>  kernel/reboot.c | 15 +++++++++++++++
+>  1 file changed, 15 insertions(+)
+>
+> diff --git a/kernel/reboot.c b/kernel/reboot.c
+> index ed4e6dfb7d44..acdae4e95061 100644
+> --- a/kernel/reboot.c
+> +++ b/kernel/reboot.c
+> @@ -182,6 +182,21 @@ static ATOMIC_NOTIFIER_HEAD(restart_handler_list);
+>   */
+>  int register_restart_handler(struct notifier_block *nb)
+>  {
+> +       int ret;
+> +
+> +       ret = atomic_notifier_chain_register_unique_prio(&restart_handler_list, nb);
+> +       if (ret != -EBUSY)
+> +               return ret;
+> +
+> +       /*
+> +        * Handler must have unique priority. Otherwise call order is
+> +        * determined by registration order, which is unreliable.
+> +        *
+> +        * This requirement will become mandatory once all drivers
+> +        * will be converted to use new sys-off API.
+> +        */
+> +       pr_err("failed to register restart handler using unique priority\n");
 
-Adding ack from Krzysztof that he gave to v6. It's missing in v7 by
-accident.
+I would use pr_info() here, because this is not a substantial error AFAICS.
 
-Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>
+> +
+>         return atomic_notifier_chain_register(&restart_handler_list, nb);
+>  }
+>  EXPORT_SYMBOL(register_restart_handler);
+> --
