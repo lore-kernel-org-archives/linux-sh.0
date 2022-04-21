@@ -2,41 +2,20 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 951B2C433EF
-	for <linux-sh@archiver.kernel.org>; Thu, 21 Apr 2022 07:25:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B7E98C433FE
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Apr 2022 12:43:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1385767AbiDUH2d (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 21 Apr 2022 03:28:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49052 "EHLO
+        id S1380505AbiDUMqU (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 21 Apr 2022 08:46:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47056 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1385789AbiDUH2S (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Apr 2022 03:28:18 -0400
-X-Greylist: delayed 455 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Thu, 21 Apr 2022 00:25:15 PDT
-Received: from mout.kundenserver.de (mout.kundenserver.de [217.72.192.73])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 506FE1AD84;
-        Thu, 21 Apr 2022 00:25:14 -0700 (PDT)
-Received: from mail-wm1-f41.google.com ([209.85.128.41]) by
- mrelayeu.kundenserver.de (mreue109 [213.165.67.113]) with ESMTPSA (Nemesis)
- id 1MbRXj-1oIhYG11dR-00bpCW; Thu, 21 Apr 2022 09:12:33 +0200
-Received: by mail-wm1-f41.google.com with SMTP id ay11-20020a05600c1e0b00b0038eb92fa965so5216104wmb.4;
-        Thu, 21 Apr 2022 00:12:33 -0700 (PDT)
-X-Gm-Message-State: AOAM530Ybh2YrZwIJarfVWgYYu3pRDL5LBGSk/ZXfGBoOlqUGJ5BHY0D
-        Qdc8aKnK0mxOYn40muHQ0I9A06pxIopB5dl05ZA=
-X-Google-Smtp-Source: ABdhPJyiDq8vDuHIbY6D8eienOMlm5JvlAwo2YuDKmIos2MBFwy3hSQ+D3GAoUjwkE1kjA32vI2wLWEQWYui85aMEb4=
-X-Received: by 2002:a1c:f219:0:b0:38c:782c:3bb with SMTP id
- s25-20020a1cf219000000b0038c782c03bbmr6996684wmc.94.1650525152760; Thu, 21
- Apr 2022 00:12:32 -0700 (PDT)
-MIME-Version: 1.0
-References: <20220414091018.896737-1-niklas.cassel@wdc.com>
- <f379cb56-6ff5-f256-d5f2-3718a47e976d@opensource.wdc.com> <Yli8voX7hw3EZ7E/@x1-carbon>
- <81788b56-5b15-7308-38c7-c7f2502c4e15@linux-m68k.org> <87levzzts4.fsf_-_@email.froward.int.ebiederm.org>
- <01b063d7-d5c2-8af0-ad90-ed6c069252c5@linux-m68k.org> <CAMuHMdXd94L=766usN4WG-hK2MpQLy50mJZ=9G9NGv03kx8V8Q@mail.gmail.com>
-In-Reply-To: <CAMuHMdXd94L=766usN4WG-hK2MpQLy50mJZ=9G9NGv03kx8V8Q@mail.gmail.com>
-From:   Arnd Bergmann <arnd@arndb.de>
-Date:   Thu, 21 Apr 2022 09:12:16 +0200
-X-Gmail-Original-Message-ID: <CAK8P3a3Cjna7H_YxFvg6UEOqQf9ZqLp9EVOCFFewzWBHVT4nWg@mail.gmail.com>
-Message-ID: <CAK8P3a3Cjna7H_YxFvg6UEOqQf9ZqLp9EVOCFFewzWBHVT4nWg@mail.gmail.com>
-Subject: Re: [PATCH] binfmt_flat: Remove shared library support
+        with ESMTP id S1384208AbiDUMqT (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Apr 2022 08:46:19 -0400
+Received: from brightrain.aerifal.cx (brightrain.aerifal.cx [216.12.86.13])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B3C2231DE5
+        for <linux-sh@vger.kernel.org>; Thu, 21 Apr 2022 05:43:28 -0700 (PDT)
+Date:   Thu, 21 Apr 2022 08:43:26 -0400
+From:   Rich Felker <dalias@libc.org>
 To:     Geert Uytterhoeven <geert@linux-m68k.org>
 Cc:     Greg Ungerer <gerg@linux-m68k.org>,
         "Eric W. Biederman" <ebiederm@xmission.com>,
@@ -56,40 +35,26 @@ Cc:     Greg Ungerer <gerg@linux-m68k.org>,
         linux-m68k <linux-m68k@lists.linux-m68k.org>,
         Linux ARM <linux-arm-kernel@lists.infradead.org>,
         Linux-sh list <linux-sh@vger.kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Sudeep Holla <sudeep.holla@arm.com>,
-        Vladimir Murzin <vladimir.murzin@arm.com>,
-        Jesse Taube <Mr.Bossman075@gmail.com>,
-        Giulio Benetti <giulio.benetti@benettiengineering.com>,
-        Patrice Chotard <patrice.chotard@st.com>,
-        Pierre-Yves MORDRET <pierre-yves.mordret@st.com>,
-        Alexandre Torgue <alexandre.torgue@st.com>
-Content-Type: text/plain; charset="UTF-8"
-X-Provags-ID: V03:K1:AnKS55OURsqF0k+WfRdXuD9BM8buN8Mbwoc8FI9tXjJLFGTbe3y
- PcqrpQ9h898pPNrInIbRk2ml2JcjSVTnepfYr1B3MLdgEDa7+TCAZXw/UgPtthe68aOsKQ0
- qGnx98dccBSfWikOAK7utp183m3T7Q8iOGPiVAPCdM20UqcGDpW+T8VEfSYrnsGRW5mLmqn
- 385GSQ5/7sSnyM6aNVbRg==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:R/4Y8V/idCU=:U4XNGjqVWEenRvB4TuNrHh
- P4Ph5ycOJjNK//WdcAJiw6GpC2MKOmQIMH5oVa3wT6l94+2dXllaSciQqBu5Kg51if59Ii1GK
- 5/3RodmfW4gdaQ3fbaV2iraRrr3pw3FLL5Qg9CvYFgKq/dZ8dABel4G7Sxt8+LZZWqEjid/tt
- 5kcBySq0P7wMI4oCcbz4h/fCmIRLIFNj6TrUSlOOjHfbQLcMTbSbXuTnkjzkawVo0wrsjP9r4
- 9xzRLWCNIoUFsoJpOAJaBS4/7kjdQgQicoe3UVPvT68a77cYLcG0tK8Pj4lr9rw8g12iZgqX8
- viLmdr3RX9XiZs+3UHPPlv11oh6UR80eXAhdIjEAAQUZd63lgp+8lU5R41hu5qgwF3WXQ/xth
- znGwqO7m8fUT2Ly0g/JFjvIzvEKDuBqHD1pjYw4cQSucKRgxAGGkZAyNDgkmB7Y8eYGsPnKNu
- of3szxj/4W0sOR13dw9JZ55JK1D9gICKG9gK4Jl3pX5CpSlhDUbqJlnJw8s7hJ/XamzBnrzb+
- SBIk6Yb34KPOonN3pmiDjGpCRUYvgShMUHetZJQZ1uyK7941M5cDt4853YYuEt/y9LPY9xOvb
- mkk1KIRIuHM55xIztjKTmXABYoaqSqRDDOmx0p2t1BCIevgfM4xBdsJJmjID70g50wCt3R8Lr
- ZfqdaT3wVHzr38Ty4byqOI/i7ninQAXqDTotlHnNG6hScCjWLbEfMN/G6AhWny6UNC9x39Qg9
- q1jNbF4wH5GrE5gLXFEJgsMwgLys0UnG5la5sUzXDYgdfFrQcPAgRqVCFYw+GYjKbYQNLxJjX
- 5uc+WBCjIAdfB8MEojhI/FfyL31LB1kV1Sx0tvyNAf/PzeYEaq+aHOViKcB0HbzH8sUa/6AA+
- z9i0I9j+a4ScKtA+lXpMyKTQeNZvraVt4/3uNFZRiQ5lPMxhPgQxp6jmq4W8KE1yRodstuTlY
- mS9Jyq7+WZw==
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+Subject: Re: [PATCH] binfmt_flat: Remove shared library support
+Message-ID: <20220421124326.GG7074@brightrain.aerifal.cx>
+References: <20220414091018.896737-1-niklas.cassel@wdc.com>
+ <f379cb56-6ff5-f256-d5f2-3718a47e976d@opensource.wdc.com>
+ <Yli8voX7hw3EZ7E/@x1-carbon>
+ <81788b56-5b15-7308-38c7-c7f2502c4e15@linux-m68k.org>
+ <87levzzts4.fsf_-_@email.froward.int.ebiederm.org>
+ <01b063d7-d5c2-8af0-ad90-ed6c069252c5@linux-m68k.org>
+ <CAMuHMdXd94L=766usN4WG-hK2MpQLy50mJZ=9G9NGv03kx8V8Q@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAMuHMdXd94L=766usN4WG-hK2MpQLy50mJZ=9G9NGv03kx8V8Q@mail.gmail.com>
+User-Agent: Mutt/1.5.21 (2010-09-15)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Apr 21, 2022 at 8:52 AM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+On Thu, Apr 21, 2022 at 08:52:59AM +0200, Geert Uytterhoeven wrote:
 > On Thu, Apr 21, 2022 at 1:53 AM Greg Ungerer <gerg@linux-m68k.org> wrote:
 > > On 21/4/22 00:58, Eric W. Biederman wrote:
 > > > In a recent discussion[1] it was reported that the binfmt_flat library
@@ -115,19 +80,24 @@ On Thu, Apr 21, 2022 at 8:52 AM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
 > >
 > >
 > > > Was binfmt_flat being enabled on arm and sh the mistake it looks like?
->
+> 
 > I think the question was intended to be
->
+> 
 >     Was *binfmt_flat_shared_flat* being enabled on arm and sh the
 >     mistake it looks like?
->
-> > >
-> > >   arch/arm/configs/lpc18xx_defconfig |   1 -
-> > >   arch/arm/configs/mps2_defconfig    |   1 -
-> > >   arch/arm/configs/stm32_defconfig   |   1 -
-> > >   arch/arm/configs/vf610m4_defconfig |   1 -
 
-Adding stm32, mps2 and imxrt maintainers to Cc, they are the most active
-armv7-m users and should know if the shared library support is used anywhere.
+Early in my work on j2, I tried to research the history of shared flat
+support on sh, and it turned out the mainline tooling never even
+supported it, and the out-of-line tooling I eventually found was using
+all sorts of wrong conditionals for how it did the linking and elf2flt
+conversion, e.g. mere presence of any PIC-like relocation in any file
+made it assume the whole program was PIC-compatible. There's no way
+that stuf was ever used in any meaningful way. It just didn't work.
 
-     Arnd
+Quickly dropped that and got plain ELF (no shared text/xip, but no
+worse than the existing flat support) working, and soon after, FDPIC.
+
+The whole binfmt_flat ecosystem is a mess with no good reason to
+exist.
+
+Rich
