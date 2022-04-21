@@ -2,58 +2,44 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E656C4332F
-	for <linux-sh@archiver.kernel.org>; Thu, 21 Apr 2022 06:54:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 951B2C433EF
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Apr 2022 07:25:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1385438AbiDUG5L (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 21 Apr 2022 02:57:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58344 "EHLO
+        id S1385767AbiDUH2d (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 21 Apr 2022 03:28:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49052 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1355352AbiDUG5B (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Apr 2022 02:57:01 -0400
-Received: from mail-qv1-f43.google.com (mail-qv1-f43.google.com [209.85.219.43])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 880641573A;
-        Wed, 20 Apr 2022 23:53:13 -0700 (PDT)
-Received: by mail-qv1-f43.google.com with SMTP id a10so3043988qvm.8;
-        Wed, 20 Apr 2022 23:53:13 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=qJDkHKGLNQny7+nf6+dAQhj4pSl5mPJhKTIW2Wu14QI=;
-        b=shpFBf9WInVCfV0s6K0AO6KIS/NaU1qw83eQ2sk8NO/39KEAaJi438icMOKafAB1He
-         MQZgmFubtpJ/e3X+55RD7ANmRgHEICjrTsRuanjxmzMdO8OwiWC9j81ANxgqJ7uNROm+
-         fFwoWS/pBZW3jsUJ/8j2H5dd08HptEHaBuPYRmlqZxKH/e97VPkRkE7Z1otqzCo5RQ98
-         u+53OyFejpH370mVCNHcg+oAAKiIcOwZpYJzj+azQDZltKoDqtJe+3iT9NfkvIuGPi//
-         4ZpUyjPLanLPSJuuvSHH49Pgg8PxhMmAkbATHUHY3WXYNGRQO/gTMN3/qiuu/T0nG1Ra
-         lKPQ==
-X-Gm-Message-State: AOAM5328t5MtqGld9LoXHrACLOayXKoYUuBcjlDr2wIL1LABz2v81d+J
-        N+A4oe+nJwq4cnQ8QwqBD0uNTthZjJyNkBaG
-X-Google-Smtp-Source: ABdhPJxAkrc4iamroPKLpa3tQkmgZXpblVdnmpT6fa++ZhcR2yYkYarZIQGcuPizOU4JTToCQNlLnQ==
-X-Received: by 2002:a05:6214:769:b0:446:538f:2b86 with SMTP id f9-20020a056214076900b00446538f2b86mr14708824qvz.4.1650523992310;
-        Wed, 20 Apr 2022 23:53:12 -0700 (PDT)
-Received: from mail-yb1-f180.google.com (mail-yb1-f180.google.com. [209.85.219.180])
-        by smtp.gmail.com with ESMTPSA id a190-20020a3766c7000000b0069e770524adsm2627453qkc.114.2022.04.20.23.53.11
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 20 Apr 2022 23:53:11 -0700 (PDT)
-Received: by mail-yb1-f180.google.com with SMTP id p65so7014414ybp.9;
-        Wed, 20 Apr 2022 23:53:11 -0700 (PDT)
-X-Received: by 2002:a5b:984:0:b0:63f:8c38:676c with SMTP id
- c4-20020a5b0984000000b0063f8c38676cmr23970174ybq.393.1650523990757; Wed, 20
- Apr 2022 23:53:10 -0700 (PDT)
+        with ESMTP id S1385789AbiDUH2S (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Apr 2022 03:28:18 -0400
+X-Greylist: delayed 455 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Thu, 21 Apr 2022 00:25:15 PDT
+Received: from mout.kundenserver.de (mout.kundenserver.de [217.72.192.73])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 506FE1AD84;
+        Thu, 21 Apr 2022 00:25:14 -0700 (PDT)
+Received: from mail-wm1-f41.google.com ([209.85.128.41]) by
+ mrelayeu.kundenserver.de (mreue109 [213.165.67.113]) with ESMTPSA (Nemesis)
+ id 1MbRXj-1oIhYG11dR-00bpCW; Thu, 21 Apr 2022 09:12:33 +0200
+Received: by mail-wm1-f41.google.com with SMTP id ay11-20020a05600c1e0b00b0038eb92fa965so5216104wmb.4;
+        Thu, 21 Apr 2022 00:12:33 -0700 (PDT)
+X-Gm-Message-State: AOAM530Ybh2YrZwIJarfVWgYYu3pRDL5LBGSk/ZXfGBoOlqUGJ5BHY0D
+        Qdc8aKnK0mxOYn40muHQ0I9A06pxIopB5dl05ZA=
+X-Google-Smtp-Source: ABdhPJyiDq8vDuHIbY6D8eienOMlm5JvlAwo2YuDKmIos2MBFwy3hSQ+D3GAoUjwkE1kjA32vI2wLWEQWYui85aMEb4=
+X-Received: by 2002:a1c:f219:0:b0:38c:782c:3bb with SMTP id
+ s25-20020a1cf219000000b0038c782c03bbmr6996684wmc.94.1650525152760; Thu, 21
+ Apr 2022 00:12:32 -0700 (PDT)
 MIME-Version: 1.0
 References: <20220414091018.896737-1-niklas.cassel@wdc.com>
  <f379cb56-6ff5-f256-d5f2-3718a47e976d@opensource.wdc.com> <Yli8voX7hw3EZ7E/@x1-carbon>
  <81788b56-5b15-7308-38c7-c7f2502c4e15@linux-m68k.org> <87levzzts4.fsf_-_@email.froward.int.ebiederm.org>
- <01b063d7-d5c2-8af0-ad90-ed6c069252c5@linux-m68k.org>
-In-Reply-To: <01b063d7-d5c2-8af0-ad90-ed6c069252c5@linux-m68k.org>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Thu, 21 Apr 2022 08:52:59 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdXd94L=766usN4WG-hK2MpQLy50mJZ=9G9NGv03kx8V8Q@mail.gmail.com>
-Message-ID: <CAMuHMdXd94L=766usN4WG-hK2MpQLy50mJZ=9G9NGv03kx8V8Q@mail.gmail.com>
+ <01b063d7-d5c2-8af0-ad90-ed6c069252c5@linux-m68k.org> <CAMuHMdXd94L=766usN4WG-hK2MpQLy50mJZ=9G9NGv03kx8V8Q@mail.gmail.com>
+In-Reply-To: <CAMuHMdXd94L=766usN4WG-hK2MpQLy50mJZ=9G9NGv03kx8V8Q@mail.gmail.com>
+From:   Arnd Bergmann <arnd@arndb.de>
+Date:   Thu, 21 Apr 2022 09:12:16 +0200
+X-Gmail-Original-Message-ID: <CAK8P3a3Cjna7H_YxFvg6UEOqQf9ZqLp9EVOCFFewzWBHVT4nWg@mail.gmail.com>
+Message-ID: <CAK8P3a3Cjna7H_YxFvg6UEOqQf9ZqLp9EVOCFFewzWBHVT4nWg@mail.gmail.com>
 Subject: Re: [PATCH] binfmt_flat: Remove shared library support
-To:     Greg Ungerer <gerg@linux-m68k.org>
-Cc:     "Eric W. Biederman" <ebiederm@xmission.com>,
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     Greg Ungerer <gerg@linux-m68k.org>,
+        "Eric W. Biederman" <ebiederm@xmission.com>,
         Kees Cook <keescook@chromium.org>,
         Niklas Cassel <Niklas.Cassel@wdc.com>,
         Damien Le Moal <damien.lemoal@opensource.wdc.com>,
@@ -71,75 +57,77 @@ Cc:     "Eric W. Biederman" <ebiederm@xmission.com>,
         Linux ARM <linux-arm-kernel@lists.infradead.org>,
         Linux-sh list <linux-sh@vger.kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
+        Rich Felker <dalias@libc.org>,
+        Sudeep Holla <sudeep.holla@arm.com>,
+        Vladimir Murzin <vladimir.murzin@arm.com>,
+        Jesse Taube <Mr.Bossman075@gmail.com>,
+        Giulio Benetti <giulio.benetti@benettiengineering.com>,
+        Patrice Chotard <patrice.chotard@st.com>,
+        Pierre-Yves MORDRET <pierre-yves.mordret@st.com>,
+        Alexandre Torgue <alexandre.torgue@st.com>
 Content-Type: text/plain; charset="UTF-8"
+X-Provags-ID: V03:K1:AnKS55OURsqF0k+WfRdXuD9BM8buN8Mbwoc8FI9tXjJLFGTbe3y
+ PcqrpQ9h898pPNrInIbRk2ml2JcjSVTnepfYr1B3MLdgEDa7+TCAZXw/UgPtthe68aOsKQ0
+ qGnx98dccBSfWikOAK7utp183m3T7Q8iOGPiVAPCdM20UqcGDpW+T8VEfSYrnsGRW5mLmqn
+ 385GSQ5/7sSnyM6aNVbRg==
+X-UI-Out-Filterresults: notjunk:1;V03:K0:R/4Y8V/idCU=:U4XNGjqVWEenRvB4TuNrHh
+ P4Ph5ycOJjNK//WdcAJiw6GpC2MKOmQIMH5oVa3wT6l94+2dXllaSciQqBu5Kg51if59Ii1GK
+ 5/3RodmfW4gdaQ3fbaV2iraRrr3pw3FLL5Qg9CvYFgKq/dZ8dABel4G7Sxt8+LZZWqEjid/tt
+ 5kcBySq0P7wMI4oCcbz4h/fCmIRLIFNj6TrUSlOOjHfbQLcMTbSbXuTnkjzkawVo0wrsjP9r4
+ 9xzRLWCNIoUFsoJpOAJaBS4/7kjdQgQicoe3UVPvT68a77cYLcG0tK8Pj4lr9rw8g12iZgqX8
+ viLmdr3RX9XiZs+3UHPPlv11oh6UR80eXAhdIjEAAQUZd63lgp+8lU5R41hu5qgwF3WXQ/xth
+ znGwqO7m8fUT2Ly0g/JFjvIzvEKDuBqHD1pjYw4cQSucKRgxAGGkZAyNDgkmB7Y8eYGsPnKNu
+ of3szxj/4W0sOR13dw9JZ55JK1D9gICKG9gK4Jl3pX5CpSlhDUbqJlnJw8s7hJ/XamzBnrzb+
+ SBIk6Yb34KPOonN3pmiDjGpCRUYvgShMUHetZJQZ1uyK7941M5cDt4853YYuEt/y9LPY9xOvb
+ mkk1KIRIuHM55xIztjKTmXABYoaqSqRDDOmx0p2t1BCIevgfM4xBdsJJmjID70g50wCt3R8Lr
+ ZfqdaT3wVHzr38Ty4byqOI/i7ninQAXqDTotlHnNG6hScCjWLbEfMN/G6AhWny6UNC9x39Qg9
+ q1jNbF4wH5GrE5gLXFEJgsMwgLys0UnG5la5sUzXDYgdfFrQcPAgRqVCFYw+GYjKbYQNLxJjX
+ 5uc+WBCjIAdfB8MEojhI/FfyL31LB1kV1Sx0tvyNAf/PzeYEaq+aHOViKcB0HbzH8sUa/6AA+
+ z9i0I9j+a4ScKtA+lXpMyKTQeNZvraVt4/3uNFZRiQ5lPMxhPgQxp6jmq4W8KE1yRodstuTlY
+ mS9Jyq7+WZw==
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Apr 21, 2022 at 1:53 AM Greg Ungerer <gerg@linux-m68k.org> wrote:
-> On 21/4/22 00:58, Eric W. Biederman wrote:
-> > In a recent discussion[1] it was reported that the binfmt_flat library
-> > support was only ever used on m68k and even on m68k has not been used
-> > in a very long time.
+On Thu, Apr 21, 2022 at 8:52 AM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> On Thu, Apr 21, 2022 at 1:53 AM Greg Ungerer <gerg@linux-m68k.org> wrote:
+> > On 21/4/22 00:58, Eric W. Biederman wrote:
+> > > In a recent discussion[1] it was reported that the binfmt_flat library
+> > > support was only ever used on m68k and even on m68k has not been used
+> > > in a very long time.
+> > >
+> > > The structure of binfmt_flat is different from all of the other binfmt
+> > > implementations becasue of this shared library support and it made
+> > > life and code review more effort when I refactored the code in fs/exec.c.
+> > >
+> > > Since in practice the code is dead remove the binfmt_flat shared libarary
+> > > support and make maintenance of the code easier.
+> > >
+> > > [1] https://lkml.kernel.org/r/81788b56-5b15-7308-38c7-c7f2502c4e15@linux-m68k.org
+> > > Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+> > > ---
+> > >
+> > > Can the binfmt_flat folks please verify that the shared library support
+> > > really isn't used?
 > >
-> > The structure of binfmt_flat is different from all of the other binfmt
-> > implementations becasue of this shared library support and it made
-> > life and code review more effort when I refactored the code in fs/exec.c.
+> > I can definitely confirm I don't use it on m68k. And I don't know of
+> > anyone that has used it in many years.
 > >
-> > Since in practice the code is dead remove the binfmt_flat shared libarary
-> > support and make maintenance of the code easier.
 > >
-> > [1] https://lkml.kernel.org/r/81788b56-5b15-7308-38c7-c7f2502c4e15@linux-m68k.org
-> > Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
-> > ---
-> >
-> > Can the binfmt_flat folks please verify that the shared library support
-> > really isn't used?
+> > > Was binfmt_flat being enabled on arm and sh the mistake it looks like?
 >
-> I can definitely confirm I don't use it on m68k. And I don't know of
-> anyone that has used it in many years.
+> I think the question was intended to be
 >
+>     Was *binfmt_flat_shared_flat* being enabled on arm and sh the
+>     mistake it looks like?
 >
-> > Was binfmt_flat being enabled on arm and sh the mistake it looks like?
+> > >
+> > >   arch/arm/configs/lpc18xx_defconfig |   1 -
+> > >   arch/arm/configs/mps2_defconfig    |   1 -
+> > >   arch/arm/configs/stm32_defconfig   |   1 -
+> > >   arch/arm/configs/vf610m4_defconfig |   1 -
 
-I think the question was intended to be
+Adding stm32, mps2 and imxrt maintainers to Cc, they are the most active
+armv7-m users and should know if the shared library support is used anywhere.
 
-    Was *binfmt_flat_shared_flat* being enabled on arm and sh the
-    mistake it looks like?
-
-> >
-> >   arch/arm/configs/lpc18xx_defconfig |   1 -
-> >   arch/arm/configs/mps2_defconfig    |   1 -
-> >   arch/arm/configs/stm32_defconfig   |   1 -
-> >   arch/arm/configs/vf610m4_defconfig |   1 -
->
-> binfmt_flat works on ARM. I use it all the time.
-> According to those defconfigs those are all non-MMU systems, so
-> having binfmt_flat enabled makes some sense there.
->
->
-> >   arch/sh/configs/rsk7201_defconfig  |   1 -
-> >   arch/sh/configs/rsk7203_defconfig  |   1 -
-> >   arch/sh/configs/se7206_defconfig   |   1 -
->
-> Those are all SH2 systems if I am reading the defconfigs correctly.
-> SH2 is non-MMU according to the Kconfig setup. So it makes sense that
-> binfmt_flat is enabled on those too.
-
-I've checked git history, and CONFIG_BINFMT_SHARED_FLAT was enabled
-in se7206_defconfig in a non-specific defconfig update, so no
-further info.
-The other two had it enabled since their introduction, so I guess
-they were just based on the former.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+     Arnd
