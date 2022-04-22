@@ -2,173 +2,122 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56D4DC433FE
-	for <linux-sh@archiver.kernel.org>; Thu, 21 Apr 2022 13:55:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2B84EC43217
+	for <linux-sh@archiver.kernel.org>; Fri, 22 Apr 2022 10:26:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1388033AbiDUN6B (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 21 Apr 2022 09:58:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34478 "EHLO
+        id S1446513AbiDVK3S (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 22 Apr 2022 06:29:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57974 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1388084AbiDUN54 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Apr 2022 09:57:56 -0400
-Received: from mail-lj1-x231.google.com (mail-lj1-x231.google.com [IPv6:2a00:1450:4864:20::231])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 372E82BB1F
-        for <linux-sh@vger.kernel.org>; Thu, 21 Apr 2022 06:55:03 -0700 (PDT)
-Received: by mail-lj1-x231.google.com with SMTP id 17so5883699lji.1
-        for <linux-sh@vger.kernel.org>; Thu, 21 Apr 2022 06:55:03 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linaro.org; s=google;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=9I2sv/w+bVoJVhgEON4k5i7vtxgov/Cr9H4jEyKQU44=;
-        b=uPd35zp+t9AoSNs4r+Vp3gerI9BRNYp+bGV9SmMC4t1Di8G5JwPLrsrJ8vas36Vmu9
-         J+PZO8qisz7ZoEOxYN8xOzv5ys4koF/bY+LyCGQ9LrE23WgtogSIRfeP1Oh2D09cEbt6
-         OO2k80qci6e56m43qzH2mW7Z/XDz9GmXTZXpOQn+Gv9DcYFMV+sqqPY19Osf2oRYWAMz
-         3zakafPxoqFkyEH8aNpwbBHlveLn+8xSW736SnqrjQ6wKh3E/6qIQRQM7WVV5PzpG8FY
-         to1aEdA0c91W/Lvb+xUcGDufj8GB7wkM6T9QrwzVDVAOrWGjLz0rkWCc5V7Lqpn4npMj
-         u1CA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=9I2sv/w+bVoJVhgEON4k5i7vtxgov/Cr9H4jEyKQU44=;
-        b=itnv+AdS22tO1k66plF/L8e1VT0xiGix/tyCWJPKGm93lRTovw4tNyqGFy2Lsu5+K0
-         sOJzUH2QhVPCH1WaASCdbAuNSMduXmaHNFYLqAW2IUcnSBPdNwqngX8zpHsXkEyGfU2s
-         Vs9v54NT1Lx6mNis9zOZ9+UqYpU8Y/yUb8vEp/OFEpJbn/O9XzTtqWDJkJz3DV1KV2zM
-         5OEpOZvo8ys4iRXfWr8l1+HnnEIe6qKbVAY6TeH76bXNiIsLESkrA0weGcCK+YyHOlmC
-         zmC6Ya/YUID3hoSoUJfICQS3j7Te8qeGWnfiSrRzze10drRkPXk6OmtFCk9uNWjf4iDH
-         blQQ==
-X-Gm-Message-State: AOAM530pMC3IsughfdHG3TbUl60ZoFY5AX0wPb8LFlJXIw3fWjhHsgAy
-        nENB3/Q7TLUiMoLPWA1BMBI/k/zqfRqXlZIZghQUsg==
-X-Google-Smtp-Source: ABdhPJxQ8zojrK8xdolxDcQ8zrSMsAOsNwi85QHOAAX4QMpz2jZNq6/IIYky8NRkIbD1nX8JR7qkOxUpHzF/JMNvZPU=
-X-Received: by 2002:a05:651c:1783:b0:249:43a8:b6f9 with SMTP id
- bn3-20020a05651c178300b0024943a8b6f9mr16093756ljb.273.1650549301441; Thu, 21
- Apr 2022 06:55:01 -0700 (PDT)
+        with ESMTP id S1379632AbiDVK3R (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 22 Apr 2022 06:29:17 -0400
+Received: from foss.arm.com (foss.arm.com [217.140.110.172])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id B01BA546BE;
+        Fri, 22 Apr 2022 03:26:24 -0700 (PDT)
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 37DEF1477;
+        Fri, 22 Apr 2022 03:26:24 -0700 (PDT)
+Received: from [10.57.12.164] (unknown [10.57.12.164])
+        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 5C18F3F766;
+        Fri, 22 Apr 2022 03:26:18 -0700 (PDT)
+Message-ID: <91c64a80-3892-944d-4178-5b57a4f2899d@arm.com>
+Date:   Fri, 22 Apr 2022 11:26:46 +0100
 MIME-Version: 1.0
-References: <20220412093102.3428-1-wsa+renesas@sang-engineering.com>
-In-Reply-To: <20220412093102.3428-1-wsa+renesas@sang-engineering.com>
-From:   Ulf Hansson <ulf.hansson@linaro.org>
-Date:   Thu, 21 Apr 2022 15:54:25 +0200
-Message-ID: <CAPDyKFofCmWC4PDQBzw-wJweOy5brD5dJ1RM2n2vM1gOTQ8peQ@mail.gmail.com>
-Subject: Re: [PATCH v2] mmc: sh_mmcif: move platform_data header to proper location
-To:     Wolfram Sang <wsa+renesas@sang-engineering.com>
-Cc:     linux-mmc@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.8.1
+Subject: Re: [PATCH] binfmt_flat: Remove shared library support
+Content-Language: en-US
+To:     Arnd Bergmann <arnd@arndb.de>,
+        Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     Greg Ungerer <gerg@linux-m68k.org>,
+        "Eric W. Biederman" <ebiederm@xmission.com>,
+        Kees Cook <keescook@chromium.org>,
+        Niklas Cassel <Niklas.Cassel@wdc.com>,
+        Damien Le Moal <damien.lemoal@opensource.wdc.com>,
+        Alexander Viro <viro@zeniv.linux.org.uk>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Mike Frysinger <vapier@gentoo.org>,
+        "stable@vger.kernel.org" <stable@vger.kernel.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+        "linux-mm@kvack.org" <linux-mm@kvack.org>,
+        "linux-riscv@lists.infradead.org" <linux-riscv@lists.infradead.org>,
+        Linux-Arch <linux-arch@vger.kernel.org>,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+        Rich Felker <dalias@libc.org>,
+        Sudeep Holla <sudeep.holla@arm.com>,
+        Jesse Taube <Mr.Bossman075@gmail.com>,
+        Giulio Benetti <giulio.benetti@benettiengineering.com>,
+        Patrice Chotard <patrice.chotard@st.com>,
+        Pierre-Yves MORDRET <pierre-yves.mordret@st.com>,
+        Alexandre Torgue <alexandre.torgue@st.com>
+References: <20220414091018.896737-1-niklas.cassel@wdc.com>
+ <f379cb56-6ff5-f256-d5f2-3718a47e976d@opensource.wdc.com>
+ <Yli8voX7hw3EZ7E/@x1-carbon>
+ <81788b56-5b15-7308-38c7-c7f2502c4e15@linux-m68k.org>
+ <87levzzts4.fsf_-_@email.froward.int.ebiederm.org>
+ <01b063d7-d5c2-8af0-ad90-ed6c069252c5@linux-m68k.org>
+ <CAMuHMdXd94L=766usN4WG-hK2MpQLy50mJZ=9G9NGv03kx8V8Q@mail.gmail.com>
+ <CAK8P3a3Cjna7H_YxFvg6UEOqQf9ZqLp9EVOCFFewzWBHVT4nWg@mail.gmail.com>
+From:   Vladimir Murzin <vladimir.murzin@arm.com>
+In-Reply-To: <CAK8P3a3Cjna7H_YxFvg6UEOqQf9ZqLp9EVOCFFewzWBHVT4nWg@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, 12 Apr 2022 at 11:31, Wolfram Sang
-<wsa+renesas@sang-engineering.com> wrote:
->
-> We have a dedicated directory for platform_data meanwhile, don't spoil
-> the MMC directory with it.
->
-> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+On 4/21/22 8:12 AM, Arnd Bergmann wrote:
+> On Thu, Apr 21, 2022 at 8:52 AM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+>> On Thu, Apr 21, 2022 at 1:53 AM Greg Ungerer <gerg@linux-m68k.org> wrote:
+>>> On 21/4/22 00:58, Eric W. Biederman wrote:
+>>>> In a recent discussion[1] it was reported that the binfmt_flat library
+>>>> support was only ever used on m68k and even on m68k has not been used
+>>>> in a very long time.
+>>>>
+>>>> The structure of binfmt_flat is different from all of the other binfmt
+>>>> implementations becasue of this shared library support and it made
+>>>> life and code review more effort when I refactored the code in fs/exec.c.
+>>>>
+>>>> Since in practice the code is dead remove the binfmt_flat shared libarary
+>>>> support and make maintenance of the code easier.
+>>>>
+>>>> [1] https://lkml.kernel.org/r/81788b56-5b15-7308-38c7-c7f2502c4e15@linux-m68k.org
+>>>> Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
+>>>> ---
+>>>>
+>>>> Can the binfmt_flat folks please verify that the shared library support
+>>>> really isn't used?
+>>>
+>>> I can definitely confirm I don't use it on m68k. And I don't know of
+>>> anyone that has used it in many years.
+>>>
+>>>
+>>>> Was binfmt_flat being enabled on arm and sh the mistake it looks like?
+>>
+>> I think the question was intended to be
+>>
+>>      Was *binfmt_flat_shared_flat* being enabled on arm and sh the
+>>      mistake it looks like?
+>>
+>>>>
+>>>>    arch/arm/configs/lpc18xx_defconfig |   1 -
+>>>>    arch/arm/configs/mps2_defconfig    |   1 -
+>>>>    arch/arm/configs/stm32_defconfig   |   1 -
+>>>>    arch/arm/configs/vf610m4_defconfig |   1 -
+> 
+> Adding stm32, mps2 and imxrt maintainers to Cc, they are the most active
+> armv7-m users and should know if the shared library support is used anywhere.
 
-As this is a trivial change, I have applied it for next, thanks!
+Never seen shared library in use for flat format, so FWIW
 
-Sato-san, Rich, please tell me if you see any problems with this - or
-if you want me to add your acks.
-
-Kind regards
-Uffe
+Acked-by: Vladimir Murzin <vladimir.murzin@arm.com> # ARM
 
 
-> ---
->
-> Change since v1: fixed sorting of includes in the MMCIF driver
->                  (Thanks Geert!)
->
-> I don't have the HW to test this but the buildbots are happy with this
-> change. I checked that they actually tested the SH builds. To make the
-> patch more readable, I used the -M (rename) feature of git-format-patch.
->
->  arch/sh/boards/board-sh7757lcr.c                | 2 +-
->  arch/sh/boards/mach-ecovec24/setup.c            | 2 +-
->  arch/sh/boot/romimage/mmcif-sh7724.c            | 2 +-
->  drivers/mmc/host/sh_mmcif.c                     | 2 +-
->  include/linux/{mmc => platform_data}/sh_mmcif.h | 2 --
->  5 files changed, 4 insertions(+), 6 deletions(-)
->  rename include/linux/{mmc => platform_data}/sh_mmcif.h (99%)
->
-> diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
-> index c32b4c6229d3..f39c8196efdf 100644
-> --- a/arch/sh/boards/board-sh7757lcr.c
-> +++ b/arch/sh/boards/board-sh7757lcr.c
-> @@ -16,7 +16,7 @@
->  #include <linux/io.h>
->  #include <linux/mfd/tmio.h>
->  #include <linux/mmc/host.h>
-> -#include <linux/mmc/sh_mmcif.h>
-> +#include <linux/platform_data/sh_mmcif.h>
->  #include <linux/sh_eth.h>
->  #include <linux/sh_intc.h>
->  #include <linux/usb/renesas_usbhs.h>
-> diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-> index 4c9522dd351f..674da7ebd8b7 100644
-> --- a/arch/sh/boards/mach-ecovec24/setup.c
-> +++ b/arch/sh/boards/mach-ecovec24/setup.c
-> @@ -19,7 +19,7 @@
->  #include <linux/memblock.h>
->  #include <linux/mfd/tmio.h>
->  #include <linux/mmc/host.h>
-> -#include <linux/mmc/sh_mmcif.h>
-> +#include <linux/platform_data/sh_mmcif.h>
->  #include <linux/mtd/physmap.h>
->  #include <linux/gpio.h>
->  #include <linux/gpio/machine.h>
-> diff --git a/arch/sh/boot/romimage/mmcif-sh7724.c b/arch/sh/boot/romimage/mmcif-sh7724.c
-> index 6595b6b45bf1..d30123d859e0 100644
-> --- a/arch/sh/boot/romimage/mmcif-sh7724.c
-> +++ b/arch/sh/boot/romimage/mmcif-sh7724.c
-> @@ -8,7 +8,7 @@
->   * for more details.
->   */
->
-> -#include <linux/mmc/sh_mmcif.h>
-> +#include <linux/platform_data/sh_mmcif.h>
->  #include <mach/romimage.h>
->
->  #define MMCIF_BASE      (void __iomem *)0xa4ca0000
-> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-> index 5f9ebf045b1c..0fd4c9d644dd 100644
-> --- a/drivers/mmc/host/sh_mmcif.c
-> +++ b/drivers/mmc/host/sh_mmcif.c
-> @@ -43,12 +43,12 @@
->  #include <linux/mmc/host.h>
->  #include <linux/mmc/mmc.h>
->  #include <linux/mmc/sdio.h>
-> -#include <linux/mmc/sh_mmcif.h>
->  #include <linux/mmc/slot-gpio.h>
->  #include <linux/mod_devicetable.h>
->  #include <linux/mutex.h>
->  #include <linux/of_device.h>
->  #include <linux/pagemap.h>
-> +#include <linux/platform_data/sh_mmcif.h>
->  #include <linux/platform_device.h>
->  #include <linux/pm_qos.h>
->  #include <linux/pm_runtime.h>
-> diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/platform_data/sh_mmcif.h
-> similarity index 99%
-> rename from include/linux/mmc/sh_mmcif.h
-> rename to include/linux/platform_data/sh_mmcif.h
-> index e25533b95d9f..6eb914f958f9 100644
-> --- a/include/linux/mmc/sh_mmcif.h
-> +++ b/include/linux/platform_data/sh_mmcif.h
-> @@ -1,7 +1,5 @@
->  /* SPDX-License-Identifier: GPL-2.0-only */
->  /*
-> - * include/linux/mmc/sh_mmcif.h
-> - *
->   * platform data for eMMC driver
->   *
->   * Copyright (C) 2010 Renesas Solutions Corp.
-> --
-> 2.30.2
->
+> 
+>       Arnd
+
