@@ -2,122 +2,76 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2B84EC43217
-	for <linux-sh@archiver.kernel.org>; Fri, 22 Apr 2022 10:26:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 32FF7C433FE
+	for <linux-sh@archiver.kernel.org>; Fri, 22 Apr 2022 17:59:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1446513AbiDVK3S (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 22 Apr 2022 06:29:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57974 "EHLO
+        id S234393AbiDVSBq (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 22 Apr 2022 14:01:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54166 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1379632AbiDVK3R (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 22 Apr 2022 06:29:17 -0400
-Received: from foss.arm.com (foss.arm.com [217.140.110.172])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id B01BA546BE;
-        Fri, 22 Apr 2022 03:26:24 -0700 (PDT)
-Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 37DEF1477;
-        Fri, 22 Apr 2022 03:26:24 -0700 (PDT)
-Received: from [10.57.12.164] (unknown [10.57.12.164])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 5C18F3F766;
-        Fri, 22 Apr 2022 03:26:18 -0700 (PDT)
-Message-ID: <91c64a80-3892-944d-4178-5b57a4f2899d@arm.com>
-Date:   Fri, 22 Apr 2022 11:26:46 +0100
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.8.1
-Subject: Re: [PATCH] binfmt_flat: Remove shared library support
-Content-Language: en-US
-To:     Arnd Bergmann <arnd@arndb.de>,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Greg Ungerer <gerg@linux-m68k.org>,
-        "Eric W. Biederman" <ebiederm@xmission.com>,
-        Kees Cook <keescook@chromium.org>,
-        Niklas Cassel <Niklas.Cassel@wdc.com>,
-        Damien Le Moal <damien.lemoal@opensource.wdc.com>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Mike Frysinger <vapier@gentoo.org>,
-        "stable@vger.kernel.org" <stable@vger.kernel.org>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "linux-mm@kvack.org" <linux-mm@kvack.org>,
-        "linux-riscv@lists.infradead.org" <linux-riscv@lists.infradead.org>,
-        Linux-Arch <linux-arch@vger.kernel.org>,
-        linux-m68k <linux-m68k@lists.linux-m68k.org>,
-        Linux ARM <linux-arm-kernel@lists.infradead.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
+        with ESMTP id S233469AbiDVR63 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 22 Apr 2022 13:58:29 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F09ADE1CC5;
+        Fri, 22 Apr 2022 10:55:31 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id C9CA260C4F;
+        Fri, 22 Apr 2022 17:48:30 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6BE67C385A0;
+        Fri, 22 Apr 2022 17:48:29 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1650649710;
+        bh=5eG88j23VfpqEXG5LElKEOANPUif8PLVVEOgW3NWPM8=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+        b=JFxldeSwtEKgk9Lc8kRCQDX6OUJaNJqjczwvWjMV4j3OqtctIRIdLWhgVFbHcrF3q
+         6RV2w/ktTedzqZubriC/58H3Vdm9JiPVMTZntT5U6PsWNK7vp6Lf1pJVILEyJGxmS+
+         qbW6cqz9aSs5BypgxKnfiub0ZMs/SwHrot2cRn1CQZuR4f0sF4Z4oMH0Z+a459fUj/
+         AqyDYdPlcTk4kUXYFN7XRqxWUhAFDdRXCLT5AegHPef/SkanQTZdABcipo326XcIeu
+         cDK0+ZCKSi/1Lz6pPb+mOUQxdS1svIyOTdYSc7OWhpV+sUpJYcDte2V/RzhDmTOY++
+         fOwXTN8nCbK0w==
+Date:   Fri, 22 Apr 2022 10:48:28 -0700
+From:   Jakub Kicinski <kuba@kernel.org>
+To:     Bjorn Helgaas <helgaas@kernel.org>
+Cc:     Richard Henderson <rth@twiddle.net>,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        Matt Turner <mattst88@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
-        Sudeep Holla <sudeep.holla@arm.com>,
-        Jesse Taube <Mr.Bossman075@gmail.com>,
-        Giulio Benetti <giulio.benetti@benettiengineering.com>,
-        Patrice Chotard <patrice.chotard@st.com>,
-        Pierre-Yves MORDRET <pierre-yves.mordret@st.com>,
-        Alexandre Torgue <alexandre.torgue@st.com>
-References: <20220414091018.896737-1-niklas.cassel@wdc.com>
- <f379cb56-6ff5-f256-d5f2-3718a47e976d@opensource.wdc.com>
- <Yli8voX7hw3EZ7E/@x1-carbon>
- <81788b56-5b15-7308-38c7-c7f2502c4e15@linux-m68k.org>
- <87levzzts4.fsf_-_@email.froward.int.ebiederm.org>
- <01b063d7-d5c2-8af0-ad90-ed6c069252c5@linux-m68k.org>
- <CAMuHMdXd94L=766usN4WG-hK2MpQLy50mJZ=9G9NGv03kx8V8Q@mail.gmail.com>
- <CAK8P3a3Cjna7H_YxFvg6UEOqQf9ZqLp9EVOCFFewzWBHVT4nWg@mail.gmail.com>
-From:   Vladimir Murzin <vladimir.murzin@arm.com>
-In-Reply-To: <CAK8P3a3Cjna7H_YxFvg6UEOqQf9ZqLp9EVOCFFewzWBHVT4nWg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+        Chas Williams <3chas3@gmail.com>,
+        "David S . Miller" <davem@davemloft.net>,
+        Paolo Abeni <pabeni@redhat.com>, linux-alpha@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-sh@vger.kernel.org, linux-atm-general@lists.sourceforge.net,
+        netdev@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Bjorn Helgaas <bhelgaas@google.com>
+Subject: Re: [PATCH 0/7] Remove unused SLOW_DOWN_IO
+Message-ID: <20220422104828.75c726d0@kernel.org>
+In-Reply-To: <20220415190817.842864-1-helgaas@kernel.org>
+References: <20220415190817.842864-1-helgaas@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 4/21/22 8:12 AM, Arnd Bergmann wrote:
-> On Thu, Apr 21, 2022 at 8:52 AM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
->> On Thu, Apr 21, 2022 at 1:53 AM Greg Ungerer <gerg@linux-m68k.org> wrote:
->>> On 21/4/22 00:58, Eric W. Biederman wrote:
->>>> In a recent discussion[1] it was reported that the binfmt_flat library
->>>> support was only ever used on m68k and even on m68k has not been used
->>>> in a very long time.
->>>>
->>>> The structure of binfmt_flat is different from all of the other binfmt
->>>> implementations becasue of this shared library support and it made
->>>> life and code review more effort when I refactored the code in fs/exec.c.
->>>>
->>>> Since in practice the code is dead remove the binfmt_flat shared libarary
->>>> support and make maintenance of the code easier.
->>>>
->>>> [1] https://lkml.kernel.org/r/81788b56-5b15-7308-38c7-c7f2502c4e15@linux-m68k.org
->>>> Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
->>>> ---
->>>>
->>>> Can the binfmt_flat folks please verify that the shared library support
->>>> really isn't used?
->>>
->>> I can definitely confirm I don't use it on m68k. And I don't know of
->>> anyone that has used it in many years.
->>>
->>>
->>>> Was binfmt_flat being enabled on arm and sh the mistake it looks like?
->>
->> I think the question was intended to be
->>
->>      Was *binfmt_flat_shared_flat* being enabled on arm and sh the
->>      mistake it looks like?
->>
->>>>
->>>>    arch/arm/configs/lpc18xx_defconfig |   1 -
->>>>    arch/arm/configs/mps2_defconfig    |   1 -
->>>>    arch/arm/configs/stm32_defconfig   |   1 -
->>>>    arch/arm/configs/vf610m4_defconfig |   1 -
+On Fri, 15 Apr 2022 14:08:10 -0500 Bjorn Helgaas wrote:
+> From: Bjorn Helgaas <bhelgaas@google.com>
 > 
-> Adding stm32, mps2 and imxrt maintainers to Cc, they are the most active
-> armv7-m users and should know if the shared library support is used anywhere.
-
-Never seen shared library in use for flat format, so FWIW
-
-Acked-by: Vladimir Murzin <vladimir.murzin@arm.com> # ARM
-
-
+> Only alpha, ia64, powerpc, and sh define SLOW_DOWN_IO, and there are no
+> actual uses of it.  The few references to it are in situations that are
+> themselves unused.  Remove them all.
 > 
->       Arnd
+> It should be safe to apply these independently and in any order.  The only
+> place SLOW_DOWN_IO is used at all is the lmc_var.h definition of DELAY,
+> which is itself never used.
 
+Hi Bojrn! Would you mind reposting just patches 1 and 3 for networking?
+LMC got removed in net-next (commit a5b116a0fa90 ("net: wan: remove the
+lanmedia (lmc) driver")) so the entire series fails to apply and therefore 
+defeats all of our patch handling scripts :S
