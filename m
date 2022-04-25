@@ -2,76 +2,119 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 32FF7C433FE
-	for <linux-sh@archiver.kernel.org>; Fri, 22 Apr 2022 17:59:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 13FBBC433EF
+	for <linux-sh@archiver.kernel.org>; Mon, 25 Apr 2022 03:35:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234393AbiDVSBq (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 22 Apr 2022 14:01:46 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54166 "EHLO
+        id S240658AbiDYDiE (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 24 Apr 2022 23:38:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43436 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233469AbiDVR63 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 22 Apr 2022 13:58:29 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F09ADE1CC5;
-        Fri, 22 Apr 2022 10:55:31 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id C9CA260C4F;
-        Fri, 22 Apr 2022 17:48:30 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6BE67C385A0;
-        Fri, 22 Apr 2022 17:48:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1650649710;
-        bh=5eG88j23VfpqEXG5LElKEOANPUif8PLVVEOgW3NWPM8=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
-        b=JFxldeSwtEKgk9Lc8kRCQDX6OUJaNJqjczwvWjMV4j3OqtctIRIdLWhgVFbHcrF3q
-         6RV2w/ktTedzqZubriC/58H3Vdm9JiPVMTZntT5U6PsWNK7vp6Lf1pJVILEyJGxmS+
-         qbW6cqz9aSs5BypgxKnfiub0ZMs/SwHrot2cRn1CQZuR4f0sF4Z4oMH0Z+a459fUj/
-         AqyDYdPlcTk4kUXYFN7XRqxWUhAFDdRXCLT5AegHPef/SkanQTZdABcipo326XcIeu
-         cDK0+ZCKSi/1Lz6pPb+mOUQxdS1svIyOTdYSc7OWhpV+sUpJYcDte2V/RzhDmTOY++
-         fOwXTN8nCbK0w==
-Date:   Fri, 22 Apr 2022 10:48:28 -0700
-From:   Jakub Kicinski <kuba@kernel.org>
-To:     Bjorn Helgaas <helgaas@kernel.org>
-Cc:     Richard Henderson <rth@twiddle.net>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Chas Williams <3chas3@gmail.com>,
-        "David S . Miller" <davem@davemloft.net>,
-        Paolo Abeni <pabeni@redhat.com>, linux-alpha@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-sh@vger.kernel.org, linux-atm-general@lists.sourceforge.net,
-        netdev@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Bjorn Helgaas <bhelgaas@google.com>
-Subject: Re: [PATCH 0/7] Remove unused SLOW_DOWN_IO
-Message-ID: <20220422104828.75c726d0@kernel.org>
-In-Reply-To: <20220415190817.842864-1-helgaas@kernel.org>
-References: <20220415190817.842864-1-helgaas@kernel.org>
+        with ESMTP id S240674AbiDYDho (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 24 Apr 2022 23:37:44 -0400
+Received: from mail-oi1-x22f.google.com (mail-oi1-x22f.google.com [IPv6:2607:f8b0:4864:20::22f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B6A512CE07
+        for <linux-sh@vger.kernel.org>; Sun, 24 Apr 2022 20:34:40 -0700 (PDT)
+Received: by mail-oi1-x22f.google.com with SMTP id q129so15804308oif.4
+        for <linux-sh@vger.kernel.org>; Sun, 24 Apr 2022 20:34:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20210112.gappssmtp.com; s=20210112;
+        h=message-id:date:mime-version:user-agent:subject:content-language:to
+         :cc:references:from:in-reply-to:content-transfer-encoding;
+        bh=B1QfoAi5AbmZrNfgKcOMoR0g+jeoWpDUXn39NnppiO8=;
+        b=RP5YQMrqRBjFc1TPzDRF/VNHpK8/m7n4dXSd/cW6Z5KUCS1IKHMEhUBJ5NZBxPSlQe
+         7w69F6X6ON+ARmCOQU0idD+EYWSxMlBPBMReqAsXwbNBrW3/87epvMb6ASjFylpL/qcT
+         PlQP2jiXuw8pn/O8+w35QVbGxauzbtyJro3+/mru8XCY6zwaT9g3mN7ITl336PH9kTPK
+         lV7kpe0CHmxr5jjvZV36lVm345wKpfd7SjO1S5pwz+Lqc12HAHCQ+CeXXfqmxvVDi/uu
+         2JS8/XRGqAInv+agUB3X6u1ASYWsrcuw+QvXWEyK0vxNdPObwZHiGre7X9RvphN4xv+E
+         e8fA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
+         :content-language:to:cc:references:from:in-reply-to
+         :content-transfer-encoding;
+        bh=B1QfoAi5AbmZrNfgKcOMoR0g+jeoWpDUXn39NnppiO8=;
+        b=ar4vYAN+chEqf4Q2YJJYJYlMjCcccmfFBe/LWpBy943rNiZmVYRlCmXQyEDC/VXz6c
+         WfmAa/7TZ+t/4NlHfbEJxssJRNxJp5kzZFEmDdRm8m3d4hNRhWZVak22LIwhVPmpVtCV
+         5CTF9IAR4VPnDpDA66hUYK0E7c+EVfpLDJZZXAs2H7PDLxyZ9E6Qkdga5TY7gh52bPIW
+         +7LhVNqEbmxqTBDs5wBw6cefJoCEorr7HaJXeu6zYk2b8kc2g7Ov4QtOcAYP0YOyOWaV
+         7pWEMIPKC8TK1qFSWU77C4p27/RhWr4iVSiHsvosy/ErIJxED4fWXUX9jzVKEjB7SCJD
+         MBMg==
+X-Gm-Message-State: AOAM531v1xT24r3IgzJ5RG7rzMqT3zocixlevugFzKigbdfXFHLmdW8N
+        jR8d5hBZUs/LVHoO6fYPwYOzZA==
+X-Google-Smtp-Source: ABdhPJxo8MI+d6zaUs6uXLuDmIBbvncR0vS1nSWd1hInEUCXQb+VfGu0cvlm09UQJgV/8onv8BD9pw==
+X-Received: by 2002:a05:6808:1690:b0:325:4159:2004 with SMTP id bb16-20020a056808169000b0032541592004mr214582oib.86.1650857680070;
+        Sun, 24 Apr 2022 20:34:40 -0700 (PDT)
+Received: from [192.168.208.243] ([172.56.88.231])
+        by smtp.gmail.com with ESMTPSA id i26-20020a4a929a000000b0033a29c8d564sm3899603ooh.3.2022.04.24.20.34.37
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 24 Apr 2022 20:34:39 -0700 (PDT)
+Message-ID: <ab454879-5506-fe7d-cd59-812a6bc9d193@landley.net>
+Date:   Sun, 24 Apr 2022 22:38:58 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.6.2
+Subject: Re: [PATCH] binfmt_flat: Remove shared library support
+Content-Language: en-US
+To:     Kees Cook <keescook@chromium.org>, Rich Felker <dalias@libc.org>
+Cc:     Palmer Dabbelt <palmer@dabbelt.com>, ebiederm@xmission.com,
+        damien.lemoal@opensource.wdc.com, Niklas.Cassel@wdc.com,
+        viro@zeniv.linux.org.uk, Paul Walmsley <paul.walmsley@sifive.com>,
+        aou@eecs.berkeley.edu, vapier@gentoo.org, stable@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-mm@kvack.org,
+        linux-riscv@lists.infradead.org, linux-arch@vger.kernel.org,
+        geert@linux-m68k.org, linux-m68k@lists.linux-m68k.org,
+        gerg@linux-m68k.org, linux-arm-kernel@lists.infradead.org,
+        linux-sh@vger.kernel.org, ysato@users.sourceforge.jp
+References: <87levzzts4.fsf_-_@email.froward.int.ebiederm.org>
+ <mhng-32cab6aa-87a3-4a5c-bf83-836c25432fdd@palmer-ri-x1c9>
+ <20220420165935.GA12207@brightrain.aerifal.cx>
+ <202204201044.ACFEB0C@keescook>
+From:   Rob Landley <rob@landley.net>
+In-Reply-To: <202204201044.ACFEB0C@keescook>
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, 15 Apr 2022 14:08:10 -0500 Bjorn Helgaas wrote:
-> From: Bjorn Helgaas <bhelgaas@google.com>
+On 4/20/22 12:47, Kees Cook wrote:
+>> For what it's worth, bimfmt_flat (with or without shared library
+>> support) should be simple to implement as a binfmt_misc handler if
+>> anyone needs the old shared library support (or if kernel wanted to
+>> drop it entirely, which I would be in favor of). That's how I handled
+>> old aout binaries I wanted to run after aout was removed: trivial
+>> binfmt_misc loader.
 > 
-> Only alpha, ia64, powerpc, and sh define SLOW_DOWN_IO, and there are no
-> actual uses of it.  The few references to it are in situations that are
-> themselves unused.  Remove them all.
-> 
-> It should be safe to apply these independently and in any order.  The only
-> place SLOW_DOWN_IO is used at all is the lmc_var.h definition of DELAY,
-> which is itself never used.
+> Yeah, I was trying to understand why systems were using binfmt_flat and
+> not binfmt_elf, given the mention of elf2flat -- is there really such a
+> large kernel memory footprint savings to be had from removing
+> binfmt_elf?
 
-Hi Bojrn! Would you mind reposting just patches 1 and 3 for networking?
-LMC got removed in net-next (commit a5b116a0fa90 ("net: wan: remove the
-lanmedia (lmc) driver")) so the entire series fails to apply and therefore 
-defeats all of our patch handling scripts :S
+elf2flat is a terrible name: it doesn't take an executable as input, it takes a
+.o file as input. (I mean it's an elf format .o file, but... misleading.)
+
+> But regardless, yes, it seems like if you're doing anything remotely
+> needing shared libraries with binfmt_flat, such a system could just use
+> ELF instead.
+
+A) The binfmt_elf.c loader won't run on nommu systems. The fdpic loader will,
+and in theory can handle normal ELF binaries (it's ELF with _more_
+capabilities), but sadly it's not supported on most architectures for reasons
+that are unclear to me.
+
+B) You can't run conventional ELF on nommu, because everything is offset from 0
+so PID 1 eats that address range and you can't run exec program.
+
+You can run PIE binaries on nommu (the symbols offset from a base pointer which
+can point anywhere), but they're inefficient (can't share text or rodata
+sections between instances because every symbol is offset from a single shared
+base pointer), and highly vulnerable to fragmentation (because it needs a
+contiguous blob of memory for text, rodata, bss, and data: see single base
+pointer everything has an integer offset from).
+
+All fdpic really does is give you 4 base pointers, one for each section. That
+way you can share text and rodata, and put bss and data into smaller independent
+fragments of memory. Various security guys use this as super-aslr even on mmu
+systems, but tend not to advertise that they're doing so. :)
+
+Rob
