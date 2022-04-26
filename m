@@ -2,685 +2,442 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 226DAC43219
-	for <linux-sh@archiver.kernel.org>; Tue, 26 Apr 2022 05:42:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D2A0C4332F
+	for <linux-sh@archiver.kernel.org>; Tue, 26 Apr 2022 12:27:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236643AbiDZFpz (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 26 Apr 2022 01:45:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55258 "EHLO
+        id S1349897AbiDZMa7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 26 Apr 2022 08:30:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33682 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232426AbiDZFpx (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 26 Apr 2022 01:45:53 -0400
+        with ESMTP id S1346338AbiDZMan (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 26 Apr 2022 08:30:43 -0400
 Received: from mga03.intel.com (mga03.intel.com [134.134.136.65])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9589E2C104;
-        Mon, 25 Apr 2022 22:42:44 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 94D756949C;
+        Tue, 26 Apr 2022 05:27:35 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
   d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1650951764; x=1682487764;
-  h=date:from:to:cc:subject:message-id:mime-version:
-   content-transfer-encoding;
-  bh=ALBaSwqRZhkpzhIwROzHvqZY8s+vIra6wfKbbUAx7ww=;
-  b=I0vRTdUMw/G/d8k0vzpbxuZWI4MVg77uJR4dfGMAOrdUAcIIHPuf84TT
-   amc6N8AaSUxmQnIdlc8YNjOGuIWwXzBiA+IUJbtEeSQGy/XUOHGkLoW9a
-   PdxSGYzfZMGBZ/lXu7H1TxDxiIcq8qP0UzBoN7o6ETWqzVCf8X/GozvK1
-   yUY4/5MZZDjJcTSD4RWh3Hl2PuQvBLqlqNOT5FMdd8xhRjKxIsVNyR8I5
-   oxUvy2d+R9B31axCLYEzSZ36N7x3P1DJIBYTD5vb4sRptJkSSsMqKzMCy
-   fkeZoUYjGn37Ui2Iqn4WBD1xBcO5pfo/gZ96wXYkxKLYkxniVYm+vsjtI
-   A==;
-X-IronPort-AV: E=McAfee;i="6400,9594,10328"; a="265266467"
+  t=1650976055; x=1682512055;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=992pMmMSIzYV7y0KEa3yv+K7RV9yrpGUXvIIXw6WJ3Q=;
+  b=MJy89OV44ynfEKiOij8eFG+yHWCoqbe4B//aTNO7VMCfnIDE6u+Qma/K
+   JEXommGtCRVTEE1L2pdHbJad4bLpvmQcaRNMwYU2vT1PMTb0lSdGaf/6J
+   NfNZcNeuymP8ZRncpk4SXVCkn9lIT4QMO75zNimEcmk9LD3Vx6LSiXfzF
+   jRAN0dl3Kjpie/lnlO2Ve3G5x6tS6ZjPDFNSKZrr5EGyKdRGerg2uszhs
+   luhf1JwKS3AjnIrYXMDzTJTAJsYzTg1zyBAj0cRq+wKtPbmzbZSBD1/D1
+   t/qa2//aTMHqfOW6grc/rlQOGwF90VjFPIssiqUiNcW73VUJQs9stbbBf
+   Q==;
+X-IronPort-AV: E=McAfee;i="6400,9594,10328"; a="265365557"
 X-IronPort-AV: E=Sophos;i="5.90,290,1643702400"; 
-   d="scan'208";a="265266467"
-Received: from fmsmga003.fm.intel.com ([10.253.24.29])
-  by orsmga103.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 25 Apr 2022 22:42:43 -0700
-X-ExtLoop1: 1
+   d="scan'208";a="265365557"
+Received: from orsmga008.jf.intel.com ([10.7.209.65])
+  by orsmga103.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Apr 2022 05:27:35 -0700
 X-IronPort-AV: E=Sophos;i="5.90,290,1643702400"; 
-   d="scan'208";a="650031008"
-Received: from lkp-server01.sh.intel.com (HELO 5056e131ad90) ([10.239.97.150])
-  by FMSMGA003.fm.intel.com with ESMTP; 25 Apr 2022 22:42:39 -0700
-Received: from kbuild by 5056e131ad90 with local (Exim 4.95)
-        (envelope-from <lkp@intel.com>)
-        id 1njDyA-0003G6-RK;
-        Tue, 26 Apr 2022 05:42:38 +0000
-Date:   Tue, 26 Apr 2022 13:42:04 +0800
-From:   kernel test robot <lkp@intel.com>
-To:     Andrew Morton <akpm@linux-foundation.org>
-Cc:     netdev@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-mm@kvack.org, linux-mips@vger.kernel.org,
-        linux-media@vger.kernel.org, linux-edac@vger.kernel.org,
-        linux-crypto@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-arm-msm@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org,
-        linaro-mm-sig@lists.linaro.org, io-uring@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, bpf@vger.kernel.org,
-        ath11k@lists.infradead.org,
-        Linux Memory Management List <linux-mm@kvack.org>
-Subject: [linux-next:master] BUILD REGRESSION
- e7d6987e09a328d4a949701db40ef63fbb970670
-Message-ID: <6267862c.xuehJN2IUHn8WMof%lkp@intel.com>
-User-Agent: Heirloom mailx 12.5 6/20/10
+   d="scan'208";a="579864945"
+Received: from mmilkovx-mobl.amr.corp.intel.com (HELO ijarvine-MOBL2.ger.corp.intel.com) ([10.249.47.245])
+  by orsmga008-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 26 Apr 2022 05:27:26 -0700
+From:   =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>
+To:     linux-serial@vger.kernel.org, Greg KH <gregkh@linuxfoundation.org>
+Cc:     Jiri Slaby <jirislaby@kernel.org>, Lukas Wunner <lukas@wunner.de>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= 
+        <u.kleine-koenig@pengutronix.de>,
+        Vicente Bergas <vicencb@gmail.com>,
+        Johan Hovold <johan@kernel.org>, heiko@sntech.de,
+        giulio.benetti@micronovasrl.com,
+        Heikki Krogerus <heikki.krogerus@linux.intel.com>,
+        =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>,
+        linux-api@vger.kernel.org,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        Matt Turner <mattst88@gmail.com>, linux-alpha@vger.kernel.org,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        linux-mips@vger.kernel.org,
+        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        Helge Deller <deller@gmx.de>, linux-parisc@vger.kernel.org,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        linuxppc-dev@lists.ozlabs.org,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        "David S. Miller" <davem@davemloft.net>,
+        sparclinux@vger.kernel.org, Chris Zankel <chris@zankel.net>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        linux-xtensa@linux-xtensa.org, Arnd Bergmann <arnd@arndb.de>,
+        linux-arch@vger.kernel.org, linux-doc@vger.kernel.org
+Subject: [PATCH v5 06/10] serial: General support for multipoint addresses
+Date:   Tue, 26 Apr 2022 15:24:44 +0300
+Message-Id: <20220426122448.38997-7-ilpo.jarvinen@linux.intel.com>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20220426122448.38997-1-ilpo.jarvinen@linux.intel.com>
+References: <20220426122448.38997-1-ilpo.jarvinen@linux.intel.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-tree/branch: https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git master
-branch HEAD: e7d6987e09a328d4a949701db40ef63fbb970670  Add linux-next specific files for 20220422
+Add generic support for serial multipoint addressing. Two new ioctls
+are added. TIOCSADDR is used to indicate the destination/receive
+address. TIOCGADDR returns the current address in use. The driver
+should implement set_addr and get_addr to support addressing mode.
 
-Error/Warning reports:
+Adjust ADDRB clearing to happen only if driver does not provide
+set_addr (=the driver doesn't support address mode).
 
-https://lore.kernel.org/linux-mm/202204081656.6x4pfen4-lkp@intel.com
-https://lore.kernel.org/linux-mm/202204231818.yVvV3Oxp-lkp@intel.com
-https://lore.kernel.org/linux-mm/202204240458.z2cymyl5-lkp@intel.com
-https://lore.kernel.org/linux-mm/202204241527.n36cr1e5-lkp@intel.com
-https://lore.kernel.org/llvm/202204230717.gJP3yZ5j-lkp@intel.com
+This change is necessary for supporting devices with RS485 multipoint
+addressing [*]. A following patch in the patch series adds support for
+Synopsys Designware UART capable for 9th bit addressing mode. In this
+mode, 9th bit is used to indicate an address (byte) within the
+communication line. The 9th bit addressing mode is selected using ADDRB
+introduced by the previous patch.
 
-Error/Warning: (recently discovered and may have been fixed)
+Transmit addresses / receiver filter are specified by setting the flags
+SER_ADDR_DEST and/or SER_ADDR_RECV. When the user supplies the transmit
+address, in the 9bit addressing mode it is sent out immediately with
+the 9th bit set to 1. After that, the subsequent normal data bytes are
+sent with 9th bit as 0 and they are intended to the device with the
+given address. It is up to receiver to enforce the filter using
+SER_ADDR_RECV. When userspace has supplied the receive address, the
+driver is expected to handle the matching of the address and only data
+with that address is forwarded to the user. Both SER_ADDR_DEST and
+SER_ADDR_RECV can be given at the same time in a single call if the
+addresses are the same.
 
-ERROR: modpost: "omap_set_dma_priority" [drivers/video/fbdev/omap/omapfb.ko] undefined!
-arch/sh/include/asm/io.h:274:33: error: expected expression before 'do'
-drivers/bus/mhi/host/main.c:787:13: warning: parameter 'event_quota' set but not used [-Wunused-but-set-parameter]
-drivers/char/hw_random/mpfs-rng.c:49:9: error: call to undeclared function 'mpfs_blocking_transaction'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
-drivers/char/hw_random/mpfs-rng.c:74:27: warning: incompatible integer to pointer conversion assigning to 'struct mpfs_sys_controller *' from 'int' [-Wint-conversion]
-drivers/char/hw_random/mpfs-rng.c:74:30: error: call to undeclared function 'mpfs_sys_controller_get'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
-drivers/gpu/drm/solomon/ssd130x-spi.c:154:35: warning: unused variable 'ssd130x_spi_table' [-Wunused-const-variable]
-drivers/usb/atm/cxacru.c:259:9: warning: Call to function 'sprintf' is insecure as it does not provide bounding of the memory buffer or security checks introduced in the C11 standard. Replace with analogous functions that support length arguments or provides boundary checks such as 'sprintf_s' in case of C11 [clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling]
-drivers/usb/atm/usbatm.c:739:10: warning: Call to function 'sprintf' is insecure as it does not provide bounding of the memory buffer or security checks introduced in the C11 standard. Replace with analogous functions that support length arguments or provides boundary checks such as 'sprintf_s' in case of C11 [clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling]
-drivers/usb/chipidea/core.c:956:10: warning: Call to function 'sprintf' is insecure as it does not provide bounding of the memory buffer or security checks introduced in the C11 standard. Replace with analogous functions that support length arguments or provides boundary checks such as 'sprintf_s' in case of C11 [clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling]
-drivers/usb/gadget/udc/core.c:1664:9: warning: Call to function 'sprintf' is insecure as it does not provide bounding of the memory buffer or security checks introduced in the C11 standard. Replace with analogous functions that support length arguments or provides boundary checks such as 'sprintf_s' in case of C11 [clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling]
-mpfs-rng.c:(.data.rel.ro+0x20): undefined reference to `mpfs_sys_controller_get'
-mpfs-rng.c:(.data.rel.ro+0x8): undefined reference to `mpfs_blocking_transaction'
-omapfb_main.c:(.text+0x41ec): undefined reference to `omap_set_dma_priority'
+The user can clear the receive filter with SER_ADDR_RECV_CLEAR.
 
-Unverified Error/Warning (likely false positive, please contact us if interested):
+[*] Technically, RS485 is just an electronic spec and does not itself
+specify the 9th bit addressing mode but 9th bit seems at least
+"semi-standard" way to do addressing with RS485.
 
-Makefile:684: arch/h8300/Makefile: No such file or directory
-arch/Kconfig:10: can't open file "arch/h8300/Kconfig"
-arch/s390/include/asm/spinlock.h:81:3: error: unexpected token in '.rept' directive
-arch/s390/include/asm/spinlock.h:81:3: error: unknown directive
-arch/s390/include/asm/spinlock.h:81:3: error: unmatched '.endr' directive
-arch/s390/lib/spinlock.c:78:3: error: unexpected token in '.rept' directive
-arch/s390/lib/spinlock.c:78:3: error: unknown directive
-arch/s390/lib/spinlock.c:78:3: error: unmatched '.endr' directive
-crypto/sm3.c:246:1: internal compiler error: Segmentation fault
-csky-linux-ld: mpfs-rng.c:(.text+0x10c): undefined reference to `mpfs_sys_controller_get'
-csky-linux-ld: mpfs-rng.c:(.text+0x70): undefined reference to `mpfs_blocking_transaction'
-drivers/base/topology.c:158:17: warning: Value stored to 'dev' during its initialization is never read [clang-analyzer-deadcode.DeadStores]
-drivers/char/hw_random/mpfs-rng.c:49:23: error: implicit declaration of function 'mpfs_blocking_transaction' [-Werror=implicit-function-declaration]
-drivers/char/hw_random/mpfs-rng.c:74:34: warning: assignment to 'struct mpfs_sys_controller *' from 'int' makes pointer from integer without a cast [-Wint-conversion]
-drivers/char/hw_random/mpfs-rng.c:74:37: error: implicit declaration of function 'mpfs_sys_controller_get' [-Werror=implicit-function-declaration]
-drivers/dma-buf/st-dma-fence-unwrap.c:125:13: warning: variable 'err' set but not used [-Wunused-but-set-variable]
-drivers/edac/edac_device.c:79 edac_device_alloc_ctl_info() warn: Please consider using kcalloc instead
-drivers/edac/edac_mc.c:396:24: warning: Variable 'layer' is not assigned a value. [unassignedVariable]
-drivers/hid/wacom_wac.c:2411:42: warning: format specifies type 'unsigned short' but the argument has type 'int' [-Wformat]
-drivers/net/ethernet/mellanox/mlxsw/core_linecards.c:851:8: warning: Use of memory after it is freed [clang-analyzer-unix.Malloc]
-drivers/net/wireless/ath/ath11k/peer.c:520 ath11k_peer_rhash_id_tbl_init() warn: missing error code 'ret'
-drivers/net/wireless/ath/ath11k/peer.c:575 ath11k_peer_rhash_addr_tbl_init() warn: missing error code 'ret'
-drivers/pinctrl/pinctrl-ingenic.c:162 is_soc_or_above() warn: bitwise AND condition is false here
-fs/btrfs/ctree.c:1412:7: warning: Local variable 'unlock_up' shadows outer function [shadowFunction]
-fs/btrfs/send.c:6857:13: warning: Either the condition '*level==0' is redundant or the array 'path->nodes[8]' is accessed at index -1, which is out of bounds. [negativeIndex]
-fs/btrfs/send.c:6858:13: warning: Either the condition '*level==0' is redundant or the array 'path->slots[8]' is accessed at index -1, which is out of bounds. [negativeIndex]
-kernel/bpf/core.c:1667:3: warning: Syntax Error: AST broken, binary operator '=' doesn't have two operands. [internalAstError]
-kernel/bpf/syscall.c:4944:13: warning: no previous prototype for function 'unpriv_ebpf_notify' [-Wmissing-prototypes]
-kernel/module/kallsyms.c:157:24: warning: Redundant assignment of 'mod->init_layout.size' to itself. [selfAssignment]
-kernel/module/kallsyms.c:424:3: warning: Assignment of function parameter has no effect outside the function. [uselessAssignmentArg]
-kernel/module/main.c:2113:26: warning: Redundant assignment of 'mod->core_layout.size' to itself. [selfAssignment]
-kernel/module/main.c:2147:26: warning: Redundant assignment of 'mod->init_layout.size' to itself. [selfAssignment]
-kernel/module/main.c:2189:4: warning: Null pointer passed as 1st argument to memory copy function [clang-analyzer-unix.cstring.NullArg]
-kernel/module/main.c:2261:70: warning: Parameter 'debug' can be declared with const [constParameter]
-kernel/module/main.c:357:20: warning: Local variable 'arr' shadows outer variable [shadowVariable]
-kernel/module/main.c:924:9: warning: Call to function 'sprintf' is insecure as it does not provide bounding of the memory buffer or security checks introduced in the C11 standard. Replace with analogous functions that support length arguments or provides boundary checks such as 'sprintf_s' in case of C11 [clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling]
-lib/iov_iter.c:1837:61: warning: Parameter 'old' can be declared with const [constParameter]
-lib/iov_iter.c:1884:6: warning: Redundant initialization for 'ret'. The initialized value is overwritten before it is read. [redundantInitialization]
-lib/vsprintf.c:588:41: warning: Parameter 'end' can be declared with const [constParameter]
-make[1]: *** No rule to make target 'arch/h8300/Makefile'.
-mm/memory.c: linux/mm_inline.h is included more than once.
-mm/sparse-vmemmap.c:740:17: warning: Value stored to 'next' during its initialization is never read [clang-analyzer-deadcode.DeadStores]
-mpfs-rng.c:(.text+0x3c): undefined reference to `mpfs_blocking_transaction'
-mpfs-rng.c:(.text+0x98): undefined reference to `mpfs_sys_controller_get'
-net/ipv4/tcp_cong.c:430:32: warning: Division by zero [clang-analyzer-core.DivideZero]
-{standard input}:1628: Error: operands mismatch -- statement `mulu.l 4(%a0),%d3:%d0' ignored
-{standard input}:1628: Error: operands mismatch -- statement `mulu.l 8(%a0),%d2:%d4' ignored
-{standard input}:2648: Error: operands mismatch -- statement `divu.l %d0,%d3:%d7' ignored
-{standard input}:2677: Error: operands mismatch -- statement `mulu.l %d3,%d2:%d7' ignored
+Cc: linux-api@vger.kernel.org
+Cc: Ivan Kokshaysky <ink@jurassic.park.msu.ru>
+Cc: Matt Turner <mattst88@gmail.com>
+Cc: linux-alpha@vger.kernel.org
+Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+Cc: linux-mips@vger.kernel.org
+Cc: "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>
+Cc: Helge Deller <deller@gmx.de>
+Cc: linux-parisc@vger.kernel.org
+Cc: Michael Ellerman <mpe@ellerman.id.au>
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: Paul Mackerras <paulus@samba.org>
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: sparclinux@vger.kernel.org
+Cc: Chris Zankel <chris@zankel.net>
+Cc: Max Filippov <jcmvbkbc@gmail.com>
+Cc: linux-xtensa@linux-xtensa.org
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: linux-arch@vger.kernel.org
+Cc: linux-doc@vger.kernel.org
+Signed-off-by: Ilpo Järvinen <ilpo.jarvinen@linux.intel.com>
+---
+ .../driver-api/serial/serial-rs485.rst        | 23 ++++++-
+ arch/alpha/include/uapi/asm/ioctls.h          |  3 +
+ arch/mips/include/uapi/asm/ioctls.h           |  3 +
+ arch/parisc/include/uapi/asm/ioctls.h         |  3 +
+ arch/powerpc/include/uapi/asm/ioctls.h        |  3 +
+ arch/sh/include/uapi/asm/ioctls.h             |  3 +
+ arch/sparc/include/uapi/asm/ioctls.h          |  3 +
+ arch/xtensa/include/uapi/asm/ioctls.h         |  3 +
+ drivers/tty/serial/8250/8250_core.c           |  2 +
+ drivers/tty/serial/serial_core.c              | 62 ++++++++++++++++++-
+ drivers/tty/tty_io.c                          |  2 +
+ include/linux/serial_core.h                   |  6 ++
+ include/uapi/asm-generic/ioctls.h             |  3 +
+ include/uapi/linux/serial.h                   |  8 +++
+ 14 files changed, 125 insertions(+), 2 deletions(-)
 
-Error/Warning ids grouped by kconfigs:
-
-gcc_recent_errors
-|-- alpha-allmodconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- alpha-allyesconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- alpha-buildonly-randconfig-r004-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- alpha-randconfig-r033-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- arc-allmodconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- arc-allyesconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- arc-randconfig-p001-20220422
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- arc-randconfig-r043-20220424
-|   |-- drivers-char-hw_random-mpfs-rng.c:error:implicit-declaration-of-function-mpfs_blocking_transaction
-|   |-- drivers-char-hw_random-mpfs-rng.c:error:implicit-declaration-of-function-mpfs_sys_controller_get
-|   `-- drivers-char-hw_random-mpfs-rng.c:warning:assignment-to-struct-mpfs_sys_controller-from-int-makes-pointer-from-integer-without-a-cast
-|-- arc-randconfig-s031-20220421
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- arm-allmodconfig
-|   |-- ERROR:omap_set_dma_priority-drivers-video-fbdev-omap-omapfb.ko-undefined
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- arm-allyesconfig
-|   |-- arch-arm-mach-omap2-sram.c:sparse:sparse:cast-removes-address-space-__iomem-of-expression
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   |-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|   `-- omapfb_main.c:(.text):undefined-reference-to-omap_set_dma_priority
-|-- arm-randconfig-c002-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- arm64-allmodconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- arm64-allyesconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- arm64-randconfig-c003-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- csky-allmodconfig
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- csky-allyesconfig
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- csky-randconfig-r003-20220424
-|   |-- csky-linux-ld:mpfs-rng.c:(.text):undefined-reference-to-mpfs_blocking_transaction
-|   |-- csky-linux-ld:mpfs-rng.c:(.text):undefined-reference-to-mpfs_sys_controller_get
-|   |-- mpfs-rng.c:(.text):undefined-reference-to-mpfs_blocking_transaction
-|   `-- mpfs-rng.c:(.text):undefined-reference-to-mpfs_sys_controller_get
-|-- h8300-allmodconfig
-|   |-- Makefile:arch-h8300-Makefile:No-such-file-or-directory
-|   |-- arch-Kconfig:can-t-open-file-arch-h8300-Kconfig
-|   `-- make:No-rule-to-make-target-arch-h8300-Makefile-.
-|-- h8300-allyesconfig
-|   |-- Makefile:arch-h8300-Makefile:No-such-file-or-directory
-|   |-- arch-Kconfig:can-t-open-file-arch-h8300-Kconfig
-|   `-- make:No-rule-to-make-target-arch-h8300-Makefile-.
-|-- h8300-buildonly-randconfig-r006-20220421
-|   |-- Makefile:arch-h8300-Makefile:No-such-file-or-directory
-|   |-- arch-Kconfig:can-t-open-file-arch-h8300-Kconfig
-|   `-- make:No-rule-to-make-target-arch-h8300-Makefile-.
-|-- i386-allmodconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- i386-allyesconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- i386-randconfig-m021
-|   `-- drivers-edac-edac_device.c-edac_device_alloc_ctl_info()-warn:Please-consider-using-kcalloc-instead
-|-- i386-randconfig-s001
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- ia64-allmodconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- ia64-allyesconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- ia64-randconfig-r032-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- m68k-allmodconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- m68k-allyesconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- m68k-buildonly-randconfig-r005-20220422
-|   |-- drivers-char-hw_random-mpfs-rng.c:error:implicit-declaration-of-function-mpfs_blocking_transaction
-|   |-- drivers-char-hw_random-mpfs-rng.c:error:implicit-declaration-of-function-mpfs_sys_controller_get
-|   |-- drivers-char-hw_random-mpfs-rng.c:warning:assignment-to-struct-mpfs_sys_controller-from-int-makes-pointer-from-integer-without-a-cast
-|   |-- standard-input:Error:operands-mismatch-statement-divu.l-d0-d3:d7-ignored
-|   |-- standard-input:Error:operands-mismatch-statement-mulu.l-(-a0)-d2:d4-ignored
-|   |-- standard-input:Error:operands-mismatch-statement-mulu.l-(-a0)-d3:d0-ignored
-|   `-- standard-input:Error:operands-mismatch-statement-mulu.l-d3-d2:d7-ignored
-|-- m68k-randconfig-r011-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- m68k-randconfig-r013-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- m68k-randconfig-r026-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- microblaze-randconfig-p002-20220422
-|   |-- fs-btrfs-ctree.c:warning:Local-variable-unlock_up-shadows-outer-function-shadowFunction
-|   |-- fs-btrfs-send.c:warning:Either-the-condition-level-is-redundant-or-the-array-path-nodes-is-accessed-at-index-which-is-out-of-bounds.-negativeIndex
-|   `-- fs-btrfs-send.c:warning:Either-the-condition-level-is-redundant-or-the-array-path-slots-is-accessed-at-index-which-is-out-of-bounds.-negativeIndex
-|-- mips-allmodconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-mem-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- mips-allyesconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-mem-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- nios2-allmodconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- nios2-allyesconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- nios2-randconfig-r005-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- parisc-allmodconfig
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- parisc-allyesconfig
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- parisc-buildonly-randconfig-r004-20220422
-|   |-- mpfs-rng.c:(.data.rel.ro):undefined-reference-to-mpfs_blocking_transaction
-|   `-- mpfs-rng.c:(.data.rel.ro):undefined-reference-to-mpfs_sys_controller_get
-|-- powerpc-allmodconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- powerpc-allyesconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- powerpc-buildonly-randconfig-r005-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- powerpc64-randconfig-p001-20220422
-|   |-- drivers-edac-edac_mc.c:warning:Variable-layer-is-not-assigned-a-value.-unassignedVariable
-|   |-- kernel-bpf-core.c:warning:Syntax-Error:AST-broken-binary-operator-doesn-t-have-two-operands.-internalAstError
-|   |-- kernel-module-kallsyms.c:warning:Assignment-of-function-parameter-has-no-effect-outside-the-function.-uselessAssignmentArg
-|   |-- kernel-module-kallsyms.c:warning:Redundant-assignment-of-mod-init_layout.size-to-itself.-selfAssignment
-|   |-- kernel-module-main.c:warning:Local-variable-arr-shadows-outer-variable-shadowVariable
-|   |-- kernel-module-main.c:warning:Parameter-debug-can-be-declared-with-const-constParameter
-|   |-- kernel-module-main.c:warning:Redundant-assignment-of-mod-core_layout.size-to-itself.-selfAssignment
-|   |-- kernel-module-main.c:warning:Redundant-assignment-of-mod-data_layout.size-to-itself.-selfAssignment
-|   |-- kernel-module-main.c:warning:Redundant-assignment-of-mod-init_layout.size-to-itself.-selfAssignment
-|   |-- lib-iov_iter.c:warning:Parameter-old-can-be-declared-with-const-constParameter
-|   |-- lib-iov_iter.c:warning:Redundant-initialization-for-ret-.-The-initialized-value-is-overwritten-before-it-is-read.-redundantInitialization
-|   `-- lib-vsprintf.c:warning:Parameter-end-can-be-declared-with-const-constParameter
-|-- powerpc64-randconfig-r021-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- riscv-allmodconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- riscv-allyesconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- riscv-buildonly-randconfig-r001-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- riscv-buildonly-randconfig-r003-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- riscv-randconfig-r035-20220422
-|   `-- crypto-sm3.c:internal-compiler-error:Segmentation-fault
-|-- s390-allmodconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- s390-allyesconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- s390-randconfig-r025-20220421
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- sh-allmodconfig
-|   |-- arch-sh-include-asm-io.h:error:expected-expression-before-do
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- sh-allyesconfig
-|   |-- arch-sh-include-asm-io.h:error:expected-expression-before-do
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- sh-randconfig-c004-20220421
-|   `-- arch-sh-include-asm-io.h:error:expected-expression-before-do
-|-- sparc-allmodconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- sparc-allyesconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:cast-to-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-argument-(different-address-spaces)-expected-void-const-volatile-noderef-__iomem-addr-got-restricted-__le32
-|   |-- drivers-soc-qcom-smem.c:sparse:sparse:incorrect-type-in-assignment-(different-address-spaces)-expected-struct-smem_partition_header-phdr-got-void-noderef-__iomem-virt_base
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- um-i386_defconfig
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- um-x86_64_defconfig
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- x86_64-allmodconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- x86_64-allnoconfig
-|   `-- mm-memory.c:linux-mm_inline.h-is-included-more-than-once.
-|-- x86_64-allyesconfig
-|   |-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- x86_64-randconfig-m001
-|   `-- drivers-edac-edac_device.c-edac_device_alloc_ctl_info()-warn:Please-consider-using-kcalloc-instead
-|-- x86_64-randconfig-m001-20220418
-|   |-- drivers-net-wireless-ath-ath11k-peer.c-ath11k_peer_rhash_addr_tbl_init()-warn:missing-error-code-ret
-|   `-- drivers-net-wireless-ath-ath11k-peer.c-ath11k_peer_rhash_id_tbl_init()-warn:missing-error-code-ret
-|-- x86_64-randconfig-s021
-|   `-- fs-io_uring.c:sparse:sparse:marked-inline-but-without-a-definition
-|-- xtensa-allmodconfig
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- xtensa-allyesconfig
-|   `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-|-- xtensa-randconfig-m031-20220422
-|   `-- drivers-pinctrl-pinctrl-ingenic.c-is_soc_or_above()-warn:bitwise-AND-condition-is-false-here
-`-- xtensa-randconfig-r002-20220421
-    `-- drivers-dma-buf-st-dma-fence-unwrap.c:warning:variable-err-set-but-not-used
-
-clang_recent_errors
-|-- arm-randconfig-c002-20220422
-|   |-- drivers-usb-atm-cxacru.c:warning:Call-to-function-sprintf-is-insecure-as-it-does-not-provide-bounding-of-the-memory-buffer-or-security-checks-introduced-in-the-C11-standard.-Replace-with-analogous-fun
-|   |-- drivers-usb-atm-usbatm.c:warning:Call-to-function-sprintf-is-insecure-as-it-does-not-provide-bounding-of-the-memory-buffer-or-security-checks-introduced-in-the-C11-standard.-Replace-with-analogous-fun
-|   |-- drivers-usb-chipidea-core.c:warning:Call-to-function-sprintf-is-insecure-as-it-does-not-provide-bounding-of-the-memory-buffer-or-security-checks-introduced-in-the-C11-standard.-Replace-with-analogous-
-|   |-- drivers-usb-gadget-udc-core.c:warning:Call-to-function-sprintf-is-insecure-as-it-does-not-provide-bounding-of-the-memory-buffer-or-security-checks-introduced-in-the-C11-standard.-Replace-with-analogou
-|   |-- kernel-module-main.c:warning:Call-to-function-sprintf-is-insecure-as-it-does-not-provide-bounding-of-the-memory-buffer-or-security-checks-introduced-in-the-C11-standard.-Replace-with-analogous-functio
-|   `-- kernel-module-main.c:warning:Null-pointer-passed-as-1st-argument-to-memory-copy-function-clang-analyzer-unix.cstring.NullArg
-|-- arm-randconfig-r015-20220421
-|   |-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|   `-- kernel-bpf-syscall.c:warning:no-previous-prototype-for-function-unpriv_ebpf_notify
-|-- arm64-buildonly-randconfig-r002-20220421
-|   `-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|-- arm64-randconfig-r021-20220422
-|   |-- drivers-char-hw_random-mpfs-rng.c:error:call-to-undeclared-function-mpfs_blocking_transaction-ISO-C99-and-later-do-not-support-implicit-function-declarations
-|   |-- drivers-char-hw_random-mpfs-rng.c:error:call-to-undeclared-function-mpfs_sys_controller_get-ISO-C99-and-later-do-not-support-implicit-function-declarations
-|   `-- drivers-char-hw_random-mpfs-rng.c:warning:incompatible-integer-to-pointer-conversion-assigning-to-struct-mpfs_sys_controller-from-int
-|-- arm64-randconfig-r035-20220421
-|   |-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|   `-- kernel-bpf-syscall.c:warning:no-previous-prototype-for-function-unpriv_ebpf_notify
-|-- hexagon-randconfig-r034-20220421
-|   `-- kernel-bpf-syscall.c:warning:no-previous-prototype-for-function-unpriv_ebpf_notify
-|-- hexagon-randconfig-r041-20220421
-|   `-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|-- hexagon-randconfig-r045-20220421
-|   `-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|-- hexagon-randconfig-r045-20220424
-|   |-- drivers-char-hw_random-mpfs-rng.c:error:call-to-undeclared-function-mpfs_blocking_transaction-ISO-C99-and-later-do-not-support-implicit-function-declarations
-|   |-- drivers-char-hw_random-mpfs-rng.c:error:call-to-undeclared-function-mpfs_sys_controller_get-ISO-C99-and-later-do-not-support-implicit-function-declarations
-|   `-- drivers-char-hw_random-mpfs-rng.c:warning:incompatible-integer-to-pointer-conversion-assigning-to-struct-mpfs_sys_controller-from-int
-|-- i386-randconfig-a002
-|   `-- kernel-bpf-syscall.c:warning:no-previous-prototype-for-function-unpriv_ebpf_notify
-|-- i386-randconfig-a004
-|   `-- kernel-bpf-syscall.c:warning:no-previous-prototype-for-function-unpriv_ebpf_notify
-|-- i386-randconfig-a011
-|   |-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|   `-- kernel-bpf-syscall.c:warning:no-previous-prototype-for-function-unpriv_ebpf_notify
-|-- i386-randconfig-a013
-|   |-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|   `-- kernel-bpf-syscall.c:warning:no-previous-prototype-for-function-unpriv_ebpf_notify
-|-- i386-randconfig-a015
-|   |-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|   `-- kernel-bpf-syscall.c:warning:no-previous-prototype-for-function-unpriv_ebpf_notify
-|-- i386-randconfig-c001
-|   |-- drivers-base-topology.c:warning:Value-stored-to-dev-during-its-initialization-is-never-read-clang-analyzer-deadcode.DeadStores
-|   |-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|   |-- kernel-bpf-syscall.c:warning:no-previous-prototype-for-function-unpriv_ebpf_notify
-|   |-- kernel-module-main.c:warning:Call-to-function-sprintf-is-insecure-as-it-does-not-provide-bounding-of-the-memory-buffer-or-security-checks-introduced-in-the-C11-standard.-Replace-with-analogous-functio
-|   |-- kernel-module-main.c:warning:Null-pointer-passed-as-1st-argument-to-memory-copy-function-clang-analyzer-unix.cstring.NullArg
-|   `-- net-ipv4-tcp_cong.c:warning:Division-by-zero-clang-analyzer-core.DivideZero
-|-- riscv-randconfig-c006-20220422
-|   `-- kernel-bpf-syscall.c:warning:no-previous-prototype-for-function-unpriv_ebpf_notify
-|-- riscv-randconfig-c006-20220424
-|   `-- drivers-net-ethernet-mellanox-mlxsw-core_linecards.c:warning:Use-of-memory-after-it-is-freed-clang-analyzer-unix.Malloc
-|-- riscv-randconfig-r004-20220421
-|   `-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|-- riscv-randconfig-r026-20220420
-|   `-- drivers-hid-wacom_wac.c:warning:format-specifies-type-unsigned-short-but-the-argument-has-type-int
-|-- s390-alldefconfig
-|   |-- arch-s390-include-asm-spinlock.h:error:unexpected-token-in-.rept-directive
-|   |-- arch-s390-include-asm-spinlock.h:error:unknown-directive
-|   |-- arch-s390-include-asm-spinlock.h:error:unmatched-.endr-directive
-|   |-- arch-s390-lib-spinlock.c:error:unexpected-token-in-.rept-directive
-|   |-- arch-s390-lib-spinlock.c:error:unknown-directive
-|   `-- arch-s390-lib-spinlock.c:error:unmatched-.endr-directive
-|-- s390-randconfig-c005-20220422
-|   |-- arch-s390-include-asm-spinlock.h:error:unexpected-token-in-.rept-directive
-|   |-- arch-s390-include-asm-spinlock.h:error:unknown-directive
-|   |-- arch-s390-include-asm-spinlock.h:error:unmatched-.endr-directive
-|   |-- arch-s390-lib-spinlock.c:error:unexpected-token-in-.rept-directive
-|   |-- arch-s390-lib-spinlock.c:error:unknown-directive
-|   `-- arch-s390-lib-spinlock.c:error:unmatched-.endr-directive
-|-- s390-randconfig-r003-20220421
-|   |-- arch-s390-include-asm-spinlock.h:error:unexpected-token-in-.rept-directive
-|   |-- arch-s390-include-asm-spinlock.h:error:unknown-directive
-|   |-- arch-s390-include-asm-spinlock.h:error:unmatched-.endr-directive
-|   |-- arch-s390-lib-spinlock.c:error:unexpected-token-in-.rept-directive
-|   |-- arch-s390-lib-spinlock.c:error:unknown-directive
-|   |-- arch-s390-lib-spinlock.c:error:unmatched-.endr-directive
-|   `-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|-- s390-randconfig-r006-20220421
-|   |-- arch-s390-include-asm-spinlock.h:error:unexpected-token-in-.rept-directive
-|   |-- arch-s390-include-asm-spinlock.h:error:unknown-directive
-|   |-- arch-s390-include-asm-spinlock.h:error:unmatched-.endr-directive
-|   |-- arch-s390-lib-spinlock.c:error:unexpected-token-in-.rept-directive
-|   |-- arch-s390-lib-spinlock.c:error:unknown-directive
-|   |-- arch-s390-lib-spinlock.c:error:unmatched-.endr-directive
-|   `-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|-- x86_64-allyesconfig
-|   `-- drivers-gpu-drm-solomon-ssd13-spi.c:warning:unused-variable-ssd13_spi_table
-|-- x86_64-randconfig-a001
-|   |-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|   `-- kernel-bpf-syscall.c:warning:no-previous-prototype-for-function-unpriv_ebpf_notify
-|-- x86_64-randconfig-a005
-|   `-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|-- x86_64-randconfig-a012
-|   |-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|   `-- kernel-bpf-syscall.c:warning:no-previous-prototype-for-function-unpriv_ebpf_notify
-|-- x86_64-randconfig-a014
-|   `-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-|-- x86_64-randconfig-a016
-|   `-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-`-- x86_64-randconfig-c007
-    |-- drivers-bus-mhi-host-main.c:warning:parameter-event_quota-set-but-not-used
-    |-- kernel-bpf-syscall.c:warning:no-previous-prototype-for-function-unpriv_ebpf_notify
-    |-- kernel-module-main.c:warning:Call-to-function-sprintf-is-insecure-as-it-does-not-provide-bounding-of-the-memory-buffer-or-security-checks-introduced-in-the-C11-standard.-Replace-with-analogous-functio
-    |-- kernel-module-main.c:warning:Null-pointer-passed-as-1st-argument-to-memory-copy-function-clang-analyzer-unix.cstring.NullArg
-    |-- mm-sparse-vmemmap.c:warning:Value-stored-to-next-during-its-initialization-is-never-read-clang-analyzer-deadcode.DeadStores
-    `-- net-ipv4-tcp_cong.c:warning:Division-by-zero-clang-analyzer-core.DivideZero
-
-elapsed time: 5684m
-
-configs tested: 130
-configs skipped: 3
-
-gcc tested configs:
-arm                              allmodconfig
-arm                              allyesconfig
-arm                                 defconfig
-arm64                               defconfig
-arm64                            allyesconfig
-ia64                             allmodconfig
-i386                             allyesconfig
-ia64                             allyesconfig
-x86_64                           allyesconfig
-mips                             allyesconfig
-riscv                            allyesconfig
-um                           x86_64_defconfig
-riscv                            allmodconfig
-um                             i386_defconfig
-mips                             allmodconfig
-powerpc                          allmodconfig
-m68k                             allyesconfig
-s390                             allmodconfig
-s390                             allyesconfig
-m68k                             allmodconfig
-powerpc                          allyesconfig
-i386                          randconfig-c001
-sparc                            allyesconfig
-parisc                           allyesconfig
-sh                               allmodconfig
-h8300                            allyesconfig
-xtensa                           allyesconfig
-arc                              allyesconfig
-alpha                            allyesconfig
-nios2                            allyesconfig
-mips                 decstation_r4k_defconfig
-powerpc                 mpc834x_mds_defconfig
-ia64                            zx1_defconfig
-mips                     decstation_defconfig
-arm                          exynos_defconfig
-arm                          simpad_defconfig
-mips                            gpr_defconfig
-m68k                        mvme147_defconfig
-sh                           se7722_defconfig
-sh                            hp6xx_defconfig
-xtensa                    xip_kc705_defconfig
-arm                          iop32x_defconfig
-parisc64                            defconfig
-sh                   rts7751r2dplus_defconfig
-arm                        mini2440_defconfig
-sparc                       sparc32_defconfig
-powerpc                  storcenter_defconfig
-arm                        keystone_defconfig
-sh                           se7343_defconfig
-powerpc                     sequoia_defconfig
-arc                                 defconfig
-xtensa                       common_defconfig
-sh                            shmin_defconfig
-sh                               alldefconfig
-powerpc                      ppc6xx_defconfig
-sh                     sh7710voipgw_defconfig
-sh                          rsk7269_defconfig
-sh                           se7750_defconfig
-arm                  randconfig-c002-20220421
-x86_64                        randconfig-c001
-ia64                                defconfig
-m68k                                defconfig
-alpha                               defconfig
-csky                                defconfig
-nios2                               defconfig
-parisc                              defconfig
-s390                                defconfig
-i386                   debian-10.3-kselftests
-i386                              debian-10.3
-i386                                defconfig
-sparc                               defconfig
-powerpc                           allnoconfig
-i386                          randconfig-a001
-i386                          randconfig-a003
-i386                          randconfig-a005
-x86_64                        randconfig-a013
-x86_64                        randconfig-a011
-x86_64                        randconfig-a015
-i386                          randconfig-a014
-i386                          randconfig-a012
-i386                          randconfig-a016
-x86_64                        randconfig-a004
-x86_64                        randconfig-a002
-x86_64                        randconfig-a006
-arc                  randconfig-r043-20220421
-riscv                randconfig-r042-20220421
-s390                 randconfig-r044-20220421
-riscv                    nommu_k210_defconfig
-riscv                    nommu_virt_defconfig
-riscv                             allnoconfig
-riscv                          rv32_defconfig
-riscv                               defconfig
-x86_64                          rhel-8.3-func
-x86_64                              defconfig
-x86_64                                  kexec
-x86_64                               rhel-8.3
-x86_64                         rhel-8.3-kunit
-x86_64                    rhel-8.3-kselftests
-
-clang tested configs:
-arm                  randconfig-c002-20220422
-powerpc              randconfig-c003-20220422
-s390                 randconfig-c005-20220422
-mips                 randconfig-c004-20220422
-x86_64                        randconfig-c007
-i386                          randconfig-c001
-riscv                randconfig-c006-20220422
-s390                             alldefconfig
-powerpc                      ppc64e_defconfig
-mips                           rs90_defconfig
-mips                        workpad_defconfig
-arm                           spitz_defconfig
-powerpc                 mpc8313_rdb_defconfig
-powerpc                 mpc836x_mds_defconfig
-powerpc                      obs600_defconfig
-powerpc                        fsp2_defconfig
-powerpc                     tqm8560_defconfig
-hexagon                          alldefconfig
-arm                     davinci_all_defconfig
-i386                          randconfig-a002
-i386                          randconfig-a006
-i386                          randconfig-a004
-x86_64                        randconfig-a016
-x86_64                        randconfig-a012
-x86_64                        randconfig-a014
-i386                          randconfig-a013
-i386                          randconfig-a011
-i386                          randconfig-a015
-x86_64                        randconfig-a005
-x86_64                        randconfig-a001
-x86_64                        randconfig-a003
-hexagon              randconfig-r041-20220421
-hexagon              randconfig-r045-20220421
-
+diff --git a/Documentation/driver-api/serial/serial-rs485.rst b/Documentation/driver-api/serial/serial-rs485.rst
+index 6bc824f948f9..2f45f007fa5b 100644
+--- a/Documentation/driver-api/serial/serial-rs485.rst
++++ b/Documentation/driver-api/serial/serial-rs485.rst
+@@ -95,7 +95,28 @@ RS485 Serial Communications
+ 		/* Error handling. See errno. */
+ 	}
+ 
+-5. References
++5. Multipoint Addressing
++========================
++
++   The Linux kernel provides serial_addr structure to handle addressing within
++   multipoint serial communications line such as RS485. 9th bit addressiong mode
++   is enabled by adding ADDRB flag in termios c_cflag.
++
++   Serial core calls device specific set/get_addr in response to TIOCSADDR and
++   TIOCGADDR ioctls with a pointer to serial_addr. Destination and receive
++   address can be specified using serial_addr flags field. Receive address may
++   also be cleared using flags. Once an address is set, the communication
++   can occur only with the particular device and other peers are filtered out.
++   It is left up to the receiver side to enforce the filtering.
++
++   Address flags:
++	- SER_ADDR_RECV: Receive (filter) address.
++	- SER_ADDR_RECV_CLEAR: Clear receive filter (only for TIOCSADDR).
++	- SER_ADDR_DEST: Destination address.
++
++   Note: not all devices supporting RS485 support multipoint addressing.
++
++6. References
+ =============
+ 
+  [1]	include/uapi/linux/serial.h
+diff --git a/arch/alpha/include/uapi/asm/ioctls.h b/arch/alpha/include/uapi/asm/ioctls.h
+index 971311605288..500cab3e1d6b 100644
+--- a/arch/alpha/include/uapi/asm/ioctls.h
++++ b/arch/alpha/include/uapi/asm/ioctls.h
+@@ -125,4 +125,7 @@
+ #define TIOCMIWAIT	0x545C	/* wait for a change on serial input line(s) */
+ #define TIOCGICOUNT	0x545D	/* read serial port inline interrupt counts */
+ 
++#define TIOCSADDR	_IOWR('T', 0x63, struct serial_addr)
++#define TIOCGADDR	_IOWR('T', 0x64, struct serial_addr)
++
+ #endif /* _ASM_ALPHA_IOCTLS_H */
+diff --git a/arch/mips/include/uapi/asm/ioctls.h b/arch/mips/include/uapi/asm/ioctls.h
+index 16aa8a766aec..3859dc46857e 100644
+--- a/arch/mips/include/uapi/asm/ioctls.h
++++ b/arch/mips/include/uapi/asm/ioctls.h
+@@ -96,6 +96,9 @@
+ #define TIOCGISO7816	_IOR('T', 0x42, struct serial_iso7816)
+ #define TIOCSISO7816	_IOWR('T', 0x43, struct serial_iso7816)
+ 
++#define TIOCSADDR	_IOWR('T', 0x63, struct serial_addr)
++#define TIOCGADDR	_IOWR('T', 0x64, struct serial_addr)
++
+ /* I hope the range from 0x5480 on is free ... */
+ #define TIOCSCTTY	0x5480		/* become controlling tty */
+ #define TIOCGSOFTCAR	0x5481
+diff --git a/arch/parisc/include/uapi/asm/ioctls.h b/arch/parisc/include/uapi/asm/ioctls.h
+index 82d1148c6379..62337743db64 100644
+--- a/arch/parisc/include/uapi/asm/ioctls.h
++++ b/arch/parisc/include/uapi/asm/ioctls.h
+@@ -86,6 +86,9 @@
+ #define TIOCSTOP	0x5462
+ #define TIOCSLTC	0x5462
+ 
++#define TIOCSADDR	_IOWR('T', 0x63, struct serial_addr)
++#define TIOCGADDR	_IOWR('T', 0x64, struct serial_addr)
++
+ /* Used for packet mode */
+ #define TIOCPKT_DATA		 0
+ #define TIOCPKT_FLUSHREAD	 1
+diff --git a/arch/powerpc/include/uapi/asm/ioctls.h b/arch/powerpc/include/uapi/asm/ioctls.h
+index 2c145da3b774..84fd69ac366a 100644
+--- a/arch/powerpc/include/uapi/asm/ioctls.h
++++ b/arch/powerpc/include/uapi/asm/ioctls.h
+@@ -120,4 +120,7 @@
+ #define TIOCMIWAIT	0x545C	/* wait for a change on serial input line(s) */
+ #define TIOCGICOUNT	0x545D	/* read serial port inline interrupt counts */
+ 
++#define TIOCSADDR	_IOWR('T', 0x63, struct serial_addr)
++#define TIOCGADDR	_IOWR('T', 0x64, struct serial_addr)
++
+ #endif	/* _ASM_POWERPC_IOCTLS_H */
+diff --git a/arch/sh/include/uapi/asm/ioctls.h b/arch/sh/include/uapi/asm/ioctls.h
+index 11866d4f60e1..f82966b7dba2 100644
+--- a/arch/sh/include/uapi/asm/ioctls.h
++++ b/arch/sh/include/uapi/asm/ioctls.h
+@@ -113,4 +113,7 @@
+ #define TIOCMIWAIT	_IO('T', 92) /* 0x545C */	/* wait for a change on serial input line(s) */
+ #define TIOCGICOUNT	0x545D	/* read serial port inline interrupt counts */
+ 
++#define TIOCSADDR	_IOWR('T', 0x63, struct serial_addr)
++#define TIOCGADDR	_IOWR('T', 0x64, struct serial_addr)
++
+ #endif /* __ASM_SH_IOCTLS_H */
+diff --git a/arch/sparc/include/uapi/asm/ioctls.h b/arch/sparc/include/uapi/asm/ioctls.h
+index 7fd2f5873c9e..e44624c67c79 100644
+--- a/arch/sparc/include/uapi/asm/ioctls.h
++++ b/arch/sparc/include/uapi/asm/ioctls.h
+@@ -125,6 +125,9 @@
+ #define TIOCMIWAIT	0x545C /* Wait for change on serial input line(s) */
+ #define TIOCGICOUNT	0x545D /* Read serial port inline interrupt counts */
+ 
++#define TIOCSADDR	_IOWR('T', 0x63, struct serial_addr)
++#define TIOCGADDR	_IOWR('T', 0x64, struct serial_addr)
++
+ /* Kernel definitions */
+ 
+ /* Used for packet mode */
+diff --git a/arch/xtensa/include/uapi/asm/ioctls.h b/arch/xtensa/include/uapi/asm/ioctls.h
+index 6d4a87296c95..759ca9377f2a 100644
+--- a/arch/xtensa/include/uapi/asm/ioctls.h
++++ b/arch/xtensa/include/uapi/asm/ioctls.h
+@@ -127,4 +127,7 @@
+ #define TIOCMIWAIT	_IO('T', 92) /* wait for a change on serial input line(s) */
+ #define TIOCGICOUNT	0x545D	/* read serial port inline interrupt counts */
+ 
++#define TIOCSADDR	_IOWR('T', 0x63, struct serial_addr)
++#define TIOCGADDR	_IOWR('T', 0x64, struct serial_addr)
++
+ #endif /* _XTENSA_IOCTLS_H */
+diff --git a/drivers/tty/serial/8250/8250_core.c b/drivers/tty/serial/8250/8250_core.c
+index 01d30f6ed8fb..f67bc3b76f65 100644
+--- a/drivers/tty/serial/8250/8250_core.c
++++ b/drivers/tty/serial/8250/8250_core.c
+@@ -1008,6 +1008,8 @@ int serial8250_register_8250_port(const struct uart_8250_port *up)
+ 		uart->port.rs485	= up->port.rs485;
+ 		uart->rs485_start_tx	= up->rs485_start_tx;
+ 		uart->rs485_stop_tx	= up->rs485_stop_tx;
++		uart->port.set_addr	= up->port.set_addr;
++		uart->port.get_addr	= up->port.get_addr;
+ 		uart->dma		= up->dma;
+ 
+ 		/* Take tx_loadsz from fifosize if it wasn't set separately */
+diff --git a/drivers/tty/serial/serial_core.c b/drivers/tty/serial/serial_core.c
+index 0f397e67eeb0..5762987bf176 100644
+--- a/drivers/tty/serial/serial_core.c
++++ b/drivers/tty/serial/serial_core.c
+@@ -1397,6 +1397,56 @@ static int uart_set_iso7816_config(struct uart_port *port,
+ 	return 0;
+ }
+ 
++static int uart_set_addr(struct uart_port *port,
++			 struct serial_addr __user *serial_addr_user)
++{
++	struct serial_addr addr;
++	unsigned long flags;
++	int ret;
++
++	if (!port->set_addr)
++		return -ENOTTY;
++
++	if (copy_from_user(&addr, serial_addr_user, sizeof(*serial_addr_user)))
++		return -EFAULT;
++
++	spin_lock_irqsave(&port->lock, flags);
++	ret = port->set_addr(port, &addr);
++	spin_unlock_irqrestore(&port->lock, flags);
++	if (ret)
++		return ret;
++
++	if (copy_to_user(serial_addr_user, &addr, sizeof(addr)))
++		return -EFAULT;
++
++	return 0;
++}
++
++static int uart_get_addr(struct uart_port *port,
++			 struct serial_addr __user *serial_addr_user)
++{
++	struct serial_addr addr;
++	unsigned long flags;
++	int ret;
++
++	if (!port->get_addr)
++		return -ENOTTY;
++
++	if (copy_from_user(&addr, serial_addr_user, sizeof(*serial_addr_user)))
++		return -EFAULT;
++
++	spin_lock_irqsave(&port->lock, flags);
++	ret = port->get_addr(port, &addr);
++	spin_unlock_irqrestore(&port->lock, flags);
++	if (ret)
++		return ret;
++
++	if (copy_to_user(serial_addr_user, &addr, sizeof(addr)))
++		return -EFAULT;
++
++	return 0;
++}
++
+ /*
+  * Called via sys_ioctl.  We can use spin_lock_irq() here.
+  */
+@@ -1474,6 +1524,15 @@ uart_ioctl(struct tty_struct *tty, unsigned int cmd, unsigned long arg)
+ 	case TIOCGISO7816:
+ 		ret = uart_get_iso7816_config(state->uart_port, uarg);
+ 		break;
++
++	case TIOCSADDR:
++		ret = uart_set_addr(uport, uarg);
++		break;
++
++	case TIOCGADDR:
++		ret = uart_get_addr(uport, uarg);
++		break;
++
+ 	default:
+ 		if (uport->ops->ioctl)
+ 			ret = uport->ops->ioctl(uport, cmd, arg);
+@@ -1540,7 +1599,8 @@ static void uart_set_termios(struct tty_struct *tty,
+ 		goto out;
+ 	}
+ 
+-	tty->termios.c_cflag &= ~ADDRB;
++	if (!uport->set_addr)
++		tty->termios.c_cflag &= ~ADDRB;
+ 
+ 	uart_change_speed(tty, state, old_termios);
+ 	/* reload cflag from termios; port driver may have overridden flags */
+diff --git a/drivers/tty/tty_io.c b/drivers/tty/tty_io.c
+index 8fec1d8648f5..ef22b95e9c79 100644
+--- a/drivers/tty/tty_io.c
++++ b/drivers/tty/tty_io.c
+@@ -2885,6 +2885,8 @@ static long tty_compat_ioctl(struct file *file, unsigned int cmd,
+ 	case TIOCSERGETLSR:
+ 	case TIOCGRS485:
+ 	case TIOCSRS485:
++	case TIOCSADDR:
++	case TIOCGADDR:
+ #ifdef TIOCGETP
+ 	case TIOCGETP:
+ 	case TIOCSETP:
+diff --git a/include/linux/serial_core.h b/include/linux/serial_core.h
+index cbd5070bc87f..2dd4c4d01c59 100644
+--- a/include/linux/serial_core.h
++++ b/include/linux/serial_core.h
+@@ -135,6 +135,12 @@ struct uart_port {
+ 						struct serial_rs485 *rs485);
+ 	int			(*iso7816_config)(struct uart_port *,
+ 						  struct serial_iso7816 *iso7816);
++
++	int			(*set_addr)(struct uart_port *p,
++					    struct serial_addr *addr);
++	int			(*get_addr)(struct uart_port *p,
++					    struct serial_addr *addr);
++
+ 	unsigned int		irq;			/* irq number */
+ 	unsigned long		irqflags;		/* irq flags  */
+ 	unsigned int		uartclk;		/* base uart clock */
+diff --git a/include/uapi/asm-generic/ioctls.h b/include/uapi/asm-generic/ioctls.h
+index cdc9f4ca8c27..689743366091 100644
+--- a/include/uapi/asm-generic/ioctls.h
++++ b/include/uapi/asm-generic/ioctls.h
+@@ -106,6 +106,9 @@
+ # define FIOQSIZE	0x5460
+ #endif
+ 
++#define TIOCSADDR	_IOWR('T', 0x63, struct serial_addr)
++#define TIOCGADDR	_IOWR('T', 0x64, struct serial_addr)
++
+ /* Used for packet mode */
+ #define TIOCPKT_DATA		 0
+ #define TIOCPKT_FLUSHREAD	 1
+diff --git a/include/uapi/linux/serial.h b/include/uapi/linux/serial.h
+index fa6b16e5fdd8..8cb785ea7087 100644
+--- a/include/uapi/linux/serial.h
++++ b/include/uapi/linux/serial.h
+@@ -149,4 +149,12 @@ struct serial_iso7816 {
+ 	__u32	reserved[5];
+ };
+ 
++struct serial_addr {
++	__u32	flags;
++#define SER_ADDR_RECV			(1 << 0)
++#define SER_ADDR_RECV_CLEAR		(1 << 1)
++#define SER_ADDR_DEST			(1 << 2)
++	__u32	addr;
++};
++
+ #endif /* _UAPI_LINUX_SERIAL_H */
 -- 
-0-DAY CI Kernel Test Service
-https://01.org/lkp
+2.30.2
+
