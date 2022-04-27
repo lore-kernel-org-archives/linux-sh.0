@@ -2,190 +2,108 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 092BDC43219
-	for <linux-sh@archiver.kernel.org>; Tue, 26 Apr 2022 13:59:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ADE3CC433F5
+	for <linux-sh@archiver.kernel.org>; Wed, 27 Apr 2022 18:57:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1346733AbiDZOCG (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 26 Apr 2022 10:02:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36704 "EHLO
+        id S229851AbiD0TAq (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 27 Apr 2022 15:00:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36982 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1351319AbiDZOCB (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 26 Apr 2022 10:02:01 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C6FCE19069A;
-        Tue, 26 Apr 2022 06:58:50 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id A6958B82004;
-        Tue, 26 Apr 2022 13:58:48 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id CF43AC385AA;
-        Tue, 26 Apr 2022 13:58:46 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1650981527;
-        bh=Q2CbGzlO12o2sbSJCVILKFqSAKwSGP36Qpvd86jEE4c=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=rPlxeusTmjq/0/+EHFfnDlmdGs+COvFDZFCgTv+38FHJQLu/3K1jRTOXmXkqLXP/J
-         qA5n0a+3bskZdBKVwMeeYcIF3N60iifRKD7Sa6eyVSIhkcBzHwhLVOLaneSeWcqnhC
-         KjMJhwCaSLPfTwzfbLs4yha6/Z7mC05ooTVOw3+o=
-Date:   Tue, 26 Apr 2022 15:58:44 +0200
-From:   Greg KH <gregkh@linuxfoundation.org>
-To:     Ilpo =?iso-8859-1?Q?J=E4rvinen?= <ilpo.jarvinen@linux.intel.com>
-Cc:     linux-serial <linux-serial@vger.kernel.org>,
-        Jiri Slaby <jirislaby@kernel.org>,
-        Lukas Wunner <lukas@wunner.de>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Uwe =?iso-8859-1?Q?Kleine-K=F6nig?= 
-        <u.kleine-koenig@pengutronix.de>,
-        Vicente Bergas <vicencb@gmail.com>,
-        Johan Hovold <johan@kernel.org>, heiko@sntech.de,
-        giulio.benetti@micronovasrl.com,
-        Heikki Krogerus <heikki.krogerus@linux.intel.com>,
-        linux-api@vger.kernel.org,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>, linux-alpha@vger.kernel.org,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        linux-mips@vger.kernel.org,
-        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Helge Deller <deller@gmx.de>, linux-parisc@vger.kernel.org,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        linuxppc-dev@lists.ozlabs.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        "David S. Miller" <davem@davemloft.net>,
-        sparclinux@vger.kernel.org, Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        linux-xtensa@linux-xtensa.org, Arnd Bergmann <arnd@arndb.de>,
-        linux-arch@vger.kernel.org, linux-doc@vger.kernel.org
-Subject: Re: [PATCH v5 06/10] serial: General support for multipoint addresses
-Message-ID: <Ymf6lJdj+nR74Tak@kroah.com>
-References: <20220426122448.38997-1-ilpo.jarvinen@linux.intel.com>
- <20220426122448.38997-7-ilpo.jarvinen@linux.intel.com>
- <YmfsDng2Z04PT3GS@kroah.com>
- <e67014bd-3c32-e7d-2982-a0edb741f3c0@linux.intel.com>
+        with ESMTP id S232401AbiD0TAi (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 27 Apr 2022 15:00:38 -0400
+Received: from mxout04.lancloud.ru (mxout04.lancloud.ru [45.84.86.114])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0F122D081C;
+        Wed, 27 Apr 2022 11:46:13 -0700 (PDT)
+Received: from LanCloud
+DKIM-Filter: OpenDKIM Filter v2.11.0 mxout04.lancloud.ru C5C71209A0EB
+Received: from LanCloud
+Received: from LanCloud
+Received: from LanCloud
+From:   Sergey Shtylyov <s.shtylyov@omp.ru>
+Subject: [PATCH v3] sh: avoid using IRQ0 on SH3/4
+To:     Rich Felker <dalias@libc.org>, <linux-sh@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>
+CC:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Organization: Open Mobile Platform
+Message-ID: <2584ba18-9653-9310-efc1-8b3b3e221eea@omp.ru>
+Date:   Wed, 27 Apr 2022 21:46:09 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <e67014bd-3c32-e7d-2982-a0edb741f3c0@linux.intel.com>
+Content-Type: text/plain; charset="utf-8"
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Originating-IP: [192.168.11.198]
+X-ClientProxiedBy: LFEXT01.lancloud.ru (fd00:f066::141) To
+ LFEX1907.lancloud.ru (fd00:f066::207)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Apr 26, 2022 at 04:36:49PM +0300, Ilpo Järvinen wrote:
-> On Tue, 26 Apr 2022, Greg KH wrote:
-> 
-> > On Tue, Apr 26, 2022 at 03:24:44PM +0300, Ilpo Järvinen wrote:
-> > > Add generic support for serial multipoint addressing. Two new ioctls
-> > > are added. TIOCSADDR is used to indicate the destination/receive
-> > > address. TIOCGADDR returns the current address in use. The driver
-> > > should implement set_addr and get_addr to support addressing mode.
-> > > 
-> > > Adjust ADDRB clearing to happen only if driver does not provide
-> > > set_addr (=the driver doesn't support address mode).
-> > > 
-> > > This change is necessary for supporting devices with RS485 multipoint
-> > > addressing [*]. A following patch in the patch series adds support for
-> > > Synopsys Designware UART capable for 9th bit addressing mode. In this
-> > > mode, 9th bit is used to indicate an address (byte) within the
-> > > communication line. The 9th bit addressing mode is selected using ADDRB
-> > > introduced by the previous patch.
-> > > 
-> > > Transmit addresses / receiver filter are specified by setting the flags
-> > > SER_ADDR_DEST and/or SER_ADDR_RECV. When the user supplies the transmit
-> > > address, in the 9bit addressing mode it is sent out immediately with
-> > > the 9th bit set to 1. After that, the subsequent normal data bytes are
-> > > sent with 9th bit as 0 and they are intended to the device with the
-> > > given address. It is up to receiver to enforce the filter using
-> > > SER_ADDR_RECV. When userspace has supplied the receive address, the
-> > > driver is expected to handle the matching of the address and only data
-> > > with that address is forwarded to the user. Both SER_ADDR_DEST and
-> > > SER_ADDR_RECV can be given at the same time in a single call if the
-> > > addresses are the same.
-> > > 
-> > > The user can clear the receive filter with SER_ADDR_RECV_CLEAR.
-> > > 
-> > > [*] Technically, RS485 is just an electronic spec and does not itself
-> > > specify the 9th bit addressing mode but 9th bit seems at least
-> > > "semi-standard" way to do addressing with RS485.
-> > > 
-> > > Cc: linux-api@vger.kernel.org
-> > > Cc: Ivan Kokshaysky <ink@jurassic.park.msu.ru>
-> > > Cc: Matt Turner <mattst88@gmail.com>
-> > > Cc: linux-alpha@vger.kernel.org
-> > > Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-> > > Cc: linux-mips@vger.kernel.org
-> > > Cc: "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>
-> > > Cc: Helge Deller <deller@gmx.de>
-> > > Cc: linux-parisc@vger.kernel.org
-> > > Cc: Michael Ellerman <mpe@ellerman.id.au>
-> > > Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-> > > Cc: Paul Mackerras <paulus@samba.org>
-> > > Cc: linuxppc-dev@lists.ozlabs.org
-> > > Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > > Cc: Rich Felker <dalias@libc.org>
-> > > Cc: linux-sh@vger.kernel.org
-> > > Cc: "David S. Miller" <davem@davemloft.net>
-> > > Cc: sparclinux@vger.kernel.org
-> > > Cc: Chris Zankel <chris@zankel.net>
-> > > Cc: Max Filippov <jcmvbkbc@gmail.com>
-> > > Cc: linux-xtensa@linux-xtensa.org
-> > > Cc: Arnd Bergmann <arnd@arndb.de>
-> > > Cc: linux-arch@vger.kernel.org
-> > > Cc: linux-doc@vger.kernel.org
-> > > Signed-off-by: Ilpo Järvinen <ilpo.jarvinen@linux.intel.com>
-> > > ---
-> 
-> > > diff --git a/include/uapi/linux/serial.h b/include/uapi/linux/serial.h
-> > > index fa6b16e5fdd8..8cb785ea7087 100644
-> > > --- a/include/uapi/linux/serial.h
-> > > +++ b/include/uapi/linux/serial.h
-> > > @@ -149,4 +149,12 @@ struct serial_iso7816 {
-> > >  	__u32	reserved[5];
-> > >  };
-> > >  
-> > > +struct serial_addr {
-> > > +	__u32	flags;
-> > > +#define SER_ADDR_RECV			(1 << 0)
-> > > +#define SER_ADDR_RECV_CLEAR		(1 << 1)
-> > > +#define SER_ADDR_DEST			(1 << 2)
-> > 
-> > You never check for invalid flags being sent to the kernel, which means
-> > this api can never change in the future to add new flags :(
-> 
-> Ok, so you mean the general level should to check
-> if (...->flags & ~(SER_ADDR_FLAGS_ALL))
-> 	return -EINVAL;
-> ?
+Using IRQ0 by the platform devices is going to be disallowed soon (see [1])
+and even now, when IRQ0 is about to be returned by platfrom_get_irq(), you
+see a big warning.  The code supporting SH3/4 SoCs maps the IRQ #s starting
+at 0 -- modify that code to start the IRQ #s from 16 instead.
 
-For any new kernel api you always have to ensure that no "extra" flags
-or bits are set and reject it otherwise you can never add any more bits
-or flags in the future.  This should be in the Documentation/ directory
-for how to add new ioctls somewhere.
+The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
+indeed use IRQ0 for the SMSC911x compatible Ethernet chip...
 
-> There's some code in the driver that detects invalid flag combinations 
-> (in 10/10) but I guess it doesn't satisfies what you're after. It is 
-> similar to how serial_rs485 flags is handled, that is, clearing flags it 
-> didn't handle (when it can) and returning -EINVAL for impossible 
-> combinations such as getting both RECV and DEST addr at the same time.
-> I don't know if serial_rs485 flags is a good example at all, it certainly 
-> doesn't check whether bits are set where there's no flag defined.
-> 
-> > And what about struct serial_rs485?  Shouldn't that be used here
-> > instead?  Why do we need a new ioctl and structure?
-> 
-> It is possible (Lukas already mentioned that option too). It just means
-> this will be available only on RS485 which could well be enough but Andy 
-> mentioned he has in the past come across addressing mode also with some 
-> RS232 thing (he didn't remember details anymore and it could be 
-> insignificant for the real world of today).
+[1] https://lore.kernel.org/all/025679e1-1f0a-ae4b-4369-01164f691511@omp.ru/
 
-This is rs485 so let's keep it attached to that.  Lots of people do
-their own custom addressing schemes on top of 232 but that's up to them
-to support in userspace or as a line discipline.
+Fixes: a85a6c86c25b ("driver core: platform: Clarify that IRQ 0 is invalid")
+Signed-off-by: Sergey Shtylyov <s.shtylyov@omp.ru>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
-thanks,
+---
+The patch is against Linus Torvalds' 'linux.git' repo.
 
-greg k-h
+Changes in version 3:
+- added an appropriate Fixes: tag and added a passage about it to the patch
+  description;
+- added actual cases of the boards using IRQ0 to the patch description;
+- added Geert Uytterhoeven's and John Paul Adrian Glaubitz's tags;
+- updated the link to point to the version 2 of the patch.
+
+Changes in version 2:
+- changed cmp/ge to cmp/hs in the assembly code.
+
+ arch/sh/kernel/cpu/sh3/entry.S |    4 ++--
+ include/linux/sh_intc.h        |    6 +++---
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+Index: linux/arch/sh/kernel/cpu/sh3/entry.S
+===================================================================
+--- linux.orig/arch/sh/kernel/cpu/sh3/entry.S
++++ linux/arch/sh/kernel/cpu/sh3/entry.S
+@@ -470,9 +470,9 @@ ENTRY(handle_interrupt)
+ 	mov	r4, r0		! save vector->jmp table offset for later
+ 
+ 	shlr2	r4		! vector to IRQ# conversion
+-	add	#-0x10, r4
+ 
+-	cmp/pz	r4		! is it a valid IRQ?
++	mov	#0x10, r5
++	cmp/hs	r5, r4		! is it a valid IRQ?
+ 	bt	10f
+ 
+ 	/*
+Index: linux/include/linux/sh_intc.h
+===================================================================
+--- linux.orig/include/linux/sh_intc.h
++++ linux/include/linux/sh_intc.h
+@@ -13,9 +13,9 @@
+ /*
+  * Convert back and forth between INTEVT and IRQ values.
+  */
+-#ifdef CONFIG_CPU_HAS_INTEVT
+-#define evt2irq(evt)		(((evt) >> 5) - 16)
+-#define irq2evt(irq)		(((irq) + 16) << 5)
++#ifdef CONFIG_CPU_HAS_INTEVT	/* Avoid IRQ0 (invalid for platform devices) */
++#define evt2irq(evt)		((evt) >> 5)
++#define irq2evt(irq)		((irq) << 5)
+ #else
+ #define evt2irq(evt)		(evt)
+ #define irq2evt(irq)		(irq)
