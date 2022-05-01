@@ -2,79 +2,100 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A1749C433F5
-	for <linux-sh@archiver.kernel.org>; Sun,  1 May 2022 18:09:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BE4B9C433EF
+	for <linux-sh@archiver.kernel.org>; Sun,  1 May 2022 22:40:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344888AbiEASM4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 1 May 2022 14:12:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49220 "EHLO
+        id S1355866AbiEAWoK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 1 May 2022 18:44:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60460 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230050AbiEASMy (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 1 May 2022 14:12:54 -0400
-Received: from mxout03.lancloud.ru (mxout03.lancloud.ru [45.84.86.113])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 778AE4EA38;
-        Sun,  1 May 2022 11:09:27 -0700 (PDT)
-Received: from LanCloud
-DKIM-Filter: OpenDKIM Filter v2.11.0 mxout03.lancloud.ru 7302120EA55E
-Received: from LanCloud
-Received: from LanCloud
-Received: from LanCloud
-Subject: Re: [PATCH v3] sh: avoid using IRQ0 on SH3/4
-From:   Sergey Shtylyov <s.shtylyov@omp.ru>
-To:     Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-CC:     <linux-sh@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
+        with ESMTP id S234297AbiEAWoH (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 1 May 2022 18:44:07 -0400
+Received: from angie.orcam.me.uk (angie.orcam.me.uk [IPv6:2001:4190:8020::34])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 94C3C14023;
+        Sun,  1 May 2022 15:40:40 -0700 (PDT)
+Received: by angie.orcam.me.uk (Postfix, from userid 500)
+        id 2E01592009C; Mon,  2 May 2022 00:40:39 +0200 (CEST)
+Received: from localhost (localhost [127.0.0.1])
+        by angie.orcam.me.uk (Postfix) with ESMTP id 2645D92009B;
+        Sun,  1 May 2022 23:40:39 +0100 (BST)
+Date:   Sun, 1 May 2022 23:40:39 +0100 (BST)
+From:   "Maciej W. Rozycki" <macro@orcam.me.uk>
+To:     Niklas Schnelle <schnelle@linux.ibm.com>
+cc:     Arnd Bergmann <arnd@arndb.de>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux-pci@vger.kernel.org, Arnd Bergmann <arnd@kernel.org>,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        Matt Turner <mattst88@gmail.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Michal Simek <monstr@monstr.eu>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-References: <2584ba18-9653-9310-efc1-8b3b3e221eea@omp.ru>
- <11021433-66c0-3c56-42bd-207a5ae8d267@physik.fu-berlin.de>
- <20220429171623.GQ7074@brightrain.aerifal.cx>
- <525e7383-d26a-fe35-7005-e1dd9b57f76f@omp.ru>
-Organization: Open Mobile Platform
-Message-ID: <86b6c752-0599-d878-bff4-7d3d7b84176a@omp.ru>
-Date:   Sun, 1 May 2022 21:09:24 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.10.1
+        Rich Felker <dalias@libc.org>,
+        "David S. Miller" <davem@davemloft.net>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        "maintainer:X86 ARCHITECTURE (32-BIT AND 64-BIT)" <x86@kernel.org>,
+        "open list:ALPHA PORT" <linux-alpha@vger.kernel.org>,
+        "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>,
+        "open list:IA64 (Itanium) PLATFORM" <linux-ia64@vger.kernel.org>,
+        "open list:M68K ARCHITECTURE" <linux-m68k@lists.linux-m68k.org>,
+        "open list:MIPS" <linux-mips@vger.kernel.org>,
+        "open list:PARISC ARCHITECTURE" <linux-parisc@vger.kernel.org>,
+        "open list:LINUX FOR POWERPC (32-BIT AND 64-BIT)" 
+        <linuxppc-dev@lists.ozlabs.org>,
+        "open list:RISC-V ARCHITECTURE" <linux-riscv@lists.infradead.org>,
+        "open list:SUPERH" <linux-sh@vger.kernel.org>,
+        "open list:SPARC + UltraSPARC (sparc/sparc64)" 
+        <sparclinux@vger.kernel.org>
+Subject: Re: [RFC v2 01/39] Kconfig: introduce HAS_IOPORT option and select
+ it as necessary
+In-Reply-To: <20220429135108.2781579-2-schnelle@linux.ibm.com>
+Message-ID: <alpine.DEB.2.21.2205012335020.9383@angie.orcam.me.uk>
+References: <20220429135108.2781579-1-schnelle@linux.ibm.com> <20220429135108.2781579-2-schnelle@linux.ibm.com>
+User-Agent: Alpine 2.21 (DEB 202 2017-01-01)
 MIME-Version: 1.0
-In-Reply-To: <525e7383-d26a-fe35-7005-e1dd9b57f76f@omp.ru>
-Content-Type: text/plain; charset="utf-8"
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Originating-IP: [192.168.11.198]
-X-ClientProxiedBy: LFEXT02.lancloud.ru (fd00:f066::142) To
- LFEX1907.lancloud.ru (fd00:f066::207)
+Content-Type: text/plain; charset=US-ASCII
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 5/1/22 8:58 PM, Sergey Shtylyov wrote:
+On Fri, 29 Apr 2022, Niklas Schnelle wrote:
+
+> We introduce a new HAS_IOPORT Kconfig option to indicate support for
+> I/O Port access. In a future patch HAS_IOPORT=n will disable compilation
+> of the I/O accessor functions inb()/outb() and friends on architectures
+> which can not meaningfully support legacy I/O spaces such as s390 or
+> where such support is optional. The "depends on" relations on HAS_IOPORT
+> in drivers as well as ifdefs for HAS_IOPORT specific sections will be
+> added in subsequent patches on a per subsystem basis.
 [...]
->>>> Using IRQ0 by the platform devices is going to be disallowed soon (see [1])
->>>> and even now, when IRQ0 is about to be returned by platfrom_get_irq(), you
->>>> see a big warning.  The code supporting SH3/4 SoCs maps the IRQ #s starting
->>>> at 0 -- modify that code to start the IRQ #s from 16 instead.
->>>>
->>>> The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
->>>> indeed use IRQ0 for the SMSC911x compatible Ethernet chip...
->>>
->>> Maybe try getting it landed through Andrew Morton's tree?
->>
->> Hi. I'm alive and looking at it. If it needs to go in for this cycle I
->> will send a pull request for just this and anything else critical. Was
-> 
->    Well, now using IRQ0 just causes a WARNing in platform_get_irq() -- I don't
-> think fixing it is critical enough. Starting from 5.19-rc1 the SMSC91xx driver
-> should stop working on the mentioned boards.
->    But let me look at the SMSC driver itself, I haven't done this yet...
+> diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+> index de3b32a507d2..4c55df08d6f1 100644
+> --- a/arch/mips/Kconfig
+> +++ b/arch/mips/Kconfig
+> @@ -47,6 +47,7 @@ config MIPS
+>  	select GENERIC_SMP_IDLE_THREAD
+>  	select GENERIC_TIME_VSYSCALL
+>  	select GUP_GET_PTE_LOW_HIGH if CPU_MIPS32 && PHYS_ADDR_T_64BIT
+> +	select HAS_IOPORT
+>  	select HAVE_ARCH_COMPILER_H
+>  	select HAVE_ARCH_JUMP_LABEL
+>  	select HAVE_ARCH_KGDB if MIPS_FP_SUPPORT
 
-   Looks like these boards were borked back in 2015 by this commit:
+ NAK, not all MIPS systems have the port I/O space, and we have it already 
+handled via the NO_IOPORT_MAP option.  We'll need to have HAS_IOPORT set 
+to !NO_IOPORT_MAP (or vice versa) for the MIPS architecture.
 
-https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=965b2aa78fbcb831acf4f669f494da201f4bcace
-
-   It stopped accepting IRQ0 for no apparent reason. :-/
-
-[...]
-
->> Rich
-
-MBR, Sergey
+  Maciej
