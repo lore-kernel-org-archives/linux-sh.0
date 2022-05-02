@@ -2,100 +2,93 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BE4B9C433EF
-	for <linux-sh@archiver.kernel.org>; Sun,  1 May 2022 22:40:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A3DB5C433FE
+	for <linux-sh@archiver.kernel.org>; Mon,  2 May 2022 07:14:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1355866AbiEAWoK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 1 May 2022 18:44:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60460 "EHLO
+        id S1358370AbiEBHRy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 2 May 2022 03:17:54 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40822 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234297AbiEAWoH (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 1 May 2022 18:44:07 -0400
-Received: from angie.orcam.me.uk (angie.orcam.me.uk [IPv6:2001:4190:8020::34])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 94C3C14023;
-        Sun,  1 May 2022 15:40:40 -0700 (PDT)
-Received: by angie.orcam.me.uk (Postfix, from userid 500)
-        id 2E01592009C; Mon,  2 May 2022 00:40:39 +0200 (CEST)
-Received: from localhost (localhost [127.0.0.1])
-        by angie.orcam.me.uk (Postfix) with ESMTP id 2645D92009B;
-        Sun,  1 May 2022 23:40:39 +0100 (BST)
-Date:   Sun, 1 May 2022 23:40:39 +0100 (BST)
-From:   "Maciej W. Rozycki" <macro@orcam.me.uk>
-To:     Niklas Schnelle <schnelle@linux.ibm.com>
-cc:     Arnd Bergmann <arnd@arndb.de>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org,
-        linux-pci@vger.kernel.org, Arnd Bergmann <arnd@kernel.org>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        "maintainer:X86 ARCHITECTURE (32-BIT AND 64-BIT)" <x86@kernel.org>,
-        "open list:ALPHA PORT" <linux-alpha@vger.kernel.org>,
-        "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>,
-        "open list:IA64 (Itanium) PLATFORM" <linux-ia64@vger.kernel.org>,
-        "open list:M68K ARCHITECTURE" <linux-m68k@lists.linux-m68k.org>,
-        "open list:MIPS" <linux-mips@vger.kernel.org>,
-        "open list:PARISC ARCHITECTURE" <linux-parisc@vger.kernel.org>,
-        "open list:LINUX FOR POWERPC (32-BIT AND 64-BIT)" 
-        <linuxppc-dev@lists.ozlabs.org>,
-        "open list:RISC-V ARCHITECTURE" <linux-riscv@lists.infradead.org>,
-        "open list:SUPERH" <linux-sh@vger.kernel.org>,
-        "open list:SPARC + UltraSPARC (sparc/sparc64)" 
-        <sparclinux@vger.kernel.org>
-Subject: Re: [RFC v2 01/39] Kconfig: introduce HAS_IOPORT option and select
- it as necessary
-In-Reply-To: <20220429135108.2781579-2-schnelle@linux.ibm.com>
-Message-ID: <alpine.DEB.2.21.2205012335020.9383@angie.orcam.me.uk>
-References: <20220429135108.2781579-1-schnelle@linux.ibm.com> <20220429135108.2781579-2-schnelle@linux.ibm.com>
-User-Agent: Alpine 2.21 (DEB 202 2017-01-01)
+        with ESMTP id S1350930AbiEBHRx (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 2 May 2022 03:17:53 -0400
+Received: from andre.telenet-ops.be (andre.telenet-ops.be [IPv6:2a02:1800:120:4::f00:15])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0BA7E4B43B
+        for <linux-sh@vger.kernel.org>; Mon,  2 May 2022 00:14:21 -0700 (PDT)
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:194e:5782:c420:7f87])
+        by andre.telenet-ops.be with bizsmtp
+        id RjEK2700a28fWK501jEKBR; Mon, 02 May 2022 09:14:20 +0200
+Received: from geert (helo=localhost)
+        by ramsan.of.borg with local-esmtp (Exim 4.93)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1nlQGB-002lJZ-99; Mon, 02 May 2022 09:14:19 +0200
+Date:   Mon, 2 May 2022 09:14:19 +0200 (CEST)
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+X-X-Sender: geert@ramsan.of.borg
+To:     linux-kernel@vger.kernel.org
+cc:     Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org,
+        linux-um@lists.infradead.org, linux-rdma@vger.kernel.org,
+        linux-mips@vger.kernel.org
+Subject: Re: Build regressions/improvements in v5.18-rc5
+In-Reply-To: <20220502065353.2658957-1-geert@linux-m68k.org>
+Message-ID: <alpine.DEB.2.22.394.2205020912140.658493@ramsan.of.borg>
+References: <CAHk-=wjUhfhaes6_hMYDQFTbGjkmA-j2ZSeXZ32H66ufRfYrmQ@mail.gmail.com> <20220502065353.2658957-1-geert@linux-m68k.org>
+User-Agent: Alpine 2.22 (DEB 394 2020-01-19)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=US-ASCII; format=flowed
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, 29 Apr 2022, Niklas Schnelle wrote:
+On Mon, 2 May 2022, Geert Uytterhoeven wrote:
+> JFYI, when comparing v5.18-rc5[1] to v5.18-rc4[3], the summaries are:
+>  - build errors: +6/-21
 
-> We introduce a new HAS_IOPORT Kconfig option to indicate support for
-> I/O Port access. In a future patch HAS_IOPORT=n will disable compilation
-> of the I/O accessor functions inb()/outb() and friends on architectures
-> which can not meaningfully support legacy I/O spaces such as s390 or
-> where such support is optional. The "depends on" relations on HAS_IOPORT
-> in drivers as well as ifdefs for HAS_IOPORT specific sections will be
-> added in subsequent patches on a per subsystem basis.
-[...]
-> diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-> index de3b32a507d2..4c55df08d6f1 100644
-> --- a/arch/mips/Kconfig
-> +++ b/arch/mips/Kconfig
-> @@ -47,6 +47,7 @@ config MIPS
->  	select GENERIC_SMP_IDLE_THREAD
->  	select GENERIC_TIME_VSYSCALL
->  	select GUP_GET_PTE_LOW_HIGH if CPU_MIPS32 && PHYS_ADDR_T_64BIT
-> +	select HAS_IOPORT
->  	select HAVE_ARCH_COMPILER_H
->  	select HAVE_ARCH_JUMP_LABEL
->  	select HAVE_ARCH_KGDB if MIPS_FP_SUPPORT
+6 error regressions:
+   + /kisskb/src/arch/sh/kernel/machvec.c: error: array subscript 'struct sh_machine_vector[0]' is partly outside array bounds of 'long int[1]' [-Werror=array-bounds]:  => 105:33
 
- NAK, not all MIPS systems have the port I/O space, and we have it already 
-handled via the NO_IOPORT_MAP option.  We'll need to have HAS_IOPORT set 
-to !NO_IOPORT_MAP (or vice versa) for the MIPS architecture.
+sh4-gcc11/se7750_defconfig
+sh4-gcc11/sh-defconfig
+sh4-gcc11/se7619_defconfig
+sh4-gcc11/sh-allmodconfig
+sh4-gcc11/sh-allyesconfig
+sh4-gcc11/sh-allnoconfig
 
-  Maciej
+gcc-11 fallout
+
+   + /kisskb/src/drivers/infiniband/sw/rdmavt/qp.c: error: 'struct cpuinfo_um' has no member named 'x86_cache_size':  => 88:22
+   + /kisskb/src/drivers/infiniband/sw/rdmavt/qp.c: error: control reaches end of non-void function [-Werror=return-type]:  => 89:1
+   + /kisskb/src/drivers/infiniband/sw/rdmavt/qp.c: error: implicit declaration of function '__copy_user_nocache' [-Werror=implicit-function-declaration]:  => 100:2
+
+um-x86_64/um-all{yes,no}config
+
+   + /kisskb/src/include/linux/sh_intc.h: error: division 'sizeof (void *) / sizeof (void)' does not compute the number of array elements [-Werror=sizeof-pointer-div]:  => 100:63
+
+v5.18-rc5/sh4-gcc11/se7750_defconfig
+v5.18-rc5/sh4-gcc11/sh-defconfig
+v5.18-rc5/sh4-gcc11/se7619_defconfig
+v5.18-rc5/sh4-gcc11/sh-allmodconfig
+v5.18-rc5/sh4-gcc11/sh-allyesconfig
+v5.18-rc5/sh4-gcc11/sh-allnoconfig
+
+gcc-10/11 fallout, seen before for sh4-gcc10/se7750_defconfig and sh4-gcc10/se7619_defconfig
+
+   + {standard input}: Error: branch to a symbol in another ISA mode:  => 1295
+
+mips-gcc11/micro32r2_defconfig
+mips-gcc11/micro32r2el_defconfig
+
+gcc-11 fallout
+
+> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/672c0c5173427e6b3e2a9bbb7be51ceeec78093a/ (all 138 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/af2d861d4cd2a4da5137f795ee3509e6f944a25b/ (96 out of 138 configs)
+
+Gr{oetje,eeting}s,
+
+ 						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+ 							    -- Linus Torvalds
