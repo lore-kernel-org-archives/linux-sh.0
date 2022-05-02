@@ -2,138 +2,184 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B51CAC433EF
-	for <linux-sh@archiver.kernel.org>; Mon,  2 May 2022 08:37:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CABFC43217
+	for <linux-sh@archiver.kernel.org>; Mon,  2 May 2022 14:05:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1359450AbiEBIkn (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 2 May 2022 04:40:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51832 "EHLO
+        id S1385488AbiEBOIk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 2 May 2022 10:08:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44994 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231486AbiEBIkm (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 2 May 2022 04:40:42 -0400
-Received: from mail-qt1-f180.google.com (mail-qt1-f180.google.com [209.85.160.180])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 222E8183B1;
-        Mon,  2 May 2022 01:37:14 -0700 (PDT)
-Received: by mail-qt1-f180.google.com with SMTP id hh4so10627427qtb.10;
-        Mon, 02 May 2022 01:37:14 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=pA3q1va6ACK5WS1PVApJ5VQckcthRFC9fvnVR7KWAE0=;
-        b=ao7sq9VoII0UYicctOjzoIFuAjhmMqvpt/wHxJ/bJ0ee7YwOvliAkW4vPGdtKMFcl8
-         7zWWuH7IQLRm9dlGGQPBpsCcnoOYBdYHLUzqZvu68pv62tjhSKsDinH9RoeuLZB63I/2
-         U6ikDUBnMVrJv1uO3c/PdVsfrs1Q/8a5tKAWKqm2mlbg5sgknxDbF+bWasD45QjNnMPf
-         OBB7Us4bz4mSO1OESAZT716RVGLRHrEbhxIQQgNd96Z23i/qKRD5pV0ON7Vg6hNr4vaD
-         34VKSYfdxT1Vh8KVPItWHUOTDpoKaFNg2FzfeLr7nbeEm9aboynoqdvad0JT+/SWOhTI
-         xCKg==
-X-Gm-Message-State: AOAM533H2J8Gwo5EJyC7IenHCTEHbrhk52Yd5dekIiJ3ncmXN9QoTegm
-        I+//TFeazjNVi9aNLijGI7QDIoLtJqZQgQ==
-X-Google-Smtp-Source: ABdhPJwjr12fmg6KmS6VzBDsXAj6tQfCfQO03ojR1W8mk3lETKuIHMbbPeJMt7IGIrF98Ldf88IxdA==
-X-Received: by 2002:ac8:5b87:0:b0:2f3:abf2:2e19 with SMTP id a7-20020ac85b87000000b002f3abf22e19mr826qta.644.1651480632762;
-        Mon, 02 May 2022 01:37:12 -0700 (PDT)
-Received: from mail-yw1-f182.google.com (mail-yw1-f182.google.com. [209.85.128.182])
-        by smtp.gmail.com with ESMTPSA id m25-20020ae9e719000000b0069fc13ce208sm3767477qka.57.2022.05.02.01.37.12
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 02 May 2022 01:37:12 -0700 (PDT)
-Received: by mail-yw1-f182.google.com with SMTP id 00721157ae682-2f7c424c66cso140673737b3.1;
-        Mon, 02 May 2022 01:37:12 -0700 (PDT)
-X-Received: by 2002:a05:690c:84:b0:2f1:9caa:e4f7 with SMTP id
- be4-20020a05690c008400b002f19caae4f7mr10932652ywb.384.1651480631989; Mon, 02
- May 2022 01:37:11 -0700 (PDT)
+        with ESMTP id S236925AbiEBOIj (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 2 May 2022 10:08:39 -0400
+Received: from mx0a-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BEA275F97;
+        Mon,  2 May 2022 07:05:09 -0700 (PDT)
+Received: from pps.filterd (m0098419.ppops.net [127.0.0.1])
+        by mx0b-001b2d01.pphosted.com (8.17.1.5/8.17.1.5) with ESMTP id 242E1xes006582;
+        Mon, 2 May 2022 14:02:42 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=date : from : to : cc :
+ subject : message-id : in-reply-to : references : mime-version :
+ content-type : content-transfer-encoding; s=pp1;
+ bh=pa3Y8njUgOpmxlb35vPiYLCiL63dwiQj0l9BRN8zD7Y=;
+ b=pz2TcaKG09iPWvjb8QT+j50Yq/fjYuV2BbisWIzf7sFeQmk7HocWYItceAG6H8sh3g6q
+ AdlRZxpsr5YFu38WbvzT5fbiz17a9xGPu8DBT9NVpih8czdyQc8Hm4CUtEEqAHfU500I
+ J2kCZOXOiUxe6p8q9zLw026UfSKfc+DUStFqbOskx2R93/+fhQimCCv8zsOHnCy+RXuS
+ YaymiLl/K0xslk0P57DJIhR4Yf9ZbNo+lzQgataaunD6lWOoYZVfWwXYbMWCuAJ4Gx7X
+ Iuz/AT5jsuC/dXuUtr6gZLh318HoWCyXwiYFAvjNLLzRIGDZ78c/I03oBs7qIq6pryDU 4w== 
+Received: from pps.reinject (localhost [127.0.0.1])
+        by mx0b-001b2d01.pphosted.com (PPS) with ESMTPS id 3ftgq400qe-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Mon, 02 May 2022 14:02:42 +0000
+Received: from m0098419.ppops.net (m0098419.ppops.net [127.0.0.1])
+        by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 242E2GTs007491;
+        Mon, 2 May 2022 14:02:41 GMT
+Received: from ppma01fra.de.ibm.com (46.49.7a9f.ip4.static.sl-reverse.com [159.122.73.70])
+        by mx0b-001b2d01.pphosted.com (PPS) with ESMTPS id 3ftgq400pg-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Mon, 02 May 2022 14:02:41 +0000
+Received: from pps.filterd (ppma01fra.de.ibm.com [127.0.0.1])
+        by ppma01fra.de.ibm.com (8.16.1.2/8.16.1.2) with SMTP id 242DwVPB016037;
+        Mon, 2 May 2022 14:02:39 GMT
+Received: from b06avi18878370.portsmouth.uk.ibm.com (b06avi18878370.portsmouth.uk.ibm.com [9.149.26.194])
+        by ppma01fra.de.ibm.com with ESMTP id 3frvr8t992-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Mon, 02 May 2022 14:02:39 +0000
+Received: from d06av23.portsmouth.uk.ibm.com (d06av23.portsmouth.uk.ibm.com [9.149.105.59])
+        by b06avi18878370.portsmouth.uk.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 242E2bdp26476826
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Mon, 2 May 2022 14:02:38 GMT
+Received: from d06av23.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+        by IMSVA (Postfix) with ESMTP id 3D2B9A4051;
+        Mon,  2 May 2022 14:02:36 +0000 (GMT)
+Received: from d06av23.portsmouth.uk.ibm.com (unknown [127.0.0.1])
+        by IMSVA (Postfix) with ESMTP id E4016A4040;
+        Mon,  2 May 2022 14:02:34 +0000 (GMT)
+Received: from thinkpad (unknown [9.171.50.173])
+        by d06av23.portsmouth.uk.ibm.com (Postfix) with SMTP;
+        Mon,  2 May 2022 14:02:34 +0000 (GMT)
+Date:   Mon, 2 May 2022 16:02:32 +0200
+From:   Gerald Schaefer <gerald.schaefer@linux.ibm.com>
+To:     Baolin Wang <baolin.wang@linux.alibaba.com>
+Cc:     akpm@linux-foundation.org, mike.kravetz@oracle.com,
+        catalin.marinas@arm.com, will@kernel.org,
+        tsbogend@alpha.franken.de, James.Bottomley@HansenPartnership.com,
+        deller@gmx.de, mpe@ellerman.id.au, benh@kernel.crashing.org,
+        paulus@samba.org, hca@linux.ibm.com, gor@linux.ibm.com,
+        agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
+        svens@linux.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org,
+        davem@davemloft.net, arnd@arndb.de,
+        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux-mm@kvack.org
+Subject: Re: [PATCH 3/3] mm: rmap: Fix CONT-PTE/PMD size hugetlb issue when
+ unmapping
+Message-ID: <20220502160232.589a6111@thinkpad>
+In-Reply-To: <bcb4a3b0-4fcd-af3a-2a2c-fd662d9eaba9@linux.alibaba.com>
+References: <cover.1651216964.git.baolin.wang@linux.alibaba.com>
+        <c91e04ebb792ef7b72966edea8bd6fa2dfa5bfa7.1651216964.git.baolin.wang@linux.alibaba.com>
+        <20220429220214.4cfc5539@thinkpad>
+        <bcb4a3b0-4fcd-af3a-2a2c-fd662d9eaba9@linux.alibaba.com>
+X-Mailer: Claws Mail 4.0.0 (GTK+ 3.24.31; x86_64-redhat-linux-gnu)
 MIME-Version: 1.0
-References: <2584ba18-9653-9310-efc1-8b3b3e221eea@omp.ru> <11021433-66c0-3c56-42bd-207a5ae8d267@physik.fu-berlin.de>
- <2ebef1ac-e5c5-980c-9413-22a6cccdfa1d@landley.net>
-In-Reply-To: <2ebef1ac-e5c5-980c-9413-22a6cccdfa1d@landley.net>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 2 May 2022 10:37:00 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdWN0vRYhK7O0MgOSCtisw3RDvp4vxSS2VF-9uGDdOEb7g@mail.gmail.com>
-Message-ID: <CAMuHMdWN0vRYhK7O0MgOSCtisw3RDvp4vxSS2VF-9uGDdOEb7g@mail.gmail.com>
-Subject: Re: [PATCH v3] sh: avoid using IRQ0 on SH3/4
-To:     Rob Landley <rob@landley.net>
-Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Sergey Shtylyov <s.shtylyov@omp.ru>,
-        Rich Felker <dalias@libc.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+X-TM-AS-GCONF: 00
+X-Proofpoint-GUID: XuufQO1q4HTBDbV5Aeg2IfsJiDYUZ4kF
+X-Proofpoint-ORIG-GUID: wX4sYDOGP4Gb-gqEiz4w3Jylk1LdzAUv
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.205,Aquarius:18.0.858,Hydra:6.0.486,FMLib:17.11.64.514
+ definitions=2022-05-02_04,2022-05-02_03,2022-02-23_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxlogscore=999
+ lowpriorityscore=0 bulkscore=0 spamscore=0 suspectscore=0 phishscore=0
+ priorityscore=1501 impostorscore=0 clxscore=1015 mlxscore=0 malwarescore=0
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2202240000 definitions=main-2205020110
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Rob,
+On Sat, 30 Apr 2022 11:22:33 +0800
+Baolin Wang <baolin.wang@linux.alibaba.com> wrote:
 
-On Sat, Apr 30, 2022 at 3:52 PM Rob Landley <rob@landley.net> wrote:
-> On 4/29/22 09:24, John Paul Adrian Glaubitz wrote:
-> > On 4/27/22 20:46, Sergey Shtylyov wrote:
-> >> Using IRQ0 by the platform devices is going to be disallowed soon (see [1])
-> >> and even now, when IRQ0 is about to be returned by platfrom_get_irq(), you
-> >> see a big warning.  The code supporting SH3/4 SoCs maps the IRQ #s starting
-> >> at 0 -- modify that code to start the IRQ #s from 16 instead.
+> 
+> 
+> On 4/30/2022 4:02 AM, Gerald Schaefer wrote:
+> > On Fri, 29 Apr 2022 16:14:43 +0800
+> > Baolin Wang <baolin.wang@linux.alibaba.com> wrote:
+> > 
+> >> On some architectures (like ARM64), it can support CONT-PTE/PMD size
+> >> hugetlb, which means it can support not only PMD/PUD size hugetlb:
+> >> 2M and 1G, but also CONT-PTE/PMD size: 64K and 32M if a 4K page
+> >> size specified.
 > >>
-> >> The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
-> >> indeed use IRQ0 for the SMSC911x compatible Ethernet chip...
+> >> When unmapping a hugetlb page, we will get the relevant page table
+> >> entry by huge_pte_offset() only once to nuke it. This is correct
+> >> for PMD or PUD size hugetlb, since they always contain only one
+> >> pmd entry or pud entry in the page table.
+> >>
+> >> However this is incorrect for CONT-PTE and CONT-PMD size hugetlb,
+> >> since they can contain several continuous pte or pmd entry with
+> >> same page table attributes, so we will nuke only one pte or pmd
+> >> entry for this CONT-PTE/PMD size hugetlb page.
+> >>
+> >> And now we only use try_to_unmap() to unmap a poisoned hugetlb page,
+> >> which means now we will unmap only one pte entry for a CONT-PTE or
+> >> CONT-PMD size poisoned hugetlb page, and we can still access other
+> >> subpages of a CONT-PTE or CONT-PMD size poisoned hugetlb page,
+> >> which will cause serious issues possibly.
+> >>
+> >> So we should change to use huge_ptep_clear_flush() to nuke the
+> >> hugetlb page table to fix this issue, which already considered
+> >> CONT-PTE and CONT-PMD size hugetlb.
+> >>
+> >> Note we've already used set_huge_swap_pte_at() to set a poisoned
+> >> swap entry for a poisoned hugetlb page.
+> >>
+> >> Signed-off-by: Baolin Wang <baolin.wang@linux.alibaba.com>
+> >> ---
+> >>   mm/rmap.c | 34 +++++++++++++++++-----------------
+> >>   1 file changed, 17 insertions(+), 17 deletions(-)
+> >>
+> >> diff --git a/mm/rmap.c b/mm/rmap.c
+> >> index 7cf2408..1e168d7 100644
+> >> --- a/mm/rmap.c
+> >> +++ b/mm/rmap.c
+> >> @@ -1564,28 +1564,28 @@ static bool try_to_unmap_one(struct folio *folio, struct vm_area_struct *vma,
+> >>   					break;
+> >>   				}
+> >>   			}
+> >> +			pteval = huge_ptep_clear_flush(vma, address, pvmw.pte);
+> > 
+> > Unlike in your patch 2/3, I do not see that this (huge) pteval would later
+> > be used again with set_huge_pte_at() instead of set_pte_at(). Not sure if
+> > this (huge) pteval could end up at a set_pte_at() later, but if yes, then
+> > this would be broken on s390, and you'd need to use set_huge_pte_at()
+> > instead of set_pte_at() like in your patch 2/3.
+> 
+> IIUC, As I said in the commit message, we will only unmap a poisoned 
+> hugetlb page by try_to_unmap(), and the poisoned hugetlb page will be 
+> remapped with a poisoned entry by set_huge_swap_pte_at() in 
+> try_to_unmap_one(). So I think no need change to use set_huge_pte_at() 
+> instead of set_pte_at() for other cases, since the hugetlb page will not 
+> hit other cases.
+> 
+> if (PageHWPoison(subpage) && !(flags & TTU_IGNORE_HWPOISON)) {
+> 	pteval = swp_entry_to_pte(make_hwpoison_entry(subpage));
+> 	if (folio_test_hugetlb(folio)) {
+> 		hugetlb_count_sub(folio_nr_pages(folio), mm);
+> 		set_huge_swap_pte_at(mm, address, pvmw.pte, pteval,
+> 				     vma_mmu_pagesize(vma));
+> 	} else {
+> 		dec_mm_counter(mm, mm_counter(&folio->page));
+> 		set_pte_at(mm, address, pvmw.pte, pteval);
+> 	}
+> 
+> }
 
-> As I told him in IRC, the problem is still that sh4 never gives me a shell
-> prompt with this patch applied. I just reconfirmed it against current git:
->
-> Freeing unused kernel image (initmem) memory: 124K
-> This architecture does not have kernel memory protection.
-> Run /init as init process
-> mountpoint: dev/pts: No such file or directory
-> 8139cp 0000:00:02.0 eth0: link up, 100Mbps, full-duplex, lpa 0x05E1
->
-> It makes it partway through the init script, but it hangs with qemu-system-sh4
-> stuck in a CPU-eating loop before finishing. Without the patch, I get a shell
-> prompt.
-
-I regularly test on qemu rts7751r2d, but couldn't produce your
-issue.  Until I tried "ifconfig eth0 up", which causes a lock-up.
-Interestingly, the 8139 irq was 112 with and without Sergey's patch,
-so there must be an irq remapping missing.
-
-I also test regularly on landisk, where 8139 Ethernet works fine.
-Turns out landisk uses arch/sh/drivers/pci/fixups-landisk.c to fixup
-the irq...
-
-arch/sh/include/mach-common/mach/r2d.h has:
-#define R2D_FPGA_IRQ_BASE       100
-Subtracting 16 here does not help.
-
-With this (gmail-whitespace-damaged) patch:
-
---- a/arch/sh/drivers/pci/fixups-rts7751r2d.c
-+++ b/arch/sh/drivers/pci/fixups-rts7751r2d.c
-@@ -31,9 +31,9 @@ static char lboxre2_irq_tab[] = {
- int pcibios_map_platform_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
- {
-        if (mach_is_lboxre2())
--               return lboxre2_irq_tab[slot];
-+               return lboxre2_irq_tab[slot] - 16;
-        else
--               return rts7751r2d_irq_tab[slot];
-+               return rts7751r2d_irq_tab[slot] - 16;
- }
-
- int pci_fixup_pcic(struct pci_channel *chan)
-
-it no longer crashes, but ifconfig still fails:
-
-/ # ifconfig eth0 up
-ifconfig: ioctl 0x8914 failed: Invalid argument
-
-Note that there are more implementations of pcibios_map_platform_irq()
-that do not use evt2irq(), and thus are probably broken by this patch.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+OK, but wouldn't the pteval be overwritten here with
+pteval = swp_entry_to_pte(make_hwpoison_entry(subpage))?
+IOW, what sense does it make to save the returned pteval from
+huge_ptep_clear_flush(), when it is never being used anywhere?
