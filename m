@@ -2,80 +2,132 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C0582C433FE
-	for <linux-sh@archiver.kernel.org>; Mon,  2 May 2022 20:14:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C987C433F5
+	for <linux-sh@archiver.kernel.org>; Mon,  2 May 2022 21:03:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1387210AbiEBURr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 2 May 2022 16:17:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46266 "EHLO
+        id S1387499AbiEBVGa (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 2 May 2022 17:06:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47928 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229453AbiEBURq (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 2 May 2022 16:17:46 -0400
-Received: from mxout03.lancloud.ru (mxout03.lancloud.ru [45.84.86.113])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 88FFEAE4C;
-        Mon,  2 May 2022 13:14:14 -0700 (PDT)
+        with ESMTP id S1348432AbiEBVG3 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 2 May 2022 17:06:29 -0400
+X-Greylist: delayed 384 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Mon, 02 May 2022 14:02:58 PDT
+Received: from mxout01.lancloud.ru (mxout01.lancloud.ru [45.84.86.81])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8BA11BC84;
+        Mon,  2 May 2022 14:02:58 -0700 (PDT)
 Received: from LanCloud
-DKIM-Filter: OpenDKIM Filter v2.11.0 mxout03.lancloud.ru 0CCEF208D328
+DKIM-Filter: OpenDKIM Filter v2.11.0 mxout01.lancloud.ru 29DA720D16F2
 Received: from LanCloud
 Received: from LanCloud
 Received: from LanCloud
+Subject: Re: [PATCH v3] sh: avoid using IRQ0 on SH3/4
+To:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Rob Landley <rob@landley.net>
+CC:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Rich Felker <dalias@libc.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        "Linux Kernel Mailing List" <linux-kernel@vger.kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+References: <2584ba18-9653-9310-efc1-8b3b3e221eea@omp.ru>
+ <11021433-66c0-3c56-42bd-207a5ae8d267@physik.fu-berlin.de>
+ <2ebef1ac-e5c5-980c-9413-22a6cccdfa1d@landley.net>
+ <CAMuHMdWN0vRYhK7O0MgOSCtisw3RDvp4vxSS2VF-9uGDdOEb7g@mail.gmail.com>
 From:   Sergey Shtylyov <s.shtylyov@omp.ru>
-Subject: [PATCH] smsc911x: allow using IRQ0
-To:     "David S. Miller" <davem@davemloft.net>,
-        Jakub Kicinski <kuba@kernel.org>, <netdev@vger.kernel.org>,
-        Steve Glendinning <steve.glendinning@shawell.net>,
-        Eric Dumazet <edumazet@google.com>,
-        Paolo Abeni <pabeni@redhat.com>
-CC:     <linux-sh@vger.kernel.org>
 Organization: Open Mobile Platform
-Message-ID: <656036e4-6387-38df-b8a7-6ba683b16e63@omp.ru>
-Date:   Mon, 2 May 2022 23:14:09 +0300
+Message-ID: <59faed1d-3878-ce75-9f62-aaf4338d0ad1@omp.ru>
+Date:   Mon, 2 May 2022 23:56:31 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
  Thunderbird/78.10.1
 MIME-Version: 1.0
+In-Reply-To: <CAMuHMdWN0vRYhK7O0MgOSCtisw3RDvp4vxSS2VF-9uGDdOEb7g@mail.gmail.com>
 Content-Type: text/plain; charset="utf-8"
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
 X-Originating-IP: [192.168.11.198]
-X-ClientProxiedBy: LFEXT01.lancloud.ru (fd00:f066::141) To
+X-ClientProxiedBy: LFEXT02.lancloud.ru (fd00:f066::142) To
  LFEX1907.lancloud.ru (fd00:f066::207)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The AlphaProject AP-SH4A-3A/AP-SH4AD-0A SH boards use IRQ0 for their SMSC
-LAN911x Ethernet chip, so the networking on them must have been broken by
-commit 965b2aa78fbc ("net/smsc911x: fix irq resource allocation failure")
-which filtered out 0 as well as the negative error codes -- it was kinda
-correct at the time, as platform_get_irq() could return 0 on of_irq_get()
-failure and on the actual 0 in an IRQ resource.  This issue was fixed by
-me (back in 2016!), so we should be able to fix this driver to allow IRQ0
-usage again...
+On 5/2/22 11:37 AM, Geert Uytterhoeven wrote:
 
-When merging this to the stable kernels, make sure you also merge commit
-e330b9a6bb35 ("platform: don't return 0 from platform_get_irq[_byname]()
-on error") -- that's my fix to platform_get_irq() for the DT platforms...
+[...]
+>>>> Using IRQ0 by the platform devices is going to be disallowed soon (see [1])
+>>>> and even now, when IRQ0 is about to be returned by platfrom_get_irq(), you
+>>>> see a big warning.  The code supporting SH3/4 SoCs maps the IRQ #s starting
+>>>> at 0 -- modify that code to start the IRQ #s from 16 instead.
+>>>>
+>>>> The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
+>>>> indeed use IRQ0 for the SMSC911x compatible Ethernet chip...
+> 
+>> As I told him in IRC, the problem is still that sh4 never gives me a shell
+>> prompt with this patch applied. I just reconfirmed it against current git:
+>>
+>> Freeing unused kernel image (initmem) memory: 124K
+>> This architecture does not have kernel memory protection.
+>> Run /init as init process
+>> mountpoint: dev/pts: No such file or directory
+>> 8139cp 0000:00:02.0 eth0: link up, 100Mbps, full-duplex, lpa 0x05E1
+>>
+>> It makes it partway through the init script, but it hangs with qemu-system-sh4
+>> stuck in a CPU-eating loop before finishing. Without the patch, I get a shell
+>> prompt.
+> 
+> I regularly test on qemu rts7751r2d, but couldn't produce your
+> issue.  Until I tried "ifconfig eth0 up", which causes a lock-up.
+> Interestingly, the 8139 irq was 112 with and without Sergey's patch,
+> so there must be an irq remapping missing.
+> 
+> I also test regularly on landisk, where 8139 Ethernet works fine.
+> Turns out landisk uses arch/sh/drivers/pci/fixups-landisk.c to fixup
+> the irq...
+> 
+> arch/sh/include/mach-common/mach/r2d.h has:
+> #define R2D_FPGA_IRQ_BASE       100
+> Subtracting 16 here does not help.
 
-Fixes: 965b2aa78fbc ("net/smsc911x: fix irq resource allocation failure")
-Signed-off-by: Sergey Shtylyov <s.shtylyov@omp.ru>
-CC: stable@vger.kernel.org
+   Why subtract when you contrariwise need to add? :-)
 
----
-This patch is against DaveM's 'net.git' repo.
+> With this (gmail-whitespace-damaged) patch:
+> 
+> --- a/arch/sh/drivers/pci/fixups-rts7751r2d.c
+> +++ b/arch/sh/drivers/pci/fixups-rts7751r2d.c
+> @@ -31,9 +31,9 @@ static char lboxre2_irq_tab[] = {
+>  int pcibios_map_platform_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
+>  {
+>         if (mach_is_lboxre2())
+> -               return lboxre2_irq_tab[slot];
+> +               return lboxre2_irq_tab[slot] - 16;
 
- drivers/net/ethernet/smsc/smsc911x.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+   This table contains the values #define'd via evt2irq(), so
+shouldn't need to subtract anything...
 
-Index: net/drivers/net/ethernet/smsc/smsc911x.c
-===================================================================
---- net.orig/drivers/net/ethernet/smsc/smsc911x.c
-+++ net/drivers/net/ethernet/smsc/smsc911x.c
-@@ -2431,7 +2431,7 @@ static int smsc911x_drv_probe(struct pla
- 	if (irq == -EPROBE_DEFER) {
- 		retval = -EPROBE_DEFER;
- 		goto out_0;
--	} else if (irq <= 0) {
-+	} else if (irq < 0) {
- 		pr_warn("Could not allocate irq resource\n");
- 		retval = -ENODEV;
- 		goto out_0;
+>         else
+> -               return rts7751r2d_irq_tab[slot];
+> +               return rts7751r2d_irq_tab[slot] - 16;
+
+   How about + 16?
+
+>  }
+> 
+>  int pci_fixup_pcic(struct pci_channel *chan)
+> 
+> it no longer crashes, but ifconfig still fails:
+> 
+> / # ifconfig eth0 up
+> ifconfig: ioctl 0x8914 failed: Invalid argument
+
+   I'm still not sure you used the correct IRQ #s...
+
+> Note that there are more implementations of pcibios_map_platform_irq()
+> that do not use evt2irq(), and thus are probably broken by this patch.
+
+   That doesn't sound encouraging... :-/
+
+> Gr{oetje,eeting}s,
+> 
+>                         Geert
+
+MBR, Sergey
