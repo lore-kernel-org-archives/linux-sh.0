@@ -2,58 +2,57 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72E8DC433F5
-	for <linux-sh@archiver.kernel.org>; Tue,  3 May 2022 06:58:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 15E79C433EF
+	for <linux-sh@archiver.kernel.org>; Tue,  3 May 2022 07:02:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231154AbiECHCJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 3 May 2022 03:02:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53746 "EHLO
+        id S231620AbiECHF6 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 3 May 2022 03:05:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59816 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230283AbiECHCI (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 3 May 2022 03:02:08 -0400
-Received: from mail-qt1-f178.google.com (mail-qt1-f178.google.com [209.85.160.178])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B1229326D9;
-        Mon,  2 May 2022 23:58:37 -0700 (PDT)
-Received: by mail-qt1-f178.google.com with SMTP id k2so6312041qtp.1;
-        Mon, 02 May 2022 23:58:37 -0700 (PDT)
+        with ESMTP id S231623AbiECHF5 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 3 May 2022 03:05:57 -0400
+Received: from mail-qk1-f169.google.com (mail-qk1-f169.google.com [209.85.222.169])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4654522293;
+        Tue,  3 May 2022 00:02:26 -0700 (PDT)
+Received: by mail-qk1-f169.google.com with SMTP id j6so12993535qkp.9;
+        Tue, 03 May 2022 00:02:26 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=AUzmMTUgoKr9MNwCNeWZmLPFdTrfpCaN2IVTJcYaoss=;
-        b=jT7FNUlL2KmKGgUwwiRTCi6RkXeWMwQe6xByLGKyobiAhhComRz0oU4XsXtk1gOMWu
-         wso8eFo7FYLxeDj7pHVVJ5t3qnJr1BUJdJ86cdKsNXXR9UV1JlARi8UQfyOcdmmq3Hey
-         Lbof27+VUBQzOUApSlKF5ItoQUgT8+Y21qxHRlfbB2QQ4nrheQ6MHVgpKur5fmANfYyv
-         FVniyAxIrBPr/ZEbDXUoTEYFdJYX3grpilN6gj3LMkEkpmV9HimDUpV8AjBKD+268JEz
-         zAaIWLLwGfArmv9OiWH+41CN+tdg+znR4SCfZDdQ5yZJ2HjtVf9Kq3SVzexF608Gy2qT
-         SHbw==
-X-Gm-Message-State: AOAM532S9X7kTlE8XXI3RhBggYwSHyhx8PrfAL92kwS5yZff+tChefIs
-        BqEX9342hAxlzAZmUOatJfcgSnxbYW2whg==
-X-Google-Smtp-Source: ABdhPJyen2DRnuIlJmSY/3HLHL85whQ/No7lVhkGL06oylpP7qVa/wv6ESZVJWYngn5pymalpwpl2w==
-X-Received: by 2002:ac8:110a:0:b0:2f1:ea84:b84 with SMTP id c10-20020ac8110a000000b002f1ea840b84mr13444274qtj.463.1651561116480;
-        Mon, 02 May 2022 23:58:36 -0700 (PDT)
-Received: from mail-yb1-f170.google.com (mail-yb1-f170.google.com. [209.85.219.170])
-        by smtp.gmail.com with ESMTPSA id fp35-20020a05622a50a300b002f39b99f67asm5206624qtb.20.2022.05.02.23.58.35
+        bh=hSeOpGTWqeqaJ05xwK7hbvzXrVoyzqa0yoZQ8B3RFC8=;
+        b=4Uy1+tbI/THbs14zNjeL1pIvxBKXmodlGrblbrWoSsHAqOBpmMWUbqBrUx5ay1ClQe
+         OnGCDYVKUMexJo1XMzxqGRwiQtUOSunQ13Um/GpPIw9zfJzC/joIYiSQf15KAjSOclbv
+         n2hHTeORVVBAEMhYhBLZZFVR3/pKTm9Qhi9rt5mZSv/Zi96AHX/4Dm4+x5Gh42XrqN8T
+         PmAnW+l+1SVbQUf+s3I/VJZrreCQmSNZ3mED8N0LQFbpp2TWQEhFrKhguLCz+gj/SWuG
+         I72Bpld2owFj9IYSnS+fxwMPumKRZ8dVfyCrcGvp9Ds09OJsIgC3/Nv8rRZeDD9qec/D
+         z6WQ==
+X-Gm-Message-State: AOAM530dmMgW8ZB+f+pMIk+f0hc9YLObeGBrGc5IlT65P3sc6U2tEWUG
+        Hpbq8zZYV4f6BDW44w5O8tXVJI66GrGWdg==
+X-Google-Smtp-Source: ABdhPJy77pWp0ojqYVlqQubLtoCJp5QQzLlFugoCo+5U7Jp2XCmml/O1I8wLPbx9zsWQZQQ4RQf91A==
+X-Received: by 2002:a05:620a:1a97:b0:69e:b83e:bb9a with SMTP id bl23-20020a05620a1a9700b0069eb83ebb9amr11181772qkb.711.1651561345137;
+        Tue, 03 May 2022 00:02:25 -0700 (PDT)
+Received: from mail-yw1-f175.google.com (mail-yw1-f175.google.com. [209.85.128.175])
+        by smtp.gmail.com with ESMTPSA id a140-20020ae9e892000000b0069fc13ce1e1sm5582504qkg.18.2022.05.03.00.02.23
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 02 May 2022 23:58:35 -0700 (PDT)
-Received: by mail-yb1-f170.google.com with SMTP id h10so628893ybc.4;
-        Mon, 02 May 2022 23:58:35 -0700 (PDT)
-X-Received: by 2002:a25:6157:0:b0:645:8d0e:f782 with SMTP id
- v84-20020a256157000000b006458d0ef782mr13768923ybb.36.1651561115076; Mon, 02
- May 2022 23:58:35 -0700 (PDT)
+        Tue, 03 May 2022 00:02:24 -0700 (PDT)
+Received: by mail-yw1-f175.google.com with SMTP id 00721157ae682-2f7d7e3b5bfso170447047b3.5;
+        Tue, 03 May 2022 00:02:23 -0700 (PDT)
+X-Received: by 2002:a81:547:0:b0:2f8:6e8:19d7 with SMTP id 68-20020a810547000000b002f806e819d7mr14236459ywf.383.1651561343489;
+ Tue, 03 May 2022 00:02:23 -0700 (PDT)
 MIME-Version: 1.0
 References: <2584ba18-9653-9310-efc1-8b3b3e221eea@omp.ru> <11021433-66c0-3c56-42bd-207a5ae8d267@physik.fu-berlin.de>
  <2ebef1ac-e5c5-980c-9413-22a6cccdfa1d@landley.net> <CAMuHMdWN0vRYhK7O0MgOSCtisw3RDvp4vxSS2VF-9uGDdOEb7g@mail.gmail.com>
- <59faed1d-3878-ce75-9f62-aaf4338d0ad1@omp.ru>
-In-Reply-To: <59faed1d-3878-ce75-9f62-aaf4338d0ad1@omp.ru>
+ <2a3f8b4c-2c0d-28bc-8dcd-c56c7b8a2bb4@landley.net>
+In-Reply-To: <2a3f8b4c-2c0d-28bc-8dcd-c56c7b8a2bb4@landley.net>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Tue, 3 May 2022 08:58:22 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdWv_DK_h6eoemNbOqbErmWbVuv+r5qTC0=APNwV=vYNzQ@mail.gmail.com>
-Message-ID: <CAMuHMdWv_DK_h6eoemNbOqbErmWbVuv+r5qTC0=APNwV=vYNzQ@mail.gmail.com>
+Date:   Tue, 3 May 2022 09:02:11 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdUZ-fTKPk1kXodjg1yi5vm3RZJ=wO9o5afA81yNvt0KYA@mail.gmail.com>
+Message-ID: <CAMuHMdUZ-fTKPk1kXodjg1yi5vm3RZJ=wO9o5afA81yNvt0KYA@mail.gmail.com>
 Subject: Re: [PATCH v3] sh: avoid using IRQ0 on SH3/4
-To:     Sergey Shtylyov <s.shtylyov@omp.ru>
-Cc:     Rob Landley <rob@landley.net>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+To:     Rob Landley <rob@landley.net>
+Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Sergey Shtylyov <s.shtylyov@omp.ru>,
         Rich Felker <dalias@libc.org>,
         Linux-sh list <linux-sh@vger.kernel.org>,
         Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
@@ -64,73 +63,19 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Sergey,
+Hi Rob,
 
-On Mon, May 2, 2022 at 10:56 PM Sergey Shtylyov <s.shtylyov@omp.ru> wrote:
-> On 5/2/22 11:37 AM, Geert Uytterhoeven wrote:
-> >>>> Using IRQ0 by the platform devices is going to be disallowed soon (see [1])
-> >>>> and even now, when IRQ0 is about to be returned by platfrom_get_irq(), you
-> >>>> see a big warning.  The code supporting SH3/4 SoCs maps the IRQ #s starting
-> >>>> at 0 -- modify that code to start the IRQ #s from 16 instead.
-> >>>>
-> >>>> The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
-> >>>> indeed use IRQ0 for the SMSC911x compatible Ethernet chip...
-> >
-> >> As I told him in IRC, the problem is still that sh4 never gives me a shell
-> >> prompt with this patch applied. I just reconfirmed it against current git:
-> >>
-> >> Freeing unused kernel image (initmem) memory: 124K
-> >> This architecture does not have kernel memory protection.
-> >> Run /init as init process
-> >> mountpoint: dev/pts: No such file or directory
-> >> 8139cp 0000:00:02.0 eth0: link up, 100Mbps, full-duplex, lpa 0x05E1
-> >>
-> >> It makes it partway through the init script, but it hangs with qemu-system-sh4
-> >> stuck in a CPU-eating loop before finishing. Without the patch, I get a shell
-> >> prompt.
-> >
-> > I regularly test on qemu rts7751r2d, but couldn't produce your
-> > issue.  Until I tried "ifconfig eth0 up", which causes a lock-up.
-> > Interestingly, the 8139 irq was 112 with and without Sergey's patch,
-> > so there must be an irq remapping missing.
-> >
-> > I also test regularly on landisk, where 8139 Ethernet works fine.
-> > Turns out landisk uses arch/sh/drivers/pci/fixups-landisk.c to fixup
-> > the irq...
-> >
-> > arch/sh/include/mach-common/mach/r2d.h has:
-> > #define R2D_FPGA_IRQ_BASE       100
-> > Subtracting 16 here does not help.
->
->    Why subtract when you contrariwise need to add? :-)
+On Mon, May 2, 2022 at 10:02 PM Rob Landley <rob@landley.net> wrote:
+> Sounds like it's now outside of the IRQ range allocation, but I can't find where
+> that's requested when registering the controller? (What is a "swizzle" anyway?)
 
-Thanks, adding 16 here fixed the issue:
+PCI slots have 4 interrupts (#A, #B, #C, #D). In machines with
+multiple slots, the interrupts lines are "swizzled", to avoid that all cards
+using a single interrupt are mapped to the same host interrupt.
 
-/ # ifconfig eth0 up
-8139cp 0000:00:02.0 eth0: link up, 100Mbps, full-duplex, lpa 0x05E1
+Typically, the mapping is:
 
-> > With this (gmail-whitespace-damaged) patch:
-> >
-> > --- a/arch/sh/drivers/pci/fixups-rts7751r2d.c
-> > +++ b/arch/sh/drivers/pci/fixups-rts7751r2d.c
-> > @@ -31,9 +31,9 @@ static char lboxre2_irq_tab[] = {
-> >  int pcibios_map_platform_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
-> >  {
-> >         if (mach_is_lboxre2())
-> > -               return lboxre2_irq_tab[slot];
-> > +               return lboxre2_irq_tab[slot] - 16;
->
->    This table contains the values #define'd via evt2irq(), so
-> shouldn't need to subtract anything...
->
-> >         else
-> > -               return rts7751r2d_irq_tab[slot];
-> > +               return rts7751r2d_irq_tab[slot] - 16;
->
->    How about + 16?
-
-Doesn't work, but changing R2D_FPGA_IRQ_BASE does work, see
-above.
+    host_irq = bus_irqs[(slot + irq_pin) % 4];
 
 Gr{oetje,eeting}s,
 
