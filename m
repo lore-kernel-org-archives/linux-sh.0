@@ -2,132 +2,149 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8C987C433F5
-	for <linux-sh@archiver.kernel.org>; Mon,  2 May 2022 21:03:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7449CC43217
+	for <linux-sh@archiver.kernel.org>; Tue,  3 May 2022 02:19:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1387499AbiEBVGa (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 2 May 2022 17:06:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47928 "EHLO
+        id S230037AbiECCWm (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 2 May 2022 22:22:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54676 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1348432AbiEBVG3 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 2 May 2022 17:06:29 -0400
-X-Greylist: delayed 384 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Mon, 02 May 2022 14:02:58 PDT
-Received: from mxout01.lancloud.ru (mxout01.lancloud.ru [45.84.86.81])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8BA11BC84;
-        Mon,  2 May 2022 14:02:58 -0700 (PDT)
-Received: from LanCloud
-DKIM-Filter: OpenDKIM Filter v2.11.0 mxout01.lancloud.ru 29DA720D16F2
-Received: from LanCloud
-Received: from LanCloud
-Received: from LanCloud
-Subject: Re: [PATCH v3] sh: avoid using IRQ0 on SH3/4
-To:     Geert Uytterhoeven <geert@linux-m68k.org>,
-        Rob Landley <rob@landley.net>
-CC:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Rich Felker <dalias@libc.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        "Linux Kernel Mailing List" <linux-kernel@vger.kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-References: <2584ba18-9653-9310-efc1-8b3b3e221eea@omp.ru>
- <11021433-66c0-3c56-42bd-207a5ae8d267@physik.fu-berlin.de>
- <2ebef1ac-e5c5-980c-9413-22a6cccdfa1d@landley.net>
- <CAMuHMdWN0vRYhK7O0MgOSCtisw3RDvp4vxSS2VF-9uGDdOEb7g@mail.gmail.com>
-From:   Sergey Shtylyov <s.shtylyov@omp.ru>
-Organization: Open Mobile Platform
-Message-ID: <59faed1d-3878-ce75-9f62-aaf4338d0ad1@omp.ru>
-Date:   Mon, 2 May 2022 23:56:31 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.10.1
+        with ESMTP id S229882AbiECCWl (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 2 May 2022 22:22:41 -0400
+Received: from out30-43.freemail.mail.aliyun.com (out30-43.freemail.mail.aliyun.com [115.124.30.43])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EECEA23BF6;
+        Mon,  2 May 2022 19:19:08 -0700 (PDT)
+X-Alimail-AntiSpam: AC=PASS;BC=-1|-1;BR=01201311R181e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=e01e04426;MF=baolin.wang@linux.alibaba.com;NM=1;PH=DS;RN=31;SR=0;TI=SMTPD_---0VC4Od8S_1651544341;
+Received: from 30.39.210.51(mailfrom:baolin.wang@linux.alibaba.com fp:SMTPD_---0VC4Od8S_1651544341)
+          by smtp.aliyun-inc.com(127.0.0.1);
+          Tue, 03 May 2022 10:19:03 +0800
+Message-ID: <48a05075-a323-e7f1-9e99-6c0d106eb2cb@linux.alibaba.com>
+Date:   Tue, 3 May 2022 10:19:46 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAMuHMdWN0vRYhK7O0MgOSCtisw3RDvp4vxSS2VF-9uGDdOEb7g@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"
-Content-Language: en-US
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
+ Thunderbird/91.8.1
+Subject: Re: [PATCH 3/3] mm: rmap: Fix CONT-PTE/PMD size hugetlb issue when
+ unmapping
+To:     Gerald Schaefer <gerald.schaefer@linux.ibm.com>
+Cc:     akpm@linux-foundation.org, mike.kravetz@oracle.com,
+        catalin.marinas@arm.com, will@kernel.org,
+        tsbogend@alpha.franken.de, James.Bottomley@HansenPartnership.com,
+        deller@gmx.de, mpe@ellerman.id.au, benh@kernel.crashing.org,
+        paulus@samba.org, hca@linux.ibm.com, gor@linux.ibm.com,
+        agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
+        svens@linux.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org,
+        davem@davemloft.net, arnd@arndb.de,
+        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux-mm@kvack.org
+References: <cover.1651216964.git.baolin.wang@linux.alibaba.com>
+ <c91e04ebb792ef7b72966edea8bd6fa2dfa5bfa7.1651216964.git.baolin.wang@linux.alibaba.com>
+ <20220429220214.4cfc5539@thinkpad>
+ <bcb4a3b0-4fcd-af3a-2a2c-fd662d9eaba9@linux.alibaba.com>
+ <20220502160232.589a6111@thinkpad>
+From:   Baolin Wang <baolin.wang@linux.alibaba.com>
+In-Reply-To: <20220502160232.589a6111@thinkpad>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
-X-Originating-IP: [192.168.11.198]
-X-ClientProxiedBy: LFEXT02.lancloud.ru (fd00:f066::142) To
- LFEX1907.lancloud.ru (fd00:f066::207)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 5/2/22 11:37 AM, Geert Uytterhoeven wrote:
 
-[...]
->>>> Using IRQ0 by the platform devices is going to be disallowed soon (see [1])
->>>> and even now, when IRQ0 is about to be returned by platfrom_get_irq(), you
->>>> see a big warning.  The code supporting SH3/4 SoCs maps the IRQ #s starting
->>>> at 0 -- modify that code to start the IRQ #s from 16 instead.
+
+On 5/2/2022 10:02 PM, Gerald Schaefer wrote:
+> On Sat, 30 Apr 2022 11:22:33 +0800
+> Baolin Wang <baolin.wang@linux.alibaba.com> wrote:
+> 
+>>
+>>
+>> On 4/30/2022 4:02 AM, Gerald Schaefer wrote:
+>>> On Fri, 29 Apr 2022 16:14:43 +0800
+>>> Baolin Wang <baolin.wang@linux.alibaba.com> wrote:
+>>>
+>>>> On some architectures (like ARM64), it can support CONT-PTE/PMD size
+>>>> hugetlb, which means it can support not only PMD/PUD size hugetlb:
+>>>> 2M and 1G, but also CONT-PTE/PMD size: 64K and 32M if a 4K page
+>>>> size specified.
 >>>>
->>>> The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
->>>> indeed use IRQ0 for the SMSC911x compatible Ethernet chip...
-> 
->> As I told him in IRC, the problem is still that sh4 never gives me a shell
->> prompt with this patch applied. I just reconfirmed it against current git:
+>>>> When unmapping a hugetlb page, we will get the relevant page table
+>>>> entry by huge_pte_offset() only once to nuke it. This is correct
+>>>> for PMD or PUD size hugetlb, since they always contain only one
+>>>> pmd entry or pud entry in the page table.
+>>>>
+>>>> However this is incorrect for CONT-PTE and CONT-PMD size hugetlb,
+>>>> since they can contain several continuous pte or pmd entry with
+>>>> same page table attributes, so we will nuke only one pte or pmd
+>>>> entry for this CONT-PTE/PMD size hugetlb page.
+>>>>
+>>>> And now we only use try_to_unmap() to unmap a poisoned hugetlb page,
+>>>> which means now we will unmap only one pte entry for a CONT-PTE or
+>>>> CONT-PMD size poisoned hugetlb page, and we can still access other
+>>>> subpages of a CONT-PTE or CONT-PMD size poisoned hugetlb page,
+>>>> which will cause serious issues possibly.
+>>>>
+>>>> So we should change to use huge_ptep_clear_flush() to nuke the
+>>>> hugetlb page table to fix this issue, which already considered
+>>>> CONT-PTE and CONT-PMD size hugetlb.
+>>>>
+>>>> Note we've already used set_huge_swap_pte_at() to set a poisoned
+>>>> swap entry for a poisoned hugetlb page.
+>>>>
+>>>> Signed-off-by: Baolin Wang <baolin.wang@linux.alibaba.com>
+>>>> ---
+>>>>    mm/rmap.c | 34 +++++++++++++++++-----------------
+>>>>    1 file changed, 17 insertions(+), 17 deletions(-)
+>>>>
+>>>> diff --git a/mm/rmap.c b/mm/rmap.c
+>>>> index 7cf2408..1e168d7 100644
+>>>> --- a/mm/rmap.c
+>>>> +++ b/mm/rmap.c
+>>>> @@ -1564,28 +1564,28 @@ static bool try_to_unmap_one(struct folio *folio, struct vm_area_struct *vma,
+>>>>    					break;
+>>>>    				}
+>>>>    			}
+>>>> +			pteval = huge_ptep_clear_flush(vma, address, pvmw.pte);
+>>>
+>>> Unlike in your patch 2/3, I do not see that this (huge) pteval would later
+>>> be used again with set_huge_pte_at() instead of set_pte_at(). Not sure if
+>>> this (huge) pteval could end up at a set_pte_at() later, but if yes, then
+>>> this would be broken on s390, and you'd need to use set_huge_pte_at()
+>>> instead of set_pte_at() like in your patch 2/3.
 >>
->> Freeing unused kernel image (initmem) memory: 124K
->> This architecture does not have kernel memory protection.
->> Run /init as init process
->> mountpoint: dev/pts: No such file or directory
->> 8139cp 0000:00:02.0 eth0: link up, 100Mbps, full-duplex, lpa 0x05E1
+>> IIUC, As I said in the commit message, we will only unmap a poisoned
+>> hugetlb page by try_to_unmap(), and the poisoned hugetlb page will be
+>> remapped with a poisoned entry by set_huge_swap_pte_at() in
+>> try_to_unmap_one(). So I think no need change to use set_huge_pte_at()
+>> instead of set_pte_at() for other cases, since the hugetlb page will not
+>> hit other cases.
 >>
->> It makes it partway through the init script, but it hangs with qemu-system-sh4
->> stuck in a CPU-eating loop before finishing. Without the patch, I get a shell
->> prompt.
+>> if (PageHWPoison(subpage) && !(flags & TTU_IGNORE_HWPOISON)) {
+>> 	pteval = swp_entry_to_pte(make_hwpoison_entry(subpage));
+>> 	if (folio_test_hugetlb(folio)) {
+>> 		hugetlb_count_sub(folio_nr_pages(folio), mm);
+>> 		set_huge_swap_pte_at(mm, address, pvmw.pte, pteval,
+>> 				     vma_mmu_pagesize(vma));
+>> 	} else {
+>> 		dec_mm_counter(mm, mm_counter(&folio->page));
+>> 		set_pte_at(mm, address, pvmw.pte, pteval);
+>> 	}
+>>
+>> }
 > 
-> I regularly test on qemu rts7751r2d, but couldn't produce your
-> issue.  Until I tried "ifconfig eth0 up", which causes a lock-up.
-> Interestingly, the 8139 irq was 112 with and without Sergey's patch,
-> so there must be an irq remapping missing.
-> 
-> I also test regularly on landisk, where 8139 Ethernet works fine.
-> Turns out landisk uses arch/sh/drivers/pci/fixups-landisk.c to fixup
-> the irq...
-> 
-> arch/sh/include/mach-common/mach/r2d.h has:
-> #define R2D_FPGA_IRQ_BASE       100
-> Subtracting 16 here does not help.
+> OK, but wouldn't the pteval be overwritten here with
+> pteval = swp_entry_to_pte(make_hwpoison_entry(subpage))?
+> IOW, what sense does it make to save the returned pteval from
+> huge_ptep_clear_flush(), when it is never being used anywhere?
 
-   Why subtract when you contrariwise need to add? :-)
+Please see previous code, we'll use the original pte value to check if 
+it is uffd-wp armed, and if need to mark it dirty though the hugetlbfs 
+is set noop_dirty_folio().
 
-> With this (gmail-whitespace-damaged) patch:
-> 
-> --- a/arch/sh/drivers/pci/fixups-rts7751r2d.c
-> +++ b/arch/sh/drivers/pci/fixups-rts7751r2d.c
-> @@ -31,9 +31,9 @@ static char lboxre2_irq_tab[] = {
->  int pcibios_map_platform_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
->  {
->         if (mach_is_lboxre2())
-> -               return lboxre2_irq_tab[slot];
-> +               return lboxre2_irq_tab[slot] - 16;
+pte_install_uffd_wp_if_needed(vma, address, pvmw.pte, pteval);
 
-   This table contains the values #define'd via evt2irq(), so
-shouldn't need to subtract anything...
-
->         else
-> -               return rts7751r2d_irq_tab[slot];
-> +               return rts7751r2d_irq_tab[slot] - 16;
-
-   How about + 16?
-
->  }
-> 
->  int pci_fixup_pcic(struct pci_channel *chan)
-> 
-> it no longer crashes, but ifconfig still fails:
-> 
-> / # ifconfig eth0 up
-> ifconfig: ioctl 0x8914 failed: Invalid argument
-
-   I'm still not sure you used the correct IRQ #s...
-
-> Note that there are more implementations of pcibios_map_platform_irq()
-> that do not use evt2irq(), and thus are probably broken by this patch.
-
-   That doesn't sound encouraging... :-/
-
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-
-MBR, Sergey
+/* Set the dirty flag on the folio now the pte is gone. */
+if (pte_dirty(pteval))
+	folio_mark_dirty(folio);
