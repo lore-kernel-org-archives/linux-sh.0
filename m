@@ -2,75 +2,135 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 968C5C433EF
-	for <linux-sh@archiver.kernel.org>; Tue,  3 May 2022 15:01:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D17CEC433F5
+	for <linux-sh@archiver.kernel.org>; Tue,  3 May 2022 19:33:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236407AbiECPFQ convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 3 May 2022 11:05:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58894 "EHLO
+        id S233959AbiECTg7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 3 May 2022 15:36:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34000 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237714AbiECPFM (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 3 May 2022 11:05:12 -0400
-X-Greylist: delayed 580 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 03 May 2022 08:01:38 PDT
-Received: from mail.megasoftsol.com (mail.megasoftsol.com [43.231.250.141])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B1A2339BA8
-        for <linux-sh@vger.kernel.org>; Tue,  3 May 2022 08:01:38 -0700 (PDT)
-Received: from localhost (localhost [127.0.0.1])
-        by mail.megasoftsol.com (Postfix) with ESMTP id BAE3890D8BD
-        for <linux-sh@vger.kernel.org>; Tue,  3 May 2022 20:17:04 +0530 (IST)
-Received: from mail.megasoftsol.com ([127.0.0.1])
-        by localhost (mail.megasoftsol.com [127.0.0.1]) (amavisd-new, port 10032)
-        with ESMTP id iFKENhM8TQjg for <linux-sh@vger.kernel.org>;
-        Tue,  3 May 2022 20:17:04 +0530 (IST)
-Received: from localhost (localhost [127.0.0.1])
-        by mail.megasoftsol.com (Postfix) with ESMTP id 2E7C490D948
-        for <linux-sh@vger.kernel.org>; Tue,  3 May 2022 20:17:04 +0530 (IST)
-X-Virus-Scanned: amavisd-new at megasoftsol.com
-Received: from mail.megasoftsol.com ([127.0.0.1])
-        by localhost (mail.megasoftsol.com [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id MjRXqowGOedm for <linux-sh@vger.kernel.org>;
-        Tue,  3 May 2022 20:17:04 +0530 (IST)
-Received: from asda.co.uk (unknown [20.97.211.134])
-        (Authenticated sender: admin)
-        by mail.megasoftsol.com (Postfix) with ESMTPSA id 5F36490D726
-        for <linux-sh@vger.kernel.org>; Tue,  3 May 2022 20:17:03 +0530 (IST)
-Reply-To: sales@asdaa.uk
-From:   ASDA Stores Limited <Hanes.Thomas23877@asda.co.uk>
-To:     linux-sh@vger.kernel.org
-Subject: 2nd Quater puchase request
-Date:   03 May 2022 14:49:31 +0000
-Message-ID: <20220503092157.943928A1CC1E97A4@asda.co.uk>
+        with ESMTP id S229480AbiECTg7 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 3 May 2022 15:36:59 -0400
+Received: from mxout03.lancloud.ru (mxout03.lancloud.ru [45.84.86.113])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 24E862E6BB;
+        Tue,  3 May 2022 12:33:21 -0700 (PDT)
+Received: from LanCloud
+DKIM-Filter: OpenDKIM Filter v2.11.0 mxout03.lancloud.ru B5F5020FC81C
+Received: from LanCloud
+Received: from LanCloud
+Received: from LanCloud
+Subject: Re: [PATCH v3] sh: avoid using IRQ0 on SH3/4
+From:   Sergey Shtylyov <s.shtylyov@omp.ru>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Rob Landley <rob@landley.net>
+CC:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Rich Felker <dalias@libc.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        "Linux Kernel Mailing List" <linux-kernel@vger.kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+References: <2584ba18-9653-9310-efc1-8b3b3e221eea@omp.ru>
+ <11021433-66c0-3c56-42bd-207a5ae8d267@physik.fu-berlin.de>
+ <2ebef1ac-e5c5-980c-9413-22a6cccdfa1d@landley.net>
+ <CAMuHMdWN0vRYhK7O0MgOSCtisw3RDvp4vxSS2VF-9uGDdOEb7g@mail.gmail.com>
+ <59faed1d-3878-ce75-9f62-aaf4338d0ad1@omp.ru>
+Organization: Open Mobile Platform
+Message-ID: <520ab5ce-021a-bbd9-7303-3f7695631ba5@omp.ru>
+Date:   Tue, 3 May 2022 22:33:15 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.1
 MIME-Version: 1.0
-Content-Type: text/plain;
-        charset="utf-8"
-Content-Transfer-Encoding: 8BIT
+In-Reply-To: <59faed1d-3878-ce75-9f62-aaf4338d0ad1@omp.ru>
+Content-Type: text/plain; charset="utf-8"
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Originating-IP: [192.168.11.198]
+X-ClientProxiedBy: LFEXT01.lancloud.ru (fd00:f066::141) To
+ LFEX1907.lancloud.ru (fd00:f066::207)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Dear linux-sh
+On 5/2/22 11:56 PM, Sergey Shtylyov wrote:
 
-We are interested in having some of your hot selling product in 
-our stores and outlets spread all over United Kingdom, Northern 
-Island and Africa. ASDA Stores Limited is one of the highest-
-ranking Wholesale & Retail outlets in the United Kingdom. 
-  
-We shall furnish our detailed company profile in our next 
-correspondent. However, it would be appreciated if you can send 
-us your catalog through email to learn more about your company's 
-products and wholesale quote. It is hopeful that we can start a 
-viable long-lasting business relationship (partnership) with you.  
-  
-  
-Your prompt response would be delightfully appreciated. 
-  
-Best Wishes 
-  
-  
-Hanes S. Thomas 
-Procurement Office. 
-ASDA Stores Limited 
-Tel:  + 44 - 7451271650 
-WhatsApp: + 44 – 7441440360 
-Website: www.asda.co.uk
+[...]
+>>>>> Using IRQ0 by the platform devices is going to be disallowed soon (see [1])
+>>>>> and even now, when IRQ0 is about to be returned by platfrom_get_irq(), you
+>>>>> see a big warning.  The code supporting SH3/4 SoCs maps the IRQ #s starting
+>>>>> at 0 -- modify that code to start the IRQ #s from 16 instead.
+>>>>>
+>>>>> The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
+>>>>> indeed use IRQ0 for the SMSC911x compatible Ethernet chip...
+>>
+>>> As I told him in IRC, the problem is still that sh4 never gives me a shell
+>>> prompt with this patch applied. I just reconfirmed it against current git:
+>>>
+>>> Freeing unused kernel image (initmem) memory: 124K
+>>> This architecture does not have kernel memory protection.
+>>> Run /init as init process
+>>> mountpoint: dev/pts: No such file or directory
+>>> 8139cp 0000:00:02.0 eth0: link up, 100Mbps, full-duplex, lpa 0x05E1
+>>>
+>>> It makes it partway through the init script, but it hangs with qemu-system-sh4
+>>> stuck in a CPU-eating loop before finishing. Without the patch, I get a shell
+>>> prompt.
+>>
+>> I regularly test on qemu rts7751r2d, but couldn't produce your
+>> issue.  Until I tried "ifconfig eth0 up", which causes a lock-up.
+>> Interestingly, the 8139 irq was 112 with and without Sergey's patch,
+>> so there must be an irq remapping missing.
+>>
+>> I also test regularly on landisk, where 8139 Ethernet works fine.
+>> Turns out landisk uses arch/sh/drivers/pci/fixups-landisk.c to fixup
+>> the irq...
+>>
+>> arch/sh/include/mach-common/mach/r2d.h has:
+>> #define R2D_FPGA_IRQ_BASE       100
+>> Subtracting 16 here does not help.
+> 
+>    Why subtract when you contrariwise need to add? :-)
+> 
+>> With this (gmail-whitespace-damaged) patch:
+>>
+>> --- a/arch/sh/drivers/pci/fixups-rts7751r2d.c
+>> +++ b/arch/sh/drivers/pci/fixups-rts7751r2d.c
+>> @@ -31,9 +31,9 @@ static char lboxre2_irq_tab[] = {
+>>  int pcibios_map_platform_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
+>>  {
+>>         if (mach_is_lboxre2())
+>> -               return lboxre2_irq_tab[slot];
+>> +               return lboxre2_irq_tab[slot] - 16;
+> 
+>    This table contains the values #define'd via evt2irq(), so
+> shouldn't need to subtract anything...
+> 
+>>         else
+>> -               return rts7751r2d_irq_tab[slot];
+>> +               return rts7751r2d_irq_tab[slot] - 16;
+> 
+>    How about + 16?
+> 
+>>  }
+>>
+>>  int pci_fixup_pcic(struct pci_channel *chan)
+>>
+>> it no longer crashes, but ifconfig still fails:
+>>
+>> / # ifconfig eth0 up
+>> ifconfig: ioctl 0x8914 failed: Invalid argument
+> 
+>    I'm still not sure you used the correct IRQ #s...
+> 
+>> Note that there are more implementations of pcibios_map_platform_irq()
+>> that do not use evt2irq(), and thus are probably broken by this patch.
+> 
+>    That doesn't sound encouraging... :-/
+
+   Actually, of those only Dreamcast didn't use evt2irq()...
+   Now I'm wondering whether all #define *_IRQ_BASE should be visited as well...
+
+>> Gr{oetje,eeting}s,
+>>
+>>                         Geert
+
+MBR, Sergey
