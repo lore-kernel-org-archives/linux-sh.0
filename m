@@ -2,79 +2,104 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5308EC433EF
-	for <linux-sh@archiver.kernel.org>; Wed,  4 May 2022 00:10:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 48E1AC4332F
+	for <linux-sh@archiver.kernel.org>; Wed,  4 May 2022 21:08:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235518AbiEDAOJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 3 May 2022 20:14:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48502 "EHLO
+        id S1378481AbiEDVMV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 4 May 2022 17:12:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55862 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232949AbiEDANw (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 3 May 2022 20:13:52 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 226E4A3;
-        Tue,  3 May 2022 17:10:14 -0700 (PDT)
+        with ESMTP id S235258AbiEDVMU (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 4 May 2022 17:12:20 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5F2AC4ECF8;
+        Wed,  4 May 2022 14:08:43 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 905B9B82270;
-        Wed,  4 May 2022 00:10:12 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPS id 373C2C385AF;
-        Wed,  4 May 2022 00:10:11 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id ED0AA6193E;
+        Wed,  4 May 2022 21:08:42 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id F213FC385A4;
+        Wed,  4 May 2022 21:08:41 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1651623011;
-        bh=TxkQO35EyZiqOa7CXy+eVYupNBIXHguoftlLt5CDOAE=;
-        h=Subject:From:Date:References:In-Reply-To:To:Cc:From;
-        b=f/5ngEI1ddBoMN/xezCzDomXIQNUlL/ovCJ2NK3GqFRafviCTVtuv6CvcNY3YgQET
-         v1nxGeCtLLsnsEjvGycG/B0O86TCoP2jHwq0OpP1qJEeWV8V/ULQR8s/Uxhgy6JuLL
-         eZcTLPA/Yudpy0VYq0FQcyXgLNuxsb+8GhZKgq/eYVQ97pGBxbohCPqRr1FSbVlcp3
-         gWfAvfl2+GZXX3mL2Ybg2M3jq7vRYOgXksuBhfRhw8Uw9J/NQMid9wGzYKkQcv/yAW
-         9a5nSNAiSd4RV/U/fO/SFUHnvr3GSzFzN+GkyqcJywwQ7VWUfb11a0iW561Tq9G1di
-         yOg2FmXiww2uA==
-Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
-        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id 1B39FE7399D;
-        Wed,  4 May 2022 00:10:11 +0000 (UTC)
-Content-Type: text/plain; charset="utf-8"
+        s=k20201202; t=1651698522;
+        bh=y1eZ0VyTuh3OSu3SZE5hnm+6Lqgi7WUL9wuM4x9LDoU=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:From;
+        b=OV+zeMEqAJx67x4OYYs/T+PwaB9EPFjKfNsjZzrWwMVM3NvLvNFpPf0wDtRgV6hPg
+         C/vW0RHXE+D3VHZkPbIlT7vV9H8IzZjwKHGMG7joXJdlZZ7WJg8oDJqQBcpyc4rw/O
+         yxAB78m6HEpQDrzbacEayJr8iiRcV1EWi7mSGZxb5IDhBXSg0dvOB0Jpz0xpdKT8q1
+         53W71wtG3ZAAJTFq4C2Bw331IYIMqmF+azzr+0ky2kC+20quz/B/hGbW52VPMkvf2m
+         sc7xISbNbAO/Ktfv/RlrnLm3f7ClaHPrrdpfMsEfr0tf1mKOlzAyEBnIbIHem9sEJj
+         ZVekgou/eHQhA==
+Date:   Wed, 4 May 2022 16:08:40 -0500
+From:   Bjorn Helgaas <helgaas@kernel.org>
+To:     Niklas Schnelle <schnelle@linux.ibm.com>
+Cc:     Arnd Bergmann <arnd@arndb.de>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux-pci@vger.kernel.org, Arnd Bergmann <arnd@kernel.org>,
+        Richard Henderson <rth@twiddle.net>,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        Matt Turner <mattst88@gmail.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Michal Simek <monstr@monstr.eu>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        "David S. Miller" <davem@davemloft.net>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        "maintainer:X86 ARCHITECTURE (32-BIT AND 64-BIT)" <x86@kernel.org>,
+        "open list:ALPHA PORT" <linux-alpha@vger.kernel.org>,
+        "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>,
+        "open list:IA64 (Itanium) PLATFORM" <linux-ia64@vger.kernel.org>,
+        "open list:M68K ARCHITECTURE" <linux-m68k@lists.linux-m68k.org>,
+        "open list:MIPS" <linux-mips@vger.kernel.org>,
+        "open list:PARISC ARCHITECTURE" <linux-parisc@vger.kernel.org>,
+        "open list:LINUX FOR POWERPC (32-BIT AND 64-BIT)" 
+        <linuxppc-dev@lists.ozlabs.org>,
+        "open list:RISC-V ARCHITECTURE" <linux-riscv@lists.infradead.org>,
+        "open list:SUPERH" <linux-sh@vger.kernel.org>,
+        "open list:SPARC + UltraSPARC (sparc/sparc64)" 
+        <sparclinux@vger.kernel.org>
+Subject: Re: [RFC v2 01/39] Kconfig: introduce HAS_IOPORT option and select
+ it as necessary
+Message-ID: <20220504210840.GA469916@bhelgaas>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-Subject: Re: [PATCH] smsc911x: allow using IRQ0
-From:   patchwork-bot+netdevbpf@kernel.org
-Message-Id: <165162301110.12177.14437301464055233758.git-patchwork-notify@kernel.org>
-Date:   Wed, 04 May 2022 00:10:11 +0000
-References: <656036e4-6387-38df-b8a7-6ba683b16e63@omp.ru>
-In-Reply-To: <656036e4-6387-38df-b8a7-6ba683b16e63@omp.ru>
-To:     Sergey Shtylyov <s.shtylyov@omp.ru>
-Cc:     davem@davemloft.net, kuba@kernel.org, netdev@vger.kernel.org,
-        steve.glendinning@shawell.net, edumazet@google.com,
-        pabeni@redhat.com, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220429135108.2781579-2-schnelle@linux.ibm.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hello:
+On Fri, Apr 29, 2022 at 03:49:59PM +0200, Niklas Schnelle wrote:
+> We introduce a new HAS_IOPORT Kconfig option to indicate support for
+> I/O Port access. In a future patch HAS_IOPORT=n will disable compilation
+> of the I/O accessor functions inb()/outb() and friends on architectures
+> which can not meaningfully support legacy I/O spaces such as s390 or
+> where such support is optional. 
 
-This patch was applied to netdev/net.git (master)
-by Jakub Kicinski <kuba@kernel.org>:
+So you plan to drop inb()/outb() on architectures where I/O port space
+is optional?  So even platforms that have I/O port space may not be
+able to use it?
 
-On Mon, 2 May 2022 23:14:09 +0300 you wrote:
-> The AlphaProject AP-SH4A-3A/AP-SH4AD-0A SH boards use IRQ0 for their SMSC
-> LAN911x Ethernet chip, so the networking on them must have been broken by
-> commit 965b2aa78fbc ("net/smsc911x: fix irq resource allocation failure")
-> which filtered out 0 as well as the negative error codes -- it was kinda
-> correct at the time, as platform_get_irq() could return 0 on of_irq_get()
-> failure and on the actual 0 in an IRQ resource.  This issue was fixed by
-> me (back in 2016!), so we should be able to fix this driver to allow IRQ0
-> usage again...
-> 
-> [...]
+This feels like a lot of work where the main benefit is to keep
+Kconfig from offering drivers that aren't of interest on s390.
 
-Here is the summary with links:
-  - smsc911x: allow using IRQ0
-    https://git.kernel.org/netdev/net/c/5ef9b803a4af
+Granted, there may be issues where inb()/outb() does the wrong thing
+such as dereferencing null pointers when I/O port space isn't
+implemented.  I think that's a defect in inb()/outb() and could be
+fixed there.
 
-You are awesome, thank you!
--- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/patchwork/pwbot.html
-
-
+Bjorn
