@@ -2,86 +2,85 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 18065C4332F
-	for <linux-sh@archiver.kernel.org>; Sat,  7 May 2022 01:32:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A688C433F5
+	for <linux-sh@archiver.kernel.org>; Sat,  7 May 2022 01:34:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1445188AbiEGBgC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 6 May 2022 21:36:02 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53352 "EHLO
+        id S1445212AbiEGBiZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 6 May 2022 21:38:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54488 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236738AbiEGBgA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 6 May 2022 21:36:00 -0400
-Received: from out199-4.us.a.mail.aliyun.com (out199-4.us.a.mail.aliyun.com [47.90.199.4])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7F90058E7E;
-        Fri,  6 May 2022 18:32:12 -0700 (PDT)
-X-Alimail-AntiSpam: AC=PASS;BC=-1|-1;BR=01201311R461e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=e01e04395;MF=baolin.wang@linux.alibaba.com;NM=1;PH=DS;RN=30;SR=0;TI=SMTPD_---0VCUCndB_1651887123;
-Received: from 30.236.9.83(mailfrom:baolin.wang@linux.alibaba.com fp:SMTPD_---0VCUCndB_1651887123)
-          by smtp.aliyun-inc.com(127.0.0.1);
-          Sat, 07 May 2022 09:32:05 +0800
-Message-ID: <971cfb54-f5a6-921c-b0c5-195a5daed0fb@linux.alibaba.com>
-Date:   Sat, 7 May 2022 09:32:46 +0800
+        with ESMTP id S1445208AbiEGBiY (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 6 May 2022 21:38:24 -0400
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 7F0F65FF33
+        for <linux-sh@vger.kernel.org>; Fri,  6 May 2022 18:34:39 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1651887278;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=vncVoL2JhBNKljKiob7OIeoa3sEmbpg073822r/dh9w=;
+        b=gfmXg3q9wC6wXTzmyaIOGgyQrT8ZCXBWR4flr4jHKj9iEqxVKg+xXh1g+vQLkxyIR4sRP9
+        HRY/7PjLqz3xAtlH0EjzXvgvCFdccYO8/MVMH7+t2+4RSdWEGQAsxCH8B8rvsdXCU6Diw6
+        iOq2LIwOtRIXiS9UbztEjn199lo2+mE=
+Received: from mimecast-mx02.redhat.com (mx3-rdu2.redhat.com
+ [66.187.233.73]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-245-qAWFsuJSNgSMVyTzlT0U4Q-1; Fri, 06 May 2022 21:34:21 -0400
+X-MC-Unique: qAWFsuJSNgSMVyTzlT0U4Q-1
+Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.rdu2.redhat.com [10.11.54.2])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id D3E3B2999B5B;
+        Sat,  7 May 2022 01:34:20 +0000 (UTC)
+Received: from MiWiFi-R3L-srv.redhat.com (ovpn-13-18.pek2.redhat.com [10.72.13.18])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id 2B34E40D2971;
+        Sat,  7 May 2022 01:34:15 +0000 (UTC)
+From:   Baoquan He <bhe@redhat.com>
+To:     ysato@users.sourceforge.jp, dalias@libc.org
+Cc:     linux-sh@vger.kernel.org, bhe@redhat.com,
+        linux-kernel@vger.kernel.org, kernel test robot <lkp@intel.com>
+Subject: [PATCH] sh: cast away __iomem to remove sparse warning
+Date:   Sat,  7 May 2022 09:34:11 +0800
+Message-Id: <20220507013411.74277-1-bhe@redhat.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
- Thunderbird/91.8.1
-Subject: Re: [PATCH 3/3] mm: rmap: Fix CONT-PTE/PMD size hugetlb issue when
- unmapping
-To:     Mike Kravetz <mike.kravetz@oracle.com>, akpm@linux-foundation.org,
-        catalin.marinas@arm.com, will@kernel.org
-Cc:     tsbogend@alpha.franken.de, James.Bottomley@HansenPartnership.com,
-        deller@gmx.de, mpe@ellerman.id.au, benh@kernel.crashing.org,
-        paulus@samba.org, hca@linux.ibm.com, gor@linux.ibm.com,
-        agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
-        svens@linux.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org,
-        davem@davemloft.net, arnd@arndb.de,
-        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-arch@vger.kernel.org,
-        linux-mm@kvack.org
-References: <cover.1651216964.git.baolin.wang@linux.alibaba.com>
- <c91e04ebb792ef7b72966edea8bd6fa2dfa5bfa7.1651216964.git.baolin.wang@linux.alibaba.com>
- <f64f0d4f-f0fc-f07c-3c17-96f124da21e4@oracle.com>
-From:   Baolin Wang <baolin.wang@linux.alibaba.com>
-In-Reply-To: <f64f0d4f-f0fc-f07c-3c17-96f124da21e4@oracle.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-type: text/plain
+Content-Transfer-Encoding: 8bit
+X-Scanned-By: MIMEDefang 2.84 on 10.11.54.2
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+LKP reported a sparse warning in arch/sh/kernel/crash_dump.c during
+a kdump patchset reviewing:
+https://lore.kernel.org/all/202204082128.JKXXDGpa-lkp@intel.com/T/#u
 
+../arch/sh/kernel/crash_dump.c:23:36: sparse: warning: incorrect type in argument 1 (different address spaces)
+../arch/sh/kernel/crash_dump.c:23:36: sparse:    expected void const *addr
+../arch/sh/kernel/crash_dump.c:23:36: sparse:    got void [noderef] __iomem *
 
-On 5/7/2022 2:55 AM, Mike Kravetz wrote:
-> On 4/29/22 01:14, Baolin Wang wrote:
->> On some architectures (like ARM64), it can support CONT-PTE/PMD size
->> hugetlb, which means it can support not only PMD/PUD size hugetlb:
->> 2M and 1G, but also CONT-PTE/PMD size: 64K and 32M if a 4K page
->> size specified.
->>
->> When unmapping a hugetlb page, we will get the relevant page table
->> entry by huge_pte_offset() only once to nuke it. This is correct
->> for PMD or PUD size hugetlb, since they always contain only one
->> pmd entry or pud entry in the page table.
->>
->> However this is incorrect for CONT-PTE and CONT-PMD size hugetlb,
->> since they can contain several continuous pte or pmd entry with
->> same page table attributes, so we will nuke only one pte or pmd
->> entry for this CONT-PTE/PMD size hugetlb page.
->>
->> And now we only use try_to_unmap() to unmap a poisoned hugetlb page,
-> 
-> Since try_to_unmap can be called for non-hugetlb pages, perhaps the following
-> is more accurate?
-> 
-> try_to_unmap is only passed a hugetlb page in the case where the
-> hugetlb page is poisoned.
+This warning happened when __iomem pointer is passed into fucntion
+which doesn't expect it. Casting away the __iomem can fix it.
 
-Yes, will update in next version.
+Reported-by: kernel test robot <lkp@intel.com>
+Signed-off-by: Baoquan He <bhe@redhat.com>
+---
+ arch/sh/kernel/crash_dump.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> It does concern me that this assumption is built into the code as
-> pointed out in your discussion with Gerald.  Should we perhaps add
-> a VM_BUG_ON() to make sure the passed huge page is poisoned?  This
-> would be in the same 'if block' where we call
-> adjust_range_if_pmd_sharing_possible.
-Good point. Will do in next version. Thanks.
+diff --git a/arch/sh/kernel/crash_dump.c b/arch/sh/kernel/crash_dump.c
+index 19ce6a950aac..52d1d54eb6b1 100644
+--- a/arch/sh/kernel/crash_dump.c
++++ b/arch/sh/kernel/crash_dump.c
+@@ -20,7 +20,7 @@ ssize_t copy_oldmem_page(struct iov_iter *iter, unsigned long pfn,
+ 		return 0;
+ 
+ 	vaddr = ioremap(pfn << PAGE_SHIFT, PAGE_SIZE);
+-	csize = copy_to_iter(vaddr + offset, csize, iter);
++	csize = copy_to_iter((const void __force *)vaddr + offset, csize, iter);
+ 	iounmap(vaddr);
+ 
+ 	return csize;
+-- 
+2.34.1
+
