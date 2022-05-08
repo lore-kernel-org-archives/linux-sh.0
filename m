@@ -2,131 +2,167 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F1334C433FE
-	for <linux-sh@archiver.kernel.org>; Sun,  8 May 2022 00:15:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 80EFAC433F5
+	for <linux-sh@archiver.kernel.org>; Sun,  8 May 2022 09:19:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231839AbiEHATk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 7 May 2022 20:19:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55306 "EHLO
+        id S232097AbiEHJXE (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 8 May 2022 05:23:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52490 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229544AbiEHATd (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 7 May 2022 20:19:33 -0400
-Received: from wnew3-smtp.messagingengine.com (wnew3-smtp.messagingengine.com [64.147.123.17])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BA5F163BC;
-        Sat,  7 May 2022 17:15:41 -0700 (PDT)
-Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
-        by mailnew.west.internal (Postfix) with ESMTP id BA7102B01A5E;
-        Sat,  7 May 2022 20:15:36 -0400 (EDT)
-Received: from mailfrontend1 ([10.202.2.162])
-  by compute3.internal (MEProxy); Sat, 07 May 2022 20:15:40 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:cc:content-type:date:date:from:from
-        :in-reply-to:in-reply-to:message-id:mime-version:references
-        :reply-to:sender:subject:subject:to:to:x-me-proxy:x-me-proxy
-        :x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=1651968936; x=
-        1651976136; bh=hBCmJbIqgEytzYwa8CW7BN7wQ9FjoZGR5Pq0KkOSgR4=; b=a
-        Fd+8vokQcvbA4GWW9owApfwSeCCmripmwI1V8BhLeK5KaZNhXYioKWO7gI/i4WS2
-        7k47a/ZWVbS9L9Tb94YqvYOtS7N7Odf5y1vj4JNgmK7LNQqCWISAKcO+P4rj0UMi
-        q+RtVMiTD2S0odWphzabgNOzrXhZiGf5nIMLf0LKorYXqpXkyhAyhpWHbDYXh7SC
-        lIsqVRz6rHiSoRmYVbBPXTr50ooseR0KbMmjBLcBybt5kQU3VX6Uv3BlsayvPX8K
-        rT/CABNOI5QNmto+53M1TPT98lstPKrnj3wt67ZKWi2d0IKDKzkcno0YDJCen2gb
-        pvOvYx7XyUrz2lynIGXHQ==
-X-ME-Sender: <xms:nQt3Yu2EHi4ipuqnh-IQxeR3-pYmafCL0ycLmbVR9jkQSZuwwhMCTw>
-    <xme:nQt3YhGj3WbJjLWRninJPo0UdIhOCVOzhNulF-SivW5rfLH6ZZQyRpAgUojPbF8-C
-    5lTRDk0I_hwK1GBwHg>
-X-ME-Received: <xmr:nQt3Ym4M7PXyIjFTVPJSxyNTs6iYk-KiuVj0c9xbLZnPIwKKKX3pbGagQ0aMJCEstBpD08vkytiENlEH1oJyJPG-juBdv5xk6po>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvfedrfeeigdeftdcutefuodetggdotefrodftvf
-    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
-    uegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenuc
-    fjughrpeffhffvvefujgfkfhggtgesthdtredttddtvdenucfhrhhomhephfhinhhnucfv
-    hhgrihhnuceofhhthhgrihhnsehlihhnuhigqdhmieekkhdrohhrgheqnecuggftrfgrth
-    htvghrnhepleeuheelheekgfeuvedtveetjeekhfffkeeffffftdfgjeevkeegfedvueeh
-    ueelnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomhepfh
-    hthhgrihhnsehlihhnuhigqdhmieekkhdrohhrgh
-X-ME-Proxy: <xmx:ngt3Yv2K9-Zw_Jv6Z_K6SmuSI0Dgy56dsjusRgWQOeGaH_9LVHsGyA>
-    <xmx:ngt3YhFAxYHvfpVbkpFftwsm7VPnoe1hEExANO3zwqFSWMnA4ZPxbQ>
-    <xmx:ngt3Yo8pHsdl-eEhvlnevon6M7vqHjCeDigA6J9OPD9hPyVH2q_GOw>
-    <xmx:qAt3Ym7_mrm_1RQ5vAt6Czfp_u6IruN66F4H7V-seVcfOQQjEYOJyLnz_fE>
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Sat,
- 7 May 2022 20:15:23 -0400 (EDT)
-Date:   Sun, 8 May 2022 10:15:31 +1000 (AEST)
-From:   Finn Thain <fthain@linux-m68k.org>
-To:     Arnd Bergmann <arnd@kernel.org>
-cc:     Niklas Schnelle <schnelle@linux.ibm.com>,
-        Bjorn Helgaas <helgaas@kernel.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-arch <linux-arch@vger.kernel.org>,
-        linux-pci <linux-pci@vger.kernel.org>,
-        Richard Henderson <rth@twiddle.net>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        "maintainer:X86 ARCHITECTURE (32-BIT AND 64-BIT)" <x86@kernel.org>,
-        "open list:ALPHA PORT" <linux-alpha@vger.kernel.org>,
-        "moderated list:ARM PORT" <linux-arm-kernel@lists.infradead.org>,
-        "open list:IA64 (Itanium) PLATFORM" <linux-ia64@vger.kernel.org>,
-        "open list:M68K ARCHITECTURE" <linux-m68k@lists.linux-m68k.org>,
-        "open list:MIPS" <linux-mips@vger.kernel.org>,
-        "open list:PARISC ARCHITECTURE" <linux-parisc@vger.kernel.org>,
-        "open list:LINUX FOR POWERPC (32-BIT AND 64-BIT)" 
-        <linuxppc-dev@lists.ozlabs.org>,
-        "open list:RISC-V ARCHITECTURE" <linux-riscv@lists.infradead.org>,
-        "open list:SUPERH" <linux-sh@vger.kernel.org>,
-        "open list:SPARC + UltraSPARC (sparc/sparc64)" 
-        <sparclinux@vger.kernel.org>
-Subject: Re: [RFC v2 01/39] Kconfig: introduce HAS_IOPORT option and select
- it as necessary
-In-Reply-To: <6f33385-5612-7042-e1b3-aa32895e91e0@linux-m68k.org>
-Message-ID: <e01fac8a-7568-14b6-84-affc4a40c6d@linux-m68k.org>
-References: <20220505195342.GA509942@bhelgaas> <22bec167-241f-2cbe-829f-a3f65e40e71@linux-m68k.org> <105ccec439f709846e82b69cb854ac825d7a6a49.camel@linux.ibm.com> <7dfa7578-039-e132-c573-ad89bd3215@linux-m68k.org> <CAK8P3a3tds8O+Gg2nF3MfrVVcmtLbtdQ2TnCJaDYz28cyhhWkg@mail.gmail.com>
- <6f33385-5612-7042-e1b3-aa32895e91e0@linux-m68k.org>
+        with ESMTP id S230000AbiEHJXD (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 8 May 2022 05:23:03 -0400
+Received: from out30-42.freemail.mail.aliyun.com (out30-42.freemail.mail.aliyun.com [115.124.30.42])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 20191E015;
+        Sun,  8 May 2022 02:19:09 -0700 (PDT)
+X-Alimail-AntiSpam: AC=PASS;BC=-1|-1;BR=01201311R171e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=e01e01424;MF=baolin.wang@linux.alibaba.com;NM=1;PH=DS;RN=30;SR=0;TI=SMTPD_---0VCZtzMG_1652001541;
+Received: from 30.15.195.77(mailfrom:baolin.wang@linux.alibaba.com fp:SMTPD_---0VCZtzMG_1652001541)
+          by smtp.aliyun-inc.com(127.0.0.1);
+          Sun, 08 May 2022 17:19:03 +0800
+Message-ID: <1fad03a6-98cf-1b0e-e012-82dc6466c7d2@linux.alibaba.com>
+Date:   Sun, 8 May 2022 17:19:43 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
+ Thunderbird/91.8.1
+Subject: Re: [PATCH 2/3] mm: rmap: Fix CONT-PTE/PMD size hugetlb issue when
+ migration
+From:   Baolin Wang <baolin.wang@linux.alibaba.com>
+To:     Mike Kravetz <mike.kravetz@oracle.com>, akpm@linux-foundation.org,
+        catalin.marinas@arm.com, will@kernel.org
+Cc:     tsbogend@alpha.franken.de, James.Bottomley@HansenPartnership.com,
+        deller@gmx.de, mpe@ellerman.id.au, benh@kernel.crashing.org,
+        paulus@samba.org, hca@linux.ibm.com, gor@linux.ibm.com,
+        agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
+        svens@linux.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org,
+        davem@davemloft.net, arnd@arndb.de,
+        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux-mm@kvack.org
+References: <cover.1651216964.git.baolin.wang@linux.alibaba.com>
+ <11b92502b3df0e0bba6a1dc71476d79cab6c79ba.1651216964.git.baolin.wang@linux.alibaba.com>
+ <5cab0eca-9630-a7c6-4f5d-5cb45ff82c83@oracle.com>
+ <21b11024-e893-8c11-9b98-ab1d13413b61@linux.alibaba.com>
+ <85bd80b4-b4fd-0d3f-a2e5-149559f2f387@oracle.com>
+ <e8b56f7d-ad95-7938-21a5-55caedbbb354@linux.alibaba.com>
+In-Reply-To: <e8b56f7d-ad95-7938-21a5-55caedbbb354@linux.alibaba.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
 
-On Sun, 8 May 2022, I wrote:
 
+On 5/7/2022 10:33 AM, Baolin Wang wrote:
 > 
-> That suggests to me that we need a "bool CONFIG_WARINGS_INTO_ERRORS" to 
-> control -Werror, which could be disabled for .config files (like make 
-> allmodconfig) where it is not helping.
 > 
+> On 5/7/2022 1:56 AM, Mike Kravetz wrote:
+>> On 5/5/22 20:39, Baolin Wang wrote:
+>>>
+>>> On 5/6/2022 7:53 AM, Mike Kravetz wrote:
+>>>> On 4/29/22 01:14, Baolin Wang wrote:
+>>>>> On some architectures (like ARM64), it can support CONT-PTE/PMD size
+>>>>> hugetlb, which means it can support not only PMD/PUD size hugetlb:
+>>>>> 2M and 1G, but also CONT-PTE/PMD size: 64K and 32M if a 4K page
+>>>>> size specified.
+>>>> <snip>
+>>>>> diff --git a/mm/rmap.c b/mm/rmap.c
+>>>>> index 6fdd198..7cf2408 100644
+>>>>> --- a/mm/rmap.c
+>>>>> +++ b/mm/rmap.c
+>>>>> @@ -1924,13 +1924,15 @@ static bool try_to_migrate_one(struct folio 
+>>>>> *folio, struct vm_area_struct *vma,
+>>>>>                        break;
+>>>>>                    }
+>>>>>                }
+>>>>> +
+>>>>> +            /* Nuke the hugetlb page table entry */
+>>>>> +            pteval = huge_ptep_clear_flush(vma, address, pvmw.pte);
+>>>>>            } else {
+>>>>>                flush_cache_page(vma, address, pte_pfn(*pvmw.pte));
+>>>>> +            /* Nuke the page table entry. */
+>>>>> +            pteval = ptep_clear_flush(vma, address, pvmw.pte);
+>>>>>            }
+>>>>
+>>>> On arm64 with CONT-PTE/PMD the returned pteval will have dirty or 
+>>>> young set
+>>>> if ANY of the PTE/PMDs had dirty or young set.
+>>>
+>>> Right.
+>>>
+>>>>
+>>>>> -        /* Nuke the page table entry. */
+>>>>> -        pteval = ptep_clear_flush(vma, address, pvmw.pte);
+>>>>> -
+>>>>>            /* Set the dirty flag on the folio now the pte is gone. */
+>>>>>            if (pte_dirty(pteval))
+>>>>>                folio_mark_dirty(folio);
+>>>>> @@ -2015,7 +2017,10 @@ static bool try_to_migrate_one(struct folio 
+>>>>> *folio, struct vm_area_struct *vma,
+>>>>>                pte_t swp_pte;
+>>>>>                  if (arch_unmap_one(mm, vma, address, pteval) < 0) {
+>>>>> -                set_pte_at(mm, address, pvmw.pte, pteval);
+>>>>> +                if (folio_test_hugetlb(folio))
+>>>>> +                    set_huge_pte_at(mm, address, pvmw.pte, pteval);
+>>>>
+>>>> And, we will use that pteval for ALL the PTE/PMDs here.  So, we 
+>>>> would set
+>>>> the dirty or young bit in ALL PTE/PMDs.
+>>>>
+>>>> Could that cause any issues?  May be more of a question for the 
+>>>> arm64 people.
+>>>
+>>> I don't think this will cause any issues. Since the hugetlb can not 
+>>> be split, and we should not lose the the dirty or young state if any 
+>>> subpages were set. Meanwhile we already did like this in hugetlb.c:
+>>>
+>>> pte = huge_ptep_get_and_clear(mm, address, ptep);
+>>> tlb_remove_huge_tlb_entry(h, tlb, ptep, address);
+>>> if (huge_pte_dirty(pte))
+>>>      set_page_dirty(page);
+>>>
+>>
+>> Agree that it 'should not' cause issues.  It just seems inconsistent.
+>> This is not a problem specifically with your patch, just the handling of
+>> CONT-PTE/PMD entries.
+>>
+>> There does not appear to be an arm64 specific version of huge_ptep_get()
+>> that takes CONT-PTE/PMD into account.  So, huge_ptep_get() would only
+>> return the one specific value.  It would not take into account the dirty
+>> or young bits of CONT-PTE/PMDs like your new version of
+>> huge_ptep_get_and_clear.  Is that correct?  Or, am I missing something.
+> 
+> Yes, you are right.
+> 
+>>
+>> If I am correct, then code like the following may not work:
+>>
+>> static int gather_hugetlb_stats(pte_t *pte, unsigned long hmask,
+>>                  unsigned long addr, unsigned long end, struct mm_walk 
+>> *walk)
+>> {
+>>          pte_t huge_pte = huge_ptep_get(pte);
+>>          struct numa_maps *md;
+>>          struct page *page;
+>>
+>>          if (!pte_present(huge_pte))
+>>                  return 0;
+>>
+>>          page = pte_page(huge_pte);
+>>
+>>          md = walk->private;
+>>          gather_stats(page, md, pte_dirty(huge_pte), 1);
+>>          return 0;
+>> }
+> 
+> Right, this is inconsistent with current huge_ptep_get() interface like 
+> you said. So I think we can define an ARCH-specific huge_ptep_get() 
+> interface for arm64, and some sample code like below. How do you think?
 
-I just noticed that we already have CONFIG_WERROR. So perhaps something 
-like this would help.
+After some investigation, I send out a RFC patch set[1] to address this 
+issue. We can talk about this issue in that thread. Thanks.
 
-diff --git a/init/Kconfig b/init/Kconfig
-index ddcbefe535e9..765d83fb148e 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -150,6 +150,8 @@ config WERROR
- 
- 	  However, if you have a new (or very old) compiler with odd and
- 	  unusual warnings, or you have some architecture with problems,
-+	  or if you are using a compiler that doesn't happen to interpret
-+	  the C standards in quite the same way as some other compilers,
- 	  you may need to disable this config option in order to
- 	  successfully build the kernel.
- 
+[1] 
+https://lore.kernel.org/all/cover.1651998586.git.baolin.wang@linux.alibaba.com/
