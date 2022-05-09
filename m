@@ -2,31 +2,31 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5F6A6C433F5
-	for <linux-sh@archiver.kernel.org>; Mon,  9 May 2022 23:34:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 668BAC4332F
+	for <linux-sh@archiver.kernel.org>; Mon,  9 May 2022 23:34:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233248AbiEIXia (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 9 May 2022 19:38:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44412 "EHLO
+        id S231592AbiEIXic (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 9 May 2022 19:38:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44974 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232934AbiEIXh7 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 9 May 2022 19:37:59 -0400
+        with ESMTP id S232833AbiEIXiG (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 9 May 2022 19:38:06 -0400
 Received: from bhuna.collabora.co.uk (bhuna.collabora.co.uk [46.235.227.227])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 35C1B21E30B;
-        Mon,  9 May 2022 16:33:59 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D5EB621E403;
+        Mon,  9 May 2022 16:34:10 -0700 (PDT)
 Received: from [127.0.0.1] (localhost [127.0.0.1])
         (Authenticated sender: dmitry.osipenko)
-        with ESMTPSA id 6209F1F441DD
+        with ESMTPSA id 0C7481F441F6
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=collabora.com;
-        s=mail; t=1652139238;
-        bh=UUAJJ/IBIhNY6NA1AxJmIDD0rKb6vfi9bj1ZHogZ1sk=;
+        s=mail; t=1652139249;
+        bh=Py3C74Fq8ylx1e5iD4JoOoDZdx6Zp6SNSGp+S5YdLlo=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=TkUASExCPh+FoXzL2OnCGIIu2Z2HXaBISDFgR7ixWfN1WdyIfCSpaUflnD7rWGxDG
-         vQCzwQpQuFj71TlHQA9DCAV9sF+sdQH9hcN7lAC3LqA9C4TbZrGN3bNuc1ngng/O7i
-         rySb86VyOpMwBjDX/TS735BJig4rEchyEIwVD9KJ+d21dHQBFQDukdAhgeiYB28NSu
-         ynWq6arqtBNX91H7sywe74sjkSSFI7BlaiTD+aG/xhTaRyK3ZGoePGigvGG/rQBHkh
-         cCEmV1YRV999ye8BFKhlDYmcEURuTzQcgUzY2QPWWaOq0izK+9ObffwREMFkcbNPRX
-         aXMbf/7L3uBQA==
+        b=lNksTBbv27hDu8EEkAEQj5GgsoEmm7+0+sHXFCTDwyFiMFRucGT2C4NwrUODWnqgr
+         ker012zTH+ctY/bp/DvwLFYX0BnRgZndrr/ZRjink8umONJEtYCTtZ06hu9J7zZfp+
+         tPWTki3zd/xPgsYlgiwfh4bnzqB4jl+L8lmX11KCP90ezvUibrmiKuFylcYpZC9yxM
+         3zLDLP7la9iYLOj7OJwr2On2lvE0/j+wGY2Uu+4im/JyIWDAWttXWW119bvaCzZOTH
+         P4wdljiq4jUyZlUuMy51pkx0/V6VzS5/w46i2URtlgrHZ77oWiTkKDRAuW0/bxBj0C
+         uupvU5EOk7DKg==
 From:   Dmitry Osipenko <dmitry.osipenko@collabora.com>
 To:     Thierry Reding <thierry.reding@gmail.com>,
         Jonathan Hunter <jonathanh@nvidia.com>,
@@ -78,9 +78,9 @@ Cc:     linux-kernel@vger.kernel.org, linux-csky@vger.kernel.org,
         linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
         xen-devel@lists.xenproject.org, linux-acpi@vger.kernel.org,
         linux-pm@vger.kernel.org, linux-tegra@vger.kernel.org
-Subject: [PATCH v8 14/27] xen/x86: Use do_kernel_power_off()
-Date:   Tue, 10 May 2022 02:32:22 +0300
-Message-Id: <20220509233235.995021-15-dmitry.osipenko@collabora.com>
+Subject: [PATCH v8 17/27] sh: Use do_kernel_power_off()
+Date:   Tue, 10 May 2022 02:32:25 +0300
+Message-Id: <20220509233235.995021-18-dmitry.osipenko@collabora.com>
 X-Mailer: git-send-email 2.35.1
 In-Reply-To: <20220509233235.995021-1-dmitry.osipenko@collabora.com>
 References: <20220509233235.995021-1-dmitry.osipenko@collabora.com>
@@ -96,35 +96,26 @@ that invokes chained power-off handlers. It also invokes legacy
 pm_power_off() for now, which will be removed once all drivers will
 be converted to the new sys-off API.
 
-Acked-by: Juergen Gross <jgross@suse.com>
 Reviewed-by: Michał Mirosław <mirq-linux@rere.qmqm.pl>
 Signed-off-by: Dmitry Osipenko <dmitry.osipenko@collabora.com>
 ---
- arch/x86/xen/enlighten_pv.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/sh/kernel/reboot.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/arch/x86/xen/enlighten_pv.c b/arch/x86/xen/enlighten_pv.c
-index 5038edb79ad5..af1f6e886225 100644
---- a/arch/x86/xen/enlighten_pv.c
-+++ b/arch/x86/xen/enlighten_pv.c
-@@ -31,6 +31,7 @@
- #include <linux/gfp.h>
- #include <linux/edd.h>
- #include <linux/objtool.h>
-+#include <linux/reboot.h>
+diff --git a/arch/sh/kernel/reboot.c b/arch/sh/kernel/reboot.c
+index 5c33f036418b..e8eeedc9b182 100644
+--- a/arch/sh/kernel/reboot.c
++++ b/arch/sh/kernel/reboot.c
+@@ -46,8 +46,7 @@ static void native_machine_shutdown(void)
  
- #include <xen/xen.h>
- #include <xen/events.h>
-@@ -1071,8 +1072,7 @@ static void xen_machine_halt(void)
- 
- static void xen_machine_power_off(void)
+ static void native_machine_power_off(void)
  {
 -	if (pm_power_off)
 -		pm_power_off();
 +	do_kernel_power_off();
- 	xen_reboot(SHUTDOWN_poweroff);
  }
  
+ static void native_machine_halt(void)
 -- 
 2.35.1
 
