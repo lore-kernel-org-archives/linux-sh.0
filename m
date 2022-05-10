@@ -2,83 +2,159 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D1E86C433FE
-	for <linux-sh@archiver.kernel.org>; Tue, 10 May 2022 04:29:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CEDC0C433FE
+	for <linux-sh@archiver.kernel.org>; Tue, 10 May 2022 18:16:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236560AbiEJEc6 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 10 May 2022 00:32:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37668 "EHLO
+        id S1348806AbiEJSUN convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 10 May 2022 14:20:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48192 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236656AbiEJEbf (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 10 May 2022 00:31:35 -0400
-Received: from out30-130.freemail.mail.aliyun.com (out30-130.freemail.mail.aliyun.com [115.124.30.130])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F0FF43526D;
-        Mon,  9 May 2022 21:26:00 -0700 (PDT)
-X-Alimail-AntiSpam: AC=PASS;BC=-1|-1;BR=01201311R271e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=e01e04357;MF=baolin.wang@linux.alibaba.com;NM=1;PH=DS;RN=31;SR=0;TI=SMTPD_---0VCp29EM_1652156751;
-Received: from 30.15.214.13(mailfrom:baolin.wang@linux.alibaba.com fp:SMTPD_---0VCp29EM_1652156751)
-          by smtp.aliyun-inc.com(127.0.0.1);
-          Tue, 10 May 2022 12:25:53 +0800
-Message-ID: <0db300f4-8a91-b330-5c6f-bbc63cf2f151@linux.alibaba.com>
-Date:   Tue, 10 May 2022 12:26:32 +0800
+        with ESMTP id S1348854AbiEJST0 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 10 May 2022 14:19:26 -0400
+Received: from mail-yb1-f174.google.com (mail-yb1-f174.google.com [209.85.219.174])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 190252A975A;
+        Tue, 10 May 2022 11:14:24 -0700 (PDT)
+Received: by mail-yb1-f174.google.com with SMTP id m128so32191961ybm.5;
+        Tue, 10 May 2022 11:14:24 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc:content-transfer-encoding;
+        bh=qpqXrLDWUEHd+BUtmgMjhwAa3QcGPruT6uNMBEv9rjU=;
+        b=sE0t+MrA2XaCL45MizPmFfYKh+U7rCzOjLv98vxpalwZsq4dz5KZYWa5EvT7z4Dj/J
+         72cDF6NlgQd5iWSoHTtTXxceYUf04R6uRHcOV8jsHXPlhwwbDMcx1IMyPtxOrsKhDggi
+         wuvB1W8gNO5ex306dapgVyE0ASFzoomTxg7L9zcB+drqohTFQe1hR9PsfiRaJ27pJr9l
+         H9JvOI63+Ooq4kqdLZBUXUvsOeixRzwIj1hEV+GcQckk7SAXqz9jSivd5ellFLiPqFs8
+         5bJ2n96C8IUu5Z4Fpv4clNCpiCIoJ0o2C6AAumEzIviiNN9HcMufo4dJXUAXqyc/StxF
+         2E1g==
+X-Gm-Message-State: AOAM531+oHyPotUKmUfvdnQsDixTSyf4gFm2u1Db2FoFEqVUEzAdkJOx
+        yFppIfJjpin5xoQr9N1U5JMJQ0EWlcJyxNaNJzA=
+X-Google-Smtp-Source: ABdhPJy/3C7Xf5XL6o3yFhMZ917Dv3JWEaRfPbmjw9NKhK3//cChodJMWe9FmxWaGm5UEgRYGP1Nqk2NauJUMOpu3kk=
+X-Received: by 2002:a25:e792:0:b0:645:7ddb:b5eb with SMTP id
+ e140-20020a25e792000000b006457ddbb5ebmr19781278ybh.482.1652206451725; Tue, 10
+ May 2022 11:14:11 -0700 (PDT)
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
- Thunderbird/91.8.1
-Subject: Re: [PATCH v3 0/3] Fix CONT-PTE/PMD size hugetlb issue when unmapping
- or migrating
-To:     Andrew Morton <akpm@linux-foundation.org>
-Cc:     mike.kravetz@oracle.com, catalin.marinas@arm.com, will@kernel.org,
-        songmuchun@bytedance.com, tsbogend@alpha.franken.de,
-        James.Bottomley@HansenPartnership.com, deller@gmx.de,
-        mpe@ellerman.id.au, benh@kernel.crashing.org, paulus@samba.org,
-        hca@linux.ibm.com, gor@linux.ibm.com, agordeev@linux.ibm.com,
-        borntraeger@linux.ibm.com, svens@linux.ibm.com,
-        ysato@users.osdn.me, dalias@libc.org, davem@davemloft.net,
-        arnd@arndb.de, linux-arm-kernel@lists.infradead.org,
-        linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-arch@vger.kernel.org, linux-mm@kvack.org
-References: <cover.1652147571.git.baolin.wang@linux.alibaba.com>
- <20220509210404.6a43aff15d0d6b3af0741001@linux-foundation.org>
-From:   Baolin Wang <baolin.wang@linux.alibaba.com>
-In-Reply-To: <20220509210404.6a43aff15d0d6b3af0741001@linux-foundation.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+References: <20220509233235.995021-1-dmitry.osipenko@collabora.com> <20220509233235.995021-2-dmitry.osipenko@collabora.com>
+In-Reply-To: <20220509233235.995021-2-dmitry.osipenko@collabora.com>
+From:   "Rafael J. Wysocki" <rafael@kernel.org>
+Date:   Tue, 10 May 2022 20:14:00 +0200
+Message-ID: <CAJZ5v0gApRhc9+jZLxgNXC2B2tmz450=8+mFZUjTFF1iU7C-gw@mail.gmail.com>
+Subject: Re: [PATCH v8 01/27] notifier: Add atomic_notifier_call_chain_is_empty()
+To:     Dmitry Osipenko <dmitry.osipenko@collabora.com>
+Cc:     Thierry Reding <thierry.reding@gmail.com>,
+        Jonathan Hunter <jonathanh@nvidia.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Joshua Thompson <funaho@jurai.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Sebastian Reichel <sre@kernel.org>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Philipp Zabel <p.zabel@pengutronix.de>,
+        Greentime Hu <green.hu@gmail.com>,
+        Vincent Chen <deanbo422@gmail.com>,
+        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        "the arch/x86 maintainers" <x86@kernel.org>,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
+        Juergen Gross <jgross@suse.com>,
+        Stefano Stabellini <sstabellini@kernel.org>,
+        "Rafael J. Wysocki" <rafael@kernel.org>,
+        Len Brown <lenb@kernel.org>,
+        Santosh Shilimkar <ssantosh@kernel.org>,
+        Krzysztof Kozlowski <krzk@kernel.org>,
+        Liam Girdwood <lgirdwood@gmail.com>,
+        Mark Brown <broonie@kernel.org>, Pavel Machek <pavel@ucw.cz>,
+        Lee Jones <lee.jones@linaro.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Daniel Lezcano <daniel.lezcano@linaro.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Ulf Hansson <ulf.hansson@linaro.org>,
+        =?UTF-8?B?TWljaGHFgiBNaXJvc8WCYXc=?= <mirq-linux@rere.qmqm.pl>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org,
+        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
+        linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        xen-devel@lists.xenproject.org,
+        ACPI Devel Maling List <linux-acpi@vger.kernel.org>,
+        Linux PM <linux-pm@vger.kernel.org>,
+        linux-tegra <linux-tegra@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+On Tue, May 10, 2022 at 1:33 AM Dmitry Osipenko
+<dmitry.osipenko@collabora.com> wrote:
+>
+> Add atomic_notifier_call_chain_is_empty() that returns true if given
+> atomic call chain is empty.
 
+It would be good to mention a use case for it.
 
-On 5/10/2022 12:04 PM, Andrew Morton wrote:
-> On Tue, 10 May 2022 11:45:57 +0800 Baolin Wang <baolin.wang@linux.alibaba.com> wrote:
-> 
->> Hi,
->>
->> Now migrating a hugetlb page or unmapping a poisoned hugetlb page, we'll
->> use ptep_clear_flush() and set_pte_at() to nuke the page table entry
->> and remap it, and this is incorrect for CONT-PTE or CONT-PMD size hugetlb
->> page,
-> 
-> It would be helpful to describe why it's wrong.  Something like "should
-> use huge_ptep_clear_flush() and huge_ptep_clear_flush() for this
-> purpose"?
-
-Sorry for the confusing description. I described the problem explicitly 
-in each patch's commit message.
-
-https://lore.kernel.org/all/ea5abf529f0997b5430961012bfda6166c1efc8c.1652147571.git.baolin.wang@linux.alibaba.com/
-https://lore.kernel.org/all/730ea4b6d292f32fb10b7a4e87dad49b0eb30474.1652147571.git.baolin.wang@linux.alibaba.com/
-
-> 
->> which will cause potential data consistent issue. This patch set
->> will change to use hugetlb related APIs to fix this issue, please find
->> details in each patch. Thanks.
-> 
-> Is a cc:stable needed here?  And are we able to identify a target for a
-> Fixes: tag?
-
-I think need a cc:stable tag, however I am not sure the target fixes 
-tag, since we should trace back to the introduction of CONT-PTE/PMD 
-hugetlb? 66b3923a1a0f ("arm64: hugetlb: add support for PTE contiguous bit")
+> Reviewed-by: Michał Mirosław <mirq-linux@rere.qmqm.pl>
+> Signed-off-by: Dmitry Osipenko <dmitry.osipenko@collabora.com>
+> ---
+>  include/linux/notifier.h |  2 ++
+>  kernel/notifier.c        | 13 +++++++++++++
+>  2 files changed, 15 insertions(+)
+>
+> diff --git a/include/linux/notifier.h b/include/linux/notifier.h
+> index 87069b8459af..95e2440037de 100644
+> --- a/include/linux/notifier.h
+> +++ b/include/linux/notifier.h
+> @@ -173,6 +173,8 @@ extern int blocking_notifier_call_chain_robust(struct blocking_notifier_head *nh
+>  extern int raw_notifier_call_chain_robust(struct raw_notifier_head *nh,
+>                 unsigned long val_up, unsigned long val_down, void *v);
+>
+> +extern bool atomic_notifier_call_chain_is_empty(struct atomic_notifier_head *nh);
+> +
+>  #define NOTIFY_DONE            0x0000          /* Don't care */
+>  #define NOTIFY_OK              0x0001          /* Suits me */
+>  #define NOTIFY_STOP_MASK       0x8000          /* Don't call further */
+> diff --git a/kernel/notifier.c b/kernel/notifier.c
+> index ba005ebf4730..aaf5b56452a6 100644
+> --- a/kernel/notifier.c
+> +++ b/kernel/notifier.c
+> @@ -204,6 +204,19 @@ int atomic_notifier_call_chain(struct atomic_notifier_head *nh,
+>  EXPORT_SYMBOL_GPL(atomic_notifier_call_chain);
+>  NOKPROBE_SYMBOL(atomic_notifier_call_chain);
+>
+> +/**
+> + *     atomicnotifier_call_chain_is_empty - Check whether notifier chain is empty
+> + *     @nh: Pointer to head of the blocking notifier chain
+> + *
+> + *     Checks whether notifier chain is empty.
+> + *
+> + *     Returns true is notifier chain is empty, false otherwise.
+> + */
+> +bool atomic_notifier_call_chain_is_empty(struct atomic_notifier_head *nh)
+> +{
+> +       return !rcu_access_pointer(nh->head);
+> +}
+> +
+>  /*
+>   *     Blocking notifier chain routines.  All access to the chain is
+>   *     synchronized by an rwsem.
+> --
+> 2.35.1
+>
