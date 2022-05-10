@@ -2,159 +2,143 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CEDC0C433FE
-	for <linux-sh@archiver.kernel.org>; Tue, 10 May 2022 18:16:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 45BF2C433EF
+	for <linux-sh@archiver.kernel.org>; Tue, 10 May 2022 23:17:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348806AbiEJSUN convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 10 May 2022 14:20:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48192 "EHLO
+        id S233352AbiEJXRr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 10 May 2022 19:17:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53224 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1348854AbiEJST0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 10 May 2022 14:19:26 -0400
-Received: from mail-yb1-f174.google.com (mail-yb1-f174.google.com [209.85.219.174])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 190252A975A;
-        Tue, 10 May 2022 11:14:24 -0700 (PDT)
-Received: by mail-yb1-f174.google.com with SMTP id m128so32191961ybm.5;
-        Tue, 10 May 2022 11:14:24 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc:content-transfer-encoding;
-        bh=qpqXrLDWUEHd+BUtmgMjhwAa3QcGPruT6uNMBEv9rjU=;
-        b=sE0t+MrA2XaCL45MizPmFfYKh+U7rCzOjLv98vxpalwZsq4dz5KZYWa5EvT7z4Dj/J
-         72cDF6NlgQd5iWSoHTtTXxceYUf04R6uRHcOV8jsHXPlhwwbDMcx1IMyPtxOrsKhDggi
-         wuvB1W8gNO5ex306dapgVyE0ASFzoomTxg7L9zcB+drqohTFQe1hR9PsfiRaJ27pJr9l
-         H9JvOI63+Ooq4kqdLZBUXUvsOeixRzwIj1hEV+GcQckk7SAXqz9jSivd5ellFLiPqFs8
-         5bJ2n96C8IUu5Z4Fpv4clNCpiCIoJ0o2C6AAumEzIviiNN9HcMufo4dJXUAXqyc/StxF
-         2E1g==
-X-Gm-Message-State: AOAM531+oHyPotUKmUfvdnQsDixTSyf4gFm2u1Db2FoFEqVUEzAdkJOx
-        yFppIfJjpin5xoQr9N1U5JMJQ0EWlcJyxNaNJzA=
-X-Google-Smtp-Source: ABdhPJy/3C7Xf5XL6o3yFhMZ917Dv3JWEaRfPbmjw9NKhK3//cChodJMWe9FmxWaGm5UEgRYGP1Nqk2NauJUMOpu3kk=
-X-Received: by 2002:a25:e792:0:b0:645:7ddb:b5eb with SMTP id
- e140-20020a25e792000000b006457ddbb5ebmr19781278ybh.482.1652206451725; Tue, 10
- May 2022 11:14:11 -0700 (PDT)
-MIME-Version: 1.0
-References: <20220509233235.995021-1-dmitry.osipenko@collabora.com> <20220509233235.995021-2-dmitry.osipenko@collabora.com>
-In-Reply-To: <20220509233235.995021-2-dmitry.osipenko@collabora.com>
-From:   "Rafael J. Wysocki" <rafael@kernel.org>
-Date:   Tue, 10 May 2022 20:14:00 +0200
-Message-ID: <CAJZ5v0gApRhc9+jZLxgNXC2B2tmz450=8+mFZUjTFF1iU7C-gw@mail.gmail.com>
-Subject: Re: [PATCH v8 01/27] notifier: Add atomic_notifier_call_chain_is_empty()
-To:     Dmitry Osipenko <dmitry.osipenko@collabora.com>
-Cc:     Thierry Reding <thierry.reding@gmail.com>,
-        Jonathan Hunter <jonathanh@nvidia.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Joshua Thompson <funaho@jurai.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Sebastian Reichel <sre@kernel.org>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Philipp Zabel <p.zabel@pengutronix.de>,
-        Greentime Hu <green.hu@gmail.com>,
-        Vincent Chen <deanbo422@gmail.com>,
-        "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Paul Mackerras <paulus@samba.org>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        "the arch/x86 maintainers" <x86@kernel.org>,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
-        Juergen Gross <jgross@suse.com>,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        "Rafael J. Wysocki" <rafael@kernel.org>,
-        Len Brown <lenb@kernel.org>,
-        Santosh Shilimkar <ssantosh@kernel.org>,
-        Krzysztof Kozlowski <krzk@kernel.org>,
-        Liam Girdwood <lgirdwood@gmail.com>,
-        Mark Brown <broonie@kernel.org>, Pavel Machek <pavel@ucw.cz>,
-        Lee Jones <lee.jones@linaro.org>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Daniel Lezcano <daniel.lezcano@linaro.org>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Ulf Hansson <ulf.hansson@linaro.org>,
-        =?UTF-8?B?TWljaGHFgiBNaXJvc8WCYXc=?= <mirq-linux@rere.qmqm.pl>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org,
-        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
-        linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        xen-devel@lists.xenproject.org,
-        ACPI Devel Maling List <linux-acpi@vger.kernel.org>,
-        Linux PM <linux-pm@vger.kernel.org>,
-        linux-tegra <linux-tegra@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+        with ESMTP id S229714AbiEJXRp (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 10 May 2022 19:17:45 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8D3DC8CCF2;
+        Tue, 10 May 2022 16:17:43 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 47683B82019;
+        Tue, 10 May 2022 23:17:42 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id ED7FBC385D2;
+        Tue, 10 May 2022 23:17:39 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
+        s=korg; t=1652224661;
+        bh=wNlnS0BAIcet/uV/acjIEyC1wJRqQktblKtGbHbJyzQ=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+        b=X5KSmq8YJHrtreTrC2tpneJDDbMcaQohzE4+3wIEkbYk/2tm8uYP1ENrzLuzWeaQV
+         O2pZL3OTQVnPa/9P/ZAHf7RzreY00Pyn71EBZXzNYrwCFqOtM+kURoCKeua+qPVQcb
+         0zztX2CBZrN7N9asxGgQ6o8DklzY5th9OydWHzHw=
+Date:   Tue, 10 May 2022 16:17:39 -0700
+From:   Andrew Morton <akpm@linux-foundation.org>
+To:     Baolin Wang <baolin.wang@linux.alibaba.com>
+Cc:     mike.kravetz@oracle.com, catalin.marinas@arm.com, will@kernel.org,
+        songmuchun@bytedance.com, tsbogend@alpha.franken.de,
+        James.Bottomley@HansenPartnership.com, deller@gmx.de,
+        mpe@ellerman.id.au, benh@kernel.crashing.org, paulus@samba.org,
+        hca@linux.ibm.com, gor@linux.ibm.com, agordeev@linux.ibm.com,
+        borntraeger@linux.ibm.com, svens@linux.ibm.com,
+        ysato@users.osdn.me, dalias@libc.org, davem@davemloft.net,
+        arnd@arndb.de, linux-arm-kernel@lists.infradead.org,
+        linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-arch@vger.kernel.org, linux-mm@kvack.org
+Subject: Re: [PATCH v3 2/3] mm: rmap: Fix CONT-PTE/PMD size hugetlb issue
+ when migration
+Message-Id: <20220510161739.fdea4d78dde8471033aab22b@linux-foundation.org>
+In-Reply-To: <ea5abf529f0997b5430961012bfda6166c1efc8c.1652147571.git.baolin.wang@linux.alibaba.com>
+References: <cover.1652147571.git.baolin.wang@linux.alibaba.com>
+        <ea5abf529f0997b5430961012bfda6166c1efc8c.1652147571.git.baolin.wang@linux.alibaba.com>
+X-Mailer: Sylpheed 3.7.0 (GTK+ 2.24.33; x86_64-redhat-linux-gnu)
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, May 10, 2022 at 1:33 AM Dmitry Osipenko
-<dmitry.osipenko@collabora.com> wrote:
->
-> Add atomic_notifier_call_chain_is_empty() that returns true if given
-> atomic call chain is empty.
+On Tue, 10 May 2022 11:45:59 +0800 Baolin Wang <baolin.wang@linux.alibaba.com> wrote:
 
-It would be good to mention a use case for it.
-
-> Reviewed-by: Michał Mirosław <mirq-linux@rere.qmqm.pl>
-> Signed-off-by: Dmitry Osipenko <dmitry.osipenko@collabora.com>
-> ---
->  include/linux/notifier.h |  2 ++
->  kernel/notifier.c        | 13 +++++++++++++
->  2 files changed, 15 insertions(+)
+> On some architectures (like ARM64), it can support CONT-PTE/PMD size
+> hugetlb, which means it can support not only PMD/PUD size hugetlb:
+> 2M and 1G, but also CONT-PTE/PMD size: 64K and 32M if a 4K page
+> size specified.
+> 
+> When migrating a hugetlb page, we will get the relevant page table
+> entry by huge_pte_offset() only once to nuke it and remap it with
+> a migration pte entry. This is correct for PMD or PUD size hugetlb,
+> since they always contain only one pmd entry or pud entry in the
+> page table.
+> 
+> However this is incorrect for CONT-PTE and CONT-PMD size hugetlb,
+> since they can contain several continuous pte or pmd entry with
+> same page table attributes. So we will nuke or remap only one pte
+> or pmd entry for this CONT-PTE/PMD size hugetlb page, which is
+> not expected for hugetlb migration. The problem is we can still
+> continue to modify the subpages' data of a hugetlb page during
+> migrating a hugetlb page, which can cause a serious data consistent
+> issue, since we did not nuke the page table entry and set a
+> migration pte for the subpages of a hugetlb page.
+> 
+> To fix this issue, we should change to use huge_ptep_clear_flush()
+> to nuke a hugetlb page table, and remap it with set_huge_pte_at()
+> and set_huge_swap_pte_at() when migrating a hugetlb page, which
+> already considered the CONT-PTE or CONT-PMD size hugetlb.
+> 
+> ...
 >
-> diff --git a/include/linux/notifier.h b/include/linux/notifier.h
-> index 87069b8459af..95e2440037de 100644
-> --- a/include/linux/notifier.h
-> +++ b/include/linux/notifier.h
-> @@ -173,6 +173,8 @@ extern int blocking_notifier_call_chain_robust(struct blocking_notifier_head *nh
->  extern int raw_notifier_call_chain_robust(struct raw_notifier_head *nh,
->                 unsigned long val_up, unsigned long val_down, void *v);
->
-> +extern bool atomic_notifier_call_chain_is_empty(struct atomic_notifier_head *nh);
+> --- a/include/linux/hugetlb.h
+> +++ b/include/linux/hugetlb.h
+> @@ -1093,6 +1093,17 @@ static inline void set_huge_swap_pte_at(struct mm_struct *mm, unsigned long addr
+>  					pte_t *ptep, pte_t pte, unsigned long sz)
+>  {
+>  }
 > +
->  #define NOTIFY_DONE            0x0000          /* Don't care */
->  #define NOTIFY_OK              0x0001          /* Suits me */
->  #define NOTIFY_STOP_MASK       0x8000          /* Don't call further */
-> diff --git a/kernel/notifier.c b/kernel/notifier.c
-> index ba005ebf4730..aaf5b56452a6 100644
-> --- a/kernel/notifier.c
-> +++ b/kernel/notifier.c
-> @@ -204,6 +204,19 @@ int atomic_notifier_call_chain(struct atomic_notifier_head *nh,
->  EXPORT_SYMBOL_GPL(atomic_notifier_call_chain);
->  NOKPROBE_SYMBOL(atomic_notifier_call_chain);
->
-> +/**
-> + *     atomicnotifier_call_chain_is_empty - Check whether notifier chain is empty
-> + *     @nh: Pointer to head of the blocking notifier chain
-> + *
-> + *     Checks whether notifier chain is empty.
-> + *
-> + *     Returns true is notifier chain is empty, false otherwise.
-> + */
-> +bool atomic_notifier_call_chain_is_empty(struct atomic_notifier_head *nh)
+> +static inline pte_t huge_ptep_clear_flush(struct vm_area_struct *vma,
+> +					  unsigned long addr, pte_t *ptep)
 > +{
-> +       return !rcu_access_pointer(nh->head);
+> +	return ptep_get(ptep);
 > +}
 > +
->  /*
->   *     Blocking notifier chain routines.  All access to the chain is
->   *     synchronized by an rwsem.
-> --
-> 2.35.1
->
+> +static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+> +				   pte_t *ptep, pte_t pte)
+> +{
+> +}
+>  #endif	/* CONFIG_HUGETLB_PAGE */
+>  
+
+This blows up nommu (arm allnoconfig):
+
+In file included from fs/io_uring.c:71:
+./include/linux/hugetlb.h: In function 'huge_ptep_clear_flush':
+./include/linux/hugetlb.h:1100:16: error: implicit declaration of function 'ptep_get' [-Werror=implicit-function-declaration]
+ 1100 |         return ptep_get(ptep);
+      |                ^~~~~~~~
+
+
+huge_ptep_clear_flush() is only used in CONFIG_NOMMU=n files, so I simply
+zapped this change.
+
+--- a/include/linux/hugetlb.h~mm-rmap-fix-cont-pte-pmd-size-hugetlb-issue-when-migration-fix
++++ a/include/linux/hugetlb.h
+@@ -1093,17 +1093,6 @@ static inline void set_huge_swap_pte_at(
+ 					pte_t *ptep, pte_t pte, unsigned long sz)
+ {
+ }
+-
+-static inline pte_t huge_ptep_clear_flush(struct vm_area_struct *vma,
+-					  unsigned long addr, pte_t *ptep)
+-{
+-	return ptep_get(ptep);
+-}
+-
+-static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
+-				   pte_t *ptep, pte_t pte)
+-{
+-}
+ #endif	/* CONFIG_HUGETLB_PAGE */
+ 
+ static inline spinlock_t *huge_pte_lock(struct hstate *h,
+_
+
