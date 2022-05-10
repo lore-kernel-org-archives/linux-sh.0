@@ -2,166 +2,79 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D460BC433EF
-	for <linux-sh@archiver.kernel.org>; Tue, 10 May 2022 03:47:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DD73FC433F5
+	for <linux-sh@archiver.kernel.org>; Tue, 10 May 2022 04:04:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229500AbiEJDvf (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 9 May 2022 23:51:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48076 "EHLO
+        id S235826AbiEJEII (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 10 May 2022 00:08:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49882 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235679AbiEJDue (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 9 May 2022 23:50:34 -0400
-Received: from out30-43.freemail.mail.aliyun.com (out30-43.freemail.mail.aliyun.com [115.124.30.43])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C8E2F29815;
-        Mon,  9 May 2022 20:46:35 -0700 (PDT)
-X-Alimail-AntiSpam: AC=PASS;BC=-1|-1;BR=01201311R181e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=e01e04395;MF=baolin.wang@linux.alibaba.com;NM=1;PH=DS;RN=32;SR=0;TI=SMTPD_---0VCobrrD_1652154387;
-Received: from localhost(mailfrom:baolin.wang@linux.alibaba.com fp:SMTPD_---0VCobrrD_1652154387)
-          by smtp.aliyun-inc.com(127.0.0.1);
-          Tue, 10 May 2022 11:46:28 +0800
-From:   Baolin Wang <baolin.wang@linux.alibaba.com>
-To:     akpm@linux-foundation.org, mike.kravetz@oracle.com,
-        catalin.marinas@arm.com, will@kernel.org
-Cc:     songmuchun@bytedance.com, tsbogend@alpha.franken.de,
+        with ESMTP id S230185AbiEJEIG (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 10 May 2022 00:08:06 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 15D074CD65;
+        Mon,  9 May 2022 21:04:09 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id C672FB81AE7;
+        Tue, 10 May 2022 04:04:07 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 748DCC385A6;
+        Tue, 10 May 2022 04:04:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
+        s=korg; t=1652155446;
+        bh=6OF+9C9FRL/t2E9bNeco9SygrOB7dQke1qTazheJwmM=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+        b=r+cD5N6bK5cMK3KiBjz/TIE0kRJfxClVYedgOaDY6iruFtbN69I0EnTrs28Odgw2B
+         MPfR9kQZKLh7AzrNokC+xb2QjO4x0B/CskDab9TBGZx07zjP3Yerqr9YNFkFVMGD3p
+         VJh3Vtf4VnZ1h7g0napFf0tAy+VjYNyYdsYerxPc=
+Date:   Mon, 9 May 2022 21:04:04 -0700
+From:   Andrew Morton <akpm@linux-foundation.org>
+To:     Baolin Wang <baolin.wang@linux.alibaba.com>
+Cc:     mike.kravetz@oracle.com, catalin.marinas@arm.com, will@kernel.org,
+        songmuchun@bytedance.com, tsbogend@alpha.franken.de,
         James.Bottomley@HansenPartnership.com, deller@gmx.de,
         mpe@ellerman.id.au, benh@kernel.crashing.org, paulus@samba.org,
         hca@linux.ibm.com, gor@linux.ibm.com, agordeev@linux.ibm.com,
         borntraeger@linux.ibm.com, svens@linux.ibm.com,
-        ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net,
-        arnd@arndb.de, baolin.wang@linux.alibaba.com,
-        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-arch@vger.kernel.org,
-        linux-mm@kvack.org
-Subject: [PATCH v3 2/3] mm: rmap: Fix CONT-PTE/PMD size hugetlb issue when migration
-Date:   Tue, 10 May 2022 11:45:59 +0800
-Message-Id: <ea5abf529f0997b5430961012bfda6166c1efc8c.1652147571.git.baolin.wang@linux.alibaba.com>
-X-Mailer: git-send-email 1.8.3.1
+        ysato@users.osdn.me, dalias@libc.org, davem@davemloft.net,
+        arnd@arndb.de, linux-arm-kernel@lists.infradead.org,
+        linux-kernel@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-arch@vger.kernel.org, linux-mm@kvack.org
+Subject: Re: [PATCH v3 0/3] Fix CONT-PTE/PMD size hugetlb issue when
+ unmapping or migrating
+Message-Id: <20220509210404.6a43aff15d0d6b3af0741001@linux-foundation.org>
 In-Reply-To: <cover.1652147571.git.baolin.wang@linux.alibaba.com>
 References: <cover.1652147571.git.baolin.wang@linux.alibaba.com>
-In-Reply-To: <cover.1652147571.git.baolin.wang@linux.alibaba.com>
-References: <cover.1652147571.git.baolin.wang@linux.alibaba.com>
+X-Mailer: Sylpheed 3.7.0 (GTK+ 2.24.33; x86_64-redhat-linux-gnu)
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On some architectures (like ARM64), it can support CONT-PTE/PMD size
-hugetlb, which means it can support not only PMD/PUD size hugetlb:
-2M and 1G, but also CONT-PTE/PMD size: 64K and 32M if a 4K page
-size specified.
+On Tue, 10 May 2022 11:45:57 +0800 Baolin Wang <baolin.wang@linux.alibaba.com> wrote:
 
-When migrating a hugetlb page, we will get the relevant page table
-entry by huge_pte_offset() only once to nuke it and remap it with
-a migration pte entry. This is correct for PMD or PUD size hugetlb,
-since they always contain only one pmd entry or pud entry in the
-page table.
+> Hi,
+> 
+> Now migrating a hugetlb page or unmapping a poisoned hugetlb page, we'll
+> use ptep_clear_flush() and set_pte_at() to nuke the page table entry
+> and remap it, and this is incorrect for CONT-PTE or CONT-PMD size hugetlb
+> page,
 
-However this is incorrect for CONT-PTE and CONT-PMD size hugetlb,
-since they can contain several continuous pte or pmd entry with
-same page table attributes. So we will nuke or remap only one pte
-or pmd entry for this CONT-PTE/PMD size hugetlb page, which is
-not expected for hugetlb migration. The problem is we can still
-continue to modify the subpages' data of a hugetlb page during
-migrating a hugetlb page, which can cause a serious data consistent
-issue, since we did not nuke the page table entry and set a
-migration pte for the subpages of a hugetlb page.
+It would be helpful to describe why it's wrong.  Something like "should
+use huge_ptep_clear_flush() and huge_ptep_clear_flush() for this
+purpose"?
 
-To fix this issue, we should change to use huge_ptep_clear_flush()
-to nuke a hugetlb page table, and remap it with set_huge_pte_at()
-and set_huge_swap_pte_at() when migrating a hugetlb page, which
-already considered the CONT-PTE or CONT-PMD size hugetlb.
+> which will cause potential data consistent issue. This patch set
+> will change to use hugetlb related APIs to fix this issue, please find
+> details in each patch. Thanks.
 
-Signed-off-by: Baolin Wang <baolin.wang@linux.alibaba.com>
-Reviewed-by: Muchun Song <songmuchun@bytedance.com>
-Reviewed-by: Mike Kravetz <mike.kravetz@oracle.com>
----
- include/linux/hugetlb.h | 11 +++++++++++
- mm/rmap.c               | 24 ++++++++++++++++++------
- 2 files changed, 29 insertions(+), 6 deletions(-)
+Is a cc:stable needed here?  And are we able to identify a target for a
+Fixes: tag?
 
-diff --git a/include/linux/hugetlb.h b/include/linux/hugetlb.h
-index 306d6ef..9f71043 100644
---- a/include/linux/hugetlb.h
-+++ b/include/linux/hugetlb.h
-@@ -1093,6 +1093,17 @@ static inline void set_huge_swap_pte_at(struct mm_struct *mm, unsigned long addr
- 					pte_t *ptep, pte_t pte, unsigned long sz)
- {
- }
-+
-+static inline pte_t huge_ptep_clear_flush(struct vm_area_struct *vma,
-+					  unsigned long addr, pte_t *ptep)
-+{
-+	return ptep_get(ptep);
-+}
-+
-+static inline void set_huge_pte_at(struct mm_struct *mm, unsigned long addr,
-+				   pte_t *ptep, pte_t pte)
-+{
-+}
- #endif	/* CONFIG_HUGETLB_PAGE */
- 
- static inline spinlock_t *huge_pte_lock(struct hstate *h,
-diff --git a/mm/rmap.c b/mm/rmap.c
-index 94d6b24..4e96daf 100644
---- a/mm/rmap.c
-+++ b/mm/rmap.c
-@@ -1926,13 +1926,15 @@ static bool try_to_migrate_one(struct folio *folio, struct vm_area_struct *vma,
- 					break;
- 				}
- 			}
-+
-+			/* Nuke the hugetlb page table entry */
-+			pteval = huge_ptep_clear_flush(vma, address, pvmw.pte);
- 		} else {
- 			flush_cache_page(vma, address, pte_pfn(*pvmw.pte));
-+			/* Nuke the page table entry. */
-+			pteval = ptep_clear_flush(vma, address, pvmw.pte);
- 		}
- 
--		/* Nuke the page table entry. */
--		pteval = ptep_clear_flush(vma, address, pvmw.pte);
--
- 		/* Set the dirty flag on the folio now the pte is gone. */
- 		if (pte_dirty(pteval))
- 			folio_mark_dirty(folio);
-@@ -2017,7 +2019,10 @@ static bool try_to_migrate_one(struct folio *folio, struct vm_area_struct *vma,
- 			pte_t swp_pte;
- 
- 			if (arch_unmap_one(mm, vma, address, pteval) < 0) {
--				set_pte_at(mm, address, pvmw.pte, pteval);
-+				if (folio_test_hugetlb(folio))
-+					set_huge_pte_at(mm, address, pvmw.pte, pteval);
-+				else
-+					set_pte_at(mm, address, pvmw.pte, pteval);
- 				ret = false;
- 				page_vma_mapped_walk_done(&pvmw);
- 				break;
-@@ -2026,7 +2031,10 @@ static bool try_to_migrate_one(struct folio *folio, struct vm_area_struct *vma,
- 				       !anon_exclusive, subpage);
- 			if (anon_exclusive &&
- 			    page_try_share_anon_rmap(subpage)) {
--				set_pte_at(mm, address, pvmw.pte, pteval);
-+				if (folio_test_hugetlb(folio))
-+					set_huge_pte_at(mm, address, pvmw.pte, pteval);
-+				else
-+					set_pte_at(mm, address, pvmw.pte, pteval);
- 				ret = false;
- 				page_vma_mapped_walk_done(&pvmw);
- 				break;
-@@ -2052,7 +2060,11 @@ static bool try_to_migrate_one(struct folio *folio, struct vm_area_struct *vma,
- 				swp_pte = pte_swp_mksoft_dirty(swp_pte);
- 			if (pte_uffd_wp(pteval))
- 				swp_pte = pte_swp_mkuffd_wp(swp_pte);
--			set_pte_at(mm, address, pvmw.pte, swp_pte);
-+			if (folio_test_hugetlb(folio))
-+				set_huge_swap_pte_at(mm, address, pvmw.pte,
-+						     swp_pte, vma_mmu_pagesize(vma));
-+			else
-+				set_pte_at(mm, address, pvmw.pte, swp_pte);
- 			trace_set_migration_pte(address, pte_val(swp_pte),
- 						compound_order(&folio->page));
- 			/*
--- 
-1.8.3.1
 
