@@ -2,93 +2,66 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 560F6C43219
-	for <linux-sh@archiver.kernel.org>; Wed, 11 May 2022 02:04:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 07A91C433F5
+	for <linux-sh@archiver.kernel.org>; Wed, 11 May 2022 02:53:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240941AbiEKCEz (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 10 May 2022 22:04:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47706 "EHLO
+        id S239081AbiEKCxe (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 10 May 2022 22:53:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36004 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229834AbiEKCEy (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 10 May 2022 22:04:54 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6FF5662BD6;
-        Tue, 10 May 2022 19:04:53 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 09878B820EB;
-        Wed, 11 May 2022 02:04:52 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 99E53C385D4;
-        Wed, 11 May 2022 02:04:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
-        s=korg; t=1652234690;
-        bh=RqytgUQmYxvDTXBUw55j51kKtaUX/T2ojOwIJ6HZEiw=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
-        b=VBO7kizVkXUSaa6HmoCSB9sOGvIGYnAyrJKrueHyNZW3nqHwMync9fdvyD0jIWLB3
-         BWm3UD/7XCPZ5egCQJKBcse8rbcVpPBoMBEAqKU8BjWdY/hurJsSHM8rL7YUxVGyKo
-         jE9NYVKIhAdH/oaFOs4aYV+DNZcFV5aQnNczUPtM=
-Date:   Tue, 10 May 2022 19:04:48 -0700
-From:   Andrew Morton <akpm@linux-foundation.org>
-To:     kernel test robot <lkp@intel.com>
-Cc:     Baolin Wang <baolin.wang@linux.alibaba.com>,
-        mike.kravetz@oracle.com, catalin.marinas@arm.com, will@kernel.org,
-        kbuild-all@lists.01.org, songmuchun@bytedance.com,
-        tsbogend@alpha.franken.de, James.Bottomley@hansenpartnership.com,
-        deller@gmx.de, mpe@ellerman.id.au, benh@kernel.crashing.org,
-        paulus@samba.org, hca@linux.ibm.com, gor@linux.ibm.com,
-        agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
-        svens@linux.ibm.com, ysato@users.osdn.me, dalias@libc.org,
-        davem@davemloft.net, arnd@arndb.de,
-        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org
-Subject: Re: [PATCH v3 2/3] mm: rmap: Fix CONT-PTE/PMD size hugetlb issue
- when migration
-Message-Id: <20220510190448.5e352897a147622ffa87175f@linux-foundation.org>
-In-Reply-To: <202205110919.CWIcIqYE-lkp@intel.com>
-References: <ea5abf529f0997b5430961012bfda6166c1efc8c.1652147571.git.baolin.wang@linux.alibaba.com>
-        <202205110919.CWIcIqYE-lkp@intel.com>
-X-Mailer: Sylpheed 3.7.0 (GTK+ 2.24.33; x86_64-redhat-linux-gnu)
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+        with ESMTP id S241738AbiEKCxS (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 10 May 2022 22:53:18 -0400
+Received: from mail.meizu.com (unknown [14.29.68.187])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 81746127940;
+        Tue, 10 May 2022 19:52:13 -0700 (PDT)
+Received: from IT-EXMB-1-125.meizu.com (172.16.1.125) by mz-mail04.meizu.com
+ (172.16.1.16) with Microsoft SMTP Server (TLS) id 14.3.487.0; Wed, 11 May
+ 2022 10:52:12 +0800
+Received: from meizu.meizu.com (172.16.137.70) by IT-EXMB-1-125.meizu.com
+ (172.16.1.125) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id 15.1.2308.14; Wed, 11 May
+ 2022 10:52:11 +0800
+From:   Haowen Bai <baihaowen@meizu.com>
+To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>
+CC:     Haowen Bai <baihaowen@meizu.com>, <linux-sh@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>
+Subject: [PATCH] sh: maple: remove useless INIT_LIST_HEAD()
+Date:   Wed, 11 May 2022 10:52:10 +0800
+Message-ID: <1652237530-11859-1-git-send-email-baihaowen@meizu.com>
+X-Mailer: git-send-email 2.7.4
+MIME-Version: 1.0
+Content-Type: text/plain
+X-Originating-IP: [172.16.137.70]
+X-ClientProxiedBy: IT-EXMB-1-126.meizu.com (172.16.1.126) To
+ IT-EXMB-1-125.meizu.com (172.16.1.125)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, 11 May 2022 09:19:17 +0800 kernel test robot <lkp@intel.com> wrote:
+The list_head maple_waitq & maple_sentq are initialized statically by
+LIST_HEAD(). It is unnecessary to initialize by INIT_LIST_HEAD(). Drop
+them.
 
-> Hi Baolin,
-> 
-> I love your patch! Yet something to improve:
-> 
-> [auto build test ERROR on akpm-mm/mm-everything]
-> [cannot apply to hnaz-mm/master arm64/for-next/core linus/master v5.18-rc6]
-> [If your patch is applied to the wrong git tree, kindly drop us a note.
-> And when submitting patch, we suggest to use '--base' as documented in
-> https://git-scm.com/docs/git-format-patch]
-> 
-> url:    https://github.com/intel-lab-lkp/linux/commits/Baolin-Wang/Fix-CONT-PTE-PMD-size-hugetlb-issue-when-unmapping-or-migrating/20220510-114753
-> base:   https://git.kernel.org/pub/scm/linux/kernel/git/akpm/mm.git mm-everything
-> config: h8300-buildonly-randconfig-r001-20220509 (https://download.01.org/0day-ci/archive/20220511/202205110919.CWIcIqYE-lkp@intel.com/config)
-> compiler: h8300-linux-gcc (GCC) 11.3.0
-> reproduce (this is a W=1 build):
->         wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
->         chmod +x ~/bin/make.cross
->         # https://github.com/intel-lab-lkp/linux/commit/b666792b4c5f9774c350977ff88837bafc36365a
->         git remote add linux-review https://github.com/intel-lab-lkp/linux
->         git fetch --no-tags linux-review Baolin-Wang/Fix-CONT-PTE-PMD-size-hugetlb-issue-when-unmapping-or-migrating/20220510-114753
->         git checkout b666792b4c5f9774c350977ff88837bafc36365a
->         # save the config file
->         mkdir build_dir && cp config build_dir/.config
->         COMPILER_INSTALL_PATH=$HOME/0day COMPILER=gcc-11.3.0 make.cross W=1 O=build_dir ARCH=h8300 SHELL=/bin/bash
-> 
-> ...
+Signed-off-by: Haowen Bai <baihaowen@meizu.com>
+---
+ drivers/sh/maple/maple.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-Thanks. 
-https://git.kernel.org/pub/scm/linux/kernel/git/akpm/25-new.git/tree/patches/mm-rmap-fix-cont-pte-pmd-size-hugetlb-issue-when-migration-fix.patch
-(which is in current mm-everything) fixes this up.
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index e24e220e56ee..44f00d7cc669 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -839,9 +839,6 @@ static int __init maple_bus_init(void)
+ 		goto cleanup_bothirqs;
+ 	}
+ 
+-	INIT_LIST_HEAD(&maple_waitq);
+-	INIT_LIST_HEAD(&maple_sentq);
+-
+ 	/* setup maple ports */
+ 	for (i = 0; i < MAPLE_PORTS; i++) {
+ 		checked[i] = false;
+-- 
+2.7.4
 
