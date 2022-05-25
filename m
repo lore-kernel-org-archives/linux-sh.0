@@ -2,162 +2,139 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 52046C433EF
-	for <linux-sh@archiver.kernel.org>; Wed, 25 May 2022 11:11:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 44518C433F5
+	for <linux-sh@archiver.kernel.org>; Wed, 25 May 2022 12:40:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242153AbiEYLLN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 25 May 2022 07:11:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41108 "EHLO
+        id S239019AbiEYMkV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 25 May 2022 08:40:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57740 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241080AbiEYLLK (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 25 May 2022 07:11:10 -0400
-Received: from desiato.infradead.org (desiato.infradead.org [IPv6:2001:8b0:10b:1:d65d:64ff:fe57:4e05])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AE3CA8CCC5;
-        Wed, 25 May 2022 04:11:05 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=desiato.20200630; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=TTSfncRF4bwVxkeR+S4pHa2NuE5vU7NkHqU52imXoeo=; b=AZ7NLjulpP1WzqY4jAw9CJ6mzn
-        eNxn6mITLdAkzreesFIusYyJANkaOvbZVslHzJxDDqo/jW9prJ6mSOYajnNAsWgSTZTPCGe4Y+H+t
-        Q7b5K2i3OxODvn+feDcYZuuvagMcqlznlm2xJ6e8wPUzB4c/WkijGr50Z8D32ZlBmwWuMwGQbue1E
-        mrsCyjPGVmj7xf/0/rnV0zIseeyVAHCeyTCYTi0ZFmZwkk1CWC0IMPFglArv51u64lwHpRP8/QuNm
-        TypGtB34O3uGaPoduTA8k7e4jOZswva+y2onGqiOIb4Z5GAtPEnJDGpyLSzDy3ZlKvUO8MvNVaZm2
-        4u9mbK6A==;
-Received: from j217100.upc-j.chello.nl ([24.132.217.100] helo=noisy.programming.kicks-ass.net)
-        by desiato.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1ntouK-001b5l-Bp; Wed, 25 May 2022 11:10:28 +0000
-Received: from hirez.programming.kicks-ass.net (hirez.programming.kicks-ass.net [192.168.1.225])
+        with ESMTP id S238201AbiEYMkU (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 25 May 2022 08:40:20 -0400
+Received: from smtp-relay-internal-0.canonical.com (smtp-relay-internal-0.canonical.com [185.125.188.122])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1CBA97B9C6
+        for <linux-sh@vger.kernel.org>; Wed, 25 May 2022 05:40:19 -0700 (PDT)
+Received: from mail-ed1-f70.google.com (mail-ed1-f70.google.com [209.85.208.70])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-        (Client did not present a certificate)
-        by noisy.programming.kicks-ass.net (Postfix) with ESMTPS id 59CA2300222;
-        Wed, 25 May 2022 13:10:17 +0200 (CEST)
-Received: by hirez.programming.kicks-ass.net (Postfix, from userid 1000)
-        id 374CD207688E7; Wed, 25 May 2022 13:10:17 +0200 (CEST)
-Date:   Wed, 25 May 2022 13:10:17 +0200
-From:   Peter Zijlstra <peterz@infradead.org>
-To:     Peter Xu <peterx@redhat.com>
-Cc:     linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Richard Henderson <rth@twiddle.net>,
-        David Hildenbrand <david@redhat.com>,
-        Matt Turner <mattst88@gmail.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Michal Simek <monstr@monstr.eu>,
-        Russell King <linux@armlinux.org.uk>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        linux-riscv@lists.infradead.org,
-        Alexander Gordeev <agordeev@linux.ibm.com>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        Jonas Bonn <jonas@southpole.se>, Will Deacon <will@kernel.org>,
-        "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
-        "H . Peter Anvin" <hpa@zytor.com>,
-        Andrea Arcangeli <aarcange@redhat.com>,
-        openrisc@lists.librecores.org, linux-s390@vger.kernel.org,
-        Ingo Molnar <mingo@redhat.com>,
-        linux-m68k@lists.linux-m68k.org,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Chris Zankel <chris@zankel.net>,
-        Alistair Popple <apopple@nvidia.com>,
-        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        Vlastimil Babka <vbabka@suse.cz>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        sparclinux@vger.kernel.org,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Stafford Horne <shorne@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Paul Mackerras <paulus@samba.org>,
-        linux-arm-kernel@lists.infradead.org,
-        Sven Schnelle <svens@linux.ibm.com>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        linux-xtensa@linux-xtensa.org, Nicholas Piggin <npiggin@gmail.com>,
-        linux-sh@vger.kernel.org, Vasily Gorbik <gor@linux.ibm.com>,
-        Borislav Petkov <bp@alien8.de>, linux-mips@vger.kernel.org,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Helge Deller <deller@gmx.de>, Vineet Gupta <vgupta@kernel.org>,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Johannes Weiner <hannes@cmpxchg.org>,
-        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        linux-um@lists.infradead.org, linux-alpha@vger.kernel.org,
-        Johannes Berg <johannes@sipsolutions.net>,
-        linux-ia64@vger.kernel.org,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Dinh Nguyen <dinguyen@kernel.org>, Guo Ren <guoren@kernel.org>,
-        linux-snps-arc@lists.infradead.org,
-        Hugh Dickins <hughd@google.com>, Rich Felker <dalias@libc.org>,
-        Andy Lutomirski <luto@kernel.org>,
-        Richard Weinberger <richard@nod.at>,
-        linuxppc-dev@lists.ozlabs.org, Brian Cain <bcain@quicinc.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        linux-parisc@vger.kernel.org,
-        "David S . Miller" <davem@davemloft.net>
-Subject: Re: [PATCH v3] mm: Avoid unnecessary page fault retires on shared
- memory types
-Message-ID: <Yo4OmaNW5YUrGE0S@hirez.programming.kicks-ass.net>
-References: <20220524234531.1949-1-peterx@redhat.com>
+         key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+        (No client certificate requested)
+        by smtp-relay-internal-0.canonical.com (Postfix) with ESMTPS id B53653FBC8
+        for <linux-sh@vger.kernel.org>; Wed, 25 May 2022 12:40:17 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=canonical.com;
+        s=20210705; t=1653482417;
+        bh=c10iLeMiN3rtcJh7R+kBjwZ/ioZSoIrALQhmp87Zhi4=;
+        h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+         MIME-Version;
+        b=WiDErVRIX37JDRGAyattTvBMlWCeNYjJXMTauu/2ritBqqvKRq001Ghclyu9BpPiX
+         u+I8vlSRVvhSyFdEGF/9ofIgC9Aa05uq4kkKc0zgmJ3Nj3q2huF+iEQApy3K/FeXnP
+         T6sw2vOA6jMjaSqcfTo+SRfeXbW2DrPVpN/SZhJCPpS6fwiSIR72b8Trx2u6laQCaI
+         7NQLrEJ5mmhkJOM6EUPId2GUb23UeraTGw+/5nvQex5EGz2gPpkfz6EHWPqRYx40Y1
+         JRT4nVBY/rr3HGsl3+bJFVn/z7YSdXvN5Lh7F1dG0I2smC4y1aEjTSi6Uu67qr9qHA
+         tuI9t4n1eeM5g==
+Received: by mail-ed1-f70.google.com with SMTP id bc17-20020a056402205100b0042aa0e072d3so14818628edb.17
+        for <linux-sh@vger.kernel.org>; Wed, 25 May 2022 05:40:17 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=c10iLeMiN3rtcJh7R+kBjwZ/ioZSoIrALQhmp87Zhi4=;
+        b=losE+1fQKUTqwM/yiRxQ3vQmgCkLLjOvrKoUWB3eosEt/zkS3VrekC/1KrEuyj+Q/i
+         nYk5I+mVka8YuOMqZMDz+ZgkLJClBZYJWo3jxYyQN2ZGXyU4kVMiDryEg3W+QhzAe8SF
+         RZyz5zUicLxRz8+Od6nIbz9PKZ5VTN+idCaryrIu9+Y/zvDinp6/Kqa/4NQL4FxuyZ7L
+         tFhP9bB9xK+a097pFzgXVAk/cR++tuipYjR6N4MdS6NROIop0Hc7Qk4XiHFjEtIzVD6i
+         NciMlM3X6DbHNdDg/M2/t8hZrEuOn5QB+/sglRMzMpog2mfrwZ1ce+L2xL/NQAJI2byU
+         Qfhw==
+X-Gm-Message-State: AOAM532PcDsHHUwEpjlaoLDz8kmBye6/+NXDWpfB9gaAAwDhjMdBAlp7
+        nmfbkEm/a3mFyKHFdIJEMq/fTIl98M0xUlZrmC9XmMEFtqUvf0FW9aXYmH37b7JfcRQumXecrVC
+        kXaolcW4LJiE/2RflrLiPNe4A1JCinmK4z1fY
+X-Received: by 2002:a05:6402:34c2:b0:42b:66d3:7b07 with SMTP id w2-20020a05640234c200b0042b66d37b07mr16289205edc.275.1653482417422;
+        Wed, 25 May 2022 05:40:17 -0700 (PDT)
+X-Google-Smtp-Source: ABdhPJy6Zbt6jA3u1X6KTZoLtdjzWjbqAcTxHk4GUPkqPs5gc24VOD834mWi0LGsNzIzB5A6SMXDww==
+X-Received: by 2002:a05:6402:34c2:b0:42b:66d3:7b07 with SMTP id w2-20020a05640234c200b0042b66d37b07mr16289182edc.275.1653482417204;
+        Wed, 25 May 2022 05:40:17 -0700 (PDT)
+Received: from gollum.fritz.box ([194.191.244.86])
+        by smtp.gmail.com with ESMTPSA id y20-20020a50eb94000000b0042617ba63c4sm10632614edr.78.2022.05.25.05.40.16
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 25 May 2022 05:40:16 -0700 (PDT)
+From:   Juerg Haefliger <juerg.haefliger@canonical.com>
+To:     ysato@users.sourceforge.jp, dalias@libc.org,
+        linux-sh@vger.kernel.org
+Cc:     linux-kernel@vger.kernel.org,
+        Juerg Haefliger <juerg.haefliger@canonical.com>
+Subject: [PATCH 3/4] sh/boards: Kconfig: Fix indentation
+Date:   Wed, 25 May 2022 14:40:06 +0200
+Message-Id: <20220525124007.45328-4-juerg.haefliger@canonical.com>
+X-Mailer: git-send-email 2.32.0
+In-Reply-To: <20220525124007.45328-1-juerg.haefliger@canonical.com>
+References: <20220525124007.45328-1-juerg.haefliger@canonical.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220524234531.1949-1-peterx@redhat.com>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, May 24, 2022 at 07:45:31PM -0400, Peter Xu wrote:
-> I observed that for each of the shared file-backed page faults, we're very
-> likely to retry one more time for the 1st write fault upon no page.  It's
-> because we'll need to release the mmap lock for dirty rate limit purpose
-> with balance_dirty_pages_ratelimited() (in fault_dirty_shared_page()).
-> 
-> Then after that throttling we return VM_FAULT_RETRY.
-> 
-> We did that probably because VM_FAULT_RETRY is the only way we can return
-> to the fault handler at that time telling it we've released the mmap lock.
-> 
-> However that's not ideal because it's very likely the fault does not need
-> to be retried at all since the pgtable was well installed before the
-> throttling, so the next continuous fault (including taking mmap read lock,
-> walk the pgtable, etc.) could be in most cases unnecessary.
-> 
-> It's not only slowing down page faults for shared file-backed, but also add
-> more mmap lock contention which is in most cases not needed at all.
-> 
-> To observe this, one could try to write to some shmem page and look at
-> "pgfault" value in /proc/vmstat, then we should expect 2 counts for each
-> shmem write simply because we retried, and vm event "pgfault" will capture
-> that.
-> 
-> To make it more efficient, add a new VM_FAULT_COMPLETED return code just to
-> show that we've completed the whole fault and released the lock.  It's also
-> a hint that we should very possibly not need another fault immediately on
-> this page because we've just completed it.
-> 
-> This patch provides a ~12% perf boost on my aarch64 test VM with a simple
-> program sequentially dirtying 400MB shmem file being mmap()ed and these are
-> the time it needs:
-> 
->   Before: 650.980 ms (+-1.94%)
->   After:  569.396 ms (+-1.38%)
-> 
-> I believe it could help more than that.
-> 
-> We need some special care on GUP and the s390 pgfault handler (for gmap
-> code before returning from pgfault), the rest changes in the page fault
-> handlers should be relatively straightforward.
-> 
-> Another thing to mention is that mm_account_fault() does take this new
-> fault as a generic fault to be accounted, unlike VM_FAULT_RETRY.
-> 
-> I explicitly didn't touch hmm_vma_fault() and break_ksm() because they do
-> not handle VM_FAULT_RETRY even with existing code, so I'm literally keeping
-> them as-is.
-> 
-> Signed-off-by: Peter Xu <peterx@redhat.com>
+The convention for indentation seems to be a single tab. Help text is
+further indented by an additional two whitespaces. Fix the lines that
+violate these rules.
 
-Acked-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+While at it, remove stray tabs/spaces from a seemingly empty line.
+
+Signed-off-by: Juerg Haefliger <juerg.haefliger@canonical.com>
+---
+ arch/sh/boards/Kconfig | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
+index 83bcb6d2daca..fbdb3fbfb976 100644
+--- a/arch/sh/boards/Kconfig
++++ b/arch/sh/boards/Kconfig
+@@ -36,7 +36,7 @@ config SH_SOLUTION_ENGINE
+ 	select CPU_HAS_IPR_IRQ
+ 	depends on CPU_SUBTYPE_SH7705 || CPU_SUBTYPE_SH7709 || CPU_SUBTYPE_SH7710 || \
+ 	  CPU_SUBTYPE_SH7712 || CPU_SUBTYPE_SH7750 || CPU_SUBTYPE_SH7750S || \
+-	  CPU_SUBTYPE_SH7750R 
++	  CPU_SUBTYPE_SH7750R
+ 	help
+ 	  Select SolutionEngine if configuring for a Hitachi SH7705, SH7709,
+ 	  SH7710, SH7712, SH7750, SH7750S or SH7750R evaluation board.
+@@ -56,7 +56,7 @@ config SH_7619_SOLUTION_ENGINE
+ 	help
+ 	  Select 7619 SolutionEngine if configuring for a Hitachi SH7619
+ 	  evaluation board.
+-	
++
+ config SH_7721_SOLUTION_ENGINE
+ 	bool "SolutionEngine7721"
+ 	select SOLUTION_ENGINE
+@@ -94,7 +94,7 @@ config SH_7751_SOLUTION_ENGINE
+ 	help
+ 	  Select 7751 SolutionEngine if configuring for a Hitachi SH7751
+ 	  evaluation board.
+-	  
++
+ config SH_7780_SOLUTION_ENGINE
+ 	bool "SolutionEngine7780"
+ 	select SOLUTION_ENGINE
+@@ -167,8 +167,8 @@ config SH_RSK
+ 	  CPU_SUBTYPE_SH7264 || CPU_SUBTYPE_SH7269
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	help
+-	 Select this option if configuring for any of the RSK+ MCU
+-	 evaluation platforms.
++	  Select this option if configuring for any of the RSK+ MCU
++	  evaluation platforms.
+ 
+ config SH_SDK7780
+ 	bool "SDK7780R3"
+@@ -236,7 +236,7 @@ config SH_MIGOR
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	help
+ 	  Select Migo-R if configuring for the SH7722 Migo-R platform
+-          by Renesas System Solutions Asia Pte. Ltd.
++	  by Renesas System Solutions Asia Pte. Ltd.
+ 
+ config SH_AP325RXA
+ 	bool "AP-325RXA"
+-- 
+2.32.0
+
