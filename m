@@ -2,174 +2,83 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F7E2C4332F
-	for <linux-sh@archiver.kernel.org>; Thu, 26 May 2022 03:41:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D7C8C433EF
+	for <linux-sh@archiver.kernel.org>; Thu, 26 May 2022 08:14:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243012AbiEZDk7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 25 May 2022 23:40:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40798 "EHLO
+        id S241705AbiEZIN7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 26 May 2022 04:13:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33002 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242286AbiEZDk6 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 25 May 2022 23:40:58 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 70CACBCEA6;
-        Wed, 25 May 2022 20:40:56 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 0D8D660FE6;
-        Thu, 26 May 2022 03:40:56 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5BBA1C385B8;
-        Thu, 26 May 2022 03:40:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1653536455;
-        bh=/FC3fRDbTNCC3O7WmAhxUVAkmggWpUFeLv7OpR1lxLg=;
-        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-        b=hLLrqk/dSj3ABZgHj+oG01SXfcPdfcPLbCPW5c/vtlKKjGhr826rFN6lLQogyE6R+
-         V4+rLm9jBH6we4JcRrEMO+7ArvhQ4vUukeFX5qG0umNfJEjOVl7t+dToTe7orX2kZK
-         bSWoDGynO3/vHi04K7UfgRIeRSjHN5GtmmMIX2USGvftGI9pdfeJrjgnAmxrltc5n0
-         8y833O4MCr4JKKzVPSDGbAvYYjpDQY/dQCqYoM1yOIlCVTJtDFNiHcFx0Vs05+lAF0
-         ALTHrfJeOAfPcImvCexeRL9L6Mpy6p/bjPRzg8B1971s8Zq8YHz1AyoKFvxIGL0AWO
-         PHAjKqVSOf5bw==
-Message-ID: <8f6add25-2e8f-4533-fa42-e43db0e32f2d@kernel.org>
-Date:   Wed, 25 May 2022 20:40:51 -0700
+        with ESMTP id S243536AbiEZINy (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 26 May 2022 04:13:54 -0400
+Received: from mail-lf1-x134.google.com (mail-lf1-x134.google.com [IPv6:2a00:1450:4864:20::134])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 787023D4B2;
+        Thu, 26 May 2022 01:13:51 -0700 (PDT)
+Received: by mail-lf1-x134.google.com with SMTP id v8so1296718lfd.8;
+        Thu, 26 May 2022 01:13:51 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=subject:to:cc:references:from:message-id:date:user-agent
+         :mime-version:in-reply-to:content-language:content-transfer-encoding;
+        bh=6XIUrzcjTsp63WT6KUFudVsfMqzwjs/ISF26+AtGKYc=;
+        b=M473zBFhKBpYDZLMCH3iHGNvgO8yBDEhAs/CCtpeY3diR5OYtHK5Qp2dggVdgz3N2/
+         NDre3BufT92wpRo3Hz/F4U6W/CI1pK6jPKkf3IlY7ax6VtMPPnMFcyfOLSbBFpHIGE1C
+         t0Di2WB5JNJgyvgBOsa81+6649T4/gEhXaU54YTUpNphkCaIJYhC5xV0HIRxF0i04qUp
+         Od6Try1IZD3jc28JPo/cdyackPBRHN9we2AVEv0wEPOZSidbrWBghVQRibpGleeClHgs
+         ipUmtJWVVgAqmM35TGBvfe1pC6XeOesixtOR2NVX6bHhPL+pyC29dQGfqTVorRNZU3vC
+         FHPw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
+         :user-agent:mime-version:in-reply-to:content-language
+         :content-transfer-encoding;
+        bh=6XIUrzcjTsp63WT6KUFudVsfMqzwjs/ISF26+AtGKYc=;
+        b=7WfiJVr0GFInQwdrCUgXWcNAChCZTpA3pc5+pBEJy2fw15WMmuEzf18wtiCEa7w/Rv
+         JklRB1m4y+XC8KnSJUslOSnQZcdpDAqzXs/KbynVsAm23xoZhBipp7ZWhGvtp583aqGz
+         ufmFheDZJNtC+awAi02WDSLKhD9CmHE9222ByIGT+p92nor04tqxTCcznNsAPQog8vuj
+         vzGCGoJAfR0CqzhJpRB5c/Bl4ApOUcx7cMhegMB4DkkFWek8WvwW7JmdRXCMlayC5FJy
+         IHmyMYDphR9IMggC6VsnlLwOQ9B0G61g9dESB93G/6pqcDd3bv/BhL7vGfQ0Sgd423cM
+         k6lg==
+X-Gm-Message-State: AOAM533+RCCk6k8i23SzEvPDBLNMbOTkW6I/dIhIo/M8T5l/picIYMgt
+        sP8VR881zkrU9BLzJSgB/SGQDDVg3x0=
+X-Google-Smtp-Source: ABdhPJzH8WmTstQykYFVsAS9QjVDfZgRXQtHx/7ka8Z5KQ7wLl7iBlWFS2b71GlxRV7/nbrKITusFA==
+X-Received: by 2002:a05:6512:3b14:b0:477:cc51:b2c3 with SMTP id f20-20020a0565123b1400b00477cc51b2c3mr24809657lfv.263.1653552829449;
+        Thu, 26 May 2022 01:13:49 -0700 (PDT)
+Received: from [192.168.1.103] ([178.176.78.197])
+        by smtp.gmail.com with ESMTPSA id dt14-20020a0565122a8e00b0047255d21202sm205638lfb.305.2022.05.26.01.13.48
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 26 May 2022 01:13:48 -0700 (PDT)
+Subject: Re: [PATCH 4/4] sh/mm: Kconfig: Fix indentation
+To:     Juerg Haefliger <juerg.haefliger@canonical.com>,
+        ysato@users.sourceforge.jp, dalias@libc.org,
+        linux-sh@vger.kernel.org
+Cc:     linux-kernel@vger.kernel.org
+References: <20220525124007.45328-1-juerg.haefliger@canonical.com>
+ <20220525124007.45328-5-juerg.haefliger@canonical.com>
+From:   Sergei Shtylyov <sergei.shtylyov@gmail.com>
+Message-ID: <be49dcae-af31-c825-6ab4-05c59deec9d8@gmail.com>
+Date:   Thu, 26 May 2022 11:13:47 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.1
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.8.1
-Subject: Re: [PATCH v3] mm: Avoid unnecessary page fault retires on shared
- memory types
+In-Reply-To: <20220525124007.45328-5-juerg.haefliger@canonical.com>
+Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
-To:     Peter Xu <peterx@redhat.com>, linux-kernel@vger.kernel.org,
-        linux-mm@kvack.org
-Cc:     Richard Henderson <rth@twiddle.net>,
-        David Hildenbrand <david@redhat.com>,
-        Matt Turner <mattst88@gmail.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Michal Simek <monstr@monstr.eu>,
-        Russell King <linux@armlinux.org.uk>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        linux-riscv@lists.infradead.org,
-        Alexander Gordeev <agordeev@linux.ibm.com>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        Jonas Bonn <jonas@southpole.se>, Will Deacon <will@kernel.org>,
-        "James E . J . Bottomley" <James.Bottomley@HansenPartnership.com>,
-        "H . Peter Anvin" <hpa@zytor.com>,
-        Andrea Arcangeli <aarcange@redhat.com>,
-        openrisc@lists.librecores.org, linux-s390@vger.kernel.org,
-        Ingo Molnar <mingo@redhat.com>,
-        linux-m68k@lists.linux-m68k.org,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Chris Zankel <chris@zankel.net>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Alistair Popple <apopple@nvidia.com>,
-        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        Vlastimil Babka <vbabka@suse.cz>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        sparclinux@vger.kernel.org,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Stafford Horne <shorne@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>, x86@kernel.org,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Paul Mackerras <paulus@samba.org>,
-        linux-arm-kernel@lists.infradead.org,
-        Sven Schnelle <svens@linux.ibm.com>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        linux-xtensa@linux-xtensa.org, Nicholas Piggin <npiggin@gmail.com>,
-        linux-sh@vger.kernel.org, Vasily Gorbik <gor@linux.ibm.com>,
-        Borislav Petkov <bp@alien8.de>, linux-mips@vger.kernel.org,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Helge Deller <deller@gmx.de>, Vineet Gupta <vgupta@kernel.org>,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Johannes Weiner <hannes@cmpxchg.org>,
-        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        linux-um@lists.infradead.org, linux-alpha@vger.kernel.org,
-        Johannes Berg <johannes@sipsolutions.net>,
-        linux-ia64@vger.kernel.org,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Dinh Nguyen <dinguyen@kernel.org>, Guo Ren <guoren@kernel.org>,
-        linux-snps-arc@lists.infradead.org,
-        Hugh Dickins <hughd@google.com>, Rich Felker <dalias@libc.org>,
-        Andy Lutomirski <luto@kernel.org>,
-        Richard Weinberger <richard@nod.at>,
-        linuxppc-dev@lists.ozlabs.org, Brian Cain <bcain@quicinc.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        linux-parisc@vger.kernel.org,
-        "David S . Miller" <davem@davemloft.net>
-References: <20220524234531.1949-1-peterx@redhat.com>
-From:   Vineet Gupta <vgupta@kernel.org>
-In-Reply-To: <20220524234531.1949-1-peterx@redhat.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+On 5/25/22 3:40 PM, Juerg Haefliger wrote:
 
+> The convention for indentation seems to be a single tab. Help text is
+> further indented by an additional two whitespaces. Fix the lines that
 
-On 5/24/22 16:45, Peter Xu wrote:
-> I observed that for each of the shared file-backed page faults, we're very
-> likely to retry one more time for the 1st write fault upon no page.  It's
-> because we'll need to release the mmap lock for dirty rate limit purpose
-> with balance_dirty_pages_ratelimited() (in fault_dirty_shared_page()).
->
-> Then after that throttling we return VM_FAULT_RETRY.
->
-> We did that probably because VM_FAULT_RETRY is the only way we can return
-> to the fault handler at that time telling it we've released the mmap lock.
->
-> However that's not ideal because it's very likely the fault does not need
-> to be retried at all since the pgtable was well installed before the
-> throttling, so the next continuous fault (including taking mmap read lock,
-> walk the pgtable, etc.) could be in most cases unnecessary.
->
-> It's not only slowing down page faults for shared file-backed, but also add
-> more mmap lock contention which is in most cases not needed at all.
->
-> To observe this, one could try to write to some shmem page and look at
-> "pgfault" value in /proc/vmstat, then we should expect 2 counts for each
-> shmem write simply because we retried, and vm event "pgfault" will capture
-> that.
->
-> To make it more efficient, add a new VM_FAULT_COMPLETED return code just to
-> show that we've completed the whole fault and released the lock.  It's also
-> a hint that we should very possibly not need another fault immediately on
-> this page because we've just completed it.
->
-> This patch provides a ~12% perf boost on my aarch64 test VM with a simple
-> program sequentially dirtying 400MB shmem file being mmap()ed and these are
-> the time it needs:
->
->    Before: 650.980 ms (+-1.94%)
->    After:  569.396 ms (+-1.38%)
->
-> I believe it could help more than that.
->
-> We need some special care on GUP and the s390 pgfault handler (for gmap
-> code before returning from pgfault), the rest changes in the page fault
-> handlers should be relatively straightforward.
->
-> Another thing to mention is that mm_account_fault() does take this new
-> fault as a generic fault to be accounted, unlike VM_FAULT_RETRY.
->
-> I explicitly didn't touch hmm_vma_fault() and break_ksm() because they do
-> not handle VM_FAULT_RETRY even with existing code, so I'm literally keeping
-> them as-is.
->
-> Signed-off-by: Peter Xu<peterx@redhat.com>
-> ---
->
-> v3:
-> - Rebase to akpm/mm-unstable
-> - Copy arch maintainers
-> ---
->    arch/arc/mm/fault.c           |  4 ++++
+   s/whitespaces/spaces/. And you don't touch the help text here...
 
-Acked-by: Vineet Gupta <vgupta@kernel.org>
+> violate these rules.
+> 
+> Signed-off-by: Juerg Haefliger <juerg.haefliger@canonical.com>
+[...]
 
-Thx,
--Vineet
+MBR, Sergey
