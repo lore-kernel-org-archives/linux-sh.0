@@ -2,66 +2,66 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D7C8C433EF
-	for <linux-sh@archiver.kernel.org>; Thu, 26 May 2022 08:14:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 403F7C433EF
+	for <linux-sh@archiver.kernel.org>; Thu, 26 May 2022 08:21:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241705AbiEZIN7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 26 May 2022 04:13:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33002 "EHLO
+        id S238696AbiEZIVt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 26 May 2022 04:21:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59506 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243536AbiEZINy (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 26 May 2022 04:13:54 -0400
-Received: from mail-lf1-x134.google.com (mail-lf1-x134.google.com [IPv6:2a00:1450:4864:20::134])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 787023D4B2;
-        Thu, 26 May 2022 01:13:51 -0700 (PDT)
-Received: by mail-lf1-x134.google.com with SMTP id v8so1296718lfd.8;
-        Thu, 26 May 2022 01:13:51 -0700 (PDT)
+        with ESMTP id S244940AbiEZIVo (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 26 May 2022 04:21:44 -0400
+Received: from mail-lj1-x233.google.com (mail-lj1-x233.google.com [IPv6:2a00:1450:4864:20::233])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C8AE71ADAB;
+        Thu, 26 May 2022 01:21:43 -0700 (PDT)
+Received: by mail-lj1-x233.google.com with SMTP id e4so963623ljb.13;
+        Thu, 26 May 2022 01:21:43 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20210112;
         h=subject:to:cc:references:from:message-id:date:user-agent
          :mime-version:in-reply-to:content-language:content-transfer-encoding;
-        bh=6XIUrzcjTsp63WT6KUFudVsfMqzwjs/ISF26+AtGKYc=;
-        b=M473zBFhKBpYDZLMCH3iHGNvgO8yBDEhAs/CCtpeY3diR5OYtHK5Qp2dggVdgz3N2/
-         NDre3BufT92wpRo3Hz/F4U6W/CI1pK6jPKkf3IlY7ax6VtMPPnMFcyfOLSbBFpHIGE1C
-         t0Di2WB5JNJgyvgBOsa81+6649T4/gEhXaU54YTUpNphkCaIJYhC5xV0HIRxF0i04qUp
-         Od6Try1IZD3jc28JPo/cdyackPBRHN9we2AVEv0wEPOZSidbrWBghVQRibpGleeClHgs
-         ipUmtJWVVgAqmM35TGBvfe1pC6XeOesixtOR2NVX6bHhPL+pyC29dQGfqTVorRNZU3vC
-         FHPw==
+        bh=1LFjb+AEMb7z82D6ENilph3SWwRvfmyKBpvYsDU8o1E=;
+        b=L+4Ap8XN1HHlwZsMeelkJ+GCXPaL2OG9wfryU9zYd1a9r3hK6NFOFJi3FgTntbzEqk
+         //INeR3wAUN6jxsfnITyvcsA9YtNuMCSpENBvwvrO69+BQN/moKg+8Op5MOLL3cBkCv/
+         gbLy4eoIDTjiJ6uMeTHoTenBCabQNIbzvY5/skEb0/EV89SqBZ5gkTg5NF5lMFu/nEpg
+         O5Nt3ojLu77EB8UWdbioXzLZY3Je3TOK71YeVb67KEH2alLBkTSFCD0PCqF84RbDHoVU
+         ifoqWjaFF2oJOYFY16wJ/AbxDgEBZ73SlHdEwccujvPMLRkDJN3uuJOI3ZJs6sgLMLYn
+         7MDg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:subject:to:cc:references:from:message-id:date
          :user-agent:mime-version:in-reply-to:content-language
          :content-transfer-encoding;
-        bh=6XIUrzcjTsp63WT6KUFudVsfMqzwjs/ISF26+AtGKYc=;
-        b=7WfiJVr0GFInQwdrCUgXWcNAChCZTpA3pc5+pBEJy2fw15WMmuEzf18wtiCEa7w/Rv
-         JklRB1m4y+XC8KnSJUslOSnQZcdpDAqzXs/KbynVsAm23xoZhBipp7ZWhGvtp583aqGz
-         ufmFheDZJNtC+awAi02WDSLKhD9CmHE9222ByIGT+p92nor04tqxTCcznNsAPQog8vuj
-         vzGCGoJAfR0CqzhJpRB5c/Bl4ApOUcx7cMhegMB4DkkFWek8WvwW7JmdRXCMlayC5FJy
-         IHmyMYDphR9IMggC6VsnlLwOQ9B0G61g9dESB93G/6pqcDd3bv/BhL7vGfQ0Sgd423cM
-         k6lg==
-X-Gm-Message-State: AOAM533+RCCk6k8i23SzEvPDBLNMbOTkW6I/dIhIo/M8T5l/picIYMgt
-        sP8VR881zkrU9BLzJSgB/SGQDDVg3x0=
-X-Google-Smtp-Source: ABdhPJzH8WmTstQykYFVsAS9QjVDfZgRXQtHx/7ka8Z5KQ7wLl7iBlWFS2b71GlxRV7/nbrKITusFA==
-X-Received: by 2002:a05:6512:3b14:b0:477:cc51:b2c3 with SMTP id f20-20020a0565123b1400b00477cc51b2c3mr24809657lfv.263.1653552829449;
-        Thu, 26 May 2022 01:13:49 -0700 (PDT)
+        bh=1LFjb+AEMb7z82D6ENilph3SWwRvfmyKBpvYsDU8o1E=;
+        b=bTyYmQemfrLhNhvbWoCJsuGhNCubRRezahSVbGo2bmc9A7jeeCiNE60b8X8PkkMFcT
+         L2MpuwOzhtP412vNP2h7M0gOZxZAuSdMEzEFgxOg90vJb8KtaDqvfFImnOsygnDZcO9R
+         VQ8nuINit6B9NIo1aBYnDIhzqWLlGn8Nd8jP/ynk1ZhWzjensWJ5ayrCIIAn1vDoaT1u
+         eVPonP2Y2g12jcO3GFjfo2z4b/nxDuPiIoXrh1LmBkSs/UrdGxfTiRHwiopTUCKvlLza
+         4hKiVkEIo0TNuAY0XVvtmNBq8r2EOusPWhWoHN7+J95YowC8rQBGASvkPVHI7l2q5GfC
+         FBdw==
+X-Gm-Message-State: AOAM531S9BS/vtVFvViqt9CWPM1swCfin8YigPiyA+XQUhNa+HSsD9F8
+        Qjp+7Q/AYgCIeB9Ulr0og7R5KN2b5T0=
+X-Google-Smtp-Source: ABdhPJyzvINvKfeNR9ga9kpdjXm6FvmwSTjTIASvaKlRKHPS6yUP0cXyoMr5Ce/DLZl4/MbyGqAsLw==
+X-Received: by 2002:a05:651c:994:b0:253:c449:12f with SMTP id b20-20020a05651c099400b00253c449012fmr21320097ljq.413.1653553301939;
+        Thu, 26 May 2022 01:21:41 -0700 (PDT)
 Received: from [192.168.1.103] ([178.176.78.197])
-        by smtp.gmail.com with ESMTPSA id dt14-20020a0565122a8e00b0047255d21202sm205638lfb.305.2022.05.26.01.13.48
+        by smtp.gmail.com with ESMTPSA id h1-20020a056512220100b0047255d211b2sm212464lfu.225.2022.05.26.01.21.41
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 26 May 2022 01:13:48 -0700 (PDT)
-Subject: Re: [PATCH 4/4] sh/mm: Kconfig: Fix indentation
+        Thu, 26 May 2022 01:21:41 -0700 (PDT)
+Subject: Re: [PATCH 1/4] sh: Kconfig: Fix indentation
 To:     Juerg Haefliger <juerg.haefliger@canonical.com>,
         ysato@users.sourceforge.jp, dalias@libc.org,
         linux-sh@vger.kernel.org
 Cc:     linux-kernel@vger.kernel.org
 References: <20220525124007.45328-1-juerg.haefliger@canonical.com>
- <20220525124007.45328-5-juerg.haefliger@canonical.com>
+ <20220525124007.45328-2-juerg.haefliger@canonical.com>
 From:   Sergei Shtylyov <sergei.shtylyov@gmail.com>
-Message-ID: <be49dcae-af31-c825-6ab4-05c59deec9d8@gmail.com>
-Date:   Thu, 26 May 2022 11:13:47 +0300
+Message-ID: <0f0c5ce5-3845-c4b4-180e-380dec53b525@gmail.com>
+Date:   Thu, 26 May 2022 11:21:40 +0300
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
  Thunderbird/78.10.1
 MIME-Version: 1.0
-In-Reply-To: <20220525124007.45328-5-juerg.haefliger@canonical.com>
+In-Reply-To: <20220525124007.45328-2-juerg.haefliger@canonical.com>
 Content-Type: text/plain; charset=utf-8
 Content-Language: en-US
 Content-Transfer-Encoding: 7bit
@@ -73,12 +73,32 @@ On 5/25/22 3:40 PM, Juerg Haefliger wrote:
 
 > The convention for indentation seems to be a single tab. Help text is
 > further indented by an additional two whitespaces. Fix the lines that
-
-   s/whitespaces/spaces/. And you don't touch the help text here...
-
 > violate these rules.
 > 
+> While at it, remove stray spaces from seemingly empty lines.
+
+   You're also fixing some trailing spaces... that all counts up
+to fixing trailing whitespace.
+
 > Signed-off-by: Juerg Haefliger <juerg.haefliger@canonical.com>
+> ---
+>  arch/sh/Kconfig | 24 ++++++++++++------------
+>  1 file changed, 12 insertions(+), 12 deletions(-)
+> 
+> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+> index 5f220e903e5a..fc15fd6b719e 100644
+> --- a/arch/sh/Kconfig
+> +++ b/arch/sh/Kconfig
+[...]
+> @@ -644,7 +644,7 @@ config GUSA
+>  	  This is the default implementation for both UP and non-ll/sc
+>  	  CPUs, and is used by the libc, amongst others.
+>  
+> -	  For additional information, design information can be found 
+> +	  For additional information, design information can be found
+>  	  in <http://lc.linux.or.jp/lc2002/papers/niibe0919p.pdf>.
+>  
+>  	  This should only be disabled for special cases where alternate
 [...]
 
 MBR, Sergey
