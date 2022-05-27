@@ -2,154 +2,112 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D9959C433F5
-	for <linux-sh@archiver.kernel.org>; Fri, 27 May 2022 12:28:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 19AACC433FE
+	for <linux-sh@archiver.kernel.org>; Fri, 27 May 2022 12:28:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348156AbiE0M1r (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 27 May 2022 08:27:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47024 "EHLO
+        id S1355584AbiE0M2K (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 27 May 2022 08:28:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56030 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1349085AbiE0MXN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 27 May 2022 08:23:13 -0400
-Received: from smtp-relay-internal-1.canonical.com (smtp-relay-internal-1.canonical.com [185.125.188.123])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 76EBB170651
-        for <linux-sh@vger.kernel.org>; Fri, 27 May 2022 05:03:03 -0700 (PDT)
-Received: from mail-ed1-f69.google.com (mail-ed1-f69.google.com [209.85.208.69])
+        with ESMTP id S1355144AbiE0M1Y (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 27 May 2022 08:27:24 -0400
+Received: from smtp-relay-internal-0.canonical.com (smtp-relay-internal-0.canonical.com [185.125.188.122])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CB22714E2E5
+        for <linux-sh@vger.kernel.org>; Fri, 27 May 2022 05:06:05 -0700 (PDT)
+Received: from mail-ed1-f70.google.com (mail-ed1-f70.google.com [209.85.208.70])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
         (No client certificate requested)
-        by smtp-relay-internal-1.canonical.com (Postfix) with ESMTPS id AB84F3F5EE
-        for <linux-sh@vger.kernel.org>; Fri, 27 May 2022 12:03:01 +0000 (UTC)
+        by smtp-relay-internal-0.canonical.com (Postfix) with ESMTPS id 567673FBEF
+        for <linux-sh@vger.kernel.org>; Fri, 27 May 2022 12:05:44 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=canonical.com;
-        s=20210705; t=1653652981;
-        bh=BkCOp4tVpeV9PMtuyS95bXY8E1w+xk5Ztl83CleBuR0=;
+        s=20210705; t=1653653144;
+        bh=ELHJEY2eK+muvmAqygYYF3QcvcVcGsf6LdaPdx8n1nw=;
         h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
          MIME-Version;
-        b=Hm9Epu+umu/XsJgij0G2XD7RSd6uzZP5w2U+Df5g1jCjGQ/ax/9o/arjVe+jX1/m9
-         tspQ6wMc5Q79XZlLBqSXDAf6LI2QBEpxMJft6+DLd4kFf6tOhhBMyK6AbhCncU9MvL
-         DaYaXnqAbI/mC4O0WjRltoj2nYAlkybIb3sXSdc5K+dZr+obEpkzWkapSedkoAMxB8
-         PfNannZvyLdCeTJI0qoQnZku9fXS75/q2N9kWEUVaCQuEDpxiGY1o20tOFWIoMWGDN
-         TIZJadhWpXmwxkxzKc6k22huOxxvLTAXzlRkB2GPZveI3z/N8AK+5ntoO8Vrg5BEW4
-         hcplPNRlE24nA==
-Received: by mail-ed1-f69.google.com with SMTP id v1-20020a056402348100b0042b4442b954so2903659edc.22
-        for <linux-sh@vger.kernel.org>; Fri, 27 May 2022 05:03:01 -0700 (PDT)
+        b=c2y9ErVISxnurLKUWuvbA4e3MXhyStRC/4XRKhJios0Rm8vFBkmI+qVlRy+62PCp2
+         IWeLLpU97k59fXSjNGZFuW44VH9Nh+8YGYGCoo3x749bJYibBa4A3rlGYEO0Uyk9P+
+         H0m4Kj6dIcMA6TlTz+aznjpLfGw0YWg97RjHY0rjukUmjUIMzAOG4SUSiZ4im7huOB
+         WQhT8ulzVkyq39WNENHHk5QzjSV7JKU3vj/Bmcsv+zgY2NByZmltS4/6Wx/lLwOHK7
+         A/nX9QiIHFAMPIE+QRY++dGqkqppv7edq3TkKr+n0k3tkU76rIgCS57B51ChspZ1OK
+         t7qYnSYXpkN3Q==
+Received: by mail-ed1-f70.google.com with SMTP id ba8-20020a0564021ac800b0042cd460b874so993390edb.15
+        for <linux-sh@vger.kernel.org>; Fri, 27 May 2022 05:05:44 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
          :references:mime-version:content-transfer-encoding;
-        bh=BkCOp4tVpeV9PMtuyS95bXY8E1w+xk5Ztl83CleBuR0=;
-        b=Mh0Ru48EQCmI2J1b8AD7PMIDroYNH9FAEIl9lVtTGRuy70n+qeZXM2HgVtedEj0xuA
-         IJwXLPZ9v8O79N4fGua6d0ytu3yB+nR83q/mmvb/qrPtt/XpOnULU276U7A19Tjb2Vkc
-         GfVZxQEa171xXSPpb6BrLZNJsYBcGDIkRNt8u57PwGy6BmA0JSzQxZtNKSnNpR60JMmz
-         5hxSemHlgy68tBDVFJg8B+wd/Q6AiYAj4mPj7qhkjAh4or/94g9ZI0DzPbwR4FWM3Uys
-         4Puam010YzOw7EsiGHgXMFbUL6GC/8Y6CJm8u43LurDgq4vRyVlsO2qvQaLS9sY5iL8m
-         GPig==
-X-Gm-Message-State: AOAM531gHwJOEAPM1fV9Qg9m3Tle5LsmtFL+1nJhjWXTPSDoTcX9lKgv
-        Mji6pxqQnanXJ++96XR+thSDyaHMlOB5iQUgPlkmLG0w3CrD9DM6376EY+uM3LUUertH6q9/JSD
-        CKwnSFnwfmSnt5P3+14ZNK6He6MaBja25zbfb
-X-Received: by 2002:aa7:cacd:0:b0:42b:b1b6:e054 with SMTP id l13-20020aa7cacd000000b0042bb1b6e054mr15390302edt.281.1653652981336;
-        Fri, 27 May 2022 05:03:01 -0700 (PDT)
-X-Google-Smtp-Source: ABdhPJyRnXq7jWUrcCmZLYsRNc7Xxu7Z3WvvC7roh4JAteb5lincMrIi20bIz83Lx5oUjeZ1Ox2TCg==
-X-Received: by 2002:aa7:cacd:0:b0:42b:b1b6:e054 with SMTP id l13-20020aa7cacd000000b0042bb1b6e054mr15390273edt.281.1653652981060;
-        Fri, 27 May 2022 05:03:01 -0700 (PDT)
+        bh=ELHJEY2eK+muvmAqygYYF3QcvcVcGsf6LdaPdx8n1nw=;
+        b=OpwvcTuZY0nxfQd13M+BtiVNcGqgvdq18GkE/ShK0upHDR0969usb0f34KZjb40jkt
+         DFI5wwqxwBL4VFMN/XrJ97bkILZ/9awF6G7+ASgWL9tbw1uKej6Q8CLHyPRf+zRX9+yn
+         X+Fz+iUuwLm1VM9HOLrW5NVWdp5romgj+H+ZGqB/cnBFQ+l3E63E6ygkYTY+D+8l82dK
+         sRoZfswV3wLOkbvy2nK0SnJ1PU5FeT7I+RbeWiaNtMiFXVdGDvZ/fhvsOVF08bFnovBi
+         eoKG3fm5UmwVU9c9VMTQyYKTnGx96lOe6BAK3OnD7RMZZ9Bv7i4xCIVd5gzq6ou4M9z7
+         tpMQ==
+X-Gm-Message-State: AOAM532SwkmyAW18JKdXb+ACHsIL+qpSqB7rmBMtnu1myQG3U7I8ZhA2
+        5yZIqA5cBTRzAt+F/w6dNP2qdtVA0oVUcDMrCYOar2Ht6/MYQ0ynD5zP5F1/WPjixIqqewmjSBO
+        kVLgYKYV7vxWwnILM7fTnBDSU+p/67obc4/1p
+X-Received: by 2002:a05:6402:1706:b0:42b:d175:1ef4 with SMTP id y6-20020a056402170600b0042bd1751ef4mr11066739edu.10.1653653143860;
+        Fri, 27 May 2022 05:05:43 -0700 (PDT)
+X-Google-Smtp-Source: ABdhPJxKkQu4vwex1CUmBeJ9KoXEu4mtwoV5MbQHQl3N2T9xbM71iOZbr2cqRkGUGMbhsI+DOreR0A==
+X-Received: by 2002:a05:6402:1706:b0:42b:d175:1ef4 with SMTP id y6-20020a056402170600b0042bd1751ef4mr11066724edu.10.1653653143714;
+        Fri, 27 May 2022 05:05:43 -0700 (PDT)
 Received: from gollum.fritz.box ([194.191.244.86])
-        by smtp.gmail.com with ESMTPSA id q9-20020a50cc89000000b0042ac2705444sm2016808edi.58.2022.05.27.05.02.59
+        by smtp.gmail.com with ESMTPSA id j20-20020a1709062a1400b006f3ef214dcdsm1401927eje.51.2022.05.27.05.05.42
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 27 May 2022 05:03:00 -0700 (PDT)
+        Fri, 27 May 2022 05:05:43 -0700 (PDT)
 From:   Juerg Haefliger <juerg.haefliger@canonical.com>
 To:     ysato@users.sourceforge.jp, dalias@libc.org,
         linux-sh@vger.kernel.org, sergei.shtylyov@gmail.com
 Cc:     linux-kernel@vger.kernel.org,
         Juerg Haefliger <juerg.haefliger@canonical.com>
-Subject: [PATCH 1/4 v2] sh: Kconfig: Fix indentation and remove trailing whitespaces
-Date:   Fri, 27 May 2022 14:02:54 +0200
-Message-Id: <20220527120254.458949-1-juerg.haefliger@canonical.com>
+Subject: [PATCH 4/4 v2] sh/mm: Kconfig: Fix indentation
+Date:   Fri, 27 May 2022 14:05:40 +0200
+Message-Id: <20220527120540.459462-1-juerg.haefliger@canonical.com>
 X-Mailer: git-send-email 2.32.0
-In-Reply-To: <0f0c5ce5-3845-c4b4-180e-380dec53b525@gmail.com>
-References: <0f0c5ce5-3845-c4b4-180e-380dec53b525@gmail.com>
+In-Reply-To: <be49dcae-af31-c825-6ab4-05c59deec9d8@gmail.com>
+References: <be49dcae-af31-c825-6ab4-05c59deec9d8@gmail.com>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The convention for indentation seems to be a single tab. Help text is
-further indented by an additional two spaces. Fix the lines that violate
-these rules.
-
-While at it, remove trailing whitespaces.
+The convention for indentation seems to be a single tab. Fix the lines
+that violate these rules.
 
 Signed-off-by: Juerg Haefliger <juerg.haefliger@canonical.com>
 ---
 v2:
-  Update commit message and subject per review comments.
+  Update commit message per review comments.
 ---
- arch/sh/Kconfig | 24 ++++++++++++------------
- 1 file changed, 12 insertions(+), 12 deletions(-)
+ arch/sh/mm/Kconfig | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 5f220e903e5a..fc15fd6b719e 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -200,9 +200,9 @@ config ARCH_SHMOBILE
- 	select PM
+diff --git a/arch/sh/mm/Kconfig b/arch/sh/mm/Kconfig
+index ba569cfb4368..a563211aeb63 100644
+--- a/arch/sh/mm/Kconfig
++++ b/arch/sh/mm/Kconfig
+@@ -2,7 +2,7 @@
+ menu "Memory management options"
  
- config CPU_HAS_PMU
--       depends on CPU_SH4 || CPU_SH4A
--       default y
--       bool
-+	depends on CPU_SH4 || CPU_SH4A
-+	default y
-+	bool
- 
- choice
- 	prompt "Processor sub-type selection"
-@@ -231,7 +231,7 @@ config CPU_SUBTYPE_SH7201
- 	select CPU_SH2A
- 	select CPU_HAS_FPU
- 	select SYS_SUPPORTS_SH_MTU2
-- 
-+
- config CPU_SUBTYPE_SH7203
- 	bool "Support SH7203 processor"
- 	select CPU_SH2A
-@@ -493,7 +493,7 @@ config CPU_SUBTYPE_SH7366
- endchoice
- 
- source "arch/sh/mm/Kconfig"
-- 
-+
- source "arch/sh/Kconfig.cpu"
- 
- source "arch/sh/boards/Kconfig"
-@@ -644,7 +644,7 @@ config GUSA
- 	  This is the default implementation for both UP and non-ll/sc
- 	  CPUs, and is used by the libc, amongst others.
- 
--	  For additional information, design information can be found 
-+	  For additional information, design information can be found
- 	  in <http://lc.linux.or.jp/lc2002/papers/niibe0919p.pdf>.
- 
- 	  This should only be disabled for special cases where alternate
-@@ -775,12 +775,12 @@ config MAPLE
- 	bool "Maple Bus support"
- 	depends on SH_DREAMCAST
+ config MMU
+-        bool "Support for memory management hardware"
++	bool "Support for memory management hardware"
+ 	depends on !CPU_SH2
+ 	default y
  	help
--	 The Maple Bus is SEGA's serial communication bus for peripherals
--	 on the Dreamcast. Without this bus support you won't be able to
--	 get your Dreamcast keyboard etc to work, so most users
--	 probably want to say 'Y' here, unless you are only using the
--	 Dreamcast with a serial line terminal or a remote network
--	 connection.
-+	  The Maple Bus is SEGA's serial communication bus for peripherals
-+	  on the Dreamcast. Without this bus support you won't be able to
-+	  get your Dreamcast keyboard etc to work, so most users
-+	  probably want to say 'Y' here, unless you are only using the
-+	  Dreamcast with a serial line terminal or a remote network
-+	  connection.
+@@ -141,8 +141,8 @@ config ARCH_MEMORY_PROBE
+ 	depends on MEMORY_HOTPLUG
  
- endmenu
+ config IOREMAP_FIXED
+-       def_bool y
+-       depends on X2TLB
++	def_bool y
++	depends on X2TLB
  
+ config UNCACHED_MAPPING
+ 	bool
 -- 
 2.32.0
 
