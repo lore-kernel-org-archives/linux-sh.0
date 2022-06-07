@@ -2,97 +2,108 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B7986C433EF
-	for <linux-sh@archiver.kernel.org>; Tue,  7 Jun 2022 16:28:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 92AD6C43334
+	for <linux-sh@archiver.kernel.org>; Wed,  8 Jun 2022 01:11:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344996AbiFGQ2U (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 7 Jun 2022 12:28:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40160 "EHLO
+        id S230510AbiFHBLh (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 7 Jun 2022 21:11:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48492 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235612AbiFGQ2T (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Jun 2022 12:28:19 -0400
-Received: from mga17.intel.com (mga17.intel.com [192.55.52.151])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 80B9B75221;
-        Tue,  7 Jun 2022 09:28:18 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1654619298; x=1686155298;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=ExbyLBBVlB99JJjQlhxs6g9MkUreWgPpOBU5Q2moeO4=;
-  b=O9YzUUrgNny0g1n/fjKkK7nD8ghcJD67N3bjISH/S5QHPhJkUCMX98vA
-   xThtctH/e5rbnsRCWnoo8cF/FRfHv40Iju/Jop7XzgfBOplV5taafuBlh
-   UwD05gjOcWsLrj4Zp6Mcx25Y8yoje7yzykrdyBH4QAjL+iWnP6aGSzHuO
-   RNimX/+NJ4cGpoMKlCFQ5V+U2chylJJ2Q2concdccOtSdmrdiUq8xbG2C
-   0sCHohRIGAUoz56vI/y/oHNJ8OeHuR7hNxPt2uITCWE9vhdieEe3vPibu
-   UR411XX79ymUXMpxwfFIGBEaP9mXcxW6xLlN8NGxgUygEUFfvGj6ZM5j5
-   g==;
-X-IronPort-AV: E=McAfee;i="6400,9594,10371"; a="257171093"
-X-IronPort-AV: E=Sophos;i="5.91,284,1647327600"; 
-   d="scan'208";a="257171093"
-Received: from fmsmga001.fm.intel.com ([10.253.24.23])
-  by fmsmga107.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 07 Jun 2022 09:28:18 -0700
-X-IronPort-AV: E=Sophos;i="5.91,284,1647327600"; 
-   d="scan'208";a="723396141"
-Received: from smile.fi.intel.com ([10.237.72.54])
-  by fmsmga001-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 07 Jun 2022 09:28:12 -0700
-Received: from andy by smile.fi.intel.com with local (Exim 4.95)
-        (envelope-from <andriy.shevchenko@linux.intel.com>)
-        id 1nyc3s-000Vr1-Gp;
-        Tue, 07 Jun 2022 19:28:08 +0300
-Date:   Tue, 7 Jun 2022 19:28:08 +0300
-From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To:     Alexander Lobakin <alexandr.lobakin@intel.com>
-Cc:     Marco Elver <elver@google.com>, Arnd Bergmann <arnd@arndb.de>,
-        Yury Norov <yury.norov@gmail.com>,
-        Richard Henderson <rth@twiddle.net>,
-        Matt Turner <mattst88@gmail.com>,
-        Brian Cain <bcain@quicinc.com>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        Kees Cook <keescook@chromium.org>,
-        "Peter Zijlstra (Intel)" <peterz@infradead.org>,
-        Borislav Petkov <bp@suse.de>, Tony Luck <tony.luck@intel.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        linux-alpha@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 3/6] bitops: define gen_test_bit() the same way as the
- rest of functions
-Message-ID: <Yp98mK3tfMrHVpvt@smile.fi.intel.com>
-References: <20220606114908.962562-1-alexandr.lobakin@intel.com>
- <20220606114908.962562-4-alexandr.lobakin@intel.com>
- <Yp9WFREfdfkho0hm@elver.google.com>
- <20220607155722.44040-1-alexandr.lobakin@intel.com>
+        with ESMTP id S1587877AbiFGXxr (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Jun 2022 19:53:47 -0400
+Received: from mail-oi1-x229.google.com (mail-oi1-x229.google.com [IPv6:2607:f8b0:4864:20::229])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9410D2F018
+        for <linux-sh@vger.kernel.org>; Tue,  7 Jun 2022 15:50:43 -0700 (PDT)
+Received: by mail-oi1-x229.google.com with SMTP id q184so8926950oia.1
+        for <linux-sh@vger.kernel.org>; Tue, 07 Jun 2022 15:50:43 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20210112.gappssmtp.com; s=20210112;
+        h=message-id:date:mime-version:user-agent:subject:content-language:to
+         :cc:references:from:in-reply-to:content-transfer-encoding;
+        bh=e8ENrtIbjY7+ujNuh6Tj/bUga0MuFUeslU3izMPi9Q4=;
+        b=5GhBg18NLPAgGo65m7wpJuE5gTzXpD4A+/+sktUFqmKGmrsnDqi5Ps9yBpdY8/7mfr
+         WjlhWg4IGhf7pkmXuYjSU76/RzUbQdjfswBA8anoHeFzL+5EAcDV+8KusQxfT8bTmGe0
+         OB3aXs7QSVDpQHWWahTgaGObb9eoDeY1tPORQ9M7j0b+XG5DZjxETgxJP8cLm15bCChg
+         VxFWHxBhF9mjh+nfYPU4+Bp99/iSKDz9h3xQzveDxBLROCfSSSqH37SVH27JYvnA5x8o
+         2trDNzCgr2VeAkpCmoXu1g1d96kCcxFgN+CfxjKF+YFuhROIiMlIYkpLov0yhhtqwilo
+         Buww==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
+         :content-language:to:cc:references:from:in-reply-to
+         :content-transfer-encoding;
+        bh=e8ENrtIbjY7+ujNuh6Tj/bUga0MuFUeslU3izMPi9Q4=;
+        b=hxHxwQTH28NE50OKxc7dZn+nNAO6W2atmr2L6Ej7wHuyWd3jSE9xBRStcO15GBcb7o
+         m1WU+1abOky7+fsJjh9v7kkKpVIYZJFNYifFADzFXweU5cnNTNFcUaxu5b2TE40X3f/N
+         P8oKBxzUot2xWQveiVX/E5lV8xYwlR0kf+nHOIYMk0m4e/SrIbsbqQuRW3SPFRSk2g04
+         sY/T+JMTAbuSz2Ol20N6UzRwmgfQuiDdeHL8+E6FCXRSSTy8EocqTPxEw3WN3KqPUYyu
+         KX5xo2yo3zamglRHI1mHlEjiK7yyRU/VHHF0DVi39niKMz+r5m3vPbVj81lBWQCIPeyQ
+         YPNg==
+X-Gm-Message-State: AOAM531GID9LnEzFutrmuwatrs8+7Mm2A51gHSNHSFcWwDdAgIL5bT57
+        Mou3+JGqq6yuDixNr/ookXId9zn3McnbIg==
+X-Google-Smtp-Source: ABdhPJyWEQTQO2zLzeUayJqxgrXyNOD6LJaalYRS/nAOx1ID2klaXccVepGxDif8A/xuMdNbwO+j7A==
+X-Received: by 2002:a05:6808:308e:b0:32b:1f24:34c4 with SMTP id bl14-20020a056808308e00b0032b1f2434c4mr734588oib.147.1654642242919;
+        Tue, 07 Jun 2022 15:50:42 -0700 (PDT)
+Received: from [192.168.86.195] ([136.62.38.22])
+        by smtp.gmail.com with ESMTPSA id k6-20020a9d7dc6000000b0060bfb08741esm3409804otn.12.2022.06.07.15.50.41
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 07 Jun 2022 15:50:41 -0700 (PDT)
+Message-ID: <c24579a3-74e4-1dbb-6237-d9e1a01e6e09@landley.net>
+Date:   Tue, 7 Jun 2022 17:56:22 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220607155722.44040-1-alexandr.lobakin@intel.com>
-Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.6.2
+Subject: Re: [PATCH] sh: cast away __iomem to remove sparse warning
+Content-Language: en-US
+To:     Baoquan He <bhe@redhat.com>, ysato@users.sourceforge.jp,
+        dalias@libc.org
+Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+        kernel test robot <lkp@intel.com>
+References: <20220507013411.74277-1-bhe@redhat.com>
+ <YpS0C8tVG2E5jGSV@MiWiFi-R3L-srv>
+From:   Rob Landley <rob@landley.net>
+In-Reply-To: <YpS0C8tVG2E5jGSV@MiWiFi-R3L-srv>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Jun 07, 2022 at 05:57:22PM +0200, Alexander Lobakin wrote:
-> From: Marco Elver <elver@google.com>
-> Date: Tue, 7 Jun 2022 15:43:49 +0200
-> > On Mon, Jun 06, 2022 at 01:49PM +0200, Alexander Lobakin wrote:
 
-...
 
-> > I would also propose adding a comment close to the deref that test_bit()
-> > is atomic and the deref needs to remain volatile, so future people will
-> > not try to do the same optimization.
+On 5/30/22 07:09, Baoquan He wrote:
+> Hi,
 > 
-> I think that's also the reason why it's not underscored, right?
+> On 05/07/22 at 09:34am, Baoquan He wrote:
+>> LKP reported a sparse warning in arch/sh/kernel/crash_dump.c during
+>> a kdump patchset reviewing:
+>> https://lore.kernel.org/all/202204082128.JKXXDGpa-lkp@intel.com/T/#u
+>> 
+>> ../arch/sh/kernel/crash_dump.c:23:36: sparse: warning: incorrect type in argument 1 (different address spaces)
+>> ../arch/sh/kernel/crash_dump.c:23:36: sparse:    expected void const *addr
+>> ../arch/sh/kernel/crash_dump.c:23:36: sparse:    got void [noderef] __iomem *
+>> 
+>> This warning happened when __iomem pointer is passed into fucntion
+>> which doesn't expect it. Casting away the __iomem can fix it.
+> 
+> This warning was reported by lkp during one patchset posted and
+> reviewing. Since it's not related to the patchset, I just sent it
+> separately so that later code change on arch/sh/kernel/crash_dump.c
+> won't trigger the lkp warning again.
+> 
+> [PATCH v5 RESEND 0/3] Convert vmcore to use an iov_iter
+> https://lore.kernel.org/all/20220408090636.560886-2-bhe@redhat.com/T/#u
+> 
+> Now the above patchset has been merged into linus's tree, please
+> consider taking this patch.
+> 
+> Thanks
+> Baoquan
+> 
+>> 
+>> Reported-by: kernel test robot <lkp@intel.com>
+>> Signed-off-by: Baoquan He <bhe@redhat.com>
 
-Non-__ prefixed bitops are atomic, __ non-atomic.
+Tested-by: Rob Landley <rob@landley.net>
 
--- 
-With Best Regards,
-Andy Shevchenko
-
-
+Rob
