@@ -2,164 +2,197 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 19F0BC43334
-	for <linux-sh@archiver.kernel.org>; Thu,  9 Jun 2022 18:37:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0EE7BCCA485
+	for <linux-sh@archiver.kernel.org>; Thu,  9 Jun 2022 23:45:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233676AbiFIShp (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 9 Jun 2022 14:37:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40446 "EHLO
+        id S1344656AbiFIXp2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 9 Jun 2022 19:45:28 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41460 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1345469AbiFIShn (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Jun 2022 14:37:43 -0400
-Received: from mail-yw1-x1130.google.com (mail-yw1-x1130.google.com [IPv6:2607:f8b0:4864:20::1130])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BCE491146A6
-        for <linux-sh@vger.kernel.org>; Thu,  9 Jun 2022 11:37:41 -0700 (PDT)
-Received: by mail-yw1-x1130.google.com with SMTP id 00721157ae682-313a8a8b95aso16549847b3.5
-        for <linux-sh@vger.kernel.org>; Thu, 09 Jun 2022 11:37:41 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=8Hj76BK0VwQ76C6uNuhyu2UOiDef16x6n+WhyTwiuL8=;
-        b=RXSLJN2r52szX6Cnw+KXoRkm5vFEmwzfQJR7lJ/Ixw/a4O/IdfAI9SSV6dT03AzgUP
-         M+w40EuKmIQpz0K5O7olO6ouYCrw/mP2EPuyvHUyotiJED4+hKPEman/oWmGeKfposGF
-         f6kKJcrRXpk4J/dR2UPUa7/yG8CHSRZxUTXNVlVIIPc+byUzzS4AQN/5O7+S2DvEDWud
-         Akol4RAuQgb/gL1FMVAcwaGcDgWS7ZBaFX4uIygMvU21K6SZvKJ24dIH42Yx/1lQrAG0
-         FCrMbdbH+2ZPdt3SWlt9OlcSqzL2d7TxDky9DyGIsCv/5LTw/jdAwAOFTWKxRW1yl6jW
-         y3wQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=8Hj76BK0VwQ76C6uNuhyu2UOiDef16x6n+WhyTwiuL8=;
-        b=EUm1lsJUPdxt/0ihFa0JTF17WNgspwk8wJy5mtcwvWEQ+HUF6Z5E7sbS+pmX5GuQvG
-         73POsbVwhX92prwK0MCnemQdPsM+d8LE+z+E/4TuTYR3tspXXYAGh15MsovnKuy5ZAMy
-         2hQSwKr+qqrE4kq3djAQHiDtaebKAnX+gfuNix8n24bratyGPdHpPRyrgwPjeeOACPNq
-         Fd95i81girnSSR8aZo1Srmc5lCj0YnFt3Qm3l/NTDqYCyulT01ZzYo6Ajg5S+mUe3rYl
-         fc8PChId88UZt5apnYwLKU2bGM8cNwN6R09fM+QM8gkOZTM4vjCM1RMFaVuhBsMG6DS+
-         UAlw==
-X-Gm-Message-State: AOAM5333gWz0yngUY66xq5dwlivDkWQAfFJQnOTAFu55OugWEb8UCpwt
-        jn2woaQIAc0JzuHWiAFGSJrmxjNDJdgMruLXXZ7cSA==
-X-Google-Smtp-Source: ABdhPJyPun0oORefCEO0LL2xiAgBLsvVeq0N5dshMTrTTvEQkgH3BMTQ7tdvm5AN6boSy1DBa7+bcxeIx+gFcsxeKbo=
-X-Received: by 2002:a81:9b0c:0:b0:2f4:c522:7d3c with SMTP id
- s12-20020a819b0c000000b002f4c5227d3cmr44383963ywg.316.1654799860756; Thu, 09
- Jun 2022 11:37:40 -0700 (PDT)
+        with ESMTP id S232670AbiFIXpY (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Jun 2022 19:45:24 -0400
+Received: from mga09.intel.com (mga09.intel.com [134.134.136.24])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E963A60ABF;
+        Thu,  9 Jun 2022 16:45:20 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1654818322; x=1686354322;
+  h=date:from:to:cc:subject:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=/qix89+4Yux2UyS3QMBWmKLCne+VvkXES21cCGFIhLs=;
+  b=EkaTUs0rea+454rYaBsqSroRFg0PamD4jU6O0eq1wv/5itn58fVYLUXz
+   hlWtv1Ogpl7/5XIS618tIb0uG/q2+eGCMXsttxiOJDTm6dvjif29rcsmN
+   nWpOfx8wOz2WQB1f6Ul8b7EGNqASBsmk3lVSAAbjuyEvvEhAIHeX8zQmg
+   +ufj+64/oRf3ev5vJZH5Yejs7zEtNES51/2LxU4etWbj7BVv+kw0q1QiP
+   unGfwpuQghUcTK8rXLxr286tVxF9gYfN+irF5pYrEItvr0xmkc2yTnQok
+   EbNfwxaIzp9UCsQ8gskKbD4HfjRVXi6KKS6myyqzqnJkOJaWOKufoYQaK
+   A==;
+X-IronPort-AV: E=McAfee;i="6400,9594,10373"; a="278263539"
+X-IronPort-AV: E=Sophos;i="5.91,288,1647327600"; 
+   d="scan'208";a="278263539"
+Received: from orsmga008.jf.intel.com ([10.7.209.65])
+  by orsmga102.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 09 Jun 2022 16:45:19 -0700
+X-IronPort-AV: E=Sophos;i="5.91,288,1647327600"; 
+   d="scan'208";a="610480359"
+Received: from jacob-builder.jf.intel.com (HELO jacob-builder) ([10.7.198.157])
+  by orsmga008-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 09 Jun 2022 16:45:19 -0700
+Date:   Thu, 9 Jun 2022 16:49:21 -0700
+From:   Jacob Pan <jacob.jun.pan@linux.intel.com>
+To:     Peter Zijlstra <peterz@infradead.org>
+Cc:     rth@twiddle.net, ink@jurassic.park.msu.ru, mattst88@gmail.com,
+        vgupta@kernel.org, linux@armlinux.org.uk,
+        ulli.kroll@googlemail.com, linus.walleij@linaro.org,
+        shawnguo@kernel.org, Sascha Hauer <s.hauer@pengutronix.de>,
+        kernel@pengutronix.de, festevam@gmail.com, linux-imx@nxp.com,
+        tony@atomide.com, khilman@kernel.org, catalin.marinas@arm.com,
+        will@kernel.org, guoren@kernel.org, bcain@quicinc.com,
+        chenhuacai@kernel.org, kernel@xen0n.name, geert@linux-m68k.org,
+        sammy@sammy.net, monstr@monstr.eu, tsbogend@alpha.franken.de,
+        dinguyen@kernel.org, jonas@southpole.se,
+        stefan.kristiansson@saunalahti.fi, shorne@gmail.com,
+        James.Bottomley@HansenPartnership.com, deller@gmx.de,
+        mpe@ellerman.id.au, benh@kernel.crashing.org, paulus@samba.org,
+        paul.walmsley@sifive.com, palmer@dabbelt.com,
+        aou@eecs.berkeley.edu, hca@linux.ibm.com, gor@linux.ibm.com,
+        agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
+        svens@linux.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org,
+        davem@davemloft.net, richard@nod.at,
+        anton.ivanov@cambridgegreys.com, johannes@sipsolutions.net,
+        tglx@linutronix.de, mingo@redhat.com, bp@alien8.de,
+        dave.hansen@linux.intel.com, x86@kernel.org, hpa@zytor.com,
+        acme@kernel.org, mark.rutland@arm.com,
+        alexander.shishkin@linux.intel.com, jolsa@kernel.org,
+        namhyung@kernel.org, jgross@suse.com, srivatsa@csail.mit.edu,
+        amakhalov@vmware.com, pv-drivers@vmware.com,
+        boris.ostrovsky@oracle.com, chris@zankel.net, jcmvbkbc@gmail.com,
+        rafael@kernel.org, lenb@kernel.org, pavel@ucw.cz,
+        gregkh@linuxfoundation.org, mturquette@baylibre.com,
+        sboyd@kernel.org, daniel.lezcano@linaro.org, lpieralisi@kernel.org,
+        sudeep.holla@arm.com, agross@kernel.org,
+        bjorn.andersson@linaro.org, anup@brainfault.org,
+        thierry.reding@gmail.com, jonathanh@nvidia.com,
+        Arnd Bergmann <arnd@arndb.de>, yury.norov@gmail.com,
+        andriy.shevchenko@linux.intel.com, linux@rasmusvillemoes.dk,
+        rostedt@goodmis.org, pmladek@suse.com, senozhatsky@chromium.org,
+        john.ogness@linutronix.de, paulmck@kernel.org, frederic@kernel.org,
+        quic_neeraju@quicinc.com, josh@joshtriplett.org,
+        mathieu.desnoyers@efficios.com, jiangshanlai@gmail.com,
+        joel@joelfernandes.org, juri.lelli@redhat.com,
+        vincent.guittot@linaro.org, dietmar.eggemann@arm.com,
+        bsegall@google.com, mgorman@suse.de, bristot@redhat.com,
+        vschneid@redhat.com, jpoimboe@kernel.org,
+        linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-omap@vger.kernel.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, linux-perf-users@vger.kernel.org,
+        virtualization@lists.linux-foundation.org,
+        xen-devel@lists.xenproject.org, linux-xtensa@linux-xtensa.org,
+        linux-acpi@vger.kernel.org, linux-pm@vger.kernel.org,
+        linux-clk@vger.kernel.org, linux-arm-msm@vger.kernel.org,
+        linux-tegra@vger.kernel.org, linux-arch@vger.kernel.org,
+        rcu@vger.kernel.org, jacob.jun.pan@linux.intel.com
+Subject: Re: [PATCH 04/36] cpuidle,intel_idle: Fix CPUIDLE_FLAG_IRQ_ENABLE
+Message-ID: <20220609164921.5e61711d@jacob-builder>
+In-Reply-To: <20220608144516.172460444@infradead.org>
+References: <20220608142723.103523089@infradead.org>
+        <20220608144516.172460444@infradead.org>
+Organization: OTC
+X-Mailer: Claws Mail 3.17.5 (GTK+ 2.24.32; x86_64-pc-linux-gnu)
 MIME-Version: 1.0
-References: <20220609113046.780504-1-elver@google.com> <20220609113046.780504-2-elver@google.com>
- <CACT4Y+bOFmCyqfSgWS0b5xuwnPqP4V9v2ooJRmFCn0YAtOPmhQ@mail.gmail.com>
- <CANpmjNNtV_6kgoLv=VX3z_oM6ZEvWJNAOj9z4ADcymqmhc+crw@mail.gmail.com> <CACT4Y+Zq-1nczM2JH7Sr4mZo84gsCRd83RAwwnHwmap-wCOLTQ@mail.gmail.com>
-In-Reply-To: <CACT4Y+Zq-1nczM2JH7Sr4mZo84gsCRd83RAwwnHwmap-wCOLTQ@mail.gmail.com>
-From:   Marco Elver <elver@google.com>
-Date:   Thu, 9 Jun 2022 20:37:04 +0200
-Message-ID: <CANpmjNNC7ry59OXsJrPMf56Xi63chexaDfnP4t8_4MG7S5ZgCg@mail.gmail.com>
-Subject: Re: [PATCH 1/8] perf/hw_breakpoint: Optimize list of per-task breakpoints
-To:     Dmitry Vyukov <dvyukov@google.com>
-Cc:     Peter Zijlstra <peterz@infradead.org>,
-        Frederic Weisbecker <frederic@kernel.org>,
-        Ingo Molnar <mingo@kernel.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Arnaldo Carvalho de Melo <acme@kernel.org>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Alexander Shishkin <alexander.shishkin@linux.intel.com>,
-        Jiri Olsa <jolsa@redhat.com>,
-        Namhyung Kim <namhyung@kernel.org>,
-        linux-perf-users@vger.kernel.org, x86@kernel.org,
-        linux-sh@vger.kernel.org, kasan-dev@googlegroups.com,
-        linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, 9 Jun 2022 at 18:53, Dmitry Vyukov <dvyukov@google.com> wrote:
->
-> .
-> /On Thu, 9 Jun 2022 at 16:56, Marco Elver <elver@google.com> wrote:
-> > > > On a machine with 256 CPUs, running the recently added perf breakpoint
-> > > > benchmark results in:
-> > > >
-> > > >  | $> perf bench -r 30 breakpoint thread -b 4 -p 64 -t 64
-> > > >  | # Running 'breakpoint/thread' benchmark:
-> > > >  | # Created/joined 30 threads with 4 breakpoints and 64 parallelism
-> > > >  |      Total time: 236.418 [sec]
-> > > >  |
-> > > >  |   123134.794271 usecs/op
-> > > >  |  7880626.833333 usecs/op/cpu
-> > > >
-> > > > The benchmark tests inherited breakpoint perf events across many
-> > > > threads.
-> > > >
-> > > > Looking at a perf profile, we can see that the majority of the time is
-> > > > spent in various hw_breakpoint.c functions, which execute within the
-> > > > 'nr_bp_mutex' critical sections which then results in contention on that
-> > > > mutex as well:
-> > > >
-> > > >     37.27%  [kernel]       [k] osq_lock
-> > > >     34.92%  [kernel]       [k] mutex_spin_on_owner
-> > > >     12.15%  [kernel]       [k] toggle_bp_slot
-> > > >     11.90%  [kernel]       [k] __reserve_bp_slot
-> > > >
-> > > > The culprit here is task_bp_pinned(), which has a runtime complexity of
-> > > > O(#tasks) due to storing all task breakpoints in the same list and
-> > > > iterating through that list looking for a matching task. Clearly, this
-> > > > does not scale to thousands of tasks.
-> > > >
-> > > > While one option would be to make task_struct a breakpoint list node,
-> > > > this would only further bloat task_struct for infrequently used data.
-> > >
-> > > task_struct already has:
-> > >
-> > > #ifdef CONFIG_PERF_EVENTS
-> > >   struct perf_event_context *perf_event_ctxp[perf_nr_task_contexts];
-> > >   struct mutex perf_event_mutex;
-> > >   struct list_head perf_event_list;
-> > > #endif
-> > >
-> > > Wonder if it's possible to use perf_event_mutex instead of the task_sharded_mtx?
-> > > And possibly perf_event_list instead of task_bps_ht? It will contain
-> > > other perf_event types, so we will need to test type as well, but on
-> > > the positive side, we don't need any management of the separate
-> > > container.
-> >
-> > Hmm, yes, I looked at that but then decided against messing the
-> > perf/core internals. The main issue I have with using perf_event_mutex
-> > is that we might interfere with perf/core's locking rules as well as
-> > interfere with other concurrent perf event additions. Using
-> > perf_event_list is very likely a no-go because it requires reworking
-> > perf/core as well.
-> >
-> > I can already hear Peter shouting, but maybe I'm wrong. :-)
->
-> Let's wait for Peter to shout then :)
-> A significant part of this change is having per-task data w/o having
-> per-task data.
->
-> The current perf-related data in task_struct is already multiple words
-> and it's also not used in lots of production cases.
-> Maybe we could have something like:
->
->   struct perf_task_data* lazily_allocated_perf_data;
->
-> that's lazily allocated on first use instead of the current
-> perf_event_ctxp/perf_event_mutex/perf_event_list.
-> This way we could both reduce task_size when perf is not used and have
-> more perf-related data (incl breakpoints) when it's used.
+Hi Peter,
 
-I don't mind either option, so keeping task_struct bloat in mind, we have:
+On Wed, 08 Jun 2022 16:27:27 +0200, Peter Zijlstra <peterz@infradead.org>
+wrote:
 
-  1. rhashtable option, no changes to task_struct.
+> Commit c227233ad64c ("intel_idle: enable interrupts before C1 on
+> Xeons") wrecked intel_idle in two ways:
+> 
+>  - must not have tracing in idle functions
+>  - must return with IRQs disabled
+> 
+> Additionally, it added a branch for no good reason.
+> 
+> Fixes: c227233ad64c ("intel_idle: enable interrupts before C1 on Xeons")
+> Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+> ---
+>  drivers/idle/intel_idle.c |   48
+> +++++++++++++++++++++++++++++++++++----------- 1 file changed, 37
+> insertions(+), 11 deletions(-)
+> 
+> --- a/drivers/idle/intel_idle.c
+> +++ b/drivers/idle/intel_idle.c
+> @@ -129,21 +137,37 @@ static unsigned int mwait_substates __in
+>   *
+>   * Must be called under local_irq_disable().
+>   */
+nit: this comment is no long true, right?
 
-  2. add the breakpoint mutex + list to task_struct.
+> +
+> -static __cpuidle int intel_idle(struct cpuidle_device *dev,
+> -				struct cpuidle_driver *drv, int index)
+> +static __always_inline int __intel_idle(struct cpuidle_device *dev,
+> +					struct cpuidle_driver *drv, int
+> index) {
+>  	struct cpuidle_state *state = &drv->states[index];
+>  	unsigned long eax = flg2MWAIT(state->flags);
+>  	unsigned long ecx = 1; /* break on interrupt flag */
+>  
+> -	if (state->flags & CPUIDLE_FLAG_IRQ_ENABLE)
+> -		local_irq_enable();
+> -
+>  	mwait_idle_with_hints(eax, ecx);
+>  
+>  	return index;
+>  }
+>  
+> +static __cpuidle int intel_idle(struct cpuidle_device *dev,
+> +				struct cpuidle_driver *drv, int index)
+> +{
+> +	return __intel_idle(dev, drv, index);
+> +}
+> +
+> +static __cpuidle int intel_idle_irq(struct cpuidle_device *dev,
+> +				    struct cpuidle_driver *drv, int
+> index) +{
+> +	int ret;
+> +
+> +	raw_local_irq_enable();
+> +	ret = __intel_idle(dev, drv, index);
+> +	raw_local_irq_disable();
+> +
+> +	return ret;
+> +}
+> +
+>  /**
+>   * intel_idle_s2idle - Ask the processor to enter the given idle state.
+>   * @dev: cpuidle device of the target CPU.
+> @@ -1801,6 +1824,9 @@ static void __init intel_idle_init_cstat
+>  		/* Structure copy. */
+>  		drv->states[drv->state_count] =
+> cpuidle_state_table[cstate]; 
+> +		if (cpuidle_state_table[cstate].flags &
+> CPUIDLE_FLAG_IRQ_ENABLE)
+> +			drv->states[drv->state_count].enter =
+> intel_idle_irq; +
+>  		if ((disabled_states_mask & BIT(drv->state_count)) ||
+>  		    ((icpu->use_acpi || force_use_acpi) &&
+>  		     intel_idle_off_by_default(mwait_hint) &&
+> 
+> 
 
-  3. add something like hw_breakpoint_task_data* and allocate lazily.
 
-  4. (your proposal) move all of perf data into a new struct (+add
-hw_breakpoint things in there) that is lazily allocated.
+Thanks,
 
-I don't think perf is that infrequently used, and I can't estimate
-performance impact, so I don't like #4 too much personally. My
-preferred compromise would be #3, but at the same time I'd rather not
-bloat task_struct even with 8 extra infrequently used bytes. Am I too
-paranoid?
-
-Preferences?
+Jacob
