@@ -2,58 +2,58 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E973DC43334
-	for <linux-sh@archiver.kernel.org>; Thu,  9 Jun 2022 13:41:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B729AC433EF
+	for <linux-sh@archiver.kernel.org>; Thu,  9 Jun 2022 14:01:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245603AbiFINlp (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 9 Jun 2022 09:41:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38102 "EHLO
+        id S244672AbiFIOA6 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 9 Jun 2022 10:00:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39450 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1343888AbiFINll (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Jun 2022 09:41:41 -0400
-Received: from mail-lj1-x22d.google.com (mail-lj1-x22d.google.com [IPv6:2a00:1450:4864:20::22d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 10B36FD38
-        for <linux-sh@vger.kernel.org>; Thu,  9 Jun 2022 06:41:40 -0700 (PDT)
-Received: by mail-lj1-x22d.google.com with SMTP id y15so20793221ljc.0
-        for <linux-sh@vger.kernel.org>; Thu, 09 Jun 2022 06:41:39 -0700 (PDT)
+        with ESMTP id S244068AbiFIOA5 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Jun 2022 10:00:57 -0400
+Received: from mail-yb1-xb2f.google.com (mail-yb1-xb2f.google.com [IPv6:2607:f8b0:4864:20::b2f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A25CB2EE11B
+        for <linux-sh@vger.kernel.org>; Thu,  9 Jun 2022 07:00:55 -0700 (PDT)
+Received: by mail-yb1-xb2f.google.com with SMTP id p13so41910380ybm.1
+        for <linux-sh@vger.kernel.org>; Thu, 09 Jun 2022 07:00:55 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=google.com; s=20210112;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc;
-        bh=PF28ZnQLVsGI2i7ul/dfgqup/8C1a0mc9TiBXmcosYU=;
-        b=OAxGTJUe+XEVGmasomKjfTPF19BOrYj/fEHmMcR16tXmje2L2+5aMxRpp7TxlZz6+J
-         yvlRV1lYkm0XlpTf4tltOaog/KE+I4t+0hk2WrYk3ACPv+Y7oF+vJN9L5yagoTRSCrS/
-         rworsIcSpHAopjkAjIDAp6gLDlsgNfeV+NvL3Db5jTsQRr/8ODDXA4w0x3waW2l6VyvY
-         QuVdTcP44qHWxvGI92Tw8KlDERHWKynUAg3xzD4PoY+1SZM+nkIHAMReHJqIYi8fyhAZ
-         GYTE2tO9RGEqmtMrpDG8JYNiKjyopdZujiWnnYuw9ckMZ1u0SBLz5YG8HyowXxR6qw40
-         Er/Q==
+        bh=jqhwYhya53Ub6ysqItH4y8unqJO0QhApIrC1/649j54=;
+        b=fGOxnn0AqIvYwnlMzEqVt2e8++kIdmsh79Hl2DvxieLeED7eK+Cc6fsvF3UcIM7nvV
+         U6qYnDICRLaiJkcwGKsasTPP4dcUwp7ITGHcGUdzJbJ8XAdlN+CfDvbYsEEYdhNCguKp
+         qrmjHuQfrNYXGZI7AQQUGhB5jI3Ohh6mOo6mNsG6wFsuSMNQsColJNkAh9OU2W0FTQu9
+         97lskwpM1QSWrTR6eivnxWbhCLpJWZiObbiCq9FVCyouTtaF/acGBdX0fS3Vud/WQuAj
+         W7TsxsE+YptpX2ec1uuqVrpEk7dxtnqbEDCuGXPJTv/VSfFSwn5pcF4M2++C0viTCSTA
+         xSWw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=PF28ZnQLVsGI2i7ul/dfgqup/8C1a0mc9TiBXmcosYU=;
-        b=4G/ysSIIZKMOlcLJzzPwom3Ec/EpuIqf/JBC8g/mYmp6pW2a03dmwk1RG0ZaxGvCR/
-         8aupz4CnzypCwHiy1tIfmHqJN6dMVui2uV+6Xkx8lWcXpj/q8cqV5uVX8tss359oA2m/
-         H74x8YorT4KREkRhS5mqa+OYzQISCd0u5HMR7mf7SRttg+uOglRrxMj2QrnCbepGggkR
-         xrAt6ZTKqzDtdAUPkFj1/gzk3e2C8t5pQ0Rso/zs/bMvu89lLHB40WKUXCV3B77hiiX4
-         mOxDZz8G7Z6cfMhWa5D5fOPHEfuAQs6IiSaEfdHTFIU9KY+gB5Hw9qfY9aCWC7jzxIcN
-         3yFg==
-X-Gm-Message-State: AOAM532DP29e/6+8ETYsdsLYvhPzjyZS7PUGkJE4dh/ZJJwNQPcYKeQk
-        97BJVedugtDBQsJVVsyOOJQlZEyJJMx55HDyrhv78g==
-X-Google-Smtp-Source: ABdhPJxKwbLXuKSnIJ3Phiqmieh/Wr9lduzAjt/Ld23SCuasFCRov3KdDNmTk8meN2KOewMYkB2L7tKO5zGU0Tha5P4=
-X-Received: by 2002:a2e:b0fc:0:b0:255:6f92:f9d4 with SMTP id
- h28-20020a2eb0fc000000b002556f92f9d4mr22136645ljl.92.1654782098160; Thu, 09
- Jun 2022 06:41:38 -0700 (PDT)
+        bh=jqhwYhya53Ub6ysqItH4y8unqJO0QhApIrC1/649j54=;
+        b=AkUg8g8LJvjGIazwsZlKyXSCfY4UfROijE03bPVtde3uNr5JLBRIR2YRbpAuivqYPh
+         olW9DzRgHUrSZzTll4ZQ1eTN1YzZrUa3Ng17NvuBLcbVnbRAK0MK7jI55AF+B3aw2XfS
+         ADYkCK5XILqtPPa0gsBOiDgRJ26L+fI28oM9YPqZY9iA4M2l5uZHUaKWORZRZ3GYmi2n
+         1Y9kRPhFC3exlPVYywnrwjeVxDe5E5LZO/CYnnDCCn69JQ9rHv/DTupP3Zvh9tX99Y/F
+         TsvrCcs6ME7Jiu/OO5zSZWhH2CGz12DO0d3O6jmdP9L4NjCIbHgrI4cFDxDKmznZp6Cl
+         g0rw==
+X-Gm-Message-State: AOAM532ab275so/Ics3VoQrZ5i11yuL9U272pnz2ftJ46wfJ0OLCtN5B
+        sS88FpO+Exy/ASPFgcJayxLJZQyos+6hfMH4hbAsNA==
+X-Google-Smtp-Source: ABdhPJzTt5jB8Al00H/AKfb9WPbMyvnzrSMN+GZ+fLZlVKzwpmwSjeqTtUGB58clLqpL/2r6TUP1/Fvy9ZWcKb1JHso=
+X-Received: by 2002:a25:780b:0:b0:664:3e22:3368 with SMTP id
+ t11-20020a25780b000000b006643e223368mr2020008ybc.625.1654783254347; Thu, 09
+ Jun 2022 07:00:54 -0700 (PDT)
 MIME-Version: 1.0
 References: <20220609113046.780504-1-elver@google.com> <20220609113046.780504-6-elver@google.com>
- <CACT4Y+Zd0Zd_66DZ-f2HG4tR6ZdraFe9b4iEBJmG9p72+7RMWQ@mail.gmail.com>
-In-Reply-To: <CACT4Y+Zd0Zd_66DZ-f2HG4tR6ZdraFe9b4iEBJmG9p72+7RMWQ@mail.gmail.com>
-From:   Dmitry Vyukov <dvyukov@google.com>
-Date:   Thu, 9 Jun 2022 15:41:26 +0200
-Message-ID: <CACT4Y+appPi5YAdKFB-2caO6xkg89FmV1_4532u7Jx_5CAX9xw@mail.gmail.com>
+ <CACT4Y+Zd0Zd_66DZ-f2HG4tR6ZdraFe9b4iEBJmG9p72+7RMWQ@mail.gmail.com> <CACT4Y+appPi5YAdKFB-2caO6xkg89FmV1_4532u7Jx_5CAX9xw@mail.gmail.com>
+In-Reply-To: <CACT4Y+appPi5YAdKFB-2caO6xkg89FmV1_4532u7Jx_5CAX9xw@mail.gmail.com>
+From:   Marco Elver <elver@google.com>
+Date:   Thu, 9 Jun 2022 16:00:16 +0200
+Message-ID: <CANpmjNP7pUYY7T1pCOVCJ_WaomdeuQzcLin46VVtyEmT4pQ4iA@mail.gmail.com>
 Subject: Re: [PATCH 5/8] perf/hw_breakpoint: Remove useless code related to
  flexible breakpoints
-To:     Marco Elver <elver@google.com>
+To:     Dmitry Vyukov <dvyukov@google.com>
 Cc:     Peter Zijlstra <peterz@infradead.org>,
         Frederic Weisbecker <frederic@kernel.org>,
         Ingo Molnar <mingo@kernel.org>,
@@ -71,89 +71,59 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, 9 Jun 2022 at 14:04, Dmitry Vyukov <dvyukov@google.com> wrote:
+On Thu, 9 Jun 2022 at 15:41, Dmitry Vyukov <dvyukov@google.com> wrote:
 >
-> On Thu, 9 Jun 2022 at 13:31, Marco Elver <elver@google.com> wrote:
+> On Thu, 9 Jun 2022 at 14:04, Dmitry Vyukov <dvyukov@google.com> wrote:
 > >
-> > Flexible breakpoints have never been implemented, with
-> > bp_cpuinfo::flexible always being 0. Unfortunately, they still occupy 4
-> > bytes in each bp_cpuinfo and bp_busy_slots, as well as computing the max
-> > flexible count in fetch_bp_busy_slots().
+> > On Thu, 9 Jun 2022 at 13:31, Marco Elver <elver@google.com> wrote:
+> > >
+> > > Flexible breakpoints have never been implemented, with
+> > > bp_cpuinfo::flexible always being 0. Unfortunately, they still occupy 4
+> > > bytes in each bp_cpuinfo and bp_busy_slots, as well as computing the max
+> > > flexible count in fetch_bp_busy_slots().
+> > >
+> > > This again causes suboptimal code generation, when we always know that
+> > > `!!slots.flexible` will be 0.
+> > >
+> > > Just get rid of the flexible "placeholder" and remove all real code
+> > > related to it. Make a note in the comment related to the constraints
+> > > algorithm but don't remove them from the algorithm, so that if in future
+> > > flexible breakpoints need supporting, it should be trivial to revive
+> > > them (along with reverting this change).
+> > >
+> > > Signed-off-by: Marco Elver <elver@google.com>
 > >
-> > This again causes suboptimal code generation, when we always know that
-> > `!!slots.flexible` will be 0.
+> > Was added in 2009.
 > >
-> > Just get rid of the flexible "placeholder" and remove all real code
-> > related to it. Make a note in the comment related to the constraints
-> > algorithm but don't remove them from the algorithm, so that if in future
-> > flexible breakpoints need supporting, it should be trivial to revive
-> > them (along with reverting this change).
+> > Acked-by: Dmitry Vyukov <dvyukov@google.com>
 > >
-> > Signed-off-by: Marco Elver <elver@google.com>
+> > > ---
+> > >  kernel/events/hw_breakpoint.c | 12 +++---------
+> > >  1 file changed, 3 insertions(+), 9 deletions(-)
+> > >
+> > > diff --git a/kernel/events/hw_breakpoint.c b/kernel/events/hw_breakpoint.c
+> > > index 5f40c8dfa042..afe0a6007e96 100644
+> > > --- a/kernel/events/hw_breakpoint.c
+> > > +++ b/kernel/events/hw_breakpoint.c
+> > > @@ -46,8 +46,6 @@ struct bp_cpuinfo {
+> > >  #else
+> > >         unsigned int    *tsk_pinned;
+> > >  #endif
+> > > -       /* Number of non-pinned cpu/task breakpoints in a cpu */
+> > > -       unsigned int    flexible; /* XXX: placeholder, see fetch_this_slot() */
+> > >  };
+> > >
+> > >  static DEFINE_PER_CPU(struct bp_cpuinfo, bp_cpuinfo[TYPE_MAX]);
+> > > @@ -71,7 +69,6 @@ static bool constraints_initialized __ro_after_init;
+> > >  /* Gather the number of total pinned and un-pinned bp in a cpuset */
+> > >  struct bp_busy_slots {
 >
-> Was added in 2009.
->
-> Acked-by: Dmitry Vyukov <dvyukov@google.com>
->
-> > ---
-> >  kernel/events/hw_breakpoint.c | 12 +++---------
-> >  1 file changed, 3 insertions(+), 9 deletions(-)
-> >
-> > diff --git a/kernel/events/hw_breakpoint.c b/kernel/events/hw_breakpoint.c
-> > index 5f40c8dfa042..afe0a6007e96 100644
-> > --- a/kernel/events/hw_breakpoint.c
-> > +++ b/kernel/events/hw_breakpoint.c
-> > @@ -46,8 +46,6 @@ struct bp_cpuinfo {
-> >  #else
-> >         unsigned int    *tsk_pinned;
-> >  #endif
-> > -       /* Number of non-pinned cpu/task breakpoints in a cpu */
-> > -       unsigned int    flexible; /* XXX: placeholder, see fetch_this_slot() */
-> >  };
-> >
-> >  static DEFINE_PER_CPU(struct bp_cpuinfo, bp_cpuinfo[TYPE_MAX]);
-> > @@ -71,7 +69,6 @@ static bool constraints_initialized __ro_after_init;
-> >  /* Gather the number of total pinned and un-pinned bp in a cpuset */
-> >  struct bp_busy_slots {
+> Do we also want to remove this struct altogether? Now it becomes just
+> an int counter.
 
-Do we also want to remove this struct altogether? Now it becomes just
-an int counter.
+Yes, that actually can simplify a bunch of things, including
+fetch_bp_busy_slots() just returning an int and fetch_this_slot() can
+be removed (it'll be even cleaner if we remove the overridable
+weight).
 
-> >         unsigned int pinned;
-> > -       unsigned int flexible;
-> >  };
-> >
-> >  /* Serialize accesses to the above constraints */
-> > @@ -213,10 +210,6 @@ fetch_bp_busy_slots(struct bp_busy_slots *slots, struct perf_event *bp,
-> >
-> >                 if (nr > slots->pinned)
-> >                         slots->pinned = nr;
-> > -
-> > -               nr = info->flexible;
-> > -               if (nr > slots->flexible)
-> > -                       slots->flexible = nr;
-> >         }
-> >  }
-> >
-> > @@ -299,7 +292,8 @@ __weak void arch_unregister_hw_breakpoint(struct perf_event *bp)
-> >  }
-> >
-> >  /*
-> > - * Constraints to check before allowing this new breakpoint counter:
-> > + * Constraints to check before allowing this new breakpoint counter. Note that
-> > + * flexible breakpoints are currently unsupported -- see fetch_this_slot().
-> >   *
-> >   *  == Non-pinned counter == (Considered as pinned for now)
-> >   *
-> > @@ -366,7 +360,7 @@ static int __reserve_bp_slot(struct perf_event *bp, u64 bp_type)
-> >         fetch_this_slot(&slots, weight);
-> >
-> >         /* Flexible counters need to keep at least one slot */
-> > -       if (slots.pinned + (!!slots.flexible) > hw_breakpoint_slots_cached(type))
-> > +       if (slots.pinned > hw_breakpoint_slots_cached(type))
-> >                 return -ENOSPC;
-> >
-> >         ret = arch_reserve_bp_slot(bp);
-> > --
-> > 2.36.1.255.ge46751e96f-goog
-> >
+I'll simplify unless I hear objections.
