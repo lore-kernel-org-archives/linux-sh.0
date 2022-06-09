@@ -2,57 +2,56 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3039EC43334
-	for <linux-sh@archiver.kernel.org>; Thu,  9 Jun 2022 14:56:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 880EAC433EF
+	for <linux-sh@archiver.kernel.org>; Thu,  9 Jun 2022 15:00:40 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344001AbiFIO40 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 9 Jun 2022 10:56:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37614 "EHLO
+        id S236865AbiFIPAj (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 9 Jun 2022 11:00:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56542 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1343903AbiFIO4Z (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Jun 2022 10:56:25 -0400
-Received: from mail-yw1-x1135.google.com (mail-yw1-x1135.google.com [IPv6:2607:f8b0:4864:20::1135])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 26BBA391824
-        for <linux-sh@vger.kernel.org>; Thu,  9 Jun 2022 07:56:24 -0700 (PDT)
-Received: by mail-yw1-x1135.google.com with SMTP id 00721157ae682-3135519f95fso73681577b3.6
-        for <linux-sh@vger.kernel.org>; Thu, 09 Jun 2022 07:56:24 -0700 (PDT)
+        with ESMTP id S235171AbiFIPAi (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Jun 2022 11:00:38 -0400
+Received: from mail-lf1-x12d.google.com (mail-lf1-x12d.google.com [IPv6:2a00:1450:4864:20::12d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B6CB13A7BEC
+        for <linux-sh@vger.kernel.org>; Thu,  9 Jun 2022 08:00:36 -0700 (PDT)
+Received: by mail-lf1-x12d.google.com with SMTP id t25so38384938lfg.7
+        for <linux-sh@vger.kernel.org>; Thu, 09 Jun 2022 08:00:36 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=google.com; s=20210112;
         h=mime-version:references:in-reply-to:from:date:message-id:subject:to
          :cc;
-        bh=0+SkCjGgZBFq5wRCXTYfFTyaGhOAcbR2Sdoh6LQhmUA=;
-        b=deUfDUG4RR9z3kerucIqTXhqCeGsbHnfHtdvw5TsJVYFknetJ/w80Mv9kBz5l4wex9
-         TssewgR73O/IyB/u1mxjbxvVfqyOyYF82MCbjOeauw6zFo7MJimse2lx811joMZtXTdC
-         uT5XfiXo74nBdAcht78tvAUnApid/SMJhbV+Nr+EedCSPzCr3MTOd8EP9AmTLlsnhGck
-         znW1PntgjNv4SDv5OQvubmFMVhj/M7k5WoovioAqVoC/pkPL9GeBmYIXDknX5bKByQzG
-         isj398VB6w8UihJLCkMJNEXGeGaR/Pfe/bXeUjDzdAAissGD1HmQ0PWrAQE6T2NwCeIX
-         Z0+g==
+        bh=NsfmNOfUlC+V3z4AhfvGEnurL/kWR5dN7NT7SPzXTek=;
+        b=kICnwHg+tz0bV++tkQVcLGjsGWQePp6LuSl2JUV4C9/W95LIKwfa7N3u9q2g2fl23W
+         vHbKn2zHQfkDmXqsPE9qAzcelTKIzlluT+9gFneFOewqU/bOHdbN9+805Q2+6ZIrl6PI
+         9maDGv7jeD+IslHkyjBNiJ9Va2xTyb58RSYv0R0TLgvUI6FExJsynWzDjLY32ChbG+XV
+         X6w6jpfDF32hlHkzmTcv6rIMRDoqzXo58qI/oN5Q7y5D58RMbeQN8xkeJV/L6g2zo22q
+         8uvG8OFYQbHpIMmFCCkOr7NPz6rlEKx+1SZwpiPy+qlJ14jWLbd5Lf6thEcU10OoSwT9
+         9ITA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:mime-version:references:in-reply-to:from:date
          :message-id:subject:to:cc;
-        bh=0+SkCjGgZBFq5wRCXTYfFTyaGhOAcbR2Sdoh6LQhmUA=;
-        b=1Wt49hLBmCPC72AddRgsEXueZtFwy7RZQBrBzWYw67fKibNIAE5IK55YmgQWYDunng
-         Q+GZdor7MI8ORmkraom6Ij+U4rTjuo80QklgjXQBPIFoTYnGiDT1YHPCWsFf8VIUYu1D
-         MqPqCEs2bJfyND+Weebg91Om3fI5Emxqb6eiP6WuknEaMY5hohXLiWLVjZyC/ahk0C9u
-         UoUTr1Ux40f2Q8Y954dwBUOZHB9ZWKNFL5giMxN96sYPezeyp5JsiXcaPlMhhEUBUCd2
-         2uUm/bSUllfx0a24b56V3vEZBZw8sQ2oz99Wmp+x4P1CpIeQscSNq9Fie9BuYS1T76ga
-         YQLg==
-X-Gm-Message-State: AOAM532Obd7CrYIPBfWWFaNX8364xCwl/qoTrqj5mlgrdI0aDZ1V5n93
-        cuwPdKo2s0xfNsVdd+J5DkzNjlWZ8rxVr+5EaNHPXg==
-X-Google-Smtp-Source: ABdhPJz3Thrnbg4dSqU+BoOQp4IJma6lc3JBLsyl9Q3m01mIrlVWxB4SwxkTgcDQXsBg4R1HBpAR8UmcfdarMxR1wx8=
-X-Received: by 2002:a0d:c0c6:0:b0:2ff:bb2:1065 with SMTP id
- b189-20020a0dc0c6000000b002ff0bb21065mr44984991ywd.512.1654786583034; Thu, 09
- Jun 2022 07:56:23 -0700 (PDT)
+        bh=NsfmNOfUlC+V3z4AhfvGEnurL/kWR5dN7NT7SPzXTek=;
+        b=tC6ToiFRFejzFlAjLn7wH7xi9x2dFSnyy766dvgRan8I38mjra20BY+fM64Ejeh934
+         Upxk1doHfC3VT3FoaXX9/21qw1l9bMmS/JmT5d7KS38SE+kJuUohJTiqUfH6TVlxV1MN
+         Iz7+jgO9/+aPSLq3q5ObTf30ywtZ/IYmZ7anRxjZMiz6fIAB96yViM8qmCSCjUqtjGpg
+         KdiDbbMN0c+f2d7TOceQvaScdCvTHyvRR5U9fzXmulaFTXKhbPtkb+BrcbxP0nLcXMVh
+         KBJGIxe37PjOltORifokfIuqmyixyZRXR8BlOQ7ORl5bleIVZRjadfoJO0hGJrvUrGtE
+         f6Qg==
+X-Gm-Message-State: AOAM530x7nFGQh6JdPZs8o2oI/xuZAEa2J1/aWKhAkM6+zq9WGt1zbmH
+        7kpnRcE5ToNoeUBDEADRIul4IE0U67nVR/mihbVOZw==
+X-Google-Smtp-Source: ABdhPJzCyhTAPCSGKsOEYllZmziNv8gM2S20pugkFptHOcy8BZaQJMKZRhF14tbm0E7D62SPU0gO0ononF6at0D43lE=
+X-Received: by 2002:a05:6512:3f13:b0:464:f55f:7806 with SMTP id
+ y19-20020a0565123f1300b00464f55f7806mr25654590lfa.598.1654786834533; Thu, 09
+ Jun 2022 08:00:34 -0700 (PDT)
 MIME-Version: 1.0
-References: <20220609113046.780504-1-elver@google.com> <20220609113046.780504-2-elver@google.com>
- <CACT4Y+bOFmCyqfSgWS0b5xuwnPqP4V9v2ooJRmFCn0YAtOPmhQ@mail.gmail.com>
-In-Reply-To: <CACT4Y+bOFmCyqfSgWS0b5xuwnPqP4V9v2ooJRmFCn0YAtOPmhQ@mail.gmail.com>
-From:   Marco Elver <elver@google.com>
-Date:   Thu, 9 Jun 2022 16:55:46 +0200
-Message-ID: <CANpmjNNtV_6kgoLv=VX3z_oM6ZEvWJNAOj9z4ADcymqmhc+crw@mail.gmail.com>
-Subject: Re: [PATCH 1/8] perf/hw_breakpoint: Optimize list of per-task breakpoints
-To:     Dmitry Vyukov <dvyukov@google.com>
+References: <20220609113046.780504-1-elver@google.com> <20220609113046.780504-8-elver@google.com>
+In-Reply-To: <20220609113046.780504-8-elver@google.com>
+From:   Dmitry Vyukov <dvyukov@google.com>
+Date:   Thu, 9 Jun 2022 17:00:22 +0200
+Message-ID: <CACT4Y+bGPLampPm7JHJeXeK_CwQ2_=3mRktPCh7T9r3y8r02hw@mail.gmail.com>
+Subject: Re: [PATCH 7/8] perf/hw_breakpoint: Optimize task_bp_pinned() if CPU-independent
+To:     Marco Elver <elver@google.com>
 Cc:     Peter Zijlstra <peterz@infradead.org>,
         Frederic Weisbecker <frederic@kernel.org>,
         Ingo Molnar <mingo@kernel.org>,
@@ -70,61 +69,110 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, 9 Jun 2022 at 16:29, Dmitry Vyukov <dvyukov@google.com> wrote:
+On Thu, 9 Jun 2022 at 13:31, Marco Elver <elver@google.com> wrote:
 >
-> On Thu, 9 Jun 2022 at 13:31, Marco Elver <elver@google.com> wrote:
-> >
-> > On a machine with 256 CPUs, running the recently added perf breakpoint
-> > benchmark results in:
-> >
-> >  | $> perf bench -r 30 breakpoint thread -b 4 -p 64 -t 64
-> >  | # Running 'breakpoint/thread' benchmark:
-> >  | # Created/joined 30 threads with 4 breakpoints and 64 parallelism
-> >  |      Total time: 236.418 [sec]
-> >  |
-> >  |   123134.794271 usecs/op
-> >  |  7880626.833333 usecs/op/cpu
-> >
-> > The benchmark tests inherited breakpoint perf events across many
-> > threads.
-> >
-> > Looking at a perf profile, we can see that the majority of the time is
-> > spent in various hw_breakpoint.c functions, which execute within the
-> > 'nr_bp_mutex' critical sections which then results in contention on that
-> > mutex as well:
-> >
-> >     37.27%  [kernel]       [k] osq_lock
-> >     34.92%  [kernel]       [k] mutex_spin_on_owner
-> >     12.15%  [kernel]       [k] toggle_bp_slot
-> >     11.90%  [kernel]       [k] __reserve_bp_slot
-> >
-> > The culprit here is task_bp_pinned(), which has a runtime complexity of
-> > O(#tasks) due to storing all task breakpoints in the same list and
-> > iterating through that list looking for a matching task. Clearly, this
-> > does not scale to thousands of tasks.
-> >
-> > While one option would be to make task_struct a breakpoint list node,
-> > this would only further bloat task_struct for infrequently used data.
+> Running the perf benchmark with (note: more aggressive parameters vs.
+> preceding changes, but same host with 256 CPUs):
 >
-> task_struct already has:
+>  | $> perf bench -r 100 breakpoint thread -b 4 -p 128 -t 512
+>  | # Running 'breakpoint/thread' benchmark:
+>  | # Created/joined 100 threads with 4 breakpoints and 128 parallelism
+>  |      Total time: 1.953 [sec]
+>  |
+>  |       38.146289 usecs/op
+>  |     4882.725000 usecs/op/cpu
 >
-> #ifdef CONFIG_PERF_EVENTS
->   struct perf_event_context *perf_event_ctxp[perf_nr_task_contexts];
->   struct mutex perf_event_mutex;
->   struct list_head perf_event_list;
-> #endif
+>     16.29%  [kernel]       [k] rhashtable_jhash2
+>     16.19%  [kernel]       [k] osq_lock
+>     14.22%  [kernel]       [k] queued_spin_lock_slowpath
+>      8.58%  [kernel]       [k] task_bp_pinned
+>      8.30%  [kernel]       [k] mutex_spin_on_owner
+>      4.03%  [kernel]       [k] smp_cfm_core_cond
+>      2.97%  [kernel]       [k] toggle_bp_slot
+>      2.94%  [kernel]       [k] bcmp
 >
-> Wonder if it's possible to use perf_event_mutex instead of the task_sharded_mtx?
-> And possibly perf_event_list instead of task_bps_ht? It will contain
-> other perf_event types, so we will need to test type as well, but on
-> the positive side, we don't need any management of the separate
-> container.
+> We can see that a majority of the time is now spent hashing task
+> pointers to index into task_bps_ht in task_bp_pinned().
+>
+> However, if task_bp_pinned()'s computation is independent of any CPU,
+> i.e. always `iter->cpu < 0`, the result for each invocation will be
+> identical. With increasing CPU-count, this problem worsens.
+>
+> Instead, identify if every call to task_bp_pinned() is CPU-independent,
+> and cache the result. Use the cached result instead of a call to
+> task_bp_pinned(), now __task_bp_pinned(), with task_bp_pinned() deciding
+> if the cached result can be used.
+>
+> After this optimization:
+>
+>     21.96%  [kernel]       [k] queued_spin_lock_slowpath
+>     16.39%  [kernel]       [k] osq_lock
+>      9.82%  [kernel]       [k] toggle_bp_slot
+>      9.81%  [kernel]       [k] find_next_bit
+>      4.93%  [kernel]       [k] mutex_spin_on_owner
+>      4.71%  [kernel]       [k] smp_cfm_core_cond
+>      4.30%  [kernel]       [k] __reserve_bp_slot
+>      2.65%  [kernel]       [k] cpumask_next
+>
+> Showing that the time spent hashing keys has become insignificant.
+>
+> With the given benchmark parameters, however, we see no statistically
+> significant improvement in performance on the test system with 256 CPUs.
+> This is very likely due to the benchmark parameters being too aggressive
+> and contention elsewhere becoming dominant.
+>
+> Indeed, when using the less aggressive parameters from the preceding
+> changes, we now observe:
+>
+>  | $> perf bench -r 30 breakpoint thread -b 4 -p 64 -t 64
+>  | # Running 'breakpoint/thread' benchmark:
+>  | # Created/joined 30 threads with 4 breakpoints and 64 parallelism
+>  |      Total time: 0.071 [sec]
+>  |
+>  |       37.134896 usecs/op
+>  |     2376.633333 usecs/op/cpu
+>
+> Which is an improvement of 12% compared to without this optimization
+> (baseline is 42 usecs/op). This is now only 5% slower than the
+> theoretical ideal (constraints disabled), and 18% slower than no
+> breakpoints at all.
+>
+> [ While we're here, swap task_bp_pinned()'s bp and cpu arguments to be
+>   more consistent with other functions (which have bp first, before the
+>   cpu argument). ]
 
-Hmm, yes, I looked at that but then decided against messing the
-perf/core internals. The main issue I have with using perf_event_mutex
-is that we might interfere with perf/core's locking rules as well as
-interfere with other concurrent perf event additions. Using
-perf_event_list is very likely a no-go because it requires reworking
-perf/core as well.
+There are 3 main cases:
+1. Per-cpu bp.
+2. Per-task and per-cpu bp.
+3. Per-task bp (on all cpus)
+right?
 
-I can already hear Peter shouting, but maybe I'm wrong. :-)
+For case 1 we still seem to do lots of unnecessary work in
+fetch_bp_busy_slots() by iterating over all CPUs. We are going to bump
+only the CPU's cpu_pinned, so that's the only CPU we need to
+fetch/check.
+
+For case 2 we also do lots of unnecessary work, again we also need to
+check only 1 CPU (don't need cached_tbp_pinned). Also don't need to do
+atomic_dec/inc on all other CPUs (they dec/inc the same variable).
+
+Case 3 is the only one when we need to check all CPUs and
+cached_tbp_pinned may be useful.
+But I wonder if we could instead add a per-task
+has_per_cpu_breakpoints flag. Then if the flag is set, we check all
+CPUs as we do now (don't need cached_tbp_pinned). And if it's not set,
+then we could optimize the code even more by making it O(1) instead of
+O(N). Namely, we add global tsk_pinned for tasks that don't have
+per-cpu breakpoints, and we update only that tsk_pinned instead of
+iterating over all CPUs.
+I think this will require adding cpu_pinned as well (similar to
+tsk_pinned but aggregated over all CPUs).
+Then the fast path capacity check can become just:
+
+if (bp->hw.target && !bp->hw.target->has_per_cpu_breakpoints && bp->cpu < 0) {
+  if (max_cpu_bp_pinned(type) + task_bp_pinned(-1 /*cpu*/, bp, type) +
+hw_breakpoint_weight(bp) > nr_slots[type])
+    return -ENOSPC;
+}
+
+Does it make any sense?
