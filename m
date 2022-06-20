@@ -2,103 +2,53 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 96B71C433EF
-	for <linux-sh@archiver.kernel.org>; Mon, 20 Jun 2022 07:01:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB175C43334
+	for <linux-sh@archiver.kernel.org>; Mon, 20 Jun 2022 07:06:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238599AbiFTHBz (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 20 Jun 2022 03:01:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44142 "EHLO
+        id S234071AbiFTHGN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 20 Jun 2022 03:06:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46734 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231197AbiFTHBz (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 20 Jun 2022 03:01:55 -0400
-Received: from andre.telenet-ops.be (andre.telenet-ops.be [IPv6:2a02:1800:120:4::f00:15])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 211EB9FC4
-        for <linux-sh@vger.kernel.org>; Mon, 20 Jun 2022 00:01:52 -0700 (PDT)
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed30:1949:b867:c4bf:a30a])
-        by andre.telenet-ops.be with bizsmtp
-        id lK1o2700t3sdbfl01K1o0j; Mon, 20 Jun 2022 09:01:49 +0200
-Received: from rox.of.borg ([192.168.97.57])
-        by ramsan.of.borg with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.93)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1o3BPw-004lue-9r; Mon, 20 Jun 2022 09:01:48 +0200
-Received: from geert by rox.of.borg with local (Exim 4.93)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1o3BPv-00Cg83-Mw; Mon, 20 Jun 2022 09:01:47 +0200
-From:   Geert Uytterhoeven <geert+renesas@glider.be>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        with ESMTP id S239046AbiFTHGL (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 20 Jun 2022 03:06:11 -0400
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 21FB89FF3;
+        Mon, 20 Jun 2022 00:06:11 -0700 (PDT)
+Received: by verein.lst.de (Postfix, from userid 2407)
+        id 1260868AA6; Mon, 20 Jun 2022 09:06:07 +0200 (CEST)
+Date:   Mon, 20 Jun 2022 09:06:06 +0200
+From:   Christoph Hellwig <hch@lst.de>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         Linus Torvalds <torvalds@linux-foundation.org>,
-        Andrew Morton <akpm@linux-foundation.org>
-Cc:     Jonathan Cameron <Jonathan.Cameron@huawei.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Jonathan Cameron <Jonathan.Cameron@huawei.com>,
         linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
         kernel test robot <lkp@intel.com>,
         Christoph Hellwig <hch@lst.de>
-Subject: [PATCH v2] sh: Convert nommu io{re,un}map() to static inline functions
-Date:   Mon, 20 Jun 2022 09:01:43 +0200
-Message-Id: <8d1b1766260961799b04035e7bc39a7f59729f72.1655708312.git.geert+renesas@glider.be>
-X-Mailer: git-send-email 2.25.1
+Subject: Re: [PATCH v2] sh: Convert nommu io{re,un}map() to static inline
+ functions
+Message-ID: <20220620070606.GA11361@lst.de>
+References: <8d1b1766260961799b04035e7bc39a7f59729f72.1655708312.git.geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <8d1b1766260961799b04035e7bc39a7f59729f72.1655708312.git.geert+renesas@glider.be>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Recently, nommu iounmap() was converted from a static inline function to
-a macro again, basically reverting commit 4580ba4ad2e6b8dd ("sh: Convert
-iounmap() macros to inline functions").  With -Werror, this leads to
-build failures like:
+On Mon, Jun 20, 2022 at 09:01:43AM +0200, Geert Uytterhoeven wrote:
+> Recently, nommu iounmap() was converted from a static inline function to
+> a macro again, basically reverting commit 4580ba4ad2e6b8dd ("sh: Convert
+> iounmap() macros to inline functions").  With -Werror, this leads to
+> build failures like:
 
-    drivers/iio/adc/xilinx-ams.c: In function ‘ams_iounmap_ps’:
-    drivers/iio/adc/xilinx-ams.c:1195:14: error: unused variable ‘ams’ [-Werror=unused-variable]
-     1195 |  struct ams *ams = data;
-	  |              ^~~
+Stupid question:  Is there any reason sh-nommu can't just use the
+generic nommu ioremap from asm-generic/io.h?
 
-Fix this by replacing the macros for ioremap() and iounmap() by static
-inline functions, based on <asm-generic/io.h>.
-
-Reported-by: kernel test robot <lkp@intel.com>
-Reported-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
-Fixes: 13f1fc870dd74713 ("sh: move the ioremap implementation out of line")
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
----
-v2:
-  - Add Acked-by, Reviewed-by.
-
-This is actually the third time this change was made, as Christoph
-converted iounmap() to a macro before in commit 98c90e5ea34e98bd ("sh:
-remove __iounmap"), reverting commit 733f0025f0fb43e3 ("sh: prevent
-warnings when using iounmap").
-
-Probably sh-nommu should include <asm-generic/io.h>, but that would
-require a lot more changes.
----
- arch/sh/include/asm/io.h | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
-
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index cf9a3ec32406f856..fba90e670ed41d48 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -271,8 +271,12 @@ static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
- #endif /* CONFIG_HAVE_IOREMAP_PROT */
- 
- #else /* CONFIG_MMU */
--#define iounmap(addr)		do { } while (0)
--#define ioremap(offset, size)	((void __iomem *)(unsigned long)(offset))
-+static inline void __iomem *ioremap(phys_addr_t offset, size_t size)
-+{
-+	return (void __iomem *)(unsigned long)offset;
-+}
-+
-+static inline void iounmap(volatile void __iomem *addr) { }
- #endif /* CONFIG_MMU */
- 
- #define ioremap_uc	ioremap
--- 
-2.25.1
-
+Then again how long it takes to to fix any sh bugs I'm still wondering
+if we shouldn't just drop sh entirely given how much of a drag it is
+on everyone.
