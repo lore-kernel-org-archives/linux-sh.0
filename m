@@ -2,118 +2,103 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 05E42C433EF
-	for <linux-sh@archiver.kernel.org>; Sat, 18 Jun 2022 03:28:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 96B71C433EF
+	for <linux-sh@archiver.kernel.org>; Mon, 20 Jun 2022 07:01:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1383936AbiFRD2F (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 17 Jun 2022 23:28:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55966 "EHLO
+        id S238599AbiFTHBz (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 20 Jun 2022 03:01:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44142 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1383842AbiFRD2D (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 17 Jun 2022 23:28:03 -0400
-Received: from out30-54.freemail.mail.aliyun.com (out30-54.freemail.mail.aliyun.com [115.124.30.54])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 948B011827;
-        Fri, 17 Jun 2022 20:27:57 -0700 (PDT)
-X-Alimail-AntiSpam: AC=PASS;BC=-1|-1;BR=01201311R131e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=ay29a033018046049;MF=baolin.wang@linux.alibaba.com;NM=1;PH=DS;RN=24;SR=0;TI=SMTPD_---0VGi1ydh_1655522870;
-Received: from 30.13.184.185(mailfrom:baolin.wang@linux.alibaba.com fp:SMTPD_---0VGi1ydh_1655522870)
-          by smtp.aliyun-inc.com;
-          Sat, 18 Jun 2022 11:27:51 +0800
-Message-ID: <e8cb00ab-f617-de14-9e5c-883f56da0b5f@linux.alibaba.com>
-Date:   Sat, 18 Jun 2022 11:27:59 +0800
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101
- Thunderbird/91.10.0
-Subject: Re: [PATCH 1/4] hugetlb: skip to end of PT page mapping when pte not
- present
-To:     Mike Kravetz <mike.kravetz@oracle.com>,
-        Peter Xu <peterx@redhat.com>
-Cc:     linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        linux-arm-kernel@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        Muchun Song <songmuchun@bytedance.com>,
-        Michal Hocko <mhocko@suse.com>,
-        Naoya Horiguchi <naoya.horiguchi@linux.dev>,
-        James Houghton <jthoughton@google.com>,
-        Mina Almasry <almasrymina@google.com>,
-        "Aneesh Kumar K . V" <aneesh.kumar@linux.vnet.ibm.com>,
-        Anshuman Khandual <anshuman.khandual@arm.com>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        catalin.marinas@arm.com, will@kernel.org,
+        with ESMTP id S231197AbiFTHBz (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 20 Jun 2022 03:01:55 -0400
+Received: from andre.telenet-ops.be (andre.telenet-ops.be [IPv6:2a02:1800:120:4::f00:15])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 211EB9FC4
+        for <linux-sh@vger.kernel.org>; Mon, 20 Jun 2022 00:01:52 -0700 (PDT)
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed30:1949:b867:c4bf:a30a])
+        by andre.telenet-ops.be with bizsmtp
+        id lK1o2700t3sdbfl01K1o0j; Mon, 20 Jun 2022 09:01:49 +0200
+Received: from rox.of.borg ([192.168.97.57])
+        by ramsan.of.borg with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        (Exim 4.93)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1o3BPw-004lue-9r; Mon, 20 Jun 2022 09:01:48 +0200
+Received: from geert by rox.of.borg with local (Exim 4.93)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1o3BPv-00Cg83-Mw; Mon, 20 Jun 2022 09:01:47 +0200
+From:   Geert Uytterhoeven <geert+renesas@glider.be>
+To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
         Andrew Morton <akpm@linux-foundation.org>
-References: <20220616210518.125287-1-mike.kravetz@oracle.com>
- <20220616210518.125287-2-mike.kravetz@oracle.com>
- <YqyMhmAjrQ4C+EyA@xz-m1.local> <Yqy3LZUOdH5GsZ9j@monkey>
-From:   Baolin Wang <baolin.wang@linux.alibaba.com>
-In-Reply-To: <Yqy3LZUOdH5GsZ9j@monkey>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Cc:     Jonathan Cameron <Jonathan.Cameron@huawei.com>,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        kernel test robot <lkp@intel.com>,
+        Christoph Hellwig <hch@lst.de>
+Subject: [PATCH v2] sh: Convert nommu io{re,un}map() to static inline functions
+Date:   Mon, 20 Jun 2022 09:01:43 +0200
+Message-Id: <8d1b1766260961799b04035e7bc39a7f59729f72.1655708312.git.geert+renesas@glider.be>
+X-Mailer: git-send-email 2.25.1
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+Recently, nommu iounmap() was converted from a static inline function to
+a macro again, basically reverting commit 4580ba4ad2e6b8dd ("sh: Convert
+iounmap() macros to inline functions").  With -Werror, this leads to
+build failures like:
 
+    drivers/iio/adc/xilinx-ams.c: In function ‘ams_iounmap_ps’:
+    drivers/iio/adc/xilinx-ams.c:1195:14: error: unused variable ‘ams’ [-Werror=unused-variable]
+     1195 |  struct ams *ams = data;
+	  |              ^~~
 
-On 6/18/2022 1:17 AM, Mike Kravetz wrote:
-> On 06/17/22 10:15, Peter Xu wrote:
->> Hi, Mike,
->>
->> On Thu, Jun 16, 2022 at 02:05:15PM -0700, Mike Kravetz wrote:
->>> @@ -6877,6 +6896,39 @@ pte_t *huge_pte_offset(struct mm_struct *mm,
->>>   	return (pte_t *)pmd;
->>>   }
->>>   
->>> +/*
->>> + * Return a mask that can be used to update an address to the last huge
->>> + * page in a page table page mapping size.  Used to skip non-present
->>> + * page table entries when linearly scanning address ranges.  Architectures
->>> + * with unique huge page to page table relationships can define their own
->>> + * version of this routine.
->>> + */
->>> +unsigned long hugetlb_mask_last_page(struct hstate *h)
->>> +{
->>> +	unsigned long hp_size = huge_page_size(h);
->>> +
->>> +	switch (hp_size) {
->>> +	case P4D_SIZE:
->>> +		return PGDIR_SIZE - P4D_SIZE;
->>> +	case PUD_SIZE:
->>> +		return P4D_SIZE - PUD_SIZE;
->>> +	case PMD_SIZE:
->>> +		return PUD_SIZE - PMD_SIZE;
->>> +	default:
->>
->> Should we add a WARN_ON_ONCE() if it should never trigger?
->>
-> 
-> Sure.  I will add this.
-> 
->>> +		break; /* Should never happen */
->>> +	}
->>> +
->>> +	return ~(0UL);
->>> +}
->>> +
->>> +#else
->>> +
->>> +/* See description above.  Architectures can provide their own version. */
->>> +__weak unsigned long hugetlb_mask_last_page(struct hstate *h)
->>> +{
->>> +	return ~(0UL);
->>
->> I'm wondering whether it's better to return 0 rather than ~0 by default.
->> Could an arch with !CONFIG_ARCH_WANT_GENERAL_HUGETLB wrongly skip some
->> valid address ranges with ~0, or perhaps I misread?
-> 
-> Thank you, thank you, thank you Peter!
-> 
-> Yes, the 'default' return for hugetlb_mask_last_page() should be 0.  If
-> there is no 'optimization', we do not want to modify the address so we
-> want to OR with 0 not ~0.  My bad, I must have been thinking AND instead
-> of OR.
-> 
-> I will change here as well as in Baolin's patch.
+Fix this by replacing the macros for ioremap() and iounmap() by static
+inline functions, based on <asm-generic/io.h>.
 
-Ah, I also overlooked this. Thanks Peter, and thanks Mike for updating.
+Reported-by: kernel test robot <lkp@intel.com>
+Reported-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+Fixes: 13f1fc870dd74713 ("sh: move the ioremap implementation out of line")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+---
+v2:
+  - Add Acked-by, Reviewed-by.
+
+This is actually the third time this change was made, as Christoph
+converted iounmap() to a macro before in commit 98c90e5ea34e98bd ("sh:
+remove __iounmap"), reverting commit 733f0025f0fb43e3 ("sh: prevent
+warnings when using iounmap").
+
+Probably sh-nommu should include <asm-generic/io.h>, but that would
+require a lot more changes.
+---
+ arch/sh/include/asm/io.h | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index cf9a3ec32406f856..fba90e670ed41d48 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -271,8 +271,12 @@ static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
+ #endif /* CONFIG_HAVE_IOREMAP_PROT */
+ 
+ #else /* CONFIG_MMU */
+-#define iounmap(addr)		do { } while (0)
+-#define ioremap(offset, size)	((void __iomem *)(unsigned long)(offset))
++static inline void __iomem *ioremap(phys_addr_t offset, size_t size)
++{
++	return (void __iomem *)(unsigned long)offset;
++}
++
++static inline void iounmap(volatile void __iomem *addr) { }
+ #endif /* CONFIG_MMU */
+ 
+ #define ioremap_uc	ioremap
+-- 
+2.25.1
+
