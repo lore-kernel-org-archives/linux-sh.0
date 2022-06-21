@@ -2,28 +2,55 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 58F6FCCA473
-	for <linux-sh@archiver.kernel.org>; Tue, 21 Jun 2022 06:04:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D6B40C433EF
+	for <linux-sh@archiver.kernel.org>; Tue, 21 Jun 2022 17:39:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1345437AbiFUGD7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 21 Jun 2022 02:03:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35818 "EHLO
+        id S1352469AbiFURjt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 21 Jun 2022 13:39:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38846 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233729AbiFUGD6 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Jun 2022 02:03:58 -0400
-Received: from foss.arm.com (foss.arm.com [217.140.110.172])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 718501CB39;
-        Mon, 20 Jun 2022 23:03:56 -0700 (PDT)
-Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 17CAF139F;
-        Mon, 20 Jun 2022 23:03:56 -0700 (PDT)
-Received: from FVFF77S0Q05N (unknown [10.57.69.153])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 399B33F5A1;
-        Mon, 20 Jun 2022 23:03:52 -0700 (PDT)
-Date:   Tue, 21 Jun 2022 07:03:44 +0100
-From:   Mark Rutland <mark.rutland@arm.com>
+        with ESMTP id S1352406AbiFURjr (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Jun 2022 13:39:47 -0400
+Received: from mail-pj1-x1029.google.com (mail-pj1-x1029.google.com [IPv6:2607:f8b0:4864:20::1029])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D6DCB1C10F;
+        Tue, 21 Jun 2022 10:39:46 -0700 (PDT)
+Received: by mail-pj1-x1029.google.com with SMTP id h9-20020a17090a648900b001ecb8596e43so4983675pjj.5;
+        Tue, 21 Jun 2022 10:39:46 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=mm0iD6HT9Mx8CXXEjxAdU1TvUV4Ez2s5c81pc2wmXwg=;
+        b=Cpkt5sgP0fqAe+Y1iRtsx8qe+2jJ5InANoetmpK6UNu1KPb9jca4X2hLmzTTN1WqPF
+         AU0N56w++P4mZB3mMlojr8wWM6bXtyDQsj/chEau1PJEWu/RbPlbW8FkMaEMDcuPhG5r
+         NO9U1XfR4Ff0tZM0w5zbEK3DXlzrhHV7B8JwF4bM67grhmMuaBqYmjgCMyeRoaWlti7C
+         oSeeejFFPjPSIRjK9+1Rgrl2zWynXbFQRm7FQYkAlfB/wIgHuMlRiuxIjmRIwu5lXPCE
+         0Z5+P7a9Rw480gqVmvlY0WIZSXBMO/pcQ7u54RbQuXhy+qhX+mUtGNe0SZOZMRjQfaGC
+         hf8Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=mm0iD6HT9Mx8CXXEjxAdU1TvUV4Ez2s5c81pc2wmXwg=;
+        b=RUgcl7rL7IdSWWFD6qs7/DMLSajLQ+ND+DI93mFzP9GEELexvxELPkYsLRWV5VoscD
+         m2iCPeSdzxxaIRlbJTW4a+UyTqgRHD728fEw0sWpp+5zLPB3Dake2f2Ea1kngNQSgPww
+         ZS44z3Wk73d25ppXRGUF2R8WuhyT46KcAdbY32skeQUHbFKPEVaQ+8HCHifbIY/KOW2E
+         at4w1pMRd/QekuKCoh+xldrTopHr8lhjfbT50bEgHzINzGnKQEN1KOUumy2BlrwJFk6t
+         8T4ZLWJT2JtUyKMIFN4lEk/lPZLdgz9vPqtrhbiyPoQpxUtScczfdZArH4hCqryDbSN4
+         8uwA==
+X-Gm-Message-State: AJIora/Nuv4KcXctTMUE/b3dQKALG8795vuSP86e3LwjKxKnIMvwqjIQ
+        fYg0KsDJDM3u9ZxRPKDui9s=
+X-Google-Smtp-Source: AGRyM1tK7vJkGhs4aAwjMWhpAIqeIo4Bvt11WfobTLLuR1i8TRAIfeLZcBg7z4nUYaKeHpF0qxaBHg==
+X-Received: by 2002:a17:90a:2e02:b0:1ea:c661:7507 with SMTP id q2-20020a17090a2e0200b001eac6617507mr43707102pjd.133.1655833186113;
+        Tue, 21 Jun 2022 10:39:46 -0700 (PDT)
+Received: from localhost ([172.85.181.54])
+        by smtp.gmail.com with ESMTPSA id cp1-20020a170902e78100b00168f329b282sm10960496plb.155.2022.06.21.10.39.45
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 21 Jun 2022 10:39:45 -0700 (PDT)
+Date:   Tue, 21 Jun 2022 10:39:44 -0700
+From:   Yury Norov <yury.norov@gmail.com>
 To:     Alexander Lobakin <alexandr.lobakin@intel.com>
-Cc:     Arnd Bergmann <arnd@arndb.de>, Yury Norov <yury.norov@gmail.com>,
+Cc:     Mark Rutland <mark.rutland@arm.com>, Arnd Bergmann <arnd@arndb.de>,
         Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         Matt Turner <mattst88@gmail.com>,
         Brian Cain <bcain@quicinc.com>,
@@ -44,7 +71,7 @@ Cc:     Arnd Bergmann <arnd@arndb.de>, Yury Norov <yury.norov@gmail.com>,
         linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
 Subject: Re: [PATCH v3 0/7] bitops: let optimize out non-atomic bitops on
  compile-time constants
-Message-ID: <YrFfQOSrqpX/qjhd@FVFF77S0Q05N>
+Message-ID: <YrICYCW0fCb0Rh8/@yury-laptop>
 References: <20220617144031.2549432-1-alexandr.lobakin@intel.com>
  <YrCB/rz3RM6TCjij@FVFF77S0Q05N>
  <20220620150855.2630784-1-alexandr.lobakin@intel.com>
@@ -61,6 +88,14 @@ On Mon, Jun 20, 2022 at 05:08:55PM +0200, Alexander Lobakin wrote:
 > Date: Mon, 20 Jun 2022 15:19:42 +0100
 > 
 > > On Fri, Jun 17, 2022 at 04:40:24PM +0200, Alexander Lobakin wrote:
+> > > So, in order to let the compiler optimize out such cases, expand the
+> > > test_bit() and __*_bit() definitions with a compile-time condition
+> > > check, so that they will pick the generic C non-atomic bitop
+> > > implementations when all of the arguments passed are compile-time
+> > > constants, which means that the result will be a compile-time
+> > > constant as well and the compiler will produce more efficient and
+> > > simple code in 100% cases (no changes when there's at least one
+> > > non-compile-time-constant argument).
 > > 
 > > > The savings are architecture, compiler and compiler flags dependent,
 > > > for example, on x86_64 -O2:
@@ -99,27 +134,57 @@ On Mon, Jun 20, 2022 at 05:08:55PM +0200, Alexander Lobakin wrote:
 > `volatile` from gen[eric]_test_bit(), so there was an impact for
 > non-constant cases as well.
 > +5 Kb sounds bad tho. Do you have CONFIG_TEST_BITMAP enabled, does
-> it work? 
-
-I didn't have it enabled, but I tried that just nw with GCC 12.1.0 and it
-builds cleanly, and test_bitmap_const_eval() gets optimized away entirely. If i
-remove the `static` from that, GCC generates:
-
-| <test_bitmap_const_eval>:
-|     paciasp
-|     autiasp
-|     ret
-
-... which is a trivial stub.
-
-> Probably the same reason as for m68k, more constant
+> it work? Probably the same reason as for m68k, more constant
 > optimization -> more aggressive inlining or inlining rebalance ->
 > larger code. OTOH I've no idea why sometimes compiler decides to
 > uninline really tiny functions where due to this patch series some
 > bitops have been converted to constants, like it goes on m68k.
+> 
+> > 
+> > Overall that's mostly hidden in the Image size, due to 64K alignment and
+> > padding requirements:
+> > 
+> >   Toolchain      Before      After       Difference
+> > 
+> >   GCC 8.5.0      36178432    36178432    0
+> >   GCC 9.3.0      36112896    36112896    0
+> >   GCC 10.3.0     36442624    36377088    -65536
+> >   GCC 11.1.0     36311552    36377088    +65536
+> >   GCC 11.3.0     36311552    36311552    0
+> >   GCC 12.1.0     36377088    36377088    0
+> > 
+> >   LLVM 12.0.1    31418880    31418880    0
+> >   LLVM 13.0.1    31418880    31418880    0
+> >   LLVM 14.0.0    31218176    31218176    0
+> > 
+> > ... so aside from the blip around GCC 10.3.0 and 11.1.0, there's not a massive
+> > change overall (due to 64KiB alignment restrictions for portions of the kernel
+> > Image).
 
-Hmm.... it'd be interesting to take a look at a few architectures and see what
-the common case is.
+I gave it a try on v5.19-rc3 for arm64 with my default GCC 11.2, and it's:
+add/remove: 89/33 grow/shrink: 1629/966 up/down: 51456/-46064 (5392)
+
+Which is not great in terms of layout size. But I don't think we should
+focus too much on those numbers. The goal of the series is not to shrink
+the image; the true goal is to provide more information to the compiler
+in a hope that it will make a better decision regarding optimizations.
+
+Looking at results provided by Mark, both GCC and LLVM have a tendency
+to inline and use other techniques that increase the image more
+aggressively in newer releases, comparing to old ones. From this
+perspective, unless we find some terribly wrong behavior, I'm OK with
++5K for the Image, because I trust my compiler and believe it spent
+those 5K wisely.
+
+For the reasons said above, I think we shouldn't disable const
+bitops for -Os build.
+
+I think this series has total positive impact because it adds a lot
+of information for compiler with just a few lines of code.
+
+If no objections, I think it's good to try it in -next. Alexander,
+would you like me to fix gen/generic typo in comment and take it in
+bitmap-for-next, or you'd prefer to send v4?
 
 Thanks,
-Mark.
+Yury
