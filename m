@@ -2,197 +2,71 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D56A4CCA481
-	for <linux-sh@archiver.kernel.org>; Wed, 22 Jun 2022 16:05:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F2AE5C433EF
+	for <linux-sh@archiver.kernel.org>; Thu, 23 Jun 2022 15:35:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1376446AbiFVQFT (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 22 Jun 2022 12:05:19 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39286 "EHLO
+        id S229992AbiFWPfc (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 23 Jun 2022 11:35:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45588 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1376435AbiFVQEz (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 22 Jun 2022 12:04:55 -0400
-Received: from mga09.intel.com (mga09.intel.com [134.134.136.24])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0696134BA1;
-        Wed, 22 Jun 2022 09:04:32 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1655913873; x=1687449873;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=eG4q6c4UvYGtzxug36fSTUwHXCGqtjeRSHre942YGGg=;
-  b=llCY6TcTc2B4dCCWVQhv81yKwEdAtn5yadjhiwtGPA2l/qyoghHhxrd1
-   58Z4Na2DLG2+ZhTMrx76BJo0TP7j0a3agC8bITw6touar09aTBRlbgNfQ
-   ZqQsT96X7p/X4CTRPUj3B/yjdCm89Kik0CtOIJdghFGVmbhl5jLPNKFwM
-   NJ4tuZJN9CafMU2Bb/w4e/3MGkZj6YVUmNTXWL7rfnkyqzpyKV+ZqcUSK
-   3PpfnYj2mdU2IEd8nxFggTf+BCCmgscpB80AhNrSu6U/KuqigKxY/6vv3
-   hbw+poKqsbtk6Y+gjsoW9KL2XpyeZiPFIWDSpyvqVf+3nMn12NPH+fy+i
-   g==;
-X-IronPort-AV: E=McAfee;i="6400,9594,10386"; a="281191468"
-X-IronPort-AV: E=Sophos;i="5.92,212,1650956400"; 
-   d="scan'208";a="281191468"
-Received: from orsmga005.jf.intel.com ([10.7.209.41])
-  by orsmga102.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 22 Jun 2022 09:04:27 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.92,212,1650956400"; 
-   d="scan'208";a="764940851"
-Received: from irvmail001.ir.intel.com ([10.43.11.63])
-  by orsmga005.jf.intel.com with ESMTP; 22 Jun 2022 09:04:20 -0700
-Received: from newjersey.igk.intel.com (newjersey.igk.intel.com [10.102.20.203])
-        by irvmail001.ir.intel.com (8.14.3/8.13.6/MailSET/Hub) with ESMTP id 25MG4Ip9006187;
-        Wed, 22 Jun 2022 17:04:18 +0100
-From:   Alexander Lobakin <alexandr.lobakin@intel.com>
-To:     Arnd Bergmann <arnd@arndb.de>, Yury Norov <yury.norov@gmail.com>
-Cc:     Alexander Lobakin <alexandr.lobakin@intel.com>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Matt Turner <mattst88@gmail.com>,
-        Brian Cain <bcain@quicinc.com>,
-        "Geert Uytterhoeven" <geert@linux-m68k.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        Kees Cook <keescook@chromium.org>,
-        "Peter Zijlstra (Intel)" <peterz@infradead.org>,
-        Marco Elver <elver@google.com>, Borislav Petkov <bp@suse.de>,
-        Tony Luck <tony.luck@intel.com>,
-        "Maciej Fijalkowski" <maciej.fijalkowski@intel.com>,
-        Jesse Brandeburg <jesse.brandeburg@intel.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Nathan Chancellor <nathan@kernel.org>,
-        Nick Desaulniers <ndesaulniers@google.com>,
-        Tom Rix <trix@redhat.com>, linux-alpha@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-arch@vger.kernel.org,
-        linux-kernel@vger.kernel.org, llvm@lists.linux.dev
-Subject: Re: [PATCH v4 8/8] lib: test_bitmap: add compile-time optimization/evaluations assertions
-Date:   Wed, 22 Jun 2022 18:04:15 +0200
-Message-Id: <20220622160415.589430-1-alexandr.lobakin@intel.com>
-X-Mailer: git-send-email 2.36.1
-In-Reply-To: <20220621191553.69455-9-alexandr.lobakin@intel.com>
-References: <20220621191553.69455-1-alexandr.lobakin@intel.com> <20220621191553.69455-9-alexandr.lobakin@intel.com>
+        with ESMTP id S229863AbiFWPfb (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 23 Jun 2022 11:35:31 -0400
+Received: from mail-wm1-x32b.google.com (mail-wm1-x32b.google.com [IPv6:2a00:1450:4864:20::32b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 498432F035
+        for <linux-sh@vger.kernel.org>; Thu, 23 Jun 2022 08:35:30 -0700 (PDT)
+Received: by mail-wm1-x32b.google.com with SMTP id l126-20020a1c2584000000b0039c1a10507fso1701854wml.1
+        for <linux-sh@vger.kernel.org>; Thu, 23 Jun 2022 08:35:30 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=message-id:date:mime-version:from:to:subject
+         :content-transfer-encoding;
+        bh=CwUiQjxiKnD5n9/TwKt0ZRYsg9QRmrX5ICreA5WOZAc=;
+        b=LB0H1owfhgrk9BYhuv24OlnT3SQ5d6kx4Jl25njZiYFhlrbet+dmWa12A1A6rCYd2p
+         gledzXy8bNxIAVGsMp7P18+BrQugG20nNuWYbi0fxhV3bvDH+rHvMH5wE2y7I5sGLUH7
+         yLTS9nn81t96jHg4gqVhEdxUPndz5xHj3wXtCJNuVUGa8HS/qNjL1F4O1jJLBeP3idcj
+         +v3of0p3jo3CBp4nRApwE+7JafTHExUhIP9Pf87hMClgvVackfiXRFakCVmuz4XpM+yI
+         ACojdFPRmVT/WdtS690SSXQZhEddothHejZLWJmoYxyjMW2DwfI18UDbfPHdbj2O9UcC
+         NSaw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:message-id:date:mime-version:from:to:subject
+         :content-transfer-encoding;
+        bh=CwUiQjxiKnD5n9/TwKt0ZRYsg9QRmrX5ICreA5WOZAc=;
+        b=z2yGh3QQSRVCTv/E5j5Dr9gPXq7afDal5zQSgUpq2dBJoXmRR610Bv2/vfmVyMri5T
+         Sh8/D8VMZzsOFDzJs6Kn6jSHKoqMYR/nH0g1ZbujWyutxq/+G7cGXekw/tCmtaKlzLOF
+         KnJbBUHpCzCml8E1ZrzHF4XDzit6X91tEWQhHOemA9kJybMevOWnNw3KxkuixXqSOroV
+         PwJAvl5iWA3Rz4P2O32u/h+j5VkoPrIkUhSVBy0m5Y4apc32mEE0LRUlqlS0DBvAD29b
+         hKZffgRkyt8PoTNbkXkzf40YQnVkR1bc4tkTr/qh0ZOUuFfqD9dW8zFeNXmAfjdIubLa
+         mTlw==
+X-Gm-Message-State: AJIora/8BBtmWtND72VEG5wp0nO7ZB/ATeLKfY5tzebs0rswSZzWikFU
+        Fm31h3cvwGh/GpTGSJ74/P9Pstxxz+w=
+X-Google-Smtp-Source: AGRyM1u4vXYywNwlNuXAbNMeQ2Lam9E7QJIri8Cv93LZdu5vK0jXKeK94tX8fT04uAh1BZyam0WtrQ==
+X-Received: by 2002:a05:600c:4ed2:b0:397:7493:53e6 with SMTP id g18-20020a05600c4ed200b00397749353e6mr4906937wmq.61.1655998528612;
+        Thu, 23 Jun 2022 08:35:28 -0700 (PDT)
+Received: from DESKTOP-DLIJ48C ([39.42.130.216])
+        by smtp.gmail.com with ESMTPSA id y6-20020a5d6206000000b0021350f7b22esm25546213wru.109.2022.06.23.08.35.27
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1 cipher=ECDHE-ECDSA-AES128-SHA bits=128/128);
+        Thu, 23 Jun 2022 08:35:28 -0700 (PDT)
+Message-ID: <62b48840.1c69fb81.f0534.1b18@mx.google.com>
+Date:   Thu, 23 Jun 2022 08:35:28 -0700 (PDT)
+X-Google-Original-Date: 23 Jun 2022 11:35:29 -0400
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+From:   scott.crosslandestimation@gmail.com
+To:     linux-sh@vger.kernel.org
+Subject: Quote To Bid
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Alexander Lobakin <alexandr.lobakin@intel.com>
-Date: Tue, 21 Jun 2022 21:15:53 +0200
+Hi,=0D=0A=0D=0AWe provide estimation & quantities takeoff service=
+s. We are providing 98-100 accuracy in our estimates and take-off=
+s. Please tell us if you need any estimating services regarding y=
+our projects.=0D=0A=0D=0ASend over the plans and mention the exac=
+t scope of work and shortly we will get back with a proposal on w=
+hich our charges and turnaround time will be mentioned=0D=0A=0D=0A=
+You may ask for sample estimates and take-offs. Thanks.=0D=0A=0D=0A=
+Kind Regards=0D=0AScott March=0D=0ACrossland Estimating, INC=20
 
-> Add a function to the bitmap test suite, which will ensure that
-> compilers are able to evaluate operations performed by the
-> bitops/bitmap helpers to compile-time constants when all of the
-> arguments are compile-time constants as well, or trigger a build
-> bug otherwise. This should work on all architectures and all the
-> optimization levels supported by Kbuild.
-> The function doesn't perform any runtime tests and gets optimized
-> out to nothing after passing the build assertions.
-> 
-> Suggested-by: Yury Norov <yury.norov@gmail.com>
-> Signed-off-by: Alexander Lobakin <alexandr.lobakin@intel.com>
-> Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-> ---
->  lib/test_bitmap.c | 45 +++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 45 insertions(+)
-> 
-> diff --git a/lib/test_bitmap.c b/lib/test_bitmap.c
-> index d5923a640457..3a7b09b82794 100644
-> --- a/lib/test_bitmap.c
-> +++ b/lib/test_bitmap.c
-> @@ -869,6 +869,50 @@ static void __init test_bitmap_print_buf(void)
->  	}
->  }
->  
-> +static void __init test_bitmap_const_eval(void)
-> +{
-> +	DECLARE_BITMAP(bitmap, BITS_PER_LONG);
-> +	unsigned long initvar = BIT(2);
-> +	unsigned long bitopvar = 0;
-> +	unsigned long var = 0;
-> +	int res;
-> +
-> +	/*
-> +	 * Compilers must be able to optimize all of those to compile-time
-> +	 * constants on any supported optimization level (-O2, -Os) and any
-> +	 * architecture. Otherwise, trigger a build bug.
-> +	 * The whole function gets optimized out then, there's nothing to do
-> +	 * in runtime.
-> +	 */
-> +
-> +	/* Equals to `unsigned long bitmap[1] = { BIT(5), }` */
-> +	bitmap_clear(bitmap, 0, BITS_PER_LONG);
-> +	if (!test_bit(7, bitmap))
-> +		bitmap_set(bitmap, 5, 1);
-
-So for now, when building for s390, Clang (up to the latest Git
-snapshot) generates some incorrect code here.
-It does expand both test_bit() and bitmap_set() to const_test_bit()
-and const___set_bit(), but at the same time thinks that starting
-from this point, @bitmap and @bitopvar (???) are *not* constants
-and fails the assertions below, which is not true and weird.
-Any other architecture + compiler couples work fine, including
-s390 on GCC.
-So would it be acceptable for now to do:
-
-	/* Equals to `unsigned long bitmap[1] = { BIT(5), }` */
-	bitmap_clear(bitmap, 0, BITS_PER_LONG);
-	/*
-	 * Some comment saying that this is currently broken
-	 * on s390 + Clang
-	 */
-#if !(defined(__s390__) && defined(__clang__))
-	if (!test_bit(7, bitmap))
-		bitmap_set(bitmap, 5, 1);
-#endif
-
-	/* Equals to `unsigned long bitopvar = BIT(20)` */
-	__change_bit(31, &bitopvar);
-	bitmap_shift_right(&bitopvar, &bitopvar, 11, BITS_PER_LONG);
-
-[...]
-
-or there could be any better solutions?
-
-(+Cc LLVM folks)
-
-> +
-> +	/* Equals to `unsigned long bitopvar = BIT(20)` */
-> +	__change_bit(31, &bitopvar);
-> +	bitmap_shift_right(&bitopvar, &bitopvar, 11, BITS_PER_LONG);
-> +
-> +	/* Equals to `unsigned long var = BIT(25)` */
-> +	var |= BIT(25);
-> +	if (var & BIT(0))
-> +		var ^= GENMASK(9, 6);
-> +
-> +	/* __const_hweight<32|64>(BIT(5)) == 1 */
-> +	res = bitmap_weight(bitmap, 20);
-> +	BUILD_BUG_ON(!__builtin_constant_p(res));
-> +
-> +	/* !(BIT(31) & BIT(18)) == 1 */
-> +	res = !test_bit(18, &bitopvar);
-> +	BUILD_BUG_ON(!__builtin_constant_p(res));
-> +
-> +	/* BIT(2) & GENMASK(14, 8) == 0 */
-> +	BUILD_BUG_ON(!__builtin_constant_p(initvar & GENMASK(14, 8)));
-> +	/* ~BIT(25) */
-> +	BUILD_BUG_ON(!__builtin_constant_p(~var));
-> +}
-> +
->  static void __init selftest(void)
->  {
->  	test_zero_clear();
-> @@ -884,6 +928,7 @@ static void __init selftest(void)
->  	test_for_each_set_clump8();
->  	test_bitmap_cut();
->  	test_bitmap_print_buf();
-> +	test_bitmap_const_eval();
->  }
->  
->  KSTM_MODULE_LOADERS(test_bitmap);
-> -- 
-> 2.36.1
-
-Thanks,
-Olek
