@@ -2,104 +2,179 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20D22CCA481
-	for <linux-sh@archiver.kernel.org>; Fri, 24 Jun 2022 12:51:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 97462CCA486
+	for <linux-sh@archiver.kernel.org>; Sat, 25 Jun 2022 03:08:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231787AbiFXMv1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 24 Jun 2022 08:51:27 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59656 "EHLO
+        id S232453AbiFYDIQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 24 Jun 2022 23:08:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51800 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231747AbiFXMvY (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 24 Jun 2022 08:51:24 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D9044ECE5;
-        Fri, 24 Jun 2022 05:51:23 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        with ESMTP id S232365AbiFYDHn (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 24 Jun 2022 23:07:43 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5C65A68026;
+        Fri, 24 Jun 2022 20:07:39 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id B0ADA21A8B;
-        Fri, 24 Jun 2022 12:51:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1656075079; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=/ufyLq98aM5sPCb/A9DZ82OxnbOu+snINKekaV1aDRU=;
-        b=z/SG5u8nE+UvZJM1KMXfsdsJS4gFo9gKNUD1jqnZCEfQktOpJL+HUho2xWseFYUUxljXxm
-        4Vbo35uQa3H7cCMHdFOtFc7bAQUGtQsQgAEW5RP+6bwSdbrCaZOzz/8N0BYLpyE6Dp73T/
-        bEaYS6aVjoMfSGXUcWCoGG+0KRxQxvM=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1656075079;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=/ufyLq98aM5sPCb/A9DZ82OxnbOu+snINKekaV1aDRU=;
-        b=cITdCFre6nFiuMrbQP1LlPRDxLJEO+oY2+mpe4FddCjNeDzFUXzaMlRw1mDzLIdh6rfNdW
-        DQtygG0C3l0HHwAw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9F7C413ACA;
-        Fri, 24 Jun 2022 12:51:19 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id SAvqJkeztWI7bwAAMHmgww
-        (envelope-from <bp@suse.de>); Fri, 24 Jun 2022 12:51:19 +0000
-Date:   Fri, 24 Jun 2022 14:51:15 +0200
-From:   Borislav Petkov <bp@suse.de>
-To:     Alexander Lobakin <alexandr.lobakin@intel.com>
-Cc:     Arnd Bergmann <arnd@arndb.de>, Yury Norov <yury.norov@gmail.com>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Matt Turner <mattst88@gmail.com>,
-        Brian Cain <bcain@quicinc.com>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        Kees Cook <keescook@chromium.org>,
-        "Peter Zijlstra (Intel)" <peterz@infradead.org>,
-        Marco Elver <elver@google.com>,
-        Tony Luck <tony.luck@intel.com>,
-        Maciej Fijalkowski <maciej.fijalkowski@intel.com>,
-        Jesse Brandeburg <jesse.brandeburg@intel.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Nathan Chancellor <nathan@kernel.org>,
-        Nick Desaulniers <ndesaulniers@google.com>,
-        Tom Rix <trix@redhat.com>, kernel test robot <lkp@intel.com>,
-        linux-alpha@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-arch@vger.kernel.org, llvm@lists.linux.dev,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v5 0/9] bitops: let optimize out non-atomic bitops on
- compile-time constants
-Message-ID: <YrWzQ6GleophO75b@zn.tnic>
-References: <20220624121313.2382500-1-alexandr.lobakin@intel.com>
+        by ams.source.kernel.org (Postfix) with ESMTPS id 1C2ADB82475;
+        Sat, 25 Jun 2022 03:07:38 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B2182C341CC;
+        Sat, 25 Jun 2022 03:07:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1656126456;
+        bh=oXHgCaP4HoPf+EWVcl07MPhIxJZH52Q6LkxiX0QDRik=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=FU+dZqhPCI7WaKDA+AjLnOS95m8QPJ0z8ReiNhcC2P4NI+ZrmxNZzDJ5YJTkaoQPc
+         SatgzVUTcSgwyHrsucOh+GM4g3/1+h+GgSSKqGqW1IBs4BT6j/vgsdecXBdHRGrd/2
+         AqxR5wuq64YrbhfjN2MwpcKf3vhLfmFGvSGSPpQJKPSvpHYebZMLXmOJS28s2TD7Ve
+         tSI/XbxbVWusqsHNpvvUVuXqKWV5X3nWDwd3AKdS2EZyyoyoyyVia9ScMoTkLyaHef
+         IZZEeQ2fgwO8fwjgwOcJcINmgNazhx1HiRXE5XjDpGoZob6l6d4Fa9hcpl/FGH0gH1
+         y2/GNgWsUtZKQ==
+Received: by mail-vs1-f46.google.com with SMTP id j6so4003947vsi.0;
+        Fri, 24 Jun 2022 20:07:36 -0700 (PDT)
+X-Gm-Message-State: AJIora+L/I8qzYYGqACA9sPMVCWF03KAQmylgjMtCh/4w05cfILkhlqw
+        3+GkJifoO+lqj8vGEffm2A6BMQlhqU7Tssmu+HI=
+X-Google-Smtp-Source: AGRyM1vKaBnKP+OKs0X53+qz3soArX9HkvW+CKQD7jqShPo7H3ehVP4Gjy9lyocTRtcrWI2zFmWCsaDUISHvTXAw0RU=
+X-Received: by 2002:a05:6102:3e93:b0:353:a8fb:e922 with SMTP id
+ m19-20020a0561023e9300b00353a8fbe922mr711833vsv.51.1656126455677; Fri, 24 Jun
+ 2022 20:07:35 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20220624121313.2382500-1-alexandr.lobakin@intel.com>
+References: <20220624044339.1533882-1-anshuman.khandual@arm.com> <20220624044339.1533882-18-anshuman.khandual@arm.com>
+In-Reply-To: <20220624044339.1533882-18-anshuman.khandual@arm.com>
+From:   Guo Ren <guoren@kernel.org>
+Date:   Sat, 25 Jun 2022 11:07:24 +0800
+X-Gmail-Original-Message-ID: <CAJF2gTQXpYggbN8vbv+XVkORDEBbUAJJaJsbN2ZtSbjGfem1Tg@mail.gmail.com>
+Message-ID: <CAJF2gTQXpYggbN8vbv+XVkORDEBbUAJJaJsbN2ZtSbjGfem1Tg@mail.gmail.com>
+Subject: Re: [PATCH V4 17/26] csky/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+To:     Anshuman Khandual <anshuman.khandual@arm.com>
+Cc:     Linux-MM <linux-mm@kvack.org>,
+        Christoph Hellwig <hch@infradead.org>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        linuxppc-dev <linuxppc-dev@lists.ozlabs.org>,
+        sparclinux <sparclinux@vger.kernel.org>,
+        "the arch/x86 maintainers" <x86@kernel.org>,
+        Openrisc <openrisc@lists.librecores.org>,
+        "open list:TENSILICA XTENSA PORT (xtensa)" 
+        <linux-xtensa@linux-xtensa.org>, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org,
+        Parisc List <linux-parisc@vger.kernel.org>,
+        linux-alpha@vger.kernel.org,
+        linux-riscv <linux-riscv@lists.infradead.org>,
+        linux-s390 <linux-s390@vger.kernel.org>,
+        linux-ia64@vger.kernel.org,
+        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
+        linux-m68k@lists.linux-m68k.org,
+        linux-snps-arc@lists.infradead.org,
+        Linux ARM <linux-arm-kernel@lists.infradead.org>,
+        linux-um@lists.infradead.org, linux-sh@vger.kernel.org,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Jun 24, 2022 at 02:13:04PM +0200, Alexander Lobakin wrote:
-> While I was working on converting some structure fields from a fixed
+For csky part.
 
-Can you please send your patchset once a week instead of spamming people
-with it every three days?
+Acked-by: Guo Ren <guoren@kernel.org>
 
-Thank you.
 
--- 
-Regards/Gruss,
-    Boris.
+On Fri, Jun 24, 2022 at 12:48 PM Anshuman Khandual
+<anshuman.khandual@arm.com> wrote:
+>
+> This enables ARCH_HAS_VM_GET_PAGE_PROT on the platform and exports standard
+> vm_get_page_prot() implementation via DECLARE_VM_GET_PAGE_PROT, which looks
+> up a private and static protection_map[] array. Subsequently all __SXXX and
+> __PXXX macros can be dropped which are no longer needed.
+>
+> Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+> Cc: linux-csky@vger.kernel.org
+> Cc: linux-kernel@vger.kernel.org
+> Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
+> ---
+>  arch/csky/Kconfig               |  1 +
+>  arch/csky/include/asm/pgtable.h | 18 ------------------
+>  arch/csky/mm/init.c             | 20 ++++++++++++++++++++
+>  3 files changed, 21 insertions(+), 18 deletions(-)
+>
+> diff --git a/arch/csky/Kconfig b/arch/csky/Kconfig
+> index 21d72b078eef..588b8a9c68ed 100644
+> --- a/arch/csky/Kconfig
+> +++ b/arch/csky/Kconfig
+> @@ -6,6 +6,7 @@ config CSKY
+>         select ARCH_HAS_GCOV_PROFILE_ALL
+>         select ARCH_HAS_SYNC_DMA_FOR_CPU
+>         select ARCH_HAS_SYNC_DMA_FOR_DEVICE
+> +       select ARCH_HAS_VM_GET_PAGE_PROT
+>         select ARCH_USE_BUILTIN_BSWAP
+>         select ARCH_USE_QUEUED_RWLOCKS
+>         select ARCH_WANT_FRAME_POINTERS if !CPU_CK610 && $(cc-option,-mbacktrace)
+> diff --git a/arch/csky/include/asm/pgtable.h b/arch/csky/include/asm/pgtable.h
+> index bbe245117777..229a5f4ad7fc 100644
+> --- a/arch/csky/include/asm/pgtable.h
+> +++ b/arch/csky/include/asm/pgtable.h
+> @@ -77,24 +77,6 @@
+>  #define MAX_SWAPFILES_CHECK() \
+>                 BUILD_BUG_ON(MAX_SWAPFILES_SHIFT != 5)
+>
+> -#define __P000 PAGE_NONE
+> -#define __P001 PAGE_READ
+> -#define __P010 PAGE_READ
+> -#define __P011 PAGE_READ
+> -#define __P100 PAGE_READ
+> -#define __P101 PAGE_READ
+> -#define __P110 PAGE_READ
+> -#define __P111 PAGE_READ
+> -
+> -#define __S000 PAGE_NONE
+> -#define __S001 PAGE_READ
+> -#define __S010 PAGE_WRITE
+> -#define __S011 PAGE_WRITE
+> -#define __S100 PAGE_READ
+> -#define __S101 PAGE_READ
+> -#define __S110 PAGE_WRITE
+> -#define __S111 PAGE_WRITE
+> -
+>  extern unsigned long empty_zero_page[PAGE_SIZE / sizeof(unsigned long)];
+>  #define ZERO_PAGE(vaddr)       (virt_to_page(empty_zero_page))
+>
+> diff --git a/arch/csky/mm/init.c b/arch/csky/mm/init.c
+> index bf2004aa811a..1bf7b2a748fd 100644
+> --- a/arch/csky/mm/init.c
+> +++ b/arch/csky/mm/init.c
+> @@ -197,3 +197,23 @@ void __init fixaddr_init(void)
+>         vaddr = __fix_to_virt(__end_of_fixed_addresses - 1) & PMD_MASK;
+>         fixrange_init(vaddr, vaddr + PMD_SIZE, swapper_pg_dir);
+>  }
+> +
+> +static pgprot_t protection_map[16] __ro_after_init = {
+> +       [VM_NONE]                                       = PAGE_NONE,
+> +       [VM_READ]                                       = PAGE_READ,
+> +       [VM_WRITE]                                      = PAGE_READ,
+> +       [VM_WRITE | VM_READ]                            = PAGE_READ,
+> +       [VM_EXEC]                                       = PAGE_READ,
+> +       [VM_EXEC | VM_READ]                             = PAGE_READ,
+> +       [VM_EXEC | VM_WRITE]                            = PAGE_READ,
+> +       [VM_EXEC | VM_WRITE | VM_READ]                  = PAGE_READ,
+> +       [VM_SHARED]                                     = PAGE_NONE,
+> +       [VM_SHARED | VM_READ]                           = PAGE_READ,
+> +       [VM_SHARED | VM_WRITE]                          = PAGE_WRITE,
+> +       [VM_SHARED | VM_WRITE | VM_READ]                = PAGE_WRITE,
+> +       [VM_SHARED | VM_EXEC]                           = PAGE_READ,
+> +       [VM_SHARED | VM_EXEC | VM_READ]                 = PAGE_READ,
+> +       [VM_SHARED | VM_EXEC | VM_WRITE]                = PAGE_WRITE,
+> +       [VM_SHARED | VM_EXEC | VM_WRITE | VM_READ]      = PAGE_WRITE
+> +};
+> +DECLARE_VM_GET_PAGE_PROT
+> --
+> 2.25.1
+>
 
-SUSE Software Solutions Germany GmbH
-GF: Ivo Totev, Andrew Myers, Andrew McDonald, Martje Boudien Moerman
-(HRB 36809, AG Nürnberg)
+
+--
+Best Regards
+ Guo Ren
+
+ML: https://lore.kernel.org/linux-csky/
