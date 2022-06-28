@@ -2,177 +2,176 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0280CC43334
-	for <linux-sh@archiver.kernel.org>; Tue, 28 Jun 2022 03:12:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AA113C43334
+	for <linux-sh@archiver.kernel.org>; Tue, 28 Jun 2022 09:59:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231970AbiF1DMt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 27 Jun 2022 23:12:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35558 "EHLO
+        id S1344155AbiF1J7G (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 28 Jun 2022 05:59:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56786 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232051AbiF1DMg (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 27 Jun 2022 23:12:36 -0400
-Received: from foss.arm.com (foss.arm.com [217.140.110.172])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id C929024F09;
-        Mon, 27 Jun 2022 20:12:34 -0700 (PDT)
-Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 71983150C;
-        Mon, 27 Jun 2022 20:12:34 -0700 (PDT)
-Received: from [10.162.42.7] (unknown [10.162.42.7])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 0D7AC3F792;
-        Mon, 27 Jun 2022 20:12:26 -0700 (PDT)
-Message-ID: <f26804cf-e342-5826-8f01-4b087a7baa63@arm.com>
-Date:   Tue, 28 Jun 2022 08:42:24 +0530
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.9.1
-Subject: Re: [PATCH V5 04/26] sparc/mm: Move protection_map[] inside the
- platform
-Content-Language: en-US
-To:     Sam Ravnborg <sam@ravnborg.org>
-Cc:     linux-mm@kvack.org, hch@infradead.org, christophe.leroy@csgroup.eu,
-        Andrew Morton <akpm@linux-foundation.org>,
-        linuxppc-dev@lists.ozlabs.org, sparclinux@vger.kernel.org,
-        x86@kernel.org, openrisc@lists.librecores.org,
-        linux-xtensa@linux-xtensa.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linux-alpha@vger.kernel.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-mips@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-um@lists.infradead.org,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        "David S. Miller" <davem@davemloft.net>
-References: <20220627045833.1590055-1-anshuman.khandual@arm.com>
- <20220627045833.1590055-5-anshuman.khandual@arm.com>
- <YrnlkLbyYSbI0EQw@ravnborg.org>
-From:   Anshuman Khandual <anshuman.khandual@arm.com>
-In-Reply-To: <YrnlkLbyYSbI0EQw@ravnborg.org>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+        with ESMTP id S1344164AbiF1J7B (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Jun 2022 05:59:01 -0400
+Received: from mail-ej1-x64a.google.com (mail-ej1-x64a.google.com [IPv6:2a00:1450:4864:20::64a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 082DE2E68F
+        for <linux-sh@vger.kernel.org>; Tue, 28 Jun 2022 02:59:00 -0700 (PDT)
+Received: by mail-ej1-x64a.google.com with SMTP id p7-20020a170906614700b006f87f866117so3424561ejl.21
+        for <linux-sh@vger.kernel.org>; Tue, 28 Jun 2022 02:58:59 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20210112;
+        h=date:message-id:mime-version:subject:from:to:cc;
+        bh=MrF5aaShEN6B7UjaZWC1TSqA3Z20kM5d1l/pRL2xCe0=;
+        b=kpac3JTWggRdiHBa1fh59jMkbCSb9OblwJN+RfZ/fjE4TPO76j/gmwnSWiMqirO/RA
+         MtTi0fzXw/WvbDygEa8XmyBZWWv2LuPU5ilmvRbvg+qDo7rJ6DcpD45MbwShAf9gYcT4
+         58D0kDspgGu8+ctdqSssbUA7tsc65VeY5aG4g876MM2ToFCKqdihwENvPWn0UTUi6yl4
+         lzT6hrrYw9uwZNPpHny3QZvwu6p21XsvqJUitxVvhT50c15CL3uUPY2xFITl5liDkI7H
+         p1WOWea+7N0BdGIRUCqRUJNLZg9qyiTWACWLDmZ4AN7CghQcExbp5T5IhlOXd+FnUH9J
+         UWbA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:message-id:mime-version:subject:from:to:cc;
+        bh=MrF5aaShEN6B7UjaZWC1TSqA3Z20kM5d1l/pRL2xCe0=;
+        b=Sh2rKb5pXL1UjLSy2Euhh6AQt+cbP+EFbZbjCQe4uOW/Q6up6RwDnlBmLZqKrqQhnf
+         uEw6k0ufbXYiP26SmOb1RIqXbv7PUzBm4n1L/Cn+/nKVPsE7Zyf4DbHQdAEVuYdFVTtf
+         +9GJq+3IAhAtjSKRi7N1t/UusANxCTfalmQOLvxDUSvlZzYlMnolG+J0AJ83GFKHsjY5
+         pK3u1WpeoBFOPSpE3OJA6DX5qBEWb9hUBQQUyAKtjgA58Qxhww7kBXS5bnUuAgl/G26l
+         vhvD22wRqV/xhgcIejxVqgptbeT6sE5o67xRn8wQWivFhWFaKtfaquNNeeypnS2zBEd8
+         Mo4g==
+X-Gm-Message-State: AJIora/xaZIp/g9HSYPER1EVXQG/zJcdvf5w0f2Fq8XJDHGrJQK+EPRv
+        VLX75FuIcDhB1LiSq9eZ25XEdXc2PA==
+X-Google-Smtp-Source: AGRyM1u3/0hvVVmDLacPPBFeWP8vaAFalfonAP5U/UldSOaNizgt1tCkuWBKHhsyPyl7bj7GKBvrytijQg==
+X-Received: from elver.muc.corp.google.com ([2a00:79e0:9c:201:3496:744e:315a:b41b])
+ (user=elver job=sendgmr) by 2002:a05:6402:1c09:b0:435:6562:e70d with SMTP id
+ ck9-20020a0564021c0900b004356562e70dmr21782463edb.203.1656410338427; Tue, 28
+ Jun 2022 02:58:58 -0700 (PDT)
+Date:   Tue, 28 Jun 2022 11:58:20 +0200
+Message-Id: <20220628095833.2579903-1-elver@google.com>
+Mime-Version: 1.0
+X-Mailer: git-send-email 2.37.0.rc0.161.g10f37bed90-goog
+Subject: [PATCH v2 00/13] perf/hw_breakpoint: Optimize for thousands of tasks
+From:   Marco Elver <elver@google.com>
+To:     elver@google.com, Peter Zijlstra <peterz@infradead.org>,
+        Frederic Weisbecker <frederic@kernel.org>,
+        Ingo Molnar <mingo@kernel.org>
+Cc:     Thomas Gleixner <tglx@linutronix.de>,
+        Arnaldo Carvalho de Melo <acme@kernel.org>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Alexander Shishkin <alexander.shishkin@linux.intel.com>,
+        Jiri Olsa <jolsa@redhat.com>,
+        Namhyung Kim <namhyung@kernel.org>,
+        Dmitry Vyukov <dvyukov@google.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        linuxppc-dev@lists.ozlabs.org, linux-perf-users@vger.kernel.org,
+        x86@kernel.org, linux-sh@vger.kernel.org,
+        kasan-dev@googlegroups.com, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+The hw_breakpoint subsystem's code has seen little change in over 10
+years. In that time, systems with >100s of CPUs have become common,
+along with improvements to the perf subsystem: using breakpoints on
+thousands of concurrent tasks should be a supported usecase.
 
+The breakpoint constraints accounting algorithm is the major bottleneck
+in doing so:
 
-On 6/27/22 22:44, Sam Ravnborg wrote:
-> Hi Anshuman,
-> 
-> On Mon, Jun 27, 2022 at 10:28:11AM +0530, Anshuman Khandual wrote:
->> This moves protection_map[] inside the platform and while here, also enable
->> ARCH_HAS_VM_GET_PAGE_PROT on 32 bit platforms via DECLARE_VM_GET_PAGE_PROT.
->>
->> Cc: "David S. Miller" <davem@davemloft.net>
->> Cc: sparclinux@vger.kernel.org
->> Cc: linux-kernel@vger.kernel.org
->> Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
->> ---
->>  arch/sparc/Kconfig                  |  2 +-
->>  arch/sparc/include/asm/pgtable_32.h | 19 -------------------
->>  arch/sparc/include/asm/pgtable_64.h | 19 -------------------
->>  arch/sparc/mm/init_32.c             | 20 ++++++++++++++++++++
->>  arch/sparc/mm/init_64.c             |  3 +++
->>  5 files changed, 24 insertions(+), 39 deletions(-)
->>
->> diff --git a/arch/sparc/Kconfig b/arch/sparc/Kconfig
->> index ba449c47effd..09f868613a4d 100644
->> --- a/arch/sparc/Kconfig
->> +++ b/arch/sparc/Kconfig
->> @@ -13,6 +13,7 @@ config 64BIT
->>  config SPARC
->>  	bool
->>  	default y
->> +	select ARCH_HAS_VM_GET_PAGE_PROT
->>  	select ARCH_MIGHT_HAVE_PC_PARPORT if SPARC64 && PCI
->>  	select ARCH_MIGHT_HAVE_PC_SERIO
->>  	select DMA_OPS
->> @@ -84,7 +85,6 @@ config SPARC64
->>  	select PERF_USE_VMALLOC
->>  	select ARCH_HAVE_NMI_SAFE_CMPXCHG
->>  	select HAVE_C_RECORDMCOUNT
->> -	select ARCH_HAS_VM_GET_PAGE_PROT
->>  	select HAVE_ARCH_AUDITSYSCALL
->>  	select ARCH_SUPPORTS_ATOMIC_RMW
->>  	select ARCH_SUPPORTS_DEBUG_PAGEALLOC
->> diff --git a/arch/sparc/include/asm/pgtable_32.h b/arch/sparc/include/asm/pgtable_32.h
->> index 4866625da314..8ff549004fac 100644
->> --- a/arch/sparc/include/asm/pgtable_32.h
->> +++ b/arch/sparc/include/asm/pgtable_32.h
->> @@ -64,25 +64,6 @@ void paging_init(void);
->>  
->>  extern unsigned long ptr_in_current_pgd;
->>  
->> -/*         xwr */
->> -#define __P000  PAGE_NONE
->> -#define __P001  PAGE_READONLY
->> -#define __P010  PAGE_COPY
->> -#define __P011  PAGE_COPY
->> -#define __P100  PAGE_READONLY
->> -#define __P101  PAGE_READONLY
->> -#define __P110  PAGE_COPY
->> -#define __P111  PAGE_COPY
->> -
->> -#define __S000	PAGE_NONE
->> -#define __S001	PAGE_READONLY
->> -#define __S010	PAGE_SHARED
->> -#define __S011	PAGE_SHARED
->> -#define __S100	PAGE_READONLY
->> -#define __S101	PAGE_READONLY
->> -#define __S110	PAGE_SHARED
->> -#define __S111	PAGE_SHARED
->> -
->>  /* First physical page can be anywhere, the following is needed so that
->>   * va-->pa and vice versa conversions work properly without performance
->>   * hit for all __pa()/__va() operations.
->> diff --git a/arch/sparc/include/asm/pgtable_64.h b/arch/sparc/include/asm/pgtable_64.h
->> index 4679e45c8348..a779418ceba9 100644
->> --- a/arch/sparc/include/asm/pgtable_64.h
->> +++ b/arch/sparc/include/asm/pgtable_64.h
->> @@ -187,25 +187,6 @@ bool kern_addr_valid(unsigned long addr);
->>  #define _PAGE_SZHUGE_4U	_PAGE_SZ4MB_4U
->>  #define _PAGE_SZHUGE_4V	_PAGE_SZ4MB_4V
->>  
->> -/* These are actually filled in at boot time by sun4{u,v}_pgprot_init() */
->> -#define __P000	__pgprot(0)
->> -#define __P001	__pgprot(0)
->> -#define __P010	__pgprot(0)
->> -#define __P011	__pgprot(0)
->> -#define __P100	__pgprot(0)
->> -#define __P101	__pgprot(0)
->> -#define __P110	__pgprot(0)
->> -#define __P111	__pgprot(0)
->> -
->> -#define __S000	__pgprot(0)
->> -#define __S001	__pgprot(0)
->> -#define __S010	__pgprot(0)
->> -#define __S011	__pgprot(0)
->> -#define __S100	__pgprot(0)
->> -#define __S101	__pgprot(0)
->> -#define __S110	__pgprot(0)
->> -#define __S111	__pgprot(0)
->> -
->>  #ifndef __ASSEMBLY__
->>  
->>  pte_t mk_pte_io(unsigned long, pgprot_t, int, unsigned long);
->> diff --git a/arch/sparc/mm/init_32.c b/arch/sparc/mm/init_32.c
->> index 1e9f577f084d..8693e4e28b86 100644
->> --- a/arch/sparc/mm/init_32.c
->> +++ b/arch/sparc/mm/init_32.c
->> @@ -302,3 +302,23 @@ void sparc_flush_page_to_ram(struct page *page)
->>  		__flush_page_to_ram(vaddr);
->>  }
->>  EXPORT_SYMBOL(sparc_flush_page_to_ram);
->> +
->> +static pgprot_t protection_map[16] __ro_after_init = {
-> This can be const - like done for powerpc and others.
-> sparc32 and sparc64 uses each their own - and I do not see sparc32 do
-> any modifications to protection_map.
+  1. toggle_bp_slot() and fetch_bp_busy_slots() are O(#cpus * #tasks):
+     Both iterate through all CPUs and call task_bp_pinned(), which is
+     O(#tasks).
 
-Indeed protection_map[] arrays are independent both for sparc32 and spacr64.
-sparc32 platform never changes the protection_map[] array during boot. Sure,
-will make it into a const instead. Thanks for pointing this out.
+  2. Everything is serialized on a global mutex, 'nr_bp_mutex'.
 
-> 
-> With this change:
-> Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
-> 
+The series progresses with the simpler optimizations and finishes with
+the more complex optimizations:
+
+ 1. We first optimize task_bp_pinned() to only take O(1) on average.
+
+ 2. Rework synchronization to allow concurrency when checking and
+    updating breakpoint constraints for tasks.
+
+ 3. Eliminate the O(#cpus) loops in the CPU-independent case.
+
+Along the way, smaller micro-optimizations and cleanups are done as they
+seemed obvious when staring at the code (but likely insignificant).
+
+The result is (on a system with 256 CPUs) that we go from:
+
+ | $> perf bench -r 30 breakpoint thread -b 4 -p 64 -t 64
+	 	[ ^ more aggressive benchmark parameters took too long ]
+ | # Running 'breakpoint/thread' benchmark:
+ | # Created/joined 30 threads with 4 breakpoints and 64 parallelism
+ |      Total time: 236.418 [sec]
+ |
+ |   123134.794271 usecs/op
+ |  7880626.833333 usecs/op/cpu
+
+... to the following with all optimizations:
+
+ | $> perf bench -r 30 breakpoint thread -b 4 -p 64 -t 64
+ |      Total time: 0.067 [sec]
+ |
+ |       35.292187 usecs/op
+ |     2258.700000 usecs/op/cpu
+
+On the used test system, that's an effective speedup of ~3490x per op.
+
+Which is on par with the theoretical ideal performance through
+optimizations in hw_breakpoint.c (constraints accounting disabled), and
+only 12% slower than no breakpoints at all.
+
+Changelog
+---------
+
+v2:
+ * Add KUnit test suite.
+ * Remove struct bp_busy_slots and simplify functions.
+ * Add "powerpc/hw_breakpoint: Avoid relying on caller synchronization".
+ * Add "locking/percpu-rwsem: Add percpu_is_write_locked() and percpu_is_read_locked()".
+ * Use percpu-rwsem instead of rwlock.
+ * Use task_struct::perf_event_mutex instead of sharded mutex.
+ * Drop v1 "perf/hw_breakpoint: Optimize task_bp_pinned() if CPU-independent".
+ * Add "perf/hw_breakpoint: Introduce bp_slots_histogram".
+ * Add "perf/hw_breakpoint: Optimize max_bp_pinned_slots() for CPU-independent task targets".
+ * Add "perf/hw_breakpoint: Optimize toggle_bp_slot() for CPU-independent task targets".
+ * Apply Acked-by/Reviewed-by given in v1 for unchanged patches.
+==> Speedup of ~3490x (vs. ~3315x in v1).
+
+v1: https://lore.kernel.org/all/20220609113046.780504-1-elver@google.com/
+
+Marco Elver (13):
+  perf/hw_breakpoint: Add KUnit test for constraints accounting
+  perf/hw_breakpoint: Clean up headers
+  perf/hw_breakpoint: Optimize list of per-task breakpoints
+  perf/hw_breakpoint: Mark data __ro_after_init
+  perf/hw_breakpoint: Optimize constant number of breakpoint slots
+  perf/hw_breakpoint: Make hw_breakpoint_weight() inlinable
+  perf/hw_breakpoint: Remove useless code related to flexible
+    breakpoints
+  powerpc/hw_breakpoint: Avoid relying on caller synchronization
+  locking/percpu-rwsem: Add percpu_is_write_locked() and
+    percpu_is_read_locked()
+  perf/hw_breakpoint: Reduce contention with large number of tasks
+  perf/hw_breakpoint: Introduce bp_slots_histogram
+  perf/hw_breakpoint: Optimize max_bp_pinned_slots() for CPU-independent
+    task targets
+  perf/hw_breakpoint: Optimize toggle_bp_slot() for CPU-independent task
+    targets
+
+ arch/powerpc/kernel/hw_breakpoint.c  |  53 ++-
+ arch/sh/include/asm/hw_breakpoint.h  |   5 +-
+ arch/x86/include/asm/hw_breakpoint.h |   5 +-
+ include/linux/hw_breakpoint.h        |   1 -
+ include/linux/percpu-rwsem.h         |   6 +
+ include/linux/perf_event.h           |   3 +-
+ kernel/events/Makefile               |   1 +
+ kernel/events/hw_breakpoint.c        | 594 ++++++++++++++++++++-------
+ kernel/events/hw_breakpoint_test.c   | 321 +++++++++++++++
+ kernel/locking/percpu-rwsem.c        |   6 +
+ lib/Kconfig.debug                    |  10 +
+ 11 files changed, 826 insertions(+), 179 deletions(-)
+ create mode 100644 kernel/events/hw_breakpoint_test.c
+
+-- 
+2.37.0.rc0.161.g10f37bed90-goog
+
