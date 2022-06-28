@@ -2,56 +2,57 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 32973C433EF
-	for <linux-sh@archiver.kernel.org>; Tue, 28 Jun 2022 09:59:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BAABECCA480
+	for <linux-sh@archiver.kernel.org>; Tue, 28 Jun 2022 09:59:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344592AbiF1J7S (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 28 Jun 2022 05:59:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56852 "EHLO
+        id S1344587AbiF1J71 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 28 Jun 2022 05:59:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57296 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344214AbiF1J7J (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Jun 2022 05:59:09 -0400
+        with ESMTP id S1344583AbiF1J7O (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Jun 2022 05:59:14 -0400
 Received: from mail-ed1-x549.google.com (mail-ed1-x549.google.com [IPv6:2a00:1450:4864:20::549])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E2EB32E9CA
-        for <linux-sh@vger.kernel.org>; Tue, 28 Jun 2022 02:59:07 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F21E92EA1A
+        for <linux-sh@vger.kernel.org>; Tue, 28 Jun 2022 02:59:12 -0700 (PDT)
 Received: by mail-ed1-x549.google.com with SMTP id c20-20020a05640227d400b004369cf00c6bso9098451ede.22
-        for <linux-sh@vger.kernel.org>; Tue, 28 Jun 2022 02:59:07 -0700 (PDT)
+        for <linux-sh@vger.kernel.org>; Tue, 28 Jun 2022 02:59:12 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=google.com; s=20210112;
         h=date:in-reply-to:message-id:mime-version:references:subject:from:to
          :cc;
-        bh=e+EIQiAUqemssDNIM5WUvkc+KdFQ1BIIF5nbA/MVrfg=;
-        b=qLGeHF0RQ8VaErc5YYcvv6+ib0OITLV+3GtLCqKadbXimOsXWfFV05pQISR5NtqHEb
-         h8ualV952N6un7reNbo+IIdFM+uAWx5QLKx4MmoYK1gwUfeycsODV0QhVvmN9UeTu1Si
-         l5TSk3pqdW5qhqz2OxHFR8skczDXzV7ysaqDHKwq+2+7+1X3hPAHTG2CJz9ENRf5k7wr
-         KDfIPJWNB3VKsIdP4NkJ+BbQZsDtO/bGoPxl2uYhcO7nUsxutmifjHeh4bfRVhL+CbEN
-         +2EHevb48Jn1ZtKtLx8+UXtDSY58YkWJnIFn8jvZq7owk3tpGBkXIhfBSrfhzlgfbovx
-         t4Mg==
+        bh=rbZIw4RHxWyjZ7uKCIj1/02nzDfS7BCWoBx2cEn1z+M=;
+        b=oiApGXN2/9s/sFVoceixDAIut228b43B7re12xpbnUERFPtk3h5VrnONGsgEsWqxUz
+         CepjzbassXmVJ76eDCy67Z+EgyN3bvcPONjJ+CWggNnKI1jYdXilj8LMD68RmZUcI4kU
+         4tqs4HcLOZ/p/oZYzlelGpHvLA7w8PNYpHsGk4RodfygCVdyL2oOVwU9Y4V/XXeqmidi
+         bJp1KeFiUgwqJPXK9L2YbiErnJvtRE5/3evOUmd3hE/AO+u/L87tyGphXzsKbtbQPHOp
+         k5xHN+MGFJMTjXOcyrqvDgFAs5/10AcftdO5la5+DNdTRvbLsWgGFquqjZKQX7ZywfYd
+         cFVA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:date:in-reply-to:message-id:mime-version
          :references:subject:from:to:cc;
-        bh=e+EIQiAUqemssDNIM5WUvkc+KdFQ1BIIF5nbA/MVrfg=;
-        b=ptdBLoqZWUyB6UQDpW1L8dkJC6Lagaj945EdJ4sYERrRR2l1ycYZBUTz0Evvo83H+h
-         3pX0DXAY9U4t+5BA6xg9RSdTeAfx3xozaOfpzTnen3FNT58g4ZDjUJMRaqNcipNrkecC
-         JD3KIJd0KTYCoRp59HHmksgi4DTsVBUD+KpgLPjfjLNsZXOVslojuckWD0/2bNtQxzcT
-         x1pvojCSnV/Vu7T+yY/JS1uSqrj4ZHEvOm0yL2DHlvu3uQkd9bT4gj7iYy7j3gcPanS5
-         Wq8tm9dmmGwtiGiwHcSqekv2hbPXHSiVTQ435I3LAMjAGaO4qvuaBrEWwlV1layBfezq
-         0lBw==
-X-Gm-Message-State: AJIora/+2J5R9FiBJFnyqp75koXyNcrRM++hrAKukB4oxeRN9xIr1yBz
-        3tI4kGx4UJ2yokHtJS0ZMBTKgQtVdg==
-X-Google-Smtp-Source: AGRyM1spgbhIUqCt5r3ELIEf7ypzSdCYWh7HrndOQVfyte1jgjplsh3zZ35U6AnMQ+AtdGeRJrcvKdChjA==
+        bh=rbZIw4RHxWyjZ7uKCIj1/02nzDfS7BCWoBx2cEn1z+M=;
+        b=m8tnfTENIrgcdirJhjb8otlau6wD2wFJJaaCZxgQlGXUCAUVQt+SJG60YTLN21Ksyi
+         /jXsfRt/dvwjuL4Gn0qN9elmiNZ9zvK6+GNDgfY63EP1KDC/raOCuApOjBJTOdB4mhvM
+         jvf08qi4wmDDelm0qDMdESinyL6dc+zp9DulmLjsbkXhXINGrk74pi5W7ix6E7c5IWdh
+         NK+B+R0yQpKeWrUKSjQdfX4WYHLhf9pC/CwWkrIVn6vI4eTyCGchjXLqPkc+02LUBql4
+         bVW25s804cCW19K3eBqUUss9lKq1HvOpE9by8U7gCplyvgtiWux2R4ci236IFJkMCK19
+         +sog==
+X-Gm-Message-State: AJIora/EzW/tEcXevkU9h+/nLHLURCtu0Xk0j2GCsTMQdfo+ketccIIJ
+        mj0cVx6JFWFeE1uwJktsNlBAvmgIXQ==
+X-Google-Smtp-Source: AGRyM1ulAFaW+cabMF408m4D0d8sMqq61HRUg92UKKN1R5zpGh6W/kBxcVHJuMeF6VNW23IvyKP84rAZ2g==
 X-Received: from elver.muc.corp.google.com ([2a00:79e0:9c:201:3496:744e:315a:b41b])
- (user=elver job=sendgmr) by 2002:a17:907:7b87:b0:726:c868:cf38 with SMTP id
- ne7-20020a1709077b8700b00726c868cf38mr4432036ejc.580.1656410346473; Tue, 28
- Jun 2022 02:59:06 -0700 (PDT)
-Date:   Tue, 28 Jun 2022 11:58:23 +0200
+ (user=elver job=sendgmr) by 2002:a05:6402:268a:b0:435:c137:6452 with SMTP id
+ w10-20020a056402268a00b00435c1376452mr22004368edd.419.1656410352317; Tue, 28
+ Jun 2022 02:59:12 -0700 (PDT)
+Date:   Tue, 28 Jun 2022 11:58:25 +0200
 In-Reply-To: <20220628095833.2579903-1-elver@google.com>
-Message-Id: <20220628095833.2579903-4-elver@google.com>
+Message-Id: <20220628095833.2579903-6-elver@google.com>
 Mime-Version: 1.0
 References: <20220628095833.2579903-1-elver@google.com>
 X-Mailer: git-send-email 2.37.0.rc0.161.g10f37bed90-goog
-Subject: [PATCH v2 03/13] perf/hw_breakpoint: Optimize list of per-task breakpoints
+Subject: [PATCH v2 05/13] perf/hw_breakpoint: Optimize constant number of
+ breakpoint slots
 From:   Marco Elver <elver@google.com>
 To:     elver@google.com, Peter Zijlstra <peterz@infradead.org>,
         Frederic Weisbecker <frederic@kernel.org>,
@@ -72,243 +73,198 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On a machine with 256 CPUs, running the recently added perf breakpoint
-benchmark results in:
+Optimize internal hw_breakpoint state if the architecture's number of
+breakpoint slots is constant. This avoids several kmalloc() calls and
+potentially unnecessary failures if the allocations fail, as well as
+subtly improves code generation and cache locality.
 
- | $> perf bench -r 30 breakpoint thread -b 4 -p 64 -t 64
- | # Running 'breakpoint/thread' benchmark:
- | # Created/joined 30 threads with 4 breakpoints and 64 parallelism
- |      Total time: 236.418 [sec]
- |
- |   123134.794271 usecs/op
- |  7880626.833333 usecs/op/cpu
-
-The benchmark tests inherited breakpoint perf events across many
-threads.
-
-Looking at a perf profile, we can see that the majority of the time is
-spent in various hw_breakpoint.c functions, which execute within the
-'nr_bp_mutex' critical sections which then results in contention on that
-mutex as well:
-
-    37.27%  [kernel]       [k] osq_lock
-    34.92%  [kernel]       [k] mutex_spin_on_owner
-    12.15%  [kernel]       [k] toggle_bp_slot
-    11.90%  [kernel]       [k] __reserve_bp_slot
-
-The culprit here is task_bp_pinned(), which has a runtime complexity of
-O(#tasks) due to storing all task breakpoints in the same list and
-iterating through that list looking for a matching task. Clearly, this
-does not scale to thousands of tasks.
-
-Instead, make use of the "rhashtable" variant "rhltable" which stores
-multiple items with the same key in a list. This results in average
-runtime complexity of O(1) for task_bp_pinned().
-
-With the optimization, the benchmark shows:
-
- | $> perf bench -r 30 breakpoint thread -b 4 -p 64 -t 64
- | # Running 'breakpoint/thread' benchmark:
- | # Created/joined 30 threads with 4 breakpoints and 64 parallelism
- |      Total time: 0.208 [sec]
- |
- |      108.422396 usecs/op
- |     6939.033333 usecs/op/cpu
-
-On this particular setup that's a speedup of ~1135x.
-
-While one option would be to make task_struct a breakpoint list node,
-this would only further bloat task_struct for infrequently used data.
-Furthermore, after all optimizations in this series, there's no evidence
-it would result in better performance: later optimizations make the time
-spent looking up entries in the hash table negligible (we'll reach the
-theoretical ideal performance i.e. no constraints).
+The protocol is that if an architecture defines hw_breakpoint_slots via
+the preprocessor, it must be constant and the same for all types.
 
 Signed-off-by: Marco Elver <elver@google.com>
+Acked-by: Dmitry Vyukov <dvyukov@google.com>
 ---
-v2:
-* Commit message tweaks.
----
- include/linux/perf_event.h    |  3 +-
- kernel/events/hw_breakpoint.c | 56 ++++++++++++++++++++++-------------
- 2 files changed, 37 insertions(+), 22 deletions(-)
+ arch/sh/include/asm/hw_breakpoint.h  |  5 +-
+ arch/x86/include/asm/hw_breakpoint.h |  5 +-
+ kernel/events/hw_breakpoint.c        | 92 ++++++++++++++++++----------
+ 3 files changed, 62 insertions(+), 40 deletions(-)
 
-diff --git a/include/linux/perf_event.h b/include/linux/perf_event.h
-index 01231f1d976c..e27360436dc6 100644
---- a/include/linux/perf_event.h
-+++ b/include/linux/perf_event.h
-@@ -36,6 +36,7 @@ struct perf_guest_info_callbacks {
- };
+diff --git a/arch/sh/include/asm/hw_breakpoint.h b/arch/sh/include/asm/hw_breakpoint.h
+index 199d17b765f2..361a0f57bdeb 100644
+--- a/arch/sh/include/asm/hw_breakpoint.h
++++ b/arch/sh/include/asm/hw_breakpoint.h
+@@ -48,10 +48,7 @@ struct pmu;
+ /* Maximum number of UBC channels */
+ #define HBP_NUM		2
  
- #ifdef CONFIG_HAVE_HW_BREAKPOINT
-+#include <linux/rhashtable-types.h>
- #include <asm/hw_breakpoint.h>
- #endif
+-static inline int hw_breakpoint_slots(int type)
+-{
+-	return HBP_NUM;
+-}
++#define hw_breakpoint_slots(type) (HBP_NUM)
  
-@@ -178,7 +179,7 @@ struct hw_perf_event {
- 			 * creation and event initalization.
- 			 */
- 			struct arch_hw_breakpoint	info;
--			struct list_head		bp_list;
-+			struct rhlist_head		bp_list;
- 		};
- #endif
- 		struct { /* amd_iommu */
+ /* arch/sh/kernel/hw_breakpoint.c */
+ extern int arch_check_bp_in_kernelspace(struct arch_hw_breakpoint *hw);
+diff --git a/arch/x86/include/asm/hw_breakpoint.h b/arch/x86/include/asm/hw_breakpoint.h
+index a1f0e90d0818..0bc931cd0698 100644
+--- a/arch/x86/include/asm/hw_breakpoint.h
++++ b/arch/x86/include/asm/hw_breakpoint.h
+@@ -44,10 +44,7 @@ struct arch_hw_breakpoint {
+ /* Total number of available HW breakpoint registers */
+ #define HBP_NUM 4
+ 
+-static inline int hw_breakpoint_slots(int type)
+-{
+-	return HBP_NUM;
+-}
++#define hw_breakpoint_slots(type) (HBP_NUM)
+ 
+ struct perf_event_attr;
+ struct perf_event;
 diff --git a/kernel/events/hw_breakpoint.c b/kernel/events/hw_breakpoint.c
-index 1b013968b395..add1b9c59631 100644
+index 270be965f829..a089302ddf59 100644
 --- a/kernel/events/hw_breakpoint.c
 +++ b/kernel/events/hw_breakpoint.c
-@@ -26,10 +26,10 @@
- #include <linux/irqflags.h>
- #include <linux/kdebug.h>
- #include <linux/kernel.h>
--#include <linux/list.h>
- #include <linux/mutex.h>
- #include <linux/notifier.h>
- #include <linux/percpu.h>
-+#include <linux/rhashtable.h>
- #include <linux/sched.h>
- #include <linux/slab.h>
+@@ -40,13 +40,16 @@ struct bp_cpuinfo {
+ 	/* Number of pinned cpu breakpoints in a cpu */
+ 	unsigned int	cpu_pinned;
+ 	/* tsk_pinned[n] is the number of tasks having n+1 breakpoints */
++#ifdef hw_breakpoint_slots
++	unsigned int	tsk_pinned[hw_breakpoint_slots(0)];
++#else
+ 	unsigned int	*tsk_pinned;
++#endif
+ 	/* Number of non-pinned cpu/task breakpoints in a cpu */
+ 	unsigned int	flexible; /* XXX: placeholder, see fetch_this_slot() */
+ };
  
-@@ -54,7 +54,13 @@ static struct bp_cpuinfo *get_bp_info(int cpu, enum bp_type_idx type)
- }
+ static DEFINE_PER_CPU(struct bp_cpuinfo, bp_cpuinfo[TYPE_MAX]);
+-static int nr_slots[TYPE_MAX] __ro_after_init;
  
- /* Keep track of the breakpoints attached to tasks */
--static LIST_HEAD(bp_task_head);
-+static struct rhltable task_bps_ht;
-+static const struct rhashtable_params task_bps_ht_params = {
-+	.head_offset = offsetof(struct hw_perf_event, bp_list),
-+	.key_offset = offsetof(struct hw_perf_event, target),
-+	.key_len = sizeof_field(struct hw_perf_event, target),
-+	.automatic_shrinking = true,
-+};
- 
- static int constraints_initialized;
- 
-@@ -103,17 +109,23 @@ static unsigned int max_task_bp_pinned(int cpu, enum bp_type_idx type)
-  */
- static int task_bp_pinned(int cpu, struct perf_event *bp, enum bp_type_idx type)
+ static struct bp_cpuinfo *get_bp_info(int cpu, enum bp_type_idx type)
  {
--	struct task_struct *tsk = bp->hw.target;
-+	struct rhlist_head *head, *pos;
- 	struct perf_event *iter;
- 	int count = 0;
+@@ -73,6 +76,54 @@ struct bp_busy_slots {
+ /* Serialize accesses to the above constraints */
+ static DEFINE_MUTEX(nr_bp_mutex);
  
--	list_for_each_entry(iter, &bp_task_head, hw.bp_list) {
--		if (iter->hw.target == tsk &&
--		    find_slot_idx(iter->attr.bp_type) == type &&
-+	rcu_read_lock();
-+	head = rhltable_lookup(&task_bps_ht, &bp->hw.target, task_bps_ht_params);
-+	if (!head)
-+		goto out;
++#ifdef hw_breakpoint_slots
++/*
++ * Number of breakpoint slots is constant, and the same for all types.
++ */
++static_assert(hw_breakpoint_slots(TYPE_INST) == hw_breakpoint_slots(TYPE_DATA));
++static inline int hw_breakpoint_slots_cached(int type)	{ return hw_breakpoint_slots(type); }
++static inline int init_breakpoint_slots(void)		{ return 0; }
++#else
++/*
++ * Dynamic number of breakpoint slots.
++ */
++static int __nr_bp_slots[TYPE_MAX] __ro_after_init;
 +
-+	rhl_for_each_entry_rcu(iter, pos, head, hw.bp_list) {
-+		if (find_slot_idx(iter->attr.bp_type) == type &&
- 		    (iter->cpu < 0 || cpu == iter->cpu))
- 			count += hw_breakpoint_weight(iter);
- 	}
- 
-+out:
-+	rcu_read_unlock();
- 	return count;
- }
- 
-@@ -186,7 +198,7 @@ static void toggle_bp_task_slot(struct perf_event *bp, int cpu,
- /*
-  * Add/remove the given breakpoint in our constraint table
-  */
--static void
-+static int
- toggle_bp_slot(struct perf_event *bp, bool enable, enum bp_type_idx type,
- 	       int weight)
++static inline int hw_breakpoint_slots_cached(int type)
++{
++	return __nr_bp_slots[type];
++}
++
++static __init int init_breakpoint_slots(void)
++{
++	int i, cpu, err_cpu;
++
++	for (i = 0; i < TYPE_MAX; i++)
++		__nr_bp_slots[i] = hw_breakpoint_slots(i);
++
++	for_each_possible_cpu(cpu) {
++		for (i = 0; i < TYPE_MAX; i++) {
++			struct bp_cpuinfo *info = get_bp_info(cpu, i);
++
++			info->tsk_pinned = kcalloc(__nr_bp_slots[i], sizeof(int), GFP_KERNEL);
++			if (!info->tsk_pinned)
++				goto err;
++		}
++	}
++
++	return 0;
++err:
++	for_each_possible_cpu(err_cpu) {
++		for (i = 0; i < TYPE_MAX; i++)
++			kfree(get_bp_info(err_cpu, i)->tsk_pinned);
++		if (err_cpu == cpu)
++			break;
++	}
++
++	return -ENOMEM;
++}
++#endif
++
+ __weak int hw_breakpoint_weight(struct perf_event *bp)
  {
-@@ -199,7 +211,7 @@ toggle_bp_slot(struct perf_event *bp, bool enable, enum bp_type_idx type,
- 	/* Pinned counter cpu profiling */
- 	if (!bp->hw.target) {
- 		get_bp_info(bp->cpu, type)->cpu_pinned += weight;
--		return;
-+		return 0;
+ 	return 1;
+@@ -95,7 +146,7 @@ static unsigned int max_task_bp_pinned(int cpu, enum bp_type_idx type)
+ 	unsigned int *tsk_pinned = get_bp_info(cpu, type)->tsk_pinned;
+ 	int i;
+ 
+-	for (i = nr_slots[type] - 1; i >= 0; i--) {
++	for (i = hw_breakpoint_slots_cached(type) - 1; i >= 0; i--) {
+ 		if (tsk_pinned[i] > 0)
+ 			return i + 1;
  	}
+@@ -312,7 +363,7 @@ static int __reserve_bp_slot(struct perf_event *bp, u64 bp_type)
+ 	fetch_this_slot(&slots, weight);
  
- 	/* Pinned counter task profiling */
-@@ -207,9 +219,9 @@ toggle_bp_slot(struct perf_event *bp, bool enable, enum bp_type_idx type,
- 		toggle_bp_task_slot(bp, cpu, type, weight);
+ 	/* Flexible counters need to keep at least one slot */
+-	if (slots.pinned + (!!slots.flexible) > nr_slots[type])
++	if (slots.pinned + (!!slots.flexible) > hw_breakpoint_slots_cached(type))
+ 		return -ENOSPC;
  
- 	if (enable)
--		list_add_tail(&bp->hw.bp_list, &bp_task_head);
-+		return rhltable_insert(&task_bps_ht, &bp->hw.bp_list, task_bps_ht_params);
- 	else
--		list_del(&bp->hw.bp_list);
-+		return rhltable_remove(&task_bps_ht, &bp->hw.bp_list, task_bps_ht_params);
- }
+ 	ret = arch_reserve_bp_slot(bp);
+@@ -687,42 +738,19 @@ static struct pmu perf_breakpoint = {
  
- __weak int arch_reserve_bp_slot(struct perf_event *bp)
-@@ -307,9 +319,7 @@ static int __reserve_bp_slot(struct perf_event *bp, u64 bp_type)
- 	if (ret)
- 		return ret;
- 
--	toggle_bp_slot(bp, true, type, weight);
--
--	return 0;
-+	return toggle_bp_slot(bp, true, type, weight);
- }
- 
- int reserve_bp_slot(struct perf_event *bp)
-@@ -334,7 +344,7 @@ static void __release_bp_slot(struct perf_event *bp, u64 bp_type)
- 
- 	type = find_slot_idx(bp_type);
- 	weight = hw_breakpoint_weight(bp);
--	toggle_bp_slot(bp, false, type, weight);
-+	WARN_ON(toggle_bp_slot(bp, false, type, weight));
- }
- 
- void release_bp_slot(struct perf_event *bp)
-@@ -678,7 +688,7 @@ static struct pmu perf_breakpoint = {
  int __init init_hw_breakpoint(void)
  {
- 	int cpu, err_cpu;
--	int i;
-+	int i, ret;
+-	int cpu, err_cpu;
+-	int i, ret;
+-
+-	for (i = 0; i < TYPE_MAX; i++)
+-		nr_slots[i] = hw_breakpoint_slots(i);
+-
+-	for_each_possible_cpu(cpu) {
+-		for (i = 0; i < TYPE_MAX; i++) {
+-			struct bp_cpuinfo *info = get_bp_info(cpu, i);
+-
+-			info->tsk_pinned = kcalloc(nr_slots[i], sizeof(int),
+-							GFP_KERNEL);
+-			if (!info->tsk_pinned) {
+-				ret = -ENOMEM;
+-				goto err;
+-			}
+-		}
+-	}
++	int ret;
  
- 	for (i = 0; i < TYPE_MAX; i++)
- 		nr_slots[i] = hw_breakpoint_slots(i);
-@@ -689,18 +699,24 @@ int __init init_hw_breakpoint(void)
- 
- 			info->tsk_pinned = kcalloc(nr_slots[i], sizeof(int),
- 							GFP_KERNEL);
--			if (!info->tsk_pinned)
--				goto err_alloc;
-+			if (!info->tsk_pinned) {
-+				ret = -ENOMEM;
-+				goto err;
-+			}
- 		}
- 	}
- 
-+	ret = rhltable_init(&task_bps_ht, &task_bps_ht_params);
-+	if (ret)
-+		goto err;
+ 	ret = rhltable_init(&task_bps_ht, &task_bps_ht_params);
+ 	if (ret)
+-		goto err;
++		return ret;
 +
- 	constraints_initialized = 1;
++	ret = init_breakpoint_slots();
++	if (ret)
++		return ret;
+ 
+ 	constraints_initialized = true;
  
  	perf_pmu_register(&perf_breakpoint, "breakpoint", PERF_TYPE_BREAKPOINT);
  
  	return register_die_notifier(&hw_breakpoint_exceptions_nb);
- 
-- err_alloc:
-+err:
- 	for_each_possible_cpu(err_cpu) {
- 		for (i = 0; i < TYPE_MAX; i++)
- 			kfree(get_bp_info(err_cpu, i)->tsk_pinned);
-@@ -708,7 +724,5 @@ int __init init_hw_breakpoint(void)
- 			break;
- 	}
- 
--	return -ENOMEM;
-+	return ret;
+-
+-err:
+-	for_each_possible_cpu(err_cpu) {
+-		for (i = 0; i < TYPE_MAX; i++)
+-			kfree(get_bp_info(err_cpu, i)->tsk_pinned);
+-		if (err_cpu == cpu)
+-			break;
+-	}
+-
+-	return ret;
  }
--
--
 -- 
 2.37.0.rc0.161.g10f37bed90-goog
 
