@@ -2,136 +2,71 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E5A67C3F2D4
-	for <linux-sh@archiver.kernel.org>; Thu, 30 Jun 2022 05:24:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6D1B7C43334
+	for <linux-sh@archiver.kernel.org>; Thu, 30 Jun 2022 15:34:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232790AbiF3FYY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 30 Jun 2022 01:24:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40720 "EHLO
+        id S236188AbiF3PeQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 30 Jun 2022 11:34:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41904 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232386AbiF3FWV (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 30 Jun 2022 01:22:21 -0400
-Received: from foss.arm.com (foss.arm.com [217.140.110.172])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 8946F41629;
-        Wed, 29 Jun 2022 22:20:23 -0700 (PDT)
-Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 819FC1BB2;
-        Wed, 29 Jun 2022 22:20:23 -0700 (PDT)
-Received: from a077893.blr.arm.com (unknown [10.162.41.8])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPA id D6CEA3F66F;
-        Wed, 29 Jun 2022 22:20:14 -0700 (PDT)
-From:   Anshuman Khandual <anshuman.khandual@arm.com>
-To:     linux-mm@kvack.org, akpm@linux-foundation.org
-Cc:     hch@infradead.org, christophe.leroy@csgroup.eu,
-        Anshuman Khandual <anshuman.khandual@arm.com>,
-        linuxppc-dev@lists.ozlabs.org, sparclinux@vger.kernel.org,
-        x86@kernel.org, openrisc@lists.librecores.org,
-        linux-xtensa@linux-xtensa.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linux-alpha@vger.kernel.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-mips@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-um@lists.infradead.org,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-Subject: [PATCH V6 25/26] sh/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
-Date:   Thu, 30 Jun 2022 10:46:29 +0530
-Message-Id: <20220630051630.1718927-26-anshuman.khandual@arm.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20220630051630.1718927-1-anshuman.khandual@arm.com>
-References: <20220630051630.1718927-1-anshuman.khandual@arm.com>
+        with ESMTP id S236014AbiF3Pdk (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 30 Jun 2022 11:33:40 -0400
+Received: from mail-wr1-x434.google.com (mail-wr1-x434.google.com [IPv6:2a00:1450:4864:20::434])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C22EA25FA
+        for <linux-sh@vger.kernel.org>; Thu, 30 Jun 2022 08:33:39 -0700 (PDT)
+Received: by mail-wr1-x434.google.com with SMTP id v9so12287527wrp.7
+        for <linux-sh@vger.kernel.org>; Thu, 30 Jun 2022 08:33:39 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=message-id:date:mime-version:from:to:subject
+         :content-transfer-encoding;
+        bh=TFGxfKfYNc6FX30F9sKmEL18XnIK/Iwh98w/L1TSaX4=;
+        b=blUFbC3b9XXke4KbKSdxYfQvJ8ALHON967lZ20HW9c2BDfQlwP5UNrBlcXptRBxm0e
+         +AvtQVHNd4kJwKkGxXYH4MIU+3TiFMA5ey5Q6pNjaFqMb1WKUwtiI7RpqiZPxDCitiL6
+         fsWNCRHiho/gk7OJSO9137Op6oHH2CesBLnp7U011Yn6G92obx1GD79ZjMcVAjmiti4k
+         5o6aLidz8MykdCsBCMjaqP7MM7anBUbbmuMrTgzA2TTfOynVveq8gtnYuoNr9duISY2B
+         UrE/KJ5NwhGXabuJGSZKi6PtOxfM56xo8m+BN4Q3ZqsZUSi3QTjAt97sapu0ASnm5a3Q
+         2HRQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:message-id:date:mime-version:from:to:subject
+         :content-transfer-encoding;
+        bh=TFGxfKfYNc6FX30F9sKmEL18XnIK/Iwh98w/L1TSaX4=;
+        b=qIaVnD1jeRDyzYazJHQnL11wv2F9lfEYWxp8va5rmDJg85SMRDiDEyvWLZcmH+Mfdq
+         ZDf1iQZl09at6vOy6BzIfNPqCJY4hnx/Az91Bat4U4voRoaKN+f5Q0hdWaOn0KoBbOyA
+         3sNQOw5kqwVQTrgqJy1LiRvYGiertcAKGsmIqQtTNFEgyZLrBqrr0bvJBY5MRR2UjKus
+         9O5l4KSnDoFXs/Y3UD/zeVLavkS5NWUyw4EVcIGVM79JKZcaeTYtc2Ft5WaGmn+lUNIP
+         SXCCsjkUF069x+WLEJhrEE0cPmO7Q+S6jM2+mKIxQwz87D/pDZ1FO4V1VftcD4dQ2gbm
+         EXmA==
+X-Gm-Message-State: AJIora+mYDPyxA63jtGRtLx0+pax57GWru3Q+SdvzF7cm/jR1fD8QmNS
+        CbsoFSmh3b2bTetvuCCJVv29HLyjlIw=
+X-Google-Smtp-Source: AGRyM1sRPxRDHN38kD4D5jLSRoup+bqizxPQrD88AW0D0//ZlEVuoPW+hnFh/ZHo8IJ69AlUlgPIYg==
+X-Received: by 2002:adf:db89:0:b0:21b:84a6:9cce with SMTP id u9-20020adfdb89000000b0021b84a69ccemr9270686wri.675.1656603218136;
+        Thu, 30 Jun 2022 08:33:38 -0700 (PDT)
+Received: from DESKTOP-L1U6HLH ([39.53.244.205])
+        by smtp.gmail.com with ESMTPSA id e12-20020a5d530c000000b002185d79dc7fsm19643154wrv.75.2022.06.30.08.33.37
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1 cipher=ECDHE-ECDSA-AES128-SHA bits=128/128);
+        Thu, 30 Jun 2022 08:33:37 -0700 (PDT)
+Message-ID: <62bdc251.1c69fb81.c2d0e.5b94@mx.google.com>
+Date:   Thu, 30 Jun 2022 08:33:37 -0700 (PDT)
+X-Google-Original-Date: 30 Jun 2022 11:33:39 -0400
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+From:   bryce.dreamlamdestimation@gmail.com
+To:     linux-sh@vger.kernel.org
+Subject: Estimating Services
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-This enables ARCH_HAS_VM_GET_PAGE_PROT on the platform and exports standard
-vm_get_page_prot() implementation via DECLARE_VM_GET_PAGE_PROT, which looks
-up a private and static protection_map[] array. Subsequently all __SXXX and
-__PXXX macros can be dropped which are no longer needed.
-
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
-Signed-off-by: Anshuman Khandual <anshuman.khandual@arm.com>
----
- arch/sh/Kconfig               |  1 +
- arch/sh/include/asm/pgtable.h | 17 -----------------
- arch/sh/mm/mmap.c             | 20 ++++++++++++++++++++
- 3 files changed, 21 insertions(+), 17 deletions(-)
-
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 5f220e903e5a..91f3ea325388 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -12,6 +12,7 @@ config SUPERH
- 	select ARCH_HAS_GCOV_PROFILE_ALL
- 	select ARCH_HAS_PTE_SPECIAL
- 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
-+	select ARCH_HAS_VM_GET_PAGE_PROT
- 	select ARCH_HIBERNATION_POSSIBLE if MMU
- 	select ARCH_MIGHT_HAVE_PC_PARPORT
- 	select ARCH_WANT_IPC_PARSE_VERSION
-diff --git a/arch/sh/include/asm/pgtable.h b/arch/sh/include/asm/pgtable.h
-index d7ddb1ec86a0..6fb9ec54cf9b 100644
---- a/arch/sh/include/asm/pgtable.h
-+++ b/arch/sh/include/asm/pgtable.h
-@@ -89,23 +89,6 @@ static inline unsigned long phys_addr_mask(void)
-  * completely separate permission bits for user and kernel space.
-  */
- 	 /*xwr*/
--#define __P000	PAGE_NONE
--#define __P001	PAGE_READONLY
--#define __P010	PAGE_COPY
--#define __P011	PAGE_COPY
--#define __P100	PAGE_EXECREAD
--#define __P101	PAGE_EXECREAD
--#define __P110	PAGE_COPY
--#define __P111	PAGE_COPY
--
--#define __S000	PAGE_NONE
--#define __S001	PAGE_READONLY
--#define __S010	PAGE_WRITEONLY
--#define __S011	PAGE_SHARED
--#define __S100	PAGE_EXECREAD
--#define __S101	PAGE_EXECREAD
--#define __S110	PAGE_RWX
--#define __S111	PAGE_RWX
- 
- typedef pte_t *pte_addr_t;
- 
-diff --git a/arch/sh/mm/mmap.c b/arch/sh/mm/mmap.c
-index 6a1a1297baae..46c1183493af 100644
---- a/arch/sh/mm/mmap.c
-+++ b/arch/sh/mm/mmap.c
-@@ -162,3 +162,23 @@ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size)
- {
- 	return 1;
- }
-+
-+static const pgprot_t protection_map[16] = {
-+	[VM_NONE]					= PAGE_NONE,
-+	[VM_READ]					= PAGE_READONLY,
-+	[VM_WRITE]					= PAGE_COPY,
-+	[VM_WRITE | VM_READ]				= PAGE_COPY,
-+	[VM_EXEC]					= PAGE_EXECREAD,
-+	[VM_EXEC | VM_READ]				= PAGE_EXECREAD,
-+	[VM_EXEC | VM_WRITE]				= PAGE_COPY,
-+	[VM_EXEC | VM_WRITE | VM_READ]			= PAGE_COPY,
-+	[VM_SHARED]					= PAGE_NONE,
-+	[VM_SHARED | VM_READ]				= PAGE_READONLY,
-+	[VM_SHARED | VM_WRITE]				= PAGE_WRITEONLY,
-+	[VM_SHARED | VM_WRITE | VM_READ]		= PAGE_SHARED,
-+	[VM_SHARED | VM_EXEC]				= PAGE_EXECREAD,
-+	[VM_SHARED | VM_EXEC | VM_READ]			= PAGE_EXECREAD,
-+	[VM_SHARED | VM_EXEC | VM_WRITE]		= PAGE_RWX,
-+	[VM_SHARED | VM_EXEC | VM_WRITE | VM_READ]	= PAGE_RWX
-+};
-+DECLARE_VM_GET_PAGE_PROT
--- 
-2.25.1
+Hi,=0D=0A=0D=0AWe provide estimation & quantities takeoff service=
+s. We are providing 98-100 accuracy in our estimates and take-off=
+s. Please tell us if you need any estimating services regarding y=
+our projects.=0D=0A=0D=0ASend over the plans and mention the exac=
+t scope of work and shortly we will get back with a proposal on w=
+hich our charges and turnaround time will be mentioned=0D=0A=0D=0A=
+You may ask for sample estimates and take-offs. Thanks.=0D=0A=0D=0A=
+Kind Regards=0D=0ABryce Weems=0D=0ADreamland Estimation, LLC
 
