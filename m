@@ -2,154 +2,235 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0861ACCA479
-	for <linux-sh@archiver.kernel.org>; Tue, 28 Jun 2022 16:02:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E0FD1CCA482
+	for <linux-sh@archiver.kernel.org>; Thu, 30 Jun 2022 05:16:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1348162AbiF1QCA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 28 Jun 2022 12:02:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45692 "EHLO
+        id S231658AbiF3FQt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 30 Jun 2022 01:16:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39544 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1348275AbiF1QBo (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Jun 2022 12:01:44 -0400
-Received: from mail-yb1-xb2e.google.com (mail-yb1-xb2e.google.com [IPv6:2607:f8b0:4864:20::b2e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5568B37A3F
-        for <linux-sh@vger.kernel.org>; Tue, 28 Jun 2022 09:01:12 -0700 (PDT)
-Received: by mail-yb1-xb2e.google.com with SMTP id p136so16776621ybg.4
-        for <linux-sh@vger.kernel.org>; Tue, 28 Jun 2022 09:01:12 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=JSgkWuUAADlOM6Jw2JGSpNYb73+UZZR8Ny928REi7Do=;
-        b=dD7WqxrxIulFXhD/bExMZnWi60wwO8Kj+M+kIed6KYNLHB0WWLvTKi3YQglVoCYW4P
-         +nCIP4SR+cwnQqQfuATDns64AdE53d0F59geSv0p/m5YXnhqp4LycwIMn8fTF4Q77Gv9
-         JOpUOTuY3a9w8gtDFPgVQ2AYVTdCpBjjnDrH38boB6yaYsKF0FG2/J9PB7qqpl9vKHJa
-         5PbEManR+KQaodnyqs64a5Pz/K9SPx1dRdNN2bbRiZzRZ65LxBDyShencH0aKN3YaGNN
-         DodJhWIcA2oLlhzqE0ACp0cNtsDgcWQAS9pfcEWt337XNT7UXLPRvQp9CgVf6ZrMiAkK
-         tJBA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=JSgkWuUAADlOM6Jw2JGSpNYb73+UZZR8Ny928REi7Do=;
-        b=WYCoYmWQ89Sih04MNaO0ldVaKomMGuz2ynFhQgrHJwGpdJ2QFXUsif4VFgdwKQo4s+
-         mhJuo3yVvkx2wFzBJI+6fa0QSCRauPm8mLX9ve1NwMu3gQTbRhR7ntCfR7A3+6pgbEXD
-         UjXkyBCsG8hmyNh4Mx7n3GFDbds3ZskCRn5Tg1LhU0HaWMe0BnZ/fFAKvkW5o7LmsvkT
-         RoqcUM5ePb6I60zeJVvR8pDp3598zKFHNq8+ughjvsbIzSSixl5LS+Pb/17q/lFY5IsS
-         BLndjuVtx8YNU55lyaZZnMQxXsJE/SwSlzDV+xGEXgdv8ks9vv9CxIQ6nhauMUuUYCCZ
-         HtmQ==
-X-Gm-Message-State: AJIora8o4Dxcjb9sGKx2IhQlKZ5yUXZvX9GGjKd9l6BPHxmxATWzJH4g
-        pEhcKII5U6L11+jdunD14qFSLQ4seF1urSxCejRhvw==
-X-Google-Smtp-Source: AGRyM1sZ36lYEgCFXIjvvLhfzCJJ1REYB15gJrq5Pp+y7LUoSX97r40Vy8EqU/H/mu0brC3/C7znR71H1FQdTL/t3qo=
-X-Received: by 2002:a25:cc56:0:b0:66c:d0f6:2f0e with SMTP id
- l83-20020a25cc56000000b0066cd0f62f0emr12156904ybf.168.1656432071758; Tue, 28
- Jun 2022 09:01:11 -0700 (PDT)
+        with ESMTP id S230308AbiF3FQs (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 30 Jun 2022 01:16:48 -0400
+Received: from foss.arm.com (foss.arm.com [217.140.110.172])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id B207E1D31B;
+        Wed, 29 Jun 2022 22:16:46 -0700 (PDT)
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 6F0B31477;
+        Wed, 29 Jun 2022 22:16:46 -0700 (PDT)
+Received: from a077893.blr.arm.com (unknown [10.162.41.8])
+        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPA id 62E253F66F;
+        Wed, 29 Jun 2022 22:16:38 -0700 (PDT)
+From:   Anshuman Khandual <anshuman.khandual@arm.com>
+To:     linux-mm@kvack.org, akpm@linux-foundation.org
+Cc:     hch@infradead.org, christophe.leroy@csgroup.eu,
+        Anshuman Khandual <anshuman.khandual@arm.com>,
+        linuxppc-dev@lists.ozlabs.org, sparclinux@vger.kernel.org,
+        x86@kernel.org, openrisc@lists.librecores.org,
+        linux-xtensa@linux-xtensa.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linux-alpha@vger.kernel.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-mips@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-um@lists.infradead.org,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH V6 00/26] mm/mmap: Drop __SXXX/__PXXX macros from across platforms
+Date:   Thu, 30 Jun 2022 10:46:04 +0530
+Message-Id: <20220630051630.1718927-1-anshuman.khandual@arm.com>
+X-Mailer: git-send-email 2.25.1
 MIME-Version: 1.0
-References: <20220628095833.2579903-1-elver@google.com> <20220628095833.2579903-14-elver@google.com>
- <CACT4Y+aJZzkYHc+YJRApOLG-NYe8zXMaqxpQgQQFAy5WY97Ttg@mail.gmail.com>
-In-Reply-To: <CACT4Y+aJZzkYHc+YJRApOLG-NYe8zXMaqxpQgQQFAy5WY97Ttg@mail.gmail.com>
-From:   Marco Elver <elver@google.com>
-Date:   Tue, 28 Jun 2022 18:00:34 +0200
-Message-ID: <CANpmjNOh9gzzC7sOOOk1q7Ssj2dFxczj1bmufarYS2KupZQthg@mail.gmail.com>
-Subject: Re: [PATCH v2 13/13] perf/hw_breakpoint: Optimize toggle_bp_slot()
- for CPU-independent task targets
-To:     Dmitry Vyukov <dvyukov@google.com>
-Cc:     Peter Zijlstra <peterz@infradead.org>,
-        Frederic Weisbecker <frederic@kernel.org>,
-        Ingo Molnar <mingo@kernel.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Arnaldo Carvalho de Melo <acme@kernel.org>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Alexander Shishkin <alexander.shishkin@linux.intel.com>,
-        Jiri Olsa <jolsa@redhat.com>,
-        Namhyung Kim <namhyung@kernel.org>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        linuxppc-dev@lists.ozlabs.org, linux-perf-users@vger.kernel.org,
-        x86@kernel.org, linux-sh@vger.kernel.org,
-        kasan-dev@googlegroups.com, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, 28 Jun 2022 at 17:45, Dmitry Vyukov <dvyukov@google.com> wrote:
->
-> On Tue, 28 Jun 2022 at 11:59, Marco Elver <elver@google.com> wrote:
-> >
-> > We can still see that a majority of the time is spent hashing task pointers:
-> >
-> >     ...
-> >     16.98%  [kernel]       [k] rhashtable_jhash2
-> >     ...
-> >
-> > Doing the bookkeeping in toggle_bp_slots() is currently O(#cpus),
-> > calling task_bp_pinned() for each CPU, even if task_bp_pinned() is
-> > CPU-independent. The reason for this is to update the per-CPU
-> > 'tsk_pinned' histogram.
-> >
-> > To optimize the CPU-independent case to O(1), keep a separate
-> > CPU-independent 'tsk_pinned_all' histogram.
-> >
-> > The major source of complexity are transitions between "all
-> > CPU-independent task breakpoints" and "mixed CPU-independent and
-> > CPU-dependent task breakpoints". The code comments list all cases that
-> > require handling.
-> >
-> > After this optimization:
-> >
-> >  | $> perf bench -r 100 breakpoint thread -b 4 -p 128 -t 512
-> >  |      Total time: 1.758 [sec]
-> >  |
-> >  |       34.336621 usecs/op
-> >  |     4395.087500 usecs/op/cpu
-> >
-> >     38.08%  [kernel]       [k] queued_spin_lock_slowpath
-> >     10.81%  [kernel]       [k] smp_cfm_core_cond
-> >      3.01%  [kernel]       [k] update_sg_lb_stats
-> >      2.58%  [kernel]       [k] osq_lock
-> >      2.57%  [kernel]       [k] llist_reverse_order
-> >      1.45%  [kernel]       [k] find_next_bit
-> >      1.21%  [kernel]       [k] flush_tlb_func_common
-> >      1.01%  [kernel]       [k] arch_install_hw_breakpoint
-> >
-> > Showing that the time spent hashing keys has become insignificant.
-> >
-> > With the given benchmark parameters, that's an improvement of 12%
-> > compared with the old O(#cpus) version.
-> >
-> > And finally, using the less aggressive parameters from the preceding
-> > changes, we now observe:
-> >
-> >  | $> perf bench -r 30 breakpoint thread -b 4 -p 64 -t 64
-> >  |      Total time: 0.067 [sec]
-> >  |
-> >  |       35.292187 usecs/op
-> >  |     2258.700000 usecs/op/cpu
-> >
-> > Which is an improvement of 12% compared to without the histogram
-> > optimizations (baseline is 40 usecs/op). This is now on par with the
-> > theoretical ideal (constraints disabled), and only 12% slower than no
-> > breakpoints at all.
-> >
-> > Signed-off-by: Marco Elver <elver@google.com>
->
-> Reviewed-by: Dmitry Vyukov <dvyukov@google.com>
->
-> I don't see any bugs. But the code is quite complex. Does it make
-> sense to add some asserts to the histogram type? E.g. counters don't
-> underflow, weight is not negative (e.g. accidentally added -1 returned
-> from task_bp_pinned()). Not sure if it will be enough to catch all
-> types of bugs, though.
-> Could kunit tests check that histograms are all 0's at the end?
->
-> I am not just about the current code (which may be correct), but also
-> future modifications to this code.
+__SXXX/__PXXX macros is an unnecessary abstraction layer in creating the
+generic protection_map[] array which is used for vm_get_page_prot(). This
+abstraction layer can be avoided, if the platforms just define the array
+protection_map[] for all possible vm_flags access permission combinations
+and also export vm_get_page_prot() implementation.
 
-I'll think of some more options.
+This series drops __SXXX/__PXXX macros from across platforms in the tree.
+First it build protects generic protection_map[] array with '#ifdef __P000'
+and moves it inside platforms which enable ARCH_HAS_VM_GET_PAGE_PROT. Later
+this build protects same array with '#ifdef ARCH_HAS_VM_GET_PAGE_PROT' and
+moves inside remaining platforms while enabling ARCH_HAS_VM_GET_PAGE_PROT.
+This adds a new macro DECLARE_VM_GET_PAGE_PROT defining the current generic
+vm_get_page_prot(), in order for it to be reused on platforms that do not
+require custom implementation. Finally, ARCH_HAS_VM_GET_PAGE_PROT can just
+be dropped, as all platforms now define and export vm_get_page_prot(), via
+looking up a private and static protection_map[] array. protection_map[]
+data type has been changed as 'static const' on all platforms that do not
+change it during boot.
 
-bp_slots_histogram_max*() already has asserts (WARN about underflow;
-some with KCSAN help).
+This series applies on v5.19-rc4 and has been build tested for multiple
+platforms. While here it has dropped off all previous tags from folks after
+the current restructuring. Series common CC list has been expanded to cover
+all impacted platforms for wider reach.
 
-The main thing I did to raise my own confidence in the code is inject
-bugs and see if the KUnit test catches it. If it didn't I extended the
-tests. I'll do that some more maybe.
+- Anshuman
+
+Changes in V6:
+
+- Converted protection_map[] array as 'static const' on sparc32 platform
+- Rebased on v5.19-rc4
+- Collected tags
+
+Changes in V5:
+
+https://lore.kernel.org/all/20220627045833.1590055-1-anshuman.khandual@arm.com/
+
+- Converted most platfomr protection_map[] array as 'static const'
+- Moved DECLARE_VM_GET_PAGE_PROT inside <include/linux/pgtable.h>
+- Moved generic protection_map[] comment near DECLARE_VM_GET_PAGE_PROT
+- Updated some commit messages
+
+Changes in V4:
+
+https://lore.kernel.org/all/20220624044339.1533882-1-anshuman.khandual@arm.com/
+
+- Both protection_map[] and vm_get_page_prot() moves inside all platforms
+- Split patches to create modular changes for individual platforms
+- Add macro DECLARE_VM_GET_PAGE_PROT defining generic vm_get_page_prot()
+- Drop ARCH_HAS_VM_GET_PAGE_PROT
+
+Changes in V3:
+
+https://lore.kernel.org/all/20220616040924.1022607-1-anshuman.khandual@arm.com/
+
+- Fix build issues on powerpc and riscv
+
+Changes in V2:
+
+https://lore.kernel.org/all/20220613053354.553579-1-anshuman.khandual@arm.com/
+
+- Add 'const' identifier to protection_map[] on powerpc
+- Dropped #ifndef CONFIG_ARCH_HAS_VM_GET_PAGE_PROT check from sparc 32
+- Dropped protection_map[] init from sparc 64
+- Dropped all new platform changes subscribing ARCH_HAS_VM_GET_PAGE_PROT
+- Added a second patch which moves generic protection_map[] array into
+  all remaining platforms (!ARCH_HAS_VM_GET_PAGE_PROT)
+
+Changes in V1:
+
+https://lore.kernel.org/all/20220603101411.488970-1-anshuman.khandual@arm.com/
+
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Christoph Hellwig <hch@infradead.org>
+Cc: Christophe Leroy <christophe.leroy@csgroup.eu>
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: sparclinux@vger.kernel.org
+Cc: x86@kernel.org
+Cc: openrisc@lists.librecores.org
+Cc: linux-xtensa@linux-xtensa.org
+Cc: linux-csky@vger.kernel.org
+Cc: linux-hexagon@vger.kernel.org
+Cc: linux-parisc@vger.kernel.org
+Cc: linux-alpha@vger.kernel.org
+Cc: linux-riscv@lists.infradead.org
+Cc: linux-csky@vger.kernel.org
+Cc: linux-s390@vger.kernel.org
+Cc: linux-ia64@vger.kernel.org
+Cc: linux-mips@vger.kernel.org
+Cc: linux-m68k@lists.linux-m68k.org
+Cc: linux-snps-arc@lists.infradead.org
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-um@lists.infradead.org
+Cc: linux-sh@vger.kernel.org
+Cc: linux-mm@kvack.org
+Cc: linux-kernel@vger.kernel.org
+
+Anshuman Khandual (26):
+  mm/mmap: Build protect protection_map[] with __P000
+  mm/mmap: Define DECLARE_VM_GET_PAGE_PROT
+  powerpc/mm: Move protection_map[] inside the platform
+  sparc/mm: Move protection_map[] inside the platform
+  arm64/mm: Move protection_map[] inside the platform
+  x86/mm: Move protection_map[] inside the platform
+  mm/mmap: Build protect protection_map[] with ARCH_HAS_VM_GET_PAGE_PROT
+  microblaze/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  loongarch/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  openrisc/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  xtensa/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  hexagon/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  parisc/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  alpha/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  nios2/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  riscv/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  csky/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  s390/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  ia64/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  mips/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  m68k/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  arc/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  arm/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  um/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  sh/mm: Enable ARCH_HAS_VM_GET_PAGE_PROT
+  mm/mmap: Drop ARCH_HAS_VM_GET_PAGE_PROT
+
+ arch/alpha/include/asm/pgtable.h          | 17 -------
+ arch/alpha/mm/init.c                      | 22 +++++++++
+ arch/arc/include/asm/pgtable-bits-arcv2.h | 18 --------
+ arch/arc/mm/mmap.c                        | 20 +++++++++
+ arch/arm/include/asm/pgtable.h            | 17 -------
+ arch/arm/lib/uaccess_with_memcpy.c        |  2 +-
+ arch/arm/mm/mmu.c                         | 20 +++++++++
+ arch/arm64/Kconfig                        |  1 -
+ arch/arm64/include/asm/pgtable-prot.h     | 18 --------
+ arch/arm64/mm/mmap.c                      | 21 +++++++++
+ arch/csky/include/asm/pgtable.h           | 18 --------
+ arch/csky/mm/init.c                       | 20 +++++++++
+ arch/hexagon/include/asm/pgtable.h        | 27 -----------
+ arch/hexagon/mm/init.c                    | 42 +++++++++++++++++
+ arch/ia64/include/asm/pgtable.h           | 18 --------
+ arch/ia64/mm/init.c                       | 28 +++++++++++-
+ arch/loongarch/include/asm/pgtable-bits.h | 19 --------
+ arch/loongarch/mm/cache.c                 | 46 +++++++++++++++++++
+ arch/m68k/include/asm/mcf_pgtable.h       | 54 ----------------------
+ arch/m68k/include/asm/motorola_pgtable.h  | 22 ---------
+ arch/m68k/include/asm/sun3_pgtable.h      | 17 -------
+ arch/m68k/mm/mcfmmu.c                     | 55 +++++++++++++++++++++++
+ arch/m68k/mm/motorola.c                   | 20 +++++++++
+ arch/m68k/mm/sun3mmu.c                    | 20 +++++++++
+ arch/microblaze/include/asm/pgtable.h     | 17 -------
+ arch/microblaze/mm/init.c                 | 20 +++++++++
+ arch/mips/include/asm/pgtable.h           | 22 ---------
+ arch/mips/mm/cache.c                      |  3 ++
+ arch/nios2/include/asm/pgtable.h          | 16 -------
+ arch/nios2/mm/init.c                      | 20 +++++++++
+ arch/openrisc/include/asm/pgtable.h       | 18 --------
+ arch/openrisc/mm/init.c                   | 20 +++++++++
+ arch/parisc/include/asm/pgtable.h         | 18 --------
+ arch/parisc/mm/init.c                     | 20 +++++++++
+ arch/powerpc/Kconfig                      |  1 -
+ arch/powerpc/include/asm/pgtable.h        | 20 +--------
+ arch/powerpc/mm/pgtable.c                 | 24 ++++++++++
+ arch/riscv/include/asm/pgtable.h          | 20 ---------
+ arch/riscv/mm/init.c                      | 20 +++++++++
+ arch/s390/include/asm/pgtable.h           | 17 -------
+ arch/s390/mm/mmap.c                       | 20 +++++++++
+ arch/sh/include/asm/pgtable.h             | 17 -------
+ arch/sh/mm/mmap.c                         | 20 +++++++++
+ arch/sparc/Kconfig                        |  1 -
+ arch/sparc/include/asm/pgtable_32.h       | 19 --------
+ arch/sparc/include/asm/pgtable_64.h       | 19 --------
+ arch/sparc/mm/init_32.c                   | 20 +++++++++
+ arch/sparc/mm/init_64.c                   |  3 ++
+ arch/um/include/asm/pgtable.h             | 17 -------
+ arch/um/kernel/mem.c                      | 20 +++++++++
+ arch/x86/Kconfig                          |  1 -
+ arch/x86/include/asm/pgtable_types.h      | 19 --------
+ arch/x86/mm/mem_encrypt_amd.c             |  7 ++-
+ arch/x86/mm/pgprot.c                      | 27 +++++++++++
+ arch/x86/um/mem_32.c                      |  2 +-
+ arch/xtensa/include/asm/pgtable.h         | 18 --------
+ arch/xtensa/mm/init.c                     | 20 +++++++++
+ include/linux/mm.h                        |  1 -
+ include/linux/pgtable.h                   | 28 ++++++++++++
+ mm/Kconfig                                |  3 --
+ mm/mmap.c                                 | 47 -------------------
+ 61 files changed, 604 insertions(+), 563 deletions(-)
+
+-- 
+2.25.1
+
