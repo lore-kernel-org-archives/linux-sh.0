@@ -2,71 +2,126 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6D1B7C43334
-	for <linux-sh@archiver.kernel.org>; Thu, 30 Jun 2022 15:34:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7DC0C43334
+	for <linux-sh@archiver.kernel.org>; Thu, 30 Jun 2022 16:57:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236188AbiF3PeQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 30 Jun 2022 11:34:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41904 "EHLO
+        id S235961AbiF3Q5L (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 30 Jun 2022 12:57:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56480 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236014AbiF3Pdk (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 30 Jun 2022 11:33:40 -0400
-Received: from mail-wr1-x434.google.com (mail-wr1-x434.google.com [IPv6:2a00:1450:4864:20::434])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C22EA25FA
-        for <linux-sh@vger.kernel.org>; Thu, 30 Jun 2022 08:33:39 -0700 (PDT)
-Received: by mail-wr1-x434.google.com with SMTP id v9so12287527wrp.7
-        for <linux-sh@vger.kernel.org>; Thu, 30 Jun 2022 08:33:39 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=message-id:date:mime-version:from:to:subject
-         :content-transfer-encoding;
-        bh=TFGxfKfYNc6FX30F9sKmEL18XnIK/Iwh98w/L1TSaX4=;
-        b=blUFbC3b9XXke4KbKSdxYfQvJ8ALHON967lZ20HW9c2BDfQlwP5UNrBlcXptRBxm0e
-         +AvtQVHNd4kJwKkGxXYH4MIU+3TiFMA5ey5Q6pNjaFqMb1WKUwtiI7RpqiZPxDCitiL6
-         fsWNCRHiho/gk7OJSO9137Op6oHH2CesBLnp7U011Yn6G92obx1GD79ZjMcVAjmiti4k
-         5o6aLidz8MykdCsBCMjaqP7MM7anBUbbmuMrTgzA2TTfOynVveq8gtnYuoNr9duISY2B
-         UrE/KJ5NwhGXabuJGSZKi6PtOxfM56xo8m+BN4Q3ZqsZUSi3QTjAt97sapu0ASnm5a3Q
-         2HRQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:message-id:date:mime-version:from:to:subject
-         :content-transfer-encoding;
-        bh=TFGxfKfYNc6FX30F9sKmEL18XnIK/Iwh98w/L1TSaX4=;
-        b=qIaVnD1jeRDyzYazJHQnL11wv2F9lfEYWxp8va5rmDJg85SMRDiDEyvWLZcmH+Mfdq
-         ZDf1iQZl09at6vOy6BzIfNPqCJY4hnx/Az91Bat4U4voRoaKN+f5Q0hdWaOn0KoBbOyA
-         3sNQOw5kqwVQTrgqJy1LiRvYGiertcAKGsmIqQtTNFEgyZLrBqrr0bvJBY5MRR2UjKus
-         9O5l4KSnDoFXs/Y3UD/zeVLavkS5NWUyw4EVcIGVM79JKZcaeTYtc2Ft5WaGmn+lUNIP
-         SXCCsjkUF069x+WLEJhrEE0cPmO7Q+S6jM2+mKIxQwz87D/pDZ1FO4V1VftcD4dQ2gbm
-         EXmA==
-X-Gm-Message-State: AJIora+mYDPyxA63jtGRtLx0+pax57GWru3Q+SdvzF7cm/jR1fD8QmNS
-        CbsoFSmh3b2bTetvuCCJVv29HLyjlIw=
-X-Google-Smtp-Source: AGRyM1sRPxRDHN38kD4D5jLSRoup+bqizxPQrD88AW0D0//ZlEVuoPW+hnFh/ZHo8IJ69AlUlgPIYg==
-X-Received: by 2002:adf:db89:0:b0:21b:84a6:9cce with SMTP id u9-20020adfdb89000000b0021b84a69ccemr9270686wri.675.1656603218136;
-        Thu, 30 Jun 2022 08:33:38 -0700 (PDT)
-Received: from DESKTOP-L1U6HLH ([39.53.244.205])
-        by smtp.gmail.com with ESMTPSA id e12-20020a5d530c000000b002185d79dc7fsm19643154wrv.75.2022.06.30.08.33.37
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1 cipher=ECDHE-ECDSA-AES128-SHA bits=128/128);
-        Thu, 30 Jun 2022 08:33:37 -0700 (PDT)
-Message-ID: <62bdc251.1c69fb81.c2d0e.5b94@mx.google.com>
-Date:   Thu, 30 Jun 2022 08:33:37 -0700 (PDT)
-X-Google-Original-Date: 30 Jun 2022 11:33:39 -0400
+        with ESMTP id S230223AbiF3Q5J (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 30 Jun 2022 12:57:09 -0400
+Received: from mga02.intel.com (mga02.intel.com [134.134.136.20])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1B188393DC;
+        Thu, 30 Jun 2022 09:57:09 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1656608229; x=1688144229;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=bL9nkQHpWXRcPQiclQNvTJObFea+2bIOo5Icywa3vMA=;
+  b=fmrnj/6XuSpY1hnOWZabHa7oDtPIZ/7Bh+RzopLp14OHknBAX57nHps+
+   hL5jBriVpX/QkW93R0zu0Im+Scz9SCMknY/iOCVSHSS2S8n+mKecZgyHQ
+   Bj7eBMp9wg9++qnorxgkRFae5QI68Ufol1Zw3FVTWM9ltXapLCo//Tj26
+   9Kxt8LZ2qLG3s4QZZ6QJUPHIBI+jiJrwD8thm/mMC7PGeyX+J3CV/8SMn
+   PUlmia2grWt0+sj7f7hIdMOsNypeNBNyPtP/nF2FJrYVf6/8tUDwXrhTm
+   a/SMH+lmmn9h8jAOslm763iFDv28yTpVnQqU9eUHwUpe3DyX9d9HKP6LI
+   Q==;
+X-IronPort-AV: E=McAfee;i="6400,9594,10394"; a="271175238"
+X-IronPort-AV: E=Sophos;i="5.92,234,1650956400"; 
+   d="scan'208";a="271175238"
+Received: from orsmga001.jf.intel.com ([10.7.209.18])
+  by orsmga101.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Jun 2022 09:57:08 -0700
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="5.92,234,1650956400"; 
+   d="scan'208";a="623800223"
+Received: from irvmail001.ir.intel.com ([10.43.11.63])
+  by orsmga001.jf.intel.com with ESMTP; 30 Jun 2022 09:57:02 -0700
+Received: from newjersey.igk.intel.com (newjersey.igk.intel.com [10.102.20.203])
+        by irvmail001.ir.intel.com (8.14.3/8.13.6/MailSET/Hub) with ESMTP id 25UGv0GF022621;
+        Thu, 30 Jun 2022 17:57:00 +0100
+From:   Alexander Lobakin <alexandr.lobakin@intel.com>
+To:     Yury Norov <yury.norov@gmail.com>
+Cc:     Alexander Lobakin <alexandr.lobakin@intel.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Matt Turner <mattst88@gmail.com>,
+        Brian Cain <bcain@quicinc.com>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        "David S. Miller" <davem@davemloft.net>,
+        Kees Cook <keescook@chromium.org>,
+        "Peter Zijlstra (Intel)" <peterz@infradead.org>,
+        Marco Elver <elver@google.com>, Borislav Petkov <bp@suse.de>,
+        Tony Luck <tony.luck@intel.com>,
+        Maciej Fijalkowski <maciej.fijalkowski@intel.com>,
+        Jesse Brandeburg <jesse.brandeburg@intel.com>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Nathan Chancellor <nathan@kernel.org>,
+        Nick Desaulniers <ndesaulniers@google.com>,
+        Tom Rix <trix@redhat.com>, kernel test robot <lkp@intel.com>,
+        linux-alpha@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-arch@vger.kernel.org, llvm@lists.linux.dev,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v5 0/9] bitops: let optimize out non-atomic bitops on compile-time constants
+Date:   Thu, 30 Jun 2022 18:56:11 +0200
+Message-Id: <20220630165611.1551808-1-alexandr.lobakin@intel.com>
+X-Mailer: git-send-email 2.36.1
+In-Reply-To: <20220624121313.2382500-1-alexandr.lobakin@intel.com>
+References: <20220624121313.2382500-1-alexandr.lobakin@intel.com>
 MIME-Version: 1.0
-From:   bryce.dreamlamdestimation@gmail.com
-To:     linux-sh@vger.kernel.org
-Subject: Estimating Services
-Content-Type: text/plain; charset=us-ascii
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi,=0D=0A=0D=0AWe provide estimation & quantities takeoff service=
-s. We are providing 98-100 accuracy in our estimates and take-off=
-s. Please tell us if you need any estimating services regarding y=
-our projects.=0D=0A=0D=0ASend over the plans and mention the exac=
-t scope of work and shortly we will get back with a proposal on w=
-hich our charges and turnaround time will be mentioned=0D=0A=0D=0A=
-You may ask for sample estimates and take-offs. Thanks.=0D=0A=0D=0A=
-Kind Regards=0D=0ABryce Weems=0D=0ADreamland Estimation, LLC
+From: Alexander Lobakin <alexandr.lobakin@intel.com>
+Date: Fri, 24 Jun 2022 14:13:04 +0200
 
+> While I was working on converting some structure fields from a fixed
+> type to a bitmap, I started observing code size increase not only in
+> places where the code works with the converted structure fields, but
+> also where the converted vars were on the stack. That said, the
+> following code:
+
+Hey,
+
+Seems like everything is fine this time. I got some reports, but
+those aren't caused by any of the changes from the series.
+Maybe we can take it to -next and see how it goes?
+
+[...]
+
+>  arch/alpha/include/asm/bitops.h               |  32 ++--
+>  arch/hexagon/include/asm/bitops.h             |  24 ++-
+>  arch/ia64/include/asm/bitops.h                |  42 ++---
+>  arch/ia64/include/asm/processor.h             |   2 +-
+>  arch/m68k/include/asm/bitops.h                |  49 ++++--
+>  arch/s390/include/asm/bitops.h                |  61 +++----
+>  arch/sh/include/asm/bitops-op32.h             |  34 ++--
+>  arch/sparc/include/asm/bitops_32.h            |  18 +-
+>  arch/sparc/lib/atomic32.c                     |  12 +-
+>  arch/x86/include/asm/bitops.h                 |  22 +--
+>  drivers/net/ethernet/intel/ice/ice_switch.c   |   2 +-
+>  .../asm-generic/bitops/generic-non-atomic.h   | 161 ++++++++++++++++++
+>  .../bitops/instrumented-non-atomic.h          |  35 ++--
+>  include/asm-generic/bitops/non-atomic.h       | 121 +------------
+>  .../bitops/non-instrumented-non-atomic.h      |  16 ++
+>  include/linux/bitmap.h                        |  22 ++-
+>  include/linux/bitops.h                        |  50 ++++++
+>  lib/test_bitmap.c                             |  62 +++++++
+>  tools/include/asm-generic/bitops/non-atomic.h |  34 ++--
+>  tools/include/linux/bitops.h                  |  16 ++
+>  20 files changed, 544 insertions(+), 271 deletions(-)
+>  create mode 100644 include/asm-generic/bitops/generic-non-atomic.h
+>  create mode 100644 include/asm-generic/bitops/non-instrumented-non-atomic.h
+> 
+> -- 
+> 2.36.1
+
+Thanks,
+Olek
