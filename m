@@ -2,48 +2,55 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D7DC0C43334
-	for <linux-sh@archiver.kernel.org>; Thu, 30 Jun 2022 16:57:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D8963C43334
+	for <linux-sh@archiver.kernel.org>; Fri,  1 Jul 2022 02:58:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235961AbiF3Q5L (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 30 Jun 2022 12:57:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56480 "EHLO
+        id S233609AbiGAC6S (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 30 Jun 2022 22:58:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51512 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230223AbiF3Q5J (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 30 Jun 2022 12:57:09 -0400
-Received: from mga02.intel.com (mga02.intel.com [134.134.136.20])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1B188393DC;
-        Thu, 30 Jun 2022 09:57:09 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1656608229; x=1688144229;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=bL9nkQHpWXRcPQiclQNvTJObFea+2bIOo5Icywa3vMA=;
-  b=fmrnj/6XuSpY1hnOWZabHa7oDtPIZ/7Bh+RzopLp14OHknBAX57nHps+
-   hL5jBriVpX/QkW93R0zu0Im+Scz9SCMknY/iOCVSHSS2S8n+mKecZgyHQ
-   Bj7eBMp9wg9++qnorxgkRFae5QI68Ufol1Zw3FVTWM9ltXapLCo//Tj26
-   9Kxt8LZ2qLG3s4QZZ6QJUPHIBI+jiJrwD8thm/mMC7PGeyX+J3CV/8SMn
-   PUlmia2grWt0+sj7f7hIdMOsNypeNBNyPtP/nF2FJrYVf6/8tUDwXrhTm
-   a/SMH+lmmn9h8jAOslm763iFDv28yTpVnQqU9eUHwUpe3DyX9d9HKP6LI
-   Q==;
-X-IronPort-AV: E=McAfee;i="6400,9594,10394"; a="271175238"
-X-IronPort-AV: E=Sophos;i="5.92,234,1650956400"; 
-   d="scan'208";a="271175238"
-Received: from orsmga001.jf.intel.com ([10.7.209.18])
-  by orsmga101.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Jun 2022 09:57:08 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.92,234,1650956400"; 
-   d="scan'208";a="623800223"
-Received: from irvmail001.ir.intel.com ([10.43.11.63])
-  by orsmga001.jf.intel.com with ESMTP; 30 Jun 2022 09:57:02 -0700
-Received: from newjersey.igk.intel.com (newjersey.igk.intel.com [10.102.20.203])
-        by irvmail001.ir.intel.com (8.14.3/8.13.6/MailSET/Hub) with ESMTP id 25UGv0GF022621;
-        Thu, 30 Jun 2022 17:57:00 +0100
-From:   Alexander Lobakin <alexandr.lobakin@intel.com>
-To:     Yury Norov <yury.norov@gmail.com>
-Cc:     Alexander Lobakin <alexandr.lobakin@intel.com>,
-        Arnd Bergmann <arnd@arndb.de>,
+        with ESMTP id S232320AbiGAC6Q (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 30 Jun 2022 22:58:16 -0400
+Received: from mail-qv1-xf33.google.com (mail-qv1-xf33.google.com [IPv6:2607:f8b0:4864:20::f33])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D7FEDCC0;
+        Thu, 30 Jun 2022 19:58:13 -0700 (PDT)
+Received: by mail-qv1-xf33.google.com with SMTP id 59so2711247qvb.3;
+        Thu, 30 Jun 2022 19:58:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=lOvmRX5TfFX/UtEGzQDHuFSxkP0i5beuEIqtb7CEA/w=;
+        b=WelpAaI3njYPrQSfHDzi8D3Dc8rtvD01QTHIWuSTBpUCspUSZA5CiPOn1FmsBxK2d1
+         n+NvrQ429oVmXtDqyobXXKenmqQR1H4B2ygsgygEyJJsgDS7yFbtnMTx/Yat7tla7IGb
+         f81YC5UvSkGSiC8iaxaum9eibqhYQJgbGxT2mCiuwPfUJl9ROYkck29M4SFGJ5LzsLJP
+         VMJvj4NIDqtL/H8VtZGuM3kOpVqOTkedC07tTTX3LXleA88NKqFOJjONifGSPFrF1T5M
+         MZBE+oi0zJaomy+MpwcjtkMzDFGUMj1gM3gdD0ksFZaravUlIe1wlA6yFdxpI1+5Wu8A
+         05kw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=lOvmRX5TfFX/UtEGzQDHuFSxkP0i5beuEIqtb7CEA/w=;
+        b=L/Ey6K+NFvjIiDeGmydgB4/iZ8H/wCdtl3871B1Wbigq5wIZW1V0vI2xStCWbkIoCY
+         JGc4GSNfKA3UCyfMtj07oq1HATb8+SQrgj+PLZNL/i5euaJxoPnM3Y/U50YhgPCX3iay
+         EXS0csxzSuzTUEiSTNtLzdm4420FsAtG4lTLZZ18EXKjHB5FdsPT03GZSbjlbR3nn/ed
+         xzDLf702kxnIWfOgYoJLcmAkCzZJ4ZDvBikzcjpPtTOWAplPm8CS55EEZBijMVuopEQu
+         4r4Nv1LYSesihVUvja2d2LQbKhEyaKjGVVYFVVSnAX8sZPCdzr0cYLtD0o6Ou3xseCFP
+         w1EA==
+X-Gm-Message-State: AJIora+adoHolPnCDw3cOKZgtpsbgOK1Ylr5oy3fzhSvI2VTeo1cjU0F
+        sY6Nvkae47g0K5QPYu9xacU=
+X-Google-Smtp-Source: AGRyM1svRdiqfGdo6Px/LVasHA2ZAF5HGNiftP14Jt+t+yFx39TVmlT99mhU8zn9HSKzlmMDUj7R+Q==
+X-Received: by 2002:a05:6214:27ed:b0:470:90a3:6b9e with SMTP id jt13-20020a05621427ed00b0047090a36b9emr14298448qvb.114.1656644292944;
+        Thu, 30 Jun 2022 19:58:12 -0700 (PDT)
+Received: from localhost ([2601:4c1:c100:1230:1dde:deb7:a57c:900d])
+        by smtp.gmail.com with ESMTPSA id w4-20020a05620a424400b006af08c26774sm15988491qko.47.2022.06.30.19.58.12
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 30 Jun 2022 19:58:12 -0700 (PDT)
+Date:   Thu, 30 Jun 2022 19:58:11 -0700
+From:   Yury Norov <yury.norov@gmail.com>
+To:     Alexander Lobakin <alexandr.lobakin@intel.com>
+Cc:     Arnd Bergmann <arnd@arndb.de>,
         Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         Mark Rutland <mark.rutland@arm.com>,
         Matt Turner <mattst88@gmail.com>,
@@ -67,61 +74,35 @@ Cc:     Alexander Lobakin <alexandr.lobakin@intel.com>,
         linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
         linux-arch@vger.kernel.org, llvm@lists.linux.dev,
         linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v5 0/9] bitops: let optimize out non-atomic bitops on compile-time constants
-Date:   Thu, 30 Jun 2022 18:56:11 +0200
-Message-Id: <20220630165611.1551808-1-alexandr.lobakin@intel.com>
-X-Mailer: git-send-email 2.36.1
-In-Reply-To: <20220624121313.2382500-1-alexandr.lobakin@intel.com>
+Subject: Re: [PATCH v5 0/9] bitops: let optimize out non-atomic bitops on
+ compile-time constants
+Message-ID: <Yr5iw9Ruj+LdlB+R@yury-laptop>
 References: <20220624121313.2382500-1-alexandr.lobakin@intel.com>
+ <20220630165611.1551808-1-alexandr.lobakin@intel.com>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220630165611.1551808-1-alexandr.lobakin@intel.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Alexander Lobakin <alexandr.lobakin@intel.com>
-Date: Fri, 24 Jun 2022 14:13:04 +0200
-
-> While I was working on converting some structure fields from a fixed
-> type to a bitmap, I started observing code size increase not only in
-> places where the code works with the converted structure fields, but
-> also where the converted vars were on the stack. That said, the
-> following code:
-
-Hey,
-
-Seems like everything is fine this time. I got some reports, but
-those aren't caused by any of the changes from the series.
-Maybe we can take it to -next and see how it goes?
-
-[...]
-
->  arch/alpha/include/asm/bitops.h               |  32 ++--
->  arch/hexagon/include/asm/bitops.h             |  24 ++-
->  arch/ia64/include/asm/bitops.h                |  42 ++---
->  arch/ia64/include/asm/processor.h             |   2 +-
->  arch/m68k/include/asm/bitops.h                |  49 ++++--
->  arch/s390/include/asm/bitops.h                |  61 +++----
->  arch/sh/include/asm/bitops-op32.h             |  34 ++--
->  arch/sparc/include/asm/bitops_32.h            |  18 +-
->  arch/sparc/lib/atomic32.c                     |  12 +-
->  arch/x86/include/asm/bitops.h                 |  22 +--
->  drivers/net/ethernet/intel/ice/ice_switch.c   |   2 +-
->  .../asm-generic/bitops/generic-non-atomic.h   | 161 ++++++++++++++++++
->  .../bitops/instrumented-non-atomic.h          |  35 ++--
->  include/asm-generic/bitops/non-atomic.h       | 121 +------------
->  .../bitops/non-instrumented-non-atomic.h      |  16 ++
->  include/linux/bitmap.h                        |  22 ++-
->  include/linux/bitops.h                        |  50 ++++++
->  lib/test_bitmap.c                             |  62 +++++++
->  tools/include/asm-generic/bitops/non-atomic.h |  34 ++--
->  tools/include/linux/bitops.h                  |  16 ++
->  20 files changed, 544 insertions(+), 271 deletions(-)
->  create mode 100644 include/asm-generic/bitops/generic-non-atomic.h
->  create mode 100644 include/asm-generic/bitops/non-instrumented-non-atomic.h
+On Thu, Jun 30, 2022 at 06:56:11PM +0200, Alexander Lobakin wrote:
+> From: Alexander Lobakin <alexandr.lobakin@intel.com>
+> Date: Fri, 24 Jun 2022 14:13:04 +0200
 > 
-> -- 
-> 2.36.1
+> > While I was working on converting some structure fields from a fixed
+> > type to a bitmap, I started observing code size increase not only in
+> > places where the code works with the converted structure fields, but
+> > also where the converted vars were on the stack. That said, the
+> > following code:
+> 
+> Hey,
+> 
+> Seems like everything is fine this time. I got some reports, but
+> those aren't caused by any of the changes from the series.
+> Maybe we can take it to -next and see how it goes?
 
-Thanks,
-Olek
+Applied on github.com:/norov/linux.git branch bitmap-for-next
+
+Thanks!
