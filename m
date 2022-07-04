@@ -2,307 +2,186 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42FC8CCA473
-	for <linux-sh@archiver.kernel.org>; Sun,  3 Jul 2022 15:22:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D421C433EF
+	for <linux-sh@archiver.kernel.org>; Mon,  4 Jul 2022 15:06:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232588AbiGCPWO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 3 Jul 2022 11:22:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35676 "EHLO
+        id S234597AbiGDPGA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 4 Jul 2022 11:06:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60306 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230446AbiGCPWN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 3 Jul 2022 11:22:13 -0400
-Received: from mail-lj1-x22b.google.com (mail-lj1-x22b.google.com [IPv6:2a00:1450:4864:20::22b])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7835C559D;
-        Sun,  3 Jul 2022 08:22:09 -0700 (PDT)
-Received: by mail-lj1-x22b.google.com with SMTP id a11so8194520ljb.5;
-        Sun, 03 Jul 2022 08:22:09 -0700 (PDT)
+        with ESMTP id S234755AbiGDPF7 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 4 Jul 2022 11:05:59 -0400
+Received: from mail-ej1-x649.google.com (mail-ej1-x649.google.com [IPv6:2a00:1450:4864:20::649])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3E0CFFD2A
+        for <linux-sh@vger.kernel.org>; Mon,  4 Jul 2022 08:05:57 -0700 (PDT)
+Received: by mail-ej1-x649.google.com with SMTP id nb10-20020a1709071c8a00b006e8f89863ceso2119231ejc.18
+        for <linux-sh@vger.kernel.org>; Mon, 04 Jul 2022 08:05:57 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=subject:to:cc:references:from:message-id:date:user-agent
-         :mime-version:in-reply-to:content-transfer-encoding:content-language;
-        bh=7h/oDkelqUvQhnXMEHsIGaLApBCL4bVp/zpTNjHKaa0=;
-        b=Ajde41bE2wU0CLXRYXxA4RUv0bp0nc6vv24Jkv3jO+pNmgV5SruaUwkgdZh2uTckb2
-         LjwBe+5chzPdn9GsqinhSMRPDH/BkAH/rWbDiCgv3b73DzTdIIwCuu7rSSyi6XgKQgam
-         QzYkv4hEeMuDSoYQBiHL7V7XX8PuwVWoX68+MhlsNYB1tpAW+qusPDMIKzVjewkktdka
-         B8RzQXojCPXGgXsFV0Py1qu3xQ+dQ+Ph5W2hTs/NfGpTe8YoyNytz8Jxlg3eba2Qpapr
-         0dHtsjY/VCs3nDTxh/rSpBzNfE0J7lWIPD0uFnZAO2fN8qfYU1kzNyc0DtqVW3j5bPa6
-         jQig==
+        d=google.com; s=20210112;
+        h=date:message-id:mime-version:subject:from:to:cc;
+        bh=vCw+qYcLfEryg0NCqZvoZGaEOfEUqqIfSJ3H2Y/La+U=;
+        b=HFp/v8d2JOu2HioOUO0UTDm9Zyhs+v2Kftdg2XX6m5HUrg5WguofD2OUwXCJFmS2t5
+         MzJ+MRI0ygIfoJcIf/tMFNJNZbGyjzyrLWGWivMyMHmp8eVi4nsp7ExUK3gmGVz/wyw0
+         7U6+cUacp1FI8hB1JqPYKjF6K/yUIZFAuD4PFsJqvZ864ha8FmfiajnGNjREe9ugM/7A
+         2bwVpugmtHL2oGjoONBY82pn1ytKFJaNZ1V8XrMgfIf418nJTEtcHiaSuoetYrZep8i9
+         0Co/EUanDPBpyvGSg4MjLbGcZRFp1iZpG2VX08sIwcAZPlkaF3A6n4gwMxMPGNYD6Br1
+         yaSg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:subject:to:cc:references:from:message-id:date
-         :user-agent:mime-version:in-reply-to:content-transfer-encoding
-         :content-language;
-        bh=7h/oDkelqUvQhnXMEHsIGaLApBCL4bVp/zpTNjHKaa0=;
-        b=SEh/L2/IwM+8X+EYW/d9V+NLQeHJljo3ZMCLaN/0nI9/mNNeYOseL/KSj+UdejcU5f
-         M6G4A0FBxvMjOzBNpOBxZvqHqUH1TxtaT6Rw3FmL3N/rGYkXf8Jdd2teyHohU898Zeu8
-         5YotdNeTrpXZJiYcb2bmrYOSpPUQq71vLW+VhJ5gHila11sfu0RI+URxoFmdKh1qMTpE
-         lujhwdQFcBtbt3pdowTBVclP+L2BW2YOo5yoREVbNIV5aufgg6gCEpEZ7mGCisAlg8yn
-         NIgPoe9QBwJ0vu0FxMJMqqI3iiTQa1v8WlZ3nUIeCJ3u/cjf+Bt2RAabzF/mzL519q/Q
-         5M7g==
-X-Gm-Message-State: AJIora+dXoR765ehfTIhs2GNiZMzADbqQbBjoOIh00GOV290PHu+DZNr
-        Zcr2YAN10bJXtG84jykjRmE=
-X-Google-Smtp-Source: AGRyM1trX48ruuzycgoteqtLbzXdO1QJTxFK4a9qaPKv/Ind+sZ8MDYf+3trOk+5IJ6FZryqObKQIg==
-X-Received: by 2002:a2e:9941:0:b0:25b:c885:3143 with SMTP id r1-20020a2e9941000000b0025bc8853143mr14475290ljj.477.1656861727485;
-        Sun, 03 Jul 2022 08:22:07 -0700 (PDT)
-Received: from [192.168.1.7] ([212.22.223.21])
-        by smtp.gmail.com with ESMTPSA id s10-20020a056512202a00b0047255d21132sm4758576lfs.97.2022.07.03.08.22.04
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 03 Jul 2022 08:22:06 -0700 (PDT)
-Subject: Re: [PATCH v3 6/8] genirq: Add and use an irq_data_update_affinity
- helper
-To:     Samuel Holland <samuel@sholland.org>
-Cc:     Marc Zyngier <maz@kernel.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Andy Shevchenko <andy.shevchenko@gmail.com>,
-        Bartosz Golaszewski <brgl@bgdev.pl>,
-        Bjorn Helgaas <bhelgaas@google.com>,
-        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
-        Borislav Petkov <bp@alien8.de>,
-        Broadcom internal kernel review list 
-        <bcm-kernel-feedback-list@broadcom.com>,
-        Chris Zankel <chris@zankel.net>,
-        Colin Ian King <colin.king@intel.com>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        Dexuan Cui <decui@microsoft.com>,
-        Florian Fainelli <f.fainelli@gmail.com>,
-        Guo Ren <guoren@kernel.org>, "H. Peter Anvin" <hpa@zytor.com>,
-        Haiyang Zhang <haiyangz@microsoft.com>,
-        Helge Deller <deller@gmx.de>, Ingo Molnar <mingo@redhat.com>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-        Jan Beulich <jbeulich@suse.com>,
-        Joerg Roedel <joro@8bytes.org>,
-        Juergen Gross <jgross@suse.com>,
-        Julia Lawall <Julia.Lawall@inria.fr>,
-        "K. Y. Srinivasan" <kys@microsoft.com>,
-        Kees Cook <keescook@chromium.org>,
-        =?UTF-8?Q?Krzysztof_Wilczy=c5=84ski?= <kw@linux.com>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Lorenzo Pieralisi <lpieralisi@kernel.org>,
+        h=x-gm-message-state:date:message-id:mime-version:subject:from:to:cc;
+        bh=vCw+qYcLfEryg0NCqZvoZGaEOfEUqqIfSJ3H2Y/La+U=;
+        b=NS67ZBcKesV4OZ7KIezcgAyCgsUUcMckdMVoA+qoY0WpNpOmYp/jpBoluerxjjILtP
+         6FIgRUwNAtyx8m2uN5Xi5HolE3unxMUQr1D3glxtxwBkHRy7rWHEWul7kE6rB1jtLXqd
+         Sx+d26U4z7MOlDDAByP5amYimzWph3DWVghpY07GnFWil1499tUXR5OxMjM3uZbRrzvq
+         HMpcNnESeC5XE+lMI5CGfKhIesc8Xthsn+riUD8mDDBhD59RfTV0ER4I/E6P59Rvplcl
+         a4ha6qJpN9zMQZIku6uwiWk2KpQJNPOTpP1LpEFX79UcIyP1HGudxGyfZNqZEbmObt3W
+         NBGg==
+X-Gm-Message-State: AJIora87M3Xz3/JY6//IZ1Ep/337F0Ws4WTmeyu8X52bfweOmYNznA1m
+        t8wXA26a5Hvk1G57zd8KyL4wylennw==
+X-Google-Smtp-Source: AGRyM1vcv+ey9wUHmm7mpO7HIaPskiyQmKiaXY4E4O4MknYpkUaDhKf/gg5exg6tZAXZRBybUUWCEVO2Hg==
+X-Received: from elver.muc.corp.google.com ([2a00:79e0:9c:201:6edf:e1bc:9a92:4ad0])
+ (user=elver job=sendgmr) by 2002:a17:906:9b86:b0:6f8:24e7:af7d with SMTP id
+ dd6-20020a1709069b8600b006f824e7af7dmr29696674ejc.295.1656947155542; Mon, 04
+ Jul 2022 08:05:55 -0700 (PDT)
+Date:   Mon,  4 Jul 2022 17:05:00 +0200
+Message-Id: <20220704150514.48816-1-elver@google.com>
+Mime-Version: 1.0
+X-Mailer: git-send-email 2.37.0.rc0.161.g10f37bed90-goog
+Subject: [PATCH v3 00/14] perf/hw_breakpoint: Optimize for thousands of tasks
+From:   Marco Elver <elver@google.com>
+To:     elver@google.com, Peter Zijlstra <peterz@infradead.org>,
+        Frederic Weisbecker <frederic@kernel.org>,
+        Ingo Molnar <mingo@kernel.org>
+Cc:     Thomas Gleixner <tglx@linutronix.de>,
+        Arnaldo Carvalho de Melo <acme@kernel.org>,
         Mark Rutland <mark.rutland@arm.com>,
-        Matt Turner <mattst88@gmail.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Maximilian Heyne <mheyne@amazon.de>,
-        Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>,
-        Rich Felker <dalias@libc.org>,
-        Richard Henderson <rth@twiddle.net>,
-        Rikard Falkeborn <rikard.falkeborn@gmail.com>,
-        Rob Herring <robh@kernel.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Serge Semin <fancer.lancer@gmail.com>,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        Stephen Hemminger <sthemmin@microsoft.com>,
-        Sven Schnelle <svens@stackframe.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Wei Liu <wei.liu@kernel.org>, Wei Xu <xuwei5@hisilicon.com>,
-        Will Deacon <will@kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        iommu@lists.linux-foundation.org, iommu@lists.linux.dev,
-        linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-hyperv@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linux-pci@vger.kernel.org,
-        linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org,
-        x86@kernel.org, xen-devel@lists.xenproject.org
-References: <20220701200056.46555-1-samuel@sholland.org>
- <20220701200056.46555-7-samuel@sholland.org>
-From:   Oleksandr <olekstysh@gmail.com>
-Message-ID: <c7171195-796a-e61e-f270-864985adc5c3@gmail.com>
-Date:   Sun, 3 Jul 2022 18:22:03 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101
- Thunderbird/68.10.0
-MIME-Version: 1.0
-In-Reply-To: <20220701200056.46555-7-samuel@sholland.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 7bit
-Content-Language: en-US
+        Alexander Shishkin <alexander.shishkin@linux.intel.com>,
+        Jiri Olsa <jolsa@redhat.com>,
+        Namhyung Kim <namhyung@kernel.org>,
+        Dmitry Vyukov <dvyukov@google.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        linuxppc-dev@lists.ozlabs.org, linux-perf-users@vger.kernel.org,
+        x86@kernel.org, linux-sh@vger.kernel.org,
+        kasan-dev@googlegroups.com, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+The hw_breakpoint subsystem's code has seen little change in over 10
+years. In that time, systems with >100s of CPUs have become common,
+along with improvements to the perf subsystem: using breakpoints on
+thousands of concurrent tasks should be a supported usecase.
 
-On 01.07.22 23:00, Samuel Holland wrote:
+The breakpoint constraints accounting algorithm is the major bottleneck
+in doing so:
 
+  1. toggle_bp_slot() and fetch_bp_busy_slots() are O(#cpus * #tasks):
+     Both iterate through all CPUs and call task_bp_pinned(), which is
+     O(#tasks).
 
-Hello Samuel
+  2. Everything is serialized on a global mutex, 'nr_bp_mutex'.
 
-> Some architectures and irqchip drivers modify the cpumask returned by
-> irq_data_get_affinity_mask, usually by copying in to it. This is
-> problematic for uniprocessor configurations, where the affinity mask
-> should be constant, as it is known at compile time.
->
-> Add and use a setter for the affinity mask, following the pattern of
-> irq_data_update_effective_affinity. This allows the getter function to
-> return a const cpumask pointer.
->
-> Signed-off-by: Samuel Holland <samuel@sholland.org>
-> ---
->
-> Changes in v3:
->   - New patch to introduce irq_data_update_affinity
->
->   arch/alpha/kernel/irq.c          | 2 +-
->   arch/ia64/kernel/iosapic.c       | 2 +-
->   arch/ia64/kernel/irq.c           | 4 ++--
->   arch/ia64/kernel/msi_ia64.c      | 4 ++--
->   arch/parisc/kernel/irq.c         | 2 +-
->   drivers/irqchip/irq-bcm6345-l1.c | 4 ++--
->   drivers/parisc/iosapic.c         | 2 +-
->   drivers/sh/intc/chip.c           | 2 +-
->   drivers/xen/events/events_base.c | 7 ++++---
->   include/linux/irq.h              | 6 ++++++
->   10 files changed, 21 insertions(+), 14 deletions(-)
->
-> diff --git a/arch/alpha/kernel/irq.c b/arch/alpha/kernel/irq.c
-> index f6d2946edbd2..15f2effd6baf 100644
-> --- a/arch/alpha/kernel/irq.c
-> +++ b/arch/alpha/kernel/irq.c
-> @@ -60,7 +60,7 @@ int irq_select_affinity(unsigned int irq)
->   		cpu = (cpu < (NR_CPUS-1) ? cpu + 1 : 0);
->   	last_cpu = cpu;
->   
-> -	cpumask_copy(irq_data_get_affinity_mask(data), cpumask_of(cpu));
-> +	irq_data_update_affinity(data, cpumask_of(cpu));
->   	chip->irq_set_affinity(data, cpumask_of(cpu), false);
->   	return 0;
->   }
-> diff --git a/arch/ia64/kernel/iosapic.c b/arch/ia64/kernel/iosapic.c
-> index 35adcf89035a..99300850abc1 100644
-> --- a/arch/ia64/kernel/iosapic.c
-> +++ b/arch/ia64/kernel/iosapic.c
-> @@ -834,7 +834,7 @@ iosapic_unregister_intr (unsigned int gsi)
->   	if (iosapic_intr_info[irq].count == 0) {
->   #ifdef CONFIG_SMP
->   		/* Clear affinity */
-> -		cpumask_setall(irq_get_affinity_mask(irq));
-> +		irq_data_update_affinity(irq_get_irq_data(irq), cpu_all_mask);
->   #endif
->   		/* Clear the interrupt information */
->   		iosapic_intr_info[irq].dest = 0;
-> diff --git a/arch/ia64/kernel/irq.c b/arch/ia64/kernel/irq.c
-> index ecef17c7c35b..275b9ea58c64 100644
-> --- a/arch/ia64/kernel/irq.c
-> +++ b/arch/ia64/kernel/irq.c
-> @@ -57,8 +57,8 @@ static char irq_redir [NR_IRQS]; // = { [0 ... NR_IRQS-1] = 1 };
->   void set_irq_affinity_info (unsigned int irq, int hwid, int redir)
->   {
->   	if (irq < NR_IRQS) {
-> -		cpumask_copy(irq_get_affinity_mask(irq),
-> -			     cpumask_of(cpu_logical_id(hwid)));
-> +		irq_data_update_affinity(irq_get_irq_data(irq),
-> +					 cpumask_of(cpu_logical_id(hwid)));
->   		irq_redir[irq] = (char) (redir & 0xff);
->   	}
->   }
-> diff --git a/arch/ia64/kernel/msi_ia64.c b/arch/ia64/kernel/msi_ia64.c
-> index df5c28f252e3..025e5133c860 100644
-> --- a/arch/ia64/kernel/msi_ia64.c
-> +++ b/arch/ia64/kernel/msi_ia64.c
-> @@ -37,7 +37,7 @@ static int ia64_set_msi_irq_affinity(struct irq_data *idata,
->   	msg.data = data;
->   
->   	pci_write_msi_msg(irq, &msg);
-> -	cpumask_copy(irq_data_get_affinity_mask(idata), cpumask_of(cpu));
-> +	irq_data_update_affinity(idata, cpumask_of(cpu));
->   
->   	return 0;
->   }
-> @@ -132,7 +132,7 @@ static int dmar_msi_set_affinity(struct irq_data *data,
->   	msg.address_lo |= MSI_ADDR_DEST_ID_CPU(cpu_physical_id(cpu));
->   
->   	dmar_msi_write(irq, &msg);
-> -	cpumask_copy(irq_data_get_affinity_mask(data), mask);
-> +	irq_data_update_affinity(data, mask);
->   
->   	return 0;
->   }
-> diff --git a/arch/parisc/kernel/irq.c b/arch/parisc/kernel/irq.c
-> index 0fe2d79fb123..5ebb1771b4ab 100644
-> --- a/arch/parisc/kernel/irq.c
-> +++ b/arch/parisc/kernel/irq.c
-> @@ -315,7 +315,7 @@ unsigned long txn_affinity_addr(unsigned int irq, int cpu)
->   {
->   #ifdef CONFIG_SMP
->   	struct irq_data *d = irq_get_irq_data(irq);
-> -	cpumask_copy(irq_data_get_affinity_mask(d), cpumask_of(cpu));
-> +	irq_data_update_affinity(d, cpumask_of(cpu));
->   #endif
->   
->   	return per_cpu(cpu_data, cpu).txn_addr;
-> diff --git a/drivers/irqchip/irq-bcm6345-l1.c b/drivers/irqchip/irq-bcm6345-l1.c
-> index 142a7431745f..6899e37810a8 100644
-> --- a/drivers/irqchip/irq-bcm6345-l1.c
-> +++ b/drivers/irqchip/irq-bcm6345-l1.c
-> @@ -216,11 +216,11 @@ static int bcm6345_l1_set_affinity(struct irq_data *d,
->   		enabled = intc->cpus[old_cpu]->enable_cache[word] & mask;
->   		if (enabled)
->   			__bcm6345_l1_mask(d);
-> -		cpumask_copy(irq_data_get_affinity_mask(d), dest);
-> +		irq_data_update_affinity(d, dest);
->   		if (enabled)
->   			__bcm6345_l1_unmask(d);
->   	} else {
-> -		cpumask_copy(irq_data_get_affinity_mask(d), dest);
-> +		irq_data_update_affinity(d, dest);
->   	}
->   	raw_spin_unlock_irqrestore(&intc->lock, flags);
->   
-> diff --git a/drivers/parisc/iosapic.c b/drivers/parisc/iosapic.c
-> index 8a3b0c3a1e92..3a8c98615634 100644
-> --- a/drivers/parisc/iosapic.c
-> +++ b/drivers/parisc/iosapic.c
-> @@ -677,7 +677,7 @@ static int iosapic_set_affinity_irq(struct irq_data *d,
->   	if (dest_cpu < 0)
->   		return -1;
->   
-> -	cpumask_copy(irq_data_get_affinity_mask(d), cpumask_of(dest_cpu));
-> +	irq_data_update_affinity(d, cpumask_of(dest_cpu));
->   	vi->txn_addr = txn_affinity_addr(d->irq, dest_cpu);
->   
->   	spin_lock_irqsave(&iosapic_lock, flags);
-> diff --git a/drivers/sh/intc/chip.c b/drivers/sh/intc/chip.c
-> index 358df7510186..828d81e02b37 100644
-> --- a/drivers/sh/intc/chip.c
-> +++ b/drivers/sh/intc/chip.c
-> @@ -72,7 +72,7 @@ static int intc_set_affinity(struct irq_data *data,
->   	if (!cpumask_intersects(cpumask, cpu_online_mask))
->   		return -1;
->   
-> -	cpumask_copy(irq_data_get_affinity_mask(data), cpumask);
-> +	irq_data_update_affinity(data, cpumask);
->   
->   	return IRQ_SET_MASK_OK_NOCOPY;
->   }
-> diff --git a/drivers/xen/events/events_base.c b/drivers/xen/events/events_base.c
-> index 46d9295d9a6e..5e8321f43cbd 100644
-> --- a/drivers/xen/events/events_base.c
-> +++ b/drivers/xen/events/events_base.c
-> @@ -528,9 +528,10 @@ static void bind_evtchn_to_cpu(evtchn_port_t evtchn, unsigned int cpu,
->   	BUG_ON(irq == -1);
->   
->   	if (IS_ENABLED(CONFIG_SMP) && force_affinity) {
-> -		cpumask_copy(irq_get_affinity_mask(irq), cpumask_of(cpu));
-> -		cpumask_copy(irq_get_effective_affinity_mask(irq),
-> -			     cpumask_of(cpu));
-> +		struct irq_data *data = irq_get_irq_data(irq);
-> +
-> +		irq_data_update_affinity(data, cpumask_of(cpu));
-> +		irq_data_update_effective_affinity(data, cpumask_of(cpu));
->   	}
+The series progresses with the simpler optimizations and finishes with
+the more complex optimizations:
 
+ 1. We first optimize task_bp_pinned() to only take O(1) on average.
 
+ 2. Rework synchronization to allow concurrency when checking and
+    updating breakpoint constraints for tasks.
 
-Nit: commit description says about reusing irq_data_update_affinity() 
-only, but here we also reuse irq_data_update_effective_affinity(), so I 
-would mention that in the description.
+ 3. Eliminate the O(#cpus) loops in the CPU-independent case.
 
-Reviewed-by: Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com> # Xen bits
+Along the way, smaller micro-optimizations and cleanups are done as they
+seemed obvious when staring at the code (but likely insignificant).
 
+The result is (on a system with 256 CPUs) that we go from:
 
-[snip]
+ | $> perf bench -r 30 breakpoint thread -b 4 -p 64 -t 64
+	 	[ ^ more aggressive benchmark parameters took too long ]
+ | # Running 'breakpoint/thread' benchmark:
+ | # Created/joined 30 threads with 4 breakpoints and 64 parallelism
+ |      Total time: 236.418 [sec]
+ |
+ |   123134.794271 usecs/op
+ |  7880626.833333 usecs/op/cpu
+
+... to the following with all optimizations:
+
+ | $> perf bench -r 30 breakpoint thread -b 4 -p 64 -t 64
+ | # Running 'breakpoint/thread' benchmark:
+ | # Created/joined 30 threads with 4 breakpoints and 64 parallelism
+ |      Total time: 0.067 [sec]
+ |
+ |       35.292187 usecs/op
+ |     2258.700000 usecs/op/cpu
+
+On the used test system, that's an effective speedup of ~3490x per op.
+
+Which is on par with the theoretical ideal performance through
+optimizations in hw_breakpoint.c (constraints accounting disabled), and
+only 12% slower than no breakpoints at all.
+
+Changelog
+---------
+
+v3:
+* Fix typos.
+* Introduce hw_breakpoint_is_used() for the test.
+* Add WARN_ON in bp_blots_histogram_add().
+* Don't use raw_smp_processor_id() in test.
+* Apply Acked-by/Reviewed-by given in v2 for mostly unchanged patches.
+
+v2: https://lkml.kernel.org/r/20220628095833.2579903-1-elver@google.com
+ * Add KUnit test suite.
+ * Remove struct bp_busy_slots and simplify functions.
+ * Add "powerpc/hw_breakpoint: Avoid relying on caller synchronization".
+ * Add "locking/percpu-rwsem: Add percpu_is_write_locked() and percpu_is_read_locked()".
+ * Use percpu-rwsem instead of rwlock.
+ * Use task_struct::perf_event_mutex instead of sharded mutex.
+ * Drop v1 "perf/hw_breakpoint: Optimize task_bp_pinned() if CPU-independent".
+ * Add "perf/hw_breakpoint: Introduce bp_slots_histogram".
+ * Add "perf/hw_breakpoint: Optimize max_bp_pinned_slots() for CPU-independent task targets".
+ * Add "perf/hw_breakpoint: Optimize toggle_bp_slot() for CPU-independent task targets".
+ * Apply Acked-by/Reviewed-by given in v1 for unchanged patches.
+==> Speedup of ~3490x (vs. ~3315x in v1).
+
+v1: https://lore.kernel.org/all/20220609113046.780504-1-elver@google.com/
+
+Marco Elver (14):
+  perf/hw_breakpoint: Add KUnit test for constraints accounting
+  perf/hw_breakpoint: Provide hw_breakpoint_is_used() and use in test
+  perf/hw_breakpoint: Clean up headers
+  perf/hw_breakpoint: Optimize list of per-task breakpoints
+  perf/hw_breakpoint: Mark data __ro_after_init
+  perf/hw_breakpoint: Optimize constant number of breakpoint slots
+  perf/hw_breakpoint: Make hw_breakpoint_weight() inlinable
+  perf/hw_breakpoint: Remove useless code related to flexible
+    breakpoints
+  powerpc/hw_breakpoint: Avoid relying on caller synchronization
+  locking/percpu-rwsem: Add percpu_is_write_locked() and
+    percpu_is_read_locked()
+  perf/hw_breakpoint: Reduce contention with large number of tasks
+  perf/hw_breakpoint: Introduce bp_slots_histogram
+  perf/hw_breakpoint: Optimize max_bp_pinned_slots() for CPU-independent
+    task targets
+  perf/hw_breakpoint: Optimize toggle_bp_slot() for CPU-independent task
+    targets
+
+ arch/powerpc/kernel/hw_breakpoint.c  |  53 ++-
+ arch/sh/include/asm/hw_breakpoint.h  |   5 +-
+ arch/x86/include/asm/hw_breakpoint.h |   5 +-
+ include/linux/hw_breakpoint.h        |   4 +-
+ include/linux/percpu-rwsem.h         |   6 +
+ include/linux/perf_event.h           |   3 +-
+ kernel/events/Makefile               |   1 +
+ kernel/events/hw_breakpoint.c        | 638 ++++++++++++++++++++-------
+ kernel/events/hw_breakpoint_test.c   | 333 ++++++++++++++
+ kernel/locking/percpu-rwsem.c        |   6 +
+ lib/Kconfig.debug                    |  10 +
+ 11 files changed, 885 insertions(+), 179 deletions(-)
+ create mode 100644 kernel/events/hw_breakpoint_test.c
 
 -- 
-Regards,
-
-Oleksandr Tyshchenko
+2.37.0.rc0.161.g10f37bed90-goog
 
