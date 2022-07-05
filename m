@@ -2,462 +2,327 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1873DC433EF
-	for <linux-sh@archiver.kernel.org>; Mon,  4 Jul 2022 15:11:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EF00ECCA47F
+	for <linux-sh@archiver.kernel.org>; Tue,  5 Jul 2022 14:05:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234812AbiGDPLL (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 4 Jul 2022 11:11:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60584 "EHLO
+        id S231454AbiGEOFi (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 5 Jul 2022 10:05:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55006 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234741AbiGDPK5 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 4 Jul 2022 11:10:57 -0400
-Received: from mail-lf1-x136.google.com (mail-lf1-x136.google.com [IPv6:2a00:1450:4864:20::136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 91F8212770
-        for <linux-sh@vger.kernel.org>; Mon,  4 Jul 2022 08:10:22 -0700 (PDT)
-Received: by mail-lf1-x136.google.com with SMTP id j21so16327861lfe.1
-        for <linux-sh@vger.kernel.org>; Mon, 04 Jul 2022 08:10:22 -0700 (PDT)
+        with ESMTP id S230432AbiGEOFP (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 5 Jul 2022 10:05:15 -0400
+Received: from mail-lf1-x12d.google.com (mail-lf1-x12d.google.com [IPv6:2a00:1450:4864:20::12d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7B4ADC1C;
+        Tue,  5 Jul 2022 06:52:49 -0700 (PDT)
+Received: by mail-lf1-x12d.google.com with SMTP id e12so20667778lfr.6;
+        Tue, 05 Jul 2022 06:52:49 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=L/r42YfcYvrG556t3Zy5OHgKS1LSmaAIBUOTsb6/fKw=;
-        b=EGhlAFrHfHRB8ou1SHMXbYcUfIjZBpCchy3OMdre/VlO0ygtVZx6RwSMmJqAsN8PNE
-         nr0kSJ1DdYmf0Z5x8BHOljq5HWjc0MSoZi30aVlPW9PihI8a9XU/5FiUgKXAAvZnNVPg
-         N4myrC2bnzsQdY0sNsi3fEH0RIP/rr1J3H7Mxgm3JHV8aOl+JONcnyztjKPNu7fRcC/q
-         CkBzbjlbCHq8fV4r4+gZZTjCUeKse4yklKY8z/TmB7GzuPrO1809qlQc6cPPEovBSA/K
-         Dq11AJj7cmhKNJb7Hv5oqheFy5SObx5DPcaRANlC6NibV3oZgdZ5b8L+b5WqwxVd74Q4
-         ZIUQ==
+        d=gmail.com; s=20210112;
+        h=date:from:to:cc:subject:message-id:references:mime-version
+         :content-disposition:in-reply-to;
+        bh=hnG3EXAGSYglCl/wRCeE6XoUd122X8s3VFjj/Cl4BDo=;
+        b=f0oPNRCtup46ssQPcrkajodUnXaa38S7aucBwdDILFTG2eeb4ezSSagYCCpSaPXn6q
+         pM88V+eJuR+2wDKnqOvmIn2UBQeLj4Dvk+jM/7QzsaH+djXUCf8dVdZrR3Rum0ZxA4Fx
+         1+V5jQK4WZ6A6r+Z7pGJ3DHRh/l/I+n6TS11toC5D+NwQqpCXjbGQMtOFJd9gZJEVfoN
+         8o6r4MmM6XpKVa4t/W7kzcEgwfUE3Y+OozwbzeYUm+9Cfc1rCiR8kyXeLGCPMRo+QW0N
+         dWcQwNP8U6XumHQBe98yfaBeLuhKipyLuPvGkvNRoq32ZtcDVOLho4L9W1jGhun/Kcvn
+         3uIA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=L/r42YfcYvrG556t3Zy5OHgKS1LSmaAIBUOTsb6/fKw=;
-        b=xDLODAbQZOb5swlnxDA9jVGUYKskrZJ19ug9mR1R+ZaSm3DTkMjZpDvtR8xpPwsy4n
-         /x/DjawhP+X+RgSenI8nSGOeMhJhEl4tuEU5ghz+KefNkNtqT8AvZeM6OriBMGrP1uRa
-         CMaN1yjFMPiScfeNH8qq+r0tdbdaxPBOe5GZlYwkcFW9M48I2AzqVNXjQ8R/d9/iixPl
-         wOUkwMKKTDZneww0Uk4pajarhcTaWYxN5Y2sP1PJf7HlbaM9SfutboBQrde/L0it79Sp
-         VVzK/jk2w64Z0Yz6AbMz6/2Yk+AiNSTlpBhjhqTuP+HrDDg0XW4jeHErsFipDbLFTrki
-         L5sQ==
-X-Gm-Message-State: AJIora8eEkVkzWshjT5+ViuuBIEjFzWkJN6XObWz9nGCl1Xa6AhgL+5V
-        O/MxCCRRc2vd4N7G3qDXxJFAgJVcQnCGkWJo3QKnrA==
-X-Google-Smtp-Source: AGRyM1vDkasEosX2mLxsO+uYtX63E6neKRn73PJy/o/dKAuyiAB6OerfwhAGZDhWpGomSw871LK4NV7IMBtNDRjt6Uw=
-X-Received: by 2002:ac2:4906:0:b0:47f:6c71:6de5 with SMTP id
- n6-20020ac24906000000b0047f6c716de5mr20311086lfi.137.1656947420719; Mon, 04
- Jul 2022 08:10:20 -0700 (PDT)
-MIME-Version: 1.0
-References: <20220704150514.48816-1-elver@google.com> <20220704150514.48816-2-elver@google.com>
-In-Reply-To: <20220704150514.48816-2-elver@google.com>
-From:   Dmitry Vyukov <dvyukov@google.com>
-Date:   Mon, 4 Jul 2022 17:10:09 +0200
-Message-ID: <CACT4Y+aA7QkAsufv6EMQ1O8mZaVd-eNOqRrx2a7qvPR4Tt=izA@mail.gmail.com>
-Subject: Re: [PATCH v3 01/14] perf/hw_breakpoint: Add KUnit test for
- constraints accounting
-To:     Marco Elver <elver@google.com>
-Cc:     Peter Zijlstra <peterz@infradead.org>,
-        Frederic Weisbecker <frederic@kernel.org>,
-        Ingo Molnar <mingo@kernel.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Arnaldo Carvalho de Melo <acme@kernel.org>,
+        h=x-gm-message-state:date:from:to:cc:subject:message-id:references
+         :mime-version:content-disposition:in-reply-to;
+        bh=hnG3EXAGSYglCl/wRCeE6XoUd122X8s3VFjj/Cl4BDo=;
+        b=e9IxXw9yie4rAH2fcd/8xGU4uzcy6Yuw7ffUpPlALqtTj1Ip+P31oYLhqzKTHSnj3G
+         hrN2+/5NEgW0s0PoZDYptyxaJzs419tIOBtT+/QmJMFl4Fx1HL+u/1AiibdMwR6Q7fBJ
+         5QLcz/ciIeZ1hBXVcsylhl369WtMhIOlSCnu1VIqmBYt2iGenrcaNWY/YH0Ecr474UG/
+         YJvudaP0HdbPJHtD9piRhk0O/iUOHsqHeyCY5S43FkmMbzIgfEcuPKSc6Xd1IMGwpP1f
+         YUFdm9Y98nn3SC1v+vsnAumO0iU+Dqe30YarDXOsI5fRxLoEMslmPYSiASHm+87PVfca
+         NVAQ==
+X-Gm-Message-State: AJIora/+HwYkx1vvb34rItGUmI3TE0GEJeKBAXzB36wnyUg4Rkx6XuW5
+        SAfw0a2iMcOSoTUEv9XkIYM=
+X-Google-Smtp-Source: AGRyM1tzQQEVczY5NcmNDovprbd7u0K8INSqZ44DlUGhkZwwx9elVzmtIOyIVqDnGRJUYz9FEGSPyA==
+X-Received: by 2002:a05:6512:b1a:b0:47f:b574:9539 with SMTP id w26-20020a0565120b1a00b0047fb5749539mr21685925lfu.143.1657029167643;
+        Tue, 05 Jul 2022 06:52:47 -0700 (PDT)
+Received: from mobilestation ([95.79.140.178])
+        by smtp.gmail.com with ESMTPSA id v19-20020ac258f3000000b00483f8c40c14sm262435lfo.243.2022.07.05.06.52.44
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 05 Jul 2022 06:52:47 -0700 (PDT)
+Date:   Tue, 5 Jul 2022 16:52:43 +0300
+From:   Serge Semin <fancer.lancer@gmail.com>
+To:     Samuel Holland <samuel@sholland.org>, Marc Zyngier <maz@kernel.org>
+Cc:     Thomas Gleixner <tglx@linutronix.de>,
+        Andy Shevchenko <andy.shevchenko@gmail.com>,
+        Bartosz Golaszewski <brgl@bgdev.pl>,
+        Bjorn Helgaas <bhelgaas@google.com>,
+        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
+        Borislav Petkov <bp@alien8.de>,
+        Broadcom internal kernel review list 
+        <bcm-kernel-feedback-list@broadcom.com>,
+        Chris Zankel <chris@zankel.net>,
+        Colin Ian King <colin.king@intel.com>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        Dexuan Cui <decui@microsoft.com>,
+        Florian Fainelli <f.fainelli@gmail.com>,
+        Guo Ren <guoren@kernel.org>, "H. Peter Anvin" <hpa@zytor.com>,
+        Haiyang Zhang <haiyangz@microsoft.com>,
+        Helge Deller <deller@gmx.de>, Ingo Molnar <mingo@redhat.com>,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        Jan Beulich <jbeulich@suse.com>,
+        Joerg Roedel <joro@8bytes.org>,
+        Juergen Gross <jgross@suse.com>,
+        Julia Lawall <Julia.Lawall@inria.fr>,
+        "K. Y. Srinivasan" <kys@microsoft.com>,
+        Kees Cook <keescook@chromium.org>,
+        Krzysztof =?utf-8?Q?Wilczy=C5=84ski?= <kw@linux.com>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Lorenzo Pieralisi <lpieralisi@kernel.org>,
         Mark Rutland <mark.rutland@arm.com>,
-        Alexander Shishkin <alexander.shishkin@linux.intel.com>,
-        Jiri Olsa <jolsa@redhat.com>,
-        Namhyung Kim <namhyung@kernel.org>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        linuxppc-dev@lists.ozlabs.org, linux-perf-users@vger.kernel.org,
-        x86@kernel.org, linux-sh@vger.kernel.org,
-        kasan-dev@googlegroups.com, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+        Matt Turner <mattst88@gmail.com>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Maximilian Heyne <mheyne@amazon.de>,
+        Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>,
+        Rich Felker <dalias@libc.org>,
+        Richard Henderson <rth@twiddle.net>,
+        Rikard Falkeborn <rikard.falkeborn@gmail.com>,
+        Rob Herring <robh@kernel.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Stefano Stabellini <sstabellini@kernel.org>,
+        Stephen Hemminger <sthemmin@microsoft.com>,
+        Sven Schnelle <svens@stackframe.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Wei Liu <wei.liu@kernel.org>, Wei Xu <xuwei5@hisilicon.com>,
+        Will Deacon <will@kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        iommu@lists.linux-foundation.org, iommu@lists.linux.dev,
+        linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-hyperv@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linux-pci@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org,
+        x86@kernel.org, xen-devel@lists.xenproject.org,
+        kernel test robot <lkp@intel.com>
+Subject: Re: [PATCH v3 1/8] irqchip/mips-gic: Only register IPI domain when
+ SMP is enabled
+Message-ID: <20220705135243.ydbwfo4kois64elr@mobilestation>
+References: <20220701200056.46555-1-samuel@sholland.org>
+ <20220701200056.46555-2-samuel@sholland.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20220701200056.46555-2-samuel@sholland.org>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, 4 Jul 2022 at 17:06, Marco Elver <elver@google.com> wrote:
->
-> Add KUnit test for hw_breakpoint constraints accounting, with various
-> interesting mixes of breakpoint targets (some care was taken to catch
-> interesting corner cases via bug-injection).
->
-> The test cannot be built as a module because it requires access to
-> hw_breakpoint_slots(), which is not inlinable or exported on all
-> architectures.
->
-> Signed-off-by: Marco Elver <elver@google.com>
+Hi Samuel
 
-Reviewed-by: Dmitry Vyukov <dvyukov@google.com>
+On Fri, Jul 01, 2022 at 03:00:49PM -0500, Samuel Holland wrote:
+> The MIPS GIC irqchip driver may be selected in a uniprocessor
+> configuration, but it unconditionally registers an IPI domain.
+> 
+> Limit the part of the driver dealing with IPIs to only be compiled when
+> GENERIC_IRQ_IPI is enabled, which corresponds to an SMP configuration.
 
+Thanks for the patch. Some comment is below.
+
+> 
+> Reported-by: kernel test robot <lkp@intel.com>
+> Signed-off-by: Samuel Holland <samuel@sholland.org>
 > ---
-> v3:
-> * Don't use raw_smp_processor_id().
->
-> v2:
-> * New patch.
-> ---
->  kernel/events/Makefile             |   1 +
->  kernel/events/hw_breakpoint_test.c | 323 +++++++++++++++++++++++++++++
->  lib/Kconfig.debug                  |  10 +
->  3 files changed, 334 insertions(+)
->  create mode 100644 kernel/events/hw_breakpoint_test.c
->
-> diff --git a/kernel/events/Makefile b/kernel/events/Makefile
-> index 8591c180b52b..91a62f566743 100644
-> --- a/kernel/events/Makefile
-> +++ b/kernel/events/Makefile
-> @@ -2,4 +2,5 @@
->  obj-y := core.o ring_buffer.o callchain.o
->
->  obj-$(CONFIG_HAVE_HW_BREAKPOINT) += hw_breakpoint.o
-> +obj-$(CONFIG_HW_BREAKPOINT_KUNIT_TEST) += hw_breakpoint_test.o
->  obj-$(CONFIG_UPROBES) += uprobes.o
-> diff --git a/kernel/events/hw_breakpoint_test.c b/kernel/events/hw_breakpoint_test.c
-> new file mode 100644
-> index 000000000000..433c5c45e2a5
-> --- /dev/null
-> +++ b/kernel/events/hw_breakpoint_test.c
-> @@ -0,0 +1,323 @@
-> +// SPDX-License-Identifier: GPL-2.0
-> +/*
-> + * KUnit test for hw_breakpoint constraints accounting logic.
-> + *
-> + * Copyright (C) 2022, Google LLC.
-> + */
+> 
+> Changes in v3:
+>  - New patch to fix build errors in uniprocessor MIPS configs
+> 
+>  drivers/irqchip/Kconfig        |  3 +-
+>  drivers/irqchip/irq-mips-gic.c | 80 +++++++++++++++++++++++-----------
+>  2 files changed, 56 insertions(+), 27 deletions(-)
+> 
+> diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
+> index 1f23a6be7d88..d26a4ff7c99f 100644
+> --- a/drivers/irqchip/Kconfig
+> +++ b/drivers/irqchip/Kconfig
+> @@ -322,7 +322,8 @@ config KEYSTONE_IRQ
+>  
+>  config MIPS_GIC
+>  	bool
+> -	select GENERIC_IRQ_IPI
+> +	select GENERIC_IRQ_IPI if SMP
+
+> +	select IRQ_DOMAIN_HIERARCHY
+
+It seems to me that the IRQ domains hierarchy is supposed to be
+created only if IPI is required. At least that's what the MIPS GIC
+driver implies. Thus we can go further and CONFIG_IRQ_DOMAIN_HIERARCHY
+ifdef-out the gic_irq_domain_alloc() and gic_irq_domain_free()
+methods definition together with the initialization:
+
+ static const struct irq_domain_ops gic_irq_domain_ops = {
+ 	.xlate = gic_irq_domain_xlate,
++#ifdef CONFIG_IRQ_DOMAIN_HIERARCHY
+ 	.alloc = gic_irq_domain_alloc,
+ 	.free = gic_irq_domain_free,
++#endif
+ 	.map = gic_irq_domain_map,
+};
+
+If the GENERIC_IRQ_IPI config is enabled, CONFIG_IRQ_DOMAIN_HIERARCHY
+will be automatically selected (see the config definition in
+kernel/irq/Kconfig). If the IRQs hierarchy is needed for some another
+functionality like GENERIC_MSI_IRQ_DOMAIN or GPIOs then they will
+explicitly enable the IRQ_DOMAIN_HIERARCHY config thus activating the
+denoted .alloc and .free methods definitions.
+
+To sum up you can get rid of the IRQ_DOMAIN_HIERARCHY config
+force-select from this patch and make the MIPS GIC driver code a bit
+more coherent.
+
+@Marc, please correct me if were wrong.
+
+-Serget
+
+>  	select MIPS_CM
+>  
+>  config INGENIC_IRQ
+> diff --git a/drivers/irqchip/irq-mips-gic.c b/drivers/irqchip/irq-mips-gic.c
+> index ff89b36267dd..8a9efb6ae587 100644
+> --- a/drivers/irqchip/irq-mips-gic.c
+> +++ b/drivers/irqchip/irq-mips-gic.c
+> @@ -52,13 +52,15 @@ static DEFINE_PER_CPU_READ_MOSTLY(unsigned long[GIC_MAX_LONGS], pcpu_masks);
+>  
+>  static DEFINE_SPINLOCK(gic_lock);
+>  static struct irq_domain *gic_irq_domain;
+> -static struct irq_domain *gic_ipi_domain;
+>  static int gic_shared_intrs;
+>  static unsigned int gic_cpu_pin;
+>  static unsigned int timer_cpu_pin;
+>  static struct irq_chip gic_level_irq_controller, gic_edge_irq_controller;
 > +
-> +#include <kunit/test.h>
-> +#include <linux/cpumask.h>
-> +#include <linux/hw_breakpoint.h>
-> +#include <linux/kthread.h>
-> +#include <linux/perf_event.h>
-> +#include <asm/hw_breakpoint.h>
+> +#ifdef CONFIG_GENERIC_IRQ_IPI
+>  static DECLARE_BITMAP(ipi_resrv, GIC_MAX_INTRS);
+>  static DECLARE_BITMAP(ipi_available, GIC_MAX_INTRS);
+> +#endif /* CONFIG_GENERIC_IRQ_IPI */
+>  
+>  static struct gic_all_vpes_chip_data {
+>  	u32	map;
+> @@ -472,9 +474,11 @@ static int gic_irq_domain_map(struct irq_domain *d, unsigned int virq,
+>  	u32 map;
+>  
+>  	if (hwirq >= GIC_SHARED_HWIRQ_BASE) {
+> +#ifdef CONFIG_GENERIC_IRQ_IPI
+>  		/* verify that shared irqs don't conflict with an IPI irq */
+>  		if (test_bit(GIC_HWIRQ_TO_SHARED(hwirq), ipi_resrv))
+>  			return -EBUSY;
+> +#endif /* CONFIG_GENERIC_IRQ_IPI */
+>  
+>  		err = irq_domain_set_hwirq_and_chip(d, virq, hwirq,
+>  						    &gic_level_irq_controller,
+> @@ -567,6 +571,8 @@ static const struct irq_domain_ops gic_irq_domain_ops = {
+>  	.map = gic_irq_domain_map,
+>  };
+>  
+> +#ifdef CONFIG_GENERIC_IRQ_IPI
 > +
-> +#define TEST_REQUIRES_BP_SLOTS(test, slots)                                            \
-> +       do {                                                                            \
-> +               if ((slots) > get_test_bp_slots()) {                                    \
-> +                       kunit_skip((test), "Requires breakpoint slots: %d > %d", slots, \
-> +                                  get_test_bp_slots());                                \
-> +               }                                                                       \
-> +       } while (0)
-> +
-> +#define TEST_EXPECT_NOSPC(expr) KUNIT_EXPECT_EQ(test, -ENOSPC, PTR_ERR(expr))
-> +
-> +#define MAX_TEST_BREAKPOINTS 512
-> +
-> +static char break_vars[MAX_TEST_BREAKPOINTS];
-> +static struct perf_event *test_bps[MAX_TEST_BREAKPOINTS];
-> +static struct task_struct *__other_task;
-> +
-> +static struct perf_event *register_test_bp(int cpu, struct task_struct *tsk, int idx)
+>  static int gic_ipi_domain_xlate(struct irq_domain *d, struct device_node *ctrlr,
+>  				const u32 *intspec, unsigned int intsize,
+>  				irq_hw_number_t *out_hwirq,
+> @@ -670,6 +676,48 @@ static const struct irq_domain_ops gic_ipi_domain_ops = {
+>  	.match = gic_ipi_domain_match,
+>  };
+>  
+> +static int gic_register_ipi_domain(struct device_node *node)
 > +{
-> +       struct perf_event_attr attr = {};
+> +	struct irq_domain *gic_ipi_domain;
+> +	unsigned int v[2], num_ipis;
 > +
-> +       if (WARN_ON(idx < 0 || idx >= MAX_TEST_BREAKPOINTS))
-> +               return NULL;
+> +	gic_ipi_domain = irq_domain_add_hierarchy(gic_irq_domain,
+> +						  IRQ_DOMAIN_FLAG_IPI_PER_CPU,
+> +						  GIC_NUM_LOCAL_INTRS + gic_shared_intrs,
+> +						  node, &gic_ipi_domain_ops, NULL);
+> +	if (!gic_ipi_domain) {
+> +		pr_err("Failed to add IPI domain");
+> +		return -ENXIO;
+> +	}
 > +
-> +       hw_breakpoint_init(&attr);
-> +       attr.bp_addr = (unsigned long)&break_vars[idx];
-> +       attr.bp_len = HW_BREAKPOINT_LEN_1;
-> +       attr.bp_type = HW_BREAKPOINT_RW;
-> +       return perf_event_create_kernel_counter(&attr, cpu, tsk, NULL, NULL);
+> +	irq_domain_update_bus_token(gic_ipi_domain, DOMAIN_BUS_IPI);
+> +
+> +	if (node &&
+> +	    !of_property_read_u32_array(node, "mti,reserved-ipi-vectors", v, 2)) {
+> +		bitmap_set(ipi_resrv, v[0], v[1]);
+> +	} else {
+> +		/*
+> +		 * Reserve 2 interrupts per possible CPU/VP for use as IPIs,
+> +		 * meeting the requirements of arch/mips SMP.
+> +		 */
+> +		num_ipis = 2 * num_possible_cpus();
+> +		bitmap_set(ipi_resrv, gic_shared_intrs - num_ipis, num_ipis);
+> +	}
+> +
+> +	bitmap_copy(ipi_available, ipi_resrv, GIC_MAX_INTRS);
+> +
+> +	return 0;
 > +}
 > +
-> +static void unregister_test_bp(struct perf_event **bp)
+> +#else /* !CONFIG_GENERIC_IRQ_IPI */
+> +
+> +static inline int gic_register_ipi_domain(struct device_node *node)
 > +{
-> +       if (WARN_ON(IS_ERR(*bp)))
-> +               return;
-> +       if (WARN_ON(!*bp))
-> +               return;
-> +       unregister_hw_breakpoint(*bp);
-> +       *bp = NULL;
+> +	return 0;
 > +}
 > +
-> +static int get_test_bp_slots(void)
-> +{
-> +       static int slots;
+> +#endif /* !CONFIG_GENERIC_IRQ_IPI */
 > +
-> +       if (!slots)
-> +               slots = hw_breakpoint_slots(TYPE_DATA);
-> +
-> +       return slots;
-> +}
-> +
-> +static void fill_one_bp_slot(struct kunit *test, int *id, int cpu, struct task_struct *tsk)
-> +{
-> +       struct perf_event *bp = register_test_bp(cpu, tsk, *id);
-> +
-> +       KUNIT_ASSERT_NOT_NULL(test, bp);
-> +       KUNIT_ASSERT_FALSE(test, IS_ERR(bp));
-> +       KUNIT_ASSERT_NULL(test, test_bps[*id]);
-> +       test_bps[(*id)++] = bp;
-> +}
-> +
-> +/*
-> + * Fills up the given @cpu/@tsk with breakpoints, only leaving @skip slots free.
-> + *
-> + * Returns true if this can be called again, continuing at @id.
-> + */
-> +static bool fill_bp_slots(struct kunit *test, int *id, int cpu, struct task_struct *tsk, int skip)
-> +{
-> +       for (int i = 0; i < get_test_bp_slots() - skip; ++i)
-> +               fill_one_bp_slot(test, id, cpu, tsk);
-> +
-> +       return *id + get_test_bp_slots() <= MAX_TEST_BREAKPOINTS;
-> +}
-> +
-> +static int dummy_kthread(void *arg)
-> +{
-> +       return 0;
-> +}
-> +
-> +static struct task_struct *get_other_task(struct kunit *test)
-> +{
-> +       struct task_struct *tsk;
-> +
-> +       if (__other_task)
-> +               return __other_task;
-> +
-> +       tsk = kthread_create(dummy_kthread, NULL, "hw_breakpoint_dummy_task");
-> +       KUNIT_ASSERT_FALSE(test, IS_ERR(tsk));
-> +       __other_task = tsk;
-> +       return __other_task;
-> +}
-> +
-> +static int get_test_cpu(int num)
-> +{
-> +       int cpu;
-> +
-> +       WARN_ON(num < 0);
-> +
-> +       for_each_online_cpu(cpu) {
-> +               if (num-- <= 0)
-> +                       break;
-> +       }
-> +
-> +       return cpu;
-> +}
-> +
-> +/* ===== Test cases ===== */
-> +
-> +static void test_one_cpu(struct kunit *test)
-> +{
-> +       int idx = 0;
-> +
-> +       fill_bp_slots(test, &idx, get_test_cpu(0), NULL, 0);
-> +       TEST_EXPECT_NOSPC(register_test_bp(-1, current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), NULL, idx));
-> +}
-> +
-> +static void test_many_cpus(struct kunit *test)
-> +{
-> +       int idx = 0;
-> +       int cpu;
-> +
-> +       /* Test that CPUs are independent. */
-> +       for_each_online_cpu(cpu) {
-> +               bool do_continue = fill_bp_slots(test, &idx, cpu, NULL, 0);
-> +
-> +               TEST_EXPECT_NOSPC(register_test_bp(cpu, NULL, idx));
-> +               if (!do_continue)
-> +                       break;
-> +       }
-> +}
-> +
-> +static void test_one_task_on_all_cpus(struct kunit *test)
-> +{
-> +       int idx = 0;
-> +
-> +       fill_bp_slots(test, &idx, -1, current, 0);
-> +       TEST_EXPECT_NOSPC(register_test_bp(-1, current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), NULL, idx));
-> +       /* Remove one and adding back CPU-target should work. */
-> +       unregister_test_bp(&test_bps[0]);
-> +       fill_one_bp_slot(test, &idx, get_test_cpu(0), NULL);
-> +}
-> +
-> +static void test_two_tasks_on_all_cpus(struct kunit *test)
-> +{
-> +       int idx = 0;
-> +
-> +       /* Test that tasks are independent. */
-> +       fill_bp_slots(test, &idx, -1, current, 0);
-> +       fill_bp_slots(test, &idx, -1, get_other_task(test), 0);
-> +
-> +       TEST_EXPECT_NOSPC(register_test_bp(-1, current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(-1, get_other_task(test), idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), get_other_task(test), idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), NULL, idx));
-> +       /* Remove one from first task and adding back CPU-target should not work. */
-> +       unregister_test_bp(&test_bps[0]);
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), NULL, idx));
-> +}
-> +
-> +static void test_one_task_on_one_cpu(struct kunit *test)
-> +{
-> +       int idx = 0;
-> +
-> +       fill_bp_slots(test, &idx, get_test_cpu(0), current, 0);
-> +       TEST_EXPECT_NOSPC(register_test_bp(-1, current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), NULL, idx));
-> +       /*
-> +        * Remove one and adding back CPU-target should work; this case is
-> +        * special vs. above because the task's constraints are CPU-dependent.
-> +        */
-> +       unregister_test_bp(&test_bps[0]);
-> +       fill_one_bp_slot(test, &idx, get_test_cpu(0), NULL);
-> +}
-> +
-> +static void test_one_task_mixed(struct kunit *test)
-> +{
-> +       int idx = 0;
-> +
-> +       TEST_REQUIRES_BP_SLOTS(test, 3);
-> +
-> +       fill_one_bp_slot(test, &idx, get_test_cpu(0), current);
-> +       fill_bp_slots(test, &idx, -1, current, 1);
-> +       TEST_EXPECT_NOSPC(register_test_bp(-1, current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), NULL, idx));
-> +
-> +       /* Transition from CPU-dependent pinned count to CPU-independent. */
-> +       unregister_test_bp(&test_bps[0]);
-> +       unregister_test_bp(&test_bps[1]);
-> +       fill_one_bp_slot(test, &idx, get_test_cpu(0), NULL);
-> +       fill_one_bp_slot(test, &idx, get_test_cpu(0), NULL);
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), NULL, idx));
-> +}
-> +
-> +static void test_two_tasks_on_one_cpu(struct kunit *test)
-> +{
-> +       int idx = 0;
-> +
-> +       fill_bp_slots(test, &idx, get_test_cpu(0), current, 0);
-> +       fill_bp_slots(test, &idx, get_test_cpu(0), get_other_task(test), 0);
-> +
-> +       TEST_EXPECT_NOSPC(register_test_bp(-1, current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(-1, get_other_task(test), idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), get_other_task(test), idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), NULL, idx));
-> +       /* Can still create breakpoints on some other CPU. */
-> +       fill_bp_slots(test, &idx, get_test_cpu(1), NULL, 0);
-> +}
-> +
-> +static void test_two_tasks_on_one_all_cpus(struct kunit *test)
-> +{
-> +       int idx = 0;
-> +
-> +       fill_bp_slots(test, &idx, get_test_cpu(0), current, 0);
-> +       fill_bp_slots(test, &idx, -1, get_other_task(test), 0);
-> +
-> +       TEST_EXPECT_NOSPC(register_test_bp(-1, current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(-1, get_other_task(test), idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), get_other_task(test), idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), NULL, idx));
-> +       /* Cannot create breakpoints on some other CPU either. */
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(1), NULL, idx));
-> +}
-> +
-> +static void test_task_on_all_and_one_cpu(struct kunit *test)
-> +{
-> +       int tsk_on_cpu_idx, cpu_idx;
-> +       int idx = 0;
-> +
-> +       TEST_REQUIRES_BP_SLOTS(test, 3);
-> +
-> +       fill_bp_slots(test, &idx, -1, current, 2);
-> +       /* Transitioning from only all CPU breakpoints to mixed. */
-> +       tsk_on_cpu_idx = idx;
-> +       fill_one_bp_slot(test, &idx, get_test_cpu(0), current);
-> +       fill_one_bp_slot(test, &idx, -1, current);
-> +
-> +       TEST_EXPECT_NOSPC(register_test_bp(-1, current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), NULL, idx));
-> +
-> +       /* We should still be able to use up another CPU's slots. */
-> +       cpu_idx = idx;
-> +       fill_one_bp_slot(test, &idx, get_test_cpu(1), NULL);
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(1), NULL, idx));
-> +
-> +       /* Transitioning back to task target on all CPUs. */
-> +       unregister_test_bp(&test_bps[tsk_on_cpu_idx]);
-> +       /* Still have a CPU target breakpoint in get_test_cpu(1). */
-> +       TEST_EXPECT_NOSPC(register_test_bp(-1, current, idx));
-> +       /* Remove it and try again. */
-> +       unregister_test_bp(&test_bps[cpu_idx]);
-> +       fill_one_bp_slot(test, &idx, -1, current);
-> +
-> +       TEST_EXPECT_NOSPC(register_test_bp(-1, current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), current, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(0), NULL, idx));
-> +       TEST_EXPECT_NOSPC(register_test_bp(get_test_cpu(1), NULL, idx));
-> +}
-> +
-> +static struct kunit_case hw_breakpoint_test_cases[] = {
-> +       KUNIT_CASE(test_one_cpu),
-> +       KUNIT_CASE(test_many_cpus),
-> +       KUNIT_CASE(test_one_task_on_all_cpus),
-> +       KUNIT_CASE(test_two_tasks_on_all_cpus),
-> +       KUNIT_CASE(test_one_task_on_one_cpu),
-> +       KUNIT_CASE(test_one_task_mixed),
-> +       KUNIT_CASE(test_two_tasks_on_one_cpu),
-> +       KUNIT_CASE(test_two_tasks_on_one_all_cpus),
-> +       KUNIT_CASE(test_task_on_all_and_one_cpu),
-> +       {},
-> +};
-> +
-> +static int test_init(struct kunit *test)
-> +{
-> +       /* Most test cases want 2 distinct CPUs. */
-> +       return num_online_cpus() < 2 ? -EINVAL : 0;
-> +}
-> +
-> +static void test_exit(struct kunit *test)
-> +{
-> +       for (int i = 0; i < MAX_TEST_BREAKPOINTS; ++i) {
-> +               if (test_bps[i])
-> +                       unregister_test_bp(&test_bps[i]);
-> +       }
-> +
-> +       if (__other_task) {
-> +               kthread_stop(__other_task);
-> +               __other_task = NULL;
-> +       }
-> +}
-> +
-> +static struct kunit_suite hw_breakpoint_test_suite = {
-> +       .name = "hw_breakpoint",
-> +       .test_cases = hw_breakpoint_test_cases,
-> +       .init = test_init,
-> +       .exit = test_exit,
-> +};
-> +
-> +kunit_test_suites(&hw_breakpoint_test_suite);
-> +
-> +MODULE_LICENSE("GPL");
-> +MODULE_AUTHOR("Marco Elver <elver@google.com>");
-> diff --git a/lib/Kconfig.debug b/lib/Kconfig.debug
-> index 2e24db4bff19..4c87a6edf046 100644
-> --- a/lib/Kconfig.debug
-> +++ b/lib/Kconfig.debug
-> @@ -2513,6 +2513,16 @@ config STACKINIT_KUNIT_TEST
->           CONFIG_GCC_PLUGIN_STRUCTLEAK, CONFIG_GCC_PLUGIN_STRUCTLEAK_BYREF,
->           or CONFIG_GCC_PLUGIN_STRUCTLEAK_BYREF_ALL.
->
-> +config HW_BREAKPOINT_KUNIT_TEST
-> +       bool "Test hw_breakpoint constraints accounting" if !KUNIT_ALL_TESTS
-> +       depends on HAVE_HW_BREAKPOINT
-> +       depends on KUNIT=y
-> +       default KUNIT_ALL_TESTS
-> +       help
-> +         Tests for hw_breakpoint constraints accounting.
-> +
-> +         If unsure, say N.
-> +
->  config TEST_UDELAY
->         tristate "udelay test driver"
->         help
-> --
-> 2.37.0.rc0.161.g10f37bed90-goog
->
+>  static int gic_cpu_startup(unsigned int cpu)
+>  {
+>  	/* Enable or disable EIC */
+> @@ -688,11 +736,12 @@ static int gic_cpu_startup(unsigned int cpu)
+>  static int __init gic_of_init(struct device_node *node,
+>  			      struct device_node *parent)
+>  {
+> -	unsigned int cpu_vec, i, gicconfig, v[2], num_ipis;
+> +	unsigned int cpu_vec, i, gicconfig;
+>  	unsigned long reserved;
+>  	phys_addr_t gic_base;
+>  	struct resource res;
+>  	size_t gic_len;
+> +	int ret;
+>  
+>  	/* Find the first available CPU vector. */
+>  	i = 0;
+> @@ -780,30 +829,9 @@ static int __init gic_of_init(struct device_node *node,
+>  		return -ENXIO;
+>  	}
+>  
+> -	gic_ipi_domain = irq_domain_add_hierarchy(gic_irq_domain,
+> -						  IRQ_DOMAIN_FLAG_IPI_PER_CPU,
+> -						  GIC_NUM_LOCAL_INTRS + gic_shared_intrs,
+> -						  node, &gic_ipi_domain_ops, NULL);
+> -	if (!gic_ipi_domain) {
+> -		pr_err("Failed to add IPI domain");
+> -		return -ENXIO;
+> -	}
+> -
+> -	irq_domain_update_bus_token(gic_ipi_domain, DOMAIN_BUS_IPI);
+> -
+> -	if (node &&
+> -	    !of_property_read_u32_array(node, "mti,reserved-ipi-vectors", v, 2)) {
+> -		bitmap_set(ipi_resrv, v[0], v[1]);
+> -	} else {
+> -		/*
+> -		 * Reserve 2 interrupts per possible CPU/VP for use as IPIs,
+> -		 * meeting the requirements of arch/mips SMP.
+> -		 */
+> -		num_ipis = 2 * num_possible_cpus();
+> -		bitmap_set(ipi_resrv, gic_shared_intrs - num_ipis, num_ipis);
+> -	}
+> -
+> -	bitmap_copy(ipi_available, ipi_resrv, GIC_MAX_INTRS);
+> +	ret = gic_register_ipi_domain(node);
+> +	if (ret)
+> +		return ret;
+>  
+>  	board_bind_eic_interrupt = &gic_bind_eic_interrupt;
+>  
+> -- 
+> 2.35.1
+> 
