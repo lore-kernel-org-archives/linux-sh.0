@@ -2,216 +2,134 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D97BACCA482
-	for <linux-sh@archiver.kernel.org>; Tue, 12 Jul 2022 14:33:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F011DC433EF
+	for <linux-sh@archiver.kernel.org>; Thu, 14 Jul 2022 02:07:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233441AbiGLOdF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 12 Jul 2022 10:33:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51198 "EHLO
+        id S231311AbiGNCH0 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 13 Jul 2022 22:07:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53608 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233317AbiGLOc7 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 12 Jul 2022 10:32:59 -0400
-Received: from mga18.intel.com (mga18.intel.com [134.134.136.126])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6893CB6DB6;
-        Tue, 12 Jul 2022 07:32:52 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1657636372; x=1689172372;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=a+ceZCUGe/ap+hQFrd92HyoZ9QEte3GdAy+AwFGYt2M=;
-  b=NKmg6Sn4AIuXJJHK7Zq1dmT+jJw/yjQRByv0HosDnRhkk3At1WtsQpkp
-   xkpU5edK7PgmyS8oJgV/0jWChLbH+WQympXVXT9sTfQE8mfbpO1Z4RKsg
-   /VH3lIzXKm/gxeYRkKxCYAFck8yIC+KZeUnkvK78S5YZtgDnZnIqnpXW5
-   m+XStk3ql+p78uyhUJ494P6EGeNynDy720oUUa4PSNwu9HKo4E3bwgbtP
-   tWFANX0ijpzWs42lDtMeAZkjN46vnH3Lw2Vp8eyo2iTW1FL3OkL6fHDR8
-   5yV5YrVbBk+6m4cagTXmkzEudNrRKbUFux75UfWfYpPY9SR1nx0Iz7L8d
-   A==;
-X-IronPort-AV: E=McAfee;i="6400,9594,10405"; a="267986173"
-X-IronPort-AV: E=Sophos;i="5.92,265,1650956400"; 
-   d="scan'208";a="267986173"
-Received: from orsmga002.jf.intel.com ([10.7.209.21])
-  by orsmga106.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 12 Jul 2022 07:32:51 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.92,265,1650956400"; 
-   d="scan'208";a="595305832"
-Received: from irvmail001.ir.intel.com ([10.43.11.63])
-  by orsmga002.jf.intel.com with ESMTP; 12 Jul 2022 07:32:48 -0700
-Received: from newjersey.igk.intel.com (newjersey.igk.intel.com [10.102.20.203])
-        by irvmail001.ir.intel.com (8.14.3/8.13.6/MailSET/Hub) with ESMTP id 26CEWlWR009263;
-        Tue, 12 Jul 2022 15:32:47 +0100
-From:   Alexander Lobakin <alexandr.lobakin@intel.com>
-To:     Yury Norov <yury.norov@gmail.com>
-Cc:     Alexander Lobakin <alexandr.lobakin@intel.com>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        kernel test robot <oliver.sang@intel.com>,
-        Mark Rutland <mark.rutland@arm.com>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Linux Memory Management List <linux-mm@kvack.org>,
-        linux-alpha@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-arch@vger.kernel.org, lkp@lists.01.org, lkp@intel.com
-Subject: Re: [bitops] 0e862838f2: BUG:KASAN:wild-memory-access_in_dmar_parse_one_rhsa
-Date:   Tue, 12 Jul 2022 16:31:23 +0200
-Message-Id: <20220712143123.38008-1-alexandr.lobakin@intel.com>
-X-Mailer: git-send-email 2.36.1
-In-Reply-To: <CAAH8bW_fypvDtWEFX32iFSagyAS2Mi+yG+bafTeTynYynBdDWA@mail.gmail.com>
-References: <YsbpTNmDaam8pl+f@xsang-OptiPlex-9020> <YsggZNUQcsKIU9xU@smile.fi.intel.com> <20220711161341.21605-1-alexandr.lobakin@intel.com> <CAAH8bW_fypvDtWEFX32iFSagyAS2Mi+yG+bafTeTynYynBdDWA@mail.gmail.com>
+        with ESMTP id S230201AbiGNCHZ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 13 Jul 2022 22:07:25 -0400
+Received: from mail-ua1-x92b.google.com (mail-ua1-x92b.google.com [IPv6:2607:f8b0:4864:20::92b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5ACD12314C;
+        Wed, 13 Jul 2022 19:07:24 -0700 (PDT)
+Received: by mail-ua1-x92b.google.com with SMTP id r25so152474uap.7;
+        Wed, 13 Jul 2022 19:07:24 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
+         :cc;
+        bh=NpLH38IQjk7redhO9PrQcXlLl1raddOqHif56KP33pc=;
+        b=gJ/Poz6fnHmy6tw3/ekjOTdZC6WAanr/z9pOUQdssMiy7McyExvpdd2WUfWAj5C8de
+         TncoEwlo8JJLiUN9u6ikmdNggPa0I8xHqcrzSFyA8+4axrtQt1keJ3CngNjRaLncRycp
+         qQwcp767wZ15QiyGPZzbaIaVB7YDgBsPq6aKOkidU3/YYJI9s6YTbbDDpyvbGvociREx
+         d54hnyqMsAqBySNzMiQPlt7aNjoilHYVamiweBh9OT8UgjMxk8qBjyBkfRVI/cBrDttl
+         e0diMOgIGJYy6CfzH7aYgBRsDb70meGOSPVAWYLpYBJ5O+5isELaxkVSWBkr3TqqsNUZ
+         J84g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
+         :message-id:subject:to:cc;
+        bh=NpLH38IQjk7redhO9PrQcXlLl1raddOqHif56KP33pc=;
+        b=jCF6pb9FI9vjZJAtgwyzs5AOiQOz6a/I/wZWuv0AJKR3VsIYY0S+v3TCBwiZsTUSuv
+         f1Fz3EhLzOVq/NpoylO/A2hSRIKfnzULMDgIR7bg46cRoVGQZuz2iZTT4Z0ai4h2mRJe
+         OvUcW77drccSqX9FJGpl+JyqW7peFvzmv3VpZcI/gEwtphmxd5/Go9hSa5bJoEUuUieq
+         gj+3uByVAisBkNTlP0b0O6nDwmSiancaLgkK+T+QjU4rhZLZ5xjNGupXc6D8PSdHgsga
+         9qpH/tsfluFOQv+/rUi5+/HNwYIzlmMs4RnOlpvyxw+k2JKOApQFopnU2L+zdaGmIpuL
+         FwRQ==
+X-Gm-Message-State: AJIora9t/UrodRBa0g4JVBuNKvgw4xT5tW0ch4RoHgM0s6X6lKVQuf3V
+        K1gHAG3YYhARqQ+X/arqzP1ILHIKjVVp5zCZCDiy77J1gzhANwDD
+X-Google-Smtp-Source: AGRyM1vFQyB5NO+1tpFvYvLDE44n1imGoxyRKDVxoA97HOyDWY4NrzjwmwdLmSMIFxgFLR+iBY3k18fU4R1SCofoqMw=
+X-Received: by 2002:ab0:6798:0:b0:382:d9f4:8d0 with SMTP id
+ v24-20020ab06798000000b00382d9f408d0mr2611303uar.63.1657764443460; Wed, 13
+ Jul 2022 19:07:23 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 8bit
+References: <20220712075255.1345991-1-chenhuacai@loongson.cn>
+ <20220712075255.1345991-3-chenhuacai@loongson.cn> <CAMuHMdUazqHLbc80vpZ+Msg9A3j5aPJ3fx+CdCG3kuWDSf8WSw@mail.gmail.com>
+ <CAAhV-H775jXMbcR9j=oLBuHo1PfFziZSUQWttJAEw20sUt+GAA@mail.gmail.com>
+ <CAMuHMdUHbepd974u5iox3BcOyo_Q2ZgT-znruk+WCt+HMQ_Lgw@mail.gmail.com>
+ <CAAhV-H78Fi0aE-h5MOgRa5L+Jt7D0wG0nLcYzx45jVney8T1BQ@mail.gmail.com>
+ <CAMuHMdVXFmKR4LuXHYRrSk3Q0VRqATGbsM512DxayWCPCE-wvg@mail.gmail.com> <c8c959fa-f17d-f0dd-6a8d-e0b0ce622f3a@xen0n.name>
+In-Reply-To: <c8c959fa-f17d-f0dd-6a8d-e0b0ce622f3a@xen0n.name>
+From:   Huacai Chen <chenhuacai@gmail.com>
+Date:   Thu, 14 Jul 2022 10:07:10 +0800
+Message-ID: <CAAhV-H6g5nLGJMz0ZsZqC5-73VSGffVdc6r0=3HHBo3Z8PQOBg@mail.gmail.com>
+Subject: Re: [PATCH 3/6] M68K: cpuinfo: Fix a warning for CONFIG_CPUMASK_OFFSTACK
+To:     WANG Xuerui <kernel@xen0n.name>
+Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Huacai Chen <chenhuacai@loongson.cn>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Michal Simek <monstr@monstr.eu>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, Jeff Dike <jdike@addtoit.com>,
+        Richard Weinberger <richard@nod.at>,
+        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+        loongarch@lists.linux.dev, Linux-Arch <linux-arch@vger.kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Guo Ren <guoren@kernel.org>,
+        Jiaxun Yang <jiaxun.yang@flygoat.com>,
+        "open list:BROADCOM NVRAM DRIVER" <linux-mips@vger.kernel.org>,
+        linux-m68k <linux-m68k@lists.linux-m68k.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        linux-um <linux-um@lists.infradead.org>,
+        stable <stable@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Yury Norov <yury.norov@gmail.com>
-Date: Mon, 11 Jul 2022 11:24:42 -0700
+Hi, all,
 
-> On Mon, Jul 11, 2022 at 9:15 AM Alexander Lobakin
-> <alexandr.lobakin@intel.com> wrote:
+On Tue, Jul 12, 2022 at 6:15 PM WANG Xuerui <kernel@xen0n.name> wrote:
+>
+> Hi Geert and Huacai,
+>
+> On 2022/7/12 17:13, Geert Uytterhoeven wrote:
+> > Hi Huacai,
 > >
-> > From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-> > Date: Fri, 8 Jul 2022 15:17:40 +0300
-> >
-> >> On Thu, Jul 07, 2022 at 10:10:20PM +0800, kernel test robot wrote:
+> > On Tue, Jul 12, 2022 at 11:08 AM Huacai Chen <chenhuacai@gmail.com> wrote:
+> >> On Tue, Jul 12, 2022 at 5:01 PM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> >>> On Tue, Jul 12, 2022 at 10:53 AM Huacai Chen <chenhuacai@gmail.com> wrote:
+> >>>> On Tue, Jul 12, 2022 at 4:33 PM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> >>>>> On Tue, Jul 12, 2022 at 9:53 AM Huacai Chen <chenhuacai@loongson.cn> wrote:
+> >>>>>> When CONFIG_CPUMASK_OFFSTACK and CONFIG_DEBUG_PER_CPU_MAPS is selected,
+> >>>>> DEBUG_PER_CPU_MAPS depends on SMP, which is not supported on m68k,
+> >>>>> and thus cannot be enabled.
+> >>>> This patch is derived from MIPS and LoongArch, I search all
+> >>>> architectures and change those that look the same as MIPS and
+> >>>> LoongArch.
+> >>>> And the warning message below is also a copy-paste from LoongArch, sorry.
+> >>>>
+> >>>> Since M68K doesn't support SMP, then this patch seems to make no
+> >>>> difference, but does it make sense to keep consistency across all
+> >>>> architectures?
+> >>> Yes, having consistency is good.  But that should be mentioned in the
+> >>> patch description, instead of a scary warning CCed to stable ;-)
 > >>>
-> >>> (please be noted we reported
-> >>> "[bitops]  001bea109d: BUG:KASAN:wild-memory-access_in_dmar_parse_one_rhsa"
-> >>> on
-> >>> https://lore.kernel.org/all/YrnGLtDXAveqXGok@xsang-OptiPlex-9020/
-> >>> now we noticed this commit has already been merged into linux-next/master,
-> >>> and the issue is still existing. report again FYI)
-> >>>
-> >>> Greeting,
-> >>>
-> >>> FYI, we noticed the following commit (built with gcc-11):
-> >>>
-> >>> commit: 0e862838f290147ea9c16db852d8d494b552d38d ("bitops: unify non-atomic bitops prototypes across architectures")
-> >>> https://git.kernel.org/cgit/linux/kernel/git/next/linux-next.git master
-> >>>
-> >>> in testcase: xfstests
-> >>> version: xfstests-x86_64-c1144bf-1_20220627
-> >>> with following parameters:
-> >>>
-> >>>     disk: 2pmem
-> >>>     fs: ext4
-> >>>     test: ext4-dax
-> >>>     ucode: 0x700001c
-> >>>
-> >>> test-description: xfstests is a regression test suite for xfs and other files ystems.
-> >>> test-url: git://git.kernel.org/pub/scm/fs/xfs/xfstests-dev.git
-> >>>
-> >>>
-> >>> on test machine: 16 threads 1 sockets Intel(R) Xeon(R) CPU D-1541 @ 2.10GHz with 48G memory
-> >>>
-> >>> caused below changes (please refer to attached dmesg/kmsg for entire log/backtrace):
-> >>>
-> >>>
-> >>>
-> >>> If you fix the issue, kindly add following tag
-> >>> Reported-by: kernel test robot <oliver.sang@intel.com>
-> >>>
-> >>>
-> >>> [ 4.668325][ T0] BUG: KASAN: wild-memory-access in dmar_parse_one_rhsa (arch/x86/include/asm/bitops.h:214 arch/x86/include/asm/bitops.h:226 include/asm-generic/bitops/instrumented-non-atomic.h:142 include/linux/nodemask.h:415 drivers/iommu/intel/dmar.c:497)
-> >>> [    4.676149][    T0] Read of size 8 at addr 1fffffff85115558 by task swapper/0/0
-> >>> [    4.683454][    T0]
-> >>> [    4.685638][    T0] CPU: 0 PID: 0 Comm: swapper/0 Not tainted 5.19.0-rc3-00004-g0e862838f290 #1
-> >>> [    4.694331][    T0] Hardware name: Supermicro SYS-5018D-FN4T/X10SDV-8C-TLN4F, BIOS 1.1 03/02/2016
-> >>> [    4.703196][    T0] Call Trace:
-> >>> [    4.706334][    T0]  <TASK>
-> >>> [ 4.709133][ T0] ? dmar_parse_one_rhsa (arch/x86/include/asm/bitops.h:214 arch/x86/include/asm/bitops.h:226 include/asm-generic/bitops/instrumented-non-atomic.h:142 include/linux/nodemask.h:415 drivers/iommu/intel/dmar.c:497)
-> >>> [ 4.714272][ T0] dump_stack_lvl (lib/dump_stack.c:107 (discriminator 1))
-> >>> [ 4.718632][ T0] kasan_report (mm/kasan/report.c:162 mm/kasan/report.c:493)
-> >>> [ 4.722903][ T0] ? dmar_parse_one_rhsa (arch/x86/include/asm/bitops.h:214 arch/x86/include/asm/bitops.h:226 include/asm-generic/bitops/instrumented-non-atomic.h:142 include/linux/nodemask.h:415 drivers/iommu/intel/dmar.c:497)
-> >>> [ 4.728042][ T0] kasan_check_range (mm/kasan/generic.c:190)
-> >>> [ 4.732750][ T0] dmar_parse_one_rhsa (arch/x86/include/asm/bitops.h:214 arch/x86/include/asm/bitops.h:226 include/asm-generic/bitops/instrumented-non-atomic.h:142 include/linux/nodemask.h:415 drivers/iommu/intel/dmar.c:497)
-> >>> [ 4.737715][ T0] dmar_walk_remapping_entries (drivers/iommu/intel/dmar.c:609)
-> >>> [ 4.743375][ T0] parse_dmar_table (drivers/iommu/intel/dmar.c:671)
-> >>> [ 4.748079][ T0] ? dmar_table_detect (drivers/iommu/intel/dmar.c:633)
-> >>> [ 4.752872][ T0] ? dmar_free_dev_scope (drivers/iommu/intel/dmar.c:408)
-> >>> [ 4.758010][ T0] ? init_dmars (drivers/iommu/intel/iommu.c:3359)
-> >>> [ 4.762370][ T0] ? iommu_resume (drivers/iommu/intel/iommu.c:3419)
-> >>> [ 4.766903][ T0] ? dmar_walk_dsm_resource+0x300/0x300
-> >>> [ 4.772909][ T0] ? dmar_acpi_insert_dev_scope (drivers/iommu/intel/dmar.c:466)
-> >>> [ 4.778655][ T0] ? dmar_check_one_atsr (drivers/iommu/intel/iommu.c:3521)
-> >>> [ 4.783795][ T0] dmar_table_init (drivers/iommu/intel/dmar.c:846)
-> >>> [ 4.788239][ T0] intel_prepare_irq_remapping (drivers/iommu/intel/irq_remapping.c:742)
-> >>> [ 4.793811][ T0] irq_remapping_prepare (drivers/iommu/irq_remapping.c:102)
-> >>> [ 4.798778][ T0] enable_IR_x2apic (arch/x86/kernel/apic/apic.c:1928)
-> >>> [ 4.803395][ T0] default_setup_apic_routing (arch/x86/kernel/apic/probe_64.c:25 (discriminator 1))
-> >>> [ 4.808883][ T0] apic_intr_mode_init (arch/x86/kernel/apic/apic.c:1446)
-> >>> [ 4.813761][ T0] x86_late_time_init (arch/x86/kernel/time.c:101)
-> >>> [ 4.818467][ T0] start_kernel (init/main.c:1101)
-> >>> [ 4.822827][ T0] secondary_startup_64_no_verify (arch/x86/kernel/head_64.S:358)
-> >>
-> >> Seems like related to nodemask APIs.
-> >
-> > It points to arch_test_bit() (node_online() -> test_bit()),
-> > converted from a macro to a function, more precisely, to
-> > variable_test_bit(), which I didn't touch.
-> >
-> > ...oh ok I got it!
-> >
-> > pxm_to_node() can return %NUMA_NO_NODE which equals to -1. The
-> > mentioned commit converts the macro to the function which now takes
-> > `unsigned long` as @nr (bit number). So I guess it gets converted to
-> > %ULONG_MAX - 1.
-> >
-> > Now the question is: what should a bitop do if we have negative bit
-> > number? Because there are 2 solutions:
-> >
-> > 1. (I prefer it) A caller must check that bitop arguments are valid.
-> >    UB for negative (== too big) bit numbers.
-> >    dmar_parse_one_rhsa() must be fixed so that it will check return
-> >    value of pxm_to_node():
-> >
-> >                         int node = pxm_to_node(rhsa->proximity_domain);
-> >
-> > -                       if (!node_online(node))
-> > +                       if (node != NUMA_NO_NODE && !node_online(node))
-> 
-> Would it make sense to check it inside node_online()?
+> >>> BTW, you probably want to update the other copy of c_start() in
+> >>> arch/m68k/kernel/setup_mm.c, too.
+> >> For no-SMP architectures, it seems c_start() in
+> >> arch/m68k/kernel/setup_mm.c is more reasonable (just use 1, neither
+> >> NR_CPUS, nor nr_cpu_ids)?
+> > The advantage of using nr_cpu_ids() is that this is one place less
+> > to update when adding SMP support later...
+>
+> Hmm, so I've been watching m68k development lately (although not as
+> closely as I'd like to, due to lack of vintage hardware at hand), given
+> the current amazing  momentum all the hobbyists/developers have been
+> contributing to, SMP is well within reach...
+>
+> But judging from the intent of this patch series (fixing WARNs on
+> certain configs), and that the triggering condition is currently
+> impossible on m68k (and other non-SMP) platforms, I think cleanups for
+> such arches could come as a separate patch series later. I think the
+> m68k refactoring is reasonable after all, due to my observation above,
+> but for the other non-SMP arches we may want to wait for the respective
+> maintainers' opinions.
+It seems that the best solution is only fix architectures with SMP
+support and leave others (m68k, microblaze, um) as is. :)
 
-Probably as a more global improvement. I believe it's used very
-often on hotpath, where it's known it can't be < 0, so for now
-I'd pick the check inside this function.
-
-> 
-> >                                 node = NUMA_NO_NODE;
-> >
-> > 2. My code is broken, I shouldn't change `long` to `unsigned long`
-> >    or should change it for {constant,variable}_test_bit() as well
-> >    or do something else and let it behave as it was previously
-> >    (it wasn't crashing probably due to a good luck or...).
-> 
-> This is definitely a NUMA problem. Bitmap has 2 kernel-wide users:
-> cpumasks and numa nodes. Both use negative indexes for their
-> reasons, which is dangerous, as we can see from here, because
-> bitmaps don't support them and don't handle it properly...
-> 
-> Can you please send a fix dmar_parse_one_rhsa() as you suggested,
-> so that I'll add the fix before the beginning of next merge window?
-
-Sure, sending in a couple hours. I guess it would be nice to get
-Acked-by from a maintainer of that subsys (if it won't take too
-long).
-
-> 
-> Regarding a general path, this is what I'm thinking on (for a while):
->  - #define NUMA_NO_NODE MAX_NUMNODES;
->  - stronger typechecking, like you did in your series;
->  - introduce CONFIG_DEBUG_BITMAP  to catch bad arguments
->    on-the-fly;
-> 
-> I'm working on DEBUG_BITMAP, hopefully submit it for next merge
-> cycle.
-
-I like the idea!
-
-> 
-> Thanks,
-> Yury
-
-Thanks,
-Olek
+Huacai
+>
