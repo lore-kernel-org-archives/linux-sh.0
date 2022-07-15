@@ -2,56 +2,49 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 82361CCA47B
-	for <linux-sh@archiver.kernel.org>; Fri, 15 Jul 2022 00:04:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 77513CCA47C
+	for <linux-sh@archiver.kernel.org>; Fri, 15 Jul 2022 13:27:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241063AbiGOAEI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 14 Jul 2022 20:04:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39450 "EHLO
+        id S234471AbiGON1p (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 15 Jul 2022 09:27:45 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60122 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232313AbiGOAEG (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 14 Jul 2022 20:04:06 -0400
-Received: from mail-pf1-x430.google.com (mail-pf1-x430.google.com [IPv6:2607:f8b0:4864:20::430])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2A8942B189;
-        Thu, 14 Jul 2022 17:04:05 -0700 (PDT)
-Received: by mail-pf1-x430.google.com with SMTP id b9so3239383pfp.10;
-        Thu, 14 Jul 2022 17:04:05 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=sender:date:from:to:cc:subject:message-id:references:mime-version
-         :content-disposition:in-reply-to;
-        bh=y3ZTJgJrieoT1UdgTTqiqvukDGVLKLFMuIKTE7lODpM=;
-        b=RQV4iwKe2wUPu88mMk1f6hs8+uQ1Ya6IG4iamvqBQZ0RnnatLUT16HB70JAQQsh2Rm
-         s/ZRjb/ADi4YjYlOZNf4rRyEHJGwGJHwKIiG/DxJhiQvwFZFqo1yvOApgxPwBWTwkE5k
-         n05fGFUuDSx5fRERuGNvyQqCRS4HEDE+CyUN+1lrE9LEmUj9d8Mvc4I81WAP7TNQhbiq
-         9c+IqL2ykCq4gi9+rg+u/ZGtfmAwtRJNjCNwkj3iJLGUh8+Gjpmg4oeH3i+A1pwKbEKY
-         E4dM1e/kl76zFL3umoiwRY/WGlN/y8IBrZ8AJfo6C4EuqIoxLlHZoCugbJerixMfjj8z
-         2LYw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:sender:date:from:to:cc:subject:message-id
-         :references:mime-version:content-disposition:in-reply-to;
-        bh=y3ZTJgJrieoT1UdgTTqiqvukDGVLKLFMuIKTE7lODpM=;
-        b=CBA1RDm4a3y5QL8HX6Y81xa3Mh+2jUGkNrSUSoal9n8K8hJdS08NZ0PG/Vj64vUIUW
-         V2WN7kCtzHiPbvyUPVvRD1/Ly/HfOtMTavM7ctN+47YyrYOxzeGFGF1TVbTxNLdFGLJn
-         Qc8ERuT2T2SWo3JOAap/UN9NDUzgsGta5nzclALA7pYDNaLPcChCEstziYWF40v7wrlC
-         7SgWr95rH7KhpQrPb3flvA4o9OL1HRSD/70nU8qD0mPwXRjORuhZ8luP0SQe8lXmaxGg
-         fI0eie/azM216+cx6sNr1/SFBnTrrOoFjm2hCJfoozht4N9GoBbO7U2jFD5Dy222bL6G
-         yQsg==
-X-Gm-Message-State: AJIora/G3ZFpeETj66ro6tWLl+IcWWPA05fbADug8gRR+wpdDRSKZtTG
-        yxqPBQBPHqnztm7po34Or7M=
-X-Google-Smtp-Source: AGRyM1urj2GIv1EKKty6wS9S6o5S8NLwsi59Wfu0TRZljegQWACf5/nBdipXNUa9lHaMrUSBQbZy+g==
-X-Received: by 2002:a63:c63:0:b0:3fe:e14b:b5a0 with SMTP id 35-20020a630c63000000b003fee14bb5a0mr9409241pgm.428.1657843444620;
-        Thu, 14 Jul 2022 17:04:04 -0700 (PDT)
-Received: from server.roeck-us.net ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
-        by smtp.gmail.com with ESMTPSA id w125-20020a636283000000b00419b1671c54sm1995347pgb.4.2022.07.14.17.04.03
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 14 Jul 2022 17:04:03 -0700 (PDT)
-Sender: Guenter Roeck <groeck7@gmail.com>
-Date:   Thu, 14 Jul 2022 17:04:02 -0700
-From:   Guenter Roeck <linux@roeck-us.net>
-To:     Alexander Lobakin <alexandr.lobakin@intel.com>
-Cc:     Arnd Bergmann <arnd@arndb.de>, Yury Norov <yury.norov@gmail.com>,
+        with ESMTP id S234625AbiGON1k (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 15 Jul 2022 09:27:40 -0400
+Received: from mga14.intel.com (mga14.intel.com [192.55.52.115])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9FFEA79EE7;
+        Fri, 15 Jul 2022 06:27:39 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1657891659; x=1689427659;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=MuD9J6xLfZe+36EwcjDB1aMvs+O7CntqPJd8E9s8qzc=;
+  b=lAABbQ45oa6QWptHgFsFl/UGRGt9kFbkgW/j/wQZivzEQNKe6GMt0s2B
+   rRbwMyOv73+gC+1w2zt17IxrMvZX8HiebDeFOcvj9XHZKSzYYN5DH1ahV
+   s8rFZQ6ob6GAY3rYOOkDDMCpZGttwmbnyQFjv6AfTbJiAKzeawEr6VDQq
+   oRjlHFkh8h21fammxqfieviK/389+Bfa+su+FMZ2fhc+qU3MYgeYxCOUa
+   TJz1BRsJtKQ4QhRoVnb1cBLXn9XPyR63RkBh9rMJNF8mPhB6/1zhBXS7k
+   rCwez8aWLJgNRr1eNzbUlhA8dTiaGgrd55tXSosDohq/fFHsPIA9Z+4rY
+   A==;
+X-IronPort-AV: E=McAfee;i="6400,9594,10408"; a="285817906"
+X-IronPort-AV: E=Sophos;i="5.92,274,1650956400"; 
+   d="scan'208";a="285817906"
+Received: from fmsmga008.fm.intel.com ([10.253.24.58])
+  by fmsmga103.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 15 Jul 2022 06:27:30 -0700
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="5.92,274,1650956400"; 
+   d="scan'208";a="654332878"
+Received: from irvmail001.ir.intel.com ([10.43.11.63])
+  by fmsmga008.fm.intel.com with ESMTP; 15 Jul 2022 06:27:25 -0700
+Received: from newjersey.igk.intel.com (newjersey.igk.intel.com [10.102.20.203])
+        by irvmail001.ir.intel.com (8.14.3/8.13.6/MailSET/Hub) with ESMTP id 26FDRMdI020138;
+        Fri, 15 Jul 2022 14:27:22 +0100
+From:   Alexander Lobakin <alexandr.lobakin@intel.com>
+To:     Guenter Roeck <linux@roeck-us.net>
+Cc:     Alexander Lobakin <alexandr.lobakin@intel.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Yury Norov <yury.norov@gmail.com>,
         Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
         Mark Rutland <mark.rutland@arm.com>,
         Matt Turner <mattst88@gmail.com>,
@@ -75,103 +68,106 @@ Cc:     Arnd Bergmann <arnd@arndb.de>, Yury Norov <yury.norov@gmail.com>,
         linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
         linux-arch@vger.kernel.org, llvm@lists.linux.dev,
         linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v5 6/9] bitops: let optimize out non-atomic bitops on
- compile-time constants
-Message-ID: <20220715000402.GA512558@roeck-us.net>
-References: <20220624121313.2382500-1-alexandr.lobakin@intel.com>
- <20220624121313.2382500-7-alexandr.lobakin@intel.com>
+Subject: Re: [PATCH v5 6/9] bitops: let optimize out non-atomic bitops on compile-time constants
+Date:   Fri, 15 Jul 2022 15:26:33 +0200
+Message-Id: <20220715132633.61480-1-alexandr.lobakin@intel.com>
+X-Mailer: git-send-email 2.36.1
+In-Reply-To: <20220715000402.GA512558@roeck-us.net>
+References: <20220624121313.2382500-1-alexandr.lobakin@intel.com> <20220624121313.2382500-7-alexandr.lobakin@intel.com> <20220715000402.GA512558@roeck-us.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Content-Disposition: inline
-In-Reply-To: <20220624121313.2382500-7-alexandr.lobakin@intel.com>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Jun 24, 2022 at 02:13:10PM +0200, Alexander Lobakin wrote:
-> Currently, many architecture-specific non-atomic bitop
-> implementations use inline asm or other hacks which are faster or
-> more robust when working with "real" variables (i.e. fields from
-> the structures etc.), but the compilers have no clue how to optimize
-> them out when called on compile-time constants. That said, the
-> following code:
-> 
-> 	DECLARE_BITMAP(foo, BITS_PER_LONG) = { }; // -> unsigned long foo[1];
-> 	unsigned long bar = BIT(BAR_BIT);
-> 	unsigned long baz = 0;
-> 
-> 	__set_bit(FOO_BIT, foo);
-> 	baz |= BIT(BAZ_BIT);
-> 
-> 	BUILD_BUG_ON(!__builtin_constant_p(test_bit(FOO_BIT, foo));
-> 	BUILD_BUG_ON(!__builtin_constant_p(bar & BAR_BIT));
-> 	BUILD_BUG_ON(!__builtin_constant_p(baz & BAZ_BIT));
-> 
-> triggers the first assertion on x86_64, which means that the
-> compiler is unable to evaluate it to a compile-time initializer
-> when the architecture-specific bitop is used even if it's obvious.
-> In order to let the compiler optimize out such cases, expand the
-> bitop() macro to use the "constant" C non-atomic bitop
-> implementations when all of the arguments passed are compile-time
-> constants, which means that the result will be a compile-time
-> constant as well, so that it produces more efficient and simple
-> code in 100% cases, comparing to the architecture-specific
-> counterparts.
-> 
-> The savings are architecture, compiler and compiler flags dependent,
-> for example, on x86_64 -O2:
-> 
-> GCC 12: add/remove: 78/29 grow/shrink: 332/525 up/down: 31325/-61560 (-30235)
-> LLVM 13: add/remove: 79/76 grow/shrink: 184/537 up/down: 55076/-141892 (-86816)
-> LLVM 14: add/remove: 10/3 grow/shrink: 93/138 up/down: 3705/-6992 (-3287)
-> 
-> and ARM64 (courtesy of Mark):
-> 
-> GCC 11: add/remove: 92/29 grow/shrink: 933/2766 up/down: 39340/-82580 (-43240)
-> LLVM 14: add/remove: 21/11 grow/shrink: 620/651 up/down: 12060/-15824 (-3764)
-> 
-> Cc: Mark Rutland <mark.rutland@arm.com>
-> Signed-off-by: Alexander Lobakin <alexandr.lobakin@intel.com>
-> Reviewed-by: Marco Elver <elver@google.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Thu, 14 Jul 2022 17:04:02 -0700
 
-Building i386:allyesconfig ... failed
---------------
-Error log:
-arch/x86/platform/olpc/olpc-xo1-sci.c: In function 'send_ebook_state':
-arch/x86/platform/olpc/olpc-xo1-sci.c:83:63: error: logical not is only applied to the left hand side of comparison
+> On Fri, Jun 24, 2022 at 02:13:10PM +0200, Alexander Lobakin wrote:
+> > Currently, many architecture-specific non-atomic bitop
+> > implementations use inline asm or other hacks which are faster or
 
-Bisect log attached.
+[...]
 
-Guenter
+> > Cc: Mark Rutland <mark.rutland@arm.com>
+> > Signed-off-by: Alexander Lobakin <alexandr.lobakin@intel.com>
+> > Reviewed-by: Marco Elver <elver@google.com>
+> 
+> Building i386:allyesconfig ... failed
+> --------------
+> Error log:
+> arch/x86/platform/olpc/olpc-xo1-sci.c: In function 'send_ebook_state':
+> arch/x86/platform/olpc/olpc-xo1-sci.c:83:63: error: logical not is only applied to the left hand side of comparison
 
+Looks like a trigger, not a cause... Anyway, this construct:
+
+	unsigned char state;
+
+	[...]
+
+	if (!!test_bit(SW_TABLET_MODE, ebook_switch_idev->sw) == state)
+
+doesn't look legit enough.
+That redundant double-negation [of boolean value], together with
+comparing boolean to char, provokes compilers to think the author
+made logical mistakes here, although it works as expected.
+Could you please try (if it's not automated build which you can't
+modify) the following:
+
+--- a/arch/x86/platform/olpc/olpc-xo1-sci.c
++++ b/arch/x86/platform/olpc/olpc-xo1-sci.c
+@@ -80,7 +80,7 @@ static void send_ebook_state(void)
+ 		return;
+ 	}
+ 
+-	if (!!test_bit(SW_TABLET_MODE, ebook_switch_idev->sw) == state)
++	if (test_bit(SW_TABLET_MODE, ebook_switch_idev->sw) == !!state)
+ 		return; /* Nothing new to report. */
+ 
+ 	input_report_switch(ebook_switch_idev, SW_TABLET_MODE, state);
 ---
-# bad: [4662b7adea50bb62e993a67f611f3be625d3df0d] Add linux-next specific files for 20220713
-# good: [32346491ddf24599decca06190ebca03ff9de7f8] Linux 5.19-rc6
-git bisect start 'HEAD' 'v5.19-rc6'
-# good: [8b7e002d8bc6e17c94092d25e7261db4e6e5f2cc] Merge branch 'drm-next' of git://git.freedesktop.org/git/drm/drm.git
-git bisect good 8b7e002d8bc6e17c94092d25e7261db4e6e5f2cc
-# good: [07f6d21d6e33c1e28e24ae84e9d26e4e7d4853f5] Merge branch 'next' of git://git.kernel.org/pub/scm/linux/kernel/git/kvms390/linux.git
-git bisect good 07f6d21d6e33c1e28e24ae84e9d26e4e7d4853f5
-# good: [5ff085e5d4f6700e03635d5e700f52163a6dc2a7] Merge branch 'staging-next' of git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git
-git bisect good 5ff085e5d4f6700e03635d5e700f52163a6dc2a7
-# good: [eb9e3fdbdd8b61ef0f4bee23259fe6ab69e463ab] Merge branch 'master' of git://git.kernel.org/pub/scm/linux/kernel/git/crng/random.git
-git bisect good eb9e3fdbdd8b61ef0f4bee23259fe6ab69e463ab
-# good: [9f2183cd961e5ddb7954eafb6bb01a495c6a9c7b] hexagon/mm: enable ARCH_HAS_VM_GET_PAGE_PROT
-git bisect good 9f2183cd961e5ddb7954eafb6bb01a495c6a9c7b
-# bad: [e878aa5faf9ac8c0b5d0c3f293389c194c250fff] Merge branch 'mm-nonmm-stable' of git://git.kernel.org/pub/scm/linux/kernel/git/akpm/mm
-git bisect bad e878aa5faf9ac8c0b5d0c3f293389c194c250fff
-# good: [cf95d50205f62c4f5f538676def847292cf39fa9] fs: don't call ->writepage from __mpage_writepage
-git bisect good cf95d50205f62c4f5f538676def847292cf39fa9
-# good: [5103cbfd92d3587713476f94f9485b96e02f0146] Merge branch 'for-next/execve' of git://git.kernel.org/pub/scm/linux/kernel/git/kees/linux.git
-git bisect good 5103cbfd92d3587713476f94f9485b96e02f0146
-# good: [ee56c3e8eec166f4e4a2ca842b7804d14f3a0208] Merge branch 'master' into mm-nonmm-stable
-git bisect good ee56c3e8eec166f4e4a2ca842b7804d14f3a0208
-# bad: [dc34d5036692c614eef23c1130ee42a201c316bf] lib: test_bitmap: add compile-time optimization/evaluations assertions
-git bisect bad dc34d5036692c614eef23c1130ee42a201c316bf
-# good: [bb7379bfa680bd48b468e856475778db2ad866c1] bitops: define const_*() versions of the non-atomics
-git bisect good bb7379bfa680bd48b468e856475778db2ad866c1
-# bad: [b03fc1173c0c2bb8fad61902a862985cecdc4b1b] bitops: let optimize out non-atomic bitops on compile-time constants
-git bisect bad b03fc1173c0c2bb8fad61902a862985cecdc4b1b
-# good: [e69eb9c460f128b71c6b995d75a05244e4b6cc3e] bitops: wrap non-atomic bitops with a transparent macro
-git bisect good e69eb9c460f128b71c6b995d75a05244e4b6cc3e
-# first bad commit: [b03fc1173c0c2bb8fad61902a862985cecdc4b1b] bitops: let optimize out non-atomic bitops on compile-time constants
+
+We'd take it into the bitmap tree then. The series revealed
+a fistful of existing code issues already :)
+
+> 
+> Bisect log attached.
+> 
+> Guenter
+> 
+> ---
+> # bad: [4662b7adea50bb62e993a67f611f3be625d3df0d] Add linux-next specific files for 20220713
+> # good: [32346491ddf24599decca06190ebca03ff9de7f8] Linux 5.19-rc6
+> git bisect start 'HEAD' 'v5.19-rc6'
+> # good: [8b7e002d8bc6e17c94092d25e7261db4e6e5f2cc] Merge branch 'drm-next' of git://git.freedesktop.org/git/drm/drm.git
+> git bisect good 8b7e002d8bc6e17c94092d25e7261db4e6e5f2cc
+> # good: [07f6d21d6e33c1e28e24ae84e9d26e4e7d4853f5] Merge branch 'next' of git://git.kernel.org/pub/scm/linux/kernel/git/kvms390/linux.git
+> git bisect good 07f6d21d6e33c1e28e24ae84e9d26e4e7d4853f5
+> # good: [5ff085e5d4f6700e03635d5e700f52163a6dc2a7] Merge branch 'staging-next' of git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/staging.git
+> git bisect good 5ff085e5d4f6700e03635d5e700f52163a6dc2a7
+> # good: [eb9e3fdbdd8b61ef0f4bee23259fe6ab69e463ab] Merge branch 'master' of git://git.kernel.org/pub/scm/linux/kernel/git/crng/random.git
+> git bisect good eb9e3fdbdd8b61ef0f4bee23259fe6ab69e463ab
+> # good: [9f2183cd961e5ddb7954eafb6bb01a495c6a9c7b] hexagon/mm: enable ARCH_HAS_VM_GET_PAGE_PROT
+> git bisect good 9f2183cd961e5ddb7954eafb6bb01a495c6a9c7b
+> # bad: [e878aa5faf9ac8c0b5d0c3f293389c194c250fff] Merge branch 'mm-nonmm-stable' of git://git.kernel.org/pub/scm/linux/kernel/git/akpm/mm
+> git bisect bad e878aa5faf9ac8c0b5d0c3f293389c194c250fff
+> # good: [cf95d50205f62c4f5f538676def847292cf39fa9] fs: don't call ->writepage from __mpage_writepage
+> git bisect good cf95d50205f62c4f5f538676def847292cf39fa9
+> # good: [5103cbfd92d3587713476f94f9485b96e02f0146] Merge branch 'for-next/execve' of git://git.kernel.org/pub/scm/linux/kernel/git/kees/linux.git
+> git bisect good 5103cbfd92d3587713476f94f9485b96e02f0146
+> # good: [ee56c3e8eec166f4e4a2ca842b7804d14f3a0208] Merge branch 'master' into mm-nonmm-stable
+> git bisect good ee56c3e8eec166f4e4a2ca842b7804d14f3a0208
+> # bad: [dc34d5036692c614eef23c1130ee42a201c316bf] lib: test_bitmap: add compile-time optimization/evaluations assertions
+> git bisect bad dc34d5036692c614eef23c1130ee42a201c316bf
+> # good: [bb7379bfa680bd48b468e856475778db2ad866c1] bitops: define const_*() versions of the non-atomics
+> git bisect good bb7379bfa680bd48b468e856475778db2ad866c1
+> # bad: [b03fc1173c0c2bb8fad61902a862985cecdc4b1b] bitops: let optimize out non-atomic bitops on compile-time constants
+> git bisect bad b03fc1173c0c2bb8fad61902a862985cecdc4b1b
+> # good: [e69eb9c460f128b71c6b995d75a05244e4b6cc3e] bitops: wrap non-atomic bitops with a transparent macro
+> git bisect good e69eb9c460f128b71c6b995d75a05244e4b6cc3e
+> # first bad commit: [b03fc1173c0c2bb8fad61902a862985cecdc4b1b] bitops: let optimize out non-atomic bitops on compile-time constants
+
+Thanks,
+Olek
