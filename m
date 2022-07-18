@@ -2,158 +2,74 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CEA0AC433EF
-	for <linux-sh@archiver.kernel.org>; Fri, 15 Jul 2022 14:52:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 736A3C433EF
+	for <linux-sh@archiver.kernel.org>; Mon, 18 Jul 2022 07:51:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229475AbiGOOwF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 15 Jul 2022 10:52:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38252 "EHLO
+        id S230033AbiGRHvL (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 18 Jul 2022 03:51:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41056 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229725AbiGOOwC (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 15 Jul 2022 10:52:02 -0400
-Received: from mga12.intel.com (mga12.intel.com [192.55.52.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1BCA2785A9;
-        Fri, 15 Jul 2022 07:51:58 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1657896718; x=1689432718;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=ZzyuoiCwqpLweGYOkG0+rKJpPglqwnxzM5a+WQyzOag=;
-  b=ZrSgvAFG8gkVc/meiW3eflT0A5FGXO0eK3uBAZmg8TH076LXjl2TQNiS
-   lllq6urSMj0UZ0OJMlEJMPMlb2gMktPYm1j4BC5DFr08ixZm0AtZB6QX0
-   Bpa0SoXsvHZniez3JpR+zTgC1UAvWOR8jKnpuRw2U/mSoTmi9NigfGbtO
-   NPrjU2VMqOLN9U8rxnoEYA0ldxQj9rXXGgPVJ15UIgaj2mo/ElvtyXrhG
-   NUp518FinAFbrB+hVQiXlxrRwoXY4yr4CcSuoYg4zfqh6giiySv79dUTm
-   6hb4DJj+eyVpaZQ6je7SVTghzSnJQgk358+Qyz8fduGMTwquYc4Ds+De+
-   g==;
-X-IronPort-AV: E=McAfee;i="6400,9594,10408"; a="265600278"
-X-IronPort-AV: E=Sophos;i="5.92,274,1650956400"; 
-   d="scan'208";a="265600278"
-Received: from fmsmga008.fm.intel.com ([10.253.24.58])
-  by fmsmga106.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 15 Jul 2022 07:51:57 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="5.92,274,1650956400"; 
-   d="scan'208";a="654357301"
-Received: from irvmail001.ir.intel.com ([10.43.11.63])
-  by fmsmga008.fm.intel.com with ESMTP; 15 Jul 2022 07:51:52 -0700
-Received: from newjersey.igk.intel.com (newjersey.igk.intel.com [10.102.20.203])
-        by irvmail001.ir.intel.com (8.14.3/8.13.6/MailSET/Hub) with ESMTP id 26FEpnoA007626;
-        Fri, 15 Jul 2022 15:51:49 +0100
-From:   Alexander Lobakin <alexandr.lobakin@intel.com>
-To:     Yury Norov <yury.norov@gmail.com>
-Cc:     Alexander Lobakin <alexandr.lobakin@intel.com>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Matt Turner <mattst88@gmail.com>,
-        Brian Cain <bcain@quicinc.com>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        Kees Cook <keescook@chromium.org>,
-        "Peter Zijlstra (Intel)" <peterz@infradead.org>,
-        Marco Elver <elver@google.com>, Borislav Petkov <bp@suse.de>,
-        Tony Luck <tony.luck@intel.com>,
-        Maciej Fijalkowski <maciej.fijalkowski@intel.com>,
-        Jesse Brandeburg <jesse.brandeburg@intel.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Nathan Chancellor <nathan@kernel.org>,
-        Nick Desaulniers <ndesaulniers@google.com>,
-        Tom Rix <trix@redhat.com>, kernel test robot <lkp@intel.com>,
-        linux-alpha@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-arch@vger.kernel.org, llvm@lists.linux.dev,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v5 6/9] bitops: let optimize out non-atomic bitops on compile-time constants
-Date:   Fri, 15 Jul 2022 16:50:53 +0200
-Message-Id: <20220715145053.64569-1-alexandr.lobakin@intel.com>
-X-Mailer: git-send-email 2.36.1
-In-Reply-To: <YtF3YIBA0Dd4KXZ+@yury-laptop>
-References: <20220624121313.2382500-1-alexandr.lobakin@intel.com> <20220624121313.2382500-7-alexandr.lobakin@intel.com> <20220715000402.GA512558@roeck-us.net> <20220715132633.61480-1-alexandr.lobakin@intel.com> <8c949bd4-d25a-d5f5-49be-59d52e4b6c9d@roeck-us.net> <YtF3YIBA0Dd4KXZ+@yury-laptop>
+        with ESMTP id S229680AbiGRHvL (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 18 Jul 2022 03:51:11 -0400
+Received: from baptiste.telenet-ops.be (baptiste.telenet-ops.be [IPv6:2a02:1800:120:4::f00:13])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7964F1209B
+        for <linux-sh@vger.kernel.org>; Mon, 18 Jul 2022 00:51:06 -0700 (PDT)
+Received: from ramsan.of.borg ([84.195.186.194])
+        by baptiste.telenet-ops.be with bizsmtp
+        id wXr42700L4C55Sk01Xr4Y5; Mon, 18 Jul 2022 09:51:04 +0200
+Received: from geert (helo=localhost)
+        by ramsan.of.borg with local-esmtp (Exim 4.93)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1oDLWy-003z0a-0E; Mon, 18 Jul 2022 09:51:04 +0200
+Date:   Mon, 18 Jul 2022 09:51:03 +0200 (CEST)
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+X-X-Sender: geert@ramsan.of.borg
+To:     linux-kernel@vger.kernel.org
+cc:     linux-rdma@vger.kernel.org, linux-um@lists.infradead.org,
+        linux-sh@vger.kernel.org
+Subject: Re: Build regressions/improvements in v5.19-rc7
+In-Reply-To: <20220718074308.3801763-1-geert@linux-m68k.org>
+Message-ID: <alpine.DEB.2.22.394.2207180949260.949449@ramsan.of.borg>
+References: <CAHk-=wj63HHDU0MTRVKese5a4j82g3s3u4Ztno7=7Cj=cRRFFQ@mail.gmail.com> <20220718074308.3801763-1-geert@linux-m68k.org>
+User-Agent: Alpine 2.22 (DEB 394 2020-01-19)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=US-ASCII; format=flowed
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Yury Norov <yury.norov@gmail.com>
-Date: Fri, 15 Jul 2022 07:19:12 -0700
+On Mon, 18 Jul 2022, Geert Uytterhoeven wrote:
+> JFYI, when comparing v5.19-rc7[1] to v5.19-rc6[3], the summaries are:
+>  - build errors: +11/-6
 
-> On Fri, Jul 15, 2022 at 06:49:46AM -0700, Guenter Roeck wrote:
-> > On 7/15/22 06:26, Alexander Lobakin wrote:
-> > > From: Guenter Roeck <linux@roeck-us.net>
-> > > Date: Thu, 14 Jul 2022 17:04:02 -0700
-> > > 
-> > > > On Fri, Jun 24, 2022 at 02:13:10PM +0200, Alexander Lobakin wrote:
-> > > > > Currently, many architecture-specific non-atomic bitop
-> > > > > implementations use inline asm or other hacks which are faster or
-> > > 
-> > > [...]
-> > > 
-> > > > > Cc: Mark Rutland <mark.rutland@arm.com>
-> > > > > Signed-off-by: Alexander Lobakin <alexandr.lobakin@intel.com>
-> > > > > Reviewed-by: Marco Elver <elver@google.com>
-> > > > 
-> > > > Building i386:allyesconfig ... failed
-> > > > --------------
-> > > > Error log:
-> > > > arch/x86/platform/olpc/olpc-xo1-sci.c: In function 'send_ebook_state':
-> > > > arch/x86/platform/olpc/olpc-xo1-sci.c:83:63: error: logical not is only applied to the left hand side of comparison
-> > > 
-> > > Looks like a trigger, not a cause... Anyway, this construct:
-> > > 
-> > > 	unsigned char state;
-> > > 
-> > > 	[...]
-> > > 
-> > > 	if (!!test_bit(SW_TABLET_MODE, ebook_switch_idev->sw) == state)
-> > > 
-> > > doesn't look legit enough.
-> > > That redundant double-negation [of boolean value], together with
-> > > comparing boolean to char, provokes compilers to think the author
-> > > made logical mistakes here, although it works as expected.
-> > > Could you please try (if it's not automated build which you can't
-> > > modify) the following:
-> > > 
-> > 
-> > Agreed, the existing code seems wrong. The change below looks correct
-> > and fixes the problem. Feel free to add
-> > 
-> > Reviewed-and-tested-by: Guenter Roeck <linux@roeck-us.net>
-> > 
-> > to the real patch.
-> > 
-> > Thanks,
-> > Guenter
-> > 
-> > > --- a/arch/x86/platform/olpc/olpc-xo1-sci.c
-> > > +++ b/arch/x86/platform/olpc/olpc-xo1-sci.c
-> > > @@ -80,7 +80,7 @@ static void send_ebook_state(void)
-> > >   		return;
-> > >   	}
-> > > -	if (!!test_bit(SW_TABLET_MODE, ebook_switch_idev->sw) == state)
-> > > +	if (test_bit(SW_TABLET_MODE, ebook_switch_idev->sw) == !!state)
-> > >   		return; /* Nothing new to report. */
-> > >   	input_report_switch(ebook_switch_idev, SW_TABLET_MODE, state);
-> > > ---
-> > > 
-> > > We'd take it into the bitmap tree then. The series revealed
-> > > a fistful of existing code issues already :)
-> 
-> Would you like me to add your signed-off-by and apply, or you prefer
-> to send it out as a patch?
+   + /kisskb/src/drivers/infiniband/hw/qib/qib_wc_x86_64.c: error: 'X86_VENDOR_AMD' undeclared (first use in this function):  => 149:37
+   + /kisskb/src/drivers/infiniband/hw/qib/qib_wc_x86_64.c: error: 'struct cpuinfo_um' has no member named 'x86_vendor':  => 149:22
+   + /kisskb/src/drivers/infiniband/hw/qib/qib_wc_x86_64.c: error: control reaches end of non-void function [-Werror=return-type]:  => 150:1
+   + /kisskb/src/drivers/infiniband/sw/rdmavt/qp.c: error: 'struct cpuinfo_um' has no member named 'x86_cache_size':  => 88:22
+   + /kisskb/src/drivers/infiniband/sw/rdmavt/qp.c: error: control reaches end of non-void function [-Werror=return-type]:  => 89:1
+   + /kisskb/src/drivers/infiniband/sw/rdmavt/qp.c: error: implicit declaration of function '__copy_user_nocache' [-Werror=implicit-function-declaration]:  => 100:2
 
-I'm sending it in a couple minutes :)
+um-x86_64/um-all{mod,yes}config
+(seen before in v5.18)
 
-> 
-> Thanks,
-> Yury
+   + {standard input}: Error: displacement to undefined symbol .L271 overflows 12-bit field:  => 1625
+   + {standard input}: Error: displacement to undefined symbol .L271 overflows 8-bit field :  => 1634
+   + {standard input}: Error: displacement to undefined symbol .L318 overflows 8-bit field :  => 1665, 1681, 1711, 1693
+   + {standard input}: Error: pcrel too far:  => 1657, 1667, 1629, 1685, 1649, 1655, 1635, 1698, 1618, 1644, 1695, 1705, 1676, 1673, 1670, 1660, 1686, 1656, 1702, 1672, 1700, 1609, 1632, 1684
+   + {standard input}: Error: unknown opcode:  => 1713
 
-Thanks,
-Olek
+sh4-gcc11/sh-allyesconfig
+
+> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/ff6992735ade75aae3e35d16b17da1008d753d28/ (all 135 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/32346491ddf24599decca06190ebca03ff9de7f8/ (all 135 configs)
+
+Gr{oetje,eeting}s,
+
+ 						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+ 							    -- Linus Torvalds
