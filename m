@@ -2,153 +2,388 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 85908C43334
-	for <linux-sh@archiver.kernel.org>; Mon, 18 Jul 2022 09:04:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 148BDC43334
+	for <linux-sh@archiver.kernel.org>; Wed, 20 Jul 2022 13:20:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233944AbiGRJEc (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 18 Jul 2022 05:04:32 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37980 "EHLO
+        id S232252AbiGTNUB (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 20 Jul 2022 09:20:01 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46848 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234033AbiGRJE3 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 18 Jul 2022 05:04:29 -0400
-Received: from mail-ej1-x635.google.com (mail-ej1-x635.google.com [IPv6:2a00:1450:4864:20::635])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 56AAD1A818
-        for <linux-sh@vger.kernel.org>; Mon, 18 Jul 2022 02:04:24 -0700 (PDT)
-Received: by mail-ej1-x635.google.com with SMTP id bp15so20019520ejb.6
-        for <linux-sh@vger.kernel.org>; Mon, 18 Jul 2022 02:04:24 -0700 (PDT)
+        with ESMTP id S229994AbiGTNT7 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Jul 2022 09:19:59 -0400
+Received: from mail-pl1-x636.google.com (mail-pl1-x636.google.com [IPv6:2607:f8b0:4864:20::636])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C4388481FD;
+        Wed, 20 Jul 2022 06:19:53 -0700 (PDT)
+Received: by mail-pl1-x636.google.com with SMTP id v21so14932481plo.0;
+        Wed, 20 Jul 2022 06:19:53 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=monstr-eu.20210112.gappssmtp.com; s=20210112;
-        h=message-id:date:mime-version:user-agent:subject:content-language:to
-         :cc:references:from:in-reply-to:content-transfer-encoding;
-        bh=3y6mB0hrnaV46VnRdVCEKqtLVV2m+vYW81yoBr+fw0w=;
-        b=lazb5AJju1MIZiojh4ugOqp3SpUeeN4m9pS4gWOOnJbgrHukSBCMpnqykr4R6rEOKM
-         po8QLW0Y+VzxM3g1dOM7i/6BAjT9Q9BlTiTVmrac89YvdKky0kmYJSAp/0HX4drLUcFc
-         L41YTwau745fy7DAYoCjPMWpCEEOgB5YsZnp05gpatqBMCwI1wZeO9eylWprvWs6OY00
-         cqoSUOmPUNMqhMS1tjqK0Ax6pFAhDGVEAVwrgkC1jZ9cXJo9Yxzy3mi/WgjQ8ny0z9Ii
-         BHOPafrZBMcQWqNHyW1SIPdatfxNXyzNbBUOiCILDiq+iys5YIJoEne7lul8CoZkG7Qp
-         1dLQ==
+        d=gmail.com; s=20210112;
+        h=from:to:cc:subject:date:message-id:in-reply-to:references
+         :mime-version:content-transfer-encoding;
+        bh=tk4oMrpzapWWhoI3Kig5dOA0vlyKb6/i+EOqjgC5cCU=;
+        b=pQntbHItc5MVnlIvmA0KJD5lIHl648MGkmwsPTxum8yDwQjSop+uHi++PtOZkCYi7n
+         EgxQwhqjN7qcglRkdra7pxQtaFomBMbtYftoiSVVlnzfNoaBLYTLhgKn3sYI+2EdXf6O
+         h6U1ZeaogPNQIy57v05WrHDLFWUiIeUmR4fS1tPeQjF3/oxFqOnHXVkYUWZF02XHGpVN
+         niyciBIdRPzdVcEoY8gg3lRZPFxS6jRZY9i7DN98k2qpQJ5sK5dyLW5FdrwrX1b0/zRu
+         MuMQ0wqS2NE1LVfEBijlNYf2GC7F7MTeUnHLUY4p5Sz/CExHxgDkOYoYrL9++bLtjfpy
+         e2Mw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
-         :content-language:to:cc:references:from:in-reply-to
-         :content-transfer-encoding;
-        bh=3y6mB0hrnaV46VnRdVCEKqtLVV2m+vYW81yoBr+fw0w=;
-        b=olYQNZqIvquwctHYWNifqyj34sXvep3yN7trmQwkiEIAIZ3opXv5EPBSUsZela2ZwT
-         VvyQcybFV42qil9VDXJH8cwZDjf2UGbYuSfKekwFB+nmdqGcdbDVk8ZceXU7BhYpdFZZ
-         Wd8z62dKo47M4uPOOafJsqY+P6qhhgMUsloQtmIiK114GnI5Jzsl08uvsMrUoHR9hc5R
-         5NNM0O1/5PhdtWOMIY+19nEgsD1SZCHJAtw45BIKfmLhsQqDppAjJqCB/KhKDFTlfmYh
-         9Dsr1PH/Q7ePmMmqndAS4vH3jcEV02D0I3Ic3GgG381zHMfaqLecth95lQ8AQwonnISB
-         3HMg==
-X-Gm-Message-State: AJIora8v5jVPE3JvNBfg+NA3t6Gz2KrEn4U+lgRtDjobd9n5kmQL6Csw
-        bteyB8eT9GdvGmSI3GQS0i5hRA==
-X-Google-Smtp-Source: AGRyM1shiX+UWsxgu56aWSxDBQiM5H9sYKjZglHKR9uDIypb1Ru+e71R8EEH25Apr7Yq430Wp4Nzhg==
-X-Received: by 2002:a17:907:2d2b:b0:72b:546a:bd03 with SMTP id gs43-20020a1709072d2b00b0072b546abd03mr25807330ejc.149.1658135062709;
-        Mon, 18 Jul 2022 02:04:22 -0700 (PDT)
-Received: from ?IPV6:2a02:768:2307:40d6::f9e? ([2a02:768:2307:40d6::f9e])
-        by smtp.gmail.com with ESMTPSA id u15-20020a056402064f00b0043a6c538047sm8259072edx.70.2022.07.18.02.04.20
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 18 Jul 2022 02:04:21 -0700 (PDT)
-Message-ID: <9cc11fd0-28c7-fd0d-fe55-cce0bb5e92a7@monstr.eu>
-Date:   Mon, 18 Jul 2022 11:04:19 +0200
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
- Thunderbird/91.11.0
-Subject: Re: [PATCH 4/6] MicroBlaze: cpuinfo: Fix a warning for
- CONFIG_CPUMASK_OFFSTACK
-Content-Language: en-US
-To:     Huacai Chen <chenhuacai@loongson.cn>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        h=x-gm-message-state:from:to:cc:subject:date:message-id:in-reply-to
+         :references:mime-version:content-transfer-encoding;
+        bh=tk4oMrpzapWWhoI3Kig5dOA0vlyKb6/i+EOqjgC5cCU=;
+        b=TBr/XyaUE2zTUxQnQH2WZHDxF8X467/hjYzSm1gAXmdOZsIt4JOncENQlOl4BW7N/S
+         aAyHqPMAMqnknokHc8Gf0THB2aOAGu0M1OsDFjugjBuEVjkmMqeAKNh7j6+sX9Ybq5jr
+         2NUSWx/7Yv5uz3exwU7gBWC9eO1bLzc/otZDTF3+HmhUmLwmVCaX78WG1oEf/vroSKWE
+         r/272MJTiRTWAdR6XycNvKBCMEDkbzcfnPz+rj+IyhORwLTwnQm5kLQoQUzusgJmNx3E
+         uUlTbVvSCfnYaGwcMcI6vC3TSV6qpP9DipB3q4laAVPR3NmK8honhP933pqKdFvULZgV
+         gpDQ==
+X-Gm-Message-State: AJIora9UJV4NQjoR7b/Zgz+Y4HEUyKBLDl/loySZS0JevBZjI4Y+gm6K
+        EACTznY8+SL6SrktpAwR+oc2uDeMBBWZqw==
+X-Google-Smtp-Source: AGRyM1uzmJLBbqdg3uG1g61oePzcT8xAPw/4xhbfrBIxelPixRjac8AbChKR5CIBlccSSFRlyue9aA==
+X-Received: by 2002:a17:902:ea09:b0:16c:3f7a:adf7 with SMTP id s9-20020a170902ea0900b0016c3f7aadf7mr39051912plg.103.1658323192919;
+        Wed, 20 Jul 2022 06:19:52 -0700 (PDT)
+Received: from localhost ([2409:10:24a0:4700:e8ad:216a:2a9d:6d0c])
+        by smtp.gmail.com with ESMTPSA id l16-20020a63ea50000000b0041a13b1d451sm6468900pgk.59.2022.07.20.06.19.52
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 20 Jul 2022 06:19:52 -0700 (PDT)
+From:   Stafford Horne <shorne@gmail.com>
+To:     LKML <linux-kernel@vger.kernel.org>
+Cc:     Arnd Bergmann <arnd@arndb.de>, Stafford Horne <shorne@gmail.com>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
+        Pierre Morel <pmorel@linux.ibm.com>,
+        Richard Henderson <rth@twiddle.net>,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        Matt Turner <mattst88@gmail.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
+        Paul Mackerras <paulus@samba.org>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Vasily Gorbik <gor@linux.ibm.com>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        Sven Schnelle <svens@linux.ibm.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, Jeff Dike <jdike@addtoit.com>,
-        Richard Weinberger <richard@nod.at>,
-        Anton Ivanov <anton.ivanov@cambridgegreys.com>
-Cc:     loongarch@lists.linux.dev, linux-arch@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Huacai Chen <chenhuacai@gmail.com>,
-        Guo Ren <guoren@kernel.org>, Xuerui Wang <kernel@xen0n.name>,
-        Jiaxun Yang <jiaxun.yang@flygoat.com>,
-        linux-mips@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-sh@vger.kernel.org, linux-um@lists.infradead.org,
-        stable@vger.kernel.org
-References: <20220712075255.1345991-1-chenhuacai@loongson.cn>
- <20220712075255.1345991-4-chenhuacai@loongson.cn>
-From:   Michal Simek <monstr@monstr.eu>
-In-Reply-To: <20220712075255.1345991-4-chenhuacai@loongson.cn>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+        Rich Felker <dalias@libc.org>,
+        "David S. Miller" <davem@davemloft.net>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+        "H. Peter Anvin" <hpa@zytor.com>, Chris Zankel <chris@zankel.net>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
+        Bjorn Helgaas <bhelgaas@google.com>,
+        Sergio Paracuellos <sergio.paracuellos@gmail.com>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Tiezhu Yang <yangtiezhu@loongson.cn>,
+        Nick Child <nick.child@ibm.com>,
+        Niklas Schnelle <schnelle@linux.ibm.com>,
+        Matthew Rosato <mjrosato@linux.ibm.com>,
+        Kees Cook <keescook@chromium.org>,
+        "Gustavo A. R. Silva" <gustavoars@kernel.org>,
+        linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org, linux-acpi@vger.kernel.org,
+        linux-pci@vger.kernel.org, linux-arch@vger.kernel.org
+Subject: [PATCH v4 1/3] PCI: Remove pci_get_legacy_ide_irq and asm-generic/pci.h
+Date:   Wed, 20 Jul 2022 22:19:32 +0900
+Message-Id: <20220720131934.373932-2-shorne@gmail.com>
+X-Mailer: git-send-email 2.36.1
+In-Reply-To: <20220720131934.373932-1-shorne@gmail.com>
+References: <20220720131934.373932-1-shorne@gmail.com>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+The definition of the pci header function pci_get_legacy_ide_irq is only
+used in platforms that support PNP.  So many of the architecutres where
+it is defined do not use it.  This also means we can remove
+asm-generic/pci.h as all it provides is a definition of
+pci_get_legacy_ide_irq.
 
+Where referenced, replace the usage of pci_get_legacy_ide_irq with the
+libata.h macros ATA_PRIMARY_IRQ and ATA_SECONDARY_IRQ which provide the
+same functionality.  This allows removing pci_get_legacy_ide_irq from
+headers where it is no longer used.
 
-On 7/12/22 09:52, Huacai Chen wrote:
-> When CONFIG_CPUMASK_OFFSTACK and CONFIG_DEBUG_PER_CPU_MAPS is selected,
-> cpu_max_bits_warn() generates a runtime warning similar as below while
-> we show /proc/cpuinfo. Fix this by using nr_cpu_ids (the runtime limit)
-> instead of NR_CPUS to iterate CPUs.
-> 
-> [    3.052463] ------------[ cut here ]------------
-> [    3.059679] WARNING: CPU: 3 PID: 1 at include/linux/cpumask.h:108 show_cpuinfo+0x5e8/0x5f0
-> [    3.070072] Modules linked in: efivarfs autofs4
-> [    3.076257] CPU: 0 PID: 1 Comm: systemd Not tainted 5.19-rc5+ #1052
-> [    3.099465] Stack : 9000000100157b08 9000000000f18530 9000000000cf846c 9000000100154000
-> [    3.109127]         9000000100157a50 0000000000000000 9000000100157a58 9000000000ef7430
-> [    3.118774]         90000001001578e8 0000000000000040 0000000000000020 ffffffffffffffff
-> [    3.128412]         0000000000aaaaaa 1ab25f00eec96a37 900000010021de80 900000000101c890
-> [    3.138056]         0000000000000000 0000000000000000 0000000000000000 0000000000aaaaaa
-> [    3.147711]         ffff8000339dc220 0000000000000001 0000000006ab4000 0000000000000000
-> [    3.157364]         900000000101c998 0000000000000004 9000000000ef7430 0000000000000000
-> [    3.167012]         0000000000000009 000000000000006c 0000000000000000 0000000000000000
-> [    3.176641]         9000000000d3de08 9000000001639390 90000000002086d8 00007ffff0080286
-> [    3.186260]         00000000000000b0 0000000000000004 0000000000000000 0000000000071c1c
-> [    3.195868]         ...
-> [    3.199917] Call Trace:
-> [    3.203941] [<90000000002086d8>] show_stack+0x38/0x14c
-> [    3.210666] [<9000000000cf846c>] dump_stack_lvl+0x60/0x88
-> [    3.217625] [<900000000023d268>] __warn+0xd0/0x100
-> [    3.223958] [<9000000000cf3c90>] warn_slowpath_fmt+0x7c/0xcc
-> [    3.231150] [<9000000000210220>] show_cpuinfo+0x5e8/0x5f0
-> [    3.238080] [<90000000004f578c>] seq_read_iter+0x354/0x4b4
-> [    3.245098] [<90000000004c2e90>] new_sync_read+0x17c/0x1c4
-> [    3.252114] [<90000000004c5174>] vfs_read+0x138/0x1d0
-> [    3.258694] [<90000000004c55f8>] ksys_read+0x70/0x100
-> [    3.265265] [<9000000000cfde9c>] do_syscall+0x7c/0x94
-> [    3.271820] [<9000000000202fe4>] handle_syscall+0xc4/0x160
-> [    3.281824] ---[ end trace 8b484262b4b8c24c ]---
-> 
-> Cc: stable@vger.kernel.org
-> Signed-off-by: Huacai Chen <chenhuacai@loongson.cn>
-> ---
->   arch/microblaze/kernel/cpu/mb.c | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/arch/microblaze/kernel/cpu/mb.c b/arch/microblaze/kernel/cpu/mb.c
-> index 9581d194d9e4..689de7f75614 100644
-> --- a/arch/microblaze/kernel/cpu/mb.c
-> +++ b/arch/microblaze/kernel/cpu/mb.c
-> @@ -137,7 +137,7 @@ static void *c_start(struct seq_file *m, loff_t *pos)
->   {
->   	int i = *pos;
->   
-> -	return i < NR_CPUS ? (void *) (i + 1) : NULL;
-> +	return i < nr_cpu_ids ? (void *) (i + 1) : NULL;
->   }
->   
->   static void *c_next(struct seq_file *m, void *v, loff_t *pos)
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Acked-by: Pierre Morel <pmorel@linux.ibm.com>
+Co-developed-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Stafford Horne <shorne@gmail.com>
+---
 
-As was said in m68k thread commit message should be fixed. MB upstream in not 
-SMP. We have SMP configuration in soc vendor tree but upstream we can't enable 
-DEBUG_PER_CPU_MAPS which depends on SMP. But definitely worth to fix it.
+Since v3:
+ - Further remove the definictions of pci_get_legacy_ide_irq from x86 and use
+   the libata macros.
+ - Add Acked-bys.
 
-Thanks,
-Michal
+ arch/alpha/include/asm/pci.h   |  6 ------
+ arch/arm/include/asm/pci.h     |  5 -----
+ arch/arm64/include/asm/pci.h   |  6 ------
+ arch/ia64/include/asm/pci.h    |  6 ------
+ arch/m68k/include/asm/pci.h    |  2 --
+ arch/mips/include/asm/pci.h    |  6 ------
+ arch/parisc/include/asm/pci.h  |  5 -----
+ arch/powerpc/include/asm/pci.h |  1 -
+ arch/s390/include/asm/pci.h    |  1 -
+ arch/sh/include/asm/pci.h      |  6 ------
+ arch/sparc/include/asm/pci.h   |  9 ---------
+ arch/x86/include/asm/pci.h     |  3 ---
+ arch/xtensa/include/asm/pci.h  |  3 ---
+ drivers/pnp/resource.c         |  5 +++--
+ include/asm-generic/pci.h      | 17 -----------------
+ 15 files changed, 3 insertions(+), 78 deletions(-)
+ delete mode 100644 include/asm-generic/pci.h
 
+diff --git a/arch/alpha/include/asm/pci.h b/arch/alpha/include/asm/pci.h
+index cf6bc1e64d66..6312656279d7 100644
+--- a/arch/alpha/include/asm/pci.h
++++ b/arch/alpha/include/asm/pci.h
+@@ -56,12 +56,6 @@ struct pci_controller {
+ 
+ /* IOMMU controls.  */
+ 
+-/* TODO: integrate with include/asm-generic/pci.h ? */
+-static inline int pci_get_legacy_ide_irq(struct pci_dev *dev, int channel)
+-{
+-	return channel ? 15 : 14;
+-}
+-
+ #define pci_domain_nr(bus) ((struct pci_controller *)(bus)->sysdata)->index
+ 
+ static inline int pci_proc_domain(struct pci_bus *bus)
+diff --git a/arch/arm/include/asm/pci.h b/arch/arm/include/asm/pci.h
+index 68e6f25784a4..5916b88d4c94 100644
+--- a/arch/arm/include/asm/pci.h
++++ b/arch/arm/include/asm/pci.h
+@@ -22,11 +22,6 @@ static inline int pci_proc_domain(struct pci_bus *bus)
+ #define HAVE_PCI_MMAP
+ #define ARCH_GENERIC_PCI_MMAP_RESOURCE
+ 
+-static inline int pci_get_legacy_ide_irq(struct pci_dev *dev, int channel)
+-{
+-	return channel ? 15 : 14;
+-}
+-
+ extern void pcibios_report_status(unsigned int status_mask, int warn);
+ 
+ #endif /* __KERNEL__ */
+diff --git a/arch/arm64/include/asm/pci.h b/arch/arm64/include/asm/pci.h
+index b33ca260e3c9..0aebc3488c32 100644
+--- a/arch/arm64/include/asm/pci.h
++++ b/arch/arm64/include/asm/pci.h
+@@ -23,12 +23,6 @@
+ extern int isa_dma_bridge_buggy;
+ 
+ #ifdef CONFIG_PCI
+-static inline int pci_get_legacy_ide_irq(struct pci_dev *dev, int channel)
+-{
+-	/* no legacy IRQ on arm64 */
+-	return -ENODEV;
+-}
+-
+ static inline int pci_proc_domain(struct pci_bus *bus)
+ {
+ 	return 1;
+diff --git a/arch/ia64/include/asm/pci.h b/arch/ia64/include/asm/pci.h
+index 8c163d1d0189..fa8f545c24c9 100644
+--- a/arch/ia64/include/asm/pci.h
++++ b/arch/ia64/include/asm/pci.h
+@@ -63,10 +63,4 @@ static inline int pci_proc_domain(struct pci_bus *bus)
+ 	return (pci_domain_nr(bus) != 0);
+ }
+ 
+-#define HAVE_ARCH_PCI_GET_LEGACY_IDE_IRQ
+-static inline int pci_get_legacy_ide_irq(struct pci_dev *dev, int channel)
+-{
+-	return channel ? isa_irq_to_vector(15) : isa_irq_to_vector(14);
+-}
+-
+ #endif /* _ASM_IA64_PCI_H */
+diff --git a/arch/m68k/include/asm/pci.h b/arch/m68k/include/asm/pci.h
+index 5a4bc223743b..ccdfa0dc8413 100644
+--- a/arch/m68k/include/asm/pci.h
++++ b/arch/m68k/include/asm/pci.h
+@@ -2,8 +2,6 @@
+ #ifndef _ASM_M68K_PCI_H
+ #define _ASM_M68K_PCI_H
+ 
+-#include <asm-generic/pci.h>
+-
+ #define	pcibios_assign_all_busses()	1
+ 
+ #define	PCIBIOS_MIN_IO		0x00000100
+diff --git a/arch/mips/include/asm/pci.h b/arch/mips/include/asm/pci.h
+index 9ffc8192adae..3fd6e22c108b 100644
+--- a/arch/mips/include/asm/pci.h
++++ b/arch/mips/include/asm/pci.h
+@@ -139,10 +139,4 @@ static inline int pci_proc_domain(struct pci_bus *bus)
+ /* Do platform specific device initialization at pci_enable_device() time */
+ extern int pcibios_plat_dev_init(struct pci_dev *dev);
+ 
+-/* Chances are this interrupt is wired PC-style ...  */
+-static inline int pci_get_legacy_ide_irq(struct pci_dev *dev, int channel)
+-{
+-	return channel ? 15 : 14;
+-}
+-
+ #endif /* _ASM_PCI_H */
+diff --git a/arch/parisc/include/asm/pci.h b/arch/parisc/include/asm/pci.h
+index f14465b84de4..127ed5021ae3 100644
+--- a/arch/parisc/include/asm/pci.h
++++ b/arch/parisc/include/asm/pci.h
+@@ -162,11 +162,6 @@ extern void pcibios_init_bridge(struct pci_dev *);
+ #define PCIBIOS_MIN_IO          0x10
+ #define PCIBIOS_MIN_MEM         0x1000 /* NBPG - but pci/setup-res.c dies */
+ 
+-static inline int pci_get_legacy_ide_irq(struct pci_dev *dev, int channel)
+-{
+-	return channel ? 15 : 14;
+-}
+-
+ #define HAVE_PCI_MMAP
+ #define ARCH_GENERIC_PCI_MMAP_RESOURCE
+ 
+diff --git a/arch/powerpc/include/asm/pci.h b/arch/powerpc/include/asm/pci.h
+index 915d6ee4b40a..f9da506751bb 100644
+--- a/arch/powerpc/include/asm/pci.h
++++ b/arch/powerpc/include/asm/pci.h
+@@ -39,7 +39,6 @@
+ #define pcibios_assign_all_busses() \
+ 	(pci_has_flag(PCI_REASSIGN_ALL_BUS))
+ 
+-#define HAVE_ARCH_PCI_GET_LEGACY_IDE_IRQ
+ static inline int pci_get_legacy_ide_irq(struct pci_dev *dev, int channel)
+ {
+ 	if (ppc_md.pci_get_legacy_ide_irq)
+diff --git a/arch/s390/include/asm/pci.h b/arch/s390/include/asm/pci.h
+index fdb9745ee998..5889ddcbc374 100644
+--- a/arch/s390/include/asm/pci.h
++++ b/arch/s390/include/asm/pci.h
+@@ -6,7 +6,6 @@
+ #include <linux/mutex.h>
+ #include <linux/iommu.h>
+ #include <linux/pci_hotplug.h>
+-#include <asm-generic/pci.h>
+ #include <asm/pci_clp.h>
+ #include <asm/pci_debug.h>
+ #include <asm/sclp.h>
+diff --git a/arch/sh/include/asm/pci.h b/arch/sh/include/asm/pci.h
+index ad22e88c6657..54c30126ea17 100644
+--- a/arch/sh/include/asm/pci.h
++++ b/arch/sh/include/asm/pci.h
+@@ -88,10 +88,4 @@ static inline int pci_proc_domain(struct pci_bus *bus)
+ 	return hose->need_domain_info;
+ }
+ 
+-/* Chances are this interrupt is wired PC-style ...  */
+-static inline int pci_get_legacy_ide_irq(struct pci_dev *dev, int channel)
+-{
+-	return channel ? 15 : 14;
+-}
+-
+ #endif /* __ASM_SH_PCI_H */
+diff --git a/arch/sparc/include/asm/pci.h b/arch/sparc/include/asm/pci.h
+index 4deddf430e5d..0c58f65bd172 100644
+--- a/arch/sparc/include/asm/pci.h
++++ b/arch/sparc/include/asm/pci.h
+@@ -40,13 +40,4 @@ static inline int pci_proc_domain(struct pci_bus *bus)
+ #define get_pci_unmapped_area get_fb_unmapped_area
+ #endif /* CONFIG_SPARC64 */
+ 
+-#if defined(CONFIG_SPARC64) || defined(CONFIG_LEON_PCI)
+-static inline int pci_get_legacy_ide_irq(struct pci_dev *dev, int channel)
+-{
+-	return PCI_IRQ_NONE;
+-}
+-#else
+-#include <asm-generic/pci.h>
+-#endif
+-
+ #endif /* ___ASM_SPARC_PCI_H */
+diff --git a/arch/x86/include/asm/pci.h b/arch/x86/include/asm/pci.h
+index f3fd5928bcbb..736793d65bcb 100644
+--- a/arch/x86/include/asm/pci.h
++++ b/arch/x86/include/asm/pci.h
+@@ -105,9 +105,6 @@ static inline void early_quirks(void) { }
+ 
+ extern void pci_iommu_alloc(void);
+ 
+-/* generic pci stuff */
+-#include <asm-generic/pci.h>
+-
+ #ifdef CONFIG_NUMA
+ /* Returns the node based on pci bus */
+ static inline int __pcibus_to_node(const struct pci_bus *bus)
+diff --git a/arch/xtensa/include/asm/pci.h b/arch/xtensa/include/asm/pci.h
+index 8e2b48a268db..b56de9635b6c 100644
+--- a/arch/xtensa/include/asm/pci.h
++++ b/arch/xtensa/include/asm/pci.h
+@@ -43,7 +43,4 @@
+ #define ARCH_GENERIC_PCI_MMAP_RESOURCE	1
+ #define arch_can_pci_mmap_io()		1
+ 
+-/* Generic PCI */
+-#include <asm-generic/pci.h>
+-
+ #endif	/* _XTENSA_PCI_H */
+diff --git a/drivers/pnp/resource.c b/drivers/pnp/resource.c
+index 2fa0f7d55259..8f7695624c8c 100644
+--- a/drivers/pnp/resource.c
++++ b/drivers/pnp/resource.c
+@@ -17,6 +17,7 @@
+ #include <asm/dma.h>
+ #include <asm/irq.h>
+ #include <linux/pci.h>
++#include <linux/libata.h>
+ #include <linux/ioport.h>
+ #include <linux/init.h>
+ 
+@@ -322,8 +323,8 @@ static int pci_dev_uses_irq(struct pnp_dev *pnp, struct pci_dev *pci,
+ 		 * treat the compatibility IRQs as busy.
+ 		 */
+ 		if ((progif & 0x5) != 0x5)
+-			if (pci_get_legacy_ide_irq(pci, 0) == irq ||
+-			    pci_get_legacy_ide_irq(pci, 1) == irq) {
++			if (ATA_PRIMARY_IRQ(pci) == irq ||
++			    ATA_SECONDARY_IRQ(pci) == irq) {
+ 				pnp_dbg(&pnp->dev, "  legacy IDE device %s "
+ 					"using irq %d\n", pci_name(pci), irq);
+ 				return 1;
+diff --git a/include/asm-generic/pci.h b/include/asm-generic/pci.h
+deleted file mode 100644
+index 6bb3cd3d695a..000000000000
+--- a/include/asm-generic/pci.h
++++ /dev/null
+@@ -1,17 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0 */
+-/*
+- * linux/include/asm-generic/pci.h
+- *
+- *  Copyright (C) 2003 Russell King
+- */
+-#ifndef _ASM_GENERIC_PCI_H
+-#define _ASM_GENERIC_PCI_H
+-
+-#ifndef HAVE_ARCH_PCI_GET_LEGACY_IDE_IRQ
+-static inline int pci_get_legacy_ide_irq(struct pci_dev *dev, int channel)
+-{
+-	return channel ? 15 : 14;
+-}
+-#endif /* HAVE_ARCH_PCI_GET_LEGACY_IDE_IRQ */
+-
+-#endif /* _ASM_GENERIC_PCI_H */
 -- 
-Michal Simek, Ing. (M.Eng), OpenPGP -> KeyID: FE3D1F91
-w: www.monstr.eu p: +42-0-721842854
-Maintainer of Linux kernel - Xilinx Microblaze
-Maintainer of Linux kernel - Xilinx Zynq ARM and ZynqMP ARM64 SoCs
-U-Boot custodian - Xilinx Microblaze/Zynq/ZynqMP/Versal SoCs
+2.36.1
 
