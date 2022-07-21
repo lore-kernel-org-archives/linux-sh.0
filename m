@@ -2,61 +2,60 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D3A5FCCA487
-	for <linux-sh@archiver.kernel.org>; Thu, 21 Jul 2022 15:36:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 32E67C433EF
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Jul 2022 15:42:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231894AbiGUPg2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 21 Jul 2022 11:36:28 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50616 "EHLO
+        id S233274AbiGUPmh (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 21 Jul 2022 11:42:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36762 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230291AbiGUPgY (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Jul 2022 11:36:24 -0400
-Received: from mail-lf1-x135.google.com (mail-lf1-x135.google.com [IPv6:2a00:1450:4864:20::135])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 775503884
-        for <linux-sh@vger.kernel.org>; Thu, 21 Jul 2022 08:36:22 -0700 (PDT)
-Received: by mail-lf1-x135.google.com with SMTP id t1so3368326lft.8
-        for <linux-sh@vger.kernel.org>; Thu, 21 Jul 2022 08:36:22 -0700 (PDT)
+        with ESMTP id S232932AbiGUPmK (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Jul 2022 11:42:10 -0400
+Received: from mail-lf1-x130.google.com (mail-lf1-x130.google.com [IPv6:2a00:1450:4864:20::130])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CA89688CF4
+        for <linux-sh@vger.kernel.org>; Thu, 21 Jul 2022 08:38:28 -0700 (PDT)
+Received: by mail-lf1-x130.google.com with SMTP id n18so3421609lfq.1
+        for <linux-sh@vger.kernel.org>; Thu, 21 Jul 2022 08:38:28 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=linaro.org; s=google;
         h=message-id:date:mime-version:user-agent:subject:content-language:to
          :cc:references:from:in-reply-to:content-transfer-encoding;
-        bh=hfKsdhQQt9tQ595I9ds8b/DPqZVDcCzjVcrK9iWT3ts=;
-        b=GCw16KpafXB+y2e+gFPayJKLMhyZMkVvIg00xSfR0J6zmap4XUiw74QYrBPZojxqnG
-         nlMigEvmPTJqX2BUwSdZ4mJxx8kFZTXQJaOIndmhXWmnsZmilUJXncDHi2uKE8pGuWVL
-         znA3Smzdfbdkc8qVWjZ7RHlZu4leucipgnhrY3cduU0fYTHFS3staPx9+XFkY/ZjtM2h
-         117KpUbzALp8IYmM0wdGGHbqPzb9abAasZ2Y4vFeXAUqeWHw9qTJ0dR/mA5YE4OC5PTw
-         ZVK2616IlVs5qLNNTIINaLS39Wgp/5PWsi2sSjQEOqP4IsbdopLcNcEJfX1/nxCnsqxR
-         Lwew==
+        bh=UqCa+wJI049j4zTLACQna4vEDfj2rqaLjlldqQdrtbc=;
+        b=Hr4EUI+tJ5IR28Fd9rlLrL2Jhdl6y04tFTZ7SiEj8y1JW0oLBxnYtIiAxp4fV/1ml3
+         XNc2IHUMggG0rlz1xVNCcB8Ij7GdlfZJng1lvQzRta+lFGgEuqvRcPk1VAyXG6/rz6L3
+         24N7v/a2z6VqnTCmtZRoxq9+R94zChXy64OuJ+ofzweytxFPcsC18NRkN0F/inqmx65G
+         8EtBrYyOKrnRMNd1zVShLukQdFrlhcWvnBxH1Skm/pMFhtK5dIa0hnnAVck4MmS80fWc
+         O4GIa+aNN+YT4KPfVRPywl0b25PpIhaAQOpzc4dspd4HUkTiGvC7Qox4l+D4eMYzliSj
+         M93g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
          :content-language:to:cc:references:from:in-reply-to
          :content-transfer-encoding;
-        bh=hfKsdhQQt9tQ595I9ds8b/DPqZVDcCzjVcrK9iWT3ts=;
-        b=3AGpq1s9LAQkx/LJblSkxPhD0svNE8dAtoZeXC4swYxEu1mFgC0gBGj2Hl9KUs31Zg
-         PwItoHtY329poE++yc0Qerfsqkbzghp0DOoX41F7zfp5A9luxQ9IsjrLP6bhQrtrzIWC
-         QvaHTup32H72COzFFKk4aLbinxIT+gRvCCoM0umHzm2xDQXqjh9j+IJrEGiceXLWF/GS
-         b3tnCGwxMpFxFfEQhayWL8pyl1uLDuuiFxGf0DFQDxmZE8iTw/Sto87GpuWwCteCTwAU
-         FJ/mKo4hEQ7QAzjfZ2l6mOiwAY4HACV0VxC0tj3QTGbUPmPNAtVSMhGUKYk8EdGYoBr7
-         eQnA==
-X-Gm-Message-State: AJIora9REQhUcDYQPQ2f+ySHZLoIYBL/v+V6S3skgsp7QXTx1z+rPEsG
-        /KJ5hB9ziTzDmQsUjRNcMtPfBQ==
-X-Google-Smtp-Source: AGRyM1uYyhdhJ+K6lLI/9qjAZeU/e9ueK5AuTfFuX6OK/DbxDxlvM3z4hS4HgQhwQusCJCfVoUBo3A==
-X-Received: by 2002:a05:6512:1506:b0:47f:79c6:eb36 with SMTP id bq6-20020a056512150600b0047f79c6eb36mr24308198lfb.168.1658417780731;
-        Thu, 21 Jul 2022 08:36:20 -0700 (PDT)
+        bh=UqCa+wJI049j4zTLACQna4vEDfj2rqaLjlldqQdrtbc=;
+        b=gF0H2SzlMrKHPoDfbwjJk26toY7gJkdtalWPqwDHlvmoO2v7YEz30UDbjw/6pLSh5v
+         Iypl47VJ4rgJJ+ONLD0FjPID9MNI759AeD7R20VXTCGrbnqcplUAFiLAchqsGM5pJTEW
+         VClnW+Ulm8khJJffnkdprw7d3gdGlbKUnsnGeRAmexojMWW29VOrYZZJJbovMZEO5cO7
+         haKIR1mhEeLEtVy6/k3tY8rENxopOr4UxEWYYzI6MpwrGozMEloMpFm+ksLjXzMepd/i
+         ACHgOpKgnMSZonHps/JqBPPmYcZ6keawbX2EAmXnN/i09oByRbCFfQnIKpsXsvroGe5R
+         0ZcA==
+X-Gm-Message-State: AJIora80waa3f3Uy3XNMD/cxVpwgD4iJl8FcHV1Q+GOqJVUZffTdSnu/
+        2hxcxlAqIXixwuH11yQ4Tf5rPg==
+X-Google-Smtp-Source: AGRyM1u+XAg5Gfu+MlpMWaQN3hIuyfigsjR8EO3U+oTkp4M+3abIhECXSY47lzIOdxD8vuPZLJkGzA==
+X-Received: by 2002:a05:6512:108d:b0:489:e640:df8c with SMTP id j13-20020a056512108d00b00489e640df8cmr22708209lfg.332.1658417903698;
+        Thu, 21 Jul 2022 08:38:23 -0700 (PDT)
 Received: from [192.168.115.193] (89-162-31-138.fiber.signal.no. [89.162.31.138])
-        by smtp.gmail.com with ESMTPSA id w17-20020a05651234d100b00478f1e04655sm511718lfr.14.2022.07.21.08.36.18
+        by smtp.gmail.com with ESMTPSA id 8-20020a05651c12c800b0025de7126bf1sm448863lje.89.2022.07.21.08.38.21
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 21 Jul 2022 08:36:20 -0700 (PDT)
-Message-ID: <9e872a00-966a-aaf8-7bb9-6627fcb0cf83@linaro.org>
-Date:   Thu, 21 Jul 2022 17:36:17 +0200
+        Thu, 21 Jul 2022 08:38:23 -0700 (PDT)
+Message-ID: <6468e7b1-b253-53bc-c81f-2fa6b75194ae@linaro.org>
+Date:   Thu, 21 Jul 2022 17:38:20 +0200
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
  Thunderbird/91.11.0
 Subject: Re: [PATCH 1/6] ARM: refresh defconfig files
 Content-Language: en-US
-To:     Scott Branden <scott.branden@broadcom.com>,
-        Arnd Bergmann <arnd@kernel.org>,
+To:     Arnd Bergmann <arnd@kernel.org>,
         linux-arm-kernel@lists.infradead.org
 Cc:     Arnd Bergmann <arnd@arndb.de>,
         Russell King <linux@armlinux.org.uk>,
@@ -105,40 +104,33 @@ Cc:     Arnd Bergmann <arnd@arndb.de>,
         linux-sh@vger.kernel.org
 References: <20220721141325.2413920-1-arnd@kernel.org>
  <20220721141325.2413920-2-arnd@kernel.org>
- <9321ce6c-7565-a7eb-2bfe-dac144ab7733@broadcom.com>
 From:   Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
-In-Reply-To: <9321ce6c-7565-a7eb-2bfe-dac144ab7733@broadcom.com>
+In-Reply-To: <20220721141325.2413920-2-arnd@kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 21/07/2022 17:33, Scott Branden wrote:
-> Hi Arnd,
+On 21/07/2022 16:13, Arnd Bergmann wrote:
+> From: Arnd Bergmann <arnd@arndb.de>
 > 
-> On 2022-07-21 07:13, Arnd Bergmann wrote:
->> From: Arnd Bergmann <arnd@arndb.de>
->>
->> A lot of Kconfig options have changed over the years, and we tend
->> to not do a blind 'make defconfig' to refresh the files, to ensure
->> we catch options that should not have gone away.
->>
->> I used some a bit of scripting to only rework the bits where an
->> option moved around in any of the defconfig files, without also
->> dropping any of the other lines, to make it clearer which options
->> we no longer have.
-> Resync is fine.  But, it would be great if the defconfig files were kept 
-> in sync. Almost every kernel version kconfig options change which affect 
-> these files. Could we put in place a defconfig refresh per kernel 
-> version to keep them all in sync going forward?
->
+> A lot of Kconfig options have changed over the years, and we tend
+> to not do a blind 'make defconfig' to refresh the files, to ensure
+> we catch options that should not have gone away.
+> 
+> I used some a bit of scripting to only rework the bits where an
+> option moved around in any of the defconfig files, without also
+> dropping any of the other lines, to make it clearer which options
+> we no longer have.
+> 
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 
-Not entirely, because some Kconfig changes are causing symbols to
-disappear. Also defconfig is expected to include user-visible options,
-even if savedefconfig would drop them.
+Samsung bits (s3c, s5p, exynos, mini2440, tct_hammer) look good:
 
-This is why blind savedefconfig is not acceptable.
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org> # Samsung
+
+(I did not review the rest, though)
 
 Best regards,
 Krzysztof
