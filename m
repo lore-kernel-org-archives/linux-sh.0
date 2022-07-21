@@ -2,58 +2,58 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0EE58CCA488
-	for <linux-sh@archiver.kernel.org>; Thu, 21 Jul 2022 15:43:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B41B0C433EF
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Jul 2022 15:46:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232496AbiGUPn4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 21 Jul 2022 11:43:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34542 "EHLO
+        id S232227AbiGUPq1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 21 Jul 2022 11:46:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35932 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231895AbiGUPnc (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Jul 2022 11:43:32 -0400
-Received: from mail-lj1-x22c.google.com (mail-lj1-x22c.google.com [IPv6:2a00:1450:4864:20::22c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8BE2788F1E
-        for <linux-sh@vger.kernel.org>; Thu, 21 Jul 2022 08:39:36 -0700 (PDT)
-Received: by mail-lj1-x22c.google.com with SMTP id r14so2290996ljp.2
-        for <linux-sh@vger.kernel.org>; Thu, 21 Jul 2022 08:39:36 -0700 (PDT)
+        with ESMTP id S233132AbiGUPqM (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Jul 2022 11:46:12 -0400
+Received: from mail-lf1-x12f.google.com (mail-lf1-x12f.google.com [IPv6:2a00:1450:4864:20::12f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 031918E4CE
+        for <linux-sh@vger.kernel.org>; Thu, 21 Jul 2022 08:42:13 -0700 (PDT)
+Received: by mail-lf1-x12f.google.com with SMTP id z25so3431212lfr.2
+        for <linux-sh@vger.kernel.org>; Thu, 21 Jul 2022 08:42:12 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=linaro.org; s=google;
         h=message-id:date:mime-version:user-agent:subject:content-language:to
          :cc:references:from:in-reply-to:content-transfer-encoding;
-        bh=oqVQwNQbcwLQWg6kfm6rj9WKvgY4OIEgQOzUXlpBlmg=;
-        b=bUbA0eHhlHZLz/7ERfxE+ujHsrXIi/1BLF0UUgCTGD2Op4a9uPqxE8PfjDUnh0vkrM
-         NoiNYlMDhoMOEIMth1a4LodxokvPtNEiBNqvhrTtMsiqk5AvOOTWVvtkX0vcdar+TZ9P
-         cuHmDRDRj/iCTgpFnlWFwejofmUcNLUdW+0FeB/h2HYA1p1jGTJseRZ/c1Dk0fKehi12
-         XzY95w37ZgrMXEVRmU96gkg5e/DspC1gFPZ/ekbdgflGdDWjEXquopvsQwGp1I4qEgn7
-         d7QKdgpNbpN8vahcEQWCFuFNkozJDOmGqU5v/udTFpQ1oOJ+f117PzP28vOHlt71WwUc
-         35AQ==
+        bh=DbAlny0t1Z1mEp76q3Ok9AdQU6F9gRBoHTbQLXF/2lk=;
+        b=hvMY/wKgqNkLwMGAA1veSwXkHAGy+A6V3WOkfUKYAdhYB8ptxzUPD7n35rsO9Jcvr7
+         6UDVHo0V37fnqX2S0c15nIq3n4z6ArkAWtF+lGEg9BC5qQf+mEDT2UuywuO/+AFrwg6P
+         jFuYVRrXQ21UhwdbV388q5sUMCQU465XKUyiSp0BPn/vBPSJN9lK2KzWUZE7tRuBCkcF
+         ewxg0NMWAaa3d+T2QRhzgxExRIc5ACCOcQ3/ppkPQ5wo0swP5SjDLy8L+XwpArxrJ0Q/
+         eeAmdqXFlUazj++UKjdRTrln8X4SOrsW3BodSCOU0+mbJsZrrBRXQKEnIdrhHN8un0RW
+         grAg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=x-gm-message-state:message-id:date:mime-version:user-agent:subject
          :content-language:to:cc:references:from:in-reply-to
          :content-transfer-encoding;
-        bh=oqVQwNQbcwLQWg6kfm6rj9WKvgY4OIEgQOzUXlpBlmg=;
-        b=CLuPUfohbVHHHYjVArqeURcWwbmDrUvAu3DKhmyY8S5I0jq+PVUPKbjeEv39SDSHoB
-         Xemw/Hoi6uy4nPG1xxe9OkdpuykrLzSkgy72roYGEisMlAp99M6jf0Hnn0mhlwXVzqAi
-         bPhmGtHk9pyXuGtULc6yKFf41U9KHC2Ty4qzHTH9aygJs5SIQ54taVPh2dTwhOJuHmX1
-         5FLPM3ZJUhB9ZmnyA9D2bBbN/5Kg2KxIncD+yneuVnz84Wh4Fn4tJjaGmpSwzgumn/0v
-         fWUY//GFLYobSXIC2ogIM8GxEBR6rBeh1uXTFUWMQsSOhhMlsWTb6BPV33TeUyGq308A
-         Bsfg==
-X-Gm-Message-State: AJIora+KbMiZs8TYFD6DHDrXWJmFxArgSy3q/CoJ0JZS1HFH29W2dVp6
-        ISU5QQ+D2pj0DlsHIJ9H0Z8LMQ==
-X-Google-Smtp-Source: AGRyM1u1EiuENGOYTFtFOFvt+gosoK/tppAX7Zpo5TZqB7ckZKOx3LwixuugOACtM48KFq3goni/DQ==
-X-Received: by 2002:a2e:953:0:b0:25d:5c20:2265 with SMTP id 80-20020a2e0953000000b0025d5c202265mr18734344ljj.348.1658417974213;
-        Thu, 21 Jul 2022 08:39:34 -0700 (PDT)
+        bh=DbAlny0t1Z1mEp76q3Ok9AdQU6F9gRBoHTbQLXF/2lk=;
+        b=3OwHFGMO2xbzB8WLw06V1FwwBcOOKYAnCDur9LxeWhhjk+kVxa4bDFgtKXUm1bOUK5
+         N+4Ce4Po8mkZJIesFwKp10JzlOq5CZ0zxWidLYBVASM1EQEv7Yahj5sA2u1pjfrgjroF
+         hj9US9FC511BBM7dLH7AIOETa3cPBpAjE2uad2mfGeg8I2Pe0AugQR2yVWoft+ofJXsG
+         M/IiVNVAFv6OIrpogPAdy3ZWImwd0brZK94jfXcztTa4+DYadUFsy+lsRs+ja18ur4C+
+         r2juHqgkEPIU7JbZbXfrhmbPUzrzUhIwlviv2rvX/g95HLWHHAfi4ynAYr6N/mp21Izc
+         wBJg==
+X-Gm-Message-State: AJIora8JjwCDFuV80WTP/vYZCEt/a5ndLpuiX0U2cQCxS+yWMVtZEZJZ
+        hsoAcDQaTlEncgPRbbKNZX3R4A==
+X-Google-Smtp-Source: AGRyM1uH+KevGsKWyG8Df61xvPgqfo29eVC+LR/aED9QzOXzzbztIiUFTSzFYEZjDIchb6h/N4lCSg==
+X-Received: by 2002:a05:6512:3409:b0:489:c549:4693 with SMTP id i9-20020a056512340900b00489c5494693mr21503245lfr.26.1658418131160;
+        Thu, 21 Jul 2022 08:42:11 -0700 (PDT)
 Received: from [192.168.115.193] (89-162-31-138.fiber.signal.no. [89.162.31.138])
-        by smtp.gmail.com with ESMTPSA id o23-20020a05651205d700b0048a35b93b24sm504903lfo.181.2022.07.21.08.39.31
+        by smtp.gmail.com with ESMTPSA id s4-20020a056512314400b00488333b6515sm499662lfi.305.2022.07.21.08.42.08
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 21 Jul 2022 08:39:33 -0700 (PDT)
-Message-ID: <e3b0a57b-e987-9be0-75e5-40c0d7e41310@linaro.org>
-Date:   Thu, 21 Jul 2022 17:39:31 +0200
+        Thu, 21 Jul 2022 08:42:10 -0700 (PDT)
+Message-ID: <e83c98f9-f32a-6bfd-71b6-9aba22aa7abb@linaro.org>
+Date:   Thu, 21 Jul 2022 17:42:07 +0200
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
  Thunderbird/91.11.0
-Subject: Re: [PATCH 3/6] ARM: defconfig: remove stale CONFIG_ZBOOT_ROM entries
+Subject: Re: [PATCH 4/6] ARM: defconfig: address renamed CONFIG_DEBUG_INFO=y
 Content-Language: en-US
 To:     Arnd Bergmann <arnd@kernel.org>,
         linux-arm-kernel@lists.infradead.org
@@ -103,9 +103,9 @@ Cc:     Arnd Bergmann <arnd@arndb.de>,
         linux-sunxi@lists.linux.dev, linux-tegra@vger.kernel.org,
         linux-sh@vger.kernel.org
 References: <20220721141325.2413920-1-arnd@kernel.org>
- <20220721141325.2413920-4-arnd@kernel.org>
+ <20220721141325.2413920-5-arnd@kernel.org>
 From:   Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
-In-Reply-To: <20220721141325.2413920-4-arnd@kernel.org>
+In-Reply-To: <20220721141325.2413920-5-arnd@kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 Precedence: bulk
@@ -115,15 +115,20 @@ X-Mailing-List: linux-sh@vger.kernel.org
 On 21/07/2022 16:13, Arnd Bergmann wrote:
 > From: Arnd Bergmann <arnd@arndb.de>
 > 
-> The default is always 0x0 after commit 39c3e304567a ("ARM: 8984/1:
-> Kconfig: set default ZBOOT_ROM_TEXT/BSS value to 0x0"), so any
-> defconfig file that has these two lines can now drop them to reduce
-> the diff against the 'make savedefconfig' version.
+> CONFIG_DEBUG_INFO is now implicitly selected if one picks one of the
+> explicit options that could be DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT,
+> DEBUG_INFO_DWARF4, DEBUG_INFO_DWARF5.
 > 
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> This was actually not what I had in mind when I suggested making
+> it a 'choice' statement, but it's too late to change again now,
+> and the Kconfig logic is more sensible in the new form.
+> 
+> Change any defconfig file that had CONFIG_DEBUG_INFO enabled
+> but did not pick DWARF4 or DWARF5 explicitly to now pick the toolchain
+> default.
 
-
-Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+I think this should be split - into remove DEBUG_INFO (noop) and into
+selecting CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT (a fix).
 
 Best regards,
 Krzysztof
