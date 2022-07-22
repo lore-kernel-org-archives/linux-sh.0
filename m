@@ -2,125 +2,194 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0556C43334
-	for <linux-sh@archiver.kernel.org>; Fri, 22 Jul 2022 13:41:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 30FB0C43334
+	for <linux-sh@archiver.kernel.org>; Fri, 22 Jul 2022 15:12:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235211AbiGVNl5 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 22 Jul 2022 09:41:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52058 "EHLO
+        id S235763AbiGVPM5 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 22 Jul 2022 11:12:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59806 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235206AbiGVNl4 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 22 Jul 2022 09:41:56 -0400
-Received: from mail-lj1-x232.google.com (mail-lj1-x232.google.com [IPv6:2a00:1450:4864:20::232])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6E4BE15FC7
-        for <linux-sh@vger.kernel.org>; Fri, 22 Jul 2022 06:41:52 -0700 (PDT)
-Received: by mail-lj1-x232.google.com with SMTP id r14so5488987ljp.2
-        for <linux-sh@vger.kernel.org>; Fri, 22 Jul 2022 06:41:52 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20210112;
-        h=mime-version:references:in-reply-to:from:date:message-id:subject:to
-         :cc;
-        bh=Dx7D0BqkkDvjmBT9gC4DV9N7HZuC2AWyX/zQVsh2Lhg=;
-        b=Mav9qQe7Hay6uovpG8VBsmTfL/xzD90QiB1XmORe5cOsqAXIlePMrDnpAKjk2SPHlU
-         kb5Ut7GMhYSuGugphdGTCzl4QS6dVbBemaHVAe/68tr5YLIdKH+1dl3Be+60VFt6Mw1X
-         89ZZ7H+XeGTtXT+aoENzLnwYujx0UEFEHIllUI+2lj18vV6lg2lkpPDYX2L9dVq8r5Mu
-         ohtc/xno0dA+uaPEz0e57vbqZPXDLbKUqdzl3NXPeMXzZjWy8P656YDqqiKQAcIZgP12
-         9CxD2oRBzvv/UqkEIIr6I79Mj6do1s20CN+FUt2qGuSgsOMDu5gIKWU0Uw89VqdLMCEK
-         WJOw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=x-gm-message-state:mime-version:references:in-reply-to:from:date
-         :message-id:subject:to:cc;
-        bh=Dx7D0BqkkDvjmBT9gC4DV9N7HZuC2AWyX/zQVsh2Lhg=;
-        b=m46950IY+hgZcEsZNE+Cj1Ihxzz5glOD7z8mqrjTxz8jo01Hn4pUxHFT/DbzP4AQDC
-         zuiGckUVTySRckzlwBUiCk6nG34hiREZi6lFfxD2TJmO4u/E/UfJk7EOjQroyTM81Syi
-         QQnK9MWk/XNLPWzSccFtoL1S+MJFoU6LS1++Q0Of3QK30cx2tc6nJPB7RPZA2nPyDecI
-         eaakdvuKn+7wtvZq4YDVeB6lMJRX2dA1zTVs6BfttAxPtxQq/S/9npcHWav7nQPY33kK
-         QKIbwzsI+YbgImNqyH1r8EDu+UbNdL+VD5ez2HE3O3vOG7S9R6h39bNne9gVMnAi+04n
-         IGcg==
-X-Gm-Message-State: AJIora+ANYA1W2Vsuwsj5ridxDqIop1UdQL0EqSqRP6skm+aQp6WPKSt
-        esOEpdYWc2i123yf4ihcmk27Q4pb2VwHg1NlowfR6w==
-X-Google-Smtp-Source: AGRyM1vqDflld4FdeS1YXh0RjgxlOzCf0nGqPxhUwqvkb5F6yDAk/Z183xcr0L3QZpAS70KrFAFPlj5+eHC8c+4k4GY=
-X-Received: by 2002:a2e:bd0e:0:b0:25a:88b3:9af6 with SMTP id
- n14-20020a2ebd0e000000b0025a88b39af6mr24943ljq.363.1658497309800; Fri, 22 Jul
- 2022 06:41:49 -0700 (PDT)
+        with ESMTP id S235703AbiGVPMr (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 22 Jul 2022 11:12:47 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D60119C279;
+        Fri, 22 Jul 2022 08:12:45 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 2B8C2B827C3;
+        Fri, 22 Jul 2022 15:12:44 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 11E56C341C6;
+        Fri, 22 Jul 2022 15:12:35 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1658502762;
+        bh=QNDA1Wl/P9Tdabb9er+hcjmLg+ZWPQYKQjQn31syPZs=;
+        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+        b=TOvvu0qlyhr+tmgrzFarODSHy2nmwd/vZkaOfw7UOlCrWttzwGKU19rg8AV7A8T7i
+         IfjgWg0t2g4Ij3/wDGk0CzmXgSTPXgE3n1u2iwGUjmleTogf4uINMSXjxmVGVqzSDf
+         NdnzljfzlPJdmijyVLMwEzZZ53euLLK3T+7lg1++pTTDKLDbOWkoP2Kq2RUZ3s84P6
+         FBICts7HV/wapVFQ1AVuS+EXg97CVEyaQ8kbfAxQREHvjUc07BdPWl0gXMD41NG9LD
+         308lnEB6RcxuafVaPDXSt3EJNt5k6THt96Bq2WKrP+Lj0X4kKIL9pRDDVTaN2puF9b
+         HBK7vSUuswD+Q==
+Message-ID: <8430301c-3682-fde0-4bf3-033450563be3@kernel.org>
+Date:   Fri, 22 Jul 2022 10:12:34 -0500
 MIME-Version: 1.0
-References: <20220704150514.48816-1-elver@google.com> <20220704150514.48816-2-elver@google.com>
- <Ytl9L0Zn1PVuL1cB@FVFF77S0Q05N.cambridge.arm.com> <20220722091044.GC18125@willie-the-truck>
- <CACT4Y+ZOXXqxhe4U3ZtQPCj2yrf6Qtjg1q0Kfq8+poAOxGgUew@mail.gmail.com>
- <20220722101053.GA18284@willie-the-truck> <CACT4Y+Z0imEHF0jM-f-uYdpfSpfzMpa+bFZfPeQW1ECBDjD9fA@mail.gmail.com>
- <20220722110305.GA18336@willie-the-truck>
-In-Reply-To: <20220722110305.GA18336@willie-the-truck>
-From:   Dmitry Vyukov <dvyukov@google.com>
-Date:   Fri, 22 Jul 2022 15:41:38 +0200
-Message-ID: <CACT4Y+aLiNNt3ESZUKHT9U8duN-TMK561nC7Htx9y3R7afCV4g@mail.gmail.com>
-Subject: Re: [PATCH v3 01/14] perf/hw_breakpoint: Add KUnit test for
- constraints accounting
-To:     Will Deacon <will@kernel.org>
-Cc:     Mark Rutland <mark.rutland@arm.com>,
-        Marco Elver <elver@google.com>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Frederic Weisbecker <frederic@kernel.org>,
-        Ingo Molnar <mingo@kernel.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Arnaldo Carvalho de Melo <acme@kernel.org>,
-        Alexander Shishkin <alexander.shishkin@linux.intel.com>,
-        Jiri Olsa <jolsa@redhat.com>,
-        Namhyung Kim <namhyung@kernel.org>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        linuxppc-dev@lists.ozlabs.org, linux-perf-users@vger.kernel.org,
-        x86@kernel.org, linux-sh@vger.kernel.org,
-        kasan-dev@googlegroups.com, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101
+ Thunderbird/91.9.1
+Subject: Re: [PATCH 1/6] ARM: refresh defconfig files
+Content-Language: en-US
+To:     Arnd Bergmann <arnd@kernel.org>,
+        linux-arm-kernel@lists.infradead.org
+Cc:     Arnd Bergmann <arnd@arndb.de>,
+        Russell King <linux@armlinux.org.uk>,
+        Nicolas Ferre <nicolas.ferre@microchip.com>,
+        Alexandre Belloni <alexandre.belloni@bootlin.com>,
+        Claudiu Beznea <claudiu.beznea@microchip.com>,
+        Florian Fainelli <f.fainelli@gmail.com>,
+        Ray Jui <rjui@broadcom.com>,
+        Scott Branden <sbranden@broadcom.com>,
+        Alexander Shiyan <shc_work@mail.ru>,
+        Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>,
+        Alim Akhtar <alim.akhtar@samsung.com>,
+        Shawn Guo <shawnguo@kernel.org>,
+        Sascha Hauer <s.hauer@pengutronix.de>,
+        Pengutronix Kernel Team <kernel@pengutronix.de>,
+        Fabio Estevam <festevam@gmail.com>,
+        NXP Linux Team <linux-imx@nxp.com>,
+        Vladimir Zapolskiy <vz@mleia.com>,
+        Taichi Sugaya <sugaya.taichi@socionext.com>,
+        Takao Orito <orito.takao@socionext.com>,
+        Liviu Dudau <liviu.dudau@arm.com>,
+        Sudeep Holla <sudeep.holla@arm.com>,
+        Lorenzo Pieralisi <lpieralisi@kernel.org>,
+        Andrew Lunn <andrew@lunn.ch>,
+        Gregory Clement <gregory.clement@bootlin.com>,
+        Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
+        Aaro Koskinen <aaro.koskinen@iki.fi>,
+        Janusz Krzysztofik <jmkrzyszt@gmail.com>,
+        Tony Lindgren <tony@atomide.com>,
+        Neil Armstrong <narmstrong@baylibre.com>,
+        Maxime Coquelin <mcoquelin.stm32@gmail.com>,
+        Alexandre Torgue <alexandre.torgue@foss.st.com>,
+        Chen-Yu Tsai <wens@csie.org>,
+        Jernej Skrabec <jernej.skrabec@gmail.com>,
+        Samuel Holland <samuel@sholland.org>,
+        Thierry Reding <thierry.reding@gmail.com>,
+        Jonathan Hunter <jonathanh@nvidia.com>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>, linux-kernel@vger.kernel.org,
+        linux-aspeed@lists.ozlabs.org,
+        bcm-kernel-feedback-list@broadcom.com,
+        linux-rpi-kernel@lists.infradead.org,
+        linux-samsung-soc@vger.kernel.org, linux-omap@vger.kernel.org,
+        linux-oxnas@groups.io, linux-stm32@st-md-mailman.stormreply.com,
+        linux-sunxi@lists.linux.dev, linux-tegra@vger.kernel.org,
+        linux-sh@vger.kernel.org
+References: <20220721141325.2413920-1-arnd@kernel.org>
+ <20220721141325.2413920-2-arnd@kernel.org>
+From:   Dinh Nguyen <dinguyen@kernel.org>
+In-Reply-To: <20220721141325.2413920-2-arnd@kernel.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, 22 Jul 2022 at 13:03, Will Deacon <will@kernel.org> wrote:
-> > > > > > On Mon, Jul 04, 2022 at 05:05:01PM +0200, Marco Elver wrote:
-> > > > > > I'm not immediately sure what would be necessary to support per-task kernel
-> > > > > > breakpoints, but given a lot of that state is currently per-cpu, I imagine it's
-> > > > > > invasive.
-> > > > >
-> > > > > I would actually like to remove HW_BREAKPOINT completely for arm64 as it
-> > > > > doesn't really work and causes problems for other interfaces such as ptrace
-> > > > > and kgdb.
-> > > >
-> > > > Will it be a localized removal of code that will be easy to revert in
-> > > > future? Or will it touch lots of code here and there?
-> > > > Let's say we come up with a very important use case for HW_BREAKPOINT
-> > > > and will need to make it work on arm64 as well in future.
-> > >
-> > > My (rough) plan is to implement a lower-level abstraction for handling the
-> > > underlying hardware resources, so we can layer consumers on top of that
-> > > instead of funneling through hw_breakpoint. So if we figure out how to make
-> > > bits of hw_breakpoint work on arm64, then it should just go on top.
-> > >
-> > > The main pain point for hw_breakpoint is kernel-side {break,watch}points
-> > > and I think there are open design questions about how they should work
-> > > on arm64, particularly when considering the interaction with user
-> > > watchpoints triggering on uaccess routines and the possibility of hitting
-> > > a kernel watchpoint in irq context.
-> >
-> > I see. Our main interest would be break/watchpoints on user addresses
-> > firing from both user-space and kernel (uaccess), so at least on irqs.
->
-> Interesting. Do other architectures report watchpoint hits on user
-> addresses from kernel uaccess? It feels like this might be surprising to
-> some users, and it opens up questions about accesses using different virtual
-> aliases (e.g. via GUP) or from other entities as well (e.g. firmware,
-> KVM guests, DMA).
 
-x86 supports this.
-There is that attr.exclude_kernel flag that requires special permissions:
-https://elixir.bootlin.com/linux/v5.19-rc7/source/kernel/events/core.c#L12061
-https://elixir.bootlin.com/linux/v5.19-rc7/source/kernel/events/core.c#L9323
-But if I understand correctly, it only filters out delivery, the HW
-breakpoint fires even if attr.exclude_kernel is set.
 
-We also wanted to relax this permission check somewhat:
-https://lore.kernel.org/all/20220601093502.364142-1-elver@google.com/
+On 7/21/22 09:13, Arnd Bergmann wrote:
+> From: Arnd Bergmann <arnd@arndb.de>
+> 
+> A lot of Kconfig options have changed over the years, and we tend
+> to not do a blind 'make defconfig' to refresh the files, to ensure
+> we catch options that should not have gone away.
+> 
+> I used some a bit of scripting to only rework the bits where an
+> option moved around in any of the defconfig files, without also
+> dropping any of the other lines, to make it clearer which options
+> we no longer have.
+> 
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> ---
+>   arch/arm/configs/am200epdkit_defconfig    |  26 ++---
+>   arch/arm/configs/aspeed_g4_defconfig      |  16 +--
+>   arch/arm/configs/aspeed_g5_defconfig      |  16 +--
+>   arch/arm/configs/assabet_defconfig        |   8 +-
+>   arch/arm/configs/at91_dt_defconfig        |  10 +-
+>   arch/arm/configs/axm55xx_defconfig        |  22 ++--
+>   arch/arm/configs/badge4_defconfig         |   8 +-
+>   arch/arm/configs/bcm2835_defconfig        |  36 +++----
+>   arch/arm/configs/cerfcube_defconfig       |  16 +--
+>   arch/arm/configs/clps711x_defconfig       |   2 +-
+>   arch/arm/configs/cm_x300_defconfig        |  26 ++---
+>   arch/arm/configs/cns3420vb_defconfig      |  18 ++--
+>   arch/arm/configs/colibri_pxa270_defconfig |  32 +++---
+>   arch/arm/configs/colibri_pxa300_defconfig |  10 +-
+>   arch/arm/configs/collie_defconfig         |  20 ++--
+>   arch/arm/configs/corgi_defconfig          |  44 ++++----
+>   arch/arm/configs/davinci_all_defconfig    |  26 ++---
+>   arch/arm/configs/dove_defconfig           |  28 ++---
+>   arch/arm/configs/ep93xx_defconfig         |  16 +--
+>   arch/arm/configs/eseries_pxa_defconfig    |  26 ++---
+>   arch/arm/configs/exynos_defconfig         |  20 ++--
+>   arch/arm/configs/ezx_defconfig            |  72 ++++++-------
+>   arch/arm/configs/footbridge_defconfig     |  14 +--
+>   arch/arm/configs/h3600_defconfig          |  10 +-
+>   arch/arm/configs/h5000_defconfig          |  18 ++--
+>   arch/arm/configs/hackkit_defconfig        |   4 +-
+>   arch/arm/configs/hisi_defconfig           |  24 ++---
+>   arch/arm/configs/imx_v4_v5_defconfig      |   8 +-
+>   arch/arm/configs/imx_v6_v7_defconfig      |   8 +-
+>   arch/arm/configs/integrator_defconfig     |   2 +-
+>   arch/arm/configs/iop32x_defconfig         |  20 ++--
+>   arch/arm/configs/jornada720_defconfig     |  10 +-
+>   arch/arm/configs/keystone_defconfig       |  62 +++++------
+>   arch/arm/configs/lart_defconfig           |   6 +-
+>   arch/arm/configs/lpc18xx_defconfig        |  12 +--
+>   arch/arm/configs/lpc32xx_defconfig        |   8 +-
+>   arch/arm/configs/lpd270_defconfig         |   6 +-
+>   arch/arm/configs/lubbock_defconfig        |  10 +-
+>   arch/arm/configs/magician_defconfig       |  30 +++---
+>   arch/arm/configs/mainstone_defconfig      |   4 +-
+>   arch/arm/configs/milbeaut_m10v_defconfig  |   6 +-
+>   arch/arm/configs/mini2440_defconfig       |   6 +-
+>   arch/arm/configs/mmp2_defconfig           |  28 ++---
+>   arch/arm/configs/moxart_defconfig         |  18 ++--
+>   arch/arm/configs/mps2_defconfig           |  14 +--
+>   arch/arm/configs/multi_v4t_defconfig      |   4 +-
+>   arch/arm/configs/multi_v5_defconfig       |  12 +--
+>   arch/arm/configs/multi_v7_defconfig       |  62 +++++------
+>   arch/arm/configs/mv78xx0_defconfig        |  32 +++---
+>   arch/arm/configs/mvebu_v5_defconfig       |  28 ++---
+>   arch/arm/configs/mvebu_v7_defconfig       |   2 +-
+>   arch/arm/configs/mxs_defconfig            |   4 +-
+>   arch/arm/configs/neponset_defconfig       |  24 ++---
+>   arch/arm/configs/netwinder_defconfig      |  10 +-
+>   arch/arm/configs/nhk8815_defconfig        |   6 +-
+>   arch/arm/configs/omap1_defconfig          |  74 ++++++-------
+>   arch/arm/configs/omap2plus_defconfig      |  16 +--
+>   arch/arm/configs/orion5x_defconfig        |  32 +++---
+>   arch/arm/configs/oxnas_v6_defconfig       |  14 +--
+>   arch/arm/configs/palmz72_defconfig        |  14 +--
+>   arch/arm/configs/pcm027_defconfig         |  22 ++--
+>   arch/arm/configs/pleb_defconfig           |   6 +-
+>   arch/arm/configs/pxa168_defconfig         |  18 ++--
+>   arch/arm/configs/pxa255-idp_defconfig     |  10 +-
+>   arch/arm/configs/pxa3xx_defconfig         |  18 ++--
+>   arch/arm/configs/pxa910_defconfig         |  22 ++--
+>   arch/arm/configs/pxa_defconfig            | 126 +++++++++++-----------
+>   arch/arm/configs/qcom_defconfig           |  60 +++++------
+>   arch/arm/configs/realview_defconfig       |   8 +-
+>   arch/arm/configs/rpc_defconfig            |  18 ++--
+>   arch/arm/configs/s3c2410_defconfig        |   8 +-
+>   arch/arm/configs/s3c6400_defconfig        |   2 +-
+>   arch/arm/configs/s5pv210_defconfig        |   4 +-
+>   arch/arm/configs/sama5_defconfig          |   8 +-
+>   arch/arm/configs/sama7_defconfig          |   8 +-
+>   arch/arm/configs/shannon_defconfig        |   8 +-
+>   arch/arm/configs/simpad_defconfig         |  18 ++--
+>   arch/arm/configs/socfpga_defconfig        |   4 +-
 
-Yes, if the kernel maps the page at a different virtual address, then
-the breakpoint won't fire I think.
-Don't know what are the issues with firmware/KVM.
+for socfpga
+
+Acked-by: Dinh Nguyen <dinguyen@kernel.org>
