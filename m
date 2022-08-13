@@ -2,102 +2,140 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D00D6C19F2A
-	for <linux-sh@archiver.kernel.org>; Thu, 11 Aug 2022 15:30:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 95D46C2BB9D
+	for <linux-sh@archiver.kernel.org>; Sat, 13 Aug 2022 22:00:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235683AbiHKPas (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 11 Aug 2022 11:30:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49198 "EHLO
+        id S240283AbiHMWAt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 13 Aug 2022 18:00:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35068 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235788AbiHKPaI (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 11 Aug 2022 11:30:08 -0400
-Received: from mail-pj1-x1036.google.com (mail-pj1-x1036.google.com [IPv6:2607:f8b0:4864:20::1036])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3BA0D95687
-        for <linux-sh@vger.kernel.org>; Thu, 11 Aug 2022 08:29:42 -0700 (PDT)
-Received: by mail-pj1-x1036.google.com with SMTP id s5-20020a17090a13c500b001f4da9ffe5fso5711628pjf.5
-        for <linux-sh@vger.kernel.org>; Thu, 11 Aug 2022 08:29:42 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=chromium.org; s=google;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc;
-        bh=k4cTJcWzw8+6axf00iGx7biHKXUEGT3Ofca07ePg5B0=;
-        b=e8WRD+IbMXLxt0XX5XAhvJBvN5jLNJ8ZUx93+YW8cz7r7GCpyryYTdJ+UJNUPY223r
-         zzoPmw6xUn3VMbJuI2F2ZSeOhIbrKmiX3G9mhH6iyovCbNm2Puhe2oTBwUlY5OL7qfj2
-         sQGEp1yOeNmSmYqyuuyL7LSmz37k/frFxM+oU=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc;
-        bh=k4cTJcWzw8+6axf00iGx7biHKXUEGT3Ofca07ePg5B0=;
-        b=AwFmQ2wUNObbnfn6hnoi2cIoZaIyG9YfrKgioF8cDFUtTIlqxzEKf1kDmGOjIM5ee6
-         gUwUcR7fJQK/kC/W99L0ivibKlGkKvscf5pAabtMRQ3QioNyJtNdlMs+oh1IPI2tDNDr
-         m8u6D280EVKgndRFMrG/JTVRbJoOO97EhfQBSBTmoEoKeT2f75nSMXf+QxNpvyLuW3t8
-         fKQp1YawT/+A9gf8uwU5CHfnQ8xlyG5z4+n7eWc3ZRfKuPsalPn5wQf5/FwEOq+gQdvu
-         bMbp7FSCD7EYmlZ+NBOMnsMwSkCAHbnsGe4ZRzlfJ2GOXHbFmrJj8Y6k5PrvXgadAIoy
-         YHng==
-X-Gm-Message-State: ACgBeo0MTKggW8CZJzqAvDaZ2XNDr/I19N7UIXJvcrNBvq2B0ny7uajH
-        b5O1HDeYr54HhqR2cSbCLoMqYg==
-X-Google-Smtp-Source: AA6agR5MDAoWj07mo8Re6bJHCK/lTI2S9VYB/kjpRf71aZeSVUXPPLyCezVqfrd1Gs3g5Ty8PSMb+A==
-X-Received: by 2002:a17:90a:55:b0:1f7:4513:8cac with SMTP id 21-20020a17090a005500b001f745138cacmr9192293pjb.93.1660231781372;
-        Thu, 11 Aug 2022 08:29:41 -0700 (PDT)
-Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
-        by smtp.gmail.com with ESMTPSA id w9-20020a1709026f0900b0016f1204cde8sm1985339plk.301.2022.08.11.08.29.40
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 11 Aug 2022 08:29:40 -0700 (PDT)
-Date:   Thu, 11 Aug 2022 08:29:39 -0700
-From:   Kees Cook <keescook@chromium.org>
-To:     Arnd Bergmann <arnd@kernel.org>
-Cc:     Richard Henderson <rth@twiddle.net>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>,
-        Vineet Gupta <vgupta@kernel.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Richard Weinberger <richard@nod.at>,
-        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-        Johannes Berg <johannes@sipsolutions.net>,
-        Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>,
+        with ESMTP id S240250AbiHMWAp (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 13 Aug 2022 18:00:45 -0400
+Received: from mga03.intel.com (mga03.intel.com [134.134.136.65])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F2890BF70;
+        Sat, 13 Aug 2022 15:00:42 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1660428043; x=1691964043;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=J2stkkYmPik2bQMds1PPTKQFWYY4K6w3/+pjsawBn4I=;
+  b=czriY2QSJtsHs+0YJIn5ie4MEylQAeO1kW/kS7jZoyutko3tg5lYKLsh
+   U8uwSotSnGfPl2vJQS7mXtH4oMFazwVlS/Xc7jXjm/W0R2M8xn4DxBnHw
+   kIWTBYyV1rhIi/CUgFr62xfLVN+CqYCowKo4VrUWdTiHHWU6njZrRlHxQ
+   kaTEKulZ63EuSu4qn9pNqf4xP0sdTWK/u2NAugMb9FbtEUSj30NAXgimh
+   5qPunzQISbEjtHhAHANiwq1Jl2HcUvhbN24qdPsixdN+lNMnl7ALLrf3m
+   ZKPstDNZJppuxJNs4K8cjvcKaPPyhu1ezSatsWfsJc/83jLR0F08xO9ot
+   w==;
+X-IronPort-AV: E=McAfee;i="6400,9594,10437"; a="293049446"
+X-IronPort-AV: E=Sophos;i="5.93,236,1654585200"; 
+   d="scan'208";a="293049446"
+Received: from orsmga008.jf.intel.com ([10.7.209.65])
+  by orsmga103.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 13 Aug 2022 15:00:42 -0700
+X-IronPort-AV: E=Sophos;i="5.93,236,1654585200"; 
+   d="scan'208";a="635047705"
+Received: from tsaiyinl-mobl1.amr.corp.intel.com (HELO localhost) ([10.209.125.19])
+  by orsmga008-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 13 Aug 2022 15:00:40 -0700
+From:   ira.weiny@intel.com
+To:     Andy Whitcroft <apw@canonical.com>, Joe Perches <joe@perches.com>
+Cc:     Ira Weiny <ira.weiny@intel.com>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        "Fabio M . De Francesco" <fmdefrancesco@gmail.com>,
         Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>, linux-alpha@vger.kernel.org,
         linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-        linux-mips@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org
-Subject: Re: [PATCH] treewide: defconfig: address renamed CONFIG_DEBUG_INFO=y
-Message-ID: <202208110829.F82D003490@keescook>
-References: <20220811114609.2097335-1-arnd@kernel.org>
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, x86@kernel.org,
+        linux-xtensa@linux-xtensa.org, keyrings@vger.kernel.org,
+        linux-ide@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-crypto@vger.kernel.org, linux-media@vger.kernel.org,
+        linux-edac@vger.kernel.org, linux1394-devel@lists.sourceforge.net,
+        dri-devel@lists.freedesktop.org, dm-devel@redhat.com,
+        linux-raid@vger.kernel.org, linux-mmc@vger.kernel.org,
+        linux-rdma@vger.kernel.org, linux-mtd@lists.infradead.org,
+        netdev@vger.kernel.org, nvdimm@lists.linux.dev,
+        linux-nvme@lists.infradead.org, linux-scsi@vger.kernel.org,
+        virtualization@lists.linux-foundation.org,
+        linux-fsdevel@vger.kernel.org,
+        kgdb-bugreport@lists.sourceforge.net, iommu@lists.linux.dev,
+        bpf@vger.kernel.org, kvm@vger.kernel.org
+Subject: [PATCH] checkpatch: Add kmap and kmap_atomic to the deprecated list
+Date:   Sat, 13 Aug 2022 15:00:34 -0700
+Message-Id: <20220813220034.806698-1-ira.weiny@intel.com>
+X-Mailer: git-send-email 2.35.3
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220811114609.2097335-1-arnd@kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Aug 11, 2022 at 01:44:34PM +0200, Arnd Bergmann wrote:
-> From: Arnd Bergmann <arnd@arndb.de>
-> 
-> CONFIG_DEBUG_INFO is now implicitly selected if one picks one of the
-> explicit options that could be DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT,
-> DEBUG_INFO_DWARF4, DEBUG_INFO_DWARF5.
-> 
-> This was actually not what I had in mind when I suggested making
-> it a 'choice' statement, but it's too late to change again now,
-> and the Kconfig logic is more sensible in the new form.
-> 
-> Change any defconfig file that had CONFIG_DEBUG_INFO enabled
-> but did not pick DWARF4 or DWARF5 explicitly to now pick the toolchain
-> default.
-> 
-> Fixes: f9b3cd245784 ("Kconfig.debug: make DEBUG_INFO selectable from a choice")
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+From: Ira Weiny <ira.weiny@intel.com>
 
-Thanks!
+kmap() and kmap_atomic() are being deprecated in favor of
+kmap_local_page().
 
-Reviewed-by: Kees Cook <keescook@chromium.org>
+There are two main problems with kmap(): (1) It comes with an overhead
+as mapping space is restricted and protected by a global lock for
+synchronization and (2) it also requires global TLB invalidation when
+the kmap’s pool wraps and it might block when the mapping space is fully
+utilized until a slot becomes available.
 
+kmap_local_page() is safe from any context and is therefore redundant
+with kmap_atomic() with the exception of any pagefault or preemption
+disable requirements.  However, using kmap_atomic() for these side
+effects makes the code less clear.  So any requirement for pagefault or
+preemption disable should be made explicitly.
+
+With kmap_local_page() the mappings are per thread, CPU local, can take
+page faults, and can be called from any context (including interrupts).
+It is faster than kmap() in kernels with HIGHMEM enabled. Furthermore,
+the tasks can be preempted and, when they are scheduled to run again,
+the kernel virtual addresses are restored.
+
+Suggested-by: Thomas Gleixner <tglx@linutronix.de>
+Suggested-by: Fabio M. De Francesco <fmdefrancesco@gmail.com>
+Signed-off-by: Ira Weiny <ira.weiny@intel.com>
+
+---
+Suggested by credits.
+	Thomas: Idea to keep from growing more kmap/kmap_atomic calls.
+	Fabio: Stole some of his boiler plate commit message.
+
+Notes on tree-wide conversions:
+
+I've cc'ed mailing lists for subsystems which currently contains either kmap()
+or kmap_atomic() calls.  As some of you already know Fabio and I have been
+working through converting kmap() calls to kmap_local_page().  But there is a
+lot more work to be done.  Help from the community is always welcome,
+especially with kmap_atomic() conversions.  To keep from stepping on each
+others toes I've created a spreadsheet of the current calls[1].  Please let me
+or Fabio know if you plan on tacking one of the conversions so we can mark it
+off the list.
+
+[1] https://docs.google.com/spreadsheets/d/1i_ckZ10p90bH_CkxD2bYNi05S2Qz84E2OFPv8zq__0w/edit#gid=1679714357
+
+---
+ scripts/checkpatch.pl | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/scripts/checkpatch.pl b/scripts/checkpatch.pl
+index 79e759aac543..9ff219e0a9d5 100755
+--- a/scripts/checkpatch.pl
++++ b/scripts/checkpatch.pl
+@@ -807,6 +807,8 @@ our %deprecated_apis = (
+ 	"rcu_barrier_sched"			=> "rcu_barrier",
+ 	"get_state_synchronize_sched"		=> "get_state_synchronize_rcu",
+ 	"cond_synchronize_sched"		=> "cond_synchronize_rcu",
++	"kmap"					=> "kmap_local_page",
++	"kmap_atomic"				=> "kmap_local_page",
+ );
+ 
+ #Create a search pattern for all these strings to speed up a loop below
+
+base-commit: 4a9350597aff50bbd0f4b80ccf49d2e02d1111f5
 -- 
-Kees Cook
+2.35.3
+
