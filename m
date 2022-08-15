@@ -2,123 +2,119 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 10918C25B0E
-	for <linux-sh@archiver.kernel.org>; Mon, 15 Aug 2022 15:53:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39D7FC00140
+	for <linux-sh@archiver.kernel.org>; Mon, 15 Aug 2022 18:10:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231578AbiHOPxm (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 15 Aug 2022 11:53:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42654 "EHLO
+        id S233038AbiHOSKN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 15 Aug 2022 14:10:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54436 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229515AbiHOPxl (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 15 Aug 2022 11:53:41 -0400
-Received: from mout.kundenserver.de (mout.kundenserver.de [212.227.126.133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3D8C7167F0;
-        Mon, 15 Aug 2022 08:53:40 -0700 (PDT)
-Received: from mail-ej1-f52.google.com ([209.85.218.52]) by
- mrelayeu.kundenserver.de (mreue009 [213.165.67.97]) with ESMTPSA (Nemesis) id
- 1MoNy4-1nZ8Nm252u-00olLR; Mon, 15 Aug 2022 17:53:38 +0200
-Received: by mail-ej1-f52.google.com with SMTP id dc19so14207471ejb.12;
-        Mon, 15 Aug 2022 08:53:38 -0700 (PDT)
-X-Gm-Message-State: ACgBeo2NTseA6Pvmml7k4+2NCcIgxy34kaHbmUZgLkzlMwlchjndPuYm
-        K/BtvcXzQxpTDaS7ImyVyofw/x+u9VAnj1WesUY=
-X-Google-Smtp-Source: AA6agR4kQH9OPkAoSzw4z/FBPTVCt5TcLJ18r0latd6JdISl5KaD+R3rrNlWHfqDqar+qTRK7WgfYWLgQGqiKgJkzhc=
-X-Received: by 2002:a17:907:7609:b0:730:d70a:1efc with SMTP id
- jx9-20020a170907760900b00730d70a1efcmr10863122ejc.766.1660578818066; Mon, 15
- Aug 2022 08:53:38 -0700 (PDT)
+        with ESMTP id S230266AbiHOSKM (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 15 Aug 2022 14:10:12 -0400
+Received: from albert.telenet-ops.be (albert.telenet-ops.be [IPv6:2a02:1800:110:4::f00:1a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3F41229CBE
+        for <linux-sh@vger.kernel.org>; Mon, 15 Aug 2022 11:10:10 -0700 (PDT)
+Received: from ramsan.of.borg ([84.195.186.194])
+        by albert.telenet-ops.be with bizsmtp
+        id 7uA42800C4C55Sk06uA4oE; Mon, 15 Aug 2022 20:10:09 +0200
+Received: from geert (helo=localhost)
+        by ramsan.of.borg with local-esmtp (Exim 4.93)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1oNeXL-001DJO-RF; Mon, 15 Aug 2022 20:10:03 +0200
+Date:   Mon, 15 Aug 2022 20:10:03 +0200 (CEST)
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+X-X-Sender: geert@ramsan.of.borg
+To:     linux-kernel@vger.kernel.org
+cc:     linux-parisc@vger.kernel.org, linux-staging@lists.linux.dev,
+        amd-gfx@lists.freedesktop.org, dri-devel@lists.freedesktop.org,
+        linux-wireless@vger.kernel.org, netdev@vger.kernel.org,
+        kvmarm@lists.cs.columbia.edu, linux-arm-kernel@lists.infradead.org,
+        "Jason A. Donenfeld" <Jason@zx2c4.com>,
+        linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org
+Subject: Re: Build regressions/improvements in v6.0-rc1
+In-Reply-To: <20220815180438.2875559-1-geert@linux-m68k.org>
+Message-ID: <alpine.DEB.2.22.394.2208152006320.289321@ramsan.of.borg>
+References: <CAHk-=wgRFjPHV-Y_eKP9wQMLFDgG+dEUHiv5wC17OQHsG5z7BA@mail.gmail.com> <20220815180438.2875559-1-geert@linux-m68k.org>
+User-Agent: Alpine 2.22 (DEB 394 2020-01-19)
 MIME-Version: 1.0
-References: <20220815143959.1511278-1-zi.yan@sent.com>
-In-Reply-To: <20220815143959.1511278-1-zi.yan@sent.com>
-From:   Arnd Bergmann <arnd@arndb.de>
-Date:   Mon, 15 Aug 2022 17:53:22 +0200
-X-Gmail-Original-Message-ID: <CAK8P3a0TcnXHVsxBkpqLi63XC62Jkg3HChtK4RgB6-giYb+hnw@mail.gmail.com>
-Message-ID: <CAK8P3a0TcnXHVsxBkpqLi63XC62Jkg3HChtK4RgB6-giYb+hnw@mail.gmail.com>
-Subject: Re: [PATCH] arch: mm: rename FORCE_MAX_ZONEORDER to ARCH_FORCE_MAX_ORDER
-To:     Zi Yan <ziy@nvidia.com>
-Cc:     linux-mm@kvack.org, David Hildenbrand <david@redhat.com>,
-        Matthew Wilcox <willy@infradead.org>,
-        Vlastimil Babka <vbabka@suse.cz>,
-        "Kirill A . Shutemov" <kirill.shutemov@linux.intel.com>,
-        Mike Kravetz <mike.kravetz@oracle.com>,
-        John Hubbard <jhubbard@nvidia.com>,
-        Yang Shi <shy828301@gmail.com>,
-        David Rientjes <rientjes@google.com>,
-        James Houghton <jthoughton@google.com>,
-        Mike Rapoport <rppt@kernel.org>, linux-kernel@vger.kernel.org,
-        Mike Rapoport <rppt@linux.ibm.com>,
-        Vineet Gupta <vgupta@synopsys.com>,
-        Shawn Guo <shawnguo@kernel.org>,
-        Taichi Sugaya <sugaya.taichi@socionext.com>,
-        Neil Armstrong <narmstrong@baylibre.com>,
-        Qin Jian <qinjian@cqplus1.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Guo Ren <guoren@kernel.org>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        "David S. Miller" <davem@davemloft.net>,
-        Chris Zankel <chris@zankel.net>, Arnd Bergmann <arnd@arndb.de>,
-        Ley Foon Tan <ley.foon.tan@intel.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        NXP Linux Team <linux-imx@nxp.com>,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-oxnas@groups.io,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org
-Content-Type: text/plain; charset="UTF-8"
-X-Provags-ID: V03:K1:3bjhYaUEWRlYdBweOdn0b/r+O4N0rvYexq07UftB14ZHOZPuXV3
- lf+VE+qVUESCIDx6KaEUMMG9THzdxte70BFMMIzWObilU0QYz2yYfixDwrOATWDyZzFfm41
- EKOxtpxlmj1HyFW6mnhXFC004OOg6wbraTMVq2dUiiTDTpeiTmPIMs4SE2+57BOzNDFzKTB
- Mf6oS5ka0yNIz0ytZ5pJw==
-X-UI-Out-Filterresults: notjunk:1;V03:K0:pGq+X3QRPxc=:WcCirK0x6sdExTy6/oiMGR
- d1jcWbA/eojZLQTurF3uPgfDqYzfS6ZJ1tqOMsqtYOu55Ks3yQMFUrLmxpxs9nvCbz66J2NDq
- fxzuUVz6uP6APSR7YJ7dNCnKyglNQfEhQ4YQ59w4XtsPw2Se29LW0WZWAAp4fAPAmbUHBRMYc
- Gio3uHfDrldBzrmci+ilPaPYx+5KeaCn2QViuMCADLPH2KEoxEsWDFJVRNK2+Yes5whbfH6fF
- 3IvPZliBPUY3GMMwyUTFodJi7d5QekFW9OsnJJXfT4Et9LAv2a0G7nytufJlmMTuZNMpzIMn8
- TLpAmVlD4N1wgL4Q7WCX55nEWJ6jfyICIoxiW3xVtVUQbYZ3JGOyzHuePZEutdGipL8bi2L77
- MsJ/yVPvaNg/X7gqfuG+7LyBEEcFGi/6FDGuMOVoZrG30coFBLnAJFvITlbKvo3iypsjw0qhN
- W2r3vIkKrp3/q2C/7SlGj6ereOURTh9KssFsMkidFs9dNWyOxkKCwiKM+rIArz0O1zeoRPqUD
- Uprn+LAc+DA0N32ZmODos/UA2h6tCl0boAyPCHXrE48+kp/lqSoUX3QJb/VJWb4dy7rWJmyYD
- aVPxkpx9/478/XvN0C/bAuvvamWyBdjkLubzy480Ue7IAM+d+Mr7Ql31AGxj9TiRgb+H2NX+v
- +nyh/uaWNLYjZiFlsOMbXD5aXBFMPhSaybdfW5bwDjYtQOnzwbU80VAwtePswoiQKpPZywT1s
- pLDUSPx5lHpT79JeuxHV8ioN5wq0+XpMpKGBospdR0He7HBK0iHw7I62Q69VMEUuQORLey08r
- FL0O65PYJ0M+H/x1oQn2ixTL4qdINn+9JWyNFv7fqFZ31VwHT+pz+m9faLoglis0cP5TEXbuS
- 8XjJZrS94wtWc86ne2jA==
+Content-Type: text/plain; charset=US-ASCII; format=flowed
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Aug 15, 2022 at 4:39 PM Zi Yan <zi.yan@sent.com> wrote:
+On Mon, 15 Aug 2022, Geert Uytterhoeven wrote:
+> Below is the list of build error/warning regressions/improvements in
+> v6.0-rc1[1] compared to v5.19[2].
 >
-> ---
->  arch/arc/Kconfig                             | 2 +-
->  arch/arm/Kconfig                             | 2 +-
->  arch/arm/configs/imx_v6_v7_defconfig         | 2 +-
->  arch/arm/configs/milbeaut_m10v_defconfig     | 2 +-
->  arch/arm/configs/oxnas_v6_defconfig          | 2 +-
->  arch/arm/configs/pxa_defconfig               | 2 +-
->  arch/arm/configs/sama7_defconfig             | 2 +-
->  arch/arm/configs/sp7021_defconfig            | 2 +-
->  arch/arm64/Kconfig                           | 2 +-
->  arch/csky/Kconfig                            | 2 +-
->  arch/ia64/Kconfig                            | 2 +-
->  arch/ia64/include/asm/sparsemem.h            | 6 +++---
->  arch/loongarch/Kconfig                       | 2 +-
->  arch/m68k/Kconfig.cpu                        | 2 +-
->  arch/mips/Kconfig                            | 2 +-
->  arch/nios2/Kconfig                           | 2 +-
->  arch/powerpc/Kconfig                         | 2 +-
->  arch/powerpc/configs/85xx/ge_imp3a_defconfig | 2 +-
->  arch/powerpc/configs/fsl-emb-nonhw.config    | 2 +-
->  arch/sh/configs/ecovec24_defconfig           | 2 +-
->  arch/sh/mm/Kconfig                           | 2 +-
->  arch/sparc/Kconfig                           | 2 +-
->  arch/xtensa/Kconfig                          | 2 +-
->  include/linux/mmzone.h                       | 4 ++--
+> Summarized:
+>  - build errors: +26/-15
 
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+   + /kisskb/src/arch/parisc/kernel/vdso32/restart_syscall.S: Error: .cfi_endproc without corresponding .cfi_startproc:  => 32
+   + /kisskb/src/arch/parisc/kernel/vdso32/restart_syscall.S: Error: bad or irreducible absolute expression:  => 16
+   + /kisskb/src/arch/parisc/kernel/vdso32/restart_syscall.S: Error: junk at end of line, first unrecognized character is `:':  => 16
+   + /kisskb/src/arch/parisc/kernel/vdso32/restart_syscall.S: Error: no such instruction: `be 0x100(%sr2,%r0)':  => 29
+   + /kisskb/src/arch/parisc/kernel/vdso32/restart_syscall.S: Error: no such instruction: `ldi 0,%r20':  => 30
+   + /kisskb/src/arch/parisc/kernel/vdso32/restart_syscall.S: Error: no such instruction: `ldw 0(%sp),%r31':  => 26
+   + /kisskb/src/arch/parisc/kernel/vdso32/sigtramp.S: Error: no such instruction: `ble 0x100(%sr2,%r0)':  => 51, 46
+   + /kisskb/src/arch/parisc/kernel/vdso32/sigtramp.S: Error: no such instruction: `ldi 0,%r25':  => 44
+   + /kisskb/src/arch/parisc/kernel/vdso32/sigtramp.S: Error: no such instruction: `ldi 1,%r25':  => 49
+   + /kisskb/src/arch/parisc/kernel/vdso32/sigtramp.S: Error: no such instruction: `ldi 173,%r20':  => 50, 45
+   + /kisskb/src/arch/parisc/kernel/vdso32/sigtramp.S: Error: unknown pseudo-op: `.callinfo':  => 40
+   + /kisskb/src/arch/parisc/kernel/vdso32/sigtramp.S: Error: unknown pseudo-op: `.entry':  => 41
+   + /kisskb/src/arch/parisc/kernel/vdso32/sigtramp.S: Error: unknown pseudo-op: `.exit':  => 54
+   + /kisskb/src/arch/parisc/kernel/vdso32/sigtramp.S: Error: unknown pseudo-op: `.proc':  => 39
+   + /kisskb/src/arch/parisc/kernel/vdso32/sigtramp.S: Error: unknown pseudo-op: `.procend':  => 55
+   + /kisskb/src/arch/parisc/kernel/vdso32/sigtramp.S: Error: unknown pseudo-op: `.stringz':  => 76
+
+parisc64-gcc11/generic-64bit_defconfig
+parisc-gcc11/generic-32bit_defconfig
+parisc-gcc11/parisc-{allmod,allno,def}config
+
+   + /kisskb/src/arch/sh/include/asm/io.h: error: cast to pointer from integer of different size [-Werror=int-to-pointer-cast]:  => 239:34
+
+sh4-gcc11/sh-allmodconfig (drivers/staging/octeon/ethernet-mem.c)
+
+   + /kisskb/src/drivers/gpu/drm/amd/amdgpu/../display/dc/dml/dcn30/display_mode_vba_30.c: error: the frame size of 2096 bytes is larger than 2048 bytes [-Werror=frame-larger-than=]:  => 6806:1
+   + /kisskb/src/drivers/gpu/drm/amd/amdgpu/../display/dc/dml/dcn32/display_mode_vba_32.c: error: the frame size of 2160 bytes is larger than 2048 bytes [-Werror=frame-larger-than=]:  => 3778:1
+
+x86_64-gcc8/x86-allmodconfig
+
+   + /kisskb/src/include/linux/bitfield.h: error: call to '__field_overflow' declared with attribute error: value doesn't fit into mask:  => 151:3
+
+mipsel-gcc5/mips-allmodconfig (net/mac80211/tx.c)
+
+   + /kisskb/src/include/linux/compiler_types.h: error: call to '__compiletime_assert_603' declared with attribute error: FIELD_GET: mask is not constant:  => 354:38
+
+arm64-gcc5/arm64-allmodconfig (arch/arm64/kvm/arm.c)
+
+   + /kisskb/src/include/linux/random.h: error: 'latent_entropy' undeclared (first use in this function):  => 25:39
+
+powerpc-gcc5/powerpc-all{mod,yes}config
+powerpc-gcc5/ppc32_allmodconfig
+powerpc-gcc5/ppc64_book3e_allmodconfig
+powerpc-gcc5/ppc64le_allmodconfig
+
+   + /kisskb/src/include/linux/random.h: error: 'latent_entropy' undeclared (first use in this function); did you mean 'add_latent_entropy'?:  => 25:46
+
+powerpc-gcc11/powerpc-all{mod,yes}config
+powerpc-gcc11/ppc64_book3e_allmodconfig
+
+   + {standard input}: Error: displacement to undefined symbol .L377 overflows 12-bit field:  => 2286
+   + {standard input}: Error: displacement to undefined symbol .L378 overflows 8-bit field :  => 2302
+   + {standard input}: Error: displacement to undefined symbol .L382 overflows 8-bit field :  => 2213
+
+sh4-gcc11/sh-allmodconfig (seen before, root cause is internal compiler error)
+
+> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/568035b01cfb107af8d2e4bd2fb9aea22cf5b868/ (all 135 configs)
+> [2] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/3d7cb6b04c3f3115719235cc6866b10326de34cd/ (all 135 configs)
+
+Gr{oetje,eeting}s,
+
+ 						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+ 							    -- Linus Torvalds
