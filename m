@@ -2,115 +2,97 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AE20EC25B0E
-	for <linux-sh@archiver.kernel.org>; Tue, 16 Aug 2022 14:12:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D8D3BC2BB41
+	for <linux-sh@archiver.kernel.org>; Wed, 17 Aug 2022 06:37:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235907AbiHPOMu (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 16 Aug 2022 10:12:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60386 "EHLO
+        id S238688AbiHQGhQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 17 Aug 2022 02:37:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48010 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235497AbiHPOMu (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 16 Aug 2022 10:12:50 -0400
-Received: from mail-yw1-x1132.google.com (mail-yw1-x1132.google.com [IPv6:2607:f8b0:4864:20::1132])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B360274B98
-        for <linux-sh@vger.kernel.org>; Tue, 16 Aug 2022 07:12:47 -0700 (PDT)
-Received: by mail-yw1-x1132.google.com with SMTP id 00721157ae682-31f445bd486so154215857b3.13
-        for <linux-sh@vger.kernel.org>; Tue, 16 Aug 2022 07:12:47 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc;
-        bh=Vyh7nX6aNSNUE119qdiIIT/EoXittiyqJ3KmpoRb3JU=;
-        b=fDj6FoppCemEAwso3o7LaD74WUC1I9oEzmYzOiTRD1OOS+4Bh/MPtP7m5uo8mLYe8C
-         zjiVBUaPQ3d7zM+BHkTObTgsVSBd9aM9wKIW8UUHuYI2CXJkxy+j0lvwAbiMhmbKWwl4
-         a16VohoYwhqmH4juBAj0nl6EkhgDKPGuuylgPjsCBy90RROWdi4K+AERKW55Swmsat7e
-         gnR7lOcShMaxofH2EhqaBVQcfGs2vhqk4kVv+35th/mz8bcupB5rEqa7i56L72oV8VbK
-         VzJx+/RwAFTqDU3LqTCDymIJPC5R6KkqcOySUiJTzF/kKwXNS+QpJMPFKemJ/d79x23F
-         eiQQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc;
-        bh=Vyh7nX6aNSNUE119qdiIIT/EoXittiyqJ3KmpoRb3JU=;
-        b=OYvt19NADNbFB/bAd7xCJiqA3RMkmcup5N5kMjMDU9iU7uRSflaMK4azIxpG8ZXxSO
-         M+HJw2L9GZJ6DwUuEjZ6PvVX8Yu1KZl2w2sEElLMffd/CXnYMDbJhwK6ZbqhIThv/Gpd
-         3ywG0K/J0Cx47cesO2OZfg7yyVyq17ZVdnI58/EBFgevXFiMJPeftLyASQiBuw3OBsQk
-         F1O8NjJVvw8JE3zF43r3anc4a9OYgxAenz0ADBgtoyBfq00Mip6DA9CNirpFwov7dLgF
-         lj1XFfHjb7Sg3GGcUpgN4Gi0u75Geudp9ASVnguGsjj4ano+bL/FhHW9BzMwxPjSbosX
-         6kUw==
-X-Gm-Message-State: ACgBeo2dmEfkaxtJLMYC8SIRh2a+t/Oobfu4d6ONLiqihop2E1rpsxIP
-        QiExYcH6oDqZzfZWNnA9+L01fAUxR1e0XaGHD6LWYw==
-X-Google-Smtp-Source: AA6agR6Cj7c7hUVt8CtUfA7vQh2q4zez305SpvmX/WRPpgHJLs/Mntp/ap6raCDGqlCGO9HtoAnpVoiUF1QjmGuI+uU=
-X-Received: by 2002:a25:490:0:b0:67c:22be:65db with SMTP id
- 138-20020a250490000000b0067c22be65dbmr15094214ybe.16.1660659166737; Tue, 16
- Aug 2022 07:12:46 -0700 (PDT)
+        with ESMTP id S229689AbiHQGhO (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 17 Aug 2022 02:37:14 -0400
+Received: from gandalf.ozlabs.org (gandalf.ozlabs.org [150.107.74.76])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DA46E792F2;
+        Tue, 16 Aug 2022 23:37:13 -0700 (PDT)
+Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange ECDHE (P-256) server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        (No client certificate requested)
+        by mail.ozlabs.org (Postfix) with ESMTPSA id 4M6ywr2Fflz4x3w;
+        Wed, 17 Aug 2022 16:36:59 +1000 (AEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ellerman.id.au;
+        s=201909; t=1660718232;
+        bh=5lvMCowArwqyA9jSE0Pt5Ze40kYbuyRJPhxadHGIwKI=;
+        h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
+        b=V5KRJdowJmJQRJnS7vKpdn3ZRXD54gk+olJ2P9NPfjmi7kMUASVQ2UXCdDQyrJ2l4
+         iCeFUua0EzB2yY0V/Z2I6yNQvrzfQPnJW1W5hxs27Vmfkv+k2UjzPlcs8lpiwhfw0s
+         rXEgyRzix9FElmstXFR+laxsxOuSRDwwsndo9tYxJEmh/ZBPqWv8VEb8et3MiTTUHN
+         x10j5udzl/wNVZu2HvSBSJ+AMCucLU+aGNDpNcmlYlO+lqwPbmi66mdTVNq3+seiCv
+         ALvJpMs3moLPQf8qL2I07gi/1+uKcpDS0UK8SnIKfeX71p9KEinWWl/Ojv6Y5XtZQh
+         hNA8dcj2NpgRA==
+From:   Michael Ellerman <mpe@ellerman.id.au>
+To:     Zi Yan <zi.yan@sent.com>, linux-mm@kvack.org
+Cc:     Zi Yan <ziy@nvidia.com>, David Hildenbrand <david@redhat.com>,
+        Matthew Wilcox <willy@infradead.org>,
+        Vlastimil Babka <vbabka@suse.cz>,
+        "Kirill A . Shutemov" <kirill.shutemov@linux.intel.com>,
+        Mike Kravetz <mike.kravetz@oracle.com>,
+        John Hubbard <jhubbard@nvidia.com>,
+        Yang Shi <shy828301@gmail.com>,
+        David Rientjes <rientjes@google.com>,
+        James Houghton <jthoughton@google.com>,
+        Mike Rapoport <rppt@kernel.org>, linux-kernel@vger.kernel.org,
+        Mike Rapoport <rppt@linux.ibm.com>,
+        Vineet Gupta <vgupta@synopsys.com>,
+        Shawn Guo <shawnguo@kernel.org>,
+        Taichi Sugaya <sugaya.taichi@socionext.com>,
+        Neil Armstrong <narmstrong@baylibre.com>,
+        Qin Jian <qinjian@cqplus1.com>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Guo Ren <guoren@kernel.org>,
+        Huacai Chen <chenhuacai@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        "David S. Miller" <davem@davemloft.net>,
+        Chris Zankel <chris@zankel.net>, Arnd Bergmann <arnd@arndb.de>,
+        Ley Foon Tan <ley.foon.tan@intel.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        NXP Linux Team <linux-imx@nxp.com>,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-oxnas@groups.io,
+        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org
+Subject: Re: [PATCH] arch: mm: rename FORCE_MAX_ZONEORDER to
+ ARCH_FORCE_MAX_ORDER
+In-Reply-To: <20220815143959.1511278-1-zi.yan@sent.com>
+References: <20220815143959.1511278-1-zi.yan@sent.com>
+Date:   Wed, 17 Aug 2022 16:36:57 +1000
+Message-ID: <87tu6bv0ja.fsf@mpe.ellerman.id.au>
 MIME-Version: 1.0
-References: <20220704150514.48816-1-elver@google.com> <CANpmjNP0hPuhXmZmkX1ytCDh56LOAmxJjf7RyfxOvoaem=2d8Q@mail.gmail.com>
- <CAP-5=fXgYWuHKkfAxxTeAzTuq7PLwMd6UvBu+J+6tnqHwraSCA@mail.gmail.com>
-In-Reply-To: <CAP-5=fXgYWuHKkfAxxTeAzTuq7PLwMd6UvBu+J+6tnqHwraSCA@mail.gmail.com>
-From:   Marco Elver <elver@google.com>
-Date:   Tue, 16 Aug 2022 16:12:10 +0200
-Message-ID: <CANpmjNOnRNKUTeSB9+LBTjG=2+BC=ox20ain1F8T1krS+ah9HA@mail.gmail.com>
-Subject: Re: [PATCH v3 00/14] perf/hw_breakpoint: Optimize for thousands of tasks
-To:     Peter Zijlstra <peterz@infradead.org>
-Cc:     Ian Rogers <irogers@google.com>,
-        Frederic Weisbecker <frederic@kernel.org>,
-        Ingo Molnar <mingo@kernel.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Arnaldo Carvalho de Melo <acme@kernel.org>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Alexander Shishkin <alexander.shishkin@linux.intel.com>,
-        Jiri Olsa <jolsa@redhat.com>,
-        Namhyung Kim <namhyung@kernel.org>,
-        Dmitry Vyukov <dvyukov@google.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        linuxppc-dev@lists.ozlabs.org, linux-perf-users@vger.kernel.org,
-        x86@kernel.org, linux-sh@vger.kernel.org,
-        kasan-dev@googlegroups.com, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, 20 Jul 2022 at 17:47, Ian Rogers <irogers@google.com> wrote:
-> On Tue, Jul 12, 2022 at 6:41 AM Marco Elver <elver@google.com> wrote:
-> > On Mon, 4 Jul 2022 at 17:05, Marco Elver <elver@google.com> wrote:
-> > > The hw_breakpoint subsystem's code has seen little change in over 10
-> > > years. In that time, systems with >100s of CPUs have become common,
-> > > along with improvements to the perf subsystem: using breakpoints on
-> > > thousands of concurrent tasks should be a supported usecase.
-> > [...]
-> > > Marco Elver (14):
-> > >   perf/hw_breakpoint: Add KUnit test for constraints accounting
-> > >   perf/hw_breakpoint: Provide hw_breakpoint_is_used() and use in test
-> > >   perf/hw_breakpoint: Clean up headers
-> > >   perf/hw_breakpoint: Optimize list of per-task breakpoints
-> > >   perf/hw_breakpoint: Mark data __ro_after_init
-> > >   perf/hw_breakpoint: Optimize constant number of breakpoint slots
-> > >   perf/hw_breakpoint: Make hw_breakpoint_weight() inlinable
-> > >   perf/hw_breakpoint: Remove useless code related to flexible
-> > >     breakpoints
-> > >   powerpc/hw_breakpoint: Avoid relying on caller synchronization
-> > >   locking/percpu-rwsem: Add percpu_is_write_locked() and
-> > >     percpu_is_read_locked()
-> > >   perf/hw_breakpoint: Reduce contention with large number of tasks
-> > >   perf/hw_breakpoint: Introduce bp_slots_histogram
-> > >   perf/hw_breakpoint: Optimize max_bp_pinned_slots() for CPU-independent
-> > >     task targets
-> > >   perf/hw_breakpoint: Optimize toggle_bp_slot() for CPU-independent task
-> > >     targets
-> > [...]
-> >
-> > This is ready from our side, and given the silence, assume it's ready
-> > to pick up and/or have a maintainer take a look. Since this is mostly
-> > kernel/events, would -tip/perf/core be appropriate?
+Zi Yan <zi.yan@sent.com> writes:
+> From: Zi Yan <ziy@nvidia.com>
 >
-> These are awesome improvements, I've added my acked-by to every
-> change. I hope we can pull these changes, as you say, into tip.git
-> perf/core and get them into 5.20.
+> This Kconfig option is used by individual arch to set its desired
+> MAX_ORDER. Rename it to reflect its actual use.
+>
+> Acked-by: Mike Rapoport <rppt@linux.ibm.com>
+> Signed-off-by: Zi Yan <ziy@nvidia.com>
+...
+>  arch/powerpc/Kconfig                         | 2 +-
+>  arch/powerpc/configs/85xx/ge_imp3a_defconfig | 2 +-
+>  arch/powerpc/configs/fsl-emb-nonhw.config    | 2 +-
 
-These still apply cleanly to 6.0-rc1 and the test passes, but let me
-know if I shall send a rebased version.
+Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
 
-Thanks
--- Marco
+cheers
