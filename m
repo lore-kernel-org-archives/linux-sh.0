@@ -2,126 +2,83 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B15DAC32771
-	for <linux-sh@archiver.kernel.org>; Wed, 17 Aug 2022 13:16:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 287DBC28B2B
+	for <linux-sh@archiver.kernel.org>; Thu, 18 Aug 2022 21:00:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236105AbiHQNQb (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 17 Aug 2022 09:16:31 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45516 "EHLO
+        id S1346140AbiHRU77 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 18 Aug 2022 16:59:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35264 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239775AbiHQNP6 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 17 Aug 2022 09:15:58 -0400
-Received: from mail-yw1-x1134.google.com (mail-yw1-x1134.google.com [IPv6:2607:f8b0:4864:20::1134])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BAEFD8C45F
-        for <linux-sh@vger.kernel.org>; Wed, 17 Aug 2022 06:15:31 -0700 (PDT)
-Received: by mail-yw1-x1134.google.com with SMTP id 00721157ae682-33365a01f29so132328127b3.2
-        for <linux-sh@vger.kernel.org>; Wed, 17 Aug 2022 06:15:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc;
-        bh=4x9/R2mHqDBSBsINZoYzu53n4+/x9xPXewr5G0XEr34=;
-        b=Ta7vQAWfgNwLeo8X+pcdJ6JyCnUcaqj1Ews44KLWjJGhgXZv20jGydY8asVvhmMfNz
-         b5Fzq6C/S2NXkgfMPJzpJcfXtNp/XsSJDaSorCNhL1D/nzqkMFU7Du+YXm0LpKulY9IK
-         /76nM6mT8xUUP8UaTC1eN5M2TkbrsohpqC0/E8YxXYpbdWBeaceJ/x8g5odhImXtyrc1
-         qOyIpz90N1Ejyl+l9w55WOS+8npqTm4TRnzX3bA4a2avvsii63eJWYfy6fWyxSZaHQWM
-         Qo0/XLJ6ZGGdQy6n6h+9ZeH4bseaOSQZpSngSXr1oW9GbmtitbnwZya8r8OT9qqDsOW5
-         Pddg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc;
-        bh=4x9/R2mHqDBSBsINZoYzu53n4+/x9xPXewr5G0XEr34=;
-        b=VzNrzT64gZhVA0FE8XdimiAAzYVCOWdEDyzAZwrzHcIQobi6zquLMTFROIZkJ/Mdon
-         KTp0ZgMEJfUN5r0eUY55OlQWRu7eMuAn8GzpmtQZq/MBN9chPRV+h0kbvey+00SeUIQ9
-         83rWMWLvy+JYCq8y0PQ4t5EOjQKDV4S1FMgsI5grMjlBvL7fsO3h3UVtJ/Wb6sMhoVKJ
-         OzoY19yVWwAaVgeMyPf6BwqiXTrZhKFeRmCb3QFfzLOrNqpgCV1A9JRmgcmNct4KwI48
-         c96bBy4pWzG+kaxsKvJkjk9JCerZF9SB0C7ZW3Jvey/8E/vrjLZazYKvnhNl0tXHaR04
-         b3jQ==
-X-Gm-Message-State: ACgBeo3FmME2KTrsWD4BkbWU3GgLs3wmML55BoHbSXVBhcqmt2E8v4U7
-        DqL+PIr7saMsBtX/90Aj+b+XToLofuXrGkuAKDpexw==
-X-Google-Smtp-Source: AA6agR4J3cyIT0SWBYaiCeztXduj+LhF+ocuDdNtn7hGLnqyHtxrllFHNLPRhY47QfH++sCFFlwAFNLyvGB5+UaJKNI=
-X-Received: by 2002:a5b:c8b:0:b0:688:ebe9:3d05 with SMTP id
- i11-20020a5b0c8b000000b00688ebe93d05mr12303544ybq.553.1660742130329; Wed, 17
- Aug 2022 06:15:30 -0700 (PDT)
+        with ESMTP id S1346141AbiHRU7x (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 18 Aug 2022 16:59:53 -0400
+Received: from mail.zeus03.de (www.zeus03.de [194.117.254.33])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D6F1FD31F4
+        for <linux-sh@vger.kernel.org>; Thu, 18 Aug 2022 13:59:51 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple; d=sang-engineering.com; h=
+        from:to:cc:subject:date:message-id:mime-version
+        :content-transfer-encoding; s=k1; bh=U9HzOfPb/gEepX5IG1rgfGqFewo
+        y3ylnLHCIY3FIxN4=; b=dyJIUm0Mx5ZAWjoYhqhmWZZB1GCwWla/GyYRu3Oi7MP
+        0ioRuBdu3hiWyNcOkT2xwH15ieZ9ayKYXXnOZLAaW6FL4VKvIUETmAR3aD4Arf9V
+        kV/nIxztr6jhrWONzJA+oDQ7eRwqMg8wne4CduFQ20arFzk1kbg6QyT+PeuWcYP0
+        =
+Received: (qmail 3959218 invoked from network); 18 Aug 2022 22:59:49 +0200
+Received: by mail.zeus03.de with ESMTPSA (TLS_AES_256_GCM_SHA384 encrypted, authenticated); 18 Aug 2022 22:59:49 +0200
+X-UD-Smtp-Session: l3s3148p1@fJgcQ4rmqewucref
+From:   Wolfram Sang <wsa+renesas@sang-engineering.com>
+To:     linux-kernel@vger.kernel.org
+Cc:     Wolfram Sang <wsa+renesas@sang-engineering.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Subject: [PATCH] sh: move from strlcpy with unused retval to strscpy
+Date:   Thu, 18 Aug 2022 22:59:49 +0200
+Message-Id: <20220818205949.6384-1-wsa+renesas@sang-engineering.com>
+X-Mailer: git-send-email 2.35.1
 MIME-Version: 1.0
-References: <20220704150514.48816-1-elver@google.com> <20220704150514.48816-12-elver@google.com>
- <YvznKYgRKjDRSMkT@worktop.programming.kicks-ass.net>
-In-Reply-To: <YvznKYgRKjDRSMkT@worktop.programming.kicks-ass.net>
-From:   Marco Elver <elver@google.com>
-Date:   Wed, 17 Aug 2022 15:14:54 +0200
-Message-ID: <CANpmjNN1vv9oDpm1_c99tQKgWVVtXza++u1xcBVeb5mhx5eUHw@mail.gmail.com>
-Subject: Re: [PATCH v3 11/14] perf/hw_breakpoint: Reduce contention with large
- number of tasks
-To:     Peter Zijlstra <peterz@infradead.org>
-Cc:     Frederic Weisbecker <frederic@kernel.org>,
-        Ingo Molnar <mingo@kernel.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Arnaldo Carvalho de Melo <acme@kernel.org>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Alexander Shishkin <alexander.shishkin@linux.intel.com>,
-        Jiri Olsa <jolsa@redhat.com>,
-        Namhyung Kim <namhyung@kernel.org>,
-        Dmitry Vyukov <dvyukov@google.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        linuxppc-dev@lists.ozlabs.org, linux-perf-users@vger.kernel.org,
-        x86@kernel.org, linux-sh@vger.kernel.org,
-        kasan-dev@googlegroups.com, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, 17 Aug 2022 at 15:03, Peter Zijlstra <peterz@infradead.org> wrote:
->
-> On Mon, Jul 04, 2022 at 05:05:11PM +0200, Marco Elver wrote:
-> > +static bool bp_constraints_is_locked(struct perf_event *bp)
-> > +{
-> > +     struct mutex *tsk_mtx = get_task_bps_mutex(bp);
-> > +
-> > +     return percpu_is_write_locked(&bp_cpuinfo_sem) ||
-> > +            (tsk_mtx ? mutex_is_locked(tsk_mtx) :
-> > +                       percpu_is_read_locked(&bp_cpuinfo_sem));
-> > +}
->
-> > @@ -426,18 +521,28 @@ static int modify_bp_slot(struct perf_event *bp, u64 old_type, u64 new_type)
-> >   */
-> >  int dbg_reserve_bp_slot(struct perf_event *bp)
-> >  {
-> > -     if (mutex_is_locked(&nr_bp_mutex))
-> > +     int ret;
-> > +
-> > +     if (bp_constraints_is_locked(bp))
-> >               return -1;
-> >
-> > -     return __reserve_bp_slot(bp, bp->attr.bp_type);
-> > +     /* Locks aren't held; disable lockdep assert checking. */
-> > +     lockdep_off();
-> > +     ret = __reserve_bp_slot(bp, bp->attr.bp_type);
-> > +     lockdep_on();
-> > +
-> > +     return ret;
-> >  }
-> >
-> >  int dbg_release_bp_slot(struct perf_event *bp)
-> >  {
-> > -     if (mutex_is_locked(&nr_bp_mutex))
-> > +     if (bp_constraints_is_locked(bp))
-> >               return -1;
-> >
-> > +     /* Locks aren't held; disable lockdep assert checking. */
-> > +     lockdep_off();
-> >       __release_bp_slot(bp, bp->attr.bp_type);
-> > +     lockdep_on();
-> >
-> >       return 0;
-> >  }
->
-> Urggghhhh... this is horrible crap. That is, the current code is that
-> and this makes it worse :/
+Follow the advice of the below link and prefer 'strscpy' in this
+subsystem. Conversion is 1:1 because the return value is not used.
+Generated by a coccinelle script.
 
-Heh, yes and when I looked at it I really wanted to see if it can
-change. But from what I can tell, when the kernel debugger is being
-attached, the kernel does stop everything it does and we need the
-horrible thing above to not deadlock. And these dbg_ functions are not
-normally used, so I decided to leave it as-is. Suggestions?
+Link: https://lore.kernel.org/r/CAHk-=wgfRnXz0W3D37d01q3JFkr_i_uTL=V6A6G1oUZcprmknw@mail.gmail.com/
+Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+---
+ arch/sh/drivers/dma/dma-api.c | 2 +-
+ arch/sh/kernel/setup.c        | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/sh/drivers/dma/dma-api.c b/arch/sh/drivers/dma/dma-api.c
+index ab9170494dcc..89cd4a3b4cca 100644
+--- a/arch/sh/drivers/dma/dma-api.c
++++ b/arch/sh/drivers/dma/dma-api.c
+@@ -198,7 +198,7 @@ int request_dma(unsigned int chan, const char *dev_id)
+ 	if (atomic_xchg(&channel->busy, 1))
+ 		return -EBUSY;
+ 
+-	strlcpy(channel->dev_id, dev_id, sizeof(channel->dev_id));
++	strscpy(channel->dev_id, dev_id, sizeof(channel->dev_id));
+ 
+ 	if (info->ops->request) {
+ 		result = info->ops->request(channel);
+diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+index 1fcb6659822a..b2727707fee0 100644
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -304,9 +304,9 @@ void __init setup_arch(char **cmdline_p)
+ 	bss_resource.end = virt_to_phys(__bss_stop)-1;
+ 
+ #ifdef CONFIG_CMDLINE_OVERWRITE
+-	strlcpy(command_line, CONFIG_CMDLINE, sizeof(command_line));
++	strscpy(command_line, CONFIG_CMDLINE, sizeof(command_line));
+ #else
+-	strlcpy(command_line, COMMAND_LINE, sizeof(command_line));
++	strscpy(command_line, COMMAND_LINE, sizeof(command_line));
+ #ifdef CONFIG_CMDLINE_EXTEND
+ 	strlcat(command_line, " ", sizeof(command_line));
+ 	strlcat(command_line, CONFIG_CMDLINE, sizeof(command_line));
+-- 
+2.35.1
+
