@@ -2,116 +2,263 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F36A4C32789
-	for <linux-sh@archiver.kernel.org>; Fri, 19 Aug 2022 14:57:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 484E7C32792
+	for <linux-sh@archiver.kernel.org>; Sat, 20 Aug 2022 00:32:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1349568AbiHSO5P (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 19 Aug 2022 10:57:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39458 "EHLO
+        id S245243AbiHTAcg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 19 Aug 2022 20:32:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37384 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1349172AbiHSO5O (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 19 Aug 2022 10:57:14 -0400
-Received: from pandora.armlinux.org.uk (pandora.armlinux.org.uk [IPv6:2001:4d48:ad52:32c8:5054:ff:fe00:142])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F342C64C4;
-        Fri, 19 Aug 2022 07:57:09 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=armlinux.org.uk; s=pandora-2019; h=Sender:In-Reply-To:Content-Type:
-        MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
-        Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
-        List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-        bh=SYqd0jVvSqn0LYdbb0mNobM+NLD0i8990uNItjrpJW0=; b=p8X1gMssAFqz7Cj5E1IU3EN3xz
-        t/snbLEyJv1XAdu4J+MpAgDpW86NPkUeqqsmS64YxuYIDoz1/0nSwGnJ4A7MRHs6v4/DfY13yylRH
-        yTpJ3gDO1i4G6ew5SrDgljBdNE61ShqeAK0joibG/N9CQrD4C5DO+D+oHobsM0kWRo/T88yRl68DM
-        ivZpQK7KoicNncKbbL3cMwzclIbdo4NBfFt8WVkYbV7Yt9Ti+iBnKi0iAa3qakANtULKlnjVs0VPW
-        qMm4R7XYp2iFBesGctz7KWjgzPu53WYvs3CSQtaYwSCE20OErGTcffzJDbyUtNOmEl2QCsbCVzRVd
-        fg0lrl+g==;
-Received: from shell.armlinux.org.uk ([fd8f:7570:feb6:1:5054:ff:fe00:4ec]:33852)
-        by pandora.armlinux.org.uk with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        (Exim 4.94.2)
-        (envelope-from <linux@armlinux.org.uk>)
-        id 1oP3PW-0007vG-Sl; Fri, 19 Aug 2022 15:55:47 +0100
-Received: from linux by shell.armlinux.org.uk with local (Exim 4.94.2)
-        (envelope-from <linux@shell.armlinux.org.uk>)
-        id 1oP3PE-0007s8-Jr; Fri, 19 Aug 2022 15:55:28 +0100
-Date:   Fri, 19 Aug 2022 15:55:28 +0100
-From:   "Russell King (Oracle)" <linux@armlinux.org.uk>
-To:     Kefeng Wang <wangkefeng.wang@huawei.com>
-Cc:     Richard Henderson <richard.henderson@linaro.org>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>,
-        Vineet Gupta <vgupta@kernel.org>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Brian Cain <bcain@quicinc.com>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        WANG Xuerui <kernel@xen0n.name>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Jonas Bonn <jonas@southpole.se>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        Stafford Horne <shorne@gmail.com>,
-        "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Alexander Gordeev <agordeev@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Sven Schnelle <svens@linux.ibm.com>,
+        with ESMTP id S245228AbiHTAce (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 19 Aug 2022 20:32:34 -0400
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AC1F5106FA6
+        for <linux-sh@vger.kernel.org>; Fri, 19 Aug 2022 17:32:32 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1660955551;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=KqPWS9gGxOeL/ZhwRsPXano6Rhd9t79hH4to3Fvy2dA=;
+        b=SarzMmr/Gj0z0FLBl7WPwSWB7oGXaqFvt+0x8Stw4mVKpi2Ej+VwbIpumMeeXt6n8KVGNm
+        eBsfFaW9FYR+hyY1XILsFAASPTVpdUmDir2up7AN6ukLvRO+L4IC02KixMikJqgQHmC9kS
+        IjK6YZ3hFP2embUVrxJishufBSM8NGw=
+Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
+ [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-632-1btemdQ7NeSIPbzJZZhjng-1; Fri, 19 Aug 2022 20:32:28 -0400
+X-MC-Unique: 1btemdQ7NeSIPbzJZZhjng-1
+Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.rdu2.redhat.com [10.11.54.2])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 28B8F101A586;
+        Sat, 20 Aug 2022 00:32:28 +0000 (UTC)
+Received: from MiWiFi-R3L-srv.redhat.com (ovpn-12-17.pek2.redhat.com [10.72.12.17])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id 08CDF4010D2A;
+        Sat, 20 Aug 2022 00:32:22 +0000 (UTC)
+From:   Baoquan He <bhe@redhat.com>
+To:     linux-kernel@vger.kernel.org
+Cc:     linux-mm@kvack.org, akpm@linux-foundation.org, hch@infradead.org,
+        agordeev@linux.ibm.com, wangkefeng.wang@huawei.com,
+        linux-arm-kernel@lists.infradead.org, Baoquan He <bhe@redhat.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        "David S . Miller" <davem@davemloft.net>,
-        Richard Weinberger <richard@nod.at>,
-        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-        Johannes Berg <johannes@sipsolutions.net>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-        Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>, linux-alpha@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
-        akpm@linux-foundation.org
-Subject: Re: [PATCH] kernel: exit: cleanup release_thread()
-Message-ID: <Yv+kYPnf8c6rLXgN@shell.armlinux.org.uk>
-References: <20220819014406.32266-1-wangkefeng.wang@huawei.com>
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Subject: [PATCH v2 10/11] sh: mm: Convert to GENERIC_IOREMAP
+Date:   Sat, 20 Aug 2022 08:31:24 +0800
+Message-Id: <20220820003125.353570-11-bhe@redhat.com>
+In-Reply-To: <20220820003125.353570-1-bhe@redhat.com>
+References: <20220820003125.353570-1-bhe@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220819014406.32266-1-wangkefeng.wang@huawei.com>
-Sender: Russell King (Oracle) <linux@armlinux.org.uk>
+Content-type: text/plain
+Content-Transfer-Encoding: 8bit
+X-Scanned-By: MIMEDefang 2.84 on 10.11.54.2
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Aug 19, 2022 at 09:44:06AM +0800, Kefeng Wang wrote:
-> Only x86 has own release_thread(), introduce a new weak
-> release_thread() function to clean empty definitions in
-> other ARCHs.
-> 
-> Signed-off-by: Kefeng Wang <wangkefeng.wang@huawei.com>
-...
->  arch/arm/include/asm/processor.h        | 3 ---
->  arch/arm/kernel/process.c               | 4 ----
+Add hook arch_ioremap() and arch_iounmap for sh's special operation when
+ioremap() and iounmap(), then ioremap_cache() is converted to use
+ioremap_prot() from GENERIC_IOREMAP.
 
-Acked-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Signed-off-by: Baoquan He <bhe@redhat.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/sh/Kconfig          |  1 +
+ arch/sh/include/asm/io.h | 47 +++++++++----------------------
+ arch/sh/mm/ioremap.c     | 61 ++++++++--------------------------------
+ 3 files changed, 26 insertions(+), 83 deletions(-)
 
-Thanks!
-
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 5f220e903e5a..b63ad4698cf8 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -25,6 +25,7 @@ config SUPERH
+ 	select GENERIC_SCHED_CLOCK
+ 	select GENERIC_SMP_IDLE_THREAD
+ 	select GUP_GET_PTE_LOW_HIGH if X2TLB
++	select GENERIC_IOREMAP if MMU
+ 	select HAVE_ARCH_AUDITSYSCALL
+ 	select HAVE_ARCH_KGDB
+ 	select HAVE_ARCH_SECCOMP_FILTER
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index fba90e670ed4..3c5ff82a511a 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -242,45 +242,26 @@ unsigned long long poke_real_address_q(unsigned long long addr,
+ #define phys_to_virt(address)	(__va(address))
+ #endif
+ 
+-#ifdef CONFIG_MMU
+-void iounmap(void __iomem *addr);
+-void __iomem *__ioremap_caller(phys_addr_t offset, unsigned long size,
+-			       pgprot_t prot, void *caller);
+-
+-static inline void __iomem *ioremap(phys_addr_t offset, unsigned long size)
+-{
+-	return __ioremap_caller(offset, size, PAGE_KERNEL_NOCACHE,
+-			__builtin_return_address(0));
+-}
+-
+-static inline void __iomem *
+-ioremap_cache(phys_addr_t offset, unsigned long size)
+-{
+-	return __ioremap_caller(offset, size, PAGE_KERNEL,
+-			__builtin_return_address(0));
+-}
+-#define ioremap_cache ioremap_cache
++/*
++ * I/O memory mapping functions.
++ */
++void __iomem *
++arch_ioremap(phys_addr_t *paddr, size_t size, unsigned long *prot_val);
++#define arch_ioremap arch_ioremap
+ 
+-#ifdef CONFIG_HAVE_IOREMAP_PROT
+-static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
+-		unsigned long flags)
+-{
+-	return __ioremap_caller(offset, size, __pgprot(flags),
+-			__builtin_return_address(0));
+-}
+-#endif /* CONFIG_HAVE_IOREMAP_PROT */
++int arch_iounmap(void __iomem *addr);
++#define arch_iounmap arch_iounmap
+ 
+-#else /* CONFIG_MMU */
+-static inline void __iomem *ioremap(phys_addr_t offset, size_t size)
+-{
+-	return (void __iomem *)(unsigned long)offset;
+-}
++#define _PAGE_IOREMAP pgprot_val(PAGE_KERNEL_NOCACHE)
+ 
+-static inline void iounmap(volatile void __iomem *addr) { }
+-#endif /* CONFIG_MMU */
++#define ioremap_cache(addr, size)  \
++	ioremap_prot((addr), (size), pgprot_val(PAGE_KERNEL))
++#define ioremap_cache ioremap_cache
+ 
+ #define ioremap_uc	ioremap
+ 
++#include <asm-generic/io.h>
++
+ /*
+  * Convert a physical pointer to a virtual kernel pointer for /dev/mem
+  * access
+diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
+index 21342581144d..720a9186b06b 100644
+--- a/arch/sh/mm/ioremap.c
++++ b/arch/sh/mm/ioremap.c
+@@ -72,22 +72,12 @@ __ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
+ #define __ioremap_29bit(offset, size, prot)		NULL
+ #endif /* CONFIG_29BIT */
+ 
+-/*
+- * Remap an arbitrary physical address space into the kernel virtual
+- * address space. Needed when the kernel wants to access high addresses
+- * directly.
+- *
+- * NOTE! We need to allow non-page-aligned mappings too: we will obviously
+- * have to convert them into an offset in a page-aligned mapping, but the
+- * caller shouldn't need to know that small detail.
+- */
+-void __iomem * __ref
+-__ioremap_caller(phys_addr_t phys_addr, unsigned long size,
+-		 pgprot_t pgprot, void *caller)
++void __iomem *
++arch_ioremap(phys_addr_t *paddr, size_t size, unsigned long *prot_val)
+ {
+-	struct vm_struct *area;
+-	unsigned long offset, last_addr, addr, orig_addr;
++	unsigned long last_addr, phys_addr = *paddr;
+ 	void __iomem *mapped;
++	pgprot_t pgprot = __pgprot(*prot_val);
+ 
+ 	mapped = __ioremap_trapped(phys_addr, size);
+ 	if (mapped)
+@@ -100,7 +90,7 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
+ 	/* Don't allow wraparound or zero size */
+ 	last_addr = phys_addr + size - 1;
+ 	if (!size || last_addr < phys_addr)
+-		return NULL;
++		return IOMEM_ERR_PTR(-EINVAL);
+ 
+ 	/*
+ 	 * If we can't yet use the regular approach, go the fixmap route.
+@@ -116,30 +106,8 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
+ 	if (mapped && !IS_ERR(mapped))
+ 		return mapped;
+ 
+-	/*
+-	 * Mappings have to be page-aligned
+-	 */
+-	offset = phys_addr & ~PAGE_MASK;
+-	phys_addr &= PAGE_MASK;
+-	size = PAGE_ALIGN(last_addr+1) - phys_addr;
+-
+-	/*
+-	 * Ok, go for it..
+-	 */
+-	area = get_vm_area_caller(size, VM_IOREMAP, caller);
+-	if (!area)
+-		return NULL;
+-	area->phys_addr = phys_addr;
+-	orig_addr = addr = (unsigned long)area->addr;
+-
+-	if (ioremap_page_range(addr, addr + size, phys_addr, pgprot)) {
+-		vunmap((void *)orig_addr);
+-		return NULL;
+-	}
+-
+-	return (void __iomem *)(offset + (char *)orig_addr);
++	return NULL;
+ }
+-EXPORT_SYMBOL(__ioremap_caller);
+ 
+ /*
+  * Simple checks for non-translatable mappings.
+@@ -158,7 +126,7 @@ static inline int iomapping_nontranslatable(unsigned long offset)
+ 	return 0;
+ }
+ 
+-void iounmap(void __iomem *addr)
++int arch_iounmap(void __iomem *addr)
+ {
+ 	unsigned long vaddr = (unsigned long __force)addr;
+ 	struct vm_struct *p;
+@@ -167,26 +135,19 @@ void iounmap(void __iomem *addr)
+ 	 * Nothing to do if there is no translatable mapping.
+ 	 */
+ 	if (iomapping_nontranslatable(vaddr))
+-		return;
++		return -EINVAL;
+ 
+ 	/*
+ 	 * There's no VMA if it's from an early fixed mapping.
+ 	 */
+ 	if (iounmap_fixed(addr) == 0)
+-		return;
++		return -EINVAL;
+ 
+ 	/*
+ 	 * If the PMB handled it, there's nothing else to do.
+ 	 */
+ 	if (pmb_unmap(addr) == 0)
+-		return;
++		return -EINVAL;
+ 
+-	p = remove_vm_area((void *)(vaddr & PAGE_MASK));
+-	if (!p) {
+-		printk(KERN_ERR "%s: bad address %p\n", __func__, addr);
+-		return;
+-	}
+-
+-	kfree(p);
++	return 0;
+ }
+-EXPORT_SYMBOL(iounmap);
 -- 
-RMK's Patch system: https://www.armlinux.org.uk/developer/patches/
-FTTP is here! 40Mbps down 10Mbps up. Decent connectivity at last!
+2.34.1
+
