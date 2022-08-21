@@ -2,54 +2,126 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 772A5C00140
-	for <linux-sh@archiver.kernel.org>; Sun, 21 Aug 2022 07:06:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 25FBAC32789
+	for <linux-sh@archiver.kernel.org>; Sun, 21 Aug 2022 11:36:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230038AbiHUHGn (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 21 Aug 2022 03:06:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55478 "EHLO
+        id S229967AbiHULgV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 21 Aug 2022 07:36:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57572 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229508AbiHUHGm (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 21 Aug 2022 03:06:42 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E9B4F18379;
-        Sun, 21 Aug 2022 00:06:41 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
-        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=rqK9MH6E+zyPNfoBb3WIh6sFDcqeUlOUtDbpiAGrdbk=; b=PE14Ru/1l5olhS26PFhijWSbP+
-        iUTHWysuaFK63pKsj+GmDBY6F5fEWffZ+s5AF0zoP7UEVsZ/oJCW2Vh/1KRHlWZIgVAxqvZoy1MA5
-        rIKU3o32lM0dHssNP5gD2WYYOsrHiDHLUk9EIndrU3aMWhoxyv3Ms04uD2//in9mnuZholjyz8aD6
-        C5h4bG4LpJDMNlscLWmBTgQvkKkU+cczmjINAPf2R1bNHSV2378xQTNDWLjxJHTbPJYZ17CyEVtpm
-        kKjloGqnDE+P3hD+VyU8lcbKP/3CDf2R+fTAH9RqVqWodGE2bKpM1Lm4gUxugP8TFhxocKnq0FlGz
-        Y1lyY3ZA==;
-Received: from hch by bombadil.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1oPf2e-0078qZ-G8; Sun, 21 Aug 2022 07:06:40 +0000
-Date:   Sun, 21 Aug 2022 00:06:40 -0700
-From:   Christoph Hellwig <hch@infradead.org>
-To:     Baoquan He <bhe@redhat.com>
-Cc:     linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        akpm@linux-foundation.org, hch@infradead.org,
-        agordeev@linux.ibm.com, wangkefeng.wang@huawei.com,
-        linux-arm-kernel@lists.infradead.org,
+        with ESMTP id S229989AbiHULgU (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 21 Aug 2022 07:36:20 -0400
+Received: from mail-wr1-x431.google.com (mail-wr1-x431.google.com [IPv6:2a00:1450:4864:20::431])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AF6642654D
+        for <linux-sh@vger.kernel.org>; Sun, 21 Aug 2022 04:36:18 -0700 (PDT)
+Received: by mail-wr1-x431.google.com with SMTP id n7so10067826wrv.4
+        for <linux-sh@vger.kernel.org>; Sun, 21 Aug 2022 04:36:18 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=conchuod.ie; s=google;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc;
+        bh=tBERBJeFmsU2gk0DqsvVk7OhaA+vX7d504uAWoZh04w=;
+        b=IunUk0SKEn1nH9A85B2rFGOdzLzvhKfM0gFlEIcPkoAPXo4AzUcYqEXCcOxLXWrj1z
+         AbEUWDg+04+jy3Fu0QvCXD1xFMIRaMvfxUVnKnfrfmoXEdYXprWWC/XNOT0FPBo1vL6D
+         k/3vEXLEjiDdQGt2zOykFohvkYMDkXZWpHoMkByk2xiRiRzlTuyOA4g+ASE0gOQttgih
+         o1Sl/4dF/zhAUA2z1C2A8eUPNoNGVU/0tLRmMgf56tCheoPeqQpcK3dL+sDn3uY5JQx3
+         hmmiLwc2CcOeVdFoM49uCkFVV7nbhStM9cZTEJKNIzPUk1T632l/nVD040fstWJ8inVu
+         e1bg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc;
+        bh=tBERBJeFmsU2gk0DqsvVk7OhaA+vX7d504uAWoZh04w=;
+        b=N95nctr/gyTLVynssyGSEic6nBn3pSlBR006MVJWKQWpHo9GUtmoZcc/0daAYb2Ls5
+         txSN/GjMHImW1pwnaTHoaJqYaSY/NCVspSsJpowh0kiOmwG3hDwYMyD7RavMkRxnJCR/
+         YQm2qTc+Xwt9p4YhIAhKckkTFwGr+5mqKsSk91uEpcKQCiuesPFfW7fLyyM7xMFWAql3
+         iqXg8qIO5O91UdJkGUkhGQgH6oiU0NvoamgQhQ2YCRHd43xsjMXBihwgJ5ybZSmQJRII
+         RPrAZz/ACQQQDcaDCq94NFakbuKtamB2/c/zv++qBHsVdfGw8ocnq/scmw0C3JtzeFrZ
+         nDQg==
+X-Gm-Message-State: ACgBeo2fLGPCBcehkn6w/sQ6WZJcKZpwwuQ83pxzmc2tc291pwC2/gjg
+        Ug2zv/kGY5wohNr2Xe2dJpLXpQ==
+X-Google-Smtp-Source: AA6agR5cyZy9CZWot4+CBW4LaR0SdclbcYK3AcOGPU3Q+v5vUQoWQM9YfCtFYFfA5X3trYU8FH6ocQ==
+X-Received: by 2002:a5d:4882:0:b0:225:3148:9f85 with SMTP id g2-20020a5d4882000000b0022531489f85mr7667679wrq.224.1661081777100;
+        Sun, 21 Aug 2022 04:36:17 -0700 (PDT)
+Received: from henark71.. ([51.37.149.245])
+        by smtp.gmail.com with ESMTPSA id m9-20020a7bce09000000b003a3442f1229sm14071361wmc.29.2022.08.21.04.36.15
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 21 Aug 2022 04:36:16 -0700 (PDT)
+From:   Conor Dooley <mail@conchuod.ie>
+To:     Michal Simek <monstr@monstr.eu>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Vasily Gorbik <gor@linux.ibm.com>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        Sven Schnelle <svens@linux.ibm.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Subject: Re: [PATCH v2 10/11] sh: mm: Convert to GENERIC_IOREMAP
-Message-ID: <YwHZgE2RlMaBBhEl@infradead.org>
-References: <20220820003125.353570-1-bhe@redhat.com>
- <20220820003125.353570-11-bhe@redhat.com>
+        Rich Felker <dalias@libc.org>,
+        "David S . Miller" <davem@davemloft.net>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+        "H . Peter Anvin" <hpa@zytor.com>, Arnd Bergmann <arnd@arndb.de>
+Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Conor Dooley <conor.dooley@microchip.com>,
+        Kees Cook <keescook@chromium.org>,
+        Peter Zijlstra <peterz@infradead.org>,
+        linux-kernel@vger.kernel.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-arch@vger.kernel.org
+Subject: [PATCH 0/6] Add an asm-generic cpuinfo_op declaration
+Date:   Sun, 21 Aug 2022 12:35:07 +0100
+Message-Id: <20220821113512.2056409-1-mail@conchuod.ie>
+X-Mailer: git-send-email 2.37.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220820003125.353570-11-bhe@redhat.com>
-X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-> +void __iomem *
-> +arch_ioremap(phys_addr_t *paddr, size_t size, unsigned long *prot_val);
-> +#define arch_ioremap arch_ioremap
+From: Conor Dooley <conor.dooley@microchip.com>
 
-Shouldn't this still be under CONFIG_MMU?
+RISC-V is missing a prototype for cpuinfo_op. Rather than adding yet
+another `extern const struct seq_operations cpuinfo_op;` to an arch
+specific header file, create an asm-generic variant and migrate the
+existing arch variants there too. Obv. there are other archs that use
+cpuinfo_op but don't declare it and surely also have the same warning?
+I went for the minimum change here, but would be perfectly happy to
+extend the change to all archs if this change is worthwhile. Or just
+make a header in arch/riscv, any of the three work for me!
+
+If this isn't the approach I should've gone for, any direction would
+be great :) I tried pushing this last weekend to get LKP to test it but
+I got neither a build success nor a build failure email from it, so
+I figured I may as well just send the patches..
+
+I wasn't too sure if this could be a single patch, so I split it out
+into a patch fixing the issue on RISC-V & copy-paste patches for each
+arch that I moved.
+
+Thanks,
+Conor.
+
+Conor Dooley (6):
+  asm-generic: add a cpuinfo_ops definition in shared code
+  microblaze: use the asm-generic version of cpuinfo_op
+  s390: use the asm-generic version of cpuinfo_op
+  sh: use the asm-generic version of cpuinfo_op
+  sparc: use the asm-generic version of cpuinfo_op
+  x86: use the asm-generic version of cpuinfo_op
+
+ arch/microblaze/include/asm/processor.h | 2 +-
+ arch/riscv/include/asm/processor.h      | 1 +
+ arch/s390/include/asm/processor.h       | 2 +-
+ arch/sh/include/asm/processor.h         | 2 +-
+ arch/sparc/include/asm/cpudata.h        | 3 +--
+ arch/x86/include/asm/processor.h        | 2 +-
+ include/asm-generic/processor.h         | 7 +++++++
+ 7 files changed, 13 insertions(+), 6 deletions(-)
+ create mode 100644 include/asm-generic/processor.h
+
+-- 
+2.37.1
+
