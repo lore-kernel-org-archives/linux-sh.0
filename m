@@ -2,58 +2,42 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F7A1ECAAD2
-	for <linux-sh@archiver.kernel.org>; Mon, 29 Aug 2022 06:01:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A1189C0502C
+	for <linux-sh@archiver.kernel.org>; Mon, 29 Aug 2022 08:39:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229535AbiH2GBk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 29 Aug 2022 02:01:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39284 "EHLO
+        id S230053AbiH2IjF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 29 Aug 2022 04:39:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47018 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229455AbiH2GBi (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 29 Aug 2022 02:01:38 -0400
-Received: from mail-yw1-x1136.google.com (mail-yw1-x1136.google.com [IPv6:2607:f8b0:4864:20::1136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BFFA527B29
-        for <linux-sh@vger.kernel.org>; Sun, 28 Aug 2022 23:01:37 -0700 (PDT)
-Received: by mail-yw1-x1136.google.com with SMTP id 00721157ae682-33dba2693d0so169998307b3.12
-        for <linux-sh@vger.kernel.org>; Sun, 28 Aug 2022 23:01:37 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc;
-        bh=GcD+HCTsL9PhfIoNQS6OfBy4IaHMHLVbPkWLbk6HzGE=;
-        b=XY395wkduWKer9JhMF4//DaIUGT8Tpq+rJg8KPi7+iDqC3nEL76fphCBKa0TADUs5Y
-         Pe+d0UGynDBtTe1J4PaLOJkDrEoC6fKoRDinEw6wRmRJHf6OGEM8g/81+ISe+2YWe4/f
-         1FWlDKRedxpgzo/cXaHo7N0rN/NxKV13AkVrqJheYKc921pnefWieUUjI0/9PMLyrkYF
-         +54ESHy7T0wT56qYZ/EujWYUASmbOawas8ItKc1fhdlWD/UOebAoskL9awaewc41GQKB
-         hW7U8lvsupulNrvPERA4OlUGCBbSW501Y9m1mOYt4Krbsw3K+dGc1Ps8S/bVkskF8+pe
-         c50w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc;
-        bh=GcD+HCTsL9PhfIoNQS6OfBy4IaHMHLVbPkWLbk6HzGE=;
-        b=0rT8N7G7lPGVL2i7U/qhP31v3XIsF4T0jyvG8dUrQzUwKmZoZ99l9FOXVmBgEzeulS
-         UsPPrsUlrTFQyVnMPKSgSyBTiremiYCS+w/SpVlLXruA5u1OyXGv/8audEd7MQUCDdTb
-         KpxNRbBNvWZHNumdtrSYej2IsTFZbdXcC5WybXzM92sV2LpLg9rFhyZI0xx151ctLG4b
-         jNiyGf9aRYsFvdDCJMZojcabuwwdtcxR+CgFJERuNLzKYxbT55OsuGRYVAh9PrmFtN0J
-         ys+80KkmzsVGth2VhkLj5Uz7f/EjiXl9gu7aJzgSBxBPs1mPfl3ocPM+h6+/ELZLBrPv
-         Dg5Q==
-X-Gm-Message-State: ACgBeo3kOFwLmQmxxJkTqiYknd4ZCC260nIuQ8JVO8G9Qtr0zjHP0ot9
-        bnwqJq6BV7088RTctpjGj0UIitE9U1JTg6XSf0M61g==
-X-Google-Smtp-Source: AA6agR4OkRBDBHVTlnL+FH4iL1r8QAUgTcU+5pqwP3zJY+yINE0mXfWAktGCQb8zpFBt1Kxb6U4Hazqq5HVKOejO/UE=
-X-Received: by 2002:a0d:ea49:0:b0:33d:bce7:25c2 with SMTP id
- t70-20020a0dea49000000b0033dbce725c2mr8651338ywe.267.1661752896882; Sun, 28
- Aug 2022 23:01:36 -0700 (PDT)
-MIME-Version: 1.0
-References: <20220704150514.48816-1-elver@google.com> <20220704150514.48816-11-elver@google.com>
- <YvzjeEHYX9d5dhAt@worktop.programming.kicks-ass.net>
-In-Reply-To: <YvzjeEHYX9d5dhAt@worktop.programming.kicks-ass.net>
-From:   Marco Elver <elver@google.com>
-Date:   Mon, 29 Aug 2022 08:00:00 +0200
-Message-ID: <CANpmjNPSOnMN3Fc4yxoArTytQcW4n6sPCN-LnisTn58xLU=4HA@mail.gmail.com>
-Subject: Re: [PATCH v3 10/14] locking/percpu-rwsem: Add percpu_is_write_locked()
- and percpu_is_read_locked()
-To:     Peter Zijlstra <peterz@infradead.org>
+        with ESMTP id S230038AbiH2IjE (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 29 Aug 2022 04:39:04 -0400
+Received: from desiato.infradead.org (desiato.infradead.org [IPv6:2001:8b0:10b:1:d65d:64ff:fe57:4e05])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 23C9D58536;
+        Mon, 29 Aug 2022 01:39:02 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=desiato.20200630; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=enW5V6g2WX8qHIsfLn2eVhcqKoAKV5YXSn+3ybsOepY=; b=VnpBQLFtOs+d1Mk1xzNicv6GHH
+        1XXYkxcTGTMvu4i/PhfHDfa4gYaMWhytusRDeWmzGqwH510EOxaBr9SH448WYvQeRHaFYUSKtNJjy
+        k82tW1bgPcjCvPNQhrVMwsm6qzYkRJnJuuZ7JgFtkrrZbLzIcC0WC9okARak/SdAL6EBp0JxqWdZd
+        FyaEeAUG5zUTjLP1/+OrqfBF3TYy1hI109Xw3Fs0y6tFejWbLo/tSBVPLyS+9Okz/sMFHDJlEas3g
+        XjEhoohLZjsY0lWJnze9mBVJ3ZVpoBzdY8gz45bY79ukjf/c9sT17BGlINSzwu8OOt6c+7aSYeKFv
+        bc3iYkKw==;
+Received: from j130084.upc-j.chello.nl ([24.132.130.84] helo=noisy.programming.kicks-ass.net)
+        by desiato.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1oSaI2-007RqX-4b; Mon, 29 Aug 2022 08:38:38 +0000
+Received: from hirez.programming.kicks-ass.net (hirez.programming.kicks-ass.net [192.168.1.225])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (4096 bits))
+        (Client did not present a certificate)
+        by noisy.programming.kicks-ass.net (Postfix) with ESMTPS id 529D3300137;
+        Mon, 29 Aug 2022 10:38:35 +0200 (CEST)
+Received: by hirez.programming.kicks-ass.net (Postfix, from userid 1000)
+        id 0F059202547D2; Mon, 29 Aug 2022 10:38:35 +0200 (CEST)
+Date:   Mon, 29 Aug 2022 10:38:34 +0200
+From:   Peter Zijlstra <peterz@infradead.org>
+To:     Marco Elver <elver@google.com>
 Cc:     Frederic Weisbecker <frederic@kernel.org>,
         Ingo Molnar <mingo@kernel.org>,
         Thomas Gleixner <tglx@linutronix.de>,
@@ -67,43 +51,74 @@ Cc:     Frederic Weisbecker <frederic@kernel.org>,
         linuxppc-dev@lists.ozlabs.org, linux-perf-users@vger.kernel.org,
         x86@kernel.org, linux-sh@vger.kernel.org,
         kasan-dev@googlegroups.com, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Subject: Re: [PATCH v3 11/14] perf/hw_breakpoint: Reduce contention with
+ large number of tasks
+Message-ID: <Ywx7CmbG+f+wg04z@hirez.programming.kicks-ass.net>
+References: <20220704150514.48816-1-elver@google.com>
+ <20220704150514.48816-12-elver@google.com>
+ <YvznKYgRKjDRSMkT@worktop.programming.kicks-ass.net>
+ <CANpmjNN1vv9oDpm1_c99tQKgWVVtXza++u1xcBVeb5mhx5eUHw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CANpmjNN1vv9oDpm1_c99tQKgWVVtXza++u1xcBVeb5mhx5eUHw@mail.gmail.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, 17 Aug 2022 at 14:48, Peter Zijlstra <peterz@infradead.org> wrote:
-> On Mon, Jul 04, 2022 at 05:05:10PM +0200, Marco Elver wrote:
-> > +bool percpu_is_read_locked(struct percpu_rw_semaphore *sem)
-> > +{
-> > +     return per_cpu_sum(*sem->read_count) != 0;
-> > +}
-> > +EXPORT_SYMBOL_GPL(percpu_is_read_locked);
->
-> I don't think this is correct; read_count can have spurious increments.
->
-> If we look at __percpu_down_read_trylock(), it does roughly something
-> like this:
->
->         this_cpu_inc(*sem->read_count);
->         smp_mb();
->         if (!sem->block)
->                 return true;
->         this_cpu_dec(*sem->read_count);
->         return false;
->
-> So percpu_is_read_locked() needs to ensure the read_count is non-zero
-> *and* that block is not set.
+On Wed, Aug 17, 2022 at 03:14:54PM +0200, Marco Elver wrote:
+> On Wed, 17 Aug 2022 at 15:03, Peter Zijlstra <peterz@infradead.org> wrote:
+> >
+> > On Mon, Jul 04, 2022 at 05:05:11PM +0200, Marco Elver wrote:
+> > > +static bool bp_constraints_is_locked(struct perf_event *bp)
+> > > +{
+> > > +     struct mutex *tsk_mtx = get_task_bps_mutex(bp);
+> > > +
+> > > +     return percpu_is_write_locked(&bp_cpuinfo_sem) ||
+> > > +            (tsk_mtx ? mutex_is_locked(tsk_mtx) :
+> > > +                       percpu_is_read_locked(&bp_cpuinfo_sem));
+> > > +}
+> >
+> > > @@ -426,18 +521,28 @@ static int modify_bp_slot(struct perf_event *bp, u64 old_type, u64 new_type)
+> > >   */
+> > >  int dbg_reserve_bp_slot(struct perf_event *bp)
+> > >  {
+> > > -     if (mutex_is_locked(&nr_bp_mutex))
+> > > +     int ret;
+> > > +
+> > > +     if (bp_constraints_is_locked(bp))
+> > >               return -1;
+> > >
+> > > -     return __reserve_bp_slot(bp, bp->attr.bp_type);
+> > > +     /* Locks aren't held; disable lockdep assert checking. */
+> > > +     lockdep_off();
+> > > +     ret = __reserve_bp_slot(bp, bp->attr.bp_type);
+> > > +     lockdep_on();
+> > > +
+> > > +     return ret;
+> > >  }
+> > >
+> > >  int dbg_release_bp_slot(struct perf_event *bp)
+> > >  {
+> > > -     if (mutex_is_locked(&nr_bp_mutex))
+> > > +     if (bp_constraints_is_locked(bp))
+> > >               return -1;
+> > >
+> > > +     /* Locks aren't held; disable lockdep assert checking. */
+> > > +     lockdep_off();
+> > >       __release_bp_slot(bp, bp->attr.bp_type);
+> > > +     lockdep_on();
+> > >
+> > >       return 0;
+> > >  }
+> >
+> > Urggghhhh... this is horrible crap. That is, the current code is that
+> > and this makes it worse :/
+> 
+> Heh, yes and when I looked at it I really wanted to see if it can
+> change. But from what I can tell, when the kernel debugger is being
+> attached, the kernel does stop everything it does and we need the
+> horrible thing above to not deadlock. And these dbg_ functions are not
+> normally used, so I decided to leave it as-is. Suggestions?
 
-I shall go and fix. v4 incoming (if more comments before that, please shout).
-
-> That said; I really dislike the whole _is_locked family with a passion.
-> Let me try and figure out what you need this for.
-
-As in the other email, it's for the dbg_*() functions for kgdb's
-benefit (avoiding deadlock if kgdb wants a breakpoint, while we're in
-the process of handing out a breakpoint elsewhere and have the locks
-taken).
-
-Thanks,
--- Marco
+What context is this ran in? NMI should already have lockdep disabled.
