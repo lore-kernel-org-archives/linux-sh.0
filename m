@@ -2,150 +2,108 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B90D7ECAAA6
-	for <linux-sh@archiver.kernel.org>; Fri, 26 Aug 2022 17:41:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2F7A1ECAAD2
+	for <linux-sh@archiver.kernel.org>; Mon, 29 Aug 2022 06:01:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244087AbiHZRld (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 26 Aug 2022 13:41:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50908 "EHLO
+        id S229535AbiH2GBk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 29 Aug 2022 02:01:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39284 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344912AbiHZRl3 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 26 Aug 2022 13:41:29 -0400
-Received: from mailrelay2-1.pub.mailoutpod1-cph3.one.com (mailrelay2-1.pub.mailoutpod1-cph3.one.com [46.30.210.183])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B3D9A71729
-        for <linux-sh@vger.kernel.org>; Fri, 26 Aug 2022 10:41:21 -0700 (PDT)
+        with ESMTP id S229455AbiH2GBi (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 29 Aug 2022 02:01:38 -0400
+Received: from mail-yw1-x1136.google.com (mail-yw1-x1136.google.com [IPv6:2607:f8b0:4864:20::1136])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BFFA527B29
+        for <linux-sh@vger.kernel.org>; Sun, 28 Aug 2022 23:01:37 -0700 (PDT)
+Received: by mail-yw1-x1136.google.com with SMTP id 00721157ae682-33dba2693d0so169998307b3.12
+        for <linux-sh@vger.kernel.org>; Sun, 28 Aug 2022 23:01:37 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=ravnborg.org; s=rsa1;
-        h=in-reply-to:content-type:mime-version:references:message-id:subject:cc:to:
-         from:date:from;
-        bh=5eX+7pFMy/DNEfDigZ6pNrp5YJzwtCFfct4ucHBv7/Q=;
-        b=YEFzIcBVkGAVR+IhfGTs5RHnLKs0Z2bDrwL/NOaHnQwC12VjTLKZDdxzaUtW5Q+xAMsPziduQfOn0
-         2jIg3FJBUn4DTDYfTPEKvl5/aGwsLofHc0eIMmdEcmBkf6YmWUfGZaUvR4Cm1aMeeQRpDzwc194yi0
-         y9EcnoBfw5oCllM0TOjAtMzPPNQbjvoGdQDhnjV69Z4KaNFrOgYNgmGVXRhm0CrVeqN7sAVw/8dEt7
-         JoErsfDHYNmSEHRUZ0MFo/B65TtRydKXhwbPexk99gt9+l5PlIELd90OnBwa0DeC08sZvRDBm4TM5g
-         0d53uCf3qMOHoyhVGka3FRvQH/jXcmw==
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed;
-        d=ravnborg.org; s=ed1;
-        h=in-reply-to:content-type:mime-version:references:message-id:subject:cc:to:
-         from:date:from;
-        bh=5eX+7pFMy/DNEfDigZ6pNrp5YJzwtCFfct4ucHBv7/Q=;
-        b=8U1A9E3ty0om1/X6z0TcJwJl59j9ZMAjBa/XjgG9RtLpW6ZDBfzjU6BEJv4VGJ5AS7fRXrPT/J03R
-         nXX1xCHCQ==
-X-HalOne-Cookie: f32858e757181299f57d1acbda1c1fad1b331eb2
-X-HalOne-ID: 4a1c93ad-2566-11ed-a920-d0431ea8a290
-Received: from mailproxy4.cst.dirpod4-cph3.one.com (2-105-2-98-cable.dk.customer.tdc.net [2.105.2.98])
-        by mailrelay2.pub.mailoutpod1-cph3.one.com (Halon) with ESMTPSA
-        id 4a1c93ad-2566-11ed-a920-d0431ea8a290;
-        Fri, 26 Aug 2022 17:41:18 +0000 (UTC)
-Date:   Fri, 26 Aug 2022 19:41:16 +0200
-From:   Sam Ravnborg <sam@ravnborg.org>
-To:     Conor.Dooley@microchip.com
-Cc:     mail@conchuod.ie, monstr@monstr.eu, paul.walmsley@sifive.com,
-        palmer@dabbelt.com, aou@eecs.berkeley.edu, hca@linux.ibm.com,
-        gor@linux.ibm.com, agordeev@linux.ibm.com,
-        borntraeger@linux.ibm.com, svens@linux.ibm.com,
-        ysato@users.sourceforge.jp, dalias@libc.org, davem@davemloft.net,
-        tglx@linutronix.de, mingo@redhat.com, bp@alien8.de,
-        dave.hansen@linux.intel.com, x86@kernel.org, hpa@zytor.com,
-        arnd@arndb.de, geert@linux-m68k.org, keescook@chromium.org,
-        peterz@infradead.org, linux-kernel@vger.kernel.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-arch@vger.kernel.org
-Subject: Re: [PATCH 5/6] sparc: use the asm-generic version of cpuinfo_op
-Message-ID: <YwkFvFiTdCccdSV8@ravnborg.org>
-References: <20220821113512.2056409-1-mail@conchuod.ie>
- <20220821113512.2056409-6-mail@conchuod.ie>
- <Ywjc67hcBwOkMtI/@ravnborg.org>
- <87c83d38-18bc-7dfc-be6f-d906ed713450@microchip.com>
+        d=google.com; s=20210112;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc;
+        bh=GcD+HCTsL9PhfIoNQS6OfBy4IaHMHLVbPkWLbk6HzGE=;
+        b=XY395wkduWKer9JhMF4//DaIUGT8Tpq+rJg8KPi7+iDqC3nEL76fphCBKa0TADUs5Y
+         Pe+d0UGynDBtTe1J4PaLOJkDrEoC6fKoRDinEw6wRmRJHf6OGEM8g/81+ISe+2YWe4/f
+         1FWlDKRedxpgzo/cXaHo7N0rN/NxKV13AkVrqJheYKc921pnefWieUUjI0/9PMLyrkYF
+         +54ESHy7T0wT56qYZ/EujWYUASmbOawas8ItKc1fhdlWD/UOebAoskL9awaewc41GQKB
+         hW7U8lvsupulNrvPERA4OlUGCBbSW501Y9m1mOYt4Krbsw3K+dGc1Ps8S/bVkskF8+pe
+         c50w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc;
+        bh=GcD+HCTsL9PhfIoNQS6OfBy4IaHMHLVbPkWLbk6HzGE=;
+        b=0rT8N7G7lPGVL2i7U/qhP31v3XIsF4T0jyvG8dUrQzUwKmZoZ99l9FOXVmBgEzeulS
+         UsPPrsUlrTFQyVnMPKSgSyBTiremiYCS+w/SpVlLXruA5u1OyXGv/8audEd7MQUCDdTb
+         KpxNRbBNvWZHNumdtrSYej2IsTFZbdXcC5WybXzM92sV2LpLg9rFhyZI0xx151ctLG4b
+         jNiyGf9aRYsFvdDCJMZojcabuwwdtcxR+CgFJERuNLzKYxbT55OsuGRYVAh9PrmFtN0J
+         ys+80KkmzsVGth2VhkLj5Uz7f/EjiXl9gu7aJzgSBxBPs1mPfl3ocPM+h6+/ELZLBrPv
+         Dg5Q==
+X-Gm-Message-State: ACgBeo3kOFwLmQmxxJkTqiYknd4ZCC260nIuQ8JVO8G9Qtr0zjHP0ot9
+        bnwqJq6BV7088RTctpjGj0UIitE9U1JTg6XSf0M61g==
+X-Google-Smtp-Source: AA6agR4OkRBDBHVTlnL+FH4iL1r8QAUgTcU+5pqwP3zJY+yINE0mXfWAktGCQb8zpFBt1Kxb6U4Hazqq5HVKOejO/UE=
+X-Received: by 2002:a0d:ea49:0:b0:33d:bce7:25c2 with SMTP id
+ t70-20020a0dea49000000b0033dbce725c2mr8651338ywe.267.1661752896882; Sun, 28
+ Aug 2022 23:01:36 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <87c83d38-18bc-7dfc-be6f-d906ed713450@microchip.com>
+References: <20220704150514.48816-1-elver@google.com> <20220704150514.48816-11-elver@google.com>
+ <YvzjeEHYX9d5dhAt@worktop.programming.kicks-ass.net>
+In-Reply-To: <YvzjeEHYX9d5dhAt@worktop.programming.kicks-ass.net>
+From:   Marco Elver <elver@google.com>
+Date:   Mon, 29 Aug 2022 08:00:00 +0200
+Message-ID: <CANpmjNPSOnMN3Fc4yxoArTytQcW4n6sPCN-LnisTn58xLU=4HA@mail.gmail.com>
+Subject: Re: [PATCH v3 10/14] locking/percpu-rwsem: Add percpu_is_write_locked()
+ and percpu_is_read_locked()
+To:     Peter Zijlstra <peterz@infradead.org>
+Cc:     Frederic Weisbecker <frederic@kernel.org>,
+        Ingo Molnar <mingo@kernel.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Arnaldo Carvalho de Melo <acme@kernel.org>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Alexander Shishkin <alexander.shishkin@linux.intel.com>,
+        Jiri Olsa <jolsa@redhat.com>,
+        Namhyung Kim <namhyung@kernel.org>,
+        Dmitry Vyukov <dvyukov@google.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        linuxppc-dev@lists.ozlabs.org, linux-perf-users@vger.kernel.org,
+        x86@kernel.org, linux-sh@vger.kernel.org,
+        kasan-dev@googlegroups.com, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Aug 26, 2022 at 03:37:40PM +0000, Conor.Dooley@microchip.com wrote:
-> On 26/08/2022 15:47, Sam Ravnborg wrote:
-> > EXTERNAL EMAIL: Do not click links or open attachments unless you know the content is safe
-> > 
-> > Hi Conor.
-> > 
-> > Thanks for this nice simplification, but I think you can make it even
-> > better.
-> > 
-> > On Sun, Aug 21, 2022 at 12:35:12PM +0100, Conor Dooley wrote:
-> >> From: Conor Dooley <conor.dooley@microchip.com>
-> >>
-> >> There's little point in duplicating the declaration of cpuinfo_op now
-> >> that there's a shared version of it, so drop it & include the generic
-> >> header.
-> >>
-> >> Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
-> >> ---
-> >>  arch/sparc/include/asm/cpudata.h | 3 +--
-> >>  1 file changed, 1 insertion(+), 2 deletions(-)
-> >>
-> >> diff --git a/arch/sparc/include/asm/cpudata.h b/arch/sparc/include/asm/cpudata.h
-> >> index d213165ee713..af6ef3c028a9 100644
-> >> --- a/arch/sparc/include/asm/cpudata.h
-> >> +++ b/arch/sparc/include/asm/cpudata.h
-> >> @@ -6,8 +6,7 @@
-> >>
-> >>  #include <linux/threads.h>
-> >>  #include <linux/percpu.h>
-> >> -
-> >> -extern const struct seq_operations cpuinfo_op;
-> >> +#include <asm-generic/processor.h>
-> > 
-> > Since the header file did not need <asm-generic/processor.h> then it
-> > should not need it now after deleting stuff.
-> > The better fix is to add the missing include to arch/sparc/kernel/cpu.c,
-> > where we have the user of it.
-> > 
-> > A header file should include what it needs, and no more.
-> > 
-> > I looked only at this patch, this comment may also be relevant for the
-> > other patches.
-> 
-> Hey Sam, thanks for your feedback.
-> As per Geert's suggestion, submitted a v2:
-> https://lore.kernel.org/linux-riscv/20220825205942.1713914-1-mail@conchuod.ie/T/#u
-> 
-> In v2, I included linux/processor.h instead of an asm-generic header.
-> The diff for sparc became:
-> 
-> diff --git a/arch/sparc/include/asm/cpudata.h b/arch/sparc/include/asm/cpudata.h
-> index d213165ee713..f7e690a7860b 100644
-> --- a/arch/sparc/include/asm/cpudata.h
-> +++ b/arch/sparc/include/asm/cpudata.h
-> @@ -7,8 +7,6 @@
->  #include <linux/threads.h>
->  #include <linux/percpu.h>
->  
-> -extern const struct seq_operations cpuinfo_op;
-> -
->  #endif /* !(__ASSEMBLY__) */
->  
->  #if defined(__sparc__) && defined(__arch64__)
-> diff --git a/arch/sparc/kernel/cpu.c b/arch/sparc/kernel/cpu.c
-> index 79cd6ccfeac0..ffdc7a825b80 100644
-> --- a/arch/sparc/kernel/cpu.c
-> +++ b/arch/sparc/kernel/cpu.c
-> @@ -12,6 +12,7 @@
->  #include <linux/smp.h>
->  #include <linux/threads.h>
->  #include <linux/pgtable.h>
-> +#include <linux/processor.h>
->  
->  #include <asm/spitfire.h>
->  #include <asm/oplib.h>
-> 
-> Hopefully that is more appealing to you!
-> Thanks,
-> Conor.
+On Wed, 17 Aug 2022 at 14:48, Peter Zijlstra <peterz@infradead.org> wrote:
+> On Mon, Jul 04, 2022 at 05:05:10PM +0200, Marco Elver wrote:
+> > +bool percpu_is_read_locked(struct percpu_rw_semaphore *sem)
+> > +{
+> > +     return per_cpu_sum(*sem->read_count) != 0;
+> > +}
+> > +EXPORT_SYMBOL_GPL(percpu_is_read_locked);
+>
+> I don't think this is correct; read_count can have spurious increments.
+>
+> If we look at __percpu_down_read_trylock(), it does roughly something
+> like this:
+>
+>         this_cpu_inc(*sem->read_count);
+>         smp_mb();
+>         if (!sem->block)
+>                 return true;
+>         this_cpu_dec(*sem->read_count);
+>         return false;
+>
+> So percpu_is_read_locked() needs to ensure the read_count is non-zero
+> *and* that block is not set.
 
-Hi Conor - much better. Thanks.
+I shall go and fix. v4 incoming (if more comments before that, please shout).
 
-	Sam
+> That said; I really dislike the whole _is_locked family with a passion.
+> Let me try and figure out what you need this for.
+
+As in the other email, it's for the dbg_*() functions for kgdb's
+benefit (avoiding deadlock if kgdb wants a breakpoint, while we're in
+the process of handing out a breakpoint elsewhere and have the locks
+taken).
+
+Thanks,
+-- Marco
