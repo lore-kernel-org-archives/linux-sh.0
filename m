@@ -2,62 +2,58 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9580EECAAD4
-	for <linux-sh@archiver.kernel.org>; Mon, 29 Aug 2022 09:39:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DEE8ECAAD4
+	for <linux-sh@archiver.kernel.org>; Mon, 29 Aug 2022 12:56:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229620AbiH2JjD (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 29 Aug 2022 05:39:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47162 "EHLO
+        id S230363AbiH2M4k (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 29 Aug 2022 08:56:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56526 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229871AbiH2JjB (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 29 Aug 2022 05:39:01 -0400
-Received: from mail-yw1-x112f.google.com (mail-yw1-x112f.google.com [IPv6:2607:f8b0:4864:20::112f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D6AF5C9D6
-        for <linux-sh@vger.kernel.org>; Mon, 29 Aug 2022 02:38:59 -0700 (PDT)
-Received: by mail-yw1-x112f.google.com with SMTP id 00721157ae682-3378303138bso180929947b3.9
-        for <linux-sh@vger.kernel.org>; Mon, 29 Aug 2022 02:38:59 -0700 (PDT)
+        with ESMTP id S230183AbiH2M4W (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 29 Aug 2022 08:56:22 -0400
+Received: from mail-ed1-x549.google.com (mail-ed1-x549.google.com [IPv6:2a00:1450:4864:20::549])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AF9646526D
+        for <linux-sh@vger.kernel.org>; Mon, 29 Aug 2022 05:47:59 -0700 (PDT)
+Received: by mail-ed1-x549.google.com with SMTP id m15-20020a056402430f00b00448af09b674so47713edc.13
+        for <linux-sh@vger.kernel.org>; Mon, 29 Aug 2022 05:47:59 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=google.com; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc;
-        bh=GBvqua5cjMzjDQ/XgF9SZ1D4y+QsnVuyrt4amhV4btE=;
-        b=dx6bRQ4JN/hF+3326YxFT0DmQuGRpE34IYiS96EVX69SRQeKSaYPwt5CrXJyN5/6Jy
-         LU4sCb/nzEwY7rPM8KQoAIxIfvdbcNm2n40rDMqVfcTJScYRUNc6PFux701CkDOaVS3I
-         p/4Hy2JiSHOOSzChWW0xl4APo4fnylJHJ9WrJKbGlSalEnDMAaddVjR/x9qZqTHorbQN
-         oIVFtRs/0W/3z2F+EVui2fGdIizOdKUhrhCdwiHSyBf99GrsKuJ0tvJe2EHzoC0aQ+mz
-         vJQY/hFbVFBQcwbB98qVRudkPkSpWvK3LFGhdzSkhwWir2jt11UNBByAnC4HQL4DbNqN
-         Q4Wg==
+        h=cc:to:from:subject:message-id:mime-version:date:from:to:cc;
+        bh=j9ioItL4hhuJk4q9fk8sTyuu8wzwxxiWo3yP0IVLpNU=;
+        b=AEnnVlL+h99/eKY9FemzwOrgccR12Jm4H4toAg74fK8miA6B3P/wnQ9dHViXDfjGzk
+         ANkIB1hemSKQ3ljjNM/gULvEHMbqdJYVFSEzMHzllccZ0ofvmU5+VZHzKeLCfELED6Qj
+         RR8s3QNCww1xK8wOiHRz9LELswrYqjd11/S5Oip28P1mVWMZhkV+RHRbvShSHTnXRhMi
+         a2hcxSSmbuOpzQpzKF4ICIywQDmWpyyZOmCak2PyU5NgzAaQda19CStINl3UHgJ9iH2z
+         SoLIdtxeVlesKAYOKzA8ZHZvFWBiyrLd4rx48tk172r91N8we+kweSXjcf74iNZcHwm+
+         C+VQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc;
-        bh=GBvqua5cjMzjDQ/XgF9SZ1D4y+QsnVuyrt4amhV4btE=;
-        b=H+jY49zpcH8Wp3lGY2ft746WiLvbNpH7T45EBWazr7ktn8y4FiLP94+KTraBNbuG1q
-         KNSzBbkvTgOsC2tZe54kba/7gA6gQ0ozhNQgRQ6SpVcK/14Da5Hhg71L9KYY7HnGKbB+
-         1RDcrFw/ACxJ2fVwFw4DVOWgCV5dz4a/z3KuUE1b2JkIs2wiO3m+ik3ePF1MN31lZmnD
-         W5YgTWhrI/Zmx5Od02J430pHl31RjY/YbYTuYfaQMeLkbMTdBPIQ/ZCDHGpb0MJwOvg5
-         lmuweC4MSqbVTTyWn7OjtBgKY041gsyXudYMIL1VcZDK1nDKKv9Ca3yRQnmX+m0+FUT/
-         1fdA==
-X-Gm-Message-State: ACgBeo3+VZbtmvFF2gNKImrp+BxZVlMwUs2hYWBtP/3nKMWQ9mTaoDB0
-        NRN7tZ25qNNhIX1sdtO9WczJtAnHikQosfq186L6OA==
-X-Google-Smtp-Source: AA6agR6q7ad6sf4kgVlbFbNc5qY39/VlvvSlRemTzNOIPH7rueyubBC/OTF7pi8jTZlObaVAtjHrYIlq/M8iqBqxOiw=
-X-Received: by 2002:a81:4e04:0:b0:33d:c7dc:9e2b with SMTP id
- c4-20020a814e04000000b0033dc7dc9e2bmr8959772ywb.4.1661765938626; Mon, 29 Aug
- 2022 02:38:58 -0700 (PDT)
-MIME-Version: 1.0
-References: <20220704150514.48816-1-elver@google.com> <20220704150514.48816-12-elver@google.com>
- <YvznKYgRKjDRSMkT@worktop.programming.kicks-ass.net> <CANpmjNN1vv9oDpm1_c99tQKgWVVtXza++u1xcBVeb5mhx5eUHw@mail.gmail.com>
- <Ywx7CmbG+f+wg04z@hirez.programming.kicks-ass.net>
-In-Reply-To: <Ywx7CmbG+f+wg04z@hirez.programming.kicks-ass.net>
+        h=cc:to:from:subject:message-id:mime-version:date:x-gm-message-state
+         :from:to:cc;
+        bh=j9ioItL4hhuJk4q9fk8sTyuu8wzwxxiWo3yP0IVLpNU=;
+        b=XAgUptj2cnmHujVjy4/k3t3RyAQ0U/A2R5aCf97f797DuQf1Iz/oDfO637ON5ZQf+4
+         ZEgasAJRRCXlaUvTFYQWnzV210Uy1O5hTqcHQL7o+rylY36rcTLZ/ECWWfji3q9+EXoV
+         7zF2lzuFj4ShrcyYVMiSS6k9gE9SEND1vmnywXLKapUiRc7gHjv5vWAKTbzwoNx7ovYC
+         3SN/5ulLhz3Rj/Hp6aLAccgcWOM8Zbye/kBOhCYV3N48c9KTkj8KpcRdqf3RgadHlTfD
+         j37bj3LxqW12MO5eiOQDKjRXTW7ma1cyiJu40zvnJ78hioWuh7tiIiuR3T2gqCyvmw3X
+         L+JA==
+X-Gm-Message-State: ACgBeo3SBQWcJDZp77ct5QRgmZznw0kCvdQ8Ikj0tzlQ/D/13RCV2bXj
+        8w/zPkpTLnD+0McftkyJS2erFZrKdQ==
+X-Google-Smtp-Source: AA6agR5Vdd0EgFTNBuEB47wo2RfngI2ORjHWVJ+Z6x1a1VnVBpwvw2x0IZ4vXzPFklVTTTPIZTwL4NPoCw==
+X-Received: from elver.muc.corp.google.com ([2a00:79e0:9c:201:196d:4fc7:fa9c:62e3])
+ (user=elver job=sendgmr) by 2002:a05:6402:350e:b0:448:4918:af81 with SMTP id
+ b14-20020a056402350e00b004484918af81mr6393841edd.384.1661777278181; Mon, 29
+ Aug 2022 05:47:58 -0700 (PDT)
+Date:   Mon, 29 Aug 2022 14:47:05 +0200
+Mime-Version: 1.0
+X-Mailer: git-send-email 2.37.2.672.g94769d06f0-goog
+Message-ID: <20220829124719.675715-1-elver@google.com>
+Subject: [PATCH v4 00/14] perf/hw_breakpoint: Optimize for thousands of tasks
 From:   Marco Elver <elver@google.com>
-Date:   Mon, 29 Aug 2022 11:38:22 +0200
-Message-ID: <CANpmjNPFnV2novubKKVmC7zJ8qi72QuRY6bWBEi5jrO_kkRBag@mail.gmail.com>
-Subject: Re: [PATCH v3 11/14] perf/hw_breakpoint: Reduce contention with large
- number of tasks
-To:     Peter Zijlstra <peterz@infradead.org>
-Cc:     Frederic Weisbecker <frederic@kernel.org>,
-        Ingo Molnar <mingo@kernel.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
+To:     elver@google.com, Peter Zijlstra <peterz@infradead.org>,
+        Frederic Weisbecker <frederic@kernel.org>,
+        Ingo Molnar <mingo@kernel.org>
+Cc:     Thomas Gleixner <tglx@linutronix.de>,
         Arnaldo Carvalho de Melo <acme@kernel.org>,
         Mark Rutland <mark.rutland@arm.com>,
         Alexander Shishkin <alexander.shishkin@linux.intel.com>,
@@ -73,64 +69,126 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, 29 Aug 2022 at 10:38, Peter Zijlstra <peterz@infradead.org> wrote:
->
-> On Wed, Aug 17, 2022 at 03:14:54PM +0200, Marco Elver wrote:
-> > On Wed, 17 Aug 2022 at 15:03, Peter Zijlstra <peterz@infradead.org> wrote:
-> > >
-> > > On Mon, Jul 04, 2022 at 05:05:11PM +0200, Marco Elver wrote:
-> > > > +static bool bp_constraints_is_locked(struct perf_event *bp)
-> > > > +{
-> > > > +     struct mutex *tsk_mtx = get_task_bps_mutex(bp);
-> > > > +
-> > > > +     return percpu_is_write_locked(&bp_cpuinfo_sem) ||
-> > > > +            (tsk_mtx ? mutex_is_locked(tsk_mtx) :
-> > > > +                       percpu_is_read_locked(&bp_cpuinfo_sem));
-> > > > +}
-> > >
-> > > > @@ -426,18 +521,28 @@ static int modify_bp_slot(struct perf_event *bp, u64 old_type, u64 new_type)
-> > > >   */
-> > > >  int dbg_reserve_bp_slot(struct perf_event *bp)
-> > > >  {
-> > > > -     if (mutex_is_locked(&nr_bp_mutex))
-> > > > +     int ret;
-> > > > +
-> > > > +     if (bp_constraints_is_locked(bp))
-> > > >               return -1;
-> > > >
-> > > > -     return __reserve_bp_slot(bp, bp->attr.bp_type);
-> > > > +     /* Locks aren't held; disable lockdep assert checking. */
-> > > > +     lockdep_off();
-> > > > +     ret = __reserve_bp_slot(bp, bp->attr.bp_type);
-> > > > +     lockdep_on();
-> > > > +
-> > > > +     return ret;
-> > > >  }
-> > > >
-> > > >  int dbg_release_bp_slot(struct perf_event *bp)
-> > > >  {
-> > > > -     if (mutex_is_locked(&nr_bp_mutex))
-> > > > +     if (bp_constraints_is_locked(bp))
-> > > >               return -1;
-> > > >
-> > > > +     /* Locks aren't held; disable lockdep assert checking. */
-> > > > +     lockdep_off();
-> > > >       __release_bp_slot(bp, bp->attr.bp_type);
-> > > > +     lockdep_on();
-> > > >
-> > > >       return 0;
-> > > >  }
-> > >
-> > > Urggghhhh... this is horrible crap. That is, the current code is that
-> > > and this makes it worse :/
-> >
-> > Heh, yes and when I looked at it I really wanted to see if it can
-> > change. But from what I can tell, when the kernel debugger is being
-> > attached, the kernel does stop everything it does and we need the
-> > horrible thing above to not deadlock. And these dbg_ functions are not
-> > normally used, so I decided to leave it as-is. Suggestions?
->
-> What context is this ran in? NMI should already have lockdep disabled.
+The hw_breakpoint subsystem's code has seen little change in over 10
+years. In that time, systems with >100s of CPUs have become common,
+along with improvements to the perf subsystem: using breakpoints on
+thousands of concurrent tasks should be a supported usecase.
 
-kgdb can enter via kgdb_nmicall*() but also via
-kgdb_handle_exception(), which isn't for NMI.
+The breakpoint constraints accounting algorithm is the major bottleneck
+in doing so:
+
+  1. toggle_bp_slot() and fetch_bp_busy_slots() are O(#cpus * #tasks):
+     Both iterate through all CPUs and call task_bp_pinned(), which is
+     O(#tasks).
+
+  2. Everything is serialized on a global mutex, 'nr_bp_mutex'.
+
+The series progresses with the simpler optimizations and finishes with
+the more complex optimizations:
+
+ 1. We first optimize task_bp_pinned() to only take O(1) on average.
+
+ 2. Rework synchronization to allow concurrency when checking and
+    updating breakpoint constraints for tasks.
+
+ 3. Eliminate the O(#cpus) loops in the CPU-independent case.
+
+Along the way, smaller micro-optimizations and cleanups are done as they
+seemed obvious when staring at the code (but likely insignificant).
+
+The result is (on a system with 256 CPUs) that we go from:
+
+ | $> perf bench -r 30 breakpoint thread -b 4 -p 64 -t 64
+	 	[ ^ more aggressive benchmark parameters took too long ]
+ | # Running 'breakpoint/thread' benchmark:
+ | # Created/joined 30 threads with 4 breakpoints and 64 parallelism
+ |      Total time: 236.418 [sec]
+ |
+ |   123134.794271 usecs/op
+ |  7880626.833333 usecs/op/cpu
+
+... to the following with all optimizations:
+
+ | $> perf bench -r 30 breakpoint thread -b 4 -p 64 -t 64
+ | # Running 'breakpoint/thread' benchmark:
+ | # Created/joined 30 threads with 4 breakpoints and 64 parallelism
+ |      Total time: 0.067 [sec]
+ |
+ |       35.292187 usecs/op
+ |     2258.700000 usecs/op/cpu
+
+On the used test system, that's an effective speedup of ~3490x per op.
+
+Which is on par with the theoretical ideal performance through
+optimizations in hw_breakpoint.c (constraints accounting disabled), and
+only 12% slower than no breakpoints at all.
+
+Changelog
+---------
+
+v4:
+* Fix percpu_is_read_locked(): Due to spurious read_count increments in
+  __percpu_down_read_trylock() if sem->block != 0, check that
+  !sem->block (reported by Peter).
+* Apply Reviewed/Acked-by.
+
+v3: https://lkml.kernel.org/r/20220704150514.48816-1-elver@google.com
+* Fix typos.
+* Introduce hw_breakpoint_is_used() for the test.
+* Add WARN_ON in bp_blots_histogram_add().
+* Don't use raw_smp_processor_id() in test.
+* Apply Acked-by/Reviewed-by given in v2 for mostly unchanged patches.
+
+
+v2: https://lkml.kernel.org/r/20220628095833.2579903-1-elver@google.com
+ * Add KUnit test suite.
+ * Remove struct bp_busy_slots and simplify functions.
+ * Add "powerpc/hw_breakpoint: Avoid relying on caller synchronization".
+ * Add "locking/percpu-rwsem: Add percpu_is_write_locked() and percpu_is_read_locked()".
+ * Use percpu-rwsem instead of rwlock.
+ * Use task_struct::perf_event_mutex instead of sharded mutex.
+ * Drop v1 "perf/hw_breakpoint: Optimize task_bp_pinned() if CPU-independent".
+ * Add "perf/hw_breakpoint: Introduce bp_slots_histogram".
+ * Add "perf/hw_breakpoint: Optimize max_bp_pinned_slots() for CPU-independent task targets".
+ * Add "perf/hw_breakpoint: Optimize toggle_bp_slot() for CPU-independent task targets".
+ * Apply Acked-by/Reviewed-by given in v1 for unchanged patches.
+==> Speedup of ~3490x (vs. ~3315x in v1).
+
+v1: https://lore.kernel.org/all/20220609113046.780504-1-elver@google.com/
+
+Marco Elver (14):
+  perf/hw_breakpoint: Add KUnit test for constraints accounting
+  perf/hw_breakpoint: Provide hw_breakpoint_is_used() and use in test
+  perf/hw_breakpoint: Clean up headers
+  perf/hw_breakpoint: Optimize list of per-task breakpoints
+  perf/hw_breakpoint: Mark data __ro_after_init
+  perf/hw_breakpoint: Optimize constant number of breakpoint slots
+  perf/hw_breakpoint: Make hw_breakpoint_weight() inlinable
+  perf/hw_breakpoint: Remove useless code related to flexible
+    breakpoints
+  powerpc/hw_breakpoint: Avoid relying on caller synchronization
+  locking/percpu-rwsem: Add percpu_is_write_locked() and
+    percpu_is_read_locked()
+  perf/hw_breakpoint: Reduce contention with large number of tasks
+  perf/hw_breakpoint: Introduce bp_slots_histogram
+  perf/hw_breakpoint: Optimize max_bp_pinned_slots() for CPU-independent
+    task targets
+  perf/hw_breakpoint: Optimize toggle_bp_slot() for CPU-independent task
+    targets
+
+ arch/powerpc/kernel/hw_breakpoint.c  |  53 ++-
+ arch/sh/include/asm/hw_breakpoint.h  |   5 +-
+ arch/x86/include/asm/hw_breakpoint.h |   5 +-
+ include/linux/hw_breakpoint.h        |   4 +-
+ include/linux/percpu-rwsem.h         |   6 +
+ include/linux/perf_event.h           |   3 +-
+ kernel/events/Makefile               |   1 +
+ kernel/events/hw_breakpoint.c        | 638 ++++++++++++++++++++-------
+ kernel/events/hw_breakpoint_test.c   | 333 ++++++++++++++
+ kernel/locking/percpu-rwsem.c        |   6 +
+ lib/Kconfig.debug                    |  10 +
+ 11 files changed, 885 insertions(+), 179 deletions(-)
+ create mode 100644 kernel/events/hw_breakpoint_test.c
+
+-- 
+2.37.2.672.g94769d06f0-goog
