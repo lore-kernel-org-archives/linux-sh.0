@@ -2,175 +2,106 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 067D6ECAAD5
-	for <linux-sh@archiver.kernel.org>; Fri,  2 Sep 2022 09:48:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C9AAC54EE9
+	for <linux-sh@archiver.kernel.org>; Fri,  2 Sep 2022 11:02:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235566AbiIBJsv (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 2 Sep 2022 05:48:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48666 "EHLO
+        id S235931AbiIBLC1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 2 Sep 2022 07:02:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44792 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235490AbiIBJsu (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 2 Sep 2022 05:48:50 -0400
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A859EC6969
-        for <linux-sh@vger.kernel.org>; Fri,  2 Sep 2022 02:48:48 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1662112127;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=L5hlwTGXpG9hUxZCZE5KZ7NE2krlb6FbDoRXg5yfQZY=;
-        b=IbCiGoPSnbyDmYyKCxHc57iB95d0zIJwN4kb+qK9pdn8QfpqyWHI3poXc3/b5JgPcYny1O
-        0RJRW470JPthpBOqTB6NJpv+urs3zCAoU2kMUNX3towpW7JkiXyR4dmauwesCmuNigv8kU
-        i5QHBa+GzQe/QkTzwcCmwmNElO5YUzY=
-Received: from mimecast-mx02.redhat.com (mx3-rdu2.redhat.com
- [66.187.233.73]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-533-s4DrPB4TOryG3kiNBNPaMw-1; Fri, 02 Sep 2022 05:48:43 -0400
-X-MC-Unique: s4DrPB4TOryG3kiNBNPaMw-1
-Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.rdu2.redhat.com [10.11.54.2])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 9AD273C0ED64;
-        Fri,  2 Sep 2022 09:48:42 +0000 (UTC)
-Received: from localhost (ovpn-12-173.pek2.redhat.com [10.72.12.173])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 5809640C141D;
-        Fri,  2 Sep 2022 09:48:40 +0000 (UTC)
-Date:   Fri, 2 Sep 2022 17:48:37 +0800
-From:   Baoquan He <bhe@redhat.com>
-To:     kernel test robot <lkp@intel.com>
-Cc:     linux-kernel@vger.kernel.org, kbuild-all@lists.01.org,
-        linux-mm@kvack.org, akpm@linux-foundation.org, hch@infradead.org,
-        agordeev@linux.ibm.com, wangkefeng.wang@huawei.com,
-        linux-arm-kernel@lists.infradead.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Subject: Re: [PATCH v2 10/11] sh: mm: Convert to GENERIC_IOREMAP
-Message-ID: <YxHRdQft06rIBM+j@MiWiFi-R3L-srv>
-References: <20220820003125.353570-11-bhe@redhat.com>
- <202208201146.8VeY9pez-lkp@intel.com>
+        with ESMTP id S235957AbiIBLC0 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 2 Sep 2022 07:02:26 -0400
+Received: from mail-qt1-f170.google.com (mail-qt1-f170.google.com [209.85.160.170])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 19FAFC58EC;
+        Fri,  2 Sep 2022 04:02:25 -0700 (PDT)
+Received: by mail-qt1-f170.google.com with SMTP id l5so1151434qtv.4;
+        Fri, 02 Sep 2022 04:02:25 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date;
+        bh=dZTws1L2y2xyjbs91n4hGu/TU6dg0KKGjBmfL0/vaak=;
+        b=aofngmOsGOIslWnPv0kCg6/DJjGt52Eh3RGbfiln+J5wyI+7p1HxTFggisKIJRM+zR
+         tlLuy7xlPv08uTqW0NH/PbAe8+1LtA+41b6FA62gknkeEY97jdApDYOvnm8dsVsKAGA/
+         DPU/d/3kEntm4ESAphszrPeyTlG4t2aiN085LJN/fyP2+rrsQH0Prx72o0oGSpITyOd6
+         6V2mwjMilK3c6l8Bvjud0FYnYlyLal/gIcTZZwvzY7qri+5hXeNkGjOz155Ve0jpuOlp
+         jymsTBsPNqwi8F+wrw2ej3d0xDbSDwJy6vWEzjC3Gbddow+FSB1gyuocfZ773BJtR07e
+         wHNQ==
+X-Gm-Message-State: ACgBeo3qGEIMXgXi9h5QnctZB2x5omtfpaOn/I/z3NSbLKtrV/HGUupF
+        NxQqBuGwuWLFJp+BwwPUzXMcBqxjPSzRpg==
+X-Google-Smtp-Source: AA6agR76vP7Mjxh6TP8BWzfMH1ghKzbUlRSbiuv5NFRKVUkG3DHdqfDFIg+pjA43PLVExa16S9+BIQ==
+X-Received: by 2002:a05:622a:512:b0:343:6f1:a026 with SMTP id l18-20020a05622a051200b0034306f1a026mr27548265qtx.323.1662116543504;
+        Fri, 02 Sep 2022 04:02:23 -0700 (PDT)
+Received: from mail-yw1-f169.google.com (mail-yw1-f169.google.com. [209.85.128.169])
+        by smtp.gmail.com with ESMTPSA id l21-20020a37f915000000b006bbe7ded98csm1128981qkj.112.2022.09.02.04.02.22
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 02 Sep 2022 04:02:22 -0700 (PDT)
+Received: by mail-yw1-f169.google.com with SMTP id 00721157ae682-324ec5a9e97so12900707b3.7;
+        Fri, 02 Sep 2022 04:02:22 -0700 (PDT)
+X-Received: by 2002:a0d:e895:0:b0:340:ab79:3285 with SMTP id
+ r143-20020a0de895000000b00340ab793285mr26854285ywe.358.1662116542087; Fri, 02
+ Sep 2022 04:02:22 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <202208201146.8VeY9pez-lkp@intel.com>
-X-Scanned-By: MIMEDefang 2.84 on 10.11.54.2
+References: <cover.1661789204.git.christophe.leroy@csgroup.eu>
+ <abb46a587b76d379ad32d53817d837d8a5fea8bd.1661789204.git.christophe.leroy@csgroup.eu>
+ <CAHp75VcngRihpfUkeKs-g+TbPnpOsZ+-Q37zDVoWp8p_2GbSvQ@mail.gmail.com>
+ <18cda49e-84f0-a806-566a-6e77705e98b3@csgroup.eu> <1d548a19-feec-42b9-944d-890d6dde2fb8@www.fastmail.com>
+ <CAHp75VfF78rWpC6+i2Hu6-PMULFeFMbqXhBVRkx5aFGFTU3U4A@mail.gmail.com>
+In-Reply-To: <CAHp75VfF78rWpC6+i2Hu6-PMULFeFMbqXhBVRkx5aFGFTU3U4A@mail.gmail.com>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Fri, 2 Sep 2022 13:02:10 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdVVup8J0uge02H4u6o8NzxfkuFuZfExJ5u2M3FBE+RSAQ@mail.gmail.com>
+Message-ID: <CAMuHMdVVup8J0uge02H4u6o8NzxfkuFuZfExJ5u2M3FBE+RSAQ@mail.gmail.com>
+Subject: Re: [PATCH v1 4/8] gpiolib: Get rid of ARCH_NR_GPIOS
+To:     Andy Shevchenko <andy.shevchenko@gmail.com>
+Cc:     Arnd Bergmann <arnd@arndb.de>,
+        =?UTF-8?B?TnVubyBTw6E=?= <nuno.sa@analog.com>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Bartosz Golaszewski <brgl@bgdev.pl>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Keerthy <j-keerthy@ti.com>, Russell King <linux@armlinux.org.uk>,
+        Jonathan Corbet <corbet@lwn.net>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>,
+        linux-arm Mailing List <linux-arm-kernel@lists.infradead.org>,
+        Linux-Arch <linux-arch@vger.kernel.org>,
+        Linux Documentation List <linux-doc@vger.kernel.org>,
+        "maintainer:X86 ARCHITECTURE (32-BIT AND 64-BIT)" <x86@kernel.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 08/20/22 at 11:41am, kernel test robot wrote:
-> Hi Baoquan,
-> 
-> I love your patch! Yet something to improve:
-> 
-> [auto build test ERROR on akpm-mm/mm-everything]
-> 
-> url:    https://github.com/intel-lab-lkp/linux/commits/Baoquan-He/mm-ioremap-Convert-architectures-to-take-GENERIC_IOREMAP-way/20220820-083435
-> base:   https://git.kernel.org/pub/scm/linux/kernel/git/akpm/mm.git mm-everything
-> config: sh-allmodconfig
-> compiler: sh4-linux-gcc (GCC) 12.1.0
-> reproduce (this is a W=1 build):
->         wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
->         chmod +x ~/bin/make.cross
->         # https://github.com/intel-lab-lkp/linux/commit/503a31451202f89e58bc5f0a49261398fafbd90e
->         git remote add linux-review https://github.com/intel-lab-lkp/linux
->         git fetch --no-tags linux-review Baoquan-He/mm-ioremap-Convert-architectures-to-take-GENERIC_IOREMAP-way/20220820-083435
->         git checkout 503a31451202f89e58bc5f0a49261398fafbd90e
->         # save the config file
->         mkdir build_dir && cp config build_dir/.config
->         COMPILER_INSTALL_PATH=$HOME/0day COMPILER=gcc-12.1.0 make.cross W=1 O=build_dir ARCH=sh prepare
+Hi Andy,
 
-I finally find gcc-sh-linux-gnu and its dependency on rpmfind.net, and
-succeeded to reproduce the building failure.
-isl-0.16.1-13
-cross-gcc-common
-gcc-sh-linux-gnu
+CC linux-sh
 
-Based on previous fixing patch for parisc, below draft patch can fix all
-reported building issues on sh.
+On Fri, Sep 2, 2022 at 12:53 PM Andy Shevchenko
+<andy.shevchenko@gmail.com> wrote:
+> On Wed, Aug 31, 2022 at 11:55 PM Arnd Bergmann <arnd@arndb.de> wrote:
+> > drivers/pinctrl/renesas/gpio.c: gc->base = pfc->nr_gpio_pins; // ??? don't understand
+>
+> I think, w/o looking into the code, that this just guarantees the
+> continuous numbering for all banks (chips) on the platform.
 
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 3c5ff82a511a..eb550c72922d 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -225,6 +225,9 @@ __BUILD_IOPORT_STRING(q, u64)
- #define IO_SPACE_LIMIT 0xffffffff
- 
- /* We really want to try and get these to memcpy etc */
-+#define memset_io memset_io
-+#define memcpy_fromio memcpy_fromio
-+#define memcpy_toio memcpy_toio
- void memcpy_fromio(void *, const volatile void __iomem *, unsigned long);
- void memcpy_toio(volatile void __iomem *, const void *, unsigned long);
- void memset_io(volatile void __iomem *, int, unsigned long);
-@@ -256,18 +259,17 @@ int arch_iounmap(void __iomem *addr);
- 
- #define ioremap_cache(addr, size)  \
- 	ioremap_prot((addr), (size), pgprot_val(PAGE_KERNEL))
--#define ioremap_cache ioremap_cache
- 
- #define ioremap_uc	ioremap
- 
--#include <asm-generic/io.h>
--
- /*
-  * Convert a physical pointer to a virtual kernel pointer for /dev/mem
-  * access
-  */
- #define xlate_dev_mem_ptr(p)	__va(p)
- 
-+#include <asm-generic/io.h>
-+
- #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
- int valid_phys_addr_range(phys_addr_t addr, size_t size);
- int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
-diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
-index f7938fe0f911..5ba4116b4265 100644
---- a/arch/sh/include/asm/io_noioport.h
-+++ b/arch/sh/include/asm/io_noioport.h
-@@ -53,6 +53,13 @@ static inline void ioport_unmap(void __iomem *addr)
- #define outw_p(x, addr)	outw((x), (addr))
- #define outl_p(x, addr)	outl((x), (addr))
- 
-+#define insb insb
-+#define insw insw
-+#define insl insl
-+#define outsb outsb
-+#define outsw outsw
-+#define outsl outsl
-+
- static inline void insb(unsigned long port, void *dst, unsigned long count)
- {
- 	BUG();
-diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
-index 720a9186b06b..725a1623675a 100644
---- a/arch/sh/mm/ioremap.c
-+++ b/arch/sh/mm/ioremap.c
-@@ -72,7 +72,7 @@ __ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
- #define __ioremap_29bit(offset, size, prot)		NULL
- #endif /* CONFIG_29BIT */
- 
--void __iomem *
-+void __iomem * __ref
- arch_ioremap(phys_addr_t *paddr, size_t size, unsigned long *prot_val)
- {
- 	unsigned long last_addr, phys_addr = *paddr;
-@@ -102,7 +102,8 @@ arch_ioremap(phys_addr_t *paddr, size_t size, unsigned long *prot_val)
- 	 * First try to remap through the PMB.
- 	 * PMB entries are all pre-faulted.
- 	 */
--	mapped = pmb_remap_caller(phys_addr, size, pgprot, caller);
-+	mapped = pmb_remap_caller(phys_addr, size, pgprot,
-+			__builtin_return_address(0));
- 	if (mapped && !IS_ERR(mapped))
- 		return mapped;
- 
-@@ -129,7 +130,6 @@ static inline int iomapping_nontranslatable(unsigned long offset)
- int arch_iounmap(void __iomem *addr)
- {
- 	unsigned long vaddr = (unsigned long __force)addr;
--	struct vm_struct *p;
- 
- 	/*
- 	 * Nothing to do if there is no translatable mapping.
+This part of the code depends on CONFIG_PINCTRL_SH_FUNC_GPIO,
+which is used only on SH.
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
