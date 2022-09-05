@@ -2,106 +2,68 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4C9AAC54EE9
-	for <linux-sh@archiver.kernel.org>; Fri,  2 Sep 2022 11:02:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 694ECECAAA1
+	for <linux-sh@archiver.kernel.org>; Mon,  5 Sep 2022 07:46:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235931AbiIBLC1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 2 Sep 2022 07:02:27 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44792 "EHLO
+        id S236286AbiIEHqG (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 5 Sep 2022 03:46:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41556 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235957AbiIBLC0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 2 Sep 2022 07:02:26 -0400
-Received: from mail-qt1-f170.google.com (mail-qt1-f170.google.com [209.85.160.170])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 19FAFC58EC;
-        Fri,  2 Sep 2022 04:02:25 -0700 (PDT)
-Received: by mail-qt1-f170.google.com with SMTP id l5so1151434qtv.4;
-        Fri, 02 Sep 2022 04:02:25 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date;
-        bh=dZTws1L2y2xyjbs91n4hGu/TU6dg0KKGjBmfL0/vaak=;
-        b=aofngmOsGOIslWnPv0kCg6/DJjGt52Eh3RGbfiln+J5wyI+7p1HxTFggisKIJRM+zR
-         tlLuy7xlPv08uTqW0NH/PbAe8+1LtA+41b6FA62gknkeEY97jdApDYOvnm8dsVsKAGA/
-         DPU/d/3kEntm4ESAphszrPeyTlG4t2aiN085LJN/fyP2+rrsQH0Prx72o0oGSpITyOd6
-         6V2mwjMilK3c6l8Bvjud0FYnYlyLal/gIcTZZwvzY7qri+5hXeNkGjOz155Ve0jpuOlp
-         jymsTBsPNqwi8F+wrw2ej3d0xDbSDwJy6vWEzjC3Gbddow+FSB1gyuocfZ773BJtR07e
-         wHNQ==
-X-Gm-Message-State: ACgBeo3qGEIMXgXi9h5QnctZB2x5omtfpaOn/I/z3NSbLKtrV/HGUupF
-        NxQqBuGwuWLFJp+BwwPUzXMcBqxjPSzRpg==
-X-Google-Smtp-Source: AA6agR76vP7Mjxh6TP8BWzfMH1ghKzbUlRSbiuv5NFRKVUkG3DHdqfDFIg+pjA43PLVExa16S9+BIQ==
-X-Received: by 2002:a05:622a:512:b0:343:6f1:a026 with SMTP id l18-20020a05622a051200b0034306f1a026mr27548265qtx.323.1662116543504;
-        Fri, 02 Sep 2022 04:02:23 -0700 (PDT)
-Received: from mail-yw1-f169.google.com (mail-yw1-f169.google.com. [209.85.128.169])
-        by smtp.gmail.com with ESMTPSA id l21-20020a37f915000000b006bbe7ded98csm1128981qkj.112.2022.09.02.04.02.22
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 02 Sep 2022 04:02:22 -0700 (PDT)
-Received: by mail-yw1-f169.google.com with SMTP id 00721157ae682-324ec5a9e97so12900707b3.7;
-        Fri, 02 Sep 2022 04:02:22 -0700 (PDT)
-X-Received: by 2002:a0d:e895:0:b0:340:ab79:3285 with SMTP id
- r143-20020a0de895000000b00340ab793285mr26854285ywe.358.1662116542087; Fri, 02
- Sep 2022 04:02:22 -0700 (PDT)
-MIME-Version: 1.0
-References: <cover.1661789204.git.christophe.leroy@csgroup.eu>
- <abb46a587b76d379ad32d53817d837d8a5fea8bd.1661789204.git.christophe.leroy@csgroup.eu>
- <CAHp75VcngRihpfUkeKs-g+TbPnpOsZ+-Q37zDVoWp8p_2GbSvQ@mail.gmail.com>
- <18cda49e-84f0-a806-566a-6e77705e98b3@csgroup.eu> <1d548a19-feec-42b9-944d-890d6dde2fb8@www.fastmail.com>
- <CAHp75VfF78rWpC6+i2Hu6-PMULFeFMbqXhBVRkx5aFGFTU3U4A@mail.gmail.com>
-In-Reply-To: <CAHp75VfF78rWpC6+i2Hu6-PMULFeFMbqXhBVRkx5aFGFTU3U4A@mail.gmail.com>
+        with ESMTP id S231519AbiIEHqF (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 5 Sep 2022 03:46:05 -0400
+Received: from andre.telenet-ops.be (andre.telenet-ops.be [IPv6:2a02:1800:120:4::f00:15])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C349333E16
+        for <linux-sh@vger.kernel.org>; Mon,  5 Sep 2022 00:46:03 -0700 (PDT)
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed50:8960:eb4c:1eb8:b03d])
+        by andre.telenet-ops.be with bizsmtp
+        id G7m12800c4gmfJk017m1gw; Mon, 05 Sep 2022 09:46:02 +0200
+Received: from geert (helo=localhost)
+        by ramsan.of.borg with local-esmtp (Exim 4.93)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1oV6nx-0042ve-J4; Mon, 05 Sep 2022 09:46:01 +0200
+Date:   Mon, 5 Sep 2022 09:46:01 +0200 (CEST)
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Fri, 2 Sep 2022 13:02:10 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdVVup8J0uge02H4u6o8NzxfkuFuZfExJ5u2M3FBE+RSAQ@mail.gmail.com>
-Message-ID: <CAMuHMdVVup8J0uge02H4u6o8NzxfkuFuZfExJ5u2M3FBE+RSAQ@mail.gmail.com>
-Subject: Re: [PATCH v1 4/8] gpiolib: Get rid of ARCH_NR_GPIOS
-To:     Andy Shevchenko <andy.shevchenko@gmail.com>
-Cc:     Arnd Bergmann <arnd@arndb.de>,
-        =?UTF-8?B?TnVubyBTw6E=?= <nuno.sa@analog.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Bartosz Golaszewski <brgl@bgdev.pl>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Keerthy <j-keerthy@ti.com>, Russell King <linux@armlinux.org.uk>,
-        Jonathan Corbet <corbet@lwn.net>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        "open list:GPIO SUBSYSTEM" <linux-gpio@vger.kernel.org>,
-        linux-arm Mailing List <linux-arm-kernel@lists.infradead.org>,
-        Linux-Arch <linux-arch@vger.kernel.org>,
-        Linux Documentation List <linux-doc@vger.kernel.org>,
-        "maintainer:X86 ARCHITECTURE (32-BIT AND 64-BIT)" <x86@kernel.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+X-X-Sender: geert@ramsan.of.borg
+To:     linux-kernel@vger.kernel.org
+cc:     linux-sh@vger.kernel.org, amd-gfx@lists.freedesktop.org,
+        linux-s390@vger.kernel.org, linux-hardening@vger.kernel.org
+Subject: Re: Build regressions/improvements in v6.0-rc4
+In-Reply-To: <20220905071915.2312316-1-geert@linux-m68k.org>
+Message-ID: <alpine.DEB.2.22.394.2209050944290.964530@ramsan.of.borg>
+References: <CAHk-=wiqix9N5P0BXrSSOXjPZxMh=wDDRJ3sgf=hutoTUx0nZQ@mail.gmail.com> <20220905071915.2312316-1-geert@linux-m68k.org>
+User-Agent: Alpine 2.22 (DEB 394 2020-01-19)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII; format=flowed
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Andy,
+On Mon, 5 Sep 2022, Geert Uytterhoeven wrote:
+> JFYI, when comparing v6.0-rc4[1] to v6.0-rc3[3], the summaries are:
+>  - build errors: +3/-16
 
-CC linux-sh
+   + /kisskb/src/arch/sh/kernel/machvec.c: error: array subscript 'struct sh_machine_vector[0]' is partly outside array bounds of 'long int[1]' [-Werror=array-bounds]:  => 105:33
 
-On Fri, Sep 2, 2022 at 12:53 PM Andy Shevchenko
-<andy.shevchenko@gmail.com> wrote:
-> On Wed, Aug 31, 2022 at 11:55 PM Arnd Bergmann <arnd@arndb.de> wrote:
-> > drivers/pinctrl/renesas/gpio.c: gc->base = pfc->nr_gpio_pins; // ??? don't understand
->
-> I think, w/o looking into the code, that this just guarantees the
-> continuous numbering for all banks (chips) on the platform.
+sh4-gcc11/sh-allyesconfig (-Werror)
 
-This part of the code depends on CONFIG_PINCTRL_SH_FUNC_GPIO,
-which is used only on SH.
+   + /kisskb/src/drivers/gpu/drm/amd/amdgpu/../display/dc/dml/dcn32/display_mode_vba_32.c: error: the frame size of 2144 bytes is larger than 2048 bytes [-Werror=frame-larger-than=]:  => 3768:1
+
+x86_64-gcc8/x86-allmodconfig (in function dml32_ModeSupportAndSystemConfigurationFull())
+
+   + /kisskb/src/include/linux/fortify-string.h: error: call to '__write_overflow_field' declared with attribute warning: detected write beyond size of field (1st parameter); maybe use struct_group()? [-Werror=attribute-warning]:  => 258:25
+
+s390x-gcc11/s390-allyesconfig (inlined from 'copy_process' at /kisskb/src/kernel/fork.c:2200:2)
+
+> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/7e18e42e4b280c85b76967a9106a13ca61c16179/ (all 135 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/b90cb1053190353cc30f0fef0ef1f378ccc063c5/ (all 135 configs)
 
 Gr{oetje,eeting}s,
 
-                        Geert
+ 						Geert
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+ 							    -- Linus Torvalds
