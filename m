@@ -2,68 +2,151 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 694ECECAAA1
-	for <linux-sh@archiver.kernel.org>; Mon,  5 Sep 2022 07:46:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E2DC5ECAAA1
+	for <linux-sh@archiver.kernel.org>; Tue,  6 Sep 2022 21:42:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236286AbiIEHqG (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 5 Sep 2022 03:46:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41556 "EHLO
+        id S229468AbiIFVmy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 6 Sep 2022 17:42:54 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40330 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231519AbiIEHqF (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 5 Sep 2022 03:46:05 -0400
-Received: from andre.telenet-ops.be (andre.telenet-ops.be [IPv6:2a02:1800:120:4::f00:15])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C349333E16
-        for <linux-sh@vger.kernel.org>; Mon,  5 Sep 2022 00:46:03 -0700 (PDT)
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed50:8960:eb4c:1eb8:b03d])
-        by andre.telenet-ops.be with bizsmtp
-        id G7m12800c4gmfJk017m1gw; Mon, 05 Sep 2022 09:46:02 +0200
-Received: from geert (helo=localhost)
-        by ramsan.of.borg with local-esmtp (Exim 4.93)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1oV6nx-0042ve-J4; Mon, 05 Sep 2022 09:46:01 +0200
-Date:   Mon, 5 Sep 2022 09:46:01 +0200 (CEST)
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-X-X-Sender: geert@ramsan.of.borg
-To:     linux-kernel@vger.kernel.org
-cc:     linux-sh@vger.kernel.org, amd-gfx@lists.freedesktop.org,
-        linux-s390@vger.kernel.org, linux-hardening@vger.kernel.org
+        with ESMTP id S229980AbiIFVms (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 6 Sep 2022 17:42:48 -0400
+Received: from mail-pf1-x42a.google.com (mail-pf1-x42a.google.com [IPv6:2607:f8b0:4864:20::42a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C0ED491D0E
+        for <linux-sh@vger.kernel.org>; Tue,  6 Sep 2022 14:42:39 -0700 (PDT)
+Received: by mail-pf1-x42a.google.com with SMTP id z187so12677419pfb.12
+        for <linux-sh@vger.kernel.org>; Tue, 06 Sep 2022 14:42:39 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=chromium.org; s=google;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date;
+        bh=qqaQNOdpehqVq2XrweTVHqYoJcLxU4LOqgxU+UY60WQ=;
+        b=Qs7dLb2pL3V3HdrG3Pv00KmIHSZrRFEQqdYflAlJUmtdciWsItEQ8Htkv6YneSBYwY
+         Hs5g69MtDio3wFYWyiMv+3vQXaoDbTS74stSTnR7vUz9O65mWgC5c5hVw9AM8sXQ2wRx
+         VTRNK5albonxpliONnuWIYHNI/t4MHcs1gF/o=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date;
+        bh=qqaQNOdpehqVq2XrweTVHqYoJcLxU4LOqgxU+UY60WQ=;
+        b=Vms+3jOpTpriqejIOT0qUfkkHh8dCFm2dCozjMu2KusolnfFk3S5YTqZdlxG+agz/f
+         heag12c7mGVtkPAG4OitXPc/D2KXEn6s10z5cNTE4L5TqWRnyB+mAZlA/D06mFPAm6Xv
+         ORxgp0ti8Ra6CTFtG0+lo4CDMtU4aO6wV0eYjpapcsTdpQhq/8pvfzo9+9XIH1L/cH+8
+         pOAv22HYztJLUq9gHy7sEte187dQ+rebJfPt7aAwwalyYxgEuggc89I10q4xbXgcGZkg
+         Trq+aLH6G8aSa2+7nOcEf759pMSWyAkILCBVdoglUz0cUaaTttifbNCFKOLzZe8/Sfw6
+         hTQw==
+X-Gm-Message-State: ACgBeo3GFIAwB7ma98Yz14MANHq2BorFY+x1g5cIEDn1F4S58GBR0ti+
+        sn3vu8f2bBLQc6a7scaPIFNe9g==
+X-Google-Smtp-Source: AA6agR6IVbl9vhYt8tQVvWX6Bhb8qmGSNxPpRhfN16MoqKCPZoC5QRPOOz4Jr5nirm//GtXy6ukk6w==
+X-Received: by 2002:a63:2208:0:b0:429:9444:85be with SMTP id i8-20020a632208000000b00429944485bemr597770pgi.236.1662500558614;
+        Tue, 06 Sep 2022 14:42:38 -0700 (PDT)
+Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
+        by smtp.gmail.com with ESMTPSA id j3-20020a170902da8300b001752216ca51sm10545234plx.39.2022.09.06.14.42.37
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 06 Sep 2022 14:42:37 -0700 (PDT)
+Date:   Tue, 6 Sep 2022 14:42:36 -0700
+From:   Kees Cook <keescook@chromium.org>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
+        amd-gfx@lists.freedesktop.org, linux-s390@vger.kernel.org,
+        linux-hardening@vger.kernel.org
 Subject: Re: Build regressions/improvements in v6.0-rc4
-In-Reply-To: <20220905071915.2312316-1-geert@linux-m68k.org>
-Message-ID: <alpine.DEB.2.22.394.2209050944290.964530@ramsan.of.borg>
-References: <CAHk-=wiqix9N5P0BXrSSOXjPZxMh=wDDRJ3sgf=hutoTUx0nZQ@mail.gmail.com> <20220905071915.2312316-1-geert@linux-m68k.org>
-User-Agent: Alpine 2.22 (DEB 394 2020-01-19)
+Message-ID: <202209061432.FFF96789B@keescook>
+References: <CAHk-=wiqix9N5P0BXrSSOXjPZxMh=wDDRJ3sgf=hutoTUx0nZQ@mail.gmail.com>
+ <20220905071915.2312316-1-geert@linux-m68k.org>
+ <alpine.DEB.2.22.394.2209050944290.964530@ramsan.of.borg>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII; format=flowed
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <alpine.DEB.2.22.394.2209050944290.964530@ramsan.of.borg>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, 5 Sep 2022, Geert Uytterhoeven wrote:
-> JFYI, when comparing v6.0-rc4[1] to v6.0-rc3[3], the summaries are:
->  - build errors: +3/-16
+On Mon, Sep 05, 2022 at 09:46:01AM +0200, Geert Uytterhoeven wrote:
+> On Mon, 5 Sep 2022, Geert Uytterhoeven wrote:
+> > JFYI, when comparing v6.0-rc4[1] to v6.0-rc3[3], the summaries are:
+> >  - build errors: +3/-16
+> 
+>   + /kisskb/src/arch/sh/kernel/machvec.c: error: array subscript 'struct sh_machine_vector[0]' is partly outside array bounds of 'long int[1]' [-Werror=array-bounds]:  => 105:33
+> 
+> sh4-gcc11/sh-allyesconfig (-Werror)
 
-   + /kisskb/src/arch/sh/kernel/machvec.c: error: array subscript 'struct sh_machine_vector[0]' is partly outside array bounds of 'long int[1]' [-Werror=array-bounds]:  => 105:33
+Interesting -- I wonder why this suddenly appeared. I think the fix is
+the common "linker addresses need to be char arrays" fix:
 
-sh4-gcc11/sh-allyesconfig (-Werror)
+diff --git a/arch/sh/include/asm/sections.h b/arch/sh/include/asm/sections.h
+index 8edb824049b9..0cb0ca149ac3 100644
+--- a/arch/sh/include/asm/sections.h
++++ b/arch/sh/include/asm/sections.h
+@@ -4,7 +4,7 @@
+ 
+ #include <asm-generic/sections.h>
+ 
+-extern long __machvec_start, __machvec_end;
++extern char __machvec_start[], __machvec_end[];
+ extern char __uncached_start, __uncached_end;
+ extern char __start_eh_frame[], __stop_eh_frame[];
+ 
+diff --git a/arch/sh/kernel/machvec.c b/arch/sh/kernel/machvec.c
+index d606679a211e..57efaf5b82ae 100644
+--- a/arch/sh/kernel/machvec.c
++++ b/arch/sh/kernel/machvec.c
+@@ -20,8 +20,8 @@
+ #define MV_NAME_SIZE 32
+ 
+ #define for_each_mv(mv) \
+-	for ((mv) = (struct sh_machine_vector *)&__machvec_start; \
+-	     (mv) && (unsigned long)(mv) < (unsigned long)&__machvec_end; \
++	for ((mv) = (struct sh_machine_vector *)__machvec_start; \
++	     (mv) && (unsigned long)(mv) < (unsigned long)__machvec_end; \
+ 	     (mv)++)
+ 
+ static struct sh_machine_vector * __init get_mv_byname(const char *name)
+@@ -87,8 +87,8 @@ void __init sh_mv_setup(void)
+ 	if (!machvec_selected) {
+ 		unsigned long machvec_size;
+ 
+-		machvec_size = ((unsigned long)&__machvec_end -
+-				(unsigned long)&__machvec_start);
++		machvec_size = ((unsigned long)__machvec_end -
++				(unsigned long)__machvec_start);
+ 
+ 		/*
+ 		 * Sanity check for machvec section alignment. Ensure
+@@ -102,7 +102,7 @@ void __init sh_mv_setup(void)
+ 		 * vector (usually the only one) from .machvec.init.
+ 		 */
+ 		if (machvec_size >= sizeof(struct sh_machine_vector))
+-			sh_mv = *(struct sh_machine_vector *)&__machvec_start;
++			sh_mv = *(struct sh_machine_vector *)__machvec_start;
+ 	}
+ 
+ 	pr_notice("Booting machvec: %s\n", get_system_type());
 
-   + /kisskb/src/drivers/gpu/drm/amd/amdgpu/../display/dc/dml/dcn32/display_mode_vba_32.c: error: the frame size of 2144 bytes is larger than 2048 bytes [-Werror=frame-larger-than=]:  => 3768:1
+> 
+>   + /kisskb/src/drivers/gpu/drm/amd/amdgpu/../display/dc/dml/dcn32/display_mode_vba_32.c: error: the frame size of 2144 bytes is larger than 2048 bytes [-Werror=frame-larger-than=]:  => 3768:1
+> 
+> x86_64-gcc8/x86-allmodconfig (in function dml32_ModeSupportAndSystemConfigurationFull())
 
-x86_64-gcc8/x86-allmodconfig (in function dml32_ModeSupportAndSystemConfigurationFull())
+This I don't know about it, but looks like a recent commit: dda4fb85e433f
+Given it's a 2000 line function, I assume it could be improved! :)
 
-   + /kisskb/src/include/linux/fortify-string.h: error: call to '__write_overflow_field' declared with attribute warning: detected write beyond size of field (1st parameter); maybe use struct_group()? [-Werror=attribute-warning]:  => 258:25
+>   + /kisskb/src/include/linux/fortify-string.h: error: call to '__write_overflow_field' declared with attribute warning: detected write beyond size of field (1st parameter); maybe use struct_group()? [-Werror=attribute-warning]:  => 258:25
+> 
+> s390x-gcc11/s390-allyesconfig (inlined from 'copy_process' at /kisskb/src/kernel/fork.c:2200:2)
 
-s390x-gcc11/s390-allyesconfig (inlined from 'copy_process' at /kisskb/src/kernel/fork.c:2200:2)
+This is:
 
-> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/7e18e42e4b280c85b76967a9106a13ca61c16179/ (all 135 configs)
-> [3] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/b90cb1053190353cc30f0fef0ef1f378ccc063c5/ (all 135 configs)
+        memset(&p->irqtrace, 0, sizeof(p->irqtrace));
 
-Gr{oetje,eeting}s,
+p->irqtrace is:
 
- 						Geert
+        struct irqtrace_events          irqtrace;
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+But that's a whole object destination... why would only s390 warn?
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
- 							    -- Linus Torvalds
+-Kees
+
+-- 
+Kees Cook
