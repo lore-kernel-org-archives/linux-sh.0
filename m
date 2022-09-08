@@ -2,89 +2,89 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 61FE8ECAAD3
-	for <linux-sh@archiver.kernel.org>; Wed,  7 Sep 2022 23:47:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 71887C6FA83
+	for <linux-sh@archiver.kernel.org>; Thu,  8 Sep 2022 06:53:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229566AbiIGXrj (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 7 Sep 2022 19:47:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39688 "EHLO
+        id S231181AbiIHGxl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 8 Sep 2022 02:53:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39988 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229477AbiIGXri (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 7 Sep 2022 19:47:38 -0400
-Received: from mail-pj1-x1029.google.com (mail-pj1-x1029.google.com [IPv6:2607:f8b0:4864:20::1029])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0E574B8A6F
-        for <linux-sh@vger.kernel.org>; Wed,  7 Sep 2022 16:47:36 -0700 (PDT)
-Received: by mail-pj1-x1029.google.com with SMTP id t6-20020a17090a950600b0020063f8f964so2274186pjo.0
-        for <linux-sh@vger.kernel.org>; Wed, 07 Sep 2022 16:47:36 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=chromium.org; s=google;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date;
-        bh=QA7YsklnD2cfDCjZnRS3vgbzndyD3I08QYNTHl1zCqo=;
-        b=ZLBdFbRl5paMgO0B2nkuSUB92aTwmtmqanZFesgw5UFus70dkXrDyjCNdhChN3pJI2
-         t8e2tFazYgcQ2/I+HCWkNpNnhTL+sGFQ2IQmiy8gFk422S7/bBjOweZRLDXszByhh4xi
-         VaMpTtbZBDMm4nqrs2mAgMKZ9VkS11Y3DZbhU=
+        with ESMTP id S230203AbiIHGxf (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 8 Sep 2022 02:53:35 -0400
+Received: from mail-qk1-f178.google.com (mail-qk1-f178.google.com [209.85.222.178])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 65A796C77B;
+        Wed,  7 Sep 2022 23:53:33 -0700 (PDT)
+Received: by mail-qk1-f178.google.com with SMTP id h27so12208298qkk.9;
+        Wed, 07 Sep 2022 23:53:33 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date;
-        bh=QA7YsklnD2cfDCjZnRS3vgbzndyD3I08QYNTHl1zCqo=;
-        b=IFf4sgEQpTCA5Es1hYPKZO597Rrmwh/7l6zDzH5opijQVZfNEKtHn1gRDuskZztEGl
-         ror1MyebQf2dWNGjMoEXt4fZknfMWd+XfcrXyZ3LJejk3l3sGSzjOrCigcfzMg/WTkb8
-         u6L5Q3P2CqiAzGJb2xoRVv5YDhmDDiN8MpLws2ePpuYKIow5hwBaFgUbDM1gfOjYk+8W
-         m+oXAeqz7IB7Q7IJSC2pR+aA2jNOA2IBc2phnihDsGUQYUtYGQLy12c0iBi9VT1geDf7
-         gRCMFrT6JSUsPu8VYFsX3u6g38MdncB0GbvKh8RWuj4v4kelTjEhEhfjHJWlaZl9Izzq
-         m4LA==
-X-Gm-Message-State: ACgBeo2rEoR6yLQf3DrkFlpAxgN4V7NOUzChurUpoJPHu/Cl0+gS5bxt
-        0Nvd5IVLa1FyJnNeVfML2wjZcQ==
-X-Google-Smtp-Source: AA6agR6FxJPicYC0Cds/ZMsA1yhEHsGrUHcNbVNraLL0wYnkuXuYdtKZvewZkYvWfNoqDsOEyKfeIg==
-X-Received: by 2002:a17:903:556:b0:176:84c9:df3 with SMTP id jo22-20020a170903055600b0017684c90df3mr6335255plb.98.1662594455557;
-        Wed, 07 Sep 2022 16:47:35 -0700 (PDT)
-Received: from www.outflux.net (smtp.outflux.net. [198.145.64.163])
-        by smtp.gmail.com with ESMTPSA id r28-20020aa79edc000000b0053e38ac0ff4sm4585765pfq.115.2022.09.07.16.47.34
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 07 Sep 2022 16:47:34 -0700 (PDT)
-Date:   Wed, 7 Sep 2022 16:47:33 -0700
-From:   Kees Cook <keescook@chromium.org>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
-        amd-gfx@lists.freedesktop.org, linux-s390@vger.kernel.org,
-        linux-hardening@vger.kernel.org
-Subject: Re: Build regressions/improvements in v6.0-rc4
-Message-ID: <202209071646.A95761A@keescook>
-References: <CAHk-=wiqix9N5P0BXrSSOXjPZxMh=wDDRJ3sgf=hutoTUx0nZQ@mail.gmail.com>
- <20220905071915.2312316-1-geert@linux-m68k.org>
- <alpine.DEB.2.22.394.2209050944290.964530@ramsan.of.borg>
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date;
+        bh=gmy5/+4JSKjjn31BCUCNFwApzR9XPUHVEEwjpPd0TFU=;
+        b=D6u3Hzr+/7aEbAjCLrTckGPDHBJo6R8d9uBPPxVbcpawzXV1aiP+al/j2WFiNnuF6R
+         wm0R3Y/GA8rX9ktPsGDFDO2Lcs3XNA6avLDb4VmUa8JUh0dtH0IRNEp1t+32e7ZgI9CO
+         TC/Z76HqaCQZNho2H6hwOhlFADsmIMRQV6Qz0+OSxHZhmKpnJFWj5WpDOdkUt8gwbO9S
+         5UpnIGztsrClXQp30cKmrAYvqCud8WDExn8uHwxh7GCyNp+JjfIcDtYp5VHi98X05dXe
+         I6uy6l9PQDIVkaPITAgf1PTTqGmcX40NDolmHFSvM/JG4Ybm87woDGbEoJjQ97TFU1Sb
+         1JSw==
+X-Gm-Message-State: ACgBeo3MUvi957vxOqG6byczPNrP6iG3+Xw/KA5pW1jG6qnbeDXjCwax
+        YBnYWxiPrYH9JLtsHuZN2ejh1tn5AXu/9A==
+X-Google-Smtp-Source: AA6agR6BfIS2tTdC/6V6owURSibEQZ/Bm97oiIXHd8UZFgIcCtHy+SVkYTTxgcnnPZZzvluZ0PCwCg==
+X-Received: by 2002:a37:2d05:0:b0:6be:8620:57f with SMTP id t5-20020a372d05000000b006be8620057fmr5123469qkh.688.1662620012282;
+        Wed, 07 Sep 2022 23:53:32 -0700 (PDT)
+Received: from mail-yb1-f170.google.com (mail-yb1-f170.google.com. [209.85.219.170])
+        by smtp.gmail.com with ESMTPSA id t24-20020a37ea18000000b006b95f832aebsm15881888qkj.96.2022.09.07.23.53.31
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 07 Sep 2022 23:53:31 -0700 (PDT)
+Received: by mail-yb1-f170.google.com with SMTP id b136so4255111yba.2;
+        Wed, 07 Sep 2022 23:53:31 -0700 (PDT)
+X-Received: by 2002:a25:e64c:0:b0:6a9:89cf:155 with SMTP id
+ d73-20020a25e64c000000b006a989cf0155mr5445388ybh.365.1662620011556; Wed, 07
+ Sep 2022 23:53:31 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <alpine.DEB.2.22.394.2209050944290.964530@ramsan.of.borg>
+References: <20220907234345.96798-1-keescook@chromium.org>
+In-Reply-To: <20220907234345.96798-1-keescook@chromium.org>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Thu, 8 Sep 2022 08:53:19 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdXTWgEttXyCggiUjc29zbsJ9OvKJa1WC+4V9RZQCQro7g@mail.gmail.com>
+Message-ID: <CAMuHMdXTWgEttXyCggiUjc29zbsJ9OvKJa1WC+4V9RZQCQro7g@mail.gmail.com>
+Subject: Re: [PATCH] sh: machvec: Use char[] for section boundaries
+To:     Kees Cook <keescook@chromium.org>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        Paul Mundt <lethal@linux-sh.org>,
+        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        linux-hardening@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Sep 05, 2022 at 09:46:01AM +0200, Geert Uytterhoeven wrote:
-> On Mon, 5 Sep 2022, Geert Uytterhoeven wrote:
-> > JFYI, when comparing v6.0-rc4[1] to v6.0-rc3[3], the summaries are:
-> >  - build errors: +3/-16
-> 
->   + /kisskb/src/arch/sh/kernel/machvec.c: error: array subscript 'struct sh_machine_vector[0]' is partly outside array bounds of 'long int[1]' [-Werror=array-bounds]:  => 105:33
-> 
-> sh4-gcc11/sh-allyesconfig (-Werror)
+On Thu, Sep 8, 2022 at 1:43 AM Kees Cook <keescook@chromium.org> wrote:
+> As done for other sections, define the extern as a character array,
+> which relaxes many of the compiler-time object size checks, which would
+> otherwise assume it's a single long. Solves the following build error:
+>
+> arch/sh/kernel/machvec.c: error: array subscript 'struct sh_machine_vector[0]' is partly outside array bounds of 'long int[1]' [-Werror=array-bounds]:  => 105:33
+>
+> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+> Cc: Rich Felker <dalias@libc.org>
+> Cc: linux-sh@vger.kernel.org
+> Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+> Link: https://lore.kernel.org/lkml/alpine.DEB.2.22.394.2209050944290.964530@ramsan.of.borg/
+> Fixes: 9655ad03af2d ("sh: Fixup machvec support.")
+> Signed-off-by: Kees Cook <keescook@chromium.org>
 
-Sent a patch for this:
-https://lore.kernel.org/linux-hardening/20220907234345.96798-1-keescook@chromium.org/
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
->   + /kisskb/src/include/linux/fortify-string.h: error: call to '__write_overflow_field' declared with attribute warning: detected write beyond size of field (1st parameter); maybe use struct_group()? [-Werror=attribute-warning]:  => 258:25
-> 
-> s390x-gcc11/s390-allyesconfig (inlined from 'copy_process' at /kisskb/src/kernel/fork.c:2200:2)
+Gr{oetje,eeting}s,
 
-This error appears to have vanished?
+                        Geert
 
-> > [3] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/b90cb1053190353cc30f0fef0ef1f378ccc063c5/ (all 135 configs)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Status	Date/time	Target
-OK	Sep 7, 13:54	linus/s390-allyesconfig/s390x-gcc11
-
--- 
-Kees Cook
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
