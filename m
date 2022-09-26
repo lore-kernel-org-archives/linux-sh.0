@@ -2,59 +2,171 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C50D9C32771
-	for <linux-sh@archiver.kernel.org>; Mon, 26 Sep 2022 09:29:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 11949C6FA94
+	for <linux-sh@archiver.kernel.org>; Mon, 26 Sep 2022 18:42:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234961AbiIZJ3g (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 26 Sep 2022 05:29:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49434 "EHLO
+        id S231420AbiIZSm4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 26 Sep 2022 14:42:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47838 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234885AbiIZJ3J (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 26 Sep 2022 05:29:09 -0400
-Received: from michel.telenet-ops.be (michel.telenet-ops.be [IPv6:2a02:1800:110:4::f00:18])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BC0D7419BD
-        for <linux-sh@vger.kernel.org>; Mon, 26 Sep 2022 02:27:51 -0700 (PDT)
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed50:b923:b6a4:31f6:7444])
-        by michel.telenet-ops.be with bizsmtp
-        id QZTp2800r0EchQB06ZTpQt; Mon, 26 Sep 2022 11:27:49 +0200
-Received: from geert (helo=localhost)
-        by ramsan.of.borg with local-esmtp (Exim 4.93)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1ockOz-006HnW-Bg; Mon, 26 Sep 2022 11:27:49 +0200
-Date:   Mon, 26 Sep 2022 11:27:49 +0200 (CEST)
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-X-X-Sender: geert@ramsan.of.borg
-To:     linux-kernel@vger.kernel.org
-cc:     linux-sh@vger.kernel.org
-Subject: Re: Build regressions/improvements in v6.0-rc7
-In-Reply-To: <20220926085820.2990710-1-geert@linux-m68k.org>
-Message-ID: <alpine.DEB.2.22.394.2209261127060.1498357@ramsan.of.borg>
-References: <CAHk-=wjc_CDPy5WbN=e_FtPrd0Yn2Wp4JcdRByeyDoM9azK1mA@mail.gmail.com> <20220926085820.2990710-1-geert@linux-m68k.org>
-User-Agent: Alpine 2.22 (DEB 394 2020-01-19)
+        with ESMTP id S231295AbiIZSlx (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 26 Sep 2022 14:41:53 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C11AC41982;
+        Mon, 26 Sep 2022 11:41:04 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id B2D516120E;
+        Mon, 26 Sep 2022 18:41:03 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B8346C433D7;
+        Mon, 26 Sep 2022 18:40:49 +0000 (UTC)
+Date:   Mon, 26 Sep 2022 14:41:57 -0400
+From:   Steven Rostedt <rostedt@goodmis.org>
+To:     Peter Zijlstra <peterz@infradead.org>
+Cc:     richard.henderson@linaro.org, ink@jurassic.park.msu.ru,
+        mattst88@gmail.com, vgupta@kernel.org, linux@armlinux.org.uk,
+        ulli.kroll@googlemail.com, linus.walleij@linaro.org,
+        shawnguo@kernel.org, Sascha Hauer <s.hauer@pengutronix.de>,
+        kernel@pengutronix.de, festevam@gmail.com, linux-imx@nxp.com,
+        tony@atomide.com, khilman@kernel.org, catalin.marinas@arm.com,
+        will@kernel.org, guoren@kernel.org, bcain@quicinc.com,
+        chenhuacai@kernel.org, kernel@xen0n.name, geert@linux-m68k.org,
+        sammy@sammy.net, monstr@monstr.eu, tsbogend@alpha.franken.de,
+        dinguyen@kernel.org, jonas@southpole.se,
+        stefan.kristiansson@saunalahti.fi, shorne@gmail.com,
+        James.Bottomley@HansenPartnership.com, deller@gmx.de,
+        mpe@ellerman.id.au, npiggin@gmail.com, christophe.leroy@csgroup.eu,
+        paul.walmsley@sifive.com, palmer@dabbelt.com,
+        aou@eecs.berkeley.edu, hca@linux.ibm.com, gor@linux.ibm.com,
+        agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
+        svens@linux.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org,
+        davem@davemloft.net, richard@nod.at,
+        anton.ivanov@cambridgegreys.com, johannes@sipsolutions.net,
+        tglx@linutronix.de, mingo@redhat.com, bp@alien8.de,
+        dave.hansen@linux.intel.com, x86@kernel.org, hpa@zytor.com,
+        acme@kernel.org, mark.rutland@arm.com,
+        alexander.shishkin@linux.intel.com, jolsa@kernel.org,
+        namhyung@kernel.org, jgross@suse.com, srivatsa@csail.mit.edu,
+        amakhalov@vmware.com, pv-drivers@vmware.com,
+        boris.ostrovsky@oracle.com, chris@zankel.net, jcmvbkbc@gmail.com,
+        rafael@kernel.org, lenb@kernel.org, pavel@ucw.cz,
+        gregkh@linuxfoundation.org, mturquette@baylibre.com,
+        sboyd@kernel.org, daniel.lezcano@linaro.org, lpieralisi@kernel.org,
+        sudeep.holla@arm.com, agross@kernel.org,
+        bjorn.andersson@linaro.org, konrad.dybcio@somainline.org,
+        anup@brainfault.org, thierry.reding@gmail.com,
+        jonathanh@nvidia.com, jacob.jun.pan@linux.intel.com,
+        atishp@atishpatra.org, Arnd Bergmann <arnd@arndb.de>,
+        yury.norov@gmail.com, andriy.shevchenko@linux.intel.com,
+        linux@rasmusvillemoes.dk, dennis@kernel.org, tj@kernel.org,
+        cl@linux.com, pmladek@suse.com, senozhatsky@chromium.org,
+        john.ogness@linutronix.de, juri.lelli@redhat.com,
+        vincent.guittot@linaro.org, dietmar.eggemann@arm.com,
+        bsegall@google.com, mgorman@suse.de, bristot@redhat.com,
+        vschneid@redhat.com, fweisbec@gmail.com, ryabinin.a.a@gmail.com,
+        glider@google.com, andreyknvl@gmail.com, dvyukov@google.com,
+        vincenzo.frascino@arm.com,
+        Andrew Morton <akpm@linux-foundation.org>, jpoimboe@kernel.org,
+        linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org, linux-omap@vger.kernel.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        linux-ia64@vger.kernel.org, loongarch@lists.linux.dev,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+        linux-perf-users@vger.kernel.org,
+        virtualization@lists.linux-foundation.org,
+        linux-xtensa@linux-xtensa.org, linux-acpi@vger.kernel.org,
+        linux-pm@vger.kernel.org, linux-clk@vger.kernel.org,
+        linux-arm-msm@vger.kernel.org, linux-tegra@vger.kernel.org,
+        linux-arch@vger.kernel.org, kasan-dev@googlegroups.com
+Subject: Re: [PATCH v2 33/44] ftrace: WARN on rcuidle
+Message-ID: <20220926144157.0406dfbb@gandalf.local.home>
+In-Reply-To: <20220919101522.573936213@infradead.org>
+References: <20220919095939.761690562@infradead.org>
+        <20220919101522.573936213@infradead.org>
+X-Mailer: Claws Mail 3.17.8 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII; format=flowed
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-> JFYI, when comparing v6.0-rc7[1] to v6.0-rc6[3], the summaries are:
->  - build errors: +1/-16
 
-   + /kisskb/src/arch/sh/kernel/machvec.c: error: array subscript 'struct sh_machine_vector[0]' is partly outside array bounds of 'long int[1]' [-Werror=array-bounds]:  => 105:33
+Nit, the subject should have "tracing:" an not "ftrace:" as the former
+encompasses the tracing infrastructure and the latter is for the function
+hook part of that.
 
-sh4-gcc11/sh-all{mod,yes}config
-Seen in other sh4-gcc11 builds before
+On Mon, 19 Sep 2022 12:00:12 +0200
+Peter Zijlstra <peterz@infradead.org> wrote:
 
-> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/f76349cf41451c5c42a99f18a9163377e4b364ff/ (all 135 configs)
-> [3] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/521a547ced6477c54b4b0cc206000406c221b4d6/ (all 135 configs)
+> CONFIG_GENERIC_ENTRY disallows any and all tracing when RCU isn't
+> enabled.
+> 
+> XXX if s390 (the only other GENERIC_ENTRY user as of this writing)
+> isn't comfortable with this, we could switch to
+> HAVE_NOINSTR_VALIDATION which is x86_64 only atm.
+> 
+> Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+> ---
+>  include/linux/tracepoint.h |   13 ++++++++++++-
+>  kernel/trace/trace.c       |    3 +++
+>  2 files changed, 15 insertions(+), 1 deletion(-)
+> 
+> --- a/include/linux/tracepoint.h
+> +++ b/include/linux/tracepoint.h
+> @@ -178,6 +178,16 @@ static inline struct tracepoint *tracepo
+>  #endif /* CONFIG_HAVE_STATIC_CALL */
+>  
+>  /*
+> + * CONFIG_GENERIC_ENTRY archs are expected to have sanitized entry and idle
+> + * code that disallow any/all tracing/instrumentation when RCU isn't watching.
+> + */
+> +#ifdef CONFIG_GENERIC_ENTRY
+> +#define RCUIDLE_COND(rcuidle)	(rcuidle)
+> +#else
 
-Gr{oetje,eeting}s,
+Should probably move the below comment to here:
 
- 						Geert
+ /* srcu can't be used from NMI */
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+> +#define RCUIDLE_COND(rcuidle)	(rcuidle && in_nmi())
+> +#endif
+> +
+> +/*
+>   * it_func[0] is never NULL because there is at least one element in the array
+>   * when the array itself is non NULL.
+>   */
+> @@ -189,7 +199,8 @@ static inline struct tracepoint *tracepo
+>  			return;						\
+>  									\
+>  		/* srcu can't be used from NMI */			\
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
- 							    -- Linus Torvalds
+And remove the above.
+
+-- Steve
+
+> -		WARN_ON_ONCE(rcuidle && in_nmi());			\
+> +		if (WARN_ON_ONCE(RCUIDLE_COND(rcuidle)))		\
+> +			return;						\
+>  									\
+>  		/* keep srcu and sched-rcu usage consistent */		\
+>  		preempt_disable_notrace();				\
+> --- a/kernel/trace/trace.c
+> +++ b/kernel/trace/trace.c
+> @@ -3104,6 +3104,9 @@ void __trace_stack(struct trace_array *t
+>  		return;
+>  	}
+>  
+> +	if (WARN_ON_ONCE(IS_ENABLED(CONFIG_GENERIC_ENTRY)))
+> +		return;
+> +
+>  	/*
+>  	 * When an NMI triggers, RCU is enabled via ct_nmi_enter(),
+>  	 * but if the above rcu_is_watching() failed, then the NMI
+> 
+
