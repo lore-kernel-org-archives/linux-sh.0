@@ -2,161 +2,120 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EBCD0C07E9D
-	for <linux-sh@archiver.kernel.org>; Tue,  4 Oct 2022 17:20:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E30F5C433F5
+	for <linux-sh@archiver.kernel.org>; Thu,  6 Oct 2022 23:42:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230243AbiJDRUX (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 4 Oct 2022 13:20:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59486 "EHLO
+        id S232200AbiJFXmx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 6 Oct 2022 19:42:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52912 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229921AbiJDRUD (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 4 Oct 2022 13:20:03 -0400
-Received: from foss.arm.com (foss.arm.com [217.140.110.172])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 5B16010C4;
-        Tue,  4 Oct 2022 10:19:54 -0700 (PDT)
-Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id A163E1A32;
-        Tue,  4 Oct 2022 10:20:00 -0700 (PDT)
-Received: from FVFF77S0Q05N.cambridge.arm.com (FVFF77S0Q05N.cambridge.arm.com [10.1.38.139])
-        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 2E7683F792;
-        Tue,  4 Oct 2022 10:19:38 -0700 (PDT)
-Date:   Tue, 4 Oct 2022 18:19:33 +0100
-From:   Mark Rutland <mark.rutland@arm.com>
-To:     Peter Zijlstra <peterz@infradead.org>
-Cc:     richard.henderson@linaro.org, ink@jurassic.park.msu.ru,
-        mattst88@gmail.com, vgupta@kernel.org, linux@armlinux.org.uk,
-        ulli.kroll@googlemail.com, linus.walleij@linaro.org,
-        shawnguo@kernel.org, Sascha Hauer <s.hauer@pengutronix.de>,
-        kernel@pengutronix.de, festevam@gmail.com, linux-imx@nxp.com,
-        tony@atomide.com, khilman@kernel.org, catalin.marinas@arm.com,
-        will@kernel.org, guoren@kernel.org, bcain@quicinc.com,
-        chenhuacai@kernel.org, kernel@xen0n.name, geert@linux-m68k.org,
-        sammy@sammy.net, monstr@monstr.eu, tsbogend@alpha.franken.de,
-        dinguyen@kernel.org, jonas@southpole.se,
-        stefan.kristiansson@saunalahti.fi, shorne@gmail.com,
-        James.Bottomley@HansenPartnership.com, deller@gmx.de,
-        mpe@ellerman.id.au, npiggin@gmail.com, christophe.leroy@csgroup.eu,
-        paul.walmsley@sifive.com, palmer@dabbelt.com,
-        aou@eecs.berkeley.edu, hca@linux.ibm.com, gor@linux.ibm.com,
-        agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
-        svens@linux.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org,
-        davem@davemloft.net, richard@nod.at,
-        anton.ivanov@cambridgegreys.com, johannes@sipsolutions.net,
-        tglx@linutronix.de, mingo@redhat.com, bp@alien8.de,
-        dave.hansen@linux.intel.com, x86@kernel.org, hpa@zytor.com,
-        acme@kernel.org, alexander.shishkin@linux.intel.com,
-        jolsa@kernel.org, namhyung@kernel.org, jgross@suse.com,
-        srivatsa@csail.mit.edu, amakhalov@vmware.com,
-        pv-drivers@vmware.com, boris.ostrovsky@oracle.com,
-        chris@zankel.net, jcmvbkbc@gmail.com, rafael@kernel.org,
-        lenb@kernel.org, pavel@ucw.cz, gregkh@linuxfoundation.org,
-        mturquette@baylibre.com, sboyd@kernel.org,
-        daniel.lezcano@linaro.org, lpieralisi@kernel.org,
-        sudeep.holla@arm.com, agross@kernel.org,
-        bjorn.andersson@linaro.org, konrad.dybcio@somainline.org,
-        anup@brainfault.org, thierry.reding@gmail.com,
-        jonathanh@nvidia.com, jacob.jun.pan@linux.intel.com,
-        atishp@atishpatra.org, Arnd Bergmann <arnd@arndb.de>,
-        yury.norov@gmail.com, andriy.shevchenko@linux.intel.com,
-        linux@rasmusvillemoes.dk, dennis@kernel.org, tj@kernel.org,
-        cl@linux.com, rostedt@goodmis.org, pmladek@suse.com,
-        senozhatsky@chromium.org, john.ogness@linutronix.de,
-        juri.lelli@redhat.com, vincent.guittot@linaro.org,
-        dietmar.eggemann@arm.com, bsegall@google.com, mgorman@suse.de,
-        bristot@redhat.com, vschneid@redhat.com, fweisbec@gmail.com,
-        ryabinin.a.a@gmail.com, glider@google.com, andreyknvl@gmail.com,
-        dvyukov@google.com, vincenzo.frascino@arm.com,
-        Andrew Morton <akpm@linux-foundation.org>, jpoimboe@kernel.org,
-        linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org, linux-omap@vger.kernel.org,
-        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-ia64@vger.kernel.org, loongarch@lists.linux.dev,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
-        linux-perf-users@vger.kernel.org,
-        virtualization@lists.linux-foundation.org,
-        linux-xtensa@linux-xtensa.org, linux-acpi@vger.kernel.org,
-        linux-pm@vger.kernel.org, linux-clk@vger.kernel.org,
-        linux-arm-msm@vger.kernel.org, linux-tegra@vger.kernel.org,
-        linux-arch@vger.kernel.org, kasan-dev@googlegroups.com
-Subject: Re: [PATCH v2 33/44] ftrace: WARN on rcuidle
-Message-ID: <YzxrJYjKxy/vUc5n@FVFF77S0Q05N.cambridge.arm.com>
-References: <20220919095939.761690562@infradead.org>
- <20220919101522.573936213@infradead.org>
+        with ESMTP id S230527AbiJFXmw (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 6 Oct 2022 19:42:52 -0400
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AA585B7EE0;
+        Thu,  6 Oct 2022 16:42:50 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
+        Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:Content-ID:
+        Content-Description:In-Reply-To:References;
+        bh=EHXjKJCl8P229+ixHF+hwry+sLAzC+giK/HCO4UhZtM=; b=rdbs0XlVMVxA2TXDEOYmo3yly1
+        q/rGmxrWlhuDOOfvnNidJy50/DJ8nB5+ObMV2EOuIm7w6jsOgg0Q9xTlZ1LXB4flXR52icvhMjSLK
+        8Ojueht35o3yVb5joRTEBzK4Iv3ssNZ/TSgUluoYYEKwbdiFS54MXp7Rx1IdIJKtEsQupYYlGEqQm
+        rsuSB6+6aBNGkmzOMWqtI+BMllrEaqhL4jYN0JRt/t8mTwfXYiVxCRCfBzVmFhmqTf3RTsFCIOUip
+        n0rQhOcAS3O2Ytdq7vpD59YHTP4Lh/+dQkMDzq/FI043EyJFxMB9MPSJLQyGA/i0LDXtaf8JjWBxq
+        aJoQ27Jg==;
+Received: from [2601:1c2:d80:3110::a2e7] (helo=casper.infradead.org)
+        by casper.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1ogaVt-001WuB-5Z; Thu, 06 Oct 2022 23:42:49 +0000
+From:   Randy Dunlap <rdunlap@infradead.org>
+To:     linux-kernel@vger.kernel.org
+Cc:     Randy Dunlap <rdunlap@infradead.org>,
+        Rob Herring <robh+dt@kernel.org>,
+        Frank Rowand <frowand.list@gmail.com>,
+        devicetree@vger.kernel.org, Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org
+Subject: [PATCH] sh: init: use OF_EARLY_FLATTREE for early init
+Date:   Thu,  6 Oct 2022 16:42:40 -0700
+Message-Id: <20221006234240.7755-1-rdunlap@infradead.org>
+X-Mailer: git-send-email 2.37.3
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20220919101522.573936213@infradead.org>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Sep 19, 2022 at 12:00:12PM +0200, Peter Zijlstra wrote:
-> CONFIG_GENERIC_ENTRY disallows any and all tracing when RCU isn't
-> enabled.
-> 
-> XXX if s390 (the only other GENERIC_ENTRY user as of this writing)
-> isn't comfortable with this, we could switch to
-> HAVE_NOINSTR_VALIDATION which is x86_64 only atm.
-> 
-> Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
-> ---
->  include/linux/tracepoint.h |   13 ++++++++++++-
->  kernel/trace/trace.c       |    3 +++
->  2 files changed, 15 insertions(+), 1 deletion(-)
-> 
-> --- a/include/linux/tracepoint.h
-> +++ b/include/linux/tracepoint.h
-> @@ -178,6 +178,16 @@ static inline struct tracepoint *tracepo
->  #endif /* CONFIG_HAVE_STATIC_CALL */
->  
->  /*
-> + * CONFIG_GENERIC_ENTRY archs are expected to have sanitized entry and idle
-> + * code that disallow any/all tracing/instrumentation when RCU isn't watching.
-> + */
-> +#ifdef CONFIG_GENERIC_ENTRY
-> +#define RCUIDLE_COND(rcuidle)	(rcuidle)
-> +#else
-> +#define RCUIDLE_COND(rcuidle)	(rcuidle && in_nmi())
-> +#endif
+When CONFIG_OF_EARLY_FLATTREE and CONFIG_SH_DEVICE_TREE are not set,
+SH3 build fails with a call to early_init_dt_scan(), so in
+arch/sh/kernel/setup.c and arch/sh/kernel/head_32.S, use
+CONFIG_OF_EARLY_FLATTREE instead of CONFIG_OF_FLATTREE.
 
-Could we make this depend on ARCH_WANTS_NO_INSTR instead?
+Fixes this build error:
+../arch/sh/kernel/setup.c: In function 'sh_fdt_init':
+../arch/sh/kernel/setup.c:262:26: error: implicit declaration of function 'early_init_dt_scan' [-Werror=implicit-function-declaration]
+  262 |         if (!dt_virt || !early_init_dt_scan(dt_virt)) {
 
-That'll allow arm64 to check this even though we're not using the generic entry
-code (and there's lots of work necessary to make that possible...).
+Fixes: 03767daa1387 ("sh: fix build regression with CONFIG_OF && !CONFIG_OF_FLATTREE")
+Fixes: eb6b6930a70f ("sh: fix memory corruption of unflattened device tree")
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Cc: Rob Herring <robh+dt@kernel.org>
+Cc: Frank Rowand <frowand.list@gmail.com>
+Cc: devicetree@vger.kernel.org
+Cc: Rich Felker <dalias@libc.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/sh/kernel/head_32.S |    6 +++---
+ arch/sh/kernel/setup.c   |    4 ++--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-Thanks,
-Mark.
-
-> +
-> +/*
->   * it_func[0] is never NULL because there is at least one element in the array
->   * when the array itself is non NULL.
->   */
-> @@ -189,7 +199,8 @@ static inline struct tracepoint *tracepo
->  			return;						\
->  									\
->  		/* srcu can't be used from NMI */			\
-> -		WARN_ON_ONCE(rcuidle && in_nmi());			\
-> +		if (WARN_ON_ONCE(RCUIDLE_COND(rcuidle)))		\
-> +			return;						\
->  									\
->  		/* keep srcu and sched-rcu usage consistent */		\
->  		preempt_disable_notrace();				\
-> --- a/kernel/trace/trace.c
-> +++ b/kernel/trace/trace.c
-> @@ -3104,6 +3104,9 @@ void __trace_stack(struct trace_array *t
->  		return;
->  	}
->  
-> +	if (WARN_ON_ONCE(IS_ENABLED(CONFIG_GENERIC_ENTRY)))
-> +		return;
-> +
->  	/*
->  	 * When an NMI triggers, RCU is enabled via ct_nmi_enter(),
->  	 * but if the above rcu_is_watching() failed, then the NMI
-> 
-> 
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -244,7 +244,7 @@ void __init __weak plat_early_device_set
+ {
+ }
+ 
+-#ifdef CONFIG_OF_FLATTREE
++#ifdef CONFIG_OF_EARLY_FLATTREE
+ void __ref sh_fdt_init(phys_addr_t dt_phys)
+ {
+ 	static int done = 0;
+@@ -326,7 +326,7 @@ void __init setup_arch(char **cmdline_p)
+ 	/* Let earlyprintk output early console messages */
+ 	sh_early_platform_driver_probe("earlyprintk", 1, 1);
+ 
+-#ifdef CONFIG_OF_FLATTREE
++#ifdef CONFIG_OF_EARLY_FLATTREE
+ #ifdef CONFIG_USE_BUILTIN_DTB
+ 	unflatten_and_copy_device_tree();
+ #else
+--- a/arch/sh/kernel/head_32.S
++++ b/arch/sh/kernel/head_32.S
+@@ -64,7 +64,7 @@ ENTRY(_stext)
+ 	ldc	r0, r6_bank
+ #endif
+ 
+-#ifdef CONFIG_OF_FLATTREE
++#ifdef CONFIG_OF_EARLY_FLATTREE
+ 	mov	r4, r12		! Store device tree blob pointer in r12
+ #endif
+ 	
+@@ -315,7 +315,7 @@ ENTRY(_stext)
+ 10:		
+ #endif
+ 
+-#ifdef CONFIG_OF_FLATTREE
++#ifdef CONFIG_OF_EARLY_FLATTREE
+ 	mov.l	8f, r0		! Make flat device tree available early.
+ 	jsr	@r0
+ 	 mov	r12, r4
+@@ -346,7 +346,7 @@ ENTRY(stack_start)
+ 5:	.long	start_kernel
+ 6:	.long	cpu_init
+ 7:	.long	init_thread_union
+-#if defined(CONFIG_OF_FLATTREE)
++#if defined(CONFIG_OF_EARLY_FLATTREE)
+ 8:	.long	sh_fdt_init
+ #endif
+ 
