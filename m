@@ -2,125 +2,133 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B883EC433FE
-	for <linux-sh@archiver.kernel.org>; Fri, 14 Oct 2022 00:19:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 384A1C43219
+	for <linux-sh@archiver.kernel.org>; Fri, 14 Oct 2022 21:23:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229585AbiJNATc (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 13 Oct 2022 20:19:32 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53270 "EHLO
+        id S229889AbiJNVW7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 14 Oct 2022 17:22:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53144 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229613AbiJNATb (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 13 Oct 2022 20:19:31 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5028B183D86;
-        Thu, 13 Oct 2022 17:19:29 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 647E7B8217A;
-        Fri, 14 Oct 2022 00:19:27 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E46CFC433C1;
-        Fri, 14 Oct 2022 00:19:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1665706766;
-        bh=truyd6YXrnJgH30xs9lXfxt5wDtPtug7TuX2iG1sDRU=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=V+ecO9Q5WguXB07V4rM+vFlU1cbrhBaORj1CS2HmHDlG2OMUtstpFQfkqXMaOwZB7
-         xcXlTaAAUOI0c3p1Op48lhR8vpkWDcmDAxzNlvKXCWsZZZu4PMHUMnP6kUx38jhIQR
-         iruz4O2tYUuLAdCLWl7YDSGNB1xsUWfMVcLmNkd23EYAiSfHqh4Q7/gZJup/EHOpVF
-         Z6lUJjkM15/gXC0kQ7ZsWJ7Rh95ZirWZRYq0WWFw3ClqLuAqcUPZsUCQkH9VPK4vFf
-         zTL6t0PiQSvAegrPGDipBcfgPf/NYzhmtBD5yKs9yrgwVbHGUDRmbeIPz4/UaKequd
-         tBQc58bPO5ybA==
-From:   Bjorn Helgaas <helgaas@kernel.org>
-To:     linux-kernel@vger.kernel.org
-Cc:     Bjorn Helgaas <bhelgaas@google.com>,
+        with ESMTP id S229436AbiJNVW6 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 14 Oct 2022 17:22:58 -0400
+Received: from mx01.omp.ru (mx01.omp.ru [90.154.21.10])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 265AE1D375E;
+        Fri, 14 Oct 2022 14:22:50 -0700 (PDT)
+Received: from localhost.localdomain (178.176.75.138) by msexch01.omp.ru
+ (10.188.4.12) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.2.986.14; Sat, 15 Oct
+ 2022 00:22:41 +0300
+From:   Sergey Shtylyov <s.shtylyov@omp.ru>
+To:     Oleg Nesterov <oleg@redhat.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>, Brian Cain <bcain@quicinc.com>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        Jonas Bonn <jonas@southpole.se>,
+        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+        Stafford Horne <shorne@gmail.com>,
+        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Subject: [PATCH 1/3] sh: remove unused SLOW_DOWN_IO
-Date:   Thu, 13 Oct 2022 19:19:09 -0500
-Message-Id: <20221014001911.3342485-2-helgaas@kernel.org>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20221014001911.3342485-1-helgaas@kernel.org>
-References: <20221014001911.3342485-1-helgaas@kernel.org>
+        Rich Felker <dalias@libc.org>,
+        "David S. Miller" <davem@davemloft.net>,
+        <linux-arm-kernel@lists.infradead.org>,
+        <linux-hexagon@vger.kernel.org>, <linux-ia64@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>, <linux-mips@vger.kernel.org>,
+        <linux-parisc@vger.kernel.org>, <linux-sh@vger.kernel.org>,
+        <linuxppc-dev@lists.ozlabs.org>, <openrisc@lists.librecores.org>,
+        <sparclinux@vger.kernel.org>
+CC:     Andrew Morton <akpm@linux-foundation.org>,
+        <lvc-patches@linuxtesting.org>, <lvc-project@linuxtesting.org>
+Subject: [PATCH 00/13] Make user_regset_copyin_ignore() *void*
+Date:   Sat, 15 Oct 2022 00:22:22 +0300
+Message-ID: <20221014212235.10770-1-s.shtylyov@omp.ru>
+X-Mailer: git-send-email 2.26.3
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7BIT
+Content-Type:   text/plain; charset=US-ASCII
+X-Originating-IP: [178.176.75.138]
+X-ClientProxiedBy: msexch01.omp.ru (10.188.4.12) To msexch01.omp.ru
+ (10.188.4.12)
+X-KSE-ServerInfo: msexch01.omp.ru, 9
+X-KSE-AntiSpam-Interceptor-Info: scan successful
+X-KSE-AntiSpam-Version: 5.9.20, Database issued on: 10/14/2022 21:00:39
+X-KSE-AntiSpam-Status: KAS_STATUS_NOT_DETECTED
+X-KSE-AntiSpam-Method: none
+X-KSE-AntiSpam-Rate: 59
+X-KSE-AntiSpam-Info: Lua profiles 173137 [Oct 14 2022]
+X-KSE-AntiSpam-Info: Version: 5.9.20.0
+X-KSE-AntiSpam-Info: Envelope from: s.shtylyov@omp.ru
+X-KSE-AntiSpam-Info: LuaCore: 500 500 6cc86d8f5638d79810308830d98d6b6279998c49
+X-KSE-AntiSpam-Info: {rep_avail}
+X-KSE-AntiSpam-Info: {Tracking_from_domain_doesnt_match_to}
+X-KSE-AntiSpam-Info: {relay has no DNS name}
+X-KSE-AntiSpam-Info: {SMTP from is not routable}
+X-KSE-AntiSpam-Info: omp.ru:7.1.1;127.0.0.199:7.1.2;d41d8cd98f00b204e9800998ecf8427e.com:7.1.1
+X-KSE-AntiSpam-Info: ApMailHostAddress: 178.176.75.138
+X-KSE-AntiSpam-Info: {DNS response errors}
+X-KSE-AntiSpam-Info: Rate: 59
+X-KSE-AntiSpam-Info: Status: not_detected
+X-KSE-AntiSpam-Info: Method: none
+X-KSE-AntiSpam-Info: Auth:dmarc=temperror header.from=omp.ru;spf=temperror
+ smtp.mailfrom=omp.ru;dkim=none
+X-KSE-Antiphishing-Info: Clean
+X-KSE-Antiphishing-ScanningType: Heuristic
+X-KSE-Antiphishing-Method: None
+X-KSE-Antiphishing-Bases: 10/14/2022 21:03:00
+X-KSE-AttachmentFiltering-Interceptor-Info: protection disabled
+X-KSE-Antivirus-Interceptor-Info: scan successful
+X-KSE-Antivirus-Info: Clean, bases: 10/14/2022 3:23:00 PM
+X-KSE-BulkMessagesFiltering-Scan-Result: InTheLimit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Bjorn Helgaas <bhelgaas@google.com>
+Here are 13 patches against the 'next-20221014' tag of the 'linux-next.git'
+repo.  I'm not sure how this cross-arch series should be merged -- perhaps
+thru Andrew Morton's tree?
 
-io.h defines SLOW_DOWN_IO only when CONF_SLOWDOWN_IO is defined, but
-CONF_SLOWDOWN_IO is never defined and is in fact explicitly undefined.
-Remove SLOW_DOWN_IO and related code.
+user_regset_copyin_ignore() apparently cannot fail and so always returns 0.
+Let's first remove the result checks in several architectures that call this
+function and then make user_regset_copyin_ignore() return *void* instead of
+*int*...
 
-N.B. 37b7a97884ba ("sh: machvec IO death.") went to some trouble to add
-CONF_SLOWDOWN_IO and SLOW_DOWN_IO, for no obvious reason.  Maybe there was
-some out-of-tree case that used this.
+Sergey Shtylyov (13):
+  arc: ptrace: user_regset_copyin_ignore() always returns 0
+  arm: ptrace: user_regset_copyin_ignore() always returns 0
+  arm64: ptrace: user_regset_copyin_ignore() always returns 0
+  hexagon: ptrace: user_regset_copyin_ignore() always returns 0
+  ia64: ptrace: user_regset_copyin_ignore() always returns 0
+  mips: ptrace: user_regset_copyin_ignore() always returns 0
+  nios2: ptrace: user_regset_copyin_ignore() always returns 0
+  openrisc: ptrace: user_regset_copyin_ignore() always returns 0
+  parisc: ptrace: user_regset_copyin_ignore() always returns 0
+  powerpc: ptrace: user_regset_copyin_ignore() always returns 0
+  sh: ptrace: user_regset_copyin_ignore() always returns 0
+  sparc: ptrace: user_regset_copyin_ignore() always returns 0
+  regset: make user_regset_copyin_ignore() *void*
 
-Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
----
- arch/sh/include/asm/io.h | 17 ++---------------
- 1 file changed, 2 insertions(+), 15 deletions(-)
+ arch/arc/kernel/ptrace.c                 |  2 +-
+ arch/arm/kernel/ptrace.c                 |  8 +++-----
+ arch/arm64/kernel/ptrace.c               | 16 ++++------------
+ arch/hexagon/kernel/ptrace.c             |  7 +++----
+ arch/ia64/kernel/ptrace.c                | 20 +++++++++-----------
+ arch/mips/kernel/ptrace.c                |  9 +++++----
+ arch/nios2/kernel/ptrace.c               |  6 +++---
+ arch/openrisc/kernel/ptrace.c            |  8 +++-----
+ arch/parisc/kernel/ptrace.c              | 15 +++++++++------
+ arch/powerpc/kernel/ptrace/ptrace-tm.c   | 10 +++++-----
+ arch/powerpc/kernel/ptrace/ptrace-view.c | 10 +++++-----
+ arch/sh/kernel/ptrace_32.c               |  8 ++++----
+ arch/sparc/kernel/ptrace_32.c            |  9 +++++----
+ arch/sparc/kernel/ptrace_64.c            | 23 +++++++++++------------
+ include/linux/regset.h                   | 15 +++++++--------
+ 15 files changed, 77 insertions(+), 89 deletions(-)
 
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index fba90e670ed4..8d2df499b2fc 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -121,11 +121,6 @@ __BUILD_MEMORY_STRING(__raw_, q, u64)
- 
- #ifdef CONFIG_HAS_IOPORT_MAP
- 
--/*
-- * Slowdown I/O port space accesses for antique hardware.
-- */
--#undef CONF_SLOWDOWN_IO
--
- /*
-  * On SuperH I/O ports are memory mapped, so we access them using normal
-  * load/store instructions. sh_io_port_base is the virtual address to
-@@ -145,13 +140,7 @@ static inline void __set_io_port_base(unsigned long pbase)
- extern void __iomem *__ioport_map(unsigned long addr, unsigned int size);
- #endif
- 
--#ifdef CONF_SLOWDOWN_IO
--#define SLOW_DOWN_IO __raw_readw(sh_io_port_base)
--#else
--#define SLOW_DOWN_IO
--#endif
--
--#define __BUILD_IOPORT_SINGLE(pfx, bwlq, type, p, slow)			\
-+#define __BUILD_IOPORT_SINGLE(pfx, bwlq, type, p)			\
- 									\
- static inline void pfx##out##bwlq##p(type val, unsigned long port)	\
- {									\
-@@ -159,7 +148,6 @@ static inline void pfx##out##bwlq##p(type val, unsigned long port)	\
- 									\
- 	__addr = __ioport_map(port, sizeof(type));			\
- 	*__addr = val;							\
--	slow;								\
- }									\
- 									\
- static inline type pfx##in##bwlq##p(unsigned long port)			\
-@@ -169,14 +157,13 @@ static inline type pfx##in##bwlq##p(unsigned long port)			\
- 									\
- 	__addr = __ioport_map(port, sizeof(type));			\
- 	__val = *__addr;						\
--	slow;								\
- 									\
- 	return __val;							\
- }
- 
- #define __BUILD_IOPORT_PFX(bus, bwlq, type)				\
- 	__BUILD_IOPORT_SINGLE(bus, bwlq, type, ,)			\
--	__BUILD_IOPORT_SINGLE(bus, bwlq, type, _p, SLOW_DOWN_IO)
-+	__BUILD_IOPORT_SINGLE(bus, bwlq, type, _p,)
- 
- #define BUILDIO_IOPORT(bwlq, type)					\
- 	__BUILD_IOPORT_PFX(, bwlq, type)
 -- 
-2.25.1
+2.26.3
 
