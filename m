@@ -2,84 +2,125 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1AAFAC43217
-	for <linux-sh@archiver.kernel.org>; Tue, 11 Oct 2022 20:41:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B883EC433FE
+	for <linux-sh@archiver.kernel.org>; Fri, 14 Oct 2022 00:19:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229694AbiJKUl5 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 11 Oct 2022 16:41:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59114 "EHLO
+        id S229585AbiJNATc (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 13 Oct 2022 20:19:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53270 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229504AbiJKUl4 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 11 Oct 2022 16:41:56 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9AB9C71BC1;
-        Tue, 11 Oct 2022 13:41:54 -0700 (PDT)
+        with ESMTP id S229613AbiJNATb (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 13 Oct 2022 20:19:31 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5028B183D86;
+        Thu, 13 Oct 2022 17:19:29 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 4DE87B8169A;
-        Tue, 11 Oct 2022 20:41:53 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E8570C433C1;
-        Tue, 11 Oct 2022 20:41:44 +0000 (UTC)
-Date:   Tue, 11 Oct 2022 16:41:43 -0400
-From:   Steven Rostedt <rostedt@goodmis.org>
-To:     Valentin Schneider <vschneid@redhat.com>
-Cc:     Daniel Bristot de Oliveira <bristot@redhat.com>,
-        linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
-        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
-        x86@kernel.org, "Paul E. McKenney" <paulmck@kernel.org>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
-        Juri Lelli <juri.lelli@redhat.com>,
-        Frederic Weisbecker <frederic@kernel.org>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        "H. Peter Anvin" <hpa@zytor.com>, Marc Zyngier <maz@kernel.org>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Marcelo Tosatti <mtosatti@redhat.com>,
-        Guo Ren <guoren@kernel.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        Douglas RAILLARD <douglas.raillard@arm.com>
-Subject: Re: [RFC PATCH 0/5] Generic IPI sending tracepoint
-Message-ID: <20221011164143.52c84421@rorschach.local.home>
-In-Reply-To: <xhsmhfsfufh51.mognet@vschneid.remote.csb>
-References: <20221007154145.1877054-1-vschneid@redhat.com>
-        <Y0CFnWDpMNGajIRD@fuller.cnet>
-        <xhsmhilkqfi7z.mognet@vschneid.remote.csb>
-        <3e680bb9-9896-3665-dd59-4f2e6f8205bb@redhat.com>
-        <xhsmhfsfufh51.mognet@vschneid.remote.csb>
-X-Mailer: Claws Mail 3.17.8 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 647E7B8217A;
+        Fri, 14 Oct 2022 00:19:27 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E46CFC433C1;
+        Fri, 14 Oct 2022 00:19:25 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1665706766;
+        bh=truyd6YXrnJgH30xs9lXfxt5wDtPtug7TuX2iG1sDRU=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=V+ecO9Q5WguXB07V4rM+vFlU1cbrhBaORj1CS2HmHDlG2OMUtstpFQfkqXMaOwZB7
+         xcXlTaAAUOI0c3p1Op48lhR8vpkWDcmDAxzNlvKXCWsZZZu4PMHUMnP6kUx38jhIQR
+         iruz4O2tYUuLAdCLWl7YDSGNB1xsUWfMVcLmNkd23EYAiSfHqh4Q7/gZJup/EHOpVF
+         Z6lUJjkM15/gXC0kQ7ZsWJ7Rh95ZirWZRYq0WWFw3ClqLuAqcUPZsUCQkH9VPK4vFf
+         zTL6t0PiQSvAegrPGDipBcfgPf/NYzhmtBD5yKs9yrgwVbHGUDRmbeIPz4/UaKequd
+         tBQc58bPO5ybA==
+From:   Bjorn Helgaas <helgaas@kernel.org>
+To:     linux-kernel@vger.kernel.org
+Cc:     Bjorn Helgaas <bhelgaas@google.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Subject: [PATCH 1/3] sh: remove unused SLOW_DOWN_IO
+Date:   Thu, 13 Oct 2022 19:19:09 -0500
+Message-Id: <20221014001911.3342485-2-helgaas@kernel.org>
+X-Mailer: git-send-email 2.25.1
+In-Reply-To: <20221014001911.3342485-1-helgaas@kernel.org>
+References: <20221014001911.3342485-1-helgaas@kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, 11 Oct 2022 17:40:26 +0100
-Valentin Schneider <vschneid@redhat.com> wrote:
+From: Bjorn Helgaas <bhelgaas@google.com>
 
-> > You could keep the tracepoint as a mask, and then make it pretty, like cpus=3-5,8
-> > in user-space. For example with a trace-cmd/perf loadable plugin, libtracefs helper.
-> >  
-> 
-> That's a nice idea, the one downside I see is that means registering an
-> event handler for all events with cpumasks rather than directly targeting
-> cpumask fields, but that doesn't look too horrible. I'll dig a bit in that
-> direction.
+io.h defines SLOW_DOWN_IO only when CONF_SLOWDOWN_IO is defined, but
+CONF_SLOWDOWN_IO is never defined and is in fact explicitly undefined.
+Remove SLOW_DOWN_IO and related code.
 
-We could just make all all dynamic array's of unsigned long use that
-format? I don't know of any other event that has dynamic arrays of
-unsigned longs. And doing a search doesn't come up with any.
+N.B. 37b7a97884ba ("sh: machvec IO death.") went to some trouble to add
+CONF_SLOWDOWN_IO and SLOW_DOWN_IO, for no obvious reason.  Maybe there was
+some out-of-tree case that used this.
 
--- Steve
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/sh/include/asm/io.h | 17 ++---------------
+ 1 file changed, 2 insertions(+), 15 deletions(-)
+
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index fba90e670ed4..8d2df499b2fc 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -121,11 +121,6 @@ __BUILD_MEMORY_STRING(__raw_, q, u64)
+ 
+ #ifdef CONFIG_HAS_IOPORT_MAP
+ 
+-/*
+- * Slowdown I/O port space accesses for antique hardware.
+- */
+-#undef CONF_SLOWDOWN_IO
+-
+ /*
+  * On SuperH I/O ports are memory mapped, so we access them using normal
+  * load/store instructions. sh_io_port_base is the virtual address to
+@@ -145,13 +140,7 @@ static inline void __set_io_port_base(unsigned long pbase)
+ extern void __iomem *__ioport_map(unsigned long addr, unsigned int size);
+ #endif
+ 
+-#ifdef CONF_SLOWDOWN_IO
+-#define SLOW_DOWN_IO __raw_readw(sh_io_port_base)
+-#else
+-#define SLOW_DOWN_IO
+-#endif
+-
+-#define __BUILD_IOPORT_SINGLE(pfx, bwlq, type, p, slow)			\
++#define __BUILD_IOPORT_SINGLE(pfx, bwlq, type, p)			\
+ 									\
+ static inline void pfx##out##bwlq##p(type val, unsigned long port)	\
+ {									\
+@@ -159,7 +148,6 @@ static inline void pfx##out##bwlq##p(type val, unsigned long port)	\
+ 									\
+ 	__addr = __ioport_map(port, sizeof(type));			\
+ 	*__addr = val;							\
+-	slow;								\
+ }									\
+ 									\
+ static inline type pfx##in##bwlq##p(unsigned long port)			\
+@@ -169,14 +157,13 @@ static inline type pfx##in##bwlq##p(unsigned long port)			\
+ 									\
+ 	__addr = __ioport_map(port, sizeof(type));			\
+ 	__val = *__addr;						\
+-	slow;								\
+ 									\
+ 	return __val;							\
+ }
+ 
+ #define __BUILD_IOPORT_PFX(bus, bwlq, type)				\
+ 	__BUILD_IOPORT_SINGLE(bus, bwlq, type, ,)			\
+-	__BUILD_IOPORT_SINGLE(bus, bwlq, type, _p, SLOW_DOWN_IO)
++	__BUILD_IOPORT_SINGLE(bus, bwlq, type, _p,)
+ 
+ #define BUILDIO_IOPORT(bwlq, type)					\
+ 	__BUILD_IOPORT_PFX(, bwlq, type)
+-- 
+2.25.1
+
