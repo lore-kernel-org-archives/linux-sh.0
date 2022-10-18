@@ -2,173 +2,129 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C56A1C43219
-	for <linux-sh@archiver.kernel.org>; Tue, 18 Oct 2022 09:20:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 42144C4332F
+	for <linux-sh@archiver.kernel.org>; Tue, 18 Oct 2022 17:30:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231262AbiJRJUg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 18 Oct 2022 05:20:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51202 "EHLO
+        id S229742AbiJRRaS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 18 Oct 2022 13:30:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56506 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230034AbiJRJUc (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 18 Oct 2022 05:20:32 -0400
-Received: from mailbox.box.xen0n.name (mail.xen0n.name [115.28.160.31])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D8F608F277;
-        Tue, 18 Oct 2022 02:20:24 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=xen0n.name; s=mail;
-        t=1666084821; bh=N48MFgDUmr1tfKHznoAthvRtR1Wpy0hSpJqTj7oKYC4=;
-        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-        b=cHV6qrCjD47k3jGPjUQF3lwihop1RDaw3yjdG73m7BjSD1b/7jyWqLqeN+Uyk642T
-         VvEcixZUqLhrENpMZkopSZmIH+3rzqlov7m3aEUZuBieiNorHcibY7orD6PjU5mrAB
-         wuldpVWm+HQ77bl4gfDeA0Z+scSMeI8G3x4eFq+M=
-Received: from [100.100.57.122] (unknown [220.248.53.61])
-        (using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+        with ESMTP id S229526AbiJRRaR (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 18 Oct 2022 13:30:17 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 185C67C331;
+        Tue, 18 Oct 2022 10:30:15 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by mailbox.box.xen0n.name (Postfix) with ESMTPSA id 69A5760087;
-        Tue, 18 Oct 2022 17:20:20 +0800 (CST)
-Message-ID: <27ffa400-b947-7c83-0e79-c8eb9f96e12e@xen0n.name>
-Date:   Tue, 18 Oct 2022 17:20:19 +0800
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:107.0)
- Gecko/20100101 Thunderbird/107.0a1
-Subject: Re: [PATCH] mm: remove kern_addr_valid() completely
-Content-Language: en-US
-To:     Kefeng Wang <wangkefeng.wang@huawei.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
-        linux-fsdevel@vger.kernel.org
-Cc:     Richard Henderson <richard.henderson@linaro.org>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>,
-        Vineet Gupta <vgupta@kernel.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Jonas Bonn <jonas@southpole.se>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        Stafford Horne <shorne@gmail.com>,
-        "James E . J . Bottomley" <James.Bottomley@HansenPartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Alexander Gordeev <agordeev@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Sven Schnelle <svens@linux.ibm.com>,
+        by ams.source.kernel.org (Postfix) with ESMTPS id CC658B82081;
+        Tue, 18 Oct 2022 17:30:13 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4A7F2C433D6;
+        Tue, 18 Oct 2022 17:30:12 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1666114212;
+        bh=iC7xbLDKxSND0ns2xavGEekUmGJNLfcd6uk0LUkTH8c=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:From;
+        b=n0nM45rn4Ww/uIwaSnJVfDH9M9rsWLWz2apOSi9Qog0d44GTiIuKPQ6TOojtDL5sX
+         EQ/mHY0vDfnAOqrZjohveCUIiUoj+AyoA73PkUahc6kQ/423yNAUMXfdk4ofqKPPKh
+         GwBp8ILDY7V+3p+wxAlV5eCRWDBCsBp2mvUyWJ1gScxFUKFv6EiCKREX6nTvHoBUGq
+         LZu2lxmjMaiabQBNzDS1R7H9OZCE0iXO7OUsYa+GuAmecUC9HTRg+VOf3ltPJA68sy
+         evXTCy+J7I3BEWH68baBDV/2dryiw4AmxQCJLNnCUkQIH1MHAxm1FFnmysqNS4RM0a
+         75sL4hiAQWtPA==
+Date:   Tue, 18 Oct 2022 12:30:10 -0500
+From:   Bjorn Helgaas <helgaas@kernel.org>
+To:     linux-kernel@vger.kernel.org
+Cc:     Bjorn Helgaas <bhelgaas@google.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        "David S . Miller" <davem@davemloft.net>,
-        Richard Weinberger <richard@nod.at>,
-        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-        Johannes Berg <johannes@sipsolutions.net>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-        "H . Peter Anvin" <hpa@zytor.com>,
-        Andy Lutomirski <luto@kernel.org>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>
-References: <20221018074014.185687-1-wangkefeng.wang@huawei.com>
-From:   WANG Xuerui <kernel@xen0n.name>
-In-Reply-To: <20221018074014.185687-1-wangkefeng.wang@huawei.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Subject: Re: [PATCH 1/3] sh: remove unused SLOW_DOWN_IO
+Message-ID: <20221018173010.GA3813365@bhelgaas>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20221014001911.3342485-2-helgaas@kernel.org>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 2022/10/18 15:40, Kefeng Wang wrote:
-> Most architectures(except arm64/x86/sparc) simply return 1 for
-
-one space before the opening parens
-
-> kern_addr_valid(), which is only used in read_kcore(), and it
-> calls copy_from_kernel_nofault() which could check whether the
-> address is a valid kernel address, so no need kern_addr_valid(),
-
-minor grammatical nit:
-
-"... which already checks whether the address is a valid kernel address. 
-So kern_addr_valid is unnecessary, let's remove it."
-
-> let's remove unneeded kern_addr_valid() completely.
+On Thu, Oct 13, 2022 at 07:19:09PM -0500, Bjorn Helgaas wrote:
+> From: Bjorn Helgaas <bhelgaas@google.com>
 > 
-> Signed-off-by: Kefeng Wang <wangkefeng.wang@huawei.com>
+> io.h defines SLOW_DOWN_IO only when CONF_SLOWDOWN_IO is defined, but
+> CONF_SLOWDOWN_IO is never defined and is in fact explicitly undefined.
+> Remove SLOW_DOWN_IO and related code.
+> 
+> N.B. 37b7a97884ba ("sh: machvec IO death.") went to some trouble to add
+> CONF_SLOWDOWN_IO and SLOW_DOWN_IO, for no obvious reason.  Maybe there was
+> some out-of-tree case that used this.
+> 
+> Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+> Cc: Rich Felker <dalias@libc.org>
+> Cc: linux-sh@vger.kernel.org
+
+Please disregard this patch.  I'll post an updated version that fixes
+the build error and removes a little more unused/unnecessary stuff.
+
 > ---
->   arch/alpha/include/asm/pgtable.h          |  2 -
->   arch/arc/include/asm/pgtable-bits-arcv2.h |  2 -
->   arch/arm/include/asm/pgtable-nommu.h      |  2 -
->   arch/arm/include/asm/pgtable.h            |  4 --
->   arch/arm64/include/asm/pgtable.h          |  2 -
->   arch/arm64/mm/mmu.c                       | 47 -----------------------
->   arch/arm64/mm/pageattr.c                  |  3 +-
->   arch/csky/include/asm/pgtable.h           |  3 --
->   arch/hexagon/include/asm/page.h           |  7 ----
->   arch/ia64/include/asm/pgtable.h           | 16 --------
->   arch/loongarch/include/asm/pgtable.h      |  2 -
->   arch/m68k/include/asm/pgtable_mm.h        |  2 -
->   arch/m68k/include/asm/pgtable_no.h        |  1 -
->   arch/microblaze/include/asm/pgtable.h     |  3 --
->   arch/mips/include/asm/pgtable.h           |  2 -
->   arch/nios2/include/asm/pgtable.h          |  2 -
->   arch/openrisc/include/asm/pgtable.h       |  2 -
->   arch/parisc/include/asm/pgtable.h         | 15 --------
->   arch/powerpc/include/asm/pgtable.h        |  7 ----
->   arch/riscv/include/asm/pgtable.h          |  2 -
->   arch/s390/include/asm/pgtable.h           |  2 -
->   arch/sh/include/asm/pgtable.h             |  2 -
->   arch/sparc/include/asm/pgtable_32.h       |  6 ---
->   arch/sparc/mm/init_32.c                   |  3 +-
->   arch/sparc/mm/init_64.c                   |  1 -
->   arch/um/include/asm/pgtable.h             |  2 -
->   arch/x86/include/asm/pgtable_32.h         |  9 -----
->   arch/x86/include/asm/pgtable_64.h         |  1 -
->   arch/x86/mm/init_64.c                     | 41 --------------------
->   arch/xtensa/include/asm/pgtable.h         |  2 -
->   fs/proc/kcore.c                           | 26 +++++--------
->   31 files changed, 11 insertions(+), 210 deletions(-)
+>  arch/sh/include/asm/io.h | 17 ++---------------
+>  1 file changed, 2 insertions(+), 15 deletions(-)
 > 
-> diff --git a/arch/loongarch/include/asm/pgtable.h b/arch/loongarch/include/asm/pgtable.h
-> index 946704bee599..fc70b7041b76 100644
-> --- a/arch/loongarch/include/asm/pgtable.h
-> +++ b/arch/loongarch/include/asm/pgtable.h
-> @@ -421,8 +421,6 @@ static inline void update_mmu_cache_pmd(struct vm_area_struct *vma,
->   	__update_tlb(vma, address, (pte_t *)pmdp);
->   }
->   
-> -#define kern_addr_valid(addr)	(1)
+> diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+> index fba90e670ed4..8d2df499b2fc 100644
+> --- a/arch/sh/include/asm/io.h
+> +++ b/arch/sh/include/asm/io.h
+> @@ -121,11 +121,6 @@ __BUILD_MEMORY_STRING(__raw_, q, u64)
+>  
+>  #ifdef CONFIG_HAS_IOPORT_MAP
+>  
+> -/*
+> - * Slowdown I/O port space accesses for antique hardware.
+> - */
+> -#undef CONF_SLOWDOWN_IO
 > -
->   static inline unsigned long pmd_pfn(pmd_t pmd)
->   {
->   	return (pmd_val(pmd) & _PFN_MASK) >> _PFN_SHIFT;
-
-Acked-by: WANG Xuerui <git@xen0n.name> # loongarch
-
-Thanks!
-
--- 
-WANG "xen0n" Xuerui
-
-Linux/LoongArch mailing list: https://lore.kernel.org/loongarch/
-
+>  /*
+>   * On SuperH I/O ports are memory mapped, so we access them using normal
+>   * load/store instructions. sh_io_port_base is the virtual address to
+> @@ -145,13 +140,7 @@ static inline void __set_io_port_base(unsigned long pbase)
+>  extern void __iomem *__ioport_map(unsigned long addr, unsigned int size);
+>  #endif
+>  
+> -#ifdef CONF_SLOWDOWN_IO
+> -#define SLOW_DOWN_IO __raw_readw(sh_io_port_base)
+> -#else
+> -#define SLOW_DOWN_IO
+> -#endif
+> -
+> -#define __BUILD_IOPORT_SINGLE(pfx, bwlq, type, p, slow)			\
+> +#define __BUILD_IOPORT_SINGLE(pfx, bwlq, type, p)			\
+>  									\
+>  static inline void pfx##out##bwlq##p(type val, unsigned long port)	\
+>  {									\
+> @@ -159,7 +148,6 @@ static inline void pfx##out##bwlq##p(type val, unsigned long port)	\
+>  									\
+>  	__addr = __ioport_map(port, sizeof(type));			\
+>  	*__addr = val;							\
+> -	slow;								\
+>  }									\
+>  									\
+>  static inline type pfx##in##bwlq##p(unsigned long port)			\
+> @@ -169,14 +157,13 @@ static inline type pfx##in##bwlq##p(unsigned long port)			\
+>  									\
+>  	__addr = __ioport_map(port, sizeof(type));			\
+>  	__val = *__addr;						\
+> -	slow;								\
+>  									\
+>  	return __val;							\
+>  }
+>  
+>  #define __BUILD_IOPORT_PFX(bus, bwlq, type)				\
+>  	__BUILD_IOPORT_SINGLE(bus, bwlq, type, ,)			\
+> -	__BUILD_IOPORT_SINGLE(bus, bwlq, type, _p, SLOW_DOWN_IO)
+> +	__BUILD_IOPORT_SINGLE(bus, bwlq, type, _p,)
+>  
+>  #define BUILDIO_IOPORT(bwlq, type)					\
+>  	__BUILD_IOPORT_PFX(, bwlq, type)
+> -- 
+> 2.25.1
+> 
