@@ -2,43 +2,43 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E4AEDC433FE
-	for <linux-sh@archiver.kernel.org>; Fri, 21 Oct 2022 20:24:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A7B87ECDFA1
+	for <linux-sh@archiver.kernel.org>; Fri, 21 Oct 2022 20:24:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229788AbiJUUYq (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 21 Oct 2022 16:24:46 -0400
+        id S229793AbiJUUYr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 21 Oct 2022 16:24:47 -0400
 Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43262 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229535AbiJUUYm (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 21 Oct 2022 16:24:42 -0400
+        with ESMTP id S229682AbiJUUYo (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 21 Oct 2022 16:24:44 -0400
 Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 378E639B81;
-        Fri, 21 Oct 2022 13:24:41 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1AB2356D8;
+        Fri, 21 Oct 2022 13:24:43 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id E2339B82D23;
-        Fri, 21 Oct 2022 20:24:39 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 799CFC433C1;
-        Fri, 21 Oct 2022 20:24:38 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 677CAB82CC6;
+        Fri, 21 Oct 2022 20:24:43 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 07516C433C1;
+        Fri, 21 Oct 2022 20:24:41 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1666383878;
-        bh=Sold5O9Z0l2jkV+weo40l2ACFBfyKqurUW9j4tWzf9Q=;
+        s=k20201202; t=1666383882;
+        bh=+us4sh73zodMSJr2daIIFwpHjFf1Aug9TQOSGrI/oiw=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=Z5F7bpW03JDQ1QfA+ZZPsS9amEAAU8bSadiiM/irqZIYUY+a4dZ2E4wLIiuvqCx0Z
-         Th2TCoRdshRRwJTo4gZ5Lco+VMzx7Nu8xZDkA3HbZ8M2SEHVKyypISackNZuugzdBS
-         tcc/cPiZHIBG26aGA+mCHGXj+aBr8PiozkePChG2LhqwJrcl2uDxIiZTBm0JXetBNZ
-         KcDqUTb4IDYG3f5OFr1uzaLsCNIqHC/lfFSoQ2w9tpzZF8D7DbDUk3hXw6wrN7o/TE
-         6Z/MLMIvGJWEjYflr45A2uujM6IErMI/z1UP6c4qzvZ79VteTlvBvJ9hWibgtX6vug
-         30nZcPZHpVGJQ==
+        b=VQTaDCeZPsfI+kuEDc+ETL9M2MSLlBX0bcHoSmBUDeo0pKPC2w8jo/NW4i4Ne9t4b
+         pChKX5VxoOW0bFY/1uC8Jc9KPZ5uoDrxZhlCRgiYDB4D+oFR2kOQDwY2KQc1nQdImH
+         0pXW6EmxLKU+tegZwuaxC5iOGN5LiuMmKdcMQiu18zgux/+V6MdeQLUC606zPnKw2J
+         +7lfoEITWMHfzrGMmCefRv1Q0kw2W4A1Ij/VHNomJMiHuJH91nkS3FyVH23NZMztA8
+         XJ3sBUv3gp6eEQRpqzPK2VnYCEE/nz/nfsLr9n+xMVP6cXdcV7HhBo+OVhXNh/hTQo
+         SNN9hTT1Kzlfw==
 From:   Bjorn Helgaas <helgaas@kernel.org>
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>
 Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
         Bjorn Helgaas <bhelgaas@google.com>
-Subject: [PATCH 2/4] sh: remove unused __BUILD_IOPORT_SINGLE 'pfx' parameter
-Date:   Fri, 21 Oct 2022 15:24:22 -0500
-Message-Id: <20221021202424.307531-3-helgaas@kernel.org>
+Subject: [PATCH 4/4] sh: remove unnecessary __BUILD_MEMORY_STRING() 'pfx' parameter
+Date:   Fri, 21 Oct 2022 15:24:24 -0500
+Message-Id: <20221021202424.307531-5-helgaas@kernel.org>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20221021202424.307531-1-helgaas@kernel.org>
 References: <20221021202424.307531-1-helgaas@kernel.org>
@@ -50,58 +50,62 @@ X-Mailing-List: linux-sh@vger.kernel.org
 
 From: Bjorn Helgaas <bhelgaas@google.com>
 
-Previously __BUILD_IOPORT_SINGLE() accepted a "pfx" parameter, to which
-__BUILD_IOPORT_PFX(), the only user of __BUILD_IOPORT_SINGLE(), passed
-along its own "bus" parameter.  But users of __BUILD_IOPORT_PFX() supplied
-nothing, so both "bus" and "pfx" are pointless.  Remove them.
+Previously __BUILD_MEMORY_STRING() accepted a "pfx" parameter, to which all
+users passed "__raw_".  Simplify this by dropping the parameter and
+encoding "__raw_" in the function name explicitly.
 
 Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 ---
- arch/sh/include/asm/io.h | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+ arch/sh/include/asm/io.h | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
 diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 8043b7c235ca..193640bd9563 100644
+index e29e8870dc3b..179420fc4053 100644
 --- a/arch/sh/include/asm/io.h
 +++ b/arch/sh/include/asm/io.h
-@@ -140,9 +140,9 @@ static inline void __set_io_port_base(unsigned long pbase)
- extern void __iomem *__ioport_map(unsigned long addr, unsigned int size);
- #endif
+@@ -86,11 +86,11 @@ __BUILD_UNCACHED_IO(w, u16)
+ __BUILD_UNCACHED_IO(l, u32)
+ __BUILD_UNCACHED_IO(q, u64)
  
--#define __BUILD_IOPORT_SINGLE(pfx, bwlq, type, p)			\
-+#define __BUILD_IOPORT_SINGLE(bwlq, type, p)				\
+-#define __BUILD_MEMORY_STRING(pfx, bwlq, type)				\
++#define __BUILD_MEMORY_STRING(bwlq, type)				\
  									\
--static inline void pfx##out##bwlq##p(type val, unsigned long port)	\
-+static inline void out##bwlq##p(type val, unsigned long port)		\
+ static inline void							\
+-pfx##writes##bwlq(volatile void __iomem *mem, const void *addr,		\
+-		  unsigned int count)					\
++__raw_writes##bwlq(volatile void __iomem *mem, const void *addr,	\
++		   unsigned int count)					\
  {									\
- 	volatile type *__addr;						\
+ 	const volatile type *__addr = addr;				\
  									\
-@@ -150,7 +150,7 @@ static inline void pfx##out##bwlq##p(type val, unsigned long port)	\
- 	*__addr = val;							\
+@@ -100,8 +100,8 @@ pfx##writes##bwlq(volatile void __iomem *mem, const void *addr,		\
+ 	}								\
  }									\
  									\
--static inline type pfx##in##bwlq##p(unsigned long port)			\
-+static inline type in##bwlq##p(unsigned long port)			\
+-static inline void pfx##reads##bwlq(volatile void __iomem *mem,		\
+-				    void *addr, unsigned int count)	\
++static inline void __raw_reads##bwlq(volatile void __iomem *mem,	\
++				     void *addr, unsigned int count)	\
  {									\
- 	volatile type *__addr;						\
- 	type __val;							\
-@@ -161,12 +161,12 @@ static inline type pfx##in##bwlq##p(unsigned long port)			\
- 	return __val;							\
+ 	volatile type *__addr = addr;					\
+ 									\
+@@ -111,13 +111,13 @@ static inline void pfx##reads##bwlq(volatile void __iomem *mem,		\
+ 	}								\
  }
  
--#define __BUILD_IOPORT_PFX(bus, bwlq, type)				\
--	__BUILD_IOPORT_SINGLE(bus, bwlq, type,)				\
--	__BUILD_IOPORT_SINGLE(bus, bwlq, type, _p)
-+#define __BUILD_IOPORT_PFX(bwlq, type)					\
-+	__BUILD_IOPORT_SINGLE(bwlq, type,)				\
-+	__BUILD_IOPORT_SINGLE(bwlq, type, _p)
+-__BUILD_MEMORY_STRING(__raw_, b, u8)
+-__BUILD_MEMORY_STRING(__raw_, w, u16)
++__BUILD_MEMORY_STRING(b, u8)
++__BUILD_MEMORY_STRING(w, u16)
  
- #define BUILDIO_IOPORT(bwlq, type)					\
--	__BUILD_IOPORT_PFX(, bwlq, type)
-+	__BUILD_IOPORT_PFX(bwlq, type)
+ void __raw_writesl(void __iomem *addr, const void *data, int longlen);
+ void __raw_readsl(const void __iomem *addr, void *data, int longlen);
  
- BUILDIO_IOPORT(b, u8)
- BUILDIO_IOPORT(w, u16)
+-__BUILD_MEMORY_STRING(__raw_, q, u64)
++__BUILD_MEMORY_STRING(q, u64)
+ 
+ #ifdef CONFIG_HAS_IOPORT_MAP
+ 
 -- 
 2.25.1
 
