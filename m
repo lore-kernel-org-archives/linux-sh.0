@@ -2,43 +2,43 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A7B87ECDFA1
-	for <linux-sh@archiver.kernel.org>; Fri, 21 Oct 2022 20:24:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BCD4FFA3740
+	for <linux-sh@archiver.kernel.org>; Fri, 21 Oct 2022 20:24:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229793AbiJUUYr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 21 Oct 2022 16:24:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43262 "EHLO
+        id S229568AbiJUUYs (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 21 Oct 2022 16:24:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43260 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229682AbiJUUYo (ORCPT
+        with ESMTP id S229685AbiJUUYo (ORCPT
         <rfc822;linux-sh@vger.kernel.org>); Fri, 21 Oct 2022 16:24:44 -0400
 Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1AB2356D8;
-        Fri, 21 Oct 2022 13:24:43 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E38962EF2A;
+        Fri, 21 Oct 2022 13:24:42 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 677CAB82CC6;
-        Fri, 21 Oct 2022 20:24:43 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 07516C433C1;
+        by ams.source.kernel.org (Postfix) with ESMTPS id A5DCBB82D4A;
         Fri, 21 Oct 2022 20:24:41 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 41A11C433D6;
+        Fri, 21 Oct 2022 20:24:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1666383882;
-        bh=+us4sh73zodMSJr2daIIFwpHjFf1Aug9TQOSGrI/oiw=;
+        s=k20201202; t=1666383880;
+        bh=+AVx5SV5r/tSMDS/xVQQrQ6GZyuBqXfn99TrHMsZq2U=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=VQTaDCeZPsfI+kuEDc+ETL9M2MSLlBX0bcHoSmBUDeo0pKPC2w8jo/NW4i4Ne9t4b
-         pChKX5VxoOW0bFY/1uC8Jc9KPZ5uoDrxZhlCRgiYDB4D+oFR2kOQDwY2KQc1nQdImH
-         0pXW6EmxLKU+tegZwuaxC5iOGN5LiuMmKdcMQiu18zgux/+V6MdeQLUC606zPnKw2J
-         +7lfoEITWMHfzrGMmCefRv1Q0kw2W4A1Ij/VHNomJMiHuJH91nkS3FyVH23NZMztA8
-         XJ3sBUv3gp6eEQRpqzPK2VnYCEE/nz/nfsLr9n+xMVP6cXdcV7HhBo+OVhXNh/hTQo
-         SNN9hTT1Kzlfw==
+        b=sY18lwjF9NMGyRWndJF/89uK3hP/CUv48OX6gL4ugZmharMVNn0K50kXHipp4Av0l
+         Te4WtPlqyN73O6k4RO6Se5J/xNq/r+MBkQ4PdWnNtmAcCu+vw3gcXw20uR8H9awbMP
+         mJM2OoKEnAakMv7wMRh9ENSKVIrUOfzq+7D1Z7cW92W+nlWNFs/RKfSjPYiqNhQHs6
+         6UG5gr2Bxqj265fCi2ohRxGh8wuvKeNYXi/dZpP6gzlek8Gjp9GuORSzIAs58HRcGB
+         5PizU1eoJplVJNyarA838+XhkHuOO9EGCHZ/W9SFkCvJMO81ONP2LjOBE5HmYVOi9u
+         RplhnzLRp/4qw==
 From:   Bjorn Helgaas <helgaas@kernel.org>
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>
 Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
         Bjorn Helgaas <bhelgaas@google.com>
-Subject: [PATCH 4/4] sh: remove unnecessary __BUILD_MEMORY_STRING() 'pfx' parameter
-Date:   Fri, 21 Oct 2022 15:24:24 -0500
-Message-Id: <20221021202424.307531-5-helgaas@kernel.org>
+Subject: [PATCH 3/4] sh: remove unnecessary __BUILD_IOPORT_PFX()
+Date:   Fri, 21 Oct 2022 15:24:23 -0500
+Message-Id: <20221021202424.307531-4-helgaas@kernel.org>
 X-Mailer: git-send-email 2.25.1
 In-Reply-To: <20221021202424.307531-1-helgaas@kernel.org>
 References: <20221021202424.307531-1-helgaas@kernel.org>
@@ -50,62 +50,34 @@ X-Mailing-List: linux-sh@vger.kernel.org
 
 From: Bjorn Helgaas <bhelgaas@google.com>
 
-Previously __BUILD_MEMORY_STRING() accepted a "pfx" parameter, to which all
-users passed "__raw_".  Simplify this by dropping the parameter and
-encoding "__raw_" in the function name explicitly.
+The only reason __BUILD_IOPORT_PFX() existed was to accept a "bus"
+parameter, but nothing ever used that.  Remove __BUILD_IOPORT_PFX() and
+collapse it into BUILDIO_IOPORT().
 
 Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 ---
- arch/sh/include/asm/io.h | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+ arch/sh/include/asm/io.h | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
 diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index e29e8870dc3b..179420fc4053 100644
+index 193640bd9563..e29e8870dc3b 100644
 --- a/arch/sh/include/asm/io.h
 +++ b/arch/sh/include/asm/io.h
-@@ -86,11 +86,11 @@ __BUILD_UNCACHED_IO(w, u16)
- __BUILD_UNCACHED_IO(l, u32)
- __BUILD_UNCACHED_IO(q, u64)
- 
--#define __BUILD_MEMORY_STRING(pfx, bwlq, type)				\
-+#define __BUILD_MEMORY_STRING(bwlq, type)				\
- 									\
- static inline void							\
--pfx##writes##bwlq(volatile void __iomem *mem, const void *addr,		\
--		  unsigned int count)					\
-+__raw_writes##bwlq(volatile void __iomem *mem, const void *addr,	\
-+		   unsigned int count)					\
- {									\
- 	const volatile type *__addr = addr;				\
- 									\
-@@ -100,8 +100,8 @@ pfx##writes##bwlq(volatile void __iomem *mem, const void *addr,		\
- 	}								\
- }									\
- 									\
--static inline void pfx##reads##bwlq(volatile void __iomem *mem,		\
--				    void *addr, unsigned int count)	\
-+static inline void __raw_reads##bwlq(volatile void __iomem *mem,	\
-+				     void *addr, unsigned int count)	\
- {									\
- 	volatile type *__addr = addr;					\
- 									\
-@@ -111,13 +111,13 @@ static inline void pfx##reads##bwlq(volatile void __iomem *mem,		\
- 	}								\
+@@ -161,13 +161,10 @@ static inline type in##bwlq##p(unsigned long port)			\
+ 	return __val;							\
  }
  
--__BUILD_MEMORY_STRING(__raw_, b, u8)
--__BUILD_MEMORY_STRING(__raw_, w, u16)
-+__BUILD_MEMORY_STRING(b, u8)
-+__BUILD_MEMORY_STRING(w, u16)
+-#define __BUILD_IOPORT_PFX(bwlq, type)					\
++#define BUILDIO_IOPORT(bwlq, type)					\
+ 	__BUILD_IOPORT_SINGLE(bwlq, type,)				\
+ 	__BUILD_IOPORT_SINGLE(bwlq, type, _p)
  
- void __raw_writesl(void __iomem *addr, const void *data, int longlen);
- void __raw_readsl(const void __iomem *addr, void *data, int longlen);
- 
--__BUILD_MEMORY_STRING(__raw_, q, u64)
-+__BUILD_MEMORY_STRING(q, u64)
- 
- #ifdef CONFIG_HAS_IOPORT_MAP
- 
+-#define BUILDIO_IOPORT(bwlq, type)					\
+-	__BUILD_IOPORT_PFX(bwlq, type)
+-
+ BUILDIO_IOPORT(b, u8)
+ BUILDIO_IOPORT(w, u16)
+ BUILDIO_IOPORT(l, u32)
 -- 
 2.25.1
 
