@@ -2,32 +2,32 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 259F6C38A2D
-	for <linux-sh@archiver.kernel.org>; Fri, 21 Oct 2022 19:37:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 527C7C433FE
+	for <linux-sh@archiver.kernel.org>; Fri, 21 Oct 2022 19:37:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229587AbiJUThU (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 21 Oct 2022 15:37:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32800 "EHLO
+        id S229744AbiJUThX (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 21 Oct 2022 15:37:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32840 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230107AbiJUThS (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 21 Oct 2022 15:37:18 -0400
+        with ESMTP id S230080AbiJUThU (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 21 Oct 2022 15:37:20 -0400
 Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8462A2610A1;
-        Fri, 21 Oct 2022 12:37:17 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1371727CFDE;
+        Fri, 21 Oct 2022 12:37:19 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id DBDD2B82D21;
-        Fri, 21 Oct 2022 19:37:15 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5EE1DC433C1;
-        Fri, 21 Oct 2022 19:37:14 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 86745B80CC1;
+        Fri, 21 Oct 2022 19:37:17 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 259A9C433B5;
+        Fri, 21 Oct 2022 19:37:16 +0000 (UTC)
 From:   Bjorn Helgaas <bhelgaas@google.com>
-Date:   Fri, 21 Oct 2022 14:36:56 -0500
-Subject: [PATCH v2 2/4] sh: remove unused __BUILD_IOPORT_SINGLE 'pfx' parameter
+Date:   Fri, 21 Oct 2022 14:36:57 -0500
+Subject: [PATCH v2 3/4] sh: remove unnecessary __BUILD_IOPORT_PFX()
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
-Message-Id: <20221021-wip-bjorn-22-10-slow-down-io-v2-2-8b3692d12ea7@google.com>
+Message-Id: <20221021-wip-bjorn-22-10-slow-down-io-v2-3-8b3692d12ea7@google.com>
 References: <20221021-wip-bjorn-22-10-slow-down-io-v2-0-8b3692d12ea7@google.com>
 In-Reply-To: <20221021-wip-bjorn-22-10-slow-down-io-v2-0-8b3692d12ea7@google.com>
 To:     Rich Felker <dalias@libc.org>,
@@ -35,69 +35,45 @@ To:     Rich Felker <dalias@libc.org>,
         linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
         Bjorn Helgaas <bhelgaas@google.com>
 X-Mailer: b4 0.10.1
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1666381029; l=2009;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1666381029; l=954;
  i=bhelgaas@google.com; s=20221014; h=from:subject:message-id;
- bh=8UKhu6SX8DGey6kmjCz3BO86QD79+K2wUhfKHDjrdCk=;
- b=ijuER2q4Zdn6CQkGbuXFSsYkilANhzlZtWGiSZHUTKE1TmMeEqUomg+ceMjAZT7Sc5mf9BKMctC4
- aUZdfA08BaLRDQGOWXJSTGBENzi3KIelyXOLjviA6uf/KjWjJIVv
+ bh=g8yI3K1tEQUHXIZtqfYnrjQ/LhOpw33jP8MlI8rMc5Q=;
+ b=xiCc/DhxkT2exYJzheQj814cfjt+cNbZWf+N85s0rV8FZq+oATOfUE4t7nB6vfZQNwsmv60HgBZh
+ n/6TWEFwC9Jc3eXOPnlGpVEkLT01AouqYzntBYKrqfSgotRfawXw
 X-Developer-Key: i=bhelgaas@google.com; a=ed25519;
  pk=bFjaHnNobtkUv3f7ErkQcm+PpbyCUUBlIfqMtNRJwQs=
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Previously __BUILD_IOPORT_SINGLE() accepted a "pfx" parameter, to which
-__BUILD_IOPORT_PFX(), the only user of __BUILD_IOPORT_SINGLE(), passed
-along its own "bus" parameter.  But users of __BUILD_IOPORT_PFX() supplied
-nothing, so both "bus" and "pfx" are pointless.  Remove them.
+The only reason __BUILD_IOPORT_PFX() existed was to accept a "bus"
+parameter, but nothing ever used that.  Remove __BUILD_IOPORT_PFX() and
+collapse it into BUILDIO_IOPORT().
 
 Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
 ---
- arch/sh/include/asm/io.h | 14 +++++++-------
- 1 file changed, 7 insertions(+), 7 deletions(-)
+ arch/sh/include/asm/io.h | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
 diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 8043b7c235ca..193640bd9563 100644
+index 193640bd9563..e29e8870dc3b 100644
 --- a/arch/sh/include/asm/io.h
 +++ b/arch/sh/include/asm/io.h
-@@ -140,9 +140,9 @@ static inline void __set_io_port_base(unsigned long pbase)
- extern void __iomem *__ioport_map(unsigned long addr, unsigned int size);
- #endif
- 
--#define __BUILD_IOPORT_SINGLE(pfx, bwlq, type, p)			\
-+#define __BUILD_IOPORT_SINGLE(bwlq, type, p)				\
- 									\
--static inline void pfx##out##bwlq##p(type val, unsigned long port)	\
-+static inline void out##bwlq##p(type val, unsigned long port)		\
- {									\
- 	volatile type *__addr;						\
- 									\
-@@ -150,7 +150,7 @@ static inline void pfx##out##bwlq##p(type val, unsigned long port)	\
- 	*__addr = val;							\
- }									\
- 									\
--static inline type pfx##in##bwlq##p(unsigned long port)			\
-+static inline type in##bwlq##p(unsigned long port)			\
- {									\
- 	volatile type *__addr;						\
- 	type __val;							\
-@@ -161,12 +161,12 @@ static inline type pfx##in##bwlq##p(unsigned long port)			\
+@@ -161,13 +161,10 @@ static inline type in##bwlq##p(unsigned long port)			\
  	return __val;							\
  }
  
--#define __BUILD_IOPORT_PFX(bus, bwlq, type)				\
--	__BUILD_IOPORT_SINGLE(bus, bwlq, type,)				\
--	__BUILD_IOPORT_SINGLE(bus, bwlq, type, _p)
-+#define __BUILD_IOPORT_PFX(bwlq, type)					\
-+	__BUILD_IOPORT_SINGLE(bwlq, type,)				\
-+	__BUILD_IOPORT_SINGLE(bwlq, type, _p)
+-#define __BUILD_IOPORT_PFX(bwlq, type)					\
++#define BUILDIO_IOPORT(bwlq, type)					\
+ 	__BUILD_IOPORT_SINGLE(bwlq, type,)				\
+ 	__BUILD_IOPORT_SINGLE(bwlq, type, _p)
  
- #define BUILDIO_IOPORT(bwlq, type)					\
--	__BUILD_IOPORT_PFX(, bwlq, type)
-+	__BUILD_IOPORT_PFX(bwlq, type)
- 
+-#define BUILDIO_IOPORT(bwlq, type)					\
+-	__BUILD_IOPORT_PFX(bwlq, type)
+-
  BUILDIO_IOPORT(b, u8)
  BUILDIO_IOPORT(w, u16)
+ BUILDIO_IOPORT(l, u32)
 
 -- 
 b4 0.10.1
