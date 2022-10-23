@@ -2,133 +2,136 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5F938FA373E
-	for <linux-sh@archiver.kernel.org>; Sat, 22 Oct 2022 07:49:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 23D9CC3A59D
+	for <linux-sh@archiver.kernel.org>; Sun, 23 Oct 2022 20:32:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230405AbiJVHto (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 22 Oct 2022 03:49:44 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49564 "EHLO
+        id S229720AbiJWUco (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 23 Oct 2022 16:32:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39418 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231697AbiJVHtA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 22 Oct 2022 03:49:00 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A8C3C24AE1A;
-        Sat, 22 Oct 2022 00:45:41 -0700 (PDT)
+        with ESMTP id S229574AbiJWUcn (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 23 Oct 2022 16:32:43 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 22C5B6705D;
+        Sun, 23 Oct 2022 13:32:42 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 7873F60ADA;
-        Sat, 22 Oct 2022 07:42:16 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 667CEC433C1;
-        Sat, 22 Oct 2022 07:42:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1666424535;
-        bh=tsYIEnNeNXBKuktBDiK6adMOHZqbmAxFQCb+rNO0Bnc=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=H9p8V9ucd7fkvjnb9j6+/VX4kSpcgClvHZ1WJ5HyTDT6kO6FEfNjaIXve1xzld5VC
-         w8LS/HzRBwmOZD67hKHRe1z5VxKqsFwQvf4wB4ULLZCaneZoZQbfrNSmtx9HjX04j7
-         BC8Xfdx2Xg7rWcIRvYZDbikhX7RGOJilPOouqF5A=
-From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+        by ams.source.kernel.org (Postfix) with ESMTPS id D915AB80DCD;
+        Sun, 23 Oct 2022 20:32:40 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 51389C433D6;
+        Sun, 23 Oct 2022 20:32:36 +0000 (UTC)
+Authentication-Results: smtp.kernel.org;
+        dkim=pass (1024-bit key) header.d=zx2c4.com header.i=@zx2c4.com header.b="QnB2qtO6"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=zx2c4.com; s=20210105;
+        t=1666557154;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=eCkESx7tLbcl/nHIQwtIPhMNwZ8iCRtVJZ00kAPVrdA=;
+        b=QnB2qtO6lEOM4mxmjapSCxuIUb838GyXQD9dk5cHuNf7r1kHF1OS2YJOtpj4MajPA79g2y
+        QGM5P4bMHnEZYNxeABp8h+OC9XW5ZhtaXOplvIwtuUPSR4RupWA3lpwNA60vNAAYYFdeXD
+        J2Fu0drXLEG5BiOYGLbxOOeFisHSqfM=
+Received: by mail.zx2c4.com (ZX2C4 Mail Server) with ESMTPSA id 40fbc149 (TLSv1.3:TLS_AES_256_GCM_SHA384:256:NO);
+        Sun, 23 Oct 2022 20:32:33 +0000 (UTC)
+From:   "Jason A. Donenfeld" <Jason@zx2c4.com>
 To:     linux-kernel@vger.kernel.org
-Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        stable@vger.kernel.org,
+Cc:     "Jason A. Donenfeld" <Jason@zx2c4.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
+        Borislav Petkov <bp@alien8.de>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Chris Zankel <chris@zankel.net>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Guo Ren <guoren@kernel.org>, "H . Peter Anvin" <hpa@zytor.com>,
+        Ingo Molnar <mingo@redhat.com>,
+        Juergen Gross <jgross@suse.com>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Rich Felker <dalias@libc.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Will Deacon <will@kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        "Gustavo A. R. Silva" <gustavoars@kernel.org>,
-        Kees Cook <keescook@chromium.org>,
-        Sasha Levin <sashal@kernel.org>
-Subject: [PATCH 5.19 182/717] sh: machvec: Use char[] for section boundaries
-Date:   Sat, 22 Oct 2022 09:21:01 +0200
-Message-Id: <20221022072447.821113921@linuxfoundation.org>
-X-Mailer: git-send-email 2.38.1
-In-Reply-To: <20221022072415.034382448@linuxfoundation.org>
-References: <20221022072415.034382448@linuxfoundation.org>
-User-Agent: quilt/0.67
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-mips@vger.kernel.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org,
+        linuxppc-dev@lists.ozlabs.org, x86@kernel.org
+Subject: [PATCH v1 0/2] cleanup stackprotector canary generation
+Date:   Sun, 23 Oct 2022 22:32:06 +0200
+Message-Id: <20221023203208.118919-1-Jason@zx2c4.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Kees Cook <keescook@chromium.org>
+Stack canary generation currently lives partially in random.h, where it
+doesn't belong, and is in general a bit overcomplicated. This small
+patchset fixes up both issues. I'll take these in my tree, unless
+somebody else prefers to do so.
 
-[ Upstream commit c5783af354688b24abd359f7086c282ec74de993 ]
-
-As done for other sections, define the extern as a character array,
-which relaxes many of the compiler-time object size checks, which would
-otherwise assume it's a single long. Solves the following build error:
-
-arch/sh/kernel/machvec.c: error: array subscript 'struct sh_machine_vector[0]' is partly outside array bounds of 'long int[1]' [-Werror=array-bounds]:  => 105:33
-
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Albert Ou <aou@eecs.berkeley.edu>
+Cc: Boris Ostrovsky <boris.ostrovsky@oracle.com>
+Cc: Borislav Petkov <bp@alien8.de>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Chris Zankel <chris@zankel.net>
+Cc: Christophe Leroy <christophe.leroy@csgroup.eu>
+Cc: Dave Hansen <dave.hansen@linux.intel.com>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Guo Ren <guoren@kernel.org>
+Cc: H. Peter Anvin <hpa@zytor.com>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Juergen Gross <jgross@suse.com>
+Cc: Max Filippov <jcmvbkbc@gmail.com>
+Cc: Michael Ellerman <mpe@ellerman.id.au>
+Cc: Nicholas Piggin <npiggin@gmail.com>
+Cc: Palmer Dabbelt <palmer@dabbelt.com>
+Cc: Paul Walmsley <paul.walmsley@sifive.com>
 Cc: Rich Felker <dalias@libc.org>
+Cc: Russell King <linux@armlinux.org.uk>
+Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Will Deacon <will@kernel.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: linux-csky@vger.kernel.org
+Cc: linux-mips@vger.kernel.org
+Cc: linux-riscv@lists.infradead.org
 Cc: linux-sh@vger.kernel.org
-Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Link: https://lore.kernel.org/lkml/alpine.DEB.2.22.394.2209050944290.964530@ramsan.of.borg/
-Fixes: 9655ad03af2d ("sh: Fixup machvec support.")
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Reviewed-by: Gustavo A. R. Silva <gustavoars@kernel.org>
-Acked-by: Rich Felker <dalias@libc.org>
-Signed-off-by: Kees Cook <keescook@chromium.org>
-Signed-off-by: Sasha Levin <sashal@kernel.org>
----
- arch/sh/include/asm/sections.h |  2 +-
- arch/sh/kernel/machvec.c       | 10 +++++-----
- 2 files changed, 6 insertions(+), 6 deletions(-)
+Cc: linux-xtensa@linux-xtensa.org
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: x86@kernel.org
 
-diff --git a/arch/sh/include/asm/sections.h b/arch/sh/include/asm/sections.h
-index 8edb824049b9..0cb0ca149ac3 100644
---- a/arch/sh/include/asm/sections.h
-+++ b/arch/sh/include/asm/sections.h
-@@ -4,7 +4,7 @@
- 
- #include <asm-generic/sections.h>
- 
--extern long __machvec_start, __machvec_end;
-+extern char __machvec_start[], __machvec_end[];
- extern char __uncached_start, __uncached_end;
- extern char __start_eh_frame[], __stop_eh_frame[];
- 
-diff --git a/arch/sh/kernel/machvec.c b/arch/sh/kernel/machvec.c
-index d606679a211e..57efaf5b82ae 100644
---- a/arch/sh/kernel/machvec.c
-+++ b/arch/sh/kernel/machvec.c
-@@ -20,8 +20,8 @@
- #define MV_NAME_SIZE 32
- 
- #define for_each_mv(mv) \
--	for ((mv) = (struct sh_machine_vector *)&__machvec_start; \
--	     (mv) && (unsigned long)(mv) < (unsigned long)&__machvec_end; \
-+	for ((mv) = (struct sh_machine_vector *)__machvec_start; \
-+	     (mv) && (unsigned long)(mv) < (unsigned long)__machvec_end; \
- 	     (mv)++)
- 
- static struct sh_machine_vector * __init get_mv_byname(const char *name)
-@@ -87,8 +87,8 @@ void __init sh_mv_setup(void)
- 	if (!machvec_selected) {
- 		unsigned long machvec_size;
- 
--		machvec_size = ((unsigned long)&__machvec_end -
--				(unsigned long)&__machvec_start);
-+		machvec_size = ((unsigned long)__machvec_end -
-+				(unsigned long)__machvec_start);
- 
- 		/*
- 		 * Sanity check for machvec section alignment. Ensure
-@@ -102,7 +102,7 @@ void __init sh_mv_setup(void)
- 		 * vector (usually the only one) from .machvec.init.
- 		 */
- 		if (machvec_size >= sizeof(struct sh_machine_vector))
--			sh_mv = *(struct sh_machine_vector *)&__machvec_start;
-+			sh_mv = *(struct sh_machine_vector *)__machvec_start;
- 	}
- 
- 	pr_notice("Booting machvec: %s\n", get_system_type());
+Jason A. Donenfeld (2):
+  stackprotector: move CANARY_MASK and get_random_canary() into
+    stackprotector.h
+  stackprotector: actually use get_random_canary()
+
+ arch/arm/include/asm/stackprotector.h     |  9 +--------
+ arch/arm64/include/asm/stackprotector.h   |  9 +--------
+ arch/csky/include/asm/stackprotector.h    | 10 +---------
+ arch/mips/include/asm/stackprotector.h    |  9 +--------
+ arch/powerpc/include/asm/stackprotector.h | 10 +---------
+ arch/riscv/include/asm/stackprotector.h   | 10 +---------
+ arch/sh/include/asm/stackprotector.h      | 10 +---------
+ arch/x86/include/asm/stackprotector.h     | 14 +-------------
+ arch/x86/kernel/cpu/common.c              |  2 +-
+ arch/x86/kernel/setup_percpu.c            |  2 +-
+ arch/x86/kernel/smpboot.c                 |  2 +-
+ arch/x86/xen/enlighten_pv.c               |  2 +-
+ arch/xtensa/include/asm/stackprotector.h  |  7 +------
+ include/linux/random.h                    | 19 -------------------
+ include/linux/stackprotector.h            | 19 +++++++++++++++++++
+ kernel/fork.c                             |  2 +-
+ 16 files changed, 33 insertions(+), 103 deletions(-)
+
 -- 
-2.35.1
-
-
+2.38.1
 
