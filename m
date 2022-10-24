@@ -2,32 +2,32 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CDC4DFA3740
-	for <linux-sh@archiver.kernel.org>; Mon, 24 Oct 2022 11:46:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D5F3FA3741
+	for <linux-sh@archiver.kernel.org>; Mon, 24 Oct 2022 12:20:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231571AbiJXLqG (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 24 Oct 2022 07:46:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46616 "EHLO
+        id S231770AbiJXMT7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 24 Oct 2022 08:19:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47544 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231126AbiJXLpK (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 24 Oct 2022 07:45:10 -0400
+        with ESMTP id S233353AbiJXMTP (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 24 Oct 2022 08:19:15 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BEBE775CD5;
-        Mon, 24 Oct 2022 04:42:24 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9E33574E38;
+        Mon, 24 Oct 2022 04:57:49 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 99993612AB;
-        Mon, 24 Oct 2022 11:41:03 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id AF1CCC433C1;
-        Mon, 24 Oct 2022 11:41:02 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 8D355612D5;
+        Mon, 24 Oct 2022 11:57:39 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9EDCFC433C1;
+        Mon, 24 Oct 2022 11:57:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1666611663;
-        bh=N9qKZYT7mOJgyhIRE5pCqOGzv5ItisKgr4od6nYdI7U=;
+        s=korg; t=1666612659;
+        bh=zyn4n4h+hCJZVFeLUjY46IkKRhJ1R1o5FUAeIwX4jUQ=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=MyDN1wqEn1UCdNBjRQRzOtoesmmWc1qL7Kf4gIW/9GfzqJ49DQkw6OCRUSsPUDYiC
-         aYcAVNXyjMPKlmTPRF0DAz99YoffmM++Msxf9yPkvClLS2gB/2B/wJAMLxRfnVZTvh
-         CvQ/VdLHoZhaaomm6OJmdCXaF8I1idpkcqSSV2uY=
+        b=X4hUI9Gg4hG6pEmlE/jVqIrcMQqB6sOc75jwzeizsd8ErAFoUTJ9DOaSpIoeLaqQb
+         NQtJjo1wFCBAzxwtr3iWbTsLZQeq6rQhp1yZhGYF22yfSem2sqkz86GV0UeUQwT+0X
+         /9XCcqblwYNSzUXC8ZxMQ/wmbIkHF5TEengadnvs=
 From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 To:     linux-kernel@vger.kernel.org
 Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
@@ -39,12 +39,12 @@ Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         "Gustavo A. R. Silva" <gustavoars@kernel.org>,
         Kees Cook <keescook@chromium.org>,
         Sasha Levin <sashal@kernel.org>
-Subject: [PATCH 4.9 064/159] sh: machvec: Use char[] for section boundaries
-Date:   Mon, 24 Oct 2022 13:30:18 +0200
-Message-Id: <20221024112951.802269614@linuxfoundation.org>
+Subject: [PATCH 4.19 070/229] sh: machvec: Use char[] for section boundaries
+Date:   Mon, 24 Oct 2022 13:29:49 +0200
+Message-Id: <20221024113001.345205044@linuxfoundation.org>
 X-Mailer: git-send-email 2.38.1
-In-Reply-To: <20221024112949.358278806@linuxfoundation.org>
-References: <20221024112949.358278806@linuxfoundation.org>
+In-Reply-To: <20221024112959.085534368@linuxfoundation.org>
+References: <20221024112959.085534368@linuxfoundation.org>
 User-Agent: quilt/0.67
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -80,10 +80,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  2 files changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/arch/sh/include/asm/sections.h b/arch/sh/include/asm/sections.h
-index 7a99e6af6372..9ec764c4ffe9 100644
+index 8edb824049b9..0cb0ca149ac3 100644
 --- a/arch/sh/include/asm/sections.h
 +++ b/arch/sh/include/asm/sections.h
-@@ -3,7 +3,7 @@
+@@ -4,7 +4,7 @@
  
  #include <asm-generic/sections.h>
  
