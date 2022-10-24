@@ -2,32 +2,32 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D5F3FA3741
-	for <linux-sh@archiver.kernel.org>; Mon, 24 Oct 2022 12:20:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2222BECAAA1
+	for <linux-sh@archiver.kernel.org>; Mon, 24 Oct 2022 12:24:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231770AbiJXMT7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 24 Oct 2022 08:19:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47544 "EHLO
+        id S231756AbiJXMYo (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 24 Oct 2022 08:24:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40658 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233353AbiJXMTP (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 24 Oct 2022 08:19:15 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9E33574E38;
-        Mon, 24 Oct 2022 04:57:49 -0700 (PDT)
+        with ESMTP id S233744AbiJXMYL (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 24 Oct 2022 08:24:11 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CF3BC44575;
+        Mon, 24 Oct 2022 05:00:16 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 8D355612D5;
-        Mon, 24 Oct 2022 11:57:39 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9EDCFC433C1;
-        Mon, 24 Oct 2022 11:57:38 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 912CB6121A;
+        Mon, 24 Oct 2022 11:48:48 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A138FC433C1;
+        Mon, 24 Oct 2022 11:48:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1666612659;
+        s=korg; t=1666612128;
         bh=zyn4n4h+hCJZVFeLUjY46IkKRhJ1R1o5FUAeIwX4jUQ=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=X4hUI9Gg4hG6pEmlE/jVqIrcMQqB6sOc75jwzeizsd8ErAFoUTJ9DOaSpIoeLaqQb
-         NQtJjo1wFCBAzxwtr3iWbTsLZQeq6rQhp1yZhGYF22yfSem2sqkz86GV0UeUQwT+0X
-         /9XCcqblwYNSzUXC8ZxMQ/wmbIkHF5TEengadnvs=
+        b=p/QdONgUSjEp4tkelSgNvYdRZo8YFIKGFU2nS/JIlC42Y5O6FAwkDh3dyrFH9yr5P
+         rOQL16i4BpfL6OokJXYfdUmqwksOV+qD1R//jtTjM93EIOk9G80scNfHGMH/aihnWB
+         5u/JRtXBpTPqawBVfET/eh4SYtzSpOQ9bB059T7c=
 From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 To:     linux-kernel@vger.kernel.org
 Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
@@ -39,12 +39,12 @@ Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         "Gustavo A. R. Silva" <gustavoars@kernel.org>,
         Kees Cook <keescook@chromium.org>,
         Sasha Levin <sashal@kernel.org>
-Subject: [PATCH 4.19 070/229] sh: machvec: Use char[] for section boundaries
-Date:   Mon, 24 Oct 2022 13:29:49 +0200
-Message-Id: <20221024113001.345205044@linuxfoundation.org>
+Subject: [PATCH 4.14 081/210] sh: machvec: Use char[] for section boundaries
+Date:   Mon, 24 Oct 2022 13:29:58 +0200
+Message-Id: <20221024112959.690828237@linuxfoundation.org>
 X-Mailer: git-send-email 2.38.1
-In-Reply-To: <20221024112959.085534368@linuxfoundation.org>
-References: <20221024112959.085534368@linuxfoundation.org>
+In-Reply-To: <20221024112956.797777597@linuxfoundation.org>
+References: <20221024112956.797777597@linuxfoundation.org>
 User-Agent: quilt/0.67
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
