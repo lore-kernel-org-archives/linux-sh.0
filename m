@@ -2,74 +2,103 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F1B98FA3741
-	for <linux-sh@archiver.kernel.org>; Thu, 27 Oct 2022 15:09:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 33638C4167E
+	for <linux-sh@archiver.kernel.org>; Tue,  1 Nov 2022 17:47:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236003AbiJ0PJZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 27 Oct 2022 11:09:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56788 "EHLO
+        id S229741AbiKARrT (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 1 Nov 2022 13:47:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44274 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236236AbiJ0PJN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 27 Oct 2022 11:09:13 -0400
+        with ESMTP id S229562AbiKARrS (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 1 Nov 2022 13:47:18 -0400
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BF58A18F0D8;
-        Thu, 27 Oct 2022 08:09:11 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 514231D0D3;
+        Tue,  1 Nov 2022 10:47:17 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 45A8762398;
-        Thu, 27 Oct 2022 15:09:11 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id AA016C43144;
-        Thu, 27 Oct 2022 15:09:10 +0000 (UTC)
-Received: from rostedt by gandalf.local.home with local (Exim 4.96)
-        (envelope-from <rostedt@goodmis.org>)
-        id 1oo4VZ-00BvTD-2a;
-        Thu, 27 Oct 2022 11:09:25 -0400
-Message-ID: <20221027150925.638910550@goodmis.org>
-User-Agent: quilt/0.66
-Date:   Thu, 27 Oct 2022 11:05:28 -0400
-From:   Steven Rostedt <rostedt@goodmis.org>
-To:     linux-kernel@vger.kernel.org
-Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Stephen Boyd <sboyd@kernel.org>,
-        Guenter Roeck <linux@roeck-us.net>,
+        by dfw.source.kernel.org (Postfix) with ESMTPS id E0AF6616D8;
+        Tue,  1 Nov 2022 17:47:16 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2CD53C433D6;
+        Tue,  1 Nov 2022 17:47:05 +0000 (UTC)
+Date:   Tue, 1 Nov 2022 17:47:01 +0000
+From:   Catalin Marinas <catalin.marinas@arm.com>
+To:     Kefeng Wang <wangkefeng.wang@huawei.com>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
+        linux-fsdevel@vger.kernel.org,
+        Richard Henderson <richard.henderson@linaro.org>,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        Matt Turner <mattst88@gmail.com>,
+        Vineet Gupta <vgupta@kernel.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+        Huacai Chen <chenhuacai@kernel.org>,
+        WANG Xuerui <kernel@xen0n.name>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Michal Simek <monstr@monstr.eu>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        Jonas Bonn <jonas@southpole.se>,
+        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+        Stafford Horne <shorne@gmail.com>,
+        "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Vasily Gorbik <gor@linux.ibm.com>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        Sven Schnelle <svens@linux.ibm.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Subject: [RFC][PATCH v2 03/31] timers: sh: Use del_timer_shutdown() before freeing timer
-References: <20221027150525.753064657@goodmis.org>
+        Rich Felker <dalias@libc.org>,
+        "David S . Miller" <davem@davemloft.net>,
+        Richard Weinberger <richard@nod.at>,
+        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+        Johannes Berg <johannes@sipsolutions.net>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+        "H . Peter Anvin" <hpa@zytor.com>,
+        Andy Lutomirski <luto@kernel.org>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Chris Zankel <chris@zankel.net>,
+        Max Filippov <jcmvbkbc@gmail.com>
+Subject: Re: [PATCH] mm: remove kern_addr_valid() completely
+Message-ID: <Y2FblZlz2LIGh5qH@arm.com>
+References: <20221018074014.185687-1-wangkefeng.wang@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20221018074014.185687-1-wangkefeng.wang@huawei.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: "Steven Rostedt (Google)" <rostedt@goodmis.org>
+On Tue, Oct 18, 2022 at 03:40:14PM +0800, Kefeng Wang wrote:
+> Most architectures(except arm64/x86/sparc) simply return 1 for
+> kern_addr_valid(), which is only used in read_kcore(), and it
+> calls copy_from_kernel_nofault() which could check whether the
+> address is a valid kernel address, so no need kern_addr_valid(),
+> let's remove unneeded kern_addr_valid() completely.
+> 
+> Signed-off-by: Kefeng Wang <wangkefeng.wang@huawei.com>
 
-Before a timer is freed, del_timer_shutdown() must be called.
+For arm64:
 
-Link: https://lore.kernel.org/all/20220407161745.7d6754b3@gandalf.local.home/
-
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Steven Rostedt (Google) <rostedt@goodmis.org>
----
- arch/sh/drivers/push-switch.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/sh/drivers/push-switch.c b/arch/sh/drivers/push-switch.c
-index 2813140fd92b..2ebdd604f6d0 100644
---- a/arch/sh/drivers/push-switch.c
-+++ b/arch/sh/drivers/push-switch.c
-@@ -102,7 +102,7 @@ static int switch_drv_remove(struct platform_device *pdev)
- 
- 	platform_set_drvdata(pdev, NULL);
- 	flush_work(&psw->work);
--	del_timer_sync(&psw->debounce);
-+	del_timer_shutdown(&psw->debounce);
- 	free_irq(irq, pdev);
- 
- 	kfree(psw);
--- 
-2.35.1
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
