@@ -2,59 +2,59 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AF71BC43217
-	for <linux-sh@archiver.kernel.org>; Wed,  2 Nov 2022 18:35:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A67E1C43219
+	for <linux-sh@archiver.kernel.org>; Wed,  2 Nov 2022 18:36:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231201AbiKBSfH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 2 Nov 2022 14:35:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56150 "EHLO
+        id S231270AbiKBSgU (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 2 Nov 2022 14:36:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56708 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229954AbiKBSfF (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 2 Nov 2022 14:35:05 -0400
+        with ESMTP id S231255AbiKBSgI (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 2 Nov 2022 14:36:08 -0400
 Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 98A832FC1A
-        for <linux-sh@vger.kernel.org>; Wed,  2 Nov 2022 11:34:11 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9EB2C2FC04
+        for <linux-sh@vger.kernel.org>; Wed,  2 Nov 2022 11:34:23 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1667414050;
+        s=mimecast20190719; t=1667414062;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=iOwZQK5qeETgL3wqlfHaHMAHqEn7+FhbLCJ4P7hdM2o=;
-        b=VH7fhpRT52El/0lvWv+HsJ2odZH/8YhPa78TW0X7Lb9XRXEhvSYQfglGw3PiLKTciPFvw3
-        N7prSB9g6KvEUaJLuxGQrKri15NU13SG8Ir/jhY5/yZOFOey6NOB6hWT9L38o8z+jGu2OC
-        NqW5JWKwRK2y5RplJqhKcRNXRdZfNFw=
-Received: from mail-qt1-f199.google.com (mail-qt1-f199.google.com
- [209.85.160.199]) by relay.mimecast.com with ESMTP with STARTTLS
+        bh=QqLWPThYSO+7/uH6VGCIiG2p0FrpcxY/esl5LuglSyI=;
+        b=UaqOzmF3XjoLl4fg9Cex0D2JZhb4Hn4fs/xuSkfevBtbljclmc82i5hLfUwGo4vvNTut3A
+        iWqg1vS5Hw7hN7FelKt6q2MtNHS4UVvAj8kccLsIzL80JsEQvUdfSo0GlxoqaAUUbjMiRu
+        2go1IVhZ8b4mzdEp4XHbnPGlcHfvYRA=
+Received: from mail-qk1-f198.google.com (mail-qk1-f198.google.com
+ [209.85.222.198]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.3, cipher=TLS_AES_128_GCM_SHA256) id
- us-mta-617-YH3rQlFdOxKaSUv1dMPldA-1; Wed, 02 Nov 2022 14:34:09 -0400
-X-MC-Unique: YH3rQlFdOxKaSUv1dMPldA-1
-Received: by mail-qt1-f199.google.com with SMTP id i13-20020ac8764d000000b003a4ec8693dcso12829590qtr.14
-        for <linux-sh@vger.kernel.org>; Wed, 02 Nov 2022 11:34:09 -0700 (PDT)
+ us-mta-359-Rb-Y7lINO5KdMGmogwNR5Q-1; Wed, 02 Nov 2022 14:34:20 -0400
+X-MC-Unique: Rb-Y7lINO5KdMGmogwNR5Q-1
+Received: by mail-qk1-f198.google.com with SMTP id bj1-20020a05620a190100b006fa12a05188so11690399qkb.4
+        for <linux-sh@vger.kernel.org>; Wed, 02 Nov 2022 11:34:20 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=iOwZQK5qeETgL3wqlfHaHMAHqEn7+FhbLCJ4P7hdM2o=;
-        b=YidKNAOGhyXRkOkNUS1+70cQticpYKMGrf1Z7XpmC7hykoK4n9xTURuaztleLqrOFr
-         AykVQJlWfOhMhwCQ9r+Up+Xo3tMdImDkcNeMqGnJrK7S1Ez4xsqEjxmmey/xGWzQ9Dpy
-         DGTgqsAzul1rRDVvHl01dJkXqQG+cprXY4D4jk4TbocSpdv94SWK8K1RVSejkMkv6afD
-         lPFzUPtMXTkvdp/B0YBjq2POrXBOwtXUcscc9eUPxxCtkvp2x4JJqflD0dGILvOmsssf
-         xqOlrzvwinbsY8RMyF7OmSJSc4S7SE66LFNwmYgPw3ITXrXWi8qHUhSSYm0LJcABkgqX
-         VgjA==
-X-Gm-Message-State: ACrzQf2qY3Cze6jZhkxKDuZMatfgL3z9bL/cxnnIYCTGFGaFTZrIyTXD
-        5fimd07yBT80L+TRIKkI5zhnqIo/7wT/BATgJPiup0LxrR7qlTI9PtvPZq1TxI7AnkrgG+6H+WE
-        zstzEYfN+GamQuYSMg1o=
-X-Received: by 2002:a05:622a:183:b0:3a5:4255:a0fe with SMTP id s3-20020a05622a018300b003a54255a0femr5122039qtw.441.1667414048630;
-        Wed, 02 Nov 2022 11:34:08 -0700 (PDT)
-X-Google-Smtp-Source: AMsMyM513iTu4ts5GTQjgBcRtTQiZ5hV5vnGyMiejNr5eqgULDfvGkfyMfW7xqa9AO3zDpp+iTddyQ==
-X-Received: by 2002:a05:622a:183:b0:3a5:4255:a0fe with SMTP id s3-20020a05622a018300b003a54255a0femr5122009qtw.441.1667414048423;
-        Wed, 02 Nov 2022 11:34:08 -0700 (PDT)
+        bh=QqLWPThYSO+7/uH6VGCIiG2p0FrpcxY/esl5LuglSyI=;
+        b=mDL2BNW9VfnqXTCpU5GEgTtd6mk1Zwr5ku/GIC59dU1IkWjw3HJZphJfzV6SuLuXFu
+         V9eAePo3+9o0eT/oceH8mYnt4Zvxd3/OrLWm3NPkPXPcMkdXEJSRF7QnweFASDY9JI2w
+         iGr3EuUzDf/dGcJia62bgHBBHLIHiWo9RXrsXdRfVBWPdgm+squClR7l3XppioNNd53R
+         3RtMbcmyTOIM8QDqxZWobBB72Houtj1ZxK3j52MtI8UdLNCVwwV3sdMvDKDoT+mJ0Xh1
+         E8+zLd1VG1hUup6MJ56rYZt2+oZXqp6CoWYI6mF7lyKzMJ+vNYPKlnWxUyjiy3F4LKLn
+         KIOg==
+X-Gm-Message-State: ACrzQf0O2bMCVI5bHsKwCou+c/p87D/ouEXL39A9ie1IUEdxqiTTdF7P
+        NcRVjX+fgNSLKx4kmUgOohseg0EYyodvPsYSXa9IwL1P6cFlnTAJIRSEStPUrMuc/RuUMur0+EF
+        /DRgFB2UdAuTFTy2nHhk=
+X-Received: by 2002:a05:620a:2185:b0:6fa:9b5:7bcd with SMTP id g5-20020a05620a218500b006fa09b57bcdmr17834827qka.689.1667414059923;
+        Wed, 02 Nov 2022 11:34:19 -0700 (PDT)
+X-Google-Smtp-Source: AMsMyM5zQBXSq1wHjxRSmwTcnsY0fuwHzVoafdqUQfLwgY4gLc/C2queTj08Inp5WgKA+UYkDnhs/w==
+X-Received: by 2002:a05:620a:2185:b0:6fa:9b5:7bcd with SMTP id g5-20020a05620a218500b006fa09b57bcdmr17834779qka.689.1667414059700;
+        Wed, 02 Nov 2022 11:34:19 -0700 (PDT)
 Received: from vschneid.remote.csb ([149.71.65.94])
-        by smtp.gmail.com with ESMTPSA id w187-20020a3794c4000000b006eed47a1a1esm8757820qkd.134.2022.11.02.11.34.02
+        by smtp.gmail.com with ESMTPSA id w187-20020a3794c4000000b006eed47a1a1esm8757820qkd.134.2022.11.02.11.34.14
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 02 Nov 2022 11:34:06 -0700 (PDT)
+        Wed, 02 Nov 2022 11:34:18 -0700 (PDT)
 From:   Valentin Schneider <vschneid@redhat.com>
 To:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-snps-arc@lists.infradead.org,
@@ -83,9 +83,9 @@ Cc:     "Paul E. McKenney" <paulmck@kernel.org>,
         Nicholas Piggin <npiggin@gmail.com>,
         Guo Ren <guoren@kernel.org>,
         "David S. Miller" <davem@davemloft.net>
-Subject: [RFC PATCH v2 2/8] trace: Add trace_ipi_send_cpumask()
-Date:   Wed,  2 Nov 2022 18:33:30 +0000
-Message-Id: <20221102183336.3120536-1-vschneid@redhat.com>
+Subject: [RFC PATCH v2 4/8] smp: Trace IPIs sent via arch_send_call_function_ipi_mask()
+Date:   Wed,  2 Nov 2022 18:33:32 +0000
+Message-Id: <20221102183336.3120536-3-vschneid@redhat.com>
 X-Mailer: git-send-email 2.31.1
 In-Reply-To: <20221102182949.3119584-1-vschneid@redhat.com>
 References: <20221102182949.3119584-1-vschneid@redhat.com>
@@ -98,51 +98,41 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-trace_ipi_raise() is unsuitable for generically tracing IPI sources due to
-its "reason" argument being an uninformative string (on arm64 all you get
-is "Function call interrupts" for SMP calls).
-
-Add a variant of it that takes a exports a target CPU, a callsite and a
-callback.
+This simply wraps around the arch function and prepends it with a
+tracepoint, similar to send_call_function_single_ipi().
 
 Signed-off-by: Valentin Schneider <vschneid@redhat.com>
 ---
- include/trace/events/ipi.h | 22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+ kernel/smp.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/include/trace/events/ipi.h b/include/trace/events/ipi.h
-index 0be71dad6ec03..b1125dc27682c 100644
---- a/include/trace/events/ipi.h
-+++ b/include/trace/events/ipi.h
-@@ -35,6 +35,28 @@ TRACE_EVENT(ipi_raise,
- 	TP_printk("target_mask=%s (%s)", __get_bitmask(target_cpus), __entry->reason)
- );
+diff --git a/kernel/smp.c b/kernel/smp.c
+index e2ca1e2f31274..c4d561cf50d45 100644
+--- a/kernel/smp.c
++++ b/kernel/smp.c
+@@ -160,6 +160,13 @@ void __init call_function_init(void)
+ 	smpcfd_prepare_cpu(smp_processor_id());
+ }
  
-+TRACE_EVENT(ipi_send_cpumask,
++static inline void
++send_call_function_ipi_mask(const struct cpumask *mask)
++{
++	trace_ipi_send_cpumask(mask, _RET_IP_, func);
++	arch_send_call_function_ipi_mask(mask);
++}
 +
-+	TP_PROTO(const struct cpumask *cpumask, unsigned long callsite, void *callback),
-+
-+	TP_ARGS(cpumask, callsite, callback),
-+
-+	TP_STRUCT__entry(
-+		__cpumask(cpumask)
-+		__field(void *, callsite)
-+		__field(void *, callback)
-+	),
-+
-+	TP_fast_assign(
-+		__assign_cpumask(cpumask, cpumask_bits(cpumask));
-+		__entry->callsite = (void *)callsite;
-+		__entry->callback = callback;
-+	),
-+
-+	TP_printk("cpumask=%s callsite=%pS callback=%pS",
-+		  __get_cpumask(cpumask), __entry->callsite, __entry->callback)
-+);
-+
- DECLARE_EVENT_CLASS(ipi_handler,
+ #ifdef CONFIG_CSD_LOCK_WAIT_DEBUG
  
- 	TP_PROTO(const char *reason),
+ static DEFINE_STATIC_KEY_FALSE(csdlock_debug_enabled);
+@@ -970,7 +977,7 @@ static void smp_call_function_many_cond(const struct cpumask *mask,
+ 		if (nr_cpus == 1)
+ 			send_call_function_single_ipi(last_cpu);
+ 		else if (likely(nr_cpus > 1))
+-			arch_send_call_function_ipi_mask(cfd->cpumask_ipi);
++			send_call_function_ipi_mask(cfd->cpumask_ipi);
+ 
+ 		cfd_seq_store(this_cpu_ptr(&cfd_seq_local)->pinged, this_cpu, CFD_SEQ_NOCPU, CFD_SEQ_PINGED);
+ 	}
 -- 
 2.31.1
 
