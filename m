@@ -2,44 +2,74 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C96DFC47089
-	for <linux-sh@archiver.kernel.org>; Fri,  4 Nov 2022 05:49:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E0214C43217
+	for <linux-sh@archiver.kernel.org>; Fri,  4 Nov 2022 17:00:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231486AbiKDFtA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 4 Nov 2022 01:49:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55654 "EHLO
+        id S231485AbiKDRA1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 4 Nov 2022 13:00:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49878 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231150AbiKDFsu (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 4 Nov 2022 01:48:50 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E3FBA28E11;
-        Thu,  3 Nov 2022 22:48:48 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 460CCB82BFA;
-        Fri,  4 Nov 2022 05:48:47 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B4911C433D6;
-        Fri,  4 Nov 2022 05:48:45 +0000 (UTC)
-Received: from rostedt by gandalf.local.home with local (Exim 4.96)
-        (envelope-from <rostedt@goodmis.org>)
-        id 1oqpZo-0070xm-08;
-        Fri, 04 Nov 2022 01:49:12 -0400
-Message-ID: <20221104054053.431922658@goodmis.org>
-User-Agent: quilt/0.66
-Date:   Fri, 04 Nov 2022 01:40:53 -0400
-From:   Steven Rostedt <rostedt@goodmis.org>
-To:     linux-kernel@vger.kernel.org
-Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
+        with ESMTP id S231653AbiKDRA0 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 4 Nov 2022 13:00:26 -0400
+Received: from mail-qt1-x836.google.com (mail-qt1-x836.google.com [IPv6:2607:f8b0:4864:20::836])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B607431EF2
+        for <linux-sh@vger.kernel.org>; Fri,  4 Nov 2022 10:00:24 -0700 (PDT)
+Received: by mail-qt1-x836.google.com with SMTP id l15so3393917qtv.4
+        for <linux-sh@vger.kernel.org>; Fri, 04 Nov 2022 10:00:24 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linux-foundation.org; s=google;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=/jNIi3NLp/0QE0eLEgGhnlZnXslRxZtVSsauwMnJ52A=;
+        b=TyCMiI4ARMPxd18RVlEv+qm2LWR7zC104Hlivn40qb5lZJslIeDFuCNMNvjneFE/Nj
+         LFwCX5vAwmEX/R8qjGO9x9K9/hgdwoRd2q59WUqMzWoiDvISQjer+tTT1jJ7UfSLA8Vn
+         fR3VeAjk206NeR5DC2lSXJH82ZME8JVM9jplc=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=/jNIi3NLp/0QE0eLEgGhnlZnXslRxZtVSsauwMnJ52A=;
+        b=b5IhaoAbtd5GWkUir5nreRL7CXVrDe1zLTX1qjFNXI2WiQyk69SN7l8P/MQ33bj0/+
+         vnJdZfgbRDii2eejzqs7aH0pfTHStc0Jey7BD54FlaSKmPlZ0q45xuLQoyOz21dzSRuH
+         JfMCNPeLPXz8TyY7f6TDKdPpPlds6KZUmY6GzjvgtEq47r5osDKeYlPvJmlEyIOzZ+3u
+         487Ee6LO5/h5v8pq87sXhWf+OTGbNdEcoY8COE86QajV9zEUfjYmCVGqNhbl9+J2TimQ
+         VySfBUPuOln4YqBilgSf5ndNwFtetY9UE6aYCC9LtTGxrl1UBF85L4HB3+eysSaiIEOI
+         xWVQ==
+X-Gm-Message-State: ACrzQf2F77s9Z62hJIR7tZxYvou5q2KMP09q9IUx64xbhszNHgdz9luM
+        4inH5mcaAisOnvKcdrscBwVXiJtmE7vthA==
+X-Google-Smtp-Source: AMsMyM62G1unALsUH6GcVtiTLiGiWkZNaKpiJ1znFVguJGKhyPinjsBisOIRBIJHsRzgrCMJV2tB4g==
+X-Received: by 2002:a05:622a:1e18:b0:3a5:5bc0:85be with SMTP id br24-20020a05622a1e1800b003a55bc085bemr6273993qtb.201.1667581223515;
+        Fri, 04 Nov 2022 10:00:23 -0700 (PDT)
+Received: from mail-yw1-f180.google.com (mail-yw1-f180.google.com. [209.85.128.180])
+        by smtp.gmail.com with ESMTPSA id 6-20020a05620a06c600b006fa4a81e895sm3145631qky.67.2022.11.04.10.00.20
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 04 Nov 2022 10:00:20 -0700 (PDT)
+Received: by mail-yw1-f180.google.com with SMTP id 00721157ae682-367cd2807f2so49262687b3.1
+        for <linux-sh@vger.kernel.org>; Fri, 04 Nov 2022 10:00:20 -0700 (PDT)
+X-Received: by 2002:a81:8241:0:b0:370:5fad:47f0 with SMTP id
+ s62-20020a818241000000b003705fad47f0mr27409344ywf.441.1667581219811; Fri, 04
+ Nov 2022 10:00:19 -0700 (PDT)
+MIME-Version: 1.0
+References: <20221104054053.431922658@goodmis.org>
+In-Reply-To: <20221104054053.431922658@goodmis.org>
+From:   Linus Torvalds <torvalds@linux-foundation.org>
+Date:   Fri, 4 Nov 2022 10:00:03 -0700
+X-Gmail-Original-Message-ID: <CAHk-=whKE5UL+AuCC2wK8oq8D_ueSO_T7-9Acx4POouqVi8ZHg@mail.gmail.com>
+Message-ID: <CAHk-=whKE5UL+AuCC2wK8oq8D_ueSO_T7-9Acx4POouqVi8ZHg@mail.gmail.com>
+Subject: Re: [RFC][PATCH v3 00/33] timers: Use timer_shutdown*() before
+ freeing timers
+To:     Steven Rostedt <rostedt@goodmis.org>
+Cc:     linux-kernel@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>,
         Stephen Boyd <sboyd@kernel.org>,
         Guenter Roeck <linux@roeck-us.net>,
         Anna-Maria Gleixner <anna-maria@linutronix.de>,
         Andrew Morton <akpm@linux-foundation.org>, rcu@vger.kernel.org,
-        linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-edac@vger.kernel.org, cgroups@vger.kernel.org,
-        linux-block@vger.kernel.org, linux-acpi@vger.kernel.org,
+        linux-doc@vger.kernel.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-edac@vger.kernel.org,
+        cgroups@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-acpi@vger.kernel.org,
         linux-atm-general@lists.sourceforge.net, netdev@vger.kernel.org,
         linux-pm@vger.kernel.org, drbd-dev@lists.linbit.com,
         linux-bluetooth@vger.kernel.org,
@@ -55,199 +85,37 @@ Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
         coreteam@netfilter.org, lvs-devel@vger.kernel.org,
         linux-afs@lists.infradead.org, linux-nfs@vger.kernel.org,
         tipc-discussion@lists.sourceforge.net, alsa-devel@alsa-project.org
-Subject: [RFC][PATCH v3 00/33] timers: Use timer_shutdown*() before freeing timers
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+On Thu, Nov 3, 2022 at 10:48 PM Steven Rostedt <rostedt@goodmis.org> wrote:
+>
+> Ideally, I would have the first patch go into this rc cycle, which is mostly
+> non functional as it will allow the other patches to come in via the respective
+> subsystems in the next merge window.
 
-Back in April, I posted an RFC patch set to help mitigate a common issue
-where a timer gets armed just before it is freed, and when the timer
-goes off, it crashes in the timer code without any evidence of who the
-culprit was. I got side tracked and never finished up on that patch set.
-Since this type of crash is still our #1 crash we are seeing in the field,
-it has become a priority again to finish it.
+Ack.
 
-This is v3 of that patch set. Thomas Gleixner posted an untested version
-that makes timer->function NULL as the flag that it is shutdown. I took that
-code, tested it (fixed it up), added more comments, and changed the
-name to timer_shutdown_sync(). I also converted it to use WARN_ON_ONCE()
-instead of just WARN_ON() as Linus asked for.
+I also wonder if we could do the completely trivially correct
+conversions immediately.
 
-I then created a trivial coccinelle script to find where del_timer*()
-is called before being freed, and converted them all to timer_shutdown*()
-(There was a couple that still used del_timer() instead of del_timer_sync()).
+I'm talking about the scripted ones where it's currently a
+"del_timer_sync()", and the very next action is freeing whatever data
+structure the timer is in (possibly with something like free_irq() in
+between - my point is that there's an unconditional free that is very
+clear and unambiguous), so that there is absolutely no question about
+whether they should use "timer_shutdown_sync()" or not.
 
-I also updated DEBUG_OBJECTS_TIMERS to check from where the timer is ever
-armed, to calling of timer_shutdown_sync(), and it will trigger if a timer
-is freed in between. The current way is to only check if the timer is armed,
-but that means it only triggers if the race condition is hit, and with
-experience, it's not run on enough machines to catch all of them. By triggering
-it from the time the timer is armed to the time it is shutdown, it catches
-all potential cases even if the race condition is not hit.
+IOW, things like patches 03, 17 and 31, and at least parts others in
+this series.
 
-I went though the result of the cocinelle script, and updated the locations.
-Some locations were caught by DEBUG_OBJECTS_TIMERS as the coccinelle script
-only checked for timers being freed in the same function as the del_timer*().
+This series clearly has several much more complex cases that need
+actual real code review, and I think it would help to have the
+completely unambiguous cases out of the way, just to get rid of noise.
 
-Ideally, I would have the first patch go into this rc cycle, which is mostly
-non functional as it will allow the other patches to come in via the respective
-subsystems in the next merge window.
+So I'd take that first patch, and a scripted set of "this cannot
+change any semantics" patches early.
 
-Changes since v2: https://lore.kernel.org/all/20221027150525.753064657@goodmis.org/
-
- - Talking with Thomas Gleixner, he wanted a better name space and to remove
-   the "del_" portion of the API.
-
- - Since there's now a shutdown interface that does not synchronize, to keep
-   it closer to del_timer() and del_timer_sync(), the API is now:
-
-    timer_shutdown() - same as del_timer() but deactivates the timer.
-
-    timer_shutdown_sync() - same as del_timer_sync() but deactivates the timer.
-
- - Added a few more locations that got converted.
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/rostedt/linux-trace.git
-trace/timers
-
-Head SHA1: 25106f0bb7968b3e8c746a7853f44b51840746c3
-
-
-Steven Rostedt (Google) (33):
-      timers: Add timer_shutdown_sync() and timer_shutdown() to be called before freeing timers
-      timers: s390/cmm: Use timer_shutdown_sync() before freeing timer
-      timers: sh: Use timer_shutdown_sync() before freeing timer
-      timers: block: Use timer_shutdown_sync() before freeing timer
-      timers: ACPI: Use timer_shutdown_sync() before freeing timer
-      timers: atm: Use timer_shutdown_sync() before freeing timer
-      timers: PM: Use timer_shutdown_sync()
-      timers: Bluetooth: Use timer_shutdown_sync() before freeing timer
-      timers: hangcheck: Use timer_shutdown_sync() before freeing timer
-      timers: ipmi: Use timer_shutdown_sync() before freeing timer
-      random: use timer_shutdown_sync() before freeing timer
-      timers: dma-buf: Use timer_shutdown_sync() before freeing timer
-      timers: drm: Use timer_shutdown_sync() before freeing timer
-      timers: HID: Use timer_shutdown_sync() before freeing timer
-      timers: Input: Use timer_shutdown_sync() before freeing timer
-      timers: mISDN: Use timer_shutdown_sync() before freeing timer
-      timers: leds: Use timer_shutdown_sync() before freeing timer
-      timers: media: Use timer_shutdown_sync() before freeing timer
-      timers: net: Use timer_shutdown_sync() before freeing timer
-      timers: usb: Use timer_shutdown_sync() before freeing timer
-      timers: cgroup: Use timer_shutdown_sync() before freeing timer
-      timers: workqueue: Use timer_shutdown_sync() before freeing timer
-      timers: nfc: pn533: Use timer_shutdown_sync() before freeing timer
-      timers: pcmcia: Use timer_shutdown_sync() before freeing timer
-      timers: scsi: Use timer_shutdown_sync() and timer_shutdown() before freeing timer
-      timers: tty: Use timer_shutdown_sync() before freeing timer
-      timers: ext4: Use timer_shutdown_sync() before freeing timer
-      timers: fs/nilfs2: Use timer_shutdown_sync() before freeing timer
-      timers: ALSA: Use timer_shutdown_sync() before freeing timer
-      timers: jbd2: Use timer_shutdown() before freeing timer
-      timers: sched/psi: Use timer_shutdown_sync() before freeing timer
-      timers: x86/mce: Use __init_timer() for resetting timers
-      timers: Expand DEBUG_OBJECTS_TIMER to check if it ever was used
-
-----
- .../RCU/Design/Requirements/Requirements.rst       |   2 +-
- Documentation/core-api/local_ops.rst               |   2 +-
- Documentation/kernel-hacking/locking.rst           |   5 +
- arch/s390/mm/cmm.c                                 |   4 +-
- arch/sh/drivers/push-switch.c                      |   2 +-
- arch/x86/kernel/cpu/mce/core.c                     |  14 ++-
- block/blk-iocost.c                                 |   2 +-
- block/blk-iolatency.c                              |   2 +-
- block/blk-stat.c                                   |   2 +-
- block/blk-throttle.c                               |   2 +-
- block/kyber-iosched.c                              |   2 +-
- drivers/acpi/apei/ghes.c                           |   2 +-
- drivers/atm/idt77105.c                             |   4 +-
- drivers/atm/idt77252.c                             |   4 +-
- drivers/atm/iphase.c                               |   2 +-
- drivers/base/power/wakeup.c                        |   7 +-
- drivers/block/drbd/drbd_main.c                     |   2 +-
- drivers/block/loop.c                               |   2 +-
- drivers/block/sunvdc.c                             |   2 +-
- drivers/bluetooth/hci_bcsp.c                       |   2 +-
- drivers/bluetooth/hci_h5.c                         |   2 +-
- drivers/bluetooth/hci_qca.c                        |   4 +-
- drivers/char/hangcheck-timer.c                     |   4 +-
- drivers/char/ipmi/ipmi_msghandler.c                |   2 +-
- drivers/char/ipmi/ipmi_ssif.c                      |   4 +-
- drivers/char/random.c                              |   2 +-
- drivers/dma-buf/st-dma-fence.c                     |   2 +-
- drivers/gpu/drm/gud/gud_pipe.c                     |   2 +-
- drivers/gpu/drm/i915/i915_sw_fence.c               |   2 +-
- drivers/hid/hid-wiimote-core.c                     |   2 +-
- drivers/input/keyboard/locomokbd.c                 |   2 +-
- drivers/input/keyboard/omap-keypad.c               |   2 +-
- drivers/input/mouse/alps.c                         |   2 +-
- drivers/input/serio/hil_mlc.c                      |   2 +-
- drivers/input/serio/hp_sdc.c                       |   2 +-
- drivers/isdn/hardware/mISDN/hfcmulti.c             |   6 +-
- drivers/isdn/mISDN/l1oip_core.c                    |   4 +-
- drivers/isdn/mISDN/timerdev.c                      |   4 +-
- drivers/leds/trigger/ledtrig-activity.c            |   2 +-
- drivers/leds/trigger/ledtrig-heartbeat.c           |   2 +-
- drivers/leds/trigger/ledtrig-pattern.c             |   2 +-
- drivers/leds/trigger/ledtrig-transient.c           |   2 +-
- drivers/media/pci/ivtv/ivtv-driver.c               |   2 +-
- drivers/media/usb/pvrusb2/pvrusb2-hdw.c            |  18 ++--
- drivers/media/usb/s2255/s2255drv.c                 |   4 +-
- drivers/net/ethernet/intel/i40e/i40e_main.c        |   6 +-
- drivers/net/ethernet/marvell/sky2.c                |   2 +-
- drivers/net/ethernet/sun/sunvnet.c                 |   2 +-
- drivers/net/usb/sierra_net.c                       |   2 +-
- drivers/net/wireless/intel/iwlwifi/iwl-dbg-tlv.c   |   2 +-
- drivers/net/wireless/intersil/hostap/hostap_ap.c   |   2 +-
- drivers/net/wireless/marvell/mwifiex/main.c        |   2 +-
- drivers/net/wireless/microchip/wilc1000/hif.c      |   8 +-
- drivers/nfc/pn533/pn533.c                          |   2 +-
- drivers/nfc/pn533/uart.c                           |   2 +-
- drivers/pcmcia/bcm63xx_pcmcia.c                    |   2 +-
- drivers/pcmcia/electra_cf.c                        |   2 +-
- drivers/pcmcia/omap_cf.c                           |   2 +-
- drivers/pcmcia/pd6729.c                            |   4 +-
- drivers/pcmcia/yenta_socket.c                      |   4 +-
- drivers/scsi/qla2xxx/qla_edif.c                    |   4 +-
- drivers/scsi/scsi_lib.c                            |   1 +
- drivers/staging/media/atomisp/i2c/atomisp-lm3554.c |   2 +-
- drivers/tty/n_gsm.c                                |   2 +-
- drivers/tty/sysrq.c                                |   2 +-
- drivers/usb/gadget/udc/m66592-udc.c                |   2 +-
- drivers/usb/serial/garmin_gps.c                    |   2 +-
- drivers/usb/serial/mos7840.c                       |   2 +-
- fs/ext4/super.c                                    |   2 +-
- fs/jbd2/journal.c                                  |   2 +
- fs/nilfs2/segment.c                                |   2 +-
- include/linux/timer.h                              | 100 +++++++++++++++++--
- include/linux/workqueue.h                          |   4 +-
- kernel/cgroup/cgroup.c                             |   2 +-
- kernel/sched/psi.c                                 |   1 +
- kernel/time/timer.c                                | 106 ++++++++++++++-------
- kernel/workqueue.c                                 |   4 +-
- net/802/garp.c                                     |   2 +-
- net/802/mrp.c                                      |   2 +-
- net/bridge/br_multicast.c                          |   6 +-
- net/bridge/br_multicast_eht.c                      |   4 +-
- net/core/gen_estimator.c                           |   2 +-
- net/core/neighbour.c                               |   2 +
- net/ipv4/inet_connection_sock.c                    |   2 +-
- net/ipv4/inet_timewait_sock.c                      |   3 +-
- net/ipv4/ipmr.c                                    |   2 +-
- net/ipv6/ip6mr.c                                   |   2 +-
- net/mac80211/mesh_pathtbl.c                        |   2 +-
- net/netfilter/ipset/ip_set_list_set.c              |   2 +-
- net/netfilter/ipvs/ip_vs_lblc.c                    |   2 +-
- net/netfilter/ipvs/ip_vs_lblcr.c                   |   2 +-
- net/netfilter/xt_LED.c                             |   2 +-
- net/rxrpc/conn_object.c                            |   2 +-
- net/sched/cls_flow.c                               |   2 +-
- net/sunrpc/svc.c                                   |   2 +-
- net/sunrpc/xprt.c                                  |   2 +-
- net/tipc/discover.c                                |   2 +-
- net/tipc/monitor.c                                 |   2 +-
- sound/i2c/other/ak4117.c                           |   2 +-
- sound/synth/emux/emux.c                            |   2 +-
- 100 files changed, 310 insertions(+), 175 deletions(-)
+                Linus
