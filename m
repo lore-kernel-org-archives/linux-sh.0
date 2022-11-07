@@ -2,30 +2,41 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E13DC4167E
-	for <linux-sh@archiver.kernel.org>; Mon,  7 Nov 2022 03:33:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D2079C4321E
+	for <linux-sh@archiver.kernel.org>; Mon,  7 Nov 2022 10:47:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231235AbiKGDdE (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 6 Nov 2022 22:33:04 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53396 "EHLO
+        id S231688AbiKGKrK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 7 Nov 2022 05:47:10 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50418 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230265AbiKGDdC (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 6 Nov 2022 22:33:02 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D587D9FCC;
-        Sun,  6 Nov 2022 19:33:00 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 6628D60EA7;
-        Mon,  7 Nov 2022 03:33:00 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 780BFC433C1;
-        Mon,  7 Nov 2022 03:32:58 +0000 (UTC)
-Date:   Sun, 6 Nov 2022 22:32:56 -0500
-From:   Steven Rostedt <rostedt@goodmis.org>
-To:     Linus Torvalds <torvalds@linux-foundation.org>
+        with ESMTP id S231616AbiKGKrG (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 7 Nov 2022 05:47:06 -0500
+Received: from galois.linutronix.de (Galois.linutronix.de [IPv6:2a0a:51c0:0:12e:550::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3172F17E33;
+        Mon,  7 Nov 2022 02:47:06 -0800 (PST)
+From:   Thomas Gleixner <tglx@linutronix.de>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
+        s=2020; t=1667818024;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=qnhu/C4/dTNGh+9YxTAUPF0AHXOgpdZiA4TofS1TDao=;
+        b=m8gFAB2FYV5B4BIkkbSCrPl5kngI1vwmC89wOqBJ/q73+RRLDUvN8153YBd0ancpYaUudU
+        +fTzmJoLwRrrXw9ulhVtc41yRIMLNrOmB9kVLUOAn2xwOs861TQYPTmwfVqoXOpGOLsPn5
+        hNBacxD9XN6Mi6tXS/NIbwjqzso2C6oqm6/L/mt2cpmfqfHELnCL8o8Pn38Ir7+eD8OVqk
+        Lj3kRr5Ls1MIF7+wsJc3Ym/BQIZf8UhWrd8aE7FpoY/qhjIfIvELeoa8/ZXUqY5eKhjinO
+        ZF4FT08X0F8jeyihKYji9kBCreFY8X9nEznXEcECfWmIcYVRm4zXH9JmYOmiiQ==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
+        s=2020e; t=1667818024;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=qnhu/C4/dTNGh+9YxTAUPF0AHXOgpdZiA4TofS1TDao=;
+        b=bzVvnuX1mysTSSrkmkIGsLumN3FZV+biUwiIDeLZdScudMhEXojJ3c4U7ytkUdHNPdLCjD
+        NbhAMzPLE4OU4lBA==
+To:     Steven Rostedt <rostedt@goodmis.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>
 Cc:     LKML <linux-kernel@vger.kernel.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
         Stephen Boyd <sboyd@kernel.org>,
         Guenter Roeck <linux@roeck-us.net>,
         Anna-Maria Gleixner <anna-maria@linutronix.de>,
@@ -45,140 +56,28 @@ Cc:     LKML <linux-kernel@vger.kernel.org>,
         coreteam@netfilter.org, lvs-devel@vger.kernel.org,
         linux-afs@lists.infradead.org, linux-nfs@vger.kernel.org,
         tipc-discussion@lists.sourceforge.net, alsa-devel@alsa-project.org
-Subject: [GIT PULL] treewide: timers: Use timer_shutdown*() before freeing
- timers
-Message-ID: <20221106223256.4bbdb018@rorschach.local.home>
-X-Mailer: Claws Mail 3.17.8 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
+Subject: Re: [GIT PULL] treewide: timers: Use timer_shutdown*() before
+ freeing timers
+In-Reply-To: <20221106223256.4bbdb018@rorschach.local.home>
+References: <20221106223256.4bbdb018@rorschach.local.home>
+Date:   Mon, 07 Nov 2022 11:47:04 +0100
+Message-ID: <87pmdzvy6v.ffs@tglx>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-
-
 Linus,
 
-As discussed here:
+On Sun, Nov 06 2022 at 22:32, Steven Rostedt wrote:
+> As discussed here:
+>
+>   https://lore.kernel.org/all/20221106212427.739928660@goodmis.org/
 
-  https://lore.kernel.org/all/20221106212427.739928660@goodmis.org/
+Please hold off. It's only nits, but tip has documented rules and random
+pull requests are not making them go away.
 
-Add a "shutdown" state for timers. This is performed by the new
-timer_shutdown_sync() and timer_shutdown() function calls. When this is
-called on a timer, it will no longer be able to be re-armed. This should
-be called before a timer is freed to prevent it from being re-armed after
-being removed from the timer queue and then causing a crash in the timer
-code when the timer triggers.
+Thanks,
 
-This required renaming some functions that were using the name
-timer_shutdown() statically to something more appropriate.
-
-Then a coccinelle script was executed on the entire kernel tree to find
-the trivial locations that remove the timer and then frees the object that
-the timer exists on.
-
-These changes are not enough to solve all the locations where timers may
-be of an issue. But by adding the shutdown infrastructure and the obvious
-cases, the more complex cases can be added after they have been reviewed
-more closely.
-
-
-Please pull the following tree, which can be found at:
-
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/rostedt/linux-trace.git
-add-timer-shutdown
-
-Tag SHA1: 7685328352dfd2908e23048f563e328dbd3526e9
-Head SHA1: 870556da63870e01ade9bb8418ac5a21862f2f10
-
-
-Steven Rostedt (Google) (5):
-      ARM: spear: Do not use timer namespace for timer_shutdown() function
-      clocksource/drivers/arm_arch_timer: Do not use timer namespace for timer_shutdown() function
-      clocksource/drivers/sp804: Do not use timer namespace for timer_shutdown() function
-      timers: Add timer_shutdown_sync() and timer_shutdown() to be called before freeing timers
-      treewide: Convert del_timer*() to timer_shutdown*()
-
-----
- .../RCU/Design/Requirements/Requirements.rst       |  2 +-
- Documentation/core-api/local_ops.rst               |  2 +-
- Documentation/kernel-hacking/locking.rst           |  5 ++
- arch/arm/mach-spear/time.c                         |  8 +--
- arch/sh/drivers/push-switch.c                      |  2 +-
- block/blk-iocost.c                                 |  2 +-
- block/blk-iolatency.c                              |  2 +-
- block/kyber-iosched.c                              |  2 +-
- drivers/acpi/apei/ghes.c                           |  2 +-
- drivers/atm/idt77252.c                             |  6 +-
- drivers/block/drbd/drbd_main.c                     |  2 +-
- drivers/block/loop.c                               |  2 +-
- drivers/bluetooth/hci_bcsp.c                       |  2 +-
- drivers/bluetooth/hci_qca.c                        |  4 +-
- drivers/clocksource/arm_arch_timer.c               | 12 ++--
- drivers/clocksource/timer-sp804.c                  |  6 +-
- drivers/gpu/drm/i915/i915_sw_fence.c               |  2 +-
- drivers/hid/hid-wiimote-core.c                     |  2 +-
- drivers/input/keyboard/locomokbd.c                 |  2 +-
- drivers/input/keyboard/omap-keypad.c               |  2 +-
- drivers/input/mouse/alps.c                         |  2 +-
- drivers/isdn/mISDN/l1oip_core.c                    |  4 +-
- drivers/isdn/mISDN/timerdev.c                      |  4 +-
- drivers/leds/trigger/ledtrig-activity.c            |  2 +-
- drivers/leds/trigger/ledtrig-heartbeat.c           |  2 +-
- drivers/leds/trigger/ledtrig-pattern.c             |  2 +-
- drivers/leds/trigger/ledtrig-transient.c           |  2 +-
- drivers/media/pci/ivtv/ivtv-driver.c               |  2 +-
- drivers/media/usb/pvrusb2/pvrusb2-hdw.c            | 16 +++---
- drivers/media/usb/s2255/s2255drv.c                 |  4 +-
- drivers/net/ethernet/intel/i40e/i40e_main.c        |  6 +-
- drivers/net/ethernet/marvell/sky2.c                |  2 +-
- drivers/net/ethernet/sun/sunvnet.c                 |  2 +-
- drivers/net/usb/sierra_net.c                       |  2 +-
- .../wireless/broadcom/brcm80211/brcmfmac/btcoex.c  |  2 +-
- drivers/net/wireless/intel/iwlwifi/iwl-dbg-tlv.c   |  2 +-
- drivers/net/wireless/intel/iwlwifi/mvm/sta.c       |  2 +-
- drivers/net/wireless/intersil/hostap/hostap_ap.c   |  2 +-
- drivers/net/wireless/marvell/mwifiex/main.c        |  2 +-
- drivers/net/wireless/microchip/wilc1000/hif.c      |  6 +-
- drivers/nfc/pn533/pn533.c                          |  2 +-
- drivers/nfc/pn533/uart.c                           |  2 +-
- drivers/pcmcia/bcm63xx_pcmcia.c                    |  2 +-
- drivers/pcmcia/electra_cf.c                        |  2 +-
- drivers/pcmcia/omap_cf.c                           |  2 +-
- drivers/pcmcia/pd6729.c                            |  4 +-
- drivers/pcmcia/yenta_socket.c                      |  4 +-
- drivers/scsi/qla2xxx/qla_edif.c                    |  4 +-
- drivers/staging/media/atomisp/i2c/atomisp-lm3554.c |  2 +-
- drivers/tty/n_gsm.c                                |  2 +-
- drivers/tty/sysrq.c                                |  2 +-
- drivers/usb/gadget/udc/m66592-udc.c                |  2 +-
- drivers/usb/serial/garmin_gps.c                    |  2 +-
- drivers/usb/serial/mos7840.c                       |  4 +-
- fs/ext4/super.c                                    |  2 +-
- fs/nilfs2/segment.c                                |  2 +-
- include/linux/timer.h                              | 62 +++++++++++++++++++--
- kernel/time/timer.c                                | 64 ++++++++++++----------
- net/802/garp.c                                     |  2 +-
- net/802/mrp.c                                      |  4 +-
- net/bridge/br_multicast.c                          |  8 +--
- net/bridge/br_multicast_eht.c                      |  4 +-
- net/core/gen_estimator.c                           |  2 +-
- net/ipv4/ipmr.c                                    |  2 +-
- net/ipv6/ip6mr.c                                   |  2 +-
- net/mac80211/mesh_pathtbl.c                        |  2 +-
- net/netfilter/ipset/ip_set_list_set.c              |  2 +-
- net/netfilter/ipvs/ip_vs_lblc.c                    |  2 +-
- net/netfilter/ipvs/ip_vs_lblcr.c                   |  2 +-
- net/netfilter/xt_IDLETIMER.c                       |  4 +-
- net/netfilter/xt_LED.c                             |  2 +-
- net/rxrpc/conn_object.c                            |  2 +-
- net/sched/cls_flow.c                               |  2 +-
- net/sunrpc/svc.c                                   |  2 +-
- net/tipc/discover.c                                |  2 +-
- net/tipc/monitor.c                                 |  2 +-
- sound/i2c/other/ak4117.c                           |  2 +-
- sound/synth/emux/emux.c                            |  2 +-
- 78 files changed, 207 insertions(+), 148 deletions(-)
----------------------------
+        tglx
