@@ -2,40 +2,60 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 813C1C4332F
-	for <linux-sh@archiver.kernel.org>; Wed,  9 Nov 2022 17:45:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7148DC433FE
+	for <linux-sh@archiver.kernel.org>; Wed,  9 Nov 2022 21:17:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231535AbiKIRpm (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 9 Nov 2022 12:45:42 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56436 "EHLO
+        id S231501AbiKIVRL (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 9 Nov 2022 16:17:11 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36246 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229527AbiKIRpm (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 9 Nov 2022 12:45:42 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 60315BA8;
-        Wed,  9 Nov 2022 09:45:41 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 17E57B81F53;
-        Wed,  9 Nov 2022 17:45:40 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B079DC433C1;
-        Wed,  9 Nov 2022 17:45:30 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1668015938;
-        bh=i7sn7z8xD6SHJEq5dmKr3bGFRNb5IIYU4SUzL9diu3w=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=ARGpruzLN9OuV1JYvbeHm52w2t6ttIgcwOERaZqjZsnd7VJWeUE/iSfoj625HTPs9
-         LjIQy4r4/9BKNBA6nWXBmpYOA6SsvVWKXtma/QrTzMUEYdJHxRYVSM9ZzUmQDzL5gE
-         yDkr6hT/XY5diiSADUVNUIFYs+FYy1RrzAoBCPu9+EF7pWX009Q1jSYcQpTH5/jXIz
-         UvI5GVfMJsao2fdud1mdLsEBszy13PadoZxvIu7tt2f03u7RvYE5qrnsmDSaX9P9Yh
-         hM2ic17YHSLgzomL7XWQE7iOvMfjj1ER/bTY5pZSY9MusLUUoQPuUHwDBgI3X4tiuz
-         SLCO2K4jannvg==
-Date:   Wed, 9 Nov 2022 19:45:19 +0200
-From:   Mike Rapoport <rppt@kernel.org>
-To:     Aaro Koskinen <aaro.koskinen@iki.fi>
-Cc:     Vlastimil Babka <vbabka@suse.cz>,
-        Pasha Tatashin <pasha.tatashin@soleen.com>,
+        with ESMTP id S231185AbiKIVRH (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 9 Nov 2022 16:17:07 -0500
+Received: from mail-pl1-x62a.google.com (mail-pl1-x62a.google.com [IPv6:2607:f8b0:4864:20::62a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EA8523134D;
+        Wed,  9 Nov 2022 13:17:05 -0800 (PST)
+Received: by mail-pl1-x62a.google.com with SMTP id p21so18273186plr.7;
+        Wed, 09 Nov 2022 13:17:05 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=6o0JaodUdCinHCuijBKMPPDh4qNhM3W4CwZTMs5pShU=;
+        b=b7JdsqL98tFczElrzx45zPQRQqT+FLWQdW7GQ21VMf1VWbVkWvdPT7fPQVW9/YYGhj
+         fsJmZVTrJHZqpF5nrGm5JKasB3diwCu2Hs5yNW2C9n/rEZiCH7R7PnAEwZ/MGa/qzyIG
+         zfiOnumXidobU0/zuy474imLQWsj+TNcT1BwOR4wCZrc7nj9wEle1ahDUDnwTkt6UQJ1
+         bZGNJ9fqbFCNFUTDQDZYUF5tjtiVt+POwV9J5xnlurRxP4GFYN8l+xbrN6OKbV0N8j6j
+         kPz632gUkLxrLhg+OI3WB7b7hny2T7RaIKSOWnHn8CvNieatf9SjrSo7u+FU7dyzH4Jo
+         RWzQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=6o0JaodUdCinHCuijBKMPPDh4qNhM3W4CwZTMs5pShU=;
+        b=b3PLisN7Ncx58rTaBNLUZpurK7Peo+EAojgr7iioQ2yIi6iizKS3V22O63r4gOy4kb
+         o4CfwbvlQhkpMutY7JA9f7+paUGVPlSSVnSsK1mib/FVf/ojjqLqh2MfYRUP9xk/ylWW
+         CiS56JEg/zNqT5FKe7HNF+wcTuOCuLHfGs9cNia2P52wqsRHAjySRHMTYfX6Bt5MVITu
+         W2/72nLb+cT5EBJ5uuZ/YZKudNtbfejQNK8UI3p9hMVbog6gaMvUkj1OsyCmxJgrbFuR
+         RYUTP2km9yaJR2ivSvJ3VgpVX1O0t1JLoWgH+OBwTYEcek8NnGKcFTxJJCOgME983Rp9
+         daWQ==
+X-Gm-Message-State: ACrzQf0K+DeZsk1e++GTBesJ4+5GYDzHBL3XncL5yFdA5ge0zPOjJg/c
+        R11ujVEZewBDVJNQT1mSPe5tfQhfcJwZGIdqGig=
+X-Google-Smtp-Source: AMsMyM5vTjPHFhQ2vYKc1ap+Gnz9Xnoi5f6pFtOuhyEULsih6osIQH75MdocdJksgvBY7Bht8TwzxWn0ElldlUKBtUU=
+X-Received: by 2002:a17:902:da82:b0:186:ee5a:47c7 with SMTP id
+ j2-20020a170902da8200b00186ee5a47c7mr63072929plx.82.1668028625070; Wed, 09
+ Nov 2022 13:17:05 -0800 (PST)
+MIME-Version: 1.0
+References: <b35c3f82-f67b-2103-7d82-7a7ba7521439@suse.cz> <CA+CK2bD-uVGJ0=9uc7Lt5zwY+2PM2RTcfOhxEd65S7TvTrJULA@mail.gmail.com>
+ <87187c52-ae48-130b-6479-ae1023915bc1@suse.cz> <20221109155008.GC307514@darkstar.musicnaut.iki.fi>
+In-Reply-To: <20221109155008.GC307514@darkstar.musicnaut.iki.fi>
+From:   Janusz Krzysztofik <jmkrzyszt@gmail.com>
+Date:   Wed, 9 Nov 2022 22:16:53 +0100
+Message-ID: <CAGfqbt50b9rFEjbFPCZoQnNyBN+CAgBf6bxwpbr4z=tL_A97MQ@mail.gmail.com>
+Subject: Re: Deprecating and removing SLOB
+To:     Vlastimil Babka <vbabka@suse.cz>,
+        Aaro Koskinen <aaro.koskinen@iki.fi>
+Cc:     Pasha Tatashin <pasha.tatashin@soleen.com>,
         Christoph Lameter <cl@linux.com>,
         David Rientjes <rientjes@google.com>,
         Joonsoo Kim <iamjoonsoo.kim@lge.com>,
@@ -53,7 +73,6 @@ Cc:     Vlastimil Babka <vbabka@suse.cz>,
         Arnd Bergmann <arnd@arndb.de>,
         Russell King <linux@armlinux.org.uk>,
         Alexander Shiyan <shc_work@mail.ru>,
-        Janusz Krzysztofik <jmkrzyszt@gmail.com>,
         Tony Lindgren <tony@atomide.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, Jonas Bonn <jonas@southpole.se>,
@@ -63,23 +82,14 @@ Cc:     Vlastimil Babka <vbabka@suse.cz>,
         <linux-arm-kernel@lists.infradead.org>,
         openrisc@lists.librecores.org, linux-riscv@lists.infradead.org,
         linux-sh@vger.kernel.org
-Subject: Re: Deprecating and removing SLOB
-Message-ID: <Y2vnLyprF79EQHNz@kernel.org>
-References: <b35c3f82-f67b-2103-7d82-7a7ba7521439@suse.cz>
- <CA+CK2bD-uVGJ0=9uc7Lt5zwY+2PM2RTcfOhxEd65S7TvTrJULA@mail.gmail.com>
- <87187c52-ae48-130b-6479-ae1023915bc1@suse.cz>
- <20221109155008.GC307514@darkstar.musicnaut.iki.fi>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20221109155008.GC307514@darkstar.musicnaut.iki.fi>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Nov 09, 2022 at 05:50:08PM +0200, Aaro Koskinen wrote:
+On Wednesday, 9 November 2022 16:50:08 CET Aaro Koskinen wrote:
 > Hi,
-> 
+>
 > On Wed, Nov 09, 2022 at 10:00:25AM +0100, Vlastimil Babka wrote:
 > > > On Tue, Nov 8, 2022 at 10:55 AM Vlastimil Babka <vbabka@suse.cz> wrote:
 > > >> I believe SLOB can be removed because:
@@ -92,31 +102,31 @@ On Wed, Nov 09, 2022 at 05:50:08PM +0200, Aaro Koskinen wrote:
 > > >> RAM, not up to 16 MB anymore. I've heard anecdotes that the performance
 > > >> SLOB impact is too much for those who tried. Googling for
 > > >> "CONFIG_SLOB=y" yielded nothing useful.
-> > > 
+> > >
 > > > I am all for removing SLOB.
-> > > 
+> > >
 > > > There are some devices with configs where SLOB is enabled by default.
 > > > Perhaps, the owners/maintainers of those devices/configs should be
 > > > included into this thread:
-> 
+>
 > [...]
-> 
+>
 > > > arch/arm/configs/omap1_defconfig:CONFIG_SLOB=y
-> 
+>
 > I have been using SLUB on my OMAP1 boards with 32 MB RAM, because of
 > better debugging features and the memory footprint difference doesn't
 > really matter for my use cases. Looking at history why SLOB was added
 > there, it seems it came from 6cfce27c14aa ("omap1: Add omap1_defconfig")
 > when separate boards configs were merged, and SX1 board happened to have
 > SLOB in there. This board is nowadays only used in QEMU anyway.
+>
+> There are OMAP1 boards with only 16 MB, but support for those boards
+> will be removed. So from OMAP1 side, I don't think there is any real
+> need for SLOB anymore.
 
-Looks like the same happened with arch/arm/configs/pxa_defconfig. XCEP
-board had SLOB in its defconfig and when common pxa_defconfig was created
-it apparently used it.
-Looks like the board has 64M of RAM, so dropping CONFIG_SLOB=y from
-arch/arm/configs/pxa_defconfig and arch/arm/configs/xcep_defconfig seems
-very reasonable.
+Moreover, I always had issues with availability of socket buffers during USB
+device setup when trying to use SLOB on Amstrad Delta based on OMAP1510,
+the least powerful OMAP1.  Then, +1 for SLOB removal.
 
--- 
-Sincerely yours,
-Mike.
+Thanks,
+Janusz
