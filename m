@@ -2,136 +2,79 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D1F6DC433FE
-	for <linux-sh@archiver.kernel.org>; Wed,  9 Nov 2022 16:45:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3110CC4332F
+	for <linux-sh@archiver.kernel.org>; Wed,  9 Nov 2022 17:45:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231225AbiKIQpx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 9 Nov 2022 11:45:53 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48954 "EHLO
+        id S230372AbiKIRpH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 9 Nov 2022 12:45:07 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56222 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231244AbiKIQpw (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 9 Nov 2022 11:45:52 -0500
-Received: from mail-qk1-f178.google.com (mail-qk1-f178.google.com [209.85.222.178])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 20D5720192;
-        Wed,  9 Nov 2022 08:45:50 -0800 (PST)
-Received: by mail-qk1-f178.google.com with SMTP id g10so11264443qkl.6;
-        Wed, 09 Nov 2022 08:45:50 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=Ews1zWN1f/PR7HGzfMn+lenNKSw7QezbzurfTC9dGEg=;
-        b=apbFbK+ZvFrjpyNcG/vYCTOZt6lminw1qidkUzeyiP68XQaofoPRYlYFHHEyoEQfS6
-         y0lLs1HkdjhUyrMLL5Hl/B8GppRpNxri00FEvHonXUhPu6aTPUJ8rnMwgJBtGwtsfIbh
-         RygX2m2a9xCSVTXVF2AHwZQ4vwWcwPH4+U1gEy7FIrZJhIxtDm5fJlLdmN3oWCOde9x+
-         jGTP2c/fFnYodPZpK7k3Ho9JtdjzNMe88MMUDX1GuRt9H53tgPCRTH1Yof7lnWMllndK
-         jN3M1PASUyOmMcEteamHUnzKNga+7gmwdbAeSv7kNrHuzPN89HoP/b5oTa5zONV72zlQ
-         VekQ==
-X-Gm-Message-State: ACrzQf2flUe35U6flHzHmy7L66sut6u64sojxfDdIUoRXdzX4uh6G7TC
-        MdCgmwlEEg0YT0xqZEaium+HyqNsdCC9jA==
-X-Google-Smtp-Source: AMsMyM4QxDsCw1/qOPm33WtMZLh9CHhwxr+FjF3wLiaFkIs2IjoB4fqI4ZbOGyLB7X0MGzI8pJTuYA==
-X-Received: by 2002:a37:e218:0:b0:6fa:28b1:6a84 with SMTP id g24-20020a37e218000000b006fa28b16a84mr26174203qki.536.1668012349140;
-        Wed, 09 Nov 2022 08:45:49 -0800 (PST)
-Received: from mail-yb1-f176.google.com (mail-yb1-f176.google.com. [209.85.219.176])
-        by smtp.gmail.com with ESMTPSA id ey26-20020a05622a4c1a00b003a4ec43f2b5sm9951181qtb.72.2022.11.09.08.45.44
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 09 Nov 2022 08:45:46 -0800 (PST)
-Received: by mail-yb1-f176.google.com with SMTP id 7so17112752ybp.13;
-        Wed, 09 Nov 2022 08:45:44 -0800 (PST)
-X-Received: by 2002:a05:6902:503:b0:6cf:c510:6a23 with SMTP id
- x3-20020a056902050300b006cfc5106a23mr40745720ybs.380.1668012343710; Wed, 09
- Nov 2022 08:45:43 -0800 (PST)
-MIME-Version: 1.0
-References: <b35c3f82-f67b-2103-7d82-7a7ba7521439@suse.cz> <CA+CK2bD-uVGJ0=9uc7Lt5zwY+2PM2RTcfOhxEd65S7TvTrJULA@mail.gmail.com>
- <87187c52-ae48-130b-6479-ae1023915bc1@suse.cz> <20221109155008.GC307514@darkstar.musicnaut.iki.fi>
-In-Reply-To: <20221109155008.GC307514@darkstar.musicnaut.iki.fi>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Wed, 9 Nov 2022 17:45:32 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdXY7z+BXjM1KNVF9AKw0n28Fe-8TDbRC=WKXZf09h6G+w@mail.gmail.com>
-Message-ID: <CAMuHMdXY7z+BXjM1KNVF9AKw0n28Fe-8TDbRC=WKXZf09h6G+w@mail.gmail.com>
-Subject: Re: Deprecating and removing SLOB
-To:     Aaro Koskinen <aaro.koskinen@iki.fi>
-Cc:     Vlastimil Babka <vbabka@suse.cz>,
-        Pasha Tatashin <pasha.tatashin@soleen.com>,
-        Christoph Lameter <cl@linux.com>,
-        David Rientjes <rientjes@google.com>,
-        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
-        Pekka Enberg <penberg@kernel.org>,
-        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
-        Matthew Wilcox <willy@infradead.org>,
-        Roman Gushchin <roman.gushchin@linux.dev>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        "linux-mm@kvack.org" <linux-mm@kvack.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Rustam Kovhaev <rkovhaev@gmail.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Josh Triplett <josh@joshtriplett.org>,
-        Arnd Bergmann <arnd@arndb.de>,
+        with ESMTP id S229527AbiKIRpG (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 9 Nov 2022 12:45:06 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 98FFDBA8;
+        Wed,  9 Nov 2022 09:45:05 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 1DA4061965;
+        Wed,  9 Nov 2022 17:45:05 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 63DE8C433D6;
+        Wed,  9 Nov 2022 17:44:59 +0000 (UTC)
+Date:   Wed, 9 Nov 2022 17:44:56 +0000
+From:   Catalin Marinas <catalin.marinas@arm.com>
+To:     "Jason A. Donenfeld" <Jason@zx2c4.com>
+Cc:     linux-kernel@vger.kernel.org, Albert Ou <aou@eecs.berkeley.edu>,
+        Boris Ostrovsky <boris.ostrovsky@oracle.com>,
+        Borislav Petkov <bp@alien8.de>,
+        Chris Zankel <chris@zankel.net>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Guo Ren <guoren@kernel.org>, "H . Peter Anvin" <hpa@zytor.com>,
+        Ingo Molnar <mingo@redhat.com>,
+        Juergen Gross <jgross@suse.com>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Rich Felker <dalias@libc.org>,
         Russell King <linux@armlinux.org.uk>,
-        Alexander Shiyan <shc_work@mail.ru>,
-        Janusz Krzysztofik <jmkrzyszt@gmail.com>,
-        Tony Lindgren <tony@atomide.com>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Will Deacon <will@kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, Jonas Bonn <jonas@southpole.se>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        Stafford Horne <shorne@gmail.com>,
-        "linux-arm-kernel@lists.infradead.org" 
-        <linux-arm-kernel@lists.infradead.org>,
-        openrisc@lists.librecores.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-mips@vger.kernel.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org, linux-xtensa@linux-xtensa.org,
+        linuxppc-dev@lists.ozlabs.org, x86@kernel.org
+Subject: Re: [PATCH v1 2/2] stackprotector: actually use get_random_canary()
+Message-ID: <Y2vnGFuj5N9/o/Ia@arm.com>
+References: <20221023203208.118919-1-Jason@zx2c4.com>
+ <20221023203208.118919-3-Jason@zx2c4.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20221023203208.118919-3-Jason@zx2c4.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Nov 9, 2022 at 4:53 PM Aaro Koskinen <aaro.koskinen@iki.fi> wrote:
-> On Wed, Nov 09, 2022 at 10:00:25AM +0100, Vlastimil Babka wrote:
-> > > On Tue, Nov 8, 2022 at 10:55 AM Vlastimil Babka <vbabka@suse.cz> wrote:
-> > >> I believe SLOB can be removed because:
-> > >>
-> > >> - AFAIK nobody really uses it? It strives for minimal memory footprint
-> > >> by putting all objects together, which has its CPU performance costs
-> > >> (locking, lack of percpu caching, searching for free space...). I'm not
-> > >> aware of any "tiny linux" deployment that opts for this. For example,
-> > >> OpenWRT seems to use SLUB and the devices these days have e.g. 128MB
-> > >> RAM, not up to 16 MB anymore. I've heard anecdotes that the performance
-> > >> SLOB impact is too much for those who tried. Googling for
-> > >> "CONFIG_SLOB=y" yielded nothing useful.
-> > >
-> > > I am all for removing SLOB.
-> > >
-> > > There are some devices with configs where SLOB is enabled by default.
-> > > Perhaps, the owners/maintainers of those devices/configs should be
-> > > included into this thread:
->
-> [...]
->
-> > > arch/arm/configs/omap1_defconfig:CONFIG_SLOB=y
->
-> I have been using SLUB on my OMAP1 boards with 32 MB RAM, because of
-> better debugging features and the memory footprint difference doesn't
-> really matter for my use cases. Looking at history why SLOB was added
-> there, it seems it came from 6cfce27c14aa ("omap1: Add omap1_defconfig")
-> when separate boards configs were merged, and SX1 board happened to have
-> SLOB in there. This board is nowadays only used in QEMU anyway.
->
-> There are OMAP1 boards with only 16 MB, but support for those boards
-> will be removed. So from OMAP1 side, I don't think there is any real
-> need for SLOB anymore.
+On Sun, Oct 23, 2022 at 10:32:08PM +0200, Jason A. Donenfeld wrote:
+> The RNG always mixes in the Linux version extremely early in boot. It
+> also always includes a cycle counter, not only during early boot, but
+> each and every time it is invoked prior to being fully initialized.
+> Together, this means that the use of additional xors inside of the
+> various stackprotector.h files is superfluous and over-complicated.
+> Instead, we can get exactly the same thing, but better, by just calling
+> `get_random_canary()`.
+> 
+> Signed-off-by: Jason A. Donenfeld <Jason@zx2c4.com>
+> ---
+>  arch/arm/include/asm/stackprotector.h     |  9 +--------
+>  arch/arm64/include/asm/stackprotector.h   |  9 +--------
 
-Interestingly, the m68k defconfigs use either SLAB, or the default (SLUB).
-So the poor old m68k machines (many of which have less than 32 MiB)
-seem to do fine without SLOB...
+For arm64:
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
