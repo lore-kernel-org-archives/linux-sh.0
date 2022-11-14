@@ -2,141 +2,80 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 485C7C4332F
-	for <linux-sh@archiver.kernel.org>; Mon, 14 Nov 2022 16:32:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5101DC43217
+	for <linux-sh@archiver.kernel.org>; Mon, 14 Nov 2022 17:27:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237646AbiKNQcX (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 14 Nov 2022 11:32:23 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35750 "EHLO
+        id S237688AbiKNR1P (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 14 Nov 2022 12:27:15 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33250 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237643AbiKNQaz (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 14 Nov 2022 11:30:55 -0500
-Received: from galois.linutronix.de (Galois.linutronix.de [IPv6:2a0a:51c0:0:12e:550::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DBF6B2F64D;
-        Mon, 14 Nov 2022 08:29:53 -0800 (PST)
-From:   John Ogness <john.ogness@linutronix.de>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020; t=1668443392;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=lyFJ0F0+PfcRjhKzuNkMUBeWMaE9PNLLtfp/JWoaB8Q=;
-        b=o493Ws7OLoNBwC3oJekHe/zqr8d4O1r2boZdC330Lx7sXR/IS+LlFMlQSjiYgilqi2WvYy
-        bK6oiaWKOaMF+Ov1zkmR7m17gutu6TqbBnx+DW+0CKcPwn/WP4WoTvHeOnxG3Dcpw50L0F
-        uCuMhIdKv8bxHZuMIY7yE5xqI87CzHeE17gRcNmlIyNpc4AunL7RVRWKjhFqzm99845QTr
-        GU9GdrUeraNW+PFqq9HeRlvM+uQT2Bk7lgRw4l2QqcvqrMlmgfyI3VLCm+SlLEyaEy08XS
-        9IYpB54UDdp25QGOFuwjoXwpDVZUiUqepmIgjw9G5zSxprsVTUdFu7iZnYfhNw==
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020e; t=1668443392;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=lyFJ0F0+PfcRjhKzuNkMUBeWMaE9PNLLtfp/JWoaB8Q=;
-        b=3yUj92YNamRVgcCdfRvOJqzWFRVhH0VyAxXFN/+0roEsIDgaS8xom/DI+PxiHFB0NAZLYl
-        geAOjgKKccPDeLAw==
-To:     Petr Mladek <pmladek@suse.com>
-Cc:     Sergey Senozhatsky <senozhatsky@chromium.org>,
-        Steven Rostedt <rostedt@goodmis.org>,
+        with ESMTP id S237736AbiKNR1L (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 14 Nov 2022 12:27:11 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9725923391;
+        Mon, 14 Nov 2022 09:27:10 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 4A246B810A3;
+        Mon, 14 Nov 2022 17:27:09 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 33120C433D6;
+        Mon, 14 Nov 2022 17:27:04 +0000 (UTC)
+Date:   Mon, 14 Nov 2022 12:27:45 -0500
+From:   Steven Rostedt <rostedt@goodmis.org>
+To:     Valentin Schneider <vschneid@redhat.com>
+Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
+        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
+        x86@kernel.org, "Paul E. McKenney" <paulmck@kernel.org>,
+        Peter Zijlstra <peterz@infradead.org>,
         Thomas Gleixner <tglx@linutronix.de>,
-        linux-kernel@vger.kernel.org,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Jiri Slaby <jirislaby@kernel.org>,
-        linux-serial@vger.kernel.org,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        Linux-Renesas <linux-renesas-soc@vger.kernel.org>,
-        Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH printk v4 39/39] tty: serial: sh-sci: use setup() callback for early console
-Date:   Mon, 14 Nov 2022 17:35:32 +0106
-Message-Id: <20221114162932.141883-40-john.ogness@linutronix.de>
-In-Reply-To: <20221114162932.141883-1-john.ogness@linutronix.de>
-References: <20221114162932.141883-1-john.ogness@linutronix.de>
+        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
+        Juri Lelli <juri.lelli@redhat.com>,
+        Daniel Bristot de Oliveira <bristot@redhat.com>,
+        Marcelo Tosatti <mtosatti@redhat.com>,
+        Frederic Weisbecker <frederic@kernel.org>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        "H. Peter Anvin" <hpa@zytor.com>, Marc Zyngier <maz@kernel.org>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Guo Ren <guoren@kernel.org>,
+        "David S. Miller" <davem@davemloft.net>
+Subject: Re: [RFC PATCH v2 0/8] Generic IPI sending tracepoint
+Message-ID: <20221114122745.189af864@gandalf.local.home>
+In-Reply-To: <20221102182949.3119584-1-vschneid@redhat.com>
+References: <20221102182949.3119584-1-vschneid@redhat.com>
+X-Mailer: Claws Mail 3.17.8 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-When setting up the early console, the setup() callback of the
-regular console is used. It is called manually before registering
-the early console instead of providing a setup() callback for the
-early console. This is probably because the early setup needs a
-different @options during the early stage.
+On Wed,  2 Nov 2022 18:29:41 +0000
+Valentin Schneider <vschneid@redhat.com> wrote:
 
-The issue here is that the setup() callback is called without the
-console_list_lock held and functions such as uart_set_options()
-expect that.
+> This is incomplete, just looking at arm64 there's more IPI types that aren't
+> covered: 
+> 
+>   IPI_CPU_STOP,
+>   IPI_CPU_CRASH_STOP,
+>   IPI_TIMER,
+>   IPI_WAKEUP,
+> 
+> ... But it feels like a good starting point.
 
-Rather than manually calling the setup() function before registering,
-provide an early console setup() callback that will use the different
-early options. This ensures that the error checking, ordering, and
-locking context when setting up the early console are correct.
+For the tracing portions:
 
-Since this early console can only be registered via the earlyprintk=
-parameter, the @options argument of the setup() callback will always
-be NULL. Rather than simply ignoring the argument, add a WARN_ON()
-to get our attention in case the setup() callback semantics should
-change in the future.
+Reviewed-by: Steven Rostedt (Google) <rostedt@goodmis.org>
 
-Note that technically the current implementation works because it is
-only used in early boot. And since the early console setup is
-performed before registering, it cannot race with anything and thus
-does not need any locking. However, longterm maintenance is easier
-when drivers rely on the subsystem API rather than manually
-implementing steps that could cause breakage in the future.
-
-Signed-off-by: John Ogness <john.ogness@linutronix.de>
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- drivers/tty/serial/sh-sci.c | 20 ++++++++++++++++----
- 1 file changed, 16 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 62f773286d44..76452fe2af86 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -3054,15 +3054,29 @@ static struct console serial_console = {
- };
- 
- #ifdef CONFIG_SUPERH
-+static char early_serial_buf[32];
-+
-+static int early_serial_console_setup(struct console *co, char *options)
-+{
-+	/*
-+	 * This early console is always registered using the earlyprintk=
-+	 * parameter, which does not call add_preferred_console(). Thus
-+	 * @options is always NULL and the options for this early console
-+	 * are passed using a custom buffer.
-+	 */
-+	WARN_ON(options);
-+
-+	return serial_console_setup(co, early_serial_buf);
-+}
-+
- static struct console early_serial_console = {
- 	.name           = "early_ttySC",
- 	.write          = serial_console_write,
-+	.setup		= early_serial_console_setup,
- 	.flags          = CON_PRINTBUFFER,
- 	.index		= -1,
- };
- 
--static char early_serial_buf[32];
--
- static int sci_probe_earlyprintk(struct platform_device *pdev)
- {
- 	const struct plat_sci_port *cfg = dev_get_platdata(&pdev->dev);
-@@ -3074,8 +3088,6 @@ static int sci_probe_earlyprintk(struct platform_device *pdev)
- 
- 	sci_init_single(pdev, &sci_ports[pdev->id], pdev->id, cfg, true);
- 
--	serial_console_setup(&early_serial_console, early_serial_buf);
--
- 	if (!strstr(early_serial_buf, "keep"))
- 		early_serial_console.flags |= CON_BOOT;
- 
--- 
-2.30.2
-
+-- Steve
