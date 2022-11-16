@@ -2,93 +2,158 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F17B4C433FE
-	for <linux-sh@archiver.kernel.org>; Tue, 15 Nov 2022 16:43:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E6F8C43217
+	for <linux-sh@archiver.kernel.org>; Wed, 16 Nov 2022 07:58:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229602AbiKOQnr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 15 Nov 2022 11:43:47 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54320 "EHLO
+        id S233085AbiKPH6t (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 16 Nov 2022 02:58:49 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34290 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238703AbiKOQnl (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 15 Nov 2022 11:43:41 -0500
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0D3A313CCA;
-        Tue, 15 Nov 2022 08:43:39 -0800 (PST)
-Received: from relay2.suse.de (relay2.suse.de [149.44.160.134])
-        by smtp-out2.suse.de (Postfix) with ESMTP id 3A56D1F8D7;
-        Tue, 15 Nov 2022 16:43:38 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-        t=1668530618; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=fp5QcrHVvziCUNf95TE2tiPSkunTivk9nv+QjUBLUYc=;
-        b=DuI+pBPW9cPLeFgTUc8qq6JcnB8YMbdXCCKmj/VkmKXQEOJiQGxHQifk91b5K7HbP6jtNB
-        Uq1ybCS4qBXvhOllYVSMaq0J07cfltsC0Xy0eGgPgZiviaLmrHSQvSQ/keV2DA/qXrahAH
-        498ArqD0N8Ee/uLQ/20i067xlnBI0bE=
-Received: from suse.cz (unknown [10.100.208.146])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by relay2.suse.de (Postfix) with ESMTPS id F37422C142;
-        Tue, 15 Nov 2022 16:43:37 +0000 (UTC)
-Date:   Tue, 15 Nov 2022 17:43:37 +0100
-From:   Petr Mladek <pmladek@suse.com>
-To:     John Ogness <john.ogness@linutronix.de>
-Cc:     Sergey Senozhatsky <senozhatsky@chromium.org>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        linux-kernel@vger.kernel.org,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Jiri Slaby <jirislaby@kernel.org>,
-        linux-serial@vger.kernel.org,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        Linux-Renesas <linux-renesas-soc@vger.kernel.org>,
-        Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: Re: [PATCH printk v4 39/39] tty: serial: sh-sci: use setup()
- callback for early console
-Message-ID: <Y3PBuWL/3qihQJxj@alley>
-References: <20221114162932.141883-1-john.ogness@linutronix.de>
- <20221114162932.141883-40-john.ogness@linutronix.de>
+        with ESMTP id S233066AbiKPH63 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 16 Nov 2022 02:58:29 -0500
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 14CD424F00;
+        Tue, 15 Nov 2022 23:58:19 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=GIDdGR9NVpGZvPLCxr6Lt5iCaPSKMyIMMAkRo9Z5H0U=; b=GjO5nedtvQbFTSqVOHRhbXy9R8
+        wVqBzTfrNIv7JpJlixcjrIFsfztRINtv8hTfXP2xdXEzm1cusHr/wBzkJXgfC1yhvBcEie3kT73/O
+        01LQ4kQ1f6HUsl8HrvglXy/FRBy9LtDRvVeVVUpFuiLU2bM1O526Y4aH4dTvRXBW0GPumyvly0J8g
+        j8A65L4jHZ6Xw5pRJSKwaDU4OJKbnsY+aJWT+IdlxO59woGeC73lkhcvx1HU3HmkmDQlDcMZG1atN
+        c3mMvdJgqYg3ThnwdQQzL544qHjEtDzguypzVWJunrU6ZXYfGQHiHRXlUFVNS4So63yUHmxiRrkDX
+        H//I7SVQ==;
+Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1ovDIx-00HA6L-AC; Wed, 16 Nov 2022 07:57:55 +0000
+Date:   Wed, 16 Nov 2022 07:57:55 +0000
+From:   Matthew Wilcox <willy@infradead.org>
+To:     Damien Le Moal <damien.lemoal@opensource.wdc.com>
+Cc:     Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+        Vlastimil Babka <vbabka@suse.cz>,
+        Conor Dooley <conor@kernel.org>,
+        Pasha Tatashin <pasha.tatashin@soleen.com>,
+        Christoph Lameter <cl@linux.com>,
+        David Rientjes <rientjes@google.com>,
+        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
+        Pekka Enberg <penberg@kernel.org>,
+        Roman Gushchin <roman.gushchin@linux.dev>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        "linux-mm@kvack.org" <linux-mm@kvack.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Rustam Kovhaev <rkovhaev@gmail.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Josh Triplett <josh@joshtriplett.org>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Russell King <linux@armlinux.org.uk>,
+        Alexander Shiyan <shc_work@mail.ru>,
+        Aaro Koskinen <aaro.koskinen@iki.fi>,
+        Janusz Krzysztofik <jmkrzyszt@gmail.com>,
+        Tony Lindgren <tony@atomide.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, Jonas Bonn <jonas@southpole.se>,
+        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+        Stafford Horne <shorne@gmail.com>,
+        "linux-arm-kernel@lists.infradead.org" 
+        <linux-arm-kernel@lists.infradead.org>,
+        openrisc@lists.librecores.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Conor.Dooley@microchip.com, Paul Cercueil <paul@crapouillou.net>
+Subject: Re: Deprecating and removing SLOB
+Message-ID: <Y3SYA31zobR6/qbj@casper.infradead.org>
+References: <CA+CK2bD-uVGJ0=9uc7Lt5zwY+2PM2RTcfOhxEd65S7TvTrJULA@mail.gmail.com>
+ <c1caa5ce-eeaf-8038-2dea-051c98aade45@suse.cz>
+ <Y260tkNHc2vFITJ3@spud>
+ <a5bba3ca-da19-293c-c01b-a28291533466@opensource.wdc.com>
+ <93079aba-362e-5d1e-e9b4-dfe3a84da750@opensource.wdc.com>
+ <44da078c-b630-a249-bf50-67df83cd8347@suse.cz>
+ <35650fd4-3152-56db-7c27-b9997e31cfc7@opensource.wdc.com>
+ <Y3JU5cfyid1rBoOy@hyeyoo>
+ <97c0735c-3127-83d5-30ff-8e57c6634f6e@opensource.wdc.com>
+ <0e45a2f2-6dd5-5a43-c1a0-7520c1ed2675@opensource.wdc.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20221114162932.141883-40-john.ogness@linutronix.de>
+In-Reply-To: <0e45a2f2-6dd5-5a43-c1a0-7520c1ed2675@opensource.wdc.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon 2022-11-14 17:35:32, John Ogness wrote:
-> When setting up the early console, the setup() callback of the
-> regular console is used. It is called manually before registering
-> the early console instead of providing a setup() callback for the
-> early console. This is probably because the early setup needs a
-> different @options during the early stage.
+On Tue, Nov 15, 2022 at 01:28:14PM +0900, Damien Le Moal wrote:
+> On 11/15/22 13:24, Damien Le Moal wrote:
+> > 6.1-rc5, SLOB:
+> >     - 623 free pages
+> >     - 629 free pages
+> >     - 629 free pages
+> > 6.1-rc5, SLUB:
+> >     - 448 free pages
+> >     - 448 free pages
+> >     - 429 free pages
+> > 6.1-rc5, SLUB + slub_max_order=0:
+> >     - Init error, shell prompt but no shell command working
+> >     - Init error, no shell prompt
+> >     - 508 free pages
+> >     - Init error, shell prompt but no shell command working
+> > 6.1-rc5, SLUB + patch:
+> >     - Init error, shell prompt but no shell command working
+> >     - 433 free pages
+> >     - 448 free pages
+> >     - 423 free pages
+> > 6.1-rc5, SLUB + slub_max_order=0 + patch:
+> >     - Init error, no shell prompt
+> >     - Init error, shell prompt, 499 free pages
+> >     - Init error, shell prompt but no shell command working
+> >     - Init error, no shell prompt
+> > 
+> > No changes for SLOB results, expected.
+> > 
+> > For default SLUB, I did get all clean boots this time and could run the
+> > cat command. But I do see shell fork failures if I keep running commands.
+> > 
+> > For SLUB + slub_max_order=0, I only got one clean boot with 508 free
+> > pages. Remaining runs failed to give a shell prompt or allow running cat
+> > command. For the clean boot, I do see higher number of free pages.
+> > 
+> > SLUB with the patch was nearly identical to SLUB without the patch.
+> > 
+> > And SLUB+patch+slub_max_order=0 gave again a lot of errors/bad boot. I
+> > could run the cat command only once, giving 499 free pages, so better than
+> > regular SLUB. But it seems that the memory is more fragmented as
+> > allocations fail more often.
 > 
-> The issue here is that the setup() callback is called without the
-> console_list_lock held and functions such as uart_set_options()
-> expect that.
+> Note about the last case (SLUB+patch+slub_max_order=0). Here are the
+> messages I got when the init shell process fork failed:
 > 
-> Rather than manually calling the setup() function before registering,
-> provide an early console setup() callback that will use the different
-> early options. This ensures that the error checking, ordering, and
-> locking context when setting up the early console are correct.
-> 
-> Since this early console can only be registered via the earlyprintk=
-> parameter, the @options argument of the setup() callback will always
-> be NULL. Rather than simply ignoring the argument, add a WARN_ON()
-> to get our attention in case the setup() callback semantics should
-> change in the future.
-> 
-> Note that technically the current implementation works because it is
-> only used in early boot. And since the early console setup is
-> performed before registering, it cannot race with anything and thus
-> does not need any locking. However, longterm maintenance is easier
-> when drivers rely on the subsystem API rather than manually
-> implementing steps that could cause breakage in the future.
-> 
-> Signed-off-by: John Ogness <john.ogness@linutronix.de>
-> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> [    1.217998] nommu: Allocation of length 491520 from process 1 (sh) failed
+> [    1.224098] active_anon:0 inactive_anon:0 isolated_anon:0
+> [    1.224098]  active_file:5 inactive_file:12 isolated_file:0
+> [    1.224098]  unevictable:0 dirty:0 writeback:0
+> [    1.224098]  slab_reclaimable:38 slab_unreclaimable:459
+> [    1.224098]  mapped:0 shmem:0 pagetables:0
+> [    1.224098]  sec_pagetables:0 bounce:0
+> [    1.224098]  kernel_misc_reclaimable:0
+> [    1.224098]  free:859 free_pcp:0 free_cma:0
+> [    1.260419] Node 0 active_anon:0kB inactive_anon:0kB active_file:20kB
+> inactive_file:48kB unevictable:0kB isolated(anon):0kB isolated(file):0kB
+> mapped:0kB dirty:0kB writeback:0kB shmem:0kB writeback_tmp:0kB
+> kernel_stack:576kB pagetables:0kB sec_pagetables:0kB all_unreclaimable? no
+> [    1.285147] DMA32 free:3436kB boost:0kB min:312kB low:388kB high:464kB
+> reserved_highatomic:0KB active_anon:0kB inactive_anon:0kB active_file:0kB
+> inactive_file:28kB unevictable:0kB writepending:0kB present:8192kB
+> managed:6240kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
+> [    1.310654] lowmem_reserve[]: 0 0 0
+> [    1.314089] DMA32: 17*4kB (U) 10*8kB (U) 7*16kB (U) 6*32kB (U) 11*64kB
+> (U) 6*128kB (U) 6*256kB (U) 0*512kB 0*1024kB 0*2048kB 0*4096kB = 3460kB
+> [    1.326883] 33 total pagecache pages
+> [    1.330420] binfmt_flat: Unable to allocate RAM for process text/data,
+> errno -12
 
-Reviewed-by: Petr Mladek <pmladek@suse.com>
-
-Best Regards,
-Petr
+What you're seeing here is memory fragmentation.  There's more than 512kB
+of memory available, but nommu requires it to be contiguous, and it's
+not.  This is pretty bad, really.  We didn't even finish starting up
+and already we've managed to allocate at least one page from each of
+the 16 512kB chunks which existed.  Commit df48a5f7a3bb was supposed
+to improve matters by making exact allocations reassemble once they
+were freed.  Maybe the problem is entirely different.
