@@ -2,218 +2,279 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56532C4332F
-	for <linux-sh@archiver.kernel.org>; Wed, 16 Nov 2022 08:02:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F3802C4321E
+	for <linux-sh@archiver.kernel.org>; Wed, 16 Nov 2022 15:29:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232876AbiKPIC1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 16 Nov 2022 03:02:27 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37360 "EHLO
+        id S236796AbiKPP3s (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 16 Nov 2022 10:29:48 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47254 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230431AbiKPIC0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 16 Nov 2022 03:02:26 -0500
-Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 14FE8626D
-        for <linux-sh@vger.kernel.org>; Wed, 16 Nov 2022 00:02:25 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1668585745; x=1700121745;
-  h=message-id:date:mime-version:subject:to:cc:references:
-   from:in-reply-to:content-transfer-encoding;
-  bh=aiQ1E4MA/V7AYoAnhMYGLoTHKrhMUZFLqWEuM1zwwcE=;
-  b=odAvg4r0MoJW9EFd1RuOYDqK+kVzhBtbKFDzL2qMFHfXCIQ5Cu6w5ubK
-   3jRrQxtRQ8L98IRIJFSFlPf0GmcmQ2yaZDunN/2HpDnD7Fiq+bX16+CYs
-   aGJQNHpypTzyzv5vuRx+7r2gzCt8UB5IqdTSg0Jg+/n3Il1AsYK7kNgJx
-   8RoNayJK49kvw+CLI0/OjUzmqa2Y7HMKAJTvbLThV0qNiPcuOWGTKeTI5
-   a+G7RQb2SGAPsjfKxMxNg3CV/l0QmYflG4tTgVmMN4/ZRv3PZ1ouABhCM
-   dpfjYyc7geXTUytu33kgBTrCG9d6VPLeq/sM+N+1Xe05ZnS8DTWI02ERV
-   Q==;
-X-IronPort-AV: E=Sophos;i="5.96,167,1665417600"; 
-   d="scan'208";a="216718598"
-Received: from h199-255-45-15.hgst.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 16 Nov 2022 16:02:24 +0800
-IronPort-SDR: Vq5HPB/dftONCCwdassJP1VcyLSkwTLftM+1tudLlDcCoYa0bwelP7A3pFbwlK0ySDmP07AxhM
- W1/owQdFixhsw5aHid12mqD8gZL/hwF8a4m3YosiEpSfeTp3X/MiEPOS+jemMt7c50DibnhHGo
- jfs+RNNrvaZ/VCMEha4w4UFM502k0Knv2CSrBH4CLJ0TkfzarguAM4M7MdGEPmEDeXTBUqfuJQ
- ldELV2Mhjl5ypRs8T8XnXo3Yl+QUWs94XKVPL0+Dk8Q50Fa/HPSHR0L0/bmKN5pZ7EhNYMB6OE
- bOs=
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 15 Nov 2022 23:15:36 -0800
-IronPort-SDR: uR27QlpkVBj9VKshEGioUE+G0hqpO/A/mBYOyUfkJuUigzXdCafDVw/APtO26LIvl9Mn5PPy8V
- hqI8JuRVth7IiJDGgJhJxDEjykuwPG9I8r+/9G5Lo4+oauimvEERIa1un+7n89jvzyKGi+GFwy
- q2mWzmoz0cw0D5gmFrxbkvbjVIk57is2vwlDKy5jZey5M2WJr2QMUjyHhpCWkPB42bpDqW9WCL
- /BxayzRsAOQXq2fFu+YviDSuNH2CCw67zhebyGoaR2AAJl2cjxUlLZQRlQA1WlUiFfzRlB+nOw
- pXI=
-WDCIronportException: Internal
-Received: from usg-ed-osssrv.wdc.com ([10.3.10.180])
-  by uls-op-cesaip02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 16 Nov 2022 00:02:25 -0800
-Received: from usg-ed-osssrv.wdc.com (usg-ed-osssrv.wdc.com [127.0.0.1])
-        by usg-ed-osssrv.wdc.com (Postfix) with ESMTP id 4NBwWN0YhSz1RwvL
-        for <linux-sh@vger.kernel.org>; Wed, 16 Nov 2022 00:02:23 -0800 (PST)
-Authentication-Results: usg-ed-osssrv.wdc.com (amavisd-new); dkim=pass
-        reason="pass (just generated, assumed good)"
-        header.d=opensource.wdc.com
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=
-        opensource.wdc.com; h=content-transfer-encoding:content-type
-        :in-reply-to:organization:from:references:to:content-language
-        :subject:user-agent:mime-version:date:message-id; s=dkim; t=
-        1668585741; x=1671177742; bh=aiQ1E4MA/V7AYoAnhMYGLoTHKrhMUZFLqWE
-        uM1zwwcE=; b=HA1Ry+cg6RJ2gjCP8QzPoYEqbM+un5RWNEqtxmceQW57Bclcbag
-        NGVq1I/ljnUAG7e+dWbg6SHQpAYCbV7sOdCxgqFgZ4pzgoNsKHS4IH8zUw04Ehu5
-        dOBiDPL4KmGViD3JeZAwkB6etQOKepL41kIde5Ba4pgzbuGnRM1pZxWBs7ausiGW
-        xHuUG/WUR1me2OOtLMdfMVusiCeskJy/VucmD/2wmEsQcj4UuKvYmRVFE6j4LVqm
-        2iq97BemLKEd79gUPRS2/gmHt/dXWiGkEr5tvvvKOvf7ul4Wt6jiIkw7aMRmg/5x
-        PB1wyQR574lwPScueQHcrY1HZ3N0U57D1/A==
-X-Virus-Scanned: amavisd-new at usg-ed-osssrv.wdc.com
-Received: from usg-ed-osssrv.wdc.com ([127.0.0.1])
-        by usg-ed-osssrv.wdc.com (usg-ed-osssrv.wdc.com [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id qZy19v1DlJhX for <linux-sh@vger.kernel.org>;
-        Wed, 16 Nov 2022 00:02:21 -0800 (PST)
-Received: from [10.89.82.19] (c02drav6md6t.dhcp.fujisawa.hgst.com [10.89.82.19])
-        by usg-ed-osssrv.wdc.com (Postfix) with ESMTPSA id 4NBwW94Qxqz1RvLy;
-        Wed, 16 Nov 2022 00:02:13 -0800 (PST)
-Message-ID: <b119e0b7-be10-46d8-886b-b5071b1b9562@opensource.wdc.com>
-Date:   Wed, 16 Nov 2022 17:02:11 +0900
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:102.0)
- Gecko/20100101 Thunderbird/102.4.2
-Subject: Re: Deprecating and removing SLOB
-Content-Language: en-US
-To:     Matthew Wilcox <willy@infradead.org>
-Cc:     Hyeonggon Yoo <42.hyeyoo@gmail.com>,
-        Vlastimil Babka <vbabka@suse.cz>,
-        Conor Dooley <conor@kernel.org>,
-        Pasha Tatashin <pasha.tatashin@soleen.com>,
-        Christoph Lameter <cl@linux.com>,
-        David Rientjes <rientjes@google.com>,
-        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
-        Pekka Enberg <penberg@kernel.org>,
-        Roman Gushchin <roman.gushchin@linux.dev>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        "linux-mm@kvack.org" <linux-mm@kvack.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Rustam Kovhaev <rkovhaev@gmail.com>,
+        with ESMTP id S234873AbiKPP3h (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 16 Nov 2022 10:29:37 -0500
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 51E134731D;
+        Wed, 16 Nov 2022 07:29:34 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=4XDB6ZbR3Awa7mOslon9xFqMWj0psrdiARhozQeRyJA=; b=gYnS7fY4SiIk8LhruYi5TSnTVA
+        fStgfkd5Z/zbz8yQZBnmnhyWOOmhlrhRObDB9G2KJoco51LBuhZxVkVxbSBrTCQ/HtHWliung+7ZZ
+        HbZe3Froz8dQdsOphMI16X4jllstvINRTH3i5h+4adnzIV8bwm2odcxdw/4ACLq7NTIENgyfmZxmW
+        flqbgkCx8yOd3LgZHd01MR5R1P5lI3CSROlGEycIvrRPVhabpLUb0rptouTmOLEERLT81z+aE6Z4G
+        +eccUWkk2tCLQB+FJ0eM8fcpEENqemtpoKisOMtzDEaLdPH2PhfiSrDXw+vDx7DBnwdyTpMo06laG
+        hxV51fpA==;
+Received: from j130084.upc-j.chello.nl ([24.132.130.84] helo=noisy.programming.kicks-ass.net)
+        by casper.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1ovKLj-00HX9A-0P; Wed, 16 Nov 2022 15:29:15 +0000
+Received: from hirez.programming.kicks-ass.net (hirez.programming.kicks-ass.net [192.168.1.225])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (4096 bits))
+        (Client did not present a certificate)
+        by noisy.programming.kicks-ass.net (Postfix) with ESMTPS id DC2C03006DC;
+        Wed, 16 Nov 2022 16:29:05 +0100 (CET)
+Received: by hirez.programming.kicks-ass.net (Postfix, from userid 1000)
+        id A500120832696; Wed, 16 Nov 2022 16:29:05 +0100 (CET)
+Date:   Wed, 16 Nov 2022 16:29:05 +0100
+From:   Peter Zijlstra <peterz@infradead.org>
+To:     Ulf Hansson <ulf.hansson@linaro.org>
+Cc:     juri.lelli@redhat.com, rafael@kernel.org, catalin.marinas@arm.com,
+        linus.walleij@linaro.org, bsegall@google.com, guoren@kernel.org,
+        pavel@ucw.cz, agordeev@linux.ibm.com, linux-arch@vger.kernel.org,
+        vincent.guittot@linaro.org, mpe@ellerman.id.au,
+        chenhuacai@kernel.org, christophe.leroy@csgroup.eu,
+        linux-acpi@vger.kernel.org, agross@kernel.org,
+        geert@linux-m68k.org, linux-imx@nxp.com, vgupta@kernel.org,
+        mattst88@gmail.com, mturquette@baylibre.com, sammy@sammy.net,
+        pmladek@suse.com, linux-pm@vger.kernel.org,
+        Sascha Hauer <s.hauer@pengutronix.de>,
+        linux-um@lists.infradead.org, npiggin@gmail.com,
+        tglx@linutronix.de, linux-omap@vger.kernel.org,
+        dietmar.eggemann@arm.com, andreyknvl@gmail.com,
+        gregkh@linuxfoundation.org, linux-kernel@vger.kernel.org,
+        linux-perf-users@vger.kernel.org, senozhatsky@chromium.org,
+        svens@linux.ibm.com, jolsa@kernel.org, tj@kernel.org,
         Andrew Morton <akpm@linux-foundation.org>,
-        Josh Triplett <josh@joshtriplett.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Russell King <linux@armlinux.org.uk>,
-        Alexander Shiyan <shc_work@mail.ru>,
-        Aaro Koskinen <aaro.koskinen@iki.fi>,
-        Janusz Krzysztofik <jmkrzyszt@gmail.com>,
-        Tony Lindgren <tony@atomide.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, Jonas Bonn <jonas@southpole.se>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        Stafford Horne <shorne@gmail.com>,
-        "linux-arm-kernel@lists.infradead.org" 
-        <linux-arm-kernel@lists.infradead.org>,
-        openrisc@lists.librecores.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Conor.Dooley@microchip.com, Paul Cercueil <paul@crapouillou.net>
-References: <CA+CK2bD-uVGJ0=9uc7Lt5zwY+2PM2RTcfOhxEd65S7TvTrJULA@mail.gmail.com>
- <c1caa5ce-eeaf-8038-2dea-051c98aade45@suse.cz> <Y260tkNHc2vFITJ3@spud>
- <a5bba3ca-da19-293c-c01b-a28291533466@opensource.wdc.com>
- <93079aba-362e-5d1e-e9b4-dfe3a84da750@opensource.wdc.com>
- <44da078c-b630-a249-bf50-67df83cd8347@suse.cz>
- <35650fd4-3152-56db-7c27-b9997e31cfc7@opensource.wdc.com>
- <Y3JU5cfyid1rBoOy@hyeyoo>
- <97c0735c-3127-83d5-30ff-8e57c6634f6e@opensource.wdc.com>
- <0e45a2f2-6dd5-5a43-c1a0-7520c1ed2675@opensource.wdc.com>
- <Y3SYA31zobR6/qbj@casper.infradead.org>
-From:   Damien Le Moal <damien.lemoal@opensource.wdc.com>
-Organization: Western Digital Research
-In-Reply-To: <Y3SYA31zobR6/qbj@casper.infradead.org>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+        mark.rutland@arm.com, linux-ia64@vger.kernel.org,
+        dave.hansen@linux.intel.com,
+        virtualization@lists.linux-foundation.org,
+        James.Bottomley@hansenpartnership.com, jcmvbkbc@gmail.com,
+        thierry.reding@gmail.com, kernel@xen0n.name, cl@linux.com,
+        linux-s390@vger.kernel.org, vschneid@redhat.com,
+        john.ogness@linutronix.de, ysato@users.sourceforge.jp,
+        linux-sh@vger.kernel.org, festevam@gmail.com, deller@gmx.de,
+        daniel.lezcano@linaro.org, jonathanh@nvidia.com, dennis@kernel.org,
+        lenb@kernel.org, linux-xtensa@linux-xtensa.org,
+        kernel@pengutronix.de, gor@linux.ibm.com,
+        linux-arm-msm@vger.kernel.org, linux-alpha@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, loongarch@lists.linux.dev,
+        shorne@gmail.com, chris@zankel.net, sboyd@kernel.org,
+        dinguyen@kernel.org, bristot@redhat.com,
+        alexander.shishkin@linux.intel.com, fweisbec@gmail.com,
+        lpieralisi@kernel.org, atishp@atishpatra.org,
+        linux@rasmusvillemoes.dk, kasan-dev@googlegroups.com,
+        will@kernel.org, boris.ostrovsky@oracle.com, khilman@kernel.org,
+        linux-csky@vger.kernel.org, pv-drivers@vmware.com,
+        linux-snps-arc@lists.infradead.org, mgorman@suse.de,
+        jacob.jun.pan@linux.intel.com, Arnd Bergmann <arnd@arndb.de>,
+        ulli.kroll@googlemail.com, linux-clk@vger.kernel.org,
+        rostedt@goodmis.org, ink@jurassic.park.msu.ru, bcain@quicinc.com,
+        tsbogend@alpha.franken.de, linux-parisc@vger.kernel.org,
+        ryabinin.a.a@gmail.com, sudeep.holla@arm.com, shawnguo@kernel.org,
+        davem@davemloft.net, dalias@libc.org, tony@atomide.com,
+        amakhalov@vmware.com, konrad.dybcio@somainline.org,
+        bjorn.andersson@linaro.org, glider@google.com, hpa@zytor.com,
+        sparclinux@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        linux-riscv@lists.infradead.org, vincenzo.frascino@arm.com,
+        anton.ivanov@cambridgegreys.com, jonas@southpole.se,
+        yury.norov@gmail.com, richard@nod.at, x86@kernel.org,
+        linux@armlinux.org.uk, mingo@redhat.com, aou@eecs.berkeley.edu,
+        hca@linux.ibm.com, richard.henderson@linaro.org,
+        stefan.kristiansson@saunalahti.fi, openrisc@lists.librecores.org,
+        acme@kernel.org, paul.walmsley@sifive.com,
+        linux-tegra@vger.kernel.org, namhyung@kernel.org,
+        andriy.shevchenko@linux.intel.com, jpoimboe@kernel.org,
+        dvyukov@google.com, jgross@suse.com, monstr@monstr.eu,
+        linux-mips@vger.kernel.org, palmer@dabbelt.com,
+        anup@brainfault.org, bp@alien8.de, johannes@sipsolutions.net,
+        linuxppc-dev@lists.ozlabs.org
+Subject: Re: [PATCH v2 12/44] cpuidle,dt: Push RCU-idle into driver
+Message-ID: <Y3UBwYNY15ETUKy9@hirez.programming.kicks-ass.net>
+References: <20220919095939.761690562@infradead.org>
+ <20220919101521.139727471@infradead.org>
+ <CAPDyKFqTWd4W5Ofk76CtC4X43dxBTNHtmY9YzN355-vpviLsPw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAPDyKFqTWd4W5Ofk76CtC4X43dxBTNHtmY9YzN355-vpviLsPw@mail.gmail.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 2022/11/16 16:57, Matthew Wilcox wrote:
-> On Tue, Nov 15, 2022 at 01:28:14PM +0900, Damien Le Moal wrote:
->> On 11/15/22 13:24, Damien Le Moal wrote:
->>> 6.1-rc5, SLOB:
->>>     - 623 free pages
->>>     - 629 free pages
->>>     - 629 free pages
->>> 6.1-rc5, SLUB:
->>>     - 448 free pages
->>>     - 448 free pages
->>>     - 429 free pages
->>> 6.1-rc5, SLUB + slub_max_order=0:
->>>     - Init error, shell prompt but no shell command working
->>>     - Init error, no shell prompt
->>>     - 508 free pages
->>>     - Init error, shell prompt but no shell command working
->>> 6.1-rc5, SLUB + patch:
->>>     - Init error, shell prompt but no shell command working
->>>     - 433 free pages
->>>     - 448 free pages
->>>     - 423 free pages
->>> 6.1-rc5, SLUB + slub_max_order=0 + patch:
->>>     - Init error, no shell prompt
->>>     - Init error, shell prompt, 499 free pages
->>>     - Init error, shell prompt but no shell command working
->>>     - Init error, no shell prompt
->>>
->>> No changes for SLOB results, expected.
->>>
->>> For default SLUB, I did get all clean boots this time and could run the
->>> cat command. But I do see shell fork failures if I keep running commands.
->>>
->>> For SLUB + slub_max_order=0, I only got one clean boot with 508 free
->>> pages. Remaining runs failed to give a shell prompt or allow running cat
->>> command. For the clean boot, I do see higher number of free pages.
->>>
->>> SLUB with the patch was nearly identical to SLUB without the patch.
->>>
->>> And SLUB+patch+slub_max_order=0 gave again a lot of errors/bad boot. I
->>> could run the cat command only once, giving 499 free pages, so better than
->>> regular SLUB. But it seems that the memory is more fragmented as
->>> allocations fail more often.
->>
->> Note about the last case (SLUB+patch+slub_max_order=0). Here are the
->> messages I got when the init shell process fork failed:
->>
->> [    1.217998] nommu: Allocation of length 491520 from process 1 (sh) failed
->> [    1.224098] active_anon:0 inactive_anon:0 isolated_anon:0
->> [    1.224098]  active_file:5 inactive_file:12 isolated_file:0
->> [    1.224098]  unevictable:0 dirty:0 writeback:0
->> [    1.224098]  slab_reclaimable:38 slab_unreclaimable:459
->> [    1.224098]  mapped:0 shmem:0 pagetables:0
->> [    1.224098]  sec_pagetables:0 bounce:0
->> [    1.224098]  kernel_misc_reclaimable:0
->> [    1.224098]  free:859 free_pcp:0 free_cma:0
->> [    1.260419] Node 0 active_anon:0kB inactive_anon:0kB active_file:20kB
->> inactive_file:48kB unevictable:0kB isolated(anon):0kB isolated(file):0kB
->> mapped:0kB dirty:0kB writeback:0kB shmem:0kB writeback_tmp:0kB
->> kernel_stack:576kB pagetables:0kB sec_pagetables:0kB all_unreclaimable? no
->> [    1.285147] DMA32 free:3436kB boost:0kB min:312kB low:388kB high:464kB
->> reserved_highatomic:0KB active_anon:0kB inactive_anon:0kB active_file:0kB
->> inactive_file:28kB unevictable:0kB writepending:0kB present:8192kB
->> managed:6240kB mlocked:0kB bounce:0kB free_pcp:0kB local_pcp:0kB free_cma:0kB
->> [    1.310654] lowmem_reserve[]: 0 0 0
->> [    1.314089] DMA32: 17*4kB (U) 10*8kB (U) 7*16kB (U) 6*32kB (U) 11*64kB
->> (U) 6*128kB (U) 6*256kB (U) 0*512kB 0*1024kB 0*2048kB 0*4096kB = 3460kB
->> [    1.326883] 33 total pagecache pages
->> [    1.330420] binfmt_flat: Unable to allocate RAM for process text/data,
->> errno -12
+
+Sorry; things keep getting in the way of finishing this :/
+
+As such, I need a bit of time to get on-track again..
+
+On Tue, Oct 04, 2022 at 01:03:57PM +0200, Ulf Hansson wrote:
+
+> > --- a/drivers/acpi/processor_idle.c
+> > +++ b/drivers/acpi/processor_idle.c
+> > @@ -1200,6 +1200,8 @@ static int acpi_processor_setup_lpi_stat
+> >                 state->target_residency = lpi->min_residency;
+> >                 if (lpi->arch_flags)
+> >                         state->flags |= CPUIDLE_FLAG_TIMER_STOP;
+> > +               if (lpi->entry_method == ACPI_CSTATE_FFH)
+> > +                       state->flags |= CPUIDLE_FLAG_RCU_IDLE;
 > 
-> What you're seeing here is memory fragmentation.  There's more than 512kB
-> of memory available, but nommu requires it to be contiguous, and it's
-> not.  This is pretty bad, really.  We didn't even finish starting up
-> and already we've managed to allocate at least one page from each of
-> the 16 512kB chunks which existed.  Commit df48a5f7a3bb was supposed
-> to improve matters by making exact allocations reassemble once they
-> were freed.  Maybe the problem is entirely different.
+> I assume the state index here will never be 0?
+> 
+> If not, it may lead to that acpi_processor_ffh_lpi_enter() may trigger
+> CPU_PM_CPU_IDLE_ENTER_PARAM() to call ct_cpuidle_enter|exit() for an
+> idle-state that doesn't have the CPUIDLE_FLAG_RCU_IDLE bit set.
 
-I suspected something like this when seeing the reported "free:859" :)
-What I can try next is booting without SD card and the bare minimum set of
-drivers to see if the fragmentation is still there or not. Would that help ?
-These one page allocations may be for device drivers so never freed, no ?
+I'm not quite sure I see how. AFAICT this condition above implies
+acpi_processor_ffh_lpi_enter() gets called, no?
 
--- 
-Damien Le Moal
-Western Digital Research
+Which in turn is an unconditional __CPU_PM_CPU_IDLE_ENTER() user, so
+even if idx==0, it ends up in ct_idle_{enter,exit}().
 
+> 
+> >                 state->enter = acpi_idle_lpi_enter;
+> >                 drv->safe_state_index = i;
+> >         }
+> > --- a/drivers/cpuidle/cpuidle-arm.c
+> > +++ b/drivers/cpuidle/cpuidle-arm.c
+> > @@ -53,6 +53,7 @@ static struct cpuidle_driver arm_idle_dr
+> >          * handler for idle state index 0.
+> >          */
+> >         .states[0] = {
+> > +               .flags                  = CPUIDLE_FLAG_RCU_IDLE,
+> 
+> Comparing arm64 and arm32 idle-states/idle-drivers, the $subject
+> series ends up setting the CPUIDLE_FLAG_RCU_IDLE for the ARM WFI idle
+> state (state zero), but only for the arm64 and psci cases (mostly
+> arm64). For arm32 we would need to update the ARM_CPUIDLE_WFI_STATE
+> too, as that is what most arm32 idle-drivers are using. My point is,
+> the code becomes a bit inconsistent.
+
+True.
+
+> Perhaps it's easier to avoid setting the CPUIDLE_FLAG_RCU_IDLE bit for
+> all of the ARM WFI idle states, for both arm64 and arm32?
+
+As per the below?
+
+> 
+> >                 .enter                  = arm_enter_idle_state,
+> >                 .exit_latency           = 1,
+> >                 .target_residency       = 1,
+
+> > --- a/include/linux/cpuidle.h
+> > +++ b/include/linux/cpuidle.h
+> > @@ -282,14 +282,18 @@ extern s64 cpuidle_governor_latency_req(
+> >         int __ret = 0;                                                  \
+> >                                                                         \
+> >         if (!idx) {                                                     \
+> > +               ct_idle_enter();                                        \
+> 
+> According to my comment above, we should then drop these calls to
+> ct_idle_enter and ct_idle_exit() here. Right?
+
+Yes, if we ensure idx==0 never has RCU_IDLE set then these must be
+removed.
+
+> >                 cpu_do_idle();                                          \
+> > +               ct_idle_exit();                                         \
+> >                 return idx;                                             \
+> >         }                                                               \
+> >                                                                         \
+> >         if (!is_retention)                                              \
+> >                 __ret =  cpu_pm_enter();                                \
+> >         if (!__ret) {                                                   \
+> > +               ct_idle_enter();                                        \
+> >                 __ret = low_level_idle_enter(state);                    \
+> > +               ct_idle_exit();                                         \
+> >                 if (!is_retention)                                      \
+> >                         cpu_pm_exit();                                  \
+> >         }                                                               \
+> >
+
+So the basic premise is that everything that needs RCU inside the idle
+callback must set CPUIDLE_FLAG_RCU_IDLE and by doing that promise to
+call ct_idle_{enter,exit}() themselves.
+
+Setting RCU_IDLE is required when there is RCU usage, however even if
+there is no RCU usage, setting RCU_IDLE is fine, as long as
+ct_idle_{enter,exit}() then get called.
+
+
+So does the below (delta) look better to you?
+
+--- a/drivers/acpi/processor_idle.c
++++ b/drivers/acpi/processor_idle.c
+@@ -1218,7 +1218,7 @@ static int acpi_processor_setup_lpi_stat
+ 		state->target_residency = lpi->min_residency;
+ 		if (lpi->arch_flags)
+ 			state->flags |= CPUIDLE_FLAG_TIMER_STOP;
+-		if (lpi->entry_method == ACPI_CSTATE_FFH)
++		if (i != 0 && lpi->entry_method == ACPI_CSTATE_FFH)
+ 			state->flags |= CPUIDLE_FLAG_RCU_IDLE;
+ 		state->enter = acpi_idle_lpi_enter;
+ 		drv->safe_state_index = i;
+--- a/drivers/cpuidle/cpuidle-arm.c
++++ b/drivers/cpuidle/cpuidle-arm.c
+@@ -53,7 +53,7 @@ static struct cpuidle_driver arm_idle_dr
+ 	 * handler for idle state index 0.
+ 	 */
+ 	.states[0] = {
+-		.flags			= CPUIDLE_FLAG_RCU_IDLE,
++		.flags			= 0,
+ 		.enter                  = arm_enter_idle_state,
+ 		.exit_latency           = 1,
+ 		.target_residency       = 1,
+--- a/drivers/cpuidle/cpuidle-psci.c
++++ b/drivers/cpuidle/cpuidle-psci.c
+@@ -357,7 +357,7 @@ static int psci_idle_init_cpu(struct dev
+ 	 * PSCI idle states relies on architectural WFI to be represented as
+ 	 * state index 0.
+ 	 */
+-	drv->states[0].flags = CPUIDLE_FLAG_RCU_IDLE;
++	drv->states[0].flags = 0;
+ 	drv->states[0].enter = psci_enter_idle_state;
+ 	drv->states[0].exit_latency = 1;
+ 	drv->states[0].target_residency = 1;
+--- a/drivers/cpuidle/cpuidle-qcom-spm.c
++++ b/drivers/cpuidle/cpuidle-qcom-spm.c
+@@ -72,7 +72,7 @@ static struct cpuidle_driver qcom_spm_id
+ 	.owner = THIS_MODULE,
+ 	.states[0] = {
+ 		.enter			= spm_enter_idle_state,
+-		.flags			= CPUIDLE_FLAG_RCU_IDLE,
++		.flags			= 0,
+ 		.exit_latency		= 1,
+ 		.target_residency	= 1,
+ 		.power_usage		= UINT_MAX,
+--- a/drivers/cpuidle/cpuidle-riscv-sbi.c
++++ b/drivers/cpuidle/cpuidle-riscv-sbi.c
+@@ -337,7 +337,7 @@ static int sbi_cpuidle_init_cpu(struct d
+ 	drv->cpumask = (struct cpumask *)cpumask_of(cpu);
+ 
+ 	/* RISC-V architectural WFI to be represented as state index 0. */
+-	drv->states[0].flags = CPUIDLE_FLAG_RCU_IDLE;
++	drv->states[0].flags = 0;
+ 	drv->states[0].enter = sbi_cpuidle_enter_state;
+ 	drv->states[0].exit_latency = 1;
+ 	drv->states[0].target_residency = 1;
+--- a/include/linux/cpuidle.h
++++ b/include/linux/cpuidle.h
+@@ -282,9 +282,7 @@ extern s64 cpuidle_governor_latency_req(
+ 	int __ret = 0;							\
+ 									\
+ 	if (!idx) {							\
+-		ct_idle_enter();					\
+ 		cpu_do_idle();						\
+-		ct_idle_exit();						\
+ 		return idx;						\
+ 	}								\
+ 									\
