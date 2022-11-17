@@ -2,57 +2,57 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D8A0C43217
-	for <linux-sh@archiver.kernel.org>; Thu, 17 Nov 2022 14:25:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F87FC4332F
+	for <linux-sh@archiver.kernel.org>; Thu, 17 Nov 2022 14:46:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240397AbiKQOZe (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 17 Nov 2022 09:25:34 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53124 "EHLO
+        id S234491AbiKQOqh (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 17 Nov 2022 09:46:37 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41040 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240387AbiKQOZN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 17 Nov 2022 09:25:13 -0500
+        with ESMTP id S234421AbiKQOqg (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 17 Nov 2022 09:46:36 -0500
 Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 098F87722B
-        for <linux-sh@vger.kernel.org>; Thu, 17 Nov 2022 06:24:12 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E1ED373BA1
+        for <linux-sh@vger.kernel.org>; Thu, 17 Nov 2022 06:45:38 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1668695052;
+        s=mimecast20190719; t=1668696338;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=nZPY6OJIRrwMZkBLytVOAK+0kIpEYMOqoTEpl19M6ws=;
-        b=hUoTaAGanTb+dFIsYwLLhlfnQMB0aCJFI9TmBYC8BxqKf5kYiKSFMU1gc6yg+LJPykT3QI
-        AQrYDFewqG1MLEo8qoJH249WxuNB2l2pc5tXg0Naq9dxoGM5YDnXWSrqtv7q7eO8D1WDeD
-        +n08eYwOA2FxLtBRxb//jc3lRNwC9S8=
+        bh=8gmgQPGvV0Pdco46Use918rHcFMun1FBq8lcqpGuipk=;
+        b=WHLp+j2JwA+WtR97vTkPT0o4n4Tn8Z+CdeXCE+SjRo090Dnff4bI5Zw0Wgmn2367z/o2A/
+        T34RXjDWMNql3epTmt/hPbAJtxWid97jiX7oFRf1NnIylNSN4bSxhprZiLhAM0wUOy8upu
+        vP4iCUt8Y6LZ+v5NwmINmfujQRfd8Ac=
 Received: from mail-wm1-f72.google.com (mail-wm1-f72.google.com
  [209.85.128.72]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.3, cipher=TLS_AES_128_GCM_SHA256) id
- us-mta-486-O_gietrzN3eybXTyT4-RRA-1; Thu, 17 Nov 2022 09:24:11 -0500
-X-MC-Unique: O_gietrzN3eybXTyT4-RRA-1
-Received: by mail-wm1-f72.google.com with SMTP id 1-20020a05600c028100b003cf7833293cso2862078wmk.3
-        for <linux-sh@vger.kernel.org>; Thu, 17 Nov 2022 06:24:10 -0800 (PST)
+ us-mta-30--z-vmaLCPU-7lY5Kc6G5kA-1; Thu, 17 Nov 2022 09:45:36 -0500
+X-MC-Unique: -z-vmaLCPU-7lY5Kc6G5kA-1
+Received: by mail-wm1-f72.google.com with SMTP id l42-20020a05600c1d2a00b003cf8e70c1ecso2881190wms.4
+        for <linux-sh@vger.kernel.org>; Thu, 17 Nov 2022 06:45:36 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
          :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=nZPY6OJIRrwMZkBLytVOAK+0kIpEYMOqoTEpl19M6ws=;
-        b=Hxf224WbgGC/OwCwt17tqV0Sx/flES4RNTsPUMufJPq8+Tp4MmBEtxqLihJGUyWfVM
-         ax8Vw+GFc1zjVelvefc5J0NZwa4A/uNolX+TYd/gnltFSAGRuFnQM3VslIp24MD3odN6
-         tp7890/9vPfhd3kyJCCiyrpa1ppgXqHGphI9uD1GC9PuOCmFPxOUh69dAVDC8qfCWmk7
-         7GiT5xe02R+60Z5FY7WOy9bB6tE/XbzSKxkOT4G2gYP7j6T10VKecDhSpUr+n49u5ddg
-         8lmD7iw6oqdVyrOhMT6nb3t/KrGLukCnI6VRrRAWTVV99YWUKLf/ATvEi4Ob/TMwMZSw
-         Cqyg==
-X-Gm-Message-State: ANoB5pk6hvYP77p5fxtriVErWnV9EMRAH3IVEw5FKKFegkpsqzcysLQF
-        r4N5CTVlOxiegyD47mq9WxEociEIV7Ua3oxb4jm2uioV3sI206kXT/qicQ9viLjkkbHycjCJ2lw
-        QVDaPKVZTFFGck79/SXM=
-X-Received: by 2002:a05:600c:24e:b0:3c5:f9f1:f956 with SMTP id 14-20020a05600c024e00b003c5f9f1f956mr5602418wmj.50.1668695049911;
-        Thu, 17 Nov 2022 06:24:09 -0800 (PST)
-X-Google-Smtp-Source: AA0mqf660kXw1O9nDmBZzBp9eoh92b2B6Bcx05wnz8U6SS8Dy3l/finKWGNWkc/ihpfy4N9vMJHAMQ==
-X-Received: by 2002:a05:600c:24e:b0:3c5:f9f1:f956 with SMTP id 14-20020a05600c024e00b003c5f9f1f956mr5602401wmj.50.1668695049758;
-        Thu, 17 Nov 2022 06:24:09 -0800 (PST)
+        bh=8gmgQPGvV0Pdco46Use918rHcFMun1FBq8lcqpGuipk=;
+        b=6bN04plTPgdiFI3c/MbOz9QzRyCTxkbnYAB8aM5okFWXvfW9I400VCCUSYRLsVBF9P
+         TML51t0idu87rut5uOPlmjnUBFcAnjYc/G0WUWR6qc5iRh8nmgfuvLt+DE2U5za2JhQd
+         iaOE8pGPysYzyQqE+NV6Xkvhf1QT8mrjItNVC6O92gFeKB/VDKiwF/HoRxXD/Gu3kIKh
+         DtOTzVJZAGF1kIglYTJwZ+onuptzvxdRYd7k8WBxWFfcEAMQrzB81cnt9lOjUSBKChwi
+         SaH0FT/H1OhnPOUh4zK5D93FvXdmzbkmdW5fnlf4fWCRikrTYnYaSnMTS3ryALDSbyaE
+         tUYg==
+X-Gm-Message-State: ANoB5pk7HB3wpupPNSVS3Vpubm1BWAJJ3/+tD8lff+TtmEiQDN1d/MrG
+        D8cJ/P4/hBqzMKcAs5TU8y+mMX5/L7Y841ttlpbb3613YqPYmR+8Aza5Ci1rKf8wPeu2CmNIdXR
+        2q6S58xXHA4pQkiG68oQ=
+X-Received: by 2002:a5d:4683:0:b0:23a:43b7:cdd5 with SMTP id u3-20020a5d4683000000b0023a43b7cdd5mr1645380wrq.387.1668696335546;
+        Thu, 17 Nov 2022 06:45:35 -0800 (PST)
+X-Google-Smtp-Source: AA0mqf64NPDvBapwgGSgB2P5pH25AfOA35vY/3ogR7keZELycX3grFeKUdCp0vRGXy3K3A08o5vlDw==
+X-Received: by 2002:a5d:4683:0:b0:23a:43b7:cdd5 with SMTP id u3-20020a5d4683000000b0023a43b7cdd5mr1645351wrq.387.1668696335309;
+        Thu, 17 Nov 2022 06:45:35 -0800 (PST)
 Received: from vschneid.remote.csb ([154.57.232.159])
-        by smtp.gmail.com with ESMTPSA id v18-20020a5d6112000000b00236e834f050sm1095385wrt.35.2022.11.17.06.24.05
+        by smtp.gmail.com with ESMTPSA id t18-20020a5d6a52000000b00236740c6e6fsm1069950wrw.100.2022.11.17.06.45.30
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 17 Nov 2022 06:24:09 -0800 (PST)
+        Thu, 17 Nov 2022 06:45:34 -0800 (PST)
 From:   Valentin Schneider <vschneid@redhat.com>
 To:     Peter Zijlstra <peterz@infradead.org>
 Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
@@ -64,8 +64,7 @@ Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
         linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
         linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
         sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
-        x86@kernel.org, Guo Ren <guoren@kernel.org>,
-        "Paul E. McKenney" <paulmck@kernel.org>,
+        x86@kernel.org, "Paul E. McKenney" <paulmck@kernel.org>,
         Steven Rostedt <rostedt@goodmis.org>,
         Thomas Gleixner <tglx@linutronix.de>,
         Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
@@ -79,15 +78,15 @@ Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
         Mark Rutland <mark.rutland@arm.com>,
         Russell King <linux@armlinux.org.uk>,
         Nicholas Piggin <npiggin@gmail.com>,
+        Guo Ren <guoren@kernel.org>,
         "David S. Miller" <davem@davemloft.net>
-Subject: Re: [RFC PATCH v2 6/8] treewide: Trace IPIs sent via
- smp_send_reschedule()
-In-Reply-To: <Y3X7CijMXpqQIHhk@hirez.programming.kicks-ass.net>
+Subject: Re: [RFC PATCH v2 8/8] sched, smp: Trace smp callback causing an IPI
+In-Reply-To: <Y3ZBUMteJysc1/lA@hirez.programming.kicks-ass.net>
 References: <20221102182949.3119584-1-vschneid@redhat.com>
- <20221102183336.3120536-5-vschneid@redhat.com>
- <Y3X7CijMXpqQIHhk@hirez.programming.kicks-ass.net>
-Date:   Thu, 17 Nov 2022 14:24:04 +0000
-Message-ID: <xhsmhiljdy7zv.mognet@vschneid.remote.csb>
+ <20221102183336.3120536-7-vschneid@redhat.com>
+ <Y3ZBUMteJysc1/lA@hirez.programming.kicks-ass.net>
+Date:   Thu, 17 Nov 2022 14:45:29 +0000
+Message-ID: <xhsmhfsehy706.mognet@vschneid.remote.csb>
 MIME-Version: 1.0
 X-Mimecast-Spam-Score: 0
 X-Mimecast-Originator: redhat.com
@@ -96,39 +95,187 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 17/11/22 10:12, Peter Zijlstra wrote:
-> On Wed, Nov 02, 2022 at 06:33:34PM +0000, Valentin Schneider wrote:
+On 17/11/22 15:12, Peter Zijlstra wrote:
+> On Wed, Nov 02, 2022 at 06:33:36PM +0000, Valentin Schneider wrote:
+> *yuck*
+
+:-)
+
 >
->> diff --git a/kernel/smp.c b/kernel/smp.c
->> index c4d561cf50d45..44fa4b9b1f46b 100644
->> --- a/kernel/smp.c
->> +++ b/kernel/smp.c
->> @@ -167,6 +167,14 @@ send_call_function_ipi_mask(const struct cpumask *mask)
->>      arch_send_call_function_ipi_mask(mask);
->>  }
->>
->> +void smp_send_reschedule(int cpu)
->> +{
->> +	/* XXX scheduler_ipi is inline :/ */
->> +	trace_ipi_send_cpumask(cpumask_of(cpu), _RET_IP_, NULL);
->> +	arch_smp_send_reschedule(cpu);
->> +}
->> +EXPORT_SYMBOL_GPL(smp_send_reschedule);
+> How about something like so?
 >
-> Yeah, no.. I see some crazy archs do this, but no we're not exporting
-> this in generic.
+> ---
+> --- a/kernel/irq_work.c
+> +++ b/kernel/irq_work.c
+> @@ -24,6 +24,8 @@
+>
+>  #include <trace/events/ipi.h>
+>
+> +#include "sched/smp.h"
+> +
+>  static DEFINE_PER_CPU(struct llist_head, raised_list);
+>  static DEFINE_PER_CPU(struct llist_head, lazy_list);
+>  static DEFINE_PER_CPU(struct task_struct *, irq_workd);
+> --- a/kernel/sched/core.c
+> +++ b/kernel/sched/core.c
+> @@ -3763,16 +3763,17 @@ void sched_ttwu_pending(void *arg)
+>       rq_unlock_irqrestore(rq, &rf);
+>  }
+>
+> -void send_call_function_single_ipi(int cpu)
+> +bool send_call_function_single_ipi(int cpu)
+>  {
+>       struct rq *rq = cpu_rq(cpu);
+>
+>       if (!set_nr_if_polling(rq->idle)) {
+> -		trace_ipi_send_cpumask(cpumask_of(cpu), _RET_IP_, NULL);
+>               arch_send_call_function_single_ipi(cpu);
+> -	} else {
+> -		trace_sched_wake_idle_without_ipi(cpu);
+> +		return true;
+>       }
+> +
+> +	trace_sched_wake_idle_without_ipi(cpu);
+> +	return false;
+>  }
+>
+>  /*
+> --- a/kernel/sched/smp.h
+> +++ b/kernel/sched/smp.h
+> @@ -6,7 +6,7 @@
+>
+>  extern void sched_ttwu_pending(void *arg);
+>
+> -extern void send_call_function_single_ipi(int cpu);
+> +extern bool send_call_function_single_ipi(int cpu);
+>
+>  #ifdef CONFIG_SMP
+>  extern void flush_smp_call_function_queue(void);
+> --- a/kernel/smp.c
+> +++ b/kernel/smp.c
+> @@ -163,7 +163,6 @@ void __init call_function_init(void)
+>  static inline void
+>  send_call_function_ipi_mask(const struct cpumask *mask)
+>  {
+> -	trace_ipi_send_cpumask(mask, _RET_IP_, func);
+>       arch_send_call_function_ipi_mask(mask);
+>  }
+>
+> @@ -438,11 +437,16 @@ static void __smp_call_single_queue_debu
+>       struct cfd_seq_local *seq = this_cpu_ptr(&cfd_seq_local);
+>       struct call_function_data *cfd = this_cpu_ptr(&cfd_data);
+>       struct cfd_percpu *pcpu = per_cpu_ptr(cfd->pcpu, cpu);
+> +	struct __call_single_data *csd;
+> +
+> +	csd = container_of(node, call_single_data_t, node.llist);
+> +	WARN_ON_ONCE(!(CSD_TYPE(csd) & (CSD_TYPE_SYNC | CSD_TYPE_ASYNC)));
+>
+>       cfd_seq_store(pcpu->seq_queue, this_cpu, cpu, CFD_SEQ_QUEUE);
+>       if (llist_add(node, &per_cpu(call_single_queue, cpu))) {
+>               cfd_seq_store(pcpu->seq_ipi, this_cpu, cpu, CFD_SEQ_IPI);
+>               cfd_seq_store(seq->ping, this_cpu, cpu, CFD_SEQ_PING);
+> +		trace_ipi_send_cpumask(cpumask_of(cpu), _RET_IP_, csd->func);
+>               send_call_function_single_ipi(cpu);
+>               cfd_seq_store(seq->pinged, this_cpu, cpu, CFD_SEQ_PINGED);
+>       } else {
+> @@ -487,6 +491,27 @@ static __always_inline void csd_unlock(s
+>
+>  static DEFINE_PER_CPU_SHARED_ALIGNED(call_single_data_t, csd_data);
+>
+> +static __always_inline
+> +bool raw_smp_call_single_queue(int cpu, struct llist_node *node)
+> +{
+> +	/*
+> +	 * The list addition should be visible to the target CPU when it pops
+> +	 * the head of the list to pull the entry off it in the IPI handler
+> +	 * because of normal cache coherency rules implied by the underlying
+> +	 * llist ops.
+> +	 *
+> +	 * If IPIs can go out of order to the cache coherency protocol
+> +	 * in an architecture, sufficient synchronisation should be added
+> +	 * to arch code to make it appear to obey cache coherency WRT
+> +	 * locking and barrier primitives. Generic code isn't really
+> +	 * equipped to do the right thing...
+> +	 */
+> +	if (llist_add(node, &per_cpu(call_single_queue, cpu)))
+> +		return send_call_function_single_ipi(cpu);
+> +
+> +	return false;
+> +}
+> +
+>  void __smp_call_single_queue(int cpu, struct llist_node *node)
+>  {
+>  #ifdef CONFIG_CSD_LOCK_WAIT_DEBUG
+> @@ -503,19 +528,28 @@ void __smp_call_single_queue(int cpu, st
+>  #endif
+>
+>       /*
+> -	 * The list addition should be visible to the target CPU when it pops
+> -	 * the head of the list to pull the entry off it in the IPI handler
+> -	 * because of normal cache coherency rules implied by the underlying
+> -	 * llist ops.
+> -	 *
+> -	 * If IPIs can go out of order to the cache coherency protocol
+> -	 * in an architecture, sufficient synchronisation should be added
+> -	 * to arch code to make it appear to obey cache coherency WRT
+> -	 * locking and barrier primitives. Generic code isn't really
+> -	 * equipped to do the right thing...
+> -	 */
+> -	if (llist_add(node, &per_cpu(call_single_queue, cpu)))
+> -		send_call_function_single_ipi(cpu);
+> +	 * We have to check the type of the CSD before queueing it, because
+> +	 * once queued it can have its flags cleared by
+> +	 *   flush_smp_call_function_queue()
+> +	 * even if we haven't sent the smp_call IPI yet (e.g. the stopper
+> +	 * executes migration_cpu_stop() on the remote CPU).
+> +	 */
+> +	if (trace_ipi_send_cpumask_enabled()) {
+> +		call_single_data_t *csd;
+> +		smp_call_func_t func;
+> +
+> +		csd = container_of(node, call_single_data_t, node.llist);
+> +
+> +		func = sched_ttwu_pending;
+> +		if (CSD_TYPE(csd) != CSD_TYPE_TTWU)
+> +			func = csd->func;
+> +
+> +		if (raw_smp_call_single_queue(cpu, node))
+> +			trace_ipi_send_cpumask(cpumask_of(cpu), _RET_IP_, func);
 
-So the list is: ia64, powerpc, riscv
-and they all seem to do it because of KVM:
-  c4cb768f0277 ("[IA64] export smp_send_reschedule")
-  de56a948b918 ("KVM: PPC: Add support for Book3S processors in hypervisor mode")
-  d3d7a0ce020e ("RISC-V: Export kernel symbols for kvm")
+So I went with the tracepoint being placed *before* the actual IPI gets
+sent to have a somewhat sane ordering between trace_ipi_send_cpumask() and
+e.g. trace_call_function_single_entry().
 
-Other archs get out of it either because their smp_send_reschedule() is
-inline (e.g. x86), or because they don't allow building KVM as a module
-(e.g. arm64).
+Packaging the call_single_queue logic makes the code less horrible, but it
+does mix up the event ordering...
 
-If I can cobble the tracepoint+reschedule in an inline helper, then that
-wouldn't require any new exports - I'm fighting a bit with the header maze
-ATM, but hopefully I can get somewhere with this.
+
+> +		return;
+> +	}
+> +
+> +	raw_smp_call_single_queue(cpu, node);
+>  }
+>
+>  /*
+> @@ -983,10 +1017,13 @@ static void smp_call_function_many_cond(
+>                * number of CPUs might be zero due to concurrent changes to the
+>                * provided mask.
+>                */
+> -		if (nr_cpus == 1)
+> +		if (nr_cpus == 1) {
+> +			trace_ipi_send_cpumask(cpumask_of(last_cpu), _RET_IP_, func);
+>                       send_call_function_single_ipi(last_cpu);
+
+This'll yield an IPI event even if no IPI is sent due to the idle task
+polling, no?
+
+> -		else if (likely(nr_cpus > 1))
+> -			send_call_function_ipi_mask(cfd->cpumask_ipi);
+> +		} else if (likely(nr_cpus > 1)) {
+> +			trace_ipi_send_cpumask(mask, _RET_IP_, func);
+> +			send_call_function_ipi_mask(mask);
+> +		}
+>
+>               cfd_seq_store(this_cpu_ptr(&cfd_seq_local)->pinged, this_cpu, CFD_SEQ_NOCPU, CFD_SEQ_PINGED);
+>       }
 
