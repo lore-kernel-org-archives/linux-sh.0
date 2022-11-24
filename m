@@ -2,144 +2,124 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7855EC433FE
-	for <linux-sh@archiver.kernel.org>; Tue, 22 Nov 2022 17:16:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1E6C9C4332F
+	for <linux-sh@archiver.kernel.org>; Thu, 24 Nov 2022 01:22:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229628AbiKVRQN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 22 Nov 2022 12:16:13 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38374 "EHLO
+        id S229505AbiKXBWA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 23 Nov 2022 20:22:00 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53160 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232665AbiKVRQL (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 22 Nov 2022 12:16:11 -0500
-Received: from out1-smtp.messagingengine.com (out1-smtp.messagingengine.com [66.111.4.25])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7667F73407;
-        Tue, 22 Nov 2022 09:16:10 -0800 (PST)
-Received: from compute3.internal (compute3.nyi.internal [10.202.2.43])
-        by mailout.nyi.internal (Postfix) with ESMTP id 412F65C01AC;
-        Tue, 22 Nov 2022 12:16:07 -0500 (EST)
-Received: from imap51 ([10.202.2.101])
-  by compute3.internal (MEProxy); Tue, 22 Nov 2022 12:16:07 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-        :cc:content-type:date:date:from:from:in-reply-to:in-reply-to
-        :message-id:mime-version:references:reply-to:sender:subject
-        :subject:to:to; s=fm3; t=1669137367; x=1669223767; bh=AWib7uk/pX
-        ojLTP6WLnsRKQNx+DKIkZTOrXloBCRaME=; b=lySZ7U8uKnWn00jTXtr9CAy5eX
-        nv56f5UzD8Tk1XQ/zM5Lhx6iJpKUBacT8Jhv8GyD2PflS6Y7GxJQc0fIKYqg5Oes
-        CFa1i/Ts0YaZ3w+29HTSOtSLJVf8UyxvgO7Elc+4A1sD1p/Xc15Cgj/ipv+7sC75
-        6w/wVc+YoF9EFV6ZnauvYJWW3dZBEdWUU3Bunbq5pUvgvqvufeUJEzM47bRam58J
-        c3BOM4tOLUQkAGfA/RhyWi1+/qHvJbvC8bLwEEGaDCDs9qV6wxZFKoq3UYhXxQKt
-        Wh8d/wv3tWb9gfqRvidRS+ZMd1z1j9zWUlznP4LRf6uszZiJKJUYJDZHHY8Q==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:cc:content-type:date:date:feedback-id
-        :feedback-id:from:from:in-reply-to:in-reply-to:message-id
-        :mime-version:references:reply-to:sender:subject:subject:to:to
-        :x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-        fm1; t=1669137367; x=1669223767; bh=AWib7uk/pXojLTP6WLnsRKQNx+DK
-        IkZTOrXloBCRaME=; b=WsG7hmw+LKirM0tmH9Kzn5cWIv1cpT8+lNht2XAQJ9s3
-        4ZLi37KXbwyfZUymR+BePagoJCdji1Vzcj0n80TQIde9wB6INMz6g6O95orGjmgQ
-        D4kmajLzD+hdqXIR6sGDItFx17483bKqA/prajubW26vU7eE2HfQ48F4RU3AbTOn
-        BflQWRTk2zMsv9br6one4vxpVJ+2Kq+zgKTclR29Zf4FJW/LONRJf+GU2SCd5pYG
-        J4BngUHmANTkgBSU86Eb3htMc55hA4qxKx5rSTTKWS1MsK5pY95N8jw9lUbptr/n
-        4Z8nSzdK1pAXa5mMpKlxS3WdFwiL2He3irWZfBm6bA==
-X-ME-Sender: <xms:0wN9Y7qPWw2exYVs5wfHuy9rYZCZQuHgMhVEQFannzbjtddQn3BQ4g>
-    <xme:0wN9Y1pqiwYlVCjjKrkgcm3wu_Akhjhp7R2xmRAGsKVts_mSuo6Fr9nHjS2-N14PA
-    LmVoU5uRDXDxBzCiFA>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvgedrheelgdeilecutefuodetggdotefrodftvf
-    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
-    uegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenuc
-    fjughrpefofgggkfgjfhffhffvvefutgesthdtredtreertdenucfhrhhomhepfdetrhhn
-    ugcuuegvrhhgmhgrnhhnfdcuoegrrhhnugesrghrnhgusgdruggvqeenucggtffrrghtth
-    gvrhhnpeffheeugeetiefhgeethfejgfdtuefggeejleehjeeutefhfeeggefhkedtkeet
-    ffenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegrrh
-    hnugesrghrnhgusgdruggv
-X-ME-Proxy: <xmx:0wN9Y4N8QRmdxsSzxLfB-wzAErGuIyYmXrIV7YRp5MuOsZXSFqmatg>
-    <xmx:0wN9Y-4hZz5AMF7CfedaolyttL0YesCLDNyMIosGKiGFB-DvxEr6EQ>
-    <xmx:0wN9Y64KESJLM4L1wu3Xny3rpN-0y311CrDXA6fAwwRQHLgNIP87NQ>
-    <xmx:1wN9Y2EvqHiCPXzlZoDK1Y6SAsHx1IrtLMuRFmYZSqKK8S6eDS_6EQ>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.nyi.internal (Postfix, from userid 501)
-        id 30CBAB60086; Tue, 22 Nov 2022 12:16:03 -0500 (EST)
-X-Mailer: MessagingEngine.com Webmail Interface
-User-Agent: Cyrus-JMAP/3.7.0-alpha0-1115-g8b801eadce-fm-20221102.001-g8b801ead
-Mime-Version: 1.0
-Message-Id: <501fbee3-cd3d-461c-9c79-0a5f2d1382b6@app.fastmail.com>
-In-Reply-To: <ab663f18-429a-7d86-f128-6db73fc07b8a@suse.cz>
-References: <20221121171202.22080-1-vbabka@suse.cz>
- <bc2f3ca9-e49a-4ca1-8b63-cbc7773d23d5@app.fastmail.com>
- <ab663f18-429a-7d86-f128-6db73fc07b8a@suse.cz>
-Date:   Tue, 22 Nov 2022 18:15:39 +0100
-From:   "Arnd Bergmann" <arnd@arndb.de>
-To:     "Vlastimil Babka" <vbabka@suse.cz>,
-        "Christoph Lameter" <cl@linux.com>,
-        "David Rientjes" <rientjes@google.com>,
-        "Joonsoo Kim" <iamjoonsoo.kim@lge.com>,
-        "Pekka Enberg" <penberg@kernel.org>
-Cc:     "Hyeonggon Yoo" <42.hyeyoo@gmail.com>,
-        "Roman Gushchin" <roman.gushchin@linux.dev>,
-        "Andrew Morton" <akpm@linux-foundation.org>,
-        "Linus Torvalds" <torvalds@linux-foundation.org>,
-        "Matthew Wilcox" <willy@infradead.org>, patches@lists.linux.dev,
+        with ESMTP id S229452AbiKXBV7 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 23 Nov 2022 20:21:59 -0500
+Received: from out0.migadu.com (out0.migadu.com [94.23.1.103])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 09A74B54EE;
+        Wed, 23 Nov 2022 17:21:59 -0800 (PST)
+Date:   Wed, 23 Nov 2022 17:21:42 -0800
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
+        t=1669252917;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=LCCb6cJQpNNyYRBbz4kRdgD2tyLQ9Ns2A7s10hH5kx0=;
+        b=WLIGoxoQm3+/ru5YF2x6H+6yl4N5sAGKnAhwTr5uRYPr8dQqa/R3ysskmGjANDh6CBkZQy
+        KJ0MBuI2R1IiCx1P42YUay6SolBrMpWVMI6fGEzq+7bsLesglGpb2m5siLqtS2z++OWNnR
+        eN3d8mpNwNHZTr5snKaaNTKSv/nsBqw=
+X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
+From:   Roman Gushchin <roman.gushchin@linux.dev>
+To:     Vlastimil Babka <vbabka@suse.cz>
+Cc:     Christoph Lameter <cl@linux.com>,
+        David Rientjes <rientjes@google.com>,
+        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
+        Pekka Enberg <penberg@kernel.org>,
+        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        Matthew Wilcox <willy@infradead.org>, patches@lists.linux.dev,
         linux-mm@kvack.org, linux-kernel@vger.kernel.org,
-        "Aaro Koskinen" <aaro.koskinen@iki.fi>,
-        "Christophe Leroy" <christophe.leroy@csgroup.eu>,
-        "Conor Dooley" <conor@kernel.org>,
-        "Damien Le Moal" <damien.lemoal@opensource.wdc.com>,
-        "Geert Uytterhoeven" <geert@linux-m68k.org>,
-        "Janusz Krzysztofik" <jmkrzyszt@gmail.com>,
-        "Jonas Bonn" <jonas@southpole.se>,
-        "Josh Triplett" <josh@joshtriplett.org>,
-        "Kees Cook" <keescook@chromium.org>,
-        linux-arm-kernel@lists.infradead.org,
-        Linux-OMAP <linux-omap@vger.kernel.org>,
-        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
-        openrisc@lists.librecores.org, "Rich Felker" <dalias@libc.org>,
-        "Russell King" <linux@armlinux.org.uk>,
-        "Stafford Horne" <shorne@gmail.com>,
-        "Stefan Kristiansson" <stefan.kristiansson@saunalahti.fi>,
-        "Tony Lindgren" <tony@atomide.com>,
-        "Yoshinori Sato" <ysato@users.sourceforge.jp>
-Subject: Re: [PATCH 00/12] Introduce CONFIG_SLUB_TINY and deprecate SLOB
-Content-Type: text/plain
+        Russell King <linux@armlinux.org.uk>,
+        Aaro Koskinen <aaro.koskinen@iki.fi>,
+        Janusz Krzysztofik <jmkrzyszt@gmail.com>,
+        Tony Lindgren <tony@atomide.com>,
+        Jonas Bonn <jonas@southpole.se>,
+        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+        Stafford Horne <shorne@gmail.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
+        Josh Triplett <josh@joshtriplett.org>,
+        Conor Dooley <conor@kernel.org>,
+        Damien Le Moal <damien.lemoal@opensource.wdc.com>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        linux-arm-kernel@lists.infradead.org, linux-omap@vger.kernel.org,
+        openrisc@lists.librecores.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org
+Subject: Re: [PATCH 12/12] mm, slob: rename CONFIG_SLOB to
+ CONFIG_SLOB_DEPRECATED
+Message-ID: <Y37HJr+lBv7wGZcs@P9FQF9L96D.corp.robot.car>
+References: <20221121171202.22080-1-vbabka@suse.cz>
+ <20221121171202.22080-13-vbabka@suse.cz>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20221121171202.22080-13-vbabka@suse.cz>
+X-Migadu-Flow: FLOW_OUT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Nov 22, 2022, at 17:59, Vlastimil Babka wrote:
-> On 11/22/22 17:33, Arnd Bergmann wrote:
->> On Mon, Nov 21, 2022, at 18:11, Vlastimil Babka wrote:
->> I can imagine those machines wanting to use sysfs in general
->> but not for the slab caches, so having a separate knob to
->> configure out the sysfs stuff could be useful without having
->> to go all the way to SLUB_TINY.
->
-> Right, but AFAIK that wouldn't save much except some text size and kobjects,
-> so probably negligible for >32MB?
+On Mon, Nov 21, 2022 at 06:12:02PM +0100, Vlastimil Babka wrote:
+> As explained in [1], we would like to remove SLOB if possible.
+> 
+> - There are no known users that need its somewhat lower memory footprint
+>   so much that they cannot handle SLUB (after some modifications by the
+>   previous patches) instead.
+> 
+> - It is an extra maintenance burden, and a number of features are
+>   incompatible with it.
+> 
+> - It blocks the API improvement of allowing kfree() on objects allocated
+>   via kmem_cache_alloc().
+> 
+> As the first step, rename the CONFIG_SLOB option in the slab allocator
+> configuration choice to CONFIG_SLOB_DEPRECATED. Add CONFIG_SLOB
+> depending on CONFIG_SLOB_DEPRECATED as an internal option to avoid code
+> churn. This will cause existing .config files and defconfigs with
+> CONFIG_SLOB=y to silently switch to the default (and recommended
+> replacement) SLUB, while still allowing SLOB to be configured by anyone
+> that notices and needs it. But those should contact the slab maintainers
+> and linux-mm@kvack.org as explained in the updated help. With no valid
+> objections, the plan is to update the existing defconfigs to SLUB and
+> remove SLOB in a few cycles.
+> 
+> To make SLUB more suitable replacement for SLOB, a CONFIG_SLUB_TINY
+> option was introduced to limit SLUB's memory overhead.
+> There is a number of defconfigs specifying CONFIG_SLOB=y. As part of
+> this patch, update them to select CONFIG_SLUB and CONFIG_SLUB_TINY.
+> 
+> [1] https://lore.kernel.org/all/b35c3f82-f67b-2103-7d82-7a7ba7521439@suse.cz/
+> 
+> Cc: Russell King <linux@armlinux.org.uk>
+> Cc: Aaro Koskinen <aaro.koskinen@iki.fi>
+> Cc: Janusz Krzysztofik <jmkrzyszt@gmail.com>
+> Cc: Tony Lindgren <tony@atomide.com>
+> Cc: Jonas Bonn <jonas@southpole.se>
+> Cc: Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>
+> Cc: Stafford Horne <shorne@gmail.com>
+> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+> Cc: Rich Felker <dalias@libc.org>
+> Cc: Arnd Bergmann <arnd@arndb.de>
+> Cc: Josh Triplett <josh@joshtriplett.org>
+> Cc: Conor Dooley <conor@kernel.org>
+> Cc: Damien Le Moal <damien.lemoal@opensource.wdc.com>
+> Cc: Christophe Leroy <christophe.leroy@csgroup.eu>
+> Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+> Cc: <linux-arm-kernel@lists.infradead.org>
+> Cc: <linux-omap@vger.kernel.org>
+> Cc: <openrisc@lists.librecores.org>
+> Cc: <linux-riscv@lists.infradead.org>
+> Cc: <linux-sh@vger.kernel.org>
+> Signed-off-by: Vlastimil Babka <vbabka@suse.cz>
 
-Makes sense, I assume you have a better idea of how much this
-could save. I'm not at all worried about the .text size, but
-my initial guess was that the metadata for sysfs would be
-noticeable.
+Acked-by: Roman Gushchin <roman.gushchin@linux.dev>
 
->> For the options that trade off performance against lower
->> fragmentation (MIN/MAX_PARTIAL, KMALLOC_RECLAIM, percpu
->> slabs), I wonder if it's possible to have a boot time
->> default based on the amount of RAM per CPU to have a better
->> tuned system on most cases, rather than having to go
->> to one extreme or the other at compile time.
->
-> Possible for some of these things, but for others that brings us back to the
-> question what are the actual observed issues. If it's low memory in absolute
-> number of pages, these can help, but if it's fragmentation (and the kind if
-> RAM sizes should have page grouping by mobility enabled), ditching e.g. the
-> KMALLOC_RECLAIM could make it worse. Unfortunately some of these tradeoffs
-> can be rather unpredictable.
-
-Are there any obvious wins on memory uage? I would guess that it
-would be safe to e.g. ditch percpu slabs when running with less
-128MB per CPU, and the MIN/MAX_PARTIAL values could easily
-be a function of the number of pages in total or per cpu,
-whichever makes most sense. As a side-effect, those could also
-grow slightly larger on huge systems by scaling them with
-log2(totalpages).
-
-     Arnd
+Thanks!
