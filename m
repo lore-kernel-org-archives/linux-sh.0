@@ -2,124 +2,144 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1E6C9C4332F
-	for <linux-sh@archiver.kernel.org>; Thu, 24 Nov 2022 01:22:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 67475C43219
+	for <linux-sh@archiver.kernel.org>; Thu, 24 Nov 2022 20:31:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229505AbiKXBWA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 23 Nov 2022 20:22:00 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53160 "EHLO
+        id S229491AbiKXUbI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 24 Nov 2022 15:31:08 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55134 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229452AbiKXBV7 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 23 Nov 2022 20:21:59 -0500
-Received: from out0.migadu.com (out0.migadu.com [94.23.1.103])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 09A74B54EE;
-        Wed, 23 Nov 2022 17:21:59 -0800 (PST)
-Date:   Wed, 23 Nov 2022 17:21:42 -0800
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linux.dev; s=key1;
-        t=1669252917;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=LCCb6cJQpNNyYRBbz4kRdgD2tyLQ9Ns2A7s10hH5kx0=;
-        b=WLIGoxoQm3+/ru5YF2x6H+6yl4N5sAGKnAhwTr5uRYPr8dQqa/R3ysskmGjANDh6CBkZQy
-        KJ0MBuI2R1IiCx1P42YUay6SolBrMpWVMI6fGEzq+7bsLesglGpb2m5siLqtS2z++OWNnR
-        eN3d8mpNwNHZTr5snKaaNTKSv/nsBqw=
-X-Report-Abuse: Please report any abuse attempt to abuse@migadu.com and include these headers.
-From:   Roman Gushchin <roman.gushchin@linux.dev>
+        with ESMTP id S229463AbiKXUbH (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 24 Nov 2022 15:31:07 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 995DD68C69;
+        Thu, 24 Nov 2022 12:31:04 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 4D495B828FF;
+        Thu, 24 Nov 2022 20:31:03 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9BB9BC433D6;
+        Thu, 24 Nov 2022 20:30:51 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1669321862;
+        bh=VYogHO/QzC0Ie7JtQNRyLU+4odaED0lO+ZqrQ2anQ4g=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=B4JIUPPb4GNyqmaugd+1VesUVg/rY2YBuh9jPZSEa9LfSEQzH3zDygt0HPqdzet2M
+         Dp4c/55O2yCFMpzlwelwJsAnq/cWVHvGVHOAbVO908xeu84LN7567KgsRaE4IVVlI4
+         irQCMsnXsSJ21jNJaw6RWjzOUpRxJ6RKhWjRfpd9wRYv71gwQVQAvT0UvpbAXv+eDr
+         jBzcX+3BhUu0qt/DvQCSNER8QfDrEQGt+TJ9slcZjWNwkaVshc7is4iQ3Zq0vSzdZc
+         hcrepLOFcnDEx3g9ybGBdkV9QmYuTZxJxy7F+stexs8bO96+DDGYQXJXkj+qDrkXGn
+         djLsL9V97W7iw==
+Date:   Thu, 24 Nov 2022 22:30:41 +0200
+From:   Mike Rapoport <rppt@kernel.org>
 To:     Vlastimil Babka <vbabka@suse.cz>
 Cc:     Christoph Lameter <cl@linux.com>,
         David Rientjes <rientjes@google.com>,
         Joonsoo Kim <iamjoonsoo.kim@lge.com>,
         Pekka Enberg <penberg@kernel.org>,
         Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+        Roman Gushchin <roman.gushchin@linux.dev>,
         Andrew Morton <akpm@linux-foundation.org>,
         Linus Torvalds <torvalds@linux-foundation.org>,
         Matthew Wilcox <willy@infradead.org>, patches@lists.linux.dev,
         linux-mm@kvack.org, linux-kernel@vger.kernel.org,
-        Russell King <linux@armlinux.org.uk>,
         Aaro Koskinen <aaro.koskinen@iki.fi>,
-        Janusz Krzysztofik <jmkrzyszt@gmail.com>,
-        Tony Lindgren <tony@atomide.com>,
-        Jonas Bonn <jonas@southpole.se>,
-        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-        Stafford Horne <shorne@gmail.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
-        Josh Triplett <josh@joshtriplett.org>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
         Conor Dooley <conor@kernel.org>,
         Damien Le Moal <damien.lemoal@opensource.wdc.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
+        Janusz Krzysztofik <jmkrzyszt@gmail.com>,
+        Jonas Bonn <jonas@southpole.se>,
+        Josh Triplett <josh@joshtriplett.org>,
+        Kees Cook <keescook@chromium.org>,
         linux-arm-kernel@lists.infradead.org, linux-omap@vger.kernel.org,
-        openrisc@lists.librecores.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org
-Subject: Re: [PATCH 12/12] mm, slob: rename CONFIG_SLOB to
- CONFIG_SLOB_DEPRECATED
-Message-ID: <Y37HJr+lBv7wGZcs@P9FQF9L96D.corp.robot.car>
+        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
+        openrisc@lists.librecores.org, Rich Felker <dalias@libc.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Stafford Horne <shorne@gmail.com>,
+        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+        Tony Lindgren <tony@atomide.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+Subject: Re: [PATCH 00/12] Introduce CONFIG_SLUB_TINY and deprecate SLOB
+Message-ID: <Y3/UccT+hJ/6/v4c@kernel.org>
 References: <20221121171202.22080-1-vbabka@suse.cz>
- <20221121171202.22080-13-vbabka@suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20221121171202.22080-13-vbabka@suse.cz>
-X-Migadu-Flow: FLOW_OUT
+In-Reply-To: <20221121171202.22080-1-vbabka@suse.cz>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Nov 21, 2022 at 06:12:02PM +0100, Vlastimil Babka wrote:
-> As explained in [1], we would like to remove SLOB if possible.
+On Mon, Nov 21, 2022 at 06:11:50PM +0100, Vlastimil Babka wrote:
+> Hi,
 > 
-> - There are no known users that need its somewhat lower memory footprint
->   so much that they cannot handle SLUB (after some modifications by the
->   previous patches) instead.
+> this continues the discussion from [1]. Reasons to remove SLOB are
+> outlined there and no-one has objected so far. The last patch of this
+> series therefore deprecates CONFIG_SLOB and updates all the defconfigs
+> using CONFIG_SLOB=y in the tree.
 > 
-> - It is an extra maintenance burden, and a number of features are
->   incompatible with it.
+> There is a k210 board with 8MB RAM where switching to SLUB caused issues
+> [2] and the lkp bot wasn't also happy about code bloat [3]. To address
+> both, this series introduces CONFIG_SLUB_TINY to perform some rather
+> low-hanging fruit modifications to SLUB to reduce its memory overhead.
+> This seems to have been successful at least in the k210 case [4]. I
+> consider this as an acceptable tradeoff for getting rid of SLOB.
 > 
-> - It blocks the API improvement of allowing kfree() on objects allocated
->   via kmem_cache_alloc().
-> 
-> As the first step, rename the CONFIG_SLOB option in the slab allocator
-> configuration choice to CONFIG_SLOB_DEPRECATED. Add CONFIG_SLOB
-> depending on CONFIG_SLOB_DEPRECATED as an internal option to avoid code
-> churn. This will cause existing .config files and defconfigs with
-> CONFIG_SLOB=y to silently switch to the default (and recommended
-> replacement) SLUB, while still allowing SLOB to be configured by anyone
-> that notices and needs it. But those should contact the slab maintainers
-> and linux-mm@kvack.org as explained in the updated help. With no valid
-> objections, the plan is to update the existing defconfigs to SLUB and
-> remove SLOB in a few cycles.
-> 
-> To make SLUB more suitable replacement for SLOB, a CONFIG_SLUB_TINY
-> option was introduced to limit SLUB's memory overhead.
-> There is a number of defconfigs specifying CONFIG_SLOB=y. As part of
-> this patch, update them to select CONFIG_SLUB and CONFIG_SLUB_TINY.
+> The series is also available in git:
+> https://git.kernel.org/pub/scm/linux/kernel/git/vbabka/linux.git/log/?h=slub-tiny-v1r2
 > 
 > [1] https://lore.kernel.org/all/b35c3f82-f67b-2103-7d82-7a7ba7521439@suse.cz/
+> [2] https://lore.kernel.org/all/a5bba3ca-da19-293c-c01b-a28291533466@opensource.wdc.com/
+> [3] https://lore.kernel.org/all/Y25E9cJbhDAKi1vd@99bb1221be19/
+> [4] https://lore.kernel.org/all/6a1883c4-4c3f-545a-90e8-2cd805bcf4ae@opensource.wdc.com/
 > 
-> Cc: Russell King <linux@armlinux.org.uk>
-> Cc: Aaro Koskinen <aaro.koskinen@iki.fi>
-> Cc: Janusz Krzysztofik <jmkrzyszt@gmail.com>
-> Cc: Tony Lindgren <tony@atomide.com>
-> Cc: Jonas Bonn <jonas@southpole.se>
-> Cc: Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>
-> Cc: Stafford Horne <shorne@gmail.com>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: Arnd Bergmann <arnd@arndb.de>
-> Cc: Josh Triplett <josh@joshtriplett.org>
-> Cc: Conor Dooley <conor@kernel.org>
-> Cc: Damien Le Moal <damien.lemoal@opensource.wdc.com>
-> Cc: Christophe Leroy <christophe.leroy@csgroup.eu>
-> Cc: Geert Uytterhoeven <geert@linux-m68k.org>
-> Cc: <linux-arm-kernel@lists.infradead.org>
-> Cc: <linux-omap@vger.kernel.org>
-> Cc: <openrisc@lists.librecores.org>
-> Cc: <linux-riscv@lists.infradead.org>
-> Cc: <linux-sh@vger.kernel.org>
-> Signed-off-by: Vlastimil Babka <vbabka@suse.cz>
+> Vlastimil Babka (12):
+>   mm, slab: ignore hardened usercopy parameters when disabled
+>   mm, slub: add CONFIG_SLUB_TINY
+>   mm, slub: disable SYSFS support with CONFIG_SLUB_TINY
+>   mm, slub: retain no free slabs on partial list with CONFIG_SLUB_TINY
+>   mm, slub: lower the default slub_max_order with CONFIG_SLUB_TINY
+>   mm, slub: don't create kmalloc-rcl caches with CONFIG_SLUB_TINY
+>   mm, slab: ignore SLAB_RECLAIM_ACCOUNT with CONFIG_SLUB_TINY
+>   mm, slub: refactor free debug processing
+>   mm, slub: split out allocations from pre/post hooks
+>   mm, slub: remove percpu slabs with CONFIG_SLUB_TINY
+>   mm, slub: don't aggressively inline with CONFIG_SLUB_TINY
+>   mm, slob: rename CONFIG_SLOB to CONFIG_SLOB_DEPRECATED
+> 
+>  arch/arm/configs/clps711x_defconfig           |   3 +-
+>  arch/arm/configs/collie_defconfig             |   3 +-
+>  arch/arm/configs/multi_v4t_defconfig          |   3 +-
+>  arch/arm/configs/omap1_defconfig              |   3 +-
+>  arch/arm/configs/pxa_defconfig                |   3 +-
+>  arch/arm/configs/tct_hammer_defconfig         |   3 +-
+>  arch/arm/configs/xcep_defconfig               |   3 +-
+>  arch/openrisc/configs/or1ksim_defconfig       |   3 +-
+>  arch/openrisc/configs/simple_smp_defconfig    |   3 +-
+>  arch/riscv/configs/nommu_k210_defconfig       |   3 +-
+>  .../riscv/configs/nommu_k210_sdcard_defconfig |   3 +-
+>  arch/riscv/configs/nommu_virt_defconfig       |   3 +-
+>  arch/sh/configs/rsk7201_defconfig             |   3 +-
+>  arch/sh/configs/rsk7203_defconfig             |   3 +-
+>  arch/sh/configs/se7206_defconfig              |   3 +-
+>  arch/sh/configs/shmin_defconfig               |   3 +-
+>  arch/sh/configs/shx3_defconfig                |   3 +-
+>  include/linux/slab.h                          |   8 +
+>  include/linux/slub_def.h                      |   6 +-
+>  kernel/configs/tiny.config                    |   5 +-
+>  mm/Kconfig                                    |  38 +-
+>  mm/Kconfig.debug                              |   2 +-
+>  mm/slab_common.c                              |  16 +-
+>  mm/slub.c                                     | 415 ++++++++++++------
+>  24 files changed, 377 insertions(+), 164 deletions(-)
 
-Acked-by: Roman Gushchin <roman.gushchin@linux.dev>
+For the series
 
-Thanks!
+Acked-by: Mike Rapoport <rppt@linux.ibm.com>
+
+-- 
+Sincerely yours,
+Mike.
