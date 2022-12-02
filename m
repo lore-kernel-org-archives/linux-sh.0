@@ -2,92 +2,249 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D0DEC46467
-	for <linux-sh@archiver.kernel.org>; Tue, 29 Nov 2022 14:37:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 063AFC4708E
+	for <linux-sh@archiver.kernel.org>; Fri,  2 Dec 2022 16:00:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235700AbiK2Og5 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 29 Nov 2022 09:36:57 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44674 "EHLO
+        id S233363AbiLBP76 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 2 Dec 2022 10:59:58 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60534 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235644AbiK2Ogy (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 29 Nov 2022 09:36:54 -0500
-X-Greylist: delayed 220 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 29 Nov 2022 06:36:51 PST
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 64EEE3AF;
-        Tue, 29 Nov 2022 06:36:51 -0800 (PST)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1p01RU-003bu3-5l; Tue, 29 Nov 2022 15:18:36 +0100
-Received: from p5b13aed4.dip0.t-ipconnect.de ([91.19.174.212] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_128_GCM_SHA256
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1p01RT-003lZs-V8; Tue, 29 Nov 2022 15:18:36 +0100
-Message-ID: <90b31900-11a0-a18e-0900-bde72254f472@physik.fu-berlin.de>
-Date:   Tue, 29 Nov 2022 15:18:34 +0100
+        with ESMTP id S233541AbiLBP74 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 2 Dec 2022 10:59:56 -0500
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4110BDF1A
+        for <linux-sh@vger.kernel.org>; Fri,  2 Dec 2022 07:58:56 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1669996735;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=B+hXh5P61A2DdBxK6OLw+4jPvT0r9cthvTrIhcW2QOA=;
+        b=SNQ4RhzLIhf7EAZE6kx7XSjJs/SPNv8Kwx1ck6pAiZdwwWUnr6RNFKIdada7/QrIb/c12j
+        lFqVMPxwq/LvC/J/4H2SDd8B5q40GPdwxcCWZxusAPvadBrdzLpi0FTcQx7XF0n2TJHE8/
+        dohdhe4+JNyq/XA1wGdqALPqzUSvEJo=
+Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
+ [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-411-aad4T597M-uqDalSOOGakQ-1; Fri, 02 Dec 2022 10:58:50 -0500
+X-MC-Unique: aad4T597M-uqDalSOOGakQ-1
+Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.rdu2.redhat.com [10.11.54.4])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 471C8800B23;
+        Fri,  2 Dec 2022 15:58:48 +0000 (UTC)
+Received: from vschneid.remote.csb (unknown [10.33.36.77])
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id 437932028CE4;
+        Fri,  2 Dec 2022 15:58:42 +0000 (UTC)
+From:   Valentin Schneider <vschneid@redhat.com>
+To:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
+        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
+        x86@kernel.org
+Cc:     "Paul E. McKenney" <paulmck@kernel.org>,
+        Steven Rostedt <rostedt@goodmis.org>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
+        Juri Lelli <juri.lelli@redhat.com>,
+        Daniel Bristot de Oliveira <bristot@redhat.com>,
+        Marcelo Tosatti <mtosatti@redhat.com>,
+        Frederic Weisbecker <frederic@kernel.org>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        "H. Peter Anvin" <hpa@zytor.com>, Marc Zyngier <maz@kernel.org>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Guo Ren <guoren@kernel.org>,
+        "David S. Miller" <davem@davemloft.net>
+Subject: [PATCH v3 0/8] Generic IPI sending tracepoint
+Date:   Fri,  2 Dec 2022 15:58:09 +0000
+Message-Id: <20221202155817.2102944-1-vschneid@redhat.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.5.0
-Subject: Re: [PATCH V2 2/3] LoongArch: cpuinfo: Fix a warning for
- CONFIG_CPUMASK_OFFSTACK
-Content-Language: en-US
-To:     Huacai Chen <chenhuacai@gmail.com>
-Cc:     Huacai Chen <chenhuacai@loongson.cn>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, loongarch@lists.linux.dev,
-        linux-arch <linux-arch@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>, Guo Ren <guoren@kernel.org>,
-        Xuerui Wang <kernel@xen0n.name>,
-        Jiaxun Yang <jiaxun.yang@flygoat.com>,
-        "open list:MIPS" <linux-mips@vger.kernel.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>,
-        stable <stable@vger.kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-References: <20220714084136.570176-1-chenhuacai@loongson.cn>
- <20220714084136.570176-2-chenhuacai@loongson.cn>
- <CAAhV-H7W8V8XdJXX5FvyvvSCAbeTSgLEKhHLivm89T-Nd59Umw@mail.gmail.com>
- <28f1be2e-ca7c-1c95-535a-2099ebf607f2@physik.fu-berlin.de>
- <CAAhV-H4VEqkeXpwCmZE=VqB-TTtnteAqAxbTbeT+s38QHTGdig@mail.gmail.com>
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-In-Reply-To: <CAAhV-H4VEqkeXpwCmZE=VqB-TTtnteAqAxbTbeT+s38QHTGdig@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 91.19.174.212
+Content-Transfer-Encoding: 8bit
+X-Scanned-By: MIMEDefang 3.1 on 10.11.54.4
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Huacai!
+Background
+==========
 
-On 11/29/22 15:06, Huacai Chen wrote:
-> On Thu, Jul 28, 2022 at 8:53 PM John Paul Adrian Glaubitz
-> <glaubitz@physik.fu-berlin.de> wrote:
->>
->> Hi!
->>
->> On 7/28/22 14:42, Huacai Chen wrote:
->>> Since the SH maintainer hasn't responded, I suppose it is better to
->>> let both LoongArch fix and SH fix go through your asm-generic tree?
->>
->> I could test on actual SuperH hardware if needed. CC'ing Geert who has
->> SH hardware as well.
-> Any updates?
+Detecting IPI *reception* is relatively easy, e.g. using
+trace_irq_handler_{entry,exit} or even just function-trace
+flush_smp_call_function_queue() for SMP calls.  
 
-Apologies. I completely forgot about this. I will test this later this week
-and report back.
+Figuring out their *origin*, is trickier as there is no generic tracepoint tied
+to e.g. smp_call_function():
 
-Adrian
+o AFAIA x86 has no tracepoint tied to sending IPIs, only receiving them
+  (cf. trace_call_function{_single}_entry()).
+o arm/arm64 do have trace_ipi_raise(), which gives us the target cpus but also a
+  mostly useless string (smp_calls will all be "Function call interrupts").
+o Other architectures don't seem to have any IPI-sending related tracepoint.  
 
--- 
-  .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+I believe one reason those tracepoints used by arm/arm64 ended up as they were
+is because these archs used to handle IPIs differently from regular interrupts
+(the IRQ driver would directly invoke an IPI-handling routine), which meant they 
+never showed up in trace_irq_handler_{entry, exit}. The trace_ipi_{entry,exit}
+tracepoints gave a way to trace IPI reception but those have become redundant as
+of: 
+
+      56afcd3dbd19 ("ARM: Allow IPIs to be handled as normal interrupts")
+      d3afc7f12987 ("arm64: Allow IPIs to be handled as normal interrupts")
+
+which gave IPIs a "proper" handler function used through
+generic_handle_domain_irq(), which makes them show up via
+trace_irq_handler_{entry, exit}.
+
+Changing stuff up
+=================
+
+Per the above, it would make sense to reshuffle trace_ipi_raise() and move it
+into generic code. This also came up during Daniel's talk on Osnoise at the CPU
+isolation MC of LPC 2022 [1]. 
+
+Now, to be useful, such a tracepoint needs to export:
+o targeted CPU(s)
+o calling context
+
+The only way to get the calling context with trace_ipi_raise() is to trigger a
+stack dump, e.g. $(trace-cmd -e ipi* -T echo 42).
+
+This is instead introducing a new tracepoint which exports the relevant context
+(callsite, and requested callback for when the callsite isn't helpful), and is
+usable by all architectures as it sits in generic code. 
+
+Another thing worth mentioning is that depending on the callsite, the _RET_IP_
+fed to the tracepoint is not always useful - generic_exec_single() doesn't tell
+you much about the actual callback being sent via IPI, which is why the new
+tracepoint also has a @callback argument.
+
+Patches
+=======
+
+o Patch 1 is included for convenience and will be merged independently. FYI I
+  have libtraceevent patches [2] to improve the 
+  pretty-printing of cpumasks using the new type, which look like:
+  <...>-3322  [021]   560.402583: ipi_send_cpumask:     cpumask=14,17,21 callsite=on_each_cpu_cond_mask+0x40 callback=flush_tlb_func+0x0
+  <...>-187   [010]   562.590584: ipi_send_cpumask:     cpumask=0-23 callsite=on_each_cpu_cond_mask+0x40 callback=do_sync_core+0x0
+
+o Patches 2-6 spread out the tracepoint across relevant sites.
+  Patch 6 ends up sprinkling lots of #include <trace/events/ipi.h> which I'm not
+  the biggest fan of, but is the least horrible solution I've been able to come
+  up with so far.
+  
+o Patch 8 is trying to be smart about tracing the callback associated with the
+  IPI.
+
+This results in having IPI trace events for:
+
+o smp_call_function*()
+o smp_send_reschedule()
+o irq_work_queue*()
+o standalone uses of __smp_call_single_queue()
+
+This is incomplete, just looking at arm64 there's more IPI types that aren't
+covered: 
+
+  IPI_CPU_STOP,
+  IPI_CPU_CRASH_STOP,
+  IPI_TIMER,
+  IPI_WAKEUP,
+
+... But it feels like a good starting point.
+
+Links
+=====
+
+[1]: https://youtu.be/5gT57y4OzBM?t=14234
+[2]: https://lore.kernel.org/all/20221116144154.3662923-1-vschneid@redhat.com/
+
+Revisions
+=========
+
+v2 -> v3
+++++++++
+
+o Dropped the generic export of smp_send_reschedule(), turned it into a macro
+  and a bunch of imports
+o Dropped the send_call_function_single_ipi() macro madness, split it into sched
+  and smp bits using some of Peter's suggestions
+
+v1 -> v2
+++++++++
+
+o Ditched single-CPU tracepoint
+o Changed tracepoint signature to include callback
+o Changed tracepoint callsite field to void *; the parameter is still UL to save
+  up on casts due to using _RET_IP_.
+o Fixed linking failures due to not exporting smp_send_reschedule()
+
+Steven Rostedt (Google) (1):
+  tracing: Add __cpumask to denote a trace event field that is a
+    cpumask_t
+
+Valentin Schneider (7):
+  trace: Add trace_ipi_send_cpumask()
+  sched, smp: Trace IPIs sent via send_call_function_single_ipi()
+  smp: Trace IPIs sent via arch_send_call_function_ipi_mask()
+  irq_work: Trace self-IPIs sent via arch_irq_work_raise()
+  treewide: Trace IPIs sent via smp_send_reschedule()
+  smp: reword smp call IPI comment
+  sched, smp: Trace smp callback causing an IPI
+
+ arch/alpha/kernel/smp.c                      |  2 +-
+ arch/arc/kernel/smp.c                        |  2 +-
+ arch/arm/kernel/smp.c                        |  5 +-
+ arch/arm/mach-actions/platsmp.c              |  2 +
+ arch/arm64/kernel/smp.c                      |  3 +-
+ arch/csky/kernel/smp.c                       |  2 +-
+ arch/hexagon/kernel/smp.c                    |  2 +-
+ arch/ia64/kernel/smp.c                       |  4 +-
+ arch/loongarch/include/asm/smp.h             |  2 +-
+ arch/mips/include/asm/smp.h                  |  2 +-
+ arch/mips/kernel/rtlx-cmp.c                  |  2 +
+ arch/openrisc/kernel/smp.c                   |  2 +-
+ arch/parisc/kernel/smp.c                     |  4 +-
+ arch/powerpc/kernel/smp.c                    |  6 +-
+ arch/powerpc/kvm/book3s_hv.c                 |  3 +
+ arch/powerpc/platforms/powernv/subcore.c     |  2 +
+ arch/riscv/kernel/smp.c                      |  4 +-
+ arch/s390/kernel/smp.c                       |  2 +-
+ arch/sh/kernel/smp.c                         |  2 +-
+ arch/sparc/kernel/smp_32.c                   |  2 +-
+ arch/sparc/kernel/smp_64.c                   |  2 +-
+ arch/x86/include/asm/smp.h                   |  2 +-
+ arch/x86/kvm/svm/svm.c                       |  4 +
+ arch/x86/kvm/x86.c                           |  2 +
+ arch/xtensa/kernel/smp.c                     |  2 +-
+ include/linux/smp.h                          |  8 +-
+ include/trace/bpf_probe.h                    |  6 ++
+ include/trace/events/ipi.h                   | 22 ++++++
+ include/trace/perf.h                         |  6 ++
+ include/trace/stages/stage1_struct_define.h  |  6 ++
+ include/trace/stages/stage2_data_offsets.h   |  6 ++
+ include/trace/stages/stage3_trace_output.h   |  6 ++
+ include/trace/stages/stage4_event_fields.h   |  6 ++
+ include/trace/stages/stage5_get_offsets.h    |  6 ++
+ include/trace/stages/stage6_event_callback.h | 20 +++++
+ include/trace/stages/stage7_class_define.h   |  2 +
+ kernel/irq_work.c                            | 14 +++-
+ kernel/sched/core.c                          | 19 +++--
+ kernel/sched/smp.h                           |  2 +-
+ kernel/smp.c                                 | 78 ++++++++++++++++----
+ samples/trace_events/trace-events-sample.c   |  2 +-
+ samples/trace_events/trace-events-sample.h   | 34 +++++++--
+ virt/kvm/kvm_main.c                          |  1 +
+ 43 files changed, 250 insertions(+), 61 deletions(-)
+
+--
+2.31.1
 
