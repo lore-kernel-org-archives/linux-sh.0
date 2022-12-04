@@ -2,86 +2,93 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 163DDC352A1
-	for <linux-sh@archiver.kernel.org>; Sat,  3 Dec 2022 05:03:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D46A2C47089
+	for <linux-sh@archiver.kernel.org>; Sun,  4 Dec 2022 01:33:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229522AbiLCFDF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 3 Dec 2022 00:03:05 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36786 "EHLO
+        id S229915AbiLDBdL (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 3 Dec 2022 20:33:11 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35732 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229458AbiLCFDD (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 3 Dec 2022 00:03:03 -0500
-Received: from mail-oa1-x2e.google.com (mail-oa1-x2e.google.com [IPv6:2001:4860:4864:20::2e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5156464C2
-        for <linux-sh@vger.kernel.org>; Fri,  2 Dec 2022 21:03:00 -0800 (PST)
-Received: by mail-oa1-x2e.google.com with SMTP id 586e51a60fabf-1445ca00781so1151705fac.1
-        for <linux-sh@vger.kernel.org>; Fri, 02 Dec 2022 21:03:00 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20210112.gappssmtp.com; s=20210112;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=f1Nn0IejF+JMb672bi1DP/LFYsZ9JfhwHbgCMkdibGs=;
-        b=A1pDE2FiJh8vVgfncLPd3brOpWbsojBB+ItRkg+yJ12Zs2GmUw8AhZsu0CfVL59kWl
-         6L0YSHDeRLG7pC899cWYeg3ZekVLUX7JAvk6ClL05eTwF0wwR2JEgHMVtkjn9jn500H9
-         x93liFmY2ZGq7GirK/A4A/U9TWvVRCdn8ZH2+F/2rL04KBXS6matWt/LaRLbUsLiMUOz
-         lGfHQjalUXJ05ujK43CiYmDD5IG+N2gKFkTXwgrKoobsCArf3anpgLiiV6G6IZSEraUC
-         d58hNApWFkONw0StGNVZgEnV8AEWZg8a8LjmQNuEHnfjL4ohxs0ghTVS6DSURBG8fQMh
-         27RQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=f1Nn0IejF+JMb672bi1DP/LFYsZ9JfhwHbgCMkdibGs=;
-        b=TPnNUIQZV37m9i8t9N9enPNxd3+TqI81Q1G2cBE5w+FpT5gzTYr6iClpwv/xHTgLsR
-         mAiXrDU05T5PHQyrOC27GdZ1dwng8v7gDYght18V8Ul10cY0DNB4xOv2KVaxDUP4a4I5
-         CShmMvgFtF/Re5YqhnxLrDS6KmxcI085IcwEtgQg8jV6ZnsnUJVWXeshtjvHUeW1H38M
-         dMBqX63H9rZCn4Xf9e67jTF9Jcbb3hEODfBLvbVPYLbB9s5Roppo2KBnYLzQf1W5nwox
-         dXuDc9H8uDBNrH1/74BpdbUpzw036xJkHbtMa4NyuU4bhszoShSC4/bD8Lb3QQuIZVJp
-         4Jsw==
-X-Gm-Message-State: ANoB5pn7gg8zRr1u361/Wu7/Urhp7m0nHOnlDyEDzlGu+VIoTYNzoiXb
-        jnyHrXsh9SEv5IuLVkMO0yCNWciIX/vaNX3m
-X-Google-Smtp-Source: AA0mqf4WGS3bqhkJlb7VKuH56N1Cq5RlurjOnCOQ3uIlNzzKiGHvUlLk2KU0em3Yfk8ah0eiWAU6Vw==
-X-Received: by 2002:a05:6870:5892:b0:132:545b:e4e2 with SMTP id be18-20020a056870589200b00132545be4e2mr31892197oab.9.1670043779714;
-        Fri, 02 Dec 2022 21:02:59 -0800 (PST)
-Received: from [192.168.86.220] ([136.62.38.22])
-        by smtp.gmail.com with ESMTPSA id o126-20020aca4184000000b003544822f725sm3973331oia.8.2022.12.02.21.02.58
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 02 Dec 2022 21:02:59 -0800 (PST)
-Message-ID: <2db1f326-3a3e-a311-a434-d06e9710288c@landley.net>
-Date:   Fri, 2 Dec 2022 23:13:48 -0600
+        with ESMTP id S229977AbiLDBct (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 3 Dec 2022 20:32:49 -0500
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5175B1A210
+        for <linux-sh@vger.kernel.org>; Sat,  3 Dec 2022 17:31:46 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1670117505;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=ueAglvJtCjt6234pC1YgPM7y4iC/0ZyTKdRHiIvyVAM=;
+        b=iJ1EaHFKS0+NELGQsk7h2GxTW13d1MHFzcHiJfeBvteHW3L0U/Jg2TLyiP40xvWBO4jTm4
+        PeNyxgONoCNxl6TzROtU3Vd+GN3B/1eW5FtFG5V46vMRapiK3F9cuvlmk2kbKZhlHmnt/P
+        0LmYU5Yy0O5BNOEagrJCt+1ahjccsrM=
+Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
+ [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-628-jhdNYiZBN8SKwnEUewJfCQ-1; Sat, 03 Dec 2022 20:31:40 -0500
+X-MC-Unique: jhdNYiZBN8SKwnEUewJfCQ-1
+Received: from smtp.corp.redhat.com (int-mx07.intmail.prod.int.rdu2.redhat.com [10.11.54.7])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 6D087185A792;
+        Sun,  4 Dec 2022 01:31:39 +0000 (UTC)
+Received: from MiWiFi-R3L-srv.redhat.com (ovpn-12-31.pek2.redhat.com [10.72.12.31])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id 105C81410DDA;
+        Sun,  4 Dec 2022 01:31:32 +0000 (UTC)
+From:   Baoquan He <bhe@redhat.com>
+To:     linux-kernel@vger.kernel.org
+Cc:     linux-mm@kvack.org, stephen.s.brennan@oracle.com, urezki@gmail.com,
+        willy@infradead.org, akpm@linux-foundation.org, hch@infradead.org,
+        Baoquan He <bhe@redhat.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        linux-sh@vger.kernel.org
+Subject: [PATCH v1 7/7] sh: mm: set VM_IOREMAP flag to the vmalloc area
+Date:   Sun,  4 Dec 2022 09:30:46 +0800
+Message-Id: <20221204013046.154960-8-bhe@redhat.com>
+In-Reply-To: <20221204013046.154960-1-bhe@redhat.com>
+References: <20221204013046.154960-1-bhe@redhat.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.4.0
-Subject: Re: [PATCH] sh/intc: Add missing list_del(&d->list) in
- register_intc_controller
-Content-Language: en-US
-To:     Gaosheng Cui <cuigaosheng1@huawei.com>, ysato@users.sourceforge.jp,
-        dalias@libc.org, lethal@linux-sh.org, damm@igel.co.jp
-Cc:     linux-sh@vger.kernel.org
-References: <20221125011725.3287607-1-cuigaosheng1@huawei.com>
-From:   Rob Landley <rob@landley.net>
-In-Reply-To: <20221125011725.3287607-1-cuigaosheng1@huawei.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-type: text/plain
+Content-Transfer-Encoding: 8bit
+X-Scanned-By: MIMEDefang 3.1 on 10.11.54.7
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 11/24/22 19:17, Gaosheng Cui wrote:
-> The list_del(&d->list) should be called in the error handling in
-> register_intc_controller(), otherwise, d will be freed, but d->list
-> will not be removed from &intc_list, list traversal may cause UAF.
-...
-> Fix it by adding missing list_del(&d->list) in register_intc_controller.
-> 
-> Fixes: 2dcec7a988a1 ("sh: intc: set_irq_wake() support")
-> Signed-off-by: Gaosheng Cui <cuigaosheng1@huawei.com>
+Currently, for vmalloc areas with flag VM_IOREMAP set, except of the
+specific alignment clamping in __get_vm_area_node(), they will be
+1) Shown as ioremap in /proc/vmallocinfo;
+2) Ignored by /proc/kcore reading via vread()
 
-Acked-by: Rob Landley <rob@landley.net>
+So for the ioremap in __sq_remap() of sh, we should set VM_IOREMAP
+in flag to make it handled correctly as above.
 
-Looks right but I haven't got an obvious way to test this. (Do you have a test
-case that triggers the error path?)
+Signed-off-by: Baoquan He <bhe@redhat.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: linux-sh@vger.kernel.org (open list:SUPERH)
+---
+ arch/sh/kernel/cpu/sh4/sq.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Rob
+diff --git a/arch/sh/kernel/cpu/sh4/sq.c b/arch/sh/kernel/cpu/sh4/sq.c
+index a76b94e41e91..27f2e3da5aa2 100644
+--- a/arch/sh/kernel/cpu/sh4/sq.c
++++ b/arch/sh/kernel/cpu/sh4/sq.c
+@@ -103,7 +103,7 @@ static int __sq_remap(struct sq_mapping *map, pgprot_t prot)
+ #if defined(CONFIG_MMU)
+ 	struct vm_struct *vma;
+ 
+-	vma = __get_vm_area_caller(map->size, VM_ALLOC, map->sq_addr,
++	vma = __get_vm_area_caller(map->size, VM_IOREMAP, map->sq_addr,
+ 			SQ_ADDRMAX, __builtin_return_address(0));
+ 	if (!vma)
+ 		return -ENOMEM;
+-- 
+2.34.1
+
