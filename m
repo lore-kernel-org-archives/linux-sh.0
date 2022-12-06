@@ -2,132 +2,246 @@ Return-Path: <linux-sh-owner@kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2FD89C4708C
-	for <linux-sh@archiver.kernel.org>; Mon,  5 Dec 2022 12:25:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D44F3C4708C
+	for <linux-sh@archiver.kernel.org>; Tue,  6 Dec 2022 14:48:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230084AbiLEMZ6 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 5 Dec 2022 07:25:58 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60058 "EHLO
+        id S232004AbiLFOs6 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 6 Dec 2022 09:48:58 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45304 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230324AbiLEMZ5 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 5 Dec 2022 07:25:57 -0500
-Received: from esa1.hgst.iphmx.com (esa1.hgst.iphmx.com [68.232.141.245])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5007863C8
-        for <linux-sh@vger.kernel.org>; Mon,  5 Dec 2022 04:25:57 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1670243156; x=1701779156;
-  h=message-id:date:mime-version:subject:to:cc:references:
-   from:in-reply-to:content-transfer-encoding;
-  bh=neMU4Ok0awO5Rq5skIsVHn5TxIHDupVu3e9O7MCpojQ=;
-  b=pTDUK1wUz7tmxn0Cd/iIQNWCHZzCyHTNl+sepQNL4JrtcOGWg+Qy1/S5
-   oZY8AwetLFlE4G9DE/oyACmxo4tYHU1kZwy+KDIu7nBgOv5jP+L8seF3W
-   RUp3Q8hyAH1GnqMhjh+zy7X85FSyRIB4KnubsjIAYU06bG9p05fuPhczJ
-   9MRdLZF6J4aIsC5lVI7mpCFZvQNk+4Xj1TnS9J4uJqMKaNkrDYQdjMk5G
-   G3YCuv2T9Pery9m/owL3QzOrjp/jElPP3KDGGEoE9GhtwQ8tqGaT3qahZ
-   rMWZxZZl2teVmOXziYtpFQl04JH7kKOVgpPB7rZCM9Mt/BebjzwvkUJfG
-   g==;
-X-IronPort-AV: E=Sophos;i="5.96,219,1665417600"; 
-   d="scan'208";a="330010010"
-Received: from uls-op-cesaip02.wdc.com (HELO uls-op-cesaep02.wdc.com) ([199.255.45.15])
-  by ob1.hgst.iphmx.com with ESMTP; 05 Dec 2022 20:25:56 +0800
-IronPort-SDR: OXIlC9C5+jrJn8xIql7U3yUDq7TTvwlXSnLVBUrVmAF7l3YQIh3e45i/KGFzvd//DRw7VylrUK
- AwNc8S4N/XAoZFBvRBTD6yKsmd+89qJ2Tcqs4PzeOmeoUx1W2pbsXIyHNXz1hkz2bCKI1rqxD0
- rCtsH1Fze+26WzvBCV+bJk/5jfiF6vp4gGiy93G1kGSjx8lhH4+HuyY0+h3KqCXndfu45rv+Bd
- z+fVE+FG+iNRkYUWFGW0lO48gufpQ03izlYAjP/Bg+E2bmdFkAP4lGbDWlwFNj5PawlRpvBJzt
- pJo=
-Received: from uls-op-cesaip02.wdc.com ([10.248.3.37])
-  by uls-op-cesaep02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 05 Dec 2022 03:38:45 -0800
-IronPort-SDR: y5Qlqnns+gDCkqTvN4taaHBfr1Xy/RfdhO6Lztu+27RTjVCVRXVsDtjqb1ZFyzd3/ZVP7gBmwl
- 3ypzGjQYaUE1GvR1+cov3wV66gBko0NUNGndDQu0k0oVl7YHMrXmOzzW5Gf75U069KrLRqHZlD
- tH2kYKlq5Unh1RUxb6fO0idBXQlTBevnvcFdfZohCTmkuPw2flym4Z1FTQhOaPWBCnEwi5lCxV
- p8Mxj7iIsiMXChQq1Zkqtf05pcA2WuhE/Spx38EiRZxlK526Z0Onmk0o9PaGZbLZFN6lLpcJCE
- ho4=
-WDCIronportException: Internal
-Received: from usg-ed-osssrv.wdc.com ([10.3.10.180])
-  by uls-op-cesaip02.wdc.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 05 Dec 2022 04:25:56 -0800
-Received: from usg-ed-osssrv.wdc.com (usg-ed-osssrv.wdc.com [127.0.0.1])
-        by usg-ed-osssrv.wdc.com (Postfix) with ESMTP id 4NQjSg0YtMz1RvTr
-        for <linux-sh@vger.kernel.org>; Mon,  5 Dec 2022 04:25:55 -0800 (PST)
-Authentication-Results: usg-ed-osssrv.wdc.com (amavisd-new); dkim=pass
-        reason="pass (just generated, assumed good)"
-        header.d=opensource.wdc.com
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=
-        opensource.wdc.com; h=content-transfer-encoding:content-type
-        :in-reply-to:organization:from:content-language:references:to
-        :subject:user-agent:mime-version:date:message-id; s=dkim; t=
-        1670243154; x=1672835155; bh=neMU4Ok0awO5Rq5skIsVHn5TxIHDupVu3e9
-        O7MCpojQ=; b=gTyQiIEtSVqvwVxAB8CGYS4bn2kbh+onxccWNV2pvnEJ+s1MACa
-        HasKpuudsHW2I0jpWQdI60uCpE7syCOp5DmV8WeF6T6GDyzSPOBIxbLb7JDtpHL5
-        z5WMuG/3pXadnoyPHiZTHDyRqi/tbpww8Sg/bIzhlqIcBH2f6rEuO69h9qEgK0Il
-        YwwhRbfChGSHLra69SncbFAS7Oz90ikKUlvaT+EUgBl6anL+lhhs3zTcrxrzs8j8
-        bdXdPtuE1b0NNsUMqYgYuSIBtAeQCvvpiy0EXzJwyjPKIe9SCPH9nwmayNXQzf2K
-        BYgRH3gvTis3DJ01W8qmCcKom9ZOBBUx1mw==
-X-Virus-Scanned: amavisd-new at usg-ed-osssrv.wdc.com
-Received: from usg-ed-osssrv.wdc.com ([127.0.0.1])
-        by usg-ed-osssrv.wdc.com (usg-ed-osssrv.wdc.com [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id letmxBM4uYKr for <linux-sh@vger.kernel.org>;
-        Mon,  5 Dec 2022 04:25:54 -0800 (PST)
-Received: from [10.225.163.74] (unknown [10.225.163.74])
-        by usg-ed-osssrv.wdc.com (Postfix) with ESMTPSA id 4NQjSW6BW3z1RvLy;
-        Mon,  5 Dec 2022 04:25:47 -0800 (PST)
-Message-ID: <e62bc865-3b6f-2790-3dbf-6485cb233c4e@opensource.wdc.com>
-Date:   Mon, 5 Dec 2022 21:25:45 +0900
+        with ESMTP id S235014AbiLFOsx (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 6 Dec 2022 09:48:53 -0500
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 79EFC9597
+        for <linux-sh@vger.kernel.org>; Tue,  6 Dec 2022 06:47:58 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1670338077;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=iUuXMOHVf03Vb0qMF+Y5euIKjDZHBS53BDQPdht/P5M=;
+        b=hgyodJzkIbf3ynguheZ7py0nh5uErQVDJTxAtx4qMPS1L4oiUns+2LnFhzfObcADOSuVFx
+        ObkeBMa/mVKTRNMN/OwRq86d59JWRN0yFXARRfum98bMlWx9f00AHvL8N2NSnykUk6Vw5g
+        ZUWMIPDa8gM0NDNTjNo0/fZdFpWbz7A=
+Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
+ [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-674-uGIT1O_oMIuU4W7hfGEOWg-1; Tue, 06 Dec 2022 09:47:54 -0500
+X-MC-Unique: uGIT1O_oMIuU4W7hfGEOWg-1
+Received: from smtp.corp.redhat.com (int-mx10.intmail.prod.int.rdu2.redhat.com [10.11.54.10])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 322AA811E67;
+        Tue,  6 Dec 2022 14:47:55 +0000 (UTC)
+Received: from t480s.redhat.com (unknown [10.39.193.173])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id 6E89C492B04;
+        Tue,  6 Dec 2022 14:47:33 +0000 (UTC)
+From:   David Hildenbrand <david@redhat.com>
+To:     linux-kernel@vger.kernel.org
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Hugh Dickins <hughd@google.com>,
+        John Hubbard <jhubbard@nvidia.com>,
+        Jason Gunthorpe <jgg@nvidia.com>,
+        Mike Rapoport <rppt@linux.ibm.com>,
+        Yang Shi <shy828301@gmail.com>,
+        Vlastimil Babka <vbabka@suse.cz>,
+        Nadav Amit <namit@vmware.com>,
+        Andrea Arcangeli <aarcange@redhat.com>,
+        Peter Xu <peterx@redhat.com>, linux-mm@kvack.org,
+        x86@kernel.org, linux-alpha@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
+        David Hildenbrand <david@redhat.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+        Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@quicinc.com>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Chris Zankel <chris@zankel.net>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        "David S. Miller" <davem@davemloft.net>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
+        "H. Peter Anvin" <hpa@zytor.com>,
+        Huacai Chen <chenhuacai@kernel.org>,
+        Ingo Molnar <mingo@redhat.com>,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        Johannes Berg <johannes@sipsolutions.net>,
+        Matt Turner <mattst88@gmail.com>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Michal Simek <monstr@monstr.eu>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Richard Henderson <richard.henderson@linaro.org>,
+        Richard Weinberger <richard@nod.at>,
+        Rich Felker <dalias@libc.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Stafford Horne <shorne@gmail.com>,
+        Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Vineet Gupta <vgupta@kernel.org>,
+        WANG Xuerui <kernel@xen0n.name>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+Subject: [PATCH mm-unstable RFC 00/26] mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE on all architectures with swap PTEs
+Date:   Tue,  6 Dec 2022 15:47:04 +0100
+Message-Id: <20221206144730.163732-1-david@redhat.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.5.0
-Subject: Re: [PATCH 12/12] mm, slob: rename CONFIG_SLOB to
- CONFIG_SLOB_DEPRECATED
-To:     Palmer Dabbelt <palmer@dabbelt.com>, vbabka@suse.cz
-Cc:     cl@linux.com, rientjes@google.com, iamjoonsoo.kim@lge.com,
-        penberg@kernel.org, 42.hyeyoo@gmail.com, roman.gushchin@linux.dev,
-        akpm@linux-foundation.org,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        willy@infradead.org, patches@lists.linux.dev, linux-mm@kvack.org,
-        linux-kernel@vger.kernel.org, linux@armlinux.org.uk,
-        aaro.koskinen@iki.fi, jmkrzyszt@gmail.com, tony@atomide.com,
-        jonas@southpole.se, stefan.kristiansson@saunalahti.fi,
-        shorne@gmail.com, ysato@users.sourceforge.jp, dalias@libc.org,
-        Arnd Bergmann <arnd@arndb.de>, josh@joshtriplett.org,
-        Conor Dooley <conor@kernel.org>, christophe.leroy@csgroup.eu,
-        geert@linux-m68k.org, linux-arm-kernel@lists.infradead.org,
-        linux-omap@vger.kernel.org, openrisc@lists.librecores.org,
-        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org
-References: <mhng-b0214281-7ee5-4698-a158-980427a97472@palmer-ri-x1c9a>
-Content-Language: en-US
-From:   Damien Le Moal <damien.lemoal@opensource.wdc.com>
-Organization: Western Digital Research
-In-Reply-To: <mhng-b0214281-7ee5-4698-a158-980427a97472@palmer-ri-x1c9a>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
+X-Scanned-By: MIMEDefang 3.1 on 10.11.54.10
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 12/3/22 02:59, Palmer Dabbelt wrote:
-[...]
->> diff --git a/arch/riscv/configs/nommu_virt_defconfig b/arch/riscv/configs/nommu_virt_defconfig
->> index 1a56eda5ce46..4cf0f297091e 100644
->> --- a/arch/riscv/configs/nommu_virt_defconfig
->> +++ b/arch/riscv/configs/nommu_virt_defconfig
->> @@ -22,7 +22,8 @@ CONFIG_EXPERT=y
->>  # CONFIG_KALLSYMS is not set
->>  # CONFIG_VM_EVENT_COUNTERS is not set
->>  # CONFIG_COMPAT_BRK is not set
->> -CONFIG_SLOB=y
->> +CONFIG_SLUB=y
->> +CONFIG_SLUB_TINY=y
->>  # CONFIG_MMU is not set
->>  CONFIG_SOC_VIRT=y
->>  CONFIG_NONPORTABLE=y
-> 
-> Acked-by: Palmer Dabbelt <palmer@rivosinc.com>
-> 
-> Though I don't have a K210 to test against, maybe Damien still does?
+This is the follow-up on [1]:
+	[PATCH v2 0/8] mm: COW fixes part 3: reliable GUP R/W FOLL_GET of
+	anonymous pages
 
-I did test and it is OK.
+After we implemented __HAVE_ARCH_PTE_SWP_EXCLUSIVE on most prominent
+enterprise architectures, implement __HAVE_ARCH_PTE_SWP_EXCLUSIVE on all
+remaining architectures that support swap PTEs.
+
+This makes sure that exclusive anonymous pages will stay exclusive, even
+after they were swapped out -- for example, making GUP R/W FOLL_GET of
+anonymous pages reliable. Details can be found in [1].
+
+This primarily fixes remaining known O_DIRECT memory corruptions that can
+happen on concurrent swapout, whereby we can lose DMA reads to a page
+(modifying the user page by writing to it).
+
+To verify, there are two test cases (requiring swap space, obviously):
+(1) The O_DIRECT+swapout test case [2] from Andrea. This test case tries
+    triggering a race condition.
+(2) My vmsplice() test case [3] that tries to detect if the exclusive
+    marker was lost during swapout, not relying on a race condition.
+
+
+For example, on 32bit x86 (with and without PAE), my test case fails
+without these patches:
+	$ ./test_swp_exclusive
+	FAIL: page was replaced during COW
+But succeeds with these patches:
+	$ ./test_swp_exclusive 
+	PASS: page was not replaced during COW
+
+
+Why implement __HAVE_ARCH_PTE_SWP_EXCLUSIVE for all architectures, even
+the ones where swap support might be in a questionable state? This is the
+first step towards removing "readable_exclusive" migration entries, and
+instead using pte_swp_exclusive() also with (readable) migration entries
+instead (as suggested by Peter). The only missing piece for that is
+supporting pmd_swp_exclusive() on relevant architectures with THP
+migration support.
+
+As all relevant architectures now implement __HAVE_ARCH_PTE_SWP_EXCLUSIVE,,
+we can drop __HAVE_ARCH_PTE_SWP_EXCLUSIVE in the last patch.
+
+
+RFC because some of the swap PTE layouts are really tricky and I really
+need some feedback related to deciphering these layouts and "using yet
+unused PTE bits in swap PTEs". I tried cross-compiling all relevant setups
+(phew, I might only miss some power/nohash variants), but only tested on
+x86 so far.
+
+CCing arch maintainers only on this cover letter and on the respective
+patch(es).
+
+
+[1] https://lkml.kernel.org/r/20220329164329.208407-1-david@redhat.com
+[2] https://gitlab.com/aarcange/kernel-testcases-for-v5.11/-/blob/main/page_count_do_wp_page-swap.c
+[3] https://gitlab.com/davidhildenbrand/scratchspace/-/blob/main/test_swp_exclusive.c
+
+David Hildenbrand (26):
+  mm/debug_vm_pgtable: more pte_swp_exclusive() sanity checks
+  alpha/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  arc/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  arm/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  csky/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  hexagon/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  ia64/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  loongarch/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  m68k/mm: remove dummy __swp definitions for nommu
+  m68k/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  microblaze/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  mips/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  nios2/mm: refactor swap PTE layout
+  nios2/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  openrisc/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  parisc/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  powerpc/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE on 32bit book3s
+  powerpc/nohash/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  riscv/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  sh/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  sparc/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE on 32bit
+  sparc/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE on 64bit
+  um/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  x86/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE also on 32bit
+  xtensa/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+  mm: remove __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+
+ arch/alpha/include/asm/pgtable.h              | 40 ++++++++-
+ arch/arc/include/asm/pgtable-bits-arcv2.h     | 26 +++++-
+ arch/arm/include/asm/pgtable-2level.h         |  3 +
+ arch/arm/include/asm/pgtable-3level.h         |  3 +
+ arch/arm/include/asm/pgtable.h                | 34 ++++++--
+ arch/arm64/include/asm/pgtable.h              |  1 -
+ arch/csky/abiv1/inc/abi/pgtable-bits.h        | 13 ++-
+ arch/csky/abiv2/inc/abi/pgtable-bits.h        | 19 ++--
+ arch/csky/include/asm/pgtable.h               | 17 ++++
+ arch/hexagon/include/asm/pgtable.h            | 36 ++++++--
+ arch/ia64/include/asm/pgtable.h               | 31 ++++++-
+ arch/loongarch/include/asm/pgtable-bits.h     |  4 +
+ arch/loongarch/include/asm/pgtable.h          | 38 +++++++-
+ arch/m68k/include/asm/mcf_pgtable.h           | 35 +++++++-
+ arch/m68k/include/asm/motorola_pgtable.h      | 37 +++++++-
+ arch/m68k/include/asm/pgtable_no.h            |  6 --
+ arch/m68k/include/asm/sun3_pgtable.h          | 38 +++++++-
+ arch/microblaze/include/asm/pgtable.h         | 44 +++++++---
+ arch/mips/include/asm/pgtable-32.h            | 86 ++++++++++++++++---
+ arch/mips/include/asm/pgtable-64.h            | 23 ++++-
+ arch/mips/include/asm/pgtable.h               | 35 ++++++++
+ arch/nios2/include/asm/pgtable-bits.h         |  3 +
+ arch/nios2/include/asm/pgtable.h              | 37 ++++++--
+ arch/openrisc/include/asm/pgtable.h           | 40 +++++++--
+ arch/parisc/include/asm/pgtable.h             | 40 ++++++++-
+ arch/powerpc/include/asm/book3s/32/pgtable.h  | 37 ++++++--
+ arch/powerpc/include/asm/book3s/64/pgtable.h  |  1 -
+ arch/powerpc/include/asm/nohash/32/pgtable.h  | 22 +++--
+ arch/powerpc/include/asm/nohash/32/pte-40x.h  |  6 +-
+ arch/powerpc/include/asm/nohash/32/pte-44x.h  | 18 +---
+ arch/powerpc/include/asm/nohash/32/pte-85xx.h |  4 +-
+ arch/powerpc/include/asm/nohash/64/pgtable.h  | 24 +++++-
+ arch/powerpc/include/asm/nohash/pgtable.h     | 15 ++++
+ arch/powerpc/include/asm/nohash/pte-e500.h    |  1 -
+ arch/riscv/include/asm/pgtable-bits.h         |  3 +
+ arch/riscv/include/asm/pgtable.h              | 28 ++++--
+ arch/s390/include/asm/pgtable.h               |  1 -
+ arch/sh/include/asm/pgtable_32.h              | 53 +++++++++---
+ arch/sparc/include/asm/pgtable_32.h           | 26 +++++-
+ arch/sparc/include/asm/pgtable_64.h           | 37 +++++++-
+ arch/sparc/include/asm/pgtsrmmu.h             | 14 +--
+ arch/um/include/asm/pgtable.h                 | 36 +++++++-
+ arch/x86/include/asm/pgtable-2level.h         | 26 ++++--
+ arch/x86/include/asm/pgtable-3level.h         | 26 +++++-
+ arch/x86/include/asm/pgtable.h                |  3 -
+ arch/xtensa/include/asm/pgtable.h             | 31 +++++--
+ include/linux/pgtable.h                       | 29 -------
+ mm/debug_vm_pgtable.c                         | 25 +++++-
+ mm/memory.c                                   |  4 -
+ mm/rmap.c                                     | 11 ---
+ 50 files changed, 943 insertions(+), 227 deletions(-)
 
 -- 
-Damien Le Moal
-Western Digital Research
+2.38.1
 
