@@ -2,183 +2,189 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A5FA9C4167B
-	for <linux-sh@archiver.kernel.org>; Thu, 22 Dec 2022 10:03:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB0DBC001B2
+	for <linux-sh@archiver.kernel.org>; Thu, 22 Dec 2022 11:47:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235227AbiLVKDD (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 22 Dec 2022 05:03:03 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57426 "EHLO
+        id S235527AbiLVLr3 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 22 Dec 2022 06:47:29 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47314 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235142AbiLVKDB (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 22 Dec 2022 05:03:01 -0500
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 02D0724083
-        for <linux-sh@vger.kernel.org>; Thu, 22 Dec 2022 02:02:14 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1671703334;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=o6jO/LCV2IF2UxvEuH5GPFWr6SJ3JZsJjPnFQmLY128=;
-        b=VPSAzvZsd0VOW0Pl30eVauKyaeyjrHeZyCKLjc73aCE0sDFNugWd332Tf8Gnf2vM6ktSsq
-        o4AXqF1IvloyT4WAPqILWIDn4nvNCDVbbf9ElBuTPa5ti0AU/YRO/UojBqvS08s5Y6pfM8
-        3mkvIzE4KULEPGaldccqosp5ef/3JS4=
-Received: from mail-qk1-f197.google.com (mail-qk1-f197.google.com
- [209.85.222.197]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_128_GCM_SHA256) id
- us-mta-221-FG-_xJbYOfiWM1fRJ8a9dA-1; Thu, 22 Dec 2022 05:02:11 -0500
-X-MC-Unique: FG-_xJbYOfiWM1fRJ8a9dA-1
-Received: by mail-qk1-f197.google.com with SMTP id r6-20020a05620a298600b007025c3760d4so925720qkp.1
-        for <linux-sh@vger.kernel.org>; Thu, 22 Dec 2022 02:02:11 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=content-transfer-encoding:mime-version:user-agent:references
-         :in-reply-to:date:cc:to:from:subject:message-id:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=o6jO/LCV2IF2UxvEuH5GPFWr6SJ3JZsJjPnFQmLY128=;
-        b=QduAW+LNq0toLBtCQQU1fuUYXWCBSEK25UKJqPqIujPDsGMUz25q8+oWJrwO/o4pnM
-         SKUlRdzFlKCgEc5rAcDjaeHWbqK0Smr7SdLRto/TA1f1eOXm9tKDe4iPSdAwq0ro4mPO
-         bl/ro65yUhZvBzTWP9JsQ7CO/uptoGFxUE6j7G6R1WqosMjz+XWan7n/BT3zQ9odIGFU
-         Kv+OXRzvoP0hIwobtuy8WHvxL9AR0QLMPKS06IcN5PF+8zKR50mrn9NGZrzM09PsWy7P
-         2IZ3/PLPZ6KLbMhSmcm7PEMJ5q4ljAHDnkSEDJQm+bBZldZMUpMfDmlTMJFsw/MJ0GMf
-         Xr+w==
-X-Gm-Message-State: AFqh2krr6GlO/yOCKncy622Gcm6J9KJJ/+OJWLXMXPwvYe6DDSmmvkes
-        ELjAknzgpwofi8sx2Bb4Ul2eM8tYrw4jOKb6c1Psh8Isabedom6N2kTJzWX1y46X9WxNmNPfGKa
-        5gH16LS6RETsWJGM+0Tg=
-X-Received: by 2002:a0c:c508:0:b0:4e5:a127:382f with SMTP id x8-20020a0cc508000000b004e5a127382fmr6466228qvi.48.1671703331047;
-        Thu, 22 Dec 2022 02:02:11 -0800 (PST)
-X-Google-Smtp-Source: AMrXdXtZnBvcAi4VqZ0nAfseRa5ZZncJObkgh59kN1yODkWBS5WICo+kLsdO+KK5pqcbrrZqdW1DHQ==
-X-Received: by 2002:a0c:c508:0:b0:4e5:a127:382f with SMTP id x8-20020a0cc508000000b004e5a127382fmr6466171qvi.48.1671703330733;
-        Thu, 22 Dec 2022 02:02:10 -0800 (PST)
-Received: from gerbillo.redhat.com (146-241-101-173.dyn.eolo.it. [146.241.101.173])
-        by smtp.gmail.com with ESMTPSA id f1-20020a05620a408100b006cfc9846594sm4269qko.93.2022.12.22.02.02.03
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 22 Dec 2022 02:02:10 -0800 (PST)
-Message-ID: <8d91ab13f56e88af0f6133130808f9623b3adb2e.camel@redhat.com>
-Subject: Re: [PATCH] treewide: Convert del_timer*() to timer_shutdown*()
-From:   Paolo Abeni <pabeni@redhat.com>
-To:     Steven Rostedt <rostedt@goodmis.org>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        Thomas Gleixner <tglx@linutronix.de>
-Cc:     LKML <linux-kernel@vger.kernel.org>,
-        Stephen Boyd <sboyd@kernel.org>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Anna-Maria Gleixner <anna-maria@linutronix.de>,
+        with ESMTP id S229548AbiLVLr0 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 22 Dec 2022 06:47:26 -0500
+Received: from mga04.intel.com (mga04.intel.com [192.55.52.120])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BBEB318E1D;
+        Thu, 22 Dec 2022 03:47:25 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1671709645; x=1703245645;
+  h=from:to:cc:subject:date:message-id:mime-version:
+   content-transfer-encoding;
+  bh=jJG0WtbR+rCKPAOFXgAECJpdIQA2qxIhAt/9hS9GHCs=;
+  b=RrpQORyS/I890Lp0DquOSsvUNL1GKaH1JDdSTSfNsl2C1m725bEPTtYd
+   2gbPUxW6rcwn6XEFWvFWW5Vljmnv1bqmkMYjA4O1Eazo+91b0tyAReZoq
+   Jzo9fDbWXUBuHRqYWWEneTPW4GW4TJMhW2VBV3vKMnfdYzztJJhFGaebP
+   UtUHILqYAS2Hk6ZAaJRPkBPIP4yZZSmNg5AkBl8Kq7mP68UO8EySb/Iqo
+   Muq2mYslgd589BVFyOqvIZZvBwi2BYR9zQZt0q9fDUAzlVtw/MY9lAf+u
+   NeVGoPH4Y/CKHh41k1phIEUbHFYielmoedk8nF9P9Tc2KOONHmYWfyAya
+   Q==;
+X-IronPort-AV: E=McAfee;i="6500,9779,10568"; a="318804416"
+X-IronPort-AV: E=Sophos;i="5.96,265,1665471600"; 
+   d="scan'208";a="318804416"
+Received: from orsmga006.jf.intel.com ([10.7.209.51])
+  by fmsmga104.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 22 Dec 2022 03:47:24 -0800
+X-IronPort-AV: E=McAfee;i="6500,9779,10568"; a="629504298"
+X-IronPort-AV: E=Sophos;i="5.96,265,1665471600"; 
+   d="scan'208";a="629504298"
+Received: from lab-ah.igk.intel.com ([10.91.215.196])
+  by orsmga006-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 22 Dec 2022 03:47:18 -0800
+From:   Andrzej Hajda <andrzej.hajda@intel.com>
+To:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org, intel-gfx@lists.freedesktop.org,
+        dri-devel@lists.freedesktop.org
+Cc:     Andrzej Hajda <andrzej.hajda@intel.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Rodrigo Vivi <rodrigo.vivi@intel.com>,
         Andrew Morton <akpm@linux-foundation.org>,
-        Julia Lawall <Julia.Lawall@inria.fr>, linux-sh@vger.kernel.org,
-        cgroups@vger.kernel.org, linux-block@vger.kernel.org,
-        linux-acpi@vger.kernel.org,
-        linux-atm-general@lists.sourceforge.net, netdev@vger.kernel.org,
-        drbd-dev@lists.linbit.com, linux-bluetooth@vger.kernel.org,
-        intel-gfx@lists.freedesktop.org, dri-devel@lists.freedesktop.org,
-        linux-input@vger.kernel.org, linux-leds@vger.kernel.org,
-        linux-media@vger.kernel.org, intel-wired-lan@lists.osuosl.org,
-        linux-usb@vger.kernel.org, linux-wireless@vger.kernel.org,
-        brcm80211-dev-list.pdl@broadcom.com,
-        SHA-cyfmac-dev-list@infineon.com, linux-scsi@vger.kernel.org,
-        linux-staging@lists.linux.dev, linux-ext4@vger.kernel.org,
-        linux-nilfs@vger.kernel.org, bridge@lists.linux-foundation.org,
-        netfilter-devel@vger.kernel.org, coreteam@netfilter.org,
-        lvs-devel@vger.kernel.org, linux-nfs@vger.kernel.org,
-        tipc-discussion@lists.sourceforge.net, alsa-devel@alsa-project.org
-Date:   Thu, 22 Dec 2022 11:02:01 +0100
-In-Reply-To: <20221220134519.3dd1318b@gandalf.local.home>
-References: <20221220134519.3dd1318b@gandalf.local.home>
-User-Agent: Evolution 3.42.4 (3.42.4-2.fc35)
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Boqun Feng <boqun.feng@gmail.com>,
+        Mark Rutland <mark.rutland@arm.com>
+Subject: [PATCH 00/19] Introduce __xchg, non-atomic xchg
+Date:   Thu, 22 Dec 2022 12:46:16 +0100
+Message-Id: <20221222114635.1251934-1-andrzej.hajda@intel.com>
+X-Mailer: git-send-email 2.34.1
 MIME-Version: 1.0
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: redhat.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 7bit
+Organization: Intel Technology Poland sp. z o.o. - ul. Slowackiego 173, 80-298 Gdansk - KRS 101882 - NIP 957-07-52-316
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, 2022-12-20 at 13:45 -0500, Steven Rostedt wrote:
-> [
->   Linus,
-> 
->     I ran the script against your latest master branch:
->     commit b6bb9676f2165d518b35ba3bea5f1fcfc0d969bf
-> 
->     As the timer_shutdown*() code is now in your tree, I figured
->     we can start doing the conversions. At least add the trivial ones
->     now as Thomas suggested that this gets applied at the end of the
->     merge window, to avoid conflicts with linux-next during the
->     development cycle. I can wait to Friday to run it again, and
->     resubmit.
-> 
->     What is the best way to handle this?
-> ]
-> 
-> From: "Steven Rostedt (Google)" <rostedt@goodmis.org>
-> 
-> Due to several bugs caused by timers being re-armed after they are
-> shutdown and just before they are freed, a new state of timers was added
-> called "shutdown". After a timer is set to this state, then it can no
-> longer be re-armed.
-> 
-> The following script was run to find all the trivial locations where
-> del_timer() or del_timer_sync() is called in the same function that the
-> object holding the timer is freed. It also ignores any locations where the
-> timer->function is modified between the del_timer*() and the free(), as
-> that is not considered a "trivial" case.
-> 
-> This was created by using a coccinelle script and the following commands:
-> 
->  $ cat timer.cocci
-> @@
-> expression ptr, slab;
-> identifier timer, rfield;
-> @@
-> (
-> -       del_timer(&ptr->timer);
-> +       timer_shutdown(&ptr->timer);
-> > 
-> -       del_timer_sync(&ptr->timer);
-> +       timer_shutdown_sync(&ptr->timer);
-> )
->   ... when strict
->       when != ptr->timer
-> (
->         kfree_rcu(ptr, rfield);
-> > 
->         kmem_cache_free(slab, ptr);
-> > 
->         kfree(ptr);
-> )
-> 
->  $ spatch timer.cocci . > /tmp/t.patch
->  $ patch -p1 < /tmp/t.patch
-> 
-> Link: https://lore.kernel.org/lkml/20221123201306.823305113@linutronix.de/
-> 
-> Signed-off-by: Steven Rostedt (Google) <rostedt@goodmis.org>
+Hi all,
 
-For the networking bits:
+I hope there will be place for such tiny helper in kernel.
+Quick cocci analyze shows there is probably few thousands places
+where it could be useful.
+I am not sure who is good person to review/ack such patches,
+so I've used my intuition to construct to/cc lists, sorry for mistakes.
+This is the 2nd approach of the same idea, with comments addressed[0].
 
->  drivers/net/ethernet/intel/i40e/i40e_main.c      |  6 +++---
->  drivers/net/ethernet/marvell/sky2.c              |  2 +-
->  drivers/net/ethernet/sun/sunvnet.c               |  2 +-
->  drivers/net/usb/sierra_net.c                     |  2 +-
->  net/802/garp.c                                   |  2 +-
->  net/802/mrp.c                                    |  4 ++--
->  net/bridge/br_multicast.c                        |  8 ++++----
->  net/bridge/br_multicast_eht.c                    |  4 ++--
->  net/core/gen_estimator.c                         |  2 +-
->  net/ipv4/ipmr.c                                  |  2 +-
->  net/ipv6/ip6mr.c                                 |  2 +-
->  net/mac80211/mesh_pathtbl.c                      |  2 +-
->  net/netfilter/ipset/ip_set_list_set.c            |  2 +-
->  net/netfilter/ipvs/ip_vs_lblc.c                  |  2 +-
->  net/netfilter/ipvs/ip_vs_lblcr.c                 |  2 +-
->  net/netfilter/xt_IDLETIMER.c                     |  4 ++--
->  net/netfilter/xt_LED.c                           |  2 +-
->  net/sched/cls_flow.c                             |  2 +-
->  net/sunrpc/svc.c                                 |  2 +-
->  net/tipc/discover.c                              |  2 +-
->  net/tipc/monitor.c                               |  2 +-
+The helper is tiny and there are advices we can leave without it, so
+I want to present few arguments why it would be good to have it:
 
-Acked-by: Paolo Abeni <pabeni@redhat.com>
+1. Code readability/simplification/number of lines:
+
+Real example from drivers/net/ethernet/mellanox/mlx5/core/esw/qos.c:
+-       previous_min_rate = evport->qos.min_rate;
+-       evport->qos.min_rate = min_rate;
++       previous_min_rate = __xchg(evport->qos.min_rate, min_rate);
+
+For sure the code is more compact, and IMHO more readable.
+
+2. Presence of similar helpers in other somehow related languages/libs:
+
+a) Rust[1]: 'replace' from std::mem module, there is also 'take'
+    helper (__xchg(&x, 0)), which is the same as private helper in
+    i915 - fetch_and_zero, see latest patch.
+b) C++ [2]: 'exchange' from utility header.
+
+If the idea is OK there are still 2 qestions to answer:
+
+1. Name of the helper, __xchg follows kernel conventions,
+    but for me Rust names are also OK.
+2. Where to put the helper:
+a) as in this patchset include/linux/non-atomic/xchg.h,
+    proposed by Andy Shevchenko,
+b) include/linux/utils.h ? any better name? Some kind
+    of container for simple helpers.
+
+Structure of the patchset:
+17 patches releasing __xchg name from arch files
+1 patch adding __xchg
+1 patch adding users of __xchg
+
+Arnd thanks for convienient set of cross compilers, it was very helpful.
+
+So many words for so small helper :)
+
+[0]: https://lore.kernel.org/lkml/Y5OFSvaYbv4XCxhE@smile.fi.intel.com/T/
+[1]: https://doc.rust-lang.org/std/mem/index.html
+[2]: https://en.cppreference.com/w/cpp/header/utility
+
+Regards
+Andrzej
+
+Andrzej Hajda (19):
+  arch/alpha: rename internal name __xchg to __arch_xchg
+  arch/arc: rename internal name __xchg to __arch_xchg
+  arch/arm: rename internal name __xchg to __arch_xchg
+  arch/arm64: rename internal name __xchg to __arch_xchg
+  arch/hexagon: rename internal name __xchg to __arch_xchg
+  arch/ia64: rename internal name __xchg to __arch_xchg
+  arch/loongarch: rename internal name __xchg to __arch_xchg
+  arch/m68k: rename internal name __xchg to __arch_xchg
+  arch/mips: rename internal name __xchg to __arch_xchg
+  arch/openrisc: rename internal name __xchg to __arch_xchg
+  arch/parisc: rename internal name __xchg to __arch_xchg
+  arch/powerpc: correct logged function names in xchg helpers
+  arch/riscv: rename internal name __xchg to __arch_xchg
+  arch/s390: rename internal name __xchg to __arch_xchg
+  arch/sh: rename internal name __xchg to __arch_xchg
+  arch/sparc: rename internal name __xchg to __arch_xchg
+  arch/xtensa: rename internal name __xchg to __arch_xchg
+  linux/include: add non-atomic version of xchg
+  drm/i915/gt: use __xchg instead of internal helper
+
+ arch/alpha/include/asm/cmpxchg.h              |  6 +++---
+ arch/arc/include/asm/cmpxchg.h                |  4 ++--
+ arch/arm/include/asm/cmpxchg.h                |  4 ++--
+ arch/arm64/include/asm/cmpxchg.h              |  4 ++--
+ arch/hexagon/include/asm/cmpxchg.h            |  6 +++---
+ arch/ia64/include/asm/cmpxchg.h               |  2 +-
+ arch/ia64/include/uapi/asm/cmpxchg.h          |  4 ++--
+ arch/loongarch/include/asm/cmpxchg.h          |  4 ++--
+ arch/m68k/include/asm/cmpxchg.h               |  6 +++---
+ arch/mips/include/asm/cmpxchg.h               |  4 ++--
+ arch/openrisc/include/asm/cmpxchg.h           |  4 ++--
+ arch/parisc/include/asm/cmpxchg.h             |  4 ++--
+ arch/powerpc/include/asm/cmpxchg.h            |  4 ++--
+ arch/riscv/include/asm/atomic.h               |  2 +-
+ arch/riscv/include/asm/cmpxchg.h              |  4 ++--
+ arch/s390/include/asm/cmpxchg.h               |  4 ++--
+ arch/sh/include/asm/cmpxchg.h                 |  4 ++--
+ arch/sparc/include/asm/cmpxchg_32.h           |  4 ++--
+ arch/sparc/include/asm/cmpxchg_64.h           |  4 ++--
+ arch/xtensa/include/asm/cmpxchg.h             |  4 ++--
+ drivers/gpu/drm/i915/gt/intel_engine_cs.c     |  2 +-
+ .../gpu/drm/i915/gt/intel_engine_heartbeat.c  |  4 ++--
+ .../drm/i915/gt/intel_execlists_submission.c  |  4 ++--
+ drivers/gpu/drm/i915/gt/intel_ggtt.c          |  4 ++--
+ drivers/gpu/drm/i915/gt/intel_gsc.c           |  2 +-
+ drivers/gpu/drm/i915/gt/intel_gt.c            |  4 ++--
+ drivers/gpu/drm/i915/gt/intel_gt_pm.c         |  2 +-
+ drivers/gpu/drm/i915/gt/intel_lrc.c           |  6 +++---
+ drivers/gpu/drm/i915/gt/intel_migrate.c       |  2 +-
+ drivers/gpu/drm/i915/gt/intel_rc6.c           |  2 +-
+ drivers/gpu/drm/i915/gt/intel_rps.c           |  2 +-
+ drivers/gpu/drm/i915/gt/selftest_context.c    |  2 +-
+ .../drm/i915/gt/selftest_ring_submission.c    |  2 +-
+ drivers/gpu/drm/i915/gt/selftest_timeline.c   |  2 +-
+ drivers/gpu/drm/i915/gt/uc/intel_gsc_uc.c     |  2 +-
+ drivers/gpu/drm/i915/gt/uc/intel_uc.c         |  2 +-
+ drivers/gpu/drm/i915/gt/uc/intel_uc_fw.c      |  2 +-
+ drivers/gpu/drm/i915/i915_utils.h             |  1 +
+ include/linux/non-atomic/xchg.h               | 19 +++++++++++++++++++
+ 39 files changed, 84 insertions(+), 64 deletions(-)
+ create mode 100644 include/linux/non-atomic/xchg.h
+
+-- 
+2.34.1
 
