@@ -2,139 +2,82 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 92B15C53210
-	for <linux-sh@archiver.kernel.org>; Fri, 23 Dec 2022 14:23:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 81C4EC4167B
+	for <linux-sh@archiver.kernel.org>; Fri, 23 Dec 2022 15:41:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236387AbiLWOXV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 23 Dec 2022 09:23:21 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56480 "EHLO
+        id S236547AbiLWPlf (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 23 Dec 2022 10:41:35 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53234 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230374AbiLWOXU (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 23 Dec 2022 09:23:20 -0500
-Received: from mga03.intel.com (mga03.intel.com [134.134.136.65])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 54BDB27CF8;
-        Fri, 23 Dec 2022 06:23:19 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1671805399; x=1703341399;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=ELTp1mLG7Y9aCL8aO+3yggqOoksNOYkU+LC/pmwgzyA=;
-  b=h6WHojs6ZpmqWpG2ottoZdl2pYgLLN2M3eW5A5tU9xF/OQlsT/3lk21H
-   c+27dZk3j5L1dN6yN+xTy/Nw2p/XcwLUfb5INN1T1g/0ViZeKJo5dasVa
-   2aM6Qe9tY1i/8kBLtimzGb9etHds0Vj1ICf1c6EWPlU8veg+mh8GlRw1f
-   H1RVwid1/AgXqzvKKGomudHa9NdK5cWPCTVhnP/tSl3PViN1cgTQlPXxG
-   AQqDeqzUnhnC4/YrPK4vlFEzcvUOFF7jMGVaZIH/9U4/Af3L+SOw42Fzh
-   ybnz3reqKRmJRugCywjpmYvBfkXpozGjqKHcppjmrXomjjgBb2U1Jx0jJ
-   g==;
-X-IronPort-AV: E=McAfee;i="6500,9779,10570"; a="322279538"
-X-IronPort-AV: E=Sophos;i="5.96,268,1665471600"; 
-   d="scan'208";a="322279538"
-Received: from fmsmga006.fm.intel.com ([10.253.24.20])
-  by orsmga103.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 23 Dec 2022 06:23:18 -0800
-X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6500,9779,10570"; a="897539227"
-X-IronPort-AV: E=Sophos;i="5.96,268,1665471600"; 
-   d="scan'208";a="897539227"
-Received: from irvmail001.ir.intel.com ([10.43.11.63])
-  by fmsmga006.fm.intel.com with ESMTP; 23 Dec 2022 06:23:13 -0800
-Received: from newjersey.igk.intel.com (newjersey.igk.intel.com [10.102.20.203])
-        by irvmail001.ir.intel.com (8.14.3/8.13.6/MailSET/Hub) with ESMTP id 2BNENBXm013561;
-        Fri, 23 Dec 2022 14:23:11 GMT
-From:   Alexander Lobakin <alexandr.lobakin@intel.com>
-To:     Andrew Morton <akpm@linux-foundation.org>
-Cc:     Alexander Lobakin <alexandr.lobakin@intel.com>,
-        Andrzej Hajda <andrzej.hajda@intel.com>,
-        linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@vger.kernel.org,
-        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org, intel-gfx@lists.freedesktop.org,
-        dri-devel@lists.freedesktop.org, Arnd Bergmann <arnd@arndb.de>,
-        Rodrigo Vivi <rodrigo.vivi@intel.com>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Boqun Feng <boqun.feng@gmail.com>,
-        Mark Rutland <mark.rutland@arm.com>
-Subject: Re: [PATCH 00/19] Introduce __xchg, non-atomic xchg
-Date:   Fri, 23 Dec 2022 15:23:00 +0100
-Message-Id: <20221223142300.1820652-1-alexandr.lobakin@intel.com>
-X-Mailer: git-send-email 2.38.1
-In-Reply-To: <20221222092147.d2bb177c67870884f2e59a9b@linux-foundation.org>
-References: <20221222114635.1251934-1-andrzej.hajda@intel.com> <20221222092147.d2bb177c67870884f2e59a9b@linux-foundation.org>
+        with ESMTP id S236522AbiLWPlV (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 23 Dec 2022 10:41:21 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3314A1148;
+        Fri, 23 Dec 2022 07:41:20 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id A9E326158B;
+        Fri, 23 Dec 2022 15:41:19 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 55F15C433D2;
+        Fri, 23 Dec 2022 15:41:15 +0000 (UTC)
+Date:   Fri, 23 Dec 2022 10:41:13 -0500
+From:   Steven Rostedt <rostedt@goodmis.org>
+To:     Linus Torvalds <torvalds@linux-foundation.org>,
+        Thomas Gleixner <tglx@linutronix.de>
+Cc:     LKML <linux-kernel@vger.kernel.org>,
+        Stephen Boyd <sboyd@kernel.org>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Anna-Maria Gleixner <anna-maria@linutronix.de>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Julia Lawall <Julia.Lawall@inria.fr>, linux-sh@vger.kernel.org,
+        cgroups@vger.kernel.org, linux-block@vger.kernel.org,
+        linux-acpi@vger.kernel.org,
+        linux-atm-general@lists.sourceforge.net, netdev@vger.kernel.org,
+        drbd-dev@lists.linbit.com, linux-bluetooth@vger.kernel.org,
+        intel-gfx@lists.freedesktop.org, dri-devel@lists.freedesktop.org,
+        linux-input@vger.kernel.org, linux-leds@vger.kernel.org,
+        linux-media@vger.kernel.org, intel-wired-lan@lists.osuosl.org,
+        linux-usb@vger.kernel.org, linux-wireless@vger.kernel.org,
+        brcm80211-dev-list.pdl@broadcom.com,
+        SHA-cyfmac-dev-list@infineon.com, linux-scsi@vger.kernel.org,
+        linux-staging@lists.linux.dev, linux-ext4@vger.kernel.org,
+        linux-nilfs@vger.kernel.org, bridge@lists.linux-foundation.org,
+        netfilter-devel@vger.kernel.org, coreteam@netfilter.org,
+        lvs-devel@vger.kernel.org, linux-nfs@vger.kernel.org,
+        tipc-discussion@lists.sourceforge.net, alsa-devel@alsa-project.org
+Subject: Re: [PATCH] treewide: Convert del_timer*() to timer_shutdown*()
+Message-ID: <20221223104113.0bc8d37f@gandalf.local.home>
+In-Reply-To: <20221220134519.3dd1318b@gandalf.local.home>
+References: <20221220134519.3dd1318b@gandalf.local.home>
+X-Mailer: Claws Mail 3.17.8 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
 MIME-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Thu, 22 Dec 2022 09:21:47 -0800
+On Tue, 20 Dec 2022 13:45:19 -0500
+Steven Rostedt <rostedt@goodmis.org> wrote:
 
-> On Thu, 22 Dec 2022 12:46:16 +0100 Andrzej Hajda <andrzej.hajda@intel.com> wrote:
+> [
+>   Linus,
 > 
-> > Hi all,
-> > 
-> > I hope there will be place for such tiny helper in kernel.
-> > Quick cocci analyze shows there is probably few thousands places
-> > where it could be useful.
+>     I ran the script against your latest master branch:
+>     commit b6bb9676f2165d518b35ba3bea5f1fcfc0d969bf
 > 
-> So to clarify, the intent here is a simple readability cleanup for
-> existing open-coded exchange operations.  The intent is *not* to
-> identify existing xchg() sites which are unnecessarily atomic and to
-> optimize them by using the non-atomic version.
+>     As the timer_shutdown*() code is now in your tree, I figured
+>     we can start doing the conversions. At least add the trivial ones
+>     now as Thomas suggested that this gets applied at the end of the
+>     merge window, to avoid conflicts with linux-next during the
+>     development cycle. I can wait to Friday to run it again, and
+>     resubmit.
 > 
-> Have you considered the latter?
-> 
-> > I am not sure who is good person to review/ack such patches,
-> 
-> I can take 'em.
-> 
-> > so I've used my intuition to construct to/cc lists, sorry for mistakes.
-> > This is the 2nd approach of the same idea, with comments addressed[0].
-> > 
-> > The helper is tiny and there are advices we can leave without it, so
-> > I want to present few arguments why it would be good to have it:
-> > 
-> > 1. Code readability/simplification/number of lines:
-> > 
-> > Real example from drivers/net/ethernet/mellanox/mlx5/core/esw/qos.c:
-> > -       previous_min_rate = evport->qos.min_rate;
-> > -       evport->qos.min_rate = min_rate;
-> > +       previous_min_rate = __xchg(evport->qos.min_rate, min_rate);
-> > 
-> > For sure the code is more compact, and IMHO more readable.
-> > 
-> > 2. Presence of similar helpers in other somehow related languages/libs:
-> > 
-> > a) Rust[1]: 'replace' from std::mem module, there is also 'take'
-> >     helper (__xchg(&x, 0)), which is the same as private helper in
-> >     i915 - fetch_and_zero, see latest patch.
-> > b) C++ [2]: 'exchange' from utility header.
-> > 
-> > If the idea is OK there are still 2 qestions to answer:
-> > 
-> > 1. Name of the helper, __xchg follows kernel conventions,
-> >     but for me Rust names are also OK.
-> 
-> I like replace(), or, shockingly, exchange().
-> 
-> But...   Can we simply make swap() return the previous value?
-> 
-> 	previous_min_rate = swap(&evport->qos.min_rate, min_rate);
+>     What is the best way to handle this?
+> ]
 
-Unforunately, swap()'s arguments get passed by names, not as
-pointers, so you can't do
+Note, I just did a git remote update, checked out the latest, re-ran the
+script, and this patch hasn't changed.
 
-	swap(some_ptr, NULL);
-
- -- pretty common pattern for xchg.
-
-Thanks,
-Olek
+-- Steve
