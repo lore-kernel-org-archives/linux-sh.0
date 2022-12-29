@@ -2,117 +2,115 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B6504C4332F
-	for <linux-sh@archiver.kernel.org>; Thu, 29 Dec 2022 07:06:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C5BAC4708E
+	for <linux-sh@archiver.kernel.org>; Thu, 29 Dec 2022 09:38:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230487AbiL2HGo (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 29 Dec 2022 02:06:44 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44356 "EHLO
+        id S233146AbiL2Jiy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 29 Dec 2022 04:38:54 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35754 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229685AbiL2HGn (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 29 Dec 2022 02:06:43 -0500
-Received: from sin.source.kernel.org (sin.source.kernel.org [145.40.73.55])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1F799FFE;
-        Wed, 28 Dec 2022 23:06:42 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by sin.source.kernel.org (Postfix) with ESMTPS id 1C8A5CE13A1;
-        Thu, 29 Dec 2022 07:06:41 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E71FDC433EF;
-        Thu, 29 Dec 2022 07:06:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1672297599;
-        bh=lbIPO6x/hNkeFCdHgErSD5W/VheZVVuEEu7dLtY+Qgs=;
-        h=From:To:Cc:Subject:Date:From;
-        b=NMiBp1Izy2kWzT2ab4F4AwNOqDdRM3qz78qBO6WizMlNguF5UsWLiHjVYe6gcmOO6
-         vscpjGYlH9oIYqLYg2nt/BRNCMc85YbWVjN18m3l7kX7l5XpyncfYevBsylo99ddRn
-         lNliBJ88ujhErm6FUOlsP0Cp/N0vOXW8+NOLqO+7fB7wP+QbfSWxPOhte2CJj1nY1z
-         3mOq1F4JAQP+J/iPQw3O15PcrctTdFYw7D57Iwh+LzX1OK1MI12WI8PgwqJLemGAmS
-         cnvWFVCz9qr/+ai3GAlJXu1taULzwhMn7qkG8zF9Ydgvu6Ez61bTNyAIRz5pOy6W/x
-         HUdwFjijI4lJA==
-From:   Masahiro Yamada <masahiroy@kernel.org>
-To:     linux-kbuild@vger.kernel.org
-Cc:     linux-kernel@vger.kernel.org,
-        Masahiro Yamada <masahiroy@kernel.org>,
-        Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-sh@vger.kernel.org
-Subject: [PATCH] kbuild: clean up stale file removal
-Date:   Thu, 29 Dec 2022 16:06:33 +0900
-Message-Id: <20221229070634.900793-1-masahiroy@kernel.org>
-X-Mailer: git-send-email 2.34.1
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+        with ESMTP id S233114AbiL2Jgt (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 29 Dec 2022 04:36:49 -0500
+Received: from out3-smtp.messagingengine.com (out3-smtp.messagingengine.com [66.111.4.27])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4A73413D41;
+        Thu, 29 Dec 2022 01:32:41 -0800 (PST)
+Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
+        by mailout.nyi.internal (Postfix) with ESMTP id A20595C022E;
+        Thu, 29 Dec 2022 04:32:40 -0500 (EST)
+Received: from imap51 ([10.202.2.101])
+  by compute6.internal (MEProxy); Thu, 29 Dec 2022 04:32:40 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
+        :cc:content-type:date:date:from:from:in-reply-to:in-reply-to
+        :message-id:mime-version:references:reply-to:sender:subject
+        :subject:to:to; s=fm1; t=1672306360; x=1672392760; bh=dQitIKz9Zv
+        Mk4oytHD9JLdnkBzb2SNyrpGTj/IDH57g=; b=V/5Cv1VhfpH5iTFAIPNbee37+7
+        fGRfQGhS2cfvaoU5prjYmzEkJOixzWrHBayYA/LAbI8aGtT5NUL+owTmoaFj3n3B
+        LJoHwRocbJtfuMEyHSx/wyanvvQ13DDzevGclpYyw7qeYNEVViTXINcAj0D9vgsh
+        7pfvXG5yZXolmbAG1xnYy8Ot//4tvH7LNGG1PIQsV13T27gAt8TnwFw1loQa0vbD
+        oPcv9yAU1hrNnDzJ4hHBOxfksO9Tu+rLYKEWw8IH2L2YS5xRATHewhb6Zy3ABb5W
+        Th9HksHzXkv0qeIqDaZbZW8EtN2KMBSeSVjD4popm9MiVXhAr8il3YStrrLA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:cc:content-type:date:date:feedback-id
+        :feedback-id:from:from:in-reply-to:in-reply-to:message-id
+        :mime-version:references:reply-to:sender:subject:subject:to:to
+        :x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
+        fm2; t=1672306360; x=1672392760; bh=dQitIKz9ZvMk4oytHD9JLdnkBzb2
+        SNyrpGTj/IDH57g=; b=iDQJHK36vHwWh1wRKl4E4QER7+DQKeClUsyglmglgxkg
+        EljL62jR2iZg18aei0CuCeH832VH529cwGFTM79QLvISe5DOGQCCaE9a5nVoNcdT
+        vRyncomABgBeJ3SsaAqCusYLubSRqSwkWTAzvRqkgUp7P/uDuSrSC8oJAPjjHwnG
+        Zd0Dd9LmkVGzRX1+/eSzkb96N8eNNz/u/R6Fm30nUUZjYR3EyVzLMio8jHJyXxIj
+        iQzshYRj6uSLjiurv3YD4ZUHN8c2WtRhXRw4+fHy6C13RBukmzzaZvqF15WJiEkO
+        SQyTebTGPXArLBywDKO2H+WZBi9s4A/HPkn50Hzk8Q==
+X-ME-Sender: <xms:t16tY_xTXyOBxZzRlwIxGAjI2ettOKadK7A9iMGmJP2qRljOTcBayg>
+    <xme:t16tY3RGUfHsWbJR8Ja2QCw0SFyKp0uowcI1CysTjogMdtCluR5C8uHqieGWGVAVH
+    SG9ndtEeyJsrl3xTZI>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedrieeggddthecutefuodetggdotefrodftvf
+    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
+    uegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenuc
+    fjughrpefofgggkfgjfhffhffvvefutgesthdtredtreertdenucfhrhhomhepfdetrhhn
+    ugcuuegvrhhgmhgrnhhnfdcuoegrrhhnugesrghrnhgusgdruggvqeenucggtffrrghtth
+    gvrhhnpeffheeugeetiefhgeethfejgfdtuefggeejleehjeeutefhfeeggefhkedtkeet
+    ffenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegrrh
+    hnugesrghrnhgusgdruggv
+X-ME-Proxy: <xmx:t16tY5WPN0eRhQuqkXR1eQBdMOuAo-5nAJJ36hmRXP0lPVn6iv5ojg>
+    <xmx:t16tY5hs5xXyUOxLtmXCD1t9iRdCyPGN1E3t5Pc7uUgssA87nClWZw>
+    <xmx:t16tYxCRfWeK3MQh1NvH9n9BHNHyKE86lXXcTf6N2kZ0kJveeEq2-A>
+    <xmx:uF6tY2yAnrmYZFHKR9Art5c4-CoKhKbO440aSm6r1v3bh4Mq4Q8mmQ>
+Feedback-ID: i56a14606:Fastmail
+Received: by mailuser.nyi.internal (Postfix, from userid 501)
+        id AA077B60086; Thu, 29 Dec 2022 04:32:39 -0500 (EST)
+X-Mailer: MessagingEngine.com Webmail Interface
+User-Agent: Cyrus-JMAP/3.7.0-alpha0-1185-g841157300a-fm-20221208.002-g84115730
+Mime-Version: 1.0
+Message-Id: <78b23407-bdd0-4b1b-bf6e-ecd4c00294ab@app.fastmail.com>
+In-Reply-To: <20221222114635.1251934-3-andrzej.hajda@intel.com>
+References: <20221222114635.1251934-1-andrzej.hajda@intel.com>
+ <20221222114635.1251934-3-andrzej.hajda@intel.com>
+Date:   Thu, 29 Dec 2022 10:32:19 +0100
+From:   "Arnd Bergmann" <arnd@arndb.de>
+To:     "Andrzej Hajda" <andrzej.hajda@intel.com>,
+        linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org, intel-gfx@lists.freedesktop.org,
+        dri-devel@lists.freedesktop.org
+Cc:     "Rodrigo Vivi" <rodrigo.vivi@intel.com>,
+        "Andrew Morton" <akpm@linux-foundation.org>,
+        "Andy Shevchenko" <andriy.shevchenko@linux.intel.com>,
+        "Peter Zijlstra" <peterz@infradead.org>,
+        "Boqun Feng" <boqun.feng@gmail.com>,
+        "Mark Rutland" <mark.rutland@arm.com>
+Subject: Re: [PATCH 02/19] arch/arc: rename internal name __xchg to __arch_xchg
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-More than one year has passed since the copied *.[cS] files were
-removed from arch/*/boot/compressed/.
+On Thu, Dec 22, 2022, at 12:46, Andrzej Hajda wrote:
+> __xchg will be used for non-atomic xchg macro.
+>
+> Signed-off-by: Andrzej Hajda <andrzej.hajda@intel.com>
+> ---
+>  arch/arc/include/asm/cmpxchg.h | 4 ++--
 
-Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
----
+Reviewed-by: Arnd Bergmann <arnd@arndb.de>
 
- arch/sh/boot/compressed/Makefile |  7 -------
- scripts/remove-stale-files       | 24 +-----------------------
- 2 files changed, 1 insertion(+), 30 deletions(-)
+for all the arch/*/include/asm/cmpxchg.h changes.
 
-diff --git a/arch/sh/boot/compressed/Makefile b/arch/sh/boot/compressed/Makefile
-index 591125c42d49..b5e29f99c02c 100644
---- a/arch/sh/boot/compressed/Makefile
-+++ b/arch/sh/boot/compressed/Makefile
-@@ -8,13 +8,6 @@
- OBJECTS := head_32.o misc.o cache.o piggy.o \
-            ashiftrt.o ashldi3.o ashrsi3.o ashlsi3.o lshrsi3.o
- 
--# These were previously generated files. When you are building the kernel
--# with O=, make sure to remove the stale files in the output tree. Otherwise,
--# the build system wrongly compiles the stale ones.
--ifdef building_out_of_srctree
--$(shell rm -f $(addprefix $(obj)/, ashiftrt.S ashldi3.c ashrsi3.S ashlsi3.S lshrsi3.S))
--endif
--
- targets := vmlinux vmlinux.bin vmlinux.bin.gz vmlinux.bin.bz2 \
-            vmlinux.bin.lzma vmlinux.bin.xz vmlinux.bin.lzo $(OBJECTS)
- 
-diff --git a/scripts/remove-stale-files b/scripts/remove-stale-files
-index 64b14aa5aebf..cdbdde89a271 100755
---- a/scripts/remove-stale-files
-+++ b/scripts/remove-stale-files
-@@ -21,31 +21,9 @@ set -e
- # then will be really dead and removed from the code base entirely.
- 
- rm -f arch/powerpc/purgatory/kexec-purgatory.c
--
--# These were previously generated source files. When you are building the kernel
--# with O=, make sure to remove the stale files in the output tree. Otherwise,
--# the build system wrongly compiles the stale ones.
--if [ -n "${building_out_of_srctree}" ]; then
--	for f in fdt_rw.c fdt_ro.c fdt_wip.c fdt.c ashldi3.S bswapsdi2.S font.c lib1funcs.S hyp-stub.S
--	do
--		rm -f arch/arm/boot/compressed/${f}
--	done
--
--	for f in uart-ath79.c ashldi3.c bswapdi.c bswapsi.c
--	do
--		rm -f arch/mips/boot/compressed/${f}
--	done
--
--	for f in firmware.c real2.S
--	do
--		rm -f arch/parisc/boot/compressed/${f}
--	done
--fi
--
- rm -f arch/riscv/purgatory/kexec-purgatory.c
-+rm -f arch/x86/purgatory/kexec-purgatory.c
- 
- rm -f scripts/extract-cert
- 
--rm -f arch/x86/purgatory/kexec-purgatory.c
--
- rm -f scripts/kconfig/[gmnq]conf-cfg
--- 
-2.34.1
+Since these patches are all the same, and they have identical
+subject and description texts, I would suggest combining them
+into a single patch to keep the series more compact.
 
+Having them separate would allow merging the patches through
+the individual architecture maintainer trees, but that in turn
+would mean waiting longer to get it all merged, but in this
+case it seems way easier to go through the asm-generic
+tree.
+
+     Arnd
