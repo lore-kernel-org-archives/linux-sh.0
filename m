@@ -2,82 +2,85 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 571DDC4332F
-	for <linux-sh@archiver.kernel.org>; Sun,  1 Jan 2023 12:24:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9420DC54E76
+	for <linux-sh@archiver.kernel.org>; Mon,  2 Jan 2023 08:38:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229601AbjAAMYe (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 1 Jan 2023 07:24:34 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40978 "EHLO
+        id S231877AbjABIiH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 2 Jan 2023 03:38:07 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51900 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229447AbjAAMYe (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 1 Jan 2023 07:24:34 -0500
-Received: from mail-qt1-f176.google.com (mail-qt1-f176.google.com [209.85.160.176])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9060EB2D;
-        Sun,  1 Jan 2023 04:24:32 -0800 (PST)
-Received: by mail-qt1-f176.google.com with SMTP id j16so20579060qtv.4;
-        Sun, 01 Jan 2023 04:24:32 -0800 (PST)
+        with ESMTP id S231636AbjABIiB (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 2 Jan 2023 03:38:01 -0500
+Received: from mail-qt1-f170.google.com (mail-qt1-f170.google.com [209.85.160.170])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6FD5FDB3;
+        Mon,  2 Jan 2023 00:38:01 -0800 (PST)
+Received: by mail-qt1-f170.google.com with SMTP id bp44so19416724qtb.0;
+        Mon, 02 Jan 2023 00:38:01 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=WU4mZYTUdP8Bxx/sJlJybQ4hqWHwyg4u2SGVhjlH2Cc=;
-        b=wU/CG4TabFTYmmJ1pD8z/qhh49MZPZZO2u1BgiLrq70h2T717iYIVaRV4FlToJC1W+
-         /zI8tdz3FtTzIO6nWZXoP1Kh8VPMV25kwWIJ2k1bwq4QM7SyfxyH/1ixc++PUqLnUm81
-         n3KmU8MuXCIRPKWXeGbbog2EdQX864bUqkqb6zl/U6moeT4iLHbNcZflUBf5KwsIzxjm
-         HkZCUDFvqAg92gmSVSWUisx7DLkg/Dd48kThZcfVIL9oGj0W3pAQJPXBeSdmM6AJ3Gl1
-         bPXtVmNbYJRRkzfxjX1qGP1wG+yfgdjaws4RR72wEyoP8PSz0c1k/EF5EQ66hCKmSuDJ
-         CfHw==
-X-Gm-Message-State: AFqh2kpch8SdU2xc66Z76BvnVi6u6dw+pWmBaxxA/oyeGE0CJ7CYWh38
-        ahlkPPj/4INM5AxJBUGKP0pxgFpeZ9AcMQ==
-X-Google-Smtp-Source: AMrXdXt8+2A2+spLle73KkjUVhNnLC0+ybEtCWAamfYqgp0xlDVpuKlQkHq1hLS4BqaeFfEpIKe9/g==
-X-Received: by 2002:a05:622a:5144:b0:3a5:ad81:8aff with SMTP id ew4-20020a05622a514400b003a5ad818affmr58326519qtb.55.1672575871257;
-        Sun, 01 Jan 2023 04:24:31 -0800 (PST)
-Received: from mail-yb1-f173.google.com (mail-yb1-f173.google.com. [209.85.219.173])
-        by smtp.gmail.com with ESMTPSA id r19-20020ac87953000000b00342f8d4d0basm16095352qtt.43.2023.01.01.04.24.30
+        bh=jo2CI5pKv7C2jtNLeQsFhlozXL/lFYNzin08UvE0x2c=;
+        b=xbgtQV+wPHPwDIM93AuAvm6WX6cGoQ1F4KIkbImS7rbjacPg0vKFBq4dxC58yjG8Mx
+         nIUSNFYwJbl7uPNcHqSDllfZYyOy06mtvncHJc0UuhGQNBQ5JczHS9Df6w48u8eZUzSp
+         TniX6oFCsLk7mSKnIPEkCvDufW/Kl2ChooylfZBACcQhF3dfzfmp7XFudVJ0fgT1AW+w
+         olBLlM2oz9KUSJNOvkpVgkYNYhsRNWl0SRBaEvbOMlm3vNZ6L/+v1VkCVj4yBUy2T8Fm
+         06GLJ8CX/bmFj94jcWysm+KJ7cj4j1WgF9OwIub3Rqxa5Z4WDtNbYXZ7VInQqEDv3x9x
+         AJgA==
+X-Gm-Message-State: AFqh2kq6SDiiBGvB2sRSZkgkOpV7zzeXBk8WjBOEGdI/e7rV1FXYUmKh
+        02pkriV6eTwkcy3mdezcl0xJM5Cqp8oEUA==
+X-Google-Smtp-Source: AMrXdXvvdSLfHxpqthAsfcybCi8mKs5HRIENs/LRGUqFwoQGphvc9t711phFovUpA1CbhJ28EYPN5g==
+X-Received: by 2002:ac8:785:0:b0:3a7:eab2:e461 with SMTP id l5-20020ac80785000000b003a7eab2e461mr42688176qth.25.1672648680473;
+        Mon, 02 Jan 2023 00:38:00 -0800 (PST)
+Received: from mail-yb1-f169.google.com (mail-yb1-f169.google.com. [209.85.219.169])
+        by smtp.gmail.com with ESMTPSA id fb25-20020a05622a481900b003a5430ee366sm15917725qtb.60.2023.01.02.00.38.00
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 01 Jan 2023 04:24:31 -0800 (PST)
-Received: by mail-yb1-f173.google.com with SMTP id e141so27917016ybh.3;
-        Sun, 01 Jan 2023 04:24:30 -0800 (PST)
-X-Received: by 2002:a25:d103:0:b0:75d:3ecb:1967 with SMTP id
- i3-20020a25d103000000b0075d3ecb1967mr3169037ybg.604.1672575870549; Sun, 01
- Jan 2023 04:24:30 -0800 (PST)
+        Mon, 02 Jan 2023 00:38:00 -0800 (PST)
+Received: by mail-yb1-f169.google.com with SMTP id e141so29641506ybh.3;
+        Mon, 02 Jan 2023 00:38:00 -0800 (PST)
+X-Received: by 2002:a25:d243:0:b0:702:90b4:2e24 with SMTP id
+ j64-20020a25d243000000b0070290b42e24mr2730771ybg.365.1672648260480; Mon, 02
+ Jan 2023 00:31:00 -0800 (PST)
 MIME-Version: 1.0
-References: <CAHk-=wgf929uGOVpiWALPyC7pv_9KbwB2EAvQ3C4woshZZ5zqQ@mail.gmail.com>
- <20221227082932.798359-1-geert@linux-m68k.org> <alpine.DEB.2.22.394.2212270933530.311423@ramsan.of.borg>
- <397291cd-4953-8b47-6021-228c9eb38361@landley.net>
-In-Reply-To: <397291cd-4953-8b47-6021-228c9eb38361@landley.net>
+References: <78b23407-bdd0-4b1b-bf6e-ecd4c00294ab@app.fastmail.com> <20221229113338.2436892-1-andrzej.hajda@intel.com>
+In-Reply-To: <20221229113338.2436892-1-andrzej.hajda@intel.com>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Sun, 1 Jan 2023 13:24:19 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdVX4Yz-zHvnwB0oCuLfiNAiEsSupcyjfeH+1oKTfQKC9A@mail.gmail.com>
-Message-ID: <CAMuHMdVX4Yz-zHvnwB0oCuLfiNAiEsSupcyjfeH+1oKTfQKC9A@mail.gmail.com>
-Subject: Re: Build regressions/improvements in v6.2-rc1
-To:     Rob Landley <rob@landley.net>
-Cc:     linux-kernel@vger.kernel.org, linux-media@vger.kernel.org,
-        kasan-dev@googlegroups.com,
-        Linux-sh list <linux-sh@vger.kernel.org>
+Date:   Mon, 2 Jan 2023 09:30:48 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdVaq9Xg3HrqLo1x5SCuwtJBsczLjWAWmH=23ZtNf_e9hQ@mail.gmail.com>
+Message-ID: <CAMuHMdVaq9Xg3HrqLo1x5SCuwtJBsczLjWAWmH=23ZtNf_e9hQ@mail.gmail.com>
+Subject: Re: [PATCH v2] arch: rename all internal names __xchg to __arch_xchg
+To:     Andrzej Hajda <andrzej.hajda@intel.com>
+Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org, intel-gfx@lists.freedesktop.org,
+        dri-devel@lists.freedesktop.org,
+        Mark Rutland <mark.rutland@arm.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Boqun Feng <boqun.feng@gmail.com>,
+        Rodrigo Vivi <rodrigo.vivi@intel.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Rob,
-
-On Sun, Jan 1, 2023 at 2:22 AM Rob Landley <rob@landley.net> wrote:
-> On 12/27/22 02:35, Geert Uytterhoeven wrote:
-> > sh4-gcc11/sh-allmodconfig (ICE = internal compiler error)
+On Thu, Dec 29, 2022 at 12:34 PM Andrzej Hajda <andrzej.hajda@intel.com> wrote:
+> __xchg will be used for non-atomic xchg macro.
 >
-> What's your actual test config here? Because when I try make ARCH=sh
-> allmodconfig; make ARCH=sh it dies in arch/sh/kernel/cpu/sh2/setup-sh7619.c with:
+> Signed-off-by: Andrzej Hajda <andrzej.hajda@intel.com>
+> Reviewed-by: Arnd Bergmann <arnd@arndb.de>
 
-[re-adding the URL you deleted]
-
-> > [2] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/ (all 152 configs)
-
-Following to
-http://kisskb.ellerman.id.au/kisskb/target/212841/ and
-http://kisskb.ellerman.id.au/kisskb/buildresult/14854440/
-gives you a page with a link to the config.
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org> [m68k]
 
 Gr{oetje,eeting}s,
 
