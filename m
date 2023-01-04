@@ -2,137 +2,77 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 31746C46467
-	for <linux-sh@archiver.kernel.org>; Tue,  3 Jan 2023 10:05:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 88580C4332F
+	for <linux-sh@archiver.kernel.org>; Wed,  4 Jan 2023 06:32:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237294AbjACKFv (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 3 Jan 2023 05:05:51 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39974 "EHLO
+        id S233330AbjADGcg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 4 Jan 2023 01:32:36 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49908 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232179AbjACKFu (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 3 Jan 2023 05:05:50 -0500
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4AE2E11E;
-        Tue,  3 Jan 2023 02:05:48 -0800 (PST)
-Received: from pps.filterd (m0098404.ppops.net [127.0.0.1])
-        by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 3037hcSP015068;
-        Tue, 3 Jan 2023 10:02:20 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=date : from : to : cc :
- subject : message-id : references : mime-version : content-type :
- in-reply-to; s=pp1; bh=dMHVtFosqWThDyY5SftMoOPjqDlLusCntZAFShOz2mY=;
- b=KQ8gHflm592WlbRAgwdQmZyTRlHDWh9M3ZAPFV+EMcsIOXJ461PiMpCp5cUVt9BL1e6j
- zqllDR5Fb/gxAm41jRkoRbn7AyAsUGSUMf7knMuu/spo09IOUdLrV2GM4nc+OlkQbkE7
- IJzG4uvffHGaWIteJBPi+B7FHAqQUQN3AtsThHUAZCqJQIQDHXbgZuAeeqSo9WeDmPJj
- eEQnkInKW+xzSa/aKKaqEDcmxJK5+xsGNpjiHiXPohV0tqVjzNS2xI1QFRZv2I9KIldN
- wQ9mkHaOJ5pKdofCP9qAqPj5s8umAAK+tXrV9dZ+20maLxpkr4T38HkHLw9ablzK3SFk /w== 
-Received: from pps.reinject (localhost [127.0.0.1])
-        by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3mvbt6xp9k-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-        Tue, 03 Jan 2023 10:02:20 +0000
-Received: from m0098404.ppops.net (m0098404.ppops.net [127.0.0.1])
-        by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 3039LwDp027251;
-        Tue, 3 Jan 2023 10:02:19 GMT
-Received: from ppma02fra.de.ibm.com (47.49.7a9f.ip4.static.sl-reverse.com [159.122.73.71])
-        by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3mvbt6xp8p-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-        Tue, 03 Jan 2023 10:02:19 +0000
-Received: from pps.filterd (ppma02fra.de.ibm.com [127.0.0.1])
-        by ppma02fra.de.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 302CL8aj017444;
-        Tue, 3 Jan 2023 10:02:16 GMT
-Received: from smtprelay03.fra02v.mail.ibm.com ([9.218.2.224])
-        by ppma02fra.de.ibm.com (PPS) with ESMTPS id 3mtcq6tmts-1
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-        Tue, 03 Jan 2023 10:02:16 +0000
-Received: from smtpav03.fra02v.mail.ibm.com (smtpav03.fra02v.mail.ibm.com [10.20.54.102])
-        by smtprelay03.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 303A2EKB49938694
-        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-        Tue, 3 Jan 2023 10:02:14 GMT
-Received: from smtpav03.fra02v.mail.ibm.com (unknown [127.0.0.1])
-        by IMSVA (Postfix) with ESMTP id 3B14420071;
-        Tue,  3 Jan 2023 10:02:14 +0000 (GMT)
-Received: from smtpav03.fra02v.mail.ibm.com (unknown [127.0.0.1])
-        by IMSVA (Postfix) with ESMTP id F230A20069;
-        Tue,  3 Jan 2023 10:02:12 +0000 (GMT)
-Received: from osiris (unknown [9.171.83.23])
-        by smtpav03.fra02v.mail.ibm.com (Postfix) with ESMTPS;
-        Tue,  3 Jan 2023 10:02:12 +0000 (GMT)
-Date:   Tue, 3 Jan 2023 11:02:09 +0100
-From:   Heiko Carstens <hca@linux.ibm.com>
-To:     Andrzej Hajda <andrzej.hajda@intel.com>
-Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org, intel-gfx@lists.freedesktop.org,
-        dri-devel@lists.freedesktop.org, Arnd Bergmann <arnd@arndb.de>,
-        Rodrigo Vivi <rodrigo.vivi@intel.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Boqun Feng <boqun.feng@gmail.com>,
-        Mark Rutland <mark.rutland@arm.com>
-Subject: Re: [PATCH v3] arch: rename all internal names __xchg to __arch_xchg
-Message-ID: <Y7P9IcR7/jgYWMcq@osiris>
-References: <202212300642.6pdgegGO-lkp@intel.com>
- <20221230141552.128508-1-andrzej.hajda@intel.com>
+        with ESMTP id S233403AbjADGcf (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 4 Jan 2023 01:32:35 -0500
+Received: from gandalf.ozlabs.org (mail.ozlabs.org [IPv6:2404:9400:2221:ea00::3])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9CE6A14027;
+        Tue,  3 Jan 2023 22:32:34 -0800 (PST)
+Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        (No client certificate requested)
+        by mail.ozlabs.org (Postfix) with ESMTPSA id 4Nn0C04FZWz4xyt;
+        Wed,  4 Jan 2023 17:32:28 +1100 (AEDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ellerman.id.au;
+        s=201909; t=1672813949;
+        bh=yy1Ja7/gN5t53Ult7n0CLa7oWDzh1zFh5lkAWxcgdt4=;
+        h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
+        b=O4NB1Mbe8U1HnIqf4kh5MjyenZwCG/UFSMjCR1YYsUv1msRBsq/cOPLS6UtlKekr1
+         p6ptRIVwVzzlvJI93Ym02Oo05krdVqvgro5C0ZJsz43Szf6QgOVbpOsmHnW+gP0Gxx
+         It+IIdezLasjprYmU/SNgRBa10xEHn9+NA+tiicO7+ipsJRYHocYBPmny2FkZO/+wg
+         /epgOSK4vPhFgHXdUqK1IAxlZdB/yJHbn5w69kkhfDL3nd7GL2eD5P212casgM5OdH
+         c43Ps7M6A84QPKdoDYHXciU+J4Ulm/M0HKxYmBvID8fagf/DOXadZyPIXS+qRVGPMN
+         77iTDos8k8Exg==
+From:   Michael Ellerman <mpe@ellerman.id.au>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Rob Landley <rob@landley.net>
+Cc:     linux-kernel@vger.kernel.org, linux-media@vger.kernel.org,
+        kasan-dev@googlegroups.com,
+        Linux-sh list <linux-sh@vger.kernel.org>
+Subject: Re: Build regressions/improvements in v6.2-rc1
+In-Reply-To: <CAMuHMdVX4Yz-zHvnwB0oCuLfiNAiEsSupcyjfeH+1oKTfQKC9A@mail.gmail.com>
+References: <CAHk-=wgf929uGOVpiWALPyC7pv_9KbwB2EAvQ3C4woshZZ5zqQ@mail.gmail.com>
+ <20221227082932.798359-1-geert@linux-m68k.org>
+ <alpine.DEB.2.22.394.2212270933530.311423@ramsan.of.borg>
+ <397291cd-4953-8b47-6021-228c9eb38361@landley.net>
+ <CAMuHMdVX4Yz-zHvnwB0oCuLfiNAiEsSupcyjfeH+1oKTfQKC9A@mail.gmail.com>
+Date:   Wed, 04 Jan 2023 17:32:24 +1100
+Message-ID: <877cy24xon.fsf@mpe.ellerman.id.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20221230141552.128508-1-andrzej.hajda@intel.com>
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: JUKgavQnlJumrUvi-CztUW8Qob9IZFEg
-X-Proofpoint-GUID: 0ZquoQ4B0WHjt8os5pwnxRNooiQSYFH8
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.205,Aquarius:18.0.923,Hydra:6.0.545,FMLib:17.11.122.1
- definitions=2023-01-03_01,2023-01-03_01,2022-06-22_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 impostorscore=0 clxscore=1011
- lowpriorityscore=0 mlxlogscore=712 priorityscore=1501 bulkscore=0
- spamscore=0 adultscore=0 phishscore=0 suspectscore=0 mlxscore=0
- malwarescore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2212070000 definitions=main-2301030088
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Dec 30, 2022 at 03:15:52PM +0100, Andrzej Hajda wrote:
-> __xchg will be used for non-atomic xchg macro.
-> 
-> Signed-off-by: Andrzej Hajda <andrzej.hajda@intel.com>
-> Reviewed-by: Arnd Bergmann <arnd@arndb.de>
-> ---
-> v2: squashed all arch patches into one
-> v3: fixed alpha/xchg_local, thx to lkp@intel.com
-> ---
-...
->  arch/s390/include/asm/cmpxchg.h      | 4 ++--
-> diff --git a/arch/s390/include/asm/cmpxchg.h b/arch/s390/include/asm/cmpxchg.h
-> index 84c3f0d576c5b1..efc16f4aac8643 100644
-> --- a/arch/s390/include/asm/cmpxchg.h
-> +++ b/arch/s390/include/asm/cmpxchg.h
-> @@ -14,7 +14,7 @@
->  
->  void __xchg_called_with_bad_pointer(void);
->  
-> -static __always_inline unsigned long __xchg(unsigned long x,
-> +static __always_inline unsigned long __arch_xchg(unsigned long x,
->  					    unsigned long address, int size)
+Geert Uytterhoeven <geert@linux-m68k.org> writes:
+> Hi Rob,
+>
+> On Sun, Jan 1, 2023 at 2:22 AM Rob Landley <rob@landley.net> wrote:
+>> On 12/27/22 02:35, Geert Uytterhoeven wrote:
+>> > sh4-gcc11/sh-allmodconfig (ICE = internal compiler error)
+>>
+>> What's your actual test config here? Because when I try make ARCH=sh
+>> allmodconfig; make ARCH=sh it dies in arch/sh/kernel/cpu/sh2/setup-sh7619.c with:
+>
+> [re-adding the URL you deleted]
+>
+>> > [2] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/830b3c68c1fb1e9176028d02ef86f3cf76aa2476/ (all 152 configs)
+>
+> Following to
+> http://kisskb.ellerman.id.au/kisskb/target/212841/ and
+> http://kisskb.ellerman.id.au/kisskb/buildresult/14854440/
+> gives you a page with a link to the config.
 
-Please adjust the alignment of the second line.
+It's possible there's something wrong with the toolchain setup, I don't
+know much about sh.
 
-> @@ -77,7 +77,7 @@ static __always_inline unsigned long __xchg(unsigned long x,
->  	__typeof__(*(ptr)) __ret;					\
->  									\
->  	__ret = (__typeof__(*(ptr)))					\
-> -		__xchg((unsigned long)(x), (unsigned long)(ptr),	\
-> +		__arch_xchg((unsigned long)(x), (unsigned long)(ptr),	\
->  		       sizeof(*(ptr)));					\
+But it's just the kernel.org crosstool sh4 compiler, nothing else fancy.
 
-Same here.
-
-The same is true for a couple of other architectures - not sure if
-they care however.
+cheers
