@@ -2,42 +2,43 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 25641C7EE22
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BE031C61DB3
 	for <linux-sh@archiver.kernel.org>; Thu, 12 Jan 2023 20:04:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241769AbjALUE4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 12 Jan 2023 15:04:56 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44314 "EHLO
+        id S241775AbjALUE5 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 12 Jan 2023 15:04:57 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44252 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237088AbjALT7U (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 12 Jan 2023 14:59:20 -0500
-Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 80F252DDA;
-        Thu, 12 Jan 2023 11:58:10 -0800 (PST)
+        with ESMTP id S239063AbjALT7V (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 12 Jan 2023 14:59:21 -0500
+Received: from desiato.infradead.org (desiato.infradead.org [IPv6:2001:8b0:10b:1:d65d:64ff:fe57:4e05])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9501C389A;
+        Thu, 12 Jan 2023 11:58:18 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=casper.20170209; h=Content-Type:MIME-Version:References:
+        d=infradead.org; s=desiato.20200630; h=Content-Type:MIME-Version:References:
         Subject:Cc:To:From:Date:Message-ID:Sender:Reply-To:Content-Transfer-Encoding:
         Content-ID:Content-Description:In-Reply-To;
-        bh=1NaK9G2/I/OTlb13IaE2Tqn3F/yijw+kp1Wy55f7+Ak=; b=d9VgDAL2fWp2M2wxA7J9NgpFTT
-        2pG2qOlYmRDNCuzGSRUBqoo9hMDtSgVzgVID6gFby7pOIrlbQNFtimg6GKmL90aKS1vg2lYRpe6E6
-        S50bRd4JCG17JCzCaWBBkWkX3v2Clfdjl01hTLfMxi/Kdtf8TxtDe2XST56gTJTH8NeJMqeihArR8
-        XcEZk4Z/I8fpUGsOtTlAneoT7X5OaEcAPvRQEER0lr8m6A3mwQn1+QXc8ME5pao1f5nnwssK44DRU
-        EUlFxQhJpcHlwX2ret9+B92moOLu8UBxS4OPT7RcvdlONjNMGjsPHDbl2769rXFicjenGXiSAmJvx
-        Q+I8zi6w==;
+        bh=G2cvNgJ/FV6t8OtxjUTEWOoXfe4MyL5zef0iqwcucnw=; b=bXVWmsZjBd0A5Q1dRbnBvn7ToW
+        3j6eFTXMZeK1D2xNKaSBA5uYP5GPcQYNyXJPFyH83DSSp2MNSCsRoEQZP6MxewYz1wP7rgVNt/9It
+        2gRBrgOz8pdij4lPvYNsXhZafNcKFsYEgHj+n5CwG2HsWiNYOQSMKGbZog8b0utVeF16dtaoY6A5q
+        V9oarqYXHJRh56KEBKm4N24tn9yAKxtrHFsxpcxWilSVN6H04Iq0zr2ANdWU40o1i9gecGsUeESZq
+        fgxgFJmukOshxn//3WVgj5eg6awcLSHCIcGsAcbFMCnaNOKch5n6lO9ediMpnVQGteZqaYO/qlHWe
+        o1amLvzw==;
 Received: from j130084.upc-j.chello.nl ([24.132.130.84] helo=noisy.programming.kicks-ass.net)
-        by casper.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pG3hZ-005Odc-MG; Thu, 12 Jan 2023 19:57:29 +0000
+        by desiato.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
+        id 1pG3hF-0045oo-1p;
+        Thu, 12 Jan 2023 19:57:35 +0000
 Received: from hirez.programming.kicks-ass.net (hirez.programming.kicks-ass.net [192.168.1.225])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature RSA-PSS (4096 bits))
         (Client did not present a certificate)
-        by noisy.programming.kicks-ass.net (Postfix) with ESMTPS id 4894230341A;
+        by noisy.programming.kicks-ass.net (Postfix) with ESMTPS id 74ABB30342D;
         Thu, 12 Jan 2023 20:57:13 +0100 (CET)
 Received: by hirez.programming.kicks-ass.net (Postfix, from userid 0)
-        id DAA122CCF1F62; Thu, 12 Jan 2023 20:57:07 +0100 (CET)
-Message-ID: <20230112195540.312601331@infradead.org>
+        id 062AF2CCF1F64; Thu, 12 Jan 2023 20:57:08 +0100 (CET)
+Message-ID: <20230112195540.682137572@infradead.org>
 User-Agent: quilt/0.66
-Date:   Thu, 12 Jan 2023 20:43:30 +0100
+Date:   Thu, 12 Jan 2023 20:43:36 +0100
 From:   Peter Zijlstra <peterz@infradead.org>
 To:     peterz@infradead.org
 Cc:     richard.henderson@linaro.org, ink@jurassic.park.msu.ru,
@@ -104,7 +105,7 @@ Cc:     richard.henderson@linaro.org, ink@jurassic.park.msu.ru,
         linux-trace-kernel@vger.kernel.org, kasan-dev@googlegroups.com,
         "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
         Ulf Hansson <ulf.hansson@linaro.org>
-Subject: [PATCH v3 16/51] cpuidle: Annotate poll_idle()
+Subject: [PATCH v3 22/51] x86/tdx: Remove TDX_HCALL_ISSUE_STI
 References: <20230112194314.845371875@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -112,39 +113,112 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The __cpuidle functions will become a noinstr class, as such they need
-explicit annotations.
+Now that arch_cpu_idle() is expected to return with IRQs disabled,
+avoid the useless STI/CLI dance.
+
+Per the specs this is supposed to work, but nobody has yet relied up
+this behaviour so broken implementations are possible.
 
 Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
-Reviewed-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
+Acked-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
 Acked-by: Frederic Weisbecker <frederic@kernel.org>
 Tested-by: Tony Lindgren <tony@atomide.com>
 Tested-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- drivers/cpuidle/poll_state.c |    6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ arch/x86/coco/tdx/tdcall.S        |   13 -------------
+ arch/x86/coco/tdx/tdx.c           |   23 ++++-------------------
+ arch/x86/include/asm/shared/tdx.h |    1 -
+ 3 files changed, 4 insertions(+), 33 deletions(-)
 
---- a/drivers/cpuidle/poll_state.c
-+++ b/drivers/cpuidle/poll_state.c
-@@ -13,7 +13,10 @@
- static int __cpuidle poll_idle(struct cpuidle_device *dev,
- 			       struct cpuidle_driver *drv, int index)
- {
--	u64 time_start = local_clock();
-+	u64 time_start;
-+
-+	instrumentation_begin();
-+	time_start = local_clock();
+--- a/arch/x86/coco/tdx/tdcall.S
++++ b/arch/x86/coco/tdx/tdcall.S
+@@ -139,19 +139,6 @@ SYM_FUNC_START(__tdx_hypercall)
  
- 	dev->poll_time_limit = false;
+ 	movl $TDVMCALL_EXPOSE_REGS_MASK, %ecx
  
-@@ -39,6 +42,7 @@ static int __cpuidle poll_idle(struct cp
- 	raw_local_irq_disable();
+-	/*
+-	 * For the idle loop STI needs to be called directly before the TDCALL
+-	 * that enters idle (EXIT_REASON_HLT case). STI instruction enables
+-	 * interrupts only one instruction later. If there is a window between
+-	 * STI and the instruction that emulates the HALT state, there is a
+-	 * chance for interrupts to happen in this window, which can delay the
+-	 * HLT operation indefinitely. Since this is the not the desired
+-	 * result, conditionally call STI before TDCALL.
+-	 */
+-	testq $TDX_HCALL_ISSUE_STI, %rsi
+-	jz .Lskip_sti
+-	sti
+-.Lskip_sti:
+ 	tdcall
  
- 	current_clr_polling();
-+	instrumentation_end();
- 
- 	return index;
+ 	/*
+--- a/arch/x86/coco/tdx/tdx.c
++++ b/arch/x86/coco/tdx/tdx.c
+@@ -169,7 +169,7 @@ static int ve_instr_len(struct ve_info *
+ 	}
  }
+ 
+-static u64 __cpuidle __halt(const bool irq_disabled, const bool do_sti)
++static u64 __cpuidle __halt(const bool irq_disabled)
+ {
+ 	struct tdx_hypercall_args args = {
+ 		.r10 = TDX_HYPERCALL_STANDARD,
+@@ -189,20 +189,14 @@ static u64 __cpuidle __halt(const bool i
+ 	 * can keep the vCPU in virtual HLT, even if an IRQ is
+ 	 * pending, without hanging/breaking the guest.
+ 	 */
+-	return __tdx_hypercall(&args, do_sti ? TDX_HCALL_ISSUE_STI : 0);
++	return __tdx_hypercall(&args, 0);
+ }
+ 
+ static int handle_halt(struct ve_info *ve)
+ {
+-	/*
+-	 * Since non safe halt is mainly used in CPU offlining
+-	 * and the guest will always stay in the halt state, don't
+-	 * call the STI instruction (set do_sti as false).
+-	 */
+ 	const bool irq_disabled = irqs_disabled();
+-	const bool do_sti = false;
+ 
+-	if (__halt(irq_disabled, do_sti))
++	if (__halt(irq_disabled))
+ 		return -EIO;
+ 
+ 	return ve_instr_len(ve);
+@@ -210,22 +204,13 @@ static int handle_halt(struct ve_info *v
+ 
+ void __cpuidle tdx_safe_halt(void)
+ {
+-	 /*
+-	  * For do_sti=true case, __tdx_hypercall() function enables
+-	  * interrupts using the STI instruction before the TDCALL. So
+-	  * set irq_disabled as false.
+-	  */
+ 	const bool irq_disabled = false;
+-	const bool do_sti = true;
+ 
+ 	/*
+ 	 * Use WARN_ONCE() to report the failure.
+ 	 */
+-	if (__halt(irq_disabled, do_sti))
++	if (__halt(irq_disabled))
+ 		WARN_ONCE(1, "HLT instruction emulation failed\n");
+-
+-	/* XXX I can't make sense of what @do_sti actually does */
+-	raw_local_irq_disable();
+ }
+ 
+ static int read_msr(struct pt_regs *regs, struct ve_info *ve)
+--- a/arch/x86/include/asm/shared/tdx.h
++++ b/arch/x86/include/asm/shared/tdx.h
+@@ -8,7 +8,6 @@
+ #define TDX_HYPERCALL_STANDARD  0
+ 
+ #define TDX_HCALL_HAS_OUTPUT	BIT(0)
+-#define TDX_HCALL_ISSUE_STI	BIT(1)
+ 
+ #define TDX_CPUID_LEAF_ID	0x21
+ #define TDX_IDENT		"IntelTDX    "
 
 
