@@ -2,43 +2,43 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F2AB6C83000
-	for <linux-sh@archiver.kernel.org>; Thu, 12 Jan 2023 20:04:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7E1CC83002
+	for <linux-sh@archiver.kernel.org>; Thu, 12 Jan 2023 20:04:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241612AbjALUEX (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 12 Jan 2023 15:04:23 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44276 "EHLO
+        id S241621AbjALUE2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 12 Jan 2023 15:04:28 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44322 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233136AbjALT7Q (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 12 Jan 2023 14:59:16 -0500
+        with ESMTP id S237748AbjALT7U (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 12 Jan 2023 14:59:20 -0500
 Received: from desiato.infradead.org (desiato.infradead.org [IPv6:2001:8b0:10b:1:d65d:64ff:fe57:4e05])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7C7B91158;
-        Thu, 12 Jan 2023 11:58:07 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BE3562DFC;
+        Thu, 12 Jan 2023 11:58:12 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=desiato.20200630; h=Content-Type:MIME-Version:References:
         Subject:Cc:To:From:Date:Message-ID:Sender:Reply-To:Content-Transfer-Encoding:
         Content-ID:Content-Description:In-Reply-To;
-        bh=WMNBIHuf5Xvagmacq/Rua4pXk5oPDpB6DgeHQM3GMNM=; b=es5m3oBDVYAufupUiNRqWVO/RC
-        MYP0S6vTEQIbAtHzKYccz/yD5ZJfSxH9DW1PqaDm8BnynuDBcuJMnpzWeo6k5K28cXrf5BUpOvyRr
-        xaY22ofQsLUZLQPbZOhkA0+xsNh1dp/NxWTMYdUVjlmzayvj2xdsZ7a2oSv/l33qTbfetO+Pw0V/I
-        s1znooGKEDK6lbfVRoWFUbM9UyYPnPakeUa1Gz+aSdCTur5B2tOgIbesDW5Iyi7MQLzRwPF7Yt/fl
-        Qgk4xgzWvHAtQv4OyPaMs4bO0FVa2EriT3ha9hGgBgou9pT7heRoYtwRBcm2JrKwksIjfWYv4TiqL
-        QjNa+ngQ==;
+        bh=53PdPXBrlefs7aSWYtbVMctVqERBXlbNfkzlUyuHUdw=; b=jkdiNqhELXj5CzanYQ20dadQjZ
+        HUn5I+MvJqhepcqPHBVlfZesL5T1BHMXftP8ez1WYbjSyJV9X85Xb/2lLnU5HxsFfWvxHxNYbXMfX
+        3suxQVQl2DSZElbXf1ip4LF4xOt+r5FVdsOrU3NDCbKShRYDyeaZc7QCd7p1tq+ps2GFOVNaFql03
+        XFgO8Wb85sm7g0HrswIQjAmmaFk3vSBO2AhJbG2M12u1oJd1EaXpYEUTt1wRVE3efBOG2D/R3hBTu
+        QKj6jS2S+NydJjiMbBfUehGc5Crf030MLT/J6aU9TDTrUQkZ/HDSe0D1/zMmPRDB2DJuN8A9NgSlp
+        gEfokIOA==;
 Received: from j130084.upc-j.chello.nl ([24.132.130.84] helo=noisy.programming.kicks-ass.net)
         by desiato.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1pG3hC-0045o5-1E;
-        Thu, 12 Jan 2023 19:57:07 +0000
+        id 1pG3hY-0045w9-2y;
+        Thu, 12 Jan 2023 19:57:33 +0000
 Received: from hirez.programming.kicks-ass.net (hirez.programming.kicks-ass.net [192.168.1.225])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature RSA-PSS (4096 bits))
         (Client did not present a certificate)
-        by noisy.programming.kicks-ass.net (Postfix) with ESMTPS id EF9C8300C9D;
-        Thu, 12 Jan 2023 20:57:12 +0100 (CET)
+        by noisy.programming.kicks-ass.net (Postfix) with ESMTPS id 42C0F303482;
+        Thu, 12 Jan 2023 20:57:14 +0100 (CET)
 Received: by hirez.programming.kicks-ass.net (Postfix, from userid 0)
-        id 9D69C2CCF1F4E; Thu, 12 Jan 2023 20:57:07 +0100 (CET)
-Message-ID: <20230112195539.637185846@infradead.org>
+        id 767D32CD066F4; Thu, 12 Jan 2023 20:57:08 +0100 (CET)
+Message-ID: <20230112195542.335211484@infradead.org>
 User-Agent: quilt/0.66
-Date:   Thu, 12 Jan 2023 20:43:19 +0100
+Date:   Thu, 12 Jan 2023 20:44:03 +0100
 From:   Peter Zijlstra <peterz@infradead.org>
 To:     peterz@infradead.org
 Cc:     richard.henderson@linaro.org, ink@jurassic.park.msu.ru,
@@ -102,10 +102,8 @@ Cc:     richard.henderson@linaro.org, ink@jurassic.park.msu.ru,
         linux-pm@vger.kernel.org, linux-clk@vger.kernel.org,
         linux-arm-msm@vger.kernel.org, linux-tegra@vger.kernel.org,
         linux-arch@vger.kernel.org, linux-mm@kvack.org,
-        linux-trace-kernel@vger.kernel.org, kasan-dev@googlegroups.com,
-        "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
-        Ulf Hansson <ulf.hansson@linaro.org>
-Subject: [PATCH v3 05/51] cpuidle,riscv: Push RCU-idle into driver
+        linux-trace-kernel@vger.kernel.org, kasan-dev@googlegroups.com
+Subject: [PATCH v3 49/51] cpuidle,arch: Mark all regular cpuidle_state::enter methods __cpuidle
 References: <20230112194314.845371875@infradead.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -113,61 +111,123 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Doing RCU-idle outside the driver, only to then temporarily enable it
-again, at least twice, before going idle is daft.
+For all cpuidle drivers that do not use CPUIDLE_FLAG_RCU_IDLE (iow,
+the simple ones) make sure all the functions are marked __cpuidle.
 
-That is, once implicitly through the cpu_pm_*() calls and once
-explicitly doing ct_irq_*_irqon().
+( due to lack of noinstr validation on these platforms it is entirely
+  possible this isn't complete )
 
 Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
-Reviewed-by: Anup Patel <anup@brainfault.org>
-Reviewed-by: Frederic Weisbecker <frederic@kernel.org>
-Acked-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
-Tested-by: Tony Lindgren <tony@atomide.com>
-Tested-by: Ulf Hansson <ulf.hansson@linaro.org>
 ---
- drivers/cpuidle/cpuidle-riscv-sbi.c |    9 +++++----
- 1 file changed, 5 insertions(+), 4 deletions(-)
+ arch/arm/kernel/cpuidle.c           |    4 ++--
+ arch/arm/mach-davinci/cpuidle.c     |    4 ++--
+ arch/arm/mach-imx/cpuidle-imx5.c    |    4 ++--
+ arch/arm/mach-imx/cpuidle-imx6sl.c  |    4 ++--
+ arch/arm/mach-imx/cpuidle-imx7ulp.c |    4 ++--
+ arch/arm/mach-s3c/cpuidle-s3c64xx.c |    5 ++---
+ arch/mips/kernel/idle.c             |    6 +++---
+ 7 files changed, 15 insertions(+), 16 deletions(-)
 
---- a/drivers/cpuidle/cpuidle-riscv-sbi.c
-+++ b/drivers/cpuidle/cpuidle-riscv-sbi.c
-@@ -116,12 +116,12 @@ static int __sbi_enter_domain_idle_state
- 		return -1;
+--- a/arch/arm/kernel/cpuidle.c
++++ b/arch/arm/kernel/cpuidle.c
+@@ -26,8 +26,8 @@ static struct cpuidle_ops cpuidle_ops[NR
+  *
+  * Returns the index passed as parameter
+  */
+-int arm_cpuidle_simple_enter(struct cpuidle_device *dev,
+-		struct cpuidle_driver *drv, int index)
++__cpuidle int arm_cpuidle_simple_enter(struct cpuidle_device *dev, struct
++				       cpuidle_driver *drv, int index)
+ {
+ 	cpu_do_idle();
  
- 	/* Do runtime PM to manage a hierarchical CPU toplogy. */
--	ct_irq_enter_irqson();
- 	if (s2idle)
- 		dev_pm_genpd_suspend(pd_dev);
- 	else
- 		pm_runtime_put_sync_suspend(pd_dev);
--	ct_irq_exit_irqson();
-+
-+	ct_idle_enter();
+--- a/arch/arm/mach-davinci/cpuidle.c
++++ b/arch/arm/mach-davinci/cpuidle.c
+@@ -44,8 +44,8 @@ static void davinci_save_ddr_power(int e
+ }
  
- 	if (sbi_is_domain_state_available())
- 		state = sbi_get_domain_state();
-@@ -130,12 +130,12 @@ static int __sbi_enter_domain_idle_state
+ /* Actual code that puts the SoC in different idle states */
+-static int davinci_enter_idle(struct cpuidle_device *dev,
+-			      struct cpuidle_driver *drv, int index)
++static __cpuidle int davinci_enter_idle(struct cpuidle_device *dev,
++					struct cpuidle_driver *drv, int index)
+ {
+ 	davinci_save_ddr_power(1, ddr2_pdown);
+ 	cpu_do_idle();
+--- a/arch/arm/mach-imx/cpuidle-imx5.c
++++ b/arch/arm/mach-imx/cpuidle-imx5.c
+@@ -8,8 +8,8 @@
+ #include <asm/system_misc.h>
+ #include "cpuidle.h"
  
- 	ret = sbi_suspend(state) ? -1 : idx;
+-static int imx5_cpuidle_enter(struct cpuidle_device *dev,
+-			      struct cpuidle_driver *drv, int index)
++static __cpuidle int imx5_cpuidle_enter(struct cpuidle_device *dev,
++					struct cpuidle_driver *drv, int index)
+ {
+ 	arm_pm_idle();
+ 	return index;
+--- a/arch/arm/mach-imx/cpuidle-imx6sl.c
++++ b/arch/arm/mach-imx/cpuidle-imx6sl.c
+@@ -11,8 +11,8 @@
+ #include "common.h"
+ #include "cpuidle.h"
  
--	ct_irq_enter_irqson();
-+	ct_idle_exit();
-+
- 	if (s2idle)
- 		dev_pm_genpd_resume(pd_dev);
- 	else
- 		pm_runtime_get_sync(pd_dev);
--	ct_irq_exit_irqson();
+-static int imx6sl_enter_wait(struct cpuidle_device *dev,
+-			    struct cpuidle_driver *drv, int index)
++static __cpuidle int imx6sl_enter_wait(struct cpuidle_device *dev,
++				       struct cpuidle_driver *drv, int index)
+ {
+ 	imx6_set_lpm(WAIT_UNCLOCKED);
+ 	/*
+--- a/arch/arm/mach-imx/cpuidle-imx7ulp.c
++++ b/arch/arm/mach-imx/cpuidle-imx7ulp.c
+@@ -12,8 +12,8 @@
+ #include "common.h"
+ #include "cpuidle.h"
  
- 	cpu_pm_exit();
+-static int imx7ulp_enter_wait(struct cpuidle_device *dev,
+-			    struct cpuidle_driver *drv, int index)
++static __cpuidle int imx7ulp_enter_wait(struct cpuidle_device *dev,
++					struct cpuidle_driver *drv, int index)
+ {
+ 	if (index == 1)
+ 		imx7ulp_set_lpm(ULP_PM_WAIT);
+--- a/arch/arm/mach-s3c/cpuidle-s3c64xx.c
++++ b/arch/arm/mach-s3c/cpuidle-s3c64xx.c
+@@ -19,9 +19,8 @@
+ #include "regs-sys-s3c64xx.h"
+ #include "regs-syscon-power-s3c64xx.h"
  
-@@ -246,6 +246,7 @@ static int sbi_dt_cpu_init_topology(stru
- 	 * of a shared state for the domain, assumes the domain states are all
- 	 * deeper states.
- 	 */
-+	drv->states[state_count - 1].flags |= CPUIDLE_FLAG_RCU_IDLE;
- 	drv->states[state_count - 1].enter = sbi_enter_domain_idle_state;
- 	drv->states[state_count - 1].enter_s2idle =
- 					sbi_enter_s2idle_domain_idle_state;
+-static int s3c64xx_enter_idle(struct cpuidle_device *dev,
+-			      struct cpuidle_driver *drv,
+-			      int index)
++static __cpuidle int s3c64xx_enter_idle(struct cpuidle_device *dev,
++					struct cpuidle_driver *drv, int index)
+ {
+ 	unsigned long tmp;
+ 
+--- a/arch/mips/kernel/idle.c
++++ b/arch/mips/kernel/idle.c
+@@ -241,7 +241,7 @@ void __init check_wait(void)
+ 	}
+ }
+ 
+-void arch_cpu_idle(void)
++__cpuidle void arch_cpu_idle(void)
+ {
+ 	if (cpu_wait)
+ 		cpu_wait();
+@@ -249,8 +249,8 @@ void arch_cpu_idle(void)
+ 
+ #ifdef CONFIG_CPU_IDLE
+ 
+-int mips_cpuidle_wait_enter(struct cpuidle_device *dev,
+-			    struct cpuidle_driver *drv, int index)
++__cpuidle int mips_cpuidle_wait_enter(struct cpuidle_device *dev,
++				      struct cpuidle_driver *drv, int index)
+ {
+ 	arch_cpu_idle();
+ 	return index;
 
 
