@@ -2,111 +2,62 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D9232C54EBE
-	for <linux-sh@archiver.kernel.org>; Tue, 10 Jan 2023 13:54:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DDE7AC677F1
+	for <linux-sh@archiver.kernel.org>; Thu, 12 Jan 2023 08:52:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234513AbjAJNxt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 10 Jan 2023 08:53:49 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44850 "EHLO
+        id S236560AbjALIwQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 12 Jan 2023 03:52:16 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46142 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237663AbjAJNxU (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 10 Jan 2023 08:53:20 -0500
-Received: from mga07.intel.com (mga07.intel.com [134.134.136.100])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0EF098BF38;
-        Tue, 10 Jan 2023 05:52:31 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1673358752; x=1704894752;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=Tp8Z9Ay/HrlqQE0qDFK7p4Fost9+vU0ggkXvi/hfbkY=;
-  b=kO8ox8CR+uhilfo5/X2nxkaV4R1ebPsPUWkdF4QsFnqdZi0+9yMqWhfv
-   PKlzD1J/dYnz4SJUbaTjjtC0QteypDLuv9UL2ilJKOJseLb3blbbDRgKR
-   /alyOqQ4wC48vEI6zM+ZbMmNStQiJjb/yC4L96pos2WPad5aLaWdyVG4l
-   uSLI+r8CIVKKNrMjXpOdrBxFuVBLBGOGy9vjBUTE3wgpx9dSS06FYtC+A
-   FnrdBVP/dZdOHbJka0bOPO00rFLSmTMw/1SY2fd3RmEgzglcdIq9JPESj
-   +zfCtPa5XOVBH9lR3c6QkN7FDo4tDCyPTRSCV6yON/XMy6W476qcBtwWn
-   A==;
-X-IronPort-AV: E=McAfee;i="6500,9779,10585"; a="387599277"
-X-IronPort-AV: E=Sophos;i="5.96,315,1665471600"; 
-   d="scan'208";a="387599277"
-Received: from orsmga005.jf.intel.com ([10.7.209.41])
-  by orsmga105.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Jan 2023 05:52:31 -0800
-X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6500,9779,10585"; a="830995823"
-X-IronPort-AV: E=Sophos;i="5.96,315,1665471600"; 
-   d="scan'208";a="830995823"
-Received: from smile.fi.intel.com ([10.237.72.54])
-  by orsmga005.jf.intel.com with ESMTP; 10 Jan 2023 05:52:23 -0800
-Received: from andy by smile.fi.intel.com with local (Exim 4.96)
-        (envelope-from <andriy.shevchenko@linux.intel.com>)
-        id 1pFF36-0073E7-37;
-        Tue, 10 Jan 2023 15:52:20 +0200
-Date:   Tue, 10 Jan 2023 15:52:20 +0200
-From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To:     Andrzej Hajda <andrzej.hajda@intel.com>
-Cc:     Mark Rutland <mark.rutland@arm.com>, linux-ia64@vger.kernel.org,
-        linux-sh@vger.kernel.org, Peter Zijlstra <peterz@infradead.org>,
-        dri-devel@lists.freedesktop.org, linux-mips@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        Boqun Feng <boqun.feng@gmail.com>,
-        linux-xtensa@linux-xtensa.org, Arnd Bergmann <arnd@arndb.de>,
-        intel-gfx@lists.freedesktop.org, linux-m68k@lists.linux-m68k.org,
-        openrisc@lists.librecores.org, loongarch@lists.linux.dev,
-        Rodrigo Vivi <rodrigo.vivi@intel.com>,
-        linux-arm-kernel@lists.infradead.org, linux-parisc@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Daniel Vetter <daniel@ffwll.ch>,
-        linux-alpha@vger.kernel.org,
-        Andrew Morton <akpm@linux-foundation.org>,
-        linuxppc-dev@lists.ozlabs.org
-Subject: Re: [Intel-gfx] [RFC DO NOT MERGE] treewide: use __xchg in most
- obvious places
-Message-ID: <Y71tlG23t0gH9K1t@smile.fi.intel.com>
-References: <Y7b6/7coJEVlTVxK@phenom.ffwll.local>
- <20230110105306.3973122-1-andrzej.hajda@intel.com>
- <Y71G1tkmUzM4BLxn@smile.fi.intel.com>
- <1bfae3d0-8c0b-ea83-7184-db847a4a969f@intel.com>
+        with ESMTP id S236734AbjALIvj (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 12 Jan 2023 03:51:39 -0500
+Received: from mail.glencoeaur.com (mail.glencoeaur.com [217.61.97.113])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B1D8F1B9C3
+        for <linux-sh@vger.kernel.org>; Thu, 12 Jan 2023 00:49:56 -0800 (PST)
+Received: by mail.glencoeaur.com (Postfix, from userid 1001)
+        id 3C40581FEE; Thu, 12 Jan 2023 08:40:43 +0000 (GMT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=glencoeaur.com;
+        s=mail; t=1673512843;
+        bh=2S0GQFScndXkBEK4sqdoOhOYLqsB2sEH8Q5XQfVvKpo=;
+        h=Date:From:To:Subject:From;
+        b=B4hLcZ1O99FU0HXK7SdDmOENWoQTX534iFgNtNUXp2Zx3afkAQ4rgrKodZO9Q/rNE
+         6lwlm3oDMWCEP7UhO7heL84uS4kbls6DpvdD8Xq5UWnHCaqsXL/y2Mm/8L6QZ+vsaF
+         Pa+34VK7LXPqoEN0vvnk/SnQ6J9bwlPQ8OTeHpErhWrkb5UXhMPPYVbil55R11J8Gh
+         yvBzEBeL5q1hlBJVFLyxxv8RrM8dbxeSILGY3XFx/j7MxgJorK0iWpRKY/1lzRDZcC
+         zZv4S2MPoTQRiRKvOwkoUmVNvssT0RfKEmXOEPQ0ZCl/Vg+ZFHpO0XUEjKIckiR+Yq
+         CmYh/GDyK9Ykg==
+Received: by mail.glencoeaur.com for <linux-sh@vger.kernel.org>; Thu, 12 Jan 2023 08:40:39 GMT
+Message-ID: <20230112074500-0.1.z.3g6q.0.gb3u8qedk0@glencoeaur.com>
+Date:   Thu, 12 Jan 2023 08:40:39 GMT
+From:   "Zbynek Spacek" <zbynek.spacek@glencoeaur.com>
+To:     <linux-sh@vger.kernel.org>
+Subject: Silikonmischungen
+X-Mailer: mail.glencoeaur.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <1bfae3d0-8c0b-ea83-7184-db847a4a969f@intel.com>
-Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Jan 10, 2023 at 01:46:37PM +0100, Andrzej Hajda wrote:
-> On 10.01.2023 12:07, Andy Shevchenko wrote:
-> > On Tue, Jan 10, 2023 at 11:53:06AM +0100, Andrzej Hajda wrote:
+Good morning,
 
-...
+do you need intermediates for processing, plastics (e.g. rubber) or silic=
+one mixtures?
 
-> > > +	return __xchg(&p_chain->p_prod_elem,
-> > > +		      (void *)(((u8 *)p_chain->p_prod_elem) + p_chain->elem_size));
-> > 
-> > Wondering if you still need a (void *) casting after the change. Ditto for the
-> > rest of similar cases.
-> 
-> IMHO it is not needed also before the change and IIRC gcc has an extension
-> which allows to drop (u8 *) cast as well [1].
+We provide a wide range of silicone rubbers with various properties, sili=
+cone mixtures from renowned manufacturers such as Wacker, Elastosil LR an=
+d dyes, stabilizers, primers and anti-adhesive additives.
 
-I guess you can drop at least the former one.
+We also produce technical silicone compounds with increased resistance to=
+ oils, resistant to high temperatures and water vapor, conductive and man=
+y more.
 
-> [1]: https://gcc.gnu.org/onlinedocs/gcc/Pointer-Arith.html
+We provide fast order fulfillment, timely deliveries and cost optimizatio=
+n.
 
-...
-
-> > Btw, is it done by coccinelle? If no, why not providing the script?
-> 
-> Yes I have used cocci. My cocci skills are far from perfect, so I did not
-> want to share my dirty code, but this is nothing secret:
-
-Thank you! It's not about secrecy, it's about automation / error proofness.
-
--- 
-With Best Regards,
-Andy Shevchenko
+Can I introduce what we can offer you?
 
 
+Best regards
+Zbynek Spacek
