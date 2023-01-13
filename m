@@ -2,31 +2,31 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D662C61DB3
-	for <linux-sh@archiver.kernel.org>; Fri, 13 Jan 2023 06:28:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4DC69C54EBD
+	for <linux-sh@archiver.kernel.org>; Fri, 13 Jan 2023 06:29:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229887AbjAMG2Y (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 13 Jan 2023 01:28:24 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36742 "EHLO
+        id S232088AbjAMG20 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 13 Jan 2023 01:28:26 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33512 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240696AbjAMG0G (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 13 Jan 2023 01:26:06 -0500
+        with ESMTP id S239960AbjAMGZF (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 13 Jan 2023 01:25:05 -0500
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 681155A880;
-        Thu, 12 Jan 2023 22:24:48 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 58A72D5F;
+        Thu, 12 Jan 2023 22:24:26 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=brkgyM1hhrmjLwT1BCvS491OM9ZvmSvWuQcY6ZdmaEQ=; b=rclg5IcyZx3hAYAW2A82gKgG/R
-        9h9Oe/wM1Koo+NmcZ4yMIJIFj+qyIun0yWyAuormOj2yAyWxmpqiP2tOTjglLnHiXw+LO8ETgIdA+
-        5Svhx7nVkyRr8shQSGKZC980O+hinT+yIkJMia9iivbaAqpxScAjdfS1ylAfFTuFfEpPajKlizKuC
-        x920Cmh9IN6hilV+vdW649ilBNPtNcRIhR92SLyVFpjckwWhuUlUQEzckeqR1pXS3MdV0ZyVfntjY
-        4ZjNun8OKq1jiBsWb6I8b5g9mXdhx5n98DESlAo/jfRw7Kht5JW4J78GkDbW2pZIH+YhQxqch531J
-        NCRDTDXw==;
+        bh=2hPC7zlGA9AoDVV3UDFLI3T20RnHyuVZW1qr++X92oI=; b=U0IxPDIbDusxYyls7GAP+XZ9hs
+        WK31Rw57DTsJeVGBg+mDkhc5spH2HTT6S2bZUnUWnMFMzjuRTQxHiqWupbwLk1M9gy0H80/2TyLAr
+        4yZAcNURNOrPm5QlFyeBEx9lyjEDdoNyEPtXoGtYw9kpeDRvlQIm1jqEylL4Lcd6JGXKqeXaBK+NJ
+        +uk9CHMdgG+2G6uVa800FbCPfygKQQtSqfcvxslcKVFQl/oOPnfpUDUTut6HA5FBLlzfI2NTovRY8
+        7+tTh7eQy6PkL+5LvQ1o6k2FC089tht54mg8KW+qjbhQzzqpgcZGx2HuDPkTk929Z5PbzaycfkZ5t
+        Zk42lm1g==;
 Received: from [2001:4bb8:181:656b:9509:7d20:8d39:f895] (helo=localhost)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pGDUT-000lua-TT; Fri, 13 Jan 2023 06:24:38 +0000
+        id 1pGDU8-000lc0-50; Fri, 13 Jan 2023 06:24:16 +0000
 From:   Christoph Hellwig <hch@lst.de>
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
@@ -45,9 +45,9 @@ Cc:     Laurent Pinchart <laurent.pinchart@ideasonboard.com>,
         linux-serial@vger.kernel.org, linux-usb@vger.kernel.org,
         linux-fbdev@vger.kernel.org, alsa-devel@alsa-project.org,
         linux-sh@vger.kernel.org
-Subject: [PATCH 15/22] spi: remove spi-sh
-Date:   Fri, 13 Jan 2023 07:23:32 +0100
-Message-Id: <20230113062339.1909087-16-hch@lst.de>
+Subject: [PATCH 09/22] i2c: remove i2c-sh7760
+Date:   Fri, 13 Jan 2023 07:23:26 +0100
+Message-Id: <20230113062339.1909087-10-hch@lst.de>
 X-Mailer: git-send-email 2.39.0
 In-Reply-To: <20230113062339.1909087-1-hch@lst.de>
 References: <20230113062339.1909087-1-hch@lst.de>
@@ -62,521 +62,615 @@ Now that arch/sh is removed this driver is dead code.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- drivers/spi/Kconfig  |   6 -
- drivers/spi/Makefile |   1 -
- drivers/spi/spi-sh.c | 474 -------------------------------------------
- 3 files changed, 481 deletions(-)
- delete mode 100644 drivers/spi/spi-sh.c
+ drivers/i2c/busses/Kconfig      |   9 -
+ drivers/i2c/busses/Makefile     |   1 -
+ drivers/i2c/busses/i2c-sh7760.c | 565 --------------------------------
+ 3 files changed, 575 deletions(-)
+ delete mode 100644 drivers/i2c/busses/i2c-sh7760.c
 
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 2c5226adf5e1d3..7508dcef909c78 100644
---- a/drivers/spi/Kconfig
-+++ b/drivers/spi/Kconfig
-@@ -882,12 +882,6 @@ config SPI_SH_MSIOF
- 	help
- 	  SPI driver for SuperH and SH Mobile MSIOF blocks.
+diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
+index 22602c512a6e50..44267a023fd19a 100644
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -1016,15 +1016,6 @@ config I2C_S3C2410
+ 	  Say Y here to include support for I2C controller in the
+ 	  Samsung SoCs (S3C, S5Pv210, Exynos).
  
--config SPI_SH
--	tristate "SuperH SPI controller"
--	depends on SUPERH || COMPILE_TEST
+-config I2C_SH7760
+-	tristate "Renesas SH7760 I2C Controller"
+-	depends on CPU_SUBTYPE_SH7760
 -	help
--	  SPI driver for SuperH SPI blocks.
+-	  This driver supports the 2 I2C interfaces on the Renesas SH7760.
 -
- config SPI_SH_SCI
- 	tristate "SuperH SCI SPI controller"
- 	depends on SUPERH
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index be9ba40ef8d03d..342a7eb5181c9b 100644
---- a/drivers/spi/Makefile
-+++ b/drivers/spi/Makefile
-@@ -116,7 +116,6 @@ obj-$(CONFIG_SPI_S3C24XX)		+= spi-s3c24xx-hw.o
- spi-s3c24xx-hw-y			:= spi-s3c24xx.o
- obj-$(CONFIG_SPI_S3C64XX)		+= spi-s3c64xx.o
- obj-$(CONFIG_SPI_SC18IS602)		+= spi-sc18is602.o
--obj-$(CONFIG_SPI_SH)			+= spi-sh.o
- obj-$(CONFIG_SPI_SH_HSPI)		+= spi-sh-hspi.o
- obj-$(CONFIG_SPI_SH_MSIOF)		+= spi-sh-msiof.o
- obj-$(CONFIG_SPI_SH_SCI)		+= spi-sh-sci.o
-diff --git a/drivers/spi/spi-sh.c b/drivers/spi/spi-sh.c
+-	  This driver can also be built as a module.  If so, the module
+-	  will be called i2c-sh7760.
+-
+ config I2C_SH_MOBILE
+ 	tristate "SuperH Mobile I2C Controller"
+ 	depends on ARCH_RENESAS || COMPILE_TEST
+diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
+index e73cdb1d2b5a85..6be213e5e4dd16 100644
+--- a/drivers/i2c/busses/Makefile
++++ b/drivers/i2c/busses/Makefile
+@@ -104,7 +104,6 @@ obj-$(CONFIG_I2C_RIIC)		+= i2c-riic.o
+ obj-$(CONFIG_I2C_RK3X)		+= i2c-rk3x.o
+ obj-$(CONFIG_I2C_RZV2M)		+= i2c-rzv2m.o
+ obj-$(CONFIG_I2C_S3C2410)	+= i2c-s3c2410.o
+-obj-$(CONFIG_I2C_SH7760)	+= i2c-sh7760.o
+ obj-$(CONFIG_I2C_SH_MOBILE)	+= i2c-sh_mobile.o
+ obj-$(CONFIG_I2C_SIMTEC)	+= i2c-simtec.o
+ obj-$(CONFIG_I2C_SPRD)		+= i2c-sprd.o
+diff --git a/drivers/i2c/busses/i2c-sh7760.c b/drivers/i2c/busses/i2c-sh7760.c
 deleted file mode 100644
-index 3e72fad99adfd4..00000000000000
---- a/drivers/spi/spi-sh.c
+index 319d1fa617c883..00000000000000
+--- a/drivers/i2c/busses/i2c-sh7760.c
 +++ /dev/null
-@@ -1,474 +0,0 @@
--// SPDX-License-Identifier: GPL-2.0
+@@ -1,565 +0,0 @@
 -/*
-- * SH SPI bus driver
+- * I2C bus driver for the SH7760 I2C Interfaces.
 - *
-- * Copyright (C) 2011  Renesas Solutions Corp.
+- * (c) 2005-2008 MSC Vertriebsges.m.b.H, Manuel Lauss <mlau@msc-ge.com>
 - *
-- * Based on pxa2xx_spi.c:
-- * Copyright (C) 2005 Stephen Street / StreetFire Sound Labs
+- * licensed under the terms outlined in the file COPYING.
+- *
 - */
 -
--#include <linux/module.h>
--#include <linux/kernel.h>
--#include <linux/sched.h>
--#include <linux/errno.h>
--#include <linux/timer.h>
+-#include <linux/completion.h>
 -#include <linux/delay.h>
--#include <linux/list.h>
--#include <linux/workqueue.h>
+-#include <linux/err.h>
+-#include <linux/i2c.h>
 -#include <linux/interrupt.h>
+-#include <linux/ioport.h>
 -#include <linux/platform_device.h>
+-#include <linux/slab.h>
 -#include <linux/io.h>
--#include <linux/spi/spi.h>
+-#include <linux/module.h>
 -
--#define SPI_SH_TBR		0x00
--#define SPI_SH_RBR		0x00
--#define SPI_SH_CR1		0x08
--#define SPI_SH_CR2		0x10
--#define SPI_SH_CR3		0x18
--#define SPI_SH_CR4		0x20
--#define SPI_SH_CR5		0x28
+-#include <asm/clock.h>
+-#include <asm/i2c-sh7760.h>
 -
--/* CR1 */
--#define SPI_SH_TBE		0x80
--#define SPI_SH_TBF		0x40
--#define SPI_SH_RBE		0x20
--#define SPI_SH_RBF		0x10
--#define SPI_SH_PFONRD		0x08
--#define SPI_SH_SSDB		0x04
--#define SPI_SH_SSD		0x02
--#define SPI_SH_SSA		0x01
+-/* register offsets */
+-#define I2CSCR		0x0		/* slave ctrl		*/
+-#define I2CMCR		0x4		/* master ctrl		*/
+-#define I2CSSR		0x8		/* slave status		*/
+-#define I2CMSR		0xC		/* master status	*/
+-#define I2CSIER		0x10		/* slave irq enable	*/
+-#define I2CMIER		0x14		/* master irq enable	*/
+-#define I2CCCR		0x18		/* clock dividers	*/
+-#define I2CSAR		0x1c		/* slave address	*/
+-#define I2CMAR		0x20		/* master address	*/
+-#define I2CRXTX		0x24		/* data port		*/
+-#define I2CFCR		0x28		/* fifo control		*/
+-#define I2CFSR		0x2C		/* fifo status		*/
+-#define I2CFIER		0x30		/* fifo irq enable	*/
+-#define I2CRFDR		0x34		/* rx fifo count	*/
+-#define I2CTFDR		0x38		/* tx fifo count	*/
 -
--/* CR2 */
--#define SPI_SH_RSTF		0x80
--#define SPI_SH_LOOPBK		0x40
--#define SPI_SH_CPOL		0x20
--#define SPI_SH_CPHA		0x10
--#define SPI_SH_L1M0		0x08
+-#define REGSIZE		0x3C
 -
--/* CR3 */
--#define SPI_SH_MAX_BYTE		0xFF
+-#define MCR_MDBS	0x80		/* non-fifo mode switch	*/
+-#define MCR_FSCL	0x40		/* override SCL pin	*/
+-#define MCR_FSDA	0x20		/* override SDA pin	*/
+-#define MCR_OBPC	0x10		/* override pins	*/
+-#define MCR_MIE		0x08		/* master if enable	*/
+-#define MCR_TSBE	0x04
+-#define MCR_FSB		0x02		/* force stop bit	*/
+-#define MCR_ESG		0x01		/* en startbit gen.	*/
 -
--/* CR4 */
--#define SPI_SH_TBEI		0x80
--#define SPI_SH_TBFI		0x40
--#define SPI_SH_RBEI		0x20
--#define SPI_SH_RBFI		0x10
--#define SPI_SH_WPABRT		0x04
--#define SPI_SH_SSS		0x01
+-#define MSR_MNR		0x40		/* nack received	*/
+-#define MSR_MAL		0x20		/* arbitration lost	*/
+-#define MSR_MST		0x10		/* sent a stop		*/
+-#define MSR_MDE		0x08
+-#define MSR_MDT		0x04
+-#define MSR_MDR		0x02
+-#define MSR_MAT		0x01		/* slave addr xfer done	*/
 -
--/* CR8 */
--#define SPI_SH_P1L0		0x80
--#define SPI_SH_PP1L0		0x40
--#define SPI_SH_MUXI		0x20
--#define SPI_SH_MUXIRQ		0x10
+-#define MIE_MNRE	0x40		/* nack irq en		*/
+-#define MIE_MALE	0x20		/* arblos irq en	*/
+-#define MIE_MSTE	0x10		/* stop irq en		*/
+-#define MIE_MDEE	0x08
+-#define MIE_MDTE	0x04
+-#define MIE_MDRE	0x02
+-#define MIE_MATE	0x01		/* address sent irq en	*/
 -
--#define SPI_SH_FIFO_SIZE	32
--#define SPI_SH_SEND_TIMEOUT	(3 * HZ)
--#define SPI_SH_RECEIVE_TIMEOUT	(HZ >> 3)
+-#define FCR_RFRST	0x02		/* reset rx fifo	*/
+-#define FCR_TFRST	0x01		/* reset tx fifo	*/
 -
--#undef DEBUG
+-#define FSR_TEND	0x04		/* last byte sent	*/
+-#define FSR_RDF		0x02		/* rx fifo trigger	*/
+-#define FSR_TDFE	0x01		/* tx fifo empty	*/
 -
--struct spi_sh_data {
--	void __iomem *addr;
+-#define FIER_TEIE	0x04		/* tx fifo empty irq en	*/
+-#define FIER_RXIE	0x02		/* rx fifo trig irq en	*/
+-#define FIER_TXIE	0x01		/* tx fifo trig irq en	*/
+-
+-#define FIFO_SIZE	16
+-
+-struct cami2c {
+-	void __iomem *iobase;
+-	struct i2c_adapter adap;
+-
+-	/* message processing */
+-	struct i2c_msg	*msg;
+-#define IDF_SEND	1
+-#define IDF_RECV	2
+-#define IDF_STOP	4
+-	int		flags;
+-
+-#define IDS_DONE	1
+-#define IDS_ARBLOST	2
+-#define IDS_NACK	4
+-	int		status;
+-	struct completion xfer_done;
+-
 -	int irq;
--	struct spi_master *master;
--	unsigned long cr1;
--	wait_queue_head_t wait;
--	int width;
+-	struct resource *ioarea;
 -};
 -
--static void spi_sh_write(struct spi_sh_data *ss, unsigned long data,
--			     unsigned long offset)
+-static inline void OUT32(struct cami2c *cam, int reg, unsigned long val)
 -{
--	if (ss->width == 8)
--		iowrite8(data, ss->addr + (offset >> 2));
--	else if (ss->width == 32)
--		iowrite32(data, ss->addr + offset);
+-	__raw_writel(val, (unsigned long)cam->iobase + reg);
 -}
 -
--static unsigned long spi_sh_read(struct spi_sh_data *ss, unsigned long offset)
+-static inline unsigned long IN32(struct cami2c *cam, int reg)
 -{
--	if (ss->width == 8)
--		return ioread8(ss->addr + (offset >> 2));
--	else if (ss->width == 32)
--		return ioread32(ss->addr + offset);
--	else
--		return 0;
+-	return __raw_readl((unsigned long)cam->iobase + reg);
 -}
 -
--static void spi_sh_set_bit(struct spi_sh_data *ss, unsigned long val,
--				unsigned long offset)
+-static irqreturn_t sh7760_i2c_irq(int irq, void *ptr)
 -{
--	unsigned long tmp;
+-	struct cami2c *id = ptr;
+-	struct i2c_msg *msg = id->msg;
+-	char *data = msg->buf;
+-	unsigned long msr, fsr, fier, len;
 -
--	tmp = spi_sh_read(ss, offset);
--	tmp |= val;
--	spi_sh_write(ss, tmp, offset);
--}
+-	msr = IN32(id, I2CMSR);
+-	fsr = IN32(id, I2CFSR);
 -
--static void spi_sh_clear_bit(struct spi_sh_data *ss, unsigned long val,
--				unsigned long offset)
--{
--	unsigned long tmp;
--
--	tmp = spi_sh_read(ss, offset);
--	tmp &= ~val;
--	spi_sh_write(ss, tmp, offset);
--}
--
--static void clear_fifo(struct spi_sh_data *ss)
--{
--	spi_sh_set_bit(ss, SPI_SH_RSTF, SPI_SH_CR2);
--	spi_sh_clear_bit(ss, SPI_SH_RSTF, SPI_SH_CR2);
--}
--
--static int spi_sh_wait_receive_buffer(struct spi_sh_data *ss)
--{
--	int timeout = 100000;
--
--	while (spi_sh_read(ss, SPI_SH_CR1) & SPI_SH_RBE) {
--		udelay(10);
--		if (timeout-- < 0)
--			return -ETIMEDOUT;
+-	/* arbitration lost */
+-	if (msr & MSR_MAL) {
+-		OUT32(id, I2CMCR, 0);
+-		OUT32(id, I2CSCR, 0);
+-		OUT32(id, I2CSAR, 0);
+-		id->status |= IDS_DONE | IDS_ARBLOST;
+-		goto out;
 -	}
--	return 0;
--}
 -
--static int spi_sh_wait_write_buffer_empty(struct spi_sh_data *ss)
--{
--	int timeout = 100000;
--
--	while (!(spi_sh_read(ss, SPI_SH_CR1) & SPI_SH_TBE)) {
--		udelay(10);
--		if (timeout-- < 0)
--			return -ETIMEDOUT;
+-	if (msr & MSR_MNR) {
+-		/* NACK handling is very screwed up.  After receiving a
+-		 * NAK IRQ one has to wait a bit  before writing to any
+-		 * registers, or the ctl will lock up. After that delay
+-		 * do a normal i2c stop. Then wait at least 1 ms before
+-		 * attempting another transfer or ctl will stop working
+-		 */
+-		udelay(100);	/* wait or risk ctl hang */
+-		OUT32(id, I2CFCR, FCR_RFRST | FCR_TFRST);
+-		OUT32(id, I2CMCR, MCR_MIE | MCR_FSB);
+-		OUT32(id, I2CFIER, 0);
+-		OUT32(id, I2CMIER, MIE_MSTE);
+-		OUT32(id, I2CSCR, 0);
+-		OUT32(id, I2CSAR, 0);
+-		id->status |= IDS_NACK;
+-		msr &= ~MSR_MAT;
+-		fsr = 0;
+-		/* In some cases the MST bit is also set. */
 -	}
--	return 0;
--}
 -
--static int spi_sh_send(struct spi_sh_data *ss, struct spi_message *mesg,
--			struct spi_transfer *t)
--{
--	int i, retval = 0;
--	int remain = t->len;
--	int cur_len;
--	unsigned char *data;
--	long ret;
+-	/* i2c-stop was sent */
+-	if (msr & MSR_MST) {
+-		id->status |= IDS_DONE;
+-		goto out;
+-	}
 -
--	if (t->len)
--		spi_sh_set_bit(ss, SPI_SH_SSA, SPI_SH_CR1);
+-	/* i2c slave addr was sent; set to "normal" operation */
+-	if (msr & MSR_MAT)
+-		OUT32(id, I2CMCR, MCR_MIE);
 -
--	data = (unsigned char *)t->tx_buf;
--	while (remain > 0) {
--		cur_len = min(SPI_SH_FIFO_SIZE, remain);
--		for (i = 0; i < cur_len &&
--				!(spi_sh_read(ss, SPI_SH_CR4) &
--							SPI_SH_WPABRT) &&
--				!(spi_sh_read(ss, SPI_SH_CR1) & SPI_SH_TBF);
--				i++)
--			spi_sh_write(ss, (unsigned long)data[i], SPI_SH_TBR);
+-	fier = IN32(id, I2CFIER);
 -
--		if (spi_sh_read(ss, SPI_SH_CR4) & SPI_SH_WPABRT) {
--			/* Abort SPI operation */
--			spi_sh_set_bit(ss, SPI_SH_WPABRT, SPI_SH_CR4);
--			retval = -EIO;
--			break;
+-	if (fsr & FSR_RDF) {
+-		len = IN32(id, I2CRFDR);
+-		if (msg->len <= len) {
+-			if (id->flags & IDF_STOP) {
+-				OUT32(id, I2CMCR, MCR_MIE | MCR_FSB);
+-				OUT32(id, I2CFIER, 0);
+-				/* manual says: wait >= 0.5 SCL times */
+-				udelay(5);
+-				/* next int should be MST */
+-			} else {
+-				id->status |= IDS_DONE;
+-				/* keep the RDF bit: ctrl holds SCL low
+-				 * until the setup for the next i2c_msg
+-				 * clears this bit.
+-				 */
+-				fsr &= ~FSR_RDF;
+-			}
+-		}
+-		while (msg->len && len) {
+-			*data++ = IN32(id, I2CRXTX);
+-			msg->len--;
+-			len--;
 -		}
 -
--		cur_len = i;
+-		if (msg->len) {
+-			len = (msg->len >= FIFO_SIZE) ? FIFO_SIZE - 1
+-						      : msg->len - 1;
 -
--		remain -= cur_len;
--		data += cur_len;
+-			OUT32(id, I2CFCR, FCR_TFRST | ((len & 0xf) << 4));
+-		}
 -
--		if (remain > 0) {
--			ss->cr1 &= ~SPI_SH_TBE;
--			spi_sh_set_bit(ss, SPI_SH_TBE, SPI_SH_CR4);
--			ret = wait_event_interruptible_timeout(ss->wait,
--						 ss->cr1 & SPI_SH_TBE,
--						 SPI_SH_SEND_TIMEOUT);
--			if (ret == 0 && !(ss->cr1 & SPI_SH_TBE)) {
--				printk(KERN_ERR "%s: timeout\n", __func__);
--				return -ETIMEDOUT;
+-	} else if (id->flags & IDF_SEND) {
+-		if ((fsr & FSR_TEND) && (msg->len < 1)) {
+-			if (id->flags & IDF_STOP) {
+-				OUT32(id, I2CMCR, MCR_MIE | MCR_FSB);
+-			} else {
+-				id->status |= IDS_DONE;
+-				/* keep the TEND bit: ctl holds SCL low
+-				 * until the setup for the next i2c_msg
+-				 * clears this bit.
+-				 */
+-				fsr &= ~FSR_TEND;
+-			}
+-		}
+-		if (fsr & FSR_TDFE) {
+-			while (msg->len && (IN32(id, I2CTFDR) < FIFO_SIZE)) {
+-				OUT32(id, I2CRXTX, *data++);
+-				msg->len--;
+-			}
+-
+-			if (msg->len < 1) {
+-				fier &= ~FIER_TXIE;
+-				OUT32(id, I2CFIER, fier);
+-			} else {
+-				len = (msg->len >= FIFO_SIZE) ? 2 : 0;
+-				OUT32(id, I2CFCR,
+-					  FCR_RFRST | ((len & 3) << 2));
 -			}
 -		}
 -	}
--
--	if (list_is_last(&t->transfer_list, &mesg->transfers)) {
--		spi_sh_clear_bit(ss, SPI_SH_SSD | SPI_SH_SSDB, SPI_SH_CR1);
--		spi_sh_set_bit(ss, SPI_SH_SSA, SPI_SH_CR1);
--
--		ss->cr1 &= ~SPI_SH_TBE;
--		spi_sh_set_bit(ss, SPI_SH_TBE, SPI_SH_CR4);
--		ret = wait_event_interruptible_timeout(ss->wait,
--					 ss->cr1 & SPI_SH_TBE,
--					 SPI_SH_SEND_TIMEOUT);
--		if (ret == 0 && (ss->cr1 & SPI_SH_TBE)) {
--			printk(KERN_ERR "%s: timeout\n", __func__);
--			return -ETIMEDOUT;
--		}
+-out:
+-	if (id->status & IDS_DONE) {
+-		OUT32(id, I2CMIER, 0);
+-		OUT32(id, I2CFIER, 0);
+-		id->msg = NULL;
+-		complete(&id->xfer_done);
 -	}
--
--	return retval;
--}
--
--static int spi_sh_receive(struct spi_sh_data *ss, struct spi_message *mesg,
--			  struct spi_transfer *t)
--{
--	int i;
--	int remain = t->len;
--	int cur_len;
--	unsigned char *data;
--	long ret;
--
--	if (t->len > SPI_SH_MAX_BYTE)
--		spi_sh_write(ss, SPI_SH_MAX_BYTE, SPI_SH_CR3);
--	else
--		spi_sh_write(ss, t->len, SPI_SH_CR3);
--
--	spi_sh_clear_bit(ss, SPI_SH_SSD | SPI_SH_SSDB, SPI_SH_CR1);
--	spi_sh_set_bit(ss, SPI_SH_SSA, SPI_SH_CR1);
--
--	spi_sh_wait_write_buffer_empty(ss);
--
--	data = (unsigned char *)t->rx_buf;
--	while (remain > 0) {
--		if (remain >= SPI_SH_FIFO_SIZE) {
--			ss->cr1 &= ~SPI_SH_RBF;
--			spi_sh_set_bit(ss, SPI_SH_RBF, SPI_SH_CR4);
--			ret = wait_event_interruptible_timeout(ss->wait,
--						 ss->cr1 & SPI_SH_RBF,
--						 SPI_SH_RECEIVE_TIMEOUT);
--			if (ret == 0 &&
--			    spi_sh_read(ss, SPI_SH_CR1) & SPI_SH_RBE) {
--				printk(KERN_ERR "%s: timeout\n", __func__);
--				return -ETIMEDOUT;
--			}
--		}
--
--		cur_len = min(SPI_SH_FIFO_SIZE, remain);
--		for (i = 0; i < cur_len; i++) {
--			if (spi_sh_wait_receive_buffer(ss))
--				break;
--			data[i] = (unsigned char)spi_sh_read(ss, SPI_SH_RBR);
--		}
--
--		remain -= cur_len;
--		data += cur_len;
--	}
--
--	/* deassert CS when SPI is receiving. */
--	if (t->len > SPI_SH_MAX_BYTE) {
--		clear_fifo(ss);
--		spi_sh_write(ss, 1, SPI_SH_CR3);
--	} else {
--		spi_sh_write(ss, 0, SPI_SH_CR3);
--	}
--
--	return 0;
--}
--
--static int spi_sh_transfer_one_message(struct spi_controller *ctlr,
--					struct spi_message *mesg)
--{
--	struct spi_sh_data *ss = spi_controller_get_devdata(ctlr);
--	struct spi_transfer *t;
--	int ret;
--
--	pr_debug("%s: enter\n", __func__);
--
--	spi_sh_clear_bit(ss, SPI_SH_SSA, SPI_SH_CR1);
--
--	list_for_each_entry(t, &mesg->transfers, transfer_list) {
--		pr_debug("tx_buf = %p, rx_buf = %p\n",
--			 t->tx_buf, t->rx_buf);
--		pr_debug("len = %d, delay.value = %d\n",
--			 t->len, t->delay.value);
--
--		if (t->tx_buf) {
--			ret = spi_sh_send(ss, mesg, t);
--			if (ret < 0)
--				goto error;
--		}
--		if (t->rx_buf) {
--			ret = spi_sh_receive(ss, mesg, t);
--			if (ret < 0)
--				goto error;
--		}
--		mesg->actual_length += t->len;
--	}
--
--	mesg->status = 0;
--	spi_finalize_current_message(ctlr);
--
--	clear_fifo(ss);
--	spi_sh_set_bit(ss, SPI_SH_SSD, SPI_SH_CR1);
--	udelay(100);
--
--	spi_sh_clear_bit(ss, SPI_SH_SSA | SPI_SH_SSDB | SPI_SH_SSD,
--			 SPI_SH_CR1);
--
--	clear_fifo(ss);
--
--	return 0;
--
-- error:
--	mesg->status = ret;
--	spi_finalize_current_message(ctlr);
--	if (mesg->complete)
--		mesg->complete(mesg->context);
--
--	spi_sh_clear_bit(ss, SPI_SH_SSA | SPI_SH_SSDB | SPI_SH_SSD,
--			 SPI_SH_CR1);
--	clear_fifo(ss);
--
--	return ret;
--}
--
--static int spi_sh_setup(struct spi_device *spi)
--{
--	struct spi_sh_data *ss = spi_master_get_devdata(spi->master);
--
--	pr_debug("%s: enter\n", __func__);
--
--	spi_sh_write(ss, 0xfe, SPI_SH_CR1);	/* SPI sycle stop */
--	spi_sh_write(ss, 0x00, SPI_SH_CR1);	/* CR1 init */
--	spi_sh_write(ss, 0x00, SPI_SH_CR3);	/* CR3 init */
--
--	clear_fifo(ss);
--
--	/* 1/8 clock */
--	spi_sh_write(ss, spi_sh_read(ss, SPI_SH_CR2) | 0x07, SPI_SH_CR2);
--	udelay(10);
--
--	return 0;
--}
--
--static void spi_sh_cleanup(struct spi_device *spi)
--{
--	struct spi_sh_data *ss = spi_master_get_devdata(spi->master);
--
--	pr_debug("%s: enter\n", __func__);
--
--	spi_sh_clear_bit(ss, SPI_SH_SSA | SPI_SH_SSDB | SPI_SH_SSD,
--			 SPI_SH_CR1);
--}
--
--static irqreturn_t spi_sh_irq(int irq, void *_ss)
--{
--	struct spi_sh_data *ss = (struct spi_sh_data *)_ss;
--	unsigned long cr1;
--
--	cr1 = spi_sh_read(ss, SPI_SH_CR1);
--	if (cr1 & SPI_SH_TBE)
--		ss->cr1 |= SPI_SH_TBE;
--	if (cr1 & SPI_SH_TBF)
--		ss->cr1 |= SPI_SH_TBF;
--	if (cr1 & SPI_SH_RBE)
--		ss->cr1 |= SPI_SH_RBE;
--	if (cr1 & SPI_SH_RBF)
--		ss->cr1 |= SPI_SH_RBF;
--
--	if (ss->cr1) {
--		spi_sh_clear_bit(ss, ss->cr1, SPI_SH_CR4);
--		wake_up(&ss->wait);
--	}
+-	/* clear status flags and ctrl resumes work */
+-	OUT32(id, I2CMSR, ~msr);
+-	OUT32(id, I2CFSR, ~fsr);
+-	OUT32(id, I2CSSR, 0);
 -
 -	return IRQ_HANDLED;
 -}
 -
--static int spi_sh_remove(struct platform_device *pdev)
+-
+-/* prepare and start a master receive operation */
+-static void sh7760_i2c_mrecv(struct cami2c *id)
 -{
--	struct spi_sh_data *ss = platform_get_drvdata(pdev);
+-	int len;
 -
--	spi_unregister_master(ss->master);
--	free_irq(ss->irq, ss);
+-	id->flags |= IDF_RECV;
 -
--	return 0;
+-	/* set the slave addr reg; otherwise rcv wont work! */
+-	OUT32(id, I2CSAR, 0xfe);
+-	OUT32(id, I2CMAR, (id->msg->addr << 1) | 1);
+-
+-	/* adjust rx fifo trigger */
+-	if (id->msg->len >= FIFO_SIZE)
+-		len = FIFO_SIZE - 1;	/* trigger at fifo full */
+-	else
+-		len = id->msg->len - 1;	/* trigger before all received */
+-
+-	OUT32(id, I2CFCR, FCR_RFRST | FCR_TFRST);
+-	OUT32(id, I2CFCR, FCR_TFRST | ((len & 0xF) << 4));
+-
+-	OUT32(id, I2CMSR, 0);
+-	OUT32(id, I2CMCR, MCR_MIE | MCR_ESG);
+-	OUT32(id, I2CMIER, MIE_MNRE | MIE_MALE | MIE_MSTE | MIE_MATE);
+-	OUT32(id, I2CFIER, FIER_RXIE);
 -}
 -
--static int spi_sh_probe(struct platform_device *pdev)
+-/* prepare and start a master send operation */
+-static void sh7760_i2c_msend(struct cami2c *id)
 -{
--	struct resource *res;
--	struct spi_master *master;
--	struct spi_sh_data *ss;
--	int ret, irq;
+-	int len;
 -
--	/* get base addr */
--	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	if (unlikely(res == NULL)) {
--		dev_err(&pdev->dev, "invalid resource\n");
+-	id->flags |= IDF_SEND;
+-
+-	/* set the slave addr reg; otherwise xmit wont work! */
+-	OUT32(id, I2CSAR, 0xfe);
+-	OUT32(id, I2CMAR, (id->msg->addr << 1) | 0);
+-
+-	/* adjust tx fifo trigger */
+-	if (id->msg->len >= FIFO_SIZE)
+-		len = 2;	/* trig: 2 bytes left in TX fifo */
+-	else
+-		len = 0;	/* trig: 8 bytes left in TX fifo */
+-
+-	OUT32(id, I2CFCR, FCR_RFRST | FCR_TFRST);
+-	OUT32(id, I2CFCR, FCR_RFRST | ((len & 3) << 2));
+-
+-	while (id->msg->len && IN32(id, I2CTFDR) < FIFO_SIZE) {
+-		OUT32(id, I2CRXTX, *(id->msg->buf));
+-		(id->msg->len)--;
+-		(id->msg->buf)++;
+-	}
+-
+-	OUT32(id, I2CMSR, 0);
+-	OUT32(id, I2CMCR, MCR_MIE | MCR_ESG);
+-	OUT32(id, I2CFSR, 0);
+-	OUT32(id, I2CMIER, MIE_MNRE | MIE_MALE | MIE_MSTE | MIE_MATE);
+-	OUT32(id, I2CFIER, FIER_TEIE | (id->msg->len ? FIER_TXIE : 0));
+-}
+-
+-static inline int sh7760_i2c_busy_check(struct cami2c *id)
+-{
+-	return (IN32(id, I2CMCR) & MCR_FSDA);
+-}
+-
+-static int sh7760_i2c_master_xfer(struct i2c_adapter *adap,
+-				  struct i2c_msg *msgs,
+-				  int num)
+-{
+-	struct cami2c *id = adap->algo_data;
+-	int i, retr;
+-
+-	if (sh7760_i2c_busy_check(id)) {
+-		dev_err(&adap->dev, "sh7760-i2c%d: bus busy!\n", adap->nr);
+-		return -EBUSY;
+-	}
+-
+-	i = 0;
+-	while (i < num) {
+-		retr = adap->retries;
+-retry:
+-		id->flags = ((i == (num-1)) ? IDF_STOP : 0);
+-		id->status = 0;
+-		id->msg = msgs;
+-		init_completion(&id->xfer_done);
+-
+-		if (msgs->flags & I2C_M_RD)
+-			sh7760_i2c_mrecv(id);
+-		else
+-			sh7760_i2c_msend(id);
+-
+-		wait_for_completion(&id->xfer_done);
+-
+-		if (id->status == 0) {
+-			num = -EIO;
+-			break;
+-		}
+-
+-		if (id->status & IDS_NACK) {
+-			/* wait a bit or i2c module stops working */
+-			mdelay(1);
+-			num = -EREMOTEIO;
+-			break;
+-		}
+-
+-		if (id->status & IDS_ARBLOST) {
+-			if (retr--) {
+-				mdelay(2);
+-				goto retry;
+-			}
+-			num = -EREMOTEIO;
+-			break;
+-		}
+-
+-		msgs++;
+-		i++;
+-	}
+-
+-	id->msg = NULL;
+-	id->flags = 0;
+-	id->status = 0;
+-
+-	OUT32(id, I2CMCR, 0);
+-	OUT32(id, I2CMSR, 0);
+-	OUT32(id, I2CMIER, 0);
+-	OUT32(id, I2CFIER, 0);
+-
+-	/* reset slave module registers too: master mode enables slave
+-	 * module for receive ops (ack, data). Without this reset,
+-	 * eternal bus activity might be reported after NACK / ARBLOST.
+-	 */
+-	OUT32(id, I2CSCR, 0);
+-	OUT32(id, I2CSAR, 0);
+-	OUT32(id, I2CSSR, 0);
+-
+-	return num;
+-}
+-
+-static u32 sh7760_i2c_func(struct i2c_adapter *adap)
+-{
+-	return I2C_FUNC_I2C | (I2C_FUNC_SMBUS_EMUL & ~I2C_FUNC_SMBUS_QUICK);
+-}
+-
+-static const struct i2c_algorithm sh7760_i2c_algo = {
+-	.master_xfer	= sh7760_i2c_master_xfer,
+-	.functionality	= sh7760_i2c_func,
+-};
+-
+-/* calculate CCR register setting for a desired scl clock.  SCL clock is
+- * derived from I2C module clock  (iclk)  which in turn is derived from
+- * peripheral module clock (mclk, usually around 33MHz):
+- * iclk = mclk/(CDF + 1).  iclk must be < 20MHz.
+- * scl = iclk/(SCGD*8 + 20).
+- */
+-static int calc_CCR(unsigned long scl_hz)
+-{
+-	struct clk *mclk;
+-	unsigned long mck, m1, dff, odff, iclk;
+-	signed char cdf, cdfm;
+-	int scgd, scgdm, scgds;
+-
+-	mclk = clk_get(NULL, "peripheral_clk");
+-	if (IS_ERR(mclk)) {
+-		return PTR_ERR(mclk);
+-	} else {
+-		mck = mclk->rate;
+-		clk_put(mclk);
+-	}
+-
+-	odff = scl_hz;
+-	scgdm = cdfm = m1 = 0;
+-	for (cdf = 3; cdf >= 0; cdf--) {
+-		iclk = mck / (1 + cdf);
+-		if (iclk >= 20000000)
+-			continue;
+-		scgds = ((iclk / scl_hz) - 20) >> 3;
+-		for (scgd = scgds; (scgd < 63) && scgd <= scgds + 1; scgd++) {
+-			m1 = iclk / (20 + (scgd << 3));
+-			dff = abs(scl_hz - m1);
+-			if (dff < odff) {
+-				odff = dff;
+-				cdfm = cdf;
+-				scgdm = scgd;
+-			}
+-		}
+-	}
+-	/* fail if more than 25% off of requested SCL */
+-	if (odff > (scl_hz >> 2))
 -		return -EINVAL;
+-
+-	/* create a CCR register value */
+-	return ((scgdm << 2) | cdfm);
+-}
+-
+-static int sh7760_i2c_probe(struct platform_device *pdev)
+-{
+-	struct sh7760_i2c_platdata *pd;
+-	struct resource *res;
+-	struct cami2c *id;
+-	int ret;
+-
+-	pd = dev_get_platdata(&pdev->dev);
+-	if (!pd) {
+-		dev_err(&pdev->dev, "no platform_data!\n");
+-		ret = -ENODEV;
+-		goto out0;
 -	}
 -
--	irq = platform_get_irq(pdev, 0);
--	if (irq < 0)
--		return irq;
--
--	master = devm_spi_alloc_master(&pdev->dev, sizeof(struct spi_sh_data));
--	if (master == NULL) {
--		dev_err(&pdev->dev, "spi_alloc_master error.\n");
--		return -ENOMEM;
+-	id = kzalloc(sizeof(struct cami2c), GFP_KERNEL);
+-	if (!id) {
+-		dev_err(&pdev->dev, "no mem for private data\n");
+-		ret = -ENOMEM;
+-		goto out0;
 -	}
 -
--	ss = spi_master_get_devdata(master);
--	platform_set_drvdata(pdev, ss);
--
--	switch (res->flags & IORESOURCE_MEM_TYPE_MASK) {
--	case IORESOURCE_MEM_8BIT:
--		ss->width = 8;
--		break;
--	case IORESOURCE_MEM_32BIT:
--		ss->width = 32;
--		break;
--	default:
--		dev_err(&pdev->dev, "No support width\n");
--		return -ENODEV;
+-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (!res) {
+-		dev_err(&pdev->dev, "no mmio resources\n");
+-		ret = -ENODEV;
+-		goto out1;
 -	}
--	ss->irq = irq;
--	ss->master = master;
--	ss->addr = devm_ioremap(&pdev->dev, res->start, resource_size(res));
--	if (ss->addr == NULL) {
--		dev_err(&pdev->dev, "ioremap error.\n");
--		return -ENOMEM;
--	}
--	init_waitqueue_head(&ss->wait);
 -
--	ret = request_irq(irq, spi_sh_irq, 0, "spi_sh", ss);
+-	id->ioarea = request_mem_region(res->start, REGSIZE, pdev->name);
+-	if (!id->ioarea) {
+-		dev_err(&pdev->dev, "mmio already reserved\n");
+-		ret = -EBUSY;
+-		goto out1;
+-	}
+-
+-	id->iobase = ioremap(res->start, REGSIZE);
+-	if (!id->iobase) {
+-		dev_err(&pdev->dev, "cannot ioremap\n");
+-		ret = -ENODEV;
+-		goto out2;
+-	}
+-
+-	ret = platform_get_irq(pdev, 0);
+-	if (ret < 0)
+-		goto out3;
+-	id->irq = ret;
+-
+-	id->adap.nr = pdev->id;
+-	id->adap.algo = &sh7760_i2c_algo;
+-	id->adap.class = I2C_CLASS_HWMON | I2C_CLASS_SPD;
+-	id->adap.retries = 3;
+-	id->adap.algo_data = id;
+-	id->adap.dev.parent = &pdev->dev;
+-	snprintf(id->adap.name, sizeof(id->adap.name),
+-		"SH7760 I2C at %08lx", (unsigned long)res->start);
+-
+-	OUT32(id, I2CMCR, 0);
+-	OUT32(id, I2CMSR, 0);
+-	OUT32(id, I2CMIER, 0);
+-	OUT32(id, I2CMAR, 0);
+-	OUT32(id, I2CSIER, 0);
+-	OUT32(id, I2CSAR, 0);
+-	OUT32(id, I2CSCR, 0);
+-	OUT32(id, I2CSSR, 0);
+-	OUT32(id, I2CFIER, 0);
+-	OUT32(id, I2CFCR, FCR_RFRST | FCR_TFRST);
+-	OUT32(id, I2CFSR, 0);
+-
+-	ret = calc_CCR(pd->speed_khz * 1000);
 -	if (ret < 0) {
--		dev_err(&pdev->dev, "request_irq error\n");
--		return ret;
+-		dev_err(&pdev->dev, "invalid SCL clock: %dkHz\n",
+-			pd->speed_khz);
+-		goto out3;
+-	}
+-	OUT32(id, I2CCCR, ret);
+-
+-	if (request_irq(id->irq, sh7760_i2c_irq, 0,
+-			SH7760_I2C_DEVNAME, id)) {
+-		dev_err(&pdev->dev, "cannot get irq %d\n", id->irq);
+-		ret = -EBUSY;
+-		goto out3;
 -	}
 -
--	master->num_chipselect = 2;
--	master->bus_num = pdev->id;
--	master->setup = spi_sh_setup;
--	master->transfer_one_message = spi_sh_transfer_one_message;
--	master->cleanup = spi_sh_cleanup;
+-	ret = i2c_add_numbered_adapter(&id->adap);
+-	if (ret < 0)
+-		goto out4;
 -
--	ret = spi_register_master(master);
--	if (ret < 0) {
--		printk(KERN_ERR "spi_register_master error.\n");
--		goto error3;
--	}
+-	platform_set_drvdata(pdev, id);
+-
+-	dev_info(&pdev->dev, "%d kHz mmio %08x irq %d\n",
+-		 pd->speed_khz, res->start, id->irq);
 -
 -	return 0;
 -
-- error3:
--	free_irq(irq, ss);
+-out4:
+-	free_irq(id->irq, id);
+-out3:
+-	iounmap(id->iobase);
+-out2:
+-	release_resource(id->ioarea);
+-	kfree(id->ioarea);
+-out1:
+-	kfree(id);
+-out0:
 -	return ret;
 -}
 -
--static struct platform_driver spi_sh_driver = {
--	.probe = spi_sh_probe,
--	.remove = spi_sh_remove,
--	.driver = {
--		.name = "sh_spi",
--	},
--};
--module_platform_driver(spi_sh_driver);
+-static int sh7760_i2c_remove(struct platform_device *pdev)
+-{
+-	struct cami2c *id = platform_get_drvdata(pdev);
 -
--MODULE_DESCRIPTION("SH SPI bus driver");
--MODULE_LICENSE("GPL v2");
--MODULE_AUTHOR("Yoshihiro Shimoda");
--MODULE_ALIAS("platform:sh_spi");
+-	i2c_del_adapter(&id->adap);
+-	free_irq(id->irq, id);
+-	iounmap(id->iobase);
+-	release_resource(id->ioarea);
+-	kfree(id->ioarea);
+-	kfree(id);
+-
+-	return 0;
+-}
+-
+-static struct platform_driver sh7760_i2c_drv = {
+-	.driver	= {
+-		.name	= SH7760_I2C_DEVNAME,
+-	},
+-	.probe		= sh7760_i2c_probe,
+-	.remove		= sh7760_i2c_remove,
+-};
+-
+-module_platform_driver(sh7760_i2c_drv);
+-
+-MODULE_LICENSE("GPL");
+-MODULE_DESCRIPTION("SH7760 I2C bus driver");
+-MODULE_AUTHOR("Manuel Lauss <mano@roarinelk.homelinux.net>");
 -- 
 2.39.0
 
