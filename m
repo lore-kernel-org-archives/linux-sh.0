@@ -2,96 +2,85 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 96985C54EBE
-	for <linux-sh@archiver.kernel.org>; Fri, 13 Jan 2023 15:26:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 05017C54EBD
+	for <linux-sh@archiver.kernel.org>; Fri, 13 Jan 2023 16:01:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230037AbjAMP0r (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 13 Jan 2023 10:26:47 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46850 "EHLO
+        id S230417AbjAMQBU (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 13 Jan 2023 11:01:20 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49718 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230071AbjAMP0P (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 13 Jan 2023 10:26:15 -0500
-Received: from mail-oi1-f175.google.com (mail-oi1-f175.google.com [209.85.167.175])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 288F47278D;
-        Fri, 13 Jan 2023 07:18:56 -0800 (PST)
-Received: by mail-oi1-f175.google.com with SMTP id n8so17958266oih.0;
-        Fri, 13 Jan 2023 07:18:56 -0800 (PST)
+        with ESMTP id S230209AbjAMQAm (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 13 Jan 2023 11:00:42 -0500
+Received: from mail-vs1-xe2f.google.com (mail-vs1-xe2f.google.com [IPv6:2607:f8b0:4864:20::e2f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 65D6E983FD
+        for <linux-sh@vger.kernel.org>; Fri, 13 Jan 2023 07:51:33 -0800 (PST)
+Received: by mail-vs1-xe2f.google.com with SMTP id v127so18236326vsb.12
+        for <linux-sh@vger.kernel.org>; Fri, 13 Jan 2023 07:51:33 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=bgdev-pl.20210112.gappssmtp.com; s=20210112;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=f5mLrAHoyJ5nE/w7T6hV9jO9ho9i+v76675RNWbUbP0=;
+        b=yHRJb87NukQWnDBcg5WdqZfZ07lI6u6ys4J9MZyzZjGgWFD6i1KYUG5iukGhsbMBL4
+         WPiiQagmylt6A5MJKZg40yDFd8qZ8ccY+6eMWL11aY4WIEGBXd/dqGBzZKRyMDOxqnPV
+         HlQTyavSGQRfJrqVQ6wJTz+FSi7AQkTYovL2goYaAHH0dhm4QHhMabwof0unFZR7NqqK
+         gUt1LFGzuwOgeO/eCmOJpww2XN1XsvqNGIJIMmVJuXLBFR9C8kmaS92T3u6hy41Z2Imp
+         tldehpMR1TNgEDawB0c5upbO5pr+85OSL7ix7y/PoWI/EmHGpIFYdWyjiVMtq12T9Dpf
+         K3yg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=ieDDnBbNB9JJsaMwpNzXJlERKk1wwpqLtOrBhJRfGpo=;
-        b=IZra8qjrcHr3eLbPGF9QPAUCfQ/039Fts8ql1H2MrriLwt0C+pWfFHzqSsotqYsAkf
-         ZGo295nFFgvvEGxogSV2+JT7dob+NPjhG6hSRVsSZStYXkIyyc7dRVaEMIjGOPDCY9UK
-         O66HdNI62tmqqgNk4dw9CPXy91TGjtJr2fqRjuM7anMwV5/cU60RP24hQt89WtTVNqD6
-         qm59rGQO/Vh2r/WPj3KKafL7EkljDSCZrJJCFgAedT0SCouSgdjtS6bWTso0aNsabsX3
-         OemNwBFGDatZgl2lLsDvvKLMAj/NRVfdqPyDzT0KS1DNd7eaaeYFdj7LiY8ZZyIznUot
-         XpvQ==
-X-Gm-Message-State: AFqh2kpj4Uo7mbYOiA4tQZeNtkdhNKVxyY6iHmSGExsuQsB6IR7DIX8d
-        9wfsKuz4lP2bsRMc5dSsNQ==
-X-Google-Smtp-Source: AMrXdXvKjUuXqtnMP8HRUWF6KklExF2oSAG2rWu9CjnEqT3LUV2kOArvIgWmH2DzIBq+esFLR8R2ag==
-X-Received: by 2002:a05:6808:996:b0:364:c003:e1ba with SMTP id a22-20020a056808099600b00364c003e1bamr517132oic.46.1673623135307;
-        Fri, 13 Jan 2023 07:18:55 -0800 (PST)
-Received: from robh_at_kernel.org (66-90-144-107.dyn.grandenetworks.net. [66.90.144.107])
-        by smtp.gmail.com with ESMTPSA id w11-20020a0568080d4b00b0035c422bb303sm9298016oik.19.2023.01.13.07.18.53
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 13 Jan 2023 07:18:54 -0800 (PST)
-Received: (nullmailer pid 2206759 invoked by uid 1000);
-        Fri, 13 Jan 2023 15:18:53 -0000
-Date:   Fri, 13 Jan 2023 09:18:53 -0600
-From:   Rob Herring <robh@kernel.org>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Laurent Pinchart <laurent.pinchart@ideasonboard.com>,
-        Kieran Bingham <kieran.bingham+renesas@ideasonboard.com>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        linux-kernel@vger.kernel.org, linux-watchdog@vger.kernel.org,
-        devicetree@vger.kernel.org, linux-arch@vger.kernel.org,
-        dmaengine@vger.kernel.org, dri-devel@lists.freedesktop.org,
-        linux-renesas-soc@vger.kernel.org, linux-i2c@vger.kernel.org,
-        linux-input@vger.kernel.org, linux-media@vger.kernel.org,
-        linux-mmc@vger.kernel.org, linux-mtd@lists.infradead.org,
-        netdev@vger.kernel.org, linux-gpio@vger.kernel.org,
-        linux-rtc@vger.kernel.org, linux-spi@vger.kernel.org,
-        linux-serial@vger.kernel.org, linux-usb@vger.kernel.org,
-        linux-fbdev@vger.kernel.org, alsa-devel@alsa-project.org,
-        linux-sh@vger.kernel.org
-Subject: Re: remove arch/sh
-Message-ID: <20230113151853.GA2184281-robh@kernel.org>
-References: <20230113062339.1909087-1-hch@lst.de>
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=f5mLrAHoyJ5nE/w7T6hV9jO9ho9i+v76675RNWbUbP0=;
+        b=VUeKW+S3NhAYTez61Gr2TKcpTIfTw+TFJWg/zr9+7ehgZhDR/b9OxfvOrBx7CtSMPS
+         SPcEayGGCasNKveW/reFkHHuPzP1SCMtortJJClnIeSFVSHUqPa0MtMjXjOPMC6qPUjh
+         MLjVOAJcElkFItKPge8z2SUAWIngMFYVs2UgY0UGyEuH0V8OBpGcoL8stDrhPk5+kTMI
+         mXwa0ERcszKFpRl8obPn9oK0ds4XdXc8dgJdcrMGsFhg9/l9FgBFPejAmINTm+160o92
+         33UA5kDgRx2AgAWx06f3R+qJYU9hmoVOSuQj8zysR40qUOBWmPwISTKrW4gbyjggoWYz
+         qCaQ==
+X-Gm-Message-State: AFqh2kpN4iRSBEEcpOtVxCjpR6PgoDWFrDPWIBCFN7gdJvM3X0u6LlaD
+        0vWjuIxkH7p7KrVcS9BNx+YDlqoxvI0/Cxlf2N4MMA==
+X-Google-Smtp-Source: AMrXdXsI3EMIQ7TOoOD/7p0LcC17cwRylvVtksQiQePxKwv+hwJDZMXOmlYE3f0gqSJLKso5mPtLAUlUwQRbqnkLpEw=
+X-Received: by 2002:a67:df09:0:b0:3ce:88b3:d7da with SMTP id
+ s9-20020a67df09000000b003ce88b3d7damr7008535vsk.62.1673625092385; Fri, 13 Jan
+ 2023 07:51:32 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230113062339.1909087-1-hch@lst.de>
+References: <20230112133942.58471-1-andriy.shevchenko@linux.intel.com>
+In-Reply-To: <20230112133942.58471-1-andriy.shevchenko@linux.intel.com>
+From:   Bartosz Golaszewski <brgl@bgdev.pl>
+Date:   Fri, 13 Jan 2023 16:51:21 +0100
+Message-ID: <CAMRc=McWPrODnwqHnKHx4V3buyWduMROnHpP1_jd3e-8EoU3tA@mail.gmail.com>
+Subject: Re: [PATCH v1 1/1] gpio: Remove unused and obsoleted irq_to_gpio()
+To:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Cc:     linux-gpio@vger.kernel.org, linux-doc@vger.kernel.org,
+        linux-kernel@vger.kernel.org,
+        linux-doc-tw-discuss@lists.sourceforge.net,
+        linux-m68k@lists.linux-m68k.org, linux-sh@vger.kernel.org,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Jonathan Corbet <corbet@lwn.net>, Alex Shi <alexs@kernel.org>,
+        Yanteng Si <siyanteng@loongson.cn>,
+        Hu Haowen <src.res@email.cn>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Jan 13, 2023 at 07:23:17AM +0100, Christoph Hellwig wrote:
-> Hi all,
-> 
-> arch/sh has been a long drag because it supports a lot of SOCs, and most
-> of them haven't even been converted to device tree infrastructure.  These
-> SOCs are generally obsolete as well, and all of the support has been barely
-> maintained for almost 10 years, and not at all for more than 1 year.
-> 
-> Drop arch/sh and everything that depends on it.
-> 
-> Diffstat:
->  Documentation/sh/booting.rst                             |   12 
->  Documentation/sh/features.rst                            |    3 
->  Documentation/sh/index.rst                               |   56 
->  Documentation/sh/new-machine.rst                         |  277 -
->  Documentation/sh/register-banks.rst                      |   40 
+On Thu, Jan 12, 2023 at 2:39 PM Andy Shevchenko
+<andriy.shevchenko@linux.intel.com> wrote:
+>
+> irq_to_gpio() is legacy and unused API, remove it for good.
+>
+> This leaves gpio_to_irq() as it's used yet in many places.
+> Nevertheless, removal of its counterpart is a good signal
+> to whoever even trying to consider using them that do not.
+>
+> Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+> ---
 
-Can you please also remove:
+Applied, thanks!
 
-Documentation/devicetree/bindings/mtd/flctl-nand.txt
-Documentation/devicetree/bindings/interrupt-controller/jcore,aic.txt
-Documentation/devicetree/bindings/spi/jcore,spi.txt
-Documentation/devicetree/bindings/timer/jcore,pit.txt
-
-Rob
+Bart
