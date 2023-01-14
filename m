@@ -2,177 +2,92 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CF3DAC67871
-	for <linux-sh@archiver.kernel.org>; Sat, 14 Jan 2023 16:10:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5EDDBC3DA78
+	for <linux-sh@archiver.kernel.org>; Sat, 14 Jan 2023 23:33:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230231AbjANQJ7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 14 Jan 2023 11:09:59 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51924 "EHLO
+        id S230224AbjANXdx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 14 Jan 2023 18:33:53 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42248 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230236AbjANQJ6 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 14 Jan 2023 11:09:58 -0500
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 59A6693CC
-        for <linux-sh@vger.kernel.org>; Sat, 14 Jan 2023 08:09:56 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1673712595;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=Q3R4pvBr6dG+A0u3o+nBNguX6qX9S+oXSEacD+sP77s=;
-        b=RYgsdZXkGI1f/95E0Bt12LQTW7+y1Cp31FI+IKA8rNsaxR8YRiQ1lb33rMgOBQxZ6p2mxB
-        4X/dkZu6t8wOJjuCifo3GAe71EM2/IgwbdYp04hwcxbFC9VzFRloVa1HqcimOqKg06VhSt
-        3fJcvqNlHqPTxQG4qtjQt2YImiggJbQ=
-Received: from mail-wm1-f72.google.com (mail-wm1-f72.google.com
- [209.85.128.72]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_128_GCM_SHA256) id
- us-mta-70-8LnZgZn0PPapp3fo6a_A6g-1; Sat, 14 Jan 2023 11:09:39 -0500
-X-MC-Unique: 8LnZgZn0PPapp3fo6a_A6g-1
-Received: by mail-wm1-f72.google.com with SMTP id n9-20020a05600c3b8900b003d9f14e904eso10028954wms.9
-        for <linux-sh@vger.kernel.org>; Sat, 14 Jan 2023 08:09:39 -0800 (PST)
+        with ESMTP id S229906AbjANXdw (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 14 Jan 2023 18:33:52 -0500
+Received: from mail-oo1-xc30.google.com (mail-oo1-xc30.google.com [IPv6:2607:f8b0:4864:20::c30])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DA0FD86BA
+        for <linux-sh@vger.kernel.org>; Sat, 14 Jan 2023 15:33:50 -0800 (PST)
+Received: by mail-oo1-xc30.google.com with SMTP id r1-20020a4a3701000000b004f2b4f8200eso599121oor.7
+        for <linux-sh@vger.kernel.org>; Sat, 14 Jan 2023 15:33:50 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20210112.gappssmtp.com; s=20210112;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=EVa7tSg34V82zc9uv/ppXuqPU5ZR9rqfF3JA312hlp4=;
+        b=0nOK1+r/a//WJZYFo1KepaU9LsjzllNZfU6wFeBZeH2Iz9q234acLX0cO62/wpFrZn
+         W3Pz1fIHC5ndFaS/pnzQdU9xQbpYbmlS5sfMr/E/34MBRgfE+q0Tihq/O/Ul9mUtOKDr
+         hLp1iWNpB6cAky0tXXxbAP7MOBkB0uahINERuAST32jEVSvzkTk2LOawn403UPcqjvB8
+         YaaZDBL6btMGnrDAlLSv6ZlXTigaPHh+b9wyYFRzTvlBXeYe1JPvEfoqK9hze81Ax108
+         oylQHqb26hucx+iiK59iUAdTZcr1pS2smwOtXHgYCkBOa3Ljpudgdb4GsfBCSLaqRNT1
+         AkOw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=content-transfer-encoding:in-reply-to:subject:organization:from
-         :references:cc:to:content-language:user-agent:mime-version:date
-         :message-id:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=Q3R4pvBr6dG+A0u3o+nBNguX6qX9S+oXSEacD+sP77s=;
-        b=JvmHJgdL58BD0Hp7fQjYNir9u/ulAlwLe8LSo7WbKa5NZvFuFhOeu2YSNbtWfR7/BK
-         StUAtu5p/6KkKED5RXlX/EQp1r2W1rXF9F3cEnOVtrAYdNI0D1jUxJ5Vvb4KTVjiVw29
-         pixzTDs4voTu00EdD/Gz7LRdv3JZAZhl7eTAa7yk2GZW+g6rkHgCq5ksdpK6yT/9rGc6
-         DmZ9tKrdTaAmizxxT7tMkf/HmI3W6kP0Wx5uAhFty2yf4H/Xjd3Ip23Dc314VNWIC0UD
-         h6zhMbkLUgc402E8M+l9fOVjI6way+BErouuOueYlpO9GOk0l6ATJHbVrBcPPPuqPj+3
-         l1Rw==
-X-Gm-Message-State: AFqh2kqhhcxGdNW3Cl86lcFJgRvCFMyBasjXTA7MXufqUGKlOsIMhWqy
-        Ia1j6YPF3WEUfhm7mX2kogzKAFnlwdlD1MqdKYUE10AtRJwmlH2fXjkzdK9yORZ80dIhgs5XuI/
-        DYDF6pE0+uDdooeNPDHA=
-X-Received: by 2002:a05:600c:348b:b0:3d1:f16b:30e6 with SMTP id a11-20020a05600c348b00b003d1f16b30e6mr62422469wmq.28.1673712578326;
-        Sat, 14 Jan 2023 08:09:38 -0800 (PST)
-X-Google-Smtp-Source: AMrXdXtvXECQ77f+OwG9Mdcw6TdAWlLhcG76s2TeMh5Hr9A1VofwYXs3lPZWG9daADyc7xNo4jh7zQ==
-X-Received: by 2002:a05:600c:348b:b0:3d1:f16b:30e6 with SMTP id a11-20020a05600c348b00b003d1f16b30e6mr62422426wmq.28.1673712578037;
-        Sat, 14 Jan 2023 08:09:38 -0800 (PST)
-Received: from ?IPV6:2003:cb:c71c:9800:fa4a:c1fc:a860:85af? (p200300cbc71c9800fa4ac1fca86085af.dip0.t-ipconnect.de. [2003:cb:c71c:9800:fa4a:c1fc:a860:85af])
-        by smtp.gmail.com with ESMTPSA id q18-20020adfdfd2000000b002bdc129c8f6sm10260315wrn.43.2023.01.14.08.09.36
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=EVa7tSg34V82zc9uv/ppXuqPU5ZR9rqfF3JA312hlp4=;
+        b=q64gBZzHlbTRv5MD4JBBdZWWr5g2PlVZ4D6k51+3n/gpqa0WjhcAnVtOAALmkZzKZI
+         o9FOWGo08H0DZFw7zx1RMUCYOEd0fpF9dzhpWBbsSJlimDijA9VJ3o5fa5CZwQiIFuX5
+         RI5fK+s/It8cHaDoHiuV+Bzw5PO3tG8sRgGDLhwO1jcUpk5YW5VnYye/OdndXaTTQhWT
+         e45IC/RPdCHsn9dzQFzKnRF0KkNwmsDggP1OdmUfFpRbfqsJR6rGIryqgwlW+FEWy0PZ
+         1emdE6EBQrR+JdzSjlGpfNUzyyBv9bu/eIfrHekrq+SEOAo3d32mUktYs9P+rOs1EsFE
+         qWrA==
+X-Gm-Message-State: AFqh2krFdQzBdcBqZv+UtjTIPbdvmO871Huj2nllh3z8JiZ+MM/KE2Tl
+        LhvaZCLT0O0mpvMwoqLfwQEU39LpO5xjY8SmAow=
+X-Google-Smtp-Source: AMrXdXs/Kns4HT9KFpy3hijA+mJsCvDdjv2Pt3sAGW1afqj/X9X0Q2SN6FycBE9luLkcBBrJY0zLpg==
+X-Received: by 2002:a4a:a845:0:b0:4a3:bcce:5b56 with SMTP id p5-20020a4aa845000000b004a3bcce5b56mr41919914oom.3.1673739229264;
+        Sat, 14 Jan 2023 15:33:49 -0800 (PST)
+Received: from [192.168.86.224] ([136.62.38.22])
+        by smtp.gmail.com with ESMTPSA id g31-20020a4a8962000000b004a8eb1d8f1bsm6770438ooi.39.2023.01.14.15.33.47
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 14 Jan 2023 08:09:37 -0800 (PST)
-Message-ID: <6aaad548-cf48-77fa-9d6c-db83d724b2eb@redhat.com>
-Date:   Sat, 14 Jan 2023 17:09:35 +0100
+        Sat, 14 Jan 2023 15:33:48 -0800 (PST)
+Message-ID: <15573018-32df-b67f-fc37-44da0ed7afde@landley.net>
+Date:   Sat, 14 Jan 2023 17:45:59 -0600
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.6.0
-To:     linux-kernel@vger.kernel.org
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Hugh Dickins <hughd@google.com>,
-        John Hubbard <jhubbard@nvidia.com>,
-        Jason Gunthorpe <jgg@nvidia.com>,
-        Mike Rapoport <rppt@linux.ibm.com>,
-        Yang Shi <shy828301@gmail.com>,
-        Vlastimil Babka <vbabka@suse.cz>,
-        Nadav Amit <namit@vmware.com>,
-        Andrea Arcangeli <aarcange@redhat.com>,
-        Peter Xu <peterx@redhat.com>, linux-mm@kvack.org,
-        x86@kernel.org, linux-alpha@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org
-References: <20230113171026.582290-1-david@redhat.com>
- <20230113171026.582290-2-david@redhat.com>
-From:   David Hildenbrand <david@redhat.com>
-Organization: Red Hat
-Subject: Re: [PATCH mm-unstable v1 01/26] mm/debug_vm_pgtable: more
- pte_swp_exclusive() sanity checks
-In-Reply-To: <20230113171026.582290-2-david@redhat.com>
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: redhat.com
+ Thunderbird/102.5.0
+Subject: Re: [PATCH v4] sh: avoid using IRQ0 on SH3/4
 Content-Language: en-US
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Sergey Shtylyov <s.shtylyov@omp.ru>
+Cc:     Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+References: <961f3b42-1522-79d5-7012-1533b568696f@omp.ru>
+ <09EB6264-E85C-487C-B706-6411BB18DDDF@physik.fu-berlin.de>
+From:   Rob Landley <rob@landley.net>
+In-Reply-To: <09EB6264-E85C-487C-B706-6411BB18DDDF@physik.fu-berlin.de>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 13.01.23 18:10, David Hildenbrand wrote:
-> We want to implement __HAVE_ARCH_PTE_SWP_EXCLUSIVE on all architectures.
-> Let's extend our sanity checks, especially testing that our PTE bit
-> does not affect:
-> * is_swap_pte() -> pte_present() and pte_none()
-> * the swap entry + type
-> * pte_swp_soft_dirty()
+On 1/13/23 12:38, John Paul Adrian Glaubitz wrote:
+>>> The patch is against Linus Torvalds' 'linux.git' repo.
+>> 
+>>   So, this patch hasn't been merged... may I ask why? :-(
 > 
-> Especially, the pfn_pte() is dodgy when the swap PTE layout differs
-> heavily from ordinary PTEs. Let's properly construct a swap PTE from
-> swap type+offset.
+> The SH maintainers have been MIA which is why the other maintainers want to kill the architecture again.
+
+To clarify: Sato-san was only ever assisting Rich, as in promising to answer
+questions when Rich didn't understand something. (That may not have been
+represented in MAINTAINERS but that was what Sato-san agreed to when we all had
+lunch together in tokyo however many years ago that was.)
+
+> I’m seriously considering adopting the architecture.
 > 
-> Signed-off-by: David Hildenbrand <david@redhat.com>
-> ---
+> Not sure whether Linus would grant that though.
 
-The following fixup for !CONFIG_SWAP on top, which makes it compile for me and
-passes when booting on x86_64 with CONFIG_DEBUG_VM_PGTABLE:
+I'll happily endorse you for maintainer if that would help.
 
-...
-[    0.347112] Loaded X.509 cert 'Build time autogenerated kernel key: ee6afc0578f6475656fec8a4f9d02832'
-[    0.350112] debug_vm_pgtable: [debug_vm_pgtable         ]: Validating architecture page table helpers
-[    0.351217] page_owner is disabled
-...
-
-
- From 6a6162e8af62a4b3f7b9d823fdfae86de3f34a9d Mon Sep 17 00:00:00 2001
-From: David Hildenbrand <david@redhat.com>
-Date: Sat, 14 Jan 2023 16:47:12 +0100
-Subject: [PATCH] fixup: mm/debug_vm_pgtable: more pte_swp_exclusive() sanity
-  checks
-
-generic_max_swapfile_size() is only available with CONFIG_SWAP -- which
-makes sense, because without SWAP there are no swap files. Let's
-simply probe manually which bits we can obtain after storing them in a
-PTE, and properly call it "max swap offset", which is more generic for
-a swap entry.
-
-Reported-by: kernel test robot <lkp@intel.com>
-Signed-off-by: David Hildenbrand <david@redhat.com>
----
-  mm/debug_vm_pgtable.c | 8 +++++---
-  1 file changed, 5 insertions(+), 3 deletions(-)
-
-diff --git a/mm/debug_vm_pgtable.c b/mm/debug_vm_pgtable.c
-index 3da0cc380c35..af59cc7bd307 100644
---- a/mm/debug_vm_pgtable.c
-+++ b/mm/debug_vm_pgtable.c
-@@ -810,15 +810,17 @@ static void __init pmd_swap_soft_dirty_tests(struct pgtable_debug_args *args) {
-  
-  static void __init pte_swap_exclusive_tests(struct pgtable_debug_args *args)
-  {
--	unsigned long max_swapfile_size = generic_max_swapfile_size();
-+	unsigned long max_swap_offset;
-  	swp_entry_t entry, entry2;
-  	pte_t pte;
-  
-  	pr_debug("Validating PTE swap exclusive\n");
-  
-+	/* See generic_max_swapfile_size(): probe the maximum offset */
-+	max_swap_offset = swp_offset(pte_to_swp_entry(swp_entry_to_pte(swp_entry(0, ~0UL))));
-+
-  	/* Create a swp entry with all possible bits set */
--	entry = swp_entry((1 << MAX_SWAPFILES_SHIFT) - 1,
--			  max_swapfile_size - 1);
-+	entry = swp_entry((1 << MAX_SWAPFILES_SHIFT) - 1, max_swap_offset);
-  
-  	pte = swp_entry_to_pte(entry);
-  	WARN_ON(pte_swp_exclusive(pte));
--- 
-2.39.0
-
-
-
--- 
-Thanks,
-
-David / dhildenb
-
+Rob
