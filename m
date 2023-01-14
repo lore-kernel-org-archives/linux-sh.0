@@ -2,108 +2,177 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7DBB6C3DA78
-	for <linux-sh@archiver.kernel.org>; Sat, 14 Jan 2023 12:07:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF3DAC67871
+	for <linux-sh@archiver.kernel.org>; Sat, 14 Jan 2023 16:10:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229747AbjANMHQ convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 14 Jan 2023 07:07:16 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57872 "EHLO
+        id S230231AbjANQJ7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 14 Jan 2023 11:09:59 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51924 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229905AbjANMHD (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 14 Jan 2023 07:07:03 -0500
-Received: from mail-qt1-f182.google.com (mail-qt1-f182.google.com [209.85.160.182])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6CF3C5BB1;
-        Sat, 14 Jan 2023 04:07:02 -0800 (PST)
-Received: by mail-qt1-f182.google.com with SMTP id y7so2664247qtv.5;
-        Sat, 14 Jan 2023 04:07:02 -0800 (PST)
+        with ESMTP id S230236AbjANQJ6 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 14 Jan 2023 11:09:58 -0500
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 59A6693CC
+        for <linux-sh@vger.kernel.org>; Sat, 14 Jan 2023 08:09:56 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1673712595;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=Q3R4pvBr6dG+A0u3o+nBNguX6qX9S+oXSEacD+sP77s=;
+        b=RYgsdZXkGI1f/95E0Bt12LQTW7+y1Cp31FI+IKA8rNsaxR8YRiQ1lb33rMgOBQxZ6p2mxB
+        4X/dkZu6t8wOJjuCifo3GAe71EM2/IgwbdYp04hwcxbFC9VzFRloVa1HqcimOqKg06VhSt
+        3fJcvqNlHqPTxQG4qtjQt2YImiggJbQ=
+Received: from mail-wm1-f72.google.com (mail-wm1-f72.google.com
+ [209.85.128.72]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_128_GCM_SHA256) id
+ us-mta-70-8LnZgZn0PPapp3fo6a_A6g-1; Sat, 14 Jan 2023 11:09:39 -0500
+X-MC-Unique: 8LnZgZn0PPapp3fo6a_A6g-1
+Received: by mail-wm1-f72.google.com with SMTP id n9-20020a05600c3b8900b003d9f14e904eso10028954wms.9
+        for <linux-sh@vger.kernel.org>; Sat, 14 Jan 2023 08:09:39 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=fjDf02IMHvV+t7jAXm+ttuj2xmadx1ibBLutjJki3dM=;
-        b=ETTEo+3T+YWJPrgFvT+mgDa14OJixhCqx64ae8lOqc1yVCdxKgjhbJMxmU3517Uksu
-         zGOAfvRLH85zDPvjkW8DYuzwPsfWM2QPq+9wuqXTkwys7IPf5cZ9iOwg9/aK9h5UcfJK
-         dgeCol9dK4Iwu7rMHzeCQJKupSZgfbzfguEeMd595Ruc//2s1VPiEGlvxkcOYt4j4H9I
-         3MtoFbKVvaXtmQEgEgAP8/eOMC5UoI1JN55ea5wq0QczzCtrNaOmt7oN3kGRzPO9Jp/r
-         hJRo+AlUbcpZIVho8PmnJj3yZ0X6DdGd9fMxzgnN+S1VLDKwoHPc+pY4AufOshzUK6n+
-         w6iA==
-X-Gm-Message-State: AFqh2kpOTWPjbJbxO/QdKdnIPYB6eu9lAjH7tIcxvNsyQf9qz5g8TZWh
-        eWDrVLqhAgyNJz5nIE4LVFG+btDAibpBtA==
-X-Google-Smtp-Source: AMrXdXv/fFFB8u4EVx36dQy5gPWqsMCsaJTjI7dgiqwhrwugjUZEmoE+BQsNZQeJpJUne8+SxqQQOw==
-X-Received: by 2002:ac8:7957:0:b0:3ad:903d:3ed4 with SMTP id r23-20020ac87957000000b003ad903d3ed4mr28232408qtt.59.1673698021369;
-        Sat, 14 Jan 2023 04:07:01 -0800 (PST)
-Received: from mail-yw1-f172.google.com (mail-yw1-f172.google.com. [209.85.128.172])
-        by smtp.gmail.com with ESMTPSA id x3-20020ac84a03000000b003a820f9fb70sm776356qtq.36.2023.01.14.04.07.00
+        h=content-transfer-encoding:in-reply-to:subject:organization:from
+         :references:cc:to:content-language:user-agent:mime-version:date
+         :message-id:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=Q3R4pvBr6dG+A0u3o+nBNguX6qX9S+oXSEacD+sP77s=;
+        b=JvmHJgdL58BD0Hp7fQjYNir9u/ulAlwLe8LSo7WbKa5NZvFuFhOeu2YSNbtWfR7/BK
+         StUAtu5p/6KkKED5RXlX/EQp1r2W1rXF9F3cEnOVtrAYdNI0D1jUxJ5Vvb4KTVjiVw29
+         pixzTDs4voTu00EdD/Gz7LRdv3JZAZhl7eTAa7yk2GZW+g6rkHgCq5ksdpK6yT/9rGc6
+         DmZ9tKrdTaAmizxxT7tMkf/HmI3W6kP0Wx5uAhFty2yf4H/Xjd3Ip23Dc314VNWIC0UD
+         h6zhMbkLUgc402E8M+l9fOVjI6way+BErouuOueYlpO9GOk0l6ATJHbVrBcPPPuqPj+3
+         l1Rw==
+X-Gm-Message-State: AFqh2kqhhcxGdNW3Cl86lcFJgRvCFMyBasjXTA7MXufqUGKlOsIMhWqy
+        Ia1j6YPF3WEUfhm7mX2kogzKAFnlwdlD1MqdKYUE10AtRJwmlH2fXjkzdK9yORZ80dIhgs5XuI/
+        DYDF6pE0+uDdooeNPDHA=
+X-Received: by 2002:a05:600c:348b:b0:3d1:f16b:30e6 with SMTP id a11-20020a05600c348b00b003d1f16b30e6mr62422469wmq.28.1673712578326;
+        Sat, 14 Jan 2023 08:09:38 -0800 (PST)
+X-Google-Smtp-Source: AMrXdXtvXECQ77f+OwG9Mdcw6TdAWlLhcG76s2TeMh5Hr9A1VofwYXs3lPZWG9daADyc7xNo4jh7zQ==
+X-Received: by 2002:a05:600c:348b:b0:3d1:f16b:30e6 with SMTP id a11-20020a05600c348b00b003d1f16b30e6mr62422426wmq.28.1673712578037;
+        Sat, 14 Jan 2023 08:09:38 -0800 (PST)
+Received: from ?IPV6:2003:cb:c71c:9800:fa4a:c1fc:a860:85af? (p200300cbc71c9800fa4ac1fca86085af.dip0.t-ipconnect.de. [2003:cb:c71c:9800:fa4a:c1fc:a860:85af])
+        by smtp.gmail.com with ESMTPSA id q18-20020adfdfd2000000b002bdc129c8f6sm10260315wrn.43.2023.01.14.08.09.36
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 14 Jan 2023 04:07:00 -0800 (PST)
-Received: by mail-yw1-f172.google.com with SMTP id 00721157ae682-4bf16baa865so318910777b3.13;
-        Sat, 14 Jan 2023 04:07:00 -0800 (PST)
-X-Received: by 2002:a05:690c:313:b0:37e:6806:a5f9 with SMTP id
- bg19-20020a05690c031300b0037e6806a5f9mr4020257ywb.47.1673698020048; Sat, 14
- Jan 2023 04:07:00 -0800 (PST)
+        Sat, 14 Jan 2023 08:09:37 -0800 (PST)
+Message-ID: <6aaad548-cf48-77fa-9d6c-db83d724b2eb@redhat.com>
+Date:   Sat, 14 Jan 2023 17:09:35 +0100
 MIME-Version: 1.0
-References: <961f3b42-1522-79d5-7012-1533b568696f@omp.ru> <09EB6264-E85C-487C-B706-6411BB18DDDF@physik.fu-berlin.de>
-In-Reply-To: <09EB6264-E85C-487C-B706-6411BB18DDDF@physik.fu-berlin.de>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Sat, 14 Jan 2023 13:06:48 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdW8=JF4CVSJZqQ=FZKRfWALGRVmg+sC+pOw+0TxF680Pg@mail.gmail.com>
-Message-ID: <CAMuHMdW8=JF4CVSJZqQ=FZKRfWALGRVmg+sC+pOw+0TxF680Pg@mail.gmail.com>
-Subject: Re: [PATCH v4] sh: avoid using IRQ0 on SH3/4
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Sergey Shtylyov <s.shtylyov@omp.ru>, Rich Felker <dalias@libc.org>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.6.0
+To:     linux-kernel@vger.kernel.org
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Hugh Dickins <hughd@google.com>,
+        John Hubbard <jhubbard@nvidia.com>,
+        Jason Gunthorpe <jgg@nvidia.com>,
+        Mike Rapoport <rppt@linux.ibm.com>,
+        Yang Shi <shy828301@gmail.com>,
+        Vlastimil Babka <vbabka@suse.cz>,
+        Nadav Amit <namit@vmware.com>,
+        Andrea Arcangeli <aarcange@redhat.com>,
+        Peter Xu <peterx@redhat.com>, linux-mm@kvack.org,
+        x86@kernel.org, linux-alpha@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org
+References: <20230113171026.582290-1-david@redhat.com>
+ <20230113171026.582290-2-david@redhat.com>
+From:   David Hildenbrand <david@redhat.com>
+Organization: Red Hat
+Subject: Re: [PATCH mm-unstable v1 01/26] mm/debug_vm_pgtable: more
+ pte_swp_exclusive() sanity checks
+In-Reply-To: <20230113171026.582290-2-david@redhat.com>
+X-Mimecast-Spam-Score: 0
+X-Mimecast-Originator: redhat.com
+Content-Language: en-US
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Adrian,
+On 13.01.23 18:10, David Hildenbrand wrote:
+> We want to implement __HAVE_ARCH_PTE_SWP_EXCLUSIVE on all architectures.
+> Let's extend our sanity checks, especially testing that our PTE bit
+> does not affect:
+> * is_swap_pte() -> pte_present() and pte_none()
+> * the swap entry + type
+> * pte_swp_soft_dirty()
+> 
+> Especially, the pfn_pte() is dodgy when the swap PTE layout differs
+> heavily from ordinary PTEs. Let's properly construct a swap PTE from
+> swap type+offset.
+> 
+> Signed-off-by: David Hildenbrand <david@redhat.com>
+> ---
 
-On Fri, Jan 13, 2023 at 7:49 PM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> > On Jan 13, 2023, at 7:27 PM, Sergey Shtylyov <s.shtylyov@omp.ru> wrote:
-> >> On 5/3/22 11:42 PM, Sergey Shtylyov wrote:
-> >> Using IRQ0 by the platform devices is going to be disallowed soon (see [1])
-> >> and even now, when IRQ0 is about to be returned by platfrom_get_irq(), you
-> >> see a big warning.  The code supporting SH3/4 SoCs maps the IRQ #s starting
-> >> at 0 -- modify that code to start the IRQ #s from 16 instead.
-> >>
-> >> The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
-> >> indeed use IRQ0 for the SMSC911x compatible Ethernet chip...
-> >>
-> >> [1] https://lore.kernel.org/all/025679e1-1f0a-ae4b-4369-01164f691511@omp.ru/
-> >>
-> >> Fixes: a85a6c86c25b ("driver core: platform: Clarify that IRQ 0 is invalid")
-> >> Signed-off-by: Sergey Shtylyov <s.shtylyov@omp.ru>
-> >> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >> Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> >>
-> >> ---
-> >> The patch is against Linus Torvalds' 'linux.git' repo.
-> >
-> >   So, this patch hasn't been merged... may I ask why? :-(
->
-> The SH maintainers have been MIA which is why the other maintainers want to kill the architecture again.
->
-> I’m seriously considering adopting the architecture.
->
-> Not sure whether Linus would grant that though.
+The following fixup for !CONFIG_SWAP on top, which makes it compile for me and
+passes when booting on x86_64 with CONFIG_DEBUG_VM_PGTABLE:
 
-Why not?
+...
+[    0.347112] Loaded X.509 cert 'Build time autogenerated kernel key: ee6afc0578f6475656fec8a4f9d02832'
+[    0.350112] debug_vm_pgtable: [debug_vm_pgtable         ]: Validating architecture page table helpers
+[    0.351217] page_owner is disabled
+...
 
-Gr{oetje,eeting}s,
 
-                        Geert
+ From 6a6162e8af62a4b3f7b9d823fdfae86de3f34a9d Mon Sep 17 00:00:00 2001
+From: David Hildenbrand <david@redhat.com>
+Date: Sat, 14 Jan 2023 16:47:12 +0100
+Subject: [PATCH] fixup: mm/debug_vm_pgtable: more pte_swp_exclusive() sanity
+  checks
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+generic_max_swapfile_size() is only available with CONFIG_SWAP -- which
+makes sense, because without SWAP there are no swap files. Let's
+simply probe manually which bits we can obtain after storing them in a
+PTE, and properly call it "max swap offset", which is more generic for
+a swap entry.
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Reported-by: kernel test robot <lkp@intel.com>
+Signed-off-by: David Hildenbrand <david@redhat.com>
+---
+  mm/debug_vm_pgtable.c | 8 +++++---
+  1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/mm/debug_vm_pgtable.c b/mm/debug_vm_pgtable.c
+index 3da0cc380c35..af59cc7bd307 100644
+--- a/mm/debug_vm_pgtable.c
++++ b/mm/debug_vm_pgtable.c
+@@ -810,15 +810,17 @@ static void __init pmd_swap_soft_dirty_tests(struct pgtable_debug_args *args) {
+  
+  static void __init pte_swap_exclusive_tests(struct pgtable_debug_args *args)
+  {
+-	unsigned long max_swapfile_size = generic_max_swapfile_size();
++	unsigned long max_swap_offset;
+  	swp_entry_t entry, entry2;
+  	pte_t pte;
+  
+  	pr_debug("Validating PTE swap exclusive\n");
+  
++	/* See generic_max_swapfile_size(): probe the maximum offset */
++	max_swap_offset = swp_offset(pte_to_swp_entry(swp_entry_to_pte(swp_entry(0, ~0UL))));
++
+  	/* Create a swp entry with all possible bits set */
+-	entry = swp_entry((1 << MAX_SWAPFILES_SHIFT) - 1,
+-			  max_swapfile_size - 1);
++	entry = swp_entry((1 << MAX_SWAPFILES_SHIFT) - 1, max_swap_offset);
+  
+  	pte = swp_entry_to_pte(entry);
+  	WARN_ON(pte_swp_exclusive(pte));
+-- 
+2.39.0
+
+
+
+-- 
+Thanks,
+
+David / dhildenb
+
