@@ -2,87 +2,100 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 42FCBC678DE
-	for <linux-sh@archiver.kernel.org>; Mon, 16 Jan 2023 08:52:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 11268C678D7
+	for <linux-sh@archiver.kernel.org>; Mon, 16 Jan 2023 10:01:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231958AbjAPIwd (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 16 Jan 2023 03:52:33 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57744 "EHLO
+        id S229639AbjAPKBL (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 16 Jan 2023 05:01:11 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49558 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232371AbjAPIw0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 16 Jan 2023 03:52:26 -0500
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2646044A1;
-        Mon, 16 Jan 2023 00:52:24 -0800 (PST)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pHLDw-0003Fv-T9; Mon, 16 Jan 2023 09:52:12 +0100
-Received: from p57bd9464.dip0.t-ipconnect.de ([87.189.148.100] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_128_GCM_SHA256
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pHLDw-000TdQ-Lf; Mon, 16 Jan 2023 09:52:12 +0100
-Message-ID: <40dc1bc1-d9cd-d9be-188e-5167ebae235c@physik.fu-berlin.de>
-Date:   Mon, 16 Jan 2023 09:52:10 +0100
+        with ESMTP id S229744AbjAPKAt (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 16 Jan 2023 05:00:49 -0500
+Received: from mail-qv1-f42.google.com (mail-qv1-f42.google.com [209.85.219.42])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 17537A5D4;
+        Mon, 16 Jan 2023 02:00:48 -0800 (PST)
+Received: by mail-qv1-f42.google.com with SMTP id qb7so19259374qvb.5;
+        Mon, 16 Jan 2023 02:00:48 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=ZcfbiaOtd0rIUu3J0LzMQ7r+7EcuQP5IsDRStK58JTY=;
+        b=Iw+E2l7iP+BBT8wRY6KgUlaJY+XOp81ebji0YGTQl0mfalLqk8KwdJH/d4pLncKqtJ
+         y7I1g+kIcwfV5SRNRr99uL6HX4rfWdDoHawXeeUShcqBPugheTY+yc+BpLVKvszGo3j7
+         FBaecPSOf17aKObAFZ8+trpHDKjtMBWIGSQYFeAm0J7aFndDMbsTPd20s1EsKvs52dLQ
+         FZuMmDD/eWn9xeXJeKO6l97CWw5XGO6MN8JAENZZb39tEsWKkIMAIhFmkTVd/UP+3C+v
+         LU1gHqwWZmZyTVa9ajp81qJFoYuKkURzSnoXXGP6mKuJzlYde1wRQQZZwsbnALZP6TVE
+         gZwQ==
+X-Gm-Message-State: AFqh2kqbRoHXRslXHqm+0ZvAGJVODn7P3DztMINdEfkYbY5h0sFOYr5X
+        vLxwZY9qiX70ef99uheXcIMU7QiqujjkYA==
+X-Google-Smtp-Source: AMrXdXuiuftiU4iE277WG3SmWjPXImBlsWEUzPQF8WNXLe8Y4WX4/6CWP8AJZgR2D+F1RJx2UMKg6A==
+X-Received: by 2002:a0c:fb44:0:b0:532:21bf:bb41 with SMTP id b4-20020a0cfb44000000b0053221bfbb41mr46054145qvq.18.1673863246977;
+        Mon, 16 Jan 2023 02:00:46 -0800 (PST)
+Received: from mail-yb1-f171.google.com (mail-yb1-f171.google.com. [209.85.219.171])
+        by smtp.gmail.com with ESMTPSA id k19-20020a05620a415300b006fbaf9c1b70sm2819430qko.133.2023.01.16.02.00.46
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 16 Jan 2023 02:00:46 -0800 (PST)
+Received: by mail-yb1-f171.google.com with SMTP id d62so13502101ybh.8;
+        Mon, 16 Jan 2023 02:00:45 -0800 (PST)
+X-Received: by 2002:a25:46c6:0:b0:7b8:a0b8:f7ec with SMTP id
+ t189-20020a2546c6000000b007b8a0b8f7ecmr4703291yba.36.1673863245804; Mon, 16
+ Jan 2023 02:00:45 -0800 (PST)
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.6.1
-Subject: Re: remove arch/sh
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Laurent Pinchart <laurent.pinchart@ideasonboard.com>,
-        Kieran Bingham <kieran.bingham+renesas@ideasonboard.com>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        linux-kernel@vger.kernel.org, linux-watchdog@vger.kernel.org,
-        devicetree@vger.kernel.org, linux-arch@vger.kernel.org,
-        dmaengine@vger.kernel.org, dri-devel@lists.freedesktop.org,
-        linux-renesas-soc@vger.kernel.org, linux-i2c@vger.kernel.org,
-        linux-input@vger.kernel.org, linux-media@vger.kernel.org,
-        linux-mmc@vger.kernel.org, linux-mtd@lists.infradead.org,
-        netdev@vger.kernel.org, linux-gpio@vger.kernel.org,
-        linux-rtc@vger.kernel.org, linux-spi@vger.kernel.org,
-        linux-serial@vger.kernel.org, linux-usb@vger.kernel.org,
-        linux-fbdev@vger.kernel.org, alsa-devel@alsa-project.org,
-        linux-sh@vger.kernel.org
-References: <20230113062339.1909087-1-hch@lst.de>
- <11e2e0a8-eabe-2d8c-d612-9cdd4bcc3648@physik.fu-berlin.de>
- <20230116071306.GA15848@lst.de>
-Content-Language: en-US
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-In-Reply-To: <20230116071306.GA15848@lst.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.148.100
+References: <Y7P9IcR7/jgYWMcq@osiris> <20230105095426.2163354-1-andrzej.hajda@intel.com>
+In-Reply-To: <20230105095426.2163354-1-andrzej.hajda@intel.com>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Mon, 16 Jan 2023 11:00:33 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdUhPjya8zWMxEN8U8pjf4M2u_+HOfxQ2NP1XOcX9EpAKg@mail.gmail.com>
+Message-ID: <CAMuHMdUhPjya8zWMxEN8U8pjf4M2u_+HOfxQ2NP1XOcX9EpAKg@mail.gmail.com>
+Subject: Re: [PATCH v4] arch: rename all internal names __xchg to __arch_xchg
+To:     Andrzej Hajda <andrzej.hajda@intel.com>
+Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org, intel-gfx@lists.freedesktop.org,
+        dri-devel@lists.freedesktop.org,
+        Mark Rutland <mark.rutland@arm.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Boqun Feng <boqun.feng@gmail.com>,
+        Rodrigo Vivi <rodrigo.vivi@intel.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Heiko Carstens <hca@linux.ibm.com>
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hello Christoph!
+On Thu, Jan 5, 2023 at 10:54 AM Andrzej Hajda <andrzej.hajda@intel.com> wrote:
+> __xchg will be used for non-atomic xchg macro.
+>
+> Signed-off-by: Andrzej Hajda <andrzej.hajda@intel.com>
+> Reviewed-by: Arnd Bergmann <arnd@arndb.de>
+> ---
+> v2: squashed all arch patches into one
+> v3: fixed alpha/xchg_local, thx to lkp@intel.com
+> v4: adjusted indentation (Heiko)
 
-On 1/16/23 08:13, Christoph Hellwig wrote:
-> On Fri, Jan 13, 2023 at 09:09:52AM +0100, John Paul Adrian Glaubitz wrote:
->> I'm still maintaining and using this port in Debian.
->>
->> It's a bit disappointing that people keep hammering on it. It works fine for me.
-> 
-> What platforms do you (or your users) use it on?
+>  arch/m68k/include/asm/cmpxchg.h      |  6 +++---
 
-We have had a discussion between multiple people invested in the SuperH port and
-I have decided to volunteer as a co-maintainer of the port to support Rich Felker
-when he isn't available.
+Acked-by: Geert Uytterhoeven <geert@linux-m68k.org> [m68k]
 
-Adrian
+Gr{oetje,eeting}s,
 
--- 
-  .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+                        Geert
 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
