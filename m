@@ -2,85 +2,137 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D00AC6379F
-	for <linux-sh@archiver.kernel.org>; Tue, 17 Jan 2023 17:06:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 52579C54E76
+	for <linux-sh@archiver.kernel.org>; Tue, 17 Jan 2023 20:10:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232000AbjAQRGN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 17 Jan 2023 12:06:13 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38952 "EHLO
+        id S235063AbjAQUKN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 17 Jan 2023 15:10:13 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44062 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230254AbjAQRGL (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 17 Jan 2023 12:06:11 -0500
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 824FB2A98C;
-        Tue, 17 Jan 2023 09:06:10 -0800 (PST)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pHpPU-001nMn-Ss; Tue, 17 Jan 2023 18:06:08 +0100
-Received: from p57bd9464.dip0.t-ipconnect.de ([87.189.148.100] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_128_GCM_SHA256
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pHpPT-002tRa-PS; Tue, 17 Jan 2023 18:06:08 +0100
-Message-ID: <429140e0-72fe-c91c-53bc-124d33ab5ffa@physik.fu-berlin.de>
-Date:   Tue, 17 Jan 2023 18:06:07 +0100
+        with ESMTP id S234608AbjAQUHS (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 17 Jan 2023 15:07:18 -0500
+Received: from mail-oa1-x2b.google.com (mail-oa1-x2b.google.com [IPv6:2001:4860:4864:20::2b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 505114520F
+        for <linux-sh@vger.kernel.org>; Tue, 17 Jan 2023 11:01:24 -0800 (PST)
+Received: by mail-oa1-x2b.google.com with SMTP id 586e51a60fabf-15eec491b40so12051487fac.12
+        for <linux-sh@vger.kernel.org>; Tue, 17 Jan 2023 11:01:24 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20210112.gappssmtp.com; s=20210112;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=OgaymgAXi9Z6g6pYwBOzM02/P477EqWitgDVTE3LFbU=;
+        b=7UFMvbpKkJyjWVLlq6ctk0nXiLL3RrLgvGqk+/g8pD0wAzMEFNodkoMNXxSPAzvJye
+         T4nqVDpRCF5Pkw4fe0ROrd1BjE8DZbycDcUSRlgnihtqJaZkkqELJ7TzEZYyPHojRNxM
+         MBh6YZCgcmJgLXwboxe3bvrjmez4qHhfCRIxGuc2G0+QOOJ/eKT38XBZ7MfSSmNLVm7z
+         gDt6C3Ymsnj+eKLcMZ0dj5q2KFKnZutgcY/1C6+IgeLmT5DwAU4QsUhG6TCQdnlD6nEb
+         fYtWfawIuB6wYahQA/cq89ISwAR2GZXbrrCFpCVxRJqHc9Mn337ID3jg/QgfKjbyHIu6
+         BObQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=OgaymgAXi9Z6g6pYwBOzM02/P477EqWitgDVTE3LFbU=;
+        b=yjhWhIDG/b7sXJJgPNLSIZ6/Vz2K7JlbfSe7F4Jp2JfYhz4PsdlMFSe1P0Qg9UrhiC
+         ejb9TnW401MY6ElbmlKF8U+PkcF8Gj699FBNi3E4HT/p6orNoo9SUE76IQiJvrsCmPRQ
+         5ancAgRFGFmZb2zVlCMhlnclrdnmfMlTCF16gjSuSxnRRDddeee3xOrNMoB7l9RsZ+bO
+         w5p/xlFc+A15avXSFJM51QVNLsVKwMgbkAT4Ptl492KavYG49aIIYLzxEZOd6jbHrJ8B
+         Iw4rF2dFnWXEh3/1napV/6jaGFjgY7A6c2NmcbJk4iJrk1kEM+XsuQHtVXLNk4vxsg8P
+         kU4g==
+X-Gm-Message-State: AFqh2kp63YbaubA5WNm0JBjcfi7xcsBa6jUS1DocG0+8OJH9xsD4q55U
+        u6TLelLQ5UEq+dgHX3IxSAltVQ==
+X-Google-Smtp-Source: AMrXdXsgzCxMhqm+bb3il7EsJjEv0NbGPCzT1qf9VREFYRxVllxrk/YEzaFAyrBdtefAaDgGfnk/UQ==
+X-Received: by 2002:a05:6870:c190:b0:15e:cfca:b312 with SMTP id h16-20020a056870c19000b0015ecfcab312mr2807015oad.52.1673982083592;
+        Tue, 17 Jan 2023 11:01:23 -0800 (PST)
+Received: from [192.168.86.224] ([136.62.38.22])
+        by smtp.gmail.com with ESMTPSA id r18-20020a05687080d200b0012763819bcasm16664335oab.50.2023.01.17.11.01.21
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 17 Jan 2023 11:01:22 -0800 (PST)
+Message-ID: <9325a949-8d19-435a-50bd-9ebe0a432012@landley.net>
+Date:   Tue, 17 Jan 2023 13:13:38 -0600
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.6.1
-Subject: Re: Calculating array sizes in C - was: Re: Build
- regressions/improvements in v6.2-rc1
+ Thunderbird/102.5.0
+Subject: Re: remove arch/sh
 Content-Language: en-US
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     linux-kernel@vger.kernel.org, amd-gfx@lists.freedesktop.org,
-        linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org,
-        linux-wireless@vger.kernel.org, linux-mips@vger.kernel.org,
-        linux-sh@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-        linuxppc-dev@lists.ozlabs.org, kasan-dev@googlegroups.com,
-        linux-xtensa@linux-xtensa.org,
-        Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
-References: <CAHk-=wgf929uGOVpiWALPyC7pv_9KbwB2EAvQ3C4woshZZ5zqQ@mail.gmail.com>
- <20221227082932.798359-1-geert@linux-m68k.org>
- <alpine.DEB.2.22.394.2212270933530.311423@ramsan.of.borg>
- <c05bee5d-0d69-289b-fe4b-98f4cd31a4f5@physik.fu-berlin.de>
- <CAMuHMdXNJveXHeS=g-aHbnxtyACxq1wCeaTg8LbpYqJTCqk86g@mail.gmail.com>
- <3800eaa8-a4da-b2f0-da31-6627176cb92e@physik.fu-berlin.de>
- <CAMuHMdWbBRkhecrqcir92TgZnffMe8ku2t7PcVLqA6e6F-j=iw@mail.gmail.com>
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-In-Reply-To: <CAMuHMdWbBRkhecrqcir92TgZnffMe8ku2t7PcVLqA6e6F-j=iw@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To:     Christoph Hellwig <hch@lst.de>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Laurent Pinchart <laurent.pinchart@ideasonboard.com>,
+        Kieran Bingham <kieran.bingham+renesas@ideasonboard.com>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        linux-kernel@vger.kernel.org, linux-watchdog@vger.kernel.org,
+        devicetree@vger.kernel.org, linux-arch@vger.kernel.org,
+        dmaengine@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        linux-renesas-soc@vger.kernel.org, linux-i2c@vger.kernel.org,
+        linux-input@vger.kernel.org, linux-media@vger.kernel.org,
+        linux-mmc@vger.kernel.org, linux-mtd@lists.infradead.org,
+        netdev@vger.kernel.org, linux-gpio@vger.kernel.org,
+        linux-rtc@vger.kernel.org, linux-spi@vger.kernel.org,
+        linux-serial@vger.kernel.org, linux-usb@vger.kernel.org,
+        linux-fbdev@vger.kernel.org, alsa-devel@alsa-project.org,
+        linux-sh@vger.kernel.org
+References: <20230113062339.1909087-1-hch@lst.de>
+ <11e2e0a8-eabe-2d8c-d612-9cdd4bcc3648@physik.fu-berlin.de>
+ <20230116071306.GA15848@lst.de>
+From:   Rob Landley <rob@landley.net>
+In-Reply-To: <20230116071306.GA15848@lst.de>
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.148.100
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi!
-
-On 1/17/23 18:01, Geert Uytterhoeven wrote:
-> The issue is that some of the parameters are not arrays, but
-> NULL. E.g.:
+On 1/16/23 01:13, Christoph Hellwig wrote:
+> On Fri, Jan 13, 2023 at 09:09:52AM +0100, John Paul Adrian Glaubitz wrote:
+>> I'm still maintaining and using this port in Debian.
+>>
+>> It's a bit disappointing that people keep hammering on it. It works fine for me.
 > 
-> arch/sh/kernel/cpu/sh2/setup-sh7619.c:static
-> DECLARE_INTC_DESC(intc_desc, "sh7619", vectors, NULL,
-> arch/sh/kernel/cpu/sh2/setup-sh7619.c-                   NULL,
-> prio_registers, NULL);
+> What platforms do you (or your users) use it on?
 
-Isn't this supposed to be caught by this check:
+3 j-core boards, two sh4 boards (the sh7760 one I patched the kernel of), and an
+sh4 emulator.
 
-	a, __same_type(a, NULL)
+I have multiple j-core systems (sh2 compatible with extensions, nommu, 3
+different kinds of boards running it here). There's an existing mmu version of
+j-core that's sh3 flavored but they want to redo it so it hasn't been publicly
+released yet, I have yet to get that to run Linux because the mmu code would
+need adapting, but the most recent customer projects were on the existing nommu
+SOC, as was last year's ASIC work via sky130.
 
-?
+My physical sh4 boards are a Johnson Controls N40 (sh7760 chipset) and the
+little blue one is... sh4a I think? (It can run the same userspace, I haven't
+replaced that board's kernel since I got it, I think it's the type Glaubitz is
+using? It's mostly in case he had an issue I couldn't reproduce on different
+hardware, or if I spill something on my N40.)
 
-Adrian
+I also have a physical sh2 board on the shelf which I haven't touched in years
+(used to comparison test during j2 development, and then the j2 boards replaced it).
 
--- 
-  .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+I'm lazy and mostly test each new sh4 build under qemu -M r2d because it's
+really convenient: neither of my physical boards boot from SD card so replacing
+the kernel requires reflashing soldered in flash. (They'll net mount userspace
+but I haven't gotten either bootloader to net-boot a kernel.)
 
+I include sh4 in the my mkroot builds each toybox release, I have a ~300 line
+bash script that builds bootable toybox systems for a dozen-ish architectures,
+including building a kernel configured to run under qemu:
+
+  https://github.com/landley/toybox/blob/master/scripts/mkroot.sh
+
+And I ship the resulting bootable system images, most recent release is at:
+
+  https://landley.net/toybox/downloads/binaries/mkroot/0.8.9/
+
+As described at:
+
+  http://landley.net/toybox/faq.html#mkroot
+
+Various people in Japan have more hardware, but I haven't made it physically
+back there since 2020. (My residency card expired during the pandemic.)
+
+Rob
