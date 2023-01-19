@@ -2,379 +2,348 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63DFBC678D4
-	for <linux-sh@archiver.kernel.org>; Wed, 18 Jan 2023 15:46:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 66FA7C004D4
+	for <linux-sh@archiver.kernel.org>; Thu, 19 Jan 2023 14:37:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230332AbjARPqr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 18 Jan 2023 10:46:47 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51184 "EHLO
+        id S230394AbjASOhx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 19 Jan 2023 09:37:53 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57510 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231215AbjARPqY (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 18 Jan 2023 10:46:24 -0500
-Received: from mga11.intel.com (mga11.intel.com [192.55.52.93])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 579143A879;
-        Wed, 18 Jan 2023 07:45:47 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1674056747; x=1705592747;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=3Dk5QUjYmMt75G/oTijf96vMy1X35zBJ81+sI2c6ELA=;
-  b=eZsEim18a7cSYD51FsRPaQKbk/lPmBeAjeu9PEJGbXvLWIzgYUFJW+o6
-   TBrnZNQlZzC3odRVkXavq3Jd82sArAUOimiv4TA7d3FrQiaCT6j1e4rLI
-   gEdWO05uIRJXJW5bNMKkjWZdgTGiZB0qoP5dDYZ9SXSNY+0Hx8T16PIjB
-   pNzmhidC04IpHR8r+Pwp4d7lRJgfmn6wR+GJBFkl1NDud531fUDDEKPzJ
-   CX9TTSPXs0f9VMHc9q+I2rzCIr1bUnvR8hOOfgY3MaPhvxrdmCd0aclwi
-   pRzbPg3djAKusENMl5kgTFr7xu1WUu0JE9yjbmkZNthHAFdRjze+qcZmg
-   w==;
-X-IronPort-AV: E=McAfee;i="6500,9779,10594"; a="322701446"
-X-IronPort-AV: E=Sophos;i="5.97,226,1669104000"; 
-   d="scan'208";a="322701446"
-Received: from fmsmga007.fm.intel.com ([10.253.24.52])
-  by fmsmga102.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 18 Jan 2023 07:45:46 -0800
-X-IronPort-AV: E=McAfee;i="6500,9779,10594"; a="661759408"
-X-IronPort-AV: E=Sophos;i="5.97,226,1669104000"; 
-   d="scan'208";a="661759408"
-Received: from lab-ah.igk.intel.com ([10.102.42.211])
-  by fmsmga007-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 18 Jan 2023 07:45:40 -0800
-From:   Andrzej Hajda <andrzej.hajda@intel.com>
+        with ESMTP id S230210AbjASOhw (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 19 Jan 2023 09:37:52 -0500
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C15DB7ED3
+        for <linux-sh@vger.kernel.org>; Thu, 19 Jan 2023 06:37:00 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1674139020;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=AsdIZuRX1FqbcXdVoz7Gc+TzREcs0q3+gEK6IezEmZw=;
+        b=bRStxDi68sw1ScQmJQ7QlI+3Le7RE13wARU6VnIYR0Dj65o/VRjqGDXElJyiUPzr1xKuO4
+        p8xeng3IFTWPE07F2V3c0jVZWEg5wd5CiJ3Rwr5Co1JIf+7qnnWRv7YK68P2TlPYBv6f9B
+        CdkzZs84FpjC3KF8rAfIweFrVjagf4c=
+Received: from mimecast-mx02.redhat.com (mx3-rdu2.redhat.com
+ [66.187.233.73]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-148-b28KbUDEM-eWLe2FBNQyOw-1; Thu, 19 Jan 2023 09:36:56 -0500
+X-MC-Unique: b28KbUDEM-eWLe2FBNQyOw-1
+Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.rdu2.redhat.com [10.11.54.4])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id C36981C0A586;
+        Thu, 19 Jan 2023 14:36:54 +0000 (UTC)
+Received: from vschneid.remote.csb (unknown [10.33.36.13])
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id CD6222026D68;
+        Thu, 19 Jan 2023 14:36:48 +0000 (UTC)
+From:   Valentin Schneider <vschneid@redhat.com>
 To:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
         linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org, intel-gfx@lists.freedesktop.org,
-        dri-devel@lists.freedesktop.org
-Cc:     Andrzej Hajda <andrzej.hajda@intel.com>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Rodrigo Vivi <rodrigo.vivi@intel.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
+        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
+        x86@kernel.org
+Cc:     "Paul E. McKenney" <paulmck@kernel.org>,
+        Steven Rostedt <rostedt@goodmis.org>,
         Peter Zijlstra <peterz@infradead.org>,
-        Boqun Feng <boqun.feng@gmail.com>,
-        Mark Rutland <mark.rutland@arm.com>
-Subject: [PATCH v5 7/7] drm/i915/gt: use __xchg instead of internal helper
-Date:   Wed, 18 Jan 2023 16:44:50 +0100
-Message-Id: <20230118154450.73842-7-andrzej.hajda@intel.com>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <20230118154450.73842-1-andrzej.hajda@intel.com>
-References: <20230118153529.57695-1-andrzej.hajda@intel.com>
- <20230118154450.73842-1-andrzej.hajda@intel.com>
+        Thomas Gleixner <tglx@linutronix.de>,
+        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
+        Juri Lelli <juri.lelli@redhat.com>,
+        Daniel Bristot de Oliveira <bristot@redhat.com>,
+        Marcelo Tosatti <mtosatti@redhat.com>,
+        Frederic Weisbecker <frederic@kernel.org>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        "H. Peter Anvin" <hpa@zytor.com>, Marc Zyngier <maz@kernel.org>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Guo Ren <guoren@kernel.org>,
+        "David S. Miller" <davem@davemloft.net>
+Subject: [PATCH v4 0/7] Generic IPI sending tracepoint
+Date:   Thu, 19 Jan 2023 14:36:12 +0000
+Message-Id: <20230119143619.2733236-1-vschneid@redhat.com>
 MIME-Version: 1.0
-Organization: Intel Technology Poland sp. z o.o. - ul. Slowackiego 173, 80-298 Gdansk - KRS 101882 - NIP 957-07-52-316
 Content-Transfer-Encoding: 8bit
+X-Scanned-By: MIMEDefang 3.1 on 10.11.54.4
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Prefer core helper if available.
+Background
+==========
 
-Signed-off-by: Andrzej Hajda <andrzej.hajda@intel.com>
----
- drivers/gpu/drm/i915/gt/intel_engine_cs.c            | 2 +-
- drivers/gpu/drm/i915/gt/intel_engine_heartbeat.c     | 4 ++--
- drivers/gpu/drm/i915/gt/intel_execlists_submission.c | 4 ++--
- drivers/gpu/drm/i915/gt/intel_ggtt.c                 | 4 ++--
- drivers/gpu/drm/i915/gt/intel_gsc.c                  | 2 +-
- drivers/gpu/drm/i915/gt/intel_gt.c                   | 4 ++--
- drivers/gpu/drm/i915/gt/intel_gt_pm.c                | 2 +-
- drivers/gpu/drm/i915/gt/intel_lrc.c                  | 6 +++---
- drivers/gpu/drm/i915/gt/intel_migrate.c              | 2 +-
- drivers/gpu/drm/i915/gt/intel_rc6.c                  | 2 +-
- drivers/gpu/drm/i915/gt/intel_rps.c                  | 2 +-
- drivers/gpu/drm/i915/gt/selftest_context.c           | 2 +-
- drivers/gpu/drm/i915/gt/selftest_ring_submission.c   | 2 +-
- drivers/gpu/drm/i915/gt/selftest_timeline.c          | 2 +-
- drivers/gpu/drm/i915/gt/uc/intel_gsc_uc.c            | 2 +-
- drivers/gpu/drm/i915/gt/uc/intel_uc.c                | 2 +-
- drivers/gpu/drm/i915/gt/uc/intel_uc_fw.c             | 2 +-
- drivers/gpu/drm/i915/i915_utils.h                    | 1 +
- 18 files changed, 24 insertions(+), 23 deletions(-)
+Detecting IPI *reception* is relatively easy, e.g. using
+trace_irq_handler_{entry,exit} or even just function-trace
+flush_smp_call_function_queue() for SMP calls.  
 
-diff --git a/drivers/gpu/drm/i915/gt/intel_engine_cs.c b/drivers/gpu/drm/i915/gt/intel_engine_cs.c
-index 922f1bb22dc685..9712bfc2c6523d 100644
---- a/drivers/gpu/drm/i915/gt/intel_engine_cs.c
-+++ b/drivers/gpu/drm/i915/gt/intel_engine_cs.c
-@@ -1042,7 +1042,7 @@ static void cleanup_status_page(struct intel_engine_cs *engine)
- 	/* Prevent writes into HWSP after returning the page to the system */
- 	intel_engine_set_hwsp_writemask(engine, ~0u);
- 
--	vma = fetch_and_zero(&engine->status_page.vma);
-+	vma = __xchg(&engine->status_page.vma, 0);
- 	if (!vma)
- 		return;
- 
-diff --git a/drivers/gpu/drm/i915/gt/intel_engine_heartbeat.c b/drivers/gpu/drm/i915/gt/intel_engine_heartbeat.c
-index 9a527e1f5be655..09befcc6a84fa1 100644
---- a/drivers/gpu/drm/i915/gt/intel_engine_heartbeat.c
-+++ b/drivers/gpu/drm/i915/gt/intel_engine_heartbeat.c
-@@ -229,7 +229,7 @@ static void heartbeat(struct work_struct *wrk)
- 	mutex_unlock(&ce->timeline->mutex);
- out:
- 	if (!engine->i915->params.enable_hangcheck || !next_heartbeat(engine))
--		i915_request_put(fetch_and_zero(&engine->heartbeat.systole));
-+		i915_request_put(__xchg(&engine->heartbeat.systole, 0));
- 	intel_engine_pm_put(engine);
- }
- 
-@@ -244,7 +244,7 @@ void intel_engine_unpark_heartbeat(struct intel_engine_cs *engine)
- void intel_engine_park_heartbeat(struct intel_engine_cs *engine)
- {
- 	if (cancel_delayed_work(&engine->heartbeat.work))
--		i915_request_put(fetch_and_zero(&engine->heartbeat.systole));
-+		i915_request_put(__xchg(&engine->heartbeat.systole, 0));
- }
- 
- void intel_gt_unpark_heartbeats(struct intel_gt *gt)
-diff --git a/drivers/gpu/drm/i915/gt/intel_execlists_submission.c b/drivers/gpu/drm/i915/gt/intel_execlists_submission.c
-index 18ffe55282e594..5c985e6fa1be2f 100644
---- a/drivers/gpu/drm/i915/gt/intel_execlists_submission.c
-+++ b/drivers/gpu/drm/i915/gt/intel_execlists_submission.c
-@@ -3199,7 +3199,7 @@ static void execlists_reset_cancel(struct intel_engine_cs *engine)
- 		RB_CLEAR_NODE(rb);
- 
- 		spin_lock(&ve->base.sched_engine->lock);
--		rq = fetch_and_zero(&ve->request);
-+		rq = __xchg(&ve->request, NULL);
- 		if (rq) {
- 			if (i915_request_mark_eio(rq)) {
- 				rq->engine = engine;
-@@ -3604,7 +3604,7 @@ static void rcu_virtual_context_destroy(struct work_struct *wrk)
- 
- 		spin_lock_irq(&ve->base.sched_engine->lock);
- 
--		old = fetch_and_zero(&ve->request);
-+		old = __xchg(&ve->request, NULL);
- 		if (old) {
- 			GEM_BUG_ON(!__i915_request_is_complete(old));
- 			__i915_request_submit(old);
-diff --git a/drivers/gpu/drm/i915/gt/intel_ggtt.c b/drivers/gpu/drm/i915/gt/intel_ggtt.c
-index fe64c13fd3b4aa..6f441c3d3d1cef 100644
---- a/drivers/gpu/drm/i915/gt/intel_ggtt.c
-+++ b/drivers/gpu/drm/i915/gt/intel_ggtt.c
-@@ -684,7 +684,7 @@ static void fini_aliasing_ppgtt(struct i915_ggtt *ggtt)
- {
- 	struct i915_ppgtt *ppgtt;
- 
--	ppgtt = fetch_and_zero(&ggtt->alias);
-+	ppgtt = __xchg(&ggtt->alias, NULL);
- 	if (!ppgtt)
- 		return;
- 
-@@ -1238,7 +1238,7 @@ bool i915_ggtt_resume_vm(struct i915_address_space *vm)
- 				   was_bound);
- 
- 		if (obj) { /* only used during resume => exclusive access */
--			write_domain_objs |= fetch_and_zero(&obj->write_domain);
-+			write_domain_objs |= __xchg(&obj->write_domain, 0);
- 			obj->read_domains |= I915_GEM_DOMAIN_GTT;
- 		}
- 	}
-diff --git a/drivers/gpu/drm/i915/gt/intel_gsc.c b/drivers/gpu/drm/i915/gt/intel_gsc.c
-index bcc3605158dbde..38fbea757ba741 100644
---- a/drivers/gpu/drm/i915/gt/intel_gsc.c
-+++ b/drivers/gpu/drm/i915/gt/intel_gsc.c
-@@ -70,7 +70,7 @@ gsc_ext_om_alloc(struct intel_gsc *gsc, struct intel_gsc_intf *intf, size_t size
- 
- static void gsc_ext_om_destroy(struct intel_gsc_intf *intf)
- {
--	struct drm_i915_gem_object *obj = fetch_and_zero(&intf->gem_obj);
-+	struct drm_i915_gem_object *obj = __xchg(&intf->gem_obj, 0);
- 
- 	if (!obj)
- 		return;
-diff --git a/drivers/gpu/drm/i915/gt/intel_gt.c b/drivers/gpu/drm/i915/gt/intel_gt.c
-index f0dbfc434e0773..884458507969e6 100644
---- a/drivers/gpu/drm/i915/gt/intel_gt.c
-+++ b/drivers/gpu/drm/i915/gt/intel_gt.c
-@@ -753,7 +753,7 @@ int intel_gt_init(struct intel_gt *gt)
- 	intel_uc_fini(&gt->uc);
- err_engines:
- 	intel_engines_release(gt);
--	i915_vm_put(fetch_and_zero(&gt->vm));
-+	i915_vm_put(__xchg(&gt->vm, 0));
- err_pm:
- 	intel_gt_pm_fini(gt);
- 	intel_gt_fini_scratch(gt);
-@@ -800,7 +800,7 @@ void intel_gt_driver_release(struct intel_gt *gt)
- {
- 	struct i915_address_space *vm;
- 
--	vm = fetch_and_zero(&gt->vm);
-+	vm = __xchg(&gt->vm, 0);
- 	if (vm) /* FIXME being called twice on error paths :( */
- 		i915_vm_put(vm);
- 
-diff --git a/drivers/gpu/drm/i915/gt/intel_gt_pm.c b/drivers/gpu/drm/i915/gt/intel_gt_pm.c
-index cef3d6f5c34e01..2527c5ae72e59b 100644
---- a/drivers/gpu/drm/i915/gt/intel_gt_pm.c
-+++ b/drivers/gpu/drm/i915/gt/intel_gt_pm.c
-@@ -124,7 +124,7 @@ static int __gt_unpark(struct intel_wakeref *wf)
- static int __gt_park(struct intel_wakeref *wf)
- {
- 	struct intel_gt *gt = container_of(wf, typeof(*gt), wakeref);
--	intel_wakeref_t wakeref = fetch_and_zero(&gt->awake);
-+	intel_wakeref_t wakeref = __xchg(&gt->awake, 0);
- 	struct drm_i915_private *i915 = gt->i915;
- 
- 	GT_TRACE(gt, "\n");
-diff --git a/drivers/gpu/drm/i915/gt/intel_lrc.c b/drivers/gpu/drm/i915/gt/intel_lrc.c
-index 7771a19008c604..9dfa3c10ddc85f 100644
---- a/drivers/gpu/drm/i915/gt/intel_lrc.c
-+++ b/drivers/gpu/drm/i915/gt/intel_lrc.c
-@@ -1144,7 +1144,7 @@ __lrc_alloc_state(struct intel_context *ce, struct intel_engine_cs *engine)
- static struct intel_timeline *
- pinned_timeline(struct intel_context *ce, struct intel_engine_cs *engine)
- {
--	struct intel_timeline *tl = fetch_and_zero(&ce->timeline);
-+	struct intel_timeline *tl = __xchg(&ce->timeline, 0);
- 
- 	return intel_timeline_create_from_engine(engine, page_unmask_bits(tl));
- }
-@@ -1261,8 +1261,8 @@ void lrc_fini(struct intel_context *ce)
- 	if (!ce->state)
- 		return;
- 
--	intel_ring_put(fetch_and_zero(&ce->ring));
--	i915_vma_put(fetch_and_zero(&ce->state));
-+	intel_ring_put(__xchg(&ce->ring, 0));
-+	i915_vma_put(__xchg(&ce->state, 0));
- }
- 
- void lrc_destroy(struct kref *kref)
-diff --git a/drivers/gpu/drm/i915/gt/intel_migrate.c b/drivers/gpu/drm/i915/gt/intel_migrate.c
-index 3f638f19879685..3eab1867a4abee 100644
---- a/drivers/gpu/drm/i915/gt/intel_migrate.c
-+++ b/drivers/gpu/drm/i915/gt/intel_migrate.c
-@@ -1147,7 +1147,7 @@ void intel_migrate_fini(struct intel_migrate *m)
- {
- 	struct intel_context *ce;
- 
--	ce = fetch_and_zero(&m->context);
-+	ce = __xchg(&m->context, 0);
- 	if (!ce)
- 		return;
- 
-diff --git a/drivers/gpu/drm/i915/gt/intel_rc6.c b/drivers/gpu/drm/i915/gt/intel_rc6.c
-index 5c91622dfca420..ca6b0c905accb3 100644
---- a/drivers/gpu/drm/i915/gt/intel_rc6.c
-+++ b/drivers/gpu/drm/i915/gt/intel_rc6.c
-@@ -702,7 +702,7 @@ void intel_rc6_fini(struct intel_rc6 *rc6)
- 
- 	intel_rc6_disable(rc6);
- 
--	pctx = fetch_and_zero(&rc6->pctx);
-+	pctx = __xchg(&rc6->pctx, 0);
- 	if (pctx)
- 		i915_gem_object_put(pctx);
- 
-diff --git a/drivers/gpu/drm/i915/gt/intel_rps.c b/drivers/gpu/drm/i915/gt/intel_rps.c
-index 9ad3bc7201cbaa..e34ca33b09d2e7 100644
---- a/drivers/gpu/drm/i915/gt/intel_rps.c
-+++ b/drivers/gpu/drm/i915/gt/intel_rps.c
-@@ -1831,7 +1831,7 @@ static void rps_work(struct work_struct *work)
- 	u32 pm_iir = 0;
- 
- 	spin_lock_irq(gt->irq_lock);
--	pm_iir = fetch_and_zero(&rps->pm_iir) & rps->pm_events;
-+	pm_iir = __xchg(&rps->pm_iir, 0) & rps->pm_events;
- 	client_boost = atomic_read(&rps->num_waiters);
- 	spin_unlock_irq(gt->irq_lock);
- 
-diff --git a/drivers/gpu/drm/i915/gt/selftest_context.c b/drivers/gpu/drm/i915/gt/selftest_context.c
-index 76fbae358072df..3f49ca1debc6ce 100644
---- a/drivers/gpu/drm/i915/gt/selftest_context.c
-+++ b/drivers/gpu/drm/i915/gt/selftest_context.c
-@@ -171,7 +171,7 @@ static int live_context_size(void *arg)
- 		 * active state is sufficient, we are only checking that we
- 		 * don't use more than we planned.
- 		 */
--		saved = fetch_and_zero(&engine->default_state);
-+		saved = __xchg(&engine->default_state, 0);
- 
- 		/* Overlaps with the execlists redzone */
- 		engine->context_size += I915_GTT_PAGE_SIZE;
-diff --git a/drivers/gpu/drm/i915/gt/selftest_ring_submission.c b/drivers/gpu/drm/i915/gt/selftest_ring_submission.c
-index 87ceb0f374b673..a01aaca4fbf5ff 100644
---- a/drivers/gpu/drm/i915/gt/selftest_ring_submission.c
-+++ b/drivers/gpu/drm/i915/gt/selftest_ring_submission.c
-@@ -269,7 +269,7 @@ static int live_ctx_switch_wa(void *arg)
- 		if (IS_GRAPHICS_VER(gt->i915, 4, 5))
- 			continue; /* MI_STORE_DWORD is privileged! */
- 
--		saved_wa = fetch_and_zero(&engine->wa_ctx.vma);
-+		saved_wa = __xchg(&engine->wa_ctx.vma, 0);
- 
- 		intel_engine_pm_get(engine);
- 		err = __live_ctx_switch_wa(engine);
-diff --git a/drivers/gpu/drm/i915/gt/selftest_timeline.c b/drivers/gpu/drm/i915/gt/selftest_timeline.c
-index 522d0190509ccc..d14d5159024ec7 100644
---- a/drivers/gpu/drm/i915/gt/selftest_timeline.c
-+++ b/drivers/gpu/drm/i915/gt/selftest_timeline.c
-@@ -892,7 +892,7 @@ static int create_watcher(struct hwsp_watcher *w,
- static int check_watcher(struct hwsp_watcher *w, const char *name,
- 			 bool (*op)(u32 hwsp, u32 seqno))
- {
--	struct i915_request *rq = fetch_and_zero(&w->rq);
-+	struct i915_request *rq = __xchg(&w->rq, NULL);
- 	u32 offset, end;
- 	int err;
- 
-diff --git a/drivers/gpu/drm/i915/gt/uc/intel_gsc_uc.c b/drivers/gpu/drm/i915/gt/uc/intel_gsc_uc.c
-index fd21dbd2663bec..3f85d3f6fc6e92 100644
---- a/drivers/gpu/drm/i915/gt/uc/intel_gsc_uc.c
-+++ b/drivers/gpu/drm/i915/gt/uc/intel_gsc_uc.c
-@@ -110,7 +110,7 @@ void intel_gsc_uc_fini(struct intel_gsc_uc *gsc)
- 	flush_work(&gsc->work);
- 
- 	if (gsc->ce)
--		intel_engine_destroy_pinned_context(fetch_and_zero(&gsc->ce));
-+		intel_engine_destroy_pinned_context(__xchg(&gsc->ce, NULL));
- 
- 	i915_vma_unpin_and_release(&gsc->local, 0);
- 
-diff --git a/drivers/gpu/drm/i915/gt/uc/intel_uc.c b/drivers/gpu/drm/i915/gt/uc/intel_uc.c
-index 9a8a1abf71d7fe..0292212cffbcb9 100644
---- a/drivers/gpu/drm/i915/gt/uc/intel_uc.c
-+++ b/drivers/gpu/drm/i915/gt/uc/intel_uc.c
-@@ -169,7 +169,7 @@ static void __uc_capture_load_err_log(struct intel_uc *uc)
- 
- static void __uc_free_load_err_log(struct intel_uc *uc)
- {
--	struct drm_i915_gem_object *log = fetch_and_zero(&uc->load_err_log);
-+	struct drm_i915_gem_object *log = __xchg(&uc->load_err_log, NULL);
- 
- 	if (log)
- 		i915_gem_object_put(log);
-diff --git a/drivers/gpu/drm/i915/gt/uc/intel_uc_fw.c b/drivers/gpu/drm/i915/gt/uc/intel_uc_fw.c
-index 65672ff8260540..3f684f34469581 100644
---- a/drivers/gpu/drm/i915/gt/uc/intel_uc_fw.c
-+++ b/drivers/gpu/drm/i915/gt/uc/intel_uc_fw.c
-@@ -1119,7 +1119,7 @@ void intel_uc_fw_cleanup_fetch(struct intel_uc_fw *uc_fw)
- 	if (!intel_uc_fw_is_available(uc_fw))
- 		return;
- 
--	i915_gem_object_put(fetch_and_zero(&uc_fw->obj));
-+	i915_gem_object_put(__xchg(&uc_fw->obj, NULL));
- 
- 	intel_uc_fw_change_status(uc_fw, INTEL_UC_FIRMWARE_SELECTED);
- }
-diff --git a/drivers/gpu/drm/i915/i915_utils.h b/drivers/gpu/drm/i915/i915_utils.h
-index 2c430c0c3badde..be7df2c384c832 100644
---- a/drivers/gpu/drm/i915/i915_utils.h
-+++ b/drivers/gpu/drm/i915/i915_utils.h
-@@ -26,6 +26,7 @@
- #define __I915_UTILS_H
- 
- #include <linux/list.h>
-+#include <linux/non-atomic/xchg.h>
- #include <linux/overflow.h>
- #include <linux/sched.h>
- #include <linux/string_helpers.h>
--- 
-2.34.1
+Figuring out their *origin*, is trickier as there is no generic tracepoint tied
+to e.g. smp_call_function():
+
+o AFAIA x86 has no tracepoint tied to sending IPIs, only receiving them
+  (cf. trace_call_function{_single}_entry()).
+o arm/arm64 do have trace_ipi_raise(), which gives us the target cpus but also a
+  mostly useless string (smp_calls will all be "Function call interrupts").
+o Other architectures don't seem to have any IPI-sending related tracepoint.  
+
+I believe one reason those tracepoints used by arm/arm64 ended up as they were
+is because these archs used to handle IPIs differently from regular interrupts
+(the IRQ driver would directly invoke an IPI-handling routine), which meant they 
+never showed up in trace_irq_handler_{entry, exit}. The trace_ipi_{entry,exit}
+tracepoints gave a way to trace IPI reception but those have become redundant as
+of: 
+
+      56afcd3dbd19 ("ARM: Allow IPIs to be handled as normal interrupts")
+      d3afc7f12987 ("arm64: Allow IPIs to be handled as normal interrupts")
+
+which gave IPIs a "proper" handler function used through
+generic_handle_domain_irq(), which makes them show up via
+trace_irq_handler_{entry, exit}.
+
+Changing stuff up
+=================
+
+Per the above, it would make sense to reshuffle trace_ipi_raise() and move it
+into generic code. This also came up during Daniel's talk on Osnoise at the CPU
+isolation MC of LPC 2022 [1]. 
+
+Now, to be useful, such a tracepoint needs to export:
+o targeted CPU(s)
+o calling context
+
+The only way to get the calling context with trace_ipi_raise() is to trigger a
+stack dump, e.g. $(trace-cmd -e ipi* -T echo 42).
+
+This is instead introducing a new tracepoint which exports the relevant context
+(callsite, and requested callback for when the callsite isn't helpful), and is
+usable by all architectures as it sits in generic code. 
+
+Another thing worth mentioning is that depending on the callsite, the _RET_IP_
+fed to the tracepoint is not always useful - generic_exec_single() doesn't tell
+you much about the actual callback being sent via IPI, which is why the new
+tracepoint also has a @callback argument.
+
+Patches
+=======
+
+o Patches 1-5 spread out the tracepoint across relevant sites.
+  Patch 5 ends up sprinkling lots of #include <trace/events/ipi.h> which I'm not
+  the biggest fan of, but is the least horrible solution I've been able to come
+  up with so far.
+  
+o Patch 7 is trying to be smart about tracing the callback associated with the
+  IPI.
+
+This results in having IPI trace events for:
+
+o smp_call_function*()
+o smp_send_reschedule()
+o irq_work_queue*()
+o standalone uses of __smp_call_single_queue()
+
+This is incomplete, just looking at arm64 there's more IPI types that aren't
+covered: 
+
+  IPI_CPU_STOP,
+  IPI_CPU_CRASH_STOP,
+  IPI_TIMER,
+  IPI_WAKEUP,
+
+but apart from IPI_TIMER (cf. tick_broadcast()), those IPIs are both unfrequent
+and accompanied with identifiable interference (stopper or cpuhp threads being
+scheduled). I've added a point in my todolist to handle those in a later series
+for the sake of completeness.
+
+Links
+=====
+
+[1]: https://youtu.be/5gT57y4OzBM?t=14234
+
+Revisions
+=========
+
+v3 -> v4
+++++++++
+
+o Rebased against 6.2-rc4
+  Re-ran my coccinelle scripts for the treewide change; only loongarch needed
+  changes
+o Dropped cpumask trace event field patch (now in 6.2-rc1)
+o Applied RB and Ack tags
+  Ingo, I wasn't sure if you meant to Ack the whole series or just the patch you
+  replied to, so since I didn't want to unlawfully forge any tag I only added
+  the one.
+o Did a small pass on comments and changelogs
+
+v2 -> v3
+++++++++
+
+o Dropped the generic export of smp_send_reschedule(), turned it into a macro
+  and a bunch of imports
+o Dropped the send_call_function_single_ipi() macro madness, split it into sched
+  and smp bits using some of Peter's suggestions
+
+v1 -> v2
+++++++++
+
+o Ditched single-CPU tracepoint
+o Changed tracepoint signature to include callback
+o Changed tracepoint callsite field to void *; the parameter is still UL to save
+  up on casts due to using _RET_IP_.
+o Fixed linking failures due to not exporting smp_send_reschedule()
+
+git range-diff v3 vs v4
+=========================
+
+1:  6820c1880d97d < -:  ------------- tracing: Add __cpumask to denote a trace event field that is a cpumask_t
+2:  ef594e168af0d ! 1:  8f1309849c859 trace: Add trace_ipi_send_cpumask()
+    @@ Commit message
+         its "reason" argument being an uninformative string (on arm64 all you get
+         is "Function call interrupts" for SMP calls).
+     
+    -    Add a variant of it that exports a target CPU, a callsite and a callback.
+    +    Add a variant of it that exports a target cpumask, a callsite and a callback.
+     
+         Signed-off-by: Valentin Schneider <vschneid@redhat.com>
+         Reviewed-by: Steven Rostedt (Google) <rostedt@goodmis.org>
+3:  17ccdc591aec9 ! 2:  3e0f952a905ce sched, smp: Trace IPIs sent via send_call_function_single_ipi()
+    @@ Commit message
+     
+         Signed-off-by: Valentin Schneider <vschneid@redhat.com>
+         Reviewed-by: Steven Rostedt (Google) <rostedt@goodmis.org>
+    +    Acked-by: Ingo Molnar <mingo@kernel.org>
+     
+      ## arch/arm/kernel/smp.c ##
+     @@
+4:  9253a0b5abf59 = 3:  6345aa71c64be smp: Trace IPIs sent via arch_send_call_function_ipi_mask()
+5:  a5d13519caa7e = 4:  d2ebdfedcb5f1 irq_work: Trace self-IPIs sent via arch_irq_work_raise()
+6:  d3e59fe921eae ! 5:  0167b33c7be0c treewide: Trace IPIs sent via smp_send_reschedule()
+    @@ Commit message
+         Signed-off-by: Valentin Schneider <vschneid@redhat.com>
+         [csky bits]
+         Acked-by: Guo Ren <guoren@kernel.org>
+    +    [riscv bits]
+    +    Acked-by: Palmer Dabbelt <palmer@rivosinc.com>
+     
+      ## arch/alpha/kernel/smp.c ##
+     @@ arch/alpha/kernel/smp.c: handle_ipi(struct pt_regs *regs)
+    @@ arch/ia64/kernel/smp.c: kdump_smp_send_init(void)
+      /*
+       * Called with preemption disabled.
+     
+    - ## arch/loongarch/include/asm/smp.h ##
+    -@@ arch/loongarch/include/asm/smp.h: extern void show_ipi_list(struct seq_file *p, int prec);
+    + ## arch/loongarch/kernel/smp.c ##
+    +@@ arch/loongarch/kernel/smp.c: void loongson_send_ipi_mask(const struct cpumask *mask, unsigned int action)
+       * it goes straight through and wastes no time serializing
+       * anything. Worst case is that we lose a reschedule ...
+       */
+    --static inline void smp_send_reschedule(int cpu)
+    -+static inline void arch_smp_send_reschedule(int cpu)
+    +-void smp_send_reschedule(int cpu)
+    ++void arch_smp_send_reschedule(int cpu)
+      {
+      	loongson_send_ipi_single(cpu, SMP_RESCHEDULE);
+      }
+    +-EXPORT_SYMBOL_GPL(smp_send_reschedule);
+    ++EXPORT_SYMBOL_GPL(arch_smp_send_reschedule);
+    + 
+    + irqreturn_t loongson_ipi_interrupt(int irq, void *dev)
+    + {
+     
+      ## arch/mips/include/asm/smp.h ##
+     @@ arch/mips/include/asm/smp.h: extern void calculate_cpu_foreign_map(void);
+    @@ arch/powerpc/platforms/powernv/subcore.c
+      
+     
+      ## arch/riscv/kernel/smp.c ##
+    -@@ arch/riscv/kernel/smp.c: void smp_send_stop(void)
+    - 			   cpumask_pr_args(cpu_online_mask));
+    +@@ arch/riscv/kernel/smp.c: bool smp_crash_stop_failed(void)
+      }
+    + #endif
+      
+     -void smp_send_reschedule(int cpu)
+     +void arch_smp_send_reschedule(int cpu)
+    @@ include/linux/smp.h: extern void smp_send_stop(void);
+     -extern void smp_send_reschedule(int cpu);
+     -
+     +extern void arch_smp_send_reschedule(int cpu);
+    ++/*
+    ++ * scheduler_ipi() is inline so can't be passed as callback reason, but the
+    ++ * callsite IP should be sufficient for root-causing IPIs sent from here.
+    ++ */
+     +#define smp_send_reschedule(cpu) ({				  \
+    -+	/* XXX scheduler_ipi is inline :/ */                      \
+     +	trace_ipi_send_cpumask(cpumask_of(cpu), _RET_IP_, NULL);  \
+     +	arch_smp_send_reschedule(cpu);				  \
+     +})
+    @@ include/linux/smp.h: extern void smp_send_stop(void);
+     
+      ## virt/kvm/kvm_main.c ##
+     @@
+    - #include "kvm_mm.h"
+    - #include "vfio.h"
+    + 
+    + #include <linux/kvm_dirty_ring.h>
+      
+     +#include <trace/events/ipi.h>
+    - #define CREATE_TRACE_POINTS
+    - #include <trace/events/kvm.h>
+    ++
+    + /* Worst case buffer size needed for holding an integer. */
+    + #define ITOA_MAX_LEN 12
+      
+7:  a4027c288ce0c = 6:  fa0de903cf99a smp: reword smp call IPI comment
+8:  124946403688e = 7:  7ecb1c29c7f1f sched, smp: Trace smp callback causing an IPI
+
+Valentin Schneider (7):
+  trace: Add trace_ipi_send_cpumask()
+  sched, smp: Trace IPIs sent via send_call_function_single_ipi()
+  smp: Trace IPIs sent via arch_send_call_function_ipi_mask()
+  irq_work: Trace self-IPIs sent via arch_irq_work_raise()
+  treewide: Trace IPIs sent via smp_send_reschedule()
+  smp: reword smp call IPI comment
+  sched, smp: Trace smp callback causing an IPI
+
+ arch/alpha/kernel/smp.c                  |  2 +-
+ arch/arc/kernel/smp.c                    |  2 +-
+ arch/arm/kernel/smp.c                    |  5 +-
+ arch/arm/mach-actions/platsmp.c          |  2 +
+ arch/arm64/kernel/smp.c                  |  3 +-
+ arch/csky/kernel/smp.c                   |  2 +-
+ arch/hexagon/kernel/smp.c                |  2 +-
+ arch/ia64/kernel/smp.c                   |  4 +-
+ arch/loongarch/kernel/smp.c              |  4 +-
+ arch/mips/include/asm/smp.h              |  2 +-
+ arch/mips/kernel/rtlx-cmp.c              |  2 +
+ arch/openrisc/kernel/smp.c               |  2 +-
+ arch/parisc/kernel/smp.c                 |  4 +-
+ arch/powerpc/kernel/smp.c                |  6 +-
+ arch/powerpc/kvm/book3s_hv.c             |  3 +
+ arch/powerpc/platforms/powernv/subcore.c |  2 +
+ arch/riscv/kernel/smp.c                  |  4 +-
+ arch/s390/kernel/smp.c                   |  2 +-
+ arch/sh/kernel/smp.c                     |  2 +-
+ arch/sparc/kernel/smp_32.c               |  2 +-
+ arch/sparc/kernel/smp_64.c               |  2 +-
+ arch/x86/include/asm/smp.h               |  2 +-
+ arch/x86/kvm/svm/svm.c                   |  4 ++
+ arch/x86/kvm/x86.c                       |  2 +
+ arch/xtensa/kernel/smp.c                 |  2 +-
+ include/linux/smp.h                      | 11 +++-
+ include/trace/events/ipi.h               | 22 +++++++
+ kernel/irq_work.c                        | 14 ++++-
+ kernel/sched/core.c                      | 19 ++++--
+ kernel/sched/smp.h                       |  2 +-
+ kernel/smp.c                             | 78 +++++++++++++++++++-----
+ virt/kvm/kvm_main.c                      |  2 +
+ 32 files changed, 164 insertions(+), 53 deletions(-)
+
+--
+2.31.1
 
