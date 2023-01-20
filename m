@@ -2,63 +2,38 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F0D3FC678D6
-	for <linux-sh@archiver.kernel.org>; Fri, 20 Jan 2023 03:19:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 425A3C05027
+	for <linux-sh@archiver.kernel.org>; Fri, 20 Jan 2023 08:49:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229462AbjATDTG (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 19 Jan 2023 22:19:06 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36862 "EHLO
+        id S229529AbjATItH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 20 Jan 2023 03:49:07 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59942 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229650AbjATDTF (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 19 Jan 2023 22:19:05 -0500
-Received: from mail-ot1-x335.google.com (mail-ot1-x335.google.com [IPv6:2607:f8b0:4864:20::335])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2003E457C4
-        for <linux-sh@vger.kernel.org>; Thu, 19 Jan 2023 19:19:03 -0800 (PST)
-Received: by mail-ot1-x335.google.com with SMTP id cm26-20020a056830651a00b00684e5c0108dso2392147otb.9
-        for <linux-sh@vger.kernel.org>; Thu, 19 Jan 2023 19:19:03 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20210112.gappssmtp.com; s=20210112;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=WxJtcfmjg8bDlWo77QXfqDNdo8CBClhx9W/RQtlqbwY=;
-        b=195AXt9odDu2myrtF32+GBb0qMFgjNikCrpxsa+WbA8hIOrugiKzMmRa6ck9jEEnh+
-         BAiMUjeACSwa7DIsy0nd31WMLgqeemkaP54UGh/z5/4/iE4OKfk/JF3Mfjc9Slk04hNo
-         yl5Eob9OFP8rjo94KXNck41rTFVGwR12Dn+yA5SLoZAqZ3VzofVm+vx+0BgQAYSmr785
-         93R2tgLtdgq0ZrmMjpy2ltpjwYB3CfaG5BeK8n4rbY9oAJxrmKWOuImd3ZYcTj/FPdb2
-         jJLXFRha+Q7ERnsBZifTFijpda8XPNDI9gPItiLsvkjmbQtAsn8L1qQF4XOocbXXc8zc
-         lOGg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=WxJtcfmjg8bDlWo77QXfqDNdo8CBClhx9W/RQtlqbwY=;
-        b=ZY4Px7Q/a+Ud2ktTIWrgt3+LXZNnH8KXqm0NlaXsZrt6LuKnBW0cyN1zdpatnc5Wrp
-         9qgNp+ovDHHQ5CacOKdUd7Z/DzlHvwv+fRZmjsJDZS635uu0ApBvx3RFgBBDscb6w2Mb
-         vGzxhZiv7smAOaARaR9tL4gbzvt+RRIlfGZl/+EL9+bL5nqT2mNfdmymW3N1n826R4jo
-         euxQwo4eBF0so2WvsFuTw5P0RjrrfMcj9CZxpb9byv40s//SMtdHDDH9PNYs8RRHsGQi
-         L51TaLryXUSHJoUbuLPEFTuMSKwXepYDqKk69rL0wKYl9VnYMZYAaShWb98SeT2Eu+SQ
-         KeAQ==
-X-Gm-Message-State: AFqh2konVieJwCUzXgoC5byDja/zhjRKnhUORCgqa8Cb4ojHVAN2NKmL
-        u8NxT5YZYvZmHfs1ma8adQraAKywei6+R5eiPaZpEQ==
-X-Google-Smtp-Source: AMrXdXsEe/2+E0aFpK50BI2W31LvjkQnB05BvrClqgL71HBhXQ2hq9P1I+orXsNyKBoEZPHv4iTJdA==
-X-Received: by 2002:a9d:704f:0:b0:685:579f:918e with SMTP id x15-20020a9d704f000000b00685579f918emr6930248otj.0.1674184742349;
-        Thu, 19 Jan 2023 19:19:02 -0800 (PST)
-Received: from ?IPV6:2607:fb90:f20b:1885:28a8:1eff:fe1b:3320? ([2607:fb90:f20b:1885:28a8:1eff:fe1b:3320])
-        by smtp.gmail.com with ESMTPSA id m6-20020a9d73c6000000b006860be3a43fsm7631822otk.14.2023.01.19.19.19.01
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 19 Jan 2023 19:19:01 -0800 (PST)
-Message-ID: <0f51dac4-836b-0ff2-38c6-5521745c1c88@landley.net>
-Date:   Thu, 19 Jan 2023 21:31:21 -0600
+        with ESMTP id S229448AbjATItH (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 20 Jan 2023 03:49:07 -0500
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 003A974960;
+        Fri, 20 Jan 2023 00:49:05 -0800 (PST)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pIn53-002oea-Ri; Fri, 20 Jan 2023 09:49:01 +0100
+Received: from p57bd9464.dip0.t-ipconnect.de ([87.189.148.100] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_128_GCM_SHA256
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pIn53-000p3c-GA; Fri, 20 Jan 2023 09:49:01 +0100
+Message-ID: <c1d233b9-bc85-dce9-ffa0-eb3170602c6c@physik.fu-berlin.de>
+Date:   Fri, 20 Jan 2023 09:49:00 +0100
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.5.0
+ Thunderbird/102.6.1
 Subject: Re: Calculating array sizes in C - was: Re: Build
  regressions/improvements in v6.2-rc1
-Content-Language: en-US
 To:     "Michael.Karcher" <Michael.Karcher@fu-berlin.de>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         Geert Uytterhoeven <geert@linux-m68k.org>
 Cc:     linux-kernel@vger.kernel.org, amd-gfx@lists.freedesktop.org,
         linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org,
@@ -79,57 +54,32 @@ References: <CAHk-=wgf929uGOVpiWALPyC7pv_9KbwB2EAvQ3C4woshZZ5zqQ@mail.gmail.com>
  <CAMuHMdWpHSsAB3WosyCVgS6+t4pU35Xfj3tjmdCDoyS2QkS7iw@mail.gmail.com>
  <0d238f02-4d78-6f14-1b1b-f53f0317a910@physik.fu-berlin.de>
  <1732342f-49fe-c20e-b877-bc0a340e1a50@fu-berlin.de>
-From:   Rob Landley <rob@landley.net>
+Content-Language: en-US
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 In-Reply-To: <1732342f-49fe-c20e-b877-bc0a340e1a50@fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.148.100
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+Hi Michael!
 
+On 1/19/23 23:11, Michael.Karcher wrote:
+> I suggest to file a bug against gcc complaining about a "spurious warning",
+> and using "-Werror -Wno-error-sizeof-pointer-div" until gcc is adapted to
+> not emit the warning about the pointer division if the result is not used.
 
-On 1/19/23 16:11, Michael.Karcher wrote:
-> Isn't this supposed to be caught by this check:
->>>>
->>>>          a, __same_type(a, NULL)
->>>>
->>>> ?
->>>
->>> Yeah, but gcc thinks it is smarter than us...
->>> Probably it drops the test, assuming UB cannot happen.
->> Hmm, sounds like a GGC bug to me then. Not sure how to fix this then.
-> 
-> 
-> I don't see a clear bug at this point. We are talking about the C expression
-> 
->    __same_type((void*)0, (void*)0)? 0 : sizeof((void*)0)/sizeof(*((void*0))
+Could you post a kernel patch for that? I would be happy to test it on my
+SH-7785CLR board. Also, I'm going to file a bug report against GCC.
 
-*(void*) is type "void" which does not have a size.
+Adrian
 
-The problem is gcc "optimizing out" an earlier type check, the same way it
-"optimizes out" checks for signed integer math overflowing, or "optimizes out" a
-comparison to pointers from two different local variables from different
-function calls trying to calculate the amount of stack used, or "optimizes out"
-using char *x = (char *)1; as a flag value and then doing "if (!(x-1)) because
-it can "never happen"...
-> I suggest to file a bug against gcc complaining about a "spurious 
-> warning", and using "-Werror -Wno-error-sizeof-pointer-div" until gcc is 
-> adapted to not emit the warning about the pointer division if the result 
-> is not used.
+-- 
+  .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
 
-Remember when gcc got rewritten in c++ starting in 2007?
-
-Historically the main marketing push of C++ was that it contains the whole of C
-and therefore MUST be just as good a language, the same way a mud pie contains
-an entire glass of water and therefore MUST be just as good a beverage. Anything
-C can do that C++ _can't_ do is seen as an existential threat by C++ developers.
-They've worked dilligently to "fix" C not being a giant pile of "undefined
-behavior" the way C++ is for 15 years now.
-
-I have... opinions on this.
-
-> Regards,
->    Michael Karcher
-
-Rob
