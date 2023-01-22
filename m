@@ -2,103 +2,82 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C400C38142
-	for <linux-sh@archiver.kernel.org>; Sat, 21 Jan 2023 21:26:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D712EC27C76
+	for <linux-sh@archiver.kernel.org>; Sun, 22 Jan 2023 00:15:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229636AbjAUV0v (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 21 Jan 2023 16:26:51 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60768 "EHLO
+        id S229672AbjAVAPX (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 21 Jan 2023 19:15:23 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37026 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229526AbjAUV0u (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 21 Jan 2023 16:26:50 -0500
+        with ESMTP id S229463AbjAVAPW (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 21 Jan 2023 19:15:22 -0500
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ED1531DBA8;
-        Sat, 21 Jan 2023 13:26:48 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5960A17CE8;
+        Sat, 21 Jan 2023 16:15:21 -0800 (PST)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pJLNr-001fc4-Li; Sat, 21 Jan 2023 22:26:43 +0100
-Received: from dynamic-089-012-154-190.89.12.pool.telefonica.de ([89.12.154.190] helo=[192.168.1.11])
+          (envelope-from <mkarcher@zedat.fu-berlin.de>)
+          id 1pJO10-002AZK-CU; Sun, 22 Jan 2023 01:15:18 +0100
+Received: from pd9f631ca.dip0.t-ipconnect.de ([217.246.49.202] helo=[192.168.144.87])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_128_GCM_SHA256
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pJLNr-001xPR-F4; Sat, 21 Jan 2023 22:26:43 +0100
-Message-ID: <7c6b114a-38f8-1a0b-8623-d492f9cc2fb9@physik.fu-berlin.de>
-Date:   Sat, 21 Jan 2023 22:26:42 +0100
+          (envelope-from <Michael.Karcher@fu-berlin.de>)
+          id 1pJO0z-002Kk0-Vw; Sun, 22 Jan 2023 01:15:18 +0100
+Message-ID: <52952170-f1a9-89a0-e307-f974ce2b7977@fu-berlin.de>
+Date:   Sun, 22 Jan 2023 01:15:17 +0100
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101
  Thunderbird/102.6.1
-Subject: Re: Calculating array sizes in C - was: Re: Build
- regressions/improvements in v6.2-rc1
-Content-Language: en-US
-To:     Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     linux-kernel@vger.kernel.org, amd-gfx@lists.freedesktop.org,
-        linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org,
-        linux-mips@vger.kernel.org, linux-wireless@vger.kernel.org,
-        linux-sh@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
-        linuxppc-dev@lists.ozlabs.org, kasan-dev@googlegroups.com,
-        linux-xtensa@linux-xtensa.org, Arnd Bergmann <arnd@arndb.de>
-References: <CAHk-=wgf929uGOVpiWALPyC7pv_9KbwB2EAvQ3C4woshZZ5zqQ@mail.gmail.com>
- <20221227082932.798359-1-geert@linux-m68k.org>
- <alpine.DEB.2.22.394.2212270933530.311423@ramsan.of.borg>
- <c05bee5d-0d69-289b-fe4b-98f4cd31a4f5@physik.fu-berlin.de>
- <CAMuHMdXNJveXHeS=g-aHbnxtyACxq1wCeaTg8LbpYqJTCqk86g@mail.gmail.com>
- <3800eaa8-a4da-b2f0-da31-6627176cb92e@physik.fu-berlin.de>
- <CAMuHMdWbBRkhecrqcir92TgZnffMe8ku2t7PcVLqA6e6F-j=iw@mail.gmail.com>
- <429140e0-72fe-c91c-53bc-124d33ab5ffa@physik.fu-berlin.de>
- <CAMuHMdWpHSsAB3WosyCVgS6+t4pU35Xfj3tjmdCDoyS2QkS7iw@mail.gmail.com>
- <0d238f02-4d78-6f14-1b1b-f53f0317a910@physik.fu-berlin.de>
- <1732342f-49fe-c20e-b877-bc0a340e1a50@fu-berlin.de>
- <c1d233b9-bc85-dce9-ffa0-eb3170602c6c@physik.fu-berlin.de>
- <def16c9b-7bb1-a454-0896-b063a9e85964@fu-berlin.de>
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-In-Reply-To: <def16c9b-7bb1-a454-0896-b063a9e85964@fu-berlin.de>
+To:     linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
+        Segher Boessenkool <segher@kernel.crashing.org>,
+        Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+From:   "Michael.Karcher" <Michael.Karcher@fu-berlin.de>
+Cc:     jakub@gcc.gnu.org
+Subject: [PATCH: 1/1] sh4: avoid spurious gcc warning
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 89.12.154.190
+Content-Transfer-Encoding: 8bit
+X-Original-Sender: Michael.Karcher@fu-berlin.de
+X-Originating-IP: 217.246.49.202
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi!
+Prevent sizeof-pointer-div warning in SH4 intc macros
 
-On 1/20/23 20:29, Michael Karcher wrote:
-> Hello Adrian,
->> Could you post a kernel patch for that? I would be happy to test it on my
->> SH-7785CLR board. Also, I'm going to file a bug report against GCC.
-> 
-> I filed the bug already. It's https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108483.
-> 
-> The diff is attached. It's published as CC0 in case anyone considers this trivial change copyrightable. This patch prevents this one specific warning from being upgraded to "error" even if you configure the kernel to use "-Werror". It still keeps it active as warning, though.
+Gcc warns about the pattern sizeof(void*)/sizeof(void), as it looks like
+the abuse of a pattern to calculate the array size. This pattern appears
+in the unevaluated part of the ternary operator in _INTC_ARRAY if the
+parameter is NULL.
 
-I used the following variant and it fixes the issue for me:
+The replacement uses an alternate approach to return 0 in case of NULL
+which does not generate the pattern sizeof(void*)/sizeof(void), but still
+emits the warning if _INTC_ARRAY is called with a nonarray parameter.
 
-diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-index 5c8776482530..11b22f7167d2 100644
---- a/arch/sh/Makefile
-+++ b/arch/sh/Makefile
-@@ -167,7 +167,7 @@ drivers-y                   += arch/sh/drivers/
-  cflags-y       += $(foreach d, $(cpuincdir-y), -I $(srctree)/arch/sh/include/$(d)) \
-                    $(foreach d, $(machdir-y), -I $(srctree)/arch/sh/include/$(d))
-  
--KBUILD_CFLAGS          += -pipe $(cflags-y)
-+KBUILD_CFLAGS          += -pipe -Wno-error=sizeof-pointer-div $(cflags-y)
-  KBUILD_CPPFLAGS                += $(cflags-y)
-  KBUILD_AFLAGS          += $(cflags-y)
+This patch is required for successful compilation with -Werror enabled.
 
-If you agree, can you post a patch to LKML so we can unbreak the SH build for CONFIG_WERROR?
+The idea to use _Generic for type distinction is taken from Comment #7
+in https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108483 by Jakub Jelinek
 
-Thanks,
-Adrian
+Signed-off-by: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+---
 
--- 
-  .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
+index c255273b0281..d7a7ffb60a34 100644
+--- a/include/linux/sh_intc.h
++++ b/include/linux/sh_intc.h
+@@ -97,7 +97,7 @@ struct intc_hw_desc {
+      unsigned int nr_subgroups;
+  };
+
+-#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
++#define _INTC_ARRAY(a) a, sizeof(a)/(_Generic((a), typeof(NULL): 
+0xFFFFFFFFU, default: sizeof(*a)))
+
+  #define INTC_HW_DESC(vectors, groups, mask_regs,    \
+               prio_regs,    sense_regs, ack_regs)    \
 
