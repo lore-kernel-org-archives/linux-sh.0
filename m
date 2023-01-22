@@ -2,77 +2,101 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D454C25B4E
-	for <linux-sh@archiver.kernel.org>; Sun, 22 Jan 2023 11:33:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 10201C25B4E
+	for <linux-sh@archiver.kernel.org>; Sun, 22 Jan 2023 12:35:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229637AbjAVLds (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 22 Jan 2023 06:33:48 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40550 "EHLO
+        id S229879AbjAVMf1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 22 Jan 2023 07:35:27 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38636 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229480AbjAVLds (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 22 Jan 2023 06:33:48 -0500
+        with ESMTP id S229794AbjAVMf0 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 22 Jan 2023 07:35:26 -0500
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E844E1E1C5;
-        Sun, 22 Jan 2023 03:33:46 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 86C535FC9;
+        Sun, 22 Jan 2023 04:35:25 -0800 (PST)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
-          (envelope-from <mkarcher@zedat.fu-berlin.de>)
-          id 1pJYbW-003cIW-JV; Sun, 22 Jan 2023 12:33:42 +0100
-Received: from pd9f631ca.dip0.t-ipconnect.de ([217.246.49.202] helo=[192.168.144.87])
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pJZZC-003o23-CL; Sun, 22 Jan 2023 13:35:22 +0100
+Received: from dynamic-078-055-164-239.78.55.pool.telefonica.de ([78.55.164.239] helo=[192.168.1.11])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_128_GCM_SHA256
-          (envelope-from <kernel@mkarcher.dialup.fu-berlin.de>)
-          id 1pJYbW-003jRK-DR; Sun, 22 Jan 2023 12:33:42 +0100
-Message-ID: <c74cad7b-9ea3-5223-8292-3fe1172a9419@mkarcher.dialup.fu-berlin.de>
-Date:   Sun, 22 Jan 2023 12:33:41 +0100
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pJZZC-003qgy-64; Sun, 22 Jan 2023 13:35:22 +0100
+Message-ID: <eee8f8c8-6a5a-4ec3-e1e7-1103da7bb7ae@physik.fu-berlin.de>
+Date:   Sun, 22 Jan 2023 13:35:21 +0100
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
  Thunderbird/102.6.1
 Subject: Re: [PATCH: 1/1] sh4: avoid spurious gcc warning
-To:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org,
-        linux-sh@vger.kernel.org,
+To:     "Michael.Karcher" <Michael.Karcher@fu-berlin.de>,
+        linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
         Segher Boessenkool <segher@kernel.crashing.org>,
         Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+        Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc:     jakub@gcc.gnu.org
 References: <52952170-f1a9-89a0-e307-f974ce2b7977@fu-berlin.de>
- <2085aec3-796b-71c3-7cb2-d4103d3b6175@infradead.org>
-From:   Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
-In-Reply-To: <2085aec3-796b-71c3-7cb2-d4103d3b6175@infradead.org>
+Content-Language: en-US
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+In-Reply-To: <52952170-f1a9-89a0-e307-f974ce2b7977@fu-berlin.de>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-Original-Sender: kernel@mkarcher.dialup.fu-berlin.de
-X-Originating-IP: 217.246.49.202
+Content-Transfer-Encoding: 7bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 78.55.164.239
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Am 22.01.2023 um 08:00 schrieb Randy Dunlap:
->> -#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
->> +#define _INTC_ARRAY(a) a, sizeof(a)/(_Generic((a), typeof(NULL): 0xFFFFFFFFU, default: sizeof(*a)))
-> s/: / : / in 2 places.
->
-> Tested-by: Randy Dunlap <rdunlap@infradead.org> # build-tested
+Hi Michael!
 
-Thanks for your confirmation! Are you sure about the space before the 
-colon? The colon in this case terminates a case descriptor for the 
-type-level switch construction using "_Generic". It says: "In case 'a' 
-has the 'type of NULL', divide by 0xFFFFFFFFU, in all other cases, 
-divide by the size of a single array element". It's not a colon of the 
-ternary ?: operator, in which case I would agree with the space before it.
+On 1/22/23 01:15, Michael.Karcher wrote:
+> Prevent sizeof-pointer-div warning in SH4 intc macros
+> 
+> Gcc warns about the pattern sizeof(void*)/sizeof(void), as it looks like
+> the abuse of a pattern to calculate the array size. This pattern appears
+> in the unevaluated part of the ternary operator in _INTC_ARRAY if the
+> parameter is NULL.
+> 
+> The replacement uses an alternate approach to return 0 in case of NULL
+> which does not generate the pattern sizeof(void*)/sizeof(void), but still
+> emits the warning if _INTC_ARRAY is called with a nonarray parameter.
+> 
+> This patch is required for successful compilation with -Werror enabled.
+> 
+> The idea to use _Generic for type distinction is taken from Comment #7
+> in https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108483 by Jakub Jelinek
+> 
+> Signed-off-by: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+> ---
+> 
+> diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
+> index c255273b0281..d7a7ffb60a34 100644
+> --- a/include/linux/sh_intc.h
+> +++ b/include/linux/sh_intc.h
+> @@ -97,7 +97,7 @@ struct intc_hw_desc {
+>       unsigned int nr_subgroups;
+>   };
+> 
+> -#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
+> +#define _INTC_ARRAY(a) a, sizeof(a)/(_Generic((a), typeof(NULL): 0xFFFFFFFFU, default: sizeof(*a)))
+> 
+>   #define INTC_HW_DESC(vectors, groups, mask_regs,    \
+>                prio_regs,    sense_regs, ack_regs)    \
 
-If you confirm that you want a space before the colon in this case as 
-well, I'm going to add it, though.
+The title should probably be "arch/sh: avoid spurious gcc warning" since it's not
+a problem special to sh4 but affects the whole arch/sh sub-folder which covers
+all SuperH and J-Core targets.
 
-> How far back in gcc versions does this work?
+Can you rephrase the title accordingly?
 
-I tested the support of _Generic on Compiler Explorer at godbolt.org. 
-This construction is rejected by gcc 4.8, but accepted by gcc 4.9.
+Adrian
 
-Kind regards,
-   Michael Karcher
+-- 
+  .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
 
