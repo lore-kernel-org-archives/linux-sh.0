@@ -2,108 +2,85 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C43F7C27C76
-	for <linux-sh@archiver.kernel.org>; Sun, 22 Jan 2023 16:02:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D42A4C25B4E
+	for <linux-sh@archiver.kernel.org>; Sun, 22 Jan 2023 16:27:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230094AbjAVQCb (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 22 Jan 2023 11:02:31 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40652 "EHLO
+        id S230287AbjAVQ1S (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 22 Jan 2023 11:27:18 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45750 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229799AbjAVQCa (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 22 Jan 2023 11:02:30 -0500
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6BB351A4BF;
-        Sun, 22 Jan 2023 08:02:29 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:
-        Message-ID:Sender:Reply-To:Content-ID:Content-Description;
-        bh=/g9L+qiibEi9xUy2Z4GqwjBdwGnmjLETL+DDfll48JY=; b=DpDqm3hqj1PshDwnnQarEFdScI
-        SLYYeXxI6y1dGddURkblGiQf4nV4jwTXtuQyjlEOUvUFD0jHqHW0DWBsoqgIxe/qY39eoCFtJeDzO
-        psE0EpyXuMOWSAEYQ3BnqT9/kuah7lyX+ZNeBr4s6ms3uuJjryuj883jTNmy7rn0bTBPJR4E6yJef
-        Ip617cCXufprrSqyGhygnCRgehbY/EZBQk3xqcfnUZSu3fD0dMpmpClqFHP8ijrDh1CJXbyJ8Fhou
-        /BgX/dMK9pXnH3/GnUBn0gvDHLET2fN6TAGrkIiTVT3Znp+0Cy1J9VOiWGVWT7CvjeuTRxBd14uBM
-        exwePYMQ==;
-Received: from [2601:1c2:d80:3110::9307]
-        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pJcnX-00FWJ0-TK; Sun, 22 Jan 2023 16:02:23 +0000
-Message-ID: <31dd9db6-413b-cddb-60e8-9e5d44ed8cb9@infradead.org>
-Date:   Sun, 22 Jan 2023 08:02:22 -0800
+        with ESMTP id S229766AbjAVQ1R (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 22 Jan 2023 11:27:17 -0500
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8F21D21A1D;
+        Sun, 22 Jan 2023 08:27:16 -0800 (PST)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <mkarcher@zedat.fu-berlin.de>)
+          id 1pJdBZ-0007tz-05; Sun, 22 Jan 2023 17:27:13 +0100
+Received: from pd9f631ca.dip0.t-ipconnect.de ([217.246.49.202] helo=[192.168.144.87])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_128_GCM_SHA256
+          (envelope-from <kernel@mkarcher.dialup.fu-berlin.de>)
+          id 1pJdBY-000Fm8-MV; Sun, 22 Jan 2023 17:27:12 +0100
+Message-ID: <563ff850-9966-b790-96d4-bb0557e1152c@mkarcher.dialup.fu-berlin.de>
+Date:   Sun, 22 Jan 2023 17:27:11 +0100
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101
  Thunderbird/102.6.1
-Subject: Re: [PATCH: 1/1] sh4: avoid spurious gcc warning
-Content-Language: en-US
-To:     Jakub Jelinek <jakub@redhat.com>,
-        Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
-Cc:     linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
+To:     linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
         Segher Boessenkool <segher@kernel.crashing.org>,
         Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.osdn.me>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        jakub@gcc.gnu.org
-References: <52952170-f1a9-89a0-e307-f974ce2b7977@fu-berlin.de>
- <2085aec3-796b-71c3-7cb2-d4103d3b6175@infradead.org>
- <c74cad7b-9ea3-5223-8292-3fe1172a9419@mkarcher.dialup.fu-berlin.de>
- <Y80vRJfPJ4mIO8Cm@tucnak>
-From:   Randy Dunlap <rdunlap@infradead.org>
-In-Reply-To: <Y80vRJfPJ4mIO8Cm@tucnak>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+From:   Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+Subject: [PATCH v2 1/1] arch/sh: avoid spurious sizeof-pointer-div warning
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
+X-Original-Sender: kernel@mkarcher.dialup.fu-berlin.de
+X-Originating-IP: 217.246.49.202
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+Gcc warns about the pattern sizeof(void*)/sizeof(void), as it looks like
+the abuse of a pattern to calculate the array size. This pattern appears
+in the unevaluated part of the ternary operator in _INTC_ARRAY if the
+parameter is NULL.
 
+The replacement uses an alternate approach to return 0 in case of NULL
+which does not generate the pattern sizeof(void*)/sizeof(void), but still
+emits the warning if _INTC_ARRAY is called with a nonarray parameter.
 
-On 1/22/23 04:42, Jakub Jelinek wrote:
-> On Sun, Jan 22, 2023 at 12:33:41PM +0100, Michael Karcher wrote:
->> Am 22.01.2023 um 08:00 schrieb Randy Dunlap:
->>>> -#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
->>>> +#define _INTC_ARRAY(a) a, sizeof(a)/(_Generic((a), typeof(NULL): 0xFFFFFFFFU, default: sizeof(*a)))
->>> s/: / : / in 2 places.
->>>
->>> Tested-by: Randy Dunlap <rdunlap@infradead.org> # build-tested
->>
->> Thanks for your confirmation! Are you sure about the space before the colon?
+This patch is required for successful compilation with -Werror enabled.
 
-Nope, my bad. Thanks, Jakub.
+The idea to use _Generic for type distinction is taken from Comment #7
+in https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108483 by Jakub Jelinek
 
-> No, it should be without those, see various other _Generic uses in
-> include/linux/
-> All those are formatted on one line for each case, so for the above macro it
-> would be
-> #define _INTC_ARRAY(a) (a), sizeof(a)/(_Generic((a),			\
-> 				       typeof(NULL):	-1,		\
-> 				       default:		sizeof(*(a)))
-> or so.
-> Anyway, two comments:
-> 1) I'd use -1 as that would be after promotion to size_t the largest size_t
->    unlike 0xFFFFFFFFU; of course, as for the void * case a can't be an array,
->    any value > sizeof(void*) will do
-> 2) if *a and a is fine (i.e. argument of the macro has to be really simple or
->    wrapped in ()s, then perhaps (a) as first operand to _Generic isn't needed
->    either, or use (a) in the two spots (sizeof(a) is of course fine) and
->    *(a)
-> 
->> The colon in this case terminates a case descriptor for the type-level
->> switch construction using "_Generic". It says: "In case 'a' has the 'type of
->> NULL', divide by 0xFFFFFFFFU, in all other cases, divide by the size of a
->> single array element". It's not a colon of the ternary ?: operator, in which
->> case I would agree with the space before it.
->>
->> If you confirm that you want a space before the colon in this case as well,
->> I'm going to add it, though.
->>
->>> How far back in gcc versions does this work?
->>
->> I tested the support of _Generic on Compiler Explorer at godbolt.org. This
->> construction is rejected by gcc 4.8, but accepted by gcc 4.9.
-> 
-> Yeah, introduced in gcc 4.9, as I think kernel minimum version is 5.1, that is fine.
-> And various headers already use _Generic.
+Signed-off-by: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+---
+History:
+v2:
+   - improve title and remove mostly redundant first sentence of the
+     description
+   - adjust formatting of the _Generic construction
 
-and thanks for that info also.
+diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
+index c255273b0281..98d1da0d8e36 100644
+--- a/include/linux/sh_intc.h
++++ b/include/linux/sh_intc.h
+@@ -97,7 +97,9 @@ struct intc_hw_desc {
+      unsigned int nr_subgroups;
+  };
 
--- 
-~Randy
+-#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
++#define _INTC_ARRAY(a) a, sizeof(a) / (_Generic(a, \
++                                       typeof(NULL):  (size_t)-1, \
++                                       default:       sizeof(*a)))
+
+  #define INTC_HW_DESC(vectors, groups, mask_regs,    \
+               prio_regs,    sense_regs, ack_regs)    \
+
