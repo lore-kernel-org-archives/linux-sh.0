@@ -2,115 +2,108 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9818CC25B4E
-	for <linux-sh@archiver.kernel.org>; Sun, 22 Jan 2023 12:43:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C43F7C27C76
+	for <linux-sh@archiver.kernel.org>; Sun, 22 Jan 2023 16:02:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230050AbjAVMnr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 22 Jan 2023 07:43:47 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41304 "EHLO
+        id S230094AbjAVQCb (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 22 Jan 2023 11:02:31 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40652 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229811AbjAVMnr (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 22 Jan 2023 07:43:47 -0500
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9FD951DBBC
-        for <linux-sh@vger.kernel.org>; Sun, 22 Jan 2023 04:43:00 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1674391379;
-        h=from:from:reply-to:reply-to:subject:subject:date:date:
-         message-id:message-id:to:to:cc:cc:mime-version:mime-version:
-         content-type:content-type:in-reply-to:in-reply-to:  references:references;
-        bh=G85QnFBacl0zUMoHghV6EXcFeaY9C51G9nbii003cL4=;
-        b=Xd6WcqcWq47L/2pPBmOyvBY28H1U02mChRe9xf98mEnatB2s1JOj7b1YabM2T46u7F0Mua
-        0CWWlkXabUM1cjnhmYn5APr2b27i6PD7T/l6HAZtFdpoJbg494HW2jhuFepIis/1U8DWL/
-        jAmnxyfJgPKiu/VcOtywfUkrV3WGIvk=
-Received: from mimecast-mx02.redhat.com (mx3-rdu2.redhat.com
- [66.187.233.73]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-642-YK9lW9PIMieqML4CVlGxKw-1; Sun, 22 Jan 2023 07:42:55 -0500
-X-MC-Unique: YK9lW9PIMieqML4CVlGxKw-1
-Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.rdu2.redhat.com [10.11.54.5])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id B799D380662D;
-        Sun, 22 Jan 2023 12:42:54 +0000 (UTC)
-Received: from tucnak.zalov.cz (unknown [10.39.192.223])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 38E4D175AD;
-        Sun, 22 Jan 2023 12:42:54 +0000 (UTC)
-Received: from tucnak.zalov.cz (localhost [127.0.0.1])
-        by tucnak.zalov.cz (8.17.1/8.17.1) with ESMTPS id 30MCgnci1532972
-        (version=TLSv1.3 cipher=TLS_AES_256_GCM_SHA384 bits=256 verify=NOT);
-        Sun, 22 Jan 2023 13:42:49 +0100
-Received: (from jakub@localhost)
-        by tucnak.zalov.cz (8.17.1/8.17.1/Submit) id 30MCgiNs1532970;
-        Sun, 22 Jan 2023 13:42:44 +0100
-Date:   Sun, 22 Jan 2023 13:42:44 +0100
-From:   Jakub Jelinek <jakub@redhat.com>
-To:     Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
-Cc:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org,
-        linux-sh@vger.kernel.org,
+        with ESMTP id S229799AbjAVQCa (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 22 Jan 2023 11:02:30 -0500
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6BB351A4BF;
+        Sun, 22 Jan 2023 08:02:29 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        Content-Type:In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:
+        Message-ID:Sender:Reply-To:Content-ID:Content-Description;
+        bh=/g9L+qiibEi9xUy2Z4GqwjBdwGnmjLETL+DDfll48JY=; b=DpDqm3hqj1PshDwnnQarEFdScI
+        SLYYeXxI6y1dGddURkblGiQf4nV4jwTXtuQyjlEOUvUFD0jHqHW0DWBsoqgIxe/qY39eoCFtJeDzO
+        psE0EpyXuMOWSAEYQ3BnqT9/kuah7lyX+ZNeBr4s6ms3uuJjryuj883jTNmy7rn0bTBPJR4E6yJef
+        Ip617cCXufprrSqyGhygnCRgehbY/EZBQk3xqcfnUZSu3fD0dMpmpClqFHP8ijrDh1CJXbyJ8Fhou
+        /BgX/dMK9pXnH3/GnUBn0gvDHLET2fN6TAGrkIiTVT3Znp+0Cy1J9VOiWGVWT7CvjeuTRxBd14uBM
+        exwePYMQ==;
+Received: from [2601:1c2:d80:3110::9307]
+        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1pJcnX-00FWJ0-TK; Sun, 22 Jan 2023 16:02:23 +0000
+Message-ID: <31dd9db6-413b-cddb-60e8-9e5d44ed8cb9@infradead.org>
+Date:   Sun, 22 Jan 2023 08:02:22 -0800
+MIME-Version: 1.0
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.6.1
+Subject: Re: [PATCH: 1/1] sh4: avoid spurious gcc warning
+Content-Language: en-US
+To:     Jakub Jelinek <jakub@redhat.com>,
+        Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+Cc:     linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
         Segher Boessenkool <segher@kernel.crashing.org>,
         Rich Felker <dalias@libc.org>,
         Yoshinori Sato <ysato@users.osdn.me>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         jakub@gcc.gnu.org
-Subject: Re: [PATCH: 1/1] sh4: avoid spurious gcc warning
-Message-ID: <Y80vRJfPJ4mIO8Cm@tucnak>
-Reply-To: Jakub Jelinek <jakub@redhat.com>
 References: <52952170-f1a9-89a0-e307-f974ce2b7977@fu-berlin.de>
  <2085aec3-796b-71c3-7cb2-d4103d3b6175@infradead.org>
  <c74cad7b-9ea3-5223-8292-3fe1172a9419@mkarcher.dialup.fu-berlin.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <c74cad7b-9ea3-5223-8292-3fe1172a9419@mkarcher.dialup.fu-berlin.de>
-X-Scanned-By: MIMEDefang 3.1 on 10.11.54.5
+ <Y80vRJfPJ4mIO8Cm@tucnak>
+From:   Randy Dunlap <rdunlap@infradead.org>
+In-Reply-To: <Y80vRJfPJ4mIO8Cm@tucnak>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Sun, Jan 22, 2023 at 12:33:41PM +0100, Michael Karcher wrote:
-> Am 22.01.2023 um 08:00 schrieb Randy Dunlap:
-> > > -#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
-> > > +#define _INTC_ARRAY(a) a, sizeof(a)/(_Generic((a), typeof(NULL): 0xFFFFFFFFU, default: sizeof(*a)))
-> > s/: / : / in 2 places.
-> > 
-> > Tested-by: Randy Dunlap <rdunlap@infradead.org> # build-tested
+
+
+On 1/22/23 04:42, Jakub Jelinek wrote:
+> On Sun, Jan 22, 2023 at 12:33:41PM +0100, Michael Karcher wrote:
+>> Am 22.01.2023 um 08:00 schrieb Randy Dunlap:
+>>>> -#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
+>>>> +#define _INTC_ARRAY(a) a, sizeof(a)/(_Generic((a), typeof(NULL): 0xFFFFFFFFU, default: sizeof(*a)))
+>>> s/: / : / in 2 places.
+>>>
+>>> Tested-by: Randy Dunlap <rdunlap@infradead.org> # build-tested
+>>
+>> Thanks for your confirmation! Are you sure about the space before the colon?
+
+Nope, my bad. Thanks, Jakub.
+
+> No, it should be without those, see various other _Generic uses in
+> include/linux/
+> All those are formatted on one line for each case, so for the above macro it
+> would be
+> #define _INTC_ARRAY(a) (a), sizeof(a)/(_Generic((a),			\
+> 				       typeof(NULL):	-1,		\
+> 				       default:		sizeof(*(a)))
+> or so.
+> Anyway, two comments:
+> 1) I'd use -1 as that would be after promotion to size_t the largest size_t
+>    unlike 0xFFFFFFFFU; of course, as for the void * case a can't be an array,
+>    any value > sizeof(void*) will do
+> 2) if *a and a is fine (i.e. argument of the macro has to be really simple or
+>    wrapped in ()s, then perhaps (a) as first operand to _Generic isn't needed
+>    either, or use (a) in the two spots (sizeof(a) is of course fine) and
+>    *(a)
 > 
-> Thanks for your confirmation! Are you sure about the space before the colon?
-
-No, it should be without those, see various other _Generic uses in
-include/linux/
-All those are formatted on one line for each case, so for the above macro it
-would be
-#define _INTC_ARRAY(a) (a), sizeof(a)/(_Generic((a),			\
-				       typeof(NULL):	-1,		\
-				       default:		sizeof(*(a)))
-or so.
-Anyway, two comments:
-1) I'd use -1 as that would be after promotion to size_t the largest size_t
-   unlike 0xFFFFFFFFU; of course, as for the void * case a can't be an array,
-   any value > sizeof(void*) will do
-2) if *a and a is fine (i.e. argument of the macro has to be really simple or
-   wrapped in ()s, then perhaps (a) as first operand to _Generic isn't needed
-   either, or use (a) in the two spots (sizeof(a) is of course fine) and
-   *(a)
-
-> The colon in this case terminates a case descriptor for the type-level
-> switch construction using "_Generic". It says: "In case 'a' has the 'type of
-> NULL', divide by 0xFFFFFFFFU, in all other cases, divide by the size of a
-> single array element". It's not a colon of the ternary ?: operator, in which
-> case I would agree with the space before it.
+>> The colon in this case terminates a case descriptor for the type-level
+>> switch construction using "_Generic". It says: "In case 'a' has the 'type of
+>> NULL', divide by 0xFFFFFFFFU, in all other cases, divide by the size of a
+>> single array element". It's not a colon of the ternary ?: operator, in which
+>> case I would agree with the space before it.
+>>
+>> If you confirm that you want a space before the colon in this case as well,
+>> I'm going to add it, though.
+>>
+>>> How far back in gcc versions does this work?
+>>
+>> I tested the support of _Generic on Compiler Explorer at godbolt.org. This
+>> construction is rejected by gcc 4.8, but accepted by gcc 4.9.
 > 
-> If you confirm that you want a space before the colon in this case as well,
-> I'm going to add it, though.
-> 
-> > How far back in gcc versions does this work?
-> 
-> I tested the support of _Generic on Compiler Explorer at godbolt.org. This
-> construction is rejected by gcc 4.8, but accepted by gcc 4.9.
+> Yeah, introduced in gcc 4.9, as I think kernel minimum version is 5.1, that is fine.
+> And various headers already use _Generic.
 
-Yeah, introduced in gcc 4.9, as I think kernel minimum version is 5.1, that is fine.
-And various headers already use _Generic.
+and thanks for that info also.
 
-	Jakub
-
+-- 
+~Randy
