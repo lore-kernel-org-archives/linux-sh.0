@@ -2,105 +2,107 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D1510C25B4E
-	for <linux-sh@archiver.kernel.org>; Sun, 22 Jan 2023 21:10:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 337B2C05027
+	for <linux-sh@archiver.kernel.org>; Mon, 23 Jan 2023 14:49:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229811AbjAVVKy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 22 Jan 2023 16:10:54 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52208 "EHLO
+        id S231732AbjAWOt6 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 23 Jan 2023 09:49:58 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54900 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229986AbjAVVKx (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 22 Jan 2023 16:10:53 -0500
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4B6CB14E82;
-        Sun, 22 Jan 2023 13:10:51 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:From:References:To:Subject:MIME-Version:Date:
-        Message-ID:Sender:Reply-To:Cc:Content-ID:Content-Description;
-        bh=87ElcHz54ZvSyAusAFanXfjovvWvwsc8dhlvjQ5tUiU=; b=xpQHNFCqf/8YK81mnXuOVHncnm
-        uYxLD6JcZ7zLHxYiYmD3AsQkzgCxHuPGCbHK3waBMr4L5LKna+11urCZZfOUlWM3MCjAI+yVuy3d8
-        5rqRpeEGw+cyswXeBWF31ln2I/wZviBBc6JZUHg9Dc3NfpV7J1yEQS3WBb9jqWPiPvOPb1fAKfld1
-        80FhbT6FToJAzjyjm5ETNE9II6LYIRrEQiKmqwh7Iag4F2FIGDnlFpLqyiAZ/mELehi9N7/o5A7U4
-        tHNLYF48cubQXV1wqRIm8Eiiy9ts2Bk9k/7uO2dvD7dOrJbLOr8Nbau8cIiJBpGgAf6TlYPQNh266
-        ePLcqvCw==;
-Received: from [2601:1c2:d80:3110::9307]
-        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pJhc0-00FnRE-VX; Sun, 22 Jan 2023 21:10:49 +0000
-Message-ID: <0e9cbdd7-1875-35bd-4d1d-81b7dff9df7c@infradead.org>
-Date:   Sun, 22 Jan 2023 13:10:48 -0800
+        with ESMTP id S232056AbjAWOty (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 23 Jan 2023 09:49:54 -0500
+Received: from mail-qt1-f172.google.com (mail-qt1-f172.google.com [209.85.160.172])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C72DDCDEC;
+        Mon, 23 Jan 2023 06:49:53 -0800 (PST)
+Received: by mail-qt1-f172.google.com with SMTP id d16so9782573qtw.8;
+        Mon, 23 Jan 2023 06:49:53 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=+mGbSTbmYZ6080GG0Gg9582BdjWiklyqcj1kSaK7l00=;
+        b=tnxB3IpvoRkcK42cirInpEisiyqwh6hfOAnnGjc3+av+fw82HENlJlbElzGHC+FIpx
+         cXB1zmGaeM+qkR3B8K4ioNJCWUm6uq7a+34YXo98LGCkefjPiyqZra9e3wZw5ZK3WP2z
+         zrXwsTHeL1r8VqOEKpr1uizvQAcq0laXNx/Oh64WO9ul2Q1gl9r7Ky4bosZQts0PL/4o
+         mi4iGvi7mzoKrEmM9z1AF7WQ/guMTHhiDkz+uznwmm7yRAviSs8/oIOlCo4jfs9kN5cH
+         aTMdBRcJ+kZ2mx53EOIYFn7lsHIZiAtWt6ChkfkzmTgJjgZV0Cwgtq75exWl2JiLNUn9
+         gFCA==
+X-Gm-Message-State: AFqh2koSupeYfxaEbDqOvO59I3e6hKu7U9d+nTQ+8GN1Y9uEkftLANtt
+        voFkdwVww5wtp7Qf7dgmWgUTTE7G+daH9w==
+X-Google-Smtp-Source: AMrXdXvV38bAkbMrODIjq8dmgQaulL8RGu0ElaRaJ9BPKCbk9zV11jkSZ9a31pMXLWLVdE3cdX1o9g==
+X-Received: by 2002:ac8:5c14:0:b0:3b6:33c6:c5ac with SMTP id i20-20020ac85c14000000b003b633c6c5acmr47171629qti.4.1674485392613;
+        Mon, 23 Jan 2023 06:49:52 -0800 (PST)
+Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com. [209.85.128.179])
+        by smtp.gmail.com with ESMTPSA id bw5-20020a05622a098500b003b64f1b1f40sm8492096qtb.40.2023.01.23.06.49.51
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 23 Jan 2023 06:49:52 -0800 (PST)
+Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-4a263c4ddbaso175582357b3.0;
+        Mon, 23 Jan 2023 06:49:51 -0800 (PST)
+X-Received: by 2002:a81:6e46:0:b0:37e:6806:a5f9 with SMTP id
+ j67-20020a816e46000000b0037e6806a5f9mr2904469ywc.47.1674485391343; Mon, 23
+ Jan 2023 06:49:51 -0800 (PST)
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.6.1
-Subject: Re: [PATCH v3 1/1] arch/sh: avoid spurious sizeof-pointer-div warning
-Content-Language: en-US
-To:     Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
+References: <52952170-f1a9-89a0-e307-f974ce2b7977@fu-berlin.de>
+ <2085aec3-796b-71c3-7cb2-d4103d3b6175@infradead.org> <c74cad7b-9ea3-5223-8292-3fe1172a9419@mkarcher.dialup.fu-berlin.de>
+ <Y80vRJfPJ4mIO8Cm@tucnak>
+In-Reply-To: <Y80vRJfPJ4mIO8Cm@tucnak>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Mon, 23 Jan 2023 15:49:38 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdXQ3MxtJycmTxomz_iJnYj6-2Mf8t7jUzoY490O2DhQfQ@mail.gmail.com>
+Message-ID: <CAMuHMdXQ3MxtJycmTxomz_iJnYj6-2Mf8t7jUzoY490O2DhQfQ@mail.gmail.com>
+Subject: Re: [PATCH: 1/1] sh4: avoid spurious gcc warning
+To:     Jakub Jelinek <jakub@redhat.com>
+Cc:     Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
+        Randy Dunlap <rdunlap@infradead.org>,
         linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
         Segher Boessenkool <segher@kernel.crashing.org>,
         Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-References: <8dc791f9-3b44-e81d-6877-c21b9180c48a@mkarcher.dialup.fu-berlin.de>
-From:   Randy Dunlap <rdunlap@infradead.org>
-In-Reply-To: <8dc791f9-3b44-e81d-6877-c21b9180c48a@mkarcher.dialup.fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+        Yoshinori Sato <ysato@users.osdn.me>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        jakub@gcc.gnu.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+Hi Jakub,
 
+On Sun, Jan 22, 2023 at 1:47 PM Jakub Jelinek <jakub@redhat.com> wrote:
+> On Sun, Jan 22, 2023 at 12:33:41PM +0100, Michael Karcher wrote:
+> > Am 22.01.2023 um 08:00 schrieb Randy Dunlap:
+> > > > -#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
+> > > > +#define _INTC_ARRAY(a) a, sizeof(a)/(_Generic((a), typeof(NULL): 0xFFFFFFFFU, default: sizeof(*a)))
+> > > s/: / : / in 2 places.
+> > >
+> > > Tested-by: Randy Dunlap <rdunlap@infradead.org> # build-tested
+> >
+> > Thanks for your confirmation! Are you sure about the space before the colon?
+>
+> No, it should be without those, see various other _Generic uses in
+> include/linux/
+> All those are formatted on one line for each case, so for the above macro it
+> would be
+> #define _INTC_ARRAY(a) (a), sizeof(a)/(_Generic((a),                    \
+>                                        typeof(NULL):    -1,             \
+>                                        default:         sizeof(*(a)))
+> or so.
+> Anyway, two comments:
+> 1) I'd use -1 as that would be after promotion to size_t the largest size_t
+>    unlike 0xFFFFFFFFU; of course, as for the void * case a can't be an array,
+>    any value > sizeof(void*) will do
 
-On 1/22/23 12:51, Michael Karcher wrote:
-> Gcc warns about the pattern sizeof(void*)/sizeof(void), as it looks like
-> the abuse of a pattern to calculate the array size. This pattern appears
-> in the unevaluated part of the ternary operator in _INTC_ARRAY if the
-> parameter is NULL.
-> 
-> The replacement uses an alternate approach to return 0 in case of NULL
-> which does not generate the pattern sizeof(void*)/sizeof(void), but still
-> emits the warning if _INTC_ARRAY is called with a nonarray parameter.
-> 
-> This patch is required for successful compilation with -Werror enabled.
-> 
-> The idea to use _Generic for type distinction is taken from Comment #7
-> in https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108483 by Jakub Jelinek
-> 
-> Signed-off-by: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
-> ---
-> History:
-> v3:
->   - I had a stern discussion with Thunderbird about not mangling the
->     space characters in my email, and I hope spaces get sent as standard
->     spaces now
+Or SIZE_MAX.
 
-Looks good now. Thanks.
+include/linux/limits.h:#define SIZE_MAX (~(size_t)0)
 
-Acked-by: Randy Dunlap <rdunlap@infradead.org> # build-tested
+Gr{oetje,eeting}s,
 
+                        Geert
 
-> v2:
->   - improve title and remove mostly redundant first sentence of the
->     description
->   - adjust formatting of the _Generic construction
-> 
-> diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
-> index c255273b0281..98d1da0d8e36 100644
-> --- a/include/linux/sh_intc.h
-> +++ b/include/linux/sh_intc.h
-> @@ -97,7 +97,9 @@ struct intc_hw_desc {
->      unsigned int nr_subgroups;
->  };
-> 
-> -#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
-> +#define _INTC_ARRAY(a) a, sizeof(a) / (_Generic(a, \
-> +                                       typeof(NULL):  (size_t)-1, \
-> +                                       default:       sizeof(*a)))
-> 
->  #define INTC_HW_DESC(vectors, groups, mask_regs,    \
->               prio_regs,    sense_regs, ack_regs)    \
-> 
-> 
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
--- 
-~Randy
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
