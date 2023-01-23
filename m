@@ -2,49 +2,42 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E007AC05027
-	for <linux-sh@archiver.kernel.org>; Mon, 23 Jan 2023 18:00:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 09511C05027
+	for <linux-sh@archiver.kernel.org>; Mon, 23 Jan 2023 18:45:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233179AbjAWSAv (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 23 Jan 2023 13:00:51 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39020 "EHLO
+        id S231501AbjAWSpY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 23 Jan 2023 13:45:24 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56204 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233225AbjAWSAt (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 23 Jan 2023 13:00:49 -0500
+        with ESMTP id S229913AbjAWSpX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 23 Jan 2023 13:45:23 -0500
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DB1E1302B9;
-        Mon, 23 Jan 2023 10:00:48 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3D0CF2139;
+        Mon, 23 Jan 2023 10:45:22 -0800 (PST)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <mkarcher@zedat.fu-berlin.de>)
-          id 1pK17Z-003ZWl-9s; Mon, 23 Jan 2023 19:00:41 +0100
+          id 1pK1om-003lk6-AJ; Mon, 23 Jan 2023 19:45:20 +0100
 Received: from pd9f631ca.dip0.t-ipconnect.de ([217.246.49.202] helo=[192.168.144.87])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_128_GCM_SHA256
           (envelope-from <kernel@mkarcher.dialup.fu-berlin.de>)
-          id 1pK17Z-0046ih-3e; Mon, 23 Jan 2023 19:00:41 +0100
-Message-ID: <f5eb6cb1-c1f5-5a13-2b22-374adc70acec@mkarcher.dialup.fu-berlin.de>
-Date:   Mon, 23 Jan 2023 19:00:39 +0100
+          id 1pK1om-0001f8-4B; Mon, 23 Jan 2023 19:45:20 +0100
+Message-ID: <68e5d3d1-7d7d-232c-c6dc-3f65bfb55114@mkarcher.dialup.fu-berlin.de>
+Date:   Mon, 23 Jan 2023 19:45:19 +0100
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101
  Thunderbird/102.6.1
-Subject: Re: [PATCH: 1/1] sh4: avoid spurious gcc warning
-To:     Jakub Jelinek <jakub@redhat.com>,
-        David Laight <David.Laight@aculab.com>
-Cc:     "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>,
+From:   Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+Subject: [PATCH v3 1/1] arch/sh: avoid spurious sizeof-pointer-div warning
+To:     linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
         Segher Boessenkool <segher@kernel.crashing.org>,
         Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.osdn.me>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "jakub@gcc.gnu.org" <jakub@gcc.gnu.org>
-References: <52952170-f1a9-89a0-e307-f974ce2b7977@fu-berlin.de>
- <c411961861df4ae4b011317ff2c3c7df@AcuMS.aculab.com> <Y86xofsIk3NzidQO@tucnak>
-From:   Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
-In-Reply-To: <Y86xofsIk3NzidQO@tucnak>
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 X-Original-Sender: kernel@mkarcher.dialup.fu-berlin.de
@@ -53,30 +46,51 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Am 23.01.2023 um 17:11 schrieb Jakub Jelinek:
+Gcc warns about the pattern sizeof(void*)/sizeof(void), as it looks like
+the abuse of a pattern to calculate the array size. This pattern appears
+in the unevaluated part of the ternary operator in _INTC_ARRAY if the
+parameter is NULL.
 
-> On Mon, Jan 23, 2023 at 04:06:27PM +0000, David Laight wrote:
->> From: Michael.Karcher
->>> -#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
->> FWIW it is (currently) enough to add 0 to the top or bottom
->> of the division.
-> If you don't want the warning at all, sure.  But if you want the compiler
-> to warn if you use the macro on a (non-void *) pointer rather than array,
-> what has been posted is needed.
+The replacement uses an alternate approach to return 0 in case of NULL
+which does not generate the pattern sizeof(void*)/sizeof(void), but still
+emits the warning if _INTC_ARRAY is called with a nonarray parameter.
 
-Exactly. I actually had sizeof(a)/(sizeof(*a) + 0) at first, but a test showed
-that it would silently generate invalid code on
+This patch is required for successful compilation with -Werror enabled.
 
-   struct intc_mask_reg singleton = {...};
-   _INTC_ARRAY(&singleton)
+The idea to use _Generic for type distinction is taken from Comment #7
+in https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108483 by Jakub Jelinek
 
-If it would expand to "&singleton, 1", it would be fine, but it will
-expand to "&singleton, 0", as sizeof(intc_mask_reg*) is smaller than
-sizeof(intc_mask_reg). The version I posted generates the intended warning
-(upgraded to an error with -Werror) in that case. The old version also
-generated the intended warning in this case, and not generating a warning
-here is a regression I didn't want to be responsible for.
+Signed-off-by: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+---
+History:
+v4:
+   - Put the case distinction into the numerator instead of the denominator
+   - Refactor the case disctinction into a second macro
+v3:
+   - I had a stern discussion with Thunderbird about not mangling the
+     space characters in my email, and I hope spaces get sent as standard
+     spaces now
+v2:
+   - improve title and remove mostly redundant first sentence of the
+     description
+   - adjust formatting of the _Generic construction
 
-Kind regards,
-   Michael Karcher
+diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
+index c255273b0281..98d1da0d8e36 100644
+--- a/include/linux/sh_intc.h
++++ b/include/linux/sh_intc.h
+@@ -97,7 +97,9 @@ struct intc_hw_desc {
+      unsigned int nr_subgroups;
+  };
+
+-#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
++#define _INTC_SIZEOF_OR_ZERO(a) (_Generic(a,                 \
++                                 typeof(NULL):  0,           \
++                                 default:       sizeof(a)))
++#define _INTC_ARRAY(a) a, _INTC_SIZEOF_OR_ZERO(a)/sizeof(*a)
+
+  #define INTC_HW_DESC(vectors, groups, mask_regs,    \
+               prio_regs,    sense_regs, ack_regs)    \
+
+
 
