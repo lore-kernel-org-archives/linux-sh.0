@@ -2,96 +2,121 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 421E9C25B50
-	for <linux-sh@archiver.kernel.org>; Mon, 23 Jan 2023 18:49:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 67C75C25B50
+	for <linux-sh@archiver.kernel.org>; Mon, 23 Jan 2023 19:37:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230128AbjAWStF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 23 Jan 2023 13:49:05 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59088 "EHLO
+        id S229930AbjAWThl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 23 Jan 2023 14:37:41 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43790 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232336AbjAWStD (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 23 Jan 2023 13:49:03 -0500
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 28D0C10A90;
-        Mon, 23 Jan 2023 10:49:01 -0800 (PST)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <mkarcher@zedat.fu-berlin.de>)
-          id 1pK1sJ-003mag-PP; Mon, 23 Jan 2023 19:48:59 +0100
-Received: from pd9f631ca.dip0.t-ipconnect.de ([217.246.49.202] helo=[192.168.144.87])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_128_GCM_SHA256
-          (envelope-from <kernel@mkarcher.dialup.fu-berlin.de>)
-          id 1pK1sJ-00024b-JI; Mon, 23 Jan 2023 19:48:59 +0100
-Message-ID: <b41ea008-d9c4-fd76-a5ce-00fe435deed5@mkarcher.dialup.fu-berlin.de>
-Date:   Mon, 23 Jan 2023 19:48:58 +0100
+        with ESMTP id S231989AbjAWThk (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 23 Jan 2023 14:37:40 -0500
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2933132509;
+        Mon, 23 Jan 2023 11:37:36 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        Content-Type:In-Reply-To:From:References:To:Subject:MIME-Version:Date:
+        Message-ID:Sender:Reply-To:Cc:Content-ID:Content-Description;
+        bh=0CYw3B5fdHcp1ceWLR2TGwnczmcK5NwFJMrherQyT+0=; b=rmWQL+X2VlIJUup29Jr8b5fAMJ
+        N6ktNo4AWzidXdzef7YpALZJD1PJoasnizlhOGjR/0IPvB24T4/ThnKZPiFlyIXvZ97Av7gJpDuiH
+        nkrdLMTI89nlIfR6BbAS79rLTP+KfEa4+V6SKa3n2EK6vy52dFR7YQxwxMldZegXJ8+uyZuygeClE
+        DaPeEhN72RWxTbwXOQbVD+znpuCQSr4vJBUObNPXKdukQ+YpnvLDy3x4zj6I+oSjAuWnZtz+skibM
+        WN+bGj0nCkyrKizbqHMvzwGGMhxFVyx6AUZm2dvuvPROca6ukASYDQCnokeQNu9f07+hI772g0mv0
+        ewFwYMGw==;
+Received: from [2601:1c2:d80:3110::9307]
+        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1pK2dK-001CMB-01; Mon, 23 Jan 2023 19:37:34 +0000
+Message-ID: <f540c26e-baa8-5c18-9502-622a4091b675@infradead.org>
+Date:   Mon, 23 Jan 2023 11:37:31 -0800
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
  Thunderbird/102.6.1
-From:   Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
-Subject: [PATCH v4 1/1] arch/sh: avoid spurious sizeof-pointer-div warning
-To:     linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
+Subject: Re: [PATCH v4 1/1] arch/sh: avoid spurious sizeof-pointer-div warning
+Content-Language: en-US
+To:     Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
+        linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
         Segher Boessenkool <segher@kernel.crashing.org>,
         Rich Felker <dalias@libc.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+References: <b41ea008-d9c4-fd76-a5ce-00fe435deed5@mkarcher.dialup.fu-berlin.de>
+From:   Randy Dunlap <rdunlap@infradead.org>
+In-Reply-To: <b41ea008-d9c4-fd76-a5ce-00fe435deed5@mkarcher.dialup.fu-berlin.de>
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
-X-Original-Sender: kernel@mkarcher.dialup.fu-berlin.de
-X-Originating-IP: 217.246.49.202
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Gcc warns about the pattern sizeof(void*)/sizeof(void), as it looks like
-the abuse of a pattern to calculate the array size. This pattern appears
-in the unevaluated part of the ternary operator in _INTC_ARRAY if the
-parameter is NULL.
+Hi,
 
-The replacement uses an alternate approach to return 0 in case of NULL
-which does not generate the pattern sizeof(void*)/sizeof(void), but still
-emits the warning if _INTC_ARRAY is called with a nonarray parameter.
+I'm curious how you generated this patch.
+'patch' complains:
 
-This patch is required for successful compilation with -Werror enabled.
+patch: **** malformed patch at line 53:                prio_regs,    sense_regs, ack_regs)    \
 
-The idea to use _Generic for type distinction is taken from Comment #7
-in https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108483 by Jakub Jelinek
+(more below)
 
-Signed-off-by: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
----
-This edition of the mail has the correct "v4" designation in the subject.
+On 1/23/23 10:48, Michael Karcher wrote:
+> Gcc warns about the pattern sizeof(void*)/sizeof(void), as it looks like
+> the abuse of a pattern to calculate the array size. This pattern appears
+> in the unevaluated part of the ternary operator in _INTC_ARRAY if the
+> parameter is NULL.
+> 
+> The replacement uses an alternate approach to return 0 in case of NULL
+> which does not generate the pattern sizeof(void*)/sizeof(void), but still
+> emits the warning if _INTC_ARRAY is called with a nonarray parameter.
+> 
+> This patch is required for successful compilation with -Werror enabled.
+> 
+> The idea to use _Generic for type distinction is taken from Comment #7
+> in https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108483 by Jakub Jelinek
+> 
+> Signed-off-by: Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>
+> ---
+> This edition of the mail has the correct "v4" designation in the subject.
+> 
+> History:
+> v4:
+>   - Put the case distinction into the numerator instead of the denominator
+>   - Refactor the case disctinction into a second macro
+> v3:
+>   - I had a stern discussion with Thunderbird about not mangling the
+>     space characters in my email, and I hope spaces get sent as standard
+>     spaces now
+> v2:
+>   - improve title and remove mostly redundant first sentence of the
+>     description
+>   - adjust formatting of the _Generic construction
+> 
+> diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
+> index c255273b0281..98d1da0d8e36 100644
+> --- a/include/linux/sh_intc.h
+> +++ b/include/linux/sh_intc.h
+> @@ -97,7 +97,9 @@ struct intc_hw_desc {
 
-History:
-v4:
-   - Put the case distinction into the numerator instead of the denominator
-   - Refactor the case disctinction into a second macro
-v3:
-   - I had a stern discussion with Thunderbird about not mangling the
-     space characters in my email, and I hope spaces get sent as standard
-     spaces now
-v2:
-   - improve title and remove mostly redundant first sentence of the
-     description
-   - adjust formatting of the _Generic construction
+That ,9 should be ,10.
 
-diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
-index c255273b0281..98d1da0d8e36 100644
---- a/include/linux/sh_intc.h
-+++ b/include/linux/sh_intc.h
-@@ -97,7 +97,9 @@ struct intc_hw_desc {
-      unsigned int nr_subgroups;
-  };
+With that change:
 
--#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
-+#define _INTC_SIZEOF_OR_ZERO(a) (_Generic(a,                 \
-+                                 typeof(NULL):  0,           \
-+                                 default:       sizeof(a)))
-+#define _INTC_ARRAY(a) a, _INTC_SIZEOF_OR_ZERO(a)/sizeof(*a)
+Acked-by: Randy Dunlap <rdunlap@infradead.org> # build-tested
 
-  #define INTC_HW_DESC(vectors, groups, mask_regs,    \
-               prio_regs,    sense_regs, ack_regs)    \
+Thanks.
 
+>      unsigned int nr_subgroups;
+>  };
+> 
+> -#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
+> +#define _INTC_SIZEOF_OR_ZERO(a) (_Generic(a,                 \
+> +                                 typeof(NULL):  0,           \
+> +                                 default:       sizeof(a)))
+> +#define _INTC_ARRAY(a) a, _INTC_SIZEOF_OR_ZERO(a)/sizeof(*a)
+> 
+>  #define INTC_HW_DESC(vectors, groups, mask_regs,    \
+>               prio_regs,    sense_regs, ack_regs)    \
+> 
+> 
 
+-- 
+~Randy
