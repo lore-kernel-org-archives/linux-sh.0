@@ -2,52 +2,45 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B15CAC25B4E
-	for <linux-sh@archiver.kernel.org>; Tue, 24 Jan 2023 08:09:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3BBE0C25B4E
+	for <linux-sh@archiver.kernel.org>; Tue, 24 Jan 2023 08:11:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231593AbjAXIJn (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 24 Jan 2023 03:09:43 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39686 "EHLO
+        id S232656AbjAXILy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 24 Jan 2023 03:11:54 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41728 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229965AbjAXIJm (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 24 Jan 2023 03:09:42 -0500
+        with ESMTP id S231749AbjAXILx (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 24 Jan 2023 03:11:53 -0500
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 71DA33D935;
-        Tue, 24 Jan 2023 00:09:41 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CCD693EFDB;
+        Tue, 24 Jan 2023 00:11:26 -0800 (PST)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pKEMy-002UjK-9t; Tue, 24 Jan 2023 09:09:28 +0100
+          id 1pKEOc-002VKM-MY; Tue, 24 Jan 2023 09:11:10 +0100
 Received: from dynamic-078-055-147-119.78.55.pool.telefonica.de ([78.55.147.119] helo=[192.168.1.11])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_128_GCM_SHA256
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pKEMy-001fq4-35; Tue, 24 Jan 2023 09:09:28 +0100
-Message-ID: <9553643d-8802-e863-bd21-c316f2788f79@physik.fu-berlin.de>
-Date:   Tue, 24 Jan 2023 09:09:26 +0100
+          id 1pKEOc-001g7K-GG; Tue, 24 Jan 2023 09:11:10 +0100
+Message-ID: <17abaf48-9ef3-72e2-010a-7e707d253fa8@physik.fu-berlin.de>
+Date:   Tue, 24 Jan 2023 09:11:09 +0100
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
  Thunderbird/102.6.1
-Subject: Re: [PATCH] sh: define RUNTIME_DISCARD_EXIT
+Subject: Re: [PATCH v5 1/1] arch/sh: avoid spurious sizeof-pointer-div warning
 Content-Language: en-US
-To:     Tom Saeger <tom.saeger@oracle.com>, Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc:     akpm@linux-foundation.org, Ard Biesheuvel <ardb@kernel.org>,
-        Arnd Bergmann <arnd@arndb.de>, Christoph Hellwig <hch@lst.de>,
-        Dennis Gilmore <dennis@ausil.us>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+To:     Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
         linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
-        Masahiro Yamada <masahiroy@kernel.org>,
-        Naresh Kamboju <naresh.kamboju@linaro.org>,
-        Nathan Chancellor <nathan@kernel.org>,
-        Palmer Dabbelt <palmer@rivosinc.com>,
-        torvalds@linux-foundation.org
-References: <9166a8abdc0f979e50377e61780a4bba1dfa2f52.1674518464.git.tom.saeger@oracle.com>
+        Segher Boessenkool <segher@kernel.crashing.org>,
+        Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>
+References: <9d3bd61a-725c-db40-b3bd-78460bc7e719@mkarcher.dialup.fu-berlin.de>
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-In-Reply-To: <9166a8abdc0f979e50377e61780a4bba1dfa2f52.1674518464.git.tom.saeger@oracle.com>
+In-Reply-To: <9d3bd61a-725c-db40-b3bd-78460bc7e719@mkarcher.dialup.fu-berlin.de>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 X-Original-Sender: glaubitz@physik.fu-berlin.de
@@ -56,68 +49,62 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Tom!
+Hello!
 
-On 1/24/23 01:09, Tom Saeger wrote:
-> sh vmlinux fails to link with GNU ld < 2.40 (likely < 2.36) since
-> commit 99cb0d917ffa ("arch: fix broken BuildID for arm64 and riscv").
+On 1/23/23 21:05, Michael Karcher wrote:
+> Gcc warns about the pattern sizeof(void*)/sizeof(void), as it looks like
+> the abuse of a pattern to calculate the array size. This pattern appears
+> in the unevaluated part of the ternary operator in _INTC_ARRAY if the
+> parameter is NULL.
+> 
+> The replacement uses an alternate approach to return 0 in case of NULL
+> which does not generate the pattern sizeof(void*)/sizeof(void), but still
+> emits the warning if _INTC_ARRAY is called with a nonarray parameter.
+> 
+> This patch is required for successful compilation with -Werror enabled.
+> 
+> The idea to use _Generic for type distinction is taken from Comment #7
+> inhttps://gcc.gnu.org/bugzilla/show_bug.cgi?id=108483  by Jakub Jelinek
+> 
+> Signed-off-by: Michael Karcher<kernel@mkarcher.dialup.fu-berlin.de>
+> ---
+> History:
+> v5:
+>    - Cleanly generated the patch
+> v4:
+>    - Put the case distinction into the numerator instead of the denominator
+>    - Refactor the case disctinction into a second macro
+> v3:
+>    - I had a stern discussion with Thunderbird about not mangling the
+>      space characters in my email, and I hope spaces get sent as standard
+>      spaces now
+> v2:
+>    - improve title and remove mostly redundant first sentence of the
+>      description
+>    - adjust formatting of the _Generic construction
+> 
+> diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
+> index c255273b0281..37ad81058d6a 100644
+> --- a/include/linux/sh_intc.h
+> +++ b/include/linux/sh_intc.h
+> @@ -97,7 +97,10 @@ struct intc_hw_desc {
+>          unsigned int nr_subgroups;
+>   };
+> 
+> -#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
+> +#define _INTC_SIZEOF_OR_ZERO(a) (_Generic(a,                 \
+> +                                 typeof(NULL):  0,           \
+> +                                 default:       sizeof(a)))
+> +#define _INTC_ARRAY(a) a, _INTC_SIZEOF_OR_ZERO(a)/sizeof(*a)
+> 
+>   #define INTC_HW_DESC(vectors, groups, mask_regs,       \
+>                       prio_regs, sense_regs, ack_regs)   \
 
-Works for me with binutils 2.36.1.
+Can anyone suggest which tree to pick this up through until we have established a
+new linux-sh tree?
 
-> This is similar to fixes for powerpc and s390:
-> commit 4b9880dbf3bd ("powerpc/vmlinux.lds: Define RUNTIME_DISCARD_EXIT").
-> commit a494398bde27 ("s390: define RUNTIME_DISCARD_EXIT to fix link error
-> with GNU ld < 2.36").
-> 
->    $ sh4-linux-gnu-ld --version | head -n1
->    GNU ld (GNU Binutils for Debian) 2.35.2
-> 
->    $ make ARCH=sh CROSS_COMPILE=sh4-linux-gnu- microdev_defconfig
->    $ make ARCH=sh CROSS_COMPILE=sh4-linux-gnu-
-> 
->    `.exit.text' referenced in section `__bug_table' of crypto/algboss.o:
->    defined in discarded section `.exit.text' of crypto/algboss.o
->    `.exit.text' referenced in section `__bug_table' of
->    drivers/char/hw_random/core.o: defined in discarded section
->    `.exit.text' of drivers/char/hw_random/core.o
->    make[2]: *** [scripts/Makefile.vmlinux:34: vmlinux] Error 1
->    make[1]: *** [Makefile:1252: vmlinux] Error 2
-> 
-> arch/sh/kernel/vmlinux.lds.S keeps EXIT_TEXT:
-> 
-> 	/*
-> 	 * .exit.text is discarded at runtime, not link time, to deal with
-> 	 * references from __bug_table
-> 	 */
-> 	.exit.text : AT(ADDR(.exit.text)) { EXIT_TEXT }
-> 
-> However, EXIT_TEXT is thrown away by
-> DISCARD(include/asm-generic/vmlinux.lds.h) because
-> sh does not define RUNTIME_DISCARD_EXIT.
-> 
-> GNU ld 2.40 does not have this issue and builds fine.
-> This corresponds with Masahiro's comments in a494398bde27:
-> "Nathan [Chancellor] also found that binutils
-> commit 21401fc7bf67 ("Duplicate output sections in scripts") cured this
-> issue, so we cannot reproduce it with binutils 2.36+, but it is better
-> to not rely on it."
-> 
-> Fixes: 99cb0d917ffa ("arch: fix broken BuildID for arm64 and riscv")
-> Link: https://lore.kernel.org/all/Y7Jal56f6UBh1abE@dev-arch.thelio-3990X/
-> Link: https://lore.kernel.org/all/20230123194218.47ssfzhrpnv3xfez@oracle.com/
-> Signed-off-by: Tom Saeger <tom.saeger@oracle.com>
+Shall this go through Andrew's tree?
 
-I'm in favor of including this patch for the said reasons.
-
-> This may be moot given sh might be soon removed:
-> https://lore.kernel.org/all/20230113062339.1909087-1-hch@lst.de/#t
-> 
-> However this did come up here:
-> https://lore.kernel.org/all/20230123194218.47ssfzhrpnv3xfez@oracle.com/
-
-We're currently busy trying to save arch/sh.
-
-Thanks,
 Adrian
 
 -- 
