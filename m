@@ -2,112 +2,119 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8189C54EED
-	for <linux-sh@archiver.kernel.org>; Tue, 24 Jan 2023 22:22:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5BA62C27C76
+	for <linux-sh@archiver.kernel.org>; Wed, 25 Jan 2023 19:08:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233407AbjAXWWS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 24 Jan 2023 17:22:18 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52990 "EHLO
+        id S236057AbjAYTIY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 25 Jan 2023 14:08:24 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56448 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231538AbjAXWWS (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 24 Jan 2023 17:22:18 -0500
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D3BB52ED7B;
-        Tue, 24 Jan 2023 14:22:16 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:From:References:To:Subject:MIME-Version:Date:
-        Message-ID:Sender:Reply-To:Cc:Content-ID:Content-Description;
-        bh=85wQJ1T0FgB7jdbTAIU4N89j02y6DNu0JcJ0cGxxy/A=; b=sP25CJ0IW8VYRwPigUMtcw6N9b
-        phVCeLBV2z+P9cMTFXxAlmba0Vjjmh1WFbZ5R8A8gRkskiSlcXjmGs72zROWoH6Ca4+W5ZQc+bdGo
-        M1f+aikAxcdjR34nquiiyaaw99/q7xYBX4848Z4Q+LBWlP6sU6jhc5hkIYGZf3tGmKlFemHDEKKDP
-        3kDIRghGi55JsYE1wAS6DiDgtHqtCIdC7u00Ohd/jULdmCD9I4pXno4BhSKsoO8tYa5B4/8f/cqWe
-        2aUP1is/8cFIu2ZxMhkZCBa0BfB8z0iR8fPizEOZpz/QavfaKheLfIWYPEmNiCaDzt31rbAtNknmT
-        Nb6athTg==;
-Received: from [2601:1c2:d80:3110::9307]
-        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pKRgF-005UY3-L9; Tue, 24 Jan 2023 22:22:15 +0000
-Message-ID: <9cce70d9-bbcc-0026-d872-f4d1f90148be@infradead.org>
-Date:   Tue, 24 Jan 2023 14:22:15 -0800
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.6.1
-Subject: Re: [PATCH v5 1/1] arch/sh: avoid spurious sizeof-pointer-div warning
-Content-Language: en-US
-To:     Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
-        linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
-        Segher Boessenkool <segher@kernel.crashing.org>,
+        with ESMTP id S235772AbjAYTIX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 25 Jan 2023 14:08:23 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 14056358B;
+        Wed, 25 Jan 2023 11:08:22 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id B8221B81B97;
+        Wed, 25 Jan 2023 19:08:20 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1A964C433D2;
+        Wed, 25 Jan 2023 19:08:08 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1674673699;
+        bh=qBn35DQSqUXJuSRxeDRwfpJWNfuE/0crpJYRHd83v4o=;
+        h=From:To:Cc:Subject:Date:From;
+        b=YEcaLAiW8LOEsQEOizhwah/DgYdk0Sj0EasElxRkmwC22UeVxExd/uj6NUQmANgP4
+         jAVzwBza/ip8qzByaan6itTOheGqmGzh/hD5E5BgZdD+9/3Ftzb0GYHM6hdAJnWG8c
+         +0dGrFu7IRI1vv+/xNF7SyJwcJ060FgtAE8tFhY0qs9BSVQGxK9kiiDi+9Al/inQ5y
+         QgjBkIDWnjNcjAsez+fQtgv2zY2/zSGOHn2szZ/WwbSgKX3evSa6IUTI2vOHlKyjnc
+         FhqKk/BuoBaxEuVWyr0QicxLbVmc8narKWe5G38G00CIXLChnK8wks51ggl7FZlFcj
+         PHJVAXzE1TuvQ==
+From:   Mike Rapoport <rppt@kernel.org>
+To:     Andrew Morton <akpm@linux-foundation.org>
+Cc:     Arnd Bergmann <arnd@arndb.de>, Brian Cain <bcain@quicinc.com>,
+        "David S. Miller" <davem@davemloft.net>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
+        Huacai Chen <chenhuacai@kernel.org>,
+        Matt Turner <mattst88@gmail.com>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Michal Simek <monstr@monstr.eu>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
         Rich Felker <dalias@libc.org>,
+        Richard Weinberger <richard@nod.at>,
+        Stafford Horne <shorne@gmail.com>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Vineet Gupta <vgupta@kernel.org>,
+        WANG Xuerui <kernel@xen0n.name>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-References: <619fa552-c988-35e5-b1d7-fe256c46a272@mkarcher.dialup.fu-berlin.de>
-From:   Randy Dunlap <rdunlap@infradead.org>
-In-Reply-To: <619fa552-c988-35e5-b1d7-fe256c46a272@mkarcher.dialup.fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+        linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux--csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
+        linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
+        openrisc@lists.librecores.org, sparclinux@vger.kernel.org,
+        x86@kernel.org, "Mike Rapoport (IBM)" <rppt@kernel.org>
+Subject: [PATCH 0/3] mm, arch: add generic implementation of pfn_valid() for FLATMEM
+Date:   Wed, 25 Jan 2023 21:07:54 +0200
+Message-Id: <20230125190757.22555-1-rppt@kernel.org>
+X-Mailer: git-send-email 2.35.1
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi--
+From: "Mike Rapoport (IBM)" <rppt@kernel.org>
 
-On 1/24/23 13:48, Michael Karcher wrote:
-> Gcc warns about the pattern sizeof(void*)/sizeof(void), as it looks like
-> the abuse of a pattern to calculate the array size. This pattern appears
-> in the unevaluated part of the ternary operator in _INTC_ARRAY if the
-> parameter is NULL.
-> 
-> The replacement uses an alternate approach to return 0 in case of NULL
-> which does not generate the pattern sizeof(void*)/sizeof(void), but still
-> emits the warning if _INTC_ARRAY is called with a nonarray parameter.
-> 
-> This patch is required for successful compilation with -Werror enabled.
-> 
-> The idea to use _Generic for type distinction is taken from Comment #7
-> inhttps://gcc.gnu.org/bugzilla/show_bug.cgi?id=108483  by Jakub Jelinek
-> 
-> Signed-off-by: Michael Karcher<kernel@mkarcher.dialup.fu-berlin.de>
+Hi,
 
-Acked-by: Randy Dunlap <rdunlap@infradead.org> # build-tested
+Every architecture that supports FLATMEM memory model defines its own
+version of pfn_valid() that essentially compares a pfn to max_mapnr.
 
-Thanks.
+Use mips/powerpc version implemented as static inline as a generic
+implementation of pfn_valid() and drop its per-architecture definitions
 
-> ---
-> (resend of the mail as plaintext only instead of multipart/alternative)
-> History:
-> v5:
->   - Cleanly generated the patch
-> v4:
->   - Put the case distinction into the numerator instead of the denominator
->   - Refactor the case disctinction into a second macro
-> v3:
->   - I had a stern discussion with Thunderbird about not mangling the
->     space characters in my email, and I hope spaces get sent as standard
->     spaces now
-> v2:
->   - improve title and remove mostly redundant first sentence of the
->     description
->   - adjust formatting of the _Generic construction
-> 
-> diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
-> index c255273b0281..37ad81058d6a 100644
-> --- a/include/linux/sh_intc.h
-> +++ b/include/linux/sh_intc.h
-> @@ -97,7 +97,10 @@ struct intc_hw_desc {
->         unsigned int nr_subgroups;
->  };
-> 
-> -#define _INTC_ARRAY(a) a, __same_type(a, NULL) ? 0 : sizeof(a)/sizeof(*a)
-> +#define _INTC_SIZEOF_OR_ZERO(a) (_Generic(a,                 \
-> +                                 typeof(NULL):  0,           \
-> +                                 default:       sizeof(a)))
-> +#define _INTC_ARRAY(a) a, _INTC_SIZEOF_OR_ZERO(a)/sizeof(*a)
-> 
->  #define INTC_HW_DESC(vectors, groups, mask_regs,       \
->                      prio_regs, sense_regs, ack_regs)   \
-> 
-> 
-> 
+Mike Rapoport (IBM) (3):
+  m68k: use asm-generic/memory_model.h for both MMU and !MMU
+  mips: drop definition of pfn_valid() for DISCONTIGMEM
+  mm, arch: add generic implementation of pfn_valid() for FLATMEM
 
+ arch/alpha/include/asm/page.h      |  4 ----
+ arch/arc/include/asm/page.h        |  1 -
+ arch/csky/include/asm/page.h       |  1 -
+ arch/hexagon/include/asm/page.h    |  1 -
+ arch/ia64/include/asm/page.h       |  4 ----
+ arch/loongarch/include/asm/page.h  | 13 -------------
+ arch/m68k/include/asm/page.h       |  6 +-----
+ arch/m68k/include/asm/page_mm.h    |  1 -
+ arch/m68k/include/asm/page_no.h    |  4 ----
+ arch/microblaze/include/asm/page.h |  1 -
+ arch/mips/include/asm/page.h       | 28 ----------------------------
+ arch/nios2/include/asm/page.h      |  9 ---------
+ arch/openrisc/include/asm/page.h   |  2 --
+ arch/parisc/include/asm/page.h     |  4 ----
+ arch/powerpc/include/asm/page.h    |  9 ---------
+ arch/riscv/include/asm/page.h      |  5 -----
+ arch/sh/include/asm/page.h         |  3 ---
+ arch/sparc/include/asm/page_32.h   |  1 -
+ arch/um/include/asm/page.h         |  1 -
+ arch/x86/include/asm/page_32.h     |  4 ----
+ arch/x86/include/asm/page_64.h     |  4 ----
+ arch/xtensa/include/asm/page.h     |  2 --
+ include/asm-generic/memory_model.h | 12 ++++++++++++
+ include/asm-generic/page.h         |  2 --
+ 24 files changed, 13 insertions(+), 109 deletions(-)
+
+
+base-commit: 2241ab53cbb5cdb08a6b2d4688feb13971058f65
 -- 
-~Randy
+2.35.1
+
