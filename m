@@ -2,111 +2,80 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 79E0BC61D9D
-	for <linux-sh@archiver.kernel.org>; Thu, 26 Jan 2023 08:20:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 32719C05027
+	for <linux-sh@archiver.kernel.org>; Thu, 26 Jan 2023 18:18:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236347AbjAZIUv (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 26 Jan 2023 03:20:51 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47952 "EHLO
+        id S229514AbjAZSSx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 26 Jan 2023 13:18:53 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38610 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234999AbjAZIUt (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 26 Jan 2023 03:20:49 -0500
-Received: from mail-qt1-f169.google.com (mail-qt1-f169.google.com [209.85.160.169])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D3FE8677AE;
-        Thu, 26 Jan 2023 00:20:47 -0800 (PST)
-Received: by mail-qt1-f169.google.com with SMTP id m26so714749qtp.9;
-        Thu, 26 Jan 2023 00:20:47 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=iTLUhLqiktW0lQYPPHgLpL0hyET/yRv7DDBqjk/47Fc=;
-        b=7+LRcWEznPa5uKoHJ1Tg+ykZpb6vX6VLjWaJRa9B+MZdl41zBVlhXNmcLBu8/LUrg1
-         b/PuJyIy0Go3MjWrP+uM+5ME6ZLSe/zJDVU4m59cO7ZEVB51LFdSIrQlkNvgDMvH1Bp4
-         vd3r5h+J62icDFbVCxbtIBGfueDAQj+m/QqeXwmUvdf+3rSRofIeuJjqi2Btl0OD+x0K
-         ZOapxF9oOIPgJ+L5/tnB58FNcDky642b8KN7p8Z2dWDXo4bO6mNY4LXjjltYuA6wCQek
-         rG9qEf5wjq2aeEoNT84Hz3anvC/N3bl9OCfchWFjpQX5heUAZVgczyC3qXS+4uD6gvgl
-         vkrw==
-X-Gm-Message-State: AFqh2kruT9tJ1lepFIJ4Uk3IEXFGV/RZynrSdpRh7l+J0GMAGyhE8Glr
-        wcUXsqO7TsxZr+7kUuQezqoL/R15SSZuUg==
-X-Google-Smtp-Source: AMrXdXvRhGAyW/N9yjvNqC9twGwSug95UgGB/kyWFjQYeOXDpVBNU3zAq9YlPOJJttgil+RQ3F/R6Q==
-X-Received: by 2002:ac8:71d1:0:b0:3b6:2f3f:2710 with SMTP id i17-20020ac871d1000000b003b62f3f2710mr47444404qtp.11.1674721246569;
-        Thu, 26 Jan 2023 00:20:46 -0800 (PST)
-Received: from mail-yb1-f181.google.com (mail-yb1-f181.google.com. [209.85.219.181])
-        by smtp.gmail.com with ESMTPSA id l16-20020ac84cd0000000b003b630456b8fsm324448qtv.89.2023.01.26.00.20.45
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 26 Jan 2023 00:20:45 -0800 (PST)
-Received: by mail-yb1-f181.google.com with SMTP id h5so1101996ybj.8;
-        Thu, 26 Jan 2023 00:20:45 -0800 (PST)
-X-Received: by 2002:a25:9ac1:0:b0:7b4:6a33:d89f with SMTP id
- t1-20020a259ac1000000b007b46a33d89fmr2761883ybo.543.1674721245117; Thu, 26
- Jan 2023 00:20:45 -0800 (PST)
+        with ESMTP id S229529AbjAZSSx (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 26 Jan 2023 13:18:53 -0500
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 88B8C28D10;
+        Thu, 26 Jan 2023 10:18:49 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        Content-Type:In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:
+        Message-ID:Sender:Reply-To:Content-ID:Content-Description;
+        bh=A/EAsoQpv98BbnAFg4jyK3LuF4jsXP2f5+Cbw1ShfTs=; b=b9cCEL1kzEWMjbYFzFb0wgufGU
+        3nL88FuO4VhxpSq5sFH8vKVPqM7bHI+NCcBivAtDo3sQGvREjekdLki6EMb8N92DkED38zpNwursR
+        zYKJM9Z6hQMaCoBbdzf5SmtYcRQ/WuIQ1z1b2UHkDrp4nGjY4hwU9hswbWev9PvGlW42nZOozaIt5
+        0xSQHvzLSb4q32M67trAxPf6zUj5uDS+nbUMYbbAQksYc0JLk2TiUBbm5/uJDpP+sCkY8tY23P080
+        QCHMcP5gMkv1wEW8wcNNBErX25FvkxvCgNW3O20akCAlO3g0bdxxitAPtvhARNYISN6K+Q0K3yp+J
+        n+v4A/mQ==;
+Received: from [2601:1c2:d80:3110::9307]
+        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1pL6pf-00C8GL-4a; Thu, 26 Jan 2023 18:18:43 +0000
+Message-ID: <2a54ce4b-e16f-d4a0-0850-15520f99248e@infradead.org>
+Date:   Thu, 26 Jan 2023 10:18:42 -0800
 MIME-Version: 1.0
-References: <20230125190757.22555-1-rppt@kernel.org> <20230125190757.22555-2-rppt@kernel.org>
-In-Reply-To: <20230125190757.22555-2-rppt@kernel.org>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Thu, 26 Jan 2023 09:20:33 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdUeuPgkWVjpZ=OM4ofnoYyv2nY1_FGo0JUZCFXYX=K2vw@mail.gmail.com>
-Message-ID: <CAMuHMdUeuPgkWVjpZ=OM4ofnoYyv2nY1_FGo0JUZCFXYX=K2vw@mail.gmail.com>
-Subject: Re: [PATCH 1/3] m68k: use asm-generic/memory_model.h for both MMU and !MMU
-To:     Mike Rapoport <rppt@kernel.org>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>, Brian Cain <bcain@quicinc.com>,
-        "David S. Miller" <davem@davemloft.net>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        Matt Turner <mattst88@gmail.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Michal Simek <monstr@monstr.eu>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.6.1
+Subject: Re: [PATCH v4 1/1] arch/sh: avoid spurious sizeof-pointer-div warning
+Content-Language: en-US
+To:     Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
+        Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>,
+        Segher Boessenkool <segher@kernel.crashing.org>,
         Rich Felker <dalias@libc.org>,
-        Richard Weinberger <richard@nod.at>,
-        Stafford Horne <shorne@gmail.com>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Vineet Gupta <vgupta@kernel.org>,
-        WANG Xuerui <kernel@xen0n.name>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
-        linux--csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
-        linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
-        openrisc@lists.librecores.org, sparclinux@vger.kernel.org,
-        x86@kernel.org
-Content-Type: text/plain; charset="UTF-8"
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+References: <b41ea008-d9c4-fd76-a5ce-00fe435deed5@mkarcher.dialup.fu-berlin.de>
+ <f540c26e-baa8-5c18-9502-622a4091b675@infradead.org>
+ <CAMuHMdUUq0FLmsRPw122My7tOUyRLJxsEKOSFgtfG3ec5OiyKQ@mail.gmail.com>
+ <0dcf23d3-09d5-802f-d9cc-2900d2cdaa53@mkarcher.dialup.fu-berlin.de>
+From:   Randy Dunlap <rdunlap@infradead.org>
+In-Reply-To: <0dcf23d3-09d5-802f-d9cc-2900d2cdaa53@mkarcher.dialup.fu-berlin.de>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Jan 25, 2023 at 8:08 PM Mike Rapoport <rppt@kernel.org> wrote:
-> From: "Mike Rapoport (IBM)" <rppt@kernel.org>
->
-> The MMU variant uses generic definitions of page_to_pfn() and
-> pfn_to_page(), but !MMU defines them in include/asm/page_no.h for no
-> good reason.
->
-> Include asm-generic/memory_model.h in the common include/asm/page.h and
-> drop redundant definitions.
->
-> Signed-off-by: Mike Rapoport (IBM) <rppt@kernel.org>
+Hi Michael,
 
-Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+On 1/24/23 14:05, Michael Karcher wrote:
+> Am 24.01.2023 um 14:07 schrieb Geert Uytterhoeven:
+> 
+>> On Mon, Jan 23, 2023 at 8:40 PM Randy Dunlap <rdunlap@infradead.org> wrote:
+>>> I'm curious how you generated this patch.
+> 
+> I'm currently using Thunderbird in a GUI environment as my only mail client,
+> and I pasted just the +/- lines of the patch into the pre-composed mail. The
+> copious amounts of bad mails I generated this way are a good point to set up
+> git-send-email in my linux environment to avoid bad patches / badly formatted
+> mails
+> 
 
-Gr{oetje,eeting}s,
+If there is anything that you told Thunderbird about as far as sending plain text
+patches that is not already documented[1], please consider adding it to the
+documentation.
 
-                        Geert
+[1] https://docs.kernel.org/process/email-clients.html (+ search for Thunderbird)
+or linux/Documentation/process/email-clients.rst
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Thanks.
+-- 
+~Randy
