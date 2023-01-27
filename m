@@ -2,39 +2,37 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 80FCBC05027
-	for <linux-sh@archiver.kernel.org>; Fri, 27 Jan 2023 02:08:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A56F6C54EAA
+	for <linux-sh@archiver.kernel.org>; Fri, 27 Jan 2023 07:28:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232019AbjA0CId (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 26 Jan 2023 21:08:33 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50410 "EHLO
+        id S232684AbjA0H2N (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 27 Jan 2023 02:28:13 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46976 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232356AbjA0CI0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 26 Jan 2023 21:08:26 -0500
+        with ESMTP id S229886AbjA0H2M (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 27 Jan 2023 02:28:12 -0500
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8038F3C0D;
-        Thu, 26 Jan 2023 18:08:25 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5C6AECC31;
+        Thu, 26 Jan 2023 23:28:11 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id D208F61A04;
-        Fri, 27 Jan 2023 02:08:24 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 15DCEC433D2;
-        Fri, 27 Jan 2023 02:08:24 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1674785304;
-        bh=gsUOOU4dKX6enFS0koRCREnw4eMO6JjDL/OWg7Yy3XA=;
+        by dfw.source.kernel.org (Postfix) with ESMTPS id EAF57619E2;
+        Fri, 27 Jan 2023 07:28:10 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AF6C0C433EF;
+        Fri, 27 Jan 2023 07:28:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+        s=korg; t=1674804490;
+        bh=41nvTCSFJJ2bFpXnW7eFEO4smfuDDSvMknN6qj5+8fQ=;
         h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=QAqy5jd5EMUp7l6VDVuSF55yzKqbFgzEOL6HdOTd2oedyg+YURxbQFxxq1f98mVJ7
-         9bM5IQWzY3lhOvaqv2XgMcXMPWEKSkpnNbPeVdlJodY5A5yjUs49raqvacw3gYTx6D
-         imiEI+V3BDW9+YQMyEsl0swt7Gw5xBOgepxQHR0hcuStjqPTFvcyZP/x5Ps4vConil
-         75N23b4yLdBLKTfVA1cxBMtmowa0N8QWa2czlCay+IxAaMLcmAykkmlhdRokjfs7T5
-         5TEc3viEzBUpg4wFVCVvepqLjd0NUJtL4OxeobX4stF9cyqq9trAskFASF+RC8G0KN
-         OJnMlSl14ACCA==
-Date:   Thu, 26 Jan 2023 21:08:23 -0500
-From:   Sasha Levin <sashal@kernel.org>
-To:     Tom Saeger <tom.saeger@oracle.com>
-Cc:     Naresh Kamboju <naresh.kamboju@linaro.org>,
+        b=pkoB9AEfbxqTGBhPImDfcmMF5VHRqGrh84KZRLtvG64eDgo+Vgcg53YnUIbHSXawQ
+         nsyl8Nmi/BhAw7YN5lc5H/RCQSpY3UAPIGA5A1SnQB6d2CwoC+P3AY6lnD2h5Y3MYu
+         CGmqs06Ytbo+YBihz75nH4xzTnsGHvaZKFo/0Q+E=
+Date:   Fri, 27 Jan 2023 08:28:07 +0100
+From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To:     Sasha Levin <sashal@kernel.org>
+Cc:     Tom Saeger <tom.saeger@oracle.com>,
+        Naresh Kamboju <naresh.kamboju@linaro.org>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         Rich Felker <dalias@libc.org>,
         Masahiro Yamada <masahiroy@kernel.org>,
@@ -42,31 +40,39 @@ Cc:     Naresh Kamboju <naresh.kamboju@linaro.org>,
         Nathan Chancellor <nathan@kernel.org>,
         Dennis Gilmore <dennis@ausil.us>,
         Palmer Dabbelt <palmer@rivosinc.com>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        stable@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-sh@vger.kernel.org
+        Arnd Bergmann <arnd@arndb.de>, stable@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
 Subject: Re: [PATCH 5.4 fix build id for arm64 with CONFIG_MODVERSIONS 0/6]
-Message-ID: <Y9MyFyifBDCrwMuq@sashalap>
+Message-ID: <Y9N9B5e7HZhFN7nl@kroah.com>
 References: <cover.1674588616.git.tom.saeger@oracle.com>
+ <Y9MyFyifBDCrwMuq@sashalap>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <cover.1674588616.git.tom.saeger@oracle.com>
+In-Reply-To: <Y9MyFyifBDCrwMuq@sashalap>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Jan 24, 2023 at 02:14:17PM -0700, Tom Saeger wrote:
->Build ID on arm64 is broken if CONFIG_MODVERSIONS=y
->on 5.4, 5.10, and 5.15
->
->Discussed:
->https://lore.kernel.org/all/3df32572ec7016e783d37e185f88495831671f5d.1671143628.git.tom.saeger@oracle.com/
->https://lore.kernel.org/all/cover.1670358255.git.tom.saeger@oracle.com/
+On Thu, Jan 26, 2023 at 09:08:23PM -0500, Sasha Levin wrote:
+> On Tue, Jan 24, 2023 at 02:14:17PM -0700, Tom Saeger wrote:
+> > Build ID on arm64 is broken if CONFIG_MODVERSIONS=y
+> > on 5.4, 5.10, and 5.15
+> > 
+> > Discussed:
+> > https://lore.kernel.org/all/3df32572ec7016e783d37e185f88495831671f5d.1671143628.git.tom.saeger@oracle.com/
+> > https://lore.kernel.org/all/cover.1670358255.git.tom.saeger@oracle.com/
+> 
+> Queued up, hopefully it makes it this time :) Thanks!
 
-Queued up, hopefully it makes it this time :) Thanks!
+Dropped from the 5.4 queue as it is not in any newer kernel tree yet,
+sorry.  We can't have a fix that is in only 5.4 but not in a newer
+release, that would mean it would be a regression if someone moves to a
+newer release.
 
--- 
-Thanks,
-Sasha
+Tom, please submit patches for _all_ branches, and we will be glad to
+consider them, not just for one old one.
+
+thanks,
+
+greg k-h
