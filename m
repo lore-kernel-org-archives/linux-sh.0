@@ -2,146 +2,142 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1139FC61DA7
-	for <linux-sh@archiver.kernel.org>; Sat, 28 Jan 2023 09:02:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A896C27C76
+	for <linux-sh@archiver.kernel.org>; Sat, 28 Jan 2023 16:16:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234033AbjA1JCU (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 28 Jan 2023 04:02:20 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41106 "EHLO
+        id S231376AbjA1QQv (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 28 Jan 2023 11:16:51 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38910 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233575AbjA1JCT (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 28 Jan 2023 04:02:19 -0500
-Received: from mail-wm1-x32e.google.com (mail-wm1-x32e.google.com [IPv6:2a00:1450:4864:20::32e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A38EA6DFCF;
-        Sat, 28 Jan 2023 01:02:16 -0800 (PST)
-Received: by mail-wm1-x32e.google.com with SMTP id j32-20020a05600c1c2000b003dc4fd6e61dso47524wms.5;
-        Sat, 28 Jan 2023 01:02:16 -0800 (PST)
+        with ESMTP id S229619AbjA1QQu (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 28 Jan 2023 11:16:50 -0500
+Received: from NAM02-BN1-obe.outbound.protection.outlook.com (mail-bn1nam02on2120.outbound.protection.outlook.com [40.107.212.120])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E1D8018160;
+        Sat, 28 Jan 2023 08:16:47 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=FaH89ZQIPr89Ngs22Zycb9HhCXuYAyJHb4VjhNnOw2mdAbupbfG0Q6C5wyZsSKoLgcxMx3xBsw/QkVBBwptQuTaOIipgpfZcSlPymxVa5xheocq72gekL4pO7pq/qqNnMy6//qB6PWClDXVQO7v/8nsBzkJ8Ek/zzbklitaRf8C19hRKtw5BTbTCyYLlaimFsR4sLYqKvmoFTlz7sd5mHoj1Ucu3k/IIHcB/gPp/fh9Vj+LY85+vEzref+mri4812btVvaVdGo76Lr2YYwahlaDraOKxw0sb66YkzWFOx7G26eyYCzPL0WFyxBkoJnh4SytoIleHhhSwm6UFUvG+EQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=aPo2d71h3sxt+ga2lJ6vP27Q95yM0nhRFYmcbmjOInw=;
+ b=MXoVmXgysJnRm7berRsgeAfa8YXPPzpfyaN5yG7DXNR3MCTqzLLGuHDD7rSeOTctKsxmN2XdvjRL/bJD649NG1szcuSEvct7VxXhfV/QL+rNu+w/GMunXlf/mVd93BmL60qF6WZjhw8ZIOrSG5eV8nHB9P7sDyt3mOncSkHY3Lp3orcM2IQy7iPnTHWNqaF4b1QqHfENFBi0E7+mBWn3MTOdBTQj8A3TLdT0S8ORGIuLxvYGQTArDt/BbKBaFS6vpgzN2k8seXA1sUrLL3zgVNcQtcFAZJwYEKRa4GG+ZrREP21pw040pVvhWuriWfUm/kBu0iJ+ILyTf44dKD34Uw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=corigine.com; dmarc=pass action=none header.from=corigine.com;
+ dkim=pass header.d=corigine.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=v7ARCz3cVaBFOjYkC77qL/HBEniL1qdQHS5E6K6GFOY=;
-        b=aqbRojTHRCVjzGUAj7OwNNFidQtZRaRDHHmAjBWeAFhAl4EP6lU/HQ+DT3lz3ORLRs
-         krDbFNMyaAoPDNNbr2Us4LfdqxvtQoKw/VqPFwWdtmeZaX2Yr/xMNSAvUp0bHiLiSOj3
-         SN1iYBMZrJW6Tuoe05d5ixjoXDQyxOx+hHgkYRdk2YredIT5D868vyI7+JtGnCIwsINP
-         AC8gyFLqm6XouHJKilNfBj6iNxK7cGu1Nhc9VlLOm0nqQCpyycdmijDtgityKjfCFibc
-         kBECjMNCFbqcxj8dsEQrghcf75B90yP81hRDkvCSROQeKfuHc3hus0w8nNDlJyMcHou/
-         rQVg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=v7ARCz3cVaBFOjYkC77qL/HBEniL1qdQHS5E6K6GFOY=;
-        b=K/g0NVKqOEQIrhvafWdRvrjURipII3R7wZsomoncfvYxOaVsjxBB4GDtgjn1rX1MtO
-         KnY0l5JrvoLJvI7FX5LmggUrjXSISAK7DhqusGl6ORvy1tgnHzaBtrzy/+5DLIG3uF8P
-         lef2XfYvHcPw/UhMCNXBZF/FmVKfSZujzuKe+DvSSWACEhbvMhK9klK7GEp0ph2XKBUP
-         FSRIeXTua9Fs6dy+8P49dTlLlb3I+Hlxpk5CylXLBf14ePJ7EAXAfsx3dOTsbkqT13W6
-         135KB/lW487LBZjy5pAqw4JyLZ1S2JICUGNRKrM2DbK6tzk5uKReWuLp3qwHAX0Xuqwz
-         L8mg==
-X-Gm-Message-State: AFqh2koU+Pl3pQgtBSHxJ3WksDASjXOPbguqlLD3Odb34RoxJ7wn82bA
-        xeVo3OD529xv6CQsEwfTAho=
-X-Google-Smtp-Source: AMrXdXshtli+OqZ9VwFCdRpOAvHTMs/09zG9TMwa0gaZMZJ8uG1JiJOtVlF/BhmQxoXBbhlR7WJAkg==
-X-Received: by 2002:a05:600c:5116:b0:3db:1a8:c041 with SMTP id o22-20020a05600c511600b003db01a8c041mr42453030wms.17.1674896535134;
-        Sat, 28 Jan 2023 01:02:15 -0800 (PST)
-Received: from localhost (cpc1-brnt4-2-0-cust862.4-2.cable.virginm.net. [86.9.131.95])
-        by smtp.gmail.com with ESMTPSA id f28-20020a5d58fc000000b002be5401ef5fsm6212824wrd.39.2023.01.28.01.02.14
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 28 Jan 2023 01:02:14 -0800 (PST)
-Date:   Sat, 28 Jan 2023 18:02:13 +0900
-From:   Stafford Horne <shorne@gmail.com>
-To:     Mike Rapoport <rppt@kernel.org>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>, Brian Cain <bcain@quicinc.com>,
-        "David S. Miller" <davem@davemloft.net>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        Matt Turner <mattst88@gmail.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Michal Simek <monstr@monstr.eu>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Rich Felker <dalias@libc.org>,
-        Richard Weinberger <richard@nod.at>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Vineet Gupta <vgupta@kernel.org>,
-        WANG Xuerui <kernel@xen0n.name>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
-        linux--csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
-        linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
-        sparclinux@vger.kernel.org, x86@kernel.org
-Subject: Re: [PATCH 3/3] mm, arch: add generic implementation of pfn_valid()
- for FLATMEM
-Message-ID: <Y9TklS4v8oHCvCu2@antec>
-References: <20230125190757.22555-1-rppt@kernel.org>
- <20230125190757.22555-4-rppt@kernel.org>
-MIME-Version: 1.0
+ d=corigine.onmicrosoft.com; s=selector2-corigine-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=aPo2d71h3sxt+ga2lJ6vP27Q95yM0nhRFYmcbmjOInw=;
+ b=VuHbcCMsz7g89eN73aJReinkQfCf57T2ZYhjMTOCwKAjaXHA+WjHhPKM7ljpNnVapfwjyI5eeASOTji01NH0v9wXXxYX6S5RTlJ8yNCEwJElcKwRBuPSxYiYu6f8sgIPIdTj3mt9m7bxx47COyRX1NqLP8DjlqXzOLpYuFBfgq4=
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=corigine.com;
+Received: from PH0PR13MB4842.namprd13.prod.outlook.com (2603:10b6:510:78::6)
+ by PH7PR13MB5988.namprd13.prod.outlook.com (2603:10b6:510:15c::7) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.6043.22; Sat, 28 Jan
+ 2023 16:16:45 +0000
+Received: from PH0PR13MB4842.namprd13.prod.outlook.com
+ ([fe80::eb5c:910f:3730:fd65]) by PH0PR13MB4842.namprd13.prod.outlook.com
+ ([fe80::eb5c:910f:3730:fd65%6]) with mapi id 15.20.6043.028; Sat, 28 Jan 2023
+ 16:16:45 +0000
+Date:   Sat, 28 Jan 2023 17:16:38 +0100
+From:   Simon Horman <simon.horman@corigine.com>
+To:     Jakub Kicinski <kuba@kernel.org>
+Cc:     davem@davemloft.net, netdev@vger.kernel.org, edumazet@google.com,
+        pabeni@redhat.com, ysato@users.sourceforge.jp, dalias@libc.org,
+        linux-sh@vger.kernel.org
+Subject: Re: [PATCH net-next] sh: checksum: add missing linux/uaccess.h
+ include
+Message-ID: <Y9VKZhCOdM4L28UA@corigine.com>
+References: <20230128073108.1603095-1-kuba@kernel.org>
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20230125190757.22555-4-rppt@kernel.org>
+In-Reply-To: <20230128073108.1603095-1-kuba@kernel.org>
+X-ClientProxiedBy: AM0PR02CA0149.eurprd02.prod.outlook.com
+ (2603:10a6:20b:28d::16) To PH0PR13MB4842.namprd13.prod.outlook.com
+ (2603:10b6:510:78::6)
+MIME-Version: 1.0
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: PH0PR13MB4842:EE_|PH7PR13MB5988:EE_
+X-MS-Office365-Filtering-Correlation-Id: 12dfd87c-d226-42a1-8eef-08db014b0ccb
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: ao8vkiB3lfqZ173JZflQUj4r8ZGGfC37bm6C5X4Lk1+rEFIVIPylihFUIos2taPyRxlAd7+OODKRkstZnWtAIysp184mq+hdDDHgf7Pf2OstFlQ0vmRdMAySuXuE6eVABXFeRGAdWRMEpRV4jHCHKj7fCl31oHtZM3Pu63c59CRVSyz9PHlvkcYejvZ2vgA+d5M9OfPZJr708RSrZ4EjnstvNiQCaCn/hn9BBHwy+srTcaxtI+KlK50owHXs8fIXj0s4STfMoeKGmNPx1yzyD4kmrjhxLNuOdfcKrxCztHn0shPzlNikgz9npl430veNNHnUMz6BCt/KSYN76G9D5RFy4FxIAaOPfeFWeGT4itcsAinNJss+k99rX+xGhr8m3P6wOqhV5PtTZutNFxHypwteU4TOFuWd7R+fI5v81BamaUFcnEvy7kFvPeVZoM8GT9rsVsfnCuMAhB1mNE0ZMGV08sUAz5BrBnsLN2ZHnju+5lcrn+dbHVFzj1LsbAqvu7JbEOrpfHCetoyc1NWspwoi+ibk+dDiESJg4ottHv2mxho5ge8TlqD3R9y+Z5QiTbhbB4HWkxv3GcP8+5wFqLIxwL/s6kXDZsHpFhWiJKeiBDushSs8UsaeIDsHYGqWCxDPAm4xVCNN3bZtOQlzpg==
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:PH0PR13MB4842.namprd13.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230025)(4636009)(136003)(39830400003)(396003)(346002)(366004)(376002)(451199018)(6486002)(186003)(478600001)(6512007)(2616005)(83380400001)(6666004)(41300700001)(8676002)(38100700002)(316002)(6506007)(44832011)(8936002)(4744005)(66556008)(5660300002)(86362001)(4326008)(66946007)(66476007)(36756003)(6916009)(2906002);DIR:OUT;SFP:1102;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?us-ascii?Q?FG2qcGA73g1SMymNf+m8W3buJHcY03ARzh86Mm/eRokoGePvtvcpKn3O4E2J?=
+ =?us-ascii?Q?hq5T3ylyMapDJvby4y1n0ZD+4BLSGLXDl9Iue+L6gfI8lAmfWK/HBp7RfxA+?=
+ =?us-ascii?Q?fCNTFqoo7dqFj0T117etKBboSzgJzrCGx/8lqRbGE1MGkYsKueCyNEMup4g7?=
+ =?us-ascii?Q?1wxZ5hQMnMXO6c+pNMkm8elMO9yAnDsmQGLMc2wbWw7kjK+TJwFTtgkKs1aY?=
+ =?us-ascii?Q?zKXr7ZHsIsiOUNDwJhYxWiCYZ9yOunlss2TfyyN3bu0jEDzNB573TyEh3aA2?=
+ =?us-ascii?Q?Ht1OvpIKewkNGlR8yaQVHmG1afITZzMqAZtBPaeV1HhxDcrZvgKFVoSnvRtp?=
+ =?us-ascii?Q?vRQLJ9oCdQxhMAXQBT0kzRYKswzKvfvIqQZhZXI3urxkJQDe6ma1Vu73jXNP?=
+ =?us-ascii?Q?kYDGm+Vjz+zIJBizDXUxgurDbupAJY6Z8kaHhXjIFaCD1a+6P7pxtKkf+uBL?=
+ =?us-ascii?Q?dErHTwPNyNebLc64GWIGXdvBecRT6NT5tNjr7gmJBrAV0cL7ELsxqr2uxbAw?=
+ =?us-ascii?Q?0OL2vwJCbXQa7jODEbHgX9TGrzjoKb7iaxryO0DwnwWyyHrODn22dvSbG9Uh?=
+ =?us-ascii?Q?ZrWZkMDA36dDVSYJJOicEb7tWiD9Fgk17yS6xSnDkciBdg65M17XTUh/kbKg?=
+ =?us-ascii?Q?p6wDijFyvEn3huKLWeV8Mxg15k9mN+cccq0ATw7r5xEh4I/aR6jnelXtlcQu?=
+ =?us-ascii?Q?ZdAn+I2cx+r1Ep0nipgdpnSp4/EAKRXIau9SCK9joJc1UH8ExQrhk3V2FcO7?=
+ =?us-ascii?Q?CfRtkCqInmTQaGypV+dBq/Z8adsgw29ngJ2spTHuT1gjQflZSrG2kWPX4xIv?=
+ =?us-ascii?Q?4TxWiuJl8giDUUmAUbyS60/WmNl1y9hFw094oZJ+ykHLGnMVpSBqAgi6Siez?=
+ =?us-ascii?Q?hq7TtRlVzLf1wsNhIJton5TM09lYSuaGaBoauC2u0Gwvit3Vf/0N6NL+lLi2?=
+ =?us-ascii?Q?bzRL2wOxWd7BYHoaG4pz3UW3LLMvlk8RhRgzc0ueA+4MFF3A6TrQcVJRJ9pQ?=
+ =?us-ascii?Q?Qln3sP988WsvcPyAET9qrg8zbnqaUH0vTIiiNRg3QwS8o0IhKsaJmyKvIXKx?=
+ =?us-ascii?Q?iw0BPs8nLM+ZcXsOuLX6yYHW/r/Nb7zFBknNcnUugGlkq7NoNzvpfVGlAgwA?=
+ =?us-ascii?Q?BSQyTVHhA7CvVL+Sleq/1FsAFq+nSYmM8LIcOiB1fBppe8xyTyb/X9sLDY2M?=
+ =?us-ascii?Q?YMp19x2t9T8470tNwYHWhyjG2FvFvwuNiacUZ8T8siXC7KfSfWjdWzhrYBkY?=
+ =?us-ascii?Q?6jalohxS6fw0m/oJlaZS7E1v6k6pNKwo0Ty9E4XLMnPpjLH60TZS+vHuP0Qn?=
+ =?us-ascii?Q?dtzKEIriKSDXuQx7T59AMMsehoyoMfDdsmtiyRocAMsAXk2ntap1fOcDgKSh?=
+ =?us-ascii?Q?u9+e00pNIU0ZYGU2v1aLF5OhwxbBelO5rHOuPyx1DY270tXtD+BtYOmeqNrj?=
+ =?us-ascii?Q?tHSEinp9Fd/O1M1e/Btohch8fvxF8+BwmqFKvX93Mdkyz3mXl7yWEP96QCmJ?=
+ =?us-ascii?Q?yiVc/BxRsUE0WsxxCq9/RCUAMYfguE27k9zitYCmvgnLwcEhxWVygy1e72D0?=
+ =?us-ascii?Q?jk0clzHucRgyF60aTmeGr/H0htI8GM7VdDM5ps2G/Hc4TKJQB7+Z0YBIyAAK?=
+ =?us-ascii?Q?CitddNBjvUPBFE0bXIzsK/nSML4hnMtuL+ftBP4yGvIjwt7L7oppvVURNsv4?=
+ =?us-ascii?Q?uQD/fQ=3D=3D?=
+X-OriginatorOrg: corigine.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 12dfd87c-d226-42a1-8eef-08db014b0ccb
+X-MS-Exchange-CrossTenant-AuthSource: PH0PR13MB4842.namprd13.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 28 Jan 2023 16:16:45.4241
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: fe128f2c-073b-4c20-818e-7246a585940c
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: qtxP0hXthHvor2BpRonwSdIfiIgbPrfB6hjYiWMvMoa8fKluT2C7MAcLn37aeF5aYFrIkXUtuiYzvXClnHVbqFa90kt2ia9kHpq0yNPumsk=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH7PR13MB5988
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Jan 25, 2023 at 09:07:57PM +0200, Mike Rapoport wrote:
-> From: "Mike Rapoport (IBM)" <rppt@kernel.org>
-> 
-> Every architecture that supports FLATMEM memory model defines its own
-> version of pfn_valid() that essentially compares a pfn to max_mapnr.
-> 
-> Use mips/powerpc version implemented as static inline as a generic
-> implementation of pfn_valid() and drop its per-architecture definitions
-> 
-> Signed-off-by: Mike Rapoport (IBM) <rppt@kernel.org>
+On Fri, Jan 27, 2023 at 11:31:08PM -0800, Jakub Kicinski wrote:
+> SuperH does not include uaccess.h, even tho it calls access_ok().
+
+I see that is true.
+But it's less clear to me why that is a problem.
+
+> Fixes: 68f4eae781dd ("net: checksum: drop the linux/uaccess.h include")
+> Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 > ---
->  arch/alpha/include/asm/page.h      |  4 ----
->  arch/arc/include/asm/page.h        |  1 -
->  arch/csky/include/asm/page.h       |  1 -
->  arch/hexagon/include/asm/page.h    |  1 -
->  arch/ia64/include/asm/page.h       |  4 ----
->  arch/loongarch/include/asm/page.h  | 13 -------------
->  arch/m68k/include/asm/page_no.h    |  2 --
->  arch/microblaze/include/asm/page.h |  1 -
->  arch/mips/include/asm/page.h       | 13 -------------
->  arch/nios2/include/asm/page.h      |  9 ---------
->  arch/openrisc/include/asm/page.h   |  2 --
->  arch/parisc/include/asm/page.h     |  4 ----
->  arch/powerpc/include/asm/page.h    |  9 ---------
->  arch/riscv/include/asm/page.h      |  5 -----
->  arch/sh/include/asm/page.h         |  3 ---
->  arch/sparc/include/asm/page_32.h   |  1 -
->  arch/um/include/asm/page.h         |  1 -
->  arch/x86/include/asm/page_32.h     |  4 ----
->  arch/x86/include/asm/page_64.h     |  4 ----
->  arch/xtensa/include/asm/page.h     |  2 --
->  include/asm-generic/memory_model.h | 12 ++++++++++++
->  include/asm-generic/page.h         |  2 --
->  22 files changed, 12 insertions(+), 86 deletions(-)
+> CC: ysato@users.sourceforge.jp
+> CC: dalias@libc.org
+> CC: linux-sh@vger.kernel.org
+> ---
+>  arch/sh/include/asm/checksum_32.h | 1 +
+>  1 file changed, 1 insertion(+)
 > 
-[...] 
-> diff --git a/arch/openrisc/include/asm/page.h b/arch/openrisc/include/asm/page.h
-> index aab6e64d6db4..52b0d7e76446 100644
-> --- a/arch/openrisc/include/asm/page.h
-> +++ b/arch/openrisc/include/asm/page.h
-> @@ -80,8 +80,6 @@ typedef struct page *pgtable_t;
+> diff --git a/arch/sh/include/asm/checksum_32.h b/arch/sh/include/asm/checksum_32.h
+> index a6501b856f3e..2b5fa75b4651 100644
+> --- a/arch/sh/include/asm/checksum_32.h
+> +++ b/arch/sh/include/asm/checksum_32.h
+> @@ -7,6 +7,7 @@
+>   */
 >  
->  #define page_to_phys(page)      ((dma_addr_t)page_to_pfn(page) << PAGE_SHIFT)
+>  #include <linux/in6.h>
+> +#include <linux/uaccess.h>
 >  
-> -#define pfn_valid(pfn)          ((pfn) < max_mapnr)
-> -
->  #define virt_addr_valid(kaddr)	(pfn_valid(virt_to_pfn(kaddr)))
->  
->  #endif /* __ASSEMBLY__ */
-
-For OpenRISC
-
-Acked-by: Stafford Horne <shorne@gmail.com>
+>  /*
+>   * computes the checksum of a memory block at buff, length len,
+> -- 
+> 2.39.1
+> 
