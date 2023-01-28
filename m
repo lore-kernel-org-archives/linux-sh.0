@@ -2,74 +2,146 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AB441C38142
-	for <linux-sh@archiver.kernel.org>; Sat, 28 Jan 2023 07:31:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1139FC61DA7
+	for <linux-sh@archiver.kernel.org>; Sat, 28 Jan 2023 09:02:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233336AbjA1Hb1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 28 Jan 2023 02:31:27 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35060 "EHLO
+        id S234033AbjA1JCU (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 28 Jan 2023 04:02:20 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41106 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230482AbjA1Hb0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 28 Jan 2023 02:31:26 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 26782199FB;
-        Fri, 27 Jan 2023 23:31:14 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id BF89EB8121D;
-        Sat, 28 Jan 2023 07:31:12 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DFA6FC433EF;
-        Sat, 28 Jan 2023 07:31:10 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1674891071;
-        bh=/0Ri97j2/mKEiP4iuV2q/FxSOuesAb3rgKItcZaHWk4=;
-        h=From:To:Cc:Subject:Date:From;
-        b=og5+fqzZmTkRChUXLE9BNTJVNkx11Fp6bFUe92ljAMIaT0qiHWUiMrMHjNSY+pZSE
-         yFX5rwSU6EmHGdDaxjuNm1ANxz/2G7pNvPL/cs+H46pNqhyXwhTWvzdZ1aZQLaQ+aQ
-         YoweGMWgrp8H8YvKHPmtg6ot/wCUANwxhm1zTdib9UgBko/HfrEqkLL7Bt3XQBK47t
-         QT+LXHmmUPOerIYGiWbHnrFMOuUwCYQO9wIZMdPw8h2/xRV4Zwm/rysu61h787GgOP
-         pqzNWRntgS4GiYo9gYFVFXanIAZC+OeiQxYszh6zrlZKKyQ7RuX9OY38C3/o2QPOJq
-         mokBJ+swYbPDQ==
-From:   Jakub Kicinski <kuba@kernel.org>
-To:     davem@davemloft.net
-Cc:     netdev@vger.kernel.org, edumazet@google.com, pabeni@redhat.com,
-        Jakub Kicinski <kuba@kernel.org>, ysato@users.sourceforge.jp,
-        dalias@libc.org, linux-sh@vger.kernel.org
-Subject: [PATCH net-next] sh: checksum: add missing linux/uaccess.h include
-Date:   Fri, 27 Jan 2023 23:31:08 -0800
-Message-Id: <20230128073108.1603095-1-kuba@kernel.org>
-X-Mailer: git-send-email 2.39.1
+        with ESMTP id S233575AbjA1JCT (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 28 Jan 2023 04:02:19 -0500
+Received: from mail-wm1-x32e.google.com (mail-wm1-x32e.google.com [IPv6:2a00:1450:4864:20::32e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A38EA6DFCF;
+        Sat, 28 Jan 2023 01:02:16 -0800 (PST)
+Received: by mail-wm1-x32e.google.com with SMTP id j32-20020a05600c1c2000b003dc4fd6e61dso47524wms.5;
+        Sat, 28 Jan 2023 01:02:16 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=v7ARCz3cVaBFOjYkC77qL/HBEniL1qdQHS5E6K6GFOY=;
+        b=aqbRojTHRCVjzGUAj7OwNNFidQtZRaRDHHmAjBWeAFhAl4EP6lU/HQ+DT3lz3ORLRs
+         krDbFNMyaAoPDNNbr2Us4LfdqxvtQoKw/VqPFwWdtmeZaX2Yr/xMNSAvUp0bHiLiSOj3
+         SN1iYBMZrJW6Tuoe05d5ixjoXDQyxOx+hHgkYRdk2YredIT5D868vyI7+JtGnCIwsINP
+         AC8gyFLqm6XouHJKilNfBj6iNxK7cGu1Nhc9VlLOm0nqQCpyycdmijDtgityKjfCFibc
+         kBECjMNCFbqcxj8dsEQrghcf75B90yP81hRDkvCSROQeKfuHc3hus0w8nNDlJyMcHou/
+         rQVg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=v7ARCz3cVaBFOjYkC77qL/HBEniL1qdQHS5E6K6GFOY=;
+        b=K/g0NVKqOEQIrhvafWdRvrjURipII3R7wZsomoncfvYxOaVsjxBB4GDtgjn1rX1MtO
+         KnY0l5JrvoLJvI7FX5LmggUrjXSISAK7DhqusGl6ORvy1tgnHzaBtrzy/+5DLIG3uF8P
+         lef2XfYvHcPw/UhMCNXBZF/FmVKfSZujzuKe+DvSSWACEhbvMhK9klK7GEp0ph2XKBUP
+         FSRIeXTua9Fs6dy+8P49dTlLlb3I+Hlxpk5CylXLBf14ePJ7EAXAfsx3dOTsbkqT13W6
+         135KB/lW487LBZjy5pAqw4JyLZ1S2JICUGNRKrM2DbK6tzk5uKReWuLp3qwHAX0Xuqwz
+         L8mg==
+X-Gm-Message-State: AFqh2koU+Pl3pQgtBSHxJ3WksDASjXOPbguqlLD3Odb34RoxJ7wn82bA
+        xeVo3OD529xv6CQsEwfTAho=
+X-Google-Smtp-Source: AMrXdXshtli+OqZ9VwFCdRpOAvHTMs/09zG9TMwa0gaZMZJ8uG1JiJOtVlF/BhmQxoXBbhlR7WJAkg==
+X-Received: by 2002:a05:600c:5116:b0:3db:1a8:c041 with SMTP id o22-20020a05600c511600b003db01a8c041mr42453030wms.17.1674896535134;
+        Sat, 28 Jan 2023 01:02:15 -0800 (PST)
+Received: from localhost (cpc1-brnt4-2-0-cust862.4-2.cable.virginm.net. [86.9.131.95])
+        by smtp.gmail.com with ESMTPSA id f28-20020a5d58fc000000b002be5401ef5fsm6212824wrd.39.2023.01.28.01.02.14
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 28 Jan 2023 01:02:14 -0800 (PST)
+Date:   Sat, 28 Jan 2023 18:02:13 +0900
+From:   Stafford Horne <shorne@gmail.com>
+To:     Mike Rapoport <rppt@kernel.org>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Arnd Bergmann <arnd@arndb.de>, Brian Cain <bcain@quicinc.com>,
+        "David S. Miller" <davem@davemloft.net>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
+        Huacai Chen <chenhuacai@kernel.org>,
+        Matt Turner <mattst88@gmail.com>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Michal Simek <monstr@monstr.eu>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Rich Felker <dalias@libc.org>,
+        Richard Weinberger <richard@nod.at>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Vineet Gupta <vgupta@kernel.org>,
+        WANG Xuerui <kernel@xen0n.name>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux--csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
+        linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
+        sparclinux@vger.kernel.org, x86@kernel.org
+Subject: Re: [PATCH 3/3] mm, arch: add generic implementation of pfn_valid()
+ for FLATMEM
+Message-ID: <Y9TklS4v8oHCvCu2@antec>
+References: <20230125190757.22555-1-rppt@kernel.org>
+ <20230125190757.22555-4-rppt@kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230125190757.22555-4-rppt@kernel.org>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-SuperH does not include uaccess.h, even tho it calls access_ok().
+On Wed, Jan 25, 2023 at 09:07:57PM +0200, Mike Rapoport wrote:
+> From: "Mike Rapoport (IBM)" <rppt@kernel.org>
+> 
+> Every architecture that supports FLATMEM memory model defines its own
+> version of pfn_valid() that essentially compares a pfn to max_mapnr.
+> 
+> Use mips/powerpc version implemented as static inline as a generic
+> implementation of pfn_valid() and drop its per-architecture definitions
+> 
+> Signed-off-by: Mike Rapoport (IBM) <rppt@kernel.org>
+> ---
+>  arch/alpha/include/asm/page.h      |  4 ----
+>  arch/arc/include/asm/page.h        |  1 -
+>  arch/csky/include/asm/page.h       |  1 -
+>  arch/hexagon/include/asm/page.h    |  1 -
+>  arch/ia64/include/asm/page.h       |  4 ----
+>  arch/loongarch/include/asm/page.h  | 13 -------------
+>  arch/m68k/include/asm/page_no.h    |  2 --
+>  arch/microblaze/include/asm/page.h |  1 -
+>  arch/mips/include/asm/page.h       | 13 -------------
+>  arch/nios2/include/asm/page.h      |  9 ---------
+>  arch/openrisc/include/asm/page.h   |  2 --
+>  arch/parisc/include/asm/page.h     |  4 ----
+>  arch/powerpc/include/asm/page.h    |  9 ---------
+>  arch/riscv/include/asm/page.h      |  5 -----
+>  arch/sh/include/asm/page.h         |  3 ---
+>  arch/sparc/include/asm/page_32.h   |  1 -
+>  arch/um/include/asm/page.h         |  1 -
+>  arch/x86/include/asm/page_32.h     |  4 ----
+>  arch/x86/include/asm/page_64.h     |  4 ----
+>  arch/xtensa/include/asm/page.h     |  2 --
+>  include/asm-generic/memory_model.h | 12 ++++++++++++
+>  include/asm-generic/page.h         |  2 --
+>  22 files changed, 12 insertions(+), 86 deletions(-)
+> 
+[...] 
+> diff --git a/arch/openrisc/include/asm/page.h b/arch/openrisc/include/asm/page.h
+> index aab6e64d6db4..52b0d7e76446 100644
+> --- a/arch/openrisc/include/asm/page.h
+> +++ b/arch/openrisc/include/asm/page.h
+> @@ -80,8 +80,6 @@ typedef struct page *pgtable_t;
+>  
+>  #define page_to_phys(page)      ((dma_addr_t)page_to_pfn(page) << PAGE_SHIFT)
+>  
+> -#define pfn_valid(pfn)          ((pfn) < max_mapnr)
+> -
+>  #define virt_addr_valid(kaddr)	(pfn_valid(virt_to_pfn(kaddr)))
+>  
+>  #endif /* __ASSEMBLY__ */
 
-Fixes: 68f4eae781dd ("net: checksum: drop the linux/uaccess.h include")
-Signed-off-by: Jakub Kicinski <kuba@kernel.org>
----
-CC: ysato@users.sourceforge.jp
-CC: dalias@libc.org
-CC: linux-sh@vger.kernel.org
----
- arch/sh/include/asm/checksum_32.h | 1 +
- 1 file changed, 1 insertion(+)
+For OpenRISC
 
-diff --git a/arch/sh/include/asm/checksum_32.h b/arch/sh/include/asm/checksum_32.h
-index a6501b856f3e..2b5fa75b4651 100644
---- a/arch/sh/include/asm/checksum_32.h
-+++ b/arch/sh/include/asm/checksum_32.h
-@@ -7,6 +7,7 @@
-  */
- 
- #include <linux/in6.h>
-+#include <linux/uaccess.h>
- 
- /*
-  * computes the checksum of a memory block at buff, length len,
--- 
-2.39.1
-
+Acked-by: Stafford Horne <shorne@gmail.com>
