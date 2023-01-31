@@ -2,110 +2,79 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A245FC636D0
-	for <linux-sh@archiver.kernel.org>; Mon, 30 Jan 2023 05:06:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CBA05C636CD
+	for <linux-sh@archiver.kernel.org>; Tue, 31 Jan 2023 05:10:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235565AbjA3FGk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 30 Jan 2023 00:06:40 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50878 "EHLO
+        id S229943AbjAaFKW (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 31 Jan 2023 00:10:22 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56102 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234955AbjA3FGi (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 30 Jan 2023 00:06:38 -0500
-Received: from gandalf.ozlabs.org (gandalf.ozlabs.org [150.107.74.76])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 200651700;
-        Sun, 29 Jan 2023 21:06:36 -0800 (PST)
-Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        with ESMTP id S229880AbjAaFKU (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 31 Jan 2023 00:10:20 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8D77124490;
+        Mon, 30 Jan 2023 21:10:19 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by mail.ozlabs.org (Postfix) with ESMTPSA id 4P4x3f2mrfz4x1T;
-        Mon, 30 Jan 2023 16:06:22 +1100 (AEDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ellerman.id.au;
-        s=201909; t=1675055194;
-        bh=POOClJ+owuBj9sqRPRjffc3znhNYliSlDQdzT8YO/i8=;
-        h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
-        b=L+Neft2adsFGU4wPfkdQqIkCCGEbr0KQklfStEOOSubA4D5/b8QWn1Ym/KJAv6xRm
-         TUPYPpT88DNlhDmu8F6Zq0+Eg9/CqOQ7vjZ2tzDW9COm2h6kbQ9aR9CgKDe6jB7oUN
-         qbkny9xOnw6qtVzbwY2BQEDmrhadqj+bjJEBVbHomTuJEKrCDFpofvG56kNiVlQ2h/
-         4kZhpVx3EpSRTAM6jXtFLXQAZAY3/mQ2GHog2lMch2wJzrLcG7TkdRQuYdqLp8OdqG
-         ahVRL+XE6UXObccshlEZ6yQOBI9fBlohqkPxNq06FIH8Kl9t0Zt68ScSYNpNUYJhy7
-         uUVQKm0hFQMqg==
-From:   Michael Ellerman <mpe@ellerman.id.au>
-To:     Mike Rapoport <rppt@kernel.org>,
-        Andrew Morton <akpm@linux-foundation.org>
-Cc:     Arnd Bergmann <arnd@arndb.de>, Brian Cain <bcain@quicinc.com>,
-        "David S. Miller" <davem@davemloft.net>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        Matt Turner <mattst88@gmail.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Michal Simek <monstr@monstr.eu>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Rich Felker <dalias@libc.org>,
-        Richard Weinberger <richard@nod.at>,
-        Russell King <linux@armlinux.org.uk>,
-        Stafford Horne <shorne@gmail.com>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Vineet Gupta <vgupta@kernel.org>,
-        WANG Xuerui <kernel@xen0n.name>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-mm@kvack.org,
-        linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
-        linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
-        openrisc@lists.librecores.org, sparclinux@vger.kernel.org,
-        x86@kernel.org, "Mike Rapoport (IBM)" <rppt@kernel.org>,
-        Huacai Chen <chenhuacai@loongson.cn>
-Subject: Re: [PATCH v2 4/4] mm, arch: add generic implementation of
- pfn_valid() for FLATMEM
-In-Reply-To: <20230129124235.209895-5-rppt@kernel.org>
-References: <20230129124235.209895-1-rppt@kernel.org>
- <20230129124235.209895-5-rppt@kernel.org>
-Date:   Mon, 30 Jan 2023 16:06:21 +1100
-Message-ID: <87o7qgsjaq.fsf@mpe.ellerman.id.au>
+        by ams.source.kernel.org (Postfix) with ESMTPS id 52F10B81985;
+        Tue, 31 Jan 2023 05:10:18 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPS id EB41AC4339E;
+        Tue, 31 Jan 2023 05:10:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1675141817;
+        bh=xTOZGGWvovyr1Zhs1zk7wctK5EnEaaMitztFKQnR00I=;
+        h=Subject:From:Date:References:In-Reply-To:To:Cc:From;
+        b=L33nTl4YSbN+O9IgKxxDdWnQUkB6aepHnpiLYmylZ1H0nFJJNA6h5+FMBr9sfoY6e
+         ToZ95mykT5xdGu2GKKBBYtmKL6CpRMSbhMm1MYJuvA7slqr5hIWR4NovuxPEbioeQn
+         wbSAbvK3PAsM8APA1XEK4boJKfjFxyzhBlACB3uqx0b5QSssqy9+0lDNFITZ5mkF0d
+         REk2J8d7UpKIJ5espizDWiAgVf2yglGnMZ1r1pCvF0WNFaBmZqWfaQYrT47lMPrnTH
+         QRYV0YQNSKx74kdpKdbkv4xA1WKn2YPdfGTAzS93ntJ6JMD/WgaxxZP5clYcrtLlhL
+         a6h67hPJqM5cA==
+Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
+        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id D7E5BC1614B;
+        Tue, 31 Jan 2023 05:10:16 +0000 (UTC)
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Transfer-Encoding: 8bit
+Subject: Re: [PATCH net-next] sh: checksum: add missing linux/uaccess.h include
+From:   patchwork-bot+netdevbpf@kernel.org
+Message-Id: <167514181688.11863.771497291150527329.git-patchwork-notify@kernel.org>
+Date:   Tue, 31 Jan 2023 05:10:16 +0000
+References: <20230128073108.1603095-1-kuba@kernel.org>
+In-Reply-To: <20230128073108.1603095-1-kuba@kernel.org>
+To:     Jakub Kicinski <kuba@kernel.org>
+Cc:     davem@davemloft.net, netdev@vger.kernel.org, edumazet@google.com,
+        pabeni@redhat.com, ysato@users.sourceforge.jp, dalias@libc.org,
+        linux-sh@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Mike Rapoport <rppt@kernel.org> writes:
-> From: "Mike Rapoport (IBM)" <rppt@kernel.org>
->
-> Every architecture that supports FLATMEM memory model defines its own
-> version of pfn_valid() that essentially compares a pfn to max_mapnr.
->
-> Use mips/powerpc version implemented as static inline as a generic
-> implementation of pfn_valid() and drop its per-architecture definitions.
->
-> Signed-off-by: Mike Rapoport (IBM) <rppt@kernel.org>
-> Acked-by: Arnd Bergmann <arnd@arndb.de>
-> Acked-by: Guo Ren <guoren@kernel.org>		# csky
-> Acked-by: Huacai Chen <chenhuacai@loongson.cn>	# LoongArch
-> Acked-by: Stafford Horne <shorne@gmail.com>	# OpenRISC
+Hello:
+
+This patch was applied to netdev/net-next.git (master)
+by Jakub Kicinski <kuba@kernel.org>:
+
+On Fri, 27 Jan 2023 23:31:08 -0800 you wrote:
+> SuperH does not include uaccess.h, even tho it calls access_ok().
+> 
+> Fixes: 68f4eae781dd ("net: checksum: drop the linux/uaccess.h include")
+> Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 > ---
->  arch/alpha/include/asm/page.h      |  4 ----
->  arch/arc/include/asm/page.h        |  1 -
->  arch/csky/include/asm/page.h       |  1 -
->  arch/hexagon/include/asm/page.h    |  1 -
->  arch/ia64/include/asm/page.h       |  4 ----
->  arch/loongarch/include/asm/page.h  | 13 -------------
->  arch/m68k/include/asm/page_no.h    |  2 --
->  arch/microblaze/include/asm/page.h |  1 -
->  arch/mips/include/asm/page.h       | 13 -------------
->  arch/nios2/include/asm/page.h      |  9 ---------
->  arch/openrisc/include/asm/page.h   |  2 --
->  arch/parisc/include/asm/page.h     |  4 ----
->  arch/powerpc/include/asm/page.h    |  9 ---------
+> CC: ysato@users.sourceforge.jp
+> CC: dalias@libc.org
+> CC: linux-sh@vger.kernel.org
+> 
+> [...]
 
-Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
+Here is the summary with links:
+  - [net-next] sh: checksum: add missing linux/uaccess.h include
+    https://git.kernel.org/netdev/net-next/c/2083656bb30d
 
-cheers
+You are awesome, thank you!
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/patchwork/pwbot.html
+
+
