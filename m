@@ -2,156 +2,99 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B35CC38142
-	for <linux-sh@archiver.kernel.org>; Tue, 31 Jan 2023 18:55:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A465AC636CD
+	for <linux-sh@archiver.kernel.org>; Wed,  1 Feb 2023 12:56:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231881AbjAaSzk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 31 Jan 2023 13:55:40 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45138 "EHLO
+        id S230043AbjBAM4x (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 1 Feb 2023 07:56:53 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35916 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231776AbjAaSzf (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 31 Jan 2023 13:55:35 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 610A35649C;
-        Tue, 31 Jan 2023 10:55:19 -0800 (PST)
+        with ESMTP id S229487AbjBAM4v (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 1 Feb 2023 07:56:51 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F37844C33;
+        Wed,  1 Feb 2023 04:56:49 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id F2F6861646;
-        Tue, 31 Jan 2023 18:55:18 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 249B8C433EF;
-        Tue, 31 Jan 2023 18:55:09 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1675191318;
-        bh=bIDjyyvdysd52cz3wo+R2FqIpQuhXwaSP+2JinM77Zs=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=p4r9YCVihzZrIRlizFq96lF4LsuRcYuXyit+cVXFPxJSxGfL99cms2/SSKpvkF2Pp
-         NgIawOhOvw555KfS+LAiMfG5/YT2a/THCQd4ucSFldwug8pgOxrs80vH+lCVDLHIZh
-         fh6CSOEpoCrswZLqAXRWz9pZ9CFIa58ZjTeMXFlgy8V6KmgUqFk322AZ/O2du+jfxI
-         cQP8VEptS2HT9jSp8zZqLDDlrzS+XSn+HUeeyHjnm0LO863o/QOiqT647VANwYetka
-         9TpahVOYB0s8YL82xibnQ7Ggye7lO/va5K0QbIxfYIjwKYESn8Y2//JUV74+mpgZ7e
-         krHdpZB95Rbtg==
-Date:   Tue, 31 Jan 2023 18:55:07 +0000
-From:   Conor Dooley <conor@kernel.org>
-To:     Mike Rapoport <rppt@kernel.org>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>, Brian Cain <bcain@quicinc.com>,
-        "David S. Miller" <davem@davemloft.net>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        Matt Turner <mattst88@gmail.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Michal Simek <monstr@monstr.eu>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Rich Felker <dalias@libc.org>,
-        Richard Weinberger <richard@nod.at>,
-        Russell King <linux@armlinux.org.uk>,
-        Stafford Horne <shorne@gmail.com>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Vineet Gupta <vgupta@kernel.org>,
-        WANG Xuerui <kernel@xen0n.name>,
+        by ams.source.kernel.org (Postfix) with ESMTPS id AD2B8B82164;
+        Wed,  1 Feb 2023 12:56:48 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AB208C433D2;
+        Wed,  1 Feb 2023 12:56:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+        s=korg; t=1675256207;
+        bh=cM5MtNWV+d8D8YxWSV+fcLmFAHndu+7kCKP50Gsy+Ss=;
+        h=From:To:Cc:Subject:Date:From;
+        b=uCeFZDpARJQWvcjjupzg/14o9OvKZi6lO7FQOa/K9+V8nBiCcwhp0s9H/SoiKad8F
+         IPV0TNrP6u9MytuFndp0C22da+OuubwgClRYpDPAQKfgv/HaOf4Do1ZyzlgKEepsWC
+         IwFkjnnPaDtZi/ROHrcQM6jmimdTl8MX4ov2TPxs=
+From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To:     linux-kernel@vger.kernel.org
+Cc:     linux-sh@vger.kernel.org,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-mm@kvack.org,
-        linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
-        linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
-        openrisc@lists.librecores.org, sparclinux@vger.kernel.org,
-        x86@kernel.org, Huacai Chen <chenhuacai@loongson.cn>
-Subject: Re: [PATCH v2 4/4] mm, arch: add generic implementation of
- pfn_valid() for FLATMEM
-Message-ID: <Y9lkCz73v7/iyyLj@spud>
-References: <20230129124235.209895-1-rppt@kernel.org>
- <20230129124235.209895-5-rppt@kernel.org>
- <Y9lULIIOneBUFE/E@spud>
- <Y9lg7R1Yd931C+y5@kernel.org>
+        Rich Felker <dalias@libc.org>,
+        Hans de Goede <hdegoede@redhat.com>,
+        "Rafael J. Wysocki" <rafael@kernel.org>,
+        Linux Kernel Functional Testing <lkft@linaro.org>,
+        Naresh Kamboju <naresh.kamboju@linaro.org>
+Subject: [PATCH] maple: remove unneeded maple_bus_uevent() callback.
+Date:   Wed,  1 Feb 2023 13:56:42 +0100
+Message-Id: <20230201125642.624255-1-gregkh@linuxfoundation.org>
+X-Mailer: git-send-email 2.39.1
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
-        protocol="application/pgp-signature"; boundary="hiaCFsst32mLBZni"
-Content-Disposition: inline
-In-Reply-To: <Y9lg7R1Yd931C+y5@kernel.org>
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1619; i=gregkh@linuxfoundation.org; h=from:subject; bh=cM5MtNWV+d8D8YxWSV+fcLmFAHndu+7kCKP50Gsy+Ss=; b=owGbwMvMwCRo6H6F97bub03G02pJDMm3EjsEH1sfFFzeVc/LcDOwRG+J7butvl8rzTyWP130Y+qO bf4hHbEsDIJMDLJiiixftvEc3V9xSNHL0PY0zBxWJpAhDFycAjCRnPMMc2W0dWPrr5df1inbtumDj8 H2J69bmxkWNF651Z5l7F/14jXz2fuHTiQsMbi+HwA=
+X-Developer-Key: i=gregkh@linuxfoundation.org; a=openpgp; fpr=F4B60CC5BF78C2214A313DCB3147D40DDB2DFB29
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+The driver core recently changed the uevent bus callback to take a const
+pointer, and the maple_bus_uevent() was not correctly fixed up.  Instead
+of fixing the function parameter types, just remove the callback
+entirely as it does not do anything, so it is not necessary.
 
---hiaCFsst32mLBZni
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: Hans de Goede <hdegoede@redhat.com>
+Cc: "Rafael J. Wysocki" <rafael@kernel.org>
+Reported-by: Linux Kernel Functional Testing <lkft@linaro.org>
+Reported-by: Naresh Kamboju <naresh.kamboju@linaro.org>
+Fixes: 2a81ada32f0e ("driver core: make struct bus_type.uevent() take a const *")
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+sh maintainers, I'll take this through my tree as that's where the
+offending commit is that causes the build breakage.
 
-Hi Mike,
+ drivers/sh/maple/maple.c | 7 -------
+ 1 file changed, 7 deletions(-)
 
-On Tue, Jan 31, 2023 at 08:41:49PM +0200, Mike Rapoport wrote:
-> On Tue, Jan 31, 2023 at 05:47:24PM +0000, Conor Dooley wrote:
-> > On Sun, Jan 29, 2023 at 02:42:35PM +0200, Mike Rapoport wrote:
-> > > From: "Mike Rapoport (IBM)" <rppt@kernel.org>
-> > >=20
-> > > Every architecture that supports FLATMEM memory model defines its own
-> > > version of pfn_valid() that essentially compares a pfn to max_mapnr.
-> > >=20
-> > > Use mips/powerpc version implemented as static inline as a generic
-> > > implementation of pfn_valid() and drop its per-architecture definitio=
-ns.
-> > >=20
-> > > Signed-off-by: Mike Rapoport (IBM) <rppt@kernel.org>
-> > > Acked-by: Arnd Bergmann <arnd@arndb.de>
-> > > Acked-by: Guo Ren <guoren@kernel.org>		# csky
-> > > Acked-by: Huacai Chen <chenhuacai@loongson.cn>	# LoongArch
-> > > Acked-by: Stafford Horne <shorne@gmail.com>	# OpenRISC
-> >=20
-> > Hmm, so this landed in linux-next today and I bisected a boot failure in
-> > my CI to it. However, I am not really sure if it is a real issue worth
-> > worrying about as the platform it triggered on is supposed to be using
-> > SPARSEMEM, but isn't.
-> > I had thought that my CI was using a config with SPARSEMEM since that
-> > became required for riscv defconfig builds to boot in v6.1-rc1, but I
-> > must have just forgotten to add it to my $platform_defconfig builds too.
-> > However, those $platform_defconfig builds continued booting without
-> > SPARSEMEM enabled until today.
->=20
-> The issue seems to be that the generic pfn_valid() does not take into
-> account pfn_offset when it compares it with max_mapnr.
-> Can you please test with the patch below?
->=20
-> diff --git a/include/asm-generic/memory_model.h b/include/asm-generic/mem=
-ory_model.h
-> index 13d2a844d928..6796abe1900e 100644
-> --- a/include/asm-generic/memory_model.h
-> +++ b/include/asm-generic/memory_model.h
-> @@ -26,7 +26,7 @@ static inline int pfn_valid(unsigned long pfn)
->  	extern unsigned long max_mapnr;
->  	unsigned long pfn_offset =3D ARCH_PFN_OFFSET;
-> =20
-> -	return pfn >=3D pfn_offset && pfn < max_mapnr;
-> +	return pfn >=3D pfn_offset && (pfn - pfn_offset) < max_mapnr;
->  }
->  #define pfn_valid pfn_valid
->  #endif
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index e24e220e56ee..e05473c5c267 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -760,12 +760,6 @@ static int maple_match_bus_driver(struct device *devptr,
+ 	return 0;
+ }
+ 
+-static int maple_bus_uevent(struct device *dev,
+-			    struct kobj_uevent_env *env)
+-{
+-	return 0;
+-}
+-
+ static void maple_bus_release(struct device *dev)
+ {
+ }
+@@ -782,7 +776,6 @@ static struct maple_driver maple_unsupported_device = {
+ struct bus_type maple_bus_type = {
+ 	.name = "maple",
+ 	.match = maple_match_bus_driver,
+-	.uevent = maple_bus_uevent,
+ };
+ EXPORT_SYMBOL_GPL(maple_bus_type);
+ 
+-- 
+2.39.1
 
-Gave that a go, board is booting properly again! Feel free to add a:
-Tested-by: Conor Dooley <conor.dooley@microchip.com>
-
-Thanks for the prompt fix!
-
-
---hiaCFsst32mLBZni
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYIAB0WIQRh246EGq/8RLhDjO14tDGHoIJi0gUCY9lkCwAKCRB4tDGHoIJi
-0pIDAP9nc8RsXGyfp84b29PfLE6bd1djEIZ71+YYWPrhRbOT0QEAs5hvd2Aq0mES
-TzWIEs2xL7+wjwVIWLwPjr1kP0shHA0=
-=AQg2
------END PGP SIGNATURE-----
-
---hiaCFsst32mLBZni--
