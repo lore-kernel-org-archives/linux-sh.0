@@ -2,114 +2,112 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 006A4C05027
-	for <linux-sh@archiver.kernel.org>; Wed,  1 Feb 2023 19:05:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AECBAC636D4
+	for <linux-sh@archiver.kernel.org>; Wed,  1 Feb 2023 19:47:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229608AbjBATFd convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 1 Feb 2023 14:05:33 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35150 "EHLO
+        id S229535AbjBATrg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 1 Feb 2023 14:47:36 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58744 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229451AbjBATF1 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 1 Feb 2023 14:05:27 -0500
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C65457DAF;
-        Wed,  1 Feb 2023 11:05:25 -0800 (PST)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pNIQ7-000zP1-12; Wed, 01 Feb 2023 20:05:23 +0100
-Received: from p57bd9464.dip0.t-ipconnect.de ([87.189.148.100] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pNIQ6-0004hu-Mn; Wed, 01 Feb 2023 20:05:22 +0100
-Message-ID: <2f10003fcf3671ccdd285952ba76153f5c2d5307.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] maple: remove unneeded maple_bus_uevent() callback.
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        linux-kernel@vger.kernel.org
-Cc:     linux-sh@vger.kernel.org,
+        with ESMTP id S231543AbjBATr1 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 1 Feb 2023 14:47:27 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3842C841A1;
+        Wed,  1 Feb 2023 11:47:18 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id E29F5B8228F;
+        Wed,  1 Feb 2023 19:47:16 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 01C89C433D2;
+        Wed,  1 Feb 2023 19:47:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+        s=korg; t=1675280835;
+        bh=A9tTG8dWtmVDJMbXWhKt0soYbv6crDy7nFqy+MC4d2k=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=kYyDEcOIYUjcY88IYKRyJ3v0ffkxC6DFXM6AOwI/RNsVCxS8ZVdc+hWO33907UT3q
+         9aHeIdmineumpKvWWoJWqkSsy1kh/2l5XfRRyyFPP3hYPPA+5TcsQV/BMCWl7gCLMF
+         EcPAQDIhcnGzYXwKo5gmC2+DKybMMVeiCssPK3OQ=
+Date:   Wed, 1 Feb 2023 20:47:12 +0100
+From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         Hans de Goede <hdegoede@redhat.com>,
         "Rafael J. Wysocki" <rafael@kernel.org>,
         Linux Kernel Functional Testing <lkft@linaro.org>,
         Naresh Kamboju <naresh.kamboju@linaro.org>
-Date:   Wed, 01 Feb 2023 20:05:21 +0100
-In-Reply-To: <20230201125642.624255-1-gregkh@linuxfoundation.org>
+Subject: Re: [PATCH] maple: remove unneeded maple_bus_uevent() callback.
+Message-ID: <Y9rBwMf6p6QmkVPp@kroah.com>
 References: <20230201125642.624255-1-gregkh@linuxfoundation.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.46.3 
+ <2f10003fcf3671ccdd285952ba76153f5c2d5307.camel@physik.fu-berlin.de>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.148.100
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <2f10003fcf3671ccdd285952ba76153f5c2d5307.camel@physik.fu-berlin.de>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Greg!
-
-On Wed, 2023-02-01 at 13:56 +0100, Greg Kroah-Hartman wrote:
-> The driver core recently changed the uevent bus callback to take a const
-> pointer, and the maple_bus_uevent() was not correctly fixed up.  Instead
-> of fixing the function parameter types, just remove the callback
-> entirely as it does not do anything, so it is not necessary.
+On Wed, Feb 01, 2023 at 08:05:21PM +0100, John Paul Adrian Glaubitz wrote:
+> Hi Greg!
 > 
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: Hans de Goede <hdegoede@redhat.com>
-> Cc: "Rafael J. Wysocki" <rafael@kernel.org>
-> Reported-by: Linux Kernel Functional Testing <lkft@linaro.org>
-> Reported-by: Naresh Kamboju <naresh.kamboju@linaro.org>
-> Fixes: 2a81ada32f0e ("driver core: make struct bus_type.uevent() take a const *")
-> Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> ---
-> sh maintainers, I'll take this through my tree as that's where the
-> offending commit is that causes the build breakage.
+> On Wed, 2023-02-01 at 13:56 +0100, Greg Kroah-Hartman wrote:
+> > The driver core recently changed the uevent bus callback to take a const
+> > pointer, and the maple_bus_uevent() was not correctly fixed up.  Instead
+> > of fixing the function parameter types, just remove the callback
+> > entirely as it does not do anything, so it is not necessary.
+> > 
+> > Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+> > Cc: Rich Felker <dalias@libc.org>
+> > Cc: Hans de Goede <hdegoede@redhat.com>
+> > Cc: "Rafael J. Wysocki" <rafael@kernel.org>
+> > Reported-by: Linux Kernel Functional Testing <lkft@linaro.org>
+> > Reported-by: Naresh Kamboju <naresh.kamboju@linaro.org>
+> > Fixes: 2a81ada32f0e ("driver core: make struct bus_type.uevent() take a const *")
+> > Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+> > ---
+> > sh maintainers, I'll take this through my tree as that's where the
+> > offending commit is that causes the build breakage.
+> > 
+> >  drivers/sh/maple/maple.c | 7 -------
+> >  1 file changed, 7 deletions(-)
+> > 
+> > diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+> > index e24e220e56ee..e05473c5c267 100644
+> > --- a/drivers/sh/maple/maple.c
+> > +++ b/drivers/sh/maple/maple.c
+> > @@ -760,12 +760,6 @@ static int maple_match_bus_driver(struct device *devptr,
+> >  	return 0;
+> >  }
+> >  
+> > -static int maple_bus_uevent(struct device *dev,
+> > -			    struct kobj_uevent_env *env)
+> > -{
+> > -	return 0;
+> > -}
+> > -
+> >  static void maple_bus_release(struct device *dev)
+> >  {
+> >  }
+> > @@ -782,7 +776,6 @@ static struct maple_driver maple_unsupported_device = {
+> >  struct bus_type maple_bus_type = {
+> >  	.name = "maple",
+> >  	.match = maple_match_bus_driver,
+> > -	.uevent = maple_bus_uevent,
+> >  };
+> >  EXPORT_SYMBOL_GPL(maple_bus_type);
 > 
->  drivers/sh/maple/maple.c | 7 -------
->  1 file changed, 7 deletions(-)
-> 
-> diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
-> index e24e220e56ee..e05473c5c267 100644
-> --- a/drivers/sh/maple/maple.c
-> +++ b/drivers/sh/maple/maple.c
-> @@ -760,12 +760,6 @@ static int maple_match_bus_driver(struct device *devptr,
->  	return 0;
->  }
->  
-> -static int maple_bus_uevent(struct device *dev,
-> -			    struct kobj_uevent_env *env)
-> -{
-> -	return 0;
-> -}
-> -
->  static void maple_bus_release(struct device *dev)
->  {
->  }
-> @@ -782,7 +776,6 @@ static struct maple_driver maple_unsupported_device = {
->  struct bus_type maple_bus_type = {
->  	.name = "maple",
->  	.match = maple_match_bus_driver,
-> -	.uevent = maple_bus_uevent,
->  };
->  EXPORT_SYMBOL_GPL(maple_bus_type);
+> Through which tree is this supposed to be picked up?
 
-Through which tree is this supposed to be picked up?
+As the comment below the --- line said above:
 
-FWIW, we have set up a new SH tree now, but I am not designated as an official
-SH maintainer yet which is what I would like to become in order to support
-Rich Felker.
+	sh maintainers, I'll take this through my tree as that's where the
+	offending commit is that causes the build breakage.
 
-Adrian 
+So I took it :)
 
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+thanks,
+
+greg k-h
