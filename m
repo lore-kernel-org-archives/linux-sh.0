@@ -2,88 +2,81 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1E8EC05027
-	for <linux-sh@archiver.kernel.org>; Thu,  2 Feb 2023 05:31:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D21C5C05027
+	for <linux-sh@archiver.kernel.org>; Thu,  2 Feb 2023 05:35:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232093AbjBBFbe (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 2 Feb 2023 00:31:34 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60230 "EHLO
+        id S229711AbjBBFfF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 2 Feb 2023 00:35:05 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37288 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232128AbjBBFa4 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 2 Feb 2023 00:30:56 -0500
+        with ESMTP id S231345AbjBBFe2 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 2 Feb 2023 00:34:28 -0500
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CFCF181B15;
-        Wed,  1 Feb 2023 21:28:55 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 32EC884B5C;
+        Wed,  1 Feb 2023 21:31:16 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:
-        Message-ID:Sender:Reply-To:Content-ID:Content-Description;
-        bh=ZPQzhV0HW/GkMC3pgyG/LRDCfcUyGJYA+kbVjtGg9Ic=; b=WBhN9OYoVQjKfQcZdE0C9wjRKN
-        CPkmVoTPk6b6ZHkmQ/YZiE6IWWhF1ffhNs+qbwA0XHQi373PEZKqRYDmslluYThBf/C//0DmSV0La
-        lLsSRxerOclMyTrkmtQTbkMMif4T7Zr5ahMOBL8dJxbd25PLzT+vDb1ZXatbhRk7yBG+H/vhMkx3U
-        lI46OUAXJ2QR94JPbU8I2nL3oMSd20I53ClEkpyFo8xkUAxW6s6T02VD0QUUH7LnVxnZClkPho18u
-        Kt9FCGsT6arK0+aHAjfeJ2deh6s5ar6lOAFe7dKz8mJoOMFu0Xqg8knjNUReEYFCz8P0+4PhIPScE
-        vsq/I9bg==;
-Received: from [2601:1c2:d00:6a60::9526]
+        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
+        Content-ID:Content-Description:In-Reply-To:References;
+        bh=6xrDrgd0SgpMzq7Fih7w16pMOwi04Mj1hgwk0rtIR8g=; b=nUKgQ0CVxwQVVfCTHpke6jhRT9
+        EeJlUfJzGwXz9zQ9oXDM6mjMK8Qkvqsj4L05sphwzyZRqCdrHMbvSec+aGB7iEo8FyqmPrmUpNQrR
+        5pdFie01KZqO6FIVeVsJjfwKGu+cIVj7auniHEygyvyBrnwZHokJ3RzzXMR3NHA8K7xphYFZVROVH
+        dDsDvCxJ4RS87XDeoS1S2kOa3sN19xd9sEVO2dGjeJlGw42jmE2Y1yas8zdYrWvOldf4mOA5m+zIY
+        wrgh7inFeNY9WmCRaNf1QHl8GUJUU0wxuWNExlsfdCtHOvh7No7vM7GnYKmh/KUs+RZRvXS45m+AW
+        +wo07Bvw==;
+Received: from [2601:1c2:d00:6a60::9526] (helo=bombadil.infradead.org)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pNS9V-00ERX0-S9; Thu, 02 Feb 2023 05:28:54 +0000
-Message-ID: <fea8991d-6405-56ff-d7cb-9662f4359809@infradead.org>
-Date:   Wed, 1 Feb 2023 21:28:52 -0800
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.6.1
-Subject: Re: [PATCH] >>>>>>>>>>>>>>>>>>>>>>>>> BLURB <<<<<<<<<<<<<<<<<<<
-Content-Language: en-US
+        id 1pNSBl-00ERl0-Q3; Thu, 02 Feb 2023 05:31:13 +0000
+From:   Randy Dunlap <rdunlap@infradead.org>
 To:     linux-kernel@vger.kernel.org
-Cc:     Al Viro <viro@zeniv.linux.org.uk>,
+Cc:     Randy Dunlap <rdunlap@infradead.org>,
+        Al Viro <viro@zeniv.linux.org.uk>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         Arnd Bergmann <arnd@arndb.de>,
         Andrew Morton <akpm@linux-foundation.org>
-References: <20230202052813.27427-1-rdunlap@infradead.org>
-From:   Randy Dunlap <rdunlap@infradead.org>
-In-Reply-To: <20230202052813.27427-1-rdunlap@infradead.org>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Subject: [PATCH v2] sh: implicit access_ok() needs an #include
+Date:   Wed,  1 Feb 2023 21:31:13 -0800
+Message-Id: <20230202053113.2782-1-rdunlap@infradead.org>
+X-Mailer: git-send-email 2.39.1
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Oops. not completed. I'll resend it. Sorry for the noise.
+Building arch/sh/ has a build error/warning that is fixed by
+adding an #include of a header file.
 
+../arch/sh/include/asm/checksum_32.h: In function 'csum_and_copy_from_user':
+../arch/sh/include/asm/checksum_32.h:53:14: error: implicit declaration of function 'access_ok' [-Werror=implicit-function-declaration]
+   53 |         if (!access_ok(src, len))
+      |              ^~~~~~~~~
 
-On 2/1/23 21:28, Randy Dunlap wrote:
-> 
-> ../arch/sh/include/asm/checksum_32.h: In function 'csum_and_copy_from_user':
-> ../arch/sh/include/asm/checksum_32.h:53:14: error: implicit declaration of function 'access_ok' [-Werror=implicit-function-declaration]
->    53 |         if (!access_ok(src, len))
->       |              ^~~~~~~~~
-> 
-> Fixes: 7fe8970a78a1 ("sh32: convert to csum_and_copy_from_user()")
-> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-> Cc: Al Viro <viro@zeniv.linux.org.uk>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: linux-sh@vger.kernel.org
-> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Cc: Arnd Bergmann <arnd@arndb.de>
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> ---
->  arch/sh/include/asm/checksum_32.h |    1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff -- a/arch/sh/include/asm/checksum_32.h b/arch/sh/include/asm/checksum_32.h
-> --- a/arch/sh/include/asm/checksum_32.h
-> +++ b/arch/sh/include/asm/checksum_32.h
-> @@ -7,6 +7,7 @@
->   */
->  
->  #include <linux/in6.h>
-> +#include <asm-generic/access_ok.h>
->  
->  /*
->   * computes the checksum of a memory block at buff, length len,
+Fixes: 7fe8970a78a1 ("sh32: convert to csum_and_copy_from_user()")
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Cc: Al Viro <viro@zeniv.linux.org.uk>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+---
+v2: add Subject: and patch description
 
--- 
-~Randy
+ arch/sh/include/asm/checksum_32.h |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff -- a/arch/sh/include/asm/checksum_32.h b/arch/sh/include/asm/checksum_32.h
+--- a/arch/sh/include/asm/checksum_32.h
++++ b/arch/sh/include/asm/checksum_32.h
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include <linux/in6.h>
++#include <asm-generic/access_ok.h>
+ 
+ /*
+  * computes the checksum of a memory block at buff, length len,
