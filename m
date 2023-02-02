@@ -2,125 +2,135 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A6574C61DA4
-	for <linux-sh@archiver.kernel.org>; Thu,  2 Feb 2023 08:22:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8FF4DC636D6
+	for <linux-sh@archiver.kernel.org>; Thu,  2 Feb 2023 13:59:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231789AbjBBIW6 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 2 Feb 2023 03:22:58 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40302 "EHLO
+        id S231768AbjBBN7l convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 2 Feb 2023 08:59:41 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51584 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229479AbjBBIW5 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 2 Feb 2023 03:22:57 -0500
-Received: from mail-qv1-f44.google.com (mail-qv1-f44.google.com [209.85.219.44])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B959483957;
-        Thu,  2 Feb 2023 00:22:47 -0800 (PST)
-Received: by mail-qv1-f44.google.com with SMTP id s4so594210qvo.3;
-        Thu, 02 Feb 2023 00:22:47 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=rNok7JkPboQ/45m03QkrG01Jx3vGfVh+k6zj14L0L94=;
-        b=Qio4TO28ODdpYrF9w/vX0JbaRbZ44ppyUoAHpxW/26lLPQQMmAkt0zj+8UCkz2nVtR
-         NxwnVk7pXwWIOXJ5KANAb69YTxHBOYAAe2rmxEZevJyWtYETsvR04j0VIUiLke0YbjSf
-         YetSPAL883nnJOCvZ0OET+rQ5TJFnDoGczXhnXNZnRYqrM0XCazxT+VFXK6oh73wB/dz
-         NQcVM3FOP3NOSXvF2A7NKwNbuTx7zwcYx+izNRHOiFH5/FztJzXEYmluV+yLv/swSuvn
-         Qpdq50em3vtL2T2MkVhdUmPufEvT30oezfZRtO68eDf7W6pthBUoiGVDMyjIDW9v6Ahp
-         w6xw==
-X-Gm-Message-State: AO0yUKUDnMJV+dgmWNUPj9Q6yLizD3FkO5z4uxebanSHRAzIQljqfXV7
-        b6AG08z75xnbAlH8/ADqWpdUetcv2m7mLg==
-X-Google-Smtp-Source: AK7set9TXKWJD+CSQElX/nQkU+0IqgziUt03hDKtv3XMmcqhVwA+EB7s76NU6Vxv2bTH0INQ6MhB3g==
-X-Received: by 2002:a0c:b306:0:b0:537:7d76:ea7c with SMTP id s6-20020a0cb306000000b005377d76ea7cmr7679308qve.25.1675326166411;
-        Thu, 02 Feb 2023 00:22:46 -0800 (PST)
-Received: from mail-yw1-f180.google.com (mail-yw1-f180.google.com. [209.85.128.180])
-        by smtp.gmail.com with ESMTPSA id d10-20020a05620a204a00b006fef61300fesm5735367qka.16.2023.02.02.00.22.45
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 02 Feb 2023 00:22:46 -0800 (PST)
-Received: by mail-yw1-f180.google.com with SMTP id 00721157ae682-5217ecc51d5so16232987b3.13;
-        Thu, 02 Feb 2023 00:22:45 -0800 (PST)
-X-Received: by 2002:a0d:c2c4:0:b0:514:a90f:10ea with SMTP id
- e187-20020a0dc2c4000000b00514a90f10eamr567022ywd.316.1675326165483; Thu, 02
- Feb 2023 00:22:45 -0800 (PST)
-MIME-Version: 1.0
-References: <20230202053113.2782-1-rdunlap@infradead.org> <980912a0-f5a0-4dea-9b5b-565d05bc4a6c@app.fastmail.com>
-In-Reply-To: <980912a0-f5a0-4dea-9b5b-565d05bc4a6c@app.fastmail.com>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Thu, 2 Feb 2023 09:22:34 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdWPyTRh_E-jRET0zObm1+RYcPy0YrnVr-+ozEO84F0DWw@mail.gmail.com>
-Message-ID: <CAMuHMdWPyTRh_E-jRET0zObm1+RYcPy0YrnVr-+ozEO84F0DWw@mail.gmail.com>
-Subject: Re: [PATCH v2] sh: implicit access_ok() needs an #include
-To:     Arnd Bergmann <arnd@arndb.de>
-Cc:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
+        with ESMTP id S231679AbjBBN7k (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 2 Feb 2023 08:59:40 -0500
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AF791589A1;
+        Thu,  2 Feb 2023 05:59:39 -0800 (PST)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pNa7g-003JGd-Ko; Thu, 02 Feb 2023 14:59:32 +0100
+Received: from p57bd9464.dip0.t-ipconnect.de ([87.189.148.100] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pNa7g-003ogj-Db; Thu, 02 Feb 2023 14:59:32 +0100
+Message-ID: <585c4b48790d71ca43b66fc24ea8d84917c4a0e1.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH net-next] r8169: use devm_clk_get_optional_enabled() to
+ simplify the code
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     hkallweit1@gmail.com
+Cc:     davem@davemloft.net, edumazet@google.com, kuba@kernel.org,
+        netdev@vger.kernel.org, nic_swsd@realtek.com, pabeni@redhat.com,
+        linux-sh@vger.kernel.org,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Andrew Morton <akpm@linux-foundation.org>
+        Rich Felker <dalias@libc.org>
+Date:   Thu, 02 Feb 2023 14:59:31 +0100
+In-Reply-To: <68bd1e34-4251-4306-cc7d-e5ccc578acd9@gmail.com>
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.46.3 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.148.100
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Arnd,
+Hello Heiner!
 
-On Thu, Feb 2, 2023 at 8:52 AM Arnd Bergmann <arnd@arndb.de> wrote:
-> On Thu, Feb 2, 2023, at 06:31, Randy Dunlap wrote:
-> > Building arch/sh/ has a build error/warning that is fixed by
-> > adding an #include of a header file.
-> >
-> > ../arch/sh/include/asm/checksum_32.h: In function
-> > 'csum_and_copy_from_user':
-> > ../arch/sh/include/asm/checksum_32.h:53:14: error: implicit declaration
-> > of function 'access_ok' [-Werror=implicit-function-declaration]
-> >    53 |         if (!access_ok(src, len))
-> >       |              ^~~~~~~~~
-> >
-> > Fixes: 7fe8970a78a1 ("sh32: convert to csum_and_copy_from_user()")
-> > Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-> > Cc: Al Viro <viro@zeniv.linux.org.uk>
-> > Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > Cc: Rich Felker <dalias@libc.org>
-> > Cc: linux-sh@vger.kernel.org
-> > Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> > Cc: Arnd Bergmann <arnd@arndb.de>
-> > Cc: Andrew Morton <akpm@linux-foundation.org>
-> > ---
-> > v2: add Subject: and patch description
->
-> Thanks for the fix!
->
-> >
-> >  arch/sh/include/asm/checksum_32.h |    1 +
-> >  1 file changed, 1 insertion(+)
-> >
-> > diff -- a/arch/sh/include/asm/checksum_32.h b/arch/sh/include/asm/checksum_32.h
-> > --- a/arch/sh/include/asm/checksum_32.h
-> > +++ b/arch/sh/include/asm/checksum_32.h
-> > @@ -7,6 +7,7 @@
-> >   */
-> >
-> >  #include <linux/in6.h>
-> > +#include <asm-generic/access_ok.h>
->
-> This will work correctly, but it is not the intended usage of the
-> header. Anything in asm-generic/*.h should only be included by
-> a particular header, usually the asm/*.h with the same name or in this
-> case the asm/uaccess.h header.
->
-> I think the correct fix here is to include asm/uaccess.h instead
-> of asm-generic/access_ok.h.
+> Now that we have devm_clk_get_optional_enabled(), we don't have to
+> open-code it.
+> 
+> Signed-off-by: Heiner Kallweit <hkallweit1@gmail.com>
+> ---
+>  drivers/net/ethernet/realtek/r8169_main.c | 37 ++---------------------
+>  1 file changed, 3 insertions(+), 34 deletions(-)
+> 
+> diff --git a/drivers/net/ethernet/realtek/r8169_main.c b/drivers/net/ethernet/realtek/r8169_main.c
+> index a8b0070bb..e6fb6f223 100644
+> --- a/drivers/net/ethernet/realtek/r8169_main.c
+> +++ b/drivers/net/ethernet/realtek/r8169_main.c
+> @@ -5122,37 +5122,6 @@ static int rtl_jumbo_max(struct rtl8169_private *tp)
+>  	}
+>  }
+>  
+> -static void rtl_disable_clk(void *data)
+> -{
+> -	clk_disable_unprepare(data);
+> -}
+> -
+> -static int rtl_get_ether_clk(struct rtl8169_private *tp)
+> -{
+> -	struct device *d = tp_to_dev(tp);
+> -	struct clk *clk;
+> -	int rc;
+> -
+> -	clk = devm_clk_get(d, "ether_clk");
+> -	if (IS_ERR(clk)) {
+> -		rc = PTR_ERR(clk);
+> -		if (rc == -ENOENT)
+> -			/* clk-core allows NULL (for suspend / resume) */
+> -			rc = 0;
+> -		else
+> -			dev_err_probe(d, rc, "failed to get clk\n");
+> -	} else {
+> -		tp->clk = clk;
+> -		rc = clk_prepare_enable(clk);
+> -		if (rc)
+> -			dev_err(d, "failed to enable clk: %d\n", rc);
+> -		else
+> -			rc = devm_add_action_or_reset(d, rtl_disable_clk, clk);
+> -	}
+> -
+> -	return rc;
+> -}
+> -
+>  static void rtl_init_mac_address(struct rtl8169_private *tp)
+>  {
+>  	u8 mac_addr[ETH_ALEN] __aligned(2) = {};
+> @@ -5216,9 +5185,9 @@ static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
+>  		return -ENOMEM;
+>  
+>  	/* Get the *optional* external "ether_clk" used on some boards */
+> -	rc = rtl_get_ether_clk(tp);
+> -	if (rc)
+> -		return rc;
+> +	tp->clk = devm_clk_get_optional_enabled(&pdev->dev, "ether_clk");
+> +	if (IS_ERR(tp->clk))
+> +		return dev_err_probe(&pdev->dev, PTR_ERR(tp->clk), "failed to get ether_clk\n");
+>  
+>  	/* enable device (incl. PCI PM wakeup and hotplug setup) */
+>  	rc = pcim_enable_device(pdev);
+> -- 
+> 2.37.3
 
-Which should already be there, or RSN:
-https://lore.kernel.org/all/167514181688.11863.771497291150527329.git-patchwork-notify@kernel.org
+This change broke the r8169 driver on my SH7785LCR SuperH Evaluation Board.
 
-Gr{oetje,eeting}s,
+With your patch, the driver initialization fails with:
 
-                        Geert
+[    1.648000] r8169 0000:00:00.0: error -EINVAL: failed to get ether_clk
+[    1.676000] r8169: probe of 0000:00:00.0 failed with error -22
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Any idea what could be the problem?
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Thanks,
+Adrian
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
