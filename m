@@ -2,112 +2,77 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AECBAC636D4
-	for <linux-sh@archiver.kernel.org>; Wed,  1 Feb 2023 19:47:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D7F9C05027
+	for <linux-sh@archiver.kernel.org>; Thu,  2 Feb 2023 05:30:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229535AbjBATrg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 1 Feb 2023 14:47:36 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58744 "EHLO
+        id S232063AbjBBFaM (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 2 Feb 2023 00:30:12 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60010 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231543AbjBATr1 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 1 Feb 2023 14:47:27 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3842C841A1;
-        Wed,  1 Feb 2023 11:47:18 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id E29F5B8228F;
-        Wed,  1 Feb 2023 19:47:16 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 01C89C433D2;
-        Wed,  1 Feb 2023 19:47:14 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1675280835;
-        bh=A9tTG8dWtmVDJMbXWhKt0soYbv6crDy7nFqy+MC4d2k=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=kYyDEcOIYUjcY88IYKRyJ3v0ffkxC6DFXM6AOwI/RNsVCxS8ZVdc+hWO33907UT3q
-         9aHeIdmineumpKvWWoJWqkSsy1kh/2l5XfRRyyFPP3hYPPA+5TcsQV/BMCWl7gCLMF
-         EcPAQDIhcnGzYXwKo5gmC2+DKybMMVeiCssPK3OQ=
-Date:   Wed, 1 Feb 2023 20:47:12 +0100
-From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
+        with ESMTP id S232112AbjBBF3I (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 2 Feb 2023 00:29:08 -0500
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 249004DCF6;
+        Wed,  1 Feb 2023 21:28:19 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
+        Content-ID:Content-Description:In-Reply-To:References;
+        bh=w67uANH4ICcPjfB8P29IxwXnWVdeW1WrLI1ybFP3zFc=; b=EgFOqzZgATVHmdjgAO46/5IsWl
+        RsxdGD2hL0Ruted5K+p7hu/ejZk6XfT+eQJetFvQSbrZhg7jfypEoXIKhQ5Z0d1elKhuKSsL4Ub18
+        W8w0Lb0Dd63DFKAoWs2Qy72lFcFO1N4jIsrO0KQMsACEcvQyRnWFOKvKuKgCcxjoYOI+yC9BTJghY
+        8LRhYT73bu82wd2BXbPv/xjhL6lsfxnq/9vnCXoruE9P184k9seNMKni6zWzxy3Cc50EEzkf3w+b1
+        0iOlj30H6PeZxWQ27SrEXpR8Gb3x7WOeWNoTAUdz3k4wYjY+WUCR+PGUxJvTEmD2LrE0JlHklgtMS
+        N2biYzzg==;
+Received: from [2601:1c2:d00:6a60::9526] (helo=bombadil.infradead.org)
+        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1pNS8u-00ERRM-FW; Thu, 02 Feb 2023 05:28:16 +0000
+From:   Randy Dunlap <rdunlap@infradead.org>
+To:     linux-kernel@vger.kernel.org
+Cc:     Randy Dunlap <rdunlap@infradead.org>,
+        Al Viro <viro@zeniv.linux.org.uk>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Hans de Goede <hdegoede@redhat.com>,
-        "Rafael J. Wysocki" <rafael@kernel.org>,
-        Linux Kernel Functional Testing <lkft@linaro.org>,
-        Naresh Kamboju <naresh.kamboju@linaro.org>
-Subject: Re: [PATCH] maple: remove unneeded maple_bus_uevent() callback.
-Message-ID: <Y9rBwMf6p6QmkVPp@kroah.com>
-References: <20230201125642.624255-1-gregkh@linuxfoundation.org>
- <2f10003fcf3671ccdd285952ba76153f5c2d5307.camel@physik.fu-berlin.de>
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Andrew Morton <akpm@linux-foundation.org>
+Subject: [PATCH] >>>>>>>>>>>>>>>>>>>>>>>>> BLURB <<<<<<<<<<<<<<<<<<<
+Date:   Wed,  1 Feb 2023 21:28:13 -0800
+Message-Id: <20230202052813.27427-1-rdunlap@infradead.org>
+X-Mailer: git-send-email 2.39.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <2f10003fcf3671ccdd285952ba76153f5c2d5307.camel@physik.fu-berlin.de>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Feb 01, 2023 at 08:05:21PM +0100, John Paul Adrian Glaubitz wrote:
-> Hi Greg!
-> 
-> On Wed, 2023-02-01 at 13:56 +0100, Greg Kroah-Hartman wrote:
-> > The driver core recently changed the uevent bus callback to take a const
-> > pointer, and the maple_bus_uevent() was not correctly fixed up.  Instead
-> > of fixing the function parameter types, just remove the callback
-> > entirely as it does not do anything, so it is not necessary.
-> > 
-> > Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > Cc: Rich Felker <dalias@libc.org>
-> > Cc: Hans de Goede <hdegoede@redhat.com>
-> > Cc: "Rafael J. Wysocki" <rafael@kernel.org>
-> > Reported-by: Linux Kernel Functional Testing <lkft@linaro.org>
-> > Reported-by: Naresh Kamboju <naresh.kamboju@linaro.org>
-> > Fixes: 2a81ada32f0e ("driver core: make struct bus_type.uevent() take a const *")
-> > Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> > ---
-> > sh maintainers, I'll take this through my tree as that's where the
-> > offending commit is that causes the build breakage.
-> > 
-> >  drivers/sh/maple/maple.c | 7 -------
-> >  1 file changed, 7 deletions(-)
-> > 
-> > diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
-> > index e24e220e56ee..e05473c5c267 100644
-> > --- a/drivers/sh/maple/maple.c
-> > +++ b/drivers/sh/maple/maple.c
-> > @@ -760,12 +760,6 @@ static int maple_match_bus_driver(struct device *devptr,
-> >  	return 0;
-> >  }
-> >  
-> > -static int maple_bus_uevent(struct device *dev,
-> > -			    struct kobj_uevent_env *env)
-> > -{
-> > -	return 0;
-> > -}
-> > -
-> >  static void maple_bus_release(struct device *dev)
-> >  {
-> >  }
-> > @@ -782,7 +776,6 @@ static struct maple_driver maple_unsupported_device = {
-> >  struct bus_type maple_bus_type = {
-> >  	.name = "maple",
-> >  	.match = maple_match_bus_driver,
-> > -	.uevent = maple_bus_uevent,
-> >  };
-> >  EXPORT_SYMBOL_GPL(maple_bus_type);
-> 
-> Through which tree is this supposed to be picked up?
 
-As the comment below the --- line said above:
+../arch/sh/include/asm/checksum_32.h: In function 'csum_and_copy_from_user':
+../arch/sh/include/asm/checksum_32.h:53:14: error: implicit declaration of function 'access_ok' [-Werror=implicit-function-declaration]
+   53 |         if (!access_ok(src, len))
+      |              ^~~~~~~~~
 
-	sh maintainers, I'll take this through my tree as that's where the
-	offending commit is that causes the build breakage.
+Fixes: 7fe8970a78a1 ("sh32: convert to csum_and_copy_from_user()")
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Cc: Al Viro <viro@zeniv.linux.org.uk>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+---
+ arch/sh/include/asm/checksum_32.h |    1 +
+ 1 file changed, 1 insertion(+)
 
-So I took it :)
-
-thanks,
-
-greg k-h
+diff -- a/arch/sh/include/asm/checksum_32.h b/arch/sh/include/asm/checksum_32.h
+--- a/arch/sh/include/asm/checksum_32.h
++++ b/arch/sh/include/asm/checksum_32.h
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include <linux/in6.h>
++#include <asm-generic/access_ok.h>
+ 
+ /*
+  * computes the checksum of a memory block at buff, length len,
