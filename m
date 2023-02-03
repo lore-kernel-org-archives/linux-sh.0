@@ -2,35 +2,35 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D08FC6379F
-	for <linux-sh@archiver.kernel.org>; Fri,  3 Feb 2023 22:07:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EA5C1C61DA4
+	for <linux-sh@archiver.kernel.org>; Fri,  3 Feb 2023 22:07:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233991AbjBCWHC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 3 Feb 2023 17:07:02 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57710 "EHLO
+        id S232445AbjBCWHV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 3 Feb 2023 17:07:21 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56470 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233568AbjBCWGa (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 3 Feb 2023 17:06:30 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 72628AF6A2;
-        Fri,  3 Feb 2023 14:06:01 -0800 (PST)
+        with ESMTP id S229782AbjBCWGw (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 3 Feb 2023 17:06:52 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8D6C0AF531;
+        Fri,  3 Feb 2023 14:06:04 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 65018B82C2A;
-        Fri,  3 Feb 2023 22:05:59 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7129AC433A7;
-        Fri,  3 Feb 2023 22:05:56 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 2DDDFB82C2E;
+        Fri,  3 Feb 2023 22:06:03 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2CC2CC433EF;
+        Fri,  3 Feb 2023 22:06:00 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1675461958;
-        bh=xE5ZmRzKMxAFPrHiSIoJTZlCDR5ti+ono/cm0PWjfeU=;
+        s=k20201202; t=1675461961;
+        bh=2MPoJoU9iEV+5bmq/FA3r/36XSx62v4q4mPHZFDs3ww=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=bWyWlCGQ8ixOuALZdKCzLss/6SMXhh1P0jHxv5K8dz+pGFJWRKFe/rDpdYt/pbEBy
-         Cv20t60IqNd4k2OPeeakryqDZQBCSnCIFbZYn4w8Wh4hZfyxfuwPiu4jwkipYMyAjx
-         3wjdyLJq2+oQSUZX9lPMnbCOK9kacUFdHpR/7gDTkVlFBlenq2ALG85m81cnxhAlqT
-         DUmyvxZm4cJjdO0Y03EgNOuJPyX9ZAC+k2Whi2B9zytn0fu/YSFoO3CbU5ghN7eGNf
-         AnlKFwVCJfplEUcEgqGsH3y9cSX006B8L7WqnSyPF5fCyXIzVXK57ufqsSU1oTeXrl
-         yrsQBm2IXfrYQ==
+        b=aDL8Fbd7q5housqD8r1xvR5Q8U5/Aib+w8BpMXVKm3G1aZwcrHOxSP2YKKdovg1Uv
+         4ZkJB0Y2uOz0X6yT1wZTvr2Dy/qvqYM4TlvU7jidUr13tcMvpXuDDnfIChFnR0S114
+         XgCY83e9GokKgbEco/t+NyOFO0YdA+0HxBWOqEp5iV4oSvGtaYrTgda4ZJIFvXPgG4
+         KNCxMpS4uI9MMwQ1cXs+JGbGCrSe2MWzovJGkzBcoFy7ViFq8mzRs0yA10vH2OGy97
+         h7LmYagnQeYcVqvMzgJan512rASuYNR/WZMXFdmycbxKND3KFZ57oa/ITSZQBJhWyr
+         EDE+zUhf9BZHA==
 From:   Josh Poimboeuf <jpoimboe@kernel.org>
 To:     linux-kernel@vger.kernel.org
 Cc:     jgross@suse.com, richard.henderson@linaro.org,
@@ -53,9 +53,9 @@ Cc:     jgross@suse.com, richard.henderson@linaro.org,
         dietmar.eggemann@arm.com, rostedt@goodmis.org, bsegall@google.com,
         mgorman@suse.de, bristot@redhat.com, vschneid@redhat.com,
         paulmck@kernel.org
-Subject: [PATCH 09/22] mips/cpu: Expose play_dead()'s prototype definition
-Date:   Fri,  3 Feb 2023 14:05:18 -0800
-Message-Id: <a532966831383927f5f4fbec0a1e13304588685a.1675461757.git.jpoimboe@kernel.org>
+Subject: [PATCH 11/22] mips/cpu: Mark play_dead() __noreturn
+Date:   Fri,  3 Feb 2023 14:05:20 -0800
+Message-Id: <829d68d289ad4eeac27c5220be695cfa6ace33f4.1675461757.git.jpoimboe@kernel.org>
 X-Mailer: git-send-email 2.39.0
 In-Reply-To: <cover.1675461757.git.jpoimboe@kernel.org>
 References: <cover.1675461757.git.jpoimboe@kernel.org>
@@ -66,26 +66,27 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Include <asm/smp.h> to make sure play_dead() matches its prototype going
-forward.
+play_dead() doesn't return.  Annotate it as such.  By extension this
+also makes arch_cpu_idle_dead() noreturn.
 
 Signed-off-by: Josh Poimboeuf <jpoimboe@kernel.org>
 ---
- arch/mips/kernel/smp-bmips.c | 1 +
- 1 file changed, 1 insertion(+)
+ arch/mips/include/asm/smp.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/mips/kernel/smp-bmips.c b/arch/mips/kernel/smp-bmips.c
-index f5d7bfa3472a..df9158e8329d 100644
---- a/arch/mips/kernel/smp-bmips.c
-+++ b/arch/mips/kernel/smp-bmips.c
-@@ -38,6 +38,7 @@
- #include <asm/traps.h>
- #include <asm/barrier.h>
- #include <asm/cpu-features.h>
-+#include <asm/smp.h>
+diff --git a/arch/mips/include/asm/smp.h b/arch/mips/include/asm/smp.h
+index 5d9ff61004ca..4eee29b7845c 100644
+--- a/arch/mips/include/asm/smp.h
++++ b/arch/mips/include/asm/smp.h
+@@ -88,7 +88,7 @@ static inline void __cpu_die(unsigned int cpu)
+ 	mp_ops->cpu_die(cpu);
+ }
  
- static int __maybe_unused max_cpus = 1;
+-extern void play_dead(void);
++extern void __noreturn play_dead(void);
+ #endif
  
+ #ifdef CONFIG_KEXEC
 -- 
 2.39.0
 
