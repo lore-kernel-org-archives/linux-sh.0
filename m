@@ -2,35 +2,35 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C2697C05027
-	for <linux-sh@archiver.kernel.org>; Fri,  3 Feb 2023 22:05:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 525F8C636CC
+	for <linux-sh@archiver.kernel.org>; Fri,  3 Feb 2023 22:05:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233336AbjBCWFz (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 3 Feb 2023 17:05:55 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56372 "EHLO
+        id S233943AbjBCWF4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 3 Feb 2023 17:05:56 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56318 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230114AbjBCWFv (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 3 Feb 2023 17:05:51 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E8FDCA77BC;
-        Fri,  3 Feb 2023 14:05:49 -0800 (PST)
+        with ESMTP id S233894AbjBCWFs (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 3 Feb 2023 17:05:48 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B3DB0991CB;
+        Fri,  3 Feb 2023 14:05:47 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 4667F62024;
-        Fri,  3 Feb 2023 22:05:49 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id F222EC433A7;
+        by ams.source.kernel.org (Postfix) with ESMTPS id 50EC2B82C2C;
         Fri,  3 Feb 2023 22:05:46 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 31D78C433A4;
+        Fri,  3 Feb 2023 22:05:43 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1675461948;
-        bh=IUG7346ru2LIaCtxjax/xlHvBhlssHCzq8SttudiekY=;
+        s=k20201202; t=1675461944;
+        bh=jwTvhfv5jui0rr++LUZmPhaoB7Jg1TFf9qG4O7JtMhQ=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=mDs+6rDG1dzYFDAxIKMUYCPpuI8xVxCk4vK7vY7SgBBbS+9M4fpuTaBD9RlOR4IpY
-         5NXqrjuw9ORKV94tm3vuwmSTrBJxoFJCTyK0InA92qEFqLJwQgCoGOouJ+2PtAAGkB
-         tywZI2GzgHL8sm2n0h5hvEG303bBDNv1IbORapWkTJr9KSjXUHNAj+2yMiIMNQdWSe
-         UL3lPmOXr1Dvb5uH4eKO4vP0s+38mGzfgCc7Dw5nVS3fnY1BCp6vQo477htt3OULlx
-         6ruyxQleCq0SasoQbj3h1mZCK0oMuduqz7cDOi0p2JVDR54NP7OttRvDrXst1X78to
-         FA+WZR+13rHMw==
+        b=Cnpsd3/vIh8cHXwxClTdwl8BAQrgBFDXI4Y6Wl3Yb8uKzKrXFmQjf4bLTlNruFSiS
+         qCw5Tpiq0hGpIKAA9/3qXe8LcDIqt+HCuF23fCoKLHz2nfcNB+D+KHlrgpbh1U43BD
+         pNBum+Kt2hjbGzQLzCB6YyRpQ9i7GLAoTP+jIcII2BpDc7lxQXJkdYAl8BjjAxWWgH
+         vPRzYJ9cYKNr4qu0wK5oRu28WzJ1AZPjIEQJEuuC7Tw5qVQ5zZYaRMYRLjPSmjNcm2
+         38kusvC4L8FnSTzlZ9mjTaLmjfcLnDzYkadBZuZ4/c+gcGOlxpmeKS17HnHSBp6y7I
+         T1Tc3i1z5DTLw==
 From:   Josh Poimboeuf <jpoimboe@kernel.org>
 To:     linux-kernel@vger.kernel.org
 Cc:     jgross@suse.com, richard.henderson@linaro.org,
@@ -53,9 +53,9 @@ Cc:     jgross@suse.com, richard.henderson@linaro.org,
         dietmar.eggemann@arm.com, rostedt@goodmis.org, bsegall@google.com,
         mgorman@suse.de, bristot@redhat.com, vschneid@redhat.com,
         paulmck@kernel.org
-Subject: [PATCH 04/22] arm64/cpu: Mark cpu_die() __noreturn
-Date:   Fri,  3 Feb 2023 14:05:13 -0800
-Message-Id: <b0d5d5608d1485495204d3dcac29bdeb8036a619.1675461757.git.jpoimboe@kernel.org>
+Subject: [PATCH 02/22] alpha/cpu: Make sure arch_cpu_idle_dead() doesn't return
+Date:   Fri,  3 Feb 2023 14:05:11 -0800
+Message-Id: <543dffab94755ae8460b22e273213cbb9a72a173.1675461757.git.jpoimboe@kernel.org>
 X-Mailer: git-send-email 2.39.0
 In-Reply-To: <cover.1675461757.git.jpoimboe@kernel.org>
 References: <cover.1675461757.git.jpoimboe@kernel.org>
@@ -66,27 +66,30 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-cpu_die() doesn't return.  Annotate it as such.  By extension this also
-makes arch_cpu_idle_dead() noreturn.
+arch_cpu_idle_dead() doesn't return.  Make that more explicit with a
+BUG().
+
+BUG() is preferable to unreachable() because BUG() is a more explicit
+failure mode and avoids undefined behavior like falling off the edge of
+the function into whatever code happens to be next.
 
 Signed-off-by: Josh Poimboeuf <jpoimboe@kernel.org>
 ---
- arch/arm64/include/asm/smp.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/alpha/kernel/process.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm64/include/asm/smp.h b/arch/arm64/include/asm/smp.h
-index fc55f5a57a06..5733a31bab08 100644
---- a/arch/arm64/include/asm/smp.h
-+++ b/arch/arm64/include/asm/smp.h
-@@ -100,7 +100,7 @@ static inline void arch_send_wakeup_ipi_mask(const struct cpumask *mask)
- extern int __cpu_disable(void);
+diff --git a/arch/alpha/kernel/process.c b/arch/alpha/kernel/process.c
+index 4813172547b5..94938f856545 100644
+--- a/arch/alpha/kernel/process.c
++++ b/arch/alpha/kernel/process.c
+@@ -63,6 +63,7 @@ void arch_cpu_idle(void)
+ void arch_cpu_idle_dead(void)
+ {
+ 	wtint(INT_MAX);
++	BUG();
+ }
+ #endif /* ALPHA_WTINT */
  
- extern void __cpu_die(unsigned int cpu);
--extern void cpu_die(void);
-+extern void __noreturn cpu_die(void);
- extern void cpu_die_early(void);
- 
- static inline void cpu_park_loop(void)
 -- 
 2.39.0
 
