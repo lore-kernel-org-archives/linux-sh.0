@@ -2,118 +2,131 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6BA3FC6379F
-	for <linux-sh@archiver.kernel.org>; Sat,  4 Feb 2023 02:29:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2CAA6C636CD
+	for <linux-sh@archiver.kernel.org>; Sat,  4 Feb 2023 05:51:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232716AbjBDC3j (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 3 Feb 2023 21:29:39 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37526 "EHLO
+        id S230042AbjBDFvX (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 4 Feb 2023 00:51:23 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47416 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229782AbjBDC3h (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 3 Feb 2023 21:29:37 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E4C4A74C15;
-        Fri,  3 Feb 2023 18:29:36 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 819AA6204D;
-        Sat,  4 Feb 2023 02:29:36 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4882FC433D2;
-        Sat,  4 Feb 2023 02:29:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1675477775;
-        bh=A31zSwlgRwgvDbdSE2DEbrUbqrKSeAqq7FjkMqnStZw=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=sys04XZk8jqh8pRKO4mghhMIaZOJaNysJlIGALRMdUzBCxAI7G298EYXo2zlMRvSr
-         v1L58VM1ZHs7x81UItVoBpt9wcZHmGDg5tNF+6JViYATk8zllrsyuNPci/+h9ThQNC
-         KW//e75t+wHxZCqRUkgsCKq4iGfhZGkJ2TH63kQJ9oR+CjCAQa7/KkH2zX9Gq7ZUzT
-         JuXMK4xLEjNS6GRz1ijKyXH/9LrhEwsou1WQe6fwvelXFDxVFZwSA9iJKcPffsY87l
-         1jDSihH/HYx9/w9lxJwcSwTV40QPZPI04Z41AbBuYIqH66hVf0PVr4wNkI33bF0LF/
-         Ts2VwRwiP4moA==
-Date:   Fri, 3 Feb 2023 18:29:32 -0800
-From:   Josh Poimboeuf <jpoimboe@kernel.org>
-To:     Guo Ren <guoren@kernel.org>
-Cc:     linux-kernel@vger.kernel.org, jgross@suse.com,
-        richard.henderson@linaro.org, ink@jurassic.park.msu.ru,
-        mattst88@gmail.com, linux-alpha@vger.kernel.org,
-        linux@armlinux.org.uk, linux-arm-kernel@lists.infradead.org,
-        catalin.marinas@arm.com, will@kernel.org,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        chenhuacai@kernel.org, kernel@xen0n.name,
-        loongarch@lists.linux.dev, f.fainelli@gmail.com,
-        bcm-kernel-feedback-list@broadcom.com, tsbogend@alpha.franken.de,
-        linux-mips@vger.kernel.org, jiaxun.yang@flygoat.com,
-        mpe@ellerman.id.au, npiggin@gmail.com, christophe.leroy@csgroup.eu,
-        linuxppc-dev@lists.ozlabs.org, ysato@users.sourceforge.jp,
-        dalias@libc.org, linux-sh@vger.kernel.org, davem@davemloft.net,
-        sparclinux@vger.kernel.org, tglx@linutronix.de, mingo@redhat.com,
-        bp@alien8.de, dave.hansen@linux.intel.com, x86@kernel.org,
-        hpa@zytor.com, chris@zankel.net, jcmvbkbc@gmail.com,
-        linux-xtensa@linux-xtensa.org, peterz@infradead.org,
-        juri.lelli@redhat.com, vincent.guittot@linaro.org,
-        dietmar.eggemann@arm.com, rostedt@goodmis.org, bsegall@google.com,
-        mgorman@suse.de, bristot@redhat.com, vschneid@redhat.com,
-        paulmck@kernel.org
-Subject: Re: [PATCH 05/22] csky/cpu: Make sure arch_cpu_idle_dead() doesn't
- return
-Message-ID: <20230204022932.k24laszjs3v4bc3v@treble>
-References: <cover.1675461757.git.jpoimboe@kernel.org>
- <f860f3a1c1a53c437a99abc53e8f1a798aef6881.1675461757.git.jpoimboe@kernel.org>
- <CAJF2gTSKe3ve4_rsOYpmSBOyUSU5rpLHyijn9i2-i+WfLqxzYw@mail.gmail.com>
+        with ESMTP id S229449AbjBDFvX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 4 Feb 2023 00:51:23 -0500
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B866C29409;
+        Fri,  3 Feb 2023 21:51:21 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        MIME-Version:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:Content-Type:
+        Content-ID:Content-Description:In-Reply-To:References;
+        bh=WzpIxsrWjep5l9VShHrZUT54iLqm1bC6ykl3lav0knk=; b=emr5gnXb1sREZaf84kRlK6cbBm
+        NyogKclSfv6CdjSd/ifA5lRTwyYZbd0889UyglbItrkilaHJNOiq6AiCPv6RxPK9ie4ks/pYTQtWJ
+        r6NnmDTPmQ9Ud8trc+D/5Im+GyqBGbfTn6L60eDz8Rt+iZqCHOhQU2C4m5tKKsD2YmEje60C03SSk
+        E+fu76mhYuZeL+pyfyT2Yz1dQYNHd5sLNusgaH9GM7Z2VXjwM+9pvLhSCri2dCe4y7iCkxs2uXONw
+        Z32EwqeYdM66qKx1CwGp/CLryo/LLUgknVqbeFQLuSRbThFKHZCxkYE7XubKdELSSoKfDUM4Fkogj
+        frPoNscA==;
+Received: from [2601:1c2:d00:6a60::9526] (helo=bombadil.infradead.org)
+        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1pOBSI-004WUA-PT; Sat, 04 Feb 2023 05:51:18 +0000
+From:   Randy Dunlap <rdunlap@infradead.org>
+To:     linux-kernel@vger.kernel.org
+Cc:     Randy Dunlap <rdunlap@infradead.org>,
+        Rob Herring <robh+dt@kernel.org>,
+        Frank Rowand <frowand.list@gmail.com>,
+        devicetree@vger.kernel.org, Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        linux-sh@vger.kernel.org
+Subject: [PATCH v2] sh: init: use OF_EARLY_FLATTREE for early init
+Date:   Fri,  3 Feb 2023 21:51:16 -0800
+Message-Id: <20230204055116.22591-1-rdunlap@infradead.org>
+X-Mailer: git-send-email 2.39.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <CAJF2gTSKe3ve4_rsOYpmSBOyUSU5rpLHyijn9i2-i+WfLqxzYw@mail.gmail.com>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Sat, Feb 04, 2023 at 09:12:31AM +0800, Guo Ren wrote:
-> On Sat, Feb 4, 2023 at 6:05 AM Josh Poimboeuf <jpoimboe@kernel.org> wrote:
-> >
-> > arch_cpu_idle_dead() doesn't return.  Make that more explicit with a
-> > BUG().
-> >
-> > BUG() is preferable to unreachable() because BUG() is a more explicit
-> > failure mode and avoids undefined behavior like falling off the edge of
-> > the function into whatever code happens to be next.
-> >
-> > Signed-off-by: Josh Poimboeuf <jpoimboe@kernel.org>
-> > ---
-> >  arch/csky/kernel/smp.c | 2 ++
-> >  1 file changed, 2 insertions(+)
-> >
-> > diff --git a/arch/csky/kernel/smp.c b/arch/csky/kernel/smp.c
-> > index b45d1073307f..0ec20efaf5fd 100644
-> > --- a/arch/csky/kernel/smp.c
-> > +++ b/arch/csky/kernel/smp.c
-> > @@ -317,5 +317,7 @@ void arch_cpu_idle_dead(void)
-> >                 "jmpi   csky_start_secondary"
-> >                 :
-> >                 : "r" (secondary_stack));
-> > +
-> > +       BUG();
-> Why not:
-> diff --git a/kernel/sched/idle.c b/kernel/sched/idle.c
-> index f26ab2675f7d..1d3bf903add2 100644
-> --- a/kernel/sched/idle.c
-> +++ b/kernel/sched/idle.c
-> @@ -285,6 +285,7 @@ static void do_idle(void)
->                         tick_nohz_idle_stop_tick();
->                         cpuhp_report_idle_dead();
->                         arch_cpu_idle_dead();
-> +                       BUG();
+When CONFIG_OF_EARLY_FLATTREE and CONFIG_SH_DEVICE_TREE are not set,
+SH3 build fails with a call to early_init_dt_scan(), so in
+arch/sh/kernel/setup.c and arch/sh/kernel/head_32.S, use
+CONFIG_OF_EARLY_FLATTREE instead of CONFIG_OF_FLATTREE.
 
-Without the BUG() in csky arch_cpu_idle_dead(), the compiler will warn
-about arch_cpu_idle_dead() returning, because it's marked __noreturn but
-doesn't clearly return (as far as the compiler knows).
+Fixes this build error:
+../arch/sh/kernel/setup.c: In function 'sh_fdt_init':
+../arch/sh/kernel/setup.c:262:26: error: implicit declaration of function 'early_init_dt_scan' [-Werror=implicit-function-declaration]
+  262 |         if (!dt_virt || !early_init_dt_scan(dt_virt)) {
 
-And we want it marked __noreturn so we'll be more likely to catch such
-bugs at build time.
+Fixes: 03767daa1387 ("sh: fix build regression with CONFIG_OF && !CONFIG_OF_FLATTREE")
+Fixes: eb6b6930a70f ("sh: fix memory corruption of unflattened device tree")
+Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Suggested-by: Rob Herring <robh+dt@kernel.org>
+Cc: Frank Rowand <frowand.list@gmail.com>
+Cc: devicetree@vger.kernel.org
+Cc: Rich Felker <dalias@libc.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: linux-sh@vger.kernel.org
+---
+v2: use Suggested-by: for Rob.
+    add more Cc's.
 
-And as a bonus we get better code generation and clearer code semantics
-which helps both humans and tooling understand the intent of the code.
+ arch/sh/kernel/head_32.S |    6 +++---
+ arch/sh/kernel/setup.c   |    4 ++--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
--- 
-Josh
+diff arch/sh/kernel/setup.c arch/sh/kernel/setup.c
+diff -- a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -244,7 +244,7 @@ void __init __weak plat_early_device_set
+ {
+ }
+ 
+-#ifdef CONFIG_OF_FLATTREE
++#ifdef CONFIG_OF_EARLY_FLATTREE
+ void __ref sh_fdt_init(phys_addr_t dt_phys)
+ {
+ 	static int done = 0;
+@@ -326,7 +326,7 @@ void __init setup_arch(char **cmdline_p)
+ 	/* Let earlyprintk output early console messages */
+ 	sh_early_platform_driver_probe("earlyprintk", 1, 1);
+ 
+-#ifdef CONFIG_OF_FLATTREE
++#ifdef CONFIG_OF_EARLY_FLATTREE
+ #ifdef CONFIG_USE_BUILTIN_DTB
+ 	unflatten_and_copy_device_tree();
+ #else
+diff -- a/arch/sh/kernel/head_32.S b/arch/sh/kernel/head_32.S
+--- a/arch/sh/kernel/head_32.S
++++ b/arch/sh/kernel/head_32.S
+@@ -64,7 +64,7 @@ ENTRY(_stext)
+ 	ldc	r0, r6_bank
+ #endif
+ 
+-#ifdef CONFIG_OF_FLATTREE
++#ifdef CONFIG_OF_EARLY_FLATTREE
+ 	mov	r4, r12		! Store device tree blob pointer in r12
+ #endif
+ 	
+@@ -315,7 +315,7 @@ ENTRY(_stext)
+ 10:		
+ #endif
+ 
+-#ifdef CONFIG_OF_FLATTREE
++#ifdef CONFIG_OF_EARLY_FLATTREE
+ 	mov.l	8f, r0		! Make flat device tree available early.
+ 	jsr	@r0
+ 	 mov	r12, r4
+@@ -346,7 +346,7 @@ ENTRY(stack_start)
+ 5:	.long	start_kernel
+ 6:	.long	cpu_init
+ 7:	.long	init_thread_union
+-#if defined(CONFIG_OF_FLATTREE)
++#if defined(CONFIG_OF_EARLY_FLATTREE)
+ 8:	.long	sh_fdt_init
+ #endif
+ 
