@@ -2,189 +2,126 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 559FCC61DA4
-	for <linux-sh@archiver.kernel.org>; Sat,  4 Feb 2023 09:59:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35E17C64ED6
+	for <linux-sh@archiver.kernel.org>; Sun,  5 Feb 2023 23:09:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232700AbjBDJ7y convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 4 Feb 2023 04:59:54 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42190 "EHLO
+        id S229622AbjBEXJJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 5 Feb 2023 18:09:09 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56260 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231320AbjBDJ7y (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 4 Feb 2023 04:59:54 -0500
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7E5A45FF5;
-        Sat,  4 Feb 2023 01:59:52 -0800 (PST)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pOFKl-001fLh-AR; Sat, 04 Feb 2023 10:59:47 +0100
-Received: from p57bd9464.dip0.t-ipconnect.de ([87.189.148.100] helo=suse-laptop.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pOFKl-003iH2-3B; Sat, 04 Feb 2023 10:59:47 +0100
-Message-ID: <767bf105a806994f8d125cadce3f8182c942e18c.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: remove sh5/sh64 last fragments
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org
-Cc:     Geert Uytterhoeven <geert+renesas@glider.be>,
-        Arnd Bergmann <arnd@arndb.de>, Rich Felker <dalias@libc.org>,
+        with ESMTP id S229478AbjBEXJH (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 5 Feb 2023 18:09:07 -0500
+Received: from gandalf.ozlabs.org (gandalf.ozlabs.org [150.107.74.76])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1062F17CF5;
+        Sun,  5 Feb 2023 15:09:05 -0800 (PST)
+Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange ECDHE (P-256) server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        (No client certificate requested)
+        by mail.ozlabs.org (Postfix) with ESMTPSA id 4P94p10kzhz4x1f;
+        Mon,  6 Feb 2023 10:08:56 +1100 (AEDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=canb.auug.org.au;
+        s=201702; t=1675638543;
+        bh=pNXUawnaU3qfDTxBKpmXsJPpQ4kMgE5LZAjUfYaVNaQ=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+        b=ZnYADCx5yiYMn3pkGOedm0t/sNMIjkMYLf/dBTxabGoodLOZTSPJETPuFDge/Cde4
+         aIRPsac6jVpl6zYzM5s0sf9qZ8PH7w9zSC17MHdHR3/1Prai5iUUUHvsKOEj2nhHO3
+         Cblnv6/K2AhBj4YkTU2WIyVtn11Iyu9muX3ILcAHxEldyx9xBhSO4GKxKXmaTccHeU
+         yYw5esGxcNGOWPs8dnxojmNjd9fFKZA9h2nPmfY09YsEtc/xrY2g/H5zDiLVhBoJXQ
+         OF2qL+X7Qm4pEDL2kEKjgtpjAAAz7yUq4t9yOAfwzn4aDqbJ6ZpjiHa3qtmhjT39nt
+         0JnygHWxXhFVw==
+Date:   Mon, 6 Feb 2023 10:08:55 +1100
+From:   Stephen Rothwell <sfr@canb.auug.org.au>
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Christoph Hellwig <hch@lst.de>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Laurent Pinchart <laurent.pinchart@ideasonboard.com>,
+        Kieran Bingham <kieran.bingham+renesas@ideasonboard.com>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        linux-kernel@vger.kernel.org, linux-watchdog@vger.kernel.org,
+        devicetree@vger.kernel.org, linux-arch@vger.kernel.org,
+        dmaengine@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        linux-renesas-soc@vger.kernel.org, linux-i2c@vger.kernel.org,
+        linux-input@vger.kernel.org, linux-media@vger.kernel.org,
+        linux-mmc@vger.kernel.org, linux-mtd@lists.infradead.org,
+        netdev@vger.kernel.org, linux-gpio@vger.kernel.org,
+        linux-rtc@vger.kernel.org, linux-spi@vger.kernel.org,
+        linux-serial@vger.kernel.org, linux-usb@vger.kernel.org,
+        linux-fbdev@vger.kernel.org, alsa-devel@alsa-project.org,
         linux-sh@vger.kernel.org
-Date:   Sat, 04 Feb 2023 10:59:46 +0100
-In-Reply-To: <20230204002508.18800-1-rdunlap@infradead.org>
-References: <20230204002508.18800-1-rdunlap@infradead.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.46.3 
+Subject: Re: remove arch/sh
+Message-ID: <20230206100856.603a0f8f@canb.auug.org.au>
+In-Reply-To: <20230203083037.GA30738@lst.de>
+References: <20230113062339.1909087-1-hch@lst.de>
+        <11e2e0a8-eabe-2d8c-d612-9cdd4bcc3648@physik.fu-berlin.de>
+        <20230116071306.GA15848@lst.de>
+        <40dc1bc1-d9cd-d9be-188e-5167ebae235c@physik.fu-berlin.de>
+        <20230203071423.GA24833@lst.de>
+        <afd056a95d21944db1dc0c9708f692dd1f7bb757.camel@physik.fu-berlin.de>
+        <20230203083037.GA30738@lst.de>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.148.100
+Content-Type: multipart/signed; boundary="Sig_/9=gZIOzZKIZz.T3XwOWz_99";
+ protocol="application/pgp-signature"; micalg=pgp-sha256
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, 2023-02-03 at 16:25 -0800, Randy Dunlap wrote:
-> A previous patch removed most of the sh5 (sh64) support from the
-> kernel tree. Now remove the last stragglers.
-> 
-> Fixes: 37744feebc08 ("sh: remove sh5 support")
-> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-> Cc: Arnd Bergmann <arnd@arndb.de>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Cc: linux-sh@vger.kernel.org
-> ---
->  Documentation/kbuild/kbuild.rst                           |    1 -
->  Documentation/scheduler/sched-arch.rst                    |    2 --
->  Documentation/translations/zh_CN/scheduler/sched-arch.rst |    2 --
->  scripts/checkstack.pl                                     |    7 -------
->  tools/perf/arch/common.c                                  |    2 --
->  tools/scripts/Makefile.arch                               |    5 -----
->  tools/testing/selftests/mm/Makefile                       |    2 +-
->  tools/testing/selftests/mm/run_vmtests.sh                 |    2 +-
->  8 files changed, 2 insertions(+), 21 deletions(-)
-> 
-> diff -- a/Documentation/kbuild/kbuild.rst b/Documentation/kbuild/kbuild.rst
-> --- a/Documentation/kbuild/kbuild.rst
-> +++ b/Documentation/kbuild/kbuild.rst
-> @@ -160,7 +160,6 @@ directory name found in the arch/ direct
->  But some architectures such as x86 and sparc have aliases.
->  
->  - x86: i386 for 32 bit, x86_64 for 64 bit
-> -- sh: sh for 32 bit, sh64 for 64 bit
->  - sparc: sparc32 for 32 bit, sparc64 for 64 bit
->  
->  CROSS_COMPILE
-> diff -- a/Documentation/scheduler/sched-arch.rst b/Documentation/scheduler/sched-arch.rst
-> --- a/Documentation/scheduler/sched-arch.rst
-> +++ b/Documentation/scheduler/sched-arch.rst
-> @@ -70,7 +70,5 @@ Possible arch problems I found (and eith
->  
->  ia64 - is safe_halt call racy vs interrupts? (does it sleep?) (See #4a)
->  
-> -sh64 - Is sleeping racy vs interrupts? (See #4a)
-> -
->  sparc - IRQs on at this point(?), change local_irq_save to _disable.
->        - TODO: needs secondary CPUs to disable preempt (See #1)
-> diff -- a/Documentation/translations/zh_CN/scheduler/sched-arch.rst b/Documentation/translations/zh_CN/scheduler/sched-arch.rst
-> --- a/Documentation/translations/zh_CN/scheduler/sched-arch.rst
-> +++ b/Documentation/translations/zh_CN/scheduler/sched-arch.rst
-> @@ -70,7 +70,5 @@ 我发现的可能的arch问题（并试
->  
->  ia64 - safe_halt的调用与中断相比，是否很荒谬？ (它睡眠了吗) (参考 #4a)
->  
-> -sh64 - 睡眠与中断相比，是否很荒谬？ (参考 #4a)
-> -
->  sparc - 在这一点上，IRQ是开着的（？），把local_irq_save改为_disable。
->        - 待办事项: 需要第二个CPU来禁用抢占 (参考 #1)
-> diff -- a/scripts/checkstack.pl b/scripts/checkstack.pl
-> --- a/scripts/checkstack.pl
-> +++ b/scripts/checkstack.pl
-> @@ -10,7 +10,6 @@
->  #	Mips port by Juan Quintela <quintela@mandrakesoft.com>
->  #	IA64 port via Andreas Dilger
->  #	Arm port by Holger Schurig
-> -#	sh64 port by Paul Mundt
->  #	Random bits by Matt Mackall <mpm@selenic.com>
->  #	M68k port by Geert Uytterhoeven and Andreas Schwab
->  #	AArch64, PARISC ports by Kyle McMartin
-> @@ -100,12 +99,6 @@ my (@stack, $re, $dre, $sub, $x, $xs, $f
->  		#  100092:	 e3 f0 ff c8 ff 71	 lay	 %r15,-56(%r15)
->  		$re = qr/.*(?:lay|ag?hi).*\%r15,-(([0-9]{2}|[3-9])[0-9]{2})
->  		      (?:\(\%r15\))?$/ox;
-> -	} elsif ($arch =~ /^sh64$/) {
-> -		#XXX: we only check for the immediate case presently,
-> -		#     though we will want to check for the movi/sub
-> -		#     pair for larger users. -- PFM.
-> -		#a00048e0:       d4fc40f0        addi.l  r15,-240,r15
-> -		$re = qr/.*addi\.l.*r15,-(([0-9]{2}|[3-9])[0-9]{2}),r15/o;
->  	} elsif ($arch eq 'sparc' || $arch eq 'sparc64') {
->  		# f0019d10:       9d e3 bf 90     save  %sp, -112, %sp
->  		$re = qr/.*save.*%sp, -(([0-9]{2}|[3-9])[0-9]{2}), %sp/o;
-> diff -- a/tools/perf/arch/common.c b/tools/perf/arch/common.c
-> --- a/tools/perf/arch/common.c
-> +++ b/tools/perf/arch/common.c
-> @@ -51,9 +51,7 @@ const char *const s390_triplets[] = {
->  
->  const char *const sh_triplets[] = {
->  	"sh-unknown-linux-gnu-",
-> -	"sh64-unknown-linux-gnu-",
->  	"sh-linux-gnu-",
-> -	"sh64-linux-gnu-",
->  	NULL
->  };
->  
-> diff -- a/tools/scripts/Makefile.arch b/tools/scripts/Makefile.arch
-> --- a/tools/scripts/Makefile.arch
-> +++ b/tools/scripts/Makefile.arch
-> @@ -29,11 +29,6 @@ ifeq ($(ARCH),sparc64)
->         SRCARCH := sparc
->  endif
->  
-> -# Additional ARCH settings for sh
-> -ifeq ($(ARCH),sh64)
-> -       SRCARCH := sh
-> -endif
-> -
->  LP64 := $(shell echo __LP64__ | ${CC} ${CFLAGS} -E -x c - | tail -n 1)
->  ifeq ($(LP64), 1)
->    IS_64_BIT := 1
-> diff -- a/tools/testing/selftests/mm/Makefile b/tools/testing/selftests/mm/Makefile
-> --- a/tools/testing/selftests/mm/Makefile
-> +++ b/tools/testing/selftests/mm/Makefile
-> @@ -90,7 +90,7 @@ endif
->  
->  endif
->  
-> -ifneq (,$(filter $(MACHINE),arm64 ia64 mips64 parisc64 ppc64 riscv64 s390x sh64 sparc64 x86_64))
-> +ifneq (,$(filter $(MACHINE),arm64 ia64 mips64 parisc64 ppc64 riscv64 s390x sparc64 x86_64))
->  TEST_GEN_FILES += va_128TBswitch
->  TEST_GEN_FILES += virtual_address_range
->  TEST_GEN_FILES += write_to_hugetlbfs
-> diff -- a/tools/testing/selftests/mm/run_vmtests.sh b/tools/testing/selftests/mm/run_vmtests.sh
-> --- a/tools/testing/selftests/mm/run_vmtests.sh
-> +++ b/tools/testing/selftests/mm/run_vmtests.sh
-> @@ -132,7 +132,7 @@ else
->  fi
->  
->  # filter 64bit architectures
-> -ARCH64STR="arm64 ia64 mips64 parisc64 ppc64 ppc64le riscv64 s390x sh64 sparc64 x86_64"
-> +ARCH64STR="arm64 ia64 mips64 parisc64 ppc64 ppc64le riscv64 s390x sparc64 x86_64"
->  if [ -z "$ARCH" ]; then
->  	ARCH=$(uname -m 2>/dev/null | sed -e 's/aarch64.*/arm64/')
->  fi
+--Sig_/9=gZIOzZKIZz.T3XwOWz_99
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Hi,
 
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+On Fri, 3 Feb 2023 09:30:37 +0100 Christoph Hellwig <hch@lst.de> wrote:
+>
+> On Fri, Feb 03, 2023 at 09:24:46AM +0100, John Paul Adrian Glaubitz wrote:
+> > Since this is my very first time stepping up as a kernel maintainer, I =
+was hoping
+> > to get some pointers on what to do to make this happen.
+> >=20
+> > So far, we have set up a new kernel tree and I have set up a local deve=
+lopment and
+> > test environment for SH kernels using my SH7785LCR board as the target =
+platform.
+> >=20
+> > Do I just need to send a patch asking to change the corresponding entry=
+ in the
+> > MAINTAINERS file? =20
+>=20
+> I'm not sure a there is a document, but:
+>=20
+>  - add the MAINTAINERS change to your tree
+>  - ask Stephen to get your tree included in linux-next
+
+And by "Stephen", Christoph means me.  When you are ready, please send
+me a request to include your tree/branch in linux-next (usually the
+branch is called something like "for-next" or just "next") telling me
+the git URL, and the contacts I should send email to if there are
+conflicts/build issues with the branch.  I will then fetch the branch
+every time I create a new linux-next release (most work days), so all
+you need to do is update that branch each time you are ready to publish
+more commits.
+
+--=20
+Cheers,
+Stephen Rothwell
+
+--Sig_/9=gZIOzZKIZz.T3XwOWz_99
+Content-Type: application/pgp-signature
+Content-Description: OpenPGP digital signature
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAEBCAAdFiEENIC96giZ81tWdLgKAVBC80lX0GwFAmPgNwgACgkQAVBC80lX
+0GzQVAgAjy+Ruo0rndMBlq3LUsn3e3WM6k7+dwjW7y5KrWBUtO9yrheMEypNr12O
+byLw07yy1/H56vz7bZJN3IaFDMrx7kFxU2Rfi4K2lkrd5y7hRGFHFbyG9KACdTVo
+d4yMastrzpa4sqz6druszU7GDQnWEFS8+bdy18sKOXOIF2A4/bCfyPcwbu6WcX9U
+PWBzYOIqYThwk1BW+po7wuq+KMZW0337iVEob5zS9qRotE98YCs2zc5AjSg1XQx3
+SWMIA+zrNKOlxUJ9BUoeDAQUoe6UJjekpz9o0j9q/w1DDNKl9mXQ5q+JvpuzrtGj
+5u71j4opYj+PidkCy3HMoXj2z0tlFw==
+=TRVa
+-----END PGP SIGNATURE-----
+
+--Sig_/9=gZIOzZKIZz.T3XwOWz_99--
