@@ -2,92 +2,184 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 14864C677F1
-	for <linux-sh@archiver.kernel.org>; Tue,  7 Feb 2023 09:07:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EA653C636CD
+	for <linux-sh@archiver.kernel.org>; Tue,  7 Feb 2023 09:39:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231389AbjBGJHO convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 7 Feb 2023 04:07:14 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49380 "EHLO
+        id S231152AbjBGJjI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 7 Feb 2023 04:39:08 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48234 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229690AbjBGJHM (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Feb 2023 04:07:12 -0500
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 68931234DF;
-        Tue,  7 Feb 2023 01:07:08 -0800 (PST)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pPJwG-001RJZ-JC; Tue, 07 Feb 2023 10:06:56 +0100
-Received: from p57bd9464.dip0.t-ipconnect.de ([87.189.148.100] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pPJwE-000mCw-Hc; Tue, 07 Feb 2023 10:06:56 +0100
-Message-ID: <60ed320c8f5286e8dbbf71be29b760339fd25069.camel@physik.fu-berlin.de>
-Subject: Re: remove arch/sh
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Christoph Hellwig <hch@lst.de>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Laurent Pinchart <laurent.pinchart@ideasonboard.com>,
-        Kieran Bingham <kieran.bingham+renesas@ideasonboard.com>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        linux-kernel@vger.kernel.org, linux-watchdog@vger.kernel.org,
-        devicetree@vger.kernel.org, linux-arch@vger.kernel.org,
-        dmaengine@vger.kernel.org, dri-devel@lists.freedesktop.org,
-        linux-renesas-soc@vger.kernel.org, linux-i2c@vger.kernel.org,
-        linux-input@vger.kernel.org, linux-media@vger.kernel.org,
-        linux-mmc@vger.kernel.org, linux-mtd@lists.infradead.org,
-        netdev@vger.kernel.org, linux-gpio@vger.kernel.org,
-        linux-rtc@vger.kernel.org, linux-spi@vger.kernel.org,
-        linux-serial@vger.kernel.org, linux-usb@vger.kernel.org,
-        linux-fbdev@vger.kernel.org, alsa-devel@alsa-project.org,
+        with ESMTP id S231296AbjBGJjH (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Feb 2023 04:39:07 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 332054224;
+        Tue,  7 Feb 2023 01:39:02 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id DF611B81853;
+        Tue,  7 Feb 2023 09:39:00 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id F2578C433D2;
+        Tue,  7 Feb 2023 09:38:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+        s=korg; t=1675762739;
+        bh=ZzAHI1LT4G/lTV8P3W1mFUjcbymsnTeBRScA6ykUc6Q=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=Wcxcd+5llLBzGT8i9WnJP3dTh2nl6pyPHq6K7ckWMyG+481tE2obDZshVv0n/9xG1
+         QTo35kww28A0n6ipqo9b8P2lspxXS2ozEfSWQy/42rpk9mttj8r2SFq94QRd7m2tq5
+         IkBNwcPP4q/LNOuQbKshr6tBw22O0oO0C9PIilx4=
+Date:   Tue, 7 Feb 2023 10:38:56 +0100
+From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To:     Tom Saeger <tom.saeger@oracle.com>
+Cc:     Naresh Kamboju <naresh.kamboju@linaro.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Rich Felker <dalias@libc.org>,
+        Masahiro Yamada <masahiroy@kernel.org>,
+        Ard Biesheuvel <ardb@kernel.org>,
+        Nathan Chancellor <nathan@kernel.org>,
+        Dennis Gilmore <dennis@ausil.us>,
+        Jisheng Zhang <jszhang@kernel.org>,
+        Palmer Dabbelt <palmer@rivosinc.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        stable@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-sh@vger.kernel.org
-Date:   Tue, 07 Feb 2023 10:06:53 +0100
-In-Reply-To: <20230203071423.GA24833@lst.de>
-References: <20230113062339.1909087-1-hch@lst.de>
-         <11e2e0a8-eabe-2d8c-d612-9cdd4bcc3648@physik.fu-berlin.de>
-         <20230116071306.GA15848@lst.de>
-         <40dc1bc1-d9cd-d9be-188e-5167ebae235c@physik.fu-berlin.de>
-         <20230203071423.GA24833@lst.de>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.46.3 
+Subject: Re: [PATCH 6.1 fix build id for arm64 5/5] sh: define
+ RUNTIME_DISCARD_EXIT
+Message-ID: <Y+IcMNCFLktg2/oT@kroah.com>
+References: <cover.1674876902.git.tom.saeger@oracle.com>
+ <ffaafd3083a1738007a3043b698ec5ac6d8d83d6.1674876902.git.tom.saeger@oracle.com>
+ <Y9TGN3ovx6qqvVa9@kroah.com>
+ <20230206192655.ydjr333ljcirm26j@oracle.com>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.148.100
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230206192655.ydjr333ljcirm26j@oracle.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hello Christoph!
-
-On Fri, 2023-02-03 at 08:14 +0100, Christoph Hellwig wrote:
-> On Mon, Jan 16, 2023 at 09:52:10AM +0100, John Paul Adrian Glaubitz wrote:
-> > We have had a discussion between multiple people invested in the SuperH port and
-> > I have decided to volunteer as a co-maintainer of the port to support Rich Felker
-> > when he isn't available.
+On Mon, Feb 06, 2023 at 01:26:55PM -0600, Tom Saeger wrote:
+> On Sat, Jan 28, 2023 at 07:52:39AM +0100, Greg Kroah-Hartman wrote:
+> > On Fri, Jan 27, 2023 at 09:10:22PM -0700, Tom Saeger wrote:
+> > > sh vmlinux fails to link with GNU ld < 2.40 (likely < 2.36) since
+> > > commit 99cb0d917ffa ("arch: fix broken BuildID for arm64 and riscv").
+> > > 
+> > > This is similar to fixes for powerpc and s390:
+> > > commit 4b9880dbf3bd ("powerpc/vmlinux.lds: Define RUNTIME_DISCARD_EXIT").
+> > > commit a494398bde27 ("s390: define RUNTIME_DISCARD_EXIT to fix link error
+> > > with GNU ld < 2.36").
+> > > 
+> > >   $ sh4-linux-gnu-ld --version | head -n1
+> > >   GNU ld (GNU Binutils for Debian) 2.35.2
+> > > 
+> > >   $ make ARCH=sh CROSS_COMPILE=sh4-linux-gnu- microdev_defconfig
+> > >   $ make ARCH=sh CROSS_COMPILE=sh4-linux-gnu-
+> > > 
+> > >   `.exit.text' referenced in section `__bug_table' of crypto/algboss.o:
+> > >   defined in discarded section `.exit.text' of crypto/algboss.o
+> > >   `.exit.text' referenced in section `__bug_table' of
+> > >   drivers/char/hw_random/core.o: defined in discarded section
+> > >   `.exit.text' of drivers/char/hw_random/core.o
+> > >   make[2]: *** [scripts/Makefile.vmlinux:34: vmlinux] Error 1
+> > >   make[1]: *** [Makefile:1252: vmlinux] Error 2
+> > > 
+> > > arch/sh/kernel/vmlinux.lds.S keeps EXIT_TEXT:
+> > > 
+> > > 	/*
+> > > 	 * .exit.text is discarded at runtime, not link time, to deal with
+> > > 	 * references from __bug_table
+> > > 	 */
+> > > 	.exit.text : AT(ADDR(.exit.text)) { EXIT_TEXT }
+> > > 
+> > > However, EXIT_TEXT is thrown away by
+> > > DISCARD(include/asm-generic/vmlinux.lds.h) because
+> > > sh does not define RUNTIME_DISCARD_EXIT.
+> > > 
+> > > GNU ld 2.40 does not have this issue and builds fine.
+> > > This corresponds with Masahiro's comments in a494398bde27:
+> > > "Nathan [Chancellor] also found that binutils
+> > > commit 21401fc7bf67 ("Duplicate output sections in scripts") cured this
+> > > issue, so we cannot reproduce it with binutils 2.36+, but it is better
+> > > to not rely on it."
+> > > 
+> > > Fixes: 99cb0d917ffa ("arch: fix broken BuildID for arm64 and riscv")
+> > > Link: https://lore.kernel.org/all/Y7Jal56f6UBh1abE@dev-arch.thelio-3990X/
+> > > Link: https://lore.kernel.org/all/20230123194218.47ssfzhrpnv3xfez@oracle.com/
+> > > Signed-off-by: Tom Saeger <tom.saeger@oracle.com>
+> > > ---
+> > >  arch/sh/kernel/vmlinux.lds.S | 2 ++
+> > >  1 file changed, 2 insertions(+)
+> > > 
+> > > diff --git a/arch/sh/kernel/vmlinux.lds.S b/arch/sh/kernel/vmlinux.lds.S
+> > > index 3161b9ccd2a5..791c06b9a54a 100644
+> > > --- a/arch/sh/kernel/vmlinux.lds.S
+> > > +++ b/arch/sh/kernel/vmlinux.lds.S
+> > > @@ -4,6 +4,8 @@
+> > >   * Written by Niibe Yutaka and Paul Mundt
+> > >   */
+> > >  OUTPUT_ARCH(sh)
+> > > +#define RUNTIME_DISCARD_EXIT
+> > > +
+> > >  #include <asm/thread_info.h>
+> > >  #include <asm/cache.h>
+> > >  #include <asm/vmlinux.lds.h>
+> > > -- 
+> > > 2.39.1
+> > > 
+> > 
+> > As my bot said last time you sent this:
+> > 
+> > <formletter>
+> > 
+> > This is not the correct way to submit patches for inclusion in the
+> > stable kernel tree.  Please read:
+> >     https://www.kernel.org/doc/html/latest/process/stable-kernel-rules.html
+> > for how to do this properly.
+> > 
+> > </formletter>
+> > 
+> > Sorry, we can not take ANY of this until it hits Linus's tree.  You know
+> > this!
+> Yep - sorry for the confusion, is it better to send as RFC in cases like
+> this where folks on list have asked for the series to test?
 > 
-> So, this still isn't reflected in MAINTAINERS in linux-next.  When
-> do you plan to take over?  What platforms will remain supported and
-> what can we start dropping due to being unused and unmaintained?
+> > 
+> > Please wait until then and then send the needed backports.  I'm dropping
+> > all of these from you from my review queue.
+> > 
+> > greg k-h
+> 
+> This patch is now in Linus's tree. 
+> 
+> c1c551bebf92 ("sh: define RUNTIME_DISCARD_EXIT")
+> 
+> $ git describe --contains c1c551bebf92
+> v6.2-rc7~18^2~5
+> 
+> commit c1c551bebf928889e7a8fef7415b44f9a64975f4 upstream.
+> 
+> Do you prefer I resend series for 6.1, 5.19, 5.15, and 5.4?
+> 
+> My questions for 6.1 still remain,
+> 
+>   https://lore.kernel.org/all/cover.1674876902.git.tom.saeger@oracle.com/
+>   This 6.1 series is not strictly necessary, as the problem
+>   does not present itself in the current 6.1 stable kernels.
+> 
+>   However, 6.1 WOULD be broken with inclusion of either:
+>   994b7ac1697b ("arm64: remove special treatment for the link order of head.o")
+>   2348e6bf4421 ("riscv: remove special treatment for the link order of head.o")
+>   Should we just include these as well?
+> 
+> My own preference is to included them, to track closer to upstream, and
+> hopefully avoid 'ld' subtlties going forward.
+> 
+> Thoughts?
 
-I'm getting everything ready now with Geert's help and I have a probably dumb
-question regarding the MAINTAINERS file change: Shall I just add myself as an
-additional maintainer first or shall I also drop Yoshinori Sato?
+Stick to what is in Linus's tree as closely as possible whenever
+possible please.
 
-Also, is it desirable to add a "T:" entry for the kernel tree?
+thanks,
 
-Thanks,
-Adrian
-
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+greg k-h
