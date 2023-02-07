@@ -2,184 +2,254 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EA653C636CD
-	for <linux-sh@archiver.kernel.org>; Tue,  7 Feb 2023 09:39:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A4F8DC678D5
+	for <linux-sh@archiver.kernel.org>; Tue,  7 Feb 2023 14:29:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231152AbjBGJjI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 7 Feb 2023 04:39:08 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48234 "EHLO
+        id S232670AbjBGO3d (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 7 Feb 2023 09:29:33 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43310 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231296AbjBGJjH (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Feb 2023 04:39:07 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 332054224;
-        Tue,  7 Feb 2023 01:39:02 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id DF611B81853;
-        Tue,  7 Feb 2023 09:39:00 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id F2578C433D2;
-        Tue,  7 Feb 2023 09:38:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1675762739;
-        bh=ZzAHI1LT4G/lTV8P3W1mFUjcbymsnTeBRScA6ykUc6Q=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=Wcxcd+5llLBzGT8i9WnJP3dTh2nl6pyPHq6K7ckWMyG+481tE2obDZshVv0n/9xG1
-         QTo35kww28A0n6ipqo9b8P2lspxXS2ozEfSWQy/42rpk9mttj8r2SFq94QRd7m2tq5
-         IkBNwcPP4q/LNOuQbKshr6tBw22O0oO0C9PIilx4=
-Date:   Tue, 7 Feb 2023 10:38:56 +0100
-From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To:     Tom Saeger <tom.saeger@oracle.com>
-Cc:     Naresh Kamboju <naresh.kamboju@linaro.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Rich Felker <dalias@libc.org>,
-        Masahiro Yamada <masahiroy@kernel.org>,
-        Ard Biesheuvel <ardb@kernel.org>,
-        Nathan Chancellor <nathan@kernel.org>,
-        Dennis Gilmore <dennis@ausil.us>,
-        Jisheng Zhang <jszhang@kernel.org>,
-        Palmer Dabbelt <palmer@rivosinc.com>,
+        with ESMTP id S230080AbjBGO3b (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Feb 2023 09:29:31 -0500
+Received: from mga14.intel.com (mga14.intel.com [192.55.52.115])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CBF2D190;
+        Tue,  7 Feb 2023 06:29:29 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1675780169; x=1707316169;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=7VgWr2VPj8L1NsfjGJ63Vno2YkqOebd37sMf+dqhyeo=;
+  b=jscZB0N2UJN/Pc0tXopZRvaT2D3XAhPMfD6oaW4L5byZnnNVyWNCxxub
+   IdHtHoQn0vOxJ7lFwzg5kbJegPaGh8leViE2X2/ElmJJeW3JejJboHfhb
+   uVp+fWDik0JBd7CBMNdBIFR8+MNTyHNuhTHewhwvJLxQmmgpP3nKgqDcT
+   MAmITuzyPvCSveL+lDTbiISrMFloCRf+k+bPpGLuTOTg4l0YoyFpnelhM
+   2yWj0R3Xq10GTQ3dXSe0UCNHRxTfG76EoI63ec5WgcJGV6+BCDn1kwm84
+   t51yfBmzvkHXx9DnlJr+kOGgvPvrAlTFOdkWON+iw1BKsF+Poga/O/lr1
+   Q==;
+X-IronPort-AV: E=McAfee;i="6500,9779,10614"; a="329537331"
+X-IronPort-AV: E=Sophos;i="5.97,278,1669104000"; 
+   d="scan'208";a="329537331"
+Received: from orsmga004.jf.intel.com ([10.7.209.38])
+  by fmsmga103.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 07 Feb 2023 06:29:28 -0800
+X-ExtLoop1: 1
+X-IronPort-AV: E=McAfee;i="6500,9779,10614"; a="790811310"
+X-IronPort-AV: E=Sophos;i="5.97,278,1669104000"; 
+   d="scan'208";a="790811310"
+Received: from black.fi.intel.com ([10.237.72.28])
+  by orsmga004.jf.intel.com with ESMTP; 07 Feb 2023 06:29:23 -0800
+Received: by black.fi.intel.com (Postfix, from userid 1003)
+        id 2D031210; Tue,  7 Feb 2023 16:30:02 +0200 (EET)
+From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+To:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Linus Walleij <linus.walleij@linaro.org>,
         Arnd Bergmann <arnd@arndb.de>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        stable@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-sh@vger.kernel.org
-Subject: Re: [PATCH 6.1 fix build id for arm64 5/5] sh: define
- RUNTIME_DISCARD_EXIT
-Message-ID: <Y+IcMNCFLktg2/oT@kroah.com>
-References: <cover.1674876902.git.tom.saeger@oracle.com>
- <ffaafd3083a1738007a3043b698ec5ac6d8d83d6.1674876902.git.tom.saeger@oracle.com>
- <Y9TGN3ovx6qqvVa9@kroah.com>
- <20230206192655.ydjr333ljcirm26j@oracle.com>
+        Bartosz Golaszewski <bartosz.golaszewski@linaro.org>,
+        Tony Lindgren <tony@atomide.com>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Devarsh Thakkar <devarsht@ti.com>,
+        Dmitry Torokhov <dmitry.torokhov@gmail.com>,
+        Stefan Schmidt <stefan@datenfreihafen.org>,
+        Miquel Raynal <miquel.raynal@bootlin.com>,
+        linux-gpio@vger.kernel.org, linux-doc@vger.kernel.org,
+        linux-kernel@vger.kernel.org,
+        linux-doc-tw-discuss@lists.sourceforge.net,
+        linux-arm-kernel@lists.infradead.org, linux-omap@vger.kernel.org,
+        linux-samsung-soc@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
+        linux-acpi@vger.kernel.org, linux-input@vger.kernel.org,
+        linux-media@vger.kernel.org, linux-wpan@vger.kernel.org,
+        netdev@vger.kernel.org, linux-wireless@vger.kernel.org,
+        brcm80211-dev-list.pdl@broadcom.com,
+        SHA-cyfmac-dev-list@infineon.com, linux-arch@vger.kernel.org,
+        devicetree@vger.kernel.org
+Cc:     Bartosz Golaszewski <brgl@bgdev.pl>,
+        Jonathan Corbet <corbet@lwn.net>, Alex Shi <alexs@kernel.org>,
+        Yanteng Si <siyanteng@loongson.cn>,
+        Hu Haowen <src.res@email.cn>,
+        Russell King <linux@armlinux.org.uk>,
+        Aaro Koskinen <aaro.koskinen@iki.fi>,
+        Janusz Krzysztofik <jmkrzyszt@gmail.com>,
+        Andrew Lunn <andrew@lunn.ch>,
+        Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
+        Gregory Clement <gregory.clement@bootlin.com>,
+        Alim Akhtar <alim.akhtar@samsung.com>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Mun Yew Tham <mun.yew.tham@intel.com>,
+        Keerthy <j-keerthy@ti.com>,
+        Mika Westerberg <mika.westerberg@linux.intel.com>,
+        Mauro Carvalho Chehab <mchehab@kernel.org>,
+        Alexander Aring <alex.aring@gmail.com>,
+        "David S. Miller" <davem@davemloft.net>,
+        Eric Dumazet <edumazet@google.com>,
+        Jakub Kicinski <kuba@kernel.org>,
+        Paolo Abeni <pabeni@redhat.com>,
+        Arend van Spriel <aspriel@gmail.com>,
+        Franky Lin <franky.lin@broadcom.com>,
+        Hante Meuleman <hante.meuleman@broadcom.com>,
+        Kalle Valo <kvalo@kernel.org>, Qiang Zhao <qiang.zhao@nxp.com>,
+        Li Yang <leoyang.li@nxp.com>, Lee Jones <lee@kernel.org>,
+        Rob Herring <robh+dt@kernel.org>,
+        Frank Rowand <frowand.list@gmail.com>,
+        Geert Uytterhoeven <geert+renesas@glider.be>
+Subject: [PATCH v3 01/12] gpiolib: remove empty asm/gpio.h files
+Date:   Tue,  7 Feb 2023 16:29:41 +0200
+Message-Id: <20230207142952.51844-2-andriy.shevchenko@linux.intel.com>
+X-Mailer: git-send-email 2.39.1
+In-Reply-To: <20230207142952.51844-1-andriy.shevchenko@linux.intel.com>
+References: <20230207142952.51844-1-andriy.shevchenko@linux.intel.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230206192655.ydjr333ljcirm26j@oracle.com>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Feb 06, 2023 at 01:26:55PM -0600, Tom Saeger wrote:
-> On Sat, Jan 28, 2023 at 07:52:39AM +0100, Greg Kroah-Hartman wrote:
-> > On Fri, Jan 27, 2023 at 09:10:22PM -0700, Tom Saeger wrote:
-> > > sh vmlinux fails to link with GNU ld < 2.40 (likely < 2.36) since
-> > > commit 99cb0d917ffa ("arch: fix broken BuildID for arm64 and riscv").
-> > > 
-> > > This is similar to fixes for powerpc and s390:
-> > > commit 4b9880dbf3bd ("powerpc/vmlinux.lds: Define RUNTIME_DISCARD_EXIT").
-> > > commit a494398bde27 ("s390: define RUNTIME_DISCARD_EXIT to fix link error
-> > > with GNU ld < 2.36").
-> > > 
-> > >   $ sh4-linux-gnu-ld --version | head -n1
-> > >   GNU ld (GNU Binutils for Debian) 2.35.2
-> > > 
-> > >   $ make ARCH=sh CROSS_COMPILE=sh4-linux-gnu- microdev_defconfig
-> > >   $ make ARCH=sh CROSS_COMPILE=sh4-linux-gnu-
-> > > 
-> > >   `.exit.text' referenced in section `__bug_table' of crypto/algboss.o:
-> > >   defined in discarded section `.exit.text' of crypto/algboss.o
-> > >   `.exit.text' referenced in section `__bug_table' of
-> > >   drivers/char/hw_random/core.o: defined in discarded section
-> > >   `.exit.text' of drivers/char/hw_random/core.o
-> > >   make[2]: *** [scripts/Makefile.vmlinux:34: vmlinux] Error 1
-> > >   make[1]: *** [Makefile:1252: vmlinux] Error 2
-> > > 
-> > > arch/sh/kernel/vmlinux.lds.S keeps EXIT_TEXT:
-> > > 
-> > > 	/*
-> > > 	 * .exit.text is discarded at runtime, not link time, to deal with
-> > > 	 * references from __bug_table
-> > > 	 */
-> > > 	.exit.text : AT(ADDR(.exit.text)) { EXIT_TEXT }
-> > > 
-> > > However, EXIT_TEXT is thrown away by
-> > > DISCARD(include/asm-generic/vmlinux.lds.h) because
-> > > sh does not define RUNTIME_DISCARD_EXIT.
-> > > 
-> > > GNU ld 2.40 does not have this issue and builds fine.
-> > > This corresponds with Masahiro's comments in a494398bde27:
-> > > "Nathan [Chancellor] also found that binutils
-> > > commit 21401fc7bf67 ("Duplicate output sections in scripts") cured this
-> > > issue, so we cannot reproduce it with binutils 2.36+, but it is better
-> > > to not rely on it."
-> > > 
-> > > Fixes: 99cb0d917ffa ("arch: fix broken BuildID for arm64 and riscv")
-> > > Link: https://lore.kernel.org/all/Y7Jal56f6UBh1abE@dev-arch.thelio-3990X/
-> > > Link: https://lore.kernel.org/all/20230123194218.47ssfzhrpnv3xfez@oracle.com/
-> > > Signed-off-by: Tom Saeger <tom.saeger@oracle.com>
-> > > ---
-> > >  arch/sh/kernel/vmlinux.lds.S | 2 ++
-> > >  1 file changed, 2 insertions(+)
-> > > 
-> > > diff --git a/arch/sh/kernel/vmlinux.lds.S b/arch/sh/kernel/vmlinux.lds.S
-> > > index 3161b9ccd2a5..791c06b9a54a 100644
-> > > --- a/arch/sh/kernel/vmlinux.lds.S
-> > > +++ b/arch/sh/kernel/vmlinux.lds.S
-> > > @@ -4,6 +4,8 @@
-> > >   * Written by Niibe Yutaka and Paul Mundt
-> > >   */
-> > >  OUTPUT_ARCH(sh)
-> > > +#define RUNTIME_DISCARD_EXIT
-> > > +
-> > >  #include <asm/thread_info.h>
-> > >  #include <asm/cache.h>
-> > >  #include <asm/vmlinux.lds.h>
-> > > -- 
-> > > 2.39.1
-> > > 
-> > 
-> > As my bot said last time you sent this:
-> > 
-> > <formletter>
-> > 
-> > This is not the correct way to submit patches for inclusion in the
-> > stable kernel tree.  Please read:
-> >     https://www.kernel.org/doc/html/latest/process/stable-kernel-rules.html
-> > for how to do this properly.
-> > 
-> > </formletter>
-> > 
-> > Sorry, we can not take ANY of this until it hits Linus's tree.  You know
-> > this!
-> Yep - sorry for the confusion, is it better to send as RFC in cases like
-> this where folks on list have asked for the series to test?
-> 
-> > 
-> > Please wait until then and then send the needed backports.  I'm dropping
-> > all of these from you from my review queue.
-> > 
-> > greg k-h
-> 
-> This patch is now in Linus's tree. 
-> 
-> c1c551bebf92 ("sh: define RUNTIME_DISCARD_EXIT")
-> 
-> $ git describe --contains c1c551bebf92
-> v6.2-rc7~18^2~5
-> 
-> commit c1c551bebf928889e7a8fef7415b44f9a64975f4 upstream.
-> 
-> Do you prefer I resend series for 6.1, 5.19, 5.15, and 5.4?
-> 
-> My questions for 6.1 still remain,
-> 
->   https://lore.kernel.org/all/cover.1674876902.git.tom.saeger@oracle.com/
->   This 6.1 series is not strictly necessary, as the problem
->   does not present itself in the current 6.1 stable kernels.
-> 
->   However, 6.1 WOULD be broken with inclusion of either:
->   994b7ac1697b ("arm64: remove special treatment for the link order of head.o")
->   2348e6bf4421 ("riscv: remove special treatment for the link order of head.o")
->   Should we just include these as well?
-> 
-> My own preference is to included them, to track closer to upstream, and
-> hopefully avoid 'ld' subtlties going forward.
-> 
-> Thoughts?
+From: Arnd Bergmann <arnd@arndb.de>
 
-Stick to what is in Linus's tree as closely as possible whenever
-possible please.
+The arm and sh versions of this file are identical to the generic
+versions and can just be removed.
 
-thanks,
+The drivers that actually use the sh3 specific version also include
+cpu/gpio.h directly, with the exception of magicpanelr2, which is
+easily fixed. This leaves coldfire as the only gpio driver
+that needs something custom for gpiolib.
 
-greg k-h
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Acked-by: Bartosz Golaszewski <bartosz.golaszewski@linaro.org>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+---
+ arch/arm/Kconfig                    |  1 -
+ arch/arm/include/asm/gpio.h         | 21 --------------
+ arch/sh/Kconfig                     |  1 -
+ arch/sh/boards/board-magicpanelr2.c |  1 +
+ arch/sh/include/asm/gpio.h          | 45 -----------------------------
+ 5 files changed, 1 insertion(+), 68 deletions(-)
+ delete mode 100644 arch/arm/include/asm/gpio.h
+ delete mode 100644 arch/sh/include/asm/gpio.h
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index e24a9820e12f..1d1a603d964d 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -24,7 +24,6 @@ config ARM
+ 	select ARCH_HAS_SYNC_DMA_FOR_CPU
+ 	select ARCH_HAS_TEARDOWN_DMA_OPS if MMU
+ 	select ARCH_HAS_TICK_BROADCAST if GENERIC_CLOCKEVENTS_BROADCAST
+-	select ARCH_HAVE_CUSTOM_GPIO_H
+ 	select ARCH_HAVE_NMI_SAFE_CMPXCHG if CPU_V7 || CPU_V7M || CPU_V6K
+ 	select ARCH_HAS_GCOV_PROFILE_ALL
+ 	select ARCH_KEEP_MEMBLOCK
+diff --git a/arch/arm/include/asm/gpio.h b/arch/arm/include/asm/gpio.h
+deleted file mode 100644
+index 4ebbb58f06ea..000000000000
+--- a/arch/arm/include/asm/gpio.h
++++ /dev/null
+@@ -1,21 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0 */
+-#ifndef _ARCH_ARM_GPIO_H
+-#define _ARCH_ARM_GPIO_H
+-
+-#include <asm-generic/gpio.h>
+-
+-/* The trivial gpiolib dispatchers */
+-#define gpio_get_value  __gpio_get_value
+-#define gpio_set_value  __gpio_set_value
+-#define gpio_cansleep   __gpio_cansleep
+-
+-/*
+- * Provide a default gpio_to_irq() which should satisfy every case.
+- * However, some platforms want to do this differently, so allow them
+- * to override it.
+- */
+-#ifndef gpio_to_irq
+-#define gpio_to_irq	__gpio_to_irq
+-#endif
+-
+-#endif /* _ARCH_ARM_GPIO_H */
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 0665ac0add0b..ccb866750a88 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -4,7 +4,6 @@ config SUPERH
+ 	select ARCH_32BIT_OFF_T
+ 	select ARCH_ENABLE_MEMORY_HOTPLUG if SPARSEMEM && MMU
+ 	select ARCH_ENABLE_MEMORY_HOTREMOVE if SPARSEMEM && MMU
+-	select ARCH_HAVE_CUSTOM_GPIO_H
+ 	select ARCH_HAVE_NMI_SAFE_CMPXCHG if (GUSA_RB || CPU_SH4A)
+ 	select ARCH_HAS_BINFMT_FLAT if !MMU
+ 	select ARCH_HAS_CURRENT_STACK_POINTER
+diff --git a/arch/sh/boards/board-magicpanelr2.c b/arch/sh/boards/board-magicpanelr2.c
+index 56bd386ff3b0..75de893152af 100644
+--- a/arch/sh/boards/board-magicpanelr2.c
++++ b/arch/sh/boards/board-magicpanelr2.c
+@@ -21,6 +21,7 @@
+ #include <linux/sh_intc.h>
+ #include <mach/magicpanelr2.h>
+ #include <asm/heartbeat.h>
++#include <cpu/gpio.h>
+ #include <cpu/sh7720.h>
+ 
+ /* Dummy supplies, where voltage doesn't matter */
+diff --git a/arch/sh/include/asm/gpio.h b/arch/sh/include/asm/gpio.h
+deleted file mode 100644
+index 588c1380e4cb..000000000000
+--- a/arch/sh/include/asm/gpio.h
++++ /dev/null
+@@ -1,45 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0
+- *
+- *  include/asm-sh/gpio.h
+- *
+- * Generic GPIO API and pinmux table support for SuperH.
+- *
+- * Copyright (c) 2008 Magnus Damm
+- */
+-#ifndef __ASM_SH_GPIO_H
+-#define __ASM_SH_GPIO_H
+-
+-#include <linux/kernel.h>
+-#include <linux/errno.h>
+-
+-#if defined(CONFIG_CPU_SH3)
+-#include <cpu/gpio.h>
+-#endif
+-
+-#include <asm-generic/gpio.h>
+-
+-#ifdef CONFIG_GPIOLIB
+-
+-static inline int gpio_get_value(unsigned gpio)
+-{
+-	return __gpio_get_value(gpio);
+-}
+-
+-static inline void gpio_set_value(unsigned gpio, int value)
+-{
+-	__gpio_set_value(gpio, value);
+-}
+-
+-static inline int gpio_cansleep(unsigned gpio)
+-{
+-	return __gpio_cansleep(gpio);
+-}
+-
+-static inline int gpio_to_irq(unsigned gpio)
+-{
+-	return __gpio_to_irq(gpio);
+-}
+-
+-#endif /* CONFIG_GPIOLIB */
+-
+-#endif /* __ASM_SH_GPIO_H */
+-- 
+2.39.1
+
