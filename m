@@ -2,94 +2,86 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 98319C636CC
-	for <linux-sh@archiver.kernel.org>; Wed,  8 Feb 2023 01:32:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35D56C05027
+	for <linux-sh@archiver.kernel.org>; Wed,  8 Feb 2023 09:00:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230165AbjBHBcK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 7 Feb 2023 20:32:10 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47386 "EHLO
+        id S229527AbjBHJAs (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 8 Feb 2023 04:00:48 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48148 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229457AbjBHBcH (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Feb 2023 20:32:07 -0500
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 697E618B2C;
-        Tue,  7 Feb 2023 17:32:06 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:
-        Message-ID:Sender:Reply-To:Content-ID:Content-Description;
-        bh=jo71tlA2eEZPdxKjgTvLhMtzKyjxK2QlLMd+t0w/e3Q=; b=ay2mX2FLZ3Pvx6L5UJcyeffPih
-        Z2FzC7RnqKsgae3U/fJ+2MREDfNnYcX+7/DIUMs8G3h8JY9UkvYd4HWnOOk7Is6BNTJaTYAZxe1vf
-        l8LfWY1qS4pm/xpZ6w6Q4zuQ/rSlOUnCWslbQWOSRIy7DLC8xbsQgRlz+/9U8gmSYKYFTGHng3Won
-        9zYe4KLDgG2h5xOK/JslAPD/TMcDxUIDr8Uh+bYJm6gP5/ICWPz84oG5SIr1LjuTibzDMj3s3eZNT
-        vAuQJO05IAMM1Vxg5h6AY1cFu3fy6HRqxOeCQZZ0SMxWcVxafZAqAdGTnLRRAF2dInznQN6ckvsDV
-        zMkQoO9Q==;
-Received: from [2601:1c2:980:9ec0::df2f]
-        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pPZJD-00Dmp1-1J; Wed, 08 Feb 2023 01:31:39 +0000
-Message-ID: <0e26bf17-864e-eb22-0d07-5b91af4fde92@infradead.org>
-Date:   Tue, 7 Feb 2023 17:31:37 -0800
+        with ESMTP id S229509AbjBHJAq (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 8 Feb 2023 04:00:46 -0500
+Received: from mail-qt1-f174.google.com (mail-qt1-f174.google.com [209.85.160.174])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3ADB0458A7;
+        Wed,  8 Feb 2023 01:00:41 -0800 (PST)
+Received: by mail-qt1-f174.google.com with SMTP id g7so19947588qto.11;
+        Wed, 08 Feb 2023 01:00:41 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=Ulipj+ekr9BdqMabMZbjdhUjgKznvujfTjbF2mwVL4I=;
+        b=ya/koxURVBVd3ekJIne1e2jCzVcm1ri/7uFC3QA4DfUtJ2EHBh2kWpJvwsqRURMzhi
+         tCFFmplmiGhP/F3zlXKau663TwKiXKlpIq+/1PhKMnt9k0LR+guuoy6aBslvWDPUsarM
+         j9Sd+4yy5upsBf6vZtRYxEKGds5t2c5Ldt72/3XxbXLsKxG/8/Nz5iiNMxlKV+blpIho
+         XFFNbiLgdprGrZ4I+KrYUaHgrU/oOhjqJBJvW21DBx4qPdh4hS/vfBtUO1gObV2wnkgs
+         jX5u6F9GPCh+vatO1Mz+aGQFy+FUUBhSIfoqYck9ldu7Kf4HtCjId3ixhbukc8bNq5+E
+         m25w==
+X-Gm-Message-State: AO0yUKU1aeAbGoUUkXyAkFjtSe89wZ4blo6knJIfokUJHvrdXgNwy25D
+        ceFydzqSYqeEwK1Eiuo6IcQeGievebd5mw==
+X-Google-Smtp-Source: AK7set9R3CdNsqj7Eh9w7Fz8rs0WU+fi/gST1ZIYYEhQ+gxf8wLtttOjJAQkQ9Hle7TrWAVVW7FSQw==
+X-Received: by 2002:ac8:5955:0:b0:3b3:7d5:a752 with SMTP id 21-20020ac85955000000b003b307d5a752mr11741273qtz.50.1675846840080;
+        Wed, 08 Feb 2023 01:00:40 -0800 (PST)
+Received: from mail-yb1-f169.google.com (mail-yb1-f169.google.com. [209.85.219.169])
+        by smtp.gmail.com with ESMTPSA id s20-20020a05622a019400b003b860983973sm11011807qtw.60.2023.02.08.01.00.39
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 08 Feb 2023 01:00:39 -0800 (PST)
+Received: by mail-yb1-f169.google.com with SMTP id t1so12078272ybd.4;
+        Wed, 08 Feb 2023 01:00:39 -0800 (PST)
+X-Received: by 2002:a25:eb04:0:b0:7b4:6a33:d89f with SMTP id
+ d4-20020a25eb04000000b007b46a33d89fmr504451ybs.543.1675846838981; Wed, 08 Feb
+ 2023 01:00:38 -0800 (PST)
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.7.1
-Subject: Re: remove arch/sh
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Christoph Hellwig <hch@lst.de>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Laurent Pinchart <laurent.pinchart@ideasonboard.com>,
-        Kieran Bingham <kieran.bingham+renesas@ideasonboard.com>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        linux-kernel@vger.kernel.org, linux-watchdog@vger.kernel.org,
-        devicetree@vger.kernel.org, linux-arch@vger.kernel.org,
-        dmaengine@vger.kernel.org, dri-devel@lists.freedesktop.org,
-        linux-renesas-soc@vger.kernel.org, linux-i2c@vger.kernel.org,
-        linux-input@vger.kernel.org, linux-media@vger.kernel.org,
-        linux-mmc@vger.kernel.org, linux-mtd@lists.infradead.org,
-        netdev@vger.kernel.org, linux-gpio@vger.kernel.org,
-        linux-rtc@vger.kernel.org, linux-spi@vger.kernel.org,
-        linux-serial@vger.kernel.org, linux-usb@vger.kernel.org,
-        linux-fbdev@vger.kernel.org, alsa-devel@alsa-project.org,
-        linux-sh@vger.kernel.org
-References: <20230113062339.1909087-1-hch@lst.de>
- <11e2e0a8-eabe-2d8c-d612-9cdd4bcc3648@physik.fu-berlin.de>
- <20230116071306.GA15848@lst.de>
- <40dc1bc1-d9cd-d9be-188e-5167ebae235c@physik.fu-berlin.de>
- <20230203071423.GA24833@lst.de>
- <60ed320c8f5286e8dbbf71be29b760339fd25069.camel@physik.fu-berlin.de>
-Content-Language: en-US
-From:   Randy Dunlap <rdunlap@infradead.org>
-In-Reply-To: <60ed320c8f5286e8dbbf71be29b760339fd25069.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+References: <20230207165715.14617-1-glaubitz@physik.fu-berlin.de>
+In-Reply-To: <20230207165715.14617-1-glaubitz@physik.fu-berlin.de>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Wed, 8 Feb 2023 10:00:26 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdWSuwu7LTpmUcOyTrZf0tOb4MfCAfHh7n7EL2JO2rtL9w@mail.gmail.com>
+Message-ID: <CAMuHMdWSuwu7LTpmUcOyTrZf0tOb4MfCAfHh7n7EL2JO2rtL9w@mail.gmail.com>
+Subject: Re: [PATCH] MAINTAINERS: Add myself as maintainer for arch/sh (SUPERH)
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     linux-sh@vger.kernel.org, Stephen Rothwell <sfr@canb.auug.org.au>,
+        Christoph Hellwig <hch@lst.de>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+Hi Adrian,
 
+On Tue, Feb 7, 2023 at 5:57 PM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> Both Rich Felker and Yoshinori Sato haven't done any work on arch/sh
+> for a while. As I have been maintaining Debian's sh4 port since 2014,
+> I am interested to keep the architecture alive.
+>
+> Signed-off-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
-On 2/7/23 01:06, John Paul Adrian Glaubitz wrote:
-> Hello Christoph!
-> 
-> On Fri, 2023-02-03 at 08:14 +0100, Christoph Hellwig wrote:
->> On Mon, Jan 16, 2023 at 09:52:10AM +0100, John Paul Adrian Glaubitz wrote:
->>> We have had a discussion between multiple people invested in the SuperH port and
->>> I have decided to volunteer as a co-maintainer of the port to support Rich Felker
->>> when he isn't available.
->>
->> So, this still isn't reflected in MAINTAINERS in linux-next.  When
->> do you plan to take over?  What platforms will remain supported and
->> what can we start dropping due to being unused and unmaintained?
-> 
-> I'm getting everything ready now with Geert's help and I have a probably dumb
-> question regarding the MAINTAINERS file change: Shall I just add myself as an
-> additional maintainer first or shall I also drop Yoshinori Sato?
-> 
-> Also, is it desirable to add a "T:" entry for the kernel tree?
+Thanks for stepping up!
 
-Yes, definitely.
+Acked-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-thanks.
--- 
-~Randy
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
