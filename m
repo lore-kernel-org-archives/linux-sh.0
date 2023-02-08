@@ -2,122 +2,124 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AC8A4C636D7
-	for <linux-sh@archiver.kernel.org>; Wed,  8 Feb 2023 14:55:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6EAACC6379F
+	for <linux-sh@archiver.kernel.org>; Wed,  8 Feb 2023 16:40:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231636AbjBHOzk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 8 Feb 2023 09:55:40 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33530 "EHLO
+        id S231617AbjBHQkI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 8 Feb 2023 11:40:08 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47770 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231637AbjBHOzh (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 8 Feb 2023 09:55:37 -0500
-Received: from mail-yb1-xb2c.google.com (mail-yb1-xb2c.google.com [IPv6:2607:f8b0:4864:20::b2c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C8F7E4B776
-        for <linux-sh@vger.kernel.org>; Wed,  8 Feb 2023 06:55:31 -0800 (PST)
-Received: by mail-yb1-xb2c.google.com with SMTP id 184so702781ybw.5
-        for <linux-sh@vger.kernel.org>; Wed, 08 Feb 2023 06:55:31 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linaro.org; s=google;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=C9FYaHZff0n04HIlu0pgHp/yoYQMAR6EN4kK+A76acU=;
-        b=IIUuXKjbtNG+brYJkm3mEz/Fq2Pb+VqZxm9M/D7mrcI0D62GgsPuJzrGVbt3bjOgAe
-         FKHgjDRBffBmgUhp+Zqa3GhW+SJYVkyXIOx4UZjGR/NTZwRH+8Ec9dhaymaPJYoDF/ul
-         uhZIWfEjC/tNp17EsrH4ckdmUbeyIs5G5o9m7zp+yGzEj3sRZGfW5ns8qaXo3UmiN25P
-         jXTHx/9TXUF8ZpeVstcTHKPqER+clJey1/KPBN1LViaw99zwQggNemG7kwAykjT9Ya89
-         TEAScCGhuWQAgdfnh+kSg3K5nsReT9OKxs5o5HSi74s3waAxRJs36+1uPauU5VDw9KHc
-         l0FQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=C9FYaHZff0n04HIlu0pgHp/yoYQMAR6EN4kK+A76acU=;
-        b=gl6+KmNTZmgG+yAGT257b2nrZW9nq83Y0dmUaD8C3R4pXDk1843QlNF29BZQReK6Pe
-         SuBmrUdShCARk5JY8kDU23pL/nUxyDrBVnNncka5vzjDRK6WLsQi7q26tSepAXhiOXEx
-         ievw9/MefEQJEmAsdDIRckmu3feQhEWRjMsPalOa196N9+kTF0M9OeJGiQQpuMsdkFdn
-         4/9PlJmo0yiEXW8Tchk81B/zG8/FXI+wuuzGpAXflYKh7jMlUdzpihPVRUj4MFMLyCgc
-         wXzCh+YO/njLZJTq4vFAyfCm8BBw0BDnuwI6ZNZbafjqEZAYY1V+y7XjG5xOSEuJMz6b
-         Jzfg==
-X-Gm-Message-State: AO0yUKW6zTIB2y0fMhoBiy7qVSV2zJsaaQENAlEP1NLw/umXHYApqB8P
-        P9zVm12ce45dh0yNn1hWwtK9N7vmfkw1G7dN7AOAUQ==
-X-Google-Smtp-Source: AK7set9QWN7XZu0/Jygke0mZWpl6dDT6sBRDV263lswVqW9oVhi8Kruq1x//EDsHd+Bda51X+66lj6ea/+9i3ige8Q4=
-X-Received: by 2002:a5b:6c5:0:b0:88f:946:bd98 with SMTP id r5-20020a5b06c5000000b0088f0946bd98mr1003903ybq.24.1675868130850;
- Wed, 08 Feb 2023 06:55:30 -0800 (PST)
+        with ESMTP id S231519AbjBHQkG (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 8 Feb 2023 11:40:06 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 563514DE2C;
+        Wed,  8 Feb 2023 08:39:55 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id D682261718;
+        Wed,  8 Feb 2023 16:39:54 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1C217C433EF;
+        Wed,  8 Feb 2023 16:39:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1675874394;
+        bh=k2WDmJefTVbmF4UtYjVTRVt38vEfq5VHOD9s78R7eyg=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=Rm1BIDwVjM+vtyitHjo1e7C/8O3osDSw3ddUWkl4Wx2bC5t9PAYPPNOMyPOnhDGBE
+         x0/ntl8Z+mYIwUFJ4SJYgRaphWg6Yt4w739Gu/lXfntdZ6JeZX0Y+rfAbGvNs2ZHt8
+         st0eJcGbt8o4IXvW5Pd80HgnuHqj+dz7ZtRrgPBzs0UpJBQvPfkACmHMCJmVksp2u1
+         7j+OBIBzFLzMDdGcGKQCjlEbr0xBVw1CpjWop+Te/iJBfsS4i7ncKglT5iTBbI8VBo
+         HOM9qBR39AlYqQf2ZmUflFWYvSQAKch5roLODmzzrvB8D8QMKelVKI/xJc21XFfhdD
+         dus+tchf6H0SA==
+Date:   Wed, 8 Feb 2023 16:39:44 +0000
+From:   Mark Brown <broonie@kernel.org>
+To:     David Hildenbrand <david@redhat.com>
+Cc:     linux-kernel@vger.kernel.org,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Hugh Dickins <hughd@google.com>,
+        John Hubbard <jhubbard@nvidia.com>,
+        Jason Gunthorpe <jgg@nvidia.com>,
+        Mike Rapoport <rppt@linux.ibm.com>,
+        Yang Shi <shy828301@gmail.com>,
+        Vlastimil Babka <vbabka@suse.cz>,
+        Nadav Amit <namit@vmware.com>,
+        Andrea Arcangeli <aarcange@redhat.com>,
+        Peter Xu <peterx@redhat.com>, linux-mm@kvack.org,
+        x86@kernel.org, linux-alpha@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
+        Russell King <linux@armlinux.org.uk>
+Subject: Re: [PATCH mm-unstable v1 04/26] arm/mm: support
+ __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+Message-ID: <Y+PQUMwH4AZSVpjb@sirena.org.uk>
+References: <20230113171026.582290-1-david@redhat.com>
+ <20230113171026.582290-5-david@redhat.com>
+ <Y+GcDFMNHw2cdDN1@sirena.org.uk>
+ <39fd91e3-c93b-23c6-afc6-cbe473bb0ca9@redhat.com>
 MIME-Version: 1.0
-References: <20230207142952.51844-1-andriy.shevchenko@linux.intel.com>
- <20230207142952.51844-7-andriy.shevchenko@linux.intel.com>
- <CACRpkdaPgjDijPjCdinWy5_Rd8g3idv-8K=YPTv5iTfJKFuJfw@mail.gmail.com>
- <Y+LWyc4rqCVq5hEi@smile.fi.intel.com> <Y+O2/dVDcvnXByc+@smile.fi.intel.com>
-In-Reply-To: <Y+O2/dVDcvnXByc+@smile.fi.intel.com>
-From:   Linus Walleij <linus.walleij@linaro.org>
-Date:   Wed, 8 Feb 2023 15:55:19 +0100
-Message-ID: <CACRpkdacHyxPKg=Dw4xdpOPZUMMNsFAuVRuSo1093E_j4a+W-Q@mail.gmail.com>
-Subject: Re: [PATCH v3 06/12] gpiolib: split linux/gpio/driver.h out of linux/gpio.h
-To:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Cc:     Arnd Bergmann <arnd@arndb.de>,
-        Bartosz Golaszewski <bartosz.golaszewski@linaro.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Dmitry Torokhov <dmitry.torokhov@gmail.com>,
-        Stefan Schmidt <stefan@datenfreihafen.org>,
-        Miquel Raynal <miquel.raynal@bootlin.com>,
-        linux-gpio@vger.kernel.org, linux-doc@vger.kernel.org,
-        linux-kernel@vger.kernel.org,
-        linux-doc-tw-discuss@lists.sourceforge.net,
-        linux-arm-kernel@lists.infradead.org, linux-omap@vger.kernel.org,
-        linux-samsung-soc@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
-        linux-acpi@vger.kernel.org, linux-input@vger.kernel.org,
-        linux-media@vger.kernel.org, linux-wpan@vger.kernel.org,
-        netdev@vger.kernel.org, linux-wireless@vger.kernel.org,
-        brcm80211-dev-list.pdl@broadcom.com,
-        SHA-cyfmac-dev-list@infineon.com, linux-arch@vger.kernel.org,
-        devicetree@vger.kernel.org, Bartosz Golaszewski <brgl@bgdev.pl>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: multipart/signed; micalg=pgp-sha512;
+        protocol="application/pgp-signature"; boundary="W0tQR/5xWRekS1hu"
+Content-Disposition: inline
+In-Reply-To: <39fd91e3-c93b-23c6-afc6-cbe473bb0ca9@redhat.com>
+X-Cookie: Walk softly and carry a megawatt laser.
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Feb 8, 2023 at 3:51 PM Andy Shevchenko
-<andriy.shevchenko@linux.intel.com> wrote:
-> On Wed, Feb 08, 2023 at 12:55:06AM +0200, Andy Shevchenko wrote:
-> > On Tue, Feb 07, 2023 at 03:55:23PM +0100, Linus Walleij wrote:
-> > > On Tue, Feb 7, 2023 at 3:29 PM Andy Shevchenko
-> > > <andriy.shevchenko@linux.intel.com> wrote:
-> > >
-> > > > From: Arnd Bergmann <arnd@arndb.de>
-> > > >
-> > > > Almost all gpio drivers include linux/gpio/driver.h, and other
-> > > > files should not rely on includes from this header.
-> > > >
-> > > > Remove the indirect include from here and include the correct
-> > > > headers directly from where they are used.
-> >
-> > ...
-> >
-> > > Make sure you push this to the kernel.org build servers (zeroday builds),
-> >
-> > Of course, that is the purpose of publishing this before the release (so we
-> > will have some TODO list that eventually this can be applied for v6.4-rc1).
-> >
-> > > I think this patch needs to hit some more files, in my tests with a similar
-> > > patch at least these:
-> >
-> > Right. I forgot to also incorporate your stuff into this series.
-> > Do you have anything that I can take as is?
->
-> I'm going to incorporate the following:
->
->         gpio: Make the legacy <linux/gpio.h> consumer-only
->         ARM: s3c24xx: Use the right include
->         ARM: orion/gpio: Use the right include
->         hte: tegra-194: Use proper includes
->         pcmcia: pxa2xx_viper: Include dependency
 
-Excellent, thanks. I don't care about being credited, just want things
-to go smooth so you run into less snags.
+--W0tQR/5xWRekS1hu
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Yours,
-Linus Walleij
+On Wed, Feb 08, 2023 at 03:12:06PM +0100, David Hildenbrand wrote:
+> On 07.02.23 01:32, Mark Brown wrote:
+
+> > Today's -next (and at least back to Friday, older logs are unclear - I
+> > only noticed -next issues today) fails to NFS boot on an AT91SAM9G20-EK
+> > (an old ARMv5 platform) with multi_v5_defconfig, a bisect appears to
+> > point to this patch (20aae9eff5acd8f5 in today's -next) as the culprit.
+
+> It's been in -next for quite a while, thanks for the report!
+
+Yeah, there's been some other things obscuring the issue.
+
+> Could you give the following a test?
+>=20
+>=20
+> From 8c4bdbd9862f85782d5919d044c172b584063e83 Mon Sep 17 00:00:00 2001
+> From: David Hildenbrand <david@redhat.com>
+> Date: Wed, 8 Feb 2023 15:08:01 +0100
+> Subject: [PATCH] arm/mm: Fix swp type masking in __swp_entry()
+>=20
+> We're masking with the number of type bits instead of the type mask, which
+> is obviously wrong.
+
+Tested-by: Mark Brown <broonie@kernel.org>
+
+but note that I had to manually apply it, though it's pretty trivial so
+I probably applied the right thing.
+
+--W0tQR/5xWRekS1hu
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQEzBAABCgAdFiEEreZoqmdXGLWf4p/qJNaLcl1Uh9AFAmPj0FAACgkQJNaLcl1U
+h9C7hQf/VKRwP16M1jInUqUdUtyzPdvalnHTpasxKVZ8Sy0U3jwXMqNUqmnpEOSO
+UB3Q8audVEzRc8pj92dk3jilZBDPHyP58UUKRsjkrZVz22Q2/R16FcjaLrdlwNlj
+GWMfEWv5OKYPHaxP4W/VX0sXzS0XMTuulvAF1BOQRlOAS3L3jYsYUtzI2pkzJm1G
+64ICND0ZQRerzQmdQd6oO2tVhymhv8Y1LPY4TT0HikINGVpwwCJoOiocmstgqqGW
+uE+M+XJ9Lp/p78SIjfccjF1rdCWlc5MJJLS/qZzYnm6OnkKMOlBAUX9bwqvyrvE9
+quDK6fshhrFo/uJ5YVAQnAEuDKLv9g==
+=rC9E
+-----END PGP SIGNATURE-----
+
+--W0tQR/5xWRekS1hu--
