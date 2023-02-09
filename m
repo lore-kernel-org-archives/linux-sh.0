@@ -2,62 +2,62 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E552C64EC6
-	for <linux-sh@archiver.kernel.org>; Thu,  9 Feb 2023 10:45:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 77547C05027
+	for <linux-sh@archiver.kernel.org>; Thu,  9 Feb 2023 10:47:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229965AbjBIKp1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 9 Feb 2023 05:45:27 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36788 "EHLO
+        id S229786AbjBIKrU (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 9 Feb 2023 05:47:20 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35468 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229801AbjBIKpH (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Feb 2023 05:45:07 -0500
-Received: from mail-yb1-xb2a.google.com (mail-yb1-xb2a.google.com [IPv6:2607:f8b0:4864:20::b2a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AAA256953B
-        for <linux-sh@vger.kernel.org>; Thu,  9 Feb 2023 02:44:39 -0800 (PST)
-Received: by mail-yb1-xb2a.google.com with SMTP id 184so1809849ybw.5
-        for <linux-sh@vger.kernel.org>; Thu, 09 Feb 2023 02:44:39 -0800 (PST)
+        with ESMTP id S229457AbjBIKq2 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Feb 2023 05:46:28 -0500
+Received: from mail-yb1-xb2f.google.com (mail-yb1-xb2f.google.com [IPv6:2607:f8b0:4864:20::b2f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3AAD76951F
+        for <linux-sh@vger.kernel.org>; Thu,  9 Feb 2023 02:45:31 -0800 (PST)
+Received: by mail-yb1-xb2f.google.com with SMTP id l201so828025ybf.10
+        for <linux-sh@vger.kernel.org>; Thu, 09 Feb 2023 02:45:31 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=linaro.org; s=google;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=4qUYzBh+htvaSXOzFbNonzhWIZMquhylnwgwaeahDZw=;
-        b=uuZ/oXOru1y5UKbjewNxej2lUBZUjA/1ggGu58hEptHz0z4GXGOaT7FaMOglr+2wPj
-         4/MsVJ6KLCikf3ZFZNyK0Gy12bs9MQqkPAtfTr75QUjILYQQ/DRnb2+a60m8owu7ZRy6
-         STtBilq89ZUzNjAwwp8kE2q+7q6e6f5g/d+9CTEAorBMILiidfS6YQHMkfUk7LQYdTv/
-         NI++1y0LwBY9js8Sr97WQfezP1Ee3hKFW9ffbD2Ed7rpzUZN3ALWW0F5B6y9hYsVO7uT
-         0dDXJ4o+1R2iwk4/GIy5Xk4EtkzULEIoKVf/W3QINP0rEKMAOq0w8D/WStNV1a1neNO3
-         Xjtw==
+        bh=6ECisu58Ou5Xr+AMVxHOSKNEG1TgY5Zq0H9DdDE7KjY=;
+        b=PVhgmNxsQQPyBAEDdyt8QfmWO6MNCgn8yXiI9Mk1P0Ph6Z19uULy1nXT56GCFjrWPx
+         kjKAE5+lQs+meWWdvnVXJViYasQ2BIpN581gJLur43fb8v+TauC8ZGc8lXkHOKYKGPcA
+         FP9AoOGP4SFr4QMxn1WBQianBQR4oWtc3600hrLz3lvn4coxlQ/kaFuOWt2ycqbFfbXj
+         SxVqq2jNdWE80O8KHlaeEokxbPI9aumzyK9cn0FOyw0rWNFqZc4gomcB9McjjYB1Bcm8
+         Us5DeeJ+v5hZbjP8yos1A+fhfcFeiZ/hBxsKgjJrx5lCY9fTmG5/RwJWvoKjyWMph0k2
+         WXDA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=4qUYzBh+htvaSXOzFbNonzhWIZMquhylnwgwaeahDZw=;
-        b=sdH+8G2keiYePaB5dlEkRONa0aZLdPQroxlYttUJnwd/94Cp2n9b+sSLQhjV+vY980
-         oIwdmN+d/5GbTSmLIBvf80vBn0TrX9M6u//QDUEbFb+eYXQEH3dVnwwHVOmb/b7Qf9SM
-         DflVgPUbwZLQqZyNu+5kJth6R7it9dfQZmqDHM3aXurNTET8QI00LJ0EU1T5bS2+1wNe
-         9b1l9qv3I5bhcYpUT/PuE29e9QRinyn759U7lkua/rEaqM3lRQXIOp9evLTnH6wewVOE
-         GZFnbxBdmARKL977XkJ4iV+kgXsplt/BPawVDIYz2W1Yg+p7WSDZj4mcg2iIiit0qMIc
-         vl0g==
-X-Gm-Message-State: AO0yUKW83RgcqKTuNF1KwdoH5irYYFmtG/05Y+BJvDVXLBINDy/ZYVEs
-        lRdkdhdf/AhRByxrV+mvLziryh1amJEz73/IPPoKYQ==
-X-Google-Smtp-Source: AK7set9d9VE2L5hryiHb25bGtGaGLrBq8cYlmsHU1RCuAZ6kpI7lLERRU7ZJG+pSow3smAjpy+w5g/+hxXK6eBZGKHY=
-X-Received: by 2002:a25:d987:0:b0:893:76b2:9200 with SMTP id
- q129-20020a25d987000000b0089376b29200mr1091099ybg.584.1675939478849; Thu, 09
- Feb 2023 02:44:38 -0800 (PST)
+        bh=6ECisu58Ou5Xr+AMVxHOSKNEG1TgY5Zq0H9DdDE7KjY=;
+        b=Tn9Cp59LMcBvMg9HCzaSKXb3UfiqFa42+rry4m2IJrGdl7/7R+id8k21kzWz3HrhzB
+         oKVE6rSWyyHBHKjCITujYfcAI3e4JC315c+eFBXGduBEBnE8CwfS0tM7fpFvWYsS3oTq
+         5jcKu8uL8bwgAgXN/B/u2GAKgb0FQrdZZD2EWvHZG8AMoAH1voRmFyIgZPBUqMwYBPgT
+         yVZVT+RzYGn/Vxcc2kku71YQ2n8YEp5vz0z1p2m9CEFIMqzMRorJwrF3SXHj/D93rzwA
+         5TfE6GM4x4vmjrAxBZ9EXWIlOD9xTiGadjOLCk1dAIA/1CWJpwiGIp1zLKlJeI882HQC
+         uJwA==
+X-Gm-Message-State: AO0yUKXyoI+FI7okAalFOYj2CvSOn2wsRjhIEu7uvChT+9fNsU+a6lig
+        2RAQ2lbZ6QzzcbFUFNbPYcgpYjxEVmdkImjgSqbaxA==
+X-Google-Smtp-Source: AK7set+c8vMXQoWt9zrvvB2u9a8HdXjW8xESL/qxrGLNm0jpSb7R5TJb/uyrRXXnVWpXHWRj2G52DUyGkXuHv+E8/cU=
+X-Received: by 2002:a5b:6c5:0:b0:88f:946:bd98 with SMTP id r5-20020a5b06c5000000b0088f0946bd98mr1339211ybq.24.1675939530421;
+ Thu, 09 Feb 2023 02:45:30 -0800 (PST)
 MIME-Version: 1.0
-References: <20230208173343.37582-1-andriy.shevchenko@linux.intel.com> <20230208173343.37582-19-andriy.shevchenko@linux.intel.com>
-In-Reply-To: <20230208173343.37582-19-andriy.shevchenko@linux.intel.com>
+References: <20230208173343.37582-1-andriy.shevchenko@linux.intel.com>
+ <20230208173343.37582-3-andriy.shevchenko@linux.intel.com> <30234963-33e5-e2d7-a6ef-112e89efbdd0@linaro.org>
+In-Reply-To: <30234963-33e5-e2d7-a6ef-112e89efbdd0@linaro.org>
 From:   Linus Walleij <linus.walleij@linaro.org>
-Date:   Thu, 9 Feb 2023 11:44:27 +0100
-Message-ID: <CACRpkdbO85vArYXF1iY8Z1wXXFTs5rOffyzy2zWK=PgM+mGM_g@mail.gmail.com>
-Subject: Re: [PATCH v4 18/18] gpiolib: Clean up headers
-To:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Cc:     Arnd Bergmann <arnd@arndb.de>,
+Date:   Thu, 9 Feb 2023 11:45:18 +0100
+Message-ID: <CACRpkdYRTq35gJq3YODGh9S_JnH1jxSOT8mNnetyRQY9Z5LhWQ@mail.gmail.com>
+Subject: Re: [PATCH v4 02/18] ARM: s3c24xx: Use the right include
+To:     Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Cc:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Arnd Bergmann <arnd@arndb.de>,
         Bartosz Golaszewski <bartosz.golaszewski@linaro.org>,
         Tony Lindgren <tony@atomide.com>,
         Thomas Gleixner <tglx@linutronix.de>,
-        Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
         Michael Ellerman <mpe@ellerman.id.au>,
         Christophe Leroy <christophe.leroy@csgroup.eu>,
@@ -117,19 +117,25 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Feb 8, 2023 at 6:34 PM Andy Shevchenko
-<andriy.shevchenko@linux.intel.com> wrote:
+On Wed, Feb 8, 2023 at 6:39 PM Krzysztof Kozlowski
+<krzysztof.kozlowski@linaro.org> wrote:
 
-> There is a few things done:
-> - include only the headers we are direct user of
-> - when pointer is in use, provide a forward declaration
-> - add missing headers
-> - group generic headers and subsystem headers
-> - sort each group alphabetically
+> On 08/02/2023 18:33, Andy Shevchenko wrote:
+> > From: Linus Walleij <linus.walleij@linaro.org>
+> >
+> > The file s3c64xx.c is including <linux/gpio.h> despite using no
+> > symbols from the file, however it needs it to implicitly bring in
+> > of_have_populated_dt() so include <linux/of.h> explicitly instead.
+> >
+> > Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+> > Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+> > ---
+> >  arch/arm/mach-s3c/s3c64xx.c | 2 +-
 >
-> Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+> It's not s3c24xx anymore, so subject prefix:
+> ARM: s3c64xx:
 
-Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+My mistake, mea culpa.
 
 Yours,
 Linus Walleij
