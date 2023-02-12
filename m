@@ -2,81 +2,145 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DE80FC636D4
-	for <linux-sh@archiver.kernel.org>; Sun, 12 Feb 2023 12:48:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 073B5C6379F
+	for <linux-sh@archiver.kernel.org>; Sun, 12 Feb 2023 16:13:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229489AbjBLMsR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 12 Feb 2023 07:48:17 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47826 "EHLO
+        id S229518AbjBLQNZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 12 Feb 2023 11:13:25 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34994 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229485AbjBLMsQ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 12 Feb 2023 07:48:16 -0500
-X-Greylist: delayed 964 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Sun, 12 Feb 2023 04:48:14 PST
-Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.238])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 29BE9FF08
-        for <linux-sh@vger.kernel.org>; Sun, 12 Feb 2023 04:48:13 -0800 (PST)
-X-Country-Code: JP
-Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-        by hsmtpd-out-1.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
-        id d44315c7-2943-41ba-8e1a-5896c9ebcab3;
-        Sun, 12 Feb 2023 21:32:08 +0900 (JST)
-Received: from SIOS1075.ysato.ml (ZM005235.ppp.dion.ne.jp [222.8.5.235])
-        by sakura.ysato.name (Postfix) with ESMTPSA id AB5751C0122;
-        Sun, 12 Feb 2023 21:32:05 +0900 (JST)
-Date:   Sun, 12 Feb 2023 21:32:04 +0900
-Message-ID: <87v8k7rrnf.wl-ysato@users.sourceforge.jp>
-From:   Yoshinori Sato <ysato@users.sourceforge.jp>
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     linux-sh@vger.kernel.org,
+        with ESMTP id S229477AbjBLQNX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 12 Feb 2023 11:13:23 -0500
+Received: from mail-oa1-x2c.google.com (mail-oa1-x2c.google.com [IPv6:2001:4860:4864:20::2c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C060111E81;
+        Sun, 12 Feb 2023 08:13:22 -0800 (PST)
+Received: by mail-oa1-x2c.google.com with SMTP id 586e51a60fabf-16ab8581837so12596940fac.4;
+        Sun, 12 Feb 2023 08:13:22 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:sender:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=m9JNrWha4YKLX9rD9uaO4Le+Z0yMwIJejyvjLhFB0mM=;
+        b=RPfdfqoXr1Cw8prltm7TREoupX5eaNpNd+CDIlDXf9L709PnPoKQLyqZ+zboWylzWR
+         vxu85Zr3W8llfd+943ctWIFMuj/eUOowqYJKaVeMEAuOZh7DSd87i28bvDxNAQ6PoOwC
+         wXW2mjy0Nv7rWdLT7K6lR96N0WQft3GWf2KAFrqyzdPjhTZH7LFIYRkc0u2koR60TrCD
+         1hpxf+WoKXg0JbOE+h0e0CkhGndeecaH5fbwJ/zhVif01anzu3CRcpBwMXBGR6L77UGt
+         T0ZqZhaH9160JyrIQvfc6bBDGV0wnlmjvzDTuOmCpyHfThC29vCqk4lTBNsczBdn8qUd
+         qBXA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:sender:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=m9JNrWha4YKLX9rD9uaO4Le+Z0yMwIJejyvjLhFB0mM=;
+        b=pgVrLQ0TtL6Y1aeMbU/cj5pgmiN3b9wgXaXsWtBGoWPC8Hv00vm4ikwrFK5VvWH5Mc
+         CYKn2xP0M4IrvO/4nKMUSmmyn+4CkpzZ1ahPkKQAgieSKT3hgkbrg0EBj9+T+bmi/FSg
+         h+p4Ko1zU+a/kw3GtiF/mId8mgFipikeRTREJ3cpXkiysNAbswcr1EB5zE9ZrUHWHylt
+         p8jYzr/a0yiChnltVFK+uDZ50zzqrujMqGkWuCCTADsgcqLhLCiZLCMkHRlusTy/MXf1
+         xqlrVqKqEdPM7xtWK+SsppGCNZ8JXvd/9gwNqxxNvWmCs9R7qb3rzpu1EP8PTtTKm4p9
+         DdYw==
+X-Gm-Message-State: AO0yUKXYSK0FMa6uiD5G2zZ+pWI1Cfs+D7vrmet9sEQ6CFUXT5oZR2JQ
+        Z37vCKKmWW8wijDTf1nd5GA=
+X-Google-Smtp-Source: AK7set9kfP8sfCh4EsN95J/ZdmLAzZQPNePNkWSy8sPECM/cP6PHARZOJXcrMxdY1LlBw1JK0pRDxg==
+X-Received: by 2002:a05:6870:b48d:b0:16d:ec6a:71ec with SMTP id y13-20020a056870b48d00b0016dec6a71ecmr2441541oap.27.1676218402068;
+        Sun, 12 Feb 2023 08:13:22 -0800 (PST)
+Received: from server.roeck-us.net ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
+        by smtp.gmail.com with ESMTPSA id n2-20020a056870844200b0010c727a3c79sm3225235oak.26.2023.02.12.08.13.20
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 12 Feb 2023 08:13:21 -0800 (PST)
+Sender: Guenter Roeck <groeck7@gmail.com>
+Date:   Sun, 12 Feb 2023 08:13:20 -0800
+From:   Guenter Roeck <linux@roeck-us.net>
+To:     Mike Rapoport <rppt@kernel.org>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Arnd Bergmann <arnd@arndb.de>, Brian Cain <bcain@quicinc.com>,
+        "David S. Miller" <davem@davemloft.net>,
+        Dinh Nguyen <dinguyen@kernel.org>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
-        Stephen Rothwell <sfr@canb.auug.org.au>,
-        Christoph Hellwig <hch@lst.de>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] MAINTAINERS: Add myself as maintainer for arch/sh (SUPERH)
-In-Reply-To: <20230207165715.14617-1-glaubitz@physik.fu-berlin.de>
-References: <20230207165715.14617-1-glaubitz@physik.fu-berlin.de>
-User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
- FLIM-LB/1.14.9 (=?ISO-8859-4?Q?Goj=F2?=) APEL-LB/10.8 EasyPG/1.0.0
- Emacs/27.1 (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
-MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
-Content-Type: text/plain; charset=US-ASCII
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
+        Huacai Chen <chenhuacai@kernel.org>,
+        Matt Turner <mattst88@gmail.com>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Michal Simek <monstr@monstr.eu>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Rich Felker <dalias@libc.org>,
+        Richard Weinberger <richard@nod.at>,
+        Russell King <linux@armlinux.org.uk>,
+        Stafford Horne <shorne@gmail.com>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Vineet Gupta <vgupta@kernel.org>,
+        WANG Xuerui <kernel@xen0n.name>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-mm@kvack.org,
+        linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
+        linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
+        openrisc@lists.librecores.org, sparclinux@vger.kernel.org,
+        x86@kernel.org, Huacai Chen <chenhuacai@loongson.cn>
+Subject: Re: [PATCH v2 4/4] mm, arch: add generic implementation of
+ pfn_valid() for FLATMEM
+Message-ID: <20230212161320.GA3784076@roeck-us.net>
+References: <20230129124235.209895-1-rppt@kernel.org>
+ <20230129124235.209895-5-rppt@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230129124235.209895-5-rppt@kernel.org>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, 08 Feb 2023 01:57:15 +0900,
-John Paul Adrian Glaubitz wrote:
+On Sun, Jan 29, 2023 at 02:42:35PM +0200, Mike Rapoport wrote:
+> From: "Mike Rapoport (IBM)" <rppt@kernel.org>
 > 
-> Both Rich Felker and Yoshinori Sato haven't done any work on arch/sh
-> for a while. As I have been maintaining Debian's sh4 port since 2014,
-> I am interested to keep the architecture alive.
+> Every architecture that supports FLATMEM memory model defines its own
+> version of pfn_valid() that essentially compares a pfn to max_mapnr.
 > 
-> Signed-off-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> ---
->  MAINTAINERS | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/MAINTAINERS b/MAINTAINERS
-> index fb1471cb5ed3..3c3696b68e93 100644
-> --- a/MAINTAINERS
-> +++ b/MAINTAINERS
-> @@ -20090,6 +20090,7 @@ F:	drivers/watchdog/sunplus_wdt.c
->  SUPERH
->  M:	Yoshinori Sato <ysato@users.sourceforge.jp>
->  M:	Rich Felker <dalias@libc.org>
-> +M:	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
->  L:	linux-sh@vger.kernel.org
->  S:	Maintained
->  Q:	http://patchwork.kernel.org/project/linux-sh/list/
-> -- 
-> 2.30.2
+> Use mips/powerpc version implemented as static inline as a generic
+> implementation of pfn_valid() and drop its per-architecture definitions.
 > 
 
-Acked-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+With this patch in the tree, sh4 and sh4eb qemu emulations no longer boot.
+Reverting this patch fixes the problem.
 
-I can't take enough time for this.
-Thank you very much.
+Guenter
 
--- 
-Yosinori Sato
+---
+# bad: [6ba8a227fd19d19779005fb66ad7562608e1df83] Add linux-next specific files for 20230210
+# good: [4ec5183ec48656cec489c49f989c508b68b518e3] Linux 6.2-rc7
+git bisect start 'HEAD' 'v6.2-rc7'
+# good: [94613f0efc69ed41f9229ef5c294db3ec37145da] Merge branch 'master' of git://git.kernel.org/pub/scm/linux/kernel/git/herbert/cryptodev-2.6.git
+git bisect good 94613f0efc69ed41f9229ef5c294db3ec37145da
+# good: [19e62c715fe70dae4582c2874ed3e66715d09af6] Merge branch 'rcu/next' of git://git.kernel.org/pub/scm/linux/kernel/git/paulmck/linux-rcu.git
+git bisect good 19e62c715fe70dae4582c2874ed3e66715d09af6
+# good: [5d8b7ecef7f4a681b6e5538db59ff26c389c0ab6] Merge branch 'for-next' of https://gitlab.com/peda-linux/mux.git
+git bisect good 5d8b7ecef7f4a681b6e5538db59ff26c389c0ab6
+# good: [c349bf6ec83903b20fe570c5609b9a864a64e09c] Merge branch 'for-next' of git://git.kernel.org/pub/scm/linux/kernel/git/krisman/unicode.git
+git bisect good c349bf6ec83903b20fe570c5609b9a864a64e09c
+# good: [5a06a9f17454df38f35672be522ff5eb9b4277d2] selftest: add testing unsharing and counting ksm zero page
+git bisect good 5a06a9f17454df38f35672be522ff5eb9b4277d2
+# bad: [f5d115a7b06e5661ed5218ffa9a2644c4ff1c135] Merge branch 'mm-nonmm-unstable' into mm-everything
+git bisect bad f5d115a7b06e5661ed5218ffa9a2644c4ff1c135
+# bad: [acb018d6ea0c055381fba7dddaef386ee28f8075] mm/vmalloc.c: allow vread() to read out vm_map_ram areas
+git bisect bad acb018d6ea0c055381fba7dddaef386ee28f8075
+# good: [1a5d9782ac969dc6e61c6786500b5160603188ea] mm/mmap: remove __vma_adjust()
+git bisect good 1a5d9782ac969dc6e61c6786500b5160603188ea
+# good: [4b32363697de957dcc890b6245bec3f58903639a] arm: include asm-generic/memory_model.h from page.h rather than memory.h
+git bisect good 4b32363697de957dcc890b6245bec3f58903639a
+# bad: [328cf3fa6682ce6a4de6f8bb8009c833dc33f3c8] mm/migrate: convert isolate_movable_page() to use folios
+git bisect bad 328cf3fa6682ce6a4de6f8bb8009c833dc33f3c8
+# bad: [b704c765b08cabe82adf76a4d1a74f3688eee410] mm/mempolicy: convert queue_pages_pmd() to queue_folios_pmd()
+git bisect bad b704c765b08cabe82adf76a4d1a74f3688eee410
+# bad: [e5734c8b0edfd2a053a5c256189586a3b1e9f63d] mm, arch: add generic implementation of pfn_valid() for FLATMEM
+git bisect bad e5734c8b0edfd2a053a5c256189586a3b1e9f63d
+# good: [ad8aecea034c591b9754bc5908da9719853aa7fa] mips: drop definition of pfn_valid() for DISCONTIGMEM
+git bisect good ad8aecea034c591b9754bc5908da9719853aa7fa
+# first bad commit: [e5734c8b0edfd2a053a5c256189586a3b1e9f63d] mm, arch: add generic implementation of pfn_valid() for FLATMEM
