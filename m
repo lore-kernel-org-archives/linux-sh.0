@@ -2,125 +2,112 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 12212C64EC4
-	for <linux-sh@archiver.kernel.org>; Mon, 13 Feb 2023 07:54:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 52C33C678DB
+	for <linux-sh@archiver.kernel.org>; Mon, 13 Feb 2023 16:31:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229891AbjBMHyo (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 13 Feb 2023 02:54:44 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43960 "EHLO
+        id S230394AbjBMQbC convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 13 Feb 2023 11:31:02 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53822 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229436AbjBMHyn (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 13 Feb 2023 02:54:43 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AD259422A;
-        Sun, 12 Feb 2023 23:54:42 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 4871F60EC3;
-        Mon, 13 Feb 2023 07:54:42 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3884FC433EF;
-        Mon, 13 Feb 2023 07:54:27 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1676274881;
-        bh=6metnuiv9QkmKFu+JTHLVBvZLre3nFtuNi3AR7PlA78=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=P/NLBLn1QBccO0iLmwEVdjTRTOu/1JTVdr0CvbgYz4ThLcAoENpkQwi1mRk7/P19V
-         Brn+rbVYSD8LBBQWtetps+o6x9tV427CYirqerxd+gmGggehAz5OXTZeiD3MkT7U29
-         s/as2HenQlPGtPPTTf3fp/G4jLA+MmtrrPcey6hAK36CzGgOAg/0LtwnODYIfT0DI9
-         MUeph4dw/P2V8jMyhN9SftHlhcEV/JNhGKIKb6cMv7netYSdbt356AlVVkhPoiPUvd
-         r4aExWVaj3CL3McIngU/VdH3ENcuJwfiC6rBQVcgRCzZo3MtbE8U1j5N/4s5pn2pxp
-         sfCWQJUUPJk8Q==
-Date:   Mon, 13 Feb 2023 09:54:17 +0200
-From:   Mike Rapoport <rppt@kernel.org>
-To:     Guenter Roeck <linux@roeck-us.net>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>, Brian Cain <bcain@quicinc.com>,
-        "David S. Miller" <davem@davemloft.net>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        Matt Turner <mattst88@gmail.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Michal Simek <monstr@monstr.eu>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Rich Felker <dalias@libc.org>,
-        Richard Weinberger <richard@nod.at>,
-        Russell King <linux@armlinux.org.uk>,
-        Stafford Horne <shorne@gmail.com>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Vineet Gupta <vgupta@kernel.org>,
-        WANG Xuerui <kernel@xen0n.name>,
+        with ESMTP id S229815AbjBMQbA (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 13 Feb 2023 11:31:00 -0500
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 97041CA3E;
+        Mon, 13 Feb 2023 08:30:58 -0800 (PST)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pRbiw-0043kT-S2; Mon, 13 Feb 2023 17:30:38 +0100
+Received: from p5b13aa49.dip0.t-ipconnect.de ([91.19.170.73] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pRbiw-0046cc-HY; Mon, 13 Feb 2023 17:30:38 +0100
+Message-ID: <dbda1f6e1c280c13d963ad6e7f68a853a7741199.camel@physik.fu-berlin.de>
+Subject: Re: remove arch/sh
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Stephen Rothwell <sfr@canb.auug.org.au>
+Cc:     Christoph Hellwig <hch@lst.de>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-mm@kvack.org,
-        linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
-        linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
-        openrisc@lists.librecores.org, sparclinux@vger.kernel.org,
-        x86@kernel.org, Huacai Chen <chenhuacai@loongson.cn>
-Subject: Re: [PATCH v2 4/4] mm, arch: add generic implementation of
- pfn_valid() for FLATMEM
-Message-ID: <Y+nsqV6u/PqNlwDS@kernel.org>
-References: <20230129124235.209895-1-rppt@kernel.org>
- <20230129124235.209895-5-rppt@kernel.org>
- <20230212161320.GA3784076@roeck-us.net>
- <Y+mRz6Wfocopv9jw@kernel.org>
- <15a2c023-fdfa-9543-ac36-a846e5f8a000@roeck-us.net>
+        Rich Felker <dalias@libc.org>, Arnd Bergmann <arnd@arndb.de>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Laurent Pinchart <laurent.pinchart@ideasonboard.com>,
+        Kieran Bingham <kieran.bingham+renesas@ideasonboard.com>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        linux-kernel@vger.kernel.org, linux-watchdog@vger.kernel.org,
+        devicetree@vger.kernel.org, linux-arch@vger.kernel.org,
+        dmaengine@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        linux-renesas-soc@vger.kernel.org, linux-i2c@vger.kernel.org,
+        linux-input@vger.kernel.org, linux-media@vger.kernel.org,
+        linux-mmc@vger.kernel.org, linux-mtd@lists.infradead.org,
+        netdev@vger.kernel.org, linux-gpio@vger.kernel.org,
+        linux-rtc@vger.kernel.org, linux-spi@vger.kernel.org,
+        linux-serial@vger.kernel.org, linux-usb@vger.kernel.org,
+        linux-fbdev@vger.kernel.org, alsa-devel@alsa-project.org,
+        linux-sh@vger.kernel.org
+Date:   Mon, 13 Feb 2023 17:30:36 +0100
+In-Reply-To: <20230206100856.603a0f8f@canb.auug.org.au>
+References: <20230113062339.1909087-1-hch@lst.de>
+         <11e2e0a8-eabe-2d8c-d612-9cdd4bcc3648@physik.fu-berlin.de>
+         <20230116071306.GA15848@lst.de>
+         <40dc1bc1-d9cd-d9be-188e-5167ebae235c@physik.fu-berlin.de>
+         <20230203071423.GA24833@lst.de>
+         <afd056a95d21944db1dc0c9708f692dd1f7bb757.camel@physik.fu-berlin.de>
+         <20230203083037.GA30738@lst.de> <20230206100856.603a0f8f@canb.auug.org.au>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.46.4 
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <15a2c023-fdfa-9543-ac36-a846e5f8a000@roeck-us.net>
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.19.170.73
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Andrew, 
+Hi Steve!
 
-On Sun, Feb 12, 2023 at 10:37:15PM -0800, Guenter Roeck wrote:
-> On 2/12/23 17:26, Mike Rapoport wrote:
-> > On Sun, Feb 12, 2023 at 08:13:20AM -0800, Guenter Roeck wrote:
-> > > On Sun, Jan 29, 2023 at 02:42:35PM +0200, Mike Rapoport wrote:
-> > > > From: "Mike Rapoport (IBM)" <rppt@kernel.org>
-> > > > 
-> > > > Every architecture that supports FLATMEM memory model defines its own
-> > > > version of pfn_valid() that essentially compares a pfn to max_mapnr.
-> > > > 
-> > > > Use mips/powerpc version implemented as static inline as a generic
-> > > > implementation of pfn_valid() and drop its per-architecture definitions.
-> > > > 
-> > > 
-> > > With this patch in the tree, sh4 and sh4eb qemu emulations no longer boot.
-> > > Reverting this patch fixes the problem.
-> > 
-> > This should be a better fix than a revert:
-> > 
-> > diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-> > index 506784702430..bf1b54055316 100644
-> > --- a/arch/sh/mm/init.c
-> > +++ b/arch/sh/mm/init.c
-> > @@ -301,6 +301,7 @@ void __init paging_init(void)
-> >   	 */
-> >   	max_low_pfn = max_pfn = memblock_end_of_DRAM() >> PAGE_SHIFT;
-> >   	min_low_pfn = __MEMORY_START >> PAGE_SHIFT;
-> > +	set_max_mapnr(max_low_pfn - min_low_pfn);
-> >   	nodes_clear(node_online_map);
+On Mon, 2023-02-06 at 10:08 +1100, Stephen Rothwell wrote:
+> Hi,
 > 
-> Confirmed, this fixes the problem for me.
- 
-What is your preference for this and m68k fix? Fixups on top of mm-stable
-or v3 of the entire series? 
+> On Fri, 3 Feb 2023 09:30:37 +0100 Christoph Hellwig <hch@lst.de> wrote:
+> > 
+> > On Fri, Feb 03, 2023 at 09:24:46AM +0100, John Paul Adrian Glaubitz wrote:
+> > > Since this is my very first time stepping up as a kernel maintainer, I was hoping
+> > > to get some pointers on what to do to make this happen.
+> > > 
+> > > So far, we have set up a new kernel tree and I have set up a local development and
+> > > test environment for SH kernels using my SH7785LCR board as the target platform.
+> > > 
+> > > Do I just need to send a patch asking to change the corresponding entry in the
+> > > MAINTAINERS file?  
+> > 
+> > I'm not sure a there is a document, but:
+> > 
+> >  - add the MAINTAINERS change to your tree
+> >  - ask Stephen to get your tree included in linux-next
+> 
+> And by "Stephen", Christoph means me.  When you are ready, please send
+> me a request to include your tree/branch in linux-next (usually the
+> branch is called something like "for-next" or just "next") telling me
+> the git URL, and the contacts I should send email to if there are
+> conflicts/build issues with the branch.  I will then fetch the branch
+> every time I create a new linux-next release (most work days), so all
+> you need to do is update that branch each time you are ready to publish
+> more commits.
 
-> Thanks,
-> Guenter
+I'm in the MAINTAINERS now in Linus' tree. I have requested a kernel.org
+account now and will hopefully have my trees set up later this week.
+
+I'll let you know about the URLs as soon as possible.
+
+Adrian
 
 -- 
-Sincerely yours,
-Mike.
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
