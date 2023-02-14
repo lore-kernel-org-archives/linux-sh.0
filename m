@@ -2,89 +2,90 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 46DB8C64EC7
-	for <linux-sh@archiver.kernel.org>; Tue, 14 Feb 2023 14:16:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D9CD4C05027
+	for <linux-sh@archiver.kernel.org>; Tue, 14 Feb 2023 14:41:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233234AbjBNOQK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 14 Feb 2023 09:16:10 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35312 "EHLO
+        id S233312AbjBNOl5 convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 14 Feb 2023 09:41:57 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37450 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232359AbjBNOQH (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Feb 2023 09:16:07 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B69E44EE0;
-        Tue, 14 Feb 2023 06:15:38 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 0B4E1B81DCC;
-        Tue, 14 Feb 2023 14:15:10 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C0907C433EF;
-        Tue, 14 Feb 2023 14:14:59 +0000 (UTC)
-Date:   Tue, 14 Feb 2023 14:14:56 +0000
-From:   Catalin Marinas <catalin.marinas@arm.com>
-To:     Alexandre Ghiti <alexghiti@rivosinc.com>
-Cc:     Jonathan Corbet <corbet@lwn.net>,
-        Richard Henderson <richard.henderson@linaro.org>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>,
-        Vineet Gupta <vgupta@kernel.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Will Deacon <will@kernel.org>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        WANG Xuerui <kernel@xen0n.name>,
+        with ESMTP id S232729AbjBNOl4 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Feb 2023 09:41:56 -0500
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7739927D4D;
+        Tue, 14 Feb 2023 06:41:55 -0800 (PST)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pRwV0-002cvL-LZ; Tue, 14 Feb 2023 15:41:38 +0100
+Received: from p5b13aa49.dip0.t-ipconnect.de ([91.19.170.73] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pRwV0-000316-EM; Tue, 14 Feb 2023 15:41:38 +0100
+Message-ID: <c9cc61db21e80b0b9304496567d0ed5feea47e25.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 2/2] sh: initialize max_mapnr
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Mike Rapoport <rppt@kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>
+Cc:     Arnd Bergmann <arnd@arndb.de>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Alexander Gordeev <agordeev@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Sven Schnelle <svens@linux.ibm.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Guenter Roeck <linux@roeck-us.net>,
         Rich Felker <dalias@libc.org>,
-        "David S . Miller" <davem@davemloft.net>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-        "H . Peter Anvin" <hpa@zytor.com>, Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Arnd Bergmann <arnd@arndb.de>, linux-doc@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
-        linux-arch@vger.kernel.org, Palmer Dabbelt <palmer@rivosinc.com>
-Subject: Re: [PATCH v3 02/24] arm64: Remove COMMAND_LINE_SIZE from uapi
-Message-ID: <Y+uXYILgDMc7zrh+@arm.com>
-References: <20230214074925.228106-1-alexghiti@rivosinc.com>
- <20230214074925.228106-3-alexghiti@rivosinc.com>
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mm@kvack.org, linux-sh@vger.kernel.org
+Date:   Tue, 14 Feb 2023 15:41:37 +0100
+In-Reply-To: <20230214140729.1649961-3-rppt@kernel.org>
+References: <20230214140729.1649961-1-rppt@kernel.org>
+         <20230214140729.1649961-3-rppt@kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.46.4 
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230214074925.228106-3-alexghiti@rivosinc.com>
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.19.170.73
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Feb 14, 2023 at 08:49:03AM +0100, Alexandre Ghiti wrote:
-> From: Palmer Dabbelt <palmer@rivosinc.com>
+On Tue, 2023-02-14 at 16:07 +0200, Mike Rapoport wrote:
+> From: "Mike Rapoport (IBM)" <rppt@kernel.org>
 > 
-> As far as I can tell this is not used by userspace and thus should not
-> be part of the user-visible API.
+> sh never initializes max_mapnr which is used by the generic
+> implementation of pfn_valid().
 > 
-> Signed-off-by: Palmer Dabbelt <palmer@rivosinc.com>
+> Initialize max_mapnr with set_max_mapnr() in sh::paging_init().
+> 
+> Reported-by: Guenter Roeck <linux@roeck-us.net>
+> Fixes: e5080a967785 ("mm, arch: add generic implementation of pfn_valid() for FLATMEM")
+> Signed-off-by: Mike Rapoport (IBM) <rppt@kernel.org>
+> ---
+>  arch/sh/mm/init.c | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+> index 506784702430..bf1b54055316 100644
+> --- a/arch/sh/mm/init.c
+> +++ b/arch/sh/mm/init.c
+> @@ -301,6 +301,7 @@ void __init paging_init(void)
+>  	 */
+>  	max_low_pfn = max_pfn = memblock_end_of_DRAM() >> PAGE_SHIFT;
+>  	min_low_pfn = __MEMORY_START >> PAGE_SHIFT;
+> +	set_max_mapnr(max_low_pfn - min_low_pfn);
+>  
+>  	nodes_clear(node_online_map);
+>  
 
-Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
