@@ -2,35 +2,35 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 61F08C6379F
-	for <linux-sh@archiver.kernel.org>; Tue, 14 Feb 2023 07:07:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C9652C6379F
+	for <linux-sh@archiver.kernel.org>; Tue, 14 Feb 2023 07:07:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229824AbjBNHH1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 14 Feb 2023 02:07:27 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49676 "EHLO
+        id S231859AbjBNHHc (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 14 Feb 2023 02:07:32 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50168 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231802AbjBNHHW (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Feb 2023 02:07:22 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 78D6E1E2A3;
-        Mon, 13 Feb 2023 23:06:55 -0800 (PST)
+        with ESMTP id S231776AbjBNHHZ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Feb 2023 02:07:25 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BA63B1E2B8;
+        Mon, 13 Feb 2023 23:06:59 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id BE36C61465;
-        Tue, 14 Feb 2023 07:06:52 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7744CC433AE;
+        by dfw.source.kernel.org (Postfix) with ESMTPS id DCFBE61448;
         Tue, 14 Feb 2023 07:06:50 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 94853C433A7;
+        Tue, 14 Feb 2023 07:06:48 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1676358412;
-        bh=Ya58HiCcymNeXiDsDrSrB3MVa42ANSTnVDrYM/I8DGE=;
+        s=k20201202; t=1676358410;
+        bh=/WRpZ+fgwXF0z/GQYKwOihjxOQ5dza8faN+YuvFg6xA=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=o1g46MnmwcBx8T5+mpqxpWg9RNiPGwxWh7u50+UbvVV/HCNE/CzztVflEM53qxglv
-         YYK/YrY0Q9V6xIHds9bSBH9HN0lqUKa6Z1xe3cfCjxpSNsspagp2pNbL0WMNKEQ0Rx
-         pzr+HaAh9N3K2/cV0XtAVxzNNCB75oEBpHNITqIRR27J3mfkFgz/r562+bVXahSIST
-         IY0Pnmrhw/r9K8+6kstkVaj4pLQJnS5iSYM8p9up4WRV2EcZ3VkSKGVUgn+3GYoIew
-         SCyrNFtXGmtYxVMosYI0z60anWodjY2gKyCCb0H5AEcAnHnT5mlvQpZIVvTrKYjllD
-         UOkJrRuEY33Fg==
+        b=dAlEp0FZUQmU3s+7nxa65cD0n3h9c7eJJZjXGr3hhHtUntee21fQKh3l9ntfq4KbC
+         3uL5hEjnYQn4bxN/OMzXjHF0pqPHb9d1Mj6gggaMFr2ZB1IbDgksvUGZPatb6zeY4p
+         US6fZpQ/eFrQEhekkbHzHVcs9ntVzGENf7WwrjcjRMEAT4p0JrsF0O+9aigRk4dHvY
+         p2C+OwYq/kn5g8didBavBbKvz/LCCMVYK+ImBjDxSPohVp1RyvxwBWm6s0VIbeK7gX
+         Zs1DSSupvJ0IqkiCQuQhWek6mO45nkdVQiVqMyeg2qyQXHiVZ0vEb4+2b613bDaJFf
+         6y9cII9Se4ZJg==
 From:   Josh Poimboeuf <jpoimboe@kernel.org>
 To:     linux-kernel@vger.kernel.org
 Cc:     jgross@suse.com, richard.henderson@linaro.org,
@@ -53,9 +53,9 @@ Cc:     jgross@suse.com, richard.henderson@linaro.org,
         dietmar.eggemann@arm.com, rostedt@goodmis.org, bsegall@google.com,
         mgorman@suse.de, bristot@redhat.com, vschneid@redhat.com,
         paulmck@kernel.org
-Subject: [PATCH v2 02/24] alpha/cpu: Make sure arch_cpu_idle_dead() doesn't return
-Date:   Mon, 13 Feb 2023 23:05:36 -0800
-Message-Id: <19ffef09a175fecb783abcd44d6bcfeade2857eb.1676358308.git.jpoimboe@kernel.org>
+Subject: [PATCH v2 01/24] alpha/cpu: Expose arch_cpu_idle_dead()'s prototype declaration
+Date:   Mon, 13 Feb 2023 23:05:35 -0800
+Message-Id: <b0405c2ac5686303b6026e1ac27cfd769b21a7d0.1676358308.git.jpoimboe@kernel.org>
 X-Mailer: git-send-email 2.39.1
 In-Reply-To: <cover.1676358308.git.jpoimboe@kernel.org>
 References: <cover.1676358308.git.jpoimboe@kernel.org>
@@ -66,12 +66,8 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-arch_cpu_idle_dead() doesn't return.  Make that more explicit with a
-BUG().
-
-BUG() is preferable to unreachable() because BUG() is a more explicit
-failure mode and avoids undefined behavior like falling off the edge of
-the function into whatever code happens to be next.
+Include <linux/cpu.h> to make sure arch_cpu_idle_dead() matches its
+prototype going forward.
 
 Signed-off-by: Josh Poimboeuf <jpoimboe@kernel.org>
 ---
@@ -79,17 +75,17 @@ Signed-off-by: Josh Poimboeuf <jpoimboe@kernel.org>
  1 file changed, 1 insertion(+)
 
 diff --git a/arch/alpha/kernel/process.c b/arch/alpha/kernel/process.c
-index d1f2e8b6b107..d0ff06eda8fa 100644
+index ce20c31828a0..d1f2e8b6b107 100644
 --- a/arch/alpha/kernel/process.c
 +++ b/arch/alpha/kernel/process.c
-@@ -63,6 +63,7 @@ void arch_cpu_idle(void)
- void arch_cpu_idle_dead(void)
- {
- 	wtint(INT_MAX);
-+	BUG();
- }
- #endif /* ALPHA_WTINT */
+@@ -9,6 +9,7 @@
+  * This file handles the architecture-dependent parts of process handling.
+  */
  
++#include <linux/cpu.h>
+ #include <linux/errno.h>
+ #include <linux/module.h>
+ #include <linux/sched.h>
 -- 
 2.39.1
 
