@@ -2,53 +2,53 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1A29C6379F
-	for <linux-sh@archiver.kernel.org>; Tue, 14 Feb 2023 08:04:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D0987C64EC7
+	for <linux-sh@archiver.kernel.org>; Tue, 14 Feb 2023 08:05:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231630AbjBNID7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 14 Feb 2023 03:03:59 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35768 "EHLO
+        id S231448AbjBNIFH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 14 Feb 2023 03:05:07 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38902 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230120AbjBNIDq (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Feb 2023 03:03:46 -0500
-Received: from mail-wr1-x42d.google.com (mail-wr1-x42d.google.com [IPv6:2a00:1450:4864:20::42d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1BD8B44BF
-        for <linux-sh@vger.kernel.org>; Tue, 14 Feb 2023 00:03:22 -0800 (PST)
-Received: by mail-wr1-x42d.google.com with SMTP id o15so11396127wrc.9
-        for <linux-sh@vger.kernel.org>; Tue, 14 Feb 2023 00:03:21 -0800 (PST)
+        with ESMTP id S231783AbjBNIEd (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Feb 2023 03:04:33 -0500
+Received: from mail-wr1-x42f.google.com (mail-wr1-x42f.google.com [IPv6:2a00:1450:4864:20::42f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D055F22A3D
+        for <linux-sh@vger.kernel.org>; Tue, 14 Feb 2023 00:04:23 -0800 (PST)
+Received: by mail-wr1-x42f.google.com with SMTP id m10so5799965wrn.4
+        for <linux-sh@vger.kernel.org>; Tue, 14 Feb 2023 00:04:23 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=rivosinc-com.20210112.gappssmtp.com; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=fWYHj4zorz+dwOxhMMH91bCZKZH71c0fjl4K1DE3I7g=;
-        b=27dlS2aO0uft324x+5s1DeYbloYz3UgO5DgO75VDlplQxxBVeI64VkQzc+Byd8Fu/Z
-         Xka03pnhW1NbtoFStNpUrISXlzzG/TAk7uTdioQtnWEclNcJ56F+eb2Buf+CDzsIjDBa
-         wGPYMfPCSoPjGcXzx0cPQO4ARszV05IlnyXN6LVlv1T7gx5cyxtQC9Ss7sDVmmmsdRGg
-         FC1qBiRgVJKFMTOWAF531BXN8fSAKHBnrY8Sk1F7aCe9PVMMmxdr3HlQ8X9W+zrUSBJb
-         J6C2ybiNqsD6i+accbqJBNvWRrnbVBq1PXgtShoItYGXBi77TYgeSR0F2epforxZmM0s
-         AR6w==
+        bh=5wjc5nUaXPqzOcikp/dFCXLyDNPdOZGtU07c3eeQkEo=;
+        b=QzV31v7ItXqx4yWsJfh152ebFGrBo9gPdhTErCgeoMfuI0a/bXBwVo9zVazH0XhD1o
+         1P22Wx88GfdDl5eEqBxmERSHFO/cszqUOCuMenN38SqwMA+e3o2paztN+lm0B02Xgkp3
+         e+v+idvauAUtu3a/SIQ7MztA/LQf+9eZsxk+Jym1ZZLsfwfAVWgFyBnu0nM0VTcvl2h7
+         FliYXwQgV+CnK774qEo/1yzLrYpRuhTqe2ZbWRvyqrg3H8e5u97kFVktjSnfWw7k86cI
+         vT5XzHCiZvDMnZ0VdkIY4TftV6Qme4WQXbWLgnrifFqlcq70lxh8ilRJsq+QAWvDOKHL
+         u3Gw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=fWYHj4zorz+dwOxhMMH91bCZKZH71c0fjl4K1DE3I7g=;
-        b=MupDPwusHf9F2ErO8QpYCEOvNy7bw3YDuQrltuLENWBRqdULca+0bywQsjOnsNe6ay
-         iVbQ023Dq/TGJa02E1umOVw73ddMUQkvrBfmf5oQF2dCRNp4OcKp9vczaV8jssF/RTko
-         DLoLEEjjTjgBJQq6FQFb2AKlhiVRklL2nZhN2qzDD6yU0tCzbeSRVy1OIFf8Kt6VXgF/
-         2Krl1HpelYUmDY7IQSSfJpVNSK+Q/AFNQDfApVzFA6jelhSObEmUjHYQOE8moU4wK9dj
-         omCboB0Z6f+ej2TPgPbThoIm98Hj2MDcz2Dsud+nz2vDFnbPTOHOkKZybqfObgYOiA0c
-         2dVw==
-X-Gm-Message-State: AO0yUKVrdZWVBIyd3uDFBmEC0QAW1ZNaQkfw9oElJEPVY16pxnu9Vtjx
-        phks9483pi/j4I8I7tC/R1lqrw==
-X-Google-Smtp-Source: AK7set+16HUKFeQRbMq4B+hriqCT9+7bWN18GPL4d51zKSI423HCnDqYe0sW8FBEL0We84v1KhSO4g==
-X-Received: by 2002:adf:e54e:0:b0:2bf:c09a:c60e with SMTP id z14-20020adfe54e000000b002bfc09ac60emr1259998wrm.2.1676361800528;
-        Tue, 14 Feb 2023 00:03:20 -0800 (PST)
+        bh=5wjc5nUaXPqzOcikp/dFCXLyDNPdOZGtU07c3eeQkEo=;
+        b=xlkgdF/IZ5WSHRyEZ7QyW6sFdSqXbPYXJPQ7sMkolTVhK6HGLo9ilBtuuReQ6ZoD3M
+         6HtPuDKZ6+t/3nCWOF4RM1GM2hlKZk3D6woa0GVbVQWM89UUwRwJ7bSK5OBtkLLuazb0
+         VSKgPZZGYGvllNKm/iHsH8zKeG9jrNYYAKtsyomD9C7+cHFRYXNZyPWWhXr61bxUtcsk
+         CcM5iHqbLQv2AdXmRpjzYTivmP1QGGPFlXv1ywIXEkBDB3jUF0/lvCgtWMSDwcgHJgKY
+         jazKk3NFiPFHwgDCrlnn2/B3LxnxiELAkjnry1K7Ov6eoeUxGzSLhgjIloXWIGOWzylr
+         UJoA==
+X-Gm-Message-State: AO0yUKX9CUW6PUB7VILZF3qluvRX5SHrOMCb6XoGnGlq2NMdwiPIQ8fk
+        rl9O5G3EEvZEBNEMr09cUo+33A==
+X-Google-Smtp-Source: AK7set8HOf1J9ROM5HGHA9FxRtFWjGn9F9yobbBJ6lKeYYbdTM09Q7loKzacnDzy8U96Ii9jf9YULg==
+X-Received: by 2002:a5d:43c6:0:b0:2bf:bf05:85ac with SMTP id v6-20020a5d43c6000000b002bfbf0585acmr797767wrr.23.1676361862446;
+        Tue, 14 Feb 2023 00:04:22 -0800 (PST)
 Received: from alex-rivos.ba.rivosinc.com (lfbn-lyo-1-450-160.w2-7.abo.wanadoo.fr. [2.7.42.160])
-        by smtp.gmail.com with ESMTPSA id n2-20020a5d67c2000000b002c53f6c7599sm11635424wrw.29.2023.02.14.00.03.19
+        by smtp.gmail.com with ESMTPSA id r2-20020adff702000000b002bddac15b3dsm12021459wrp.33.2023.02.14.00.04.21
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 14 Feb 2023 00:03:20 -0800 (PST)
+        Tue, 14 Feb 2023 00:04:22 -0800 (PST)
 From:   Alexandre Ghiti <alexghiti@rivosinc.com>
 To:     Jonathan Corbet <corbet@lwn.net>,
         Richard Henderson <richard.henderson@linaro.org>,
@@ -95,9 +95,9 @@ To:     Jonathan Corbet <corbet@lwn.net>,
         sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
         linux-arch@vger.kernel.org
 Cc:     Palmer Dabbelt <palmer@rivosinc.com>
-Subject: [PATCH v3 13/24] alpha: Remove empty <uapi/asm/setup.h>
-Date:   Tue, 14 Feb 2023 08:49:14 +0100
-Message-Id: <20230214074925.228106-14-alexghiti@rivosinc.com>
+Subject: [PATCH v3 14/24] arc: Remove empty <uapi/asm/setup.h>
+Date:   Tue, 14 Feb 2023 08:49:15 +0100
+Message-Id: <20230214074925.228106-15-alexghiti@rivosinc.com>
 X-Mailer: git-send-email 2.37.2
 In-Reply-To: <20230214074925.228106-1-alexghiti@rivosinc.com>
 References: <20230214074925.228106-1-alexghiti@rivosinc.com>
@@ -111,21 +111,35 @@ From: Palmer Dabbelt <palmer@rivosinc.com>
 
 Signed-off-by: Palmer Dabbelt <palmer@rivosinc.com>
 ---
- arch/alpha/include/uapi/asm/setup.h | 5 -----
- 1 file changed, 5 deletions(-)
- delete mode 100644 arch/alpha/include/uapi/asm/setup.h
+ arch/arc/include/asm/setup.h      | 1 -
+ arch/arc/include/uapi/asm/setup.h | 6 ------
+ 2 files changed, 7 deletions(-)
+ delete mode 100644 arch/arc/include/uapi/asm/setup.h
 
-diff --git a/arch/alpha/include/uapi/asm/setup.h b/arch/alpha/include/uapi/asm/setup.h
+diff --git a/arch/arc/include/asm/setup.h b/arch/arc/include/asm/setup.h
+index 028a8cf76206..fe45ff4681bc 100644
+--- a/arch/arc/include/asm/setup.h
++++ b/arch/arc/include/asm/setup.h
+@@ -7,7 +7,6 @@
+ 
+ 
+ #include <linux/types.h>
+-#include <uapi/asm/setup.h>
+ 
+ #define COMMAND_LINE_SIZE 256
+ 
+diff --git a/arch/arc/include/uapi/asm/setup.h b/arch/arc/include/uapi/asm/setup.h
 deleted file mode 100644
-index 9b3b5ba39b1d..000000000000
---- a/arch/alpha/include/uapi/asm/setup.h
+index a6d4e44938be..000000000000
+--- a/arch/arc/include/uapi/asm/setup.h
 +++ /dev/null
-@@ -1,5 +0,0 @@
--/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
--#ifndef _UAPI__ALPHA_SETUP_H
--#define _UAPI__ALPHA_SETUP_H
--
--#endif /* _UAPI__ALPHA_SETUP_H */
+@@ -1,6 +0,0 @@
+-/*
+- * setup.h is part of userspace header ABI so UAPI scripts have to generate it
+- * even if there's nothing to export - causing empty <uapi/asm/setup.h>
+- * However to prevent "patch" from discarding it we add this placeholder
+- * comment
+- */
 -- 
 2.37.2
 
