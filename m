@@ -2,35 +2,35 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C051C677F1
-	for <linux-sh@archiver.kernel.org>; Tue, 14 Feb 2023 07:07:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 43A8EC678DB
+	for <linux-sh@archiver.kernel.org>; Tue, 14 Feb 2023 07:07:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231865AbjBNHHd (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 14 Feb 2023 02:07:33 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50888 "EHLO
+        id S231874AbjBNHHe (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 14 Feb 2023 02:07:34 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50566 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229570AbjBNHHZ (ORCPT
+        with ESMTP id S231414AbjBNHHZ (ORCPT
         <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Feb 2023 02:07:25 -0500
 Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EABA51E9D7;
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5C11C1F5DD;
         Mon, 13 Feb 2023 23:06:59 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 720FD61467;
-        Tue, 14 Feb 2023 07:06:56 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 31830C433AC;
-        Tue, 14 Feb 2023 07:06:54 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 0511061451;
+        Tue, 14 Feb 2023 07:06:49 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AD53CC433EF;
+        Tue, 14 Feb 2023 07:06:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1676358415;
-        bh=oKr+64PCQbKmVhIylAaRqnfLnM47aB4SsgpB++1picw=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=uWSwmz7maJITaav1CLWBhY0wq77E2TQEFKj9SKI7oT4oMpxVqb3lnDG9f8hCIs7vx
-         HVTVUNH/CEB+xnKwRtPrWXCjjXX2QoZ6agft9A4TFcEbpCpKEzT26/mEGxqnQiz95o
-         zkfcQQxa8cvlxnYRQYWNZohgh7gKqA1EEVTuJI/igRwz7PuH4itxjP9aX6J5xm6WHv
-         AqE4y1+HEUJO8h2TaNm+RWH5Twq/9S9n93G3vmmCUYhVhMNLRNmz8AdGFdTOEjqc58
-         eqx4YmZwfXjO7QxwI0rh92vrbJzEUVkWPecbQGWlfLvjGw76DlG8tSDV49G6oiOOzu
-         wAL7TpohQ8anw==
+        s=k20201202; t=1676358408;
+        bh=RKzZmEQ0aGTy+gbzBwQMcZ+ax04gqBZYglhP2Mxomuo=;
+        h=From:To:Cc:Subject:Date:From;
+        b=FeDhahtj5zTcKfS87v8/QfdL3FiuaRKBYgvZJuSr3uTqDOUDpR9xAIwfSUUl+xCQ4
+         r7S+eXVH1xqLNIUZnh/cHtuO1wDJDQW64m8IJbGmNTGNy+/CBDE3sNH46BYhM8ZJzq
+         hySTqkxhjf0gavLtGi4niNQiqmOkWmn2no49fQG3W+sIsnBFMBNtI28+cWarf+lgjw
+         EkIBlAg10MBeQ6FOIITajEZQjSMDxh0fHI3x8obz1DyGtW5I15c9zlJwXVZxpo4sQS
+         v0B/B1Cs/GdU7oUHS5iP/TM7GdZXf5Rr8enZUnuUAzcybm31QTM4L2TA1DoDr3aD30
+         9f3vJpb0gcS8w==
 From:   Josh Poimboeuf <jpoimboe@kernel.org>
 To:     linux-kernel@vger.kernel.org
 Cc:     jgross@suse.com, richard.henderson@linaro.org,
@@ -53,12 +53,10 @@ Cc:     jgross@suse.com, richard.henderson@linaro.org,
         dietmar.eggemann@arm.com, rostedt@goodmis.org, bsegall@google.com,
         mgorman@suse.de, bristot@redhat.com, vschneid@redhat.com,
         paulmck@kernel.org
-Subject: [PATCH v2 04/24] arm64/cpu: Mark cpu_die() __noreturn
-Date:   Mon, 13 Feb 2023 23:05:38 -0800
-Message-Id: <e47fc487980d5330e6059ac6e16416bec88cda0e.1676358308.git.jpoimboe@kernel.org>
+Subject: [PATCH v2 00/24] cpu,sched: Mark arch_cpu_idle_dead() __noreturn
+Date:   Mon, 13 Feb 2023 23:05:34 -0800
+Message-Id: <cover.1676358308.git.jpoimboe@kernel.org>
 X-Mailer: git-send-email 2.39.1
-In-Reply-To: <cover.1676358308.git.jpoimboe@kernel.org>
-References: <cover.1676358308.git.jpoimboe@kernel.org>
 MIME-Version: 1.0
 Content-type: text/plain
 Content-Transfer-Encoding: 8bit
@@ -66,27 +64,76 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-cpu_die() doesn't return.  Annotate it as such.  By extension this also
-makes arch_cpu_idle_dead() noreturn.
+v2:
+- make arch_call_rest_init() and rest_init() __noreturn
+- make objtool 'global_returns' work for weak functions
+- rebase on tip/objtool/core with dependencies merged in (mingo)
+- add acks
 
-Signed-off-by: Josh Poimboeuf <jpoimboe@kernel.org>
----
- arch/arm64/include/asm/smp.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+v1.1:
+- add __noreturn to all arch_cpu_idle_dead() implementations (mpe)
 
-diff --git a/arch/arm64/include/asm/smp.h b/arch/arm64/include/asm/smp.h
-index fc55f5a57a06..5733a31bab08 100644
---- a/arch/arm64/include/asm/smp.h
-+++ b/arch/arm64/include/asm/smp.h
-@@ -100,7 +100,7 @@ static inline void arch_send_wakeup_ipi_mask(const struct cpumask *mask)
- extern int __cpu_disable(void);
- 
- extern void __cpu_die(unsigned int cpu);
--extern void cpu_die(void);
-+extern void __noreturn cpu_die(void);
- extern void cpu_die_early(void);
- 
- static inline void cpu_park_loop(void)
+Josh Poimboeuf (24):
+  alpha/cpu: Expose arch_cpu_idle_dead()'s prototype declaration
+  alpha/cpu: Make sure arch_cpu_idle_dead() doesn't return
+  arm/cpu: Make sure arch_cpu_idle_dead() doesn't return
+  arm64/cpu: Mark cpu_die() __noreturn
+  csky/cpu: Make sure arch_cpu_idle_dead() doesn't return
+  ia64/cpu: Mark play_dead() __noreturn
+  loongarch/cpu: Make sure play_dead() doesn't return
+  loongarch/cpu: Mark play_dead() __noreturn
+  mips/cpu: Expose play_dead()'s prototype definition
+  mips/cpu: Make sure play_dead() doesn't return
+  mips/cpu: Mark play_dead() __noreturn
+  powerpc/cpu: Mark start_secondary_resume() __noreturn
+  sh/cpu: Make sure play_dead() doesn't return
+  sh/cpu: Mark play_dead() __noreturn
+  sh/cpu: Expose arch_cpu_idle_dead()'s prototype definition
+  sparc/cpu: Mark cpu_play_dead() __noreturn
+  x86/cpu: Make sure play_dead() doesn't return
+  x86/cpu: Mark play_dead() __noreturn
+  xtensa/cpu: Make sure cpu_die() doesn't return
+  xtensa/cpu: Mark cpu_die() __noreturn
+  sched/idle: Make sure weak version of arch_cpu_idle_dead() doesn't
+    return
+  objtool: Include weak functions in 'global_noreturns' check
+  init: Make arch_call_rest_init() and rest_init() __noreturn
+  sched/idle: Mark arch_cpu_idle_dead() __noreturn
+
+ arch/alpha/kernel/process.c      |  4 +++-
+ arch/arm/kernel/smp.c            |  4 +++-
+ arch/arm64/include/asm/smp.h     |  2 +-
+ arch/arm64/kernel/process.c      |  2 +-
+ arch/csky/kernel/smp.c           |  4 +++-
+ arch/ia64/kernel/process.c       |  6 +++---
+ arch/loongarch/include/asm/smp.h |  2 +-
+ arch/loongarch/kernel/process.c  |  2 +-
+ arch/loongarch/kernel/smp.c      |  2 +-
+ arch/mips/include/asm/smp.h      |  2 +-
+ arch/mips/kernel/process.c       |  2 +-
+ arch/mips/kernel/smp-bmips.c     |  3 +++
+ arch/mips/loongson64/smp.c       |  1 +
+ arch/parisc/kernel/process.c     |  2 +-
+ arch/powerpc/include/asm/smp.h   |  2 +-
+ arch/powerpc/kernel/smp.c        |  2 +-
+ arch/riscv/kernel/cpu-hotplug.c  |  2 +-
+ arch/s390/kernel/idle.c          |  2 +-
+ arch/s390/kernel/setup.c         |  2 +-
+ arch/sh/include/asm/smp-ops.h    |  5 +++--
+ arch/sh/kernel/idle.c            |  3 ++-
+ arch/sparc/include/asm/smp_64.h  |  2 +-
+ arch/sparc/kernel/process_64.c   |  2 +-
+ arch/x86/include/asm/smp.h       |  3 ++-
+ arch/x86/kernel/process.c        |  4 ++--
+ arch/xtensa/include/asm/smp.h    |  2 +-
+ arch/xtensa/kernel/smp.c         |  4 +++-
+ include/linux/cpu.h              |  2 +-
+ include/linux/start_kernel.h     |  4 ++--
+ init/main.c                      |  4 ++--
+ kernel/sched/idle.c              |  2 +-
+ tools/objtool/check.c            | 11 +++++++----
+ 32 files changed, 57 insertions(+), 39 deletions(-)
+
 -- 
 2.39.1
 
