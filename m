@@ -2,148 +2,112 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A7E7C64EC7
-	for <linux-sh@archiver.kernel.org>; Tue, 14 Feb 2023 07:57:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 87B2DC64ED6
+	for <linux-sh@archiver.kernel.org>; Tue, 14 Feb 2023 07:58:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229623AbjBNH5W (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 14 Feb 2023 02:57:22 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56776 "EHLO
+        id S231730AbjBNH6L (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 14 Feb 2023 02:58:11 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58142 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230340AbjBNH5R (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Feb 2023 02:57:17 -0500
-Received: from mail-wr1-x430.google.com (mail-wr1-x430.google.com [IPv6:2a00:1450:4864:20::430])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D57D21A30
-        for <linux-sh@vger.kernel.org>; Mon, 13 Feb 2023 23:57:11 -0800 (PST)
-Received: by mail-wr1-x430.google.com with SMTP id j23so14736312wra.0
-        for <linux-sh@vger.kernel.org>; Mon, 13 Feb 2023 23:57:11 -0800 (PST)
+        with ESMTP id S230322AbjBNH5r (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Feb 2023 02:57:47 -0500
+Received: from mail-wr1-x434.google.com (mail-wr1-x434.google.com [IPv6:2a00:1450:4864:20::434])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6C88F2278B
+        for <linux-sh@vger.kernel.org>; Mon, 13 Feb 2023 23:57:44 -0800 (PST)
+Received: by mail-wr1-x434.google.com with SMTP id k3so7065087wrv.5
+        for <linux-sh@vger.kernel.org>; Mon, 13 Feb 2023 23:57:44 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=rivosinc-com.20210112.gappssmtp.com; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=fWjLqsc+NkWMLFdHmbfFb0dn9xRzmwLOXd3uaLGqwBY=;
-        b=caX8aWQ8DZKo96HIEXErccmSqQeGKRpDuSdr6010va+fd6heZz1VBNqHbYUWTHczq8
-         mezb+8HbIfzaNI36qGubajDNLCzRQzt4Hbgq7MFFxEJGNk3bEGAMc043qE5rdYn342sz
-         zVKvXF9BRRNZYR6lWJOn/JnI+PgnmHZPBcTAowttzA8jjfTIqHHQZ+ERkinvG9qHEEWV
-         rovUNsOO1j9tz1zELCVd7W981MDmvC6qTN+tjlfDMf18pIEV94eGlS2sYxoOgQ3HkWuh
-         MK0V0bkixcCwiYoT3zYKuN+arx2XpkArqn0BbZInm5/TMzCXdMsPWy4n//p8ONoMyppz
-         QTdw==
+        d=linaro.org; s=google;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=/y3DoebXU2aSRTyTPgatGNryU5LQnPO9lrblNWAcqag=;
+        b=FL1ODDD/dH0Fe6e9PftNHR2p1QM5RdtNbSNzqlK8pNihYv6DfVt9L8P4pf7gFWx8t9
+         y7Myyo7fNfEgvIVHxiwayOczBTVyPShNBJ+OyPBbO2TGT73uZHOhE3xZtTrnwGF0MT+v
+         t8HDjwcNYJ3GyE9n9IqdapPU+YITuv62k93vOPRVKNP4lguYU+6Ab9dRsm/1X2dXcAVB
+         5VOmuk01NjVUhEIq+/0xsdIu4HhgQwnS4aeU6D7zwtcEsT7QviV6e0w82yhAQ3D1LK0D
+         EflN9bEH39Ng0giNeci5B2LCie2rjDM+BdrF7iU+PFyH9SNv22kw1gwN55V2cUJYlnUa
+         Ft5Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=1e100.net; s=20210112;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=fWjLqsc+NkWMLFdHmbfFb0dn9xRzmwLOXd3uaLGqwBY=;
-        b=aA6zQQcBSDURWR7qymfrh2JvoIYArrruvTozmAMch3wTJ0Wn3mUUpsnZ9fvDJgsmo+
-         jLUexRuaysNZ8jyp1iN/Xl3fgNkDq06wrc7JWfP5xzTNnpQUNk+r1ux0rvOkA4i90tkH
-         pkL3/qFDVlSjrHtGMKcWrkZC0F4j0cr80nyIbhTkEEvMX2n3f3vXYaZgv612eh9g1qJp
-         72gnT/go/pXQtBsQ5MmB+zdWgE8nk1DAO6HTiL8pucYG1FViKJtiNPXABDgVNOAB9Wj4
-         ixTVcmbpCga/dNdjbagbyiVt5Gtne86yblkMHzHmhZv2UbYdoKlEiDUSA6JtHDJ/eYnO
-         1Zmg==
-X-Gm-Message-State: AO0yUKUyYch1D0DI53wzFRdbeXxPG9k2mtT0Hxh/l9STzZcuXmAtToUt
-        32bZaQtt6e+Lf0/oA89HskfEYQ==
-X-Google-Smtp-Source: AK7set+iS2kYtSEJxwa0DIBeh1AY3bbZg7Y7IAN8bCjXkQu8bp7LWnEg4bsVRpj28otCWhsJxiywzQ==
-X-Received: by 2002:a5d:58d9:0:b0:2bf:c0e4:1bc5 with SMTP id o25-20020a5d58d9000000b002bfc0e41bc5mr943365wrf.56.1676361430168;
-        Mon, 13 Feb 2023 23:57:10 -0800 (PST)
-Received: from alex-rivos.ba.rivosinc.com (lfbn-lyo-1-450-160.w2-7.abo.wanadoo.fr. [2.7.42.160])
-        by smtp.gmail.com with ESMTPSA id s12-20020adfdb0c000000b002c3ec1fbc0bsm12232660wri.94.2023.02.13.23.57.08
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 13 Feb 2023 23:57:09 -0800 (PST)
-From:   Alexandre Ghiti <alexghiti@rivosinc.com>
-To:     Jonathan Corbet <corbet@lwn.net>,
-        Richard Henderson <richard.henderson@linaro.org>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>,
-        Vineet Gupta <vgupta@kernel.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        WANG Xuerui <kernel@xen0n.name>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        "James E . J . Bottomley" <James.Bottomley@HansenPartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Alexander Gordeev <agordeev@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Sven Schnelle <svens@linux.ibm.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        "David S . Miller" <davem@davemloft.net>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-        "H . Peter Anvin" <hpa@zytor.com>, Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Arnd Bergmann <arnd@arndb.de>, linux-doc@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
-        linux-arch@vger.kernel.org
-Cc:     Palmer Dabbelt <palmer@rivosinc.com>
-Subject: [PATCH v3 07/24] mips: Remove COMMAND_LINE_SIZE from uapi
-Date:   Tue, 14 Feb 2023 08:49:08 +0100
-Message-Id: <20230214074925.228106-8-alexghiti@rivosinc.com>
-X-Mailer: git-send-email 2.37.2
-In-Reply-To: <20230214074925.228106-1-alexghiti@rivosinc.com>
-References: <20230214074925.228106-1-alexghiti@rivosinc.com>
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=/y3DoebXU2aSRTyTPgatGNryU5LQnPO9lrblNWAcqag=;
+        b=okK9BQLQT89+p8wfpF0RWrYO/Xdzj7EM9z2/8E3itX136Iie/8fe9kyJhUd7+l/5iB
+         6ShHxoddmiAB8PJfsnzqy8i18lOcvqgnoFJTKOrFknpjTA8qAFOsFZ6qoxCOYrrvxjP4
+         Gc8zQhqxk0xclZ3ISkpleCIU+ccZvkZh0rOCqJaiRfTwBTNuZPUyaU1kYPQZhMrwr83W
+         hWG504uFi/UqaVTAP1HqzKo3+4gd9DuYntou551GVwciVYchMb8UWj4tTf1P3A/v5BKZ
+         LUM5zHUbcADnhNqJEdgoyE3rxxNgagUNgearkp/IPAVgRXDsMaLpiovMkQDIuEqTbuP7
+         pBsA==
+X-Gm-Message-State: AO0yUKWi9KetfI+FP2gQBjH4siIv/67HNCig3ksAXJoLUYt+6YRVmNDt
+        U0mRkVJmYS6WNHPjWazcy7fr7g==
+X-Google-Smtp-Source: AK7set/s62h/fO0i39nDWEPXBi6NKjg0gNVQNim1tERqh4PVsEAEgwi+kKdJTAleWFN9GVgtgNq8RA==
+X-Received: by 2002:a05:6000:8b:b0:2bd:f5bd:5482 with SMTP id m11-20020a056000008b00b002bdf5bd5482mr1139258wrx.28.1676361462875;
+        Mon, 13 Feb 2023 23:57:42 -0800 (PST)
+Received: from [192.168.30.216] ([81.0.6.76])
+        by smtp.gmail.com with ESMTPSA id h12-20020adff4cc000000b002be505ab59asm12483785wrp.97.2023.02.13.23.57.39
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 13 Feb 2023 23:57:42 -0800 (PST)
+Message-ID: <2575e5f7-b11a-020f-06ef-ba42301d7415@linaro.org>
+Date:   Tue, 14 Feb 2023 08:57:39 +0100
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:102.0)
+ Gecko/20100101 Thunderbird/102.7.2
+Subject: Re: [PATCH v2 13/24] sh/cpu: Make sure play_dead() doesn't return
+Content-Language: en-US
+To:     Josh Poimboeuf <jpoimboe@kernel.org>, linux-kernel@vger.kernel.org
+Cc:     jgross@suse.com, richard.henderson@linaro.org,
+        ink@jurassic.park.msu.ru, mattst88@gmail.com,
+        linux-alpha@vger.kernel.org, linux@armlinux.org.uk,
+        linux-arm-kernel@lists.infradead.org, catalin.marinas@arm.com,
+        will@kernel.org, guoren@kernel.org, linux-csky@vger.kernel.org,
+        linux-ia64@vger.kernel.org, chenhuacai@kernel.org,
+        kernel@xen0n.name, loongarch@lists.linux.dev, f.fainelli@gmail.com,
+        bcm-kernel-feedback-list@broadcom.com, tsbogend@alpha.franken.de,
+        linux-mips@vger.kernel.org, jiaxun.yang@flygoat.com,
+        mpe@ellerman.id.au, npiggin@gmail.com, christophe.leroy@csgroup.eu,
+        linuxppc-dev@lists.ozlabs.org, ysato@users.sourceforge.jp,
+        dalias@libc.org, linux-sh@vger.kernel.org, davem@davemloft.net,
+        sparclinux@vger.kernel.org, tglx@linutronix.de, mingo@redhat.com,
+        bp@alien8.de, dave.hansen@linux.intel.com, x86@kernel.org,
+        hpa@zytor.com, chris@zankel.net, jcmvbkbc@gmail.com,
+        linux-xtensa@linux-xtensa.org, peterz@infradead.org,
+        juri.lelli@redhat.com, vincent.guittot@linaro.org,
+        dietmar.eggemann@arm.com, rostedt@goodmis.org, bsegall@google.com,
+        mgorman@suse.de, bristot@redhat.com, vschneid@redhat.com,
+        paulmck@kernel.org
+References: <cover.1676358308.git.jpoimboe@kernel.org>
+ <d0c3ff5349adfe8fd227acc236ae2c278a05eb4c.1676358308.git.jpoimboe@kernel.org>
+From:   =?UTF-8?Q?Philippe_Mathieu-Daud=c3=a9?= <philmd@linaro.org>
+In-Reply-To: <d0c3ff5349adfe8fd227acc236ae2c278a05eb4c.1676358308.git.jpoimboe@kernel.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Palmer Dabbelt <palmer@rivosinc.com>
+On 14/2/23 08:05, Josh Poimboeuf wrote:
+> play_dead() doesn't return.  Make that more explicit with a BUG().
+> 
+> BUG() is preferable to unreachable() because BUG() is a more explicit
+> failure mode and avoids undefined behavior like falling off the edge of
+> the function into whatever code happens to be next.
+> 
+> Signed-off-by: Josh Poimboeuf <jpoimboe@kernel.org>
+> ---
+>   arch/sh/include/asm/smp-ops.h | 1 +
+>   1 file changed, 1 insertion(+)
+> 
+> diff --git a/arch/sh/include/asm/smp-ops.h b/arch/sh/include/asm/smp-ops.h
+> index e27702130eb6..63866b1595a0 100644
+> --- a/arch/sh/include/asm/smp-ops.h
+> +++ b/arch/sh/include/asm/smp-ops.h
+> @@ -27,6 +27,7 @@ static inline void plat_smp_setup(void)
+>   static inline void play_dead(void)
+>   {
+>   	mp_ops->play_dead();
+> +	BUG();
+>   }
 
-As far as I can tell this is not used by userspace and thus should not
-be part of the user-visible API.
-
-Signed-off-by: Palmer Dabbelt <palmer@rivosinc.com>
----
- arch/mips/include/asm/setup.h      | 3 ++-
- arch/mips/include/uapi/asm/setup.h | 3 ---
- 2 files changed, 2 insertions(+), 4 deletions(-)
-
-diff --git a/arch/mips/include/asm/setup.h b/arch/mips/include/asm/setup.h
-index 8c56b862fd9c..a13b9259b476 100644
---- a/arch/mips/include/asm/setup.h
-+++ b/arch/mips/include/asm/setup.h
-@@ -3,7 +3,8 @@
- #define _MIPS_SETUP_H
- 
- #include <linux/types.h>
--#include <uapi/asm/setup.h>
-+
-+#define COMMAND_LINE_SIZE	4096
- 
- extern void prom_putchar(char);
- extern void setup_early_printk(void);
-diff --git a/arch/mips/include/uapi/asm/setup.h b/arch/mips/include/uapi/asm/setup.h
-index 7d48c433b0c2..157c3c392fb4 100644
---- a/arch/mips/include/uapi/asm/setup.h
-+++ b/arch/mips/include/uapi/asm/setup.h
-@@ -2,7 +2,4 @@
- #ifndef _UAPI_MIPS_SETUP_H
- #define _UAPI_MIPS_SETUP_H
- 
--#define COMMAND_LINE_SIZE	4096
--
--
- #endif /* _UAPI_MIPS_SETUP_H */
--- 
-2.37.2
-
+Shouldn't we decorate plat_smp_ops::play_dead() as noreturn first?
