@@ -2,117 +2,78 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8CDBFC678D4
-	for <linux-sh@archiver.kernel.org>; Tue, 14 Feb 2023 13:10:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F440C61DA4
+	for <linux-sh@archiver.kernel.org>; Tue, 14 Feb 2023 14:09:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232671AbjBNNKo (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 14 Feb 2023 08:10:44 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52776 "EHLO
+        id S233132AbjBNOJ1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 14 Feb 2023 09:09:27 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53952 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229882AbjBNNKm (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Feb 2023 08:10:42 -0500
-Received: from mail-pl1-x634.google.com (mail-pl1-x634.google.com [IPv6:2607:f8b0:4864:20::634])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BF67C265AE;
-        Tue, 14 Feb 2023 05:10:35 -0800 (PST)
-Received: by mail-pl1-x634.google.com with SMTP id e17so8143831plg.12;
-        Tue, 14 Feb 2023 05:10:35 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=/UCnR+z6gmAvcqmKIJeLEMH14WiUbQ57wKTFDt5pcJ8=;
-        b=AroULSWko9Zr7eGEPpWTPA6D2mG8vKfAIsqG1/UHiZHP3HX3PbVp0qrMJ+FuAJsbWS
-         v05+kTojvExJxZ8W+9yB21D5w8vexFjRyphDjBsOddEZTMVdttkVBNXjxWFQ3Iqwojqw
-         +DKSZuOkQRuVKSaqQXL+bh2B50zxlDW7/k12RIgkMnOVm0uYI6LnfzeI25mloiCklp33
-         VHHtIf4Dpr/qSsDgSQMEDKRS4lg6TE80G2m56Li8ak7Mi6jrTmPyCPMKDQkClT1hFcFO
-         HozC1z+zsQ4VmKCtjiLNbcQm7z7g/V4D6C2WAOwQT8Y+WTTuWkSjrC9wQJ19rS06uj77
-         A7tg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=/UCnR+z6gmAvcqmKIJeLEMH14WiUbQ57wKTFDt5pcJ8=;
-        b=Yh6r+Cyvc3ch25WkKMIPEi6JcdDwdok7HPEIBQnK6V3sl44mwC+eZ9qNKbOBDbxtWl
-         pof2JqyJXjSSkT8CMFExO6s/Qg28xNIzZkC0gf6zD/Fh+L8VnVr0nhv9e95EdfNmzZTR
-         mdriLMeZO1jKC0hSUmr7gF4InzhVx6vYPbNQQ8J2yZyraPf7ek6Pouq2xaeU5/n1QvIh
-         62bC+IUUpxppa3F30Zet7GzbPx34lKOrKwsgIq/jlYuYB6wCjk/1hDo9foMfVKj6XxAJ
-         PfUvAkaQAcovc0GqBavEGkC2KonLbGO9yNI9xAlc31QaGUfLWltVqIdRyWQZZwBNHzML
-         5ybw==
-X-Gm-Message-State: AO0yUKVlmB4becgaZjpBNj4c5EG+0gsBpVCgNJr8BykApiyxmUb9E0HV
-        vCKgG/aiZ7YWKDdAKAHhvWoBkfHaEEujRQyII+g=
-X-Google-Smtp-Source: AK7set8wnbcla18BA65mD0tF+YGFQZaLOi1vF6MNFPYgJ+xCNbkwNuOA5gg0rl8sjl7Hw+xmx/asisuFdRpgxW5I32w=
-X-Received: by 2002:a17:90a:d486:b0:233:c720:e6d5 with SMTP id
- s6-20020a17090ad48600b00233c720e6d5mr2301551pju.94.1676380235318; Tue, 14 Feb
- 2023 05:10:35 -0800 (PST)
-MIME-Version: 1.0
-References: <20230214074925.228106-1-alexghiti@rivosinc.com> <20230214074925.228106-22-alexghiti@rivosinc.com>
-In-Reply-To: <20230214074925.228106-22-alexghiti@rivosinc.com>
-From:   Max Filippov <jcmvbkbc@gmail.com>
-Date:   Tue, 14 Feb 2023 05:10:24 -0800
-Message-ID: <CAMo8BfLCDbYWBWfF7ZJtG_U7E846RmJLF5OFdWpaFOv8ydo0Eg@mail.gmail.com>
-Subject: Re: [PATCH v3 21/24] xtensa: Remove empty <uapi/asm/setup.h>
-To:     Alexandre Ghiti <alexghiti@rivosinc.com>
-Cc:     Jonathan Corbet <corbet@lwn.net>,
-        Richard Henderson <richard.henderson@linaro.org>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>,
-        Vineet Gupta <vgupta@kernel.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        WANG Xuerui <kernel@xen0n.name>,
+        with ESMTP id S233115AbjBNOJZ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Feb 2023 09:09:25 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AE78E29400;
+        Tue, 14 Feb 2023 06:08:35 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 0230F61652;
+        Tue, 14 Feb 2023 14:07:44 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2B239C433D2;
+        Tue, 14 Feb 2023 14:07:39 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1676383663;
+        bh=zce8QKVBJkEIXF59dxMyDtcW4qvuXPNLJ6sOhE8RueQ=;
+        h=From:To:Cc:Subject:Date:From;
+        b=l3txA3xWDmy4ooFkvP7a5PQ7BIHvWpV3aTqjbR5wtUChigPobs0oCXRVdK0QRgWen
+         TDT+mSJD71UNB57zahQLRycH6xKd81Sw0M4cr+rNVRJz3K/3/7zbsYwc5seltenHIB
+         N+SxGGaMnA06DbxbDhTPkpix5+7ccGris499RL7Yg5j/BVHcqT6onexKczZXC9ZQZl
+         XMihRoVWr8ZIZPFy5gfGZOjVoTmmwlRx9V1npvxM1vfTlMJfHrRytuA90Nn7YOz6hM
+         rqNy0rwEiGAf+cte9ESjyQntRAbj+APkwss5PKVo70x15m7/k6Wi7T7IEgjJGdKJFD
+         XxWTCPceUj8xw==
+From:   Mike Rapoport <rppt@kernel.org>
+To:     Andrew Morton <akpm@linux-foundation.org>
+Cc:     Arnd Bergmann <arnd@arndb.de>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Alexander Gordeev <agordeev@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Sven Schnelle <svens@linux.ibm.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Guenter Roeck <linux@roeck-us.net>,
+        "Mike Rapoport (IBM)" <rppt@kernel.org>,
         Rich Felker <dalias@libc.org>,
-        "David S . Miller" <davem@davemloft.net>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-        "H . Peter Anvin" <hpa@zytor.com>, Chris Zankel <chris@zankel.net>,
-        Arnd Bergmann <arnd@arndb.de>, linux-doc@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
-        linux-arch@vger.kernel.org, Palmer Dabbelt <palmer@rivosinc.com>
-Content-Type: text/plain; charset="UTF-8"
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mm@kvack.org, linux-sh@vger.kernel.org
+Subject: [PATCH 0/2] fixups for generic implementation of pfn_valid()
+Date:   Tue, 14 Feb 2023 16:07:27 +0200
+Message-Id: <20230214140729.1649961-1-rppt@kernel.org>
+X-Mailer: git-send-email 2.35.1
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Feb 14, 2023 at 12:11 AM Alexandre Ghiti <alexghiti@rivosinc.com> wrote:
->
-> From: Palmer Dabbelt <palmer@rivosinc.com>
->
-> Signed-off-by: Palmer Dabbelt <palmer@rivosinc.com>
-> ---
->  arch/xtensa/include/uapi/asm/setup.h | 15 ---------------
->  1 file changed, 15 deletions(-)
->  delete mode 100644 arch/xtensa/include/uapi/asm/setup.h
+From: "Mike Rapoport (IBM)" <rppt@kernel.org>
 
-Acked-by: Max Filippov <jcmvbkbc@gmail.com>
+Hi,
 
+Guenter reported boot failures on m68k-nommu and sh caused by the switch to
+the generic implementation of pfn_valid():
+
+https://lore.kernel.org/all/20230212173513.GA4052259@roeck-us.net
+https://lore.kernel.org/all/20230212161320.GA3784076@roeck-us.net
+
+These are small fixups on top of mm-stable that address the issues.
+
+Mike Rapoport (IBM) (2):
+  m68k/nommu: add missing definition of ARCH_PFN_OFFSET
+  sh: initialize max_mapnr
+
+ arch/m68k/include/asm/page_no.h | 2 ++
+ arch/sh/mm/init.c               | 1 +
+ 2 files changed, 3 insertions(+)
+
+
+base-commit: f67d6b26649379f8520abe6a6c7ed335310bf01e
 -- 
-Thanks.
--- Max
+2.35.1
+
