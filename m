@@ -2,151 +2,115 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 96828C64ED8
-	for <linux-sh@archiver.kernel.org>; Wed, 15 Feb 2023 16:00:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A31BC64EC4
+	for <linux-sh@archiver.kernel.org>; Wed, 15 Feb 2023 19:45:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229960AbjBOQAF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 15 Feb 2023 11:00:05 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46802 "EHLO
+        id S229678AbjBOTpp (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 15 Feb 2023 14:45:45 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40700 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229940AbjBOQAD (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 15 Feb 2023 11:00:03 -0500
-Received: from mga14.intel.com (mga14.intel.com [192.55.52.115])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 594FA3A86E;
-        Wed, 15 Feb 2023 07:59:50 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1676476790; x=1708012790;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=rFzlPJjklUrRYXlztiXxbWF4vZTLJe24dy5KZSKBFTU=;
-  b=a2QbX3wd6aUC0XQJ2qfsU00tzCVvCSv9F3xqk4Z83a8t6xUnXvoVdf4i
-   NBxzdPdWCGWw2G0+a2FRuc48aS6+5zJjMUsAUU4x7VaRvR1kt0dzcZeE4
-   jHo1zYFgV07HaGAbi4BPBks+qZO9fn82e64Aa8yl7lKBMwgcsv+zV9IxW
-   OiuiwgzZBscUVew/h/YbZuv2dJSiEXos8iy5r5aT66TiKYAAe654m+i11
-   7/wVHEjSAu+ZufvrTjIJdAAaHjX6IYCkPCwqy3u3/8UDxpT3SMTZUn4cD
-   5pGtrG081KVPyAUVsBJtZcBo/nzky/lMvsHKB6yLBlnvLINeQJm0/k0wE
-   Q==;
-X-IronPort-AV: E=McAfee;i="6500,9779,10622"; a="331461160"
-X-IronPort-AV: E=Sophos;i="5.97,300,1669104000"; 
-   d="scan'208";a="331461160"
-Received: from orsmga008.jf.intel.com ([10.7.209.65])
-  by fmsmga103.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 15 Feb 2023 07:59:49 -0800
-X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6500,9779,10622"; a="700017813"
-X-IronPort-AV: E=Sophos;i="5.97,300,1669104000"; 
-   d="scan'208";a="700017813"
-Received: from smile.fi.intel.com ([10.237.72.54])
-  by orsmga008.jf.intel.com with ESMTP; 15 Feb 2023 07:59:31 -0800
-Received: from andy by smile.fi.intel.com with local (Exim 4.96)
-        (envelope-from <andriy.shevchenko@linux.intel.com>)
-        id 1pSKBp-007KF7-0b;
-        Wed, 15 Feb 2023 17:59:25 +0200
-Date:   Wed, 15 Feb 2023 17:59:24 +0200
-From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To:     Bartosz Golaszewski <brgl@bgdev.pl>
-Cc:     Arnd Bergmann <arnd@arndb.de>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Bartosz Golaszewski <bartosz.golaszewski@linaro.org>,
-        Tony Lindgren <tony@atomide.com>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Vincenzo Palazzo <vincenzopalazzodev@gmail.com>,
-        Devarsh Thakkar <devarsht@ti.com>,
-        Michael Walle <michael@walle.cc>,
-        Dmitry Torokhov <dmitry.torokhov@gmail.com>,
-        Dipen Patel <dipenp@nvidia.com>,
-        Thierry Reding <treding@nvidia.com>,
-        Stefan Schmidt <stefan@datenfreihafen.org>,
-        Miquel Raynal <miquel.raynal@bootlin.com>,
-        Lee Jones <lee@kernel.org>, linux-gpio@vger.kernel.org,
-        linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-doc-tw-discuss@lists.sourceforge.net,
-        linux-arm-kernel@lists.infradead.org, linux-omap@vger.kernel.org,
-        linux-samsung-soc@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
-        linux-acpi@vger.kernel.org, linux-tegra@vger.kernel.org,
-        linux-input@vger.kernel.org, linux-media@vger.kernel.org,
-        linux-wpan@vger.kernel.org, netdev@vger.kernel.org,
-        linux-wireless@vger.kernel.org,
-        brcm80211-dev-list.pdl@broadcom.com,
-        SHA-cyfmac-dev-list@infineon.com, linux-arch@vger.kernel.org,
-        devicetree@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>,
-        Alex Shi <alexs@kernel.org>,
-        Yanteng Si <siyanteng@loongson.cn>,
-        Hu Haowen <src.res@email.cn>,
-        Russell King <linux@armlinux.org.uk>,
-        Aaro Koskinen <aaro.koskinen@iki.fi>,
-        Janusz Krzysztofik <jmkrzyszt@gmail.com>,
-        Andrew Lunn <andrew@lunn.ch>,
-        Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
-        Gregory Clement <gregory.clement@bootlin.com>,
-        Alim Akhtar <alim.akhtar@samsung.com>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Mun Yew Tham <mun.yew.tham@intel.com>,
-        Keerthy <j-keerthy@ti.com>,
-        Mika Westerberg <mika.westerberg@linux.intel.com>,
-        Thierry Reding <thierry.reding@gmail.com>,
-        Jonathan Hunter <jonathanh@nvidia.com>,
-        Mauro Carvalho Chehab <mchehab@kernel.org>,
-        Alexander Aring <alex.aring@gmail.com>,
-        "David S. Miller" <davem@davemloft.net>,
-        Eric Dumazet <edumazet@google.com>,
-        Jakub Kicinski <kuba@kernel.org>,
-        Paolo Abeni <pabeni@redhat.com>,
-        Arend van Spriel <aspriel@gmail.com>,
-        Franky Lin <franky.lin@broadcom.com>,
-        Hante Meuleman <hante.meuleman@broadcom.com>,
-        Kalle Valo <kvalo@kernel.org>, Qiang Zhao <qiang.zhao@nxp.com>,
-        Li Yang <leoyang.li@nxp.com>, Rob Herring <robh+dt@kernel.org>,
-        Frank Rowand <frowand.list@gmail.com>
-Subject: Re: [PATCH v4 00/18] gpiolib cleanups
-Message-ID: <Y+0BXGLf2n+dAi4v@smile.fi.intel.com>
-References: <20230208173343.37582-1-andriy.shevchenko@linux.intel.com>
- <CAMRc=MdsCZKh12QcqdWk+Zht5UDpA_G1+rx6+_3dzwjDYe6L+Q@mail.gmail.com>
+        with ESMTP id S229651AbjBOTpn (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 15 Feb 2023 14:45:43 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E04233BD8F;
+        Wed, 15 Feb 2023 11:45:42 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 7E36461D23;
+        Wed, 15 Feb 2023 19:45:42 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 43254C433EF;
+        Wed, 15 Feb 2023 19:45:40 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1676490341;
+        bh=jEHEKJREN3+faSwa9KQfDCZrIk1boGFeW1CEIEtwaE8=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=nR0NlH9Idu9r6K5BB6SiskW/nN4Duv8oUu4t8oAsMW/BA2jHnn50sUmTtFA09snEM
+         MM4Q1KeVxIEK0CQ3heZ6KGEcJDJrmingPvv4ff3yLJnpeg2zJ4He1vCJjQd4s9mOGJ
+         HhE0qrDT5xUO3xGvs5zweCTvugYIA2adLOusrfvLPAxv6b4Cny+j0eHRlRanyAeAV0
+         ysxu48fte0a0SA7XcnPw1U31MXQzSfjcPpTrp4Qgi04O07kA/LeXjWVthIX5CMIF30
+         JAfOEJGYLSGZoEytWeIGwTCLRlwIMdQ5V+BaoKw5Pr+bw7iEZ2yNGIfGT3LJDZnQTo
+         qDwCO7AGpVLow==
+Date:   Wed, 15 Feb 2023 11:45:38 -0800
+From:   Josh Poimboeuf <jpoimboe@kernel.org>
+To:     Mark Rutland <mark.rutland@arm.com>
+Cc:     Philippe =?utf-8?Q?Mathieu-Daud=C3=A9?= <philmd@linaro.org>,
+        juri.lelli@redhat.com, dalias@libc.org, linux-ia64@vger.kernel.org,
+        linux-sh@vger.kernel.org, peterz@infradead.org,
+        catalin.marinas@arm.com, dave.hansen@linux.intel.com,
+        x86@kernel.org, jiaxun.yang@flygoat.com,
+        linux-mips@vger.kernel.org, bsegall@google.com, jcmvbkbc@gmail.com,
+        guoren@kernel.org, hpa@zytor.com, sparclinux@vger.kernel.org,
+        kernel@xen0n.name, will@kernel.org, vschneid@redhat.com,
+        f.fainelli@gmail.com, vincent.guittot@linaro.org,
+        ysato@users.sourceforge.jp, chenhuacai@kernel.org,
+        linux@armlinux.org.uk, linux-csky@vger.kernel.org,
+        dietmar.eggemann@arm.com, mingo@redhat.com,
+        bcm-kernel-feedback-list@broadcom.com, mgorman@suse.de,
+        mattst88@gmail.com, linux-xtensa@linux-xtensa.org,
+        paulmck@kernel.org, richard.henderson@linaro.org,
+        npiggin@gmail.com, ink@jurassic.park.msu.ru, rostedt@goodmis.org,
+        loongarch@lists.linux.dev, tglx@linutronix.de,
+        linux-arm-kernel@lists.infradead.org, jgross@suse.com,
+        chris@zankel.net, tsbogend@alpha.franken.de, bristot@redhat.com,
+        linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org,
+        bp@alien8.de, linuxppc-dev@lists.ozlabs.org, davem@davemloft.net
+Subject: Re: [PATCH v2 04/24] arm64/cpu: Mark cpu_die() __noreturn
+Message-ID: <20230215194538.aiiris3uabnuvkkg@treble>
+References: <cover.1676358308.git.jpoimboe@kernel.org>
+ <e47fc487980d5330e6059ac6e16416bec88cda0e.1676358308.git.jpoimboe@kernel.org>
+ <14274f04-2991-95bd-c29b-07e86e8755c1@linaro.org>
+ <Y+zZgZIP7RPIgyQf@FVFF77S0Q05N>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <CAMRc=MdsCZKh12QcqdWk+Zht5UDpA_G1+rx6+_3dzwjDYe6L+Q@mail.gmail.com>
-Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <Y+zZgZIP7RPIgyQf@FVFF77S0Q05N>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Feb 15, 2023 at 04:52:29PM +0100, Bartosz Golaszewski wrote:
-> On Wed, Feb 8, 2023 at 6:34 PM Andy Shevchenko
-> <andriy.shevchenko@linux.intel.com> wrote:
-> >
-> > These are some older patches Arnd did last year, rebased to
-> > linux-next-20230208. On top there are Andy's patches regarding
-> > similar topic. The series starts with Linus Walleij's patches.
-> >
-> > The main goal is to remove some of the legacy bits of the gpiolib
-> > interfaces, where the corner cases are easily avoided or replaced
-> > with gpio descriptor based interfaces.
-> >
-> > The idea is to get an immutable branch and route the whole series
-> > via GPIO tree.
+On Wed, Feb 15, 2023 at 01:09:21PM +0000, Mark Rutland wrote:
+> On Tue, Feb 14, 2023 at 09:13:08AM +0100, Philippe Mathieu-Daudé wrote:
+> > On 14/2/23 08:05, Josh Poimboeuf wrote:
+> > > cpu_die() doesn't return.  Annotate it as such.  By extension this also
+> > > makes arch_cpu_idle_dead() noreturn.
+> > > 
+> > > Signed-off-by: Josh Poimboeuf <jpoimboe@kernel.org>
+> > > ---
+> > >   arch/arm64/include/asm/smp.h | 2 +-
+> > >   1 file changed, 1 insertion(+), 1 deletion(-)
+> > > 
+> > > diff --git a/arch/arm64/include/asm/smp.h b/arch/arm64/include/asm/smp.h
+> > > index fc55f5a57a06..5733a31bab08 100644
+> > > --- a/arch/arm64/include/asm/smp.h
+> > > +++ b/arch/arm64/include/asm/smp.h
+> > > @@ -100,7 +100,7 @@ static inline void arch_send_wakeup_ipi_mask(const struct cpumask *mask)
+> > >   extern int __cpu_disable(void);
+> > >   extern void __cpu_die(unsigned int cpu);
+> > > -extern void cpu_die(void);
+> > > +extern void __noreturn cpu_die(void);
+> > >   extern void cpu_die_early(void);
+> > 
+> > Shouldn't cpu_operations::cpu_die() be declared noreturn first?
 > 
-> Andy,
+> The cpu_die() function ends with a BUG(), and so does not return, even if a
+> cpu_operations::cpu_die() function that it calls erroneously returned.
 > 
-> looks like this series has all the acks it needs but I decided to not
-> send it in the upcoming merge window, I'd prefer it gets some time in
-> next so I'll let it sit until the next release cycle.
+> We *could* mark cpu_operations::cpu_die() as noreturn, but I'd prefer that we
+> did not so that the compiler doesn't optimize away the BUG() which is there to
+> catch such erroneous returns.
+> 
+> That said, could we please add __noreturn to the implementation of cpu_die() in
+> arch/arm64/kernel/smp.c? i.e. the fixup below.
 
-Ah, I forgot to mention that this is for the next cycle (v6.4).
-Hence it's fine. (Moreover it's based on Linux Next, so it will
-fail compilation in any certain tree except that one.)
+Done.
 
-I will create an immutable branch after v6.3-rc1 is out.
+> With that fixup:
+> 
+> Acked-by: Mark Rutland <mark.rutland@arm.com>
+
+Thanks!
 
 -- 
-With Best Regards,
-Andy Shevchenko
-
-
+Josh
