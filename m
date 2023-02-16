@@ -2,359 +2,108 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 206FFC61DA4
-	for <linux-sh@archiver.kernel.org>; Thu, 16 Feb 2023 12:36:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 79682C636CC
+	for <linux-sh@archiver.kernel.org>; Thu, 16 Feb 2023 12:56:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229487AbjBPMgy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 16 Feb 2023 07:36:54 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44252 "EHLO
+        id S229678AbjBPM4i (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 16 Feb 2023 07:56:38 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39922 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230124AbjBPMgw (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 16 Feb 2023 07:36:52 -0500
+        with ESMTP id S229653AbjBPM4g (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 16 Feb 2023 07:56:36 -0500
 Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E989685F49
-        for <linux-sh@vger.kernel.org>; Thu, 16 Feb 2023 04:35:50 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F12511B546
+        for <linux-sh@vger.kernel.org>; Thu, 16 Feb 2023 04:55:47 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1676550949;
+        s=mimecast20190719; t=1676552147;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=QVTDIuzGqj+0AznPZIdOL0y+dZAfOPA4Q2ivFIOFZp8=;
-        b=hdaAKe6gMhQhUZCkn0zUhWDx/6DPVETp4+uUdTm1dO5QDR6OtEaSwe4A585umOMqIa6QbR
-        kCLqEDHsv8LE/1QswnHIfVWrKUtO1JHnnEgNr8Ok1ljmlOZmbTzFYTfv9sY+vl5tilgaaT
-        09fefxFPW5G4IvW/clQnpO96I8vVVIY=
-Received: from mimecast-mx02.redhat.com (mx3-rdu2.redhat.com
- [66.187.233.73]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-292-JlR7Fil8MsSoO_Y6dmY8gQ-1; Thu, 16 Feb 2023 07:35:47 -0500
-X-MC-Unique: JlR7Fil8MsSoO_Y6dmY8gQ-1
-Received: from smtp.corp.redhat.com (int-mx09.intmail.prod.int.rdu2.redhat.com [10.11.54.9])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id BD9AC2806043;
-        Thu, 16 Feb 2023 12:35:46 +0000 (UTC)
-Received: from MiWiFi-R3L-srv.redhat.com (ovpn-12-99.pek2.redhat.com [10.72.12.99])
-        by smtp.corp.redhat.com (Postfix) with ESMTP id 8FF13492C3C;
-        Thu, 16 Feb 2023 12:35:39 +0000 (UTC)
-From:   Baoquan He <bhe@redhat.com>
-To:     linux-kernel@vger.kernel.org
-Cc:     linux-mm@kvack.org, akpm@linux-foundation.org,
-        christophe.leroy@csgroup.eu, hch@infradead.org,
-        agordeev@linux.ibm.com, wangkefeng.wang@huawei.com,
-        schnelle@linux.ibm.com, David.Laight@ACULAB.COM, shorne@gmail.com,
-        arnd@arndb.de, Baoquan He <bhe@redhat.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Subject: [PATCH v4 10/16] sh: mm: Convert to GENERIC_IOREMAP
-Date:   Thu, 16 Feb 2023 20:34:13 +0800
-Message-Id: <20230216123419.461016-11-bhe@redhat.com>
-In-Reply-To: <20230216123419.461016-1-bhe@redhat.com>
-References: <20230216123419.461016-1-bhe@redhat.com>
+        bh=YQju69BiqsaDeQRQ67eE8xOTlMpUfeTc3HdbBLvKdtI=;
+        b=PBURyO56yfGpgv+rVaRaGZwrs9ZPQo4h9XZ2P2Zn6bGK7ZFPg432ngCIH8SjasACchWssD
+        Hmvhlq9b9h/M3mpt5NQ5ye+Xyru43pBP4va3n1YHi4SHLaEtBb5v96GIgEOyZPmxZ+OUU+
+        22X3ITtNH6jAqn8qyFh6RwkeEISvgcA=
+Received: from mail-wm1-f69.google.com (mail-wm1-f69.google.com
+ [209.85.128.69]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_128_GCM_SHA256) id
+ us-mta-624-n6Kei61eMNqIOSRvBSCTXg-1; Thu, 16 Feb 2023 07:55:46 -0500
+X-MC-Unique: n6Kei61eMNqIOSRvBSCTXg-1
+Received: by mail-wm1-f69.google.com with SMTP id r14-20020a05600c35ce00b003e10bfcd160so1081899wmq.6
+        for <linux-sh@vger.kernel.org>; Thu, 16 Feb 2023 04:55:45 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=content-transfer-encoding:in-reply-to:organization:from:references
+         :cc:to:content-language:subject:user-agent:mime-version:date
+         :message-id:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=YQju69BiqsaDeQRQ67eE8xOTlMpUfeTc3HdbBLvKdtI=;
+        b=u5UJhuah3wHIAqL9unZ6L041bWeasGc5JYZs91T0wQHye26d1eHn/E7zjT65tjvp0U
+         /OUk8oeikBR1Gu2qhGJq3t8xuSyQEFRkGtxuBbnEYtmL5OBQ7jR+v/wWK682jMY+hC+9
+         m4E4Bu+Vj4GZQAZxTWb8ot1lM13HZP/vfTHXe1lZyGCkUjZYMzgK+tlHEYzNOpY4GM+T
+         i11Gxpz9HQDj8b8WPLse4Tb1sqPnXb+IEJxN/T+NfcscxNXKprk6HHaSBiJQmojkXbc3
+         qBuOIA/04Z8e4/kSPgdTTwyjeV9PQfcI0gPm7V7b28eHUaQJT8ebiaBGFHQnHXXyhWG4
+         59sw==
+X-Gm-Message-State: AO0yUKWyqbG6yLTFGCBe32pbHjy5z1Y1M0LeASvG6//dzg2QYX2s/ELx
+        v3vYDKmoX1zy1/jPUoOecZH6uYa3fo0Dr6M6ldiGdstdLUDPRLCi8+xzUfNqoMgIZ8TlEPx37hN
+        M2rbL8uWqJkwA+srEIxGTqdRz
+X-Received: by 2002:a05:600c:3095:b0:3e0:270f:dc88 with SMTP id g21-20020a05600c309500b003e0270fdc88mr4727009wmn.33.1676552145109;
+        Thu, 16 Feb 2023 04:55:45 -0800 (PST)
+X-Google-Smtp-Source: AK7set+7vAUFLmGpK/uGMNwqyeDbGIKjmd05FOFkQfPnLLLkNoDCGfYC4U+JHMip2ipd/4/xZ0D3Eg==
+X-Received: by 2002:a05:600c:3095:b0:3e0:270f:dc88 with SMTP id g21-20020a05600c309500b003e0270fdc88mr4726994wmn.33.1676552144813;
+        Thu, 16 Feb 2023 04:55:44 -0800 (PST)
+Received: from ?IPV6:2003:cb:c708:bc00:2acb:9e46:1412:686a? (p200300cbc708bc002acb9e461412686a.dip0.t-ipconnect.de. [2003:cb:c708:bc00:2acb:9e46:1412:686a])
+        by smtp.gmail.com with ESMTPSA id i28-20020a1c541c000000b003dd1c45a7b0sm1803896wmb.23.2023.02.16.04.55.43
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 16 Feb 2023 04:55:44 -0800 (PST)
+Message-ID: <36284094-b8b7-abe2-3ac9-f504a7c8010f@redhat.com>
+Date:   Thu, 16 Feb 2023 13:55:43 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-X-Scanned-By: MIMEDefang 3.1 on 10.11.54.9
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.6.0
+Subject: Re: [PATCH 1/2] m68k/nommu: add missing definition of ARCH_PFN_OFFSET
+To:     Mike Rapoport <rppt@kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>
+Cc:     Arnd Bergmann <arnd@arndb.de>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Guenter Roeck <linux@roeck-us.net>,
+        Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mm@kvack.org, linux-sh@vger.kernel.org
+References: <20230214140729.1649961-1-rppt@kernel.org>
+ <20230214140729.1649961-2-rppt@kernel.org>
+From:   David Hildenbrand <david@redhat.com>
+Organization: Red Hat
+In-Reply-To: <20230214140729.1649961-2-rppt@kernel.org>
+X-Mimecast-Spam-Score: 0
+X-Mimecast-Originator: redhat.com
+Content-Language: en-US
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-By taking GENERIC_IOREMAP method, the generic generic_ioremap_prot(),
-generic_iounmap(), and their generic wrapper ioremap_prot(), ioremap()
-and iounmap() are all visible and available to arch. Arch needs to
-provide wrapper functions to override the generic versions if there's
-arch specific handling in its ioremap_prot(), ioremap() or iounmap().
-This change will simplify implementation by removing duplicated codes
-with generic_ioremap_prot() and generic_iounmap(), and has the equivalent
-functioality as before.
+On 14.02.23 15:07, Mike Rapoport wrote:
+> From: "Mike Rapoport (IBM)" <rppt@kernel.org>
+> 
+> On m68k/nommu RAM does not necessarily start at 0x0 and when it does not
+> pfn_valid() uses a wrong offset into the memory map which causes silent
+> boot failures.
+> 
+> Define ARCH_PFN_OFFSET to make pfn_valid() use the correct offset.
+> 
+> Reported-by: Guenter Roeck <linux@roeck-us.net>
+> Fixes: d82f07f06cf8 ("m68k: use asm-generic/memory_model.h for both MMU and !MMU")
+> Signed-off-by: Mike Rapoport (IBM) <rppt@kernel.org>
+> ---
 
-Here, add wrapper functions ioremap_prot() and iounmap() for SuperH's
-special operation when ioremap() and iounmap().
+Reviewed-by: David Hildenbrand <david@redhat.com>
 
-Meanwhile, add macro definitions for port|mm io functions since SuperH
-has its own implementation in arch/sh/kernel/iomap.c and
-arch/sh/include/asm/io_noioport.h. These will conflict with the port|mm io
-function definitions in include/asm-generic/io.h to cause compiling
-errors like below:
-
-====
-  CC      arch/sh/kernel/asm-offsets.s
-In file included from ./arch/sh/include/asm/io.h:294,
-                 from ./include/linux/io.h:13,
-                 ......
-                 from arch/sh/kernel/asm-offsets.c:16:
-./include/asm-generic/io.h:792:17: error: conflicting types for ‘ioread8’
-  792 | #define ioread8 ioread8
-      |                 ^~~~~~~
-./include/asm-generic/io.h:793:18: note: in expansion of macro ‘ioread8’
-  793 | static inline u8 ioread8(const volatile void __iomem *addr)
-      |                  ^~~~~~~
-In file included from ./arch/sh/include/asm/io.h:22,
-                 from ./include/linux/io.h:13,
-                 ......
-                 from arch/sh/kernel/asm-offsets.c:16:
-./include/asm-generic/iomap.h:29:21: note: previous declaration of ‘ioread8’ was here
-   29 | extern unsigned int ioread8(const void __iomem *);
-====
-
-Signed-off-by: Baoquan He <bhe@redhat.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
----
- arch/sh/Kconfig                   |  1 +
- arch/sh/include/asm/io.h          | 65 ++++++++++++++++---------------
- arch/sh/include/asm/io_noioport.h |  7 ++++
- arch/sh/mm/ioremap.c              | 65 ++++++-------------------------
- 4 files changed, 52 insertions(+), 86 deletions(-)
-
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 0665ac0add0b..9ab627f97c4a 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -25,6 +25,7 @@ config SUPERH
- 	select GENERIC_SCHED_CLOCK
- 	select GENERIC_SMP_IDLE_THREAD
- 	select GUP_GET_PXX_LOW_HIGH if X2TLB
-+	select GENERIC_IOREMAP if MMU
- 	select HAVE_ARCH_AUDITSYSCALL
- 	select HAVE_ARCH_KGDB
- 	select HAVE_ARCH_SECCOMP_FILTER
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index fba90e670ed4..b3a26b405c8d 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -119,6 +119,26 @@ void __raw_readsl(const void __iomem *addr, void *data, int longlen);
- 
- __BUILD_MEMORY_STRING(__raw_, q, u64)
- 
-+#define ioread8 ioread8
-+#define ioread16 ioread16
-+#define ioread16be ioread16be
-+#define ioread32 ioread32
-+#define ioread32be ioread32be
-+
-+#define iowrite8 iowrite8
-+#define iowrite16 iowrite16
-+#define iowrite16be iowrite16be
-+#define iowrite32 iowrite32
-+#define iowrite32be iowrite32be
-+
-+#define ioread8_rep ioread8_rep
-+#define ioread16_rep ioread16_rep
-+#define ioread32_rep ioread32_rep
-+
-+#define iowrite8_rep iowrite8_rep
-+#define iowrite16_rep iowrite16_rep
-+#define iowrite32_rep iowrite32_rep
-+
- #ifdef CONFIG_HAS_IOPORT_MAP
- 
- /*
-@@ -225,6 +245,9 @@ __BUILD_IOPORT_STRING(q, u64)
- #define IO_SPACE_LIMIT 0xffffffff
- 
- /* We really want to try and get these to memcpy etc */
-+#define memset_io memset_io
-+#define memcpy_fromio memcpy_fromio
-+#define memcpy_toio memcpy_toio
- void memcpy_fromio(void *, const volatile void __iomem *, unsigned long);
- void memcpy_toio(volatile void __iomem *, const void *, unsigned long);
- void memset_io(volatile void __iomem *, int, unsigned long);
-@@ -243,40 +266,16 @@ unsigned long long poke_real_address_q(unsigned long long addr,
- #endif
- 
- #ifdef CONFIG_MMU
--void iounmap(void __iomem *addr);
--void __iomem *__ioremap_caller(phys_addr_t offset, unsigned long size,
--			       pgprot_t prot, void *caller);
--
--static inline void __iomem *ioremap(phys_addr_t offset, unsigned long size)
--{
--	return __ioremap_caller(offset, size, PAGE_KERNEL_NOCACHE,
--			__builtin_return_address(0));
--}
--
--static inline void __iomem *
--ioremap_cache(phys_addr_t offset, unsigned long size)
--{
--	return __ioremap_caller(offset, size, PAGE_KERNEL,
--			__builtin_return_address(0));
--}
--#define ioremap_cache ioremap_cache
--
--#ifdef CONFIG_HAVE_IOREMAP_PROT
--static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
--		unsigned long flags)
--{
--	return __ioremap_caller(offset, size, __pgprot(flags),
--			__builtin_return_address(0));
--}
--#endif /* CONFIG_HAVE_IOREMAP_PROT */
-+/*
-+ * I/O memory mapping functions.
-+ */
-+#define ioremap_prot ioremap_prot
-+#define iounmap iounmap
- 
--#else /* CONFIG_MMU */
--static inline void __iomem *ioremap(phys_addr_t offset, size_t size)
--{
--	return (void __iomem *)(unsigned long)offset;
--}
-+#define _PAGE_IOREMAP pgprot_val(PAGE_KERNEL_NOCACHE)
- 
--static inline void iounmap(volatile void __iomem *addr) { }
-+#define ioremap_cache(addr, size)  \
-+	ioremap_prot((addr), (size), pgprot_val(PAGE_KERNEL))
- #endif /* CONFIG_MMU */
- 
- #define ioremap_uc	ioremap
-@@ -287,6 +286,8 @@ static inline void iounmap(volatile void __iomem *addr) { }
-  */
- #define xlate_dev_mem_ptr(p)	__va(p)
- 
-+#include <asm-generic/io.h>
-+
- #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
- int valid_phys_addr_range(phys_addr_t addr, size_t size);
- int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
-diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
-index f7938fe0f911..5ba4116b4265 100644
---- a/arch/sh/include/asm/io_noioport.h
-+++ b/arch/sh/include/asm/io_noioport.h
-@@ -53,6 +53,13 @@ static inline void ioport_unmap(void __iomem *addr)
- #define outw_p(x, addr)	outw((x), (addr))
- #define outl_p(x, addr)	outl((x), (addr))
- 
-+#define insb insb
-+#define insw insw
-+#define insl insl
-+#define outsb outsb
-+#define outsw outsw
-+#define outsl outsl
-+
- static inline void insb(unsigned long port, void *dst, unsigned long count)
- {
- 	BUG();
-diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
-index 21342581144d..c33b3daa4ad1 100644
---- a/arch/sh/mm/ioremap.c
-+++ b/arch/sh/mm/ioremap.c
-@@ -72,22 +72,11 @@ __ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
- #define __ioremap_29bit(offset, size, prot)		NULL
- #endif /* CONFIG_29BIT */
- 
--/*
-- * Remap an arbitrary physical address space into the kernel virtual
-- * address space. Needed when the kernel wants to access high addresses
-- * directly.
-- *
-- * NOTE! We need to allow non-page-aligned mappings too: we will obviously
-- * have to convert them into an offset in a page-aligned mapping, but the
-- * caller shouldn't need to know that small detail.
-- */
--void __iomem * __ref
--__ioremap_caller(phys_addr_t phys_addr, unsigned long size,
--		 pgprot_t pgprot, void *caller)
-+void __iomem *ioremap_prot(phys_addr_t phys_addr, size_t size,
-+			   unsigned long prot)
- {
--	struct vm_struct *area;
--	unsigned long offset, last_addr, addr, orig_addr;
- 	void __iomem *mapped;
-+	pgprot_t pgprot = __pgprot(prot);
- 
- 	mapped = __ioremap_trapped(phys_addr, size);
- 	if (mapped)
-@@ -97,11 +86,6 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
- 	if (mapped)
- 		return mapped;
- 
--	/* Don't allow wraparound or zero size */
--	last_addr = phys_addr + size - 1;
--	if (!size || last_addr < phys_addr)
--		return NULL;
--
- 	/*
- 	 * If we can't yet use the regular approach, go the fixmap route.
- 	 */
-@@ -112,34 +96,14 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
- 	 * First try to remap through the PMB.
- 	 * PMB entries are all pre-faulted.
- 	 */
--	mapped = pmb_remap_caller(phys_addr, size, pgprot, caller);
-+	mapped = pmb_remap_caller(phys_addr, size, pgprot,
-+			__builtin_return_address(0));
- 	if (mapped && !IS_ERR(mapped))
- 		return mapped;
- 
--	/*
--	 * Mappings have to be page-aligned
--	 */
--	offset = phys_addr & ~PAGE_MASK;
--	phys_addr &= PAGE_MASK;
--	size = PAGE_ALIGN(last_addr+1) - phys_addr;
--
--	/*
--	 * Ok, go for it..
--	 */
--	area = get_vm_area_caller(size, VM_IOREMAP, caller);
--	if (!area)
--		return NULL;
--	area->phys_addr = phys_addr;
--	orig_addr = addr = (unsigned long)area->addr;
--
--	if (ioremap_page_range(addr, addr + size, phys_addr, pgprot)) {
--		vunmap((void *)orig_addr);
--		return NULL;
--	}
--
--	return (void __iomem *)(offset + (char *)orig_addr);
-+	return generic_ioremap_prot(phys_addr, size, pgprot);
- }
--EXPORT_SYMBOL(__ioremap_caller);
-+EXPORT_SYMBOL(ioremap_prot);
- 
- /*
-  * Simple checks for non-translatable mappings.
-@@ -158,10 +122,9 @@ static inline int iomapping_nontranslatable(unsigned long offset)
- 	return 0;
- }
- 
--void iounmap(void __iomem *addr)
-+void iounmap(volatile void __iomem *addr)
- {
- 	unsigned long vaddr = (unsigned long __force)addr;
--	struct vm_struct *p;
- 
- 	/*
- 	 * Nothing to do if there is no translatable mapping.
-@@ -172,21 +135,15 @@ void iounmap(void __iomem *addr)
- 	/*
- 	 * There's no VMA if it's from an early fixed mapping.
- 	 */
--	if (iounmap_fixed(addr) == 0)
-+	if (iounmap_fixed((void __iomem *)addr) == 0)
- 		return;
- 
- 	/*
- 	 * If the PMB handled it, there's nothing else to do.
- 	 */
--	if (pmb_unmap(addr) == 0)
-+	if (pmb_unmap((void __iomem *)addr) == 0)
- 		return;
- 
--	p = remove_vm_area((void *)(vaddr & PAGE_MASK));
--	if (!p) {
--		printk(KERN_ERR "%s: bad address %p\n", __func__, addr);
--		return;
--	}
--
--	kfree(p);
-+	generic_iounmap(addr);
- }
- EXPORT_SYMBOL(iounmap);
 -- 
-2.34.1
+Thanks,
+
+David / dhildenb
 
