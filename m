@@ -2,96 +2,156 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EBC0CC05027
-	for <linux-sh@archiver.kernel.org>; Sun, 19 Feb 2023 17:05:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 52AFAC6379F
+	for <linux-sh@archiver.kernel.org>; Sun, 19 Feb 2023 20:40:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230520AbjBSRFc (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 19 Feb 2023 12:05:32 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42294 "EHLO
+        id S231494AbjBSUkw (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 19 Feb 2023 15:40:52 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41558 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231124AbjBSRF3 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 19 Feb 2023 12:05:29 -0500
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 93D9A1350D;
-        Sun, 19 Feb 2023 09:05:25 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:References:Cc:To:Subject:From:MIME-Version:Date:
-        Message-ID:Sender:Reply-To:Content-ID:Content-Description;
-        bh=F6JJADHOsWHKA0bshEGXmw0TuflTOHo4/Y/0axH58tc=; b=0bQrdmQXLvQS/CWWCW2JzSwHMQ
-        ckfCDify3CmNxAS5OAQShbkf8L5VCNS+tR+r8xSNbifqYZL2GgrvNqPGfxJsAEGCPVwVUuqqBNuZd
-        Thnx6KqAdgDfntS2JuY9LfI8zQWTIrIj2UXm4h8aObd8w7b9wylm0TutDqu8EfnnUiHK1V9/6T1Pa
-        Opca1+EzlfNrx8i3/TOXKVrgYyMgAnAtluQWC3v+RedrXqA+JnQrzz9yPJAUPbxq7/s/M6QWQc9dK
-        R46GBq5JYzKANbkgZwsqk6uAdnpiwQmSzNsmjg37jIqcUfov2oQyhZX8d0bBZQVNEd0AR5c3W8+BL
-        XZVxjhFw==;
-Received: from [2601:1c2:980:9ec0::df2f]
-        by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pTn7s-001zOP-S2; Sun, 19 Feb 2023 17:05:24 +0000
-Message-ID: <86cc6fec-2d6e-17eb-b9ca-66c1850fca78@infradead.org>
-Date:   Sun, 19 Feb 2023 09:05:24 -0800
+        with ESMTP id S230365AbjBSUkv (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 19 Feb 2023 15:40:51 -0500
+Received: from mail-pj1-x1030.google.com (mail-pj1-x1030.google.com [IPv6:2607:f8b0:4864:20::1030])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3A9F018B14
+        for <linux-sh@vger.kernel.org>; Sun, 19 Feb 2023 12:40:49 -0800 (PST)
+Received: by mail-pj1-x1030.google.com with SMTP id t4so1694778pjy.1
+        for <linux-sh@vger.kernel.org>; Sun, 19 Feb 2023 12:40:49 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=chromium.org; s=google;
+        h=in-reply-to:content-disposition:mime-version:references:subject:cc
+         :to:from:date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=lqAwlutC29lMR1tf1e4XOcfdxhypv9zb0T2DcQuJ+3c=;
+        b=MjtbsH5bW1HXHGXLRbwOKZEzdSInx4XUaJn+/0d2SKM5dw34hiBNmQU6ohqNZQA+L2
+         I1GvKT2KInRCvvo+fSO/0GUShulfgU4qQvkio0wi+hAcl/UCahGdGyhq51MgW0auKO3G
+         CJxCVe/nwu6tGjmlmFI7U6pzHUn2OY1PSCX/Y=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112;
+        h=in-reply-to:content-disposition:mime-version:references:subject:cc
+         :to:from:date:message-id:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=lqAwlutC29lMR1tf1e4XOcfdxhypv9zb0T2DcQuJ+3c=;
+        b=5wB+7+1Z0k5FmS2oQwGHd5hFhYS1BjWJuuJID5xW6wi6Ms7JXhLWaSPwYFcPj8xFoB
+         H70R56VtcT/OpONUg89oTofVEqAcY/aoUEKfT3eUylfbJe84ft59KK3ItAldL6DFool5
+         1Eq6jXY3CnjZnAoITD5U6g68vQs7aGhJOWmr7Mws8uiQKJodListrvnSZSAPAUcyRdyj
+         I+UgPja55EYv2Uwtl6LB6fx5sj8UO8xCSAiFj8N6kePZzu+YuGeZpJz/upreMfL2V+2g
+         DAaiD8199JLsG69+IY8pew1wg9XRRHAPDfMbZ6c/Vd6RGgAVAZOd/DOc7bjA5XXYh4ez
+         1huA==
+X-Gm-Message-State: AO0yUKWLbCbVMIQkXXcbPSERa9UMY5k5JX5sqcJWCK1eWTnwuKlrgrzA
+        Ipsq5aazhiPQwjLclLujbQGehw==
+X-Google-Smtp-Source: AK7set+6pLNAI2t6KBKr2yLlrqERzrItep/TFuzpN1S5wuT33QqMqXLLIayngNvSFYR5H3F8x2mXwg==
+X-Received: by 2002:a17:903:2344:b0:19b:110d:28dc with SMTP id c4-20020a170903234400b0019b110d28dcmr2297593plh.19.1676839248654;
+        Sun, 19 Feb 2023 12:40:48 -0800 (PST)
+Received: from www.outflux.net (198-0-35-241-static.hfc.comcastbusiness.net. [198.0.35.241])
+        by smtp.gmail.com with ESMTPSA id bd6-20020a170902830600b0019a723a831dsm6357706plb.158.2023.02.19.12.40.47
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 19 Feb 2023 12:40:48 -0800 (PST)
+Message-ID: <63f28950.170a0220.aef42.bc00@mx.google.com>
+X-Google-Original-Message-ID: <202302191240.@keescook>
+Date:   Sun, 19 Feb 2023 12:40:47 -0800
+From:   Kees Cook <keescook@chromium.org>
+To:     Rick Edgecombe <rick.p.edgecombe@intel.com>
+Cc:     x86@kernel.org, "H . Peter Anvin" <hpa@zytor.com>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, linux-kernel@vger.kernel.org,
+        linux-doc@vger.kernel.org, linux-mm@kvack.org,
+        linux-arch@vger.kernel.org, linux-api@vger.kernel.org,
+        Arnd Bergmann <arnd@arndb.de>,
+        Andy Lutomirski <luto@kernel.org>,
+        Balbir Singh <bsingharora@gmail.com>,
+        Borislav Petkov <bp@alien8.de>,
+        Cyrill Gorcunov <gorcunov@gmail.com>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        Eugene Syromiatnikov <esyr@redhat.com>,
+        Florian Weimer <fweimer@redhat.com>,
+        "H . J . Lu" <hjl.tools@gmail.com>, Jann Horn <jannh@google.com>,
+        Jonathan Corbet <corbet@lwn.net>,
+        Mike Kravetz <mike.kravetz@oracle.com>,
+        Nadav Amit <nadav.amit@gmail.com>,
+        Oleg Nesterov <oleg@redhat.com>, Pavel Machek <pavel@ucw.cz>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Randy Dunlap <rdunlap@infradead.org>,
+        Weijiang Yang <weijiang.yang@intel.com>,
+        "Kirill A . Shutemov" <kirill.shutemov@linux.intel.com>,
+        John Allen <john.allen@amd.com>, kcc@google.com,
+        eranian@google.com, rppt@kernel.org, jamorris@linux.microsoft.com,
+        dethoma@microsoft.com, akpm@linux-foundation.org,
+        Andrew.Cooper3@citrix.com, christina.schimpe@intel.com,
+        david@redhat.com, debug@rivosinc.com, linux-alpha@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        Michal Simek <monstr@monstr.eu>,
+        Dinh Nguyen <dinguyen@kernel.org>, linux-mips@vger.kernel.org,
+        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+        xen-devel@lists.xenproject.org
+Subject: Re: [PATCH v6 13/41] mm: Make pte_mkwrite() take a VMA
+References: <20230218211433.26859-1-rick.p.edgecombe@intel.com>
+ <20230218211433.26859-14-rick.p.edgecombe@intel.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.7.2
-From:   Randy Dunlap <rdunlap@infradead.org>
-Subject: Re: [PATCH 4/4] sh: remove compiler flag duplication
-To:     Masahiro Yamada <masahiroy@kernel.org>,
-        linux-kbuild@vger.kernel.org
-Cc:     linux-kernel@vger.kernel.org, Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-sh@vger.kernel.org
-References: <20230219141555.2308306-1-masahiroy@kernel.org>
- <20230219141555.2308306-4-masahiroy@kernel.org>
-Content-Language: en-US
-In-Reply-To: <20230219141555.2308306-4-masahiroy@kernel.org>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230218211433.26859-14-rick.p.edgecombe@intel.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+On Sat, Feb 18, 2023 at 01:14:05PM -0800, Rick Edgecombe wrote:
+> The x86 Control-flow Enforcement Technology (CET) feature includes a new
+> type of memory called shadow stack. This shadow stack memory has some
+> unusual properties, which requires some core mm changes to function
+> properly.
+> 
+> One of these unusual properties is that shadow stack memory is writable,
+> but only in limited ways. These limits are applied via a specific PTE
+> bit combination. Nevertheless, the memory is writable, and core mm code
+> will need to apply the writable permissions in the typical paths that
+> call pte_mkwrite().
+> 
+> In addition to VM_WRITE, the shadow stack VMA's will have a flag denoting
+> that they are special shadow stack flavor of writable memory. So make
+> pte_mkwrite() take a VMA, so that the x86 implementation of it can know to
+> create regular writable memory or shadow stack memory.
+> 
+> Apply the same changes for pmd_mkwrite() and huge_pte_mkwrite().
+> 
+> No functional change.
+> 
+> Cc: linux-doc@vger.kernel.org
+> Cc: linux-kernel@vger.kernel.org
+> Cc: linux-alpha@vger.kernel.org
+> Cc: linux-snps-arc@lists.infradead.org
+> Cc: linux-arm-kernel@lists.infradead.org
+> Cc: linux-csky@vger.kernel.org
+> Cc: linux-hexagon@vger.kernel.org
+> Cc: linux-ia64@vger.kernel.org
+> Cc: loongarch@lists.linux.dev
+> Cc: linux-m68k@lists.linux-m68k.org
+> Cc: Michal Simek <monstr@monstr.eu>
+> Cc: Dinh Nguyen <dinguyen@kernel.org>
+> Cc: linux-mips@vger.kernel.org
+> Cc: openrisc@lists.librecores.org
+> Cc: linux-parisc@vger.kernel.org
+> Cc: linuxppc-dev@lists.ozlabs.org
+> Cc: linux-riscv@lists.infradead.org
+> Cc: linux-s390@vger.kernel.org
+> Cc: linux-sh@vger.kernel.org
+> Cc: sparclinux@vger.kernel.org
+> Cc: linux-um@lists.infradead.org
+> Cc: xen-devel@lists.xenproject.org
+> Cc: linux-arch@vger.kernel.org
+> Cc: linux-mm@kvack.org
+> Tested-by: Pengfei Xu <pengfei.xu@intel.com>
+> Suggested-by: David Hildenbrand <david@redhat.com>
+> Signed-off-by: Rick Edgecombe <rick.p.edgecombe@intel.com>
 
+I'm not an arch maintainer, but it looks like a correct tree-wide
+refactor.
 
-On 2/19/23 06:15, Masahiro Yamada wrote:
-> Every compiler flag added by arch/sh/Makefile is passed to the
-> compiler twice.
-> 
-> $(KBUILD_CPPFLAGS) + $(KBUILD_CFLAGS) is used for compiling *.c
-> $(KBUILD_CPPFLAGS) + $(KBUILD_AFLAGS) is used for compiling *.S
-> 
-> Given the above, adding $(cflags-y) to all of KBUILD_{CPP/C/A}FLAGS
-> ends up with duplication.
-> 
-> Add -I options to $(KBUILD_CPPFLAGS), and the rest of $(cflags-y)
-> to KBUILD_{C,A}FLAGS.
-> 
-> Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
-
-Acked-by: Randy Dunlap <rdunlap@infradead.org>
-Tested-by: Randy Dunlap <rdunlap@infradead.org>
-
-Thanks.
-
-> ---
-> 
->  arch/sh/Makefile | 4 +---
->  1 file changed, 1 insertion(+), 3 deletions(-)
-> 
-> diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-> index f1c6aace8acb..cab2f9c011a8 100644
-> --- a/arch/sh/Makefile
-> +++ b/arch/sh/Makefile
-> @@ -145,10 +145,8 @@ cpuincdir-y			+= cpu-common	# Must be last
->  
->  drivers-y			+= arch/sh/drivers/
->  
-> -cflags-y	+= $(addprefix -I $(srctree)/arch/sh/include/, $(cpuincdir-y) $(machdir-y))
-> -
-> +KBUILD_CPPFLAGS		+= $(addprefix -I $(srctree)/arch/sh/include/, $(cpuincdir-y) $(machdir-y))
->  KBUILD_CFLAGS		+= -pipe $(cflags-y)
-> -KBUILD_CPPFLAGS		+= $(cflags-y)
->  KBUILD_AFLAGS		+= $(cflags-y)
->  
->  ifeq ($(CONFIG_MCOUNT),y)
+Reviewed-by: Kees Cook <keescook@chromium.org>
 
 -- 
-~Randy
+Kees Cook
