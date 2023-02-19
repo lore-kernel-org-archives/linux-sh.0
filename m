@@ -2,150 +2,88 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56044C64ED6
-	for <linux-sh@archiver.kernel.org>; Sun, 19 Feb 2023 14:16:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2D77AC678D5
+	for <linux-sh@archiver.kernel.org>; Sun, 19 Feb 2023 14:16:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230063AbjBSOQ2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 19 Feb 2023 09:16:28 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57866 "EHLO
+        id S229729AbjBSOQ3 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 19 Feb 2023 09:16:29 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57880 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229781AbjBSOQX (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 19 Feb 2023 09:16:23 -0500
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6EF46E3AB;
-        Sun, 19 Feb 2023 06:16:21 -0800 (PST)
+        with ESMTP id S230071AbjBSOQ2 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 19 Feb 2023 09:16:28 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A76F8E3AB;
+        Sun, 19 Feb 2023 06:16:27 -0800 (PST)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 039E9B803F1;
-        Sun, 19 Feb 2023 14:16:20 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A6BB0C433D2;
-        Sun, 19 Feb 2023 14:16:16 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 1AA47B808BC;
+        Sun, 19 Feb 2023 14:16:26 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 09A25C4339B;
+        Sun, 19 Feb 2023 14:16:22 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1676816178;
-        bh=mHhx5AehWJHYHcZ1xrAE18qXym1Yn6rcKDqM/8buz3s=;
-        h=From:To:Cc:Subject:Date:From;
-        b=INJl1Ttznv53s+8dfVHbD/3/M04BQRCYsZJx2Z8t9jg/AeBgQmESXbqcjd9IHzgWa
-         cyJCzC6EKBCjfd8sg/o/mbStbqiWsnPnzDjISXS/QjsbmKEEA7maMxciJz9vNNllOh
-         4nDD6KbEnzlkQZs3yHJCsd+4w3KBSRQi2Tur9/OZRCMMBINM/yszSzDKu8WxD/JPHL
-         AwBzaothdRzBtp4L1z+c05AGRkcZov6qO9lBOtGiWlRu6ecaK+GYZOCcu/UJLbRdCa
-         1rOb7VmEBZppNkEw/asfs80tqL0+vx2BC7LgmVTMycVYUu3dty9JMjV2+KG8FlE/Vg
-         /7rLomjyjzVQA==
+        s=k20201202; t=1676816184;
+        bh=OnHesLJjuM4ndL0bx3IO8J099WVFzKW7b0gcW6zf1HY=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=a6MPY1We5Gq+eXc22qp3LVBeZjtQ1Z9K4zYmKOTvBgVXpowHgmidtMRl1lnjX+aHe
+         cSwsOa/qSSgrAzai3J6hOjqO7LeJjSxQ6oT/URE6opE63Aff3BmdfC0ENb9J1rixzT
+         PHWkYFqeV33fWe0ka3FmpdvF7j8kHwzG01HzNZDrJ0a5ednegxyLc/GpMafMluz80x
+         g7dyQAGoHWthtQ+b7M6pDjzdEW/ekzY0vhkK6vtGsxwjILKNnG99lWS/fFhh9QUdkS
+         cgES0y3+Bqv99Lk08ydycZp0whkYF4a4j6ajTrlIgfmiR8l/llkW/wifvURuSel9WM
+         Kkj0Z+DaVdGqA==
 From:   Masahiro Yamada <masahiroy@kernel.org>
 To:     linux-kbuild@vger.kernel.org
 Cc:     linux-kernel@vger.kernel.org, Randy Dunlap <rdunlap@infradead.org>,
         Masahiro Yamada <masahiroy@kernel.org>,
-        kernel test robot <lkp@intel.com>,
         Rich Felker <dalias@libc.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         linux-sh@vger.kernel.org
-Subject: [PATCH 1/4] sh: fix -Wmissing-include-dirs warnings for various platforms
-Date:   Sun, 19 Feb 2023 23:15:52 +0900
-Message-Id: <20230219141555.2308306-1-masahiroy@kernel.org>
+Subject: [PATCH 4/4] sh: remove compiler flag duplication
+Date:   Sun, 19 Feb 2023 23:15:55 +0900
+Message-Id: <20230219141555.2308306-4-masahiroy@kernel.org>
 X-Mailer: git-send-email 2.34.1
+In-Reply-To: <20230219141555.2308306-1-masahiroy@kernel.org>
+References: <20230219141555.2308306-1-masahiroy@kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The 0day bot reports a lot of warnings (or errors due to CONFIG_WERROR)
-like this:
+Every compiler flag added by arch/sh/Makefile is passed to the
+compiler twice.
 
-  cc1: error: arch/sh/include/mach-hp6xx: No such file or directory [-Werror=missing-include-dirs]
+$(KBUILD_CPPFLAGS) + $(KBUILD_CFLAGS) is used for compiling *.c
+$(KBUILD_CPPFLAGS) + $(KBUILD_AFLAGS) is used for compiling *.S
 
-Indeed, arch/sh/include/mach-hp6xx does not exist.
+Given the above, adding $(cflags-y) to all of KBUILD_{CPP/C/A}FLAGS
+ends up with duplication.
 
--Wmissing-include-dirs is W=1 warning, but it may be annoying
-when CONFIG_BTRFS_FS is enabled because fs/btrfs/Makefile
-unconditionally adds this warning option.
+Add -I options to $(KBUILD_CPPFLAGS), and the rest of $(cflags-y)
+to KBUILD_{C,A}FLAGS.
 
-arch/sh/Makefile defines machdir-y for two purposes:
-
- - Build platform code in arch/sh/boards/mach-*/
- - Add arch/sh/include/mach-*/ to the header search path
-
-For the latter, some platforms use arch/sh/include/mach-common/ instead
-of having its own arch/sh/include/mach-*/.
-
-Drop unneeded machdir-y to not include non-existing include directory.
-
-To build arch/sh/boards/mach-*/, use the standard obj-y syntax in
-arch/sh/boards/Makefile.
-
-Reported-by: kernel test robot <lkp@intel.com>
-Link: https://lore.kernel.org/oe-kbuild-all/202302190641.30VVXnPb-lkp@intel.com/
 Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
 ---
 
- arch/sh/Makefile        | 18 +-----------------
- arch/sh/boards/Makefile | 19 +++++++++++++++++++
- 2 files changed, 20 insertions(+), 17 deletions(-)
+ arch/sh/Makefile | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-index 5c8776482530..a9cad5137f92 100644
+index f1c6aace8acb..cab2f9c011a8 100644
 --- a/arch/sh/Makefile
 +++ b/arch/sh/Makefile
-@@ -116,31 +116,15 @@ export ld-bfd
+@@ -145,10 +145,8 @@ cpuincdir-y			+= cpu-common	# Must be last
  
- # Mach groups
- machdir-$(CONFIG_SOLUTION_ENGINE)		+= mach-se
--machdir-$(CONFIG_SH_HP6XX)			+= mach-hp6xx
- machdir-$(CONFIG_SH_DREAMCAST)			+= mach-dreamcast
- machdir-$(CONFIG_SH_SH03)			+= mach-sh03
--machdir-$(CONFIG_SH_RTS7751R2D)			+= mach-r2d
--machdir-$(CONFIG_SH_HIGHLANDER)			+= mach-highlander
- machdir-$(CONFIG_SH_MIGOR)			+= mach-migor
--machdir-$(CONFIG_SH_AP325RXA)			+= mach-ap325rxa
- machdir-$(CONFIG_SH_KFR2R09)			+= mach-kfr2r09
- machdir-$(CONFIG_SH_ECOVEC)			+= mach-ecovec24
--machdir-$(CONFIG_SH_SDK7780)			+= mach-sdk7780
- machdir-$(CONFIG_SH_SDK7786)			+= mach-sdk7786
- machdir-$(CONFIG_SH_X3PROTO)			+= mach-x3proto
--machdir-$(CONFIG_SH_SH7763RDP)			+= mach-sh7763rdp
--machdir-$(CONFIG_SH_SH4202_MICRODEV)		+= mach-microdev
- machdir-$(CONFIG_SH_LANDISK)			+= mach-landisk
--machdir-$(CONFIG_SH_LBOX_RE2)			+= mach-lboxre2
--machdir-$(CONFIG_SH_RSK)			+= mach-rsk
+ drivers-y			+= arch/sh/drivers/
+ 
+-cflags-y	+= $(addprefix -I $(srctree)/arch/sh/include/, $(cpuincdir-y) $(machdir-y))
 -
--ifneq ($(machdir-y),)
--core-y	+= $(addprefix arch/sh/boards/, \
--	     $(filter-out ., $(patsubst %,%/,$(machdir-y))))
--endif
--
--# Common machine type headers. Not part of the arch/sh/boards/ hierarchy.
--machdir-y	+= mach-common
-+machdir-y					+= mach-common
++KBUILD_CPPFLAGS		+= $(addprefix -I $(srctree)/arch/sh/include/, $(cpuincdir-y) $(machdir-y))
+ KBUILD_CFLAGS		+= -pipe $(cflags-y)
+-KBUILD_CPPFLAGS		+= $(cflags-y)
+ KBUILD_AFLAGS		+= $(cflags-y)
  
- # Companion chips
- core-$(CONFIG_HD6446X_SERIES)	+= arch/sh/cchips/hd6446x/
-diff --git a/arch/sh/boards/Makefile b/arch/sh/boards/Makefile
-index 4002a22a7c40..b57219436ace 100644
---- a/arch/sh/boards/Makefile
-+++ b/arch/sh/boards/Makefile
-@@ -18,3 +18,22 @@ obj-$(CONFIG_SH_APSH4A3A)	+= board-apsh4a3a.o
- obj-$(CONFIG_SH_APSH4AD0A)	+= board-apsh4ad0a.o
- 
- obj-$(CONFIG_SH_DEVICE_TREE)	+= of-generic.o
-+
-+obj-$(CONFIG_SOLUTION_ENGINE)	+= mach-se/
-+obj-$(CONFIG_SH_HP6XX)		+= mach-hp6xx/
-+obj-$(CONFIG_SH_DREAMCAST)	+= mach-dreamcast/
-+obj-$(CONFIG_SH_SH03)		+= mach-sh03/
-+obj-$(CONFIG_SH_RTS7751R2D)	+= mach-r2d/
-+obj-$(CONFIG_SH_HIGHLANDER)	+= mach-highlander/
-+obj-$(CONFIG_SH_MIGOR)		+= mach-migor/
-+obj-$(CONFIG_SH_AP325RXA)	+= mach-ap325rxa/
-+obj-$(CONFIG_SH_KFR2R09)	+= mach-kfr2r09/
-+obj-$(CONFIG_SH_ECOVEC)		+= mach-ecovec24/
-+obj-$(CONFIG_SH_SDK7780)	+= mach-sdk7780/
-+obj-$(CONFIG_SH_SDK7786)	+= mach-sdk7786/
-+obj-$(CONFIG_SH_X3PROTO)	+= mach-x3proto/
-+obj-$(CONFIG_SH_SH7763RDP)	+= mach-sh7763rdp/
-+obj-$(CONFIG_SH_SH4202_MICRODEV)+= mach-microdev/
-+obj-$(CONFIG_SH_LANDISK)	+= mach-landisk/
-+obj-$(CONFIG_SH_LBOX_RE2)	+= mach-lboxre2/
-+obj-$(CONFIG_SH_RSK)		+= mach-rsk/
+ ifeq ($(CONFIG_MCOUNT),y)
 -- 
 2.34.1
 
