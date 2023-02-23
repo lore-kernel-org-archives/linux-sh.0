@@ -2,84 +2,109 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29146C636D6
-	for <linux-sh@archiver.kernel.org>; Wed, 22 Feb 2023 17:05:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 60EB9C636D6
+	for <linux-sh@archiver.kernel.org>; Thu, 23 Feb 2023 09:50:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232498AbjBVRFA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 22 Feb 2023 12:05:00 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50722 "EHLO
+        id S233692AbjBWJu3 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 23 Feb 2023 04:50:29 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51438 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232458AbjBVRE6 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 22 Feb 2023 12:04:58 -0500
-Received: from desiato.infradead.org (desiato.infradead.org [IPv6:2001:8b0:10b:1:d65d:64ff:fe57:4e05])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 83BC23A08B;
-        Wed, 22 Feb 2023 09:04:56 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=desiato.20200630; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=8seSikIduHdwWlxLKvtsNdKihKZpOnnG/byEzPIYqpo=; b=Y1ljMAsEbY1xeALhV24P6D+VB8
-        W1bdI7nU0WhWoHx4NgJjUs1eL4F579QHnU+VRNoxr0EmxLBTqZ3vOKnmHpwMB+Sofv3xiO5BeF6WD
-        1LD1NvVLmJ2+7rgSzEr2KFdkQGbvBYCsMTfz8sZqwESBDJCLccPcpvy9GuBpXxB4wGZyirHyFJlTf
-        gndmj7kqHoQ049GccgXjz/BpbKTlsy/A8I1wozGsWIJRtFjTTw2VRwpq8mSkA9UdnUdhM7yIf7jgi
-        NcbLaUrNNJrkpHmN4j4xvoM8KhBnKHeFAYPSNMidGw19ugtisIBpD9l0VLYU1g+Tbm+Yn6Ihuibqi
-        eg9uba3g==;
-Received: from j130084.upc-j.chello.nl ([24.132.130.84] helo=noisy.programming.kicks-ass.net)
-        by desiato.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1pUsXk-00CbPL-05;
-        Wed, 22 Feb 2023 17:04:36 +0000
-Received: from hirez.programming.kicks-ass.net (hirez.programming.kicks-ass.net [192.168.1.225])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-        (Client did not present a certificate)
-        by noisy.programming.kicks-ass.net (Postfix) with ESMTPS id 58890300446;
-        Wed, 22 Feb 2023 18:04:32 +0100 (CET)
-Received: by hirez.programming.kicks-ass.net (Postfix, from userid 1000)
-        id 0DE9520DD8076; Wed, 22 Feb 2023 18:04:32 +0100 (CET)
-Date:   Wed, 22 Feb 2023 18:04:31 +0100
-From:   Peter Zijlstra <peterz@infradead.org>
-To:     Andrzej Hajda <andrzej.hajda@intel.com>
-Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org, intel-gfx@lists.freedesktop.org,
-        dri-devel@lists.freedesktop.org, Arnd Bergmann <arnd@arndb.de>,
-        Rodrigo Vivi <rodrigo.vivi@intel.com>,
+        with ESMTP id S233272AbjBWJu2 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 23 Feb 2023 04:50:28 -0500
+Received: from ams.source.kernel.org (ams.source.kernel.org [145.40.68.75])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F275E4DE2E;
+        Thu, 23 Feb 2023 01:50:26 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id A7CB5B81990;
+        Thu, 23 Feb 2023 09:50:25 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D9D17C433EF;
+        Thu, 23 Feb 2023 09:50:23 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+        s=korg; t=1677145824;
+        bh=6+RS3vKNtOBH6Iix7VuTmtdw51WghGYeiUtoXdjfsao=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=pxNV593LF5ua2oXpyWhWw1CF8jqDWKRzFCBzYfUwdPB1+9vcs6TD9K2SlZipxjpQB
+         kV9faWEzrhPUEdIgV4eq1gA6XRO9nQrFwQ5KdKWOiyXk8WAIxeNisp8BiVE0gT9p4h
+         n5hwQSUaA3nqHXumhYz3HIspsumEAftd2BDgXNvU=
+Date:   Thu, 23 Feb 2023 10:50:22 +0100
+From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To:     Tom Saeger <tom.saeger@oracle.com>
+Cc:     Sasha Levin <sashal@kernel.org>,
+        Naresh Kamboju <naresh.kamboju@linaro.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Rich Felker <dalias@libc.org>,
+        Masahiro Yamada <masahiroy@kernel.org>,
+        Ard Biesheuvel <ardb@kernel.org>,
+        Nathan Chancellor <nathan@kernel.org>,
+        Dennis Gilmore <dennis@ausil.us>,
+        Palmer Dabbelt <palmer@rivosinc.com>,
+        Arnd Bergmann <arnd@arndb.de>,
         Andrew Morton <akpm@linux-foundation.org>,
-        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Boqun Feng <boqun.feng@gmail.com>,
-        Mark Rutland <mark.rutland@arm.com>
-Subject: Re: [PATCH v5 0/7] Introduce __xchg, non-atomic xchg
-Message-ID: <Y/ZLH5F8LA3H10aL@hirez.programming.kicks-ass.net>
-References: <20230118153529.57695-1-andrzej.hajda@intel.com>
+        stable@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-riscv@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        "H.J. Lu" <hjl.tools@gmail.com>, Borislav Petkov <bp@suse.de>,
+        Kees Cook <keescook@chromium.org>
+Subject: Re: [PATCH 5.4 v2 1/6] x86, vmlinux.lds: Add RUNTIME_DISCARD_EXIT to
+ generic DISCARDS
+Message-ID: <Y/c23lnfn42s5uCC@kroah.com>
+References: <20230210-tsaeger-upstream-linux-stable-5-4-v2-0-a56d1e0f5e98@oracle.com>
+ <20230210-tsaeger-upstream-linux-stable-5-4-v2-1-a56d1e0f5e98@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20230118153529.57695-1-andrzej.hajda@intel.com>
+In-Reply-To: <20230210-tsaeger-upstream-linux-stable-5-4-v2-1-a56d1e0f5e98@oracle.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Jan 18, 2023 at 04:35:22PM +0100, Andrzej Hajda wrote:
+On Fri, Feb 10, 2023 at 01:20:22PM -0700, Tom Saeger wrote:
+> From: "H.J. Lu" <hjl.tools@gmail.com>
+> 
+> commit 84d5f77fc2ee4e010c2c037750e32f06e55224b0 upstream.
+> 
+> In the x86 kernel, .exit.text and .exit.data sections are discarded at
+> runtime, not by the linker. Add RUNTIME_DISCARD_EXIT to generic DISCARDS
+> and define it in the x86 kernel linker script to keep them.
+> 
+> The sections are added before the DISCARD directive so document here
+> only the situation explicitly as this change doesn't have any effect on
+> the generated kernel. Also, other architectures like ARM64 will use it
+> too so generalize the approach with the RUNTIME_DISCARD_EXIT define.
+> 
+>  [ bp: Massage and extend commit message. ]
+> 
+> Signed-off-by: H.J. Lu <hjl.tools@gmail.com>
+> Signed-off-by: Borislav Petkov <bp@suse.de>
+> Reviewed-by: Kees Cook <keescook@chromium.org>
+> Link: https://lkml.kernel.org/r/20200326193021.255002-1-hjl.tools@gmail.com
+> Signed-off-by: Tom Saeger <tom.saeger@oracle.com>
+> ---
+>  arch/x86/kernel/vmlinux.lds.S     |  1 +
+>  include/asm-generic/vmlinux.lds.h | 11 +++++++++--
+>  2 files changed, 10 insertions(+), 2 deletions(-)
+> 
+> diff --git a/arch/x86/kernel/vmlinux.lds.S b/arch/x86/kernel/vmlinux.lds.S
+> index 1afe211d7a7c..0ae3cd9a25ea 100644
+> --- a/arch/x86/kernel/vmlinux.lds.S
+> +++ b/arch/x86/kernel/vmlinux.lds.S
+> @@ -21,6 +21,7 @@
+>  #define LOAD_OFFSET __START_KERNEL_map
+>  #endif
+>  
+> +#define RUNTIME_DISCARD_EXIT
+>  #include <asm-generic/vmlinux.lds.h>
+>  #include <asm/asm-offsets.h>
+>  #include <asm/thread_info.h>
 
-> Andrzej Hajda (7):
->   arch: rename all internal names __xchg to __arch_xchg
->   linux/include: add non-atomic version of xchg
->   arch/*/uprobes: simplify arch_uretprobe_hijack_return_addr
->   llist: simplify __llist_del_all
->   io_uring: use __xchg if possible
->   qed: use __xchg if possible
->   drm/i915/gt: use __xchg instead of internal helper
+Does this backport look correct from a style point-of-view?
 
-Nothing crazy in here I suppose, I somewhat wonder why you went through
-the trouble, but meh.
+Hint, extra blank line needed after the define, like what is done in the
+original...
 
-You want me to take this through te locking tree (for the next cycle,
-not this one) where I normally take atomic things or does someone else
-want this?
+thanks,
+
+greg k-h
