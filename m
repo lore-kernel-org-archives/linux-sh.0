@@ -2,92 +2,176 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 26DDDC64ED6
-	for <linux-sh@archiver.kernel.org>; Tue, 28 Feb 2023 11:57:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7E95C7EE32
+	for <linux-sh@archiver.kernel.org>; Tue, 28 Feb 2023 15:50:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229574AbjB1L5s (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 28 Feb 2023 06:57:48 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56046 "EHLO
+        id S230177AbjB1Pum (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 28 Feb 2023 10:50:42 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45788 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230346AbjB1L5q (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Feb 2023 06:57:46 -0500
-Received: from mail-qt1-f171.google.com (mail-qt1-f171.google.com [209.85.160.171])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5C0FB35B1;
-        Tue, 28 Feb 2023 03:57:43 -0800 (PST)
-Received: by mail-qt1-f171.google.com with SMTP id z6so10124883qtv.0;
-        Tue, 28 Feb 2023 03:57:43 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+        with ESMTP id S229796AbjB1Pul (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Feb 2023 10:50:41 -0500
+Received: from mail-pj1-x102a.google.com (mail-pj1-x102a.google.com [IPv6:2607:f8b0:4864:20::102a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8C34630EB0
+        for <linux-sh@vger.kernel.org>; Tue, 28 Feb 2023 07:50:37 -0800 (PST)
+Received: by mail-pj1-x102a.google.com with SMTP id x34so10322982pjj.0
+        for <linux-sh@vger.kernel.org>; Tue, 28 Feb 2023 07:50:37 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=dabbelt-com.20210112.gappssmtp.com; s=20210112; t=1677599437;
+        h=content-transfer-encoding:mime-version:message-id:to:from:cc
+         :in-reply-to:subject:date:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=OBqG4RFiho8wLx0OkbNeTLwcZ0cErBkreFsGBchxVJA=;
-        b=6OcHzVJusgLqez/BWdTOQmXxkHKYamekUrF9Eop6h80ei/YNfdwuKRf6kREYcSgxhg
-         fT/Ldh+ifZSgctBOCRkHrQI35dAf+JYOqyKcsrHaP0uZxJOKxEX7oxEq03gQMR1XysAE
-         OXU0j4CmKExRTwiv8J+AZC80tqwSISB4oSvTgRhjHS3Ivn2ZFCQj9+6c8b3DN4hYfm9M
-         0FU5T+O4GkJMrhLfBL8mXGAvsmX07MEQksl/Go+MDQKHaJQutLzzMaLTwLdfJdp3pFO3
-         xZgmWGaoe8NfIChYuZrpHVm48Yv7376DFfKwnSv0mf4Bj871fGTmjsYybBPI4EjdzP+e
-         v5yA==
-X-Gm-Message-State: AO0yUKXaMgUzlSnK5Tx96+szOg8YjHXF8i86suCTj2l+G2pMOmwyEI7l
-        wJ4PHimLKjyh4ypKdkXjgh0el0oOweVWeA==
-X-Google-Smtp-Source: AK7set8To/p/AS4FtLwNVfuzu7jwpHG0s+mHMrtTwRBGXQPI1rJ7T0qpEAeWCJul6zqCvFA5L2Qu1Q==
-X-Received: by 2002:a05:622a:48c:b0:3a8:e35:258f with SMTP id p12-20020a05622a048c00b003a80e35258fmr3594209qtx.31.1677585462263;
-        Tue, 28 Feb 2023 03:57:42 -0800 (PST)
-Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com. [209.85.128.179])
-        by smtp.gmail.com with ESMTPSA id o16-20020a05620a111000b007343fceee5fsm6658131qkk.8.2023.02.28.03.57.41
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 28 Feb 2023 03:57:41 -0800 (PST)
-Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-5384ff97993so265123397b3.2;
-        Tue, 28 Feb 2023 03:57:41 -0800 (PST)
-X-Received: by 2002:a81:ad43:0:b0:533:91d2:9d94 with SMTP id
- l3-20020a81ad43000000b0053391d29d94mr1472680ywk.5.1677585461211; Tue, 28 Feb
- 2023 03:57:41 -0800 (PST)
-MIME-Version: 1.0
-References: <cover.1677579750.git.geert+renesas@glider.be> <e72dd5e0af2df190d7bb52ba36e44391d59da59e.camel@physik.fu-berlin.de>
-In-Reply-To: <e72dd5e0af2df190d7bb52ba36e44391d59da59e.camel@physik.fu-berlin.de>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Tue, 28 Feb 2023 12:57:27 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdWEzvbXYSaMDQcqvMFDDNPxp16N6250FRxt8KbBv2b_5w@mail.gmail.com>
-Message-ID: <CAMuHMdWEzvbXYSaMDQcqvMFDDNPxp16N6250FRxt8KbBv2b_5w@mail.gmail.com>
-Subject: Re: [PATCH 0/2] kunit: tool: Add support for SH under QEMU
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Geert Uytterhoeven <geert+renesas@glider.be>,
-        Brendan Higgins <brendan.higgins@linux.dev>,
-        David Gow <davidgow@google.com>,
-        linux-kselftest@vger.kernel.org, kunit-dev@googlegroups.com,
-        linux-sh@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+        bh=UryJW0EuVY8u2sW6z9mCQGQjWTzi+ldNIkpQGB8+HtU=;
+        b=B87Sz4AD1+v0XwCsrRoMpTHOfPGa5C2kWXfopmI+Go4uM/GlteH88Prr3xnOjgOBpK
+         5TXEM23YJaNZ7g9EbVYCuK/JD08Tarh0thhlMnTFFyMOEygBOFNnHXUltVMCUsr+soSV
+         N7JymoT7+eTk9L3hW6gd0jRYqCQJylQ1Sv9bK+MVkRTzPo6kpx2lySfN5ZcoLvOslGRO
+         KPapypwptYDfTKoui/kxjkto9aXQEXnB0zNI2xnF9K9K1w6AMTAlsuNOBVAzoDOh6S9m
+         XMeLlvUu7AtZRerpGExszQw24rKkktWNdf98ePl6noAkKeRplxZuYNOqKiII4Yi6n3n8
+         TCXA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1677599437;
+        h=content-transfer-encoding:mime-version:message-id:to:from:cc
+         :in-reply-to:subject:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=UryJW0EuVY8u2sW6z9mCQGQjWTzi+ldNIkpQGB8+HtU=;
+        b=Pu3k5yi9J2sBr8Z+T4DyOA2cOgzFyLzsIBIekaoWI4iIseggGPsOxujq+gJ0AL3Stz
+         XeLRZ5gtp784nzMdfOQ0gCeTkKdsyoVChNrstJRorP/wYMkuSHOlYqzkDKuboo7nyT52
+         QFE/D09DEC25wcS7V9K1LD5qqSC83MFflYoZZuhRt1j7jep1mHrAt/C58FaL+MSDyx8E
+         Y7XOnoMYxxkkIl6T7Z/BDUyhLP9Ox/SLhvjti3ks+Ks1v0+2T6xAnhJoEnHvhMjx9bLK
+         9cW4ubzQNEa0PTmoSjn16j2T71840Vun/IeaOgwQmFyBZ35DgpzZFpt0M4Nq1tf1Bsrh
+         TvCA==
+X-Gm-Message-State: AO0yUKXE/MfzDsLuX65UqDHeXcXQt0uSVQZISWHyL3MRwLAoa9ETW7VT
+        nRcT2V4AF0hMll9h1MBXHIKfyQ==
+X-Google-Smtp-Source: AK7set80NPLuAAPSgZZsRqS35byB+8nywbDP9pe24Tyk+tjImkNZjMRv8vvzE4HsisyOpmumYVDG2Q==
+X-Received: by 2002:a17:902:d2c7:b0:19c:fbdb:43cb with SMTP id n7-20020a170902d2c700b0019cfbdb43cbmr3953598plc.51.1677599436809;
+        Tue, 28 Feb 2023 07:50:36 -0800 (PST)
+Received: from localhost ([50.221.140.188])
+        by smtp.gmail.com with ESMTPSA id h12-20020a170902f7cc00b0019d1f42b00csm3612084plw.17.2023.02.28.07.50.35
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 28 Feb 2023 07:50:36 -0800 (PST)
+Date:   Tue, 28 Feb 2023 07:50:36 -0800 (PST)
+X-Google-Original-Date: Tue, 28 Feb 2023 07:49:44 PST (-0800)
+Subject:     Re: [PATCH mm-unstable v1 19/26] riscv/mm: support __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+In-Reply-To: <20230113171026.582290-20-david@redhat.com>
+CC:     linux-kernel@vger.kernel.org, akpm@linux-foundation.org,
+        hughd@google.com, jhubbard@nvidia.com, jgg@nvidia.com,
+        rppt@linux.ibm.com, shy828301@gmail.com, vbabka@suse.cz,
+        namit@vmware.com, aarcange@redhat.com, peterx@redhat.com,
+        linux-mm@kvack.org, x86@kernel.org, linux-alpha@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, openrisc@lists.librecores.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, linux-xtensa@linux-xtensa.org,
+        david@redhat.com, Paul Walmsley <paul.walmsley@sifive.com>,
+        aou@eecs.berkeley.edu
+From:   Palmer Dabbelt <palmer@dabbelt.com>
+To:     david@redhat.com
+Message-ID: <mhng-b8dc8a57-dde0-4995-bbb7-3948a95ba0b1@palmer-ri-x1c9a>
+Mime-Version: 1.0 (MHng)
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Adrian,
+On Fri, 13 Jan 2023 09:10:19 PST (-0800), david@redhat.com wrote:
+> Let's support __HAVE_ARCH_PTE_SWP_EXCLUSIVE by stealing one bit
+> from the offset. This reduces the maximum swap space per file: on 32bit
+> to 16 GiB (was 32 GiB).
 
-On Tue, Feb 28, 2023 at 12:55 PM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Tue, 2023-02-28 at 11:31 +0100, Geert Uytterhoeven wrote:
-> > This patch series adds support to run tests via kunit_tool on the
-> > SuperH-based virtualized r2d platform.  As r2d uses the second serial
-> > port as the console, this needs a small modification of the core
-> > infrastructure.
+Seems fine to me, I doubt anyone wants a huge pile of swap on rv32.
+
 >
-> Very cool idea. I have never used the kunit testsuite before, I will have
-> a look at it. Is there documentation available which shows how to get
-> started?
+> Note that this bit does not conflict with swap PMDs and could also be used
+> in swap PMD context later.
+>
+> While at it, mask the type in __swp_entry().
+>
+> Cc: Paul Walmsley <paul.walmsley@sifive.com>
+> Cc: Palmer Dabbelt <palmer@dabbelt.com>
+> Cc: Albert Ou <aou@eecs.berkeley.edu>
+> Signed-off-by: David Hildenbrand <david@redhat.com>
+> ---
+>  arch/riscv/include/asm/pgtable-bits.h |  3 +++
+>  arch/riscv/include/asm/pgtable.h      | 29 ++++++++++++++++++++++-----
+>  2 files changed, 27 insertions(+), 5 deletions(-)
+>
+> diff --git a/arch/riscv/include/asm/pgtable-bits.h b/arch/riscv/include/asm/pgtable-bits.h
+> index b9e13a8fe2b7..f896708e8331 100644
+> --- a/arch/riscv/include/asm/pgtable-bits.h
+> +++ b/arch/riscv/include/asm/pgtable-bits.h
+> @@ -27,6 +27,9 @@
+>   */
+>  #define _PAGE_PROT_NONE _PAGE_GLOBAL
+>
+> +/* Used for swap PTEs only. */
+> +#define _PAGE_SWP_EXCLUSIVE _PAGE_ACCESSED
+> +
+>  #define _PAGE_PFN_SHIFT 10
+>
+>  /*
+> diff --git a/arch/riscv/include/asm/pgtable.h b/arch/riscv/include/asm/pgtable.h
+> index 4eba9a98d0e3..03a4728db039 100644
+> --- a/arch/riscv/include/asm/pgtable.h
+> +++ b/arch/riscv/include/asm/pgtable.h
+> @@ -724,16 +724,18 @@ static inline pmd_t pmdp_establish(struct vm_area_struct *vma,
+>  #endif /* CONFIG_TRANSPARENT_HUGEPAGE */
+>
+>  /*
+> - * Encode and decode a swap entry
+> + * Encode/decode swap entries and swap PTEs. Swap PTEs are all PTEs that
+> + * are !pte_none() && !pte_present().
+>   *
+>   * Format of swap PTE:
+>   *	bit            0:	_PAGE_PRESENT (zero)
+>   *	bit       1 to 3:       _PAGE_LEAF (zero)
+>   *	bit            5:	_PAGE_PROT_NONE (zero)
+> - *	bits      6 to 10:	swap type
+> - *	bits 10 to XLEN-1:	swap offset
+> + *	bit            6:	exclusive marker
+> + *	bits      7 to 11:	swap type
+> + *	bits 11 to XLEN-1:	swap offset
+>   */
+> -#define __SWP_TYPE_SHIFT	6
+> +#define __SWP_TYPE_SHIFT	7
+>  #define __SWP_TYPE_BITS		5
+>  #define __SWP_TYPE_MASK		((1UL << __SWP_TYPE_BITS) - 1)
+>  #define __SWP_OFFSET_SHIFT	(__SWP_TYPE_BITS + __SWP_TYPE_SHIFT)
+> @@ -744,11 +746,28 @@ static inline pmd_t pmdp_establish(struct vm_area_struct *vma,
+>  #define __swp_type(x)	(((x).val >> __SWP_TYPE_SHIFT) & __SWP_TYPE_MASK)
+>  #define __swp_offset(x)	((x).val >> __SWP_OFFSET_SHIFT)
+>  #define __swp_entry(type, offset) ((swp_entry_t) \
+> -	{ ((type) << __SWP_TYPE_SHIFT) | ((offset) << __SWP_OFFSET_SHIFT) })
+> +	{ (((type) & __SWP_TYPE_MASK) << __SWP_TYPE_SHIFT) | \
+> +	  ((offset) << __SWP_OFFSET_SHIFT) })
+>
+>  #define __pte_to_swp_entry(pte)	((swp_entry_t) { pte_val(pte) })
+>  #define __swp_entry_to_pte(x)	((pte_t) { (x).val })
+>
+> +#define __HAVE_ARCH_PTE_SWP_EXCLUSIVE
+> +static inline int pte_swp_exclusive(pte_t pte)
+> +{
+> +	return pte_val(pte) & _PAGE_SWP_EXCLUSIVE;
+> +}
+> +
+> +static inline pte_t pte_swp_mkexclusive(pte_t pte)
+> +{
+> +	return __pte(pte_val(pte) | _PAGE_SWP_EXCLUSIVE);
+> +}
+> +
+> +static inline pte_t pte_swp_clear_exclusive(pte_t pte)
+> +{
+> +	return __pte(pte_val(pte) & ~_PAGE_SWP_EXCLUSIVE);
+> +}
+> +
+>  #ifdef CONFIG_ARCH_ENABLE_THP_MIGRATION
+>  #define __pmd_to_swp_entry(pmd) ((swp_entry_t) { pmd_val(pmd) })
+>  #define __swp_entry_to_pmd(swp) __pmd((swp).val)
 
-Run e.g.:
-
-./tools/testing/kunit/kunit.py run --arch=sh
---cross_compile=sh4-linux-gnu- --raw_output=all --kunitconfig
-fs/ext4/.kunitconfig
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Acked-by: Palmer Dabbelt <palmer@rivosinc.com>
+Reviewed-by: Palmer Dabbelt <palmer@rivosinc.com>
