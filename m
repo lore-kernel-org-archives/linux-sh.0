@@ -2,124 +2,75 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91084C7EE30
-	for <linux-sh@archiver.kernel.org>; Tue, 28 Feb 2023 08:58:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 156CFC64ED6
+	for <linux-sh@archiver.kernel.org>; Tue, 28 Feb 2023 10:31:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229809AbjB1I6Z (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 28 Feb 2023 03:58:25 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41876 "EHLO
+        id S230157AbjB1Kbm (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 28 Feb 2023 05:31:42 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47878 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230059AbjB1I6V (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Feb 2023 03:58:21 -0500
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ACFD57D9F;
-        Tue, 28 Feb 2023 00:58:20 -0800 (PST)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 3E33761030;
-        Tue, 28 Feb 2023 08:58:20 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 24246C433D2;
-        Tue, 28 Feb 2023 08:58:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1677574699;
-        bh=UztsLsaqmIXyoCT63yUOOYX/F2RBn+tEboh82iUTl84=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=dvFldP2nDPK1JM1UdTSvrNFQgLKdCKwOzfkHHphaxtZJbfiOb+x1w8SgrPHVVLpTM
-         0+DGxsyLVGr/st2iaB5VqG6eeN9RmbwrKyu1S1M0ogYouEhMNuHsdIhPyL2tnEfVU1
-         gTZGjIJffgoh26CK72V24tXXKN+/RvSZ3yTVgjyc=
-Date:   Tue, 28 Feb 2023 09:58:16 +0100
-From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To:     Tom Saeger <tom.saeger@oracle.com>
-Cc:     Sasha Levin <sashal@kernel.org>,
-        Naresh Kamboju <naresh.kamboju@linaro.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Rich Felker <dalias@libc.org>,
-        Masahiro Yamada <masahiroy@kernel.org>,
-        Ard Biesheuvel <ardb@kernel.org>,
-        Nathan Chancellor <nathan@kernel.org>,
-        Dennis Gilmore <dennis@ausil.us>,
-        Palmer Dabbelt <palmer@rivosinc.com>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        stable@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-riscv@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org
-Subject: Re: [PATCH 5.15 v2 1/5] arch: fix broken BuildID for arm64 and riscv
-Message-ID: <Y/3CKO8XjvyMlg+5@kroah.com>
-References: <20230210-tsaeger-upstream-linux-stable-5-15-v2-0-6c68622745e9@oracle.com>
- <20230210-tsaeger-upstream-linux-stable-5-15-v2-1-6c68622745e9@oracle.com>
- <Y/c3MSvnN4DcvzSx@kroah.com>
- <20230223175331.7tsgvkvcur6wl7h7@oracle.com>
- <20230224024724.whvtsrljz5k3jpln@oracle.com>
+        with ESMTP id S229530AbjB1Kbl (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Feb 2023 05:31:41 -0500
+Received: from laurent.telenet-ops.be (laurent.telenet-ops.be [IPv6:2a02:1800:110:4::f00:19])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A24E972AF
+        for <linux-sh@vger.kernel.org>; Tue, 28 Feb 2023 02:31:37 -0800 (PST)
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed50:9202:974e:f0e0:414c])
+        by laurent.telenet-ops.be with bizsmtp
+        id SaXZ2900G1hKVeJ01aXZmX; Tue, 28 Feb 2023 11:31:35 +0100
+Received: from rox.of.borg ([192.168.97.57])
+        by ramsan.of.borg with esmtp (Exim 4.95)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1pWxGC-00ANGm-Jq;
+        Tue, 28 Feb 2023 11:31:33 +0100
+Received: from geert by rox.of.borg with local (Exim 4.95)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1pWxGf-00FbNA-3l;
+        Tue, 28 Feb 2023 11:31:33 +0100
+From:   Geert Uytterhoeven <geert+renesas@glider.be>
+To:     Brendan Higgins <brendan.higgins@linux.dev>,
+        David Gow <davidgow@google.com>
+Cc:     linux-kselftest@vger.kernel.org, kunit-dev@googlegroups.com,
+        linux-sh@vger.kernel.org,
+        Geert Uytterhoeven <geert+renesas@glider.be>
+Subject: [PATCH 0/2] kunit: tool: Add support for SH under QEMU
+Date:   Tue, 28 Feb 2023 11:31:01 +0100
+Message-Id: <cover.1677579750.git.geert+renesas@glider.be>
+X-Mailer: git-send-email 2.34.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230224024724.whvtsrljz5k3jpln@oracle.com>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Feb 23, 2023 at 08:47:24PM -0600, Tom Saeger wrote:
-> On Thu, Feb 23, 2023 at 11:53:42AM -0600, Tom Saeger wrote:
-> > On Thu, Feb 23, 2023 at 10:51:45AM +0100, Greg Kroah-Hartman wrote:
-> > > On Fri, Feb 10, 2023 at 01:18:40PM -0700, Tom Saeger wrote:
-> > > > From: Masahiro Yamada <masahiroy@kernel.org>
-> > > > 
-> > > > commit 99cb0d917ffa1ab628bb67364ca9b162c07699b1 upstream.
-> > > > 
-> > > > Dennis Gilmore reports that the BuildID is missing in the arm64 vmlinux
-> > > > since commit 994b7ac1697b ("arm64: remove special treatment for the
-> > > > link order of head.o").
-> > > > 
-> > > > The issue is that the type of .notes section, which contains the BuildID,
-> > > > changed from NOTES to PROGBITS.
-> > > > 
-> > > > Ard Biesheuvel figured out that whichever object gets linked first gets
-> > > > to decide the type of a section. The PROGBITS type is the result of the
-> > > > compiler emitting .note.GNU-stack as PROGBITS rather than NOTE.
-> > > > 
-> > > > While Ard provided a fix for arm64, I want to fix this globally because
-> > > > the same issue is happening on riscv since commit 2348e6bf4421 ("riscv:
-> > > > remove special treatment for the link order of head.o"). This problem
-> > > > will happen in general for other architectures if they start to drop
-> > > > unneeded entries from scripts/head-object-list.txt.
-> > > > 
-> > > > Discard .note.GNU-stack in include/asm-generic/vmlinux.lds.h.
-> > > > 
-> > > > Link: https://lore.kernel.org/lkml/CAABkxwuQoz1CTbyb57n0ZX65eSYiTonFCU8-LCQc=74D=xE=rA@mail.gmail.com/
-> > > > Fixes: 994b7ac1697b ("arm64: remove special treatment for the link order of head.o")
-> > > > Fixes: 2348e6bf4421 ("riscv: remove special treatment for the link order of head.o")
-> 
-> Greg, how about something like this tacked onto backport of this commit?
-> 
-> [Tom: stable backport 5.15.y, 5.10.y, 5.4.y]
-> 
-> Though the above "Fixes:" commits are not in this kernel, the conditions
-> which lead to a missing Build ID in arm64 vmlinux are similar.
-> 
-> Evidence points to these conditions:
-> 1. ld version > 2.36 (exact binutils commit documented in a494398bde27)
-> 2. first object which gets linked (head.o) has a PROGBITS .note.GNU-stack segment
-> 
-> These conditions can be observed when:
-> - 5.15.60+ OR 5.10.136+ OR 5.4.210+
-> - AND ld version > 2.36
-> - AND arch=arm64
-> - AND CONFIG_MODVERSIONS=y
-> 
-> This was previously bisected to the stable backport of 0d362be5b142.
-> Follow-up experiments were discussed here: https://lore.kernel.org/all/20221221235413.xaisboqmr7dkqwn6@oracle.com/ 
-> which strongly hints at condition 2.
-> 
-> 
-> > > 
-> > > Why are we adding a commit to 5.15.y that fixes an issue that only
-> > > showed up in 6.1.y?
-> 
-> If you approve - I'll send v3 for 5.15, 5.10, and 5.4 (with style fixes).
+	Hi all,
 
-That would make more sense, thanks.
+This patch series adds support to run tests via kunit_tool on the
+SuperH-based virtualized r2d platform.  As r2d uses the second serial
+port as the console, this needs a small modification of the core
+infrastructure.
 
-greg k-h
+Thanks for your comments!
+
+Geert Uytterhoeven (2):
+  kunit: tool: Add support for overriding the QEMU serial port
+  kunit: tool: Add support for SH under QEMU
+
+ tools/testing/kunit/kunit_kernel.py    |  3 ++-
+ tools/testing/kunit/qemu_config.py     |  1 +
+ tools/testing/kunit/qemu_configs/sh.py | 17 +++++++++++++++++
+ 3 files changed, 20 insertions(+), 1 deletion(-)
+ create mode 100644 tools/testing/kunit/qemu_configs/sh.py
+
+-- 
+2.34.1
+
+Gr{oetje,eeting}s,
+
+						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+							    -- Linus Torvalds
