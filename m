@@ -2,91 +2,69 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 41433C7EE33
-	for <linux-sh@archiver.kernel.org>; Tue, 28 Feb 2023 10:31:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EACE9C64EC7
+	for <linux-sh@archiver.kernel.org>; Tue, 28 Feb 2023 11:52:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229627AbjB1Kbn (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 28 Feb 2023 05:31:43 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47920 "EHLO
+        id S229993AbjB1LwS convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 28 Feb 2023 06:52:18 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46990 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230185AbjB1Kbm (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Feb 2023 05:31:42 -0500
-Received: from laurent.telenet-ops.be (laurent.telenet-ops.be [IPv6:2a02:1800:110:4::f00:19])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A1D395BA4
-        for <linux-sh@vger.kernel.org>; Tue, 28 Feb 2023 02:31:37 -0800 (PST)
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed50:9202:974e:f0e0:414c])
-        by laurent.telenet-ops.be with bizsmtp
-        id SaXZ2900H1hKVeJ01aXZmY; Tue, 28 Feb 2023 11:31:35 +0100
-Received: from rox.of.borg ([192.168.97.57])
-        by ramsan.of.borg with esmtp (Exim 4.95)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1pWxGC-00ANGn-K0;
-        Tue, 28 Feb 2023 11:31:33 +0100
-Received: from geert by rox.of.borg with local (Exim 4.95)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1pWxGf-00FbNK-4c;
-        Tue, 28 Feb 2023 11:31:33 +0100
-From:   Geert Uytterhoeven <geert+renesas@glider.be>
-To:     Brendan Higgins <brendan.higgins@linux.dev>,
+        with ESMTP id S229711AbjB1LwR (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Feb 2023 06:52:17 -0500
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 253802CC77;
+        Tue, 28 Feb 2023 03:52:16 -0800 (PST)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pWyWi-003MVU-Js; Tue, 28 Feb 2023 12:52:12 +0100
+Received: from p57bd9bc2.dip0.t-ipconnect.de ([87.189.155.194] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pWyWi-003hsA-Cu; Tue, 28 Feb 2023 12:52:12 +0100
+Message-ID: <e72dd5e0af2df190d7bb52ba36e44391d59da59e.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 0/2] kunit: tool: Add support for SH under QEMU
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>,
+        Brendan Higgins <brendan.higgins@linux.dev>,
         David Gow <davidgow@google.com>
 Cc:     linux-kselftest@vger.kernel.org, kunit-dev@googlegroups.com,
-        linux-sh@vger.kernel.org,
-        Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH 1/2] kunit: tool: Add support for overriding the QEMU serial port
-Date:   Tue, 28 Feb 2023 11:31:02 +0100
-Message-Id: <f12e6f606a2612fab4d1038d088959710a423a9f.1677579750.git.geert+renesas@glider.be>
-X-Mailer: git-send-email 2.34.1
+        linux-sh@vger.kernel.org
+Date:   Tue, 28 Feb 2023 12:52:11 +0100
 In-Reply-To: <cover.1677579750.git.geert+renesas@glider.be>
 References: <cover.1677579750.git.geert+renesas@glider.be>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.46.4 
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.155.194
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On some platforms, the console is not the first serial port.  To make
-this work, the first serial port in QEMU must be set to "null".
+Hi Geert!
 
-Add support for this by adding an optional "serial" parameter, which
-defaults to "stdio", and can be overridden by platform-specific
-configuration.
+On Tue, 2023-02-28 at 11:31 +0100, Geert Uytterhoeven wrote:
+> This patch series adds support to run tests via kunit_tool on the
+> SuperH-based virtualized r2d platform.  As r2d uses the second serial
+> port as the console, this needs a small modification of the core
+> infrastructure.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- tools/testing/kunit/kunit_kernel.py | 3 ++-
- tools/testing/kunit/qemu_config.py  | 1 +
- 2 files changed, 3 insertions(+), 1 deletion(-)
+Very cool idea. I have never used the kunit testsuite before, I will have
+a look at it. Is there documentation available which shows how to get
+started?
 
-diff --git a/tools/testing/kunit/kunit_kernel.py b/tools/testing/kunit/kunit_kernel.py
-index 53e90c3358348dbe..64262875993ff070 100644
---- a/tools/testing/kunit/kunit_kernel.py
-+++ b/tools/testing/kunit/kunit_kernel.py
-@@ -106,6 +106,7 @@ class LinuxSourceTreeOperationsQemu(LinuxSourceTreeOperations):
- 		self._kernel_path = qemu_arch_params.kernel_path
- 		self._kernel_command_line = qemu_arch_params.kernel_command_line + ' kunit_shutdown=reboot'
- 		self._extra_qemu_params = qemu_arch_params.extra_qemu_params
-+		self._serial = qemu_arch_params.serial
- 
- 	def make_arch_config(self, base_kunitconfig: kunit_config.Kconfig) -> kunit_config.Kconfig:
- 		kconfig = kunit_config.parse_from_string(self._kconfig)
-@@ -121,7 +122,7 @@ class LinuxSourceTreeOperationsQemu(LinuxSourceTreeOperations):
- 				'-append', ' '.join(params + [self._kernel_command_line]),
- 				'-no-reboot',
- 				'-nographic',
--				'-serial', 'stdio'] + self._extra_qemu_params
-+				'-serial', self._serial] + self._extra_qemu_params
- 		# Note: shlex.join() does what we want, but requires python 3.8+.
- 		print('Running tests with:\n$', ' '.join(shlex.quote(arg) for arg in qemu_command))
- 		return subprocess.Popen(qemu_command,
-diff --git a/tools/testing/kunit/qemu_config.py b/tools/testing/kunit/qemu_config.py
-index 0b6a80398cccb50f..b1fba9016eed00d0 100644
---- a/tools/testing/kunit/qemu_config.py
-+++ b/tools/testing/kunit/qemu_config.py
-@@ -17,3 +17,4 @@ class QemuArchParams:
-   kernel_path: str
-   kernel_command_line: str
-   extra_qemu_params: List[str]
-+  serial: str = 'stdio'
+Adrian
+
 -- 
-2.34.1
-
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
