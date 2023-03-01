@@ -2,464 +2,359 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B6091C7EE30
-	for <linux-sh@archiver.kernel.org>; Tue, 28 Feb 2023 21:39:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B0562C7EE23
+	for <linux-sh@archiver.kernel.org>; Wed,  1 Mar 2023 03:45:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230126AbjB1VjI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 28 Feb 2023 16:39:08 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51734 "EHLO
+        id S230049AbjCADpt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 28 Feb 2023 22:45:49 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46044 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229919AbjB1ViV (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Feb 2023 16:38:21 -0500
-Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 890CA3430F;
-        Tue, 28 Feb 2023 13:37:47 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:MIME-Version:
-        References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender:Reply-To:
-        Content-Type:Content-ID:Content-Description;
-        bh=bHG0cAAB5y+5Fy2o+LQ/LT1veDA41EiEXJDm/yoHE4w=; b=uuNpaykeiK5frENkfd+aJNrgoD
-        zi+BAtfLF/YVlEoNF2/fceWUxc4H557U7VOvkZavRFq+8vH7xnCPti0atW6QBc1YG7hC7hZocJ78G
-        yesByn9YVrJPdpmy3ngrYC5YXRqKl+W3RBlRiDnHUDM5/XyrSOyubzsZu01ggy0jmQpkYpGeAWHRm
-        lyTL+J5cDDw5ztIpSIT4nE7R5zTUN3fMKKEnnBDpb3ODjFvY1RvBN5YZiCWcuu8BvL9E6xCka7s/7
-        keZ7XcWYA1V7/9HEyfngx7D5SXVa9jECUsd7mDWRP2+0I46TYC4G42bdFY12DTKPLXSsurdY6UYLU
-        BFkpkq2w==;
-Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pX7fJ-0018q4-Ol; Tue, 28 Feb 2023 21:37:41 +0000
-From:   "Matthew Wilcox (Oracle)" <willy@infradead.org>
-To:     linux-mm@kvack.org, linux-arch@vger.kernel.org
-Cc:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
-        linux-kernel@vger.kernel.org,
+        with ESMTP id S229995AbjCADpY (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 28 Feb 2023 22:45:24 -0500
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6B20132CCF
+        for <linux-sh@vger.kernel.org>; Tue, 28 Feb 2023 19:44:16 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1677642255;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=QVTDIuzGqj+0AznPZIdOL0y+dZAfOPA4Q2ivFIOFZp8=;
+        b=b1NdamkIS3GwaMUg4sSSStoYeRQ+Hr4YfM/VsAFjp4e2PRzwuPL0QbiTA1x/MveRqBqjm/
+        ZaJS+HO9Lzkhlj+1stCqsJXnzgaYFIFCMv1B2i2EghaLl0NND+w63+78+vjDVtj0L/nYAD
+        7v06ncZ82AXaYsXitSpGBEuzqo27yHs=
+Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
+ [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-626-OtzYJ80dMqmsQV3f-Zk21g-1; Tue, 28 Feb 2023 22:44:10 -0500
+X-MC-Unique: OtzYJ80dMqmsQV3f-Zk21g-1
+Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.rdu2.redhat.com [10.11.54.8])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 8A72F101A521;
+        Wed,  1 Mar 2023 03:44:09 +0000 (UTC)
+Received: from MiWiFi-R3L-srv.redhat.com (ovpn-13-180.pek2.redhat.com [10.72.13.180])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id 364D3C15BAD;
+        Wed,  1 Mar 2023 03:43:59 +0000 (UTC)
+From:   Baoquan He <bhe@redhat.com>
+To:     linux-kernel@vger.kernel.org
+Cc:     linux-arch@vger.kernel.org, linux-mm@kvack.org, arnd@arndb.de,
+        christophe.leroy@csgroup.eu, hch@infradead.org,
+        agordeev@linux.ibm.com, wangkefeng.wang@huawei.com,
+        schnelle@linux.ibm.com, David.Laight@ACULAB.COM, shorne@gmail.com,
+        willy@infradead.org, Baoquan He <bhe@redhat.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-sh@vger.kernel.org
-Subject: [PATCH v3 22/34] superh: Implement the new page table range API
-Date:   Tue, 28 Feb 2023 21:37:25 +0000
-Message-Id: <20230228213738.272178-23-willy@infradead.org>
-X-Mailer: git-send-email 2.37.1
-In-Reply-To: <20230228213738.272178-1-willy@infradead.org>
-References: <20230228213738.272178-1-willy@infradead.org>
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Subject: [PATCH v5 11/17] sh: mm: Convert to GENERIC_IOREMAP
+Date:   Wed,  1 Mar 2023 11:42:41 +0800
+Message-Id: <20230301034247.136007-12-bhe@redhat.com>
+In-Reply-To: <20230301034247.136007-1-bhe@redhat.com>
+References: <20230301034247.136007-1-bhe@redhat.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
+X-Scanned-By: MIMEDefang 3.1 on 10.11.54.8
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Add set_ptes(), update_mmu_cache_range(), flush_dcache_folio() and
-flush_icache_pages().  Change the PG_dcache_clean flag from being
-per-page to per-folio.  Flush the entire folio containing the pages in
-flush_icache_pages() for ease of implementation.
+By taking GENERIC_IOREMAP method, the generic generic_ioremap_prot(),
+generic_iounmap(), and their generic wrapper ioremap_prot(), ioremap()
+and iounmap() are all visible and available to arch. Arch needs to
+provide wrapper functions to override the generic versions if there's
+arch specific handling in its ioremap_prot(), ioremap() or iounmap().
+This change will simplify implementation by removing duplicated codes
+with generic_ioremap_prot() and generic_iounmap(), and has the equivalent
+functioality as before.
 
-Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
+Here, add wrapper functions ioremap_prot() and iounmap() for SuperH's
+special operation when ioremap() and iounmap().
+
+Meanwhile, add macro definitions for port|mm io functions since SuperH
+has its own implementation in arch/sh/kernel/iomap.c and
+arch/sh/include/asm/io_noioport.h. These will conflict with the port|mm io
+function definitions in include/asm-generic/io.h to cause compiling
+errors like below:
+
+====
+  CC      arch/sh/kernel/asm-offsets.s
+In file included from ./arch/sh/include/asm/io.h:294,
+                 from ./include/linux/io.h:13,
+                 ......
+                 from arch/sh/kernel/asm-offsets.c:16:
+./include/asm-generic/io.h:792:17: error: conflicting types for ‘ioread8’
+  792 | #define ioread8 ioread8
+      |                 ^~~~~~~
+./include/asm-generic/io.h:793:18: note: in expansion of macro ‘ioread8’
+  793 | static inline u8 ioread8(const volatile void __iomem *addr)
+      |                  ^~~~~~~
+In file included from ./arch/sh/include/asm/io.h:22,
+                 from ./include/linux/io.h:13,
+                 ......
+                 from arch/sh/kernel/asm-offsets.c:16:
+./include/asm-generic/iomap.h:29:21: note: previous declaration of ‘ioread8’ was here
+   29 | extern unsigned int ioread8(const void __iomem *);
+====
+
+Signed-off-by: Baoquan He <bhe@redhat.com>
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc: Rich Felker <dalias@libc.org>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 Cc: linux-sh@vger.kernel.org
 ---
- arch/sh/include/asm/cacheflush.h | 21 ++++++++-----
- arch/sh/include/asm/pgtable.h    |  6 ++--
- arch/sh/include/asm/pgtable_32.h | 16 ++++++++--
- arch/sh/mm/cache-j2.c            |  4 +--
- arch/sh/mm/cache-sh4.c           | 26 ++++++++++-----
- arch/sh/mm/cache-sh7705.c        | 26 +++++++++------
- arch/sh/mm/cache.c               | 54 ++++++++++++++++++--------------
- arch/sh/mm/kmap.c                |  3 +-
- 8 files changed, 101 insertions(+), 55 deletions(-)
+ arch/sh/Kconfig                   |  1 +
+ arch/sh/include/asm/io.h          | 65 ++++++++++++++++---------------
+ arch/sh/include/asm/io_noioport.h |  7 ++++
+ arch/sh/mm/ioremap.c              | 65 ++++++-------------------------
+ 4 files changed, 52 insertions(+), 86 deletions(-)
 
-diff --git a/arch/sh/include/asm/cacheflush.h b/arch/sh/include/asm/cacheflush.h
-index 481a664287e2..9fceef6f3e00 100644
---- a/arch/sh/include/asm/cacheflush.h
-+++ b/arch/sh/include/asm/cacheflush.h
-@@ -13,9 +13,9 @@
-  *  - flush_cache_page(mm, vmaddr, pfn) flushes a single page
-  *  - flush_cache_range(vma, start, end) flushes a range of pages
-  *
-- *  - flush_dcache_page(pg) flushes(wback&invalidates) a page for dcache
-+ *  - flush_dcache_folio(folio) flushes(wback&invalidates) a folio for dcache
-  *  - flush_icache_range(start, end) flushes(invalidates) a range for icache
-- *  - flush_icache_page(vma, pg) flushes(invalidates) a page for icache
-+ *  - flush_icache_pages(vma, pg, nr) flushes(invalidates) pages for icache
-  *  - flush_cache_sigtramp(vaddr) flushes the signal trampoline
-  */
- extern void (*local_flush_cache_all)(void *args);
-@@ -23,9 +23,9 @@ extern void (*local_flush_cache_mm)(void *args);
- extern void (*local_flush_cache_dup_mm)(void *args);
- extern void (*local_flush_cache_page)(void *args);
- extern void (*local_flush_cache_range)(void *args);
--extern void (*local_flush_dcache_page)(void *args);
-+extern void (*local_flush_dcache_folio)(void *args);
- extern void (*local_flush_icache_range)(void *args);
--extern void (*local_flush_icache_page)(void *args);
-+extern void (*local_flush_icache_folio)(void *args);
- extern void (*local_flush_cache_sigtramp)(void *args);
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 0665ac0add0b..9ab627f97c4a 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -25,6 +25,7 @@ config SUPERH
+ 	select GENERIC_SCHED_CLOCK
+ 	select GENERIC_SMP_IDLE_THREAD
+ 	select GUP_GET_PXX_LOW_HIGH if X2TLB
++	select GENERIC_IOREMAP if MMU
+ 	select HAVE_ARCH_AUDITSYSCALL
+ 	select HAVE_ARCH_KGDB
+ 	select HAVE_ARCH_SECCOMP_FILTER
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index fba90e670ed4..b3a26b405c8d 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -119,6 +119,26 @@ void __raw_readsl(const void __iomem *addr, void *data, int longlen);
  
- static inline void cache_noop(void *args) { }
-@@ -42,11 +42,18 @@ extern void flush_cache_page(struct vm_area_struct *vma,
- extern void flush_cache_range(struct vm_area_struct *vma,
- 				 unsigned long start, unsigned long end);
- #define ARCH_IMPLEMENTS_FLUSH_DCACHE_PAGE 1
--void flush_dcache_page(struct page *page);
-+void flush_dcache_folio(struct folio *folio);
-+#define flush_dcache_folio flush_dcache_folio
-+static inline void flush_dcache_page(struct page *page)
-+{
-+	flush_dcache_folio(page_folio(page));
-+}
+ __BUILD_MEMORY_STRING(__raw_, q, u64)
+ 
++#define ioread8 ioread8
++#define ioread16 ioread16
++#define ioread16be ioread16be
++#define ioread32 ioread32
++#define ioread32be ioread32be
 +
- extern void flush_icache_range(unsigned long start, unsigned long end);
- #define flush_icache_user_range flush_icache_range
--extern void flush_icache_page(struct vm_area_struct *vma,
--				 struct page *page);
-+void flush_icache_pages(struct vm_area_struct *vma, struct page *page,
-+		unsigned int nr);
-+#define flush_icache_page(vma, page) flush_icache_pages(vma, page, 1)
- extern void flush_cache_sigtramp(unsigned long address);
- 
- struct flusher_data {
-diff --git a/arch/sh/include/asm/pgtable.h b/arch/sh/include/asm/pgtable.h
-index 3ce30becf6df..1a8fdc3bc363 100644
---- a/arch/sh/include/asm/pgtable.h
-+++ b/arch/sh/include/asm/pgtable.h
-@@ -102,13 +102,15 @@ extern void __update_cache(struct vm_area_struct *vma,
- extern void __update_tlb(struct vm_area_struct *vma,
- 			 unsigned long address, pte_t pte);
- 
--static inline void
--update_mmu_cache(struct vm_area_struct *vma, unsigned long address, pte_t *ptep)
-+static inline void update_mmu_cache_range(struct vm_area_struct *vma,
-+		unsigned long address, pte_t *ptep, unsigned int nr)
- {
- 	pte_t pte = *ptep;
- 	__update_cache(vma, address, pte);
- 	__update_tlb(vma, address, pte);
- }
-+#define update_mmu_cache(vma, addr, ptep) \
-+	update_mmu_cache_range(vma, addr, ptep, 1)
- 
- extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
- extern void paging_init(void);
-diff --git a/arch/sh/include/asm/pgtable_32.h b/arch/sh/include/asm/pgtable_32.h
-index 21952b094650..03ba1834e126 100644
---- a/arch/sh/include/asm/pgtable_32.h
-+++ b/arch/sh/include/asm/pgtable_32.h
-@@ -307,7 +307,19 @@ static inline void set_pte(pte_t *ptep, pte_t pte)
- #define set_pte(pteptr, pteval) (*(pteptr) = pteval)
- #endif
- 
--#define set_pte_at(mm,addr,ptep,pteval) set_pte(ptep,pteval)
-+static inline void set_ptes(struct mm_struct *mm, unsigned long addr,
-+		pte_t *ptep, pte_t pte, unsigned int nr)
-+{
-+	for (;;) {
-+		set_pte(ptep, pte);
-+		if (--nr == 0)
-+			break;
-+		ptep++;
-+		pte = __pte(pte_val(pte) + PAGE_SIZE);
-+	}
-+}
++#define iowrite8 iowrite8
++#define iowrite16 iowrite16
++#define iowrite16be iowrite16be
++#define iowrite32 iowrite32
++#define iowrite32be iowrite32be
 +
-+#define set_pte_at(mm, addr, ptep, pte) set_ptes(mm, addr, ptep, pte, 1)
++#define ioread8_rep ioread8_rep
++#define ioread16_rep ioread16_rep
++#define ioread32_rep ioread32_rep
++
++#define iowrite8_rep iowrite8_rep
++#define iowrite16_rep iowrite16_rep
++#define iowrite32_rep iowrite32_rep
++
+ #ifdef CONFIG_HAS_IOPORT_MAP
  
  /*
-  * (pmds are folded into pgds so this doesn't get actually called,
-@@ -323,7 +335,7 @@ static inline void set_pte(pte_t *ptep, pte_t pte)
- #define pte_none(x)		(!pte_val(x))
- #define pte_present(x)		((x).pte_low & (_PAGE_PRESENT | _PAGE_PROTNONE))
+@@ -225,6 +245,9 @@ __BUILD_IOPORT_STRING(q, u64)
+ #define IO_SPACE_LIMIT 0xffffffff
  
--#define pte_clear(mm,addr,xp) do { set_pte_at(mm, addr, xp, __pte(0)); } while (0)
-+#define pte_clear(mm, addr, ptep) set_pte(ptep, __pte(0))
- 
- #define pmd_none(x)	(!pmd_val(x))
- #define pmd_present(x)	(pmd_val(x))
-diff --git a/arch/sh/mm/cache-j2.c b/arch/sh/mm/cache-j2.c
-index f277862a11f5..9ac960214380 100644
---- a/arch/sh/mm/cache-j2.c
-+++ b/arch/sh/mm/cache-j2.c
-@@ -55,9 +55,9 @@ void __init j2_cache_init(void)
- 	local_flush_cache_dup_mm = j2_flush_both;
- 	local_flush_cache_page = j2_flush_both;
- 	local_flush_cache_range = j2_flush_both;
--	local_flush_dcache_page = j2_flush_dcache;
-+	local_flush_dcache_folio = j2_flush_dcache;
- 	local_flush_icache_range = j2_flush_icache;
--	local_flush_icache_page = j2_flush_icache;
-+	local_flush_icache_folio = j2_flush_icache;
- 	local_flush_cache_sigtramp = j2_flush_icache;
- 
- 	pr_info("Initial J2 CCR is %.8x\n", __raw_readl(j2_ccr_base));
-diff --git a/arch/sh/mm/cache-sh4.c b/arch/sh/mm/cache-sh4.c
-index 72c2e1b46c08..862046f26981 100644
---- a/arch/sh/mm/cache-sh4.c
-+++ b/arch/sh/mm/cache-sh4.c
-@@ -107,19 +107,29 @@ static inline void flush_cache_one(unsigned long start, unsigned long phys)
-  * Write back & invalidate the D-cache of the page.
-  * (To avoid "alias" issues)
-  */
--static void sh4_flush_dcache_page(void *arg)
-+static void sh4_flush_dcache_folio(void *arg)
- {
--	struct page *page = arg;
--	unsigned long addr = (unsigned long)page_address(page);
-+	struct folio *folio = arg;
- #ifndef CONFIG_SMP
--	struct address_space *mapping = page_mapping_file(page);
-+	struct address_space *mapping = folio_flush_mapping(folio);
- 
- 	if (mapping && !mapping_mapped(mapping))
--		clear_bit(PG_dcache_clean, &page->flags);
-+		clear_bit(PG_dcache_clean, &folio->flags);
- 	else
+ /* We really want to try and get these to memcpy etc */
++#define memset_io memset_io
++#define memcpy_fromio memcpy_fromio
++#define memcpy_toio memcpy_toio
+ void memcpy_fromio(void *, const volatile void __iomem *, unsigned long);
+ void memcpy_toio(volatile void __iomem *, const void *, unsigned long);
+ void memset_io(volatile void __iomem *, int, unsigned long);
+@@ -243,40 +266,16 @@ unsigned long long poke_real_address_q(unsigned long long addr,
  #endif
--		flush_cache_one(CACHE_OC_ADDRESS_ARRAY |
--				(addr & shm_align_mask), page_to_phys(page));
-+	{
-+		unsigned long pfn = folio_pfn(folio);
-+		unsigned long addr = (unsigned long)folio_address(folio);
-+		unsigned int i, nr = folio_nr_pages(folio);
-+
-+		for (i = 0; i < nr; i++) {
-+			flush_cache_one(CACHE_OC_ADDRESS_ARRAY |
-+						(addr & shm_align_mask),
-+					pfn * PAGE_SIZE);
-+			addr += PAGE_SIZE;
-+			pfn++;
-+		}
-+	}
  
- 	wmb();
- }
-@@ -379,7 +389,7 @@ void __init sh4_cache_init(void)
- 		__raw_readl(CCN_PRR));
+ #ifdef CONFIG_MMU
+-void iounmap(void __iomem *addr);
+-void __iomem *__ioremap_caller(phys_addr_t offset, unsigned long size,
+-			       pgprot_t prot, void *caller);
+-
+-static inline void __iomem *ioremap(phys_addr_t offset, unsigned long size)
+-{
+-	return __ioremap_caller(offset, size, PAGE_KERNEL_NOCACHE,
+-			__builtin_return_address(0));
+-}
+-
+-static inline void __iomem *
+-ioremap_cache(phys_addr_t offset, unsigned long size)
+-{
+-	return __ioremap_caller(offset, size, PAGE_KERNEL,
+-			__builtin_return_address(0));
+-}
+-#define ioremap_cache ioremap_cache
+-
+-#ifdef CONFIG_HAVE_IOREMAP_PROT
+-static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
+-		unsigned long flags)
+-{
+-	return __ioremap_caller(offset, size, __pgprot(flags),
+-			__builtin_return_address(0));
+-}
+-#endif /* CONFIG_HAVE_IOREMAP_PROT */
++/*
++ * I/O memory mapping functions.
++ */
++#define ioremap_prot ioremap_prot
++#define iounmap iounmap
  
- 	local_flush_icache_range	= sh4_flush_icache_range;
--	local_flush_dcache_page		= sh4_flush_dcache_page;
-+	local_flush_dcache_folio	= sh4_flush_dcache_folio;
- 	local_flush_cache_all		= sh4_flush_cache_all;
- 	local_flush_cache_mm		= sh4_flush_cache_mm;
- 	local_flush_cache_dup_mm	= sh4_flush_cache_mm;
-diff --git a/arch/sh/mm/cache-sh7705.c b/arch/sh/mm/cache-sh7705.c
-index 9b63a53a5e46..b509a407588f 100644
---- a/arch/sh/mm/cache-sh7705.c
-+++ b/arch/sh/mm/cache-sh7705.c
-@@ -132,15 +132,20 @@ static void __flush_dcache_page(unsigned long phys)
-  * Write back & invalidate the D-cache of the page.
-  * (To avoid "alias" issues)
+-#else /* CONFIG_MMU */
+-static inline void __iomem *ioremap(phys_addr_t offset, size_t size)
+-{
+-	return (void __iomem *)(unsigned long)offset;
+-}
++#define _PAGE_IOREMAP pgprot_val(PAGE_KERNEL_NOCACHE)
+ 
+-static inline void iounmap(volatile void __iomem *addr) { }
++#define ioremap_cache(addr, size)  \
++	ioremap_prot((addr), (size), pgprot_val(PAGE_KERNEL))
+ #endif /* CONFIG_MMU */
+ 
+ #define ioremap_uc	ioremap
+@@ -287,6 +286,8 @@ static inline void iounmap(volatile void __iomem *addr) { }
   */
--static void sh7705_flush_dcache_page(void *arg)
-+static void sh7705_flush_dcache_folio(void *arg)
- {
--	struct page *page = arg;
--	struct address_space *mapping = page_mapping_file(page);
-+	struct folio *folio = arg;
-+	struct address_space *mapping = folio_flush_mapping(folio);
+ #define xlate_dev_mem_ptr(p)	__va(p)
  
- 	if (mapping && !mapping_mapped(mapping))
--		clear_bit(PG_dcache_clean, &page->flags);
--	else
--		__flush_dcache_page(__pa(page_address(page)));
-+		clear_bit(PG_dcache_clean, &folio->flags);
-+	else {
-+		unsigned long pfn = folio_pfn(folio);
-+		unsigned int i, nr = folio_nr_pages(folio);
++#include <asm-generic/io.h>
 +
-+		for (i = 0; i < nr; i++)
-+			__flush_dcache_page((pfn + i) * PAGE_SIZE);
-+	}
- }
+ #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
+ int valid_phys_addr_range(phys_addr_t addr, size_t size);
+ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
+diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
+index f7938fe0f911..5ba4116b4265 100644
+--- a/arch/sh/include/asm/io_noioport.h
++++ b/arch/sh/include/asm/io_noioport.h
+@@ -53,6 +53,13 @@ static inline void ioport_unmap(void __iomem *addr)
+ #define outw_p(x, addr)	outw((x), (addr))
+ #define outl_p(x, addr)	outl((x), (addr))
  
- static void sh7705_flush_cache_all(void *args)
-@@ -176,19 +181,20 @@ static void sh7705_flush_cache_page(void *args)
-  * Not entirely sure why this is necessary on SH3 with 32K cache but
-  * without it we get occasional "Memory fault" when loading a program.
-  */
--static void sh7705_flush_icache_page(void *page)
-+static void sh7705_flush_icache_folio(void *arg)
- {
--	__flush_purge_region(page_address(page), PAGE_SIZE);
-+	struct folio *folio = arg;
-+	__flush_purge_region(folio_address(folio), folio_size(folio));
- }
- 
- void __init sh7705_cache_init(void)
- {
- 	local_flush_icache_range	= sh7705_flush_icache_range;
--	local_flush_dcache_page		= sh7705_flush_dcache_page;
-+	local_flush_dcache_folio	= sh7705_flush_dcache_folio;
- 	local_flush_cache_all		= sh7705_flush_cache_all;
- 	local_flush_cache_mm		= sh7705_flush_cache_all;
- 	local_flush_cache_dup_mm	= sh7705_flush_cache_all;
- 	local_flush_cache_range		= sh7705_flush_cache_all;
- 	local_flush_cache_page		= sh7705_flush_cache_page;
--	local_flush_icache_page		= sh7705_flush_icache_page;
-+	local_flush_icache_folio	= sh7705_flush_icache_folio;
- }
-diff --git a/arch/sh/mm/cache.c b/arch/sh/mm/cache.c
-index 3aef78ceb820..93fc5fb8ec1c 100644
---- a/arch/sh/mm/cache.c
-+++ b/arch/sh/mm/cache.c
-@@ -20,9 +20,9 @@ void (*local_flush_cache_mm)(void *args) = cache_noop;
- void (*local_flush_cache_dup_mm)(void *args) = cache_noop;
- void (*local_flush_cache_page)(void *args) = cache_noop;
- void (*local_flush_cache_range)(void *args) = cache_noop;
--void (*local_flush_dcache_page)(void *args) = cache_noop;
-+void (*local_flush_dcache_folio)(void *args) = cache_noop;
- void (*local_flush_icache_range)(void *args) = cache_noop;
--void (*local_flush_icache_page)(void *args) = cache_noop;
-+void (*local_flush_icache_folio)(void *args) = cache_noop;
- void (*local_flush_cache_sigtramp)(void *args) = cache_noop;
- 
- void (*__flush_wback_region)(void *start, int size);
-@@ -61,15 +61,17 @@ void copy_to_user_page(struct vm_area_struct *vma, struct page *page,
- 		       unsigned long vaddr, void *dst, const void *src,
- 		       unsigned long len)
- {
--	if (boot_cpu_data.dcache.n_aliases && page_mapcount(page) &&
--	    test_bit(PG_dcache_clean, &page->flags)) {
-+	struct folio *folio = page_folio(page);
++#define insb insb
++#define insw insw
++#define insl insl
++#define outsb outsb
++#define outsw outsw
++#define outsl outsl
 +
-+	if (boot_cpu_data.dcache.n_aliases && folio_mapped(folio) &&
-+	    test_bit(PG_dcache_clean, &folio->flags)) {
- 		void *vto = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
- 		memcpy(vto, src, len);
- 		kunmap_coherent(vto);
- 	} else {
- 		memcpy(dst, src, len);
- 		if (boot_cpu_data.dcache.n_aliases)
--			clear_bit(PG_dcache_clean, &page->flags);
-+			clear_bit(PG_dcache_clean, &folio->flags);
- 	}
- 
- 	if (vma->vm_flags & VM_EXEC)
-@@ -80,27 +82,30 @@ void copy_from_user_page(struct vm_area_struct *vma, struct page *page,
- 			 unsigned long vaddr, void *dst, const void *src,
- 			 unsigned long len)
+ static inline void insb(unsigned long port, void *dst, unsigned long count)
  {
-+	struct folio *folio = page_folio(page);
-+
- 	if (boot_cpu_data.dcache.n_aliases && page_mapcount(page) &&
--	    test_bit(PG_dcache_clean, &page->flags)) {
-+	    test_bit(PG_dcache_clean, &folio->flags)) {
- 		void *vfrom = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
- 		memcpy(dst, vfrom, len);
- 		kunmap_coherent(vfrom);
- 	} else {
- 		memcpy(dst, src, len);
- 		if (boot_cpu_data.dcache.n_aliases)
--			clear_bit(PG_dcache_clean, &page->flags);
-+			clear_bit(PG_dcache_clean, &folio->flags);
- 	}
+ 	BUG();
+diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
+index 21342581144d..c33b3daa4ad1 100644
+--- a/arch/sh/mm/ioremap.c
++++ b/arch/sh/mm/ioremap.c
+@@ -72,22 +72,11 @@ __ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
+ #define __ioremap_29bit(offset, size, prot)		NULL
+ #endif /* CONFIG_29BIT */
+ 
+-/*
+- * Remap an arbitrary physical address space into the kernel virtual
+- * address space. Needed when the kernel wants to access high addresses
+- * directly.
+- *
+- * NOTE! We need to allow non-page-aligned mappings too: we will obviously
+- * have to convert them into an offset in a page-aligned mapping, but the
+- * caller shouldn't need to know that small detail.
+- */
+-void __iomem * __ref
+-__ioremap_caller(phys_addr_t phys_addr, unsigned long size,
+-		 pgprot_t pgprot, void *caller)
++void __iomem *ioremap_prot(phys_addr_t phys_addr, size_t size,
++			   unsigned long prot)
+ {
+-	struct vm_struct *area;
+-	unsigned long offset, last_addr, addr, orig_addr;
+ 	void __iomem *mapped;
++	pgprot_t pgprot = __pgprot(prot);
+ 
+ 	mapped = __ioremap_trapped(phys_addr, size);
+ 	if (mapped)
+@@ -97,11 +86,6 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
+ 	if (mapped)
+ 		return mapped;
+ 
+-	/* Don't allow wraparound or zero size */
+-	last_addr = phys_addr + size - 1;
+-	if (!size || last_addr < phys_addr)
+-		return NULL;
+-
+ 	/*
+ 	 * If we can't yet use the regular approach, go the fixmap route.
+ 	 */
+@@ -112,34 +96,14 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
+ 	 * First try to remap through the PMB.
+ 	 * PMB entries are all pre-faulted.
+ 	 */
+-	mapped = pmb_remap_caller(phys_addr, size, pgprot, caller);
++	mapped = pmb_remap_caller(phys_addr, size, pgprot,
++			__builtin_return_address(0));
+ 	if (mapped && !IS_ERR(mapped))
+ 		return mapped;
+ 
+-	/*
+-	 * Mappings have to be page-aligned
+-	 */
+-	offset = phys_addr & ~PAGE_MASK;
+-	phys_addr &= PAGE_MASK;
+-	size = PAGE_ALIGN(last_addr+1) - phys_addr;
+-
+-	/*
+-	 * Ok, go for it..
+-	 */
+-	area = get_vm_area_caller(size, VM_IOREMAP, caller);
+-	if (!area)
+-		return NULL;
+-	area->phys_addr = phys_addr;
+-	orig_addr = addr = (unsigned long)area->addr;
+-
+-	if (ioremap_page_range(addr, addr + size, phys_addr, pgprot)) {
+-		vunmap((void *)orig_addr);
+-		return NULL;
+-	}
+-
+-	return (void __iomem *)(offset + (char *)orig_addr);
++	return generic_ioremap_prot(phys_addr, size, pgprot);
+ }
+-EXPORT_SYMBOL(__ioremap_caller);
++EXPORT_SYMBOL(ioremap_prot);
+ 
+ /*
+  * Simple checks for non-translatable mappings.
+@@ -158,10 +122,9 @@ static inline int iomapping_nontranslatable(unsigned long offset)
+ 	return 0;
  }
  
- void copy_user_highpage(struct page *to, struct page *from,
- 			unsigned long vaddr, struct vm_area_struct *vma)
+-void iounmap(void __iomem *addr)
++void iounmap(volatile void __iomem *addr)
  {
-+	struct folio *src = page_folio(from);
- 	void *vfrom, *vto;
+ 	unsigned long vaddr = (unsigned long __force)addr;
+-	struct vm_struct *p;
  
- 	vto = kmap_atomic(to);
- 
--	if (boot_cpu_data.dcache.n_aliases && page_mapcount(from) &&
--	    test_bit(PG_dcache_clean, &from->flags)) {
-+	if (boot_cpu_data.dcache.n_aliases && folio_mapped(src) &&
-+	    test_bit(PG_dcache_clean, &src->flags)) {
- 		vfrom = kmap_coherent(from, vaddr);
- 		copy_page(vto, vfrom);
- 		kunmap_coherent(vfrom);
-@@ -136,35 +141,37 @@ EXPORT_SYMBOL(clear_user_highpage);
- void __update_cache(struct vm_area_struct *vma,
- 		    unsigned long address, pte_t pte)
- {
--	struct page *page;
- 	unsigned long pfn = pte_pfn(pte);
- 
- 	if (!boot_cpu_data.dcache.n_aliases)
+ 	/*
+ 	 * Nothing to do if there is no translatable mapping.
+@@ -172,21 +135,15 @@ void iounmap(void __iomem *addr)
+ 	/*
+ 	 * There's no VMA if it's from an early fixed mapping.
+ 	 */
+-	if (iounmap_fixed(addr) == 0)
++	if (iounmap_fixed((void __iomem *)addr) == 0)
  		return;
  
--	page = pfn_to_page(pfn);
- 	if (pfn_valid(pfn)) {
--		int dirty = !test_and_set_bit(PG_dcache_clean, &page->flags);
-+		struct folio *folio = page_folio(pfn_to_page(pfn));
-+		int dirty = !test_and_set_bit(PG_dcache_clean, &folio->flags);
- 		if (dirty)
--			__flush_purge_region(page_address(page), PAGE_SIZE);
-+			__flush_purge_region(folio_address(folio),
-+						folio_size(folio));
- 	}
+ 	/*
+ 	 * If the PMB handled it, there's nothing else to do.
+ 	 */
+-	if (pmb_unmap(addr) == 0)
++	if (pmb_unmap((void __iomem *)addr) == 0)
+ 		return;
+ 
+-	p = remove_vm_area((void *)(vaddr & PAGE_MASK));
+-	if (!p) {
+-		printk(KERN_ERR "%s: bad address %p\n", __func__, addr);
+-		return;
+-	}
+-
+-	kfree(p);
++	generic_iounmap(addr);
  }
- 
- void __flush_anon_page(struct page *page, unsigned long vmaddr)
- {
-+	struct folio *folio = page_folio(page);
- 	unsigned long addr = (unsigned long) page_address(page);
- 
- 	if (pages_do_alias(addr, vmaddr)) {
--		if (boot_cpu_data.dcache.n_aliases && page_mapcount(page) &&
--		    test_bit(PG_dcache_clean, &page->flags)) {
-+		if (boot_cpu_data.dcache.n_aliases && folio_mapped(folio) &&
-+		    test_bit(PG_dcache_clean, &folio->flags)) {
- 			void *kaddr;
- 
- 			kaddr = kmap_coherent(page, vmaddr);
- 			/* XXX.. For now kunmap_coherent() does a purge */
- 			/* __flush_purge_region((void *)kaddr, PAGE_SIZE); */
- 			kunmap_coherent(kaddr);
--		} else
--			__flush_purge_region((void *)addr, PAGE_SIZE);
-+		} else 
-+			__flush_purge_region(folio_address(folio),
-+						folio_size(folio));
- 	}
- }
- 
-@@ -215,11 +222,11 @@ void flush_cache_range(struct vm_area_struct *vma, unsigned long start,
- }
- EXPORT_SYMBOL(flush_cache_range);
- 
--void flush_dcache_page(struct page *page)
-+void flush_dcache_folio(struct folio *folio)
- {
--	cacheop_on_each_cpu(local_flush_dcache_page, page, 1);
-+	cacheop_on_each_cpu(local_flush_dcache_folio, folio, 1);
- }
--EXPORT_SYMBOL(flush_dcache_page);
-+EXPORT_SYMBOL(flush_dcache_folio);
- 
- void flush_icache_range(unsigned long start, unsigned long end)
- {
-@@ -233,10 +240,11 @@ void flush_icache_range(unsigned long start, unsigned long end)
- }
- EXPORT_SYMBOL(flush_icache_range);
- 
--void flush_icache_page(struct vm_area_struct *vma, struct page *page)
-+void flush_icache_pages(struct vm_area_struct *vma, struct page *page,
-+		unsigned int nr)
- {
--	/* Nothing uses the VMA, so just pass the struct page along */
--	cacheop_on_each_cpu(local_flush_icache_page, page, 1);
-+	/* Nothing uses the VMA, so just pass the folio along */
-+	cacheop_on_each_cpu(local_flush_icache_folio, page_folio(page), 1);
- }
- 
- void flush_cache_sigtramp(unsigned long address)
-diff --git a/arch/sh/mm/kmap.c b/arch/sh/mm/kmap.c
-index 73fd7cc99430..fa50e8f6e7a9 100644
---- a/arch/sh/mm/kmap.c
-+++ b/arch/sh/mm/kmap.c
-@@ -27,10 +27,11 @@ void __init kmap_coherent_init(void)
- 
- void *kmap_coherent(struct page *page, unsigned long addr)
- {
-+	struct folio *folio = page_folio(page);
- 	enum fixed_addresses idx;
- 	unsigned long vaddr;
- 
--	BUG_ON(!test_bit(PG_dcache_clean, &page->flags));
-+	BUG_ON(!test_bit(PG_dcache_clean, &folio->flags));
- 
- 	preempt_disable();
- 	pagefault_disable();
+ EXPORT_SYMBOL(iounmap);
 -- 
-2.39.1
+2.34.1
 
