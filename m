@@ -2,99 +2,154 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2BD81C7EE30
-	for <linux-sh@archiver.kernel.org>; Wed,  1 Mar 2023 09:03:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B03FEC7EE32
+	for <linux-sh@archiver.kernel.org>; Wed,  1 Mar 2023 15:41:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229738AbjCAJDD convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 1 Mar 2023 04:03:03 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55788 "EHLO
+        id S229932AbjCAPlk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 1 Mar 2023 10:41:40 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33296 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229769AbjCAJDC (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 1 Mar 2023 04:03:02 -0500
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2848B7D8D;
-        Wed,  1 Mar 2023 01:03:01 -0800 (PST)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pXIMR-000R73-38; Wed, 01 Mar 2023 10:02:55 +0100
-Received: from p57bd9bc2.dip0.t-ipconnect.de ([87.189.155.194] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pXIMQ-003rAU-SH; Wed, 01 Mar 2023 10:02:55 +0100
-Message-ID: <43b34b98415a56fa5808837ae0d16003c80910b9.camel@physik.fu-berlin.de>
-Subject: [GIT PULL] sh updates for v6.3
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Linus Torvalds <torvalds@linux-foundation.org>
-Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
-        Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
-        Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date:   Wed, 01 Mar 2023 10:02:54 +0100
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.46.4 
+        with ESMTP id S229884AbjCAPli (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 1 Mar 2023 10:41:38 -0500
+Received: from mail-pj1-x1032.google.com (mail-pj1-x1032.google.com [IPv6:2607:f8b0:4864:20::1032])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 67620457EF
+        for <linux-sh@vger.kernel.org>; Wed,  1 Mar 2023 07:41:36 -0800 (PST)
+Received: by mail-pj1-x1032.google.com with SMTP id oj5so9789845pjb.5
+        for <linux-sh@vger.kernel.org>; Wed, 01 Mar 2023 07:41:36 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=rivosinc-com.20210112.gappssmtp.com; s=20210112; t=1677685296;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=T04RMfKzSUFRrZ3CYc3+bErGU8vpxkP2QVI3mwlpG78=;
+        b=RacUjtkKVhkSdFUBywOGho+8dt8NsK+GHdxWXdQ69WX2yCf/yYWl7r6icMXBWT/ShM
+         KzbzJEeKqlnWntlEh4Hu5sno9Ak81pDzhFum2pY94j4Sv2hldxTUvXOesOtDXjR8r6gc
+         qTgIZDS9fRsSDLNbTTTqAFsgPsTJ/DQ+0jjGE9ek1g+5UBhUcmjFAxCNoVki1FxJorhz
+         1mqoDsTuoBLwUNz+cTKmWUvmBN0WlvjuL/8NCCPe/UsZ69pgJ+6lNteW1mdicJGes/KY
+         sz2TvcyHAjAaMaJRH5/VJiCFama3PVa+Xs98E38Ow6CsZfQ4ni3p2/e/LUrMvV5jGCLw
+         yEmQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1677685296;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=T04RMfKzSUFRrZ3CYc3+bErGU8vpxkP2QVI3mwlpG78=;
+        b=1+V5dfVyLra/Wn7zpeNw4OS3439FdsIqLS2+gy8i/ant2EAUumVaTtNneBf590Zb8x
+         AkUZGUBLBufCr2c4nmrBJiPx6hof0hwSmH128EYS9Nq8q7hKtj2BB4LBeXF3ysanf8m7
+         lJ/4Kh7kX/wbVRfVx5sV9yXj+WpBJZxWMzWo0NnW7YfMf04n8jBMIMXV/kbBQJAMQuMk
+         EveeNZl+0LtzZTxj6YnTzA+m1c+CifLnrhKq+ieAvpSXXK08wJZsTTx2OJA2G7RvXduN
+         RyKUJCf0qW3+rMH5cfuwz9o1wutqyqLzY6OknxtJ6H4oHwC9BuEAIYWoa5khEertduTC
+         w4zg==
+X-Gm-Message-State: AO0yUKUjsG4WEQjyZm9s2ESzMFG6HRcRsGedjhE/5TOiAAOYZLmPMvvb
+        8MR0KL+XWkuKZr5URSVbaohZFw==
+X-Google-Smtp-Source: AK7set89u8u7K351sr+Ck6r7PKKsfq0NxjZus48TDBYC9SmTqwP5jGqb0tSf18Db2RC/D0Tp3KOSQg==
+X-Received: by 2002:a05:6a20:2444:b0:cc:ac05:88f7 with SMTP id t4-20020a056a20244400b000ccac0588f7mr8304959pzc.34.1677685295782;
+        Wed, 01 Mar 2023 07:41:35 -0800 (PST)
+Received: from debug.ba.rivosinc.com ([66.220.2.162])
+        by smtp.gmail.com with ESMTPSA id l12-20020a62be0c000000b005821c109cebsm8058970pff.199.2023.03.01.07.41.32
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 01 Mar 2023 07:41:35 -0800 (PST)
+Date:   Wed, 1 Mar 2023 07:41:30 -0800
+From:   Deepak Gupta <debug@rivosinc.com>
+To:     Rick Edgecombe <rick.p.edgecombe@intel.com>
+Cc:     x86@kernel.org, "H . Peter Anvin" <hpa@zytor.com>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, linux-kernel@vger.kernel.org,
+        linux-doc@vger.kernel.org, linux-mm@kvack.org,
+        linux-arch@vger.kernel.org, linux-api@vger.kernel.org,
+        Arnd Bergmann <arnd@arndb.de>,
+        Andy Lutomirski <luto@kernel.org>,
+        Balbir Singh <bsingharora@gmail.com>,
+        Borislav Petkov <bp@alien8.de>,
+        Cyrill Gorcunov <gorcunov@gmail.com>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        Eugene Syromiatnikov <esyr@redhat.com>,
+        Florian Weimer <fweimer@redhat.com>,
+        "H . J . Lu" <hjl.tools@gmail.com>, Jann Horn <jannh@google.com>,
+        Jonathan Corbet <corbet@lwn.net>,
+        Kees Cook <keescook@chromium.org>,
+        Mike Kravetz <mike.kravetz@oracle.com>,
+        Nadav Amit <nadav.amit@gmail.com>,
+        Oleg Nesterov <oleg@redhat.com>, Pavel Machek <pavel@ucw.cz>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Randy Dunlap <rdunlap@infradead.org>,
+        Weijiang Yang <weijiang.yang@intel.com>,
+        "Kirill A . Shutemov" <kirill.shutemov@linux.intel.com>,
+        John Allen <john.allen@amd.com>, kcc@google.com,
+        eranian@google.com, rppt@kernel.org, jamorris@linux.microsoft.com,
+        dethoma@microsoft.com, akpm@linux-foundation.org,
+        Andrew.Cooper3@citrix.com, christina.schimpe@intel.com,
+        david@redhat.com, linux-alpha@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        Michal Simek <monstr@monstr.eu>,
+        Dinh Nguyen <dinguyen@kernel.org>, linux-mips@vger.kernel.org,
+        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+        xen-devel@lists.xenproject.org
+Subject: Re: [PATCH v6 13/41] mm: Make pte_mkwrite() take a VMA
+Message-ID: <20230301154130.GB3505369@debug.ba.rivosinc.com>
+References: <20230218211433.26859-1-rick.p.edgecombe@intel.com>
+ <20230218211433.26859-14-rick.p.edgecombe@intel.com>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.155.194
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Disposition: inline
+In-Reply-To: <20230218211433.26859-14-rick.p.edgecombe@intel.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Linus!
+On Sat, Feb 18, 2023 at 01:14:05PM -0800, Rick Edgecombe wrote:
+>The x86 Control-flow Enforcement Technology (CET) feature includes a new
+>type of memory called shadow stack. This shadow stack memory has some
+>unusual properties, which requires some core mm changes to function
+>properly.
+>
+>One of these unusual properties is that shadow stack memory is writable,
+>but only in limited ways. These limits are applied via a specific PTE
+>bit combination. Nevertheless, the memory is writable, and core mm code
+>will need to apply the writable permissions in the typical paths that
+>call pte_mkwrite().
+>
+>In addition to VM_WRITE, the shadow stack VMA's will have a flag denoting
+>that they are special shadow stack flavor of writable memory. So make
+>pte_mkwrite() take a VMA, so that the x86 implementation of it can know to
+>create regular writable memory or shadow stack memory.
+>
+>Apply the same changes for pmd_mkwrite() and huge_pte_mkwrite().
+>
+>No functional change.
+>
+>Cc: linux-doc@vger.kernel.org
+>Cc: linux-kernel@vger.kernel.org
+>Cc: linux-alpha@vger.kernel.org
+>Cc: linux-snps-arc@lists.infradead.org
+>Cc: linux-arm-kernel@lists.infradead.org
+>Cc: linux-csky@vger.kernel.org
+>Cc: linux-hexagon@vger.kernel.org
+>Cc: linux-ia64@vger.kernel.org
+>Cc: loongarch@lists.linux.dev
+>Cc: linux-m68k@lists.linux-m68k.org
+>Cc: Michal Simek <monstr@monstr.eu>
+>Cc: Dinh Nguyen <dinguyen@kernel.org>
+>Cc: linux-mips@vger.kernel.org
+>Cc: openrisc@lists.librecores.org
+>Cc: linux-parisc@vger.kernel.org
+>Cc: linuxppc-dev@lists.ozlabs.org
+>Cc: linux-riscv@lists.infradead.org
+>Cc: linux-s390@vger.kernel.org
+>Cc: linux-sh@vger.kernel.org
+>Cc: sparclinux@vger.kernel.org
+>Cc: linux-um@lists.infradead.org
+>Cc: xen-devel@lists.xenproject.org
+>Cc: linux-arch@vger.kernel.org
+>Cc: linux-mm@kvack.org
+>Tested-by: Pengfei Xu <pengfei.xu@intel.com>
+>Suggested-by: David Hildenbrand <david@redhat.com>
+>Signed-off-by: Rick Edgecombe <rick.p.edgecombe@intel.com>
+>
 
-This is my first pull request as a SuperH maintainer, so the list of changes
-is very short and contains just two fixes.
-
-One patch by Geert Uytterhoeven fixes a regression in connection with the rtl8169
-driver on SuperH boards that was introduced when the driver was switched to use
-devm_clk_get_optional_enabled() to simplify the code.
-
-The second patch by Michael Karcher fixes a build warning and allows the kernel
-to be built with CONFIG_WERROR enabled on SuperH.
-
-The following changes since commit c9c3395d5e3dcc6daee66c6908354d47bf98cb0c:
-
- Linux 6.2 (2023-02-19 14:24:22 -0800)
-
-are available in the Git repository at:
-
- git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.3-tag1
-
-for you to fetch changes up to ff30bd6a6618e979b16977617371c0f28a95036e:
-
- sh: clk: Fix clk_enable() to return 0 on NULL clk (2023-02-27 10:50:48 +0100)
-
-Thanks for pulling!
-
-Adrian
-
-----------------------------------------------------------------
-sh updates for v6.3
-
-- sh: clk: Fix clk_enable() to return 0 on NULL clk
-- sh: intc: Avoid spurious sizeof-pointer-div warning
-
-----------------------------------------------------------------
-Geert Uytterhoeven (1):
- sh: clk: Fix clk_enable() to return 0 on NULL clk
-
-Michael Karcher (1):
- sh: intc: Avoid spurious sizeof-pointer-div warning
-
- drivers/sh/clk/core.c | 2 +-
- include/linux/sh_intc.h | 5 ++++-
- 2 files changed, 5 insertions(+), 2 deletions(-)
-
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Acked-by: Deepak Gupta <debug@rivosinc.com>
