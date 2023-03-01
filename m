@@ -2,129 +2,71 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 98475C64ED6
-	for <linux-sh@archiver.kernel.org>; Wed,  1 Mar 2023 16:17:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4EA2BC6FA9D
+	for <linux-sh@archiver.kernel.org>; Wed,  1 Mar 2023 18:02:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229615AbjCAQRM (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 1 Mar 2023 11:17:12 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37384 "EHLO
+        id S230191AbjCASCO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 1 Mar 2023 13:02:14 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59208 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229607AbjCAQRL (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 1 Mar 2023 11:17:11 -0500
-Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0BF292CC5B;
-        Wed,  1 Mar 2023 08:17:11 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=r4yRxsyjEc1VgxQqaMv5T8Q6fGJDXSNJgN02dz9+RN8=; b=GHNhxO3vzlp8y2VXNOy0x836JG
-        lAg6k6Oj7mWyKYzCebVyBGkYX04FkPUFpo+cl2nn9dSW79eGp0YfxE4EgANWEMzA4HpZwebmfKtkX
-        sUwBEJl8RlMrijtGzbxjFFvuZE8SU8AmbOOqAiIvu9RUVIovi3lfPjpH729tDT79KoVFfygWE9Jcl
-        Pe52lcIKRTKbzibHDbHPxScrJ8fDWPCbP/ZRVcDib6Sw6nUCWsj1td4rvfsmYDGpmz64u9CvEQp+Y
-        cP44Y+8YvfjwPIZKM+0tCqtX5cDiTL52++ELhMAuISaQpviFnjpnoVF6X9Hj8nLH4P08eI/ok2zjn
-        fYJqc/pA==;
-Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pXP8b-001jj8-QL; Wed, 01 Mar 2023 16:17:05 +0000
-Date:   Wed, 1 Mar 2023 16:17:05 +0000
-From:   Matthew Wilcox <willy@infradead.org>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     linux-mm@kvack.org, linux-arch@vger.kernel.org,
-        linux-kernel@vger.kernel.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        with ESMTP id S230048AbjCASCM (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 1 Mar 2023 13:02:12 -0500
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 486BD4A1C5;
+        Wed,  1 Mar 2023 10:02:12 -0800 (PST)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id CF22461453;
+        Wed,  1 Mar 2023 18:02:11 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPS id 400C0C433A0;
+        Wed,  1 Mar 2023 18:02:11 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1677693731;
+        bh=bWW/5ozZCHu4rInwKLRJHNLJwrQTWnrL8a4oZTu9av8=;
+        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
+        b=ufz0l0E0NO3PNE9EV6PPxgVlygEg6N3thoZH2m37tl04Pe5p6jdg2XyZdI5+mDAoF
+         0QSmhYGkC1xNyqksaZFw/TBCU3YyvqSpn+/cElZRU5CBV+XeSC56WHdaF/nO/8wrYl
+         EGBjrBvf/Oxk7hbTb+Pr07irbRJrn4tyuIoxY3LzBSLT1mZXUu2wYSp0uGW2HA7IMT
+         xQwcGY+vfrtFMJ8nHmFqsN7I8v4l7gQpgABnEsIc/R0sd4h+LIek3j5UzAu4t4DOAX
+         croxq9RHDd53MJcKIJWM6NHwVUuQ5KYvdDVYjgjb/JCc5JdeijKXqYA+eMKTP6O3NR
+         TCiQFxFGiOnZQ==
+Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
+        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id 2E2EBC395EC;
+        Wed,  1 Mar 2023 18:02:11 +0000 (UTC)
+Subject: Re: [GIT PULL] sh updates for v6.3
+From:   pr-tracker-bot@kernel.org
+In-Reply-To: <43b34b98415a56fa5808837ae0d16003c80910b9.camel@physik.fu-berlin.de>
+References: <43b34b98415a56fa5808837ae0d16003c80910b9.camel@physik.fu-berlin.de>
+X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
+X-PR-Tracked-Message-Id: <43b34b98415a56fa5808837ae0d16003c80910b9.camel@physik.fu-berlin.de>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.3-tag1
+X-PR-Tracked-Commit-Id: ff30bd6a6618e979b16977617371c0f28a95036e
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 1d2aea1bcf68992c90218f47405bee29efd722cd
+Message-Id: <167769373118.10213.13124914948263089775.pr-tracker-bot@kernel.org>
+Date:   Wed, 01 Mar 2023 18:02:11 +0000
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
         Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-sh@vger.kernel.org
-Subject: Re: [PATCH v3 22/34] superh: Implement the new page table range API
-Message-ID: <Y/96gfG1vpfdTzZO@casper.infradead.org>
-References: <20230228213738.272178-1-willy@infradead.org>
- <20230228213738.272178-23-willy@infradead.org>
- <CAMuHMdVY9VSZ57g-RXpDVBigfKJZLyF5wuyRsbmOm6d+m08OEA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAMuHMdVY9VSZ57g-RXpDVBigfKJZLyF5wuyRsbmOm6d+m08OEA@mail.gmail.com>
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Mar 01, 2023 at 09:06:16AM +0100, Geert Uytterhoeven wrote:
-> > -               } else
-> > -                       __flush_purge_region((void *)addr, PAGE_SIZE);
-> > +               } else
-> 
-> Trailing whitespace. Please run scripts/checkpath.pl (on the full series).
+The pull request you sent on Wed, 01 Mar 2023 10:02:54 +0100:
 
-Thanks.  It's pretty noisy and I don't intend to clean up many of
-those warnings, but it did find some legit problems.
+> git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.3-tag1
 
-I'll squash these fixes into v4.
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/1d2aea1bcf68992c90218f47405bee29efd722cd
 
-diff --git a/arch/powerpc/include/asm/pgtable.h b/arch/powerpc/include/asm/pgtable.h
-index bf1263ff7e67..45e5282f406c 100644
---- a/arch/powerpc/include/asm/pgtable.h
-+++ b/arch/powerpc/include/asm/pgtable.h
-@@ -45,7 +45,7 @@ void set_ptes(struct mm_struct *mm, unsigned long addr, pte_t *ptep,
- 		pte_t pte, unsigned int nr);
- #define set_pte_at(mm, addr, ptep, pte) set_ptes(mm, addr, ptep, pte, 1)
- #define update_mmu_cache(vma, addr, ptep) \
--	update_mmu_cache_range(vma, addr, ptep, 1);
-+	update_mmu_cache_range(vma, addr, ptep, 1)
- 
- #ifndef MAX_PTRS_PER_PGD
- #define MAX_PTRS_PER_PGD PTRS_PER_PGD
-diff --git a/arch/sh/mm/cache.c b/arch/sh/mm/cache.c
-index 93fc5fb8ec1c..9bcaa5619eab 100644
---- a/arch/sh/mm/cache.c
-+++ b/arch/sh/mm/cache.c
-@@ -169,7 +169,7 @@ void __flush_anon_page(struct page *page, unsigned long vmaddr)
- 			/* XXX.. For now kunmap_coherent() does a purge */
- 			/* __flush_purge_region((void *)kaddr, PAGE_SIZE); */
- 			kunmap_coherent(kaddr);
--		} else 
-+		} else
- 			__flush_purge_region(folio_address(folio),
- 						folio_size(folio));
- 	}
-diff --git a/arch/sparc/include/asm/pgtable_64.h b/arch/sparc/include/asm/pgtable_64.h
-index d5c0088e0c6a..0c30b0eb6c57 100644
---- a/arch/sparc/include/asm/pgtable_64.h
-+++ b/arch/sparc/include/asm/pgtable_64.h
-@@ -924,7 +924,7 @@ static inline void set_ptes(struct mm_struct *mm, unsigned long addr,
- 	}
- }
- 
--#define set_pte_at(mm, addr, ptep, pte) set_ptes(mm, addr, ptep, pte, 1);
-+#define set_pte_at(mm, addr, ptep, pte) set_ptes(mm, addr, ptep, pte, 1)
- 
- #define pte_clear(mm,addr,ptep)		\
- 	set_pte_at((mm), (addr), (ptep), __pte(0UL))
-diff --git a/arch/xtensa/mm/cache.c b/arch/xtensa/mm/cache.c
-index 65c0d5298041..27bd798e4d89 100644
---- a/arch/xtensa/mm/cache.c
-+++ b/arch/xtensa/mm/cache.c
-@@ -254,7 +254,7 @@ void update_mmu_cache_range(struct vm_area_struct *vma, unsigned long addr,
- 			void *paddr = kmap_local_folio(folio, i * PAGE_SIZE);
- 			__flush_dcache_page((unsigned long)paddr);
- 			__invalidate_icache_page((unsigned long)paddr);
--			kunmap_atomic(paddr);
-+			kunmap_local(paddr);
- 		}
- 		set_bit(PG_arch_1, &folio->flags);
- 	}
+Thank you!
 
-> > +                       __flush_purge_region(folio_address(folio),
-> > +                                               folio_size(folio));
-> >         }
-> >  }
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> -- 
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html
