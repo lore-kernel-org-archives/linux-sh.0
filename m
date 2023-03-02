@@ -2,58 +2,59 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8BFC0C87FDD
-	for <linux-sh@archiver.kernel.org>; Thu,  2 Mar 2023 03:17:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BCC7EC7EE3A
+	for <linux-sh@archiver.kernel.org>; Thu,  2 Mar 2023 07:57:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229727AbjCBDR3 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 1 Mar 2023 22:17:29 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33344 "EHLO
+        id S229693AbjCBH5Z (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 2 Mar 2023 02:57:25 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38974 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229815AbjCBDR1 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 1 Mar 2023 22:17:27 -0500
-Received: from mail-pj1-x1032.google.com (mail-pj1-x1032.google.com [IPv6:2607:f8b0:4864:20::1032])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8E0D54FA98
-        for <linux-sh@vger.kernel.org>; Wed,  1 Mar 2023 19:17:20 -0800 (PST)
-Received: by mail-pj1-x1032.google.com with SMTP id bo22so3917621pjb.4
-        for <linux-sh@vger.kernel.org>; Wed, 01 Mar 2023 19:17:20 -0800 (PST)
+        with ESMTP id S229673AbjCBH5X (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 2 Mar 2023 02:57:23 -0500
+Received: from mail-wm1-x331.google.com (mail-wm1-x331.google.com [IPv6:2a00:1450:4864:20::331])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 18CCD360A8
+        for <linux-sh@vger.kernel.org>; Wed,  1 Mar 2023 23:57:21 -0800 (PST)
+Received: by mail-wm1-x331.google.com with SMTP id d41-20020a05600c4c2900b003e9e066550fso949801wmp.4
+        for <linux-sh@vger.kernel.org>; Wed, 01 Mar 2023 23:57:21 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=dabbelt-com.20210112.gappssmtp.com; s=20210112; t=1677727040;
-        h=content-transfer-encoding:mime-version:message-id:to:from:cc
-         :in-reply-to:subject:date:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=On9It+4zdvXePGpqvCCrKF4Zz8YWrxnIbxTBVMgkuCs=;
-        b=It4hmxTEAyg7hPQnG8xuSpgz+jJKrlOhrcoQbLU4P/YxhalWRyom0ZRJ9msu/DO/86
-         AiIsktubYrvwpRFNifmG+BrBU8v6Yala4vW9pwjX/bv47kqdaFRBl58uJ5bIBRTWVMBT
-         NEWSeyJD4fgG+iWneC8bOvtxcO0rBYIjkLBer1PgLGvr/r+TBMTp8+ncLKFkUa5GBOHq
-         LyRA8ug4TwsdvYR3u1GIAGW60jHpBModJwHYh1E3SbElOIomsRGv1pXdHkKrQoLtx60j
-         B+LSax1q+0/Z9R4mu/KI8ChOEX0yXbPBPiNHSvaszPAfYNONdpL5L3WAXmTh1suUklGm
-         5kcw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1677727040;
-        h=content-transfer-encoding:mime-version:message-id:to:from:cc
-         :in-reply-to:subject:date:x-gm-message-state:from:to:cc:subject:date
+        d=rivosinc-com.20210112.gappssmtp.com; s=20210112; t=1677743839;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=On9It+4zdvXePGpqvCCrKF4Zz8YWrxnIbxTBVMgkuCs=;
-        b=FuUis3jLzSZTvR3ik/lC/KS15EVIMN5tTGwnawiqP5ffX4UcCZbAw1sgwqB5RF5KC6
-         AQA9c59u0fTYwz1YBAxt5uw/qf3aZNsi3DdbSO78Osy25fuhV1px8fwA4y9X2Ne2dpXu
-         53XQ9l8iJoKmtEdoHQF6Bc34/koxBbDEZUEF4Ej+iAp5F6Dh4iE6st4JD1Sm31j7CdCz
-         cPpNNDwXgFMBX9pwqgZUhoB2AnOcrMhkY+T5cyjmp9tISE6phLlDu6yxeYpzJj8dbNBR
-         bJ3C/4KddgRhwXXkk922CtziGUtbIKCG55XK7Q72YivM11dvwaeOpkJnIysOrPWu5Yud
-         jyyQ==
-X-Gm-Message-State: AO0yUKV6/akxsvl9znzdnRF9iIvPBZSS0CToRBn8DNbgRlYtxvf7Sll9
-        LFXhJjgmMxql4ba9mK+lmSrYkQ==
-X-Google-Smtp-Source: AK7set9NlkpYiMNjk7pdCtbLbxqSj79/p1ppAGwB6F9HvsUOQ5DEbSCAxLqrZ/Sx9hwWvoGz24uxIQ==
-X-Received: by 2002:a17:90b:1c8d:b0:236:76cb:99d2 with SMTP id oo13-20020a17090b1c8d00b0023676cb99d2mr10274539pjb.8.1677727039843;
-        Wed, 01 Mar 2023 19:17:19 -0800 (PST)
-Received: from localhost ([50.221.140.188])
-        by smtp.gmail.com with ESMTPSA id d7-20020a17090a498700b002340b2c62e7sm437605pjh.55.2023.03.01.19.17.18
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 01 Mar 2023 19:17:18 -0800 (PST)
-Date:   Wed, 01 Mar 2023 19:17:18 -0800 (PST)
-X-Google-Original-Date: Wed, 01 Mar 2023 19:04:58 PST (-0800)
-Subject:     Re: [PATCH v3 00/24] Remove COMMAND_LINE_SIZE from uapi
-In-Reply-To: <Y+tSBlSsQBQF/Ro2@osiris>
-CC:     geert@linux-m68k.org, alexghiti@rivosinc.com, corbet@lwn.net,
+        bh=3gGlmdrxpk12L0HtiU5R9bJeUayhxQ74GXgfAq6meuw=;
+        b=pn+DJn+k9uImMGeBMXuwnMQE1biMNzy71Plo8H7DOI3fKK/ceps9rgGUxc/bmw8s6L
+         4TQMSud9TXFc8/r2OEOEiAKv5SApxcJ1Yd/LQHA0imhiw3qi8hrsJYLIdS7LaNAmBH1O
+         AbgLlGVWFn2hf8BkmR90At5+g3zqQ61Ankq9cGuBB9WgQfAsyn4JZulcRbW71gf7ZeYz
+         oRP4F6/LxUTL9nxCbjnWUdwQSV0fTcnbx/sIcDMk8fB8xQ9dJ6UAQMnDD3HBbCn+Qr4a
+         fIykdIwuX5WmEnYpwkBvfu6oXc7MDCcdwlfNYOa5JGNIdVdo8Hubuxh+Kfco99U7Z89i
+         QfaQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1677743839;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=3gGlmdrxpk12L0HtiU5R9bJeUayhxQ74GXgfAq6meuw=;
+        b=AUP8Rx2dx42WGa43xz68I1tUDPGV8JistXtLFMr9SFlR4Hmyc+1wfclRJjiRn98e3g
+         mhnMcEwuHFD8gl/eFYVvVxvfayK0jvKqSCM8gAOHcICd2pjPZm9mRfK04c8/r5TY2CZA
+         DYmU57LKuIXOJ7sLE8YRvoKo7pTnrFzycDEPCikhVAIr2sXWjUBH7hdEiZz7MhBWBRlh
+         PUQm2pL2IsPZQLv/i9JDo46cegu1CFpg9AUpUdNjhEsw6TyXsNZcEqyxLGJSkffkCI9s
+         Evm/LXjjt1/kwyCCZ33fBKsGwObdFoqA6VOn8LsxhPuBfgvH9a0FLfD/R05aQ+5nxlt1
+         V5tA==
+X-Gm-Message-State: AO0yUKU3zSCiGBT+nxrLBxzMBBKpwvawqt3Vrw1XQe3ToBI3XCVn8AL8
+        K4USKZJgX3MfsxltF53DeWOYE1oVx0EMevHhEBx20A==
+X-Google-Smtp-Source: AK7set8WtHYe+gEo1Fgs1pSlJqsnM2tCvgsXzdB6/J3n+P8FnRw3jetc5Yrjj9TAlqQSjPmyeFZCYlu44lotg0az/Sk=
+X-Received: by 2002:a05:600c:4591:b0:3ea:8ed9:8e4b with SMTP id
+ r17-20020a05600c459100b003ea8ed98e4bmr2655128wmo.6.1677743839531; Wed, 01 Mar
+ 2023 23:57:19 -0800 (PST)
+MIME-Version: 1.0
+References: <Y+tSBlSsQBQF/Ro2@osiris> <mhng-e8b09772-24e5-4729-a0bf-01a9e4c76636@palmer-ri-x1c9a>
+In-Reply-To: <mhng-e8b09772-24e5-4729-a0bf-01a9e4c76636@palmer-ri-x1c9a>
+From:   Alexandre Ghiti <alexghiti@rivosinc.com>
+Date:   Thu, 2 Mar 2023 08:57:08 +0100
+Message-ID: <CAHVXubgdr_NrLPnZ6NhuDt8uZYZD+R_swpCVGoLDxnD+eOJcuA@mail.gmail.com>
+Subject: Re: [PATCH v3 00/24] Remove COMMAND_LINE_SIZE from uapi
+To:     Palmer Dabbelt <palmer@dabbelt.com>
+Cc:     hca@linux.ibm.com, geert@linux-m68k.org, corbet@lwn.net,
         Richard Henderson <richard.henderson@linaro.org>,
         ink@jurassic.park.msu.ru, mattst88@gmail.com, vgupta@kernel.org,
         linux@armlinux.org.uk, Catalin Marinas <catalin.marinas@arm.com>,
@@ -78,67 +79,91 @@ CC:     geert@linux-m68k.org, alexghiti@rivosinc.com, corbet@lwn.net,
         linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
         sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
         linux-arch@vger.kernel.org
-From:   Palmer Dabbelt <palmer@dabbelt.com>
-To:     hca@linux.ibm.com
-Message-ID: <mhng-e8b09772-24e5-4729-a0bf-01a9e4c76636@palmer-ri-x1c9a>
-Mime-Version: 1.0 (MHng)
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, 14 Feb 2023 01:19:02 PST (-0800), hca@linux.ibm.com wrote:
-> On Tue, Feb 14, 2023 at 09:58:17AM +0100, Geert Uytterhoeven wrote:
->> Hi Heiko,
->>
->> On Tue, Feb 14, 2023 at 9:39 AM Heiko Carstens <hca@linux.ibm.com> wrote:
->> > On Tue, Feb 14, 2023 at 08:49:01AM +0100, Alexandre Ghiti wrote:
->> > > This all came up in the context of increasing COMMAND_LINE_SIZE in the
->> > > RISC-V port.  In theory that's a UABI break, as COMMAND_LINE_SIZE is the
->> > > maximum length of /proc/cmdline and userspace could staticly rely on
->> > > that to be correct.
->> > >
->> > > Usually I wouldn't mess around with changing this sort of thing, but
->> > > PowerPC increased it with a5980d064fe2 ("powerpc: Bump COMMAND_LINE_SIZE
->> > > to 2048").  There are also a handful of examples of COMMAND_LINE_SIZE
->> > > increasing, but they're from before the UAPI split so I'm not quite sure
->> > > what that means: e5a6a1c90948 ("powerpc: derive COMMAND_LINE_SIZE from
->> > > asm-generic"), 684d2fd48e71 ("[S390] kernel: Append scpdata to kernel
->> > > boot command line"), 22242681cff5 ("MIPS: Extend COMMAND_LINE_SIZE"),
->> > > and 2b74b85693c7 ("sh: Derive COMMAND_LINE_SIZE from
->> > > asm-generic/setup.h.").
->> > >
->> > > It seems to me like COMMAND_LINE_SIZE really just shouldn't have been
->> > > part of the uapi to begin with, and userspace should be able to handle
->> > > /proc/cmdline of whatever length it turns out to be.  I don't see any
->> > > references to COMMAND_LINE_SIZE anywhere but Linux via a quick Google
->> > > search, but that's not really enough to consider it unused on my end.
->> > >
->> > > The feedback on the v1 seemed to indicate that COMMAND_LINE_SIZE really
->> > > shouldn't be part of uapi, so this now touches all the ports.  I've
->> > > tried to split this all out and leave it bisectable, but I haven't
->> > > tested it all that aggressively.
->> >
->> > Just to confirm this assumption a bit more: that's actually the same
->> > conclusion that we ended up with when commit 3da0243f906a ("s390: make
->> > command line configurable") went upstream.
-
-Thanks, I guess I'd missed that one.  At some point I think there was 
-some discussion of making this a Kconfig for everyone, which seems 
-reasonable to me -- our use case for this being extended is syzkaller, 
-but we're sort of just picking a value that's big enough for now and 
-running with it.
-
-Probably best to get it out of uapi first, though, as that way at least 
-it's clear that it's not uABI.
-
->> Commit 622021cd6c560ce7 ("s390: make command line configurable"),
->> I assume?
+On Thu, Mar 2, 2023 at 4:17=E2=80=AFAM Palmer Dabbelt <palmer@dabbelt.com> =
+wrote:
 >
-> Yes, sorry for that. I got distracted while writing and used the wrong
-> branch to look this up.
+> On Tue, 14 Feb 2023 01:19:02 PST (-0800), hca@linux.ibm.com wrote:
+> > On Tue, Feb 14, 2023 at 09:58:17AM +0100, Geert Uytterhoeven wrote:
+> >> Hi Heiko,
+> >>
+> >> On Tue, Feb 14, 2023 at 9:39 AM Heiko Carstens <hca@linux.ibm.com> wro=
+te:
+> >> > On Tue, Feb 14, 2023 at 08:49:01AM +0100, Alexandre Ghiti wrote:
+> >> > > This all came up in the context of increasing COMMAND_LINE_SIZE in=
+ the
+> >> > > RISC-V port.  In theory that's a UABI break, as COMMAND_LINE_SIZE =
+is the
+> >> > > maximum length of /proc/cmdline and userspace could staticly rely =
+on
+> >> > > that to be correct.
+> >> > >
+> >> > > Usually I wouldn't mess around with changing this sort of thing, b=
+ut
+> >> > > PowerPC increased it with a5980d064fe2 ("powerpc: Bump COMMAND_LIN=
+E_SIZE
+> >> > > to 2048").  There are also a handful of examples of COMMAND_LINE_S=
+IZE
+> >> > > increasing, but they're from before the UAPI split so I'm not quit=
+e sure
+> >> > > what that means: e5a6a1c90948 ("powerpc: derive COMMAND_LINE_SIZE =
+from
+> >> > > asm-generic"), 684d2fd48e71 ("[S390] kernel: Append scpdata to ker=
+nel
+> >> > > boot command line"), 22242681cff5 ("MIPS: Extend COMMAND_LINE_SIZE=
+"),
+> >> > > and 2b74b85693c7 ("sh: Derive COMMAND_LINE_SIZE from
+> >> > > asm-generic/setup.h.").
+> >> > >
+> >> > > It seems to me like COMMAND_LINE_SIZE really just shouldn't have b=
+een
+> >> > > part of the uapi to begin with, and userspace should be able to ha=
+ndle
+> >> > > /proc/cmdline of whatever length it turns out to be.  I don't see =
+any
+> >> > > references to COMMAND_LINE_SIZE anywhere but Linux via a quick Goo=
+gle
+> >> > > search, but that's not really enough to consider it unused on my e=
+nd.
+> >> > >
+> >> > > The feedback on the v1 seemed to indicate that COMMAND_LINE_SIZE r=
+eally
+> >> > > shouldn't be part of uapi, so this now touches all the ports.  I'v=
+e
+> >> > > tried to split this all out and leave it bisectable, but I haven't
+> >> > > tested it all that aggressively.
+> >> >
+> >> > Just to confirm this assumption a bit more: that's actually the same
+> >> > conclusion that we ended up with when commit 3da0243f906a ("s390: ma=
+ke
+> >> > command line configurable") went upstream.
+>
+> Thanks, I guess I'd missed that one.  At some point I think there was
+> some discussion of making this a Kconfig for everyone, which seems
+> reasonable to me -- our use case for this being extended is syzkaller,
+> but we're sort of just picking a value that's big enough for now and
+> running with it.
+>
+> Probably best to get it out of uapi first, though, as that way at least
+> it's clear that it's not uABI.
+>
+> >> Commit 622021cd6c560ce7 ("s390: make command line configurable"),
+> >> I assume?
+> >
+> > Yes, sorry for that. I got distracted while writing and used the wrong
+> > branch to look this up.
+>
+> Alex: Probably worth adding that to the list in the cover letter as it
+> looks like you were planning on a v4 anyway (which I guess you now have
+> to do, given that I just added the issue to RISC-V).
 
-Alex: Probably worth adding that to the list in the cover letter as it 
-looks like you were planning on a v4 anyway (which I guess you now have 
-to do, given that I just added the issue to RISC-V).
+Yep, I will :)
+
+Thanks,
+
+Alex
