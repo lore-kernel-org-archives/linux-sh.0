@@ -2,171 +2,236 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 583A9C7EE2D
-	for <linux-sh@archiver.kernel.org>; Fri,  3 Mar 2023 16:41:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0A1F8C6FA8E
+	for <linux-sh@archiver.kernel.org>; Sat,  4 Mar 2023 05:33:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230282AbjCCQln (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 3 Mar 2023 11:41:43 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47756 "EHLO
+        id S229607AbjCDFdT (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 4 Mar 2023 00:33:19 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33954 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230189AbjCCQlk (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 3 Mar 2023 11:41:40 -0500
-Received: from out2-smtp.messagingengine.com (out2-smtp.messagingengine.com [66.111.4.26])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E819729146;
-        Fri,  3 Mar 2023 08:41:23 -0800 (PST)
-Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
-        by mailout.nyi.internal (Postfix) with ESMTP id 6F3885C00BD;
-        Fri,  3 Mar 2023 11:41:21 -0500 (EST)
-Received: from imap51 ([10.202.2.101])
-  by compute6.internal (MEProxy); Fri, 03 Mar 2023 11:41:21 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-        :cc:content-type:content-type:date:date:from:from:in-reply-to
-        :in-reply-to:message-id:mime-version:references:reply-to:sender
-        :subject:subject:to:to; s=fm1; t=1677861681; x=1677948081; bh=cq
-        QZ3RgaXf1BBbVEeoodJ6F1ZwSPMj6A5MLY/vjXzGA=; b=MBSCbCwUd8juCEDzj6
-        X+v74NFX7yzWnWb/0gMj34SxPvFz8wyL7gywm5fAIqNKELJdPbh2PYOcHyJ8iqlR
-        O8pzmDTMVyBQ9cMZhSKtn6qmb0KnUA81EK1dpH3SIrJLFelykD8o7UZrplrf66L7
-        W9mg6q/stuxyiWKAwsz/FuGl0mIzCybvdEWEtwKs8vITdXabH94KVLj/yk4WWaiY
-        PkScaQMl3egYObdw/lEOs1KQKTN4G4OIlbK8+qX/IrrGOL8Uq8CSP4LjajDkY11d
-        KGKuxzD0Xlm/gwc/z8sKvDkaKXF/dcFxBRwiNzGxIDlYiagYG5UF8qoHNy+mGJFh
-        GxRg==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:cc:content-type:content-type:date:date
-        :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-        :message-id:mime-version:references:reply-to:sender:subject
-        :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
-        :x-sasl-enc; s=fm1; t=1677861681; x=1677948081; bh=cqQZ3RgaXf1BB
-        bVEeoodJ6F1ZwSPMj6A5MLY/vjXzGA=; b=UVgk6Z8BckmZDASnwvaGoQorgyUq2
-        pQEk7FSlPDa2e+Q6rFx7ZTuIeUij7y9Rrf9Jgh1cpCMAjevycM9AKxSI61k/v8pu
-        5BgUmz43ShLEMosBdymSqmoT4llAbJWhUPur9BqQ+EvwN+g9cxgv0PSoeVrl3u/u
-        zIloXjwNhKZwaJsdydfOwKJuRZYRnqEYNX9CUSOueTYvicXxGcaESX9Qxxhz2q7S
-        y23I9CLQUnUCpw4C2ZRx4HGFKdPKZ3KpejAaTVQ+9VLjziJILZV7r4FYif1Od77P
-        LCKDNeAD2rne62GXKt9BQv1wGyqBG0OLRFWwu3Fv7ICn92s37LvtH/j/w==
-X-ME-Sender: <xms:MCMCZJAuWXjkvRapyHeNiOF30z0WZtCT2IUSh_DGzagx2t_9BoAGgA>
-    <xme:MCMCZHhPhHJnQj7Jd9oDbBHLtdzlJQj6AQmaaUj1cJd5hx3-3fWQpnUe6W9Ais0gn
-    IpB2WEfan7YoF3bQKY>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedrudelledgkeeiucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
-    cujfgurhepofgfggfkjghffffhvfevufgtsehttdertderredtnecuhfhrohhmpedftehr
-    nhguuceuvghrghhmrghnnhdfuceorghrnhgusegrrhhnuggsrdguvgeqnecuggftrfgrth
-    htvghrnhepffehueegteeihfegtefhjefgtdeugfegjeelheejueethfefgeeghfektdek
-    teffnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomheprg
-    hrnhgusegrrhhnuggsrdguvg
-X-ME-Proxy: <xmx:MCMCZEn-u-vskm94MHqpwMb6efig7zWWVGLLDko7WXr67x0p1FHB0w>
-    <xmx:MCMCZDxHsEO9oVcr-nwuh4K7Kk2bkAquoIbrRSs8lGUcL3kT4X9SJA>
-    <xmx:MCMCZOQAoiH6g-an3IU4R8457T0ch4BofH0kMra3K7DfWRtLBv8Gbg>
-    <xmx:MSMCZMdBiQQ4uXlsrvlAy8QwxkZd7eA3C2X8F_mN_fKZzwhl1Hermg>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.nyi.internal (Postfix, from userid 501)
-        id 9A291B60086; Fri,  3 Mar 2023 11:41:20 -0500 (EST)
-X-Mailer: MessagingEngine.com Webmail Interface
-User-Agent: Cyrus-JMAP/3.9.0-alpha0-183-gbf7d00f500-fm-20230220.001-gbf7d00f5
-Mime-Version: 1.0
-Message-Id: <c500840b-b57d-47f2-a3d9-41465b10ffae@app.fastmail.com>
-In-Reply-To: <674bc31e-e4ed-988f-820d-54213d83f9c7@ghiti.fr>
-References: <mhng-e8b09772-24e5-4729-a0bf-01a9e4c76636@palmer-ri-x1c9a>
- <21F95EC4-71EA-4154-A7DC-8A5BA54F174B@zytor.com>
- <674bc31e-e4ed-988f-820d-54213d83f9c7@ghiti.fr>
-Date:   Fri, 03 Mar 2023 17:40:46 +0100
-From:   "Arnd Bergmann" <arnd@arndb.de>
-To:     "Alexandre Ghiti" <alex@ghiti.fr>,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        "Palmer Dabbelt" <palmer@dabbelt.com>,
-        "Heiko Carstens" <hca@linux.ibm.com>
-Cc:     "Geert Uytterhoeven" <geert@linux-m68k.org>,
-        "Alexandre Ghiti" <alexghiti@rivosinc.com>,
-        "Jonathan Corbet" <corbet@lwn.net>,
-        "Richard Henderson" <richard.henderson@linaro.org>,
-        "Ivan Kokshaysky" <ink@jurassic.park.msu.ru>,
-        "Matt Turner" <mattst88@gmail.com>,
-        "Vineet Gupta" <vgupta@kernel.org>,
-        "Russell King" <linux@armlinux.org.uk>,
-        "Catalin Marinas" <catalin.marinas@arm.com>,
-        "Will Deacon" <will@kernel.org>,
-        "Huacai Chen" <chenhuacai@kernel.org>,
-        "WANG Xuerui" <kernel@xen0n.name>,
-        "Michal Simek" <monstr@monstr.eu>,
-        "Thomas Bogendoerfer" <tsbogend@alpha.franken.de>,
-        "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
-        "Helge Deller" <deller@gmx.de>,
-        "Michael Ellerman" <mpe@ellerman.id.au>,
-        "Nicholas Piggin" <npiggin@gmail.com>,
-        "Christophe Leroy" <christophe.leroy@csgroup.eu>,
-        "Paul Walmsley" <paul.walmsley@sifive.com>,
-        "Albert Ou" <aou@eecs.berkeley.edu>, gor@linux.ibm.com,
-        "Alexander Gordeev" <agordeev@linux.ibm.com>,
-        borntraeger@linux.ibm.com, "Sven Schnelle" <svens@linux.ibm.com>,
-        ysato@users.osdn.me, "Rich Felker" <dalias@libc.org>,
-        "David S . Miller" <davem@davemloft.net>,
-        "Thomas Gleixner" <tglx@linutronix.de>,
-        "Ingo Molnar" <mingo@redhat.com>, "Borislav Petkov" <bp@alien8.de>,
-        "Dave Hansen" <dave.hansen@linux.intel.com>, x86@kernel.org,
-        chris@zankel.net, "Max Filippov" <jcmvbkbc@gmail.com>,
-        linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@vger.kernel.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
-        Linux-Arch <linux-arch@vger.kernel.org>
-Subject: Re: [PATCH v3 00/24] Remove COMMAND_LINE_SIZE from uapi
-Content-Type: text/plain
+        with ESMTP id S229445AbjCDFdR (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 4 Mar 2023 00:33:17 -0500
+Received: from mail-vs1-xe2a.google.com (mail-vs1-xe2a.google.com [IPv6:2607:f8b0:4864:20::e2a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5A9A1126CF
+        for <linux-sh@vger.kernel.org>; Fri,  3 Mar 2023 21:33:16 -0800 (PST)
+Received: by mail-vs1-xe2a.google.com with SMTP id d20so4328235vsf.11
+        for <linux-sh@vger.kernel.org>; Fri, 03 Mar 2023 21:33:16 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20210112; t=1677907995;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=ZyzJFUJ8wMamnIcYVaj/aa7Kmgmp0R7a5zGoz1s7Gwk=;
+        b=D2egt2eYhBaofI+q9jhQFoLc9QvEwuBKhZmK1cUIag3fJo5N6iBoAfmLx9267EdJbp
+         eHtNZ97tyBNuXXNXOJYXQ3RfpD6xa2RVW7YMXPkB5mbmTjmzF7ePcKhPa0xfyRq5N8ot
+         OGKGNrCFAQ7S6IgEFHOdXEXyrKmM5Y8n5H/lUEMty++woFIRH5OjUoBhRIIhGuiZBUwU
+         3WYPqEBzctGPlKFoG4LQbFM1ixa6YPd1m+xCFpu76i9El5omZ+rmk7j+04w1/tLAZv1/
+         6IuCPNgmENpZGkXJteZd4YckCPqG9K4O4mpZF0j1ZusXfHvL2NI/HfXgQeXb4e66CEXi
+         eSIA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1677907995;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=ZyzJFUJ8wMamnIcYVaj/aa7Kmgmp0R7a5zGoz1s7Gwk=;
+        b=8M/hu4suiudybk97RPrBdH5Vyzd99yiOEAGn7HAXX5IWMZlVL+YoElGG2VmcjOBV7v
+         NgvnXhcEnH11kR9FjvqVTcNZ3KIOapTl0B6rfkI6rKue/zqI6q2aZIqsXDSPMUaEj6MD
+         U3Ua0IoQeRvsd7TfBMX5zzV+enyyZEvjWfnCw6rmMy0EwaBAyftzIV3RGb6pj9rsWm/T
+         G+OYljl57uTaqXX6+qmLwbxBYmwf2iOUURrfbzMb/rC9bJU6HkvESuYo5UQGfHPF/JGh
+         rVB3ALTEju0/e+jzOZf2dfvkJ0BHZNLVJoAJtGB4jDWETQZOwGXa711jrvYnYrwlOciH
+         Zseg==
+X-Gm-Message-State: AO0yUKVuR9e0es/+PwixRao5N36GzLuxgnX9NHbUGFuRZQPpXUjtk5TV
+        l1lqodPiIXS0ompIOPmw8RnCX0l4xFjPFlPpAMSWqQ==
+X-Google-Smtp-Source: AK7set/smxYHtK6SIDKniH50QUR8g5YB4I76SU6WpKxttht4UFccnq30kUpnnajmC7dULmxaYPUg18qvsvK48Mk8ANs=
+X-Received: by 2002:a67:e04b:0:b0:411:b8e8:a924 with SMTP id
+ n11-20020a67e04b000000b00411b8e8a924mr2937583vsl.7.1677907995273; Fri, 03 Mar
+ 2023 21:33:15 -0800 (PST)
+MIME-Version: 1.0
+References: <cover.1677579750.git.geert+renesas@glider.be> <CABVgOS=vXSuqrJ=6rbAZ1vT3Y=SR69T9EFikXKPY_hmv25riwQ@mail.gmail.com>
+ <CAMuHMdX4_FBsSYMF3Yvw3v_g6tdS=WVJGeuPmH3XRUiyYNBPmQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdX4_FBsSYMF3Yvw3v_g6tdS=WVJGeuPmH3XRUiyYNBPmQ@mail.gmail.com>
+From:   David Gow <davidgow@google.com>
+Date:   Sat, 4 Mar 2023 13:33:03 +0800
+Message-ID: <CABVgOSkFoDhu6y5ZfmetKnu5CXw3cOpBnpCAYmnS6ffANMNJ2g@mail.gmail.com>
+Subject: Re: [PATCH 0/2] kunit: tool: Add support for SH under QEMU
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     Brendan Higgins <brendan.higgins@linux.dev>,
+        linux-kselftest@vger.kernel.org, kunit-dev@googlegroups.com,
+        linux-sh@vger.kernel.org
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256;
+        boundary="0000000000000ca47d05f60c6612"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Mar 3, 2023, at 12:59, Alexandre Ghiti wrote:
-> On 3/2/23 20:50, H. Peter Anvin wrote:
->> On March 1, 2023 7:17:18 PM PST, Palmer Dabbelt <palmer@dabbelt.com> wrote:
+--0000000000000ca47d05f60c6612
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
->>>>> Commit 622021cd6c560ce7 ("s390: make command line configurable"),
->>>>> I assume?
->>>> Yes, sorry for that. I got distracted while writing and used the wrong
->>>> branch to look this up.
->>> Alex: Probably worth adding that to the list in the cover letter as it looks like you were planning on a v4 anyway (which I guess you now have to do, given that I just added the issue to RISC-V).
->> The only use that is uapi is the *default* length of the command line if the kernel header doesn't include it (in the case of x86, it is in the bzImage header, but that is atchitecture- or even boot format-specific.)
+On Fri, 3 Mar 2023 at 15:42, Geert Uytterhoeven <geert@linux-m68k.org> wrot=
+e:
 >
-> Is COMMAND_LINE_SIZE what you call the default length? Does that mean 
-> that to you the patchset is wrong?
+> Hi David,
+>
+> On Fri, Mar 3, 2023 at 8:26=E2=80=AFAM David Gow <davidgow@google.com> wr=
+ote:
+> > On Tue, 28 Feb 2023 at 18:31, Geert Uytterhoeven
+> > <geert+renesas@glider.be> wrote:
+> > > This patch series adds support to run tests via kunit_tool on the
+> > > SuperH-based virtualized r2d platform.  As r2d uses the second serial
+> > > port as the console, this needs a small modification of the core
+> > > infrastructure.
+> > >
+> > > Thanks for your comments!
+> >
+> > This series looks good to me, but I've not been able to successfully
+> > get qemu to boot anything on SuperH (it just seems to hang with no
+> > output).
+> >
+> > Is there anything like magic config or firmware images (I didn't think
+> > so for r2d: shix prints out an error, though) required to get this
+> > going?
+>
+> No idea. I thought it just works.
+>
 
-On x86, the COMMAND_LINE_SIZE value is already not part of a uapi header,
-but instead (since bzImage format version 2.06) is communicated from
-the kernel to the boot loader, which then knows how much data the
-kernel will read (at most) from the command line.
+Strange: I'm not able to get anything to boot here, regardless of the
+versions I use.
 
-Most x86 kernels these days are booted using UEFI, which I think has
-no such interface, the firmware just passes the command line and a
-length, but has no way of knowing if the kernel will truncate this.
-I think that is the same as with any other architecture that passes
-the command line through UEFI, DT or ATAGS, all of which use
-length/value pairs.
+I'm definitely not convinced that it's a qemu issue, as opposed to a
+kernel issue, but either way I can't get anything to boot.
 
-Russell argued on IRC that this can be considered an ABI since a
-boot loader may use its knowledge of the kernel's command line size
-limit to reject long command lines. On the other hand, I don't
-think that any boot loader actually does, they just trust that it
-fits and don't have a good way of rejecting invalid configuration
-other than truncating and/or warning.
+> > The qemu command KUnit is using seems correct (and none of the obvious
+> > permutations, particularly around the serial ports seem to help):
+> > qemu-system-sh4 -nodefaults -m 1024 -kernel .kunit/arch/sh/boot/zImage
+> > -append 'kunit.enable=3D1 console=3DttySC1 kunit_shutdown=3Dreboot'
+> > -no-reboot -nographic -serial null -machine r2d -serial mon:stdio
+>
+> That works just fine for me.
+>
+> On plain v6.2 with this series applied:
+> $ ./tools/testing/kunit/kunit.py run --arch=3Dsh
+> --cross_compile=3Dsh4-linux-gnu- --raw_output=3Dall --kunitconfig
+> fs/ext4/.kunitconfig
+> [08:38:59] Configuring KUnit Kernel ...
+> Regenerating .config ...
+> Populating config with:
+> $ make ARCH=3Dsh O=3D.kunit olddefconfig CROSS_COMPILE=3Dsh4-linux-gnu-
+> [08:39:01] Building KUnit Kernel ...
+> Populating config with:
+> $ make ARCH=3Dsh O=3D.kunit olddefconfig CROSS_COMPILE=3Dsh4-linux-gnu-
+> Building with:
+> $ make ARCH=3Dsh O=3D.kunit --jobs=3D12 CROSS_COMPILE=3Dsh4-linux-gnu-
+> <stdin>:1517:2: warning: #warning syscall clone3 not implemented [-Wcpp]
+> [... more warnings ...]
+> [08:39:51] Starting KUnit Kernel (1/1)...
+> Running tests with:
+> $ qemu-system-sh4 -nodefaults -m 1024 -kernel
+> .kunit/arch/sh/boot/zImage -append 'kunit.enable=3D1 console=3DttySC1
+> kunit_shutdown=3Dreboot' -no-reboot -nographic -serial null -machine r2d
+> -serial mon:stdio
+> Linux version 6.2.0-00002-g5b394444bb0d (geert@rox) (sh4-linux-gnu-gcc
+> (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0, GNU ld (GNU Binutils for
+> Ubuntu) 2.38) #3 Fri Mar  3 08:39:50 CET 2023
+> ...
+>
 
-One notable exception I found while looking through is the old
-(pre-ATAGS) parameter structure on Arm, which uses COMMAND_LINE_SIZE
-as part of the structure definition. Apparently this was deprecated
-22 years ago, so hopefully the remaining riscpc and footbridge
-users have all upgraded their bootloaders.
+I see the same issue with a clean 6.2 and these patches, with both
+"sh4-linux-gnu-gcc (Debian 12.2.0-10) 12.2.0" and
+"sh4-linux-gnu-gcc-11 (Debian 11.3.0-8) 11.3.0".
 
-The only other case I could find that might go wrong is
-m68knommu with a few files copying a COMMAND_LINE_SIZE sized
-buffer from flash into a kernel buffer:
+> $ qemu-system-sh4 --version
+> QEMU emulator version 6.2.0 (Debian 1:6.2+dfsg-2ubuntu6.6)
+> Copyright (c) 2003-2021 Fabrice Bellard and the QEMU Project developers
+>
 
-arch/m68k/coldfire/m5206.c:void __init config_BSP(char *commandp, int size)
-arch/m68k/coldfire/m5206.c-{
-arch/m68k/coldfire/m5206.c-#if defined(CONFIG_NETtel)
-arch/m68k/coldfire/m5206.c-     /* Copy command line from FLASH to local buffer... */
-arch/m68k/coldfire/m5206.c-     memcpy(commandp, (char *) 0xf0004000, size);
-arch/m68k/coldfire/m5206.c-     commandp[size-1] = 0;
-arch/m68k/coldfire/m5206.c-#endif /* CONFIG_NETtel */
+I've mostly been using "QEMU emulator version 7.2.0 (Debian
+1:7.2+dfsg-1+build1)", but did try building 6.2.0 myself ("QEMU
+emulator version 6.2.0
+"), which didn't help either.
 
-     Arnd
+
+In any case, I'm happy to accept this if it's working well elsewhere,
+and I'll see if it starts working on this machine (or if I can try it
+on another) later on.
+
+Cheers,
+-- David
+
+--0000000000000ca47d05f60c6612
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIIPnwYJKoZIhvcNAQcCoIIPkDCCD4wCAQExDzANBglghkgBZQMEAgEFADALBgkqhkiG9w0BBwGg
+ggz5MIIEtjCCA56gAwIBAgIQeAMYYHb81ngUVR0WyMTzqzANBgkqhkiG9w0BAQsFADBMMSAwHgYD
+VQQLExdHbG9iYWxTaWduIFJvb3QgQ0EgLSBSMzETMBEGA1UEChMKR2xvYmFsU2lnbjETMBEGA1UE
+AxMKR2xvYmFsU2lnbjAeFw0yMDA3MjgwMDAwMDBaFw0yOTAzMTgwMDAwMDBaMFQxCzAJBgNVBAYT
+AkJFMRkwFwYDVQQKExBHbG9iYWxTaWduIG52LXNhMSowKAYDVQQDEyFHbG9iYWxTaWduIEF0bGFz
+IFIzIFNNSU1FIENBIDIwMjAwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCvLe9xPU9W
+dpiHLAvX7kFnaFZPuJLey7LYaMO8P/xSngB9IN73mVc7YiLov12Fekdtn5kL8PjmDBEvTYmWsuQS
+6VBo3vdlqqXZ0M9eMkjcKqijrmDRleudEoPDzTumwQ18VB/3I+vbN039HIaRQ5x+NHGiPHVfk6Rx
+c6KAbYceyeqqfuJEcq23vhTdium/Bf5hHqYUhuJwnBQ+dAUcFndUKMJrth6lHeoifkbw2bv81zxJ
+I9cvIy516+oUekqiSFGfzAqByv41OrgLV4fLGCDH3yRh1tj7EtV3l2TngqtrDLUs5R+sWIItPa/4
+AJXB1Q3nGNl2tNjVpcSn0uJ7aFPbAgMBAAGjggGKMIIBhjAOBgNVHQ8BAf8EBAMCAYYwHQYDVR0l
+BBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQIMAYBAf8CAQAwHQYDVR0OBBYEFHzM
+CmjXouseLHIb0c1dlW+N+/JjMB8GA1UdIwQYMBaAFI/wS3+oLkUkrk1Q+mOai97i3Ru8MHsGCCsG
+AQUFBwEBBG8wbTAuBggrBgEFBQcwAYYiaHR0cDovL29jc3AyLmdsb2JhbHNpZ24uY29tL3Jvb3Ry
+MzA7BggrBgEFBQcwAoYvaHR0cDovL3NlY3VyZS5nbG9iYWxzaWduLmNvbS9jYWNlcnQvcm9vdC1y
+My5jcnQwNgYDVR0fBC8wLTAroCmgJ4YlaHR0cDovL2NybC5nbG9iYWxzaWduLmNvbS9yb290LXIz
+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
+64VRg2IjDI2fJVE9RD6aMEwGA1UdIARFMEMwQQYJKwYBBAGgMgEoMDQwMgYIKwYBBQUHAgEWJmh0
+dHBzOi8vd3d3Lmdsb2JhbHNpZ24uY29tL3JlcG9zaXRvcnkvMAwGA1UdEwEB/wQCMAAwgZoGCCsG
+AQUFBwEBBIGNMIGKMD4GCCsGAQUFBzABhjJodHRwOi8vb2NzcC5nbG9iYWxzaWduLmNvbS9jYS9n
+c2F0bGFzcjNzbWltZWNhMjAyMDBIBggrBgEFBQcwAoY8aHR0cDovL3NlY3VyZS5nbG9iYWxzaWdu
+LmNvbS9jYWNlcnQvZ3NhdGxhc3Izc21pbWVjYTIwMjAuY3J0MB8GA1UdIwQYMBaAFHzMCmjXouse
+LHIb0c1dlW+N+/JjMEYGA1UdHwQ/MD0wO6A5oDeGNWh0dHA6Ly9jcmwuZ2xvYmFsc2lnbi5jb20v
+Y2EvZ3NhdGxhc3Izc21pbWVjYTIwMjAuY3JsMA0GCSqGSIb3DQEBCwUAA4IBAQA2lZLYRLu7foeR
+cHo1VeNA974FZBiCm08Kd44/aCMEzdTJvxAE9xbUJf7hS1i6eW49qxuSp3/YLn6U7uatwAcmZcwp
+Zma19ftf3LH+9Hvffk+X8fbPKe6uHkJhR2LktrhRzF159jj67NvXyGQv8J4n7UNeEVP0d5ByvRwv
+tF2bJwlOwRGLoxasKSyDHIyUpwTfWYPq7XvjoGqQ/tDS7Khcc5WncJl0/ZEj7EKjtoGbsDbLdXEF
+m/6vdcYKJzF9ghHewtV3YIU4RE3pEM4aCWWRtJwbExzeue6fI7RqURbNCAyQuSpWv0YQvzsX3ZX3
+c1otrs50n1N0Sf8/rfJxq7sWMYICajCCAmYCAQEwaDBUMQswCQYDVQQGEwJCRTEZMBcGA1UEChMQ
+R2xvYmFsU2lnbiBudi1zYTEqMCgGA1UEAxMhR2xvYmFsU2lnbiBBdGxhcyBSMyBTTUlNRSBDQSAy
+MDIwAhABxy1wm0tAmHKHFkLS9RWPMA0GCWCGSAFlAwQCAQUAoIHUMC8GCSqGSIb3DQEJBDEiBCAy
+9YdYBud5/ehBxUswure+txF9KHdwghPINu52bKW1RzAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcB
+MBwGCSqGSIb3DQEJBTEPFw0yMzAzMDQwNTMzMTVaMGkGCSqGSIb3DQEJDzFcMFowCwYJYIZIAWUD
+BAEqMAsGCWCGSAFlAwQBFjALBglghkgBZQMEAQIwCgYIKoZIhvcNAwcwCwYJKoZIhvcNAQEKMAsG
+CSqGSIb3DQEBBzALBglghkgBZQMEAgEwDQYJKoZIhvcNAQEBBQAEggEADilRfX5N2wJYObDdipr6
+LddzRNWOQIpCFDBznmA7qGux3KXtdqMLznsX9lYoyX2yiNAzWSsxDe6oLf2mRZCncqKQUi9MjIpn
+EdyDSYP3FKmhUXtc5h30JjY8bg5xcNcqqygk7MqP/fX3VuCmXDqM61QHGlNrAOxOmNsdsIrALN/h
+VQW6efJ2Gg98Xi8lmN/YEI/4DOI2N700+3ZSbOksEQ5/yaRpCMaVQsIqoGtxAdeU1UnWyvaYnIRf
+/fYlX6FG6t2UJRYu64Ipav2PumLe1gURnINXzGvUaW05I5QhPafjNHFWCN4eT1UzNek991k0+HtQ
+4C+vCcPR1xJm5jg6PQ==
+--0000000000000ca47d05f60c6612--
