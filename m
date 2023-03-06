@@ -2,53 +2,53 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 97C11C61DA4
-	for <linux-sh@archiver.kernel.org>; Mon,  6 Mar 2023 10:22:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4FE21C678D4
+	for <linux-sh@archiver.kernel.org>; Mon,  6 Mar 2023 10:23:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230371AbjCFKWS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 6 Mar 2023 05:22:18 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52084 "EHLO
+        id S229641AbjCFKXR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 6 Mar 2023 05:23:17 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54000 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230016AbjCFKWP (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 6 Mar 2023 05:22:15 -0500
-Received: from mail-wr1-x430.google.com (mail-wr1-x430.google.com [IPv6:2a00:1450:4864:20::430])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F00482055F
-        for <linux-sh@vger.kernel.org>; Mon,  6 Mar 2023 02:22:12 -0800 (PST)
-Received: by mail-wr1-x430.google.com with SMTP id r18so8243328wrx.1
-        for <linux-sh@vger.kernel.org>; Mon, 06 Mar 2023 02:22:12 -0800 (PST)
+        with ESMTP id S229593AbjCFKXQ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 6 Mar 2023 05:23:16 -0500
+Received: from mail-wm1-x335.google.com (mail-wm1-x335.google.com [IPv6:2a00:1450:4864:20::335])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B2E3935BA
+        for <linux-sh@vger.kernel.org>; Mon,  6 Mar 2023 02:23:14 -0800 (PST)
+Received: by mail-wm1-x335.google.com with SMTP id r19-20020a05600c459300b003eb3e2a5e7bso4871640wmo.0
+        for <linux-sh@vger.kernel.org>; Mon, 06 Mar 2023 02:23:14 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=rivosinc-com.20210112.gappssmtp.com; s=20210112; t=1678098131;
+        d=rivosinc-com.20210112.gappssmtp.com; s=20210112; t=1678098193;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=llD45vs7BruCqN5Y6LuJ+UdeA+HWMt5VLzqATcaeE3k=;
-        b=biuy33Bk2mI4ZMPBuWVd+4iS4s3Hh5qbYt3PjTBlB6xKI3sqAN5/opSaH9Oq2FmLAj
-         /Bo+b8SV5ooGWiS/kzLE0AatJKaQQSoDImYsefz7b5oTictITyDKaFbdGHBUaody+kOH
-         Ho+ScOf9SGVsXyGS2CWJ2O+ezbS15TOBFh0MVgeTIcv93OFa65f4TG47OPXCTq07neAH
-         pPqPantWl3phD1rMQq2bMLpZlFMj7b6XLHIEPyAtb+PjzcONbalR8XfGBJufSVux/cwv
-         g/BzVUJlLgeJU7a7nSXyp6X1Dt0ohhIr8wGSwVkMa3b1H78/mrfIdl7RcOsLKEIpuH99
-         9WQQ==
+        bh=bZl2MGTEHXobHnZZhmOouSAyxqbSE7xaVKrZmF7qt7s=;
+        b=NESzTJWLCuHvu2jDkZyWMECt8+ZgfQONb6h/TRsXr6VUD2HAeHDlqcM6Nthqqzkz7v
+         /XzQ0rJtzBQq7CiTOze5MfNbbRu+4/8ZbEx65dW2nXha3bQrnvST4jywyqdEwtoF3G/Y
+         tgxUawKTlFnYdfTlJSZeQ3PFy6wWBsoynk1CnOEchdF+Rq8alIT4bCVA2qc9gxo0zG4C
+         Zp/r07Uybcy8dUydQmsV+MrCxCwVTedO01H+NQvIWOXLGvNi9DdOiMJuST85gbnwmuUI
+         MRTr4SS8W1qczqXPJZwRcOGFC/gmtHrrzzzm45Bn5AIgdPSPCis/l7v34L/4UnIDvP1K
+         YOzA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1678098131;
+        d=1e100.net; s=20210112; t=1678098193;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=llD45vs7BruCqN5Y6LuJ+UdeA+HWMt5VLzqATcaeE3k=;
-        b=LDZX/KcYTy0y3+yODmVpn+oK1rlko/7XxiJV7LWQG68SobZmo0O3zWLXLHAqr5HqtJ
-         1v//n6SLDSmFdtPWWF+YOZ4bQZnf2Jr5mjXz7pmKZUNN3luZF+qTWbBZdyWfUdGk8foW
-         6UqxZWVlpDxv5ODgwB9sbt40WbxpWMf26x8KXfLvc67MTgsy9k6ymDgg3JjoYZuAIACl
-         f/vvmkp51e5TruoJJ8NylisHuohmDGAPp4ei83LF1JAvkYomIk/ATJlnivBsJ5mlf/ya
-         gpZWiNVZ/FYAfj+3mUxFyfG+/xHLThNUDNK2p7rTXNof2jm1FtQKhdfYUASIANFO+JKa
-         R0XA==
-X-Gm-Message-State: AO0yUKVys3Xz510DFYQmVQFsVe1zaXfxdVGt0m73TEhjOi4DUthCLit8
-        P4K8LMBGxKfgK7+gsi6IsBTYxg==
-X-Google-Smtp-Source: AK7set9CKdAXw9zT5b2S7XFTgcEiN4kPjtcCTBiE006KHZWMAQkWVtXBrm+fHU347RB7cSb9V0evYw==
-X-Received: by 2002:a5d:46c8:0:b0:2c7:df1:a09d with SMTP id g8-20020a5d46c8000000b002c70df1a09dmr6147537wrs.4.1678098131430;
-        Mon, 06 Mar 2023 02:22:11 -0800 (PST)
+        bh=bZl2MGTEHXobHnZZhmOouSAyxqbSE7xaVKrZmF7qt7s=;
+        b=JxdLIzbeVdVOC7ImEoVVe1XzGlJQw02H061ggNlCFUh4ElrY4LQ5CcbYK39BC5cs54
+         L+F66U9pMYDUOMLYreS0gxfuuHQIllwZx7u3vNnxMVFbjaUftxazmuYQkQwpfJHiM/xj
+         l5nz8a+CJsSYedh57P+9cJ0ULQ5QiklngZu+f+DplFQiVikG6QBjgGyXTJNVSLkEehiy
+         zpLLOAuSCJGxg8lqYdwaaO3P2jf5rxycLFWUqvDnjZT00bieKUAscDdev45r/MA/mz93
+         pnDfu9r+6/VpHuCGfx+GD8Duqrg75726K5lmFmBV0/xoXh2rbo4ACFVgBXLwL5UMqwos
+         enkw==
+X-Gm-Message-State: AO0yUKVbb3xpkY2u0dgioAJmEb7ZBD029HsmY7mt68GffqgPrrIvRRKs
+        Ew7O/M73+0UNYRLEIb31yfmFkw==
+X-Google-Smtp-Source: AK7set9vWVaVCOOnIsSW+KUGTszYaZVeSK3EcYRFpJTaLv/dYXycsieLeu7NM1JRjz4B48GZSjlpmw==
+X-Received: by 2002:a05:600c:4ecb:b0:3e7:b17f:9af1 with SMTP id g11-20020a05600c4ecb00b003e7b17f9af1mr8981864wmq.22.1678098193096;
+        Mon, 06 Mar 2023 02:23:13 -0800 (PST)
 Received: from alex-rivos.ba.rivosinc.com (amontpellier-656-1-456-62.w92-145.abo.wanadoo.fr. [92.145.124.62])
-        by smtp.gmail.com with ESMTPSA id h18-20020a5d4312000000b002c7107ce17fsm9587322wrq.3.2023.03.06.02.22.10
+        by smtp.gmail.com with ESMTPSA id n18-20020adfe352000000b002c567881dbcsm9415027wrj.48.2023.03.06.02.23.11
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 06 Mar 2023 02:22:11 -0800 (PST)
+        Mon, 06 Mar 2023 02:23:12 -0800 (PST)
 From:   Alexandre Ghiti <alexghiti@rivosinc.com>
 To:     Greg KH <gregkh@linuxfoundation.org>,
         Jonathan Corbet <corbet@lwn.net>,
@@ -97,9 +97,9 @@ To:     Greg KH <gregkh@linuxfoundation.org>,
         linux-arch@vger.kernel.org
 Cc:     Palmer Dabbelt <palmer@rivosinc.com>,
         Alexandre Ghiti <alexghiti@rivosinc.com>
-Subject: [PATCH v5 16/26] m68k: Remove empty <uapi/asm/setup.h>
-Date:   Mon,  6 Mar 2023 11:04:58 +0100
-Message-Id: <20230306100508.1171812-17-alexghiti@rivosinc.com>
+Subject: [PATCH v5 17/26] arm64: Remove empty <uapi/asm/setup.h>
+Date:   Mon,  6 Mar 2023 11:04:59 +0100
+Message-Id: <20230306100508.1171812-18-alexghiti@rivosinc.com>
 X-Mailer: git-send-email 2.37.2
 In-Reply-To: <20230306100508.1171812-1-alexghiti@rivosinc.com>
 References: <20230306100508.1171812-1-alexghiti@rivosinc.com>
@@ -113,33 +113,42 @@ From: Palmer Dabbelt <palmer@rivosinc.com>
 
 Signed-off-by: Palmer Dabbelt <palmer@rivosinc.com>
 Signed-off-by: Alexandre Ghiti <alexghiti@rivosinc.com>
-Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
 ---
- arch/m68k/include/uapi/asm/setup.h | 15 ---------------
- 1 file changed, 15 deletions(-)
- delete mode 100644 arch/m68k/include/uapi/asm/setup.h
+ arch/arm64/include/uapi/asm/setup.h | 25 -------------------------
+ 1 file changed, 25 deletions(-)
+ delete mode 100644 arch/arm64/include/uapi/asm/setup.h
 
-diff --git a/arch/m68k/include/uapi/asm/setup.h b/arch/m68k/include/uapi/asm/setup.h
+diff --git a/arch/arm64/include/uapi/asm/setup.h b/arch/arm64/include/uapi/asm/setup.h
 deleted file mode 100644
-index 005593acc7d8..000000000000
---- a/arch/m68k/include/uapi/asm/setup.h
+index f9f51e5925aa..000000000000
+--- a/arch/arm64/include/uapi/asm/setup.h
 +++ /dev/null
-@@ -1,15 +0,0 @@
+@@ -1,25 +0,0 @@
 -/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 -/*
--** asm/setup.h -- Definition of the Linux/m68k setup information
--**
--** Copyright 1992 by Greg Harp
--**
--** This file is subject to the terms and conditions of the GNU General Public
--** License.  See the file COPYING in the main directory of this archive
--** for more details.
--*/
+- * Based on arch/arm/include/asm/setup.h
+- *
+- * Copyright (C) 1997-1999 Russell King
+- * Copyright (C) 2012 ARM Ltd.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+- */
+-#ifndef __ASM_SETUP_H
+-#define __ASM_SETUP_H
 -
--#ifndef _UAPI_M68K_SETUP_H
--#define _UAPI_M68K_SETUP_H
+-#include <linux/types.h>
 -
--#endif /* _UAPI_M68K_SETUP_H */
+-#endif
 -- 
 2.37.2
 
