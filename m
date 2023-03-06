@@ -2,53 +2,53 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1081C678D4
-	for <linux-sh@archiver.kernel.org>; Mon,  6 Mar 2023 10:14:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 65704C6FD1C
+	for <linux-sh@archiver.kernel.org>; Mon,  6 Mar 2023 10:15:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230491AbjCFKN7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 6 Mar 2023 05:13:59 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38520 "EHLO
+        id S230304AbjCFKPW (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 6 Mar 2023 05:15:22 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39208 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230493AbjCFKNf (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 6 Mar 2023 05:13:35 -0500
-Received: from mail-wr1-x42f.google.com (mail-wr1-x42f.google.com [IPv6:2a00:1450:4864:20::42f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4976C22795
-        for <linux-sh@vger.kernel.org>; Mon,  6 Mar 2023 02:13:08 -0800 (PST)
-Received: by mail-wr1-x42f.google.com with SMTP id q16so8205132wrw.2
-        for <linux-sh@vger.kernel.org>; Mon, 06 Mar 2023 02:13:08 -0800 (PST)
+        with ESMTP id S230393AbjCFKOo (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 6 Mar 2023 05:14:44 -0500
+Received: from mail-wm1-x330.google.com (mail-wm1-x330.google.com [IPv6:2a00:1450:4864:20::330])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B6D6225973
+        for <linux-sh@vger.kernel.org>; Mon,  6 Mar 2023 02:14:01 -0800 (PST)
+Received: by mail-wm1-x330.google.com with SMTP id bg16-20020a05600c3c9000b003eb34e21bdfso7819178wmb.0
+        for <linux-sh@vger.kernel.org>; Mon, 06 Mar 2023 02:14:01 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=rivosinc-com.20210112.gappssmtp.com; s=20210112; t=1678097576;
+        d=rivosinc-com.20210112.gappssmtp.com; s=20210112; t=1678097638;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=UpWo932tuk1D2POoIh3SqR6//enYEECaor8dEe11NsU=;
-        b=vhZCFKWfGvUSFsDhwWjJlH3hyhWGt7HLROOh778mTjNL4gufsnGp53NJud40dToGnL
-         8qeC6NM2iT55IerKG49oK2vLQT27iAmsasr2ot41mlOSG5YUL8p/DoV2zIOqsjUJN70B
-         iUNvLxug4rs0TE8uXJSZn2y/hL+ydY2fsar06hmtO2Uh2XPxMhySCU9kPXtTJmyZZJcH
-         r9474lsQdRJ0C1FBrn3WG5vVYQBWXu1Jdki7lFNTTENCldpadEIDTXWSqH1uoKwoJR9g
-         2LLGa0YGt4DGUA5hFaNPatUSHD4DOzvgtiIvwoB1Z6VTUA6hmBwFZHLc3uL05jusP5nK
-         Sjpw==
+        bh=3X9BvECf+3SX0mMpHf0lthb5xJ0QkcE03vRTNH+hHOU=;
+        b=TTSZLAdSQw2BSgSrJJ2o37VazWfyqoXDSSnKzELvvKdWaFxQn0hpc3xnanqgBRvl8f
+         hMcTvxnJ8qqKyl8vSndcVLH7PbDn9kfgNB1VXKCuPDHcFGW4mKqFBhn/w6Sdh0Xgm1R6
+         YM6vKZwjlOo0wqPzhmimn1eoNY7JrMrYeHStZ/t5ZuIOEXNPQKF0tExXRTn6cVEw2RP6
+         dYsHwEH4Xe7lRfjF3at1i//BKyDky/XBdoPvehKfCtgR5rGkyIeUwTBKTSwBNVePHqZ+
+         iJYXtXhBy/u8FL/m/g6gBbLtGB3IJ5+MqR+lTtHRiPq1uFWNBl/r9W3PzjkDk3EBJxIX
+         xeFg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1678097576;
+        d=1e100.net; s=20210112; t=1678097638;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=UpWo932tuk1D2POoIh3SqR6//enYEECaor8dEe11NsU=;
-        b=m4e7IGdL67cU11Xs28Nhb2AwIQpv037acmqrg/yE1QE771aioManYHFxiLn3pToCQj
-         tu7A0mcnMGtLvLEufCR5rBLf7CZIU/+Ig3Fb78P7rjBjZWSIpubjflv74M/EJPFrJSlI
-         afx+1c32kFAe2f8MBpldW49R8A8QjJ1hbc3idDGIxTXarT3sjddhhY0l7y2qZfzxfHoD
-         /x1+XjcvItp157U0rGyYTh8SpEc7xQcBPluOHuvf5Trt9zhBiE3HFMda0KSJRIFqab1Q
-         Gd75Iat+8q+8+yd/rLK5coXYBd3ydxkRUXclTbUKehKinhB0rz8elxTEfHC4h+Ce2GQr
-         g86g==
-X-Gm-Message-State: AO0yUKXWyGHEGlfIZjic9ffW2IKfokYu2TSayJV11mQtUY3M59xT/JNw
-        bRIkZumbUZOrFkeYiNQB1PjMsg==
-X-Google-Smtp-Source: AK7set+31TNEuPO6s3cfa55rRLYq6o+G/3pR5nmNea15dX1hG89weq3ojmUgEkCYiX0LzcBMJ05hsg==
-X-Received: by 2002:a05:6000:110f:b0:2cb:5f2a:274e with SMTP id z15-20020a056000110f00b002cb5f2a274emr6011928wrw.41.1678097576202;
-        Mon, 06 Mar 2023 02:12:56 -0800 (PST)
+        bh=3X9BvECf+3SX0mMpHf0lthb5xJ0QkcE03vRTNH+hHOU=;
+        b=MlWurKcOfvrbhaQuDuihTlbiPoTkAULbdMEYBVcNvdTX2/0Jsp2nJtx56J7Qr97wbh
+         nE73Y8TtsST8i+XDq/DmbJttAM7xNIAzh0jfSVjiSl9RvxZmm+LtR4QLv8EHFWgVk8IV
+         r2DQb4lrhqyliW7HTG+5LN12qHGDYt0M/mEoGtqkioK3AK8c2c0o/cb6DW4zYAFFHc21
+         QtWfT/4n6DrezR/f+5J2rrkm++UVuNmG+p/XDecpES9lEiPLZffHAtoXQbh00XcRWBlJ
+         hZhCfcCAl1DYEkFAos8TlBpLRzpeF/u9RnOdQ/U1zRQVqr33toFipyeYLPEuA9C6meLY
+         Utdg==
+X-Gm-Message-State: AO0yUKXxxrwJPp+Tk7Lii+bz/aiB4bqOnbZBPlx4kJNFiE+ngm69d+Kx
+        xjFDSlgnBlCOD8SvFb+KhU9uRw==
+X-Google-Smtp-Source: AK7set/l5GEMnq9janBGBy5D83Z+dadr5zaqw7qRz4/2MZ2rCQRE3vxRMNg0fQT2CV/QEN0Xv7ys6w==
+X-Received: by 2002:a05:600c:19cf:b0:3e7:772d:22de with SMTP id u15-20020a05600c19cf00b003e7772d22demr8559008wmq.30.1678097637919;
+        Mon, 06 Mar 2023 02:13:57 -0800 (PST)
 Received: from alex-rivos.ba.rivosinc.com (amontpellier-656-1-456-62.w92-145.abo.wanadoo.fr. [92.145.124.62])
-        by smtp.gmail.com with ESMTPSA id u18-20020a5d6ad2000000b002c5539171d1sm9171191wrw.41.2023.03.06.02.12.54
+        by smtp.gmail.com with ESMTPSA id q11-20020a05600c46cb00b003dc1d668866sm14417931wmo.10.2023.03.06.02.13.56
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 06 Mar 2023 02:12:56 -0800 (PST)
+        Mon, 06 Mar 2023 02:13:57 -0800 (PST)
 From:   Alexandre Ghiti <alexghiti@rivosinc.com>
 To:     Greg KH <gregkh@linuxfoundation.org>,
         Jonathan Corbet <corbet@lwn.net>,
@@ -98,9 +98,9 @@ To:     Greg KH <gregkh@linuxfoundation.org>,
 Cc:     Palmer Dabbelt <palmer@rivosinc.com>,
         Alexandre Ghiti <alexghiti@rivosinc.com>,
         =?UTF-8?q?Philippe=20Mathieu-Daud=C3=A9?= <philmd@linaro.org>
-Subject: [PATCH v5 07/26] mips: Remove COMMAND_LINE_SIZE from uapi
-Date:   Mon,  6 Mar 2023 11:04:49 +0100
-Message-Id: <20230306100508.1171812-8-alexghiti@rivosinc.com>
+Subject: [PATCH v5 08/26] parisc: Remove COMMAND_LINE_SIZE from uapi
+Date:   Mon,  6 Mar 2023 11:04:50 +0100
+Message-Id: <20230306100508.1171812-9-alexghiti@rivosinc.com>
 X-Mailer: git-send-email 2.37.2
 In-Reply-To: <20230306100508.1171812-1-alexghiti@rivosinc.com>
 References: <20230306100508.1171812-1-alexghiti@rivosinc.com>
@@ -119,37 +119,37 @@ be part of the user-visible API.
 Signed-off-by: Palmer Dabbelt <palmer@rivosinc.com>
 Signed-off-by: Alexandre Ghiti <alexghiti@rivosinc.com>
 Reviewed-by: Philippe Mathieu-Daudé <philmd@linaro.org>
+Acked-by: Helge Deller <deller@gmx.de>
 ---
- arch/mips/include/asm/setup.h      | 3 ++-
- arch/mips/include/uapi/asm/setup.h | 3 ---
- 2 files changed, 2 insertions(+), 4 deletions(-)
+ arch/parisc/include/asm/setup.h      | 7 +++++++
+ arch/parisc/include/uapi/asm/setup.h | 2 --
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+ create mode 100644 arch/parisc/include/asm/setup.h
 
-diff --git a/arch/mips/include/asm/setup.h b/arch/mips/include/asm/setup.h
-index 8c56b862fd9c..a13b9259b476 100644
---- a/arch/mips/include/asm/setup.h
-+++ b/arch/mips/include/asm/setup.h
-@@ -3,7 +3,8 @@
- #define _MIPS_SETUP_H
- 
- #include <linux/types.h>
--#include <uapi/asm/setup.h>
+diff --git a/arch/parisc/include/asm/setup.h b/arch/parisc/include/asm/setup.h
+new file mode 100644
+index 000000000000..44e1c42244bb
+--- /dev/null
++++ b/arch/parisc/include/asm/setup.h
+@@ -0,0 +1,7 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _PARISC_SETUP_H
++#define _PARISC_SETUP_H
 +
-+#define COMMAND_LINE_SIZE	4096
++#define COMMAND_LINE_SIZE	1024
++
++#endif /* _PARISC_SETUP_H */
+diff --git a/arch/parisc/include/uapi/asm/setup.h b/arch/parisc/include/uapi/asm/setup.h
+index 78b2f4ec7d65..bfad89428e47 100644
+--- a/arch/parisc/include/uapi/asm/setup.h
++++ b/arch/parisc/include/uapi/asm/setup.h
+@@ -2,6 +2,4 @@
+ #ifndef _PARISC_SETUP_H
+ #define _PARISC_SETUP_H
  
- extern void prom_putchar(char);
- extern void setup_early_printk(void);
-diff --git a/arch/mips/include/uapi/asm/setup.h b/arch/mips/include/uapi/asm/setup.h
-index 7d48c433b0c2..157c3c392fb4 100644
---- a/arch/mips/include/uapi/asm/setup.h
-+++ b/arch/mips/include/uapi/asm/setup.h
-@@ -2,7 +2,4 @@
- #ifndef _UAPI_MIPS_SETUP_H
- #define _UAPI_MIPS_SETUP_H
- 
--#define COMMAND_LINE_SIZE	4096
+-#define COMMAND_LINE_SIZE	1024
 -
--
- #endif /* _UAPI_MIPS_SETUP_H */
+ #endif /* _PARISC_SETUP_H */
 -- 
 2.37.2
 
