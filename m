@@ -2,134 +2,185 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9A648C6FD18
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AB271C6FD19
 	for <linux-sh@archiver.kernel.org>; Mon,  6 Mar 2023 04:00:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229797AbjCFEAp (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 5 Mar 2023 23:00:45 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34312 "EHLO
+        id S229457AbjCFEAq (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 5 Mar 2023 23:00:46 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34314 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229684AbjCFEAo (ORCPT
+        with ESMTP id S229718AbjCFEAo (ORCPT
         <rfc822;linux-sh@vger.kernel.org>); Sun, 5 Mar 2023 23:00:44 -0500
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1391FF764;
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 22AE0F94E;
         Sun,  5 Mar 2023 20:00:43 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
-        :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=UhjsCF+rddzzypyrP6fAf9gWJ0k8iBH1lmCoUVV1gpY=; b=4+eLkNkdnjDWSXISs50Rh16wOU
-        eWs4XaJTu6YSNuFj9fIjj/06b6S2VLIFPc+huvqMY6RwtgtbU5QAM6kn9bh+AmnfZnbIkvnWSzj7d
-        lGhCFcaEjMH9AQrtl2E6eVA8kfR7RHLYAJbovKNyOtroF66rIXxrli/vS2Kdq+0B/N7VXW4adis2T
-        ZDxpPFGFf4stqhZrj4iepC0PurUxSq3PUjOZqK3Fsv1DjlAsA2/EGmW/4I+ZQdAgISUFxJq6a4Zsz
-        ZXpIEmR76bGq652+QzZBk6UEm2vHJdmA889Hwua/q472BtlcS4OIeLE/Fr78NcNQD/3NCbsAOK1DU
-        K45Wekuw==;
+        Content-Type:MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:
+        To:From:Sender:Reply-To:Content-ID:Content-Description;
+        bh=M92hecT3X/bcNNKtMijVpnARHRKJzwee5XeX6ujHiXI=; b=zldEoKhuNQMsRoTg4EU4F7CabF
+        tnGTA1U6Ksh2HJm0AYJyCun3JtWkTIYWOIv02Hw/tAASegg4WsL0+nEQ1rMJ8fqhxAo16Gxy9nD83
+        Ash8mkxdSXYFZjWycU1RjQ+aqVbEe4IctWmBVEGVRGqrVhJnKTUKkb9kPIDyBslkLDvgf2fyrzS6p
+        ee7viG16yDIh779VGDq5BYA/a+VwPOMM+cx+oJnCiT2/T4FvmA7Vk9BDHV5IdxlhC4QWH7Cw1ioJB
+        RVJi3DM+jRU08Kx0JobOC7/lds2zcS70P1GVXUWEAJlR4JZdvZjzjjB90qTnGwF6P5tX9SGDUPQ1t
+        n6fxxoiA==;
 Received: from [2601:1c2:980:9ec0::df2f] (helo=bombadil.infradead.org)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pZ21h-00B9yD-5Q; Mon, 06 Mar 2023 04:00:41 +0000
+        id 1pZ21i-00B9yD-6o; Mon, 06 Mar 2023 04:00:42 +0000
 From:   Randy Dunlap <rdunlap@infradead.org>
 To:     linux-kernel@vger.kernel.org
 Cc:     Randy Dunlap <rdunlap@infradead.org>,
-        Rob Herring <robh+dt@kernel.org>,
-        Frank Rowand <frowand.list@gmail.com>,
-        devicetree@vger.kernel.org, Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
         Geert Uytterhoeven <geert+renesas@glider.be>,
+        Arnd Bergmann <arnd@arndb.de>, Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-sh@vger.kernel.org, stable@vger.kernel.org
-Subject: [PATCH 3/7 v4] sh: init: use OF_EARLY_FLATTREE for early init
-Date:   Sun,  5 Mar 2023 20:00:33 -0800
-Message-Id: <20230306040037.20350-4-rdunlap@infradead.org>
+        linux-sh@vger.kernel.org
+Subject: [PATCH 5/7 v4] sh: remove sh5/sh64 last fragments
+Date:   Sun,  5 Mar 2023 20:00:35 -0800
+Message-Id: <20230306040037.20350-6-rdunlap@infradead.org>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230306040037.20350-1-rdunlap@infradead.org>
 References: <20230306040037.20350-1-rdunlap@infradead.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-When CONFIG_OF_EARLY_FLATTREE and CONFIG_SH_DEVICE_TREE are not set,
-SH3 build fails with a call to early_init_dt_scan(), so in
-arch/sh/kernel/setup.c and arch/sh/kernel/head_32.S, use
-CONFIG_OF_EARLY_FLATTREE instead of CONFIG_OF_FLATTREE.
+A previous patch removed most of the sh5 (sh64) support from the
+kernel tree. Now remove the last stragglers.
 
-Fixes this build error:
-../arch/sh/kernel/setup.c: In function 'sh_fdt_init':
-../arch/sh/kernel/setup.c:262:26: error: implicit declaration of function 'early_init_dt_scan' [-Werror=implicit-function-declaration]
-  262 |         if (!dt_virt || !early_init_dt_scan(dt_virt)) {
-
-Fixes: 03767daa1387 ("sh: fix build regression with CONFIG_OF && !CONFIG_OF_FLATTREE")
-Fixes: eb6b6930a70f ("sh: fix memory corruption of unflattened device tree")
+Fixes: 37744feebc08 ("sh: remove sh5 support")
 Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-Suggested-by: Rob Herring <robh+dt@kernel.org>
-Cc: Frank Rowand <frowand.list@gmail.com>
-Cc: devicetree@vger.kernel.org
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Arnd Bergmann <arnd@arndb.de>
 Cc: Rich Felker <dalias@libc.org>
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>
 Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 Cc: linux-sh@vger.kernel.org
-Cc: stable@vger.kernel.org
+Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 ---
-v2: use Suggested-by: for Rob.
-    add more Cc's.
+v2: update after adding the parisc64 alias to kbuild.rst
 v3: skipped
-v4: update Cc's, refresh & resend
+v4: refresh & resend
 
- arch/sh/kernel/head_32.S |    6 +++---
- arch/sh/kernel/setup.c   |    4 ++--
- 2 files changed, 5 insertions(+), 5 deletions(-)
+ Documentation/kbuild/kbuild.rst                           |    1 -
+ Documentation/scheduler/sched-arch.rst                    |    2 --
+ Documentation/translations/zh_CN/scheduler/sched-arch.rst |    2 --
+ scripts/checkstack.pl                                     |    7 -------
+ tools/perf/arch/common.c                                  |    2 --
+ tools/scripts/Makefile.arch                               |    5 -----
+ tools/testing/selftests/mm/Makefile                       |    2 +-
+ tools/testing/selftests/mm/run_vmtests.sh                 |    2 +-
+ 8 files changed, 2 insertions(+), 21 deletions(-)
 
-diff arch/sh/kernel/setup.c arch/sh/kernel/setup.c
-diff -- a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -244,7 +244,7 @@ void __init __weak plat_early_device_set
- {
- }
+diff -- a/Documentation/kbuild/kbuild.rst b/Documentation/kbuild/kbuild.rst
+--- a/Documentation/kbuild/kbuild.rst
++++ b/Documentation/kbuild/kbuild.rst
+@@ -161,7 +161,6 @@ But some architectures such as x86 and s
  
--#ifdef CONFIG_OF_FLATTREE
-+#ifdef CONFIG_OF_EARLY_FLATTREE
- void __ref sh_fdt_init(phys_addr_t dt_phys)
- {
- 	static int done = 0;
-@@ -326,7 +326,7 @@ void __init setup_arch(char **cmdline_p)
- 	/* Let earlyprintk output early console messages */
- 	sh_early_platform_driver_probe("earlyprintk", 1, 1);
+ - x86: i386 for 32 bit, x86_64 for 64 bit
+ - parisc: parisc64 for 64 bit
+-- sh: sh for 32 bit, sh64 for 64 bit
+ - sparc: sparc32 for 32 bit, sparc64 for 64 bit
  
--#ifdef CONFIG_OF_FLATTREE
-+#ifdef CONFIG_OF_EARLY_FLATTREE
- #ifdef CONFIG_USE_BUILTIN_DTB
- 	unflatten_and_copy_device_tree();
- #else
-diff -- a/arch/sh/kernel/head_32.S b/arch/sh/kernel/head_32.S
---- a/arch/sh/kernel/head_32.S
-+++ b/arch/sh/kernel/head_32.S
-@@ -64,7 +64,7 @@ ENTRY(_stext)
- 	ldc	r0, r6_bank
- #endif
+ CROSS_COMPILE
+diff -- a/Documentation/scheduler/sched-arch.rst b/Documentation/scheduler/sched-arch.rst
+--- a/Documentation/scheduler/sched-arch.rst
++++ b/Documentation/scheduler/sched-arch.rst
+@@ -70,7 +70,5 @@ Possible arch problems I found (and eith
  
--#ifdef CONFIG_OF_FLATTREE
-+#ifdef CONFIG_OF_EARLY_FLATTREE
- 	mov	r4, r12		! Store device tree blob pointer in r12
- #endif
- 	
-@@ -315,7 +315,7 @@ ENTRY(_stext)
- 10:		
- #endif
+ ia64 - is safe_halt call racy vs interrupts? (does it sleep?) (See #4a)
  
--#ifdef CONFIG_OF_FLATTREE
-+#ifdef CONFIG_OF_EARLY_FLATTREE
- 	mov.l	8f, r0		! Make flat device tree available early.
- 	jsr	@r0
- 	 mov	r12, r4
-@@ -346,7 +346,7 @@ ENTRY(stack_start)
- 5:	.long	start_kernel
- 6:	.long	cpu_init
- 7:	.long	init_thread_union
--#if defined(CONFIG_OF_FLATTREE)
-+#if defined(CONFIG_OF_EARLY_FLATTREE)
- 8:	.long	sh_fdt_init
- #endif
+-sh64 - Is sleeping racy vs interrupts? (See #4a)
+-
+ sparc - IRQs on at this point(?), change local_irq_save to _disable.
+       - TODO: needs secondary CPUs to disable preempt (See #1)
+diff -- a/Documentation/translations/zh_CN/scheduler/sched-arch.rst b/Documentation/translations/zh_CN/scheduler/sched-arch.rst
+--- a/Documentation/translations/zh_CN/scheduler/sched-arch.rst
++++ b/Documentation/translations/zh_CN/scheduler/sched-arch.rst
+@@ -70,7 +70,5 @@ 我发现的可能的arch问题（并试
  
+ ia64 - safe_halt的调用与中断相比，是否很荒谬？ (它睡眠了吗) (参考 #4a)
+ 
+-sh64 - 睡眠与中断相比，是否很荒谬？ (参考 #4a)
+-
+ sparc - 在这一点上，IRQ是开着的（？），把local_irq_save改为_disable。
+       - 待办事项: 需要第二个CPU来禁用抢占 (参考 #1)
+diff -- a/scripts/checkstack.pl b/scripts/checkstack.pl
+--- a/scripts/checkstack.pl
++++ b/scripts/checkstack.pl
+@@ -10,7 +10,6 @@
+ #	Mips port by Juan Quintela <quintela@mandrakesoft.com>
+ #	IA64 port via Andreas Dilger
+ #	Arm port by Holger Schurig
+-#	sh64 port by Paul Mundt
+ #	Random bits by Matt Mackall <mpm@selenic.com>
+ #	M68k port by Geert Uytterhoeven and Andreas Schwab
+ #	AArch64, PARISC ports by Kyle McMartin
+@@ -100,12 +99,6 @@ my (@stack, $re, $dre, $sub, $x, $xs, $f
+ 		#  100092:	 e3 f0 ff c8 ff 71	 lay	 %r15,-56(%r15)
+ 		$re = qr/.*(?:lay|ag?hi).*\%r15,-(([0-9]{2}|[3-9])[0-9]{2})
+ 		      (?:\(\%r15\))?$/ox;
+-	} elsif ($arch =~ /^sh64$/) {
+-		#XXX: we only check for the immediate case presently,
+-		#     though we will want to check for the movi/sub
+-		#     pair for larger users. -- PFM.
+-		#a00048e0:       d4fc40f0        addi.l  r15,-240,r15
+-		$re = qr/.*addi\.l.*r15,-(([0-9]{2}|[3-9])[0-9]{2}),r15/o;
+ 	} elsif ($arch eq 'sparc' || $arch eq 'sparc64') {
+ 		# f0019d10:       9d e3 bf 90     save  %sp, -112, %sp
+ 		$re = qr/.*save.*%sp, -(([0-9]{2}|[3-9])[0-9]{2}), %sp/o;
+diff -- a/tools/perf/arch/common.c b/tools/perf/arch/common.c
+--- a/tools/perf/arch/common.c
++++ b/tools/perf/arch/common.c
+@@ -51,9 +51,7 @@ const char *const s390_triplets[] = {
+ 
+ const char *const sh_triplets[] = {
+ 	"sh-unknown-linux-gnu-",
+-	"sh64-unknown-linux-gnu-",
+ 	"sh-linux-gnu-",
+-	"sh64-linux-gnu-",
+ 	NULL
+ };
+ 
+diff -- a/tools/scripts/Makefile.arch b/tools/scripts/Makefile.arch
+--- a/tools/scripts/Makefile.arch
++++ b/tools/scripts/Makefile.arch
+@@ -29,11 +29,6 @@ ifeq ($(ARCH),sparc64)
+        SRCARCH := sparc
+ endif
+ 
+-# Additional ARCH settings for sh
+-ifeq ($(ARCH),sh64)
+-       SRCARCH := sh
+-endif
+-
+ # Additional ARCH settings for loongarch
+ ifeq ($(ARCH),loongarch32)
+        SRCARCH := loongarch
+diff -- a/tools/testing/selftests/mm/Makefile b/tools/testing/selftests/mm/Makefile
+--- a/tools/testing/selftests/mm/Makefile
++++ b/tools/testing/selftests/mm/Makefile
+@@ -90,7 +90,7 @@ endif
+ 
+ endif
+ 
+-ifneq (,$(filter $(MACHINE),arm64 ia64 mips64 parisc64 ppc64 riscv64 s390x sh64 sparc64 x86_64))
++ifneq (,$(filter $(MACHINE),arm64 ia64 mips64 parisc64 ppc64 riscv64 s390x sparc64 x86_64))
+ TEST_GEN_FILES += va_128TBswitch
+ TEST_GEN_FILES += virtual_address_range
+ TEST_GEN_FILES += write_to_hugetlbfs
+diff -- a/tools/testing/selftests/mm/run_vmtests.sh b/tools/testing/selftests/mm/run_vmtests.sh
+--- a/tools/testing/selftests/mm/run_vmtests.sh
++++ b/tools/testing/selftests/mm/run_vmtests.sh
+@@ -132,7 +132,7 @@ else
+ fi
+ 
+ # filter 64bit architectures
+-ARCH64STR="arm64 ia64 mips64 parisc64 ppc64 ppc64le riscv64 s390x sh64 sparc64 x86_64"
++ARCH64STR="arm64 ia64 mips64 parisc64 ppc64 ppc64le riscv64 s390x sparc64 x86_64"
+ if [ -z "$ARCH" ]; then
+ 	ARCH=$(uname -m 2>/dev/null | sed -e 's/aarch64.*/arm64/')
+ fi
