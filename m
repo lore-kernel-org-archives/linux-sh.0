@@ -2,43 +2,43 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 74A4DC6FA9E
-	for <linux-sh@archiver.kernel.org>; Mon,  6 Mar 2023 04:00:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 005EEC61DA3
+	for <linux-sh@archiver.kernel.org>; Mon,  6 Mar 2023 04:00:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229808AbjCFEAs (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 5 Mar 2023 23:00:48 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34330 "EHLO
+        id S229819AbjCFEA5 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 5 Mar 2023 23:00:57 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34336 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229643AbjCFEAp (ORCPT
+        with ESMTP id S229789AbjCFEAp (ORCPT
         <rfc822;linux-sh@vger.kernel.org>); Sun, 5 Mar 2023 23:00:45 -0500
 Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4409CF962;
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D00D6F973;
         Sun,  5 Mar 2023 20:00:43 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
         d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
         MIME-Version:References:In-Reply-To:Message-Id:Date:Subject:Cc:To:From:Sender
         :Reply-To:Content-Type:Content-ID:Content-Description;
-        bh=WgyXM7Qo3viihserObDO4DAWeU3lIl1inofxTIVc+4I=; b=sLHdFy4WxAhVNW1qn8Tqz/mfZx
-        EjfOu5z0GJrrCgy+lXG1pdjvHCSOdl0REBoLuRxbcs5q0hbpogg6e0s1RfznWmvsNTymj4d2ncbJ9
-        WjaQrOJJyYZpH/jrRrKSlhIPCWhQoDgBG7MaVfJ01cLErJK4CawuAXz7/xVfIYRdvtrr7VuZ5I7rk
-        x2DOe5aFqqcVlHDqUnG0BJei+qIrY6seGHjq5nLOB3lAK7LRZH5b1OxiNr3oyYyciyDKbZ0ltXAoi
-        QRNxtvMOeSEU4M/lNK7mHrpyBwwt3pq8/XGqr04nZOpikMuikxgzQnvDyQk/VeEdZyerMIGW0G+Hz
-        JC9H9TsA==;
+        bh=iULMFTYSH9RAAYP5rn6cyfg7kS6emYH4OKw5O1Q8kv0=; b=tXQ2PYqnaJJHdEPBsIxRpo2kTn
+        +GVFOASIP3wlTp2RkxdVE5mcCluSIuVMCfq8w4CfXLaieoO1bEAaOXvBy3kZ7NUbHiOhMWZb98mEr
+        xyIKotXVsh5JjZgbzNffAoqIWXOLAGRQ2+EkG8bwTQe9ejfAGEPePbe90MhvZFFvAnOTI+ENw8XJY
+        PdZvIJ+lTr+QH3F6/0tBR15CHkpxFNKMz++puKItRP8LkzV9Y2OJNxX6vq1885u5B+dGHTT4XGl4u
+        XSf4AsPB/YB/oPZ0EHVL8INakKA+csPIy61+K2o9oIeteubd0TMFHHr5HrrW+SXtzq5xPvuXaa33y
+        YQ0GUwSg==;
 Received: from [2601:1c2:980:9ec0::df2f] (helo=bombadil.infradead.org)
         by bombadil.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1pZ21f-00B9yD-FR; Mon, 06 Mar 2023 04:00:40 +0000
+        id 1pZ21h-00B9yD-Ji; Mon, 06 Mar 2023 04:00:41 +0000
 From:   Randy Dunlap <rdunlap@infradead.org>
 To:     linux-kernel@vger.kernel.org
 Cc:     Randy Dunlap <rdunlap@infradead.org>,
+        kernel test robot <lkp@intel.com>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
         Geert Uytterhoeven <geert+renesas@glider.be>,
-        Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>,
-        linux-sh@vger.kernel.org
-Subject: [PATCH 1/7 v4] sh: SH2007: drop the bad URL info
-Date:   Sun,  5 Mar 2023 20:00:31 -0800
-Message-Id: <20230306040037.20350-2-rdunlap@infradead.org>
+        stable@vger.kernel.org
+Subject: [PATCH 4/7 v4] sh: math-emu: fix macro redefined warning
+Date:   Sun,  5 Mar 2023 20:00:34 -0800
+Message-Id: <20230306040037.20350-5-rdunlap@infradead.org>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230306040037.20350-1-rdunlap@infradead.org>
 References: <20230306040037.20350-1-rdunlap@infradead.org>
@@ -48,33 +48,43 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-This URL provided is no longer functional, so drop it.
+Fix a warning that was reported by the kernel test robot:
 
-Fixes: 3a598264436e ("sh: SH-2007 board support.")
+In file included from ../include/math-emu/soft-fp.h:27,
+                 from ../arch/sh/math-emu/math.c:22:
+../arch/sh/include/asm/sfp-machine.h:17: warning: "__BYTE_ORDER" redefined
+   17 | #define __BYTE_ORDER __BIG_ENDIAN
+In file included from ../arch/sh/math-emu/math.c:21:
+../arch/sh/math-emu/sfp-util.h:71: note: this is the location of the previous definition
+   71 | #define __BYTE_ORDER __LITTLE_ENDIAN
+
+Fixes: b929926f01f2 ("sh: define __BIG_ENDIAN for math-emu")
 Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+Reported-by: kernel test robot <lkp@intel.com>
+Link: lore.kernel.org/r/202111121827.6v6SXtVv-lkp@intel.com
 Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc: Rich Felker <dalias@libc.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
 Cc: linux-sh@vger.kernel.org
 Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: stable@vger.kernel.org
 ---
-v2: skipped
+v2: add Reviewed-by Geert,
+    rebase to linux-next-20211115
 v3: skipped
-v4: refresh/rebase and resend
+v4: refresh & resend
 
- arch/sh/boards/Kconfig |    1 -
- 1 file changed, 1 deletion(-)
+ arch/sh/math-emu/sfp-util.h |    4 ----
+ 1 file changed, 4 deletions(-)
 
-diff -- a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
---- a/arch/sh/boards/Kconfig
-+++ b/arch/sh/boards/Kconfig
-@@ -358,7 +358,6 @@ config SH_SH2007
- 	  intended for embedded applications.
- 	  It has an Ethernet interface (SMC9118), direct connected
- 	  Compact Flash socket, two serial ports and PC-104 bus.
--	  More information at <http://sh2000.sh-linux.org>.
+diff -- a/arch/sh/math-emu/sfp-util.h b/arch/sh/math-emu/sfp-util.h
+--- a/arch/sh/math-emu/sfp-util.h
++++ b/arch/sh/math-emu/sfp-util.h
+@@ -67,7 +67,3 @@
+   } while (0)
  
- config SH_APSH4A3A
- 	bool "AP-SH4A-3A"
+ #define abort()	return 0
+-
+-#define __BYTE_ORDER __LITTLE_ENDIAN
+-
+-
