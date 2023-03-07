@@ -2,107 +2,130 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0FDF3C6FD1A
-	for <linux-sh@archiver.kernel.org>; Tue,  7 Mar 2023 15:22:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BDE02C6FA99
+	for <linux-sh@archiver.kernel.org>; Tue,  7 Mar 2023 21:42:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229954AbjCGPW1 convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 7 Mar 2023 10:22:27 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40034 "EHLO
+        id S230392AbjCGVmB (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 7 Mar 2023 16:42:01 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49962 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230061AbjCGPWF (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Mar 2023 10:22:05 -0500
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DFD003584;
-        Tue,  7 Mar 2023 07:19:50 -0800 (PST)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pZZ5X-000U6x-Rz; Tue, 07 Mar 2023 16:18:51 +0100
-Received: from p57bd9bc2.dip0.t-ipconnect.de ([87.189.155.194] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pZZ5X-001GRG-Ke; Tue, 07 Mar 2023 16:18:51 +0100
-Message-ID: <04af6ead8bd4ac6680d5dc5024b0c9ef2e422778.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 0/7 v4] sh: various doc, build, init fixes
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>,
-        linux-sh@vger.kernel.org, Frank Rowand <frowand.list@gmail.com>,
-        devicetree@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
-Date:   Tue, 07 Mar 2023 16:18:50 +0100
-In-Reply-To: <20230306040037.20350-1-rdunlap@infradead.org>
-References: <20230306040037.20350-1-rdunlap@infradead.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.46.4 
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.155.194
-X-ZEDAT-Hint: PO
+        with ESMTP id S229525AbjCGVmA (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Mar 2023 16:42:00 -0500
+Received: from mail-pj1-x102b.google.com (mail-pj1-x102b.google.com [IPv6:2607:f8b0:4864:20::102b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 208DFA616A
+        for <linux-sh@vger.kernel.org>; Tue,  7 Mar 2023 13:41:59 -0800 (PST)
+Received: by mail-pj1-x102b.google.com with SMTP id me6-20020a17090b17c600b0023816b0c7ceso78103pjb.2
+        for <linux-sh@vger.kernel.org>; Tue, 07 Mar 2023 13:41:59 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=dabbelt-com.20210112.gappssmtp.com; s=20210112; t=1678225318;
+        h=content-transfer-encoding:mime-version:message-id:to:from:cc
+         :in-reply-to:subject:date:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=h0UBWEzua7mI1E3a/+R1pzklpJ+RGJpYFy9mijom/UM=;
+        b=3d0i9L9fgsM6wfDV6SgEVPe2doCmA84h8dgaHpMbejZeZuQRklJuURRf6PhkCN7ukc
+         w/n+8nbuC+OW0mQWtjtERbzb9wBvkWnsuB3UcR0sH2Ba3g7FDMT+jDol43sV0ZSapUuU
+         afFVzDtGs7qaCnWpNgGUvXPCI9VeRCtjLQt1T3AcBXMLT19wGawFny88dkq7b+SM519J
+         izcWM0iUW0/Sac/AVhLneLvdpP7x0olNKc4YqRIWvevDICe0+qs1ypmIQEYjXt6H2n6Q
+         PGyqmNUpfeGmcTALJ+qCkHjqjpTn7tbuCsOrFtOo3YqXRw3n/PRxx6fcIN5oBf8fOwBc
+         hPrQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1678225318;
+        h=content-transfer-encoding:mime-version:message-id:to:from:cc
+         :in-reply-to:subject:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=h0UBWEzua7mI1E3a/+R1pzklpJ+RGJpYFy9mijom/UM=;
+        b=dI5ScF5ingP7aOCqBDfyKmYhELNgARx90QF3X0AwkfPPmKA/EFXGtr+9tnqLW6RUup
+         8aRDNLoyt9BChEQRNHZPEt1wAStqVuPbPQcowqVMNT1+GGseu9xnd5unOSlZ7SvKLnBd
+         k4yK6JxqosxONdfBL3RIXbevCbf8NArU8V4FZTKQdgj0PyL+SZjpeWZ+1pbfEDvIw7FW
+         WVDfKd5bITCOwCNtGqW5mqv9vDp+TfcgFXPKjnmF8qkNdVCWr94g19dxSTpyRz29U0pT
+         RN06TS/19l8QFf6NAQOo0clltvqdjE68MxnOUYdc3Al+QjgJVOMtly5q7fUpCWs10q2D
+         1NGQ==
+X-Gm-Message-State: AO0yUKVAp4XrlPuvjd9VQ9GjwMUMhtM6Y40u83cro98UMdcPFrv9/pGY
+        48sEpXExgER/xH/6qAopYLJqYw==
+X-Google-Smtp-Source: AK7set/K6eJAQf/eSbaq269PoSBswE0gsDc5h7lzSW9lr2zauw1plinMmCGHpVyR/4qKnDR1/eXDIg==
+X-Received: by 2002:a17:902:ce90:b0:19a:9434:af30 with SMTP id f16-20020a170902ce9000b0019a9434af30mr18505363plg.18.1678225318377;
+        Tue, 07 Mar 2023 13:41:58 -0800 (PST)
+Received: from localhost ([50.221.140.188])
+        by smtp.gmail.com with ESMTPSA id km12-20020a17090327cc00b0019e30e3068bsm8866509plb.168.2023.03.07.13.41.57
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 07 Mar 2023 13:41:57 -0800 (PST)
+Date:   Tue, 07 Mar 2023 13:41:57 -0800 (PST)
+X-Google-Original-Date: Tue, 07 Mar 2023 13:40:59 PST (-0800)
+Subject:     Re: [PATCH v5 12/26] riscv: Remove COMMAND_LINE_SIZE from uapi
+In-Reply-To: <20230306100508.1171812-13-alexghiti@rivosinc.com>
+CC:     Greg KH <gregkh@linuxfoundation.org>, corbet@lwn.net,
+        Richard Henderson <richard.henderson@linaro.org>,
+        ink@jurassic.park.msu.ru, mattst88@gmail.com, vgupta@kernel.org,
+        linux@armlinux.org.uk, Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>, chenhuacai@kernel.org,
+        kernel@xen0n.name, geert@linux-m68k.org, monstr@monstr.eu,
+        tsbogend@alpha.franken.de, James.Bottomley@HansenPartnership.com,
+        deller@gmx.de, mpe@ellerman.id.au, npiggin@gmail.com,
+        christophe.leroy@csgroup.eu,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        aou@eecs.berkeley.edu, hca@linux.ibm.com, gor@linux.ibm.com,
+        agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
+        svens@linux.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org,
+        davem@davemloft.net, tglx@linutronix.de, mingo@redhat.com,
+        bp@alien8.de, dave.hansen@linux.intel.com, x86@kernel.org,
+        hpa@zytor.com, chris@zankel.net, jcmvbkbc@gmail.com,
+        Arnd Bergmann <arnd@arndb.de>, linux-doc@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
+        linux-arch@vger.kernel.org, alexghiti@rivosinc.com
+From:   Palmer Dabbelt <palmer@dabbelt.com>
+To:     alexghiti@rivosinc.com
+Message-ID: <mhng-d4be5bb5-f0ad-4e76-9b11-83732d233a45@palmer-ri-x1c9a>
+Mime-Version: 1.0 (MHng)
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Randy!
+On Mon, 06 Mar 2023 02:04:54 PST (-0800), alexghiti@rivosinc.com wrote:
+> As far as I can tell this is not used by userspace and thus should not
+> be part of the user-visible API.
+>
+> Signed-off-by: Alexandre Ghiti <alexghiti@rivosinc.com>
+> ---
+>  arch/riscv/include/asm/setup.h      | 7 +++++++
+>  arch/riscv/include/uapi/asm/setup.h | 2 --
+>  2 files changed, 7 insertions(+), 2 deletions(-)
+>  create mode 100644 arch/riscv/include/asm/setup.h
+>
+> diff --git a/arch/riscv/include/asm/setup.h b/arch/riscv/include/asm/setup.h
+> new file mode 100644
+> index 000000000000..f165a14344e2
+> --- /dev/null
+> +++ b/arch/riscv/include/asm/setup.h
+> @@ -0,0 +1,7 @@
+> +/* SPDX-License-Identifier: GPL-2.0-only */
+> +#ifndef _ASM_RISCV_SETUP_H
+> +#define _ASM_RISCV_SETUP_H
+> +
+> +#define COMMAND_LINE_SIZE       1024
+> +
+> +#endif /* _ASM_RISCV_SETUP_H */
+> diff --git a/arch/riscv/include/uapi/asm/setup.h b/arch/riscv/include/uapi/asm/setup.h
+> index 66b13a522880..17fcecd4a2f8 100644
+> --- a/arch/riscv/include/uapi/asm/setup.h
+> +++ b/arch/riscv/include/uapi/asm/setup.h
+> @@ -3,6 +3,4 @@
+>  #ifndef _UAPI_ASM_RISCV_SETUP_H
+>  #define _UAPI_ASM_RISCV_SETUP_H
+>
+> -#define COMMAND_LINE_SIZE	1024
+> -
+>  #endif /* _UAPI_ASM_RISCV_SETUP_H */
 
-On Sun, 2023-03-05 at 20:00 -0800, Randy Dunlap wrote:
-> All of these patches have been sent previously, anywhere from
-> one to 3 times.  All patches are now called "v4".
-> 
-> This refresh/resend is to assist the new SH maintainer.
-> 
->  [PATCH 1/7 v4] sh: SH2007: drop the bad URL info
->  [PATCH 2/7 v4] sh: nmi_debug: fix return value of __setup handler
->  [PATCH 3/7 v4] sh: init: use OF_EARLY_FLATTREE for early init
->  [PATCH 4/7 v4] sh: math-emu: fix macro redefined warning
->  [PATCH 5/7 v4] sh: remove sh5/sh64 last fragments
->  [PATCH 6/7 v4] sh: fix Kconfig entry for NUMA => SMP
->  [PATCH 7/7 v4] sh: mcount.S: fix build error when PRINTK is not enabled
-> 
-> diffstat:
->  Documentation/kbuild/kbuild.rst                           |    1 -
->  Documentation/scheduler/sched-arch.rst                    |    2 --
->  Documentation/translations/zh_CN/scheduler/sched-arch.rst |    2 --
->  arch/sh/Kconfig                                           |    4 ++++
->  arch/sh/Kconfig.debug                                     |    2 +-
->  arch/sh/boards/Kconfig                                    |    1 -
->  arch/sh/kernel/head_32.S                                  |    6 +++---
->  arch/sh/kernel/nmi_debug.c                                |    4 ++--
->  arch/sh/kernel/setup.c                                    |    4 ++--
->  arch/sh/math-emu/sfp-util.h                               |    4 ----
->  scripts/checkstack.pl                                     |    7 -------
->  tools/perf/arch/common.c                                  |    2 --
->  tools/scripts/Makefile.arch                               |    5 -----
->  tools/testing/selftests/mm/Makefile                       |    2 +-
->  tools/testing/selftests/mm/run_vmtests.sh                 |    2 +-
->  15 files changed, 14 insertions(+), 34 deletions(-)
-> 
-> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-> Cc: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
-> Cc: linux-sh@vger.kernel.org
-> Cc: Frank Rowand <frowand.list@gmail.com>
-> Cc: devicetree@vger.kernel.org
-> Cc: Arnd Bergmann <arnd@arndb.de>
+Reviewed-by: Palmer Dabbelt <palmer@rivosinc.com>
+Acked-by: Palmer Dabbelt <palmer@rivosinc.com>
 
-Thanks for these fixes. All changes look good to me and I'm going to test
-them on my SH-7785LCR board on top of 6.3-rc1 and report back. The documentation
-changes obviously won't have any impact in this regard.
-
-Adrian
-
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Thanks!
