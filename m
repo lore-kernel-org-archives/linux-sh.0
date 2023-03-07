@@ -2,126 +2,107 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A9D7CC678D4
-	for <linux-sh@archiver.kernel.org>; Tue,  7 Mar 2023 15:00:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0FDF3C6FD1A
+	for <linux-sh@archiver.kernel.org>; Tue,  7 Mar 2023 15:22:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229627AbjCGPA6 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 7 Mar 2023 10:00:58 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37516 "EHLO
+        id S229954AbjCGPW1 convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 7 Mar 2023 10:22:27 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40034 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229657AbjCGPAR (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Mar 2023 10:00:17 -0500
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C9B569224A
-        for <linux-sh@vger.kernel.org>; Tue,  7 Mar 2023 06:42:46 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1678200165;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=sqdAC23AFCpafEftyGbYSrYoVeo5kk0ftc/PmTPLnCU=;
-        b=RnC1oS1yl0HbZ6NepuOhyPYVwAjK6Mk7qGZXoASawD2ef7nVBqaZ6swRZ0HWFA2cmztZqt
-        qImrU8q6eS3qjV4LXLya5ja/QLYrcd0WUi3zCK+WDsUBEeEUEDh8l8rCy5jMaKPTkSM0zN
-        8OZ8AZBy8/I6JvGvtDb3ktw1MLPK6/0=
-Received: from mimecast-mx02.redhat.com (mx3-rdu2.redhat.com
- [66.187.233.73]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-316--Mbwj-W3NLC_0yM8Mt1Txw-1; Tue, 07 Mar 2023 09:36:31 -0500
-X-MC-Unique: -Mbwj-W3NLC_0yM8Mt1Txw-1
-Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.rdu2.redhat.com [10.11.54.1])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
-        (No client certificate requested)
-        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 8FCA33C6986A;
-        Tue,  7 Mar 2023 14:36:30 +0000 (UTC)
-Received: from vschneid.remote.csb (unknown [10.33.37.13])
-        by smtp.corp.redhat.com (Postfix) with ESMTPS id 79249401B290;
-        Tue,  7 Mar 2023 14:36:26 +0000 (UTC)
-From:   Valentin Schneider <vschneid@redhat.com>
-To:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
-        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
-        x86@kernel.org
-Cc:     Steven Rostedt <rostedt@goodmis.org>,
-        "Paul E. McKenney" <paulmck@kernel.org>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
-        Juri Lelli <juri.lelli@redhat.com>,
-        Daniel Bristot de Oliveira <bristot@redhat.com>,
-        Marcelo Tosatti <mtosatti@redhat.com>,
-        Frederic Weisbecker <frederic@kernel.org>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        "H. Peter Anvin" <hpa@zytor.com>, Marc Zyngier <maz@kernel.org>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Guo Ren <guoren@kernel.org>,
-        "David S. Miller" <davem@davemloft.net>
-Subject: [PATCH v5 1/7] trace: Add trace_ipi_send_cpumask()
-Date:   Tue,  7 Mar 2023 14:35:52 +0000
-Message-Id: <20230307143558.294354-2-vschneid@redhat.com>
-In-Reply-To: <20230307143558.294354-1-vschneid@redhat.com>
-References: <20230307143558.294354-1-vschneid@redhat.com>
+        with ESMTP id S230061AbjCGPWF (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Mar 2023 10:22:05 -0500
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DFD003584;
+        Tue,  7 Mar 2023 07:19:50 -0800 (PST)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pZZ5X-000U6x-Rz; Tue, 07 Mar 2023 16:18:51 +0100
+Received: from p57bd9bc2.dip0.t-ipconnect.de ([87.189.155.194] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pZZ5X-001GRG-Ke; Tue, 07 Mar 2023 16:18:51 +0100
+Message-ID: <04af6ead8bd4ac6680d5dc5024b0c9ef2e422778.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 0/7 v4] sh: various doc, build, init fixes
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>,
+        linux-sh@vger.kernel.org, Frank Rowand <frowand.list@gmail.com>,
+        devicetree@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
+Date:   Tue, 07 Mar 2023 16:18:50 +0100
+In-Reply-To: <20230306040037.20350-1-rdunlap@infradead.org>
+References: <20230306040037.20350-1-rdunlap@infradead.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.46.4 
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Scanned-By: MIMEDefang 3.1 on 10.11.54.1
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.155.194
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-trace_ipi_raise() is unsuitable for generically tracing IPI sources due to
-its "reason" argument being an uninformative string (on arm64 all you get
-is "Function call interrupts" for SMP calls).
+Hi Randy!
 
-Add a variant of it that exports a target cpumask, a callsite and a callback.
+On Sun, 2023-03-05 at 20:00 -0800, Randy Dunlap wrote:
+> All of these patches have been sent previously, anywhere from
+> one to 3 times.  All patches are now called "v4".
+> 
+> This refresh/resend is to assist the new SH maintainer.
+> 
+>  [PATCH 1/7 v4] sh: SH2007: drop the bad URL info
+>  [PATCH 2/7 v4] sh: nmi_debug: fix return value of __setup handler
+>  [PATCH 3/7 v4] sh: init: use OF_EARLY_FLATTREE for early init
+>  [PATCH 4/7 v4] sh: math-emu: fix macro redefined warning
+>  [PATCH 5/7 v4] sh: remove sh5/sh64 last fragments
+>  [PATCH 6/7 v4] sh: fix Kconfig entry for NUMA => SMP
+>  [PATCH 7/7 v4] sh: mcount.S: fix build error when PRINTK is not enabled
+> 
+> diffstat:
+>  Documentation/kbuild/kbuild.rst                           |    1 -
+>  Documentation/scheduler/sched-arch.rst                    |    2 --
+>  Documentation/translations/zh_CN/scheduler/sched-arch.rst |    2 --
+>  arch/sh/Kconfig                                           |    4 ++++
+>  arch/sh/Kconfig.debug                                     |    2 +-
+>  arch/sh/boards/Kconfig                                    |    1 -
+>  arch/sh/kernel/head_32.S                                  |    6 +++---
+>  arch/sh/kernel/nmi_debug.c                                |    4 ++--
+>  arch/sh/kernel/setup.c                                    |    4 ++--
+>  arch/sh/math-emu/sfp-util.h                               |    4 ----
+>  scripts/checkstack.pl                                     |    7 -------
+>  tools/perf/arch/common.c                                  |    2 --
+>  tools/scripts/Makefile.arch                               |    5 -----
+>  tools/testing/selftests/mm/Makefile                       |    2 +-
+>  tools/testing/selftests/mm/run_vmtests.sh                 |    2 +-
+>  15 files changed, 14 insertions(+), 34 deletions(-)
+> 
+> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+> Cc: Rich Felker <dalias@libc.org>
+> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+> Cc: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
+> Cc: linux-sh@vger.kernel.org
+> Cc: Frank Rowand <frowand.list@gmail.com>
+> Cc: devicetree@vger.kernel.org
+> Cc: Arnd Bergmann <arnd@arndb.de>
 
-Signed-off-by: Valentin Schneider <vschneid@redhat.com>
-Reviewed-by: Steven Rostedt (Google) <rostedt@goodmis.org>
----
- include/trace/events/ipi.h | 22 ++++++++++++++++++++++
- 1 file changed, 22 insertions(+)
+Thanks for these fixes. All changes look good to me and I'm going to test
+them on my SH-7785LCR board on top of 6.3-rc1 and report back. The documentation
+changes obviously won't have any impact in this regard.
 
-diff --git a/include/trace/events/ipi.h b/include/trace/events/ipi.h
-index 0be71dad6ec03..b1125dc27682c 100644
---- a/include/trace/events/ipi.h
-+++ b/include/trace/events/ipi.h
-@@ -35,6 +35,28 @@ TRACE_EVENT(ipi_raise,
- 	TP_printk("target_mask=%s (%s)", __get_bitmask(target_cpus), __entry->reason)
- );
- 
-+TRACE_EVENT(ipi_send_cpumask,
-+
-+	TP_PROTO(const struct cpumask *cpumask, unsigned long callsite, void *callback),
-+
-+	TP_ARGS(cpumask, callsite, callback),
-+
-+	TP_STRUCT__entry(
-+		__cpumask(cpumask)
-+		__field(void *, callsite)
-+		__field(void *, callback)
-+	),
-+
-+	TP_fast_assign(
-+		__assign_cpumask(cpumask, cpumask_bits(cpumask));
-+		__entry->callsite = (void *)callsite;
-+		__entry->callback = callback;
-+	),
-+
-+	TP_printk("cpumask=%s callsite=%pS callback=%pS",
-+		  __get_cpumask(cpumask), __entry->callsite, __entry->callback)
-+);
-+
- DECLARE_EVENT_CLASS(ipi_handler,
- 
- 	TP_PROTO(const char *reason),
+Adrian
+
 -- 
-2.31.1
-
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
