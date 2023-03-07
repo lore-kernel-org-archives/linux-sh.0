@@ -2,135 +2,266 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D80AFC678D4
-	for <linux-sh@archiver.kernel.org>; Tue,  7 Mar 2023 08:38:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0EE84C678D4
+	for <linux-sh@archiver.kernel.org>; Tue,  7 Mar 2023 14:44:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229819AbjCGIid (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 7 Mar 2023 03:38:33 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46632 "EHLO
+        id S231348AbjCGOoY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 7 Mar 2023 09:44:24 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47810 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229818AbjCGIic (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Mar 2023 03:38:32 -0500
-Received: from mail-ed1-x52e.google.com (mail-ed1-x52e.google.com [IPv6:2a00:1450:4864:20::52e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 86EB72E0EE;
-        Tue,  7 Mar 2023 00:38:29 -0800 (PST)
-Received: by mail-ed1-x52e.google.com with SMTP id k10so25264978edk.13;
-        Tue, 07 Mar 2023 00:38:29 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112; t=1678178308;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=QFkwqhkT+lIt2irVF6rhRMk0pnuU8Ja1oB/xp+FXlr8=;
-        b=lUvWp6toVHkr4XQ7hhtU/YiewW60L/6LagLE9I0VbD7fq1zn7c+LpYUcPLm4sStnaI
-         o90OrqJ36nric2PeL0uS1QEdYAkrOEsnb6h+nZ+FYT7mi8lAupvgVxZk9X0IOqV0tR56
-         Ib1sShHJrT0vCcGZnMmjx/xmO7mezHQV54kCzaz63gbVPrvvKzw2U5QsF/MVI2BYz++A
-         ljYMIBdbtWLRfOqEK72sMBh4mXAzXRjn6vpArJRx9wVM6TDQt3YZz6cVoxY+inyyfr9e
-         rfbxhjlHLA+lXZfHSoC74fXRH+dDLWALUYu0hYHQ52awLQ9Nuka2gOGBjmnwa5vSS/W3
-         M4kg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1678178308;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=QFkwqhkT+lIt2irVF6rhRMk0pnuU8Ja1oB/xp+FXlr8=;
-        b=Bk1Wne6zUK7t6oron0ipXlO7uTXI49TIElwIZzj3Eau53Q8CEVDaGL/23Dz64+t8+l
-         RB6NbE6CYcaGc7YJq8jltxvFeZeUJzNI6KEvYHirL/v3e5USDaQeoGYviw/8DnTpsyxT
-         T7aCvT0BbudMv50kM5eMBCsHbxvvUBqgkU7a1ZECxy1FbmwmKflQAYea+waQy1ZLLkar
-         n/6YccqFhzASNtsJuAFSaY0GXW07AGfgFuBWsq0g1e/hIqu9s18jJRuLc6LEtCU/eDUv
-         Az7ac/SsQbFFmJGMx0lYeZF6nyb2sAsLQULva0rwIzm9x0S2h4NCisfeKqWv9HNixkEO
-         y/kA==
-X-Gm-Message-State: AO0yUKV+sMkOq82UgV5lEv1S7P0GiVyjv65qJKRx151XgvaHwF00BOUe
-        mHHsHT/Ysvz6ArPzLSSx3GiBb9FI9I0aEwfG7Xk=
-X-Google-Smtp-Source: AK7set835bG0dJ6ngtk0PjuuqUnLs8sqgHQUsfUtZuyvpNqCpDSFdEABaR2fb1BA1EJAY+RMipe53NieyYlhlK8/Rk0=
-X-Received: by 2002:a17:906:a4b:b0:879:9c05:f5fb with SMTP id
- x11-20020a1709060a4b00b008799c05f5fbmr6743103ejf.5.1678178307909; Tue, 07 Mar
- 2023 00:38:27 -0800 (PST)
+        with ESMTP id S230226AbjCGOmX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Mar 2023 09:42:23 -0500
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 88C0D8E3EC
+        for <linux-sh@vger.kernel.org>; Tue,  7 Mar 2023 06:37:19 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1678199791;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding;
+        bh=yMscSn7/v7gE6eZusBzcl4tSE2iMOh2pPYNqXPmBjFI=;
+        b=OUohGG/J1AReH1N3f63roppCEHTIvJWMC32erNzd6xvJ/34tMeNdMo1wozUgv3cRhRlEZR
+        Yo5Ws6QW0zLD4xrp3xluty7UxMqmZWi0syRUe3r0uJKkAA/zKfgFMNj0cf4fwj5qPb3Nlh
+        gehnaeNN0oniYDkjYPo8bDxdPQ09meU=
+Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
+ [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-635-8Xan7_2yOZyL38nkQLtwpw-1; Tue, 07 Mar 2023 09:36:28 -0500
+X-MC-Unique: 8Xan7_2yOZyL38nkQLtwpw-1
+Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.rdu2.redhat.com [10.11.54.1])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 2A55D185A794;
+        Tue,  7 Mar 2023 14:36:26 +0000 (UTC)
+Received: from vschneid.remote.csb (unknown [10.33.37.13])
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id 3D43B40CF8EE;
+        Tue,  7 Mar 2023 14:36:21 +0000 (UTC)
+From:   Valentin Schneider <vschneid@redhat.com>
+To:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
+        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
+        x86@kernel.org
+Cc:     "Paul E. McKenney" <paulmck@kernel.org>,
+        Steven Rostedt <rostedt@goodmis.org>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
+        Juri Lelli <juri.lelli@redhat.com>,
+        Daniel Bristot de Oliveira <bristot@redhat.com>,
+        Marcelo Tosatti <mtosatti@redhat.com>,
+        Frederic Weisbecker <frederic@kernel.org>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        "H. Peter Anvin" <hpa@zytor.com>, Marc Zyngier <maz@kernel.org>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Guo Ren <guoren@kernel.org>,
+        "David S. Miller" <davem@davemloft.net>
+Subject: [PATCH v5 0/7] Generic IPI sending tracepoint
+Date:   Tue,  7 Mar 2023 14:35:51 +0000
+Message-Id: <20230307143558.294354-1-vschneid@redhat.com>
 MIME-Version: 1.0
-References: <20230307075923.28821-1-lukas.bulwahn@gmail.com>
- <CAMuHMdV1eYWhDKwTAxC32Qp0CcxrWxgu=uRNTdu_G8K=gHS9Yw@mail.gmail.com> <c85990e892571ae5da7a9c4b0e86897ee34286a7.camel@physik.fu-berlin.de>
-In-Reply-To: <c85990e892571ae5da7a9c4b0e86897ee34286a7.camel@physik.fu-berlin.de>
-From:   Lukas Bulwahn <lukas.bulwahn@gmail.com>
-Date:   Tue, 7 Mar 2023 09:38:16 +0100
-Message-ID: <CAKXUXMyRd2V+a9yoqfgkVPY3UufKHKTOPxxXLSJCK49DDEUQEA@mail.gmail.com>
-Subject: Re: [PATCH] arch: sh: remove references to config USB_OHCI_SH
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
-        Christoph Hellwig <hch@lst.de>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        kernel-janitors@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+X-Scanned-By: MIMEDefang 3.1 on 10.11.54.1
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Mar 7, 2023 at 9:19=E2=80=AFAM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
->
-> Hi Geert!
->
-> On Tue, 2023-03-07 at 09:16 +0100, Geert Uytterhoeven wrote:
-> > Hi Lukas,
-> >
-> > On Tue, Mar 7, 2023 at 9:02=E2=80=AFAM Lukas Bulwahn <lukas.bulwahn@gma=
-il.com> wrote:
-> > > Commit 4f6dfc2136fb ("usb: remove the dead USB_OHCI_SH option") left =
-some
-> > > references to the config USB_OHCI_SH in ./arch/sh/ around, expecting =
-those
-> > > to be removed with the whole SH architecture deletion.
-> > >
-> > > As that did not happen, do minor clean-up instead and remove the refe=
-rences
-> > > to the removed config USB_OHCI_SH instead.
-> > >
-> > > Signed-off-by: Lukas Bulwahn <lukas.bulwahn@gmail.com>
-> >
-> > Thanks for your patch!
-> >
-> > > --- a/arch/sh/Kconfig
-> > > +++ b/arch/sh/Kconfig
-> > > @@ -326,7 +326,6 @@ config CPU_SUBTYPE_SH7720
-> > >         select CPU_SH3
-> > >         select CPU_HAS_DSP
-> > >         select SYS_SUPPORTS_SH_CMT
-> > > -       select USB_OHCI_SH if USB_OHCI_HCD
-> >
-> > Shouldn't this select USB_OHCI_HCD_PLATFORM instead, as the (now
-> > removed) Kconfig help text for USB_OHCI_SH used to say?
-> >
-> >     +       select USB_OHCI_HCD_PLATFORM if USB_OHCI_HCD
-> >
-> > I completely forgot I already made that comment before, cfr.
-> > https://lore.kernel.org/all/CAMuHMdVM3BpvVD3c4gp1OidnwF5zFd4MJecij7zWBn=
-ahzNaSNw@mail.gmail.com
-> >
-> > The same is true for the three selects below.
-> > As USB is now broken, the proper solution will need
-> > Fixes: 4f6dfc2136fb2e8d ("usb: remove the dead USB_OHCI_SH option")
->
+Background
+==========
 
-Well, I assumed that I am just cleaning up some minor stuff, not
-fixing broken code...
+Detecting IPI *reception* is relatively easy, e.g. using
+trace_irq_handler_{entry,exit} or even just function-trace
+flush_smp_call_function_queue() for SMP calls.  
 
-With your link and explanation, Geert, I know what needs to be done. Thanks=
-.
+Figuring out their *origin*, is trickier as there is no generic tracepoint tied
+to e.g. smp_call_function():
 
-> Thanks a lot for catching this!
->
-> @Lukas: Can you send a new patch with the suggested changes?
->
+o AFAIA x86 has no tracepoint tied to sending IPIs, only receiving them
+  (cf. trace_call_function{_single}_entry()).
+o arm/arm64 do have trace_ipi_raise(), which gives us the target cpus but also a
+  mostly useless string (smp_calls will all be "Function call interrupts").
+o Other architectures don't seem to have any IPI-sending related tracepoint.  
 
-I will send a new patch in a second.
+I believe one reason those tracepoints used by arm/arm64 ended up as they were
+is because these archs used to handle IPIs differently from regular interrupts
+(the IRQ driver would directly invoke an IPI-handling routine), which meant they 
+never showed up in trace_irq_handler_{entry, exit}. The trace_ipi_{entry,exit}
+tracepoints gave a way to trace IPI reception but those have become redundant as
+of: 
 
-Lukas
+      56afcd3dbd19 ("ARM: Allow IPIs to be handled as normal interrupts")
+      d3afc7f12987 ("arm64: Allow IPIs to be handled as normal interrupts")
 
-> Adrian
->
-> --
->  .''`.  John Paul Adrian Glaubitz
-> : :' :  Debian Developer
-> `. `'   Physicist
->   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+which gave IPIs a "proper" handler function used through
+generic_handle_domain_irq(), which makes them show up via
+trace_irq_handler_{entry, exit}.
+
+Changing stuff up
+=================
+
+Per the above, it would make sense to reshuffle trace_ipi_raise() and move it
+into generic code. This also came up during Daniel's talk on Osnoise at the CPU
+isolation MC of LPC 2022 [1]. 
+
+Now, to be useful, such a tracepoint needs to export:
+o targeted CPU(s)
+o calling context
+
+The only way to get the calling context with trace_ipi_raise() is to trigger a
+stack dump, e.g. $(trace-cmd -e ipi* -T echo 42).
+
+This is instead introducing a new tracepoint which exports the relevant context
+(callsite, and requested callback for when the callsite isn't helpful), and is
+usable by all architectures as it sits in generic code. 
+
+Another thing worth mentioning is that depending on the callsite, the _RET_IP_
+fed to the tracepoint is not always useful - generic_exec_single() doesn't tell
+you much about the actual callback being sent via IPI, which is why the new
+tracepoint also has a @callback argument.
+
+Patches
+=======
+
+o Patches 1-5 spread out the tracepoint across relevant sites.
+  Patch 5 ends up sprinkling lots of #include <trace/events/ipi.h> which I'm not
+  the biggest fan of, but is the least horrible solution I've been able to come
+  up with so far.
+  
+o Patch 7 is trying to be smart about tracing the callback associated with the
+  IPI.
+
+This results in having IPI trace events for:
+
+o smp_call_function*()
+o smp_send_reschedule()
+o irq_work_queue*()
+o standalone uses of __smp_call_single_queue()
+
+This is incomplete, just looking at arm64 there's more IPI types that aren't
+covered: 
+
+  IPI_CPU_STOP,
+  IPI_CPU_CRASH_STOP,
+  IPI_TIMER,
+  IPI_WAKEUP,
+
+but apart from IPI_TIMER (cf. tick_broadcast()), those IPIs are both unfrequent
+and accompanied with identifiable interference (stopper or cpuhp threads being
+scheduled). I've added a point in my todolist to handle those in a later series
+for the sake of completeness, but IMO this is ready to use.
+
+Results
+=======
+
+Using a recent enough libtraceevent (1.7.0 and above):
+
+  $ trace-cmd record -e 'ipi:*' hackbench
+  $ trace-cmd report
+	 hackbench-159   [002]   136.973122: ipi_send_cpumask:     cpumask=0 callsite=generic_exec_single+0x33 callback=nohz_csd_func+0x0
+	 hackbench-159   [002]   136.977945: ipi_send_cpumask:     cpumask=0 callsite=generic_exec_single+0x33 callback=nohz_csd_func+0x0
+	 hackbench-159   [002]   136.984576: ipi_send_cpumask:     cpumask=3 callsite=check_preempt_curr+0x37 callback=0x0
+	 hackbench-159   [002]   136.985996: ipi_send_cpumask:     cpumask=0 callsite=generic_exec_single+0x33 callback=nohz_csd_func+0x0
+	 [...]
+
+Links
+=====
+
+[1]: https://youtu.be/5gT57y4OzBM?t=14234
+
+Revisions
+=========
+
+v4: https://lore.kernel.org/lkml/20230119143619.2733236-1-vschneid@redhat.com/
+v3: https://lore.kernel.org/lkml/20221202155817.2102944-1-vschneid@redhat.com/
+v2: https://lore.kernel.org/lkml/20221102182949.3119584-1-vschneid@redhat.com/
+v1: https://lore.kernel.org/lkml/20221007154145.1877054-1-vschneid@redhat.com/
+
+v5 -> v4
+++++++++
+
+o Rebased against 6.3-rc1
+
+v3 -> v4
+++++++++
+
+o Rebased against 6.2-rc4
+  Re-ran my coccinelle scripts for the treewide change; only loongarch needed
+  changes
+o Dropped cpumask trace event field patch (now in 6.2-rc1)
+o Applied RB and Ack tags
+  Ingo, I wasn't sure if you meant to Ack the whole series or just the patch you
+  replied to, so since I didn't want to unlawfully forge any tag I only added
+  the one.
+o Did a small pass on comments and changelogs
+
+v2 -> v3
+++++++++
+
+o Dropped the generic export of smp_send_reschedule(), turned it into a macro
+  and a bunch of imports
+o Dropped the send_call_function_single_ipi() macro madness, split it into sched
+  and smp bits using some of Peter's suggestions
+
+v1 -> v2
+++++++++
+
+o Ditched single-CPU tracepoint
+o Changed tracepoint signature to include callback
+o Changed tracepoint callsite field to void *; the parameter is still UL to save
+  up on casts due to using _RET_IP_.
+o Fixed linking failures due to not exporting smp_send_reschedule()
+
+Valentin Schneider (7):
+  trace: Add trace_ipi_send_cpumask()
+  sched, smp: Trace IPIs sent via send_call_function_single_ipi()
+  smp: Trace IPIs sent via arch_send_call_function_ipi_mask()
+  irq_work: Trace self-IPIs sent via arch_irq_work_raise()
+  treewide: Trace IPIs sent via smp_send_reschedule()
+  smp: reword smp call IPI comment
+  sched, smp: Trace smp callback causing an IPI
+
+ arch/alpha/kernel/smp.c                  |  2 +-
+ arch/arc/kernel/smp.c                    |  2 +-
+ arch/arm/kernel/smp.c                    |  5 +-
+ arch/arm/mach-actions/platsmp.c          |  2 +
+ arch/arm64/kernel/smp.c                  |  3 +-
+ arch/csky/kernel/smp.c                   |  2 +-
+ arch/hexagon/kernel/smp.c                |  2 +-
+ arch/ia64/kernel/smp.c                   |  4 +-
+ arch/loongarch/kernel/smp.c              |  4 +-
+ arch/mips/include/asm/smp.h              |  2 +-
+ arch/mips/kernel/rtlx-cmp.c              |  2 +
+ arch/openrisc/kernel/smp.c               |  2 +-
+ arch/parisc/kernel/smp.c                 |  4 +-
+ arch/powerpc/kernel/smp.c                |  6 +-
+ arch/powerpc/kvm/book3s_hv.c             |  3 +
+ arch/powerpc/platforms/powernv/subcore.c |  2 +
+ arch/riscv/kernel/smp.c                  |  4 +-
+ arch/s390/kernel/smp.c                   |  2 +-
+ arch/sh/kernel/smp.c                     |  2 +-
+ arch/sparc/kernel/smp_32.c               |  2 +-
+ arch/sparc/kernel/smp_64.c               |  2 +-
+ arch/x86/include/asm/smp.h               |  2 +-
+ arch/x86/kvm/svm/svm.c                   |  4 ++
+ arch/x86/kvm/x86.c                       |  2 +
+ arch/xtensa/kernel/smp.c                 |  2 +-
+ include/linux/smp.h                      | 11 +++-
+ include/trace/events/ipi.h               | 22 +++++++
+ kernel/irq_work.c                        | 14 ++++-
+ kernel/sched/core.c                      | 19 ++++--
+ kernel/sched/smp.h                       |  2 +-
+ kernel/smp.c                             | 78 +++++++++++++++++++-----
+ virt/kvm/kvm_main.c                      |  2 +
+ 32 files changed, 164 insertions(+), 53 deletions(-)
+
+--
+2.31.1
+
