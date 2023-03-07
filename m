@@ -2,152 +2,100 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 96A97C678D5
-	for <linux-sh@archiver.kernel.org>; Tue,  7 Mar 2023 08:16:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ACC2AC6FD1F
+	for <linux-sh@archiver.kernel.org>; Tue,  7 Mar 2023 08:20:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230045AbjCGIQf convert rfc822-to-8bit (ORCPT
+        id S230138AbjCGIUK convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 7 Mar 2023 03:16:35 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51132 "EHLO
+        Tue, 7 Mar 2023 03:20:10 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56424 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229729AbjCGIQc (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Mar 2023 03:16:32 -0500
-Received: from mail-qt1-f177.google.com (mail-qt1-f177.google.com [209.85.160.177])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 45A1B50997;
-        Tue,  7 Mar 2023 00:16:31 -0800 (PST)
-Received: by mail-qt1-f177.google.com with SMTP id c18so13526454qte.5;
-        Tue, 07 Mar 2023 00:16:31 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1678176990;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=ZjZIlXQTpJ24PjO5Zb7phOIg9/5X/qOSvWi0SXZ0qlg=;
-        b=cWJYXA8g2I9BMvqLFQTJktFLE0djSfaQD338DLADU+XFxwafja68e7wdmc4yQ1yckb
-         tulKhBIcgZwYJ2CVNn30vXA349qT8L9XYo1ZDcmX/EzNIezT1avylhMBCcYrnGPKSnch
-         H/84elGIBd/+8ynnkyLtlp4/RBfd5c9V+EnzocndWwhO5cG2oqlRzbiqw2JM6f1TXLlv
-         vauIig8reNow6GqCaGQw+SANdPAm5Dv1/YfVnEUhnqeL2yJc0JJtmtO9VBfE5Pn4qnYm
-         STy6kqEqSfnuyfrAYSIWIDDFT+aBejtpEjtsko0gnAgCkQtv0W/nh5k8m7d74npRMc1z
-         tz/A==
-X-Gm-Message-State: AO0yUKXD5vXmC4luBGdV/213Ud/QQRSTo669Ql0mg4D7e9YcUR5dbgXA
-        ozXNXrXamivaS3bsmi0oDmpuD3lyHrsjYQ==
-X-Google-Smtp-Source: AK7set/q89VBoBwSUxxrPgcoIGi81XAI2rtm+SJ0GrPhnuL13aqHOpDXwEliwQK24YXbclySAJnQ5w==
-X-Received: by 2002:a05:622a:15ce:b0:3b8:6442:2575 with SMTP id d14-20020a05622a15ce00b003b864422575mr23256946qty.49.1678176990249;
-        Tue, 07 Mar 2023 00:16:30 -0800 (PST)
-Received: from mail-yw1-f176.google.com (mail-yw1-f176.google.com. [209.85.128.176])
-        by smtp.gmail.com with ESMTPSA id o6-20020a05622a138600b003b63a734434sm9411780qtk.52.2023.03.07.00.16.28
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 07 Mar 2023 00:16:29 -0800 (PST)
-Received: by mail-yw1-f176.google.com with SMTP id 00721157ae682-53852143afcso231552817b3.3;
-        Tue, 07 Mar 2023 00:16:28 -0800 (PST)
-X-Received: by 2002:a81:af0c:0:b0:52f:1c23:ef1 with SMTP id
- n12-20020a81af0c000000b0052f1c230ef1mr8939020ywh.5.1678176988688; Tue, 07 Mar
- 2023 00:16:28 -0800 (PST)
-MIME-Version: 1.0
-References: <20230307075923.28821-1-lukas.bulwahn@gmail.com>
-In-Reply-To: <20230307075923.28821-1-lukas.bulwahn@gmail.com>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Tue, 7 Mar 2023 09:16:17 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdV1eYWhDKwTAxC32Qp0CcxrWxgu=uRNTdu_G8K=gHS9Yw@mail.gmail.com>
-Message-ID: <CAMuHMdV1eYWhDKwTAxC32Qp0CcxrWxgu=uRNTdu_G8K=gHS9Yw@mail.gmail.com>
+        with ESMTP id S230228AbjCGITa (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 7 Mar 2023 03:19:30 -0500
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DAB48509B7;
+        Tue,  7 Mar 2023 00:19:09 -0800 (PST)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pZSXF-001LdO-QQ; Tue, 07 Mar 2023 09:19:01 +0100
+Received: from p57bd9bc2.dip0.t-ipconnect.de ([87.189.155.194] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pZSXF-000GYP-JQ; Tue, 07 Mar 2023 09:19:01 +0100
+Message-ID: <c85990e892571ae5da7a9c4b0e86897ee34286a7.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH] arch: sh: remove references to config USB_OHCI_SH
-To:     Lukas Bulwahn <lukas.bulwahn@gmail.com>
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Lukas Bulwahn <lukas.bulwahn@gmail.com>
 Cc:     Christoph Hellwig <hch@lst.de>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-sh@vger.kernel.org, kernel-janitors@vger.kernel.org,
-        linux-kernel@vger.kernel.org
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        kernel-janitors@vger.kernel.org, linux-kernel@vger.kernel.org
+Date:   Tue, 07 Mar 2023 09:19:00 +0100
+In-Reply-To: <CAMuHMdV1eYWhDKwTAxC32Qp0CcxrWxgu=uRNTdu_G8K=gHS9Yw@mail.gmail.com>
+References: <20230307075923.28821-1-lukas.bulwahn@gmail.com>
+         <CAMuHMdV1eYWhDKwTAxC32Qp0CcxrWxgu=uRNTdu_G8K=gHS9Yw@mail.gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.46.4 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.155.194
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Lukas,
+Hi Geert!
 
-On Tue, Mar 7, 2023 at 9:02 AM Lukas Bulwahn <lukas.bulwahn@gmail.com> wrote:
-> Commit 4f6dfc2136fb ("usb: remove the dead USB_OHCI_SH option") left some
-> references to the config USB_OHCI_SH in ./arch/sh/ around, expecting those
-> to be removed with the whole SH architecture deletion.
->
-> As that did not happen, do minor clean-up instead and remove the references
-> to the removed config USB_OHCI_SH instead.
->
-> Signed-off-by: Lukas Bulwahn <lukas.bulwahn@gmail.com>
+On Tue, 2023-03-07 at 09:16 +0100, Geert Uytterhoeven wrote:
+> Hi Lukas,
+> 
+> On Tue, Mar 7, 2023 at 9:02 AM Lukas Bulwahn <lukas.bulwahn@gmail.com> wrote:
+> > Commit 4f6dfc2136fb ("usb: remove the dead USB_OHCI_SH option") left some
+> > references to the config USB_OHCI_SH in ./arch/sh/ around, expecting those
+> > to be removed with the whole SH architecture deletion.
+> > 
+> > As that did not happen, do minor clean-up instead and remove the references
+> > to the removed config USB_OHCI_SH instead.
+> > 
+> > Signed-off-by: Lukas Bulwahn <lukas.bulwahn@gmail.com>
+> 
+> Thanks for your patch!
+> 
+> > --- a/arch/sh/Kconfig
+> > +++ b/arch/sh/Kconfig
+> > @@ -326,7 +326,6 @@ config CPU_SUBTYPE_SH7720
+> >         select CPU_SH3
+> >         select CPU_HAS_DSP
+> >         select SYS_SUPPORTS_SH_CMT
+> > -       select USB_OHCI_SH if USB_OHCI_HCD
+> 
+> Shouldn't this select USB_OHCI_HCD_PLATFORM instead, as the (now
+> removed) Kconfig help text for USB_OHCI_SH used to say?
+> 
+>     +       select USB_OHCI_HCD_PLATFORM if USB_OHCI_HCD
+> 
+> I completely forgot I already made that comment before, cfr.
+> https://lore.kernel.org/all/CAMuHMdVM3BpvVD3c4gp1OidnwF5zFd4MJecij7zWBnahzNaSNw@mail.gmail.com
+> 
+> The same is true for the three selects below.
+> As USB is now broken, the proper solution will need
+> Fixes: 4f6dfc2136fb2e8d ("usb: remove the dead USB_OHCI_SH option")
 
-Thanks for your patch!
+Thanks a lot for catching this!
 
-> --- a/arch/sh/Kconfig
-> +++ b/arch/sh/Kconfig
-> @@ -326,7 +326,6 @@ config CPU_SUBTYPE_SH7720
->         select CPU_SH3
->         select CPU_HAS_DSP
->         select SYS_SUPPORTS_SH_CMT
-> -       select USB_OHCI_SH if USB_OHCI_HCD
+@Lukas: Can you send a new patch with the suggested changes?
 
-Shouldn't this select USB_OHCI_HCD_PLATFORM instead, as the (now
-removed) Kconfig help text for USB_OHCI_SH used to say?
+Adrian
 
-    +       select USB_OHCI_HCD_PLATFORM if USB_OHCI_HCD
-
-I completely forgot I already made that comment before, cfr.
-https://lore.kernel.org/all/CAMuHMdVM3BpvVD3c4gp1OidnwF5zFd4MJecij7zWBnahzNaSNw@mail.gmail.com
-
-The same is true for the three selects below.
-As USB is now broken, the proper solution will need
-Fixes: 4f6dfc2136fb2e8d ("usb: remove the dead USB_OHCI_SH option")
-
->         select PINCTRL
->         help
->           Select SH7720 if you have a SH3-DSP SH7720 CPU.
-> @@ -336,7 +335,6 @@ config CPU_SUBTYPE_SH7721
->         select CPU_SH3
->         select CPU_HAS_DSP
->         select SYS_SUPPORTS_SH_CMT
-> -       select USB_OHCI_SH if USB_OHCI_HCD
->         help
->           Select SH7721 if you have a SH3-DSP SH7721 CPU.
->
-> @@ -425,7 +423,6 @@ config CPU_SUBTYPE_SH7757
->  config CPU_SUBTYPE_SH7763
->         bool "Support SH7763 processor"
->         select CPU_SH4A
-> -       select USB_OHCI_SH if USB_OHCI_HCD
->         help
->           Select SH7763 if you have a SH4A SH7763(R5S77631) CPU.
->
-> @@ -451,7 +448,6 @@ config CPU_SUBTYPE_SH7786
->         select CPU_SHX3
->         select CPU_HAS_PTEAEX
->         select GENERIC_CLOCKEVENTS_BROADCAST if SMP
-> -       select USB_OHCI_SH if USB_OHCI_HCD
->         select USB_EHCI_SH if USB_EHCI_HCD
->         select PINCTRL
->
-> diff --git a/arch/sh/configs/sh7757lcr_defconfig b/arch/sh/configs/sh7757lcr_defconfig
-> index f10fb730b6f4..cd404818e33f 100644
-> --- a/arch/sh/configs/sh7757lcr_defconfig
-> +++ b/arch/sh/configs/sh7757lcr_defconfig
-> @@ -58,7 +58,6 @@ CONFIG_USB=y
->  CONFIG_USB_EHCI_HCD=y
->  CONFIG_USB_EHCI_SH=y
->  CONFIG_USB_OHCI_HCD=y
-> -CONFIG_USB_OHCI_SH=y
->  CONFIG_USB_STORAGE=y
->  CONFIG_MMC=y
->  CONFIG_MMC_SDHI=y
-
-This part is fine.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
