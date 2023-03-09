@@ -2,102 +2,94 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9BD33C64EC4
-	for <linux-sh@archiver.kernel.org>; Thu,  9 Mar 2023 13:55:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B48E4C6FD1F
+	for <linux-sh@archiver.kernel.org>; Thu,  9 Mar 2023 13:57:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231490AbjCINzT convert rfc822-to-8bit (ORCPT
+        id S231514AbjCIN5Y convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 9 Mar 2023 08:55:19 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46806 "EHLO
+        Thu, 9 Mar 2023 08:57:24 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44140 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231657AbjCINzA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Mar 2023 08:55:00 -0500
-Received: from mail-qv1-f46.google.com (mail-qv1-f46.google.com [209.85.219.46])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B35BF56177;
-        Thu,  9 Mar 2023 05:54:26 -0800 (PST)
-Received: by mail-qv1-f46.google.com with SMTP id o3so1441003qvr.1;
-        Thu, 09 Mar 2023 05:54:26 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1678370063;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=WTOWEd+TQYThqGxUlQtcX5WNVUCTIKBkMv4b+L1Yl+U=;
-        b=DE9l+/c5M0ltSF9JlR25MckadBC6KAFPht2NnNw7wLZ5il3B1N9Ai/90HLeFJ3aGbB
-         AswIYaGlww9/B6GuEnfteczwlNs8v9R70jGHM94lEHShYRiVn8U/vl1DXmVvoKuzOEQv
-         HU1hoFPyAgYtrWMlHkC+/Q42/3kSKthmfbK53/xEQiRUVkCKA4UH2AXqc1iKu4G4bVm0
-         7LVZPzkkbRFghUyBYcnwMyMF29l/8nP1D+bx48slkvgS6urId5lZ1EnaUkoqJufpWl1V
-         dOfZYxjHdjdmiU0iw5D7EexpApvlWrZ53uznf+9fcS38eJCI1SIu4ynMrvuX9bjGLg2Y
-         IFdw==
-X-Gm-Message-State: AO0yUKUv2NVy/G3dStUhS+UyCGX2KJFWBnmqyKxB/pduuUB0l+QJRhsx
-        jPLVMOaWPb4dkcK5pvjDbGGDdcGTAg+rnA==
-X-Google-Smtp-Source: AK7set8mRKKrW2Ok+1dgeXyegGnPcm3RxMyKEoNLg7tq1RkKBSvu+T6Lf5CQfIFLdAHeJ6bnNO/WvA==
-X-Received: by 2002:a05:6214:23c9:b0:56f:47f:bbe3 with SMTP id hr9-20020a05621423c900b0056f047fbbe3mr36615925qvb.4.1678370062961;
-        Thu, 09 Mar 2023 05:54:22 -0800 (PST)
-Received: from mail-yw1-f177.google.com (mail-yw1-f177.google.com. [209.85.128.177])
-        by smtp.gmail.com with ESMTPSA id p188-20020a3742c5000000b006fed58fc1a3sm13555380qka.119.2023.03.09.05.54.20
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 09 Mar 2023 05:54:21 -0800 (PST)
-Received: by mail-yw1-f177.google.com with SMTP id 00721157ae682-536cb25982eso35682117b3.13;
-        Thu, 09 Mar 2023 05:54:20 -0800 (PST)
-X-Received: by 2002:a81:ae1d:0:b0:52f:23f5:4079 with SMTP id
- m29-20020a81ae1d000000b0052f23f54079mr14283619ywh.4.1678370060445; Thu, 09
- Mar 2023 05:54:20 -0800 (PST)
-MIME-Version: 1.0
-References: <CA+G9fYs7suzGsEDK40G0pzxXyR1o2V4Pn-oy1owTsTWRVEVHog@mail.gmail.com>
-In-Reply-To: <CA+G9fYs7suzGsEDK40G0pzxXyR1o2V4Pn-oy1owTsTWRVEVHog@mail.gmail.com>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Thu, 9 Mar 2023 14:54:08 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdXHQUiYfhLibRq8G=yStxGvWD8Y=WBBrGHGX5PQZ_pq7w@mail.gmail.com>
-Message-ID: <CAMuHMdXHQUiYfhLibRq8G=yStxGvWD8Y=WBBrGHGX5PQZ_pq7w@mail.gmail.com>
-Subject: Re: sh/boards/mach-x3proto/setup.c:246:62: error: invalid use of
- undefined type 'struct gpio_chip'
-To:     Naresh Kamboju <naresh.kamboju@linaro.org>
-Cc:     Linux-sh list <linux-sh@vger.kernel.org>,
-        open list <linux-kernel@vger.kernel.org>,
-        Linux-Next Mailing List <linux-next@vger.kernel.org>,
-        lkft-triage@lists.linaro.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Christoph Hellwig <hch@lst.de>
+        with ESMTP id S231449AbjCINzP (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Mar 2023 08:55:15 -0500
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EFD2D460A4;
+        Thu,  9 Mar 2023 05:55:09 -0800 (PST)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1paGjS-003nVv-BY; Thu, 09 Mar 2023 14:54:58 +0100
+Received: from dynamic-077-188-003-023.77.188.pool.telefonica.de ([77.188.3.23] helo=[192.168.1.11])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1paGjS-002ozW-3O; Thu, 09 Mar 2023 14:54:58 +0100
+Message-ID: <a1f72b2bb25f8a06a10a436138e1032cc12b6506.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: mach-x3proto: Add missing #include
+ <linux/gpio/driver.h>
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-gpio@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Linux Kernel Functional Testing <lkft@linaro.org>
+Date:   Thu, 09 Mar 2023 14:54:56 +0100
+In-Reply-To: <20230309135255.3861308-1-geert+renesas@glider.be>
+References: <20230309135255.3861308-1-geert+renesas@glider.be>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.46.4 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 77.188.3.23
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Naresh,
+Hi Geert!
 
-On Thu, Mar 9, 2023 at 12:50 PM Naresh Kamboju
-<naresh.kamboju@linaro.org> wrote:
-> Following build error reported on sh shx3_defconfig on Linux next-20230309
-> and started from next-20230307.
->
+On Thu, 2023-03-09 at 14:52 +0100, Geert Uytterhoeven wrote:
+> shx3_defconfig:
+> 
+>     arch/sh/boards/mach-x3proto/setup.c: In function ‘x3proto_devices_setup’:
+>     arch/sh/boards/mach-x3proto/setup.c:246:62: error: invalid use of undefined type ‘struct gpio_chip’
+>       246 |                 baseboard_buttons[i].gpio = x3proto_gpio_chip.base + i;
+> 	  |                                                              ^
+> 
 > Reported-by: Linux Kernel Functional Testing <lkft@linaro.org>
->
-> Build log:
-> --------
-> arch/sh/boards/mach-x3proto/setup.c: In function 'x3proto_devices_setup':
-> arch/sh/boards/mach-x3proto/setup.c:246:62: error: invalid use of
-> undefined type 'struct gpio_chip'
->   246 |                 baseboard_buttons[i].gpio = x3proto_gpio_chip.base + i;
->       |                                                              ^
-> make[3]: *** [scripts/Makefile.build:252:
-> arch/sh/boards/mach-x3proto/setup.o] Error 1
-> make[3]: Target 'arch/sh/boards/mach-x3proto/' not remade because of errors.
-> make[2]: *** [scripts/Makefile.build:494: arch/sh/boards/mach-x3proto] Error 2
+> Link: https://lore.kernel.org/r/CA+G9fYs7suzGsEDK40G0pzxXyR1o2V4Pn-oy1owTsTWRVEVHog@mail.gmail.com
+> Fixes: 21d9526d13b5467b ("gpiolib: Make the legacy <linux/gpio.h> consumer-only")
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+>  arch/sh/boards/mach-x3proto/setup.c | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/arch/sh/boards/mach-x3proto/setup.c b/arch/sh/boards/mach-x3proto/setup.c
+> index 95b85f2e13dda75b..7f39fca95e57a109 100644
+> --- a/arch/sh/boards/mach-x3proto/setup.c
+> +++ b/arch/sh/boards/mach-x3proto/setup.c
+> @@ -17,6 +17,7 @@
+>  #include <linux/usb/r8a66597.h>
+>  #include <linux/usb/m66592.h>
+>  #include <linux/gpio.h>
+> +#include <linux/gpio/driver.h>
+>  #include <linux/gpio_keys.h>
+>  #include <mach/ilsel.h>
+>  #include <mach/hardware.h>
 
-Thanks, I've bisected, and sent a fix
-https://lore.kernel.org/r/20230309135255.3861308-1-geert+renesas@glider.be
+Thanks. You were much faster than me. I didn't even have the time to have a look
+at the problem yet ;-). Is it sufficient to pick this up for 6.4?
 
-Gr{oetje,eeting}s,
-
-                        Geert
+Adrian
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
