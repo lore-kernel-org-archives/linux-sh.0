@@ -2,87 +2,91 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 77588C64EC4
-	for <linux-sh@archiver.kernel.org>; Thu,  9 Mar 2023 17:47:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 052F1C6FD1F
+	for <linux-sh@archiver.kernel.org>; Thu,  9 Mar 2023 22:55:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230398AbjCIRrD (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 9 Mar 2023 12:47:03 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51206 "EHLO
+        id S231372AbjCIWzQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 9 Mar 2023 17:55:16 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38020 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230144AbjCIRrC (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Mar 2023 12:47:02 -0500
-Received: from mga09.intel.com (mga09.intel.com [134.134.136.24])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 34650FB257;
-        Thu,  9 Mar 2023 09:47:01 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1678384021; x=1709920021;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:content-transfer-encoding:in-reply-to;
-  bh=I8UicG17Q/faH5uDUFSsbeEZfZYosSYwUWWJFsU2Qzo=;
-  b=SgSHIFSt86SSWe4jioQG5+qYiIDiRV5/XiaAuftm9VL20MyT+DZeqb3f
-   ptJEa6gIvJId/+m5TE7ezuc/4agjvDqHU6saCfpLVewGjIhR+sRx5UPTe
-   kv0I9ma2+JMmqyk0Aqk3GLz+0FDh7V/vQRJVX8uupWHtDqDpAMD917jOO
-   P21j+Gefz+nevjjJ8Q6gBhySmjAY0Ip7LxIJEKE4xHfafuoAyYvM36Xkz
-   FMQqkslEFieBRcMF8hwwdx6MEt20MuNE3AgWxIC7KClkuYgYXMZJrbIna
-   imaGDhmT3PuQUESQ/+ysuN0PpRADQ4l5y8XiCQE9CG2JeYvutFuzpeBP8
-   Q==;
-X-IronPort-AV: E=McAfee;i="6500,9779,10644"; a="338062370"
-X-IronPort-AV: E=Sophos;i="5.98,247,1673942400"; 
-   d="scan'208";a="338062370"
-Received: from orsmga003.jf.intel.com ([10.7.209.27])
-  by orsmga102.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 09 Mar 2023 09:47:00 -0800
-X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6500,9779,10644"; a="627451541"
-X-IronPort-AV: E=Sophos;i="5.98,247,1673942400"; 
-   d="scan'208";a="627451541"
-Received: from smile.fi.intel.com ([10.237.72.54])
-  by orsmga003.jf.intel.com with ESMTP; 09 Mar 2023 09:46:57 -0800
-Received: from andy by smile.fi.intel.com with local (Exim 4.96)
-        (envelope-from <andriy.shevchenko@linux.intel.com>)
-        id 1paKLv-000SVg-1X;
-        Thu, 09 Mar 2023 19:46:55 +0200
-Date:   Thu, 9 Mar 2023 19:46:55 +0200
-From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To:     Geert Uytterhoeven <geert+renesas@glider.be>
-Cc:     Bartosz Golaszewski <brgl@bgdev.pl>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org,
-        Linux Kernel Functional Testing <lkft@linaro.org>
-Subject: Re: [PATCH v2] sh: mach-x3proto: Add missing #include
- <linux/gpio/driver.h>
-Message-ID: <ZAobj3hZuhQ2pLb6@smile.fi.intel.com>
-References: <20230309144113.3922386-1-geert+renesas@glider.be>
+        with ESMTP id S230494AbjCIWzK (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Mar 2023 17:55:10 -0500
+Received: from gandalf.ozlabs.org (gandalf.ozlabs.org [150.107.74.76])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 520653CE03;
+        Thu,  9 Mar 2023 14:54:40 -0800 (PST)
+Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        (No client certificate requested)
+        by mail.ozlabs.org (Postfix) with ESMTPSA id 4PXkyW6RNvz4x7s;
+        Fri, 10 Mar 2023 09:54:27 +1100 (AEDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ellerman.id.au;
+        s=201909; t=1678402469;
+        bh=HnGqhsJTeGjqlPVUTmz3g9ouF0ULtGaBV4DNsEeVxsY=;
+        h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
+        b=qtChMEayOa7BG3gV8biPN1UquvZjKKHH1PLnOktZLFk+z7+30lmoHFQWG/ybTGOfV
+         Msn+vq0214G/5bCC5sK8YEWC4SONYn3IjVV2gLKa55Cy0vLJqZpwyIgKHr5xpyRlRO
+         2B59x+JG32iD6Ll1IeACkY+jSFZ42uC6mHr940GQ8rZCqsWJ73oUfODgJNTU1QA4cH
+         /Zt2BN0brA6nfVHnuvaamrjV+75syVJwmQZUAWs6jzdNGb6ONfyH1iskU2QALlqqJR
+         fcr5fnsHZCG3RA30SBInWnaih8rWQ8VzjneqbRw1yHLKc3Q/ihjyNUCZJzzzjHFnUd
+         puglrrgtkl1qg==
+From:   Michael Ellerman <mpe@ellerman.id.au>
+To:     Baoquan He <bhe@redhat.com>, linux-kernel@vger.kernel.org
+Cc:     linux-arch@vger.kernel.org, linux-mm@kvack.org, arnd@arndb.de,
+        geert@linux-m68k.org, mcgrof@kernel.org, hch@infradead.org,
+        Baoquan He <bhe@redhat.com>, linux-alpha@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org
+Subject: Re: [PATCH v4 3/4] arch/*/io.h: remove ioremap_uc in some
+ architectures
+In-Reply-To: <20230308130710.368085-4-bhe@redhat.com>
+References: <20230308130710.368085-1-bhe@redhat.com>
+ <20230308130710.368085-4-bhe@redhat.com>
+Date:   Fri, 10 Mar 2023 09:54:27 +1100
+Message-ID: <874jqtpmcc.fsf@mpe.ellerman.id.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20230309144113.3922386-1-geert+renesas@glider.be>
-Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Mar 09, 2023 at 03:41:13PM +0100, Geert Uytterhoeven wrote:
-> shx3_defconfig:
-> 
->     arch/sh/boards/mach-x3proto/setup.c: In function ‘x3proto_devices_setup’:
->     arch/sh/boards/mach-x3proto/setup.c:246:62: error: invalid use of undefined type ‘struct gpio_chip’
->       246 |                 baseboard_buttons[i].gpio = x3proto_gpio_chip.base + i;
-> 	  |                                                              ^
-> 
-> Fix this by replacing the include of the legacy <linux/gpio.h> by
-> <linux/gpio/driver.h>.
+Baoquan He <bhe@redhat.com> writes:
+> ioremap_uc() is only meaningful on old x86-32 systems with the PAT
+> extension, and on ia64 with its slightly unconventional ioremap()
+> behavior. So remove the ioremap_uc() definition in architecutures
+> other than x86 and ia64. These architectures all have asm-generic/io.h
+> included and will have the default ioremap_uc() definition which
+> returns NULL.
+>
+> This changes the existing behaviour, while no need to worry about
+> any breakage because in the only callsite of ioremap_uc(), code
+> has been adjusted to eliminate the impact. Please see
+> atyfb_setup_generic() of drivers/video/fbdev/aty/atyfb_base.c.
+>
+> If any new invocation of ioremap_uc() need be added, please consider
+> using ioremap() intead or adding a ARCH specific version if necessary.
+>
+> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+> Signed-off-by: Baoquan He <bhe@redhat.com>
+> Cc: linux-alpha@vger.kernel.org
+> Cc: linux-hexagon@vger.kernel.org
+> Cc: linux-m68k@lists.linux-m68k.org
+> Cc: linux-mips@vger.kernel.org
+> Cc: linux-parisc@vger.kernel.org
+> Cc: linuxppc-dev@lists.ozlabs.org
+> Cc: linux-sh@vger.kernel.org
+> Cc: sparclinux@vger.kernel.org
+> ---
+>  Documentation/driver-api/device-io.rst | 9 +++++----
+>  arch/alpha/include/asm/io.h            | 1 -
+>  arch/hexagon/include/asm/io.h          | 3 ---
+>  arch/m68k/include/asm/kmap.h           | 1 -
+>  arch/mips/include/asm/io.h             | 1 -
+>  arch/parisc/include/asm/io.h           | 2 --
+>  arch/powerpc/include/asm/io.h          | 1 -
 
-Pushed to my review and testing queue, thanks!
+Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
 
--- 
-With Best Regards,
-Andy Shevchenko
-
-
+cheers
