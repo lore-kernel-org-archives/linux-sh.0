@@ -2,107 +2,89 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A3C03C64EC4
-	for <linux-sh@archiver.kernel.org>; Thu,  9 Mar 2023 14:36:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C4FB8C742A7
+	for <linux-sh@archiver.kernel.org>; Thu,  9 Mar 2023 14:37:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230398AbjCIOgY convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 9 Mar 2023 09:36:24 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35320 "EHLO
+        id S231888AbjCIOhO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 9 Mar 2023 09:37:14 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37100 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231844AbjCIOgN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Mar 2023 09:36:13 -0500
-Received: from mail-qv1-f43.google.com (mail-qv1-f43.google.com [209.85.219.43])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 87E42E7EFC;
-        Thu,  9 Mar 2023 06:35:49 -0800 (PST)
-Received: by mail-qv1-f43.google.com with SMTP id jo29so1554594qvb.0;
-        Thu, 09 Mar 2023 06:35:49 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1678372548;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=ri9sSxFPujb6hfgdxYFHOdQXavWyvWPB4UY0+uT79Nw=;
-        b=eTnguzaluUJXlztCk2iX3NWCpxDgqQ2alLA8p7d2qZUJq2Bnr3O4xwH4dTnJtYAtol
-         yGnaAKQHQl+P0fOr9ZrI4IPwe5EqVGwGceMZCN1WKajed9/9jVkWx1MRY7+Hn6ONOM1b
-         ZlkK4bIGKtquTXKr7bY7arhJeEPH4NnWtvrS6u5eipgFfZXNueNRev/uT+L2EIky/hNU
-         ph1MTqXzTyyC3CfKOUkhCSJ9MNLBfme89grtJOa857bFZiLjZCKszbZwfKdQ10o/4eX2
-         Rd0TnxMgRSsX0YeTPuJtCo+b6K+aKcM5HTJbLBQQk/KFCk13sSw3ftaSELLoTkch5E3o
-         /psg==
-X-Gm-Message-State: AO0yUKW5yo4dufnVktQw/3whRKxyvnTS408N4/nSV9syKCRH7e7N5Qqp
-        NAs9K+bmIQhTOs84O+oRrgOWwHAOM19yLA==
-X-Google-Smtp-Source: AK7set8+SAgzvyJlMh11ayPR9bJfGF9zVYlqWAx9nGmFRdDfApJr4J0bSoNWrJvNXerJ8Pn5gctiyw==
-X-Received: by 2002:a05:6214:238e:b0:56e:bb43:a07c with SMTP id fw14-20020a056214238e00b0056ebb43a07cmr2340663qvb.20.1678372548438;
-        Thu, 09 Mar 2023 06:35:48 -0800 (PST)
-Received: from mail-yw1-f176.google.com (mail-yw1-f176.google.com. [209.85.128.176])
-        by smtp.gmail.com with ESMTPSA id r125-20020a374483000000b006fcb77f3bd6sm13658332qka.98.2023.03.09.06.35.47
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 09 Mar 2023 06:35:48 -0800 (PST)
-Received: by mail-yw1-f176.google.com with SMTP id 00721157ae682-536bf92b55cso38174207b3.12;
-        Thu, 09 Mar 2023 06:35:47 -0800 (PST)
-X-Received: by 2002:a81:ae1d:0:b0:524:5bc5:a3d5 with SMTP id
- m29-20020a81ae1d000000b005245bc5a3d5mr13737816ywh.4.1678372547668; Thu, 09
- Mar 2023 06:35:47 -0800 (PST)
+        with ESMTP id S231897AbjCIOgt (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 9 Mar 2023 09:36:49 -0500
+Received: from elvis.franken.de (elvis.franken.de [193.175.24.41])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id AB4FAF4D9E;
+        Thu,  9 Mar 2023 06:36:43 -0800 (PST)
+Received: from uucp (helo=alpha)
+        by elvis.franken.de with local-bsmtp (Exim 3.36 #1)
+        id 1paHNg-000885-00; Thu, 09 Mar 2023 15:36:32 +0100
+Received: by alpha.franken.de (Postfix, from userid 1000)
+        id 6CA12C123A; Thu,  9 Mar 2023 15:36:21 +0100 (CET)
+Date:   Thu, 9 Mar 2023 15:36:21 +0100
+From:   Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+To:     Baoquan He <bhe@redhat.com>
+Cc:     linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux-mm@kvack.org, arnd@arndb.de, mpe@ellerman.id.au,
+        geert@linux-m68k.org, mcgrof@kernel.org, hch@infradead.org,
+        linux-alpha@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
+Subject: Re: [PATCH v4 3/4] arch/*/io.h: remove ioremap_uc in some
+ architectures
+Message-ID: <20230309143621.GA12350@alpha.franken.de>
+References: <20230308130710.368085-1-bhe@redhat.com>
+ <20230308130710.368085-4-bhe@redhat.com>
 MIME-Version: 1.0
-References: <20230309135255.3861308-1-geert+renesas@glider.be> <ZAnna6xIhBZPG/nD@smile.fi.intel.com>
-In-Reply-To: <ZAnna6xIhBZPG/nD@smile.fi.intel.com>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Thu, 9 Mar 2023 15:35:35 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdUn0rbhiDLyTKuBvYTw3c9JGOs2ZZq=7aaOFnQ4_6PZAg@mail.gmail.com>
-Message-ID: <CAMuHMdUn0rbhiDLyTKuBvYTw3c9JGOs2ZZq=7aaOFnQ4_6PZAg@mail.gmail.com>
-Subject: Re: [PATCH] sh: mach-x3proto: Add missing #include <linux/gpio/driver.h>
-To:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-Cc:     Linus Walleij <linus.walleij@linaro.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-gpio@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org,
-        Linux Kernel Functional Testing <lkft@linaro.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230308130710.368085-4-bhe@redhat.com>
+User-Agent: Mutt/1.10.1 (2018-07-13)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Andy,
+On Wed, Mar 08, 2023 at 09:07:09PM +0800, Baoquan He wrote:
+> ioremap_uc() is only meaningful on old x86-32 systems with the PAT
+> extension, and on ia64 with its slightly unconventional ioremap()
+> behavior. So remove the ioremap_uc() definition in architecutures
+> other than x86 and ia64. These architectures all have asm-generic/io.h
+> included and will have the default ioremap_uc() definition which
+> returns NULL.
+> 
+> This changes the existing behaviour, while no need to worry about
+> any breakage because in the only callsite of ioremap_uc(), code
+> has been adjusted to eliminate the impact. Please see
+> atyfb_setup_generic() of drivers/video/fbdev/aty/atyfb_base.c.
+> 
+> If any new invocation of ioremap_uc() need be added, please consider
+> using ioremap() intead or adding a ARCH specific version if necessary.
+> 
+> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+> Signed-off-by: Baoquan He <bhe@redhat.com>
+> Cc: linux-alpha@vger.kernel.org
+> Cc: linux-hexagon@vger.kernel.org
+> Cc: linux-m68k@lists.linux-m68k.org
+> Cc: linux-mips@vger.kernel.org
+> Cc: linux-parisc@vger.kernel.org
+> Cc: linuxppc-dev@lists.ozlabs.org
+> Cc: linux-sh@vger.kernel.org
+> Cc: sparclinux@vger.kernel.org
+> ---
+>  Documentation/driver-api/device-io.rst | 9 +++++----
+>  arch/alpha/include/asm/io.h            | 1 -
+>  arch/hexagon/include/asm/io.h          | 3 ---
+>  arch/m68k/include/asm/kmap.h           | 1 -
+>  arch/mips/include/asm/io.h             | 1 -
+>  arch/parisc/include/asm/io.h           | 2 --
+>  arch/powerpc/include/asm/io.h          | 1 -
+>  arch/sh/include/asm/io.h               | 2 --
+>  arch/sparc/include/asm/io_64.h         | 1 -
+>  9 files changed, 5 insertions(+), 16 deletions(-)
 
-On Thu, Mar 9, 2023 at 3:10 PM Andy Shevchenko
-<andriy.shevchenko@linux.intel.com> wrote:
-> On Thu, Mar 09, 2023 at 02:52:55PM +0100, Geert Uytterhoeven wrote:
-> > shx3_defconfig:
-> >
-> >     arch/sh/boards/mach-x3proto/setup.c: In function ‘x3proto_devices_setup’:
-> >     arch/sh/boards/mach-x3proto/setup.c:246:62: error: invalid use of undefined type ‘struct gpio_chip’
-> >       246 |                 baseboard_buttons[i].gpio = x3proto_gpio_chip.base + i;
-> >         |                                                              ^
-> >
-> > Reported-by: Linux Kernel Functional Testing <lkft@linaro.org>
-> > Link: https://lore.kernel.org/r/CA+G9fYs7suzGsEDK40G0pzxXyR1o2V4Pn-oy1owTsTWRVEVHog@mail.gmail.com
-> > Fixes: 21d9526d13b5467b ("gpiolib: Make the legacy <linux/gpio.h> consumer-only")
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> Thank you!
->
-> ...
->
-> >  #include <linux/gpio.h>
-> > +#include <linux/gpio/driver.h>
->
-> Do we still need the legacy header?
+this doesn't apply to v6.3-rc1... what tree is this based on ?
 
-Apparently not.  And "make arch/sh/boards/mach-x3proto/setup.i"
-confirms it's not included indirectly.
-
-Will send a v2...
-
-Gr{oetje,eeting}s,
-
-                        Geert
+Thomas.
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Crap can work. Given enough thrust pigs will fly, but it's not necessarily a
+good idea.                                                [ RFC1925, 2.3 ]
