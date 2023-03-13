@@ -2,42 +2,42 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E3575C74A4B
-	for <linux-sh@archiver.kernel.org>; Mon, 13 Mar 2023 18:41:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DF8EFC61DA4
+	for <linux-sh@archiver.kernel.org>; Mon, 13 Mar 2023 18:48:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230341AbjCMSle convert rfc822-to-8bit (ORCPT
+        id S231490AbjCMSsO convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 13 Mar 2023 14:41:34 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58820 "EHLO
+        Mon, 13 Mar 2023 14:48:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44218 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230043AbjCMSlc (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 13 Mar 2023 14:41:32 -0400
+        with ESMTP id S231342AbjCMSsG (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 13 Mar 2023 14:48:06 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1D842CA31;
-        Mon, 13 Mar 2023 11:40:53 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8EE5386178;
+        Mon, 13 Mar 2023 11:47:43 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pbn4r-001niP-J4; Mon, 13 Mar 2023 19:39:21 +0100
+          id 1pbn3b-001n3P-9h; Mon, 13 Mar 2023 19:38:03 +0100
 Received: from p57bd9bc2.dip0.t-ipconnect.de ([87.189.155.194] helo=suse-laptop.fritz.box)
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pbn4r-001kJz-C0; Mon, 13 Mar 2023 19:39:21 +0100
-Message-ID: <a23e10f1cf957d0e6096b3a7ca0b7298263c9757.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 17/36] sh: intc: move to use bus_get_dev_root()
+          id 1pbn3b-001k6k-2d; Mon, 13 Mar 2023 19:38:03 +0100
+Message-ID: <0343d84733bcda9a36bb7329165ae03f0d8ba759.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 16/36] sh: dma-sysfs: move to use bus_get_dev_root()
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 To:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         linux-kernel@vger.kernel.org
 Cc:     rafael@kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Date:   Mon, 13 Mar 2023 19:39:20 +0100
-In-Reply-To: <20230313182918.1312597-17-gregkh@linuxfoundation.org>
+Date:   Mon, 13 Mar 2023 19:38:02 +0100
+In-Reply-To: <20230313182918.1312597-16-gregkh@linuxfoundation.org>
 References: <20230313182918.1312597-1-gregkh@linuxfoundation.org>
-         <20230313182918.1312597-17-gregkh@linuxfoundation.org>
+         <20230313182918.1312597-16-gregkh@linuxfoundation.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 User-Agent: Evolution 3.46.4 
@@ -65,32 +65,33 @@ On Mon, 2023-03-13 at 19:28 +0100, Greg Kroah-Hartman wrote:
 > its own, but I'd prefer if I could take it through my driver-core tree
 > so that the driver core changes can be taken through there for 6.4-rc1.
 > 
->  drivers/sh/intc/userimask.c | 10 +++++++++-
->  1 file changed, 9 insertions(+), 1 deletion(-)
+>  arch/sh/drivers/dma/dma-sysfs.c | 8 +++++++-
+>  1 file changed, 7 insertions(+), 1 deletion(-)
 > 
-> diff --git a/drivers/sh/intc/userimask.c b/drivers/sh/intc/userimask.c
-> index f9f043a3d90a..abe9091827cd 100644
-> --- a/drivers/sh/intc/userimask.c
-> +++ b/drivers/sh/intc/userimask.c
-> @@ -61,10 +61,18 @@ static DEVICE_ATTR(userimask, S_IRUSR | S_IWUSR,
+> diff --git a/arch/sh/drivers/dma/dma-sysfs.c b/arch/sh/drivers/dma/dma-sysfs.c
+> index 8ef318150f84..431bc18f0a41 100644
+> --- a/arch/sh/drivers/dma/dma-sysfs.c
+> +++ b/arch/sh/drivers/dma/dma-sysfs.c
+> @@ -45,13 +45,19 @@ static DEVICE_ATTR(devices, S_IRUGO, dma_show_devices, NULL);
 >  
->  static int __init userimask_sysdev_init(void)
+>  static int __init dma_subsys_init(void)
 >  {
 > +	struct device *dev_root;
-> +	int ret = 0;
-> +
->  	if (unlikely(!uimask))
->  		return -ENXIO;
+>  	int ret;
 >  
-> -	return device_create_file(intc_subsys.dev_root, &dev_attr_userimask);
-> +	dev_root = bus_get_dev_root(&intc_subsys);
+>  	ret = subsys_system_register(&dma_subsys, NULL);
+>  	if (unlikely(ret))
+>  		return ret;
+>  
+> -	return device_create_file(dma_subsys.dev_root, &dev_attr_devices);
+> +	dev_root = bus_get_dev_root(&dma_subsys);
 > +	if (dev_root) {
-> +		ret = device_create_file(dev_root, &dev_attr_userimask);
+> +		ret = device_create_file(dev_root, &dev_attr_devices);
 > +		put_device(dev_root);
 > +	}
 > +	return ret;
 >  }
->  late_initcall(userimask_sysdev_init);
+>  postcore_initcall(dma_subsys_init);
 >  
 
 Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
