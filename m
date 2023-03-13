@@ -2,39 +2,39 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF8EFC61DA4
-	for <linux-sh@archiver.kernel.org>; Mon, 13 Mar 2023 18:48:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6FFFC6FD19
+	for <linux-sh@archiver.kernel.org>; Mon, 13 Mar 2023 18:50:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231490AbjCMSsO convert rfc822-to-8bit (ORCPT
+        id S229649AbjCMSuL convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 13 Mar 2023 14:48:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44218 "EHLO
+        Mon, 13 Mar 2023 14:50:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50822 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231342AbjCMSsG (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 13 Mar 2023 14:48:06 -0400
+        with ESMTP id S231614AbjCMSuB (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 13 Mar 2023 14:50:01 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8EE5386178;
-        Mon, 13 Mar 2023 11:47:43 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0C9466C182;
+        Mon, 13 Mar 2023 11:49:30 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pbn3b-001n3P-9h; Mon, 13 Mar 2023 19:38:03 +0100
+          id 1pbnDx-001rD4-AJ; Mon, 13 Mar 2023 19:48:45 +0100
 Received: from p57bd9bc2.dip0.t-ipconnect.de ([87.189.155.194] helo=suse-laptop.fritz.box)
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pbn3b-001k6k-2d; Mon, 13 Mar 2023 19:38:03 +0100
-Message-ID: <0343d84733bcda9a36bb7329165ae03f0d8ba759.camel@physik.fu-berlin.de>
+          id 1pbnDx-001lj0-2N; Mon, 13 Mar 2023 19:48:45 +0100
+Message-ID: <ecf27b8c33d10b2816413b25c463ecf5d8298ea5.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH 16/36] sh: dma-sysfs: move to use bus_get_dev_root()
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 To:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         linux-kernel@vger.kernel.org
 Cc:     rafael@kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Date:   Mon, 13 Mar 2023 19:38:02 +0100
+Date:   Mon, 13 Mar 2023 19:48:44 +0100
 In-Reply-To: <20230313182918.1312597-16-gregkh@linuxfoundation.org>
 References: <20230313182918.1312597-1-gregkh@linuxfoundation.org>
          <20230313182918.1312597-16-gregkh@linuxfoundation.org>
@@ -48,6 +48,8 @@ X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
+
+Hi Greg!
 
 On Mon, 2023-03-13 at 19:28 +0100, Greg Kroah-Hartman wrote:
 > Direct access to the struct bus_type dev_root pointer is going away soon
@@ -94,7 +96,11 @@ On Mon, 2023-03-13 at 19:28 +0100, Greg Kroah-Hartman wrote:
 >  postcore_initcall(dma_subsys_init);
 >  
 
-Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+After acking this, I noticed that if bus_get_dev_root() fails, "ret" remains
+set to the value by subsys_system_register() which might confuse the caller
+thinking that dma_subsys_init() succeeded unless I am missing something?
+
+Adrian
 
 -- 
  .''`.  John Paul Adrian Glaubitz
