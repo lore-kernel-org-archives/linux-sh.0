@@ -2,108 +2,116 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B6FFFC6FD19
-	for <linux-sh@archiver.kernel.org>; Mon, 13 Mar 2023 18:50:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 083EDC7618D
+	for <linux-sh@archiver.kernel.org>; Tue, 14 Mar 2023 12:40:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229649AbjCMSuL convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 13 Mar 2023 14:50:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50822 "EHLO
+        id S231579AbjCNMks (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 14 Mar 2023 08:40:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55386 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231614AbjCMSuB (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 13 Mar 2023 14:50:01 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0C9466C182;
-        Mon, 13 Mar 2023 11:49:30 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pbnDx-001rD4-AJ; Mon, 13 Mar 2023 19:48:45 +0100
-Received: from p57bd9bc2.dip0.t-ipconnect.de ([87.189.155.194] helo=suse-laptop.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pbnDx-001lj0-2N; Mon, 13 Mar 2023 19:48:45 +0100
-Message-ID: <ecf27b8c33d10b2816413b25c463ecf5d8298ea5.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 16/36] sh: dma-sysfs: move to use bus_get_dev_root()
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        linux-kernel@vger.kernel.org
-Cc:     rafael@kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Date:   Mon, 13 Mar 2023 19:48:44 +0100
-In-Reply-To: <20230313182918.1312597-16-gregkh@linuxfoundation.org>
-References: <20230313182918.1312597-1-gregkh@linuxfoundation.org>
-         <20230313182918.1312597-16-gregkh@linuxfoundation.org>
+        with ESMTP id S231405AbjCNMki (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Mar 2023 08:40:38 -0400
+Received: from sipsolutions.net (s3.sipsolutions.net [IPv6:2a01:4f8:191:4433::2])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 04C4596C0A;
+        Tue, 14 Mar 2023 05:40:15 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=sipsolutions.net; s=mail; h=MIME-Version:Content-Transfer-Encoding:
+        Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
+        :Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:Resent-To:
+        Resent-Cc:Resent-Message-ID; bh=pOg2+UYpTygnBlX1RyGCO9nWu9fsmXuoawMaiLoDXLo=;
+        t=1678797615; x=1680007215; b=JDfeqyz66j/1OSlkRo7oEl8L1nvxvq6BodO72FGLa+QNkVX
+        aHBXuz/sE64+EN/m3XGIVLLNuEsNf/YmmnF40dDsKpcC66Pdm5L5rRE7WIKYkeP9pydbwIS+MV3Cz
+        TkaKWzppMgeSjoK+de2gH5lIsLKEjP61kBEAw0v+gqLL2FUOkjeL45cduFXpAb9jhQpzmMR86WWbW
+        mhTa1koli65WDXs/25LuQ1O082uNBWPKZD/KrpQyI7p/3OdOudSYEso0DaNATgxC+wzxMWw5BI3dA
+        Y0DUmQgocQiDrndOG3IhH6cdOx2EYurOW0+mcI+Hn/uegCUYHxyPECaw/pcUTJYA==;
+Received: by sipsolutions.net with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+        (Exim 4.96)
+        (envelope-from <johannes@sipsolutions.net>)
+        id 1pc3uU-003AIF-1Y;
+        Tue, 14 Mar 2023 13:37:46 +0100
+Message-ID: <21a828bae06b97b8ca806a6b76d867902b1e0e1f.camel@sipsolutions.net>
+Subject: Re: [PATCH v3 01/38] Kconfig: introduce HAS_IOPORT option and
+ select it as necessary
+From:   Johannes Berg <johannes@sipsolutions.net>
+To:     Niklas Schnelle <schnelle@linux.ibm.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Richard Henderson <richard.henderson@linaro.org>,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        Matt Turner <mattst88@gmail.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Michal Simek <monstr@monstr.eu>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Albert Ou <aou@eecs.berkeley.edu>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "David S. Miller" <davem@davemloft.net>,
+        Richard Weinberger <richard@nod.at>,
+        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+        "H. Peter Anvin" <hpa@zytor.com>
+Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        Bjorn Helgaas <bhelgaas@google.com>,
+        Uwe =?ISO-8859-1?Q?Kleine-K=F6nig?= 
+        <u.kleine-koenig@pengutronix.de>,
+        Mauro Carvalho Chehab <mchehab@kernel.org>,
+        Alan Stern <stern@rowland.harvard.edu>,
+        "Rafael J. Wysocki" <rafael@kernel.org>,
+        linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux-pci@vger.kernel.org, Arnd Bergmann <arnd@kernel.org>,
+        linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org
+Date:   Tue, 14 Mar 2023 13:37:43 +0100
+In-Reply-To: <20230314121216.413434-2-schnelle@linux.ibm.com>
+References: <20230314121216.413434-1-schnelle@linux.ibm.com>
+         <20230314121216.413434-2-schnelle@linux.ibm.com>
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.46.4 
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.46.4 (3.46.4-1.fc37) 
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.155.194
-X-ZEDAT-Hint: PO
+X-malware-bazaar: not-scanned
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Greg!
+On Tue, 2023-03-14 at 13:11 +0100, Niklas Schnelle wrote:
+> --- a/arch/um/Kconfig
+> +++ b/arch/um/Kconfig
+> @@ -56,6 +56,7 @@ config NO_IOPORT_MAP
+> =20
+>  config ISA
+>  	bool
+> +	depends on HAS_IOPORT
+>=20
 
-On Mon, 2023-03-13 at 19:28 +0100, Greg Kroah-Hartman wrote:
-> Direct access to the struct bus_type dev_root pointer is going away soon
-> so replace that with a call to bus_get_dev_root() instead, which is what
-> it is there for.
-> 
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: linux-sh@vger.kernel.org
-> Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-> ---
-> Note, this is a patch that is a prepatory cleanup as part of a larger
-> series of patches that is working on resolving some old driver core
-> design mistakes.  It will build and apply cleanly on top of 6.3-rc2 on
-> its own, but I'd prefer if I could take it through my driver-core tree
-> so that the driver core changes can be taken through there for 6.4-rc1.
-> 
->  arch/sh/drivers/dma/dma-sysfs.c | 8 +++++++-
->  1 file changed, 7 insertions(+), 1 deletion(-)
-> 
-> diff --git a/arch/sh/drivers/dma/dma-sysfs.c b/arch/sh/drivers/dma/dma-sysfs.c
-> index 8ef318150f84..431bc18f0a41 100644
-> --- a/arch/sh/drivers/dma/dma-sysfs.c
-> +++ b/arch/sh/drivers/dma/dma-sysfs.c
-> @@ -45,13 +45,19 @@ static DEVICE_ATTR(devices, S_IRUGO, dma_show_devices, NULL);
->  
->  static int __init dma_subsys_init(void)
->  {
-> +	struct device *dev_root;
->  	int ret;
->  
->  	ret = subsys_system_register(&dma_subsys, NULL);
->  	if (unlikely(ret))
->  		return ret;
->  
-> -	return device_create_file(dma_subsys.dev_root, &dev_attr_devices);
-> +	dev_root = bus_get_dev_root(&dma_subsys);
-> +	if (dev_root) {
-> +		ret = device_create_file(dev_root, &dev_attr_devices);
-> +		put_device(dev_root);
-> +	}
-> +	return ret;
->  }
->  postcore_initcall(dma_subsys_init);
->  
+config ISA here is already unselectable, and nothing ever does "select
+ISA" (only in some other architectures), so is there much point in this?
 
-After acking this, I noticed that if bus_get_dev_root() fails, "ret" remains
-set to the value by subsys_system_register() which might confuse the caller
-thinking that dma_subsys_init() succeeded unless I am missing something?
+I'm not even sure why this exists at all.
 
-Adrian
+But anyway, adding a dependency to a always-false symbol doesn't make it
+less always-false :-)
 
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Acked-by: Johannes Berg <johannes@sipsolutions.net> # for ARCH=3Dum
+
+
+Certainly will be nice to get rid of this cruft for architectures that
+don't have it.
+
+johannes
