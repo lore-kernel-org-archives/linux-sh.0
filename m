@@ -2,57 +2,57 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 76709C6FD1D
-	for <linux-sh@archiver.kernel.org>; Wed, 15 Mar 2023 07:38:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 663E9C61DA4
+	for <linux-sh@archiver.kernel.org>; Wed, 15 Mar 2023 10:12:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231788AbjCOHi4 convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 15 Mar 2023 03:38:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56784 "EHLO
+        id S232253AbjCOKMK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 15 Mar 2023 06:12:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49090 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231851AbjCOHif (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 15 Mar 2023 03:38:35 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 273022A994;
-        Wed, 15 Mar 2023 00:36:42 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pcLgd-002oLJ-P7; Wed, 15 Mar 2023 08:36:39 +0100
-Received: from p57bd9bc2.dip0.t-ipconnect.de ([87.189.155.194] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pcLgd-003jCP-7K; Wed, 15 Mar 2023 08:36:39 +0100
-Message-ID: <8bf8711f34c06746cca2a3e641062d0879de9123.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v4 23/36] superh: Implement the new page table range API
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
-        linux-arch@vger.kernel.org
-Cc:     linux-mm@kvack.org, linux-kernel@vger.kernel.org,
+        with ESMTP id S232300AbjCOKLr (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 15 Mar 2023 06:11:47 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4B2716486F;
+        Wed, 15 Mar 2023 03:11:12 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id B685F61CC3;
+        Wed, 15 Mar 2023 10:11:11 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 774F6C4339B;
+        Wed, 15 Mar 2023 10:11:08 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1678875071;
+        bh=+FRz+tX0o9VfhzL8sjL2RO8QyI/PIzPw4csAEXF/SfM=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=gYSBdRb4MMu13UnAWpFDsXsOb/ct6oxU0qvqS/BeJh3rBYz+Xc0zaDrZ+7Rbm/wDF
+         kRe1pgTfiKS6vIqeA0a2F9f4wJHoL6RsM59L7/Yp4FL+TEBsEYcJeZElKKUOoBFJbw
+         W+WX37MYReYZQL5jis2Rm1NGBlqxzUP4hwMFw1wKsWqhMXGhAolxxOJCmRN8REMRVT
+         ULHv8EDdSiDSqsILRBWBjAkawNJyo8WljSIHr4FpCHIqb/JJM8HzyAiKv1zTgjC/Lo
+         bY4GieIMutM1E57tCQVjCy22p6Pq9dPQga0Ij4CO1eJO2xnSsKilTFYLN1Yl8i5q5h
+         ngOHKp35Oh8HQ==
+Date:   Wed, 15 Mar 2023 12:10:58 +0200
+From:   Mike Rapoport <rppt@kernel.org>
+To:     "Matthew Wilcox (Oracle)" <willy@infradead.org>
+Cc:     linux-arch@vger.kernel.org, linux-mm@kvack.org,
+        linux-kernel@vger.kernel.org,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Date:   Wed, 15 Mar 2023 08:36:38 +0100
-In-Reply-To: <20230315051444.3229621-24-willy@infradead.org>
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        linux-sh@vger.kernel.org
+Subject: Re: [PATCH v4 23/36] superh: Implement the new page table range API
+Message-ID: <ZBGZsnd12JT1Qs9l@kernel.org>
 References: <20230315051444.3229621-1-willy@infradead.org>
-         <20230315051444.3229621-24-willy@infradead.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.46.4 
+ <20230315051444.3229621-24-willy@infradead.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.155.194
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230315051444.3229621-24-willy@infradead.org>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Matthew!
-
-On Wed, 2023-03-15 at 05:14 +0000, Matthew Wilcox (Oracle) wrote:
+On Wed, Mar 15, 2023 at 05:14:31AM +0000, Matthew Wilcox (Oracle) wrote:
 > Add PFN_PTE_SHIFT, update_mmu_cache_range(), flush_dcache_folio() and
 > flush_icache_pages().  Change the PG_dcache_clean flag from being
 > per-page to per-folio.  Flush the entire folio containing the pages in
@@ -63,6 +63,9 @@ On Wed, 2023-03-15 at 05:14 +0000, Matthew Wilcox (Oracle) wrote:
 > Cc: Rich Felker <dalias@libc.org>
 > Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 > Cc: linux-sh@vger.kernel.org
+
+Acked-by: Mike Rapoport (IBM) <rppt@kernel.org>
+
 > ---
 >  arch/sh/include/asm/cacheflush.h | 21 ++++++++-----
 >  arch/sh/include/asm/pgtable.h    |  6 ++--
@@ -461,26 +464,11 @@ On Wed, 2023-03-15 at 05:14 +0000, Matthew Wilcox (Oracle) wrote:
 >  
 >  	preempt_disable();
 >  	pagefault_disable();
-
-Doesn't build for me with CONFIG_WERROR:
-
-  CC      arch/sh/kernel/asm-offsets.s
-In file included from ./include/linux/mm.h:29,
-                 from arch/sh/kernel/asm-offsets.c:14:
-./include/linux/pgtable.h: In function 'ptep_test_and_clear_young':
-./include/linux/pgtable.h:217:17: error: implicit declaration of function 'set_pte_at'; did you mean 'set_pte'? [-Werror=implicit-function-
-declaration]
-  217 |                 set_pte_at(vma->vm_mm, address, ptep, pte_mkold(pte));
-      |                 ^~~~~~~~~~
-      |                 set_pte
-cc1: some warnings being treated as errors
-make[1]: *** [scripts/Makefile.build:114: arch/sh/kernel/asm-offsets.s] Error 1
-make: *** [Makefile:1287: prepare0] Error 2
-
-Adrian
+> -- 
+> 2.39.2
+> 
+> 
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Sincerely yours,
+Mike.
