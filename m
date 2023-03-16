@@ -2,53 +2,105 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A8E80C7618A
-	for <linux-sh@archiver.kernel.org>; Thu, 16 Mar 2023 08:46:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B1BFDC6FD1F
+	for <linux-sh@archiver.kernel.org>; Thu, 16 Mar 2023 13:23:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231127AbjCPIq1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 16 Mar 2023 04:46:27 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38240 "EHLO
+        id S229804AbjCPNXT convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 16 Mar 2023 09:23:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40468 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231133AbjCPIqV (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 16 Mar 2023 04:46:21 -0400
-Received: from mail.paretdee.com (mail.paretdee.com [141.95.17.174])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B3148B5B4C
-        for <linux-sh@vger.kernel.org>; Thu, 16 Mar 2023 01:46:14 -0700 (PDT)
-Received: by mail.paretdee.com (Postfix, from userid 1002)
-        id 5EAFDA2B3C; Thu, 16 Mar 2023 08:45:59 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=paretdee.com; s=mail;
-        t=1678956373; bh=FLMIyM7qOCOVEMp1o/ltkgnLeuU0ZBlT9xWiZMBZ7Ag=;
-        h=Date:From:To:Subject:From;
-        b=CRJllk6E7OEkwt7V0BEF0lt9phwodKa5GJUaTvK8utGOuT/O6W1MdNCoAi8qrMrXr
-         1LwM2WGfqycDcGwB/jINS3Cvn4Eud9cws7m5g1HnffH2oErVQNLruvr30Dg5gAK7M2
-         6LWfaNSPIzM5mTkSazRGDvEPaaYgmrO3KqbYMfR++ggrsnZ1U8XOOQh8vi7Duw5/cX
-         uA5kjgJmvDbu/Lg1hnJc91DV24Th77UkXn0pOCqPtjhrDhmglyZ022kpglj9KMS2W2
-         kpFjvzMxGDMahXVmF3YdFyJeQZiEj5q+Vqgn5bt1BF8ar4RyqREPzCmewECbgZ6MA6
-         7R31un4rgU+MQ==
-Received: by mail.paretdee.com for <linux-sh@vger.kernel.org>; Thu, 16 Mar 2023 08:45:39 GMT
-Message-ID: <20230316074500-0.1.5h.cmzl.0.jiqxkg9516@paretdee.com>
-Date:   Thu, 16 Mar 2023 08:45:39 GMT
-From:   "Zbynek Spacek" <zbynek.spacek@paretdee.com>
-To:     <linux-sh@vger.kernel.org>
-Subject: Rubber Molded
-X-Mailer: mail.paretdee.com
-MIME-Version: 1.0
+        with ESMTP id S229629AbjCPNXT (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 16 Mar 2023 09:23:19 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D2C9A22A24;
+        Thu, 16 Mar 2023 06:23:17 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pcnZZ-000lFD-E8; Thu, 16 Mar 2023 14:23:13 +0100
+Received: from p57bd9bc2.dip0.t-ipconnect.de ([87.189.155.194] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pcnZZ-0044YO-6g; Thu, 16 Mar 2023 14:23:13 +0100
+Message-ID: <c16434108aaf639782f905ae45e94ea9d58621f1.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 5/7 v4] sh: remove sh5/sh64 last fragments
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org
+Cc:     Geert Uytterhoeven <geert+renesas@glider.be>,
+        Arnd Bergmann <arnd@arndb.de>, Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org
+Date:   Thu, 16 Mar 2023 14:23:12 +0100
+In-Reply-To: <20230306040037.20350-6-rdunlap@infradead.org>
+References: <20230306040037.20350-1-rdunlap@infradead.org>
+         <20230306040037.20350-6-rdunlap@infradead.org>
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.46.4 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.155.194
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Good morning,
+Hi Randy!
 
-we can offer unbeatable conditions for the supply of various silicone com=
-pounds and rubbers, liquid silicone rubber (LSR).
+On Sun, 2023-03-05 at 20:00 -0800, Randy Dunlap wrote:
+> A previous patch removed most of the sh5 (sh64) support from the
+> kernel tree. Now remove the last stragglers.
+> 
+> Fixes: 37744feebc08 ("sh: remove sh5 support")
+> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+> Cc: Arnd Bergmann <arnd@arndb.de>
+> Cc: Rich Felker <dalias@libc.org>
+> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+> Cc: linux-sh@vger.kernel.org
+> Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+> ---
+> v2: update after adding the parisc64 alias to kbuild.rst
+> v3: skipped
+> v4: refresh & resend
+> 
+>  Documentation/kbuild/kbuild.rst                           |    1 -
+>  Documentation/scheduler/sched-arch.rst                    |    2 --
+>  Documentation/translations/zh_CN/scheduler/sched-arch.rst |    2 --
+>  scripts/checkstack.pl                                     |    7 -------
+>  tools/perf/arch/common.c                                  |    2 --
+>  tools/scripts/Makefile.arch                               |    5 -----
+>  tools/testing/selftests/mm/Makefile                       |    2 +-
+>  tools/testing/selftests/mm/run_vmtests.sh                 |    2 +-
+>  8 files changed, 2 insertions(+), 21 deletions(-)
+> 
+> diff -- a/Documentation/kbuild/kbuild.rst b/Documentation/kbuild/kbuild.rst
+> --- a/Documentation/kbuild/kbuild.rst
+> +++ b/Documentation/kbuild/kbuild.rst
+> @@ -161,7 +161,6 @@ But some architectures such as x86 and s
+>  
+>  - x86: i386 for 32 bit, x86_64 for 64 bit
+>  - parisc: parisc64 for 64 bit
+> -- sh: sh for 32 bit, sh64 for 64 bit
+>  - sparc: sparc32 for 32 bit, sparc64 for 64 bit
+>  
+>  CROSS_COMPILE
 
-In our assortment you will also find cross-linking agents, stabilizers, d=
-yes and individual silicone mixtures that we will develop for your needs.
+This hunk doesn't apply anymore since the parisc part has been dropped although I can't
+find the commit for that. Could you rebase your patch, please?
 
-Do you want to know what we can offer you?
+Apologies that I didn't have the time earlier to start looking at this series!
 
+Adrian
 
-Best regards
-Zbynek Spacek
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
