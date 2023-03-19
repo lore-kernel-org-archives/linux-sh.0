@@ -2,44 +2,45 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30F06C6FD1F
-	for <linux-sh@archiver.kernel.org>; Sun, 19 Mar 2023 19:32:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D6F88C7618A
+	for <linux-sh@archiver.kernel.org>; Sun, 19 Mar 2023 19:48:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229622AbjCSTcv convert rfc822-to-8bit (ORCPT
+        id S229735AbjCSTsq convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 19 Mar 2023 15:32:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43510 "EHLO
+        Sun, 19 Mar 2023 15:48:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56508 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229497AbjCSTcu (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 19 Mar 2023 15:32:50 -0400
+        with ESMTP id S229472AbjCSTsm (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 19 Mar 2023 15:48:42 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9E3BC136C3;
-        Sun, 19 Mar 2023 12:32:49 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 29CE116ACE;
+        Sun, 19 Mar 2023 12:48:39 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pdylr-002DmL-My; Sun, 19 Mar 2023 20:32:47 +0100
+          id 1pdz1A-002Ftj-V8; Sun, 19 Mar 2023 20:48:36 +0100
 Received: from p57bd9bc2.dip0.t-ipconnect.de ([87.189.155.194] helo=[192.168.178.81])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pdylr-002sOE-Fu; Sun, 19 Mar 2023 20:32:47 +0100
-Message-ID: <6753a4a9d28f490e068e0a3c4ce1a470319e3e86.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 2/7 v4] sh: nmi_debug: fix return value of __setup
- handler
+          id 1pdz1A-002vAw-Nj; Sun, 19 Mar 2023 20:48:36 +0100
+Message-ID: <8e15ccf2fe80445095b6653210f5cea081f6ffee.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 3/7 v4] sh: init: use OF_EARLY_FLATTREE for early init
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 To:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org
-Cc:     Igor Zhbanov <izh1979@gmail.com>,
+Cc:     Rob Herring <robh+dt@kernel.org>,
+        Frank Rowand <frowand.list@gmail.com>,
+        devicetree@vger.kernel.org, Rich Felker <dalias@libc.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        stable@vger.kernel.org
-Date:   Sun, 19 Mar 2023 20:32:46 +0100
-In-Reply-To: <20230306040037.20350-3-rdunlap@infradead.org>
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        linux-sh@vger.kernel.org, stable@vger.kernel.org
+Date:   Sun, 19 Mar 2023 20:48:35 +0100
+In-Reply-To: <20230306040037.20350-4-rdunlap@infradead.org>
 References: <20230306040037.20350-1-rdunlap@infradead.org>
-         <20230306040037.20350-3-rdunlap@infradead.org>
+         <20230306040037.20350-4-rdunlap@infradead.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 User-Agent: Evolution 3.46.4 
@@ -52,52 +53,90 @@ List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
 On Sun, 2023-03-05 at 20:00 -0800, Randy Dunlap wrote:
-> __setup() handlers should return 1 to obsolete_checksetup() in
-> init/main.c to indicate that the boot option has been handled.
-> A return of 0 causes the boot option/value to be listed as an Unknown
-> kernel parameter and added to init's (limited) argument or environment
-> strings. Also, error return codes don't mean anything to
-> obsolete_checksetup() -- only non-zero (usually 1) or zero.
-> So return 1 from nmi_debug_setup().
+> When CONFIG_OF_EARLY_FLATTREE and CONFIG_SH_DEVICE_TREE are not set,
+> SH3 build fails with a call to early_init_dt_scan(), so in
+> arch/sh/kernel/setup.c and arch/sh/kernel/head_32.S, use
+> CONFIG_OF_EARLY_FLATTREE instead of CONFIG_OF_FLATTREE.
 > 
-> Fixes: 1e1030dccb10 ("sh: nmi_debug support.")
+> Fixes this build error:
+> ../arch/sh/kernel/setup.c: In function 'sh_fdt_init':
+> ../arch/sh/kernel/setup.c:262:26: error: implicit declaration of function 'early_init_dt_scan' [-Werror=implicit-function-declaration]
+>   262 |         if (!dt_virt || !early_init_dt_scan(dt_virt)) {
+> 
+> Fixes: 03767daa1387 ("sh: fix build regression with CONFIG_OF && !CONFIG_OF_FLATTREE")
+> Fixes: eb6b6930a70f ("sh: fix memory corruption of unflattened device tree")
 > Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-> Reported-by: Igor Zhbanov <izh1979@gmail.com>
-> Link: lore.kernel.org/r/64644a2f-4a20-bab3-1e15-3b2cdd0defe3@omprussia.ru
-> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+> Suggested-by: Rob Herring <robh+dt@kernel.org>
+> Cc: Frank Rowand <frowand.list@gmail.com>
+> Cc: devicetree@vger.kernel.org
 > Cc: Rich Felker <dalias@libc.org>
+> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 > Cc: linux-sh@vger.kernel.org
 > Cc: stable@vger.kernel.org
 > ---
-> v2: add more Cc's;
->     refresh and resend;
-> v3: add Arnd to Cc: list
-> v4: update Cc: list, refresh & resend
+> v2: use Suggested-by: for Rob.
+>     add more Cc's.
+> v3: skipped
+> v4: update Cc's, refresh & resend
 > 
->  arch/sh/kernel/nmi_debug.c |    4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
+>  arch/sh/kernel/head_32.S |    6 +++---
+>  arch/sh/kernel/setup.c   |    4 ++--
+>  2 files changed, 5 insertions(+), 5 deletions(-)
 > 
-> diff -- a/arch/sh/kernel/nmi_debug.c b/arch/sh/kernel/nmi_debug.c
-> --- a/arch/sh/kernel/nmi_debug.c
-> +++ b/arch/sh/kernel/nmi_debug.c
-> @@ -49,7 +49,7 @@ static int __init nmi_debug_setup(char *
->  	register_die_notifier(&nmi_debug_nb);
->  
->  	if (*str != '=')
-> -		return 0;
-> +		return 1;
->  
->  	for (p = str + 1; *p; p = sep + 1) {
->  		sep = strchr(p, ',');
-> @@ -70,6 +70,6 @@ static int __init nmi_debug_setup(char *
->  			break;
->  	}
->  
-> -	return 0;
-> +	return 1;
+> diff arch/sh/kernel/setup.c arch/sh/kernel/setup.c
+> diff -- a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+> --- a/arch/sh/kernel/setup.c
+> +++ b/arch/sh/kernel/setup.c
+> @@ -244,7 +244,7 @@ void __init __weak plat_early_device_set
+>  {
 >  }
->  __setup("nmi_debug", nmi_debug_setup);
+>  
+> -#ifdef CONFIG_OF_FLATTREE
+> +#ifdef CONFIG_OF_EARLY_FLATTREE
+>  void __ref sh_fdt_init(phys_addr_t dt_phys)
+>  {
+>  	static int done = 0;
+> @@ -326,7 +326,7 @@ void __init setup_arch(char **cmdline_p)
+>  	/* Let earlyprintk output early console messages */
+>  	sh_early_platform_driver_probe("earlyprintk", 1, 1);
+>  
+> -#ifdef CONFIG_OF_FLATTREE
+> +#ifdef CONFIG_OF_EARLY_FLATTREE
+>  #ifdef CONFIG_USE_BUILTIN_DTB
+>  	unflatten_and_copy_device_tree();
+>  #else
+> diff -- a/arch/sh/kernel/head_32.S b/arch/sh/kernel/head_32.S
+> --- a/arch/sh/kernel/head_32.S
+> +++ b/arch/sh/kernel/head_32.S
+> @@ -64,7 +64,7 @@ ENTRY(_stext)
+>  	ldc	r0, r6_bank
+>  #endif
+>  
+> -#ifdef CONFIG_OF_FLATTREE
+> +#ifdef CONFIG_OF_EARLY_FLATTREE
+>  	mov	r4, r12		! Store device tree blob pointer in r12
+>  #endif
+>  	
+> @@ -315,7 +315,7 @@ ENTRY(_stext)
+>  10:		
+>  #endif
+>  
+> -#ifdef CONFIG_OF_FLATTREE
+> +#ifdef CONFIG_OF_EARLY_FLATTREE
+>  	mov.l	8f, r0		! Make flat device tree available early.
+>  	jsr	@r0
+>  	 mov	r12, r4
+> @@ -346,7 +346,7 @@ ENTRY(stack_start)
+>  5:	.long	start_kernel
+>  6:	.long	cpu_init
+>  7:	.long	init_thread_union
+> -#if defined(CONFIG_OF_FLATTREE)
+> +#if defined(CONFIG_OF_EARLY_FLATTREE)
+>  8:	.long	sh_fdt_init
+>  #endif
+>  
 
 Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
