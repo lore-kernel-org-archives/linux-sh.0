@@ -2,49 +2,49 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A33BCC7618E
-	for <linux-sh@archiver.kernel.org>; Mon, 20 Mar 2023 00:57:59 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 31FD0C77B61
+	for <linux-sh@archiver.kernel.org>; Mon, 20 Mar 2023 01:01:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229798AbjCTA56 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 19 Mar 2023 20:57:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60168 "EHLO
+        id S230480AbjCTBA7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 19 Mar 2023 21:00:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45250 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230057AbjCTA4n (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 19 Mar 2023 20:56:43 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6272C1F4BF;
-        Sun, 19 Mar 2023 17:55:14 -0700 (PDT)
+        with ESMTP id S231139AbjCTA7z (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 19 Mar 2023 20:59:55 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 751FD21A3B;
+        Sun, 19 Mar 2023 17:56:14 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 3DA44611C9;
-        Mon, 20 Mar 2023 00:55:12 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 78B16C433D2;
-        Mon, 20 Mar 2023 00:55:10 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id 15478B80D4C;
+        Mon, 20 Mar 2023 00:56:00 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8E8CBC433EF;
+        Mon, 20 Mar 2023 00:55:57 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1679273711;
-        bh=wIMMwK89KStOb42+4eP014hy8v2pJD2GJYpw7okucq8=;
+        s=k20201202; t=1679273758;
+        bh=P6vD6BAEdEhDdhlgw4psgjaRokQKZmpTxdO+jiaYJFY=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=P6YXJK4wkZnBhgdl6UsEBaqUuo5LR9sM/FV14b1BJCWlfQiumuiAEgM1Rw//t+dIg
-         YkuizMHangHJzg9J3sGJgcNLe+F6WbNXYXPy/CgLiatJjQyudPOC4Ft1EZiBKbnEZk
-         Od16vCw5UezKGf61Vh63c6oBnCZT3T7jnVTFD9EQQF/xBTYh/3N2KYSm7iNrG3Sij+
-         h+3ZRYp18tkUHsXYFI7Qzfk88LS2N6wsIdZmaEBkZOAI21NJdGxnxPdrXXLlebe4xn
-         I327gphF9zoAtjBZ170QaerXMmNPjpKI8kADRtnjJjLkN4omYb1dUq5abvDbcVnhmr
-         6PmVDylYJ7xVw==
+        b=X+qsEmSQs7xTzOEufqE/XUqx35jdnfGPnbIvL4PnZz/osR6neBbkpp0VmKrcAKmwT
+         1UDiflb9yYiJ76CtLd81o1ZwbyYvWz16ibFLvwGhyhLLHx2B7KZpE6iSzB2TwK24I5
+         KWMzv8hXJVf+kcOztHz+bghWrmm27//eG7jYKd8LldvI52g9aGYMbpHVCTxKS2UAj2
+         L4+xMxz3csiQZwY/9F9wvnrWSV3bcWmBkJrWJvBNSMmKKNQBzmwP6yapBZjKFapaAF
+         YJby3At/bnL8ibHmiueaK9V3rBarYsQdLZ1S32oUQGQZlLG6TyAE0CwyUvRcH6k/xz
+         4Zykyj1jB5AIg==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Al Viro <viro@zeniv.linux.org.uk>, Rich Felker <dalias@libc.org>,
         Linus Torvalds <torvalds@linux-foundation.org>,
         Sasha Levin <sashal@kernel.org>, ysato@users.sourceforge.jp,
-        akpm@linux-foundation.org, rmk+kernel@armlinux.org.uk,
-        wangkefeng.wang@huawei.com, catalin.marinas@arm.com,
-        bcain@quicinc.com, linux-sh@vger.kernel.org
-Subject: [PATCH AUTOSEL 6.1 27/29] sh: sanitize the flags on sigreturn
-Date:   Sun, 19 Mar 2023 20:54:09 -0400
-Message-Id: <20230320005413.1428452-27-sashal@kernel.org>
+        wangkefeng.wang@huawei.com, chenhuacai@kernel.org,
+        catalin.marinas@arm.com, akpm@linux-foundation.org,
+        mpe@ellerman.id.au, linux-sh@vger.kernel.org
+Subject: [PATCH AUTOSEL 5.15 17/17] sh: sanitize the flags on sigreturn
+Date:   Sun, 19 Mar 2023 20:55:19 -0400
+Message-Id: <20230320005521.1428820-17-sashal@kernel.org>
 X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20230320005413.1428452-1-sashal@kernel.org>
-References: <20230320005413.1428452-1-sashal@kernel.org>
+In-Reply-To: <20230320005521.1428820-1-sashal@kernel.org>
+References: <20230320005521.1428820-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -71,7 +71,7 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  2 files changed, 4 insertions(+)
 
 diff --git a/arch/sh/include/asm/processor_32.h b/arch/sh/include/asm/processor_32.h
-index 27aebf1e75a20..3ef7adf739c83 100644
+index aa92cc933889d..6c7966e627758 100644
 --- a/arch/sh/include/asm/processor_32.h
 +++ b/arch/sh/include/asm/processor_32.h
 @@ -50,6 +50,7 @@
@@ -83,7 +83,7 @@ index 27aebf1e75a20..3ef7adf739c83 100644
   * DSP structure and data
   */
 diff --git a/arch/sh/kernel/signal_32.c b/arch/sh/kernel/signal_32.c
-index 90f495d35db29..a6bfc6f374911 100644
+index dd3092911efad..dc13702003f0f 100644
 --- a/arch/sh/kernel/signal_32.c
 +++ b/arch/sh/kernel/signal_32.c
 @@ -115,6 +115,7 @@ static int
