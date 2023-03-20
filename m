@@ -2,205 +2,307 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6BA71C6FD1D
-	for <linux-sh@archiver.kernel.org>; Mon, 20 Mar 2023 12:43:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 361E9C7618D
+	for <linux-sh@archiver.kernel.org>; Mon, 20 Mar 2023 13:16:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231463AbjCTMnt convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 20 Mar 2023 08:43:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48528 "EHLO
+        id S231657AbjCTNQP (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 20 Mar 2023 09:16:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40484 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231465AbjCTMnp (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 20 Mar 2023 08:43:45 -0400
-Received: from mail-qt1-f177.google.com (mail-qt1-f177.google.com [209.85.160.177])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2C2FE17CC8;
-        Mon, 20 Mar 2023 05:43:44 -0700 (PDT)
-Received: by mail-qt1-f177.google.com with SMTP id t9so12760928qtx.8;
-        Mon, 20 Mar 2023 05:43:43 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1679316223;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=J27/p0bP3aKpOCIgRWklAhNJ8h7EoV6Eqok7p2+EW2s=;
-        b=KsTqTsHzwAETomPDd0GLJqhHyM1uBvBhzmYwn3d3S15guNht3MQ+juWNmV2GEUIyE6
-         FN83M3RMSjfo2Vb9HZwjmGc2E3/Ch/ybfVhpRoI0s/T3n1+zTGFPdNxsqwyqrva+Nob4
-         REWZHiijWBCZkzSJe+TwQXwPgRRaE6MLfHomy0hm+iSzibHKtHn7PgNrwFiYmfBOTOC9
-         EOr2drR4efcGzh9MLYmE6o2QkYjXWRFzoeUfHNhSaNzdgyTh7MqHoefJdxrEuruWcuwi
-         ErYaUPWXb0MLzeUEdB8cjH18Oe9BGDTv6BIIFMOdiRxBUxy+6Jrz9i7ge3usiVSY2QOb
-         vsKg==
-X-Gm-Message-State: AO0yUKX2vZYG/GugqemK7OQyNdDuooL2r6dIFT2HzGt3IhiKEJO/EOZb
-        a+W0kQif4seX/Za8PFgn3AO1mKCqjIyBvg==
-X-Google-Smtp-Source: AK7set+U8dXVTqiPc6hfsq5yDwVruWdQXI8XyeJmDXmRWkGMsFNB9u2NIIAabOY8jN50ziBuDUBTBQ==
-X-Received: by 2002:ac8:5715:0:b0:3e1:59e8:7450 with SMTP id 21-20020ac85715000000b003e159e87450mr5893331qtw.41.1679316222893;
-        Mon, 20 Mar 2023 05:43:42 -0700 (PDT)
-Received: from mail-yb1-f170.google.com (mail-yb1-f170.google.com. [209.85.219.170])
-        by smtp.gmail.com with ESMTPSA id r15-20020ac8794f000000b003bfaff2a6b9sm6508278qtt.10.2023.03.20.05.43.42
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 20 Mar 2023 05:43:42 -0700 (PDT)
-Received: by mail-yb1-f170.google.com with SMTP id x198so3148071ybe.9;
-        Mon, 20 Mar 2023 05:43:42 -0700 (PDT)
-X-Received: by 2002:a5b:c47:0:b0:b56:1f24:7e9f with SMTP id
- d7-20020a5b0c47000000b00b561f247e9fmr5449744ybr.12.1679316222145; Mon, 20 Mar
- 2023 05:43:42 -0700 (PDT)
-MIME-Version: 1.0
-References: <20230306040037.20350-1-rdunlap@infradead.org> <20230306040037.20350-8-rdunlap@infradead.org>
- <056df6d548ad0e4f7f4ccb2782744b165ce20578.camel@physik.fu-berlin.de>
- <CAMuHMdU+tsKuONm9iPqqTFSnRT2zaV3zogYgc-+vCp6x-ruQ_w@mail.gmail.com>
- <01f84314b2499b6859a4826ecf7363635e66a4fc.camel@physik.fu-berlin.de> <CAMuHMdVR78EXTVd7ThUEv6rxL8aHSyAoC_5z8KyAPmiTyww85w@mail.gmail.com>
-In-Reply-To: <CAMuHMdVR78EXTVd7ThUEv6rxL8aHSyAoC_5z8KyAPmiTyww85w@mail.gmail.com>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 20 Mar 2023 13:43:30 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdW7-4ENVzbUBmquUWyvO5yVJGAC2v3Hffqh12sveOqb_w@mail.gmail.com>
-Message-ID: <CAMuHMdW7-4ENVzbUBmquUWyvO5yVJGAC2v3Hffqh12sveOqb_w@mail.gmail.com>
-Subject: Re: [PATCH 7/7 v4] sh: mcount.S: fix build error when PRINTK is not enabled
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org,
+        with ESMTP id S231596AbjCTNQN (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 20 Mar 2023 09:16:13 -0400
+Received: from mga03.intel.com (mga03.intel.com [134.134.136.65])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5FFC723840;
+        Mon, 20 Mar 2023 06:16:09 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1679318169; x=1710854169;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=pKBg2DWRtjN/3o0GQ+Gz1Jmqpx4HtRyfpegHo4oOuDE=;
+  b=IevzGpzGRGvW6GHvpuGTsY/dEcTF4i+gKzGLKMxz9JkrMv4+oNpy0zO4
+   0WHVKpWOELHGsdINiwE7WeZkwW0EjFz+KVEiUNmME1rCsw3T0eSEf8hiX
+   GeL0Se5Zj4g90Kqsi1TQbql+lA0XbQ8eUCuPGAc3qhkwcEzXy4uByNex5
+   qYRF93wmVEcKPRsI0AUd4fJWbCWmdtUdAkkefFAN4SZ/El/2Xxtl6di/y
+   500+a/Ci/ySo7dQawdXEZVO0IOmHRD3ki5ziCw1AOnbEOvpW0EcbliCNn
+   mgV9jD1sqor+3xpU75mvuKGmSumoZofFYjxnOc3fDI+yGszd5WSy4N9QA
+   A==;
+X-IronPort-AV: E=McAfee;i="6600,9927,10654"; a="341015291"
+X-IronPort-AV: E=Sophos;i="5.98,274,1673942400"; 
+   d="scan'208";a="341015291"
+Received: from fmsmga001.fm.intel.com ([10.253.24.23])
+  by orsmga103.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 20 Mar 2023 06:16:07 -0700
+X-ExtLoop1: 1
+X-IronPort-AV: E=McAfee;i="6600,9927,10654"; a="824468996"
+X-IronPort-AV: E=Sophos;i="5.98,274,1673942400"; 
+   d="scan'208";a="824468996"
+Received: from black.fi.intel.com ([10.237.72.28])
+  by fmsmga001.fm.intel.com with ESMTP; 20 Mar 2023 06:15:58 -0700
+Received: by black.fi.intel.com (Postfix, from userid 1003)
+        id 0FA3050B; Mon, 20 Mar 2023 15:16:44 +0200 (EET)
+From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+To:     =?UTF-8?q?Micka=C3=ABl=20Sala=C3=BCn?= <mic@digikod.net>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Mika Westerberg <mika.westerberg@linux.intel.com>,
+        =?UTF-8?q?Krzysztof=20Wilczy=C5=84ski?= <kw@linux.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Randy Dunlap <rdunlap@infradead.org>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Niklas Schnelle <schnelle@linux.ibm.com>,
+        Bjorn Helgaas <helgaas@kernel.org>,
+        "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
+        =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>,
+        "Maciej W. Rozycki" <macro@orcam.me.uk>,
+        Juergen Gross <jgross@suse.com>,
+        Dominik Brodowski <linux@dominikbrodowski.net>,
+        linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-pci@vger.kernel.org,
+        xen-devel@lists.xenproject.org, linux-acpi@vger.kernel.org
+Cc:     Miguel Ojeda <ojeda@kernel.org>,
+        Richard Henderson <richard.henderson@linaro.org>,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        Matt Turner <mattst88@gmail.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Andrew Lunn <andrew@lunn.ch>,
+        Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
+        Gregory Clement <gregory.clement@bootlin.com>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Anatolij Gustschin <agust@denx.de>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, stable@vger.kernel.org,
-        Linux-sh list <linux-sh@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "David S. Miller" <davem@davemloft.net>,
+        Bjorn Helgaas <bhelgaas@google.com>,
+        Stefano Stabellini <sstabellini@kernel.org>,
+        Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>
+Subject: [PATCH v6 2/4] PCI: Split pci_bus_for_each_resource_p() out of pci_bus_for_each_resource()
+Date:   Mon, 20 Mar 2023 15:16:31 +0200
+Message-Id: <20230320131633.61680-3-andriy.shevchenko@linux.intel.com>
+X-Mailer: git-send-email 2.39.2
+In-Reply-To: <20230320131633.61680-1-andriy.shevchenko@linux.intel.com>
+References: <20230320131633.61680-1-andriy.shevchenko@linux.intel.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-CC linux-sh
+Refactor pci_bus_for_each_resource() in the same way as it's done in
+pci_dev_for_each_resource() case. This will allow to hide iterator
+inside the loop, where it's not used otherwise.
 
-On Mon, Mar 20, 2023 at 1:42 PM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> On Mon, Mar 20, 2023 at 10:13 AM John Paul Adrian Glaubitz
-> <glaubitz@physik.fu-berlin.de> wrote:
-> > On Mon, 2023-03-20 at 09:16 +0100, Geert Uytterhoeven wrote:
-> > > On Sun, Mar 19, 2023 at 9:49 PM John Paul Adrian Glaubitz
-> > > <glaubitz@physik.fu-berlin.de> wrote:
-> > > > On Sun, 2023-03-05 at 20:00 -0800, Randy Dunlap wrote:
-> > > > > Fix a build error in mcount.S when CONFIG_PRINTK is not enabled.
-> > > > > Fixes this build error:
-> > > > >
-> > > > > sh2-linux-ld: arch/sh/lib/mcount.o: in function `stack_panic':
-> > > > > (.text+0xec): undefined reference to `dump_stack'
-> > > > >
-> > > > > Fixes: e460ab27b6c3 ("sh: Fix up stack overflow check with ftrace disabled.")
-> > > > > Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-> > > > > Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> > > > > Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > > > > Cc: Rich Felker <dalias@libc.org>
-> > > > > Suggested-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> > > > > Cc: stable@vger.kernel.org
-> > > > > ---
-> > > > > v2: add PRINTK to STACK_DEBUG dependency (thanks, Geert)
-> > > > > v3: skipped
-> > > > > v4: refresh & resend
-> > > > >
-> > > > >  arch/sh/Kconfig.debug |    2 +-
-> > > > >  1 file changed, 1 insertion(+), 1 deletion(-)
-> > > > >
-> > > > > diff -- a/arch/sh/Kconfig.debug b/arch/sh/Kconfig.debug
-> > > > > --- a/arch/sh/Kconfig.debug
-> > > > > +++ b/arch/sh/Kconfig.debug
-> > > > > @@ -15,7 +15,7 @@ config SH_STANDARD_BIOS
-> > > > >
-> > > > >  config STACK_DEBUG
-> > > > >       bool "Check for stack overflows"
-> > > > > -     depends on DEBUG_KERNEL
-> > > > > +     depends on DEBUG_KERNEL && PRINTK
-> > > > >       help
-> > > > >         This option will cause messages to be printed if free stack space
-> > > > >         drops below a certain limit. Saying Y here will add overhead to
-> > > >
-> > > > I can't really test this change as the moment I am enabling CONFIG_STACK_DEBUG,
-> > > > the build fails with:
-> > > >
-> > > >   CC      scripts/mod/devicetable-offsets.s
-> > > > sh4-linux-gcc: error: -pg and -fomit-frame-pointer are incompatible
-> > > > make[1]: *** [scripts/Makefile.build:252: scripts/mod/empty.o] Error 1
-> > > > make[1]: *** Waiting for unfinished jobs....
-> > > > sh4-linux-gcc: error: -pg and -fomit-frame-pointer are incompatible
-> > > > make[1]: *** [scripts/Makefile.build:114: scripts/mod/devicetable-offsets.s] Error 1
-> > > > make: *** [Makefile:1286: prepare0] Error 2
-> > > >
-> > > > So, I assume we need to strip -fomit-frame-pointer from KBUILD_CFLAGS, correct?
-> > > >
-> > > > I tried this change, but that doesn't fix it for me:
-> > > >
-> > > > diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-> > > > index 5c8776482530..83f535b73835 100644
-> > > > --- a/arch/sh/Makefile
-> > > > +++ b/arch/sh/Makefile
-> > > > @@ -173,6 +173,7 @@ KBUILD_AFLAGS               += $(cflags-y)
-> > > >
-> > > >  ifeq ($(CONFIG_MCOUNT),y)
-> > > >    KBUILD_CFLAGS += -pg
-> > > > +  KBUILD_CFLAGS := $(subst -fomit-frame-pointer,,$(KBUILD_CFLAGS))
-> > > >  endif
-> > > >
-> > > >  ifeq ($(CONFIG_DWARF_UNWINDER),y)
-> > > >
-> > > > Any ideas?
-> > >
-> > > Please try with "+=" instead of ":=".
-> >
-> > That doesn't work either. I tried the following, but that didn't strip -fomit-frame-pointer:
->
-> Oops, obviously all of that happened before my morning coffee ;-)
->
-> Makefile has:
->
->     ifdef CONFIG_FRAME_POINTER
->     KBUILD_CFLAGS   += -fno-omit-frame-pointer -fno-optimize-sibling-calls
->     KBUILD_RUSTFLAGS += -Cforce-frame-pointers=y
->     else
->     # Some targets (ARM with Thumb2, for example), can't be built with frame
->     # pointers.  For those, we don't have FUNCTION_TRACER automatically
->     # select FRAME_POINTER.  However, FUNCTION_TRACER adds -pg, and this is
->     # incompatible with -fomit-frame-pointer with current GCC, so we don't use
->     # -fomit-frame-pointer with FUNCTION_TRACER.
->     # In the Rust target specification, "frame-pointer" is set explicitly
->     # to "may-omit".
->     ifndef CONFIG_FUNCTION_TRACER
->     KBUILD_CFLAGS   += -fomit-frame-pointer
->     endif
->     endif
->
-> Your config probably has CONFIG_FRAME_POINTER set?
->
->     arch/sh/Kconfig.debug=config DWARF_UNWINDER
->     arch/sh/Kconfig.debug-  bool "Enable the DWARF unwinder for stacktraces"
->     arch/sh/Kconfig.debug-  depends on DEBUG_KERNEL
->     arch/sh/Kconfig.debug:  select FRAME_POINTER
->
-> You should make sure that cannot happen when CONFIG_FUNCTION_TRACER
-> is enabled. I.e. make DWARF_UNWINDER depend on !FUNCTION_TRACER?
->
-> Other architectures do something similar:
->
->     arch/sparc/Kconfig.debug:config FRAME_POINTER
->     arch/sparc/Kconfig.debug-       bool
->     arch/sparc/Kconfig.debug-       depends on MCOUNT
->
->     arch/x86/Kconfig.debug:config FRAME_POINTER
->     arch/x86/Kconfig.debug- depends on !UNWINDER_ORC && !UNWINDER_GUESS
->     arch/x86/Kconfig.debug- bool
->
-> Probably you need to adjust the following, too:
->
->     lib/Kconfig.debug:config FRAME_POINTER
->     lib/Kconfig.debug-      bool "Compile the kernel with frame pointers"
->     lib/Kconfig.debug-      depends on DEBUG_KERNEL && (M68K || UML ||
-> SUPERH) || ARCH_WANT_FRAME_POINTERS
->     lib/Kconfig.debug-      default y if (DEBUG_INFO && UML) ||
-> ARCH_WANT_FRAME_POINTERS
->
-> i.e. drop SUPERH from the list above, and select ARCH_WANT_FRAME_POINTERS
-> if !FUNCTION_TRACER.
->
-> Gr{oetje,eeting}s,
->
->                         Geert
->
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
->
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+No functional changes intended.
+
+Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Reviewed-by: Krzysztof Wilczyński <kw@linux.com>
+---
+ .clang-format                      |  1 +
+ drivers/pci/bus.c                  |  7 +++----
+ drivers/pci/hotplug/shpchp_sysfs.c |  8 ++++----
+ drivers/pci/pci.c                  |  5 ++---
+ drivers/pci/probe.c                |  2 +-
+ drivers/pci/setup-bus.c            | 10 ++++------
+ include/linux/pci.h                | 14 ++++++++++----
+ 7 files changed, 25 insertions(+), 22 deletions(-)
+
+diff --git a/.clang-format b/.clang-format
+index 266abb843654..81c9f055086f 100644
+--- a/.clang-format
++++ b/.clang-format
+@@ -520,6 +520,7 @@ ForEachMacros:
+   - 'of_property_for_each_string'
+   - 'of_property_for_each_u32'
+   - 'pci_bus_for_each_resource'
++  - 'pci_bus_for_each_resource_p'
+   - 'pci_dev_for_each_resource'
+   - 'pci_dev_for_each_resource_p'
+   - 'pci_doe_for_each_off'
+diff --git a/drivers/pci/bus.c b/drivers/pci/bus.c
+index 549c4bd5caec..b0789d332d36 100644
+--- a/drivers/pci/bus.c
++++ b/drivers/pci/bus.c
+@@ -182,13 +182,13 @@ static int pci_bus_alloc_from_region(struct pci_bus *bus, struct resource *res,
+ 		void *alignf_data,
+ 		struct pci_bus_region *region)
+ {
+-	int i, ret;
+ 	struct resource *r, avail;
+ 	resource_size_t max;
++	int ret;
+ 
+ 	type_mask |= IORESOURCE_TYPE_BITS;
+ 
+-	pci_bus_for_each_resource(bus, r, i) {
++	pci_bus_for_each_resource_p(bus, r) {
+ 		resource_size_t min_used = min;
+ 
+ 		if (!r)
+@@ -289,9 +289,8 @@ bool pci_bus_clip_resource(struct pci_dev *dev, int idx)
+ 	struct resource *res = &dev->resource[idx];
+ 	struct resource orig_res = *res;
+ 	struct resource *r;
+-	int i;
+ 
+-	pci_bus_for_each_resource(bus, r, i) {
++	pci_bus_for_each_resource_p(bus, r) {
+ 		resource_size_t start, end;
+ 
+ 		if (!r)
+diff --git a/drivers/pci/hotplug/shpchp_sysfs.c b/drivers/pci/hotplug/shpchp_sysfs.c
+index 64beed7a26be..ff04f0c5e7c3 100644
+--- a/drivers/pci/hotplug/shpchp_sysfs.c
++++ b/drivers/pci/hotplug/shpchp_sysfs.c
+@@ -24,16 +24,16 @@
+ static ssize_t show_ctrl(struct device *dev, struct device_attribute *attr, char *buf)
+ {
+ 	struct pci_dev *pdev;
+-	int index, busnr;
+ 	struct resource *res;
+ 	struct pci_bus *bus;
+ 	size_t len = 0;
++	int busnr;
+ 
+ 	pdev = to_pci_dev(dev);
+ 	bus = pdev->subordinate;
+ 
+ 	len += sysfs_emit_at(buf, len, "Free resources: memory\n");
+-	pci_bus_for_each_resource(bus, res, index) {
++	pci_bus_for_each_resource_p(bus, res) {
+ 		if (res && (res->flags & IORESOURCE_MEM) &&
+ 				!(res->flags & IORESOURCE_PREFETCH)) {
+ 			len += sysfs_emit_at(buf, len,
+@@ -43,7 +43,7 @@ static ssize_t show_ctrl(struct device *dev, struct device_attribute *attr, char
+ 		}
+ 	}
+ 	len += sysfs_emit_at(buf, len, "Free resources: prefetchable memory\n");
+-	pci_bus_for_each_resource(bus, res, index) {
++	pci_bus_for_each_resource_p(bus, res) {
+ 		if (res && (res->flags & IORESOURCE_MEM) &&
+ 			       (res->flags & IORESOURCE_PREFETCH)) {
+ 			len += sysfs_emit_at(buf, len,
+@@ -53,7 +53,7 @@ static ssize_t show_ctrl(struct device *dev, struct device_attribute *attr, char
+ 		}
+ 	}
+ 	len += sysfs_emit_at(buf, len, "Free resources: IO\n");
+-	pci_bus_for_each_resource(bus, res, index) {
++	pci_bus_for_each_resource_p(bus, res) {
+ 		if (res && (res->flags & IORESOURCE_IO)) {
+ 			len += sysfs_emit_at(buf, len,
+ 					     "start = %8.8llx, length = %8.8llx\n",
+diff --git a/drivers/pci/pci.c b/drivers/pci/pci.c
+index 7a67611dc5f4..2f8915ab41ef 100644
+--- a/drivers/pci/pci.c
++++ b/drivers/pci/pci.c
+@@ -779,9 +779,8 @@ struct resource *pci_find_parent_resource(const struct pci_dev *dev,
+ {
+ 	const struct pci_bus *bus = dev->bus;
+ 	struct resource *r;
+-	int i;
+ 
+-	pci_bus_for_each_resource(bus, r, i) {
++	pci_bus_for_each_resource_p(bus, r) {
+ 		if (!r)
+ 			continue;
+ 		if (resource_contains(r, res)) {
+@@ -799,7 +798,7 @@ struct resource *pci_find_parent_resource(const struct pci_dev *dev,
+ 			 * be both a positively-decoded aperture and a
+ 			 * subtractively-decoded region that contain the BAR.
+ 			 * We want the positively-decoded one, so this depends
+-			 * on pci_bus_for_each_resource() giving us those
++			 * on pci_bus_for_each_resource_p() giving us those
+ 			 * first.
+ 			 */
+ 			return r;
+diff --git a/drivers/pci/probe.c b/drivers/pci/probe.c
+index a3f68b6ba6ac..5ada4c155d3c 100644
+--- a/drivers/pci/probe.c
++++ b/drivers/pci/probe.c
+@@ -533,7 +533,7 @@ void pci_read_bridge_bases(struct pci_bus *child)
+ 	pci_read_bridge_mmio_pref(child);
+ 
+ 	if (dev->transparent) {
+-		pci_bus_for_each_resource(child->parent, res, i) {
++		pci_bus_for_each_resource_p(child->parent, res) {
+ 			if (res && res->flags) {
+ 				pci_bus_add_resource(child, res,
+ 						     PCI_SUBTRACTIVE_DECODE);
+diff --git a/drivers/pci/setup-bus.c b/drivers/pci/setup-bus.c
+index d4fc7665f70a..d6ead027255f 100644
+--- a/drivers/pci/setup-bus.c
++++ b/drivers/pci/setup-bus.c
+@@ -770,9 +770,8 @@ static struct resource *find_bus_resource_of_type(struct pci_bus *bus,
+ 						  unsigned long type)
+ {
+ 	struct resource *r, *r_assigned = NULL;
+-	int i;
+ 
+-	pci_bus_for_each_resource(bus, r, i) {
++	pci_bus_for_each_resource_p(bus, r) {
+ 		if (r == &ioport_resource || r == &iomem_resource)
+ 			continue;
+ 		if (r && (r->flags & type_mask) == type && !r->parent)
+@@ -1204,7 +1203,7 @@ void __pci_bus_size_bridges(struct pci_bus *bus, struct list_head *realloc_head)
+ 			additional_mmio_pref_size = 0;
+ 	struct resource *pref;
+ 	struct pci_host_bridge *host;
+-	int hdr_type, i, ret;
++	int hdr_type, ret;
+ 
+ 	list_for_each_entry(dev, &bus->devices, bus_list) {
+ 		struct pci_bus *b = dev->subordinate;
+@@ -1228,7 +1227,7 @@ void __pci_bus_size_bridges(struct pci_bus *bus, struct list_head *realloc_head)
+ 		host = to_pci_host_bridge(bus->bridge);
+ 		if (!host->size_windows)
+ 			return;
+-		pci_bus_for_each_resource(bus, pref, i)
++		pci_bus_for_each_resource_p(bus, pref)
+ 			if (pref && (pref->flags & IORESOURCE_PREFETCH))
+ 				break;
+ 		hdr_type = -1;	/* Intentionally invalid - not a PCI device. */
+@@ -1333,12 +1332,11 @@ EXPORT_SYMBOL(pci_bus_size_bridges);
+ 
+ static void assign_fixed_resource_on_bus(struct pci_bus *b, struct resource *r)
+ {
+-	int i;
+ 	struct resource *parent_r;
+ 	unsigned long mask = IORESOURCE_IO | IORESOURCE_MEM |
+ 			     IORESOURCE_PREFETCH;
+ 
+-	pci_bus_for_each_resource(b, parent_r, i) {
++	pci_bus_for_each_resource_p(b, parent_r) {
+ 		if (!parent_r)
+ 			continue;
+ 
+diff --git a/include/linux/pci.h b/include/linux/pci.h
+index a97f026afaed..f0be961fcd7e 100644
+--- a/include/linux/pci.h
++++ b/include/linux/pci.h
+@@ -1445,10 +1445,16 @@ int devm_request_pci_bus_resources(struct device *dev,
+ /* Temporary until new and working PCI SBR API in place */
+ int pci_bridge_secondary_bus_reset(struct pci_dev *dev);
+ 
+-#define pci_bus_for_each_resource(bus, res, i)				\
+-	for (i = 0;							\
+-	    (res = pci_bus_resource_n(bus, i)) || i < PCI_BRIDGE_RESOURCE_NUM; \
+-	     i++)
++#define __pci_bus_for_each_resource(bus, res, __i, vartype)			\
++	for (vartype __i = 0;							\
++	     res = pci_bus_resource_n(bus, __i), __i < PCI_BRIDGE_RESOURCE_NUM;	\
++	     __i++)
++
++#define pci_bus_for_each_resource(bus, res, i)					\
++	__pci_bus_for_each_resource(bus, res, i, )
++
++#define pci_bus_for_each_resource_p(bus, res)					\
++	__pci_bus_for_each_resource(bus, res, __i, unsigned int)
+ 
+ int __must_check pci_bus_alloc_resource(struct pci_bus *bus,
+ 			struct resource *res, resource_size_t size,
+-- 
+2.39.2
+
