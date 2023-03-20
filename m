@@ -2,49 +2,49 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 575F7C761AF
-	for <linux-sh@archiver.kernel.org>; Mon, 20 Mar 2023 01:06:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 94080C7619A
+	for <linux-sh@archiver.kernel.org>; Mon, 20 Mar 2023 01:31:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231251AbjCTBGD (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 19 Mar 2023 21:06:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45286 "EHLO
+        id S229788AbjCTBbm (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 19 Mar 2023 21:31:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42972 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231238AbjCTBDR (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 19 Mar 2023 21:03:17 -0400
-Received: from sin.source.kernel.org (sin.source.kernel.org [IPv6:2604:1380:40e1:4800::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1AF0623DA6;
-        Sun, 19 Mar 2023 17:57:44 -0700 (PDT)
+        with ESMTP id S230229AbjCTBbX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 19 Mar 2023 21:31:23 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3801A241F3;
+        Sun, 19 Mar 2023 18:24:13 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by sin.source.kernel.org (Postfix) with ESMTPS id 2A54CCE1011;
-        Mon, 20 Mar 2023 00:56:37 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 27137C433D2;
-        Mon, 20 Mar 2023 00:56:34 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id E0490B80B48;
+        Mon, 20 Mar 2023 00:57:32 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4BF7AC433EF;
+        Mon, 20 Mar 2023 00:57:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1679273795;
-        bh=P6vD6BAEdEhDdhlgw4psgjaRokQKZmpTxdO+jiaYJFY=;
+        s=k20201202; t=1679273851;
+        bh=Q24NRcEzhgVm8UiR9gH3LzWlYm2ehh+5ZgK6JcpA32o=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=NnjjZtK0hSZ2Awk3zm4crSBwgMvpkvwp+DPGsfhHR/DZC0mWQy80mOWDVOv9mccVT
-         cZ00hqgkWV3LBUi6x+LTlFISE6hi5cN5WFTBLvibOv6X2IYc2M3xqZ6ELchjdtP9e6
-         WosUhq5m7wtnLeu9DTXp6irb7gaapedhSJtBj0DnmXFa/EBV2/nPXSBT87MiHqlOg6
-         f32p0PpLCclylIGkkKmoeAnP1ZQ2N955LXpGETjS/CPbFtVQpjFrAjxX1tQO37nJ2W
-         tjSnLVwvjKn+6eqFtYlPdEQGuBOIbcKwrWRson8n/7vMCMIRcIU36xpkwp7bVIEum7
-         OPgUzgDD3Ol4A==
+        b=HxEFBklEL+JMTutn9jFkySG4ZU4nwwMAkF5f6o1ZMWRZgiG0rcOIGahSp5sBlhE6S
+         rZYUmGTbLPN5RbKhcrYb0kBynCFMztZSr8DmxjDRf/PsGY1wdQIv+6QxUmyy/Ews4R
+         Rn5Zc6PyW+VooCRsnxwVC3INeF6wOhoCLBM0ajYTNInrmcxp7pEEnUHxFUWjRJcpqV
+         GPmZHMQnNp9MneV8ArDzbqJqPk0XlngxKlfqqDfiRwIEqjYgSJyiEdQuRTXuOC/sZ/
+         xV2uQOwPrcjNKJhL1/Ya+fmNt5m12UcuRqdC3QgJ9SSNyibQfNCXm1RZX8taWzhfxP
+         OwwVzTftDsYng==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Al Viro <viro@zeniv.linux.org.uk>, Rich Felker <dalias@libc.org>,
         Linus Torvalds <torvalds@linux-foundation.org>,
         Sasha Levin <sashal@kernel.org>, ysato@users.sourceforge.jp,
-        catalin.marinas@arm.com, bcain@quicinc.com,
-        akpm@linux-foundation.org, guoren@kernel.org,
-        wangkefeng.wang@huawei.com, linux-sh@vger.kernel.org
-Subject: [PATCH AUTOSEL 5.10 15/15] sh: sanitize the flags on sigreturn
-Date:   Sun, 19 Mar 2023 20:55:59 -0400
-Message-Id: <20230320005559.1429040-15-sashal@kernel.org>
+        shorne@gmail.com, catalin.marinas@arm.com, chenhuacai@kernel.org,
+        akpm@linux-foundation.org, wangkefeng.wang@huawei.com,
+        linux-sh@vger.kernel.org
+Subject: [PATCH AUTOSEL 4.19 9/9] sh: sanitize the flags on sigreturn
+Date:   Sun, 19 Mar 2023 20:57:07 -0400
+Message-Id: <20230320005707.1429405-9-sashal@kernel.org>
 X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20230320005559.1429040-1-sashal@kernel.org>
-References: <20230320005559.1429040-1-sashal@kernel.org>
+In-Reply-To: <20230320005707.1429405-1-sashal@kernel.org>
+References: <20230320005707.1429405-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
@@ -71,10 +71,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  2 files changed, 4 insertions(+)
 
 diff --git a/arch/sh/include/asm/processor_32.h b/arch/sh/include/asm/processor_32.h
-index aa92cc933889d..6c7966e627758 100644
+index 95100d8a0b7b4..fc94603724b86 100644
 --- a/arch/sh/include/asm/processor_32.h
 +++ b/arch/sh/include/asm/processor_32.h
-@@ -50,6 +50,7 @@
+@@ -57,6 +57,7 @@
  #define SR_FD		0x00008000
  #define SR_MD		0x40000000
  
@@ -83,10 +83,10 @@ index aa92cc933889d..6c7966e627758 100644
   * DSP structure and data
   */
 diff --git a/arch/sh/kernel/signal_32.c b/arch/sh/kernel/signal_32.c
-index dd3092911efad..dc13702003f0f 100644
+index c46c0020ff55e..ce93ae78c3002 100644
 --- a/arch/sh/kernel/signal_32.c
 +++ b/arch/sh/kernel/signal_32.c
-@@ -115,6 +115,7 @@ static int
+@@ -116,6 +116,7 @@ static int
  restore_sigcontext(struct pt_regs *regs, struct sigcontext __user *sc, int *r0_p)
  {
  	unsigned int err = 0;
@@ -94,7 +94,7 @@ index dd3092911efad..dc13702003f0f 100644
  
  #define COPY(x)		err |= __get_user(regs->x, &sc->sc_##x)
  			COPY(regs[1]);
-@@ -130,6 +131,8 @@ restore_sigcontext(struct pt_regs *regs, struct sigcontext __user *sc, int *r0_p
+@@ -131,6 +132,8 @@ restore_sigcontext(struct pt_regs *regs, struct sigcontext __user *sc, int *r0_p
  	COPY(sr);	COPY(pc);
  #undef COPY
  
