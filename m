@@ -2,49 +2,49 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 94080C7619A
-	for <linux-sh@archiver.kernel.org>; Mon, 20 Mar 2023 01:31:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 38C9DC7619A
+	for <linux-sh@archiver.kernel.org>; Mon, 20 Mar 2023 01:39:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229788AbjCTBbm (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 19 Mar 2023 21:31:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42972 "EHLO
+        id S229832AbjCTBjl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 19 Mar 2023 21:39:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59000 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230229AbjCTBbX (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 19 Mar 2023 21:31:23 -0400
+        with ESMTP id S229746AbjCTBjZ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 19 Mar 2023 21:39:25 -0400
 Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3801A241F3;
-        Sun, 19 Mar 2023 18:24:13 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0539E1E2BD;
+        Sun, 19 Mar 2023 18:34:12 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id E0490B80B48;
-        Mon, 20 Mar 2023 00:57:32 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4BF7AC433EF;
-        Mon, 20 Mar 2023 00:57:30 +0000 (UTC)
+        by ams.source.kernel.org (Postfix) with ESMTPS id CF891B80D4D;
+        Mon, 20 Mar 2023 00:57:57 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2EE6EC433EF;
+        Mon, 20 Mar 2023 00:57:55 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1679273851;
+        s=k20201202; t=1679273876;
         bh=Q24NRcEzhgVm8UiR9gH3LzWlYm2ehh+5ZgK6JcpA32o=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=HxEFBklEL+JMTutn9jFkySG4ZU4nwwMAkF5f6o1ZMWRZgiG0rcOIGahSp5sBlhE6S
-         rZYUmGTbLPN5RbKhcrYb0kBynCFMztZSr8DmxjDRf/PsGY1wdQIv+6QxUmyy/Ews4R
-         Rn5Zc6PyW+VooCRsnxwVC3INeF6wOhoCLBM0ajYTNInrmcxp7pEEnUHxFUWjRJcpqV
-         GPmZHMQnNp9MneV8ArDzbqJqPk0XlngxKlfqqDfiRwIEqjYgSJyiEdQuRTXuOC/sZ/
-         xV2uQOwPrcjNKJhL1/Ya+fmNt5m12UcuRqdC3QgJ9SSNyibQfNCXm1RZX8taWzhfxP
-         OwwVzTftDsYng==
+        b=LnQdgeL/KBZR9NO8fuCw1aYsQEO/cMMpZ+WuB/XAPP9wBvK68JSncVYTAFSeW3gSu
+         1Y2lXJ1/OGLia4+0B8ctftXaLRf069QvYKzy5GS5PV2dHeOS+HoKdk7zzQrb72aHQO
+         sMqIWr4NHal1YdfXTNVp2RMMJyr1HMeZ/2L72F9HIk3L1ipk+dWFUxjWRG+KYGqsnM
+         EwywAOvF329T+mZ9XWKWqIDyuagYcQHyVrL3Qxug4kWmfvWGpKOhjHoWdGdG/3ZOHd
+         j3+Wy0Z3ycHAMim/dm83ti2VeC1T5iVwHd9aWutdMfAhLjRjrXq4JzStK5/Vg56rS3
+         XfoVrWSJiDtyA==
 From:   Sasha Levin <sashal@kernel.org>
 To:     linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Cc:     Al Viro <viro@zeniv.linux.org.uk>, Rich Felker <dalias@libc.org>,
         Linus Torvalds <torvalds@linux-foundation.org>,
         Sasha Levin <sashal@kernel.org>, ysato@users.sourceforge.jp,
-        shorne@gmail.com, catalin.marinas@arm.com, chenhuacai@kernel.org,
-        akpm@linux-foundation.org, wangkefeng.wang@huawei.com,
-        linux-sh@vger.kernel.org
-Subject: [PATCH AUTOSEL 4.19 9/9] sh: sanitize the flags on sigreturn
-Date:   Sun, 19 Mar 2023 20:57:07 -0400
-Message-Id: <20230320005707.1429405-9-sashal@kernel.org>
+        catalin.marinas@arm.com, mpe@ellerman.id.au, geert@linux-m68k.org,
+        akpm@linux-foundation.org, shorne@gmail.com,
+        wangkefeng.wang@huawei.com, linux-sh@vger.kernel.org
+Subject: [PATCH AUTOSEL 4.14 9/9] sh: sanitize the flags on sigreturn
+Date:   Sun, 19 Mar 2023 20:57:32 -0400
+Message-Id: <20230320005732.1429533-9-sashal@kernel.org>
 X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20230320005707.1429405-1-sashal@kernel.org>
-References: <20230320005707.1429405-1-sashal@kernel.org>
+In-Reply-To: <20230320005732.1429533-1-sashal@kernel.org>
+References: <20230320005732.1429533-1-sashal@kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
