@@ -2,102 +2,96 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2D033C6FD1D
-	for <linux-sh@archiver.kernel.org>; Tue, 21 Mar 2023 08:43:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CE069C6FD1D
+	for <linux-sh@archiver.kernel.org>; Tue, 21 Mar 2023 08:46:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229861AbjCUIne convert rfc822-to-8bit (ORCPT
+        id S229822AbjCUIqy convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 21 Mar 2023 04:43:34 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52114 "EHLO
+        Tue, 21 Mar 2023 04:46:54 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56004 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230224AbjCUInd (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Mar 2023 04:43:33 -0400
-Received: from mail-qt1-f179.google.com (mail-qt1-f179.google.com [209.85.160.179])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1086C4391C;
-        Tue, 21 Mar 2023 01:42:59 -0700 (PDT)
-Received: by mail-qt1-f179.google.com with SMTP id t9so16957711qtx.8;
-        Tue, 21 Mar 2023 01:42:59 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1679388169;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=iK/sUmy+uYhum5gWxh+OskUEG9MJUSbdKMs8GiRoDEA=;
-        b=2mr/Yl9a7W5ge6l7VYQ+2YTc3f6II/EJPIm02IvHR0zA4I1EBAOpty2cb9vCqjdjIa
-         z9RqgrJuA8cd8ty8hYKkK0lY0OMDyUHGMUMB6qTu19gjSLWomp+9kIXFjGZG6rR5B0zF
-         Iwh8tOEunPZ3/lVe+MV1kjvX7DXaW5Z1y5+71y5Vd0ldSNiyq3ez3axVpp2IuiGRbr8L
-         FdEXOQ8Uy1bjLQ8lR7AiT4mKKlVThh4YBQrWnhKe2vEgrIDBnBU6p9xN5kKQMghf6Oqg
-         d7wPFJZ+CS0BW2QYQS6eUwq2g/E10aFw0trdRgMovq81kBdA6rNLMur6+e+hsFC0bBjg
-         U+eQ==
-X-Gm-Message-State: AO0yUKUioH7FNo7oKnuhK2MxhmqVfnv3Qu/LkY1U/JoIxKtnLqG1fl9k
-        pPmu2S2xY5D5OmN+PGaHa8Cyhs1XrA6fiw==
-X-Google-Smtp-Source: AK7set8zcFcPFYMXR1676wnY/uqv2LKnwfFwC19F1xiLF0fxOYp8iBz2ktCItNtcrB75rMmsnx/SRA==
-X-Received: by 2002:a05:622a:15cb:b0:3e3:7d35:7899 with SMTP id d11-20020a05622a15cb00b003e37d357899mr3078700qty.43.1679388169352;
-        Tue, 21 Mar 2023 01:42:49 -0700 (PDT)
-Received: from mail-yb1-f173.google.com (mail-yb1-f173.google.com. [209.85.219.173])
-        by smtp.gmail.com with ESMTPSA id e14-20020a05620a014e00b0073b45004754sm8974446qkn.34.2023.03.21.01.42.48
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 21 Mar 2023 01:42:49 -0700 (PDT)
-Received: by mail-yb1-f173.google.com with SMTP id e71so16181898ybc.0;
-        Tue, 21 Mar 2023 01:42:48 -0700 (PDT)
-X-Received: by 2002:a05:6902:1023:b0:b6b:841a:aae4 with SMTP id
- x3-20020a056902102300b00b6b841aaae4mr689181ybt.12.1679388168489; Tue, 21 Mar
- 2023 01:42:48 -0700 (PDT)
-MIME-Version: 1.0
-References: <20230320231310.28841-1-rdunlap@infradead.org> <CAMuHMdXnbRvCjtgpbMnUVoRbHSk407t7Sr4XPpoiaE7M1h+4Ng@mail.gmail.com>
- <ad2234ad155d51c142e59adcf2981bce23d69aa4.camel@physik.fu-berlin.de>
-In-Reply-To: <ad2234ad155d51c142e59adcf2981bce23d69aa4.camel@physik.fu-berlin.de>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Tue, 21 Mar 2023 09:42:37 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdW-oxpoHubUJUpsjG9aXtQ3MMwAopN-hS+Mf0gN1udhig@mail.gmail.com>
-Message-ID: <CAMuHMdW-oxpoHubUJUpsjG9aXtQ3MMwAopN-hS+Mf0gN1udhig@mail.gmail.com>
+        with ESMTP id S230012AbjCUIqs (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Mar 2023 04:46:48 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DCC771B4;
+        Tue, 21 Mar 2023 01:45:50 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1peXcb-002Leu-VU; Tue, 21 Mar 2023 09:45:33 +0100
+Received: from p57bd9952.dip0.t-ipconnect.de ([87.189.153.82] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1peXcb-001BoR-OK; Tue, 21 Mar 2023 09:45:33 +0100
+Message-ID: <fa8b4f3ca8f3d9dc0487399962bcc6ef75ebd6b0.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH 6/7 v5] sh: fix Kconfig entry for NUMA => SMP
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
 Cc:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
         stable@vger.kernel.org
+Date:   Tue, 21 Mar 2023 09:45:33 +0100
+In-Reply-To: <CAMuHMdW-oxpoHubUJUpsjG9aXtQ3MMwAopN-hS+Mf0gN1udhig@mail.gmail.com>
+References: <20230320231310.28841-1-rdunlap@infradead.org>
+         <CAMuHMdXnbRvCjtgpbMnUVoRbHSk407t7Sr4XPpoiaE7M1h+4Ng@mail.gmail.com>
+         <ad2234ad155d51c142e59adcf2981bce23d69aa4.camel@physik.fu-berlin.de>
+         <CAMuHMdW-oxpoHubUJUpsjG9aXtQ3MMwAopN-hS+Mf0gN1udhig@mail.gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.46.4 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.153.82
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Adrian,
+Hi Geert!
 
-On Tue, Mar 21, 2023 at 9:10 AM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Tue, 2023-03-21 at 08:55 +0100, Geert Uytterhoeven wrote:
-> > On Tue, Mar 21, 2023 at 12:13 AM Randy Dunlap <rdunlap@infradead.org> wrote:
-> > > Fix SUPERH builds that select SYS_SUPPORTS_NUMA but do not select
-> > > SYS_SUPPORTS_SMP and SMP.
-> >
-> > Perhaps because these SoCs do not support SMP?
->
-> Well, there is actually a dual-core 7786 board available, see:
->
-> > https://www.apnet.co.jp/product/superh/ap-sh4ad-0a.html
->
-> Quoting:
->
-> »The SH7786 is equipped with a dual-core SH-4A and has interfaces such as
->  DDR3 SDRAM, PCI Express, USB, and display unit.«
+On Tue, 2023-03-21 at 09:42 +0100, Geert Uytterhoeven wrote:
+> Hi Adrian,
+> 
+> On Tue, Mar 21, 2023 at 9:10 AM John Paul Adrian Glaubitz
+> <glaubitz@physik.fu-berlin.de> wrote:
+> > On Tue, 2023-03-21 at 08:55 +0100, Geert Uytterhoeven wrote:
+> > > On Tue, Mar 21, 2023 at 12:13 AM Randy Dunlap <rdunlap@infradead.org> wrote:
+> > > > Fix SUPERH builds that select SYS_SUPPORTS_NUMA but do not select
+> > > > SYS_SUPPORTS_SMP and SMP.
+> > > 
+> > > Perhaps because these SoCs do not support SMP?
+> > 
+> > Well, there is actually a dual-core 7786 board available, see:
+> > 
+> > > https://www.apnet.co.jp/product/superh/ap-sh4ad-0a.html
+> > 
+> > Quoting:
+> > 
+> > »The SH7786 is equipped with a dual-core SH-4A and has interfaces such as
+> >  DDR3 SDRAM, PCI Express, USB, and display unit.«
+> 
+> SH7786 is dual-core...
+> 
+> > FWIW, I just realized we need this for config CPU_SUBTYPE_SH7786 as well.
+> 
+> ... and CPU_SUBTYPE_SH7786 selects CPU_SHX3, which selects
+> SYS_SUPPORTS_SMP and SYS_SUPPORTS_NUMA in turn.
+> So everything is fine for SH7786.
 
-SH7786 is dual-core...
+Yeah, this explains it then. Your new patch is definitely the better approach
+and I would prefer it over Randy's suggested change. Let's see what the mm
+maintainers have to say.
 
-> FWIW, I just realized we need this for config CPU_SUBTYPE_SH7786 as well.
-
-... and CPU_SUBTYPE_SH7786 selects CPU_SHX3, which selects
-SYS_SUPPORTS_SMP and SYS_SUPPORTS_NUMA in turn.
-So everything is fine for SH7786.
-
-Gr{oetje,eeting}s,
-
-                        Geert
+Thanks,
+Adrian
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
