@@ -2,30 +2,37 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E811C7618D
-	for <linux-sh@archiver.kernel.org>; Tue, 21 Mar 2023 08:38:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 001DFC7618D
+	for <linux-sh@archiver.kernel.org>; Tue, 21 Mar 2023 08:42:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229808AbjCUIin (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 21 Mar 2023 04:38:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43484 "EHLO
+        id S230031AbjCUImb convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 21 Mar 2023 04:42:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50008 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229738AbjCUIil (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Mar 2023 04:38:41 -0400
-Received: from albert.telenet-ops.be (albert.telenet-ops.be [IPv6:2a02:1800:110:4::f00:1a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ED9C59742
-        for <linux-sh@vger.kernel.org>; Tue, 21 Mar 2023 01:38:18 -0700 (PDT)
-Received: from ramsan.of.borg ([84.195.187.55])
-        by albert.telenet-ops.be with bizsmtp
-        id aweA2900R1C8whw06weA6A; Tue, 21 Mar 2023 09:38:17 +0100
-Received: from geert (helo=localhost)
-        by ramsan.of.borg with local-esmtp (Exim 4.95)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1peXVS-00E6Yd-Pu;
-        Tue, 21 Mar 2023 09:38:10 +0100
-Date:   Tue, 21 Mar 2023 09:38:10 +0100 (CET)
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-To:     Geert Uytterhoeven <geert+renesas@glider.be>
-cc:     Dave Hansen <dave.hansen@linux.intel.com>,
+        with ESMTP id S230070AbjCUIm3 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Mar 2023 04:42:29 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E87775B96;
+        Tue, 21 Mar 2023 01:41:38 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1peXYU-002KXH-5J; Tue, 21 Mar 2023 09:41:18 +0100
+Received: from p57bd9952.dip0.t-ipconnect.de ([87.189.153.82] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1peXYT-001AuK-U4; Tue, 21 Mar 2023 09:41:18 +0100
+Message-ID: <fac6b2c757166df891d60bd00524af7e7d30fe78.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] mm/slab: Fix undefined init_cache_node_node() for NUMA
+ and !SMP
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
         Arnd Bergmann <arnd@arndb.de>,
         Christoph Lameter <cl@linux.com>,
         Pekka Enberg <penberg@kernel.org>,
@@ -34,36 +41,70 @@ cc:     Dave Hansen <dave.hansen@linux.intel.com>,
         Andrew Morton <akpm@linux-foundation.org>,
         Vlastimil Babka <vbabka@suse.cz>,
         Roman Gushchin <roman.gushchin@linux.dev>,
-        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-mm@kvack.org, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] pinctrl: renesas: r8a7779: Add bias pinconf support
-In-Reply-To: <20230321083033.1830063-1-geert+renesas@glider.be>
-Message-ID: <d6141970-297-717a-38a-7753698aa61@linux-m68k.org>
-References: <20230321083033.1830063-1-geert+renesas@glider.be>
+        Hyeonggon Yoo <42.hyeyoo@gmail.com>
+Cc:     linux-mm@kvack.org, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org, Randy Dunlap <rdunlap@infradead.org>
+Date:   Tue, 21 Mar 2023 09:41:16 +0100
+In-Reply-To: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
+References: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.46.4 
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII; format=flowed
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.153.82
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, 21 Mar 2023, Geert Uytterhoeven wrote:
-> Implement support for pull-up handling for the R-Car H1 SoC, using the
-> common R-Car bias handling.
->
+Hi Geert!
+
+On Tue, 2023-03-21 at 09:30 +0100, Geert Uytterhoeven wrote:
+> sh/migor_defconfig:
+> 
+>     mm/slab.c: In function ‘slab_memory_callback’:
+>     mm/slab.c:1127:23: error: implicit declaration of function ‘init_cache_node_node’; did you mean ‘drain_cache_node_node’? [-Werror=implicit-function-declaration]
+>      1127 |                 ret = init_cache_node_node(nid);
+> 	  |                       ^~~~~~~~~~~~~~~~~~~~
+> 	  |                       drain_cache_node_node
+> 
+> The #ifdef condition protecting the definition of init_cache_node_node()
+> no longer matches the conditions protecting the (multiple) users.
+> 
+> Fix this by syncing the conditions.
+> 
+> Fixes: 76af6a054da40553 ("mm/migrate: add CPU hotplug to demotion #ifdef")
+> Reported-by: Randy Dunlap <rdunlap@infradead.org>
+> Link: https://lore.kernel.org/r/b5bdea22-ed2f-3187-6efe-0c72330270a4@infradead.org
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+>  mm/slab.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/mm/slab.c b/mm/slab.c
+> index ba454246ee13dd4d..de1523a78f2e7367 100644
+> --- a/mm/slab.c
+> +++ b/mm/slab.c
+> @@ -839,7 +839,7 @@ static int init_cache_node(struct kmem_cache *cachep, int node, gfp_t gfp)
+>  	return 0;
+>  }
+>  
+> -#if (defined(CONFIG_NUMA) && defined(CONFIG_MEMORY_HOTPLUG)) || defined(CONFIG_SMP)
+> +#if defined(CONFIG_NUMA) || defined(CONFIG_SMP)
+>  /*
+>   * Allocates and initializes node for a node on each slab cache, used for
+>   * either memory or cpu hotplug.  If memory is being hot-added, the kmem_cache_node
 
-My apologies, this patch was meant for a different audience.
-Please ignore.
+FWIW, the other #ifdef starting at drain_cache_node_node() closes with "#endif /* CONFIG_NUMA */",
+while this #ifdef just ends with "#endif". Just in case you want to make this consistent.
 
-Gr{oetje,eeting}s,
+Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
- 						Geert
+Adrian
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
- 							    -- Linus Torvalds
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
