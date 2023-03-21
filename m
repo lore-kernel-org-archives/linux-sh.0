@@ -2,80 +2,68 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EE479C6FD1D
-	for <linux-sh@archiver.kernel.org>; Tue, 21 Mar 2023 08:38:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E811C7618D
+	for <linux-sh@archiver.kernel.org>; Tue, 21 Mar 2023 08:38:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229798AbjCUIil (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 21 Mar 2023 04:38:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43768 "EHLO
+        id S229808AbjCUIin (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 21 Mar 2023 04:38:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43484 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229941AbjCUIig (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Mar 2023 04:38:36 -0400
-Received: from mail-pl1-x631.google.com (mail-pl1-x631.google.com [IPv6:2607:f8b0:4864:20::631])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4F297EB4E;
-        Tue, 21 Mar 2023 01:38:04 -0700 (PDT)
-Received: by mail-pl1-x631.google.com with SMTP id o11so15283561ple.1;
-        Tue, 21 Mar 2023 01:38:04 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20210112; t=1679387883;
-        h=to:in-reply-to:cc:references:message-id:date:subject:mime-version
-         :from:content-transfer-encoding:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=IhiEXEyTGcdUxfBPxrZJ+Sx7w1Ag4vhfNh72LHa0hJ4=;
-        b=nnJclekWZoU2ry/PfmgIn6NKdYwHjH9BsN+FP3Macpi5PJmcbJq1Nyle5QmkuPKeeb
-         xIgGWuOV7PyDc9AhZqBlGsj0r0EfaVm5iL139H6OI0HnDxNnz+PGek+CkKycUEQQipJW
-         M4gIMwMBSY4F+oDaQwi1Jlj+/XKHSN42cM0g1NbY91fdQgSwq64nKM7wXB844KCKJ2MI
-         DjhihqASsFsYuXs7YK30n6pDbbK2G6sv3yg6EQ+Vp7ng8jnsrZVoEA+7KlS/zhtg0U/p
-         UMLMcrTtH9BELkjuRo4/32D9C6LgPf9Kct9YuPpG9WwB24yKh42l2jQdKr7zTBhn81WW
-         l5kg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1679387883;
-        h=to:in-reply-to:cc:references:message-id:date:subject:mime-version
-         :from:content-transfer-encoding:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=IhiEXEyTGcdUxfBPxrZJ+Sx7w1Ag4vhfNh72LHa0hJ4=;
-        b=TwyvV2MEMToMayrgTj3Ex8DB9thug+/mzJQELV+xiXmkdQG75+UFYiDbFVPBF1HwZL
-         cQtzj0BUVK9Y3vE9XCUc6OcYzvVh6ClK+75g/7u7+n9AXNBOBqBRTlaH7xrc6SLdJvcS
-         2JOm0HUYePpWrdTUu8PhhL8cz8Q3so9WhON2BzvxEqQD4WiMQ13Hyj58gqa5EYk7rR/B
-         VfBaGRX3f4Xmm5xp9pCX6DNuXwVrIeXlRy+m6Fn4HkZLaUv4fJzFo38Dgddj8nLNDbHa
-         wHIwcAL8r7yJZBUK9InuwhlkdgRre5Nxo27pXlK9OK9wXtUWj36eAjMgXmODdZZopNvJ
-         +zOA==
-X-Gm-Message-State: AO0yUKWBxDHPAVbGjyC5BPxRuu6K/+lm5tLdh0xOeEYmA/WUq/VByGb6
-        oEXAxy7o4aKjrJzsviE9QbYtAjZhc5ukvA==
-X-Google-Smtp-Source: AK7set+uwdKluX7gOqZ7nvo57v5vID/nGwhHRGi7uuQhSk7/gG0Nv/P0WQOUwwjqoH5PelR4EZkvqw==
-X-Received: by 2002:a17:902:fb4e:b0:1a1:dd05:39fe with SMTP id lf14-20020a170902fb4e00b001a1dd0539femr1304426plb.4.1679387883571;
-        Tue, 21 Mar 2023 01:38:03 -0700 (PDT)
-Received: from smtpclient.apple (g1-27-253-251-242.bmobile.ne.jp. [27.253.251.242])
-        by smtp.gmail.com with ESMTPSA id p8-20020a1709028a8800b001a1d553de0fsm3013978plo.271.2023.03.21.01.38.03
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 21 Mar 2023 01:38:03 -0700 (PDT)
-Content-Type: text/plain; charset=us-ascii
-Content-Transfer-Encoding: quoted-printable
-From:   "D. Jeff Dionne" <djeffdionne@gmail.com>
-Mime-Version: 1.0 (1.0)
-Subject: Re: [PATCH 6/7 v5] sh: fix Kconfig entry for NUMA => SMP
-Date:   Tue, 21 Mar 2023 17:38:01 +0900
-Message-Id: <A7A78CA6-F9F2-4AFB-8756-0965E33101C8@gmail.com>
-References: <ad2234ad155d51c142e59adcf2981bce23d69aa4.camel@physik.fu-berlin.de>
-Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
-        Randy Dunlap <rdunlap@infradead.org>,
-        linux-kernel@vger.kernel.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Kuninori Morimoto <morimoto.kuninori@renesas.com>,
-        linux-sh@vger.kernel.org, stable@vger.kernel.org
-In-Reply-To: <ad2234ad155d51c142e59adcf2981bce23d69aa4.camel@physik.fu-berlin.de>
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-X-Mailer: iPhone Mail (19H12)
+        with ESMTP id S229738AbjCUIil (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Mar 2023 04:38:41 -0400
+Received: from albert.telenet-ops.be (albert.telenet-ops.be [IPv6:2a02:1800:110:4::f00:1a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ED9C59742
+        for <linux-sh@vger.kernel.org>; Tue, 21 Mar 2023 01:38:18 -0700 (PDT)
+Received: from ramsan.of.borg ([84.195.187.55])
+        by albert.telenet-ops.be with bizsmtp
+        id aweA2900R1C8whw06weA6A; Tue, 21 Mar 2023 09:38:17 +0100
+Received: from geert (helo=localhost)
+        by ramsan.of.borg with local-esmtp (Exim 4.95)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1peXVS-00E6Yd-Pu;
+        Tue, 21 Mar 2023 09:38:10 +0100
+Date:   Tue, 21 Mar 2023 09:38:10 +0100 (CET)
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>
+cc:     Dave Hansen <dave.hansen@linux.intel.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Christoph Lameter <cl@linux.com>,
+        Pekka Enberg <penberg@kernel.org>,
+        David Rientjes <rientjes@google.com>,
+        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Vlastimil Babka <vbabka@suse.cz>,
+        Roman Gushchin <roman.gushchin@linux.dev>,
+        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        linux-mm@kvack.org, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] pinctrl: renesas: r8a7779: Add bias pinconf support
+In-Reply-To: <20230321083033.1830063-1-geert+renesas@glider.be>
+Message-ID: <d6141970-297-717a-38a-7753698aa61@linux-m68k.org>
+References: <20230321083033.1830063-1-geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII; format=flowed
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mar 21, 2023, at 17:12, John Paul Adrian Glaubitz <glaubitz@physik.fu-ber=
-lin.de> wrote:
+On Tue, 21 Mar 2023, Geert Uytterhoeven wrote:
+> Implement support for pull-up handling for the R-Car H1 SoC, using the
+> common R-Car bias handling.
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-> Also, the Sega Saturn had two SH-2 CPUs
+My apologies, this patch was meant for a different audience.
+Please ignore.
 
-New hardware that runs linux is generally/all J2 SMP (dual core sh2 class).
+Gr{oetje,eeting}s,
 
-J.=
+ 						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+ 							    -- Linus Torvalds
