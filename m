@@ -2,109 +2,102 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 001DFC7618D
-	for <linux-sh@archiver.kernel.org>; Tue, 21 Mar 2023 08:42:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2D033C6FD1D
+	for <linux-sh@archiver.kernel.org>; Tue, 21 Mar 2023 08:43:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230031AbjCUImb convert rfc822-to-8bit (ORCPT
+        id S229861AbjCUIne convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 21 Mar 2023 04:42:31 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50008 "EHLO
+        Tue, 21 Mar 2023 04:43:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52114 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230070AbjCUIm3 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Mar 2023 04:42:29 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E87775B96;
-        Tue, 21 Mar 2023 01:41:38 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1peXYU-002KXH-5J; Tue, 21 Mar 2023 09:41:18 +0100
-Received: from p57bd9952.dip0.t-ipconnect.de ([87.189.153.82] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1peXYT-001AuK-U4; Tue, 21 Mar 2023 09:41:18 +0100
-Message-ID: <fac6b2c757166df891d60bd00524af7e7d30fe78.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] mm/slab: Fix undefined init_cache_node_node() for NUMA
- and !SMP
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Geert Uytterhoeven <geert+renesas@glider.be>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Christoph Lameter <cl@linux.com>,
-        Pekka Enberg <penberg@kernel.org>,
-        David Rientjes <rientjes@google.com>,
-        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Vlastimil Babka <vbabka@suse.cz>,
-        Roman Gushchin <roman.gushchin@linux.dev>,
-        Hyeonggon Yoo <42.hyeyoo@gmail.com>
-Cc:     linux-mm@kvack.org, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Randy Dunlap <rdunlap@infradead.org>
-Date:   Tue, 21 Mar 2023 09:41:16 +0100
-In-Reply-To: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
-References: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
+        with ESMTP id S230224AbjCUInd (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Mar 2023 04:43:33 -0400
+Received: from mail-qt1-f179.google.com (mail-qt1-f179.google.com [209.85.160.179])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1086C4391C;
+        Tue, 21 Mar 2023 01:42:59 -0700 (PDT)
+Received: by mail-qt1-f179.google.com with SMTP id t9so16957711qtx.8;
+        Tue, 21 Mar 2023 01:42:59 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1679388169;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=iK/sUmy+uYhum5gWxh+OskUEG9MJUSbdKMs8GiRoDEA=;
+        b=2mr/Yl9a7W5ge6l7VYQ+2YTc3f6II/EJPIm02IvHR0zA4I1EBAOpty2cb9vCqjdjIa
+         z9RqgrJuA8cd8ty8hYKkK0lY0OMDyUHGMUMB6qTu19gjSLWomp+9kIXFjGZG6rR5B0zF
+         Iwh8tOEunPZ3/lVe+MV1kjvX7DXaW5Z1y5+71y5Vd0ldSNiyq3ez3axVpp2IuiGRbr8L
+         FdEXOQ8Uy1bjLQ8lR7AiT4mKKlVThh4YBQrWnhKe2vEgrIDBnBU6p9xN5kKQMghf6Oqg
+         d7wPFJZ+CS0BW2QYQS6eUwq2g/E10aFw0trdRgMovq81kBdA6rNLMur6+e+hsFC0bBjg
+         U+eQ==
+X-Gm-Message-State: AO0yUKUioH7FNo7oKnuhK2MxhmqVfnv3Qu/LkY1U/JoIxKtnLqG1fl9k
+        pPmu2S2xY5D5OmN+PGaHa8Cyhs1XrA6fiw==
+X-Google-Smtp-Source: AK7set8zcFcPFYMXR1676wnY/uqv2LKnwfFwC19F1xiLF0fxOYp8iBz2ktCItNtcrB75rMmsnx/SRA==
+X-Received: by 2002:a05:622a:15cb:b0:3e3:7d35:7899 with SMTP id d11-20020a05622a15cb00b003e37d357899mr3078700qty.43.1679388169352;
+        Tue, 21 Mar 2023 01:42:49 -0700 (PDT)
+Received: from mail-yb1-f173.google.com (mail-yb1-f173.google.com. [209.85.219.173])
+        by smtp.gmail.com with ESMTPSA id e14-20020a05620a014e00b0073b45004754sm8974446qkn.34.2023.03.21.01.42.48
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 21 Mar 2023 01:42:49 -0700 (PDT)
+Received: by mail-yb1-f173.google.com with SMTP id e71so16181898ybc.0;
+        Tue, 21 Mar 2023 01:42:48 -0700 (PDT)
+X-Received: by 2002:a05:6902:1023:b0:b6b:841a:aae4 with SMTP id
+ x3-20020a056902102300b00b6b841aaae4mr689181ybt.12.1679388168489; Tue, 21 Mar
+ 2023 01:42:48 -0700 (PDT)
+MIME-Version: 1.0
+References: <20230320231310.28841-1-rdunlap@infradead.org> <CAMuHMdXnbRvCjtgpbMnUVoRbHSk407t7Sr4XPpoiaE7M1h+4Ng@mail.gmail.com>
+ <ad2234ad155d51c142e59adcf2981bce23d69aa4.camel@physik.fu-berlin.de>
+In-Reply-To: <ad2234ad155d51c142e59adcf2981bce23d69aa4.camel@physik.fu-berlin.de>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Tue, 21 Mar 2023 09:42:37 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdW-oxpoHubUJUpsjG9aXtQ3MMwAopN-hS+Mf0gN1udhig@mail.gmail.com>
+Message-ID: <CAMuHMdW-oxpoHubUJUpsjG9aXtQ3MMwAopN-hS+Mf0gN1udhig@mail.gmail.com>
+Subject: Re: [PATCH 6/7 v5] sh: fix Kconfig entry for NUMA => SMP
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        stable@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.46.4 
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.153.82
-X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Geert!
+Hi Adrian,
 
-On Tue, 2023-03-21 at 09:30 +0100, Geert Uytterhoeven wrote:
-> sh/migor_defconfig:
-> 
->     mm/slab.c: In function ‘slab_memory_callback’:
->     mm/slab.c:1127:23: error: implicit declaration of function ‘init_cache_node_node’; did you mean ‘drain_cache_node_node’? [-Werror=implicit-function-declaration]
->      1127 |                 ret = init_cache_node_node(nid);
-> 	  |                       ^~~~~~~~~~~~~~~~~~~~
-> 	  |                       drain_cache_node_node
-> 
-> The #ifdef condition protecting the definition of init_cache_node_node()
-> no longer matches the conditions protecting the (multiple) users.
-> 
-> Fix this by syncing the conditions.
-> 
-> Fixes: 76af6a054da40553 ("mm/migrate: add CPU hotplug to demotion #ifdef")
-> Reported-by: Randy Dunlap <rdunlap@infradead.org>
-> Link: https://lore.kernel.org/r/b5bdea22-ed2f-3187-6efe-0c72330270a4@infradead.org
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  mm/slab.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/mm/slab.c b/mm/slab.c
-> index ba454246ee13dd4d..de1523a78f2e7367 100644
-> --- a/mm/slab.c
-> +++ b/mm/slab.c
-> @@ -839,7 +839,7 @@ static int init_cache_node(struct kmem_cache *cachep, int node, gfp_t gfp)
->  	return 0;
->  }
->  
-> -#if (defined(CONFIG_NUMA) && defined(CONFIG_MEMORY_HOTPLUG)) || defined(CONFIG_SMP)
-> +#if defined(CONFIG_NUMA) || defined(CONFIG_SMP)
->  /*
->   * Allocates and initializes node for a node on each slab cache, used for
->   * either memory or cpu hotplug.  If memory is being hot-added, the kmem_cache_node
+On Tue, Mar 21, 2023 at 9:10 AM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> On Tue, 2023-03-21 at 08:55 +0100, Geert Uytterhoeven wrote:
+> > On Tue, Mar 21, 2023 at 12:13 AM Randy Dunlap <rdunlap@infradead.org> wrote:
+> > > Fix SUPERH builds that select SYS_SUPPORTS_NUMA but do not select
+> > > SYS_SUPPORTS_SMP and SMP.
+> >
+> > Perhaps because these SoCs do not support SMP?
+>
+> Well, there is actually a dual-core 7786 board available, see:
+>
+> > https://www.apnet.co.jp/product/superh/ap-sh4ad-0a.html
+>
+> Quoting:
+>
+> »The SH7786 is equipped with a dual-core SH-4A and has interfaces such as
+>  DDR3 SDRAM, PCI Express, USB, and display unit.«
 
-FWIW, the other #ifdef starting at drain_cache_node_node() closes with "#endif /* CONFIG_NUMA */",
-while this #ifdef just ends with "#endif". Just in case you want to make this consistent.
+SH7786 is dual-core...
 
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+> FWIW, I just realized we need this for config CPU_SUBTYPE_SH7786 as well.
 
-Adrian
+... and CPU_SUBTYPE_SH7786 selects CPU_SHX3, which selects
+SYS_SUPPORTS_SMP and SYS_SUPPORTS_NUMA in turn.
+So everything is fine for SH7786.
+
+Gr{oetje,eeting}s,
+
+                        Geert
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
