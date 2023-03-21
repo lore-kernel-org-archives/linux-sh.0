@@ -2,42 +2,34 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 38A0DC6FD1D
-	for <linux-sh@archiver.kernel.org>; Tue, 21 Mar 2023 15:30:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8612FC74A5B
+	for <linux-sh@archiver.kernel.org>; Tue, 21 Mar 2023 16:41:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229456AbjCUPaQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 21 Mar 2023 11:30:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58730 "EHLO
+        id S229684AbjCUQli (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 21 Mar 2023 12:41:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52194 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231709AbjCUPaN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Mar 2023 11:30:13 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AECAF5259;
-        Tue, 21 Mar 2023 08:29:45 -0700 (PDT)
+        with ESMTP id S229864AbjCUQle (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Mar 2023 12:41:34 -0400
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9E9573CE32;
+        Tue, 21 Mar 2023 09:41:17 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:
-        Message-ID:Sender:Reply-To:Content-ID:Content-Description;
-        bh=V+bmw1RvbbZi6jSx984W7m2Bc3dCIIAmL6vIS1dzYPQ=; b=VZJsnuGBRKlaSnPzQK8ytVfPvu
-        LP9xzhVAVhV54fQxrlSHoK1Oik/3I1hFCje+oVe9mjp+few0Rihx4xtT11eTtmAQZxc8kQZWqtRYV
-        3WtKN7ZrH2Rs7l83POxtcSA5vuSmH2pmKkXsaBPH+UquPtHDlqjfx8c1LXPF1EfWhiWDnP42K8PPR
-        NCm3M7aRkOWN7beNPeIuJcZDYDuO4wM45/OE0CNaW6I9Ca4TpLO7eKOOY9QToZNY/leetuqgX/FwV
-        7V5leD5cAdSPFiq/iBacDNopHBP9FYJPOOYPdQqKjtYVP0/CjUm+qrjVQCQurdTRh8D1CSvAYJ1CT
-        oJmjXEyw==;
-Received: from [2601:1c2:980:9ec0::21b4]
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1pedvK-00CvRL-1W;
-        Tue, 21 Mar 2023 15:29:18 +0000
-Message-ID: <6f5fd9d9-f247-a7c0-a5e5-c40c37c76281@infradead.org>
-Date:   Tue, 21 Mar 2023 08:29:16 -0700
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.8.0
-Subject: Re: [PATCH] mm/slab: Fix undefined init_cache_node_node() for NUMA
- and !SMP
-Content-Language: en-US
-To:     Geert Uytterhoeven <geert+renesas@glider.be>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
+        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=kpqcXT8QqZUbgAbHLkFBXBAuimNYfe86vG0UJSyYaa0=; b=mT6QzWgAzHeZ2aR0SzXvvHka2g
+        v0h4J+l4MslLiuDg9mUJXGjaPdp51AOBdd5SqPyBs9GTOGJ94bkGQuL5XHXLLMADUPlcF5DcYpH3k
+        jUU+V95m0jtK3yuqWE582W6R8rkZLCMJL1unrYc3TkuFa6grmhRaxd7rZvVANe0RJ3w6XCJqNW/TL
+        y7MAwIMBunId3Cosr0okHwHX0JhoU4Nm/soPHMDObvAjPuwZmby7iPwtO8UjQcYkocYHOCp23OXHc
+        1YDroaylCEY2wsEJd8vGVqjZ28sBSQ3oYz0jV9sHvC0tZlLdgXYIgOfWCwcaBX2WoEoPDuD98lNxm
+        qCdmHxYg==;
+Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1pef2W-002CQM-Rt; Tue, 21 Mar 2023 16:40:48 +0000
+Date:   Tue, 21 Mar 2023 16:40:48 +0000
+From:   Matthew Wilcox <willy@infradead.org>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>
+Cc:     Dave Hansen <dave.hansen@linux.intel.com>,
         Arnd Bergmann <arnd@arndb.de>,
         Christoph Lameter <cl@linux.com>,
         Pekka Enberg <penberg@kernel.org>,
@@ -46,59 +38,26 @@ To:     Geert Uytterhoeven <geert+renesas@glider.be>,
         Andrew Morton <akpm@linux-foundation.org>,
         Vlastimil Babka <vbabka@suse.cz>,
         Roman Gushchin <roman.gushchin@linux.dev>,
-        Hyeonggon Yoo <42.hyeyoo@gmail.com>
-Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         linux-mm@kvack.org, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
+        linux-kernel@vger.kernel.org, Randy Dunlap <rdunlap@infradead.org>
+Subject: Re: [PATCH] mm/slab: Fix undefined init_cache_node_node() for NUMA
+ and !SMP
+Message-ID: <ZBneELQuakjva1xa@casper.infradead.org>
 References: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
-From:   Randy Dunlap <rdunlap@infradead.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 In-Reply-To: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-
-On 3/21/23 01:30, Geert Uytterhoeven wrote:
-> sh/migor_defconfig:
-> 
->     mm/slab.c: In function ‘slab_memory_callback’:
->     mm/slab.c:1127:23: error: implicit declaration of function ‘init_cache_node_node’; did you mean ‘drain_cache_node_node’? [-Werror=implicit-function-declaration]
->      1127 |                 ret = init_cache_node_node(nid);
-> 	  |                       ^~~~~~~~~~~~~~~~~~~~
-> 	  |                       drain_cache_node_node
-> 
-> The #ifdef condition protecting the definition of init_cache_node_node()
-> no longer matches the conditions protecting the (multiple) users.
-> 
-> Fix this by syncing the conditions.
-> 
-> Fixes: 76af6a054da40553 ("mm/migrate: add CPU hotplug to demotion #ifdef")
-> Reported-by: Randy Dunlap <rdunlap@infradead.org>
-> Link: https://lore.kernel.org/r/b5bdea22-ed2f-3187-6efe-0c72330270a4@infradead.org
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-
-Acked-by: Randy Dunlap <rdunlap@infradead.org>
-Thanks.
-
-> ---
->  mm/slab.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/mm/slab.c b/mm/slab.c
-> index ba454246ee13dd4d..de1523a78f2e7367 100644
-> --- a/mm/slab.c
-> +++ b/mm/slab.c
-> @@ -839,7 +839,7 @@ static int init_cache_node(struct kmem_cache *cachep, int node, gfp_t gfp)
->  	return 0;
->  }
->  
+On Tue, Mar 21, 2023 at 09:30:59AM +0100, Geert Uytterhoeven wrote:
 > -#if (defined(CONFIG_NUMA) && defined(CONFIG_MEMORY_HOTPLUG)) || defined(CONFIG_SMP)
 > +#if defined(CONFIG_NUMA) || defined(CONFIG_SMP)
->  /*
->   * Allocates and initializes node for a node on each slab cache, used for
->   * either memory or cpu hotplug.  If memory is being hot-added, the kmem_cache_node
 
--- 
-~Randy
+I'm amused by the thought of CONFIG_NUMA without CONFIG_SMP.
+Is it possible to have one node with memory and a single CPU, then
+another node with memory and no CPU?
