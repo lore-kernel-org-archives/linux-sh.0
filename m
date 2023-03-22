@@ -2,102 +2,237 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9B8C4C6FD1C
-	for <linux-sh@archiver.kernel.org>; Wed, 22 Mar 2023 16:49:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E83ACC77B60
+	for <linux-sh@archiver.kernel.org>; Wed, 22 Mar 2023 17:03:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230086AbjCVQtv (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 22 Mar 2023 12:49:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53926 "EHLO
+        id S230181AbjCVRDN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 22 Mar 2023 13:03:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54806 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229941AbjCVQtv (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 22 Mar 2023 12:49:51 -0400
-Received: from mga07.intel.com (mga07.intel.com [134.134.136.100])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8D32439BB5;
-        Wed, 22 Mar 2023 09:49:50 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1679503790; x=1711039790;
-  h=message-id:date:mime-version:subject:to:cc:references:
-   from:in-reply-to:content-transfer-encoding;
-  bh=PmlDxcsDFapOGbfdlWh2GWhkkqitl+2PBEpJ4f3MM/Y=;
-  b=aQrtXiaZV40d30HJtF8PITqUnrEyqWKf6bnSZTC7DlBsiUG7lb4bXehi
-   svWmqgp0i5+AMBP+8nBuosYwwxJcGaaZvHjYx4v4ajetq+jeddsWQhIGe
-   AEsCF+ukiXVRMtZ7bfNZy8RG0bneSJcI+cft52PTs9Qjjdabb8kds3fV2
-   lMsNk74Cg25XEtId4bQ4mltblwhTr1A/vQzBvg+aNOIGNdSRerjXcm9yf
-   gA5cMx9xaMfPA7gzh9VyiSzbAeBZK9ZW9LXRszbL2lB9Up1pzQPF4VXb6
-   NiwSDJ8ZEjlYjMaTBIlr8GQPGeTRs9KaFszEtk5WyDiTS+xvq7jkGOUmN
-   g==;
-X-IronPort-AV: E=McAfee;i="6600,9927,10657"; a="404159809"
-X-IronPort-AV: E=Sophos;i="5.98,282,1673942400"; 
-   d="scan'208";a="404159809"
-Received: from fmsmga005.fm.intel.com ([10.253.24.32])
-  by orsmga105.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 22 Mar 2023 09:49:49 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6600,9927,10657"; a="1011437716"
-X-IronPort-AV: E=Sophos;i="5.98,282,1673942400"; 
-   d="scan'208";a="1011437716"
-Received: from mtfreder-mobl1.amr.corp.intel.com (HELO [10.209.35.23]) ([10.209.35.23])
-  by fmsmga005-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 22 Mar 2023 09:49:48 -0700
-Message-ID: <d0bf2342-4f1c-bf2f-b912-a4558288a3d0@intel.com>
-Date:   Wed, 22 Mar 2023 09:49:48 -0700
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.7.1
-Subject: Re: [PATCH] mm/slab: Fix undefined init_cache_node_node() for NUMA
- and !SMP
-Content-Language: en-US
-To:     Matthew Wilcox <willy@infradead.org>
-Cc:     Geert Uytterhoeven <geert+renesas@glider.be>,
+        with ESMTP id S231175AbjCVRDG (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 22 Mar 2023 13:03:06 -0400
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C32E45DC92
+        for <linux-sh@vger.kernel.org>; Wed, 22 Mar 2023 10:01:59 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1679504484;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=2ZS63eR35hQQpuztlWGnGcv/jaBVlYMjTvbdWWfPWAY=;
+        b=R3wXvEy72H8DcVvRWZo9a//6v+b5En0EzBxfc4xHkMLClw1tc78evZr3GgYrWXhBrKPOXg
+        PEwV9S3IIQ+BoQp1ZiT51WCfYq0YSGMMCv6TBC3xop+CgRumdNECwRpYwXSVkF+1+n4K0G
+        +R5bCoOdVHpe8s7wie3+uVSMT3ivBYQ=
+Received: from mail-ot1-f69.google.com (mail-ot1-f69.google.com
+ [209.85.210.69]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-358-_G845EasMHGecqLuKAHzaw-1; Wed, 22 Mar 2023 13:01:22 -0400
+X-MC-Unique: _G845EasMHGecqLuKAHzaw-1
+Received: by mail-ot1-f69.google.com with SMTP id m1-20020a0568301e6100b0069f94fdab6fso1559297otr.21
+        for <linux-sh@vger.kernel.org>; Wed, 22 Mar 2023 10:01:22 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1679504482;
+        h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
+         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=2ZS63eR35hQQpuztlWGnGcv/jaBVlYMjTvbdWWfPWAY=;
+        b=cfMd63t+0qzydiEuep9IWNunFxpfAt/aOprn29CSo79vVtFCX1/v2TiPhwAVW+iQVy
+         snYVg9qe/9h8dbzDFRL0knRwYD0hsH4YidtoW0Keddn/oqOtFg/hrh39VpHErNtxy8Pf
+         /okkQ4Epq58DmIlzwVld3FMg/4Q4xPJeaVuA/Eu5TcC+RrWpuhSR4H/YHk6DRKFil+km
+         zt7LENGy/WKiz9mE4y38LOMVkHQYrq5Xv3vG76pTCJ8WzcmTBzw0pqDvN6hd9wb/12pW
+         IRZxRmUYg0meTBq8YTJuUY6VAlHf84hrIjFYh6VjR34VphB+rwYzgtpgjhhpyUsoc+Rv
+         biGw==
+X-Gm-Message-State: AO0yUKU0xOpYbMedbi0ZSbtp/5HWUKIOGdm+8bEXtydqJLZsiJlgbpEX
+        G2RhiIcC5ShFqrnqwsolhlDV2auuXfIOG38Y+wbBdF7vMzDiSe3fSdL2xdipkTh3EeAsDMKGKTh
+        mLVJcKuq8wniDYwMcw0c=
+X-Received: by 2002:a05:6830:1397:b0:69b:c665:95ef with SMTP id d23-20020a056830139700b0069bc66595efmr1849083otq.32.1679504481960;
+        Wed, 22 Mar 2023 10:01:21 -0700 (PDT)
+X-Google-Smtp-Source: AK7set9OhxWG20qH1i/Yp6i2el5aA4zIJA9CTIhUo/MbvkBAyasdde0EdhDBEsgwB6QV+kPj7JTH5w==
+X-Received: by 2002:a05:6830:1397:b0:69b:c665:95ef with SMTP id d23-20020a056830139700b0069bc66595efmr1849034otq.32.1679504481408;
+        Wed, 22 Mar 2023 10:01:21 -0700 (PDT)
+Received: from vschneid.remote.csb ([154.57.232.159])
+        by smtp.gmail.com with ESMTPSA id g19-20020a05620a40d300b007290be5557bsm11733172qko.38.2023.03.22.10.01.14
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 22 Mar 2023 10:01:20 -0700 (PDT)
+From:   Valentin Schneider <vschneid@redhat.com>
+To:     Peter Zijlstra <peterz@infradead.org>
+Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
+        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
+        x86@kernel.org, "Paul E. McKenney" <paulmck@kernel.org>,
+        Steven Rostedt <rostedt@goodmis.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
+        Juri Lelli <juri.lelli@redhat.com>,
+        Daniel Bristot de Oliveira <bristot@redhat.com>,
+        Marcelo Tosatti <mtosatti@redhat.com>,
+        Frederic Weisbecker <frederic@kernel.org>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
         Dave Hansen <dave.hansen@linux.intel.com>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Christoph Lameter <cl@linux.com>,
-        Pekka Enberg <penberg@kernel.org>,
-        David Rientjes <rientjes@google.com>,
-        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Vlastimil Babka <vbabka@suse.cz>,
-        Roman Gushchin <roman.gushchin@linux.dev>,
-        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-mm@kvack.org, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Randy Dunlap <rdunlap@infradead.org>
-References: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
- <ZBneELQuakjva1xa@casper.infradead.org>
- <6320abf6-0898-361b-d5f6-bcc58306f55c@intel.com>
- <ZBsw9lRbJU4c2wLD@casper.infradead.org>
-From:   Dave Hansen <dave.hansen@intel.com>
-In-Reply-To: <ZBsw9lRbJU4c2wLD@casper.infradead.org>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+        "H. Peter Anvin" <hpa@zytor.com>, Marc Zyngier <maz@kernel.org>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Guo Ren <guoren@kernel.org>,
+        "David S. Miller" <davem@davemloft.net>
+Subject: Re: [PATCH v5 7/7] sched, smp: Trace smp callback causing an IPI
+In-Reply-To: <20230322140434.GC2357380@hirez.programming.kicks-ass.net>
+References: <20230307143558.294354-1-vschneid@redhat.com>
+ <20230307143558.294354-8-vschneid@redhat.com>
+ <20230322095329.GS2017917@hirez.programming.kicks-ass.net>
+ <xhsmhmt45c703.mognet@vschneid.remote.csb>
+ <20230322140434.GC2357380@hirez.programming.kicks-ass.net>
+Date:   Wed, 22 Mar 2023 17:01:13 +0000
+Message-ID: <xhsmhjzz8d8km.mognet@vschneid.remote.csb>
+MIME-Version: 1.0
+X-Mimecast-Spam-Score: 0
+X-Mimecast-Originator: redhat.com
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 3/22/23 09:46, Matthew Wilcox wrote:
-> On Wed, Mar 22, 2023 at 09:16:55AM -0700, Dave Hansen wrote:
->> On 3/21/23 09:40, Matthew Wilcox wrote:
->>> On Tue, Mar 21, 2023 at 09:30:59AM +0100, Geert Uytterhoeven wrote:
->>>> -#if (defined(CONFIG_NUMA) && defined(CONFIG_MEMORY_HOTPLUG)) || defined(CONFIG_SMP)
->>>> +#if defined(CONFIG_NUMA) || defined(CONFIG_SMP)
->>> I'm amused by the thought of CONFIG_NUMA without CONFIG_SMP.
->>> Is it possible to have one node with memory and a single CPU, then
->>> another node with memory and no CPU?
->> It's _possible_ for sure, just unlikely.  The most likely place these
->> days is probably a teensy tiny VM that just happens to have some
->> performance-differentiated memory exposed to it for some reason.  Maybe
->> it's got a slice of slow PMEM or fast High-Bandwidth memory for whatever
->> reason.
-> Right, you can construct such a system, but do we support the CONFIG
-> options of NUMA enabled and SMP disabled?  It seems so niche that we
-> shouldn't be spending time testing that combination.
+On 22/03/23 15:04, Peter Zijlstra wrote:
+> On Wed, Mar 22, 2023 at 12:20:28PM +0000, Valentin Schneider wrote:
+>> On 22/03/23 10:53, Peter Zijlstra wrote:
+>
+>> > Hurmph... so we only really consume @func when we IPI. Would it not be
+>> > more useful to trace this thing for *every* csd enqeued?
+>>
+>> It's true that any CSD enqueued on that CPU's call_single_queue in the
+>> [first CSD llist_add()'ed, IPI IRQ hits] timeframe is a potential source of
+>> interference.
+>>
+>> However, can we be sure that first CSD isn't an indirect cause for the
+>> following ones? say the target CPU exits RCU EQS due to the IPI, there's a
+>> bit of time before it gets to flush_smp_call_function_queue() where some other CSD
+>> could be enqueued *because* of that change in state.
+>>
+>> I couldn't find a easy example of that, I might be biased as this is where
+>> I'd like to go wrt IPI'ing isolated CPUs in usermode. But regardless, when
+>> correlating an IPI IRQ with its source, we'd always have to look at the
+>> first CSD in that CSD stack.
+>
+> So I was thinking something like this:
+>
+> ---
+> Subject: trace,smp: Trace all smp_function_call*() invocations
+> From: Peter Zijlstra <peterz@infradead.org>
+> Date: Wed Mar 22 14:58:36 CET 2023
+>
+> (Ab)use the trace_ipi_send_cpu*() family to trace all
+> smp_function_call*() invocations, not only those that result in an
+> actual IPI.
+>
+> The queued entries log their callback function while the actual IPIs
+> are traced on generic_smp_call_function_single_interrupt().
+>
+> Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+> ---
+>  kernel/smp.c |   58 ++++++++++++++++++++++++++++++----------------------------
+>  1 file changed, 30 insertions(+), 28 deletions(-)
+>
+> --- a/kernel/smp.c
+> +++ b/kernel/smp.c
+> @@ -106,18 +106,20 @@ void __init call_function_init(void)
+>  }
+>
+>  static __always_inline void
+> -send_call_function_single_ipi(int cpu, smp_call_func_t func)
+> +send_call_function_single_ipi(int cpu)
+>  {
+>       if (call_function_single_prep_ipi(cpu)) {
+> -		trace_ipi_send_cpu(cpu, _RET_IP_, func);
+> +		trace_ipi_send_cpu(cpu, _RET_IP_,
+> +				   generic_smp_call_function_single_interrupt);
 
-On x86 we don't:
+Hm, this does get rid of the func being passed down the helpers, but this
+means the trace events are now stateful, i.e. I need the first and last
+events in a CSD stack to figure out which one actually caused the IPI.
 
-> config NUMA
->         bool "NUMA Memory Allocation and Scheduler Support"
->         depends on SMP
->         depends on X86_64 || (X86_32 && HIGHMEM64G && X86_BIGSMP)
+It also requires whoever is looking at the trace to be aware of which IPIs
+are attached to a CSD, and which ones aren't. ATM that's only the resched
+IPI, but per the cover letter there's more to come (e.g. tick_broadcast()
+for arm64/riscv and a few others). For instance:
 
-... which I think is fine.  I totally agree that NUMA without SMP is too
-niche to care about.  Heck, !SMP is almost too niche to care about these
-days.
+       hackbench-157   [001]    10.894320: ipi_send_cpu:         cpu=3 callsite=check_preempt_curr+0x37 callback=0x0
+       hackbench-157   [001]    10.895068: ipi_send_cpu:         cpu=3 callsite=try_to_wake_up+0x29e callback=sched_ttwu_pending+0x0
+       hackbench-157   [001]    10.895068: ipi_send_cpu:         cpu=3 callsite=try_to_wake_up+0x29e callback=generic_smp_call_function_single_interrupt+0x0
+
+That first one sent a RESCHEDULE IPI, the second one a CALL_FUNCTION one,
+but you really have to know what you're looking at...
+
+Are you worried about the @func being pushed down? Staring at x86 asm is
+not good for the soul, but AFAICT this does cause an extra register to be
+popped in the prologue because all of the helpers are __always_inline, so
+both paths of the static key(s) are in the same stackframe.
+
+I can "improve" this with:
+
+---
+diff --git a/kernel/smp.c b/kernel/smp.c
+index 5cd680a7e78ef..55f120dae1713 100644
+--- a/kernel/smp.c
++++ b/kernel/smp.c
+@@ -511,6 +511,26 @@ raw_smp_call_single_queue(int cpu, struct llist_node *node, smp_call_func_t func
+ 
+ static DEFINE_PER_CPU_SHARED_ALIGNED(call_single_data_t, csd_data);
+ 
++static noinline void __smp_call_single_queue_trace(int cpu, struct llist_node *node)
++{
++	call_single_data_t *csd;
++	smp_call_func_t func;
++
++
++	/*
++	 * We have to check the type of the CSD before queueing it, because
++	 * once queued it can have its flags cleared by
++	 *   flush_smp_call_function_queue()
++	 * even if we haven't sent the smp_call IPI yet (e.g. the stopper
++	 * executes migration_cpu_stop() on the remote CPU).
++	 */
++	csd = container_of(node, call_single_data_t, node.llist);
++	func = CSD_TYPE(csd) == CSD_TYPE_TTWU ?
++		sched_ttwu_pending : csd->func;
++
++	raw_smp_call_single_queue(cpu, node, func);
++}
++
+ void __smp_call_single_queue(int cpu, struct llist_node *node)
+ {
+ #ifdef CONFIG_CSD_LOCK_WAIT_DEBUG
+@@ -525,25 +545,10 @@ void __smp_call_single_queue(int cpu, struct llist_node *node)
+ 		}
+ 	}
+ #endif
+-	/*
+-	 * We have to check the type of the CSD before queueing it, because
+-	 * once queued it can have its flags cleared by
+-	 *   flush_smp_call_function_queue()
+-	 * even if we haven't sent the smp_call IPI yet (e.g. the stopper
+-	 * executes migration_cpu_stop() on the remote CPU).
+-	 */
+-	if (trace_ipi_send_cpumask_enabled()) {
+-		call_single_data_t *csd;
+-		smp_call_func_t func;
+-
+-		csd = container_of(node, call_single_data_t, node.llist);
+-		func = CSD_TYPE(csd) == CSD_TYPE_TTWU ?
+-			sched_ttwu_pending : csd->func;
+-
+-		raw_smp_call_single_queue(cpu, node, func);
+-	} else {
++	if (trace_ipi_send_cpumask_enabled())
++		__smp_call_single_queue_trace(cpu, node);
++	else
+ 		raw_smp_call_single_queue(cpu, node, NULL);
+-	}
+ }
+ 
+ /*
+
