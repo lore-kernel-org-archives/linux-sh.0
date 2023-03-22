@@ -2,221 +2,87 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 62E19C77B61
-	for <linux-sh@archiver.kernel.org>; Wed, 22 Mar 2023 14:06:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7491FC6FD1F
+	for <linux-sh@archiver.kernel.org>; Wed, 22 Mar 2023 16:18:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231319AbjCVOG2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 22 Mar 2023 10:06:28 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54976 "EHLO
+        id S229865AbjCVQSL (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 22 Mar 2023 12:18:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39312 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231318AbjCVOGO (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 22 Mar 2023 10:06:14 -0400
-Received: from desiato.infradead.org (desiato.infradead.org [IPv6:2001:8b0:10b:1:d65d:64ff:fe57:4e05])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8C4BA54CA4;
-        Wed, 22 Mar 2023 07:06:03 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=desiato.20200630; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=sOH/P4JrokMCYAgfWwj5ycXuOYqJurQfzeUI9onBv2s=; b=jBjNHOC7qWB4oHhln7lym2SyvG
-        13fiewzNurZdmqlPmM5LTnqVATc7bc7Ck81ekMH2BdQufrQhM/S/cYdNh+nUd/SS8jlISkZJdxng9
-        UGDNfRGIVcLBM0n4Q0WPB/BTCRBw/oZTgxkxh/MFcemdwuVVMfRrzZwT8hleSfze70nwksyC7FdQo
-        URq2nt3wWzTns3K+z/QYKTG28lEJZKPQMPsDVNr07WZ093beJ4RGvPV3dW+CYaEfTPjs2OhVfICrD
-        rnE+0tsqva+jhkqwvNTu6Df6g8GtY/D7ezclkZESxvIP2EapnT7/e9uX8x4F6vTPNIrjB5GOcYvb0
-        GUSRtrjg==;
-Received: from j130084.upc-j.chello.nl ([24.132.130.84] helo=noisy.programming.kicks-ass.net)
-        by desiato.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1pez4w-004ZNU-0e;
-        Wed, 22 Mar 2023 14:04:38 +0000
-Received: from hirez.programming.kicks-ass.net (hirez.programming.kicks-ass.net [192.168.1.225])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (4096 bits))
-        (Client did not present a certificate)
-        by noisy.programming.kicks-ass.net (Postfix) with ESMTPS id CFDD830031E;
-        Wed, 22 Mar 2023 15:04:34 +0100 (CET)
-Received: by hirez.programming.kicks-ass.net (Postfix, from userid 1000)
-        id B8585240C838E; Wed, 22 Mar 2023 15:04:34 +0100 (CET)
-Date:   Wed, 22 Mar 2023 15:04:34 +0100
-From:   Peter Zijlstra <peterz@infradead.org>
-To:     Valentin Schneider <vschneid@redhat.com>
-Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
-        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
-        x86@kernel.org, "Paul E. McKenney" <paulmck@kernel.org>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
-        Juri Lelli <juri.lelli@redhat.com>,
-        Daniel Bristot de Oliveira <bristot@redhat.com>,
-        Marcelo Tosatti <mtosatti@redhat.com>,
-        Frederic Weisbecker <frederic@kernel.org>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        "H. Peter Anvin" <hpa@zytor.com>, Marc Zyngier <maz@kernel.org>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Guo Ren <guoren@kernel.org>,
-        "David S. Miller" <davem@davemloft.net>
-Subject: Re: [PATCH v5 7/7] sched, smp: Trace smp callback causing an IPI
-Message-ID: <20230322140434.GC2357380@hirez.programming.kicks-ass.net>
-References: <20230307143558.294354-1-vschneid@redhat.com>
- <20230307143558.294354-8-vschneid@redhat.com>
- <20230322095329.GS2017917@hirez.programming.kicks-ass.net>
- <xhsmhmt45c703.mognet@vschneid.remote.csb>
+        with ESMTP id S229597AbjCVQSJ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 22 Mar 2023 12:18:09 -0400
+Received: from mga05.intel.com (mga05.intel.com [192.55.52.43])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5B6CC422F;
+        Wed, 22 Mar 2023 09:18:08 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1679501888; x=1711037888;
+  h=message-id:date:mime-version:subject:to:cc:references:
+   from:in-reply-to:content-transfer-encoding;
+  bh=GxnyaeprblyISryT2qF5P+Px8gWsxIIA48GZP8Apwvg=;
+  b=OCvBAOQxETqfBEtd8QFhIyMlNvHe4jwP8tRQi8/kRcKU4IkXLNjmyX63
+   reEsOZh60NvtqqoEYnyEhchK8HdV2svvEQXRz7+j+lQapsq1SOiUx2u0e
+   e9Cic4JTqEDnpR88ASJocMJ6Cssf2EOWLDeA6uZi/0wbOUMbg5fMSxj00
+   jbMFp4mR2Q/K1Djn6ZdYMYjT7HVX/3rj8BSleKh13JUIxPJnnbO9OCbaD
+   U1fmZyW0R0aUBE3zSE9Dc0qpy/Y731xkP0p7S5VLXRHJ8t/ZUtIeUFBEV
+   1aFUsK9pbu3l5A6KwZdRsvsnKC4oJqE6LrU8cxMjKBdkbIMzoeKnzU+/M
+   w==;
+X-IronPort-AV: E=McAfee;i="6600,9927,10657"; a="425547449"
+X-IronPort-AV: E=Sophos;i="5.98,282,1673942400"; 
+   d="scan'208";a="425547449"
+Received: from orsmga007.jf.intel.com ([10.7.209.58])
+  by fmsmga105.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 22 Mar 2023 09:16:59 -0700
+X-ExtLoop1: 1
+X-IronPort-AV: E=McAfee;i="6600,9927,10657"; a="675344533"
+X-IronPort-AV: E=Sophos;i="5.98,282,1673942400"; 
+   d="scan'208";a="675344533"
+Received: from mtfreder-mobl1.amr.corp.intel.com (HELO [10.209.35.23]) ([10.209.35.23])
+  by orsmga007-auth.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 22 Mar 2023 09:16:55 -0700
+Message-ID: <6320abf6-0898-361b-d5f6-bcc58306f55c@intel.com>
+Date:   Wed, 22 Mar 2023 09:16:55 -0700
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <xhsmhmt45c703.mognet@vschneid.remote.csb>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.7.1
+Subject: Re: [PATCH] mm/slab: Fix undefined init_cache_node_node() for NUMA
+ and !SMP
+Content-Language: en-US
+To:     Matthew Wilcox <willy@infradead.org>,
+        Geert Uytterhoeven <geert+renesas@glider.be>
+Cc:     Dave Hansen <dave.hansen@linux.intel.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Christoph Lameter <cl@linux.com>,
+        Pekka Enberg <penberg@kernel.org>,
+        David Rientjes <rientjes@google.com>,
+        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Vlastimil Babka <vbabka@suse.cz>,
+        Roman Gushchin <roman.gushchin@linux.dev>,
+        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        linux-mm@kvack.org, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org, Randy Dunlap <rdunlap@infradead.org>
+References: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
+ <ZBneELQuakjva1xa@casper.infradead.org>
+From:   Dave Hansen <dave.hansen@intel.com>
+In-Reply-To: <ZBneELQuakjva1xa@casper.infradead.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Mar 22, 2023 at 12:20:28PM +0000, Valentin Schneider wrote:
-> On 22/03/23 10:53, Peter Zijlstra wrote:
+On 3/21/23 09:40, Matthew Wilcox wrote:
+> On Tue, Mar 21, 2023 at 09:30:59AM +0100, Geert Uytterhoeven wrote:
+>> -#if (defined(CONFIG_NUMA) && defined(CONFIG_MEMORY_HOTPLUG)) || defined(CONFIG_SMP)
+>> +#if defined(CONFIG_NUMA) || defined(CONFIG_SMP)
+> I'm amused by the thought of CONFIG_NUMA without CONFIG_SMP.
+> Is it possible to have one node with memory and a single CPU, then
+> another node with memory and no CPU?
 
-> > Hurmph... so we only really consume @func when we IPI. Would it not be
-> > more useful to trace this thing for *every* csd enqeued?
-> 
-> It's true that any CSD enqueued on that CPU's call_single_queue in the
-> [first CSD llist_add()'ed, IPI IRQ hits] timeframe is a potential source of
-> interference.
-> 
-> However, can we be sure that first CSD isn't an indirect cause for the
-> following ones? say the target CPU exits RCU EQS due to the IPI, there's a
-> bit of time before it gets to flush_smp_call_function_queue() where some other CSD
-> could be enqueued *because* of that change in state.
-> 
-> I couldn't find a easy example of that, I might be biased as this is where
-> I'd like to go wrt IPI'ing isolated CPUs in usermode. But regardless, when
-> correlating an IPI IRQ with its source, we'd always have to look at the
-> first CSD in that CSD stack.
+It's _possible_ for sure, just unlikely.  The most likely place these
+days is probably a teensy tiny VM that just happens to have some
+performance-differentiated memory exposed to it for some reason.  Maybe
+it's got a slice of slow PMEM or fast High-Bandwidth memory for whatever
+reason.
 
-So I was thinking something like this:
 
----
-Subject: trace,smp: Trace all smp_function_call*() invocations
-From: Peter Zijlstra <peterz@infradead.org>
-Date: Wed Mar 22 14:58:36 CET 2023
-
-(Ab)use the trace_ipi_send_cpu*() family to trace all
-smp_function_call*() invocations, not only those that result in an
-actual IPI.
-
-The queued entries log their callback function while the actual IPIs
-are traced on generic_smp_call_function_single_interrupt().
-
-Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
----
- kernel/smp.c |   58 ++++++++++++++++++++++++++++++----------------------------
- 1 file changed, 30 insertions(+), 28 deletions(-)
-
---- a/kernel/smp.c
-+++ b/kernel/smp.c
-@@ -106,18 +106,20 @@ void __init call_function_init(void)
- }
- 
- static __always_inline void
--send_call_function_single_ipi(int cpu, smp_call_func_t func)
-+send_call_function_single_ipi(int cpu)
- {
- 	if (call_function_single_prep_ipi(cpu)) {
--		trace_ipi_send_cpu(cpu, _RET_IP_, func);
-+		trace_ipi_send_cpu(cpu, _RET_IP_,
-+				   generic_smp_call_function_single_interrupt);
- 		arch_send_call_function_single_ipi(cpu);
- 	}
- }
- 
- static __always_inline void
--send_call_function_ipi_mask(const struct cpumask *mask, smp_call_func_t func)
-+send_call_function_ipi_mask(const struct cpumask *mask)
- {
--	trace_ipi_send_cpumask(mask, _RET_IP_, func);
-+	trace_ipi_send_cpumask(mask, _RET_IP_,
-+			       generic_smp_call_function_single_interrupt);
- 	arch_send_call_function_ipi_mask(mask);
- }
- 
-@@ -318,25 +320,6 @@ static __always_inline void csd_unlock(s
- 	smp_store_release(&csd->node.u_flags, 0);
- }
- 
--static __always_inline void
--raw_smp_call_single_queue(int cpu, struct llist_node *node, smp_call_func_t func)
--{
--	/*
--	 * The list addition should be visible to the target CPU when it pops
--	 * the head of the list to pull the entry off it in the IPI handler
--	 * because of normal cache coherency rules implied by the underlying
--	 * llist ops.
--	 *
--	 * If IPIs can go out of order to the cache coherency protocol
--	 * in an architecture, sufficient synchronisation should be added
--	 * to arch code to make it appear to obey cache coherency WRT
--	 * locking and barrier primitives. Generic code isn't really
--	 * equipped to do the right thing...
--	 */
--	if (llist_add(node, &per_cpu(call_single_queue, cpu)))
--		send_call_function_single_ipi(cpu, func);
--}
--
- static DEFINE_PER_CPU_SHARED_ALIGNED(call_single_data_t, csd_data);
- 
- void __smp_call_single_queue(int cpu, struct llist_node *node)
-@@ -356,10 +339,23 @@ void __smp_call_single_queue(int cpu, st
- 		func = CSD_TYPE(csd) == CSD_TYPE_TTWU ?
- 			sched_ttwu_pending : csd->func;
- 
--		raw_smp_call_single_queue(cpu, node, func);
--	} else {
--		raw_smp_call_single_queue(cpu, node, NULL);
-+		trace_ipi_send_cpu(cpu, _RET_IP_, func);
- 	}
-+
-+	/*
-+	 * The list addition should be visible to the target CPU when it pops
-+	 * the head of the list to pull the entry off it in the IPI handler
-+	 * because of normal cache coherency rules implied by the underlying
-+	 * llist ops.
-+	 *
-+	 * If IPIs can go out of order to the cache coherency protocol
-+	 * in an architecture, sufficient synchronisation should be added
-+	 * to arch code to make it appear to obey cache coherency WRT
-+	 * locking and barrier primitives. Generic code isn't really
-+	 * equipped to do the right thing...
-+	 */
-+	if (llist_add(node, &per_cpu(call_single_queue, cpu)))
-+		send_call_function_single_ipi(cpu);
- }
- 
- /*
-@@ -798,14 +794,20 @@ static void smp_call_function_many_cond(
- 		}
- 
- 		/*
-+		 * Trace each smp_function_call_*() as an IPI, actual IPIs
-+		 * will be traced with func==generic_smp_call_function_single_ipi().
-+		 */
-+		trace_ipi_send_cpumask(cfd->cpumask_ipi, _RET_IP_, func);
-+
-+		/*
- 		 * Choose the most efficient way to send an IPI. Note that the
- 		 * number of CPUs might be zero due to concurrent changes to the
- 		 * provided mask.
- 		 */
- 		if (nr_cpus == 1)
--			send_call_function_single_ipi(last_cpu, func);
-+			send_call_function_single_ipi(last_cpu);
- 		else if (likely(nr_cpus > 1))
--			send_call_function_ipi_mask(cfd->cpumask_ipi, func);
-+			send_call_function_ipi_mask(cfd->cpumask_ipi);
- 	}
- 
- 	if (run_local && (!cond_func || cond_func(this_cpu, info))) {
