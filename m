@@ -2,79 +2,125 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 20756C6FD1D
-	for <linux-sh@archiver.kernel.org>; Tue, 21 Mar 2023 16:43:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C48DC77B60
+	for <linux-sh@archiver.kernel.org>; Wed, 22 Mar 2023 09:40:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229527AbjCUQnu (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 21 Mar 2023 12:43:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56092 "EHLO
+        id S230515AbjCVJkz (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 22 Mar 2023 05:40:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45420 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230103AbjCUQns (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 21 Mar 2023 12:43:48 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8501F515C9;
-        Tue, 21 Mar 2023 09:43:23 -0700 (PDT)
+        with ESMTP id S229873AbjCVJkx (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 22 Mar 2023 05:40:53 -0400
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A6D831989;
+        Wed, 22 Mar 2023 02:40:51 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:
-        Message-ID:Sender:Reply-To:Content-ID:Content-Description;
-        bh=Z+zwblPNJ3OUYOnKk/QBbkl8n+ZHXybiPX0PiQx3oXU=; b=YHEt7/8HVk+HXyQdyu4UIyshX9
-        24kbrya3mv8KOjHy2Mvq9WjJcPISA8U2TMNhAe71LJOCWB2xxAXOlT8a7A0sB0w1B06p8iCOAv+rL
-        0d8pFv2ojSaI9VUu343HerXQVkP2UWXXTYjzWFROZzX2elqgRzqjHVtLuN4zllt6HH2UQrFGl+iY0
-        7kGmtienyRFdp+fwP4KMvaE5qlhe7hqKwQj0G5fgN5END84mQjluWFCBg6A+13Yk6XimfuLf/Cq0D
-        GTDq/tUG4bI9++AFKsUWh2fAla691b9RQlx0W0uP24zEaKTuqhChjmaJQSEr9/MnrQixHA4mk1fFc
-        Iv/73d0Q==;
-Received: from [2601:1c2:980:9ec0::21b4]
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1pef4j-00D6ty-1A;
-        Tue, 21 Mar 2023 16:43:05 +0000
-Message-ID: <227fdc99-b54a-eeb0-c4e6-21ed92731240@infradead.org>
-Date:   Tue, 21 Mar 2023 09:43:04 -0700
+        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=NIAHg4If27BetC+4UZobAV0PxBnmTt3z+fWts2bKQWA=; b=rgS/CEWAlsTurPe5ucKBiXaDhr
+        ew26BoXauCH9lin/sWfYKxjLJe0WysSt1P4iOSDXV1qfu4JSoUQNAlogwxNIDbcZw5jKIurC6wBP0
+        +/+Z8kdUTp/ZyyNP9QPql3dhW8rHV0QqkfTXWuMoE0vryMGgt+T+aOFFPTKbmbiRK5T84YLaG6C4t
+        iRHD6M2ZFvI2kES3RCcIFI7D2yWW07o0ZjcKw1qqr5MTJddfTUE9AHHetindb2rqkUVxpV/GEVyQu
+        B4Z/fkelloNxIIEvBXXKz9pvL88Uc5JVf1N0nCKJVM3jEC4cK78BNevAeHHN3c0k/dy9sGC9ChrU5
+        42+coITw==;
+Received: from j130084.upc-j.chello.nl ([24.132.130.84] helo=noisy.programming.kicks-ass.net)
+        by casper.infradead.org with esmtpsa (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1peuwq-002t99-FB; Wed, 22 Mar 2023 09:40:00 +0000
+Received: from hirez.programming.kicks-ass.net (hirez.programming.kicks-ass.net [192.168.1.225])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        (Client did not present a certificate)
+        by noisy.programming.kicks-ass.net (Postfix) with ESMTPS id 7E63F3001F7;
+        Wed, 22 Mar 2023 10:39:56 +0100 (CET)
+Received: by hirez.programming.kicks-ass.net (Postfix, from userid 1000)
+        id 16170205D08C3; Wed, 22 Mar 2023 10:39:56 +0100 (CET)
+Date:   Wed, 22 Mar 2023 10:39:55 +0100
+From:   Peter Zijlstra <peterz@infradead.org>
+To:     Valentin Schneider <vschneid@redhat.com>
+Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
+        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
+        x86@kernel.org, Steven Rostedt <rostedt@goodmis.org>,
+        "Paul E. McKenney" <paulmck@kernel.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
+        Juri Lelli <juri.lelli@redhat.com>,
+        Daniel Bristot de Oliveira <bristot@redhat.com>,
+        Marcelo Tosatti <mtosatti@redhat.com>,
+        Frederic Weisbecker <frederic@kernel.org>,
+        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        "H. Peter Anvin" <hpa@zytor.com>, Marc Zyngier <maz@kernel.org>,
+        Mark Rutland <mark.rutland@arm.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Guo Ren <guoren@kernel.org>,
+        "David S. Miller" <davem@davemloft.net>
+Subject: Re: [PATCH v5 1/7] trace: Add trace_ipi_send_cpumask()
+Message-ID: <20230322093955.GR2017917@hirez.programming.kicks-ass.net>
+References: <20230307143558.294354-1-vschneid@redhat.com>
+ <20230307143558.294354-2-vschneid@redhat.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.8.0
-Subject: Re: [PATCH] mm/slab: Fix undefined init_cache_node_node() for NUMA
- and !SMP
-Content-Language: en-US
-To:     Matthew Wilcox <willy@infradead.org>,
-        Geert Uytterhoeven <geert+renesas@glider.be>
-Cc:     Dave Hansen <dave.hansen@linux.intel.com>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Christoph Lameter <cl@linux.com>,
-        Pekka Enberg <penberg@kernel.org>,
-        David Rientjes <rientjes@google.com>,
-        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Vlastimil Babka <vbabka@suse.cz>,
-        Roman Gushchin <roman.gushchin@linux.dev>,
-        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-mm@kvack.org, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
- <ZBneELQuakjva1xa@casper.infradead.org>
-From:   Randy Dunlap <rdunlap@infradead.org>
-In-Reply-To: <ZBneELQuakjva1xa@casper.infradead.org>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230307143558.294354-2-vschneid@redhat.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-
-
-On 3/21/23 09:40, Matthew Wilcox wrote:
-> On Tue, Mar 21, 2023 at 09:30:59AM +0100, Geert Uytterhoeven wrote:
->> -#if (defined(CONFIG_NUMA) && defined(CONFIG_MEMORY_HOTPLUG)) || defined(CONFIG_SMP)
->> +#if defined(CONFIG_NUMA) || defined(CONFIG_SMP)
+On Tue, Mar 07, 2023 at 02:35:52PM +0000, Valentin Schneider wrote:
+> trace_ipi_raise() is unsuitable for generically tracing IPI sources due to
+> its "reason" argument being an uninformative string (on arm64 all you get
+> is "Function call interrupts" for SMP calls).
 > 
-> I'm amused by the thought of CONFIG_NUMA without CONFIG_SMP.
-> Is it possible to have one node with memory and a single CPU, then
-> another node with memory and no CPU?
+> Add a variant of it that exports a target cpumask, a callsite and a callback.
+> 
+> Signed-off-by: Valentin Schneider <vschneid@redhat.com>
+> Reviewed-by: Steven Rostedt (Google) <rostedt@goodmis.org>
+> ---
+>  include/trace/events/ipi.h | 22 ++++++++++++++++++++++
+>  1 file changed, 22 insertions(+)
+> 
+> diff --git a/include/trace/events/ipi.h b/include/trace/events/ipi.h
+> index 0be71dad6ec03..b1125dc27682c 100644
+> --- a/include/trace/events/ipi.h
+> +++ b/include/trace/events/ipi.h
+> @@ -35,6 +35,28 @@ TRACE_EVENT(ipi_raise,
+>  	TP_printk("target_mask=%s (%s)", __get_bitmask(target_cpus), __entry->reason)
+>  );
+>  
+> +TRACE_EVENT(ipi_send_cpumask,
+> +
+> +	TP_PROTO(const struct cpumask *cpumask, unsigned long callsite, void *callback),
+> +
+> +	TP_ARGS(cpumask, callsite, callback),
+> +
+> +	TP_STRUCT__entry(
+> +		__cpumask(cpumask)
+> +		__field(void *, callsite)
+> +		__field(void *, callback)
+> +	),
+> +
+> +	TP_fast_assign(
+> +		__assign_cpumask(cpumask, cpumask_bits(cpumask));
+> +		__entry->callsite = (void *)callsite;
+> +		__entry->callback = callback;
+> +	),
+> +
+> +	TP_printk("cpumask=%s callsite=%pS callback=%pS",
+> +		  __get_cpumask(cpumask), __entry->callsite, __entry->callback)
+> +);
 
-More likely 1 with CPU+memory, 1 with memory only.
+Would it make sense to add a variant like: ipi_send_cpu() that records a
+single cpu instead of a cpumask. A lot of sites seems to do:
+cpumask_of(cpu) for that first argument, and it seems to me it is quite
+daft to have to memcpy a full multi-word cpumask in those cases.
 
-I've been told that that are also I/O-only nodes.
-
--- 
-~Randy
+Remember, nr_possible_cpus > 64 is quite common these days.
