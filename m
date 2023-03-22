@@ -2,57 +2,57 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 18F3AC7619A
-	for <linux-sh@archiver.kernel.org>; Wed, 22 Mar 2023 11:25:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 04F63C6FD1C
+	for <linux-sh@archiver.kernel.org>; Wed, 22 Mar 2023 12:21:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230140AbjCVLZz (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 22 Mar 2023 07:25:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45648 "EHLO
+        id S229983AbjCVMVa (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 22 Mar 2023 08:21:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51340 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230363AbjCVLZv (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 22 Mar 2023 07:25:51 -0400
+        with ESMTP id S229713AbjCVMV0 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 22 Mar 2023 08:21:26 -0400
 Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3F6A46152E
-        for <linux-sh@vger.kernel.org>; Wed, 22 Mar 2023 04:25:04 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5E54026BE
+        for <linux-sh@vger.kernel.org>; Wed, 22 Mar 2023 05:20:40 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1679484303;
+        s=mimecast20190719; t=1679487639;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=CeeQx+I+dRtKj5nSnz4ngzuZMZMfDzExS1NioY8sNjE=;
-        b=YiHCcEMklnPO1Nnsc6FZEFkoAjKCP+8zw8PmMOPG8ZtoPhd4DcKa40P5t1WvJCGLw1i9/Z
-        xGOfqk5p/rol+DVvScIDktQyC1nlY7yLxxbrXh4UjvoDYSbqbtgY4jZ09TLgqTzFSTXShx
-        tE5Bxrp6JhkLWOsiCe7J+lRfmR19q+U=
-Received: from mail-qv1-f72.google.com (mail-qv1-f72.google.com
- [209.85.219.72]) by relay.mimecast.com with ESMTP with STARTTLS
+        bh=hPXFCTl8qif3OA4s3YNypS2WhS0XvH7qdHBOusQ/gQI=;
+        b=YAxhCDZ7zuff0hxJriNCNI/IHuGCMIdwBOFuOdkHHnOpSK8kx1wNrtrQnimQqVxX18OEVn
+        hHNX7pyphAS80AO4UCkgsin+W4N44mod4q/vUa+//8FXNgbvdzTBzaD3oa75FTmdLQOXoK
+        D3sBMytS7XCmW2Ir7b/wRWhGMui8ov4=
+Received: from mail-qt1-f197.google.com (mail-qt1-f197.google.com
+ [209.85.160.197]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-587-ywbgRDyiOvaFHJcmZhuokQ-1; Wed, 22 Mar 2023 07:25:02 -0400
-X-MC-Unique: ywbgRDyiOvaFHJcmZhuokQ-1
-Received: by mail-qv1-f72.google.com with SMTP id w2-20020a0cc242000000b00583d8e55181so9125748qvh.23
-        for <linux-sh@vger.kernel.org>; Wed, 22 Mar 2023 04:25:02 -0700 (PDT)
+ us-mta-275-fS2l8FKTNLWAMWgqEDyjQw-1; Wed, 22 Mar 2023 08:20:36 -0400
+X-MC-Unique: fS2l8FKTNLWAMWgqEDyjQw-1
+Received: by mail-qt1-f197.google.com with SMTP id l2-20020ac87242000000b003bfecc6d046so10777413qtp.17
+        for <linux-sh@vger.kernel.org>; Wed, 22 Mar 2023 05:20:36 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1679484302;
+        d=1e100.net; s=20210112; t=1679487636;
         h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
          :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=CeeQx+I+dRtKj5nSnz4ngzuZMZMfDzExS1NioY8sNjE=;
-        b=hQGtSQ+kOfyAj4hjTJ5+cB4uItqp+X9vd1Z9Ldx+ThYz9ahOK8i2t0pw1YySQidGPH
-         SgwsS3NQsk3EZOTic9HSvX6ScDu7LZCEQmXy2uzVp4kYtWrVg6qPknS3TR8dBrA3ys+b
-         oEHeGp/2hLBZzB3bsCZW5TSwOTlAsUXBx2ZCA0Px6VoCddyjkFKLWijuVhI4JjK+92FR
-         0AOFnFYA9GRdrTbrWOnckle6C99sRo+JsVEI5u5K8wViBwP2pmQ1YgSX4csirymLFj7i
-         uUVxB22C0NSIOsz9DwBHaLZHnxNgUaWbEJdNMws7tVv7E2ZEtUKKqHhwxciB94ieidFo
-         Rhgg==
-X-Gm-Message-State: AO0yUKVUnn8kUXM3MOlvkkuuNxcnDIkX26SNlg3o0c6p4D53h7jz7Uap
-        fThQMQH3Kr+obWIW6iYRgtbBAuQnJN4UkzOSrKdQsWxRW0EOmoosWn+Iutg11osLlUDdWyjlgaR
-        3kfHSmiXVdwxjyzL5/cQ=
-X-Received: by 2002:a05:6214:5087:b0:5a3:2f3c:4ee2 with SMTP id kk7-20020a056214508700b005a32f3c4ee2mr4440565qvb.42.1679484301888;
-        Wed, 22 Mar 2023 04:25:01 -0700 (PDT)
-X-Google-Smtp-Source: AK7set9pQPCTrnu5TcJ8+anXt5wOGunOW6pbx+MNpUrdRaYmFZLBIEbvfDpQn22VZvxy9XYWlsJV9g==
-X-Received: by 2002:a05:6214:5087:b0:5a3:2f3c:4ee2 with SMTP id kk7-20020a056214508700b005a32f3c4ee2mr4440518qvb.42.1679484301639;
-        Wed, 22 Mar 2023 04:25:01 -0700 (PDT)
+        bh=hPXFCTl8qif3OA4s3YNypS2WhS0XvH7qdHBOusQ/gQI=;
+        b=naz9sFk+AHfmrCXs6QCn12AMCdFJ5H6zQBnyTqyBLODFBZIkXe4PjkLphP958tfvYW
+         7yZJIWk4gBd9USLG8nn+ZwSm47OIlx+SrF1IFAe1GkcFdtEyGEs0GRDKXVelkLjxfsvO
+         jbZZmRWRqAYExpfIERalb62961KgaZLEeVucbQrE8FNUbxXrpdIsdz55qlMjOnr4nxSs
+         3WtPJv0Vjin4ryPdHfzqzp1b0knAAYOG4DB518c2JTQKEdxW4LVuUyDx7I8h5jjLUbSv
+         PPegNAYb8SPr0I/0MfH9E+4Bv27qJAFOFIdpWO60bVCih5W9H6RHGzpcLOc5y6lDDk+7
+         UnVg==
+X-Gm-Message-State: AO0yUKWtrj0A4/uxB7w2jR46aDvgbY2QLY2GQlupbqsICmt1HUuaqzl2
+        hX9xXcmw/OpKbAxirB0RFt/MZqFFcTkTcFfMt6Ma+KyTuhkoNL5o8mrf2LHmFmXEvDWs8XTQkor
+        V3C7cQpb1qTcmrBAtBEE=
+X-Received: by 2002:a05:6214:e6e:b0:5c5:95db:858a with SMTP id jz14-20020a0562140e6e00b005c595db858amr5249089qvb.31.1679487636122;
+        Wed, 22 Mar 2023 05:20:36 -0700 (PDT)
+X-Google-Smtp-Source: AK7set+c4qgqaBQUslatTuVuP/CBQYeSmWHcWFFuVnFTR+yoMggQM+H4NTuj8PmuW7zmUDZ2oj+NWg==
+X-Received: by 2002:a05:6214:e6e:b0:5c5:95db:858a with SMTP id jz14-20020a0562140e6e00b005c595db858amr5249039qvb.31.1679487635822;
+        Wed, 22 Mar 2023 05:20:35 -0700 (PDT)
 Received: from vschneid.remote.csb ([154.57.232.159])
-        by smtp.gmail.com with ESMTPSA id f66-20020a37d245000000b00745f3200f54sm11036821qkj.112.2023.03.22.04.24.54
+        by smtp.gmail.com with ESMTPSA id d185-20020a37b4c2000000b007425ef4cbc2sm11175799qkf.100.2023.03.22.05.20.29
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 22 Mar 2023 04:25:00 -0700 (PDT)
+        Wed, 22 Mar 2023 05:20:35 -0700 (PDT)
 From:   Valentin Schneider <vschneid@redhat.com>
 To:     Peter Zijlstra <peterz@infradead.org>
 Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
@@ -64,8 +64,8 @@ Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
         linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
         linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
         sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
-        x86@kernel.org, Steven Rostedt <rostedt@goodmis.org>,
-        "Paul E. McKenney" <paulmck@kernel.org>,
+        x86@kernel.org, "Paul E. McKenney" <paulmck@kernel.org>,
+        Steven Rostedt <rostedt@goodmis.org>,
         Thomas Gleixner <tglx@linutronix.de>,
         Sebastian Andrzej Siewior <bigeasy@linutronix.de>,
         Juri Lelli <juri.lelli@redhat.com>,
@@ -80,14 +80,13 @@ Cc:     linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
         Nicholas Piggin <npiggin@gmail.com>,
         Guo Ren <guoren@kernel.org>,
         "David S. Miller" <davem@davemloft.net>
-Subject: Re: [PATCH v5 1/7] trace: Add trace_ipi_send_cpumask()
-In-Reply-To: <20230322103004.GA571242@hirez.programming.kicks-ass.net>
+Subject: Re: [PATCH v5 7/7] sched, smp: Trace smp callback causing an IPI
+In-Reply-To: <20230322095329.GS2017917@hirez.programming.kicks-ass.net>
 References: <20230307143558.294354-1-vschneid@redhat.com>
- <20230307143558.294354-2-vschneid@redhat.com>
- <20230322093955.GR2017917@hirez.programming.kicks-ass.net>
- <20230322103004.GA571242@hirez.programming.kicks-ass.net>
-Date:   Wed, 22 Mar 2023 11:24:53 +0000
-Message-ID: <xhsmhpm91c9kq.mognet@vschneid.remote.csb>
+ <20230307143558.294354-8-vschneid@redhat.com>
+ <20230322095329.GS2017917@hirez.programming.kicks-ass.net>
+Date:   Wed, 22 Mar 2023 12:20:28 +0000
+Message-ID: <xhsmhmt45c703.mognet@vschneid.remote.csb>
 MIME-Version: 1.0
 X-Mimecast-Spam-Score: 0
 X-Mimecast-Originator: redhat.com
@@ -96,84 +95,74 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 22/03/23 11:30, Peter Zijlstra wrote:
-> On Wed, Mar 22, 2023 at 10:39:55AM +0100, Peter Zijlstra wrote:
->> On Tue, Mar 07, 2023 at 02:35:52PM +0000, Valentin Schneider wrote:
->> > +TRACE_EVENT(ipi_send_cpumask,
->> > +
->> > +	TP_PROTO(const struct cpumask *cpumask, unsigned long callsite, void *callback),
->> > +
->> > +	TP_ARGS(cpumask, callsite, callback),
->> > +
->> > +	TP_STRUCT__entry(
->> > +		__cpumask(cpumask)
->> > +		__field(void *, callsite)
->> > +		__field(void *, callback)
->> > +	),
->> > +
->> > +	TP_fast_assign(
->> > +		__assign_cpumask(cpumask, cpumask_bits(cpumask));
->> > +		__entry->callsite = (void *)callsite;
->> > +		__entry->callback = callback;
->> > +	),
->> > +
->> > +	TP_printk("cpumask=%s callsite=%pS callback=%pS",
->> > +		  __get_cpumask(cpumask), __entry->callsite, __entry->callback)
->> > +);
+On 22/03/23 10:53, Peter Zijlstra wrote:
+> On Tue, Mar 07, 2023 at 02:35:58PM +0000, Valentin Schneider wrote:
+>
+>> @@ -477,6 +490,25 @@ static __always_inline void csd_unlock(struct __call_single_data *csd)
+>>      smp_store_release(&csd->node.u_flags, 0);
+>>  }
 >>
->> Would it make sense to add a variant like: ipi_send_cpu() that records a
->> single cpu instead of a cpumask. A lot of sites seems to do:
->> cpumask_of(cpu) for that first argument, and it seems to me it is quite
->> daft to have to memcpy a full multi-word cpumask in those cases.
+>> +static __always_inline void
+>> +raw_smp_call_single_queue(int cpu, struct llist_node *node, smp_call_func_t func)
+>> +{
+>> +	/*
+>> +	 * The list addition should be visible to the target CPU when it pops
+>> +	 * the head of the list to pull the entry off it in the IPI handler
+>> +	 * because of normal cache coherency rules implied by the underlying
+>> +	 * llist ops.
+>> +	 *
+>> +	 * If IPIs can go out of order to the cache coherency protocol
+>> +	 * in an architecture, sufficient synchronisation should be added
+>> +	 * to arch code to make it appear to obey cache coherency WRT
+>> +	 * locking and barrier primitives. Generic code isn't really
+>> +	 * equipped to do the right thing...
+>> +	 */
+>> +	if (llist_add(node, &per_cpu(call_single_queue, cpu)))
+>> +		send_call_function_single_ipi(cpu, func);
+>> +}
+>> +
+>>  static DEFINE_PER_CPU_SHARED_ALIGNED(call_single_data_t, csd_data);
 >>
->> Remember, nr_possible_cpus > 64 is quite common these days.
+>>  void __smp_call_single_queue(int cpu, struct llist_node *node)
+>> @@ -493,21 +525,25 @@ void __smp_call_single_queue(int cpu, struct llist_node *node)
+>>              }
+>>      }
+>>  #endif
+>>      /*
+>> +	 * We have to check the type of the CSD before queueing it, because
+>> +	 * once queued it can have its flags cleared by
+>> +	 *   flush_smp_call_function_queue()
+>> +	 * even if we haven't sent the smp_call IPI yet (e.g. the stopper
+>> +	 * executes migration_cpu_stop() on the remote CPU).
+>>       */
+>> +	if (trace_ipi_send_cpumask_enabled()) {
+>> +		call_single_data_t *csd;
+>> +		smp_call_func_t func;
+>> +
+>> +		csd = container_of(node, call_single_data_t, node.llist);
+>> +		func = CSD_TYPE(csd) == CSD_TYPE_TTWU ?
+>> +			sched_ttwu_pending : csd->func;
+>> +
+>> +		raw_smp_call_single_queue(cpu, node, func);
+>> +	} else {
+>> +		raw_smp_call_single_queue(cpu, node, NULL);
+>> +	}
+>>  }
 >
-> Something we litte bit like so...
->
+> Hurmph... so we only really consume @func when we IPI. Would it not be
+> more useful to trace this thing for *every* csd enqeued?
 
-I was wondering whether we could stick with a single trace event, but let
-ftrace be aware of weight=1 vs weight>1 cpumasks.
+It's true that any CSD enqueued on that CPU's call_single_queue in the
+[first CSD llist_add()'ed, IPI IRQ hits] timeframe is a potential source of
+interference.
 
-For weight>1, it would memcpy() as usual, for weight=1, it could write a
-pointer to a cpu_bit_bitmap[] equivalent embedded in the trace itself.
+However, can we be sure that first CSD isn't an indirect cause for the
+following ones? say the target CPU exits RCU EQS due to the IPI, there's a
+bit of time before it gets to flush_smp_call_function_queue() where some other CSD
+could be enqueued *because* of that change in state.
 
-Unfortunately, Ftrace bitmasks are represented as a u32 made of two 16 bit
-values: [offset in event record, size], so there isn't a straightforward
-way to point to a "reusable" cpumask. AFAICT the only alternative would be
-to do that via a different trace event, but then we should just go with a
-plain old uint - i.e. do what you're doing here, so:
-
-Tested-and-reviewed-by: Valentin Schneider <vschneid@redhat.com>
-
-(with the tiny typo fix below)
-
-> @@ -35,6 +35,28 @@ TRACE_EVENT(ipi_raise,
->       TP_printk("target_mask=%s (%s)", __get_bitmask(target_cpus), __entry->reason)
->  );
->
-> +TRACE_EVENT(ipi_send_cpu,
-> +
-> +	TP_PROTO(const unsigned int cpu, unsigned long callsite, void *callback),
-> +
-> +	TP_ARGS(cpu, callsite, callback),
-> +
-> +	TP_STRUCT__entry(
-> +		__field(unsigned int, cpu)
-> +		__field(void *, callsite)
-> +		__field(void *, callback)
-> +	),
-> +
-> +	TP_fast_assign(
-> +		__entry->cpu = cpu;
-> +		__entry->callsite = (void *)callsite;
-> +		__entry->callback = callback;
-> +	),
-> +
-> +	TP_printk("cpu=%s callsite=%pS callback=%pS",
-                        ^
-                      s/s/u/
-
-> +		  __entry->cpu, __entry->callsite, __entry->callback)
-> +);
-> +
+I couldn't find a easy example of that, I might be biased as this is where
+I'd like to go wrt IPI'ing isolated CPUs in usermode. But regardless, when
+correlating an IPI IRQ with its source, we'd always have to look at the
+first CSD in that CSD stack.
 
