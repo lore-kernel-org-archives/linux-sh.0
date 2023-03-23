@@ -2,108 +2,113 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A491C6FD1C
-	for <linux-sh@archiver.kernel.org>; Thu, 23 Mar 2023 08:38:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AD228C6FD1D
+	for <linux-sh@archiver.kernel.org>; Thu, 23 Mar 2023 09:22:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231593AbjCWIih convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 23 Mar 2023 04:38:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42746 "EHLO
+        id S230196AbjCWJWT (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 23 Mar 2023 05:22:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45356 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231620AbjCWIiI (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 23 Mar 2023 04:38:08 -0400
-Received: from mail-qt1-f180.google.com (mail-qt1-f180.google.com [209.85.160.180])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F3F9F35EF7;
-        Thu, 23 Mar 2023 01:36:53 -0700 (PDT)
-Received: by mail-qt1-f180.google.com with SMTP id c19so25702661qtn.13;
-        Thu, 23 Mar 2023 01:36:53 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1679560613;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=DLvOHhjGtQPAGxbfhV5i2RzlDMu0DOqPCzbtGbv4UHg=;
-        b=wUD+P+CNiRq5ncqepbhg9mtUuXC9Z7FWsgBQvs+uU7DCX7jpufVeVnruutUYbyJ+CC
-         QzLr+hGotRBzvijOm8Xi1Ye/AeO5DHt70rbatvf1Ql/j3vXscsfutS1E7vLH5N2SNQlB
-         ilrMZqYYXVLNlds4TG0lOGL0KQA7oqHG9trQfLnqXViAKTKKMq+2H58GN6vHiRKnGybb
-         N1U4T2Olnn7W2WGPdK5kMrI3TTB7iwXYucA95wAWQr4YtMpKclgyEPVEMjSbCoIzLFa4
-         nH+vZB8BDykcLj6X6JAceN2kMz7ljjeoS4Kd2wkq6NpuPANSntn1d9663Su9rLJnD9lo
-         ZhQg==
-X-Gm-Message-State: AO0yUKWii5BMcSgkHLBQ9FQBKWIO0kp/cfJi/jjUrAfxjUeDqBxKoAif
-        eO7n0wZaQQ3qK/4MclwXehYhHg6QgjbqgQ==
-X-Google-Smtp-Source: AK7set9P5xWan7eeEzD1Ah340/W3CLp6dOjOm+sFWYiQgdCBZ4CPsWzGOblq/4C3IvC/YsQewdDIMw==
-X-Received: by 2002:a05:622a:58a:b0:3bb:8a14:badd with SMTP id c10-20020a05622a058a00b003bb8a14baddmr7016607qtb.29.1679560612906;
-        Thu, 23 Mar 2023 01:36:52 -0700 (PDT)
-Received: from mail-yb1-f178.google.com (mail-yb1-f178.google.com. [209.85.219.178])
-        by smtp.gmail.com with ESMTPSA id i14-20020ac84f4e000000b003e3895903bfsm3006909qtw.8.2023.03.23.01.36.51
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 23 Mar 2023 01:36:51 -0700 (PDT)
-Received: by mail-yb1-f178.google.com with SMTP id y5so23909930ybu.3;
-        Thu, 23 Mar 2023 01:36:51 -0700 (PDT)
-X-Received: by 2002:a25:6b0e:0:b0:a27:3ecc:ffe7 with SMTP id
- g14-20020a256b0e000000b00a273eccffe7mr1426444ybc.3.1679560611303; Thu, 23 Mar
- 2023 01:36:51 -0700 (PDT)
+        with ESMTP id S229461AbjCWJWR (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 23 Mar 2023 05:22:17 -0400
+Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3697C3C3B;
+        Thu, 23 Mar 2023 02:22:16 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by ams.source.kernel.org (Postfix) with ESMTPS id D2D07B8201C;
+        Thu, 23 Mar 2023 09:22:14 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 81329C433A0;
+        Thu, 23 Mar 2023 09:22:06 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1679563333;
+        bh=D35W3oT4dEB7lQGf2gyibA65I3USxy0/PoMsBYvdggw=;
+        h=From:To:Cc:Subject:Date:From;
+        b=FvLGPcFNvposDJHd12P4B6tiY0alzsOWKmMDuuC6Bbtu7FQoT8X1aprZqvi0FJfLS
+         mt0kh+Jo3486s1qGacqEDX/OHvGQZOMLk3QivFrdR+KFUHaYTxUB878ydKgR4ebxQD
+         hFtgvnKM+VqXPQFFh+LsJ24F5Nvj1PwRnlN6oaSMVilDaV5obtUxIDQf1ebqfjw///
+         Xh234xD1rgyjvmGU7SMuN7Gnez8IKfnGstw+tdb8tErfz4SpbTfAXlP81Ofg/1ejcw
+         5ntVdo/7OGVtej0l0Oes4NXXVkuGPAKtpkLi1VbVSLZcdokDBgJOW5/iwZAcLFvNjO
+         EHVKriGuB7TNg==
+From:   Mike Rapoport <rppt@kernel.org>
+To:     Andrew Morton <akpm@linux-foundation.org>
+Cc:     Arnd Bergmann <arnd@arndb.de>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        "David S. Miller" <davem@davemloft.net>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Guo Ren <guoren@kernel.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Mike Rapoport <rppt@kernel.org>, Rich Felker <dalias@libc.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Will Deacon <will@kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Zi Yan <ziy@nvidia.com>, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mm@kvack.org, linux-sh@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org,
+        sparclinux@vger.kernel.org
+Subject: [PATCH 00/14] arch,mm: cleanup Kconfig entries for ARCH_FORCE_MAX_ORDER
+Date:   Thu, 23 Mar 2023 11:21:42 +0200
+Message-Id: <20230323092156.2545741-1-rppt@kernel.org>
+X-Mailer: git-send-email 2.35.1
 MIME-Version: 1.0
-References: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
- <ZBneELQuakjva1xa@casper.infradead.org> <6320abf6-0898-361b-d5f6-bcc58306f55c@intel.com>
- <ZBsw9lRbJU4c2wLD@casper.infradead.org> <CAMuHMdW1ed0ns=Xb-ug=wfUuBTU1Pr0V6Deds1GkSb_f-Ac3Xw@mail.gmail.com>
- <4cd6f0c8d7603254df9e2eb1e7b80973e75c4e45.camel@physik.fu-berlin.de>
-In-Reply-To: <4cd6f0c8d7603254df9e2eb1e7b80973e75c4e45.camel@physik.fu-berlin.de>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Thu, 23 Mar 2023 09:36:39 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdW52q5d8R4DawXRhLGj7sNoaZiwayAsMh6eWPGxUW=_HA@mail.gmail.com>
-Message-ID: <CAMuHMdW52q5d8R4DawXRhLGj7sNoaZiwayAsMh6eWPGxUW=_HA@mail.gmail.com>
-Subject: Re: [PATCH] mm/slab: Fix undefined init_cache_node_node() for NUMA
- and !SMP
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Matthew Wilcox <willy@infradead.org>,
-        Dave Hansen <dave.hansen@intel.com>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Christoph Lameter <cl@linux.com>,
-        Pekka Enberg <penberg@kernel.org>,
-        David Rientjes <rientjes@google.com>,
-        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Vlastimil Babka <vbabka@suse.cz>,
-        Roman Gushchin <roman.gushchin@linux.dev>,
-        Hyeonggon Yoo <42.hyeyoo@gmail.com>, linux-mm@kvack.org,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Randy Dunlap <rdunlap@infradead.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Adrian,
+From: "Mike Rapoport (IBM)" <rppt@kernel.org>
 
-On Thu, Mar 23, 2023 at 9:28 AM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Thu, 2023-03-23 at 09:25 +0100, Geert Uytterhoeven wrote:
-> > It's supported. Dave just forgot to update the #ifdef around the
-> > definition of init_cache_node_node() when updating an #ifdef around
-> > a code block that contains one of the callers.
-> >
-> > P.S. To me, this discussion reminds me of the old discussion about
-> >      discontigmem without NUMA. Yes, not all systems are PCs with
-> >      contiguous memory on a single fast bus ;-)
->
-> I'm wondering: Could the NUMA code be used to work with the different
-> memory types found on the Amiga, i.e. chip RAM, fast RAM etc?
+Hi,
 
-I guess so, but only for 32-bit motherboard RAM on A3000/A4000
-vs. RAM on an accelerator card vs. Zorro-III RAM on e.g. BigRamPlus.
-Chip RAM and Zorro-II RAM do not support RMW-cycles on
-Zorro-III capable machines.
+Several architectures have ARCH_FORCE_MAX_ORDER in their Kconfig and
+they all have wrong and misleading prompt and help text for this option.
 
-Gr{oetje,eeting}s,
+Besides, some define insane limits for possible values of
+ARCH_FORCE_MAX_ORDER, some carefully define ranges only for a subset of
+possible configurations, some make this option configurable by users for no
+good reason.
 
-                        Geert
+This set updates the prompt and help text everywhere and does its best to
+update actual definitions of ranges where applicable.
 
+Mike Rapoport (IBM) (14):
+  arm: reword ARCH_FORCE_MAX_ORDER prompt and help text
+  arm64: drop ranges in definition of ARCH_FORCE_MAX_ORDER
+  arm64: reword ARCH_FORCE_MAX_ORDER prompt and help text
+  csky: drop ARCH_FORCE_MAX_ORDER
+  ia64: don't allow users to override ARCH_FORCE_MAX_ORDER
+  m68k: reword ARCH_FORCE_MAX_ORDER prompt and help text
+  nios2: reword ARCH_FORCE_MAX_ORDER prompt and help text
+  nios2: drop ranges for definition of ARCH_FORCE_MAX_ORDER
+  powerpc: reword ARCH_FORCE_MAX_ORDER prompt and help text
+  powerpc: drop ranges for definition of ARCH_FORCE_MAX_ORDER
+  sh: reword ARCH_FORCE_MAX_ORDER prompt and help text
+  sh: drop ranges for definition of ARCH_FORCE_MAX_ORDER
+  sparc: reword ARCH_FORCE_MAX_ORDER prompt and help text
+  xtensa: reword ARCH_FORCE_MAX_ORDER prompt and help text
+
+ arch/arm/Kconfig      | 16 +++++++++-------
+ arch/arm64/Kconfig    | 27 ++++++++++++---------------
+ arch/csky/Kconfig     |  4 ----
+ arch/ia64/Kconfig     |  3 +--
+ arch/m68k/Kconfig.cpu | 16 +++++++++-------
+ arch/nios2/Kconfig    | 17 +++++++++--------
+ arch/powerpc/Kconfig  | 22 +++++++++-------------
+ arch/sh/mm/Kconfig    | 19 +++++++++----------
+ arch/sparc/Kconfig    | 16 +++++++++-------
+ arch/xtensa/Kconfig   | 16 +++++++++-------
+ 10 files changed, 76 insertions(+), 80 deletions(-)
+
+
+base-commit: 51551d71edbc998fd8c8afa7312db3d270f5998e
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+2.35.1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
