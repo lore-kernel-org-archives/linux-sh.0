@@ -2,125 +2,236 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2AE17C76195
-	for <linux-sh@archiver.kernel.org>; Thu, 23 Mar 2023 10:18:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 326F0C6FD1C
+	for <linux-sh@archiver.kernel.org>; Thu, 23 Mar 2023 10:18:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230021AbjCWKSI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 23 Mar 2023 06:18:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59670 "EHLO
+        id S230370AbjCWKSj (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 23 Mar 2023 06:18:39 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33944 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229526AbjCWKRr (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 23 Mar 2023 06:17:47 -0400
-Received: from mga14.intel.com (mga14.intel.com [192.55.52.115])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B6D8A1A96D;
-        Thu, 23 Mar 2023 03:17:34 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1679566654; x=1711102654;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=FnXm+KxPAQOleEvIez2agf6n8OX0ULT3pj5+c93lH5Q=;
-  b=fuf5PHN77MzxiRUzC5j638tIo0hdDL+H5VFV/RgxOObMMTlSBMOmWhlo
-   apqTMHvRy55TXSRgsep3wppJPwagyzzOsSzOUDB16R6p0o0tG3xs7QMTb
-   sFUYw0U0Cv+r3lBj7iFATm1XG/DywflHvTHVMe2aUKKVinZ29kVdwmR0s
-   zC0Cf5WXRgICK1QtnzLGUsc15gBCkXlCqbLMD5Rjx3G13Y+lFoT25zoUW
-   toJQCYF9Z+8tVm+FtpeLVnp4ZM26Na1j9MhfHa04dtc35M9e0Bt9Lc0F0
-   rjxIK7My9nonZFPz2Ezod1H4CWF+GykQK7m+WLrSP5xxkGDu9epnngFb4
-   w==;
-X-IronPort-AV: E=McAfee;i="6600,9927,10657"; a="339479969"
-X-IronPort-AV: E=Sophos;i="5.98,283,1673942400"; 
-   d="scan'208";a="339479969"
-Received: from fmsmga001.fm.intel.com ([10.253.24.23])
-  by fmsmga103.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 23 Mar 2023 03:17:34 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6600,9927,10657"; a="825766162"
-X-IronPort-AV: E=Sophos;i="5.98,283,1673942400"; 
-   d="scan'208";a="825766162"
-Received: from stinti-mobl.ger.corp.intel.com (HELO box.shutemov.name) ([10.249.46.226])
-  by fmsmga001-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 23 Mar 2023 03:17:27 -0700
-Received: by box.shutemov.name (Postfix, from userid 1000)
-        id 154D8109FCC; Thu, 23 Mar 2023 13:17:25 +0300 (+03)
-Date:   Thu, 23 Mar 2023 13:17:25 +0300
-From:   "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
-To:     Mike Rapoport <rppt@kernel.org>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        "David S. Miller" <davem@davemloft.net>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Guo Ren <guoren@kernel.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
+        with ESMTP id S231176AbjCWKSU (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 23 Mar 2023 06:18:20 -0400
+Received: from xavier.telenet-ops.be (xavier.telenet-ops.be [IPv6:2a02:1800:120:4::f00:14])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2E18A1CBC2
+        for <linux-sh@vger.kernel.org>; Thu, 23 Mar 2023 03:18:15 -0700 (PDT)
+Received: from ramsan.of.borg ([84.195.187.55])
+        by xavier.telenet-ops.be with bizsmtp
+        id bmJC2900G1C8whw01mJCyA; Thu, 23 Mar 2023 11:18:13 +0100
+Received: from rox.of.borg ([192.168.97.57])
+        by ramsan.of.borg with esmtp (Exim 4.95)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1pfI0g-00EKqY-0O;
+        Thu, 23 Mar 2023 11:18:12 +0100
+Received: from geert by rox.of.borg with local (Exim 4.95)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1pfI1M-00CE4D-7v;
+        Thu, 23 Mar 2023 11:18:12 +0100
+From:   Geert Uytterhoeven <geert+renesas@glider.be>
+To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Will Deacon <will@kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Zi Yan <ziy@nvidia.com>, linux-arm-kernel@lists.infradead.org,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mm@kvack.org, linux-sh@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org,
-        sparclinux@vger.kernel.org
-Subject: Re: [PATCH 00/14] arch,mm: cleanup Kconfig entries for
- ARCH_FORCE_MAX_ORDER
-Message-ID: <20230323101725.2jmvpaqpzflr4mv2@box>
-References: <20230323092156.2545741-1-rppt@kernel.org>
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Palmer Dabbelt <palmer@rivosinc.com>, linux-sh@vger.kernel.org,
+        linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Geert Uytterhoeven <geert+renesas@glider.be>
+Subject: [PATCH v3] sh: Use generic GCC library routines
+Date:   Thu, 23 Mar 2023 11:18:07 +0100
+Message-Id: <74dbe68dc8e2ffb6180092f73723fe21ab692c7a.1679566500.git.geert+renesas@glider.be>
+X-Mailer: git-send-email 2.34.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230323092156.2545741-1-rppt@kernel.org>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Mar 23, 2023 at 11:21:42AM +0200, Mike Rapoport wrote:
-> From: "Mike Rapoport (IBM)" <rppt@kernel.org>
-> 
-> Hi,
-> 
-> Several architectures have ARCH_FORCE_MAX_ORDER in their Kconfig and
-> they all have wrong and misleading prompt and help text for this option.
-> 
-> Besides, some define insane limits for possible values of
-> ARCH_FORCE_MAX_ORDER, some carefully define ranges only for a subset of
-> possible configurations, some make this option configurable by users for no
-> good reason.
-> 
-> This set updates the prompt and help text everywhere and does its best to
-> update actual definitions of ranges where applicable.
-> 
-> Mike Rapoport (IBM) (14):
->   arm: reword ARCH_FORCE_MAX_ORDER prompt and help text
->   arm64: drop ranges in definition of ARCH_FORCE_MAX_ORDER
->   arm64: reword ARCH_FORCE_MAX_ORDER prompt and help text
->   csky: drop ARCH_FORCE_MAX_ORDER
->   ia64: don't allow users to override ARCH_FORCE_MAX_ORDER
->   m68k: reword ARCH_FORCE_MAX_ORDER prompt and help text
->   nios2: reword ARCH_FORCE_MAX_ORDER prompt and help text
->   nios2: drop ranges for definition of ARCH_FORCE_MAX_ORDER
->   powerpc: reword ARCH_FORCE_MAX_ORDER prompt and help text
->   powerpc: drop ranges for definition of ARCH_FORCE_MAX_ORDER
->   sh: reword ARCH_FORCE_MAX_ORDER prompt and help text
->   sh: drop ranges for definition of ARCH_FORCE_MAX_ORDER
->   sparc: reword ARCH_FORCE_MAX_ORDER prompt and help text
->   xtensa: reword ARCH_FORCE_MAX_ORDER prompt and help text
-> 
->  arch/arm/Kconfig      | 16 +++++++++-------
->  arch/arm64/Kconfig    | 27 ++++++++++++---------------
->  arch/csky/Kconfig     |  4 ----
->  arch/ia64/Kconfig     |  3 +--
->  arch/m68k/Kconfig.cpu | 16 +++++++++-------
->  arch/nios2/Kconfig    | 17 +++++++++--------
->  arch/powerpc/Kconfig  | 22 +++++++++-------------
->  arch/sh/mm/Kconfig    | 19 +++++++++----------
->  arch/sparc/Kconfig    | 16 +++++++++-------
->  arch/xtensa/Kconfig   | 16 +++++++++-------
->  10 files changed, 76 insertions(+), 80 deletions(-)
+The C implementations of __ashldi3(), __ashrdi3__(), and __lshrdi3() in
+arch/sh/lib/ are identical to the generic C implementations in lib/.
+Reduce duplication by switching SH to the generic versions.
 
-Acked-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
+Update the include path in arch/sh/boot/compressed accordingly.
 
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Palmer Dabbelt <palmer@rivosinc.com>
+---
+v3:
+  - Add Acked-by,
+
+v2:
+  - Fix silly typo in subject.
+
+Tested on landisk and qemu/rts7751r2d.
+
+Note that it also works without the change to arch/sh/boot/compressed/,
+as lib/ashldi3.c can be reached via both include/uapi/../../lib/ashldi3.c
+and arch/sh/boot/compressed/../../../../lib/ashldi3.c.
+
+Palmer tried a similar thing before:
+https://lore.kernel.org/linux-arch/20170523220546.16758-1-palmer@dabbelt.com/
+but initially it broke the SH build due to a missing change to
+arch/sh/boot/compressed/, and the later update never got picked up.
+In the mean time, arch/sh/boot/compressed/ was changed, so his patch no
+longer applies.
+
+Similar for the other architectures, I guess?
+---
+ arch/sh/Kconfig                   |  3 +++
+ arch/sh/boot/compressed/ashldi3.c |  4 ++--
+ arch/sh/lib/Makefile              |  4 +---
+ arch/sh/lib/ashldi3.c             | 30 -----------------------------
+ arch/sh/lib/ashrdi3.c             | 32 -------------------------------
+ arch/sh/lib/lshrdi3.c             | 30 -----------------------------
+ 6 files changed, 6 insertions(+), 97 deletions(-)
+ delete mode 100644 arch/sh/lib/ashldi3.c
+ delete mode 100644 arch/sh/lib/ashrdi3.c
+ delete mode 100644 arch/sh/lib/lshrdi3.c
+
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index ccb866750a884643..892903dc74990c36 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -20,6 +20,9 @@ config SUPERH
+ 	select GENERIC_CMOS_UPDATE if SH_SH03 || SH_DREAMCAST
+ 	select GENERIC_IDLE_POLL_SETUP
+ 	select GENERIC_IRQ_SHOW
++	select GENERIC_LIB_ASHLDI3
++	select GENERIC_LIB_ASHRDI3
++	select GENERIC_LIB_LSHRDI3
+ 	select GENERIC_PCI_IOMAP if PCI
+ 	select GENERIC_SCHED_CLOCK
+ 	select GENERIC_SMP_IDLE_THREAD
+diff --git a/arch/sh/boot/compressed/ashldi3.c b/arch/sh/boot/compressed/ashldi3.c
+index 7cebd646df839b48..7c12121702309e8c 100644
+--- a/arch/sh/boot/compressed/ashldi3.c
++++ b/arch/sh/boot/compressed/ashldi3.c
+@@ -1,2 +1,2 @@
+-// SPDX-License-Identifier: GPL-2.0-only
+-#include "../../lib/ashldi3.c"
++// SPDX-License-Identifier: GPL-2.0-or-later
++#include "../../../../lib/ashldi3.c"
+diff --git a/arch/sh/lib/Makefile b/arch/sh/lib/Makefile
+index eb473d373ca43a4b..d20a0768b31fa2b6 100644
+--- a/arch/sh/lib/Makefile
++++ b/arch/sh/lib/Makefile
+@@ -7,9 +7,7 @@ lib-y  = delay.o memmove.o memchr.o \
+ 	 checksum.o strlen.o div64.o div64-generic.o
+ 
+ # Extracted from libgcc
+-obj-y += movmem.o ashldi3.o ashrdi3.o lshrdi3.o \
+-	 ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o \
+-	 udiv_qrnnd.o
++obj-y += movmem.o ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o udiv_qrnnd.o
+ 
+ udivsi3-y			:= udivsi3_i4i-Os.o
+ 
+diff --git a/arch/sh/lib/ashldi3.c b/arch/sh/lib/ashldi3.c
+deleted file mode 100644
+index e5afe0935847427f..0000000000000000
+--- a/arch/sh/lib/ashldi3.c
++++ /dev/null
+@@ -1,30 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0
+-#include <linux/module.h>
+-
+-#include "libgcc.h"
+-
+-long long __ashldi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b == 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		w.s.low = 0;
+-		w.s.high = (unsigned int) uu.s.low << -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.low >> bm;
+-
+-		w.s.low = (unsigned int) uu.s.low << b;
+-		w.s.high = ((unsigned int) uu.s.high << b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-
+-EXPORT_SYMBOL(__ashldi3);
+diff --git a/arch/sh/lib/ashrdi3.c b/arch/sh/lib/ashrdi3.c
+deleted file mode 100644
+index ae263fbf25383b70..0000000000000000
+--- a/arch/sh/lib/ashrdi3.c
++++ /dev/null
+@@ -1,32 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0
+-#include <linux/module.h>
+-
+-#include "libgcc.h"
+-
+-long long __ashrdi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b == 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		/* w.s.high = 1..1 or 0..0 */
+-		w.s.high =
+-		    uu.s.high >> 31;
+-		w.s.low = uu.s.high >> -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.high << bm;
+-
+-		w.s.high = uu.s.high >> b;
+-		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-
+-EXPORT_SYMBOL(__ashrdi3);
+diff --git a/arch/sh/lib/lshrdi3.c b/arch/sh/lib/lshrdi3.c
+deleted file mode 100644
+index 33eaa1edbc3c0656..0000000000000000
+--- a/arch/sh/lib/lshrdi3.c
++++ /dev/null
+@@ -1,30 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0
+-#include <linux/module.h>
+-
+-#include "libgcc.h"
+-
+-long long __lshrdi3(long long u, word_type b)
+-{
+-	DWunion uu, w;
+-	word_type bm;
+-
+-	if (b == 0)
+-		return u;
+-
+-	uu.ll = u;
+-	bm = 32 - b;
+-
+-	if (bm <= 0) {
+-		w.s.high = 0;
+-		w.s.low = (unsigned int) uu.s.high >> -bm;
+-	} else {
+-		const unsigned int carries = (unsigned int) uu.s.high << bm;
+-
+-		w.s.high = (unsigned int) uu.s.high >> b;
+-		w.s.low = ((unsigned int) uu.s.low >> b) | carries;
+-	}
+-
+-	return w.ll;
+-}
+-
+-EXPORT_SYMBOL(__lshrdi3);
 -- 
-  Kiryl Shutsemau / Kirill A. Shutemov
+2.34.1
+
