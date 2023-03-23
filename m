@@ -2,59 +2,37 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D8297C6FD1C
-	for <linux-sh@archiver.kernel.org>; Thu, 23 Mar 2023 08:26:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DD2D3C6FD1D
+	for <linux-sh@archiver.kernel.org>; Thu, 23 Mar 2023 08:30:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229548AbjCWI0G convert rfc822-to-8bit (ORCPT
+        id S231407AbjCWIaU convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 23 Mar 2023 04:26:06 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53656 "EHLO
+        Thu, 23 Mar 2023 04:30:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33328 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231229AbjCWI0E (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 23 Mar 2023 04:26:04 -0400
-Received: from mail-qt1-f177.google.com (mail-qt1-f177.google.com [209.85.160.177])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3648230B3F;
-        Thu, 23 Mar 2023 01:25:53 -0700 (PDT)
-Received: by mail-qt1-f177.google.com with SMTP id r5so25696328qtp.4;
-        Thu, 23 Mar 2023 01:25:53 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1679559952;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=YLwa8WskLyA8HRsaKD+rmyXpE99G5zG0nLdln1xHQs8=;
-        b=TNMKF0V5tmOBoxaqMcVrKlZJKxUhHwG42vHE72qT2F5wOSP/42kTPD4p3OUYgtKWl0
-         /U+0nKrEVkCzLlvBCo62V862orLyxgW0CvBfpWnylNkavfJvE8PjwfWWUMRYhFM75NVM
-         iWCQpWeBS3roXsedDqsgPG0J60lcsJILMne8V0VIPBj75k0IpiRFWONFIa9gfkxVIkPS
-         4Dl4cj/CsuHZW9xClIIEmJhDbmPXLg6A8eRKexIeD5WIw3NPxzdHh3cJHcsyr0CbPh1t
-         pjxoK5yICJTRwsucZ3QIoutfUL55mL9tGQXnBBNiB+uwGI/j4tifX2riivmC+WuTy/9n
-         ZpKQ==
-X-Gm-Message-State: AO0yUKVkyHIhaMZKQHEQs+gxXZal/MZv2vRmh5WKZEt0yIwcd6f3UWmG
-        kSSLasaLEhl14s/ONpIWk1EALFhqTUPkPQ==
-X-Google-Smtp-Source: AK7set+MzqZEiIaqkd4Cs+SmPUkl2Ofj2n7GOQQNJRbcQAp44BSlBSdiWmd8tfI1gbno9ZvDFjfgnQ==
-X-Received: by 2002:a05:622a:13d1:b0:3db:9289:6949 with SMTP id p17-20020a05622a13d100b003db92896949mr8044624qtk.3.1679559951982;
-        Thu, 23 Mar 2023 01:25:51 -0700 (PDT)
-Received: from mail-yw1-f178.google.com (mail-yw1-f178.google.com. [209.85.128.178])
-        by smtp.gmail.com with ESMTPSA id y3-20020a37f603000000b0074382b756c2sm12809242qkj.14.2023.03.23.01.25.50
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 23 Mar 2023 01:25:50 -0700 (PDT)
-Received: by mail-yw1-f178.google.com with SMTP id 00721157ae682-544b959a971so348549777b3.3;
-        Thu, 23 Mar 2023 01:25:50 -0700 (PDT)
-X-Received: by 2002:a81:4424:0:b0:52f:184a:da09 with SMTP id
- r36-20020a814424000000b0052f184ada09mr1197947ywa.2.1679559949876; Thu, 23 Mar
- 2023 01:25:49 -0700 (PDT)
-MIME-Version: 1.0
-References: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
- <ZBneELQuakjva1xa@casper.infradead.org> <6320abf6-0898-361b-d5f6-bcc58306f55c@intel.com>
- <ZBsw9lRbJU4c2wLD@casper.infradead.org>
-In-Reply-To: <ZBsw9lRbJU4c2wLD@casper.infradead.org>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Thu, 23 Mar 2023 09:25:37 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdW1ed0ns=Xb-ug=wfUuBTU1Pr0V6Deds1GkSb_f-Ac3Xw@mail.gmail.com>
-Message-ID: <CAMuHMdW1ed0ns=Xb-ug=wfUuBTU1Pr0V6Deds1GkSb_f-Ac3Xw@mail.gmail.com>
+        with ESMTP id S231393AbjCWIaO (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 23 Mar 2023 04:30:14 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EDDDA22797;
+        Thu, 23 Mar 2023 01:30:12 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pfGJ0-002TGv-My; Thu, 23 Mar 2023 09:28:18 +0100
+Received: from p57bd9952.dip0.t-ipconnect.de ([87.189.153.82] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pfGJ0-004B39-FY; Thu, 23 Mar 2023 09:28:18 +0100
+Message-ID: <4cd6f0c8d7603254df9e2eb1e7b80973e75c4e45.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH] mm/slab: Fix undefined init_cache_node_node() for NUMA
  and !SMP
-To:     Matthew Wilcox <willy@infradead.org>
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Matthew Wilcox <willy@infradead.org>
 Cc:     Dave Hansen <dave.hansen@intel.com>,
         Dave Hansen <dave.hansen@linux.intel.com>,
         Arnd Bergmann <arnd@arndb.de>,
@@ -65,55 +43,45 @@ Cc:     Dave Hansen <dave.hansen@intel.com>,
         Andrew Morton <akpm@linux-foundation.org>,
         Vlastimil Babka <vbabka@suse.cz>,
         Roman Gushchin <roman.gushchin@linux.dev>,
-        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-mm@kvack.org, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Randy Dunlap <rdunlap@infradead.org>
+        Hyeonggon Yoo <42.hyeyoo@gmail.com>, linux-mm@kvack.org,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Randy Dunlap <rdunlap@infradead.org>
+Date:   Thu, 23 Mar 2023 09:28:17 +0100
+In-Reply-To: <CAMuHMdW1ed0ns=Xb-ug=wfUuBTU1Pr0V6Deds1GkSb_f-Ac3Xw@mail.gmail.com>
+References: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
+         <ZBneELQuakjva1xa@casper.infradead.org>
+         <6320abf6-0898-361b-d5f6-bcc58306f55c@intel.com>
+         <ZBsw9lRbJU4c2wLD@casper.infradead.org>
+         <CAMuHMdW1ed0ns=Xb-ug=wfUuBTU1Pr0V6Deds1GkSb_f-Ac3Xw@mail.gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.46.4 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.153.82
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Matthew,
+Hi Geert!
 
-On Wed, Mar 22, 2023 at 5:47 PM Matthew Wilcox <willy@infradead.org> wrote:
-> On Wed, Mar 22, 2023 at 09:16:55AM -0700, Dave Hansen wrote:
-> > On 3/21/23 09:40, Matthew Wilcox wrote:
-> > > On Tue, Mar 21, 2023 at 09:30:59AM +0100, Geert Uytterhoeven wrote:
-> > >> -#if (defined(CONFIG_NUMA) && defined(CONFIG_MEMORY_HOTPLUG)) || defined(CONFIG_SMP)
-> > >> +#if defined(CONFIG_NUMA) || defined(CONFIG_SMP)
-> > > I'm amused by the thought of CONFIG_NUMA without CONFIG_SMP.
-> > > Is it possible to have one node with memory and a single CPU, then
-> > > another node with memory and no CPU?
-> >
-> > It's _possible_ for sure, just unlikely.  The most likely place these
-> > days is probably a teensy tiny VM that just happens to have some
-> > performance-differentiated memory exposed to it for some reason.  Maybe
-> > it's got a slice of slow PMEM or fast High-Bandwidth memory for whatever
-> > reason.
->
-> Right, you can construct such a system, but do we support the CONFIG
-> options of NUMA enabled and SMP disabled?  It seems so niche that we
-> shouldn't be spending time testing that combination.
+On Thu, 2023-03-23 at 09:25 +0100, Geert Uytterhoeven wrote:
+> It's supported. Dave just forgot to update the #ifdef around the
+> definition of init_cache_node_node() when updating an #ifdef around
+> a code block that contains one of the callers.
+> 
+> P.S. To me, this discussion reminds me of the old discussion about
+>      discontigmem without NUMA. Yes, not all systems are PCs with
+>      contiguous memory on a single fast bus ;-)
 
-SH has been using this for a long time.
+I'm wondering: Could the NUMA code be used to work with the different
+memory types found on the Amiga, i.e. chip RAM, fast RAM etc?
 
-It's supported. Dave just forgot to update the #ifdef around the
-definition of init_cache_node_node() when updating an #ifdef around
-a code block that contains one of the callers.
-
-P.S. To me, this discussion reminds me of the old discussion about
-     discontigmem without NUMA. Yes, not all systems are PCs with
-     contiguous memory on a single fast bus ;-)
-
-Gr{oetje,eeting}s,
-
-                        Geert
+Adrian
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
