@@ -2,38 +2,62 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DD2D3C6FD1D
-	for <linux-sh@archiver.kernel.org>; Thu, 23 Mar 2023 08:30:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5A491C6FD1C
+	for <linux-sh@archiver.kernel.org>; Thu, 23 Mar 2023 08:38:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231407AbjCWIaU convert rfc822-to-8bit (ORCPT
+        id S231593AbjCWIih convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 23 Mar 2023 04:30:20 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33328 "EHLO
+        Thu, 23 Mar 2023 04:38:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42746 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231393AbjCWIaO (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 23 Mar 2023 04:30:14 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EDDDA22797;
-        Thu, 23 Mar 2023 01:30:12 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pfGJ0-002TGv-My; Thu, 23 Mar 2023 09:28:18 +0100
-Received: from p57bd9952.dip0.t-ipconnect.de ([87.189.153.82] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pfGJ0-004B39-FY; Thu, 23 Mar 2023 09:28:18 +0100
-Message-ID: <4cd6f0c8d7603254df9e2eb1e7b80973e75c4e45.camel@physik.fu-berlin.de>
+        with ESMTP id S231620AbjCWIiI (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 23 Mar 2023 04:38:08 -0400
+Received: from mail-qt1-f180.google.com (mail-qt1-f180.google.com [209.85.160.180])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F3F9F35EF7;
+        Thu, 23 Mar 2023 01:36:53 -0700 (PDT)
+Received: by mail-qt1-f180.google.com with SMTP id c19so25702661qtn.13;
+        Thu, 23 Mar 2023 01:36:53 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1679560613;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=DLvOHhjGtQPAGxbfhV5i2RzlDMu0DOqPCzbtGbv4UHg=;
+        b=wUD+P+CNiRq5ncqepbhg9mtUuXC9Z7FWsgBQvs+uU7DCX7jpufVeVnruutUYbyJ+CC
+         QzLr+hGotRBzvijOm8Xi1Ye/AeO5DHt70rbatvf1Ql/j3vXscsfutS1E7vLH5N2SNQlB
+         ilrMZqYYXVLNlds4TG0lOGL0KQA7oqHG9trQfLnqXViAKTKKMq+2H58GN6vHiRKnGybb
+         N1U4T2Olnn7W2WGPdK5kMrI3TTB7iwXYucA95wAWQr4YtMpKclgyEPVEMjSbCoIzLFa4
+         nH+vZB8BDykcLj6X6JAceN2kMz7ljjeoS4Kd2wkq6NpuPANSntn1d9663Su9rLJnD9lo
+         ZhQg==
+X-Gm-Message-State: AO0yUKWii5BMcSgkHLBQ9FQBKWIO0kp/cfJi/jjUrAfxjUeDqBxKoAif
+        eO7n0wZaQQ3qK/4MclwXehYhHg6QgjbqgQ==
+X-Google-Smtp-Source: AK7set9P5xWan7eeEzD1Ah340/W3CLp6dOjOm+sFWYiQgdCBZ4CPsWzGOblq/4C3IvC/YsQewdDIMw==
+X-Received: by 2002:a05:622a:58a:b0:3bb:8a14:badd with SMTP id c10-20020a05622a058a00b003bb8a14baddmr7016607qtb.29.1679560612906;
+        Thu, 23 Mar 2023 01:36:52 -0700 (PDT)
+Received: from mail-yb1-f178.google.com (mail-yb1-f178.google.com. [209.85.219.178])
+        by smtp.gmail.com with ESMTPSA id i14-20020ac84f4e000000b003e3895903bfsm3006909qtw.8.2023.03.23.01.36.51
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 23 Mar 2023 01:36:51 -0700 (PDT)
+Received: by mail-yb1-f178.google.com with SMTP id y5so23909930ybu.3;
+        Thu, 23 Mar 2023 01:36:51 -0700 (PDT)
+X-Received: by 2002:a25:6b0e:0:b0:a27:3ecc:ffe7 with SMTP id
+ g14-20020a256b0e000000b00a273eccffe7mr1426444ybc.3.1679560611303; Thu, 23 Mar
+ 2023 01:36:51 -0700 (PDT)
+MIME-Version: 1.0
+References: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
+ <ZBneELQuakjva1xa@casper.infradead.org> <6320abf6-0898-361b-d5f6-bcc58306f55c@intel.com>
+ <ZBsw9lRbJU4c2wLD@casper.infradead.org> <CAMuHMdW1ed0ns=Xb-ug=wfUuBTU1Pr0V6Deds1GkSb_f-Ac3Xw@mail.gmail.com>
+ <4cd6f0c8d7603254df9e2eb1e7b80973e75c4e45.camel@physik.fu-berlin.de>
+In-Reply-To: <4cd6f0c8d7603254df9e2eb1e7b80973e75c4e45.camel@physik.fu-berlin.de>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Thu, 23 Mar 2023 09:36:39 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdW52q5d8R4DawXRhLGj7sNoaZiwayAsMh6eWPGxUW=_HA@mail.gmail.com>
+Message-ID: <CAMuHMdW52q5d8R4DawXRhLGj7sNoaZiwayAsMh6eWPGxUW=_HA@mail.gmail.com>
 Subject: Re: [PATCH] mm/slab: Fix undefined init_cache_node_node() for NUMA
  and !SMP
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>,
-        Matthew Wilcox <willy@infradead.org>
-Cc:     Dave Hansen <dave.hansen@intel.com>,
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Matthew Wilcox <willy@infradead.org>,
+        Dave Hansen <dave.hansen@intel.com>,
         Dave Hansen <dave.hansen@linux.intel.com>,
         Arnd Bergmann <arnd@arndb.de>,
         Christoph Lameter <cl@linux.com>,
@@ -46,42 +70,40 @@ Cc:     Dave Hansen <dave.hansen@intel.com>,
         Hyeonggon Yoo <42.hyeyoo@gmail.com>, linux-mm@kvack.org,
         linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
         Randy Dunlap <rdunlap@infradead.org>
-Date:   Thu, 23 Mar 2023 09:28:17 +0100
-In-Reply-To: <CAMuHMdW1ed0ns=Xb-ug=wfUuBTU1Pr0V6Deds1GkSb_f-Ac3Xw@mail.gmail.com>
-References: <67261c513706241d479b8b4cf46eb4e6fb0417ba.1679387262.git.geert+renesas@glider.be>
-         <ZBneELQuakjva1xa@casper.infradead.org>
-         <6320abf6-0898-361b-d5f6-bcc58306f55c@intel.com>
-         <ZBsw9lRbJU4c2wLD@casper.infradead.org>
-         <CAMuHMdW1ed0ns=Xb-ug=wfUuBTU1Pr0V6Deds1GkSb_f-Ac3Xw@mail.gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.46.4 
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.153.82
-X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Geert!
+Hi Adrian,
 
-On Thu, 2023-03-23 at 09:25 +0100, Geert Uytterhoeven wrote:
-> It's supported. Dave just forgot to update the #ifdef around the
-> definition of init_cache_node_node() when updating an #ifdef around
-> a code block that contains one of the callers.
-> 
-> P.S. To me, this discussion reminds me of the old discussion about
->      discontigmem without NUMA. Yes, not all systems are PCs with
->      contiguous memory on a single fast bus ;-)
+On Thu, Mar 23, 2023 at 9:28 AM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> On Thu, 2023-03-23 at 09:25 +0100, Geert Uytterhoeven wrote:
+> > It's supported. Dave just forgot to update the #ifdef around the
+> > definition of init_cache_node_node() when updating an #ifdef around
+> > a code block that contains one of the callers.
+> >
+> > P.S. To me, this discussion reminds me of the old discussion about
+> >      discontigmem without NUMA. Yes, not all systems are PCs with
+> >      contiguous memory on a single fast bus ;-)
+>
+> I'm wondering: Could the NUMA code be used to work with the different
+> memory types found on the Amiga, i.e. chip RAM, fast RAM etc?
 
-I'm wondering: Could the NUMA code be used to work with the different
-memory types found on the Amiga, i.e. chip RAM, fast RAM etc?
+I guess so, but only for 32-bit motherboard RAM on A3000/A4000
+vs. RAM on an accelerator card vs. Zorro-III RAM on e.g. BigRamPlus.
+Chip RAM and Zorro-II RAM do not support RMW-cycles on
+Zorro-III capable machines.
 
-Adrian
+Gr{oetje,eeting}s,
+
+                        Geert
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
