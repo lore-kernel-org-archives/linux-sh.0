@@ -2,107 +2,95 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C67DC76195
-	for <linux-sh@archiver.kernel.org>; Thu, 23 Mar 2023 09:41:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 219C3C7619A
+	for <linux-sh@archiver.kernel.org>; Thu, 23 Mar 2023 10:16:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229672AbjCWJl5 convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 23 Mar 2023 05:41:57 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50956 "EHLO
+        id S231483AbjCWKQi (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 23 Mar 2023 06:16:38 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59372 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231384AbjCWJlX (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 23 Mar 2023 05:41:23 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4A9D8113DD;
-        Thu, 23 Mar 2023 02:41:08 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pfHRQ-002zTH-Fy; Thu, 23 Mar 2023 10:41:04 +0100
-Received: from p57bd9952.dip0.t-ipconnect.de ([87.189.153.82] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pfHRQ-000BqP-8k; Thu, 23 Mar 2023 10:41:04 +0100
-Message-ID: <075155911e5be40a7f74cc0d05003f8683d784e0.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 0/7 v4] sh: various doc, build, init fixes
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        with ESMTP id S231444AbjCWKQJ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 23 Mar 2023 06:16:09 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B38B21CF74;
+        Thu, 23 Mar 2023 03:15:42 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id E6318625AC;
+        Thu, 23 Mar 2023 10:15:41 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B040BC4339C;
+        Thu, 23 Mar 2023 10:15:36 +0000 (UTC)
+Date:   Thu, 23 Mar 2023 10:15:33 +0000
+From:   Catalin Marinas <catalin.marinas@arm.com>
+To:     Mike Rapoport <rppt@kernel.org>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        "David S. Miller" <davem@davemloft.net>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Guo Ren <guoren@kernel.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
         Rich Felker <dalias@libc.org>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>,
-        linux-sh@vger.kernel.org, Frank Rowand <frowand.list@gmail.com>,
-        devicetree@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
-Date:   Thu, 23 Mar 2023 10:41:03 +0100
-In-Reply-To: <20230306040037.20350-1-rdunlap@infradead.org>
-References: <20230306040037.20350-1-rdunlap@infradead.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.46.4 
+        Russell King <linux@armlinux.org.uk>,
+        Will Deacon <will@kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Zi Yan <ziy@nvidia.com>, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mm@kvack.org, linux-sh@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org,
+        sparclinux@vger.kernel.org
+Subject: Re: [PATCH 02/14] arm64: drop ranges in definition of
+ ARCH_FORCE_MAX_ORDER
+Message-ID: <ZBwmxbRJrF8RxZEp@arm.com>
+References: <20230323092156.2545741-1-rppt@kernel.org>
+ <20230323092156.2545741-3-rppt@kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.153.82
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230323092156.2545741-3-rppt@kernel.org>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Randy!
-
-On Sun, 2023-03-05 at 20:00 -0800, Randy Dunlap wrote:
-> All of these patches have been sent previously, anywhere from
-> one to 3 times.  All patches are now called "v4".
+On Thu, Mar 23, 2023 at 11:21:44AM +0200, Mike Rapoport wrote:
+> From: "Mike Rapoport (IBM)" <rppt@kernel.org>
 > 
-> This refresh/resend is to assist the new SH maintainer.
+> It is not a good idea to change fundamental parameters of core memory
+> management. Having predefined ranges suggests that the values within
+> those ranges are sensible, but one has to *really* understand
+> implications of changing MAX_ORDER before actually amending it and
+> ranges don't help here.
 > 
->  [PATCH 1/7 v4] sh: SH2007: drop the bad URL info
->  [PATCH 2/7 v4] sh: nmi_debug: fix return value of __setup handler
->  [PATCH 3/7 v4] sh: init: use OF_EARLY_FLATTREE for early init
->  [PATCH 4/7 v4] sh: math-emu: fix macro redefined warning
->  [PATCH 5/7 v4] sh: remove sh5/sh64 last fragments
->  [PATCH 6/7 v4] sh: fix Kconfig entry for NUMA => SMP
->  [PATCH 7/7 v4] sh: mcount.S: fix build error when PRINTK is not enabled
+> Drop ranges in definition of ARCH_FORCE_MAX_ORDER
 > 
-> diffstat:
->  Documentation/kbuild/kbuild.rst                           |    1 -
->  Documentation/scheduler/sched-arch.rst                    |    2 --
->  Documentation/translations/zh_CN/scheduler/sched-arch.rst |    2 --
->  arch/sh/Kconfig                                           |    4 ++++
->  arch/sh/Kconfig.debug                                     |    2 +-
->  arch/sh/boards/Kconfig                                    |    1 -
->  arch/sh/kernel/head_32.S                                  |    6 +++---
->  arch/sh/kernel/nmi_debug.c                                |    4 ++--
->  arch/sh/kernel/setup.c                                    |    4 ++--
->  arch/sh/math-emu/sfp-util.h                               |    4 ----
->  scripts/checkstack.pl                                     |    7 -------
->  tools/perf/arch/common.c                                  |    2 --
->  tools/scripts/Makefile.arch                               |    5 -----
->  tools/testing/selftests/mm/Makefile                       |    2 +-
->  tools/testing/selftests/mm/run_vmtests.sh                 |    2 +-
->  15 files changed, 14 insertions(+), 34 deletions(-)
+> Signed-off-by: Mike Rapoport (IBM) <rppt@kernel.org>
+> ---
+>  arch/arm64/Kconfig | 2 --
+>  1 file changed, 2 deletions(-)
 > 
-> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: Geert Uytterhoeven <geert+renesas@glider.be>
-> Cc: Hitoshi Mitake <mitake@dcl.info.waseda.ac.jp>
-> Cc: linux-sh@vger.kernel.org
-> Cc: Frank Rowand <frowand.list@gmail.com>
-> Cc: devicetree@vger.kernel.org
-> Cc: Arnd Bergmann <arnd@arndb.de>
+> diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+> index e60baf7859d1..bab6483e4317 100644
+> --- a/arch/arm64/Kconfig
+> +++ b/arch/arm64/Kconfig
+> @@ -1489,9 +1489,7 @@ config XEN
+>  config ARCH_FORCE_MAX_ORDER
+>  	int "Maximum zone order" if ARM64_4K_PAGES || ARM64_16K_PAGES
+>  	default "13" if ARM64_64K_PAGES
+> -	range 11 13 if ARM64_16K_PAGES
+>  	default "11" if ARM64_16K_PAGES
+> -	range 10 15 if ARM64_4K_PAGES
+>  	default "10"
 
-All applied to sh-linux/for-next now except for patch number 6.
-
-Apologies that it took so long, I'm still learning :-).
-
-Adrian
+I don't mind rewriting the help text as in the subsequent patch but I'd
+keep the ranges as a safety measure. It's less wasted time explaining to
+people why some random max order doesn't work. Alternatively, we can
+drop the ranges but make this option configurable only if EXPERT.
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Catalin
