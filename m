@@ -2,138 +2,112 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 87492C77B61
-	for <linux-sh@archiver.kernel.org>; Mon, 27 Mar 2023 13:37:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6FB64C761A6
+	for <linux-sh@archiver.kernel.org>; Mon, 27 Mar 2023 14:28:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232583AbjC0Nhk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 27 Mar 2023 09:37:40 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58520 "EHLO
+        id S233142AbjC0O2R (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 27 Mar 2023 10:28:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49350 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232102AbjC0Nhh (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 27 Mar 2023 09:37:37 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 68E9E1BC6;
-        Mon, 27 Mar 2023 06:37:36 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 02D5E61286;
-        Mon, 27 Mar 2023 13:37:36 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 66B4CC433AE;
-        Mon, 27 Mar 2023 13:37:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1679924255;
-        bh=sKw5GnPYWTx1tEo+IYG63yzmzH5uUSkHi5W70RXeiXE=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=me5d4slZ7BQwLYQm0UbRAC2iVqyUYiUxghqwGTfCH/vpOgHLgDekGA1TBK2dJnpUc
-         9WkLB4v/ufSmAfgCCV5YSuoaGaKiOwCqLyqumjx5XyRbF9dJBFFSs6HLt7PEmp891n
-         XwMOQwvU37TpfHRmLM6F2Wu2rjJcr08TSj+OfMLw3e/eYNtc8Ff3gi22phENHfgyn4
-         DNtHVC4q96uONAXntDKuUBjVgg2LmxrGjTx5EvWUGZrk2TnDCWrxinTYGMaEa37yw+
-         smAD8fYPQMq6WbMRXe/30WkwvLcPhMLKpDQqlLl5O9Eqp+HZa9Zv6aqE9YRxyDLRSD
-         1UErhgcXn+Ddg==
-Received: by mail-ed1-f52.google.com with SMTP id r11so36361759edd.5;
-        Mon, 27 Mar 2023 06:37:35 -0700 (PDT)
-X-Gm-Message-State: AAQBX9eEu4XKsmRvh0JrG+LYiYn12N/qN/lZiehJvyNIK6uUwrxWSZIa
-        fogXil5VslYgdYJZExPp8pksxJBCtWLuhtdig5k=
-X-Google-Smtp-Source: AKy350aPL1uQ3r2MblLdeWPWx+R7rA3ZaUJTGPp0hWqhXUlS0wDj97jvk8gg6F5BBuMMpzVJHH5p6CMaiE85EcR30Es=
-X-Received: by 2002:a17:906:4746:b0:8ab:b606:9728 with SMTP id
- j6-20020a170906474600b008abb6069728mr5893837ejs.5.1679924253534; Mon, 27 Mar
- 2023 06:37:33 -0700 (PDT)
-MIME-Version: 1.0
-References: <20230327121317.4081816-1-arnd@kernel.org> <20230327121317.4081816-11-arnd@kernel.org>
-In-Reply-To: <20230327121317.4081816-11-arnd@kernel.org>
-From:   Guo Ren <guoren@kernel.org>
-Date:   Mon, 27 Mar 2023 21:37:22 +0800
-X-Gmail-Original-Message-ID: <CAJF2gTT73KBZ01N2fr8z6=9XWFKo4D7cGKOtZLZeXN9NrscCXg@mail.gmail.com>
-Message-ID: <CAJF2gTT73KBZ01N2fr8z6=9XWFKo4D7cGKOtZLZeXN9NrscCXg@mail.gmail.com>
-Subject: Re: [PATCH 10/21] csky: dma-mapping: skip invalidating before DMA
- from device
-To:     Arnd Bergmann <arnd@kernel.org>
-Cc:     linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>,
-        Vineet Gupta <vgupta@kernel.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Neil Armstrong <neil.armstrong@linaro.org>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Brian Cain <bcain@quicinc.com>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Stafford Horne <shorne@gmail.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
+        with ESMTP id S233145AbjC0O15 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 27 Mar 2023 10:27:57 -0400
+Received: from mga09.intel.com (mga09.intel.com [134.134.136.24])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6BBB344AC;
+        Mon, 27 Mar 2023 07:27:17 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1679927237; x=1711463237;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=1MXFA7b+qpjUvdowUV3HUCrOHcVQ/STW7k81imYGgDE=;
+  b=cMnxglVcmfH2PxbwDjzE7Z3E0Ia0/7GpCw+9raCMBxQrvNvXNclnx/rz
+   brFOKPZLaRk974xo2qUW+TJc32qRWlbg/8FP7DFTYvNiquG/cc3RJhmpz
+   P9/bUFLltAatrn1vTbSAWqGc4ZQfYncw93X+QmeAB+q+QhWU/vI0cX70d
+   PZPIGXjO5nU5JJQze/6qsK/t8WtRUODfFhzahwRY4EsVtmF5/G0R5f9nQ
+   5GZZnU6PI9DNx8QHFdMF7w2MPXsJeu79clf/JztTnNJqToIIGFVY97J1c
+   hUudWlXZmXPq+eVxirvsfKPImqnHFsidzvKZwTnPGctujivK8BirvHtfX
+   Q==;
+X-IronPort-AV: E=McAfee;i="6600,9927,10662"; a="341851359"
+X-IronPort-AV: E=Sophos;i="5.98,294,1673942400"; 
+   d="scan'208";a="341851359"
+Received: from orsmga003.jf.intel.com ([10.7.209.27])
+  by orsmga102.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 27 Mar 2023 07:27:16 -0700
+X-ExtLoop1: 1
+X-IronPort-AV: E=McAfee;i="6600,9927,10662"; a="633616358"
+X-IronPort-AV: E=Sophos;i="5.98,294,1673942400"; 
+   d="scan'208";a="633616358"
+Received: from lkp-server01.sh.intel.com (HELO b613635ddfff) ([10.239.97.150])
+  by orsmga003.jf.intel.com with ESMTP; 27 Mar 2023 07:27:14 -0700
+Received: from kbuild by b613635ddfff with local (Exim 4.96)
+        (envelope-from <lkp@intel.com>)
+        id 1pgnoX-000HlX-2W;
+        Mon, 27 Mar 2023 14:27:13 +0000
+Date:   Mon, 27 Mar 2023 22:26:24 +0800
+From:   kernel test robot <lkp@intel.com>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "David S. Miller" <davem@davemloft.net>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Christoph Hellwig <hch@lst.de>,
-        Robin Murphy <robin.murphy@arm.com>,
-        Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>,
-        Conor Dooley <conor.dooley@microchip.com>,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-oxnas@groups.io,
-        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     oe-kbuild-all@lists.linux.dev,
+        Palmer Dabbelt <palmer@rivosinc.com>, linux-sh@vger.kernel.org,
+        linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Geert Uytterhoeven <geert+renesas@glider.be>
+Subject: Re: [PATCH v3] sh: Use generic GCC library routines
+Message-ID: <202303272214.RxzpA6bP-lkp@intel.com>
+References: <74dbe68dc8e2ffb6180092f73723fe21ab692c7a.1679566500.git.geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <74dbe68dc8e2ffb6180092f73723fe21ab692c7a.1679566500.git.geert+renesas@glider.be>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Mar 27, 2023 at 8:15=E2=80=AFPM Arnd Bergmann <arnd@kernel.org> wro=
-te:
->
-> From: Arnd Bergmann <arnd@arndb.de>
->
-> csky is the only architecture that does a full flush for the
-> dma_sync_*_for_device(..., DMA_FROM_DEVICE) operation. The requirement
-> is only make sure there are no dirty cache lines for the buffer,
-> which can be either done through an invalidate operation (as on most
-> architectures including arm32, mips and arc), or a writeback (as on
-> arm64 and riscv). The cache also has to be invalidated eventually but
-> csky already does that after the transfer.
->
-> Use a 'clean' operation here for consistency with arm64 and riscv.
->
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> ---
->  arch/csky/mm/dma-mapping.c | 4 +---
->  1 file changed, 1 insertion(+), 3 deletions(-)
->
-> diff --git a/arch/csky/mm/dma-mapping.c b/arch/csky/mm/dma-mapping.c
-> index 82447029feb4..c90f912e2822 100644
-> --- a/arch/csky/mm/dma-mapping.c
-> +++ b/arch/csky/mm/dma-mapping.c
-> @@ -60,11 +60,9 @@ void arch_sync_dma_for_device(phys_addr_t paddr, size_=
-t size,
->  {
->         switch (dir) {
->         case DMA_TO_DEVICE:
-> -               cache_op(paddr, size, dma_wb_range);
-> -               break;
->         case DMA_FROM_DEVICE:
->         case DMA_BIDIRECTIONAL:
-> -               cache_op(paddr, size, dma_wbinv_range);
-> +               cache_op(paddr, size, dma_wb_range);
-Reviewed-by: Guo Ren <guoren@kernel.org>
+Hi Geert,
+
+I love your patch! Perhaps something to improve:
+
+[auto build test WARNING on linus/master]
+[also build test WARNING on v6.3-rc4 next-20230327]
+[If your patch is applied to the wrong git tree, kindly drop us a note.
+And when submitting patch, we suggest to use '--base' as documented in
+https://git-scm.com/docs/git-format-patch#_base_tree_information]
+
+url:    https://github.com/intel-lab-lkp/linux/commits/Geert-Uytterhoeven/sh-Use-generic-GCC-library-routines/20230323-181932
+patch link:    https://lore.kernel.org/r/74dbe68dc8e2ffb6180092f73723fe21ab692c7a.1679566500.git.geert%2Brenesas%40glider.be
+patch subject: [PATCH v3] sh: Use generic GCC library routines
+config: sh-allnoconfig (https://download.01.org/0day-ci/archive/20230327/202303272214.RxzpA6bP-lkp@intel.com/config)
+compiler: sh4-linux-gcc (GCC) 12.1.0
+reproduce (this is a W=1 build):
+        wget https://raw.githubusercontent.com/intel/lkp-tests/master/sbin/make.cross -O ~/bin/make.cross
+        chmod +x ~/bin/make.cross
+        # https://github.com/intel-lab-lkp/linux/commit/f81d82f320398d37e233429781ed14069e3eaf53
+        git remote add linux-review https://github.com/intel-lab-lkp/linux
+        git fetch --no-tags linux-review Geert-Uytterhoeven/sh-Use-generic-GCC-library-routines/20230323-181932
+        git checkout f81d82f320398d37e233429781ed14069e3eaf53
+        # save the config file
+        mkdir build_dir && cp config build_dir/.config
+        COMPILER_INSTALL_PATH=$HOME/0day COMPILER=gcc-12.1.0 make.cross W=1 O=build_dir ARCH=sh olddefconfig
+        COMPILER_INSTALL_PATH=$HOME/0day COMPILER=gcc-12.1.0 make.cross W=1 O=build_dir ARCH=sh SHELL=/bin/bash
+
+If you fix the issue, kindly add following tag where applicable
+| Reported-by: kernel test robot <lkp@intel.com>
+| Link: https://lore.kernel.org/oe-kbuild-all/202303272214.RxzpA6bP-lkp@intel.com/
+
+Note: functions only called from assembly code should be annotated with the asmlinkage attribute
+All warnings (new ones prefixed by >>):
+
+   In file included from arch/sh/boot/compressed/ashldi3.c:2:
+>> arch/sh/boot/compressed/../../../../lib/ashldi3.c:9:19: warning: no previous prototype for '__ashldi3' [-Wmissing-prototypes]
+       9 | long long notrace __ashldi3(long long u, word_type b)
+         |                   ^~~~~~~~~
 
 
->                 break;
->         default:
->                 BUG();
-> --
-> 2.39.2
->
+vim +/__ashldi3 +9 arch/sh/boot/compressed/../../../../lib/ashldi3.c
 
+b35cd9884fa5d8 Palmer Dabbelt 2017-05-23  8  
+b35cd9884fa5d8 Palmer Dabbelt 2017-05-23 @9  long long notrace __ashldi3(long long u, word_type b)
 
---=20
-Best Regards
- Guo Ren
+-- 
+0-DAY CI Kernel Test Service
+https://github.com/intel/lkp-tests
