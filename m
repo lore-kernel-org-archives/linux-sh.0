@@ -2,44 +2,44 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A587BC77B6F
-	for <linux-sh@archiver.kernel.org>; Thu, 30 Mar 2023 16:28:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 86A51C77B6D
+	for <linux-sh@archiver.kernel.org>; Thu, 30 Mar 2023 16:28:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231590AbjC3Q2m (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 30 Mar 2023 12:28:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60386 "EHLO
+        id S232010AbjC3Q2q (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 30 Mar 2023 12:28:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60348 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231700AbjC3Q2f (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 30 Mar 2023 12:28:35 -0400
+        with ESMTP id S231776AbjC3Q2g (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 30 Mar 2023 12:28:36 -0400
 Received: from mga05.intel.com (mga05.intel.com [192.55.52.43])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 432A8BB9C;
-        Thu, 30 Mar 2023 09:28:32 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 51A55B46F;
+        Thu, 30 Mar 2023 09:28:34 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
   d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1680193712; x=1711729712;
+  t=1680193714; x=1711729714;
   h=from:to:cc:subject:date:message-id:in-reply-to:
    references:mime-version:content-transfer-encoding;
-  bh=mMeyztJwnpsG6WpiZZE3Wzd++aYBpdo5TdtsAUuwHek=;
-  b=UeetYP0z4KQE3eGjgEb1rZcZdEKa4Zt/lw25k6ICMVHP/gr5WLpuWQOv
-   vHX230IkzboLjCyY0SQaC5V2mklJtqcbYRk2INBRiPU+nUZ2ThENiWsQl
-   QjVZ5ibEfB6QA9H2UxZ8Z3lAFcYb+cVp+jJSkiiHMmVkMr1XHd/axlD3J
-   3JHxWBMqslYXAnMN15EbgPmZAp1alUykAZS6TnuASxRudTBpBTdr4LXG/
-   0kqpNQWr3EUMkEcrs+OLeQYpHrCj5mOTQr8ShpTdUC6iUyfiIoVSwlr14
-   MPiOzkt1azTtcvTJEyW41A0oyLudH1otqOsj8j/Ds4aW4rMZ3DlizoKzE
-   g==;
-X-IronPort-AV: E=McAfee;i="6600,9927,10665"; a="427496059"
+  bh=xbQWUNZRhMDKSfWq+Wm+hoCdoGH5KZ6pm5K/n+XSSwM=;
+  b=HT85l5NYyZLNzawnUtxbMAOFjsxDUmwxdiOu9NPsFbr3jTarqFqrumeb
+   ADFomDuksf0r16xVkhXHTJtMi82ssKSmNZVJm1IueNDOuEQEnMsuWdwpV
+   k5On/KlKTBy4Qv4YbZUQJakA7oFY7c0Mq8GyeD1CsnlHxSNF1WSa0TM+D
+   XGlYiPil0mPNDQCh2gVTQw+xJD8WDYczG5X0SxONWIt9k6yPns26oWl5b
+   nF/gzBfSKEdbt0TBLd9Xjr7N6aF30BQ82lhXJ0cs9P8giPP/J249Xkvzx
+   nYLM3TZfjZ+uz1sQ2h93CPQuhtNYLmUWeBaFSvqW1dM68/NjirmKPZ10v
+   A==;
+X-IronPort-AV: E=McAfee;i="6600,9927,10665"; a="427496093"
 X-IronPort-AV: E=Sophos;i="5.98,305,1673942400"; 
-   d="scan'208";a="427496059"
-Received: from orsmga002.jf.intel.com ([10.7.209.21])
-  by fmsmga105.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Mar 2023 09:28:31 -0700
+   d="scan'208";a="427496093"
+Received: from orsmga005.jf.intel.com ([10.7.209.41])
+  by fmsmga105.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Mar 2023 09:28:32 -0700
 X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6600,9927,10665"; a="684762351"
+X-IronPort-AV: E=McAfee;i="6600,9927,10665"; a="858971554"
 X-IronPort-AV: E=Sophos;i="5.98,305,1673942400"; 
-   d="scan'208";a="684762351"
+   d="scan'208";a="858971554"
 Received: from black.fi.intel.com ([10.237.72.28])
-  by orsmga002.jf.intel.com with ESMTP; 30 Mar 2023 09:28:19 -0700
+  by orsmga005.jf.intel.com with ESMTP; 30 Mar 2023 09:28:22 -0700
 Received: by black.fi.intel.com (Postfix, from userid 1003)
-        id 43047238; Thu, 30 Mar 2023 19:24:51 +0300 (EEST)
+        id 85CC62BE; Thu, 30 Mar 2023 19:24:52 +0300 (EEST)
 From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 To:     =?UTF-8?q?Micka=C3=ABl=20Sala=C3=BCn?= <mic@digikod.net>,
         Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
@@ -80,59 +80,53 @@ Cc:     Miguel Ojeda <ojeda@kernel.org>,
         Bjorn Helgaas <bhelgaas@google.com>,
         Stefano Stabellini <sstabellini@kernel.org>,
         Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>
-Subject: [PATCH v8 4/7] PCI: Document pci_bus_for_each_resource() to avoid confusion
-Date:   Thu, 30 Mar 2023 19:24:31 +0300
-Message-Id: <20230330162434.35055-5-andriy.shevchenko@linux.intel.com>
+Subject: [PATCH v8 6/7] EISA: Convert to use less arguments in pci_bus_for_each_resource()
+Date:   Thu, 30 Mar 2023 19:24:33 +0300
+Message-Id: <20230330162434.35055-7-andriy.shevchenko@linux.intel.com>
 X-Mailer: git-send-email 2.40.0.1.gaa8946217a0b
 In-Reply-To: <20230330162434.35055-1-andriy.shevchenko@linux.intel.com>
 References: <20230330162434.35055-1-andriy.shevchenko@linux.intel.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-There might be a confusion with the implementation of the
-pci_bus_for_each_resources() due to side effect of Logical
-OR. Document entire macro and explain how it works and why
-the conditional needs to be like that.
+The pci_bus_for_each_resource() can hide the iterator loop since
+it may be not used otherwise. With this, we may drop that iterator
+variable definition.
 
 Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Reviewed-by: Krzysztof Wilczyński <kw@linux.com>
+Reviewed-by: Philippe Mathieu-Daudé <philmd@linaro.org>
 ---
- include/linux/pci.h | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ drivers/eisa/pci_eisa.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/pci.h b/include/linux/pci.h
-index 5cacd9e4c8cd..e3b3af606280 100644
---- a/include/linux/pci.h
-+++ b/include/linux/pci.h
-@@ -1446,6 +1446,26 @@ int devm_request_pci_bus_resources(struct device *dev,
- /* Temporary until new and working PCI SBR API in place */
- int pci_bridge_secondary_bus_reset(struct pci_dev *dev);
+diff --git a/drivers/eisa/pci_eisa.c b/drivers/eisa/pci_eisa.c
+index 930c2332c3c4..8173e60bb808 100644
+--- a/drivers/eisa/pci_eisa.c
++++ b/drivers/eisa/pci_eisa.c
+@@ -20,8 +20,8 @@ static struct eisa_root_device pci_eisa_root;
  
-+/**
-+ * pci_bus_for_each_resource - iterate over PCI bus resources
-+ * @bus: the PCI bus
-+ * @res: a varible to keep a pointer to the current resource
-+ * @i: a variable to keep the index of the current resource
-+ *
-+ * Iterate over PCI bus resources. The first part is to go over PCI bus
-+ * resource array, which has at most the %PCI_BRIDGE_RESOURCE_NUM entries.
-+ * After that continue with the separate list of the additional resources,
-+ * if not empty. That's why the Logical OR is being used.
-+ *
-+ * Possible usage:
-+ *
-+ *	struct pci_bus *bus = ...;
-+ *	struct resource *res;
-+ *	unsigned int i;
-+ *
-+ * 	pci_bus_for_each_resource(bus, res, i)
-+ * 		pr_info("PCI bus resource[%u]: %pR\n", i, res);
-+ */
- #define pci_bus_for_each_resource(bus, res, i)				\
- 	for (i = 0;							\
- 	    (res = pci_bus_resource_n(bus, i)) || i < PCI_BRIDGE_RESOURCE_NUM; \
+ static int __init pci_eisa_init(struct pci_dev *pdev)
+ {
+-	int rc, i;
+ 	struct resource *res, *bus_res = NULL;
++	int rc;
+ 
+ 	if ((rc = pci_enable_device (pdev))) {
+ 		dev_err(&pdev->dev, "Could not enable device\n");
+@@ -38,7 +38,7 @@ static int __init pci_eisa_init(struct pci_dev *pdev)
+ 	 * eisa_root_register() can only deal with a single io port resource,
+ 	*  so we use the first valid io port resource.
+ 	 */
+-	pci_bus_for_each_resource(pdev->bus, res, i)
++	pci_bus_for_each_resource(pdev->bus, res)
+ 		if (res && (res->flags & IORESOURCE_IO)) {
+ 			bus_res = res;
+ 			break;
 -- 
 2.40.0.1.gaa8946217a0b
 
