@@ -2,110 +2,62 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CF931C76196
-	for <linux-sh@archiver.kernel.org>; Sun,  2 Apr 2023 06:52:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B5288C76196
+	for <linux-sh@archiver.kernel.org>; Mon,  3 Apr 2023 08:08:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229997AbjDBGwP (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 2 Apr 2023 02:52:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59962 "EHLO
+        id S231527AbjDCIIk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 3 Apr 2023 04:08:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60650 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229567AbjDBGwN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 2 Apr 2023 02:52:13 -0400
-Received: from ams.source.kernel.org (ams.source.kernel.org [IPv6:2604:1380:4601:e00::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EEA601BD8;
-        Sat,  1 Apr 2023 23:52:12 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by ams.source.kernel.org (Postfix) with ESMTPS id 8BE9DB80D9D;
-        Sun,  2 Apr 2023 06:52:11 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 172F1C433EF;
-        Sun,  2 Apr 2023 06:51:55 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1680418330;
-        bh=a/EFMMyTJLmdvL39oZFGsprYDxcAb3c4B++/AP48aI8=;
-        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-        b=pqQ8UGR2W/sRFjxT8DARJF1gEKMVmWBdp+qDC9PGt0i4TRAg0xAwoG7YQQxAtDcdi
-         4Pb253Uxof3u9uF71S5Xrs095QXIy4AdVj3153ZRySY7w6oib4sTzQ8CqAmyQSRayG
-         2EAT/e6m3unLAUSKk8zn/YhBr3R6k1eBeKiApm9beA6GV7oD5h7f9NbOa+/z/XcUUq
-         Wo1iHf9vVkeyRvdktceSDmuJx7kOOEGZtUZ6DOOxmfVTUgf0Rrb6I9FB+HQBZqNZ1B
-         jIzLWCQM2V8D9tYxUPIRptyXw28M0O5YuIe+Fd2OoUguwXFRn6X5yntmmRZtkvx66T
-         3696IoVFPDlHA==
-Message-ID: <2b298e8c-e6fc-a973-9f42-b6a88e92838a@kernel.org>
-Date:   Sun, 2 Apr 2023 12:22:20 +0530
+        with ESMTP id S231614AbjDCIIi (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 3 Apr 2023 04:08:38 -0400
+X-Greylist: delayed 385 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Mon, 03 Apr 2023 01:08:15 PDT
+Received: from mail.feshiecree.pl (mail.feshiecree.pl [89.40.114.103])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EB2C52D7B
+        for <linux-sh@vger.kernel.org>; Mon,  3 Apr 2023 01:08:15 -0700 (PDT)
+Received: by mail.feshiecree.pl (Postfix, from userid 1001)
+        id 7AC8A83B28; Mon,  3 Apr 2023 08:56:18 +0100 (BST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=feshiecree.pl;
+        s=mail; t=1680508634;
+        bh=hFxZwVw4rIL+JwfEOGI47p+fdoVOAeqVswP6NWoHSHQ=;
+        h=Date:From:To:Subject:From;
+        b=LpKjJQAX8de3D8f1vlQMuYfHtx64pJHYQUVrvumucFnJd2oHVSaDphyx70iOTUjvd
+         Z+m0FditT6WuIVWTtipRLvWYV8gdmc30P4+9YLs58Dv61HQadyCSYcHxKILdrCQaJk
+         sfaenZAQiZAhurWVD1QuQQLji0A0i1FE/jeqMqC//dPcVyyzEAlODPaJSZFfBhOsLq
+         2WvNG9qRfGpOmDVbKX+LmgOVuWczzw/PCpOFzejpzyEPTc6WibrQyNU64rjZvh5uej
+         PYxcmYss7uh8zPpsNZkoxKm1eUdl5ltHgF0Un2OEYj9cjPAA3VF5D6RfxY5jgLcsMW
+         MXihShVMzCblw==
+Received: by mail.feshiecree.pl for <linux-sh@vger.kernel.org>; Mon,  3 Apr 2023 07:55:37 GMT
+Message-ID: <20230403074501-0.1.1s.57wt.0.033wo4ek15@feshiecree.pl>
+Date:   Mon,  3 Apr 2023 07:55:37 GMT
+From:   "Krystian Wieczorek" <krystian.wieczorek@feshiecree.pl>
+To:     <linux-sh@vger.kernel.org>
+Subject: W sprawie samochodu
+X-Mailer: mail.feshiecree.pl
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.9.0
-Subject: Re: [PATCH 13/21] arc: dma-mapping: skip invalidating before
- bidirectional DMA
-Content-Language: en-US
-To:     Arnd Bergmann <arnd@kernel.org>, linux-kernel@vger.kernel.org
-Cc:     Arnd Bergmann <arnd@arndb.de>, Vineet Gupta <vgupta@kernel.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Neil Armstrong <neil.armstrong@linaro.org>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Brian Cain <bcain@quicinc.com>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Stafford Horne <shorne@gmail.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "David S. Miller" <davem@davemloft.net>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Christoph Hellwig <hch@lst.de>,
-        Robin Murphy <robin.murphy@arm.com>,
-        Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>,
-        Conor Dooley <conor.dooley@microchip.com>,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-oxnas@groups.io,
-        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org,
-        Shahab Vahedi <Shahab.Vahedi@synopsys.com>
-References: <20230327121317.4081816-1-arnd@kernel.org>
- <20230327121317.4081816-14-arnd@kernel.org>
-From:   Vineet Gupta <vgupta@kernel.org>
-In-Reply-To: <20230327121317.4081816-14-arnd@kernel.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-CC Shahab
+Dzie=C5=84 dobry,
 
-On 3/27/23 17:43, Arnd Bergmann wrote:
-> From: Arnd Bergmann<arnd@arndb.de>
->
-> Some architectures that need to invalidate buffers after bidirectional
-> DMA because of speculative prefetching only do a simpler writeback
-> before that DMA, while architectures that don't need to do the second
-> invalidate tend to have a combined writeback+invalidate before the
-> DMA.
->
-> arc is one of the architectures that does both, which seems unnecessary.
->
-> Change it to behave like arm/arm64/xtensa instead, and use just a
-> writeback before the DMA when we do the invalidate afterwards.
->
-> Signed-off-by: Arnd Bergmann<arnd@arndb.de>
+chcieliby=C5=9Bmy zapewni=C4=87 Pa=C5=84stwu kompleksowe rozwi=C4=85zania=
+, je=C5=9Bli chodzi o system monitoringu GPS.
 
-Reviewed-by: Vineet Gupta <vgupta@kernel.org>
+Precyzyjne monitorowanie pojazd=C3=B3w na mapach cyfrowych, =C5=9Bledzeni=
+e ich parametr=C3=B3w eksploatacyjnych w czasie rzeczywistym oraz kontrol=
+a paliwa to kluczowe funkcjonalno=C5=9Bci naszego systemu.=20
 
-Shahab can you give this a spin on hsdk - run glibc testsuite over ssh 
-and make sure nothing strange happens.
+Organizowanie pracy pracownik=C3=B3w jest dzi=C4=99ki temu prostsze i bar=
+dziej efektywne, a oszcz=C4=99dno=C5=9Bci i optymalizacja w zakresie pono=
+szonych koszt=C3=B3w, maj=C4=85 dla ka=C5=BCdego przedsi=C4=99biorcy ogro=
+mne znaczenie.
 
-Thx,
--Vineet
+Dopasujemy nasz=C4=85 ofert=C4=99 do Pa=C5=84stwa oczekiwa=C5=84 i potrze=
+b organizacji. Czy mogliby=C5=9Bmy porozmawia=C4=87 o naszej propozycji?
+
+
+Pozdrawiam
+Krystian Wieczorek
