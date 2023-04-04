@@ -2,130 +2,168 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DEF06C76196
-	for <linux-sh@archiver.kernel.org>; Tue,  4 Apr 2023 03:16:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B0D2C7618D
+	for <linux-sh@archiver.kernel.org>; Tue,  4 Apr 2023 05:13:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233000AbjDDDQB (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 3 Apr 2023 23:16:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33184 "EHLO
+        id S233280AbjDDFNt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 4 Apr 2023 01:13:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50686 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232973AbjDDDQA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 3 Apr 2023 23:16:00 -0400
-Received: from mail-ua1-x92e.google.com (mail-ua1-x92e.google.com [IPv6:2607:f8b0:4864:20::92e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5D9B41FDC
-        for <linux-sh@vger.kernel.org>; Mon,  3 Apr 2023 20:15:59 -0700 (PDT)
-Received: by mail-ua1-x92e.google.com with SMTP id 89so22376284uao.0
-        for <linux-sh@vger.kernel.org>; Mon, 03 Apr 2023 20:15:59 -0700 (PDT)
+        with ESMTP id S229481AbjDDFNs (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 4 Apr 2023 01:13:48 -0400
+Received: from mail-vs1-xe29.google.com (mail-vs1-xe29.google.com [IPv6:2607:f8b0:4864:20::e29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 63E541FEE
+        for <linux-sh@vger.kernel.org>; Mon,  3 Apr 2023 22:13:46 -0700 (PDT)
+Received: by mail-vs1-xe29.google.com with SMTP id z17so20757805vsf.4
+        for <linux-sh@vger.kernel.org>; Mon, 03 Apr 2023 22:13:46 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20210112; t=1680578158;
+        d=google.com; s=20210112; t=1680585225;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=0YiYK6By/Gy8uFjpR2dxWrAfJVoXcMr6v0o3UFEqpfU=;
-        b=OuN/6Va32DuC9gvFK51rLQQk7xOA6DhtikrxRVQ4YaVczEWVWOK8jQytn/SUzPygH0
-         +RssSzxP/RqvO1vbpeZsmSbZ2mL5vrYpJT4URsg08oRRg6Tzl8iXHWKTHvnzVOXqukqW
-         IqLYEwN2nSS0sZkT98tsDyleZowIMUq5ojYLE6wYLb7qjGQPn0L0OjbfAdK9Xvyw62/S
-         NZOPzULmKLNCECGaykmC46C98+BO/xN6PHQzG1Z/aCct+S3vWkfjHWjT+kgINC3pYKX7
-         ZGC/TbtKW6HcncNLPEmOyR2KiF6DouQXcn+h8XuLlBlCfh2SOXIze9TAtiQIWV0LQp2Z
-         K1SQ==
+        bh=TRl2Uqz/O7GLYtBo1DNGUo3NVBnje2uCeRXc5ekoa+U=;
+        b=WMP2icHxGpUrSDDGf0T4r36MVlQZmhW5pg56/E6hTqlWsRyLqke2fTPFKZS4lm+1Bu
+         m/Jrk+7WPfHOjOZ73fhlSkFzzTO6lAgoZX+VPKfn+K4uUVYB5DlUSy+SI30Un5z+yGc2
+         D60rqPtb4slC/n3w2UZigpACXtAzspEQKlh6LGAHh5aC8EN0ld+hq1L/Zs0XS44lz9jp
+         /yWOBnX5c/tnC9X+Zq8JabPwtvdDrX16zYl8OydNLtQ3EZm/61N6nXUudjwIwNqtuNav
+         yrVQHQiDz6ezB0KdjCHMx8Npl/RkYw66yvsa+tCI3gb4Vc84g1NfAi80homvgq6UItxG
+         wQJw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1680578158;
+        d=1e100.net; s=20210112; t=1680585225;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=0YiYK6By/Gy8uFjpR2dxWrAfJVoXcMr6v0o3UFEqpfU=;
-        b=m/QazSGGGoBCgy7tAWLL6Qu7AMpvLptQ8ZQvZFtwKK3sr628uYseenZNvVLIzv0AQy
-         orpyzAzWwC6cOdXb5G/lmM50NOjZz5R4YG4RGx0FogfEpdTifN9TCqpEDozY0P4xD1Fa
-         QiNJSG65OHh5sX6wWeU+qt908dvdpZL+OU1McTxEZ6CxsZKnux5R9UAdBMXoCPCDJ1wI
-         7pZWEsrU/iXpFd6KwhlE1Tjag+C6zlYhOMQ12b2eI5cHIl1Jdc7DVAIIXQU20jw3DC+g
-         EeGa8VKZemwJeiM9AyYQgQ6r/4+DoAnsCp3AnVoYh+SV6i+asCjSRuWiZter83dK0VGq
-         ERYg==
-X-Gm-Message-State: AAQBX9dTaOoTWR/8shyT7bcDv5ZwZp6M4D/R5hSlxQTSF9hbwjqNTZWs
-        WsF6L/Dfz/X0tsifbLWEzGkfgBcuAk3yJS39pslfzQ==
-X-Google-Smtp-Source: AKy350a3/Rlm1WmMqLEJtH852amtNKjYdti/UH4UiDDjewfRI7TsAFjfDhP0pLeF3RT8PaMr1AEKZFWfeNGsX+YtwgM=
-X-Received: by 2002:a1f:a7c4:0:b0:40e:fee9:667a with SMTP id
- q187-20020a1fa7c4000000b0040efee9667amr1147067vke.3.1680578158365; Mon, 03
- Apr 2023 20:15:58 -0700 (PDT)
+        bh=TRl2Uqz/O7GLYtBo1DNGUo3NVBnje2uCeRXc5ekoa+U=;
+        b=egldGTgQEYDkkFymH+7CnrEx3C+e0dJu0DYF3KowvO2msJ30RpYI5fcuaJ0MThey/W
+         UPEJBsiMKCKLOWtLHROOcfdjw5GA/ciStJYWpHYhco2MFWJr/+f+5JukfEXu4Aggl95F
+         qY3SM6tJj6j0dFIo/eqdHES8MkIaMQ+JjYZUN4WEUDoznJT5UV0R0L73wAm+sONwO/qY
+         lYO5FlhlPCcFdy6i05issb3+oWGZdZZzQoy9kweW6O8hSLZyO4KJuKqu5DqoOnioq/cQ
+         BcEY/Pmx/w5dtwPvm7kwyhL4wqyFmEpLrXfz+/yv9fVEQV6+D+zitd6UNM0RauHWUgI4
+         oeBw==
+X-Gm-Message-State: AAQBX9dXaf/1siBBSFnDi7NwQf2sVaGspd6q4deKLN20O0U/xpsDrixJ
+        SbAaMBuNxhtHLY7c/ebfp2lW+VIRvQvbLh2h/HlJBg==
+X-Google-Smtp-Source: AKy350bRiQUnXmt4B0hrBSKllxGHN0MEKhGLd1lj0axpGNgh3kdy9VcHpLO9rtm6oL/lW8K3WEikHG3Knv2WDLZOTbw=
+X-Received: by 2002:a67:c20a:0:b0:416:f1ea:1001 with SMTP id
+ i10-20020a67c20a000000b00416f1ea1001mr1270249vsj.5.1680585225111; Mon, 03 Apr
+ 2023 22:13:45 -0700 (PDT)
 MIME-Version: 1.0
-References: <cover.1677579750.git.geert+renesas@glider.be> <c72e5884711da51424ad2f9c7933bb294129aef3.1677579750.git.geert+renesas@glider.be>
-In-Reply-To: <c72e5884711da51424ad2f9c7933bb294129aef3.1677579750.git.geert+renesas@glider.be>
+References: <cover.1677579750.git.geert+renesas@glider.be> <CABVgOS=vXSuqrJ=6rbAZ1vT3Y=SR69T9EFikXKPY_hmv25riwQ@mail.gmail.com>
+ <CAMuHMdX4_FBsSYMF3Yvw3v_g6tdS=WVJGeuPmH3XRUiyYNBPmQ@mail.gmail.com> <CABVgOSkFoDhu6y5ZfmetKnu5CXw3cOpBnpCAYmnS6ffANMNJ2g@mail.gmail.com>
+In-Reply-To: <CABVgOSkFoDhu6y5ZfmetKnu5CXw3cOpBnpCAYmnS6ffANMNJ2g@mail.gmail.com>
 From:   David Gow <davidgow@google.com>
-Date:   Tue, 4 Apr 2023 11:15:47 +0800
-Message-ID: <CABVgOSnh6643FAAx9qt+2V_DJUrsFEOxb=O10qqxiO8ED44YMA@mail.gmail.com>
-Subject: Re: [PATCH 2/2] kunit: tool: Add support for SH under QEMU
-To:     Geert Uytterhoeven <geert+renesas@glider.be>
+Date:   Tue, 4 Apr 2023 13:13:32 +0800
+Message-ID: <CABVgOSmgpkktiLkU-ic0xGitDOhep+3sb5X91hb8RNEzFauhAA@mail.gmail.com>
+Subject: Re: [PATCH 0/2] kunit: tool: Add support for SH under QEMU
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
 Cc:     Brendan Higgins <brendan.higgins@linux.dev>,
         linux-kselftest@vger.kernel.org, kunit-dev@googlegroups.com,
         linux-sh@vger.kernel.org
 Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256;
-        boundary="0000000000002ab03f05f87a1817"
+        boundary="00000000000060c1f105f87bbd44"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
---0000000000002ab03f05f87a1817
+--00000000000060c1f105f87bbd44
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Tue, 28 Feb 2023 at 18:31, Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
+On Sat, 4 Mar 2023 at 13:33, David Gow <davidgow@google.com> wrote:
 >
-> Add basic support to run SH under QEMU via kunit_tool using the
-> virtualized r2d platform.
+> On Fri, 3 Mar 2023 at 15:42, Geert Uytterhoeven <geert@linux-m68k.org> wr=
+ote:
+> >
+> > Hi David,
+> >
+> > On Fri, Mar 3, 2023 at 8:26=E2=80=AFAM David Gow <davidgow@google.com> =
+wrote:
+> > > On Tue, 28 Feb 2023 at 18:31, Geert Uytterhoeven
+> > > <geert+renesas@glider.be> wrote:
+> > > > This patch series adds support to run tests via kunit_tool on the
+> > > > SuperH-based virtualized r2d platform.  As r2d uses the second seri=
+al
+> > > > port as the console, this needs a small modification of the core
+> > > > infrastructure.
+> > > >
+> > > > Thanks for your comments!
+> > >
+> > > This series looks good to me, but I've not been able to successfully
+> > > get qemu to boot anything on SuperH (it just seems to hang with no
+> > > output).
+> > >
+> > > Is there anything like magic config or firmware images (I didn't thin=
+k
+> > > so for r2d: shix prints out an error, though) required to get this
+> > > going?
+> >
+> > No idea. I thought it just works.
+> >
 >
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
+> Strange: I'm not able to get anything to boot here, regardless of the
+> versions I use.
+>
+> I'm definitely not convinced that it's a qemu issue, as opposed to a
+> kernel issue, but either way I can't get anything to boot.
+>
+> > > The qemu command KUnit is using seems correct (and none of the obviou=
+s
+> > > permutations, particularly around the serial ports seem to help):
+> > > qemu-system-sh4 -nodefaults -m 1024 -kernel .kunit/arch/sh/boot/zImag=
+e
+> > > -append 'kunit.enable=3D1 console=3DttySC1 kunit_shutdown=3Dreboot'
+> > > -no-reboot -nographic -serial null -machine r2d -serial mon:stdio
+> >
+> > That works just fine for me.
+> >
+> > On plain v6.2 with this series applied:
+> > $ ./tools/testing/kunit/kunit.py run --arch=3Dsh
+> > --cross_compile=3Dsh4-linux-gnu- --raw_output=3Dall --kunitconfig
+> > fs/ext4/.kunitconfig
+> > [08:38:59] Configuring KUnit Kernel ...
+> > Regenerating .config ...
+> > Populating config with:
+> > $ make ARCH=3Dsh O=3D.kunit olddefconfig CROSS_COMPILE=3Dsh4-linux-gnu-
+> > [08:39:01] Building KUnit Kernel ...
+> > Populating config with:
+> > $ make ARCH=3Dsh O=3D.kunit olddefconfig CROSS_COMPILE=3Dsh4-linux-gnu-
+> > Building with:
+> > $ make ARCH=3Dsh O=3D.kunit --jobs=3D12 CROSS_COMPILE=3Dsh4-linux-gnu-
+> > <stdin>:1517:2: warning: #warning syscall clone3 not implemented [-Wcpp=
+]
+> > [... more warnings ...]
+> > [08:39:51] Starting KUnit Kernel (1/1)...
+> > Running tests with:
+> > $ qemu-system-sh4 -nodefaults -m 1024 -kernel
+> > .kunit/arch/sh/boot/zImage -append 'kunit.enable=3D1 console=3DttySC1
+> > kunit_shutdown=3Dreboot' -no-reboot -nographic -serial null -machine r2=
+d
+> > -serial mon:stdio
+> > Linux version 6.2.0-00002-g5b394444bb0d (geert@rox) (sh4-linux-gnu-gcc
+> > (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0, GNU ld (GNU Binutils for
+> > Ubuntu) 2.38) #3 Fri Mar  3 08:39:50 CET 2023
+> > ...
+> >
+>
+> I see the same issue with a clean 6.2 and these patches, with both
+> "sh4-linux-gnu-gcc (Debian 12.2.0-10) 12.2.0" and
+> "sh4-linux-gnu-gcc-11 (Debian 11.3.0-8) 11.3.0".
+>
 
-I finally managed to get this working: it's fine under openSUSE
-tumbleweed (with the kernel.org toolchain), and in a debian stable
-container, so I'll chalk the problems I was having up to my
-Google-ified setup here.
+Looks like this is an issue with the compiler in Debian testing.
 
-Even if that turns out to be a more widespread issue, it'll be easier
-to track down with these patches applied,
+Broken (Debian Testing):
+sh4-linux-gnu-gcc (Debian 12.2.0-10) 12.2.0
+Works (From https://mirrors.edge.kernel.org/pub/tools/crosstool/ ):
+sh4-linux-gcc (GCC) 12.2.0
+Works (Debian Stable):
+sh4-linux-gnu-gcc (Debian 10.2.1-6) 10.2.1 20210110
 
-So,
-Reviewed-by: David Gow <davidgow@google.com>
+I'll leave debugging it here, as my SuperH knowledge is nonexistant,
+but there's definitely something going wrong.
 
 Cheers,
 -- David
 
-
-
-> All tests succeed, except for the usual suspects.
-> drivers/clk/.kunitconfig cannot be run as CONFIG_COMMON_CLK is not
-> available.
-> ---
->  tools/testing/kunit/qemu_configs/sh.py | 17 +++++++++++++++++
->  1 file changed, 17 insertions(+)
->  create mode 100644 tools/testing/kunit/qemu_configs/sh.py
->
-> diff --git a/tools/testing/kunit/qemu_configs/sh.py b/tools/testing/kunit/qemu_configs/sh.py
-> new file mode 100644
-> index 0000000000000000..78a474a5b95f3a7d
-> --- /dev/null
-> +++ b/tools/testing/kunit/qemu_configs/sh.py
-> @@ -0,0 +1,17 @@
-> +# SPDX-License-Identifier: GPL-2.0-only
-> +from ..qemu_config import QemuArchParams
-> +
-> +QEMU_ARCH = QemuArchParams(linux_arch='sh',
-> +                          kconfig='''
-> +CONFIG_CPU_SUBTYPE_SH7751R=y
-> +CONFIG_MEMORY_START=0x0c000000
-> +CONFIG_SH_RTS7751R2D=y
-> +CONFIG_RTS7751R2D_PLUS=y
-> +CONFIG_SERIAL_SH_SCI=y''',
-> +                          qemu_arch='sh4',
-> +                          kernel_path='arch/sh/boot/zImage',
-> +                          kernel_command_line='console=ttySC1',
-> +                          serial='null',
-> +                          extra_qemu_params=[
-> +                                           '-machine', 'r2d',
-> +                                           '-serial', 'mon:stdio'])
-> --
-> 2.34.1
->
-
---0000000000002ab03f05f87a1817
+--00000000000060c1f105f87bbd44
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -192,14 +230,14 @@ tF2bJwlOwRGLoxasKSyDHIyUpwTfWYPq7XvjoGqQ/tDS7Khcc5WncJl0/ZEj7EKjtoGbsDbLdXEF
 m/6vdcYKJzF9ghHewtV3YIU4RE3pEM4aCWWRtJwbExzeue6fI7RqURbNCAyQuSpWv0YQvzsX3ZX3
 c1otrs50n1N0Sf8/rfJxq7sWMYICajCCAmYCAQEwaDBUMQswCQYDVQQGEwJCRTEZMBcGA1UEChMQ
 R2xvYmFsU2lnbiBudi1zYTEqMCgGA1UEAxMhR2xvYmFsU2lnbiBBdGxhcyBSMyBTTUlNRSBDQSAy
-MDIwAhABxy1wm0tAmHKHFkLS9RWPMA0GCWCGSAFlAwQCAQUAoIHUMC8GCSqGSIb3DQEJBDEiBCDB
-cQcUWIJ4etMUztUqqwdAQW78DvmnNLgz/8LKI6YIZzAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcB
-MBwGCSqGSIb3DQEJBTEPFw0yMzA0MDQwMzE1NThaMGkGCSqGSIb3DQEJDzFcMFowCwYJYIZIAWUD
+MDIwAhABxy1wm0tAmHKHFkLS9RWPMA0GCWCGSAFlAwQCAQUAoIHUMC8GCSqGSIb3DQEJBDEiBCBi
+IYhGNY55FVf4wMoDU26Gg4UdqsfP0RKRbOJMRr+PaDAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcB
+MBwGCSqGSIb3DQEJBTEPFw0yMzA0MDQwNTEzNDVaMGkGCSqGSIb3DQEJDzFcMFowCwYJYIZIAWUD
 BAEqMAsGCWCGSAFlAwQBFjALBglghkgBZQMEAQIwCgYIKoZIhvcNAwcwCwYJKoZIhvcNAQEKMAsG
-CSqGSIb3DQEBBzALBglghkgBZQMEAgEwDQYJKoZIhvcNAQEBBQAEggEAHKCFgwvacIn6cBCAw+pN
-ZVuPcnj5wXmuI9jqUO6lFxuT6IG4Qvq0z51Dk4VWeuPSOGhtaIvLdfh8aPklo4DYcLAB17HJskc5
-dS0yvUcboZrdyObklvY5+WPLe8Mxh1HIvZ208dgv4Q8v3t0K9DteCpbKEdlV5NUzez+lu/OtHcMm
-oDQEa9DugNq1rBVgCVxnqP37/ySWoFkqZLMYBfqkDVBKOfRby3P2ghyNXnZpgawgh+0kYkYM+QfK
-eXhQN0TWXhg19qc3jpoSxdKMNVdoiJiF/CkgDa9S2bztoQ2zZmfKjdqJEjrYHqhEdKA78J0QFFSR
-K8a+/k3DHun80+CNDg==
---0000000000002ab03f05f87a1817--
+CSqGSIb3DQEBBzALBglghkgBZQMEAgEwDQYJKoZIhvcNAQEBBQAEggEAvJzIUDQliGNV17QaFyeN
+zJEeM2G5HH8Ph83sGjMwiV6NNIgAiCJF20bA90s6bjOMbcTVgKEQdFhBYVz7fBdmdI/WeqM/KohY
+47MnEgMqBrZCiwcPmc2h2EMzd7lC3qTIdLl9kWWyY8LLf1IaKvpTogsrtQ7fFAgsA8oQLZhigaNo
+lw9BCcwcypVnLIdRVYVryNY8IAD8RKdXYHjn7xBMye/8x35g+cXvJwFtIROWMF07zRrQ3Vr1ee2Z
+UQSUzQ1u5ERA88+pmO/v8aQnRo04N2eAwDbjGKh8R9FQc8Ozw7pcpvZ2OMkJYDpjv/gZZJnk5LuV
+5Q7yIsc9RXH4EcG14w==
+--00000000000060c1f105f87bbd44--
