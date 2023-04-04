@@ -2,129 +2,130 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7ADA5C761A6
-	for <linux-sh@archiver.kernel.org>; Tue,  4 Apr 2023 03:15:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DEF06C76196
+	for <linux-sh@archiver.kernel.org>; Tue,  4 Apr 2023 03:16:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232560AbjDDDPy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 3 Apr 2023 23:15:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33098 "EHLO
+        id S233000AbjDDDQB (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 3 Apr 2023 23:16:01 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33184 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232334AbjDDDPx (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 3 Apr 2023 23:15:53 -0400
-Received: from mail-vs1-xe36.google.com (mail-vs1-xe36.google.com [IPv6:2607:f8b0:4864:20::e36])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0EF1A10C6
-        for <linux-sh@vger.kernel.org>; Mon,  3 Apr 2023 20:15:52 -0700 (PDT)
-Received: by mail-vs1-xe36.google.com with SMTP id d2so27216177vso.9
-        for <linux-sh@vger.kernel.org>; Mon, 03 Apr 2023 20:15:52 -0700 (PDT)
+        with ESMTP id S232973AbjDDDQA (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 3 Apr 2023 23:16:00 -0400
+Received: from mail-ua1-x92e.google.com (mail-ua1-x92e.google.com [IPv6:2607:f8b0:4864:20::92e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5D9B41FDC
+        for <linux-sh@vger.kernel.org>; Mon,  3 Apr 2023 20:15:59 -0700 (PDT)
+Received: by mail-ua1-x92e.google.com with SMTP id 89so22376284uao.0
+        for <linux-sh@vger.kernel.org>; Mon, 03 Apr 2023 20:15:59 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20210112; t=1680578151;
+        d=google.com; s=20210112; t=1680578158;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=yhPLF+v7f7AlpeDvPIQciGVcPXDP0tjF8H9WWIO2Dos=;
-        b=cbjoqncHZKTYg72KnModvg8WV0+fj2kDENlZvHoHqL7C1BNtpaUBqnUgt3nUUgL9pN
-         c5qNVC5DQXSuHx6QRih3noeOJgyCPkaNFcJGXodrIcO4dobam4Rhv5az5g+PuEoyCxy8
-         Pt7qgDMaOaYQh1Xs+GYtE64/GR2yQJgs3DOphj/4sV7SZhgUOhKiZ56NDrDZ5mz5wYXa
-         RZi4NxyaHXQT6s2ViP3lLVw3KL6AVFP6Offw973BveKmwmDc6CaAnq8IR/pZhTCV8fNf
-         VpNW3VvxDVhuX1KPyvY/6QQlfd0iztn3aHcG6WNRv+V7QOSrc0uOjckJyylcVzzuzXMI
-         4Y0A==
+        bh=0YiYK6By/Gy8uFjpR2dxWrAfJVoXcMr6v0o3UFEqpfU=;
+        b=OuN/6Va32DuC9gvFK51rLQQk7xOA6DhtikrxRVQ4YaVczEWVWOK8jQytn/SUzPygH0
+         +RssSzxP/RqvO1vbpeZsmSbZ2mL5vrYpJT4URsg08oRRg6Tzl8iXHWKTHvnzVOXqukqW
+         IqLYEwN2nSS0sZkT98tsDyleZowIMUq5ojYLE6wYLb7qjGQPn0L0OjbfAdK9Xvyw62/S
+         NZOPzULmKLNCECGaykmC46C98+BO/xN6PHQzG1Z/aCct+S3vWkfjHWjT+kgINC3pYKX7
+         ZGC/TbtKW6HcncNLPEmOyR2KiF6DouQXcn+h8XuLlBlCfh2SOXIze9TAtiQIWV0LQp2Z
+         K1SQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20210112; t=1680578151;
+        d=1e100.net; s=20210112; t=1680578158;
         h=cc:to:subject:message-id:date:from:in-reply-to:references
          :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=yhPLF+v7f7AlpeDvPIQciGVcPXDP0tjF8H9WWIO2Dos=;
-        b=nn9IOhVA7rAqzPUIuOFHh1g/7pU2Teexw2Y1ysTociLP1OD4GhjB9qRn9IY2iYrCma
-         9PktTTCDmsoM7Cchi6K5SyO3bI1JFN5p7LmdRngsdjFsYT/VmrKIUj5rtu1WLK68ALbz
-         i1c1txWzxWafn5LM2fnU1H7Z8+kyCpsHMAEfNNf16A8Ammj/41ZJPndQ+vW5uNWvL00J
-         SWOcoQJFW/mfxXNn3S3OWK/xAXVt2rPpiUJXn0SIV/uKftEB1/qy5uAbUV8TZhFD7yxc
-         eQ0MDozFrO8Kj5j4E1jCGXMo9z4n6a1/tCEkvrTpx0j7EqF3Wr20pzZxjmW2moXLzj+f
-         jY9g==
-X-Gm-Message-State: AAQBX9d2O/OHqAIcRRc3YImemNnAB2+B3QzKOANr4K1wLHytufL6xuUO
-        MkUIhcb6JTn75/WfPmBUVej7cTd8c0OJZ+4R/eH2XQ==
-X-Google-Smtp-Source: AKy350Yn4XLtgHOpdGPB+6WOQHaRrEJ61wo/FNTjORSDCPl9iJ72D68+D5KRbuqPUfi4+dmDCN8v8dRiJ7KfOk1ieBo=
-X-Received: by 2002:a67:d286:0:b0:426:da10:2408 with SMTP id
- z6-20020a67d286000000b00426da102408mr1251985vsi.5.1680578151024; Mon, 03 Apr
- 2023 20:15:51 -0700 (PDT)
+        bh=0YiYK6By/Gy8uFjpR2dxWrAfJVoXcMr6v0o3UFEqpfU=;
+        b=m/QazSGGGoBCgy7tAWLL6Qu7AMpvLptQ8ZQvZFtwKK3sr628uYseenZNvVLIzv0AQy
+         orpyzAzWwC6cOdXb5G/lmM50NOjZz5R4YG4RGx0FogfEpdTifN9TCqpEDozY0P4xD1Fa
+         QiNJSG65OHh5sX6wWeU+qt908dvdpZL+OU1McTxEZ6CxsZKnux5R9UAdBMXoCPCDJ1wI
+         7pZWEsrU/iXpFd6KwhlE1Tjag+C6zlYhOMQ12b2eI5cHIl1Jdc7DVAIIXQU20jw3DC+g
+         EeGa8VKZemwJeiM9AyYQgQ6r/4+DoAnsCp3AnVoYh+SV6i+asCjSRuWiZter83dK0VGq
+         ERYg==
+X-Gm-Message-State: AAQBX9dTaOoTWR/8shyT7bcDv5ZwZp6M4D/R5hSlxQTSF9hbwjqNTZWs
+        WsF6L/Dfz/X0tsifbLWEzGkfgBcuAk3yJS39pslfzQ==
+X-Google-Smtp-Source: AKy350a3/Rlm1WmMqLEJtH852amtNKjYdti/UH4UiDDjewfRI7TsAFjfDhP0pLeF3RT8PaMr1AEKZFWfeNGsX+YtwgM=
+X-Received: by 2002:a1f:a7c4:0:b0:40e:fee9:667a with SMTP id
+ q187-20020a1fa7c4000000b0040efee9667amr1147067vke.3.1680578158365; Mon, 03
+ Apr 2023 20:15:58 -0700 (PDT)
 MIME-Version: 1.0
-References: <cover.1677579750.git.geert+renesas@glider.be> <f12e6f606a2612fab4d1038d088959710a423a9f.1677579750.git.geert+renesas@glider.be>
-In-Reply-To: <f12e6f606a2612fab4d1038d088959710a423a9f.1677579750.git.geert+renesas@glider.be>
+References: <cover.1677579750.git.geert+renesas@glider.be> <c72e5884711da51424ad2f9c7933bb294129aef3.1677579750.git.geert+renesas@glider.be>
+In-Reply-To: <c72e5884711da51424ad2f9c7933bb294129aef3.1677579750.git.geert+renesas@glider.be>
 From:   David Gow <davidgow@google.com>
-Date:   Tue, 4 Apr 2023 11:15:39 +0800
-Message-ID: <CABVgOS=nE44djUDmh6QENXqZxf9mvrL_guz-N1U1nDhLez8jjg@mail.gmail.com>
-Subject: Re: [PATCH 1/2] kunit: tool: Add support for overriding the QEMU
- serial port
+Date:   Tue, 4 Apr 2023 11:15:47 +0800
+Message-ID: <CABVgOSnh6643FAAx9qt+2V_DJUrsFEOxb=O10qqxiO8ED44YMA@mail.gmail.com>
+Subject: Re: [PATCH 2/2] kunit: tool: Add support for SH under QEMU
 To:     Geert Uytterhoeven <geert+renesas@glider.be>
 Cc:     Brendan Higgins <brendan.higgins@linux.dev>,
         linux-kselftest@vger.kernel.org, kunit-dev@googlegroups.com,
         linux-sh@vger.kernel.org
 Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256;
-        boundary="000000000000bb303605f87a1780"
+        boundary="0000000000002ab03f05f87a1817"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
---000000000000bb303605f87a1780
+--0000000000002ab03f05f87a1817
 Content-Type: text/plain; charset="UTF-8"
 
 On Tue, 28 Feb 2023 at 18:31, Geert Uytterhoeven
 <geert+renesas@glider.be> wrote:
 >
-> On some platforms, the console is not the first serial port.  To make
-> this work, the first serial port in QEMU must be set to "null".
->
-> Add support for this by adding an optional "serial" parameter, which
-> defaults to "stdio", and can be overridden by platform-specific
-> configuration.
+> Add basic support to run SH under QEMU via kunit_tool using the
+> virtualized r2d platform.
 >
 > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > ---
 
-Seems good to me, cheers!
+I finally managed to get this working: it's fine under openSUSE
+tumbleweed (with the kernel.org toolchain), and in a debian stable
+container, so I'll chalk the problems I was having up to my
+Google-ified setup here.
 
+Even if that turns out to be a more widespread issue, it'll be easier
+to track down with these patches applied,
+
+So,
 Reviewed-by: David Gow <davidgow@google.com>
 
-Thanks,
+Cheers,
 -- David
 
->  tools/testing/kunit/kunit_kernel.py | 3 ++-
->  tools/testing/kunit/qemu_config.py  | 1 +
->  2 files changed, 3 insertions(+), 1 deletion(-)
+
+
+> All tests succeed, except for the usual suspects.
+> drivers/clk/.kunitconfig cannot be run as CONFIG_COMMON_CLK is not
+> available.
+> ---
+>  tools/testing/kunit/qemu_configs/sh.py | 17 +++++++++++++++++
+>  1 file changed, 17 insertions(+)
+>  create mode 100644 tools/testing/kunit/qemu_configs/sh.py
 >
-> diff --git a/tools/testing/kunit/kunit_kernel.py b/tools/testing/kunit/kunit_kernel.py
-> index 53e90c3358348dbe..64262875993ff070 100644
-> --- a/tools/testing/kunit/kunit_kernel.py
-> +++ b/tools/testing/kunit/kunit_kernel.py
-> @@ -106,6 +106,7 @@ class LinuxSourceTreeOperationsQemu(LinuxSourceTreeOperations):
->                 self._kernel_path = qemu_arch_params.kernel_path
->                 self._kernel_command_line = qemu_arch_params.kernel_command_line + ' kunit_shutdown=reboot'
->                 self._extra_qemu_params = qemu_arch_params.extra_qemu_params
-> +               self._serial = qemu_arch_params.serial
->
->         def make_arch_config(self, base_kunitconfig: kunit_config.Kconfig) -> kunit_config.Kconfig:
->                 kconfig = kunit_config.parse_from_string(self._kconfig)
-> @@ -121,7 +122,7 @@ class LinuxSourceTreeOperationsQemu(LinuxSourceTreeOperations):
->                                 '-append', ' '.join(params + [self._kernel_command_line]),
->                                 '-no-reboot',
->                                 '-nographic',
-> -                               '-serial', 'stdio'] + self._extra_qemu_params
-> +                               '-serial', self._serial] + self._extra_qemu_params
->                 # Note: shlex.join() does what we want, but requires python 3.8+.
->                 print('Running tests with:\n$', ' '.join(shlex.quote(arg) for arg in qemu_command))
->                 return subprocess.Popen(qemu_command,
-> diff --git a/tools/testing/kunit/qemu_config.py b/tools/testing/kunit/qemu_config.py
-> index 0b6a80398cccb50f..b1fba9016eed00d0 100644
-> --- a/tools/testing/kunit/qemu_config.py
-> +++ b/tools/testing/kunit/qemu_config.py
-> @@ -17,3 +17,4 @@ class QemuArchParams:
->    kernel_path: str
->    kernel_command_line: str
->    extra_qemu_params: List[str]
-> +  serial: str = 'stdio'
+> diff --git a/tools/testing/kunit/qemu_configs/sh.py b/tools/testing/kunit/qemu_configs/sh.py
+> new file mode 100644
+> index 0000000000000000..78a474a5b95f3a7d
+> --- /dev/null
+> +++ b/tools/testing/kunit/qemu_configs/sh.py
+> @@ -0,0 +1,17 @@
+> +# SPDX-License-Identifier: GPL-2.0-only
+> +from ..qemu_config import QemuArchParams
+> +
+> +QEMU_ARCH = QemuArchParams(linux_arch='sh',
+> +                          kconfig='''
+> +CONFIG_CPU_SUBTYPE_SH7751R=y
+> +CONFIG_MEMORY_START=0x0c000000
+> +CONFIG_SH_RTS7751R2D=y
+> +CONFIG_RTS7751R2D_PLUS=y
+> +CONFIG_SERIAL_SH_SCI=y''',
+> +                          qemu_arch='sh4',
+> +                          kernel_path='arch/sh/boot/zImage',
+> +                          kernel_command_line='console=ttySC1',
+> +                          serial='null',
+> +                          extra_qemu_params=[
+> +                                           '-machine', 'r2d',
+> +                                           '-serial', 'mon:stdio'])
 > --
 > 2.34.1
 >
 
---000000000000bb303605f87a1780
+--0000000000002ab03f05f87a1817
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -191,14 +192,14 @@ tF2bJwlOwRGLoxasKSyDHIyUpwTfWYPq7XvjoGqQ/tDS7Khcc5WncJl0/ZEj7EKjtoGbsDbLdXEF
 m/6vdcYKJzF9ghHewtV3YIU4RE3pEM4aCWWRtJwbExzeue6fI7RqURbNCAyQuSpWv0YQvzsX3ZX3
 c1otrs50n1N0Sf8/rfJxq7sWMYICajCCAmYCAQEwaDBUMQswCQYDVQQGEwJCRTEZMBcGA1UEChMQ
 R2xvYmFsU2lnbiBudi1zYTEqMCgGA1UEAxMhR2xvYmFsU2lnbiBBdGxhcyBSMyBTTUlNRSBDQSAy
-MDIwAhABxy1wm0tAmHKHFkLS9RWPMA0GCWCGSAFlAwQCAQUAoIHUMC8GCSqGSIb3DQEJBDEiBCDF
-f8mBewhIzJpKYyREImvUxBJt07z9zHqxaEg1diSMQTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcB
-MBwGCSqGSIb3DQEJBTEPFw0yMzA0MDQwMzE1NTFaMGkGCSqGSIb3DQEJDzFcMFowCwYJYIZIAWUD
+MDIwAhABxy1wm0tAmHKHFkLS9RWPMA0GCWCGSAFlAwQCAQUAoIHUMC8GCSqGSIb3DQEJBDEiBCDB
+cQcUWIJ4etMUztUqqwdAQW78DvmnNLgz/8LKI6YIZzAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcB
+MBwGCSqGSIb3DQEJBTEPFw0yMzA0MDQwMzE1NThaMGkGCSqGSIb3DQEJDzFcMFowCwYJYIZIAWUD
 BAEqMAsGCWCGSAFlAwQBFjALBglghkgBZQMEAQIwCgYIKoZIhvcNAwcwCwYJKoZIhvcNAQEKMAsG
-CSqGSIb3DQEBBzALBglghkgBZQMEAgEwDQYJKoZIhvcNAQEBBQAEggEAcVyF4wpRLRRaPOTZbVnu
-/mBeAcPx/iMn7A5ucgJM0FusGKI9WNjjEdjVxcaAdfn7rQSpgx6azt+E2C1OrtV9WIOR0gze2zSN
-V/uVwgiBn8u6nL11EwdEe0K6Kyx8C5t6v2qGjFhllSHMhe9dSopT9FbT05e71cRrTtysAdsaM1AW
-2jXS1ntgA09dVa7bQW4HL1qZGu8O8qgpw1mmSa3T+cxsqSwKGL3d+P4QbHjV2xsIi50Z3YizSTeW
-HanmfZqDCdv9JDWtj0Z7h1wfbabTIosJfjdLJhJvVWles0pFLvU62sX+NpebONbs8AwQS4csL5ud
-lmz92J3SbkLbjTVM7A==
---000000000000bb303605f87a1780--
+CSqGSIb3DQEBBzALBglghkgBZQMEAgEwDQYJKoZIhvcNAQEBBQAEggEAHKCFgwvacIn6cBCAw+pN
+ZVuPcnj5wXmuI9jqUO6lFxuT6IG4Qvq0z51Dk4VWeuPSOGhtaIvLdfh8aPklo4DYcLAB17HJskc5
+dS0yvUcboZrdyObklvY5+WPLe8Mxh1HIvZ208dgv4Q8v3t0K9DteCpbKEdlV5NUzez+lu/OtHcMm
+oDQEa9DugNq1rBVgCVxnqP37/ySWoFkqZLMYBfqkDVBKOfRby3P2ghyNXnZpgawgh+0kYkYM+QfK
+eXhQN0TWXhg19qc3jpoSxdKMNVdoiJiF/CkgDa9S2bztoQ2zZmfKjdqJEjrYHqhEdKA78J0QFFSR
+K8a+/k3DHun80+CNDg==
+--0000000000002ab03f05f87a1817--
