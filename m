@@ -2,131 +2,174 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 219D5C7618D
-	for <linux-sh@archiver.kernel.org>; Thu,  6 Apr 2023 10:31:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C88C0C77B73
+	for <linux-sh@archiver.kernel.org>; Thu,  6 Apr 2023 14:07:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237125AbjDFKbl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 6 Apr 2023 06:31:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59074 "EHLO
+        id S239023AbjDFOHa (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 6 Apr 2023 10:07:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49416 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237167AbjDFKbc (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 6 Apr 2023 06:31:32 -0400
-Received: from mga04.intel.com (mga04.intel.com [192.55.52.120])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D8DBC1BC1;
-        Thu,  6 Apr 2023 03:31:24 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1680777085; x=1712313085;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=3ceVcmjc6Ptm9PzaLBlyJdk3QXqcq40nfjFwb4WczVs=;
-  b=kOgwiJmMD8Ijg1BxIDiKzJGlnfh06c4u/a+t6pG62SWIfHGF43vwVcn1
-   l6kS+CWjI97tH1JSPZkOsacTF0JAUvep3W1ya7BUNjaWtSu7hvUBsFwJz
-   BlQ2tzA8zaxvzXb1oiwO6NBUu4WDqTE/TetiEy6DMDrGtz8beNGL74wJD
-   dCyJbcd2nE9qI2kCe1NPga9pgkYVvDi8lCXHSDtjgFmEp3jJFueV16xhT
-   SBGxffan6xHWIQQumEr51X4IvgROVSWHITRTO8w1ZsICins7XqX5z2WvK
-   xY5dytToTv+c5r1i6cuzWbUECnfKoYXigdPJ/pjWqzQorPBjnWriHCQw7
-   w==;
-X-IronPort-AV: E=McAfee;i="6600,9927,10671"; a="341435058"
-X-IronPort-AV: E=Sophos;i="5.98,323,1673942400"; 
-   d="scan'208";a="341435058"
-Received: from orsmga001.jf.intel.com ([10.7.209.18])
-  by fmsmga104.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 06 Apr 2023 03:31:23 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6600,9927,10671"; a="719666156"
-X-IronPort-AV: E=Sophos;i="5.98,323,1673942400"; 
-   d="scan'208";a="719666156"
-Received: from smile.fi.intel.com ([10.237.72.54])
-  by orsmga001.jf.intel.com with ESMTP; 06 Apr 2023 03:31:12 -0700
-Received: from andy by smile.fi.intel.com with local (Exim 4.96)
-        (envelope-from <andriy.shevchenko@linux.intel.com>)
-        id 1pkMtX-00DJOA-0t;
-        Thu, 06 Apr 2023 13:31:07 +0300
-Date:   Thu, 6 Apr 2023 13:31:07 +0300
-From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To:     Bjorn Helgaas <helgaas@kernel.org>
-Cc:     =?iso-8859-1?Q?Micka=EBl_Sala=FCn?= <mic@digikod.net>,
-        Krzysztof =?utf-8?Q?Wilczy=C5=84ski?= <kw@linux.com>,
-        Mika Westerberg <mika.westerberg@linux.intel.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Randy Dunlap <rdunlap@infradead.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Philippe =?iso-8859-1?Q?Mathieu-Daud=E9?= <philmd@linaro.org>,
-        Niklas Schnelle <schnelle@linux.ibm.com>,
-        "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
-        Pali =?iso-8859-1?Q?Roh=E1r?= <pali@kernel.org>,
-        "Maciej W. Rozycki" <macro@orcam.me.uk>,
-        Juergen Gross <jgross@suse.com>,
-        Dominik Brodowski <linux@dominikbrodowski.net>,
-        linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org, linux-mips@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-pci@vger.kernel.org,
-        xen-devel@lists.xenproject.org, linux-acpi@vger.kernel.org,
-        Miguel Ojeda <ojeda@kernel.org>,
-        Richard Henderson <richard.henderson@linaro.org>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Andrew Lunn <andrew@lunn.ch>,
-        Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
-        Gregory Clement <gregory.clement@bootlin.com>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Anatolij Gustschin <agust@denx.de>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "David S. Miller" <davem@davemloft.net>,
-        Bjorn Helgaas <bhelgaas@google.com>,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>
-Subject: Re: [PATCH v8 0/7] Add pci_dev_for_each_resource() helper and update
- users
-Message-ID: <ZC6fa1vJGOOI7t8a@smile.fi.intel.com>
-References: <ZC0xK4YJrKga7akk@smile.fi.intel.com>
- <20230405201832.GA3638070@bhelgaas>
+        with ESMTP id S239128AbjDFOHL (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 6 Apr 2023 10:07:11 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 23AF793E4;
+        Thu,  6 Apr 2023 07:06:53 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 035D61FE10;
+        Thu,  6 Apr 2023 14:06:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1680789996; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=tj6qTYY7HjBmnMQqASkMGFG64SRZ5nWbwwt6tzxcRgc=;
+        b=rvHBfS6gogvIKS2WovtcYsR106i5Tjq5cU3i0pyVVXeX5J+IdGwrUy5cVxbSC7rEOcYUuN
+        gdRVtyDitINz4rfczZjNAiRkxY+HEt1kkOY5tjWweZ2J3cdVv86FTh6Z7dXc1Fa5xxfePP
+        yDVhu5n/+Pfw2Xj2dzYQIZfJnflUEyc=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1680789996;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=tj6qTYY7HjBmnMQqASkMGFG64SRZ5nWbwwt6tzxcRgc=;
+        b=YcQ4OxRj56Q1ndvbvFNPAjAa2H/rnTTFQzthtdsdnqAvv70fsma6TU4T/gg2qX1w8ECDl8
+        V9wHzCwWeVJyFEDw==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 90DAF1351F;
+        Thu,  6 Apr 2023 14:06:35 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id QOptIuvRLmTYIAAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Thu, 06 Apr 2023 14:06:35 +0000
+Message-ID: <71e5450f-aad2-1f7c-a961-c0b0fce62eea@suse.de>
+Date:   Thu, 6 Apr 2023 16:06:35 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230405201832.GA3638070@bhelgaas>
-Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.9.0
+Subject: Re: [PATCH 01/18] fbdev: Prepare generic architecture helpers
+Content-Language: en-US
+To:     Arnd Bergmann <arnd@arndb.de>,
+        Daniel Vetter <daniel.vetter@ffwll.ch>,
+        Helge Deller <deller@gmx.de>,
+        Javier Martinez Canillas <javierm@redhat.com>,
+        Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc:     Linux-Arch <linux-arch@vger.kernel.org>,
+        linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        linux-snps-arc@lists.infradead.org, linux-kernel@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, x86@kernel.org
+References: <20230405150554.30540-1-tzimmermann@suse.de>
+ <20230405150554.30540-2-tzimmermann@suse.de>
+ <92fe3838-41f0-4e27-8467-161553ff724f@app.fastmail.com>
+From:   Thomas Zimmermann <tzimmermann@suse.de>
+In-Reply-To: <92fe3838-41f0-4e27-8467-161553ff724f@app.fastmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="------------5BePbc0zJRAG34NMI313OlgI"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Apr 05, 2023 at 03:18:32PM -0500, Bjorn Helgaas wrote:
-> On Wed, Apr 05, 2023 at 11:28:27AM +0300, Andy Shevchenko wrote:
-> > On Tue, Apr 04, 2023 at 11:11:01AM -0500, Bjorn Helgaas wrote:
-> > > On Thu, Mar 30, 2023 at 07:24:27PM +0300, Andy Shevchenko wrote:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--------------5BePbc0zJRAG34NMI313OlgI
+Content-Type: multipart/mixed; boundary="------------MODvgaz0WeNglR1dVG2UtKLY";
+ protected-headers="v1"
+From: Thomas Zimmermann <tzimmermann@suse.de>
+To: Arnd Bergmann <arnd@arndb.de>, Daniel Vetter <daniel.vetter@ffwll.ch>,
+ Helge Deller <deller@gmx.de>, Javier Martinez Canillas <javierm@redhat.com>,
+ Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Linux-Arch <linux-arch@vger.kernel.org>, linux-fbdev@vger.kernel.org,
+ dri-devel@lists.freedesktop.org, linux-snps-arc@lists.infradead.org,
+ linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+ linux-ia64@vger.kernel.org, loongarch@lists.linux.dev,
+ linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+ linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+ linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, x86@kernel.org
+Message-ID: <71e5450f-aad2-1f7c-a961-c0b0fce62eea@suse.de>
+Subject: Re: [PATCH 01/18] fbdev: Prepare generic architecture helpers
+References: <20230405150554.30540-1-tzimmermann@suse.de>
+ <20230405150554.30540-2-tzimmermann@suse.de>
+ <92fe3838-41f0-4e27-8467-161553ff724f@app.fastmail.com>
+In-Reply-To: <92fe3838-41f0-4e27-8467-161553ff724f@app.fastmail.com>
 
-...
+--------------MODvgaz0WeNglR1dVG2UtKLY
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: base64
 
-> > > I omitted
-> > > 
-> > >   [1/7] kernel.h: Split out COUNT_ARGS() and CONCATENATE()"
-> > > 
-> > > only because it's not essential to this series and has only a trivial
-> > > one-line impact on include/linux/pci.h.
-> > 
-> > I'm not sure I understood what exactly "essentiality" means to you, but
-> > I included that because it makes the split which can be used later by
-> > others and not including kernel.h in the header is the objective I want
-> > to achieve. Without this patch the achievement is going to be deferred.
-> > Yet, this, as you have noticed, allows to compile and use the macros in
-> > the rest of the patches.
-> 
-> I haven't followed the kernel.h splitting, and I try to avoid
-> incidental changes outside of the files I maintain, so I just wanted
-> to keep this series purely PCI and avoid any possible objections to a
-> new include file or discussion about how it should be done.
+SGkNCg0KQW0gMDUuMDQuMjMgdW0gMTc6NTMgc2NocmllYiBBcm5kIEJlcmdtYW5uOg0KPiBP
+biBXZWQsIEFwciA1LCAyMDIzLCBhdCAxNzowNSwgVGhvbWFzIFppbW1lcm1hbm4gd3JvdGU6
+DQo+PiBHZW5lcmljIGltcGxlbWVudGF0aW9ucyBvZiBmYl9wZ3Byb3RlY3QoKSBhbmQgZmJf
+aXNfcHJpbWFyeV9kZXZpY2UoKQ0KPj4gaGF2ZSBiZWVuIGluIHRoZSBzb3VyY2UgY29kZSBm
+b3IgYSBsb25nIHRpbWUuIFByZXBhcmUgdGhlIGhlYWRlciBmaWxlDQo+PiB0byBtYWtlIHVz
+ZSBvZiB0aGVtLg0KPj4NCj4+IEltcHJvdmUgdGhlIGNvZGUgYnkgdXNpbmcgYW4gaW5saW5l
+IGZ1bmN0aW9uIGZvciBmYl9wZ3Byb3RlY3QoKSBhbmQNCj4+IGJ5IHJlbW92aW5nIGluY2x1
+ZGUgc3RhdGVtZW50cy4NCj4+DQo+PiBTeW1ib2xzIGFyZSBwcm90ZWN0ZWQgYnkgcHJlcHJv
+Y2Vzc29yIGd1YXJkcy4gQXJjaGl0ZWN0dXJlcyB0aGF0DQo+PiBwcm92aWRlIGEgc3ltYm9s
+IG5lZWQgdG8gZGVmaW5lIGEgcHJlcHJvY2Vzc29yIHRva2VuIG9mIHRoZSBzYW1lDQo+PiBu
+YW1lIGFuZCB2YWx1ZS4gT3RoZXJ3aXNlIHRoZSBoZWFkZXIgZmlsZSB3aWxsIHByb3ZpZGUg
+YSBnZW5lcmljDQo+PiBpbXBsZW1lbnRhdGlvbi4gVGhpcyBwYXR0ZXJuIGhhcyBiZWVuIHRh
+a2VuIGZyb20gPGFzbS9pby5oPi4NCj4+DQo+PiBTaWduZWQtb2ZmLWJ5OiBUaG9tYXMgWmlt
+bWVybWFubiA8dHppbW1lcm1hbm5Ac3VzZS5kZT4NCj4gDQo+IE1vdmluZyB0aGlzIGludG8g
+Z2VuZXJpYyBjb2RlIGlzIGdvb2QsIGJ1dCBJJ20gbm90IHN1cmUNCj4gYWJvdXQgdGhlIGRl
+ZmF1bHQgZm9yIGZiX3BncHJvdGVjdCgpOg0KPiANCj4+ICsNCj4+ICsjaWZuZGVmIGZiX3Bn
+cHJvdGVjdA0KPj4gKyNkZWZpbmUgZmJfcGdwcm90ZWN0IGZiX3BncHJvdGVjdA0KPj4gK3N0
+YXRpYyBpbmxpbmUgdm9pZCBmYl9wZ3Byb3RlY3Qoc3RydWN0IGZpbGUgKmZpbGUsIHN0cnVj
+dCB2bV9hcmVhX3N0cnVjdCAqdm1hLA0KPj4gKwkJCQl1bnNpZ25lZCBsb25nIG9mZikNCj4+
+ICt7IH0NCj4+ICsjZW5kaWYNCj4gDQo+IEkgdGhpbmsgbW9zdCBhcmNoaXRlY3R1cmVzIHdp
+bGwgd2FudCB0aGUgdmVyc2lvbiB3ZSBoYXZlIG9uDQo+IGFyYywgYXJtLCBhcm02NCwgbG9v
+bmdhcmNoLCBhbmQgc2ggYWxyZWFkeToNCj4gDQo+IHN0YXRpYyBpbmxpbmUgdm9pZCBmYl9w
+Z3Byb3RlY3Qoc3RydWN0IGZpbGUgKmZpbGUsIHN0cnVjdCB2bV9hcmVhX3N0cnVjdCAqdm1h
+LA0KPiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB1bnNpZ25lZCBsb25nIG9m
+ZikNCj4gew0KPiAgICAgICAgIHZtYS0+dm1fcGFnZV9wcm90ID0gcGdwcm90X3dyaXRlY29t
+YmluZSh2bWEtPnZtX3BhZ2VfcHJvdCk7DQo+IH0NCj4gDQo+IHNvIEknZCBzdWdnZXN0IG1h
+a2luZyB0aGF0IHZlcnNpb24gdGhlIGRlZmF1bHQsIGFuZCB0cmVhdGluZyB0aGUNCj4gZW1w
+dHkgb25lcyAobTY4a25vbW11LCBzcGFyYzMyKSBhcyBhcmNoaXRlY3R1cmUgc3BlY2lmaWMN
+Cj4gd29ya2Fyb3VuZHMuDQo+IA0KPiBJIHNlZSB0aGF0IHNwYXJjNjQgYW5kIHBhcmlzYyB1
+c2UgcGdwcm90X3VuY2FjaGVkIGhlcmUsIGJ1dCBhcw0KPiB0aGV5IGRvbid0IGRlZmluZSBh
+IGN1c3RvbSBwZ3Byb3Rfd3JpdGVjb21iaW5lLCB0aGlzIGVuZHMgdXAgYmVpbmcNCj4gdGhl
+IHNhbWUsIGFuZCB0aGV5IGNhbiB1c2UgdGhlIGFib3ZlIGRlZmluaXRpb24gYXMgd2VsbC4N
+Cj4gDQo+IG1pcHMgZGVmaW5lcyBwZ3Byb3Rfd3JpdGVjb21iaW5lIGJ1dCB1c2VzIHBncHJv
+dF9ub25jYWNoZWQNCj4gaW4gZmJfcGdwcm90ZWN0KCksIHdoaWNoIGlzIHByb2JhYmx5IGEg
+bWlzdGFrZSBhbmQgc2hvdWxkIGhhdmUNCj4gYmVlbiB1cGRhdGVkIGFzIHBhcnQgb2YgY29t
+bWl0IDRiMDUwYmE3YTY2YyAoIk1JUFM6IHBndGFibGUuaDoNCj4gSW1wbGVtZW50IHRoZSBw
+Z3Byb3Rfd3JpdGVjb21iaW5lIGZ1bmN0aW9uIGZvciBNSVBTIikuDQoNCkkgd291bGQgbm90
+IHdhbnQgdG8gY2hhbmdlIGFueSBvZiB0aGUgb3RoZXIgcGxhdGZvcm0ncyBmdW5jdGlvbnMg
+dW5sZXNzIA0KdGhlIHJzcCBwbGF0Zm9ybSBtYWludGFpbmVycyBhc2sgbWUgdG8uDQoNCkJl
+c3QgcmVnYXJkcw0KVGhvbWFzDQoNCj4gDQo+ICAgICAgQXJuZA0KDQotLSANClRob21hcyBa
+aW1tZXJtYW5uDQpHcmFwaGljcyBEcml2ZXIgRGV2ZWxvcGVyDQpTVVNFIFNvZnR3YXJlIFNv
+bHV0aW9ucyBHZXJtYW55IEdtYkgNCk1heGZlbGRzdHIuIDUsIDkwNDA5IE7DvHJuYmVyZywg
+R2VybWFueQ0KKEhSQiAzNjgwOSwgQUcgTsO8cm5iZXJnKQ0KR2VzY2jDpGZ0c2bDvGhyZXI6
+IEl2byBUb3Rldg0K
 
-Okay, fair enough :-) Thank you for elaboration, I will send the new version of
-patch 7 separately.
+--------------MODvgaz0WeNglR1dVG2UtKLY--
 
--- 
-With Best Regards,
-Andy Shevchenko
+--------------5BePbc0zJRAG34NMI313OlgI
+Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="OpenPGP_signature"
 
+-----BEGIN PGP SIGNATURE-----
 
+wsF5BAABCAAjFiEExndm/fpuMUdwYFFolh/E3EQov+AFAmQu0esFAwAAAAAACgkQlh/E3EQov+A3
++Q//XOh61SSsVY48Py2Qalvs1ZdXTTRJozsv2OV7IZPGNx2cNXvMk7k0wZz2OwgpV4+lWxgq+yvD
+An33+eafJLUSvtNpjYl5omC4MaOfnHk5CdOFw+exisXyQs+mN4fFeZRfaG8pEloJPbr5hz1Ecl9G
+D0eey1O1uv8TDN/grrY6+6TyOnYQGFmpYYRrE4gKaL5EdRKy1Zs0BQSWXe0sV/4iaAEpJzPuhcfA
+S2EHgrw1S024RFR0tpttyy8RilJa2qahDL8iWrhLIfo3S0ufRvtGLm2QW2K+/x7lOufPlQsw/X16
+c50C6N4UFCtWwlyyJGX5jbN/ewELBAVVLgA6/APMVAnKfg1742JNBSRQ/e19LFrNgiFbk9DD2X47
+z9K7LklM8KoW0GYV7Oihqdeov9mVkbK+kr4euXPEOSvuGLvlW3mm56zvTgDJnKy4szqXr9Z4tJt2
+Eo5QfO2VIAjjji9HdAfc55ygnPfjLikSWUwktYEPsrFv3dYg8BYa6W4uaAzbBwwu1RR+xjfXic40
+Jr+a1a/Bd3HI+zPXW2PF6Fbi9XYn/6DTPy+0UZnuV6NPG9v51ekpdxJFFL6hOGrQBGBP0VOhWKYO
+7c5sc8Bbosxe7TtLw0DnQJRNwIkAkzlKfptXIGasPvIuXrUE4VvceO5fTc1H2IexRQpdBK72wSJ1
+VWE=
+=wP7T
+-----END PGP SIGNATURE-----
+
+--------------5BePbc0zJRAG34NMI313OlgI--
