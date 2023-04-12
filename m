@@ -2,106 +2,126 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A901C77B78
-	for <linux-sh@archiver.kernel.org>; Wed, 12 Apr 2023 06:18:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4A0B0C7619A
+	for <linux-sh@archiver.kernel.org>; Wed, 12 Apr 2023 17:27:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229647AbjDLGSR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 12 Apr 2023 02:18:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40460 "EHLO
+        id S229578AbjDLR1T (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 12 Apr 2023 13:27:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36764 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229638AbjDLGSO (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 12 Apr 2023 02:18:14 -0400
-Received: from gandalf.ozlabs.org (mail.ozlabs.org [IPv6:2404:9400:2221:ea00::3])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C99AA527A;
-        Tue, 11 Apr 2023 23:18:07 -0700 (PDT)
-Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        with ESMTP id S229484AbjDLR1S (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 12 Apr 2023 13:27:18 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E78D440FB;
+        Wed, 12 Apr 2023 10:27:16 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by mail.ozlabs.org (Postfix) with ESMTPSA id 4PxCF401xjz4xFj;
-        Wed, 12 Apr 2023 16:17:59 +1000 (AEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ellerman.id.au;
-        s=201909; t=1681280282;
-        bh=mVus6VBYhH8GmWv60JhlJfNhVtxbImSRmEm6BDRrW3s=;
-        h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
-        b=lTZEAUAJ2QZsc9UPHGoexeIDhivQg0OZP2tQ8N178oguDiIOjU/GS5yjDEkHA0ZQY
-         UoSdL/mLxTXV/wa3HPEVjblwcxsdx2c+OnuyDK5Tv1Pbg7hiKGkpXXQYiHyY9ZXKUK
-         6CSwY02DKtu+cGQJMahEUbmjJakfBQLvnLNWdj1LScutIwzO/9mPiHZFRCutiHgFFy
-         LDNwBaVtxl/OmcZoIc9q0YGGvsTAR4vPp6o9KxvHWYHacDs55AZq5ZD42D7HmgmLSM
-         12TeMwxecBFtXBTtmtuIhlm5OkckoQGJYZdQPchk2E7CbMKkKzVuJ/odBCPWTELN7l
-         5ijFDMn/S4fVA==
-From:   Michael Ellerman <mpe@ellerman.id.au>
-To:     Thomas Zimmermann <tzimmermann@suse.de>, arnd@arndb.de,
-        daniel.vetter@ffwll.ch, deller@gmx.de, javierm@redhat.com,
-        gregkh@linuxfoundation.org
-Cc:     linux-arch@vger.kernel.org, linux-fbdev@vger.kernel.org,
-        dri-devel@lists.freedesktop.org,
-        linux-snps-arc@lists.infradead.org, linux-kernel@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, x86@kernel.org,
-        Thomas Zimmermann <tzimmermann@suse.de>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>
-Subject: Re: [PATCH v2 15/19] arch/powerpc: Implement <asm/fb.h> with
- generic helpers
-In-Reply-To: <20230406143019.6709-16-tzimmermann@suse.de>
-References: <20230406143019.6709-1-tzimmermann@suse.de>
- <20230406143019.6709-16-tzimmermann@suse.de>
-Date:   Wed, 12 Apr 2023 16:17:59 +1000
-Message-ID: <87r0spipyg.fsf@mpe.ellerman.id.au>
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 829B0634C9;
+        Wed, 12 Apr 2023 17:27:16 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5DA85C433EF;
+        Wed, 12 Apr 2023 17:27:11 +0000 (UTC)
+Date:   Wed, 12 Apr 2023 18:27:08 +0100
+From:   Catalin Marinas <catalin.marinas@arm.com>
+To:     Justin Forbes <jforbes@fedoraproject.org>
+Cc:     Mike Rapoport <rppt@kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        "David S. Miller" <davem@davemloft.net>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Guo Ren <guoren@kernel.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Rich Felker <dalias@libc.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Will Deacon <will@kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Zi Yan <ziy@nvidia.com>, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mm@kvack.org, linux-sh@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org,
+        sparclinux@vger.kernel.org
+Subject: Re: [PATCH v3 02/14] arm64: drop ranges in definition of
+ ARCH_FORCE_MAX_ORDER
+Message-ID: <ZDbp7LAHES3YFo30@arm.com>
+References: <20230325060828.2662773-1-rppt@kernel.org>
+ <20230325060828.2662773-3-rppt@kernel.org>
+ <CAFxkdAr5C7ggZ+WdvDbsfmwuXujT_z_x3qcUnhnCn-WrAurvgA@mail.gmail.com>
+ <ZCvQGJzdED+An8an@kernel.org>
+ <CAFbkSA38eTA_iJ3ttBvQ8G4Rjj8qB12GxY7Z=qmZ8wm+0tZieA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAFbkSA38eTA_iJ3ttBvQ8G4Rjj8qB12GxY7Z=qmZ8wm+0tZieA@mail.gmail.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Thomas Zimmermann <tzimmermann@suse.de> writes:
-> Replace the architecture's fb_is_primary_device() with the generic
-> one from <asm-generic/fb.h>. No functional changes.
->
-> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
-> Cc: Michael Ellerman <mpe@ellerman.id.au>
-> Cc: Nicholas Piggin <npiggin@gmail.com>
-> Cc: Christophe Leroy <christophe.leroy@csgroup.eu>
-> ---
->  arch/powerpc/include/asm/fb.h | 8 +++-----
->  1 file changed, 3 insertions(+), 5 deletions(-)
+On Tue, Apr 04, 2023 at 06:50:01AM -0500, Justin Forbes wrote:
+> On Tue, Apr 4, 2023 at 2:22 AM Mike Rapoport <rppt@kernel.org> wrote:
+> > On Wed, Mar 29, 2023 at 10:55:37AM -0500, Justin Forbes wrote:
+> > > On Sat, Mar 25, 2023 at 1:09 AM Mike Rapoport <rppt@kernel.org> wrote:
+> > > >
+> > > > From: "Mike Rapoport (IBM)" <rppt@kernel.org>
+> > > >
+> > > > It is not a good idea to change fundamental parameters of core memory
+> > > > management. Having predefined ranges suggests that the values within
+> > > > those ranges are sensible, but one has to *really* understand
+> > > > implications of changing MAX_ORDER before actually amending it and
+> > > > ranges don't help here.
+> > > >
+> > > > Drop ranges in definition of ARCH_FORCE_MAX_ORDER and make its prompt
+> > > > visible only if EXPERT=y
+> > >
+> > > I do not like suddenly hiding this behind EXPERT for a couple of
+> > > reasons.  Most importantly, it will silently change the config for
+> > > users building with an old kernel config.  If a user has for instance
+> > > "13" set and building with 4K pages, as is the current configuration
+> > > for Fedora and RHEL aarch64 builds, an oldconfig build will now set it
+> > > to 10 with no indication that it is doing so.  And while I think that
+> > > 10 is a fine default for many aarch64 users, there are valid reasons
+> > > for choosing other values. Putting this behind expert makes it much
+> > > less obvious that this is an option.
+> >
+> > That's the idea of EXPERT, no?
+> >
+> > This option was intended to allow allocation of huge pages for
+> > architectures that had PMD_ORDER > MAX_ORDER and not to allow user to
+> > select size of maximal physically contiguous allocation.
+> >
+> > Changes to MAX_ORDER fundamentally change the behaviour of core mm and
+> > unless users *really* know what they are doing there is no reason to choose
+> > non-default values so hiding this option behind EXPERT seems totally
+> > appropriate to me.
+> 
+> It sounds nice in theory. In practice. EXPERT hides too much. When you
+> flip expert, you expose over a 175ish new config options which are
+> hidden behind EXPERT.  You don't have to know what you are doing just
+> with the MAX_ORDER, but a whole bunch more as well.  If everyone were
+> already running 10, this might be less of a problem. At least Fedora
+> and RHEL are running 13 for 4K pages on aarch64. This was not some
+> accidental choice, we had to carry a patch to even allow it for a
+> while.  If this does go in as is, we will likely just carry a patch to
+> remove the "if EXPERT", but that is a bit of a disservice to users who
+> might be trying to debug something else upstream, bisecting upstream
+> kernels or testing a patch.  In those cases, people tend to use
+> pristine upstream sources without distro patches to verify, and they
+> tend to use their existing configs. With this change, their MAX_ORDER
+> will drop to 10 from 13 silently.   That can look like a different
+> issue enough to ruin a bisect or have them give bad feedback on a
+> patch because it introduces a "regression" which is not a regression
+> at all, but a config change they couldn't see.
 
-Looks fine.
+If we remove EXPERT (as prior to this patch), I'd rather keep the ranges
+and avoid having to explain to people why some random MAX_ORDER doesn't
+build (keeping the range would also make sense for randconfig, not sure
+we got to any conclusion there).
 
-Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
-
-cheers
-
-> diff --git a/arch/powerpc/include/asm/fb.h b/arch/powerpc/include/asm/fb.h
-> index 6541ab77c5b9..5f1a2e5f7654 100644
-> --- a/arch/powerpc/include/asm/fb.h
-> +++ b/arch/powerpc/include/asm/fb.h
-> @@ -2,8 +2,8 @@
->  #ifndef _ASM_FB_H_
->  #define _ASM_FB_H_
->  
-> -#include <linux/fb.h>
->  #include <linux/fs.h>
-> +
->  #include <asm/page.h>
->  
->  static inline void fb_pgprotect(struct file *file, struct vm_area_struct *vma,
-> @@ -13,10 +13,8 @@ static inline void fb_pgprotect(struct file *file, struct vm_area_struct *vma,
->  						 vma->vm_end - vma->vm_start,
->  						 vma->vm_page_prot);
->  }
-> +#define fb_pgprotect fb_pgprotect
->  
-> -static inline int fb_is_primary_device(struct fb_info *info)
-> -{
-> -	return 0;
-> -}
-> +#include <asm-generic/fb.h>
->  
->  #endif /* _ASM_FB_H_ */
-> -- 
-> 2.40.0
+-- 
+Catalin
