@@ -2,120 +2,83 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DC852C77B61
-	for <linux-sh@archiver.kernel.org>; Sun, 16 Apr 2023 19:33:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C42FC77B70
+	for <linux-sh@archiver.kernel.org>; Mon, 17 Apr 2023 06:51:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229547AbjDPTdy convert rfc822-to-8bit (ORCPT
+        id S230163AbjDQGvZ convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 16 Apr 2023 15:33:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59438 "EHLO
+        Mon, 17 Apr 2023 02:51:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44760 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229501AbjDPTdx (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 16 Apr 2023 15:33:53 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 763982126;
-        Sun, 16 Apr 2023 12:33:51 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1po888-000Jmb-9R; Sun, 16 Apr 2023 21:33:44 +0200
-Received: from p5b13a017.dip0.t-ipconnect.de ([91.19.160.23] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1po888-0003Iq-2E; Sun, 16 Apr 2023 21:33:44 +0200
-Message-ID: <22ef4cb30c0315e73284cd965f9d090dd7a8990d.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH RESEND] sh: sq: Use the bitmap API when applicable
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-Cc:     linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org,
-        linux-sh@vger.kernel.org
-Date:   Sun, 16 Apr 2023 21:33:43 +0200
-In-Reply-To: <071e9f32c19a007f4922903282c9121898641400.1681671848.git.christophe.jaillet@wanadoo.fr>
+        with ESMTP id S229664AbjDQGvY (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 17 Apr 2023 02:51:24 -0400
+Received: from mail-yb1-f174.google.com (mail-yb1-f174.google.com [209.85.219.174])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E5D151729;
+        Sun, 16 Apr 2023 23:51:22 -0700 (PDT)
+Received: by mail-yb1-f174.google.com with SMTP id v9so4155784ybm.0;
+        Sun, 16 Apr 2023 23:51:22 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1681714282; x=1684306282;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=zJYvk4q6mS1dys9tzSECyNKgl5eo32ZFDWFyFDVmtjY=;
+        b=RnfTbd5H6dkXV/mD0ZC8t7VCAp3goMQ4x2Y2lM9+rkKsORuuiAzFzBciWsSjf/VIRk
+         Nl8kLE5IA2czObaDz1xq6jAkf8BE3ZgjpgXvXB07sFKIBr2neTfqlo9Lr0nnE7W7IHrG
+         j/78yhiNMtKN6zsuRalRifaXLwiSECwx5mehGhgmJXo+gC1DJpTqub1+ZrXIdAfmoW9+
+         7qtUdKcx1kFIEvrEiSiBdzGxJZ550MiqOcNSTz2fRiRKe9xHXxqm8vbhtKI0BJ3/0pbF
+         V4aKgud6uwJt0UeQkd6PJYrLN+siLcFhbi8Js1569vRLc3mcLbqCB7IvEZMzAWgjiw67
+         SwWg==
+X-Gm-Message-State: AAQBX9dLPOP70CSqof+xRIVUXV7nw8Xn+BX24/7hPKhbkTATbhCfMG/w
+        vKEMQgAyyhgQsNrGV3PI0sltyJVx2wy2fg==
+X-Google-Smtp-Source: AKy350YWz1jv13TTchreG9vqWHZmwbICSJh68YwLDY7uSb4o+t5DST05ed+03H29pUqLJq5vIrAo0A==
+X-Received: by 2002:a05:6902:114d:b0:b8f:384b:4f83 with SMTP id p13-20020a056902114d00b00b8f384b4f83mr15847354ybu.33.1681714282007;
+        Sun, 16 Apr 2023 23:51:22 -0700 (PDT)
+Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com. [209.85.128.179])
+        by smtp.gmail.com with ESMTPSA id h82-20020a252155000000b00b8d65899d76sm2826046ybh.47.2023.04.16.23.51.21
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 16 Apr 2023 23:51:21 -0700 (PDT)
+Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-54fbb713301so165320867b3.11;
+        Sun, 16 Apr 2023 23:51:21 -0700 (PDT)
+X-Received: by 2002:a81:b71c:0:b0:54f:b931:adf7 with SMTP id
+ v28-20020a81b71c000000b0054fb931adf7mr9260584ywh.4.1681714281276; Sun, 16 Apr
+ 2023 23:51:21 -0700 (PDT)
+MIME-Version: 1.0
 References: <071e9f32c19a007f4922903282c9121898641400.1681671848.git.christophe.jaillet@wanadoo.fr>
+In-Reply-To: <071e9f32c19a007f4922903282c9121898641400.1681671848.git.christophe.jaillet@wanadoo.fr>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Mon, 17 Apr 2023 08:51:10 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdXGgxYubHe7dcJgLa9gsZdvPdOdpBUh1ppMnJbc=VTj+Q@mail.gmail.com>
+Message-ID: <CAMuHMdXGgxYubHe7dcJgLa9gsZdvPdOdpBUh1ppMnJbc=VTj+Q@mail.gmail.com>
+Subject: Re: [PATCH RESEND] sh: sq: Use the bitmap API when applicable
+To:     Christophe JAILLET <christophe.jaillet@wanadoo.fr>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org,
+        linux-sh@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.0 
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 91.19.160.23
-X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Christophe!
-
-On Sun, 2023-04-16 at 21:05 +0200, Christophe JAILLET wrote:
+On Sun, Apr 16, 2023 at 9:10 PM Christophe JAILLET
+<christophe.jaillet@wanadoo.fr> wrote:
 > Using the bitmap API is less verbose than hand writing them.
 > It also improves the semantic.
-> 
+>
 > Signed-off-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
-> ---
-> This is a resend of [1].
-> 
-> Now cross-compile tested with CONFIG_CPU_SUBTYPE_SH7770=y
-> 
-> [1]: https://lore.kernel.org/all/521788e22ad8f7a5058c154f068b061525321841.1656142814.git.christophe.jaillet@wanadoo.fr/
-> ---
->  arch/sh/kernel/cpu/sh4/sq.c | 7 +++----
->  1 file changed, 3 insertions(+), 4 deletions(-)
-> 
-> diff --git a/arch/sh/kernel/cpu/sh4/sq.c b/arch/sh/kernel/cpu/sh4/sq.c
-> index 27f2e3da5aa2..d289e99dc118 100644
-> --- a/arch/sh/kernel/cpu/sh4/sq.c
-> +++ b/arch/sh/kernel/cpu/sh4/sq.c
-> @@ -372,7 +372,6 @@ static struct subsys_interface sq_interface = {
->  static int __init sq_api_init(void)
->  {
->  	unsigned int nr_pages = 0x04000000 >> PAGE_SHIFT;
-> -	unsigned int size = (nr_pages + (BITS_PER_LONG - 1)) / BITS_PER_LONG;
->  	int ret = -ENOMEM;
->  
->  	printk(KERN_NOTICE "sq: Registering store queue API.\n");
-> @@ -382,7 +381,7 @@ static int __init sq_api_init(void)
->  	if (unlikely(!sq_cache))
->  		return ret;
->  
-> -	sq_bitmap = kzalloc(size, GFP_KERNEL);
-> +	sq_bitmap = bitmap_zalloc(nr_pages, GFP_KERNEL);
->  	if (unlikely(!sq_bitmap))
->  		goto out;
->  
-> @@ -393,7 +392,7 @@ static int __init sq_api_init(void)
->  	return 0;
->  
->  out:
-> -	kfree(sq_bitmap);
-> +	bitmap_free(sq_bitmap);
->  	kmem_cache_destroy(sq_cache);
->  
->  	return ret;
-> @@ -402,7 +401,7 @@ static int __init sq_api_init(void)
->  static void __exit sq_api_exit(void)
->  {
->  	subsys_interface_unregister(&sq_interface);
-> -	kfree(sq_bitmap);
-> +	bitmap_free(sq_bitmap);
->  	kmem_cache_destroy(sq_cache);
->  }
->  
 
-Thanks for resending this patch. I will try to review it next week
-and also boot-test it on my SH7785LCR evaluation board.
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-I am not familiar with the bitmap API at the moment, so I might take
-a little longer to review this patch.
+Gr{oetje,eeting}s,
 
-Adrian
+                        Geert
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
