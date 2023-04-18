@@ -2,130 +2,140 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E4D98C77B75
-	for <linux-sh@archiver.kernel.org>; Tue, 18 Apr 2023 06:36:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 12D4EC77B75
+	for <linux-sh@archiver.kernel.org>; Tue, 18 Apr 2023 07:14:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230093AbjDRGgx convert rfc822-to-8bit (ORCPT
+        id S230526AbjDRHOv convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 18 Apr 2023 02:36:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36948 "EHLO
+        Tue, 18 Apr 2023 03:14:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33492 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229714AbjDRGgw (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 18 Apr 2023 02:36:52 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BBCB73C20;
-        Mon, 17 Apr 2023 23:36:50 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1poexH-002CzT-3h; Tue, 18 Apr 2023 08:36:43 +0200
-Received: from p5b13a017.dip0.t-ipconnect.de ([91.19.160.23] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1poexG-000nCD-MG; Tue, 18 Apr 2023 08:36:43 +0200
-Message-ID: <b5fea49d68e1e2a702b0050f73582526e205cfa2.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH RESEND] sh: sq: Use the bitmap API when applicable
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-Cc:     linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org,
-        linux-sh@vger.kernel.org, Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Tue, 18 Apr 2023 08:36:40 +0200
-In-Reply-To: <071e9f32c19a007f4922903282c9121898641400.1681671848.git.christophe.jaillet@wanadoo.fr>
+        with ESMTP id S231159AbjDRHOq (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 18 Apr 2023 03:14:46 -0400
+Received: from mail-yw1-f171.google.com (mail-yw1-f171.google.com [209.85.128.171])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 47526272C;
+        Tue, 18 Apr 2023 00:14:39 -0700 (PDT)
+Received: by mail-yw1-f171.google.com with SMTP id 00721157ae682-555bc7f6746so1599347b3.6;
+        Tue, 18 Apr 2023 00:14:39 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1681802078; x=1684394078;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=37Q0oq5R7kZdTKmqbM4IEE6eu7wqQKN1Cf4j4F2SLq8=;
+        b=iaDMC2IZj0Ttbqo9seMcf8A1j7TyB9VDhiSCo1dW5mYDyZW+lcWJeOuSc3bURQr57n
+         lDNxzMa4xAJoslVkL4NqQ31XTLOI6GL7vhV9Kf/EOrPMn0r++as6/APK3pLLgcjYwpr4
+         3QDtT+gZ0lOn56yXVFAg2T95FZclMnk57vK/9Xiwi8wRfRvhCFFzDEbvog+nzz60DKFL
+         bUCpCN5X3169LtfclMw9vs9BCa7XAYvQTqJfJIOn5DwNKQHAYfyGn2E2LIbfUDQAmekk
+         w3XI/Qi2KiUs4tvN3KR979iaa+d5Ucmgyce/JL+K9lD7k9seKpQ1F4L5+lJKhebqG+16
+         7eeA==
+X-Gm-Message-State: AAQBX9dkg01YXt4CFauSndnF/9+P+vdQbVRBRckMnBKz351ofurxjzFZ
+        qFKhmeI3imNMEqnQzkUWpbQqIzWGEHa+LQ==
+X-Google-Smtp-Source: AKy350aNEaaaMwDzkbZlq1GInqpt1giJVNkbUQdfWHauXpjeUrlxxfo8hZjErVDtg6oTdX5fNx5UTw==
+X-Received: by 2002:a0d:d8d8:0:b0:54e:ac2b:8a8c with SMTP id a207-20020a0dd8d8000000b0054eac2b8a8cmr17176350ywe.24.1681802078162;
+        Tue, 18 Apr 2023 00:14:38 -0700 (PDT)
+Received: from mail-yw1-f178.google.com (mail-yw1-f178.google.com. [209.85.128.178])
+        by smtp.gmail.com with ESMTPSA id bh7-20020a05690c038700b00545c373f7c0sm3114024ywb.139.2023.04.18.00.14.37
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 18 Apr 2023 00:14:37 -0700 (PDT)
+Received: by mail-yw1-f178.google.com with SMTP id 00721157ae682-552ae3e2cbeso74111397b3.13;
+        Tue, 18 Apr 2023 00:14:37 -0700 (PDT)
+X-Received: by 2002:a81:78f:0:b0:54f:af2e:d7c1 with SMTP id
+ 137-20020a81078f000000b0054faf2ed7c1mr20948607ywh.11.1681802077517; Tue, 18
+ Apr 2023 00:14:37 -0700 (PDT)
+MIME-Version: 1.0
 References: <071e9f32c19a007f4922903282c9121898641400.1681671848.git.christophe.jaillet@wanadoo.fr>
+ <b5fea49d68e1e2a702b0050f73582526e205cfa2.camel@physik.fu-berlin.de>
+In-Reply-To: <b5fea49d68e1e2a702b0050f73582526e205cfa2.camel@physik.fu-berlin.de>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Tue, 18 Apr 2023 09:14:25 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdWz7YJ4ifkxU2GGdoj46fTsjS5WE66R0YzvOYr1ZKY=4w@mail.gmail.com>
+Message-ID: <CAMuHMdWz7YJ4ifkxU2GGdoj46fTsjS5WE66R0YzvOYr1ZKY=4w@mail.gmail.com>
+Subject: Re: [PATCH RESEND] sh: sq: Use the bitmap API when applicable
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org,
+        kernel-janitors@vger.kernel.org, linux-sh@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.0 
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 91.19.160.23
-X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Christophe!
+Hi Adrian,
 
-Thanks for your patch. The changes look good to me. However, I have
-one question, see below.
+On Tue, Apr 18, 2023 at 8:36 AM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> Thanks for your patch. The changes look good to me. However, I have
+> one question, see below.
+>
+> On Sun, 2023-04-16 at 21:05 +0200, Christophe JAILLET wrote:
+> > Using the bitmap API is less verbose than hand writing them.
+> > It also improves the semantic.
+> >
+> > Signed-off-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
 
-On Sun, 2023-04-16 at 21:05 +0200, Christophe JAILLET wrote:
-> Using the bitmap API is less verbose than hand writing them.
-> It also improves the semantic.
-> 
-> Signed-off-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
-> ---
-> This is a resend of [1].
-> 
-> Now cross-compile tested with CONFIG_CPU_SUBTYPE_SH7770=y
-> 
-> [1]: https://lore.kernel.org/all/521788e22ad8f7a5058c154f068b061525321841.1656142814.git.christophe.jaillet@wanadoo.fr/
-> ---
->  arch/sh/kernel/cpu/sh4/sq.c | 7 +++----
->  1 file changed, 3 insertions(+), 4 deletions(-)
-> 
-> diff --git a/arch/sh/kernel/cpu/sh4/sq.c b/arch/sh/kernel/cpu/sh4/sq.c
-> index 27f2e3da5aa2..d289e99dc118 100644
-> --- a/arch/sh/kernel/cpu/sh4/sq.c
-> +++ b/arch/sh/kernel/cpu/sh4/sq.c
-> @@ -372,7 +372,6 @@ static struct subsys_interface sq_interface = {
->  static int __init sq_api_init(void)
->  {
->  	unsigned int nr_pages = 0x04000000 >> PAGE_SHIFT;
-> -	unsigned int size = (nr_pages + (BITS_PER_LONG - 1)) / BITS_PER_LONG;
->  	int ret = -ENOMEM;
->  
->  	printk(KERN_NOTICE "sq: Registering store queue API.\n");
-> @@ -382,7 +381,7 @@ static int __init sq_api_init(void)
->  	if (unlikely(!sq_cache))
->  		return ret;
->  
-> -	sq_bitmap = kzalloc(size, GFP_KERNEL);
-> +	sq_bitmap = bitmap_zalloc(nr_pages, GFP_KERNEL);
->  	if (unlikely(!sq_bitmap))
->  		goto out;
-> 
+> > --- a/arch/sh/kernel/cpu/sh4/sq.c
+> > +++ b/arch/sh/kernel/cpu/sh4/sq.c
+> > @@ -372,7 +372,6 @@ static struct subsys_interface sq_interface = {
+> >  static int __init sq_api_init(void)
+> >  {
+> >       unsigned int nr_pages = 0x04000000 >> PAGE_SHIFT;
+> > -     unsigned int size = (nr_pages + (BITS_PER_LONG - 1)) / BITS_PER_LONG;
+> >       int ret = -ENOMEM;
+> >
+> >       printk(KERN_NOTICE "sq: Registering store queue API.\n");
+> > @@ -382,7 +381,7 @@ static int __init sq_api_init(void)
+> >       if (unlikely(!sq_cache))
+> >               return ret;
+> >
+> > -     sq_bitmap = kzalloc(size, GFP_KERNEL);
+> > +     sq_bitmap = bitmap_zalloc(nr_pages, GFP_KERNEL);
+> >       if (unlikely(!sq_bitmap))
+> >               goto out;
+> >
+>
+> I have look through other patches where k{z,c,m}alloc() were replaced with
+> bitmap_zalloc() and I noticed that in the other cases such as [1], kcalloc()
+> was used instead of kzalloc() in our cases with the element size set to
+> sizeof(long) while kzalloc() is using an element size equal to a byte.
+>
+> Wouldn't that mean that the current code in sq is allocating a buffer that is
+> too small by a factor of 1/sizeof(long) or am I missing something?
+>
+> @Geert: Do you have any idea?
 
-I have look through other patches where k{z,c,m}alloc() were replaced with
-bitmap_zalloc() and I noticed that in the other cases such as [1], kcalloc()
-was used instead of kzalloc() in our cases with the element size set to
-sizeof(long) while kzalloc() is using an element size equal to a byte.
+Nice catch!
 
-Wouldn't that mean that the current code in sq is allocating a buffer that is
-too small by a factor of 1/sizeof(long) or am I missing something?
+Looking more deeply at the code, the intention is to allocate a bitmap
+with nr_pages bits, so the code fater Christophe's patch is correct.
+However, the old code is indeed wrong:
 
-@Geert: Do you have any idea?
+    (nr_pages + (BITS_PER_LONG - 1)) / BITS_PER_LONG
 
-> @@ -393,7 +392,7 @@ static int __init sq_api_init(void)
->  	return 0;
->  
->  out:
-> -	kfree(sq_bitmap);
-> +	bitmap_free(sq_bitmap);
->  	kmem_cache_destroy(sq_cache);
->  
->  	return ret;
-> @@ -402,7 +401,7 @@ static int __init sq_api_init(void)
->  static void __exit sq_api_exit(void)
->  {
->  	subsys_interface_unregister(&sq_interface);
-> -	kfree(sq_bitmap);
-> +	bitmap_free(sq_bitmap);
->  	kmem_cache_destroy(sq_cache);
->  }
->  
+The aim is to calculate the size in bytes, rounded up to an integral
+number of longs, but it lacks a final multiplication by BITS_PER_BYTE,
+so it's off by a factor of 4.
 
-Adrian
+Fixes: d7c30c682a278abe ("sh: Store Queue API rework.")
 
-> [1] https://lkml.org/lkml/2021/11/28/155
+As we didn't have bitmap_zalloc() until commit c42b65e363ce97a8
+("bitmap: Add bitmap_alloc(), bitmap_zalloc() and bitmap_free()")
+in v4.19, it would be good to fix the bug first in a separate patch,
+not using
+
+BTW, interesting how this got missed when fixing the other out-of-range
+bug in commit 9f650cf2b811cfb6 ("sh: Fix store queue bitmap end.",
+s/marc.theaimsgroup.com/marc.info/ when following the link).
+
+Gr{oetje,eeting}s,
+
+                        Geert
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
