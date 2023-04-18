@@ -2,80 +2,96 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7709AC77B75
-	for <linux-sh@archiver.kernel.org>; Tue, 18 Apr 2023 15:53:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7BF17C6FD18
+	for <linux-sh@archiver.kernel.org>; Tue, 18 Apr 2023 16:14:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232427AbjDRPxI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 18 Apr 2023 11:53:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38218 "EHLO
+        id S231144AbjDRQO0 convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 18 Apr 2023 12:14:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55842 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231352AbjDRPxG (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 18 Apr 2023 11:53:06 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C246E12C92;
-        Tue, 18 Apr 2023 08:52:41 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1ponce-002J3n-R0; Tue, 18 Apr 2023 17:52:00 +0200
-Received: from p5b13a017.dip0.t-ipconnect.de ([91.19.160.23] helo=z6.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1ponce-003jUm-Kb; Tue, 18 Apr 2023 17:52:00 +0200
-Received: from glaubitz by z6.fritz.box with local (Exim 4.96)
-        (envelope-from <glaubitz@physik.fu-berlin.de>)
-        id 1ponce-000voW-0k;
-        Tue, 18 Apr 2023 17:52:00 +0200
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        with ESMTP id S229984AbjDRQO0 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 18 Apr 2023 12:14:26 -0400
+Received: from mail-lj1-f179.google.com (mail-lj1-f179.google.com [209.85.208.179])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E64E38A4F;
+        Tue, 18 Apr 2023 09:14:21 -0700 (PDT)
+Received: by mail-lj1-f179.google.com with SMTP id 38308e7fff4ca-2a8bbea12d7so20087491fa.3;
+        Tue, 18 Apr 2023 09:14:21 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1681834459; x=1684426459;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=edzK7u79JqM+7LhPBFR+z+4eZJTEqnBnyOWxqayzfUI=;
+        b=EReeCXHKx1aTsXZqjFcWudONc0P0bjLFKUIeAqY1Tfm97KjVFV5fG0WRlzrOU9XV17
+         5HDzAhNDq7Mb0Yf9lzy0SPZNF+otGl1mWBVoVBHk9FmCcc9pGg42Qxw/yU3jiH9f4hNM
+         9hpU8ETn9mIPtO/Yf1gdfF7OQFI8WAdQ/nfBmRmj68Q5eUGBX3OsvV43Lhxmve/zqCOO
+         xocvJb7i5WD3VeHmX+Xje09BWAecVR4xcRWtVIs20dyCAGzKKFCMHlBRYE7TDl4GqWyI
+         Eg8WKLMSHtEIgxIvyM6+KIyTMRE698UR2Wm4jYpH1vmaWY8g+YxcJtKxZRoi0yOvbtCt
+         ipgQ==
+X-Gm-Message-State: AAQBX9e6UZ9pcw/vbrS7hza0tMYQpjCi0nIX1iH9hjH9DTgVsWD2XS/P
+        91wfYtjwMVX2Li21TNvG3EHVg+TpHQ3pKKkR
+X-Google-Smtp-Source: AKy350Z/zwZVo7ajnKsgaHXgBS3gBKqd2fLfcrymV0zfU0Yp+TE3UdLaOGQiwNlBOTztY54Dnq1GbQ==
+X-Received: by 2002:ac2:5ec6:0:b0:4eb:4002:a5ca with SMTP id d6-20020ac25ec6000000b004eb4002a5camr2931215lfq.66.1681834459478;
+        Tue, 18 Apr 2023 09:14:19 -0700 (PDT)
+Received: from mail-lf1-f42.google.com (mail-lf1-f42.google.com. [209.85.167.42])
+        by smtp.gmail.com with ESMTPSA id c17-20020ac24151000000b004eb554a1711sm2409704lfi.51.2023.04.18.09.14.18
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 18 Apr 2023 09:14:18 -0700 (PDT)
+Received: by mail-lf1-f42.google.com with SMTP id 2adb3069b0e04-4ec8133c698so10733929e87.0;
+        Tue, 18 Apr 2023 09:14:18 -0700 (PDT)
+X-Received: by 2002:ac2:51a2:0:b0:4ed:d542:6f65 with SMTP id
+ f2-20020ac251a2000000b004edd5426f65mr397608lfk.5.1681834458048; Tue, 18 Apr
+ 2023 09:14:18 -0700 (PDT)
+MIME-Version: 1.0
+References: <20230418155153.222214-1-glaubitz@physik.fu-berlin.de>
+In-Reply-To: <20230418155153.222214-1-glaubitz@physik.fu-berlin.de>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Tue, 18 Apr 2023 18:14:04 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdWpTu3NXt-Y-Xh9SS=mQsL9Wm4=XNe6pKGd+WB2Ef5Fow@mail.gmail.com>
+Message-ID: <CAMuHMdWpTu3NXt-Y-Xh9SS=mQsL9Wm4=XNe6pKGd+WB2Ef5Fow@mail.gmail.com>
+Subject: Re: [PATCH] sh: pci: Remove unused variable in SH-7786 PCI Express code
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         Jim Quinlan <james.quinlan@broadcom.com>,
         Mathieu Poirier <mathieu.poirier@linaro.org>,
         linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH] sh: pci: Remove unused variable in SH-7786 PCI Express code
-Date:   Tue, 18 Apr 2023 17:51:49 +0200
-Message-Id: <20230418155153.222214-1-glaubitz@physik.fu-berlin.de>
-X-Mailer: git-send-email 2.39.2
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 91.19.160.23
-X-ZEDAT-Hint: PO
-To:     unlisted-recipients:; (no To-header on input)
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Addresses the following warning when building sdk7786_defconfig:
+Hi Adrian,
 
-arch/sh/drivers/pci/pcie-sh7786.c:34:22: warning: 'dma_pfn_offset' defined but not used [-Wunused-variable]
-   34 | static unsigned long dma_pfn_offset;
-      |                      ^~~~~~~~~~~~~~
+Thanks for your patch!
 
-Fixes: e0d072782c73 ("dma-mapping: introduce DMA range map, supplanting dma_pfn_offset")
+On Tue, Apr 18, 2023 at 5:59 PM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> Addresses the following warning when building sdk7786_defconfig:
+>
+> arch/sh/drivers/pci/pcie-sh7786.c:34:22: warning: 'dma_pfn_offset' defined but not used [-Wunused-variable]
+>    34 | static unsigned long dma_pfn_offset;
+>       |                      ^~~~~~~~~~~~~~
+>
+> Fixes: e0d072782c73 ("dma-mapping: introduce DMA range map, supplanting dma_pfn_offset")
+>
 
-Signed-off-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
----
- arch/sh/drivers/pci/pcie-sh7786.c | 1 -
- 1 file changed, 1 deletion(-)
+Please no blank line between tags and SoB.
 
-diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
-index b0c2a5238d04..39bb5038e1c6 100644
---- a/arch/sh/drivers/pci/pcie-sh7786.c
-+++ b/arch/sh/drivers/pci/pcie-sh7786.c
-@@ -31,7 +31,6 @@ struct sh7786_pcie_port {
- 
- static struct sh7786_pcie_port *sh7786_pcie_ports;
- static unsigned int nr_ports;
--static unsigned long dma_pfn_offset;
- size_t memsize;
- u64 memstart;
- 
+> Signed-off-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+
+For the actual patch contents:
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
 -- 
-2.39.2
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
