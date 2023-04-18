@@ -2,106 +2,136 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 05DF6C77B75
-	for <linux-sh@archiver.kernel.org>; Tue, 18 Apr 2023 09:03:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DB4FCC77B71
+	for <linux-sh@archiver.kernel.org>; Tue, 18 Apr 2023 09:17:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229593AbjDRJDO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 18 Apr 2023 05:03:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39102 "EHLO
+        id S229687AbjDRJRO convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 18 Apr 2023 05:17:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53600 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231210AbjDRJDL (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 18 Apr 2023 05:03:11 -0400
-Received: from mail-pf1-x442.google.com (mail-pf1-x442.google.com [IPv6:2607:f8b0:4864:20::442])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 073B34C0B
-        for <linux-sh@vger.kernel.org>; Tue, 18 Apr 2023 02:03:09 -0700 (PDT)
-Received: by mail-pf1-x442.google.com with SMTP id d2e1a72fcca58-63b60366047so1463553b3a.1
-        for <linux-sh@vger.kernel.org>; Tue, 18 Apr 2023 02:03:09 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20221208.gappssmtp.com; s=20221208; t=1681808589; x=1684400589;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=riEyUUcyGOoo1m6E9T12XXnAsiXXXppReCmjmHm49hw=;
-        b=H7SnQr2p/f7scQtloPUNrTUr8NnJaqEnUlXeuUpk8LwhrZl0N53zwJqnPaaxcz3akc
-         oIs6vepvY/FKQZeVWMY+Fy/hZt1KIhaYHkPd1xtqIG2sIC/uj8ZCbaAzfzVietL1O+2e
-         69D6usOu5w6E4K176pgvDx67X7oqtivmsGJhlvyH+4mR+CayuxcTDzUysHDcVQT14Scw
-         k9lcgm4XS+yzJH1VSFmyKcyoJNg0+qTejQnfQVtHHsBSGRRai2sKLVEDNynJicYSZs0q
-         KX8hLkjE04ssnXgVVXYUTljBbsrNb5oQgFjGxzsGCXvcOOXfiaG43s9sT2mtdT2zP61U
-         jT4g==
+        with ESMTP id S229756AbjDRJRN (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 18 Apr 2023 05:17:13 -0400
+Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com [209.85.128.179])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1D26910E7
+        for <linux-sh@vger.kernel.org>; Tue, 18 Apr 2023 02:17:11 -0700 (PDT)
+Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-54fbb713301so207057407b3.11
+        for <linux-sh@vger.kernel.org>; Tue, 18 Apr 2023 02:17:11 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681808589; x=1684400589;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=riEyUUcyGOoo1m6E9T12XXnAsiXXXppReCmjmHm49hw=;
-        b=auTaWIkbVQtr8/XxIYoZs547dGhsJHWLOFD3ZfpPpCvryD9xkeuGp66/p+2zfTzyzA
-         qbraJySHeWuxvUvZcsFtnLkVoZ5Q6E79F9JG9ZLODfAzls/VyZdFi1EehN7x5tUk+GXg
-         0S5UdWYRjh8tKIMqizkB4tI9hsTLnr0R8505wxiXRIxnLnb8T0xGjcwFxm8hU35/GXtD
-         VFPYqsCHXHEycRM+dGSl3PRjmw3Tvd2hpG8Z2uRY9F9RP49eTa5cl9sRnDQwNRL3ldzI
-         2tAf23bUMI6O/4tfBYubtfh7vafbRnUkqTJCAaHXcBVDFDGkw0QJ+ur5K2KZRoPE4RvY
-         sKPA==
-X-Gm-Message-State: AAQBX9e9FspWyKRJskffA7MjIaM1A/cfmbsctsBKwhAcn37C1msmK/11
-        pPJQZeULxs+xbK9NsggulzN8icNYgXIObCdVe0WvOdii
-X-Google-Smtp-Source: AKy350ZFztdvNtdyyYFX3bp5O/XLsyUxbyKY/fR6ry59sIHkwUl/mYYSJb7KgwiEnON421dPqYzJIg==
-X-Received: by 2002:a05:6a00:1249:b0:63d:39f0:6eaa with SMTP id u9-20020a056a00124900b0063d39f06eaamr1577220pfi.4.1681808589423;
-        Tue, 18 Apr 2023 02:03:09 -0700 (PDT)
-Received: from [192.168.33.147] (124-110-25-102.east.xps.vectant.ne.jp. [124.110.25.102])
-        by smtp.gmail.com with ESMTPSA id a10-20020aa780ca000000b005a8173829d5sm8903986pfn.66.2023.04.18.02.03.07
+        d=1e100.net; s=20221208; t=1681809430; x=1684401430;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=wG1R9oG6uaczv1KWTSXG5OjFqoDdtkMy6AcBE07f8EE=;
+        b=ddRvLDNLijqOVXubrthcWaM6NkJQNR6IlcH82Q/nnSFwEAOwbLgOFm8Isb4lqcAGw1
+         up75z++0HYUr9OAs+AWIGI1PPTti+7US6dK5MapOZz09TD6f+O6E0mP3BDSmFBsYhQ85
+         ip8keu394IKEwpPvD20ajCgowibwLbX480OXdrNyNoT5W1B9X5rPPB08NlAx+YBizS0q
+         Y9YqnW6oYzzJJSuTgOdKeKaMCgYGpRJn4nIurOCP5ei3IIkPn8Um/RBchMYhazCgnZOp
+         TZcwPgC1vAx7l4H81+TXKNLe07Cq5RUUaJwY0G6QdKvzHW823hsuT4Goo+cPWiQzdRJG
+         D3QQ==
+X-Gm-Message-State: AAQBX9c1Ojmre2mLCLmXpE9wLQl9AZr0MKi7VMkqXHfUwjwEpb5aRhQS
+        ZIq6S0zU+TiKmALLYryjnA9S/GyzFjLwgA==
+X-Google-Smtp-Source: AKy350YzQXVL7HaslZLNv9cGqGDL3DZ3EToRmXAAHK7lDGpoUXLOWCHmpp9apO5GVvvt7rZPEzH6Aw==
+X-Received: by 2002:a0d:d50d:0:b0:54c:288a:a2a1 with SMTP id x13-20020a0dd50d000000b0054c288aa2a1mr16833420ywd.27.1681809429982;
+        Tue, 18 Apr 2023 02:17:09 -0700 (PDT)
+Received: from mail-yw1-f169.google.com (mail-yw1-f169.google.com. [209.85.128.169])
+        by smtp.gmail.com with ESMTPSA id 184-20020a810ac1000000b00545a081848bsm3703571ywk.27.2023.04.18.02.17.09
+        for <linux-sh@vger.kernel.org>
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 18 Apr 2023 02:03:09 -0700 (PDT)
-Message-ID: <29ac31e3-2c3a-03b3-200f-52c74adcca3f@landley.net>
-Date:   Tue, 18 Apr 2023 04:18:22 -0500
+        Tue, 18 Apr 2023 02:17:09 -0700 (PDT)
+Received: by mail-yw1-f169.google.com with SMTP id 00721157ae682-552fb3c2bb7so40768167b3.10
+        for <linux-sh@vger.kernel.org>; Tue, 18 Apr 2023 02:17:09 -0700 (PDT)
+X-Received: by 2002:a81:5ac1:0:b0:54f:d816:8963 with SMTP id
+ o184-20020a815ac1000000b0054fd8168963mr17164068ywb.19.1681809429227; Tue, 18
+ Apr 2023 02:17:09 -0700 (PDT)
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.9.0
-Subject: Re: [PATCH] Fix J-core aic warning spam
-Content-Language: en-US
-To:     Sergey Shtylyov <s.shtylyov@omp.ru>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Rich Felker <dalias@libc.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>
 References: <ec905cf9-09de-a5d1-b8ee-0d874db4c301@landley.net>
  <45c6426d762dbbe27830182ce751aa3d8210602a.camel@physik.fu-berlin.de>
  <CAMuHMdVxTtoV5_+tEeoTT6hSEBkK8ZsHtu8t6jumvUK6u5effQ@mail.gmail.com>
- <91f17ce6-566f-c5d0-f30c-8f8440f0cca6@omp.ru>
-From:   Rob Landley <rob@landley.net>
-In-Reply-To: <91f17ce6-566f-c5d0-f30c-8f8440f0cca6@omp.ru>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+ <e4f89e6f-b7fb-6cfc-c90c-03ecdefe602a@landley.net> <08823dbc7d6abb99958993bc35e315a3eb0e63bb.camel@physik.fu-berlin.de>
+ <f321805d-346b-36d5-247f-3c092aa7bea1@landley.net>
+In-Reply-To: <f321805d-346b-36d5-247f-3c092aa7bea1@landley.net>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Tue, 18 Apr 2023 11:16:57 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdXX7+-KF7eEoqY4NH90e9g=ykapfma7V050NaKW1Qb-vQ@mail.gmail.com>
+Message-ID: <CAMuHMdXX7+-KF7eEoqY4NH90e9g=ykapfma7V050NaKW1Qb-vQ@mail.gmail.com>
+Subject: Re: [PATCH] Fix J-core aic warning spam
+To:     Rob Landley <rob@landley.net>
+Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Rich Felker <dalias@libc.org>,
+        Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+Hi Rob,
 
+On Tue, Apr 18, 2023 at 10:59 AM Rob Landley <rob@landley.net> wrote:
+> On 4/18/23 03:10, John Paul Adrian Glaubitz wrote:
+> > On Tue, 2023-04-18 at 03:09 -0500, Rob Landley wrote:
+> >> On 4/18/23 02:18, Geert Uytterhoeven wrote:
+> >> > On Tue, Apr 18, 2023 at 8:19 AM John Paul Adrian Glaubitz
+> >> > <glaubitz@physik.fu-berlin.de> wrote:
+> >> > > On Mon, 2023-04-17 at 23:23 -0500, Rob Landley wrote:
+> >> > > > From: Rich Felker <dalias@libc.org>
+> >> > > > Signed-off-by: Rob Landley <rob@landley.net>
+> >> > > >
+> >> > > > Silence noisy boot messages (warning and stack dump for each IRQ) when booting
+> >> > > > on J2 SOC.
+> >> >
+> >> > > > --- a/drivers/irqchip/irq-jcore-aic.c
+> >> > > > +++ b/drivers/irqchip/irq-jcore-aic.c
+> >> > > > @@ -68,6 +68,7 @@ static int __init aic_irq_of_init(struct device_node *node,
+> >> > > >       unsigned min_irq = JCORE_AIC2_MIN_HWIRQ;
+> >> > > >       unsigned dom_sz = JCORE_AIC_MAX_HWIRQ+1;
+> >> > > >       struct irq_domain *domain;
+> >> > > > +     int rc;
+> >> > > >
+> >> > > >       pr_info("Initializing J-Core AIC\n");
+> >> > > >
+> >> > > > @@ -100,6 +101,11 @@ static int __init aic_irq_of_init(struct device_node *node,
+> >> > > >       jcore_aic.irq_unmask = noop;
+> >> > > >       jcore_aic.name = "AIC";
+> >> > > >
+> >> > > > +     rc = irq_alloc_descs(min_irq, min_irq, dom_sz - min_irq,
+> >> > > > +                          of_node_to_nid(node));
+> >> > > > +     if (rc < 0)
+> >> > > > +             pr_info("Cannot allocate irq_descs @ IRQ%d, assuming pre-allocated\n",
+> >> > > > +                     min_irq);
+> >> >
+> >> > This is a fatal error, so please bail out, instead of continuing.
+> >>
+> >> If it can continue, it's not a fatal error. (Some pieces of hardware might not
+> >> come up, but the board might still be usable.) If it can't continue, how does
+> >> the _type_ of failure matter?
+> >
+> > I would still consider it fatal if any of the integral board components failed to
+> > initialize. I don't think we want users to boot up their system into such an undefined
+> > state.
+>
+> So if the network card doesn't work, kernel panic? If it's fatal, why does the
+> function return? It could have called panic() instead. How does panicing _help_?
+> (If the driver loads and the hardware works, we're good. If it doesn't, it won't
+> work and they'll notice...)
 
-On 4/18/23 03:56, Sergey Shtylyov wrote:
-> On 4/18/23 10:18 AM, Geert Uytterhoeven wrote:
-> [...]
->>>> From: Rich Felker <dalias@libc.org>
->>>> Signed-off-by: Rob Landley <rob@landley.net>
->>>>
->>>> Silence noisy boot messages (warning and stack dump for each IRQ) when booting
->>>> on J2 SOC.
->> 
->>>> --- a/drivers/irqchip/irq-jcore-aic.c
->>>> +++ b/drivers/irqchip/irq-jcore-aic.c
-> [...]
->>>> @@ -100,6 +101,11 @@ static int __init aic_irq_of_init(struct device_node *node,
->>>>       jcore_aic.irq_unmask = noop;
->>>>       jcore_aic.name = "AIC";
->>>>
->>>> +     rc = irq_alloc_descs(min_irq, min_irq, dom_sz - min_irq,
->>>> +                          of_node_to_nid(node));
->>>> +     if (rc < 0)
->>>> +             pr_info("Cannot allocate irq_descs @ IRQ%d, assuming pre-allocated\n",
->>>> +                     min_irq);
->> 
->> This is a fatal error, so please bail out, instead of continuing.
-> 
->    Then shounld't we use pr_err() (or stronger), not pr_info()?
+I didn't suggest to call panic(), just return rc.
 
-That I agree with. Happy to repost the patch with that? (Or, you could just sed
-'s/pr_info/pr_err/' file.patch at your end if that's easier...)
+Diving deeper, irq_alloc_descs() can fail only when passing bad or severely
+out-of-range values, so that's very unlikely.
 
-Rob
+BTW, what are the noisy boot messages? What's the call chain?
+
+Thanks!
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
