@@ -2,136 +2,139 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DB4FCC77B71
-	for <linux-sh@archiver.kernel.org>; Tue, 18 Apr 2023 09:17:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 39D9FC77B75
+	for <linux-sh@archiver.kernel.org>; Tue, 18 Apr 2023 09:40:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229687AbjDRJRO convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 18 Apr 2023 05:17:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53600 "EHLO
+        id S231156AbjDRJkt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 18 Apr 2023 05:40:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42806 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229756AbjDRJRN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 18 Apr 2023 05:17:13 -0400
-Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com [209.85.128.179])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1D26910E7
-        for <linux-sh@vger.kernel.org>; Tue, 18 Apr 2023 02:17:11 -0700 (PDT)
-Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-54fbb713301so207057407b3.11
-        for <linux-sh@vger.kernel.org>; Tue, 18 Apr 2023 02:17:11 -0700 (PDT)
+        with ESMTP id S231436AbjDRJkR (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 18 Apr 2023 05:40:17 -0400
+Received: from mail-wm1-x32b.google.com (mail-wm1-x32b.google.com [IPv6:2a00:1450:4864:20::32b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2107C7D84;
+        Tue, 18 Apr 2023 02:39:59 -0700 (PDT)
+Received: by mail-wm1-x32b.google.com with SMTP id 5b1f17b1804b1-3f0a00a5880so14036885e9.0;
+        Tue, 18 Apr 2023 02:39:59 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1681810797; x=1684402797;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=zzQBmhBycWm3Z62ZlfZCa618OpeoVEJ5/aiYxN8jq8g=;
+        b=Y8X8UNZ3w6OP7zNvJtK8S//kpaupljHwfXHt1s4mtjajbW+xW7UhtBZ06YIMp2AAu8
+         cq9xxNTjCkt7qUgqteV4MJ54oxoAbc7Tw82xsj5RIRtAbbEDygewA5bcaopcldsde0Ov
+         LcEpUgVX6qf2/5Iq0q7bHGRtzsN3EBDdgH+jzCMfm6MaSeQljGUIxoPREBkehDCdSMFT
+         fnHFsBDaw4lPYCU5ljyfN9q+DeRO3osc7bhUUM1eh6q/FMKY8e68Wsp8NV+cd9ykRC22
+         736BNbfhsW8wwYJ1Jls/UqzT+xI0UJjA7bvliZwnmfSI/Nh4Qcmfr7wpKBtgiXr6IthU
+         EzpA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681809430; x=1684401430;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=wG1R9oG6uaczv1KWTSXG5OjFqoDdtkMy6AcBE07f8EE=;
-        b=ddRvLDNLijqOVXubrthcWaM6NkJQNR6IlcH82Q/nnSFwEAOwbLgOFm8Isb4lqcAGw1
-         up75z++0HYUr9OAs+AWIGI1PPTti+7US6dK5MapOZz09TD6f+O6E0mP3BDSmFBsYhQ85
-         ip8keu394IKEwpPvD20ajCgowibwLbX480OXdrNyNoT5W1B9X5rPPB08NlAx+YBizS0q
-         Y9YqnW6oYzzJJSuTgOdKeKaMCgYGpRJn4nIurOCP5ei3IIkPn8Um/RBchMYhazCgnZOp
-         TZcwPgC1vAx7l4H81+TXKNLe07Cq5RUUaJwY0G6QdKvzHW823hsuT4Goo+cPWiQzdRJG
-         D3QQ==
-X-Gm-Message-State: AAQBX9c1Ojmre2mLCLmXpE9wLQl9AZr0MKi7VMkqXHfUwjwEpb5aRhQS
-        ZIq6S0zU+TiKmALLYryjnA9S/GyzFjLwgA==
-X-Google-Smtp-Source: AKy350YzQXVL7HaslZLNv9cGqGDL3DZ3EToRmXAAHK7lDGpoUXLOWCHmpp9apO5GVvvt7rZPEzH6Aw==
-X-Received: by 2002:a0d:d50d:0:b0:54c:288a:a2a1 with SMTP id x13-20020a0dd50d000000b0054c288aa2a1mr16833420ywd.27.1681809429982;
-        Tue, 18 Apr 2023 02:17:09 -0700 (PDT)
-Received: from mail-yw1-f169.google.com (mail-yw1-f169.google.com. [209.85.128.169])
-        by smtp.gmail.com with ESMTPSA id 184-20020a810ac1000000b00545a081848bsm3703571ywk.27.2023.04.18.02.17.09
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 18 Apr 2023 02:17:09 -0700 (PDT)
-Received: by mail-yw1-f169.google.com with SMTP id 00721157ae682-552fb3c2bb7so40768167b3.10
-        for <linux-sh@vger.kernel.org>; Tue, 18 Apr 2023 02:17:09 -0700 (PDT)
-X-Received: by 2002:a81:5ac1:0:b0:54f:d816:8963 with SMTP id
- o184-20020a815ac1000000b0054fd8168963mr17164068ywb.19.1681809429227; Tue, 18
- Apr 2023 02:17:09 -0700 (PDT)
+        d=1e100.net; s=20221208; t=1681810797; x=1684402797;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=zzQBmhBycWm3Z62ZlfZCa618OpeoVEJ5/aiYxN8jq8g=;
+        b=lFG03HGy2BBXErV3uFHBGB3ECcncp48biwiVdGmB6S8NS3JrdylL/1CuVhbLJ5I0BE
+         ErQjIjRN5TNTBEWklxmK4GgB5dExmZEFWKCniys/Lj8XJ9VrURy1XiS9jDDh25YrvwT2
+         rNl2DTSmb73vinbPjaz5QEnpdnrknrt3w6J3kC1atvZWGkMMyrspopmKswYr8Kwch4ZJ
+         NzMmKKelF/dlL9LsIN3dcrk0PB1XPb9RRbVCskT96OnCow1Kt1AIsF4cO1i94Ozv6BSU
+         z+7IouMTk9oixAVtu8hN7YD37zhtPzXNMoaLCteGODKLBKHlIfyUKJkdBBe6Cngw8rBT
+         JCwg==
+X-Gm-Message-State: AAQBX9c+haF+PbpLxOi2AErFrhwOecBQQhkwj+r9GwSwgMuFFpLFd7l8
+        ohlVJy3zno171JzwuR37Mwo=
+X-Google-Smtp-Source: AKy350ZQeQOBzR2NxmiWEuG7qicyB6tgVhfnjd7tiafeRzyIisX1X4roYNyApYsHl9lPDW+mjo0PuA==
+X-Received: by 2002:adf:ea8b:0:b0:2f2:c46b:1eb5 with SMTP id s11-20020adfea8b000000b002f2c46b1eb5mr1491650wrm.59.1681810797486;
+        Tue, 18 Apr 2023 02:39:57 -0700 (PDT)
+Received: from localhost ([102.36.222.112])
+        by smtp.gmail.com with ESMTPSA id m14-20020a056000008e00b002c71b4d476asm12576888wrx.106.2023.04.18.02.39.53
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 18 Apr 2023 02:39:56 -0700 (PDT)
+Date:   Tue, 18 Apr 2023 12:39:43 +0300
+From:   Dan Carpenter <error27@gmail.com>
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org,
+        kernel-janitors@vger.kernel.org, linux-sh@vger.kernel.org,
+        Geert Uytterhoeven <geert@linux-m68k.org>
+Subject: Re: [PATCH RESEND] sh: sq: Use the bitmap API when applicable
+Message-ID: <837e9f5e-ca8d-4c93-9a89-d7bdb9bb0240@kili.mountain>
+References: <071e9f32c19a007f4922903282c9121898641400.1681671848.git.christophe.jaillet@wanadoo.fr>
+ <b5fea49d68e1e2a702b0050f73582526e205cfa2.camel@physik.fu-berlin.de>
+ <14788dbc-c2a6-4d1d-8ae3-1be53b0daf17@kili.mountain>
 MIME-Version: 1.0
-References: <ec905cf9-09de-a5d1-b8ee-0d874db4c301@landley.net>
- <45c6426d762dbbe27830182ce751aa3d8210602a.camel@physik.fu-berlin.de>
- <CAMuHMdVxTtoV5_+tEeoTT6hSEBkK8ZsHtu8t6jumvUK6u5effQ@mail.gmail.com>
- <e4f89e6f-b7fb-6cfc-c90c-03ecdefe602a@landley.net> <08823dbc7d6abb99958993bc35e315a3eb0e63bb.camel@physik.fu-berlin.de>
- <f321805d-346b-36d5-247f-3c092aa7bea1@landley.net>
-In-Reply-To: <f321805d-346b-36d5-247f-3c092aa7bea1@landley.net>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Tue, 18 Apr 2023 11:16:57 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdXX7+-KF7eEoqY4NH90e9g=ykapfma7V050NaKW1Qb-vQ@mail.gmail.com>
-Message-ID: <CAMuHMdXX7+-KF7eEoqY4NH90e9g=ykapfma7V050NaKW1Qb-vQ@mail.gmail.com>
-Subject: Re: [PATCH] Fix J-core aic warning spam
-To:     Rob Landley <rob@landley.net>
-Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Rich Felker <dalias@libc.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+Content-Type: multipart/mixed; boundary="V2iJ7csRRNqcDySa"
+Content-Disposition: inline
+In-Reply-To: <14788dbc-c2a6-4d1d-8ae3-1be53b0daf17@kili.mountain>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Rob,
 
-On Tue, Apr 18, 2023 at 10:59 AM Rob Landley <rob@landley.net> wrote:
-> On 4/18/23 03:10, John Paul Adrian Glaubitz wrote:
-> > On Tue, 2023-04-18 at 03:09 -0500, Rob Landley wrote:
-> >> On 4/18/23 02:18, Geert Uytterhoeven wrote:
-> >> > On Tue, Apr 18, 2023 at 8:19 AM John Paul Adrian Glaubitz
-> >> > <glaubitz@physik.fu-berlin.de> wrote:
-> >> > > On Mon, 2023-04-17 at 23:23 -0500, Rob Landley wrote:
-> >> > > > From: Rich Felker <dalias@libc.org>
-> >> > > > Signed-off-by: Rob Landley <rob@landley.net>
-> >> > > >
-> >> > > > Silence noisy boot messages (warning and stack dump for each IRQ) when booting
-> >> > > > on J2 SOC.
-> >> >
-> >> > > > --- a/drivers/irqchip/irq-jcore-aic.c
-> >> > > > +++ b/drivers/irqchip/irq-jcore-aic.c
-> >> > > > @@ -68,6 +68,7 @@ static int __init aic_irq_of_init(struct device_node *node,
-> >> > > >       unsigned min_irq = JCORE_AIC2_MIN_HWIRQ;
-> >> > > >       unsigned dom_sz = JCORE_AIC_MAX_HWIRQ+1;
-> >> > > >       struct irq_domain *domain;
-> >> > > > +     int rc;
-> >> > > >
-> >> > > >       pr_info("Initializing J-Core AIC\n");
-> >> > > >
-> >> > > > @@ -100,6 +101,11 @@ static int __init aic_irq_of_init(struct device_node *node,
-> >> > > >       jcore_aic.irq_unmask = noop;
-> >> > > >       jcore_aic.name = "AIC";
-> >> > > >
-> >> > > > +     rc = irq_alloc_descs(min_irq, min_irq, dom_sz - min_irq,
-> >> > > > +                          of_node_to_nid(node));
-> >> > > > +     if (rc < 0)
-> >> > > > +             pr_info("Cannot allocate irq_descs @ IRQ%d, assuming pre-allocated\n",
-> >> > > > +                     min_irq);
-> >> >
-> >> > This is a fatal error, so please bail out, instead of continuing.
-> >>
-> >> If it can continue, it's not a fatal error. (Some pieces of hardware might not
-> >> come up, but the board might still be usable.) If it can't continue, how does
-> >> the _type_ of failure matter?
-> >
-> > I would still consider it fatal if any of the integral board components failed to
-> > initialize. I don't think we want users to boot up their system into such an undefined
-> > state.
->
-> So if the network card doesn't work, kernel panic? If it's fatal, why does the
-> function return? It could have called panic() instead. How does panicing _help_?
-> (If the driver loads and the hardware works, we're good. If it doesn't, it won't
-> work and they'll notice...)
+--V2iJ7csRRNqcDySa
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-I didn't suggest to call panic(), just return rc.
+On Tue, Apr 18, 2023 at 10:30:01AM +0300, Dan Carpenter wrote:
+> I have some unpublished Smatch stuff which tries to track "variable x
+> is in terms of bit units or byte units etc."  I will try to make a
+> static checker rule for this.
 
-Diving deeper, irq_alloc_descs() can fail only when passing bad or severely
-out-of-range values, so that's very unlikely.
+Attached.  It prints a warning like this:
 
-BTW, what are the noisy boot messages? What's the call chain?
+drivers/net/ethernet/broadcom/cnic.c:667 cnic_init_id_tbl() warn: allocating units of longs instead of bytes 'test_var'
 
-Thanks!
+I'll test it out tonight.
 
-Gr{oetje,eeting}s,
+regards,
+dan carpenter
 
-                        Geert
+--V2iJ7csRRNqcDySa
+Content-Type: text/x-csrc; charset=us-ascii
+Content-Disposition: attachment; filename="check_allocating_longs.c"
 
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+/*
+ * Copyright 2023 Linaro Ltd.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see http://www.gnu.org/copyleft/gpl.txt
+ */
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+#include "smatch.h"
+#include "smatch_slist.h"
+
+static int my_id;
+
+static void match_allocation(struct expression *expr,
+			     const char *name, struct symbol *sym,
+			     struct allocation_info *info)
+{
+	struct smatch_state *units;
+	char *str;
+
+	units = get_units(info->total_size);
+	if (!units || strcmp(units->name, "longs") != 0)
+		return;
+
+	str = expr_to_str(info->total_size);
+	sm_warning("allocating units of longs instead of bytes '%s'", str);
+	free_string(str);
+}
+
+void check_allocating_longs(int id)
+{
+	my_id = id;
+
+	add_allocation_hook(&match_allocation);
+}
+
+--V2iJ7csRRNqcDySa--
