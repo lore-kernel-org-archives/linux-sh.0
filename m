@@ -2,199 +2,166 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7CE44C6FD18
-	for <linux-sh@archiver.kernel.org>; Wed, 19 Apr 2023 07:31:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 28ECAC77B73
+	for <linux-sh@archiver.kernel.org>; Wed, 19 Apr 2023 07:55:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232279AbjDSHbJ convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 19 Apr 2023 03:31:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54128 "EHLO
+        id S231615AbjDSHzx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 19 Apr 2023 03:55:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43302 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232306AbjDSHbA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 19 Apr 2023 03:31:00 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E6DDB93C7
-        for <linux-sh@vger.kernel.org>; Wed, 19 Apr 2023 00:30:55 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pp2HE-001l6d-PH; Wed, 19 Apr 2023 09:30:52 +0200
-Received: from p5b13a017.dip0.t-ipconnect.de ([91.19.160.23] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pp2HE-001csf-IL; Wed, 19 Apr 2023 09:30:52 +0200
-Message-ID: <031163a43190031e742504d6e89183f6f22ac03e.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] Fix J-core aic warning spam
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>,
-        Rob Landley <rob@landley.net>
-Cc:     Rich Felker <dalias@libc.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>
-Date:   Wed, 19 Apr 2023 09:30:51 +0200
-In-Reply-To: <CAMuHMdX5Hn2QR127M4NjNLWJMrEVUQK5ApCkeb2nDuSid1o90g@mail.gmail.com>
-References: <ec905cf9-09de-a5d1-b8ee-0d874db4c301@landley.net>
-         <45c6426d762dbbe27830182ce751aa3d8210602a.camel@physik.fu-berlin.de>
-         <CAMuHMdVxTtoV5_+tEeoTT6hSEBkK8ZsHtu8t6jumvUK6u5effQ@mail.gmail.com>
-         <e4f89e6f-b7fb-6cfc-c90c-03ecdefe602a@landley.net>
-         <08823dbc7d6abb99958993bc35e315a3eb0e63bb.camel@physik.fu-berlin.de>
-         <f321805d-346b-36d5-247f-3c092aa7bea1@landley.net>
-         <CAMuHMdXX7+-KF7eEoqY4NH90e9g=ykapfma7V050NaKW1Qb-vQ@mail.gmail.com>
-         <33f74e06-6b62-3f13-ed09-8efb4f05ac5c@landley.net>
-         <CAMuHMdX5Hn2QR127M4NjNLWJMrEVUQK5ApCkeb2nDuSid1o90g@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.0 
+        with ESMTP id S231577AbjDSHzw (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 19 Apr 2023 03:55:52 -0400
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CAAC346A8
+        for <linux-sh@vger.kernel.org>; Wed, 19 Apr 2023 00:54:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1681890853;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=Ku4/Si8D6xrlYmDkiBxBM7QW/Zhm4h1GUH6h0hqbhBo=;
+        b=Cla5vpMiSIZ5MOM+7UGd9nWVvOXptu0l43jeZGrATas6+8FjMyfn14Fgp7gvTt+0hIes+w
+        QwdHtUYCx8CYOVcExcScBGm2t3vI3VvievgQXPz05kwqAR2Czo4iMDt3qZlIugSxHfVorL
+        lvG0B2ZsjbTX60EegYqc9foEfZM6B10=
+Received: from mail-wm1-f70.google.com (mail-wm1-f70.google.com
+ [209.85.128.70]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-299-5SLeDa6DN5uUt7ogIWsoNg-1; Wed, 19 Apr 2023 03:54:09 -0400
+X-MC-Unique: 5SLeDa6DN5uUt7ogIWsoNg-1
+Received: by mail-wm1-f70.google.com with SMTP id c20-20020a05600c171400b003f173d94427so837193wmn.1
+        for <linux-sh@vger.kernel.org>; Wed, 19 Apr 2023 00:54:09 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1681890849; x=1684482849;
+        h=content-transfer-encoding:in-reply-to:subject:organization:from
+         :references:cc:to:content-language:user-agent:mime-version:date
+         :message-id:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=Ku4/Si8D6xrlYmDkiBxBM7QW/Zhm4h1GUH6h0hqbhBo=;
+        b=I8T5WtXprH61dmesB8TS3s53cMgRVL3riT76NhTnGtK/HUHYgyVtOy4Y0xNXKbWg6+
+         KsF0peP3eH3qPGLDbcebFBeRBcoYNQHDpwl5ZrObBETu5osE0fOsYiTnUtMKsnqJciMW
+         /MP9AxE3cjSXhyyboPghtrjd2dg/EWL1Qh4Milk4bh4NEZ67ZGvKU27gi98YMS0VJa1f
+         fWFkGeeBI92IDic1ttwrAhXjiEvkvBKw4j8UNzExpaMyIo2sKUzwdo9lRyXcz0/Tzmnz
+         aPo57c7smu14zkw2NmZMAuykjxSgiPrqUR91X3kJFIbSJ0ihZLiWfv7BOp0h4EgDlhvb
+         MEpg==
+X-Gm-Message-State: AAQBX9c5zolM2h4hZShmXPMZ03an2bhhale8RyFhYpYSIl055ZBMOslg
+        0pJW7rutY7mpoJ/bdpbip9R8r7D99KrUz5AstKNd7FuLpO1WMJAETPuye5gsMMmCVtyELmNw/S1
+        wlJtIGmcFMIRRHUX3Kck=
+X-Received: by 2002:a05:600c:2305:b0:3f1:728a:1881 with SMTP id 5-20020a05600c230500b003f1728a1881mr7565082wmo.31.1681890848810;
+        Wed, 19 Apr 2023 00:54:08 -0700 (PDT)
+X-Google-Smtp-Source: AKy350ZGeCzv8hHHPCLoBp3+kn6wkQN0cMnv6OhMvvwsxXxMwENw712YUrmrVhvIskYHJBvgTLUksw==
+X-Received: by 2002:a05:600c:2305:b0:3f1:728a:1881 with SMTP id 5-20020a05600c230500b003f1728a1881mr7565048wmo.31.1681890848428;
+        Wed, 19 Apr 2023 00:54:08 -0700 (PDT)
+Received: from ?IPV6:2003:cb:c70b:7b00:7c52:a5fa:8004:96fd? (p200300cbc70b7b007c52a5fa800496fd.dip0.t-ipconnect.de. [2003:cb:c70b:7b00:7c52:a5fa:8004:96fd])
+        by smtp.gmail.com with ESMTPSA id l26-20020a1ced1a000000b003eeb1d6a470sm1327085wmh.13.2023.04.19.00.54.06
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 19 Apr 2023 00:54:08 -0700 (PDT)
+Message-ID: <e0c0ad67-f23f-ff35-80bf-841dcfd43d99@redhat.com>
+Date:   Wed, 19 Apr 2023 09:54:06 +0200
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 91.19.160.23
-X-ZEDAT-Hint: PO
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.0
+To:     Vishal Moola <vishal.moola@gmail.com>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Matthew Wilcox <willy@infradead.org>, linux-mm@kvack.org,
+        linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+        xen-devel@lists.xenproject.org, kvm@vger.kernel.org
+References: <20230417205048.15870-1-vishal.moola@gmail.com>
+ <20230417205048.15870-2-vishal.moola@gmail.com>
+ <da600570-51c7-8088-b46b-7524c9e66e5d@redhat.com>
+ <CAOzc2pwpRhNoFbdzdzuvrqbZdf2OsrTvBGs40QCZJjA5fS_q1A@mail.gmail.com>
+From:   David Hildenbrand <david@redhat.com>
+Organization: Red Hat
+Subject: Re: [PATCH 01/33] s390: Use _pt_s390_gaddr for gmap address tracking
+In-Reply-To: <CAOzc2pwpRhNoFbdzdzuvrqbZdf2OsrTvBGs40QCZJjA5fS_q1A@mail.gmail.com>
+X-Mimecast-Spam-Score: 0
+X-Mimecast-Originator: redhat.com
+Content-Language: en-US
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, 2023-04-19 at 09:27 +0200, Geert Uytterhoeven wrote:
-> On Tue, Apr 18, 2023 at 11:56 PM Rob Landley <rob@landley.net> wrote:
-> > 
-> > On 4/18/23 04:16, Geert Uytterhoeven wrote:
-> > > Hi Rob,
-> > > 
-> > > On Tue, Apr 18, 2023 at 10:59 AM Rob Landley <rob@landley.net> wrote:
-> > > > On 4/18/23 03:10, John Paul Adrian Glaubitz wrote:
-> > > > > On Tue, 2023-04-18 at 03:09 -0500, Rob Landley wrote:
-> > > > > > On 4/18/23 02:18, Geert Uytterhoeven wrote:
-> > > > > > > On Tue, Apr 18, 2023 at 8:19 AM John Paul Adrian Glaubitz
-> > > > > > > <glaubitz@physik.fu-berlin.de> wrote:
-> > > > > > > > On Mon, 2023-04-17 at 23:23 -0500, Rob Landley wrote:
-> > > > > > > > > From: Rich Felker <dalias@libc.org>
-> > > > > > > > > Signed-off-by: Rob Landley <rob@landley.net>
-> > > > > > > > > 
-> > > > > > > > > Silence noisy boot messages (warning and stack dump for each IRQ) when booting
-> > > > > > > > > on J2 SOC.
-> > > > > > > 
-> > > > > > > > > --- a/drivers/irqchip/irq-jcore-aic.c
-> > > > > > > > > +++ b/drivers/irqchip/irq-jcore-aic.c
-> > > > > > > > > @@ -68,6 +68,7 @@ static int __init aic_irq_of_init(struct device_node *node,
-> > > > > > > > >       unsigned min_irq = JCORE_AIC2_MIN_HWIRQ;
-> > > > > > > > >       unsigned dom_sz = JCORE_AIC_MAX_HWIRQ+1;
-> > > > > > > > >       struct irq_domain *domain;
-> > > > > > > > > +     int rc;
-> > > > > > > > > 
-> > > > > > > > >       pr_info("Initializing J-Core AIC\n");
-> > > > > > > > > 
-> > > > > > > > > @@ -100,6 +101,11 @@ static int __init aic_irq_of_init(struct device_node *node,
-> > > > > > > > >       jcore_aic.irq_unmask = noop;
-> > > > > > > > >       jcore_aic.name = "AIC";
-> > > > > > > > > 
-> > > > > > > > > +     rc = irq_alloc_descs(min_irq, min_irq, dom_sz - min_irq,
-> > > > > > > > > +                          of_node_to_nid(node));
-> > > > > > > > > +     if (rc < 0)
-> > > > > > > > > +             pr_info("Cannot allocate irq_descs @ IRQ%d, assuming pre-allocated\n",
-> > > > > > > > > +                     min_irq);
-> > > > > > > 
-> > > > > > > This is a fatal error, so please bail out, instead of continuing.
-> > > > > > 
-> > > > > > If it can continue, it's not a fatal error. (Some pieces of hardware might not
-> > > > > > come up, but the board might still be usable.) If it can't continue, how does
-> > > > > > the _type_ of failure matter?
-> > > > > 
-> > > > > I would still consider it fatal if any of the integral board components failed to
-> > > > > initialize. I don't think we want users to boot up their system into such an undefined
-> > > > > state.
-> > > > 
-> > > > So if the network card doesn't work, kernel panic? If it's fatal, why does the
-> > > > function return? It could have called panic() instead. How does panicing _help_?
-> > > > (If the driver loads and the hardware works, we're good. If it doesn't, it won't
-> > > > work and they'll notice...)
-> > > 
-> > > I didn't suggest to call panic(), just return rc.
-> > 
-> > Ah, I misunderstood.
-> > 
-> > > Diving deeper, irq_alloc_descs() can fail only when passing bad or severely
-> > > out-of-range values, so that's very unlikely.
-> > > 
-> > > BTW, what are the noisy boot messages? What's the call chain?
-> > 
-> > I have a log lying around somewhere...
+On 18.04.23 23:33, Vishal Moola wrote:
+> On Tue, Apr 18, 2023 at 8:45 AM David Hildenbrand <david@redhat.com> wrote:
+>>
+>> On 17.04.23 22:50, Vishal Moola (Oracle) wrote:
+>>> s390 uses page->index to keep track of page tables for the guest address
+>>> space. In an attempt to consolidate the usage of page fields in s390,
+>>> replace _pt_pad_2 with _pt_s390_gaddr to replace page->index in gmap.
+>>>
+>>> This will help with the splitting of struct ptdesc from struct page, as
+>>> well as allow s390 to use _pt_frag_refcount for fragmented page table
+>>> tracking.
+>>>
+>>> Since page->_pt_s390_gaddr aliases with mapping, ensure its set to NULL
+>>> before freeing the pages as well.
+>>>
+>>> Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
+>>> ---
+>>
+>> [...]
+>>
+>>> diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
+>>> index 3fc9e680f174..2616d64c0e8c 100644
+>>> --- a/include/linux/mm_types.h
+>>> +++ b/include/linux/mm_types.h
+>>> @@ -144,7 +144,7 @@ struct page {
+>>>                struct {        /* Page table pages */
+>>>                        unsigned long _pt_pad_1;        /* compound_head */
+>>>                        pgtable_t pmd_huge_pte; /* protected by page->ptl */
+>>> -                     unsigned long _pt_pad_2;        /* mapping */
+>>> +                     unsigned long _pt_s390_gaddr;   /* mapping */
+>>>                        union {
+>>>                                struct mm_struct *pt_mm; /* x86 pgds only */
+>>>                                atomic_t pt_frag_refcount; /* powerpc */
+>>
+>> The confusing part is, that these gmap page tables are not ordinary
+>> process page tables that we would ordinarily place into this section
+>> here. That's why they are also not allocated/freed using the typical
+>> page table constructor/destructor ...
 > 
-> Thanks!
+> I initially thought the same, so I was quite confused when I saw
+> __gmap_segment_gaddr was using pmd_pgtable_page().
 > 
-> It was a bit too large for the list, so I only kept the first relevant
-> part below...
-> 
-> > Initializing J-Core AIC
-> > ------------[ cut here ]------------
-> > error: virq16 is not allocated
-> > WARNING: CPU: 0 PID: 0 at kernel/irq/irqdomain.c:571
-> > irq_domain_associate+0x120/0x178
-> > 
-> > CPU: 0 PID: 0 Comm: swapper/0 Not tainted 5.19.0-rc2 #1
-> > PC is at irq_domain_associate+0x120/0x178
-> > PR is at irq_domain_associate+0x120/0x178
-> > PC  : 10049b90 SP  : 103bdec0 SR  : 400001f1
-> > R0  : 0000001e R1  : 1042d024 R2  : 1042d024 R3  : 00000028
-> > R4  : 00000001 R5  : 0006f1ff R6  : 00000008 R7  : 103bde04
-> > R8  : 1200c000 R9  : 00000010 R10 : 00000000 R11 : 00000010
-> > R12 : 10049a70 R13 : 103bfcac R14 : 1030a398
-> > MACH: 00000000 MACL: 00057fa8 GBR : 00000000 PR  : 10049b90
-> > 
-> > Call trace:
-> >  [<100496f0>] __irq_domain_add+0x80/0x1dc
-> >  [<10049cd2>] irq_domain_create_legacy+0x46/0x68
-> >  [<10049a70>] irq_domain_associate+0x0/0x178
-> >  [<104517da>] aic_irq_of_init+0x82/0xd8
-> >  [<1020ab90>] of_iomap+0x0/0x30
-> >  [<1031df1c>] _printk+0x0/0x24
-> >  [<1045630c>] of_irq_init+0xe4/0x228
-> >  [<100a5a10>] kfree+0x0/0x250
-> >  [<10042376>] vprintk_emit+0xde/0x1fc
-> >  [<1004239c>] vprintk_emit+0x104/0x1fc
-> >  [<10309940>] strlen+0x0/0x60
-> >  [<100424a6>] vprintk_default+0x12/0x20
-> >  [<10309940>] strlen+0x0/0x60
-> >  [<10002a2c>] arch_local_save_flags+0x0/0x8
-> >  [<1031df1c>] _printk+0x0/0x24
-> >  [<104456f8>] init_IRQ+0x14/0x28
-> >  [<10309940>] strlen+0x0/0x60
-> >  [<10002a2c>] arch_local_save_flags+0x0/0x8
-> >  [<1031df1c>] _printk+0x0/0x24
-> >  [<1044394c>] start_kernel+0x3b8/0x73c
-> >  [<1044320c>] unknown_bootoption+0x0/0x170
-> >  [<1000202a>] _stext+0x2a/0x34
-> > 
-> > Code:
-> >   10049b8a:  mov.l     10049bd8 <irq_domain_associate+0x168/0x178>, r4  !
-> > 10393da0 <0x10393da0>
-> >   10049b8c:  jsr       @r1
-> >   10049b8e:  mov       r11, r5
-> > ->10049b90:  trapa     #62
-> >   10049b92:  bra       10049b0e
-> >   10049b94:  mov       #-22, r12
-> >   10049b96:  mov.l     10049bd0 <irq_domain_associate+0x160/0x178>, r1  !
-> > 1031da2c <__warn_printk+0x0/0x38>
-> >   10049b98:  mov.l     10049bdc <irq_domain_associate+0x16c/0x178>, r4  !
-> > 10393dc0 <0x10393dc0>
-> >   10049b9a:  jsr       @r1
-> > 
-> > ---[ end trace 0000000000000000 ]---
-> 
-> OK, so virq 16-127 are non-functional without this fix.
-> 
-> One other thing to consider when sending a v2: v1 lacks an SoB
-> from the original author.
+> Although they are not ordinary process page tables, since we
+> eventually want to move them out of struct page, I think shifting them
+> to be in ptdescs, being a memory descriptor for page tables, makes
+> the most sense.
 
-So, my original assessment that the patch title is misleading was correct then?
+Seeing utilities like tlb_remove_page_ptdesc() that don't really apply 
+to such page tables, I wonder if we should much rather treat such 
+shadow/auxiliary/... page tables (just like other architectures like 
+x86, arm, ... employ as well) as a distinct type.
 
-If Rich is not going to send a v2 of the patch anytime soon, I can do that myself.
+And have ptdesc be the common type for all process page tables.
 
-Adrian
+> 
+> Another option is to leave pmd_pgtable_page() as is just for this case.
+> Or we can revert commit 7e25de77bc5ea which uses the function here
+> then figure out where these gmap pages table pages will go later.
+
+I'm always confused when reading gmap code, so let me have another look :)
+
+The confusing part is that s390x shares the lowest level page tables 
+(PTE tables) between the process and gmap ("guest mapping", similar to 
+EPT on x86-64). It maps these process PTE tables (covering 1 MiB) into 
+gmap-specific PMD tables.
+
+pmd_pgtable_page() should indeed always give us a gmap-specific 
+PMD-table. In fact, something allocated via gmap_alloc_table().
+
+Decoupling both concepts sounds like a good idea.
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Thanks,
+
+David / dhildenb
+
