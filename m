@@ -2,127 +2,83 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E3A05C77B7A
-	for <linux-sh@archiver.kernel.org>; Wed, 19 Apr 2023 08:56:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 514DFC77B73
+	for <linux-sh@archiver.kernel.org>; Wed, 19 Apr 2023 09:22:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232518AbjDSI4r (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 19 Apr 2023 04:56:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33556 "EHLO
+        id S232834AbjDSJW1 convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 19 Apr 2023 05:22:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50674 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232287AbjDSI4p (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 19 Apr 2023 04:56:45 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D64C34220;
-        Wed, 19 Apr 2023 01:56:42 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 7458263B6E;
-        Wed, 19 Apr 2023 08:56:42 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9CC62C433EF;
-        Wed, 19 Apr 2023 08:56:33 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1681894601;
-        bh=oL3JfeXWUvBPUZYm3G7h4erIKqKht1v9PUQNBf1+rOo=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=BR7WTzhV+iyHBxQ8Oa1rcV4sSIOUSmp0fX0gCgozNiJSx7eQY1V/PMcvXsLGM4MLi
-         y4DnDqR7GqUjCxVTLISQvLmr2xZLJnC5y9M53YFeOk0EC55PkeSod5brJmGrM0EGhR
-         LG0KfajjZxgU7WsGUQJoVUMk/Ks7yPViz5AWk33QbGZSpDZZ5+Qg4wlnTRsGq7tgaE
-         1cVsFasQNA+emk3GBpqmUV+J3vB+6qhs/PLg4X0Yjqqz5dz31oXpgtwJPdVN8f05kZ
-         Oj/30StHYGewt51jyd4ViqMaxcXCkBDpbFqe91wYXXx7hb0cja/0MnPVN2RsvZIgYt
-         VRrAqyXH2ZrNQ==
-Date:   Wed, 19 Apr 2023 11:56:22 +0300
-From:   Mike Rapoport <rppt@kernel.org>
-To:     Kefeng Wang <wangkefeng.wang@huawei.com>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        "David S. Miller" <davem@davemloft.net>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Guo Ren <guoren@kernel.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
+        with ESMTP id S232846AbjDSJW0 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 19 Apr 2023 05:22:26 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ADEDD7D96;
+        Wed, 19 Apr 2023 02:22:21 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pp410-002ld4-Hz; Wed, 19 Apr 2023 11:22:14 +0200
+Received: from p5b13a017.dip0.t-ipconnect.de ([91.19.160.23] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pp410-002ALy-AP; Wed, 19 Apr 2023 11:22:14 +0200
+Message-ID: <198f478ac0415c906dafbcf1202238cacb3069a4.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH v2] sh: pci: Remove unused variable in SH-7786 PCI
+ Express code
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Will Deacon <will@kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Zi Yan <ziy@nvidia.com>, linux-arm-kernel@lists.infradead.org,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mm@kvack.org, linux-sh@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org,
-        sparclinux@vger.kernel.org
-Subject: Re: [PATCH v3 05/14] ia64: don't allow users to override
- ARCH_FORCE_MAX_ORDER
-Message-ID: <ZD+stlzr83s6qkJr@kernel.org>
-References: <20230325060828.2662773-1-rppt@kernel.org>
- <20230325060828.2662773-6-rppt@kernel.org>
- <02dd2437-32fa-31aa-4ff3-b33a058f2363@huawei.com>
+        Mathieu Poirier <mathieu.poirier@linaro.org>,
+        Jim Quinlan <james.quinlan@broadcom.com>,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Date:   Wed, 19 Apr 2023 11:22:13 +0200
+In-Reply-To: <CAMuHMdXx9a9dV4GApYQNMYsTO7E1fGXFr4DFJXKmpYhdNN_fAA@mail.gmail.com>
+References: <20230419070934.422997-1-glaubitz@physik.fu-berlin.de>
+         <CAMuHMdXx9a9dV4GApYQNMYsTO7E1fGXFr4DFJXKmpYhdNN_fAA@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.0 
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <02dd2437-32fa-31aa-4ff3-b33a058f2363@huawei.com>
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.19.160.23
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Sat, Mar 25, 2023 at 02:38:15PM +0800, Kefeng Wang wrote:
-> 
-> 
-> On 2023/3/25 14:08, Mike Rapoport wrote:
-> > From: "Mike Rapoport (IBM)" <rppt@kernel.org>
+On Wed, 2023-04-19 at 09:30 +0200, Geert Uytterhoeven wrote:
+> On Wed, Apr 19, 2023 at 9:14 AM John Paul Adrian Glaubitz
+> <glaubitz@physik.fu-berlin.de> wrote:
+> > Addresses the following warning when building sdk7786_defconfig:
 > > 
-> > It is enough to keep default values for base and huge pages without
-> > letting users to override ARCH_FORCE_MAX_ORDER.
+> > arch/sh/drivers/pci/pcie-sh7786.c:34:22: warning: 'dma_pfn_offset' defined but not used [-Wunused-variable]
+> >    34 | static unsigned long dma_pfn_offset;
+> >       |                      ^~~~~~~~~~~~~~
 > > 
-> > Drop the prompt to make the option unvisible in *config.
-> > 
-> > Acked-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
-> > Reviewed-by: Zi Yan <ziy@nvidia.com>
-> > Signed-off-by: Mike Rapoport (IBM) <rppt@kernel.org>
+> > Fixes: e0d072782c73 ("dma-mapping: introduce DMA range map, supplanting dma_pfn_offset")
+> > Signed-off-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 > > ---
-> >   arch/ia64/Kconfig | 3 +--
-> >   1 file changed, 1 insertion(+), 2 deletions(-)
-> > 
-> > diff --git a/arch/ia64/Kconfig b/arch/ia64/Kconfig
-> > index 0d2f41fa56ee..b61437cae162 100644
-> > --- a/arch/ia64/Kconfig
-> > +++ b/arch/ia64/Kconfig
-> > @@ -202,8 +202,7 @@ config IA64_CYCLONE
-> >   	  If you're unsure, answer N.
-> >   config ARCH_FORCE_MAX_ORDER
-> > -	int "MAX_ORDER (10 - 16)"  if !HUGETLB_PAGE
-> > -	range 10 16  if !HUGETLB_PAGE
-> > +	int
-> >   	default "16" if HUGETLB_PAGE
-> >   	default "10"
+> > v2:
+> > - Fix formatting in commit message
 > 
-> It seems that we could drop the following part?
+> My
+> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> on v1 is still valid.
 
-ia64 can have 64k pages, so with MAX_ORDER==16 we'd need at least 32 bits
-for section size
- 
-> diff --git a/arch/ia64/include/asm/sparsemem.h
-> b/arch/ia64/include/asm/sparsemem.h
-> index a58f8b466d96..18187551b183 100644
-> --- a/arch/ia64/include/asm/sparsemem.h
-> +++ b/arch/ia64/include/asm/sparsemem.h
-> @@ -11,11 +11,6 @@
-> 
->  #define SECTION_SIZE_BITS      (30)
->  #define MAX_PHYSMEM_BITS       (50)
-> -#ifdef CONFIG_ARCH_FORCE_MAX_ORDER
-> -#if (CONFIG_ARCH_FORCE_MAX_ORDER + PAGE_SHIFT > SECTION_SIZE_BITS)
-> -#undef SECTION_SIZE_BITS
-> -#define SECTION_SIZE_BITS (CONFIG_ARCH_FORCE_MAX_ORDER + PAGE_SHIFT)
-> -#endif
->  #endif
-> 
+Thanks, pushed to my for-next branch:
+
+> https://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git/?h=for-next
+
+Adrian
 
 -- 
-Sincerely yours,
-Mike.
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
