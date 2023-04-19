@@ -2,57 +2,57 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3AEC7C77B73
-	for <linux-sh@archiver.kernel.org>; Wed, 19 Apr 2023 14:23:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6990C7EE22
+	for <linux-sh@archiver.kernel.org>; Wed, 19 Apr 2023 14:23:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233355AbjDSOXP (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 19 Apr 2023 10:23:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50972 "EHLO
+        id S232979AbjDSOXR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 19 Apr 2023 10:23:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50910 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233100AbjDSOXA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 19 Apr 2023 10:23:00 -0400
-Received: from mail-pf1-x42f.google.com (mail-pf1-x42f.google.com [IPv6:2607:f8b0:4864:20::42f])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6D8FB7DAD
-        for <linux-sh@vger.kernel.org>; Wed, 19 Apr 2023 07:22:51 -0700 (PDT)
-Received: by mail-pf1-x42f.google.com with SMTP id d2e1a72fcca58-63b62d2f729so2471173b3a.1
-        for <linux-sh@vger.kernel.org>; Wed, 19 Apr 2023 07:22:51 -0700 (PDT)
+        with ESMTP id S232564AbjDSOXG (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 19 Apr 2023 10:23:06 -0400
+Received: from mail-pf1-x42c.google.com (mail-pf1-x42c.google.com [IPv6:2607:f8b0:4864:20::42c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0D7E3B469
+        for <linux-sh@vger.kernel.org>; Wed, 19 Apr 2023 07:22:52 -0700 (PDT)
+Received: by mail-pf1-x42c.google.com with SMTP id d2e1a72fcca58-63b5465fc13so2569293b3a.3
+        for <linux-sh@vger.kernel.org>; Wed, 19 Apr 2023 07:22:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=dabbelt-com.20221208.gappssmtp.com; s=20221208; t=1681914171; x=1684506171;
+        d=dabbelt-com.20221208.gappssmtp.com; s=20221208; t=1681914172; x=1684506172;
         h=content-transfer-encoding:mime-version:message-id:to:from:cc
          :in-reply-to:subject:date:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=PqMbvZWHdx/umNn2GDsuDcOtpXqKSdzh2puSjeFvGNg=;
-        b=BQQfPjXj9RjzqoAPS+lEslGY5dDcNNPEbJrUbMfagQ00SpueZWLcpYAadUOn4K2r/7
-         h4HdkG7hv1lk/JwJJQYCK1kCSiFRuTmkN44fcy7kPteadqn38MkQ3ndJHP2Mc9t7NrZL
-         nmp1DYP7b7nPYrKCi/AHIrNyGwWhrPzKd1bjeAAqOo6tX3/AL+K+6SRGBPhAsfYsDgSs
-         dPS/aO0HTzlFjGLxzQlmfHBIIf93KsDsbdHG4ySz5E0QxtwHAyLnkpkj20M9cIgvdPfV
-         aEw0KFtyNn5lgDQSa9YMyBJglZh/UHtAgTzAA5ieEsZiecFBH/5j299y8tclByk2q0hU
-         dWkg==
+        bh=IvT99d3vu2s9u2HdXHuOsCskK0/5VChFq+aBcaoQwKM=;
+        b=eJ51Lyhme8n3XB+0k6fcBFov9PY8/EUmTR8+nuSaGr7xBsijqIoLjwhsLzVxYH/nx0
+         wauVowtfzqnaLMg0Md06tjLXI3lWkSGzsXedNOsMpQwkDCNvEtBTyQ19M/Yyo6D06BSV
+         XNjXn0CGdLZl3nFWqDjNax+yB6CXLq01SwKNwyDS36uGnLYxQFXzNQuK/+7hScqPlZwX
+         z+agJw/VCIGMUixwVDzm2XMnLSn8GR3DsnMXY+jrQCfbr9O1Le1uXDKTi2rYkt7oJ2Ce
+         tyNNGrxSj0L54sdbIeiSTDtndMc3YiWnjyxMJLeRw/TsNRHsyFeDM9KNzzDNKUVPs4Et
+         pKOQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681914171; x=1684506171;
+        d=1e100.net; s=20221208; t=1681914172; x=1684506172;
         h=content-transfer-encoding:mime-version:message-id:to:from:cc
          :in-reply-to:subject:date:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=PqMbvZWHdx/umNn2GDsuDcOtpXqKSdzh2puSjeFvGNg=;
-        b=Pr402ejarJSDnbf30QSp+mBSzPkiNNxbP8pclqd3NuDd2cHVzO/Gclzyy6vY7ncH/O
-         YBDHTEf7JL+Anz5qWirjmWEv/D/F667uwbL9tx+S3ed3ciWgJ/JY5C8jTs5a0cJoyaz4
-         iZZb8iU37v42qegHKQO05JEux8kbtidCA7CwrGoS7yDTQcxR54mDJimYgC65pNSFsKZd
-         MkTPeIJBpTVtV1Q47M7FNpRRi5BfqF8fCfVLG3BHzZnqjzV0P4V7jeYcqbFSRq+J6vCp
-         8UPyoQg0Ry4WA9AI9shBFSg2165hcpRFE9rGXsJfZoiUgJPUxrAYvTclBN2uX79NMW9s
-         jUPg==
-X-Gm-Message-State: AAQBX9evPTQ45Ov7p1c/OT/HoEHlxPpcTmHl6qbN4rWScYWO+x1mFzCQ
-        btsgNCxSdAiHhVjDCRjVF7ElGg==
-X-Google-Smtp-Source: AKy350bZHj+5SLgwTf96Z4FllovZ8h4/H1ZYpgVXzzdS4Hiiw7gNLDstVjX8e8aaqlbpRvsz3GY15A==
-X-Received: by 2002:a05:6a00:2355:b0:63b:8778:99f7 with SMTP id j21-20020a056a00235500b0063b877899f7mr4656389pfj.9.1681914170729;
-        Wed, 19 Apr 2023 07:22:50 -0700 (PDT)
+        bh=IvT99d3vu2s9u2HdXHuOsCskK0/5VChFq+aBcaoQwKM=;
+        b=fHb0xzfrLufiEDRqjys418zmVdRLLedYPcFl6EX9XYk5NfztosafHS8ju+1jXk8evm
+         lO66HuVEZ6hCQB25qJ+UEGmMMSUimx7Jijo4qQqIq+ARAcu/dk6hiDrUbKSWG2czpXCh
+         fWPmYvkNk+SOlKAb4uB+qKwrRTeCA4wMDgxPdUNNNxjr1H0/EDmnb+8CNrMQ+fb4KOP/
+         EsvQwQe2d2jTZPkf6a1DKngpyVxV3H+7fuzjc+x/clNIK8JVbX2MMh/JSnp1uFnH35MX
+         MfE3umelOaUrfRf+uClSCzDbvjRn4BQCgySF7JojO7AtPV7JK1m2D4FjQMWfLo0eucRH
+         rP9g==
+X-Gm-Message-State: AAQBX9cKXGfKI8ZAjdv9FtNyRSLX1IivqxOwpPiocs0OYgUuht8hXUAw
+        QVgayAG0c4DMlSDQ+ltPAhFfWA==
+X-Google-Smtp-Source: AKy350YgrN7zbaEKFT5DU1qrct74Wsi9a0WokbCy4dVCW0VXg9H7v3lPwT87yJxbljWHRWpRpF5B0Q==
+X-Received: by 2002:a05:6a00:130a:b0:63b:859f:f094 with SMTP id j10-20020a056a00130a00b0063b859ff094mr4002975pfu.20.1681914171995;
+        Wed, 19 Apr 2023 07:22:51 -0700 (PDT)
 Received: from localhost ([135.180.227.0])
-        by smtp.gmail.com with ESMTPSA id j7-20020aa78dc7000000b0063b806b111csm7467077pfr.169.2023.04.19.07.22.50
+        by smtp.gmail.com with ESMTPSA id d2-20020a63d642000000b005140ce70582sm10431557pgj.44.2023.04.19.07.22.51
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 19 Apr 2023 07:22:50 -0700 (PDT)
-Date:   Wed, 19 Apr 2023 07:22:50 -0700 (PDT)
-X-Google-Original-Date: Wed, 19 Apr 2023 07:22:40 PDT (-0700)
-Subject:     Re: [PATCH 08/21] riscv: dma-mapping: only invalidate after DMA, not flush
-In-Reply-To: <20230327121317.4081816-9-arnd@kernel.org>
+        Wed, 19 Apr 2023 07:22:51 -0700 (PDT)
+Date:   Wed, 19 Apr 2023 07:22:51 -0700 (PDT)
+X-Google-Original-Date: Wed, 19 Apr 2023 07:22:44 PDT (-0700)
+Subject:     Re: [PATCH 09/21] riscv: dma-mapping: skip invalidation before bidirectional DMA
+In-Reply-To: <20230327121317.4081816-10-arnd@kernel.org>
 CC:     linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>,
         vgupta@kernel.org, linux@armlinux.org.uk,
         neil.armstrong@linaro.org, linus.walleij@linaro.org,
@@ -76,7 +76,7 @@ CC:     linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>,
         linux-xtensa@linux-xtensa.org
 From:   Palmer Dabbelt <palmer@dabbelt.com>
 To:     arnd@kernel.org
-Message-ID: <mhng-158f3971-b108-426f-b3e2-4f3c02a2199d@palmer-ri-x1c9>
+Message-ID: <mhng-7529cf5a-4397-456f-b610-faa619d4faca@palmer-ri-x1c9>
 Mime-Version: 1.0 (MHng)
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: 8bit
@@ -84,14 +84,15 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, 27 Mar 2023 05:13:04 PDT (-0700), arnd@kernel.org wrote:
+On Mon, 27 Mar 2023 05:13:05 PDT (-0700), arnd@kernel.org wrote:
 > From: Arnd Bergmann <arnd@arndb.de>
 >
-> No other architecture intentionally writes back dirty cache lines into
-> a buffer that a device has just finished writing into. If the cache is
-> clean, this has no effect at all, but if a cacheline in the buffer has
-> actually been written by the CPU,  there is a drive bug that is likely
-> made worse by overwriting that buffer.
+> For a DMA_BIDIRECTIONAL transfer, the caches have to be cleaned
+> first to let the device see data written by the CPU, and invalidated
+> after the transfer to let the CPU see data written by the device.
+>
+> riscv also invalidates the caches before the transfer, which does
+> not appear to serve any purpose.
 >
 > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 > ---
@@ -99,15 +100,15 @@ On Mon, 27 Mar 2023 05:13:04 PDT (-0700), arnd@kernel.org wrote:
 >  1 file changed, 1 insertion(+), 1 deletion(-)
 >
 > diff --git a/arch/riscv/mm/dma-noncoherent.c b/arch/riscv/mm/dma-noncoherent.c
-> index d919efab6eba..640f4c496d26 100644
+> index 640f4c496d26..69c80b2155a1 100644
 > --- a/arch/riscv/mm/dma-noncoherent.c
 > +++ b/arch/riscv/mm/dma-noncoherent.c
-> @@ -42,7 +42,7 @@ void arch_sync_dma_for_cpu(phys_addr_t paddr, size_t size,
+> @@ -25,7 +25,7 @@ void arch_sync_dma_for_device(phys_addr_t paddr, size_t size,
+>  		ALT_CMO_OP(clean, vaddr, size, riscv_cbom_block_size);
 >  		break;
->  	case DMA_FROM_DEVICE:
 >  	case DMA_BIDIRECTIONAL:
 > -		ALT_CMO_OP(flush, vaddr, size, riscv_cbom_block_size);
-> +		ALT_CMO_OP(inval, vaddr, size, riscv_cbom_block_size);
+> +		ALT_CMO_OP(clean, vaddr, size, riscv_cbom_block_size);
 >  		break;
 >  	default:
 >  		break;
