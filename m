@@ -2,101 +2,91 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DBDCFC6FD18
-	for <linux-sh@archiver.kernel.org>; Tue, 18 Apr 2023 22:06:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A35FC77B73
+	for <linux-sh@archiver.kernel.org>; Wed, 19 Apr 2023 04:48:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233061AbjDRWGC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 18 Apr 2023 18:06:02 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45888 "EHLO
+        id S231208AbjDSEsR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 19 Apr 2023 00:48:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60250 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231522AbjDRWGB (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 18 Apr 2023 18:06:01 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6E60A189;
-        Tue, 18 Apr 2023 15:06:00 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 041FE6157B;
-        Tue, 18 Apr 2023 22:06:00 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 85911C433D2;
-        Tue, 18 Apr 2023 22:05:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linux-foundation.org;
-        s=korg; t=1681855559;
-        bh=4TzxYQM54gPj6fAMyI3AyBzp+dk5LpFT94Xr5/gjrX0=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
-        b=dxQBhdcrCQd5w9R2wn/07cf7rhZ8iADKh1CjHqyiIBLZHS/f7OVNSf/gt8KG0CR7h
-         Oz4N9A9EESIVDc/zZIanRvYdJy6Kbh1WqoSbL45tIyDhAh0VZ2Gkw4aRGPne/24EZV
-         EG4PhaKU8uuzDbgnkxxKnbzEtY58uWS7osG7BkGw=
-Date:   Tue, 18 Apr 2023 15:05:57 -0700
-From:   Andrew Morton <akpm@linux-foundation.org>
-To:     Catalin Marinas <catalin.marinas@arm.com>
-Cc:     Justin Forbes <jforbes@fedoraproject.org>,
-        Mike Rapoport <rppt@kernel.org>, Arnd Bergmann <arnd@arndb.de>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        "David S. Miller" <davem@davemloft.net>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Guo Ren <guoren@kernel.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Rich Felker <dalias@libc.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Will Deacon <will@kernel.org>,
+        with ESMTP id S231177AbjDSEsQ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 19 Apr 2023 00:48:16 -0400
+Received: from mail-wm1-x333.google.com (mail-wm1-x333.google.com [IPv6:2a00:1450:4864:20::333])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E41523AB2;
+        Tue, 18 Apr 2023 21:48:14 -0700 (PDT)
+Received: by mail-wm1-x333.google.com with SMTP id 5b1f17b1804b1-3f173af6712so20236035e9.1;
+        Tue, 18 Apr 2023 21:48:14 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1681879693; x=1684471693;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=SuAJq4blX/O8RlbmBU9aH8uCfq+5leOuh2Fbv/l7p24=;
+        b=sJ+GYpYQTLxnTUG13QTdmbhWC25D7w7hfCO8BFPxMjuYriAlvzlEoB/BjF+ULpFzdQ
+         Leej5ztj4k66+/YjyYI0IwmscxntLHHe8rPXTIO04OoMsMil5DRlIpNVR34bJjWYGrjG
+         RjN6hF/bPQG7yaJuamojM5oOtVQADcD7LAfYD7EhWUq/UcMAeEmu/6Eev2ZUMgnEbmJn
+         dd1tmPr6qnLxaDL/i23Ow47QJCrL+MidR8ZXcvnLB/hPbUybs+DhBTYkbLTbIpii77i9
+         9W+VOEhmo6rlfH6MpPo78uWHgOvWyys+ww4Vz7wW6LzjkBaEPF7DxDz/AWvJ+GcwN5mT
+         zQDQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1681879693; x=1684471693;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=SuAJq4blX/O8RlbmBU9aH8uCfq+5leOuh2Fbv/l7p24=;
+        b=kX7q/rkfE9RsIEwiFG3MrRjwHWPx4sTrGN4wpal31aGLof8fyPMDCoED4rd4ywY2AT
+         Ojg6ZH6Zw0cZLiGGcA7C6UWl53AXcYfhH5sykQIaAoKT4FotAeTe3aUEhO2JPJr+8dTX
+         c4Z+CgHLG0A7S30lNAE2JW1qFUSnpuBKubEQEZ/SWP5Vd61Ljx3v5ZvOaLC3Bnc7+/1g
+         KPjU+k1L3mwROKqSucOeDXe1ZLWKB//y2ZwtWfx8CLtWkUIHMdd4WZKjMiNyKWO4EI2Z
+         TvPy7EjrSP7ihdfkxMHt1Z+lFgd7jlMfJhQqj6KhAOU0pLgOjjFydVSeFhlpE3mSYu7l
+         UoAQ==
+X-Gm-Message-State: AAQBX9fV2gDiy9E8nhkqrepIr8VDdtNbDoYBgNyRiE9K7khLgPToT1GG
+        UPLxvbdKjHJGXyhTEh+neu8=
+X-Google-Smtp-Source: AKy350YET1L5bLEk6BV2LpnogWlAT1RhfX1CdhSMZpYVhbgdmxBOfO9ptGf6270+UW14vX5vMdzc5A==
+X-Received: by 2002:a05:6000:12c1:b0:2ef:a57e:bb9a with SMTP id l1-20020a05600012c100b002efa57ebb9amr3548275wrx.6.1681879693332;
+        Tue, 18 Apr 2023 21:48:13 -0700 (PDT)
+Received: from localhost ([102.36.222.112])
+        by smtp.gmail.com with ESMTPSA id k18-20020a5d6e92000000b002cea8e3bd54sm14597636wrz.53.2023.04.18.21.48.12
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 18 Apr 2023 21:48:12 -0700 (PDT)
+Date:   Wed, 19 Apr 2023 07:48:08 +0300
+From:   Dan Carpenter <error27@gmail.com>
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Zi Yan <ziy@nvidia.com>, linux-arm-kernel@lists.infradead.org,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mm@kvack.org, linux-sh@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org,
-        sparclinux@vger.kernel.org
-Subject: Re: [PATCH v3 02/14] arm64: drop ranges in definition of
- ARCH_FORCE_MAX_ORDER
-Message-Id: <20230418150557.ea8c87c96ec64c899c88ab08@linux-foundation.org>
-In-Reply-To: <ZDbp7LAHES3YFo30@arm.com>
-References: <20230325060828.2662773-1-rppt@kernel.org>
-        <20230325060828.2662773-3-rppt@kernel.org>
-        <CAFxkdAr5C7ggZ+WdvDbsfmwuXujT_z_x3qcUnhnCn-WrAurvgA@mail.gmail.com>
-        <ZCvQGJzdED+An8an@kernel.org>
-        <CAFbkSA38eTA_iJ3ttBvQ8G4Rjj8qB12GxY7Z=qmZ8wm+0tZieA@mail.gmail.com>
-        <ZDbp7LAHES3YFo30@arm.com>
-X-Mailer: Sylpheed 3.8.0beta1 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+        Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org,
+        kernel-janitors@vger.kernel.org, linux-sh@vger.kernel.org,
+        Geert Uytterhoeven <geert@linux-m68k.org>
+Subject: Re: [PATCH RESEND] sh: sq: Use the bitmap API when applicable
+Message-ID: <0e420e0e-001e-4d0f-a192-a2daa4e789c6@kili.mountain>
+References: <071e9f32c19a007f4922903282c9121898641400.1681671848.git.christophe.jaillet@wanadoo.fr>
+ <b5fea49d68e1e2a702b0050f73582526e205cfa2.camel@physik.fu-berlin.de>
+ <14788dbc-c2a6-4d1d-8ae3-1be53b0daf17@kili.mountain>
+ <837e9f5e-ca8d-4c93-9a89-d7bdb9bb0240@kili.mountain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <837e9f5e-ca8d-4c93-9a89-d7bdb9bb0240@kili.mountain>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, 12 Apr 2023 18:27:08 +0100 Catalin Marinas <catalin.marinas@arm.com> wrote:
-
-> > It sounds nice in theory. In practice. EXPERT hides too much. When you
-> > flip expert, you expose over a 175ish new config options which are
-> > hidden behind EXPERT.  You don't have to know what you are doing just
-> > with the MAX_ORDER, but a whole bunch more as well.  If everyone were
-> > already running 10, this might be less of a problem. At least Fedora
-> > and RHEL are running 13 for 4K pages on aarch64. This was not some
-> > accidental choice, we had to carry a patch to even allow it for a
-> > while.  If this does go in as is, we will likely just carry a patch to
-> > remove the "if EXPERT", but that is a bit of a disservice to users who
-> > might be trying to debug something else upstream, bisecting upstream
-> > kernels or testing a patch.  In those cases, people tend to use
-> > pristine upstream sources without distro patches to verify, and they
-> > tend to use their existing configs. With this change, their MAX_ORDER
-> > will drop to 10 from 13 silently.   That can look like a different
-> > issue enough to ruin a bisect or have them give bad feedback on a
-> > patch because it introduces a "regression" which is not a regression
-> > at all, but a config change they couldn't see.
+On Tue, Apr 18, 2023 at 12:39:43PM +0300, Dan Carpenter wrote:
+> On Tue, Apr 18, 2023 at 10:30:01AM +0300, Dan Carpenter wrote:
+> > I have some unpublished Smatch stuff which tries to track "variable x
+> > is in terms of bit units or byte units etc."  I will try to make a
+> > static checker rule for this.
 > 
-> If we remove EXPERT (as prior to this patch), I'd rather keep the ranges
-> and avoid having to explain to people why some random MAX_ORDER doesn't
-> build (keeping the range would also make sense for randconfig, not sure
-> we got to any conclusion there).
+> Attached.  It prints a warning like this:
+> 
+> drivers/net/ethernet/broadcom/cnic.c:667 cnic_init_id_tbl() warn: allocating units of longs instead of bytes 'test_var'
+> 
+> I'll test it out tonight.
 
-Well this doesn't seem to have got anywhere.  I think I'll send the
-patchset into Linus for the next merge window as-is.  Please let's take
-a look at this Kconfig presentation issue during the following -rc
-cycle.
+It didn't find any bugs.  (Which is hardly surprising because most would
+be caught in testing).  No false postives either.  I imagine that people
+will introduce bugs like this in the future and now we'll see it when
+that happens.
+
+regards,
+dan carpenter
 
