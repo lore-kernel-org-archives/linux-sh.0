@@ -2,91 +2,82 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A35FC77B73
-	for <linux-sh@archiver.kernel.org>; Wed, 19 Apr 2023 04:48:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 36998C6FD18
+	for <linux-sh@archiver.kernel.org>; Wed, 19 Apr 2023 07:11:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231208AbjDSEsR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 19 Apr 2023 00:48:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60250 "EHLO
+        id S230393AbjDSHLd (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 19 Apr 2023 03:11:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38312 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231177AbjDSEsQ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 19 Apr 2023 00:48:16 -0400
-Received: from mail-wm1-x333.google.com (mail-wm1-x333.google.com [IPv6:2a00:1450:4864:20::333])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E41523AB2;
-        Tue, 18 Apr 2023 21:48:14 -0700 (PDT)
-Received: by mail-wm1-x333.google.com with SMTP id 5b1f17b1804b1-3f173af6712so20236035e9.1;
-        Tue, 18 Apr 2023 21:48:14 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1681879693; x=1684471693;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=SuAJq4blX/O8RlbmBU9aH8uCfq+5leOuh2Fbv/l7p24=;
-        b=sJ+GYpYQTLxnTUG13QTdmbhWC25D7w7hfCO8BFPxMjuYriAlvzlEoB/BjF+ULpFzdQ
-         Leej5ztj4k66+/YjyYI0IwmscxntLHHe8rPXTIO04OoMsMil5DRlIpNVR34bJjWYGrjG
-         RjN6hF/bPQG7yaJuamojM5oOtVQADcD7LAfYD7EhWUq/UcMAeEmu/6Eev2ZUMgnEbmJn
-         dd1tmPr6qnLxaDL/i23Ow47QJCrL+MidR8ZXcvnLB/hPbUybs+DhBTYkbLTbIpii77i9
-         9W+VOEhmo6rlfH6MpPo78uWHgOvWyys+ww4Vz7wW6LzjkBaEPF7DxDz/AWvJ+GcwN5mT
-         zQDQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1681879693; x=1684471693;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=SuAJq4blX/O8RlbmBU9aH8uCfq+5leOuh2Fbv/l7p24=;
-        b=kX7q/rkfE9RsIEwiFG3MrRjwHWPx4sTrGN4wpal31aGLof8fyPMDCoED4rd4ywY2AT
-         Ojg6ZH6Zw0cZLiGGcA7C6UWl53AXcYfhH5sykQIaAoKT4FotAeTe3aUEhO2JPJr+8dTX
-         c4Z+CgHLG0A7S30lNAE2JW1qFUSnpuBKubEQEZ/SWP5Vd61Ljx3v5ZvOaLC3Bnc7+/1g
-         KPjU+k1L3mwROKqSucOeDXe1ZLWKB//y2ZwtWfx8CLtWkUIHMdd4WZKjMiNyKWO4EI2Z
-         TvPy7EjrSP7ihdfkxMHt1Z+lFgd7jlMfJhQqj6KhAOU0pLgOjjFydVSeFhlpE3mSYu7l
-         UoAQ==
-X-Gm-Message-State: AAQBX9fV2gDiy9E8nhkqrepIr8VDdtNbDoYBgNyRiE9K7khLgPToT1GG
-        UPLxvbdKjHJGXyhTEh+neu8=
-X-Google-Smtp-Source: AKy350YET1L5bLEk6BV2LpnogWlAT1RhfX1CdhSMZpYVhbgdmxBOfO9ptGf6270+UW14vX5vMdzc5A==
-X-Received: by 2002:a05:6000:12c1:b0:2ef:a57e:bb9a with SMTP id l1-20020a05600012c100b002efa57ebb9amr3548275wrx.6.1681879693332;
-        Tue, 18 Apr 2023 21:48:13 -0700 (PDT)
-Received: from localhost ([102.36.222.112])
-        by smtp.gmail.com with ESMTPSA id k18-20020a5d6e92000000b002cea8e3bd54sm14597636wrz.53.2023.04.18.21.48.12
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 18 Apr 2023 21:48:12 -0700 (PDT)
-Date:   Wed, 19 Apr 2023 07:48:08 +0300
-From:   Dan Carpenter <error27@gmail.com>
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
+        with ESMTP id S229791AbjDSHLb (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 19 Apr 2023 03:11:31 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6FD6AC7;
+        Wed, 19 Apr 2023 00:11:30 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pp1yN-001clK-MC; Wed, 19 Apr 2023 09:11:23 +0200
+Received: from p5b13a017.dip0.t-ipconnect.de ([91.19.160.23] helo=z6.fritz.box)
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pp1yN-001Zkf-Fy; Wed, 19 Apr 2023 09:11:23 +0200
+Received: from glaubitz by z6.fritz.box with local (Exim 4.96)
+        (envelope-from <glaubitz@physik.fu-berlin.de>)
+        id 1pp1yN-001m3D-0N;
+        Wed, 19 Apr 2023 09:11:23 +0200
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-kernel@vger.kernel.org,
-        kernel-janitors@vger.kernel.org, linux-sh@vger.kernel.org,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-Subject: Re: [PATCH RESEND] sh: sq: Use the bitmap API when applicable
-Message-ID: <0e420e0e-001e-4d0f-a192-a2daa4e789c6@kili.mountain>
-References: <071e9f32c19a007f4922903282c9121898641400.1681671848.git.christophe.jaillet@wanadoo.fr>
- <b5fea49d68e1e2a702b0050f73582526e205cfa2.camel@physik.fu-berlin.de>
- <14788dbc-c2a6-4d1d-8ae3-1be53b0daf17@kili.mountain>
- <837e9f5e-ca8d-4c93-9a89-d7bdb9bb0240@kili.mountain>
+        Rich Felker <dalias@libc.org>,
+        Mathieu Poirier <mathieu.poirier@linaro.org>,
+        Jim Quinlan <james.quinlan@broadcom.com>,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH v2] sh: pci: Remove unused variable in SH-7786 PCI Express code
+Date:   Wed, 19 Apr 2023 09:09:33 +0200
+Message-Id: <20230419070934.422997-1-glaubitz@physik.fu-berlin.de>
+X-Mailer: git-send-email 2.39.2
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <837e9f5e-ca8d-4c93-9a89-d7bdb9bb0240@kili.mountain>
+Content-Transfer-Encoding: 8bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.19.160.23
+X-ZEDAT-Hint: PO
+To:     unlisted-recipients:; (no To-header on input)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Apr 18, 2023 at 12:39:43PM +0300, Dan Carpenter wrote:
-> On Tue, Apr 18, 2023 at 10:30:01AM +0300, Dan Carpenter wrote:
-> > I have some unpublished Smatch stuff which tries to track "variable x
-> > is in terms of bit units or byte units etc."  I will try to make a
-> > static checker rule for this.
-> 
-> Attached.  It prints a warning like this:
-> 
-> drivers/net/ethernet/broadcom/cnic.c:667 cnic_init_id_tbl() warn: allocating units of longs instead of bytes 'test_var'
-> 
-> I'll test it out tonight.
+Addresses the following warning when building sdk7786_defconfig:
 
-It didn't find any bugs.  (Which is hardly surprising because most would
-be caught in testing).  No false postives either.  I imagine that people
-will introduce bugs like this in the future and now we'll see it when
-that happens.
+arch/sh/drivers/pci/pcie-sh7786.c:34:22: warning: 'dma_pfn_offset' defined but not used [-Wunused-variable]
+   34 | static unsigned long dma_pfn_offset;
+      |                      ^~~~~~~~~~~~~~
 
-regards,
-dan carpenter
+Fixes: e0d072782c73 ("dma-mapping: introduce DMA range map, supplanting dma_pfn_offset")
+Signed-off-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+---
+v2:
+- Fix formatting in commit message
+
+ arch/sh/drivers/pci/pcie-sh7786.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
+index b0c2a5238d04..39bb5038e1c6 100644
+--- a/arch/sh/drivers/pci/pcie-sh7786.c
++++ b/arch/sh/drivers/pci/pcie-sh7786.c
+@@ -31,7 +31,6 @@ struct sh7786_pcie_port {
+ 
+ static struct sh7786_pcie_port *sh7786_pcie_ports;
+ static unsigned int nr_ports;
+-static unsigned long dma_pfn_offset;
+ size_t memsize;
+ u64 memstart;
+ 
+-- 
+2.39.2
 
