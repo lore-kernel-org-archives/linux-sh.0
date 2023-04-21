@@ -2,42 +2,42 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 856C7C77B75
-	for <linux-sh@archiver.kernel.org>; Fri, 21 Apr 2023 10:39:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 285B5C7618E
+	for <linux-sh@archiver.kernel.org>; Fri, 21 Apr 2023 11:03:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229786AbjDUKjd convert rfc822-to-8bit (ORCPT
+        id S231161AbjDULDo convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 21 Apr 2023 06:39:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34964 "EHLO
+        Fri, 21 Apr 2023 07:03:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44702 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229543AbjDUKjc (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 21 Apr 2023 06:39:32 -0400
+        with ESMTP id S230507AbjDULDn (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 21 Apr 2023 07:03:43 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A2ACA9EF4;
-        Fri, 21 Apr 2023 03:39:30 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E0291902A;
+        Fri, 21 Apr 2023 04:03:38 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1ppoAm-001O5I-Af; Fri, 21 Apr 2023 12:39:24 +0200
+          id 1ppoY8-001WVG-R2; Fri, 21 Apr 2023 13:03:32 +0200
 Received: from p57bd9bea.dip0.t-ipconnect.de ([87.189.155.234] helo=[192.168.178.81])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1ppoAm-001A7x-3T; Fri, 21 Apr 2023 12:39:24 +0200
-Message-ID: <a4ddd8fd24247d660a4a7cbedd4de94228c59bc0.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2] sh: sq: Use the bitmap API when applicable
+          id 1ppoY8-001DxP-Hy; Fri, 21 Apr 2023 13:03:32 +0200
+Message-ID: <434fe02c2c774ae4d1694ff222884bc5d5fc25e6.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH v3] sh: Use generic GCC library routines
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
+To:     Geert Uytterhoeven <geert+renesas@glider.be>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>
-Cc:     linux-kernel@vger.kernel.org, kernel-janitors@vger.kernel.org,
-        linux-sh@vger.kernel.org
-Date:   Fri, 21 Apr 2023 12:39:23 +0200
-In-Reply-To: <a51e9f32c19a007f4922943282cb12c89064440d.1681671848.git.christophe.jaillet@wanadoo.fr>
-References: <a51e9f32c19a007f4922943282cb12c89064440d.1681671848.git.christophe.jaillet@wanadoo.fr>
+Cc:     Palmer Dabbelt <palmer@rivosinc.com>, linux-sh@vger.kernel.org,
+        linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org
+Date:   Fri, 21 Apr 2023 13:03:31 +0200
+In-Reply-To: <74dbe68dc8e2ffb6180092f73723fe21ab692c7a.1679566500.git.geert+renesas@glider.be>
+References: <74dbe68dc8e2ffb6180092f73723fe21ab692c7a.1679566500.git.geert+renesas@glider.be>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 User-Agent: Evolution 3.48.0 
@@ -49,61 +49,90 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, 2023-04-20 at 21:19 +0200, Christophe JAILLET wrote:
-> Using the bitmap API is less verbose than hand writing it.
-> It also improves the semantic.
+Hi Geert!
+
+On Thu, 2023-03-23 at 11:18 +0100, Geert Uytterhoeven wrote:
+> The C implementations of __ashldi3(), __ashrdi3__(), and __lshrdi3() in
+> arch/sh/lib/ are identical to the generic C implementations in lib/.
+> Reduce duplication by switching SH to the generic versions.
 > 
-> Signed-off-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
+> Update the include path in arch/sh/boot/compressed accordingly.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Acked-by: Palmer Dabbelt <palmer@rivosinc.com>
 > ---
+> v3:
+>   - Add Acked-by,
+> 
 > v2:
->    - synch with latest linux-next because of 80f746e2bd0e which fixes a bug
-> ---
->  arch/sh/kernel/cpu/sh4/sq.c | 7 +++----
->  1 file changed, 3 insertions(+), 4 deletions(-)
+>   - Fix silly typo in subject.
 > 
-> diff --git a/arch/sh/kernel/cpu/sh4/sq.c b/arch/sh/kernel/cpu/sh4/sq.c
-> index 27f2e3da5aa2..d289e99dc118 100644
-> --- a/arch/sh/kernel/cpu/sh4/sq.c
-> +++ b/arch/sh/kernel/cpu/sh4/sq.c
-> @@ -372,7 +372,6 @@ static struct subsys_interface sq_interface = {
->  static int __init sq_api_init(void)
->  {
->  	unsigned int nr_pages = 0x04000000 >> PAGE_SHIFT;
-> -	unsigned int size = (nr_pages + (BITS_PER_LONG - 1)) / BITS_PER_LONG;
->  	int ret = -ENOMEM;
+> Tested on landisk and qemu/rts7751r2d.
+> 
+> Note that it also works without the change to arch/sh/boot/compressed/,
+> as lib/ashldi3.c can be reached via both include/uapi/../../lib/ashldi3.c
+> and arch/sh/boot/compressed/../../../../lib/ashldi3.c.
+> 
+> Palmer tried a similar thing before:
+> https://lore.kernel.org/linux-arch/20170523220546.16758-1-palmer@dabbelt.com/
+> but initially it broke the SH build due to a missing change to
+> arch/sh/boot/compressed/, and the later update never got picked up.
+> In the mean time, arch/sh/boot/compressed/ was changed, so his patch no
+> longer applies.
+> 
+> Similar for the other architectures, I guess?
+> ---
+>  arch/sh/Kconfig                   |  3 +++
+>  arch/sh/boot/compressed/ashldi3.c |  4 ++--
+>  arch/sh/lib/Makefile              |  4 +---
+>  arch/sh/lib/ashldi3.c             | 30 -----------------------------
+>  arch/sh/lib/ashrdi3.c             | 32 -------------------------------
+>  arch/sh/lib/lshrdi3.c             | 30 -----------------------------
+>  6 files changed, 6 insertions(+), 97 deletions(-)
+>  delete mode 100644 arch/sh/lib/ashldi3.c
+>  delete mode 100644 arch/sh/lib/ashrdi3.c
+>  delete mode 100644 arch/sh/lib/lshrdi3.c
+> 
+> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+> index ccb866750a884643..892903dc74990c36 100644
+> --- a/arch/sh/Kconfig
+> +++ b/arch/sh/Kconfig
+> @@ -20,6 +20,9 @@ config SUPERH
+>  	select GENERIC_CMOS_UPDATE if SH_SH03 || SH_DREAMCAST
+>  	select GENERIC_IDLE_POLL_SETUP
+>  	select GENERIC_IRQ_SHOW
+> +	select GENERIC_LIB_ASHLDI3
+> +	select GENERIC_LIB_ASHRDI3
+> +	select GENERIC_LIB_LSHRDI3
+>  	select GENERIC_PCI_IOMAP if PCI
+>  	select GENERIC_SCHED_CLOCK
+>  	select GENERIC_SMP_IDLE_THREAD
+> diff --git a/arch/sh/boot/compressed/ashldi3.c b/arch/sh/boot/compressed/ashldi3.c
+> index 7cebd646df839b48..7c12121702309e8c 100644
+> --- a/arch/sh/boot/compressed/ashldi3.c
+> +++ b/arch/sh/boot/compressed/ashldi3.c
+> @@ -1,2 +1,2 @@
+> -// SPDX-License-Identifier: GPL-2.0-only
+> -#include "../../lib/ashldi3.c"
+> +// SPDX-License-Identifier: GPL-2.0-or-later
+> +#include "../../../../lib/ashldi3.c"
+> diff --git a/arch/sh/lib/Makefile b/arch/sh/lib/Makefile
+> index eb473d373ca43a4b..d20a0768b31fa2b6 100644
+> --- a/arch/sh/lib/Makefile
+> +++ b/arch/sh/lib/Makefile
+> @@ -7,9 +7,7 @@ lib-y  = delay.o memmove.o memchr.o \
+>  	 checksum.o strlen.o div64.o div64-generic.o
 >  
->  	printk(KERN_NOTICE "sq: Registering store queue API.\n");
-> @@ -382,7 +381,7 @@ static int __init sq_api_init(void)
->  	if (unlikely(!sq_cache))
->  		return ret;
->  
-> -	sq_bitmap = kcalloc(size, sizeof(long), GFP_KERNEL);
-> +	sq_bitmap = bitmap_zalloc(nr_pages, GFP_KERNEL);
->  	if (unlikely(!sq_bitmap))
->  		goto out;
->  
-> @@ -393,7 +392,7 @@ static int __init sq_api_init(void)
->  	return 0;
->  
->  out:
-> -	kfree(sq_bitmap);
-> +	bitmap_free(sq_bitmap);
->  	kmem_cache_destroy(sq_cache);
->  
->  	return ret;
-> @@ -402,7 +401,7 @@ static int __init sq_api_init(void)
->  static void __exit sq_api_exit(void)
->  {
->  	subsys_interface_unregister(&sq_interface);
-> -	kfree(sq_bitmap);
-> +	bitmap_free(sq_bitmap);
->  	kmem_cache_destroy(sq_cache);
->  }
->  
+>  # Extracted from libgcc
+> -obj-y += movmem.o ashldi3.o ashrdi3.o lshrdi3.o \
+> -	 ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o \
+> -	 udiv_qrnnd.o
+> +obj-y += movmem.o ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o udiv_qrnnd.o
 
-Applied to my for-next branch for 6.4.
+Why are the single-precision (denoted as "si") variants not being replaced?
 
-Thanks,
+Don't we have generic versions for these?
+
 Adrian
 
 -- 
