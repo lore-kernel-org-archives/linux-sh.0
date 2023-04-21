@@ -2,61 +2,60 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 11418C77B75
-	for <linux-sh@archiver.kernel.org>; Fri, 21 Apr 2023 12:14:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E6B3C77B75
+	for <linux-sh@archiver.kernel.org>; Fri, 21 Apr 2023 12:19:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231845AbjDUMOi convert rfc822-to-8bit (ORCPT
+        id S231922AbjDUMT3 convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 21 Apr 2023 08:14:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54830 "EHLO
+        Fri, 21 Apr 2023 08:19:29 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58460 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229843AbjDUMOh (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 21 Apr 2023 08:14:37 -0400
-Received: from mail-yb1-f181.google.com (mail-yb1-f181.google.com [209.85.219.181])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 81BFE7D93;
-        Fri, 21 Apr 2023 05:14:35 -0700 (PDT)
-Received: by mail-yb1-f181.google.com with SMTP id 3f1490d57ef6-b992ed878ebso1928075276.0;
-        Fri, 21 Apr 2023 05:14:35 -0700 (PDT)
+        with ESMTP id S231537AbjDUMT2 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 21 Apr 2023 08:19:28 -0400
+Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com [209.85.128.179])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7EA199016;
+        Fri, 21 Apr 2023 05:19:27 -0700 (PDT)
+Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-54f851bcd4fso18321077b3.3;
+        Fri, 21 Apr 2023 05:19:27 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1682079274; x=1684671274;
+        d=1e100.net; s=20221208; t=1682079566; x=1684671566;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=rpGP5Ic7xgbtuWAjmqGMPKY1bCeKiuYvBRGEng3tVTI=;
-        b=XbCRSaginUwipaKBdY/XOMNasKG6wGN8PBehqW/1uy++/NfdnTp7hrtEMMjbl5gWvh
-         GS3q8MR/0kRPpQ03TSr2pTanOjALeeQq+/K5KqrPTiNdtooO9xrN/QAFGy+BmqgBLtrm
-         SerGcvmARt3wCaEmgo4nIZuRUNUyCuZOOOfqH/yDG0F1wQBfSs6thr3fMDSz6VAJSI7B
-         rovXRox/yRu3KXXz3xwQMZ9s3kqxaISY7iwkRCOEpAOGUogyqKblkj2blRnYSVr5P7h4
-         eH+rp7AXaZvY3uWr/apBKC0e1T+yCjkhFS4y6JAe39Oo6Ov1QL7cLmhsu4AXgcx8TJlP
-         /y7w==
-X-Gm-Message-State: AAQBX9eHKR49S0Y9j2hpU6eLVnHuAhGjOa+cBRKGEU/0vbyWh0am+TgD
-        oUVNGh/1AYpHDocdF7s5iLRhCoYLuNc8xtq6
-X-Google-Smtp-Source: AKy350Z+1cDxc7jwK0RKyI8MhwiZYmjnDO3bciT0yaOyFF6tOfIMFPGEzG/3n0dtZiDuWk+rQe2bcQ==
-X-Received: by 2002:a25:d254:0:b0:b8f:46d8:dfb1 with SMTP id j81-20020a25d254000000b00b8f46d8dfb1mr1743831ybg.4.1682079274466;
-        Fri, 21 Apr 2023 05:14:34 -0700 (PDT)
-Received: from mail-yb1-f170.google.com (mail-yb1-f170.google.com. [209.85.219.170])
-        by smtp.gmail.com with ESMTPSA id 124-20020a251482000000b00b9550fcb12fsm881146ybu.64.2023.04.21.05.14.34
+        bh=MBGPxGXW5B4PY2iHwEX+HXfd0m2xt7m/C36xWqTMiSA=;
+        b=AqFykgijJuqjGymMzP0RZqWP/wC1yXC7hsBygpbHU3oxn3p2bWtahMl41Ofaa/c43N
+         f2aI1n36BHTQkobRobG9oNTmG911+pEc4CjRLBrcrDhMIKV6X9KZV8N/UXt+m5FnsY5v
+         Pr9T+60bbG8zZm2PoQ3WcfNnLvO3wizfdwnr5lENQBo8PEUzu11FXx2zsrgBvfVXz1X9
+         PEhAdOQgZXl7YtVYs7hXJ9AvR8ml/KUx1JHGIiY5d5HFtAWfdDvE+TVtI+t5z2BoXC5j
+         fLKTz5w3JQAD8Z0be2vvGsX6tR+Z9DcsNkp/9RpINJqnNPUEHYlThtgx1ivK4u69CZlX
+         k2sQ==
+X-Gm-Message-State: AAQBX9dc+Wo2SmKcY7sW+YlIr2pfoKSLs6y/tvBHGEKp/x63tOOPAQvC
+        2uyKIf1s41OjPvnUlfNkRY4y0U2cP/IeHtP3
+X-Google-Smtp-Source: AKy350ZRuKSELWIE5Ozqt7iRdH+dDlFRPTbfRf9NJRDn9lhm70obydqAYCQI32ROUJ8nrvXq32KkfQ==
+X-Received: by 2002:a0d:ccd2:0:b0:54f:b4c2:bba9 with SMTP id o201-20020a0dccd2000000b0054fb4c2bba9mr1537793ywd.25.1682079566344;
+        Fri, 21 Apr 2023 05:19:26 -0700 (PDT)
+Received: from mail-yw1-f178.google.com (mail-yw1-f178.google.com. [209.85.128.178])
+        by smtp.gmail.com with ESMTPSA id d197-20020a814fce000000b0054f8de7c6f1sm920373ywb.70.2023.04.21.05.19.25
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 21 Apr 2023 05:14:34 -0700 (PDT)
-Received: by mail-yb1-f170.google.com with SMTP id 3f1490d57ef6-b992ed878ebso1927996276.0;
-        Fri, 21 Apr 2023 05:14:34 -0700 (PDT)
-X-Received: by 2002:a0d:d68d:0:b0:54f:9b37:c1af with SMTP id
- y135-20020a0dd68d000000b0054f9b37c1afmr1836713ywd.1.1682079274054; Fri, 21
- Apr 2023 05:14:34 -0700 (PDT)
+        Fri, 21 Apr 2023 05:19:25 -0700 (PDT)
+Received: by mail-yw1-f178.google.com with SMTP id 00721157ae682-54f99770f86so18372957b3.1;
+        Fri, 21 Apr 2023 05:19:25 -0700 (PDT)
+X-Received: by 2002:a81:65c6:0:b0:52e:cd73:f927 with SMTP id
+ z189-20020a8165c6000000b0052ecd73f927mr1487441ywb.48.1682079565541; Fri, 21
+ Apr 2023 05:19:25 -0700 (PDT)
 MIME-Version: 1.0
-References: <74dbe68dc8e2ffb6180092f73723fe21ab692c7a.1679566500.git.geert+renesas@glider.be>
- <434fe02c2c774ae4d1694ff222884bc5d5fc25e6.camel@physik.fu-berlin.de>
-In-Reply-To: <434fe02c2c774ae4d1694ff222884bc5d5fc25e6.camel@physik.fu-berlin.de>
+References: <26932016c83c2ad350db59f5daf96117a38bbbd8.1679566927.git.geert@linux-m68k.org>
+ <cfcfc689de8480a3ab0a03826e4c95f22c5af937.camel@physik.fu-berlin.de>
+In-Reply-To: <cfcfc689de8480a3ab0a03826e4c95f22c5af937.camel@physik.fu-berlin.de>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Fri, 21 Apr 2023 14:14:22 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdW72T=OU0iEtbAjHqYUv_k0+xe8NeUod4BhzNTUqoPH6A@mail.gmail.com>
-Message-ID: <CAMuHMdW72T=OU0iEtbAjHqYUv_k0+xe8NeUod4BhzNTUqoPH6A@mail.gmail.com>
-Subject: Re: [PATCH v3] sh: Use generic GCC library routines
+Date:   Fri, 21 Apr 2023 14:19:14 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdV_oZDe-FWLHPKaqEdMZRcumbNbaf6PY6HTUzF6YmNmJw@mail.gmail.com>
+Message-ID: <CAMuHMdV_oZDe-FWLHPKaqEdMZRcumbNbaf6PY6HTUzF6YmNmJw@mail.gmail.com>
+Subject: Re: [PATCH v2] sh: Replace <uapi/asm/types.h> by <asm-generic/int-ll64.h>
 To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Palmer Dabbelt <palmer@rivosinc.com>, linux-sh@vger.kernel.org,
-        linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 Precedence: bulk
@@ -65,35 +64,42 @@ X-Mailing-List: linux-sh@vger.kernel.org
 
 Hi Adrian,
 
-On Fri, Apr 21, 2023 at 1:03 PM John Paul Adrian Glaubitz
+On Fri, Apr 21, 2023 at 1:14 PM John Paul Adrian Glaubitz
 <glaubitz@physik.fu-berlin.de> wrote:
-> On Thu, 2023-03-23 at 11:18 +0100, Geert Uytterhoeven wrote:
-> > The C implementations of __ashldi3(), __ashrdi3__(), and __lshrdi3() in
-> > arch/sh/lib/ are identical to the generic C implementations in lib/.
-> > Reduce duplication by switching SH to the generic versions.
+> On Thu, 2023-03-23 at 11:22 +0100, Geert Uytterhoeven wrote:
+> > As arch/sh/include/uapi/asm/types.h doesn't exist, sh doesn't provide
+> > any sh-specific uapi definitions, and it can just include
+> > <asm-generic/int-ll64.h>, like most other architectures.
 > >
-> > Update the include path in arch/sh/boot/compressed accordingly.
+> > Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+> > ---
+> > v2:
+> >   - Rebased for SPDX-License-Identifier addition in 2017.
 > >
-> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > Acked-by: Palmer Dabbelt <palmer@rivosinc.com>
-
-> > --- a/arch/sh/lib/Makefile
-> > +++ b/arch/sh/lib/Makefile
-> > @@ -7,9 +7,7 @@ lib-y  = delay.o memmove.o memchr.o \
-> >        checksum.o strlen.o div64.o div64-generic.o
+> >  arch/sh/include/asm/types.h | 2 +-
+> >  1 file changed, 1 insertion(+), 1 deletion(-)
 > >
-> >  # Extracted from libgcc
-> > -obj-y += movmem.o ashldi3.o ashrdi3.o lshrdi3.o \
-> > -      ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o \
-> > -      udiv_qrnnd.o
-> > +obj-y += movmem.o ashlsi3.o ashrsi3.o ashiftrt.o lshrsi3.o udiv_qrnnd.o
+> > diff --git a/arch/sh/include/asm/types.h b/arch/sh/include/asm/types.h
+> > index 68eb24ad201383ef..9b3fc923ee28701c 100644
+> > --- a/arch/sh/include/asm/types.h
+> > +++ b/arch/sh/include/asm/types.h
+> > @@ -2,7 +2,7 @@
+> >  #ifndef __ASM_SH_TYPES_H
+> >  #define __ASM_SH_TYPES_H
+> >
+> > -#include <uapi/asm/types.h>
+> > +#include <asm-generic/int-ll64.h>
+> >
+> >  /*
+> >   * These aren't exported outside the kernel to avoid name space clashes
 >
-> Why are the single-precision (denoted as "si") variants not being replaced?
->
-> Don't we have generic versions for these?
+> It seems that many (most?) architectures don't even provide their own types.h
+> header. Does it even make sense to still carry that header or can it be provided
+> from somewhere else?
 
-Because they are written in assembler, and thus different from generic
-versions, and because Linux does not include generic versions for these.
+SH does because it defines extra types {insn,reg}_size_t.
+We can get rid of it by moving these extra types elsewhere, but is that
+worth the effort?
 
 Gr{oetje,eeting}s,
 
