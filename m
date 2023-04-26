@@ -2,143 +2,147 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1F55CC77B61
-	for <linux-sh@archiver.kernel.org>; Tue, 25 Apr 2023 16:10:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A4212C7618E
+	for <linux-sh@archiver.kernel.org>; Wed, 26 Apr 2023 09:31:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233838AbjDYQKt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 25 Apr 2023 12:10:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47000 "EHLO
+        id S239947AbjDZJbO convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 26 Apr 2023 05:31:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55682 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234477AbjDYQKr (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 25 Apr 2023 12:10:47 -0400
-Received: from mail-lj1-x233.google.com (mail-lj1-x233.google.com [IPv6:2a00:1450:4864:20::233])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F13BE16197
-        for <linux-sh@vger.kernel.org>; Tue, 25 Apr 2023 09:10:34 -0700 (PDT)
-Received: by mail-lj1-x233.google.com with SMTP id 38308e7fff4ca-2aa39ce5d26so50464111fa.1
-        for <linux-sh@vger.kernel.org>; Tue, 25 Apr 2023 09:10:34 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linuxtx.org; s=google; t=1682439033; x=1685031033;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:sender:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=gzBCWhkUry18zVOWXW5QyNYiFJMq+EJv8KjCsvLzxVI=;
-        b=QMkIWwlSa1dFqjZNAvY1XABYARSvvJqstr6B3FBYxnYeEZbMDFWIcbcX289rr+ND5z
-         ZQJCn1lqGn87wlPR/gIR1F+JWxMSOcLRF2PDHJ6MJTwRrd7AutqRm+TTOaEeBT3sRMYQ
-         yzPmvWLbEoY0UXf2J2QHnMJHIPXTROKg9jOH8=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1682439033; x=1685031033;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:sender:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=gzBCWhkUry18zVOWXW5QyNYiFJMq+EJv8KjCsvLzxVI=;
-        b=Oqsg82B/M5MbNQzd4WfK8muIinik1J1C7sMzhAr4vlEEk7Wyz60OhpsWCQvub91Us6
-         dsq4C5dDcadSBBdjlqpiNlNmL72tw25tOkP6ZV73GwuHKbby8CpZt7wN0Ayfyzk3YkJp
-         hAh9czLr7rIq2AAR9zA952ltTh05Z84T88Bf1vfdFKZLeo4SHUtb6gNuY4wLtCjowqhp
-         tLJBZj5y7XQKCvWnTn9f75AoVsebJ2C44a6BwfKuRP72WQwFpvdm0sqaaLcJr+cJSQrR
-         stAVyk3PBqrr0a1tOe53No19FKlp+0eZEX9AGtr9I2FsL4Ws1na80v2HAKpe6wsVHCqi
-         +2HA==
-X-Gm-Message-State: AAQBX9dXoJM2jC/K8vOU9P8Rdwn3ZDvtTRiHZwg16KVqccSTUhlU9O6c
-        thpVYWCK1RIWbE3QdGUG00004WDzDnSXUrnDRfbZjzoq
-X-Google-Smtp-Source: AKy350ZOZ/yZ7B6fMyOxlP9ychViPWdg1WR/+cHqdfssZw7yKyps+lDXsK5UF1hjvDF/PSmNcDaRRg==
-X-Received: by 2002:a2e:7003:0:b0:2a8:d3bb:2d83 with SMTP id l3-20020a2e7003000000b002a8d3bb2d83mr3283548ljc.42.1682439032930;
-        Tue, 25 Apr 2023 09:10:32 -0700 (PDT)
-Received: from mail-lf1-f54.google.com (mail-lf1-f54.google.com. [209.85.167.54])
-        by smtp.gmail.com with ESMTPSA id u21-20020a2e8455000000b002a8e8c776e9sm2147654ljh.56.2023.04.25.09.10.31
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 25 Apr 2023 09:10:32 -0700 (PDT)
-Sender: Justin Forbes <jmforbes@linuxtx.org>
-Received: by mail-lf1-f54.google.com with SMTP id 2adb3069b0e04-4efefbd2c5eso3191180e87.0
-        for <linux-sh@vger.kernel.org>; Tue, 25 Apr 2023 09:10:31 -0700 (PDT)
-X-Received: by 2002:a05:6512:145:b0:4d7:44c9:9f4c with SMTP id
- m5-20020a056512014500b004d744c99f4cmr4233943lfo.4.1682439010843; Tue, 25 Apr
- 2023 09:10:10 -0700 (PDT)
-MIME-Version: 1.0
-References: <20230325060828.2662773-1-rppt@kernel.org> <20230325060828.2662773-3-rppt@kernel.org>
- <CAFxkdAr5C7ggZ+WdvDbsfmwuXujT_z_x3qcUnhnCn-WrAurvgA@mail.gmail.com>
- <ZCvQGJzdED+An8an@kernel.org> <CAFbkSA38eTA_iJ3ttBvQ8G4Rjj8qB12GxY7Z=qmZ8wm+0tZieA@mail.gmail.com>
- <ZDbp7LAHES3YFo30@arm.com> <20230418150557.ea8c87c96ec64c899c88ab08@linux-foundation.org>
-In-Reply-To: <20230418150557.ea8c87c96ec64c899c88ab08@linux-foundation.org>
-From:   Justin Forbes <jforbes@fedoraproject.org>
-Date:   Tue, 25 Apr 2023 11:09:58 -0500
-X-Gmail-Original-Message-ID: <CAFbkSA2hU+2V0i5OG0BBD-s3yNOAZwBmyGmxMLkbzoWZK6cxOQ@mail.gmail.com>
-Message-ID: <CAFbkSA2hU+2V0i5OG0BBD-s3yNOAZwBmyGmxMLkbzoWZK6cxOQ@mail.gmail.com>
-Subject: Re: [PATCH v3 02/14] arm64: drop ranges in definition of ARCH_FORCE_MAX_ORDER
-To:     Andrew Morton <akpm@linux-foundation.org>
-Cc:     Catalin Marinas <catalin.marinas@arm.com>,
-        Mike Rapoport <rppt@kernel.org>, Arnd Bergmann <arnd@arndb.de>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        "David S. Miller" <davem@davemloft.net>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Guo Ren <guoren@kernel.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
+        with ESMTP id S239543AbjDZJbN (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 26 Apr 2023 05:31:13 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3BAA319F;
+        Wed, 26 Apr 2023 02:31:11 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1prbUH-002IGg-SU; Wed, 26 Apr 2023 11:30:57 +0200
+Received: from p5b13a35e.dip0.t-ipconnect.de ([91.19.163.94] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1prbUH-003KgH-LD; Wed, 26 Apr 2023 11:30:57 +0200
+Message-ID: <7ba5e47fd342b596937022a207ea630ab692a8a9.camel@physik.fu-berlin.de>
+Subject: [GIT PULL] sh updates for v6.4
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Linus Torvalds <torvalds@linux-foundation.org>
+Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Randy Dunlap <rdunlap@infradead.org>,
+        Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
         Rich Felker <dalias@libc.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Will Deacon <will@kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Zi Yan <ziy@nvidia.com>, linux-arm-kernel@lists.infradead.org,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mm@kvack.org, linux-sh@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org,
-        sparclinux@vger.kernel.org
+        linux-sh@vger.kernel.org,
+        linux-kernel <linux-kernel@vger.kernel.org>
+Date:   Wed, 26 Apr 2023 11:30:56 +0200
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.1 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.19.163.94
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Apr 18, 2023 at 5:22=E2=80=AFPM Andrew Morton <akpm@linux-foundatio=
-n.org> wrote:
->
-> On Wed, 12 Apr 2023 18:27:08 +0100 Catalin Marinas <catalin.marinas@arm.c=
-om> wrote:
->
-> > > It sounds nice in theory. In practice. EXPERT hides too much. When yo=
-u
-> > > flip expert, you expose over a 175ish new config options which are
-> > > hidden behind EXPERT.  You don't have to know what you are doing just
-> > > with the MAX_ORDER, but a whole bunch more as well.  If everyone were
-> > > already running 10, this might be less of a problem. At least Fedora
-> > > and RHEL are running 13 for 4K pages on aarch64. This was not some
-> > > accidental choice, we had to carry a patch to even allow it for a
-> > > while.  If this does go in as is, we will likely just carry a patch t=
-o
-> > > remove the "if EXPERT", but that is a bit of a disservice to users wh=
-o
-> > > might be trying to debug something else upstream, bisecting upstream
-> > > kernels or testing a patch.  In those cases, people tend to use
-> > > pristine upstream sources without distro patches to verify, and they
-> > > tend to use their existing configs. With this change, their MAX_ORDER
-> > > will drop to 10 from 13 silently.   That can look like a different
-> > > issue enough to ruin a bisect or have them give bad feedback on a
-> > > patch because it introduces a "regression" which is not a regression
-> > > at all, but a config change they couldn't see.
-> >
-> > If we remove EXPERT (as prior to this patch), I'd rather keep the range=
-s
-> > and avoid having to explain to people why some random MAX_ORDER doesn't
-> > build (keeping the range would also make sense for randconfig, not sure
-> > we got to any conclusion there).
->
-> Well this doesn't seem to have got anywhere.  I think I'll send the
-> patchset into Linus for the next merge window as-is.  Please let's take
-> a look at this Kconfig presentation issue during the following -rc
-> cycle.
+Hi Linus!
 
-Well, I am very sorry to see this going in as is.  It will silently
-change people building with oldconfig, and anyone not paying attention
-will not notice until an issue is hit where "it worked before, and my
-config hasn't changed".  If EXPERT is unset, there is no notification,
-just a changed behavior.  While it would be easy for me to carry a
-patch dropping the if EXPERT, it will not help any users building on
-upstream with our configs, whether for their own regular use, or while
-trying to debug other issues,  I expect it will result in a reasonable
-amount of frustration from users trying to do the right thing and
-bisect or test patches upstream.
+This pull request is a bit larger than my previous one and mainly consists of
+clean-up work in the arch/sh directory by Geert Uytterhoeven and Randy Dunlap.
 
-Justin
+Additionally, this PR fixes a bug in the Storage Queue code that was discovered
+while I was reviewing a patch to switch the code to the bitmap API by Christophe
+Jaillet.
+
+Thus, the PR contains both a fix for the original bug in the Storage Queue code
+that can be backported later as well as the Christophe's patch to swich the code
+to the bitmap API.
+
+The following changes since commit fe15c26ee26efa11741a7b632e9f23b01aca4cc6:
+
+  Linux 6.3-rc1 (2023-03-05 14:52:03 -0800)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.4-tag1
+
+for you to fetch changes up to e5c23bec0f121b4160dc8ca61e751e734652bd05:
+
+  sh: Replace <uapi/asm/types.h> by <asm-generic/int-ll64.h> (2023-04-25 09:16:51 +0200)
+
+Thanks for pulling!
+
+Adrian
+
+----------------------------------------------------------------
+sh updates for v6.4
+
+- sh: Use generic GCC library routines
+- sh: sq: Use the bitmap API when applicable
+- sh: sq: Fix incorrect element size for allocating bitmap buffer
+- sh: pci: Remove unused variable in SH-7786 PCI Express code
+- sh: mcount.S: fix build error when PRINTK is not enabled
+- sh: remove sh5/sh64 last fragments
+- sh: math-emu: fix macro redefined warning
+- sh: init: use OF_EARLY_FLATTREE for early init
+- sh: nmi_debug: fix return value of __setup handler
+- sh: SH2007: drop the bad URL info
+
+----------------------------------------------------------------
+Christophe JAILLET (1):
+      sh: sq: Use the bitmap API when applicable
+
+Geert Uytterhoeven (2):
+      sh: Use generic GCC library routines
+      sh: Replace <uapi/asm/types.h> by <asm-generic/int-ll64.h>
+
+John Paul Adrian Glaubitz (2):
+      sh: pci: Remove unused variable in SH-7786 PCI Express code
+      sh: sq: Fix incorrect element size for allocating bitmap buffer
+
+Randy Dunlap (6):
+      sh: SH2007: drop the bad URL info
+      sh: nmi_debug: fix return value of __setup handler
+      sh: init: use OF_EARLY_FLATTREE for early init
+      sh: math-emu: fix macro redefined warning
+      sh: remove sh5/sh64 last fragments
+      sh: mcount.S: fix build error when PRINTK is not enabled
+
+ Documentation/kbuild/kbuild.rst                    |  1 -
+ Documentation/scheduler/sched-arch.rst             |  2 --
+ .../translations/zh_CN/scheduler/sched-arch.rst    |  2 --
+ arch/sh/Kconfig                                    |  3 ++
+ arch/sh/Kconfig.debug                              |  2 +-
+ arch/sh/boards/Kconfig                             |  1 -
+ arch/sh/boot/compressed/ashldi3.c                  |  4 +--
+ arch/sh/drivers/pci/pcie-sh7786.c                  |  1 -
+ arch/sh/include/asm/types.h                        |  2 +-
+ arch/sh/kernel/cpu/sh4/sq.c                        |  7 ++---
+ arch/sh/kernel/head_32.S                           |  6 ++--
+ arch/sh/kernel/nmi_debug.c                         |  4 +--
+ arch/sh/kernel/setup.c                             |  4 +--
+ arch/sh/lib/Makefile                               |  4 +--
+ arch/sh/lib/ashldi3.c                              | 30 --------------------
+ arch/sh/lib/ashrdi3.c                              | 32 ----------------------
+ arch/sh/lib/lshrdi3.c                              | 30 --------------------
+ arch/sh/math-emu/sfp-util.h                        |  4 ---
+ scripts/checkstack.pl                              |  7 -----
+ tools/perf/arch/common.c                           |  2 --
+ tools/scripts/Makefile.arch                        |  5 ----
+ tools/testing/selftests/mm/Makefile                |  2 +-
+ tools/testing/selftests/mm/run_vmtests.sh          |  2 +-
+ 23 files changed, 20 insertions(+), 137 deletions(-)
+ delete mode 100644 arch/sh/lib/ashldi3.c
+ delete mode 100644 arch/sh/lib/ashrdi3.c
+ delete mode 100644 arch/sh/lib/lshrdi3.c
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
