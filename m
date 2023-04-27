@@ -2,61 +2,119 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6699DC77B61
-	for <linux-sh@archiver.kernel.org>; Thu, 27 Apr 2023 08:08:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 047C4C77B7F
+	for <linux-sh@archiver.kernel.org>; Thu, 27 Apr 2023 13:40:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233083AbjD0II0 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 27 Apr 2023 04:08:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36180 "EHLO
+        id S243549AbjD0Nkd (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 27 Apr 2023 09:40:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49756 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232094AbjD0IIZ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 27 Apr 2023 04:08:25 -0400
-Received: from mail.loanfly.pl (mail.loanfly.pl [141.94.250.68])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7E5672D71
-        for <linux-sh@vger.kernel.org>; Thu, 27 Apr 2023 01:08:24 -0700 (PDT)
-Received: by mail.loanfly.pl (Postfix, from userid 1002)
-        id 49529A77B5; Thu, 27 Apr 2023 08:06:02 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=loanfly.pl; s=mail;
-        t=1682582808; bh=flSgn4+IJB03yMaHNopPnR0v50wun3P5Hd/CkHJx2Bc=;
-        h=Date:From:To:Subject:From;
-        b=bmDeUevjQHnPL+6fP+32DZBkH1HEegKvRczmkEipQ7LFP2N/LVIVkirJ47HocPpQQ
-         WE+VPdd4Zb0l6NvSnaWM5IjpVU/9zhuTvIPmhaQL0CPjylSs0M05iqhZ4HwCiVJM3R
-         d6RLC8Hkgwo6ACOtc0S4dfEveBXJACnkeV15h8MULrv/aYuqrfGQNrUNx50OLY4NiC
-         IGYAVPXQK48vL1FNSkDqC6O5apA8syc+/vgdkPJJgQqVu8NgVlL51PTdG5JxpdY2Vz
-         iowwM7RzZbd1yGKdHJITbikPv4Jc27yHBtvHEpvcOLx5zBSEEJwgOAGCB8oEWBSNRq
-         ONk0/+TgLfBAA==
-Received: by mail.loanfly.pl for <linux-sh@vger.kernel.org>; Thu, 27 Apr 2023 08:05:41 GMT
-Message-ID: <20230427064432-0.1.9t.16lao.0.gk4940opml@loanfly.pl>
-Date:   Thu, 27 Apr 2023 08:05:41 GMT
-From:   "Damian Cichocki" <damian.cichocki@loanfly.pl>
-To:     <linux-sh@vger.kernel.org>
-Subject: Prezentacja
-X-Mailer: mail.loanfly.pl
+        with ESMTP id S243467AbjD0Nkb (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 27 Apr 2023 09:40:31 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5882644AE;
+        Thu, 27 Apr 2023 06:40:25 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id E45CE611B3;
+        Thu, 27 Apr 2023 13:40:24 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id DF907C433EF;
+        Thu, 27 Apr 2023 13:40:19 +0000 (UTC)
+Date:   Thu, 27 Apr 2023 14:40:16 +0100
+From:   Catalin Marinas <catalin.marinas@arm.com>
+To:     Justin Forbes <jforbes@fedoraproject.org>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Mike Rapoport <rppt@kernel.org>, Arnd Bergmann <arnd@arndb.de>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        "David S. Miller" <davem@davemloft.net>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Guo Ren <guoren@kernel.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Rich Felker <dalias@libc.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Will Deacon <will@kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Zi Yan <ziy@nvidia.com>, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mm@kvack.org, linux-sh@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org,
+        sparclinux@vger.kernel.org
+Subject: Re: [PATCH v3 02/14] arm64: drop ranges in definition of
+ ARCH_FORCE_MAX_ORDER
+Message-ID: <ZEp7QCZx27MuFYUb@arm.com>
+References: <20230325060828.2662773-1-rppt@kernel.org>
+ <20230325060828.2662773-3-rppt@kernel.org>
+ <CAFxkdAr5C7ggZ+WdvDbsfmwuXujT_z_x3qcUnhnCn-WrAurvgA@mail.gmail.com>
+ <ZCvQGJzdED+An8an@kernel.org>
+ <CAFbkSA38eTA_iJ3ttBvQ8G4Rjj8qB12GxY7Z=qmZ8wm+0tZieA@mail.gmail.com>
+ <ZDbp7LAHES3YFo30@arm.com>
+ <20230418150557.ea8c87c96ec64c899c88ab08@linux-foundation.org>
+ <CAFbkSA2hU+2V0i5OG0BBD-s3yNOAZwBmyGmxMLkbzoWZK6cxOQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CAFbkSA2hU+2V0i5OG0BBD-s3yNOAZwBmyGmxMLkbzoWZK6cxOQ@mail.gmail.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Dzie=C5=84 dobry!
+On Tue, Apr 25, 2023 at 11:09:58AM -0500, Justin Forbes wrote:
+> On Tue, Apr 18, 2023 at 5:22 PM Andrew Morton <akpm@linux-foundation.org> wrote:
+> > On Wed, 12 Apr 2023 18:27:08 +0100 Catalin Marinas <catalin.marinas@arm.com> wrote:
+> > > > It sounds nice in theory. In practice. EXPERT hides too much. When you
+> > > > flip expert, you expose over a 175ish new config options which are
+> > > > hidden behind EXPERT.  You don't have to know what you are doing just
+> > > > with the MAX_ORDER, but a whole bunch more as well.  If everyone were
+> > > > already running 10, this might be less of a problem. At least Fedora
+> > > > and RHEL are running 13 for 4K pages on aarch64. This was not some
+> > > > accidental choice, we had to carry a patch to even allow it for a
+> > > > while.  If this does go in as is, we will likely just carry a patch to
+> > > > remove the "if EXPERT", but that is a bit of a disservice to users who
+> > > > might be trying to debug something else upstream, bisecting upstream
+> > > > kernels or testing a patch.  In those cases, people tend to use
+> > > > pristine upstream sources without distro patches to verify, and they
+> > > > tend to use their existing configs. With this change, their MAX_ORDER
+> > > > will drop to 10 from 13 silently.   That can look like a different
+> > > > issue enough to ruin a bisect or have them give bad feedback on a
+> > > > patch because it introduces a "regression" which is not a regression
+> > > > at all, but a config change they couldn't see.
+> > >
+> > > If we remove EXPERT (as prior to this patch), I'd rather keep the ranges
+> > > and avoid having to explain to people why some random MAX_ORDER doesn't
+> > > build (keeping the range would also make sense for randconfig, not sure
+> > > we got to any conclusion there).
+> >
+> > Well this doesn't seem to have got anywhere.  I think I'll send the
+> > patchset into Linus for the next merge window as-is.  Please let's take
+> > a look at this Kconfig presentation issue during the following -rc
+> > cycle.
+> 
+> Well, I am very sorry to see this going in as is.  It will silently
+> change people building with oldconfig, and anyone not paying attention
+> will not notice until an issue is hit where "it worked before, and my
+> config hasn't changed".  If EXPERT is unset, there is no notification,
+> just a changed behavior.  While it would be easy for me to carry a
+> patch dropping the if EXPERT, it will not help any users building on
+> upstream with our configs, whether for their own regular use, or while
+> trying to debug other issues,  I expect it will result in a reasonable
+> amount of frustration from users trying to do the right thing and
+> bisect or test patches upstream.
 
-Czy m=C3=B3g=C5=82bym przedstawi=C4=87 rozwi=C4=85zanie, kt=C3=B3re umo=C5=
-=BCliwia monitoring ka=C5=BCdego auta w czasie rzeczywistym w tym jego po=
-zycj=C4=99, zu=C5=BCycie paliwa i przebieg?
+As I said in a previous reply, I'm fine with reverting this commit if it
+breaks existing configs. It's only that Andrew had already queued it in
+his tree but we have time until the final 6.4 kernel is released.
 
-Dodatkowo nasze narz=C4=99dzie minimalizuje koszty utrzymania samochod=C3=
-=B3w, skraca czas przejazd=C3=B3w, a tak=C5=BCe tworzenie planu tras czy =
-dostaw.
+That said, would you mind sending a patch reverting it (if removing
+EXPERT, I'd like to keep the ranges)? ;)
 
-Z naszej wiedzy i do=C5=9Bwiadczenia korzysta ju=C5=BC ponad 49 tys. Klie=
-nt=C3=B3w. Monitorujemy 809 000 pojazd=C3=B3w na ca=C5=82ym =C5=9Bwiecie,=
- co jest nasz=C4=85 najlepsz=C4=85 wizyt=C3=B3wk=C4=85.
+Thanks.
 
-Bardzo prosz=C4=99 o e-maila zwrotnego, je=C5=9Bli mogliby=C5=9Bmy wsp=C3=
-=B3lnie om=C3=B3wi=C4=87 potencja=C5=82 wykorzystania takiego rozwi=C4=85=
-zania w Pa=C5=84stwa firmie.
-
-
-Pozdrawiam,
-Damian Cichocki
+-- 
+Catalin
