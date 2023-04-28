@@ -2,119 +2,73 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 047C4C77B7F
-	for <linux-sh@archiver.kernel.org>; Thu, 27 Apr 2023 13:40:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EA70EC77B61
+	for <linux-sh@archiver.kernel.org>; Fri, 28 Apr 2023 00:50:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243549AbjD0Nkd (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 27 Apr 2023 09:40:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49756 "EHLO
+        id S1344549AbjD1Au6 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 27 Apr 2023 20:50:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43434 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243467AbjD0Nkb (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 27 Apr 2023 09:40:31 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5882644AE;
-        Thu, 27 Apr 2023 06:40:25 -0700 (PDT)
+        with ESMTP id S1344544AbjD1Au5 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 27 Apr 2023 20:50:57 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D2C5340DB;
+        Thu, 27 Apr 2023 17:50:56 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id E45CE611B3;
-        Thu, 27 Apr 2023 13:40:24 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DF907C433EF;
-        Thu, 27 Apr 2023 13:40:19 +0000 (UTC)
-Date:   Thu, 27 Apr 2023 14:40:16 +0100
-From:   Catalin Marinas <catalin.marinas@arm.com>
-To:     Justin Forbes <jforbes@fedoraproject.org>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Mike Rapoport <rppt@kernel.org>, Arnd Bergmann <arnd@arndb.de>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        "David S. Miller" <davem@davemloft.net>,
-        Dinh Nguyen <dinguyen@kernel.org>,
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 6E6916409A;
+        Fri, 28 Apr 2023 00:50:56 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPS id CEE62C433EF;
+        Fri, 28 Apr 2023 00:50:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1682643055;
+        bh=kPHHvsN4zl+1kkKbcWKddFCwf8k3VVH0IxthkflkTEo=;
+        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
+        b=NH+/XQxrQuqyApsT0OTgtHXbw7FtBeATGYqLqvvBcJFWHx2Zg/vU7NVTH5tKWefmg
+         K6phdgBH12h6h6GCeQVEjKAH1uGvsip72QXXF5HPG1OeLVCyBy6tcnenSTRNomK2cZ
+         v0vaMVCG2CGc20NpyclCBAIwovAfteDWqcp7zVkr/7Da84ELVD62igW69C7lyQG8+w
+         hgtOf/4YFkXNMueSUfaGpnc/hIcdqIMLUfqN46DkJ9UV2tIOXO77uOySXIxwYNvPxB
+         cnKhQ30h3kQmd17keCLqLZbSIhB1guuhhw1ezDM6Z0q3g6UJQz2V+m4+8E6fyOzm3g
+         GXh5glTTUGm4A==
+Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
+        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id BC468E5FFC8;
+        Fri, 28 Apr 2023 00:50:55 +0000 (UTC)
+Subject: Re: [GIT PULL] sh updates for v6.4
+From:   pr-tracker-bot@kernel.org
+In-Reply-To: <7ba5e47fd342b596937022a207ea630ab692a8a9.camel@physik.fu-berlin.de>
+References: <7ba5e47fd342b596937022a207ea630ab692a8a9.camel@physik.fu-berlin.de>
+X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
+X-PR-Tracked-Message-Id: <7ba5e47fd342b596937022a207ea630ab692a8a9.camel@physik.fu-berlin.de>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.4-tag1
+X-PR-Tracked-Commit-Id: e5c23bec0f121b4160dc8ca61e751e734652bd05
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 513f17f8d6b67563d977c730d50bc0db6ea6e1b0
+Message-Id: <168264305576.17833.12394640784363981694.pr-tracker-bot@kernel.org>
+Date:   Fri, 28 Apr 2023 00:50:55 +0000
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
-        Guo Ren <guoren@kernel.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
+        Randy Dunlap <rdunlap@infradead.org>,
+        Christophe JAILLET <christophe.jaillet@wanadoo.fr>,
         Rich Felker <dalias@libc.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Will Deacon <will@kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Zi Yan <ziy@nvidia.com>, linux-arm-kernel@lists.infradead.org,
-        linux-csky@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mm@kvack.org, linux-sh@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org, linuxppc-dev@lists.ozlabs.org,
-        sparclinux@vger.kernel.org
-Subject: Re: [PATCH v3 02/14] arm64: drop ranges in definition of
- ARCH_FORCE_MAX_ORDER
-Message-ID: <ZEp7QCZx27MuFYUb@arm.com>
-References: <20230325060828.2662773-1-rppt@kernel.org>
- <20230325060828.2662773-3-rppt@kernel.org>
- <CAFxkdAr5C7ggZ+WdvDbsfmwuXujT_z_x3qcUnhnCn-WrAurvgA@mail.gmail.com>
- <ZCvQGJzdED+An8an@kernel.org>
- <CAFbkSA38eTA_iJ3ttBvQ8G4Rjj8qB12GxY7Z=qmZ8wm+0tZieA@mail.gmail.com>
- <ZDbp7LAHES3YFo30@arm.com>
- <20230418150557.ea8c87c96ec64c899c88ab08@linux-foundation.org>
- <CAFbkSA2hU+2V0i5OG0BBD-s3yNOAZwBmyGmxMLkbzoWZK6cxOQ@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAFbkSA2hU+2V0i5OG0BBD-s3yNOAZwBmyGmxMLkbzoWZK6cxOQ@mail.gmail.com>
+        linux-sh@vger.kernel.org,
+        linux-kernel <linux-kernel@vger.kernel.org>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Apr 25, 2023 at 11:09:58AM -0500, Justin Forbes wrote:
-> On Tue, Apr 18, 2023 at 5:22 PM Andrew Morton <akpm@linux-foundation.org> wrote:
-> > On Wed, 12 Apr 2023 18:27:08 +0100 Catalin Marinas <catalin.marinas@arm.com> wrote:
-> > > > It sounds nice in theory. In practice. EXPERT hides too much. When you
-> > > > flip expert, you expose over a 175ish new config options which are
-> > > > hidden behind EXPERT.  You don't have to know what you are doing just
-> > > > with the MAX_ORDER, but a whole bunch more as well.  If everyone were
-> > > > already running 10, this might be less of a problem. At least Fedora
-> > > > and RHEL are running 13 for 4K pages on aarch64. This was not some
-> > > > accidental choice, we had to carry a patch to even allow it for a
-> > > > while.  If this does go in as is, we will likely just carry a patch to
-> > > > remove the "if EXPERT", but that is a bit of a disservice to users who
-> > > > might be trying to debug something else upstream, bisecting upstream
-> > > > kernels or testing a patch.  In those cases, people tend to use
-> > > > pristine upstream sources without distro patches to verify, and they
-> > > > tend to use their existing configs. With this change, their MAX_ORDER
-> > > > will drop to 10 from 13 silently.   That can look like a different
-> > > > issue enough to ruin a bisect or have them give bad feedback on a
-> > > > patch because it introduces a "regression" which is not a regression
-> > > > at all, but a config change they couldn't see.
-> > >
-> > > If we remove EXPERT (as prior to this patch), I'd rather keep the ranges
-> > > and avoid having to explain to people why some random MAX_ORDER doesn't
-> > > build (keeping the range would also make sense for randconfig, not sure
-> > > we got to any conclusion there).
-> >
-> > Well this doesn't seem to have got anywhere.  I think I'll send the
-> > patchset into Linus for the next merge window as-is.  Please let's take
-> > a look at this Kconfig presentation issue during the following -rc
-> > cycle.
-> 
-> Well, I am very sorry to see this going in as is.  It will silently
-> change people building with oldconfig, and anyone not paying attention
-> will not notice until an issue is hit where "it worked before, and my
-> config hasn't changed".  If EXPERT is unset, there is no notification,
-> just a changed behavior.  While it would be easy for me to carry a
-> patch dropping the if EXPERT, it will not help any users building on
-> upstream with our configs, whether for their own regular use, or while
-> trying to debug other issues,  I expect it will result in a reasonable
-> amount of frustration from users trying to do the right thing and
-> bisect or test patches upstream.
+The pull request you sent on Wed, 26 Apr 2023 11:30:56 +0200:
 
-As I said in a previous reply, I'm fine with reverting this commit if it
-breaks existing configs. It's only that Andrew had already queued it in
-his tree but we have time until the final 6.4 kernel is released.
+> git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.4-tag1
 
-That said, would you mind sending a patch reverting it (if removing
-EXPERT, I'd like to keep the ranges)? ;)
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/513f17f8d6b67563d977c730d50bc0db6ea6e1b0
 
-Thanks.
+Thank you!
 
 -- 
-Catalin
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html
