@@ -2,88 +2,175 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 85E66C77B60
-	for <linux-sh@archiver.kernel.org>; Sat, 29 Apr 2023 20:07:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A76CCC7EE26
+	for <linux-sh@archiver.kernel.org>; Sat, 29 Apr 2023 20:14:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229646AbjD2UHQ convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 29 Apr 2023 16:07:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40994 "EHLO
+        id S229900AbjD2UOd (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 29 Apr 2023 16:14:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43770 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229532AbjD2UHP (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 29 Apr 2023 16:07:15 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D4D911B7
-        for <linux-sh@vger.kernel.org>; Sat, 29 Apr 2023 13:07:13 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1psqqb-001Wid-0R; Sat, 29 Apr 2023 22:07:09 +0200
-Received: from dynamic-077-013-005-103.77.13.pool.telefonica.de ([77.13.5.103] helo=[192.168.1.11])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1psqqa-000VYO-QG; Sat, 29 Apr 2023 22:07:08 +0200
-Message-ID: <c72b94655a26cf69ad0ed4ec586cdb062c24ac93.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] Fix J-core aic warning spam
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Rob Landley <rob@landley.net>,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Rich Felker <dalias@libc.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>
-Date:   Sat, 29 Apr 2023 22:07:07 +0200
-In-Reply-To: <b2415afc-5df9-cd95-9dd5-b31a3f9db6fc@landley.net>
-References: <ec905cf9-09de-a5d1-b8ee-0d874db4c301@landley.net>
-         <45c6426d762dbbe27830182ce751aa3d8210602a.camel@physik.fu-berlin.de>
-         <CAMuHMdVxTtoV5_+tEeoTT6hSEBkK8ZsHtu8t6jumvUK6u5effQ@mail.gmail.com>
-         <e4f89e6f-b7fb-6cfc-c90c-03ecdefe602a@landley.net>
-         <08823dbc7d6abb99958993bc35e315a3eb0e63bb.camel@physik.fu-berlin.de>
-         <f321805d-346b-36d5-247f-3c092aa7bea1@landley.net>
-         <CAMuHMdXX7+-KF7eEoqY4NH90e9g=ykapfma7V050NaKW1Qb-vQ@mail.gmail.com>
-         <33f74e06-6b62-3f13-ed09-8efb4f05ac5c@landley.net>
-         <b6ba777419f0d94c5f39cfc4698e2dd4f7319e16.camel@physik.fu-berlin.de>
-         <b42c6496ffb531459eb7995fd4b5e828f599b4fe.camel@physik.fu-berlin.de>
-         <b2415afc-5df9-cd95-9dd5-b31a3f9db6fc@landley.net>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.1 
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 77.13.5.103
-X-ZEDAT-Hint: PO
+        with ESMTP id S229878AbjD2UO3 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 29 Apr 2023 16:14:29 -0400
+Received: from mail-pl1-x629.google.com (mail-pl1-x629.google.com [IPv6:2607:f8b0:4864:20::629])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 52DED1A8
+        for <linux-sh@vger.kernel.org>; Sat, 29 Apr 2023 13:14:25 -0700 (PDT)
+Received: by mail-pl1-x629.google.com with SMTP id d9443c01a7336-1a92369761cso8794005ad.3
+        for <linux-sh@vger.kernel.org>; Sat, 29 Apr 2023 13:14:25 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=dabbelt-com.20221208.gappssmtp.com; s=20221208; t=1682799264; x=1685391264;
+        h=content-transfer-encoding:mime-version:message-id:to:from:cc
+         :in-reply-to:subject:date:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=EvNXrGU7f9AyBgQxPAxIH8w5LQ2sGDY5VhYCeQmIsvg=;
+        b=ztXNyujPGJ3TImj9rkWYO2n2FifWKitTQShNykqcCXMnlMDmDVUdGDZxkkAjoc2LxT
+         wjlkNuWu5MpGZ0hx2IY/BfGicm00cVl+x8sMPYhvJYOTMhGVFNRcq+t2+IhK1Zbg1HBm
+         TwPyb5IfXHXgdYm4kQQJO8mCutMWnoA0MAQG1HObQV2DkWdvKA82EPwFFy15NEoVvzDJ
+         YaFLlQv2/hnRBo+Kg2l+LFcBMREq5GVfs5levwZlW+i9w9qFVpvKUrXtIKJRJqUd1KUC
+         DRDHp5Z7Fs9kgbXLfeVSACxaLJ8vDKqbLXNf+pwsIg4BCZFLNo8FmqNy+hScbEds+O2l
+         SL9w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1682799264; x=1685391264;
+        h=content-transfer-encoding:mime-version:message-id:to:from:cc
+         :in-reply-to:subject:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=EvNXrGU7f9AyBgQxPAxIH8w5LQ2sGDY5VhYCeQmIsvg=;
+        b=fiEYKSPu6QjrtLFP1hvpebcNdG5o4Op8ShCUOXp+Zd7uo45rWCutw5lJzoSnbcb6zA
+         HpieyfNWDVKuxTkf/mr5hzv/Ldt8xM6Dca3Kx45hdUY7vJxPqQVTGauJ5PnwH4DHR3a2
+         AODT7C4/mqNf3Kew4ChW1H4eX9x83032iFz6ix3YjShASxmwi55/2xzoD9NsTasSPoKb
+         dT9CDBgTcA0R5Utgg7Pbk6pi3B4GmJVn+AY2HWyvO1GlnZFsuidP+omi5e5CtIsLmNAl
+         LY6XLZr1Hs7zXTk1TpEjT2OsVXGl6HnzWDJ87XNzMMOoEGTq+TDb+UQG339Wjh2xvLc2
+         yxNQ==
+X-Gm-Message-State: AC+VfDz0RNTcQ89lGIWgqO2OlAjQu90arD7+Q6gN9xPTWmoprf6lQ0Aa
+        ztDJz73m6slAuktoK4B49n88XQ==
+X-Google-Smtp-Source: ACHHUZ7pgoIToYashe1bFzQ1hUq7/0xuSIbhdV55MwhX+AUZI7FSn+oK96sUBgsJukxkcTmiriVdYg==
+X-Received: by 2002:a17:902:ef45:b0:1a6:dd9a:62c5 with SMTP id e5-20020a170902ef4500b001a6dd9a62c5mr8875345plx.10.1682799264493;
+        Sat, 29 Apr 2023 13:14:24 -0700 (PDT)
+Received: from localhost ([50.221.140.188])
+        by smtp.gmail.com with ESMTPSA id g2-20020a170902740200b001a4f7325466sm15179442pll.276.2023.04.29.13.14.23
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 29 Apr 2023 13:14:23 -0700 (PDT)
+Date:   Sat, 29 Apr 2023 13:14:23 -0700 (PDT)
+X-Google-Original-Date: Sat, 29 Apr 2023 13:14:07 PDT (-0700)
+Subject:     Re: [PATCH] Remove HAVE_VIRT_CPU_ACCOUNTING_GEN option
+In-Reply-To: <20230429063348.125544-1-npiggin@gmail.com>
+CC:     Arnd Bergmann <arnd@arndb.de>, npiggin@gmail.com,
+        linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org,
+        vgupta@kernel.org, linux-snps-arc@lists.infradead.org,
+        bcain@quicinc.com, linux-hexagon@vger.kernel.org,
+        chenhuacai@kernel.org, loongarch@lists.linux.dev,
+        geert@linux-m68k.org, linux-m68k@lists.linux-m68k.org,
+        monstr@monstr.eu, tsbogend@alpha.franken.de,
+        linux-mips@vger.kernel.org, dinguyen@kernel.org,
+        jonas@southpole.se, stefan.kristiansson@saunalahti.fi,
+        shorne@gmail.com, linux-openrisc@vger.kernel.org,
+        James.Bottomley@HansenPartnership.com, deller@gmx.de,
+        linux-parisc@vger.kernel.org,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        aou@eecs.berkeley.edu, linux-riscv@lists.infradead.org,
+        ysato@users.sourceforge.jp, dalias@libc.org,
+        glaubitz@physik.fu-berlin.de, linux-sh@vger.kernel.org,
+        davem@davemloft.net, sparclinux@vger.kernel.org, richard@nod.at,
+        anton.ivanov@cambridgegreys.com, johannes@sipsolutions.net,
+        linux-um@lists.infradead.org, tglx@linutronix.de, mingo@redhat.com,
+        bp@alien8.de, dave.hansen@linux.intel.com, x86@kernel.org,
+        hpa@zytor.com, khilman@baylibre.com, frederic@kernel.org
+From:   Palmer Dabbelt <palmer@dabbelt.com>
+To:     npiggin@gmail.com
+Message-ID: <mhng-7ec0443b-2201-41b7-996c-78c3a61f0230@palmer-ri-x1c9a>
+Mime-Version: 1.0 (MHng)
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Rob!
+On Fri, 28 Apr 2023 23:33:48 PDT (-0700), npiggin@gmail.com wrote:
+> This option was created in commit 554b0004d0ec4 ("vtime: Add
+> HAVE_VIRT_CPU_ACCOUNTING_GEN Kconfig") for architectures to indicate
+> they support the 64-bit cputime_t required for VIRT_CPU_ACCOUNTING_GEN.
+>
+> The cputime_t type has since been removed, so this doesn't have any
+> meaning. Remove it.
+>
+> Cc: linux-arch@vger.kernel.org
+> Cc: linux-kernel@vger.kernel.org
+> Cc: Vineet Gupta <vgupta@kernel.org>
+> Cc: linux-snps-arc@lists.infradead.org
+> Cc: Brian Cain <bcain@quicinc.com>
+> Cc: linux-hexagon@vger.kernel.org
+> Cc: Huacai Chen <chenhuacai@kernel.org>
+> Cc: loongarch@lists.linux.dev
+> Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+> Cc: linux-m68k@lists.linux-m68k.org
+> Cc: Michal Simek <monstr@monstr.eu>
+> Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+> Cc: linux-mips@vger.kernel.org
+> Cc: Dinh Nguyen <dinguyen@kernel.org>
+> Cc: Jonas Bonn <jonas@southpole.se>
+> Cc: Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>
+> Cc: Stafford Horne <shorne@gmail.com>
+> Cc: linux-openrisc@vger.kernel.org
+> Cc: "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>
+> Cc: Helge Deller <deller@gmx.de>
+> Cc: linux-parisc@vger.kernel.org
+> Cc: Paul Walmsley <paul.walmsley@sifive.com>
+> Cc: Palmer Dabbelt <palmer@dabbelt.com>
+> Cc: Albert Ou <aou@eecs.berkeley.edu>
+> Cc: linux-riscv@lists.infradead.org
+> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+> Cc: Rich Felker <dalias@libc.org>
+> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+> Cc: linux-sh@vger.kernel.org
+> Cc: "David S. Miller" <davem@davemloft.net>
+> Cc: sparclinux@vger.kernel.org
+> Cc: Richard Weinberger <richard@nod.at>
+> Cc: Anton Ivanov <anton.ivanov@cambridgegreys.com>
+> Cc: Johannes Berg <johannes@sipsolutions.net>
+> Cc: linux-um@lists.infradead.org
+> Cc: Thomas Gleixner <tglx@linutronix.de>
+> Cc: Ingo Molnar <mingo@redhat.com>
+> Cc: Borislav Petkov <bp@alien8.de>
+> Cc: Dave Hansen <dave.hansen@linux.intel.com>
+> Cc: x86@kernel.org
+> Cc: "H. Peter Anvin" <hpa@zytor.com>
+> Cc: Kevin Hilman <khilman@baylibre.com>
+> Cc: Frederic Weisbecker <frederic@kernel.org>
+> Signed-off-by: Nicholas Piggin <npiggin@gmail.com>
+> ---
+> Hi,
+>
+> Could we tidy this? I don't know what tree it can go in, timers,
+> sched, asm-generic, probably doesn't matter.
+>
+> The only thing this actually does is gate VIRT_CPU_ACCOUNTING_GEN and
+> NO_HZ_FULL so if your arch has some other issue that requires this
+> then the documentation needs to change. Any concerns from the archs?
+> I.e., 32-bit that does *not* define HAVE_VIRT_CPU_ACCOUNTING_GEN
+> which looks to be:
+>
+> arc
+> hexagon
+> loongarch 32-bit with SMP
+> m68k
+> microblaze
+> mips 32-bit with SMP
+> nios2
+> openrisc
+> parisc 32-bit
+> riscv 32-bit
 
-On Wed, 2023-04-19 at 20:24 -0500, Rob Landley wrote:
-> J-core binary toolchain tarball:
-> 
-> https://landley.net/toybox/downloads/binaries/toolchains/latest/sh2eb-linux-muslfdpic-cross.tar.xz
+Nothing's jumping out, though I haven't tested this yet so I'm not 100%.  
+I assume this isn't aimed for this merge window, given the timing?  
+Probably best to give this sort of thing time to bake in linux-next, but 
+I doubt anyone is even paying attention to rv32/NO_HZ_FULL so no big 
+deal either way on my end.
 
-OK, I can actually build a J2 kernel with that. Are there instructions somewhere which explain
-how to boot such a kernel on a Turtle board? Then I can give it a try on my personal one.
+Acked-by: Palmer Dabbelt <palmer@rivosinc.com> # RISC-V
 
-And do you have a root filesystem available for J2 that I can use?
-
-> Feel free to peel out simpler compiler toolchain builds if you've got a
-> preference? The interesting bits for your purposes are probably:
-> 
-> https://github.com/richfelker/musl-cross-make/blob/master/patches/gcc-9.4.0/0007-j2.diff
-> 
-> https://github.com/richfelker/musl-cross-make/blob/master/patches/binutils-2.33.1/0001-j2.diff
-
-Do you know who authored these patches? We should get these merged upstream which should be
-easier these days since the FSF has lowered the barriers regarding the copyright assignment.
-
-Adrian
-
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+> sh
+> sparc 32-bit
+> um 32-bit
+> x86 32-bit
+>
+> Thanks,
+> Nick
