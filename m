@@ -2,75 +2,99 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E9DA3C7EE24
-	for <linux-sh@archiver.kernel.org>; Sat,  6 May 2023 14:17:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B53CAC77B73
+	for <linux-sh@archiver.kernel.org>; Sat,  6 May 2023 15:25:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232273AbjEFORu (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 6 May 2023 10:17:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37214 "EHLO
+        id S232729AbjEFPZL convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 6 May 2023 11:25:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48528 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232779AbjEFORt (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 6 May 2023 10:17:49 -0400
-Received: from relay7-d.mail.gandi.net (relay7-d.mail.gandi.net [217.70.183.200])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B91A619D42;
-        Sat,  6 May 2023 07:17:41 -0700 (PDT)
-Received: (Authenticated sender: contact@artur-rojek.eu)
-        by mail.gandi.net (Postfix) with ESMTPSA id D7D8420008;
-        Sat,  6 May 2023 14:17:38 +0000 (UTC)
-From:   Artur Rojek <contact@artur-rojek.eu>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+        with ESMTP id S232526AbjEFPZK (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 6 May 2023 11:25:10 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0404BA26F;
+        Sat,  6 May 2023 08:25:08 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pvJmQ-003JEH-Gg; Sat, 06 May 2023 17:25:02 +0200
+Received: from p57bd9cee.dip0.t-ipconnect.de ([87.189.156.238] helo=suse-laptop.fritz.box)
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pvJmQ-0011hr-6G; Sat, 06 May 2023 17:25:02 +0200
+Message-ID: <3e9c027dd90ca9d4a02ba06714960ddcdae5fd2c.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 0/2] SH7709 DMA fixes
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Artur Rojek <contact@artur-rojek.eu>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>
 Cc:     Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Artur Rojek <contact@artur-rojek.eu>
-Subject: [PATCH 2/2] sh: dma: Correct the number of DMA channels in SH7709
-Date:   Sat,  6 May 2023 16:17:03 +0200
-Message-Id: <20230506141703.65605-3-contact@artur-rojek.eu>
-X-Mailer: git-send-email 2.40.1
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Date:   Sat, 06 May 2023 17:25:01 +0200
 In-Reply-To: <20230506141703.65605-1-contact@artur-rojek.eu>
 References: <20230506141703.65605-1-contact@artur-rojek.eu>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.1 
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.156.238
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-According to the PM, the DMAC found in SH7709 features only 4 channels.
+Hi Artur!
 
-Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
----
- arch/sh/drivers/dma/Kconfig | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+Thanks a lot for your patches!
 
-diff --git a/arch/sh/drivers/dma/Kconfig b/arch/sh/drivers/dma/Kconfig
-index 7d54f284ce10..4494d09597e9 100644
---- a/arch/sh/drivers/dma/Kconfig
-+++ b/arch/sh/drivers/dma/Kconfig
-@@ -28,8 +28,9 @@ config SH_DMA_API
- config NR_ONCHIP_DMA_CHANNELS
- 	int
- 	depends on SH_DMA
--	default "4" if CPU_SUBTYPE_SH7750  || CPU_SUBTYPE_SH7751  || \
--		       CPU_SUBTYPE_SH7750S || CPU_SUBTYPE_SH7091
-+	default "4" if CPU_SUBTYPE_SH7709 || CPU_SUBTYPE_SH7750  || \
-+		       CPU_SUBTYPE_SH7751 || CPU_SUBTYPE_SH7750S || \
-+		       CPU_SUBTYPE_SH7091
- 	default "8" if CPU_SUBTYPE_SH7750R || CPU_SUBTYPE_SH7751R || \
- 		       CPU_SUBTYPE_SH7760
- 	default "12" if CPU_SUBTYPE_SH7723 || CPU_SUBTYPE_SH7780  || \
-@@ -37,8 +38,9 @@ config NR_ONCHIP_DMA_CHANNELS
- 	default "6"
- 	help
- 	  This allows you to specify the number of channels that the on-chip
--	  DMAC supports. This will be 4 for SH7750/SH7751/Sh7750S/SH7091 and 8 for the
--	  SH7750R/SH7751R/SH7760, 12 for the SH7723/SH7780/SH7785/SH7724, default is 6.
-+	  DMAC supports. This will be 4 for SH7709/SH7750/SH7751/Sh7750S/SH7091
-+	  and 8 for the SH7750R/SH7751R/SH7760, 12 for the SH7723/SH7780/SH7785/SH7724,
-+	  default is 6.
- 
- config SH_DMABRG
- 	bool "SH7760 DMABRG support"
+On Sat, 2023-05-06 at 16:17 +0200, Artur Rojek wrote:
+> this series provides fixes to the SH7709 DMA controller, allowing the HP
+> Jornada 680 palmtop to boot Linux again. To my knowledge, this is the
+> first time in ~14 years someone tests upstream Linux on this device. And
+> with the included patches applied, I'm happy to announce that it still
+> works like a charm.
+
+Wow, that sounds great! I will be happy to review your patches.
+
+> PS. What might be of interest to the sh-linux community, there's further
+> work towards this platform in my pipeline. E.g. I've added support for
+> the HD6446x PCMCIA controller, allowing Jornada 680 to use Ethernet and
+> Wi-Fi cards. However, what prevents proper upstream of such a driver is
+> the crude and antiquated code of the underlying platform base. For
+> example, the HD6446x bridge (`cchips/hd6446x/hd64461.c`) lacks the
+> concept of clocks, preventing the PCMCIA driver from hardware agnostic
+> clock gating. So what I'm looking into next is the cleanup of existing
+> platform code base, bringing it up-to-date with modern kernel APIs.
+> Hopefully it's not trying to bite more than I can chew, but eventually
+> ending up with Device Tree support would be really nice :)
+
+Yes, there is still a lot of modernization work to be done for SuperH!
+
+Device tree has actually been worked on in the past and there is a patch
+set by Yoshinori Sato to add support for device tree that got never merged,
+see [1].
+
+Geert and I are planning to have another look at these patches and see whether
+we can get them into a shape where they can be merged. Maybe you can help us
+with that effort.
+
+I might not have the time for your patches today, but certainly next week
+starting Monday. Very much looking forward to reviewing and merging them
+into my SuperH tree [2].
+
+Adrian
+
+> [1] https://lore.kernel.org/all/1467564402-2649-1-git-send-email-ysato@users.sourceforge.jp/
+> [2] https://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git/
+
 -- 
-2.40.1
-
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
