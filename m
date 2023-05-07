@@ -2,44 +2,44 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6959AC77B7D
-	for <linux-sh@archiver.kernel.org>; Sun,  7 May 2023 08:33:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D87AEC77B7C
+	for <linux-sh@archiver.kernel.org>; Sun,  7 May 2023 08:39:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229628AbjEGId2 convert rfc822-to-8bit (ORCPT
+        id S231261AbjEGIj0 convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 7 May 2023 04:33:28 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60848 "EHLO
+        Sun, 7 May 2023 04:39:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34254 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229619AbjEGId1 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 7 May 2023 04:33:27 -0400
+        with ESMTP id S229619AbjEGIjZ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 7 May 2023 04:39:25 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 80B9812085;
-        Sun,  7 May 2023 01:33:26 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 44D9E55BF;
+        Sun,  7 May 2023 01:39:24 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pvZpX-001LSN-Kv; Sun, 07 May 2023 10:33:19 +0200
+          id 1pvZvK-001MM2-9r; Sun, 07 May 2023 10:39:18 +0200
 Received: from p57bd9c27.dip0.t-ipconnect.de ([87.189.156.39] helo=suse-laptop.fritz.box)
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pvZpX-003FzF-Cv; Sun, 07 May 2023 10:33:19 +0200
-Message-ID: <c630350f51eb3bf85d2a7fb7c51b3f1ba3a57c4f.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 2/2] sh: dma: Correct the number of DMA channels in
- SH7709
+          id 1pvZvK-003HIr-2d; Sun, 07 May 2023 10:39:18 +0200
+Message-ID: <65f873585db0cd9f79a84eb48707413775a9ba5b.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 1/2] sh: dma: fix `dmaor_read_reg`/`dmaor_write_reg`
+ macros
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 To:     Artur Rojek <contact@artur-rojek.eu>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>
 Cc:     Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
         linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date:   Sun, 07 May 2023 10:33:17 +0200
-In-Reply-To: <20230506141703.65605-3-contact@artur-rojek.eu>
+Date:   Sun, 07 May 2023 10:39:17 +0200
+In-Reply-To: <20230506141703.65605-2-contact@artur-rojek.eu>
 References: <20230506141703.65605-1-contact@artur-rojek.eu>
-         <20230506141703.65605-3-contact@artur-rojek.eu>
+         <20230506141703.65605-2-contact@artur-rojek.eu>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 User-Agent: Evolution 3.48.1 
@@ -52,51 +52,47 @@ List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
 On Sat, 2023-05-06 at 16:17 +0200, Artur Rojek wrote:
-> According to the PM, the DMAC found in SH7709 features only 4 channels.
+> Squash two bugs introduced into said macros in 7f47c7189b3e, preventing
+> them from proper operation:
+> 1) Add DMAOR register offset into the address of the hw reg access,
+> 2) Correct a nasty typo in the DMAOR base calculation for
+>    `dmaor_write_reg`.
 > 
 > Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
 > ---
->  arch/sh/drivers/dma/Kconfig | 10 ++++++----
->  1 file changed, 6 insertions(+), 4 deletions(-)
+>  arch/sh/drivers/dma/dma-sh.c | 7 +++++--
+>  1 file changed, 5 insertions(+), 2 deletions(-)
 > 
-> diff --git a/arch/sh/drivers/dma/Kconfig b/arch/sh/drivers/dma/Kconfig
-> index 7d54f284ce10..4494d09597e9 100644
-> --- a/arch/sh/drivers/dma/Kconfig
-> +++ b/arch/sh/drivers/dma/Kconfig
-> @@ -28,8 +28,9 @@ config SH_DMA_API
->  config NR_ONCHIP_DMA_CHANNELS
->  	int
->  	depends on SH_DMA
-> -	default "4" if CPU_SUBTYPE_SH7750  || CPU_SUBTYPE_SH7751  || \
-> -		       CPU_SUBTYPE_SH7750S || CPU_SUBTYPE_SH7091
-> +	default "4" if CPU_SUBTYPE_SH7709 || CPU_SUBTYPE_SH7750  || \
-> +		       CPU_SUBTYPE_SH7751 || CPU_SUBTYPE_SH7750S || \
-> +		       CPU_SUBTYPE_SH7091
->  	default "8" if CPU_SUBTYPE_SH7750R || CPU_SUBTYPE_SH7751R || \
->  		       CPU_SUBTYPE_SH7760
->  	default "12" if CPU_SUBTYPE_SH7723 || CPU_SUBTYPE_SH7780  || \
-> @@ -37,8 +38,9 @@ config NR_ONCHIP_DMA_CHANNELS
->  	default "6"
->  	help
->  	  This allows you to specify the number of channels that the on-chip
-> -	  DMAC supports. This will be 4 for SH7750/SH7751/Sh7750S/SH7091 and 8 for the
-> -	  SH7750R/SH7751R/SH7760, 12 for the SH7723/SH7780/SH7785/SH7724, default is 6.
-> +	  DMAC supports. This will be 4 for SH7709/SH7750/SH7751/Sh7750S/SH7091
-> +	  and 8 for the SH7750R/SH7751R/SH7760, 12 for the SH7723/SH7780/SH7785/SH7724,
-> +	  default is 6.
+> diff --git a/arch/sh/drivers/dma/dma-sh.c b/arch/sh/drivers/dma/dma-sh.c
+> index 96c626c2cd0a..14c18ebda400 100644
+> --- a/arch/sh/drivers/dma/dma-sh.c
+> +++ b/arch/sh/drivers/dma/dma-sh.c
+> @@ -254,8 +254,11 @@ static int sh_dmac_get_dma_residue(struct dma_channel *chan)
+>   * DMAOR bases are broken out amongst channel groups. DMAOR0 manages
+>   * channels 0 - 5, DMAOR1 6 - 11 (optional).
+>   */
+> -#define dmaor_read_reg(n)		__raw_readw(dma_find_base((n)*6))
+> -#define dmaor_write_reg(n, data)	__raw_writew(data, dma_find_base(n)*6)
+> +#define dmaor_read_reg(n)		__raw_readw(dma_find_base((n) * 6) + \
+> +						    DMAOR)
+> +#define dmaor_write_reg(n, data)	__raw_writew(data, \
+> +						     dma_find_base((n) * 6) + \
+> +						     DMAOR)
 >  
->  config SH_DMABRG
->  	bool "SH7760 DMABRG support"
+>  static inline int dmaor_reset(int no)
+>  {
 
-I will replace "PM" with "processor manual" since the acronym is not necessarily
-unambiguous, at least I didn't know at first what you were referring to. I checked
-the manual [1] myself and four DMA channels is correct, thus:
+I have looked through the changes and the code and I agree that there is a typo
+in dmaor_write_regn() that needs to be fixed and that the DMAOR offset is missing
+although I don't understand why that didn't break the kernel on other SuperH systems
+such as my SH-7785LCR evaluation board or the LANDISK board which Geert uses.
 
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+What I also don't understand is the factor 6 the DMA channel number is multiplied
+with. When looking at the definition of dma_find_base(), it seems that every channel
+equal to 6 or higher will return SH_DMAC_BASE1 as DMA base address. But if we multiply
+the parameter with 6, this will apply to every n > 0. Is that correct?
 
 Adrian
-
-> [1] https://www.renesas.com/us/en/document/mah/sh7709s-group-hardware-manual?r=1055106 (S. 373)
 
 -- 
  .''`.  John Paul Adrian Glaubitz
