@@ -2,103 +2,99 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C53FEC77B75
-	for <linux-sh@archiver.kernel.org>; Mon,  8 May 2023 11:46:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D757FC7EE2A
+	for <linux-sh@archiver.kernel.org>; Mon,  8 May 2023 14:42:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236317AbjEHLqj convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 8 May 2023 07:46:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45252 "EHLO
+        id S234484AbjEHOmC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 8 May 2023 10:42:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49810 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236215AbjEHLq0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 8 May 2023 07:46:26 -0400
-Received: from mail-yb1-f175.google.com (mail-yb1-f175.google.com [209.85.219.175])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 85A923EF80;
-        Mon,  8 May 2023 04:46:13 -0700 (PDT)
-Received: by mail-yb1-f175.google.com with SMTP id 3f1490d57ef6-b9e27684b53so3855593276.0;
-        Mon, 08 May 2023 04:46:13 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1683546372; x=1686138372;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=Pxzntl2vCSjynso5+OwUtZ2MCoVRvOy6diVTHHVIE0g=;
-        b=Y5SxeZrTjL0WpkdTUj/aKNzXk6ncUAwFEZ3nLcA+uBYk/K6E+U0+GTDZTonvpVJUwx
-         b+8Ix1MdP+0zxYC1yghKtT2M+NxdXfacugSmxvOl2j/s++Q6N4YnivsA3jmT/tKOtfoH
-         egFb5VNjGus0v7QmJeo1KxAylpg3HP0wogj0550jAyv2U0ruwozD2GjxA3tayk4iBGlr
-         EVUjTSW/Qo+6uTXbq+sxbGisqng2+hvVBao1oNs+enFVZVrPnhXWvHbOgAsR9f3LvlHY
-         jEfZXbkwbYSbkPZ+995VVJQ21jcy+zU63CDIWC/tMNow5WXRpNAv5wZGpuBJehiVRlL/
-         X90Q==
-X-Gm-Message-State: AC+VfDyhxAc37/QpmV6kO0thIvyTxG5GRrJEt4qs5ZJLkhf5jsx7r2qc
-        cgJAwQl6act76GJdpAXcCJped4cGLPCB4Q==
-X-Google-Smtp-Source: ACHHUZ6X5Ri1ne6fVM6AmoeOclgQW+V9R7kx1nuBYlWR5vNK4Pd0bZZBR5y1mcP2iXLFqA+RZ5E19A==
-X-Received: by 2002:a25:addf:0:b0:b96:52f0:9ba3 with SMTP id d31-20020a25addf000000b00b9652f09ba3mr11103511ybe.11.1683546372098;
-        Mon, 08 May 2023 04:46:12 -0700 (PDT)
-Received: from mail-yw1-f181.google.com (mail-yw1-f181.google.com. [209.85.128.181])
-        by smtp.gmail.com with ESMTPSA id w6-20020a258506000000b00b9e9286f1e6sm2221026ybk.55.2023.05.08.04.46.11
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 08 May 2023 04:46:11 -0700 (PDT)
-Received: by mail-yw1-f181.google.com with SMTP id 00721157ae682-55a5a830238so38994427b3.3;
-        Mon, 08 May 2023 04:46:11 -0700 (PDT)
-X-Received: by 2002:a0d:d54d:0:b0:55a:7722:1401 with SMTP id
- x74-20020a0dd54d000000b0055a77221401mr11012997ywd.31.1683546371412; Mon, 08
- May 2023 04:46:11 -0700 (PDT)
+        with ESMTP id S234362AbjEHOl7 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 8 May 2023 10:41:59 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 78512769A;
+        Mon,  8 May 2023 07:41:57 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 03DFF63FF4;
+        Mon,  8 May 2023 14:41:57 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPS id 5599DC433AF;
+        Mon,  8 May 2023 14:41:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1683556916;
+        bh=GN50963fdkw5cucYPuN4xRaiQmxHDA0hrlxtEWYsvtQ=;
+        h=Subject:From:Date:References:In-Reply-To:To:Cc:From;
+        b=r64Dxi/fpFWqlTPgj0oa/IYTE2F52/0U4frXOQyj/T+tixhV8XgLG9eTZd0UTcV36
+         MThVa+dfb2c7qq/bN1MQ8+/nOc8Zmb/oMzz15aLEjcY3k7iXI8FgY1pc19ij96JWIV
+         p9dbdwXXuKSBbcyHFrtz6ZwA4PUDzbKgr0j7wVdl3YWaGX8HsjZh5pa2IYQUToSezH
+         E9CdNSf3PqfxLJyZIxE9T5n56CbdoDjfQLgg37E6Wjd320jmozml/4Ck793810C2gG
+         zwHDr3HymZCWssXv9EaO6SQ9YW4Hi3EpsX6/opGZlaru1Qz9BiS57573d/bVlpFpBc
+         4vD8grh8d6yuA==
+Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
+        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id 2C09CE26D2B;
+        Mon,  8 May 2023 14:41:56 +0000 (UTC)
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-References: <20230506141703.65605-1-contact@artur-rojek.eu>
- <20230506141703.65605-2-contact@artur-rojek.eu> <65f873585db0cd9f79a84eb48707413775a9ba5b.camel@physik.fu-berlin.de>
- <2f73b2ac1ec15a6b0f78d8d3a7f12266@artur-rojek.eu> <CAMuHMdXFFaRqPxvUqgJCtZG1B5gpULL-N4VpNPyPF=_+mtn7Dg@mail.gmail.com>
- <3687ad9134f6869a479b94f821f92aefd41bd449.camel@physik.fu-berlin.de>
-In-Reply-To: <3687ad9134f6869a479b94f821f92aefd41bd449.camel@physik.fu-berlin.de>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 8 May 2023 13:46:00 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdWMyRz2NGrjOZtcLL4udwfvFyJ3zhLnQMoPtLzMCBa32g@mail.gmail.com>
-Message-ID: <CAMuHMdWMyRz2NGrjOZtcLL4udwfvFyJ3zhLnQMoPtLzMCBa32g@mail.gmail.com>
-Subject: Re: [PATCH 1/2] sh: dma: fix `dmaor_read_reg`/`dmaor_write_reg` macros
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Artur Rojek <contact@artur-rojek.eu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+Content-Transfer-Encoding: 8bit
+Subject: Re: [PATCH] libgcc: Add forward declarations for generic library routines
+From:   patchwork-bot+linux-riscv@kernel.org
+Message-Id: <168355691617.25692.18413165340491314933.git-patchwork-notify@kernel.org>
+Date:   Mon, 08 May 2023 14:41:56 +0000
+References: <5cdbe08296693dd53849f199c3933e16e97b33c1.1682088593.git.geert+renesas@glider.be>
+In-Reply-To: <5cdbe08296693dd53849f199c3933e16e97b33c1.1682088593.git.geert+renesas@glider.be>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>
+Cc:     linux-riscv@lists.infradead.org, akpm@linux-foundation.org,
+        arnd@arndb.de, linux-csky@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
+        linux-sh@vger.kernel.org, chris@zankel.net, jcmvbkbc@gmail.com,
+        lkp@intel.com
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Adrian,
+Hello:
 
-On Mon, May 8, 2023 at 1:28 PM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Mon, 2023-05-08 at 13:20 +0200, Geert Uytterhoeven wrote:
-> > Looks like this is still broken on e.g. SH7751R, which has 8 channels,
-> > both handled by a single DMAOR register at offset 0x40...
-> >
-> > While e.g. dma_base_addr() seems to have some provision for this
-> > (cfr. the "chan >= 9" (not "8") check), dma_find_base() will fail, as
-> > arch/sh/include/cpu-sh4/cpu/dma.h defines SH_DMAC_BASE1.
-> > Anyway, that's not new, so I have no objection to your patch.
->
-> Was SH7751R broken by 7f47c7189b3e8f19 as well?
+This patch was applied to riscv/linux.git (fixes)
+by Andrew Morton <akpm@linux-foundation.org>:
 
-I think so.
-Before, the code to use 1 or 2 DMA engine relied on the presence of
-DMAE1_IRQ, which is/was defined in arch/sh/include/cpu-sh4a/cpu/dma.h,
-but not in arch/sh/include/cpu-sh4/cpu/dma.h.
+On Fri, 21 Apr 2023 16:54:24 +0200 you wrote:
+> With W=1 on platforms that use the generic gcc library routines
+> (csky/loongarch/mips/riscv/sh/xtensa):
+> 
+>     lib/ashldi3.c:9:19: warning: no previous prototype for '__ashldi3' [-Wmissing-prototypes]
+> 	9 | long long notrace __ashldi3(long long u, word_type b)
+> 	  |                   ^~~~~~~~~
+>       CC      lib/ashrdi3.o
+>     lib/ashrdi3.c:9:19: warning: no previous prototype for '__ashrdi3' [-Wmissing-prototypes]
+> 	9 | long long notrace __ashrdi3(long long u, word_type b)
+> 	  |                   ^~~~~~~~~
+>       CC      lib/cmpdi2.o
+>     lib/cmpdi2.c:9:19: warning: no previous prototype for '__cmpdi2' [-Wmissing-prototypes]
+> 	9 | word_type notrace __cmpdi2(long long a, long long b)
+> 	  |                   ^~~~~~~~
+>       CC      lib/lshrdi3.o
+>     lib/lshrdi3.c:9:19: warning: no previous prototype for '__lshrdi3' [-Wmissing-prototypes]
+> 	9 | long long notrace __lshrdi3(long long u, word_type b)
+> 	  |                   ^~~~~~~~~
+>       CC      lib/muldi3.o
+>     lib/muldi3.c:49:19: warning: no previous prototype for '__muldi3' [-Wmissing-prototypes]
+>        49 | long long notrace __muldi3(long long u, long long v)
+> 	  |                   ^~~~~~~~
+>       CC      lib/ucmpdi2.o
+>     lib/ucmpdi2.c:8:19: warning: no previous prototype for '__ucmpdi2' [-Wmissing-prototypes]
+> 	8 | word_type notrace __ucmpdi2(unsigned long long a, unsigned long long b)
+> 	  |                   ^~~~~~~~~
+> 
+> [...]
 
-It might be sufficient to fix this by just dropping the SH_DMAC_BASE1
-definition from arch/sh/include/cpu-sh4/cpu/dma.h.  I'm actually
-wondering why it was added (in commit 71b973a42c545682 ("sh: dma-sh
-updates for multi IRQ and new SH-4A CPUs.")), because it looks like
-none of the SH4-based (not SH4A!) SoCs have a second base...
+Here is the summary with links:
+  - libgcc: Add forward declarations for generic library routines
+    https://git.kernel.org/riscv/c/4f20b7471c57
 
-Gr{oetje,eeting}s,
+You are awesome, thank you!
+-- 
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/patchwork/pwbot.html
 
-                        Geert
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
