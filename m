@@ -2,52 +2,52 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 939E9C7EE24
-	for <linux-sh@archiver.kernel.org>; Wed, 10 May 2023 04:52:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 11D45C77B7C
+	for <linux-sh@archiver.kernel.org>; Wed, 10 May 2023 04:54:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229461AbjEJEwl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 10 May 2023 00:52:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50072 "EHLO
+        id S230215AbjEJEyS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 10 May 2023 00:54:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51236 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235289AbjEJEwi (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 10 May 2023 00:52:38 -0400
-Received: from mail-yb1-xb36.google.com (mail-yb1-xb36.google.com [IPv6:2607:f8b0:4864:20::b36])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CF61D272B
-        for <linux-sh@vger.kernel.org>; Tue,  9 May 2023 21:52:36 -0700 (PDT)
-Received: by mail-yb1-xb36.google.com with SMTP id 3f1490d57ef6-b9d8e8898eeso8662062276.1
-        for <linux-sh@vger.kernel.org>; Tue, 09 May 2023 21:52:36 -0700 (PDT)
+        with ESMTP id S235628AbjEJEyI (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 10 May 2023 00:54:08 -0400
+Received: from mail-yw1-x1135.google.com (mail-yw1-x1135.google.com [IPv6:2607:f8b0:4864:20::1135])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0F5BA26BF
+        for <linux-sh@vger.kernel.org>; Tue,  9 May 2023 21:54:05 -0700 (PDT)
+Received: by mail-yw1-x1135.google.com with SMTP id 00721157ae682-55a14807e4cso120989507b3.1
+        for <linux-sh@vger.kernel.org>; Tue, 09 May 2023 21:54:05 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20221208; t=1683694356; x=1686286356;
+        d=google.com; s=20221208; t=1683694444; x=1686286444;
         h=mime-version:references:message-id:in-reply-to:subject:cc:to:from
          :date:from:to:cc:subject:date:message-id:reply-to;
-        bh=q/pWRyMl+DKjSxR+96RJZ1aR1tS5RvJyhJKXen2hGiQ=;
-        b=xdSNWZzA71Dn4PjSJ/2LhqeF5r1JevaGaRgpoS69f1WOD9bhyOsVwChSsl62EbUoE2
-         9cnM7TV7zP/+dkaQIS04gEZsgS+3y2H8ZK/Bphg85NyOLG7YB4uljYqtMwzBINkb9uAc
-         Qg8lSbjmhMLr4mA9fzJNs5WYmacpWClDgIdvFtjewDeSGePxRCKcQAns2EMoohHps9+8
-         S/YpDXqiv4vPhVzyygfg06y+shcq7WCfEpVB4klTCpxP9lMZUivNHG3zXi2wJbvPV+fq
-         bKOy9gNDnov9JiPlPv0RSMj3z9ndQZvcZqYURqj9IDWet3DFKA/Lg6LIl2Rd/fMVxLQn
-         5Dvw==
+        bh=8E7TU+EpCMsIU6CqnZRd0vWJGC9oqEXRuUswowSWl1o=;
+        b=nx2nVYMVrNHZwwSl8w3NSmhsRvWihgBOt84R2c16JqiYC4KBl38YHxIAdhEkbKIKU+
+         3KinRet9UKewX1U+bJzN/HA2S7KOTkCF4X7wqaw/K7+S17drzHhQwyGVptzSW8CKp+rn
+         7n/QckVxFQIds+kKrngIuvcYjerJY8U+pP0nKt9JbKkli09JNKT1dmegLnEsv/7gGsJF
+         Qp1n5E/tb+Ovu77mxoxN3oLzT8n8iySQ8FxtBPgBcz8wTrqYdAKrqvMBlZ96CIsNIEnp
+         6lPBYSKwbzZLj7KAL6W20hrNmnnmTZNvlsZaMnXbJsKFp6VCUGJP8Oy+j1QTC9dUJ6vO
+         gsZA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1683694356; x=1686286356;
+        d=1e100.net; s=20221208; t=1683694444; x=1686286444;
         h=mime-version:references:message-id:in-reply-to:subject:cc:to:from
          :date:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=q/pWRyMl+DKjSxR+96RJZ1aR1tS5RvJyhJKXen2hGiQ=;
-        b=UoNON/7hwGRGzQvWUGo8iQWedGEpoVx8DVEcawvnFYjitf/LlZbwxaEo+5tTsd6mnX
-         6IL0SA1HEFNAXekHXfwZA9EEg3DtpneQDjIQsNpjRwcJiWFTprfTBy8y1ki2ufw9GIkU
-         UhTzJZjIsvj9XVuPhDIlc+EqnJgJ8J9uU8YRujTU75Yjs80QJKb0e5K/5DxUvMe4qGiY
-         mzqtGv6QhtQqUlfQv86aF0aerwiJDK91uo8s1AXFgwCfoOlmXmQsZuZ5gaYKQE7PPrR9
-         lKDhhv0qx38iu7kzoVH3p4n0EXsZnPaAtgOkyWUPtenYenAUjceDN9nj1UexfHkpXoTN
-         LHRQ==
-X-Gm-Message-State: AC+VfDy/CfR1oQJpo8qVMfv44jQr6uyt5To/gyFoFqaKT/+CeifcmBJf
-        OWXa+AwMmAwziR7/H1Qw38Zo0Q==
-X-Google-Smtp-Source: ACHHUZ6J+F8J+T+3sf+ZeNloEZY2mqXZ4z6wckfThiZ54x80vQ+jP1v1hMPi/dn45eihWxG2Dt7Wzw==
-X-Received: by 2002:a25:344e:0:b0:b9d:b79b:3b89 with SMTP id b75-20020a25344e000000b00b9db79b3b89mr17243065yba.18.1683694355907;
-        Tue, 09 May 2023 21:52:35 -0700 (PDT)
+        bh=8E7TU+EpCMsIU6CqnZRd0vWJGC9oqEXRuUswowSWl1o=;
+        b=SukzyDypSjn1dgL6YtSWGMh2tCZyGoQaySONZ3QSFbAYp8GN+UINyrxR5B4JlTO772
+         xe/qsdm2CrwXFxbPJNMmDDiIMGRbGkSQz9jNmD/PBvmzf5g/OpNj3bqzt3w4XGiFbIA9
+         9IAaR5TofF3rOOrVjg4cQBWKOFaIazdeZ/8GHqq1P6nTcK1+paTKnBB2JfzX8iwy8shB
+         LN8kCNm02E6fZNOy2xLPQZxFIN6HkMfkxCxkigtF7Mj5Vj914hh3OuuzqDpmiAs/xYLl
+         wnTeLAAGAS9M9tij4il+keX5v2k3DMPMjI/7dANrhrKLlEpS1wNXg2f6+7p1fP/nfey1
+         lC2Q==
+X-Gm-Message-State: AC+VfDxHC0bOyvEG/75gyGbQV4/c5KtLVjZuwHMxr9TeYdKSdvFfi7vM
+        AXVVk7bDplD/FraJY+eZR4RXag==
+X-Google-Smtp-Source: ACHHUZ57Dsib2dNeEkcs0nwSe68HvlbijE2Qa11Gh7g4OTrdhlBqOZhC7lvqfUbJMl49On6qtViJzQ==
+X-Received: by 2002:a0d:d955:0:b0:55a:ad0a:766 with SMTP id b82-20020a0dd955000000b0055aad0a0766mr17847236ywe.10.1683694444181;
+        Tue, 09 May 2023 21:54:04 -0700 (PDT)
 Received: from ripple.attlocal.net (172-10-233-147.lightspeed.sntcca.sbcglobal.net. [172.10.233.147])
-        by smtp.gmail.com with ESMTPSA id h6-20020a258a86000000b00b9a80b9e08esm3435393ybl.12.2023.05.09.21.52.32
+        by smtp.gmail.com with ESMTPSA id l4-20020a81d544000000b0055b46dac76esm3814196ywj.116.2023.05.09.21.54.00
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 09 May 2023 21:52:35 -0700 (PDT)
-Date:   Tue, 9 May 2023 21:52:31 -0700 (PDT)
+        Tue, 09 May 2023 21:54:03 -0700 (PDT)
+Date:   Tue, 9 May 2023 21:54:00 -0700 (PDT)
 From:   Hugh Dickins <hughd@google.com>
 X-X-Sender: hugh@ripple.attlocal.net
 To:     Andrew Morton <akpm@linux-foundation.org>
@@ -84,9 +84,9 @@ cc:     Mike Kravetz <mike.kravetz@oracle.com>,
         linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
         linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
         linux-kernel@vger.kernel.org, linux-mm@kvack.org
-Subject: [PATCH 08/23] parisc: add pte_unmap() to balance get_ptep()
+Subject: [PATCH 09/23] parisc: unmap_uncached_pte() use pte_offset_kernel()
 In-Reply-To: <77a5d8c-406b-7068-4f17-23b7ac53bc83@google.com>
-Message-ID: <44ebbf90-5fbb-2815-17c7-fcfe3c87d78e@google.com>
+Message-ID: <12c4693d-8bb3-2852-8cf5-9777b427d770@google.com>
 References: <77a5d8c-406b-7068-4f17-23b7ac53bc83@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -94,84 +94,28 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-To keep balance in future, remember to pte_unmap() after a successful
-get_ptep().  And (we might as well) pretend that flush_cache_pages()
-really needed a map there, to read the pfn before "unmapping".
+unmap_uncached_pte() is working from pgd_offset_k(vaddr), so it should
+use pte_offset_kernel() instead of pte_offset_map(), to avoid the
+question of whether a pte_unmap() will be needed to balance.
 
 Signed-off-by: Hugh Dickins <hughd@google.com>
 ---
- arch/parisc/kernel/cache.c | 26 +++++++++++++++++++++-----
- 1 file changed, 21 insertions(+), 5 deletions(-)
+ arch/parisc/kernel/pci-dma.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/parisc/kernel/cache.c b/arch/parisc/kernel/cache.c
-index 1d3b8bc8a623..b0c969b3a300 100644
---- a/arch/parisc/kernel/cache.c
-+++ b/arch/parisc/kernel/cache.c
-@@ -425,10 +425,15 @@ void flush_dcache_page(struct page *page)
- 		offset = (pgoff - mpnt->vm_pgoff) << PAGE_SHIFT;
- 		addr = mpnt->vm_start + offset;
- 		if (parisc_requires_coherency()) {
-+			bool needs_flush = false;
- 			pte_t *ptep;
- 
- 			ptep = get_ptep(mpnt->vm_mm, addr);
--			if (ptep && pte_needs_flush(*ptep))
-+			if (ptep) {
-+				needs_flush = pte_needs_flush(*ptep);
-+				pte_unmap(ptep);
-+			}
-+			if (needs_flush)
- 				flush_user_cache_page(mpnt, addr);
- 		} else {
- 			/*
-@@ -560,14 +565,20 @@ EXPORT_SYMBOL(flush_kernel_dcache_page_addr);
- static void flush_cache_page_if_present(struct vm_area_struct *vma,
- 	unsigned long vmaddr, unsigned long pfn)
- {
--	pte_t *ptep = get_ptep(vma->vm_mm, vmaddr);
-+	bool needs_flush = false;
-+	pte_t *ptep;
- 
- 	/*
- 	 * The pte check is racy and sometimes the flush will trigger
- 	 * a non-access TLB miss. Hopefully, the page has already been
- 	 * flushed.
- 	 */
--	if (ptep && pte_needs_flush(*ptep))
-+	ptep = get_ptep(vma->vm_mm, vmaddr);
-+	if (ptep) {
-+		needs_flush = pte_needs_flush(*ptep))
-+		pte_unmap(ptep);
-+	}
-+	if (needs_flush)
- 		flush_cache_page(vma, vmaddr, pfn);
- }
- 
-@@ -634,17 +645,22 @@ static void flush_cache_pages(struct vm_area_struct *vma, unsigned long start, u
- 	pte_t *ptep;
- 
- 	for (addr = start; addr < end; addr += PAGE_SIZE) {
-+		bool needs_flush = false;
- 		/*
- 		 * The vma can contain pages that aren't present. Although
- 		 * the pte search is expensive, we need the pte to find the
- 		 * page pfn and to check whether the page should be flushed.
- 		 */
- 		ptep = get_ptep(vma->vm_mm, addr);
--		if (ptep && pte_needs_flush(*ptep)) {
-+		if (ptep) {
-+			needs_flush = pte_needs_flush(*ptep);
-+			pfn = pte_pfn(*ptep);
-+			pte_unmap(ptep);
-+		}
-+		if (needs_flush) {
- 			if (parisc_requires_coherency()) {
- 				flush_user_cache_page(vma, addr);
- 			} else {
--				pfn = pte_pfn(*ptep);
- 				if (WARN_ON(!pfn_valid(pfn)))
- 					return;
- 				__flush_cache_page(vma, addr, PFN_PHYS(pfn));
+diff --git a/arch/parisc/kernel/pci-dma.c b/arch/parisc/kernel/pci-dma.c
+index ba87f791323b..52d5f8a5cdd2 100644
+--- a/arch/parisc/kernel/pci-dma.c
++++ b/arch/parisc/kernel/pci-dma.c
+@@ -164,7 +164,7 @@ static inline void unmap_uncached_pte(pmd_t * pmd, unsigned long vaddr,
+ 		pmd_clear(pmd);
+ 		return;
+ 	}
+-	pte = pte_offset_map(pmd, vaddr);
++	pte = pte_offset_kernel(pmd, vaddr);
+ 	vaddr &= ~PMD_MASK;
+ 	end = vaddr + size;
+ 	if (end > PMD_SIZE)
 -- 
 2.35.3
 
