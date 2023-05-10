@@ -2,130 +2,116 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5BEE5C7EE25
-	for <linux-sh@archiver.kernel.org>; Wed, 10 May 2023 08:21:58 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 66D5BC77B7C
+	for <linux-sh@archiver.kernel.org>; Wed, 10 May 2023 14:01:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236268AbjEJIV4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 10 May 2023 04:21:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37348 "EHLO
+        id S237132AbjEJOB6 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 10 May 2023 10:01:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38604 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229893AbjEJIVz (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 10 May 2023 04:21:55 -0400
-Received: from desiato.infradead.org (desiato.infradead.org [IPv6:2001:8b0:10b:1:d65d:64ff:fe57:4e05])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9B8DB171B;
-        Wed, 10 May 2023 01:21:52 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=desiato.20200630; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=1WZCLagr9yk4Cbp+6qSxxsSMmqvOctxqT3bVkNGFhnY=; b=CzmDvf3rqlZoWLTgd3FVOKNA13
-        am3KRsvw5dx0zZtORpSkeQixmHm2I0T/j68VXo57hz3B2sKfsZlkzT6mcIfsGM8QExy3tEBmFQg15
-        5knvERiYGPZKMBkmsOAK/iQ/5rtOFvAqMTYH7nFMXqdqWWfvmHjqNDYraw79BjtqAXxEKvC5IXPLi
-        v4WkUXSf6SdYO2DxNqGoNj/9jzwXI/RVqLwvIK8H89K9xhFYfEkKkPofOod7rLsPcDYQd4FB4I+bb
-        ncPfZdYjPCu8FZ1ut2ZqCkZjLMrUhqEHRkvEROX3xUgFItRMwb3mnY6amim7reKFoxZZ2cjlGh5hD
-        cm+pskqQ==;
-Received: from j130084.upc-j.chello.nl ([24.132.130.84] helo=noisy.programming.kicks-ass.net)
-        by desiato.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1pwf2E-007PM8-2r;
-        Wed, 10 May 2023 08:20:55 +0000
-Received: from hirez.programming.kicks-ass.net (hirez.programming.kicks-ass.net [192.168.1.225])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (4096 bits))
-        (Client did not present a certificate)
-        by noisy.programming.kicks-ass.net (Postfix) with ESMTPS id 4DA20300338;
-        Wed, 10 May 2023 10:18:48 +0200 (CEST)
-Received: by hirez.programming.kicks-ass.net (Postfix, from userid 1000)
-        id 2369E20B04BA2; Wed, 10 May 2023 10:18:48 +0200 (CEST)
-Date:   Wed, 10 May 2023 10:18:48 +0200
-From:   Peter Zijlstra <peterz@infradead.org>
-To:     Hugh Dickins <hughd@google.com>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Mike Kravetz <mike.kravetz@oracle.com>,
-        Mike Rapoport <rppt@kernel.org>,
-        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
-        Matthew Wilcox <willy@infradead.org>,
-        David Hildenbrand <david@redhat.com>,
-        Suren Baghdasaryan <surenb@google.com>,
-        Qi Zheng <zhengqi.arch@bytedance.com>,
-        Russell King <linux@armlinux.org.uk>,
+        with ESMTP id S236415AbjEJOB5 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 10 May 2023 10:01:57 -0400
+Received: from mail-pf1-x432.google.com (mail-pf1-x432.google.com [IPv6:2607:f8b0:4864:20::432])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DE7A030D6
+        for <linux-sh@vger.kernel.org>; Wed, 10 May 2023 07:01:55 -0700 (PDT)
+Received: by mail-pf1-x432.google.com with SMTP id d2e1a72fcca58-64115e652eeso50447584b3a.0
+        for <linux-sh@vger.kernel.org>; Wed, 10 May 2023 07:01:55 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=dabbelt-com.20221208.gappssmtp.com; s=20221208; t=1683727315; x=1686319315;
+        h=content-transfer-encoding:mime-version:message-id:to:from:cc
+         :in-reply-to:subject:date:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=8O+Xva6SSKUOzu8cD6VykU+fN8y+E0NtB9pirvzzQ9U=;
+        b=xm7Lt7K+fM4a6fbPP7MIva3KYIsdEH2pn6NhTnqMZWDxfwMmfjfuC2iA7TIUgSp9X7
+         iapnslzabTi/3hpYysj/Y+Qpo/U+trS4YUbBrAymZCbRPQc2GdzYMvfSXRt75xnkQ7HH
+         9YmGcBzN1XGEnBnDnk4hqc6szvJ0vnbRYHR7DYbbDIfxitLJRxJHVDjlkZx/sb2Dalmd
+         NMN9fv1UEU3MEvWMv2OyK363gty+uPi7R5tqnoKyXja1AZDDzs7OuMx+xXPfQOPl3EBu
+         5ahAyXiN9ZWDD9X3LQrrN5sPj7Sd7WcMwJ/uvJSD2iG4PimTEA2R4mrq6SpEbr7//1lB
+         gm+g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1683727315; x=1686319315;
+        h=content-transfer-encoding:mime-version:message-id:to:from:cc
+         :in-reply-to:subject:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=8O+Xva6SSKUOzu8cD6VykU+fN8y+E0NtB9pirvzzQ9U=;
+        b=DGekQDYuvUA5Wmgc0JnIk+8OlL8I+rQ04OPbUu8F5Axgff2NGudKYWWXhONQ/5iZ22
+         X3ic119KeTkJoxF4ejxXnPZC8wN7sXTUjhIEo3irlz+OQ+CDDU+KJVqSt/k5JeB2oDDO
+         vlHgLZ7TFTVZLZDQz15fQqfqax9N7oEZlXnD1xNzqEe8cWkTvbPUSi9Mz9KkApZYKVhw
+         VVm9MnR9lK4FS7Qz0J+opaD/JjtX8W8vEqfeQMhYCf+/gicDjRplc715MetUD4nJHezB
+         y85sQE7kOpF6jNBXX8ZCgFSGESdLgrNtciB5jOWz4H688o19YC3Wq5PGWMfRZG9AMyJV
+         0tvA==
+X-Gm-Message-State: AC+VfDwr7uYyAD0aCx2d8qxRrMue+p00t++5CTqsFBSuLJjvJmLnL3ZV
+        4RSXs0PgPR5hbAQWchSuHWMfEw==
+X-Google-Smtp-Source: ACHHUZ5DO6A5G9Iwzn4Bquam+4PsWMq7WswXOCHPFyT+gtbX2VPfleyC7b8WGb0kQumaiIfRAr9lsw==
+X-Received: by 2002:a17:902:9a03:b0:1ad:1be7:2a76 with SMTP id v3-20020a1709029a0300b001ad1be72a76mr1572089plp.10.1683727315241;
+        Wed, 10 May 2023 07:01:55 -0700 (PDT)
+Received: from localhost ([135.180.227.0])
+        by smtp.gmail.com with ESMTPSA id q6-20020a170902dac600b001ac55a5e5eesm3819212plx.121.2023.05.10.07.01.54
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 10 May 2023 07:01:54 -0700 (PDT)
+Date:   Wed, 10 May 2023 07:01:54 -0700 (PDT)
+X-Google-Original-Date: Wed, 10 May 2023 07:01:48 PDT (-0700)
+Subject:     Re: [PATCH 14/23] riscv/hugetlb: pte_alloc_huge() pte_offset_huge()
+In-Reply-To: <d1e54510-9ea2-edf-3851-fa7635ce1e5e@google.com>
+CC:     akpm@linux-foundation.org, mike.kravetz@oracle.com,
+        rppt@kernel.org, kirill.shutemov@linux.intel.com,
+        willy@infradead.org, david@redhat.com, surenb@google.com,
+        zhengqi.arch@bytedance.com, linux@armlinux.org.uk,
         Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Helge Deller <deller@gmx.de>,
-        John David Anglin <dave.anglin@bell.net>,
-        "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Alexandre Ghiti <alexghiti@rivosinc.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Claudio Imbrenda <imbrenda@linux.ibm.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "David S. Miller" <davem@davemloft.net>,
-        Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org,
+        Will Deacon <will@kernel.org>, geert@linux-m68k.org,
+        gerg@linux-m68k.org, monstr@monstr.eu, tsbogend@alpha.franken.de,
+        deller@gmx.de, dave.anglin@bell.net, aneesh.kumar@linux.ibm.com,
+        mpe@ellerman.id.au, alexghiti@rivosinc.com, hca@linux.ibm.com,
+        borntraeger@linux.ibm.com, imbrenda@linux.ibm.com,
+        glaubitz@physik.fu-berlin.de, davem@davemloft.net,
+        chris@zankel.net, jcmvbkbc@gmail.com, x86@kernel.org,
         linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
         linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
         linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
         linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
         linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
         linux-kernel@vger.kernel.org, linux-mm@kvack.org
-Subject: Re: [PATCH 21/23] x86: Allow get_locked_pte() to fail
-Message-ID: <20230510081848.GD83892@hirez.programming.kicks-ass.net>
-References: <77a5d8c-406b-7068-4f17-23b7ac53bc83@google.com>
- <eba2b72f-2180-498b-c8bd-ce8f717fc78a@google.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <eba2b72f-2180-498b-c8bd-ce8f717fc78a@google.com>
+From:   Palmer Dabbelt <palmer@dabbelt.com>
+To:     hughd@google.com
+Message-ID: <mhng-fa58638c-1b42-4264-8bf1-55d4bc42a5e2@palmer-ri-x1c9>
+Mime-Version: 1.0 (MHng)
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, May 09, 2023 at 10:08:37PM -0700, Hugh Dickins wrote:
-> In rare transient cases, not yet made possible, pte_offset_map() and
-> pte_offset_map_lock() may not find a page table: handle appropriately.
-> 
+On Tue, 09 May 2023 21:59:57 PDT (-0700), hughd@google.com wrote:
+> pte_alloc_map() expects to be followed by pte_unmap(), but hugetlb omits
+> that: to keep balance in future, use the recently added pte_alloc_huge()
+> instead; with pte_offset_huge() a better name for pte_offset_kernel().
+>
 > Signed-off-by: Hugh Dickins <hughd@google.com>
 > ---
->  arch/x86/kernel/ldt.c | 6 ++++--
->  1 file changed, 4 insertions(+), 2 deletions(-)
-> 
-> diff --git a/arch/x86/kernel/ldt.c b/arch/x86/kernel/ldt.c
-> index 525876e7b9f4..eb844549cd83 100644
-> --- a/arch/x86/kernel/ldt.c
-> +++ b/arch/x86/kernel/ldt.c
-> @@ -367,8 +367,10 @@ static void unmap_ldt_struct(struct mm_struct *mm, struct ldt_struct *ldt)
->  
->  		va = (unsigned long)ldt_slot_va(ldt->slot) + offset;
->  		ptep = get_locked_pte(mm, va, &ptl);
-> -		pte_clear(mm, va, ptep);
-> -		pte_unmap_unlock(ptep, ptl);
-> +		if (ptep) {
-> +			pte_clear(mm, va, ptep);
-> +			pte_unmap_unlock(ptep, ptl);
-> +		}
+>  arch/riscv/mm/hugetlbpage.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+>
+> diff --git a/arch/riscv/mm/hugetlbpage.c b/arch/riscv/mm/hugetlbpage.c
+> index a163a3e0f0d4..80926946759f 100644
+> --- a/arch/riscv/mm/hugetlbpage.c
+> +++ b/arch/riscv/mm/hugetlbpage.c
+> @@ -43,7 +43,7 @@ pte_t *huge_pte_alloc(struct mm_struct *mm,
+>
+>  	for_each_napot_order(order) {
+>  		if (napot_cont_size(order) == sz) {
+> -			pte = pte_alloc_map(mm, pmd, addr & napot_cont_mask(order));
+> +			pte = pte_alloc_huge(mm, pmd, addr & napot_cont_mask(order));
+>  			break;
+>  		}
+>  	}
+> @@ -90,7 +90,7 @@ pte_t *huge_pte_offset(struct mm_struct *mm,
+>
+>  	for_each_napot_order(order) {
+>  		if (napot_cont_size(order) == sz) {
+> -			pte = pte_offset_kernel(pmd, addr & napot_cont_mask(order));
+> +			pte = pte_offset_huge(pmd, addr & napot_cont_mask(order));
+>  			break;
+>  		}
 >  	}
 
-Ow geez, now I have to go remember how the whole PTI/LDT crud worked :/
-
-At first glance this seems wrong; we can't just not unmap the LDT if we
-can't find it in a hurry. Also, IIRC this isn't in fact a regular user
-mapping, so it should not be subject to THP induced seizures.
-
-... memory bubbles back ... for PTI kernels we need to map this in the
-user and kernel page-tables because obviously userspace needs to be able
-to have access to the LDT. But it is not directly acessible by
-userspace. It lives in the cpu_entry_area as a virtual map of the real
-kernel allocation, and this virtual address is used for LLDT.
-Modification is done through sys_modify_ldt().
-
-I think I would feel much better if this were something like:
-
-	if (!WARN_ON_ONCE(!ptep))
-
-This really shouldn't fail and if it does, simply skipping it isn't the
-right thing either.
+Acked-by: Palmer Dabbelt <palmer@rivosinc.com>
