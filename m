@@ -2,61 +2,141 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D4EB8C77B7F
-	for <linux-sh@archiver.kernel.org>; Thu, 11 May 2023 08:43:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C7484C7EE2A
+	for <linux-sh@archiver.kernel.org>; Thu, 11 May 2023 09:01:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229536AbjEKInB (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 11 May 2023 04:43:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50118 "EHLO
+        id S236759AbjEKJBw (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 11 May 2023 05:01:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57928 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229482AbjEKInA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 11 May 2023 04:43:00 -0400
-Received: from mail.feshiecree.pl (mail.feshiecree.pl [89.40.114.103])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 462B1269D
-        for <linux-sh@vger.kernel.org>; Thu, 11 May 2023 01:42:55 -0700 (PDT)
-Received: by mail.feshiecree.pl (Postfix, from userid 1001)
-        id 7B5828FC20; Wed, 10 May 2023 09:06:17 +0100 (BST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=feshiecree.pl;
-        s=mail; t=1683706056;
-        bh=hFxZwVw4rIL+JwfEOGI47p+fdoVOAeqVswP6NWoHSHQ=;
-        h=Date:From:To:Subject:From;
-        b=ywME0RygNxZugyIP+49fmbDYGuPIJbje6XIP0jGWgULsfTkoOURykqvzfaW5hnmeL
-         ldfZdmjwIEfAytb7ZY97Dl5TYQhTUt+Dql+RQwc7idD6s9RBgtqAWmrl5XQUhAQYNe
-         66uPdyvdRiA8RFN76MLmP6E93iThaBlIGP+JcC4Mamfvs17mqWu/5n8agqB4hbapHy
-         DNleUDAVSQ5i4fVSlmk5e03s1GXuoqUWNwCBL9gshTSQ6ELxCzOooLQUynju4I0Rjw
-         sgBmC2P4jaVSIwWPHfKLr8407f/Q/uikG9L0GELT/W8ICRA8iUuAa1AwhCfw2jwzz3
-         Ts0ALl+BVC8LQ==
-Received: by feshiecree.pl for <linux-sh@vger.kernel.org>; Wed, 10 May 2023 08:05:19 GMT
-Message-ID: <20230510074506-0.1.2h.h1vh.0.0r2otz4m4p@feshiecree.pl>
-Date:   Wed, 10 May 2023 08:05:19 GMT
-From:   "Krystian Wieczorek" <krystian.wieczorek@feshiecree.pl>
-To:     <linux-sh@vger.kernel.org>
-Subject: W sprawie samochodu
-X-Mailer: mail.feshiecree.pl
+        with ESMTP id S235696AbjEKJBv (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 11 May 2023 05:01:51 -0400
+Received: from mail-qv1-xf2c.google.com (mail-qv1-xf2c.google.com [IPv6:2607:f8b0:4864:20::f2c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AFA6E270E;
+        Thu, 11 May 2023 02:01:49 -0700 (PDT)
+Received: by mail-qv1-xf2c.google.com with SMTP id 6a1803df08f44-61cd6191a62so37795906d6.3;
+        Thu, 11 May 2023 02:01:49 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1683795709; x=1686387709;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=KATKL5c9hHw7borFknSpolyvbkYiWwqKIKb81BIcugs=;
+        b=LiA5aCThzGnNp7E+Ta+DAvVEwiclZpF791zLAUwx+Als8erWN8Yl7PpwtloKY7vfA7
+         +VTsnl2KSlBmbyAImxRU3lG+IUT2Wqb5hUFCcAsZyEs/D1k9iAGqD79kt7aecJ/Cxj9r
+         eR6nzEnIzjucsN/6A+1hNPz8FvRo+Kuj2ketbPBiwSj1JqzajAiKbzNVkW/c2RJBCR3k
+         MZC8rrsOEhbdZrX91ntkakGdeHJHeYwEVqGe6cUOqDaw42N8TysvScbiMKu+APTP9eCY
+         3fchxaSfDDqrX5GvKxMc/O6qbvizbF/orFqeAlT1EFH85PiOL82QGmIN8EQXMGf+kfzf
+         4sBA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1683795709; x=1686387709;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=KATKL5c9hHw7borFknSpolyvbkYiWwqKIKb81BIcugs=;
+        b=Jm/KMUODbh3xfPvkr3EYAuyjraxkpSRfZkRQWRGd5Ni7IbcADn0Gmc1VLLk98s3z9m
+         EJiGkpqjUQ0tC5HxHf5YZV60s6UtPPlkQVdvm1h5pJJfRPKiEimnTlRB++OjkWSIbF1u
+         Otn7mvfa886ruINYOtyRdbugYpAEWTVDfBlwLVsI/hr6ywsN1DPKMkLXjOMOAxk0bjQI
+         BReSDiab4UPJnzoyBDJF/InErcCr4JvBpVbZtqVsXUCilmTZdMG/tIE+WNT/sUn3melK
+         AwkghZc3Z2AqjhrL9anBDdH2kmoFl5puCzyT3onzJXq4BvaJliEsaRKyGpK3Vl9CYXB2
+         A1bg==
+X-Gm-Message-State: AC+VfDyzC7lf57fXKzBy/EGTdDQtdzE/qz8MHkRSvRizewlVNRHhKu+W
+        W+53RpRqW6fi3BHHecNDevm8P/xI+BC0LyHZF2Q=
+X-Google-Smtp-Source: ACHHUZ5zRYnTHqc+5jEp+WommdN4iUlzGKKD+R//mFSlux2Z635gESR+gw4QOQ+7Eia9GPcOqFZAyzIfjtGm1Vv4yks=
+X-Received: by 2002:a05:6214:4018:b0:5ef:3b9a:b01d with SMTP id
+ kd24-20020a056214401800b005ef3b9ab01dmr25843220qvb.1.1683795708608; Thu, 11
+ May 2023 02:01:48 -0700 (PDT)
 MIME-Version: 1.0
+References: <20230510195806.2902878-1-nphamcs@gmail.com> <CAMuHMdV=PNCb1VYfUkEb9rPwGVB=1tkwvm-XBqECyhHR4SNGKg@mail.gmail.com>
+In-Reply-To: <CAMuHMdV=PNCb1VYfUkEb9rPwGVB=1tkwvm-XBqECyhHR4SNGKg@mail.gmail.com>
+From:   Nhat Pham <nphamcs@gmail.com>
+Date:   Thu, 11 May 2023 02:01:37 -0700
+Message-ID: <CAKEwX=Pty0V0m+_00F1uWR1EXt8Gt35PYh-yUZEd-LQRSKgfGQ@mail.gmail.com>
+Subject: Re: [PATCH] cachestat: wire up cachestat for other architectures
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     akpm@linux-foundation.org, linux-mm@kvack.org,
+        linux-api@vger.kernel.org, kernel-team@meta.com,
+        linux-arch@vger.kernel.org, hannes@cmpxchg.org,
+        richard.henderson@linaro.org, ink@jurassic.park.msu.ru,
+        mattst88@gmail.com, linux@armlinux.org.uk, monstr@monstr.eu,
+        tsbogend@alpha.franken.de, James.Bottomley@hansenpartnership.com,
+        deller@gmx.de, mpe@ellerman.id.au, npiggin@gmail.com,
+        christophe.leroy@csgroup.eu, hca@linux.ibm.com, gor@linux.ibm.com,
+        agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
+        svens@linux.ibm.com, ysato@users.sourceforge.jp, dalias@libc.org,
+        glaubitz@physik.fu-berlin.de, davem@davemloft.net,
+        chris@zankel.net, jcmvbkbc@gmail.com, linux-alpha@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Dzie=C5=84 dobry,
+On Thu, May 11, 2023 at 12:01=E2=80=AFAM Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+>
+> Hi Nat,
+>
+> On Wed, May 10, 2023 at 9:58=E2=80=AFPM Nhat Pham <nphamcs@gmail.com> wro=
+te:
+> > cachestat is previously only wired in for x86 (and architectures using
+> > the generic unistd.h table):
+> >
+> > https://lore.kernel.org/lkml/20230503013608.2431726-1-nphamcs@gmail.com=
+/
+> >
+> > This patch wires cachestat in for all the other architectures.
+> >
+> > Signed-off-by: Nhat Pham <nphamcs@gmail.com>
+> > ---
+> >  arch/alpha/kernel/syscalls/syscall.tbl      | 1 +
+> >  arch/arm/tools/syscall.tbl                  | 1 +
+>
+> Looking at the last addition of a syscall (commit 21b084fdf2a49ca1
+> ("mm/mempolicy: wire up syscall set_mempolicy_home_node"), it looks
+> like you forgot to update arm64 in compat mode? Or is that not needed?
 
-chcieliby=C5=9Bmy zapewni=C4=87 Pa=C5=84stwu kompleksowe rozwi=C4=85zania=
-, je=C5=9Bli chodzi o system monitoringu GPS.
+It does look like I missed that! Thanks for the reminder. I'll send a fixle=
+t
+shortly...
 
-Precyzyjne monitorowanie pojazd=C3=B3w na mapach cyfrowych, =C5=9Bledzeni=
-e ich parametr=C3=B3w eksploatacyjnych w czasie rzeczywistym oraz kontrol=
-a paliwa to kluczowe funkcjonalno=C5=9Bci naszego systemu.=20
+Best,
+Nhat
 
-Organizowanie pracy pracownik=C3=B3w jest dzi=C4=99ki temu prostsze i bar=
-dziej efektywne, a oszcz=C4=99dno=C5=9Bci i optymalizacja w zakresie pono=
-szonych koszt=C3=B3w, maj=C4=85 dla ka=C5=BCdego przedsi=C4=99biorcy ogro=
-mne znaczenie.
-
-Dopasujemy nasz=C4=85 ofert=C4=99 do Pa=C5=84stwa oczekiwa=C5=84 i potrze=
-b organizacji. Czy mogliby=C5=9Bmy porozmawia=C4=87 o naszej propozycji?
-
-
-Pozdrawiam
-Krystian Wieczorek
+>
+> >  arch/ia64/kernel/syscalls/syscall.tbl       | 1 +
+> >  arch/m68k/kernel/syscalls/syscall.tbl       | 1 +
+>
+> For m68k:
+> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
+>
+> >  arch/microblaze/kernel/syscalls/syscall.tbl | 1 +
+> >  arch/mips/kernel/syscalls/syscall_n32.tbl   | 1 +
+> >  arch/mips/kernel/syscalls/syscall_n64.tbl   | 1 +
+> >  arch/mips/kernel/syscalls/syscall_o32.tbl   | 1 +
+> >  arch/parisc/kernel/syscalls/syscall.tbl     | 1 +
+> >  arch/powerpc/kernel/syscalls/syscall.tbl    | 1 +
+> >  arch/s390/kernel/syscalls/syscall.tbl       | 1 +
+> >  arch/sh/kernel/syscalls/syscall.tbl         | 1 +
+> >  arch/sparc/kernel/syscalls/syscall.tbl      | 1 +
+> >  arch/xtensa/kernel/syscalls/syscall.tbl     | 1 +
+> >  14 files changed, 14 insertions(+)
+>
+> Gr{oetje,eeting}s,
+>
+>                         Geert
+>
+> --
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m6=
+8k.org
+>
+> In personal conversations with technical people, I call myself a hacker. =
+But
+> when I'm talking to journalists I just say "programmer" or something like=
+ that.
+>                                 -- Linus Torvalds
