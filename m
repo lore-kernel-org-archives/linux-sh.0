@@ -2,150 +2,93 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FB5EC7EE26
-	for <linux-sh@archiver.kernel.org>; Thu, 11 May 2023 14:04:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E8A2EC77B7F
+	for <linux-sh@archiver.kernel.org>; Thu, 11 May 2023 14:36:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233998AbjEKOEY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 11 May 2023 10:04:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51214 "EHLO
+        id S238529AbjEKOgc convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 11 May 2023 10:36:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53444 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238236AbjEKOEW (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 11 May 2023 10:04:22 -0400
-Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A353F10FF;
-        Thu, 11 May 2023 07:04:20 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-        Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=agTIVDV40QlNuRDmtaMpYQzLmx8ylyt8K8o0YwfCE44=; b=lL2e25Q7Ym9Z2f1ilo2kWwHtLS
-        4LEtDqoDAi/1aC4kjoeLMlHtLt+a+FS4EW3ttxbaQDhTXZfyi02WOEzNc3/vCsr0owbyF5PEsIwHc
-        4EGA9zShanxJYpMWANvO4AfYvUXSJigLrvPdNGyjPeVrrNrqH+tCpFoKNI6P6bYEGIKsYYtBzAtzu
-        8Ajl8g5ng54yFG0pf0AiaE1GeB3gEJ+vkOMxu+NkdXV1EBgexS5qxecZBXe6DpvnyQd7D8QuN/WHz
-        qIZBX6djd2pg1T+ptsLEa/faZBnf92py7b8vnk1aHVuruD1rplz5XIZSxcsHdZBQZO/oPVfH/8958
-        /oI/ASsA==;
-Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
-        id 1px6sh-00HGyK-LW; Thu, 11 May 2023 14:02:55 +0000
-Date:   Thu, 11 May 2023 15:02:55 +0100
-From:   Matthew Wilcox <willy@infradead.org>
-To:     Hugh Dickins <hughd@google.com>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Mike Kravetz <mike.kravetz@oracle.com>,
-        Mike Rapoport <rppt@kernel.org>,
-        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
-        David Hildenbrand <david@redhat.com>,
-        Suren Baghdasaryan <surenb@google.com>,
-        Qi Zheng <zhengqi.arch@bytedance.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Helge Deller <deller@gmx.de>,
-        John David Anglin <dave.anglin@bell.net>,
-        "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Alexandre Ghiti <alexghiti@rivosinc.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Claudio Imbrenda <imbrenda@linux.ibm.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "David S. Miller" <davem@davemloft.net>,
-        Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Peter Zijlstra <peterz@infradead.org>, x86@kernel.org,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Michel Lespinasse <michel@lespinasse.org>
-Subject: Re: [PATCH 00/23] arch: allow pte_offset_map[_lock]() to fail
-Message-ID: <ZFz1j1slZHCQmwMJ@casper.infradead.org>
-References: <77a5d8c-406b-7068-4f17-23b7ac53bc83@google.com>
- <ZFs0k2rrLPH9A/UU@casper.infradead.org>
- <d7f3c7b2-25b8-ef66-98a8-43d68f4499f@google.com>
+        with ESMTP id S238544AbjEKOgQ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 11 May 2023 10:36:16 -0400
+Received: from mail-yw1-f181.google.com (mail-yw1-f181.google.com [209.85.128.181])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8552B106D3;
+        Thu, 11 May 2023 07:35:35 -0700 (PDT)
+Received: by mail-yw1-f181.google.com with SMTP id 00721157ae682-55c939fb24dso81108037b3.2;
+        Thu, 11 May 2023 07:35:35 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1683815734; x=1686407734;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=zuNMFCCjBGiRepfEIV/kIi3+pDm4ryspV/CKvccFj/c=;
+        b=A9h6pBfQVLkxeZ49T1NCNBgmT73VLkPkLC4+DxjgTlgofNzRABS7jTQ6mly3ue0hn0
+         iR9XYeosBM9DZx2rMPul+AJqt2w6mJu/sle/9iJzWEvhwqIq+a9hZ+8vfR2w6qrtHLuz
+         YXbd2T6JhjdH5I0Z8BhOCLCi5RcfmxU9eh6PkFk33gJ7fiBHvWRvteU7MZW6K3LNHuAT
+         tDa1WL63Ihvn5Pp0zPAJDK9CIPb+9ha5017UmfiB3HJBX/IdBuyJBwHj06/EtAcG4Qlo
+         GYa8RsdV08ZKF95GGF2Dndl5jF7k7cHC/zsLKlaO9DHwr77P+z2RT4tc0deAfqnwqp4h
+         hjPw==
+X-Gm-Message-State: AC+VfDzBf6GRyzKNZlzOoo0VuLQGO7xizHuGwdX9c60yVqcajY9aFRav
+        2pEe8zJriIYeKEnOw4EIDfzG/qOWP15B7g==
+X-Google-Smtp-Source: ACHHUZ6/C8pDovpD7gt6Gs1M2dYlDqlXiWHvDCgzxLsa2kwyqTH6w3Qt5/xioq9wI19aFyDfY0E2lg==
+X-Received: by 2002:a0d:ddd7:0:b0:55a:4bd3:f73b with SMTP id g206-20020a0dddd7000000b0055a4bd3f73bmr24081601ywe.10.1683815734332;
+        Thu, 11 May 2023 07:35:34 -0700 (PDT)
+Received: from mail-yw1-f177.google.com (mail-yw1-f177.google.com. [209.85.128.177])
+        by smtp.gmail.com with ESMTPSA id c74-20020a814e4d000000b00552f7767803sm4943160ywb.58.2023.05.11.07.35.33
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 11 May 2023 07:35:34 -0700 (PDT)
+Received: by mail-yw1-f177.google.com with SMTP id 00721157ae682-55a8019379fso81280627b3.0;
+        Thu, 11 May 2023 07:35:33 -0700 (PDT)
+X-Received: by 2002:a0d:d90f:0:b0:55a:aeb7:2b0a with SMTP id
+ b15-20020a0dd90f000000b0055aaeb72b0amr21601241ywe.23.1683815733695; Thu, 11
+ May 2023 07:35:33 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <d7f3c7b2-25b8-ef66-98a8-43d68f4499f@google.com>
+References: <20230510163343.43090-1-glaubitz@physik.fu-berlin.de>
+In-Reply-To: <20230510163343.43090-1-glaubitz@physik.fu-berlin.de>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Thu, 11 May 2023 16:35:21 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdXmtfCir4dt6CKe2YxDN53nNAcE=i5oyMkOsPavJ-p0Tw@mail.gmail.com>
+Message-ID: <CAMuHMdXmtfCir4dt6CKe2YxDN53nNAcE=i5oyMkOsPavJ-p0Tw@mail.gmail.com>
+Subject: Re: [PATCH] irqchip/jcore-aic: Fix missing allocation of IRQ descriptors
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Thomas Gleixner <tglx@linutronix.de>,
+        Marc Zyngier <maz@kernel.org>, Rich Felker <dalias@libc.org>,
+        Jason Cooper <jason@lakedaemon.net>,
+        linux-kernel@vger.kernel.org,
+        Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, May 10, 2023 at 09:35:44PM -0700, Hugh Dickins wrote:
-> On Wed, 10 May 2023, Matthew Wilcox wrote:
-> > On Tue, May 09, 2023 at 09:39:13PM -0700, Hugh Dickins wrote:
-> > > Two: pte_offset_map() will need to do an rcu_read_lock(), with the
-> > > corresponding rcu_read_unlock() in pte_unmap().  But most architectures
-> > > never supported CONFIG_HIGHPTE, so some don't always call pte_unmap()
-> > > after pte_offset_map(), or have used userspace pte_offset_map() where
-> > > pte_offset_kernel() is more correct.  No problem in the current tree,
-> > > but a problem once an rcu_read_unlock() will be needed to keep balance.
-> > 
-> > Hi Hugh,
-> > 
-> > I shall have to spend some time looking at these patches, but at LSFMM
-> > just a few hours ago, I proposed and nobody objected to removing
-> > CONFIG_HIGHPTE.  I don't intend to take action on that consensus
-> > immediately, so I can certainly wait until your patches are applied, but
-> > if this information simplifies what you're doing, feel free to act on it.
-> 
-> Thanks a lot, Matthew: very considerate, as usual.
-> 
-> Yes, I did see your "Whither Highmem?" (wither highmem!) proposal on the
+Hi Adrian,
 
-I'm glad somebody noticed the pun ;-)
+On Wed, May 10, 2023 at 6:36 PM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> The initialization function for the J-Core AIC aic_irq_of_init() is
+> currently missing the call to irq_alloc_descs() which allocates and
+> initializes all the IRQ descriptors. Add missing function call and
+> return the error code from irq_alloc_descs() in case the allocation
+> fails.
+>
+> Fixes: 981b58f66cfc ("irqchip/jcore-aic: Add J-Core AIC driver")
+> Signed-off-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
-> list, and it did make me think, better get these patches and preview out
-> soon, before you get to vanish pte_unmap() altogether.  HIGHMEM or not,
-> HIGHPTE or not, I think pte_offset_map() and pte_unmap() still have an
-> important role to play.
-> 
-> I don't really understand why you're going down a remove-CONFIG_HIGHPTE
-> route: I thought you were motivated by the awkardness of kmap on large
-> folios; but I don't see how removing HIGHPTE helps with that at all
-> (unless you have a "large page tables" effort in mind, but I doubt it).
+Thanks for your patch!
 
-Quite right, my primary concern is filesystem metadata; primarily
-directories as I don't think anybody has ever supported symlinks or
-superblocks larger than 4kB.
+I am not an IRQ expert, so I'd like to leave the technical parts for
+e.g. Marc.  But I think you should add to the description that this
+is based on a patch by Rich.
 
-I was thinking that removing CONFIG_HIGHPTE might simplify the page
-fault handling path a little, but now I've looked at it some more, and
-I'm not sure there's any simplification to be had.  It should probably
-use kmap_local instead of kmap_atomic(), though.
+Gr{oetje,eeting}s,
 
-> But I've no investment in CONFIG_HIGHPTE if people think now is the
-> time to remove it: I disagree, but wouldn't miss it myself - so long
-> as you leave pte_offset_map() and pte_unmap() (under whatever names).
-> 
-> I don't think removing CONFIG_HIGHPTE will simplify what I'm doing.
-> For a moment it looked like it would: the PAE case is nasty (and our
-> data centres have not been on PAE for a long time, so it wasn't a
-> problem I had to face before); and knowing pmd_high must be 0 for a
-> page table looked like it would help, but now I'm not so sure of that
-> (hmm, I'm changing my mind again as I write).
-> 
-> Peter's pmdp_get_lockless() does rely for complete correctness on
-> interrupts being disabled, and I suspect that I may be forced in the
-> PAE case to do so briefly; but detest that notion.  For now I'm just
-> deferring it, hoping for a better idea before third series finalized.
-> 
-> I mention this (and Cc Peter) in passing: don't want this arch thread
-> to go down into that rabbit hole: we can start a fresh thread on it if
-> you wish, but right now my priority is commit messages for the second
-> series, rather than solving (or even detailing) the PAE problem.
+                        Geert
 
-I infer that what you need is a pte_access_start() and a
-pte_access_end() which look like they can be plausibly rcu_read_lock()
-and rcu_read_unlock(), but might need to be local_irq_save() and
-local_irq_restore() in some configurations?
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-We also talked about moving x86 to always RCU-free page tables in
-order to make accessing /proc/$pid/smaps lockless.  I believe Michel
-is going to take a swing at this project.
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
