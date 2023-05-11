@@ -2,118 +2,150 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6471AC7EE2F
-	for <linux-sh@archiver.kernel.org>; Thu, 11 May 2023 09:31:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FB5EC7EE26
+	for <linux-sh@archiver.kernel.org>; Thu, 11 May 2023 14:04:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237458AbjEKJbK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 11 May 2023 05:31:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52514 "EHLO
+        id S233998AbjEKOEY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 11 May 2023 10:04:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51214 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236592AbjEKJbH (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 11 May 2023 05:31:07 -0400
-Received: from mail-qk1-x732.google.com (mail-qk1-x732.google.com [IPv6:2607:f8b0:4864:20::732])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9F4884EEC;
-        Thu, 11 May 2023 02:31:06 -0700 (PDT)
-Received: by mail-qk1-x732.google.com with SMTP id af79cd13be357-757741ca000so500431385a.2;
-        Thu, 11 May 2023 02:31:06 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1683797466; x=1686389466;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=44LgLHJDIULJkMBem069KICIq3uxO214CaUgM8dXQT8=;
-        b=BDA3XAW6HVHBBCTylbjq0CrSvwep3z/RKHIin6eHkOxIgxSvF9oCpp4JdMxjhKCg8a
-         t6De61RAZB8nwhqVhhnd+GwGOl5A9f6x8ta1mhnXQNHIA8XVVWTsZ3z2sLNVKJGzzpnv
-         pVJ84YIgNXNe3zzg0Bt2DTwq5JDGQGStI/fGod4pqnCGfyQ7QKofa8hYUqI7j01kYIh5
-         pdBpovGUxFwqp+4kZG7VlWddqhNwbB9KXu5x5m7XiaxjuDvLIgeFm1gLHxbutaTsEe0t
-         4R0BYZnEDMzRXc8veBcbo5PxiVrNC+0sZriJIWCU7Z1JN7IWfsEaHn66MIjE5tmEuP4w
-         GExw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1683797466; x=1686389466;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=44LgLHJDIULJkMBem069KICIq3uxO214CaUgM8dXQT8=;
-        b=dOB9EqJRKU9yOdD/XZ2T/hNNSCFQtAGKxLUU16T6mVKz6TCWCNalINroxiiD+sbp+Q
-         N406tuWlnXrlHLE2XghdpM1R3uUH36/6YyhUpY3pcf530A7VBgwc1oc16edXX3Ev6GXs
-         LBNQKqX1qhl2XbgpqAYRY9CZ87xGR7xBkKEcvVQw3uWauWfGtzjMRZV4IMh71TRci4jH
-         SFrooGCERFq2zkzbvwiIg/zPCHBSsLTZ1IZ/vFfLCZyAEVJcl917xswax7omKu2TB8gr
-         Eh7yq94a71+WRcFrOC+k7GuokGZbJbvPS8EGTWotP4K3o7XyytgSr1KhNmmjNqyFGvI7
-         Wfrg==
-X-Gm-Message-State: AC+VfDzWHForSBQse/Glxvyj0A7Qwsifs7e0vqzajeOPLXEXBtCnBeU2
-        uMOe012FZ5yNduh3m9Uq3zTkdCRCOOUnWZCK5tk=
-X-Google-Smtp-Source: ACHHUZ4gCIyUNhd/+bbAhcP9wNcKpLhKmfok0Ws6ilq/cfwGVAdfDhZw6m7PSHSI2kufFJi8oJq2AHQm2PPca7W1ngo=
-X-Received: by 2002:ad4:5961:0:b0:621:4551:c6dc with SMTP id
- eq1-20020ad45961000000b006214551c6dcmr7378789qvb.39.1683797465598; Thu, 11
- May 2023 02:31:05 -0700 (PDT)
-MIME-Version: 1.0
-References: <20230510195806.2902878-1-nphamcs@gmail.com> <0d8e2503-5d4f-4b60-84ff-01a23bcf557f@app.fastmail.com>
-In-Reply-To: <0d8e2503-5d4f-4b60-84ff-01a23bcf557f@app.fastmail.com>
-From:   Nhat Pham <nphamcs@gmail.com>
-Date:   Thu, 11 May 2023 02:30:54 -0700
-Message-ID: <CAKEwX=OFVkc2GL3jmoC-qAuwZvzxfs7v__aWY=8bLY3MeMq9hA@mail.gmail.com>
-Subject: Re: [PATCH] cachestat: wire up cachestat for other architectures
-To:     Arnd Bergmann <arnd@arndb.de>
-Cc:     Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org,
-        linux-api@vger.kernel.org, kernel-team@meta.com,
-        Linux-Arch <linux-arch@vger.kernel.org>,
-        Johannes Weiner <hannes@cmpxchg.org>,
-        Richard Henderson <richard.henderson@linaro.org>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>,
+        with ESMTP id S238236AbjEKOEW (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 11 May 2023 10:04:22 -0400
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A353F10FF;
+        Thu, 11 May 2023 07:04:20 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=agTIVDV40QlNuRDmtaMpYQzLmx8ylyt8K8o0YwfCE44=; b=lL2e25Q7Ym9Z2f1ilo2kWwHtLS
+        4LEtDqoDAi/1aC4kjoeLMlHtLt+a+FS4EW3ttxbaQDhTXZfyi02WOEzNc3/vCsr0owbyF5PEsIwHc
+        4EGA9zShanxJYpMWANvO4AfYvUXSJigLrvPdNGyjPeVrrNrqH+tCpFoKNI6P6bYEGIKsYYtBzAtzu
+        8Ajl8g5ng54yFG0pf0AiaE1GeB3gEJ+vkOMxu+NkdXV1EBgexS5qxecZBXe6DpvnyQd7D8QuN/WHz
+        qIZBX6djd2pg1T+ptsLEa/faZBnf92py7b8vnk1aHVuruD1rplz5XIZSxcsHdZBQZO/oPVfH/8958
+        /oI/ASsA==;
+Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1px6sh-00HGyK-LW; Thu, 11 May 2023 14:02:55 +0000
+Date:   Thu, 11 May 2023 15:02:55 +0100
+From:   Matthew Wilcox <willy@infradead.org>
+To:     Hugh Dickins <hughd@google.com>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Mike Kravetz <mike.kravetz@oracle.com>,
+        Mike Rapoport <rppt@kernel.org>,
+        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
+        David Hildenbrand <david@redhat.com>,
+        Suren Baghdasaryan <surenb@google.com>,
+        Qi Zheng <zhengqi.arch@bytedance.com>,
         Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
         Michal Simek <monstr@monstr.eu>,
         Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
         Helge Deller <deller@gmx.de>,
+        John David Anglin <dave.anglin@bell.net>,
+        "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
         Michael Ellerman <mpe@ellerman.id.au>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Heiko Carstens <hca@linux.ibm.com>, gor@linux.ibm.com,
-        Alexander Gordeev <agordeev@linux.ibm.com>,
-        borntraeger@linux.ibm.com, Sven Schnelle <svens@linux.ibm.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
+        Alexandre Ghiti <alexghiti@rivosinc.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        Claudio Imbrenda <imbrenda@linux.ibm.com>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "David S . Miller" <davem@davemloft.net>, chris@zankel.net,
-        Max Filippov <jcmvbkbc@gmail.com>, linux-alpha@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+        "David S. Miller" <davem@davemloft.net>,
+        Chris Zankel <chris@zankel.net>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Peter Zijlstra <peterz@infradead.org>, x86@kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
+        Michel Lespinasse <michel@lespinasse.org>
+Subject: Re: [PATCH 00/23] arch: allow pte_offset_map[_lock]() to fail
+Message-ID: <ZFz1j1slZHCQmwMJ@casper.infradead.org>
+References: <77a5d8c-406b-7068-4f17-23b7ac53bc83@google.com>
+ <ZFs0k2rrLPH9A/UU@casper.infradead.org>
+ <d7f3c7b2-25b8-ef66-98a8-43d68f4499f@google.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <d7f3c7b2-25b8-ef66-98a8-43d68f4499f@google.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, May 11, 2023 at 12:05=E2=80=AFAM Arnd Bergmann <arnd@arndb.de> wrot=
-e:
->
-> On Wed, May 10, 2023, at 21:58, Nhat Pham wrote:
-> > cachestat is previously only wired in for x86 (and architectures using
-> > the generic unistd.h table):
-> >
-> > https://lore.kernel.org/lkml/20230503013608.2431726-1-nphamcs@gmail.com=
-/
-> >
-> > This patch wires cachestat in for all the other architectures.
-> >
-> > Signed-off-by: Nhat Pham <nphamcs@gmail.com>
->
-> The changes you did here look good, but you missed one
-> file that has never been converted to the syscall.tbl format:
-> arch/arm64/include/asm/unistd32.h along with the __NR_compat_syscalls
-> definition in arch/arm64/include/asm/unistd.h, please add those
-> as well, and then
->
-> Reviewed-by: Arnd Bergmann <arnd@arndb.de>
+On Wed, May 10, 2023 at 09:35:44PM -0700, Hugh Dickins wrote:
+> On Wed, 10 May 2023, Matthew Wilcox wrote:
+> > On Tue, May 09, 2023 at 09:39:13PM -0700, Hugh Dickins wrote:
+> > > Two: pte_offset_map() will need to do an rcu_read_lock(), with the
+> > > corresponding rcu_read_unlock() in pte_unmap().  But most architectures
+> > > never supported CONFIG_HIGHPTE, so some don't always call pte_unmap()
+> > > after pte_offset_map(), or have used userspace pte_offset_map() where
+> > > pte_offset_kernel() is more correct.  No problem in the current tree,
+> > > but a problem once an rcu_read_unlock() will be needed to keep balance.
+> > 
+> > Hi Hugh,
+> > 
+> > I shall have to spend some time looking at these patches, but at LSFMM
+> > just a few hours ago, I proposed and nobody objected to removing
+> > CONFIG_HIGHPTE.  I don't intend to take action on that consensus
+> > immediately, so I can certainly wait until your patches are applied, but
+> > if this information simplifies what you're doing, feel free to act on it.
+> 
+> Thanks a lot, Matthew: very considerate, as usual.
+> 
+> Yes, I did see your "Whither Highmem?" (wither highmem!) proposal on the
 
-Just sent a follow-up fixlet for this:
+I'm glad somebody noticed the pun ;-)
 
-https://lore.kernel.org/linux-mm/20230511092843.3896327-1-nphamcs@gmail.com=
-/T/#u
+> list, and it did make me think, better get these patches and preview out
+> soon, before you get to vanish pte_unmap() altogether.  HIGHMEM or not,
+> HIGHPTE or not, I think pte_offset_map() and pte_unmap() still have an
+> important role to play.
+> 
+> I don't really understand why you're going down a remove-CONFIG_HIGHPTE
+> route: I thought you were motivated by the awkardness of kmap on large
+> folios; but I don't see how removing HIGHPTE helps with that at all
+> (unless you have a "large page tables" effort in mind, but I doubt it).
 
-Thanks for the suggestion!
+Quite right, my primary concern is filesystem metadata; primarily
+directories as I don't think anybody has ever supported symlinks or
+superblocks larger than 4kB.
+
+I was thinking that removing CONFIG_HIGHPTE might simplify the page
+fault handling path a little, but now I've looked at it some more, and
+I'm not sure there's any simplification to be had.  It should probably
+use kmap_local instead of kmap_atomic(), though.
+
+> But I've no investment in CONFIG_HIGHPTE if people think now is the
+> time to remove it: I disagree, but wouldn't miss it myself - so long
+> as you leave pte_offset_map() and pte_unmap() (under whatever names).
+> 
+> I don't think removing CONFIG_HIGHPTE will simplify what I'm doing.
+> For a moment it looked like it would: the PAE case is nasty (and our
+> data centres have not been on PAE for a long time, so it wasn't a
+> problem I had to face before); and knowing pmd_high must be 0 for a
+> page table looked like it would help, but now I'm not so sure of that
+> (hmm, I'm changing my mind again as I write).
+> 
+> Peter's pmdp_get_lockless() does rely for complete correctness on
+> interrupts being disabled, and I suspect that I may be forced in the
+> PAE case to do so briefly; but detest that notion.  For now I'm just
+> deferring it, hoping for a better idea before third series finalized.
+> 
+> I mention this (and Cc Peter) in passing: don't want this arch thread
+> to go down into that rabbit hole: we can start a fresh thread on it if
+> you wish, but right now my priority is commit messages for the second
+> series, rather than solving (or even detailing) the PAE problem.
+
+I infer that what you need is a pte_access_start() and a
+pte_access_end() which look like they can be plausibly rcu_read_lock()
+and rcu_read_unlock(), but might need to be local_irq_save() and
+local_irq_restore() in some configurations?
+
+We also talked about moving x86 to always RCU-free page tables in
+order to make accessing /proc/$pid/smaps lockless.  I believe Michel
+is going to take a swing at this project.
