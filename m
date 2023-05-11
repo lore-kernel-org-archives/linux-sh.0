@@ -2,115 +2,73 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5C271C7EE25
-	for <linux-sh@archiver.kernel.org>; Thu, 11 May 2023 19:34:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D9A73C77B7C
+	for <linux-sh@archiver.kernel.org>; Thu, 11 May 2023 20:12:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239174AbjEKTeh (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 11 May 2023 15:34:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53072 "EHLO
+        id S239233AbjEKUMF convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 11 May 2023 16:12:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57072 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232629AbjEKTef (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 11 May 2023 15:34:35 -0400
-Received: from mail-qv1-xf31.google.com (mail-qv1-xf31.google.com [IPv6:2607:f8b0:4864:20::f31])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E2C1F59D0;
-        Thu, 11 May 2023 12:34:34 -0700 (PDT)
-Received: by mail-qv1-xf31.google.com with SMTP id 6a1803df08f44-619be7d7211so42158626d6.3;
-        Thu, 11 May 2023 12:34:34 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1683833674; x=1686425674;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=OkRg4aBIGd+Ujeyjhqn0VJEzJVlq0iY77Z11k0mAFFM=;
-        b=D8VOr21Fczrl0K1COf0x4Ck7WHMsRogiYEEbrY2VpNny+n3MR+tJuDH09I9YAsS652
-         swT6GvFknXTnMBZPWlOxHk2u05+SeKUhRFMH/ZtDMNfuFTmqhV28jtrPoFuIwQ/bqAzu
-         JEHJCZ22+ejNPu9sQ5B4mFAObz8laeWoYTSRIa0MiOnPq0OszLg5zmMrWPnpqMS2qlwN
-         5gjqnyxgdjPUMVEd0f/03my+5DYNfTma/sJ3vnrs+cTqKEwezFl9LOtEmPAD5vfhXfNX
-         JrpZrTJ+uj1uIfEyrp6lAwR5J8sidiziH5Wld/lDfUFxzbjgvyiL15VatExShfnoJdEm
-         /ImQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1683833674; x=1686425674;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=OkRg4aBIGd+Ujeyjhqn0VJEzJVlq0iY77Z11k0mAFFM=;
-        b=I+e0iSK5LM2XRHfR9+c8Jb9mN0NXDz/nBDRNymh9Jue2t28UrKxRqYi2LAE/un8HXU
-         l/OOq8L0LY8OQVbmwAoWH/BaM0Ae7AY9L0YOjjmHDWt730qnBQmLmnym9oZ0iBbXqNd4
-         gVWJ/+zsy+LxKr+tRpoHswUe1SZbbfIEoedYAQpdDDuJhDQ9bPUD+tQZOHpUrKSAnejI
-         9u0b9DBVMJn0eyhNC8EAk9eFmoxMjQNvibNIGd9h2L1Z5YH86xENlUi8nWwFAHrkiOJK
-         PSsMWFQ6fFXlQaVDIh+PXUezizXqkF3zz0KM+XkAcsoqlQlFCMJuRs4XbetYVKblN/5h
-         jOmQ==
-X-Gm-Message-State: AC+VfDzTm74CQfiyLWsMkFQ3vTps7tfH1fUU0rEwsZ8jQoJJSlcyDrj/
-        Q3nS9z5o1ebkDUsZdHKTVKEx7Y1ZNHkeOKrul8Y=
-X-Google-Smtp-Source: ACHHUZ6FKXu0op+KxzAVHeFuNCXe2D1xFAp09jFVR7D1aeGdyycJWyp3G5ZLoEExaajX1pb4elh/5/+JF1DIDbKGBFc=
-X-Received: by 2002:ad4:5dec:0:b0:5a1:6212:93be with SMTP id
- jn12-20020ad45dec000000b005a1621293bemr33993641qvb.29.1683833673901; Thu, 11
- May 2023 12:34:33 -0700 (PDT)
-MIME-Version: 1.0
-References: <20230510195806.2902878-1-nphamcs@gmail.com> <874joja6vz.fsf@mail.lhotse>
-In-Reply-To: <874joja6vz.fsf@mail.lhotse>
-From:   Nhat Pham <nphamcs@gmail.com>
-Date:   Thu, 11 May 2023 12:34:23 -0700
-Message-ID: <CAKEwX=OHMaUzEG9hoMz20m9DnyFD4xC78KiNV1Qu0bUhkrYhAA@mail.gmail.com>
-Subject: Re: [PATCH] cachestat: wire up cachestat for other architectures
-To:     Michael Ellerman <mpe@ellerman.id.au>
-Cc:     akpm@linux-foundation.org, linux-mm@kvack.org,
-        linux-api@vger.kernel.org, kernel-team@meta.com,
-        linux-arch@vger.kernel.org, hannes@cmpxchg.org,
-        richard.henderson@linaro.org, ink@jurassic.park.msu.ru,
-        mattst88@gmail.com, linux@armlinux.org.uk, geert@linux-m68k.org,
-        monstr@monstr.eu, tsbogend@alpha.franken.de,
-        James.Bottomley@hansenpartnership.com, deller@gmx.de,
-        npiggin@gmail.com, christophe.leroy@csgroup.eu, hca@linux.ibm.com,
-        gor@linux.ibm.com, agordeev@linux.ibm.com,
-        borntraeger@linux.ibm.com, svens@linux.ibm.com,
-        ysato@users.sourceforge.jp, dalias@libc.org,
-        glaubitz@physik.fu-berlin.de, davem@davemloft.net,
-        chris@zankel.net, jcmvbkbc@gmail.com, linux-alpha@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
+        with ESMTP id S238053AbjEKUME (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 11 May 2023 16:12:04 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 28A462D6A;
+        Thu, 11 May 2023 13:12:00 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pxCdk-001kHF-Gk; Thu, 11 May 2023 22:11:52 +0200
+Received: from p5b13addc.dip0.t-ipconnect.de ([91.19.173.220] helo=suse-laptop.fritz.box)
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pxCdk-0022mr-8U; Thu, 11 May 2023 22:11:52 +0200
+Message-ID: <4358d6ccca2d4e915e07a6e89d2d281e1299fbe5.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 1/2] sh: dma: fix `dmaor_read_reg`/`dmaor_write_reg`
+ macros
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Artur Rojek <contact@artur-rojek.eu>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Date:   Thu, 11 May 2023 22:11:51 +0200
+In-Reply-To: <ef8a4c361255303359b003185e50f47cf3b422f0.camel@physik.fu-berlin.de>
+References: <20230506141703.65605-1-contact@artur-rojek.eu>
+         <20230506141703.65605-2-contact@artur-rojek.eu>
+         <65f873585db0cd9f79a84eb48707413775a9ba5b.camel@physik.fu-berlin.de>
+         <2f73b2ac1ec15a6b0f78d8d3a7f12266@artur-rojek.eu>
+         <ef8a4c361255303359b003185e50f47cf3b422f0.camel@physik.fu-berlin.de>
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.1 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.19.173.220
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, May 10, 2023 at 8:23=E2=80=AFPM Michael Ellerman <mpe@ellerman.id.a=
-u> wrote:
->
-> Nhat Pham <nphamcs@gmail.com> writes:
-> > cachestat is previously only wired in for x86 (and architectures using
-> > the generic unistd.h table):
-> >
-> > https://lore.kernel.org/lkml/20230503013608.2431726-1-nphamcs@gmail.com=
-/
-> >
-> > This patch wires cachestat in for all the other architectures.
-> >
-> > Signed-off-by: Nhat Pham <nphamcs@gmail.com>
-> > ---
-> >  arch/alpha/kernel/syscalls/syscall.tbl      | 1 +
-> >  arch/arm/tools/syscall.tbl                  | 1 +
-> >  arch/ia64/kernel/syscalls/syscall.tbl       | 1 +
-> >  arch/m68k/kernel/syscalls/syscall.tbl       | 1 +
-> >  arch/microblaze/kernel/syscalls/syscall.tbl | 1 +
-> >  arch/mips/kernel/syscalls/syscall_n32.tbl   | 1 +
-> >  arch/mips/kernel/syscalls/syscall_n64.tbl   | 1 +
-> >  arch/mips/kernel/syscalls/syscall_o32.tbl   | 1 +
-> >  arch/parisc/kernel/syscalls/syscall.tbl     | 1 +
-> >  arch/powerpc/kernel/syscalls/syscall.tbl    | 1 +
->
-> With the change to the selftest (see my other mail), I tested this on
-> powerpc and all tests pass.
+On Sun, 2023-05-07 at 12:32 +0200, John Paul Adrian Glaubitz wrote:
+> > I also wondered that. On SH7709 it's a hard panic, it should be the same
+> > elsewhere.
+> 
+> I will give the patch a spin on my SH-7785LCR and see if it breaks anything.
 
-Saw the change you proposed, Michael! It looks good to me.
-Thanks for helping me make the selftest suite more robust :)
+I have successfully booted a current kernel with both patches applied on my
+SH7785LCR board and will let it run for a few days to make sure it runs stable
+and then apply the two patches to my sh-linux tree.
 
->
-> Tested-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
->
->
-> cheers
+Thanks,
+Adrian
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
