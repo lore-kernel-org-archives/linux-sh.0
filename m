@@ -2,97 +2,87 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9D687C77B7C
-	for <linux-sh@archiver.kernel.org>; Fri, 12 May 2023 07:35:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D8510C77B75
+	for <linux-sh@archiver.kernel.org>; Fri, 12 May 2023 08:44:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239868AbjELHfD convert rfc822-to-8bit (ORCPT
+        id S239826AbjELIoC convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 12 May 2023 03:35:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45306 "EHLO
+        Fri, 12 May 2023 04:44:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55236 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239965AbjELHfC (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 12 May 2023 03:35:02 -0400
-Received: from mail-yw1-f182.google.com (mail-yw1-f182.google.com [209.85.128.182])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 33B2930F4;
-        Fri, 12 May 2023 00:35:00 -0700 (PDT)
-Received: by mail-yw1-f182.google.com with SMTP id 00721157ae682-55dc3431c64so70410847b3.2;
-        Fri, 12 May 2023 00:35:00 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1683876899; x=1686468899;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=krHFF4VrQFF8ZdKbjFXoyE6dRQVVUTVc+JTNIgiYdP4=;
-        b=Rm4u6bptwbpVEu7gAjRWPCStzRG7pFI+1Ct33NT5gAgMt9NuFcdxldneWeEJdQjluA
-         QLcHRCO7Ys7T7Fn+FL8LA6GVQv9MX+r+6kkHfxKJxpMftYpQ1OBgd/AFZWAI0yKt7InF
-         Bn/d+HypRD8xb3KaOjRzP5owvayUbhpoo5puFbypkg0tAXEt6bQeSb0znqanD20I6uCE
-         gba4+9QBNtEUYSdRUmpUV+djc+s+Gk95WlWp3Rr01zrP/sVF3/pVnZ8a/3Z6UY36CF2U
-         bKVNoeshMWLF+Thr4JISoVPusHGj51DdxnCtK8b19HxwFSBJyA+zBI0V/AWTbrzBsOhz
-         Regg==
-X-Gm-Message-State: AC+VfDxPbiOAdsJf6SbvjAnQpX46DIXp+LXvA0RVWQ9f7N5Y8Q4jR8ME
-        UMok12mpOQrZS7xZ/r1NTIumvz75Sp1SaBEw
-X-Google-Smtp-Source: ACHHUZ6G9iN1KeyQc9bDVbD81iB24r5gztRuhuN1/b3Nw0gqG/uj3uYtx/dxmJKyEwFzzroAwsWOtA==
-X-Received: by 2002:a25:d68c:0:b0:ba7:1421:ce06 with SMTP id n134-20020a25d68c000000b00ba71421ce06mr625424ybg.49.1683876899170;
-        Fri, 12 May 2023 00:34:59 -0700 (PDT)
-Received: from mail-yw1-f173.google.com (mail-yw1-f173.google.com. [209.85.128.173])
-        by smtp.gmail.com with ESMTPSA id p78-20020a25d851000000b00b9a63c60fefsm4972620ybg.31.2023.05.12.00.34.58
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 12 May 2023 00:34:58 -0700 (PDT)
-Received: by mail-yw1-f173.google.com with SMTP id 00721157ae682-55dc3431c64so70410667b3.2;
-        Fri, 12 May 2023 00:34:58 -0700 (PDT)
-X-Received: by 2002:a05:6902:1892:b0:b72:4ca:b3ce with SMTP id
- cj18-20020a056902189200b00b7204cab3cemr28721655ybb.16.1683876898563; Fri, 12
- May 2023 00:34:58 -0700 (PDT)
-MIME-Version: 1.0
-References: <20230506141703.65605-1-contact@artur-rojek.eu>
- <20230506141703.65605-3-contact@artur-rojek.eu> <CAMuHMdV4hDULr43_4Z=Q9EHEvbzGStMRY45d4Ja1ixqSvMd2Cg@mail.gmail.com>
- <079f78025bf0af7808951ff0b56393cff99d957b.camel@physik.fu-berlin.de>
-In-Reply-To: <079f78025bf0af7808951ff0b56393cff99d957b.camel@physik.fu-berlin.de>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Fri, 12 May 2023 09:34:47 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdVD9kDqhaZsVO8sLMAxB0NX524y8e7m-3n=Bz+PALJJ7Q@mail.gmail.com>
-Message-ID: <CAMuHMdVD9kDqhaZsVO8sLMAxB0NX524y8e7m-3n=Bz+PALJJ7Q@mail.gmail.com>
-Subject: Re: [PATCH 2/2] sh: dma: Correct the number of DMA channels in SH7709
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+        with ESMTP id S232659AbjELIoB (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 12 May 2023 04:44:01 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 758FC4EC2;
+        Fri, 12 May 2023 01:44:00 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1pxONW-000HaH-0B; Fri, 12 May 2023 10:43:54 +0200
+Received: from p5b13afa1.dip0.t-ipconnect.de ([91.19.175.161] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1pxONV-000Czl-Oz; Fri, 12 May 2023 10:43:53 +0200
+Message-ID: <6be49109f6ee00da175f56698332932f27779389.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 2/2] sh: dma: Correct the number of DMA channels in
+ SH7709
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
 Cc:     Artur Rojek <contact@artur-rojek.eu>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
         linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Date:   Fri, 12 May 2023 10:43:52 +0200
+In-Reply-To: <CAMuHMdVD9kDqhaZsVO8sLMAxB0NX524y8e7m-3n=Bz+PALJJ7Q@mail.gmail.com>
+References: <20230506141703.65605-1-contact@artur-rojek.eu>
+         <20230506141703.65605-3-contact@artur-rojek.eu>
+         <CAMuHMdV4hDULr43_4Z=Q9EHEvbzGStMRY45d4Ja1ixqSvMd2Cg@mail.gmail.com>
+         <079f78025bf0af7808951ff0b56393cff99d957b.camel@physik.fu-berlin.de>
+         <CAMuHMdVD9kDqhaZsVO8sLMAxB0NX524y8e7m-3n=Bz+PALJJ7Q@mail.gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.1 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.19.175.161
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Adrian,
+On Fri, 2023-05-12 at 09:34 +0200, Geert Uytterhoeven wrote:
+> Hi Adrian,
+> 
+> On Thu, May 11, 2023 at 10:20 PM John Paul Adrian Glaubitz
+> <glaubitz@physik.fu-berlin.de> wrote:
+> > On Mon, 2023-05-08 at 12:55 +0200, Geert Uytterhoeven wrote:
+> > > On Sat, May 6, 2023 at 4:22 PM Artur Rojek <contact@artur-rojek.eu> wrote:
+> > > > According to the PM, the DMAC found in SH7709 features only 4 channels.
+> > > > 
+> > > > Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
+> > > 
+> > > Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> > 
+> > I assume we can't find a commit for the Fixes tag? Looking at the "git blame"
+> > for the Kconfig file, it seems the corresponding lines were changed before
+> > the source tree was imported into git in 1da177e4c3f4.
+> 
+> I don't think Fixes has much relevance, as the issue is present in all
+> LTS kernel versions that are still maintained.
+> The stable machinery AI will just pick it up, based on the word "correct" in
+> the description.
 
-On Thu, May 11, 2023 at 10:20 PM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Mon, 2023-05-08 at 12:55 +0200, Geert Uytterhoeven wrote:
-> > On Sat, May 6, 2023 at 4:22 PM Artur Rojek <contact@artur-rojek.eu> wrote:
-> > > According to the PM, the DMAC found in SH7709 features only 4 channels.
-> > >
-> > > Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
-> >
-> > Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
->
-> I assume we can't find a commit for the Fixes tag? Looking at the "git blame"
-> for the Kconfig file, it seems the corresponding lines were changed before
-> the source tree was imported into git in 1da177e4c3f4.
+Ah, I didn't know about that. Thanks for the clarification.
 
-I don't think Fixes has much relevance, as the issue is present in all
-LTS kernel versions that are still maintained.
-The stable machinery AI will just pick it up, based on the word "correct" in
-the description.
-
-Gr{oetje,eeting}s,
-
-                        Geert
+Adrian
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
