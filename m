@@ -2,93 +2,158 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4E688C77B7D
-	for <linux-sh@archiver.kernel.org>; Sat, 13 May 2023 15:02:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 339EFC7EE25
+	for <linux-sh@archiver.kernel.org>; Sat, 13 May 2023 21:37:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238046AbjEMPCS convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 13 May 2023 11:02:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54312 "EHLO
+        id S231562AbjEMVhx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 13 May 2023 17:37:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52750 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230133AbjEMPCR (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 13 May 2023 11:02:17 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ADD9B213C;
-        Sat, 13 May 2023 08:02:16 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pxql8-003KcP-I7; Sat, 13 May 2023 17:02:10 +0200
-Received: from dynamic-077-013-140-028.77.13.pool.telefonica.de ([77.13.140.28] helo=[192.168.1.11])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pxql8-000zVB-BP; Sat, 13 May 2023 17:02:10 +0200
-Message-ID: <6977d52a797af5dfa3a863ac32bee8a9553bf86a.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 1/2] sh: dma: fix `dmaor_read_reg`/`dmaor_write_reg`
- macros
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Artur Rojek <contact@artur-rojek.eu>
-Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date:   Sat, 13 May 2023 17:02:09 +0200
-In-Reply-To: <0ea0b05e99f63edf05ef9a0afe410fc1@artur-rojek.eu>
-References: <20230506141703.65605-1-contact@artur-rojek.eu>
-         <20230506141703.65605-2-contact@artur-rojek.eu>
-         <65f873585db0cd9f79a84eb48707413775a9ba5b.camel@physik.fu-berlin.de>
-         <2f73b2ac1ec15a6b0f78d8d3a7f12266@artur-rojek.eu>
-         <CAMuHMdXFFaRqPxvUqgJCtZG1B5gpULL-N4VpNPyPF=_+mtn7Dg@mail.gmail.com>
-         <309305917494c5a6c7cfb7ecb8bbf766@artur-rojek.eu>
-         <750f11848a647831ccfd1284ad0a8dd540c8f886.camel@physik.fu-berlin.de>
-         <0ea0b05e99f63edf05ef9a0afe410fc1@artur-rojek.eu>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.1 
+        with ESMTP id S229447AbjEMVhu (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 13 May 2023 17:37:50 -0400
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0597C26BF;
+        Sat, 13 May 2023 14:37:48 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.de; s=s31663417;
+        t=1684013732; i=deller@gmx.de;
+        bh=yJRf6LHTP/Tqq0WjA9yc9VAdZA0puqTSbfj+iJUayOI=;
+        h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
+        b=cr8F1CRBH8iQkDkEZ/t6guBO/5jXWPHjvHesKUuGbD0L0xJGMcsfDLG0X9/WHN5tf
+         gmoBZcMozWcEmMI1SXgz60UKtLHg89Qkg3K5IkelB8CkMlNz7sHwAxzIMD7I9clgqG
+         8BBXU1INAL2hkc4jAoXGc9Lj9qQhDT78CQ4DXrxDBdxOVY1Chk3DgfjVKIVZpGXT/D
+         hVsUkekeRL3hC4ZEJXj+51+YVnf9Nvq9nqI08asyhPuJHM5bnDl2bJRO7+pyeEkSzs
+         makkDeysMdDZ+PR6cOIDeDEyBEo1Ufi+QeDWvXHj3Lo1XEgk6NeIJkd9GLiqmybaVK
+         GkXJUictBPxtg==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [192.168.20.60] ([94.134.158.250]) by mail.gmx.net (mrgmx005
+ [212.227.17.190]) with ESMTPSA (Nemesis) id 1MdvqW-1qYw4r4BZ0-00b73t; Sat, 13
+ May 2023 23:35:32 +0200
+Message-ID: <ca4ac780-42b0-4818-bd84-e1a4acbb28dd@gmx.de>
+Date:   Sat, 13 May 2023 23:35:26 +0200
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 77.13.140.28
-X-ZEDAT-Hint: PO
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.0
+Subject: Re: [PATCH 08/23] parisc: add pte_unmap() to balance get_ptep()
+Content-Language: en-US
+To:     Hugh Dickins <hughd@google.com>,
+        Andrew Morton <akpm@linux-foundation.org>
+Cc:     Mike Kravetz <mike.kravetz@oracle.com>,
+        Mike Rapoport <rppt@kernel.org>,
+        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
+        Matthew Wilcox <willy@infradead.org>,
+        David Hildenbrand <david@redhat.com>,
+        Suren Baghdasaryan <surenb@google.com>,
+        Qi Zheng <zhengqi.arch@bytedance.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Michal Simek <monstr@monstr.eu>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        John David Anglin <dave.anglin@bell.net>,
+        "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Alexandre Ghiti <alexghiti@rivosinc.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        Claudio Imbrenda <imbrenda@linux.ibm.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "David S. Miller" <davem@davemloft.net>,
+        Chris Zankel <chris@zankel.net>,
+        Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org
+References: <77a5d8c-406b-7068-4f17-23b7ac53bc83@google.com>
+ <44ebbf90-5fbb-2815-17c7-fcfe3c87d78e@google.com>
+From:   Helge Deller <deller@gmx.de>
+In-Reply-To: <44ebbf90-5fbb-2815-17c7-fcfe3c87d78e@google.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:02c5NpapKZ0yND7w0y40kUtQXH+Ybc0bQPzvspvwYlotAB99sF5
+ zFBBfNW47FR7ppsIv7ORzd5debot/2bSdnSyGIDtWWm1xzh1QppJDewIoqcOMGEOc5o3++E
+ GB7D5SsAuS01JsydFNYGrdMOwh1KtcLiZKmwzv4YnhFPj7aU+qawXM/A52PkJ99vIebL33s
+ O5IbJLN5O6SEa/1rmMz5g==
+UI-OutboundReport: notjunk:1;M01:P0:bhlTqfzpBjQ=;VggY45HBIIx7XaH/PngpNV8urft
+ cjwTlAoz1j7g24v8vlKLAO3PylYnY/qHL1gAemvPDWFLKb+ZHNP7elgmO7WqCtgoC6KjABob8
+ DNOyUboPP4EN29IO7mQkp5zAUdfcC9dvuIH6FrtIgv24kY/u0UkP0sFqXCCza311xuhuc0bfI
+ W3a3RTKNdId6dAowl5u63DT6seM8Hm4iphC0SPSPZT9g005M9r8+BQH/XC9MFQyJSO3FX3CWI
+ UokhNrxaQU+aZoAGuy0ZKtyCLBTYWL4F6TSIHPfUdr4DKE8vx3tRYWkx+4y1/bi2ullhSCNlL
+ t6uHP3r9oyZotSEHOmuNGQ7W90zXSNq13A8slhX51+wEbYQI7OjJlN5/6SNi0b3fPn7mCmsak
+ 5u96zCjBgO45UkYwIFVS3h7nF/Mwj8eEQpBbuQa/S0dQzwZzDhm85nk91JGJWzeKBhnpogocH
+ HASt2e1tuCNJHXlJDWO5LuLXb/JVmpy/KwGOxafTz0qWr0u9OGwBJyzr/aekEvaK0vqfAKu9G
+ WWPJ6EPxl3C5tMotM5H57EtsA/8G5fV+FiCfWCTjtjTsMZF7DQvd5ixzVKc8aKHYj3o78J5J9
+ b1xbN4FsZDbke0QSx0p5QFQq4XQal0qGr9xIMYRqRZ0p56T3GrZgrwad5D5lXnpeTj0OqJ47u
+ LkxrOM39notrGfVPy74SGBIJ6LFZQs2aBXs0Hrdb2Ua2vNs/36VHsvhfxQ4rZu2ljsKr7Tnsd
+ t3WHCudqPse4fRr2srS44fxtRfB3efVVWEMsoe5NnAfdFJZgOwt0WYZyDbB2PZ4mU7ilCEJAJ
+ irVSZYdS00VuNKqtGWxFrZ0rrE5AHHHlC1uGoa5UQz1YYRu63D00hqjC4lOZ81YrXtV0VSuXi
+ PDH9rmGqc28YryLY3ce8ZihMjd1Tkl/vP1QN0EuRgkkWHoKGGQ5LzjYSoYI+w24AaBgVLeyTT
+ dmWbT/BmDshTWbB5y4/6VdjN1LM=
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Artur!
+Hi Hugh,
 
-On Sat, 2023-05-13 at 16:57 +0200, Artur Rojek wrote:
-> > Maybe you're also interested in the clean-up that Geert suggested in 
-> > this
-> > thread (ordering of the CPU subtypes and capitalization issues)?
-> 
-> Sure, why not - the more clean-up we do, the better :)
+On 5/10/23 06:52, Hugh Dickins wrote:
+> To keep balance in future, remember to pte_unmap() after a successful
+> get_ptep().  And (we might as well) pretend that flush_cache_pages()
+> really needed a map there, to read the pfn before "unmapping".
+>
+> Signed-off-by: Hugh Dickins <hughd@google.com>
+> ---
+>   arch/parisc/kernel/cache.c | 26 +++++++++++++++++++++-----
+>   1 file changed, 21 insertions(+), 5 deletions(-)
+>
+> diff --git a/arch/parisc/kernel/cache.c b/arch/parisc/kernel/cache.c
+> index 1d3b8bc8a623..b0c969b3a300 100644
+> --- a/arch/parisc/kernel/cache.c
+> +++ b/arch/parisc/kernel/cache.c
+> @@ -425,10 +425,15 @@ void flush_dcache_page(struct page *page)
+>   		offset =3D (pgoff - mpnt->vm_pgoff) << PAGE_SHIFT;
+>   		addr =3D mpnt->vm_start + offset;
+>   		if (parisc_requires_coherency()) {
+> +			bool needs_flush =3D false;
+>   			pte_t *ptep;
+>
+>   			ptep =3D get_ptep(mpnt->vm_mm, addr);
+> -			if (ptep && pte_needs_flush(*ptep))
+> +			if (ptep) {
+> +				needs_flush =3D pte_needs_flush(*ptep);
+> +				pte_unmap(ptep);
+> +			}
+> +			if (needs_flush)
+>   				flush_user_cache_page(mpnt, addr);
+>   		} else {
+>   			/*
+> @@ -560,14 +565,20 @@ EXPORT_SYMBOL(flush_kernel_dcache_page_addr);
+>   static void flush_cache_page_if_present(struct vm_area_struct *vma,
+>   	unsigned long vmaddr, unsigned long pfn)
+>   {
+> -	pte_t *ptep =3D get_ptep(vma->vm_mm, vmaddr);
+> +	bool needs_flush =3D false;
+> +	pte_t *ptep;
+>
+>   	/*
+>   	 * The pte check is racy and sometimes the flush will trigger
+>   	 * a non-access TLB miss. Hopefully, the page has already been
+>   	 * flushed.
+>   	 */
+> -	if (ptep && pte_needs_flush(*ptep))
+> +	ptep =3D get_ptep(vma->vm_mm, vmaddr);
+> +	if (ptep) {
+> +		needs_flush =3D pte_needs_flush(*ptep))
 
-Great, thanks a lot!
+^^^^^
+One ")" too much and lacks a trailing ";"
+Should be:
+		needs_flush =3D pte_needs_flush(*ptep);
 
-> > Also, can you write "processor manual" instead of "PM" in the other 
-> > patch
-> > as well as don't use backticks for the macro names? In fact, I would 
-> > suggest
-> > retitling the subject to:
-> > 
-> > 	sh: dma: Fix dmaor_read_reg() and dmaor_write_reg() macros
-> > 
-> 
-> Of course.
-> On a side note, it was supposed to be "programming manual", however I
-> now see that Renesas named that document as "hardware manual", so that's
-> what I'll put into the commit description, if you don't mind.
+With that fixed the kernel compiles and boots sucessfully on parisc.
 
-Absolutely not! Looking forward to your v2 series and please take your time!
-
-Adrian
-
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Helge
