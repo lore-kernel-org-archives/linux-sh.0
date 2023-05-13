@@ -2,91 +2,98 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 64513C77B7C
-	for <linux-sh@archiver.kernel.org>; Sat, 13 May 2023 14:46:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A515C77B7C
+	for <linux-sh@archiver.kernel.org>; Sat, 13 May 2023 14:57:27 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230133AbjEMOqH convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 13 May 2023 10:46:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49690 "EHLO
+        id S238604AbjEMO50 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 13 May 2023 10:57:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53224 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232082AbjEMOqG (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 13 May 2023 10:46:06 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 943753A9B;
-        Sat, 13 May 2023 07:46:05 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1pxqVR-003IIv-Jq; Sat, 13 May 2023 16:45:57 +0200
-Received: from dynamic-077-013-140-028.77.13.pool.telefonica.de ([77.13.140.28] helo=[192.168.1.11])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1pxqVR-000xpB-D8; Sat, 13 May 2023 16:45:57 +0200
-Message-ID: <750f11848a647831ccfd1284ad0a8dd540c8f886.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 1/2] sh: dma: fix `dmaor_read_reg`/`dmaor_write_reg`
- macros
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Artur Rojek <contact@artur-rojek.eu>,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        with ESMTP id S230133AbjEMO5Z (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 13 May 2023 10:57:25 -0400
+Received: from relay8-d.mail.gandi.net (relay8-d.mail.gandi.net [217.70.183.201])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3245C1FC6;
+        Sat, 13 May 2023 07:57:22 -0700 (PDT)
+Received: (Authenticated sender: contact@artur-rojek.eu)
+        by mail.gandi.net (Postfix) with ESMTPA id B56DB1BF204;
+        Sat, 13 May 2023 14:57:19 +0000 (UTC)
+MIME-Version: 1.0
+Date:   Sat, 13 May 2023 16:57:19 +0200
+From:   Artur Rojek <contact@artur-rojek.eu>
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
         linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date:   Sat, 13 May 2023 16:45:56 +0200
-In-Reply-To: <309305917494c5a6c7cfb7ecb8bbf766@artur-rojek.eu>
+Subject: Re: [PATCH 1/2] sh: dma: fix `dmaor_read_reg`/`dmaor_write_reg`
+ macros
+In-Reply-To: <750f11848a647831ccfd1284ad0a8dd540c8f886.camel@physik.fu-berlin.de>
 References: <20230506141703.65605-1-contact@artur-rojek.eu>
-         <20230506141703.65605-2-contact@artur-rojek.eu>
-         <65f873585db0cd9f79a84eb48707413775a9ba5b.camel@physik.fu-berlin.de>
-         <2f73b2ac1ec15a6b0f78d8d3a7f12266@artur-rojek.eu>
-         <CAMuHMdXFFaRqPxvUqgJCtZG1B5gpULL-N4VpNPyPF=_+mtn7Dg@mail.gmail.com>
-         <309305917494c5a6c7cfb7ecb8bbf766@artur-rojek.eu>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.1 
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 77.13.140.28
-X-ZEDAT-Hint: PO
+ <20230506141703.65605-2-contact@artur-rojek.eu>
+ <65f873585db0cd9f79a84eb48707413775a9ba5b.camel@physik.fu-berlin.de>
+ <2f73b2ac1ec15a6b0f78d8d3a7f12266@artur-rojek.eu>
+ <CAMuHMdXFFaRqPxvUqgJCtZG1B5gpULL-N4VpNPyPF=_+mtn7Dg@mail.gmail.com>
+ <309305917494c5a6c7cfb7ecb8bbf766@artur-rojek.eu>
+ <750f11848a647831ccfd1284ad0a8dd540c8f886.camel@physik.fu-berlin.de>
+Message-ID: <0ea0b05e99f63edf05ef9a0afe410fc1@artur-rojek.eu>
+X-Sender: contact@artur-rojek.eu
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Artur!
+On 2023-05-13 16:45, John Paul Adrian Glaubitz wrote:
+> Hi Artur!
+> 
+> On Sat, 2023-05-13 at 13:41 +0200, Artur Rojek wrote:
+>> Yikes!
+>> If this series hasn't been merged yet, perhaps we could fix this issue
+>> in v2. I have something like this in mind (untested):
+>> (...)
+>> Otherwise, I'll send it in separately. Of course we'll also need to 
+>> fix
+>> `SH_DMAC_BASE1` so that it's set only for SoCs that feature two DMAC
+>> modules...
+> 
+> No worries, nothing has been merged yet. For one, the merge windows for 
+> 6.4
+> has been closed and I also haven't merged your patches into my tree 
+> yet. Please
+> take your time to spin up a v2 of your patch set and test them 
+> properly.
 
-On Sat, 2023-05-13 at 13:41 +0200, Artur Rojek wrote:
-> Yikes!
-> If this series hasn't been merged yet, perhaps we could fix this issue
-> in v2. I have something like this in mind (untested):
-> (...)
-> Otherwise, I'll send it in separately. Of course we'll also need to fix
-> `SH_DMAC_BASE1` so that it's set only for SoCs that feature two DMAC
-> modules...
+Great!
 
-No worries, nothing has been merged yet. For one, the merge windows for 6.4
-has been closed and I also haven't merged your patches into my tree yet. Please
-take your time to spin up a v2 of your patch set and test them properly.
+> 
+> Maybe you're also interested in the clean-up that Geert suggested in 
+> this
+> thread (ordering of the CPU subtypes and capitalization issues)?
 
-Maybe you're also interested in the clean-up that Geert suggested in this
-thread (ordering of the CPU subtypes and capitalization issues)?
+Sure, why not - the more clean-up we do, the better :)
 
-Also, can you write "processor manual" instead of "PM" in the other patch
-as well as don't use backticks for the macro names? In fact, I would suggest
-retitling the subject to:
+> 
+> Also, can you write "processor manual" instead of "PM" in the other 
+> patch
+> as well as don't use backticks for the macro names? In fact, I would 
+> suggest
+> retitling the subject to:
+> 
+> 	sh: dma: Fix dmaor_read_reg() and dmaor_write_reg() macros
+> 
 
-	sh: dma: Fix dmaor_read_reg() and dmaor_write_reg() macros
+Of course.
+On a side note, it was supposed to be "programming manual", however I
+now see that Renesas named that document as "hardware manual", so that's
+what I'll put into the commit description, if you don't mind.
 
-Oh, and I will retest your v2 patches before merging them, of course ;-).
+cheers,
+Artur
 
-Thanks,
-Adrian
-
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+> Oh, and I will retest your v2 patches before merging them, of course 
+> ;-).
+> 
+> Thanks,
+> Adrian
