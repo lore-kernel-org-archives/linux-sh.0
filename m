@@ -2,44 +2,46 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 64CFEC7EE24
-	for <linux-sh@archiver.kernel.org>; Mon, 15 May 2023 17:23:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AF054C7EE23
+	for <linux-sh@archiver.kernel.org>; Mon, 15 May 2023 17:23:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S244025AbjEORXM (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 15 May 2023 13:23:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40254 "EHLO
+        id S244132AbjEORXU (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 15 May 2023 13:23:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40892 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S244018AbjEORWv (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 15 May 2023 13:22:51 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6FCF7120B5;
-        Mon, 15 May 2023 10:21:00 -0700 (PDT)
+        with ESMTP id S243778AbjEORXA (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 15 May 2023 13:23:00 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 169251248B;
+        Mon, 15 May 2023 10:21:08 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 9BAAD62C54;
-        Mon, 15 May 2023 17:20:58 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A1DECC433D2;
-        Mon, 15 May 2023 17:20:57 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id EA8DB62C65;
+        Mon, 15 May 2023 17:21:07 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A9005C433EF;
+        Mon, 15 May 2023 17:21:06 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1684171258;
-        bh=Nc25TSkVxVrXY64easAv0Dysj5N+r+hR4Ws0zUbzFD0=;
+        s=korg; t=1684171267;
+        bh=h5mK51aebmM7frvlZj9/VAIXXGKmEyWTQHFtggW+AO4=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=UtgkctKQmV/HQfiTBSAF1uKG34rftn4OTlJibbxAMGVZuHe4/vFrfWLu0N/jlvHls
-         AlporCOmVGY9mv8kBxF5t6ndM+lZjuE9+nFV4UBrdiXn+JA6deDuNn5AOsxynMfR8S
-         86VEBOg+hQ96LM4aofF11dV07A4CcubILak2jmP0=
+        b=OiISy/CXzo5KaHmwuCLa+V2rMYanClreSTTj9VE+RMhuKJhW1W30JSuL0l0D4Jl8T
+         mEg6IKJ3mo8wWTTI697GAlrwoe36/oWiEzRmPTsDaCLDD4BvSH8FJIeMFH9NJrvRwK
+         KF8ghGhp+thz9lSiMs6dFpo+e+mNu6DNaArqSmmM=
 From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 To:     stable@vger.kernel.org
 Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         patches@lists.linux.dev, Randy Dunlap <rdunlap@infradead.org>,
-        kernel test robot <lkp@intel.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Rob Herring <robh+dt@kernel.org>,
+        Frank Rowand <frowand.list@gmail.com>,
+        devicetree@vger.kernel.org, Rich Felker <dalias@libc.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH 6.2 152/242] sh: math-emu: fix macro redefined warning
-Date:   Mon, 15 May 2023 18:27:58 +0200
-Message-Id: <20230515161726.450136349@linuxfoundation.org>
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        linux-sh@vger.kernel.org
+Subject: [PATCH 6.2 154/242] sh: init: use OF_EARLY_FLATTREE for early init
+Date:   Mon, 15 May 2023 18:28:00 +0200
+Message-Id: <20230515161726.509748856@linuxfoundation.org>
 X-Mailer: git-send-email 2.40.1
 In-Reply-To: <20230515161721.802179972@linuxfoundation.org>
 References: <20230515161721.802179972@linuxfoundation.org>
@@ -53,45 +55,87 @@ X-Mailing-List: linux-sh@vger.kernel.org
 
 From: Randy Dunlap <rdunlap@infradead.org>
 
-commit 58a49ad90939386a8682e842c474a0d2c00ec39c upstream.
+commit 6cba655543c7959f8a6d2979b9d40a6a66b7ed4f upstream.
 
-Fix a warning that was reported by the kernel test robot:
+When CONFIG_OF_EARLY_FLATTREE and CONFIG_SH_DEVICE_TREE are not set,
+SH3 build fails with a call to early_init_dt_scan(), so in
+arch/sh/kernel/setup.c and arch/sh/kernel/head_32.S, use
+CONFIG_OF_EARLY_FLATTREE instead of CONFIG_OF_FLATTREE.
 
-In file included from ../include/math-emu/soft-fp.h:27,
-                 from ../arch/sh/math-emu/math.c:22:
-../arch/sh/include/asm/sfp-machine.h:17: warning: "__BYTE_ORDER" redefined
-   17 | #define __BYTE_ORDER __BIG_ENDIAN
-In file included from ../arch/sh/math-emu/math.c:21:
-../arch/sh/math-emu/sfp-util.h:71: note: this is the location of the previous definition
-   71 | #define __BYTE_ORDER __LITTLE_ENDIAN
+Fixes this build error:
+../arch/sh/kernel/setup.c: In function 'sh_fdt_init':
+../arch/sh/kernel/setup.c:262:26: error: implicit declaration of function 'early_init_dt_scan' [-Werror=implicit-function-declaration]
+  262 |         if (!dt_virt || !early_init_dt_scan(dt_virt)) {
 
-Fixes: b929926f01f2 ("sh: define __BIG_ENDIAN for math-emu")
+Fixes: 03767daa1387 ("sh: fix build regression with CONFIG_OF && !CONFIG_OF_FLATTREE")
+Fixes: eb6b6930a70f ("sh: fix memory corruption of unflattened device tree")
 Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
-Reported-by: kernel test robot <lkp@intel.com>
-Link: lore.kernel.org/r/202111121827.6v6SXtVv-lkp@intel.com
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Suggested-by: Rob Herring <robh+dt@kernel.org>
+Cc: Frank Rowand <frowand.list@gmail.com>
+Cc: devicetree@vger.kernel.org
 Cc: Rich Felker <dalias@libc.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 Cc: linux-sh@vger.kernel.org
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 Cc: stable@vger.kernel.org
 Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Link: https://lore.kernel.org/r/20230306040037.20350-5-rdunlap@infradead.org
+Link: https://lore.kernel.org/r/20230306040037.20350-4-rdunlap@infradead.org
 Signed-off-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- arch/sh/math-emu/sfp-util.h |    4 ----
- 1 file changed, 4 deletions(-)
+ arch/sh/kernel/head_32.S |    6 +++---
+ arch/sh/kernel/setup.c   |    4 ++--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
---- a/arch/sh/math-emu/sfp-util.h
-+++ b/arch/sh/math-emu/sfp-util.h
-@@ -67,7 +67,3 @@
-   } while (0)
+--- a/arch/sh/kernel/head_32.S
++++ b/arch/sh/kernel/head_32.S
+@@ -64,7 +64,7 @@ ENTRY(_stext)
+ 	ldc	r0, r6_bank
+ #endif
  
- #define abort()	return 0
--
--#define __BYTE_ORDER __LITTLE_ENDIAN
--
--
+-#ifdef CONFIG_OF_FLATTREE
++#ifdef CONFIG_OF_EARLY_FLATTREE
+ 	mov	r4, r12		! Store device tree blob pointer in r12
+ #endif
+ 	
+@@ -315,7 +315,7 @@ ENTRY(_stext)
+ 10:		
+ #endif
+ 
+-#ifdef CONFIG_OF_FLATTREE
++#ifdef CONFIG_OF_EARLY_FLATTREE
+ 	mov.l	8f, r0		! Make flat device tree available early.
+ 	jsr	@r0
+ 	 mov	r12, r4
+@@ -346,7 +346,7 @@ ENTRY(stack_start)
+ 5:	.long	start_kernel
+ 6:	.long	cpu_init
+ 7:	.long	init_thread_union
+-#if defined(CONFIG_OF_FLATTREE)
++#if defined(CONFIG_OF_EARLY_FLATTREE)
+ 8:	.long	sh_fdt_init
+ #endif
+ 
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -244,7 +244,7 @@ void __init __weak plat_early_device_set
+ {
+ }
+ 
+-#ifdef CONFIG_OF_FLATTREE
++#ifdef CONFIG_OF_EARLY_FLATTREE
+ void __ref sh_fdt_init(phys_addr_t dt_phys)
+ {
+ 	static int done = 0;
+@@ -326,7 +326,7 @@ void __init setup_arch(char **cmdline_p)
+ 	/* Let earlyprintk output early console messages */
+ 	sh_early_platform_driver_probe("earlyprintk", 1, 1);
+ 
+-#ifdef CONFIG_OF_FLATTREE
++#ifdef CONFIG_OF_EARLY_FLATTREE
+ #ifdef CONFIG_USE_BUILTIN_DTB
+ 	unflatten_and_copy_device_tree();
+ #else
 
 
