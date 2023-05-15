@@ -2,359 +2,159 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 76403C77B75
-	for <linux-sh@archiver.kernel.org>; Mon, 15 May 2023 09:13:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D7B6C7EE25
+	for <linux-sh@archiver.kernel.org>; Mon, 15 May 2023 10:34:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235649AbjEOJNB (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 15 May 2023 05:13:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48424 "EHLO
+        id S240564AbjEOKeN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 15 May 2023 06:34:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60452 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239746AbjEOJLz (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 15 May 2023 05:11:55 -0400
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 021901BEF
-        for <linux-sh@vger.kernel.org>; Mon, 15 May 2023 02:10:33 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1684141833;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=p8qEquP01UJzuUVmjHErarqQIAtxjzFbcD1ySUGX2k8=;
-        b=P6MBBELcbZyznBpVpWEt+fjlx9cY5NGtiCHQt7c7BspEUTujcZtf3o7q3b3lA3MxrNdzkb
-        MtzuZj44beSG1ZMhSF0gPb9gcYm6cUgo11oUu1GMKvKpNjXMGzx9jFvrxQeiYRB+srJ4lU
-        ZRCVTU4dhgOhX8RWsKTV4J6r6aS436c=
-Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
- [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-615--4CQWEinM5SC3EfIchWr2Q-1; Mon, 15 May 2023 05:10:27 -0400
-X-MC-Unique: -4CQWEinM5SC3EfIchWr2Q-1
-Received: from smtp.corp.redhat.com (int-mx01.intmail.prod.int.rdu2.redhat.com [10.11.54.1])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        with ESMTP id S241074AbjEOKeB (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 15 May 2023 06:34:01 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 90E22E6E;
+        Mon, 15 May 2023 03:33:57 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 1FB2185A5B1;
-        Mon, 15 May 2023 09:10:27 +0000 (UTC)
-Received: from MiWiFi-R3L-srv.redhat.com (ovpn-12-32.pek2.redhat.com [10.72.12.32])
-        by smtp.corp.redhat.com (Postfix) with ESMTP id CA14140C2070;
-        Mon, 15 May 2023 09:10:18 +0000 (UTC)
-From:   Baoquan He <bhe@redhat.com>
-To:     linux-kernel@vger.kernel.org
-Cc:     linux-arch@vger.kernel.org, linux-mm@kvack.org, arnd@arndb.de,
-        christophe.leroy@csgroup.eu, hch@infradead.org,
-        agordeev@linux.ibm.com, wangkefeng.wang@huawei.com,
-        schnelle@linux.ibm.com, David.Laight@ACULAB.COM, shorne@gmail.com,
-        willy@infradead.org, deller@gmx.de, Baoquan He <bhe@redhat.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Subject: [PATCH v5 RESEND 11/17] sh: mm: Convert to GENERIC_IOREMAP
-Date:   Mon, 15 May 2023 17:08:42 +0800
-Message-Id: <20230515090848.833045-12-bhe@redhat.com>
-In-Reply-To: <20230515090848.833045-1-bhe@redhat.com>
-References: <20230515090848.833045-1-bhe@redhat.com>
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 2B2F861767;
+        Mon, 15 May 2023 10:33:57 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1595CC433EF;
+        Mon, 15 May 2023 10:33:50 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1684146836;
+        bh=5tmSZMTrH48otorY7sLrXC7yV0twLhRBW3UaH6lhA84=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=E1Y6ZR0WzHfeBpvPqw70ZdEnLQQpgWKdvoQLpVhX+5wJVudUhLnJbQKQ2L7d8drrx
+         vaba6Sv7UUva6cY/90vupd2i0jeWyJImmPki/eVyWS/qSMa4zlGwG45Onyby+LYuxz
+         t4v6jVxMQtxbDLB5kD152NTGCQXYVQ9LjsNZS98+cpJ/IHA1JmLip8tRBk9o0W7UFS
+         +hXPahVEsUNYeokdYRgs4mMcHkNUFNQTsItXvcYkTMceYm84h1teCoroif0s3h9uPe
+         sqWkX5W99uvKpXcxOHqVsL+ray+oaNU/T2ud44pu1HOLF41InFyVvhMR9XVkRjPq03
+         36vFVPrZNiVOw==
+Date:   Mon, 15 May 2023 12:33:47 +0200
+From:   Christian Brauner <brauner@kernel.org>
+To:     Christian =?utf-8?B?R8O2dHRzY2hl?= <cgzones@googlemail.com>
+Cc:     x86@kernel.org, linux-alpha@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, audit@vger.kernel.org,
+        linux-arch@vger.kernel.org, linux-api@vger.kernel.org,
+        linux-security-module@vger.kernel.org, selinux@vger.kernel.org,
+        amir73il@gmail.com, Jan Kara <jack@suse.cz>, jlayton@kernel.org,
+        cyphar@cyphar.com, Arnd Bergmann <arnd@arndb.de>
+Subject: Re: [RFC PATCH v2] fs/xattr: add *at family syscalls
+Message-ID: <20230515-kopfgeld-umkurven-f27be4b68a26@brauner>
+References: <20230511150802.737477-1-cgzones@googlemail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-X-Scanned-By: MIMEDefang 3.1 on 10.11.54.1
+In-Reply-To: <20230511150802.737477-1-cgzones@googlemail.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-By taking GENERIC_IOREMAP method, the generic generic_ioremap_prot(),
-generic_iounmap(), and their generic wrapper ioremap_prot(), ioremap()
-and iounmap() are all visible and available to arch. Arch needs to
-provide wrapper functions to override the generic versions if there's
-arch specific handling in its ioremap_prot(), ioremap() or iounmap().
-This change will simplify implementation by removing duplicated codes
-with generic_ioremap_prot() and generic_iounmap(), and has the equivalent
-functioality as before.
+On Thu, May 11, 2023 at 05:08:02PM +0200, Christian Göttsche wrote:
+> Add the four syscalls setxattrat(), getxattrat(), listxattrat() and
+> removexattrat().  Those can be used to operate on extended attributes,
+> especially security related ones, either relative to a pinned directory
+> or on a file descriptor without read access, avoiding a
+> /proc/<pid>/fd/<fd> detour, requiring a mounted procfs.
+> 
+> One use case will be setfiles(8) setting SELinux file contexts
+> ("security.selinux") without race conditions.
+> 
+> Add XATTR flags to the private namespace of AT_* flags.
+> 
+> Use the do_{name}at() pattern from fs/open.c.
+> 
+> Use a single flag parameter for extended attribute flags (currently
+> XATTR_CREATE and XATTR_REPLACE) and *at() flags to not exceed six
+> syscall arguments in setxattrat().
+> 
+> Previous approach ("f*xattr: allow O_PATH descriptors"): https://lore.kernel.org/all/20220607153139.35588-1-cgzones@googlemail.com/
+> v1 discussion: https://lore.kernel.org/all/20220830152858.14866-2-cgzones@googlemail.com/
+> 
+> Signed-off-by: Christian Göttsche <cgzones@googlemail.com>
+> CC: x86@kernel.org
+> CC: linux-alpha@vger.kernel.org
+> CC: linux-kernel@vger.kernel.org
+> CC: linux-arm-kernel@lists.infradead.org
+> CC: linux-ia64@vger.kernel.org
+> CC: linux-m68k@lists.linux-m68k.org
+> CC: linux-mips@vger.kernel.org
+> CC: linux-parisc@vger.kernel.org
+> CC: linuxppc-dev@lists.ozlabs.org
+> CC: linux-s390@vger.kernel.org
+> CC: linux-sh@vger.kernel.org
+> CC: sparclinux@vger.kernel.org
+> CC: linux-fsdevel@vger.kernel.org
+> CC: audit@vger.kernel.org
+> CC: linux-arch@vger.kernel.org
+> CC: linux-api@vger.kernel.org
+> CC: linux-security-module@vger.kernel.org
+> CC: selinux@vger.kernel.org
+> ---
 
-Here, add wrapper functions ioremap_prot() and iounmap() for SuperH's
-special operation when ioremap() and iounmap().
+Fwiw, your header doesn't let me see who the mail was directly sent to
+so I'm only able to reply to lists which is a bit pointless...
 
-Meanwhile, add macro definitions for port|mm io functions since SuperH
-has its own implementation in arch/sh/kernel/iomap.c and
-arch/sh/include/asm/io_noioport.h. These will conflict with the port|mm io
-function definitions in include/asm-generic/io.h to cause compiling
-errors like below:
+> v2:
+>   - squash syscall introduction and wire up commits
+>   - add AT_XATTR_CREATE and AT_XATTR_REPLACE constants
 
-====
-  CC      arch/sh/kernel/asm-offsets.s
-In file included from ./arch/sh/include/asm/io.h:294,
-                 from ./include/linux/io.h:13,
-                 ......
-                 from arch/sh/kernel/asm-offsets.c:16:
-./include/asm-generic/io.h:792:17: error: conflicting types for ‘ioread8’
-  792 | #define ioread8 ioread8
-      |                 ^~~~~~~
-./include/asm-generic/io.h:793:18: note: in expansion of macro ‘ioread8’
-  793 | static inline u8 ioread8(const volatile void __iomem *addr)
-      |                  ^~~~~~~
-In file included from ./arch/sh/include/asm/io.h:22,
-                 from ./include/linux/io.h:13,
-                 ......
-                 from arch/sh/kernel/asm-offsets.c:16:
-./include/asm-generic/iomap.h:29:21: note: previous declaration of ‘ioread8’ was here
-   29 | extern unsigned int ioread8(const void __iomem *);
-====
+> +#define AT_XATTR_CREATE	        0x1	/* setxattrat(2): set value, fail if attr already exists */
+> +#define AT_XATTR_REPLACE	0x2	/* setxattrat(2): set value, fail if attr does not exist */
 
-Signed-off-by: Baoquan He <bhe@redhat.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
----
- arch/sh/Kconfig                   |  1 +
- arch/sh/include/asm/io.h          | 65 ++++++++++++++++---------------
- arch/sh/include/asm/io_noioport.h |  7 ++++
- arch/sh/mm/ioremap.c              | 65 ++++++-------------------------
- 4 files changed, 52 insertions(+), 86 deletions(-)
+We really shouldn't waste any AT_* flags for this. Otherwise we'll run
+out of them rather quickly. Two weeks ago we added another AT_* flag
+which is up for merging for v6.5 iirc and I've glimpsed another AT_*
+flag proposal in one of the talks at last weeks Vancouver conference
+extravaganza.
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 9652d367fc37..f326985e46e0 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -28,6 +28,7 @@ config SUPERH
- 	select GENERIC_SMP_IDLE_THREAD
- 	select GUP_GET_PXX_LOW_HIGH if X2TLB
- 	select HAS_IOPORT if HAS_IOPORT_MAP
-+	select GENERIC_IOREMAP if MMU
- 	select HAVE_ARCH_AUDITSYSCALL
- 	select HAVE_ARCH_KGDB
- 	select HAVE_ARCH_SECCOMP_FILTER
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index fba90e670ed4..b3a26b405c8d 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -119,6 +119,26 @@ void __raw_readsl(const void __iomem *addr, void *data, int longlen);
- 
- __BUILD_MEMORY_STRING(__raw_, q, u64)
- 
-+#define ioread8 ioread8
-+#define ioread16 ioread16
-+#define ioread16be ioread16be
-+#define ioread32 ioread32
-+#define ioread32be ioread32be
-+
-+#define iowrite8 iowrite8
-+#define iowrite16 iowrite16
-+#define iowrite16be iowrite16be
-+#define iowrite32 iowrite32
-+#define iowrite32be iowrite32be
-+
-+#define ioread8_rep ioread8_rep
-+#define ioread16_rep ioread16_rep
-+#define ioread32_rep ioread32_rep
-+
-+#define iowrite8_rep iowrite8_rep
-+#define iowrite16_rep iowrite16_rep
-+#define iowrite32_rep iowrite32_rep
-+
- #ifdef CONFIG_HAS_IOPORT_MAP
- 
- /*
-@@ -225,6 +245,9 @@ __BUILD_IOPORT_STRING(q, u64)
- #define IO_SPACE_LIMIT 0xffffffff
- 
- /* We really want to try and get these to memcpy etc */
-+#define memset_io memset_io
-+#define memcpy_fromio memcpy_fromio
-+#define memcpy_toio memcpy_toio
- void memcpy_fromio(void *, const volatile void __iomem *, unsigned long);
- void memcpy_toio(volatile void __iomem *, const void *, unsigned long);
- void memset_io(volatile void __iomem *, int, unsigned long);
-@@ -243,40 +266,16 @@ unsigned long long poke_real_address_q(unsigned long long addr,
- #endif
- 
- #ifdef CONFIG_MMU
--void iounmap(void __iomem *addr);
--void __iomem *__ioremap_caller(phys_addr_t offset, unsigned long size,
--			       pgprot_t prot, void *caller);
--
--static inline void __iomem *ioremap(phys_addr_t offset, unsigned long size)
--{
--	return __ioremap_caller(offset, size, PAGE_KERNEL_NOCACHE,
--			__builtin_return_address(0));
--}
--
--static inline void __iomem *
--ioremap_cache(phys_addr_t offset, unsigned long size)
--{
--	return __ioremap_caller(offset, size, PAGE_KERNEL,
--			__builtin_return_address(0));
--}
--#define ioremap_cache ioremap_cache
--
--#ifdef CONFIG_HAVE_IOREMAP_PROT
--static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
--		unsigned long flags)
--{
--	return __ioremap_caller(offset, size, __pgprot(flags),
--			__builtin_return_address(0));
--}
--#endif /* CONFIG_HAVE_IOREMAP_PROT */
-+/*
-+ * I/O memory mapping functions.
-+ */
-+#define ioremap_prot ioremap_prot
-+#define iounmap iounmap
- 
--#else /* CONFIG_MMU */
--static inline void __iomem *ioremap(phys_addr_t offset, size_t size)
--{
--	return (void __iomem *)(unsigned long)offset;
--}
-+#define _PAGE_IOREMAP pgprot_val(PAGE_KERNEL_NOCACHE)
- 
--static inline void iounmap(volatile void __iomem *addr) { }
-+#define ioremap_cache(addr, size)  \
-+	ioremap_prot((addr), (size), pgprot_val(PAGE_KERNEL))
- #endif /* CONFIG_MMU */
- 
- #define ioremap_uc	ioremap
-@@ -287,6 +286,8 @@ static inline void iounmap(volatile void __iomem *addr) { }
-  */
- #define xlate_dev_mem_ptr(p)	__va(p)
- 
-+#include <asm-generic/io.h>
-+
- #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
- int valid_phys_addr_range(phys_addr_t addr, size_t size);
- int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
-diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
-index f7938fe0f911..5ba4116b4265 100644
---- a/arch/sh/include/asm/io_noioport.h
-+++ b/arch/sh/include/asm/io_noioport.h
-@@ -53,6 +53,13 @@ static inline void ioport_unmap(void __iomem *addr)
- #define outw_p(x, addr)	outw((x), (addr))
- #define outl_p(x, addr)	outl((x), (addr))
- 
-+#define insb insb
-+#define insw insw
-+#define insl insl
-+#define outsb outsb
-+#define outsw outsw
-+#define outsl outsl
-+
- static inline void insb(unsigned long port, void *dst, unsigned long count)
- {
- 	BUG();
-diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
-index 21342581144d..c33b3daa4ad1 100644
---- a/arch/sh/mm/ioremap.c
-+++ b/arch/sh/mm/ioremap.c
-@@ -72,22 +72,11 @@ __ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
- #define __ioremap_29bit(offset, size, prot)		NULL
- #endif /* CONFIG_29BIT */
- 
--/*
-- * Remap an arbitrary physical address space into the kernel virtual
-- * address space. Needed when the kernel wants to access high addresses
-- * directly.
-- *
-- * NOTE! We need to allow non-page-aligned mappings too: we will obviously
-- * have to convert them into an offset in a page-aligned mapping, but the
-- * caller shouldn't need to know that small detail.
-- */
--void __iomem * __ref
--__ioremap_caller(phys_addr_t phys_addr, unsigned long size,
--		 pgprot_t pgprot, void *caller)
-+void __iomem *ioremap_prot(phys_addr_t phys_addr, size_t size,
-+			   unsigned long prot)
- {
--	struct vm_struct *area;
--	unsigned long offset, last_addr, addr, orig_addr;
- 	void __iomem *mapped;
-+	pgprot_t pgprot = __pgprot(prot);
- 
- 	mapped = __ioremap_trapped(phys_addr, size);
- 	if (mapped)
-@@ -97,11 +86,6 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
- 	if (mapped)
- 		return mapped;
- 
--	/* Don't allow wraparound or zero size */
--	last_addr = phys_addr + size - 1;
--	if (!size || last_addr < phys_addr)
--		return NULL;
--
- 	/*
- 	 * If we can't yet use the regular approach, go the fixmap route.
- 	 */
-@@ -112,34 +96,14 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
- 	 * First try to remap through the PMB.
- 	 * PMB entries are all pre-faulted.
- 	 */
--	mapped = pmb_remap_caller(phys_addr, size, pgprot, caller);
-+	mapped = pmb_remap_caller(phys_addr, size, pgprot,
-+			__builtin_return_address(0));
- 	if (mapped && !IS_ERR(mapped))
- 		return mapped;
- 
--	/*
--	 * Mappings have to be page-aligned
--	 */
--	offset = phys_addr & ~PAGE_MASK;
--	phys_addr &= PAGE_MASK;
--	size = PAGE_ALIGN(last_addr+1) - phys_addr;
--
--	/*
--	 * Ok, go for it..
--	 */
--	area = get_vm_area_caller(size, VM_IOREMAP, caller);
--	if (!area)
--		return NULL;
--	area->phys_addr = phys_addr;
--	orig_addr = addr = (unsigned long)area->addr;
--
--	if (ioremap_page_range(addr, addr + size, phys_addr, pgprot)) {
--		vunmap((void *)orig_addr);
--		return NULL;
--	}
--
--	return (void __iomem *)(offset + (char *)orig_addr);
-+	return generic_ioremap_prot(phys_addr, size, pgprot);
- }
--EXPORT_SYMBOL(__ioremap_caller);
-+EXPORT_SYMBOL(ioremap_prot);
- 
- /*
-  * Simple checks for non-translatable mappings.
-@@ -158,10 +122,9 @@ static inline int iomapping_nontranslatable(unsigned long offset)
- 	return 0;
- }
- 
--void iounmap(void __iomem *addr)
-+void iounmap(volatile void __iomem *addr)
- {
- 	unsigned long vaddr = (unsigned long __force)addr;
--	struct vm_struct *p;
- 
- 	/*
- 	 * Nothing to do if there is no translatable mapping.
-@@ -172,21 +135,15 @@ void iounmap(void __iomem *addr)
- 	/*
- 	 * There's no VMA if it's from an early fixed mapping.
- 	 */
--	if (iounmap_fixed(addr) == 0)
-+	if (iounmap_fixed((void __iomem *)addr) == 0)
- 		return;
- 
- 	/*
- 	 * If the PMB handled it, there's nothing else to do.
- 	 */
--	if (pmb_unmap(addr) == 0)
-+	if (pmb_unmap((void __iomem *)addr) == 0)
- 		return;
- 
--	p = remove_vm_area((void *)(vaddr & PAGE_MASK));
--	if (!p) {
--		printk(KERN_ERR "%s: bad address %p\n", __func__, addr);
--		return;
--	}
--
--	kfree(p);
-+	generic_iounmap(addr);
- }
- EXPORT_SYMBOL(iounmap);
--- 
-2.34.1
+Even if we reuse 0x200 for AT_XATTR_CREATE (like we did for AT_EACCESS
+and AT_REMOVEDIR) we still need another bit for AT_XATTR_REPLACE.
 
+Plus, this is really ugly since AT_XATTR_{CREATE,REPLACE} really isn't
+in any way related to lookup and we're mixing it in with lookup
+modifying flags.
+
+So my proposal for {g,s}etxattrat() would be:
+
+struct xattr_args {
+        __aligned_u64 value;
+        __u32 size;
+        __u32 cmd;
+};
+
+So everything's nicely 64bit aligned in the struct. Use the @cmd member
+to set either XATTR_REPLACE or XATTR_CREATE and treat it as a proper
+enum and not as a flag argument like the old calls did.
+
+So then we'd have:
+
+setxattrat(int dfd, const char *path, const char __user *name,
+           struct xattr_args __user *args, size_t size, unsigned int flags)
+getxattrat(int dfd, const char *path, const char __user *name,
+           struct xattr_args __user *args, size_t size, unsigned int flags)
+
+The current in-kernel struct xattr_ctx would be renamed to struct
+kernel_xattr_args and then we do the usual copy_struct_from_user()
+dance:
+
+struct xattr_args args;
+err = copy_struct_from_user(&args, sizeof(args), uargs, usize);
+
+and then go on to handle value/size for setxattrat()/getxattrat()
+accordingly.
+
+getxattr()/setxattr() aren't meaningfully filterable by seccomp already
+so there's not point in not using a struct.
+
+If that isn't very appealing then another option is to add a new flag
+namespace just for setxattrat() similar to fspick() and move_mount()
+duplicating the needed lookup modifying flags.
+Thoughts?
