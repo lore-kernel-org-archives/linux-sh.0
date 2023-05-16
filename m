@@ -2,102 +2,61 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0BD26C7EE2E
-	for <linux-sh@archiver.kernel.org>; Tue, 16 May 2023 00:53:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 35B52C77B75
+	for <linux-sh@archiver.kernel.org>; Tue, 16 May 2023 07:51:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1343555AbjEPAxx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 15 May 2023 20:53:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35194 "EHLO
+        id S230325AbjEPHvY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 16 May 2023 03:51:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48916 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S245192AbjEPAxv (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 15 May 2023 20:53:51 -0400
-Received: from angie.orcam.me.uk (angie.orcam.me.uk [IPv6:2001:4190:8020::34])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id E8ED39D;
-        Mon, 15 May 2023 17:53:50 -0700 (PDT)
-Received: by angie.orcam.me.uk (Postfix, from userid 500)
-        id 9D7EE92009C; Tue, 16 May 2023 02:53:45 +0200 (CEST)
-Received: from localhost (localhost [127.0.0.1])
-        by angie.orcam.me.uk (Postfix) with ESMTP id 9709492009B;
-        Tue, 16 May 2023 01:53:45 +0100 (BST)
-Date:   Tue, 16 May 2023 01:53:45 +0100 (BST)
-From:   "Maciej W. Rozycki" <macro@orcam.me.uk>
-To:     Alexandre Ghiti <alexghiti@rivosinc.com>
-cc:     Greg KH <gregkh@linuxfoundation.org>,
-        Jonathan Corbet <corbet@lwn.net>,
-        Richard Henderson <richard.henderson@linaro.org>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        Matt Turner <mattst88@gmail.com>,
-        Vineet Gupta <vgupta@kernel.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        WANG Xuerui <kernel@xen0n.name>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        "James E . J . Bottomley" <James.Bottomley@HansenPartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Albert Ou <aou@eecs.berkeley.edu>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Vasily Gorbik <gor@linux.ibm.com>,
-        Alexander Gordeev <agordeev@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Sven Schnelle <svens@linux.ibm.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        "David S . Miller" <davem@davemloft.net>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-        "H . Peter Anvin" <hpa@zytor.com>, Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Arnd Bergmann <arnd@arndb.de>, linux-doc@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-xtensa@linux-xtensa.org,
-        linux-arch@vger.kernel.org, Palmer Dabbelt <palmer@rivosinc.com>
-Subject: Re: [PATCH v5 14/26] alpha: Remove empty <uapi/asm/setup.h>
-In-Reply-To: <20230306100508.1171812-15-alexghiti@rivosinc.com>
-Message-ID: <alpine.DEB.2.21.2305160147100.11892@angie.orcam.me.uk>
-References: <20230306100508.1171812-1-alexghiti@rivosinc.com> <20230306100508.1171812-15-alexghiti@rivosinc.com>
-User-Agent: Alpine 2.21 (DEB 202 2017-01-01)
+        with ESMTP id S231468AbjEPHvX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 16 May 2023 03:51:23 -0400
+Received: from mail.feshiecree.pl (mail.feshiecree.pl [89.40.114.103])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C54EA1FCC
+        for <linux-sh@vger.kernel.org>; Tue, 16 May 2023 00:51:22 -0700 (PDT)
+Received: by mail.feshiecree.pl (Postfix, from userid 1001)
+        id 854038810F; Tue, 16 May 2023 08:50:39 +0100 (BST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=feshiecree.pl;
+        s=mail; t=1684223453;
+        bh=hFxZwVw4rIL+JwfEOGI47p+fdoVOAeqVswP6NWoHSHQ=;
+        h=Date:From:To:Subject:From;
+        b=gsTaY95BUciiIyOU1DOZui9KHCEt8gIdCi+8AxWr9yVSxSVr1Z4m2eM+Yu0/CraCT
+         pER0jhzhQiXZN8Qf+8dBcNyzBWJyre0g7dsU1xW2BDV+M7yohrSDq98+PRp0lVjA9K
+         U2ml+o8cC4xc2zVVOyEByjuBn0+E9sr5oikKOzkPHp4DydV4tvSShxvUxiw9yqpGEM
+         JqcFIzaWE4Zn3H07QeYP+f2Ks4WiGVYpODx3PQmRuO5Hd3J34//U54uAG5ulLuwoBk
+         3jDCNidCh71oCVmkmKqyA4gWTa0LqaNGVEe1gtLBeK3ZCcQzXGcQhwbp+z4me1Krqj
+         M66iN0gTmqoTA==
+Received: by mail.feshiecree.pl for <linux-sh@vger.kernel.org>; Tue, 16 May 2023 07:50:18 GMT
+Message-ID: <20230516074502-0.1.2l.ji4p.0.u60g4azjs7@feshiecree.pl>
+Date:   Tue, 16 May 2023 07:50:18 GMT
+From:   "Krystian Wieczorek" <krystian.wieczorek@feshiecree.pl>
+To:     <linux-sh@vger.kernel.org>
+Subject: W sprawie samochodu
+X-Mailer: mail.feshiecree.pl
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, 6 Mar 2023, Alexandre Ghiti wrote:
+Dzie=C5=84 dobry,
 
-> diff --git a/arch/alpha/include/uapi/asm/setup.h b/arch/alpha/include/uapi/asm/setup.h
-> deleted file mode 100644
-> index 9b3b5ba39b1d..000000000000
-> --- a/arch/alpha/include/uapi/asm/setup.h
-> +++ /dev/null
-> @@ -1,5 +0,0 @@
-> -/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
-> -#ifndef _UAPI__ALPHA_SETUP_H
-> -#define _UAPI__ALPHA_SETUP_H
-> -
-> -#endif /* _UAPI__ALPHA_SETUP_H */
+chcieliby=C5=9Bmy zapewni=C4=87 Pa=C5=84stwu kompleksowe rozwi=C4=85zania=
+, je=C5=9Bli chodzi o system monitoringu GPS.
 
- You can't just remove a UAPI header like this, something will break; cf. 
-arch/arc/include/uapi/asm/setup.h, or arch/x86/include/uapi/asm/setup.h if 
-you want it brief.
+Precyzyjne monitorowanie pojazd=C3=B3w na mapach cyfrowych, =C5=9Bledzeni=
+e ich parametr=C3=B3w eksploatacyjnych w czasie rzeczywistym oraz kontrol=
+a paliwa to kluczowe funkcjonalno=C5=9Bci naszego systemu.=20
 
- I suggest that you fold it into 01/26 (it makes no sense to have empty 
-multiple inclusion protection), and likewise for the relevant remaining 
-headers.
+Organizowanie pracy pracownik=C3=B3w jest dzi=C4=99ki temu prostsze i bar=
+dziej efektywne, a oszcz=C4=99dno=C5=9Bci i optymalizacja w zakresie pono=
+szonych koszt=C3=B3w, maj=C4=85 dla ka=C5=BCdego przedsi=C4=99biorcy ogro=
+mne znaczenie.
 
-  Maciej
+Dopasujemy nasz=C4=85 ofert=C4=99 do Pa=C5=84stwa oczekiwa=C5=84 i potrze=
+b organizacji. Czy mogliby=C5=9Bmy porozmawia=C4=87 o naszej propozycji?
+
+
+Pozdrawiam
+Krystian Wieczorek
