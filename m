@@ -2,97 +2,64 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C661C7EE2D
-	for <linux-sh@archiver.kernel.org>; Tue, 16 May 2023 10:43:39 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ADF54C77B7D
+	for <linux-sh@archiver.kernel.org>; Wed, 17 May 2023 06:37:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232404AbjEPKnh (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 16 May 2023 06:43:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40484 "EHLO
+        id S229679AbjEQGh6 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 17 May 2023 02:37:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53638 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229664AbjEPKng (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 16 May 2023 06:43:36 -0400
-Received: from desiato.infradead.org (desiato.infradead.org [IPv6:2001:8b0:10b:1:d65d:64ff:fe57:4e05])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C50C2E8;
-        Tue, 16 May 2023 03:43:33 -0700 (PDT)
+        with ESMTP id S229511AbjEQGh5 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 17 May 2023 02:37:57 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D903B10C;
+        Tue, 16 May 2023 23:37:56 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=desiato.20200630; h=In-Reply-To:Content-Type:MIME-Version:
-        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        d=infradead.org; s=bombadil.20210309; h=In-Reply-To:Content-Type:MIME-Version
+        :References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
         Content-Transfer-Encoding:Content-ID:Content-Description;
-        bh=aFE52arMbeuGVCs81HtFqwlRw7vUUbocXdncBereG0Q=; b=FkkqeXjyINXcZ0dn67fZnclgj5
-        cM/jyQTU2OOfVb/EiYFiDE06liJQP27KDAcpUH/jvL5QV5T8XRtCJzU+4kg1GW4V/NzKuN4GPJCdQ
-        0sqkIOfozkG/6bRoKC331l4E55SrRg5QgVT5Oax7JRzQ8FaceCgUVhX3+9fgImj0uvsScOdj/gykc
-        BiRVVw7g07fwYDhA/dioi9Gx9dHD4NjilKqhgdxQMUfWU0+KUYPlLl+nB8lai821mGMHryLvk+NSQ
-        Eh+gOFJ/bYjCd1MgOmvB2ulDNpaXZcyForWW7zbsHFkP4U9F6xTP8XOIUJ9iT/VeLM4yXgttg5d8o
-        HZ+p+e2A==;
-Received: from j130084.upc-j.chello.nl ([24.132.130.84] helo=noisy.programming.kicks-ass.net)
-        by desiato.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1pys7y-00C5WG-2z;
-        Tue, 16 May 2023 10:41:59 +0000
-Received: from hirez.programming.kicks-ass.net (hirez.programming.kicks-ass.net [192.168.1.225])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (4096 bits))
-        (Client did not present a certificate)
-        by noisy.programming.kicks-ass.net (Postfix) with ESMTPS id D21DF30008D;
-        Tue, 16 May 2023 12:41:52 +0200 (CEST)
-Received: by hirez.programming.kicks-ass.net (Postfix, from userid 1000)
-        id A9E932013503C; Tue, 16 May 2023 12:41:52 +0200 (CEST)
-Date:   Tue, 16 May 2023 12:41:52 +0200
-From:   Peter Zijlstra <peterz@infradead.org>
-To:     Matthew Wilcox <willy@infradead.org>
-Cc:     Hugh Dickins <hughd@google.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Mike Kravetz <mike.kravetz@oracle.com>,
-        Mike Rapoport <rppt@kernel.org>,
-        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
-        David Hildenbrand <david@redhat.com>,
-        Suren Baghdasaryan <surenb@google.com>,
-        Qi Zheng <zhengqi.arch@bytedance.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Helge Deller <deller@gmx.de>,
-        John David Anglin <dave.anglin@bell.net>,
-        "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Alexandre Ghiti <alexghiti@rivosinc.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Claudio Imbrenda <imbrenda@linux.ibm.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "David S. Miller" <davem@davemloft.net>,
-        Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-        Michel Lespinasse <michel@lespinasse.org>
-Subject: Re: [PATCH 00/23] arch: allow pte_offset_map[_lock]() to fail
-Message-ID: <20230516104152.GH2587705@hirez.programming.kicks-ass.net>
-References: <77a5d8c-406b-7068-4f17-23b7ac53bc83@google.com>
- <ZFs0k2rrLPH9A/UU@casper.infradead.org>
- <d7f3c7b2-25b8-ef66-98a8-43d68f4499f@google.com>
- <ZFz1j1slZHCQmwMJ@casper.infradead.org>
+        bh=JZ0E1cXLrZ9bDAe2GWQiXJ8aw7kmRqj0VQc5spb/718=; b=xPmECXDUC1tRNxXSHQpqDQApvL
+        eRpHTc/0MGOkKNqgGS/gFUvRnEEDpb7ZDNFJnNPShlgH+oB2VRNIYChsTMxw62ks9bJek3pO4kpuT
+        CQ1j+NMds2fUrAm6z84reZ7Ekj8NadfqtHtYqHd82ayEXfk7viS5YTXp4J/08PTwIzxF8/1AO4+qG
+        5zc4xEkZlwPQLpjv1PX/kJm2aLmgVjoWEAGCgJ1Ioi6Iu/pyNKAIhSEn1ykiLwieOgSZ89Fspddz5
+        jaRyLSaf/2K91BPZRjBFG0CSmHTB09dbldytgeTQ8dSFLt/i0kwzBJoX0Yyx3mHZF15DTTHemvk7Q
+        gvTn0L3w==;
+Received: from hch by bombadil.infradead.org with local (Exim 4.96 #2 (Red Hat Linux))
+        id 1pzAnK-008UrG-1E;
+        Wed, 17 May 2023 06:37:54 +0000
+Date:   Tue, 16 May 2023 23:37:54 -0700
+From:   Christoph Hellwig <hch@infradead.org>
+To:     Baoquan He <bhe@redhat.com>
+Cc:     linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux-mm@kvack.org, arnd@arndb.de, christophe.leroy@csgroup.eu,
+        hch@infradead.org, agordeev@linux.ibm.com,
+        wangkefeng.wang@huawei.com, schnelle@linux.ibm.com,
+        David.Laight@aculab.com, shorne@gmail.com, willy@infradead.org,
+        deller@gmx.de, Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Subject: Re: [PATCH v5 RESEND 11/17] sh: mm: Convert to GENERIC_IOREMAP
+Message-ID: <ZGR2Ql7zmwor/qR7@infradead.org>
+References: <20230515090848.833045-1-bhe@redhat.com>
+ <20230515090848.833045-12-bhe@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <ZFz1j1slZHCQmwMJ@casper.infradead.org>
+In-Reply-To: <20230515090848.833045-12-bhe@redhat.com>
+X-SRS-Rewrite: SMTP reverse-path rewritten from <hch@infradead.org> by bombadil.infradead.org. See http://www.infradead.org/rpr.html
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, May 11, 2023 at 03:02:55PM +0100, Matthew Wilcox wrote:
+On Mon, May 15, 2023 at 05:08:42PM +0800, Baoquan He wrote:
+> Meanwhile, add macro definitions for port|mm io functions since SuperH
+> has its own implementation in arch/sh/kernel/iomap.c and
+> arch/sh/include/asm/io_noioport.h. These will conflict with the port|mm io
+> function definitions in include/asm-generic/io.h to cause compiling
+> errors like below:
 
-> We also talked about moving x86 to always RCU-free page tables in
-> order to make accessing /proc/$pid/smaps lockless.  I believe Michel
-> is going to take a swing at this project.
+Please split that inclusion of include/asm-generic/io.h and redefining
+of the helpers into a separate prep patch.
 
-Shouldn't be too controversial I think -- effectively everybody already
-has it enabled because everybody builds with KVM enabled.
+Otherwise looks good:
+
+Reviewed-by: Christoph Hellwig <hch@lst.de>
