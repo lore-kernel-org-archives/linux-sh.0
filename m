@@ -2,35 +2,35 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4F143C7EE43
-	for <linux-sh@archiver.kernel.org>; Wed, 17 May 2023 13:14:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E54EC7EE2D
+	for <linux-sh@archiver.kernel.org>; Wed, 17 May 2023 13:14:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232030AbjEQNN7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 17 May 2023 09:13:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52016 "EHLO
+        id S232176AbjEQNOO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 17 May 2023 09:14:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52748 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232001AbjEQNNo (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 17 May 2023 09:13:44 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 947EE7D86;
-        Wed, 17 May 2023 06:13:27 -0700 (PDT)
+        with ESMTP id S232105AbjEQNNt (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 17 May 2023 09:13:49 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F309383EC;
+        Wed, 17 May 2023 06:13:37 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id A8129642AE;
-        Wed, 17 May 2023 13:13:26 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E19EFC433A0;
-        Wed, 17 May 2023 13:13:18 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 58182614CC;
+        Wed, 17 May 2023 13:13:11 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 82ACBC433A1;
+        Wed, 17 May 2023 13:13:03 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1684329206;
-        bh=JGGRsTfqJlmibWTBDdmhkqjrT8ru+5vGeLr90vAqN7A=;
+        s=k20201202; t=1684329190;
+        bh=d19FT2UXzed3oRWIfJJFjSTk/2JiLUfj9No4RlO7/6Q=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=sUL++CNilYTKBfXlj2dPw8lmLxduHSA+47PUjO45sLxz4n2hEzFLajiqXD05oRvI8
-         26qxQpUDKHthdA9YwLEN/YHntIwAjq5IVk/J7nX75CJFm0yAiW/fp8Unf6Rbj8LRNG
-         UuAyk54JKmTtRzRbemmz9tzUGfiyIgAB+TQe5EXHbuj+wPEfM/oRJtkiWyMRQrpic3
-         qOjN6jBo+fGjO/IUX/iF6ln8D5N66od5Gncx4RdpQj8+TWomVhhGXJRHHJK3AEjfup
-         2fvc0cvn3xNc2dtggIu38wLBvRDjizWLgiEZ0mpy6+j/cgELWKA2rntPrjWLUxoYaK
-         TbULgVLN3CPyA==
+        b=D1+6zXZHFnxnG+wOAs+I7Jk3ZmwjP67pJgzP0uRLk1KweQErWDtrD6kcCaiJbOcnT
+         FeyForINJFNNHVR7SlZDLxBqXsy6U1Q8QSU2g7HzT+HDxANY+2tRRB/juS7IWqHnN0
+         R7uJEX9uIR2BJ1iVGwpgqVvJxOimPbuxDH8nVE33oigOLH+a2C6WGLVT5O2FBvlKz1
+         1cchN4Ol9FfjcJdHRvb6NG6ME/EGUJBb5JSRXXIOYIHDL60v7knAjAptFgq2qEdzKr
+         kBNHvdOcis7Z2szvD6pixKpaEvKxiNP2G0OykAdHnW8HCBkYh+jiZUMYx1rLc8DsBc
+         EwxZhq5xDzb7g==
 From:   Arnd Bergmann <arnd@kernel.org>
 To:     Andrew Morton <akpm@linux-foundation.org>
 Cc:     linux-mm@kvack.org, Arnd Bergmann <arnd@arndb.de>,
@@ -58,9 +58,9 @@ Cc:     linux-mm@kvack.org, Arnd Bergmann <arnd@arndb.de>,
         linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
         audit@vger.kernel.org, linux-pm@vger.kernel.org,
         linux-kselftest@vger.kernel.org, kunit-dev@googlegroups.com
-Subject: [PATCH 14/14] time_namespace: always provide arch_get_vdso_data() prototype for vdso
-Date:   Wed, 17 May 2023 15:11:02 +0200
-Message-Id: <20230517131102.934196-15-arnd@kernel.org>
+Subject: [PATCH 12/14] init: move cifs_root_data() prototype into linux/mount.h
+Date:   Wed, 17 May 2023 15:11:00 +0200
+Message-Id: <20230517131102.934196-13-arnd@kernel.org>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <20230517131102.934196-1-arnd@kernel.org>
 References: <20230517131102.934196-1-arnd@kernel.org>
@@ -72,39 +72,43 @@ X-Mailing-List: linux-sh@vger.kernel.org
 
 From: Arnd Bergmann <arnd@arndb.de>
 
-The arch_get_vdso_data() function is defined separately on each architecture,
-but only called when CONFIG_TIME_NS is set. If the definition is a global
-function, this causes a W=1 warning without TIME_NS:
+cifs_root_data() is defined in cifs and called from early init
+code, but lacks a global prototype:
 
-arch/x86/entry/vdso/vma.c:35:19: error: no previous prototype for 'arch_get_vdso_data' [-Werror=missing-prototypes]
+fs/cifs/cifsroot.c:83:12: error: no previous prototype for 'cifs_root_data'
 
-Move the prototype out of the #ifdef block to reliably turn off that
-warning.
+Move the declaration from do_mounts.c into an appropriate header.
 
 Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
- include/linux/time_namespace.h | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ include/linux/mount.h | 2 ++
+ init/do_mounts.c      | 2 --
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/time_namespace.h b/include/linux/time_namespace.h
-index bb9d3f5542f8..03d9c5ac01d1 100644
---- a/include/linux/time_namespace.h
-+++ b/include/linux/time_namespace.h
-@@ -44,7 +44,6 @@ struct time_namespace *copy_time_ns(unsigned long flags,
- 				    struct time_namespace *old_ns);
- void free_time_ns(struct time_namespace *ns);
- void timens_on_fork(struct nsproxy *nsproxy, struct task_struct *tsk);
--struct vdso_data *arch_get_vdso_data(void *vvar_page);
- struct page *find_timens_vvar_page(struct vm_area_struct *vma);
+diff --git a/include/linux/mount.h b/include/linux/mount.h
+index 1ea326c368f7..f381eb44b24c 100644
+--- a/include/linux/mount.h
++++ b/include/linux/mount.h
+@@ -124,4 +124,6 @@ extern int iterate_mounts(int (*)(struct vfsmount *, void *), void *,
+ 			  struct vfsmount *);
+ extern void kern_unmount_array(struct vfsmount *mnt[], unsigned int num);
  
- static inline void put_time_ns(struct time_namespace *ns)
-@@ -163,4 +162,6 @@ static inline ktime_t timens_ktime_to_host(clockid_t clockid, ktime_t tim)
- }
- #endif
- 
-+struct vdso_data *arch_get_vdso_data(void *vvar_page);
++extern int cifs_root_data(char **dev, char **opts);
 +
- #endif /* _LINUX_TIMENS_H */
+ #endif /* _LINUX_MOUNT_H */
+diff --git a/init/do_mounts.c b/init/do_mounts.c
+index 811e94daf0a8..83447c46ad6d 100644
+--- a/init/do_mounts.c
++++ b/init/do_mounts.c
+@@ -489,8 +489,6 @@ static int __init mount_nfs_root(void)
+ 
+ #ifdef CONFIG_CIFS_ROOT
+ 
+-extern int cifs_root_data(char **dev, char **opts);
+-
+ #define CIFSROOT_TIMEOUT_MIN	5
+ #define CIFSROOT_TIMEOUT_MAX	30
+ #define CIFSROOT_RETRY_MAX	5
 -- 
 2.39.2
 
