@@ -2,118 +2,148 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AC561C7EE29
-	for <linux-sh@archiver.kernel.org>; Wed, 24 May 2023 00:29:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DF702C7EE31
+	for <linux-sh@archiver.kernel.org>; Wed, 24 May 2023 01:49:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238776AbjEXA3e (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 23 May 2023 20:29:34 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44284 "EHLO
+        id S238795AbjEXBtb (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 23 May 2023 21:49:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43118 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233325AbjEXA3d (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 23 May 2023 20:29:33 -0400
-Received: from mail-pl1-x62d.google.com (mail-pl1-x62d.google.com [IPv6:2607:f8b0:4864:20::62d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6FEBA135
-        for <linux-sh@vger.kernel.org>; Tue, 23 May 2023 17:29:19 -0700 (PDT)
-Received: by mail-pl1-x62d.google.com with SMTP id d9443c01a7336-1ae64580e9fso6735ad.1
-        for <linux-sh@vger.kernel.org>; Tue, 23 May 2023 17:29:19 -0700 (PDT)
+        with ESMTP id S232881AbjEXBta (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 23 May 2023 21:49:30 -0400
+Received: from mail-yb1-xb2d.google.com (mail-yb1-xb2d.google.com [IPv6:2607:f8b0:4864:20::b2d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C7B46189
+        for <linux-sh@vger.kernel.org>; Tue, 23 May 2023 18:49:27 -0700 (PDT)
+Received: by mail-yb1-xb2d.google.com with SMTP id 3f1490d57ef6-ba82d82bd39so630713276.2
+        for <linux-sh@vger.kernel.org>; Tue, 23 May 2023 18:49:27 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20221208; t=1684888159; x=1687480159;
+        d=google.com; s=20221208; t=1684892967; x=1687484967;
         h=mime-version:references:message-id:in-reply-to:subject:cc:to:from
          :date:from:to:cc:subject:date:message-id:reply-to;
-        bh=p+iGDu91GXvHaUJ4/GkDIwXiVromlKTEDnrVX/jdHHE=;
-        b=oCPd/VMBzehzBIwxKD0CUQlcv9XnCqSIGnZFpfNhT9159UiXp4+4s0dt1T5T+r2N8u
-         ejdMVEW9GWrQK3u8D/R+OgCl4fi8an2VY0K+/eeCPWT2cGGSET/E3kHkr5iqimXeopNz
-         1LhLEfNIl9101bv8HdubYyq2hpbrF89XLwyNahFvZOtnckCP7CoEZsh2L+2+OK9q9Yjc
-         K9vC86dI9TWXu3/6r3ILFI/gvIY8hkiVXH1FcP052iNl13PiuUL4NAyi+n5JDzxUMMjc
-         YVmWP+V4GT0WZnv89R5QJMFswFGyufptXG7L83ZUIfYIL/yWyXKcEjeZvi21gEBg088G
-         o5Zg==
+        bh=qRR20WPPG9GQ+bWld5KX4B7EuAV7QhoHIJ5BRRfzj5g=;
+        b=fL1Ko/YzJ7ADR+5IhbndnTRBOzBniMKv2InrhlDBTKJ8NlYVC/WzojNZzRdjG8LqqI
+         8LB9Z4sfpXm4DMnyfRFicnIehOON6Mw+FClbq6xhPa9tlrIuXm3Q/2idrYMx02+afzOp
+         1VCSHU1xv+O9cTuzhmlxGQq1v0D4TgBrAS9dYOJLgo+SzeMAZ7rQLDPNPL9H5vsD1p44
+         JTB4zFm6Ty/2t/Mm5CpAGXHuXSex52HKZD5bYmtrIhNvgrtjqZinsu17ACzjltY7KKk5
+         TNaE7Q4HSc79RkqKOj+NGXTgrLKTP+KzqHxsfw06sf9yCgMnslxI0DnH5G6oL7bKwZgq
+         fWlg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1684888159; x=1687480159;
+        d=1e100.net; s=20221208; t=1684892967; x=1687484967;
         h=mime-version:references:message-id:in-reply-to:subject:cc:to:from
          :date:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=p+iGDu91GXvHaUJ4/GkDIwXiVromlKTEDnrVX/jdHHE=;
-        b=WwXNabczD4zUrFTCY/QwNBt/Jci6yTYuGs5S1ERg4RanYjrJnLXFMvgnYgZ/mnjka0
-         s5ojsJ7QQBy/u77miIv9VbPcfZ00f9twmXZJRvtMaP3fPBjWhdNu4Bb853HQC5CHOCYX
-         dJCMCEEJOdXMl3F8VpOJ53C7PJhyT7WgyL9gDm6uAWKqB9zNyv/xtniGBySkBK3GqCD3
-         OL4/OVZLOABvYnvN0V8TsXXc446TD52RAb3oSQxzBbZYlVEz8KR6plT98E4aAIxWeoR9
-         hAoS198vQr9mNt36AdqGt2TW2cnFTQ+9vRZyIcdfkWtCj7KVOUiHDUKy1g8npQhxn2BR
-         RoFA==
-X-Gm-Message-State: AC+VfDxU3SYbVX2YLHCtPVSvJQy6f/yDpM978iWpewPXXMfn0gnjbLwc
-        wyK13+gE4yarbRGHreB1TBIBRQ==
-X-Google-Smtp-Source: ACHHUZ4WC86fv/HCojVq6Z7bo1LnEN2P8Qa/JJdhSbqAvm7x1JKXoIG4BePTyVsmdwlyiuzkRQj4Vw==
-X-Received: by 2002:a17:902:e847:b0:1af:90ce:5263 with SMTP id t7-20020a170902e84700b001af90ce5263mr107385plg.26.1684888158675;
-        Tue, 23 May 2023 17:29:18 -0700 (PDT)
-Received: from [2620:0:1008:11:c789:c1fb:6667:1766] ([2620:0:1008:11:c789:c1fb:6667:1766])
-        by smtp.gmail.com with ESMTPSA id n20-20020a17090a929400b0024de0de6ec8sm137193pjo.17.2023.05.23.17.29.17
+        bh=qRR20WPPG9GQ+bWld5KX4B7EuAV7QhoHIJ5BRRfzj5g=;
+        b=E0J9JYcQIKjvvQqoGQ6IZG8gdXspHNiZVI07itzDcmmITatEK8wcmUi8NMudxFgBtx
+         S9Vyf/SyOGQMB4mzphOHc2dcpaVO8+0ejEfWmSdygAax5ypNUgnIUOIe1estj2DeZn63
+         9ZtEBMhIiOuRzNWu81sarMLZxoTBrIeHH8DTzdCpSLqH6M7XHH7PoQTirq7vTJ9ewgT2
+         LG1S1JQLa3ht/MS9nGIgp3jLSO5GtgUzE/qyErzh+QS6AUNJF8qCdqtfvkSOP9OgwBdb
+         syP4BB6kECNfO992r4GNOwLh8I5t2Fm0/hFW/lKI6WmNp1FNGDYBeMuRfA95V/1JS1tn
+         IgoA==
+X-Gm-Message-State: AC+VfDxFCqJPnC7TWmyBtGtKa6+X7h/lb6hgBgVNFUtZKqCfYYrTBYlT
+        NwStDS1YHhDGURzEm6YJSK35Ug==
+X-Google-Smtp-Source: ACHHUZ7f0TOZQo7Cw+o/qEVNq4B1zvZdBbLM5VJM6QqwwtZu4t36Vxp5CkGSHrwBFYCBff4rw2Ddpw==
+X-Received: by 2002:a25:385:0:b0:ba8:54c4:3136 with SMTP id 127-20020a250385000000b00ba854c43136mr19398918ybd.52.1684892966804;
+        Tue, 23 May 2023 18:49:26 -0700 (PDT)
+Received: from ripple.attlocal.net (172-10-233-147.lightspeed.sntcca.sbcglobal.net. [172.10.233.147])
+        by smtp.gmail.com with ESMTPSA id x7-20020a259a07000000b00b8f6ec5a955sm2395274ybn.49.2023.05.23.18.49.23
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 23 May 2023 17:29:18 -0700 (PDT)
-Date:   Tue, 23 May 2023 17:29:17 -0700 (PDT)
-From:   David Rientjes <rientjes@google.com>
-To:     Vlastimil Babka <vbabka@suse.cz>
-cc:     Christoph Lameter <cl@linux.com>,
-        Pekka Enberg <penberg@kernel.org>,
-        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
-        Roman Gushchin <roman.gushchin@linux.dev>,
-        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
-        Shawn Guo <shawnguo@kernel.org>,
-        Sascha Hauer <s.hauer@pengutronix.de>,
-        Vladimir Zapolskiy <vz@mleia.com>,
-        Andrew Lunn <andrew@lunn.ch>,
-        Gregory Clement <gregory.clement@bootlin.com>,
-        Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
-        Tony Lindgren <tony@atomide.com>,
-        Qin Jian <qinjian@cqplus1.com>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Helge Deller <deller@gmx.de>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "David S . Miller" <davem@davemloft.net>,
-        Richard Weinberger <richard@nod.at>,
-        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-        Johannes Berg <johannes@sipsolutions.net>,
+        Tue, 23 May 2023 18:49:26 -0700 (PDT)
+Date:   Tue, 23 May 2023 18:49:14 -0700 (PDT)
+From:   Hugh Dickins <hughd@google.com>
+X-X-Sender: hugh@ripple.attlocal.net
+To:     Claudio Imbrenda <imbrenda@linux.ibm.com>
+cc:     Hugh Dickins <hughd@google.com>,
         Andrew Morton <akpm@linux-foundation.org>,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-omap@vger.kernel.org,
-        linux-renesas-soc@vger.kernel.org, linux-tegra@vger.kernel.org,
+        Mike Kravetz <mike.kravetz@oracle.com>,
+        Mike Rapoport <rppt@kernel.org>,
+        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
+        Matthew Wilcox <willy@infradead.org>,
+        David Hildenbrand <david@redhat.com>,
+        Suren Baghdasaryan <surenb@google.com>,
+        Qi Zheng <zhengqi.arch@bytedance.com>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Michal Simek <monstr@monstr.eu>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Helge Deller <deller@gmx.de>,
+        John David Anglin <dave.anglin@bell.net>,
+        "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Alexandre Ghiti <alexghiti@rivosinc.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "David S. Miller" <davem@davemloft.net>,
+        Chris Zankel <chris@zankel.net>,
+        Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
         linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
         linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
         linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-um@lists.infradead.org, linux-mm@kvack.org
-Subject: Re: [PATCH] mm/slab: rename CONFIG_SLAB to CONFIG_SLAB_DEPRECATED
-In-Reply-To: <20230523091139.21449-1-vbabka@suse.cz>
-Message-ID: <be109b49-8510-5887-72ae-738db9945619@google.com>
-References: <20230523091139.21449-1-vbabka@suse.cz>
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org
+Subject: Re: [PATCH 15/23] s390: allow pte_offset_map_lock() to fail
+In-Reply-To: <20230523140056.55b664b1@p-imbrenda>
+Message-ID: <b64cd153-18e8-81a6-b852-c04d8b1381d@google.com>
+References: <77a5d8c-406b-7068-4f17-23b7ac53bc83@google.com> <94aec8fe-383f-892-dcbf-d4c14e460a7@google.com> <20230517123546.672fb9b0@p-imbrenda> <4a15dbaa-1614-ce-ce1f-f73959cef895@google.com> <20230523140056.55b664b1@p-imbrenda>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, 23 May 2023, Vlastimil Babka wrote:
-
-> As discussed at LSF/MM [1] [2] and with no objections raised there,
-> deprecate the SLAB allocator. Rename the user-visible option so that
-> users with CONFIG_SLAB=y get a new prompt with explanation during make
-> oldconfig, while make olddefconfig will just switch to SLUB.
+On Tue, 23 May 2023, Claudio Imbrenda wrote:
 > 
-> In all defconfigs with CONFIG_SLAB=y remove the line so those also
-> switch to SLUB. Regressions due to the switch should be reported to
-> linux-mm and slab maintainers.
-> 
-> [1] https://lore.kernel.org/all/4b9fc9c6-b48c-198f-5f80-811a44737e5f@suse.cz/
-> [2] https://lwn.net/Articles/932201/
-> 
-> Signed-off-by: Vlastimil Babka <vbabka@suse.cz>
+> so if I understand the above correctly, pte_offset_map_lock will only
+> fail if the whole page table has disappeared, and in that case, it will
+> never reappear with zero pages, therefore we can safely skip (in that
+> case just break). if we were to do a continue instead of a break, we
+> would most likely fail again anyway.
 
-Acked-by: David Rientjes <rientjes@google.com>
+Yes, that's the most likely; and you hold mmap_write_lock() there,
+and VM_NOHUGEPAGE on all vmas, so I think it's the only foreseeable
+possibility.
 
-The Kconfig option says that SLAB will be removed in a few cycles.  I 
-think we should wait until at least the next LTS kernel is forked at the 
-end of the year so that users who upgrade to only the LTS releases can be 
-prompted for this change and surface any concerns.  Slab allocation is a 
-critical subsystem, so I presume this is the safest and most responsible 
-way to do the SLAB deprecation.  Hopefully that timeline works for 
-everybody.
+> 
+> in that case I would still like a small change in your patch: please
+> write a short (2~3 lines max) comment about why it's ok to do things
+> that way
+
+Sure.
+
+But I now see that I've disobeyed you, and gone to 4 lines (but in the
+comment above the function, so as not to distract from the code itself):
+is this good wording to you?  I needed to research how they were stopped
+from coming in afterwards, so wanted to put something greppable in there.
+
+And, unless I'm misunderstanding, that "after THP was enabled" was
+always supposed to say "after THP was disabled" (because splitting a
+huge zero page pmd inserts a a page table full of little zero ptes).
+
+Or would you prefer the comment in the commit message instead,
+or down just above the pte_offset_map_lock() line?
+
+It would much better if I could find one place at the mm end, to
+enforce its end of the contract; but cannot think how to do that.
+
+Hugh
+
+--- a/arch/s390/mm/gmap.c
++++ b/arch/s390/mm/gmap.c
+@@ -2537,7 +2537,12 @@ static inline void thp_split_mm(struct mm_struct *mm)
+  * Remove all empty zero pages from the mapping for lazy refaulting
+  * - This must be called after mm->context.has_pgste is set, to avoid
+  *   future creation of zero pages
+- * - This must be called after THP was enabled
++ * - This must be called after THP was disabled.
++ *
++ * mm contracts with s390, that even if mm were to remove a page table,
++ * racing with the loop below and so causing pte_offset_map_lock() to fail,
++ * it will never insert a page table containing empty zero pages once
++ * mm_forbids_zeropage(mm) i.e. mm->context.has_pgste is set.
+  */
+ static int __zap_zero_pages(pmd_t *pmd, unsigned long start,
+ 			   unsigned long end, struct mm_walk *walk)
