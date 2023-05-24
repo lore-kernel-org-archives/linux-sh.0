@@ -2,61 +2,132 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DF52CC77B73
-	for <linux-sh@archiver.kernel.org>; Wed, 24 May 2023 07:32:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A9340C7EE32
+	for <linux-sh@archiver.kernel.org>; Wed, 24 May 2023 14:27:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239085AbjEXHcn (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 24 May 2023 03:32:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36404 "EHLO
+        id S233637AbjEXO1I (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 24 May 2023 10:27:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55900 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233637AbjEXHcm (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 24 May 2023 03:32:42 -0400
-Received: from mail.feshiecree.pl (mail.feshiecree.pl [89.40.114.103])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AF1EA93
-        for <linux-sh@vger.kernel.org>; Wed, 24 May 2023 00:32:38 -0700 (PDT)
-Received: by mail.feshiecree.pl (Postfix, from userid 1001)
-        id E298D8674A; Wed, 24 May 2023 08:31:53 +0100 (BST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=feshiecree.pl;
-        s=mail; t=1684913555;
-        bh=hFxZwVw4rIL+JwfEOGI47p+fdoVOAeqVswP6NWoHSHQ=;
-        h=Date:From:To:Subject:From;
-        b=FPbHFaLRBTTur1+lR+tvNdkdd7ZQ5CnVpR8rUv5mjaYFElfhkYkWhbRTplTAKsuaa
-         VE196Ql7L9ktd81APn8NORZeVVErdvBEHvkWSkgtA3PzPBdHxSz4KEmHT5uKRucQS8
-         RQd5aTVHnxLXOqPv4fHi/gGgVGtPED8NmR2ZcNtBCwjYqE7JOXh1ejltLapPB59ABs
-         mZGjL8oCrQqrz4BT3o845jHjACreJ8s//U1/lK6DP6FqLprS34/rYUK6a04oIww6nj
-         vZsdTp+ZdfgA/dmssClGfa/xaeAmyGUvtl8dZ8FIPN4DHfGPbIDCFVzuXWc3tIf+bw
-         Zq3DgVt4hD65w==
-Received: by mail.feshiecree.pl for <linux-sh@vger.kernel.org>; Wed, 24 May 2023 07:31:21 GMT
-Message-ID: <20230524074503-0.1.2q.ji4p.0.kct6hmcfek@feshiecree.pl>
-Date:   Wed, 24 May 2023 07:31:21 GMT
-From:   "Krystian Wieczorek" <krystian.wieczorek@feshiecree.pl>
-To:     <linux-sh@vger.kernel.org>
-Subject: W sprawie samochodu
-X-Mailer: mail.feshiecree.pl
+        with ESMTP id S229524AbjEXO1H (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 24 May 2023 10:27:07 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 70AA711D;
+        Wed, 24 May 2023 07:27:06 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 91B9522041;
+        Wed, 24 May 2023 14:27:04 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1684938424; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=tXGazCQJhB+4Gbe14ojDjDepmPElagpzQVjU1cq9coM=;
+        b=CvxJjiwUfSN+kySKUn/EWA67pNGj3pzmDi1HbwCtE90AFBLWe7vv+d8M1Ij3FkSbIz4VTI
+        gWvmGqepcrFlLCBiRAAf+FLKtDv7IxP6DOFYzfABdT3HuVDKFvuPv4HouAx5CI/XFNBevQ
+        b0eo4MDqgOjEmRFkWmGBuHZT8lU/dcs=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1684938424;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=tXGazCQJhB+4Gbe14ojDjDepmPElagpzQVjU1cq9coM=;
+        b=pq5m/8gWb5XY3U0bzLALdtiUNBu4jqNs3ujyoKqIbmne//9yJpXq+qLIx07FO9Z84ILL6b
+        c/7V1xSDO+g6aHAA==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1777E13425;
+        Wed, 24 May 2023 14:27:04 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id VWz9BLgebmSqKAAAMHmgww
+        (envelope-from <vbabka@suse.cz>); Wed, 24 May 2023 14:27:04 +0000
+Message-ID: <4f690e97-b26c-1705-51e7-0d7ebc77d819@suse.cz>
+Date:   Wed, 24 May 2023 16:27:03 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.11.0
+Subject: Re: [PATCH] mm/slab: rename CONFIG_SLAB to CONFIG_SLAB_DEPRECATED
+Content-Language: en-US
+To:     David Rientjes <rientjes@google.com>
+Cc:     Christoph Lameter <cl@linux.com>,
+        Pekka Enberg <penberg@kernel.org>,
+        Joonsoo Kim <iamjoonsoo.kim@lge.com>,
+        Roman Gushchin <roman.gushchin@linux.dev>,
+        Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+        Shawn Guo <shawnguo@kernel.org>,
+        Sascha Hauer <s.hauer@pengutronix.de>,
+        Vladimir Zapolskiy <vz@mleia.com>,
+        Andrew Lunn <andrew@lunn.ch>,
+        Gregory Clement <gregory.clement@bootlin.com>,
+        Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
+        Tony Lindgren <tony@atomide.com>,
+        Qin Jian <qinjian@cqplus1.com>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
+        Helge Deller <deller@gmx.de>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "David S . Miller" <davem@davemloft.net>,
+        Richard Weinberger <richard@nod.at>,
+        Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+        Johannes Berg <johannes@sipsolutions.net>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-omap@vger.kernel.org,
+        linux-renesas-soc@vger.kernel.org, linux-tegra@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, linux-mm@kvack.org
+References: <20230523091139.21449-1-vbabka@suse.cz>
+ <be109b49-8510-5887-72ae-738db9945619@google.com>
+From:   Vlastimil Babka <vbabka@suse.cz>
+In-Reply-To: <be109b49-8510-5887-72ae-738db9945619@google.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Dzie=C5=84 dobry,
+On 5/24/23 02:29, David Rientjes wrote:
+> On Tue, 23 May 2023, Vlastimil Babka wrote:
+> 
+>> As discussed at LSF/MM [1] [2] and with no objections raised there,
+>> deprecate the SLAB allocator. Rename the user-visible option so that
+>> users with CONFIG_SLAB=y get a new prompt with explanation during make
+>> oldconfig, while make olddefconfig will just switch to SLUB.
+>> 
+>> In all defconfigs with CONFIG_SLAB=y remove the line so those also
+>> switch to SLUB. Regressions due to the switch should be reported to
+>> linux-mm and slab maintainers.
+>> 
+>> [1] https://lore.kernel.org/all/4b9fc9c6-b48c-198f-5f80-811a44737e5f@suse.cz/
+>> [2] https://lwn.net/Articles/932201/
+>> 
+>> Signed-off-by: Vlastimil Babka <vbabka@suse.cz>
+> 
+> Acked-by: David Rientjes <rientjes@google.com>
 
-chcieliby=C5=9Bmy zapewni=C4=87 Pa=C5=84stwu kompleksowe rozwi=C4=85zania=
-, je=C5=9Bli chodzi o system monitoringu GPS.
+Thanks.
 
-Precyzyjne monitorowanie pojazd=C3=B3w na mapach cyfrowych, =C5=9Bledzeni=
-e ich parametr=C3=B3w eksploatacyjnych w czasie rzeczywistym oraz kontrol=
-a paliwa to kluczowe funkcjonalno=C5=9Bci naszego systemu.=20
+> The Kconfig option says that SLAB will be removed in a few cycles.  I 
+> think we should wait until at least the next LTS kernel is forked at the 
+> end of the year so that users who upgrade to only the LTS releases can be 
+> prompted for this change and surface any concerns.  Slab allocation is a 
+> critical subsystem, so I presume this is the safest and most responsible 
+> way to do the SLAB deprecation.  Hopefully that timeline works for 
+> everybody.
 
-Organizowanie pracy pracownik=C3=B3w jest dzi=C4=99ki temu prostsze i bar=
-dziej efektywne, a oszcz=C4=99dno=C5=9Bci i optymalizacja w zakresie pono=
-szonych koszt=C3=B3w, maj=C4=85 dla ka=C5=BCdego przedsi=C4=99biorcy ogro=
-mne znaczenie.
+Sure, and in fact looking at predicted release dates [1], if the deprecation
+goes into 6.5 then 6.7 ("few" == 2) is already end of January 2024, anyway.
 
-Dopasujemy nasz=C4=85 ofert=C4=99 do Pa=C5=84stwa oczekiwa=C5=84 i potrze=
-b organizacji. Czy mogliby=C5=9Bmy porozmawia=C4=87 o naszej propozycji?
-
-
-Pozdrawiam
-Krystian Wieczorek
+[1] https://hansen.beer/~dave/phb/
