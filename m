@@ -2,95 +2,85 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A6058C77B73
-	for <linux-sh@archiver.kernel.org>; Sat, 27 May 2023 16:45:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BFCE5C7EE32
+	for <linux-sh@archiver.kernel.org>; Sun, 28 May 2023 05:48:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230038AbjE0Qp2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 27 May 2023 12:45:28 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55326 "EHLO
+        id S229483AbjE1FsQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 28 May 2023 01:48:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47694 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229649AbjE0Qp0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 27 May 2023 12:45:26 -0400
-Received: from relay7-d.mail.gandi.net (relay7-d.mail.gandi.net [IPv6:2001:4b98:dc4:8::227])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6ABAED8;
-        Sat, 27 May 2023 09:45:18 -0700 (PDT)
-X-GND-Sasl: contact@artur-rojek.eu
-X-GND-Sasl: contact@artur-rojek.eu
-X-GND-Sasl: contact@artur-rojek.eu
-X-GND-Sasl: contact@artur-rojek.eu
-X-GND-Sasl: contact@artur-rojek.eu
-X-GND-Sasl: contact@artur-rojek.eu
-X-GND-Sasl: contact@artur-rojek.eu
-X-GND-Sasl: contact@artur-rojek.eu
-Received: by mail.gandi.net (Postfix) with ESMTPSA id C5A4A20003;
-        Sat, 27 May 2023 16:45:15 +0000 (UTC)
-From:   Artur Rojek <contact@artur-rojek.eu>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Artur Rojek <contact@artur-rojek.eu>
-Subject: [PATCH v2 3/3] sh: dma: Correct the number of DMA channels in SH7709
-Date:   Sat, 27 May 2023 18:44:52 +0200
-Message-Id: <20230527164452.64797-4-contact@artur-rojek.eu>
-X-Mailer: git-send-email 2.40.1
-In-Reply-To: <20230527164452.64797-1-contact@artur-rojek.eu>
-References: <20230527164452.64797-1-contact@artur-rojek.eu>
+        with ESMTP id S229445AbjE1FsO (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 28 May 2023 01:48:14 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 20DD4BE;
+        Sat, 27 May 2023 22:48:13 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id A621E60A76;
+        Sun, 28 May 2023 05:48:12 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B2385C433D2;
+        Sun, 28 May 2023 05:48:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1685252892;
+        bh=bkuMHroVl9TlOSFo6p59v17X6rAsvGxb3kzfT5vZogM=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=R/fA88QDLAPfI5+3dlnjis0mHISdgNRk033rp1tEp/+Mnh4pdPF6GyqhT2d0f44ZM
+         O9W0HkIZYw4XGrrX1f3tUzE0jNE3oALs8Cn992s+EfmiHsu8hfXhu3DkQX9TcwN2oj
+         7E7N3KWaDItcFkwUQzuLHOiQy27MUurhgxG80g7TkNYefeCpTsWvx1dhgZiE8imgx7
+         3iInnTBsRh7R7es7uW5hUx43VvmKiGSLfYpxMoZFKFBm9CDY8XYAON1aC4gzYndzuk
+         JoH7BurJumWuV7HAw5lKspfn5I/oVTTKuKbhXpKROtOf7xIXSt3aAHLO5P0Ikkt3g7
+         bN8aIuRcKOvMA==
+Date:   Sun, 28 May 2023 08:47:45 +0300
+From:   Mike Rapoport <rppt@kernel.org>
+To:     Matthew Wilcox <willy@infradead.org>
+Cc:     Vishal Moola <vishal.moola@gmail.com>,
+        Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org,
+        linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+        xen-devel@lists.xenproject.org, kvm@vger.kernel.org
+Subject: Re: [PATCH v2 05/34] mm: add utility functions for ptdesc
+Message-ID: <20230528054745.GI4967@kernel.org>
+References: <20230501192829.17086-1-vishal.moola@gmail.com>
+ <20230501192829.17086-6-vishal.moola@gmail.com>
+ <20230525090956.GX4967@kernel.org>
+ <CAOzc2pxSH6GhBnAoSOjvYJk2VdMDFZi3H_1qGC5Cdyp3j4AzPQ@mail.gmail.com>
+ <20230525202537.GA4967@kernel.org>
+ <CAOzc2pxD21mxisy-M5b_SDUv0MYwNHqaVDJnJpARuDG_HjCbOg@mail.gmail.com>
+ <20230527104144.GH4967@kernel.org>
+ <ZHIdK+170XoK2jVe@casper.infradead.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ZHIdK+170XoK2jVe@casper.infradead.org>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-According to the hardware manual [1], the DMAC found in SH7709 features
-only 4 channels.
+On Sat, May 27, 2023 at 04:09:31PM +0100, Matthew Wilcox wrote:
+> On Sat, May 27, 2023 at 01:41:44PM +0300, Mike Rapoport wrote:
+> > Sorry if I wasn't clear, by "page table page" I meant the page (or memory
+> > for that matter) for actual page table rather than struct page describing
+> > that memory.
+> > 
+> > So what we allocate here is the actual memory for the page tables and not
+> > the memory for the metadata. That's why I think the name ptdesc_alloc is
+> > confusing.
+> 
+> But that's going to be the common pattern in the Glorious Future.
+> You allocate a folio and that includes both the folio memory descriptor
+> and the 2^n pages of memory described by that folio.  Similarly for all
+> the other memory descriptors.
 
-While at it, also sort the existing targets and clarify that
-NR_ONCHIP_DMA_CHANNELS must be a multiply of two.
+I'm not arguing with that, I'm not happy about the naming. IMO, the name
+should reflect that we allocate memory for page tables rather than for the
+descriptor of that memory, say pgtable_alloc() or page_table_alloc().
 
-[1] https://www.renesas.com/us/en/document/mah/sh7709s-group-hardware-manual (p. 373)
-
-Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
----
-
-v2: - sort existing targets
-    - clarify that the value must be a multiply of two
-
- arch/sh/drivers/dma/Kconfig | 14 ++++++++------
- 1 file changed, 8 insertions(+), 6 deletions(-)
-
-diff --git a/arch/sh/drivers/dma/Kconfig b/arch/sh/drivers/dma/Kconfig
-index 7d54f284ce10..382fbb189fcf 100644
---- a/arch/sh/drivers/dma/Kconfig
-+++ b/arch/sh/drivers/dma/Kconfig
-@@ -28,17 +28,19 @@ config SH_DMA_API
- config NR_ONCHIP_DMA_CHANNELS
- 	int
- 	depends on SH_DMA
--	default "4" if CPU_SUBTYPE_SH7750  || CPU_SUBTYPE_SH7751  || \
--		       CPU_SUBTYPE_SH7750S || CPU_SUBTYPE_SH7091
-+	default "4" if CPU_SUBTYPE_SH7709 || CPU_SUBTYPE_SH7750  || \
-+		       CPU_SUBTYPE_SH7750S || CPU_SUBTYPE_SH7751 || \
-+		       CPU_SUBTYPE_SH7091
- 	default "8" if CPU_SUBTYPE_SH7750R || CPU_SUBTYPE_SH7751R || \
- 		       CPU_SUBTYPE_SH7760
--	default "12" if CPU_SUBTYPE_SH7723 || CPU_SUBTYPE_SH7780  || \
--			CPU_SUBTYPE_SH7785 || CPU_SUBTYPE_SH7724
-+	default "12" if CPU_SUBTYPE_SH7723 || CPU_SUBTYPE_SH7724  || \
-+			CPU_SUBTYPE_SH7780 || CPU_SUBTYPE_SH7785
- 	default "6"
- 	help
- 	  This allows you to specify the number of channels that the on-chip
--	  DMAC supports. This will be 4 for SH7750/SH7751/Sh7750S/SH7091 and 8 for the
--	  SH7750R/SH7751R/SH7760, 12 for the SH7723/SH7780/SH7785/SH7724, default is 6.
-+	  DMAC supports. This will be 4 for SH7709/SH7750/SH7750S/SH7751/SH7091,
-+	  8 for SH7750R/SH7751R/SH7760, and 12 for SH7723/SH7724/SH7780/SH7785.
-+	  Default is 6. Must be an even number.
- 
- config SH_DMABRG
- 	bool "SH7760 DMABRG support"
 -- 
-2.40.1
-
+Sincerely yours,
+Mike.
