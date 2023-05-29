@@ -2,85 +2,61 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BFCE5C7EE32
-	for <linux-sh@archiver.kernel.org>; Sun, 28 May 2023 05:48:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A3AFC7EE29
+	for <linux-sh@archiver.kernel.org>; Mon, 29 May 2023 07:45:47 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229483AbjE1FsQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 28 May 2023 01:48:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47694 "EHLO
+        id S229512AbjE2Hpr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 29 May 2023 03:45:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56570 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229445AbjE1FsO (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 28 May 2023 01:48:14 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 20DD4BE;
-        Sat, 27 May 2023 22:48:13 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id A621E60A76;
-        Sun, 28 May 2023 05:48:12 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B2385C433D2;
-        Sun, 28 May 2023 05:48:05 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1685252892;
-        bh=bkuMHroVl9TlOSFo6p59v17X6rAsvGxb3kzfT5vZogM=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=R/fA88QDLAPfI5+3dlnjis0mHISdgNRk033rp1tEp/+Mnh4pdPF6GyqhT2d0f44ZM
-         O9W0HkIZYw4XGrrX1f3tUzE0jNE3oALs8Cn992s+EfmiHsu8hfXhu3DkQX9TcwN2oj
-         7E7N3KWaDItcFkwUQzuLHOiQy27MUurhgxG80g7TkNYefeCpTsWvx1dhgZiE8imgx7
-         3iInnTBsRh7R7es7uW5hUx43VvmKiGSLfYpxMoZFKFBm9CDY8XYAON1aC4gzYndzuk
-         JoH7BurJumWuV7HAw5lKspfn5I/oVTTKuKbhXpKROtOf7xIXSt3aAHLO5P0Ikkt3g7
-         bN8aIuRcKOvMA==
-Date:   Sun, 28 May 2023 08:47:45 +0300
-From:   Mike Rapoport <rppt@kernel.org>
-To:     Matthew Wilcox <willy@infradead.org>
-Cc:     Vishal Moola <vishal.moola@gmail.com>,
-        Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org,
-        linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
-        xen-devel@lists.xenproject.org, kvm@vger.kernel.org
-Subject: Re: [PATCH v2 05/34] mm: add utility functions for ptdesc
-Message-ID: <20230528054745.GI4967@kernel.org>
-References: <20230501192829.17086-1-vishal.moola@gmail.com>
- <20230501192829.17086-6-vishal.moola@gmail.com>
- <20230525090956.GX4967@kernel.org>
- <CAOzc2pxSH6GhBnAoSOjvYJk2VdMDFZi3H_1qGC5Cdyp3j4AzPQ@mail.gmail.com>
- <20230525202537.GA4967@kernel.org>
- <CAOzc2pxD21mxisy-M5b_SDUv0MYwNHqaVDJnJpARuDG_HjCbOg@mail.gmail.com>
- <20230527104144.GH4967@kernel.org>
- <ZHIdK+170XoK2jVe@casper.infradead.org>
+        with ESMTP id S231550AbjE2Hpd (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 29 May 2023 03:45:33 -0400
+Received: from mail.feshiecree.pl (mail.feshiecree.pl [89.40.114.103])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C2839D2
+        for <linux-sh@vger.kernel.org>; Mon, 29 May 2023 00:45:30 -0700 (PDT)
+Received: by mail.feshiecree.pl (Postfix, from userid 1001)
+        id 9491882CD5; Mon, 29 May 2023 08:41:56 +0100 (BST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=feshiecree.pl;
+        s=mail; t=1685346191;
+        bh=hFxZwVw4rIL+JwfEOGI47p+fdoVOAeqVswP6NWoHSHQ=;
+        h=Date:From:To:Subject:From;
+        b=G/odQdBNc2Lw4dLxGgDssbfkV2BKihglbyzaTzTGeQR+FDSuIDUV0jKJtpo2GX1iU
+         g7KL2Kw8I1qfYHSf+TMPlSCazxBQXpC+guIYjliXK4vQ3ui8bULzsWL6Le1s/wPbw2
+         ofwIJJ1UPAyT/cehPJlpOyVeOlEqpB6jXwdpPr088Fn1ovkvgSyK0Sgw2ZW6sHqYSC
+         11EEbNODNFut5Fk/CT8Fls40ZJa3O+4XFoPXAKHUDR41kX1lBUfr4+oRyHhkHtd/ZE
+         KVarrPt4OPQUJC6mCD/kuAGsXL7oPlpl2WBHB18WMpFUSmfw6d96qIP+RDPHn+ozqo
+         yF0NKpLDGEoQA==
+Received: by mail.feshiecree.pl for <linux-sh@vger.kernel.org>; Mon, 29 May 2023 07:40:59 GMT
+Message-ID: <20230529074503-0.1.2t.ji4p.0.w2injr9cze@feshiecree.pl>
+Date:   Mon, 29 May 2023 07:40:59 GMT
+From:   "Krystian Wieczorek" <krystian.wieczorek@feshiecree.pl>
+To:     <linux-sh@vger.kernel.org>
+Subject: W sprawie samochodu
+X-Mailer: mail.feshiecree.pl
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <ZHIdK+170XoK2jVe@casper.infradead.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Sat, May 27, 2023 at 04:09:31PM +0100, Matthew Wilcox wrote:
-> On Sat, May 27, 2023 at 01:41:44PM +0300, Mike Rapoport wrote:
-> > Sorry if I wasn't clear, by "page table page" I meant the page (or memory
-> > for that matter) for actual page table rather than struct page describing
-> > that memory.
-> > 
-> > So what we allocate here is the actual memory for the page tables and not
-> > the memory for the metadata. That's why I think the name ptdesc_alloc is
-> > confusing.
-> 
-> But that's going to be the common pattern in the Glorious Future.
-> You allocate a folio and that includes both the folio memory descriptor
-> and the 2^n pages of memory described by that folio.  Similarly for all
-> the other memory descriptors.
+Dzie=C5=84 dobry,
 
-I'm not arguing with that, I'm not happy about the naming. IMO, the name
-should reflect that we allocate memory for page tables rather than for the
-descriptor of that memory, say pgtable_alloc() or page_table_alloc().
+chcieliby=C5=9Bmy zapewni=C4=87 Pa=C5=84stwu kompleksowe rozwi=C4=85zania=
+, je=C5=9Bli chodzi o system monitoringu GPS.
 
--- 
-Sincerely yours,
-Mike.
+Precyzyjne monitorowanie pojazd=C3=B3w na mapach cyfrowych, =C5=9Bledzeni=
+e ich parametr=C3=B3w eksploatacyjnych w czasie rzeczywistym oraz kontrol=
+a paliwa to kluczowe funkcjonalno=C5=9Bci naszego systemu.=20
+
+Organizowanie pracy pracownik=C3=B3w jest dzi=C4=99ki temu prostsze i bar=
+dziej efektywne, a oszcz=C4=99dno=C5=9Bci i optymalizacja w zakresie pono=
+szonych koszt=C3=B3w, maj=C4=85 dla ka=C5=BCdego przedsi=C4=99biorcy ogro=
+mne znaczenie.
+
+Dopasujemy nasz=C4=85 ofert=C4=99 do Pa=C5=84stwa oczekiwa=C5=84 i potrze=
+b organizacji. Czy mogliby=C5=9Bmy porozmawia=C4=87 o naszej propozycji?
+
+
+Pozdrawiam
+Krystian Wieczorek
