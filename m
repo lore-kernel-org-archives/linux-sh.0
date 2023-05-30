@@ -2,114 +2,125 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8F126C77B7A
-	for <linux-sh@archiver.kernel.org>; Tue, 30 May 2023 16:31:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C4F3DC7EE32
+	for <linux-sh@archiver.kernel.org>; Tue, 30 May 2023 21:24:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232285AbjE3Qbd (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 30 May 2023 12:31:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45594 "EHLO
+        id S232841AbjE3VYH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 30 May 2023 17:24:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48698 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232523AbjE3QbR (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 30 May 2023 12:31:17 -0400
-Received: from mail-il1-x134.google.com (mail-il1-x134.google.com [IPv6:2607:f8b0:4864:20::134])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B538D102;
-        Tue, 30 May 2023 09:30:46 -0700 (PDT)
-Received: by mail-il1-x134.google.com with SMTP id e9e14a558f8ab-3360a95c0a1so6350415ab.0;
-        Tue, 30 May 2023 09:30:46 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1685464244; x=1688056244;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to;
-        bh=iLnzBlwd4R6Xah7NSEk7Gqbfnuy0fx7IzR6wWPi2abY=;
-        b=ZrBmmyjdqwAUMrQ0s1MT6bcQHlkw9VOKADCoct8GsAUr1nE4RCwwN5o/W71+uSJFYa
-         jhEFyLRZZh8JsKtJ87D/B5VWtVaJm0GRri631dez2iYRwMkuQGq12ecIFu3Q1fed0GTx
-         UjO6Ql+YxfHp3FY9pYI27aWHPTZSjaAVEcrGDHCC3mkeOjoUlMOX8IapM2wlEOl1nJi/
-         LyuPi27B99capG2hZahRtiHU+74lQfFpFocCQQ62uhK+iJ6XByVMbKpUPSAy/+zs0mp9
-         FQaLM3LYgmLy8tEYOqhBIkgvBOIsjcz1tNonw9v3PPvU0KemzJEELmI5hOeqKMaz7FY4
-         lx0w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1685464244; x=1688056244;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=iLnzBlwd4R6Xah7NSEk7Gqbfnuy0fx7IzR6wWPi2abY=;
-        b=ZXQ5zFAY3qkdrlSzkElNH0ZV3yXaNcz38fd1xSFG6NVNpE0swimmkpm/dfdfFaKJsO
-         P+5WVNeueAOwFnJPYs2o+p00Ax7GBUr8RwNx5W1QZmFD0d2vTEZoktbHEXkdyvxb3QN7
-         MNqTAAp2OuUVa6vfQ4/6pTwiGMwUwr5NWLM5neJvgVNbIdzngxlSha8qJlRqHLy861PE
-         sy4poaYBiI/sFHrsp/D+hW4n/oRqcx6qn5cxGmm04oTodNmLP/9cHkYycwsOxmHNZrv2
-         jgL7vfl0V249tRm2r19brbePoqJpKNR8NuKrA+qj1VnZY00jjnXXZrPf3J7Fbexarp2Y
-         jtXA==
-X-Gm-Message-State: AC+VfDxYDJn0jVGtsHggORgF2oV1pzq1UirCEDGT4JP/PUdFQSDsZJGG
-        BeivZiPpFFkl6+1s8BM37kw=
-X-Google-Smtp-Source: ACHHUZ4x1Pt5L6exVrp0MlOS69Vf+DlbzGnXtN4/qVqrVNqTZ3F69SALBs4ZMhHtGUr32ghaP/Vp4g==
-X-Received: by 2002:a92:d203:0:b0:335:56cb:a3a with SMTP id y3-20020a92d203000000b0033556cb0a3amr74431ily.16.1685464244493;
-        Tue, 30 May 2023 09:30:44 -0700 (PDT)
-Received: from azeems-kspp.c.googlers.com.com (54.70.188.35.bc.googleusercontent.com. [35.188.70.54])
-        by smtp.gmail.com with ESMTPSA id a4-20020a92a304000000b0033af84e6321sm2543982ili.64.2023.05.30.09.30.43
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 30 May 2023 09:30:44 -0700 (PDT)
-From:   Azeem Shaikh <azeemshaikh38@gmail.com>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     linux-hardening@vger.kernel.org,
-        Azeem Shaikh <azeemshaikh38@gmail.com>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Randy Dunlap <rdunlap@infradead.org>
-Subject: [PATCH] sh: Replace all non-returning strlcpy with strscpy
-Date:   Tue, 30 May 2023 16:30:41 +0000
-Message-ID: <20230530163041.985456-1-azeemshaikh38@gmail.com>
-X-Mailer: git-send-email 2.41.0.rc0.172.g3f132b7071-goog
+        with ESMTP id S230193AbjE3VYG (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 30 May 2023 17:24:06 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1C77AD9;
+        Tue, 30 May 2023 14:24:05 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id B5C1E6338E;
+        Tue, 30 May 2023 21:24:04 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id CB01EC4339B;
+        Tue, 30 May 2023 21:24:03 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1685481844;
+        bh=nSQjRvB5sqKGMsdtyBRHXZYqX4emyOnsRXhxnpxj5CY=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:From;
+        b=TV1bjAHwa6NLdVZVD7DllGDZUObfyAObgZ8dpZarPA3MFb+4JwjHeGjrah/sKeuB6
+         Xq8Z6uhzHX0F3PKJSdkRh1pFxjO+XorK0VZvx6no556rDJNfISNz+wSJYYSdEmvn7Z
+         hUMZYEgCtddE7YUdKaua4hQLvfWtpf57g3PAd+6ZmWrfu2xY5A7mha+RytVeJ/84Sv
+         mxnDEJPKCDkp/bA6BADO+x5ZZtDdknfJeDc4bcwl2S3en2mWL+rmMtiDyQsmiX2t01
+         UKGSafGTnUjV0OrS31D6yutY2Y59cmVv6Xh9lXe15RO90svr9jvNnhSKkE8vII7TeO
+         VMw5j/h0xzgKQ==
+Date:   Tue, 30 May 2023 16:24:02 -0500
+From:   Bjorn Helgaas <helgaas@kernel.org>
+To:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Cc:     Krzysztof =?utf-8?Q?Wilczy=C5=84ski?= <kw@linux.com>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        linux-pci@vger.kernel.org,
+        Dominik Brodowski <linux@dominikbrodowski.net>,
+        linux-kernel@vger.kernel.org,
+        =?iso-8859-1?Q?Micka=EBl_Sala=FCn?= <mic@digikod.net>,
+        Andrew Lunn <andrew@lunn.ch>, sparclinux@vger.kernel.org,
+        Stefano Stabellini <sstabellini@kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Gregory Clement <gregory.clement@bootlin.com>,
+        "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
+        Russell King <linux@armlinux.org.uk>,
+        linux-acpi@vger.kernel.org, Miguel Ojeda <ojeda@kernel.org>,
+        xen-devel@lists.xenproject.org, Matt Turner <mattst88@gmail.com>,
+        Anatolij Gustschin <agust@denx.de>,
+        Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Niklas Schnelle <schnelle@linux.ibm.com>,
+        Richard Henderson <richard.henderson@linaro.org>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Bjorn Helgaas <bhelgaas@google.com>,
+        Mika Westerberg <mika.westerberg@linux.intel.com>,
+        linux-arm-kernel@lists.infradead.org,
+        Juergen Gross <jgross@suse.com>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Philippe =?iso-8859-1?Q?Mathieu-Daud=E9?= <philmd@linaro.org>,
+        linuxppc-dev@lists.ozlabs.org,
+        Randy Dunlap <rdunlap@infradead.org>,
+        linux-mips@vger.kernel.org,
+        Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>,
+        linux-alpha@vger.kernel.org,
+        Pali =?iso-8859-1?Q?Roh=E1r?= <pali@kernel.org>,
+        "David S. Miller" <davem@davemloft.net>,
+        "Maciej W. Rozycki" <macro@orcam.me.uk>
+Subject: Re: [PATCH v8 0/7] Add pci_dev_for_each_resource() helper and update
+ users
+Message-ID: <ZHZpcli2UmdzHgme@bhelgaas>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ZF6YIezraETr9iNM@bhelgaas>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-strlcpy() reads the entire source buffer first.
-This read may exceed the destination size limit.
-This is both inefficient and can lead to linear read
-overflows if a source string is not NUL-terminated [1].
-In an effort to remove strlcpy() completely [2], replace
-strlcpy() here with strscpy().
-No return values were used, so direct replacement is safe.
+On Fri, May 12, 2023 at 02:48:51PM -0500, Bjorn Helgaas wrote:
+> On Fri, May 12, 2023 at 01:56:29PM +0300, Andy Shevchenko wrote:
+> > On Tue, May 09, 2023 at 01:21:22PM -0500, Bjorn Helgaas wrote:
+> > > On Tue, Apr 04, 2023 at 11:11:01AM -0500, Bjorn Helgaas wrote:
+> > > > On Thu, Mar 30, 2023 at 07:24:27PM +0300, Andy Shevchenko wrote:
+> > > > > Provide two new helper macros to iterate over PCI device resources and
+> > > > > convert users.
+> > > 
+> > > > Applied 2-7 to pci/resource for v6.4, thanks, I really like this!
+> > > 
+> > > This is 09cc90063240 ("PCI: Introduce pci_dev_for_each_resource()")
+> > > upstream now.
+> > > 
+> > > Coverity complains about each use,
+> > 
+> > It needs more clarification here. Use of reduced variant of the
+> > macro or all of them? If the former one, then I can speculate that
+> > Coverity (famous for false positives) simply doesn't understand `for
+> > (type var; var ...)` code.
+> 
+> True, Coverity finds false positives.  It flagged every use in
+> drivers/pci and drivers/pnp.  It didn't mention the arch/alpha, arm,
+> mips, powerpc, sh, or sparc uses, but I think it just didn't look at
+> those.
+> 
+> It flagged both:
+> 
+>   pbus_size_io    pci_dev_for_each_resource(dev, r)
+>   pbus_size_mem   pci_dev_for_each_resource(dev, r, i)
+> 
+> Here's a spreadsheet with a few more details (unfortunately I don't
+> know how to make it dump the actual line numbers or analysis like I
+> pasted below, so "pci_dev_for_each_resource" doesn't appear).  These
+> are mostly in the "Drivers-PCI" component.
+> 
+> https://docs.google.com/spreadsheets/d/1ohOJwxqXXoDUA0gwopgk-z-6ArLvhN7AZn4mIlDkHhQ/edit?usp=sharing
+> 
+> These particular reports are in the "High Impact Outstanding" tab.
 
-[1] https://www.kernel.org/doc/html/latest/process/deprecated.html#strlcpy
-[2] https://github.com/KSPP/linux/issues/89
+Where are we at?  Are we going to ignore this because some Coverity
+reports are false positives?
 
-Signed-off-by: Azeem Shaikh <azeemshaikh38@gmail.com>
----
- arch/sh/drivers/dma/dma-api.c |    2 +-
- arch/sh/kernel/setup.c        |    4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
-
-diff --git a/arch/sh/drivers/dma/dma-api.c b/arch/sh/drivers/dma/dma-api.c
-index ab9170494dcc..89cd4a3b4cca 100644
---- a/arch/sh/drivers/dma/dma-api.c
-+++ b/arch/sh/drivers/dma/dma-api.c
-@@ -198,7 +198,7 @@ int request_dma(unsigned int chan, const char *dev_id)
- 	if (atomic_xchg(&channel->busy, 1))
- 		return -EBUSY;
- 
--	strlcpy(channel->dev_id, dev_id, sizeof(channel->dev_id));
-+	strscpy(channel->dev_id, dev_id, sizeof(channel->dev_id));
- 
- 	if (info->ops->request) {
- 		result = info->ops->request(channel);
-diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-index af977ec4ca5e..e4f0f9a1d355 100644
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -304,9 +304,9 @@ void __init setup_arch(char **cmdline_p)
- 	bss_resource.end = virt_to_phys(__bss_stop)-1;
- 
- #ifdef CONFIG_CMDLINE_OVERWRITE
--	strlcpy(command_line, CONFIG_CMDLINE, sizeof(command_line));
-+	strscpy(command_line, CONFIG_CMDLINE, sizeof(command_line));
- #else
--	strlcpy(command_line, COMMAND_LINE, sizeof(command_line));
-+	strscpy(command_line, COMMAND_LINE, sizeof(command_line));
- #ifdef CONFIG_CMDLINE_EXTEND
- 	strlcat(command_line, " ", sizeof(command_line));
- 	strlcat(command_line, CONFIG_CMDLINE, sizeof(command_line));
-
+Bjorn
