@@ -2,111 +2,150 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4BF53C7EE23
-	for <linux-sh@archiver.kernel.org>; Wed, 31 May 2023 21:30:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 64439C7EE29
+	for <linux-sh@archiver.kernel.org>; Wed, 31 May 2023 21:32:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229543AbjEaVav (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 31 May 2023 17:30:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38412 "EHLO
+        id S230359AbjEaVb1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 31 May 2023 17:31:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39110 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229484AbjEaVau (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 31 May 2023 17:30:50 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2E1A01A2;
-        Wed, 31 May 2023 14:30:31 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id A5E2E63391;
-        Wed, 31 May 2023 21:30:30 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id AE7E1C433D2;
-        Wed, 31 May 2023 21:30:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1685568630;
-        bh=gW9waI0b8IiYUwk0vfOCM7pXk2nDw1QSAznIy/h3ghs=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:From;
-        b=KtBbCN/ixHzj8ZulEY/5zCSpe/VVKBpSZFDZuNCSDCoNNZ4IeoA+28lWLQWvSlii6
-         83BDJpZxFh6HJCKpfPSOLONuS2M6Vumh+ceOlzxWjyrmYHupNvr4DztdjDLJl3iqmN
-         E3araGx+1PyOqST2zluz35yOcgzUDjix8glDLTAN/wUxtojSsJeinZtS0BNCLJVOXb
-         hkXJLKswE11TqxiL8vaPqm931ggJJ71GILWlC61yGzVhgB56FeGO9+L1ZryEUY7qlP
-         EPZxdEvOEEyvpu7VdWJnY4Z4bFlhgqbJcQ6tWlmZqEjiu2TPM90LCU6E74dCFHn04m
-         J5aGwHVGTvHag==
-Date:   Wed, 31 May 2023 16:30:28 -0500
-From:   Bjorn Helgaas <helgaas@kernel.org>
-To:     Jonas Gorski <jonas.gorski@gmail.com>
-Cc:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        Krzysztof =?utf-8?Q?Wilczy=C5=84ski?= <kw@linux.com>,
-        linux-pci@vger.kernel.org, linux-kernel@vger.kernel.org,
-        =?iso-8859-1?Q?Micka=EBl_Sala=FCn?= <mic@digikod.net>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        Dominik Brodowski <linux@dominikbrodowski.net>,
-        Andrew Lunn <andrew@lunn.ch>, sparclinux@vger.kernel.org,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Gregory Clement <gregory.clement@bootlin.com>,
-        "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
-        Russell King <linux@armlinux.org.uk>,
-        linux-acpi@vger.kernel.org, Miguel Ojeda <ojeda@kernel.org>,
-        xen-devel@lists.xenproject.org, Matt Turner <mattst88@gmail.com>,
-        Anatolij Gustschin <agust@denx.de>,
-        Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Niklas Schnelle <schnelle@linux.ibm.com>,
-        Richard Henderson <richard.henderson@linaro.org>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Bjorn Helgaas <bhelgaas@google.com>,
-        Mika Westerberg <mika.westerberg@linux.intel.com>,
-        linux-arm-kernel@lists.infradead.org,
-        Juergen Gross <jgross@suse.com>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Philippe =?iso-8859-1?Q?Mathieu-Daud=E9?= <philmd@linaro.org>,
-        linuxppc-dev@lists.ozlabs.org,
-        Randy Dunlap <rdunlap@infradead.org>,
-        linux-mips@vger.kernel.org,
-        Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>,
-        linux-alpha@vger.kernel.org,
-        Pali =?iso-8859-1?Q?Roh=E1r?= <pali@kernel.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        "Maciej W. Rozycki" <macro@orcam.me.uk>
-Subject: Re: [PATCH v8 0/7] Add pci_dev_for_each_resource() helper and update
- users
-Message-ID: <ZHe8dKb3f392MfBO@bhelgaas>
+        with ESMTP id S230061AbjEaVbZ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 31 May 2023 17:31:25 -0400
+Received: from mail-yw1-x1132.google.com (mail-yw1-x1132.google.com [IPv6:2607:f8b0:4864:20::1132])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5017D18B;
+        Wed, 31 May 2023 14:31:18 -0700 (PDT)
+Received: by mail-yw1-x1132.google.com with SMTP id 00721157ae682-568ba7abc11so705557b3.3;
+        Wed, 31 May 2023 14:31:18 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1685568677; x=1688160677;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=/2bE9CDG9Oxw3pEA2fSuUshC33VMwoQ2Xz6qScjQL3E=;
+        b=iYqqA4KZmoroGYhynV/jiNkWzAMHN4TlFNnsupyXM0HztFgnmGpbYhflGvCI4PnTEH
+         qsb+x4h+Ra/DHJZpmJ+cDpCt0WFO8DN9RsHpGbhgd8UZD1C59aXCIdDYpdL/DDlqjtME
+         QAC1ynKbnXEL2BUoeiDKJEOTEmjHPJwx20Oocm0d9VYWRam4vpslVsanNLIqZtenI7il
+         z8Y4AX5Qo3hIFiKRtt14OfPeMVmgXXgQiLO70vbxlL1MgUQYvu/5R1IEb6sabFTUiQkk
+         WKmmoKw4Cu+qJUco9/5c4L88Blpl8Ohrj5Udd50ZlUMrgKFkg8PwQhuutxVbJdY53ahQ
+         RhOQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1685568677; x=1688160677;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=/2bE9CDG9Oxw3pEA2fSuUshC33VMwoQ2Xz6qScjQL3E=;
+        b=VyC2vVA9i0/W1KOTBLlTWbwoTRfLbnPFj1R7j9t+ixET+E21EtpII5IsRCAjHSD6aC
+         +qcYmtVXhNu3XuJCSJprz7lZr1DkGHlFoAboorP5cMy+WxojrNEFvvyAHeZwWNj9pcG7
+         Y92O3/6YryTijdYoAHivDC2D8TGraPusRtF6XY5Hyfdu8IMaVF1FY1hNT6Q5r1PphYQU
+         Kgqwbh9OzWgnR+SP4nHfVUPeRT2mzMqO3z4kdT3+ps0PKDb6ERWK2oBuP+aZRT2JNh5S
+         xRGN1U9/xRaHRgFQZOixp6nboZ+a8cM9JmuoqJzk4VzjTVxssJjYQBPAa7riCiTFfYht
+         IDOg==
+X-Gm-Message-State: AC+VfDwPw+mcJAit4hsVQmWXQE2zdpep5THriucgLF4BbqU1A4nyGshP
+        fMqTeDKV8oW4SpzyDOEXoBc=
+X-Google-Smtp-Source: ACHHUZ6pTbgk5oakG8rCTNTHmfkc+dDnZpqxrm9LdrARtP0jWcbiwYUD1VVJhesMtUI+Yz5eprOqiQ==
+X-Received: by 2002:a0d:d816:0:b0:565:bb04:53fa with SMTP id a22-20020a0dd816000000b00565bb0453famr7385514ywe.10.1685568677391;
+        Wed, 31 May 2023 14:31:17 -0700 (PDT)
+Received: from unknowna0e70b2ca394.attlocal.net ([2600:1700:2f7d:1800::46])
+        by smtp.googlemail.com with ESMTPSA id t63-20020a0dd142000000b0055aafcef659sm658905ywd.5.2023.05.31.14.31.15
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 31 May 2023 14:31:17 -0700 (PDT)
+From:   "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
+To:     Andrew Morton <akpm@linux-foundation.org>,
+        Matthew Wilcox <willy@infradead.org>
+Cc:     linux-mm@kvack.org, linux-arch@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-openrisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, xen-devel@lists.xenproject.org,
+        kvm@vger.kernel.org,
+        "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
+Subject: [PATCH v3 04/34] pgtable: Create struct ptdesc
+Date:   Wed, 31 May 2023 14:30:02 -0700
+Message-Id: <20230531213032.25338-5-vishal.moola@gmail.com>
+X-Mailer: git-send-email 2.40.1
+In-Reply-To: <20230531213032.25338-1-vishal.moola@gmail.com>
+References: <20230531213032.25338-1-vishal.moola@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAOiHx==5YWhDiZP2PyHZiJrmtqRzvqCqoSO59RwuYuR85BezBg@mail.gmail.com>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, May 31, 2023 at 08:48:35PM +0200, Jonas Gorski wrote:
-> ...
+Currently, page table information is stored within struct page. As part
+of simplifying struct page, create struct ptdesc for page table
+information.
 
-> Looking at the code I understand where coverity is coming from:
-> 
-> #define __pci_dev_for_each_res0(dev, res, ...)                         \
->        for (unsigned int __b = 0;                                      \
->             res = pci_resource_n(dev, __b), __b < PCI_NUM_RESOURCES;   \
->             __b++)
-> 
->  res will be assigned before __b is checked for being less than
-> PCI_NUM_RESOURCES, making it point to behind the array at the end of
-> the last loop iteration.
-> 
-> Rewriting the test expression as
-> 
-> __b < PCI_NUM_RESOURCES && (res = pci_resource_n(dev, __b));
-> 
-> should avoid the (coverity) warning by making use of lazy evaluation.
-> 
-> It probably makes the code slightly less performant as res will now be
-> checked for being not NULL (which will always be true), but I doubt it
-> will be significant (or in any hot paths).
+Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
+---
+ include/linux/pgtable.h | 52 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 52 insertions(+)
 
-Thanks a lot for looking into this!  I think you're right, and I think
-the rewritten expression is more logical as well.  Do you want to post
-a patch for it?
+diff --git a/include/linux/pgtable.h b/include/linux/pgtable.h
+index c5a51481bbb9..c997e9878969 100644
+--- a/include/linux/pgtable.h
++++ b/include/linux/pgtable.h
+@@ -975,6 +975,58 @@ static inline void ptep_modify_prot_commit(struct vm_area_struct *vma,
+ #endif /* __HAVE_ARCH_PTEP_MODIFY_PROT_TRANSACTION */
+ #endif /* CONFIG_MMU */
+ 
++
++/**
++ * struct ptdesc - Memory descriptor for page tables.
++ * @__page_flags: Same as page flags. Unused for page tables.
++ * @pt_list: List of used page tables. Used for s390 and x86.
++ * @_pt_pad_1: Padding that aliases with page's compound head.
++ * @pmd_huge_pte: Protected by ptdesc->ptl, used for THPs.
++ * @_pt_s390_gaddr: Aliases with page's mapping. Used for s390 gmap only.
++ * @pt_mm: Used for x86 pgds.
++ * @pt_frag_refcount: For fragmented page table tracking. Powerpc and s390 only.
++ * @ptl: Lock for the page table.
++ *
++ * This struct overlays struct page for now. Do not modify without a good
++ * understanding of the issues.
++ */
++struct ptdesc {
++	unsigned long __page_flags;
++
++	union {
++		struct list_head pt_list;
++		struct {
++			unsigned long _pt_pad_1;
++			pgtable_t pmd_huge_pte;
++		};
++	};
++	unsigned long _pt_s390_gaddr;
++
++	union {
++		struct mm_struct *pt_mm;
++		atomic_t pt_frag_refcount;
++		unsigned long index;
++	};
++
++#if ALLOC_SPLIT_PTLOCKS
++	spinlock_t *ptl;
++#else
++	spinlock_t ptl;
++#endif
++};
++
++#define TABLE_MATCH(pg, pt)						\
++	static_assert(offsetof(struct page, pg) == offsetof(struct ptdesc, pt))
++TABLE_MATCH(flags, __page_flags);
++TABLE_MATCH(compound_head, pt_list);
++TABLE_MATCH(compound_head, _pt_pad_1);
++TABLE_MATCH(pmd_huge_pte, pmd_huge_pte);
++TABLE_MATCH(mapping, _pt_s390_gaddr);
++TABLE_MATCH(pt_mm, pt_mm);
++TABLE_MATCH(ptl, ptl);
++#undef TABLE_MATCH
++static_assert(sizeof(struct ptdesc) <= sizeof(struct page));
++
+ /*
+  * No-op macros that just return the current protection value. Defined here
+  * because these macros can be used even if CONFIG_MMU is not defined.
+-- 
+2.40.1
 
-Bjorn
