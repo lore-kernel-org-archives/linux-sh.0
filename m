@@ -2,146 +2,109 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C9C37C7EE2F
-	for <linux-sh@archiver.kernel.org>; Thu,  1 Jun 2023 16:27:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 64232C7EE31
+	for <linux-sh@archiver.kernel.org>; Thu,  1 Jun 2023 18:32:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231599AbjFAQ1s (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 1 Jun 2023 12:27:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48432 "EHLO
+        id S232951AbjFAScc (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 1 Jun 2023 14:32:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37456 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229880AbjFAQ1q (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 1 Jun 2023 12:27:46 -0400
-Received: from mga02.intel.com (mga02.intel.com [134.134.136.20])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F125212C;
-        Thu,  1 Jun 2023 09:27:44 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1685636865; x=1717172865;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=Re3XUbJYE5wz7BKtwG+m2aCGFJz7ak2dDNPkBnP/kmg=;
-  b=LYgA2WPWdZssZmEPeY1Rr7lbbbRrKYNF+Zx9CsW+bPHxHc/Jlcrw8oiJ
-   ofN7lYLmBsbsCHD8m3dkobK24qeA5W0mlyrxABaxLDG1aEREmk0AqVRW3
-   QV+25pR3UC2lrQjiotkiHroCv7FQ2XYhGq+v+4EFYyTtkMOO7I/U3EJ0Q
-   jrQwCMxIL7WbP+Tw7TyRifglzAMurA3XfL+2KRSk/h40phCt0L0uS9aGR
-   bckw71Gv8lbaIoau2digHUiKJrNB1eTd7QtzfsuTXzudG4qOCGmMEmpSv
-   bsylEhnfUSIK7Z+5f/FiYr7d+VHztapVvasLBya//SzcV1LdMNfrN+3av
-   A==;
-X-IronPort-AV: E=McAfee;i="6600,9927,10728"; a="345169915"
-X-IronPort-AV: E=Sophos;i="6.00,210,1681196400"; 
-   d="scan'208";a="345169915"
-Received: from orsmga003.jf.intel.com ([10.7.209.27])
-  by orsmga101.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Jun 2023 09:27:44 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6600,9927,10728"; a="657859553"
-X-IronPort-AV: E=Sophos;i="6.00,210,1681196400"; 
-   d="scan'208";a="657859553"
-Received: from smile.fi.intel.com ([10.237.72.54])
-  by orsmga003.jf.intel.com with ESMTP; 01 Jun 2023 09:27:34 -0700
-Received: from andy by smile.fi.intel.com with local (Exim 4.96)
-        (envelope-from <andriy.shevchenko@linux.intel.com>)
-        id 1q4l98-000SZF-0S;
-        Thu, 01 Jun 2023 19:27:30 +0300
-Date:   Thu, 1 Jun 2023 19:27:29 +0300
-From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
-To:     Jonas Gorski <jonas.gorski@gmail.com>
-Cc:     Bjorn Helgaas <helgaas@kernel.org>,
-        Krzysztof =?utf-8?Q?Wilczy=C5=84ski?= <kw@linux.com>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        linux-pci@vger.kernel.org,
-        Dominik Brodowski <linux@dominikbrodowski.net>,
-        linux-kernel@vger.kernel.org,
-        =?iso-8859-1?Q?Micka=EBl_Sala=FCn?= <mic@digikod.net>,
-        Andrew Lunn <andrew@lunn.ch>, sparclinux@vger.kernel.org,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Gregory Clement <gregory.clement@bootlin.com>,
-        "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
-        Russell King <linux@armlinux.org.uk>,
-        linux-acpi@vger.kernel.org, Miguel Ojeda <ojeda@kernel.org>,
-        xen-devel@lists.xenproject.org, Matt Turner <mattst88@gmail.com>,
-        Anatolij Gustschin <agust@denx.de>,
-        Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Niklas Schnelle <schnelle@linux.ibm.com>,
-        Richard Henderson <richard.henderson@linaro.org>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Bjorn Helgaas <bhelgaas@google.com>,
-        Mika Westerberg <mika.westerberg@linux.intel.com>,
-        linux-arm-kernel@lists.infradead.org,
-        Juergen Gross <jgross@suse.com>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Philippe =?iso-8859-1?Q?Mathieu-Daud=E9?= <philmd@linaro.org>,
-        linuxppc-dev@lists.ozlabs.org,
-        Randy Dunlap <rdunlap@infradead.org>,
-        linux-mips@vger.kernel.org,
-        Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>,
-        linux-alpha@vger.kernel.org,
-        Pali =?iso-8859-1?Q?Roh=E1r?= <pali@kernel.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        "Maciej W. Rozycki" <macro@orcam.me.uk>
-Subject: Re: [PATCH v8 0/7] Add pci_dev_for_each_resource() helper and update
- users
-Message-ID: <ZHjG8cBIdZsjhDOe@smile.fi.intel.com>
-References: <ZF6YIezraETr9iNM@bhelgaas>
- <ZHZpcli2UmdzHgme@bhelgaas>
- <CAOiHx==5YWhDiZP2PyHZiJrmtqRzvqCqoSO59RwuYuR85BezBg@mail.gmail.com>
- <ZHjGik12vSFgi1eO@smile.fi.intel.com>
+        with ESMTP id S232932AbjFAScZ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 1 Jun 2023 14:32:25 -0400
+Received: from mx01.omp.ru (mx01.omp.ru [90.154.21.10])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4B8DA184;
+        Thu,  1 Jun 2023 11:32:18 -0700 (PDT)
+Received: from [192.168.1.103] (178.176.72.8) by msexch01.omp.ru (10.188.4.12)
+ with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.2.986.14; Thu, 1 Jun 2023
+ 21:32:08 +0300
+Subject: Re: [PATCH v5] sh: avoid using IRQ0 on SH3/4
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Rich Felker <dalias@libc.org>, <linux-sh@vger.kernel.org>
+CC:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        <linux-kernel@vger.kernel.org>
+References: <197b4ccb-2dc8-add6-02a5-2e241b15a5f9@omp.ru>
+ <e9a5f27effa12a058fa944034ee581817f2e7928.camel@physik.fu-berlin.de>
+From:   Sergey Shtylyov <s.shtylyov@omp.ru>
+Organization: Open Mobile Platform
+Message-ID: <d78797df-530e-229b-418a-5cb6c269d683@omp.ru>
+Date:   Thu, 1 Jun 2023 21:32:08 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.1
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <ZHjGik12vSFgi1eO@smile.fi.intel.com>
-Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
+In-Reply-To: <e9a5f27effa12a058fa944034ee581817f2e7928.camel@physik.fu-berlin.de>
+Content-Type: text/plain; charset="utf-8"
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
+X-Originating-IP: [178.176.72.8]
+X-ClientProxiedBy: msexch01.omp.ru (10.188.4.12) To msexch01.omp.ru
+ (10.188.4.12)
+X-KSE-ServerInfo: msexch01.omp.ru, 9
+X-KSE-AntiSpam-Interceptor-Info: scan successful
+X-KSE-AntiSpam-Version: 5.9.59, Database issued on: 06/01/2023 18:09:22
+X-KSE-AntiSpam-Status: KAS_STATUS_NOT_DETECTED
+X-KSE-AntiSpam-Method: none
+X-KSE-AntiSpam-Rate: 59
+X-KSE-AntiSpam-Info: Lua profiles 177803 [Jun 01 2023]
+X-KSE-AntiSpam-Info: Version: 5.9.59.0
+X-KSE-AntiSpam-Info: Envelope from: s.shtylyov@omp.ru
+X-KSE-AntiSpam-Info: LuaCore: 515 515 1b17fc6ab778ab3730d780f30d802773a7d822ac
+X-KSE-AntiSpam-Info: {rep_avail}
+X-KSE-AntiSpam-Info: {Tracking_no_received}
+X-KSE-AntiSpam-Info: {Tracking_uf_ne_domains}
+X-KSE-AntiSpam-Info: {Tracking_from_domain_doesnt_match_to}
+X-KSE-AntiSpam-Info: {relay has no DNS name}
+X-KSE-AntiSpam-Info: {SMTP from is not routable}
+X-KSE-AntiSpam-Info: omp.ru:7.1.1;d41d8cd98f00b204e9800998ecf8427e.com:7.1.1;127.0.0.199:7.1.2;git.kernel.org:7.1.1
+X-KSE-AntiSpam-Info: ApMailHostAddress: 178.176.72.8
+X-KSE-AntiSpam-Info: {DNS response errors}
+X-KSE-AntiSpam-Info: Rate: 59
+X-KSE-AntiSpam-Info: Status: not_detected
+X-KSE-AntiSpam-Info: Method: none
+X-KSE-AntiSpam-Info: Auth:dmarc=temperror header.from=omp.ru;spf=temperror
+ smtp.mailfrom=omp.ru;dkim=none
+X-KSE-Antiphishing-Info: Clean
+X-KSE-Antiphishing-ScanningType: Heuristic
+X-KSE-Antiphishing-Method: None
+X-KSE-Antiphishing-Bases: 06/01/2023 18:17:00
+X-KSE-Antivirus-Interceptor-Info: scan successful
+X-KSE-Antivirus-Info: Clean, bases: 6/1/2023 2:21:00 PM
+X-KSE-Attachment-Filter-Triggered-Rules: Clean
+X-KSE-Attachment-Filter-Triggered-Filters: Clean
+X-KSE-BulkMessagesFiltering-Scan-Result: InTheLimit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Jun 01, 2023 at 07:25:46PM +0300, Andy Shevchenko wrote:
-> On Wed, May 31, 2023 at 08:48:35PM +0200, Jonas Gorski wrote:
-> > On Tue, 30 May 2023 at 23:34, Bjorn Helgaas <helgaas@kernel.org> wrote:
-> > > On Fri, May 12, 2023 at 02:48:51PM -0500, Bjorn Helgaas wrote:
+On 6/1/23 9:38 AM, John Paul Adrian Glaubitz wrote:
+[...]
+>> Now that IRQ0 is no longer returned by platform_get_irq() and its ilk (they
+>> now return -EINVAL instead).  However, the code supporting SH3/4 SoCs still
+>> maps the IRQ #s starting at 0 -- modify that code to start the IRQ #s from
+>> 16 instead.
 
-...
+  Now that I'm re-reading this passage, it seems unfinished... :-/
 
-> > > Where are we at?  Are we going to ignore this because some Coverity
-> > > reports are false positives?
-> > 
-> > Looking at the code I understand where coverity is coming from:
-> > 
-> > #define __pci_dev_for_each_res0(dev, res, ...)                         \
-> >        for (unsigned int __b = 0;                                      \
-> >             res = pci_resource_n(dev, __b), __b < PCI_NUM_RESOURCES;   \
-> >             __b++)
-> > 
-> >  res will be assigned before __b is checked for being less than
-> > PCI_NUM_RESOURCES, making it point to behind the array at the end of
-> > the last loop iteration.
+>> The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
+>> indeed use IRQ0 for the SMSC911x compatible Ethernet chip...
 > 
-> Which is fine and you stumbled over the same mistake I made, that's why the
-> documentation has been added to describe why the heck this macro is written
-> the way it's written.
-> 
-> Coverity sucks.
-> 
-> > Rewriting the test expression as
-> > 
-> > __b < PCI_NUM_RESOURCES && (res = pci_resource_n(dev, __b));
-> > 
-> > should avoid the (coverity) warning by making use of lazy evaluation.
-> 
-> Obviously NAK.
-> 
-> > It probably makes the code slightly less performant as res will now be
-> > checked for being not NULL (which will always be true), but I doubt it
-> > will be significant (or in any hot paths).
+> I'm not sure I understand. Does that mean that the Ethernet controller on
+> the AP-SH4A-3A/AP-SH4AD-0A boards will no longer work after this patch
+> has been applied?
 
-Oh my god, I mistakenly read this as bus macro, sorry for my rant,
-it's simply wrong.
+   Contrariwise, they should start working again! :-)
+   Here's the story as I understand it:
 
--- 
-With Best Regards,
-Andy Shevchenko
+1. https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=965b2aa78fbcb831acf4f669f494da201f4bcace broke IRQ0 use in the SMSC 9111x
+driver.
 
+2. https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=5ef9b803a4af0f5e42012176889b40bb2a978b18 fixed IRQ0 use in that driver.
 
+3. https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=ce753ad1549cbe9ccaea4c06a1f5fa47432c8289 totally stopped returning IRQ0
+from platform_get_irq(), thus breaking that driver again.
+
+4. This patch remaps IRQ0 to IRQ16 and thus fixes the SMSC 911x driver again.
+
+[...]
+
+MBR, Sergey
