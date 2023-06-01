@@ -2,146 +2,127 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 29D0FC77B7E
-	for <linux-sh@archiver.kernel.org>; Thu,  1 Jun 2023 11:17:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 47416C7EE32
+	for <linux-sh@archiver.kernel.org>; Thu,  1 Jun 2023 13:19:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232229AbjFALRg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 1 Jun 2023 07:17:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34964 "EHLO
+        id S233541AbjFANTq (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 1 Jun 2023 09:19:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57672 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230222AbjFALRe (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 1 Jun 2023 07:17:34 -0400
-Received: from mail-pj1-x1035.google.com (mail-pj1-x1035.google.com [IPv6:2607:f8b0:4864:20::1035])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9442F123;
-        Thu,  1 Jun 2023 04:17:33 -0700 (PDT)
-Received: by mail-pj1-x1035.google.com with SMTP id 98e67ed59e1d1-256422ad25dso220377a91.0;
-        Thu, 01 Jun 2023 04:17:33 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1685618253; x=1688210253;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=3KLMivggFERHTUQ4oKDCdCn/4yto409QZ31zuIfVcxw=;
-        b=MeUm9YdyFvQ+EmzMauQm3DwWlQ0uGm51kMyqs4PhBgH/mijyrQiG2NopdYymwRbJxY
-         WBb3Tf1Ln6XZqKWhH5S7yQhGi9LLiabQOTeQ8Pbm6c1NX2Xy4WY3/v4jgXe5Wm7qcbDH
-         yEY3HNSHJGimYiFdpPz7nmg67nUmGWb4PamYB7ge/Vdfq0ytqPkY0wlqmD8GxJ3QU2ha
-         YMgYHSJ7Qpd2tGHgPxbotFgYnGiJWb6n/hwdCwf80mscrhqXd4SxH5LEbISu95zojTnv
-         WNtxh7RS0s5xKaXlqlboISfHSVYLF8kc+uAACZeNu+Oizk+CGC+kRe6EXEKAHfyfkH5e
-         ZLFg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1685618253; x=1688210253;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=3KLMivggFERHTUQ4oKDCdCn/4yto409QZ31zuIfVcxw=;
-        b=RcCHXsj7SADJjX8LoYm8YZ6XSsyAKEX80PbN+8tjRUAXmFv8b0WFJactfdjnSTJymo
-         1qEWsxAl2RhgT8ZNTTLv9S11j06hTGI8HJlLXQf4br9QCcXSuum0HYRg8vM/iwU1x29z
-         seYB1oPre0yXKkGQ1Ok7BJa57By6vwZjH6QelFu1OOhozVLmgs3bhNTEt/7qPxTTi1nT
-         05Vu4RlEgSGYkoaJ6cd9SP0mNFUUBDLENKic/FoyAXJ2W0iW09vwd1xg/cY764mmOOQf
-         6TPTcaDW56Yj/SG7t709tWa3ATgRFOjQRmypeYBOLsHag0iYVa3i5QZWRon8jInf16tI
-         z+/A==
-X-Gm-Message-State: AC+VfDxLWwLoXQEaH63HYCU/AZNlNMQyR6MmfbRvbIXj0hkzZAAuHw4I
-        YuPFuzlA9KjC4jUByC1U6Ulu4Zq5vkLZUTVsVE0=
-X-Google-Smtp-Source: ACHHUZ7nalKosql0wqoA6eLZQyCHzFFB2nLyOpniZjsGzpomunYZZ7UC7Kcp/mX27yNINR6qH69ddmRyUjrovwtppOk=
-X-Received: by 2002:a17:90a:9f01:b0:253:50d0:a39d with SMTP id
- n1-20020a17090a9f0100b0025350d0a39dmr5508485pjp.48.1685618252985; Thu, 01 Jun
- 2023 04:17:32 -0700 (PDT)
+        with ESMTP id S233324AbjFANTn (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 1 Jun 2023 09:19:43 -0400
+Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F002B97;
+        Thu,  1 Jun 2023 06:19:41 -0700 (PDT)
+Received: from pps.filterd (m0353723.ppops.net [127.0.0.1])
+        by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 351DDSRk018568;
+        Thu, 1 Jun 2023 13:19:10 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=date : from : to : cc :
+ subject : message-id : in-reply-to : references : content-type :
+ content-transfer-encoding : mime-version; s=pp1;
+ bh=tTBWxMHAGeJlpPAzqjw4yCDaupaYk6+WOuZ0r7RHXlQ=;
+ b=S/K5bR2wzWD8jF0s2LtK3vF/J1ec5Pw9lqbPdCL6ZXZARzxk77m6XthOAVrzcENBYS/e
+ ov9SEtmnnKsZTXa99Jk5hlMimhCPtmwo+YCJttdvMRkZI8Kj3tec3MJCAkANML7vJgEN
+ mm82HHoVVpteTT1109f2h3OEi5Dtya1+qWK/izBLKcrhp4adRtqmgRrMH7o6BtITpGsV
+ XQajjlwcskrHiNYJ0m2IzKlfajqLyEOsVlAvnpMojNTW61NI6Y/l6FXM9CcrwKrRoiRU
+ 5yYyiViugHG/GJk6Dj84G7GFPGbzxZudOaESQkF8/B03VEx03rqx3lIPkJn/GXcV7VmA dQ== 
+Received: from pps.reinject (localhost [127.0.0.1])
+        by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3qxv1b0a39-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Thu, 01 Jun 2023 13:19:09 +0000
+Received: from m0353723.ppops.net (m0353723.ppops.net [127.0.0.1])
+        by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 351DFUru001084;
+        Thu, 1 Jun 2023 13:19:09 GMT
+Received: from ppma05fra.de.ibm.com (6c.4a.5195.ip4.static.sl-reverse.com [149.81.74.108])
+        by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3qxv1b0a25-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Thu, 01 Jun 2023 13:19:08 +0000
+Received: from pps.filterd (ppma05fra.de.ibm.com [127.0.0.1])
+        by ppma05fra.de.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 351Ac6ca009714;
+        Thu, 1 Jun 2023 13:19:07 GMT
+Received: from smtprelay03.fra02v.mail.ibm.com ([9.218.2.224])
+        by ppma05fra.de.ibm.com (PPS) with ESMTPS id 3qu9g5a49c-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Thu, 01 Jun 2023 13:19:06 +0000
+Received: from smtpav02.fra02v.mail.ibm.com (smtpav02.fra02v.mail.ibm.com [10.20.54.101])
+        by smtprelay03.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 351DJ3fS23134818
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Thu, 1 Jun 2023 13:19:03 GMT
+Received: from smtpav02.fra02v.mail.ibm.com (unknown [127.0.0.1])
+        by IMSVA (Postfix) with ESMTP id 330772004F;
+        Thu,  1 Jun 2023 13:19:03 +0000 (GMT)
+Received: from smtpav02.fra02v.mail.ibm.com (unknown [127.0.0.1])
+        by IMSVA (Postfix) with ESMTP id 7D8E420040;
+        Thu,  1 Jun 2023 13:19:02 +0000 (GMT)
+Received: from thinkpad-T15 (unknown [9.152.212.238])
+        by smtpav02.fra02v.mail.ibm.com (Postfix) with ESMTP;
+        Thu,  1 Jun 2023 13:19:02 +0000 (GMT)
+Date:   Thu, 1 Jun 2023 15:19:00 +0200
+From:   Gerald Schaefer <gerald.schaefer@linux.ibm.com>
+To:     "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Matthew Wilcox <willy@infradead.org>, linux-mm@kvack.org,
+        linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+        xen-devel@lists.xenproject.org, kvm@vger.kernel.org,
+        David Hildenbrand <david@redhat.com>,
+        Claudio Imbrenda <imbrenda@linux.ibm.com>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        Vasily Gorbik <gor@linux.ibm.com>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Hugh Dickins <hughd@google.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>
+Subject: Re: [PATCH v3 03/34] s390: Use pt_frag_refcount for pagetables
+Message-ID: <20230601151900.6f184e8c@thinkpad-T15>
+In-Reply-To: <20230531213032.25338-4-vishal.moola@gmail.com>
+References: <20230531213032.25338-1-vishal.moola@gmail.com>
+        <20230531213032.25338-4-vishal.moola@gmail.com>
+X-Mailer: Claws Mail 4.1.1 (GTK 3.24.37; x86_64-redhat-linux-gnu)
+Content-Type: text/plain; charset=US-ASCII
+X-TM-AS-GCONF: 00
+X-Proofpoint-ORIG-GUID: NZnx_8FojkhNAEEWitWpik8jaNZSNqYi
+X-Proofpoint-GUID: URInLnYnsG8BZV2VGVY1OnfgESTv3EvD
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-UnRewURL: 0 URL was un-rewritten
 MIME-Version: 1.0
-References: <CAOiHx==5YWhDiZP2PyHZiJrmtqRzvqCqoSO59RwuYuR85BezBg@mail.gmail.com>
- <ZHe8dKb3f392MfBO@bhelgaas>
-In-Reply-To: <ZHe8dKb3f392MfBO@bhelgaas>
-From:   Jonas Gorski <jonas.gorski@gmail.com>
-Date:   Thu, 1 Jun 2023 13:17:21 +0200
-Message-ID: <CAOiHx=nTgtnfUqRDJR0yFP0du3Yvs73PkEUR_1eb+1gtbDBM-g@mail.gmail.com>
-Subject: Re: [PATCH v8 0/7] Add pci_dev_for_each_resource() helper and update users
-To:     Bjorn Helgaas <helgaas@kernel.org>
-Cc:     Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-        =?UTF-8?Q?Krzysztof_Wilczy=C5=84ski?= <kw@linux.com>,
-        linux-pci@vger.kernel.org, linux-kernel@vger.kernel.org,
-        =?UTF-8?B?TWlja2HDq2wgU2FsYcO8bg==?= <mic@digikod.net>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        Dominik Brodowski <linux@dominikbrodowski.net>,
-        Andrew Lunn <andrew@lunn.ch>, sparclinux@vger.kernel.org,
-        Stefano Stabellini <sstabellini@kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Gregory Clement <gregory.clement@bootlin.com>,
-        "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
-        Russell King <linux@armlinux.org.uk>,
-        linux-acpi@vger.kernel.org, Miguel Ojeda <ojeda@kernel.org>,
-        xen-devel@lists.xenproject.org, Matt Turner <mattst88@gmail.com>,
-        Anatolij Gustschin <agust@denx.de>,
-        Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Niklas Schnelle <schnelle@linux.ibm.com>,
-        Richard Henderson <richard.henderson@linaro.org>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Bjorn Helgaas <bhelgaas@google.com>,
-        Mika Westerberg <mika.westerberg@linux.intel.com>,
-        linux-arm-kernel@lists.infradead.org,
-        Juergen Gross <jgross@suse.com>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        =?UTF-8?Q?Philippe_Mathieu=2DDaud=C3=A9?= <philmd@linaro.org>,
-        linuxppc-dev@lists.ozlabs.org,
-        Randy Dunlap <rdunlap@infradead.org>,
-        linux-mips@vger.kernel.org,
-        Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>,
-        linux-alpha@vger.kernel.org,
-        =?UTF-8?Q?Pali_Roh=C3=A1r?= <pali@kernel.org>,
-        "David S. Miller" <davem@davemloft.net>,
-        "Maciej W. Rozycki" <macro@orcam.me.uk>
-Content-Type: text/plain; charset="UTF-8"
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.254,Aquarius:18.0.957,Hydra:6.0.573,FMLib:17.11.176.26
+ definitions=2023-06-01_08,2023-05-31_03,2023-05-22_02
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscore=1011 spamscore=0
+ adultscore=0 priorityscore=1501 lowpriorityscore=0 suspectscore=0
+ impostorscore=0 bulkscore=0 mlxscore=0 phishscore=0 mlxlogscore=692
+ malwarescore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2304280000 definitions=main-2306010115
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, 31 May 2023 at 23:30, Bjorn Helgaas <helgaas@kernel.org> wrote:
->
-> On Wed, May 31, 2023 at 08:48:35PM +0200, Jonas Gorski wrote:
-> > ...
->
-> > Looking at the code I understand where coverity is coming from:
-> >
-> > #define __pci_dev_for_each_res0(dev, res, ...)                         \
-> >        for (unsigned int __b = 0;                                      \
-> >             res = pci_resource_n(dev, __b), __b < PCI_NUM_RESOURCES;   \
-> >             __b++)
-> >
-> >  res will be assigned before __b is checked for being less than
-> > PCI_NUM_RESOURCES, making it point to behind the array at the end of
-> > the last loop iteration.
-> >
-> > Rewriting the test expression as
-> >
-> > __b < PCI_NUM_RESOURCES && (res = pci_resource_n(dev, __b));
-> >
-> > should avoid the (coverity) warning by making use of lazy evaluation.
-> >
-> > It probably makes the code slightly less performant as res will now be
-> > checked for being not NULL (which will always be true), but I doubt it
-> > will be significant (or in any hot paths).
->
-> Thanks a lot for looking into this!  I think you're right, and I think
-> the rewritten expression is more logical as well.  Do you want to post
-> a patch for it?
+ On Wed, 31 May 2023 14:30:01 -0700
+"Vishal Moola (Oracle)" <vishal.moola@gmail.com> wrote:
 
-Not sure when I'll come around to, so I have no strong feeling here.
-So feel free to just borrow my suggestion, especially since I won't be
-able to test it (don't have a kernel tree ready I can build and boot).
+> s390 currently uses _refcount to identify fragmented page tables.
+> The page table struct already has a member pt_frag_refcount used by
+> powerpc, so have s390 use that instead of the _refcount field as well.
+> This improves the safety for _refcount and the page table tracking.
+> 
+> This also allows us to simplify the tracking since we can once again use
+> the lower byte of pt_frag_refcount instead of the upper byte of _refcount.
 
-Also looking more closely at the Coverity output, I think it might not
-handle the comma operator well in the loop condition:
+This would conflict with s390 impact of pte_free_defer() work from Hugh Dickins
+https://lore.kernel.org/lkml/35e983f5-7ed3-b310-d949-9ae8b130cdab@google.com/
+https://lore.kernel.org/lkml/6dd63b39-e71f-2e8b-7e0-83e02f3bcb39@google.com/
 
->          11. incr: Incrementing __b. The value of __b may now be up to 17.
->          12. alias: Assigning: r = &pdev->resource[__b]. r may now point to as high as element 17 of pdev->resource (which consists of 17 64-byte elements).
->          13. Condition __b < PCI_NUM_RESOURCES, taking true branch.
->          14. Condition (r = &pdev->resource[__b]) , (__b < PCI_NUM_RESOURCES), taking true branch.
+There he uses pt_frag_refcount, or rather pt_mm in the same union, to save
+the mm_struct for deferred pte_free().
 
-13 If __b is 17 ( = PCI_NUM_RESOURCES) we wouldn't taking the true
-branch, but somehow Coverity thinks that we do. No idea if it is worth
-reporting to Coverity.
+I still need to look closer into both of your patch series, but so far it
+seems that you have no hard functional requirement to switch from _refcount
+to pt_frag_refcount here, for s390.
 
-The changed condition statement should hopefully silence the warning though.
-
-Regards
-Jonas
+If this is correct, and you do not e.g. need this to make some other use
+of _refcount, I would suggest to drop this patch.
