@@ -2,206 +2,130 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F0355C7EE23
-	for <linux-sh@archiver.kernel.org>; Thu,  1 Jun 2023 20:23:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E443BC7EE2F
+	for <linux-sh@archiver.kernel.org>; Thu,  1 Jun 2023 20:43:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229899AbjFAUX3 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 1 Jun 2023 16:23:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52186 "EHLO
+        id S229562AbjFAUng (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 1 Jun 2023 16:43:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32962 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230504AbjFAUX2 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 1 Jun 2023 16:23:28 -0400
-Received: from mx01.omp.ru (mx01.omp.ru [90.154.21.10])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0FEF6134;
-        Thu,  1 Jun 2023 13:22:57 -0700 (PDT)
-Received: from [192.168.1.103] (178.176.72.8) by msexch01.omp.ru (10.188.4.12)
- with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.2.986.14; Thu, 1 Jun 2023
- 23:22:18 +0300
-From:   Sergey Shtylyov <s.shtylyov@omp.ru>
-Subject: [PATCH v6] sh: avoid using IRQ0 on SH3/4
-To:     Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        <linux-sh@vger.kernel.org>
-CC:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        <linux-kernel@vger.kernel.org>
-Organization: Open Mobile Platform
-Message-ID: <71105dbf-cdb0-72e1-f9eb-eeda8e321696@omp.ru>
-Date:   Thu, 1 Jun 2023 23:22:17 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.10.1
+        with ESMTP id S232572AbjFAUne (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 1 Jun 2023 16:43:34 -0400
+Received: from mail-yw1-x112e.google.com (mail-yw1-x112e.google.com [IPv6:2607:f8b0:4864:20::112e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 617FF189;
+        Thu,  1 Jun 2023 13:43:32 -0700 (PDT)
+Received: by mail-yw1-x112e.google.com with SMTP id 00721157ae682-565a63087e9so13253237b3.2;
+        Thu, 01 Jun 2023 13:43:32 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1685652211; x=1688244211;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=F1D8lVOaAVBWbT9t2RmOD+26281abLHxtrNSt32Ap24=;
+        b=qLgbJbj5g8WGk9vr+h5GU3VAGYoZuUQfYy+Jk03a6BWdaBQStekzq99EEhSRb/apVE
+         r1wG5klq4xTuvlp4fzfvGwGvXsPOH5Z+EGzZ3xDm5VuokYBfnX2Z7EeXpvrNqoMOmFfA
+         JBLO6CGLz8pEI44d71tWawLxUIyiVrcZLnzOInnX4NDx0adjPFt4WqdjoFpvwTeJeP42
+         YdR8VtfFc5+TjUwWFHzsShyWmg/NGqDFZTc1nDT9EKaeGOrhYp9pTMhkn6c++xEXcw0Z
+         7/JenW6z+3FLVb69Ur5a6g5NHDXYEBFsl6KltuWvHl5pgiI7Ar5zj9KICtB4zwOfTiPP
+         PMcg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1685652211; x=1688244211;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=F1D8lVOaAVBWbT9t2RmOD+26281abLHxtrNSt32Ap24=;
+        b=GOowg9yn12Q6SQlCdXA40g08sLFst1a8mGzJYQc/D+ZC9Cv2U4KHw5O8JXgIdyIf6t
+         CkDgwYmWXjjIQLVN66g8S46iRGAxfgeuACOMOXb1rjo+Nk38gC9zvNnX8Mu6Mtn7rOCK
+         60f9rGemU06TnD/1OlFLxVftsIaKncCha4VSdmCCYFyn7Cr0LAXaFscluQveBYHF8+Qw
+         jV8yv5Gjekgy4HnL13fOiqaUFg4vhGAs4al+h7471Q1JJ+74hIQyZo4ofSMyl3D+Zkdz
+         8JvBwdKQbUVTivEbq50q6u9owP0DcP1eS0gnbqbQ2fVxAvU2zI50G7f+mhB6C5Lr/RAS
+         axEg==
+X-Gm-Message-State: AC+VfDxPOzX26sLB2wS6GTh3JDg9tVa9nUNjVyyIL/vXD17t+m+HgPcY
+        of+dXb9FtqMQ8lyQ6dtTMD1JbR2mgvDN2u0MMj8olTx8p5Y=
+X-Google-Smtp-Source: ACHHUZ5DfuhGus+PqmBDfDw3I8CUwiopOPmtEZnOXp6mFa4otjE0OnORW5aklQp2qVjtyKAx2ImFFxSDC1ok71Q6xew=
+X-Received: by 2002:a0d:e84b:0:b0:565:f045:18c3 with SMTP id
+ r72-20020a0de84b000000b00565f04518c3mr10614817ywe.20.1685652211220; Thu, 01
+ Jun 2023 13:43:31 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Originating-IP: [178.176.72.8]
-X-ClientProxiedBy: msexch01.omp.ru (10.188.4.12) To msexch01.omp.ru
- (10.188.4.12)
-X-KSE-ServerInfo: msexch01.omp.ru, 9
-X-KSE-AntiSpam-Interceptor-Info: scan successful
-X-KSE-AntiSpam-Version: 5.9.59, Database issued on: 06/01/2023 19:59:41
-X-KSE-AntiSpam-Status: KAS_STATUS_NOT_DETECTED
-X-KSE-AntiSpam-Method: none
-X-KSE-AntiSpam-Rate: 59
-X-KSE-AntiSpam-Info: Lua profiles 177803 [Jun 01 2023]
-X-KSE-AntiSpam-Info: Version: 5.9.59.0
-X-KSE-AntiSpam-Info: Envelope from: s.shtylyov@omp.ru
-X-KSE-AntiSpam-Info: LuaCore: 515 515 1b17fc6ab778ab3730d780f30d802773a7d822ac
-X-KSE-AntiSpam-Info: {rep_avail}
-X-KSE-AntiSpam-Info: {Tracking_no_received}
-X-KSE-AntiSpam-Info: {Tracking_from_domain_doesnt_match_to}
-X-KSE-AntiSpam-Info: {relay has no DNS name}
-X-KSE-AntiSpam-Info: {SMTP from is not routable}
-X-KSE-AntiSpam-Info: 178.176.72.8:7.4.1,7.7.3,7.1.2;d41d8cd98f00b204e9800998ecf8427e.com:7.1.1;127.0.0.199:7.1.2;omp.ru:7.1.1
-X-KSE-AntiSpam-Info: {iprep_blacklist}
-X-KSE-AntiSpam-Info: ApMailHostAddress: 178.176.72.8
-X-KSE-AntiSpam-Info: {DNS response errors}
-X-KSE-AntiSpam-Info: Rate: 59
-X-KSE-AntiSpam-Info: Status: not_detected
-X-KSE-AntiSpam-Info: Method: none
-X-KSE-AntiSpam-Info: Auth:dmarc=temperror header.from=omp.ru;spf=temperror
- smtp.mailfrom=omp.ru;dkim=none
-X-KSE-Antiphishing-Info: Clean
-X-KSE-Antiphishing-ScanningType: Heuristic
-X-KSE-Antiphishing-Method: None
-X-KSE-Antiphishing-Bases: 06/01/2023 20:06:00
-X-KSE-Antivirus-Interceptor-Info: scan successful
-X-KSE-Antivirus-Info: Clean, bases: 6/1/2023 4:24:00 PM
-X-KSE-Attachment-Filter-Triggered-Rules: Clean
-X-KSE-Attachment-Filter-Triggered-Filters: Clean
-X-KSE-BulkMessagesFiltering-Scan-Result: InTheLimit
+References: <20230531213032.25338-1-vishal.moola@gmail.com>
+ <20230531213032.25338-4-vishal.moola@gmail.com> <20230601151900.6f184e8c@thinkpad-T15>
+In-Reply-To: <20230601151900.6f184e8c@thinkpad-T15>
+From:   Vishal Moola <vishal.moola@gmail.com>
+Date:   Thu, 1 Jun 2023 13:43:20 -0700
+Message-ID: <CAOzc2pyjLh_GV1PL7CPkkPGcASHULhir_rJgB+UhwzPgQZD8Bw@mail.gmail.com>
+Subject: Re: [PATCH v3 03/34] s390: Use pt_frag_refcount for pagetables
+To:     Gerald Schaefer <gerald.schaefer@linux.ibm.com>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Matthew Wilcox <willy@infradead.org>, linux-mm@kvack.org,
+        linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+        xen-devel@lists.xenproject.org, kvm@vger.kernel.org,
+        David Hildenbrand <david@redhat.com>,
+        Claudio Imbrenda <imbrenda@linux.ibm.com>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        Vasily Gorbik <gor@linux.ibm.com>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Hugh Dickins <hughd@google.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-IRQ0 is no longer returned by platform_get_irq() and its ilk -- they now
-return -EINVAL instead.  However, the kernel code supporting SH3/4 based
-SoCs still maps the IRQ #s starting at 0 -- modify that code to start the
-IRQ #s from 16 instead.
+On Thu, Jun 1, 2023 at 6:19=E2=80=AFAM Gerald Schaefer
+<gerald.schaefer@linux.ibm.com> wrote:
+>
+>  On Wed, 31 May 2023 14:30:01 -0700
+> "Vishal Moola (Oracle)" <vishal.moola@gmail.com> wrote:
+>
+> > s390 currently uses _refcount to identify fragmented page tables.
+> > The page table struct already has a member pt_frag_refcount used by
+> > powerpc, so have s390 use that instead of the _refcount field as well.
+> > This improves the safety for _refcount and the page table tracking.
+> >
+> > This also allows us to simplify the tracking since we can once again us=
+e
+> > the lower byte of pt_frag_refcount instead of the upper byte of _refcou=
+nt.
+>
+> This would conflict with s390 impact of pte_free_defer() work from Hugh D=
+ickins
+> https://lore.kernel.org/lkml/35e983f5-7ed3-b310-d949-9ae8b130cdab@google.=
+com/
+> https://lore.kernel.org/lkml/6dd63b39-e71f-2e8b-7e0-83e02f3bcb39@google.c=
+om/
+>
+> There he uses pt_frag_refcount, or rather pt_mm in the same union, to sav=
+e
+> the mm_struct for deferred pte_free().
+>
+> I still need to look closer into both of your patch series, but so far it
+> seems that you have no hard functional requirement to switch from _refcou=
+nt
+> to pt_frag_refcount here, for s390.
+>
+> If this is correct, and you do not e.g. need this to make some other use
+> of _refcount, I would suggest to drop this patch.
 
-The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
-indeed are using IRQ0 for the SMSC911x compatible Ethernet chip...
+The goal of this preparation patch is to consolidate s390's usage of
+struct page fields so that struct ptdesc can be smaller. Its not particular=
+ly
+mandatory; leaving _refcount in ptdesc only increases the struct by
+8 bytes and can always be changed later.
 
-Fixes: ce753ad1549c ("platform: finally disallow IRQ0 in platform_get_irq() and its ilk")
-Signed-off-by: Sergey Shtylyov <s.shtylyov@omp.ru>
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+However it is a little annoying since s390 is the only architecture
+that egregiously uses space throughout struct page for their page
+tables, rather than just the page table struct. For example, s390
+gmap uses page->index which also aliases with pt_mm and
+pt_frag_refcount. I'm not sure if/how gmap page tables interact
+with s390 process page tables at all, but if it does that could
+potentially cause problems with Hugh's patch as well :(
 
----
-The patch is against Linus Torvalds' 'linux.git' repo.
-
-Changes in version 6:
-- fixed up inconsistencies and did some rewording in the patch description.
-
-Changes in version 5:
-- updated the patch description and the "Fixes:" tag as the patch disallowing
-  the use of IRQ0 was merged meanwhile.
-
-Changes in version 4:
-- fixed up the off-chip base IRQ #s for the Dreamcast/Highlander/R2D/SE7724
-  boards.
-
-Changes in version 3:
-- added an appropriate Fixes: tag and added a passage about it to the patch
-  description;
-- added actual cases of the boards using IRQ0 to the patch description;
-- added Geert Uytterhoeven's and John Paul Adrian Glaubitz's tags;
-- updated the link to point to the version 2 of the patch.
-
-Changes in version 2:
-- changed cmp/ge to cmp/hs in the assembly code.
-
- arch/sh/include/mach-common/mach/highlander.h |    2 +-
- arch/sh/include/mach-common/mach/r2d.h        |    2 +-
- arch/sh/include/mach-dreamcast/mach/sysasic.h |    2 +-
- arch/sh/include/mach-se/mach/se7724.h         |    2 +-
- arch/sh/kernel/cpu/sh3/entry.S                |    4 ++--
- include/linux/sh_intc.h                       |    6 +++---
- 6 files changed, 9 insertions(+), 9 deletions(-)
-
-Index: linux/arch/sh/include/mach-common/mach/highlander.h
-===================================================================
---- linux.orig/arch/sh/include/mach-common/mach/highlander.h
-+++ linux/arch/sh/include/mach-common/mach/highlander.h
-@@ -176,7 +176,7 @@
- #define IVDR_CK_ON	4		/* iVDR Clock ON */
- #endif
- 
--#define HL_FPGA_IRQ_BASE	200
-+#define HL_FPGA_IRQ_BASE	(200 + 16)
- #define HL_NR_IRL		15
- 
- #define IRQ_AX88796		(HL_FPGA_IRQ_BASE + 0)
-Index: linux/arch/sh/include/mach-common/mach/r2d.h
-===================================================================
---- linux.orig/arch/sh/include/mach-common/mach/r2d.h
-+++ linux/arch/sh/include/mach-common/mach/r2d.h
-@@ -47,7 +47,7 @@
- 
- #define IRLCNTR1	(PA_BCR + 0)	/* Interrupt Control Register1 */
- 
--#define R2D_FPGA_IRQ_BASE	100
-+#define R2D_FPGA_IRQ_BASE	(100 + 16)
- 
- #define IRQ_VOYAGER		(R2D_FPGA_IRQ_BASE + 0)
- #define IRQ_EXT			(R2D_FPGA_IRQ_BASE + 1)
-Index: linux/arch/sh/include/mach-dreamcast/mach/sysasic.h
-===================================================================
---- linux.orig/arch/sh/include/mach-dreamcast/mach/sysasic.h
-+++ linux/arch/sh/include/mach-dreamcast/mach/sysasic.h
-@@ -22,7 +22,7 @@
-    takes.
- */
- 
--#define HW_EVENT_IRQ_BASE  48
-+#define HW_EVENT_IRQ_BASE  (48 + 16)
- 
- /* IRQ 13 */
- #define HW_EVENT_VSYNC     (HW_EVENT_IRQ_BASE +  5) /* VSync */
-Index: linux/arch/sh/include/mach-se/mach/se7724.h
-===================================================================
---- linux.orig/arch/sh/include/mach-se/mach/se7724.h
-+++ linux/arch/sh/include/mach-se/mach/se7724.h
-@@ -37,7 +37,7 @@
- #define IRQ2_IRQ        evt2irq(0x640)
- 
- /* Bits in IRQ012 registers */
--#define SE7724_FPGA_IRQ_BASE	220
-+#define SE7724_FPGA_IRQ_BASE	(220 + 16)
- 
- /* IRQ0 */
- #define IRQ0_BASE	SE7724_FPGA_IRQ_BASE
-Index: linux/arch/sh/kernel/cpu/sh3/entry.S
-===================================================================
---- linux.orig/arch/sh/kernel/cpu/sh3/entry.S
-+++ linux/arch/sh/kernel/cpu/sh3/entry.S
-@@ -470,9 +470,9 @@ ENTRY(handle_interrupt)
- 	mov	r4, r0		! save vector->jmp table offset for later
- 
- 	shlr2	r4		! vector to IRQ# conversion
--	add	#-0x10, r4
- 
--	cmp/pz	r4		! is it a valid IRQ?
-+	mov	#0x10, r5
-+	cmp/hs	r5, r4		! is it a valid IRQ?
- 	bt	10f
- 
- 	/*
-Index: linux/include/linux/sh_intc.h
-===================================================================
---- linux.orig/include/linux/sh_intc.h
-+++ linux/include/linux/sh_intc.h
-@@ -13,9 +13,9 @@
- /*
-  * Convert back and forth between INTEVT and IRQ values.
-  */
--#ifdef CONFIG_CPU_HAS_INTEVT
--#define evt2irq(evt)		(((evt) >> 5) - 16)
--#define irq2evt(irq)		(((irq) + 16) << 5)
-+#ifdef CONFIG_CPU_HAS_INTEVT	/* Avoid IRQ0 (invalid for platform devices) */
-+#define evt2irq(evt)		((evt) >> 5)
-+#define irq2evt(irq)		((irq) << 5)
- #else
- #define evt2irq(evt)		(evt)
- #define irq2evt(irq)		(irq)
+I can add _refcount to ptdesc if we would like, but I still
+prefer if s390 could be simplified instead.
