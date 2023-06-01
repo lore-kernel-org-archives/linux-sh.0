@@ -2,193 +2,91 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7E217C7EE23
-	for <linux-sh@archiver.kernel.org>; Thu,  1 Jun 2023 06:38:15 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E0665C7EE31
+	for <linux-sh@archiver.kernel.org>; Thu,  1 Jun 2023 07:20:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231680AbjFAGiO convert rfc822-to-8bit (ORCPT
+        id S231622AbjFAHUY convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 1 Jun 2023 02:38:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50734 "EHLO
+        Thu, 1 Jun 2023 03:20:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40774 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231648AbjFAGiN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 1 Jun 2023 02:38:13 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6C6A198;
-        Wed, 31 May 2023 23:38:08 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1q4bwg-001UUB-89; Thu, 01 Jun 2023 08:38:02 +0200
-Received: from p57bd9d78.dip0.t-ipconnect.de ([87.189.157.120] helo=suse-laptop.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1q4bwg-002mDe-0m; Thu, 01 Jun 2023 08:38:02 +0200
-Message-ID: <e9a5f27effa12a058fa944034ee581817f2e7928.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v5] sh: avoid using IRQ0 on SH3/4
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Sergey Shtylyov <s.shtylyov@omp.ru>, Rich Felker <dalias@libc.org>,
-        linux-sh@vger.kernel.org
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-kernel@vger.kernel.org
-Date:   Thu, 01 Jun 2023 08:38:01 +0200
-In-Reply-To: <197b4ccb-2dc8-add6-02a5-2e241b15a5f9@omp.ru>
-References: <197b4ccb-2dc8-add6-02a5-2e241b15a5f9@omp.ru>
+        with ESMTP id S229524AbjFAHUX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 1 Jun 2023 03:20:23 -0400
+Received: from mail-yb1-f177.google.com (mail-yb1-f177.google.com [209.85.219.177])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 64666134;
+        Thu,  1 Jun 2023 00:20:21 -0700 (PDT)
+Received: by mail-yb1-f177.google.com with SMTP id 3f1490d57ef6-bacf685150cso535509276.3;
+        Thu, 01 Jun 2023 00:20:21 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1685604020; x=1688196020;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=uahBQ1+NZ4LtBmJlKuzSeHMKUQpvPqnHtI00z7d7Eg4=;
+        b=Xd2hjhEnmU0jiZwo64AgQKvaEBzw6kMBKlLRa9C8EVQpBlSngee8i8WHYGyYnSpj+Y
+         DmWnR89W9g8GJemJcdDkKkub24yv/Q6P1bQYrf850HRFFiMduGrza6eY65H2qg6sIvit
+         UJ274SA7vKtTfXw1qIhMkDTzOlWCaVG56XyzGoDx05oyQj8vL9EDZ0J3H3svJRPLODQu
+         d3p5997O5+UMw17hGoXB4yjCjWWdxsmxFd0Ad6+ym6y2Lf3iqMYnBPRDDkRA1lU+AGve
+         BJf947B/Nx+sY0tpFty7qxV+odUv0MVbdWrUPGXvEKjtb/dR/oTO0p7uUpuO/MOUdDRf
+         ndTA==
+X-Gm-Message-State: AC+VfDxusOa5o4o7QMhAgJ4Lh8hoIInOR68flpAA/nsBmYtSisbHQSlY
+        eLTETar/eHRNCZeh+rN4/XHsuQc5l5GiTw==
+X-Google-Smtp-Source: ACHHUZ4xfWPAEf5iziXWIIsITBRttepqIdZGJ3xuKjrKeNaXqebMzIadB0gLp59Xnx74LdjP0sMt1w==
+X-Received: by 2002:a25:2d0a:0:b0:ba9:6b90:e551 with SMTP id t10-20020a252d0a000000b00ba96b90e551mr9197872ybt.50.1685604020185;
+        Thu, 01 Jun 2023 00:20:20 -0700 (PDT)
+Received: from mail-yb1-f170.google.com (mail-yb1-f170.google.com. [209.85.219.170])
+        by smtp.gmail.com with ESMTPSA id n18-20020a259f12000000b00ba89afced65sm4668890ybq.46.2023.06.01.00.20.18
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 01 Jun 2023 00:20:18 -0700 (PDT)
+Received: by mail-yb1-f170.google.com with SMTP id 3f1490d57ef6-b9a7e639656so556825276.0;
+        Thu, 01 Jun 2023 00:20:18 -0700 (PDT)
+X-Received: by 2002:a25:6891:0:b0:ba8:7122:2917 with SMTP id
+ d139-20020a256891000000b00ba871222917mr10052062ybc.0.1685604018484; Thu, 01
+ Jun 2023 00:20:18 -0700 (PDT)
+MIME-Version: 1.0
+References: <20230531213032.25338-1-vishal.moola@gmail.com> <20230531213032.25338-31-vishal.moola@gmail.com>
+In-Reply-To: <20230531213032.25338-31-vishal.moola@gmail.com>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Thu, 1 Jun 2023 09:20:05 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdU4t4ac_eCH0UaX9F+GQ5-9kYjB_=e+pSfTkxG=3b8DsA@mail.gmail.com>
+Message-ID: <CAMuHMdU4t4ac_eCH0UaX9F+GQ5-9kYjB_=e+pSfTkxG=3b8DsA@mail.gmail.com>
+Subject: Re: [PATCH v3 30/34] sh: Convert pte_free_tlb() to use ptdescs
+To:     "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Matthew Wilcox <willy@infradead.org>, linux-mm@kvack.org,
+        linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+        xen-devel@lists.xenproject.org, kvm@vger.kernel.org,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.1 
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.157.120
-X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Sergey!
+On Wed, May 31, 2023 at 11:33 PM Vishal Moola (Oracle)
+<vishal.moola@gmail.com> wrote:
+> Part of the conversions to replace pgtable constructor/destructors with
+> ptdesc equivalents. Also cleans up some spacing issues.
+>
+> Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
 
-On Wed, 2023-05-31 at 23:34 +0300, Sergey Shtylyov wrote:
-> Now that IRQ0 is no longer returned by platform_get_irq() and its ilk (they
-> now return -EINVAL instead).  However, the code supporting SH3/4 SoCs still
-> maps the IRQ #s starting at 0 -- modify that code to start the IRQ #s from
-> 16 instead.
-> 
-> The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
-> indeed use IRQ0 for the SMSC911x compatible Ethernet chip...
+LGTM, so
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-I'm not sure I understand. Does that mean that the Ethernet controller on
-the AP-SH4A-3A/AP-SH4AD-0A boards will no longer work after this patch
-has been applied?
+Gr{oetje,eeting}s,
 
-Adrian
-
-> 
-> Fixes: ce753ad1549c ("platform: finally disallow IRQ0 in platform_get_irq() and its ilk")
-> Signed-off-by: Sergey Shtylyov <s.shtylyov@omp.ru>
-> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> 
-> ---
-> The patch is against Linus Torvalds' 'linux.git' repo.
-> 
-> Changes in version 5:
-> - updated the patch description and the "Fixes:" tag as the patch disallowing
->   the use of IRQ0 was merged meanwhile.
-> 
-> Changes in version 4:
-> - fixed up the off-chip base IRQ #s for the Dreamcast/Highlander/R2D/SE7724
->   boards.
-> 
-> Changes in version 3:
-> - added an appropriate Fixes: tag and added a passage about it to the patch
->   description;
-> - added actual cases of the boards using IRQ0 to the patch description;
-> - added Geert Uytterhoeven's and John Paul Adrian Glaubitz's tags;
-> - updated the link to point to the version 2 of the patch.
-> 
-> Changes in version 2:
-> - changed cmp/ge to cmp/hs in the assembly code.
-> 
->  arch/sh/include/mach-common/mach/highlander.h |    2 +-
->  arch/sh/include/mach-common/mach/r2d.h        |    2 +-
->  arch/sh/include/mach-dreamcast/mach/sysasic.h |    2 +-
->  arch/sh/include/mach-se/mach/se7724.h         |    2 +-
->  arch/sh/kernel/cpu/sh3/entry.S                |    4 ++--
->  include/linux/sh_intc.h                       |    6 +++---
->  6 files changed, 9 insertions(+), 9 deletions(-)
-> 
-> Index: linux/arch/sh/include/mach-common/mach/highlander.h
-> ===================================================================
-> --- linux.orig/arch/sh/include/mach-common/mach/highlander.h
-> +++ linux/arch/sh/include/mach-common/mach/highlander.h
-> @@ -176,7 +176,7 @@
->  #define IVDR_CK_ON	4		/* iVDR Clock ON */
->  #endif
->  
-> -#define HL_FPGA_IRQ_BASE	200
-> +#define HL_FPGA_IRQ_BASE	(200 + 16)
->  #define HL_NR_IRL		15
->  
->  #define IRQ_AX88796		(HL_FPGA_IRQ_BASE + 0)
-> Index: linux/arch/sh/include/mach-common/mach/r2d.h
-> ===================================================================
-> --- linux.orig/arch/sh/include/mach-common/mach/r2d.h
-> +++ linux/arch/sh/include/mach-common/mach/r2d.h
-> @@ -47,7 +47,7 @@
->  
->  #define IRLCNTR1	(PA_BCR + 0)	/* Interrupt Control Register1 */
->  
-> -#define R2D_FPGA_IRQ_BASE	100
-> +#define R2D_FPGA_IRQ_BASE	(100 + 16)
->  
->  #define IRQ_VOYAGER		(R2D_FPGA_IRQ_BASE + 0)
->  #define IRQ_EXT			(R2D_FPGA_IRQ_BASE + 1)
-> Index: linux/arch/sh/include/mach-dreamcast/mach/sysasic.h
-> ===================================================================
-> --- linux.orig/arch/sh/include/mach-dreamcast/mach/sysasic.h
-> +++ linux/arch/sh/include/mach-dreamcast/mach/sysasic.h
-> @@ -22,7 +22,7 @@
->     takes.
->  */
->  
-> -#define HW_EVENT_IRQ_BASE  48
-> +#define HW_EVENT_IRQ_BASE  (48 + 16)
->  
->  /* IRQ 13 */
->  #define HW_EVENT_VSYNC     (HW_EVENT_IRQ_BASE +  5) /* VSync */
-> Index: linux/arch/sh/include/mach-se/mach/se7724.h
-> ===================================================================
-> --- linux.orig/arch/sh/include/mach-se/mach/se7724.h
-> +++ linux/arch/sh/include/mach-se/mach/se7724.h
-> @@ -37,7 +37,7 @@
->  #define IRQ2_IRQ        evt2irq(0x640)
->  
->  /* Bits in IRQ012 registers */
-> -#define SE7724_FPGA_IRQ_BASE	220
-> +#define SE7724_FPGA_IRQ_BASE	(220 + 16)
->  
->  /* IRQ0 */
->  #define IRQ0_BASE	SE7724_FPGA_IRQ_BASE
-> Index: linux/arch/sh/kernel/cpu/sh3/entry.S
-> ===================================================================
-> --- linux.orig/arch/sh/kernel/cpu/sh3/entry.S
-> +++ linux/arch/sh/kernel/cpu/sh3/entry.S
-> @@ -470,9 +470,9 @@ ENTRY(handle_interrupt)
->  	mov	r4, r0		! save vector->jmp table offset for later
->  
->  	shlr2	r4		! vector to IRQ# conversion
-> -	add	#-0x10, r4
->  
-> -	cmp/pz	r4		! is it a valid IRQ?
-> +	mov	#0x10, r5
-> +	cmp/hs	r5, r4		! is it a valid IRQ?
->  	bt	10f
->  
->  	/*
-> Index: linux/include/linux/sh_intc.h
-> ===================================================================
-> --- linux.orig/include/linux/sh_intc.h
-> +++ linux/include/linux/sh_intc.h
-> @@ -13,9 +13,9 @@
->  /*
->   * Convert back and forth between INTEVT and IRQ values.
->   */
-> -#ifdef CONFIG_CPU_HAS_INTEVT
-> -#define evt2irq(evt)		(((evt) >> 5) - 16)
-> -#define irq2evt(irq)		(((irq) + 16) << 5)
-> +#ifdef CONFIG_CPU_HAS_INTEVT	/* Avoid IRQ0 (invalid for platform devices) */
-> +#define evt2irq(evt)		((evt) >> 5)
-> +#define irq2evt(irq)		((irq) << 5)
->  #else
->  #define evt2irq(evt)		(evt)
->  #define irq2evt(irq)		(irq)
+                        Geert
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
