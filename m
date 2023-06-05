@@ -2,68 +2,133 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DEE2EC7EE24
-	for <linux-sh@archiver.kernel.org>; Mon,  5 Jun 2023 07:46:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 44926C7EE32
+	for <linux-sh@archiver.kernel.org>; Mon,  5 Jun 2023 14:08:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230150AbjFEHq3 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 5 Jun 2023 03:46:29 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37218 "EHLO
+        id S234306AbjFEOIV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 5 Jun 2023 10:08:21 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35948 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230147AbjFEHqG (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 5 Jun 2023 03:46:06 -0400
-X-Greylist: delayed 579 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Mon, 05 Jun 2023 00:45:15 PDT
-Received: from mail.mojafirma24biz.pl (mail.mojafirma24biz.pl [94.177.230.123])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 058501711
-        for <linux-sh@vger.kernel.org>; Mon,  5 Jun 2023 00:45:15 -0700 (PDT)
-Received: by mail.mojafirma24biz.pl (Postfix, from userid 1002)
-        id 663EC82443; Mon,  5 Jun 2023 09:35:31 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=mojafirma24biz.pl;
-        s=mail; t=1685950533;
-        bh=KdfmXOOTUiU1rPdxFho8h7/xAjTXI1yaanga5GRZkRI=;
-        h=Date:From:To:Subject:From;
-        b=i6gJfZW8YURw3PpbYLpw1H6tx9zgsaK6cJWwQGsMDHwpDu94LfVy/PdS/zxU49ICR
-         jQZcA1+TlieuCYymA1LCaN51EhrV48IQXoTg5mYUMq8euilEoexDYu4xaRwH13YC4L
-         ibQVvRbDsBqGer78FJs9Xxg2Jk/QkxPIlAgtkaBIsC99WCMIgNsXsUl4mxRmkhqf/5
-         ZTsnkOPiqN5SC3HPIBFChotFFNrzX7BVdtOk72M+yaIIVqHV1jaUHcrCQPGoLGq9Sz
-         LP3FGfSHsTkZPa1/nzGr1vpD8YACFqWxcH4XvKpp9HRX+u8nvOKZA0+ybJpsaRhPQC
-         HCCMDgdku1G7A==
-Received: by mail.mojafirma24biz.pl for <linux-sh@vger.kernel.org>; Mon,  5 Jun 2023 07:35:30 GMT
-Message-ID: <20230605084500-0.1.o.23il.0.8eqanlukf8@mojafirma24biz.pl>
-Date:   Mon,  5 Jun 2023 07:35:30 GMT
-From:   "Adam Wyrwisz" <adam.wyrwisz@mojafirma24biz.pl>
-To:     <linux-sh@vger.kernel.org>
-Subject: Wsparcie w finansowaniu fotowoltaiki
-X-Mailer: mail.mojafirma24biz.pl
+        with ESMTP id S234298AbjFEOH7 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 5 Jun 2023 10:07:59 -0400
+Received: from mga12.intel.com (mga12.intel.com [192.55.52.136])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4C8F2E5C;
+        Mon,  5 Jun 2023 07:07:51 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1685974071; x=1717510071;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=zjA9XYetqLmj2er7YOpXmYqZcR8z8Fh+g5Flt9xdytk=;
+  b=O96WqxzlUCNQyd33mgmV+U+gO7Lgr+/55QF6BKqVKFY53MIvHhzdcl4N
+   xdGbsU6vvWdH65EhEc1Dup08XLUzSGM/ENIdjVfI38q1DmbrtZ7RqIXSU
+   XFhU8HQpR0b9EMsblU4xIi2zBUPnZaOK6MXv7t6Th5nf7GVtcKncqMWRs
+   2pA+rVgzMjtJx8OUe2PgpIprtmvCUcz6OINPgM06ruHWparvphAN7ftf2
+   GODvFHSgy+5VSlcBcv7oGKlEdMT2nWOvsjhUn0zTnzNTLi57F2vd8qIMa
+   fuMqRNsqppppAcn0BAHJHrQ7FODn+RVT8PBKus4oetqfPBskfYs5StpT2
+   g==;
+X-IronPort-AV: E=McAfee;i="6600,9927,10732"; a="335993888"
+X-IronPort-AV: E=Sophos;i="6.00,217,1681196400"; 
+   d="scan'208";a="335993888"
+Received: from orsmga005.jf.intel.com ([10.7.209.41])
+  by fmsmga106.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 05 Jun 2023 07:04:20 -0700
+X-ExtLoop1: 1
+X-IronPort-AV: E=McAfee;i="6600,9927,10732"; a="882915325"
+X-IronPort-AV: E=Sophos;i="6.00,217,1681196400"; 
+   d="scan'208";a="882915325"
+Received: from smile.fi.intel.com ([10.237.72.54])
+  by orsmga005.jf.intel.com with ESMTP; 05 Jun 2023 07:04:09 -0700
+Received: from andy by smile.fi.intel.com with local (Exim 4.96)
+        (envelope-from <andriy.shevchenko@linux.intel.com>)
+        id 1q6AoX-001O9h-1D;
+        Mon, 05 Jun 2023 17:04:05 +0300
+Date:   Mon, 5 Jun 2023 17:04:05 +0300
+From:   Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+To:     Bjorn Helgaas <helgaas@kernel.org>
+Cc:     Jonas Gorski <jonas.gorski@gmail.com>,
+        Krzysztof =?utf-8?Q?Wilczy=C5=84ski?= <kw@linux.com>,
+        linux-pci@vger.kernel.org, linux-kernel@vger.kernel.org,
+        =?iso-8859-1?Q?Micka=EBl_Sala=FCn?= <mic@digikod.net>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        Dominik Brodowski <linux@dominikbrodowski.net>,
+        Andrew Lunn <andrew@lunn.ch>, sparclinux@vger.kernel.org,
+        Stefano Stabellini <sstabellini@kernel.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Gregory Clement <gregory.clement@bootlin.com>,
+        "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>,
+        Russell King <linux@armlinux.org.uk>,
+        linux-acpi@vger.kernel.org, Miguel Ojeda <ojeda@kernel.org>,
+        xen-devel@lists.xenproject.org, Matt Turner <mattst88@gmail.com>,
+        Anatolij Gustschin <agust@denx.de>,
+        Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Niklas Schnelle <schnelle@linux.ibm.com>,
+        Richard Henderson <richard.henderson@linaro.org>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Bjorn Helgaas <bhelgaas@google.com>,
+        Mika Westerberg <mika.westerberg@linux.intel.com>,
+        linux-arm-kernel@lists.infradead.org,
+        Juergen Gross <jgross@suse.com>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Philippe =?iso-8859-1?Q?Mathieu-Daud=E9?= <philmd@linaro.org>,
+        linuxppc-dev@lists.ozlabs.org,
+        Randy Dunlap <rdunlap@infradead.org>,
+        linux-mips@vger.kernel.org,
+        Oleksandr Tyshchenko <oleksandr_tyshchenko@epam.com>,
+        linux-alpha@vger.kernel.org,
+        Pali =?iso-8859-1?Q?Roh=E1r?= <pali@kernel.org>,
+        "David S. Miller" <davem@davemloft.net>,
+        "Maciej W. Rozycki" <macro@orcam.me.uk>
+Subject: Re: [PATCH v8 0/7] Add pci_dev_for_each_resource() helper and update
+ users
+Message-ID: <ZH3rVcSr+m8DHmo9@smile.fi.intel.com>
+References: <CAOiHx==5YWhDiZP2PyHZiJrmtqRzvqCqoSO59RwuYuR85BezBg@mail.gmail.com>
+ <ZHe8dKb3f392MfBO@bhelgaas>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ZHe8dKb3f392MfBO@bhelgaas>
+Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Szanowni Pa=C5=84stwo,
+On Wed, May 31, 2023 at 04:30:28PM -0500, Bjorn Helgaas wrote:
+> On Wed, May 31, 2023 at 08:48:35PM +0200, Jonas Gorski wrote:
 
-Czy w obliczu ci=C4=85gle rosn=C4=85cych cen produkt=C3=B3w i us=C5=82ug =
-zastanawiali si=C4=99 Pa=C5=84stwo nad sposobami obni=C5=BCenia koszt=C3=B3=
-w prowadzenia dzia=C5=82alno=C5=9Bci? Jednym z efektywnych rozwi=C4=85za=C5=
-=84 jest zainstalowanie system=C3=B3w fotowoltaicznych.
+...
 
-Dla wszystkich zainteresowanych redukcj=C4=85 koszt=C3=B3w energii elektr=
-ycznej, oferujemy kompleksow=C4=85 obs=C5=82ug=C4=99 inwestycji w fotowol=
-taik=C4=99. Jeste=C5=9Bmy jedyn=C4=85 firm=C4=85 na rynku, kt=C3=B3ra zap=
-ewnia 12-letni=C4=85 gwarancj=C4=99, przeprowadza audyt po monta=C5=BCu o=
-raz przeprowadza kalkulacj=C4=99 oszcz=C4=99dno=C5=9Bci po instalacji sys=
-temu fotowoltaicznego.
+> > Looking at the code I understand where coverity is coming from:
+> > 
+> > #define __pci_dev_for_each_res0(dev, res, ...)                         \
+> >        for (unsigned int __b = 0;                                      \
+> >             res = pci_resource_n(dev, __b), __b < PCI_NUM_RESOURCES;   \
+> >             __b++)
+> > 
+> >  res will be assigned before __b is checked for being less than
+> > PCI_NUM_RESOURCES, making it point to behind the array at the end of
+> > the last loop iteration.
+> > 
+> > Rewriting the test expression as
+> > 
+> > __b < PCI_NUM_RESOURCES && (res = pci_resource_n(dev, __b));
+> > 
+> > should avoid the (coverity) warning by making use of lazy evaluation.
+> > 
+> > It probably makes the code slightly less performant as res will now be
+> > checked for being not NULL (which will always be true), but I doubt it
+> > will be significant (or in any hot paths).
+> 
+> Thanks a lot for looking into this!  I think you're right, and I think
+> the rewritten expression is more logical as well.  Do you want to post
+> a patch for it?
 
-Dla u=C5=82atwienia, udost=C4=99pniamy opcj=C4=99 leasingu z odroczon=C4=85=
- sp=C5=82at=C4=85 i bez wk=C5=82adu w=C5=82asnego. Ponadto, zapewniamy ws=
-parcie w pozyskaniu odpowiedniego =C5=BAr=C3=B3d=C5=82a finansowania oraz=
- pomoc w procesie sk=C5=82adania wniosk=C3=B3w o dotacje.
+Gimme some time, I was on a long leave and now it's a pile to handle.
 
-Czy by=C5=82oby Pa=C5=84stwu mi=C5=82o zapozna=C4=87 si=C4=99 z naszymi d=
-ostosowanymi do Pa=C5=84stwa obiektu mo=C5=BCliwo=C5=9Bciami inwestycji w=
- fotowoltaik=C4=99?
+-- 
+With Best Regards,
+Andy Shevchenko
 
 
-Pozdrawiam
-Adam Wyrwisz
