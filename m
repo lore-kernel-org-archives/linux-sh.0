@@ -2,57 +2,57 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CD78BC77B7A
-	for <linux-sh@archiver.kernel.org>; Wed,  7 Jun 2023 22:26:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2DF0EC7EE25
+	for <linux-sh@archiver.kernel.org>; Wed,  7 Jun 2023 22:30:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232731AbjFGW0c (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 7 Jun 2023 18:26:32 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40484 "EHLO
+        id S230282AbjFGWaH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 7 Jun 2023 18:30:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43718 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232995AbjFGW0Y (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 7 Jun 2023 18:26:24 -0400
+        with ESMTP id S233284AbjFGW36 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 7 Jun 2023 18:29:58 -0400
 Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 297BB26A0
-        for <linux-sh@vger.kernel.org>; Wed,  7 Jun 2023 15:25:02 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2FC5E2700
+        for <linux-sh@vger.kernel.org>; Wed,  7 Jun 2023 15:28:49 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1686176611;
+        s=mimecast20190719; t=1686176918;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=m3wnM605gKMmCudt2hcJJr2EFLF4uSnPgF/R0Xs7/Z4=;
-        b=f2In9eu0fcJlyEfFJZrs+XUR8lUfcGNlW8tcJ0idu7lCXQHZpvDOUJf2ylTRDD+f/5m5Od
-        rtzLAeD+OqiYXe7KU1YvIEmGMy+qkS8Etwd3sMp8riXhLYEzW7Cs1f3/9WDtWR+cAbI6K/
-        x1sQ65IK7z46Lkql8W2+M+afvSYNk0I=
-Received: from mail-wm1-f72.google.com (mail-wm1-f72.google.com
- [209.85.128.72]) by relay.mimecast.com with ESMTP with STARTTLS
+        bh=irRG2hn1Ih/d+vMuj88e+Lh/5vC/wBK+G/U1UA7S7zo=;
+        b=UPwoq8Jw6iEHtz6qkm97dSgQfa62gP7WEXEAtlqbqG6iyTKDeoDK2+ajhttO4rr6TLSH12
+        JuC5BldX/k4l6Ymc0YIk0BA1ODLMqQFybFtttyGF1ODk0084ODjhCJ2vObNxUHlNT4xxmI
+        HWFsHy8FQHBX2mXUMfXCvbVfUVil+JU=
+Received: from mail-wr1-f71.google.com (mail-wr1-f71.google.com
+ [209.85.221.71]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-331-gwaolc4GPDudkunfgAeZmA-1; Wed, 07 Jun 2023 18:23:30 -0400
-X-MC-Unique: gwaolc4GPDudkunfgAeZmA-1
-Received: by mail-wm1-f72.google.com with SMTP id 5b1f17b1804b1-3f7f2d9a660so4378975e9.2
-        for <linux-sh@vger.kernel.org>; Wed, 07 Jun 2023 15:23:30 -0700 (PDT)
+ us-mta-259-Jl1nHq_UMKWjz7xJCjzazw-1; Wed, 07 Jun 2023 18:28:37 -0400
+X-MC-Unique: Jl1nHq_UMKWjz7xJCjzazw-1
+Received: by mail-wr1-f71.google.com with SMTP id ffacd0b85a97d-30af222c5feso4319138f8f.1
+        for <linux-sh@vger.kernel.org>; Wed, 07 Jun 2023 15:28:37 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686176609; x=1688768609;
+        d=1e100.net; s=20221208; t=1686176916; x=1688768916;
         h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
          :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=m3wnM605gKMmCudt2hcJJr2EFLF4uSnPgF/R0Xs7/Z4=;
-        b=Xi6ccsbyD9K2SA1WYHHOnOLDzoUEHI2yP8XII8mOaujRvXIxmRTnPZUvnvuSQbvDVP
-         Q+34pKkiMZx5Oh9iMDQ0c9PDXBx0aDvHoqTMO/62wRQQgeMndO5AMMeWp6V3iD6k8WA2
-         H8nSlajBRCYGdfJW7wUOPLdL8goMGqi3k9bosBfAn/7J2Ae2A7FpNRWIRCRJsO+EcUwu
-         XsQZByJbEAmUhvK6ISh2ErgJwjVencvou6pjiYxrn0VWH0rFHXbOiBhfqgUmsKA5U+SK
-         Jl2y5W4KrQ+IbeOyNz84ZJOUy5C94G5se+8eD2nMVnn9SsmJKk9W6idDN56xqonJRDJg
-         WcqA==
-X-Gm-Message-State: AC+VfDwGIgXHoD70GhywacOXlszB7dDUgbioRcvhMLKUMlt2Jvxp65Cn
-        SVkRgVUiSMrIKaeT3yRTy6jXGDt3TsHQh3GiEx71cin/iluZ8ziQS/GgSg7VxeRzACSa8Mi2G2i
-        cPwBN9AB1kH823Q9ATjs=
-X-Received: by 2002:a05:600c:230c:b0:3f7:f4bc:ebf3 with SMTP id 12-20020a05600c230c00b003f7f4bcebf3mr1544745wmo.36.1686176609315;
-        Wed, 07 Jun 2023 15:23:29 -0700 (PDT)
-X-Google-Smtp-Source: ACHHUZ46AO52oYq6hkZwI7LskizRRuqd6gfq8mv/AQFd6xOXiRAiGoamovfGXQJy96q8ipeUPGiuUw==
-X-Received: by 2002:a05:600c:230c:b0:3f7:f4bc:ebf3 with SMTP id 12-20020a05600c230c00b003f7f4bcebf3mr1544739wmo.36.1686176608968;
-        Wed, 07 Jun 2023 15:23:28 -0700 (PDT)
+        bh=irRG2hn1Ih/d+vMuj88e+Lh/5vC/wBK+G/U1UA7S7zo=;
+        b=LYF7VYL0hwg6T0JqJr1l/Y0Q/8NAL0nFhXIjQXsv5uf4/TE5exTQLq8RrHmUZVi/FI
+         WQuG63jUPbSJefxM3R95dSN7lbHueShu0nUCJ8ulnCRWRwhAzw8iDAHuMXrqZgwQXQrK
+         DF0HvhrxQx/QaopaxFFbq0ToKVWpQZJgV8NaLmGm6922UB9Q0QUiPsaYYcCy4qnSltpD
+         +GBsETakGM3tYyiQ5du8BWoxDcr/a8opDoEiQW4bleX7o0DPwM4Ak9VykD14cTS5iupD
+         a5jpU920DW8hOyWSlCzlHmXyYmNhkVwjkedsPwFe1XuU2SuzSAclET+3Z5HLH9di7RyO
+         QpBQ==
+X-Gm-Message-State: AC+VfDxrbkA7z1CUSK8+ho2fiKz30URw8rc4io3lzEmNAPpHC2aBIrFi
+        I7KBW6as/aMTz03N2BViD91+S5CprL0hNG3LR1FNnftZzyf3912ilCiQa8KRskm388qgTRnymZP
+        dLWXfIpsVJ6HV45nqHPU=
+X-Received: by 2002:a5d:650e:0:b0:307:9da1:c9d8 with SMTP id x14-20020a5d650e000000b003079da1c9d8mr4923754wru.4.1686176916352;
+        Wed, 07 Jun 2023 15:28:36 -0700 (PDT)
+X-Google-Smtp-Source: ACHHUZ61tYV/VqxAjAws580IyjPbyEEBH7wxqnNFkzkRRkVd9vumKgbQUzpT98wO/2M3vhdVG8VhKw==
+X-Received: by 2002:a5d:650e:0:b0:307:9da1:c9d8 with SMTP id x14-20020a5d650e000000b003079da1c9d8mr4923745wru.4.1686176916109;
+        Wed, 07 Jun 2023 15:28:36 -0700 (PDT)
 Received: from localhost (205.pool92-176-231.dynamic.orange.es. [92.176.231.205])
-        by smtp.gmail.com with ESMTPSA id d10-20020a1c730a000000b003f42158288dsm3313271wmb.20.2023.06.07.15.23.28
+        by smtp.gmail.com with ESMTPSA id v25-20020a1cf719000000b003f736735424sm3323437wmh.43.2023.06.07.15.28.35
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 07 Jun 2023 15:23:28 -0700 (PDT)
+        Wed, 07 Jun 2023 15:28:35 -0700 (PDT)
 From:   Javier Martinez Canillas <javierm@redhat.com>
 To:     Thomas Zimmermann <tzimmermann@suse.de>, daniel@ffwll.ch,
         sam@ravnborg.org, deller@gmx.de, geert+renesas@glider.be,
@@ -61,13 +61,12 @@ Cc:     linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
         linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
         linux-staging@lists.linux.dev,
         Thomas Zimmermann <tzimmermann@suse.de>
-Subject: Re: [PATCH 23/30] fbdev/tdfxfb: Set i2c adapter parent to hardware
- device
-In-Reply-To: <20230605144812.15241-24-tzimmermann@suse.de>
+Subject: Re: [PATCH 28/30] fbdev/core: Move file-I/O code into separate file
+In-Reply-To: <20230605144812.15241-29-tzimmermann@suse.de>
 References: <20230605144812.15241-1-tzimmermann@suse.de>
- <20230605144812.15241-24-tzimmermann@suse.de>
-Date:   Thu, 08 Jun 2023 00:23:27 +0200
-Message-ID: <87bkhqewtc.fsf@minerva.mail-host-address-is-not-set>
+ <20230605144812.15241-29-tzimmermann@suse.de>
+Date:   Thu, 08 Jun 2023 00:28:35 +0200
+Message-ID: <877cseewks.fsf@minerva.mail-host-address-is-not-set>
 MIME-Version: 1.0
 X-Mimecast-Spam-Score: 0
 X-Mimecast-Originator: redhat.com
@@ -78,15 +77,20 @@ X-Mailing-List: linux-sh@vger.kernel.org
 
 Thomas Zimmermann <tzimmermann@suse.de> writes:
 
-> Use the 3dfx hardware device from the Linux device hierarchy as
-> parent device of the i2c adapter. Aligns the driver with the rest
-> of the codebase and prepares fbdev for making struct fb_info.dev
-> optional.
+> Move fbdev's file-I/O code into a separate file and contain it in
+> init and cleanup helpers. No functional changes.
 >
 > Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
 > ---
 
-Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+[...]
+
+> +
+> +#include <linux/console.h>
+
+#include <linux/compat.h> here, the robot complained about:
+
+   drivers/video/fbdev/core/fb_devfs.c:183:9: error: unknown type name 'compat_caddr_t'
 
 -- 
 Best regards,
