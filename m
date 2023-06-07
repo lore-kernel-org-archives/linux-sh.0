@@ -2,142 +2,136 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E9EBC7EE29
-	for <linux-sh@archiver.kernel.org>; Wed,  7 Jun 2023 09:16:43 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5AB8CC7EE23
+	for <linux-sh@archiver.kernel.org>; Wed,  7 Jun 2023 12:22:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238078AbjFGJQm convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 7 Jun 2023 05:16:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39912 "EHLO
+        id S240696AbjFGMWC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 7 Jun 2023 08:22:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35468 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234932AbjFGJQl (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 7 Jun 2023 05:16:41 -0400
-Received: from mail-yw1-f174.google.com (mail-yw1-f174.google.com [209.85.128.174])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 644E083;
-        Wed,  7 Jun 2023 02:16:40 -0700 (PDT)
-Received: by mail-yw1-f174.google.com with SMTP id 00721157ae682-565eb83efe4so93007877b3.0;
-        Wed, 07 Jun 2023 02:16:40 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686129399; x=1688721399;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=A6fIbBz94NXBI1+KVIOgP3CUxQlOZI2uVELRCoMaFFA=;
-        b=gt3sepA3A5WR3KhAPWGvVUptVUAajiEWPgGvhe5U4ntZsXGWni1c5uzOYwT+T3AnDo
-         AbJ1qw7bD4k2YIiOjLApvRnWoyat1M9cuzqtF5jNvLjxGhrRy5DDdanHSJkrIimFGQPx
-         aRsQvOa8l6hQbmJDR3GbthMqfN/oQjMtpAwAlnMGeGF+Xv9GjDNxR84z05NeUUlWxEdR
-         wpLK5oJme862nTY/+0Q5mdIGTZHaqKNGpS41fnpGXxlilJj3dktQI4x/5vNxd9GlGtpJ
-         U51JZNPaijDqoSYDqjtDCgOr4irRYE+4ZWsZFeYLLtjD3hyc+TLA2D6xQ8UAFIsecmpu
-         zsqg==
-X-Gm-Message-State: AC+VfDw4hLBnhkxwJugeXFroImdEcs1fL/yNy/qD+wB20TNKfd1zzGvG
-        cu7OpQpTqcwZLDvyk2KNsshTSFQSzuswbw==
-X-Google-Smtp-Source: ACHHUZ6yvflTH0edmN+V9BihJnWGO7D1Hwt6ib4O/Xgb/YkKltVzg5cKfcJ9o4nDoPCbFi7IWD3HIg==
-X-Received: by 2002:a0d:d5c8:0:b0:565:a8e7:239e with SMTP id x191-20020a0dd5c8000000b00565a8e7239emr5973478ywd.23.1686129399375;
-        Wed, 07 Jun 2023 02:16:39 -0700 (PDT)
-Received: from mail-yw1-f173.google.com (mail-yw1-f173.google.com. [209.85.128.173])
-        by smtp.gmail.com with ESMTPSA id x128-20020a814a86000000b0056183cdb2d9sm4599970ywa.60.2023.06.07.02.16.38
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 07 Jun 2023 02:16:38 -0700 (PDT)
-Received: by mail-yw1-f173.google.com with SMTP id 00721157ae682-56974f42224so66356157b3.1;
-        Wed, 07 Jun 2023 02:16:38 -0700 (PDT)
-X-Received: by 2002:a25:33c6:0:b0:ba8:7122:2917 with SMTP id
- z189-20020a2533c6000000b00ba871222917mr5649365ybz.0.1686129398094; Wed, 07
- Jun 2023 02:16:38 -0700 (PDT)
+        with ESMTP id S240713AbjFGMVu (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 7 Jun 2023 08:21:50 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ED7561BD4;
+        Wed,  7 Jun 2023 05:21:48 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 67249218B8;
+        Wed,  7 Jun 2023 12:21:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1686140507; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=ta2FRAbQj0UwuOoAp0yjJ66hb4vAKW3txPGg2Eqa/ls=;
+        b=J/il2DV+GzNOLLIrsNjkeK2yO6zhHV1LqiURxOr63dIyG/NiMamaLNk+kPxwOy5NgQRG8s
+        yTwchZBE8UBHQtTgXr1/Q9y9PsoDYzzxivwcgAYmy1s/FuepZ1/McbnxAnpaRtG1I5JF5a
+        6OTPXe+jNemR936GMPghkUvQXP3ivvs=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1686140507;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=ta2FRAbQj0UwuOoAp0yjJ66hb4vAKW3txPGg2Eqa/ls=;
+        b=qwEx/5STfYKT3dNkZTXOoEkepTtUZxat+Ty2hciE7ZXt4+PcgqCN6KYkP+4UPraz5myCHp
+        bwaDYDlB9klcKwAg==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 27AAC13776;
+        Wed,  7 Jun 2023 12:21:47 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id bWDpCFt2gGQBQgAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Wed, 07 Jun 2023 12:21:47 +0000
+Message-ID: <8c2db8a0-048c-af17-85f6-ac0946ce0f0f@suse.de>
+Date:   Wed, 7 Jun 2023 14:21:46 +0200
 MIME-Version: 1.0
-References: <20230527164452.64797-1-contact@artur-rojek.eu> <20230527164452.64797-4-contact@artur-rojek.eu>
-In-Reply-To: <20230527164452.64797-4-contact@artur-rojek.eu>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Wed, 7 Jun 2023 11:16:26 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdV3gn8g-gKam71K=WfT3CVNwvz5eKPSh2Fqi3wVg7ZwNw@mail.gmail.com>
-Message-ID: <CAMuHMdV3gn8g-gKam71K=WfT3CVNwvz5eKPSh2Fqi3wVg7ZwNw@mail.gmail.com>
-Subject: Re: [PATCH v2 3/3] sh: dma: Correct the number of DMA channels in SH7709
-To:     Artur Rojek <contact@artur-rojek.eu>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.11.2
+Subject: Re: [PATCH 00/30] fbdev: Make userspace interfaces optional
+Content-Language: en-US
+To:     Markus Elfring <Markus.Elfring@web.de>
+Cc:     dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org,
+        linux-omap@vger.kernel.org, linux-sh@vger.kernel.org,
+        linux-staging@lists.linux.dev,
+        Daniel Thompson <daniel.thompson@linaro.org>,
+        Daniel Vetter <daniel@ffwll.ch>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Helge Deller <deller@gmx.de>,
+        Javier Martinez Canillas <javierm@redhat.com>,
+        Jingoo Han <jingoohan1@gmail.com>, Lee Jones <lee@kernel.org>,
+        Sam Ravnborg <sam@ravnborg.org>
+References: <20230605144812.15241-1-tzimmermann@suse.de>
+ <16a8f34a-d4f9-2e1d-02cf-e4c53f89c006@web.de>
+From:   Thomas Zimmermann <tzimmermann@suse.de>
+In-Reply-To: <16a8f34a-d4f9-2e1d-02cf-e4c53f89c006@web.de>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="------------FW1FeVQdL1giSXp8BKAshSuA"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Artur,
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--------------FW1FeVQdL1giSXp8BKAshSuA
+Content-Type: multipart/mixed; boundary="------------7Epbi9PEVe6pPjkkKh0YiBGj";
+ protected-headers="v1"
+From: Thomas Zimmermann <tzimmermann@suse.de>
+To: Markus Elfring <Markus.Elfring@web.de>
+Cc: dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org,
+ linux-omap@vger.kernel.org, linux-sh@vger.kernel.org,
+ linux-staging@lists.linux.dev, Daniel Thompson <daniel.thompson@linaro.org>,
+ Daniel Vetter <daniel@ffwll.ch>, Geert Uytterhoeven
+ <geert+renesas@glider.be>, Helge Deller <deller@gmx.de>,
+ Javier Martinez Canillas <javierm@redhat.com>,
+ Jingoo Han <jingoohan1@gmail.com>, Lee Jones <lee@kernel.org>,
+ Sam Ravnborg <sam@ravnborg.org>
+Message-ID: <8c2db8a0-048c-af17-85f6-ac0946ce0f0f@suse.de>
+Subject: Re: [PATCH 00/30] fbdev: Make userspace interfaces optional
+References: <20230605144812.15241-1-tzimmermann@suse.de>
+ <16a8f34a-d4f9-2e1d-02cf-e4c53f89c006@web.de>
+In-Reply-To: <16a8f34a-d4f9-2e1d-02cf-e4c53f89c006@web.de>
 
-On Sat, May 27, 2023 at 6:45 PM Artur Rojek <contact@artur-rojek.eu> wrote:
-> According to the hardware manual [1], the DMAC found in SH7709 features
-> only 4 channels.
->
-> While at it, also sort the existing targets and clarify that
-> NR_ONCHIP_DMA_CHANNELS must be a multiply of two.
->
-> [1] https://www.renesas.com/us/en/document/mah/sh7709s-group-hardware-manual (p. 373)
->
-> Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
-> ---
->
-> v2: - sort existing targets
+--------------7Epbi9PEVe6pPjkkKh0YiBGj
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: base64
 
-Thanks for the update!
-
->     - clarify that the value must be a multiply of two
-
-That's only true when there are two DMACs, right?
-
-Even in that case, you could mitigate that by avoiding the division by
-
-    #ifdef SH_DMAC_BASE1
-   -#define        SH_DMAC_NR_MD_CH        (CONFIG_NR_ONCHIP_DMA_CHANNELS / 2)
-   +#define        SH_DMAC_NR_MD_CH        6
-    #else
-    #define        SH_DMAC_NR_MD_CH        CONFIG_NR_ONCHIP_DMA_CHANNELS
-    #endif
-
-That is actually safer, as the user can override NR_ONCHIP_DMA_CHANNELS
-when configuring his kernel, thus breaking DMA  due to an incorrect
-value of SH_DMAC_NR_MD_CH.
-
-Unfortunately we cannot protect against that when using a single DMAC,
-as SH_DMAC_NR_MD_CH can be either 4, 6, or 8.
-
-Perhaps this configuration should be moved from Kconfig to <cpu/dma.h>,
-to protect against a user overriding this value?
-
-> --- a/arch/sh/drivers/dma/Kconfig
-> +++ b/arch/sh/drivers/dma/Kconfig
-> @@ -28,17 +28,19 @@ config SH_DMA_API
->  config NR_ONCHIP_DMA_CHANNELS
->         int
->         depends on SH_DMA
-> -       default "4" if CPU_SUBTYPE_SH7750  || CPU_SUBTYPE_SH7751  || \
-> -                      CPU_SUBTYPE_SH7750S || CPU_SUBTYPE_SH7091
-> +       default "4" if CPU_SUBTYPE_SH7709 || CPU_SUBTYPE_SH7750  || \
-> +                      CPU_SUBTYPE_SH7750S || CPU_SUBTYPE_SH7751 || \
-> +                      CPU_SUBTYPE_SH7091
->         default "8" if CPU_SUBTYPE_SH7750R || CPU_SUBTYPE_SH7751R || \
->                        CPU_SUBTYPE_SH7760
-> -       default "12" if CPU_SUBTYPE_SH7723 || CPU_SUBTYPE_SH7780  || \
-> -                       CPU_SUBTYPE_SH7785 || CPU_SUBTYPE_SH7724
-> +       default "12" if CPU_SUBTYPE_SH7723 || CPU_SUBTYPE_SH7724  || \
-> +                       CPU_SUBTYPE_SH7780 || CPU_SUBTYPE_SH7785
->         default "6"
->         help
->           This allows you to specify the number of channels that the on-chip
-> -         DMAC supports. This will be 4 for SH7750/SH7751/Sh7750S/SH7091 and 8 for the
-> -         SH7750R/SH7751R/SH7760, 12 for the SH7723/SH7780/SH7785/SH7724, default is 6.
-> +         DMAC supports. This will be 4 for SH7709/SH7750/SH7750S/SH7751/SH7091,
-> +         8 for SH7750R/SH7751R/SH7760, and 12 for SH7723/SH7724/SH7780/SH7785.
-> +         Default is 6. Must be an even number.
-
-Gr{oetje,eeting}s,
-
-                        Geert
+DQoNCkFtIDA3LjA2LjIzIHVtIDE0OjA2IHNjaHJpZWIgTWFya3VzIEVsZnJpbmc6DQo+PiBN
+b2Rlcm4gTGludXggZGlzdHJvYnV0aW9ucyBoYXZlIGFkb3B0ZWQgRFJNIGRyaXZlcnMgZm9y
+IGdyYXBoaWNzDQo+PiBvdXRwdXQgYW5kIHVzZSBmYmRldiBvbmx5IGZvciB0aGUga2VybmVs
+J3MgZnJhbWVidWZmZXIgY29uc29sZS4NCj4gDQo+IFdvdWxkIHlvdSBsaWtlIHRvIGF2b2lk
+IGEgdHlwbyBpbiBzdWJzZXF1ZW50IGNvdmVyIGxldHRlcnM/DQoNCkhhISBJdCBzYXlzICdk
+aXN0cm9idXRpb25zJy4NCg0KPiANCj4gUmVnYXJkcywNCj4gTWFya3VzDQoNCi0tIA0KVGhv
+bWFzIFppbW1lcm1hbm4NCkdyYXBoaWNzIERyaXZlciBEZXZlbG9wZXINClNVU0UgU29mdHdh
+cmUgU29sdXRpb25zIEdlcm1hbnkgR21iSA0KRnJhbmtlbnN0cmFzc2UgMTQ2LCA5MDQ2MSBO
+dWVybmJlcmcsIEdlcm1hbnkNCkdGOiBJdm8gVG90ZXYsIEFuZHJldyBNeWVycywgQW5kcmV3
+IE1jRG9uYWxkLCBCb3VkaWVuIE1vZXJtYW4NCkhSQiAzNjgwOSAoQUcgTnVlcm5iZXJnKQ0K
 
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+--------------7Epbi9PEVe6pPjkkKh0YiBGj--
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+--------------FW1FeVQdL1giSXp8BKAshSuA
+Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="OpenPGP_signature"
+
+-----BEGIN PGP SIGNATURE-----
+
+wsF5BAABCAAjFiEExndm/fpuMUdwYFFolh/E3EQov+AFAmSAdloFAwAAAAAACgkQlh/E3EQov+CX
+jg/9FNBf8ZoZQO+eosw1vBEZ9nuaT0FLZyWHr9yNEU33bOLCa5mmAi3B1TRjYwdSk7shlRf73twX
+YRuSuMrW/2ODEiN2DVkaf8jSOCbZgZxcPHYZRJiHKThM7ApQxlRSZ+mjD3QPNpWwp8x0LumHcN+V
+dYjdR0/LZCp47I5sIsIr6BUP67GEqaBjy2UY1SKdAKIhlAlD4YJmPwrC/bJ+HZCBkDFuaimu4qAV
+YkKXc2qIXo7wLgFCKW10q/Jgk6Duph4BrHK/ypbZd/5Tgeb+NgV9gq6L9QQzOpIzKFO42zYoSWXl
+stDmdBcxM+cdcLW0b4b+veBIRI44YJUt/0vv//SliYQw8wGUHqDKM1zSckdqVYdL9MqZWXlBUIjH
+3yUrOmdyjhnoFdY+PjgqmP2mX8I/uYgQjPXWYDyhI8tWxMIgjyFZtlT2tGO6B0PktrBfLv/5lqTO
+qei+gMMJydV0ceV8M0usD1SVEdkFeR4/CtjHxotSfj670KWWRczIP78PxWoW/OWMWEatidEv14z2
++czkANOTrdRickPxEjBxaPYTnZcZQE8yGsdW6ufhnsQdcT/Uv1LN55509+C2QMHVwDng70u60Gdx
+AYKRWTZKRXfvjHmOD3GmgT3M4ZMR9kg4LMdB79fPEa3jyq4o2Im13Jt5ylFPIz/NLf9qY366H6yp
+z9Y=
+=GLVN
+-----END PGP SIGNATURE-----
+
+--------------FW1FeVQdL1giSXp8BKAshSuA--
