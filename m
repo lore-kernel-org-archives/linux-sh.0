@@ -2,55 +2,55 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7DBF2C7EE23
-	for <linux-sh@archiver.kernel.org>; Wed,  7 Jun 2023 09:06:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 988FAC7EE23
+	for <linux-sh@archiver.kernel.org>; Wed,  7 Jun 2023 09:06:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233580AbjFGJGA convert rfc822-to-8bit (ORCPT
+        id S239013AbjFGJGE convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 7 Jun 2023 05:06:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58606 "EHLO
+        Wed, 7 Jun 2023 05:06:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58926 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237398AbjFGJFf (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 7 Jun 2023 05:05:35 -0400
-Received: from mail-yw1-f178.google.com (mail-yw1-f178.google.com [209.85.128.178])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F225A213A;
-        Wed,  7 Jun 2023 02:04:41 -0700 (PDT)
-Received: by mail-yw1-f178.google.com with SMTP id 00721157ae682-568ba7abc11so92692397b3.3;
-        Wed, 07 Jun 2023 02:04:41 -0700 (PDT)
+        with ESMTP id S239345AbjFGJFk (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 7 Jun 2023 05:05:40 -0400
+Received: from mail-yw1-f173.google.com (mail-yw1-f173.google.com [209.85.128.173])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0FCF91725;
+        Wed,  7 Jun 2023 02:05:14 -0700 (PDT)
+Received: by mail-yw1-f173.google.com with SMTP id 00721157ae682-565cdb77b01so75292037b3.0;
+        Wed, 07 Jun 2023 02:05:14 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686128681; x=1688720681;
+        d=1e100.net; s=20221208; t=1686128713; x=1688720713;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=TNEKaP7UVQJpZRtahYRlPOw3JCnkhMyaEr720NhUxp4=;
-        b=UiTsLu8aEUZnsPcrwJyYjFJUWWzeLRQuuaixny4S6NMUajkWequgCYA1KoSt0F6PFF
-         tDyPmUYAUtOwhPf4fElCgvfNeRQedwWel4QmUtvqZUTG0YXyVK28PBgzB/Xg6H4dZCUs
-         CUP9zh01m9+drC7lo3KTZhe+ZOWQ7eiApRX9y3c1Xtw0kWKhHcG+vm7i8fA6PwdOhUK6
-         kky8sEHlFXSWm9wRVXC1MvtZjnbSusMGXw+y0Ht6Eo3y1HacTWe4vvAidv5D0flKUqK0
-         S/ZlIxfbZY7Rx060J5mjkIcUjy6SIWRQeC+GgmEn+nlBMLiVPEUFrk/eDiPO4EgNx4oY
-         E8bg==
-X-Gm-Message-State: AC+VfDyikJ1YeRW0L32BvKdYW7iyI0ckeXi+TL7JLvbQ4qg5gNJ/dnhw
-        TNkj/qgqtdBQLbwuQMcarJ9fHh++/9SZ2w==
-X-Google-Smtp-Source: ACHHUZ6ziPtuMJubFT3g+33BIHcHeG/nAX5QuAXl3nB3Xq4YZjO4/eOuVWaFPJ5SceOgVJPJlns7YQ==
-X-Received: by 2002:a81:61d6:0:b0:561:3fb7:1333 with SMTP id v205-20020a8161d6000000b005613fb71333mr7171131ywb.43.1686128681034;
-        Wed, 07 Jun 2023 02:04:41 -0700 (PDT)
-Received: from mail-yw1-f182.google.com (mail-yw1-f182.google.com. [209.85.128.182])
-        by smtp.gmail.com with ESMTPSA id d14-20020a81d34e000000b00568ab5dd873sm4573007ywl.65.2023.06.07.02.04.39
+        bh=E422pSWL3ak6KdRHBbqkZaT44vzRnDyfnzTSQCDwJNI=;
+        b=FTSZNvdUSA2Mi4EiP2S5bT5qcLHNBj82BdV4YxFzqMP45qXO8w4AYGjNFXdNtkhiBA
+         9t1F/GX//KZqSN+lS+p26o0D1e7dMPOW+Mz22ByNapH36bhWPPND3qDHRf4IZK2VLkYv
+         qfqBsm1ZtMZ7Zn/Vjhr1ICp9FSYbQJMRI8MVj6Nz11wz993p+ghuvhVgN+igLmTlAyiA
+         DwioYewbolvTC1EWIOMfhaZXNbcK+CljIuGpsgduBlx68b4PnJUcnk23Otgt22mZgetZ
+         OLm/uGHHBCUq9xlCQr7Mg+8VSsV5RcqVriZbk4k55f33gjwcaSMHqcugJMFwehm0fwdH
+         Pzhw==
+X-Gm-Message-State: AC+VfDziq2igMD9Dka5YkOP+LcnQkkJxCfdHzFiYim/fO55oCmADum5j
+        XneEmY9C54b8idrgxgDwpwAeWiaUHZXpeg==
+X-Google-Smtp-Source: ACHHUZ7yodeTt/O+VkPe7iBcY4Od3RWmqfB6ntLg9rUTEyobthgtasbctpaVGiuDI7MYHC0ciUp67Q==
+X-Received: by 2002:a81:7cd4:0:b0:54f:8b56:bb3 with SMTP id x203-20020a817cd4000000b0054f8b560bb3mr4870829ywc.5.1686128713065;
+        Wed, 07 Jun 2023 02:05:13 -0700 (PDT)
+Received: from mail-yb1-f172.google.com (mail-yb1-f172.google.com. [209.85.219.172])
+        by smtp.gmail.com with ESMTPSA id y141-20020a0dd693000000b00562b8c7edf0sm4705393ywd.51.2023.06.07.02.05.12
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 07 Jun 2023 02:04:40 -0700 (PDT)
-Received: by mail-yw1-f182.google.com with SMTP id 00721157ae682-568ba7abc11so92692137b3.3;
-        Wed, 07 Jun 2023 02:04:39 -0700 (PDT)
-X-Received: by 2002:a0d:eb88:0:b0:55a:4a73:6177 with SMTP id
- u130-20020a0deb88000000b0055a4a736177mr6153827ywe.42.1686128679544; Wed, 07
- Jun 2023 02:04:39 -0700 (PDT)
+        Wed, 07 Jun 2023 02:05:12 -0700 (PDT)
+Received: by mail-yb1-f172.google.com with SMTP id 3f1490d57ef6-bab8f66d3a2so8335935276.3;
+        Wed, 07 Jun 2023 02:05:12 -0700 (PDT)
+X-Received: by 2002:a25:ccc7:0:b0:bb4:204f:bb79 with SMTP id
+ l190-20020a25ccc7000000b00bb4204fbb79mr2168697ybf.55.1686128712106; Wed, 07
+ Jun 2023 02:05:12 -0700 (PDT)
 MIME-Version: 1.0
-References: <20230527164452.64797-1-contact@artur-rojek.eu> <20230527164452.64797-2-contact@artur-rojek.eu>
-In-Reply-To: <20230527164452.64797-2-contact@artur-rojek.eu>
+References: <20230527164452.64797-1-contact@artur-rojek.eu> <20230527164452.64797-3-contact@artur-rojek.eu>
+In-Reply-To: <20230527164452.64797-3-contact@artur-rojek.eu>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Wed, 7 Jun 2023 11:04:28 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdXfeF9jttu7K5C1CMqb+wsGY5z3GzNaFzdQLWbOrgqicQ@mail.gmail.com>
-Message-ID: <CAMuHMdXfeF9jttu7K5C1CMqb+wsGY5z3GzNaFzdQLWbOrgqicQ@mail.gmail.com>
-Subject: Re: [PATCH v2 1/3] sh: dma: Fix dma channel offset calculation
+Date:   Wed, 7 Jun 2023 11:05:00 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdXe+R-OhC8LSupR8YUNXcebFQ+7nSDNFphdBn_K-owGyA@mail.gmail.com>
+Message-ID: <CAMuHMdXe+R-OhC8LSupR8YUNXcebFQ+7nSDNFphdBn_K-owGyA@mail.gmail.com>
+Subject: Re: [PATCH v2 2/3] sh: dma: Drop incorrect SH_DMAC_BASE1 for SH4
 To:     Artur Rojek <contact@artur-rojek.eu>
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
@@ -64,21 +64,14 @@ List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
 On Sat, May 27, 2023 at 6:45 PM Artur Rojek <contact@artur-rojek.eu> wrote:
-> Various SoCs of the SH3, SH4 and SH4A family, which use this driver,
-> feature a differing number of DMA channels, which can be distributed
-> between up to two DMAC modules. Existing implementation fails to
-> correctly accommodate for all those variations, resulting in wrong
-> channel offset calculations and leading to kernel panics.
+> None of the supported SH4 family SoCs features a second DMAC module. As
+> this define negatively impacts DMA channel calculation for the above
+> targets, remove it from the code.
 >
-> Rewrite dma_base_addr() in order to properly calculate channel offsets
-> in a DMAC module. Fix dmaor_read_reg() and dmaor_write_reg(), so that
-> the correct DMAC module base is selected for the DMAOR register.
->
-> Fixes: 7f47c7189b3e8f19 ("sh: dma: More legacy cpu dma chainsawing.")
 > Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
 > ---
 >
-> v2: also handle differing numbers of DMAC modules and channels
+> v2: new patch
 
 Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
