@@ -2,93 +2,142 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4BF0FC77B7A
-	for <linux-sh@archiver.kernel.org>; Wed,  7 Jun 2023 09:14:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E9EBC7EE29
+	for <linux-sh@archiver.kernel.org>; Wed,  7 Jun 2023 09:16:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239905AbjFGJOi (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 7 Jun 2023 05:14:38 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38220 "EHLO
+        id S238078AbjFGJQm convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 7 Jun 2023 05:16:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39912 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235770AbjFGJOT (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 7 Jun 2023 05:14:19 -0400
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 90ED71BFD
-        for <linux-sh@vger.kernel.org>; Wed,  7 Jun 2023 02:12:22 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1686129141;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=B3BIYD3PXMtQvTPGQV01/1k0Hmx/7PJYivm+5X8kP8U=;
-        b=O+IETPrpEKa5dZUBQt2NtWpk9csmzf3XlIbfvYXhRQyGDov4ThNqiSRuLbAQFf0DO92KaE
-        Wvmnuxky8x4QhIc1CqB9mYrxaRADznaMPy/OMvpyhO6GTGyxl4waEC6HpZILJfIGVzs0z2
-        DJKr+KE6MwDS9vbpvjJ3or6EsnSdvPw=
-Received: from mail-wr1-f70.google.com (mail-wr1-f70.google.com
- [209.85.221.70]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-62-4hgs-ZhYPs2ttH55R88_kA-1; Wed, 07 Jun 2023 05:12:20 -0400
-X-MC-Unique: 4hgs-ZhYPs2ttH55R88_kA-1
-Received: by mail-wr1-f70.google.com with SMTP id ffacd0b85a97d-30ade645c59so3222947f8f.2
-        for <linux-sh@vger.kernel.org>; Wed, 07 Jun 2023 02:12:20 -0700 (PDT)
+        with ESMTP id S234932AbjFGJQl (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 7 Jun 2023 05:16:41 -0400
+Received: from mail-yw1-f174.google.com (mail-yw1-f174.google.com [209.85.128.174])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 644E083;
+        Wed,  7 Jun 2023 02:16:40 -0700 (PDT)
+Received: by mail-yw1-f174.google.com with SMTP id 00721157ae682-565eb83efe4so93007877b3.0;
+        Wed, 07 Jun 2023 02:16:40 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686129139; x=1688721139;
-        h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=B3BIYD3PXMtQvTPGQV01/1k0Hmx/7PJYivm+5X8kP8U=;
-        b=iC/pcSouE6zTwdkGQbf8tV1EzN+18LojPEy/MHxOWb94UX+P7hh9XNHJVKLb4FlxPZ
-         wV4JyLuKGxJ7EBzP1vTFb+vm0kmvdhkWLPPX0UqbAHutfIB+OU9cqAxmB6Uc6jhfgvoQ
-         7iDoqeszXJgGlY5QT4gASMsaQDZ1Bn4rTNfze67mu/DziS0FBbMM4LH9ey1TPMI2Pgse
-         SGouWHPxZeyh1SBKAARj7KgulwCq2nw0liYzG/AquHNdJLxin0p4Xl69dNowK7RUE/0t
-         jLpKAPGic10lfnQElOW9hUwz4AsY0YGMeHGQqyWZ6mNKAr/TA3IFS39C1GK+dZhwyGxf
-         JgrQ==
-X-Gm-Message-State: AC+VfDzGt2Nr5A2N3rg+mJtTfUykVFRZBT+KC+1CWqmqkVXoRRhD1ZI0
-        B9FC5ZsOZePjFDiHqNdW9L3hYD/eH/xqaq7Fd3/jTaIVer0jCpodWQLKHCz9gA22QQat8j1j5JL
-        KBT3cxY7w/ZWMM5aMh/o=
-X-Received: by 2002:a5d:55c6:0:b0:30e:38d3:cc4f with SMTP id i6-20020a5d55c6000000b0030e38d3cc4fmr3742550wrw.36.1686129139399;
-        Wed, 07 Jun 2023 02:12:19 -0700 (PDT)
-X-Google-Smtp-Source: ACHHUZ5wzUZfsA9VSizf9bxaqukgTVAwDp5W+57tfKmlffItPyQVvcHhSQ5E8wYACr5/gCv7xQF2rA==
-X-Received: by 2002:a5d:55c6:0:b0:30e:38d3:cc4f with SMTP id i6-20020a5d55c6000000b0030e38d3cc4fmr3742525wrw.36.1686129139085;
-        Wed, 07 Jun 2023 02:12:19 -0700 (PDT)
-Received: from localhost (205.pool92-176-231.dynamic.orange.es. [92.176.231.205])
-        by smtp.gmail.com with ESMTPSA id o10-20020a1c750a000000b003f60101074dsm1447712wmc.33.2023.06.07.02.12.18
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 07 Jun 2023 02:12:18 -0700 (PDT)
-From:   Javier Martinez Canillas <javierm@redhat.com>
-To:     Thomas Zimmermann <tzimmermann@suse.de>, daniel@ffwll.ch,
-        sam@ravnborg.org, deller@gmx.de, geert+renesas@glider.be,
-        lee@kernel.org, daniel.thompson@linaro.org, jingoohan1@gmail.com
-Cc:     linux-fbdev@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-staging@lists.linux.dev, dri-devel@lists.freedesktop.org,
-        Thomas Zimmermann <tzimmermann@suse.de>,
-        linux-omap@vger.kernel.org
-Subject: Re: [PATCH 21/30] fbdev/sm501fb: Output message with fb_err()
-In-Reply-To: <20230605144812.15241-22-tzimmermann@suse.de>
-References: <20230605144812.15241-1-tzimmermann@suse.de>
- <20230605144812.15241-22-tzimmermann@suse.de>
-Date:   Wed, 07 Jun 2023 11:12:18 +0200
-Message-ID: <87o7lreivh.fsf@minerva.mail-host-address-is-not-set>
+        d=1e100.net; s=20221208; t=1686129399; x=1688721399;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=A6fIbBz94NXBI1+KVIOgP3CUxQlOZI2uVELRCoMaFFA=;
+        b=gt3sepA3A5WR3KhAPWGvVUptVUAajiEWPgGvhe5U4ntZsXGWni1c5uzOYwT+T3AnDo
+         AbJ1qw7bD4k2YIiOjLApvRnWoyat1M9cuzqtF5jNvLjxGhrRy5DDdanHSJkrIimFGQPx
+         aRsQvOa8l6hQbmJDR3GbthMqfN/oQjMtpAwAlnMGeGF+Xv9GjDNxR84z05NeUUlWxEdR
+         wpLK5oJme862nTY/+0Q5mdIGTZHaqKNGpS41fnpGXxlilJj3dktQI4x/5vNxd9GlGtpJ
+         U51JZNPaijDqoSYDqjtDCgOr4irRYE+4ZWsZFeYLLtjD3hyc+TLA2D6xQ8UAFIsecmpu
+         zsqg==
+X-Gm-Message-State: AC+VfDw4hLBnhkxwJugeXFroImdEcs1fL/yNy/qD+wB20TNKfd1zzGvG
+        cu7OpQpTqcwZLDvyk2KNsshTSFQSzuswbw==
+X-Google-Smtp-Source: ACHHUZ6yvflTH0edmN+V9BihJnWGO7D1Hwt6ib4O/Xgb/YkKltVzg5cKfcJ9o4nDoPCbFi7IWD3HIg==
+X-Received: by 2002:a0d:d5c8:0:b0:565:a8e7:239e with SMTP id x191-20020a0dd5c8000000b00565a8e7239emr5973478ywd.23.1686129399375;
+        Wed, 07 Jun 2023 02:16:39 -0700 (PDT)
+Received: from mail-yw1-f173.google.com (mail-yw1-f173.google.com. [209.85.128.173])
+        by smtp.gmail.com with ESMTPSA id x128-20020a814a86000000b0056183cdb2d9sm4599970ywa.60.2023.06.07.02.16.38
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 07 Jun 2023 02:16:38 -0700 (PDT)
+Received: by mail-yw1-f173.google.com with SMTP id 00721157ae682-56974f42224so66356157b3.1;
+        Wed, 07 Jun 2023 02:16:38 -0700 (PDT)
+X-Received: by 2002:a25:33c6:0:b0:ba8:7122:2917 with SMTP id
+ z189-20020a2533c6000000b00ba871222917mr5649365ybz.0.1686129398094; Wed, 07
+ Jun 2023 02:16:38 -0700 (PDT)
 MIME-Version: 1.0
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: redhat.com
-Content-Type: text/plain
+References: <20230527164452.64797-1-contact@artur-rojek.eu> <20230527164452.64797-4-contact@artur-rojek.eu>
+In-Reply-To: <20230527164452.64797-4-contact@artur-rojek.eu>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Wed, 7 Jun 2023 11:16:26 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdV3gn8g-gKam71K=WfT3CVNwvz5eKPSh2Fqi3wVg7ZwNw@mail.gmail.com>
+Message-ID: <CAMuHMdV3gn8g-gKam71K=WfT3CVNwvz5eKPSh2Fqi3wVg7ZwNw@mail.gmail.com>
+Subject: Re: [PATCH v2 3/3] sh: dma: Correct the number of DMA channels in SH7709
+To:     Artur Rojek <contact@artur-rojek.eu>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Thomas Zimmermann <tzimmermann@suse.de> writes:
+Hi Artur,
 
-> Fix case were dev_err() is being called with struct fb_info.dev.
-> Use fb_err() instead.
+On Sat, May 27, 2023 at 6:45 PM Artur Rojek <contact@artur-rojek.eu> wrote:
+> According to the hardware manual [1], the DMAC found in SH7709 features
+> only 4 channels.
 >
-> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+> While at it, also sort the existing targets and clarify that
+> NR_ONCHIP_DMA_CHANNELS must be a multiply of two.
+>
+> [1] https://www.renesas.com/us/en/document/mah/sh7709s-group-hardware-manual (p. 373)
+>
+> Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
 > ---
+>
+> v2: - sort existing targets
 
-Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Thanks for the update!
 
--- 
-Best regards,
+>     - clarify that the value must be a multiply of two
 
-Javier Martinez Canillas
-Core Platforms
-Red Hat
+That's only true when there are two DMACs, right?
 
+Even in that case, you could mitigate that by avoiding the division by
+
+    #ifdef SH_DMAC_BASE1
+   -#define        SH_DMAC_NR_MD_CH        (CONFIG_NR_ONCHIP_DMA_CHANNELS / 2)
+   +#define        SH_DMAC_NR_MD_CH        6
+    #else
+    #define        SH_DMAC_NR_MD_CH        CONFIG_NR_ONCHIP_DMA_CHANNELS
+    #endif
+
+That is actually safer, as the user can override NR_ONCHIP_DMA_CHANNELS
+when configuring his kernel, thus breaking DMA  due to an incorrect
+value of SH_DMAC_NR_MD_CH.
+
+Unfortunately we cannot protect against that when using a single DMAC,
+as SH_DMAC_NR_MD_CH can be either 4, 6, or 8.
+
+Perhaps this configuration should be moved from Kconfig to <cpu/dma.h>,
+to protect against a user overriding this value?
+
+> --- a/arch/sh/drivers/dma/Kconfig
+> +++ b/arch/sh/drivers/dma/Kconfig
+> @@ -28,17 +28,19 @@ config SH_DMA_API
+>  config NR_ONCHIP_DMA_CHANNELS
+>         int
+>         depends on SH_DMA
+> -       default "4" if CPU_SUBTYPE_SH7750  || CPU_SUBTYPE_SH7751  || \
+> -                      CPU_SUBTYPE_SH7750S || CPU_SUBTYPE_SH7091
+> +       default "4" if CPU_SUBTYPE_SH7709 || CPU_SUBTYPE_SH7750  || \
+> +                      CPU_SUBTYPE_SH7750S || CPU_SUBTYPE_SH7751 || \
+> +                      CPU_SUBTYPE_SH7091
+>         default "8" if CPU_SUBTYPE_SH7750R || CPU_SUBTYPE_SH7751R || \
+>                        CPU_SUBTYPE_SH7760
+> -       default "12" if CPU_SUBTYPE_SH7723 || CPU_SUBTYPE_SH7780  || \
+> -                       CPU_SUBTYPE_SH7785 || CPU_SUBTYPE_SH7724
+> +       default "12" if CPU_SUBTYPE_SH7723 || CPU_SUBTYPE_SH7724  || \
+> +                       CPU_SUBTYPE_SH7780 || CPU_SUBTYPE_SH7785
+>         default "6"
+>         help
+>           This allows you to specify the number of channels that the on-chip
+> -         DMAC supports. This will be 4 for SH7750/SH7751/Sh7750S/SH7091 and 8 for the
+> -         SH7750R/SH7751R/SH7760, 12 for the SH7723/SH7780/SH7785/SH7724, default is 6.
+> +         DMAC supports. This will be 4 for SH7709/SH7750/SH7750S/SH7751/SH7091,
+> +         8 for SH7750R/SH7751R/SH7760, and 12 for SH7723/SH7724/SH7780/SH7785.
+> +         Default is 6. Must be an even number.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
