@@ -2,97 +2,93 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2EC75C83005
-	for <linux-sh@archiver.kernel.org>; Wed,  7 Jun 2023 09:05:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7DBF2C7EE23
+	for <linux-sh@archiver.kernel.org>; Wed,  7 Jun 2023 09:06:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235486AbjFGJFS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 7 Jun 2023 05:05:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58840 "EHLO
+        id S233580AbjFGJGA convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 7 Jun 2023 05:06:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58606 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239781AbjFGJEr (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 7 Jun 2023 05:04:47 -0400
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1C8EE2130
-        for <linux-sh@vger.kernel.org>; Wed,  7 Jun 2023 02:02:34 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1686128553;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=x1ensWxwtR1H9WH8H1jKCiwbKVNzMfKW0b7Yi6bDGCs=;
-        b=A8YO4pF8JjIsj0laoj/M3mPzvGDeKawVgnrum8Kg0OPtX/ceT7FAerBt8HvfBDV5mk9D4g
-        yu3ye4aWwECY2qYYluj/6L324lS5R5AFwuP6Gdvp6aD4srTfxmS1TlyaRcn/xDh1eVcGed
-        hwC/qY0oHwz13+u5D5kHMPw/SBRmruU=
-Received: from mail-wr1-f72.google.com (mail-wr1-f72.google.com
- [209.85.221.72]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-75-Rci2U6-jMw6fHwk9yQLVag-1; Wed, 07 Jun 2023 05:02:30 -0400
-X-MC-Unique: Rci2U6-jMw6fHwk9yQLVag-1
-Received: by mail-wr1-f72.google.com with SMTP id ffacd0b85a97d-30e4943ca7fso1212500f8f.3
-        for <linux-sh@vger.kernel.org>; Wed, 07 Jun 2023 02:02:29 -0700 (PDT)
+        with ESMTP id S237398AbjFGJFf (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 7 Jun 2023 05:05:35 -0400
+Received: from mail-yw1-f178.google.com (mail-yw1-f178.google.com [209.85.128.178])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F225A213A;
+        Wed,  7 Jun 2023 02:04:41 -0700 (PDT)
+Received: by mail-yw1-f178.google.com with SMTP id 00721157ae682-568ba7abc11so92692397b3.3;
+        Wed, 07 Jun 2023 02:04:41 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686128549; x=1688720549;
-        h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=x1ensWxwtR1H9WH8H1jKCiwbKVNzMfKW0b7Yi6bDGCs=;
-        b=bl2SjYYneV1WgPH2PYoYfDIgIxsheXkR8dAaZgs6AiobQbdYG5mWF2gU8b01TvsP3W
-         FPNq4S+29i1s/wKUpFLT+zAraJzLA/f8qoh6pt04yW3DvVPC97LcrCgDsfaPDdfAktXK
-         Cx97regeIPSCgxAkKQJQlnL6vHBJSiTU0xlg9weKiY/JzSF8JSFVgxbUYtsULjN5Tw+j
-         h/Uba3uTYHRSFZ5qKQn92hhVC6JPLQPxkmnJsUkGQgZcJY+6zWkQi6KIh9aP0GoAIbBg
-         C5yGD3yl+v/23ajigurL+HEtodKKy+ezhF1IeLCtJlhJP7wpHDvpcwX0U6U9NdadGycM
-         KUtg==
-X-Gm-Message-State: AC+VfDxvmXYVzupZxKvrm4cLuporjn76CRxRyPzYAyCWeGQdEU5SIIZf
-        Ya9SJYedZ7h4/fEJ/agtk4tyd6kVmWFSRnYPKu0TgqC6UJ9NFSSZOCF3GyNqDD4XaHoHWY5CAd2
-        7UAPHtpuHcDhM+CCZnuo=
-X-Received: by 2002:a5d:5611:0:b0:30a:f030:8637 with SMTP id l17-20020a5d5611000000b0030af0308637mr3810374wrv.22.1686128549045;
-        Wed, 07 Jun 2023 02:02:29 -0700 (PDT)
-X-Google-Smtp-Source: ACHHUZ6tdzlumiDh+lcZSgp5sjiYX3gXCJJUKDHiUf2E4K2nudny411fzwbP2HTNQbZ/H/p4MQRLhw==
-X-Received: by 2002:a5d:5611:0:b0:30a:f030:8637 with SMTP id l17-20020a5d5611000000b0030af0308637mr3810350wrv.22.1686128548788;
-        Wed, 07 Jun 2023 02:02:28 -0700 (PDT)
-Received: from localhost (205.pool92-176-231.dynamic.orange.es. [92.176.231.205])
-        by smtp.gmail.com with ESMTPSA id y4-20020a056000108400b0030e5da3e295sm449804wrw.65.2023.06.07.02.02.28
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 07 Jun 2023 02:02:28 -0700 (PDT)
-From:   Javier Martinez Canillas <javierm@redhat.com>
-To:     Thomas Zimmermann <tzimmermann@suse.de>, daniel@ffwll.ch,
-        sam@ravnborg.org, deller@gmx.de, geert+renesas@glider.be,
-        lee@kernel.org, daniel.thompson@linaro.org, jingoohan1@gmail.com
-Cc:     linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
-        linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
-        linux-staging@lists.linux.dev,
-        Thomas Zimmermann <tzimmermann@suse.de>,
-        Antonino Daplas <adaplas@gmail.com>
-Subject: Re: [PATCH 15/30] fbdev/nvidiafb: Use hardware device as backlight
- parent
-In-Reply-To: <20230605144812.15241-16-tzimmermann@suse.de>
-References: <20230605144812.15241-1-tzimmermann@suse.de>
- <20230605144812.15241-16-tzimmermann@suse.de>
-Date:   Wed, 07 Jun 2023 11:02:27 +0200
-Message-ID: <877csffxwc.fsf@minerva.mail-host-address-is-not-set>
+        d=1e100.net; s=20221208; t=1686128681; x=1688720681;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=TNEKaP7UVQJpZRtahYRlPOw3JCnkhMyaEr720NhUxp4=;
+        b=UiTsLu8aEUZnsPcrwJyYjFJUWWzeLRQuuaixny4S6NMUajkWequgCYA1KoSt0F6PFF
+         tDyPmUYAUtOwhPf4fElCgvfNeRQedwWel4QmUtvqZUTG0YXyVK28PBgzB/Xg6H4dZCUs
+         CUP9zh01m9+drC7lo3KTZhe+ZOWQ7eiApRX9y3c1Xtw0kWKhHcG+vm7i8fA6PwdOhUK6
+         kky8sEHlFXSWm9wRVXC1MvtZjnbSusMGXw+y0Ht6Eo3y1HacTWe4vvAidv5D0flKUqK0
+         S/ZlIxfbZY7Rx060J5mjkIcUjy6SIWRQeC+GgmEn+nlBMLiVPEUFrk/eDiPO4EgNx4oY
+         E8bg==
+X-Gm-Message-State: AC+VfDyikJ1YeRW0L32BvKdYW7iyI0ckeXi+TL7JLvbQ4qg5gNJ/dnhw
+        TNkj/qgqtdBQLbwuQMcarJ9fHh++/9SZ2w==
+X-Google-Smtp-Source: ACHHUZ6ziPtuMJubFT3g+33BIHcHeG/nAX5QuAXl3nB3Xq4YZjO4/eOuVWaFPJ5SceOgVJPJlns7YQ==
+X-Received: by 2002:a81:61d6:0:b0:561:3fb7:1333 with SMTP id v205-20020a8161d6000000b005613fb71333mr7171131ywb.43.1686128681034;
+        Wed, 07 Jun 2023 02:04:41 -0700 (PDT)
+Received: from mail-yw1-f182.google.com (mail-yw1-f182.google.com. [209.85.128.182])
+        by smtp.gmail.com with ESMTPSA id d14-20020a81d34e000000b00568ab5dd873sm4573007ywl.65.2023.06.07.02.04.39
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 07 Jun 2023 02:04:40 -0700 (PDT)
+Received: by mail-yw1-f182.google.com with SMTP id 00721157ae682-568ba7abc11so92692137b3.3;
+        Wed, 07 Jun 2023 02:04:39 -0700 (PDT)
+X-Received: by 2002:a0d:eb88:0:b0:55a:4a73:6177 with SMTP id
+ u130-20020a0deb88000000b0055a4a736177mr6153827ywe.42.1686128679544; Wed, 07
+ Jun 2023 02:04:39 -0700 (PDT)
 MIME-Version: 1.0
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: redhat.com
-Content-Type: text/plain
+References: <20230527164452.64797-1-contact@artur-rojek.eu> <20230527164452.64797-2-contact@artur-rojek.eu>
+In-Reply-To: <20230527164452.64797-2-contact@artur-rojek.eu>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Wed, 7 Jun 2023 11:04:28 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdXfeF9jttu7K5C1CMqb+wsGY5z3GzNaFzdQLWbOrgqicQ@mail.gmail.com>
+Message-ID: <CAMuHMdXfeF9jttu7K5C1CMqb+wsGY5z3GzNaFzdQLWbOrgqicQ@mail.gmail.com>
+Subject: Re: [PATCH v2 1/3] sh: dma: Fix dma channel offset calculation
+To:     Artur Rojek <contact@artur-rojek.eu>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Thomas Zimmermann <tzimmermann@suse.de> writes:
-
-> Use the hardware device in struct fb_info.device as parent of the
-> backlight device. Aligns the driver with the rest of the codebase
-> and prepares fbdev for making struct fb_info.dev optional.
+On Sat, May 27, 2023 at 6:45 PM Artur Rojek <contact@artur-rojek.eu> wrote:
+> Various SoCs of the SH3, SH4 and SH4A family, which use this driver,
+> feature a differing number of DMA channels, which can be distributed
+> between up to two DMAC modules. Existing implementation fails to
+> correctly accommodate for all those variations, resulting in wrong
+> channel offset calculations and leading to kernel panics.
 >
-> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
-> Cc: Antonino Daplas <adaplas@gmail.com>
+> Rewrite dma_base_addr() in order to properly calculate channel offsets
+> in a DMAC module. Fix dmaor_read_reg() and dmaor_write_reg(), so that
+> the correct DMAC module base is selected for the DMAOR register.
+>
+> Fixes: 7f47c7189b3e8f19 ("sh: dma: More legacy cpu dma chainsawing.")
+> Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
 > ---
+>
+> v2: also handle differing numbers of DMAC modules and channels
 
-Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+
+Gr{oetje,eeting}s,
+
+                        Geert
 
 -- 
-Best regards,
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-Javier Martinez Canillas
-Core Platforms
-Red Hat
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
