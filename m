@@ -2,48 +2,50 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0E587C7EE23
-	for <linux-sh@archiver.kernel.org>; Thu,  8 Jun 2023 10:04:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D0B38C87FE4
+	for <linux-sh@archiver.kernel.org>; Thu,  8 Jun 2023 10:12:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234126AbjFHKD7 convert rfc822-to-8bit (ORCPT
+        id S235840AbjFHKMc convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 8 Jun 2023 06:03:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57600 "EHLO
+        Thu, 8 Jun 2023 06:12:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35862 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235522AbjFHKD6 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 8 Jun 2023 06:03:58 -0400
+        with ESMTP id S235782AbjFHKMW (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 8 Jun 2023 06:12:22 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 132C42736;
-        Thu,  8 Jun 2023 03:03:50 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B05A01FE9;
+        Thu,  8 Jun 2023 03:12:19 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1q7CUZ-000ZFZ-Tz; Thu, 08 Jun 2023 12:03:43 +0200
+          id 1q7Cck-000hkd-IA; Thu, 08 Jun 2023 12:12:10 +0200
 Received: from p57bd96d9.dip0.t-ipconnect.de ([87.189.150.217] helo=[192.168.178.81])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1q7CUZ-0047u5-Mf; Thu, 08 Jun 2023 12:03:43 +0200
-Message-ID: <8205bc2cb9f983914ff6920deed3f54893713ba0.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2 3/3] sh: dma: Correct the number of DMA channels in
- SH7709
+          id 1q7Cck-0049Nn-9l; Thu, 08 Jun 2023 12:12:10 +0200
+Message-ID: <0e74974450a15870f13ff36ab5dd60924368c0d9.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH v3 30/34] sh: Convert pte_free_tlb() to use ptdescs
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Artur Rojek <contact@artur-rojek.eu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date:   Thu, 08 Jun 2023 12:03:43 +0200
-In-Reply-To: <CAMuHMdVFBo+KMNQ6gzh3rZrZ+_Wfg=UJ4XOW4Uqibnjm6T7CdA@mail.gmail.com>
-References: <20230527164452.64797-1-contact@artur-rojek.eu>
-         <20230527164452.64797-4-contact@artur-rojek.eu>
-         <CAMuHMdV3gn8g-gKam71K=WfT3CVNwvz5eKPSh2Fqi3wVg7ZwNw@mail.gmail.com>
-         <f7b9ceb9739f8ae5cbee4f6073ce3af3921a2540.camel@physik.fu-berlin.de>
-         <CAMuHMdVFBo+KMNQ6gzh3rZrZ+_Wfg=UJ4XOW4Uqibnjm6T7CdA@mail.gmail.com>
+To:     "Vishal Moola (Oracle)" <vishal.moola@gmail.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Matthew Wilcox <willy@infradead.org>
+Cc:     linux-mm@kvack.org, linux-arch@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-openrisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, xen-devel@lists.xenproject.org,
+        kvm@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>
+Date:   Thu, 08 Jun 2023 12:12:09 +0200
+In-Reply-To: <20230531213032.25338-31-vishal.moola@gmail.com>
+References: <20230531213032.25338-1-vishal.moola@gmail.com>
+         <20230531213032.25338-31-vishal.moola@gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 User-Agent: Evolution 3.48.2 
@@ -55,37 +57,44 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Geert!
-
-On Thu, 2023-06-08 at 11:58 +0200, Geert Uytterhoeven wrote:
-> > 
-> > Aren't we dropping SH_DMAC_BASE1 in the other patch anyway?
+On Wed, 2023-05-31 at 14:30 -0700, Vishal Moola (Oracle) wrote:
+> Part of the conversions to replace pgtable constructor/destructors with
+> ptdesc equivalents. Also cleans up some spacing issues.
 > 
-> Only for the SH4 parts that do not have it.
-> It is still set in arch/sh/include/cpu-sh4a/cpu/dma.h for the SH4a parts with
-> 12 channels and 2 DMACs.
-
-OK, thanks for the clarification. I will review the other patches tonight.
-
-> > > That is actually safer, as the user can override NR_ONCHIP_DMA_CHANNELS
-> > > when configuring his kernel, thus breaking DMA  due to an incorrect
-> > > value of SH_DMAC_NR_MD_CH.
-> > > 
-> > > Unfortunately we cannot protect against that when using a single DMAC,
-> > > as SH_DMAC_NR_MD_CH can be either 4, 6, or 8.
-> > > 
-> > > Perhaps this configuration should be moved from Kconfig to <cpu/dma.h>,
-> > > to protect against a user overriding this value?
-> > 
-> > Isn't SH_DMAC_NR_MD_CH already hardwired to the SoC being used?
+> Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
+> ---
+>  arch/sh/include/asm/pgalloc.h | 9 +++++----
+>  1 file changed, 5 insertions(+), 4 deletions(-)
 > 
-> It depends on CONFIG_NR_ONCHIP_DMA_CHANNELS, while it
-> should be fixed based on the SoC.
+> diff --git a/arch/sh/include/asm/pgalloc.h b/arch/sh/include/asm/pgalloc.h
+> index a9e98233c4d4..5d8577ab1591 100644
+> --- a/arch/sh/include/asm/pgalloc.h
+> +++ b/arch/sh/include/asm/pgalloc.h
+> @@ -2,6 +2,7 @@
+>  #ifndef __ASM_SH_PGALLOC_H
+>  #define __ASM_SH_PGALLOC_H
+>  
+> +#include <linux/mm.h>
+>  #include <asm/page.h>
+>  
+>  #define __HAVE_ARCH_PMD_ALLOC_ONE
+> @@ -31,10 +32,10 @@ static inline void pmd_populate(struct mm_struct *mm, pmd_t *pmd,
+>  	set_pmd(pmd, __pmd((unsigned long)page_address(pte)));
+>  }
+>  
+> -#define __pte_free_tlb(tlb,pte,addr)			\
+> -do {							\
+> -	pgtable_pte_page_dtor(pte);			\
+> -	tlb_remove_page((tlb), (pte));			\
+> +#define __pte_free_tlb(tlb, pte, addr)				\
+> +do {								\
+> +	pagetable_pte_dtor(page_ptdesc(pte));			\
+> +	tlb_remove_page_ptdesc((tlb), (page_ptdesc(pte)));	\
+>  } while (0)
+>  
+>  #endif /* __ASM_SH_PGALLOC_H */
 
-I agree. However, I would be fine with merging this patch set first and fixing
-this particular issue in a follow-up series.
-
-Adrian
+Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
 -- 
  .''`.  John Paul Adrian Glaubitz
