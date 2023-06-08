@@ -2,111 +2,131 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ACF57C7EE29
-	for <linux-sh@archiver.kernel.org>; Thu,  8 Jun 2023 09:55:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F37B0C7EE29
+	for <linux-sh@archiver.kernel.org>; Thu,  8 Jun 2023 09:58:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235501AbjFHJyr convert rfc822-to-8bit (ORCPT
+        id S235254AbjFHJ6w convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 8 Jun 2023 05:54:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52080 "EHLO
+        Thu, 8 Jun 2023 05:58:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54246 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235350AbjFHJyq (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 8 Jun 2023 05:54:46 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1DD86269E;
-        Thu,  8 Jun 2023 02:54:42 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1q7CLi-000Po7-Rc; Thu, 08 Jun 2023 11:54:34 +0200
-Received: from p57bd96d9.dip0.t-ipconnect.de ([87.189.150.217] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1q7CLi-0046Or-KG; Thu, 08 Jun 2023 11:54:34 +0200
-Message-ID: <f7b9ceb9739f8ae5cbee4f6073ce3af3921a2540.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2 3/3] sh: dma: Correct the number of DMA channels in
- SH7709
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>,
-        Artur Rojek <contact@artur-rojek.eu>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        with ESMTP id S231439AbjFHJ6v (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 8 Jun 2023 05:58:51 -0400
+Received: from mail-yb1-f169.google.com (mail-yb1-f169.google.com [209.85.219.169])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D36D026B9;
+        Thu,  8 Jun 2023 02:58:49 -0700 (PDT)
+Received: by mail-yb1-f169.google.com with SMTP id 3f1490d57ef6-bad05c6b389so527416276.2;
+        Thu, 08 Jun 2023 02:58:49 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1686218329; x=1688810329;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=uzz3OZh3QB/d2SKcrr0d8uZ9dUBpMs9PB0O6tVeC/Ug=;
+        b=hNJUcA2ydfjedY295HDN7qc51uPSU9rnzQd3dAd1mNy4ZUMGQjHLu0myksw3JQwBb0
+         EuVzPqCcrOEIZAdojenozcEiUdZio4nb42oGV6KVYJ7xG0weJ6Et+nTCA/hs+VW6hFPu
+         2d3nXk3DDZ7c+qDPA7I6pPoN/lpoAwCw+LM52ioh2Oqj+gUsDDeOLubM4XR8rfPIyqsZ
+         7kjPrJhXQDbnlAzijEXN6ONGKw3G9Dz7AUzg395wNXfoRd5O2o6090XXKC/rhx7g6E7t
+         HLM0Mizm0WHe+CsNu8eYPYTKtej39c5jzgl1uKfZBV5pGiXTg74jSN/ywKXU/VnTjnAq
+         /FbA==
+X-Gm-Message-State: AC+VfDy+F59A6py899IKrSSiMuSDgAeA9f9xj8lttjJpuz3lu2Vv/4hE
+        yxjL3r+W+9Po1Cgd1r32f68FUrTGkGptrA==
+X-Google-Smtp-Source: ACHHUZ4u46GNap8T+b+tokBe1BF3/Gt8dAsZjpMNWkmaXJGjLocTU6ogawm8QVNarzqjn911pNTxYg==
+X-Received: by 2002:a81:6583:0:b0:56a:3b3e:bc7 with SMTP id z125-20020a816583000000b0056a3b3e0bc7mr5129485ywb.16.1686218328766;
+        Thu, 08 Jun 2023 02:58:48 -0700 (PDT)
+Received: from mail-yb1-f173.google.com (mail-yb1-f173.google.com. [209.85.219.173])
+        by smtp.gmail.com with ESMTPSA id x23-20020a25acd7000000b00bb1d8f2a593sm185261ybd.45.2023.06.08.02.58.48
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 08 Jun 2023 02:58:48 -0700 (PDT)
+Received: by mail-yb1-f173.google.com with SMTP id 3f1490d57ef6-bad05c6b389so527400276.2;
+        Thu, 08 Jun 2023 02:58:48 -0700 (PDT)
+X-Received: by 2002:a0d:dd47:0:b0:568:b0f6:ce8a with SMTP id
+ g68-20020a0ddd47000000b00568b0f6ce8amr9980204ywe.24.1686218327937; Thu, 08
+ Jun 2023 02:58:47 -0700 (PDT)
+MIME-Version: 1.0
+References: <20230527164452.64797-1-contact@artur-rojek.eu>
+ <20230527164452.64797-4-contact@artur-rojek.eu> <CAMuHMdV3gn8g-gKam71K=WfT3CVNwvz5eKPSh2Fqi3wVg7ZwNw@mail.gmail.com>
+ <f7b9ceb9739f8ae5cbee4f6073ce3af3921a2540.camel@physik.fu-berlin.de>
+In-Reply-To: <f7b9ceb9739f8ae5cbee4f6073ce3af3921a2540.camel@physik.fu-berlin.de>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Thu, 8 Jun 2023 11:58:36 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdVFBo+KMNQ6gzh3rZrZ+_Wfg=UJ4XOW4Uqibnjm6T7CdA@mail.gmail.com>
+Message-ID: <CAMuHMdVFBo+KMNQ6gzh3rZrZ+_Wfg=UJ4XOW4Uqibnjm6T7CdA@mail.gmail.com>
+Subject: Re: [PATCH v2 3/3] sh: dma: Correct the number of DMA channels in SH7709
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Artur Rojek <contact@artur-rojek.eu>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
         linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date:   Thu, 08 Jun 2023 11:54:33 +0200
-In-Reply-To: <CAMuHMdV3gn8g-gKam71K=WfT3CVNwvz5eKPSh2Fqi3wVg7ZwNw@mail.gmail.com>
-References: <20230527164452.64797-1-contact@artur-rojek.eu>
-         <20230527164452.64797-4-contact@artur-rojek.eu>
-         <CAMuHMdV3gn8g-gKam71K=WfT3CVNwvz5eKPSh2Fqi3wVg7ZwNw@mail.gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.2 
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.150.217
-X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi!
+Hi Adrian,
 
-Sorry for being so late to the party.
+On Thu, Jun 8, 2023 at 11:54 AM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> On Wed, 2023-06-07 at 11:16 +0200, Geert Uytterhoeven wrote:
+> > On Sat, May 27, 2023 at 6:45 PM Artur Rojek <contact@artur-rojek.eu> wrote:
+> > > According to the hardware manual [1], the DMAC found in SH7709 features
+> > > only 4 channels.
+> > >
+> > > While at it, also sort the existing targets and clarify that
+> > > NR_ONCHIP_DMA_CHANNELS must be a multiply of two.
+> > >
+> > > [1] https://www.renesas.com/us/en/document/mah/sh7709s-group-hardware-manual (p. 373)
+> > >
+> > > Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
+> > > ---
+> > >
+> > > v2: - sort existing targets
+> >
+> > Thanks for the update!
+> >
+> > >     - clarify that the value must be a multiply of two
+> >
+> > That's only true when there are two DMACs, right?
+> >
+> > Even in that case, you could mitigate that by avoiding the division by
+> >
+> >     #ifdef SH_DMAC_BASE1
+> >    -#define        SH_DMAC_NR_MD_CH        (CONFIG_NR_ONCHIP_DMA_CHANNELS / 2)
+> >    +#define        SH_DMAC_NR_MD_CH        6
+> >     #else
+> >     #define        SH_DMAC_NR_MD_CH        CONFIG_NR_ONCHIP_DMA_CHANNELS
+> >     #endif
+>
+> Aren't we dropping SH_DMAC_BASE1 in the other patch anyway?
 
-On Wed, 2023-06-07 at 11:16 +0200, Geert Uytterhoeven wrote:
-> Hi Artur,
-> 
-> On Sat, May 27, 2023 at 6:45 PM Artur Rojek <contact@artur-rojek.eu> wrote:
-> > According to the hardware manual [1], the DMAC found in SH7709 features
-> > only 4 channels.
-> > 
-> > While at it, also sort the existing targets and clarify that
-> > NR_ONCHIP_DMA_CHANNELS must be a multiply of two.
-> > 
-> > [1] https://www.renesas.com/us/en/document/mah/sh7709s-group-hardware-manual (p. 373)
-> > 
-> > Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
-> > ---
-> > 
-> > v2: - sort existing targets
-> 
-> Thanks for the update!
-> 
-> >     - clarify that the value must be a multiply of two
-> 
-> That's only true when there are two DMACs, right?
-> 
-> Even in that case, you could mitigate that by avoiding the division by
-> 
->     #ifdef SH_DMAC_BASE1
->    -#define        SH_DMAC_NR_MD_CH        (CONFIG_NR_ONCHIP_DMA_CHANNELS / 2)
->    +#define        SH_DMAC_NR_MD_CH        6
->     #else
->     #define        SH_DMAC_NR_MD_CH        CONFIG_NR_ONCHIP_DMA_CHANNELS
->     #endif
+Only for the SH4 parts that do not have it.
+It is still set in arch/sh/include/cpu-sh4a/cpu/dma.h for the SH4a parts with
+12 channels and 2 DMACs.
 
-Aren't we dropping SH_DMAC_BASE1 in the other patch anyway?
+> > That is actually safer, as the user can override NR_ONCHIP_DMA_CHANNELS
+> > when configuring his kernel, thus breaking DMA  due to an incorrect
+> > value of SH_DMAC_NR_MD_CH.
+> >
+> > Unfortunately we cannot protect against that when using a single DMAC,
+> > as SH_DMAC_NR_MD_CH can be either 4, 6, or 8.
+> >
+> > Perhaps this configuration should be moved from Kconfig to <cpu/dma.h>,
+> > to protect against a user overriding this value?
+>
+> Isn't SH_DMAC_NR_MD_CH already hardwired to the SoC being used?
 
-> That is actually safer, as the user can override NR_ONCHIP_DMA_CHANNELS
-> when configuring his kernel, thus breaking DMA  due to an incorrect
-> value of SH_DMAC_NR_MD_CH.
-> 
-> Unfortunately we cannot protect against that when using a single DMAC,
-> as SH_DMAC_NR_MD_CH can be either 4, 6, or 8.
-> 
-> Perhaps this configuration should be moved from Kconfig to <cpu/dma.h>,
-> to protect against a user overriding this value?
+It depends on CONFIG_NR_ONCHIP_DMA_CHANNELS, while it
+should be fixed based on the SoC.
 
-Isn't SH_DMAC_NR_MD_CH already hardwired to the SoC being used?
+Gr{oetje,eeting}s,
 
-Adrian
+                        Geert
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
