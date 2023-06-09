@@ -2,152 +2,72 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D6322C7EE37
-	for <linux-sh@archiver.kernel.org>; Fri,  9 Jun 2023 08:10:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D9635C7EE2E
+	for <linux-sh@archiver.kernel.org>; Fri,  9 Jun 2023 08:11:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238930AbjFIIKW (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 9 Jun 2023 04:10:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46052 "EHLO
+        id S230344AbjFIILY convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 9 Jun 2023 04:11:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47786 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240165AbjFIIJ2 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 9 Jun 2023 04:09:28 -0400
-Received: from mail-yw1-x112a.google.com (mail-yw1-x112a.google.com [IPv6:2607:f8b0:4864:20::112a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 58FA335A5
-        for <linux-sh@vger.kernel.org>; Fri,  9 Jun 2023 01:09:07 -0700 (PDT)
-Received: by mail-yw1-x112a.google.com with SMTP id 00721157ae682-568ba7abc11so13634997b3.3
-        for <linux-sh@vger.kernel.org>; Fri, 09 Jun 2023 01:09:07 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20221208; t=1686298146; x=1688890146;
-        h=mime-version:references:message-id:in-reply-to:subject:cc:to:from
-         :date:from:to:cc:subject:date:message-id:reply-to;
-        bh=D+JG9ScbeIgWCoIoD1lrBSynxF7pZ7ZmtCOtSuAlDGQ=;
-        b=RfeoHUBLwqk9vTTBDLCpOuzNXpllWDEkPYc6yjXtxGCPNmX/rvie991AU10lJs4XbF
-         9RzbOtcSEpi5Rh8KstlxITQN3Ffo4ROyfYENBHFqs9HkcG3CFgO7j5lBQrxeeGMGBjp2
-         NZdxOQon49qNf9HZ1Qgrz3xC18+gnVg36Hvk5SsHYUm7h4j5tszvUdFL2KV4ehwHCBOk
-         gyj3AdqSIMMtQdGmRCxc7HYtfEU+n7ezPeWYkyEIY3KjdS94V8qvWswp+jF2hFiGMFim
-         NoPZGExtzKBOx7SOm5zC/zUvIhzRSqstVSVI3uYZkXeW9ex9SLXGk6aLeA5PY5ojGjGB
-         epOQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686298146; x=1688890146;
-        h=mime-version:references:message-id:in-reply-to:subject:cc:to:from
-         :date:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=D+JG9ScbeIgWCoIoD1lrBSynxF7pZ7ZmtCOtSuAlDGQ=;
-        b=NowxHa7nkwPo85GSbwBVQFQ4Zfs2Nm4nFCtinQuOhBECt3qwb6KFH+C91gSpTGJalx
-         30HaK+Ik3X1hXxOO5gv/bdLj3gbUQI+rok/N4D1CuHgZlM5YfHxdOW7IQxidl5+24Pyw
-         S9KgUMlrUXI6TJXE+E3Rd6FHJY9+DYCTN/wGIw/K0pwCjLQVD2gR5aBKdKgDDB367hiT
-         8mZz5pgeuJaQZNAnbhjFRMBYnMA+ewH5cM/bgYev4GrmP9SZCo3lB9s9AkKz7wLIxaz7
-         gY1V3i8RXeBPUOvQIChN6EJIs6D+tseGwc1MAODIBzXJ3V9o7ywROa4JFK0LJtUGv3wk
-         9Lfw==
-X-Gm-Message-State: AC+VfDwQpQkOCJXRcw+tPXktcTqyrWfHvi9F8AFGVReRdaSGR7UaKnfz
-        t/uEXGkntZAX6OEI1LVfNVhLcQ==
-X-Google-Smtp-Source: ACHHUZ5DQYcZ9JTl8EUp4l7QLImYygbjncdx8ql55YYe3IsFqc7F1XNEab87Po2zAxMo3TGE3P0BfA==
-X-Received: by 2002:a0d:e684:0:b0:565:e87f:a78f with SMTP id p126-20020a0de684000000b00565e87fa78fmr500342ywe.25.1686298145738;
-        Fri, 09 Jun 2023 01:09:05 -0700 (PDT)
-Received: from ripple.attlocal.net (172-10-233-147.lightspeed.sntcca.sbcglobal.net. [172.10.233.147])
-        by smtp.gmail.com with ESMTPSA id n19-20020a819c53000000b005688f7596ccsm453200ywa.78.2023.06.09.01.09.01
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 09 Jun 2023 01:09:04 -0700 (PDT)
-Date:   Fri, 9 Jun 2023 01:08:52 -0700 (PDT)
-From:   Hugh Dickins <hughd@google.com>
-X-X-Sender: hugh@ripple.attlocal.net
-To:     Andrew Morton <akpm@linux-foundation.org>
-cc:     Mike Kravetz <mike.kravetz@oracle.com>,
-        Mike Rapoport <rppt@kernel.org>,
-        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
-        Matthew Wilcox <willy@infradead.org>,
-        David Hildenbrand <david@redhat.com>,
-        Suren Baghdasaryan <surenb@google.com>,
-        Qi Zheng <zhengqi.arch@bytedance.com>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Helge Deller <deller@gmx.de>,
-        John David Anglin <dave.anglin@bell.net>,
-        "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Alexandre Ghiti <alexghiti@rivosinc.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Claudio Imbrenda <imbrenda@linux.ibm.com>,
-        Alexander Gordeev <agordeev@linux.ibm.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "David S. Miller" <davem@davemloft.net>,
-        Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-kernel@vger.kernel.org, linux-mm@kvack.org
-Subject: [PATCH v2 07/23 fix] mips: update_mmu_cache() can replace __update_tlb():
- fix
-In-Reply-To: <178970b0-1539-8aac-76fd-972c6c46ec17@google.com>
-Message-ID: <6852be98-64e6-6092-d1c-13124b97bc75@google.com>
-References: <a4963be9-7aa6-350-66d0-2ba843e1af44@google.com> <178970b0-1539-8aac-76fd-972c6c46ec17@google.com>
+        with ESMTP id S230391AbjFIIK5 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 9 Jun 2023 04:10:57 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D39BD1AB;
+        Fri,  9 Jun 2023 01:10:53 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1q7XCp-002oBq-4N; Fri, 09 Jun 2023 10:10:47 +0200
+Received: from ip5b40320d.dynamic.kabel-deutschland.de ([91.64.50.13] helo=suse-laptop.fritz.box)
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1q7XCo-002gny-TQ; Fri, 09 Jun 2023 10:10:47 +0200
+Message-ID: <025fe4853ff0a258dafdf71075419a2b740cabbd.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH v6 11/19] sh: add <asm-generic/io.h> including
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Baoquan He <bhe@redhat.com>, linux-kernel@vger.kernel.org
+Cc:     linux-arch@vger.kernel.org, linux-mm@kvack.org, arnd@arndb.de,
+        christophe.leroy@csgroup.eu, hch@lst.de, rppt@kernel.org,
+        willy@infradead.org, agordeev@linux.ibm.com,
+        wangkefeng.wang@huawei.com, schnelle@linux.ibm.com,
+        David.Laight@ACULAB.COM, shorne@gmail.com, deller@gmx.de,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Date:   Fri, 09 Jun 2023 10:10:46 +0200
+In-Reply-To: <20230609075528.9390-12-bhe@redhat.com>
+References: <20230609075528.9390-1-bhe@redhat.com>
+         <20230609075528.9390-12-bhe@redhat.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.2 
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.64.50.13
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-I expect this to fix the
-arch/mips/mm/tlb-r4k.c:300:16: warning: variable 'pmdp' set but not used
-reported by the kernel test robot; but I am uncomfortable rearranging
-lines in this tlb_probe_hazard() area, and would be glad for review and
-testing by someone familiar with mips - thanks in advance!
+Hello Baoquan!
 
-Reported-by: kernel test robot <lkp@intel.com>
-Closes: https://lore.kernel.org/oe-kbuild-all/202306091304.cNVIspK0-lkp@intel.com/
-Signed-off-by: Hugh Dickins <hughd@google.com>
----
- arch/mips/mm/tlb-r4k.c | 10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+On Fri, 2023-06-09 at 15:55 +0800, Baoquan He wrote:
+> Also add macro definitions for port|mm io functions since SuperH
+> has its own implementation in arch/sh/kernel/iomap.c and
+> arch/sh/include/asm/io_noioport.h. These will conflict with the port|mm io
+> function definitions in include/asm-generic/io.h to cause compiling
+> errors like below:
 
-diff --git a/arch/mips/mm/tlb-r4k.c b/arch/mips/mm/tlb-r4k.c
-index c96725d17cab..80fc90d8d2f1 100644
---- a/arch/mips/mm/tlb-r4k.c
-+++ b/arch/mips/mm/tlb-r4k.c
-@@ -293,11 +293,13 @@ void local_flush_tlb_one(unsigned long page)
- void update_mmu_cache(struct vm_area_struct *vma,
- 		      unsigned long address, pte_t *ptep)
- {
--	unsigned long flags;
-+#ifdef CONFIG_MIPS_HUGE_TLB_SUPPORT
- 	pgd_t *pgdp;
- 	p4d_t *p4dp;
- 	pud_t *pudp;
- 	pmd_t *pmdp;
-+#endif
-+	unsigned long flags;
- 	int idx, pid;
- 
- 	/*
-@@ -316,15 +318,15 @@ void update_mmu_cache(struct vm_area_struct *vma,
- 		pid = read_c0_entryhi() & cpu_asid_mask(&current_cpu_data);
- 		write_c0_entryhi(address | pid);
- 	}
--	pgdp = pgd_offset(vma->vm_mm, address);
- 	mtc0_tlbw_hazard();
- 	tlb_probe();
- 	tlb_probe_hazard();
-+	idx = read_c0_index();
-+#ifdef CONFIG_MIPS_HUGE_TLB_SUPPORT
-+	pgdp = pgd_offset(vma->vm_mm, address);
- 	p4dp = p4d_offset(pgdp, address);
- 	pudp = pud_offset(p4dp, address);
- 	pmdp = pmd_offset(pudp, address);
--	idx = read_c0_index();
--#ifdef CONFIG_MIPS_HUGE_TLB_SUPPORT
- 	/* this could be a huge page  */
- 	if (ptep == (pte_t *)pmdp) {
- 		unsigned long lo;
+What change does the "Also" refer to?
+
+Adrian
+
 -- 
-2.35.3
-
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
