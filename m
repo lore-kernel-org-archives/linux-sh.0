@@ -2,200 +2,171 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 78F11C83005
-	for <linux-sh@archiver.kernel.org>; Fri,  9 Jun 2023 07:30:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D569DC7EE43
+	for <linux-sh@archiver.kernel.org>; Fri,  9 Jun 2023 07:59:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238796AbjFIHaV convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 9 Jun 2023 03:30:21 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43838 "EHLO
+        id S237837AbjFIH7W (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 9 Jun 2023 03:59:22 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34018 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238846AbjFIH37 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 9 Jun 2023 03:29:59 -0400
-Received: from mail-vk1-f179.google.com (mail-vk1-f179.google.com [209.85.221.179])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AB0C82D7C;
-        Fri,  9 Jun 2023 00:29:56 -0700 (PDT)
-Received: by mail-vk1-f179.google.com with SMTP id 71dfb90a1353d-462e3a806cbso574345e0c.3;
-        Fri, 09 Jun 2023 00:29:56 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686295795; x=1688887795;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=/f/KLwj3+JtPFJyQSR7kV5ZARQVx9rMOW7yyOQY55Ks=;
-        b=X/VYIUWf4OF2uIWO8U1+VAsOzP2S/uXs2sx1CLQHewHlX9dapGZ7KFJG26EQHk1TxK
-         mGe1ZENnMlg7WNyCUq9TzHvU31Wg8aZPmrwrhg/THIRV82ue50wUoTpgVRzMoUlQMv2b
-         zM1c0qKDaH/xVpxRloq42pjI74W6+A6mnqU6YmhlnOTqKWdF+6y2VcY7wX5anGSE/qVA
-         Br7XlfWRr6uzACDDmxaN8glSJw5zOfZq8y/aMl9snehX6w+JPXjwrWp39qiMalAjCXox
-         yhRvH0VmeVlRstQQxPjSHPsrrAu4h+bEiShflWeG3OmdYJtiETxC5RuD0z5NLbvSCS0H
-         zsEw==
-X-Gm-Message-State: AC+VfDzWFn8gHePUbV+nQro2IoWc5XKcvC4X+eId/2U1yn1FfmbDbXDd
-        WoJSMgFjUrZ2bzjzz3l2elK4msmnuFtB2g==
-X-Google-Smtp-Source: ACHHUZ6W2+qcWyua9w5NR4Nxgx8dhXhzDKbUSCzvTKKxEzZC9MrUsDU0RcYi8/IfyBBwsAL0K94vYQ==
-X-Received: by 2002:a1f:6057:0:b0:464:6036:604f with SMTP id u84-20020a1f6057000000b004646036604fmr520743vkb.7.1686295793944;
-        Fri, 09 Jun 2023 00:29:53 -0700 (PDT)
-Received: from mail-yb1-f170.google.com (mail-yb1-f170.google.com. [209.85.219.170])
-        by smtp.gmail.com with ESMTPSA id y62-20020a0dd641000000b00568938ca41bsm452429ywd.53.2023.06.09.00.29.49
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 09 Jun 2023 00:29:50 -0700 (PDT)
-Received: by mail-yb1-f170.google.com with SMTP id 3f1490d57ef6-bbc0168b02bso1146877276.3;
-        Fri, 09 Jun 2023 00:29:49 -0700 (PDT)
-X-Received: by 2002:a05:6902:3cb:b0:bb3:9329:608b with SMTP id
- g11-20020a05690203cb00b00bb39329608bmr355653ybs.51.1686295789563; Fri, 09 Jun
- 2023 00:29:49 -0700 (PDT)
+        with ESMTP id S239854AbjFIH7F (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 9 Jun 2023 03:59:05 -0400
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 143643AAC
+        for <linux-sh@vger.kernel.org>; Fri,  9 Jun 2023 00:57:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1686297432;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=LUIKuTNwx3aGCN/mpc81rLXKw/yQlIAJox5sUw6Md70=;
+        b=aBzZrrjuVy9zoOGy7UqZjoUAPgebTpwUWbl+nd7T/MR7xbLLt4sAiQfsaZygSl/ahN8r8O
+        xa3uG1TleDhyTa/OdBRTwquRn4FJTCPzYmTRPeAlhH7HCUHsqOtgsMBeDehLbfFCAcsz1x
+        z3UhO5gfCtTlYrdpfHCClvMWmtHuU4Q=
+Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
+ [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-298-qdGF8u1yOFKOwOjmf_5LtQ-1; Fri, 09 Jun 2023 03:56:57 -0400
+X-MC-Unique: qdGF8u1yOFKOwOjmf_5LtQ-1
+Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.rdu2.redhat.com [10.11.54.4])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 7360385A5BB;
+        Fri,  9 Jun 2023 07:56:56 +0000 (UTC)
+Received: from MiWiFi-R3L-srv.redhat.com (ovpn-12-92.pek2.redhat.com [10.72.12.92])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id E440120268C6;
+        Fri,  9 Jun 2023 07:56:48 +0000 (UTC)
+From:   Baoquan He <bhe@redhat.com>
+To:     linux-kernel@vger.kernel.org
+Cc:     linux-arch@vger.kernel.org, linux-mm@kvack.org, arnd@arndb.de,
+        christophe.leroy@csgroup.eu, hch@lst.de, rppt@kernel.org,
+        willy@infradead.org, agordeev@linux.ibm.com,
+        wangkefeng.wang@huawei.com, schnelle@linux.ibm.com,
+        David.Laight@ACULAB.COM, shorne@gmail.com, deller@gmx.de,
+        Baoquan He <bhe@redhat.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Subject: [PATCH v6 11/19] sh: add <asm-generic/io.h> including
+Date:   Fri,  9 Jun 2023 15:55:20 +0800
+Message-Id: <20230609075528.9390-12-bhe@redhat.com>
+In-Reply-To: <20230609075528.9390-1-bhe@redhat.com>
+References: <20230609075528.9390-1-bhe@redhat.com>
 MIME-Version: 1.0
-References: <20230605144812.15241-1-tzimmermann@suse.de> <20230605144812.15241-31-tzimmermann@suse.de>
- <CAMuHMdVP2hrgXaZvASnHJ4M+VXaTCtfbeVXrq2dsEJqcs3G6ZA@mail.gmail.com>
- <e5d88ca8-66fe-b5ee-cb6b-2dc8f3a3fb26@suse.de> <CAMuHMdWBUKTgfCD9VLDFh_Tm1J-NJQHpxODs-TuYM7V-dtmGjA@mail.gmail.com>
- <873532eurg.fsf@minerva.mail-host-address-is-not-set> <77252bc9-e08e-fcee-d140-2b78ab768b42@suse.de>
-In-Reply-To: <77252bc9-e08e-fcee-d140-2b78ab768b42@suse.de>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Fri, 9 Jun 2023 09:29:37 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdWUkZDcYfndf1A+cgcN5Fz1hmst4LrpA7iYCFqWSRTNDA@mail.gmail.com>
-Message-ID: <CAMuHMdWUkZDcYfndf1A+cgcN5Fz1hmst4LrpA7iYCFqWSRTNDA@mail.gmail.com>
-Subject: Re: [PATCH 30/30] fbdev: Make support for userspace interfaces configurable
-To:     Thomas Zimmermann <tzimmermann@suse.de>
-Cc:     Javier Martinez Canillas <javierm@redhat.com>,
-        daniel.thompson@linaro.org, linux-staging@lists.linux.dev,
-        linux-sh@vger.kernel.org, jingoohan1@gmail.com, deller@gmx.de,
-        lee@kernel.org, dri-devel@lists.freedesktop.org,
-        linux-fbdev@vger.kernel.org, linux-omap@vger.kernel.org,
-        sam@ravnborg.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+X-Scanned-By: MIMEDefang 3.1 on 10.11.54.4
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Thomas,
+Also add macro definitions for port|mm io functions since SuperH
+has its own implementation in arch/sh/kernel/iomap.c and
+arch/sh/include/asm/io_noioport.h. These will conflict with the port|mm io
+function definitions in include/asm-generic/io.h to cause compiling
+errors like below:
 
-On Fri, Jun 9, 2023 at 9:09 AM Thomas Zimmermann <tzimmermann@suse.de> wrote:
-> Am 08.06.23 um 01:07 schrieb Javier Martinez Canillas:
-> > Geert Uytterhoeven <geert@linux-m68k.org> writes:
-> >> On Wed, Jun 7, 2023 at 5:15 PM Thomas Zimmermann <tzimmermann@suse.de> wrote:
-> >>> Am 07.06.23 um 10:48 schrieb Geert Uytterhoeven:
-> >>>> On Mon, Jun 5, 2023 at 4:48 PM Thomas Zimmermann <tzimmermann@suse.de> wrote:
-> >>>>> --- a/drivers/video/fbdev/Kconfig
-> >>>>> +++ b/drivers/video/fbdev/Kconfig
-> >>>>> @@ -57,6 +57,15 @@ config FIRMWARE_EDID
-> >>>>>             combination with certain motherboards and monitors are known to
-> >>>>>             suffer from this problem.
-> >>>>>
-> >>>>> +config FB_DEVICE
-> >>>>> +        bool "Provide legacy /dev/fb* device"
-> >>>>
-> >>>> Perhaps "default y if !DRM", although that does not help for a
-> >>>> mixed drm/fbdev kernel build?
-> >>>
-> >>> We could simply set it to "default y".  But OTOH is it worth making it a
-> >>> default? Distributions will set it to the value they need/want. The very
-> >>> few people that build their own kernels to get certain fbdev drivers
-> >>> will certainly be able to enable the option by hand as well.
-> >>
-> >> Defaulting to "n" (the default) means causing regressions when these
-> >> few people use an existing defconfig.
-> >>
-> >
-> > Having "dfault y if !DRM" makes sense to me. I guess is a corner case but
-> > at least it won't silently be disabled for users that only want fbdev as
-> > Geert mentioned.
->
-> IMHO the rational behind such conditionals are mostly what "we make up
-> here in the discussion", but not something based on real-world feedback.
-> So I'd strongly prefer a clear n or y setting here.
->
-> >
-> > I wouldn't call it a regression though, because AFAIK the Kconfig options
-> > are not a stable API ?
->
-> IIRC in the past there have been concerns about changing Kconfig
-> defaults. If we go with "default n", we'd apparently do something similar.
->
-> >
-> >>>> Or reserve "FB" for real fbdev drivers, and introduce a new FB_CORE,
-> >>>> to be selected by both FB and DRM_FBDEV_EMULATION?
-> >>>> Then FB_DEVICE can depend on FB_CORE, and default to y if FB.
-> >
-> > Funny that you mention because it's exactly what I attempted in the past:
-> >
-> > https://lore.kernel.org/all/20210827100531.1578604-1-javierm@redhat.com/T/#u
-> >
-> >>>
-> >>> That wouldn't work. In Tumbleweed, we still have efifb and vesafb
-> >>> enabled under certain conditions; merely for the kernel console. We'd
-> >>> have to enable CONFIG_FB, which would bring back the device.
-> >>
-> >> "Default y" does not mean that you cannot disable FB_DEVICE, so
-> >> you are not forced to bring back the device?
-> >
-> > I think we can have both to make the kernel more configurable:
-> >
-> > 1) Allow to only disable fbdev user-space APIs (/dev/fb?, /proc/fb, etc),
-> >     which is what the series is doing with the new FB_DEVICE config symbol.
-> >
-> > 2) Allow to disable all "native" fbdev drivers and only keep the DRM fbdev
-> >     emulation layer. That's what my series attempted to do with the FB_CORE
-> >     Kconfig symbol.
-> >
-> > I believe that there are use cases for both, for example as Thomas' said
-> > many distros are disabling all the fbdev drivers and their user-space only
-> > requires DRM/KMS, so makes sense to not expose any fbdev uAPI at all.
-> >
-> > But may be that other users want the opposite, they have an old user-space
-> > that requires fbdev, but is running on newer hardware that only have a DRM
-> > driver. So they will want DRM fbdev emulation but none fbdev driver at all.
-> >
-> > That's why I think that FB_DEVICE and FB_CORE are complementary and we can
-> > support any combination of the two, if you agree there are uses for either.
->
-> I still don't understand the value of such an extra compile-time option?
->   Either you have fbdev userspace, then you want the device; or you
-> don't then it's better to disable it entirely. I don't see much of a
-> difference between DRM and fbdev drivers here.
+====
+  CC      arch/sh/kernel/asm-offsets.s
+In file included from ./arch/sh/include/asm/io.h:294,
+                 from ./include/linux/io.h:13,
+                 ......
+                 from arch/sh/kernel/asm-offsets.c:16:
+./include/asm-generic/io.h:792:17: error: conflicting types for ‘ioread8’
+  792 | #define ioread8 ioread8
+      |                 ^~~~~~~
+./include/asm-generic/io.h:793:18: note: in expansion of macro ‘ioread8’
+  793 | static inline u8 ioread8(const volatile void __iomem *addr)
+      |                  ^~~~~~~
+In file included from ./arch/sh/include/asm/io.h:22,
+                 from ./include/linux/io.h:13,
+                 ......
+                 from arch/sh/kernel/asm-offsets.c:16:
+./include/asm-generic/iomap.h:29:21: note: previous declaration of ‘ioread8’ was here
+   29 | extern unsigned int ioread8(const void __iomem *);
+====
 
-If you have DRM and are running a Linux desktop, you are probably
-using DRM userspace.
-If you have fbdev, and are using graphics, you have no choice but
-using an fbdev userspace.
+Signed-off-by: Baoquan He <bhe@redhat.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+---
+v5->v6:
+  split that inclusion of include/asm-generic/io.h and redefining of the
+  helpers from the old patch 11 into this prep patch - Christoph
 
-So with FB_CORE, you can have default y if you have a real fbdev driver,
-and default n if you have only DRM drivers.
+ arch/sh/include/asm/io.h          | 25 +++++++++++++++++++++++++
+ arch/sh/include/asm/io_noioport.h |  7 +++++++
+ 2 files changed, 32 insertions(+)
 
-> I'd also question the argument that there's even fbdev userspace out
-> there. It was never popular in it's heyday and definitely hasn't
-> improved since then. Even the 3 people who still ask for fbdev support
-
-There's X.org, DirectFB, SDL, ...
-
-What do you think low-end embedded devices with an out-of-tree[*]
-fbdev driver are using?
-
-[*] There's been a moratorium on new fbdev drivers for about a decade.
-
-> here only seem to care about the performance of the framebuffer console,
-> but never about userspace.
-
-Unless you go for heavy graphics and 3D, a simple GUI with some
-buttons and text requires less performance than scrolling a full-screen
-graphical text console...
-
-> So I'd like to propose a different solution: on top of the current
-> patchset, let's make an fbdev module option that enables the device. If
-> CONFIG_FB_DEVICE has been enabled, the option would switch the
-> functionality on and off. A Kconfig option would set the default.  With
-> such a setup, distributions can disable the fbdev device by default.
-> And the few users with the odd system that has fbdev userspace can still
-> enable the fbdev device at boot time.
-
-Hmm... That makes it even more complicated...
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index fba90e670ed4..270e7952950c 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -119,6 +119,26 @@ void __raw_readsl(const void __iomem *addr, void *data, int longlen);
+ 
+ __BUILD_MEMORY_STRING(__raw_, q, u64)
+ 
++#define ioread8 ioread8
++#define ioread16 ioread16
++#define ioread16be ioread16be
++#define ioread32 ioread32
++#define ioread32be ioread32be
++
++#define iowrite8 iowrite8
++#define iowrite16 iowrite16
++#define iowrite16be iowrite16be
++#define iowrite32 iowrite32
++#define iowrite32be iowrite32be
++
++#define ioread8_rep ioread8_rep
++#define ioread16_rep ioread16_rep
++#define ioread32_rep ioread32_rep
++
++#define iowrite8_rep iowrite8_rep
++#define iowrite16_rep iowrite16_rep
++#define iowrite32_rep iowrite32_rep
++
+ #ifdef CONFIG_HAS_IOPORT_MAP
+ 
+ /*
+@@ -225,6 +245,9 @@ __BUILD_IOPORT_STRING(q, u64)
+ #define IO_SPACE_LIMIT 0xffffffff
+ 
+ /* We really want to try and get these to memcpy etc */
++#define memset_io memset_io
++#define memcpy_fromio memcpy_fromio
++#define memcpy_toio memcpy_toio
+ void memcpy_fromio(void *, const volatile void __iomem *, unsigned long);
+ void memcpy_toio(volatile void __iomem *, const void *, unsigned long);
+ void memset_io(volatile void __iomem *, int, unsigned long);
+@@ -287,6 +310,8 @@ static inline void iounmap(volatile void __iomem *addr) { }
+  */
+ #define xlate_dev_mem_ptr(p)	__va(p)
+ 
++#include <asm-generic/io.h>
++
+ #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
+ int valid_phys_addr_range(phys_addr_t addr, size_t size);
+ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
+diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
+index f7938fe0f911..5ba4116b4265 100644
+--- a/arch/sh/include/asm/io_noioport.h
++++ b/arch/sh/include/asm/io_noioport.h
+@@ -53,6 +53,13 @@ static inline void ioport_unmap(void __iomem *addr)
+ #define outw_p(x, addr)	outw((x), (addr))
+ #define outl_p(x, addr)	outl((x), (addr))
+ 
++#define insb insb
++#define insw insw
++#define insl insl
++#define outsb outsb
++#define outsw outsw
++#define outsl outsl
++
+ static inline void insb(unsigned long port, void *dst, unsigned long count)
+ {
+ 	BUG();
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+2.34.1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
