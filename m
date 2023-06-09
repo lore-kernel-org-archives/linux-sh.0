@@ -2,273 +2,265 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 70264C8300C
-	for <linux-sh@archiver.kernel.org>; Fri,  9 Jun 2023 07:59:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EF7C8C7EE2F
+	for <linux-sh@archiver.kernel.org>; Fri,  9 Jun 2023 08:03:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238721AbjFIH7X (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 9 Jun 2023 03:59:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33804 "EHLO
+        id S240065AbjFIID4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 9 Jun 2023 04:03:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39498 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239372AbjFIH6d (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 9 Jun 2023 03:58:33 -0400
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9A3F04218
-        for <linux-sh@vger.kernel.org>; Fri,  9 Jun 2023 00:57:08 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1686297427;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=J2JqJ5DVfD1RBef7ys9lCToVJCiVC3QaC6lHIm4BgJc=;
-        b=XIcCyN7Vt27a6MDWV17TgqsKDiaUP8o8WEJvsLKu0kAfHjIWlYu/RQvDDUte/az+1ryAUr
-        eF1fcg7zu6XkwiiQuft5v05GNv2YPVJGpv6ZOyubYbQptjlCqJpwJkBc8J+Oy7DFUjFpku
-        EEGQ+idQOt7vzmO/Z11ecLbYfdbARXk=
-Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
- [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-425-63ItICqVMnCnNe_-eICvug-1; Fri, 09 Jun 2023 03:57:04 -0400
-X-MC-Unique: 63ItICqVMnCnNe_-eICvug-1
-Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.rdu2.redhat.com [10.11.54.4])
-        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        with ESMTP id S239800AbjFIIDj (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 9 Jun 2023 04:03:39 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EA8823C2A;
+        Fri,  9 Jun 2023 01:01:55 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id A30D8185A78F;
-        Fri,  9 Jun 2023 07:57:03 +0000 (UTC)
-Received: from MiWiFi-R3L-srv.redhat.com (ovpn-12-92.pek2.redhat.com [10.72.12.92])
-        by smtp.corp.redhat.com (Postfix) with ESMTP id 1D51720268C6;
-        Fri,  9 Jun 2023 07:56:56 +0000 (UTC)
-From:   Baoquan He <bhe@redhat.com>
-To:     linux-kernel@vger.kernel.org
-Cc:     linux-arch@vger.kernel.org, linux-mm@kvack.org, arnd@arndb.de,
-        christophe.leroy@csgroup.eu, hch@lst.de, rppt@kernel.org,
-        willy@infradead.org, agordeev@linux.ibm.com,
-        wangkefeng.wang@huawei.com, schnelle@linux.ibm.com,
-        David.Laight@ACULAB.COM, shorne@gmail.com, deller@gmx.de,
-        Baoquan He <bhe@redhat.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Subject: [PATCH v6 12/19] sh: mm: Convert to GENERIC_IOREMAP
-Date:   Fri,  9 Jun 2023 15:55:21 +0800
-Message-Id: <20230609075528.9390-13-bhe@redhat.com>
-In-Reply-To: <20230609075528.9390-1-bhe@redhat.com>
-References: <20230609075528.9390-1-bhe@redhat.com>
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 37E99219FC;
+        Fri,  9 Jun 2023 08:00:50 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1686297650; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=aZaVD/oGOq12nWqB3jmSiCI+YnT3mfvJIdOBaxkg8lM=;
+        b=XeHdM9PD0ztnT9ubUOpRbpvx+UMENt+LvAKm2aC7bpISVjMTNdN0x9jVjUBTw3rwOzgS4z
+        0aXEFvIB3ML57jkT6GfTHsV8+FRS5H9ihXwXNahLS1oQkYutFMVqeAUTe9WXxrOt+eu470
+        mum2zT4ze+35v6+ck9eN7Flv1F0KHmQ=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1686297650;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=aZaVD/oGOq12nWqB3jmSiCI+YnT3mfvJIdOBaxkg8lM=;
+        b=FDxFFea35L5dE5Gttf3HFSZqD6tu4UEhqbf94AQxh5e9PGCGDxtkSiX1guF4TKVpOJcZ7d
+        zrtL+TKIoNwtU/Dw==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id ED8FC13A47;
+        Fri,  9 Jun 2023 08:00:49 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id dp0BOTHcgmQNVQAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Fri, 09 Jun 2023 08:00:49 +0000
+Message-ID: <4df23439-462f-47da-890d-2dd2092eea35@suse.de>
+Date:   Fri, 9 Jun 2023 10:00:49 +0200
 MIME-Version: 1.0
-Content-type: text/plain
-Content-Transfer-Encoding: 8bit
-X-Scanned-By: MIMEDefang 3.1 on 10.11.54.4
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.11.2
+Subject: Re: [PATCH 30/30] fbdev: Make support for userspace interfaces
+ configurable
+Content-Language: en-US
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     Javier Martinez Canillas <javierm@redhat.com>,
+        daniel.thompson@linaro.org, linux-staging@lists.linux.dev,
+        linux-sh@vger.kernel.org, jingoohan1@gmail.com, deller@gmx.de,
+        lee@kernel.org, dri-devel@lists.freedesktop.org,
+        linux-fbdev@vger.kernel.org, linux-omap@vger.kernel.org,
+        sam@ravnborg.org
+References: <20230605144812.15241-1-tzimmermann@suse.de>
+ <20230605144812.15241-31-tzimmermann@suse.de>
+ <CAMuHMdVP2hrgXaZvASnHJ4M+VXaTCtfbeVXrq2dsEJqcs3G6ZA@mail.gmail.com>
+ <e5d88ca8-66fe-b5ee-cb6b-2dc8f3a3fb26@suse.de>
+ <CAMuHMdWBUKTgfCD9VLDFh_Tm1J-NJQHpxODs-TuYM7V-dtmGjA@mail.gmail.com>
+ <873532eurg.fsf@minerva.mail-host-address-is-not-set>
+ <77252bc9-e08e-fcee-d140-2b78ab768b42@suse.de>
+ <CAMuHMdWUkZDcYfndf1A+cgcN5Fz1hmst4LrpA7iYCFqWSRTNDA@mail.gmail.com>
+From:   Thomas Zimmermann <tzimmermann@suse.de>
+In-Reply-To: <CAMuHMdWUkZDcYfndf1A+cgcN5Fz1hmst4LrpA7iYCFqWSRTNDA@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="------------9WWMu77xFnUD5RQsa52KUfuv"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-By taking GENERIC_IOREMAP method, the generic generic_ioremap_prot(),
-generic_iounmap(), and their generic wrapper ioremap_prot(), ioremap()
-and iounmap() are all visible and available to arch. Arch needs to
-provide wrapper functions to override the generic versions if there's
-arch specific handling in its ioremap_prot(), ioremap() or iounmap().
-This change will simplify implementation by removing duplicated codes
-with generic_ioremap_prot() and generic_iounmap(), and has the equivalent
-functioality as before.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--------------9WWMu77xFnUD5RQsa52KUfuv
+Content-Type: multipart/mixed; boundary="------------6yxa7mvS88S1iDNOJDxlT0o1";
+ protected-headers="v1"
+From: Thomas Zimmermann <tzimmermann@suse.de>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Javier Martinez Canillas <javierm@redhat.com>,
+ daniel.thompson@linaro.org, linux-staging@lists.linux.dev,
+ linux-sh@vger.kernel.org, jingoohan1@gmail.com, deller@gmx.de,
+ lee@kernel.org, dri-devel@lists.freedesktop.org,
+ linux-fbdev@vger.kernel.org, linux-omap@vger.kernel.org, sam@ravnborg.org
+Message-ID: <4df23439-462f-47da-890d-2dd2092eea35@suse.de>
+Subject: Re: [PATCH 30/30] fbdev: Make support for userspace interfaces
+ configurable
+References: <20230605144812.15241-1-tzimmermann@suse.de>
+ <20230605144812.15241-31-tzimmermann@suse.de>
+ <CAMuHMdVP2hrgXaZvASnHJ4M+VXaTCtfbeVXrq2dsEJqcs3G6ZA@mail.gmail.com>
+ <e5d88ca8-66fe-b5ee-cb6b-2dc8f3a3fb26@suse.de>
+ <CAMuHMdWBUKTgfCD9VLDFh_Tm1J-NJQHpxODs-TuYM7V-dtmGjA@mail.gmail.com>
+ <873532eurg.fsf@minerva.mail-host-address-is-not-set>
+ <77252bc9-e08e-fcee-d140-2b78ab768b42@suse.de>
+ <CAMuHMdWUkZDcYfndf1A+cgcN5Fz1hmst4LrpA7iYCFqWSRTNDA@mail.gmail.com>
+In-Reply-To: <CAMuHMdWUkZDcYfndf1A+cgcN5Fz1hmst4LrpA7iYCFqWSRTNDA@mail.gmail.com>
 
-Here, add wrapper functions ioremap_prot() and iounmap() for SuperH's
-special operation when ioremap() and iounmap().
+--------------6yxa7mvS88S1iDNOJDxlT0o1
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: base64
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Baoquan He <bhe@redhat.com>
----
-v5->v6:
-  Based on the previous prep patch, this only focuses on converting to
-  GENERIC_IOREMAP for SuperH - Christoph
+SGkNCg0KQW0gMDkuMDYuMjMgdW0gMDk6Mjkgc2NocmllYiBHZWVydCBVeXR0ZXJob2V2ZW46
+DQo+IEhpIFRob21hcywNCj4gDQo+IE9uIEZyaSwgSnVuIDksIDIwMjMgYXQgOTowOeKAr0FN
+IFRob21hcyBaaW1tZXJtYW5uIDx0emltbWVybWFubkBzdXNlLmRlPiB3cm90ZToNCj4+IEFt
+IDA4LjA2LjIzIHVtIDAxOjA3IHNjaHJpZWIgSmF2aWVyIE1hcnRpbmV6IENhbmlsbGFzOg0K
+Pj4+IEdlZXJ0IFV5dHRlcmhvZXZlbiA8Z2VlcnRAbGludXgtbTY4ay5vcmc+IHdyaXRlczoN
+Cj4+Pj4gT24gV2VkLCBKdW4gNywgMjAyMyBhdCA1OjE14oCvUE0gVGhvbWFzIFppbW1lcm1h
+bm4gPHR6aW1tZXJtYW5uQHN1c2UuZGU+IHdyb3RlOg0KPj4+Pj4gQW0gMDcuMDYuMjMgdW0g
+MTA6NDggc2NocmllYiBHZWVydCBVeXR0ZXJob2V2ZW46DQo+Pj4+Pj4gT24gTW9uLCBKdW4g
+NSwgMjAyMyBhdCA0OjQ44oCvUE0gVGhvbWFzIFppbW1lcm1hbm4gPHR6aW1tZXJtYW5uQHN1
+c2UuZGU+IHdyb3RlOg0KPj4+Pj4+PiAtLS0gYS9kcml2ZXJzL3ZpZGVvL2ZiZGV2L0tjb25m
+aWcNCj4+Pj4+Pj4gKysrIGIvZHJpdmVycy92aWRlby9mYmRldi9LY29uZmlnDQo+Pj4+Pj4+
+IEBAIC01Nyw2ICs1NywxNSBAQCBjb25maWcgRklSTVdBUkVfRURJRA0KPj4+Pj4+PiAgICAg
+ICAgICAgICAgY29tYmluYXRpb24gd2l0aCBjZXJ0YWluIG1vdGhlcmJvYXJkcyBhbmQgbW9u
+aXRvcnMgYXJlIGtub3duIHRvDQo+Pj4+Pj4+ICAgICAgICAgICAgICBzdWZmZXIgZnJvbSB0
+aGlzIHByb2JsZW0uDQo+Pj4+Pj4+DQo+Pj4+Pj4+ICtjb25maWcgRkJfREVWSUNFDQo+Pj4+
+Pj4+ICsgICAgICAgIGJvb2wgIlByb3ZpZGUgbGVnYWN5IC9kZXYvZmIqIGRldmljZSINCj4+
+Pj4+Pg0KPj4+Pj4+IFBlcmhhcHMgImRlZmF1bHQgeSBpZiAhRFJNIiwgYWx0aG91Z2ggdGhh
+dCBkb2VzIG5vdCBoZWxwIGZvciBhDQo+Pj4+Pj4gbWl4ZWQgZHJtL2ZiZGV2IGtlcm5lbCBi
+dWlsZD8NCj4+Pj4+DQo+Pj4+PiBXZSBjb3VsZCBzaW1wbHkgc2V0IGl0IHRvICJkZWZhdWx0
+IHkiLiAgQnV0IE9UT0ggaXMgaXQgd29ydGggbWFraW5nIGl0IGENCj4+Pj4+IGRlZmF1bHQ/
+IERpc3RyaWJ1dGlvbnMgd2lsbCBzZXQgaXQgdG8gdGhlIHZhbHVlIHRoZXkgbmVlZC93YW50
+LiBUaGUgdmVyeQ0KPj4+Pj4gZmV3IHBlb3BsZSB0aGF0IGJ1aWxkIHRoZWlyIG93biBrZXJu
+ZWxzIHRvIGdldCBjZXJ0YWluIGZiZGV2IGRyaXZlcnMNCj4+Pj4+IHdpbGwgY2VydGFpbmx5
+IGJlIGFibGUgdG8gZW5hYmxlIHRoZSBvcHRpb24gYnkgaGFuZCBhcyB3ZWxsLg0KPj4+Pg0K
+Pj4+PiBEZWZhdWx0aW5nIHRvICJuIiAodGhlIGRlZmF1bHQpIG1lYW5zIGNhdXNpbmcgcmVn
+cmVzc2lvbnMgd2hlbiB0aGVzZQ0KPj4+PiBmZXcgcGVvcGxlIHVzZSBhbiBleGlzdGluZyBk
+ZWZjb25maWcuDQo+Pj4+DQo+Pj4NCj4+PiBIYXZpbmcgImRmYXVsdCB5IGlmICFEUk0iIG1h
+a2VzIHNlbnNlIHRvIG1lLiBJIGd1ZXNzIGlzIGEgY29ybmVyIGNhc2UgYnV0DQo+Pj4gYXQg
+bGVhc3QgaXQgd29uJ3Qgc2lsZW50bHkgYmUgZGlzYWJsZWQgZm9yIHVzZXJzIHRoYXQgb25s
+eSB3YW50IGZiZGV2IGFzDQo+Pj4gR2VlcnQgbWVudGlvbmVkLg0KPj4NCj4+IElNSE8gdGhl
+IHJhdGlvbmFsIGJlaGluZCBzdWNoIGNvbmRpdGlvbmFscyBhcmUgbW9zdGx5IHdoYXQgIndl
+IG1ha2UgdXANCj4+IGhlcmUgaW4gdGhlIGRpc2N1c3Npb24iLCBidXQgbm90IHNvbWV0aGlu
+ZyBiYXNlZCBvbiByZWFsLXdvcmxkIGZlZWRiYWNrLg0KPj4gU28gSSdkIHN0cm9uZ2x5IHBy
+ZWZlciBhIGNsZWFyIG4gb3IgeSBzZXR0aW5nIGhlcmUuDQo+Pg0KPj4+DQo+Pj4gSSB3b3Vs
+ZG4ndCBjYWxsIGl0IGEgcmVncmVzc2lvbiB0aG91Z2gsIGJlY2F1c2UgQUZBSUsgdGhlIEtj
+b25maWcgb3B0aW9ucw0KPj4+IGFyZSBub3QgYSBzdGFibGUgQVBJID8NCj4+DQo+PiBJSVJD
+IGluIHRoZSBwYXN0IHRoZXJlIGhhdmUgYmVlbiBjb25jZXJucyBhYm91dCBjaGFuZ2luZyBL
+Y29uZmlnDQo+PiBkZWZhdWx0cy4gSWYgd2UgZ28gd2l0aCAiZGVmYXVsdCBuIiwgd2UnZCBh
+cHBhcmVudGx5IGRvIHNvbWV0aGluZyBzaW1pbGFyLg0KPj4NCj4+Pg0KPj4+Pj4+IE9yIHJl
+c2VydmUgIkZCIiBmb3IgcmVhbCBmYmRldiBkcml2ZXJzLCBhbmQgaW50cm9kdWNlIGEgbmV3
+IEZCX0NPUkUsDQo+Pj4+Pj4gdG8gYmUgc2VsZWN0ZWQgYnkgYm90aCBGQiBhbmQgRFJNX0ZC
+REVWX0VNVUxBVElPTj8NCj4+Pj4+PiBUaGVuIEZCX0RFVklDRSBjYW4gZGVwZW5kIG9uIEZC
+X0NPUkUsIGFuZCBkZWZhdWx0IHRvIHkgaWYgRkIuDQo+Pj4NCj4+PiBGdW5ueSB0aGF0IHlv
+dSBtZW50aW9uIGJlY2F1c2UgaXQncyBleGFjdGx5IHdoYXQgSSBhdHRlbXB0ZWQgaW4gdGhl
+IHBhc3Q6DQo+Pj4NCj4+PiBodHRwczovL2xvcmUua2VybmVsLm9yZy9hbGwvMjAyMTA4Mjcx
+MDA1MzEuMTU3ODYwNC0xLWphdmllcm1AcmVkaGF0LmNvbS9ULyN1DQo+Pj4NCj4+Pj4+DQo+
+Pj4+PiBUaGF0IHdvdWxkbid0IHdvcmsuIEluIFR1bWJsZXdlZWQsIHdlIHN0aWxsIGhhdmUg
+ZWZpZmIgYW5kIHZlc2FmYg0KPj4+Pj4gZW5hYmxlZCB1bmRlciBjZXJ0YWluIGNvbmRpdGlv
+bnM7IG1lcmVseSBmb3IgdGhlIGtlcm5lbCBjb25zb2xlLiBXZSdkDQo+Pj4+PiBoYXZlIHRv
+IGVuYWJsZSBDT05GSUdfRkIsIHdoaWNoIHdvdWxkIGJyaW5nIGJhY2sgdGhlIGRldmljZS4N
+Cj4+Pj4NCj4+Pj4gIkRlZmF1bHQgeSIgZG9lcyBub3QgbWVhbiB0aGF0IHlvdSBjYW5ub3Qg
+ZGlzYWJsZSBGQl9ERVZJQ0UsIHNvDQo+Pj4+IHlvdSBhcmUgbm90IGZvcmNlZCB0byBicmlu
+ZyBiYWNrIHRoZSBkZXZpY2U/DQo+Pj4NCj4+PiBJIHRoaW5rIHdlIGNhbiBoYXZlIGJvdGgg
+dG8gbWFrZSB0aGUga2VybmVsIG1vcmUgY29uZmlndXJhYmxlOg0KPj4+DQo+Pj4gMSkgQWxs
+b3cgdG8gb25seSBkaXNhYmxlIGZiZGV2IHVzZXItc3BhY2UgQVBJcyAoL2Rldi9mYj8sIC9w
+cm9jL2ZiLCBldGMpLA0KPj4+ICAgICAgd2hpY2ggaXMgd2hhdCB0aGUgc2VyaWVzIGlzIGRv
+aW5nIHdpdGggdGhlIG5ldyBGQl9ERVZJQ0UgY29uZmlnIHN5bWJvbC4NCj4+Pg0KPj4+IDIp
+IEFsbG93IHRvIGRpc2FibGUgYWxsICJuYXRpdmUiIGZiZGV2IGRyaXZlcnMgYW5kIG9ubHkg
+a2VlcCB0aGUgRFJNIGZiZGV2DQo+Pj4gICAgICBlbXVsYXRpb24gbGF5ZXIuIFRoYXQncyB3
+aGF0IG15IHNlcmllcyBhdHRlbXB0ZWQgdG8gZG8gd2l0aCB0aGUgRkJfQ09SRQ0KPj4+ICAg
+ICAgS2NvbmZpZyBzeW1ib2wuDQo+Pj4NCj4+PiBJIGJlbGlldmUgdGhhdCB0aGVyZSBhcmUg
+dXNlIGNhc2VzIGZvciBib3RoLCBmb3IgZXhhbXBsZSBhcyBUaG9tYXMnIHNhaWQNCj4+PiBt
+YW55IGRpc3Ryb3MgYXJlIGRpc2FibGluZyBhbGwgdGhlIGZiZGV2IGRyaXZlcnMgYW5kIHRo
+ZWlyIHVzZXItc3BhY2Ugb25seQ0KPj4+IHJlcXVpcmVzIERSTS9LTVMsIHNvIG1ha2VzIHNl
+bnNlIHRvIG5vdCBleHBvc2UgYW55IGZiZGV2IHVBUEkgYXQgYWxsLg0KPj4+DQo+Pj4gQnV0
+IG1heSBiZSB0aGF0IG90aGVyIHVzZXJzIHdhbnQgdGhlIG9wcG9zaXRlLCB0aGV5IGhhdmUg
+YW4gb2xkIHVzZXItc3BhY2UNCj4+PiB0aGF0IHJlcXVpcmVzIGZiZGV2LCBidXQgaXMgcnVu
+bmluZyBvbiBuZXdlciBoYXJkd2FyZSB0aGF0IG9ubHkgaGF2ZSBhIERSTQ0KPj4+IGRyaXZl
+ci4gU28gdGhleSB3aWxsIHdhbnQgRFJNIGZiZGV2IGVtdWxhdGlvbiBidXQgbm9uZSBmYmRl
+diBkcml2ZXIgYXQgYWxsLg0KPj4+DQo+Pj4gVGhhdCdzIHdoeSBJIHRoaW5rIHRoYXQgRkJf
+REVWSUNFIGFuZCBGQl9DT1JFIGFyZSBjb21wbGVtZW50YXJ5IGFuZCB3ZSBjYW4NCj4+PiBz
+dXBwb3J0IGFueSBjb21iaW5hdGlvbiBvZiB0aGUgdHdvLCBpZiB5b3UgYWdyZWUgdGhlcmUg
+YXJlIHVzZXMgZm9yIGVpdGhlci4NCj4+DQo+PiBJIHN0aWxsIGRvbid0IHVuZGVyc3RhbmQg
+dGhlIHZhbHVlIG9mIHN1Y2ggYW4gZXh0cmEgY29tcGlsZS10aW1lIG9wdGlvbj8NCj4+ICAg
+IEVpdGhlciB5b3UgaGF2ZSBmYmRldiB1c2Vyc3BhY2UsIHRoZW4geW91IHdhbnQgdGhlIGRl
+dmljZTsgb3IgeW91DQo+PiBkb24ndCB0aGVuIGl0J3MgYmV0dGVyIHRvIGRpc2FibGUgaXQg
+ZW50aXJlbHkuIEkgZG9uJ3Qgc2VlIG11Y2ggb2YgYQ0KPj4gZGlmZmVyZW5jZSBiZXR3ZWVu
+IERSTSBhbmQgZmJkZXYgZHJpdmVycyBoZXJlLg0KPiANCj4gSWYgeW91IGhhdmUgRFJNIGFu
+ZCBhcmUgcnVubmluZyBhIExpbnV4IGRlc2t0b3AsIHlvdSBhcmUgcHJvYmFibHkNCj4gdXNp
+bmcgRFJNIHVzZXJzcGFjZS4NCj4gSWYgeW91IGhhdmUgZmJkZXYsIGFuZCBhcmUgdXNpbmcg
+Z3JhcGhpY3MsIHlvdSBoYXZlIG5vIGNob2ljZSBidXQNCj4gdXNpbmcgYW4gZmJkZXYgdXNl
+cnNwYWNlLg0KPiANCj4gU28gd2l0aCBGQl9DT1JFLCB5b3UgY2FuIGhhdmUgZGVmYXVsdCB5
+IGlmIHlvdSBoYXZlIGEgcmVhbCBmYmRldiBkcml2ZXIsDQo+IGFuZCBkZWZhdWx0IG4gaWYg
+eW91IGhhdmUgb25seSBEUk0gZHJpdmVycy4NCj4gDQo+PiBJJ2QgYWxzbyBxdWVzdGlvbiB0
+aGUgYXJndW1lbnQgdGhhdCB0aGVyZSdzIGV2ZW4gZmJkZXYgdXNlcnNwYWNlIG91dA0KPj4g
+dGhlcmUuIEl0IHdhcyBuZXZlciBwb3B1bGFyIGluIGl0J3MgaGV5ZGF5IGFuZCBkZWZpbml0
+ZWx5IGhhc24ndA0KPj4gaW1wcm92ZWQgc2luY2UgdGhlbi4gRXZlbiB0aGUgMyBwZW9wbGUg
+d2hvIHN0aWxsIGFzayBmb3IgZmJkZXYgc3VwcG9ydA0KPiANCj4gVGhlcmUncyBYLm9yZywg
+RGlyZWN0RkIsIFNETCwgLi4uDQoNCk5vbmUgb2YgdGhlc2UgZXhhbXBsZXMgaGFzIGEgZGVw
+ZW5kZW5jeSBvbiBmYmRldi4gVGhleSBjYW4gZnJlZWx5IHN3aXRjaCANCmJhY2tlbmRzIGFu
+ZCBoYXZlIG1vdmVkIHRvIERSTS4gQW55dGhpbmcgcHJvZ3JhbSB1dGlsaXppbmcgdGhlc2Ug
+DQpleGFtcGxlcyBoYXMgbm8gZGVwZW5kZW5jeSBvbiBmYmRldiBlaXRoZXIuDQoNCldoZW4g
+SSBzYXkgInVzZXJzcGFjZSIgaW4gdGhpcyBjb250ZXh0LCBpdCdzIHRoZSBvbmUgb2xkIHBy
+b2dyYW0gdGhhdCANCnN1cHBvcnRzIG5vdGhpbmcgYnV0IGZiZGV2LiBUQkggSSdtIGhhdmlu
+ZyBwcm9ibGVtcyB0byBjb21lIHVwIHdpdGggDQpleGFtcGxlcy4NCg0KPiANCj4gV2hhdCBk
+byB5b3UgdGhpbmsgbG93LWVuZCBlbWJlZGRlZCBkZXZpY2VzIHdpdGggYW4gb3V0LW9mLXRy
+ZWVbKl0NCj4gZmJkZXYgZHJpdmVyIGFyZSB1c2luZz8NCg0KQW5kIHRob3NlIGRvIG5vdCBj
+b3VudCBlaXRoZXIuIElJUkMgQW5kcm9pZCB1c2VkIHRvIGJlIGJ1aWx0IG9uIHRvcCBvZiAN
+CmZiZGV2IGRldmljZXMuIEknbSBub3Qgc3VyZSBpZiB0aGV5IGhhdmUgbW92ZWQgdG8gRFJN
+IGJ5IG5vdy4gQnV0IA0KZW1iZWRkZWQgdXNlcyBkZWRpY2F0ZWQga2VybmVscyBhbmQga2Vy
+bmVsIGNvbmZpZ3MuICBJdCdzIGVhc3kgZm9yIHRoZW0gDQp0byBzZXQgRkJfREVWSUNFPXku
+ICBXZSdyZSBub3QgZ29pbmcgdG8gdGFrZSBhd2F5IHRoZSBmYmRldiBkZXZpY2UgZW50aXJl
+bHkuDQoNCj4gDQo+IFsqXSBUaGVyZSdzIGJlZW4gYSBtb3JhdG9yaXVtIG9uIG5ldyBmYmRl
+diBkcml2ZXJzIGZvciBhYm91dCBhIGRlY2FkZS4NCj4gDQo+PiBoZXJlIG9ubHkgc2VlbSB0
+byBjYXJlIGFib3V0IHRoZSBwZXJmb3JtYW5jZSBvZiB0aGUgZnJhbWVidWZmZXIgY29uc29s
+ZSwNCj4+IGJ1dCBuZXZlciBhYm91dCB1c2Vyc3BhY2UuDQo+IA0KPiBVbmxlc3MgeW91IGdv
+IGZvciBoZWF2eSBncmFwaGljcyBhbmQgM0QsIGEgc2ltcGxlIEdVSSB3aXRoIHNvbWUNCj4g
+YnV0dG9ucyBhbmQgdGV4dCByZXF1aXJlcyBsZXNzIHBlcmZvcm1hbmNlIHRoYW4gc2Nyb2xs
+aW5nIGEgZnVsbC1zY3JlZW4NCj4gZ3JhcGhpY2FsIHRleHQgY29uc29sZS4uLg0KPiANCj4+
+IFNvIEknZCBsaWtlIHRvIHByb3Bvc2UgYSBkaWZmZXJlbnQgc29sdXRpb246IG9uIHRvcCBv
+ZiB0aGUgY3VycmVudA0KPj4gcGF0Y2hzZXQsIGxldCdzIG1ha2UgYW4gZmJkZXYgbW9kdWxl
+IG9wdGlvbiB0aGF0IGVuYWJsZXMgdGhlIGRldmljZS4gSWYNCj4+IENPTkZJR19GQl9ERVZJ
+Q0UgaGFzIGJlZW4gZW5hYmxlZCwgdGhlIG9wdGlvbiB3b3VsZCBzd2l0Y2ggdGhlDQo+PiBm
+dW5jdGlvbmFsaXR5IG9uIGFuZCBvZmYuIEEgS2NvbmZpZyBvcHRpb24gd291bGQgc2V0IHRo
+ZSBkZWZhdWx0LiAgV2l0aA0KPj4gc3VjaCBhIHNldHVwLCBkaXN0cmlidXRpb25zIGNhbiBk
+aXNhYmxlIHRoZSBmYmRldiBkZXZpY2UgYnkgZGVmYXVsdC4NCj4+IEFuZCB0aGUgZmV3IHVz
+ZXJzIHdpdGggdGhlIG9kZCBzeXN0ZW0gdGhhdCBoYXMgZmJkZXYgdXNlcnNwYWNlIGNhbiBz
+dGlsbA0KPj4gZW5hYmxlIHRoZSBmYmRldiBkZXZpY2UgYXQgYm9vdCB0aW1lLg0KPiANCj4g
+SG1tLi4uIFRoYXQgbWFrZXMgaXQgZXZlbiBtb3JlIGNvbXBsaWNhdGVkLi4uDQoNCk5vLCB0
+aGF0IG1ha2VzIHRoaW5ncyBhIGxvdCBlYXNpZXIgZm9yIGRpc3Ryb3MuIEV2ZXJ5b25lIGVs
+c2UgKGN1c3RvbSANCmJ1aWxkcywgZW1iZWRkZWQpIGlzIG5vdCBhZmZlY3RlZCBieSB0aGlz
+IGNoYW5nZS4gRGVza3RvcCBkaXN0cm9zIGFyZSANCnJlYWxseSB0aGUgb25seSBhZmZlY3Rl
+ZCBwYXJ0eSBJIHNlZSBoZXJlLiAiV2UiIChJJ20gYXQgU3VzZSkgaGF2ZSB0byANCnN1cHBv
+cnQgYWxsIGtpbmRzIG9mIHVzZXJzIHdpdGgganVzdCBhIGZldyBnZW5lcmljIG9mZmVyaW5n
+cy4gQW5kIGlmIEkgDQpjYW4gZGlzYWJsZSB0aGUgZmJkZXYgZGV2aWNlIGJ5IGRlZmF1bHQg
+YW5kIGdpdmUgdGhlIHZlcnkgZmV3IGZiZGV2IA0KdXNlcnMgYSB3b3JrYXJvdW5kLCBpdCdz
+IGEgdmVyeSBnb29kIHRyYWRlb2ZmLg0KDQpCZXN0IHJlZ2FyZHMNClRob21hcw0KDQo+IA0K
+PiBHcntvZXRqZSxlZXRpbmd9cywNCj4gDQo+ICAgICAgICAgICAgICAgICAgICAgICAgICBH
+ZWVydA0KPiANCg0KLS0gDQpUaG9tYXMgWmltbWVybWFubg0KR3JhcGhpY3MgRHJpdmVyIERl
+dmVsb3Blcg0KU1VTRSBTb2Z0d2FyZSBTb2x1dGlvbnMgR2VybWFueSBHbWJIDQpGcmFua2Vu
+c3RyYXNzZSAxNDYsIDkwNDYxIE51ZXJuYmVyZywgR2VybWFueQ0KR0Y6IEl2byBUb3Rldiwg
+QW5kcmV3IE15ZXJzLCBBbmRyZXcgTWNEb25hbGQsIEJvdWRpZW4gTW9lcm1hbg0KSFJCIDM2
+ODA5IChBRyBOdWVybmJlcmcpDQo=
 
- arch/sh/Kconfig          |  1 +
- arch/sh/include/asm/io.h | 40 +++++--------------------
- arch/sh/mm/ioremap.c     | 65 +++++++---------------------------------
- 3 files changed, 20 insertions(+), 86 deletions(-)
+--------------6yxa7mvS88S1iDNOJDxlT0o1--
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 9652d367fc37..f326985e46e0 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -28,6 +28,7 @@ config SUPERH
- 	select GENERIC_SMP_IDLE_THREAD
- 	select GUP_GET_PXX_LOW_HIGH if X2TLB
- 	select HAS_IOPORT if HAS_IOPORT_MAP
-+	select GENERIC_IOREMAP if MMU
- 	select HAVE_ARCH_AUDITSYSCALL
- 	select HAVE_ARCH_KGDB
- 	select HAVE_ARCH_SECCOMP_FILTER
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 270e7952950c..b3a26b405c8d 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -266,40 +266,16 @@ unsigned long long poke_real_address_q(unsigned long long addr,
- #endif
- 
- #ifdef CONFIG_MMU
--void iounmap(void __iomem *addr);
--void __iomem *__ioremap_caller(phys_addr_t offset, unsigned long size,
--			       pgprot_t prot, void *caller);
--
--static inline void __iomem *ioremap(phys_addr_t offset, unsigned long size)
--{
--	return __ioremap_caller(offset, size, PAGE_KERNEL_NOCACHE,
--			__builtin_return_address(0));
--}
--
--static inline void __iomem *
--ioremap_cache(phys_addr_t offset, unsigned long size)
--{
--	return __ioremap_caller(offset, size, PAGE_KERNEL,
--			__builtin_return_address(0));
--}
--#define ioremap_cache ioremap_cache
--
--#ifdef CONFIG_HAVE_IOREMAP_PROT
--static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
--		unsigned long flags)
--{
--	return __ioremap_caller(offset, size, __pgprot(flags),
--			__builtin_return_address(0));
--}
--#endif /* CONFIG_HAVE_IOREMAP_PROT */
-+/*
-+ * I/O memory mapping functions.
-+ */
-+#define ioremap_prot ioremap_prot
-+#define iounmap iounmap
- 
--#else /* CONFIG_MMU */
--static inline void __iomem *ioremap(phys_addr_t offset, size_t size)
--{
--	return (void __iomem *)(unsigned long)offset;
--}
-+#define _PAGE_IOREMAP pgprot_val(PAGE_KERNEL_NOCACHE)
- 
--static inline void iounmap(volatile void __iomem *addr) { }
-+#define ioremap_cache(addr, size)  \
-+	ioremap_prot((addr), (size), pgprot_val(PAGE_KERNEL))
- #endif /* CONFIG_MMU */
- 
- #define ioremap_uc	ioremap
-diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
-index 21342581144d..c33b3daa4ad1 100644
---- a/arch/sh/mm/ioremap.c
-+++ b/arch/sh/mm/ioremap.c
-@@ -72,22 +72,11 @@ __ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
- #define __ioremap_29bit(offset, size, prot)		NULL
- #endif /* CONFIG_29BIT */
- 
--/*
-- * Remap an arbitrary physical address space into the kernel virtual
-- * address space. Needed when the kernel wants to access high addresses
-- * directly.
-- *
-- * NOTE! We need to allow non-page-aligned mappings too: we will obviously
-- * have to convert them into an offset in a page-aligned mapping, but the
-- * caller shouldn't need to know that small detail.
-- */
--void __iomem * __ref
--__ioremap_caller(phys_addr_t phys_addr, unsigned long size,
--		 pgprot_t pgprot, void *caller)
-+void __iomem *ioremap_prot(phys_addr_t phys_addr, size_t size,
-+			   unsigned long prot)
- {
--	struct vm_struct *area;
--	unsigned long offset, last_addr, addr, orig_addr;
- 	void __iomem *mapped;
-+	pgprot_t pgprot = __pgprot(prot);
- 
- 	mapped = __ioremap_trapped(phys_addr, size);
- 	if (mapped)
-@@ -97,11 +86,6 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
- 	if (mapped)
- 		return mapped;
- 
--	/* Don't allow wraparound or zero size */
--	last_addr = phys_addr + size - 1;
--	if (!size || last_addr < phys_addr)
--		return NULL;
--
- 	/*
- 	 * If we can't yet use the regular approach, go the fixmap route.
- 	 */
-@@ -112,34 +96,14 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
- 	 * First try to remap through the PMB.
- 	 * PMB entries are all pre-faulted.
- 	 */
--	mapped = pmb_remap_caller(phys_addr, size, pgprot, caller);
-+	mapped = pmb_remap_caller(phys_addr, size, pgprot,
-+			__builtin_return_address(0));
- 	if (mapped && !IS_ERR(mapped))
- 		return mapped;
- 
--	/*
--	 * Mappings have to be page-aligned
--	 */
--	offset = phys_addr & ~PAGE_MASK;
--	phys_addr &= PAGE_MASK;
--	size = PAGE_ALIGN(last_addr+1) - phys_addr;
--
--	/*
--	 * Ok, go for it..
--	 */
--	area = get_vm_area_caller(size, VM_IOREMAP, caller);
--	if (!area)
--		return NULL;
--	area->phys_addr = phys_addr;
--	orig_addr = addr = (unsigned long)area->addr;
--
--	if (ioremap_page_range(addr, addr + size, phys_addr, pgprot)) {
--		vunmap((void *)orig_addr);
--		return NULL;
--	}
--
--	return (void __iomem *)(offset + (char *)orig_addr);
-+	return generic_ioremap_prot(phys_addr, size, pgprot);
- }
--EXPORT_SYMBOL(__ioremap_caller);
-+EXPORT_SYMBOL(ioremap_prot);
- 
- /*
-  * Simple checks for non-translatable mappings.
-@@ -158,10 +122,9 @@ static inline int iomapping_nontranslatable(unsigned long offset)
- 	return 0;
- }
- 
--void iounmap(void __iomem *addr)
-+void iounmap(volatile void __iomem *addr)
- {
- 	unsigned long vaddr = (unsigned long __force)addr;
--	struct vm_struct *p;
- 
- 	/*
- 	 * Nothing to do if there is no translatable mapping.
-@@ -172,21 +135,15 @@ void iounmap(void __iomem *addr)
- 	/*
- 	 * There's no VMA if it's from an early fixed mapping.
- 	 */
--	if (iounmap_fixed(addr) == 0)
-+	if (iounmap_fixed((void __iomem *)addr) == 0)
- 		return;
- 
- 	/*
- 	 * If the PMB handled it, there's nothing else to do.
- 	 */
--	if (pmb_unmap(addr) == 0)
-+	if (pmb_unmap((void __iomem *)addr) == 0)
- 		return;
- 
--	p = remove_vm_area((void *)(vaddr & PAGE_MASK));
--	if (!p) {
--		printk(KERN_ERR "%s: bad address %p\n", __func__, addr);
--		return;
--	}
--
--	kfree(p);
-+	generic_iounmap(addr);
- }
- EXPORT_SYMBOL(iounmap);
--- 
-2.34.1
+--------------9WWMu77xFnUD5RQsa52KUfuv
+Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="OpenPGP_signature"
 
+-----BEGIN PGP SIGNATURE-----
+
+wsF5BAABCAAjFiEExndm/fpuMUdwYFFolh/E3EQov+AFAmSC3DEFAwAAAAAACgkQlh/E3EQov+Cx
+Zw/+OdjDLP5trVwcidrvFgF6TKEUYGkaFFhqs8PM32L7NsoIasCZw1W6rw9O51fJRjFcA0g6S2Ey
+dhBOPznPxxlgMH3YYKTlug65w3p4vwAzJb6+Q+U9hlUBUM3HM89skpbW+MDr40nru+gGOXnKXDXr
+I6t5caMa89BWjN38Yn37mJCHYVpDvkkBP+nTR5niUmckz67Hm17m6px4oplW4i27QGum/QVH7Jca
+1/J8xb04rr3IlCiLksFSGpTHMZprbm2qHmkJ3IdOYq2bIdOjXb0niQtemOBXK90lcn0603HhcRLS
+LkcVDnzZXw9CFDSBkUTgT97hzdlJ/oPcCRDS0xSqi831xzZCUrPsWv6PWT92AzKVQRk7ObzZdN61
+xMGdXDRFiHhVLSCzpVh25wVIsWlaXqmIMz4589qh+A+UQ54IREmNtNZG8dPPTmhw+Q6fmbLeH75V
+deYlrS/0HMBV4nRVW9w0nZJgwjAY0HCMAcabzQ+g1cKW+2npIKqe7XRbI3kCosiL14cclrv6/hUn
+xbKYAtgfRI5xA4D11nQWRPi9fnLsKRltt00A7Gu/CD6+7IVysDkWbivF3fnltqWjjVEpHLHDtfGV
+c6kqsSImT8P3KKO/4tXKf1dbwsYgtt1A8+GoAeP1Djs7nkJNkUg3BgrkFoPA2D2ddwaMtH0JkpZl
+ghk=
+=RAJi
+-----END PGP SIGNATURE-----
+
+--------------9WWMu77xFnUD5RQsa52KUfuv--
