@@ -2,91 +2,78 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B8422C77B7A
-	for <linux-sh@archiver.kernel.org>; Sat, 10 Jun 2023 10:25:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 05A0CC7EE23
+	for <linux-sh@archiver.kernel.org>; Sun, 11 Jun 2023 05:28:56 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230502AbjFJKZF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 10 Jun 2023 06:25:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45144 "EHLO
+        id S229911AbjFKF24 convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 11 Jun 2023 01:28:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47710 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229639AbjFJKZD (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 10 Jun 2023 06:25:03 -0400
-Received: from mail-lj1-x22d.google.com (mail-lj1-x22d.google.com [IPv6:2a00:1450:4864:20::22d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7FC5735B8;
-        Sat, 10 Jun 2023 03:25:01 -0700 (PDT)
-Received: by mail-lj1-x22d.google.com with SMTP id 38308e7fff4ca-2b1c910ee19so29089101fa.3;
-        Sat, 10 Jun 2023 03:25:01 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1686392699; x=1688984699;
-        h=content-transfer-encoding:content-language:in-reply-to:mime-version
-         :user-agent:date:message-id:from:references:cc:to:subject:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=z1amQyhc+nv8NT2kKmm9VpSR6/WIVyNzgkj2D/x5YIs=;
-        b=HOoT5xmA7Ad3ui/OJhSgvvg519+/nfEH0TG2vAWtTAY31v6u3mKAHPz6jt0Rj1ljya
-         rK+Cx6VDwUda7pDQdhNz9d0EouRjMqYO4FzNWnNHA0CfX9xzsC1jVAHlS+TQIy96Syi8
-         Wa/EkwJNL6QwKsYbvZ7kUh3/4XTUgIPNEwNgNP3gxsaD5CRs90u46EkhEb43GNDPRReo
-         3XW+OScQiHd15GRdRpvt969zU6o4K0HxcRnY7cLMsU22dy7oCA4516U04WI7A8apYUew
-         u7WnuYeNGqjJFGUVZ7KYXsimFwXAGxvr1+UTLWsGS12ZBzJL1/syEtIhAOrMUoqSGVBz
-         hx8Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686392699; x=1688984699;
-        h=content-transfer-encoding:content-language:in-reply-to:mime-version
-         :user-agent:date:message-id:from:references:cc:to:subject
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=z1amQyhc+nv8NT2kKmm9VpSR6/WIVyNzgkj2D/x5YIs=;
-        b=FZvtQvQZEjOEdB7aistbDD2tzfJuCg3OQ/my1QFy1vx0xG1lalJtVG2IXcpDpMel4Y
-         VGawKaOytRl2ThxB62JFxQOALCYpuZAnZtF8lRhzvEraxvmFDQmTTSWr8bjnV73cJTqY
-         Ey09+jSz6dFP+V48oGNGyAUq7Avn23Dfh/gV4Kz0R9dQON5c9p9W9xdn+muvuEHmjm0G
-         0Aj5doYfGXO1AncmjCVnF+9ZT1c0Pnh3z/HJs2Sq19w2IbbIwn1DAB6isoREFFxi351F
-         X1jkgE5fWxJgNifLPZj9kF6SJPpnpb4IaR/fgBTaVbfbRfANZ+bV9R/r1EIKHzwxVjtD
-         gv8Q==
-X-Gm-Message-State: AC+VfDwhM5ao9hbCFMteMeHyBQbPZQR/QIL4bBP83XUMWyyY1WqhwgEs
-        TVG5Qr6X4rPcucOVII4dKC+D3C9lJQ4=
-X-Google-Smtp-Source: ACHHUZ4ly3M+0uqFmfE4M46VDaXwNPpsVE7Bjwb2KKnTh4mooYPOtZj7fBlj2rBhLURtdYV9t7Ezyw==
-X-Received: by 2002:a2e:a0d6:0:b0:2b2:5d2:ce63 with SMTP id f22-20020a2ea0d6000000b002b205d2ce63mr470206ljm.35.1686392699015;
-        Sat, 10 Jun 2023 03:24:59 -0700 (PDT)
-Received: from [192.168.1.103] ([31.173.80.166])
-        by smtp.gmail.com with ESMTPSA id x13-20020a2e9c8d000000b002ad9a1bfa8esm791825lji.1.2023.06.10.03.24.57
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 10 Jun 2023 03:24:58 -0700 (PDT)
+        with ESMTP id S229562AbjFKF2z (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 11 Jun 2023 01:28:55 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 16922E6;
+        Sat, 10 Jun 2023 22:28:54 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1q8Dd8-003JdR-F6; Sun, 11 Jun 2023 07:28:46 +0200
+Received: from dynamic-077-191-185-170.77.191.pool.telefonica.de ([77.191.185.170] helo=[192.168.1.11])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1q8Dd8-000T1b-8H; Sun, 11 Jun 2023 07:28:46 +0200
+Message-ID: <3fff103bcea3874cc7fd93c3a765ca642aa7f632.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH v6] sh: avoid using IRQ0 on SH3/4
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Sergei Shtylyov <sergei.shtylyov@gmail.com>,
         Sergey Shtylyov <s.shtylyov@omp.ru>,
         Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         linux-kernel@vger.kernel.org
+Date:   Sun, 11 Jun 2023 07:28:45 +0200
+In-Reply-To: <837a586e-5e76-7a5b-a890-403ce26ea51b@gmail.com>
 References: <71105dbf-cdb0-72e1-f9eb-eeda8e321696@omp.ru>
- <983d701befce7fc0010c53d09be84f5c330bdf45.camel@physik.fu-berlin.de>
-From:   Sergei Shtylyov <sergei.shtylyov@gmail.com>
-Message-ID: <837a586e-5e76-7a5b-a890-403ce26ea51b@gmail.com>
-Date:   Sat, 10 Jun 2023 13:24:56 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.10.1
+         <983d701befce7fc0010c53d09be84f5c330bdf45.camel@physik.fu-berlin.de>
+         <837a586e-5e76-7a5b-a890-403ce26ea51b@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.3 
 MIME-Version: 1.0
-In-Reply-To: <983d701befce7fc0010c53d09be84f5c330bdf45.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset=utf-8
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 77.191.185.170
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 6/10/23 7:32 AM, John Paul Adrian Glaubitz wrote:
-
->> IRQ0 is no longer returned by platform_get_irq() and its ilk -- they now
->> return -EINVAL instead.  However, the kernel code supporting SH3/4 based
->> SoCs still maps the IRQ #s starting at 0 -- modify that code to start the
->> IRQ #s from 16 instead.
->>
->> The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
->> indeed are using IRQ0 for the SMSC911x compatible Ethernet chip...
+On Sat, 2023-06-10 at 13:24 +0300, Sergei Shtylyov wrote:
+> On 6/10/23 7:32 AM, John Paul Adrian Glaubitz wrote:
 > 
-> Do you mind if I remove the ellipsis at the end of this sentence when I merge
-> this later today? I think it makes no sense from a grammatical point of view.
+> > > IRQ0 is no longer returned by platform_get_irq() and its ilk -- they now
+> > > return -EINVAL instead.  However, the kernel code supporting SH3/4 based
+> > > SoCs still maps the IRQ #s starting at 0 -- modify that code to start the
+> > > IRQ #s from 16 instead.
+> > > 
+> > > The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
+> > > indeed are using IRQ0 for the SMSC911x compatible Ethernet chip...
+> > 
+> > Do you mind if I remove the ellipsis at the end of this sentence when I merge
+> > this later today? I think it makes no sense from a grammatical point of view.
+> 
+>    No, I don't mind. :-)
 
-   No, I don't mind. :-)
+Applied to my for-next branch.
 
-> Adrian
+Thanks,
+Adrian
 
-MBR, Sergey
-
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
