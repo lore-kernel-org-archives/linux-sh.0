@@ -2,52 +2,52 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 96270C88CB8
-	for <linux-sh@archiver.kernel.org>; Mon, 12 Jun 2023 14:14:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0082CCA9EA5
+	for <linux-sh@archiver.kernel.org>; Mon, 12 Jun 2023 14:14:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237398AbjFLOOJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 12 Jun 2023 10:14:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55088 "EHLO
+        id S237425AbjFLOOL (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 12 Jun 2023 10:14:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55152 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237316AbjFLOOA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 12 Jun 2023 10:14:00 -0400
+        with ESMTP id S237341AbjFLOOD (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 12 Jun 2023 10:14:03 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9215810D9;
-        Mon, 12 Jun 2023 07:13:59 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7658F10C4;
+        Mon, 12 Jun 2023 07:14:00 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 31693203E7;
+        by smtp-out2.suse.de (Postfix) with ESMTPS id D2F6920487;
         Mon, 12 Jun 2023 14:13:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
         t=1686579238; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=6kaVCNj4tgN+z2DdqslCQwj9/KoTXQV8PSRO8egtdwg=;
-        b=TUsdTAYgmS8pspPnsXIEh8X/Q6hFe1+kgCRCx0cJ6HUYwaxplYsxI7KxIcSv2gk1WzxUCM
-        tkixYzDw8TI8VjyqX7mSHAcHknZ+W4XGL4Kb7X5C/W26lmJTdeuW/lu1OwzMfFvh60xGPu
-        TU9c1g6qtcGNROkxe/o0SMuLIJDy9Vs=
+        bh=wgea4CAx5RQUmrYwJYNcyiyGnDDQ3dqg16YEIp4VW1k=;
+        b=piT0tDi1k9GcInx2VZawxHTEUmo2GUSb9G3n/TbHXMhvuQlgrWIbbSpC7QeLwMxNIAN3vk
+        BKMMEeXRYEjhnYn4InzLNw8mNeIFW69LpZJDyVZmXFtHFva0ZIgCP0vBU6pkTiC4UgL7Pb
+        BFmZBmsSL1PCA2RFkGUhpZComRzERy0=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
         s=susede2_ed25519; t=1686579238;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=6kaVCNj4tgN+z2DdqslCQwj9/KoTXQV8PSRO8egtdwg=;
-        b=eB6RqgxueXzNYsaF1Y3a4zr0pkYjM/24cfOxXsOq8/07BOeFZ1+nrTHTM01B4IJuKY+Ls3
-        9RGhQD0zMxMTIaBg==
+        bh=wgea4CAx5RQUmrYwJYNcyiyGnDDQ3dqg16YEIp4VW1k=;
+        b=y7enem/ailjQhCZUOs9GcJ2zdJtJLqZ/6l9bBay5RCU9uOv4oi3yhizKOazmW1ooU9Hale
+        IG3q1iWDXJNUIdAQ==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D4BBE1357F;
-        Mon, 12 Jun 2023 14:13:57 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 86A4113A67;
+        Mon, 12 Jun 2023 14:13:58 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id mG3+MiUoh2RwGQAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Mon, 12 Jun 2023 14:13:57 +0000
+        id iKDkHyYoh2RwGQAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Mon, 12 Jun 2023 14:13:58 +0000
 From:   Thomas Zimmermann <tzimmermann@suse.de>
 To:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
         deller@gmx.de, geert+renesas@glider.be, lee@kernel.org,
@@ -57,9 +57,9 @@ Cc:     linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
         linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
         linux-staging@lists.linux.dev, linux-kernel@vger.kernel.org,
         Thomas Zimmermann <tzimmermann@suse.de>
-Subject: [PATCH v2 10/38] fbdev/aty128fb: Use hardware device as backlight parent
-Date:   Mon, 12 Jun 2023 16:07:48 +0200
-Message-ID: <20230612141352.29939-11-tzimmermann@suse.de>
+Subject: [PATCH v2 12/38] fbdev/ep93xx-fb: Alloc DMA memory from hardware device
+Date:   Mon, 12 Jun 2023 16:07:50 +0200
+Message-ID: <20230612141352.29939-13-tzimmermann@suse.de>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <20230612141352.29939-1-tzimmermann@suse.de>
 References: <20230612141352.29939-1-tzimmermann@suse.de>
@@ -69,29 +69,56 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Use the hardware device in struct fb_info.device as parent of the
-backlight device. Aligns the driver with the rest of the codebase
-and prepares fbdev for making struct fb_info.dev optional.
+Pass the hardware device to the DMA helpers dma_alloc_wc(), dma_mmap_wc()
+and dma_free_coherent(). The fbdev device that is currently being used is
+a software device and does not provide DMA memory.
 
 Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
 Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
 ---
- drivers/video/fbdev/aty/aty128fb.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/video/fbdev/ep93xx-fb.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/video/fbdev/aty/aty128fb.c b/drivers/video/fbdev/aty/aty128fb.c
-index b4a49068a522f..2d9320a52e519 100644
---- a/drivers/video/fbdev/aty/aty128fb.c
-+++ b/drivers/video/fbdev/aty/aty128fb.c
-@@ -1846,7 +1846,7 @@ static void aty128_bl_init(struct aty128fb_par *par)
- 	memset(&props, 0, sizeof(struct backlight_properties));
- 	props.type = BACKLIGHT_RAW;
- 	props.max_brightness = FB_BACKLIGHT_LEVELS - 1;
--	bd = backlight_device_register(name, info->dev, par, &aty128_bl_data,
-+	bd = backlight_device_register(name, info->device, par, &aty128_bl_data,
- 				       &props);
- 	if (IS_ERR(bd)) {
- 		info->bl_dev = NULL;
+diff --git a/drivers/video/fbdev/ep93xx-fb.c b/drivers/video/fbdev/ep93xx-fb.c
+index 94fe52928be25..376ee59e925c2 100644
+--- a/drivers/video/fbdev/ep93xx-fb.c
++++ b/drivers/video/fbdev/ep93xx-fb.c
+@@ -312,7 +312,7 @@ static int ep93xxfb_mmap(struct fb_info *info, struct vm_area_struct *vma)
+ 	unsigned int offset = vma->vm_pgoff << PAGE_SHIFT;
+ 
+ 	if (offset < info->fix.smem_len) {
+-		return dma_mmap_wc(info->dev, vma, info->screen_base,
++		return dma_mmap_wc(info->device, vma, info->screen_base,
+ 				   info->fix.smem_start, info->fix.smem_len);
+ 	}
+ 
+@@ -423,7 +423,7 @@ static int ep93xxfb_alloc_videomem(struct fb_info *info)
+ 	/* Maximum 16bpp -> used memory is maximum x*y*2 bytes */
+ 	fb_size = EP93XXFB_MAX_XRES * EP93XXFB_MAX_YRES * 2;
+ 
+-	virt_addr = dma_alloc_wc(info->dev, fb_size, &phys_addr, GFP_KERNEL);
++	virt_addr = dma_alloc_wc(info->device, fb_size, &phys_addr, GFP_KERNEL);
+ 	if (!virt_addr)
+ 		return -ENOMEM;
+ 
+@@ -440,7 +440,7 @@ static int ep93xxfb_alloc_videomem(struct fb_info *info)
+ 			"has bit 27 set: cannot init framebuffer\n",
+ 			phys_addr);
+ 
+-		dma_free_coherent(info->dev, fb_size, virt_addr, phys_addr);
++		dma_free_coherent(info->device, fb_size, virt_addr, phys_addr);
+ 		return -ENOMEM;
+ 	}
+ 
+@@ -454,7 +454,7 @@ static int ep93xxfb_alloc_videomem(struct fb_info *info)
+ static void ep93xxfb_dealloc_videomem(struct fb_info *info)
+ {
+ 	if (info->screen_base)
+-		dma_free_coherent(info->dev, info->fix.smem_len,
++		dma_free_coherent(info->device, info->fix.smem_len,
+ 				  info->screen_base, info->fix.smem_start);
+ }
+ 
 -- 
 2.41.0
 
