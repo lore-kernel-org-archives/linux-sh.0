@@ -2,107 +2,74 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E0F42C7EE25
-	for <linux-sh@archiver.kernel.org>; Mon, 12 Jun 2023 11:08:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1C6C0C7EE23
+	for <linux-sh@archiver.kernel.org>; Mon, 12 Jun 2023 11:13:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S238095AbjFLLIg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 12 Jun 2023 07:08:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43470 "EHLO
+        id S233676AbjFLLNR convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 12 Jun 2023 07:13:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46888 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236652AbjFLLIT (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 12 Jun 2023 07:08:19 -0400
-Received: from mx01.omp.ru (mx01.omp.ru [90.154.21.10])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 23EFF5277;
-        Mon, 12 Jun 2023 03:56:39 -0700 (PDT)
-Received: from [192.168.1.103] (178.176.77.197) by msexch01.omp.ru
- (10.188.4.12) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.2.986.14; Mon, 12 Jun
- 2023 13:56:29 +0300
+        with ESMTP id S234917AbjFLLND (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 12 Jun 2023 07:13:03 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E18687A93;
+        Mon, 12 Jun 2023 04:01:59 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1q8fIS-00164Q-JP; Mon, 12 Jun 2023 13:01:16 +0200
+Received: from p57bd9486.dip0.t-ipconnect.de ([87.189.148.134] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1q8fIS-00087K-EX; Mon, 12 Jun 2023 13:01:16 +0200
+Message-ID: <cf997239b624431486ecba90a1f67d81d6c3fb13.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH v6] sh: avoid using IRQ0 on SH3/4
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Sergey Shtylyov <s.shtylyov@omp.ru>,
         Sergei Shtylyov <sergei.shtylyov@gmail.com>,
-        Rich Felker <dalias@libc.org>, <linux-sh@vger.kernel.org>
-CC:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        <linux-kernel@vger.kernel.org>
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-kernel@vger.kernel.org
+Date:   Mon, 12 Jun 2023 13:01:15 +0200
+In-Reply-To: <f32a649e-3563-2485-234e-640f9dace105@omp.ru>
 References: <71105dbf-cdb0-72e1-f9eb-eeda8e321696@omp.ru>
- <983d701befce7fc0010c53d09be84f5c330bdf45.camel@physik.fu-berlin.de>
- <837a586e-5e76-7a5b-a890-403ce26ea51b@gmail.com>
- <3fff103bcea3874cc7fd93c3a765ca642aa7f632.camel@physik.fu-berlin.de>
-From:   Sergey Shtylyov <s.shtylyov@omp.ru>
-Organization: Open Mobile Platform
-Message-ID: <f32a649e-3563-2485-234e-640f9dace105@omp.ru>
-Date:   Mon, 12 Jun 2023 13:56:29 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.10.1
+         <983d701befce7fc0010c53d09be84f5c330bdf45.camel@physik.fu-berlin.de>
+         <837a586e-5e76-7a5b-a890-403ce26ea51b@gmail.com>
+         <3fff103bcea3874cc7fd93c3a765ca642aa7f632.camel@physik.fu-berlin.de>
+         <f32a649e-3563-2485-234e-640f9dace105@omp.ru>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.3 
 MIME-Version: 1.0
-In-Reply-To: <3fff103bcea3874cc7fd93c3a765ca642aa7f632.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset="utf-8"
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Originating-IP: [178.176.77.197]
-X-ClientProxiedBy: msexch01.omp.ru (10.188.4.12) To msexch01.omp.ru
- (10.188.4.12)
-X-KSE-ServerInfo: msexch01.omp.ru, 9
-X-KSE-AntiSpam-Interceptor-Info: scan successful
-X-KSE-AntiSpam-Version: 5.9.59, Database issued on: 06/12/2023 10:41:47
-X-KSE-AntiSpam-Status: KAS_STATUS_NOT_DETECTED
-X-KSE-AntiSpam-Method: none
-X-KSE-AntiSpam-Rate: 59
-X-KSE-AntiSpam-Info: Lua profiles 177977 [Jun 09 2023]
-X-KSE-AntiSpam-Info: Version: 5.9.59.0
-X-KSE-AntiSpam-Info: Envelope from: s.shtylyov@omp.ru
-X-KSE-AntiSpam-Info: LuaCore: 516 516 efd4d74ff4b68f90ca62ae34a19f27bf46d81db5
-X-KSE-AntiSpam-Info: {rep_avail}
-X-KSE-AntiSpam-Info: {Tracking_no_received}
-X-KSE-AntiSpam-Info: {Tracking_arrow_text}
-X-KSE-AntiSpam-Info: {Tracking_from_domain_doesnt_match_to}
-X-KSE-AntiSpam-Info: {relay has no DNS name}
-X-KSE-AntiSpam-Info: {SMTP from is not routable}
-X-KSE-AntiSpam-Info: {Found in DNSBL: 178.176.77.197 in (user)
- dbl.spamhaus.org}
-X-KSE-AntiSpam-Info: omp.ru:7.1.1;d41d8cd98f00b204e9800998ecf8427e.com:7.1.1;127.0.0.199:7.1.2
-X-KSE-AntiSpam-Info: ApMailHostAddress: 178.176.77.197
-X-KSE-AntiSpam-Info: {DNS response errors}
-X-KSE-AntiSpam-Info: Rate: 59
-X-KSE-AntiSpam-Info: Status: not_detected
-X-KSE-AntiSpam-Info: Method: none
-X-KSE-AntiSpam-Info: Auth:dmarc=temperror header.from=omp.ru;spf=temperror
- smtp.mailfrom=omp.ru;dkim=none
-X-KSE-Antiphishing-Info: Clean
-X-KSE-Antiphishing-ScanningType: Heuristic
-X-KSE-Antiphishing-Method: None
-X-KSE-Antiphishing-Bases: 06/12/2023 10:47:00
-X-KSE-Antivirus-Interceptor-Info: scan successful
-X-KSE-Antivirus-Info: Clean, bases: 6/12/2023 4:54:00 AM
-X-KSE-Attachment-Filter-Triggered-Rules: Clean
-X-KSE-Attachment-Filter-Triggered-Filters: Clean
-X-KSE-BulkMessagesFiltering-Scan-Result: InTheLimit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.148.134
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 6/11/23 8:28 AM, John Paul Adrian Glaubitz wrote:
-[...]
+Hi Sergey!
 
->>>> IRQ0 is no longer returned by platform_get_irq() and its ilk -- they now
->>>> return -EINVAL instead.  However, the kernel code supporting SH3/4 based
->>>> SoCs still maps the IRQ #s starting at 0 -- modify that code to start the
->>>> IRQ #s from 16 instead.
->>>>
->>>> The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
->>>> indeed are using IRQ0 for the SMSC911x compatible Ethernet chip...
->>>
->>> Do you mind if I remove the ellipsis at the end of this sentence when I merge
->>> this later today? I think it makes no sense from a grammatical point of view.
->>
->>    No, I don't mind. :-)
+On Mon, 2023-06-12 at 13:56 +0300, Sergey Shtylyov wrote:
+> > Applied to my for-next branch.
 > 
-> Applied to my for-next branch.
+>    Note that this was positioned as a fix.
 
-   Note that this was positioned as a fix.
-   Where is your tree, BTW? :-)
+Hmm, it will be at least backported to the stable trees.
 
-> Thanks,
-> Adrian
+>    Where is your tree, BTW? :-)
 
-MBR, Sergey
+https://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git
+
+Adrian
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
