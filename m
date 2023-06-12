@@ -2,131 +2,107 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A93FC7EE45
-	for <linux-sh@archiver.kernel.org>; Mon, 12 Jun 2023 11:00:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E0F42C7EE25
+	for <linux-sh@archiver.kernel.org>; Mon, 12 Jun 2023 11:08:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236365AbjFLLAC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 12 Jun 2023 07:00:02 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60326 "EHLO
+        id S238095AbjFLLIg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 12 Jun 2023 07:08:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43470 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236715AbjFLK7G (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 12 Jun 2023 06:59:06 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 51A487295;
-        Mon, 12 Jun 2023 03:46:22 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id E8BA8201A7;
-        Mon, 12 Jun 2023 10:46:20 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1686566780; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=XKUVIMDVJIG/UmtUdhol+jEC2QYZC04MyRqvdtB1JVM=;
-        b=mUlrG4hRnU0/QybWitK+0wlKfNS01dhUAVUNYgeZAGc3Fqj9eRVSsqlhgnpQnYaONx9YOc
-        UKkbJxD90h+pyvkkC1ikuZQNdsTOOi0RS6AlvYn8jnzUqqA8IsPUS6q80+hVf3ua+i6hYU
-        Mj76FfYbtV9IuW/oDYt/y6TA1oUyFLQ=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1686566780;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=XKUVIMDVJIG/UmtUdhol+jEC2QYZC04MyRqvdtB1JVM=;
-        b=GBbfEnJnmmcciQRJOOmEcK348eL7HTUX2HvbFuAjVyBJZKPGdRomAmGyqW7SuuAENDq+Ch
-        iorIfZMHUaJ+npBw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A66CD138EC;
-        Mon, 12 Jun 2023 10:46:20 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id DUybJ3z3hmSiMwAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Mon, 12 Jun 2023 10:46:20 +0000
-Message-ID: <7b73550c-3e8d-6cb3-ace7-49cc405f8086@suse.de>
-Date:   Mon, 12 Jun 2023 12:46:19 +0200
+        with ESMTP id S236652AbjFLLIT (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 12 Jun 2023 07:08:19 -0400
+Received: from mx01.omp.ru (mx01.omp.ru [90.154.21.10])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 23EFF5277;
+        Mon, 12 Jun 2023 03:56:39 -0700 (PDT)
+Received: from [192.168.1.103] (178.176.77.197) by msexch01.omp.ru
+ (10.188.4.12) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.2.986.14; Mon, 12 Jun
+ 2023 13:56:29 +0300
+Subject: Re: [PATCH v6] sh: avoid using IRQ0 on SH3/4
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Sergei Shtylyov <sergei.shtylyov@gmail.com>,
+        Rich Felker <dalias@libc.org>, <linux-sh@vger.kernel.org>
+CC:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        <linux-kernel@vger.kernel.org>
+References: <71105dbf-cdb0-72e1-f9eb-eeda8e321696@omp.ru>
+ <983d701befce7fc0010c53d09be84f5c330bdf45.camel@physik.fu-berlin.de>
+ <837a586e-5e76-7a5b-a890-403ce26ea51b@gmail.com>
+ <3fff103bcea3874cc7fd93c3a765ca642aa7f632.camel@physik.fu-berlin.de>
+From:   Sergey Shtylyov <s.shtylyov@omp.ru>
+Organization: Open Mobile Platform
+Message-ID: <f32a649e-3563-2485-234e-640f9dace105@omp.ru>
+Date:   Mon, 12 Jun 2023 13:56:29 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.1
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.11.2
-Subject: Re: [PATCH 00/30] fbdev: Make userspace interfaces optional
+In-Reply-To: <3fff103bcea3874cc7fd93c3a765ca642aa7f632.camel@physik.fu-berlin.de>
+Content-Type: text/plain; charset="utf-8"
 Content-Language: en-US
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
-        deller@gmx.de, lee@kernel.org, daniel.thompson@linaro.org,
-        jingoohan1@gmail.com, linux-fbdev@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org,
-        linux-omap@vger.kernel.org, linux-staging@lists.linux.dev
-References: <20230605144812.15241-1-tzimmermann@suse.de>
- <CAMuHMdUNAg5MYQVOnVhYeHKnciHci1Ly6v8DbdBp_P_9YEu=Zg@mail.gmail.com>
-From:   Thomas Zimmermann <tzimmermann@suse.de>
-In-Reply-To: <CAMuHMdUNAg5MYQVOnVhYeHKnciHci1Ly6v8DbdBp_P_9YEu=Zg@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="------------jczAnVEPWIiygzYqzfIvFYvB"
+Content-Transfer-Encoding: 7bit
+X-Originating-IP: [178.176.77.197]
+X-ClientProxiedBy: msexch01.omp.ru (10.188.4.12) To msexch01.omp.ru
+ (10.188.4.12)
+X-KSE-ServerInfo: msexch01.omp.ru, 9
+X-KSE-AntiSpam-Interceptor-Info: scan successful
+X-KSE-AntiSpam-Version: 5.9.59, Database issued on: 06/12/2023 10:41:47
+X-KSE-AntiSpam-Status: KAS_STATUS_NOT_DETECTED
+X-KSE-AntiSpam-Method: none
+X-KSE-AntiSpam-Rate: 59
+X-KSE-AntiSpam-Info: Lua profiles 177977 [Jun 09 2023]
+X-KSE-AntiSpam-Info: Version: 5.9.59.0
+X-KSE-AntiSpam-Info: Envelope from: s.shtylyov@omp.ru
+X-KSE-AntiSpam-Info: LuaCore: 516 516 efd4d74ff4b68f90ca62ae34a19f27bf46d81db5
+X-KSE-AntiSpam-Info: {rep_avail}
+X-KSE-AntiSpam-Info: {Tracking_no_received}
+X-KSE-AntiSpam-Info: {Tracking_arrow_text}
+X-KSE-AntiSpam-Info: {Tracking_from_domain_doesnt_match_to}
+X-KSE-AntiSpam-Info: {relay has no DNS name}
+X-KSE-AntiSpam-Info: {SMTP from is not routable}
+X-KSE-AntiSpam-Info: {Found in DNSBL: 178.176.77.197 in (user)
+ dbl.spamhaus.org}
+X-KSE-AntiSpam-Info: omp.ru:7.1.1;d41d8cd98f00b204e9800998ecf8427e.com:7.1.1;127.0.0.199:7.1.2
+X-KSE-AntiSpam-Info: ApMailHostAddress: 178.176.77.197
+X-KSE-AntiSpam-Info: {DNS response errors}
+X-KSE-AntiSpam-Info: Rate: 59
+X-KSE-AntiSpam-Info: Status: not_detected
+X-KSE-AntiSpam-Info: Method: none
+X-KSE-AntiSpam-Info: Auth:dmarc=temperror header.from=omp.ru;spf=temperror
+ smtp.mailfrom=omp.ru;dkim=none
+X-KSE-Antiphishing-Info: Clean
+X-KSE-Antiphishing-ScanningType: Heuristic
+X-KSE-Antiphishing-Method: None
+X-KSE-Antiphishing-Bases: 06/12/2023 10:47:00
+X-KSE-Antivirus-Interceptor-Info: scan successful
+X-KSE-Antivirus-Info: Clean, bases: 6/12/2023 4:54:00 AM
+X-KSE-Attachment-Filter-Triggered-Rules: Clean
+X-KSE-Attachment-Filter-Triggered-Filters: Clean
+X-KSE-BulkMessagesFiltering-Scan-Result: InTheLimit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---------------jczAnVEPWIiygzYqzfIvFYvB
-Content-Type: multipart/mixed; boundary="------------ied9YunLYcXBK5a4s7zjJrSU";
- protected-headers="v1"
-From: Thomas Zimmermann <tzimmermann@suse.de>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org, deller@gmx.de,
- lee@kernel.org, daniel.thompson@linaro.org, jingoohan1@gmail.com,
- linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
- linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
- linux-staging@lists.linux.dev
-Message-ID: <7b73550c-3e8d-6cb3-ace7-49cc405f8086@suse.de>
-Subject: Re: [PATCH 00/30] fbdev: Make userspace interfaces optional
-References: <20230605144812.15241-1-tzimmermann@suse.de>
- <CAMuHMdUNAg5MYQVOnVhYeHKnciHci1Ly6v8DbdBp_P_9YEu=Zg@mail.gmail.com>
-In-Reply-To: <CAMuHMdUNAg5MYQVOnVhYeHKnciHci1Ly6v8DbdBp_P_9YEu=Zg@mail.gmail.com>
+On 6/11/23 8:28 AM, John Paul Adrian Glaubitz wrote:
+[...]
 
---------------ied9YunLYcXBK5a4s7zjJrSU
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: base64
+>>>> IRQ0 is no longer returned by platform_get_irq() and its ilk -- they now
+>>>> return -EINVAL instead.  However, the kernel code supporting SH3/4 based
+>>>> SoCs still maps the IRQ #s starting at 0 -- modify that code to start the
+>>>> IRQ #s from 16 instead.
+>>>>
+>>>> The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
+>>>> indeed are using IRQ0 for the SMSC911x compatible Ethernet chip...
+>>>
+>>> Do you mind if I remove the ellipsis at the end of this sentence when I merge
+>>> this later today? I think it makes no sense from a grammatical point of view.
+>>
+>>    No, I don't mind. :-)
+> 
+> Applied to my for-next branch.
 
-SGkNCg0KQW0gMDcuMDYuMjMgdW0gMTA6MzUgc2NocmllYiBHZWVydCBVeXR0ZXJob2V2ZW46
-DQpbLi4uXQ0KPiANCj4gQlRXLCBJIGFtIHdvbmRlcmluZyBpZiBpdCB3b3VsZCBiZSBwb3Nz
-aWJsZSB0byB3cml0ZSBhIERSTSBlbXVsYXRpb24NCj4gbGF5ZXIgb24gdG9wIG9mIChiYXNp
-YywgZS5nLiBubyBNTUlPLCBqdXN0IGZiKSBmYmRldj8NCg0KVGhhdCBleGlzdHMsIHNvcnQg
-b2YuICBJIGZpcnN0IHBvc3RlZCBpdCBoZXJlOg0KDQogICBodHRwczovL3BhdGNod29yay5m
-cmVlZGVza3RvcC5vcmcvc2VyaWVzLzU4NTY5Lw0KDQphbmQgaXQgaGFzIGxhdGVyIGJlZW4g
-dHJhbnNmb3JtZWQgaW50byB0aGVzZSBjb252ZXJzaW9uIGhlbHBlcnMgdGhhdCBJIA0KaGF2
-ZSBzb21ld2hlcmUgb24gZ2l0bGFiLg0KDQpCZXN0IHJlZ2FyZHMNClRob21hcw0KDQo+IA0K
-PiBHcntvZXRqZSxlZXRpbmd9cywNCj4gDQo+ICAgICAgICAgICAgICAgICAgICAgICAgICBH
-ZWVydA0KPiANCg0KLS0gDQpUaG9tYXMgWmltbWVybWFubg0KR3JhcGhpY3MgRHJpdmVyIERl
-dmVsb3Blcg0KU1VTRSBTb2Z0d2FyZSBTb2x1dGlvbnMgR2VybWFueSBHbWJIDQpGcmFua2Vu
-c3RyYXNzZSAxNDYsIDkwNDYxIE51ZXJuYmVyZywgR2VybWFueQ0KR0Y6IEl2byBUb3Rldiwg
-QW5kcmV3IE15ZXJzLCBBbmRyZXcgTWNEb25hbGQsIEJvdWRpZW4gTW9lcm1hbg0KSFJCIDM2
-ODA5IChBRyBOdWVybmJlcmcpDQo=
+   Note that this was positioned as a fix.
+   Where is your tree, BTW? :-)
 
---------------ied9YunLYcXBK5a4s7zjJrSU--
+> Thanks,
+> Adrian
 
---------------jczAnVEPWIiygzYqzfIvFYvB
-Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="OpenPGP_signature"
-
------BEGIN PGP SIGNATURE-----
-
-wsF5BAABCAAjFiEExndm/fpuMUdwYFFolh/E3EQov+AFAmSG93sFAwAAAAAACgkQlh/E3EQov+Dg
-hg//UQNYjBQLz502Rz811LBrAJFzZAtFe6BeN9TBDTKqkScQQY5g4UU4wCzy5vq3t82Vg7cgtjxc
-che0ZWmH3fhLR+b/F2zlEzMecgFSGTXXa860DKC87Vkdj5gvRjOvIi9MPi5Tfzw+C9kFHXybkhHv
-sdxnuXEqAy4Qz0+8yucEsBYrAT2RCSnhbL/xC4NLIB1Srw/9NpzicbrjXSo8mKPeXCB5bE+sjptY
-T+H0BOsVdnJhzwmsvrKYKJe2UiWdr5jawXSWm9gR01QP/DgHmhLYYMVoeHrwwfTHTu0RWxi9G6YS
-f0jH0fDqfDe4n26cIhXKM3lcm3NVZQczgphJdty9rHdEzKVE1A89t/udc8xLMyEKDtXbJijme4ud
-5yzUTNK0ju3WyF5+oA6Bnu0ti8DOuWEREIrs7Gv9e09+j53+peOQUfLjl77031/vF1dWaG8WBTPz
-yxNt4fHhW4/lzLdTW7rGg9Aec9805fGYpphcUcVXMVxIHt+R4KtlCFBz+NUL9B9pKCwKZNXajLSh
-TYNziiXe0kdt7oDvYMvOri+5ZzH9Ngv+aIfKlrEgeOQLnEo6gjVTo9VrIXN5yv9bFKf61QBrps0X
-zUaC4hw+uqcAfZveNj+u2QdrGtQp9hBI/g7EFFiCPBVcNFFCTDVPZwJdAWdcL5wlwTJrR9+zqUlg
-h1Y=
-=SNdA
------END PGP SIGNATURE-----
-
---------------jczAnVEPWIiygzYqzfIvFYvB--
+MBR, Sergey
