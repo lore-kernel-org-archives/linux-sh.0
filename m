@@ -2,137 +2,131 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3005EC8300C
-	for <linux-sh@archiver.kernel.org>; Mon, 12 Jun 2023 10:55:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A93FC7EE45
+	for <linux-sh@archiver.kernel.org>; Mon, 12 Jun 2023 11:00:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236360AbjFLKzR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 12 Jun 2023 06:55:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59756 "EHLO
+        id S236365AbjFLLAC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 12 Jun 2023 07:00:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60326 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236857AbjFLKzG (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 12 Jun 2023 06:55:06 -0400
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B746A11D9B
-        for <linux-sh@vger.kernel.org>; Mon, 12 Jun 2023 03:40:26 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1686566425;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+        with ESMTP id S236715AbjFLK7G (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 12 Jun 2023 06:59:06 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 51A487295;
+        Mon, 12 Jun 2023 03:46:22 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id E8BA8201A7;
+        Mon, 12 Jun 2023 10:46:20 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1686566780; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
          in-reply-to:in-reply-to:references:references;
-        bh=75rPdiK8vy0+hfZPm4hKQMMWAw1iiTrCWzbw47oqQ3o=;
-        b=TYi7dR8qf11nqA5JFfAlYicCWCDrrKaDsceD6YLQVbJlcUz+fzqO4qIyF8swy4bH+v5miJ
-        l/3p4pxKK1dMaET/wrH+gjteE3GkIKiRINjGp++IGJQbwOd5N0PIZg7T4vEJPFyoBubYGH
-        v4HBGGehSzpDLFt7/pLhvB3Un9cvZls=
-Received: from mail-wm1-f71.google.com (mail-wm1-f71.google.com
- [209.85.128.71]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-209-MIOizSdjNbmMMoMnayP9Kw-1; Mon, 12 Jun 2023 06:40:22 -0400
-X-MC-Unique: MIOizSdjNbmMMoMnayP9Kw-1
-Received: by mail-wm1-f71.google.com with SMTP id 5b1f17b1804b1-3f81dda24d3so10544365e9.1
-        for <linux-sh@vger.kernel.org>; Mon, 12 Jun 2023 03:40:22 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686566421; x=1689158421;
-        h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=75rPdiK8vy0+hfZPm4hKQMMWAw1iiTrCWzbw47oqQ3o=;
-        b=AoXn0WXF6pVpg+YyO0CKbRBE5+fwsnvJcBOd1FwuE8cjiQzPcyYlG5rSDxLePExk47
-         17a4YWWwoBG0fhib9zhd17JLFQH0yOkLX8IEE18zvnwWcz+dbSNP+UOfPkRWqNKxOv6n
-         emEnoJBZAJbb4xiloU1nFc1D6zAKDXmLAPNNQcqDlem78zYhKdl6XmtIaaR75io4LAC9
-         oKS9dAFlNoFY0twl1oJN5A/h9GfH3AOX29gtVP1McLBWeD1oeGk1W4skTzzot7YOXUw/
-         3pqUCwUO9F3QUSgRsXvKP2Llx47+kMsKU7fE4Y5PWN9StNkfrTt5/s9A/scMVxkYsRMd
-         rBXA==
-X-Gm-Message-State: AC+VfDwar+/L6byLmjj3oILS7QB39XCA5flXCZoin8L6oUYCbVX/usBK
-        mWa1D9+LMViAnR7P5hrW3KgSldMPN2UEqr7HxMkXejILVUXCToOu9T0ILJOS34zhLDQA2r0Z0o/
-        4iHkeeMsRUY8nGCTx+qw=
-X-Received: by 2002:a7b:ca51:0:b0:3f8:1e00:5a62 with SMTP id m17-20020a7bca51000000b003f81e005a62mr1113947wml.38.1686566421734;
-        Mon, 12 Jun 2023 03:40:21 -0700 (PDT)
-X-Google-Smtp-Source: ACHHUZ7MsqRGgveHsuNkfrpDC1Y5y2oZ/Wv2tvp//EQrR0fI03+Glf+TK6KJrHQIoCgU/ovDWpctCw==
-X-Received: by 2002:a7b:ca51:0:b0:3f8:1e00:5a62 with SMTP id m17-20020a7bca51000000b003f81e005a62mr1113932wml.38.1686566421434;
-        Mon, 12 Jun 2023 03:40:21 -0700 (PDT)
-Received: from localhost (205.pool92-176-231.dynamic.orange.es. [92.176.231.205])
-        by smtp.gmail.com with ESMTPSA id o7-20020adfeac7000000b002fed865c55esm12153178wrn.56.2023.06.12.03.40.21
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 12 Jun 2023 03:40:21 -0700 (PDT)
-From:   Javier Martinez Canillas <javierm@redhat.com>
-To:     Thomas Zimmermann <tzimmermann@suse.de>, daniel@ffwll.ch,
-        sam@ravnborg.org, deller@gmx.de, geert+renesas@glider.be,
-        lee@kernel.org, daniel.thompson@linaro.org, jingoohan1@gmail.com
-Cc:     Steve Glendinning <steve.glendinning@shawell.net>,
-        linux-fbdev@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-staging@lists.linux.dev, dri-devel@lists.freedesktop.org,
-        linux-omap@vger.kernel.org
-Subject: Re: [PATCH 22/30] fbdev/smscufx: Detect registered fb_info from
- refcount
-In-Reply-To: <7f62aa10-bc6f-96e2-d2cc-d42f0fad9e32@suse.de>
-References: <20230605144812.15241-1-tzimmermann@suse.de>
- <20230605144812.15241-23-tzimmermann@suse.de>
- <87edmmewuk.fsf@minerva.mail-host-address-is-not-set>
- <7f62aa10-bc6f-96e2-d2cc-d42f0fad9e32@suse.de>
-Date:   Mon, 12 Jun 2023 12:40:20 +0200
-Message-ID: <87mt152cbv.fsf@minerva.mail-host-address-is-not-set>
+        bh=XKUVIMDVJIG/UmtUdhol+jEC2QYZC04MyRqvdtB1JVM=;
+        b=mUlrG4hRnU0/QybWitK+0wlKfNS01dhUAVUNYgeZAGc3Fqj9eRVSsqlhgnpQnYaONx9YOc
+        UKkbJxD90h+pyvkkC1ikuZQNdsTOOi0RS6AlvYn8jnzUqqA8IsPUS6q80+hVf3ua+i6hYU
+        Mj76FfYbtV9IuW/oDYt/y6TA1oUyFLQ=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1686566780;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=XKUVIMDVJIG/UmtUdhol+jEC2QYZC04MyRqvdtB1JVM=;
+        b=GBbfEnJnmmcciQRJOOmEcK348eL7HTUX2HvbFuAjVyBJZKPGdRomAmGyqW7SuuAENDq+Ch
+        iorIfZMHUaJ+npBw==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A66CD138EC;
+        Mon, 12 Jun 2023 10:46:20 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id DUybJ3z3hmSiMwAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Mon, 12 Jun 2023 10:46:20 +0000
+Message-ID: <7b73550c-3e8d-6cb3-ace7-49cc405f8086@suse.de>
+Date:   Mon, 12 Jun 2023 12:46:19 +0200
 MIME-Version: 1.0
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: redhat.com
-Content-Type: text/plain
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.11.2
+Subject: Re: [PATCH 00/30] fbdev: Make userspace interfaces optional
+Content-Language: en-US
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
+        deller@gmx.de, lee@kernel.org, daniel.thompson@linaro.org,
+        jingoohan1@gmail.com, linux-fbdev@vger.kernel.org,
+        dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org,
+        linux-omap@vger.kernel.org, linux-staging@lists.linux.dev
+References: <20230605144812.15241-1-tzimmermann@suse.de>
+ <CAMuHMdUNAg5MYQVOnVhYeHKnciHci1Ly6v8DbdBp_P_9YEu=Zg@mail.gmail.com>
+From:   Thomas Zimmermann <tzimmermann@suse.de>
+In-Reply-To: <CAMuHMdUNAg5MYQVOnVhYeHKnciHci1Ly6v8DbdBp_P_9YEu=Zg@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="------------jczAnVEPWIiygzYqzfIvFYvB"
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Thomas Zimmermann <tzimmermann@suse.de> writes:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--------------jczAnVEPWIiygzYqzfIvFYvB
+Content-Type: multipart/mixed; boundary="------------ied9YunLYcXBK5a4s7zjJrSU";
+ protected-headers="v1"
+From: Thomas Zimmermann <tzimmermann@suse.de>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org, deller@gmx.de,
+ lee@kernel.org, daniel.thompson@linaro.org, jingoohan1@gmail.com,
+ linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
+ linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
+ linux-staging@lists.linux.dev
+Message-ID: <7b73550c-3e8d-6cb3-ace7-49cc405f8086@suse.de>
+Subject: Re: [PATCH 00/30] fbdev: Make userspace interfaces optional
+References: <20230605144812.15241-1-tzimmermann@suse.de>
+ <CAMuHMdUNAg5MYQVOnVhYeHKnciHci1Ly6v8DbdBp_P_9YEu=Zg@mail.gmail.com>
+In-Reply-To: <CAMuHMdUNAg5MYQVOnVhYeHKnciHci1Ly6v8DbdBp_P_9YEu=Zg@mail.gmail.com>
 
-Hello Thomas,
+--------------ied9YunLYcXBK5a4s7zjJrSU
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: base64
 
-> Hi Javier
->
-> Am 08.06.23 um 00:22 schrieb Javier Martinez Canillas:
->> Thomas Zimmermann <tzimmermann@suse.de> writes:
->> 
->>> Detect registered instances of fb_info by reading the reference
->>> counter from struct fb_info.read. Avoids looking at the dev field
->>> and prepares fbdev for making struct fb_info.dev optional.
->>>
->>> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
->>> Cc: Steve Glendinning <steve.glendinning@shawell.net>
->>> ---
->>>   drivers/video/fbdev/smscufx.c | 4 ++--
->>>   1 file changed, 2 insertions(+), 2 deletions(-)
->>>
->>> diff --git a/drivers/video/fbdev/smscufx.c b/drivers/video/fbdev/smscufx.c
->>> index 17cec62cc65d..adb2b1fe8383 100644
->>> --- a/drivers/video/fbdev/smscufx.c
->>> +++ b/drivers/video/fbdev/smscufx.c
->>> @@ -1496,7 +1496,7 @@ static int ufx_setup_modes(struct ufx_data *dev, struct fb_info *info,
->>>   	u8 *edid;
->>>   	int i, result = 0, tries = 3;
->>>   
->>> -	if (info->dev) /* only use mutex if info has been registered */
->>> +	if (refcount_read(&info->count)) /* only use mutex if info has been registered */
->> 
->> The struct fb_info .count refcount is protected by the registration_lock
->> mutex in register_framebuffer(). I think this operation isn't thread safe ?
->
-> It's an atomic read.
->
-> https://elixir.bootlin.com/linux/latest/source/include/linux/refcount.h#L147
->
+SGkNCg0KQW0gMDcuMDYuMjMgdW0gMTA6MzUgc2NocmllYiBHZWVydCBVeXR0ZXJob2V2ZW46
+DQpbLi4uXQ0KPiANCj4gQlRXLCBJIGFtIHdvbmRlcmluZyBpZiBpdCB3b3VsZCBiZSBwb3Nz
+aWJsZSB0byB3cml0ZSBhIERSTSBlbXVsYXRpb24NCj4gbGF5ZXIgb24gdG9wIG9mIChiYXNp
+YywgZS5nLiBubyBNTUlPLCBqdXN0IGZiKSBmYmRldj8NCg0KVGhhdCBleGlzdHMsIHNvcnQg
+b2YuICBJIGZpcnN0IHBvc3RlZCBpdCBoZXJlOg0KDQogICBodHRwczovL3BhdGNod29yay5m
+cmVlZGVza3RvcC5vcmcvc2VyaWVzLzU4NTY5Lw0KDQphbmQgaXQgaGFzIGxhdGVyIGJlZW4g
+dHJhbnNmb3JtZWQgaW50byB0aGVzZSBjb252ZXJzaW9uIGhlbHBlcnMgdGhhdCBJIA0KaGF2
+ZSBzb21ld2hlcmUgb24gZ2l0bGFiLg0KDQpCZXN0IHJlZ2FyZHMNClRob21hcw0KDQo+IA0K
+PiBHcntvZXRqZSxlZXRpbmd9cywNCj4gDQo+ICAgICAgICAgICAgICAgICAgICAgICAgICBH
+ZWVydA0KPiANCg0KLS0gDQpUaG9tYXMgWmltbWVybWFubg0KR3JhcGhpY3MgRHJpdmVyIERl
+dmVsb3Blcg0KU1VTRSBTb2Z0d2FyZSBTb2x1dGlvbnMgR2VybWFueSBHbWJIDQpGcmFua2Vu
+c3RyYXNzZSAxNDYsIDkwNDYxIE51ZXJuYmVyZywgR2VybWFueQ0KR0Y6IEl2byBUb3Rldiwg
+QW5kcmV3IE15ZXJzLCBBbmRyZXcgTWNEb25hbGQsIEJvdWRpZW4gTW9lcm1hbg0KSFJCIDM2
+ODA5IChBRyBOdWVybmJlcmcpDQo=
 
-Yes, is an atomic read but by reading [0] my understanding is that does
-not provide memory ordering guarantees. Maybe I misunderstood though...
+--------------ied9YunLYcXBK5a4s7zjJrSU--
 
-[0]: https://www.kernel.org/doc/html/latest/core-api/refcount-vs-atomic.html
+--------------jczAnVEPWIiygzYqzfIvFYvB
+Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="OpenPGP_signature"
 
-> And that function is only being called from the USB probe callback 
-> before registering the framebuffer. It's not clear to me how the value 
-> could be anything but zero. I'd best leave it as is with the ref counter.
->
+-----BEGIN PGP SIGNATURE-----
 
-Yes, I'm OK with that and as mentioned I don't think that's less safe
-than the previous info->dev check with regard to race conditions.
+wsF5BAABCAAjFiEExndm/fpuMUdwYFFolh/E3EQov+AFAmSG93sFAwAAAAAACgkQlh/E3EQov+Dg
+hg//UQNYjBQLz502Rz811LBrAJFzZAtFe6BeN9TBDTKqkScQQY5g4UU4wCzy5vq3t82Vg7cgtjxc
+che0ZWmH3fhLR+b/F2zlEzMecgFSGTXXa860DKC87Vkdj5gvRjOvIi9MPi5Tfzw+C9kFHXybkhHv
+sdxnuXEqAy4Qz0+8yucEsBYrAT2RCSnhbL/xC4NLIB1Srw/9NpzicbrjXSo8mKPeXCB5bE+sjptY
+T+H0BOsVdnJhzwmsvrKYKJe2UiWdr5jawXSWm9gR01QP/DgHmhLYYMVoeHrwwfTHTu0RWxi9G6YS
+f0jH0fDqfDe4n26cIhXKM3lcm3NVZQczgphJdty9rHdEzKVE1A89t/udc8xLMyEKDtXbJijme4ud
+5yzUTNK0ju3WyF5+oA6Bnu0ti8DOuWEREIrs7Gv9e09+j53+peOQUfLjl77031/vF1dWaG8WBTPz
+yxNt4fHhW4/lzLdTW7rGg9Aec9805fGYpphcUcVXMVxIHt+R4KtlCFBz+NUL9B9pKCwKZNXajLSh
+TYNziiXe0kdt7oDvYMvOri+5ZzH9Ngv+aIfKlrEgeOQLnEo6gjVTo9VrIXN5yv9bFKf61QBrps0X
+zUaC4hw+uqcAfZveNj+u2QdrGtQp9hBI/g7EFFiCPBVcNFFCTDVPZwJdAWdcL5wlwTJrR9+zqUlg
+h1Y=
+=SNdA
+-----END PGP SIGNATURE-----
 
--- 
-Best regards,
-
-Javier Martinez Canillas
-Core Platforms
-Red Hat
-
+--------------jczAnVEPWIiygzYqzfIvFYvB--
