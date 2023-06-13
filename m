@@ -2,121 +2,239 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5CE56C88CBA
-	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 11:21:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 61E76C88CB9
+	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 11:47:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239958AbjFMLVY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 13 Jun 2023 07:21:24 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49112 "EHLO
+        id S240496AbjFMLr4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 13 Jun 2023 07:47:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42344 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240019AbjFMLKA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 07:10:00 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8CD9892;
-        Tue, 13 Jun 2023 04:09:59 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 1DB7E1FD92;
-        Tue, 13 Jun 2023 11:09:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1686654598; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=WsDEEspPWul74UZLXdW4Ecwc8Oa61gwjOHH6cUKWaqk=;
-        b=KHWdLqkrddz7uVBb+Yv2fY2eeaje+oPTUxlMVi45GkBNEFZRssE8WRvLHIyXzyPvvxTBGW
-        nD2v2MncxM+de/iQ2RpaGKY6Dpy/cRzLpisJR2pYyLjOU2mxw6oMsoLmVKYSLk2vcqmA9g
-        Qkg6Da7q7sK1BJ/S3JW+9YyLm3elEx4=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1686654598;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=WsDEEspPWul74UZLXdW4Ecwc8Oa61gwjOHH6cUKWaqk=;
-        b=1p44QGybnwv43z9lUWFXzQUhcsUiV9Pb7+AYixEqsnWUfaiwjJ020l547sviQBvkhxT8m4
-        FWcqeQMWDsQ0mBAA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A846A13A47;
-        Tue, 13 Jun 2023 11:09:57 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id iLoDKIVOiGR8CQAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 11:09:57 +0000
-From:   Thomas Zimmermann <tzimmermann@suse.de>
-To:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
-        deller@gmx.de, geert+renesas@glider.be, lee@kernel.org,
-        daniel.thompson@linaro.org, jingoohan1@gmail.com,
-        dan.carpenter@linaro.org, michael.j.ruhl@intel.com
-Cc:     linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
-        linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
-        linux-staging@lists.linux.dev, linux-kernel@vger.kernel.org,
-        Thomas Zimmermann <tzimmermann@suse.de>,
-        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
+        with ESMTP id S235301AbjFMLry (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 07:47:54 -0400
+Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5CE56E47;
+        Tue, 13 Jun 2023 04:47:53 -0700 (PDT)
+Received: from pps.filterd (m0353725.ppops.net [127.0.0.1])
+        by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 35DBHqbe019547;
+        Tue, 13 Jun 2023 11:46:26 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=date : from : to : cc :
+ subject : message-id : in-reply-to : references : mime-version :
+ content-type : content-transfer-encoding; s=pp1;
+ bh=YW8dFle4FwBo/xSGfxj/YlaloUxuRpkH0geiv0yOSDw=;
+ b=T5i9ZjoLCtD5qW5i8NKsB6igZlD7dMJC6lq2OsnNDPy7oI/IJwCWRx4SPn5FJJpROxmM
+ XGoOjoVssuM9/IjC8/J3XlUqvCz3C3iOZBKCzWeoF0IhoZ+avSBdbwNZr59eAY+Y/MwT
+ m2mG+QlqXNAIO2Pu40I08q6zflwJsJOVsijb4rqfpucHx1YhsAfZE7071II3obN8oK0Q
+ NnZiT60lRymQXLae3bIOY+/57zmLGsf/tJ23yvopK4qH2zkFEV55XJ0NU4UIbN/4AKyx
+ fHREytSGkFNXaEKXdBvC+qFh/1F0GU1+NwGoF/v4zbQshn2s5Y75imb05ioVeOAk3wU9 uA== 
+Received: from pps.reinject (localhost [127.0.0.1])
+        by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3r6qey0j7t-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Tue, 13 Jun 2023 11:46:25 +0000
+Received: from m0353725.ppops.net (m0353725.ppops.net [127.0.0.1])
+        by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 35DBbbht032708;
+        Tue, 13 Jun 2023 11:46:24 GMT
+Received: from ppma04ams.nl.ibm.com (63.31.33a9.ip4.static.sl-reverse.com [169.51.49.99])
+        by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3r6qey0j6c-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Tue, 13 Jun 2023 11:46:24 +0000
+Received: from pps.filterd (ppma04ams.nl.ibm.com [127.0.0.1])
+        by ppma04ams.nl.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 35D3i4Ui022712;
+        Tue, 13 Jun 2023 11:45:14 GMT
+Received: from smtprelay01.fra02v.mail.ibm.com ([9.218.2.227])
+        by ppma04ams.nl.ibm.com (PPS) with ESMTPS id 3r4gt523ws-1
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+        Tue, 13 Jun 2023 11:45:14 +0000
+Received: from smtpav05.fra02v.mail.ibm.com (smtpav05.fra02v.mail.ibm.com [10.20.54.104])
+        by smtprelay01.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 35DBjA1w19399178
+        (version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+        Tue, 13 Jun 2023 11:45:11 GMT
+Received: from smtpav05.fra02v.mail.ibm.com (unknown [127.0.0.1])
+        by IMSVA (Postfix) with ESMTP id CC35620043;
+        Tue, 13 Jun 2023 11:45:10 +0000 (GMT)
+Received: from smtpav05.fra02v.mail.ibm.com (unknown [127.0.0.1])
+        by IMSVA (Postfix) with ESMTP id D6D1F20040;
+        Tue, 13 Jun 2023 11:45:09 +0000 (GMT)
+Received: from p-imbrenda (unknown [9.152.224.66])
+        by smtpav05.fra02v.mail.ibm.com (Postfix) with ESMTP;
+        Tue, 13 Jun 2023 11:45:09 +0000 (GMT)
+Date:   Tue, 13 Jun 2023 13:45:08 +0200
+From:   Claudio Imbrenda <imbrenda@linux.ibm.com>
+To:     Hugh Dickins <hughd@google.com>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Mike Kravetz <mike.kravetz@oracle.com>,
+        Mike Rapoport <rppt@kernel.org>,
+        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
+        Matthew Wilcox <willy@infradead.org>,
+        David Hildenbrand <david@redhat.com>,
+        Suren Baghdasaryan <surenb@google.com>,
+        Qi Zheng <zhengqi.arch@bytedance.com>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Michal Simek <monstr@monstr.eu>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Helge Deller <deller@gmx.de>,
+        John David Anglin <dave.anglin@bell.net>,
+        "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Alexandre Ghiti <alexghiti@rivosinc.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        stable@vger.kernel.org
-Subject: [PATCH v3 05/38] backlight/lv5207lp: Compare against struct fb_info.device
-Date:   Tue, 13 Jun 2023 13:06:40 +0200
-Message-ID: <20230613110953.24176-6-tzimmermann@suse.de>
-X-Mailer: git-send-email 2.41.0
-In-Reply-To: <20230613110953.24176-1-tzimmermann@suse.de>
-References: <20230613110953.24176-1-tzimmermann@suse.de>
+        "David S. Miller" <davem@davemloft.net>,
+        Chris Zankel <chris@zankel.net>,
+        Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-mm@kvack.org
+Subject: Re: [PATCH v2 15/23] s390: allow pte_offset_map_lock() to fail
+Message-ID: <20230613134508.6018e70c@p-imbrenda>
+In-Reply-To: <3ff29363-336a-9733-12a1-5c31a45c8aeb@google.com>
+References: <a4963be9-7aa6-350-66d0-2ba843e1af44@google.com>
+        <3ff29363-336a-9733-12a1-5c31a45c8aeb@google.com>
+Organization: IBM
+X-Mailer: Claws Mail 4.1.1 (GTK 3.24.38; x86_64-redhat-linux-gnu)
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+X-TM-AS-GCONF: 00
+X-Proofpoint-GUID: NSzf1M38pnx2z8GhXfyd2zkrTyue7I-U
+X-Proofpoint-ORIG-GUID: Jl-BWVCZvUKcympIO9JuW2YKR9vYO4UE
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.254,Aquarius:18.0.957,Hydra:6.0.573,FMLib:17.11.176.26
+ definitions=2023-06-13_04,2023-06-12_02,2023-05-22_02
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 phishscore=0 spamscore=0
+ clxscore=1011 mlxscore=0 lowpriorityscore=0 priorityscore=1501
+ impostorscore=0 adultscore=0 mlxlogscore=999 bulkscore=0 suspectscore=0
+ malwarescore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2305260000 definitions=main-2306130102
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Struct lv5207lp_platform_data refers to a platform device within
-the Linux device hierarchy. The test in lv5207lp_backlight_check_fb()
-compares it against the fbdev device in struct fb_info.dev, which
-is different. Fix the test by comparing to struct fb_info.device.
+On Thu, 8 Jun 2023 12:27:22 -0700 (PDT)
+Hugh Dickins <hughd@google.com> wrote:
 
-Fixes a bug in the backlight driver and prepares fbdev for making
-struct fb_info.dev optional.
+> In rare transient cases, not yet made possible, pte_offset_map() and
+> pte_offset_map_lock() may not find a page table: handle appropriately.
+> 
+> Add comment on mm's contract with s390 above __zap_zero_pages(),
+> and fix old comment there: must be called after THP was disabled.
+> 
+> Signed-off-by: Hugh Dickins <hughd@google.com>
 
-v2:
-	* move renames into separate patch (Javier, Sam, Michael)
+Acked-by: Claudio Imbrenda <imbrenda@linux.ibm.com>
 
-Fixes: 82e5c40d88f9 ("backlight: Add Sanyo LV5207LP backlight driver")
-Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Lee Jones <lee@kernel.org>
-Cc: Daniel Thompson <daniel.thompson@linaro.org>
-Cc: Jingoo Han <jingoohan1@gmail.com>
-Cc: linux-sh@vger.kernel.org
-Cc: dri-devel@lists.freedesktop.org
-Cc: <stable@vger.kernel.org> # v3.12+
-Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
-Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
-Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
----
- drivers/video/backlight/lv5207lp.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/drivers/video/backlight/lv5207lp.c b/drivers/video/backlight/lv5207lp.c
-index 00673c8b66ac5..99ba4bc0a500d 100644
---- a/drivers/video/backlight/lv5207lp.c
-+++ b/drivers/video/backlight/lv5207lp.c
-@@ -67,7 +67,7 @@ static int lv5207lp_backlight_check_fb(struct backlight_device *backlight,
- {
- 	struct lv5207lp *lv = bl_get_data(backlight);
- 
--	return lv->pdata->fbdev == NULL || lv->pdata->fbdev == info->dev;
-+	return lv->pdata->fbdev == NULL || lv->pdata->fbdev == info->device;
- }
- 
- static const struct backlight_ops lv5207lp_backlight_ops = {
--- 
-2.41.0
+> ---
+>  arch/s390/kernel/uv.c  |  2 ++
+>  arch/s390/mm/gmap.c    |  9 ++++++++-
+>  arch/s390/mm/pgtable.c | 12 +++++++++---
+>  3 files changed, 19 insertions(+), 4 deletions(-)
+> 
+> diff --git a/arch/s390/kernel/uv.c b/arch/s390/kernel/uv.c
+> index cb2ee06df286..3c62d1b218b1 100644
+> --- a/arch/s390/kernel/uv.c
+> +++ b/arch/s390/kernel/uv.c
+> @@ -294,6 +294,8 @@ int gmap_make_secure(struct gmap *gmap, unsigned long gaddr, void *uvcb)
+>  
+>  	rc = -ENXIO;
+>  	ptep = get_locked_pte(gmap->mm, uaddr, &ptelock);
+> +	if (!ptep)
+> +		goto out;
+>  	if (pte_present(*ptep) && !(pte_val(*ptep) & _PAGE_INVALID) && pte_write(*ptep)) {
+>  		page = pte_page(*ptep);
+>  		rc = -EAGAIN;
+> diff --git a/arch/s390/mm/gmap.c b/arch/s390/mm/gmap.c
+> index dc90d1eb0d55..3a2a31a15ea8 100644
+> --- a/arch/s390/mm/gmap.c
+> +++ b/arch/s390/mm/gmap.c
+> @@ -2537,7 +2537,12 @@ static inline void thp_split_mm(struct mm_struct *mm)
+>   * Remove all empty zero pages from the mapping for lazy refaulting
+>   * - This must be called after mm->context.has_pgste is set, to avoid
+>   *   future creation of zero pages
+> - * - This must be called after THP was enabled
+> + * - This must be called after THP was disabled.
+> + *
+> + * mm contracts with s390, that even if mm were to remove a page table,
+> + * racing with the loop below and so causing pte_offset_map_lock() to fail,
+> + * it will never insert a page table containing empty zero pages once
+> + * mm_forbids_zeropage(mm) i.e. mm->context.has_pgste is set.
+>   */
+>  static int __zap_zero_pages(pmd_t *pmd, unsigned long start,
+>  			   unsigned long end, struct mm_walk *walk)
+> @@ -2549,6 +2554,8 @@ static int __zap_zero_pages(pmd_t *pmd, unsigned long start,
+>  		spinlock_t *ptl;
+>  
+>  		ptep = pte_offset_map_lock(walk->mm, pmd, addr, &ptl);
+> +		if (!ptep)
+> +			break;
+>  		if (is_zero_pfn(pte_pfn(*ptep)))
+>  			ptep_xchg_direct(walk->mm, addr, ptep, __pte(_PAGE_INVALID));
+>  		pte_unmap_unlock(ptep, ptl);
+> diff --git a/arch/s390/mm/pgtable.c b/arch/s390/mm/pgtable.c
+> index 6effb24de6d9..3bd2ab2a9a34 100644
+> --- a/arch/s390/mm/pgtable.c
+> +++ b/arch/s390/mm/pgtable.c
+> @@ -829,7 +829,7 @@ int set_guest_storage_key(struct mm_struct *mm, unsigned long addr,
+>  	default:
+>  		return -EFAULT;
+>  	}
+> -
+> +again:
+>  	ptl = pmd_lock(mm, pmdp);
+>  	if (!pmd_present(*pmdp)) {
+>  		spin_unlock(ptl);
+> @@ -850,6 +850,8 @@ int set_guest_storage_key(struct mm_struct *mm, unsigned long addr,
+>  	spin_unlock(ptl);
+>  
+>  	ptep = pte_offset_map_lock(mm, pmdp, addr, &ptl);
+> +	if (!ptep)
+> +		goto again;
+>  	new = old = pgste_get_lock(ptep);
+>  	pgste_val(new) &= ~(PGSTE_GR_BIT | PGSTE_GC_BIT |
+>  			    PGSTE_ACC_BITS | PGSTE_FP_BIT);
+> @@ -938,7 +940,7 @@ int reset_guest_reference_bit(struct mm_struct *mm, unsigned long addr)
+>  	default:
+>  		return -EFAULT;
+>  	}
+> -
+> +again:
+>  	ptl = pmd_lock(mm, pmdp);
+>  	if (!pmd_present(*pmdp)) {
+>  		spin_unlock(ptl);
+> @@ -955,6 +957,8 @@ int reset_guest_reference_bit(struct mm_struct *mm, unsigned long addr)
+>  	spin_unlock(ptl);
+>  
+>  	ptep = pte_offset_map_lock(mm, pmdp, addr, &ptl);
+> +	if (!ptep)
+> +		goto again;
+>  	new = old = pgste_get_lock(ptep);
+>  	/* Reset guest reference bit only */
+>  	pgste_val(new) &= ~PGSTE_GR_BIT;
+> @@ -1000,7 +1004,7 @@ int get_guest_storage_key(struct mm_struct *mm, unsigned long addr,
+>  	default:
+>  		return -EFAULT;
+>  	}
+> -
+> +again:
+>  	ptl = pmd_lock(mm, pmdp);
+>  	if (!pmd_present(*pmdp)) {
+>  		spin_unlock(ptl);
+> @@ -1017,6 +1021,8 @@ int get_guest_storage_key(struct mm_struct *mm, unsigned long addr,
+>  	spin_unlock(ptl);
+>  
+>  	ptep = pte_offset_map_lock(mm, pmdp, addr, &ptl);
+> +	if (!ptep)
+> +		goto again;
+>  	pgste = pgste_get_lock(ptep);
+>  	*key = (pgste_val(pgste) & (PGSTE_ACC_BITS | PGSTE_FP_BIT)) >> 56;
+>  	paddr = pte_val(*ptep) & PAGE_MASK;
 
