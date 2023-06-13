@@ -2,212 +2,78 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 255CDC88CB4
-	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 12:27:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2EF2CEB64D0
+	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 15:52:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242442AbjFMM14 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 13 Jun 2023 08:27:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35454 "EHLO
+        id S235653AbjFMPwy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 13 Jun 2023 11:52:54 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33246 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236403AbjFMM1z (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 08:27:55 -0400
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C2C5E1984
-        for <linux-sh@vger.kernel.org>; Tue, 13 Jun 2023 05:26:59 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1686659219;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=x4X42epITHEmHx9Rdq7WZvtJt4reSEJsGpXTx4uakPs=;
-        b=XnHIVU90C9TJ+dH5iLKcGln4N+lzVrbOu5uj9N85J15wwf4z10nruD+dGMcniFwEbHmk7J
-        lHqVWWDwwSjfFAlkhuZEh3i956u4PWyXakr9CaL1RFFbLTbOyagldGAbMpSdR0WEY9Ty6Z
-        P0oxgRVuraXBH5frWwz/MY1wNqSs+/s=
-Received: from mail-wr1-f72.google.com (mail-wr1-f72.google.com
- [209.85.221.72]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-662-FaIUOGBwPGywTRie57ud7g-1; Tue, 13 Jun 2023 08:26:58 -0400
-X-MC-Unique: FaIUOGBwPGywTRie57ud7g-1
-Received: by mail-wr1-f72.google.com with SMTP id ffacd0b85a97d-30c5d31b567so2128535f8f.2
-        for <linux-sh@vger.kernel.org>; Tue, 13 Jun 2023 05:26:57 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686659217; x=1689251217;
-        h=content-transfer-encoding:in-reply-to:organization:from:references
-         :cc:to:content-language:subject:user-agent:mime-version:date
-         :message-id:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=x4X42epITHEmHx9Rdq7WZvtJt4reSEJsGpXTx4uakPs=;
-        b=BnItnqfuYhOeZtfGD0CKwbyKz6ydcbktloyicfTiPo0ku/XiAztsCLT3Ogc9xqMrpc
-         3lp76TgndzaLG+rlp2AUPxdYrVNW89FGekollwzyWW/rCeWFWp54W9/r6vki4WD904WC
-         eMMfEWv1RzmjQHgkQlL85RMit7F3QodZZ9rJNLP5O6SPxKp9HDzBJxTul1uNWLFNAqiS
-         FJ/IJc7+Pg1UPC/x0jYKnEoF7npolHrJ01Uhijz3UnoDvYnI92/eonGLVUav92jgWTqj
-         eJYIlDx1Aq1HpPkFMMrEhkz1Ov+owC2lpeELLb970dRSTrJqvYAckSFS2glcvOPKElWG
-         NCTg==
-X-Gm-Message-State: AC+VfDxBCwFW1mIEBwGoontaZlIl18Vj+NSToq9MSuP7JIHH2GxBos1j
-        HbEq+knFaLTsnrDVy/urESMb6n1JMVEaQNeFSdMY6A/M86nmyDPJ1QC0wCxcQSBJJz5UPxLMqRO
-        Hak2Nviy6rBk/DxjrKKU=
-X-Received: by 2002:a5d:6acd:0:b0:30f:b7b4:3e55 with SMTP id u13-20020a5d6acd000000b0030fb7b43e55mr6371752wrw.19.1686659216772;
-        Tue, 13 Jun 2023 05:26:56 -0700 (PDT)
-X-Google-Smtp-Source: ACHHUZ4yteTIZOrnVCopzRkUBsfyPnfoDVYPpW9xv2sO4EBsmO+rg3naLzU0Pz+CwjSuscU8Zw+bFQ==
-X-Received: by 2002:a5d:6acd:0:b0:30f:b7b4:3e55 with SMTP id u13-20020a5d6acd000000b0030fb7b43e55mr6371694wrw.19.1686659216382;
-        Tue, 13 Jun 2023 05:26:56 -0700 (PDT)
-Received: from ?IPV6:2003:cb:c710:ff00:1a06:80f:733a:e8c6? (p200300cbc710ff001a06080f733ae8c6.dip0.t-ipconnect.de. [2003:cb:c710:ff00:1a06:80f:733a:e8c6])
-        by smtp.gmail.com with ESMTPSA id i1-20020adff301000000b002f28de9f73bsm15275419wro.55.2023.06.13.05.26.53
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 13 Jun 2023 05:26:55 -0700 (PDT)
-Message-ID: <497e571e-e4de-7634-7da6-683599a4bbba@redhat.com>
-Date:   Tue, 13 Jun 2023 14:26:53 +0200
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.12.0
-Subject: Re: [PATCH v9 01/42] mm: Rename arch pte_mkwrite()'s to
- pte_mkwrite_novma()
-To:     Rick Edgecombe <rick.p.edgecombe@intel.com>, x86@kernel.org,
-        "H . Peter Anvin" <hpa@zytor.com>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, linux-kernel@vger.kernel.org,
-        linux-doc@vger.kernel.org, linux-mm@kvack.org,
-        linux-arch@vger.kernel.org, linux-api@vger.kernel.org,
-        Arnd Bergmann <arnd@arndb.de>,
-        Andy Lutomirski <luto@kernel.org>,
-        Balbir Singh <bsingharora@gmail.com>,
-        Borislav Petkov <bp@alien8.de>,
-        Cyrill Gorcunov <gorcunov@gmail.com>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        Eugene Syromiatnikov <esyr@redhat.com>,
-        Florian Weimer <fweimer@redhat.com>,
-        "H . J . Lu" <hjl.tools@gmail.com>, Jann Horn <jannh@google.com>,
-        Jonathan Corbet <corbet@lwn.net>,
-        Kees Cook <keescook@chromium.org>,
-        Mike Kravetz <mike.kravetz@oracle.com>,
-        Nadav Amit <nadav.amit@gmail.com>,
-        Oleg Nesterov <oleg@redhat.com>, Pavel Machek <pavel@ucw.cz>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Randy Dunlap <rdunlap@infradead.org>,
-        Weijiang Yang <weijiang.yang@intel.com>,
-        "Kirill A . Shutemov" <kirill.shutemov@linux.intel.com>,
-        John Allen <john.allen@amd.com>, kcc@google.com,
-        eranian@google.com, rppt@kernel.org, jamorris@linux.microsoft.com,
-        dethoma@microsoft.com, akpm@linux-foundation.org,
-        Andrew.Cooper3@citrix.com, christina.schimpe@intel.com,
-        debug@rivosinc.com, szabolcs.nagy@arm.com,
-        torvalds@linux-foundation.org, broonie@kernel.org
-Cc:     linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        with ESMTP id S237195AbjFMPww (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 11:52:52 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F406D1AC;
+        Tue, 13 Jun 2023 08:52:51 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 049CF633BC;
+        Tue, 13 Jun 2023 15:52:51 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2D806C433F0;
+        Tue, 13 Jun 2023 15:52:48 +0000 (UTC)
+From:   Catalin Marinas <catalin.marinas@arm.com>
+To:     Andrew Morton <akpm@linux-foundation.org>
+Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
+        Vlastimil Babka <vbabka@suse.cz>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
         Michal Simek <monstr@monstr.eu>,
-        Dinh Nguyen <dinguyen@kernel.org>, linux-mips@vger.kernel.org,
-        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
-        Linus Torvalds <torvalds@linuxfoundation.org>
-References: <20230613001108.3040476-1-rick.p.edgecombe@intel.com>
- <20230613001108.3040476-2-rick.p.edgecombe@intel.com>
-From:   David Hildenbrand <david@redhat.com>
-Organization: Red Hat
-In-Reply-To: <20230613001108.3040476-2-rick.p.edgecombe@intel.com>
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: redhat.com
-Content-Language: en-US
-Content-Type: text/plain; charset=UTF-8; format=flowed
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH 0/3] Move the ARCH_DMA_MINALIGN definition to asm/cache.h
+Date:   Tue, 13 Jun 2023 16:52:42 +0100
+Message-Id: <20230613155245.1228274-1-catalin.marinas@arm.com>
+X-Mailer: git-send-email 2.39.2
+MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 13.06.23 02:10, Rick Edgecombe wrote:
-> The x86 Shadow stack feature includes a new type of memory called shadow
-> stack. This shadow stack memory has some unusual properties, which requires
-> some core mm changes to function properly.
-> 
-> One of these unusual properties is that shadow stack memory is writable,
-> but only in limited ways. These limits are applied via a specific PTE
-> bit combination. Nevertheless, the memory is writable, and core mm code
-> will need to apply the writable permissions in the typical paths that
-> call pte_mkwrite(). Future patches will make pte_mkwrite() take a VMA, so
-> that the x86 implementation of it can know whether to create regular
-> writable memory or shadow stack memory.
-> 
-> But there are a couple of challenges to this. Modifying the signatures of
-> each arch pte_mkwrite() implementation would be error prone because some
-> are generated with macros and would need to be re-implemented. Also, some
-> pte_mkwrite() callers operate on kernel memory without a VMA.
-> 
-> So this can be done in a three step process. First pte_mkwrite() can be
-> renamed to pte_mkwrite_novma() in each arch, with a generic pte_mkwrite()
-> added that just calls pte_mkwrite_novma(). Next callers without a VMA can
-> be moved to pte_mkwrite_novma(). And lastly, pte_mkwrite() and all callers
-> can be changed to take/pass a VMA.
-> 
-> Start the process by renaming pte_mkwrite() to pte_mkwrite_novma() and
-> adding the pte_mkwrite() wrapper in linux/pgtable.h. Apply the same
-> pattern for pmd_mkwrite(). Since not all archs have a pmd_mkwrite_novma(),
-> create a new arch config HAS_HUGE_PAGE that can be used to tell if
-> pmd_mkwrite() should be defined. Otherwise in the !HAS_HUGE_PAGE cases the
-> compiler would not be able to find pmd_mkwrite_novma().
-> 
-> No functional change.
-> 
-> Cc: linux-doc@vger.kernel.org
-> Cc: linux-kernel@vger.kernel.org
-> Cc: linux-alpha@vger.kernel.org
-> Cc: linux-snps-arc@lists.infradead.org
-> Cc: linux-arm-kernel@lists.infradead.org
-> Cc: linux-csky@vger.kernel.org
-> Cc: linux-hexagon@vger.kernel.org
-> Cc: linux-ia64@vger.kernel.org
-> Cc: loongarch@lists.linux.dev
-> Cc: linux-m68k@lists.linux-m68k.org
-> Cc: Michal Simek <monstr@monstr.eu>
-> Cc: Dinh Nguyen <dinguyen@kernel.org>
-> Cc: linux-mips@vger.kernel.org
-> Cc: openrisc@lists.librecores.org
-> Cc: linux-parisc@vger.kernel.org
-> Cc: linuxppc-dev@lists.ozlabs.org
-> Cc: linux-riscv@lists.infradead.org
-> Cc: linux-s390@vger.kernel.org
-> Cc: linux-sh@vger.kernel.org
-> Cc: sparclinux@vger.kernel.org
-> Cc: linux-um@lists.infradead.org
-> Cc: linux-arch@vger.kernel.org
-> Cc: linux-mm@kvack.org
-> Suggested-by: Linus Torvalds <torvalds@linuxfoundation.org>
-> Signed-off-by: Rick Edgecombe <rick.p.edgecombe@intel.com>
-> Link: https://lore.kernel.org/lkml/CAHk-=wiZjSu7c9sFYZb3q04108stgHff2wfbokGCCgW7riz+8Q@mail.gmail.com/
-> ---
-> Hi Non-x86 Arch’s,
-> 
-> x86 has a feature that allows for the creation of a special type of
-> writable memory (shadow stack) that is only writable in limited specific
-> ways. Previously, changes were proposed to core MM code to teach it to
-> decide when to create normally writable memory or the special shadow stack
-> writable memory, but David Hildenbrand suggested[0] to change
-> pXX_mkwrite() to take a VMA, so awareness of shadow stack memory can be
-> moved into x86 code. Later Linus suggested a less error-prone way[1] to go
-> about this after the first attempt had a bug.
-> 
-> Since pXX_mkwrite() is defined in every arch, it requires some tree-wide
-> changes. So that is why you are seeing some patches out of a big x86
-> series pop up in your arch mailing list. There is no functional change.
-> After this refactor, the shadow stack series goes on to use the arch
-> helpers to push arch memory details inside arch/x86 and other arch's
-> with upcoming shadow stack features.
-> 
-> Testing was just 0-day build testing.
-> 
-> Hopefully that is enough context. Thanks!
-> 
-> [0] https://lore.kernel.org/lkml/0e29a2d0-08d8-bcd6-ff26-4bea0e4037b0@redhat.com/
-> [1] https://lore.kernel.org/lkml/CAHk-=wiZjSu7c9sFYZb3q04108stgHff2wfbokGCCgW7riz+8Q@mail.gmail.com/
-> ---
+Hi,
 
-Acked-by: David Hildenbrand <david@redhat.com>
+The ARCH_KMALLOC_MINALIGN reduction series defines a generic
+ARCH_DMA_MINALIGN in linux/cache.h:
 
--- 
-Cheers,
+https://lore.kernel.org/r/20230612153201.554742-2-catalin.marinas@arm.com/
 
-David / dhildenb
+Unfortunately, this causes a duplicate definition warning for
+microblaze, powerpc (32-bit only) and sh as these architectures define
+ARCH_DMA_MINALIGN in a different file than asm/cache.h. Move the macro
+to asm/cache.h to avoid this issue and also bring them in line with the
+other architectures.
+
+Andrew, if the arch maintainers cc'ed are fine with such change, could
+you please take these three patches together with the
+ARCH_KMALLOC_MINALIGN series?
+
+Thank you.
+
+Catalin Marinas (3):
+  powerpc: Move the ARCH_DMA_MINALIGN definition to asm/cache.h
+  microblaze: Move the ARCH_{DMA,SLAB}_MINALIGN definitions to
+    asm/cache.h
+  sh: Move the ARCH_DMA_MINALIGN definition to asm/cache.h
+
+ arch/microblaze/include/asm/cache.h | 5 +++++
+ arch/microblaze/include/asm/page.h  | 5 -----
+ arch/powerpc/include/asm/cache.h    | 4 ++++
+ arch/powerpc/include/asm/page_32.h  | 4 ----
+ arch/sh/include/asm/cache.h         | 6 ++++++
+ arch/sh/include/asm/page.h          | 6 ------
+ 6 files changed, 15 insertions(+), 15 deletions(-)
 
