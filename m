@@ -2,52 +2,52 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 81B36CA9EC0
-	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 11:10:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D89A3CA9EA0
+	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 11:10:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242160AbjFMLKy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 13 Jun 2023 07:10:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49136 "EHLO
+        id S242215AbjFMLK5 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 13 Jun 2023 07:10:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49146 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242110AbjFMLKF (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 07:10:05 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 28D5810D8;
-        Tue, 13 Jun 2023 04:10:04 -0700 (PDT)
+        with ESMTP id S242104AbjFMLKD (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 07:10:03 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 870AB10DA;
+        Tue, 13 Jun 2023 04:10:02 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id C0A3422416;
-        Tue, 13 Jun 2023 11:10:02 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 3B5C01FD9B;
+        Tue, 13 Jun 2023 11:10:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1686654602; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1686654601; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=iS75Sy8vxPdQTxKd8R/a14a55yT+9ZE1XrealkwT0x8=;
-        b=Q38CvPhEMtiNefeeOeH1vGahXu/yyy0YEhuBjm1JmUEEC2utiogyKVMwU96QYlrZmRp2nD
-        Dyvccc3evDLBZrq8iVmZsLVgU5+gbhsRpe6eI42YxiU+Pyjzv0+FhtqX2B9wHg5QpORz8x
-        q2CjPSlhB52ekQ5zyqMJwYdH7MJjCV0=
+        bh=ZgRWkj4ohO0KZCbdDBuPVV97H141ZbSM13kcN600c2k=;
+        b=zbJ6q17gN8z70oqaqKqYOGRakhvg0MbJtIIg+o+DeiVqehX4j9aCFpHcRwxRU7Z7rTKQ5t
+        f2HvzzQ9ZUU7AlYT3riteoeQJIFhBNK0hiqqcaAKRYURq+VplkkzBMg+g1sCN1U6pkFzi3
+        R00/iqjza3qieg7tUoKlcDTqAiYBjMk=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1686654602;
+        s=susede2_ed25519; t=1686654601;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=iS75Sy8vxPdQTxKd8R/a14a55yT+9ZE1XrealkwT0x8=;
-        b=EZDaB+E68NnQ724We9tBfV8Es66SWW3pJADfp5wqoGrgSipwtlYOzXaSRMxxOJW1+QIXad
-        t+0OSOJDyYZhMvCA==
+        bh=ZgRWkj4ohO0KZCbdDBuPVV97H141ZbSM13kcN600c2k=;
+        b=pIjnNyxvGQUaS/zeU12bEmPVy9t4gCOAOw0wkygp3pDUeluFfLgW/eBwzhfSOeCSyTtNPF
+        rxGmQ9YXgFdbbCCg==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 75C3413483;
-        Tue, 13 Jun 2023 11:10:02 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id E667E13A47;
+        Tue, 13 Jun 2023 11:10:00 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id +JXYG4pOiGR8CQAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 11:10:02 +0000
+        id UNF+N4hOiGR8CQAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 11:10:00 +0000
 From:   Thomas Zimmermann <tzimmermann@suse.de>
 To:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
         deller@gmx.de, geert+renesas@glider.be, lee@kernel.org,
@@ -56,10 +56,11 @@ To:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
 Cc:     linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
         linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
         linux-staging@lists.linux.dev, linux-kernel@vger.kernel.org,
-        Thomas Zimmermann <tzimmermann@suse.de>
-Subject: [PATCH v3 20/38] fbdev/pxa168fb: Do not assign to struct fb_info.dev
-Date:   Tue, 13 Jun 2023 13:06:55 +0200
-Message-ID: <20230613110953.24176-21-tzimmermann@suse.de>
+        Thomas Zimmermann <tzimmermann@suse.de>,
+        Timur Tabi <timur@kernel.org>
+Subject: [PATCH v3 15/38] fbdev/fsl-diu-fb: Output messages with fb_*() helpers
+Date:   Tue, 13 Jun 2023 13:06:50 +0200
+Message-ID: <20230613110953.24176-16-tzimmermann@suse.de>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <20230613110953.24176-1-tzimmermann@suse.de>
 References: <20230613110953.24176-1-tzimmermann@suse.de>
@@ -69,29 +70,107 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Do not assign the hardware device to struct fb_info.dev. The
-field references the fbdev software device, which is unrelated.
+Fix cases were output helpers are called with struct fb_info.dev.
+Use fb_*() helpers instead. Prepares fbdev for making struct
+fb_info.dev optional.
 
 Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
-Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Cc: Timur Tabi <timur@kernel.org>
 Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
 ---
- drivers/video/fbdev/pxa168fb.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/video/fbdev/fsl-diu-fb.c | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/video/fbdev/pxa168fb.c b/drivers/video/fbdev/pxa168fb.c
-index 79f3384630926..82cb9ffe52908 100644
---- a/drivers/video/fbdev/pxa168fb.c
-+++ b/drivers/video/fbdev/pxa168fb.c
-@@ -629,7 +629,7 @@ static int pxa168fb_probe(struct platform_device *pdev)
- 	fbi = info->par;
- 	fbi->info = info;
- 	fbi->clk = clk;
--	fbi->dev = info->dev = &pdev->dev;
-+	fbi->dev = &pdev->dev;
- 	fbi->panel_rbswap = mi->panel_rbswap;
- 	fbi->is_blanked = 0;
- 	fbi->active = mi->active;
+diff --git a/drivers/video/fbdev/fsl-diu-fb.c b/drivers/video/fbdev/fsl-diu-fb.c
+index 730a07d23fa92..785eb8a06943f 100644
+--- a/drivers/video/fbdev/fsl-diu-fb.c
++++ b/drivers/video/fbdev/fsl-diu-fb.c
+@@ -872,7 +872,7 @@ static int map_video_memory(struct fb_info *info)
+ 
+ 	p = alloc_pages_exact(smem_len, GFP_DMA | __GFP_ZERO);
+ 	if (!p) {
+-		dev_err(info->dev, "unable to allocate fb memory\n");
++		fb_err(info, "unable to allocate fb memory\n");
+ 		return -ENOMEM;
+ 	}
+ 	mutex_lock(&info->mm_lock);
+@@ -1145,7 +1145,7 @@ static int fsl_diu_set_par(struct fb_info *info)
+ 
+ 		/* Memory allocation for framebuffer */
+ 		if (map_video_memory(info)) {
+-			dev_err(info->dev, "unable to allocate fb memory 1\n");
++			fb_err(info, "unable to allocate fb memory 1\n");
+ 			return -ENOMEM;
+ 		}
+ 	}
+@@ -1277,16 +1277,16 @@ static int fsl_diu_ioctl(struct fb_info *info, unsigned int cmd,
+ 	if (!arg)
+ 		return -EINVAL;
+ 
+-	dev_dbg(info->dev, "ioctl %08x (dir=%s%s type=%u nr=%u size=%u)\n", cmd,
++	fb_dbg(info, "ioctl %08x (dir=%s%s type=%u nr=%u size=%u)\n", cmd,
+ 		_IOC_DIR(cmd) & _IOC_READ ? "R" : "",
+ 		_IOC_DIR(cmd) & _IOC_WRITE ? "W" : "",
+ 		_IOC_TYPE(cmd), _IOC_NR(cmd), _IOC_SIZE(cmd));
+ 
+ 	switch (cmd) {
+ 	case MFB_SET_PIXFMT_OLD:
+-		dev_warn(info->dev,
+-			 "MFB_SET_PIXFMT value of 0x%08x is deprecated.\n",
+-			 MFB_SET_PIXFMT_OLD);
++		fb_warn(info,
++			"MFB_SET_PIXFMT value of 0x%08x is deprecated.\n",
++			MFB_SET_PIXFMT_OLD);
+ 		fallthrough;
+ 	case MFB_SET_PIXFMT:
+ 		if (copy_from_user(&pix_fmt, buf, sizeof(pix_fmt)))
+@@ -1294,9 +1294,9 @@ static int fsl_diu_ioctl(struct fb_info *info, unsigned int cmd,
+ 		ad->pix_fmt = pix_fmt;
+ 		break;
+ 	case MFB_GET_PIXFMT_OLD:
+-		dev_warn(info->dev,
+-			 "MFB_GET_PIXFMT value of 0x%08x is deprecated.\n",
+-			 MFB_GET_PIXFMT_OLD);
++		fb_warn(info,
++			"MFB_GET_PIXFMT value of 0x%08x is deprecated.\n",
++			MFB_GET_PIXFMT_OLD);
+ 		fallthrough;
+ 	case MFB_GET_PIXFMT:
+ 		pix_fmt = ad->pix_fmt;
+@@ -1375,7 +1375,7 @@ static int fsl_diu_ioctl(struct fb_info *info, unsigned int cmd,
+ 	}
+ #endif
+ 	default:
+-		dev_err(info->dev, "unknown ioctl command (0x%08X)\n", cmd);
++		fb_err(info, "unknown ioctl command (0x%08X)\n", cmd);
+ 		return -ENOIOCTLCMD;
+ 	}
+ 
+@@ -1543,21 +1543,21 @@ static int install_fb(struct fb_info *info)
+ 	}
+ 
+ 	if (fsl_diu_check_var(&info->var, info)) {
+-		dev_err(info->dev, "fsl_diu_check_var failed\n");
++		fb_err(info, "fsl_diu_check_var failed\n");
+ 		unmap_video_memory(info);
+ 		fb_dealloc_cmap(&info->cmap);
+ 		return -EINVAL;
+ 	}
+ 
+ 	if (register_framebuffer(info) < 0) {
+-		dev_err(info->dev, "register_framebuffer failed\n");
++		fb_err(info, "register_framebuffer failed\n");
+ 		unmap_video_memory(info);
+ 		fb_dealloc_cmap(&info->cmap);
+ 		return -EINVAL;
+ 	}
+ 
+ 	mfbi->registered = 1;
+-	dev_info(info->dev, "%s registered successfully\n", mfbi->id);
++	fb_info(info, "%s registered successfully\n", mfbi->id);
+ 
+ 	return 0;
+ }
 -- 
 2.41.0
 
