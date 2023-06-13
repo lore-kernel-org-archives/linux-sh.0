@@ -2,52 +2,52 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 59131C88CB9
-	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 11:10:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 119F4CA9EB4
+	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 11:10:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232484AbjFMLKx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 13 Jun 2023 07:10:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49136 "EHLO
+        id S241600AbjFMLKz (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 13 Jun 2023 07:10:55 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49124 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242105AbjFMLKE (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 07:10:04 -0400
+        with ESMTP id S240108AbjFMLKB (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 07:10:01 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DFBC410DE;
-        Tue, 13 Jun 2023 04:10:02 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 489D510D8;
+        Tue, 13 Jun 2023 04:10:00 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 8137A2240D;
-        Tue, 13 Jun 2023 11:10:01 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id D3254223F6;
+        Tue, 13 Jun 2023 11:09:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1686654601; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1686654598; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=SP5XPQ+B+tBgODPORD3Z9zsr7bRrI+Ip0rV0x56IK2w=;
-        b=pTSICEX1c8Qsm19zd8eQCOJmYryvMjO4aaOSHlOwtXah5fzubr34ywOkPBk4udx7Cd8n99
-        Qogm1Tg5gQANMUt14YBudjAK4+V0BX1XBy+bxA2fQQDpo10af0cqtvdgcZbgBS0ghOnZiJ
-        JCTCiP5206NMjTAyMPMCilRo+t0oVgU=
+        bh=3Hne6zfetbnsseXQc/de0eJDmmigZxWOHUk4CZKAIDY=;
+        b=KL3N5e5ivtUmwkAJemE63I+AtdC5MiHTK4dzeTOEeAKJfbjDZggCYd1n1knqsnsUGAOndJ
+        A/7c86AcjfM3MVygCAn07cFPtEXjTfN+E6CjKMg6zXPLATQ4pyKPA0FX5ggtvfFIbobYxn
+        G6Dp5t9Shvz7Asuokh1ps4REO/36AMY=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1686654601;
+        s=susede2_ed25519; t=1686654598;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=SP5XPQ+B+tBgODPORD3Z9zsr7bRrI+Ip0rV0x56IK2w=;
-        b=9Ocgsrqyr17hP8X9xHsC/t7ebR3q+Nbnf3ogJQ3SjTVVLWEjLKHtw3tY3i4JoL3nQy+/SE
-        YEXpcN8c7ALLfPCQ==
+        bh=3Hne6zfetbnsseXQc/de0eJDmmigZxWOHUk4CZKAIDY=;
+        b=APplPEVT6MZ9PeXzJ8dv98VwUZ2pPhx1D0WWnZxRl+iwXoGHgfISZUbi9PsTM1tC17vGlu
+        4n+4eow1R5DAzyCA==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3CF8A13483;
-        Tue, 13 Jun 2023 11:10:01 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8174E13A47;
+        Tue, 13 Jun 2023 11:09:58 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id mAscDolOiGR8CQAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 11:10:01 +0000
+        id YD+hHoZOiGR8CQAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 11:09:58 +0000
 From:   Thomas Zimmermann <tzimmermann@suse.de>
 To:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
         deller@gmx.de, geert+renesas@glider.be, lee@kernel.org,
@@ -57,9 +57,9 @@ Cc:     linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
         linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
         linux-staging@lists.linux.dev, linux-kernel@vger.kernel.org,
         Thomas Zimmermann <tzimmermann@suse.de>
-Subject: [PATCH v3 16/38] fbdev/mb862xxfb: Output messages with fb_dbg()
-Date:   Tue, 13 Jun 2023 13:06:51 +0200
-Message-ID: <20230613110953.24176-17-tzimmermann@suse.de>
+Subject: [PATCH v3 07/38] fbdev/atyfb: Reorder backlight and framebuffer init/cleanup
+Date:   Tue, 13 Jun 2023 13:06:42 +0200
+Message-ID: <20230613110953.24176-8-tzimmermann@suse.de>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <20230613110953.24176-1-tzimmermann@suse.de>
 References: <20230613110953.24176-1-tzimmermann@suse.de>
@@ -69,62 +69,62 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Fix cases were output helpers are called with struct fb_info.dev.
-Use fb_dbg() instead. Prepares fbdev for making struct fb_info.dev
-optional.
-
-v2:
-	* fix another reference to struct fb_info.dev (kernel test reobot)
-	* remove fb_err() from commit message
+The driver's backlight code requires the framebuffer to be
+registered. Therefore reorder the init and cleanup calls for
+both data structures.
 
 Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
 Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
 Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
 ---
- drivers/video/fbdev/mb862xx/mb862xxfbdrv.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ drivers/video/fbdev/aty/atyfb_base.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/video/fbdev/mb862xx/mb862xxfbdrv.c b/drivers/video/fbdev/mb862xx/mb862xxfbdrv.c
-index b5c8fcab9940d..119c2a582ecbd 100644
---- a/drivers/video/fbdev/mb862xx/mb862xxfbdrv.c
-+++ b/drivers/video/fbdev/mb862xx/mb862xxfbdrv.c
-@@ -112,8 +112,7 @@ static int mb862xxfb_check_var(struct fb_var_screeninfo *var,
- {
- 	unsigned long tmp;
+diff --git a/drivers/video/fbdev/aty/atyfb_base.c b/drivers/video/fbdev/aty/atyfb_base.c
+index cba2b113b28b0..51504fe39054c 100644
+--- a/drivers/video/fbdev/aty/atyfb_base.c
++++ b/drivers/video/fbdev/aty/atyfb_base.c
+@@ -2654,11 +2654,6 @@ static int aty_init(struct fb_info *info)
+ 			   USE_F32KHZ | TRISTATE_MEM_EN, par);
+ 	} else
+ #endif
+-	if (M64_HAS(MOBIL_BUS) && backlight) {
+-#ifdef CONFIG_FB_ATY_BACKLIGHT
+-		aty_bl_init(par);
+-#endif
+-	}
  
--	if (fbi->dev)
--		dev_dbg(fbi->dev, "%s\n", __func__);
-+	fb_dbg(fbi, "%s\n", __func__);
+ 	memset(&var, 0, sizeof(var));
+ #ifdef CONFIG_PPC
+@@ -2751,6 +2746,12 @@ static int aty_init(struct fb_info *info)
+ 		goto aty_init_exit;
+ 	}
  
- 	/* check if these values fit into the registers */
- 	if (var->hsync_len > 255 || var->vsync_len > 255)
-@@ -290,7 +289,7 @@ static int mb862xxfb_blank(int mode, struct fb_info *fbi)
- 	struct mb862xxfb_par  *par = fbi->par;
- 	unsigned long reg;
++	if (M64_HAS(MOBIL_BUS) && backlight) {
++#ifdef CONFIG_FB_ATY_BACKLIGHT
++		aty_bl_init(par);
++#endif
++	}
++
+ 	fb_list = info;
  
--	dev_dbg(fbi->dev, "blank mode=%d\n", mode);
-+	fb_dbg(fbi, "blank mode=%d\n", mode);
+ 	PRINTKI("fb%d: %s frame buffer device on %s\n",
+@@ -3716,12 +3717,13 @@ static void atyfb_remove(struct fb_info *info)
+ 	aty_set_crtc(par, &par->saved_crtc);
+ 	par->pll_ops->set_pll(info, &par->saved_pll);
  
- 	switch (mode) {
- 	case FB_BLANK_POWERDOWN:
-@@ -791,7 +790,7 @@ static void of_platform_mb862xx_remove(struct platform_device *ofdev)
- 	resource_size_t res_size = resource_size(par->res);
- 	unsigned long reg;
+-	unregister_framebuffer(info);
+-
+ #ifdef CONFIG_FB_ATY_BACKLIGHT
+ 	if (M64_HAS(MOBIL_BUS))
+ 		aty_bl_exit(info->bl_dev);
+ #endif
++
++	unregister_framebuffer(info);
++
+ 	arch_phys_wc_del(par->wc_cookie);
  
--	dev_dbg(fbi->dev, "%s release\n", fbi->fix.id);
-+	fb_dbg(fbi, "%s release\n", fbi->fix.id);
- 
- 	/* display off */
- 	reg = inreg(disp, GC_DCM1);
-@@ -1138,7 +1137,7 @@ static void mb862xx_pci_remove(struct pci_dev *pdev)
- 	struct mb862xxfb_par *par = fbi->par;
- 	unsigned long reg;
- 
--	dev_dbg(fbi->dev, "%s release\n", fbi->fix.id);
-+	fb_dbg(fbi, "%s release\n", fbi->fix.id);
- 
- 	/* display off */
- 	reg = inreg(disp, GC_DCM1);
+ #ifndef __sparc__
 -- 
 2.41.0
 
