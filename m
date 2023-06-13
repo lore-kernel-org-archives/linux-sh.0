@@ -2,52 +2,52 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 65486C88CB6
-	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 11:10:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1A4E8C7EE29
+	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 11:10:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242188AbjFMLKv (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 13 Jun 2023 07:10:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49148 "EHLO
+        id S238408AbjFMLKw (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 13 Jun 2023 07:10:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49122 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242103AbjFMLKD (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 07:10:03 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2F75B10E3;
-        Tue, 13 Jun 2023 04:10:02 -0700 (PDT)
+        with ESMTP id S240041AbjFMLKB (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 07:10:01 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F020BE52;
+        Tue, 13 Jun 2023 04:09:59 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id E36212240B;
-        Tue, 13 Jun 2023 11:10:00 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 7D761223F0;
+        Tue, 13 Jun 2023 11:09:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1686654600; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1686654598; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=7UD3qH0Jecnz6Jrwvr3w6k9CQhko83sOH0nBzjwfJ48=;
-        b=RhPAcbmSSJszenRxT7RweffotDn1VlilAc5nKqiKeksrW7Zoy0GJ/QD2XVTPmx86IveCTq
-        MclrcRrDtVm+H726MshQbbouWH6AfT6m0TaID+Td6UmqMRxhiLaTIH/JpdDRd8xtIqpNrD
-        7Manifhngao7sBP/4Of4HmB/mF9TEzQ=
+        bh=KrLiCPptg/CrbEdxRS4nqESWN3R2XNbgt49nlTQ1rAI=;
+        b=GtWgQUMQuvT+GLA4Ey8TUV9PghMgSXEALHmo+M9zbwr6GBu1++03z+rM64A/shZi/+JihM
+        Xnywz1JlcqPCkRo9doybsThJJT7EygFDMMoFpnvyzyOkmVNxOKFEP5Kj4MGYs34yDB8Wjy
+        TxB0r5mw4ZHQfBDOJcjbvRK103MGQJo=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1686654600;
+        s=susede2_ed25519; t=1686654598;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=7UD3qH0Jecnz6Jrwvr3w6k9CQhko83sOH0nBzjwfJ48=;
-        b=g33LnGgTYSqQL3eYebYg+/jQAyfoEP6/IlbRVr7g0h90lYz1Q5MWF0qLW2LL9Oh9m/RW8o
-        lv3qYaTcqQ1P/NDQ==
+        bh=KrLiCPptg/CrbEdxRS4nqESWN3R2XNbgt49nlTQ1rAI=;
+        b=/e17zNgNljXV6lJyXfhxYAJ8MTLoKAhFe0DGCBW/4/6g1JDQxmYWiZiSELNEU+NXV1GUeE
+        AWZPROuIZvkaprBw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9B86C13483;
-        Tue, 13 Jun 2023 11:10:00 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 2079813483;
+        Tue, 13 Jun 2023 11:09:58 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id aB03JYhOiGR8CQAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 11:10:00 +0000
+        id 6GAFB4ZOiGR8CQAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 11:09:58 +0000
 From:   Thomas Zimmermann <tzimmermann@suse.de>
 To:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
         deller@gmx.de, geert+renesas@glider.be, lee@kernel.org,
@@ -56,10 +56,13 @@ To:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
 Cc:     linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
         linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
         linux-staging@lists.linux.dev, linux-kernel@vger.kernel.org,
-        Thomas Zimmermann <tzimmermann@suse.de>, stable@vger.kernel.org
-Subject: [PATCH v3 14/38] fbdev/ep93xx-fb: Do not assign to struct fb_info.dev
-Date:   Tue, 13 Jun 2023 13:06:49 +0200
-Message-ID: <20230613110953.24176-15-tzimmermann@suse.de>
+        Thomas Zimmermann <tzimmermann@suse.de>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Subject: [PATCH v3 06/38] backlight/lv5207lp: Rename struct lv5207lp_platform_data.fbdev to 'dev'
+Date:   Tue, 13 Jun 2023 13:06:41 +0200
+Message-ID: <20230613110953.24176-7-tzimmermann@suse.de>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <20230613110953.24176-1-tzimmermann@suse.de>
 References: <20230613110953.24176-1-tzimmermann@suse.de>
@@ -69,37 +72,66 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Do not assing the Linux device to struct fb_info.dev. The call to
-register_framebuffer() initializes the field to the fbdev device.
-Drivers should not override its value.
-
-Fixes a bug where the driver incorrectly decreases the hardware
-device's reference counter and leaks the fbdev device.
-
-v2:
-	* add Fixes tag (Dan)
+Rename struct lv5207lp_platform_data.fbdev to 'dev', as it stores a
+pointer to the Linux platform device; not the fbdev device. Makes
+the code easier to understand.
 
 Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
-Fixes: 88017bda96a5 ("ep93xx video driver")
-Cc: <stable@vger.kernel.org> # v2.6.32+
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Lee Jones <lee@kernel.org>
+Cc: Daniel Thompson <daniel.thompson@linaro.org>
+Cc: Jingoo Han <jingoohan1@gmail.com>
+Cc: linux-sh@vger.kernel.org
 Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
 Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
+Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
 ---
- drivers/video/fbdev/ep93xx-fb.c | 1 -
- 1 file changed, 1 deletion(-)
+ arch/sh/boards/mach-kfr2r09/setup.c    | 2 +-
+ drivers/video/backlight/lv5207lp.c     | 2 +-
+ include/linux/platform_data/lv5207lp.h | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/video/fbdev/ep93xx-fb.c b/drivers/video/fbdev/ep93xx-fb.c
-index f6cd200fe50ff..37309f9dbe828 100644
---- a/drivers/video/fbdev/ep93xx-fb.c
-+++ b/drivers/video/fbdev/ep93xx-fb.c
-@@ -474,7 +474,6 @@ static int ep93xxfb_probe(struct platform_device *pdev)
- 	if (!info)
- 		return -ENOMEM;
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 20f4db778ed6a..a18e80394aedc 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -202,7 +202,7 @@ static struct platform_device kfr2r09_sh_lcdc_device = {
+ };
  
--	info->dev = &pdev->dev;
- 	platform_set_drvdata(pdev, info);
- 	fbi = info->par;
- 	fbi->mach_info = mach_info;
+ static struct lv5207lp_platform_data kfr2r09_backlight_data = {
+-	.fbdev = &kfr2r09_sh_lcdc_device.dev,
++	.dev = &kfr2r09_sh_lcdc_device.dev,
+ 	.def_value = 13,
+ 	.max_value = 13,
+ };
+diff --git a/drivers/video/backlight/lv5207lp.c b/drivers/video/backlight/lv5207lp.c
+index 99ba4bc0a500d..739f45cd2d381 100644
+--- a/drivers/video/backlight/lv5207lp.c
++++ b/drivers/video/backlight/lv5207lp.c
+@@ -67,7 +67,7 @@ static int lv5207lp_backlight_check_fb(struct backlight_device *backlight,
+ {
+ 	struct lv5207lp *lv = bl_get_data(backlight);
+ 
+-	return lv->pdata->fbdev == NULL || lv->pdata->fbdev == info->device;
++	return !lv->pdata->dev || lv->pdata->dev == info->device;
+ }
+ 
+ static const struct backlight_ops lv5207lp_backlight_ops = {
+diff --git a/include/linux/platform_data/lv5207lp.h b/include/linux/platform_data/lv5207lp.h
+index c9da8d4027504..95d85c1394bca 100644
+--- a/include/linux/platform_data/lv5207lp.h
++++ b/include/linux/platform_data/lv5207lp.h
+@@ -8,7 +8,7 @@
+ struct device;
+ 
+ struct lv5207lp_platform_data {
+-	struct device *fbdev;
++	struct device *dev;
+ 	unsigned int max_value;
+ 	unsigned int def_value;
+ };
 -- 
 2.41.0
 
