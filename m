@@ -2,106 +2,145 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BE33EEB64D7
-	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 19:55:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 36A12EB64DA
+	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 20:21:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239036AbjFMTzN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 13 Jun 2023 15:55:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48496 "EHLO
+        id S239642AbjFMUVL (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 13 Jun 2023 16:21:11 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34324 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239627AbjFMTy7 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 15:54:59 -0400
-Received: from mx01.omp.ru (mx01.omp.ru [90.154.21.10])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D82DBB3;
-        Tue, 13 Jun 2023 12:54:57 -0700 (PDT)
-Received: from [192.168.1.103] (31.173.84.45) by msexch01.omp.ru (10.188.4.12)
- with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.2.986.14; Tue, 13 Jun
- 2023 22:54:47 +0300
-Subject: Re: [PATCH v6] sh: avoid using IRQ0 on SH3/4
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Sergei Shtylyov <sergei.shtylyov@gmail.com>,
-        Rich Felker <dalias@libc.org>, <linux-sh@vger.kernel.org>
-CC:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        <linux-kernel@vger.kernel.org>
-References: <71105dbf-cdb0-72e1-f9eb-eeda8e321696@omp.ru>
- <983d701befce7fc0010c53d09be84f5c330bdf45.camel@physik.fu-berlin.de>
- <837a586e-5e76-7a5b-a890-403ce26ea51b@gmail.com>
- <3fff103bcea3874cc7fd93c3a765ca642aa7f632.camel@physik.fu-berlin.de>
- <f32a649e-3563-2485-234e-640f9dace105@omp.ru>
- <cf997239b624431486ecba90a1f67d81d6c3fb13.camel@physik.fu-berlin.de>
-From:   Sergey Shtylyov <s.shtylyov@omp.ru>
-Organization: Open Mobile Platform
-Message-ID: <89ca154f-ff8a-5b59-16df-654c108d0fd5@omp.ru>
-Date:   Tue, 13 Jun 2023 22:54:46 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.10.1
+        with ESMTP id S235958AbjFMUVK (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 16:21:10 -0400
+Received: from mail-pf1-x435.google.com (mail-pf1-x435.google.com [IPv6:2607:f8b0:4864:20::435])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2126E1BC7
+        for <linux-sh@vger.kernel.org>; Tue, 13 Jun 2023 13:21:07 -0700 (PDT)
+Received: by mail-pf1-x435.google.com with SMTP id d2e1a72fcca58-650bacd6250so4620533b3a.2
+        for <linux-sh@vger.kernel.org>; Tue, 13 Jun 2023 13:21:07 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=chromium.org; s=google; t=1686687666; x=1689279666;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=xxCRqTUpCdcaL5d+zxoNNIGdAwVO5d6gYOiArNvEfDk=;
+        b=MdG3P+8ihRjSOh7LybABvISRLscCMBxkCXrypPOlWdC+OtYj0yftCdz/uUj98Dw73e
+         FhGLYHBT+mUIwYBKA7+2i75jw7j0RCQu7cApPRXOzrZZaHzRGXsKvoXhl03dGB8ouUuG
+         /A5TFZGtg2AeZl6z7cZS08VFOGBVeakdEkhkM=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1686687666; x=1689279666;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=xxCRqTUpCdcaL5d+zxoNNIGdAwVO5d6gYOiArNvEfDk=;
+        b=kig0ymsO1Dt6+AdFR+MhWyary1fPU0XkFZY2UOFffwehzR42G3+8Km6YQgREi9dXNf
+         b9tvdZDRPmSXBxiPWhf0gGpD3K4+gz3n7ntRD2BW0OPrajXIqpcYrGz8gi2Z5XUaZWn+
+         /0hSuO5seJJz+5koawVQovnVJElqUGPTsLpZO7Fa8wKXp5i67jeIMZfmJP9VvPGMx/yC
+         QqJb0skRAgfVTYcqYZloH0n7Mab1wAyEQoHNv+S6tJGNd+xAVhHwukUmpvmOpCybVVDl
+         ipKgGLmo4eQGT5bMjgTy71XGX8P0mugLaLwZKunv71shdC6P0Uane0bID6S/pwn30di6
+         fVNQ==
+X-Gm-Message-State: AC+VfDzMz79UQCYLa9AzXI+ics1FdavZhiZIhgmp6F3HmhknB3s8se2N
+        htiKb+PPJGohDrIubh0x6TqT+A==
+X-Google-Smtp-Source: ACHHUZ4FjJE13zDDzcDgsWgBZwhdFAkpwfh7UQt9gQTWfr+WAlSvDzNOiSEYdsJRmv+1hwafinJSyA==
+X-Received: by 2002:a17:902:8d8a:b0:1ad:e633:ee96 with SMTP id v10-20020a1709028d8a00b001ade633ee96mr8591788plo.55.1686687666576;
+        Tue, 13 Jun 2023 13:21:06 -0700 (PDT)
+Received: from www.outflux.net (198-0-35-241-static.hfc.comcastbusiness.net. [198.0.35.241])
+        by smtp.gmail.com with ESMTPSA id p4-20020a1709026b8400b001b034d2e71csm10608371plk.34.2023.06.13.13.21.05
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 13 Jun 2023 13:21:06 -0700 (PDT)
+Date:   Tue, 13 Jun 2023 13:21:05 -0700
+From:   Kees Cook <keescook@chromium.org>
+To:     Eric DeVolder <eric.devolder@oracle.com>
+Cc:     linux@armlinux.org.uk, catalin.marinas@arm.com, will@kernel.org,
+        chenhuacai@kernel.org, geert@linux-m68k.org,
+        tsbogend@alpha.franken.de, James.Bottomley@hansenpartnership.com,
+        deller@gmx.de, ysato@users.sourceforge.jp, dalias@libc.org,
+        glaubitz@physik.fu-berlin.de, tglx@linutronix.de, mingo@redhat.com,
+        bp@alien8.de, dave.hansen@linux.intel.com, 86@kernel.org,
+        linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-ia64@vger.kernel.org, loongarch@lists.linux.dev,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, kernel@xen0n.name, mpe@ellerman.id.au,
+        npiggin@gmail.com, christophe.leroy@csgroup.eu,
+        paul.walmsley@sifive.com, palmer@dabbelt.com,
+        aou@eecs.berkeley.edu, hca@linux.ibm.com, gor@linux.ibm.com,
+        agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
+        svens@linux.ibm.com, hpa@zytor.com, paulmck@kernel.org,
+        peterz@infradead.org, frederic@kernel.org,
+        akpm@linux-foundation.org, ardb@kernel.org,
+        samitolvanen@google.com, juerg.haefliger@canonical.com,
+        arnd@arndb.de, rmk+kernel@armlinux.org.uk,
+        linus.walleij@linaro.org, sebastian.reichel@collabora.com,
+        rppt@kernel.org, kirill.shutemov@linux.intel.com,
+        anshuman.khandual@arm.com, ziy@nvidia.com, masahiroy@kernel.org,
+        ndesaulniers@google.com, mhiramat@kernel.org, ojeda@kernel.org,
+        thunder.leizhen@huawei.com, xin3.li@intel.com, tj@kernel.org,
+        gregkh@linuxfoundation.org, tsi@tuyoix.net, bhe@redhat.com,
+        hbathini@linux.ibm.com, sourabhjain@linux.ibm.com,
+        boris.ostrovsky@oracle.com, konrad.wilk@oracle.com
+Subject: Re: [PATCH v1 00/21] refactor Kconfig to consolidate KEXEC and CRASH
+ options
+Message-ID: <202306131314.EFA558B7@keescook>
+References: <20230612172805.681179-1-eric.devolder@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <cf997239b624431486ecba90a1f67d81d6c3fb13.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset="utf-8"
-Content-Language: en-US
-Content-Transfer-Encoding: 7bit
-X-Originating-IP: [31.173.84.45]
-X-ClientProxiedBy: msexch01.omp.ru (10.188.4.12) To msexch01.omp.ru
- (10.188.4.12)
-X-KSE-ServerInfo: msexch01.omp.ru, 9
-X-KSE-AntiSpam-Interceptor-Info: scan successful
-X-KSE-AntiSpam-Version: 5.9.59, Database issued on: 06/13/2023 19:25:51
-X-KSE-AntiSpam-Status: KAS_STATUS_NOT_DETECTED
-X-KSE-AntiSpam-Method: none
-X-KSE-AntiSpam-Rate: 59
-X-KSE-AntiSpam-Info: Lua profiles 178009 [Jun 13 2023]
-X-KSE-AntiSpam-Info: Version: 5.9.59.0
-X-KSE-AntiSpam-Info: Envelope from: s.shtylyov@omp.ru
-X-KSE-AntiSpam-Info: LuaCore: 517 517 b0056c19d8e10afbb16cb7aad7258dedb0179a79
-X-KSE-AntiSpam-Info: {rep_avail}
-X-KSE-AntiSpam-Info: {Tracking_no_received}
-X-KSE-AntiSpam-Info: {Tracking_arrow_text}
-X-KSE-AntiSpam-Info: {Tracking_uf_ne_domains}
-X-KSE-AntiSpam-Info: {Tracking_from_domain_doesnt_match_to}
-X-KSE-AntiSpam-Info: {relay has no DNS name}
-X-KSE-AntiSpam-Info: {SMTP from is not routable}
-X-KSE-AntiSpam-Info: {Found in DNSBL: 31.173.84.45 in (user)
- b.barracudacentral.org}
-X-KSE-AntiSpam-Info: omp.ru:7.1.1;31.173.84.45:7.1.2,7.7.3,7.4.1;d41d8cd98f00b204e9800998ecf8427e.com:7.1.1;git.kernel.org:7.1.1;127.0.0.199:7.1.2
-X-KSE-AntiSpam-Info: {iprep_blacklist}
-X-KSE-AntiSpam-Info: ApMailHostAddress: 31.173.84.45
-X-KSE-AntiSpam-Info: {DNS response errors}
-X-KSE-AntiSpam-Info: Rate: 59
-X-KSE-AntiSpam-Info: Status: not_detected
-X-KSE-AntiSpam-Info: Method: none
-X-KSE-AntiSpam-Info: Auth:dmarc=temperror header.from=omp.ru;spf=temperror
- smtp.mailfrom=omp.ru;dkim=none
-X-KSE-Antiphishing-Info: Clean
-X-KSE-Antiphishing-ScanningType: Heuristic
-X-KSE-Antiphishing-Method: None
-X-KSE-Antiphishing-Bases: 06/13/2023 19:35:00
-X-KSE-Antivirus-Interceptor-Info: scan successful
-X-KSE-Antivirus-Info: Clean, bases: 6/13/2023 3:26:00 PM
-X-KSE-Attachment-Filter-Triggered-Rules: Clean
-X-KSE-Attachment-Filter-Triggered-Filters: Clean
-X-KSE-BulkMessagesFiltering-Scan-Result: InTheLimit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230612172805.681179-1-eric.devolder@oracle.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 6/12/23 2:01 PM, John Paul Adrian Glaubitz wrote:
-[...]
+On Mon, Jun 12, 2023 at 01:27:52PM -0400, Eric DeVolder wrote:
+> The Kconfig is refactored to consolidate KEXEC and CRASH options from
+> various arch/<arch>/Kconfig files into new file kernel/Kconfig.kexec.
 
->>> Applied to my for-next branch.
->>
->>    Note that this was positioned as a fix.
+This looks very nice!
+
+> [...]
+> - The boolean ARCH_HAS_<option> in effect allows the arch to determine
+>   when the feature is allowed.  Archs which don't have the feature
+>   simply do not provide the corresponding ARCH_HAS_<option>.
+>   For each arch, where there previously were KEXEC and/or CRASH
+>   options, these have been replaced with the corresponding boolean
+>   ARCH_HAS_<option>, and an appropriate def_bool statement.
 > 
-> Hmm, it will be at least backported to the stable trees.
-
-   OK. :-)
-
->>    Where is your tree, BTW? :-)
+>   For example, if the arch supports KEXEC_FILE, then the
+>   ARCH_HAS_KEXEC_FILE simply has a 'def_bool y'. This permits the
+>   KEXEC_FILE option to be available.
 > 
-> https://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git
+>   If the arch has a 'depends on' statement in its original coding
+>   of the option, then that expression becomes part of the def_bool
+>   expression. For example, arm64 had:
+> 
+>   config KEXEC
+>     depends on PM_SLEEP_SMP
+> 
+>   and in this solution, this converts to:
+> 
+>   config ARCH_HAS_KEXEC
+>     def_bool PM_SLEEP_SMP
+> 
+> 
+> - In order to account for the differences in the config coding for
+>   the three common options, the ARCH_SUPPORTS_<option> is used.
+>   This options has a 'depends on <option>' statement to couple it
+>   to the main option, and from there can insert the differences
+>   from the common option and the arch original coding of that option.
+> 
+>   For example, a few archs enable CRYPTO and CRYTPO_SHA256 for
+>   KEXEC_FILE. These require a ARCH_SUPPORTS_KEXEC_FILE and
+>   'select CRYPTO' and 'select CRYPTO_SHA256' statements.
 
-   Shouldn't it be published in MAINTANERS?
+Naming nit: "HAS" and "SUPPORTS" feel very similar, and looking at
+existing configs, "ARCH_SUPPORTS_..." is already used for doing this
+kind of bare "bool" management. e.g. see ARCH_SUPPORTS_INT128
 
-> Adrian
+It looks like you need to split "depends" and "select" so the options
+can be chosen separately from the "selectable" configs.
 
-MBR, Sergey
+How about naming this ARCH_SELECTS_<option>, since that's what it's
+there for?
+
+-Kees
+
+-- 
+Kees Cook
