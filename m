@@ -2,52 +2,52 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CD070CA9EB3
-	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 11:10:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 06452CA9EB6
+	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 11:10:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242179AbjFMLKq (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        id S242181AbjFMLKq (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
         Tue, 13 Jun 2023 07:10:46 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49262 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49254 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242138AbjFMLKK (ORCPT
+        with ESMTP id S242133AbjFMLKK (ORCPT
         <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 07:10:10 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B253010E3;
-        Tue, 13 Jun 2023 04:10:09 -0700 (PDT)
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D07DE10E2;
+        Tue, 13 Jun 2023 04:10:08 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 63597223E4;
-        Tue, 13 Jun 2023 11:10:08 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 654481FD9B;
+        Tue, 13 Jun 2023 11:10:07 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1686654608; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1686654607; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=yHsYY4KkqinsC3hNy7+x1+/KpZqx4RkXsKhX6dnk4eY=;
-        b=K2rJNJxfzP7upRowYzs7e5sPaiHmP/Ietyvvwt588hWoZmYRvivCKm38mIu/6DuoWxTBQY
-        +re1bBD+5jKbfW0nlfydH9Q+9hUJnQSKWyzxAmkEiJbUQDQgV8GEF2VnFNXXDppVVxGcAp
-        KKdOS/g1Kt3J47NJDIcQwcpd53hTvxM=
+        bh=eAk2/6ibdZH0kfzQKlGiXlQ0sdOrgLY8cFw5r/ejdU0=;
+        b=UAeqG60HF96B34Zb8zAbsUHqHdqePI2Hx+bnLL2Px0TLj8a3mnzADulBJ3wVGidBG0o4Ko
+        GlRFMR0g+DavopvYU02zi+YPIXlu+Mwqsmkb89lFkWP0LZCqqiMRg6G8kWKD1l3QKjqMRm
+        9Ueg7GU1QujWs6zJj1+WUvWDZd2mw1M=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1686654608;
+        s=susede2_ed25519; t=1686654607;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=yHsYY4KkqinsC3hNy7+x1+/KpZqx4RkXsKhX6dnk4eY=;
-        b=zA/qhXUKqKrL7esCdkSiWza8MO1kKeovzhPD/bLjn+XI+eireuiDt89TMNpwP3E7n4izdu
-        hFRfeA7qFYjPGdCA==
+        bh=eAk2/6ibdZH0kfzQKlGiXlQ0sdOrgLY8cFw5r/ejdU0=;
+        b=n/47xsMt6I3VTPwwvPdH3F4k2gEB1fB8VpAdKGbLNVTKuiWzNRDqSR0yvco+uSJm7HMV+e
+        TvFvFmys1fyp9LAg==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1690613A47;
-        Tue, 13 Jun 2023 11:10:08 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 180FE13483;
+        Tue, 13 Jun 2023 11:10:07 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id YNF+BJBOiGR8CQAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 11:10:08 +0000
+        id wPfyBI9OiGR8CQAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 11:10:07 +0000
 From:   Thomas Zimmermann <tzimmermann@suse.de>
 To:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
         deller@gmx.de, geert+renesas@glider.be, lee@kernel.org,
@@ -57,9 +57,9 @@ Cc:     linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
         linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
         linux-staging@lists.linux.dev, linux-kernel@vger.kernel.org,
         Thomas Zimmermann <tzimmermann@suse.de>
-Subject: [PATCH v3 37/38] fbdev/core: Rework fb init code
-Date:   Tue, 13 Jun 2023 13:07:12 +0200
-Message-ID: <20230613110953.24176-38-tzimmermann@suse.de>
+Subject: [PATCH v3 34/38] fbdev/core: Add fb_device_{create,destroy}()
+Date:   Tue, 13 Jun 2023 13:07:09 +0200
+Message-ID: <20230613110953.24176-35-tzimmermann@suse.de>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <20230613110953.24176-1-tzimmermann@suse.de>
 References: <20230613110953.24176-1-tzimmermann@suse.de>
@@ -69,159 +69,182 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Init the class "graphics" before the rest of fbdev. Later steps, such
-as the sysfs code, depend on the class. Also arrange the module's exit
-code in reverse order.
+Move the logic to create and destroy fbdev devices into the new
+helpers fb_device_create() and fb_device_destroy().
 
-Unexport the global variable fb_class, which is only shared internally
-within the fbdev core module.
+There was a call to fb_cleanup_device() in do_unregister_framebuffer()
+that was too late. The device had already been removed at this point.
+Move the call into fb_device_destroy().
+
+Declare the helpers in the new internal header file  fb_internal.h, as
+they are only used within the fbdev core module.
 
 Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
 Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
 ---
- drivers/video/fbdev/core/fb_internal.h |  1 +
- drivers/video/fbdev/core/fbcon.c       |  1 +
- drivers/video/fbdev/core/fbmem.c       | 52 ++++++++++----------------
- include/linux/fb.h                     |  1 -
- 4 files changed, 22 insertions(+), 33 deletions(-)
+ drivers/video/fbdev/core/fb_internal.h | 12 ++++++++
+ drivers/video/fbdev/core/fbmem.c       | 21 +++-----------
+ drivers/video/fbdev/core/fbsysfs.c     | 38 ++++++++++++++++++++++++--
+ include/linux/fb.h                     |  3 --
+ 4 files changed, 52 insertions(+), 22 deletions(-)
+ create mode 100644 drivers/video/fbdev/core/fb_internal.h
 
 diff --git a/drivers/video/fbdev/core/fb_internal.h b/drivers/video/fbdev/core/fb_internal.h
-index abe06c9da36e3..0b43c0cd50968 100644
---- a/drivers/video/fbdev/core/fb_internal.h
+new file mode 100644
+index 0000000000000..0b9640ae7a3d2
+--- /dev/null
 +++ b/drivers/video/fbdev/core/fb_internal.h
-@@ -11,6 +11,7 @@ int fb_register_chrdev(void);
- void fb_unregister_chrdev(void);
- 
- /* fbmem.c */
-+extern struct class *fb_class;
- extern struct mutex registration_lock;
- extern struct fb_info *registered_fb[FB_MAX];
- extern int num_registered_fb;
-diff --git a/drivers/video/fbdev/core/fbcon.c b/drivers/video/fbdev/core/fbcon.c
-index c6c9d040bdec7..8e76bc246b387 100644
---- a/drivers/video/fbdev/core/fbcon.c
-+++ b/drivers/video/fbdev/core/fbcon.c
-@@ -78,6 +78,7 @@
- #include <asm/irq.h>
- 
- #include "fbcon.h"
-+#include "fb_internal.h"
- 
- /*
-  * FIXME: Locking
+@@ -0,0 +1,12 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++
++#ifndef _FB_INTERNAL_H
++#define _FB_INTERNAL_H
++
++struct fb_info;
++
++/* fbsysfs.c */
++int fb_device_create(struct fb_info *fb_info);
++void fb_device_destroy(struct fb_info *fb_info);
++
++#endif
 diff --git a/drivers/video/fbdev/core/fbmem.c b/drivers/video/fbdev/core/fbmem.c
-index 4edf70241a23c..ee44a46a66be1 100644
+index f91ae7d4c94d6..66532774d351e 100644
 --- a/drivers/video/fbdev/core/fbmem.c
 +++ b/drivers/video/fbdev/core/fbmem.c
-@@ -44,6 +44,8 @@
+@@ -40,6 +40,8 @@
+ #include <video/nomodeset.h>
+ #include <video/vga.h>
  
- #define FBPIXMAPSIZE	(1024 * 8)
- 
-+struct class *fb_class;
++#include "fb_internal.h"
 +
- DEFINE_MUTEX(registration_lock);
- struct fb_info *registered_fb[FB_MAX] __read_mostly;
- int num_registered_fb __read_mostly;
-@@ -899,9 +901,6 @@ fb_blank(struct fb_info *info, int blank)
- }
- EXPORT_SYMBOL(fb_blank);
+     /*
+      *  Frame buffer device initialization and setup routines
+      */
+@@ -1447,14 +1449,7 @@ static int do_register_framebuffer(struct fb_info *fb_info)
+ 	mutex_init(&fb_info->lock);
+ 	mutex_init(&fb_info->mm_lock);
  
--struct class *fb_class;
--EXPORT_SYMBOL(fb_class);
+-	fb_info->dev = device_create(fb_class, fb_info->device,
+-				     MKDEV(FB_MAJOR, i), NULL, "fb%d", i);
+-	if (IS_ERR(fb_info->dev)) {
+-		/* Not fatal */
+-		printk(KERN_WARNING "Unable to create device for framebuffer %d; errno = %ld\n", i, PTR_ERR(fb_info->dev));
+-		fb_info->dev = NULL;
+-	} else
+-		fb_init_device(fb_info);
++	fb_device_create(fb_info);
+ 
+ 	if (fb_info->pixmap.addr == NULL) {
+ 		fb_info->pixmap.addr = kmalloc(FBPIXMAPSIZE, GFP_KERNEL);
+@@ -1515,16 +1510,9 @@ static void unlink_framebuffer(struct fb_info *fb_info)
+ 	if (WARN_ON(i < 0 || i >= FB_MAX || registered_fb[i] != fb_info))
+ 		return;
+ 
+-	if (!fb_info->dev)
+-		return;
 -
- static int fb_check_foreignness(struct fb_info *fi)
- {
- 	const bool foreign_endian = fi->flags & FBINFO_FOREIGN_ENDIAN;
-@@ -1108,59 +1107,48 @@ void fb_set_suspend(struct fb_info *info, int state)
- }
- EXPORT_SYMBOL(fb_set_suspend);
- 
--/**
-- *	fbmem_init - init frame buffer subsystem
-- *
-- *	Initialize the frame buffer subsystem.
-- *
-- *	NOTE: This function is _only_ to be called by drivers/char/mem.c.
-- *
-- */
+-	device_destroy(fb_class, MKDEV(FB_MAJOR, i));
 -
--static int __init
--fbmem_init(void)
-+static int __init fbmem_init(void)
- {
- 	int ret;
++	fb_device_destroy(fb_info);
+ 	pm_vt_switch_unregister(fb_info->device);
+-
+ 	unbind_console(fb_info);
+-
+-	fb_info->dev = NULL;
+ }
  
-+	fb_class = class_create("graphics");
-+	if (IS_ERR(fb_class)) {
-+		ret = PTR_ERR(fb_class);
-+		pr_err("Unable to create fb class; errno = %d\n", ret);
-+		goto err_fb_class;
+ static void do_unregister_framebuffer(struct fb_info *fb_info)
+@@ -1539,7 +1527,6 @@ static void do_unregister_framebuffer(struct fb_info *fb_info)
+ 	fb_destroy_modelist(&fb_info->modelist);
+ 	registered_fb[fb_info->node] = NULL;
+ 	num_registered_fb--;
+-	fb_cleanup_device(fb_info);
+ #ifdef CONFIG_GUMSTIX_AM200EPD
+ 	{
+ 		struct fb_event event;
+diff --git a/drivers/video/fbdev/core/fbsysfs.c b/drivers/video/fbdev/core/fbsysfs.c
+index 849073f1ca067..fafe574398b01 100644
+--- a/drivers/video/fbdev/core/fbsysfs.c
++++ b/drivers/video/fbdev/core/fbsysfs.c
+@@ -8,6 +8,9 @@
+ #include <linux/console.h>
+ #include <linux/fb.h>
+ #include <linux/fbcon.h>
++#include <linux/major.h>
++
++#include "fb_internal.h"
+ 
+ #define FB_SYSFS_FLAG_ATTR 1
+ 
+@@ -435,7 +438,7 @@ static struct device_attribute device_attrs[] = {
+ #endif
+ };
+ 
+-int fb_init_device(struct fb_info *fb_info)
++static int fb_init_device(struct fb_info *fb_info)
+ {
+ 	int i, error = 0;
+ 
+@@ -459,7 +462,7 @@ int fb_init_device(struct fb_info *fb_info)
+ 	return 0;
+ }
+ 
+-void fb_cleanup_device(struct fb_info *fb_info)
++static void fb_cleanup_device(struct fb_info *fb_info)
+ {
+ 	unsigned int i;
+ 
+@@ -470,3 +473,34 @@ void fb_cleanup_device(struct fb_info *fb_info)
+ 		fb_info->class_flag &= ~FB_SYSFS_FLAG_ATTR;
+ 	}
+ }
++
++int fb_device_create(struct fb_info *fb_info)
++{
++	int node = fb_info->node;
++	dev_t devt = MKDEV(FB_MAJOR, node);
++	int ret;
++
++	fb_info->dev = device_create(fb_class, fb_info->device, devt, NULL, "fb%d", node);
++	if (IS_ERR(fb_info->dev)) {
++		/* Not fatal */
++		ret = PTR_ERR(fb_info->dev);
++		pr_warn("Unable to create device for framebuffer %d; error %d\n", node, ret);
++		fb_info->dev = NULL;
++	} else {
++		fb_init_device(fb_info);
 +	}
 +
- 	ret = fb_init_procfs();
- 	if (ret)
--		return ret;
-+		goto err_class_destroy;
- 
- 	ret = fb_register_chrdev();
- 	if (ret)
--		goto err_chrdev;
--
--	fb_class = class_create("graphics");
--	if (IS_ERR(fb_class)) {
--		ret = PTR_ERR(fb_class);
--		pr_warn("Unable to create fb class; errno = %d\n", ret);
--		fb_class = NULL;
--		goto err_class;
--	}
-+		goto err_fb_cleanup_procfs;
- 
- 	fb_console_init();
- 
- 	return 0;
- 
--err_class:
--	fb_unregister_chrdev();
--err_chrdev:
-+err_fb_cleanup_procfs:
- 	fb_cleanup_procfs();
-+err_class_destroy:
-+	class_destroy(fb_class);
-+err_fb_class:
-+	fb_class = NULL;
- 	return ret;
- }
- 
- #ifdef MODULE
--module_init(fbmem_init);
--static void __exit
--fbmem_exit(void)
-+static void __exit fbmem_exit(void)
- {
- 	fb_console_exit();
--
-+	fb_unregister_chrdev();
- 	fb_cleanup_procfs();
- 	class_destroy(fb_class);
--	fb_unregister_chrdev();
- }
- 
-+module_init(fbmem_init);
- module_exit(fbmem_exit);
- MODULE_LICENSE("GPL");
- MODULE_DESCRIPTION("Framebuffer base");
++	return 0;
++}
++
++void fb_device_destroy(struct fb_info *fb_info)
++{
++	dev_t devt = MKDEV(FB_MAJOR, fb_info->node);
++
++	if (!fb_info->dev)
++		return;
++
++	fb_cleanup_device(fb_info);
++	device_destroy(fb_class, devt);
++	fb_info->dev = NULL;
++}
 diff --git a/include/linux/fb.h b/include/linux/fb.h
-index 1988d11f78bcb..541a0e3ce21f4 100644
+index ce6823e157e6b..1988d11f78bcb 100644
 --- a/include/linux/fb.h
 +++ b/include/linux/fb.h
-@@ -609,7 +609,6 @@ extern int fb_new_modelist(struct fb_info *info);
+@@ -735,11 +735,8 @@ static inline bool fb_be_math(struct fb_info *info)
+ #endif /* CONFIG_FB_FOREIGN_ENDIAN */
+ }
  
- extern bool fb_center_logo;
- extern int fb_logo_count;
--extern struct class *fb_class;
+-/* drivers/video/fbsysfs.c */
+ extern struct fb_info *framebuffer_alloc(size_t size, struct device *dev);
+ extern void framebuffer_release(struct fb_info *info);
+-extern int fb_init_device(struct fb_info *fb_info);
+-extern void fb_cleanup_device(struct fb_info *head);
+ extern void fb_bl_default_curve(struct fb_info *fb_info, u8 off, u8 min, u8 max);
  
- static inline void lock_fb_info(struct fb_info *info)
- {
+ /* drivers/video/fbmon.c */
 -- 
 2.41.0
 
