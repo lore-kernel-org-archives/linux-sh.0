@@ -2,187 +2,155 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ADDE6C77B7A
-	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 07:32:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A4622C88CB9
+	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 07:45:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240468AbjFMHcE (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 13 Jun 2023 03:32:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33870 "EHLO
+        id S239229AbjFMHpG (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 13 Jun 2023 03:45:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42934 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240458AbjFMHbu (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 03:31:50 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C64F319B1;
-        Tue, 13 Jun 2023 00:31:24 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        with ESMTP id S240285AbjFMHoo (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 03:44:44 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BBBA219B1;
+        Tue, 13 Jun 2023 00:44:31 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 721DE22623;
-        Tue, 13 Jun 2023 07:31:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1686641483; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=8yklOUQliENxVhDaviA5tsO1+HEHxyZMuRKI8/yVe9M=;
-        b=T1UnoGOArn7UdIqvXCOBfm+CzjaqmBCYKvGhr/djfyEKpoSKxQgPNhKk9ZVOyzGTkETAvP
-        m8ZNHsPWrb8e0vemel14pWCZNnuKgb82ldo558GxgWvuFai0Mgts/ZG2oEYL4GB36w5+oR
-        1kjhdQOXehf6/x/lvb0gK4gl61NVHk0=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1686641483;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=8yklOUQliENxVhDaviA5tsO1+HEHxyZMuRKI8/yVe9M=;
-        b=rtj1o5JTUo3Kjacbneg0Rlz+Civc6RWPT2N2OPRb+bdhcQfrGM8YULl3xwuWm5oG9PTl1g
-        yCzn2iDPDJro1sAg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1D67813345;
-        Tue, 13 Jun 2023 07:31:23 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id sOxHBksbiGSpFQAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 07:31:23 +0000
-Message-ID: <41e119bc-5a93-c91e-7451-aa48f829dc1a@suse.de>
-Date:   Tue, 13 Jun 2023 09:31:22 +0200
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 532C561333;
+        Tue, 13 Jun 2023 07:44:31 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E078FC433D2;
+        Tue, 13 Jun 2023 07:44:15 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1686642270;
+        bh=ez0I+RKRhMdZt82NML91fPb7fzRC4/NkCFA3IdK3cEg=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=HyA2VS9kwVTQsYOWOuof1Z4qJ92ct0+rpQ0B5SIAzOL2Mz6wp6NoYwA7DcLYOqzj9
+         Q8Z9RGOQt5lsRA8Nc33tC8G7SiwN9ipBSdD03bBdhpX4MycI3Vh7vOT7ypJVtsouWv
+         8Bsg5dlRSFLhnsq+PWCSJc5VolYLva+SeDgrT92N096TEl0/uLmsJvVPLGz9OK3/dz
+         OYm6tEkeVT/cDyaIgk5UyxE5b/W7hyDcldGwNesOYI9EZOqwD7xGIveZKNt/lp9izm
+         uoBjmwxoGZjGvj7XWF9lQv7iNjjhyG9sIxFni/WcE8h+xW9r48P7ifrawWGz2rEEWN
+         FKciDs53eQHeQ==
+Date:   Tue, 13 Jun 2023 10:43:47 +0300
+From:   Mike Rapoport <rppt@kernel.org>
+To:     Rick Edgecombe <rick.p.edgecombe@intel.com>
+Cc:     x86@kernel.org, "H . Peter Anvin" <hpa@zytor.com>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Ingo Molnar <mingo@redhat.com>, linux-kernel@vger.kernel.org,
+        linux-doc@vger.kernel.org, linux-mm@kvack.org,
+        linux-arch@vger.kernel.org, linux-api@vger.kernel.org,
+        Arnd Bergmann <arnd@arndb.de>,
+        Andy Lutomirski <luto@kernel.org>,
+        Balbir Singh <bsingharora@gmail.com>,
+        Borislav Petkov <bp@alien8.de>,
+        Cyrill Gorcunov <gorcunov@gmail.com>,
+        Dave Hansen <dave.hansen@linux.intel.com>,
+        Eugene Syromiatnikov <esyr@redhat.com>,
+        Florian Weimer <fweimer@redhat.com>,
+        "H . J . Lu" <hjl.tools@gmail.com>, Jann Horn <jannh@google.com>,
+        Jonathan Corbet <corbet@lwn.net>,
+        Kees Cook <keescook@chromium.org>,
+        Mike Kravetz <mike.kravetz@oracle.com>,
+        Nadav Amit <nadav.amit@gmail.com>,
+        Oleg Nesterov <oleg@redhat.com>, Pavel Machek <pavel@ucw.cz>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Randy Dunlap <rdunlap@infradead.org>,
+        Weijiang Yang <weijiang.yang@intel.com>,
+        "Kirill A . Shutemov" <kirill.shutemov@linux.intel.com>,
+        John Allen <john.allen@amd.com>, kcc@google.com,
+        eranian@google.com, jamorris@linux.microsoft.com,
+        dethoma@microsoft.com, akpm@linux-foundation.org,
+        Andrew.Cooper3@citrix.com, christina.schimpe@intel.com,
+        david@redhat.com, debug@rivosinc.com, szabolcs.nagy@arm.com,
+        torvalds@linux-foundation.org, broonie@kernel.org,
+        linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        Michal Simek <monstr@monstr.eu>,
+        Dinh Nguyen <dinguyen@kernel.org>, linux-mips@vger.kernel.org,
+        openrisc@lists.librecores.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+        Linus Torvalds <torvalds@linuxfoundation.org>
+Subject: Re: [PATCH v9 01/42] mm: Rename arch pte_mkwrite()'s to
+ pte_mkwrite_novma()
+Message-ID: <20230613074347.GR52412@kernel.org>
+References: <20230613001108.3040476-1-rick.p.edgecombe@intel.com>
+ <20230613001108.3040476-2-rick.p.edgecombe@intel.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.11.2
-Subject: Re: [PATCH v2 01/38] backlight/bd6107: Compare against struct
- fb_info.device
-Content-Language: en-US
-To:     "Ruhl, Michael J" <michael.j.ruhl@intel.com>,
-        "daniel@ffwll.ch" <daniel@ffwll.ch>,
-        "javierm@redhat.com" <javierm@redhat.com>,
-        "sam@ravnborg.org" <sam@ravnborg.org>,
-        "deller@gmx.de" <deller@gmx.de>,
-        "geert+renesas@glider.be" <geert+renesas@glider.be>,
-        "lee@kernel.org" <lee@kernel.org>,
-        "daniel.thompson@linaro.org" <daniel.thompson@linaro.org>,
-        "jingoohan1@gmail.com" <jingoohan1@gmail.com>,
-        "dan.carpenter@linaro.org" <dan.carpenter@linaro.org>
-Cc:     "linux-fbdev@vger.kernel.org" <linux-fbdev@vger.kernel.org>,
-        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
-        "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>,
-        "linux-staging@lists.linux.dev" <linux-staging@lists.linux.dev>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "dri-devel@lists.freedesktop.org" <dri-devel@lists.freedesktop.org>,
-        "stable@vger.kernel.org" <stable@vger.kernel.org>,
-        "linux-omap@vger.kernel.org" <linux-omap@vger.kernel.org>
-References: <20230612141352.29939-1-tzimmermann@suse.de>
- <20230612141352.29939-2-tzimmermann@suse.de>
- <IA1PR11MB641822AFCB0E0EA5856C7E59C154A@IA1PR11MB6418.namprd11.prod.outlook.com>
-From:   Thomas Zimmermann <tzimmermann@suse.de>
-In-Reply-To: <IA1PR11MB641822AFCB0E0EA5856C7E59C154A@IA1PR11MB6418.namprd11.prod.outlook.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="------------pXSHUios00U5kRTo473gtCKr"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230613001108.3040476-2-rick.p.edgecombe@intel.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---------------pXSHUios00U5kRTo473gtCKr
-Content-Type: multipart/mixed; boundary="------------U2OCUX5bG0ubHrGWpdK9sORo";
- protected-headers="v1"
-From: Thomas Zimmermann <tzimmermann@suse.de>
-To: "Ruhl, Michael J" <michael.j.ruhl@intel.com>,
- "daniel@ffwll.ch" <daniel@ffwll.ch>, "javierm@redhat.com"
- <javierm@redhat.com>, "sam@ravnborg.org" <sam@ravnborg.org>,
- "deller@gmx.de" <deller@gmx.de>,
- "geert+renesas@glider.be" <geert+renesas@glider.be>,
- "lee@kernel.org" <lee@kernel.org>,
- "daniel.thompson@linaro.org" <daniel.thompson@linaro.org>,
- "jingoohan1@gmail.com" <jingoohan1@gmail.com>,
- "dan.carpenter@linaro.org" <dan.carpenter@linaro.org>
-Cc: "linux-fbdev@vger.kernel.org" <linux-fbdev@vger.kernel.org>,
- Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
- "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>,
- "linux-staging@lists.linux.dev" <linux-staging@lists.linux.dev>,
- "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
- "dri-devel@lists.freedesktop.org" <dri-devel@lists.freedesktop.org>,
- "stable@vger.kernel.org" <stable@vger.kernel.org>,
- "linux-omap@vger.kernel.org" <linux-omap@vger.kernel.org>
-Message-ID: <41e119bc-5a93-c91e-7451-aa48f829dc1a@suse.de>
-Subject: Re: [PATCH v2 01/38] backlight/bd6107: Compare against struct
- fb_info.device
-References: <20230612141352.29939-1-tzimmermann@suse.de>
- <20230612141352.29939-2-tzimmermann@suse.de>
- <IA1PR11MB641822AFCB0E0EA5856C7E59C154A@IA1PR11MB6418.namprd11.prod.outlook.com>
-In-Reply-To: <IA1PR11MB641822AFCB0E0EA5856C7E59C154A@IA1PR11MB6418.namprd11.prod.outlook.com>
+On Mon, Jun 12, 2023 at 05:10:27PM -0700, Rick Edgecombe wrote:
+> The x86 Shadow stack feature includes a new type of memory called shadow
+> stack. This shadow stack memory has some unusual properties, which requires
+> some core mm changes to function properly.
+> 
+> One of these unusual properties is that shadow stack memory is writable,
+> but only in limited ways. These limits are applied via a specific PTE
+> bit combination. Nevertheless, the memory is writable, and core mm code
+> will need to apply the writable permissions in the typical paths that
+> call pte_mkwrite(). Future patches will make pte_mkwrite() take a VMA, so
+> that the x86 implementation of it can know whether to create regular
+> writable memory or shadow stack memory.
 
---------------U2OCUX5bG0ubHrGWpdK9sORo
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: base64
+Nit:                            ^ mapping?
 
-SGkNCg0KQW0gMTIuMDYuMjMgdW0gMTc6MTcgc2NocmllYiBSdWhsLCBNaWNoYWVsIEo6DQpb
-Li4uXQ0KPiANCj4gVGhvbWFzLA0KPiANCj4gTG9va2luZyBhdCB0aGUgZmIuaCBmaWxlIEkg
-c2VlOg0KPiANCj4gCXN0cnVjdCBkZXZpY2UgKmRldmljZTsJCS8qIFRoaXMgaXMgdGhlIHBh
-cmVudCAqLw0KPiAJc3RydWN0IGRldmljZSAqZGV2OwkJLyogVGhpcyBpcyB0aGlzIGZiIGRl
-dmljZSAqLw0KPiANCj4gSXMgdGhpcyBkb2N1bWVudGF0aW9uICJjb3JyZWN0Ij8gIElmIHNv
-LCBob3cgZG9lcyB0aGF0IG1hdGNoIHdoYXQgeW91IGFyZSBkb2luZyBoZXJlPw0KDQpUaGUg
-Y29tbWVudHMgYXJlIGNvcnJlY3QuIExldCdzIGdvIHRocm91Z2ggd2hhdCdzIGhhcHBlbmlu
-ZyBoZXJlLg0KDQpUaGUgZmllbGQgJ2RldmljZScgaXMgdGhlIExpbnV4IGRldmljZSAocGxh
-dGZvcm1fZGV2aWNlLCBwY2lfZGV2LCBldGMuKSANCmFuZCAnZGV2JyBpcyB0aGUgZmJkZXYg
-Y2hhcmFjdGVyIGRldmljZSB0aGF0IGlzIC9kZXYvZmIqLg0KDQpXZSBzZXQgJ2RldmljZScg
-d2hlcmUgd2UgYWxsb2NhdGUgdGhlIGZiX2luZm8gaW4gZnJhbWVidWZmZXJfYWxsb2MoKQ0K
-DQpodHRwczovL2VsaXhpci5ib290bGluLmNvbS9saW51eC92Ni4zL3NvdXJjZS9kcml2ZXJz
-L3ZpZGVvL2ZiZGV2L2NvcmUvZmJzeXNmcy5jI0w1Nw0KDQphbmQgd2Ugc2V0ICdkZXYnIHdo
-ZW4gd2UgcmVnaXN0ZXIgdGhlIGNocmRldiB3aXRoaW4gcmVnaXN0ZXJfZnJhbWVidWZmZXIo
-KS4NCg0KaHR0cHM6Ly9lbGl4aXIuYm9vdGxpbi5jb20vbGludXgvdjYuMy9zb3VyY2UvZHJp
-dmVycy92aWRlby9mYmRldi9jb3JlL2ZibWVtLmMjTDE1NTUNCg0KKEFuZCB0aGUgcG9pbnQg
-b2YgdGhpcyBwYXRjaCBzZXJpZXMgaXMgdG8gbWFrZSB0aGUgY2hyZGV2IG9wdGlvbmFsLikN
-Cg0KVGhlIHByb2JsZW0gd2l0aCBiZDYxMDcgaXMgdGhhdCBpcyBtaXNzZXMgdGhlIHBhcnQg
-d2hlcmUgaXQgcmVnaXN0ZXJzIA0KdGhlIHBsYXRmb3JtIGRldmljZS4gVGhlIGRyaXZlciBh
-cHBlYXJzIHRvIGJlIHVudXNlZC4NCg0KQnV0IGdwaW9fYmFja2xpZ2h0IGZyb20gcGF0Y2hl
-cyAzIGFuZCA0IHdvcmtzLiBUaGUgYXJjaGl0ZWN0dXJlIGNvZGUgDQpzZXRzIHRoZSAnZmJk
-ZXYnIGZpZWxkIGZyb20gYSBwbGF0Zm9ybS1kZXZpY2Ugc3RydWN0dXJlIGF0DQoNCmh0dHBz
-Oi8vZWxpeGlyLmJvb3RsaW4uY29tL2xpbnV4L3Y2LjMvc291cmNlL2FyY2gvc2gvYm9hcmRz
-L21hY2gtZWNvdmVjMjQvc2V0dXAuYyNMMzg5DQoNCmFuZCBsYXRlciBjcmVhdGVzIHRoZSBw
-bGF0Zm9ybSBkZXZpY2UgYXMgcGFydCBvZg0KDQpodHRwczovL2VsaXhpci5ib290bGluLmNv
-bS9saW51eC92Ni4zL3NvdXJjZS9hcmNoL3NoL2JvYXJkcy9tYWNoLWVjb3ZlYzI0L3NldHVw
-LmMjTDE0ODMNCg0KSXQgd2lsbCBiZSB1c2VkIHdpdGggdGhlIHNoLW1vYmlsZSBmYmRldiBk
-cml2ZXIgYW5kIGJlY29tZSB0aGUgJ2RldmljZScgDQpmaWVsZCB0aGVyZS4NCg0KSW4gdGhl
-IGJhY2tsaWdodCBjb2RlLCB0aGUgZ3Bpb19iYWNrbGlnaHQgZHJpdmVyIGNvcGllcyB0aGUg
-ZmJkZXYgZmllbGQgYXQNCg0KaHR0cHM6Ly9lbGl4aXIuYm9vdGxpbi5jb20vbGludXgvdjYu
-My9zb3VyY2UvZHJpdmVycy92aWRlby9iYWNrbGlnaHQvZ3Bpb19iYWNrbGlnaHQuYyNMNjIN
-Cg0KdG8gbGF0ZXIgdXNlIGl0IGluY29ycmVjdGx5IGluIC5jaGVja19mYi4gSGVuY2UsIHRo
-ZSBoZWxwZXIgaGFzIHRvIA0KY29tcGFyZSB0aGUgcGxhdGZvcm0gZGV2aWNlIHRvIHRoZSAn
-ZGV2aWNlJyBmaWVsZCwgbm90IHRoZSAnZGV2JyBmaWVsZDsgDQp3aGljaCBpcyBiZWluZyBm
-aXhlZCBieSB0aGlzIHBhdGNoc2V0Lg0KDQpUaGUgdHdvIG90aGVyIGRyaXZlcnMsIGJkNjEw
-NyBhbmQgbHY1MjA3bHAsIGhhdmUgdGhlIHNhbWUgYnVnLg0KDQpCZXN0IHJlZ2FyZHMNClRo
-b21hcw0KDQoNCj4gDQo+IFRoYW5rcywNCj4gDQo+IE0NCj4gDQo+PiB9DQo+Pg0KPj4gc3Rh
-dGljIGNvbnN0IHN0cnVjdCBiYWNrbGlnaHRfb3BzIGJkNjEwN19iYWNrbGlnaHRfb3BzID0g
-ew0KPj4gLS0NCj4+IDIuNDEuMA0KPiANCg0KLS0gDQpUaG9tYXMgWmltbWVybWFubg0KR3Jh
-cGhpY3MgRHJpdmVyIERldmVsb3Blcg0KU1VTRSBTb2Z0d2FyZSBTb2x1dGlvbnMgR2VybWFu
-eSBHbWJIDQpGcmFua2Vuc3RyYXNzZSAxNDYsIDkwNDYxIE51ZXJuYmVyZywgR2VybWFueQ0K
-R0Y6IEl2byBUb3RldiwgQW5kcmV3IE15ZXJzLCBBbmRyZXcgTWNEb25hbGQsIEJvdWRpZW4g
-TW9lcm1hbg0KSFJCIDM2ODA5IChBRyBOdWVybmJlcmcpDQo=
+> But there are a couple of challenges to this. Modifying the signatures of
+> each arch pte_mkwrite() implementation would be error prone because some
+> are generated with macros and would need to be re-implemented. Also, some
+> pte_mkwrite() callers operate on kernel memory without a VMA.
+> 
+> So this can be done in a three step process. First pte_mkwrite() can be
+> renamed to pte_mkwrite_novma() in each arch, with a generic pte_mkwrite()
+> added that just calls pte_mkwrite_novma(). Next callers without a VMA can
+> be moved to pte_mkwrite_novma(). And lastly, pte_mkwrite() and all callers
+> can be changed to take/pass a VMA.
+> 
+> Start the process by renaming pte_mkwrite() to pte_mkwrite_novma() and
+> adding the pte_mkwrite() wrapper in linux/pgtable.h. Apply the same
+> pattern for pmd_mkwrite(). Since not all archs have a pmd_mkwrite_novma(),
+> create a new arch config HAS_HUGE_PAGE that can be used to tell if
+> pmd_mkwrite() should be defined. Otherwise in the !HAS_HUGE_PAGE cases the
+> compiler would not be able to find pmd_mkwrite_novma().
+> 
+> No functional change.
+> 
+> Cc: linux-doc@vger.kernel.org
+> Cc: linux-kernel@vger.kernel.org
+> Cc: linux-alpha@vger.kernel.org
+> Cc: linux-snps-arc@lists.infradead.org
+> Cc: linux-arm-kernel@lists.infradead.org
+> Cc: linux-csky@vger.kernel.org
+> Cc: linux-hexagon@vger.kernel.org
+> Cc: linux-ia64@vger.kernel.org
+> Cc: loongarch@lists.linux.dev
+> Cc: linux-m68k@lists.linux-m68k.org
+> Cc: Michal Simek <monstr@monstr.eu>
+> Cc: Dinh Nguyen <dinguyen@kernel.org>
+> Cc: linux-mips@vger.kernel.org
+> Cc: openrisc@lists.librecores.org
+> Cc: linux-parisc@vger.kernel.org
+> Cc: linuxppc-dev@lists.ozlabs.org
+> Cc: linux-riscv@lists.infradead.org
+> Cc: linux-s390@vger.kernel.org
+> Cc: linux-sh@vger.kernel.org
+> Cc: sparclinux@vger.kernel.org
+> Cc: linux-um@lists.infradead.org
+> Cc: linux-arch@vger.kernel.org
+> Cc: linux-mm@kvack.org
+> Suggested-by: Linus Torvalds <torvalds@linuxfoundation.org>
+> Signed-off-by: Rick Edgecombe <rick.p.edgecombe@intel.com>
+> Link: https://lore.kernel.org/lkml/CAHk-=wiZjSu7c9sFYZb3q04108stgHff2wfbokGCCgW7riz+8Q@mail.gmail.com/
 
---------------U2OCUX5bG0ubHrGWpdK9sORo--
+Reviewed-by: Mike Rapoport (IBM) <rppt@kernel.org>
 
---------------pXSHUios00U5kRTo473gtCKr
-Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="OpenPGP_signature"
-
------BEGIN PGP SIGNATURE-----
-
-wsF5BAABCAAjFiEExndm/fpuMUdwYFFolh/E3EQov+AFAmSIG0oFAwAAAAAACgkQlh/E3EQov+Bd
-FBAAxy6YlDaU4D9ffnggcGz+xokLfeqLoxNxGVLvcP0g+HsxmRrwCg4Irwazg0GyNyjRKFVyJsw2
-jjOQ9HsgSaTU/fxaRsv7D3A+oWwyMhTbYQicLBP1NE0vEjagiqgzWuRrv1omEY8tiol5Lpc+kLEo
-VrXKRidqweyYGgjSlv1fMCw+dxZ2KX3pXbFZDJeYDQog69CzahjdE2j6kwC06GdCtgqMl7p088ut
-cK7dwXnrtbC+WylRtW7SSkPW8y7hSKwKebOGpZBMP0sBfjB9aPq1tPoXh1cl9oW2pBFrirWkDyAf
-hq5iBc0oEkgrR/DFOEYR7cM/dUyKht7077PN3BflK5T5f1G64lwc6/SUDklvnIjzwZ4QjE7vy6dG
-qBb6Fm2Ya3hKTwv/5V3dH2WgsZ3Xp6yprCV4KRDRxf498sGqn17rFvwI17pZXta/2jtzlF7VHZHt
-EEgin6kvDIgrfG4QqfUB69SsB+zRfXjMkPzBfntdPjyjdy8laZOqIqklEc46ZxmBP26wiPCVALG4
-vqjxdyrIRbMrgg4LpBJ6wQx1SAJJx4KdMgdXFDTNagtvJgUqy9A2sN7j17Rq3mbekk847jm/XCcB
-yObOT93fkjHi0SUJIsmTR+4azwE0c3TY4j4wFBuHUEMKv2RiEDW8lMwG7uXzSjLzbVb3wr7uB4AA
-eCo=
-=59Ha
------END PGP SIGNATURE-----
-
---------------pXSHUios00U5kRTo473gtCKr--
+-- 
+Sincerely yours,
+Mike.
