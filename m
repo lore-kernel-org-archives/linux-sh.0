@@ -2,161 +2,132 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 36348C7EE29
-	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 10:47:55 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2759AC7EE29
+	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 11:10:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242034AbjFMKry (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 13 Jun 2023 06:47:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40504 "EHLO
+        id S236303AbjFMLK2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 13 Jun 2023 07:10:28 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49154 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242030AbjFMKrw (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 06:47:52 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AE53F1AD;
-        Tue, 13 Jun 2023 03:47:50 -0700 (PDT)
+        with ESMTP id S242118AbjFMLKG (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 07:10:06 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B3B6410E3;
+        Tue, 13 Jun 2023 04:10:05 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 48AA72213E;
-        Tue, 13 Jun 2023 10:47:49 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 667E41FDA0;
+        Tue, 13 Jun 2023 11:10:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1686653269; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
+        t=1686654604; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=c3fhYdVUr0tRLaaukczpen+StPe7TUnaAnjtsiCIZ2s=;
-        b=tdqBaQl0pM7QXRNqnNkkV7fRdFCZ3I4rbdThW7TEZZdnmPFQb1oVlDr7EHK3gWtsdfD4e2
-        MtKY75Qm/uLPgIZOgYTkJ2OlaQKhj4BNTdGA2Knvvgd72iKiazhq/IF1jKwgyk8PIRb7OB
-        /3jSZLCvym/lzkd/r32KuLer7mbzDds=
+        bh=m8VbrnHchcHPw1JwrzLB5Pq+lSXRLkyS7z7RtP8I5uQ=;
+        b=oYnRl8AkWCmENRcIzVUXhO4Wh5oMMp2WCbZyLVuUNoKCMD7t/NCDBe0yzRqLPcbBl/dz2m
+        wa0dgoNHMkqrJSG8JEDzO95WePRNO/OdTM6gCRYTkeiRiAqDA+ZnBuQR0/tp82BY4vbH8j
+        ubF00V9M7vPBV6O4aSxMi2a2wiksyP0=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1686653269;
+        s=susede2_ed25519; t=1686654604;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=c3fhYdVUr0tRLaaukczpen+StPe7TUnaAnjtsiCIZ2s=;
-        b=yyjG8vmaT01YVpsvIlIprlvIsyvd8WnCZbFEY0qVJByyZzlM558Aj+/peI35jk6oYhyrgf
-        s4FlWVWmtCGS1kDA==
+        bh=m8VbrnHchcHPw1JwrzLB5Pq+lSXRLkyS7z7RtP8I5uQ=;
+        b=lJ2D1kHtpJp/O4D23HfdpfYnJIQb6xHWyHTSolcmFlo8ZcHmMipvk20u0Ulhz1PX9N4AmP
+        qIIog4y/0K0u9hBg==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id F0CE313483;
-        Tue, 13 Jun 2023 10:47:48 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 1DC1513A47;
+        Tue, 13 Jun 2023 11:10:04 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 7M8HOlRJiGTGfAAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 10:47:48 +0000
-Message-ID: <9a390f13-4ad3-cddc-64f7-8a1737965242@suse.de>
-Date:   Tue, 13 Jun 2023 12:47:48 +0200
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.11.2
-Subject: Re: [PATCH v2 01/38] backlight/bd6107: Compare against struct
- fb_info.device
-Content-Language: en-US
-To:     Daniel Thompson <daniel.thompson@linaro.org>
-Cc:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
-        deller@gmx.de, geert+renesas@glider.be, lee@kernel.org,
-        jingoohan1@gmail.com, dan.carpenter@linaro.org,
-        michael.j.ruhl@intel.com, linux-fbdev@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org,
-        linux-omap@vger.kernel.org, linux-staging@lists.linux.dev,
-        linux-kernel@vger.kernel.org,
-        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
-        stable@vger.kernel.org
-References: <20230612141352.29939-1-tzimmermann@suse.de>
- <20230612141352.29939-2-tzimmermann@suse.de>
- <20230613103730.GA169438@aspen.lan>
+        id ALJlBoxOiGR8CQAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 11:10:04 +0000
 From:   Thomas Zimmermann <tzimmermann@suse.de>
-In-Reply-To: <20230613103730.GA169438@aspen.lan>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="------------Bih0PagUpBHQXHTR42b2H5ZP"
+To:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
+        deller@gmx.de, geert+renesas@glider.be, lee@kernel.org,
+        daniel.thompson@linaro.org, jingoohan1@gmail.com,
+        dan.carpenter@linaro.org, michael.j.ruhl@intel.com
+Cc:     linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
+        linux-staging@lists.linux.dev, linux-kernel@vger.kernel.org,
+        Thomas Zimmermann <tzimmermann@suse.de>
+Subject: [PATCH v3 25/38] fbdev/sh7760fb: Use fb_dbg() in sh7760fb_get_color_info()
+Date:   Tue, 13 Jun 2023 13:07:00 +0200
+Message-ID: <20230613110953.24176-26-tzimmermann@suse.de>
+X-Mailer: git-send-email 2.41.0
+In-Reply-To: <20230613110953.24176-1-tzimmermann@suse.de>
+References: <20230613110953.24176-1-tzimmermann@suse.de>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---------------Bih0PagUpBHQXHTR42b2H5ZP
-Content-Type: multipart/mixed; boundary="------------kN8YWHBXTOAX040efj8X6bTV";
- protected-headers="v1"
-From: Thomas Zimmermann <tzimmermann@suse.de>
-To: Daniel Thompson <daniel.thompson@linaro.org>
-Cc: daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org, deller@gmx.de,
- geert+renesas@glider.be, lee@kernel.org, jingoohan1@gmail.com,
- dan.carpenter@linaro.org, michael.j.ruhl@intel.com,
- linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
- linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
- linux-staging@lists.linux.dev, linux-kernel@vger.kernel.org,
- Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
- stable@vger.kernel.org
-Message-ID: <9a390f13-4ad3-cddc-64f7-8a1737965242@suse.de>
-Subject: Re: [PATCH v2 01/38] backlight/bd6107: Compare against struct
- fb_info.device
-References: <20230612141352.29939-1-tzimmermann@suse.de>
- <20230612141352.29939-2-tzimmermann@suse.de>
- <20230613103730.GA169438@aspen.lan>
-In-Reply-To: <20230613103730.GA169438@aspen.lan>
+Give struct fb_info to sh7760fb_get_color_info() and use it in
+call to fb_dbg(). Prepares fbdev for making struct fb_info.dev
+optional.
 
---------------kN8YWHBXTOAX040efj8X6bTV
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: base64
+Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
+---
+ drivers/video/fbdev/sh7760fb.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-SGkNCg0KQW0gMTMuMDYuMjMgdW0gMTI6Mzcgc2NocmllYiBEYW5pZWwgVGhvbXBzb246DQo+
-IE9uIE1vbiwgSnVuIDEyLCAyMDIzIGF0IDA0OjA3OjM5UE0gKzAyMDAsIFRob21hcyBaaW1t
-ZXJtYW5uIHdyb3RlOg0KPj4gU3RydWN0IGJkNjEwN19wbGF0Zm9ybV9kYXRhIHJlZmVycyB0
-byBhIHBsYXRmb3JtIGRldmljZSB3aXRoaW4NCj4+IHRoZSBMaW51eCBkZXZpY2UgaGllcmFy
-Y2h5LiBUaGUgdGVzdCBpbiBiZDYxMDdfYmFja2xpZ2h0X2NoZWNrX2ZiKCkNCj4+IGNvbXBh
-cmVzIGl0IGFnYWluc3QgdGhlIGZiZGV2IGRldmljZSBpbiBzdHJ1Y3QgZmJfaW5mby5kZXYs
-IHdoaWNoDQo+PiBpcyBkaWZmZXJlbnQuIEZpeCB0aGUgdGVzdCBieSBjb21wYXJpbmcgdG8g
-c3RydWN0IGZiX2luZm8uZGV2aWNlLg0KPj4NCj4+IEZpeGVzIGEgYnVnIGluIHRoZSBiYWNr
-bGlnaHQgZHJpdmVyIGFuZCBwcmVwYXJlcyBmYmRldiBmb3IgbWFraW5nDQo+PiBzdHJ1Y3Qg
-ZmJfaW5mby5kZXYgb3B0aW9uYWwuDQo+Pg0KPj4gdjI6DQo+PiAJKiBtb3ZlIHJlbmFtZXMg
-aW50byBzZXBhcmF0ZSBwYXRjaCAoSmF2aWVyLCBTYW0sIE1pY2hhZWwpDQo+Pg0KPj4gRml4
-ZXM6IDY3YjQzZTU5MDQxNSAoImJhY2tsaWdodDogQWRkIFJPSE0gQkQ2MTA3IGJhY2tsaWdo
-dCBkcml2ZXIiKQ0KPj4gU2lnbmVkLW9mZi1ieTogVGhvbWFzIFppbW1lcm1hbm4gPHR6aW1t
-ZXJtYW5uQHN1c2UuZGU+DQo+PiBDYzogTGF1cmVudCBQaW5jaGFydCA8bGF1cmVudC5waW5j
-aGFydCtyZW5lc2FzQGlkZWFzb25ib2FyZC5jb20+DQo+PiBDYzogTGVlIEpvbmVzIDxsZWVA
-a2VybmVsLm9yZz4NCj4+IENjOiBEYW5pZWwgVGhvbXBzb24gPGRhbmllbC50aG9tcHNvbkBs
-aW5hcm8ub3JnPg0KPj4gQ2M6IEppbmdvbyBIYW4gPGppbmdvb2hhbjFAZ21haWwuY29tPg0K
-Pj4gQ2M6IGRyaS1kZXZlbEBsaXN0cy5mcmVlZGVza3RvcC5vcmcNCj4+IENjOiA8c3RhYmxl
-QHZnZXIua2VybmVsLm9yZz4gIyB2My4xMisNCj4+IFJldmlld2VkLWJ5OiBKYXZpZXIgTWFy
-dGluZXogQ2FuaWxsYXMgPGphdmllcm1AcmVkaGF0LmNvbT4NCj4gDQo+IFJldmlld2VkLWJ5
-OiBEYW5pZWwgVGhvbXBzb24gPGRhbmllbC50aG9tcHNvbkBsaW5hcm8ub3JnPg0KDQpUaGFu
-a3MgZm9yIGdvaW5nIHRocm91Z2ggdGhlIGJhY2tsaWdodCBwYXRjaGVzLg0KDQo+IA0KPiAN
-Cj4gRGFuaWVsLg0KPiANCj4gUFMgUGxlYXNlIGRvbid0IHRyZWF0IHRoaXMgYXMgYW4gQWNr
-ZWQtYnksIGlmIHlvdSB3YW50IHRvIGxhbmQgdGhpcw0KPiAgICAgcGF0Y2hzZXQgdmlhIGEg
-c2luZ2xlIHRyZWUgcGxlYXNlIGNvb3JkaW5hdGUgd2l0aCBMZWUgSm9uZXMhDQoNCkknZCBs
-aWtlIHRvIG1lcmdlIHRoZW0gdmlhIGRybS1taXNjLW5leHQgdG9nZXRoZXIgd2l0aCB0aGUg
-cmVzdCBvZiB0aGUgDQpwYXRjaHNldC4gSXQncyBub3QgRFJNLCBidXQgZmJkZXYgcGF0Y2hl
-cyBvZnRlbiBnbyB0aHJvdWdoIHRoYXQgdHJlZSANCnF1aXRlIG9mdGVuLg0KDQpCZXN0IHJl
-Z2FyZHMNClRob21hcw0KDQotLSANClRob21hcyBaaW1tZXJtYW5uDQpHcmFwaGljcyBEcml2
-ZXIgRGV2ZWxvcGVyDQpTVVNFIFNvZnR3YXJlIFNvbHV0aW9ucyBHZXJtYW55IEdtYkgNCkZy
-YW5rZW5zdHJhc3NlIDE0NiwgOTA0NjEgTnVlcm5iZXJnLCBHZXJtYW55DQpHRjogSXZvIFRv
-dGV2LCBBbmRyZXcgTXllcnMsIEFuZHJldyBNY0RvbmFsZCwgQm91ZGllbiBNb2VybWFuDQpI
-UkIgMzY4MDkgKEFHIE51ZXJuYmVyZykNCg==
+diff --git a/drivers/video/fbdev/sh7760fb.c b/drivers/video/fbdev/sh7760fb.c
+index 4c092c7935027..a2946f06d579e 100644
+--- a/drivers/video/fbdev/sh7760fb.c
++++ b/drivers/video/fbdev/sh7760fb.c
+@@ -118,7 +118,7 @@ static int sh7760_setcolreg (u_int regno,
+ 	return 0;
+ }
+ 
+-static int sh7760fb_get_color_info(struct device *dev,
++static int sh7760fb_get_color_info(struct fb_info *info,
+ 				   u16 lddfr, int *bpp, int *gray)
+ {
+ 	int lbpp, lgray;
+@@ -150,7 +150,7 @@ static int sh7760fb_get_color_info(struct device *dev,
+ 		lgray = 0;
+ 		break;
+ 	default:
+-		dev_dbg(dev, "unsupported LDDFR bit depth.\n");
++		fb_dbg(info, "unsupported LDDFR bit depth.\n");
+ 		return -EINVAL;
+ 	}
+ 
+@@ -170,7 +170,7 @@ static int sh7760fb_check_var(struct fb_var_screeninfo *var,
+ 	int ret, bpp;
+ 
+ 	/* get color info from register value */
+-	ret = sh7760fb_get_color_info(info->dev, par->pd->lddfr, &bpp, NULL);
++	ret = sh7760fb_get_color_info(info, par->pd->lddfr, &bpp, NULL);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -222,7 +222,7 @@ static int sh7760fb_set_par(struct fb_info *info)
+ 	vdln = vm->yres;
+ 
+ 	/* get color info from register value */
+-	ret = sh7760fb_get_color_info(info->dev, par->pd->lddfr, &bpp, &gray);
++	ret = sh7760fb_get_color_info(info, par->pd->lddfr, &bpp, &gray);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -381,7 +381,7 @@ static int sh7760fb_alloc_mem(struct fb_info *info)
+ 		return 0;
+ 
+ 	/* get color info from register value */
+-	ret = sh7760fb_get_color_info(info->dev, par->pd->lddfr, &bpp, NULL);
++	ret = sh7760fb_get_color_info(info, par->pd->lddfr, &bpp, NULL);
+ 	if (ret) {
+ 		printk(KERN_ERR "colinfo\n");
+ 		return ret;
+-- 
+2.41.0
 
---------------kN8YWHBXTOAX040efj8X6bTV--
-
---------------Bih0PagUpBHQXHTR42b2H5ZP
-Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="OpenPGP_signature"
-
------BEGIN PGP SIGNATURE-----
-
-wsF5BAABCAAjFiEExndm/fpuMUdwYFFolh/E3EQov+AFAmSISVQFAwAAAAAACgkQlh/E3EQov+DI
-iQ/7BKHWYUoMmnyorQ8yHtBI1XVxUNzbBJ0OGTBT4b82riNpqOq9KfyBGnmOJcEey66W74EmBU5V
-L4vlnw9VTD4BVQsw/iwIArnUrpazJ+GmYABhFM6I3BR8ZUwY61HH8PX8NeMje/nG4Md9n7ugOyzt
-mQerA5bh9exoD7hytk3CuDeEwpVfk+AvMOovuUwuUsKXOcK+s6oQiRfGSd4q+DrKQbD04JGy1IBf
-3ZR9s0dSIuBzZFwhqr+fUcAuuhZSxq6Fpd5okO6mhDlX+G6eeKuFaeL4hg51TJQe2wPokqZjatnG
-8qG9wA5+0uBdaDW620DSVpyUdAZZAKs5DLmKsM80SyBseZSXddy7Zo3958kbbl7pfcP3j3hlJiUI
-fMXMUY6y9syT/DVUXRVjiYb5qX7tO4W+gi8gBSNkdC99c4JwvhWFiobs4Lru0iM4ePC3LNCnt7Ma
-QZ9jbQlvu16Ke+9EIoA0bIxL0181S+19JHBftQzBAgbmXnB7pGZa9UIng8t0tGaLXMClLxmXC+lD
-+ryZgyLhc76mKMxQWy2CbJyM6Aynyq0U0P5DLsMkOBGDmqpLg5nQw6VC0INkEKnzIBq0cRTFEwry
-UwPWiBj1XzooWK/LiDPxdXqHFeibjHLzSCyxrdASPCFlhiw1A7SZWwYwsaP8+pS3KeM80gZPBcKq
-cwE=
-=cAD4
------END PGP SIGNATURE-----
-
---------------Bih0PagUpBHQXHTR42b2H5ZP--
