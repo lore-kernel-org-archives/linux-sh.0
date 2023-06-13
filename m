@@ -2,50 +2,49 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D6B1CC001DF
-	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 23:40:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2B431C001E0
+	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 23:40:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239940AbjFMXkF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        id S239719AbjFMXkF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
         Tue, 13 Jun 2023 19:40:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33668 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34118 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240329AbjFMXj3 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 19:39:29 -0400
+        with ESMTP id S240983AbjFMXjs (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 19:39:48 -0400
 Received: from galois.linutronix.de (Galois.linutronix.de [IPv6:2a0a:51c0:0:12e:550::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0544D1985;
-        Tue, 13 Jun 2023 16:39:28 -0700 (PDT)
-Message-ID: <20230613224545.078124882@linutronix.de>
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E35751BE6;
+        Tue, 13 Jun 2023 16:39:33 -0700 (PDT)
+Message-ID: <20230613224545.312438573@linutronix.de>
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020; t=1686699566;
+        s=2020; t=1686699572;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         references:references; bh=dVFthLCRReoMWN5sC8FHYm0TEZ3L3fBC7evr6n0+Mk4=;
-        b=TpU4F3Cm21DA+wjsqv0/P+lCFo9Kph9tSJszuyDewJQpAkHNucWI6VQGH2ovheCCeLSwPM
-        8L0zJwOQu4OwERTYKoBKWk8lYaWsIeNJKgE/BZ+3odqC4pib9gmV3UiyFV64EYaagE2pPe
-        Exd1bgLoh+RHn42egy6GkWFY/dWoZ6kiRe8LYhwBFTmq/5hx2Xeu6+ayFJlro4BKpaVqTF
-        hoqWbHNhlfn0CKlpuwRtoRE/a9lZ6ft1xMPStZm61XNHf4WWtkCgcdqEVZdekO3JFHK0bm
-        4FNS7A0stNubNTTdH46Z7QDtve7F2+5WqKGyGo7lcEMug4LbJl6Tow46fGqshQ==
+         references:references; bh=wBQc/zChg4ZHu9OAL6oaU+W0aufJsVa+t+cps2UYOzo=;
+        b=sHRgliPpDTjgmrteZw2uDQBUy+LhOlD3YNuUxaLosBPN+K+8BCzWKcPReE25Xi07QjPQcL
+        WHxBiBob3DFaJk/2N9uf+OeuN8Hq+VDzDvLfA5UtScqlcGp5kBT5Xwx5SsCfaNH3pLOkcK
+        OaKK3NqcYdxM5nvApmNp0HRDO2slf2ydverVHd74coSQyIKQURcg7JGrXjDYwEiZtKSFYt
+        2fU2pGqYCaccQFmaN+qTg4IkKeFj53K071bPF00AJ4dPXMfCbJMrqNiHJBC0R5Y+HkvovW
+        FLplREzOZ5ayqWY4iQUMr4rIn18sRC0mBw/C/OMxcmLs38IblSKmbvmzh1FyCQ==
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-        s=2020e; t=1686699566;
+        s=2020e; t=1686699572;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         references:references; bh=dVFthLCRReoMWN5sC8FHYm0TEZ3L3fBC7evr6n0+Mk4=;
-        b=n9/kemZ7bnQmtNpLkJz9kR9cP/+4kE35m9KdxwLlgsl/n5lmdDRb0Z74LTL1qsMW2Ghy/D
-        ZsktOSy4OXsR84Bg==
+         references:references; bh=wBQc/zChg4ZHu9OAL6oaU+W0aufJsVa+t+cps2UYOzo=;
+        b=dfmmyGF3Ntb3WpojTDArqr9OpUQlPdOpzLQomxxJDc1n/cQhmo6FJVRhmTyPC6gibO2eTb
+        /aeCSO1mON4sepBA==
 From:   Thomas Gleixner <tglx@linutronix.de>
 To:     LKML <linux-kernel@vger.kernel.org>
 Cc:     x86@kernel.org, Linus Torvalds <torvalds@linux-foundation.org>,
         Nikolay Borisov <nik.borisov@suse.com>,
         "Ahmed S. Darwish" <darwi@linutronix.de>,
         Arnd Bergmann <arnd@arndb.de>,
-        Russell King <linux@armlinux.org.uk>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        linux-mips@vger.kernel.org, Russell King <linux@armlinux.org.uk>,
         linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
         Huacai Chen <chenhuacai@kernel.org>,
         WANG Xuerui <kernel@xen0n.name>, loongarch@lists.linux.dev,
         Geert Uytterhoeven <geert@linux-m68k.org>,
         linux-m68k@lists.linux-m68k.org,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        linux-mips@vger.kernel.org,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
@@ -59,11 +58,11 @@ Cc:     x86@kernel.org, Linus Torvalds <torvalds@linux-foundation.org>,
         Michael Ellerman <mpe@ellerman.id.au>,
         Chris Zankel <chris@zankel.net>,
         Tom Lendacky <thomas.lendacky@amd.com>
-Subject: [patch 03/17] ARM: cpu: Switch to arch_cpu_finalize_init()
+Subject: [patch 07/17] mips/cpu: Switch to arch_cpu_finalize_init()
 References: <20230613223827.532680283@linutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Date:   Wed, 14 Jun 2023 01:39:25 +0200 (CEST)
+Date:   Wed, 14 Jun 2023 01:39:32 +0200 (CEST)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
@@ -74,62 +73,86 @@ arch_cpu_finalize_init() implementation.
 No functional change.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Cc: Russell King <linux@armlinux.org.uk>
-Cc: Arnd Bergmann <arnd@arndb.de>
-Cc: linux-arm-kernel@lists.infradead.org
+Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+Cc: linux-mips@vger.kernel.org
 ---
- arch/arm/Kconfig            |    1 +
- arch/arm/include/asm/bugs.h |    4 ----
- arch/arm/kernel/bugs.c      |    3 ++-
- 3 files changed, 3 insertions(+), 5 deletions(-)
+ arch/mips/Kconfig            |    1 +
+ arch/mips/include/asm/bugs.h |   17 -----------------
+ arch/mips/kernel/setup.c     |   13 +++++++++++++
+ 3 files changed, 14 insertions(+), 17 deletions(-)
 
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -5,6 +5,7 @@ config ARM
- 	select ARCH_32BIT_OFF_T
- 	select ARCH_CORRECT_STACKTRACE_ON_KRETPROBE if HAVE_KRETPROBES && FRAME_POINTER && !ARM_UNWIND
- 	select ARCH_HAS_BINFMT_FLAT
-+	select ARCH_HAS_CPU_FINALIZE_INIT if MMU
- 	select ARCH_HAS_CURRENT_STACK_POINTER
- 	select ARCH_HAS_DEBUG_VIRTUAL if MMU
- 	select ARCH_HAS_DMA_WRITE_COMBINE if !ARM_DMA_MEM_BUFFERABLE
---- a/arch/arm/include/asm/bugs.h
-+++ b/arch/arm/include/asm/bugs.h
-@@ -1,7 +1,5 @@
- /* SPDX-License-Identifier: GPL-2.0-only */
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -4,6 +4,7 @@ config MIPS
+ 	default y
+ 	select ARCH_32BIT_OFF_T if !64BIT
+ 	select ARCH_BINFMT_ELF_STATE if MIPS_FP_SUPPORT
++	select ARCH_HAS_CPU_FINALIZE_INIT
+ 	select ARCH_HAS_CURRENT_STACK_POINTER if !CC_IS_CLANG || CLANG_VERSION >= 140000
+ 	select ARCH_HAS_DEBUG_VIRTUAL if !64BIT
+ 	select ARCH_HAS_FORTIFY_SOURCE
+--- a/arch/mips/include/asm/bugs.h
++++ b/arch/mips/include/asm/bugs.h
+@@ -1,17 +1,11 @@
+ /* SPDX-License-Identifier: GPL-2.0 */
  /*
-- *  arch/arm/include/asm/bugs.h
+- * This is included by init/main.c to check for architecture-dependent bugs.
 - *
-  *  Copyright (C) 1995-2003 Russell King
+  * Copyright (C) 2007  Maciej W. Rozycki
+- *
+- * Needs:
+- *	void check_bugs(void);
   */
- #ifndef __ASM_BUGS_H
-@@ -10,10 +8,8 @@
- extern void check_writebuffer_bugs(void);
+ #ifndef _ASM_BUGS_H
+ #define _ASM_BUGS_H
  
- #ifdef CONFIG_MMU
--extern void check_bugs(void);
- extern void check_other_bugs(void);
- #else
--#define check_bugs() do { } while (0)
- #define check_other_bugs() do { } while (0)
- #endif
+ #include <linux/bug.h>
+-#include <linux/delay.h>
+ #include <linux/smp.h>
  
---- a/arch/arm/kernel/bugs.c
-+++ b/arch/arm/kernel/bugs.c
-@@ -1,5 +1,6 @@
- // SPDX-License-Identifier: GPL-2.0
+ #include <asm/cpu.h>
+@@ -24,17 +18,6 @@ extern void check_bugs64_early(void);
+ extern void check_bugs32(void);
+ extern void check_bugs64(void);
+ 
+-static inline void __init check_bugs(void)
+-{
+-	unsigned int cpu = smp_processor_id();
+-
+-	cpu_data[cpu].udelay_val = loops_per_jiffy;
+-	check_bugs32();
+-
+-	if (IS_ENABLED(CONFIG_CPU_R4X00_BUGS64))
+-		check_bugs64();
+-}
+-
+ static inline int r4k_daddiu_bug(void)
+ {
+ 	if (!IS_ENABLED(CONFIG_CPU_R4X00_BUGS64))
+--- a/arch/mips/kernel/setup.c
++++ b/arch/mips/kernel/setup.c
+@@ -11,6 +11,8 @@
+  * Copyright (C) 2000, 2001, 2002, 2007	 Maciej W. Rozycki
+  */
  #include <linux/init.h>
 +#include <linux/cpu.h>
- #include <asm/bugs.h>
- #include <asm/proc-fns.h>
- 
-@@ -11,7 +12,7 @@ void check_other_bugs(void)
- #endif
++#include <linux/delay.h>
+ #include <linux/ioport.h>
+ #include <linux/export.h>
+ #include <linux/screen_info.h>
+@@ -841,3 +843,14 @@ static int __init setnocoherentio(char *
  }
- 
--void __init check_bugs(void)
+ early_param("nocoherentio", setnocoherentio);
+ #endif
++
 +void __init arch_cpu_finalize_init(void)
- {
- 	check_writebuffer_bugs();
- 	check_other_bugs();
++{
++	unsigned int cpu = smp_processor_id();
++
++	cpu_data[cpu].udelay_val = loops_per_jiffy;
++	check_bugs32();
++
++	if (IS_ENABLED(CONFIG_CPU_R4X00_BUGS64))
++		check_bugs64();
++}
 
