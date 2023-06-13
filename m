@@ -2,52 +2,52 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E4939C88CB6
-	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 11:10:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 418E5C88CBF
+	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 11:10:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242119AbjFMLKl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 13 Jun 2023 07:10:41 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49136 "EHLO
+        id S238289AbjFMLKm (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 13 Jun 2023 07:10:42 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49148 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241644AbjFMLKC (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 07:10:02 -0400
+        with ESMTP id S242107AbjFMLKE (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 07:10:04 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C0A94E52;
-        Tue, 13 Jun 2023 04:10:01 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7D81A10E2;
+        Tue, 13 Jun 2023 04:10:03 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 4B6681FD9A;
-        Tue, 13 Jun 2023 11:10:00 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 1F9B81FD9F;
+        Tue, 13 Jun 2023 11:10:02 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1686654600; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1686654602; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=wgea4CAx5RQUmrYwJYNcyiyGnDDQ3dqg16YEIp4VW1k=;
-        b=KpOGwMTRGofNmhOvJtJWHYoxw7MmbRGeo6FzxVMzqS8Cl/HkPaqlqAIbbj5QVOxQDh/1ef
-        HmTOZZdLLfzm9zdlL6u/vxhlgRbWB0WsEox8pd5anT+ZsyfUUVWGtiHUZ7ZUy3ZgGKZhKE
-        8wfoh2o8hDRXm8FwGh53HXFXlR5ZspA=
+        bh=8X3yQyHtdAGbqV8Nngj4Yuzd3t4nUJygtIKDANSM4Nc=;
+        b=fb7NQvigOWfhSdnOuUEs6DjDj7KZWtfFk1LzP6QBPaIkgtQA5InjB14ZVT6672flPB+BLs
+        7w5vg5hCN0Jx0MbRsSJPXZut1QFSlUmzbWVrOzVxgurthL+kr/m7rGCTZ+tegz7usQXpVE
+        Ri1EkrJzKAAVLZkzXsdMVwoyIh2UVts=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1686654600;
+        s=susede2_ed25519; t=1686654602;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=wgea4CAx5RQUmrYwJYNcyiyGnDDQ3dqg16YEIp4VW1k=;
-        b=BH3aTWJc5uDayXV3wpXjuSh1Sh5kbMo7UKgjKKzOa4KrYc6ekCR5qDLHKStl5r3NnssLBl
-        0ZAPAlm7SNuT1iDA==
+        bh=8X3yQyHtdAGbqV8Nngj4Yuzd3t4nUJygtIKDANSM4Nc=;
+        b=AdvR9dycWkCIy6DpzBXW2dHx5vLGmuDV3+7VOZjIDE3AeDwVemIh4qXwnOxeWXTr9GiIpS
+        yIcMhODSkwuCGaDA==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 064B813483;
-        Tue, 13 Jun 2023 11:10:00 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C842213483;
+        Tue, 13 Jun 2023 11:10:01 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id KPbCAIhOiGR8CQAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 11:10:00 +0000
+        id wDweMIlOiGR8CQAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Tue, 13 Jun 2023 11:10:01 +0000
 From:   Thomas Zimmermann <tzimmermann@suse.de>
 To:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
         deller@gmx.de, geert+renesas@glider.be, lee@kernel.org,
@@ -56,10 +56,11 @@ To:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
 Cc:     linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
         linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
         linux-staging@lists.linux.dev, linux-kernel@vger.kernel.org,
-        Thomas Zimmermann <tzimmermann@suse.de>
-Subject: [PATCH v3 12/38] fbdev/ep93xx-fb: Alloc DMA memory from hardware device
-Date:   Tue, 13 Jun 2023 13:06:47 +0200
-Message-ID: <20230613110953.24176-13-tzimmermann@suse.de>
+        Thomas Zimmermann <tzimmermann@suse.de>,
+        Antonino Daplas <adaplas@gmail.com>
+Subject: [PATCH v3 18/38] fbdev/nvidiafb: Reorder backlight and framebuffer init/cleanup
+Date:   Tue, 13 Jun 2023 13:06:53 +0200
+Message-ID: <20230613110953.24176-19-tzimmermann@suse.de>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <20230613110953.24176-1-tzimmermann@suse.de>
 References: <20230613110953.24176-1-tzimmermann@suse.de>
@@ -69,56 +70,51 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Pass the hardware device to the DMA helpers dma_alloc_wc(), dma_mmap_wc()
-and dma_free_coherent(). The fbdev device that is currently being used is
-a software device and does not provide DMA memory.
+The driver's backlight code requires the framebuffer to be
+registered. Therefore reorder the init and cleanup calls for
+both data structures.
 
 Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+Cc: Antonino Daplas <adaplas@gmail.com>
 Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
 ---
- drivers/video/fbdev/ep93xx-fb.c | 8 ++++----
+ drivers/video/fbdev/nvidia/nvidia.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/video/fbdev/ep93xx-fb.c b/drivers/video/fbdev/ep93xx-fb.c
-index 94fe52928be25..376ee59e925c2 100644
---- a/drivers/video/fbdev/ep93xx-fb.c
-+++ b/drivers/video/fbdev/ep93xx-fb.c
-@@ -312,7 +312,7 @@ static int ep93xxfb_mmap(struct fb_info *info, struct vm_area_struct *vma)
- 	unsigned int offset = vma->vm_pgoff << PAGE_SHIFT;
+diff --git a/drivers/video/fbdev/nvidia/nvidia.c b/drivers/video/fbdev/nvidia/nvidia.c
+index ea4ba3dfb96bb..039e886346fa6 100644
+--- a/drivers/video/fbdev/nvidia/nvidia.c
++++ b/drivers/video/fbdev/nvidia/nvidia.c
+@@ -1400,14 +1400,14 @@ static int nvidiafb_probe(struct pci_dev *pd, const struct pci_device_id *ent)
  
- 	if (offset < info->fix.smem_len) {
--		return dma_mmap_wc(info->dev, vma, info->screen_base,
-+		return dma_mmap_wc(info->device, vma, info->screen_base,
- 				   info->fix.smem_start, info->fix.smem_len);
+ 	pci_set_drvdata(pd, info);
+ 
+-	if (backlight)
+-		nvidia_bl_init(par);
+-
+ 	if (register_framebuffer(info) < 0) {
+ 		printk(KERN_ERR PFX "error registering nVidia framebuffer\n");
+ 		goto err_out_iounmap_fb;
  	}
  
-@@ -423,7 +423,7 @@ static int ep93xxfb_alloc_videomem(struct fb_info *info)
- 	/* Maximum 16bpp -> used memory is maximum x*y*2 bytes */
- 	fb_size = EP93XXFB_MAX_XRES * EP93XXFB_MAX_YRES * 2;
++	if (backlight)
++		nvidia_bl_init(par);
++
+ 	printk(KERN_INFO PFX
+ 	       "PCI nVidia %s framebuffer (%dMB @ 0x%lX)\n",
+ 	       info->fix.id,
+@@ -1439,9 +1439,9 @@ static void nvidiafb_remove(struct pci_dev *pd)
  
--	virt_addr = dma_alloc_wc(info->dev, fb_size, &phys_addr, GFP_KERNEL);
-+	virt_addr = dma_alloc_wc(info->device, fb_size, &phys_addr, GFP_KERNEL);
- 	if (!virt_addr)
- 		return -ENOMEM;
+ 	NVTRACE_ENTER();
  
-@@ -440,7 +440,7 @@ static int ep93xxfb_alloc_videomem(struct fb_info *info)
- 			"has bit 27 set: cannot init framebuffer\n",
- 			phys_addr);
++	nvidia_bl_exit(par);
+ 	unregister_framebuffer(info);
  
--		dma_free_coherent(info->dev, fb_size, virt_addr, phys_addr);
-+		dma_free_coherent(info->device, fb_size, virt_addr, phys_addr);
- 		return -ENOMEM;
- 	}
- 
-@@ -454,7 +454,7 @@ static int ep93xxfb_alloc_videomem(struct fb_info *info)
- static void ep93xxfb_dealloc_videomem(struct fb_info *info)
- {
- 	if (info->screen_base)
--		dma_free_coherent(info->dev, info->fix.smem_len,
-+		dma_free_coherent(info->device, info->fix.smem_len,
- 				  info->screen_base, info->fix.smem_start);
- }
- 
+-	nvidia_bl_exit(par);
+ 	arch_phys_wc_del(par->wc_cookie);
+ 	iounmap(info->screen_base);
+ 	fb_destroy_modedb(info->monspecs.modedb);
 -- 
 2.41.0
 
