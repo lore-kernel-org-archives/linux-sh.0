@@ -2,145 +2,97 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 36A12EB64DA
-	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 20:21:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1AD58EB64DB
+	for <linux-sh@archiver.kernel.org>; Tue, 13 Jun 2023 22:17:01 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239642AbjFMUVL (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 13 Jun 2023 16:21:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34324 "EHLO
+        id S232974AbjFMWRA (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 13 Jun 2023 18:17:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57628 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235958AbjFMUVK (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 16:21:10 -0400
-Received: from mail-pf1-x435.google.com (mail-pf1-x435.google.com [IPv6:2607:f8b0:4864:20::435])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2126E1BC7
-        for <linux-sh@vger.kernel.org>; Tue, 13 Jun 2023 13:21:07 -0700 (PDT)
-Received: by mail-pf1-x435.google.com with SMTP id d2e1a72fcca58-650bacd6250so4620533b3a.2
-        for <linux-sh@vger.kernel.org>; Tue, 13 Jun 2023 13:21:07 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=chromium.org; s=google; t=1686687666; x=1689279666;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=xxCRqTUpCdcaL5d+zxoNNIGdAwVO5d6gYOiArNvEfDk=;
-        b=MdG3P+8ihRjSOh7LybABvISRLscCMBxkCXrypPOlWdC+OtYj0yftCdz/uUj98Dw73e
-         FhGLYHBT+mUIwYBKA7+2i75jw7j0RCQu7cApPRXOzrZZaHzRGXsKvoXhl03dGB8ouUuG
-         /A5TFZGtg2AeZl6z7cZS08VFOGBVeakdEkhkM=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1686687666; x=1689279666;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=xxCRqTUpCdcaL5d+zxoNNIGdAwVO5d6gYOiArNvEfDk=;
-        b=kig0ymsO1Dt6+AdFR+MhWyary1fPU0XkFZY2UOFffwehzR42G3+8Km6YQgREi9dXNf
-         b9tvdZDRPmSXBxiPWhf0gGpD3K4+gz3n7ntRD2BW0OPrajXIqpcYrGz8gi2Z5XUaZWn+
-         /0hSuO5seJJz+5koawVQovnVJElqUGPTsLpZO7Fa8wKXp5i67jeIMZfmJP9VvPGMx/yC
-         QqJb0skRAgfVTYcqYZloH0n7Mab1wAyEQoHNv+S6tJGNd+xAVhHwukUmpvmOpCybVVDl
-         ipKgGLmo4eQGT5bMjgTy71XGX8P0mugLaLwZKunv71shdC6P0Uane0bID6S/pwn30di6
-         fVNQ==
-X-Gm-Message-State: AC+VfDzMz79UQCYLa9AzXI+ics1FdavZhiZIhgmp6F3HmhknB3s8se2N
-        htiKb+PPJGohDrIubh0x6TqT+A==
-X-Google-Smtp-Source: ACHHUZ4FjJE13zDDzcDgsWgBZwhdFAkpwfh7UQt9gQTWfr+WAlSvDzNOiSEYdsJRmv+1hwafinJSyA==
-X-Received: by 2002:a17:902:8d8a:b0:1ad:e633:ee96 with SMTP id v10-20020a1709028d8a00b001ade633ee96mr8591788plo.55.1686687666576;
-        Tue, 13 Jun 2023 13:21:06 -0700 (PDT)
-Received: from www.outflux.net (198-0-35-241-static.hfc.comcastbusiness.net. [198.0.35.241])
-        by smtp.gmail.com with ESMTPSA id p4-20020a1709026b8400b001b034d2e71csm10608371plk.34.2023.06.13.13.21.05
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 13 Jun 2023 13:21:06 -0700 (PDT)
-Date:   Tue, 13 Jun 2023 13:21:05 -0700
-From:   Kees Cook <keescook@chromium.org>
-To:     Eric DeVolder <eric.devolder@oracle.com>
-Cc:     linux@armlinux.org.uk, catalin.marinas@arm.com, will@kernel.org,
-        chenhuacai@kernel.org, geert@linux-m68k.org,
-        tsbogend@alpha.franken.de, James.Bottomley@hansenpartnership.com,
-        deller@gmx.de, ysato@users.sourceforge.jp, dalias@libc.org,
-        glaubitz@physik.fu-berlin.de, tglx@linutronix.de, mingo@redhat.com,
-        bp@alien8.de, dave.hansen@linux.intel.com, 86@kernel.org,
-        linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-ia64@vger.kernel.org, loongarch@lists.linux.dev,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, kernel@xen0n.name, mpe@ellerman.id.au,
-        npiggin@gmail.com, christophe.leroy@csgroup.eu,
-        paul.walmsley@sifive.com, palmer@dabbelt.com,
-        aou@eecs.berkeley.edu, hca@linux.ibm.com, gor@linux.ibm.com,
-        agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
-        svens@linux.ibm.com, hpa@zytor.com, paulmck@kernel.org,
-        peterz@infradead.org, frederic@kernel.org,
-        akpm@linux-foundation.org, ardb@kernel.org,
-        samitolvanen@google.com, juerg.haefliger@canonical.com,
-        arnd@arndb.de, rmk+kernel@armlinux.org.uk,
-        linus.walleij@linaro.org, sebastian.reichel@collabora.com,
-        rppt@kernel.org, kirill.shutemov@linux.intel.com,
-        anshuman.khandual@arm.com, ziy@nvidia.com, masahiroy@kernel.org,
-        ndesaulniers@google.com, mhiramat@kernel.org, ojeda@kernel.org,
-        thunder.leizhen@huawei.com, xin3.li@intel.com, tj@kernel.org,
-        gregkh@linuxfoundation.org, tsi@tuyoix.net, bhe@redhat.com,
-        hbathini@linux.ibm.com, sourabhjain@linux.ibm.com,
-        boris.ostrovsky@oracle.com, konrad.wilk@oracle.com
-Subject: Re: [PATCH v1 00/21] refactor Kconfig to consolidate KEXEC and CRASH
- options
-Message-ID: <202306131314.EFA558B7@keescook>
-References: <20230612172805.681179-1-eric.devolder@oracle.com>
+        with ESMTP id S229785AbjFMWQ5 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 13 Jun 2023 18:16:57 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B86C3E3;
+        Tue, 13 Jun 2023 15:16:56 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id A14AB62012;
+        Tue, 13 Jun 2023 22:16:54 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 155E5C433C8;
+        Tue, 13 Jun 2023 22:16:52 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1686694614;
+        bh=u1U2JS+u6wM6OBhkKijCKkdxF/PQ2U4e1EnjjkO0qgU=;
+        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+        b=hQuqhvJn3yNLy2Olxjnd1xuxCkh0wfTthUElblk3SWD5APhbp2A8h/GrhfZUDe0CA
+         msAOI8lTM4SDCJH4Jw/egXw9kHffrgpSBDU2Lq/B7FL9Ncb4kZlGiVq95JuesT+7qf
+         YEh5WOURMYPSU7yAQJlo+F3GFXuLwUg0ZCA7ynIU6Zby2JiopTRsMlBw6pN58eDxfr
+         P7S7QpyZ+fotvuzUysUkJnW2doGlPUjxnxuveW2tzsGyBUdpBclirEyYiSIpPiSYAo
+         M8uN4PP8S1NMMmXoKD0EuORe3OhQDCHvxGL87kEJWcKBMzzECpxbOCX8TRFljoINsE
+         8Ubz3n0NLn6FQ==
+Message-ID: <e52c7a74-da68-08d2-54e2-f95a8c5b52e7@kernel.org>
+Date:   Tue, 13 Jun 2023 17:16:50 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20230612172805.681179-1-eric.devolder@oracle.com>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.11.0
+Subject: Re: [PATCH v4 27/34] nios2: Convert __pte_free_tlb() to use ptdescs
+Content-Language: en-US
+To:     "Vishal Moola (Oracle)" <vishal.moola@gmail.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Matthew Wilcox <willy@infradead.org>
+Cc:     linux-mm@kvack.org, linux-arch@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-openrisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-um@lists.infradead.org, xen-devel@lists.xenproject.org,
+        kvm@vger.kernel.org, Hugh Dickins <hughd@google.com>
+References: <20230612210423.18611-1-vishal.moola@gmail.com>
+ <20230612210423.18611-28-vishal.moola@gmail.com>
+From:   Dinh Nguyen <dinguyen@kernel.org>
+In-Reply-To: <20230612210423.18611-28-vishal.moola@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Jun 12, 2023 at 01:27:52PM -0400, Eric DeVolder wrote:
-> The Kconfig is refactored to consolidate KEXEC and CRASH options from
-> various arch/<arch>/Kconfig files into new file kernel/Kconfig.kexec.
 
-This looks very nice!
 
-> [...]
-> - The boolean ARCH_HAS_<option> in effect allows the arch to determine
->   when the feature is allowed.  Archs which don't have the feature
->   simply do not provide the corresponding ARCH_HAS_<option>.
->   For each arch, where there previously were KEXEC and/or CRASH
->   options, these have been replaced with the corresponding boolean
->   ARCH_HAS_<option>, and an appropriate def_bool statement.
+On 6/12/23 16:04, Vishal Moola (Oracle) wrote:
+> Part of the conversions to replace pgtable constructor/destructors with
+> ptdesc equivalents.
 > 
->   For example, if the arch supports KEXEC_FILE, then the
->   ARCH_HAS_KEXEC_FILE simply has a 'def_bool y'. This permits the
->   KEXEC_FILE option to be available.
+> Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
+> ---
+>   arch/nios2/include/asm/pgalloc.h | 8 ++++----
+>   1 file changed, 4 insertions(+), 4 deletions(-)
 > 
->   If the arch has a 'depends on' statement in its original coding
->   of the option, then that expression becomes part of the def_bool
->   expression. For example, arm64 had:
-> 
->   config KEXEC
->     depends on PM_SLEEP_SMP
-> 
->   and in this solution, this converts to:
-> 
->   config ARCH_HAS_KEXEC
->     def_bool PM_SLEEP_SMP
-> 
-> 
-> - In order to account for the differences in the config coding for
->   the three common options, the ARCH_SUPPORTS_<option> is used.
->   This options has a 'depends on <option>' statement to couple it
->   to the main option, and from there can insert the differences
->   from the common option and the arch original coding of that option.
-> 
->   For example, a few archs enable CRYPTO and CRYTPO_SHA256 for
->   KEXEC_FILE. These require a ARCH_SUPPORTS_KEXEC_FILE and
->   'select CRYPTO' and 'select CRYPTO_SHA256' statements.
+> diff --git a/arch/nios2/include/asm/pgalloc.h b/arch/nios2/include/asm/pgalloc.h
+> index ecd1657bb2ce..ce6bb8e74271 100644
+> --- a/arch/nios2/include/asm/pgalloc.h
+> +++ b/arch/nios2/include/asm/pgalloc.h
+> @@ -28,10 +28,10 @@ static inline void pmd_populate(struct mm_struct *mm, pmd_t *pmd,
+>   
+>   extern pgd_t *pgd_alloc(struct mm_struct *mm);
+>   
+> -#define __pte_free_tlb(tlb, pte, addr)				\
+> -	do {							\
+> -		pgtable_pte_page_dtor(pte);			\
+> -		tlb_remove_page((tlb), (pte));			\
+> +#define __pte_free_tlb(tlb, pte, addr)					\
+> +	do {								\
+> +		pagetable_pte_dtor(page_ptdesc(pte));			\
+> +		tlb_remove_page_ptdesc((tlb), (page_ptdesc(pte)));	\
+>   	} while (0)
+>   
+>   #endif /* _ASM_NIOS2_PGALLOC_H */
 
-Naming nit: "HAS" and "SUPPORTS" feel very similar, and looking at
-existing configs, "ARCH_SUPPORTS_..." is already used for doing this
-kind of bare "bool" management. e.g. see ARCH_SUPPORTS_INT128
+Applied!
 
-It looks like you need to split "depends" and "select" so the options
-can be chosen separately from the "selectable" configs.
-
-How about naming this ARCH_SELECTS_<option>, since that's what it's
-there for?
-
--Kees
-
--- 
-Kees Cook
+Thanks,
+Dinh
