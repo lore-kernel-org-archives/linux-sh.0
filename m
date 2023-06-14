@@ -2,159 +2,278 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 80F5CEB64D8
-	for <linux-sh@archiver.kernel.org>; Wed, 14 Jun 2023 14:13:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E2434C001DE
+	for <linux-sh@archiver.kernel.org>; Wed, 14 Jun 2023 14:20:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245397AbjFNONQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 14 Jun 2023 10:13:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41960 "EHLO
+        id S245522AbjFNOUZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 14 Jun 2023 10:20:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46844 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235340AbjFNONP (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 14 Jun 2023 10:13:15 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6D255CD;
-        Wed, 14 Jun 2023 07:13:14 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        with ESMTP id S245520AbjFNOUS (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 14 Jun 2023 10:20:18 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3C4381FFA;
+        Wed, 14 Jun 2023 07:20:04 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits))
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id E695921A27;
-        Wed, 14 Jun 2023 14:13:12 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1686751992; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=AXWk6CUvSgl2P4YJqAhXvTVbwqxUPGzo3E+LIQWooSI=;
-        b=Uzm0HlGQ0v+BDSs40EBKzyurOvOS9Jev8U90j1YhQzVpaUHMOwQ9eQl5TsE6Ub/k1khjm0
-        I2t7De+ZDz+yghYtyxDGJDOzkkTOebOlI1zUcfJwRLkAsu0INteoflheEP6ae4I8/IP9mP
-        JvCZDVHceToTHPL3qp+24NEQHmMOFMw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1686751992;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=AXWk6CUvSgl2P4YJqAhXvTVbwqxUPGzo3E+LIQWooSI=;
-        b=tyKL14vhY7af13xcxWb/qt2Bg82IxT03rMqZnPv6npmXGpKMuCWJ1p61BtBeYdFgFN72s5
-        0tJhND7fkwjTBrAg==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 8BD461391E;
-        Wed, 14 Jun 2023 14:13:12 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id M+YTIfjKiWTCdAAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Wed, 14 Jun 2023 14:13:12 +0000
-Message-ID: <5720dbc1-a3e4-2b23-28cd-f889d3a5a4fc@suse.de>
-Date:   Wed, 14 Jun 2023 16:13:11 +0200
+        by dfw.source.kernel.org (Postfix) with ESMTPS id C654F61B38;
+        Wed, 14 Jun 2023 14:20:03 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id EA8CFC433C8;
+        Wed, 14 Jun 2023 14:19:55 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1686752403;
+        bh=msIQzzbJVOpmfYjD76BXOfuKQSvBA8DkGXsTDNo7F6k=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=rDmqmXQ7/igDzWzKHWbbYSxsjI011+Qu0wfAX+xrJpGzScpx6c+TijBp42WTBHVHg
+         NMmFssQgKjcddaqFVOPxQIHovSCNhsGM78nzLy5IbF4NK4cENbZRynU7sbyPZQ0OJ2
+         u/YLiI/yye6XVAHtU6FTIMwuBcUtFL1dW8Vds6vGnufNWMWundcXWjgqsCICj6W4Dp
+         4phecE7fv+X9AppCQNzdJLoMn5npv3j2tWHnKsD12s3s/OF7tMN1vBabdXbvjijdFZ
+         e04wiDqE9JOa0+z6hm50Ui8dV1VvUlrYxaQY9WH+tDrmbOoYiIFulWKAMNy2BNR/ES
+         9cyaCj1LKvc6w==
+Date:   Wed, 14 Jun 2023 17:19:24 +0300
+From:   Mike Rapoport <rppt@kernel.org>
+To:     "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Matthew Wilcox <willy@infradead.org>, linux-mm@kvack.org,
+        linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+        xen-devel@lists.xenproject.org, kvm@vger.kernel.org,
+        Hugh Dickins <hughd@google.com>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>
+Subject: Re: [PATCH v4 14/34] powerpc: Convert various functions to use
+ ptdescs
+Message-ID: <20230614141924.GM52412@kernel.org>
+References: <20230612210423.18611-1-vishal.moola@gmail.com>
+ <20230612210423.18611-15-vishal.moola@gmail.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.11.2
-Subject: Re: [PATCH v3 01/38] backlight/bd6107: Compare against struct
- fb_info.device
-Content-Language: en-US
-To:     Lee Jones <lee@kernel.org>
-Cc:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
-        deller@gmx.de, geert+renesas@glider.be, daniel.thompson@linaro.org,
-        jingoohan1@gmail.com, dan.carpenter@linaro.org,
-        michael.j.ruhl@intel.com, linux-fbdev@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org,
-        linux-omap@vger.kernel.org, linux-staging@lists.linux.dev,
-        linux-kernel@vger.kernel.org,
-        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
-        stable@vger.kernel.org
-References: <20230613110953.24176-1-tzimmermann@suse.de>
- <20230613110953.24176-2-tzimmermann@suse.de>
- <20230614135157.GU3635807@google.com>
-From:   Thomas Zimmermann <tzimmermann@suse.de>
-In-Reply-To: <20230614135157.GU3635807@google.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="------------jFKBPLLaVKDIAocIfs4ThSlI"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230612210423.18611-15-vishal.moola@gmail.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---------------jFKBPLLaVKDIAocIfs4ThSlI
-Content-Type: multipart/mixed; boundary="------------qMR6e1eJ6r4sR49vitWQ2hp2";
- protected-headers="v1"
-From: Thomas Zimmermann <tzimmermann@suse.de>
-To: Lee Jones <lee@kernel.org>
-Cc: daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org, deller@gmx.de,
- geert+renesas@glider.be, daniel.thompson@linaro.org, jingoohan1@gmail.com,
- dan.carpenter@linaro.org, michael.j.ruhl@intel.com,
- linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
- linux-sh@vger.kernel.org, linux-omap@vger.kernel.org,
- linux-staging@lists.linux.dev, linux-kernel@vger.kernel.org,
- Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
- stable@vger.kernel.org
-Message-ID: <5720dbc1-a3e4-2b23-28cd-f889d3a5a4fc@suse.de>
-Subject: Re: [PATCH v3 01/38] backlight/bd6107: Compare against struct
- fb_info.device
-References: <20230613110953.24176-1-tzimmermann@suse.de>
- <20230613110953.24176-2-tzimmermann@suse.de>
- <20230614135157.GU3635807@google.com>
-In-Reply-To: <20230614135157.GU3635807@google.com>
+On Mon, Jun 12, 2023 at 02:04:03PM -0700, Vishal Moola (Oracle) wrote:
+> In order to split struct ptdesc from struct page, convert various
+> functions to use ptdescs.
+> 
+> Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
 
---------------qMR6e1eJ6r4sR49vitWQ2hp2
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: base64
+Acked-by: Mike Rapoport (IBM) <rppt@kernel.org>
 
-SGkNCg0KQW0gMTQuMDYuMjMgdW0gMTU6NTEgc2NocmllYiBMZWUgSm9uZXM6DQo+IE9uIFR1
-ZSwgMTMgSnVuIDIwMjMsIFRob21hcyBaaW1tZXJtYW5uIHdyb3RlOg0KPiANCj4+IFN0cnVj
-dCBiZDYxMDdfcGxhdGZvcm1fZGF0YSByZWZlcnMgdG8gYSBwbGF0Zm9ybSBkZXZpY2Ugd2l0
-aGluDQo+PiB0aGUgTGludXggZGV2aWNlIGhpZXJhcmNoeS4gVGhlIHRlc3QgaW4gYmQ2MTA3
-X2JhY2tsaWdodF9jaGVja19mYigpDQo+PiBjb21wYXJlcyBpdCBhZ2FpbnN0IHRoZSBmYmRl
-diBkZXZpY2UgaW4gc3RydWN0IGZiX2luZm8uZGV2LCB3aGljaA0KPj4gaXMgZGlmZmVyZW50
-LiBGaXggdGhlIHRlc3QgYnkgY29tcGFyaW5nIHRvIHN0cnVjdCBmYl9pbmZvLmRldmljZS4N
-Cj4+DQo+PiBGaXhlcyBhIGJ1ZyBpbiB0aGUgYmFja2xpZ2h0IGRyaXZlciBhbmQgcHJlcGFy
-ZXMgZmJkZXYgZm9yIG1ha2luZw0KPj4gc3RydWN0IGZiX2luZm8uZGV2IG9wdGlvbmFsLg0K
-Pj4NCj4+IHYyOg0KPj4gCSogbW92ZSByZW5hbWVzIGludG8gc2VwYXJhdGUgcGF0Y2ggKEph
-dmllciwgU2FtLCBNaWNoYWVsKQ0KPj4NCj4+IEZpeGVzOiA2N2I0M2U1OTA0MTUgKCJiYWNr
-bGlnaHQ6IEFkZCBST0hNIEJENjEwNyBiYWNrbGlnaHQgZHJpdmVyIikNCj4+IFNpZ25lZC1v
-ZmYtYnk6IFRob21hcyBaaW1tZXJtYW5uIDx0emltbWVybWFubkBzdXNlLmRlPg0KPj4gQ2M6
-IExhdXJlbnQgUGluY2hhcnQgPGxhdXJlbnQucGluY2hhcnQrcmVuZXNhc0BpZGVhc29uYm9h
-cmQuY29tPg0KPj4gQ2M6IExlZSBKb25lcyA8bGVlQGtlcm5lbC5vcmc+DQo+PiBDYzogRGFu
-aWVsIFRob21wc29uIDxkYW5pZWwudGhvbXBzb25AbGluYXJvLm9yZz4NCj4+IENjOiBKaW5n
-b28gSGFuIDxqaW5nb29oYW4xQGdtYWlsLmNvbT4NCj4+IENjOiBkcmktZGV2ZWxAbGlzdHMu
-ZnJlZWRlc2t0b3Aub3JnDQo+PiBDYzogPHN0YWJsZUB2Z2VyLmtlcm5lbC5vcmc+ICMgdjMu
-MTIrDQo+PiBSZXZpZXdlZC1ieTogSmF2aWVyIE1hcnRpbmV6IENhbmlsbGFzIDxqYXZpZXJt
-QHJlZGhhdC5jb20+DQo+PiBSZXZpZXdlZC1ieTogU2FtIFJhdm5ib3JnIDxzYW1AcmF2bmJv
-cmcub3JnPg0KPj4gUmV2aWV3ZWQtYnk6IERhbmllbCBUaG9tcHNvbiA8ZGFuaWVsLnRob21w
-c29uQGxpbmFyby5vcmc+DQo+PiAtLS0NCj4+ICAgZHJpdmVycy92aWRlby9iYWNrbGlnaHQv
-YmQ2MTA3LmMgfCAyICstDQo+PiAgIDEgZmlsZSBjaGFuZ2VkLCAxIGluc2VydGlvbigrKSwg
-MSBkZWxldGlvbigtKQ0KPiANCj4gQ2FuIHRoZSBCYWNrbGlnaHQgcGF0Y2hlcyBiZSBhcHBs
-aWVkIHdpdGhvdXQgdGhlIG90aGVycyBhbmQgdmlzYSB2ZXJzYT8NCg0KVW5mb3J0dW5hdGVs
-eSBub3QuIFRoZSByZXN0IG9mIHRoZSBzZXJpZXMgcmVxdWlyZXMgdGhlIGJhY2tsaWdodCBw
-YXRjaGVzLg0KDQpCZXN0IHJlZ2FyZHMNClRob21hcw0KDQo+IA0KDQotLSANClRob21hcyBa
-aW1tZXJtYW5uDQpHcmFwaGljcyBEcml2ZXIgRGV2ZWxvcGVyDQpTVVNFIFNvZnR3YXJlIFNv
-bHV0aW9ucyBHZXJtYW55IEdtYkgNCkZyYW5rZW5zdHJhc3NlIDE0NiwgOTA0NjEgTnVlcm5i
-ZXJnLCBHZXJtYW55DQpHRjogSXZvIFRvdGV2LCBBbmRyZXcgTXllcnMsIEFuZHJldyBNY0Rv
-bmFsZCwgQm91ZGllbiBNb2VybWFuDQpIUkIgMzY4MDkgKEFHIE51ZXJuYmVyZykNCg==
+> ---
+>  arch/powerpc/mm/book3s64/mmu_context.c | 10 +++---
+>  arch/powerpc/mm/book3s64/pgtable.c     | 32 +++++++++---------
+>  arch/powerpc/mm/pgtable-frag.c         | 46 +++++++++++++-------------
+>  3 files changed, 44 insertions(+), 44 deletions(-)
+> 
+> diff --git a/arch/powerpc/mm/book3s64/mmu_context.c b/arch/powerpc/mm/book3s64/mmu_context.c
+> index c766e4c26e42..1715b07c630c 100644
+> --- a/arch/powerpc/mm/book3s64/mmu_context.c
+> +++ b/arch/powerpc/mm/book3s64/mmu_context.c
+> @@ -246,15 +246,15 @@ static void destroy_contexts(mm_context_t *ctx)
+>  static void pmd_frag_destroy(void *pmd_frag)
+>  {
+>  	int count;
+> -	struct page *page;
+> +	struct ptdesc *ptdesc;
+>  
+> -	page = virt_to_page(pmd_frag);
+> +	ptdesc = virt_to_ptdesc(pmd_frag);
+>  	/* drop all the pending references */
+>  	count = ((unsigned long)pmd_frag & ~PAGE_MASK) >> PMD_FRAG_SIZE_SHIFT;
+>  	/* We allow PTE_FRAG_NR fragments from a PTE page */
+> -	if (atomic_sub_and_test(PMD_FRAG_NR - count, &page->pt_frag_refcount)) {
+> -		pgtable_pmd_page_dtor(page);
+> -		__free_page(page);
+> +	if (atomic_sub_and_test(PMD_FRAG_NR - count, &ptdesc->pt_frag_refcount)) {
+> +		pagetable_pmd_dtor(ptdesc);
+> +		pagetable_free(ptdesc);
+>  	}
+>  }
+>  
+> diff --git a/arch/powerpc/mm/book3s64/pgtable.c b/arch/powerpc/mm/book3s64/pgtable.c
+> index 85c84e89e3ea..1212deeabe15 100644
+> --- a/arch/powerpc/mm/book3s64/pgtable.c
+> +++ b/arch/powerpc/mm/book3s64/pgtable.c
+> @@ -306,22 +306,22 @@ static pmd_t *get_pmd_from_cache(struct mm_struct *mm)
+>  static pmd_t *__alloc_for_pmdcache(struct mm_struct *mm)
+>  {
+>  	void *ret = NULL;
+> -	struct page *page;
+> +	struct ptdesc *ptdesc;
+>  	gfp_t gfp = GFP_KERNEL_ACCOUNT | __GFP_ZERO;
+>  
+>  	if (mm == &init_mm)
+>  		gfp &= ~__GFP_ACCOUNT;
+> -	page = alloc_page(gfp);
+> -	if (!page)
+> +	ptdesc = pagetable_alloc(gfp, 0);
+> +	if (!ptdesc)
+>  		return NULL;
+> -	if (!pgtable_pmd_page_ctor(page)) {
+> -		__free_pages(page, 0);
+> +	if (!pagetable_pmd_ctor(ptdesc)) {
+> +		pagetable_free(ptdesc);
+>  		return NULL;
+>  	}
+>  
+> -	atomic_set(&page->pt_frag_refcount, 1);
+> +	atomic_set(&ptdesc->pt_frag_refcount, 1);
+>  
+> -	ret = page_address(page);
+> +	ret = ptdesc_address(ptdesc);
+>  	/*
+>  	 * if we support only one fragment just return the
+>  	 * allocated page.
+> @@ -331,12 +331,12 @@ static pmd_t *__alloc_for_pmdcache(struct mm_struct *mm)
+>  
+>  	spin_lock(&mm->page_table_lock);
+>  	/*
+> -	 * If we find pgtable_page set, we return
+> +	 * If we find ptdesc_page set, we return
+>  	 * the allocated page with single fragment
+>  	 * count.
+>  	 */
+>  	if (likely(!mm->context.pmd_frag)) {
+> -		atomic_set(&page->pt_frag_refcount, PMD_FRAG_NR);
+> +		atomic_set(&ptdesc->pt_frag_refcount, PMD_FRAG_NR);
+>  		mm->context.pmd_frag = ret + PMD_FRAG_SIZE;
+>  	}
+>  	spin_unlock(&mm->page_table_lock);
+> @@ -357,15 +357,15 @@ pmd_t *pmd_fragment_alloc(struct mm_struct *mm, unsigned long vmaddr)
+>  
+>  void pmd_fragment_free(unsigned long *pmd)
+>  {
+> -	struct page *page = virt_to_page(pmd);
+> +	struct ptdesc *ptdesc = virt_to_ptdesc(pmd);
+>  
+> -	if (PageReserved(page))
+> -		return free_reserved_page(page);
+> +	if (pagetable_is_reserved(ptdesc))
+> +		return free_reserved_ptdesc(ptdesc);
+>  
+> -	BUG_ON(atomic_read(&page->pt_frag_refcount) <= 0);
+> -	if (atomic_dec_and_test(&page->pt_frag_refcount)) {
+> -		pgtable_pmd_page_dtor(page);
+> -		__free_page(page);
+> +	BUG_ON(atomic_read(&ptdesc->pt_frag_refcount) <= 0);
+> +	if (atomic_dec_and_test(&ptdesc->pt_frag_refcount)) {
+> +		pagetable_pmd_dtor(ptdesc);
+> +		pagetable_free(ptdesc);
+>  	}
+>  }
+>  
+> diff --git a/arch/powerpc/mm/pgtable-frag.c b/arch/powerpc/mm/pgtable-frag.c
+> index 20652daa1d7e..8961f1540209 100644
+> --- a/arch/powerpc/mm/pgtable-frag.c
+> +++ b/arch/powerpc/mm/pgtable-frag.c
+> @@ -18,15 +18,15 @@
+>  void pte_frag_destroy(void *pte_frag)
+>  {
+>  	int count;
+> -	struct page *page;
+> +	struct ptdesc *ptdesc;
+>  
+> -	page = virt_to_page(pte_frag);
+> +	ptdesc = virt_to_ptdesc(pte_frag);
+>  	/* drop all the pending references */
+>  	count = ((unsigned long)pte_frag & ~PAGE_MASK) >> PTE_FRAG_SIZE_SHIFT;
+>  	/* We allow PTE_FRAG_NR fragments from a PTE page */
+> -	if (atomic_sub_and_test(PTE_FRAG_NR - count, &page->pt_frag_refcount)) {
+> -		pgtable_pte_page_dtor(page);
+> -		__free_page(page);
+> +	if (atomic_sub_and_test(PTE_FRAG_NR - count, &ptdesc->pt_frag_refcount)) {
+> +		pagetable_pte_dtor(ptdesc);
+> +		pagetable_free(ptdesc);
+>  	}
+>  }
+>  
+> @@ -55,25 +55,25 @@ static pte_t *get_pte_from_cache(struct mm_struct *mm)
+>  static pte_t *__alloc_for_ptecache(struct mm_struct *mm, int kernel)
+>  {
+>  	void *ret = NULL;
+> -	struct page *page;
+> +	struct ptdesc *ptdesc;
+>  
+>  	if (!kernel) {
+> -		page = alloc_page(PGALLOC_GFP | __GFP_ACCOUNT);
+> -		if (!page)
+> +		ptdesc = pagetable_alloc(PGALLOC_GFP | __GFP_ACCOUNT, 0);
+> +		if (!ptdesc)
+>  			return NULL;
+> -		if (!pgtable_pte_page_ctor(page)) {
+> -			__free_page(page);
+> +		if (!pagetable_pte_ctor(ptdesc)) {
+> +			pagetable_free(ptdesc);
+>  			return NULL;
+>  		}
+>  	} else {
+> -		page = alloc_page(PGALLOC_GFP);
+> -		if (!page)
+> +		ptdesc = pagetable_alloc(PGALLOC_GFP, 0);
+> +		if (!ptdesc)
+>  			return NULL;
+>  	}
+>  
+> -	atomic_set(&page->pt_frag_refcount, 1);
+> +	atomic_set(&ptdesc->pt_frag_refcount, 1);
+>  
+> -	ret = page_address(page);
+> +	ret = ptdesc_address(ptdesc);
+>  	/*
+>  	 * if we support only one fragment just return the
+>  	 * allocated page.
+> @@ -82,12 +82,12 @@ static pte_t *__alloc_for_ptecache(struct mm_struct *mm, int kernel)
+>  		return ret;
+>  	spin_lock(&mm->page_table_lock);
+>  	/*
+> -	 * If we find pgtable_page set, we return
+> +	 * If we find ptdesc_page set, we return
+>  	 * the allocated page with single fragment
+>  	 * count.
+>  	 */
+>  	if (likely(!pte_frag_get(&mm->context))) {
+> -		atomic_set(&page->pt_frag_refcount, PTE_FRAG_NR);
+> +		atomic_set(&ptdesc->pt_frag_refcount, PTE_FRAG_NR);
+>  		pte_frag_set(&mm->context, ret + PTE_FRAG_SIZE);
+>  	}
+>  	spin_unlock(&mm->page_table_lock);
+> @@ -108,15 +108,15 @@ pte_t *pte_fragment_alloc(struct mm_struct *mm, int kernel)
+>  
+>  void pte_fragment_free(unsigned long *table, int kernel)
+>  {
+> -	struct page *page = virt_to_page(table);
+> +	struct ptdesc *ptdesc = virt_to_ptdesc(table);
+>  
+> -	if (PageReserved(page))
+> -		return free_reserved_page(page);
+> +	if (pagetable_is_reserved(ptdesc))
+> +		return free_reserved_ptdesc(ptdesc);
+>  
+> -	BUG_ON(atomic_read(&page->pt_frag_refcount) <= 0);
+> -	if (atomic_dec_and_test(&page->pt_frag_refcount)) {
+> +	BUG_ON(atomic_read(&ptdesc->pt_frag_refcount) <= 0);
+> +	if (atomic_dec_and_test(&ptdesc->pt_frag_refcount)) {
+>  		if (!kernel)
+> -			pgtable_pte_page_dtor(page);
+> -		__free_page(page);
+> +			pagetable_pte_dtor(ptdesc);
+> +		pagetable_free(ptdesc);
+>  	}
+>  }
+> -- 
+> 2.40.1
+> 
+> 
 
---------------qMR6e1eJ6r4sR49vitWQ2hp2--
-
---------------jFKBPLLaVKDIAocIfs4ThSlI
-Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="OpenPGP_signature"
-
------BEGIN PGP SIGNATURE-----
-
-wsF5BAABCAAjFiEExndm/fpuMUdwYFFolh/E3EQov+AFAmSJyvcFAwAAAAAACgkQlh/E3EQov+DO
-uhAAsRBpTfNB2nRslH0VsoSwy6Po5YGk5E4vLJymwShH9bCMu2X+HxfG2JUWFVz7+LXPm/MYwZze
-0NAeaWjs2ft9FCSEzYVlCnhkpjZsa2Gf1u79S3ZMJHTWuacUji/M2mL2IZZCtG+EsCJmHPqWP+oI
-RRmzkZF3VLjE4nu8AKqSUF8P9d4CjOoTy7iUHhZ/OuAYv1pdHlJ6nLUv4m0gwsizgJNcF4Z9LeCa
-oqAVidYe/TebhOgC6rv3C5gTZnMoBfT9ICYFrGhLUKublhYI+xFGkYk5sx6vQLMJXwSMNu7KK4L+
-g4uoytQwFdTF+H1IhZS3ZQ3Le+9yX3HrQ82qqzKgKcTX370CCvX+qbC+EzcRzp6C2gyVkyMMTOVm
-Rvugdp+Z5CLyMyd6YW3IrGnitajR1ZyM7oTuJNuVV6ErLbKsX0DV0pAwu5u/Ai3adOvuXcrzZV9f
-pAbMBx7lXfMdy+3vVOQDyhoS5LltgbwcPq/yBZXLJkd6KtwFLNCqPYzPu0JzeVK5/Bb+ACsnA1be
-6hq9h8Ga3DHeGNrQ9yU92vSfVF9PUC68y2Ei5sobO2WtgwtG9tG4XYexbumRo1waMuseZ9c+LS1s
-0guFuxEWPTz4Kf96yXCzDPmz8NZ+reH2c+QqTlTnspHykEdA2O3QA5EHH4BFPSku3Ya0SX+LRkBE
-Fek=
-=elwI
------END PGP SIGNATURE-----
-
---------------jFKBPLLaVKDIAocIfs4ThSlI--
+-- 
+Sincerely yours,
+Mike.
