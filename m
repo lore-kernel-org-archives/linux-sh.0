@@ -2,112 +2,91 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 01D05EB64D8
-	for <linux-sh@archiver.kernel.org>; Wed, 14 Jun 2023 13:52:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7ED43EB64DB
+	for <linux-sh@archiver.kernel.org>; Wed, 14 Jun 2023 13:52:18 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S245260AbjFNNwB (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 14 Jun 2023 09:52:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56110 "EHLO
+        id S245252AbjFNNwR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 14 Jun 2023 09:52:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56510 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S245217AbjFNNv6 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 14 Jun 2023 09:51:58 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9F0441FFD;
-        Wed, 14 Jun 2023 06:51:51 -0700 (PDT)
+        with ESMTP id S245251AbjFNNwM (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 14 Jun 2023 09:52:12 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 579142684;
+        Wed, 14 Jun 2023 06:52:06 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature RSA-PSS (2048 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 15D1563768;
-        Wed, 14 Jun 2023 13:51:51 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7653EC433C0;
-        Wed, 14 Jun 2023 13:51:43 +0000 (UTC)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id CB4D860F06;
+        Wed, 14 Jun 2023 13:52:05 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 51FC5C433C0;
+        Wed, 14 Jun 2023 13:52:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1686750710;
-        bh=MAYhMoo3f8WL6wMqKE5pm7ocfhsiks+frK6iH2blioo=;
+        s=k20201202; t=1686750725;
+        bh=CO5xc8YPPQWPDb40OvDsmBIPZj3o5j1/a0jNwh4QVN4=;
         h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=UEIirlFbT/jXJvHUAqdydA59j1RgDZUUfgyOKgwNndXqGOEHUHhZfOzL8/NQgVHWq
-         /q8XC8zbUoWUdbEY52nA6n3QMoY+5uT3nVSo46hX3ckloa8Tsk20nvsFk+nFyI69rq
-         kqHKU2qNg4cLDxDKYqW/CF0jwV3eWOULQ1qERJP4E28CBFcj6QUn7snwpsx+9K+Qu2
-         POIbcaK1ERRHtrayBYsdhpVVMqCnIj3U/FswN9W3HiA4Vsg6KhJEbi7yWjCVgy7Bim
-         qkQ5e6uOUhmZCAZAp2Mldqm52UMAWsfOcJWE7Vw1mqKjcEoYqpl1pq42H9ff1U9Ztz
-         NxXUpOfWIJH1g==
-Date:   Wed, 14 Jun 2023 16:51:12 +0300
-From:   Mike Rapoport <rppt@kernel.org>
-To:     "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        Matthew Wilcox <willy@infradead.org>, linux-mm@kvack.org,
-        linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
-        xen-devel@lists.xenproject.org, kvm@vger.kernel.org,
-        Hugh Dickins <hughd@google.com>
-Subject: Re: [PATCH v4 06/34] mm: Convert pmd_pgtable_page() to pmd_ptdesc()
-Message-ID: <20230614135112.GE52412@kernel.org>
-References: <20230612210423.18611-1-vishal.moola@gmail.com>
- <20230612210423.18611-7-vishal.moola@gmail.com>
+        b=dMU49nXfjD0xUXILvTvlDXF8NMUb2VlD+tfLPuwxXKPYNwvghwaxBU+9u2dFQKFMo
+         XG+fJzMiwNtoO0PTs068LLyp6fKUG1EThsNPAAUJAhH3cSh2dtIxXzlGd88HQv484/
+         ZAlAl83NY+7EBAOlT+shnVTY6WCtv7JBz6vvP95GR1zrwO/OawUrUrsW1MuGojBZsU
+         ioUn869QlwHx9xsO4FSJtFNrH+83l/Y//XX2lHjKyHDmUnW2nJ8wKCVlv7fkPfS+Te
+         paPKw8aaxdheBAC+5kYRLZAtm7ruqPpKky4hXCGyPIRxJST++sKSPrIR2izAJsgq5m
+         lVIOfM71BDihA==
+Date:   Wed, 14 Jun 2023 14:51:57 +0100
+From:   Lee Jones <lee@kernel.org>
+To:     Thomas Zimmermann <tzimmermann@suse.de>
+Cc:     daniel@ffwll.ch, javierm@redhat.com, sam@ravnborg.org,
+        deller@gmx.de, geert+renesas@glider.be, daniel.thompson@linaro.org,
+        jingoohan1@gmail.com, dan.carpenter@linaro.org,
+        michael.j.ruhl@intel.com, linux-fbdev@vger.kernel.org,
+        dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org,
+        linux-omap@vger.kernel.org, linux-staging@lists.linux.dev,
+        linux-kernel@vger.kernel.org,
+        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+        stable@vger.kernel.org
+Subject: Re: [PATCH v3 01/38] backlight/bd6107: Compare against struct
+ fb_info.device
+Message-ID: <20230614135157.GU3635807@google.com>
+References: <20230613110953.24176-1-tzimmermann@suse.de>
+ <20230613110953.24176-2-tzimmermann@suse.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <20230612210423.18611-7-vishal.moola@gmail.com>
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <20230613110953.24176-2-tzimmermann@suse.de>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Jun 12, 2023 at 02:03:55PM -0700, Vishal Moola (Oracle) wrote:
-> Converts pmd_pgtable_page() to pmd_ptdesc() and all its callers. This
-> removes some direct accesses to struct page, working towards splitting
-> out struct ptdesc from struct page.
+On Tue, 13 Jun 2023, Thomas Zimmermann wrote:
+
+> Struct bd6107_platform_data refers to a platform device within
+> the Linux device hierarchy. The test in bd6107_backlight_check_fb()
+> compares it against the fbdev device in struct fb_info.dev, which
+> is different. Fix the test by comparing to struct fb_info.device.
 > 
-> Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
-
-Acked-by: Mike Rapoport (IBM) <rppt@kernel.org>
-
+> Fixes a bug in the backlight driver and prepares fbdev for making
+> struct fb_info.dev optional.
+> 
+> v2:
+> 	* move renames into separate patch (Javier, Sam, Michael)
+> 
+> Fixes: 67b43e590415 ("backlight: Add ROHM BD6107 backlight driver")
+> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+> Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Cc: Lee Jones <lee@kernel.org>
+> Cc: Daniel Thompson <daniel.thompson@linaro.org>
+> Cc: Jingoo Han <jingoohan1@gmail.com>
+> Cc: dri-devel@lists.freedesktop.org
+> Cc: <stable@vger.kernel.org> # v3.12+
+> Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+> Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
+> Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
 > ---
->  include/linux/mm.h | 8 ++++----
->  1 file changed, 4 insertions(+), 4 deletions(-)
-> 
-> diff --git a/include/linux/mm.h b/include/linux/mm.h
-> index f184f1eba85d..088b7664f897 100644
-> --- a/include/linux/mm.h
-> +++ b/include/linux/mm.h
-> @@ -2931,15 +2931,15 @@ static inline void pgtable_pte_page_dtor(struct page *page)
->  
->  #if USE_SPLIT_PMD_PTLOCKS
->  
-> -static inline struct page *pmd_pgtable_page(pmd_t *pmd)
-> +static inline struct ptdesc *pmd_ptdesc(pmd_t *pmd)
->  {
->  	unsigned long mask = ~(PTRS_PER_PMD * sizeof(pmd_t) - 1);
-> -	return virt_to_page((void *)((unsigned long) pmd & mask));
-> +	return virt_to_ptdesc((void *)((unsigned long) pmd & mask));
->  }
->  
->  static inline spinlock_t *pmd_lockptr(struct mm_struct *mm, pmd_t *pmd)
->  {
-> -	return ptlock_ptr(pmd_pgtable_page(pmd));
-> +	return ptlock_ptr(ptdesc_page(pmd_ptdesc(pmd)));
->  }
->  
->  static inline bool pmd_ptlock_init(struct page *page)
-> @@ -2958,7 +2958,7 @@ static inline void pmd_ptlock_free(struct page *page)
->  	ptlock_free(page);
->  }
->  
-> -#define pmd_huge_pte(mm, pmd) (pmd_pgtable_page(pmd)->pmd_huge_pte)
-> +#define pmd_huge_pte(mm, pmd) (pmd_ptdesc(pmd)->pmd_huge_pte)
->  
->  #else
->  
-> -- 
-> 2.40.1
-> 
-> 
+>  drivers/video/backlight/bd6107.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+
+Can the Backlight patches be applied without the others and visa versa?
 
 -- 
-Sincerely yours,
-Mike.
+Lee Jones [李琼斯]
