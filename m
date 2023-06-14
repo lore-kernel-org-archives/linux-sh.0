@@ -2,42 +2,45 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BF967EB64D9
-	for <linux-sh@archiver.kernel.org>; Wed, 14 Jun 2023 19:23:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3D743EB64D8
+	for <linux-sh@archiver.kernel.org>; Wed, 14 Jun 2023 19:24:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230214AbjFNTXB convert rfc822-to-8bit (ORCPT
+        id S236156AbjFNTYK convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 14 Jun 2023 15:23:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49232 "EHLO
+        Wed, 14 Jun 2023 15:24:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50394 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231499AbjFNTXA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 14 Jun 2023 15:23:00 -0400
+        with ESMTP id S233083AbjFNTYJ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 14 Jun 2023 15:24:09 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C0A7D26AB;
-        Wed, 14 Jun 2023 12:22:37 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id ABE2726B7;
+        Wed, 14 Jun 2023 12:23:54 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1q9W4f-002h8x-3E; Wed, 14 Jun 2023 21:22:33 +0200
+          id 1q9W5u-002hOq-2e; Wed, 14 Jun 2023 21:23:50 +0200
 Received: from p57bd9486.dip0.t-ipconnect.de ([87.189.148.134] helo=[192.168.178.81])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1q9W4e-0012Wx-KO; Wed, 14 Jun 2023 21:22:33 +0200
-Message-ID: <63d247d3de5a0ca289c39dff930f83d7bbc7c4a5.camel@physik.fu-berlin.de>
+          id 1q9W5t-0012jF-RM; Wed, 14 Jun 2023 21:23:50 +0200
+Message-ID: <af114229f6231ec180266eebce4e62851732a446.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH] sh: Replace all non-returning strlcpy with strscpy
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Azeem Shaikh <azeemshaikh38@gmail.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-Cc:     linux-hardening@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org, Randy Dunlap <rdunlap@infradead.org>
-Date:   Wed, 14 Jun 2023 21:22:31 +0200
-In-Reply-To: <20230530163041.985456-1-azeemshaikh38@gmail.com>
+To:     Kees Cook <keescook@chromium.org>
+Cc:     ysato@users.sourceforge.jp, azeemshaikh38@gmail.com,
+        dalias@libc.org, linux-kernel@vger.kernel.org,
+        rdunlap@infradead.org, linux-sh@vger.kernel.org,
+        linux-hardening@vger.kernel.org
+Date:   Wed, 14 Jun 2023 21:23:49 +0200
+In-Reply-To: <202306141203.0CAB93DD13@keescook>
 References: <20230530163041.985456-1-azeemshaikh38@gmail.com>
+         <168676826702.1963449.9061022814058323294.b4-ty@chromium.org>
+         <2a1d8002f7e2982399cb8ab7641f54ac867270aa.camel@physik.fu-berlin.de>
+         <202306141203.0CAB93DD13@keescook>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 User-Agent: Evolution 3.48.3 
@@ -49,55 +52,47 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, 2023-05-30 at 16:30 +0000, Azeem Shaikh wrote:
-> strlcpy() reads the entire source buffer first.
-> This read may exceed the destination size limit.
-> This is both inefficient and can lead to linear read
-> overflows if a source string is not NUL-terminated [1].
-> In an effort to remove strlcpy() completely [2], replace
-> strlcpy() here with strscpy().
-> No return values were used, so direct replacement is safe.
+On Wed, 2023-06-14 at 12:03 -0700, Kees Cook wrote:
+> On Wed, Jun 14, 2023 at 08:49:13PM +0200, John Paul Adrian Glaubitz wrote:
+> > Hi Kees!
+> > 
+> > On Wed, 2023-06-14 at 11:44 -0700, Kees Cook wrote:
+> > > On Tue, 30 May 2023 16:30:41 +0000, Azeem Shaikh wrote:
+> > > > strlcpy() reads the entire source buffer first.
+> > > > This read may exceed the destination size limit.
+> > > > This is both inefficient and can lead to linear read
+> > > > overflows if a source string is not NUL-terminated [1].
+> > > > In an effort to remove strlcpy() completely [2], replace
+> > > > strlcpy() here with strscpy().
+> > > > No return values were used, so direct replacement is safe.
+> > > > 
+> > > > [...]
+> > > 
+> > > Build tested with sh4 GCC 13.1 from:
+> > > https://mirrors.edge.kernel.org/pub/tools/crosstool/files/bin/x86_64/13.1.0/
+> > > 
+> > > with defconfig and:
+> > > 	CONFIG_CPU_SUBTYPE_SH7343=y
+> > > 	CONFIG_SH_DMA=y
+> > > 	CONFIG_SH_DMA_API=y
+> > > 
+> > > Applied to for-next/hardening, thanks!
+> > > 
+> > > [1/1] sh: Replace all non-returning strlcpy with strscpy
+> > >       https://git.kernel.org/kees/c/ca64da3052be
+> > > 
+> > 
+> > Apologies, this fell off my table. I should have acked and tested this being the
+> > SuperH maintainer. If you can still update the patch in your tree, I can both
+> > test and ack this patch.
 > 
-> [1] https://www.kernel.org/doc/html/latest/process/deprecated.html#strlcpy
-> [2] https://github.com/KSPP/linux/issues/89
-> 
-> Signed-off-by: Azeem Shaikh <azeemshaikh38@gmail.com>
-> ---
->  arch/sh/drivers/dma/dma-api.c |    2 +-
->  arch/sh/kernel/setup.c        |    4 ++--
->  2 files changed, 3 insertions(+), 3 deletions(-)
-> 
-> diff --git a/arch/sh/drivers/dma/dma-api.c b/arch/sh/drivers/dma/dma-api.c
-> index ab9170494dcc..89cd4a3b4cca 100644
-> --- a/arch/sh/drivers/dma/dma-api.c
-> +++ b/arch/sh/drivers/dma/dma-api.c
-> @@ -198,7 +198,7 @@ int request_dma(unsigned int chan, const char *dev_id)
->  	if (atomic_xchg(&channel->busy, 1))
->  		return -EBUSY;
->  
-> -	strlcpy(channel->dev_id, dev_id, sizeof(channel->dev_id));
-> +	strscpy(channel->dev_id, dev_id, sizeof(channel->dev_id));
->  
->  	if (info->ops->request) {
->  		result = info->ops->request(channel);
-> diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-> index af977ec4ca5e..e4f0f9a1d355 100644
-> --- a/arch/sh/kernel/setup.c
-> +++ b/arch/sh/kernel/setup.c
-> @@ -304,9 +304,9 @@ void __init setup_arch(char **cmdline_p)
->  	bss_resource.end = virt_to_phys(__bss_stop)-1;
->  
->  #ifdef CONFIG_CMDLINE_OVERWRITE
-> -	strlcpy(command_line, CONFIG_CMDLINE, sizeof(command_line));
-> +	strscpy(command_line, CONFIG_CMDLINE, sizeof(command_line));
->  #else
-> -	strlcpy(command_line, COMMAND_LINE, sizeof(command_line));
-> +	strscpy(command_line, COMMAND_LINE, sizeof(command_line));
->  #ifdef CONFIG_CMDLINE_EXTEND
->  	strlcat(command_line, " ", sizeof(command_line));
->  	strlcat(command_line, CONFIG_CMDLINE, sizeof(command_line));
+> Absolutely! Thanks for double-checking. :)
 
-Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+I have tested the patch on my SH-7785LCR board on top of Linus' tree and
+also acked it.
+
+Thanks,
+Adrian
 
 -- 
  .''`.  John Paul Adrian Glaubitz
