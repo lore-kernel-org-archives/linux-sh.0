@@ -2,141 +2,107 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7193DEB64D7
-	for <linux-sh@archiver.kernel.org>; Fri, 16 Jun 2023 14:37:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 41426C0015E
+	for <linux-sh@archiver.kernel.org>; Fri, 16 Jun 2023 20:38:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229482AbjFPOhx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 16 Jun 2023 10:37:53 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44882 "EHLO
+        id S1345200AbjFPUio (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 16 Jun 2023 16:38:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58362 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344132AbjFPOhx (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 16 Jun 2023 10:37:53 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 630362D73;
-        Fri, 16 Jun 2023 07:37:52 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 1203421BD7;
-        Fri, 16 Jun 2023 14:37:51 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1686926271; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=/pc5e01Az30d0Y7EOVtqX1ghgv8iymBCr4cTKd6NYVc=;
-        b=pxiGv5A2Uk44sRbQW8ymLZStrLHP4hKSsy0fjcizLCRTrfOsJG0muZR3LEEx8hedi2Y12c
-        UN/AmOPNHmjpHGLP/iSfI0oOSh599hdlydntQLyGKqzf04bxSwv3phpZ4hWZoW7Gyw4RhJ
-        16UYf+QqbKlh7hTKgcFgoNPyizpCKl8=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1686926271;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=/pc5e01Az30d0Y7EOVtqX1ghgv8iymBCr4cTKd6NYVc=;
-        b=xbba1t2427WO4fkI830Ss7ilzxtJFad8dVD0KbNe0PbI0dCLW0VWSnO2LCR54TUdKusRHB
-        iSViPIkRyVy1g7Dw==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 9CDB71330B;
-        Fri, 16 Jun 2023 14:37:50 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id z3+tJL5zjGRFaQAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Fri, 16 Jun 2023 14:37:50 +0000
-Message-ID: <9f74b8de-9a1b-2547-5eab-d4b4349a6a81@suse.de>
-Date:   Fri, 16 Jun 2023 16:37:49 +0200
+        with ESMTP id S235280AbjFPUih (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 16 Jun 2023 16:38:37 -0400
+Received: from casper.infradead.org (casper.infradead.org [IPv6:2001:8b0:10b:1236::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8802C3AA0;
+        Fri, 16 Jun 2023 13:38:31 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+        References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+        Content-Transfer-Encoding:Content-ID:Content-Description;
+        bh=fw74FAZhkocnJnJyLR/WQNNOz26kiObyhL++hGG0nWw=; b=QBNdm8qv6j/A/iWrMKfpB6M7G8
+        dX02GHdjAg9rPGckqaKAq0nuLHgnEOZOUcT5iS1KFKrWFBJlTrkF2I4g5N2YgCfsexrQECwyFoHPp
+        z6yd+/vIl/PequagU7pGV8UNE2yhdOrdkDT+t3SJSVONZj6Q1cQWhoxiK+7FUVh/Fb17OdOH8kjtt
+        OWIuj2P4ze5K/i70TfCVLOSJSXO+Ry9WEoIoy6BlMNh0EJ1wlu/c8zXDIuEPPIicVlz2AV+6m8LDv
+        lA4vOEDBJYuPKGoF8lu2OSuuFhx10iSF/LiB0UcYpqrALuMFJM02PbH03w+/bd9OLb/nrxdqasmpe
+        J/m6D//w==;
+Received: from willy by casper.infradead.org with local (Exim 4.94.2 #2 (Red Hat Linux))
+        id 1qAGD7-009Lj7-EI; Fri, 16 Jun 2023 20:38:21 +0000
+Date:   Fri, 16 Jun 2023 21:38:21 +0100
+From:   Matthew Wilcox <willy@infradead.org>
+To:     Hugh Dickins <hughd@google.com>
+Cc:     "Vishal Moola (Oracle)" <vishal.moola@gmail.com>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Gerald Schaefer <gerald.schaefer@linux.ibm.com>,
+        Vasily Gorbik <gor@linux.ibm.com>,
+        Jason Gunthorpe <jgg@ziepe.ca>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        Claudio Imbrenda <imbrenda@linux.ibm.com>,
+        Alexander Gordeev <agordeev@linux.ibm.com>, linux-mm@kvack.org,
+        linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+        xen-devel@lists.xenproject.org, kvm@vger.kernel.org
+Subject: Re: [PATCH v4 04/34] pgtable: Create struct ptdesc
+Message-ID: <ZIzIPQBXvnMtQekj@casper.infradead.org>
+References: <20230612210423.18611-1-vishal.moola@gmail.com>
+ <20230612210423.18611-5-vishal.moola@gmail.com>
+ <fd63179-6ad6-fd86-79d6-2833c91111f8@google.com>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.11.2
-Subject: Re: [PATCH v3 01/38] backlight/bd6107: Compare against struct
- fb_info.device
-Content-Language: en-US
-From:   Thomas Zimmermann <tzimmermann@suse.de>
-To:     Lee Jones <lee@kernel.org>
-Cc:     daniel.thompson@linaro.org,
-        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
-        linux-kernel@vger.kernel.org, geert+renesas@glider.be,
-        linux-sh@vger.kernel.org, jingoohan1@gmail.com, deller@gmx.de,
-        linux-staging@lists.linux.dev, javierm@redhat.com,
-        dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org,
-        michael.j.ruhl@intel.com, stable@vger.kernel.org,
-        linux-omap@vger.kernel.org, sam@ravnborg.org,
-        dan.carpenter@linaro.org
-References: <20230613110953.24176-1-tzimmermann@suse.de>
- <20230613110953.24176-2-tzimmermann@suse.de>
- <20230614135157.GU3635807@google.com>
- <5720dbc1-a3e4-2b23-28cd-f889d3a5a4fc@suse.de>
-In-Reply-To: <5720dbc1-a3e4-2b23-28cd-f889d3a5a4fc@suse.de>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="------------uqxf1PmsVcgGFzKAiF8s860m"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <fd63179-6ad6-fd86-79d6-2833c91111f8@google.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---------------uqxf1PmsVcgGFzKAiF8s860m
-Content-Type: multipart/mixed; boundary="------------Kge1wVVwVTDuGXE1lqDWar4A";
- protected-headers="v1"
-From: Thomas Zimmermann <tzimmermann@suse.de>
-To: Lee Jones <lee@kernel.org>
-Cc: daniel.thompson@linaro.org,
- Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
- linux-kernel@vger.kernel.org, geert+renesas@glider.be,
- linux-sh@vger.kernel.org, jingoohan1@gmail.com, deller@gmx.de,
- linux-staging@lists.linux.dev, javierm@redhat.com,
- dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org,
- michael.j.ruhl@intel.com, stable@vger.kernel.org,
- linux-omap@vger.kernel.org, sam@ravnborg.org, dan.carpenter@linaro.org
-Message-ID: <9f74b8de-9a1b-2547-5eab-d4b4349a6a81@suse.de>
-Subject: Re: [PATCH v3 01/38] backlight/bd6107: Compare against struct
- fb_info.device
-References: <20230613110953.24176-1-tzimmermann@suse.de>
- <20230613110953.24176-2-tzimmermann@suse.de>
- <20230614135157.GU3635807@google.com>
- <5720dbc1-a3e4-2b23-28cd-f889d3a5a4fc@suse.de>
-In-Reply-To: <5720dbc1-a3e4-2b23-28cd-f889d3a5a4fc@suse.de>
+On Thu, Jun 15, 2023 at 12:57:19AM -0700, Hugh Dickins wrote:
+> Probably just trivial collisions in most architectures, which either
+> of us can easily adjust to the other; powerpc likely to be more awkward,
+> but fairly easily resolved; s390 quite a problem.
+> 
+> I've so far been unable to post a v2 of my series (and powerpc and s390
+> were stupidly wrong in the v1), because a good s390 patch is not yet
+> decided - Gerald Schaefer and I are currently working on that, on the
+> s390 list (I took off most Ccs until we are settled and I can post v2).
+> 
+> As you have no doubt found yourself, s390 has sophisticated handling of
+> free half-pages already, and I need to add rcu_head usage in there too:
+> it's tricky to squeeze it all in, and ptdesc does not appear to help us
+> in any way (though mostly it's just changing some field names, okay).
+> 
+> If ptdesc were actually allowing a flexible structure which architectures
+> could add into, that would (in some future) be nice; but of course at
+> present it's still fitting it all into one struct page, and mandating
+> new restrictions which just make an architecture's job harder.
 
---------------Kge1wVVwVTDuGXE1lqDWar4A
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: base64
+The intent is to get ptdescs to be dynamically allocated at some point
+in the ~2-3 years out future when we have finished the folio project ...
+which is not a terribly helpful thing for me to say.
 
-SGkgTGVlDQoNCkFtIDE0LjA2LjIzIHVtIDE2OjEzIHNjaHJpZWIgVGhvbWFzIFppbW1lcm1h
-bm46DQpbLi4uXQ0KPj4gQ2FuIHRoZSBCYWNrbGlnaHQgcGF0Y2hlcyBiZSBhcHBsaWVkIHdp
-dGhvdXQgdGhlIG90aGVycyBhbmQgdmlzYSB2ZXJzYT8NCj4gDQo+IFVuZm9ydHVuYXRlbHkg
-bm90LiBUaGUgcmVzdCBvZiB0aGUgc2VyaWVzIHJlcXVpcmVzIHRoZSBiYWNrbGlnaHQgcGF0
-Y2hlcy4NCg0KQXJlIHlvdSBPSyB3aXRoIHRoZSBwYXRjaGVzIGdvaW5nIHRocm91Z2ggZHJt
-Pw0KDQpCZXN0IHJlZ2FyZHMNClRob21hcw0KDQo+IA0KPiBCZXN0IHJlZ2FyZHMNCj4gVGhv
-bWFzDQo+IA0KPj4NCj4gDQoNCi0tIA0KVGhvbWFzIFppbW1lcm1hbm4NCkdyYXBoaWNzIERy
-aXZlciBEZXZlbG9wZXINClNVU0UgU29mdHdhcmUgU29sdXRpb25zIEdlcm1hbnkgR21iSA0K
-RnJhbmtlbnN0cmFzc2UgMTQ2LCA5MDQ2MSBOdWVybmJlcmcsIEdlcm1hbnkNCkdGOiBJdm8g
-VG90ZXYsIEFuZHJldyBNeWVycywgQW5kcmV3IE1jRG9uYWxkLCBCb3VkaWVuIE1vZXJtYW4N
-CkhSQiAzNjgwOSAoQUcgTnVlcm5iZXJnKQ0K
+I have three suggestions, probably all dreadful:
 
---------------Kge1wVVwVTDuGXE1lqDWar4A--
+1. s390 could change its behaviour to always allocate page tables in
+pairs.  That is, it fills in two pmd_t entries any time it takes a fault
+in either of them.
 
---------------uqxf1PmsVcgGFzKAiF8s860m
-Content-Type: application/pgp-signature; name="OpenPGP_signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="OpenPGP_signature"
+2. We could allocate two or four pages at a time for s390 to allocate
+2kB pages from.  That gives us a lot more space to store RCU heads.
 
------BEGIN PGP SIGNATURE-----
+3. We could use s390 as a guinea-pig for dynamic ptdesc allocation.
+Every time we allocate a struct page, we have a slab cache for an
+s390-special definition of struct ptdesc, we allocate a ptdesc and store
+a pointer to that in compound_head.
 
-wsF5BAABCAAjFiEExndm/fpuMUdwYFFolh/E3EQov+AFAmSMc70FAwAAAAAACgkQlh/E3EQov+AF
-FxAAzH7H+UtNiH0YBxQX3fM2qFKzS4qSWBlg3K501Pyci6J+5eAgKYuhwGctklh9HKO9dmkB/Lpt
-X0sRCnnRHSC2K6Ofu4hQOrRv2T51Yz17z9G69YDW0/iDtgkMev1WebyKSyJ2YxJXts5HJffY1hq6
-dBToDogmi+X2RBHKVXDTyIqn0nYt9KAk4EjhmUbkQ4Kdp383yBGdJma0UykmQfznIhNQLNtw3fjv
-TKPM2FzgxpR43x4aUDz12DxdEmsP+DA+6F3iECiW0LiRAvprHE3/9c7vkdhO4hz/NIZuNoGO/HTz
-0TygMS9qSTpeB4+OR502PUp65ZrcK67SoSZ9v/WOntFeQ9zYe+L3rLyvt3/fkbOYWBKF9MgQ33mx
-qrn4cFZSusXpUk4V2p+Ks+XfJP0YIalvFf1dATRQGZYhOYh0oGZPDc+G1EMjpO7uYxKxwE34HJ6i
-zPxtr7lEF0tbvTbIfdF6pkyxK50km6SPWiKRqxn5Nts83C3aw/xAfbpcSeUNYiF5/XErJm5ZSniR
-gwzNaQHAVLgND/Ui5Sh6iM0PpIbfbXRRG4uEpRsXFDE7ArGMQDUbTv6yweN9rQUppjOTUMp49jNM
-hD3j/9H9RSWJZKGxXREFTvP9k2XW82h5450VmiWR4b/Jg386iUX+7jumgmVmf/WOKP+Q4+b8hAqF
-Znk=
-=2ezj
------END PGP SIGNATURE-----
+We could sweeten #3 by doing that not just for s390 but also for every
+configuration which has ALLOC_SPLIT_PTLOCKS today.  That would get rid
+of the ambiguity between "is ptl a pointer or a lock".
 
---------------uqxf1PmsVcgGFzKAiF8s860m--
+> But I've no desire to undo powerpc's use of pt_frag_refcount:
+> just warning that we may want to undo any use of it in s390.
+
+I would dearly love ppc & s390 to use the _same_ scheme to solve the
+same problem.
