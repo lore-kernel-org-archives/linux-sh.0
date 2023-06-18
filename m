@@ -2,108 +2,144 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EAEBEEB64D9
-	for <linux-sh@archiver.kernel.org>; Sat, 17 Jun 2023 11:09:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A94AAC0015E
+	for <linux-sh@archiver.kernel.org>; Sun, 18 Jun 2023 20:58:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234055AbjFQLJ0 convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 17 Jun 2023 07:09:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38110 "EHLO
+        id S229545AbjFRU6M (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 18 Jun 2023 16:58:12 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56836 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233026AbjFQLJZ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 17 Jun 2023 07:09:25 -0400
-Received: from mail-yb1-f170.google.com (mail-yb1-f170.google.com [209.85.219.170])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 03B9B172A;
-        Sat, 17 Jun 2023 04:09:25 -0700 (PDT)
-Received: by mail-yb1-f170.google.com with SMTP id 3f1490d57ef6-be49e41a3d6so1303230276.1;
-        Sat, 17 Jun 2023 04:09:24 -0700 (PDT)
+        with ESMTP id S229640AbjFRU6L (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 18 Jun 2023 16:58:11 -0400
+Received: from mail-qt1-x833.google.com (mail-qt1-x833.google.com [IPv6:2607:f8b0:4864:20::833])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0FB63E51
+        for <linux-sh@vger.kernel.org>; Sun, 18 Jun 2023 13:58:09 -0700 (PDT)
+Received: by mail-qt1-x833.google.com with SMTP id d75a77b69052e-3f9a81da5d7so251931cf.0
+        for <linux-sh@vger.kernel.org>; Sun, 18 Jun 2023 13:58:09 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20221208; t=1687121888; x=1689713888;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=FZtyfCTAVMiPGQWHjgwoE9XDDUe5Zitl3naYIJu5u8M=;
+        b=ZVT9TlvXekbzjsIk4FVN6w5b3V3bL2g07xM58CsOQEKlBliMaOMo4yZji4Q+4M2pTX
+         PwOyYLy6AVqkAYYG8oZQzsoJ5wXO3fYU4dvuBveWcoPn/DBqA76dOm2wErETk5RMX4DF
+         Pdjj7y7tVBfSg3bUPlVpNbbP9RKpJTFpWfMqG6NS8ogCoI9SFLLQjHjuiJCl9wmx/QMI
+         sfudbAhw5Fv3ydEbSaSvd7K7sWgk9eaIp4KEVRbqeVVI+v27ojzRWzN3DHLLYoRPb3Uw
+         6IMcAn+rqIjZUCyYlDlj0BpHHcpwknOPBIBYMxSFkst2yjNHbhKR20MPChNpYuTjpIYD
+         wwUg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1687000164; x=1689592164;
+        d=1e100.net; s=20221208; t=1687121888; x=1689713888;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=Ma2ohXdKWjjObauQDSrmhCjbdpKidVQlMZ34Z0kZwiE=;
-        b=k5I7pH9qIn0Cll61CKGkRyHSSBkUh5QTqYkz3j4ZqFtI7FEO6JRtSqjFo4fA+yVo4X
-         XFhxJ38O93rCRPrx81mVnQ6kg6HyjlOoSbrRS+Rh+GG/fiXb+N3JY6f1+wfuKdVw1MwV
-         /+zcKP36mpYvBgcZEDNKyRRbRiKlqrCIIA3G7XzXJRM/m/VzCD+AXipbBpMOUii2bfgB
-         ZOijHOKbQyWRyZKNy+E9OXfXHQAq4xN/qdu8DE9U/heH0Qw84cNaK9XbwfcSRWS9CFyE
-         EfenebNTXRgPiMuKuvNGfE2LvuQadel+1wJpTdqNVbMs/GHE4F8IRt7ptMqluYhaF5Ks
-         Ww0g==
-X-Gm-Message-State: AC+VfDxZRWckjPKXXV5SqwOt3y7iXl2qcN79z53MPPWmTLfqg5g41Zsz
-        axrI+RkZQipNAtZUo4Fy9xhXFvQxmG18zA==
-X-Google-Smtp-Source: ACHHUZ5Y/pYgk5ucg8HwGRJxY+NblBL9zjJdCXIufrkqCP3bvSEqTEgLzYTRE4oVwoxhTTOW30PCow==
-X-Received: by 2002:a25:fc10:0:b0:bb1:5628:59ee with SMTP id v16-20020a25fc10000000b00bb1562859eemr1400672ybd.28.1687000164051;
-        Sat, 17 Jun 2023 04:09:24 -0700 (PDT)
-Received: from mail-yb1-f171.google.com (mail-yb1-f171.google.com. [209.85.219.171])
-        by smtp.gmail.com with ESMTPSA id b13-20020a5b0b4d000000b00bcb4ac1fbc6sm2868049ybr.30.2023.06.17.04.09.23
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 17 Jun 2023 04:09:23 -0700 (PDT)
-Received: by mail-yb1-f171.google.com with SMTP id 3f1490d57ef6-bcad7f7dabcso1479716276.0;
-        Sat, 17 Jun 2023 04:09:23 -0700 (PDT)
-X-Received: by 2002:a25:2404:0:b0:bc7:f83f:92f4 with SMTP id
- k4-20020a252404000000b00bc7f83f92f4mr1344930ybk.39.1687000163316; Sat, 17 Jun
- 2023 04:09:23 -0700 (PDT)
+        bh=FZtyfCTAVMiPGQWHjgwoE9XDDUe5Zitl3naYIJu5u8M=;
+        b=DYCDVcSLYV1v7N+shgr9l5i+nzB5rx/K90VRN9eojaGmMU+I0E3pKppoV0OkfdOuEQ
+         p6NtprayWUc3fLSGEY8N8FwoFHRMIIwXBGiFJ5Tcwu1+TGYNZYBQtbSIJuCil2vAGnLR
+         tETd1rv0xIJ63DquQmwz7YC+5QbStLaO3dZ2eFWaac8OH1veLZtv7HSjnT5C0R9x/o+c
+         2aIml6qiK05xi8XKS/6j/GRGWaNizqVBtm3/48RQMAzl/dZdmroKg9xjwNDGZ2o2jsPm
+         GKpAgTSVyRFMbtZiqnUrry/4qu3TR+8btn7cqRc81eY2Sv6A9UterjLfgsEBkmeqmi1c
+         uhMA==
+X-Gm-Message-State: AC+VfDwU032XrMiueKDGMMoi9rN0JsdAM6pfdgy5elUXRsbDURSJkyGY
+        Llokyw38xVBb/ZOYpJiOr1BPzaUxb7VsU48Yf8oO8Q==
+X-Google-Smtp-Source: ACHHUZ6ZDWbPtAWRuLjADFFa6FEUQ3GypTx245KPaUVC0BHZGX9Wd0LOXtVKSGnZtQDaYiPHdDlVEaUz0sYg2vTadSQ=
+X-Received: by 2002:a05:622a:20a:b0:3f9:a78f:c527 with SMTP id
+ b10-20020a05622a020a00b003f9a78fc527mr291449qtx.21.1687121888063; Sun, 18 Jun
+ 2023 13:58:08 -0700 (PDT)
 MIME-Version: 1.0
-References: <20230527164452.64797-1-contact@artur-rojek.eu>
- <20230527164452.64797-4-contact@artur-rojek.eu> <CAMuHMdV3gn8g-gKam71K=WfT3CVNwvz5eKPSh2Fqi3wVg7ZwNw@mail.gmail.com>
- <f7b9ceb9739f8ae5cbee4f6073ce3af3921a2540.camel@physik.fu-berlin.de>
- <CAMuHMdVFBo+KMNQ6gzh3rZrZ+_Wfg=UJ4XOW4Uqibnjm6T7CdA@mail.gmail.com>
- <8205bc2cb9f983914ff6920deed3f54893713ba0.camel@physik.fu-berlin.de> <d5667e9675bf8be35b1a5414d443b8f371b1bd9e.camel@physik.fu-berlin.de>
-In-Reply-To: <d5667e9675bf8be35b1a5414d443b8f371b1bd9e.camel@physik.fu-berlin.de>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Sat, 17 Jun 2023 13:09:09 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdV=kc1sZfsBad99ofbUBUyuZ_fAekdkFJYp9Rhskf9xWg@mail.gmail.com>
-Message-ID: <CAMuHMdV=kc1sZfsBad99ofbUBUyuZ_fAekdkFJYp9Rhskf9xWg@mail.gmail.com>
-Subject: Re: [PATCH v2 3/3] sh: dma: Correct the number of DMA channels in SH7709
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Artur Rojek <contact@artur-rojek.eu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <a4963be9-7aa6-350-66d0-2ba843e1af44@google.com>
+ <178970b0-1539-8aac-76fd-972c6c46ec17@google.com> <20230614231758.GA1503611@dev-arch.thelio-3990X>
+ <f5526f17-9d78-f7ea-427a-7e76bfeb6b8@google.com> <344a4da-3890-45fd-607e-b5f85ca6ad48@google.com>
+ <20230615155059.GB3665766@dev-arch.thelio-3990X> <76b41825-30fa-b9e8-d043-2affcba24317@google.com>
+ <addfcb3-b5f4-976e-e050-a2508e589cfe@google.com> <ZI0uh8P/akwkGo0D@google.com>
+In-Reply-To: <ZI0uh8P/akwkGo0D@google.com>
+From:   Yu Zhao <yuzhao@google.com>
+Date:   Sun, 18 Jun 2023 14:57:31 -0600
+Message-ID: <CAOUHufbAjZd4Mxkio9OGct-TZ=L0QRG+_6Xa7atQVFN_4ez86w@mail.gmail.com>
+Subject: Re: [PATCH v2 07/23 replacement] mips: add pte_unmap() to balance pte_offset_map()
+To:     Hugh Dickins <hughd@google.com>,
+        Nathan Chancellor <nathan@kernel.org>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Mike Kravetz <mike.kravetz@oracle.com>,
+        Mike Rapoport <rppt@kernel.org>,
+        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
+        Matthew Wilcox <willy@infradead.org>,
+        David Hildenbrand <david@redhat.com>,
+        Suren Baghdasaryan <surenb@google.com>,
+        Qi Zheng <zhengqi.arch@bytedance.com>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Greg Ungerer <gerg@linux-m68k.org>,
+        Michal Simek <monstr@monstr.eu>, Helge Deller <deller@gmx.de>,
+        John David Anglin <dave.anglin@bell.net>,
+        "Aneesh Kumar K.V" <aneesh.kumar@linux.ibm.com>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Alexandre Ghiti <alexghiti@rivosinc.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
+        Heiko Carstens <hca@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        Claudio Imbrenda <imbrenda@linux.ibm.com>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "David S. Miller" <davem@davemloft.net>,
+        Chris Zankel <chris@zankel.net>,
+        Max Filippov <jcmvbkbc@gmail.com>, x86@kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-mm@kvack.org, linux-mips@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Adrian,
-
-On Sat, Jun 17, 2023 at 9:32 AM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Thu, 2023-06-08 at 12:03 +0200, John Paul Adrian Glaubitz wrote:
-> > > > > That is actually safer, as the user can override NR_ONCHIP_DMA_CHANNELS
-> > > > > when configuring his kernel, thus breaking DMA  due to an incorrect
-> > > > > value of SH_DMAC_NR_MD_CH.
-> > > > >
-> > > > > Unfortunately we cannot protect against that when using a single DMAC,
-> > > > > as SH_DMAC_NR_MD_CH can be either 4, 6, or 8.
-> > > > >
-> > > > > Perhaps this configuration should be moved from Kconfig to <cpu/dma.h>,
-> > > > > to protect against a user overriding this value?
-> > > >
-> > > > Isn't SH_DMAC_NR_MD_CH already hardwired to the SoC being used?
-> > >
-> > > It depends on CONFIG_NR_ONCHIP_DMA_CHANNELS, while it
-> > > should be fixed based on the SoC.
-> >
-> > I agree. However, I would be fine with merging this patch set first and fixing
-> > this particular issue in a follow-up series.
+On Fri, Jun 16, 2023 at 9:54=E2=80=AFPM Yu Zhao <yuzhao@google.com> wrote:
 >
-> So, my suggestion is to take this series as-is for 6.5, then get the other issues
-> you mentioned fixed for 6.6. I think it's already a gain when these issues are
-> fixed and the kernel boots on the HP Journada 680 again.
+> On Thu, Jun 15, 2023 at 04:02:43PM -0700, Hugh Dickins wrote:
+> > To keep balance in future, __update_tlb() remember to pte_unmap() after
+> > pte_offset_map().  This is an odd case, since the caller has already do=
+ne
+> > pte_offset_map_lock(), then mips forgets the address and recalculates i=
+t;
+> > but my two naive attempts to clean that up did more harm than good.
+> >
+> > Tested-by: Nathan Chancellor <nathan@kernel.org>
+> > Signed-off-by: Hugh Dickins <hughd@google.com>
+>
+> FWIW: Tested-by: Yu Zhao <yuzhao@google.com>
+>
+> There is another problem, likely caused by khugepaged, happened multiple =
+times. But I don't think it's related to your series, just FYI.
+>
+>   Got mcheck at ffffffff81134ef0
+>   CPU: 3 PID: 36 Comm: khugepaged Not tainted 6.4.0-rc6-00049-g62d8779610=
+bb-dirty #1
 
-Sure, I don't want to block the acceptance of this series at all.
-Thanks!
+...
 
-Gr{oetje,eeting}s,
+>   Kernel panic - not syncing: Caught Machine Check exception - caused by =
+multiple matching entries in the TLB.
 
-                        Geert
+In case anyone plans to try to fix this - the problem goes back to at
+least 5.15 stable. My (educated) guess is that nobody complained about
+it because all the testing is done in QEMU, which does NOT detect
+conflicting TLBs. This means the verification of the fix would need to
+be on a real piece of h/w or an updated QEMU.
 
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+In target/mips/tcg/sysemu/tlb_helper.c:
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+static void r4k_fill_tlb(CPUMIPSState *env, int idx)
+{
+    r4k_tlb_t *tlb;
+    uint64_t mask =3D env->CP0_PageMask >> (TARGET_PAGE_BITS + 1);
+
+    /* XXX: detect conflicting TLBs and raise a MCHECK exception when neede=
+d */
+...
