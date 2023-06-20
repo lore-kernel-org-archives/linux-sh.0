@@ -2,270 +2,141 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0F1A5EB64DB
-	for <linux-sh@archiver.kernel.org>; Tue, 20 Jun 2023 13:19:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A2858EB64DB
+	for <linux-sh@archiver.kernel.org>; Tue, 20 Jun 2023 14:54:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232871AbjFTNTV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 20 Jun 2023 09:19:21 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48354 "EHLO
+        id S233055AbjFTOyS (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 20 Jun 2023 10:54:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57394 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232875AbjFTNSm (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 20 Jun 2023 09:18:42 -0400
+        with ESMTP id S233033AbjFTOyL (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 20 Jun 2023 10:54:11 -0400
 Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6A6811987
-        for <linux-sh@vger.kernel.org>; Tue, 20 Jun 2023 06:17:26 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B62581710
+        for <linux-sh@vger.kernel.org>; Tue, 20 Jun 2023 07:53:27 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1687267035;
+        s=mimecast20190719; t=1687272806;
         h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
          to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=BZDW/9l2SXpk3O4K9ggpnwprp0OjaYClAxIb9iSyrKo=;
-        b=KtlnH5Co/yv+zK3HxY0DfXl/DUG53vOdVV6JGh4P1nkb3Mt2EIbRc7tsKD7KwaFSTUH8VQ
-        LOZ2O4tz2yQuICfmvaP6BSzzE2VyeqAu7twmeVtFHsiVUExIYRqV/3/Vg/OQdKIbxg7RzV
-        SYO473HVsdHLXdYrLHBk93loK1C0xbs=
+        bh=M+loKwD1RCVu8eKK2gw8N4KlZrUem/NzN5IicUf+C0A=;
+        b=B43JcHAsmCURjxj8gkiz/1nAeJDZFrhnWe4lXfoy00JEm4uGuaT7BakmzVUrDHjStD4W1U
+        5jUtpgET8LyooIHsmLal9NqhkbWkulq2kMy2LAPbS5ZWLZWzweV2ybL37oY7TEj2un73fm
+        avCZwbl7Rn/2uq79F9YoIxID+I2Dl0w=
 Received: from mimecast-mx02.redhat.com (mx3-rdu2.redhat.com
  [66.187.233.73]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- us-mta-393-oaZkYfEhNpSZi9l2-OVjAg-1; Tue, 20 Jun 2023 09:17:09 -0400
-X-MC-Unique: oaZkYfEhNpSZi9l2-OVjAg-1
-Received: from smtp.corp.redhat.com (int-mx08.intmail.prod.int.rdu2.redhat.com [10.11.54.8])
+ us-mta-57-xInM5PQYOXiUnqhucMOkTw-1; Tue, 20 Jun 2023 10:53:23 -0400
+X-MC-Unique: xInM5PQYOXiUnqhucMOkTw-1
+Received: from smtp.corp.redhat.com (int-mx07.intmail.prod.int.rdu2.redhat.com [10.11.54.7])
         (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
         (No client certificate requested)
-        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 3A9AD38470A6;
-        Tue, 20 Jun 2023 13:16:04 +0000 (UTC)
-Received: from MiWiFi-R3L-srv.redhat.com (ovpn-12-166.pek2.redhat.com [10.72.12.166])
-        by smtp.corp.redhat.com (Postfix) with ESMTP id 2E0FFC1ED97;
-        Tue, 20 Jun 2023 13:15:54 +0000 (UTC)
+        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 344871C2CFEB;
+        Tue, 20 Jun 2023 14:49:56 +0000 (UTC)
+Received: from localhost (ovpn-12-166.pek2.redhat.com [10.72.12.166])
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id B5B4014682F7;
+        Tue, 20 Jun 2023 14:49:54 +0000 (UTC)
+Date:   Tue, 20 Jun 2023 22:49:50 +0800
 From:   Baoquan He <bhe@redhat.com>
-To:     linux-kernel@vger.kernel.org
-Cc:     linux-arch@vger.kernel.org, linux-mm@kvack.org, arnd@arndb.de,
-        hch@lst.de, christophe.leroy@csgroup.eu, rppt@kernel.org,
-        willy@infradead.org, agordeev@linux.ibm.com,
-        wangkefeng.wang@huawei.com, schnelle@linux.ibm.com,
-        David.Laight@ACULAB.COM, shorne@gmail.com, deller@gmx.de,
-        nathan@kernel.org, glaubitz@physik.fu-berlin.de,
-        Baoquan He <bhe@redhat.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Subject: [PATCH v7 12/19] sh: mm: Convert to GENERIC_IOREMAP
-Date:   Tue, 20 Jun 2023 21:13:49 +0800
-Message-Id: <20230620131356.25440-13-bhe@redhat.com>
-In-Reply-To: <20230620131356.25440-1-bhe@redhat.com>
-References: <20230620131356.25440-1-bhe@redhat.com>
+To:     Eric DeVolder <eric.devolder@oracle.com>
+Cc:     linux@armlinux.org.uk, catalin.marinas@arm.com, will@kernel.org,
+        chenhuacai@kernel.org, geert@linux-m68k.org,
+        tsbogend@alpha.franken.de, James.Bottomley@hansenpartnership.com,
+        deller@gmx.de, ysato@users.sourceforge.jp, dalias@libc.org,
+        glaubitz@physik.fu-berlin.de, tglx@linutronix.de, mingo@redhat.com,
+        bp@alien8.de, dave.hansen@linux.intel.com, x86@kernel.org,
+        linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-ia64@vger.kernel.org, loongarch@lists.linux.dev,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, kernel@xen0n.name, mpe@ellerman.id.au,
+        npiggin@gmail.com, christophe.leroy@csgroup.eu,
+        paul.walmsley@sifive.com, palmer@dabbelt.com,
+        aou@eecs.berkeley.edu, hca@linux.ibm.com, gor@linux.ibm.com,
+        agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
+        svens@linux.ibm.com, hpa@zytor.com, keescook@chromium.org,
+        paulmck@kernel.org, peterz@infradead.org, frederic@kernel.org,
+        akpm@linux-foundation.org, ardb@kernel.org,
+        samitolvanen@google.com, juerg.haefliger@canonical.com,
+        arnd@arndb.de, rmk+kernel@armlinux.org.uk,
+        linus.walleij@linaro.org, sebastian.reichel@collabora.com,
+        rppt@kernel.org, kirill.shutemov@linux.intel.com,
+        anshuman.khandual@arm.com, ziy@nvidia.com, masahiroy@kernel.org,
+        ndesaulniers@google.com, mhiramat@kernel.org, ojeda@kernel.org,
+        thunder.leizhen@huawei.com, xin3.li@intel.com, tj@kernel.org,
+        gregkh@linuxfoundation.org, tsi@tuyoix.net, hbathini@linux.ibm.com,
+        sourabhjain@linux.ibm.com, boris.ostrovsky@oracle.com,
+        konrad.wilk@oracle.com
+Subject: Re: [PATCH v2 02/13] x86/kexec: refactor for kernel/Kconfig.kexec
+Message-ID: <ZJG8jtNUWXxmnfao@MiWiFi-R3L-srv>
+References: <20230619145801.1064716-1-eric.devolder@oracle.com>
+ <20230619145801.1064716-3-eric.devolder@oracle.com>
+ <ZJFhlsFN6DxnWsQE@MiWiFi-R3L-srv>
+ <ac065d02-61a4-3b1f-241d-443ede70d3f2@oracle.com>
 MIME-Version: 1.0
-Content-type: text/plain
-Content-Transfer-Encoding: 8bit
-X-Scanned-By: MIMEDefang 3.1 on 10.11.54.8
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ac065d02-61a4-3b1f-241d-443ede70d3f2@oracle.com>
+X-Scanned-By: MIMEDefang 3.1 on 10.11.54.7
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-By taking GENERIC_IOREMAP method, the generic generic_ioremap_prot(),
-generic_iounmap(), and their generic wrapper ioremap_prot(), ioremap()
-and iounmap() are all visible and available to arch. Arch needs to
-provide wrapper functions to override the generic versions if there's
-arch specific handling in its ioremap_prot(), ioremap() or iounmap().
-This change will simplify implementation by removing duplicated codes
-with generic_ioremap_prot() and generic_iounmap(), and has the equivalent
-functioality as before.
+On 06/20/23 at 07:56am, Eric DeVolder wrote:
+> 
+> 
+> On 6/20/23 03:21, Baoquan He wrote:
+> > Hi Eric,
+> > 
+> > On 06/19/23 at 10:57am, Eric DeVolder wrote:
+> > ......
+> > > +config ARCH_SUPPORTS_KEXEC
+> > > +	def_bool y
+> > > -config ARCH_HAS_KEXEC_PURGATORY
+> > > -	def_bool KEXEC_FILE
+> > > +config ARCH_SUPPORTS_KEXEC_FILE
+> > > +	def_bool X86_64 && CRYPTO && CRYPTO_SHA256
+> > ......
+> > > +config ARCH_SELECTS_KEXEC_FILE
+> > > +	def_bool y
+> > >   	depends on KEXEC_FILE
+> > > -	help
+> > 
+> > I am a little confused about this ARCH_SELECTS_XX adding. Wondering what
+> > limits us defining the ARCH_SUPPORTS_KEXEC_FILE like below? I have limited
+> > knowledge about Kconfig, please correct me if I am wrong. Thanks in
+> > advance.
+> > 
+> >   +config ARCH_SUPPORTS_KEXEC_FILE
+> >   +	def_bool y
+> >    	depends on KEXEC_FILE
+> >    	depends on X86_64 && CRYPTO && CRYPTO_SHA256
+> > 
+> 
+> For the ARCH_SUPPORTS_ options, I chose to list the dependencies on the
+> def_bool line to show that it took all those conditions to result in True.
+> However, as you point out, using a def_bool y and then listing them as 'depends on' works as well.
+> Probably would have resulted in fewer changes to the Kconfig file.
+> Either way is ok (the 'depends on KEXEC_FILE' is erroneous in your example).
 
-Here, add wrapper functions ioremap_prot() and iounmap() for SuperH's
-special operation when ioremap() and iounmap().
+Got it, thanks. To me, one option with explicit dependencies looks clearer
+and straightforward. I need check and investigage why two options are needed,
+whether two options are unavoidable. Not sure if other people would get
+the same feeling or not. Honestly, it's my first time to see the usage of
+XXX_SELECTS_XXX, it took me a while to dig into.
 
-Signed-off-by: Baoquan He <bhe@redhat.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: linux-sh@vger.kernel.org
----
- arch/sh/Kconfig          |  1 +
- arch/sh/include/asm/io.h | 40 +++++--------------------
- arch/sh/mm/ioremap.c     | 65 +++++++---------------------------------
- 3 files changed, 20 insertions(+), 86 deletions(-)
-
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 9652d367fc37..f326985e46e0 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -28,6 +28,7 @@ config SUPERH
- 	select GENERIC_SMP_IDLE_THREAD
- 	select GUP_GET_PXX_LOW_HIGH if X2TLB
- 	select HAS_IOPORT if HAS_IOPORT_MAP
-+	select GENERIC_IOREMAP if MMU
- 	select HAVE_ARCH_AUDITSYSCALL
- 	select HAVE_ARCH_KGDB
- 	select HAVE_ARCH_SECCOMP_FILTER
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 270e7952950c..b3a26b405c8d 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -266,40 +266,16 @@ unsigned long long poke_real_address_q(unsigned long long addr,
- #endif
- 
- #ifdef CONFIG_MMU
--void iounmap(void __iomem *addr);
--void __iomem *__ioremap_caller(phys_addr_t offset, unsigned long size,
--			       pgprot_t prot, void *caller);
--
--static inline void __iomem *ioremap(phys_addr_t offset, unsigned long size)
--{
--	return __ioremap_caller(offset, size, PAGE_KERNEL_NOCACHE,
--			__builtin_return_address(0));
--}
--
--static inline void __iomem *
--ioremap_cache(phys_addr_t offset, unsigned long size)
--{
--	return __ioremap_caller(offset, size, PAGE_KERNEL,
--			__builtin_return_address(0));
--}
--#define ioremap_cache ioremap_cache
--
--#ifdef CONFIG_HAVE_IOREMAP_PROT
--static inline void __iomem *ioremap_prot(phys_addr_t offset, unsigned long size,
--		unsigned long flags)
--{
--	return __ioremap_caller(offset, size, __pgprot(flags),
--			__builtin_return_address(0));
--}
--#endif /* CONFIG_HAVE_IOREMAP_PROT */
-+/*
-+ * I/O memory mapping functions.
-+ */
-+#define ioremap_prot ioremap_prot
-+#define iounmap iounmap
- 
--#else /* CONFIG_MMU */
--static inline void __iomem *ioremap(phys_addr_t offset, size_t size)
--{
--	return (void __iomem *)(unsigned long)offset;
--}
-+#define _PAGE_IOREMAP pgprot_val(PAGE_KERNEL_NOCACHE)
- 
--static inline void iounmap(volatile void __iomem *addr) { }
-+#define ioremap_cache(addr, size)  \
-+	ioremap_prot((addr), (size), pgprot_val(PAGE_KERNEL))
- #endif /* CONFIG_MMU */
- 
- #define ioremap_uc	ioremap
-diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
-index 21342581144d..c33b3daa4ad1 100644
---- a/arch/sh/mm/ioremap.c
-+++ b/arch/sh/mm/ioremap.c
-@@ -72,22 +72,11 @@ __ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
- #define __ioremap_29bit(offset, size, prot)		NULL
- #endif /* CONFIG_29BIT */
- 
--/*
-- * Remap an arbitrary physical address space into the kernel virtual
-- * address space. Needed when the kernel wants to access high addresses
-- * directly.
-- *
-- * NOTE! We need to allow non-page-aligned mappings too: we will obviously
-- * have to convert them into an offset in a page-aligned mapping, but the
-- * caller shouldn't need to know that small detail.
-- */
--void __iomem * __ref
--__ioremap_caller(phys_addr_t phys_addr, unsigned long size,
--		 pgprot_t pgprot, void *caller)
-+void __iomem *ioremap_prot(phys_addr_t phys_addr, size_t size,
-+			   unsigned long prot)
- {
--	struct vm_struct *area;
--	unsigned long offset, last_addr, addr, orig_addr;
- 	void __iomem *mapped;
-+	pgprot_t pgprot = __pgprot(prot);
- 
- 	mapped = __ioremap_trapped(phys_addr, size);
- 	if (mapped)
-@@ -97,11 +86,6 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
- 	if (mapped)
- 		return mapped;
- 
--	/* Don't allow wraparound or zero size */
--	last_addr = phys_addr + size - 1;
--	if (!size || last_addr < phys_addr)
--		return NULL;
--
- 	/*
- 	 * If we can't yet use the regular approach, go the fixmap route.
- 	 */
-@@ -112,34 +96,14 @@ __ioremap_caller(phys_addr_t phys_addr, unsigned long size,
- 	 * First try to remap through the PMB.
- 	 * PMB entries are all pre-faulted.
- 	 */
--	mapped = pmb_remap_caller(phys_addr, size, pgprot, caller);
-+	mapped = pmb_remap_caller(phys_addr, size, pgprot,
-+			__builtin_return_address(0));
- 	if (mapped && !IS_ERR(mapped))
- 		return mapped;
- 
--	/*
--	 * Mappings have to be page-aligned
--	 */
--	offset = phys_addr & ~PAGE_MASK;
--	phys_addr &= PAGE_MASK;
--	size = PAGE_ALIGN(last_addr+1) - phys_addr;
--
--	/*
--	 * Ok, go for it..
--	 */
--	area = get_vm_area_caller(size, VM_IOREMAP, caller);
--	if (!area)
--		return NULL;
--	area->phys_addr = phys_addr;
--	orig_addr = addr = (unsigned long)area->addr;
--
--	if (ioremap_page_range(addr, addr + size, phys_addr, pgprot)) {
--		vunmap((void *)orig_addr);
--		return NULL;
--	}
--
--	return (void __iomem *)(offset + (char *)orig_addr);
-+	return generic_ioremap_prot(phys_addr, size, pgprot);
- }
--EXPORT_SYMBOL(__ioremap_caller);
-+EXPORT_SYMBOL(ioremap_prot);
- 
- /*
-  * Simple checks for non-translatable mappings.
-@@ -158,10 +122,9 @@ static inline int iomapping_nontranslatable(unsigned long offset)
- 	return 0;
- }
- 
--void iounmap(void __iomem *addr)
-+void iounmap(volatile void __iomem *addr)
- {
- 	unsigned long vaddr = (unsigned long __force)addr;
--	struct vm_struct *p;
- 
- 	/*
- 	 * Nothing to do if there is no translatable mapping.
-@@ -172,21 +135,15 @@ void iounmap(void __iomem *addr)
- 	/*
- 	 * There's no VMA if it's from an early fixed mapping.
- 	 */
--	if (iounmap_fixed(addr) == 0)
-+	if (iounmap_fixed((void __iomem *)addr) == 0)
- 		return;
- 
- 	/*
- 	 * If the PMB handled it, there's nothing else to do.
- 	 */
--	if (pmb_unmap(addr) == 0)
-+	if (pmb_unmap((void __iomem *)addr) == 0)
- 		return;
- 
--	p = remove_vm_area((void *)(vaddr & PAGE_MASK));
--	if (!p) {
--		printk(KERN_ERR "%s: bad address %p\n", __func__, addr);
--		return;
--	}
--
--	kfree(p);
-+	generic_iounmap(addr);
- }
- EXPORT_SYMBOL(iounmap);
--- 
-2.34.1
+> 
+> > > -
+> > > -	  This option makes the kexec_file_load() syscall check for a valid
+> > > -	  signature of the kernel image.  The image can still be loaded without
+> > > -	  a valid signature unless you also enable KEXEC_SIG_FORCE, though if
+> > > -	  there's a signature that we can check, then it must be valid.
+> > > -
+> > > -	  In addition to this option, you need to enable signature
+> > > -	  verification for the corresponding kernel image type being
+> > > -	  loaded in order for this to work.
+> > > -
+> > 
+> 
 
