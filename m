@@ -2,96 +2,60 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id F3CFFEB64DD
-	for <linux-sh@archiver.kernel.org>; Thu, 22 Jun 2023 22:05:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 652A5EB64D7
+	for <linux-sh@archiver.kernel.org>; Fri, 23 Jun 2023 08:10:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231234AbjFVWFZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 22 Jun 2023 18:05:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46540 "EHLO
+        id S230090AbjFWIKk (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 23 Jun 2023 04:10:40 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50940 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230502AbjFVWFT (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 22 Jun 2023 18:05:19 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0220E1FCE;
-        Thu, 22 Jun 2023 15:05:18 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 88D476191D;
-        Thu, 22 Jun 2023 22:05:17 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id CB652C433C8;
-        Thu, 22 Jun 2023 22:05:14 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1687471516;
-        bh=dnifwmEwN5EPVqltpiQCF3MdFT37QyzPJA5VU9yHeeQ=;
-        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-        b=RzL6J1fXaBDz0XMnNSx8x8mXcyvopQkvOXbep39IPzJX6IZTiyxdwE2nHfhbPls3L
-         N+mS72rPbV5Hplxc5fgNpJiDPbV/HNUcjlNM0k72bojGJ4KjFY1InlFqwVw3x6nnQC
-         91+lFDGDXPX57EeoiKgvynYAipkz9J96TnpYMaik9KnCYZuHYn0BitFhgrP4G1fgbY
-         6R4Jpwcj42qDrlJ2D+uH33pP6SPXmc0IbmA4+yG9XAiy7RYgb0iOqdFeCCR7TQblLZ
-         fmEHl1XvZkPJVwZHZ1ypNXpY1N8YMHO70VuR9LvpNAy1Wj1k/paRgs0NZSlBf4+f5g
-         0uQe2Ka6aNE0g==
-Message-ID: <bf396b3f-a3f3-817e-8241-222591f88c97@kernel.org>
-Date:   Thu, 22 Jun 2023 17:05:13 -0500
+        with ESMTP id S230038AbjFWIKj (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 23 Jun 2023 04:10:39 -0400
+Received: from mail.durme.pl (mail.durme.pl [217.182.69.186])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8467B1FE7
+        for <linux-sh@vger.kernel.org>; Fri, 23 Jun 2023 01:10:36 -0700 (PDT)
+Received: by mail.durme.pl (Postfix, from userid 1002)
+        id A01FC4E22C; Fri, 23 Jun 2023 08:06:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=durme.pl; s=mail;
+        t=1687507646; bh=hFxZwVw4rIL+JwfEOGI47p+fdoVOAeqVswP6NWoHSHQ=;
+        h=Date:From:To:Subject:From;
+        b=mHoaVGQWg/VbOn3O/6Q9hHS+U482H8yaSlVNbkjalr1MhWsY0OiUo3NLe2mLv03bO
+         ACE4tXBUdbWQFm2jcx3UgB6wjHN0h2m35pt88OYHTQnTqsY4TTmBsyCShMXmhWQRuZ
+         uRx7lih2iH7zj4AbpHAMJ29LMUjwa/HKsY14pDWQlTKmQI93PC4bMCNI7vEpm10WCH
+         +pagOdG9MvbNC/4JXE2WTeWqpkNi1jIbe7w6BF9hBOodgOP9wn2+mJ1/MUioKidVyb
+         RvOASupIKh7TlyLF5k7XRPxEQOnipssT37Qizi6x4WUF6XqbwMWgE3HYL5GZujYzT6
+         zPqZ9EHG+OoUw==
+Received: by mail.durme.pl for <linux-sh@vger.kernel.org>; Fri, 23 Jun 2023 08:05:58 GMT
+Message-ID: <20230623064501-0.1.2o.d8j3.0.aierv9jnuw@durme.pl>
+Date:   Fri, 23 Jun 2023 08:05:58 GMT
+From:   "Krystian Wieczorek" <krystian.wieczorek@durme.pl>
+To:     <linux-sh@vger.kernel.org>
+Subject: W sprawie samochodu
+X-Mailer: mail.durme.pl
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.11.0
-Subject: Re: [PATCH v5 26/33] nios2: Convert __pte_free_tlb() to use ptdescs
-Content-Language: en-US
-To:     "Vishal Moola (Oracle)" <vishal.moola@gmail.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Matthew Wilcox <willy@infradead.org>
-Cc:     linux-mm@kvack.org, linux-arch@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-openrisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-um@lists.infradead.org, xen-devel@lists.xenproject.org,
-        kvm@vger.kernel.org, Hugh Dickins <hughd@google.com>,
-        Mike Rapoport <rppt@kernel.org>
-References: <20230622205745.79707-1-vishal.moola@gmail.com>
- <20230622205745.79707-27-vishal.moola@gmail.com>
-From:   Dinh Nguyen <dinguyen@kernel.org>
-In-Reply-To: <20230622205745.79707-27-vishal.moola@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+Dzie=C5=84 dobry,
+
+chcieliby=C5=9Bmy zapewni=C4=87 Pa=C5=84stwu kompleksowe rozwi=C4=85zania=
+, je=C5=9Bli chodzi o system monitoringu GPS.
+
+Precyzyjne monitorowanie pojazd=C3=B3w na mapach cyfrowych, =C5=9Bledzeni=
+e ich parametr=C3=B3w eksploatacyjnych w czasie rzeczywistym oraz kontrol=
+a paliwa to kluczowe funkcjonalno=C5=9Bci naszego systemu.=20
+
+Organizowanie pracy pracownik=C3=B3w jest dzi=C4=99ki temu prostsze i bar=
+dziej efektywne, a oszcz=C4=99dno=C5=9Bci i optymalizacja w zakresie pono=
+szonych koszt=C3=B3w, maj=C4=85 dla ka=C5=BCdego przedsi=C4=99biorcy ogro=
+mne znaczenie.
+
+Dopasujemy nasz=C4=85 ofert=C4=99 do Pa=C5=84stwa oczekiwa=C5=84 i potrze=
+b organizacji. Czy mogliby=C5=9Bmy porozmawia=C4=87 o naszej propozycji?
 
 
-On 6/22/23 15:57, Vishal Moola (Oracle) wrote:
-> Part of the conversions to replace pgtable constructor/destructors with
-> ptdesc equivalents.
-> 
-> Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
-> Acked-by: Mike Rapoport (IBM) <rppt@kernel.org>
-> ---
->   arch/nios2/include/asm/pgalloc.h | 8 ++++----
->   1 file changed, 4 insertions(+), 4 deletions(-)
-> 
-> diff --git a/arch/nios2/include/asm/pgalloc.h b/arch/nios2/include/asm/pgalloc.h
-> index ecd1657bb2ce..ce6bb8e74271 100644
-> --- a/arch/nios2/include/asm/pgalloc.h
-> +++ b/arch/nios2/include/asm/pgalloc.h
-> @@ -28,10 +28,10 @@ static inline void pmd_populate(struct mm_struct *mm, pmd_t *pmd,
->   
->   extern pgd_t *pgd_alloc(struct mm_struct *mm);
->   
-> -#define __pte_free_tlb(tlb, pte, addr)				\
-> -	do {							\
-> -		pgtable_pte_page_dtor(pte);			\
-> -		tlb_remove_page((tlb), (pte));			\
-> +#define __pte_free_tlb(tlb, pte, addr)					\
-> +	do {								\
-> +		pagetable_pte_dtor(page_ptdesc(pte));			\
-> +		tlb_remove_page_ptdesc((tlb), (page_ptdesc(pte)));	\
->   	} while (0)
->   
->   #endif /* _ASM_NIOS2_PGALLOC_H */
-
-Acked-by: Dinh Nguyen <dinguyen@kernel.org>
+Pozdrawiam
+Krystian Wieczorek
