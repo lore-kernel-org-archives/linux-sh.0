@@ -2,149 +2,127 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0CE3CC001DB
-	for <linux-sh@archiver.kernel.org>; Sat, 24 Jun 2023 14:22:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 680FBEB64DC
+	for <linux-sh@archiver.kernel.org>; Sun, 25 Jun 2023 07:57:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232835AbjFXOWV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 24 Jun 2023 10:22:21 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38508 "EHLO
+        id S230459AbjFYH5X (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 25 Jun 2023 03:57:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51628 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229584AbjFXOWU (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 24 Jun 2023 10:22:20 -0400
-Received: from new4-smtp.messagingengine.com (new4-smtp.messagingengine.com [66.111.4.230])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 979561BDB;
-        Sat, 24 Jun 2023 07:22:18 -0700 (PDT)
-Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
-        by mailnew.nyi.internal (Postfix) with ESMTP id 9D1445801DE;
-        Sat, 24 Jun 2023 10:22:17 -0400 (EDT)
-Received: from imap51 ([10.202.2.101])
-  by compute6.internal (MEProxy); Sat, 24 Jun 2023 10:22:17 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-        :cc:content-type:content-type:date:date:from:from:in-reply-to
-        :in-reply-to:message-id:mime-version:references:reply-to:sender
-        :subject:subject:to:to; s=fm1; t=1687616537; x=1687623737; bh=Ih
-        z6/bi511oP4d526TPPtM1blBZt4arV1NypQDvLup8=; b=Owr1gNHl98uY/LqghJ
-        ew6TAsiUgTWjuGMsxDEW7dPPnLV3e7dQ48EjTdP5xHC8mtn8gOYupnCSHk4hfivP
-        2548A0+ELQQlya9a+Jj0JkYOlxNPXvbMtrvZE4ZYuMEg0oeEVRQxH3fZk7dq7fcR
-        K2FnnRvxLC2ctHogIIPsu5AzKYi/b1l8LHXlg+nhxQKDQbQ2GgNgOE7o0SLx/lJl
-        ZJl/F2RHs+ZN1HfuzBUUYja0J54XdNJ5XYphhB2SZMV3SOmTcHA6JZT0U9/SAmVC
-        9c8VJBDM16nnBrphov+n9ifuK0VIrDEcUy1gZSuUHvkasNoYZlMz0wEqqeUYovQg
-        985w==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:cc:content-type:content-type:date:date
-        :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-        :message-id:mime-version:references:reply-to:sender:subject
-        :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
-        :x-sasl-enc; s=fm2; t=1687616537; x=1687623737; bh=Ihz6/bi511oP4
-        d526TPPtM1blBZt4arV1NypQDvLup8=; b=VK5TgDjVEpiEaunZZwRRAQPsTnjFp
-        zkoDEEdhdFioqudleRGZjNuek0JsRnk3YrU4OgaJsTS63QgF8QOtf7vg2z1azqmX
-        zbJgS5KJT8RVEJGWIcWXoccJV7DsEUPIM7fQrw314Non4B0AcKCTS2tiu4ftIj8G
-        sBy+JyOj8lBXvLnjyDAYLzzz21cS9Rw6GZ1k8qjXXnVcAj+7YV4car/+OJ2Hz1Vy
-        XzKWDBO3QquHdDPcc9ZnIK0trCu+0GLImpYfYIOCCwLguVtAkJf4TryNcTfPhMob
-        qjIlOfgux2mxV3SnTy++07Z7K6tSNSgFgk6q7BXZ1w+17nZskwCf6fCwA==
-X-ME-Sender: <xms:GPyWZCp4xCyzgIT7Kv57_S9Fj_YrOyXXtQi7KxbKTITt5sPxujuEgA>
-    <xme:GPyWZAoCSw5-QOKYgYL1kqq0dPmclQVYtInH9cHAwaW4i2eRqwCURn45oRtWD_RQc
-    xQUs-Q4Qr9LCBw-SYo>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvhedrgeegjedgjeehucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
-    cujfgurhepofgfggfkjghffffhvfevufgtsehttdertderredtnecuhfhrohhmpedftehr
-    nhguuceuvghrghhmrghnnhdfuceorghrnhgusegrrhhnuggsrdguvgeqnecuggftrfgrth
-    htvghrnhepffehueegteeihfegtefhjefgtdeugfegjeelheejueethfefgeeghfektdek
-    teffnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomheprg
-    hrnhgusegrrhhnuggsrdguvg
-X-ME-Proxy: <xmx:GPyWZHMyXf5Kvsllp2a13R-ZdsUa5Eyn9zm8e_TevTvdOPqjcW5nlQ>
-    <xmx:GPyWZB456YmIlexKtameEvfzxT6jb_S5LP8U4ZZ8x8ftCJgDf8Imbw>
-    <xmx:GPyWZB4KiilRGFPdEeCPRk6Xvib-UQo3Rc6SHJIcWlgnWs25oEFPvQ>
-    <xmx:GfyWZDvcJNvUjndis2HwHYCG9wl31VYvNLjRzs3Fi5XOZJ7a0ROd8w>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.nyi.internal (Postfix, from userid 501)
-        id B8029B60086; Sat, 24 Jun 2023 10:22:16 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
-User-Agent: Cyrus-JMAP/3.9.0-alpha0-499-gf27bbf33e2-fm-20230619.001-gf27bbf33
-Mime-Version: 1.0
-Message-Id: <d9ffc44c-c4ae-4f01-bc0b-ee5359a24a0a@app.fastmail.com>
-In-Reply-To: <d4156e51-102f-36b4-e42c-938268b4b608@roeck-us.net>
-References: <20230417125651.25126-18-tzimmermann@suse.de>
- <c525adc9-6623-4660-8718-e0c9311563b8@roeck-us.net>
- <55130a50-d129-4336-99ce-3be4229b1c7d@app.fastmail.com>
- <d4156e51-102f-36b4-e42c-938268b4b608@roeck-us.net>
-Date:   Sat, 24 Jun 2023 16:21:47 +0200
-From:   "Arnd Bergmann" <arnd@arndb.de>
-To:     "Guenter Roeck" <linux@roeck-us.net>,
-        "Thomas Zimmermann" <tzimmermann@suse.de>
-Cc:     "Daniel Vetter" <daniel.vetter@ffwll.ch>,
-        "Helge Deller" <deller@gmx.de>,
-        "Javier Martinez Canillas" <javierm@redhat.com>,
-        "Greg Kroah-Hartman" <gregkh@linuxfoundation.org>,
-        Linux-Arch <linux-arch@vger.kernel.org>,
-        linux-fbdev@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org,
-        x86@kernel.org, linux-kernel@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, linux-mips@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, loongarch@lists.linux.dev,
-        sparclinux@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-        linuxppc-dev@lists.ozlabs.org,
-        "David S . Miller" <davem@davemloft.net>,
-        linux-arm-kernel@lists.infradead.org
-Subject: Re: [v3,17/19] arch/sparc: Implement fb_is_primary_device() in source file
-Content-Type: text/plain
+        with ESMTP id S230154AbjFYH5W (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 25 Jun 2023 03:57:22 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D0A3BE4C;
+        Sun, 25 Jun 2023 00:57:21 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 65AAF60B51;
+        Sun, 25 Jun 2023 07:57:21 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C61C9C433CA;
+        Sun, 25 Jun 2023 07:57:20 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1687679840;
+        bh=Of8os0H9OHLVLvcjVzInbz6tEFdUkC/CX0HwtgMbj9g=;
+        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
+        b=WEthQxXgD6wppje6rKQgquLsIJx+k2kL2ImTzGMAjmcc3Ehpp5sncXSt5qdy5tkEo
+         DTlyGUoaPosA+gU0cpmpn+Lkdc4lbPurZ2JJY7Ba3J2f8ygUbsvoYlhp83X1njmtKY
+         +XSQZpxxZ2eJuztm6O4YJEa1kJHT4vmEbG5uq/qLb2W9/+cFhqcJh7cnFZVArv9o7w
+         XjtY4+UgGtM1dd4fMBDt+iHhmn9DtT1sxKFf4tzn/kTTKtwuFEjiZelrfyW5nnplvt
+         AqkrYSsQPndZJQwS+LICyyieZLwlRYS7UsEO/m971WW1FnwqlMXbG4fyPXBVHYv86H
+         Wedz6yKtXlY8Q==
+Received: by mail-oo1-f52.google.com with SMTP id 006d021491bc7-5634808e16eso37483eaf.2;
+        Sun, 25 Jun 2023 00:57:20 -0700 (PDT)
+X-Gm-Message-State: AC+VfDwhHCXYsXJ3tfh0ilc9tqcVbMMCftYyJjPuBnJ5IEq4jlNszYYt
+        +8CaK5z0SRWDpP2MetcAORzXnOCu1NDPUhpVyOE=
+X-Google-Smtp-Source: ACHHUZ4soVb+dT5Teo+ZgL0ai8BLjpT0f12KgKLOkq/Tiod18AqWE6XARZDiF1A6MPIOCfhGiIt1RC620+NUYoUxkA8=
+X-Received: by 2002:a4a:d884:0:b0:558:c5b8:9575 with SMTP id
+ b4-20020a4ad884000000b00558c5b89575mr20976482oov.1.1687679840100; Sun, 25 Jun
+ 2023 00:57:20 -0700 (PDT)
+MIME-Version: 1.0
+References: <20230219141555.2308306-1-masahiroy@kernel.org> <3c1b53fb670467b90138aaf3ef29bf235c2b4ffa.camel@physik.fu-berlin.de>
+In-Reply-To: <3c1b53fb670467b90138aaf3ef29bf235c2b4ffa.camel@physik.fu-berlin.de>
+From:   Masahiro Yamada <masahiroy@kernel.org>
+Date:   Sun, 25 Jun 2023 16:56:43 +0900
+X-Gmail-Original-Message-ID: <CAK7LNAQFc8pGD4y=pNePxWyiVRM+xHGFF_x6SkAuDcA01dB3cA@mail.gmail.com>
+Message-ID: <CAK7LNAQFc8pGD4y=pNePxWyiVRM+xHGFF_x6SkAuDcA01dB3cA@mail.gmail.com>
+Subject: Re: [PATCH 1/4] sh: fix -Wmissing-include-dirs warnings for various platforms
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Randy Dunlap <rdunlap@infradead.org>,
+        kernel test robot <lkp@intel.com>,
+        Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Sat, Jun 24, 2023, at 15:26, Guenter Roeck wrote:
-> On 6/24/23 02:27, Arnd Bergmann wrote:
->> On Sat, Jun 24, 2023, at 03:55, Guenter Roeck wrote:
->>>
->>> On Mon, Apr 17, 2023 at 02:56:49PM +0200, Thomas Zimmermann wrote:
->>>> Other architectures implment fb_is_primary_device() in a source
->>>> file. Do the same on sparc. No functional changes, but allows to
->>>> remove several include statement from <asm/fb.h>.
->>>>
->>>> v2:
->>>> 	* don't include <asm/prom.h> in header file
->>>>
->>>> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
->>>> Cc: "David S. Miller" <davem@davemloft.net>
->>>
->>> This patch results (or appears to result) in the following build error
->>> when trying to build sparc64:allmodconfig.
->>>
->>> Error log:
->>> <stdin>:1519:2: warning: #warning syscall clone3 not implemented [-Wcpp]
->>> WARNING: modpost: drivers/cpufreq/sparc-us2e-cpufreq: section mismatch
->>> in reference: cpufreq_us2e_driver+0x20 (section: .data) ->
->>> us2e_freq_cpu_init (section: .init.text)
->>> WARNING: modpost: drivers/cpufreq/sparc-us3-cpufreq: section mismatch
->>> in reference: cpufreq_us3_driver+0x20 (section: .data) ->
->>> us3_freq_cpu_init (section: .init.text)
->>> ERROR: modpost: "__xchg_called_with_bad_pointer" [lib/atomic64_test.ko]
->>> undefined!
->> 
->> These all look like old bugs that would be trivially fixed if
->> anyone cared about sparc.
->> 
+On Sun, Feb 19, 2023 at 11:40=E2=80=AFPM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
 >
-> Odd argument, given that this _is_ a sparc patch. Those may be old
-> bugs, but at least in 6.4-rc7 sparc64:allmodconfig does at least compile.
+> Hi Masahiro!
+>
+> On Sun, 2023-02-19 at 23:15 +0900, Masahiro Yamada wrote:
+> > The 0day bot reports a lot of warnings (or errors due to CONFIG_WERROR)
+> > like this:
+> >
+> >   cc1: error: arch/sh/include/mach-hp6xx: No such file or directory [-W=
+error=3Dmissing-include-dirs]
+> >
+> > Indeed, arch/sh/include/mach-hp6xx does not exist.
+> >
+> > -Wmissing-include-dirs is W=3D1 warning, but it may be annoying
+> > when CONFIG_BTRFS_FS is enabled because fs/btrfs/Makefile
+> > unconditionally adds this warning option.
+> >
+> > arch/sh/Makefile defines machdir-y for two purposes:
+> >
+> >  - Build platform code in arch/sh/boards/mach-*/
+> >  - Add arch/sh/include/mach-*/ to the header search path
+> >
+> > For the latter, some platforms use arch/sh/include/mach-common/ instead
+> > of having its own arch/sh/include/mach-*/.
+> >
+> > Drop unneeded machdir-y to not include non-existing include directory.
+> >
+> > To build arch/sh/boards/mach-*/, use the standard obj-y syntax in
+> > arch/sh/boards/Makefile.
+> >
+> > Reported-by: kernel test robot <lkp@intel.com>
+> > Link: https://lore.kernel.org/oe-kbuild-all/202302190641.30VVXnPb-lkp@i=
+ntel.com/
+> > Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
+> > ---
+>
+> Thanks for your patches! I'm still waiting for my kernel.org account to b=
+e created,
+> so I can set up my own linux-sh tree. I hope that happens next week. Ther=
+e are already
+> some patches piling up.
 
-The first three are non-fatal warnings even with CONFIG_WERROR=y, I'm
-sure they have been there for years. I don't immediately see what
-caused the __xchg_called_with_bad_pointer error, but it does not
-look related to the fbdev patch. I would guess that this is a second
-regression that happened to come in at the same time.
 
-> Sure, I can stop build testing it if that is where things are going.
+So, what has happened since then?
 
-I think we clearly want to fix the fbdev regression you found, and
-maybe bisect the atomic64_test as well to see if that was caused by
-a recent patch to get it into a working state again.
 
-Regarding whether to continue build testing: if every kernel build
-warns about a missing syscall for almost four years (clone3 was
-added in 5.3 and requires a minimal review to hook it up to asm
-code), it shows that the architecture is seriously neglected
-already.
 
-     Arnd
+
+
+
+>
+> Adrian
+>
+> --
+>  .''`.  John Paul Adrian Glaubitz
+> : :' :  Debian Developer
+> `. `'   Physicist
+>   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+
+
+
+--=20
+Best Regards
+Masahiro Yamada
