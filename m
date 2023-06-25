@@ -2,103 +2,120 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8AD8EEB64DC
-	for <linux-sh@archiver.kernel.org>; Sun, 25 Jun 2023 08:11:29 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 529B2C001DD
+	for <linux-sh@archiver.kernel.org>; Sun, 25 Jun 2023 08:51:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231236AbjFYIL2 convert rfc822-to-8bit (ORCPT
+        id S231945AbjFYIvf convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 25 Jun 2023 04:11:28 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54292 "EHLO
+        Sun, 25 Jun 2023 04:51:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36294 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230459AbjFYIL1 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 25 Jun 2023 04:11:27 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 927C2E53;
-        Sun, 25 Jun 2023 01:11:25 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qDKq8-0012ki-HS; Sun, 25 Jun 2023 10:11:20 +0200
-Received: from tmo-087-130.customers.d1-online.com ([80.187.87.130] helo=smtpclient.apple)
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_128_GCM_SHA256
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qDKq8-002gaQ-6u; Sun, 25 Jun 2023 10:11:20 +0200
-Content-Type: text/plain; charset=utf-8
+        with ESMTP id S231389AbjFYIve (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 25 Jun 2023 04:51:34 -0400
+Received: from mail-yw1-f173.google.com (mail-yw1-f173.google.com [209.85.128.173])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E3C691A1;
+        Sun, 25 Jun 2023 01:51:32 -0700 (PDT)
+Received: by mail-yw1-f173.google.com with SMTP id 00721157ae682-56fff21c2ebso23288107b3.3;
+        Sun, 25 Jun 2023 01:51:32 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1687683092; x=1690275092;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=e/Aydrd9oAz9wF8VtbGA6a+XUUai3n6kkWsRZbAgo9o=;
+        b=EToGb3kw23gL6uvmfczy9Pb030gjqgDY3WM/320p+VDjjw6fjvV7psyFaHZZTNqrlD
+         CE+KU+vw+7B6pMrX/K6HQv3sHffmg486Gq/ClfbP09wvlP/nKTdvVuv7QwsMaUoz6OZX
+         kewK35SWStj52QKRzq1KFZsrzyx6iaXoI2uNVdsS2wQfjZ3nbYTlm9w52Wqo8d1WoyHa
+         MNPa4heDCNE0nCHNItwNmb4y1hV6KQkSKdgpeIRILUe/TI7lM2CTKFMlQg28j4vJLVK7
+         KX4N4hQKNQ4OsCj9LGja6r0vmyx/4MgnTBEX6QhOHwSDdhyVEBaA/N2ZaQuFBWJR/mkX
+         1hLw==
+X-Gm-Message-State: AC+VfDxts1GSIRtpyXYjzoqXlFQhTAZ7RP5sYwbON/fuN6N2FnWnSpBa
+        VM/itUwTOZ1L4uVRMOWMvm9imvQ1SCw/tg==
+X-Google-Smtp-Source: ACHHUZ7z1PhP7sGNjjYSngHvzCnTNMSJ9xFk2xpE+56ixmWKFrYFRjyioXpkMledeFyaGAG1LXdJfQ==
+X-Received: by 2002:a0d:d98d:0:b0:56f:e7b0:1753 with SMTP id b135-20020a0dd98d000000b0056fe7b01753mr24877426ywe.17.1687683091890;
+        Sun, 25 Jun 2023 01:51:31 -0700 (PDT)
+Received: from mail-yb1-f179.google.com (mail-yb1-f179.google.com. [209.85.219.179])
+        by smtp.gmail.com with ESMTPSA id p5-20020a817405000000b005739aebb692sm725874ywc.61.2023.06.25.01.51.30
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 25 Jun 2023 01:51:31 -0700 (PDT)
+Received: by mail-yb1-f179.google.com with SMTP id 3f1490d57ef6-bd6d9d7da35so2325348276.0;
+        Sun, 25 Jun 2023 01:51:30 -0700 (PDT)
+X-Received: by 2002:a25:cc02:0:b0:c13:f86d:3324 with SMTP id
+ l2-20020a25cc02000000b00c13f86d3324mr3724376ybf.14.1687683090555; Sun, 25 Jun
+ 2023 01:51:30 -0700 (PDT)
+MIME-Version: 1.0
+References: <20230622205745.79707-1-vishal.moola@gmail.com> <20230622205745.79707-25-vishal.moola@gmail.com>
+In-Reply-To: <20230622205745.79707-25-vishal.moola@gmail.com>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Sun, 25 Jun 2023 10:51:19 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdU2ZM1oJ7=Br6nezLpxjDQo_07N3T-adOupDm0Jntp=Qg@mail.gmail.com>
+Message-ID: <CAMuHMdU2ZM1oJ7=Br6nezLpxjDQo_07N3T-adOupDm0Jntp=Qg@mail.gmail.com>
+Subject: Re: [PATCH v5 24/33] m68k: Convert various functions to use ptdescs
+To:     "Vishal Moola (Oracle)" <vishal.moola@gmail.com>
+Cc:     Andrew Morton <akpm@linux-foundation.org>,
+        Matthew Wilcox <willy@infradead.org>, linux-mm@kvack.org,
+        linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+        linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-um@lists.infradead.org,
+        xen-devel@lists.xenproject.org, kvm@vger.kernel.org,
+        Hugh Dickins <hughd@google.com>,
+        Mike Rapoport <rppt@kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Mime-Version: 1.0 (1.0)
-Subject: Re: [PATCH 1/4] sh: fix -Wmissing-include-dirs warnings for various platforms
-Date:   Sun, 25 Jun 2023 10:11:09 +0200
-Message-Id: <D124BC54-1F49-478B-997C-87A3B89A58F8@physik.fu-berlin.de>
-References: <CAK7LNAQFc8pGD4y=pNePxWyiVRM+xHGFF_x6SkAuDcA01dB3cA@mail.gmail.com>
-Cc:     linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Randy Dunlap <rdunlap@infradead.org>,
-        kernel test robot <lkp@intel.com>,
-        Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-sh@vger.kernel.org
-In-Reply-To: <CAK7LNAQFc8pGD4y=pNePxWyiVRM+xHGFF_x6SkAuDcA01dB3cA@mail.gmail.com>
-To:     Masahiro Yamada <masahiroy@kernel.org>
-X-Mailer: iPhone Mail (20F75)
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 80.187.87.130
-X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+Hi Vishal,
 
+On Thu, Jun 22, 2023 at 10:58 PM Vishal Moola (Oracle)
+<vishal.moola@gmail.com> wrote:
+> As part of the conversions to replace pgtable constructor/destructors with
+> ptdesc equivalents, convert various page table functions to use ptdescs.
+>
+> Some of the functions use the *get*page*() helper functions. Convert
+> these to use pagetable_alloc() and ptdesc_address() instead to help
+> standardize page tables further.
+>
+> Signed-off-by: Vishal Moola (Oracle) <vishal.moola@gmail.com>
 
-> On Jun 25, 2023, at 9:57 AM, Masahiro Yamada <masahiroy@kernel.org> wrote:
-> 
-> ﻿On Sun, Feb 19, 2023 at 11:40 PM John Paul Adrian Glaubitz
-> <glaubitz@physik.fu-berlin.de> wrote:
->> 
->> Hi Masahiro!
->> 
->>> On Sun, 2023-02-19 at 23:15 +0900, Masahiro Yamada wrote:
->>> The 0day bot reports a lot of warnings (or errors due to CONFIG_WERROR)
->>> like this:
->>> 
->>>  cc1: error: arch/sh/include/mach-hp6xx: No such file or directory [-Werror=missing-include-dirs]
->>> 
->>> Indeed, arch/sh/include/mach-hp6xx does not exist.
->>> 
->>> -Wmissing-include-dirs is W=1 warning, but it may be annoying
->>> when CONFIG_BTRFS_FS is enabled because fs/btrfs/Makefile
->>> unconditionally adds this warning option.
->>> 
->>> arch/sh/Makefile defines machdir-y for two purposes:
->>> 
->>> - Build platform code in arch/sh/boards/mach-*/
->>> - Add arch/sh/include/mach-*/ to the header search path
->>> 
->>> For the latter, some platforms use arch/sh/include/mach-common/ instead
->>> of having its own arch/sh/include/mach-*/.
->>> 
->>> Drop unneeded machdir-y to not include non-existing include directory.
->>> 
->>> To build arch/sh/boards/mach-*/, use the standard obj-y syntax in
->>> arch/sh/boards/Makefile.
->>> 
->>> Reported-by: kernel test robot <lkp@intel.com>
->>> Link: https://lore.kernel.org/oe-kbuild-all/202302190641.30VVXnPb-lkp@intel.com/
->>> Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
->>> ---
->> 
->> Thanks for your patches! I'm still waiting for my kernel.org account to be created,
->> so I can set up my own linux-sh tree. I hope that happens next week. There are already
->> some patches piling up.
-> 
-> 
-> So, what has happened since then?
+Thanks for your patch!
 
-Sorry, these somehow went off my radar.
+> --- a/arch/m68k/include/asm/mcf_pgalloc.h
+> +++ b/arch/m68k/include/asm/mcf_pgalloc.h
 
-I’ll have a look later today.
+>  static inline pgd_t *pgd_alloc(struct mm_struct *mm)
+>  {
+>         pgd_t *new_pgd;
+> +       struct ptdesc *ptdesc = pagetable_alloc((GFP_DMA | GFP_NOWARN) &
 
-Adrian
+0-day already told you for v3 that GFP_NOWARN does not exist.
+Please try cross-compiling your changes:
+https://mirrors.edge.kernel.org/pub/tools/crosstool/
+
+> +                       ~__GFP_HIGHMEM, 0);
+>
+> -       new_pgd = (pgd_t *)__get_free_page(GFP_DMA | __GFP_NOWARN);
+> -       if (!new_pgd)
+> +       if (!ptdesc)
+>                 return NULL;
+> +       new_pgd = ptdesc_address(ptdesc);
+> +
+>         memcpy(new_pgd, swapper_pg_dir, PTRS_PER_PGD * sizeof(pgd_t));
+>         memset(new_pgd, 0, PAGE_OFFSET >> PGDIR_SHIFT);
+>         return new_pgd;
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
