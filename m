@@ -2,205 +2,57 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B33DDEB64DC
-	for <linux-sh@archiver.kernel.org>; Wed, 28 Jun 2023 08:25:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 236D7EB64DA
+	for <linux-sh@archiver.kernel.org>; Wed, 28 Jun 2023 09:38:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232724AbjF1IZU (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 28 Jun 2023 04:25:20 -0400
-Received: from esa.microchip.iphmx.com ([68.232.153.233]:24222 "EHLO
-        esa.microchip.iphmx.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231911AbjF1IV2 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 28 Jun 2023 04:21:28 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=microchip.com; i=@microchip.com; q=dns/txt; s=mchp;
-  t=1687940488; x=1719476488;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=UMkXk+bPbzGfZkrBHrsW/8MysrRy74gOjizdruOTAJs=;
-  b=ws+yuToO/QR5a9BxSMvZrJpj/+Ahn2JZotQ33ZP56QH75SWadrTw3wXb
-   BX1fZyRswX1bZYoNSa5a2t5JoojzTzgsvYPFcWXGUZKIpcRb+IhvBxSNv
-   qrwfocm11hAGXKNs8c8oGeGzKHjbNwGDAVQEdMHbq0uPAKCzFY42WHg6h
-   BbPIUC3+5Inqtge+ZBDq9e1xWcZ9EXR947c9zgO+eVJfWgYjUbqQbehGL
-   9DaKyhdRjwz9VjOXnGA4fvGKaufyCJ18SwjUyVXqc96IVwl0uwCzReg3q
-   noPZ0YbIxOi7A6Ptlra0h2l0CVsH0/oTIYciZOXHIAA1zgK8GwNjqX+/X
-   Q==;
-X-IronPort-AV: E=Sophos;i="6.01,165,1684825200"; 
-   d="asc'?scan'208";a="220938489"
-X-Amp-Result: UNKNOWN
-X-Amp-Original-Verdict: FILE UNKNOWN
-Received: from unknown (HELO email.microchip.com) ([170.129.1.10])
-  by esa5.microchip.iphmx.com with ESMTP/TLS/AES256-SHA256; 28 Jun 2023 01:21:26 -0700
-Received: from chn-vm-ex03.mchp-main.com (10.10.85.151) by
- chn-vm-ex04.mchp-main.com (10.10.85.152) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2507.21; Wed, 28 Jun 2023 01:21:15 -0700
-Received: from wendy (10.10.115.15) by chn-vm-ex03.mchp-main.com
- (10.10.85.151) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id 15.1.2507.21 via Frontend
- Transport; Wed, 28 Jun 2023 01:21:04 -0700
-Date:   Wed, 28 Jun 2023 09:20:36 +0100
-From:   Conor Dooley <conor.dooley@microchip.com>
-To:     Eric DeVolder <eric.devolder@oracle.com>
-CC:     <linux@armlinux.org.uk>, <catalin.marinas@arm.com>,
-        <will@kernel.org>, <chenhuacai@kernel.org>, <geert@linux-m68k.org>,
-        <tsbogend@alpha.franken.de>,
-        <James.Bottomley@hansenpartnership.com>, <deller@gmx.de>,
-        <ysato@users.sourceforge.jp>, <dalias@libc.org>,
-        <glaubitz@physik.fu-berlin.de>, <tglx@linutronix.de>,
-        <mingo@redhat.com>, <bp@alien8.de>, <dave.hansen@linux.intel.com>,
-        <x86@kernel.org>, <linux-kernel@vger.kernel.org>,
-        <linux-arm-kernel@lists.infradead.org>,
-        <linux-ia64@vger.kernel.org>, <loongarch@lists.linux.dev>,
-        <linux-m68k@lists.linux-m68k.org>, <linux-mips@vger.kernel.org>,
-        <linux-parisc@vger.kernel.org>, <linuxppc-dev@lists.ozlabs.org>,
-        <linux-riscv@lists.infradead.org>, <linux-s390@vger.kernel.org>,
-        <linux-sh@vger.kernel.org>, <kernel@xen0n.name>,
-        <mpe@ellerman.id.au>, <npiggin@gmail.com>,
-        <christophe.leroy@csgroup.eu>, <paul.walmsley@sifive.com>,
-        <palmer@dabbelt.com>, <aou@eecs.berkeley.edu>, <hca@linux.ibm.com>,
-        <gor@linux.ibm.com>, <agordeev@linux.ibm.com>,
-        <borntraeger@linux.ibm.com>, <svens@linux.ibm.com>,
-        <hpa@zytor.com>, <keescook@chromium.org>, <paulmck@kernel.org>,
-        <peterz@infradead.org>, <frederic@kernel.org>,
-        <akpm@linux-foundation.org>, <ardb@kernel.org>,
-        <samitolvanen@google.com>, <juerg.haefliger@canonical.com>,
-        <arnd@arndb.de>, <rmk+kernel@armlinux.org.uk>,
-        <linus.walleij@linaro.org>, <sebastian.reichel@collabora.com>,
-        <rppt@kernel.org>, <kirill.shutemov@linux.intel.com>,
-        <anshuman.khandual@arm.com>, <ziy@nvidia.com>,
-        <masahiroy@kernel.org>, <ndesaulniers@google.com>,
-        <mhiramat@kernel.org>, <ojeda@kernel.org>,
-        <thunder.leizhen@huawei.com>, <xin3.li@intel.com>, <tj@kernel.org>,
-        <gregkh@linuxfoundation.org>, <tsi@tuyoix.net>, <bhe@redhat.com>,
-        <hbathini@linux.ibm.com>, <sourabhjain@linux.ibm.com>,
-        <boris.ostrovsky@oracle.com>, <konrad.wilk@oracle.com>
-Subject: Re: [PATCH v3 11/13] riscv/kexec: refactor for kernel/Kconfig.kexec
-Message-ID: <20230628-urologist-faction-42ebe5372206@wendy>
-References: <20230626161332.183214-1-eric.devolder@oracle.com>
- <20230626161332.183214-12-eric.devolder@oracle.com>
+        id S231461AbjF1JiL (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 28 Jun 2023 05:38:11 -0400
+Received: from mail.durme.pl ([217.182.69.186]:37640 "EHLO mail.durme.pl"
+        rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+        id S233453AbjF1IJM (ORCPT <rfc822;linux-sh@vger.kernel.org>);
+        Wed, 28 Jun 2023 04:09:12 -0400
+Received: by mail.durme.pl (Postfix, from userid 1002)
+        id AA22F4D517; Wed, 28 Jun 2023 08:06:16 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=durme.pl; s=mail;
+        t=1687939615; bh=hFxZwVw4rIL+JwfEOGI47p+fdoVOAeqVswP6NWoHSHQ=;
+        h=Date:From:To:Subject:From;
+        b=Wqxdj29URCfXuptw59fN3sbhqAN3hPyCat0/froQTTBjN7KVxS8Zj5IRU1m3sssS7
+         ZT5I5+yCrL5k296dU93d6EUfg7m2gbfUd7kDbbCAEAXCWZ7ZP27vhPdwWbZZkNjv3k
+         2nIJGmaRcKkeZtp2G+mXv102Ju2TyBd0t4d+oX+US+ebbCTwEQfYlx+S2QiubvbLPc
+         ermDdX5f/FwVwrGpsvtPmf+BiaMcdDgcV2xUDYpFk2Qo21PwHw7+4speV6s389okJ+
+         9DwIAOYtfbgBus/6C7ECej8p0PaQ/whdQ54OBouq6DhfvthwLKC489aFqpje9Yol/4
+         Kxqj7XlSCUv+A==
+Received: by mail.durme.pl for <linux-sh@vger.kernel.org>; Wed, 28 Jun 2023 08:05:50 GMT
+Message-ID: <20230628064500-0.1.2r.d8j3.0.ips367d0ob@durme.pl>
+Date:   Wed, 28 Jun 2023 08:05:50 GMT
+From:   "Krystian Wieczorek" <krystian.wieczorek@durme.pl>
+To:     <linux-sh@vger.kernel.org>
+Subject: W sprawie samochodu
+X-Mailer: mail.durme.pl
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
-        protocol="application/pgp-signature"; boundary="dNpbxT7522GzDtJd"
-Content-Disposition: inline
-In-Reply-To: <20230626161332.183214-12-eric.devolder@oracle.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
---dNpbxT7522GzDtJd
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Dzie=C5=84 dobry,
 
-Hey Eric,
+chcieliby=C5=9Bmy zapewni=C4=87 Pa=C5=84stwu kompleksowe rozwi=C4=85zania=
+, je=C5=9Bli chodzi o system monitoringu GPS.
 
-On Mon, Jun 26, 2023 at 12:13:30PM -0400, Eric DeVolder wrote:
-> The kexec and crash kernel options are provided in the common
-> kernel/Kconfig.kexec. Utilize the common options and provide
-> the ARCH_SUPPORTS_ and ARCH_SELECTS_ entries to recreate the
+Precyzyjne monitorowanie pojazd=C3=B3w na mapach cyfrowych, =C5=9Bledzeni=
+e ich parametr=C3=B3w eksploatacyjnych w czasie rzeczywistym oraz kontrol=
+a paliwa to kluczowe funkcjonalno=C5=9Bci naszego systemu.=20
 
-> equivalent set of KEXEC and CRASH options.
+Organizowanie pracy pracownik=C3=B3w jest dzi=C4=99ki temu prostsze i bar=
+dziej efektywne, a oszcz=C4=99dno=C5=9Bci i optymalizacja w zakresie pono=
+szonych koszt=C3=B3w, maj=C4=85 dla ka=C5=BCdego przedsi=C4=99biorcy ogro=
+mne znaczenie.
 
-I find this diff a little hard to follow (since the other half off the
-change is in another patch), so it may be me missing something, but are
-you sure?
+Dopasujemy nasz=C4=85 ofert=C4=99 do Pa=C5=84stwa oczekiwa=C5=84 i potrze=
+b organizacji. Czy mogliby=C5=9Bmy porozmawia=C4=87 o naszej propozycji?
 
->=20
-> Signed-off-by: Eric DeVolder <eric.devolder@oracle.com>
-> ---
->  arch/riscv/Kconfig | 48 ++++++++++++++--------------------------------
->  1 file changed, 14 insertions(+), 34 deletions(-)
->=20
-> diff --git a/arch/riscv/Kconfig b/arch/riscv/Kconfig
-> index 5966ad97c30c..c484abd9bbfd 100644
-> --- a/arch/riscv/Kconfig
-> +++ b/arch/riscv/Kconfig
-> @@ -585,48 +585,28 @@ config RISCV_BOOT_SPINWAIT
-> =20
->  	  If unsure what to do here, say N.
-> =20
-> -config KEXEC
-> -	bool "Kexec system call"
-> -	depends on MMU
-> +config ARCH_SUPPORTS_KEXEC
-> +	def_bool MMU
-> +
-> +config ARCH_SELECTS_KEXEC
-> +	def_bool y
-> +	depends on KEXEC
->  	select HOTPLUG_CPU if SMP
-> -	select KEXEC_CORE
-> -	help
-> -	  kexec is a system call that implements the ability to shutdown your
-> -	  current kernel, and to start another kernel. It is like a reboot
-> -	  but it is independent of the system firmware. And like a reboot
-> -	  you can start any kernel with it, not just Linux.
-> =20
-> -	  The name comes from the similarity to the exec system call.
-> +config ARCH_SUPPORTS_KEXEC_FILE
-> +	def_bool 64BIT && MMU && CRYPTO=3Dy && CRYPTO_SHA256=3Dy
 
-This looks like a change to me. Previously, only KEXEC_PURGATORY
-required these crypto options to be like so, but now KEXEC_FILE needs
-them too.
-
-What am I missing?
-
-Cheers,
-Conor.
-
-> =20
-> -config KEXEC_FILE
-> -	bool "kexec file based systmem call"
-> -	depends on 64BIT && MMU
-> -	select HAVE_IMA_KEXEC if IMA
-> -	select KEXEC_CORE
-> +config ARCH_SELECTS_KEXEC_FILE
-> +	def_bool y
-> +	depends on KEXEC_FILE
->  	select KEXEC_ELF
-> -	help
-> -	  This is new version of kexec system call. This system call is
-> -	  file based and takes file descriptors as system call argument
-> -	  for kernel and initramfs as opposed to list of segments as
-> -	  accepted by previous system call.
-> -
-> -	  If you don't know what to do here, say Y.
-> +	select HAVE_IMA_KEXEC if IMA
-> =20
->  config ARCH_HAS_KEXEC_PURGATORY
->  	def_bool KEXEC_FILE
-> -	depends on CRYPTO=3Dy
-> -	depends on CRYPTO_SHA256=3Dy
-> =20
-> -config CRASH_DUMP
-> -	bool "Build kdump crash kernel"
-> -	help
-> -	  Generate crash dump after being started by kexec. This should
-> -	  be normally only set in special crash dump kernels which are
-> -	  loaded in the main kernel with kexec-tools into a specially
-> -	  reserved region and then later executed after a crash by
-> -	  kdump/kexec.
-> -
-> -	  For more details see Documentation/admin-guide/kdump/kdump.rst
-> +config ARCH_SUPPORTS_CRASH_DUMP
-> +	def_bool y
-> =20
->  config COMPAT
->  	bool "Kernel support for 32-bit U-mode"
-> --=20
-> 2.31.1
->
-
---dNpbxT7522GzDtJd
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYIAB0WIQRh246EGq/8RLhDjO14tDGHoIJi0gUCZJvtVAAKCRB4tDGHoIJi
-0nmiAQDOO3BHXlme661CQ5d0WA+9UNnblFm/cWV3USIeSzvJAQD9Ev9vbdYVY6Uu
-ypalgd3Ta51Btqo6Gv+Pn5Xaf3a3lg4=
-=9sLY
------END PGP SIGNATURE-----
-
---dNpbxT7522GzDtJd--
+Pozdrawiam
+Krystian Wieczorek
