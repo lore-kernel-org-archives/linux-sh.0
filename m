@@ -2,94 +2,60 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 15093EB64D9
-	for <linux-sh@archiver.kernel.org>; Sun,  2 Jul 2023 22:33:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4259CEB64DC
+	for <linux-sh@archiver.kernel.org>; Mon,  3 Jul 2023 07:43:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229671AbjGBWdB (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 2 Jul 2023 18:33:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54896 "EHLO
+        id S229809AbjGCHnZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 3 Jul 2023 03:43:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38620 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229437AbjGBWdA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 2 Jul 2023 18:33:00 -0400
-Received: from perceval.ideasonboard.com (perceval.ideasonboard.com [213.167.242.64])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C5E08E49;
-        Sun,  2 Jul 2023 15:32:59 -0700 (PDT)
-Received: from ideasonboard.com (85-160-45-219.reb.o2.cz [85.160.45.219])
-        by perceval.ideasonboard.com (Postfix) with ESMTPSA id 5B7A36DE;
-        Mon,  3 Jul 2023 00:32:15 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=ideasonboard.com;
-        s=mail; t=1688337135;
-        bh=5sny6CY4ssurgOhg9dEm+wJ9LPpiuE4sHpxZ2EjTn8Y=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=PiOCpW9o3ljZWU3eadw0kKEZ6zf5KRhnMDZdLpUJLvRJQ8XdPp68XDDeQSd1hY9tW
-         SGwEx/alQa7/E1TVw5ylOb9UA6/dtIgf+gq6WWh3OCUqOlijbRXXfIDcVTbIXXbsEW
-         E1NfxjNE7dTA2gH5aildxC8tiPQZbXuPHF22LSIQ=
-Date:   Mon, 3 Jul 2023 00:32:54 +0200
-From:   Jacopo Mondi <jacopo.mondi@ideasonboard.com>
-To:     Petr =?utf-8?B?VGVzYcWZw61r?= <petr@tesarici.cz>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "open list:SUPERH" <linux-sh@vger.kernel.org>,
-        open list <linux-kernel@vger.kernel.org>
-Subject: Re: arch/superh: Suspicious coherent DMA allocations for CEU video
- buffers
-Message-ID: <6hbvbciyyx7wcuwzhgaczqearmu2mu3h2u447mljbp24emtjaz@ciel5ezmehfq>
-References: <20230629151124.34e72817@meshulam.tesarici.cz>
+        with ESMTP id S229597AbjGCHnZ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 3 Jul 2023 03:43:25 -0400
+Received: from mail.durme.pl (mail.durme.pl [217.182.69.186])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EBC8CC1
+        for <linux-sh@vger.kernel.org>; Mon,  3 Jul 2023 00:43:20 -0700 (PDT)
+Received: by mail.durme.pl (Postfix, from userid 1002)
+        id E09DE48EDF; Mon,  3 Jul 2023 07:41:51 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=durme.pl; s=mail;
+        t=1688370175; bh=hFxZwVw4rIL+JwfEOGI47p+fdoVOAeqVswP6NWoHSHQ=;
+        h=Date:From:To:Subject:From;
+        b=QSXB4lQ4QqT5veygvG4jneM3THIUC3N85Io3PWr4avc/ugojK9hbBfVF6B3hEOWXX
+         60qp6iNvgMJmzAIV5pRTQJ64nPqnIvc+NRzNxAIIBInRHDhUsHcsLjyChRLJjdTjbo
+         7xdluxmxhVdppS6nQcUrJjQpglVMyhbchE4WxsvW3Bp2t57zKHAaKdqSAft04PSEMN
+         bqpec+Z18WfCaN66ulXfWK9lB4KJ+s/rlE6rJm3aeWoyKqhBmXBQqbY+G0wGoj5aCV
+         sjy/S+A5XjOPUWUvXAD6upnhnBK9ASxLS+cyM9rCsGoNbWI1f+04hQmk5aM3IvQz+S
+         hmC/shJwO+ETg==
+Received: by mail.durme.pl for <linux-sh@vger.kernel.org>; Mon,  3 Jul 2023 07:41:21 GMT
+Message-ID: <20230703064501-0.1.2u.d8j3.0.ec427vgg1r@durme.pl>
+Date:   Mon,  3 Jul 2023 07:41:21 GMT
+From:   "Krystian Wieczorek" <krystian.wieczorek@durme.pl>
+To:     <linux-sh@vger.kernel.org>
+Subject: W sprawie samochodu
+X-Mailer: mail.durme.pl
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <20230629151124.34e72817@meshulam.tesarici.cz>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Petr,
+Dzie=C5=84 dobry,
 
-On Thu, Jun 29, 2023 at 03:11:24PM +0200, Petr Tesařík wrote:
-> Hi Jacopo,
->
-> I've just noticed a few calls to dma_declare_coherent_memory() which
-> look suspicious to me, all authored by you:
->
-> - arch/sh/boards/mach-ap325rxa/setup.c
-> - arch/sh/boards/mach-ecovec24/setup.c
-> - arch/sh/boards/mach-kfr2r09/setup.c
-> - arch/sh/boards/mach-migor/setup.c
-> - arch/sh/boards/mach-se/7724/setup.c
->
-> In these files, the last argument to dma_declare_coherent_memory()
-> looks like the last address to be used, but the expected value should
-> be the size of the reserved region, e.g.:
->
-> 	dma_declare_coherent_memory(&ap325rxa_ceu_device.dev,
-> 			ceu_dma_membase, ceu_dma_membase,
-> 			ceu_dma_membase + CEU_BUFFER_MEMORY_SIZE - 1);
->
-> Do you (or anyone else on Cc) agree that this is a braino, and all these
-> boards should actually use CEU_BUFFER_MEMORY_SIZE as the size of their
-> DMA pools rather than membase + CEU_BUFFER_MEMORY_SIZE - 1?
->
+chcieliby=C5=9Bmy zapewni=C4=87 Pa=C5=84stwu kompleksowe rozwi=C4=85zania=
+, je=C5=9Bli chodzi o system monitoringu GPS.
 
-Thanks for spotting this.. I tried to track down where this comes from
-digging out the CEU and the platform file from 4.16, but it seems this
-simply is a brain fart from my side.
+Precyzyjne monitorowanie pojazd=C3=B3w na mapach cyfrowych, =C5=9Bledzeni=
+e ich parametr=C3=B3w eksploatacyjnych w czasie rzeczywistym oraz kontrol=
+a paliwa to kluczowe funkcjonalno=C5=9Bci naszego systemu.=20
 
-I presume this is very much dead code, as the commit message of
-39fb993038e1 ("media: arch: sh: ap325rxa: Use new renesas-ceu camera
-driver") says: "Compile tested only." and nobody has ever reported
-bugs.
+Organizowanie pracy pracownik=C3=B3w jest dzi=C4=99ki temu prostsze i bar=
+dziej efektywne, a oszcz=C4=99dno=C5=9Bci i optymalizacja w zakresie pono=
+szonych koszt=C3=B3w, maj=C4=85 dla ka=C5=BCdego przedsi=C4=99biorcy ogro=
+mne znaczenie.
 
-Feel free to send patches and cc me, as long as this code is around
-it's nice to have it correct at least.
-
-Thank you!
-   j
-
-PS: if you ask me, as nobody clearly run this code in the last 5
-years, I would simply drop all these platform files. But that's
-maintainers' call.
+Dopasujemy nasz=C4=85 ofert=C4=99 do Pa=C5=84stwa oczekiwa=C5=84 i potrze=
+b organizacji. Czy mogliby=C5=9Bmy porozmawia=C4=87 o naszej propozycji?
 
 
-> Petr T
+Pozdrawiam
+Krystian Wieczorek
