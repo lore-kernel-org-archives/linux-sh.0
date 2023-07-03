@@ -2,188 +2,114 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BC4F5EB64DC
-	for <linux-sh@archiver.kernel.org>; Mon,  3 Jul 2023 07:55:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84A7DEB64DC
+	for <linux-sh@archiver.kernel.org>; Mon,  3 Jul 2023 13:23:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229926AbjGCHzE convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 3 Jul 2023 03:55:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43980 "EHLO
+        id S230098AbjGCNXu (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 3 Jul 2023 09:23:50 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47550 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230205AbjGCHzB (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 3 Jul 2023 03:55:01 -0400
-Received: from mail-yw1-f180.google.com (mail-yw1-f180.google.com [209.85.128.180])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B5269BA;
-        Mon,  3 Jul 2023 00:54:59 -0700 (PDT)
-Received: by mail-yw1-f180.google.com with SMTP id 00721157ae682-579dfae6855so22582167b3.1;
-        Mon, 03 Jul 2023 00:54:59 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1688370899; x=1690962899;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=ap+98X7lUU4Mb/R2w4KrLGdPkASGfI2gOWe+xareG/w=;
-        b=gV20QlEGzskXm07NAqjW665ZOYqxSGlkKqWzqoJMbhnIEuBkLxl4oSnIw+4dMp/6Qu
-         rTBskUaVp+NpWb1A2bQDMcw75It6Eze/JvCCstzZHZja06hmfb50w1hES/NOjA7v7dan
-         j7Duf2YvIsW6Pk8YvaKXdM2KKPxORSPfJuOEeQOagyL0bAenCS2mejFCokjJP/pzSc7c
-         Zq+1+yvVojwqbfa83kSVQXXZDAQpRnjQivEcltHnSlHuuWE/kWFqTdswimQT//evGouf
-         OvnNrUQYo//zINW7PYrkA1/fRkmHGfnYqN6PqtMmTIRP0DHWMxMC6lcI9iM1F5rOVIo8
-         yGZw==
-X-Gm-Message-State: ABy/qLZ8JxjsjLPy8UYTLdPS/PjqNX0RSExMIU5yyOlrz4WgP70p8TFd
-        LM2iWpojrFiGfOw7jAWMPsQ8GBURmdfLDg==
-X-Google-Smtp-Source: APBJJlHb87eLaE470shsNSC1acSVhnfK0tWhT1v3ISD1tEI3oo1td+vo0uIBY60+HpW5q2cS4a+/aQ==
-X-Received: by 2002:a0d:f005:0:b0:573:4d8b:471f with SMTP id z5-20020a0df005000000b005734d8b471fmr8421371ywe.26.1688370898728;
-        Mon, 03 Jul 2023 00:54:58 -0700 (PDT)
-Received: from mail-yb1-f177.google.com (mail-yb1-f177.google.com. [209.85.219.177])
-        by smtp.gmail.com with ESMTPSA id l189-20020a0dfbc6000000b0055a931afe48sm4942907ywf.8.2023.07.03.00.54.58
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 03 Jul 2023 00:54:58 -0700 (PDT)
-Received: by mail-yb1-f177.google.com with SMTP id 3f1490d57ef6-c4d1b491095so1850181276.0;
-        Mon, 03 Jul 2023 00:54:58 -0700 (PDT)
-X-Received: by 2002:a25:a287:0:b0:c1a:2928:74ab with SMTP id
- c7-20020a25a287000000b00c1a292874abmr8554017ybi.31.1688370898299; Mon, 03 Jul
- 2023 00:54:58 -0700 (PDT)
-MIME-Version: 1.0
-References: <20230327121317.4081816-1-arnd@kernel.org> <20230327121317.4081816-21-arnd@kernel.org>
-In-Reply-To: <20230327121317.4081816-21-arnd@kernel.org>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 3 Jul 2023 09:54:46 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdW5bXeE=nr7+hHxL+xhm2q05udkJpMBM-BG7g9S7Nt7Zg@mail.gmail.com>
-Message-ID: <CAMuHMdW5bXeE=nr7+hHxL+xhm2q05udkJpMBM-BG7g9S7Nt7Zg@mail.gmail.com>
-Subject: Re: [PATCH 20/21] ARM: dma-mapping: split out arch_dma_mark_clean() helper
-To:     Arnd Bergmann <arnd@kernel.org>
-Cc:     linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>,
-        Vineet Gupta <vgupta@kernel.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Neil Armstrong <neil.armstrong@linaro.org>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
-        Brian Cain <bcain@quicinc.com>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Stafford Horne <shorne@gmail.com>,
-        Helge Deller <deller@gmx.de>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Paul Walmsley <paul.walmsley@sifive.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
+        with ESMTP id S229861AbjGCNXt (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 3 Jul 2023 09:23:49 -0400
+Received: from bee.tesarici.cz (bee.tesarici.cz [IPv6:2a03:3b40:fe:2d4::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 96F70E6C;
+        Mon,  3 Jul 2023 06:23:42 -0700 (PDT)
+Received: from meshulam.tesarici.cz (dynamic-2a00-1028-83b8-1e7a-4427-cc85-6706-c595.ipv6.o2.cz [IPv6:2a00:1028:83b8:1e7a:4427:cc85:6706:c595])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange ECDHE (P-256) server-signature RSA-PSS (2048 bits) server-digest SHA256)
+        (No client certificate requested)
+        by bee.tesarici.cz (Postfix) with ESMTPSA id 7BEB3ACFEE;
+        Mon,  3 Jul 2023 15:23:39 +0200 (CEST)
+Authentication-Results: mail.tesarici.cz; dmarc=fail (p=none dis=none) header.from=tesarici.cz
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=tesarici.cz; s=mail;
+        t=1688390619; bh=CcakWLV2/CnUPYuB5QwvAIuhCgWmDptbC9yZXabw76o=;
+        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+        b=tk7eVobtoFgFKeR+n58SGbPeSIh81DkvxJNdLR0b0vnvGZ/L1WcU0di3AcQtPDS60
+         sZmQHro9woNZpitfi5qUpYWhOOL5X9myAiFLccIvA/8ZI8LC0tDs3RkxmfuYH865ku
+         2DOTudWgdX/x1eqpCZSz8HqSQuUnWgsMETZhXIeOTFXa0FS8A0Cm22fpwWsg6HZI3c
+         64dqlSoxzQLp5GvPbVRCtbd9ao+4pki1zA5L3pKl7asEX6vw6groIy4Q3MRa+Hp10y
+         C5YdrzbcZmR2vErfa6Y3LH3rRms0cwq+sOMwtS02FmiK6JzseAHtV0YvBftR/msYaB
+         qQOnN2QDp24Ug==
+Date:   Mon, 3 Jul 2023 15:23:36 +0200
+From:   Petr =?UTF-8?B?VGVzYcWZw61r?= <petr@tesarici.cz>
+To:     Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "David S. Miller" <davem@davemloft.net>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Christoph Hellwig <hch@lst.de>,
-        Robin Murphy <robin.murphy@arm.com>,
-        Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>,
-        Conor Dooley <conor.dooley@microchip.com>,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org, linux-oxnas@groups.io,
-        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-xtensa@linux-xtensa.org,
-        Emil Renner Berthing <emil.renner.berthing@canonical.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+        "open list:SUPERH" <linux-sh@vger.kernel.org>,
+        open list <linux-kernel@vger.kernel.org>
+Subject: Re: arch/superh: Suspicious coherent DMA allocations for CEU video
+ buffers
+Message-ID: <20230703152336.43c5d129@meshulam.tesarici.cz>
+In-Reply-To: <6hbvbciyyx7wcuwzhgaczqearmu2mu3h2u447mljbp24emtjaz@ciel5ezmehfq>
+References: <20230629151124.34e72817@meshulam.tesarici.cz>
+        <6hbvbciyyx7wcuwzhgaczqearmu2mu3h2u447mljbp24emtjaz@ciel5ezmehfq>
+X-Mailer: Claws Mail 4.1.1 (GTK 3.24.38; x86_64-suse-linux-gnu)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Arnd,
+Hi Jacopo,
 
-On Mon, Mar 27, 2023 at 2:16 PM Arnd Bergmann <arnd@kernel.org> wrote:
-> From: Arnd Bergmann <arnd@arndb.de>
->
-> The arm version of the arch_sync_dma_for_cpu() function annotates pages as
-> PG_dcache_clean after a DMA, but no other architecture does this here. On
-> ia64, the same thing is done in arch_sync_dma_for_cpu(), so it makes sense
-> to use the same hook in order to have identical arch_sync_dma_for_cpu()
-> semantics as all other architectures.
->
-> Splitting this out has multiple effects:
->
->  - for dma-direct, this now gets called after arch_sync_dma_for_cpu()
->    for DMA_FROM_DEVICE mappings, but not for DMA_BIDIRECTIONAL. While
->    it would not be harmful to keep doing it for bidirectional mappings,
->    those are apparently not used in any callers that care about the flag.
->
->  - Since arm has its own dma-iommu abstraction, this now also needs to
->    call the same function, so the calls are added there to mirror the
->    dma-direct version.
->
->  - Like dma-direct, the dma-iommu version now marks the dcache clean
->    for both coherent and noncoherent devices after a DMA, but it only
->    does this for DMA_FROM_DEVICE, not DMA_BIDIRECTIONAL.
->
-> [ HELP NEEDED: can anyone confirm that it is a correct assumption
->   on arm that a cache-coherent device writing to a page always results
->   in it being in a PG_dcache_clean state like on ia64, or can a device
->   write directly into the dcache?]
->
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+On Mon, 3 Jul 2023 00:32:54 +0200
+Jacopo Mondi <jacopo.mondi@ideasonboard.com> wrote:
 
-Thanks for your patch, which is now commit 322dbe898f82fd8a
-("ARM: dma-mapping: split out arch_dma_mark_clean() helper") in
-esmil/jh7100-dmapool.
+> Hi Petr,
+>=20
+> On Thu, Jun 29, 2023 at 03:11:24PM +0200, Petr Tesa=C5=99=C3=ADk wrote:
+> > Hi Jacopo,
+> >
+> > I've just noticed a few calls to dma_declare_coherent_memory() which
+> > look suspicious to me, all authored by you:
+> >
+> > - arch/sh/boards/mach-ap325rxa/setup.c
+> > - arch/sh/boards/mach-ecovec24/setup.c
+> > - arch/sh/boards/mach-kfr2r09/setup.c
+> > - arch/sh/boards/mach-migor/setup.c
+> > - arch/sh/boards/mach-se/7724/setup.c
+> >
+> > In these files, the last argument to dma_declare_coherent_memory()
+> > looks like the last address to be used, but the expected value should
+> > be the size of the reserved region, e.g.:
+> >
+> > 	dma_declare_coherent_memory(&ap325rxa_ceu_device.dev,
+> > 			ceu_dma_membase, ceu_dma_membase,
+> > 			ceu_dma_membase + CEU_BUFFER_MEMORY_SIZE - 1);
+> >
+> > Do you (or anyone else on Cc) agree that this is a braino, and all these
+> > boards should actually use CEU_BUFFER_MEMORY_SIZE as the size of their
+> > DMA pools rather than membase + CEU_BUFFER_MEMORY_SIZE - 1?
+> > =20
+>=20
+> Thanks for spotting this.. I tried to track down where this comes from
+> digging out the CEU and the platform file from 4.16, but it seems this
+> simply is a brain fart from my side.
+>=20
+> I presume this is very much dead code, as the commit message of
+> 39fb993038e1 ("media: arch: sh: ap325rxa: Use new renesas-ceu camera
+> driver") says: "Compile tested only." and nobody has ever reported
+> bugs.
+>=20
+> Feel free to send patches and cc me, as long as this code is around
+> it's nice to have it correct at least.
 
-If CONFIG_ARM_DMA_USE_IOMMU=y, the build fails.
+Thank you for confirmation. I'll do that.
 
-> --- a/arch/arm/mm/dma-mapping.c
-> +++ b/arch/arm/mm/dma-mapping.c
+> Thank you!
+>    j
+>=20
+> PS: if you ask me, as nobody clearly run this code in the last 5
+> years, I would simply drop all these platform files. But that's
+> maintainers' call.
 
-> @@ -1294,6 +1298,17 @@ static int arm_iommu_map_sg(struct device *dev, struct scatterlist *sg,
->         return -EINVAL;
->  }
->
-> +static void arm_iommu_sync_dma_for_cpu(phys_addr_t phys, size_t len,
-> +                                      enum dma_data_direction dir,
-> +                                      bool dma_coherent)
-> +{
-> +       if (!dma_coherent)
-> +               arch_sync_dma_for_cpu(phys, s->length, dir);
+Since the beginning of the coherent region is declared correctly, it is
+possible that it just happens to work, merely unreliably, frustrating
+users with occasional freezes/crashes which may not be easily linked
+with the CEU camera.
 
-s/s->length/len/
+OTOH it is much more likely that this code is simply dead.
 
-> +
-> +       if (dir == DMA_FROM_DEVICE)
-> +               arch_dma_mark_clean(phys, s->length);
-
-Likewise.
-
-> +}
-> +
->  /**
->   * arm_iommu_unmap_sg - unmap a set of SG buffers mapped by dma_map_sg
->   * @dev: valid struct device pointer
-
-> @@ -1425,9 +1438,9 @@ static void arm_iommu_unmap_page(struct device *dev, dma_addr_t handle,
->         if (!iova)
->                 return;
->
-> -       if (!dev->dma_coherent && !(attrs & DMA_ATTR_SKIP_CPU_SYNC)) {
-> +       if (!(attrs & DMA_ATTR_SKIP_CPU_SYNC))
-
-Missing opening curly brace.
-
->                 phys = iommu_iova_to_phys(mapping->domain, handle);
-> -               arch_sync_dma_for_cpu(phys, size, dir);
-> +               arm_iommu_sync_dma_for_cpu(phys, size, dir, dev->dma_coherent);
->         }
->
->         iommu_unmap(mapping->domain, iova, len);
-
-With the above fixed, it builds and boots fine (on R-Car M2-W).
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Petr T
