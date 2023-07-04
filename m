@@ -2,133 +2,108 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E1279EB64DA
-	for <linux-sh@archiver.kernel.org>; Tue,  4 Jul 2023 07:55:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EE347C001B1
+	for <linux-sh@archiver.kernel.org>; Tue,  4 Jul 2023 16:24:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231418AbjGDHzZ convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 4 Jul 2023 03:55:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35136 "EHLO
+        id S231579AbjGDQYg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 4 Jul 2023 12:24:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36390 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230137AbjGDHzO (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 4 Jul 2023 03:55:14 -0400
-Received: from mail-yw1-f174.google.com (mail-yw1-f174.google.com [209.85.128.174])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5C03FE5F;
-        Tue,  4 Jul 2023 00:54:54 -0700 (PDT)
-Received: by mail-yw1-f174.google.com with SMTP id 00721157ae682-5703cb4bcb4so57043837b3.3;
-        Tue, 04 Jul 2023 00:54:54 -0700 (PDT)
+        with ESMTP id S231570AbjGDQYg (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 4 Jul 2023 12:24:36 -0400
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 980E910F6
+        for <linux-sh@vger.kernel.org>; Tue,  4 Jul 2023 09:23:45 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1688487824;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=2FITFWtbRXE3gky2EO4aMziTa3J/r1+wMO4yc2vs7Pc=;
+        b=Yaj0XoGTnPY3jldtaJrBd3h0EFLc5QY5r2f1GcQiDU5Bwt+QkhnRA5Y3ClkBsx59aWT2Mc
+        O1BXRKMpVO9+Wb82xQFvJuf17h84NyATS9f4N1wgCJHvmtmtX5bmQkya0n1s8pMiouL+Iu
+        fyHZ1/QKZQcqnRr3IdPIPspTAWH3/GI=
+Received: from mail-wm1-f71.google.com (mail-wm1-f71.google.com
+ [209.85.128.71]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-252-haRNjml5MJqq3L90IW-kQA-1; Tue, 04 Jul 2023 12:23:43 -0400
+X-MC-Unique: haRNjml5MJqq3L90IW-kQA-1
+Received: by mail-wm1-f71.google.com with SMTP id 5b1f17b1804b1-3fa8f8fb7b3so63631255e9.2
+        for <linux-sh@vger.kernel.org>; Tue, 04 Jul 2023 09:23:43 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1688457293; x=1691049293;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=/6PEM/UjggbPB3U50bizdGKT5TbutaMqAFH7NawLuWM=;
-        b=Q5s+lXJC7zbciN7St2jNyqE0XrGzGHUz/wSaIH6EJNTdbQdOvmnmHmVYEKksSPhpw0
-         796ZiBTrLVWAI2JJ3Q5X/UUpzzNXb/9dpFrp8Dfuwpd0/RWy5Mq+Jvh8pefuInKZYM2S
-         r7zpbUM6Oimd8WW4GI8fjEIhWDOZ6PG0DoZhYr3Mp7UIEHn7ohr6Pwz04kaXmi3HFcgv
-         Z3BTwbF/ES4lXFsYZMh+ekLGI2YW0hFmmcSM9S2SV/oIxweW4J7mM+NY45uw9l2VOEp5
-         9SiZgg3DiLDxU0W+fCwb6HuDj2BICjp2qt2ZRUqYvo9dL/epPYyB72T7eVQ/gqu1w/If
-         mW7Q==
-X-Gm-Message-State: ABy/qLaXd4vDD55Kt96/BmchUvdSdOQlm7ii4y+fxHLxB/A+XMY1jTxL
-        3Rgz9mEssN2irgmpqmBTLrV2RGm9l64Jcg==
-X-Google-Smtp-Source: APBJJlEu13jT5IYHerh5y8OXCZpB2G3am/20CXCveghqdOovEE5US5UR2FYwjoPSgmqtz+ZFKhWF+g==
-X-Received: by 2002:a81:7d84:0:b0:577:60ba:440a with SMTP id y126-20020a817d84000000b0057760ba440amr10934249ywc.50.1688457293442;
-        Tue, 04 Jul 2023 00:54:53 -0700 (PDT)
-Received: from mail-yb1-f171.google.com (mail-yb1-f171.google.com. [209.85.219.171])
-        by smtp.gmail.com with ESMTPSA id p190-20020a0de6c7000000b00577335ea38csm2749020ywe.121.2023.07.04.00.54.52
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 04 Jul 2023 00:54:53 -0700 (PDT)
-Received: by mail-yb1-f171.google.com with SMTP id 3f1490d57ef6-c4dd264359cso2179908276.3;
-        Tue, 04 Jul 2023 00:54:52 -0700 (PDT)
-X-Received: by 2002:a25:df97:0:b0:bff:aaf9:b7a2 with SMTP id
- w145-20020a25df97000000b00bffaaf9b7a2mr13423578ybg.39.1688457292794; Tue, 04
- Jul 2023 00:54:52 -0700 (PDT)
+        d=1e100.net; s=20221208; t=1688487822; x=1691079822;
+        h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
+         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=2FITFWtbRXE3gky2EO4aMziTa3J/r1+wMO4yc2vs7Pc=;
+        b=ltfuuT5ei01GqIWmnokhzCPfEjVkUHUM5DFFokInohftB2Fca3zqUnlxVnR8pby0EV
+         TTK9D97CNAmRMRuPIvdLY/zH5F6zGbEtSmQdT/6s3mH8G5Bs+WcwrBg1Ncxdph27aEWf
+         /iYoaihK/2hOSPTDr//NqWPn04QuIo3GzUUvqgBK8gI7DjP6pw3/dQpg3KoKALIb2dlm
+         +U0A+X4KqRpAwCdKuMJrDXWoizvqqsTmDBbUx9Cgm8yY3kWZUjFemWANrYvBXA0xxQSZ
+         +J0IyBKdlADi1vCHfaxusNrrHBN5/ng+ZNosbXQTd6Hh3qdR0vR0++rul8/5PcOeMaK+
+         eG1Q==
+X-Gm-Message-State: AC+VfDy5V5BSYftNXP/j3LpQMIpJM7YnRw1HcVKkH4s1QDiA6stn3yHy
+        UJn0beuWpA5LrqORif9JFpsBIkLA0LBkei6NgGJLSlvPvpaJV5e6a3dzzJDDI4Y49myAjuxtMti
+        i0RxasctEVM9+RmFUO3U=
+X-Received: by 2002:a05:600c:2145:b0:3fb:415f:a85b with SMTP id v5-20020a05600c214500b003fb415fa85bmr18158804wml.3.1688487822320;
+        Tue, 04 Jul 2023 09:23:42 -0700 (PDT)
+X-Google-Smtp-Source: ACHHUZ7T04nL74CM9kmUBFWNxbGLn7ruUc6nb3zVFQfaw7cBAYtqvH64gACvFSpImO/HrduwXThnBg==
+X-Received: by 2002:a05:600c:2145:b0:3fb:415f:a85b with SMTP id v5-20020a05600c214500b003fb415fa85bmr18158793wml.3.1688487821958;
+        Tue, 04 Jul 2023 09:23:41 -0700 (PDT)
+Received: from localhost (205.pool92-176-231.dynamic.orange.es. [92.176.231.205])
+        by smtp.gmail.com with ESMTPSA id m21-20020a7bcb95000000b003faabd8fcb8sm24447459wmi.46.2023.07.04.09.23.41
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 04 Jul 2023 09:23:41 -0700 (PDT)
+From:   Javier Martinez Canillas <javierm@redhat.com>
+To:     Thomas Zimmermann <tzimmermann@suse.de>, arnd@arndb.de,
+        deller@gmx.de, daniel@ffwll.ch, airlied@gmail.com
+Cc:     linux-hyperv@vger.kernel.org, linux-efi@vger.kernel.org,
+        linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        linux-mips@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-riscv@lists.infradead.org, Will Deacon <will@kernel.org>,
+        Ard Biesheuvel <ardb@kernel.org>, linux-arch@vger.kernel.org,
+        linux-hexagon@vger.kernel.org, linux-staging@lists.linux.dev,
+        Russell King <linux@armlinux.org.uk>,
+        linux-csky@vger.kernel.org, loongarch@lists.linux.dev,
+        linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
+        Thomas Zimmermann <tzimmermann@suse.de>,
+        linux-alpha@vger.kernel.org, linuxppc-dev@lists.ozlabs.org
+Subject: Re: [PATCH 01/12] efi: Do not include <linux/screen_info.h> from
+ EFI header
+In-Reply-To: <20230629121952.10559-2-tzimmermann@suse.de>
+References: <20230629121952.10559-1-tzimmermann@suse.de>
+ <20230629121952.10559-2-tzimmermann@suse.de>
+Date:   Tue, 04 Jul 2023 18:23:40 +0200
+Message-ID: <87ilazlk6r.fsf@minerva.mail-host-address-is-not-set>
 MIME-Version: 1.0
-References: <20230527164452.64797-1-contact@artur-rojek.eu>
- <20230527164452.64797-4-contact@artur-rojek.eu> <CAMuHMdV3gn8g-gKam71K=WfT3CVNwvz5eKPSh2Fqi3wVg7ZwNw@mail.gmail.com>
- <f7b9ceb9739f8ae5cbee4f6073ce3af3921a2540.camel@physik.fu-berlin.de>
- <CAMuHMdVFBo+KMNQ6gzh3rZrZ+_Wfg=UJ4XOW4Uqibnjm6T7CdA@mail.gmail.com>
- <8205bc2cb9f983914ff6920deed3f54893713ba0.camel@physik.fu-berlin.de>
- <d5667e9675bf8be35b1a5414d443b8f371b1bd9e.camel@physik.fu-berlin.de>
- <CAMuHMdV=kc1sZfsBad99ofbUBUyuZ_fAekdkFJYp9Rhskf9xWg@mail.gmail.com>
- <485e9274ebf29da4075b40c2888f95a6cdc6d4ed.camel@physik.fu-berlin.de>
- <CAMuHMdUtgUu36uMOS0ij=1_oFKeqj2kwb_4DkhxAsrZQisMpew@mail.gmail.com> <1af44c63f3fdffb3bb5d0cf718cc470ef8459c33.camel@physik.fu-berlin.de>
-In-Reply-To: <1af44c63f3fdffb3bb5d0cf718cc470ef8459c33.camel@physik.fu-berlin.de>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Tue, 4 Jul 2023 09:54:41 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdW-zK9=FVN+hoqUfpbzwe6Un5k0PDgqV3ZdHveNZxDdyw@mail.gmail.com>
-Message-ID: <CAMuHMdW-zK9=FVN+hoqUfpbzwe6Un5k0PDgqV3ZdHveNZxDdyw@mail.gmail.com>
-Subject: Re: [PATCH v2 3/3] sh: dma: Correct the number of DMA channels in SH7709
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Artur Rojek <contact@artur-rojek.eu>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+X-Mimecast-Spam-Score: 0
+X-Mimecast-Originator: redhat.com
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Adrian.
+Thomas Zimmermann <tzimmermann@suse.de> writes:
 
-On Tue, Jul 4, 2023 at 9:43 AM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Tue, 2023-07-04 at 09:32 +0200, Geert Uytterhoeven wrote:
-> > On Tue, Jul 4, 2023 at 7:45 AM John Paul Adrian Glaubitz
-> > <glaubitz@physik.fu-berlin.de> wrote:
-> > > On Sat, 2023-06-17 at 13:09 +0200, Geert Uytterhoeven wrote:
-> > > > On Sat, Jun 17, 2023 at 9:32 AM John Paul Adrian Glaubitz
-> > > > <glaubitz@physik.fu-berlin.de> wrote:
-> > > > > On Thu, 2023-06-08 at 12:03 +0200, John Paul Adrian Glaubitz wrote:
-> > > > > > > > > That is actually safer, as the user can override NR_ONCHIP_DMA_CHANNELS
-> > > > > > > > > when configuring his kernel, thus breaking DMA  due to an incorrect
-> > > > > > > > > value of SH_DMAC_NR_MD_CH.
-> > > > > > > > >
-> > > > > > > > > Unfortunately we cannot protect against that when using a single DMAC,
-> > > > > > > > > as SH_DMAC_NR_MD_CH can be either 4, 6, or 8.
-> > > > > > > > >
-> > > > > > > > > Perhaps this configuration should be moved from Kconfig to <cpu/dma.h>,
-> > > > > > > > > to protect against a user overriding this value?
-> > > > > > > >
-> > > > > > > > Isn't SH_DMAC_NR_MD_CH already hardwired to the SoC being used?
-> > > > > > >
-> > > > > > > It depends on CONFIG_NR_ONCHIP_DMA_CHANNELS, while it
-> > > > > > > should be fixed based on the SoC.
-> > > > > >
-> > > > > > I agree. However, I would be fine with merging this patch set first and fixing
-> > > > > > this particular issue in a follow-up series.
-> > > > >
-> > > > > So, my suggestion is to take this series as-is for 6.5, then get the other issues
-> > > > > you mentioned fixed for 6.6. I think it's already a gain when these issues are
-> > > > > fixed and the kernel boots on the HP Journada 680 again.
-> > > >
-> > > > Sure, I don't want to block the acceptance of this series at all.
-> > > > Thanks!
-> > >
-> > > Apologies for the late reply. Would you mind adding your Reviewed-by to this patch
-> > > before I review and apply the series?
-> >
-> > With "must be a multiply of two" and "Must be an even number" removed.
-> > Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> The header file <linux/efi.h> does not need anything from
+> <linux/screen_info.h>. Declare struct screen_info and remove
+> the include statements. Update a number of source files that
+> require struct screen_info's definition.
 >
-> Thanks. I guess, I will drop the whole
->
->         "and clarify that NR_ONCHIP_DMA_CHANNELS must be a multiply of two"
->
-> then. Correct?
+> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+> Cc: Ard Biesheuvel <ardb@kernel.org>
+> Cc: Russell King <linux@armlinux.org.uk>
+> Cc: Catalin Marinas <catalin.marinas@arm.com>
+> Cc: Will Deacon <will@kernel.org>
+> ---
 
-Correct. Also in the help text.
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+Best regards,
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Javier Martinez Canillas
+Core Platforms
+Red Hat
+
