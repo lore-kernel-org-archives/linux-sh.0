@@ -2,123 +2,103 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 142CAEB64DA
-	for <linux-sh@archiver.kernel.org>; Tue,  4 Jul 2023 16:29:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3C1AEEB64DD
+	for <linux-sh@archiver.kernel.org>; Tue,  4 Jul 2023 19:01:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231779AbjGDQ3E (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 4 Jul 2023 12:29:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39074 "EHLO
+        id S230326AbjGDTBw (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 4 Jul 2023 15:01:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35810 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231582AbjGDQ2w (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 4 Jul 2023 12:28:52 -0400
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0632A173E
-        for <linux-sh@vger.kernel.org>; Tue,  4 Jul 2023 09:27:47 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1688488067;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=gHdgPj1Wm2IgY2fHBO70NHanGv82Rz5Bml4kSaFfUEk=;
-        b=jCwEbiV78yYy+2kz0mYUu/xOOcW+HRcoh9pUaVZwoqlbjPJvwYbCxtM6W+gIlxzoWzWLS4
-        ps5qQSQ5akNYq/4k0kjIe16br+5UpnRkhVPLhy5CYcq4IwE52oXCwHsMOm82YH0YBy3RRG
-        Plv0smLrvJIEcqFXxNmcA/XrMEG9LjQ=
-Received: from mail-wm1-f69.google.com (mail-wm1-f69.google.com
- [209.85.128.69]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-589-lc3qkbEIPjWKB11Lo-4MOA-1; Tue, 04 Jul 2023 12:27:46 -0400
-X-MC-Unique: lc3qkbEIPjWKB11Lo-4MOA-1
-Received: by mail-wm1-f69.google.com with SMTP id 5b1f17b1804b1-3fb40ec952bso36428395e9.0
-        for <linux-sh@vger.kernel.org>; Tue, 04 Jul 2023 09:27:45 -0700 (PDT)
+        with ESMTP id S229645AbjGDTBv (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 4 Jul 2023 15:01:51 -0400
+Received: from mail-pj1-x102f.google.com (mail-pj1-x102f.google.com [IPv6:2607:f8b0:4864:20::102f])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EEE0819B;
+        Tue,  4 Jul 2023 12:01:48 -0700 (PDT)
+Received: by mail-pj1-x102f.google.com with SMTP id 98e67ed59e1d1-263036d54b9so4173067a91.0;
+        Tue, 04 Jul 2023 12:01:48 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1688497308; x=1691089308;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:sender:from:to:cc:subject:date:message-id:reply-to;
+        bh=eiQcnG0xBxPngdSjyCA9YtXcq9HfBPPqojDVTf5BQ4Y=;
+        b=r/Pq4xAxhdGXMZwuvWgEYRPutk/RsJuJaH2ewYmEYt3MkEPuAyAFS/r5OE/fFWYKI/
+         CIZ7R/oKLrZ9z3onjn7HY8BN66YLwd07TOhmU64zGEJpyz3ItuzS+vlhsnl3HtxAFn/1
+         gKkgk/UcYs+bQgU/HVsBaGfVGbpn/RhiCzQ5wsIPrUave1Th4LlQboWA5EX5PBxi5u3N
+         EKI72a4If7vaVd4dICTpSaFIQ3odbWQa+2DPa7Qa200fIPxBq5WSxS1GtmA3i9ZFFYtP
+         VIyIZpptNhpZmMNsqPa1YBbvzkopH9uxwFZZVRGNZ6v8LWGg4RbA/5WsUVWqzVjBScBq
+         FHXg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1688488065; x=1691080065;
-        h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=gHdgPj1Wm2IgY2fHBO70NHanGv82Rz5Bml4kSaFfUEk=;
-        b=Te36/DwshB0+JQwlHrUq4vmvzCGNg3AwYczsG1gLJZZIVrj9fHRm6y2BRl8EnGU1t3
-         Md/NC5xhST8HzMihPytpJ+JJc3dOpIP2vUjz0BRU5GPAxS6YJ611+ibZnjZmlKksQzzw
-         EtvEBVWqmcS8Wjl2t/tXpqykk+tGPGCZtiDsbRJ05JKUJXYfZGXY6FOGKxNAJlE6AiPc
-         uqCrGSMpyfsX3HCvadaDuFQSTwLaRDEreMPHs144hF3ecJV8Ps8+1IFIvtOlzgvOF5i2
-         9dAc4DsjUsftKQ8Ysi+75cLeJzdyFANLIAI+RrKymUVq/JITGEVUJQm1stpfWtryoo79
-         5ujQ==
-X-Gm-Message-State: AC+VfDx2Ym6X6R7lSALsFcZxuBslNZX63L/0TL5guLKVZ4lt+Ymg4A0d
-        XCmWrxeyF11fF4y0Zw1a4MyBQa5J4WlK0EcRYUdS4U9au3D4l/U0YOmLM6qTlelFmF6TDf0UdOu
-        h4EaT6F/nxVjHwm4vCHE=
-X-Received: by 2002:a05:600c:2181:b0:3fa:96ae:fd78 with SMTP id e1-20020a05600c218100b003fa96aefd78mr12439024wme.29.1688488065020;
-        Tue, 04 Jul 2023 09:27:45 -0700 (PDT)
-X-Google-Smtp-Source: ACHHUZ76jB5JrX6TXp/j+SpnZTGNMceWk0U9GUm8msLFZPg0J8xzTJ2Ph/XYxtIjAMzvUbO/YmFVwQ==
-X-Received: by 2002:a05:600c:2181:b0:3fa:96ae:fd78 with SMTP id e1-20020a05600c218100b003fa96aefd78mr12439000wme.29.1688488064598;
-        Tue, 04 Jul 2023 09:27:44 -0700 (PDT)
-Received: from localhost (205.pool92-176-231.dynamic.orange.es. [92.176.231.205])
-        by smtp.gmail.com with ESMTPSA id s24-20020a7bc398000000b003fb9ebb6b88sm22214385wmj.39.2023.07.04.09.27.44
+        d=1e100.net; s=20221208; t=1688497308; x=1691089308;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:sender:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=eiQcnG0xBxPngdSjyCA9YtXcq9HfBPPqojDVTf5BQ4Y=;
+        b=HGF+CmWhPLi2l6FFLbwdaH2K3Xk9p3La+p9LTksiiOpLd9i8dMoAF/CtBF5263lQbN
+         KNFSwXgv1x4ZYaY9L6h9/0fRMX+MOmkOL4Y7DbelCb4zNiDGAsIc6bMP/FQ+KSfw7zFX
+         3HBbiyqpfHCe+TmCuSqTlZi1FMUG+uKmz4WGS+sfJ4PuGwPqkpYZkT9d/r5sy1zC99MM
+         EgcBgvhFF8PcIZZXSHyI3Ho7L7ItTFGq1tEF+prZZA5wVGz4g3/6gfjo0/80wI7HfDaB
+         7cvePVb/hoXwDSlgfcWyIR0yHEAs5/t3+XBdmkejLNyjUlCdTy9SBq7zgY5JrGVzrA2X
+         o/CA==
+X-Gm-Message-State: ABy/qLZ80jCKCMUovR0nOnuDb+rsreMOzGuKk4bwwNPYVgglgKiuup/v
+        m1l+h1rLA8GNMK6+I7vSnnEh3Yfhi4U=
+X-Google-Smtp-Source: APBJJlGkB/q064LFOm0pow+xA/tO0GOb9ShtyQYmWjadpmklFJTR/D5UOzYUAwf8gusRfkrDBdWupQ==
+X-Received: by 2002:a17:90a:1954:b0:262:e3aa:fd73 with SMTP id 20-20020a17090a195400b00262e3aafd73mr15737820pjh.17.1688497308295;
+        Tue, 04 Jul 2023 12:01:48 -0700 (PDT)
+Received: from server.roeck-us.net ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
+        by smtp.gmail.com with ESMTPSA id 6-20020a17090a018600b0025bd4db25f0sm18544108pjc.53.2023.07.04.12.01.47
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 04 Jul 2023 09:27:44 -0700 (PDT)
-From:   Javier Martinez Canillas <javierm@redhat.com>
-To:     Thomas Zimmermann <tzimmermann@suse.de>, arnd@arndb.de,
-        deller@gmx.de, daniel@ffwll.ch, airlied@gmail.com
-Cc:     linux-hyperv@vger.kernel.org, linux-efi@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-sh@vger.kernel.org,
-        Peter Zijlstra <peterz@infradead.org>,
-        linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
-        linux-mips@vger.kernel.org, Rich Felker <dalias@libc.org>,
-        sparclinux@vger.kernel.org, linux-riscv@lists.infradead.org,
-        linux-arch@vger.kernel.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-hexagon@vger.kernel.org, linux-staging@lists.linux.dev,
-        linux-csky@vger.kernel.org,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Zi Yan <ziy@nvidia.com>,
-        Anshuman Khandual <anshuman.khandual@arm.com>,
-        Niklas Schnelle <schnelle@linux.ibm.com>,
-        loongarch@lists.linux.dev,
+        Tue, 04 Jul 2023 12:01:47 -0700 (PDT)
+Sender: Guenter Roeck <groeck7@gmail.com>
+From:   Guenter Roeck <linux@roeck-us.net>
+To:     Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc:     Rich Felker <dalias@libc.org>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-arm-kernel@lists.infradead.org,
-        Arnd Bergmann <arnd@kernel.org>, linux-kernel@vger.kernel.org,
-        "Mike Rapoport (IBM)" <rppt@kernel.org>,
-        Thomas Zimmermann <tzimmermann@suse.de>,
-        linux-alpha@vger.kernel.org,
-        Andrew Morton <akpm@linux-foundation.org>,
-        linuxppc-dev@lists.ozlabs.org,
-        "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
-Subject: Re: [PATCH 05/12] arch: Remove trailing whitespaces
-In-Reply-To: <20230629121952.10559-6-tzimmermann@suse.de>
-References: <20230629121952.10559-1-tzimmermann@suse.de>
- <20230629121952.10559-6-tzimmermann@suse.de>
-Date:   Tue, 04 Jul 2023 18:27:43 +0200
-Message-ID: <877crflk00.fsf@minerva.mail-host-address-is-not-set>
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Guenter Roeck <linux@roeck-us.net>,
+        Arnd Bergmann <arnd@arndb.de>
+Subject: [PATCH] sh: provide unxlate_dev_mem_ptr() in asm/io.h
+Date:   Tue,  4 Jul 2023 12:01:44 -0700
+Message-Id: <20230704190144.2888679-1-linux@roeck-us.net>
+X-Mailer: git-send-email 2.39.2
 MIME-Version: 1.0
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: redhat.com
-Content-Type: text/plain
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Thomas Zimmermann <tzimmermann@suse.de> writes:
+The unxlate_dev_mem_ptr() function has no prototype on the sh architecture,
+which does not include asm-generic/io.h. This results in the following
+build failure.
 
-> Fix coding style. No functional changes.
->
-> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Cc: Andrew Morton <akpm@linux-foundation.org>
-> Cc: Geert Uytterhoeven <geert@linux-m68k.org>
-> Cc: Arnd Bergmann <arnd@kernel.org>
-> Cc: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
-> Cc: Anshuman Khandual <anshuman.khandual@arm.com>
-> Cc: Niklas Schnelle <schnelle@linux.ibm.com>
-> Cc: Zi Yan <ziy@nvidia.com>
-> Cc: "Mike Rapoport (IBM)" <rppt@kernel.org>
-> Cc: Peter Zijlstra <peterz@infradead.org>
-> ---
+drivers/char/mem.c: In function 'read_mem':
+drivers/char/mem.c:164:25: error: implicit declaration of function 'unxlate_dev_mem_ptr'
 
-Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+This compile error is now seen because commit 99b619b37ae1 ("mips: provide
+unxlate_dev_mem_ptr() in asm/io.h") removed the weak function which was
+previously in place to handle the problem.
 
+Add a trivial macro to the sh header to provide the now missing dummy
+function.
+
+Fixes: 99b619b37ae1 ("mips: provide unxlate_dev_mem_ptr() in asm/io.h")
+Cc: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+---
+ arch/sh/include/asm/io.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index fba90e670ed4..d8f3537ef57f 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -286,6 +286,7 @@ static inline void iounmap(volatile void __iomem *addr) { }
+  * access
+  */
+ #define xlate_dev_mem_ptr(p)	__va(p)
++#define unxlate_dev_mem_ptr(p, v) do { } while (0)
+ 
+ #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
+ int valid_phys_addr_range(phys_addr_t addr, size_t size);
 -- 
-Best regards,
-
-Javier Martinez Canillas
-Core Platforms
-Red Hat
+2.39.2
 
