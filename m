@@ -2,33 +2,33 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3A3B1EB64D9
-	for <linux-sh@archiver.kernel.org>; Tue,  4 Jul 2023 20:30:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6E71BEB64D9
+	for <linux-sh@archiver.kernel.org>; Tue,  4 Jul 2023 20:32:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230432AbjGDUa0 convert rfc822-to-8bit (ORCPT
+        id S231179AbjGDUcS convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 4 Jul 2023 16:30:26 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48180 "EHLO
+        Tue, 4 Jul 2023 16:32:18 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48926 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229753AbjGDUaZ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 4 Jul 2023 16:30:25 -0400
+        with ESMTP id S230246AbjGDUcR (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 4 Jul 2023 16:32:17 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 51F34E76;
-        Tue,  4 Jul 2023 13:30:24 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DD934E76;
+        Tue,  4 Jul 2023 13:32:16 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qGmfC-001sRK-9Q; Tue, 04 Jul 2023 22:30:18 +0200
+          id 1qGmh1-001suX-Qh; Tue, 04 Jul 2023 22:32:11 +0200
 Received: from p5b13a7a5.dip0.t-ipconnect.de ([91.19.167.165] helo=[192.168.178.81])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qGmfC-003WTr-1Z; Tue, 04 Jul 2023 22:30:18 +0200
-Message-ID: <0ec80cb69e4ea5eed6ee29ed7f58ea649fb5c65e.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2 1/3] sh: dma: Fix dma channel offset calculation
+          id 1qGmh1-003X2y-JE; Tue, 04 Jul 2023 22:32:11 +0200
+Message-ID: <d9f6fdf1ba8a3c57e80da0582a6dd8b83b1373df.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH v2 2/3] sh: dma: Drop incorrect SH_DMAC_BASE1 for SH4
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 To:     Artur Rojek <contact@artur-rojek.eu>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
@@ -36,10 +36,10 @@ To:     Artur Rojek <contact@artur-rojek.eu>,
         Geert Uytterhoeven <geert@linux-m68k.org>
 Cc:     Rafael Ignacio Zurita <rafaelignacio.zurita@gmail.com>,
         linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date:   Tue, 04 Jul 2023 22:30:17 +0200
-In-Reply-To: <20230527164452.64797-2-contact@artur-rojek.eu>
+Date:   Tue, 04 Jul 2023 22:32:10 +0200
+In-Reply-To: <20230527164452.64797-3-contact@artur-rojek.eu>
 References: <20230527164452.64797-1-contact@artur-rojek.eu>
-         <20230527164452.64797-2-contact@artur-rojek.eu>
+         <20230527164452.64797-3-contact@artur-rojek.eu>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 User-Agent: Evolution 3.48.3 
@@ -52,95 +52,29 @@ List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
 On Sat, 2023-05-27 at 18:44 +0200, Artur Rojek wrote:
-> Various SoCs of the SH3, SH4 and SH4A family, which use this driver,
-> feature a differing number of DMA channels, which can be distributed
-> between up to two DMAC modules. Existing implementation fails to
-> correctly accommodate for all those variations, resulting in wrong
-> channel offset calculations and leading to kernel panics.
+> None of the supported SH4 family SoCs features a second DMAC module. As
+> this define negatively impacts DMA channel calculation for the above
+> targets, remove it from the code.
 > 
-> Rewrite dma_base_addr() in order to properly calculate channel offsets
-> in a DMAC module. Fix dmaor_read_reg() and dmaor_write_reg(), so that
-> the correct DMAC module base is selected for the DMAOR register.
-> 
-> Fixes: 7f47c7189b3e8f19 ("sh: dma: More legacy cpu dma chainsawing.")
 > Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
 > ---
 > 
-> v2: also handle differing numbers of DMAC modules and channels
+> v2: new patch
 > 
->  arch/sh/drivers/dma/dma-sh.c | 37 +++++++++++++++++++++++-------------
->  1 file changed, 24 insertions(+), 13 deletions(-)
+>  arch/sh/include/cpu-sh4/cpu/dma.h | 1 -
+>  1 file changed, 1 deletion(-)
 > 
-> diff --git a/arch/sh/drivers/dma/dma-sh.c b/arch/sh/drivers/dma/dma-sh.c
-> index 96c626c2cd0a..306fba1564e5 100644
-> --- a/arch/sh/drivers/dma/dma-sh.c
-> +++ b/arch/sh/drivers/dma/dma-sh.c
-> @@ -18,6 +18,18 @@
->  #include <cpu/dma-register.h>
->  #include <cpu/dma.h>
+> diff --git a/arch/sh/include/cpu-sh4/cpu/dma.h b/arch/sh/include/cpu-sh4/cpu/dma.h
+> index 38187d06b234..e97fb2c79177 100644
+> --- a/arch/sh/include/cpu-sh4/cpu/dma.h
+> +++ b/arch/sh/include/cpu-sh4/cpu/dma.h
+> @@ -13,6 +13,5 @@
+>  #define DMAE0_IRQ	evt2irq(0x6c0)
 >  
-> +/*
-> + * Some of the SoCs feature two DMAC modules. In such a case, the channels are
-> + * distributed equally among them.
-> + */
-> +#ifdef	SH_DMAC_BASE1
-> +#define	SH_DMAC_NR_MD_CH	(CONFIG_NR_ONCHIP_DMA_CHANNELS / 2)
-> +#else
-> +#define	SH_DMAC_NR_MD_CH	CONFIG_NR_ONCHIP_DMA_CHANNELS
-> +#endif
-> +
-> +#define	SH_DMAC_CH_SZ		0x10
-> +
->  /*
->   * Define the default configuration for dual address memory-memory transfer.
->   * The 0x400 value represents auto-request, external->external.
-> @@ -29,7 +41,7 @@ static unsigned long dma_find_base(unsigned int chan)
->  	unsigned long base = SH_DMAC_BASE0;
+>  #define SH_DMAC_BASE0	0xffa00000
+> -#define SH_DMAC_BASE1	0xffa00070
 >  
->  #ifdef SH_DMAC_BASE1
-> -	if (chan >= 6)
-> +	if (chan >= SH_DMAC_NR_MD_CH)
->  		base = SH_DMAC_BASE1;
->  #endif
->  
-> @@ -40,13 +52,13 @@ static unsigned long dma_base_addr(unsigned int chan)
->  {
->  	unsigned long base = dma_find_base(chan);
->  
-> -	/* Normalize offset calculation */
-> -	if (chan >= 9)
-> -		chan -= 6;
-> -	if (chan >= 4)
-> -		base += 0x10;
-> +	chan = (chan % SH_DMAC_NR_MD_CH) * SH_DMAC_CH_SZ;
-> +
-> +	/* DMAOR is placed inside the channel register space. Step over it. */
-> +	if (chan >= DMAOR)
-> +		base += SH_DMAC_CH_SZ;
->  
-> -	return base + (chan * 0x10);
-> +	return base + chan;
->  }
->  
->  #ifdef CONFIG_SH_DMA_IRQ_MULTI
-> @@ -250,12 +262,11 @@ static int sh_dmac_get_dma_residue(struct dma_channel *chan)
->  #define NR_DMAOR	1
->  #endif
->  
-> -/*
-> - * DMAOR bases are broken out amongst channel groups. DMAOR0 manages
-> - * channels 0 - 5, DMAOR1 6 - 11 (optional).
-> - */
-> -#define dmaor_read_reg(n)		__raw_readw(dma_find_base((n)*6))
-> -#define dmaor_write_reg(n, data)	__raw_writew(data, dma_find_base(n)*6)
-> +#define dmaor_read_reg(n)		__raw_readw(dma_find_base((n) * \
-> +						    SH_DMAC_NR_MD_CH) + DMAOR)
-> +#define dmaor_write_reg(n, data)	__raw_writew(data, \
-> +						     dma_find_base((n) * \
-> +						     SH_DMAC_NR_MD_CH) + DMAOR)
->  
->  static inline int dmaor_reset(int no)
->  {
+>  #endif /* __ASM_CPU_SH4_DMA_H */
 
 Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
