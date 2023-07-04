@@ -2,114 +2,167 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 84A7DEB64DC
-	for <linux-sh@archiver.kernel.org>; Mon,  3 Jul 2023 13:23:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 84C75EB64D9
+	for <linux-sh@archiver.kernel.org>; Tue,  4 Jul 2023 05:26:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230098AbjGCNXu (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 3 Jul 2023 09:23:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47550 "EHLO
+        id S229534AbjGDF05 convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 4 Jul 2023 01:26:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34130 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229861AbjGCNXt (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 3 Jul 2023 09:23:49 -0400
-Received: from bee.tesarici.cz (bee.tesarici.cz [IPv6:2a03:3b40:fe:2d4::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 96F70E6C;
-        Mon,  3 Jul 2023 06:23:42 -0700 (PDT)
-Received: from meshulam.tesarici.cz (dynamic-2a00-1028-83b8-1e7a-4427-cc85-6706-c595.ipv6.o2.cz [IPv6:2a00:1028:83b8:1e7a:4427:cc85:6706:c595])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange ECDHE (P-256) server-signature RSA-PSS (2048 bits) server-digest SHA256)
-        (No client certificate requested)
-        by bee.tesarici.cz (Postfix) with ESMTPSA id 7BEB3ACFEE;
-        Mon,  3 Jul 2023 15:23:39 +0200 (CEST)
-Authentication-Results: mail.tesarici.cz; dmarc=fail (p=none dis=none) header.from=tesarici.cz
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=tesarici.cz; s=mail;
-        t=1688390619; bh=CcakWLV2/CnUPYuB5QwvAIuhCgWmDptbC9yZXabw76o=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
-        b=tk7eVobtoFgFKeR+n58SGbPeSIh81DkvxJNdLR0b0vnvGZ/L1WcU0di3AcQtPDS60
-         sZmQHro9woNZpitfi5qUpYWhOOL5X9myAiFLccIvA/8ZI8LC0tDs3RkxmfuYH865ku
-         2DOTudWgdX/x1eqpCZSz8HqSQuUnWgsMETZhXIeOTFXa0FS8A0Cm22fpwWsg6HZI3c
-         64dqlSoxzQLp5GvPbVRCtbd9ao+4pki1zA5L3pKl7asEX6vw6groIy4Q3MRa+Hp10y
-         C5YdrzbcZmR2vErfa6Y3LH3rRms0cwq+sOMwtS02FmiK6JzseAHtV0YvBftR/msYaB
-         qQOnN2QDp24Ug==
-Date:   Mon, 3 Jul 2023 15:23:36 +0200
-From:   Petr =?UTF-8?B?VGVzYcWZw61r?= <petr@tesarici.cz>
-To:     Jacopo Mondi <jacopo.mondi@ideasonboard.com>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        with ESMTP id S229505AbjGDF04 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 4 Jul 2023 01:26:56 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3623DBD;
+        Mon,  3 Jul 2023 22:26:55 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1qGYYu-000K0B-3G; Tue, 04 Jul 2023 07:26:52 +0200
+Received: from p57bd997f.dip0.t-ipconnect.de ([87.189.153.127] helo=suse-laptop.fritz.box)
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1qGYYt-000d1u-S1; Tue, 04 Jul 2023 07:26:52 +0200
+Message-ID: <bf8e46bc0e6d564cf8633f21098d5b6f7ccb6018.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 1/4] sh: fix -Wmissing-include-dirs warnings for various
+ platforms
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Masahiro Yamada <masahiroy@kernel.org>,
+        linux-kbuild@vger.kernel.org
+Cc:     linux-kernel@vger.kernel.org, Randy Dunlap <rdunlap@infradead.org>,
+        kernel test robot <lkp@intel.com>,
         Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "open list:SUPERH" <linux-sh@vger.kernel.org>,
-        open list <linux-kernel@vger.kernel.org>
-Subject: Re: arch/superh: Suspicious coherent DMA allocations for CEU video
- buffers
-Message-ID: <20230703152336.43c5d129@meshulam.tesarici.cz>
-In-Reply-To: <6hbvbciyyx7wcuwzhgaczqearmu2mu3h2u447mljbp24emtjaz@ciel5ezmehfq>
-References: <20230629151124.34e72817@meshulam.tesarici.cz>
-        <6hbvbciyyx7wcuwzhgaczqearmu2mu3h2u447mljbp24emtjaz@ciel5ezmehfq>
-X-Mailer: Claws Mail 4.1.1 (GTK 3.24.38; x86_64-suse-linux-gnu)
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org
+Date:   Tue, 04 Jul 2023 07:26:51 +0200
+In-Reply-To: <20230219141555.2308306-1-masahiroy@kernel.org>
+References: <20230219141555.2308306-1-masahiroy@kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.3 
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.153.127
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Jacopo,
+Hi Masahiro!
 
-On Mon, 3 Jul 2023 00:32:54 +0200
-Jacopo Mondi <jacopo.mondi@ideasonboard.com> wrote:
+On Sun, 2023-02-19 at 23:15 +0900, Masahiro Yamada wrote:
+> The 0day bot reports a lot of warnings (or errors due to CONFIG_WERROR)
+> like this:
+> 
+>   cc1: error: arch/sh/include/mach-hp6xx: No such file or directory [-Werror=missing-include-dirs]
+> 
+> Indeed, arch/sh/include/mach-hp6xx does not exist.
+> 
+> -Wmissing-include-dirs is W=1 warning, but it may be annoying
+> when CONFIG_BTRFS_FS is enabled because fs/btrfs/Makefile
+> unconditionally adds this warning option.
+> 
+> arch/sh/Makefile defines machdir-y for two purposes:
+> 
+>  - Build platform code in arch/sh/boards/mach-*/
+>  - Add arch/sh/include/mach-*/ to the header search path
+> 
+> For the latter, some platforms use arch/sh/include/mach-common/ instead
+> of having its own arch/sh/include/mach-*/.
+> 
+> Drop unneeded machdir-y to not include non-existing include directory.
+> 
+> To build arch/sh/boards/mach-*/, use the standard obj-y syntax in
+> arch/sh/boards/Makefile.
+> 
+> Reported-by: kernel test robot <lkp@intel.com>
+> Link: https://lore.kernel.org/oe-kbuild-all/202302190641.30VVXnPb-lkp@intel.com/
+> Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
+> ---
+> 
+>  arch/sh/Makefile        | 18 +-----------------
+>  arch/sh/boards/Makefile | 19 +++++++++++++++++++
+>  2 files changed, 20 insertions(+), 17 deletions(-)
+> 
+> diff --git a/arch/sh/Makefile b/arch/sh/Makefile
+> index 5c8776482530..a9cad5137f92 100644
+> --- a/arch/sh/Makefile
+> +++ b/arch/sh/Makefile
+> @@ -116,31 +116,15 @@ export ld-bfd
+>  
+>  # Mach groups
+>  machdir-$(CONFIG_SOLUTION_ENGINE)		+= mach-se
+> -machdir-$(CONFIG_SH_HP6XX)			+= mach-hp6xx
+>  machdir-$(CONFIG_SH_DREAMCAST)			+= mach-dreamcast
+>  machdir-$(CONFIG_SH_SH03)			+= mach-sh03
+> -machdir-$(CONFIG_SH_RTS7751R2D)			+= mach-r2d
+> -machdir-$(CONFIG_SH_HIGHLANDER)			+= mach-highlander
+>  machdir-$(CONFIG_SH_MIGOR)			+= mach-migor
+> -machdir-$(CONFIG_SH_AP325RXA)			+= mach-ap325rxa
+>  machdir-$(CONFIG_SH_KFR2R09)			+= mach-kfr2r09
+>  machdir-$(CONFIG_SH_ECOVEC)			+= mach-ecovec24
+> -machdir-$(CONFIG_SH_SDK7780)			+= mach-sdk7780
+>  machdir-$(CONFIG_SH_SDK7786)			+= mach-sdk7786
+>  machdir-$(CONFIG_SH_X3PROTO)			+= mach-x3proto
+> -machdir-$(CONFIG_SH_SH7763RDP)			+= mach-sh7763rdp
+> -machdir-$(CONFIG_SH_SH4202_MICRODEV)		+= mach-microdev
+>  machdir-$(CONFIG_SH_LANDISK)			+= mach-landisk
+> -machdir-$(CONFIG_SH_LBOX_RE2)			+= mach-lboxre2
+> -machdir-$(CONFIG_SH_RSK)			+= mach-rsk
+> -
+> -ifneq ($(machdir-y),)
+> -core-y	+= $(addprefix arch/sh/boards/, \
+> -	     $(filter-out ., $(patsubst %,%/,$(machdir-y))))
+> -endif
+> -
+> -# Common machine type headers. Not part of the arch/sh/boards/ hierarchy.
+> -machdir-y	+= mach-common
+> +machdir-y					+= mach-common
+>  
+>  # Companion chips
+>  core-$(CONFIG_HD6446X_SERIES)	+= arch/sh/cchips/hd6446x/
+> diff --git a/arch/sh/boards/Makefile b/arch/sh/boards/Makefile
+> index 4002a22a7c40..b57219436ace 100644
+> --- a/arch/sh/boards/Makefile
+> +++ b/arch/sh/boards/Makefile
+> @@ -18,3 +18,22 @@ obj-$(CONFIG_SH_APSH4A3A)	+= board-apsh4a3a.o
+>  obj-$(CONFIG_SH_APSH4AD0A)	+= board-apsh4ad0a.o
+>  
+>  obj-$(CONFIG_SH_DEVICE_TREE)	+= of-generic.o
+> +
+> +obj-$(CONFIG_SOLUTION_ENGINE)	+= mach-se/
+> +obj-$(CONFIG_SH_HP6XX)		+= mach-hp6xx/
+> +obj-$(CONFIG_SH_DREAMCAST)	+= mach-dreamcast/
+> +obj-$(CONFIG_SH_SH03)		+= mach-sh03/
+> +obj-$(CONFIG_SH_RTS7751R2D)	+= mach-r2d/
+> +obj-$(CONFIG_SH_HIGHLANDER)	+= mach-highlander/
+> +obj-$(CONFIG_SH_MIGOR)		+= mach-migor/
+> +obj-$(CONFIG_SH_AP325RXA)	+= mach-ap325rxa/
+> +obj-$(CONFIG_SH_KFR2R09)	+= mach-kfr2r09/
+> +obj-$(CONFIG_SH_ECOVEC)		+= mach-ecovec24/
+> +obj-$(CONFIG_SH_SDK7780)	+= mach-sdk7780/
+> +obj-$(CONFIG_SH_SDK7786)	+= mach-sdk7786/
+> +obj-$(CONFIG_SH_X3PROTO)	+= mach-x3proto/
+> +obj-$(CONFIG_SH_SH7763RDP)	+= mach-sh7763rdp/
+> +obj-$(CONFIG_SH_SH4202_MICRODEV)+= mach-microdev/
+> +obj-$(CONFIG_SH_LANDISK)	+= mach-landisk/
+> +obj-$(CONFIG_SH_LBOX_RE2)	+= mach-lboxre2/
+> +obj-$(CONFIG_SH_RSK)		+= mach-rsk/
 
-> Hi Petr,
->=20
-> On Thu, Jun 29, 2023 at 03:11:24PM +0200, Petr Tesa=C5=99=C3=ADk wrote:
-> > Hi Jacopo,
-> >
-> > I've just noticed a few calls to dma_declare_coherent_memory() which
-> > look suspicious to me, all authored by you:
-> >
-> > - arch/sh/boards/mach-ap325rxa/setup.c
-> > - arch/sh/boards/mach-ecovec24/setup.c
-> > - arch/sh/boards/mach-kfr2r09/setup.c
-> > - arch/sh/boards/mach-migor/setup.c
-> > - arch/sh/boards/mach-se/7724/setup.c
-> >
-> > In these files, the last argument to dma_declare_coherent_memory()
-> > looks like the last address to be used, but the expected value should
-> > be the size of the reserved region, e.g.:
-> >
-> > 	dma_declare_coherent_memory(&ap325rxa_ceu_device.dev,
-> > 			ceu_dma_membase, ceu_dma_membase,
-> > 			ceu_dma_membase + CEU_BUFFER_MEMORY_SIZE - 1);
-> >
-> > Do you (or anyone else on Cc) agree that this is a braino, and all these
-> > boards should actually use CEU_BUFFER_MEMORY_SIZE as the size of their
-> > DMA pools rather than membase + CEU_BUFFER_MEMORY_SIZE - 1?
-> > =20
->=20
-> Thanks for spotting this.. I tried to track down where this comes from
-> digging out the CEU and the platform file from 4.16, but it seems this
-> simply is a brain fart from my side.
->=20
-> I presume this is very much dead code, as the commit message of
-> 39fb993038e1 ("media: arch: sh: ap325rxa: Use new renesas-ceu camera
-> driver") says: "Compile tested only." and nobody has ever reported
-> bugs.
->=20
-> Feel free to send patches and cc me, as long as this code is around
-> it's nice to have it correct at least.
+Can you fix the tabs so that the mach directories are all aligned?
 
-Thank you for confirmation. I'll do that.
+Other than that:
 
-> Thank you!
->    j
->=20
-> PS: if you ask me, as nobody clearly run this code in the last 5
-> years, I would simply drop all these platform files. But that's
-> maintainers' call.
+Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
-Since the beginning of the coherent region is declared correctly, it is
-possible that it just happens to work, merely unreliably, frustrating
-users with occasional freezes/crashes which may not be easily linked
-with the CEU camera.
+Adrian
 
-OTOH it is much more likely that this code is simply dead.
-
-Petr T
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
