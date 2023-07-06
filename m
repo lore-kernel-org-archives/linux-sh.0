@@ -2,114 +2,160 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D07D9EB64DC
-	for <linux-sh@archiver.kernel.org>; Thu,  6 Jul 2023 13:57:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8542DEB64DC
+	for <linux-sh@archiver.kernel.org>; Thu,  6 Jul 2023 14:01:49 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229613AbjGFN5I (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 6 Jul 2023 09:57:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36276 "EHLO
+        id S232805AbjGFOBs (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 6 Jul 2023 10:01:48 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38864 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232552AbjGFN5H (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 6 Jul 2023 09:57:07 -0400
-Received: from mail-yw1-x112c.google.com (mail-yw1-x112c.google.com [IPv6:2607:f8b0:4864:20::112c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 02A891BE2;
-        Thu,  6 Jul 2023 06:57:04 -0700 (PDT)
-Received: by mail-yw1-x112c.google.com with SMTP id 00721157ae682-579d5d89b41so8933667b3.2;
-        Thu, 06 Jul 2023 06:57:04 -0700 (PDT)
+        with ESMTP id S232783AbjGFOBm (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 6 Jul 2023 10:01:42 -0400
+Received: from mail-yw1-x112a.google.com (mail-yw1-x112a.google.com [IPv6:2607:f8b0:4864:20::112a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 814211BE3;
+        Thu,  6 Jul 2023 07:01:40 -0700 (PDT)
+Received: by mail-yw1-x112a.google.com with SMTP id 00721157ae682-579ed2829a8so9610627b3.1;
+        Thu, 06 Jul 2023 07:01:40 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1688651824; x=1691243824;
-        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
+        d=gmail.com; s=20221208; t=1688652099; x=1691244099;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
          :sender:from:to:cc:subject:date:message-id:reply-to;
-        bh=pZEJ43d+NAMmIrTo551RtzDddBeER6NhBfPjdNhrCGk=;
-        b=ZK2545S8+cayJ/SkROlmQsz7hJCI4UZfi3iTrzJ8b2zSaNCVIqcd2GzY5gMizcNpi6
-         YdN2Dt1VSJ0CIwXWVXZKUm1HlXMd5M0hVRWCWpwzNxOHiM0n7HjVCPQTRUfc543Rpd6e
-         a0XRTrx+eD5D4PZcp1nLcI7Tp6d2ibsWP16HiPesUmu74BLmQYsvf3L5pbk5RThI247Y
-         1Awm2Q+zVRXv4WIgYr17AA8CYXuHcazeV92Cre90gvpR1LWkvioSl1x2tF13oXrOKAP0
-         +/DhzQjca6Yeif6qTQOZdpywhjarM4anZxFhH2JVE6WeFsDhg3p5bLiAOXKHGq3CrNzn
-         0ydQ==
+        bh=YxdEnLVX4p6L9VdcJgJfX3ANf/EuhvUyyqiujSowdUU=;
+        b=HKpfmMe18SWS0jZc6cwOKYjUoYLtdEHeghVnrtbUmfZeb2diQdGD+59iiEdI4aTDGd
+         DEUnxf8VuB10a+kXqzzV33AUIQMXQlB2u/Tu44daKx0Wy+rCNiVQyHGsUBDTl9p7GQM2
+         Hc0bxF93QVIfl9cYhnJKZS1bQTjlLYZTlUWM1CRAHpxa2QMPikqzHGu/QgUG0JEyabtG
+         VU+z6OV3hNR8BoOq+WMBPhh6NgW1fNmZEN7fke04zPiDxjfoWZtqiOrZ652r9pmVx6Hc
+         OWyFULfiFjmHbz/+i7f2yckCdxlBBfdbZY2d6UMoclt5xtQK11587UhsfSgBKBG2uzJ2
+         Zb+w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1688651824; x=1691243824;
-        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
+        d=1e100.net; s=20221208; t=1688652099; x=1691244099;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
          :sender:x-gm-message-state:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=pZEJ43d+NAMmIrTo551RtzDddBeER6NhBfPjdNhrCGk=;
-        b=BEA4csXlTkPtGshl3NmFGB+HAEpxO8qs9cyeNVP9H1D3bwuSxl3ucVbV8jJxVFXCpS
-         BYe35tZ61ScigmlH9+aPs/BziuN+VAPFoWIRmlGJBpr97s5NcZdXt0ATSN6S3wP9v19o
-         4OIK5IIct0ebx8yAi/G8b5mHd3PTpovqmEgUa154/n4yZX5JOk8TZP5w3G1lE2BCdTyX
-         ImgRbs1AtjhUxVimyOFxK7qB7TSmNxzdFWimGe1b3kgwS/BKEK3pscrk3KEQqXi6ehdb
-         5L/Pa/8Er2cx/C0qZqF0PKjGlGkicZXSAuJkeR9q6TgCuMbnUcq8AhLbIwqw8GYAriTO
-         5jQw==
-X-Gm-Message-State: ABy/qLamJRalXfEt194Z4OpIXNHJAurN2dn4M7kfbZDzSgHozX85lc16
-        nNhIhsXZxqm3TbV+n5Cft2s=
-X-Google-Smtp-Source: APBJJlFtMueb3U/FE2QuaSoGLA84VH6d80bL0vcD7tWNpYBm1eqI9OlMiLIE8un9/QkQO/fPnUJjCQ==
-X-Received: by 2002:a0d:e241:0:b0:573:d710:6f88 with SMTP id l62-20020a0de241000000b00573d7106f88mr1885685ywe.36.1688651823857;
-        Thu, 06 Jul 2023 06:57:03 -0700 (PDT)
-Received: from server.roeck-us.net ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
-        by smtp.gmail.com with ESMTPSA id l195-20020a0de2cc000000b00565d056a74bsm354915ywe.139.2023.07.06.06.57.02
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 06 Jul 2023 06:57:03 -0700 (PDT)
+        bh=YxdEnLVX4p6L9VdcJgJfX3ANf/EuhvUyyqiujSowdUU=;
+        b=dKCoyH+Fvcu7V+MmsRcI0pCzJpazc9fQ0MlHGL1Nw4fPvYlr1Tyu6hmi0mg927UW+x
+         aB0qh/1iAJa1TfoN+rCuIdhWYW0j73K7NYDnfEp7XFyFh+hmyb95+MeDgL7Ad37pYtlI
+         Hyp6d9yX+BBQhweT6N65HTS1BRydHG9u2FSq9nYh9soY2UDsdOPGT8KpiQljVy5nJa0a
+         qvpqphNCPayLHZ4i2/xoTLWc0COw4ZAybXkSf15FtQBWM/8R9sMH/kGyaXUF3c/cLmlS
+         PbSyyPvm7ay3c7YszpKS5FwWFPJMWNgvHCT13eXdi+eVNDv4kFBrEzA1JumIX3vIBeix
+         JueQ==
+X-Gm-Message-State: ABy/qLafuEIz6CzVIeTmNLTy1e8ZBuGMAt8yD+ysvHBSKe003yRZ6Tw7
+        XdQMMsEVySRwkZjkKkeMVOg=
+X-Google-Smtp-Source: APBJJlEqFwwIx73WB+xYRURaWQNcgGKLa/1/4BrO6ictQPrh+N3rm3yhO5vYDV7I2Z2AyPVgYXNvMA==
+X-Received: by 2002:a81:7bd5:0:b0:573:6cf0:4008 with SMTP id w204-20020a817bd5000000b005736cf04008mr2234907ywc.26.1688652099166;
+        Thu, 06 Jul 2023 07:01:39 -0700 (PDT)
+Received: from ?IPV6:2600:1700:e321:62f0:329c:23ff:fee3:9d7c? ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
+        by smtp.gmail.com with ESMTPSA id k128-20020a0dc886000000b00569ff2d94f6sm367660ywd.19.2023.07.06.07.01.37
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 06 Jul 2023 07:01:38 -0700 (PDT)
 Sender: Guenter Roeck <groeck7@gmail.com>
-Date:   Thu, 6 Jul 2023 06:57:01 -0700
-From:   Guenter Roeck <linux@roeck-us.net>
-To:     Sergey Shtylyov <s.shtylyov@omp.ru>
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] sh: Avoid using IRQ0 on SH3 and SH4
-Message-ID: <fbfea3ad-d327-4ad5-ac9c-648c7ca3fe1f@roeck-us.net>
+Message-ID: <9bc72d0c-fe33-5759-799c-f54e325ba38d@roeck-us.net>
+Date:   Thu, 6 Jul 2023 07:01:37 -0700
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.11.0
+Subject: Re: [GIT PULL] sh updates for v6.5
+Content-Language: en-US
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Linus Torvalds <torvalds@linux-foundation.org>
+Cc:     Sergey Shtylyov <s.shtylyov@omp.ru>,
+        Masahiro Yamada <masahiroy@kernel.org>,
+        Artur Rojek <contact@artur-rojek.eu>,
+        Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org,
+        linux-kernel <linux-kernel@vger.kernel.org>
+References: <9a6b730fc6c8e70ff034e2e3665478ec31858c29.camel@physik.fu-berlin.de>
+From:   Guenter Roeck <linux@roeck-us.net>
+In-Reply-To: <9a6b730fc6c8e70ff034e2e3665478ec31858c29.camel@physik.fu-berlin.de>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi,
-
-On Thu, Jun 01, 2023 at 11:22:17PM +0300, Sergey Shtylyov wrote:
-> IRQ0 is no longer returned by platform_get_irq() and its ilk -- they now
-> return -EINVAL instead.  However, the kernel code supporting SH3/4-based
-> SoCs still maps the IRQ #s starting at 0 -- modify that code to start the
-> IRQ #s from 16 instead.
+On 7/5/23 14:43, John Paul Adrian Glaubitz wrote:
+> Hi Linus!
 > 
-> The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
-> indeed are using IRQ0 for the SMSC911x compatible Ethernet chip.
+> I am being a little late this merge window since it took me a little longer
+> to thoroughly review the changes which address important issues in the DMA
+> and IRQ code in arch/sh.
+> 
+> The pull request includes a patch by me to fix a compiler warning in the J2
+> probing code and a fix by Sergey Shtylyov to avoid using IRQ0 on SH3 and SH4
+> targets. Masahiro Yamada made some clean-up in the build system to address
+> reports by the 0day bot.
+> 
+> The most notable changes come from Artur Rojek who addressed a number of issues
+> in the DMA code, in particular a fix for the DMA channel offset calculation that
+> was introduced in in 7f47c7189b3e ("sh: dma: More legacy cpu dma chainsawing.")
+> in 2012! Together with another change to correct the number of DMA channels for
+> each SuperH SoC according to specification, Artur's series unbreaks the kernel
+> on the SH7709 SoC allowing Linux to boot on the HP Jornada 680 handheld again.
+> 
+> Last but not least, Guenter Roeck sent in a patch to fix a build regression that
+> was recently introduced in 99b619b37ae1 ("mips: provide unxlate_dev_mem_ptr() in
+> asm/io.h").
+> 
+> The following changes since commit ac9a78681b921877518763ba0e89202254349d1b:
+> 
+>    Linux 6.4-rc1 (2023-05-07 13:34:35 -0700)
+> 
+> are available in the Git repository at:
+> 
+>    git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.5-tag1
+> 
+> for you to fetch changes up to 7497840d462c8f54c4888c22ab3726a8cde4b9a2:
+> 
+>    sh: Provide unxlate_dev_mem_ptr() in asm/io.h (2023-07-05 19:04:51 +0200)
+> 
+> Thanks for pulling!
+> 
+> Adrian
+> 
+> ----------------------------------------------------------------
+> sh updates for v6.5
+> 
+> - sh: Provide unxlate_dev_mem_ptr() in asm/io.h
+> - sh: dma: Correct the number of DMA channels for SH7709
+> - sh: dma: Drop incorrect SH_DMAC_BASE1 definition for SH4
+> - sh: dma: Fix DMA channel offset calculation
+> - sh: Remove compiler flag duplication
+> - sh: Refactor header include path addition
+> - sh: Move build rule for cchips/hd6446x/ to arch/sh/Kbuild
+> - sh: Fix -Wmissing-include-dirs warnings for various platforms
+> - sh: Avoid using IRQ0 on SH3 and SH4
+> - sh: j2: Use ioremap() to translate device tree address into kernel memory
+> 
+> ----------------------------------------------------------------
+> Artur Rojek (3):
+>        sh: dma: Fix DMA channel offset calculation
+>        sh: dma: Drop incorrect SH_DMAC_BASE1 definition for SH4
+>        sh: dma: Correct the number of DMA channels for SH7709
+> 
+> Guenter Roeck (1):
+>        sh: Provide unxlate_dev_mem_ptr() in asm/io.h
 > 
 
-Unfortunately it also affects all sh4 emulations in qemu, and results in
-boot stalls with those. There isn't a relevant log to attach because there
-is no error message - booting just stalls until the emulation is aborted.
+Perfect example why it is a bad idea to let build failures linger around.
+The build failure fixed by this patch ...
 
-Reverting this patch fixes the problem.
-
-Bisect log is attached for reference. Note that bisect requires applying
-commit 7497840d462c ("sh: Provide unxlate_dev_mem_ptr() in asm/io.h"),
-which is also the reason why the problem was not observed earlier since
-it was hiding behind a build failure.
+> John Paul Adrian Glaubitz (1):
+>        sh: j2: Use ioremap() to translate device tree address into kernel memory
+> 
+> Masahiro Yamada (4):
+>        sh: Fix -Wmissing-include-dirs warnings for various platforms
+>        sh: Move build rule for cchips/hd6446x/ to arch/sh/Kbuild
+>        sh: Refactor header include path addition
+>        sh: Remove compiler flag duplication
+> 
+> Sergey Shtylyov (1):
+>        sh: Avoid using IRQ0 on SH3 and SH4
+> 
+... was hiding boot failures with all my qemu emulations caused by
+this patch.
 
 Guenter
 
----
-# bad: [c17414a273b81fe4e34e11d69fc30cc8b1431614] Merge tag 'sh-for-v6.5-tag1' of git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux
-# good: [b5641a5d8b8b14643bfe3d017d64da90a5c55479] mm: don't do validate_mm() unnecessarily and without mmap locking
-git bisect start 'HEAD' 'b5641a5d8b8b'
-# good: [15ac468614e5e4fee82e1eb32568f427b0e51adc] Merge tag 'media/v6.5-1' of git://git.kernel.org/pub/scm/linux/kernel/git/mchehab/linux-media
-git bisect good 15ac468614e5e4fee82e1eb32568f427b0e51adc
-# good: [73a3fcdaa73200e38e38f7e8a32c9b901c5b95b5] Merge tag 'f2fs-for-6.5-rc1' of git://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs
-git bisect good 73a3fcdaa73200e38e38f7e8a32c9b901c5b95b5
-# good: [6843306689aff3aea608e4d2630b2a5a0137f827] Merge tag 'net-6.5-rc1' of git://git.kernel.org/pub/scm/linux/kernel/git/netdev/net
-git bisect good 6843306689aff3aea608e4d2630b2a5a0137f827
-# good: [afa92949124abc25ddab1789dd654214e2e1b040] dt-bindings: phy: cdns,salvo: add property cdns,usb2-disconnect-threshold-microvolt
-git bisect good afa92949124abc25ddab1789dd654214e2e1b040
-# good: [37bd215fc48ef2a399f836d62d2e4a166efb31be] phy: qualcomm: fix indentation in Makefile
-git bisect good 37bd215fc48ef2a399f836d62d2e4a166efb31be
-# bad: [7497840d462c8f54c4888c22ab3726a8cde4b9a2] sh: Provide unxlate_dev_mem_ptr() in asm/io.h
-git bisect bad 7497840d462c8f54c4888c22ab3726a8cde4b9a2
-# bad: [01658fe3d6c02992846a038c8111e70ace169295] sh: Refactor header include path addition
-git bisect bad 01658fe3d6c02992846a038c8111e70ace169295
-# bad: [a8ac2961148e8c720dc760f2e06627cd5c55a154] sh: Avoid using IRQ0 on SH3 and SH4
-git bisect bad a8ac2961148e8c720dc760f2e06627cd5c55a154
-# good: [bc9d1f0cecd2407cfb2364a7d4be2f52d1d46a9d] sh: j2: Use ioremap() to translate device tree address into kernel memory
-git bisect good bc9d1f0cecd2407cfb2364a7d4be2f52d1d46a9d
-# first bad commit: [a8ac2961148e8c720dc760f2e06627cd5c55a154] sh: Avoid using IRQ0 on SH3 and SH4
