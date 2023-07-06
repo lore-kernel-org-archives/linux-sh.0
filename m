@@ -2,93 +2,96 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id ABB18EB64DC
-	for <linux-sh@archiver.kernel.org>; Thu,  6 Jul 2023 15:24:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C8284EB64DC
+	for <linux-sh@archiver.kernel.org>; Thu,  6 Jul 2023 15:40:07 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233719AbjGFPYJ convert rfc822-to-8bit (ORCPT
+        id S229734AbjGFPkH convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 6 Jul 2023 11:24:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:32928 "EHLO
+        Thu, 6 Jul 2023 11:40:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42638 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233498AbjGFPYG (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 6 Jul 2023 11:24:06 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 885191BFF;
-        Thu,  6 Jul 2023 08:23:47 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qHQpR-000tTL-Cg; Thu, 06 Jul 2023 17:23:33 +0200
-Received: from p57bd990e.dip0.t-ipconnect.de ([87.189.153.14] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qHQpR-000Yv1-51; Thu, 06 Jul 2023 17:23:33 +0200
-Message-ID: <5c612d0b293082352df6640ac951918bfa458181.camel@physik.fu-berlin.de>
-Subject: Re: [GIT PULL] sh updates for v6.5
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Christoph Hellwig <hch@infradead.org>
-Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
-        Sergey Shtylyov <s.shtylyov@omp.ru>,
-        Masahiro Yamada <masahiroy@kernel.org>,
-        Artur Rojek <contact@artur-rojek.eu>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Rich Felker <dalias@libc.org>,
+        with ESMTP id S229538AbjGFPkE (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 6 Jul 2023 11:40:04 -0400
+Received: from mail-yw1-f176.google.com (mail-yw1-f176.google.com [209.85.128.176])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2604D1FD2;
+        Thu,  6 Jul 2023 08:39:40 -0700 (PDT)
+Received: by mail-yw1-f176.google.com with SMTP id 00721157ae682-57722942374so10923627b3.1;
+        Thu, 06 Jul 2023 08:39:40 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1688657976; x=1691249976;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=j3DiZE9JB6ColP1aIV7E9G0pPGJNewraAmq4lD+0Ir4=;
+        b=d0GSVQiUzPYJ/Qf9h4+29ktP7gJaxqg6FnXp4dEv7i97j9T/UctC02scgNnzUFA2F8
+         OrgnuAQw7Yb1EBOamYLCKcqT2kUeiw9mN0sVi9YokfsC9Zue6BIP8nSqW+Fq/9ebYatl
+         ZZ09/3fe0SpfRVX1QnMmpxU+ho2S5mO9yzATFkPc6jgXAxzCTB7rfbkI9S8fFAMcsPSf
+         QVaQMYfihQnUQCHPfwuOnN2TmtDiY4dVZ3AVYcYEG7aSG7MWgebdqSveBvgiV8yFP7nP
+         UCM5KTfqe20UhhE+Ypd99gayxyI1tV8MkfAXvm6msFEz4XyuBSBAIeqnNiRoj5xKH97T
+         MKHQ==
+X-Gm-Message-State: ABy/qLa9xfiOAjpxrd4Y+021mLyYdOEu4A0maISuHmQjjHh/SrpDpq7p
+        YvV5L5zPWzo5I+Tt4lPzTiLvkmM2bEYkOw==
+X-Google-Smtp-Source: APBJJlGRyJMnRqZebmp9ZEnoqbz5EMFdTHaqJgenZpIOiNelblR/Xq2fbsp3gNyaQMG5UHYRN0xUIQ==
+X-Received: by 2002:a0d:e8c8:0:b0:576:896a:dbc5 with SMTP id r191-20020a0de8c8000000b00576896adbc5mr2232985ywe.48.1688657975973;
+        Thu, 06 Jul 2023 08:39:35 -0700 (PDT)
+Received: from mail-yb1-f175.google.com (mail-yb1-f175.google.com. [209.85.219.175])
+        by smtp.gmail.com with ESMTPSA id v126-20020a0dd384000000b0057a02887d4esm409974ywd.100.2023.07.06.08.39.35
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 06 Jul 2023 08:39:35 -0700 (PDT)
+Received: by mail-yb1-f175.google.com with SMTP id 3f1490d57ef6-c4e4c258ba9so901758276.1;
+        Thu, 06 Jul 2023 08:39:35 -0700 (PDT)
+X-Received: by 2002:a25:a4c1:0:b0:c18:4f16:aaf6 with SMTP id
+ g59-20020a25a4c1000000b00c184f16aaf6mr1782557ybi.58.1688657975503; Thu, 06
+ Jul 2023 08:39:35 -0700 (PDT)
+MIME-Version: 1.0
+References: <fbfea3ad-d327-4ad5-ac9c-648c7ca3fe1f@roeck-us.net>
+In-Reply-To: <fbfea3ad-d327-4ad5-ac9c-648c7ca3fe1f@roeck-us.net>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Thu, 6 Jul 2023 17:39:23 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdUfXdCf_CQuWXpP72MzKFYvXg3Ud1VN_3Bd0RHxfLhVeQ@mail.gmail.com>
+Message-ID: <CAMuHMdUfXdCf_CQuWXpP72MzKFYvXg3Ud1VN_3Bd0RHxfLhVeQ@mail.gmail.com>
+Subject: Re: [PATCH] sh: Avoid using IRQ0 on SH3 and SH4
+To:     Guenter Roeck <linux@roeck-us.net>
+Cc:     Sergey Shtylyov <s.shtylyov@omp.ru>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-sh@vger.kernel.org,
-        linux-kernel <linux-kernel@vger.kernel.org>
-Date:   Thu, 06 Jul 2023 17:23:32 +0200
-In-Reply-To: <ZKba4SLzjjhHgOEs@infradead.org>
-References: <9a6b730fc6c8e70ff034e2e3665478ec31858c29.camel@physik.fu-berlin.de>
-         <ZKba4SLzjjhHgOEs@infradead.org>
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.3 
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.153.14
-X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Christoph!
+Hi Günter,
 
-On Thu, 2023-07-06 at 08:16 -0700, Christoph Hellwig wrote:
-> thanks for taking up the sh maintainership!
+On Thu, Jul 6, 2023 at 4:03 PM Guenter Roeck <linux@roeck-us.net> wrote:
+> On Thu, Jun 01, 2023 at 11:22:17PM +0300, Sergey Shtylyov wrote:
+> > IRQ0 is no longer returned by platform_get_irq() and its ilk -- they now
+> > return -EINVAL instead.  However, the kernel code supporting SH3/4-based
+> > SoCs still maps the IRQ #s starting at 0 -- modify that code to start the
+> > IRQ #s from 16 instead.
+> >
+> > The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
+> > indeed are using IRQ0 for the SMSC911x compatible Ethernet chip.
+> >
+>
+> Unfortunately it also affects all sh4 emulations in qemu, and results in
+> boot stalls with those. There isn't a relevant log to attach because there
+> is no error message - booting just stalls until the emulation is aborted.
 
-You're welcome.
+Which sh4 platforms in particular?
 
-> Any chance you could do an inventoy on which arch/sh/ platforms are
-> currently working and maintained and which are just bitrot?
-> 
-> sh still has a lot of platform specific code that feels іt is rotting,
-> but some of that might just have been due to the lack of active
-> maintainance.
+I booted a kernel with this patch on rts7751r2d (QEMU) and landisk
+(physical) two days ago.
 
-I am slowly working towards getting everything back into shape. In particular,
-there is a patch set by Yoshinori Sato to convert arch/sh to device tree which
-I would like to eventually get upstreamed.
+Gr{oetje,eeting}s,
 
-However, since I am still new to kernel development, it will certainly take
-me a little more time until we're there. However, there is some interest
-in the community such as the J-Core people and Artur Rojek, so there are people
-who are willing to help me.
-
-> Once platform that I'm particulary interested in is dreamcast, which has
-> a rather oddball block driver (gdrom) and some very odd interaction with
-> the dma-mapping code.
-
-OK, thanks for the heads-up. I cannot comment on this yet, but I have a Dreamcast
-myself which I can use for testing in this case.
-
-Adrian
+                        Geert
 
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
