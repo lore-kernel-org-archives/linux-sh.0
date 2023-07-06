@@ -2,87 +2,75 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CC54EB64D9
-	for <linux-sh@archiver.kernel.org>; Thu,  6 Jul 2023 14:05:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C49EEB64D9
+	for <linux-sh@archiver.kernel.org>; Thu,  6 Jul 2023 14:11:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232884AbjGFOFD convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 6 Jul 2023 10:05:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41644 "EHLO
+        id S233005AbjGFOLY (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 6 Jul 2023 10:11:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45806 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232152AbjGFOFC (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 6 Jul 2023 10:05:02 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A8D681BC2;
-        Thu,  6 Jul 2023 07:05:00 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qHPbC-000PKz-9U; Thu, 06 Jul 2023 16:04:46 +0200
-Received: from p57bd990e.dip0.t-ipconnect.de ([87.189.153.14] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qHPbC-000JuG-1s; Thu, 06 Jul 2023 16:04:46 +0200
-Message-ID: <ab09d99c78bd378f23580427323c6418cd0888af.camel@physik.fu-berlin.de>
-Subject: Re: [GIT PULL] sh updates for v6.5
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Guenter Roeck <linux@roeck-us.net>,
-        Linus Torvalds <torvalds@linux-foundation.org>
-Cc:     Sergey Shtylyov <s.shtylyov@omp.ru>,
-        Masahiro Yamada <masahiroy@kernel.org>,
-        Artur Rojek <contact@artur-rojek.eu>,
+        with ESMTP id S231623AbjGFOLW (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 6 Jul 2023 10:11:22 -0400
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A7A6910EC;
+        Thu,  6 Jul 2023 07:11:21 -0700 (PDT)
+Received: by verein.lst.de (Postfix, from userid 2407)
+        id C70C168AFE; Thu,  6 Jul 2023 16:11:14 +0200 (CEST)
+Date:   Thu, 6 Jul 2023 16:11:14 +0200
+From:   Christoph Hellwig <hch@lst.de>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     Arnd Bergmann <arnd@kernel.org>, linux-kernel@vger.kernel.org,
+        Arnd Bergmann <arnd@arndb.de>,
+        Vineet Gupta <vgupta@kernel.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Neil Armstrong <neil.armstrong@linaro.org>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Catalin Marinas <catalin.marinas@arm.com>,
+        Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+        Brian Cain <bcain@quicinc.com>,
+        Michal Simek <monstr@monstr.eu>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        Dinh Nguyen <dinguyen@kernel.org>,
+        Stafford Horne <shorne@gmail.com>,
+        Helge Deller <deller@gmx.de>,
+        Michael Ellerman <mpe@ellerman.id.au>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Paul Walmsley <paul.walmsley@sifive.com>,
+        Palmer Dabbelt <palmer@dabbelt.com>,
         Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-sh@vger.kernel.org,
-        linux-kernel <linux-kernel@vger.kernel.org>
-Date:   Thu, 06 Jul 2023 16:04:45 +0200
-In-Reply-To: <9bc72d0c-fe33-5759-799c-f54e325ba38d@roeck-us.net>
-References: <9a6b730fc6c8e70ff034e2e3665478ec31858c29.camel@physik.fu-berlin.de>
-         <9bc72d0c-fe33-5759-799c-f54e325ba38d@roeck-us.net>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.3 
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "David S. Miller" <davem@davemloft.net>,
+        Max Filippov <jcmvbkbc@gmail.com>,
+        Christoph Hellwig <hch@lst.de>,
+        Robin Murphy <robin.murphy@arm.com>,
+        Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>,
+        Conor Dooley <conor.dooley@microchip.com>,
+        linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org, linux-oxnas@groups.io,
+        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+        linux-xtensa@linux-xtensa.org,
+        Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Subject: Re: [PATCH 20/21] ARM: dma-mapping: split out
+ arch_dma_mark_clean() helper
+Message-ID: <20230706141114.GA14485@lst.de>
+References: <20230327121317.4081816-1-arnd@kernel.org> <20230327121317.4081816-21-arnd@kernel.org> <CAMuHMdW5bXeE=nr7+hHxL+xhm2q05udkJpMBM-BG7g9S7Nt7Zg@mail.gmail.com>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.153.14
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAMuHMdW5bXeE=nr7+hHxL+xhm2q05udkJpMBM-BG7g9S7Nt7Zg@mail.gmail.com>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, 2023-07-06 at 07:01 -0700, Guenter Roeck wrote:
-> Perfect example why it is a bad idea to let build failures linger around.
-> The build failure fixed by this patch ...
+> Thanks for your patch, which is now commit 322dbe898f82fd8a
+> ("ARM: dma-mapping: split out arch_dma_mark_clean() helper") in
+> esmil/jh7100-dmapool.
 
-How was that lingered around? Your patch was merged within less than a week.
-
-> > John Paul Adrian Glaubitz (1):
-> >        sh: j2: Use ioremap() to translate device tree address into kernel memory
-> > 
-> > Masahiro Yamada (4):
-> >        sh: Fix -Wmissing-include-dirs warnings for various platforms
-> >        sh: Move build rule for cchips/hd6446x/ to arch/sh/Kbuild
-> >        sh: Refactor header include path addition
-> >        sh: Remove compiler flag duplication
-> > 
-> > Sergey Shtylyov (1):
-> >        sh: Avoid using IRQ0 on SH3 and SH4
-> > 
-> ... was hiding boot failures with all my qemu emulations caused by
-> this patch.
-
-But Sergey's patch had been in my for-next tree since June 11 [1].
-
-Adrian
-
-> [1] https://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git/log/?h=for-next
-
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Well, something is wrong with that branch then, and this series still
+needs more work, and should eventually be merged through the dma-mapping
+tree.
