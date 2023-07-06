@@ -2,96 +2,152 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C8284EB64DC
-	for <linux-sh@archiver.kernel.org>; Thu,  6 Jul 2023 15:40:07 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 248F6EB64D9
+	for <linux-sh@archiver.kernel.org>; Thu,  6 Jul 2023 15:48:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229734AbjGFPkH convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 6 Jul 2023 11:40:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42638 "EHLO
+        id S232964AbjGFPsw (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 6 Jul 2023 11:48:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45456 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229538AbjGFPkE (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 6 Jul 2023 11:40:04 -0400
-Received: from mail-yw1-f176.google.com (mail-yw1-f176.google.com [209.85.128.176])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2604D1FD2;
-        Thu,  6 Jul 2023 08:39:40 -0700 (PDT)
-Received: by mail-yw1-f176.google.com with SMTP id 00721157ae682-57722942374so10923627b3.1;
-        Thu, 06 Jul 2023 08:39:40 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1688657976; x=1691249976;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=j3DiZE9JB6ColP1aIV7E9G0pPGJNewraAmq4lD+0Ir4=;
-        b=d0GSVQiUzPYJ/Qf9h4+29ktP7gJaxqg6FnXp4dEv7i97j9T/UctC02scgNnzUFA2F8
-         OrgnuAQw7Yb1EBOamYLCKcqT2kUeiw9mN0sVi9YokfsC9Zue6BIP8nSqW+Fq/9ebYatl
-         ZZ09/3fe0SpfRVX1QnMmpxU+ho2S5mO9yzATFkPc6jgXAxzCTB7rfbkI9S8fFAMcsPSf
-         QVaQMYfihQnUQCHPfwuOnN2TmtDiY4dVZ3AVYcYEG7aSG7MWgebdqSveBvgiV8yFP7nP
-         UCM5KTfqe20UhhE+Ypd99gayxyI1tV8MkfAXvm6msFEz4XyuBSBAIeqnNiRoj5xKH97T
-         MKHQ==
-X-Gm-Message-State: ABy/qLa9xfiOAjpxrd4Y+021mLyYdOEu4A0maISuHmQjjHh/SrpDpq7p
-        YvV5L5zPWzo5I+Tt4lPzTiLvkmM2bEYkOw==
-X-Google-Smtp-Source: APBJJlGRyJMnRqZebmp9ZEnoqbz5EMFdTHaqJgenZpIOiNelblR/Xq2fbsp3gNyaQMG5UHYRN0xUIQ==
-X-Received: by 2002:a0d:e8c8:0:b0:576:896a:dbc5 with SMTP id r191-20020a0de8c8000000b00576896adbc5mr2232985ywe.48.1688657975973;
-        Thu, 06 Jul 2023 08:39:35 -0700 (PDT)
-Received: from mail-yb1-f175.google.com (mail-yb1-f175.google.com. [209.85.219.175])
-        by smtp.gmail.com with ESMTPSA id v126-20020a0dd384000000b0057a02887d4esm409974ywd.100.2023.07.06.08.39.35
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 06 Jul 2023 08:39:35 -0700 (PDT)
-Received: by mail-yb1-f175.google.com with SMTP id 3f1490d57ef6-c4e4c258ba9so901758276.1;
-        Thu, 06 Jul 2023 08:39:35 -0700 (PDT)
-X-Received: by 2002:a25:a4c1:0:b0:c18:4f16:aaf6 with SMTP id
- g59-20020a25a4c1000000b00c184f16aaf6mr1782557ybi.58.1688657975503; Thu, 06
- Jul 2023 08:39:35 -0700 (PDT)
-MIME-Version: 1.0
-References: <fbfea3ad-d327-4ad5-ac9c-648c7ca3fe1f@roeck-us.net>
-In-Reply-To: <fbfea3ad-d327-4ad5-ac9c-648c7ca3fe1f@roeck-us.net>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Thu, 6 Jul 2023 17:39:23 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdUfXdCf_CQuWXpP72MzKFYvXg3Ud1VN_3Bd0RHxfLhVeQ@mail.gmail.com>
-Message-ID: <CAMuHMdUfXdCf_CQuWXpP72MzKFYvXg3Ud1VN_3Bd0RHxfLhVeQ@mail.gmail.com>
-Subject: Re: [PATCH] sh: Avoid using IRQ0 on SH3 and SH4
-To:     Guenter Roeck <linux@roeck-us.net>
-Cc:     Sergey Shtylyov <s.shtylyov@omp.ru>,
+        with ESMTP id S232970AbjGFPsm (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 6 Jul 2023 11:48:42 -0400
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 858971FEF
+        for <linux-sh@vger.kernel.org>; Thu,  6 Jul 2023 08:47:28 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1688658447;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=tzZiG+lU/mpwC2M6do1wPfvjsF6WIZJJprfTB9qP0II=;
+        b=T/WrA4FF+ATucH2mVEMIJT8+NkyionpjydwskzTDP0gItjPhR5kjNEW9QUifZrXQc0USvj
+        /+IPhUOxnVkRwqCTWeoPAM56cDdLQ3tOjUip0fRNz316AXTmZ+aFh8b+r9lez9X6eMcXqq
+        I8vDBdFECNwsEOPQhRt/teiny5hEwCY=
+Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
+ [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-672-0iqGGaRmOUaijaM3Mod1VQ-1; Thu, 06 Jul 2023 11:47:20 -0400
+X-MC-Unique: 0iqGGaRmOUaijaM3Mod1VQ-1
+Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.rdu2.redhat.com [10.11.54.5])
+        (using TLSv1.2 with cipher AECDH-AES256-SHA (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id E391B800CB3;
+        Thu,  6 Jul 2023 15:47:18 +0000 (UTC)
+Received: from MiWiFi-R3L-srv.redhat.com (ovpn-12-39.pek2.redhat.com [10.72.12.39])
+        by smtp.corp.redhat.com (Postfix) with ESMTP id F1BA3F5CF0;
+        Thu,  6 Jul 2023 15:47:09 +0000 (UTC)
+From:   Baoquan He <bhe@redhat.com>
+To:     linux-kernel@vger.kernel.org
+Cc:     akpm@linux-foundation.org, linux-mm@kvack.org, arnd@arndb.de,
+        hch@lst.de, christophe.leroy@csgroup.eu, rppt@kernel.org,
+        willy@infradead.org, agordeev@linux.ibm.com,
+        wangkefeng.wang@huawei.com, schnelle@linux.ibm.com,
+        shorne@gmail.com, David.Laight@ACULAB.COM, deller@gmx.de,
+        nathan@kernel.org, glaubitz@physik.fu-berlin.de,
+        Baoquan He <bhe@redhat.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+Subject: [PATCH v8 11/19] sh: add <asm-generic/io.h> including
+Date:   Thu,  6 Jul 2023 23:45:12 +0800
+Message-Id: <20230706154520.11257-12-bhe@redhat.com>
+In-Reply-To: <20230706154520.11257-1-bhe@redhat.com>
+References: <20230706154520.11257-1-bhe@redhat.com>
+MIME-Version: 1.0
+Content-type: text/plain
+Content-Transfer-Encoding: 8bit
+X-Scanned-By: MIMEDefang 3.1 on 10.11.54.5
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Günter,
+In <asm-generic/io.h>, it provides a generic implementation of all
+I/O accessors.
 
-On Thu, Jul 6, 2023 at 4:03 PM Guenter Roeck <linux@roeck-us.net> wrote:
-> On Thu, Jun 01, 2023 at 11:22:17PM +0300, Sergey Shtylyov wrote:
-> > IRQ0 is no longer returned by platform_get_irq() and its ilk -- they now
-> > return -EINVAL instead.  However, the kernel code supporting SH3/4-based
-> > SoCs still maps the IRQ #s starting at 0 -- modify that code to start the
-> > IRQ #s from 16 instead.
-> >
-> > The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
-> > indeed are using IRQ0 for the SMSC911x compatible Ethernet chip.
-> >
->
-> Unfortunately it also affects all sh4 emulations in qemu, and results in
-> boot stalls with those. There isn't a relevant log to attach because there
-> is no error message - booting just stalls until the emulation is aborted.
+For some port|mm io functions, SuperH has its own implementation
+in arch/sh/kernel/iomap.c and arch/sh/include/asm/io_noioport.h.
+These will conflict with those in <asm-generic/io.h> and cause compiling
+error. Hence add macro definitions to ensure that the SuperH version
+of them will override the generic version.
 
-Which sh4 platforms in particular?
+Signed-off-by: Baoquan He <bhe@redhat.com>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/sh/include/asm/io.h          | 25 +++++++++++++++++++++++++
+ arch/sh/include/asm/io_noioport.h |  7 +++++++
+ 2 files changed, 32 insertions(+)
 
-I booted a kernel with this patch on rts7751r2d (QEMU) and landisk
-(physical) two days ago.
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index fba90e670ed4..270e7952950c 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -119,6 +119,26 @@ void __raw_readsl(const void __iomem *addr, void *data, int longlen);
+ 
+ __BUILD_MEMORY_STRING(__raw_, q, u64)
+ 
++#define ioread8 ioread8
++#define ioread16 ioread16
++#define ioread16be ioread16be
++#define ioread32 ioread32
++#define ioread32be ioread32be
++
++#define iowrite8 iowrite8
++#define iowrite16 iowrite16
++#define iowrite16be iowrite16be
++#define iowrite32 iowrite32
++#define iowrite32be iowrite32be
++
++#define ioread8_rep ioread8_rep
++#define ioread16_rep ioread16_rep
++#define ioread32_rep ioread32_rep
++
++#define iowrite8_rep iowrite8_rep
++#define iowrite16_rep iowrite16_rep
++#define iowrite32_rep iowrite32_rep
++
+ #ifdef CONFIG_HAS_IOPORT_MAP
+ 
+ /*
+@@ -225,6 +245,9 @@ __BUILD_IOPORT_STRING(q, u64)
+ #define IO_SPACE_LIMIT 0xffffffff
+ 
+ /* We really want to try and get these to memcpy etc */
++#define memset_io memset_io
++#define memcpy_fromio memcpy_fromio
++#define memcpy_toio memcpy_toio
+ void memcpy_fromio(void *, const volatile void __iomem *, unsigned long);
+ void memcpy_toio(volatile void __iomem *, const void *, unsigned long);
+ void memset_io(volatile void __iomem *, int, unsigned long);
+@@ -287,6 +310,8 @@ static inline void iounmap(volatile void __iomem *addr) { }
+  */
+ #define xlate_dev_mem_ptr(p)	__va(p)
+ 
++#include <asm-generic/io.h>
++
+ #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
+ int valid_phys_addr_range(phys_addr_t addr, size_t size);
+ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
+diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
+index f7938fe0f911..5ba4116b4265 100644
+--- a/arch/sh/include/asm/io_noioport.h
++++ b/arch/sh/include/asm/io_noioport.h
+@@ -53,6 +53,13 @@ static inline void ioport_unmap(void __iomem *addr)
+ #define outw_p(x, addr)	outw((x), (addr))
+ #define outl_p(x, addr)	outl((x), (addr))
+ 
++#define insb insb
++#define insw insw
++#define insl insl
++#define outsb outsb
++#define outsw outsw
++#define outsl outsl
++
+ static inline void insb(unsigned long port, void *dst, unsigned long count)
+ {
+ 	BUG();
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+2.34.1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
