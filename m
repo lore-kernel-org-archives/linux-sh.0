@@ -2,113 +2,103 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 256E0EB64DA
-	for <linux-sh@archiver.kernel.org>; Fri,  7 Jul 2023 13:43:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BF26DEB64D9
+	for <linux-sh@archiver.kernel.org>; Fri,  7 Jul 2023 14:34:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230145AbjGGNnn (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 7 Jul 2023 09:43:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55730 "EHLO
+        id S231799AbjGGOeq (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 7 Jul 2023 10:34:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59358 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232602AbjGGNni (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 7 Jul 2023 09:43:38 -0400
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 550672105
-        for <linux-sh@vger.kernel.org>; Fri,  7 Jul 2023 06:42:51 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-        s=mimecast20190719; t=1688737370;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=I+owWNOWvEK7SZ1O/p9+BsoqrhRbp6l42ZVJTUZNbK4=;
-        b=al24FDfIHIpwfIhJZ/GjyMRkqN6Ebtm6UIeOmij0IPwvVUa9gbYQxg3jGwRv8oqKixNFVL
-        IKF1S4ezG1Yo0QTg3UFKKdp7vdk5VUjZCJGwBfgDGDLudN86CWLuzZ/olGqwVU63g6JHMN
-        tbZ0JVjmEIfPfP4HkMMW7nJNGql5eLU=
-Received: from mail-wm1-f70.google.com (mail-wm1-f70.google.com
- [209.85.128.70]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-152-zvY4T-DJMiaI4CUIC5ZxxA-1; Fri, 07 Jul 2023 09:42:49 -0400
-X-MC-Unique: zvY4T-DJMiaI4CUIC5ZxxA-1
-Received: by mail-wm1-f70.google.com with SMTP id 5b1f17b1804b1-3f5df65f9f4so11352345e9.2
-        for <linux-sh@vger.kernel.org>; Fri, 07 Jul 2023 06:42:48 -0700 (PDT)
+        with ESMTP id S231616AbjGGOep (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 7 Jul 2023 10:34:45 -0400
+Received: from mail-yb1-xb2e.google.com (mail-yb1-xb2e.google.com [IPv6:2607:f8b0:4864:20::b2e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 82EA011B;
+        Fri,  7 Jul 2023 07:34:44 -0700 (PDT)
+Received: by mail-yb1-xb2e.google.com with SMTP id 3f1490d57ef6-c4dfe2a95fbso2086447276.3;
+        Fri, 07 Jul 2023 07:34:44 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1688740483; x=1691332483;
+        h=content-transfer-encoding:in-reply-to:subject:from:references:cc:to
+         :content-language:user-agent:mime-version:date:message-id:sender
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=3p5aFfYXx0zUGHrXuEIgjjwQBqgXOALoH5J8KcvZyRY=;
+        b=jrgiPVSwGYPEisBAsr29v837w9nqGK9uBxl4JdGnbWOgN3ntENbZ2lcN3YgKdstVQf
+         i4+poi/qSdmIWcYmrlJ/UQCAtzOCAUTr7hdH84aNd00UYg2WrTHKwnhpKRmUUyqyQLH7
+         Vp64mUsbhr6KNJEIB+CXgXF5MpmKsuawoUNoFi32Od8oM9GPRdSD8bm/qs5HzWdCjD6l
+         W08L51jsjxjUz/F/zgE/Z33M01xk/QlAv16lerKzoc+HpSM4aVnGVhPPVCaRkUmhRaeR
+         H0Sp8Pzpw0KXvx/GyEwcmImYQHIZdSNnLCPeubxKsqtQqbEZPFVkpiHQv3Ahfg8S6wRs
+         HbBA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1688737368; x=1691329368;
-        h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
-         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=I+owWNOWvEK7SZ1O/p9+BsoqrhRbp6l42ZVJTUZNbK4=;
-        b=WcmoQuFZJMd4s3eH22STBHcVhbhvegMxUG4XbEeXLotwQ1f/gFyzgYVtIEJymx7rJm
-         KTr6899U3MwKJGHpAgBaqC3vj0JzvTyGAgfYAlvbwj/yR+Aws9/nPiTBFNkMqhgaLIiK
-         aDQENldli3Wi9JvCPZccUDiSH4igSII5zSbHlJ+BP1lHxRFvNrI3srdPX0/1mnw7md9O
-         t21VzOJiP7McqgKLL3m4K4FOc2mcrvmQuhonE3EqahBVTdhOsEGnwoR9xDEmySlkAyNZ
-         0YO1gezWSx8diFaYEOW45SKOd0Kh7RcyCQa0pTLvv2lVs6SX4iBkOrGA8X2S7wrCzqlf
-         x8Lg==
-X-Gm-Message-State: ABy/qLbNrX9aue5XdkbUyNdRcfo8yrn7PPtZK8QDV3Exu+a0xfKr+SIC
-        sw8qK2kj+7H/+yNEjUxLMoUrrEvD00xYyVApkkDW4ug0ns5BmKH9m0zHbekzL2RzAIXnk2GxuPv
-        BWJB/S8cxJThFhb7q5SM=
-X-Received: by 2002:a7b:cd85:0:b0:3fb:5dad:1392 with SMTP id y5-20020a7bcd85000000b003fb5dad1392mr3824000wmj.17.1688737367975;
-        Fri, 07 Jul 2023 06:42:47 -0700 (PDT)
-X-Google-Smtp-Source: APBJJlEZxhfEH8UwFPHB4pXOYFja3GHddFsOU/EgTb58z7K38wBQ2x+vg0IaPSVH4aXqur2PYGn+xA==
-X-Received: by 2002:a7b:cd85:0:b0:3fb:5dad:1392 with SMTP id y5-20020a7bcd85000000b003fb5dad1392mr3823993wmj.17.1688737367817;
-        Fri, 07 Jul 2023 06:42:47 -0700 (PDT)
-Received: from localhost (205.pool92-176-231.dynamic.orange.es. [92.176.231.205])
-        by smtp.gmail.com with ESMTPSA id k12-20020a7bc30c000000b003fba92fad35sm2498874wmj.26.2023.07.07.06.42.47
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 07 Jul 2023 06:42:47 -0700 (PDT)
-From:   Javier Martinez Canillas <javierm@redhat.com>
-To:     Arnd Bergmann <arnd@kernel.org>,
-        Thomas Zimmermann <tzimmermann@suse.de>
-Cc:     linux-fbdev@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Russell King <linux@armlinux.org.uk>,
-        dri-devel@lists.freedesktop.org, Ard Biesheuvel <ardb@kernel.org>,
-        Helge Deller <deller@gmx.de>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Arnd Bergmann <arnd@arndb.de>, Guo Ren <guoren@kernel.org>,
-        Brian Cain <bcain@quicinc.com>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "David S. Miller" <davem@davemloft.net>,
-        Chris Zankel <chris@zankel.net>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Masahiro Yamada <masahiroy@kernel.org>,
-        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
-Subject: Re: [PATCH 4/4] vgacon, arch/*: remove unused screen_info definitions
-In-Reply-To: <20230707095415.1449376-4-arnd@kernel.org>
-References: <20230707095415.1449376-1-arnd@kernel.org>
- <20230707095415.1449376-4-arnd@kernel.org>
-Date:   Fri, 07 Jul 2023 15:42:46 +0200
-Message-ID: <87edljyh0p.fsf@minerva.mail-host-address-is-not-set>
+        d=1e100.net; s=20221208; t=1688740483; x=1691332483;
+        h=content-transfer-encoding:in-reply-to:subject:from:references:cc:to
+         :content-language:user-agent:mime-version:date:message-id:sender
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=3p5aFfYXx0zUGHrXuEIgjjwQBqgXOALoH5J8KcvZyRY=;
+        b=f2A0FqCIYpx1FZwR5yiI1jxRfFUhcbmvy32fgFzxUojby2mHSVFplCiwV6E/f0hGu7
+         sIrKxo+vzW7vZz53zCkoGRun21RQg22UYJmeCkNbigLHVFX/3EavakkXH8py0eji08Oa
+         +EqcvwW1jBNqp5Zl1TuZyC1XzvUov1AKvy/Uvk6YW3gMYzsfNbwTToOrbZKco/4rj/+N
+         oSTVUBO8xkBnvq2IU/htUsjcTLIr403dim6rkc1mA7yLTshR2W4f0rdVjsByjZf/fcZh
+         yzwqR4cXMalhu+XDPBcdhnebt4wVGfpFiaNm+6z3Hugm3iUcqq9HY5GBwN0ya7b78DxV
+         eCEQ==
+X-Gm-Message-State: ABy/qLYbLeYl1dQfdrfZWd/uo7WU7xg96BTGY7ab8zzZXf5nljGMLquq
+        nM80adhQqFdrHQMyB249uDxU1jXkMVg=
+X-Google-Smtp-Source: APBJJlGHhZuiTlSPpBvQzOHNGzjr3optRLDkfcVtnbiTex0B2yhUe4s5hIKckT1eprjkoVISxbbubQ==
+X-Received: by 2002:a25:6d57:0:b0:bc3:8c94:8e34 with SMTP id i84-20020a256d57000000b00bc38c948e34mr4075892ybc.26.1688740483673;
+        Fri, 07 Jul 2023 07:34:43 -0700 (PDT)
+Received: from ?IPV6:2600:1700:e321:62f0:329c:23ff:fee3:9d7c? ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
+        by smtp.gmail.com with ESMTPSA id t62-20020a254641000000b00be4f34d419asm959437yba.37.2023.07.07.07.34.41
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 07 Jul 2023 07:34:43 -0700 (PDT)
+Sender: Guenter Roeck <groeck7@gmail.com>
+Message-ID: <d8254cce-a6a6-46b4-ea28-3a1df2760499@roeck-us.net>
+Date:   Fri, 7 Jul 2023 07:34:41 -0700
 MIME-Version: 1.0
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: redhat.com
-Content-Type: text/plain
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.11.0
+Content-Language: en-US
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     Sergey Shtylyov <s.shtylyov@omp.ru>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+References: <fbfea3ad-d327-4ad5-ac9c-648c7ca3fe1f@roeck-us.net>
+ <CAMuHMdUfXdCf_CQuWXpP72MzKFYvXg3Ud1VN_3Bd0RHxfLhVeQ@mail.gmail.com>
+ <7b2c0d812280afaefee0c70a9aea00a0fcf84e3a.camel@physik.fu-berlin.de>
+ <CAMuHMdWLdJPC6oQ0P4_DVbPXrVjg=PMjTUdX4MD4+tmc3BW9sg@mail.gmail.com>
+ <CAMuHMdUzk8GuaqK6rBLaskVb=8Lsqe5hZ-=N=zqfWcxay-Euew@mail.gmail.com>
+ <0a7c60cebf41e781f5c8f04d85dfba9e31e61e2b.camel@physik.fu-berlin.de>
+From:   Guenter Roeck <linux@roeck-us.net>
+Subject: Re: [PATCH] sh: Avoid using IRQ0 on SH3 and SH4
+In-Reply-To: <0a7c60cebf41e781f5c8f04d85dfba9e31e61e2b.camel@physik.fu-berlin.de>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Arnd Bergmann <arnd@kernel.org> writes:
+On 7/7/23 02:53, John Paul Adrian Glaubitz wrote:
+> Hi Geert!
+> 
+> On Fri, 2023-07-07 at 10:48 +0200, Geert Uytterhoeven wrote:
+>>> I can reproduce the issue with rts7751r2dplus_defconfig, but I may
+>>> not be able to look into it today...
+>>
+>> Disabling CONFIG_USB_OHCI_HCD fixes the hang.
+> 
+> I picked rts7751r2dplus_defconfig, disabled CONFIG_USB_OHCI_HCD but it still
+> hangs for me. Are you sure it's CONFIG_USB_OHCI_HCD and not something else?
+> 
 
-> From: Arnd Bergmann <arnd@arndb.de>
->
-> A number of architectures either kept the screen_info definition for
-> historical purposes as it used to be required by the generic VT code, or
-> they copied it from another architecture in order to build the VGA
-> console driver in an allmodconfig build.
->
-> Now that vgacon no longer builds on these architectures, remove the
-> stale definitions.
->
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> ---
+It seems to be related. With this patch reverted, ohci_irq() gets a single
+interrupt, and boot continues. With this patch in place, ohci_irq() does
+not get any interrupts, and boot hangs with qemu at 100% CPU. I confirmed
+this by disabling CONFIG_MFD_SM501. After that, the hang is no longer seen.
+Of course, that also means that OHCI and other emulated sm501 functionality
+no longer works.
 
-Nice cleanup!
+My suspicion is that something goes wrong with interrupt routing to
+SM501 and with it to ohci_irq(), but that is just a wild guess.
 
-Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
-
--- 
-Best regards,
-
-Javier Martinez Canillas
-Core Platforms
-Red Hat
+Guenter
 
