@@ -2,32 +2,32 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3008BEB64D9
-	for <linux-sh@archiver.kernel.org>; Fri,  7 Jul 2023 09:30:24 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 89208EB64D9
+	for <linux-sh@archiver.kernel.org>; Fri,  7 Jul 2023 09:54:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230443AbjGGJaW convert rfc822-to-8bit (ORCPT
+        id S231492AbjGGJyP convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 7 Jul 2023 05:30:22 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51190 "EHLO
+        Fri, 7 Jul 2023 05:54:15 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60856 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229636AbjGGJaV (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 7 Jul 2023 05:30:21 -0400
+        with ESMTP id S229661AbjGGJyP (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 7 Jul 2023 05:54:15 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9EFBA1BE8;
-        Fri,  7 Jul 2023 02:30:20 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CC44B90;
+        Fri,  7 Jul 2023 02:54:13 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qHhmu-000Uby-0d; Fri, 07 Jul 2023 11:30:04 +0200
+          id 1qHiA1-000b6e-Nz; Fri, 07 Jul 2023 11:53:57 +0200
 Received: from p5b13afb1.dip0.t-ipconnect.de ([91.19.175.177] helo=[192.168.178.81])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qHhmt-002u5A-OU; Fri, 07 Jul 2023 11:30:03 +0200
-Message-ID: <a74a9c59173df4244b555d2f6691081303cb166e.camel@physik.fu-berlin.de>
+          id 1qHiA1-002xAJ-Gf; Fri, 07 Jul 2023 11:53:57 +0200
+Message-ID: <0a7c60cebf41e781f5c8f04d85dfba9e31e61e2b.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH] sh: Avoid using IRQ0 on SH3 and SH4
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 To:     Geert Uytterhoeven <geert@linux-m68k.org>
@@ -36,7 +36,7 @@ Cc:     Guenter Roeck <linux@roeck-us.net>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
         linux-kernel@vger.kernel.org
-Date:   Fri, 07 Jul 2023 11:30:03 +0200
+Date:   Fri, 07 Jul 2023 11:53:51 +0200
 In-Reply-To: <CAMuHMdUzk8GuaqK6rBLaskVb=8Lsqe5hZ-=N=zqfWcxay-Euew@mail.gmail.com>
 References: <fbfea3ad-d327-4ad5-ac9c-648c7ca3fe1f@roeck-us.net>
          <CAMuHMdUfXdCf_CQuWXpP72MzKFYvXg3Ud1VN_3Bd0RHxfLhVeQ@mail.gmail.com>
@@ -57,17 +57,13 @@ X-Mailing-List: linux-sh@vger.kernel.org
 Hi Geert!
 
 On Fri, 2023-07-07 at 10:48 +0200, Geert Uytterhoeven wrote:
-> > I am not using rts7751r2dplus_defconfig, but my own[*] config,
-> > which boots fine into initrd userspace.
-> > 
 > > I can reproduce the issue with rts7751r2dplus_defconfig, but I may
 > > not be able to look into it today...
 > 
 > Disabling CONFIG_USB_OHCI_HCD fixes the hang.
 
-Thanks, I was expecting a driver issue. I guess we need to look into the
-OHCI driver or the SH-specific part and check whether the IRQ numbers need
-to be adjusted there as well.
+I picked rts7751r2dplus_defconfig, disabled CONFIG_USB_OHCI_HCD but it still
+hangs for me. Are you sure it's CONFIG_USB_OHCI_HCD and not something else?
 
 Adrian
 
