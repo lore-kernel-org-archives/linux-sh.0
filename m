@@ -2,113 +2,127 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 16195EB64DA
-	for <linux-sh@archiver.kernel.org>; Fri,  7 Jul 2023 15:30:28 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 416BDEB64DA
+	for <linux-sh@archiver.kernel.org>; Sat,  8 Jul 2023 13:26:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229665AbjGGPa1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 7 Jul 2023 11:30:27 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33374 "EHLO
+        id S229666AbjGHN0w (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 8 Jul 2023 09:26:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40660 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229681AbjGGPa1 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 7 Jul 2023 11:30:27 -0400
-Received: from mail-pl1-x62c.google.com (mail-pl1-x62c.google.com [IPv6:2607:f8b0:4864:20::62c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5979419B7;
-        Fri,  7 Jul 2023 08:30:25 -0700 (PDT)
-Received: by mail-pl1-x62c.google.com with SMTP id d9443c01a7336-1b895a06484so10773775ad.1;
-        Fri, 07 Jul 2023 08:30:25 -0700 (PDT)
+        with ESMTP id S229462AbjGHN0v (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 8 Jul 2023 09:26:51 -0400
+Received: from mail-pf1-x42d.google.com (mail-pf1-x42d.google.com [IPv6:2607:f8b0:4864:20::42d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4AA74BA;
+        Sat,  8 Jul 2023 06:26:50 -0700 (PDT)
+Received: by mail-pf1-x42d.google.com with SMTP id d2e1a72fcca58-66767d628e2so1892182b3a.2;
+        Sat, 08 Jul 2023 06:26:50 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1688743825; x=1691335825;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :sender:from:to:cc:subject:date:message-id:reply-to;
-        bh=23fqDXyoBeUMVhuKSW8F1o5jrSURNCbcDsreKQGADIQ=;
-        b=kmY9x4Hl5lou7/neUj4ZHr9FyuqDnV9af9hyxvpWJm1buSQZKqdSb9gXu0elbdK4V+
-         X72UwMF7/+5zq4kDO1YzqV0q6Ct+LZFjfEZurY4meI/eVl2x31+5JsjkJK76KZySY4lO
-         0GyVnmBjHNeZm5O8J/lViByY3OTtDELeL4TIZtfUGuv/+oKLCj2tSjSVRmZOYCYNadGq
-         Hvb3lxCq7iuH+idaF4Tu2O4/1/5L0JuQfFK+pSQjAfGjBI53iTJ/WH7ZnxifQ+gCYAzr
-         YuZMdjjQr5vvIj4iH6WrFbrFnly1Mz0hdxrk67sfO+fhAAbGliXFfiDRUZl6WaterdTO
-         KejA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1688743825; x=1691335825;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :sender:x-gm-message-state:from:to:cc:subject:date:message-id
+        d=gmail.com; s=20221208; t=1688822809; x=1691414809;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:sender:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=23fqDXyoBeUMVhuKSW8F1o5jrSURNCbcDsreKQGADIQ=;
-        b=dCnFCdBXSQPg7V+Z0h163QrqHf6Fn3MB8eLurUu6TA+3++oK/fhMr19PvvMXZEzV6T
-         QHXMLLsP1PwSUrAKI1A2KNq2P5LHmkpgxUHlELrKmnKs8vIJasLvJ1GRhMO0hA382uN4
-         gjlC+MtBnsIw1qH5bO+++gKyzGpHWJrEuzKfrBgrzJugBKvEGOyZuJK+cBz4lOncJd74
-         Pt7VmoFs7FI7GAFTWXRexRKtGEw13kDeQ/0OY0VokwL5/xrnStmELK1lLoOA5re1P+MN
-         NPj+0RLI/YZb+rlDUJuGq4xzzNA8PZZRXN2LlyKA8jL2citPgwOU+OiqV3GqV6A1HUsZ
-         R0Sw==
-X-Gm-Message-State: ABy/qLZfUL/tlcy1EaDoX0onMcIin82WHb4n/ukOYjfSVTJdRC6lV8hl
-        TG3wN9liauGijFMalc9eDt6RvvbM1g0=
-X-Google-Smtp-Source: APBJJlE4AtjAv83gXgurA1uTa/SFwHaiudMa6q87SvxelfAFeOy0Vi/sG8vfiZj59mHz098I85y6zQ==
-X-Received: by 2002:a17:902:b402:b0:1b6:a972:4414 with SMTP id x2-20020a170902b40200b001b6a9724414mr4321648plr.3.1688743824652;
-        Fri, 07 Jul 2023 08:30:24 -0700 (PDT)
-Received: from ?IPV6:2600:1700:e321:62f0:329c:23ff:fee3:9d7c? ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
-        by smtp.gmail.com with ESMTPSA id h5-20020a170902f54500b001b53c8659fesm3405218plf.30.2023.07.07.08.30.23
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 07 Jul 2023 08:30:24 -0700 (PDT)
+        bh=qefpVYKHCZIqBOQ2CrloZdhfg0L8/Dnkq/kNB/3pkhk=;
+        b=Bh4jKRAud+SLMfpDuZvhOuWWvab4RDEKhavrxjbxVejiSrR+fMzWxPeeW1vtGyyuHF
+         kdMj1saKwfyLWfKT3mt+snIhAojrZOZDhRQjLXYCC7DYJ1iERXoJsZqngG7KIsncwBLl
+         +TcKsfFX9asYHaOui7QHrDIIQ5TW9cpAaBVmXBsJ51gZs+9Iy6fXR/mGLWs4ry/vAEMO
+         Tt6TEjpKaHzFIo5qRTXBv2DQdSkEw+mT2ngyWulwQc207jxPh2ac5QA0xeHuKIhF+Sa6
+         XzGAc/BWcGVQTF8llYXfAQoSK0d7SNKiBQ2lfGRHHic4v7ygccf/3Q9bfvdP0kmIjmqP
+         Gjfg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1688822809; x=1691414809;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:sender:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=qefpVYKHCZIqBOQ2CrloZdhfg0L8/Dnkq/kNB/3pkhk=;
+        b=NTfuqFvkVP6pcqI5thnEHOQzqPFw0o17tWJTxtsPTCcX5suJtjhUEljeh4SziF+won
+         6kpcUPHSvOizRwT5a6XZ0YluNTBB6WC9cJUFQwD+yhEQldZNMiucSbQlTDw7tRkYuIOc
+         xB4AOtU8lvVuq5DlzBk9Gl8fZOw3fPfz8LMKT7lGwS2OU8lrR6zZ2k37frCZZQ6QTCLP
+         SxF5Iopj3xkFHqD38cY2eUNhd9N+KA7fJqg7O+mqWO/PWInH1aEZ0r/xbUcOX8cvHGgY
+         jxIqQ2l0QFHDZo86snyzH5p6BMRAy3JKxxE6i++WK40A7C4QkiiGDuU3cqpjurL4do7K
+         kqEQ==
+X-Gm-Message-State: ABy/qLbdJb0xZCDtMOO2lsBTwj9bAfmkf+7WVZvuwTiXA49BGRKm8rwX
+        QcVdDCUX2BsJikdPzPHYeHE=
+X-Google-Smtp-Source: APBJJlH5vKOwcfjVTgfliHx3QT4wZqg41+dJVjnHAppMKQy7YRR6MnuCiQASypm0or5ZJF+NsXMEvA==
+X-Received: by 2002:a05:6a20:1c5:b0:12f:eb73:fc64 with SMTP id 5-20020a056a2001c500b0012feb73fc64mr4771396pzz.51.1688822809500;
+        Sat, 08 Jul 2023 06:26:49 -0700 (PDT)
+Received: from server.roeck-us.net ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
+        by smtp.gmail.com with ESMTPSA id i129-20020a636d87000000b0050fa6546a45sm4364265pgc.6.2023.07.08.06.26.48
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 08 Jul 2023 06:26:49 -0700 (PDT)
 Sender: Guenter Roeck <groeck7@gmail.com>
-Message-ID: <7ed3afcf-42f2-af72-9837-76c14c9bb3a1@roeck-us.net>
-Date:   Fri, 7 Jul 2023 08:30:22 -0700
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.11.0
-Subject: Re: [PATCH] sh: Avoid using IRQ0 on SH3 and SH4
-Content-Language: en-US
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Geert Uytterhoeven <geert@linux-m68k.org>,
-        Sergey Shtylyov <s.shtylyov@omp.ru>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <d8254cce-a6a6-46b4-ea28-3a1df2760499@roeck-us.net>
- <407492B8-5D9F-41BC-A696-24C421C69F49@physik.fu-berlin.de>
+Date:   Sat, 8 Jul 2023 06:26:47 -0700
 From:   Guenter Roeck <linux@roeck-us.net>
-In-Reply-To: <407492B8-5D9F-41BC-A696-24C421C69F49@physik.fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+To:     Sergey Shtylyov <s.shtylyov@omp.ru>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Linux regressions mailing list <regressions@lists.linux.dev>
+Subject: Re: [PATCH] sh: Avoid using IRQ0 on SH3 and SH4
+Message-ID: <5d15a610-b818-4089-9ab4-3390d7cf8832@roeck-us.net>
+References: <fbfea3ad-d327-4ad5-ac9c-648c7ca3fe1f@roeck-us.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <fbfea3ad-d327-4ad5-ac9c-648c7ca3fe1f@roeck-us.net>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 7/7/23 08:19, John Paul Adrian Glaubitz wrote:
-> Hi Guenter!
+On Thu, Jul 06, 2023 at 06:57:04AM -0700, Guenter Roeck wrote:
+> Hi,
 > 
->> On Jul 7, 2023, at 4:35 PM, Guenter Roeck <linux@roeck-us.net> wrote:
->>
->> ﻿On 7/7/23 02:53, John Paul Adrian Glaubitz wrote:
->>> Hi Geert!
->>> On Fri, 2023-07-07 at 10:48 +0200, Geert Uytterhoeven wrote:
->>>>> I can reproduce the issue with rts7751r2dplus_defconfig, but I may
->>>>> not be able to look into it today...
->>>>
->>>> Disabling CONFIG_USB_OHCI_HCD fixes the hang.
->>> I picked rts7751r2dplus_defconfig, disabled CONFIG_USB_OHCI_HCD but it still
->>> hangs for me. Are you sure it's CONFIG_USB_OHCI_HCD and not something else?
->>
->> It seems to be related. With this patch reverted, ohci_irq() gets a single
->> interrupt, and boot continues. With this patch in place, ohci_irq() does
->> not get any interrupts, and boot hangs with qemu at 100% CPU. I confirmed
->> this by disabling CONFIG_MFD_SM501. After that, the hang is no longer seen.
->> Of course, that also means that OHCI and other emulated sm501 functionality
->> no longer works.
->>
->> My suspicion is that something goes wrong with interrupt routing to
->> SM501 and with it to ohci_irq(), but that is just a wild guess.
+> On Thu, Jun 01, 2023 at 11:22:17PM +0300, Sergey Shtylyov wrote:
+> > IRQ0 is no longer returned by platform_get_irq() and its ilk -- they now
+> > return -EINVAL instead.  However, the kernel code supporting SH3/4-based
+> > SoCs still maps the IRQ #s starting at 0 -- modify that code to start the
+> > IRQ #s from 16 instead.
+> > 
+> > The patch should mostly affect the AP-SH4A-3A/AP-SH4AD-0A boards as they
+> > indeed are using IRQ0 for the SMSC911x compatible Ethernet chip.
+> > 
 > 
-> Looking at drivers/mfd/sm501.c, sm501_plat_probe() is explicitly requesting IRQ 0 which is no longer supported on SH:
+> Unfortunately it also affects all sh4 emulations in qemu, and results in
+> boot stalls with those. There isn't a relevant log to attach because there
+> is no error message - booting just stalls until the emulation is aborted.
 > 
->  > https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/mfd/sm501.c <https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/mfd/sm501.c>
+> Reverting this patch fixes the problem.
 > 
-> So, we need to shift this by 16, I guess.
+> Bisect log is attached for reference. Note that bisect requires applying
+> commit 7497840d462c ("sh: Provide unxlate_dev_mem_ptr() in asm/io.h"),
+> which is also the reason why the problem was not observed earlier since
+> it was hiding behind a build failure.
 > 
 
-It isn't interrupt 0, it is interrupt _index_ 0. See platform_get_irq_optional()
-which calls platform_get_resource(dev, IORESOURCE_IRQ, num). There are lots
-of calls to platform_get_irq() with index 0 in the kernel.
+Since -rc1 is coming up and there has been no progress, it is time to start
+tracking this problem as regression.
 
-Guenter
+#regzbot ^introduced a8ac2961148e
+#regzbot title sh4: Boot stall with qemu emulations
+#regzbot ignore-activity
 
+> Guenter
+> 
+> ---
+> # bad: [c17414a273b81fe4e34e11d69fc30cc8b1431614] Merge tag 'sh-for-v6.5-tag1' of git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux
+> # good: [b5641a5d8b8b14643bfe3d017d64da90a5c55479] mm: don't do validate_mm() unnecessarily and without mmap locking
+> git bisect start 'HEAD' 'b5641a5d8b8b'
+> # good: [15ac468614e5e4fee82e1eb32568f427b0e51adc] Merge tag 'media/v6.5-1' of git://git.kernel.org/pub/scm/linux/kernel/git/mchehab/linux-media
+> git bisect good 15ac468614e5e4fee82e1eb32568f427b0e51adc
+> # good: [73a3fcdaa73200e38e38f7e8a32c9b901c5b95b5] Merge tag 'f2fs-for-6.5-rc1' of git://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs
+> git bisect good 73a3fcdaa73200e38e38f7e8a32c9b901c5b95b5
+> # good: [6843306689aff3aea608e4d2630b2a5a0137f827] Merge tag 'net-6.5-rc1' of git://git.kernel.org/pub/scm/linux/kernel/git/netdev/net
+> git bisect good 6843306689aff3aea608e4d2630b2a5a0137f827
+> # good: [afa92949124abc25ddab1789dd654214e2e1b040] dt-bindings: phy: cdns,salvo: add property cdns,usb2-disconnect-threshold-microvolt
+> git bisect good afa92949124abc25ddab1789dd654214e2e1b040
+> # good: [37bd215fc48ef2a399f836d62d2e4a166efb31be] phy: qualcomm: fix indentation in Makefile
+> git bisect good 37bd215fc48ef2a399f836d62d2e4a166efb31be
+> # bad: [7497840d462c8f54c4888c22ab3726a8cde4b9a2] sh: Provide unxlate_dev_mem_ptr() in asm/io.h
+> git bisect bad 7497840d462c8f54c4888c22ab3726a8cde4b9a2
+> # bad: [01658fe3d6c02992846a038c8111e70ace169295] sh: Refactor header include path addition
+> git bisect bad 01658fe3d6c02992846a038c8111e70ace169295
+> # bad: [a8ac2961148e8c720dc760f2e06627cd5c55a154] sh: Avoid using IRQ0 on SH3 and SH4
+> git bisect bad a8ac2961148e8c720dc760f2e06627cd5c55a154
+> # good: [bc9d1f0cecd2407cfb2364a7d4be2f52d1d46a9d] sh: j2: Use ioremap() to translate device tree address into kernel memory
+> git bisect good bc9d1f0cecd2407cfb2364a7d4be2f52d1d46a9d
+> # first bad commit: [a8ac2961148e8c720dc760f2e06627cd5c55a154] sh: Avoid using IRQ0 on SH3 and SH4
