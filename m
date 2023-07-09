@@ -2,92 +2,106 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EC76CEB64DC
-	for <linux-sh@archiver.kernel.org>; Sun,  9 Jul 2023 12:35:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D894AEB64DC
+	for <linux-sh@archiver.kernel.org>; Sun,  9 Jul 2023 12:48:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230283AbjGIMfN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 9 Jul 2023 08:35:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52190 "EHLO
+        id S229535AbjGIMsZ convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 9 Jul 2023 08:48:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53816 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230272AbjGIMfN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 9 Jul 2023 08:35:13 -0400
-Received: from mail.208.org (unknown [183.242.55.162])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BDCCA129
-        for <linux-sh@vger.kernel.org>; Sun,  9 Jul 2023 05:35:10 -0700 (PDT)
-Received: from mail.208.org (email.208.org [127.0.0.1])
-        by mail.208.org (Postfix) with ESMTP id 4QzRRb3pXxzBJBgF
-        for <linux-sh@vger.kernel.org>; Sun,  9 Jul 2023 20:35:07 +0800 (CST)
-Authentication-Results: mail.208.org (amavisd-new); dkim=pass
-        reason="pass (just generated, assumed good)" header.d=208.org
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=208.org; h=
-        content-transfer-encoding:content-type:message-id:user-agent
-        :references:in-reply-to:subject:to:from:date:mime-version; s=
-        dkim; t=1688906107; x=1691498108; bh=mjXTHNdHAU+xS5sfdZYN0S62k7a
-        JHZJWnjIbQuU5p7A=; b=oWuCm1q/QTLpYYbNzAAN8Jxv6YUE0bOSrxULpz9lrmc
-        hX4qTLv2X65rAVMrn+O+atPYlJfT6zHg0s4rWsxoht9GzUAdmb57/RBN2PlTAZ98
-        +PnidPMY+aI8Z0ABqrrscQSEPHXtytBlrPF1iL/pB4z+O31XRuIvpBChFKpm4qUM
-        afIRfzIVeAQV4lK/aiSie/5cn99D77CUp6D21A5+iZNmJ3/7Qlf03F9EFH/PQXtw
-        5a9RDN7puQLZufkNPjUKTsaeNhgq5IZMmVqRqdD2wXqgPLuXYbxd4naehbNnVvDO
-        EMhf1blJziCiU0IZtj7DBXlcb1YhAIEOx1TGTcJc0lQ==
-X-Virus-Scanned: amavisd-new at mail.208.org
-Received: from mail.208.org ([127.0.0.1])
-        by mail.208.org (mail.208.org [127.0.0.1]) (amavisd-new, port 10026)
-        with ESMTP id ZtXf2p8cSGUQ for <linux-sh@vger.kernel.org>;
-        Sun,  9 Jul 2023 20:35:07 +0800 (CST)
-Received: from localhost (email.208.org [127.0.0.1])
-        by mail.208.org (Postfix) with ESMTPSA id 4QzRRZ6c6lzBHXkb;
-        Sun,  9 Jul 2023 20:35:06 +0800 (CST)
-MIME-Version: 1.0
-Date:   Sun, 09 Jul 2023 20:35:06 +0800
-From:   xuanzhenggang001@208suo.com
-To:     ysato@users.sourceforge.jp, dalias@libc.org,
-        glaubitz@physik.fu-berlin.de
+        with ESMTP id S229534AbjGIMsY (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 9 Jul 2023 08:48:24 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 45D48B9;
+        Sun,  9 Jul 2023 05:48:23 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1qITpq-002AfV-QR; Sun, 09 Jul 2023 14:48:18 +0200
+Received: from dynamic-077-191-183-238.77.191.pool.telefonica.de ([77.191.183.238] helo=[192.168.1.11])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1qITpq-001CdG-Iz; Sun, 09 Jul 2023 14:48:18 +0200
+Message-ID: <bb896c311151f8ccc7d3e919877641a5e9fbb3ff.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: hd64461: fix virq offsets
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Artur Rojek <contact@artur-rojek.eu>,
+        Rich Felker <dalias@libc.org>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Sergey Shtylyov <s.shtylyov@omp.ru>
 Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH] sh: heartbeat: prefer 'unsigned int' to bare use of
- 'unsigned'
-In-Reply-To: <20230709123329.33674-1-denghuilong@cdjrlc.com>
-References: <20230709123329.33674-1-denghuilong@cdjrlc.com>
-User-Agent: Roundcube Webmail
-Message-ID: <7554aadc5afb915ee1065cea56053cb6@208suo.com>
-X-Sender: xuanzhenggang001@208suo.com
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Content-Transfer-Encoding: 7bit
+Date:   Sun, 09 Jul 2023 14:48:09 +0200
+In-Reply-To: <20230709121311.211720-1-contact@artur-rojek.eu>
+References: <20230709121311.211720-1-contact@artur-rojek.eu>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.4 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 77.191.183.238
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Fix the following warnings reported by checkpatch:
+Hi Artur!
 
-arch/sh/drivers/heartbeat.c:33: WARNING: Prefer 'unsigned int' to bare 
-use of 'unsigned'
-arch/sh/drivers/heartbeat.c:62: WARNING: Prefer 'unsigned int' to bare 
-use of 'unsigned'
+On Sun, 2023-07-09 at 14:13 +0200, Artur Rojek wrote:
+> A recent change to start counting SuperH IRQ #s from 16 breaks support
+> for the Hitachi HD64461 companion chip.
+> 
+> Move the offchip IRQ base and HD64461 IRQ # by 16 in order to
+> accommodate for the new virq numbering rules.
+> 
+> Fixes: a8ac2961148e ("sh: Avoid using IRQ0 on SH3 and SH4")
+> Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
+> ---
+>  arch/sh/cchips/Kconfig        | 4 ++--
+>  arch/sh/include/asm/hd64461.h | 2 +-
+>  2 files changed, 3 insertions(+), 3 deletions(-)
+> 
+> diff --git a/arch/sh/cchips/Kconfig b/arch/sh/cchips/Kconfig
+> index efde2edb5627..9659a0bc58de 100644
+> --- a/arch/sh/cchips/Kconfig
+> +++ b/arch/sh/cchips/Kconfig
+> @@ -29,9 +29,9 @@ endchoice
+>  config HD64461_IRQ
+>  	int "HD64461 IRQ"
+>  	depends on HD64461
+> -	default "36"
+> +	default "52"
+>  	help
+> -	  The default setting of the HD64461 IRQ is 36.
+> +	  The default setting of the HD64461 IRQ is 52.
+>  
+>  	  Do not change this unless you know what you are doing.
+>  
+> diff --git a/arch/sh/include/asm/hd64461.h b/arch/sh/include/asm/hd64461.h
+> index afb24cb034b1..6d85db6cf54b 100644
+> --- a/arch/sh/include/asm/hd64461.h
+> +++ b/arch/sh/include/asm/hd64461.h
+> @@ -229,7 +229,7 @@
+>  #define	HD64461_NIMR		HD64461_IO_OFFSET(0x5002)
+>  
+>  #define	HD64461_IRQBASE		OFFCHIP_IRQ_BASE
+> -#define	OFFCHIP_IRQ_BASE	64
+> +#define	OFFCHIP_IRQ_BASE	80
+>  #define	HD64461_IRQ_NUM		16
+>  
+>  #define	HD64461_IRQ_UART	(HD64461_IRQBASE+5)
 
-Signed-off-by: Zhenggang Xuan <xuanzhenggang001@208suo.com>
----
-  arch/sh/drivers/heartbeat.c | 4 ++--
-  1 file changed, 2 insertions(+), 2 deletions(-)
+I think it would be better to write this as (64 + 16) for consistency
+with the other changes made by Sergey.
 
-diff --git a/arch/sh/drivers/heartbeat.c b/arch/sh/drivers/heartbeat.c
-index 24391b444b28..07f04ed0d517 100644
---- a/arch/sh/drivers/heartbeat.c
-+++ b/arch/sh/drivers/heartbeat.c
-@@ -30,7 +30,7 @@
-  static unsigned char default_bit_pos[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+Adrian
 
-  static inline void heartbeat_toggle_bit(struct heartbeat_data *hd,
--                    unsigned bit, unsigned int inverted)
-+                    unsigned int bit, unsigned int inverted)
-  {
-      unsigned int new;
-
-@@ -59,7 +59,7 @@ static inline void heartbeat_toggle_bit(struct 
-heartbeat_data *hd,
-  static void heartbeat_timer(struct timer_list *t)
-  {
-      struct heartbeat_data *hd = from_timer(hd, t, timer);
--    static unsigned bit = 0, up = 1;
-+    static unsigned int bit = 0, up = 1;
-
-      heartbeat_toggle_bit(hd, bit, hd->flags & HEARTBEAT_INVERTED);
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
