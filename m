@@ -2,116 +2,99 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B5666EB64DC
-	for <linux-sh@archiver.kernel.org>; Sun,  9 Jul 2023 12:51:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 410E8EB64DD
+	for <linux-sh@archiver.kernel.org>; Sun,  9 Jul 2023 12:56:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230120AbjGIMvC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 9 Jul 2023 08:51:02 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54210 "EHLO
+        id S229591AbjGIM45 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 9 Jul 2023 08:56:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55246 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229534AbjGIMvB (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 9 Jul 2023 08:51:01 -0400
-Received: from mx01.omp.ru (mx01.omp.ru [90.154.21.10])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 082CDB9;
-        Sun,  9 Jul 2023 05:50:59 -0700 (PDT)
-Received: from [192.168.1.103] (31.173.81.79) by msexch01.omp.ru (10.188.4.12)
- with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id 15.2.986.14; Sun, 9 Jul 2023
- 15:50:49 +0300
-Subject: Re: [PATCH] [RFT] sh: mach-r2d: Handle virq offset in cascaded IRL
- demux
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-CC:     <linux-sh@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-References: <2c99d5df41c40691f6c407b7b6a040d406bc81ac.1688901306.git.geert+renesas@glider.be>
- <d92853f1a37158d37fefcc84b59efae9b0fb903b.camel@physik.fu-berlin.de>
-From:   Sergey Shtylyov <s.shtylyov@omp.ru>
-Organization: Open Mobile Platform
-Message-ID: <ef715abc-6be4-6473-15a1-05069b23bdc1@omp.ru>
-Date:   Sun, 9 Jul 2023 15:50:48 +0300
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
- Thunderbird/78.10.1
+        with ESMTP id S229534AbjGIM45 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 9 Jul 2023 08:56:57 -0400
+Received: from relay6-d.mail.gandi.net (relay6-d.mail.gandi.net [IPv6:2001:4b98:dc4:8::226])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 72860A6;
+        Sun,  9 Jul 2023 05:56:50 -0700 (PDT)
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Sasl: contact@artur-rojek.eu
+Received: by mail.gandi.net (Postfix) with ESMTPA id 88CDDC0002;
+        Sun,  9 Jul 2023 12:56:47 +0000 (UTC)
 MIME-Version: 1.0
-In-Reply-To: <d92853f1a37158d37fefcc84b59efae9b0fb903b.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset="utf-8"
-Content-Language: en-US
+Date:   Sun, 09 Jul 2023 14:56:47 +0200
+From:   Artur Rojek <contact@artur-rojek.eu>
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Rich Felker <dalias@libc.org>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Sergey Shtylyov <s.shtylyov@omp.ru>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] sh: hd64461: fix virq offsets
+In-Reply-To: <bb896c311151f8ccc7d3e919877641a5e9fbb3ff.camel@physik.fu-berlin.de>
+References: <20230709121311.211720-1-contact@artur-rojek.eu>
+ <bb896c311151f8ccc7d3e919877641a5e9fbb3ff.camel@physik.fu-berlin.de>
+Message-ID: <2c57d9cc03b6a430234c0016bf78fa22@artur-rojek.eu>
+X-Sender: contact@artur-rojek.eu
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
 Content-Transfer-Encoding: 7bit
-X-Originating-IP: [31.173.81.79]
-X-ClientProxiedBy: msexch01.omp.ru (10.188.4.12) To msexch01.omp.ru
- (10.188.4.12)
-X-KSE-ServerInfo: msexch01.omp.ru, 9
-X-KSE-AntiSpam-Interceptor-Info: scan successful
-X-KSE-AntiSpam-Version: 5.9.59, Database issued on: 07/09/2023 12:27:06
-X-KSE-AntiSpam-Status: KAS_STATUS_NOT_DETECTED
-X-KSE-AntiSpam-Method: none
-X-KSE-AntiSpam-Rate: 59
-X-KSE-AntiSpam-Info: Lua profiles 178491 [Jul 07 2023]
-X-KSE-AntiSpam-Info: Version: 5.9.59.0
-X-KSE-AntiSpam-Info: Envelope from: s.shtylyov@omp.ru
-X-KSE-AntiSpam-Info: LuaCore: 520 520 ccb018a655251011855942a2571029252d3d69a2
-X-KSE-AntiSpam-Info: {rep_avail}
-X-KSE-AntiSpam-Info: {Tracking_uf_ne_domains}
-X-KSE-AntiSpam-Info: {Tracking_from_domain_doesnt_match_to}
-X-KSE-AntiSpam-Info: {relay has no DNS name}
-X-KSE-AntiSpam-Info: {SMTP from is not routable}
-X-KSE-AntiSpam-Info: {Found in DNSBL: 31.173.81.79 in (user)
- b.barracudacentral.org}
-X-KSE-AntiSpam-Info: {Found in DNSBL: 31.173.81.79 in (user) dbl.spamhaus.org}
-X-KSE-AntiSpam-Info: git.kernel.org:7.1.1;d41d8cd98f00b204e9800998ecf8427e.com:7.1.1;omp.ru:7.1.1;127.0.0.199:7.1.2
-X-KSE-AntiSpam-Info: ApMailHostAddress: 31.173.81.79
-X-KSE-AntiSpam-Info: {DNS response errors}
-X-KSE-AntiSpam-Info: Rate: 59
-X-KSE-AntiSpam-Info: Status: not_detected
-X-KSE-AntiSpam-Info: Method: none
-X-KSE-AntiSpam-Info: Auth:dmarc=temperror header.from=omp.ru;spf=temperror
- smtp.mailfrom=omp.ru;dkim=none
-X-KSE-Antiphishing-Info: Clean
-X-KSE-Antiphishing-ScanningType: Heuristic
-X-KSE-Antiphishing-Method: None
-X-KSE-Antiphishing-Bases: 07/09/2023 12:34:00
-X-KSE-Antivirus-Interceptor-Info: scan successful
-X-KSE-Antivirus-Info: Clean, bases: 7/9/2023 8:24:00 AM
-X-KSE-Attachment-Filter-Triggered-Rules: Clean
-X-KSE-Attachment-Filter-Triggered-Filters: Clean
-X-KSE-BulkMessagesFiltering-Scan-Result: InTheLimit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 7/9/23 2:58 PM, John Paul Adrian Glaubitz wrote:
-[...]
->> diff --git a/arch/sh/boards/mach-r2d/irq.c b/arch/sh/boards/mach-r2d/irq.c
->> index e34f81e9ae813b8d..c37b40398c5bc83e 100644
->> --- a/arch/sh/boards/mach-r2d/irq.c
->> +++ b/arch/sh/boards/mach-r2d/irq.c
->> @@ -117,10 +117,10 @@ static unsigned char irl2irq[R2D_NR_IRL];
->>  
->>  int rts7751r2d_irq_demux(int irq)
->>  {
->> -	if (irq >= R2D_NR_IRL || irq < 0 || !irl2irq[irq])
->> +	if (irq >= 16 + R2D_NR_IRL || irq < 16 || !irl2irq[irq - 16])
->>  		return irq;
->>  
->> -	return irl2irq[irq];
->> +	return irl2irq[irq - 16];
->>  }
->>  
->>  /*
+On 2023-07-09 14:48, John Paul Adrian Glaubitz wrote:
+> Hi Artur!
 > 
-> Btw, I think this needs to be adjusted to test for "ret <= 0" since IRQs cannot
-> be zero anymore, correct?
+> On Sun, 2023-07-09 at 14:13 +0200, Artur Rojek wrote:
+>> A recent change to start counting SuperH IRQ #s from 16 breaks support
+>> for the Hitachi HD64461 companion chip.
+>> 
+>> Move the offchip IRQ base and HD64461 IRQ # by 16 in order to
+>> accommodate for the new virq numbering rules.
+>> 
+>> Fixes: a8ac2961148e ("sh: Avoid using IRQ0 on SH3 and SH4")
+>> Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
+>> ---
+>>  arch/sh/cchips/Kconfig        | 4 ++--
+>>  arch/sh/include/asm/hd64461.h | 2 +-
+>>  2 files changed, 3 insertions(+), 3 deletions(-)
+>> 
+>> diff --git a/arch/sh/cchips/Kconfig b/arch/sh/cchips/Kconfig
+>> index efde2edb5627..9659a0bc58de 100644
+>> --- a/arch/sh/cchips/Kconfig
+>> +++ b/arch/sh/cchips/Kconfig
+>> @@ -29,9 +29,9 @@ endchoice
+>>  config HD64461_IRQ
+>>  	int "HD64461 IRQ"
+>>  	depends on HD64461
+>> -	default "36"
+>> +	default "52"
+>>  	help
+>> -	  The default setting of the HD64461 IRQ is 36.
+>> +	  The default setting of the HD64461 IRQ is 52.
+>> 
+>>  	  Do not change this unless you know what you are doing.
+>> 
+>> diff --git a/arch/sh/include/asm/hd64461.h 
+>> b/arch/sh/include/asm/hd64461.h
+>> index afb24cb034b1..6d85db6cf54b 100644
+>> --- a/arch/sh/include/asm/hd64461.h
+>> +++ b/arch/sh/include/asm/hd64461.h
+>> @@ -229,7 +229,7 @@
+>>  #define	HD64461_NIMR		HD64461_IO_OFFSET(0x5002)
+>> 
+>>  #define	HD64461_IRQBASE		OFFCHIP_IRQ_BASE
+>> -#define	OFFCHIP_IRQ_BASE	64
+>> +#define	OFFCHIP_IRQ_BASE	80
+>>  #define	HD64461_IRQ_NUM		16
+>> 
+>>  #define	HD64461_IRQ_UART	(HD64461_IRQBASE+5)
 > 
->> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/mfd/sm501.c#n1389
-
-   No, just ignore IRQ0 from now on, it can't be returned. Else you'd just complicate
-your code as you'd have to add a separate check for IRQ0 in order to return -EINVAL
-in this case (you can't return 0 from probe in case of ret == 0 as that would mean
-successful probe when it's not).  My patch to platfrom_get_irq() ensures that IRQ0
-check in its users is never needed, in order to avoid the (badly scaling) checks)...
-
+> I think it would be better to write this as (64 + 16) for consistency
+> with the other changes made by Sergey.
+Sure, I will send v2 with this change, although the same can't be
+applied to HD64461_IRQ value above, so some inconsistency will exist
+either way.
+> 
 > Adrian
-
-MBR, Sergey
