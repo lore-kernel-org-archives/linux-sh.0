@@ -2,32 +2,32 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0547AEB64DC
-	for <linux-sh@archiver.kernel.org>; Sun,  9 Jul 2023 11:52:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E7189EB64DC
+	for <linux-sh@archiver.kernel.org>; Sun,  9 Jul 2023 11:53:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230091AbjGILw4 convert rfc822-to-8bit (ORCPT
+        id S229853AbjGILxc convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 9 Jul 2023 07:52:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46530 "EHLO
+        Sun, 9 Jul 2023 07:53:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46868 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229853AbjGILwz (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 9 Jul 2023 07:52:55 -0400
+        with ESMTP id S229769AbjGILxb (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 9 Jul 2023 07:53:31 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 62363DB;
-        Sun,  9 Jul 2023 04:52:54 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C41C6F9;
+        Sun,  9 Jul 2023 04:53:30 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qISxz-001xzw-0W; Sun, 09 Jul 2023 13:52:39 +0200
+          id 1qISyd-001yBo-Ki; Sun, 09 Jul 2023 13:53:19 +0200
 Received: from dynamic-077-191-183-238.77.191.pool.telefonica.de ([77.191.183.238] helo=[192.168.1.11])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qISxy-0016ZT-Ph; Sun, 09 Jul 2023 13:52:38 +0200
-Message-ID: <3f1a79cb42c1518ca18cc72a21f3b58974fff96d.camel@physik.fu-berlin.de>
+          id 1qISyd-0016ew-Dc; Sun, 09 Jul 2023 13:53:19 +0200
+Message-ID: <58697ba16c0e14aea7337330ae6f03bb35cd76ff.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH] [RFT] sh: mach-r2d: Handle virq offset in cascaded IRL
  demux
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
@@ -37,7 +37,7 @@ To:     Geert Uytterhoeven <geert+renesas@glider.be>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>
 Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date:   Sun, 09 Jul 2023 13:52:29 +0200
+Date:   Sun, 09 Jul 2023 13:53:09 +0200
 In-Reply-To: <2c99d5df41c40691f6c407b7b6a040d406bc81ac.1688901306.git.geert+renesas@glider.be>
 References: <2c99d5df41c40691f6c407b7b6a040d406bc81ac.1688901306.git.geert+renesas@glider.be>
 Content-Type: text/plain; charset="UTF-8"
@@ -93,14 +93,9 @@ On Sun, 2023-07-09 at 13:15 +0200, Geert Uytterhoeven wrote:
 >  
 >  /*
 
-Funny, this is actually almost what I did myself when trying to fix this
-issue. Only difference was that I applied the offset of 16 only to one
-of the instances at a time and it never occurred to me that it needs to
-be applied to all instances.
+I can also confirm that this fixes the hang on QEMU.
 
-Thanks for fixing this!
-
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
 Adrian
 
