@@ -2,141 +2,118 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2D994EB64DC
-	for <linux-sh@archiver.kernel.org>; Sun,  9 Jul 2023 13:19:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 59B95EB64DC
+	for <linux-sh@archiver.kernel.org>; Sun,  9 Jul 2023 13:51:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230203AbjGINTL convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 9 Jul 2023 09:19:11 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58894 "EHLO
+        id S230252AbjGINvH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 9 Jul 2023 09:51:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37968 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229505AbjGINTK (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 9 Jul 2023 09:19:10 -0400
-Received: from mail-yw1-f177.google.com (mail-yw1-f177.google.com [209.85.128.177])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6D632CE;
-        Sun,  9 Jul 2023 06:19:09 -0700 (PDT)
-Received: by mail-yw1-f177.google.com with SMTP id 00721157ae682-5701eaf0d04so43044937b3.2;
-        Sun, 09 Jul 2023 06:19:09 -0700 (PDT)
+        with ESMTP id S229706AbjGINvH (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 9 Jul 2023 09:51:07 -0400
+Received: from mail-pl1-x630.google.com (mail-pl1-x630.google.com [IPv6:2607:f8b0:4864:20::630])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 42AD3114;
+        Sun,  9 Jul 2023 06:51:06 -0700 (PDT)
+Received: by mail-pl1-x630.google.com with SMTP id d9443c01a7336-1b8ad9eede0so27059015ad.1;
+        Sun, 09 Jul 2023 06:51:06 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1688910665; x=1691502665;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:sender:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=3TedygSIVmNctQbeMqIt6+adjDWuI/4xC/VFYdzgvfI=;
+        b=QQQcqXS1lweh7hYqS96vzPxYDNuMI+PzDO6W6y4EwWSSaXIoZvtEDcfhG1pytxImev
+         wMlx83o+ykInPGOA2T8TyLz6QhyqALsy3QGIec8uPeOQzFMbVXnwzGY1QR+VB0Ee80RQ
+         QqGyPh/YoKl2sEp8UNwQiJNbNsGZ78EIP1/kuqh9fIcFBM70/oasjAwwJ7oS/iku9pDk
+         M4RjFmktIKpfQV/DxHWlCyjtmaZUWsejeZJcr3C8A6QV0JAvyXzv+eH9XCXlnHU/BaQI
+         76uXG69ez7anQ+6k/cdgm4nEMYRpTNG/OxeZ75JPprP8D/wc8BGmg4LQYLeTxZN2MQF0
+         xgGA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1688908748; x=1691500748;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+        d=1e100.net; s=20221208; t=1688910665; x=1691502665;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:sender:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=jAsWFjQ8XQ0l4a3pjroso8uTitNWzeuQkFoqULC7cZw=;
-        b=GRLkFAEMIN2RSyV/zyqsBsj7xW1bQefef1ka0qVb4Hxc+mX1ZCZO2L4VtCnfXHvTOf
-         AxxwrrMsvUae95KPFyriSWruzNppps4xcmCxDpwC8dAqDEFV45XRX0gJKcUglSssNH01
-         XQrLRT98fdFIg1MErBKxeu9aaTW4nWnTaKSygRsY5EP6UWhWQY4VQWUejM+1g5Q2cW2D
-         AVp6RCIo3ZY59rdl5pPg65icVLiJSt2rl4MlPgAhGEqvzZiV2GmSW/ng7ANzCOUWU+Yy
-         qNiXRGlaBiXsXCsBbuoJgNeVIb5fVh32OFbM5QXTsxKJAwTloUCk7o1Qh1rL7SogiMgO
-         p5jA==
-X-Gm-Message-State: ABy/qLbKCnFQIQZ0F3XgGRaDUjMBlbwRHUkoRZjWT/uXJIg4kP+MiFOM
-        Jf13JlzESqpGmyfCR0NJ8951Bl97zlmKJg==
-X-Google-Smtp-Source: APBJJlE6Ubfev6CzIHYqZpxdI+5ur12FdRnN70K7NByMGYxJXMTW+dm+fTajXPvXKVEybxp/R3n9wA==
-X-Received: by 2002:a81:83c8:0:b0:56c:e2db:8d07 with SMTP id t191-20020a8183c8000000b0056ce2db8d07mr9604518ywf.33.1688908748288;
-        Sun, 09 Jul 2023 06:19:08 -0700 (PDT)
-Received: from mail-yb1-f174.google.com (mail-yb1-f174.google.com. [209.85.219.174])
-        by smtp.gmail.com with ESMTPSA id w126-20020a814984000000b0057a0e5b18e0sm2411783ywa.142.2023.07.09.06.19.08
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 09 Jul 2023 06:19:08 -0700 (PDT)
-Received: by mail-yb1-f174.google.com with SMTP id 3f1490d57ef6-c5079a9f1c8so4295076276.0;
-        Sun, 09 Jul 2023 06:19:08 -0700 (PDT)
-X-Received: by 2002:a05:6902:185:b0:c1d:5719:7c74 with SMTP id
- t5-20020a056902018500b00c1d57197c74mr8062783ybh.31.1688908747883; Sun, 09 Jul
- 2023 06:19:07 -0700 (PDT)
-MIME-Version: 1.0
-References: <20230709121311.211720-1-contact@artur-rojek.eu>
- <bb896c311151f8ccc7d3e919877641a5e9fbb3ff.camel@physik.fu-berlin.de>
- <2c57d9cc03b6a430234c0016bf78fa22@artur-rojek.eu> <8c075658d00953ecb4383e1910c7b04fdaf870dd.camel@physik.fu-berlin.de>
-In-Reply-To: <8c075658d00953ecb4383e1910c7b04fdaf870dd.camel@physik.fu-berlin.de>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Sun, 9 Jul 2023 15:18:55 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdWVP4Y4Bp+M-1rzVYmZnu4tVVQR6yAenVVYN+6ogw+Hkw@mail.gmail.com>
-Message-ID: <CAMuHMdWVP4Y4Bp+M-1rzVYmZnu4tVVQR6yAenVVYN+6ogw+Hkw@mail.gmail.com>
-Subject: Re: [PATCH] sh: hd64461: fix virq offsets
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Artur Rojek <contact@artur-rojek.eu>,
-        Rich Felker <dalias@libc.org>,
-        Sergey Shtylyov <s.shtylyov@omp.ru>, linux-sh@vger.kernel.org,
+        bh=3TedygSIVmNctQbeMqIt6+adjDWuI/4xC/VFYdzgvfI=;
+        b=Vw0UzEqoS9XkLCkAY7PiIfT25t3bnDTftMlG8mQjHn5/ppw7MCspJgOUlZm+ocFwig
+         kDDfz3D3Fup1yhptJfTNFzSJiOBblwbP7wt09fjF+yCZ/CPJTd/+U/LNzyiIFjUH4fwk
+         T6ZpWzJOEKTdjN2lfhPPm4pATPu2vLJhh4b/aoLx+/0i6z0qamIopi8VDiJbbVH/HYvL
+         6j93xZXrNWtibwAgSTFM0pHARapmvAJfEOqjrgD6WJH75Kf/nUOdAuIJ1AB6LadMra9C
+         2P1ycok7WTv7kzTlqWxO1PoiBG69NTB41G8NBhkT/hNpURN+w2vBcVyG/iRUI61SvTs9
+         l2KQ==
+X-Gm-Message-State: ABy/qLYcGWZp2faT2MtEEL4J0mQXsFGU8RfyouLtRp1v5u0wQrbT7Vfs
+        T2DHNCIu/ftwheYZQ55UJmQtYLWDzPk=
+X-Google-Smtp-Source: APBJJlGPp+UafruZ6YbdTmvx8Nq+8uvEz0r9QDOeU7k0hZzC9uFmWWbITBJorxRFy7n6DzT808rcxQ==
+X-Received: by 2002:a17:902:e80d:b0:1b8:b459:f47a with SMTP id u13-20020a170902e80d00b001b8b459f47amr13153836plg.34.1688910665539;
+        Sun, 09 Jul 2023 06:51:05 -0700 (PDT)
+Received: from server.roeck-us.net ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
+        by smtp.gmail.com with ESMTPSA id f11-20020a17090274cb00b0019f3cc463absm6362632plt.0.2023.07.09.06.51.04
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 09 Jul 2023 06:51:04 -0700 (PDT)
+Sender: Guenter Roeck <groeck7@gmail.com>
+Date:   Sun, 9 Jul 2023 06:51:03 -0700
+From:   Guenter Roeck <linux@roeck-us.net>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>
+Cc:     Sergey Shtylyov <s.shtylyov@omp.ru>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
         linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+Subject: Re: [PATCH] [RFT] sh: mach-r2d: Handle virq offset in cascaded IRL
+ demux
+Message-ID: <ebba6278-2d4b-411b-ad95-8db70752eff8@roeck-us.net>
+References: <2c99d5df41c40691f6c407b7b6a040d406bc81ac.1688901306.git.geert+renesas@glider.be>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <2c99d5df41c40691f6c407b7b6a040d406bc81ac.1688901306.git.geert+renesas@glider.be>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Sun, Jul 9, 2023 at 2:59 PM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Sun, 2023-07-09 at 14:56 +0200, Artur Rojek wrote:
-> > On 2023-07-09 14:48, John Paul Adrian Glaubitz wrote:
-> > > On Sun, 2023-07-09 at 14:13 +0200, Artur Rojek wrote:
-> > > > A recent change to start counting SuperH IRQ #s from 16 breaks support
-> > > > for the Hitachi HD64461 companion chip.
-> > > >
-> > > > Move the offchip IRQ base and HD64461 IRQ # by 16 in order to
-> > > > accommodate for the new virq numbering rules.
-> > > >
-> > > > Fixes: a8ac2961148e ("sh: Avoid using IRQ0 on SH3 and SH4")
-> > > > Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
+On Sun, Jul 09, 2023 at 01:15:49PM +0200, Geert Uytterhoeven wrote:
+> When booting rts7751r2dplus_defconfig on QEMU, the system hangs due to
+> an interrupt storm on IRQ 20.  IRQ 20 aka event 0x280 is a cascaded IRL
+> interrupt, which maps to IRQ_VOYAGER, the interrupt used by the Silicon
+> Motion SM501 multimedia companion chip.  As rts7751r2d_irq_demux() does
+> not take into account the new virq offset, the interrupt is no longer
+> translated, leading to an unhandled interrupt.
+> 
+> Fix this by taking into account the virq offset when translating
+> cascaded IRL interrupts.
+> 
+> Fixes: a8ac2961148e8c72 ("sh: Avoid using IRQ0 on SH3 and SH4")
+> Reported-by: Guenter Roeck <linux@roeck-us.net>
+> Closes: https://lore.kernel.org/r/fbfea3ad-d327-4ad5-ac9c-648c7ca3fe1f@roeck-us.net
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Guenter Roeck <linux@roeck-us.net>
 
-> > > > --- a/arch/sh/cchips/Kconfig
-> > > > +++ b/arch/sh/cchips/Kconfig
-> > > > @@ -29,9 +29,9 @@ endchoice
-> > > >  config HD64461_IRQ
-> > > >   int "HD64461 IRQ"
-> > > >   depends on HD64461
-> > > > - default "36"
-> > > > + default "52"
-> > > >   help
-> > > > -   The default setting of the HD64461 IRQ is 36.
-> > > > +   The default setting of the HD64461 IRQ is 52.
-> > > >
-> > > >     Do not change this unless you know what you are doing.
-> > > >
-> > > > diff --git a/arch/sh/include/asm/hd64461.h
-> > > > b/arch/sh/include/asm/hd64461.h
-> > > > index afb24cb034b1..6d85db6cf54b 100644
-> > > > --- a/arch/sh/include/asm/hd64461.h
-> > > > +++ b/arch/sh/include/asm/hd64461.h
-> > > > @@ -229,7 +229,7 @@
-> > > >  #define  HD64461_NIMR            HD64461_IO_OFFSET(0x5002)
-> > > >
-> > > >  #define  HD64461_IRQBASE         OFFCHIP_IRQ_BASE
-> > > > -#define  OFFCHIP_IRQ_BASE        64
-> > > > +#define  OFFCHIP_IRQ_BASE        80
-> > > >  #define  HD64461_IRQ_NUM         16
-> > > >
-> > > >  #define  HD64461_IRQ_UART        (HD64461_IRQBASE+5)
-> > >
-> > > I think it would be better to write this as (64 + 16) for consistency
-> > > with the other changes made by Sergey.
+Guenter
 
-Ideally, we want to have a #define for that...
-
-> > Sure, I will send v2 with this change, although the same can't be
-> > applied to HD64461_IRQ value above, so some inconsistency will exist
-> > either way.
->
-> That's okay, that's the user-facing part ;-).
-
-Do we want to keep this Kconfig option? It is rather fragile, and there is
-no in-tree config file overriding the default value.
-Presumably it was introduced to support an out-of-tree board with
-a different wiring.
-
-BTW, there's also this (unused) definition:
-
-arch/sh/include/mach-common/mach/hp6xx.h:#define HP680_HD64461_IRQ
- evt2irq(0x680)  /* IRQ4_IRQ */
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+> ---
+> Highlander and Dreamcast probably have the same issue.
+> I'll send patches for these later...
+> ---
+>  arch/sh/boards/mach-r2d/irq.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/arch/sh/boards/mach-r2d/irq.c b/arch/sh/boards/mach-r2d/irq.c
+> index e34f81e9ae813b8d..c37b40398c5bc83e 100644
+> --- a/arch/sh/boards/mach-r2d/irq.c
+> +++ b/arch/sh/boards/mach-r2d/irq.c
+> @@ -117,10 +117,10 @@ static unsigned char irl2irq[R2D_NR_IRL];
+>  
+>  int rts7751r2d_irq_demux(int irq)
+>  {
+> -	if (irq >= R2D_NR_IRL || irq < 0 || !irl2irq[irq])
+> +	if (irq >= 16 + R2D_NR_IRL || irq < 16 || !irl2irq[irq - 16])
+>  		return irq;
+>  
+> -	return irl2irq[irq];
+> +	return irl2irq[irq - 16];
+>  }
+>  
+>  /*
+> -- 
+> 2.34.1
+> 
