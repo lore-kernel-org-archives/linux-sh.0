@@ -2,123 +2,75 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6DCF2EB64DC
-	for <linux-sh@archiver.kernel.org>; Sun,  9 Jul 2023 12:59:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F6ADEB64DC
+	for <linux-sh@archiver.kernel.org>; Sun,  9 Jul 2023 13:10:32 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229736AbjGIM7j convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 9 Jul 2023 08:59:39 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55770 "EHLO
+        id S230512AbjGINKa (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 9 Jul 2023 09:10:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56910 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229534AbjGIM7i (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 9 Jul 2023 08:59:38 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6F02BA6;
-        Sun,  9 Jul 2023 05:59:37 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qIU0j-002DQ5-7d; Sun, 09 Jul 2023 14:59:33 +0200
-Received: from dynamic-077-191-183-238.77.191.pool.telefonica.de ([77.191.183.238] helo=[192.168.1.11])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qIU0j-001Dzs-0b; Sun, 09 Jul 2023 14:59:33 +0200
-Message-ID: <8c075658d00953ecb4383e1910c7b04fdaf870dd.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: hd64461: fix virq offsets
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Artur Rojek <contact@artur-rojek.eu>
-Cc:     Rich Felker <dalias@libc.org>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Sergey Shtylyov <s.shtylyov@omp.ru>, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Date:   Sun, 09 Jul 2023 14:59:24 +0200
-In-Reply-To: <2c57d9cc03b6a430234c0016bf78fa22@artur-rojek.eu>
-References: <20230709121311.211720-1-contact@artur-rojek.eu>
-         <bb896c311151f8ccc7d3e919877641a5e9fbb3ff.camel@physik.fu-berlin.de>
-         <2c57d9cc03b6a430234c0016bf78fa22@artur-rojek.eu>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.4 
+        with ESMTP id S230467AbjGINK3 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 9 Jul 2023 09:10:29 -0400
+Received: from albert.telenet-ops.be (albert.telenet-ops.be [IPv6:2a02:1800:110:4::f00:1a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C298C1A8
+        for <linux-sh@vger.kernel.org>; Sun,  9 Jul 2023 06:10:27 -0700 (PDT)
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:5bb:109a:ec27:6093])
+        by albert.telenet-ops.be with bizsmtp
+        id K1AQ2A0051ycx4f061AQW7; Sun, 09 Jul 2023 15:10:25 +0200
+Received: from rox.of.borg ([192.168.97.57])
+        by ramsan.of.borg with esmtp (Exim 4.95)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1qIUB9-000xGt-3T;
+        Sun, 09 Jul 2023 15:10:24 +0200
+Received: from geert by rox.of.borg with local (Exim 4.95)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1qIUBE-003a1C-Cm;
+        Sun, 09 Jul 2023 15:10:24 +0200
+From:   Geert Uytterhoeven <geert+renesas@glider.be>
+To:     Sergey Shtylyov <s.shtylyov@omp.ru>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>
+Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Geert Uytterhoeven <geert+renesas@glider.be>
+Subject: [PATCH] [RFC] sh: highlander: Handle virq offset in cascaded IRL demux
+Date:   Sun,  9 Jul 2023 15:10:23 +0200
+Message-Id: <4fcb0d08a2b372431c41e04312742dc9e41e1be4.1688908186.git.geert+renesas@glider.be>
+X-Mailer: git-send-email 2.34.1
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 77.191.183.238
-X-ZEDAT-Hint: PO
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi!
+Take into account the virq offset when translating cascaded IRL
+interrupts.
 
-On Sun, 2023-07-09 at 14:56 +0200, Artur Rojek wrote:
-> On 2023-07-09 14:48, John Paul Adrian Glaubitz wrote:
-> > Hi Artur!
-> > 
-> > On Sun, 2023-07-09 at 14:13 +0200, Artur Rojek wrote:
-> > > A recent change to start counting SuperH IRQ #s from 16 breaks support
-> > > for the Hitachi HD64461 companion chip.
-> > > 
-> > > Move the offchip IRQ base and HD64461 IRQ # by 16 in order to
-> > > accommodate for the new virq numbering rules.
-> > > 
-> > > Fixes: a8ac2961148e ("sh: Avoid using IRQ0 on SH3 and SH4")
-> > > Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
-> > > ---
-> > >  arch/sh/cchips/Kconfig        | 4 ++--
-> > >  arch/sh/include/asm/hd64461.h | 2 +-
-> > >  2 files changed, 3 insertions(+), 3 deletions(-)
-> > > 
-> > > diff --git a/arch/sh/cchips/Kconfig b/arch/sh/cchips/Kconfig
-> > > index efde2edb5627..9659a0bc58de 100644
-> > > --- a/arch/sh/cchips/Kconfig
-> > > +++ b/arch/sh/cchips/Kconfig
-> > > @@ -29,9 +29,9 @@ endchoice
-> > >  config HD64461_IRQ
-> > >  	int "HD64461 IRQ"
-> > >  	depends on HD64461
-> > > -	default "36"
-> > > +	default "52"
-> > >  	help
-> > > -	  The default setting of the HD64461 IRQ is 36.
-> > > +	  The default setting of the HD64461 IRQ is 52.
-> > > 
-> > >  	  Do not change this unless you know what you are doing.
-> > > 
-> > > diff --git a/arch/sh/include/asm/hd64461.h 
-> > > b/arch/sh/include/asm/hd64461.h
-> > > index afb24cb034b1..6d85db6cf54b 100644
-> > > --- a/arch/sh/include/asm/hd64461.h
-> > > +++ b/arch/sh/include/asm/hd64461.h
-> > > @@ -229,7 +229,7 @@
-> > >  #define	HD64461_NIMR		HD64461_IO_OFFSET(0x5002)
-> > > 
-> > >  #define	HD64461_IRQBASE		OFFCHIP_IRQ_BASE
-> > > -#define	OFFCHIP_IRQ_BASE	64
-> > > +#define	OFFCHIP_IRQ_BASE	80
-> > >  #define	HD64461_IRQ_NUM		16
-> > > 
-> > >  #define	HD64461_IRQ_UART	(HD64461_IRQBASE+5)
-> > 
-> > I think it would be better to write this as (64 + 16) for consistency
-> > with the other changes made by Sergey.
->
-> Sure, I will send v2 with this change, although the same can't be
-> applied to HD64461_IRQ value above, so some inconsistency will exist
-> either way.
-> 
+Fixes: a8ac2961148e8c72 ("sh: Avoid using IRQ0 on SH3 and SH4")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+Compile-tested only, but the fix is identical to the fix for rts7751r2d.
+---
+ arch/sh/boards/mach-highlander/setup.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-That's okay, that's the user-facing part ;-).
-
-Btw, did you verify that the default assigned IRQ is actually changed from
-36 to 52 when the machine boots?
-
-Adrian
-
+diff --git a/arch/sh/boards/mach-highlander/setup.c b/arch/sh/boards/mach-highlander/setup.c
+index 533393d779c2b97f..a821a1b155473d93 100644
+--- a/arch/sh/boards/mach-highlander/setup.c
++++ b/arch/sh/boards/mach-highlander/setup.c
+@@ -389,10 +389,10 @@ static unsigned char irl2irq[HL_NR_IRL];
+ 
+ static int highlander_irq_demux(int irq)
+ {
+-	if (irq >= HL_NR_IRL || irq < 0 || !irl2irq[irq])
++	if (irq >= 16 + HL_NR_IRL || irq < 16 || !irl2irq[irq - 16])
+ 		return irq;
+ 
+-	return irl2irq[irq];
++	return irl2irq[irq - 16];
+ }
+ 
+ static void __init highlander_init_irq(void)
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+2.34.1
+
