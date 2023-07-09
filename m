@@ -2,85 +2,86 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 424D2EB64DC
-	for <linux-sh@archiver.kernel.org>; Sun,  9 Jul 2023 11:58:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id ABAC4EB64DC
+	for <linux-sh@archiver.kernel.org>; Sun,  9 Jul 2023 12:14:02 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229915AbjGIL6v convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 9 Jul 2023 07:58:51 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49640 "EHLO
+        id S229579AbjGIMOC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 9 Jul 2023 08:14:02 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50784 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230030AbjGIL6v (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 9 Jul 2023 07:58:51 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8B4E1E8;
-        Sun,  9 Jul 2023 04:58:50 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qIT3m-001zBV-8x; Sun, 09 Jul 2023 13:58:38 +0200
-Received: from dynamic-077-191-183-238.77.191.pool.telefonica.de ([77.191.183.238] helo=[192.168.1.11])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qIT3m-00179R-1u; Sun, 09 Jul 2023 13:58:38 +0200
-Message-ID: <d92853f1a37158d37fefcc84b59efae9b0fb903b.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] [RFT] sh: mach-r2d: Handle virq offset in cascaded IRL
- demux
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Geert Uytterhoeven <geert+renesas@glider.be>,
-        Guenter Roeck <linux@roeck-us.net>,
-        Sergey Shtylyov <s.shtylyov@omp.ru>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date:   Sun, 09 Jul 2023 13:58:28 +0200
-In-Reply-To: <2c99d5df41c40691f6c407b7b6a040d406bc81ac.1688901306.git.geert+renesas@glider.be>
-References: <2c99d5df41c40691f6c407b7b6a040d406bc81ac.1688901306.git.geert+renesas@glider.be>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.4 
+        with ESMTP id S229535AbjGIMOB (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 9 Jul 2023 08:14:01 -0400
+Received: from relay8-d.mail.gandi.net (relay8-d.mail.gandi.net [217.70.183.201])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 20002D2;
+        Sun,  9 Jul 2023 05:13:50 -0700 (PDT)
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Sasl: contact@artur-rojek.eu
+X-GND-Sasl: contact@artur-rojek.eu
+Received: by mail.gandi.net (Postfix) with ESMTPSA id 32BDF1BF205;
+        Sun,  9 Jul 2023 12:13:47 +0000 (UTC)
+From:   Artur Rojek <contact@artur-rojek.eu>
+To:     Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Sergey Shtylyov <s.shtylyov@omp.ru>
+Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Artur Rojek <contact@artur-rojek.eu>
+Subject: [PATCH] sh: hd64461: fix virq offsets
+Date:   Sun,  9 Jul 2023 14:13:11 +0200
+Message-ID: <20230709121311.211720-1-contact@artur-rojek.eu>
+X-Mailer: git-send-email 2.41.0
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 77.191.183.238
-X-ZEDAT-Hint: PO
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi!
+A recent change to start counting SuperH IRQ #s from 16 breaks support
+for the Hitachi HD64461 companion chip.
 
-On Sun, 2023-07-09 at 13:15 +0200, Geert Uytterhoeven wrote:
-> diff --git a/arch/sh/boards/mach-r2d/irq.c b/arch/sh/boards/mach-r2d/irq.c
-> index e34f81e9ae813b8d..c37b40398c5bc83e 100644
-> --- a/arch/sh/boards/mach-r2d/irq.c
-> +++ b/arch/sh/boards/mach-r2d/irq.c
-> @@ -117,10 +117,10 @@ static unsigned char irl2irq[R2D_NR_IRL];
->  
->  int rts7751r2d_irq_demux(int irq)
->  {
-> -	if (irq >= R2D_NR_IRL || irq < 0 || !irl2irq[irq])
-> +	if (irq >= 16 + R2D_NR_IRL || irq < 16 || !irl2irq[irq - 16])
->  		return irq;
->  
-> -	return irl2irq[irq];
-> +	return irl2irq[irq - 16];
->  }
->  
->  /*
+Move the offchip IRQ base and HD64461 IRQ # by 16 in order to
+accommodate for the new virq numbering rules.
 
-Btw, I think this needs to be adjusted to test for "ret <= 0" since IRQs cannot
-be zero anymore, correct?
+Fixes: a8ac2961148e ("sh: Avoid using IRQ0 on SH3 and SH4")
+Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
+---
+ arch/sh/cchips/Kconfig        | 4 ++--
+ arch/sh/include/asm/hd64461.h | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/mfd/sm501.c#n1389
-
-Adrian
-
+diff --git a/arch/sh/cchips/Kconfig b/arch/sh/cchips/Kconfig
+index efde2edb5627..9659a0bc58de 100644
+--- a/arch/sh/cchips/Kconfig
++++ b/arch/sh/cchips/Kconfig
+@@ -29,9 +29,9 @@ endchoice
+ config HD64461_IRQ
+ 	int "HD64461 IRQ"
+ 	depends on HD64461
+-	default "36"
++	default "52"
+ 	help
+-	  The default setting of the HD64461 IRQ is 36.
++	  The default setting of the HD64461 IRQ is 52.
+ 
+ 	  Do not change this unless you know what you are doing.
+ 
+diff --git a/arch/sh/include/asm/hd64461.h b/arch/sh/include/asm/hd64461.h
+index afb24cb034b1..6d85db6cf54b 100644
+--- a/arch/sh/include/asm/hd64461.h
++++ b/arch/sh/include/asm/hd64461.h
+@@ -229,7 +229,7 @@
+ #define	HD64461_NIMR		HD64461_IO_OFFSET(0x5002)
+ 
+ #define	HD64461_IRQBASE		OFFCHIP_IRQ_BASE
+-#define	OFFCHIP_IRQ_BASE	64
++#define	OFFCHIP_IRQ_BASE	80
+ #define	HD64461_IRQ_NUM		16
+ 
+ #define	HD64461_IRQ_UART	(HD64461_IRQBASE+5)
 -- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+2.41.0
+
