@@ -2,220 +2,105 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2C20BEB64D9
-	for <linux-sh@archiver.kernel.org>; Mon, 10 Jul 2023 10:48:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C69C3C04FE2
+	for <linux-sh@archiver.kernel.org>; Mon, 10 Jul 2023 13:02:05 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229639AbjGJKsZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 10 Jul 2023 06:48:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50896 "EHLO
+        id S232821AbjGJNBn (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 10 Jul 2023 09:01:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48080 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229522AbjGJKsX (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 10 Jul 2023 06:48:23 -0400
-Received: from wout1-smtp.messagingengine.com (wout1-smtp.messagingengine.com [64.147.123.24])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9B316B5;
-        Mon, 10 Jul 2023 03:48:22 -0700 (PDT)
-Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
-        by mailout.west.internal (Postfix) with ESMTP id D224032000E5;
-        Mon, 10 Jul 2023 06:48:16 -0400 (EDT)
-Received: from imap50 ([10.202.2.100])
-  by compute6.internal (MEProxy); Mon, 10 Jul 2023 06:48:18 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-        :cc:content-transfer-encoding:content-type:content-type:date
-        :date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-        :references:reply-to:sender:subject:subject:to:to; s=fm2; t=
-        1688986096; x=1689072496; bh=w6ICekzr9KYZl8W9GIefXJYjQf4JFQn5qnN
-        fJewCe0o=; b=nQ9QPUY7wS4rGy1GEx42RGy7zp+AksoN/jMq8WNwG0z2osUupCr
-        J9FCFjCMQhZzOeMBdbAPDvJNf6/9vSEk1Xgus5bb0b6s2jl3/78ll4i1pxSDE4Md
-        IyYevHeXLqId94HhwpLfGiCdlhK7u/lUft/J2an/R9HCgZMMnykcm/dksNSgfGW6
-        CaqSo/8+1GO63j/tAXVF7y8g/HmJr/3vxWuDA8eD9rHYXHdGc7ccNYgCVuoVGWEu
-        WG+zirxyXjMWPuyrIbW32eAIdWRO1fySvx1DAXSXhPRzlxXvW0VCqujirzS2Nsla
-        K8yW1Lsd7hBXvkhVQNAmzQLqwz1zCuero5g==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:cc:content-transfer-encoding
-        :content-type:content-type:date:date:feedback-id:feedback-id
-        :from:from:in-reply-to:in-reply-to:message-id:mime-version
-        :references:reply-to:sender:subject:subject:to:to:x-me-proxy
-        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-        1688986096; x=1689072496; bh=w6ICekzr9KYZl8W9GIefXJYjQf4JFQn5qnN
-        fJewCe0o=; b=ZkHAMHcbMSh1Cq9/wENzdf6XnZDO3hN+tF0dL4gCNTP63yq1kI7
-        ouBrcHvC7ga3zHOd0hwKM9+vlgEpZ3EqXtBKXskKqQEiF+5FPhZ+OyQZdXeLmhUR
-        2wt99SbCrVFp3hgR4FL02QNladiiOJzCnzctSx/DhxSNu9LHJpa86na5gZw7Zq+S
-        sDebcPreC98DKlvOWyKoHyKD9qd3m6y+HlCseY9wyi51oLx8J/8R4PKygkID2UqQ
-        MiC28xYtLxbENXTQK9fC7+xUSnGmaFpyh8JeB7gfeVFjWhiErmlSdV/QmNO/P+1Q
-        I9ZVwrlrM1z4fjAOQfAfKwvWssXcYWJFN/w==
-X-ME-Sender: <xms:7-GrZOcyM_IwsSAN3huzeuwrzzmtSq7THzuQUmQShF94vnvOcl8ocw>
-    <xme:7-GrZINScqYkuBJOWHd8u0hwbLWVKha-XGzafH46_DSlQbiodUB6MWhamSxUB7MUo
-    vQkIc5y1Jtbv9UaTGk>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrvdekgddvfecutefuodetggdotefrodftvf
-    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
-    uegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenuc
-    fjughrpefofgggkfgjfhffhffvvefutgfgsehtqhertderreejnecuhfhrohhmpedftehr
-    nhguuceuvghrghhmrghnnhdfuceorghrnhgusegrrhhnuggsrdguvgeqnecuggftrfgrth
-    htvghrnhepgeefjeehvdelvdffieejieejiedvvdfhleeivdelveehjeelteegudektdfg
-    jeevnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomheprg
-    hrnhgusegrrhhnuggsrdguvg
-X-ME-Proxy: <xmx:7-GrZPgr8zYvmVFXmnbnMS3NtLQQtmz5-jv6lXu88VzpihAllXP1HA>
-    <xmx:7-GrZL_0jbydbTZqbeybbDHudMrq1LomKnmCrTapMDCvDU2pucECtg>
-    <xmx:7-GrZKuTrFBHm95YEXOfD6k2tciSw_rH1wD7vp9n-FAOXSFJuIPlXQ>
-    <xmx:8OGrZFkWl6_FpcxOtWF-dHE_ALqF2KLzUta3CuKeQKEqGeFqlGkLLw>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.nyi.internal (Postfix, from userid 501)
-        id 093AE1700089; Mon, 10 Jul 2023 06:48:15 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
-User-Agent: Cyrus-JMAP/3.9.0-alpha0-531-gfdfa13a06d-fm-20230703.001-gfdfa13a0
-Mime-Version: 1.0
-Message-Id: <09094baf-dadf-4bce-9f63-f2a1f255f9a8@app.fastmail.com>
-In-Reply-To: <0f771b11539d5a3871691af901315ee2034b577c.camel@physik.fu-berlin.de>
-References: <20230706154520.11257-1-bhe@redhat.com>
- <20230706154520.11257-12-bhe@redhat.com>
- <CAMuHMdWmv-Jdvi7a04JGXuA2QARj8c8mpUvY7TOcetPkG4pW7A@mail.gmail.com>
- <0f771b11539d5a3871691af901315ee2034b577c.camel@physik.fu-berlin.de>
-Date:   Mon, 10 Jul 2023 12:47:52 +0200
-From:   "Arnd Bergmann" <arnd@arndb.de>
-To:     "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
-        "Geert Uytterhoeven" <geert@linux-m68k.org>,
-        "Baoquan He" <bhe@redhat.com>
-Cc:     linux-kernel@vger.kernel.org,
-        "Andrew Morton" <akpm@linux-foundation.org>, linux-mm@kvack.org,
-        "Christoph Hellwig" <hch@lst.de>,
-        "Christophe Leroy" <christophe.leroy@csgroup.eu>,
-        "Mike Rapoport" <rppt@kernel.org>,
-        "Matthew Wilcox" <willy@infradead.org>,
-        "Alexander Gordeev" <agordeev@linux.ibm.com>,
-        "Kefeng Wang" <wangkefeng.wang@huawei.com>,
-        "Niklas Schnelle" <schnelle@linux.ibm.com>,
-        "Stafford Horne" <shorne@gmail.com>,
-        "David Laight" <David.Laight@aculab.com>,
-        "Helge Deller" <deller@gmx.de>,
-        "Nathan Chancellor" <nathan@kernel.org>,
-        "Yoshinori Sato" <ysato@users.sourceforge.jp>,
-        "Rich Felker" <dalias@libc.org>, linux-sh@vger.kernel.org,
-        "Guenter Roeck" <linux@roeck-us.net>
-Subject: Re: [PATCH v8 11/19] sh: add <asm-generic/io.h> including
-Content-Type: text/plain;charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+        with ESMTP id S232250AbjGJNB3 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 10 Jul 2023 09:01:29 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6C725A8;
+        Mon, 10 Jul 2023 06:01:23 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 0BDD7221C1;
+        Mon, 10 Jul 2023 13:01:22 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1688994082; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=I0Gm3caehTf+DDNUO7FEiHJTJ/hpEoZRP8IUYE91TXw=;
+        b=Go7brugIegGY+ZVPi6YfHKxGodhrQekZWN2V2ZK6jxPYBTjY635csao0oKFNQYWr11kMz8
+        G39YnLW+q7ItBbkzh7LkyKVTEiNWztYwaEDCGYGHHmSJ6suqKc0jI7HYjJIJ0YgoIdBdUB
+        y0bMj50CzUM97CeHB3sibChMwMXdKNs=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1688994082;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=I0Gm3caehTf+DDNUO7FEiHJTJ/hpEoZRP8IUYE91TXw=;
+        b=MsqvxlT6sFr6ha7xHjLd+Ynf+kok1rNaAtXEFt/8fbacjxNPr9mpxokzH4T2unRIgadntW
+        9gKaSCCViPXyQpCQ==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id AFEF513A05;
+        Mon, 10 Jul 2023 13:01:21 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id qGYSKiEBrGTTFAAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Mon, 10 Jul 2023 13:01:21 +0000
+From:   Thomas Zimmermann <tzimmermann@suse.de>
+To:     deller@gmx.de, javierm@redhat.com
+Cc:     linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        linux-kernel@vger.kernel.org, amd-gfx@lists.freedesktop.org,
+        linux-input@vger.kernel.org, linux-media@vger.kernel.org,
+        linux-fbdev@vger.kernel.org, linux-staging@lists.linux.dev,
+        linux-arm-kernel@lists.infradead.org,
+        linux-geode@lists.infradead.org, linux-nvidia@lists.surfsouth.com,
+        linux-hyperv@vger.kernel.org, linux-omap@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, kvm@vger.kernel.org,
+        Thomas Zimmermann <tzimmermann@suse.de>
+Subject: [PATCH 17/17] fbdev: Remove FBINFO_DEFAULT and FBINFO_FLAG_DEFAULT
+Date:   Mon, 10 Jul 2023 14:50:21 +0200
+Message-ID: <20230710130113.14563-18-tzimmermann@suse.de>
+X-Mailer: git-send-email 2.41.0
+In-Reply-To: <20230710130113.14563-1-tzimmermann@suse.de>
+References: <20230710130113.14563-1-tzimmermann@suse.de>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Jul 10, 2023, at 10:45, John Paul Adrian Glaubitz wrote:
-> On Mon, 2023-07-10 at 10:17 +0200, Geert Uytterhoeven wrote:
->> Thanks for your patch, which is now commit edad4470b45298ba ("sh:
->> add <asm-generic/io.h> including") in next-20230710.
->>=20
->> This break dreamcast_defconfig:
->>=20
->>   CC      arch/sh/kernel/asm-offsets.s
->> In file included from ./arch/sh/include/asm/io.h:290,
->> ./include/asm-generic/io.h:636:15: error: redefinition of =E2=80=98in=
-b_p=E2=80=99
->>   636 | #define inb_p inb_p
->>       |               ^~~~~
+Remove the unused flags FBINFO_DEFAULT and FBINFO_FLAG_DEFAULT. No
+functional changes.
 
->> > index f7938fe0f911..5ba4116b4265 100644
->> > --- a/arch/sh/include/asm/io_noioport.h
->> > +++ b/arch/sh/include/asm/io_noioport.h
->> > @@ -53,6 +53,13 @@ static inline void ioport_unmap(void __iomem *ad=
-dr)
->> >  #define outw_p(x, addr)        outw((x), (addr))
->> >  #define outl_p(x, addr)        outl((x), (addr))
->> >=20
->> > +#define insb insb
->> > +#define insw insw
->> > +#define insl insl
->> > +#define outsb outsb
->> > +#define outsw outsw
->> > +#define outsl outsl
+Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+Cc: Helge Deller <deller@gmx.de>
+---
+ include/linux/fb.h | 3 ---
+ 1 file changed, 3 deletions(-)
 
-It looks like only the "noioport" variant got some of the
-extra macro definitions, but the version for PCI still needs the
-same six macros, plus the ones of inb/outb etc, something like
-this:
-
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 24c560c065ec7..2135e32145c54 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -241,6 +241,26 @@ __BUILD_IOPORT_STRING(q, u64)
-=20
- #endif
-=20
-+#define inb(addr)      inb(addr)
-+#define inw(addr)      inw(addr)
-+#define inl(addr)      inl(addr)
-+#define outb(x, addr)  outb((x), (addr))
-+#define outw(x, addr)  outw((x), (addr))
-+#define outl(x, addr)  outl((x), (addr))
-+
-+#define inb_p(addr)    inb(addr)
-+#define inw_p(addr)    inw(addr)
-+#define inl_p(addr)    inl(addr)
-+#define outb_p(x, addr)        outb((x), (addr))
-+#define outw_p(x, addr)        outw((x), (addr))
-+#define outl_p(x, addr)        outl((x), (addr))
-+
-+#define insb insb
-+#define insw insw
-+#define insl insl
-+#define outsb outsb
-+#define outsw outsw
-+#define outsl outsl
-=20
- #define IO_SPACE_LIMIT 0xffffffff
-=20
-diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_=
-noioport.h
-index 5ba4116b4265c..12dad91f41c1e 100644
---- a/arch/sh/include/asm/io_noioport.h
-+++ b/arch/sh/include/asm/io_noioport.h
-@@ -46,20 +46,6 @@ static inline void ioport_unmap(void __iomem *addr)
-        BUG();
- }
-=20
--#define inb_p(addr)    inb(addr)
--#define inw_p(addr)    inw(addr)
--#define inl_p(addr)    inl(addr)
--#define outb_p(x, addr)        outb((x), (addr))
--#define outw_p(x, addr)        outw((x), (addr))
--#define outl_p(x, addr)        outl((x), (addr))
+diff --git a/include/linux/fb.h b/include/linux/fb.h
+index 1d5c13f34b09..43458f582f35 100644
+--- a/include/linux/fb.h
++++ b/include/linux/fb.h
+@@ -383,7 +383,6 @@ struct fb_tile_ops {
+ #endif /* CONFIG_FB_TILEBLITTING */
+ 
+ /* FBINFO_* = fb_info.flags bit flags */
+-#define FBINFO_DEFAULT		0
+ #define FBINFO_HWACCEL_DISABLED	0x0002
+ 	/* When FBINFO_HWACCEL_DISABLED is set:
+ 	 *  Hardware acceleration is turned off.  Software implementations
+@@ -504,8 +503,6 @@ struct fb_info {
+ 	bool skip_vt_switch; /* no VT switch on suspend/resume required */
+ };
+ 
+-#define FBINFO_FLAG_DEFAULT	FBINFO_DEFAULT
 -
--#define insb insb
--#define insw insw
--#define insl insl
--#define outsb outsb
--#define outsw outsw
--#define outsl outsl
--
- static inline void insb(unsigned long port, void *dst, unsigned long co=
-unt)
- {
-        BUG();
+ /* This will go away
+  * fbset currently hacks in FB_ACCELF_TEXT into var.accel_flags
+  * when it wants to turn the acceleration engine on.  This is
+-- 
+2.41.0
 
-I think ideally all the I/O port stuff in arch/sh/ could just be
-removed after the conversion to asm-generic/io.h, but the
-microdev_ioport_map() function oddity gets in the way of that,
-unless someone wants to clean up that platform. As far as I
-can tell, the ethernet, display, USB and PCI devices on it already
-broke at some point (afbb9d8d5266b, 46bc85872040a), so it might
-be easier to remove it entirely.
-
-> I'm not happy though that this patch is in linux-next without being Ac=
-ked by me
-> or being reviewed by anyone. We should always make sure first that the=
- code
-> actually builds and has been tested on real hardware.
-
-I think that if the series has been posted eight times, you had
-your chance to do a review, especially since I pointed out that
-merging this one would have avoid the unxlate_dev_mem_ptr() bug
-as well.
-
-Having the series go into linux-next sounds appropriate like this,
-the entire purpose of that is to find such bugs and Andrew can jus
-fold the fixup into the broken patch.=20
-
-Let me know if you prefer the simple version with the extra
-#defines or if we should just use the generic inb/outb implementation
-immediately and drop microdev in a separate patch.
-
-      Arnd
