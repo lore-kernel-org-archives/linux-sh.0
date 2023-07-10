@@ -2,94 +2,86 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B4982EB64D9
-	for <linux-sh@archiver.kernel.org>; Mon, 10 Jul 2023 07:55:13 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CEDE4EB64DC
+	for <linux-sh@archiver.kernel.org>; Mon, 10 Jul 2023 07:58:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229627AbjGJHzM convert rfc822-to-8bit (ORCPT
+        id S230225AbjGJH6O convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 10 Jul 2023 03:55:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55868 "EHLO
+        Mon, 10 Jul 2023 03:58:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58208 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229732AbjGJHzK (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 10 Jul 2023 03:55:10 -0400
-Received: from mail-yw1-f173.google.com (mail-yw1-f173.google.com [209.85.128.173])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 69F63BB;
-        Mon, 10 Jul 2023 00:55:09 -0700 (PDT)
-Received: by mail-yw1-f173.google.com with SMTP id 00721157ae682-5728df0a7d9so54696517b3.1;
-        Mon, 10 Jul 2023 00:55:09 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1688975708; x=1691567708;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=UoVR0Ww3NqQWB+CsUodfgver6HRm/NVni4uz6vfXOaM=;
-        b=DvvjbayuwxXBWUvWxqUTcUYEIFkEmJkA3oJzU5zv3bQUjrCJ3XCimdgBSWI3mnMG+V
-         QQlD3pJBUK+/hvtRMDwEUvA2SCSdFjt9rhkVPfYrPeF0IhN3Wlht8WItQQL9nB9gWa2v
-         egvifc/mCk+8lsDgZb1+E3Y1B6WQUX33xp2Ddrd4GAHZAlnWUWMa+LuBNFtXWWXI2rBJ
-         e2gWf5ZNB9ms1AnwB5ZF0fQtJmRHnORXTH6l3/mTRJlqV4wZfFuUs6ujPEoLo+/xjLbs
-         oVOW2A+qRwK4mGi/5QzaITj/kPzpFh3SJVxSNu/ZJuoPlb06N83vUnbzBX+3EgXDDZsY
-         03rA==
-X-Gm-Message-State: ABy/qLZTOM1C6lHumhrESV1WUz5hd6rvCKf8vsSWtUyb2koN+u/9ys3O
-        +H3FTfabOlXMSFByFQHl0qvj3vKNC9w0tQ==
-X-Google-Smtp-Source: APBJJlHxpb+mLx9F04KFHepLfDhlnPl3f2B2fwdW00P+4hU75r5eDtlIcFL79fm4+b6KCMVJN0OFlA==
-X-Received: by 2002:a0d:cd81:0:b0:577:3bf2:80f0 with SMTP id p123-20020a0dcd81000000b005773bf280f0mr12617690ywd.2.1688975708424;
-        Mon, 10 Jul 2023 00:55:08 -0700 (PDT)
-Received: from mail-yb1-f171.google.com (mail-yb1-f171.google.com. [209.85.219.171])
-        by smtp.gmail.com with ESMTPSA id p135-20020a0de68d000000b005707d7686ddsm2927995ywe.76.2023.07.10.00.55.07
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 10 Jul 2023 00:55:07 -0700 (PDT)
-Received: by mail-yb1-f171.google.com with SMTP id 3f1490d57ef6-c17534f4c63so5503876276.0;
-        Mon, 10 Jul 2023 00:55:07 -0700 (PDT)
-X-Received: by 2002:a25:c343:0:b0:c16:8d80:228b with SMTP id
- t64-20020a25c343000000b00c168d80228bmr10199701ybf.37.1688975707771; Mon, 10
- Jul 2023 00:55:07 -0700 (PDT)
-MIME-Version: 1.0
-References: <2c99d5df41c40691f6c407b7b6a040d406bc81ac.1688901306.git.geert+renesas@glider.be>
- <6af51602-631a-dadc-2740-d1cfad0a2993@roeck-us.net> <CAMuHMdW=WDuqgXk_51T341vgXrcxYPO34ou=rKHZrZj8Yiw6Rw@mail.gmail.com>
- <f27872c8f374a42fb7ea313314c47cdba2473b06.camel@physik.fu-berlin.de>
-In-Reply-To: <f27872c8f374a42fb7ea313314c47cdba2473b06.camel@physik.fu-berlin.de>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 10 Jul 2023 09:54:54 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdXg1FvMCSBCvs=aFah0NWdOzEX+XdF4af0kY3kNx2bPtg@mail.gmail.com>
-Message-ID: <CAMuHMdXg1FvMCSBCvs=aFah0NWdOzEX+XdF4af0kY3kNx2bPtg@mail.gmail.com>
-Subject: Re: [PATCH] [RFT] sh: mach-r2d: Handle virq offset in cascaded IRL demux
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+        with ESMTP id S231622AbjGJH5m (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 10 Jul 2023 03:57:42 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0E010FB;
+        Mon, 10 Jul 2023 00:57:41 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1qIllt-002WfI-Rl; Mon, 10 Jul 2023 09:57:25 +0200
+Received: from dynamic-089-014-157-058.89.14.pool.telefonica.de ([89.14.157.58] helo=[192.168.1.11])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1qIllt-000dU2-Ki; Mon, 10 Jul 2023 09:57:25 +0200
+Message-ID: <e44bc98f41e0497a3f125a32a6e78fe14313c634.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] [RFT] sh: mach-r2d: Handle virq offset in cascaded IRL
+ demux
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
 Cc:     Guenter Roeck <linux@roeck-us.net>,
         Sergey Shtylyov <s.shtylyov@omp.ru>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
         linux-kernel@vger.kernel.org
+Date:   Mon, 10 Jul 2023 09:57:16 +0200
+In-Reply-To: <CAMuHMdXg1FvMCSBCvs=aFah0NWdOzEX+XdF4af0kY3kNx2bPtg@mail.gmail.com>
+References: <2c99d5df41c40691f6c407b7b6a040d406bc81ac.1688901306.git.geert+renesas@glider.be>
+         <6af51602-631a-dadc-2740-d1cfad0a2993@roeck-us.net>
+         <CAMuHMdW=WDuqgXk_51T341vgXrcxYPO34ou=rKHZrZj8Yiw6Rw@mail.gmail.com>
+         <f27872c8f374a42fb7ea313314c47cdba2473b06.camel@physik.fu-berlin.de>
+         <CAMuHMdXg1FvMCSBCvs=aFah0NWdOzEX+XdF4af0kY3kNx2bPtg@mail.gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.4 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 89.14.157.58
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Adrian,
+Hi Geert!
 
-On Mon, Jul 10, 2023 at 9:44 AM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Mon, 2023-07-10 at 09:03 +0200, Geert Uytterhoeven wrote:
-> > Indeed, I hadn't tested that.
-> > My current tree isn't based on linux-next, but did have a build
-> > failure in the cdrom code, for which I had found your fix (thanks!) in
-> > linux-next...
->
-> So, there is a patch for this already? Is it going to be included for 6.5?
+On Mon, 2023-07-10 at 09:54 +0200, Geert Uytterhoeven wrote:
+> Hi Adrian,
+> 
+> On Mon, Jul 10, 2023 at 9:44 AM John Paul Adrian Glaubitz
+> <glaubitz@physik.fu-berlin.de> wrote:
+> > On Mon, 2023-07-10 at 09:03 +0200, Geert Uytterhoeven wrote:
+> > > Indeed, I hadn't tested that.
+> > > My current tree isn't based on linux-next, but did have a build
+> > > failure in the cdrom code, for which I had found your fix (thanks!) in
+> > > linux-next...
+> > 
+> > So, there is a patch for this already? Is it going to be included for 6.5?
+> 
+> The cdrom fix is commit a587b046ce921cc1 ("cdrom/gdrom: Fix build
+> error") in v6.5-rc1, which builds dreamcast_defconfig fine.
+> 
+> That config is still broken in linux-next, but the breakage hasn't\
+> entered v6.5-rc1 (yet?).
 
-The cdrom fix is commit a587b046ce921cc1 ("cdrom/gdrom: Fix build
-error") in v6.5-rc1, which builds dreamcast_defconfig fine.
+OK, so we're talking about two different regressions here?
 
-That config is still broken in linux-next, but the breakage hasn't\
-entered v6.5-rc1 (yet?).
-
-Gr{oetje,eeting}s,
-
-                        Geert
+Adrian
 
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
