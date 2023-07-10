@@ -2,107 +2,104 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A1DDFEB64DA
-	for <linux-sh@archiver.kernel.org>; Mon, 10 Jul 2023 04:08:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A5164EB64D9
+	for <linux-sh@archiver.kernel.org>; Mon, 10 Jul 2023 07:03:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230179AbjGJEIR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 10 Jul 2023 00:08:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40502 "EHLO
+        id S229792AbjGJHDh convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 10 Jul 2023 03:03:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57498 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229462AbjGJEIQ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 10 Jul 2023 00:08:16 -0400
-Received: from mail-oa1-x2d.google.com (mail-oa1-x2d.google.com [IPv6:2001:4860:4864:20::2d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E6A64E6;
-        Sun,  9 Jul 2023 21:08:15 -0700 (PDT)
-Received: by mail-oa1-x2d.google.com with SMTP id 586e51a60fabf-1b055511b85so3069201fac.2;
-        Sun, 09 Jul 2023 21:08:15 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1688962094; x=1691554094;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=SI9RNcelEJRqjgZ3cj4A/MldUxL+d7rqihkZbBH1AFY=;
-        b=iVKpTnqvNrUhmIj8Pead4qxzUx+5FEqEj2o2LZQPy/bO+4COQLAPUA2tYXOc/R2BgT
-         WXXxngVaWFUrztbY3CREIS4d8vXvIbEUHInTqWO8/fcCVi/k61dqCs9L57T6/hQPeoTL
-         djqWGsASDlN37qpDOunajF78cc7Miv4m5fR9daAJazyNoH/Jv0IoP4QuI8R0xXektt0Z
-         BzUZmv9QLZnpwucS2nyyz/xwdmr7pR9/9w8M76YZcl6WiWHbfX6msKl+3Dl0nSAnHW2A
-         n70RJ3CEVgoCVyWZRzjwy1vt9eb2l4ZKA4WC/qtPMPfB6EBkvQiU2qne580vUi/Mhbov
-         qXsw==
+        with ESMTP id S229750AbjGJHDg (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 10 Jul 2023 03:03:36 -0400
+Received: from mail-yw1-f178.google.com (mail-yw1-f178.google.com [209.85.128.178])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EAC60EA;
+        Mon, 10 Jul 2023 00:03:34 -0700 (PDT)
+Received: by mail-yw1-f178.google.com with SMTP id 00721157ae682-579de633419so46397967b3.3;
+        Mon, 10 Jul 2023 00:03:34 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1688962094; x=1691554094;
+        d=1e100.net; s=20221208; t=1688972614; x=1691564614;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=SI9RNcelEJRqjgZ3cj4A/MldUxL+d7rqihkZbBH1AFY=;
-        b=Q+6EfR1EDMLqnHzGYGsPkafP0E0jQu7zzhMUYm3JldflAl4oVD28Gcf339ZSmUKRLr
-         smf87vNhaJV+oofS0ivFwj6W9U+fDOtMhIn+OM3TK/LXEMOzjVf/AmzTZBN1HgnicZft
-         S/Obo74NidK1npRdVG+4KR5979ZVBj5v72rGZNQf1OasFS/P9hZGGvZDqfb6onFhRY23
-         jQlxtjH8CKPrlY68nYfsQ78hBmlA4AJ10UuLvVXHMg6eO57sFrOBpP8N+QQFR5YQ19Hi
-         f62c+EGoyOhhRdgpEQM9aV1DZNu1n84sKTOW0xB0EDDwxqrqxtwelTChHp15+AvShg2c
-         vB8A==
-X-Gm-Message-State: ABy/qLbFyEQeRZl+AwMSrPQt35A0E7SMGvET5Ja4VLnK/Q6yzxg4J/xp
-        S500PhueBJXt6tAB4iPZb+rjfXbYkETShM3BPfg=
-X-Google-Smtp-Source: APBJJlGmSNmHOoafZjLJZz8/wV792WRpiff+2GDpJxWf6XS+WYjRR+08RhvbYCi14YACNX/qF8Zpr859L/3Uxipik8M=
-X-Received: by 2002:a05:6870:438f:b0:1b0:25b4:4b77 with SMTP id
- r15-20020a056870438f00b001b025b44b77mr12556779oah.14.1688962094392; Sun, 09
- Jul 2023 21:08:14 -0700 (PDT)
+        bh=FUsj5MBXEgLiVC60bUrok+biC26UCfULbqssp91WdhI=;
+        b=h1HucfQNPERns2DcWtcXvRo/VHvdm1maDpFqoOjHaFI59fpLL+Fqw3baBElaKeQtPj
+         eDEBpq6YYpvnwR/zWCDsSsm0u5EwQxHLclXrTxJ1EN7I1ZvbQctqvEwAnBxL1PBITAtb
+         DoC/960eaBQAx4QHqwD9dGnsDh0lzs9+zItK0ILwFefcF+pY1MPTuZ1Yvtdsv1gGNyUL
+         aXQNnI+/yhpvashvlgahemz2bFHrFgGI9BMHUw5sb1VMswgvAnVdIlC7MJ7pc0zPGgGq
+         EBjjauRWc2/AF+gO+npSrOMI/2hsUK+wk9v5GkaoYLhVmQZH3058RMdVq8CVTvPH12og
+         PT4w==
+X-Gm-Message-State: ABy/qLZFYTT4IfTGkCNAvhxyHqjQo4gEnJa06e3FxNEU4OREFPvO6LBs
+        fba2soKwEShKQoEf+RciSNmxhxx7hhrcKQ==
+X-Google-Smtp-Source: APBJJlEKvXsObR1B6Rqnf3S7EJaSIghwSd5gePaDe7kRBufMrNjDy+BCWQPgFwEBNmezZqz9MwPFhA==
+X-Received: by 2002:a81:5294:0:b0:56d:244:ab13 with SMTP id g142-20020a815294000000b0056d0244ab13mr10921341ywb.28.1688972613799;
+        Mon, 10 Jul 2023 00:03:33 -0700 (PDT)
+Received: from mail-yb1-f173.google.com (mail-yb1-f173.google.com. [209.85.219.173])
+        by smtp.gmail.com with ESMTPSA id v188-20020a8161c5000000b0056dfbc37d9fsm2921201ywb.50.2023.07.10.00.03.32
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 10 Jul 2023 00:03:33 -0700 (PDT)
+Received: by mail-yb1-f173.google.com with SMTP id 3f1490d57ef6-bd0a359ca35so3720058276.3;
+        Mon, 10 Jul 2023 00:03:32 -0700 (PDT)
+X-Received: by 2002:a25:e6c4:0:b0:bc7:d27:ddb6 with SMTP id
+ d187-20020a25e6c4000000b00bc70d27ddb6mr9310391ybh.64.1688972612601; Mon, 10
+ Jul 2023 00:03:32 -0700 (PDT)
 MIME-Version: 1.0
-References: <20230707095415.1449376-1-arnd@kernel.org> <20230707095415.1449376-4-arnd@kernel.org>
-In-Reply-To: <20230707095415.1449376-4-arnd@kernel.org>
-From:   Max Filippov <jcmvbkbc@gmail.com>
-Date:   Sun, 9 Jul 2023 21:08:03 -0700
-Message-ID: <CAMo8BfLOYkdxF4x=E2L4OYavw+GDtO0ftdAxCaVuFwGr=RUCyw@mail.gmail.com>
-Subject: Re: [PATCH 4/4] vgacon, arch/*: remove unused screen_info definitions
-To:     Arnd Bergmann <arnd@kernel.org>
-Cc:     Thomas Zimmermann <tzimmermann@suse.de>, javierm@redhat.com,
-        linux-fbdev@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Russell King <linux@armlinux.org.uk>,
-        dri-devel@lists.freedesktop.org, Ard Biesheuvel <ardb@kernel.org>,
-        Helge Deller <deller@gmx.de>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Arnd Bergmann <arnd@arndb.de>, Guo Ren <guoren@kernel.org>,
-        Brian Cain <bcain@quicinc.com>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Rich Felker <dalias@libc.org>,
+References: <2c99d5df41c40691f6c407b7b6a040d406bc81ac.1688901306.git.geert+renesas@glider.be>
+ <6af51602-631a-dadc-2740-d1cfad0a2993@roeck-us.net>
+In-Reply-To: <6af51602-631a-dadc-2740-d1cfad0a2993@roeck-us.net>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Mon, 10 Jul 2023 09:03:19 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdW=WDuqgXk_51T341vgXrcxYPO34ou=rKHZrZj8Yiw6Rw@mail.gmail.com>
+Message-ID: <CAMuHMdW=WDuqgXk_51T341vgXrcxYPO34ou=rKHZrZj8Yiw6Rw@mail.gmail.com>
+Subject: Re: [PATCH] [RFT] sh: mach-r2d: Handle virq offset in cascaded IRL demux
+To:     Guenter Roeck <linux@roeck-us.net>
+Cc:     Sergey Shtylyov <s.shtylyov@omp.ru>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "David S. Miller" <davem@davemloft.net>,
-        Chris Zankel <chris@zankel.net>,
-        Masahiro Yamada <masahiroy@kernel.org>,
-        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Jul 7, 2023 at 2:56=E2=80=AFAM Arnd Bergmann <arnd@kernel.org> wrot=
-e:
->
-> From: Arnd Bergmann <arnd@arndb.de>
->
-> A number of architectures either kept the screen_info definition for
-> historical purposes as it used to be required by the generic VT code, or
-> they copied it from another architecture in order to build the VGA
-> console driver in an allmodconfig build.
->
-> Now that vgacon no longer builds on these architectures, remove the
-> stale definitions.
->
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> ---
->  arch/csky/kernel/setup.c          | 12 ------------
->  arch/hexagon/kernel/Makefile      |  2 --
->  arch/hexagon/kernel/screen_info.c |  3 ---
->  arch/nios2/kernel/setup.c         |  5 -----
->  arch/sh/kernel/setup.c            |  5 -----
->  arch/sparc/kernel/setup_32.c      | 13 -------------
->  arch/sparc/kernel/setup_64.c      | 13 -------------
->  arch/xtensa/kernel/setup.c        | 12 ------------
+Hi Günter,
 
-For xtensa:
-Acked-by: Max Filippov <jcmvbkbc@gmail.com>
+On Mon, Jul 10, 2023 at 3:13 AM Guenter Roeck <linux@roeck-us.net> wrote:
+> On 7/9/23 04:15, Geert Uytterhoeven wrote:
+> > When booting rts7751r2dplus_defconfig on QEMU, the system hangs due to
+> > an interrupt storm on IRQ 20.  IRQ 20 aka event 0x280 is a cascaded IRL
+> > interrupt, which maps to IRQ_VOYAGER, the interrupt used by the Silicon
+> > Motion SM501 multimedia companion chip.  As rts7751r2d_irq_demux() does
+> > not take into account the new virq offset, the interrupt is no longer
+> > translated, leading to an unhandled interrupt.
+> >
+> > Fix this by taking into account the virq offset when translating
+> > cascaded IRL interrupts.
+> >
+> > Fixes: a8ac2961148e8c72 ("sh: Avoid using IRQ0 on SH3 and SH4")
+> > Reported-by: Guenter Roeck <linux@roeck-us.net>
+> > Closes: https://lore.kernel.org/r/fbfea3ad-d327-4ad5-ac9c-648c7ca3fe1f@roeck-us.net
+> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> > ---
+> > Highlander and Dreamcast probably have the same issue.
+> > I'll send patches for these later...
+>
+> dreamcast doesn't build in linux-next, just in case you didn't notice.
 
---=20
-Thanks.
--- Max
+Indeed, I hadn't tested that.
+My current tree isn't based on linux-next, but did have a build
+failure in the cdrom code, for which I had found your fix (thanks!) in
+linux-next...
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
