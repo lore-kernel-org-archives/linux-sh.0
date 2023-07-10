@@ -2,45 +2,46 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 11CAEEB64DA
-	for <linux-sh@archiver.kernel.org>; Mon, 10 Jul 2023 07:24:01 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D23DC001DD
+	for <linux-sh@archiver.kernel.org>; Mon, 10 Jul 2023 07:45:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230144AbjGJHYA convert rfc822-to-8bit (ORCPT
+        id S231509AbjGJHpX convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 10 Jul 2023 03:24:00 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34384 "EHLO
+        Mon, 10 Jul 2023 03:45:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48130 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230194AbjGJHXz (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 10 Jul 2023 03:23:55 -0400
+        with ESMTP id S231236AbjGJHpI (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 10 Jul 2023 03:45:08 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 37477138;
-        Mon, 10 Jul 2023 00:23:54 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 72FFD103;
+        Mon, 10 Jul 2023 00:45:05 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qIlFB-002LVa-Rm; Mon, 10 Jul 2023 09:23:37 +0200
+          id 1qIlZg-002SWK-Pa; Mon, 10 Jul 2023 09:44:48 +0200
 Received: from dynamic-089-014-157-058.89.14.pool.telefonica.de ([89.14.157.58] helo=[192.168.1.11])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qIlFB-000YtY-Km; Mon, 10 Jul 2023 09:23:37 +0200
-Message-ID: <c7b9d65f5cc013f3a721ab6dd8c27ace89bc1fd3.camel@physik.fu-berlin.de>
+          id 1qIlZg-000bka-IW; Mon, 10 Jul 2023 09:44:48 +0200
+Message-ID: <f27872c8f374a42fb7ea313314c47cdba2473b06.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH] [RFT] sh: mach-r2d: Handle virq offset in cascaded IRL
  demux
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Guenter Roeck <linux@roeck-us.net>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Sergey Shtylyov <s.shtylyov@omp.ru>,
+To:     Geert Uytterhoeven <geert@linux-m68k.org>,
+        Guenter Roeck <linux@roeck-us.net>
+Cc:     Sergey Shtylyov <s.shtylyov@omp.ru>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>
-Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Date:   Mon, 10 Jul 2023 09:23:27 +0200
-In-Reply-To: <6af51602-631a-dadc-2740-d1cfad0a2993@roeck-us.net>
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Date:   Mon, 10 Jul 2023 09:44:39 +0200
+In-Reply-To: <CAMuHMdW=WDuqgXk_51T341vgXrcxYPO34ou=rKHZrZj8Yiw6Rw@mail.gmail.com>
 References: <2c99d5df41c40691f6c407b7b6a040d406bc81ac.1688901306.git.geert+renesas@glider.be>
          <6af51602-631a-dadc-2740-d1cfad0a2993@roeck-us.net>
+         <CAMuHMdW=WDuqgXk_51T341vgXrcxYPO34ou=rKHZrZj8Yiw6Rw@mail.gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 User-Agent: Evolution 3.48.4 
@@ -52,16 +53,15 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Guenter!
+Hi Geert!
 
-On Sun, 2023-07-09 at 18:13 -0700, Guenter Roeck wrote:
-> dreamcast doesn't build in linux-next, just in case you didn't notice.
+On Mon, 2023-07-10 at 09:03 +0200, Geert Uytterhoeven wrote:
+> Indeed, I hadn't tested that.
+> My current tree isn't based on linux-next, but did have a build
+> failure in the cdrom code, for which I had found your fix (thanks!) in
+> linux-next...
 
-Didn't the person who introduced the regression a notification from the CI?
-
-Maybe we could configure the CI to send a mail to the linux-sh mailing list
-in case of such failures, so that the people involved in the SH port are
-being notified.
+So, there is a patch for this already? Is it going to be included for 6.5?
 
 Adrian
 
