@@ -2,52 +2,52 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A2F3CEB64D9
-	for <linux-sh@archiver.kernel.org>; Mon, 10 Jul 2023 13:02:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8E48DC10F1A
+	for <linux-sh@archiver.kernel.org>; Mon, 10 Jul 2023 13:02:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229843AbjGJNCF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 10 Jul 2023 09:02:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48062 "EHLO
+        id S233085AbjGJNB7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 10 Jul 2023 09:01:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48150 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232167AbjGJNB2 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 10 Jul 2023 09:01:28 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5FE22102;
-        Mon, 10 Jul 2023 06:01:22 -0700 (PDT)
+        with ESMTP id S232376AbjGJNBd (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 10 Jul 2023 09:01:33 -0400
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A056711F;
+        Mon, 10 Jul 2023 06:01:25 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 34E73221C0;
-        Mon, 10 Jul 2023 13:01:19 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id AA9DB1FF87;
+        Mon, 10 Jul 2023 13:01:21 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1688994079; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
+        t=1688994081; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=yV2wtMW1pTWKiKA6vzhm1FHNvRRFzUPDYznI2jcl4e8=;
-        b=ruSiAb2MEn43gJQ8sExxBZkWl7VsKJ0q0KZiHUBUFLPT/cD4lsJ+nTS+pNOAakMNROWljO
-        PnrQFjfmikitAOYRY+dVT7JaG2t7b6cANUWcBQkaZTe/H0LHIObxGNDBI7BJNabWLbPOP8
-        pNry3wr5EzpEy5t3Gv6nWofURPt3UM0=
+        bh=MBN05KgHaY0sMx1l1iBUjP749OE7Z5F7kgfPD8riQ2g=;
+        b=SuQ5e90aJch45HVzdyRHmRbbrzuHmO1SiTYMooQuvASBPdLqlTlVilzOBrVfV3XDxhivqO
+        BljjcN4Jyhf8bKj4o6lQrdesOVKLRNCvIG62NlYjtHiRrPJQ+Oi7z7go3R/fHNCwVTBrbS
+        EnLnpzZX5+qqT+i1TQVfz5Vbh+G68vQ=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1688994079;
+        s=susede2_ed25519; t=1688994081;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
+         mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=yV2wtMW1pTWKiKA6vzhm1FHNvRRFzUPDYznI2jcl4e8=;
-        b=6bsBqnqW+4AJQdk5L02E0tI3SdxxjxB6URfq34a5sy4qYS0N/oJAhF6wa9ZD7HUa0Llyy3
-        OE9GIwiaBPSAl8CQ==
+        bh=MBN05KgHaY0sMx1l1iBUjP749OE7Z5F7kgfPD8riQ2g=;
+        b=HMr8eJJ2iAGo8mdPxjB2hyPQv7w8MHRS1RtWaIIBe31IMfopJy4lG5GeGEKarxz7bk1cY8
+        17E3SBnQgzcfSCDA==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id C7A3713A6B;
-        Mon, 10 Jul 2023 13:01:18 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 5E68F13A05;
+        Mon, 10 Jul 2023 13:01:21 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id YIXWLx4BrGTTFAAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Mon, 10 Jul 2023 13:01:18 +0000
+        id mIUrFiEBrGTTFAAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Mon, 10 Jul 2023 13:01:21 +0000
 From:   Thomas Zimmermann <tzimmermann@suse.de>
 To:     deller@gmx.de, javierm@redhat.com
 Cc:     linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org,
@@ -58,50 +58,44 @@ Cc:     linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org,
         linux-geode@lists.infradead.org, linux-nvidia@lists.surfsouth.com,
         linux-hyperv@vger.kernel.org, linux-omap@vger.kernel.org,
         linuxppc-dev@lists.ozlabs.org, kvm@vger.kernel.org,
-        Thomas Zimmermann <tzimmermann@suse.de>,
-        =?UTF-8?q?Bruno=20Pr=C3=A9mont?= <bonbons@linux-vserver.org>,
-        Jiri Kosina <jikos@kernel.org>,
-        Benjamin Tissoires <benjamin.tissoires@redhat.com>
-Subject: [PATCH 10/17] hid/picolcd: Remove flag FBINFO_FLAG_DEFAULT from fbdev driver
-Date:   Mon, 10 Jul 2023 14:50:14 +0200
-Message-ID: <20230710130113.14563-11-tzimmermann@suse.de>
+        Thomas Zimmermann <tzimmermann@suse.de>
+Subject: [PATCH 16/17] fbdev/pxafb: Remove flag FBINFO_FLAG_DEFAULT
+Date:   Mon, 10 Jul 2023 14:50:20 +0200
+Message-ID: <20230710130113.14563-17-tzimmermann@suse.de>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <20230710130113.14563-1-tzimmermann@suse.de>
 References: <20230710130113.14563-1-tzimmermann@suse.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
 The flag FBINFO_FLAG_DEFAULT is 0 and has no effect, as struct
-fbinfo.flags has been allocated to zero by framebuffer_alloc(). So do
-not set it.
+fbinfo.flags has been allocated to zero by devm_kzalloc(). So do not
+set it.
 
 Flags should signal differences from the default values. After cleaning
 up all occurences of FBINFO_FLAG_DEFAULT, the token can be removed.
 
 Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
-Cc: "Bruno Prémont" <bonbons@linux-vserver.org>
-Cc: Jiri Kosina <jikos@kernel.org>
-Cc: Benjamin Tissoires <benjamin.tissoires@redhat.com>
+Cc: Helge Deller <deller@gmx.de>
 ---
- drivers/hid/hid-picolcd_fb.c | 1 -
+ drivers/video/fbdev/pxafb.c | 1 -
  1 file changed, 1 deletion(-)
 
-diff --git a/drivers/hid/hid-picolcd_fb.c b/drivers/hid/hid-picolcd_fb.c
-index dabcd054dad9..d726aaafb146 100644
---- a/drivers/hid/hid-picolcd_fb.c
-+++ b/drivers/hid/hid-picolcd_fb.c
-@@ -527,7 +527,6 @@ int picolcd_init_framebuffer(struct picolcd_data *data)
- 	info->var = picolcdfb_var;
- 	info->fix = picolcdfb_fix;
- 	info->fix.smem_len   = PICOLCDFB_SIZE*8;
--	info->flags = FBINFO_FLAG_DEFAULT;
+diff --git a/drivers/video/fbdev/pxafb.c b/drivers/video/fbdev/pxafb.c
+index c8c4677d06b4..beffb0602a2c 100644
+--- a/drivers/video/fbdev/pxafb.c
++++ b/drivers/video/fbdev/pxafb.c
+@@ -888,7 +888,6 @@ static void init_pxafb_overlay(struct pxafb_info *fbi, struct pxafb_layer *ofb,
+ 	ofb->fb.var.vmode		= FB_VMODE_NONINTERLACED;
  
- 	fbdata = info->par;
- 	spin_lock_init(&fbdata->lock);
+ 	ofb->fb.fbops			= &overlay_fb_ops;
+-	ofb->fb.flags			= FBINFO_FLAG_DEFAULT;
+ 	ofb->fb.node			= -1;
+ 	ofb->fb.pseudo_palette		= NULL;
+ 
 -- 
 2.41.0
 
