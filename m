@@ -2,117 +2,177 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4142AC001DF
-	for <linux-sh@archiver.kernel.org>; Tue, 11 Jul 2023 14:48:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 46209C04A6A
+	for <linux-sh@archiver.kernel.org>; Tue, 11 Jul 2023 15:14:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233134AbjGKOsK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 11 Jul 2023 10:48:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54238 "EHLO
+        id S230439AbjGKPOn (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 11 Jul 2023 11:14:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:36734 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232686AbjGKOr6 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 11 Jul 2023 10:47:58 -0400
-X-Greylist: delayed 77330 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 11 Jul 2023 07:47:57 PDT
-Received: from mailrelay6-1.pub.mailoutpod2-cph3.one.com (mailrelay6-1.pub.mailoutpod2-cph3.one.com [IPv6:2a02:2350:5:405::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1DA3CE60
-        for <linux-sh@vger.kernel.org>; Tue, 11 Jul 2023 07:47:57 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=ravnborg.org; s=rsa1;
-        h=in-reply-to:content-type:mime-version:references:message-id:subject:cc:to:
-         from:date:from;
-        bh=IzJnH7tearuxnA6Z+6SlVNN7/HpdHXO6OvjidkyffDc=;
-        b=t1UZoY+OgZB4qloOKAGoPzdxKiYC17C9++ltdd9VkKKSSJf/R5HyAsdaxr5chXo+LcqtCqMpEj2TA
-         b8Z7yF6JHKQOlU7blN+narui79FThKq8hj2VwanKmhandBBtpyfKAhsU889SFEdFbXrVkiKx3hcR7H
-         QKjso83LwxpCtsl1H23jeJIFNxLM2fJZpqpYaWgVJBzgpvhQLjm/hOp65N2Nj7rNyOZMvrxGPI6czh
-         YS0MtrmIYLsQmwRyf7YF8HR5nxe+n7cXTvsKENehLpNtWPbi2L0wAhskoQ5ZCvD2WrQtbyYxsEJ/AP
-         CUbin2WAzk67odxeRHKtnqDopCvMHJA==
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed;
-        d=ravnborg.org; s=ed1;
-        h=in-reply-to:content-type:mime-version:references:message-id:subject:cc:to:
-         from:date:from;
-        bh=IzJnH7tearuxnA6Z+6SlVNN7/HpdHXO6OvjidkyffDc=;
-        b=KzzqHm8tLnuEHjgNWidySCjTk6o2+jW4abV9LJjbJcqDWTbuxi74O9whyYkZn2CXMR1EK8Adpr0Tp
-         1xeW/n7CQ==
-X-HalOne-ID: e4c9d52a-1ff9-11ee-be66-6f01c1d0a443
-Received: from ravnborg.org (2-105-2-98-cable.dk.customer.tdc.net [2.105.2.98])
-        by mailrelay6 (Halon) with ESMTPSA
-        id e4c9d52a-1ff9-11ee-be66-6f01c1d0a443;
-        Tue, 11 Jul 2023 14:47:46 +0000 (UTC)
-Date:   Tue, 11 Jul 2023 16:47:44 +0200
-From:   Sam Ravnborg <sam@ravnborg.org>
-To:     Thomas Zimmermann <tzimmermann@suse.de>
-Cc:     deller@gmx.de, javierm@redhat.com, linux-fbdev@vger.kernel.org,
-        kvm@vger.kernel.org, linux-hyperv@vger.kernel.org,
-        linux-sh@vger.kernel.org, linux-staging@lists.linux.dev,
-        linux-kernel@vger.kernel.org, amd-gfx@lists.freedesktop.org,
-        linux-geode@lists.infradead.org, dri-devel@lists.freedesktop.org,
-        linux-input@vger.kernel.org, linux-nvidia@lists.surfsouth.com,
-        linux-omap@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org
-Subject: Re: [PATCH 00/17] fbdev: Remove FBINFO_DEFAULT and
- FBINFO_FLAG_DEFAULT flags
-Message-ID: <20230711144744.GA117276@ravnborg.org>
-References: <20230710130113.14563-1-tzimmermann@suse.de>
- <20230710171903.GA14712@ravnborg.org>
- <ab92f8d9-36ab-06bc-b85b-d52b7a1bfe9a@suse.de>
+        with ESMTP id S230099AbjGKPOl (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 11 Jul 2023 11:14:41 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9CC0CA0;
+        Tue, 11 Jul 2023 08:14:40 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 263E061556;
+        Tue, 11 Jul 2023 15:14:40 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E0348C433C8;
+        Tue, 11 Jul 2023 15:14:27 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1689088479;
+        bh=bX8Zc81k/ncwGh5PXE1iM2yYHZ5h1mgr1P4ipGrAm1M=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=mDFv4m1QNbIupDgbm/yNE10IK+Jeb4u+Hp68VFw3gYEYHzXTkpqsmiBmls8OBQfPi
+         8gjlYbWsgsODgNYCmyXngE6+ER4yrQMBktLYNPkyJSjO2PjqzRDQj3KdGcUbf36wgu
+         7aVrn48sPOFnWH131NWsle3XUxWV/2e0lFw26VzHHXoO8mymCN/o1hXTzSRRVodm0Y
+         B5206f1UngBXiceL8iWamazSHAkYPEyz7ifXvbgPuGcFqApic+fgdAUQdD0SmUf4Kh
+         EnHPx7buKqGizbTbYPcPVdErtwKB6c7QWKWmK02m4duXrEZGbjqNnptXpu0XsScJBM
+         QLRMPGbf7fjgw==
+Date:   Tue, 11 Jul 2023 17:14:24 +0200
+From:   Christian Brauner <brauner@kernel.org>
+To:     Florian Weimer <fweimer@redhat.com>
+Cc:     Alexey Gladkov <legion@kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>,
+        Arnd Bergmann <arnd@arndb.de>, linux-api@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, viro@zeniv.linux.org.uk,
+        James.Bottomley@HansenPartnership.com, acme@kernel.org,
+        alexander.shishkin@linux.intel.com, axboe@kernel.dk,
+        benh@kernel.crashing.org, borntraeger@de.ibm.com, bp@alien8.de,
+        catalin.marinas@arm.com, christian@brauner.io, dalias@libc.org,
+        davem@davemloft.net, deepa.kernel@gmail.com, deller@gmx.de,
+        dhowells@redhat.com, fenghua.yu@intel.com, geert@linux-m68k.org,
+        glebfm@altlinux.org, gor@linux.ibm.com, hare@suse.com,
+        hpa@zytor.com, ink@jurassic.park.msu.ru, jhogan@kernel.org,
+        kim.phillips@arm.com, ldv@altlinux.org,
+        linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
+        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linux-s390@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux@armlinux.org.uk,
+        linuxppc-dev@lists.ozlabs.org, luto@kernel.org, mattst88@gmail.com,
+        mingo@redhat.com, monstr@monstr.eu, mpe@ellerman.id.au,
+        namhyung@kernel.org, paul.burton@mips.com, paulus@samba.org,
+        peterz@infradead.org, ralf@linux-mips.org, rth@twiddle.net,
+        sparclinux@vger.kernel.org, stefan@agner.ch, tglx@linutronix.de,
+        tony.luck@intel.com, tycho@tycho.ws, will@kernel.org,
+        x86@kernel.org, ysato@users.sourceforge.jp
+Subject: Re: [PATCH v3 0/5] Add a new fchmodat4() syscall
+Message-ID: <20230711-quintessenz-auswechseln-92a4640c073d@brauner>
+References: <87o8pscpny.fsf@oldenburg2.str.redhat.com>
+ <cover.1689074739.git.legion@kernel.org>
+ <87lefmbppo.fsf@oldenburg.str.redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-In-Reply-To: <ab92f8d9-36ab-06bc-b85b-d52b7a1bfe9a@suse.de>
+In-Reply-To: <87lefmbppo.fsf@oldenburg.str.redhat.com>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Thomas,
+On Tue, Jul 11, 2023 at 02:24:51PM +0200, Florian Weimer wrote:
+> * Alexey Gladkov:
+> 
+> > This patch set adds fchmodat4(), a new syscall. The actual
+> > implementation is super simple: essentially it's just the same as
+> > fchmodat(), but LOOKUP_FOLLOW is conditionally set based on the flags.
+> > I've attempted to make this match "man 2 fchmodat" as closely as
+> > possible, which says EINVAL is returned for invalid flags (as opposed to
+> > ENOTSUPP, which is currently returned by glibc for AT_SYMLINK_NOFOLLOW).
+> > I have a sketch of a glibc patch that I haven't even compiled yet, but
+> > seems fairly straight-forward:
+> >
+> >     diff --git a/sysdeps/unix/sysv/linux/fchmodat.c b/sysdeps/unix/sysv/linux/fchmodat.c
+> >     index 6d9cbc1ce9e0..b1beab76d56c 100644
+> >     --- a/sysdeps/unix/sysv/linux/fchmodat.c
+> >     +++ b/sysdeps/unix/sysv/linux/fchmodat.c
+> >     @@ -29,12 +29,36 @@
+> >      int
+> >      fchmodat (int fd, const char *file, mode_t mode, int flag)
+> >      {
+> >     -  if (flag & ~AT_SYMLINK_NOFOLLOW)
+> >     -    return INLINE_SYSCALL_ERROR_RETURN_VALUE (EINVAL);
+> >     -#ifndef __NR_lchmod		/* Linux so far has no lchmod syscall.  */
+> >     +  /* There are four paths through this code:
+> >     +      - The flags are zero.  In this case it's fine to call fchmodat.
+> >     +      - The flags are non-zero and glibc doesn't have access to
+> >     +	__NR_fchmodat4.  In this case all we can do is emulate the error codes
+> >     +	defined by the glibc interface from userspace.
+> >     +      - The flags are non-zero, glibc has __NR_fchmodat4, and the kernel has
+> >     +	fchmodat4.  This is the simplest case, as the fchmodat4 syscall exactly
+> >     +	matches glibc's library interface so it can be called directly.
+> >     +      - The flags are non-zero, glibc has __NR_fchmodat4, but the kernel does
+> 
+> If you define __NR_fchmodat4 on all architectures, we can use these
+> constants directly in glibc.  We no longer depend on the UAPI
+> definitions of those constants, to cut down the number of code variants,
+> and to make glibc's system call profile independent of the kernel header
+> version at build time.
+> 
+> Your version is based on 2.31, more recent versions have some reasonable
+> emulation for fchmodat based on /proc/self/fd.  I even wrote a comment
+> describing the same buggy behavior that you witnessed:
+> 
+> +      /* Some Linux versions with some file systems can actually
+> +        change symbolic link permissions via /proc, but this is not
+> +        intentional, and it gives inconsistent results (e.g., error
+> +        return despite mode change).  The expected behavior is that
+> +        symbolic link modes cannot be changed at all, and this check
+> +        enforces that.  */
+> +      if (S_ISLNK (st.st_mode))
+> +       {
+> +         __close_nocancel (pathfd);
+> +         __set_errno (EOPNOTSUPP);
+> +         return -1;
+> +       }
+> 
+> I think there was some kernel discussion about that behavior before, but
+> apparently, it hasn't led to fixes.
 
-On Tue, Jul 11, 2023 at 08:24:40AM +0200, Thomas Zimmermann wrote:
-> Hi Sam
-> 
-> Am 10.07.23 um 19:19 schrieb Sam Ravnborg:
-> > Hi Thomas,
-> > 
-> > On Mon, Jul 10, 2023 at 02:50:04PM +0200, Thomas Zimmermann wrote:
-> > > Remove the unused flags FBINFO_DEFAULT and FBINFO_FLAG_DEFAULT from
-> > > fbdev and drivers, as briefly discussed at [1]. Both flags were maybe
-> > > useful when fbdev had special handling for driver modules. With
-> > > commit 376b3ff54c9a ("fbdev: Nuke FBINFO_MODULE"), they are both 0
-> > > and have no further effect.
-> > > 
-> > > Patches 1 to 7 remove FBINFO_DEFAULT from drivers. Patches 2 to 5
-> > > split this by the way the fb_info struct is being allocated. All flags
-> > > are cleared to zero during the allocation.
-> > > 
-> > > Patches 8 to 16 do the same for FBINFO_FLAG_DEFAULT. Patch 8 fixes
-> > > an actual bug in how arch/sh uses the tokne for struct fb_videomode,
-> > > which is unrelated.
-> > > 
-> > > Patch 17 removes both flag constants from <linux/fb.h>
-> > 
-> > We have a few more flags that are unused - should they be nuked too?
-> > FBINFO_HWACCEL_FILLRECT
-> > FBINFO_HWACCEL_ROTATE
-> > FBINFO_HWACCEL_XPAN
-> 
-> It seems those are there for completeness. Nothing sets _ROTATE, the others
-> are simply never checked. According to the comments, some are required, some
-> are optional. I don't know what that means.
-> 
-> IIRC there were complains about performance when Daniel tried to remove
-> fbcon acceleration, so not all _HWACCEL_ flags are unneeded.
-> 
-> Leaving them in for reference/completeness might be an option; or not. I
-> have no strong feelings about those flags.
-> 
-> > 
-> > Unused as in no references from fbdev/core/*
-> > 
-> > I would rather see one series nuke all unused FBINFO flags in one go.
-> > Assuming my quick grep are right and the above can be dropped.
-> 
-> I would not want to extend this series. I'm removing _DEFAULT as it's
-> absolutely pointless and confusing.
+I think I've explained this somewhere else a couple of months ago but
+just in case you weren't on that thread or don't remember and apologies
+if you should already know.
 
-OK, makes sense and thanks for the explanation.
+A lot of filesystem will happily update the mode of a symlink. The VFS
+doesn't do anything to prevent this from happening. This is filesystem
+specific.
 
-The series is:
-Acked-by: Sam Ravnborg <sam@ravnborg.org>
+The EOPNOTSUPP you're seeing very likely comes from POSIX ACLs.
+Specifically it comes from filesystems that call posix_acl_chmod(),
+e.g., btrfs via
 
+        if (!err && attr->ia_valid & ATTR_MODE)
+                err = posix_acl_chmod(idmap, dentry, inode->i_mode);
+
+Most filesystems don't implement i_op->set_acl() for POSIX ACLs.
+So posix_acl_chmod() will report EOPNOTSUPP. By the time
+posix_acl_chmod() is called, most filesystems will have finished
+updating the inode. POSIX ACLs also often aren't integrated into
+transactions so a rollback wouldn't even be possible on some
+filesystems.
+
+Any filesystem that doesn't implement POSIX ACLs at all will obviously
+never fail unless it blocks mode changes on symlinks. Or filesystems
+that do have a way to rollback failures from posix_acl_chmod(), or
+filesystems that do return an error on chmod() on symlinks such as 9p,
+ntfs, ocfs2.
+
+> 
+> I wonder if it makes sense to add a similar error return to the system
+> call implementation?
+
+Hm, blocking symlink mode changes is pretty regression prone. And just
+blocking it through one interface seems weird and makes things even more
+inconsistent.
+
+So two options I see:
+(1) minimally invasive:
+    Filesystems that do call posix_acl_chmod() on symlinks need to be
+    changed to stop doing that.
+(2) might hit us on the head invasive:
+    Try and block symlink mode changes in chmod_common().
+
+Thoughts?
