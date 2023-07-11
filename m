@@ -2,88 +2,86 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 43DAAEB64DC
-	for <linux-sh@archiver.kernel.org>; Tue, 11 Jul 2023 06:36:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 62461C00528
+	for <linux-sh@archiver.kernel.org>; Tue, 11 Jul 2023 10:03:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229577AbjGKGgT convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 11 Jul 2023 02:36:19 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59422 "EHLO
+        id S231370AbjGKKD5 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 11 Jul 2023 06:03:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45822 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230358AbjGKGgS (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 11 Jul 2023 02:36:18 -0400
-Received: from mail-yw1-f180.google.com (mail-yw1-f180.google.com [209.85.128.180])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DD489B0;
-        Mon, 10 Jul 2023 23:36:16 -0700 (PDT)
-Received: by mail-yw1-f180.google.com with SMTP id 00721157ae682-5774335bb2aso59908177b3.0;
-        Mon, 10 Jul 2023 23:36:16 -0700 (PDT)
+        with ESMTP id S230230AbjGKKDm (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 11 Jul 2023 06:03:42 -0400
+Received: from mail-oa1-x30.google.com (mail-oa1-x30.google.com [IPv6:2001:4860:4864:20::30])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E02F412E;
+        Tue, 11 Jul 2023 03:03:38 -0700 (PDT)
+Received: by mail-oa1-x30.google.com with SMTP id 586e51a60fabf-1b449890ef5so4267656fac.1;
+        Tue, 11 Jul 2023 03:03:38 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1689069818; x=1691661818;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=f+EdWg+i/tz1eYpH9ck9/qmxGmzdGcH8THqJbinUddk=;
+        b=NyI0NAaMqg06KA6hwBSQgBEB85LCB8gClAXi9s9KdtyJxX2aBORKelElCulIdppHS6
+         B2KpbjTxVS2+wUc9g/u+o+ZwR99AGXRU021BosfNDYuk/lbxfTcwf4poeCIl1pjSfmvJ
+         5jkEpuK/djrhv1A7k5tWeHiTtBppXhqwoEPSSNpCFuvfRbFDru0owVW8nZGMH4e28CJA
+         37otT/of6vfb688RtJjgE4uuPquRo2iO+FPZYJPBc0xkoWD8nJuSeik7gJXt88UxhuU5
+         ynGI8Mdwz40F9nADl3/OzgmP0F+m9xzz5dHEj+Nekn9xjmNXbRk7FYYufVHEanQb1xEP
+         DNog==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1689057376; x=1691649376;
+        d=1e100.net; s=20221208; t=1689069818; x=1691661818;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=pWAhQvEef30a0QgnXpAXi7OUbX7QN63sgiP02lTQRGI=;
-        b=FEk+FfMmOaw8z6xa0DMtibF9/i/8bYvjl5hG+szljtLJTkB2ACeJarkI9azg+t+1Pj
-         7TAbgLIMvuUX+6h3SeQIZbnEIphCwpvg/OFLVOehZY5IZkZiXoBmFX5pWdatYMeARUVP
-         84tHaAxdcfDvbvCtkWYbUV6AY/yAUeZDlwjgl8nuQDRr6hS4W892hDcsjlm+dq7hAquD
-         mczVBly23nH5hge8uM+iQ1rBGJeFDNUwd6QGVPP01CK3jDdgt/QNzkUV6mf+9ETOPCbR
-         6sRWW3lNXxtlFI2jteD1kjXXBKg4QOiZXKKek54gkEAdYbPk7kwl0k42KMfo1DGHwwwW
-         ZQ9A==
-X-Gm-Message-State: ABy/qLZLsB//OQOolVUE3atAn2PlK7rQ1jccqg7iWFxUCWLfwRiOONy1
-        lsNhXJ3AKcfoUhoLtdH9gyuFSedeN4u5ug==
-X-Google-Smtp-Source: APBJJlEUAtkdatWDr/8F2FKf0CODOP2oyZpG979yt0UsSvKZW7BXePOoynxexzaAn741t2BoMiVxmQ==
-X-Received: by 2002:a0d:dd8c:0:b0:568:8e96:7008 with SMTP id g134-20020a0ddd8c000000b005688e967008mr12170146ywe.0.1689057375800;
-        Mon, 10 Jul 2023 23:36:15 -0700 (PDT)
-Received: from mail-yb1-f170.google.com (mail-yb1-f170.google.com. [209.85.219.170])
-        by smtp.gmail.com with ESMTPSA id u10-20020a0deb0a000000b005772154dddbsm408268ywe.24.2023.07.10.23.36.15
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 10 Jul 2023 23:36:15 -0700 (PDT)
-Received: by mail-yb1-f170.google.com with SMTP id 3f1490d57ef6-bff89873d34so4822523276.2;
-        Mon, 10 Jul 2023 23:36:15 -0700 (PDT)
-X-Received: by 2002:a25:9e92:0:b0:c18:fa74:8721 with SMTP id
- p18-20020a259e92000000b00c18fa748721mr11893164ybq.12.1689057375251; Mon, 10
- Jul 2023 23:36:15 -0700 (PDT)
+        bh=f+EdWg+i/tz1eYpH9ck9/qmxGmzdGcH8THqJbinUddk=;
+        b=DKtFHwI4mNYoktvamMJLiGBJsqpCY93EK9gWGWO10vn2JMIvQNDT/Rj/cl8I84rs63
+         Rcxz8M7GSP+5VkEgNcGlr1xDilPjTDjJrohMQciOsVJwcBLrfecx3sQbe0GkgH3fxLXz
+         PiakuBuepb7i52GHEjoMMAXMhlokEdb851OAffuZBc3b4MbmM6IMTs+H60iR9zRwJYE/
+         5PwBzAsA9ML7Javyk2+G3r8HJNxzGkA1l+rP5evhgPZhcB8ORqWLo5QSg4+0AYJRUuau
+         VgrkDaLyb19strSLRCBPafLA/9K0eoIBzBcZQvABDiU5YyTagILGctjtD3J1+Gfx5fz8
+         3bMA==
+X-Gm-Message-State: ABy/qLa0mi2bB/HsgkcvRIOdss77wEjB7kFexQvYoFJQTE/H0NVtzovP
+        MG/wDDcLjwjycMI0l92EVdQwH1o1k420cwygTJU=
+X-Google-Smtp-Source: APBJJlGGsUuf+V3qoT11Pogf+mqcTAutGtQX8L+sFbR9xMxcqCOg1dWiYkpNfhV8TDJxJAkM3OI/WYW3QCrNv2zauGo=
+X-Received: by 2002:a05:6870:420f:b0:1a5:4e57:e5d1 with SMTP id
+ u15-20020a056870420f00b001a54e57e5d1mr19457972oac.49.1689069818163; Tue, 11
+ Jul 2023 03:03:38 -0700 (PDT)
 MIME-Version: 1.0
-References: <20230710233132.69734-1-contact@artur-rojek.eu>
-In-Reply-To: <20230710233132.69734-1-contact@artur-rojek.eu>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Tue, 11 Jul 2023 08:36:01 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdUS6AK+k8v2vZLakFQqknUP=k95-KGic0uRE9PncZ6CWQ@mail.gmail.com>
-Message-ID: <CAMuHMdUS6AK+k8v2vZLakFQqknUP=k95-KGic0uRE9PncZ6CWQ@mail.gmail.com>
-Subject: Re: [PATCH v2] sh: hd64461: fix virq offsets
-To:     Artur Rojek <contact@artur-rojek.eu>
-Cc:     Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Sergey Shtylyov <s.shtylyov@omp.ru>, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
+References: <20230710130113.14563-1-tzimmermann@suse.de> <20230710130113.14563-10-tzimmermann@suse.de>
+ <CANiq72=9PoV3FOcXx9FdiSLePKXDG4BSY_5-jddBkqDL=ua3FA@mail.gmail.com>
+ <733273ad-89e1-d952-37ee-bb75c3ab8188@suse.de> <CANiq72kPh2KE=ADUxhPyyr7noWhC0fkzmDu8EBn_20focnZqtw@mail.gmail.com>
+ <745347ca-a369-eb01-eac4-75c09cf9e67f@suse.de>
+In-Reply-To: <745347ca-a369-eb01-eac4-75c09cf9e67f@suse.de>
+From:   Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>
+Date:   Tue, 11 Jul 2023 12:03:27 +0200
+Message-ID: <CANiq72kg_2PxmSnyj_X7Rak0-fmPP+W-+2EKFjyXCetw7w+mGA@mail.gmail.com>
+Subject: Re: [PATCH 09/17] auxdisplay: Remove flag FBINFO_FLAG_DEFAULT from
+ fbdev drivers
+To:     Thomas Zimmermann <tzimmermann@suse.de>
+Cc:     deller@gmx.de, javierm@redhat.com, linux-sh@vger.kernel.org,
+        dri-devel@lists.freedesktop.org, linux-kernel@vger.kernel.org,
+        amd-gfx@lists.freedesktop.org, linux-input@vger.kernel.org,
+        linux-media@vger.kernel.org, linux-fbdev@vger.kernel.org,
+        linux-staging@lists.linux.dev,
+        linux-arm-kernel@lists.infradead.org,
+        linux-geode@lists.infradead.org, linux-nvidia@lists.surfsouth.com,
+        linux-hyperv@vger.kernel.org, linux-omap@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, kvm@vger.kernel.org,
+        Miguel Ojeda <ojeda@kernel.org>,
+        Robin van der Gracht <robin@protonic.nl>
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Jul 11, 2023 at 1:31 AM Artur Rojek <contact@artur-rojek.eu> wrote:
-> A recent change to start counting SuperH IRQ #s from 16 breaks support
-> for the Hitachi HD64461 companion chip.
+On Tue, Jul 11, 2023 at 8:10=E2=80=AFAM Thomas Zimmermann <tzimmermann@suse=
+.de> wrote:
 >
-> Move the offchip IRQ base and HD64461 IRQ # by 16 in order to
-> accommodate for the new virq numbering rules.
->
-> Fixes: a8ac2961148e ("sh: Avoid using IRQ0 on SH3 and SH4")
-> Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
-> ---
->
-> v2: Make the IRQ base offset an explicit (64 + 16), as per review.
+> I'd like to take the patchset into drm-misc. It's part of a larger
+> cleanup of the fbdev modules and its interfaces.
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Sounds good, thanks!
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Cheers,
+Miguel
