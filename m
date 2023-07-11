@@ -2,477 +2,183 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7B0F8C0015E
-	for <linux-sh@archiver.kernel.org>; Tue, 11 Jul 2023 04:00:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EDB92EB64DC
+	for <linux-sh@archiver.kernel.org>; Tue, 11 Jul 2023 05:19:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229588AbjGKEAg convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 11 Jul 2023 00:00:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38268 "EHLO
+        id S229514AbjGKFTh (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 11 Jul 2023 01:19:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56066 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229464AbjGKEAf (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 11 Jul 2023 00:00:35 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4F19212A;
-        Mon, 10 Jul 2023 21:00:24 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qJ4Xz-003r5d-US; Tue, 11 Jul 2023 06:00:19 +0200
-Received: from p57bd95f7.dip0.t-ipconnect.de ([87.189.149.247] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qJ4Xz-0046tU-MT; Tue, 11 Jul 2023 06:00:19 +0200
-Message-ID: <e6842fb7d1f77702bff00d32c42f35dfc8a9ad50.camel@physik.fu-berlin.de>
+        with ESMTP id S229449AbjGKFTf (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 11 Jul 2023 01:19:35 -0400
+Received: from mga05.intel.com (mga05.intel.com [192.55.52.43])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F2B5E93;
+        Mon, 10 Jul 2023 22:19:34 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1689052775; x=1720588775;
+  h=message-id:date:subject:to:cc:references:from:
+   in-reply-to:content-transfer-encoding:mime-version;
+  bh=9gvsfw2aw1hq5eUUY4aV9dtjyY6IHvhPCTwJRmbe4Zc=;
+  b=OvHaAa1Uu0B/roVx1kiNOzvSXFPmeUyUge2wmnQYJQXok/SBImy5MtyU
+   KTT2MJ+zps3hMcmR64GvSRzGA1skoNstipX1/Ik7E/yvhbuBbVKT7DWaW
+   Z6H333FSp3XumASeMnaUBhp5nUgHfovqE5dMQ+xnADOfnpNzAiB6PYui8
+   M0jaJKKuku1EeBYMz8fAVN3cij+V+JD2eG2tBSIUlFCH4TtS9l8irrREy
+   s16ERnfAKrOP9CEawLTbRzxKyTxL8NbqDiCxB57m5wumRg7LHVBd7JQEL
+   PpAvIuBKae9X50WsKrYRlVj/WuuQYxtIfq0t6BtiIk1CqHRR/41tHTFKc
+   Q==;
+X-IronPort-AV: E=McAfee;i="6600,9927,10767"; a="450888602"
+X-IronPort-AV: E=Sophos;i="6.01,196,1684825200"; 
+   d="scan'208";a="450888602"
+Received: from fmsmga006.fm.intel.com ([10.253.24.20])
+  by fmsmga105.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Jul 2023 22:19:34 -0700
+X-ExtLoop1: 1
+X-IronPort-AV: E=McAfee;i="6600,9927,10767"; a="967655071"
+X-IronPort-AV: E=Sophos;i="6.01,196,1684825200"; 
+   d="scan'208";a="967655071"
+Received: from fmsmsx601.amr.corp.intel.com ([10.18.126.81])
+  by fmsmga006.fm.intel.com with ESMTP; 10 Jul 2023 22:19:34 -0700
+Received: from fmsmsx610.amr.corp.intel.com (10.18.126.90) by
+ fmsmsx601.amr.corp.intel.com (10.18.126.81) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2507.27; Mon, 10 Jul 2023 22:19:33 -0700
+Received: from fmsedg602.ED.cps.intel.com (10.1.192.136) by
+ fmsmsx610.amr.corp.intel.com (10.18.126.90) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
+ 15.1.2507.27 via Frontend Transport; Mon, 10 Jul 2023 22:19:33 -0700
+Received: from NAM10-BN7-obe.outbound.protection.outlook.com (104.47.70.101)
+ by edgegateway.intel.com (192.55.55.71) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.1.2507.27; Mon, 10 Jul 2023 22:19:33 -0700
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=QXrP9etBYJnj4klu62ij1mCYFMYhhQvOMG99bG+0YMZNBX+0rnWV/gNPJZQ8JAFbgCjulFgujHQPEobbTOSQDXof+++GVqKMMKfP6nNVPDescAzsSk84D1UMFCioRJWmgZUNGXi++gqtHAVO4d+9KBaSjr/lJoD59CGhuLRpg/0qNzRzhx0OJUHL0yoIL/pfKv8x7+fTyqcE7hmmzNp1kYK9XqWrkag2rSHuaAXzG0CQaRLzbGEZfs4/NBfNU4KieZoyV5wXVNNyl8yCK+ZcPvZ0iMo8C9H6i4YXq9JxaFb9ubb89fcAfuGs9dFOC0shRSR+tDrWR0GBHSyjQnHwkg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=FoWTCKOa0Oeh+xR/jCnEsdjrlfuhNItOsAq32ZNtoVA=;
+ b=diPtQY2B8vqCyK5UT3yTjthoZuKxI5ASKyznzeW5cmAO/Q9ZeUjeIlL4f/TFz1wubStBkkXBsXr8fjhmfJz8oWfVzfWeEuY954Y1m+jz5JaGp+HEwD5KzmoLF1Q1eimAuKi7q8mmUcNGsAA7EYUq1BTV9dNq6Acwir/W6lYbFoOapTRHGR8fUtkjJagJUIemf/3R1isbiolU2fs6zHLy8FEpSd86eamvDlb5GmPMzLAmpsFRCJlwlrlkhQmCCfAU/p1AiQ0UKU+zPf0KzE4n51inc3CnpubRytE2r7bC9V1gsnUmEfC7iwmw6i+GvO+osDhdLLmxNVQoPJ22xcqGEw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=intel.com; dmarc=pass action=none header.from=intel.com;
+ dkim=pass header.d=intel.com; arc=none
+Authentication-Results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=intel.com;
+Received: from CO1PR11MB4820.namprd11.prod.outlook.com (2603:10b6:303:6f::8)
+ by LV3PR11MB8694.namprd11.prod.outlook.com (2603:10b6:408:21b::11) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.6565.30; Tue, 11 Jul
+ 2023 05:19:32 +0000
+Received: from CO1PR11MB4820.namprd11.prod.outlook.com
+ ([fe80::e6c7:a86d:68d6:f2f3]) by CO1PR11MB4820.namprd11.prod.outlook.com
+ ([fe80::e6c7:a86d:68d6:f2f3%5]) with mapi id 15.20.6565.028; Tue, 11 Jul 2023
+ 05:19:32 +0000
+Message-ID: <b7adcefb-1e49-79f0-33e0-c84c82e6ed95@intel.com>
+Date:   Tue, 11 Jul 2023 13:19:22 +0800
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101
+ Firefox/102.0 Thunderbird/102.13.0
 Subject: Re: [PATCH v5 24/38] sh: Implement the new page table range API
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     "Matthew Wilcox (Oracle)" <willy@infradead.org>,
+Content-Language: en-US
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "Matthew Wilcox (Oracle)" <willy@infradead.org>,
         Andrew Morton <akpm@linux-foundation.org>
-Cc:     linux-arch@vger.kernel.org, linux-mm@kvack.org,
-        linux-kernel@vger.kernel.org, Mike Rapoport <rppt@kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
-Date:   Tue, 11 Jul 2023 06:00:18 +0200
-In-Reply-To: <20230710204339.3554919-25-willy@infradead.org>
+CC:     <linux-arch@vger.kernel.org>, <linux-mm@kvack.org>,
+        <linux-kernel@vger.kernel.org>, Mike Rapoport <rppt@kernel.org>,
+        "Yoshinori Sato" <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>, <linux-sh@vger.kernel.org>
 References: <20230710204339.3554919-1-willy@infradead.org>
-         <20230710204339.3554919-25-willy@infradead.org>
+ <20230710204339.3554919-25-willy@infradead.org>
+ <e6842fb7d1f77702bff00d32c42f35dfc8a9ad50.camel@physik.fu-berlin.de>
+From:   "Yin, Fengwei" <fengwei.yin@intel.com>
+In-Reply-To: <e6842fb7d1f77702bff00d32c42f35dfc8a9ad50.camel@physik.fu-berlin.de>
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.4 
+Content-Transfer-Encoding: 7bit
+X-ClientProxiedBy: SI2PR02CA0009.apcprd02.prod.outlook.com
+ (2603:1096:4:194::11) To CO1PR11MB4820.namprd11.prod.outlook.com
+ (2603:10b6:303:6f::8)
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.149.247
-X-ZEDAT-Hint: PO
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: CO1PR11MB4820:EE_|LV3PR11MB8694:EE_
+X-MS-Office365-Filtering-Correlation-Id: 1fae171d-0eba-4c22-bd78-08db81ce6878
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info: FipN+WVK+YZKDx4QGTaEMxYe65DpStdg2bcRHHZGycVnLhq12p0Q0huABL0/Ly3HhBOmF/Kd0TTH+zUDoOX5ECBhfFgyUBo/RvkkUMZ+7OQiBLbOlp/fcal56dofwEFbyY1s69Gc45wt3gcb1tLcB5+MfBlm7Xg+pXCcaNbj9J8yka20q6oF/RnSoP8ieORyaOWTnIFIY/UJg+Z/85sy4sTT5F+ECeJ9/DCZdazJdmGW9tI9rdeKDzJvusP3A0vjqx238epOZH+/kI/OLp59+At47YsPQ070rymAmcPUCByrz45YmcJqdbHWuMKQobreop6YIfP3FuFzlbd/iV0cIGLqXkJGlvU2vm8eDQs8X/eMdlBxjRo3/hjjqRNICVmQ/tHr++qK8LXAshG9TCFWHe3TfrbHodV6eO+4UJbCKo+O0cRKhkyyKLOXydKFVyA4Z23AucCaFvYJ/FfbA8vVgXJUUJSfQQXjJTOgxo09LqTEGYDLRnkDZ8TKnwpQ9p0q3IhflxlP/7FD9Bxh14dLYoVMgcch1Qg9SQp8yE+KhSfNr0VoZMIJhMaNsyqhjqy7UBZRPuUEacTzadG51DbGHX/809+Bs010f04Z0Gvnn+M5VIRUoSqvwhWVjHGqMDPjXfkQwN/pA3Xm/igDJr7a+0xwWjvVujC9x1/ddAJlHa8=
+X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:CO1PR11MB4820.namprd11.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230028)(39860400002)(366004)(396003)(376002)(136003)(346002)(451199021)(186003)(6506007)(6512007)(53546011)(966005)(2616005)(26005)(478600001)(66574015)(83380400001)(4744005)(41300700001)(4326008)(66556008)(5660300002)(2906002)(7416002)(316002)(8936002)(8676002)(66946007)(66476007)(6486002)(6666004)(110136005)(54906003)(36756003)(82960400001)(38100700002)(86362001)(31696002)(31686004)(43740500002)(45980500001);DIR:OUT;SFP:1102;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0: =?utf-8?B?WUd1QkhOOFMwZkpndzlWcGlRZG5nMUE2SURGRS9PdDBjaVhJL2JYRXlleDFx?=
+ =?utf-8?B?S3dyZms2TW16czA1SS9uTVJ0a2crcVZRbVdYNUw3TVQ1c0JkL3dQTnJRNllL?=
+ =?utf-8?B?TEluY2txTGJjeTVSNHJ6QVlNejdrdkFKUmhYQ3BUbzVPQ1lUbW95RmdlT3JO?=
+ =?utf-8?B?Nzhya1BSMzRBV3lNRnJyNWtOUUErN1QwRUE1OGhzVVNPQkxzZjlvR25CQzl5?=
+ =?utf-8?B?MUhzZUJUTVhSYzlWTzVRbkV2d0FJZzVhVjd4RVVtMDljTU9pZXhNSFVYWlll?=
+ =?utf-8?B?Y2VFYW8vWk01aVlzZ1NPSVFmT1d1TG9MKzFPd2puTUJwaUZyMFNLZy9hbGZh?=
+ =?utf-8?B?UmtqOG9WR1lrbmhIWWpiNVRBRmI4OTQ2eGUxdlU1M0gvdUVRQStQUFkzbUdW?=
+ =?utf-8?B?Y1ZZMGY2dU43MHVVM1gvR1h4NGl3UDdxMnVWYmtWRGZaUWY0V3UxSVRiaWNW?=
+ =?utf-8?B?bXAwU2VtS1h5L0pwVmlRL0l6OUd3bjVMS0doTVZQeXVGUnBOSjRQN2ppbURI?=
+ =?utf-8?B?K0l6dUkrR1cranM4UVZMUlhDSlBaM09IT3FHMFFZMmJPSTFrTThFdG5pT1Fj?=
+ =?utf-8?B?T28waGRWeWNvYWVUR1lYYlEwQTQ3b2dzMWMwSEFqWElsNTM2T0tKREtaMHhl?=
+ =?utf-8?B?b2p1VENZVHUxRzYrY2VyVFY4aXh3eHkyeXVSM3ZQTktKM0NxUmhDMmZ3MFIy?=
+ =?utf-8?B?OVBhOTdZNFlvRnBjYkd0VEF5Y1NpYnM1a1NwMi9NL1VOWThrTUhqQnpUY3Uz?=
+ =?utf-8?B?QlBXdW11NDVvbVdGQk5FOGJWWU1qNFFsMFZxNU9DaDU5bWZrUHEyMmhZMXZq?=
+ =?utf-8?B?MGxDTlpwUmNON2pPQ3V6QkRxbFlBc3hJN3g1R291dndka3ppWGFoTmhQSU9m?=
+ =?utf-8?B?YldhM1hVcHU0dlNnK1Q3bUJDZ3BFVmJWTFdZREF6NkhGTjMxZUMrZFlnMk5i?=
+ =?utf-8?B?aEVBdVg1SENPSTJIOVlUTFMxZXgxVjBPZlBXOUdKcm9qYUU1Yk95N2lkcHhT?=
+ =?utf-8?B?ZEJrYVFBK0txNEEvQmhmaHdNemx0NnoreUVMRVRvVTdJTndreFB4cER1SEY0?=
+ =?utf-8?B?WTJPdzJrVzlsNkVKMzhGeHNtSW5uY2xvd0xtdCtXcG9Vb3hiMngyaHJCQndt?=
+ =?utf-8?B?QXAvNTdud0hPRVBrVmhNUVRyZFRkWGFRMVI2amtxRUlySXhtYzVRQWVJWjRK?=
+ =?utf-8?B?SDh4TE4ySXU0WGtOV3pFZ3k3M28wSnorVDRPSENRN0ZheHh5dUFPNXl0UEVh?=
+ =?utf-8?B?d2F2c2tUc01VcmpDOHBRSHY2VGpqanpBOUJiOS9senFwdXVBVXpmUUkzT2d4?=
+ =?utf-8?B?Vm9ib0x5RUY3MDhoQzB5WnUxZGxJVkRxRnB1TmVxWlN2bm5Jbmw5SjFFVitC?=
+ =?utf-8?B?QStLVEkyNXJkbGMweXpRaEdyMXpUOEw5TllsTDZ4WUhXaDAwcFlJTnZ4VWZQ?=
+ =?utf-8?B?dG5Mdm5OZlhVUE5MNHRiQVlpaXNyaU5HYjJJTDFKbHcrRVhkUFA2TmM0R1Q5?=
+ =?utf-8?B?UmtrRDh4cCtlM0I1emU4b1ZmcTNrNjZCcWo5ZVpqcmcwcUp4SGl6azN3UndJ?=
+ =?utf-8?B?OW55eFF4OEtrYVR0eWJqWkx5dmZrQ2g1SEtXUkVrTlVFSEkySDdVc2d3dVZn?=
+ =?utf-8?B?UjIrK2QrSWNVSkFzcGh0eVk3eGoyZ0piRVVTckFyMXN4bjJWL1JPVFJpUXpt?=
+ =?utf-8?B?SitFTGdGN2xyS3psbEJRbndvVEhSbzB5YkhwSlNxb1lRK2ZoU2IvOU1GQmQw?=
+ =?utf-8?B?V2NkODJDWGFpTCtBSmQ3VXBpZmlxYVlqaVJ6azRsM2NhMVArMHN2SHVwTnda?=
+ =?utf-8?B?VHoweTRNQVhpaHM1dEZFRUM1ck1TeWxxS2RTZkZ0b3JsVm4rd1o0K2lDRkF2?=
+ =?utf-8?B?YlZpcExIMjZDNmZzQmZwQ0ZoemJlazh6MWxaVUovWlNQeVlpUjZsTWlBaGh5?=
+ =?utf-8?B?Q0xFRy9wYzRMWFFqZVp3dnBnWVBBSHljeExTVDlUY2NvUEY1MVVVZDNHOEVE?=
+ =?utf-8?B?YTdvQzB0aFFWL2prNG5XRmN2aEo0NlNCaGJka0d4bzQvQjdGallJV3h1SVoz?=
+ =?utf-8?B?cE8xNEdGQmFXemtEckwwU2E5cllkZHRYaEZuTm5GcXRsSDg4RlVjWlR2dWFj?=
+ =?utf-8?Q?kMgcRB7OBQMXQwOvYXPkLvpBj?=
+X-MS-Exchange-CrossTenant-Network-Message-Id: 1fae171d-0eba-4c22-bd78-08db81ce6878
+X-MS-Exchange-CrossTenant-AuthSource: CO1PR11MB4820.namprd11.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 11 Jul 2023 05:19:32.0214
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 46c98d88-e344-4ed4-8496-4ed7712e255d
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: F3rdcqkS8Or7k+QBu++gss+bQtdBQNWOCxYv4b6ykHCsLCo154q1jPfD9F/wubEmdS8TJI/WlyVrlRujcSVOLg==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: LV3PR11MB8694
+X-OriginatorOrg: intel.com
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Matthew!
 
-On Mon, 2023-07-10 at 21:43 +0100, Matthew Wilcox (Oracle) wrote:
-> Add PFN_PTE_SHIFT, update_mmu_cache_range(), flush_dcache_folio() and
-> flush_icache_pages().  Change the PG_dcache_clean flag from being
-> per-page to per-folio.  Flush the entire folio containing the pages in
-> flush_icache_pages() for ease of implementation.
+
+On 7/11/2023 12:00 PM, John Paul Adrian Glaubitz wrote:
+> What's the best way to test this? Just build Andrew's kernel?
+I didn't see the patchset shown on:
+https://git.kernel.org/pub/scm/linux/kernel/git/akpm/mm.git/log/?h=mm-unstable
+yet. I believe the patchset will be in mm-unstable soon.
+
+From the cover letter:
+The point of all this is better performance, and Fengwei Yin has
+measured improvement on x86.  I suspect you'll see improvement on
+your architecture too.  Try the new will-it-scale test mentioned here:
+https://lore.kernel.org/linux-mm/20230206140639.538867-5-fengwei.yin@intel.com/
+You'll need to run it on an XFS filesystem and have
+CONFIG_TRANSPARENT_HUGEPAGE set.
+
+It's for performance testing. For functionality, I used:
+   - System boot/reboot.
+   - Using browser to access internet, Thunderbird to check email.
+   - Build kernel.
+
+
+Regards
+Yin, Fengwei
+
 > 
-> Signed-off-by: Matthew Wilcox (Oracle) <willy@infradead.org>
-> Acked-by: Mike Rapoport (IBM) <rppt@kernel.org>
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Cc: linux-sh@vger.kernel.org
-> ---
->  arch/sh/include/asm/cacheflush.h | 21 ++++++++-----
->  arch/sh/include/asm/pgtable.h    |  7 +++--
->  arch/sh/include/asm/pgtable_32.h |  5 ++-
->  arch/sh/mm/cache-j2.c            |  4 +--
->  arch/sh/mm/cache-sh4.c           | 26 +++++++++++-----
->  arch/sh/mm/cache-sh7705.c        | 26 ++++++++++------
->  arch/sh/mm/cache.c               | 52 ++++++++++++++++++--------------
->  arch/sh/mm/kmap.c                |  3 +-
->  8 files changed, 89 insertions(+), 55 deletions(-)
-> 
-> diff --git a/arch/sh/include/asm/cacheflush.h b/arch/sh/include/asm/cacheflush.h
-> index 481a664287e2..9fceef6f3e00 100644
-> --- a/arch/sh/include/asm/cacheflush.h
-> +++ b/arch/sh/include/asm/cacheflush.h
-> @@ -13,9 +13,9 @@
->   *  - flush_cache_page(mm, vmaddr, pfn) flushes a single page
->   *  - flush_cache_range(vma, start, end) flushes a range of pages
->   *
-> - *  - flush_dcache_page(pg) flushes(wback&invalidates) a page for dcache
-> + *  - flush_dcache_folio(folio) flushes(wback&invalidates) a folio for dcache
->   *  - flush_icache_range(start, end) flushes(invalidates) a range for icache
-> - *  - flush_icache_page(vma, pg) flushes(invalidates) a page for icache
-> + *  - flush_icache_pages(vma, pg, nr) flushes(invalidates) pages for icache
->   *  - flush_cache_sigtramp(vaddr) flushes the signal trampoline
->   */
->  extern void (*local_flush_cache_all)(void *args);
-> @@ -23,9 +23,9 @@ extern void (*local_flush_cache_mm)(void *args);
->  extern void (*local_flush_cache_dup_mm)(void *args);
->  extern void (*local_flush_cache_page)(void *args);
->  extern void (*local_flush_cache_range)(void *args);
-> -extern void (*local_flush_dcache_page)(void *args);
-> +extern void (*local_flush_dcache_folio)(void *args);
->  extern void (*local_flush_icache_range)(void *args);
-> -extern void (*local_flush_icache_page)(void *args);
-> +extern void (*local_flush_icache_folio)(void *args);
->  extern void (*local_flush_cache_sigtramp)(void *args);
->  
->  static inline void cache_noop(void *args) { }
-> @@ -42,11 +42,18 @@ extern void flush_cache_page(struct vm_area_struct *vma,
->  extern void flush_cache_range(struct vm_area_struct *vma,
->  				 unsigned long start, unsigned long end);
->  #define ARCH_IMPLEMENTS_FLUSH_DCACHE_PAGE 1
-> -void flush_dcache_page(struct page *page);
-> +void flush_dcache_folio(struct folio *folio);
-> +#define flush_dcache_folio flush_dcache_folio
-> +static inline void flush_dcache_page(struct page *page)
-> +{
-> +	flush_dcache_folio(page_folio(page));
-> +}
-> +
->  extern void flush_icache_range(unsigned long start, unsigned long end);
->  #define flush_icache_user_range flush_icache_range
-> -extern void flush_icache_page(struct vm_area_struct *vma,
-> -				 struct page *page);
-> +void flush_icache_pages(struct vm_area_struct *vma, struct page *page,
-> +		unsigned int nr);
-> +#define flush_icache_page(vma, page) flush_icache_pages(vma, page, 1)
->  extern void flush_cache_sigtramp(unsigned long address);
->  
->  struct flusher_data {
-> diff --git a/arch/sh/include/asm/pgtable.h b/arch/sh/include/asm/pgtable.h
-> index 3ce30becf6df..729f5c6225fb 100644
-> --- a/arch/sh/include/asm/pgtable.h
-> +++ b/arch/sh/include/asm/pgtable.h
-> @@ -102,13 +102,16 @@ extern void __update_cache(struct vm_area_struct *vma,
->  extern void __update_tlb(struct vm_area_struct *vma,
->  			 unsigned long address, pte_t pte);
->  
-> -static inline void
-> -update_mmu_cache(struct vm_area_struct *vma, unsigned long address, pte_t *ptep)
-> +static inline void update_mmu_cache_range(struct vm_fault *vmf,
-> +		struct vm_area_struct *vma, unsigned long address,
-> +		pte_t *ptep, unsigned int nr)
->  {
->  	pte_t pte = *ptep;
->  	__update_cache(vma, address, pte);
->  	__update_tlb(vma, address, pte);
->  }
-> +#define update_mmu_cache(vma, addr, ptep) \
-> +	update_mmu_cache_range(NULL, vma, addr, ptep, 1)
->  
->  extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
->  extern void paging_init(void);
-> diff --git a/arch/sh/include/asm/pgtable_32.h b/arch/sh/include/asm/pgtable_32.h
-> index 21952b094650..676f3d4ef6ce 100644
-> --- a/arch/sh/include/asm/pgtable_32.h
-> +++ b/arch/sh/include/asm/pgtable_32.h
-> @@ -307,14 +307,13 @@ static inline void set_pte(pte_t *ptep, pte_t pte)
->  #define set_pte(pteptr, pteval) (*(pteptr) = pteval)
->  #endif
->  
-> -#define set_pte_at(mm,addr,ptep,pteval) set_pte(ptep,pteval)
-> -
->  /*
->   * (pmds are folded into pgds so this doesn't get actually called,
->   * but the define is needed for a generic inline function.)
->   */
->  #define set_pmd(pmdptr, pmdval) (*(pmdptr) = pmdval)
->  
-> +#define PFN_PTE_SHIFT	PAGE_SHIFT
->  #define pfn_pte(pfn, prot) \
->  	__pte(((unsigned long long)(pfn) << PAGE_SHIFT) | pgprot_val(prot))
->  #define pfn_pmd(pfn, prot) \
-> @@ -323,7 +322,7 @@ static inline void set_pte(pte_t *ptep, pte_t pte)
->  #define pte_none(x)		(!pte_val(x))
->  #define pte_present(x)		((x).pte_low & (_PAGE_PRESENT | _PAGE_PROTNONE))
->  
-> -#define pte_clear(mm,addr,xp) do { set_pte_at(mm, addr, xp, __pte(0)); } while (0)
-> +#define pte_clear(mm, addr, ptep) set_pte(ptep, __pte(0))
->  
->  #define pmd_none(x)	(!pmd_val(x))
->  #define pmd_present(x)	(pmd_val(x))
-> diff --git a/arch/sh/mm/cache-j2.c b/arch/sh/mm/cache-j2.c
-> index f277862a11f5..9ac960214380 100644
-> --- a/arch/sh/mm/cache-j2.c
-> +++ b/arch/sh/mm/cache-j2.c
-> @@ -55,9 +55,9 @@ void __init j2_cache_init(void)
->  	local_flush_cache_dup_mm = j2_flush_both;
->  	local_flush_cache_page = j2_flush_both;
->  	local_flush_cache_range = j2_flush_both;
-> -	local_flush_dcache_page = j2_flush_dcache;
-> +	local_flush_dcache_folio = j2_flush_dcache;
->  	local_flush_icache_range = j2_flush_icache;
-> -	local_flush_icache_page = j2_flush_icache;
-> +	local_flush_icache_folio = j2_flush_icache;
->  	local_flush_cache_sigtramp = j2_flush_icache;
->  
->  	pr_info("Initial J2 CCR is %.8x\n", __raw_readl(j2_ccr_base));
-> diff --git a/arch/sh/mm/cache-sh4.c b/arch/sh/mm/cache-sh4.c
-> index 72c2e1b46c08..862046f26981 100644
-> --- a/arch/sh/mm/cache-sh4.c
-> +++ b/arch/sh/mm/cache-sh4.c
-> @@ -107,19 +107,29 @@ static inline void flush_cache_one(unsigned long start, unsigned long phys)
->   * Write back & invalidate the D-cache of the page.
->   * (To avoid "alias" issues)
->   */
-> -static void sh4_flush_dcache_page(void *arg)
-> +static void sh4_flush_dcache_folio(void *arg)
->  {
-> -	struct page *page = arg;
-> -	unsigned long addr = (unsigned long)page_address(page);
-> +	struct folio *folio = arg;
->  #ifndef CONFIG_SMP
-> -	struct address_space *mapping = page_mapping_file(page);
-> +	struct address_space *mapping = folio_flush_mapping(folio);
->  
->  	if (mapping && !mapping_mapped(mapping))
-> -		clear_bit(PG_dcache_clean, &page->flags);
-> +		clear_bit(PG_dcache_clean, &folio->flags);
->  	else
->  #endif
-> -		flush_cache_one(CACHE_OC_ADDRESS_ARRAY |
-> -				(addr & shm_align_mask), page_to_phys(page));
-> +	{
-> +		unsigned long pfn = folio_pfn(folio);
-> +		unsigned long addr = (unsigned long)folio_address(folio);
-> +		unsigned int i, nr = folio_nr_pages(folio);
-> +
-> +		for (i = 0; i < nr; i++) {
-> +			flush_cache_one(CACHE_OC_ADDRESS_ARRAY |
-> +						(addr & shm_align_mask),
-> +					pfn * PAGE_SIZE);
-> +			addr += PAGE_SIZE;
-> +			pfn++;
-> +		}
-> +	}
->  
->  	wmb();
->  }
-> @@ -379,7 +389,7 @@ void __init sh4_cache_init(void)
->  		__raw_readl(CCN_PRR));
->  
->  	local_flush_icache_range	= sh4_flush_icache_range;
-> -	local_flush_dcache_page		= sh4_flush_dcache_page;
-> +	local_flush_dcache_folio	= sh4_flush_dcache_folio;
->  	local_flush_cache_all		= sh4_flush_cache_all;
->  	local_flush_cache_mm		= sh4_flush_cache_mm;
->  	local_flush_cache_dup_mm	= sh4_flush_cache_mm;
-> diff --git a/arch/sh/mm/cache-sh7705.c b/arch/sh/mm/cache-sh7705.c
-> index 9b63a53a5e46..b509a407588f 100644
-> --- a/arch/sh/mm/cache-sh7705.c
-> +++ b/arch/sh/mm/cache-sh7705.c
-> @@ -132,15 +132,20 @@ static void __flush_dcache_page(unsigned long phys)
->   * Write back & invalidate the D-cache of the page.
->   * (To avoid "alias" issues)
->   */
-> -static void sh7705_flush_dcache_page(void *arg)
-> +static void sh7705_flush_dcache_folio(void *arg)
->  {
-> -	struct page *page = arg;
-> -	struct address_space *mapping = page_mapping_file(page);
-> +	struct folio *folio = arg;
-> +	struct address_space *mapping = folio_flush_mapping(folio);
->  
->  	if (mapping && !mapping_mapped(mapping))
-> -		clear_bit(PG_dcache_clean, &page->flags);
-> -	else
-> -		__flush_dcache_page(__pa(page_address(page)));
-> +		clear_bit(PG_dcache_clean, &folio->flags);
-> +	else {
-> +		unsigned long pfn = folio_pfn(folio);
-> +		unsigned int i, nr = folio_nr_pages(folio);
-> +
-> +		for (i = 0; i < nr; i++)
-> +			__flush_dcache_page((pfn + i) * PAGE_SIZE);
-> +	}
->  }
->  
->  static void sh7705_flush_cache_all(void *args)
-> @@ -176,19 +181,20 @@ static void sh7705_flush_cache_page(void *args)
->   * Not entirely sure why this is necessary on SH3 with 32K cache but
->   * without it we get occasional "Memory fault" when loading a program.
->   */
-> -static void sh7705_flush_icache_page(void *page)
-> +static void sh7705_flush_icache_folio(void *arg)
->  {
-> -	__flush_purge_region(page_address(page), PAGE_SIZE);
-> +	struct folio *folio = arg;
-> +	__flush_purge_region(folio_address(folio), folio_size(folio));
->  }
->  
->  void __init sh7705_cache_init(void)
->  {
->  	local_flush_icache_range	= sh7705_flush_icache_range;
-> -	local_flush_dcache_page		= sh7705_flush_dcache_page;
-> +	local_flush_dcache_folio	= sh7705_flush_dcache_folio;
->  	local_flush_cache_all		= sh7705_flush_cache_all;
->  	local_flush_cache_mm		= sh7705_flush_cache_all;
->  	local_flush_cache_dup_mm	= sh7705_flush_cache_all;
->  	local_flush_cache_range		= sh7705_flush_cache_all;
->  	local_flush_cache_page		= sh7705_flush_cache_page;
-> -	local_flush_icache_page		= sh7705_flush_icache_page;
-> +	local_flush_icache_folio	= sh7705_flush_icache_folio;
->  }
-> diff --git a/arch/sh/mm/cache.c b/arch/sh/mm/cache.c
-> index 3aef78ceb820..9bcaa5619eab 100644
-> --- a/arch/sh/mm/cache.c
-> +++ b/arch/sh/mm/cache.c
-> @@ -20,9 +20,9 @@ void (*local_flush_cache_mm)(void *args) = cache_noop;
->  void (*local_flush_cache_dup_mm)(void *args) = cache_noop;
->  void (*local_flush_cache_page)(void *args) = cache_noop;
->  void (*local_flush_cache_range)(void *args) = cache_noop;
-> -void (*local_flush_dcache_page)(void *args) = cache_noop;
-> +void (*local_flush_dcache_folio)(void *args) = cache_noop;
->  void (*local_flush_icache_range)(void *args) = cache_noop;
-> -void (*local_flush_icache_page)(void *args) = cache_noop;
-> +void (*local_flush_icache_folio)(void *args) = cache_noop;
->  void (*local_flush_cache_sigtramp)(void *args) = cache_noop;
->  
->  void (*__flush_wback_region)(void *start, int size);
-> @@ -61,15 +61,17 @@ void copy_to_user_page(struct vm_area_struct *vma, struct page *page,
->  		       unsigned long vaddr, void *dst, const void *src,
->  		       unsigned long len)
->  {
-> -	if (boot_cpu_data.dcache.n_aliases && page_mapcount(page) &&
-> -	    test_bit(PG_dcache_clean, &page->flags)) {
-> +	struct folio *folio = page_folio(page);
-> +
-> +	if (boot_cpu_data.dcache.n_aliases && folio_mapped(folio) &&
-> +	    test_bit(PG_dcache_clean, &folio->flags)) {
->  		void *vto = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
->  		memcpy(vto, src, len);
->  		kunmap_coherent(vto);
->  	} else {
->  		memcpy(dst, src, len);
->  		if (boot_cpu_data.dcache.n_aliases)
-> -			clear_bit(PG_dcache_clean, &page->flags);
-> +			clear_bit(PG_dcache_clean, &folio->flags);
->  	}
->  
->  	if (vma->vm_flags & VM_EXEC)
-> @@ -80,27 +82,30 @@ void copy_from_user_page(struct vm_area_struct *vma, struct page *page,
->  			 unsigned long vaddr, void *dst, const void *src,
->  			 unsigned long len)
->  {
-> +	struct folio *folio = page_folio(page);
-> +
->  	if (boot_cpu_data.dcache.n_aliases && page_mapcount(page) &&
-> -	    test_bit(PG_dcache_clean, &page->flags)) {
-> +	    test_bit(PG_dcache_clean, &folio->flags)) {
->  		void *vfrom = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
->  		memcpy(dst, vfrom, len);
->  		kunmap_coherent(vfrom);
->  	} else {
->  		memcpy(dst, src, len);
->  		if (boot_cpu_data.dcache.n_aliases)
-> -			clear_bit(PG_dcache_clean, &page->flags);
-> +			clear_bit(PG_dcache_clean, &folio->flags);
->  	}
->  }
->  
->  void copy_user_highpage(struct page *to, struct page *from,
->  			unsigned long vaddr, struct vm_area_struct *vma)
->  {
-> +	struct folio *src = page_folio(from);
->  	void *vfrom, *vto;
->  
->  	vto = kmap_atomic(to);
->  
-> -	if (boot_cpu_data.dcache.n_aliases && page_mapcount(from) &&
-> -	    test_bit(PG_dcache_clean, &from->flags)) {
-> +	if (boot_cpu_data.dcache.n_aliases && folio_mapped(src) &&
-> +	    test_bit(PG_dcache_clean, &src->flags)) {
->  		vfrom = kmap_coherent(from, vaddr);
->  		copy_page(vto, vfrom);
->  		kunmap_coherent(vfrom);
-> @@ -136,27 +141,28 @@ EXPORT_SYMBOL(clear_user_highpage);
->  void __update_cache(struct vm_area_struct *vma,
->  		    unsigned long address, pte_t pte)
->  {
-> -	struct page *page;
->  	unsigned long pfn = pte_pfn(pte);
->  
->  	if (!boot_cpu_data.dcache.n_aliases)
->  		return;
->  
-> -	page = pfn_to_page(pfn);
->  	if (pfn_valid(pfn)) {
-> -		int dirty = !test_and_set_bit(PG_dcache_clean, &page->flags);
-> +		struct folio *folio = page_folio(pfn_to_page(pfn));
-> +		int dirty = !test_and_set_bit(PG_dcache_clean, &folio->flags);
->  		if (dirty)
-> -			__flush_purge_region(page_address(page), PAGE_SIZE);
-> +			__flush_purge_region(folio_address(folio),
-> +						folio_size(folio));
->  	}
->  }
->  
->  void __flush_anon_page(struct page *page, unsigned long vmaddr)
->  {
-> +	struct folio *folio = page_folio(page);
->  	unsigned long addr = (unsigned long) page_address(page);
->  
->  	if (pages_do_alias(addr, vmaddr)) {
-> -		if (boot_cpu_data.dcache.n_aliases && page_mapcount(page) &&
-> -		    test_bit(PG_dcache_clean, &page->flags)) {
-> +		if (boot_cpu_data.dcache.n_aliases && folio_mapped(folio) &&
-> +		    test_bit(PG_dcache_clean, &folio->flags)) {
->  			void *kaddr;
->  
->  			kaddr = kmap_coherent(page, vmaddr);
-> @@ -164,7 +170,8 @@ void __flush_anon_page(struct page *page, unsigned long vmaddr)
->  			/* __flush_purge_region((void *)kaddr, PAGE_SIZE); */
->  			kunmap_coherent(kaddr);
->  		} else
-> -			__flush_purge_region((void *)addr, PAGE_SIZE);
-> +			__flush_purge_region(folio_address(folio),
-> +						folio_size(folio));
->  	}
->  }
->  
-> @@ -215,11 +222,11 @@ void flush_cache_range(struct vm_area_struct *vma, unsigned long start,
->  }
->  EXPORT_SYMBOL(flush_cache_range);
->  
-> -void flush_dcache_page(struct page *page)
-> +void flush_dcache_folio(struct folio *folio)
->  {
-> -	cacheop_on_each_cpu(local_flush_dcache_page, page, 1);
-> +	cacheop_on_each_cpu(local_flush_dcache_folio, folio, 1);
->  }
-> -EXPORT_SYMBOL(flush_dcache_page);
-> +EXPORT_SYMBOL(flush_dcache_folio);
->  
->  void flush_icache_range(unsigned long start, unsigned long end)
->  {
-> @@ -233,10 +240,11 @@ void flush_icache_range(unsigned long start, unsigned long end)
->  }
->  EXPORT_SYMBOL(flush_icache_range);
->  
-> -void flush_icache_page(struct vm_area_struct *vma, struct page *page)
-> +void flush_icache_pages(struct vm_area_struct *vma, struct page *page,
-> +		unsigned int nr)
->  {
-> -	/* Nothing uses the VMA, so just pass the struct page along */
-> -	cacheop_on_each_cpu(local_flush_icache_page, page, 1);
-> +	/* Nothing uses the VMA, so just pass the folio along */
-> +	cacheop_on_each_cpu(local_flush_icache_folio, page_folio(page), 1);
->  }
->  
->  void flush_cache_sigtramp(unsigned long address)
-> diff --git a/arch/sh/mm/kmap.c b/arch/sh/mm/kmap.c
-> index 73fd7cc99430..fa50e8f6e7a9 100644
-> --- a/arch/sh/mm/kmap.c
-> +++ b/arch/sh/mm/kmap.c
-> @@ -27,10 +27,11 @@ void __init kmap_coherent_init(void)
->  
->  void *kmap_coherent(struct page *page, unsigned long addr)
->  {
-> +	struct folio *folio = page_folio(page);
->  	enum fixed_addresses idx;
->  	unsigned long vaddr;
->  
-> -	BUG_ON(!test_bit(PG_dcache_clean, &page->flags));
-> +	BUG_ON(!test_bit(PG_dcache_clean, &folio->flags));
->  
->  	preempt_disable();
->  	pagefault_disable();
-
-What's the best way to test this? Just build Andrew's kernel?
-
-I would like to give it a go on my SH7785LCR to be sure nothing breaks.
-
-Adrian
-
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+> I would like to give it a go on my SH7785LCR to be sure nothing breaks.
