@@ -2,138 +2,117 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 40BA2C04FDF
-	for <linux-sh@archiver.kernel.org>; Tue, 11 Jul 2023 14:01:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4142AC001DF
+	for <linux-sh@archiver.kernel.org>; Tue, 11 Jul 2023 14:48:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233217AbjGKOBX (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 11 Jul 2023 10:01:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41078 "EHLO
+        id S233134AbjGKOsK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 11 Jul 2023 10:48:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54238 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233182AbjGKOBV (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 11 Jul 2023 10:01:21 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B77DBB0;
-        Tue, 11 Jul 2023 07:01:19 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 554A861504;
-        Tue, 11 Jul 2023 14:01:19 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id ADD1DC433C7;
-        Tue, 11 Jul 2023 14:01:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1689084078;
-        bh=cdE+rFjbrFVLmzVrU6vfdc/Au2vs/4K/KtQWUN2iOVE=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=uFC0KFw6/M6i8iNMypafGbl8Cu47AhRfSYX/xpea89PI4ZoMwe92EJqP3skNe1e6r
-         wdNiag9bpyADI4zIDbvsfEfC5gi5cG0LiI+uy+iziLVFM+p32F6ViRjBHJmXzejh3K
-         hGryvnrWcowWB4v9G6Utb47tLMTtfXf0Jk5KlXTXblJ68+Ehl7NBgEro6SYLZcBbuG
-         SEhMMw8zZvhNH953cv8zDMYVJb4nE9cNKmW9VcGjlVykyXZpRuOY205drYPWTtbPxy
-         Nee7XyVCXNFnj+xKEgPCEgPFhFOWJaEQgr+bospaDMUJydxlVz0ktUF8W7K96PF8x7
-         FoGj2nXcIV0Uw==
-Date:   Tue, 11 Jul 2023 16:01:03 +0200
-From:   Christian Brauner <brauner@kernel.org>
-To:     Alexey Gladkov <legion@kernel.org>
-Cc:     Arnd Bergmann <arnd@arndb.de>, LKML <linux-kernel@vger.kernel.org>,
-        linux-api@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        Palmer Dabbelt <palmer@sifive.com>,
-        "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
-        Arnaldo Carvalho de Melo <acme@kernel.org>,
-        Alexander Shishkin <alexander.shishkin@linux.intel.com>,
-        Jens Axboe <axboe@kernel.dk>,
-        Benjamin Herrenschmidt <benh@kernel.crashing.org>,
-        Christian Borntraeger <borntraeger@de.ibm.com>,
-        Borislav Petkov <bp@alien8.de>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        christian@brauner.io, Rich Felker <dalias@libc.org>,
-        "David S . Miller" <davem@davemloft.net>,
-        Deepa Dinamani <deepa.kernel@gmail.com>,
-        Helge Deller <deller@gmx.de>,
-        David Howells <dhowells@redhat.com>, fenghua.yu@intel.com,
-        firoz.khan@linaro.org, Florian Weimer <fweimer@redhat.com>,
-        Geert Uytterhoeven <geert@linux-m68k.org>, glebfm@altlinux.org,
-        gor@linux.ibm.com, hare@suse.com, heiko.carstens@de.ibm.com,
-        "H. Peter Anvin" <hpa@zytor.com>,
-        Ivan Kokshaysky <ink@jurassic.park.msu.ru>, jhogan@kernel.org,
-        Kim Phillips <kim.phillips@arm.com>, ldv@altlinux.org,
-        linux-alpha@vger.kernel.org,
-        Linux-Arch <linux-arch@vger.kernel.org>,
-        linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, Russell King <linux@armlinux.org.uk>,
-        linuxppc-dev@lists.ozlabs.org, Andy Lutomirski <luto@kernel.org>,
-        Matt Turner <mattst88@gmail.com>,
-        Ingo Molnar <mingo@redhat.com>,
-        Michal Simek <monstr@monstr.eu>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Namhyung Kim <namhyung@kernel.org>, paul.burton@mips.com,
-        Paul Mackerras <paulus@samba.org>,
-        Peter Zijlstra <peterz@infradead.org>, ralf@linux-mips.org,
-        rth@twiddle.net, schwidefsky@de.ibm.com,
-        sparclinux@vger.kernel.org, stefan@agner.ch,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Tony Luck <tony.luck@intel.com>, tycho@tycho.ws,
-        Will Deacon <will@kernel.org>, x86@kernel.org,
-        Yoshinori Sato <ysato@users.sourceforge.jp>
-Subject: Re: [PATCH v3 2/5] fs: Add fchmodat4()
-Message-ID: <20230711-verpennen-turnier-717bb9682e19@brauner>
-References: <87o8pscpny.fsf@oldenburg2.str.redhat.com>
- <cover.1689074739.git.legion@kernel.org>
- <d11b93ad8e3b669afaff942e25c3fca65c6a983c.1689074739.git.legion@kernel.org>
- <83363cbb-2431-4520-81a9-0d71f420cb36@app.fastmail.com>
- <20230711-demolieren-nilpferd-80ffe47563ad@brauner>
- <ZK1QNRidZuGcfOSd@example.org>
+        with ESMTP id S232686AbjGKOr6 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 11 Jul 2023 10:47:58 -0400
+X-Greylist: delayed 77330 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 11 Jul 2023 07:47:57 PDT
+Received: from mailrelay6-1.pub.mailoutpod2-cph3.one.com (mailrelay6-1.pub.mailoutpod2-cph3.one.com [IPv6:2a02:2350:5:405::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1DA3CE60
+        for <linux-sh@vger.kernel.org>; Tue, 11 Jul 2023 07:47:57 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=ravnborg.org; s=rsa1;
+        h=in-reply-to:content-type:mime-version:references:message-id:subject:cc:to:
+         from:date:from;
+        bh=IzJnH7tearuxnA6Z+6SlVNN7/HpdHXO6OvjidkyffDc=;
+        b=t1UZoY+OgZB4qloOKAGoPzdxKiYC17C9++ltdd9VkKKSSJf/R5HyAsdaxr5chXo+LcqtCqMpEj2TA
+         b8Z7yF6JHKQOlU7blN+narui79FThKq8hj2VwanKmhandBBtpyfKAhsU889SFEdFbXrVkiKx3hcR7H
+         QKjso83LwxpCtsl1H23jeJIFNxLM2fJZpqpYaWgVJBzgpvhQLjm/hOp65N2Nj7rNyOZMvrxGPI6czh
+         YS0MtrmIYLsQmwRyf7YF8HR5nxe+n7cXTvsKENehLpNtWPbi2L0wAhskoQ5ZCvD2WrQtbyYxsEJ/AP
+         CUbin2WAzk67odxeRHKtnqDopCvMHJA==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed;
+        d=ravnborg.org; s=ed1;
+        h=in-reply-to:content-type:mime-version:references:message-id:subject:cc:to:
+         from:date:from;
+        bh=IzJnH7tearuxnA6Z+6SlVNN7/HpdHXO6OvjidkyffDc=;
+        b=KzzqHm8tLnuEHjgNWidySCjTk6o2+jW4abV9LJjbJcqDWTbuxi74O9whyYkZn2CXMR1EK8Adpr0Tp
+         1xeW/n7CQ==
+X-HalOne-ID: e4c9d52a-1ff9-11ee-be66-6f01c1d0a443
+Received: from ravnborg.org (2-105-2-98-cable.dk.customer.tdc.net [2.105.2.98])
+        by mailrelay6 (Halon) with ESMTPSA
+        id e4c9d52a-1ff9-11ee-be66-6f01c1d0a443;
+        Tue, 11 Jul 2023 14:47:46 +0000 (UTC)
+Date:   Tue, 11 Jul 2023 16:47:44 +0200
+From:   Sam Ravnborg <sam@ravnborg.org>
+To:     Thomas Zimmermann <tzimmermann@suse.de>
+Cc:     deller@gmx.de, javierm@redhat.com, linux-fbdev@vger.kernel.org,
+        kvm@vger.kernel.org, linux-hyperv@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-staging@lists.linux.dev,
+        linux-kernel@vger.kernel.org, amd-gfx@lists.freedesktop.org,
+        linux-geode@lists.infradead.org, dri-devel@lists.freedesktop.org,
+        linux-input@vger.kernel.org, linux-nvidia@lists.surfsouth.com,
+        linux-omap@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-arm-kernel@lists.infradead.org, linux-media@vger.kernel.org
+Subject: Re: [PATCH 00/17] fbdev: Remove FBINFO_DEFAULT and
+ FBINFO_FLAG_DEFAULT flags
+Message-ID: <20230711144744.GA117276@ravnborg.org>
+References: <20230710130113.14563-1-tzimmermann@suse.de>
+ <20230710171903.GA14712@ravnborg.org>
+ <ab92f8d9-36ab-06bc-b85b-d52b7a1bfe9a@suse.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <ZK1QNRidZuGcfOSd@example.org>
+In-Reply-To: <ab92f8d9-36ab-06bc-b85b-d52b7a1bfe9a@suse.de>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Jul 11, 2023 at 02:51:01PM +0200, Alexey Gladkov wrote:
-> On Tue, Jul 11, 2023 at 01:52:01PM +0200, Christian Brauner wrote:
-> > On Tue, Jul 11, 2023 at 01:42:19PM +0200, Arnd Bergmann wrote:
-> > > On Tue, Jul 11, 2023, at 13:25, Alexey Gladkov wrote:
-> > > > From: Palmer Dabbelt <palmer@sifive.com>
-> > > >
-> > > > On the userspace side fchmodat(3) is implemented as a wrapper
-> > > > function which implements the POSIX-specified interface. This
-> > > > interface differs from the underlying kernel system call, which does not
-> > > > have a flags argument. Most implementations require procfs [1][2].
-> > > >
-> > > > There doesn't appear to be a good userspace workaround for this issue
-> > > > but the implementation in the kernel is pretty straight-forward.
-> > > >
-> > > > The new fchmodat4() syscall allows to pass the AT_SYMLINK_NOFOLLOW flag,
-> > > > unlike existing fchmodat.
-> > > >
-> > > > [1] 
-> > > > https://sourceware.org/git/?p=glibc.git;a=blob;f=sysdeps/unix/sysv/linux/fchmodat.c;h=17eca54051ee28ba1ec3f9aed170a62630959143;hb=a492b1e5ef7ab50c6fdd4e4e9879ea5569ab0a6c#l35
-> > > > [2] 
-> > > > https://git.musl-libc.org/cgit/musl/tree/src/stat/fchmodat.c?id=718f363bc2067b6487900eddc9180c84e7739f80#n28
-> > > >
-> > > > Signed-off-by: Palmer Dabbelt <palmer@sifive.com>
-> > > > Signed-off-by: Alexey Gladkov <legion@kernel.org>
-> > > 
-> > > I don't know the history of why we ended up with the different
-> > > interface, or whether this was done intentionally in the kernel
-> > > or if we want this syscall.
-> > > 
-> > > Assuming this is in fact needed, I double-checked that the
-> > > implementation looks correct to me and is portable to all the
-> > > architectures, without the need for a compat wrapper.
-> > > 
-> > > Acked-by: Arnd Bergmann <arnd@arndb.de>
-> > 
-> > The system call itself is useful afaict. But please,
-> > 
-> > s/fchmodat4/fchmodat2/
-> 
-> Sure. I will.
+Hi Thomas,
 
-Thanks. Can you also wire this up for every architecture, please?
-I don't see that this has been done in this series.
+On Tue, Jul 11, 2023 at 08:24:40AM +0200, Thomas Zimmermann wrote:
+> Hi Sam
+> 
+> Am 10.07.23 um 19:19 schrieb Sam Ravnborg:
+> > Hi Thomas,
+> > 
+> > On Mon, Jul 10, 2023 at 02:50:04PM +0200, Thomas Zimmermann wrote:
+> > > Remove the unused flags FBINFO_DEFAULT and FBINFO_FLAG_DEFAULT from
+> > > fbdev and drivers, as briefly discussed at [1]. Both flags were maybe
+> > > useful when fbdev had special handling for driver modules. With
+> > > commit 376b3ff54c9a ("fbdev: Nuke FBINFO_MODULE"), they are both 0
+> > > and have no further effect.
+> > > 
+> > > Patches 1 to 7 remove FBINFO_DEFAULT from drivers. Patches 2 to 5
+> > > split this by the way the fb_info struct is being allocated. All flags
+> > > are cleared to zero during the allocation.
+> > > 
+> > > Patches 8 to 16 do the same for FBINFO_FLAG_DEFAULT. Patch 8 fixes
+> > > an actual bug in how arch/sh uses the tokne for struct fb_videomode,
+> > > which is unrelated.
+> > > 
+> > > Patch 17 removes both flag constants from <linux/fb.h>
+> > 
+> > We have a few more flags that are unused - should they be nuked too?
+> > FBINFO_HWACCEL_FILLRECT
+> > FBINFO_HWACCEL_ROTATE
+> > FBINFO_HWACCEL_XPAN
+> 
+> It seems those are there for completeness. Nothing sets _ROTATE, the others
+> are simply never checked. According to the comments, some are required, some
+> are optional. I don't know what that means.
+> 
+> IIRC there were complains about performance when Daniel tried to remove
+> fbcon acceleration, so not all _HWACCEL_ flags are unneeded.
+> 
+> Leaving them in for reference/completeness might be an option; or not. I
+> have no strong feelings about those flags.
+> 
+> > 
+> > Unused as in no references from fbdev/core/*
+> > 
+> > I would rather see one series nuke all unused FBINFO flags in one go.
+> > Assuming my quick grep are right and the above can be dropped.
+> 
+> I would not want to extend this series. I'm removing _DEFAULT as it's
+> absolutely pointless and confusing.
+
+OK, makes sense and thanks for the explanation.
+
+The series is:
+Acked-by: Sam Ravnborg <sam@ravnborg.org>
+
