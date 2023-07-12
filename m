@@ -2,35 +2,56 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5B0E5EB64D9
-	for <linux-sh@archiver.kernel.org>; Wed, 12 Jul 2023 08:20:45 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D1FEAEB64D9
+	for <linux-sh@archiver.kernel.org>; Wed, 12 Jul 2023 08:26:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232465AbjGLIUo convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 12 Jul 2023 04:20:44 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51196 "EHLO
+        id S232542AbjGLI0M (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 12 Jul 2023 04:26:12 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56214 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232508AbjGLIUQ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 12 Jul 2023 04:20:16 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A83C12706;
-        Wed, 12 Jul 2023 01:16:55 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qJV0i-003CBT-OC; Wed, 12 Jul 2023 10:15:44 +0200
-Received: from p57bd9f0d.dip0.t-ipconnect.de ([87.189.159.13] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qJV0i-001l2s-F8; Wed, 12 Jul 2023 10:15:44 +0200
-Message-ID: <b6a22e7f96fd635fa00eebbfc0accf01e971061b.camel@physik.fu-berlin.de>
+        with ESMTP id S232541AbjGLIZt (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 12 Jul 2023 04:25:49 -0400
+Received: from mail-lf1-x134.google.com (mail-lf1-x134.google.com [IPv6:2a00:1450:4864:20::134])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3316E1BFA;
+        Wed, 12 Jul 2023 01:20:54 -0700 (PDT)
+Received: by mail-lf1-x134.google.com with SMTP id 2adb3069b0e04-4fb96e2b573so10626243e87.3;
+        Wed, 12 Jul 2023 01:20:54 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20221208; t=1689150050; x=1691742050;
+        h=content-transfer-encoding:content-language:in-reply-to:mime-version
+         :user-agent:date:message-id:from:references:cc:to:subject:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=Stm2+briN7xTHjyU1YYMiw0ahBy2NrW0BYxEeVzHaDk=;
+        b=feG9mMNPxVH2E1hZYUaeSzFYUPfTzCgAfJQTdrm/iWAC/FRfKwwsii5R3IGUhDbwgx
+         bc3cgKrNPPquwMrXL5Ixcbanxjo6hnnneTcSurxDT+rVWwhbaO6QXMkTu2Nrckm5BCa7
+         yR0A6kDOv89asIAau6ARtVReRSfO9ZRJjdvYlcL5gSyR7HSyDCuUO4XY6QLGCrHLUdlj
+         jSpYdIZZSx/3cD8xlHZ0h6eZ8lp2ZTkK1/lwmwTibHeuS8kQYABYp8jU28YcWgZ1NBSz
+         jMMdjB3kSSMfdqWz5P1IF5vjoZjawglCahR2YSyQ4X7MNnhhWgygXMogP8PFDf15F4n3
+         eHag==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1689150050; x=1691742050;
+        h=content-transfer-encoding:content-language:in-reply-to:mime-version
+         :user-agent:date:message-id:from:references:cc:to:subject
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=Stm2+briN7xTHjyU1YYMiw0ahBy2NrW0BYxEeVzHaDk=;
+        b=SernVOh4abjz3kN6XFbeoZqhF2PYZxtKZDQ3FaaVYmFSb0tWhyFGBuEvVnnwAPzaW8
+         mt9XiBEjuPFZP4KoIzrTiKrPB0mi3zhXZOChvI4OJ5tTr9Le+Y4xYLXciTkJzM7TH1UX
+         4o9q3fwII5fwFrYc+B7Z9xfArQwqN4EkiW+DNH0IbfVqfsEeQDuZzZoLKoP5PllTpTfH
+         cQG4ehfs3VaOsqqQuKuBH4f6sV9C8xnHNUg1i1ZffnmAgwMrXQu1GghiHGxjg9PCLt4w
+         Ai9VvaacZvBaA33fCSraLNNIOzQahsGvsaVwBc362IOTzVYnIvRZSEOVVuJtJIL3rtUy
+         njsA==
+X-Gm-Message-State: ABy/qLaEZKORDFxY2TyqKhTWYB8nzCyEPoird/YmPKE6CZn/bcYvEHaH
+        Yd426dyHBWZsdOryWKWLU5wrfnNvj9s=
+X-Google-Smtp-Source: APBJJlHz4hYlxCwgr1mnFSAkZqZCx64MZvnbcWfrr2bR7jLPqI0yB4T6F1AhFbmI6sIrFbRLZQFG1Q==
+X-Received: by 2002:ac2:4e07:0:b0:4f8:5e49:c613 with SMTP id e7-20020ac24e07000000b004f85e49c613mr17263551lfr.43.1689150049426;
+        Wed, 12 Jul 2023 01:20:49 -0700 (PDT)
+Received: from [192.168.1.103] ([31.173.82.245])
+        by smtp.gmail.com with ESMTPSA id u16-20020ac25190000000b004fbdf1c85b5sm614017lfi.116.2023.07.12.01.20.48
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 12 Jul 2023 01:20:48 -0700 (PDT)
 Subject: Re: [PATCH] sh: Avoid using IRQ0 on SH3 and SH4
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 To:     David Laight <David.Laight@ACULAB.COM>,
+        'John Paul Adrian Glaubitz' <glaubitz@physik.fu-berlin.de>,
         Guenter Roeck <linux@roeck-us.net>,
         Sergey Shtylyov <s.shtylyov@omp.ru>,
         Geert Uytterhoeven <geert@linux-m68k.org>
@@ -38,56 +59,53 @@ Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>,
         "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Date:   Wed, 12 Jul 2023 10:15:43 +0200
-In-Reply-To: <c5ad5c59fcfa4888bd03fb8a855c989c@AcuMS.aculab.com>
 References: <fbfea3ad-d327-4ad5-ac9c-648c7ca3fe1f@roeck-us.net>
-         <CAMuHMdUfXdCf_CQuWXpP72MzKFYvXg3Ud1VN_3Bd0RHxfLhVeQ@mail.gmail.com>
-         <7b2c0d812280afaefee0c70a9aea00a0fcf84e3a.camel@physik.fu-berlin.de>
-         <cd1caa5d-fbd8-c3fe-29e9-b848ddd5634c@omp.ru>
-         <1178f8d0-be70-c088-ee6a-8b421b290624@roeck-us.net>
-         <a0a0d4d06eecc9c3194afe2cee0b61ebed5e0392.camel@physik.fu-berlin.de>
-         <c5ad5c59fcfa4888bd03fb8a855c989c@AcuMS.aculab.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.4 
+ <CAMuHMdUfXdCf_CQuWXpP72MzKFYvXg3Ud1VN_3Bd0RHxfLhVeQ@mail.gmail.com>
+ <7b2c0d812280afaefee0c70a9aea00a0fcf84e3a.camel@physik.fu-berlin.de>
+ <cd1caa5d-fbd8-c3fe-29e9-b848ddd5634c@omp.ru>
+ <1178f8d0-be70-c088-ee6a-8b421b290624@roeck-us.net>
+ <a0a0d4d06eecc9c3194afe2cee0b61ebed5e0392.camel@physik.fu-berlin.de>
+ <c5ad5c59fcfa4888bd03fb8a855c989c@AcuMS.aculab.com>
+From:   Sergei Shtylyov <sergei.shtylyov@gmail.com>
+Message-ID: <c9483d7f-7f5f-dd29-2bba-5659a1dae7e0@gmail.com>
+Date:   Wed, 12 Jul 2023 11:20:46 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.1
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.159.13
-X-ZEDAT-Hint: PO
+In-Reply-To: <c5ad5c59fcfa4888bd03fb8a855c989c@AcuMS.aculab.com>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi David!
+On 7/12/23 11:12 AM, David Laight wrote:
 
-On Wed, 2023-07-12 at 08:12 +0000, David Laight wrote:
-> From: John Paul Adrian Glaubitz
-> > Sent: 09 July 2023 00:13
+>> Sent: 09 July 2023 00:13
 > ....
-> > Looking at arch/sh/boards/mach-r2d/irq.c, there is some IRQ translation going
-> > on and maybe that's the part where we need to correct the offset by 16?
+>> Looking at arch/sh/boards/mach-r2d/irq.c, there is some IRQ translation going
+>> on and maybe that's the part where we need to correct the offset by 16?
 > 
 > Would it be less problematic to use (say) 16 for IRQ_0
 > leaving IRQ_1+ as 1+ ?
 
-That would make things more complicated as IRQ0 would have to be
-handled individually.
+   I don't think so.
 
 > At least that would only cause issues for code that needed
 > to use IRQ_0.
-
-What issues are you seeing or expecting?
-
+> 
 > (It has to be said that making IRQ 0 invalid seemed wrong
 > to me. x86 (IBM PC) gets away with it because IRQ 0 is
 > always assigned to platform specific hardware.)
 
-It's invalid for driver code, not for architecture code.
+   Not only x86, IIRC.
+   Have you seen the commit below?
 
-Adrian
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=ce753ad1549cbe9ccaea4c06a1f5fa47432c8289
 
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+   IOW, try arguing with Linus. :-)
+
+> 	David
+
+MBR, Sergey
