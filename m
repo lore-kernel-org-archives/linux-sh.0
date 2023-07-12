@@ -2,116 +2,88 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 525DCC04E69
-	for <linux-sh@archiver.kernel.org>; Tue, 11 Jul 2023 17:37:19 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 99621EB64D9
+	for <linux-sh@archiver.kernel.org>; Wed, 12 Jul 2023 05:15:29 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231869AbjGKRhQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 11 Jul 2023 13:37:16 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43618 "EHLO
+        id S231370AbjGLFP2 convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 12 Jul 2023 01:15:28 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34878 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229491AbjGKRhP (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 11 Jul 2023 13:37:15 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A7F62E4F;
-        Tue, 11 Jul 2023 10:37:13 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 3CE7861579;
-        Tue, 11 Jul 2023 17:37:13 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7E41BC433C8;
-        Tue, 11 Jul 2023 17:37:01 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1689097032;
-        bh=g+dg42YNtsQJhOjtGMIfYdxeMk+Q5chUUpj1UHPyuI0=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=OU0fx9r/gW1jdTCG/iJZoodUiAYpTTMgryh+eUwK0SvFFeCzBDxABJWQ/HAhpM8ye
-         yBnM//6OA543xk4QBgEbWFDkvCh7ONFKnet6T2nY6GiJNGe++LpNHsBO53yIxRC1dw
-         CLUi1qmmodaux6upnMNyF/KqqubSxVHA67DwxYH/aO5VwDsXvdD1T4BZZhZWFZrom9
-         +nthUGNjjcFzaX2bY1z9qhdSCg7rB6hz0xgLF1oCv+tCDu8UN7UNhRG5OCUuJUdOw+
-         UBXBTnHv6L2WRueaCic7RFYV1/lmEsdEsvaplXp/1qHno7ehBsSMmEORgYmfsLOmFl
-         vPA4Eb9AXLl0w==
-From:   Christian Brauner <brauner@kernel.org>
-To:     Alexey Gladkov <legion@kernel.org>
-Cc:     Christian Brauner <brauner@kernel.org>,
-        James.Bottomley@HansenPartnership.com, acme@kernel.org,
-        alexander.shishkin@linux.intel.com, axboe@kernel.dk,
-        benh@kernel.crashing.org, bp@alien8.de, catalin.marinas@arm.com,
-        dalias@libc.org, davem@davemloft.net, deepa.kernel@gmail.com,
-        deller@gmx.de, dhowells@redhat.com, fenghua.yu@intel.com,
-        fweimer@redhat.com, geert@linux-m68k.org, glebfm@altlinux.org,
-        gor@linux.ibm.com, hare@suse.com, hpa@zytor.com,
-        ink@jurassic.park.msu.ru, jhogan@kernel.org, kim.phillips@arm.com,
-        ldv@altlinux.org, linux-alpha@vger.kernel.org,
-        linux-arch@vger.kernel.org, linux-ia64@vger.kernel.org,
-        linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
-        linux-parisc@vger.kernel.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, linux@armlinux.org.uk,
-        linuxppc-dev@lists.ozlabs.org, luto@kernel.org, mattst88@gmail.com,
-        mingo@redhat.com, monstr@monstr.eu, mpe@ellerman.id.au,
-        namhyung@kernel.org, peterz@infradead.org, ralf@linux-mips.org,
-        sparclinux@vger.kernel.org, stefan@agner.ch, tglx@linutronix.de,
-        tony.luck@intel.com, will@kernel.org, x86@kernel.org,
-        ysato@users.sourceforge.jp,
-        Christian Borntraeger <borntraeger@linux.ibm.com>,
-        Paul Mackerras <paulus@ozlabs.org>,
-        Tycho Andersen <tycho@tycho.pizza>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Arnd Bergmann <arnd@arndb.de>, linux-api@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, viro@zeniv.linux.org.uk
-Subject: Re: (subset) [PATCH v4 0/5] Add a new fchmodat2() syscall
-Date:   Tue, 11 Jul 2023 19:36:45 +0200
-Message-Id: <20230711-befreien-unwiderruflich-c2265c61e514@brauner>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <cover.1689092120.git.legion@kernel.org>
-References: <cover.1689074739.git.legion@kernel.org> <cover.1689092120.git.legion@kernel.org>
+        with ESMTP id S229928AbjGLFP1 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 12 Jul 2023 01:15:27 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 63F1710E3;
+        Tue, 11 Jul 2023 22:15:26 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1qJSC6-002AA8-7T; Wed, 12 Jul 2023 07:15:18 +0200
+Received: from p57bd9f0d.dip0.t-ipconnect.de ([87.189.159.13] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1qJSC6-0016Z1-09; Wed, 12 Jul 2023 07:15:18 +0200
+Message-ID: <31e4e3d0e6d1c6f044dd9461b81eb7f410ccabfe.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] [RFC] sh: highlander: Handle virq offset in cascaded
+ IRL demux
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>,
+        Sergey Shtylyov <s.shtylyov@omp.ru>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>
+Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Date:   Wed, 12 Jul 2023 07:15:16 +0200
+In-Reply-To: <4fcb0d08a2b372431c41e04312742dc9e41e1be4.1688908186.git.geert+renesas@glider.be>
+References: <4fcb0d08a2b372431c41e04312742dc9e41e1be4.1688908186.git.geert+renesas@glider.be>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.4 
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1700; i=brauner@kernel.org; h=from:subject:message-id; bh=g+dg42YNtsQJhOjtGMIfYdxeMk+Q5chUUpj1UHPyuI0=; b=owGbwMvMwCU28Zj0gdSKO4sYT6slMaSsnSxT9aGqYFXo8u/Pv0u8/8n7p3Ja0Z4JQu5vS1/e2JvM Xda7tKOUhUGMi0FWTJHFod0kXG45T8Vmo0wNmDmsTCBDGLg4BWAiwv8ZGa5HavbtmudR8P/916OJ0j 91rvW3zk3vj11VUnvmNlvDpK2MDJ8umZ/uZt1qWrp9+6sJ/1y98jZJfQleeOMaf2RRS0fvbmYA
-X-Developer-Key: i=brauner@kernel.org; a=openpgp; fpr=4880B8C9BD0E5106FC070F4F7B3C391EFEA93624
-Content-Transfer-Encoding: 8bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.159.13
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, 11 Jul 2023 18:16:02 +0200, Alexey Gladkov wrote:
-> In glibc, the fchmodat(3) function has a flags argument according to the
-> POSIX specification [1], but kernel syscalls has no such argument.
-> Therefore, libc implementations do workarounds using /proc. However,
-> this requires procfs to be mounted and accessible.
+On Sun, 2023-07-09 at 15:10 +0200, Geert Uytterhoeven wrote:
+> Take into account the virq offset when translating cascaded IRL
+> interrupts.
 > 
-> This patch set adds fchmodat2(), a new syscall. The syscall allows to
-> pass the AT_SYMLINK_NOFOLLOW flag to disable LOOKUP_FOLLOW. In all other
-> respects, this syscall is no different from fchmodat().
+> Fixes: a8ac2961148e8c72 ("sh: Avoid using IRQ0 on SH3 and SH4")
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+> Compile-tested only, but the fix is identical to the fix for rts7751r2d.
+> ---
+>  arch/sh/boards/mach-highlander/setup.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
 > 
-> [...]
+> diff --git a/arch/sh/boards/mach-highlander/setup.c b/arch/sh/boards/mach-highlander/setup.c
+> index 533393d779c2b97f..a821a1b155473d93 100644
+> --- a/arch/sh/boards/mach-highlander/setup.c
+> +++ b/arch/sh/boards/mach-highlander/setup.c
+> @@ -389,10 +389,10 @@ static unsigned char irl2irq[HL_NR_IRL];
+>  
+>  static int highlander_irq_demux(int irq)
+>  {
+> -	if (irq >= HL_NR_IRL || irq < 0 || !irl2irq[irq])
+> +	if (irq >= 16 + HL_NR_IRL || irq < 16 || !irl2irq[irq - 16])
+>  		return irq;
+>  
+> -	return irl2irq[irq];
+> +	return irl2irq[irq - 16];
+>  }
+>  
+>  static void __init highlander_init_irq(void)
 
-Tools updates usually go separately.
-Flags argument ported to unsigned int; otherwise unchanged.
+Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
----
-
-Applied to the master branch of the vfs/vfs.git tree.
-Patches in the master branch should appear in linux-next soon.
-
-Please report any outstanding bugs that were missed during review in a
-new review to the original patch series allowing us to drop it.
-
-It's encouraged to provide Acked-bys and Reviewed-bys even though the
-patch has now been applied. If possible patch trailers will be updated.
-
-Note that commit hashes shown below are subject to change due to rebase,
-trailer updates or similar. If in doubt, please check the listed branch.
-
-tree:   https://git.kernel.org/pub/scm/linux/kernel/git/vfs/vfs.git
-branch: master
-
-[1/5] Non-functional cleanup of a "__user * filename"
-      https://git.kernel.org/vfs/vfs/c/0f05a6af6b7e
-[2/5] fs: Add fchmodat2()
-      https://git.kernel.org/vfs/vfs/c/8d593559ec09
-[3/5] arch: Register fchmodat2, usually as syscall 452
-      https://git.kernel.org/vfs/vfs/c/2ee63b04f206
-[5/5] selftests: Add fchmodat2 selftest
-      https://git.kernel.org/vfs/vfs/c/f175b92081ec
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
