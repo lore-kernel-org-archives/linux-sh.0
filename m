@@ -2,69 +2,84 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 15763EB64D9
-	for <linux-sh@archiver.kernel.org>; Wed, 12 Jul 2023 08:30:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 85EF1C0015E
+	for <linux-sh@archiver.kernel.org>; Wed, 12 Jul 2023 10:20:22 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232417AbjGLIaw (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 12 Jul 2023 04:30:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58536 "EHLO
+        id S231494AbjGLKUU convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 12 Jul 2023 06:20:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43220 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232425AbjGLIa0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 12 Jul 2023 04:30:26 -0400
-Received: from eu-smtp-delivery-151.mimecast.com (eu-smtp-delivery-151.mimecast.com [185.58.85.151])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2382026A1
-        for <linux-sh@vger.kernel.org>; Wed, 12 Jul 2023 01:25:04 -0700 (PDT)
-Received: from AcuMS.aculab.com (156.67.243.121 [156.67.243.121]) by
- relay.mimecast.com with ESMTP with both STARTTLS and AUTH (version=TLSv1.2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id
- uk-mta-6-etuMEl9WNcGfDxoRsyEDgg-1; Wed, 12 Jul 2023 09:25:00 +0100
-X-MC-Unique: etuMEl9WNcGfDxoRsyEDgg-1
-Received: from AcuMS.Aculab.com (10.202.163.4) by AcuMS.aculab.com
- (10.202.163.4) with Microsoft SMTP Server (TLS) id 15.0.1497.48; Wed, 12 Jul
- 2023 09:24:59 +0100
-Received: from AcuMS.Aculab.com ([::1]) by AcuMS.aculab.com ([::1]) with mapi
- id 15.00.1497.048; Wed, 12 Jul 2023 09:24:59 +0100
-From:   David Laight <David.Laight@ACULAB.COM>
-To:     'Sergei Shtylyov' <sergei.shtylyov@gmail.com>,
-        'John Paul Adrian Glaubitz' <glaubitz@physik.fu-berlin.de>,
-        Guenter Roeck <linux@roeck-us.net>,
-        "Sergey Shtylyov" <s.shtylyov@omp.ru>,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-CC:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Subject: RE: [PATCH] sh: Avoid using IRQ0 on SH3 and SH4
-Thread-Topic: [PATCH] sh: Avoid using IRQ0 on SH3 and SH4
-Thread-Index: AQHZsfHdmuMwibd1MUyQs4RUtwxCnq+1y++Q///y7QCAABHTUA==
-Date:   Wed, 12 Jul 2023 08:24:59 +0000
-Message-ID: <e51e00f3d0194fd688f6baa59fe7fa3d@AcuMS.aculab.com>
-References: <fbfea3ad-d327-4ad5-ac9c-648c7ca3fe1f@roeck-us.net>
- <CAMuHMdUfXdCf_CQuWXpP72MzKFYvXg3Ud1VN_3Bd0RHxfLhVeQ@mail.gmail.com>
- <7b2c0d812280afaefee0c70a9aea00a0fcf84e3a.camel@physik.fu-berlin.de>
- <cd1caa5d-fbd8-c3fe-29e9-b848ddd5634c@omp.ru>
- <1178f8d0-be70-c088-ee6a-8b421b290624@roeck-us.net>
- <a0a0d4d06eecc9c3194afe2cee0b61ebed5e0392.camel@physik.fu-berlin.de>
- <c5ad5c59fcfa4888bd03fb8a855c989c@AcuMS.aculab.com>
- <c9483d7f-7f5f-dd29-2bba-5659a1dae7e0@gmail.com>
-In-Reply-To: <c9483d7f-7f5f-dd29-2bba-5659a1dae7e0@gmail.com>
-Accept-Language: en-GB, en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-x-ms-exchange-transport-fromentityheader: Hosted
-x-originating-ip: [10.202.205.107]
+        with ESMTP id S232476AbjGLKUP (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 12 Jul 2023 06:20:15 -0400
+X-Greylist: delayed 1202 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 12 Jul 2023 03:20:14 PDT
+Received: from hygieia.sysophe.eu (hygieia.sysophe.eu [138.201.91.14])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C0588B4;
+        Wed, 12 Jul 2023 03:20:14 -0700 (PDT)
+Received: from hemera.lan.sysophe.eu (unknown [IPv6:2001:a18:2c5:a501:fa75:a4ff:fe28:fe3a])
+        by smtp.sysophe.eu (Postfix) with ESMTPSA id 1A675260A610;
+        Wed, 12 Jul 2023 11:43:42 +0200 (CEST)
+Date:   Wed, 12 Jul 2023 11:43:35 +0200
+From:   Bruno =?UTF-8?B?UHLDqW1vbnQ=?= <bonbons@linux-vserver.org>
+To:     Thomas Zimmermann <tzimmermann@suse.de>
+Cc:     deller@gmx.de, javierm@redhat.com, linux-sh@vger.kernel.org,
+        dri-devel@lists.freedesktop.org, linux-kernel@vger.kernel.org,
+        amd-gfx@lists.freedesktop.org, linux-input@vger.kernel.org,
+        linux-media@vger.kernel.org, linux-fbdev@vger.kernel.org,
+        linux-staging@lists.linux.dev,
+        linux-arm-kernel@lists.infradead.org,
+        linux-geode@lists.infradead.org, linux-nvidia@lists.surfsouth.com,
+        linux-hyperv@vger.kernel.org, linux-omap@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, kvm@vger.kernel.org,
+        Jiri Kosina <jikos@kernel.org>,
+        Benjamin Tissoires <benjamin.tissoires@redhat.com>
+Subject: Re: [PATCH 10/17] hid/picolcd: Remove flag FBINFO_FLAG_DEFAULT from
+ fbdev driver
+Message-ID: <20230712114335.42644eab@hemera.lan.sysophe.eu>
+In-Reply-To: <20230710130113.14563-11-tzimmermann@suse.de>
+References: <20230710130113.14563-1-tzimmermann@suse.de>
+ <20230710130113.14563-11-tzimmermann@suse.de>
+X-Mailer: Claws Mail 4.1.1 (GTK 3.24.37; x86_64-pc-linux-gnu)
 MIME-Version: 1.0
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: aculab.com
-Content-Language: en-US
 Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: base64
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Li4uDQo+ICAgIElPVywgdHJ5IGFyZ3Vpbmcgd2l0aCBMaW51cy4gOi0pDQoNCkkgYWx3YXlzIGxv
-c2UgOi0pDQoNCglEYXZpZA0KDQotDQpSZWdpc3RlcmVkIEFkZHJlc3MgTGFrZXNpZGUsIEJyYW1s
-ZXkgUm9hZCwgTW91bnQgRmFybSwgTWlsdG9uIEtleW5lcywgTUsxIDFQVCwgVUsNClJlZ2lzdHJh
-dGlvbiBObzogMTM5NzM4NiAoV2FsZXMpDQo=
+On Mon, 10 Jul 2023 14:50:14 +0200 Thomas Zimmermann wrote:
+> The flag FBINFO_FLAG_DEFAULT is 0 and has no effect, as struct
+> fbinfo.flags has been allocated to zero by framebuffer_alloc(). So do
+> not set it.
+> 
+> Flags should signal differences from the default values. After cleaning
+> up all occurences of FBINFO_FLAG_DEFAULT, the token can be removed.
+> 
+> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+> Cc: "Bruno Prémont" <bonbons@linux-vserver.org>
+> Cc: Jiri Kosina <jikos@kernel.org>
+> Cc: Benjamin Tissoires <benjamin.tissoires@redhat.com>
+
+Acked-by: Bruno Prémont <bonbons@linux-vserver.org>
+
+Cheers,
+Bruno
+
+
+> ---
+>  drivers/hid/hid-picolcd_fb.c | 1 -
+>  1 file changed, 1 deletion(-)
+> 
+> diff --git a/drivers/hid/hid-picolcd_fb.c b/drivers/hid/hid-picolcd_fb.c
+> index dabcd054dad9..d726aaafb146 100644
+> --- a/drivers/hid/hid-picolcd_fb.c
+> +++ b/drivers/hid/hid-picolcd_fb.c
+> @@ -527,7 +527,6 @@ int picolcd_init_framebuffer(struct picolcd_data *data)
+>  	info->var = picolcdfb_var;
+>  	info->fix = picolcdfb_fix;
+>  	info->fix.smem_len   = PICOLCDFB_SIZE*8;
+> -	info->flags = FBINFO_FLAG_DEFAULT;
+>  
+>  	fbdata = info->par;
+>  	spin_lock_init(&fbdata->lock);
 
