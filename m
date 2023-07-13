@@ -2,90 +2,73 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 83CA9C04A6A
-	for <linux-sh@archiver.kernel.org>; Thu, 13 Jul 2023 16:02:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B060AC0015E
+	for <linux-sh@archiver.kernel.org>; Thu, 13 Jul 2023 21:41:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235079AbjGMQCs (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 13 Jul 2023 12:02:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57666 "EHLO
+        id S234040AbjGMVld (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 13 Jul 2023 17:41:33 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44838 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233618AbjGMQCq (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 13 Jul 2023 12:02:46 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4F44226B2;
-        Thu, 13 Jul 2023 09:02:45 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:
-        Message-ID:Sender:Reply-To:Content-ID:Content-Description;
-        bh=FGfECluQ+8FqgloN5y7njhMRYgbNQmkghpgv24LmuxM=; b=0XY4/FQJa9khQp7bFpbGplPtrB
-        5SpA/Xwz1+y5xMC8TkQ/RIwD1YWvtpubNsS1DOufMRk8U8ZOw4QBT/2OcdaSsugIN7fvQtpI7FoTv
-        cytb12hmpQ++kNkMjOGEjV3X0J/VuBhB9uSnfg9JjtfUZNml3TMudThtLyoBgiurIyPLTXfpsW1zN
-        ZtXFfJPqxyrJBHJb3985aNxuQmUFSYt3wjhQoX2i+JeMJunamtLIY8iXJ5jgN3F/OMabSTImubkKK
-        MN74NscjU6mryhy24nJ4dBieOuA4YvnVsMsArDKWNb60xY8A4s7oL4npScU177xtucZj0Dk4Lyl65
-        o8/EadpQ==;
-Received: from [2601:1c2:980:9ec0::2764]
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1qJym9-003r1C-08;
-        Thu, 13 Jul 2023 16:02:41 +0000
-Message-ID: <801dbd65-ee7f-526d-6cd8-27cb0291c4ba@infradead.org>
-Date:   Thu, 13 Jul 2023 09:02:39 -0700
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.12.0
-Subject: Re: [PATCH v2 18/18] fbdev: Document that framebuffer_alloc() returns
- zero'ed data
-Content-Language: en-US
-To:     Miguel Ojeda <miguel.ojeda.sandonis@gmail.com>,
-        Thomas Zimmermann <tzimmermann@suse.de>
-Cc:     deller@gmx.de, javierm@redhat.com, linux-sh@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, linux-kernel@vger.kernel.org,
-        amd-gfx@lists.freedesktop.org, linux-input@vger.kernel.org,
-        linux-media@vger.kernel.org, linux-fbdev@vger.kernel.org,
-        linux-staging@lists.linux.dev,
-        linux-arm-kernel@lists.infradead.org,
-        linux-geode@lists.infradead.org, linux-nvidia@lists.surfsouth.com,
-        linux-hyperv@vger.kernel.org, linux-omap@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, kvm@vger.kernel.org,
-        Miguel Ojeda <ojeda@kernel.org>
-References: <20230713130338.31086-1-tzimmermann@suse.de>
- <20230713130338.31086-19-tzimmermann@suse.de>
- <CANiq72mbLmMKph8aiz4apNF9n3MtVO-nhM9rEWYApZbSVAO9Qw@mail.gmail.com>
-From:   Randy Dunlap <rdunlap@infradead.org>
-In-Reply-To: <CANiq72mbLmMKph8aiz4apNF9n3MtVO-nhM9rEWYApZbSVAO9Qw@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+        with ESMTP id S234328AbjGMVlb (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 13 Jul 2023 17:41:31 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DE1C62691;
+        Thu, 13 Jul 2023 14:41:30 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id 712C761B7C;
+        Thu, 13 Jul 2023 21:41:30 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPS id D577BC433CA;
+        Thu, 13 Jul 2023 21:41:29 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1689284489;
+        bh=jpkwRfIuO/p7CmmiIptnPZpuPwnt1xMdErD42scVioE=;
+        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
+        b=PnHV7FfGf0Q7aK6dC/VdAQbmGh446IrCj0LlIA6f5iqR0ArZiDKxMpW4W07F1TSL1
+         /5uqwLqWzCr7i+F7S6OlQEDNCZq2SrQliofa9Yh5AbYQyPhEME/l+5hQtqY7EXvMMH
+         shGEPki2RW04M4S4e22AyzWpSo105IPIVQ7DL2IzJNEtHOjkivDtFWUQ2jVLLG7fF+
+         BX1O2s6TzUsB++dWQAPpNdgO5uw6erQbCe7Rxbe4YCcHTIGBT5L4AB0jAPskhVk3o5
+         lNGE98F9rKlieHtYh+lWOZd1vyZFI3Jlos3k/2+83eIq0KK/7/8CjmpllQkyBzRZ0/
+         ela6nozmqMB3w==
+Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
+        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id C309CE29F46;
+        Thu, 13 Jul 2023 21:41:29 +0000 (UTC)
+Subject: Re: [GIT PULL] sh fixes for v6.5
+From:   pr-tracker-bot@kernel.org
+In-Reply-To: <90e6042f3a82d5e9b4cf475603dcb73ca5e821d8.camel@physik.fu-berlin.de>
+References: <90e6042f3a82d5e9b4cf475603dcb73ca5e821d8.camel@physik.fu-berlin.de>
+X-PR-Tracked-List-Id: <linux-sh.vger.kernel.org>
+X-PR-Tracked-Message-Id: <90e6042f3a82d5e9b4cf475603dcb73ca5e821d8.camel@physik.fu-berlin.de>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.5-tag2
+X-PR-Tracked-Commit-Id: 7c28a35e19fafa1d3b367bcd3ec4021427a9397b
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 9350cd0190c0d60915ec704112c864d858a0d31c
+Message-Id: <168928448979.12038.351367698931546359.pr-tracker-bot@kernel.org>
+Date:   Thu, 13 Jul 2023 21:41:29 +0000
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        Artur Rojek <contact@artur-rojek.eu>,
+        Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org,
+        linux-kernel <linux-kernel@vger.kernel.org>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+The pull request you sent on Thu, 13 Jul 2023 09:25:39 +0200:
 
+> git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.5-tag2
 
-On 7/13/23 06:21, Miguel Ojeda wrote:
-> On Thu, Jul 13, 2023 at 3:03 PM Thomas Zimmermann <tzimmermann@suse.de> wrote:
->>
->> Most fbdev drivers depend on framebuffer_alloc() to initialize the
->> allocated memory to 0. Document this guarantee.
->>
->> Suggested-by: Miguel Ojeda <ojeda@kernel.org>
->> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
->> Cc: Helge Deller <deller@gmx.de>
-> 
-> Thanks for sending this! Maybe this would be best earlier in the
-> series, so that later patches make more sense (since they use the
-> guarantee), but it is not a big deal.
-> 
->> + * aligned to sizeof(long). Both, the instance of struct fb_info and
->> + * the driver private data, are cleared to zero.
-> 
-> I think both commas may be best omitted (but I am not a native speaker).
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/9350cd0190c0d60915ec704112c864d858a0d31c
 
-Yes, it would be better to omit them.
-
-> Reviewed-by: Miguel Ojeda <ojeda@kernel.org>
-> 
-> Cheers,
-> Miguel
+Thank you!
 
 -- 
-~Randy
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html
