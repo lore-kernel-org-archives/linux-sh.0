@@ -2,73 +2,163 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B060AC0015E
-	for <linux-sh@archiver.kernel.org>; Thu, 13 Jul 2023 21:41:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D64AC16B13
+	for <linux-sh@archiver.kernel.org>; Fri, 14 Jul 2023 07:52:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234040AbjGMVld (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 13 Jul 2023 17:41:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44838 "EHLO
+        id S235575AbjGNHwI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 14 Jul 2023 03:52:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45790 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234328AbjGMVlb (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 13 Jul 2023 17:41:31 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DE1C62691;
-        Thu, 13 Jul 2023 14:41:30 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        with ESMTP id S235510AbjGNHwB (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 14 Jul 2023 03:52:01 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C009530E7;
+        Fri, 14 Jul 2023 00:51:59 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits))
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 712C761B7C;
-        Thu, 13 Jul 2023 21:41:30 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPS id D577BC433CA;
-        Thu, 13 Jul 2023 21:41:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1689284489;
-        bh=jpkwRfIuO/p7CmmiIptnPZpuPwnt1xMdErD42scVioE=;
-        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
-        b=PnHV7FfGf0Q7aK6dC/VdAQbmGh446IrCj0LlIA6f5iqR0ArZiDKxMpW4W07F1TSL1
-         /5uqwLqWzCr7i+F7S6OlQEDNCZq2SrQliofa9Yh5AbYQyPhEME/l+5hQtqY7EXvMMH
-         shGEPki2RW04M4S4e22AyzWpSo105IPIVQ7DL2IzJNEtHOjkivDtFWUQ2jVLLG7fF+
-         BX1O2s6TzUsB++dWQAPpNdgO5uw6erQbCe7Rxbe4YCcHTIGBT5L4AB0jAPskhVk3o5
-         lNGE98F9rKlieHtYh+lWOZd1vyZFI3Jlos3k/2+83eIq0KK/7/8CjmpllQkyBzRZ0/
-         ela6nozmqMB3w==
-Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
-        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id C309CE29F46;
-        Thu, 13 Jul 2023 21:41:29 +0000 (UTC)
-Subject: Re: [GIT PULL] sh fixes for v6.5
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <90e6042f3a82d5e9b4cf475603dcb73ca5e821d8.camel@physik.fu-berlin.de>
-References: <90e6042f3a82d5e9b4cf475603dcb73ca5e821d8.camel@physik.fu-berlin.de>
-X-PR-Tracked-List-Id: <linux-sh.vger.kernel.org>
-X-PR-Tracked-Message-Id: <90e6042f3a82d5e9b4cf475603dcb73ca5e821d8.camel@physik.fu-berlin.de>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.5-tag2
-X-PR-Tracked-Commit-Id: 7c28a35e19fafa1d3b367bcd3ec4021427a9397b
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 9350cd0190c0d60915ec704112c864d858a0d31c
-Message-Id: <168928448979.12038.351367698931546359.pr-tracker-bot@kernel.org>
-Date:   Thu, 13 Jul 2023 21:41:29 +0000
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Artur Rojek <contact@artur-rojek.eu>,
-        Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-sh@vger.kernel.org,
-        linux-kernel <linux-kernel@vger.kernel.org>
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 4216422149;
+        Fri, 14 Jul 2023 07:51:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+        t=1689321118; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=xL43EBO5xnFODw7DI91w3TTT+ZhOge9QgOFwJtZBLCM=;
+        b=uQonbdQwrxSxRB9R7XgXzaCoUwMSMRyGOewBPEpCS3GKpWAtCWMg1cPSZ/6lUG6UdfD+V/
+        8hY1J+p+R/TsQclnU4ik9MmeuZe4zs4RlkF0pW2vD9ITdCYUsG4FJbJQN6c/0BSFbpsaAt
+        a30g6wOrDJ+sWFAwdeKI8TiJJSniWRo=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+        s=susede2_ed25519; t=1689321118;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:
+         content-transfer-encoding:content-transfer-encoding:
+         in-reply-to:in-reply-to:references:references;
+        bh=xL43EBO5xnFODw7DI91w3TTT+ZhOge9QgOFwJtZBLCM=;
+        b=U2imgWXSb9+jHXoefnoWzaWhg6GhRZlKkRdwnStxcSULewVh7z81p5Pq+TAX6HgaRCLR1J
+        p2xmB63lckne/ICw==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id D9B4513A92;
+        Fri, 14 Jul 2023 07:51:57 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id 8JZJNJ3+sGQCQwAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Fri, 14 Jul 2023 07:51:57 +0000
+From:   Thomas Zimmermann <tzimmermann@suse.de>
+To:     deller@gmx.de, javierm@redhat.com
+Cc:     linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        linux-kernel@vger.kernel.org, amd-gfx@lists.freedesktop.org,
+        linux-input@vger.kernel.org, linux-media@vger.kernel.org,
+        linux-fbdev@vger.kernel.org, linux-staging@lists.linux.dev,
+        linux-arm-kernel@lists.infradead.org,
+        linux-geode@lists.infradead.org, linux-nvidia@lists.surfsouth.com,
+        linux-hyperv@vger.kernel.org, linux-omap@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, kvm@vger.kernel.org,
+        Thomas Zimmermann <tzimmermann@suse.de>,
+        Sam Ravnborg <sam@ravnborg.org>,
+        Russell King <linux@armlinux.org.uk>
+Subject: [PATCH v3 03/18] fbdev: Remove flag FBINFO_DEFAULT from fbdev drivers
+Date:   Fri, 14 Jul 2023 09:49:29 +0200
+Message-ID: <20230714075155.5686-4-tzimmermann@suse.de>
+X-Mailer: git-send-email 2.41.0
+In-Reply-To: <20230714075155.5686-1-tzimmermann@suse.de>
+References: <20230714075155.5686-1-tzimmermann@suse.de>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The pull request you sent on Thu, 13 Jul 2023 09:25:39 +0200:
+The flag FBINFO_DEFAULT is 0 and has no effect, as struct fbinfo.flags
+has been allocated to zero by kzalloc(). So do not set it.
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.5-tag2
+Flags should signal differences from the default values. After cleaning
+up all occurrences of FBINFO_DEFAULT, the token will be removed.
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/9350cd0190c0d60915ec704112c864d858a0d31c
+v2:
+	* fix commit message (Miguel)
 
-Thank you!
+Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+Acked-by: Sam Ravnborg <sam@ravnborg.org>
+Cc: Helge Deller <deller@gmx.de>
+Cc: Russell King <linux@armlinux.org.uk>
+---
+ drivers/video/fbdev/controlfb.c           | 2 +-
+ drivers/video/fbdev/cyber2000fb.c         | 2 +-
+ drivers/video/fbdev/valkyriefb.c          | 1 -
+ drivers/video/fbdev/vermilion/vermilion.c | 2 +-
+ drivers/video/fbdev/vt8500lcdfb.c         | 3 +--
+ 5 files changed, 4 insertions(+), 6 deletions(-)
 
+diff --git a/drivers/video/fbdev/controlfb.c b/drivers/video/fbdev/controlfb.c
+index 82eeb139c4eb..717134c141ff 100644
+--- a/drivers/video/fbdev/controlfb.c
++++ b/drivers/video/fbdev/controlfb.c
+@@ -775,7 +775,7 @@ static void __init control_init_info(struct fb_info *info, struct fb_info_contro
+ 	info->par = &p->par;
+ 	info->fbops = &controlfb_ops;
+ 	info->pseudo_palette = p->pseudo_palette;
+-        info->flags = FBINFO_DEFAULT | FBINFO_HWACCEL_YPAN;
++	info->flags = FBINFO_HWACCEL_YPAN;
+ 	info->screen_base = p->frame_buffer + CTRLFB_OFF;
+ 
+ 	fb_alloc_cmap(&info->cmap, 256, 0);
+diff --git a/drivers/video/fbdev/cyber2000fb.c b/drivers/video/fbdev/cyber2000fb.c
+index 38c0a6866d76..98ea56a9abf1 100644
+--- a/drivers/video/fbdev/cyber2000fb.c
++++ b/drivers/video/fbdev/cyber2000fb.c
+@@ -1459,7 +1459,7 @@ static struct cfb_info *cyberpro_alloc_fb_info(unsigned int id, char *name)
+ 	cfb->fb.var.accel_flags	= FB_ACCELF_TEXT;
+ 
+ 	cfb->fb.fbops		= &cyber2000fb_ops;
+-	cfb->fb.flags		= FBINFO_DEFAULT | FBINFO_HWACCEL_YPAN;
++	cfb->fb.flags		= FBINFO_HWACCEL_YPAN;
+ 	cfb->fb.pseudo_palette	= cfb->pseudo_palette;
+ 
+ 	spin_lock_init(&cfb->reg_b0_lock);
+diff --git a/drivers/video/fbdev/valkyriefb.c b/drivers/video/fbdev/valkyriefb.c
+index b166b7cfe0e5..fd4488777032 100644
+--- a/drivers/video/fbdev/valkyriefb.c
++++ b/drivers/video/fbdev/valkyriefb.c
+@@ -535,7 +535,6 @@ static int __init valkyrie_init_info(struct fb_info *info,
+ {
+ 	info->fbops = &valkyriefb_ops;
+ 	info->screen_base = p->frame_buffer + 0x1000;
+-	info->flags = FBINFO_DEFAULT;
+ 	info->pseudo_palette = p->pseudo_palette;
+ 	info->par = &p->par;
+ 	return fb_alloc_cmap(&info->cmap, 256, 0);
+diff --git a/drivers/video/fbdev/vermilion/vermilion.c b/drivers/video/fbdev/vermilion/vermilion.c
+index 32e74e02a02f..71584c775efd 100644
+--- a/drivers/video/fbdev/vermilion/vermilion.c
++++ b/drivers/video/fbdev/vermilion/vermilion.c
+@@ -477,7 +477,7 @@ static int vml_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
+ 	}
+ 
+ 	info = &vinfo->info;
+-	info->flags = FBINFO_DEFAULT | FBINFO_PARTIAL_PAN_OK;
++	info->flags = FBINFO_PARTIAL_PAN_OK;
+ 
+ 	err = vmlfb_enable_mmio(par);
+ 	if (err)
+diff --git a/drivers/video/fbdev/vt8500lcdfb.c b/drivers/video/fbdev/vt8500lcdfb.c
+index 31d4e85b220c..42d39a9d5130 100644
+--- a/drivers/video/fbdev/vt8500lcdfb.c
++++ b/drivers/video/fbdev/vt8500lcdfb.c
+@@ -300,8 +300,7 @@ static int vt8500lcd_probe(struct platform_device *pdev)
+ 	fbi->fb.var.vmode	= FB_VMODE_NONINTERLACED;
+ 
+ 	fbi->fb.fbops		= &vt8500lcd_ops;
+-	fbi->fb.flags		= FBINFO_DEFAULT
+-				| FBINFO_HWACCEL_COPYAREA
++	fbi->fb.flags		= FBINFO_HWACCEL_COPYAREA
+ 				| FBINFO_HWACCEL_FILLRECT
+ 				| FBINFO_HWACCEL_YPAN
+ 				| FBINFO_VIRTFB
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+2.41.0
+
