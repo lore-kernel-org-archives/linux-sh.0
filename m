@@ -2,52 +2,52 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 63399C04A94
-	for <linux-sh@archiver.kernel.org>; Fri, 14 Jul 2023 07:52:35 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7A303C18E72
+	for <linux-sh@archiver.kernel.org>; Fri, 14 Jul 2023 07:52:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235737AbjGNHwe (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 14 Jul 2023 03:52:34 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45720 "EHLO
+        id S235746AbjGNHwf (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 14 Jul 2023 03:52:35 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45786 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235540AbjGNHwG (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 14 Jul 2023 03:52:06 -0400
+        with ESMTP id S235521AbjGNHwD (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 14 Jul 2023 03:52:03 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EF89530F6;
-        Fri, 14 Jul 2023 00:52:03 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DF1B630EE;
+        Fri, 14 Jul 2023 00:52:01 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 0DFEC1FD88;
-        Fri, 14 Jul 2023 07:52:02 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 22E101FD65;
+        Fri, 14 Jul 2023 07:52:00 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1689321122; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1689321120; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=HF0ntTEfTFR2eIXkYuLTyCKB+tFcMggnqDzzMkFmIGA=;
-        b=k3R9CMEEVHHOW6sw9ur3sR3vWZf0Og+likYvH2sC1AM6JU5wsJZygcfpHHrJvUkw0PPuEe
-        LgvVN2QbK/QTW/rm+rECHMijYMOLmHIJXR0f+TPw6An2AjXpS8DGK7kHPdyy8g2gNnL4Oi
-        bv12NZmhahM0U2LPAyFZAcuOqRyY0Hs=
+        bh=Tx/aqv++WTiG+HB9fsdEKxv/jL2xUmStLjqk656Qv/M=;
+        b=k8kD/xRxX18MqtINc3Gup2b4Fx1RAleBywoHcIUzz0lZAdKfGKAHUqETgOq+XkacByGaaz
+        sXBcbzyWne4dtN/8DmPK4cm0RIAiZEd2IswULPUtz2SOP/TLA5bZtbH7EsbrgFedN1uc89
+        BbFP1c4BmusD7LkZt2Vlxmiz08GXfao=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1689321122;
+        s=susede2_ed25519; t=1689321120;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=HF0ntTEfTFR2eIXkYuLTyCKB+tFcMggnqDzzMkFmIGA=;
-        b=VfWUqWHI6r/BCLgjMns89AYGSompv65+9Uf/weig8DuUaCsOMPp5g0+/zLT8SEKo28BSXN
-        Y5TW350q3fz2xBCg==
+        bh=Tx/aqv++WTiG+HB9fsdEKxv/jL2xUmStLjqk656Qv/M=;
+        b=CJiQLbh9L8sop58skc+0R4gM6jpBpfzkgzIKZM+bZhZRkmPiyn11QdCyVnABVCUDk/IhRN
+        dgkdmboIUAqlzvBQ==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id AC71513A15;
-        Fri, 14 Jul 2023 07:52:01 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id BDDB513A15;
+        Fri, 14 Jul 2023 07:51:59 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 4O9MKaH+sGQCQwAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Fri, 14 Jul 2023 07:52:01 +0000
+        id uClkLZ/+sGQCQwAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Fri, 14 Jul 2023 07:51:59 +0000
 From:   Thomas Zimmermann <tzimmermann@suse.de>
 To:     deller@gmx.de, javierm@redhat.com
 Cc:     linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org,
@@ -60,12 +60,10 @@ Cc:     linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org,
         linuxppc-dev@lists.ozlabs.org, kvm@vger.kernel.org,
         Thomas Zimmermann <tzimmermann@suse.de>,
         Sam Ravnborg <sam@ravnborg.org>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Sudip Mukherjee <sudipm.mukherjee@gmail.com>,
-        Teddy Wang <teddy.wang@siliconmotion.com>
-Subject: [PATCH v3 12/18] staging: Remove flag FBINFO_FLAG_DEFAULT from fbdev drivers
-Date:   Fri, 14 Jul 2023 09:49:38 +0200
-Message-ID: <20230714075155.5686-13-tzimmermann@suse.de>
+        Kirti Wankhede <kwankhede@nvidia.com>
+Subject: [PATCH v3 07/18] vfio-mdev: Remove flag FBINFO_DEFAULT from fbdev sample driver
+Date:   Fri, 14 Jul 2023 09:49:33 +0200
+Message-ID: <20230714075155.5686-8-tzimmermann@suse.de>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <20230714075155.5686-1-tzimmermann@suse.de>
 References: <20230714075155.5686-1-tzimmermann@suse.de>
@@ -75,9 +73,8 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The flag FBINFO_FLAG_DEFAULT is 0 and has no effect, as struct
-fbinfo.flags has been allocated to zero by framebuffer_alloc(). So do
-not set it.
+The flag FBINFO_DEFAULT is 0 and has no effect, as struct fbinfo.flags
+has been allocated to zero by framebuffer_alloc(). So do not set it.
 
 Flags should signal differences from the default values. After cleaning
 up all occurrences of FBINFO_DEFAULT, the token will be removed.
@@ -87,39 +84,23 @@ v2:
 
 Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
 Acked-by: Sam Ravnborg <sam@ravnborg.org>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Cc: Sudip Mukherjee <sudipm.mukherjee@gmail.com>
-Cc: Teddy Wang <teddy.wang@siliconmotion.com>
+Cc: Kirti Wankhede <kwankhede@nvidia.com>
 ---
- drivers/staging/fbtft/fbtft-core.c | 2 +-
- drivers/staging/sm750fb/sm750.c    | 1 -
- 2 files changed, 1 insertion(+), 2 deletions(-)
+ samples/vfio-mdev/mdpy-fb.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/staging/fbtft/fbtft-core.c b/drivers/staging/fbtft/fbtft-core.c
-index 3a4abf3bae40..eac1d570f437 100644
---- a/drivers/staging/fbtft/fbtft-core.c
-+++ b/drivers/staging/fbtft/fbtft-core.c
-@@ -684,7 +684,7 @@ struct fb_info *fbtft_framebuffer_alloc(struct fbtft_display *display,
- 	info->var.transp.offset =  0;
- 	info->var.transp.length =  0;
+diff --git a/samples/vfio-mdev/mdpy-fb.c b/samples/vfio-mdev/mdpy-fb.c
+index 3c8001b9e407..cda477b28685 100644
+--- a/samples/vfio-mdev/mdpy-fb.c
++++ b/samples/vfio-mdev/mdpy-fb.c
+@@ -162,7 +162,6 @@ static int mdpy_fb_probe(struct pci_dev *pdev,
+ 	}
  
--	info->flags =              FBINFO_FLAG_DEFAULT | FBINFO_VIRTFB;
-+	info->flags =              FBINFO_VIRTFB;
+ 	info->fbops = &mdpy_fb_ops;
+-	info->flags = FBINFO_DEFAULT;
+ 	info->pseudo_palette = par->palette;
  
- 	par = info->par;
- 	par->info = info;
-diff --git a/drivers/staging/sm750fb/sm750.c b/drivers/staging/sm750fb/sm750.c
-index c260f73cf570..79bcd5bd4938 100644
---- a/drivers/staging/sm750fb/sm750.c
-+++ b/drivers/staging/sm750fb/sm750.c
-@@ -807,7 +807,6 @@ static int lynxfb_set_fbinfo(struct fb_info *info, int index)
- 	info->screen_base = crtc->v_screen;
- 	pr_debug("screen_base vaddr = %p\n", info->screen_base);
- 	info->screen_size = line_length * var->yres_virtual;
--	info->flags = FBINFO_FLAG_DEFAULT | 0;
- 
- 	/* set info->fix */
- 	fix->type = FB_TYPE_PACKED_PIXELS;
+ 	ret = register_framebuffer(info);
 -- 
 2.41.0
 
