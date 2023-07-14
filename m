@@ -2,52 +2,52 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 48B36C2FC07
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C68CC2FC06
 	for <linux-sh@archiver.kernel.org>; Fri, 14 Jul 2023 07:52:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235798AbjGNHwo (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 14 Jul 2023 03:52:44 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45784 "EHLO
+        id S235523AbjGNHwn (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 14 Jul 2023 03:52:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45790 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235549AbjGNHwH (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 14 Jul 2023 03:52:07 -0400
+        with ESMTP id S235536AbjGNHwG (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 14 Jul 2023 03:52:06 -0400
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.220.29])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 13ECD30FD;
-        Fri, 14 Jul 2023 00:52:04 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id CF20230EA;
+        Fri, 14 Jul 2023 00:52:02 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 73FB11FD98;
-        Fri, 14 Jul 2023 07:52:03 +0000 (UTC)
+        by smtp-out2.suse.de (Postfix) with ESMTPS id 451F21FD83;
+        Fri, 14 Jul 2023 07:52:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1689321123; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
+        t=1689321121; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=ucmT+1GLTDoqupQ1pU8mLni2ss8QN6gSt8DgqXn9pcI=;
-        b=dxLsstQbla8TzztfdF9jB+ru3N8knrJaOiF7eIFMJPWUplhamsz381ttWSQNK1R3AIqw+b
-        iu4muL0IOx29RaeiEs9RJdI1hib4KYCaGLiiPgNz52ABZ/gfqUSyvtHhBEwTQi232qSMFJ
-        2K9Ji1LldUaR9nsZpp18E3Z+K0BpbFc=
+        bh=LJyxHdcmj5FWZ0pZ0y2ioRq6mf/10a9++06DyYlIN00=;
+        b=i9AqcG6l6TJYknQQXzJFPwVoOdSDqr0JPZH3OmRfP3JT7Lpodu8TuTaYHu7h32kxPTUVMc
+        kxsGRh43rs6RGd57DEU+ODRpznOEtInnDkW+/VSgq+D029vjtoBBlGL6h6//G1PlftIj3H
+        +cZokcN9dblywO/7VwoedcJWq7V+UOk=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1689321123;
+        s=susede2_ed25519; t=1689321121;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:
+         mime-version:mime-version:content-type:content-type:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=ucmT+1GLTDoqupQ1pU8mLni2ss8QN6gSt8DgqXn9pcI=;
-        b=w0ER7TI9hEhnvBKAAF5kg9tZ1akYSqO2cqdxcBLYYkHr2ZsB3+gDXLD8Vwg7tCOWvtHp40
-        uXGfAVzC5wtPTrCw==
+        bh=LJyxHdcmj5FWZ0pZ0y2ioRq6mf/10a9++06DyYlIN00=;
+        b=n9QXhMTyBELGT9OUcxRNRxh7l63pKzX1IEhDvJb87LqMfGDVtqhRxKqrlrbizZTgfl9jAN
+        qGt1Q2Zd4V+n77Cw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 24E9D13A92;
-        Fri, 14 Jul 2023 07:52:03 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id E30F313A15;
+        Fri, 14 Jul 2023 07:52:00 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id 6NcACKP+sGQCQwAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Fri, 14 Jul 2023 07:52:03 +0000
+        id uB2tNqD+sGQCQwAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Fri, 14 Jul 2023 07:52:00 +0000
 From:   Thomas Zimmermann <tzimmermann@suse.de>
 To:     deller@gmx.de, javierm@redhat.com
 Cc:     linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org,
@@ -59,21 +59,25 @@ Cc:     linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org,
         linux-hyperv@vger.kernel.org, linux-omap@vger.kernel.org,
         linuxppc-dev@lists.ozlabs.org, kvm@vger.kernel.org,
         Thomas Zimmermann <tzimmermann@suse.de>,
-        Sam Ravnborg <sam@ravnborg.org>
-Subject: [PATCH v3 15/18] fbdev/atafb: Remove flag FBINFO_FLAG_DEFAULT
-Date:   Fri, 14 Jul 2023 09:49:41 +0200
-Message-ID: <20230714075155.5686-16-tzimmermann@suse.de>
+        Sam Ravnborg <sam@ravnborg.org>,
+        Benjamin Tissoires <benjamin.tissoires@redhat.com>,
+        =?UTF-8?q?Bruno=20Pr=C3=A9mont?= <bonbons@linux-vserver.org>,
+        Jiri Kosina <jikos@kernel.org>
+Subject: [PATCH v3 10/18] hid/picolcd: Remove flag FBINFO_FLAG_DEFAULT from fbdev driver
+Date:   Fri, 14 Jul 2023 09:49:36 +0200
+Message-ID: <20230714075155.5686-11-tzimmermann@suse.de>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <20230714075155.5686-1-tzimmermann@suse.de>
 References: <20230714075155.5686-1-tzimmermann@suse.de>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
 The flag FBINFO_FLAG_DEFAULT is 0 and has no effect, as struct
-fbinfo.flags has been allocated to zero by a static declaration. So do
+fbinfo.flags has been allocated to zero by framebuffer_alloc(). So do
 not set it.
 
 Flags should signal differences from the default values. After cleaning
@@ -84,23 +88,27 @@ v2:
 
 Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
 Acked-by: Sam Ravnborg <sam@ravnborg.org>
-Cc: Helge Deller <deller@gmx.de>
+Acked-by: Benjamin Tissoires <benjamin.tissoires@redhat.com>
+Acked-by: Bruno Prémont <bonbons@linux-vserver.org>
+Cc: "Bruno Prémont" <bonbons@linux-vserver.org>
+Cc: Jiri Kosina <jikos@kernel.org>
+Cc: Benjamin Tissoires <benjamin.tissoires@redhat.com>
 ---
- drivers/video/fbdev/atafb.c | 1 -
+ drivers/hid/hid-picolcd_fb.c | 1 -
  1 file changed, 1 deletion(-)
 
-diff --git a/drivers/video/fbdev/atafb.c b/drivers/video/fbdev/atafb.c
-index 2bc4089865e6..c4a420b791b9 100644
---- a/drivers/video/fbdev/atafb.c
-+++ b/drivers/video/fbdev/atafb.c
-@@ -3112,7 +3112,6 @@ static int __init atafb_probe(struct platform_device *pdev)
- #ifdef ATAFB_FALCON
- 	fb_info.pseudo_palette = current_par.hw.falcon.pseudo_palette;
- #endif
--	fb_info.flags = FBINFO_FLAG_DEFAULT;
+diff --git a/drivers/hid/hid-picolcd_fb.c b/drivers/hid/hid-picolcd_fb.c
+index dabcd054dad9..d726aaafb146 100644
+--- a/drivers/hid/hid-picolcd_fb.c
++++ b/drivers/hid/hid-picolcd_fb.c
+@@ -527,7 +527,6 @@ int picolcd_init_framebuffer(struct picolcd_data *data)
+ 	info->var = picolcdfb_var;
+ 	info->fix = picolcdfb_fix;
+ 	info->fix.smem_len   = PICOLCDFB_SIZE*8;
+-	info->flags = FBINFO_FLAG_DEFAULT;
  
- 	if (!fb_find_mode(&fb_info.var, &fb_info, mode_option, atafb_modedb,
- 			  NUM_TOTAL_MODES, &atafb_modedb[defmode],
+ 	fbdata = info->par;
+ 	spin_lock_init(&fbdata->lock);
 -- 
 2.41.0
 
