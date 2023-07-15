@@ -2,52 +2,52 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0B870C25B7B
-	for <linux-sh@archiver.kernel.org>; Sat, 15 Jul 2023 18:54:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F28BC18E1B
+	for <linux-sh@archiver.kernel.org>; Sat, 15 Jul 2023 18:54:21 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231561AbjGOSyR (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 15 Jul 2023 14:54:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50158 "EHLO
+        id S231629AbjGOSyU (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 15 Jul 2023 14:54:20 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50086 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230489AbjGOSyC (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 15 Jul 2023 14:54:02 -0400
+        with ESMTP id S230414AbjGOSx5 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 15 Jul 2023 14:53:57 -0400
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2613A30FB;
-        Sat, 15 Jul 2023 11:53:59 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C3E982738;
+        Sat, 15 Jul 2023 11:53:48 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id 942EA21AFF;
-        Sat, 15 Jul 2023 18:53:52 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 4BE3321ADA;
+        Sat, 15 Jul 2023 18:53:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1689447232; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1689447227; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=ucmT+1GLTDoqupQ1pU8mLni2ss8QN6gSt8DgqXn9pcI=;
-        b=U7I6Ofdn50Yf9J74ZtjzhcPb1eUY5MGKkR4WnpQVALNXaiKN//sbzJp0VKaiQDbFUHoJd+
-        g3ibnCscc4eYNFuu3i/Ru6lDZdPewBUFWtEf61mf90/4BgfiZVPPepyAANBCDpp76mPVJN
-        76Of4SripwDbtbBMa+1AvurWqxMeTkw=
+        bh=0nBZiCLXU0uFmpREVr8et6lhshWUUvKrFnXs/LiU8uw=;
+        b=ExBZohaIoUpM32swEW4TLbTA+2ZURsoBCxxCB1bJPx6VTUDzDbwGTw2jS0q88EQ9JCp4jI
+        ucOn7rj0we3ZJtaem65Z+u7i/bHvfPDcKNkm99KAuAQfVrEJTwQ9mv2Dt0IhCVMUZMmD2p
+        7P6oXhH3gFR41VSzRUz+fClKaTfnb/4=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1689447232;
+        s=susede2_ed25519; t=1689447227;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=ucmT+1GLTDoqupQ1pU8mLni2ss8QN6gSt8DgqXn9pcI=;
-        b=zodS/0MiChj1HWAYZLqS+sr/v4lQteaizZGRmmzdz1I7jh4YQE4fUcrEO0Ar1sQrfFjbYY
-        l5Y1QWABgAvcaIBg==
+        bh=0nBZiCLXU0uFmpREVr8et6lhshWUUvKrFnXs/LiU8uw=;
+        b=8QYCN2WcxYAGEUJeoAu1ZGY7RazmqUfzUvU0vgAHcSLzeAYE8T1eFjuEIXXoSRNSYhMyL9
+        oVziRyNB6+uAM6Dw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 3290A133F7;
-        Sat, 15 Jul 2023 18:53:52 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DB86F133F7;
+        Sat, 15 Jul 2023 18:53:46 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id QMNzC0DrsmQCBwAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Sat, 15 Jul 2023 18:53:52 +0000
+        id oMFRMzrrsmQCBwAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Sat, 15 Jul 2023 18:53:46 +0000
 From:   Thomas Zimmermann <tzimmermann@suse.de>
 To:     deller@gmx.de, javierm@redhat.com, geert@linux-m68k.org,
         dan.carpenter@linaro.org
@@ -60,9 +60,9 @@ Cc:     linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org,
         linux-omap@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
         kvm@vger.kernel.org, Thomas Zimmermann <tzimmermann@suse.de>,
         Sam Ravnborg <sam@ravnborg.org>
-Subject: [PATCH v4 15/18] fbdev/atafb: Remove flag FBINFO_FLAG_DEFAULT
-Date:   Sat, 15 Jul 2023 20:51:57 +0200
-Message-ID: <20230715185343.7193-16-tzimmermann@suse.de>
+Subject: [PATCH v4 04/18] fbdev: Remove FBINFO_DEFAULT from devm_kzalloc()'ed structs
+Date:   Sat, 15 Jul 2023 20:51:46 +0200
+Message-ID: <20230715185343.7193-5-tzimmermann@suse.de>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <20230715185343.7193-1-tzimmermann@suse.de>
 References: <20230715185343.7193-1-tzimmermann@suse.de>
@@ -72,13 +72,14 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The flag FBINFO_FLAG_DEFAULT is 0 and has no effect, as struct
-fbinfo.flags has been allocated to zero by a static declaration. So do
-not set it.
+The flag FBINFO_DEFAULT is 0 and has no effect, as struct fbinfo.flags
+has been allocated to zero by devm_kzalloc(). So do not set it.
 
 Flags should signal differences from the default values. After cleaning
 up all occurrences of FBINFO_DEFAULT, the token will be removed.
 
+v4:
+	* clarify commit message (Geert, Dan)
 v2:
 	* fix commit message (Miguel)
 
@@ -86,21 +87,62 @@ Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
 Acked-by: Sam Ravnborg <sam@ravnborg.org>
 Cc: Helge Deller <deller@gmx.de>
 ---
- drivers/video/fbdev/atafb.c | 1 -
- 1 file changed, 1 deletion(-)
+ drivers/video/fbdev/pxafb.c    | 1 -
+ drivers/video/fbdev/sa1100fb.c | 1 -
+ drivers/video/fbdev/wm8505fb.c | 3 +--
+ drivers/video/fbdev/xilinxfb.c | 1 -
+ 4 files changed, 1 insertion(+), 5 deletions(-)
 
-diff --git a/drivers/video/fbdev/atafb.c b/drivers/video/fbdev/atafb.c
-index 2bc4089865e6..c4a420b791b9 100644
---- a/drivers/video/fbdev/atafb.c
-+++ b/drivers/video/fbdev/atafb.c
-@@ -3112,7 +3112,6 @@ static int __init atafb_probe(struct platform_device *pdev)
- #ifdef ATAFB_FALCON
- 	fb_info.pseudo_palette = current_par.hw.falcon.pseudo_palette;
- #endif
--	fb_info.flags = FBINFO_FLAG_DEFAULT;
+diff --git a/drivers/video/fbdev/pxafb.c b/drivers/video/fbdev/pxafb.c
+index 2a8b1dea3a67..c8c4677d06b4 100644
+--- a/drivers/video/fbdev/pxafb.c
++++ b/drivers/video/fbdev/pxafb.c
+@@ -1826,7 +1826,6 @@ static struct pxafb_info *pxafb_init_fbinfo(struct device *dev,
+ 	fbi->fb.var.vmode	= FB_VMODE_NONINTERLACED;
  
- 	if (!fb_find_mode(&fb_info.var, &fb_info, mode_option, atafb_modedb,
- 			  NUM_TOTAL_MODES, &atafb_modedb[defmode],
+ 	fbi->fb.fbops		= &pxafb_ops;
+-	fbi->fb.flags		= FBINFO_DEFAULT;
+ 	fbi->fb.node		= -1;
+ 
+ 	addr = fbi;
+diff --git a/drivers/video/fbdev/sa1100fb.c b/drivers/video/fbdev/sa1100fb.c
+index a2408bf00ca0..3d76ce111488 100644
+--- a/drivers/video/fbdev/sa1100fb.c
++++ b/drivers/video/fbdev/sa1100fb.c
+@@ -1089,7 +1089,6 @@ static struct sa1100fb_info *sa1100fb_init_fbinfo(struct device *dev)
+ 	fbi->fb.var.vmode	= FB_VMODE_NONINTERLACED;
+ 
+ 	fbi->fb.fbops		= &sa1100fb_ops;
+-	fbi->fb.flags		= FBINFO_DEFAULT;
+ 	fbi->fb.monspecs	= monspecs;
+ 	fbi->fb.pseudo_palette	= fbi->pseudo_palette;
+ 
+diff --git a/drivers/video/fbdev/wm8505fb.c b/drivers/video/fbdev/wm8505fb.c
+index 10a8b1250103..5833147aa43d 100644
+--- a/drivers/video/fbdev/wm8505fb.c
++++ b/drivers/video/fbdev/wm8505fb.c
+@@ -285,8 +285,7 @@ static int wm8505fb_probe(struct platform_device *pdev)
+ 	fbi->fb.fix.accel	= FB_ACCEL_NONE;
+ 
+ 	fbi->fb.fbops		= &wm8505fb_ops;
+-	fbi->fb.flags		= FBINFO_DEFAULT
+-				| FBINFO_HWACCEL_COPYAREA
++	fbi->fb.flags		= FBINFO_HWACCEL_COPYAREA
+ 				| FBINFO_HWACCEL_FILLRECT
+ 				| FBINFO_HWACCEL_XPAN
+ 				| FBINFO_HWACCEL_YPAN
+diff --git a/drivers/video/fbdev/xilinxfb.c b/drivers/video/fbdev/xilinxfb.c
+index 2aa3a528277f..768a281a8d2c 100644
+--- a/drivers/video/fbdev/xilinxfb.c
++++ b/drivers/video/fbdev/xilinxfb.c
+@@ -324,7 +324,6 @@ static int xilinxfb_assign(struct platform_device *pdev,
+ 	drvdata->info.fix.line_length = pdata->xvirt * BYTES_PER_PIXEL;
+ 
+ 	drvdata->info.pseudo_palette = drvdata->pseudo_palette;
+-	drvdata->info.flags = FBINFO_DEFAULT;
+ 	drvdata->info.var = xilinx_fb_var;
+ 	drvdata->info.var.height = pdata->screen_height_mm;
+ 	drvdata->info.var.width = pdata->screen_width_mm;
 -- 
 2.41.0
 
