@@ -2,52 +2,52 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 275E4C27C42
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 98D6EC27C40
 	for <linux-sh@archiver.kernel.org>; Sat, 15 Jul 2023 18:55:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230456AbjGOSy7 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 15 Jul 2023 14:54:59 -0400
+        id S230473AbjGOSy5 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 15 Jul 2023 14:54:57 -0400
 Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50156 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230474AbjGOSyC (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 15 Jul 2023 14:54:02 -0400
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2705A30FD;
-        Sat, 15 Jul 2023 11:53:59 -0700 (PDT)
+        with ESMTP id S230435AbjGOSyA (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 15 Jul 2023 14:54:00 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [IPv6:2001:67c:2178:6::1c])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E36252D63;
+        Sat, 15 Jul 2023 11:53:50 -0700 (PDT)
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by smtp-out1.suse.de (Postfix) with ESMTPS id D31A621B48;
-        Sat, 15 Jul 2023 18:53:53 +0000 (UTC)
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 4CF6821ADE;
+        Sat, 15 Jul 2023 18:53:49 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-        t=1689447233; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+        t=1689447229; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=rN7iXgHdNfoVTGsKEMlM6qhA1C0OhaHzC+3XBqWokqM=;
-        b=0CLO+Jl4RJxV02TQgGz1lVL0Z9mSQ1j0P+DgJ0nbU3UREBFXn2S5HeoaA8EFIUrK8+tzuG
-        kTXqLC5ehTyt80dsVHiDLOBo2qQe1dSoc8WH+TmzBpFIYDvstFzOhzYqpjWqEoNBLAnMl7
-        R7fqYYnu/SFLBf1BHOVJWcubFCaLJXE=
+        bh=AudvpgVwEo8rKBJvmUL4nJ192ctihi90m956sryfWBI=;
+        b=rlx2K0DX0a7aLp8uigVFHuUAM9bV1hHZPasKhvTaGsQY9kZ/4eVtjq5LUVsKuQec422bE0
+        +mB1BYcbpceDSMWz3txt2h8RHtuIAVrQd7KADTim+k1y09Q8+6PaQ2P8rkFia9UHT3opPt
+        M832Ov6RomMMCW1eAKM4qqN4itU5oNA=
 DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-        s=susede2_ed25519; t=1689447233;
+        s=susede2_ed25519; t=1689447229;
         h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
          mime-version:mime-version:
          content-transfer-encoding:content-transfer-encoding:
          in-reply-to:in-reply-to:references:references;
-        bh=rN7iXgHdNfoVTGsKEMlM6qhA1C0OhaHzC+3XBqWokqM=;
-        b=+mXK0HAm21mj2g3flnXhM/kuVloOtSTQJd3/Y+ZO6agZVwZtFaRZLjGgxErCwRwNTikJWj
-        JChxhkeFZob60KAQ==
+        bh=AudvpgVwEo8rKBJvmUL4nJ192ctihi90m956sryfWBI=;
+        b=sIzlOQKvsGqS4WsvShqurtnstG7hUqxBdFaIRnVCAIKCT6s48j0bu9fHlgpf1Iv5erIHnG
+        p0vGP/J7dx1s/4Bw==
 Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 7463E13A23;
-        Sat, 15 Jul 2023 18:53:53 +0000 (UTC)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id DBF9A13A23;
+        Sat, 15 Jul 2023 18:53:48 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([192.168.254.65])
         by imap2.suse-dmz.suse.de with ESMTPSA
-        id UIB4G0HrsmQCBwAAMHmgww
-        (envelope-from <tzimmermann@suse.de>); Sat, 15 Jul 2023 18:53:53 +0000
+        id yLrPNDzrsmQCBwAAMHmgww
+        (envelope-from <tzimmermann@suse.de>); Sat, 15 Jul 2023 18:53:48 +0000
 From:   Thomas Zimmermann <tzimmermann@suse.de>
 To:     deller@gmx.de, javierm@redhat.com, geert@linux-m68k.org,
         dan.carpenter@linaro.org
@@ -59,11 +59,13 @@ Cc:     linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org,
         linux-geode@lists.infradead.org, linux-hyperv@vger.kernel.org,
         linux-omap@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
         kvm@vger.kernel.org, Thomas Zimmermann <tzimmermann@suse.de>,
-        Miguel Ojeda <ojeda@kernel.org>,
-        Sui Jingfeng <suijingfeng@loongson.cn>
-Subject: [PATCH v4 18/18] fbdev: Document that framebuffer_alloc() returns zero'ed data
-Date:   Sat, 15 Jul 2023 20:52:00 +0200
-Message-ID: <20230715185343.7193-19-tzimmermann@suse.de>
+        Sam Ravnborg <sam@ravnborg.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>
+Subject: [PATCH v4 08/18] sh: mach-sh7763rdp: Assign FB_MODE_IS_UNKNOWN to struct fb_videomode.flag
+Date:   Sat, 15 Jul 2023 20:51:50 +0200
+Message-ID: <20230715185343.7193-9-tzimmermann@suse.de>
 X-Mailer: git-send-email 2.41.0
 In-Reply-To: <20230715185343.7193-1-tzimmermann@suse.de>
 References: <20230715185343.7193-1-tzimmermann@suse.de>
@@ -73,35 +75,40 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Most fbdev drivers depend on framebuffer_alloc() to initialize the
-allocated memory to 0. Document this guarantee.
+Assign FB_MODE_IS_UNKNOWN to sh7763fb_videomode.flag instead of
+FBINFO_FLAG_DEFAULT. Both are 0, so the stored value does not change.
+
+FBINFO_FLAG_DEFAULT is a flag for a framebuffer in struct fb_info.
+Flags for videomodes are prefixed with FB_MODE_.
 
 v3:
-	* slightly reword the sentence (Miguel)
+	* include board name in commit message (Adrian)
+v2:
+	* assign FB_MODE_IS_UNKNOWN (Adrian)
 
-Suggested-by: Miguel Ojeda <ojeda@kernel.org>
 Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
-Reviewed-by: Miguel Ojeda <ojeda@kernel.org>
-Reviewed-by: Sui Jingfeng <suijingfeng@loongson.cn>
-Cc: Helge Deller <deller@gmx.de>
+Acked-by: Sam Ravnborg <sam@ravnborg.org>
+Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 ---
- drivers/video/fbdev/core/fb_info.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ arch/sh/boards/mach-sh7763rdp/setup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/video/fbdev/core/fb_info.c b/drivers/video/fbdev/core/fb_info.c
-index 8bdbefdd4b70..4847ebe50d7d 100644
---- a/drivers/video/fbdev/core/fb_info.c
-+++ b/drivers/video/fbdev/core/fb_info.c
-@@ -13,7 +13,8 @@
-  *
-  * Creates a new frame buffer info structure. Also reserves @size bytes
-  * for driver private data (info->par). info->par (if any) will be
-- * aligned to sizeof(long).
-+ * aligned to sizeof(long). The new instances of struct fb_info and
-+ * the driver private data are both cleared to zero.
-  *
-  * Returns the new structure, or NULL if an error occurred.
-  *
+diff --git a/arch/sh/boards/mach-sh7763rdp/setup.c b/arch/sh/boards/mach-sh7763rdp/setup.c
+index 97e715e4e9b3..e25193001ea0 100644
+--- a/arch/sh/boards/mach-sh7763rdp/setup.c
++++ b/arch/sh/boards/mach-sh7763rdp/setup.c
+@@ -119,7 +119,7 @@ static struct fb_videomode sh7763fb_videomode = {
+ 	.vsync_len = 1,
+ 	.sync = 0,
+ 	.vmode = FB_VMODE_NONINTERLACED,
+-	.flag = FBINFO_FLAG_DEFAULT,
++	.flag = FB_MODE_IS_UNKNOWN,
+ };
+ 
+ static struct sh7760fb_platdata sh7763fb_def_pdata = {
 -- 
 2.41.0
 
