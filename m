@@ -2,154 +2,113 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6CA33C04FDF
-	for <linux-sh@archiver.kernel.org>; Mon, 17 Jul 2023 16:52:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B532DC001DE
+	for <linux-sh@archiver.kernel.org>; Tue, 18 Jul 2023 10:58:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231603AbjGQQwD (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 17 Jul 2023 12:52:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53696 "EHLO
+        id S232008AbjGRK6X (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 18 Jul 2023 06:58:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55940 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231623AbjGQQv5 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 17 Jul 2023 12:51:57 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E32F7170D;
-        Mon, 17 Jul 2023 09:51:47 -0700 (PDT)
+        with ESMTP id S231901AbjGRK6P (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 18 Jul 2023 06:58:15 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3C8C0E77;
+        Tue, 18 Jul 2023 03:58:14 -0700 (PDT)
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
          key-exchange X25519 server-signature RSA-PSS (2048 bits))
         (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 063A661181;
-        Mon, 17 Jul 2023 16:51:47 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 812EAC433C7;
-        Mon, 17 Jul 2023 16:51:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1689612706;
-        bh=GDoZ+CsfFo9PibsTP4iZm+ttTgfHxn11DDJbAlCFH8E=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=ZEoHMX2JdQeUVyNkgdWBKI6yr5pe/INc5DfODCru+00fN8J5XJg/01FraxC5Uf+FG
-         XLGyykcZarElT+yfQ88/qw3rxbdtmQwlMm4MVMWcjVA8W1BzI++pek5YZKKBwI7XR6
-         Vc/WH98m5BnS7DdeM2++eaKr94hk2O0k89Bc1b9ybe/FsHvQBWZ/9PaJFm5XUvbhPh
-         78TOOOqQ+Nd6w2oOqOYhgVZm+Y7ykGxydEmczeSZwjlePi5nZMkHrFdDg9hL8zxSio
-         SCc95tvYUaXDed+x2C7VwVXHcnKo0+0JBdhxm/Vl4xw/gxBOwJrvOMJAyCgSMZ+3MK
-         +O+f2UpDtYbxQ==
-Date:   Mon, 17 Jul 2023 17:51:31 +0100
-From:   Mark Brown <broonie@kernel.org>
-To:     "Edgecombe, Rick P" <rick.p.edgecombe@intel.com>
-Cc:     "Schimpe, Christina" <christina.schimpe@intel.com>,
-        "Yang, Weijiang" <weijiang.yang@intel.com>,
-        "hjl.tools@gmail.com" <hjl.tools@gmail.com>,
-        "x86@kernel.org" <x86@kernel.org>,
-        "monstr@monstr.eu" <monstr@monstr.eu>,
-        "rppt@kernel.org" <rppt@kernel.org>,
-        "dave.hansen@linux.intel.com" <dave.hansen@linux.intel.com>,
-        "linux-snps-arc@lists.infradead.org" 
-        <linux-snps-arc@lists.infradead.org>,
-        "Torvalds, Linus" <torvalds@linux-foundation.org>,
-        "kirill.shutemov@linux.intel.com" <kirill.shutemov@linux.intel.com>,
-        "linux-api@vger.kernel.org" <linux-api@vger.kernel.org>,
-        "dinguyen@kernel.org" <dinguyen@kernel.org>,
-        "rdunlap@infradead.org" <rdunlap@infradead.org>,
-        "tglx@linutronix.de" <tglx@linutronix.de>,
-        "sparclinux@vger.kernel.org" <sparclinux@vger.kernel.org>,
-        "arnd@arndb.de" <arnd@arndb.de>,
-        "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>,
-        "Lutomirski, Andy" <luto@kernel.org>,
-        "szabolcs.nagy@arm.com" <szabolcs.nagy@arm.com>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        "linux-parisc@vger.kernel.org" <linux-parisc@vger.kernel.org>,
-        "akpm@linux-foundation.org" <akpm@linux-foundation.org>,
-        "pavel@ucw.cz" <pavel@ucw.cz>,
-        "keescook@chromium.org" <keescook@chromium.org>,
-        "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>,
-        "gorcunov@gmail.com" <gorcunov@gmail.com>,
-        "andrew.cooper3@citrix.com" <andrew.cooper3@citrix.com>,
-        "david@redhat.com" <david@redhat.com>,
-        "hpa@zytor.com" <hpa@zytor.com>,
-        "loongarch@lists.linux.dev" <loongarch@lists.linux.dev>,
-        "peterz@infradead.org" <peterz@infradead.org>,
-        "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>,
-        "nadav.amit@gmail.com" <nadav.amit@gmail.com>,
-        "linux-m68k@lists.linux-m68k.org" <linux-m68k@lists.linux-m68k.org>,
-        "linux-doc@vger.kernel.org" <linux-doc@vger.kernel.org>,
-        "openrisc@lists.librecores.org" <openrisc@lists.librecores.org>,
-        "jamorris@linux.microsoft.com" <jamorris@linux.microsoft.com>,
-        "mike.kravetz@oracle.com" <mike.kravetz@oracle.com>,
-        "debug@rivosinc.com" <debug@rivosinc.com>,
-        "fweimer@redhat.com" <fweimer@redhat.com>,
-        "kcc@google.com" <kcc@google.com>,
-        "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>,
-        "mingo@redhat.com" <mingo@redhat.com>,
-        "linux-csky@vger.kernel.org" <linux-csky@vger.kernel.org>,
-        "linux-mips@vger.kernel.org" <linux-mips@vger.kernel.org>,
-        "john.allen@amd.com" <john.allen@amd.com>,
-        "Eranian, Stephane" <eranian@google.com>,
-        "bsingharora@gmail.com" <bsingharora@gmail.com>,
-        "linux-alpha@vger.kernel.org" <linux-alpha@vger.kernel.org>,
-        "linux-s390@vger.kernel.org" <linux-s390@vger.kernel.org>,
-        "linux-riscv@lists.infradead.org" <linux-riscv@lists.infradead.org>,
-        "linux-um@lists.infradead.org" <linux-um@lists.infradead.org>,
-        "linux-arm-kernel@lists.infradead.org" 
-        <linux-arm-kernel@lists.infradead.org>,
-        "torvalds@linuxfoundation.org" <torvalds@linuxfoundation.org>,
-        "bp@alien8.de" <bp@alien8.de>, "corbet@lwn.net" <corbet@lwn.net>,
-        "linux-hexagon@vger.kernel.org" <linux-hexagon@vger.kernel.org>,
-        "dethoma@microsoft.com" <dethoma@microsoft.com>,
-        "jannh@google.com" <jannh@google.com>,
-        "Syromiatnikov, Eugene" <esyr@redhat.com>,
-        "oleg@redhat.com" <oleg@redhat.com>,
-        "linux-mm@kvack.org" <linux-mm@kvack.org>
-Subject: Re: [PATCH v9 01/42] mm: Rename arch pte_mkwrite()'s to
- pte_mkwrite_novma()
-Message-ID: <285d346e-14e7-4f43-9b5b-faded6205142@sirena.org.uk>
-References: <20230613001108.3040476-1-rick.p.edgecombe@intel.com>
- <20230613001108.3040476-2-rick.p.edgecombe@intel.com>
- <b389274a-abed-40dc-8e33-7ce922ea9b61@sirena.org.uk>
- <87acbb49fa83b0e3f261315a531e105da9e5b9d6.camel@intel.com>
+        by dfw.source.kernel.org (Postfix) with ESMTPS id C711B61514;
+        Tue, 18 Jul 2023 10:58:13 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 626C4C433C8;
+        Tue, 18 Jul 2023 10:58:09 +0000 (UTC)
+Message-ID: <263b3c0f-53cf-14b6-b956-e0f5b03c95b5@xs4all.nl>
+Date:   Tue, 18 Jul 2023 12:58:07 +0200
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-        protocol="application/pgp-signature"; boundary="klyEM8Lfv/18WVhb"
-Content-Disposition: inline
-In-Reply-To: <87acbb49fa83b0e3f261315a531e105da9e5b9d6.camel@intel.com>
-X-Cookie: Not a flying toy.
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.12.0
+Subject: Re: [PATCH v4 11/18] media: Remove flag FBINFO_FLAG_DEFAULT from
+ fbdev drivers
+Content-Language: en-US
+To:     Thomas Zimmermann <tzimmermann@suse.de>, deller@gmx.de,
+        javierm@redhat.com, geert@linux-m68k.org, dan.carpenter@linaro.org
+Cc:     linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        linux-kernel@vger.kernel.org, amd-gfx@lists.freedesktop.org,
+        linux-input@vger.kernel.org, linux-media@vger.kernel.org,
+        linux-fbdev@vger.kernel.org, linux-staging@lists.linux.dev,
+        linux-arm-kernel@lists.infradead.org,
+        linux-geode@lists.infradead.org, linux-hyperv@vger.kernel.org,
+        linux-omap@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        kvm@vger.kernel.org, Sam Ravnborg <sam@ravnborg.org>,
+        Andy Walls <awalls@md.metrocast.net>,
+        Mauro Carvalho Chehab <mchehab@kernel.org>
+References: <20230715185343.7193-1-tzimmermann@suse.de>
+ <20230715185343.7193-12-tzimmermann@suse.de>
+From:   Hans Verkuil <hverkuil@xs4all.nl>
+In-Reply-To: <20230715185343.7193-12-tzimmermann@suse.de>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+Hi Thomas,
 
---klyEM8Lfv/18WVhb
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On 15/07/2023 20:51, Thomas Zimmermann wrote:
+> The flag FBINFO_FLAG_DEFAULT is 0 and has no effect, as struct
+> fbinfo.flags has been allocated to zero by kzalloc(). So do not
+> set it.
+> 
+> Flags should signal differences from the default values. After cleaning
+> up all occurrences of FBINFO_DEFAULT, the token will be removed.
+> 
+> v2:
+> 	* fix commit message (Miguel)
+> 
+> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+> Acked-by: Sam Ravnborg <sam@ravnborg.org>
+> Cc: Andy Walls <awalls@md.metrocast.net>
+> Cc: Mauro Carvalho Chehab <mchehab@kernel.org>
+> Cc: Hans Verkuil <hverkuil@xs4all.nl>
+> ---
+>  drivers/media/pci/ivtv/ivtvfb.c              | 1 -
+>  drivers/media/test-drivers/vivid/vivid-osd.c | 1 -
+>  2 files changed, 2 deletions(-)
 
-On Mon, Jul 17, 2023 at 03:55:50PM +0000, Edgecombe, Rick P wrote:
-> On Fri, 2023-07-14 at 23:57 +0100, Mark Brown wrote:
+I can take this patches for 6.6, unless you prefer to have this whole series
+merged in one go?
 
-> > The same issue seems to apply with the version that was in -next
-> > based
-> > on v6.4-rc4 too.
+In that case you can use my:
 
-> The version in your branch is not the same as the version in tip (which
-> had a squashed build fix). I was able to reproduce the build error with
-> your branch. But not with the one in tip rebased on v6.5-rc1. So can
-> you try this version:
-> https://git.kernel.org/pub/scm/linux/kernel/git/tip/tip.git/commit/?h=x86/shstk&id=899223d69ce9f338056f4c41ef870d70040fc860
+Reviewed-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
 
-Ah, I'd not seen that patch or that tip had been rebased - I'd actually
-been using literally the branch from tip as my base at whatever point I
-last noticed it changing up until I rebased onto -rc1.
+Regards,
 
---klyEM8Lfv/18WVhb
-Content-Type: application/pgp-signature; name="signature.asc"
+	Hans
 
------BEGIN PGP SIGNATURE-----
+> 
+> diff --git a/drivers/media/pci/ivtv/ivtvfb.c b/drivers/media/pci/ivtv/ivtvfb.c
+> index 0aeb9daaee4c..23c8c094e791 100644
+> --- a/drivers/media/pci/ivtv/ivtvfb.c
+> +++ b/drivers/media/pci/ivtv/ivtvfb.c
+> @@ -1048,7 +1048,6 @@ static int ivtvfb_init_vidmode(struct ivtv *itv)
+>  	/* Generate valid fb_info */
+>  
+>  	oi->ivtvfb_info.node = -1;
+> -	oi->ivtvfb_info.flags = FBINFO_FLAG_DEFAULT;
+>  	oi->ivtvfb_info.par = itv;
+>  	oi->ivtvfb_info.var = oi->ivtvfb_defined;
+>  	oi->ivtvfb_info.fix = oi->ivtvfb_fix;
+> diff --git a/drivers/media/test-drivers/vivid/vivid-osd.c b/drivers/media/test-drivers/vivid/vivid-osd.c
+> index ec25edc679b3..051f1805a16d 100644
+> --- a/drivers/media/test-drivers/vivid/vivid-osd.c
+> +++ b/drivers/media/test-drivers/vivid/vivid-osd.c
+> @@ -310,7 +310,6 @@ static int vivid_fb_init_vidmode(struct vivid_dev *dev)
+>  	/* Generate valid fb_info */
+>  
+>  	dev->fb_info.node = -1;
+> -	dev->fb_info.flags = FBINFO_FLAG_DEFAULT;
+>  	dev->fb_info.par = dev;
+>  	dev->fb_info.var = dev->fb_defined;
+>  	dev->fb_info.fix = dev->fb_fix;
 
-iQEzBAABCgAdFiEEreZoqmdXGLWf4p/qJNaLcl1Uh9AFAmS1cZIACgkQJNaLcl1U
-h9DfWwf/Qv2sx8Qywn2HA+F1wJsVWOOqaPIZzIVBQ5Kg2bysQK3YMNLLZWKdXMsh
-sTgXGVlr5oANLjP/hYxvcaxk16N1y51q6PuBh4lJN1w37tEdph1ZIcSejQY/jKpf
-fKFWHZ++2w+lXvIOB/7rYQe+XutmQzCVmL0Cod8zxf2UhC4WJe9/3RCKxi6rfxuV
-NXldTW7h7dqnurbev4TX4npwjcetNGofPUer7VZD7o1vRKXvX9VLG42UbeV4cu+g
-ICKZmGwC9G23gWg0Ql2QkeOr43PLBo4AocKhyO6B22uYLOrA8BQHJUrbnD4ZUyD+
-4rWq0iWXOnrixnw11LOSSIVZ2HkwmQ==
-=SaIl
------END PGP SIGNATURE-----
-
---klyEM8Lfv/18WVhb--
