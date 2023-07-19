@@ -2,64 +2,61 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 76FCEC001B0
-	for <linux-sh@archiver.kernel.org>; Wed, 19 Jul 2023 13:50:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 07F95C04A6A
+	for <linux-sh@archiver.kernel.org>; Wed, 19 Jul 2023 14:18:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231454AbjGSNuF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 19 Jul 2023 09:50:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33992 "EHLO
+        id S230267AbjGSOSH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 19 Jul 2023 10:18:07 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48348 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231304AbjGSNt7 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 19 Jul 2023 09:49:59 -0400
-Received: from mail-wr1-x42a.google.com (mail-wr1-x42a.google.com [IPv6:2a00:1450:4864:20::42a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E5D7D199D
-        for <linux-sh@vger.kernel.org>; Wed, 19 Jul 2023 06:49:31 -0700 (PDT)
-Received: by mail-wr1-x42a.google.com with SMTP id ffacd0b85a97d-31454996e06so6503963f8f.2
-        for <linux-sh@vger.kernel.org>; Wed, 19 Jul 2023 06:49:31 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linaro.org; s=google; t=1689774570; x=1692366570;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=JeaSSoZd0P4aBDcnBZ8BgOhayrU2NW5OGYbO05NkL/4=;
-        b=mSLGK2c7L5EE4FfadrFnGKrx8rHqMorl3CkK/H11fHsq3cy4XSsKtutECoQcxj7VUH
-         6217O/9tcynPgDcZCiS5kwgKPRQ9yaxcBfet9pGpjP3OtetZCluXE3f4KQeLL37dXcdq
-         Shyafc4xZzvzAf3/I3duYT0A6Lan59ePh67EPf8B6LGZv9LJEeK4tH3b6lkOaji6veEW
-         jV3wN5L8eRb0FEZEQdFL5i8bBvckl20VHoXJydGdhlh18d4M6Z7KwE4oD2NfJGaix4SY
-         m60NOgE8+OkCmcQdiCC141H+NDbenv1Kvjlt/AYNlG4in4PaDFI5cUWT/kWWjIB6GhTf
-         8q+A==
+        with ESMTP id S231548AbjGSOSD (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 19 Jul 2023 10:18:03 -0400
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F3E96172D
+        for <linux-sh@vger.kernel.org>; Wed, 19 Jul 2023 07:17:12 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1689776231;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=YjdFQRNR08a24eSSE2jcx3RnjwPdI3D1UG9L8u3hsoE=;
+        b=FWguGfwOO+rfjs0fvFjrSrzQ32kjEPT8o8EekxSSjdUeLTnsXWYM0nd6YMEMHuPUN0EVYE
+        lFM0Qbd2QSn5B7CaU296PsZiorG6xTgOmjiO8mppIyDzasutEqBcqNNcUaB86UlJEEIAq5
+        LWw7EaryBsiA4dajwANVCpkbAmntw5s=
+Received: from mail-wm1-f71.google.com (mail-wm1-f71.google.com
+ [209.85.128.71]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-42-spacD9VFPBqZdg0_rNNB-w-1; Wed, 19 Jul 2023 10:17:10 -0400
+X-MC-Unique: spacD9VFPBqZdg0_rNNB-w-1
+Received: by mail-wm1-f71.google.com with SMTP id 5b1f17b1804b1-3fc08d6a40cso39427935e9.0
+        for <linux-sh@vger.kernel.org>; Wed, 19 Jul 2023 07:17:10 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1689774570; x=1692366570;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=JeaSSoZd0P4aBDcnBZ8BgOhayrU2NW5OGYbO05NkL/4=;
-        b=P4ld5aZ7EhQwMDTg5VwOGJ7b/u7jqRmBgTcCrmvgVJ47hypmf4mh6fk/hAj3d6A0ST
-         hklbPKFNyDmzwbxF6z4qL/dbxcGE2l891sxVW2j7H07IAip+nEKR6STv0rBdTyO50sHA
-         3RGTUFmwy4U5JpsAQ/ldor72PpC6daPA2YaQDw4t2lW6UacmrCNOhnONPV1QfQwHmhdi
-         8SNp22L0kDNa3lJEMdZk8Q8ebDOMxPE1g8swmHqrA+zep/t7yS14nc5PvbbB/MBOeUS6
-         YrUjePu2TWgbqOLYTn9ssJpgo/gVoYNhJY1XdfdWgQ2grPMcvMqFj6IELYcS/jo/4uYU
-         8uBw==
-X-Gm-Message-State: ABy/qLY/DnUtbTs5n1pKLDBb1UIOzkN2y2PfJqa06LEW+bm0eqU/R5lJ
-        7DSoPZK/s9+aIASEQSgJRrON5g==
-X-Google-Smtp-Source: APBJJlEbRVrqi3m5ZvwiJaNOZocZP7fbMQ7EmoV04cKWj5tMJSoThE8C5X94lSqKcc5w5KB/JoRc7Q==
-X-Received: by 2002:adf:d0d1:0:b0:314:824:3777 with SMTP id z17-20020adfd0d1000000b0031408243777mr13524380wrh.48.1689774570336;
-        Wed, 19 Jul 2023 06:49:30 -0700 (PDT)
-Received: from [192.168.69.115] ([176.187.201.220])
-        by smtp.gmail.com with ESMTPSA id w17-20020adfde91000000b00315a57f1128sm5357828wrl.115.2023.07.19.06.49.23
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 19 Jul 2023 06:49:29 -0700 (PDT)
-Message-ID: <32595080-dd79-5cf0-46e7-b82d0df8f067@linaro.org>
-Date:   Wed, 19 Jul 2023 15:49:22 +0200
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:102.0)
- Gecko/20100101 Thunderbird/102.13.0
-Subject: Re: [PATCH v2 5/9] vgacon: remove screen_info dependency
-Content-Language: en-US
+        d=1e100.net; s=20221208; t=1689776229; x=1690381029;
+        h=mime-version:message-id:date:references:in-reply-to:subject:cc:to
+         :from:x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=YjdFQRNR08a24eSSE2jcx3RnjwPdI3D1UG9L8u3hsoE=;
+        b=fkff9k/gezyJ8dAkk8ryrg08ZYPDFRIV7ctMHrarn2pjQfIUGrWQUsb80YqBTjFxXM
+         96+Pl0D423pJgdLiKj3EXyTEeYrdu9OmBwrp/mn5uudutkNMIqX5HO7eUt8DpipwZH7Z
+         w+36NAoizfPXTGg5R33XKK3/H3QT0wwiILi/m0krNJZIgbZWLvfnS5HMFil6aMFUU3mW
+         wEby/xg7UJ3DO9JZFuC3ZhGgd4193ZUNFXNXA0YlsAnOXA8OmJBxyNCpDWUYfiJO2Ers
+         9ofIQQ2ULXar/N4pS3PER0kzvGFyS1tBd3KX4zi7yde5SxF/jqLvmLQXdd/Fr0rnjkda
+         glIA==
+X-Gm-Message-State: ABy/qLbFANrcdW1uTyEzXhyNOmU/4TEjQTQkSo7Fx4x9+fxo5bEtehe3
+        NOIhktEjv/bW0W6FCKtjFYNVJNCR2jz829FUHkk7GxmSgDdrJomD7Iv16bvsa501P88XHIus9uz
+        ANFZjDJ94HTSnzPwl0rs=
+X-Received: by 2002:a05:600c:3651:b0:3fc:627:ea31 with SMTP id y17-20020a05600c365100b003fc0627ea31mr2123079wmq.38.1689776229116;
+        Wed, 19 Jul 2023 07:17:09 -0700 (PDT)
+X-Google-Smtp-Source: APBJJlHY6b0TgUW8MDG3POksnXdAxeQBRH+KD9U9aN090eyMWJPzhTreLBf0F2Av+qSumHgaL9gGUQ==
+X-Received: by 2002:a05:600c:3651:b0:3fc:627:ea31 with SMTP id y17-20020a05600c365100b003fc0627ea31mr2123053wmq.38.1689776228833;
+        Wed, 19 Jul 2023 07:17:08 -0700 (PDT)
+Received: from localhost (205.pool92-176-231.dynamic.orange.es. [92.176.231.205])
+        by smtp.gmail.com with ESMTPSA id h21-20020a1ccc15000000b003fbacc853ccsm1833816wmb.18.2023.07.19.07.17.08
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 19 Jul 2023 07:17:08 -0700 (PDT)
+From:   Javier Martinez Canillas <javierm@redhat.com>
 To:     Arnd Bergmann <arnd@kernel.org>, linux-fbdev@vger.kernel.org,
         Thomas Zimmermann <tzimmermann@suse.de>,
-        Helge Deller <deller@gmx.de>,
-        Javier Martinez Canillas <javierm@redhat.com>
+        Helge Deller <deller@gmx.de>
 Cc:     Arnd Bergmann <arnd@arndb.de>,
         "David S. Miller" <davem@davemloft.net>,
         "K. Y. Srinivasan" <kys@microsoft.com>,
@@ -99,85 +96,58 @@ Cc:     Arnd Bergmann <arnd@arndb.de>,
         linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
         sparclinux@vger.kernel.org, linux-hyperv@vger.kernel.org,
         dri-devel@lists.freedesktop.org
+Subject: Re: [PATCH v2 6/9] vgacon: clean up global screen_info instances
+In-Reply-To: <20230719123944.3438363-7-arnd@kernel.org>
 References: <20230719123944.3438363-1-arnd@kernel.org>
- <20230719123944.3438363-6-arnd@kernel.org>
-From:   =?UTF-8?Q?Philippe_Mathieu-Daud=c3=a9?= <philmd@linaro.org>
-In-Reply-To: <20230719123944.3438363-6-arnd@kernel.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+ <20230719123944.3438363-7-arnd@kernel.org>
+Date:   Wed, 19 Jul 2023 16:17:07 +0200
+Message-ID: <87cz0ohtp8.fsf@minerva.mail-host-address-is-not-set>
+MIME-Version: 1.0
+X-Mimecast-Spam-Score: 0
+X-Mimecast-Originator: redhat.com
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Arnd,
+Arnd Bergmann <arnd@kernel.org> writes:
 
-On 19/7/23 14:39, Arnd Bergmann wrote:
 > From: Arnd Bergmann <arnd@arndb.de>
-> 
-> The vga console driver is fairly self-contained, and only used by
-> architectures that explicitly initialize the screen_info settings.
-> 
-> Chance every instance that picks the vga console by setting conswitchp
-> to call a function instead, and pass a reference to the screen_info
-> there.
-> 
+>
+> To prepare for completely separating the VGA console screen_info from
+> the one used in EFI/sysfb, rename the vgacon instances and make them
+> local as much as possible.
+>
+> ia64 and arm both have confurations with vgacon and efi, but the contents
+
+is this a typo for configurations ?
+
+> never overlaps because ia64 has no EFI framebuffer, and arm only has
+> vga console on legacy platforms without EFI. Renaming these is required
+> before the EFI screen_info can be moved into drivers/firmware.
+>
+> The ia64 vga console is actually registered in two places from
+> setup_arch(), but one of them is wrong, so drop the one in pcdp.c and
+> the fix the one in setup.c to use the correct conditional.
+>
+
+s/the fix the/fix the
+
+> x86 has to keep them together, as the boot protocol is used to switch
+> between VGA text console and framebuffer through the screen_info data.
+>
 > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 > ---
->   arch/alpha/kernel/setup.c      |  2 +-
->   arch/arm/kernel/setup.c        |  2 +-
->   arch/ia64/kernel/setup.c       |  2 +-
->   arch/mips/kernel/setup.c       |  2 +-
->   arch/x86/kernel/setup.c        |  2 +-
->   drivers/firmware/pcdp.c        |  2 +-
->   drivers/video/console/vgacon.c | 68 ++++++++++++++++++++--------------
->   include/linux/console.h        |  7 ++++
->   8 files changed, 53 insertions(+), 34 deletions(-)
 
+Patch looks good to me, but I'm not that familiar with some of the arches
+to give a proper reviewed-by.
 
-> @@ -1074,13 +1077,13 @@ static int vgacon_resize(struct vc_data *c, unsigned int width,
->   		 * Ho ho!  Someone (svgatextmode, eh?) may have reprogrammed
->   		 * the video mode!  Set the new defaults then and go away.
->   		 */
-> -		screen_info.orig_video_cols = width;
-> -		screen_info.orig_video_lines = height;
-> +		vga_si->orig_video_cols = width;
-> +		vga_si->orig_video_lines = height;
->   		vga_default_font_height = c->vc_cell_height;
->   		return 0;
->   	}
-> -	if (width % 2 || width > screen_info.orig_video_cols ||
-> -	    height > (screen_info.orig_video_lines * vga_default_font_height)/
-> +	if (width % 2 || width > vga_si->orig_video_cols ||
-> +	    height > (vga_si->orig_video_lines * vga_default_font_height)/
->   	    c->vc_cell_height)
->   		return -EINVAL;
->   
-> @@ -1110,8 +1113,8 @@ static void vgacon_save_screen(struct vc_data *c)
->   		 * console initialization routines.
->   		 */
->   		vga_bootup_console = 1;
-> -		c->state.x = screen_info.orig_x;
-> -		c->state.y = screen_info.orig_y;
-> +		c->state.x = vga_si->orig_x;
-> +		c->state.y = vga_si->orig_y;
+Acked-by: Javier Martinez Canillas <javierm@redhat.com>
 
-Not really my area, so bare with me if this is obviously not
-possible :) If using DUMMY_CONSOLE, can we trigger a save_screen
-/ resize? If so, we'd reach here with vga_si=NULL.
+-- 
+Best regards,
 
->   	}
->   
->   	/* We can't copy in more than the size of the video buffer,
-> @@ -1204,4 +1207,13 @@ const struct consw vga_con = {
->   };
->   EXPORT_SYMBOL(vga_con);
->   
-> +void vgacon_register_screen(struct screen_info *si)
-> +{
-> +	if (!si || vga_si)
-> +		return;
-> +
-> +	conswitchp = &vga_con;
-> +	vga_si = si;
-> +}
+Javier Martinez Canillas
+Core Platforms
+Red Hat
 
