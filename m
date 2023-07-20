@@ -2,40 +2,43 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72BB6EB64DA
-	for <linux-sh@archiver.kernel.org>; Wed, 19 Jul 2023 14:59:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 89A58EB64DA
+	for <linux-sh@archiver.kernel.org>; Thu, 20 Jul 2023 19:04:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231286AbjGSO7B (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 19 Jul 2023 10:59:01 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47732 "EHLO
+        id S229756AbjGTTEO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 20 Jul 2023 15:04:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53002 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229646AbjGSO7A (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 19 Jul 2023 10:59:00 -0400
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D18D7C0;
-        Wed, 19 Jul 2023 07:58:58 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=gmx.de;
- s=s31663417; t=1689778659; x=1690383459; i=deller@gmx.de;
- bh=iQUnHGbic8gu+ig2/dvuRMVZ9NdHOWOrYR1bIcIdEEI=;
- h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:In-Reply-To;
- b=Oj76ZDbvIWlVeT7RknkMQBRZveyGPeaavM/7Hd2yo0VaxgBreq1RYAEB0hFfewqVvvghv6Q
- bodOrVr550D5HZlqDgB3YLfPOrTCQM3TCjKHDB2dJOZHoIa71786MQxwB1NbvycigzSKOxAXb
- 6ZzEXcDb9k3UgAEfth7TfHSLA58vvfzUv6ulGW71L5xNw0gixI8MKF5gnbT3fhbWS+ATeYNKt
- ieCK2TFKuSXE/ozWDwJJy++aTZ0SBnrY/ovnKdb81Uk7xmvoS7C6bZynPoMyxlk0tyc4eBPNb
- ugz85t+iHLpPDHwe2/OJ0aXdRz0Qd8Wj5Gm6vVqKd6ptYS3WJ2ZA==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [192.168.20.60] ([94.134.145.157]) by mail.gmx.net (mrgmx104
- [212.227.17.168]) with ESMTPSA (Nemesis) id 1N1Obb-1pwrjE0tCd-012rpb; Wed, 19
- Jul 2023 16:57:39 +0200
-Message-ID: <6c9be40f-0970-3eb5-899f-b69aa09d7f97@gmx.de>
-Date:   Wed, 19 Jul 2023 16:57:30 +0200
+        with ESMTP id S230046AbjGTTEM (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 20 Jul 2023 15:04:12 -0400
+X-Greylist: delayed 751 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Thu, 20 Jul 2023 12:04:10 PDT
+Received: from mailout.easymail.ca (mailout.easymail.ca [64.68.200.34])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 573D91984;
+        Thu, 20 Jul 2023 12:04:10 -0700 (PDT)
+Received: from localhost (localhost [127.0.0.1])
+        by mailout.easymail.ca (Postfix) with ESMTP id 5A9E6E0906;
+        Thu, 20 Jul 2023 18:48:50 +0000 (UTC)
+X-Virus-Scanned: Debian amavisd-new at emo08-pco.easydns.vpn
+Received: from mailout.easymail.ca ([127.0.0.1])
+        by localhost (emo08-pco.easydns.vpn [127.0.0.1]) (amavisd-new, port 10024)
+        with ESMTP id wv_6UILBW7iq; Thu, 20 Jul 2023 18:48:49 +0000 (UTC)
+Received: from mail.gonehiking.org (unknown [38.15.45.1])
+        by mailout.easymail.ca (Postfix) with ESMTPA id CA76EE075E;
+        Thu, 20 Jul 2023 18:48:49 +0000 (UTC)
+Received: from [192.168.1.4] (internal [192.168.1.4])
+        by mail.gonehiking.org (Postfix) with ESMTP id CC21F3EED6;
+        Thu, 20 Jul 2023 12:48:47 -0600 (MDT)
+Message-ID: <aea82980-358a-863f-d6a0-66f4ce3f87b7@gonehiking.org>
+Date:   Thu, 20 Jul 2023 12:48:47 -0600
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.12.0
-Subject: Re: [PATCH v2 0/9] video: screen_info cleanups
+ Thunderbird/102.11.0
+Reply-To: khalid@gonehiking.org
+Subject: Re: [PATCH v2 1/9] vgacon: rework Kconfig dependencies
 Content-Language: en-US
 To:     Arnd Bergmann <arnd@kernel.org>, linux-fbdev@vger.kernel.org,
         Thomas Zimmermann <tzimmermann@suse.de>,
+        Helge Deller <deller@gmx.de>,
         Javier Martinez Canillas <javierm@redhat.com>
 Cc:     Arnd Bergmann <arnd@arndb.de>,
         "David S. Miller" <davem@davemloft.net>,
@@ -56,7 +59,6 @@ Cc:     Arnd Bergmann <arnd@arndb.de>,
         Huacai Chen <chenhuacai@kernel.org>,
         Ingo Molnar <mingo@redhat.com>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Khalid Aziz <khalid@gonehiking.org>,
         Linus Walleij <linus.walleij@linaro.org>,
         Matt Turner <mattst88@gmail.com>,
         Max Filippov <jcmvbkbc@gmail.com>,
@@ -77,61 +79,68 @@ Cc:     Arnd Bergmann <arnd@arndb.de>,
         sparclinux@vger.kernel.org, linux-hyperv@vger.kernel.org,
         dri-devel@lists.freedesktop.org
 References: <20230719123944.3438363-1-arnd@kernel.org>
-From:   Helge Deller <deller@gmx.de>
-In-Reply-To: <20230719123944.3438363-1-arnd@kernel.org>
+ <20230719123944.3438363-2-arnd@kernel.org>
+From:   Khalid Aziz <khalid@gonehiking.org>
+In-Reply-To: <20230719123944.3438363-2-arnd@kernel.org>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:YKbXr21JZgKRkgbsGmVJDM40tJR1qBdCxKWfG2/2zM1Hz5g95nU
- PY0FOmI/L2j9W1vGyLYbMi9ABDdfgWOPRCMO8zMry116yimj9tsvXc4s6fjnjRwkYdIoPKa
- n+9JxJJXhDMP2Ce+c3fQIz1wcyEzeBExDfucEwj81ZYLXufdZhN/dpMjy+bzjb7TNdOFqgM
- Ief2UkK3zX3uAV0dVEamQ==
-UI-OutboundReport: notjunk:1;M01:P0:egu7CabpTFY=;cUfSSNb5FGDxvZd6PLuSysdSDvD
- ls5ct71ZsXDBRiFkda5EH38/nQ/EcAqCJZsUD40cSH/+igFVbthR3XF2Po8lNk1cqs1EYQCIm
- M/bNP4mwkBL0U5cBk8a7oo/RnMLCbsMCOBYccP1D8xm88u/QaFKZ8Q3yphrv+yPohojv/cdhw
- 9uc+JLy6730Il4w/FO8mbH++J/ftKfmDZ1Sofwp3BC74D/cPKVNtj6MJKCnmxBufOnI6SmYoB
- 2S/yrdA0s4catYwxtpxHM3qw3ad+06jWcK6vyHiCRvOom/FhPAW2DOqNBRgfVRjVqNNkCK1T+
- R+kY3p3qGKi67yqmoP7PyYbgt8ozyAYza5uml8XRMAO8h8HnG9PhpbBTMgJMCWcoNmhPGARkd
- 39g8HecgJijqw57SdgghEDepDk7sJruagdtGZ2868LrRd1+i+TchHaii2BcwWpiYsWC/1Jg1p
- MiBZSrab+b4o06BLX/KJqYTcugazeV/g3/6FNIaPyOApN+Tqmv0kbjPi9aEso0ZaDYDcGEfEp
- UGyUC4NAS8Vk6cdQkMzuvtDIwy0Lfam4D/ERNFlqdybQ6k+vYPc/d1m2lyrpiCArcJh9w8iZv
- BydvWmnjmdvnxQ/ozWK++LnqAT+6AjTXLjpmtlM4YyYIR+y0DCsuhbJVefrYaIcexS9LB+1d9
- kxc7jGoCqjyFvgc6zNOKsUiGZwOLTDLjuUyUACf/QIUSqdRrjRHPw8VRISdmCJF3qXEqGku22
- PRBqA4Yt3B3/+1CHDZZA4kapOF9ZTTCQwBk3hy7mq/9XRQYULEAyX2HX9iJE0snjLeQjHi7TG
- CAebdhtQzKSHSt6891NcXCQyAntbr1DR+vZDS02S62uxQ=
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 7/19/23 14:39, Arnd Bergmann wrote:
+On 7/19/23 6:39 AM, Arnd Bergmann wrote:
 > From: Arnd Bergmann <arnd@arndb.de>
->
-> I refreshed the first four patches that I sent before with very minor
-> updates, and then added some more to further disaggregate the use
-> of screen_info:
->
->   - I found that powerpc wasn't using vga16fb any more
->
->   - vgacon can be almost entirely separated from the global
->     screen_info, except on x86
->
->   - similarly, the EFI framebuffer initialization can be
->     kept separate, except on x86.
+> 
+> The list of dependencies here is phrased as an opt-out, but this is missing
+> a lot of architectures that don't actually support VGA consoles, and some
+> of the entries are stale:
+> 
+>   - powerpc used to support VGA consoles in the old arch/ppc codebase, but
+>     the merged arch/powerpc never did
+> 
+>   - arm lists footbridge, integrator and netwinder, but netwinder is actually
+>     part of footbridge, and integrator does not appear to have an actual
+>     VGA hardware, or list it in its ATAG or DT.
+> 
+>   - mips has a few platforms (malta, sibyte, and sni) that initialize
+>     screen_info, on everything else the console is selected but cannot
+>     actually work.
+> 
+>   - csky, hexgagon, loongarch, nios2, riscv and xtensa are not listed
+>     in the opt-out table and declare a screen_info to allow building
+>     vga_con, but this cannot work because the console is never selected.
+> 
+> Replace this with an opt-in table that lists only the platforms that
+> remain. This is effectively x86, plus a couple of historic workstation
+> and server machines that reused parts of the x86 system architecture.
+> 
+> Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+> Reviewed-by: Thomas Zimmermann <tzimmermann@suse.de>
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 
-Nice cleanup, Arnd!
 
-You may add a
-Acked-by: Helge Deller <deller@gmx.de>
-to the series.
+Reviewed-by: Khalid Aziz <khalid@gonehiking.org>
 
 
-> I did extensive build testing on arm/arm64/x86 and the normal built bot
-> testing for the other architectures.
+> ---
+>   drivers/video/console/Kconfig | 6 +++---
+>   1 file changed, 3 insertions(+), 3 deletions(-)
+> 
+> diff --git a/drivers/video/console/Kconfig b/drivers/video/console/Kconfig
+> index 1b5a319971ed0..6af90db6d2da9 100644
+> --- a/drivers/video/console/Kconfig
+> +++ b/drivers/video/console/Kconfig
+> @@ -7,9 +7,9 @@ menu "Console display driver support"
+>   
+>   config VGA_CONSOLE
+>   	bool "VGA text console" if EXPERT || !X86
+> -	depends on !4xx && !PPC_8xx && !SPARC && !M68K && !PARISC &&  !SUPERH && \
+> -		(!ARM || ARCH_FOOTBRIDGE || ARCH_INTEGRATOR || ARCH_NETWINDER) && \
+> -		!ARM64 && !ARC && !MICROBLAZE && !OPENRISC && !S390 && !UML
+> +	depends on ALPHA || IA64 || X86 || \
+> +		(ARM && ARCH_FOOTBRIDGE) || \
+> +		(MIPS && (MIPS_MALTA || SIBYTE_BCM112X || SIBYTE_SB1250 || SIBYTE_BCM1x80 || SNI_RM))
+>   	select APERTURE_HELPERS if (DRM || FB || VFIO_PCI_CORE)
+>   	default y
+>   	help
 
-> Which tree should this get merged through?
-
-I suggest drm-misc or fbdev. Either is fine for me.
-
-Since it applies cleanly onto git head, I can put it a few days into
-the fbdev git tree to see if some builds break. Just let me know.
-
-Helge
