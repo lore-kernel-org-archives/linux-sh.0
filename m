@@ -2,148 +2,93 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 04CE6C04FDF
-	for <linux-sh@archiver.kernel.org>; Mon, 24 Jul 2023 12:16:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4CBA2C41513
+	for <linux-sh@archiver.kernel.org>; Mon, 24 Jul 2023 12:43:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229703AbjGXMQC convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 24 Jul 2023 08:16:02 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46102 "EHLO
+        id S230369AbjGXMnI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 24 Jul 2023 08:43:08 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35146 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230317AbjGXMQA (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 24 Jul 2023 08:16:00 -0400
-Received: from mail-ot1-f46.google.com (mail-ot1-f46.google.com [209.85.210.46])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4B63110E4;
-        Mon, 24 Jul 2023 05:15:34 -0700 (PDT)
-Received: by mail-ot1-f46.google.com with SMTP id 46e09a7af769-6bb140cd5a5so2034274a34.3;
-        Mon, 24 Jul 2023 05:15:34 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1690200925; x=1690805725;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=9nNGOJzgymf6gQYpdxd2UIkw90HSJ+oAIVzOwuAShWk=;
-        b=Uy62wyMg9w8t+mqXu0QFMNYQLHegY1Q65joGU4ncPvQPGwYptIiN2f6DmsYUouk6+7
-         JtAWmLG197KYoHDOmAfg3ZxOMrjHz4xE3hYyT76AcEWP1/NbfEO6q8JRB5nr/BxAzOyg
-         a7+QOuyPI2rhvw7/jP5F4BBg9IY8T8XHLcAMM5ohppGtr7R86x2IuaPjPO9X/nWI0OoX
-         EtvgGcsk0r/ueEy3TzgJuT1uDqG0x03uxNtyt02jDdb+T8/6bg+fyCYc4tnNsnN92/Ld
-         LEs75sY2hdIgCGspHVn8/auJuTwf5Te67YoZrN0CdTPjjYJTQVBra4cPZU4AkhkcKXZg
-         UqmA==
-X-Gm-Message-State: ABy/qLbLYusZCq828Ib/fOAikT1ZT1JurJbDna2ZiunMDfG28vkcu73f
-        FuQTMKLHFf9zJHCLdakK0mBA/eVijJEt8w==
-X-Google-Smtp-Source: APBJJlGibdh4VyCHZRuKbHeK83kZpT8FPuPgZrxRhKw6BlST+Wy1ddPXguufHTrmJ8wIiimetINKUg==
-X-Received: by 2002:a05:6830:188:b0:6b9:91da:484f with SMTP id q8-20020a056830018800b006b991da484fmr8804468ota.27.1690200924916;
-        Mon, 24 Jul 2023 05:15:24 -0700 (PDT)
-Received: from mail-oo1-f50.google.com (mail-oo1-f50.google.com. [209.85.161.50])
-        by smtp.gmail.com with ESMTPSA id d9-20020a056830004900b006b8c6eb962esm3835164otp.52.2023.07.24.05.15.24
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 24 Jul 2023 05:15:24 -0700 (PDT)
-Received: by mail-oo1-f50.google.com with SMTP id 006d021491bc7-56368c40e8eso2620523eaf.0;
-        Mon, 24 Jul 2023 05:15:24 -0700 (PDT)
-X-Received: by 2002:a25:238e:0:b0:d05:abaf:9933 with SMTP id
- j136-20020a25238e000000b00d05abaf9933mr7019302ybj.36.1690200457350; Mon, 24
- Jul 2023 05:07:37 -0700 (PDT)
-MIME-Version: 1.0
-References: <20230719123944.3438363-1-arnd@kernel.org> <20230719123944.3438363-2-arnd@kernel.org>
- <87pm4lj1w3.fsf@mail.lhotse> <19631e74-415e-4dcb-b79d-33dcf03d2dfc@app.fastmail.com>
-In-Reply-To: <19631e74-415e-4dcb-b79d-33dcf03d2dfc@app.fastmail.com>
+        with ESMTP id S230165AbjGXMnH (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 24 Jul 2023 08:43:07 -0400
+Received: from baptiste.telenet-ops.be (baptiste.telenet-ops.be [IPv6:2a02:1800:120:4::f00:13])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0E19C1B8
+        for <linux-sh@vger.kernel.org>; Mon, 24 Jul 2023 05:43:04 -0700 (PDT)
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:e908:444e:5a23:b79e])
+        by baptiste.telenet-ops.be with bizsmtp
+        id R0j22A00H26vpYY010j2rR; Mon, 24 Jul 2023 14:43:02 +0200
+Received: from geert (helo=localhost)
+        by ramsan.of.borg with local-esmtp (Exim 4.95)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1qNuty-002O66-6f;
+        Mon, 24 Jul 2023 14:43:02 +0200
+Date:   Mon, 24 Jul 2023 14:43:02 +0200 (CEST)
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 24 Jul 2023 14:07:25 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdVszR+oZi8x8L0iXx=ydTiaNUZxToBSdf=2ZH5t85+D_Q@mail.gmail.com>
-Message-ID: <CAMuHMdVszR+oZi8x8L0iXx=ydTiaNUZxToBSdf=2ZH5t85+D_Q@mail.gmail.com>
-Subject: Re: [PATCH v2 1/9] vgacon: rework Kconfig dependencies
-To:     Arnd Bergmann <arnd@arndb.de>
-Cc:     Michael Ellerman <mpe@ellerman.id.au>,
-        Arnd Bergmann <arnd@kernel.org>, linux-fbdev@vger.kernel.org,
-        Thomas Zimmermann <tzimmermann@suse.de>,
-        Helge Deller <deller@gmx.de>,
-        Javier Martinez Canillas <javierm@redhat.com>,
-        "David S . Miller" <davem@davemloft.net>,
-        "K. Y. Srinivasan" <kys@microsoft.com>,
-        Ard Biesheuvel <ardb@kernel.org>,
-        Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@quicinc.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Daniel Vetter <daniel@ffwll.ch>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        Dave Airlie <airlied@gmail.com>,
-        Deepak Rawat <drawat.floss@gmail.com>,
-        Dexuan Cui <decui@microsoft.com>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        guoren <guoren@kernel.org>,
-        Haiyang Zhang <haiyangz@microsoft.com>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        Ingo Molnar <mingo@redhat.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Khalid Aziz <khalid@gonehiking.org>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Matt Turner <mattst88@gmail.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        WANG Xuerui <kernel@xen0n.name>, Wei Liu <wei.liu@kernel.org>,
-        Will Deacon <will@kernel.org>, x86@kernel.org,
-        linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org, linux-efi@vger.kernel.org,
-        "linux-csky@vger.kernel.org" <linux-csky@vger.kernel.org>,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        linux-hyperv@vger.kernel.org, dri-devel@lists.freedesktop.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+To:     linux-kernel@vger.kernel.org
+cc:     Kees Cook <keescook@chromium.org>,
+        "Gustavo A. R. Silva" <gustavoars@kernel.org>,
+        linux-hardening@vger.kernel.org, linux-wireless@vger.kernel.org,
+        linux-mips@vger.kernel.org, linux-mtd@lists.infradead.org,
+        linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org
+Subject: Re: Build regressions/improvements in v6.5-rc3
+In-Reply-To: <20230724122626.1701631-1-geert@linux-m68k.org>
+Message-ID: <88f83d73-781d-bdc-126-aa629cb368c@linux-m68k.org>
+References: <CAHk-=wi4Yau-3Bsv2rXYmtXMTLaj3=Wyf4cdM6d89czFvkVsRQ@mail.gmail.com> <20230724122626.1701631-1-geert@linux-m68k.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII; format=flowed
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Arnd,
+On Mon, 24 Jul 2023, Geert Uytterhoeven wrote:
+> JFYI, when comparing v6.5-rc3[1] to v6.5-rc2[3], the summaries are:
+>  - build errors: +5/-0
 
-On Fri, Jul 21, 2023 at 10:29 AM Arnd Bergmann <arnd@arndb.de> wrote:
-> On Fri, Jul 21, 2023, at 06:59, Michael Ellerman wrote:
-> > Arnd Bergmann <arnd@kernel.org> writes:
-> >> From: Arnd Bergmann <arnd@arndb.de>
-> >>
-> >> The list of dependencies here is phrased as an opt-out, but this is missing
-> >> a lot of architectures that don't actually support VGA consoles, and some
-> >> of the entries are stale:
-> >>
-> >>  - powerpc used to support VGA consoles in the old arch/ppc codebase, but
-> >>    the merged arch/powerpc never did
-> >
-> > Not disputing this, but how did you come to that conclusion? I grepped
-> > around and couldn't convince myself whether it can work on powerpc or
-> > not. ie. currently it's possible to enable CONFIG_VGA_CONSOLE and
-> > powerpc does have a struct screen_info defined which seems like it would
-> > allow vgacon_startup() to complete.
->
-> The VGA console needs both screen_info and vga_con to work. In arch/ppc
-> we had both, but in arch/powerpc we only retained the screen_info:
->
-> $ git grep vga_con v2.6.26 -- arch/ppc arch/ppc64 arch/powerpc
-> v2.6.26:arch/ppc/platforms/pplus.c:     conswitchp = &vga_con;
-> v2.6.26:arch/ppc/platforms/prep_setup.c:        conswitchp = &vga_con;
->
-> so after arch/ppc was removed, this became impossible to use on both
-> pplus and prep. These two platforms were also (as far as I can tell)
-> the only ones to support vga16fb as an alternative to vgacon, but
-> both platforms were removed later on.
+   + /kisskb/src/include/linux/fortify-string.h: error: call to '__write_overflow_field' declared with attribute warning: detected write beyond size of field (1st parameter); maybe use struct_group()? [-Werror=attribute-warning]:  => 583:25, 493:25
 
-I did use vgacon and vga16fb on CHRP on a second video card
-(initialized using Gabriel Paubert's x86 BIOS emulator), but that was
-definitely before the advent of arch/powerpc/.
+mips-gcc13/mips-allmodconfig
+
+Full context:
+
+     In function 'fortify_memset_chk',
+ 	inlined from 'memset_io' at /kisskb/src/arch/mips/include/asm/io.h:486:2,
+ 	inlined from 'build_auth_frame' at /kisskb/src/drivers/net/wireless/legacy/ray_cs.c:2697:2:
+     /kisskb/src/include/linux/fortify-string.h:493:25: error: call to '__write_overflow_field' declared with attribute warning: detected write beyond size of field (1st parameter); maybe use struct_group()? [-Werror=attribute-warning]
+       493 |                         __write_overflow_field(p_size_field, size);
+ 	  |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     In function 'fortify_memcpy_chk',
+ 	inlined from 'memcpy_toio' at /kisskb/src/arch/mips/include/asm/io.h:494:2,
+ 	inlined from 'translate_frame' at /kisskb/src/drivers/net/wireless/legacy/ray_cs.c:955:3,
+ 	inlined from 'ray_hw_xmit.constprop' at /kisskb/src/drivers/net/wireless/legacy/ray_cs.c:912:12:
+     /kisskb/src/include/linux/fortify-string.h:583:25: error: call to '__write_overflow_field' declared with attribute warning: detected write beyond size of field (1st parameter); maybe use struct_group()? [-Werror=attribute-warning]
+       583 |                         __write_overflow_field(p_size_field, size);
+ 	  |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Single-element flexible array abuse in drivers/net/wireless/legacy/rayctl.h:tx_msg.var
+
+   + error: modpost: ".L856" [drivers/mtd/nand/raw/nand.ko] undefined!:  => N/A
+
+parisc-gcc13/parisc-allmodconfig
+
+   + {standard input}: Error: Missing symbol name in directive:  => 1096
+   + {standard input}: Error: unrecognized symbol type "":  => 1096
+
+sh4-gcc12/sh-allmodconfig (ICE)
+
+   + {standard input}: Error: unknown opcode:  => 1091
+
+sh4-gcc13/sh-allmodconfig (ICE)
+
+> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/6eaae198076080886b9e7d57f4ae06fa782f90ef/ (all 235 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/fdf0eaf11452d72945af31804e2a1048ee1b574c/ (161 out of 235 configs)
 
 Gr{oetje,eeting}s,
 
-                        Geert
+ 						Geert
 
--- 
+--
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+ 							    -- Linus Torvalds
