@@ -2,93 +2,99 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4CBA2C41513
-	for <linux-sh@archiver.kernel.org>; Mon, 24 Jul 2023 12:43:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 82D37C001B0
+	for <linux-sh@archiver.kernel.org>; Mon, 24 Jul 2023 13:03:33 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230369AbjGXMnI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 24 Jul 2023 08:43:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35146 "EHLO
+        id S231515AbjGXNDc convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 24 Jul 2023 09:03:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49146 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230165AbjGXMnH (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 24 Jul 2023 08:43:07 -0400
-Received: from baptiste.telenet-ops.be (baptiste.telenet-ops.be [IPv6:2a02:1800:120:4::f00:13])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0E19C1B8
-        for <linux-sh@vger.kernel.org>; Mon, 24 Jul 2023 05:43:04 -0700 (PDT)
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:e908:444e:5a23:b79e])
-        by baptiste.telenet-ops.be with bizsmtp
-        id R0j22A00H26vpYY010j2rR; Mon, 24 Jul 2023 14:43:02 +0200
-Received: from geert (helo=localhost)
-        by ramsan.of.borg with local-esmtp (Exim 4.95)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1qNuty-002O66-6f;
-        Mon, 24 Jul 2023 14:43:02 +0200
-Date:   Mon, 24 Jul 2023 14:43:02 +0200 (CEST)
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-To:     linux-kernel@vger.kernel.org
-cc:     Kees Cook <keescook@chromium.org>,
-        "Gustavo A. R. Silva" <gustavoars@kernel.org>,
-        linux-hardening@vger.kernel.org, linux-wireless@vger.kernel.org,
-        linux-mips@vger.kernel.org, linux-mtd@lists.infradead.org,
-        linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org
-Subject: Re: Build regressions/improvements in v6.5-rc3
-In-Reply-To: <20230724122626.1701631-1-geert@linux-m68k.org>
-Message-ID: <88f83d73-781d-bdc-126-aa629cb368c@linux-m68k.org>
-References: <CAHk-=wi4Yau-3Bsv2rXYmtXMTLaj3=Wyf4cdM6d89czFvkVsRQ@mail.gmail.com> <20230724122626.1701631-1-geert@linux-m68k.org>
+        with ESMTP id S231899AbjGXNDL (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 24 Jul 2023 09:03:11 -0400
+Received: from mail-yb1-f176.google.com (mail-yb1-f176.google.com [209.85.219.176])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A097E4203;
+        Mon, 24 Jul 2023 06:02:06 -0700 (PDT)
+Received: by mail-yb1-f176.google.com with SMTP id 3f1490d57ef6-d0b597e7ac1so1932382276.1;
+        Mon, 24 Jul 2023 06:02:06 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1690203725; x=1690808525;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=c8ZRRgNrzhuaT2MvQ4fQw/uUCe9amj8CicD9xhbrskQ=;
+        b=eCFbcDYGx79ynNxtT0fUBEUh1m/xOfoMeX30iUtha1L5JBjT9dvDs0yt3eQiEPjhrz
+         F2NX6D3fRy5GGB6vVAnThT8LhVFsvJEzEnwZoGnnjKzaVSjbEHwi8ZqNF+q9TY5zscKE
+         4CWpUttL2ltRAkUNzdHU3CFDUDtsdxuIDF7j1llpODaLr6lAxSZLxsUHhh0HFu02ADyI
+         r/7h8SkAfuuk3ptB88VtDF1bPV/B1fnUEkotoBQdqzul5tXoZgtzncKdflqCc7ZX7RnK
+         stKTBkKNJxXDR8my+rqCwv8IOEyNf23KA2wMp9o2/0tU1ZksrMTaVFNi/6eDGErbHXoY
+         Qeiw==
+X-Gm-Message-State: ABy/qLZPBfTn+2IzQ46SE3y9u0WQuzT3iLm1izK7YukqXzSGZakzRzUP
+        vIxo1p+TI4p51n3tEAnhppNjD91kZP1AHQ==
+X-Google-Smtp-Source: APBJJlETwHmbD47elSe2cZ/ZZIZlIQwWXp4dSsn1EQit5qTOzA1n9EKbFp8SHdRS9Z3nwNowbGtFjA==
+X-Received: by 2002:a25:780e:0:b0:cec:e155:2879 with SMTP id t14-20020a25780e000000b00cece1552879mr7186473ybc.59.1690203725535;
+        Mon, 24 Jul 2023 06:02:05 -0700 (PDT)
+Received: from mail-yw1-f182.google.com (mail-yw1-f182.google.com. [209.85.128.182])
+        by smtp.gmail.com with ESMTPSA id x13-20020a5b028d000000b00c389676f3a2sm2225412ybl.40.2023.07.24.06.02.01
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 24 Jul 2023 06:02:02 -0700 (PDT)
+Received: by mail-yw1-f182.google.com with SMTP id 00721157ae682-58411e24eefso4363567b3.1;
+        Mon, 24 Jul 2023 06:02:01 -0700 (PDT)
+X-Received: by 2002:a25:15c9:0:b0:c5d:953b:db6 with SMTP id
+ 192-20020a2515c9000000b00c5d953b0db6mr6548392ybv.41.1690203721676; Mon, 24
+ Jul 2023 06:02:01 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII; format=flowed
+References: <20230724120742.2187-1-petrtesarik@huaweicloud.com>
+In-Reply-To: <20230724120742.2187-1-petrtesarik@huaweicloud.com>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Mon, 24 Jul 2023 15:01:50 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdXwU2gku+fXKnnUaCPZAE4JUaPw5cPaqpQ=+Augynn6ng@mail.gmail.com>
+Message-ID: <CAMuHMdXwU2gku+fXKnnUaCPZAE4JUaPw5cPaqpQ=+Augynn6ng@mail.gmail.com>
+Subject: Re: [PATCH v1] sh: boards: fix CEU buffer size passed to dma_declare_coherent_memory()
+To:     Petr Tesarik <petrtesarik@huaweicloud.com>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Linus Walleij <linus.walleij@linaro.org>,
+        Jacopo Mondi <jacopo+renesas@jmondi.org>,
+        Hans Verkuil <hans.verkuil@cisco.com>,
+        Mauro Carvalho Chehab <mchehab+samsung@kernel.org>,
+        Laurent Pinchart <laurent.pinchart@ideasonboard.com>,
+        "open list:SUPERH" <linux-sh@vger.kernel.org>,
+        open list <linux-kernel@vger.kernel.org>,
+        Roberto Sassu <roberto.sassu@huaweicloud.com>, petr@tesarici.cz
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, 24 Jul 2023, Geert Uytterhoeven wrote:
-> JFYI, when comparing v6.5-rc3[1] to v6.5-rc2[3], the summaries are:
->  - build errors: +5/-0
+On Mon, Jul 24, 2023 at 2:15 PM Petr Tesarik
+<petrtesarik@huaweicloud.com> wrote:
+> From: Petr Tesarik <petr.tesarik.ext@huawei.com>
+>
+> In all these cases, the last argument to dma_declare_coherent_memory() is
+> the buffer end address, but the expected value should be the size of the
+> reserved region.
+>
+> Fixes: 39fb993038e1 ("media: arch: sh: ap325rxa: Use new renesas-ceu camera driver")
+> Fixes: c2f9b05fd5c1 ("media: arch: sh: ecovec: Use new renesas-ceu camera driver")
+> Fixes: f3590dc32974 ("media: arch: sh: kfr2r09: Use new renesas-ceu camera driver")
+> Fixes: 186c446f4b84 ("media: arch: sh: migor: Use new renesas-ceu camera driver")
+> Fixes: 1a3c230b4151 ("media: arch: sh: ms7724se: Use new renesas-ceu camera driver")
+> Signed-off-by: Petr Tesarik <petr.tesarik.ext@huawei.com>
 
-   + /kisskb/src/include/linux/fortify-string.h: error: call to '__write_overflow_field' declared with attribute warning: detected write beyond size of field (1st parameter); maybe use struct_group()? [-Werror=attribute-warning]:  => 583:25, 493:25
-
-mips-gcc13/mips-allmodconfig
-
-Full context:
-
-     In function 'fortify_memset_chk',
- 	inlined from 'memset_io' at /kisskb/src/arch/mips/include/asm/io.h:486:2,
- 	inlined from 'build_auth_frame' at /kisskb/src/drivers/net/wireless/legacy/ray_cs.c:2697:2:
-     /kisskb/src/include/linux/fortify-string.h:493:25: error: call to '__write_overflow_field' declared with attribute warning: detected write beyond size of field (1st parameter); maybe use struct_group()? [-Werror=attribute-warning]
-       493 |                         __write_overflow_field(p_size_field, size);
- 	  |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     In function 'fortify_memcpy_chk',
- 	inlined from 'memcpy_toio' at /kisskb/src/arch/mips/include/asm/io.h:494:2,
- 	inlined from 'translate_frame' at /kisskb/src/drivers/net/wireless/legacy/ray_cs.c:955:3,
- 	inlined from 'ray_hw_xmit.constprop' at /kisskb/src/drivers/net/wireless/legacy/ray_cs.c:912:12:
-     /kisskb/src/include/linux/fortify-string.h:583:25: error: call to '__write_overflow_field' declared with attribute warning: detected write beyond size of field (1st parameter); maybe use struct_group()? [-Werror=attribute-warning]
-       583 |                         __write_overflow_field(p_size_field, size);
- 	  |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Single-element flexible array abuse in drivers/net/wireless/legacy/rayctl.h:tx_msg.var
-
-   + error: modpost: ".L856" [drivers/mtd/nand/raw/nand.ko] undefined!:  => N/A
-
-parisc-gcc13/parisc-allmodconfig
-
-   + {standard input}: Error: Missing symbol name in directive:  => 1096
-   + {standard input}: Error: unrecognized symbol type "":  => 1096
-
-sh4-gcc12/sh-allmodconfig (ICE)
-
-   + {standard input}: Error: unknown opcode:  => 1091
-
-sh4-gcc13/sh-allmodconfig (ICE)
-
-> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/6eaae198076080886b9e7d57f4ae06fa782f90ef/ (all 235 configs)
-> [3] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/fdf0eaf11452d72945af31804e2a1048ee1b574c/ (161 out of 235 configs)
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
 Gr{oetje,eeting}s,
 
- 						Geert
+                        Geert
 
---
+-- 
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
- 							    -- Linus Torvalds
+                                -- Linus Torvalds
