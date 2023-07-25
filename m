@@ -2,63 +2,32 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 79434C001DE
-	for <linux-sh@archiver.kernel.org>; Tue, 25 Jul 2023 12:21:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 64C73C001DF
+	for <linux-sh@archiver.kernel.org>; Tue, 25 Jul 2023 12:42:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232063AbjGYMVn (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 25 Jul 2023 08:21:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47028 "EHLO
+        id S232819AbjGYMm1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 25 Jul 2023 08:42:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58138 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231783AbjGYMVm (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 25 Jul 2023 08:21:42 -0400
-Received: from mail-pl1-x629.google.com (mail-pl1-x629.google.com [IPv6:2607:f8b0:4864:20::629])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1ABF8A7;
-        Tue, 25 Jul 2023 05:21:42 -0700 (PDT)
-Received: by mail-pl1-x629.google.com with SMTP id d9443c01a7336-1bb2468257fso28551055ad.0;
-        Tue, 25 Jul 2023 05:21:42 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1690287701; x=1690892501;
-        h=to:references:message-id:content-transfer-encoding:cc:date
-         :in-reply-to:from:subject:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=8cnWD3DwULGe/vHl0lzjt4JBf1liZ6Y8f/YvLSUrQM8=;
-        b=Gm3OK6GqP9gmG0jDC3GcT5CzT2uazRACBM1RC+SbsRjTTjfbUV41RlASWJGK8AVpnU
-         pVm604yn9cZBe8u8VZ0dMuUEXlZgzv+SAaMzHFwtETRjMsz6r+M0gXeEvYj+5TABFepT
-         ryfLvgSZYvmwDPQu0Bpc13Odne2uePXvDO8yw9x+yVWZK0Bkr7rvbtdoCh0eKMl1AVLR
-         7wmwl1Lin8bYMuFHjDLy+ZIBoCeCINvAB7keABtaSzt/dE+n8/MwoXCAZgWhPGKSHh8y
-         oxbzxfuw6BvHG94j+LSHh9OKrabszldtUA8v7MZI8CLKo/GO3UEBGbxhVe5eubURDBXj
-         mtWA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1690287701; x=1690892501;
-        h=to:references:message-id:content-transfer-encoding:cc:date
-         :in-reply-to:from:subject:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=8cnWD3DwULGe/vHl0lzjt4JBf1liZ6Y8f/YvLSUrQM8=;
-        b=ewjYW68ShYVjOkwCaIXUs+lnjSKjiNdbH37VF+lhQroknzzqUUjmbLh9gAJ8OzmTV2
-         b/HIuhLOs9tNDHgixJSqH1SDEgKiP2vQRqr/DnkRJjMZeG6cf27fK4Rv6CtY/ihzDXeE
-         XpS6O9RA2YOZfYib9Qc6yaGkkA1xWpyDykPIzil6pdGFJlUQr/9/XMgfx2BEvWkTfdI4
-         XooEXeHzc9LBbIVSiOQoDLbtgTywpv5SyHLWb1FgB5W/svhIOxePwGkQgEsjHNbZaS99
-         gaL8mXzkPujJsi5x34N1shWxEcflKwSxs6h6u0DxbtpTjk7w6QtRTiow0UdQwrafFRpM
-         sagQ==
-X-Gm-Message-State: ABy/qLbXg9/PL67gnWSqY52CblHzZfOgwN7Z0ss38GHTY6ZA1U71/3hY
-        pkZMC5/s/EEs8vVUc316V+Y=
-X-Google-Smtp-Source: APBJJlFPnSG+glgygdNl9mzcy65ryIY4k9fUUs5Tbe48zDuahDXbjWOKghBCMulVzQniXAfGAPzd5g==
-X-Received: by 2002:a17:902:d4d2:b0:1b8:b4d5:4c3d with SMTP id o18-20020a170902d4d200b001b8b4d54c3dmr11205357plg.51.1690287701094;
-        Tue, 25 Jul 2023 05:21:41 -0700 (PDT)
-Received: from ibuprofen.lan (202-79-124-123.east.xps.vectant.ne.jp. [202.79.124.123])
-        by smtp.gmail.com with ESMTPSA id w17-20020a170902a71100b001b9c5e07bc3sm10940916plq.238.2023.07.25.05.21.37
-        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 25 Jul 2023 05:21:40 -0700 (PDT)
-Content-Type: text/plain;
-        charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 13.4 \(3608.120.23.2.7\))
-Subject: Re: [PATCH v1] sh: boards: fix CEU buffer size passed to
- dma_declare_coherent_memory()
-From:   "D. Jeff Dionne" <djeffdionne@gmail.com>
-In-Reply-To: <20230725110942.GB31069@pendragon.ideasonboard.com>
-Date:   Tue, 25 Jul 2023 21:21:34 +0900
-Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Petr Tesarik <petrtesarik@huaweicloud.com>,
+        with ESMTP id S229780AbjGYMm0 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 25 Jul 2023 08:42:26 -0400
+Received: from perceval.ideasonboard.com (perceval.ideasonboard.com [213.167.242.64])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 518A9B0;
+        Tue, 25 Jul 2023 05:42:25 -0700 (PDT)
+Received: from pendragon.ideasonboard.com (213-243-189-158.bb.dnainternet.fi [213.243.189.158])
+        by perceval.ideasonboard.com (Postfix) with ESMTPSA id D301D5AA;
+        Tue, 25 Jul 2023 14:41:24 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=ideasonboard.com;
+        s=mail; t=1690288885;
+        bh=SqM2HUkiO7n7nmt9WNDtTCUEd9QDVHxh+GOS5VByUsI=;
+        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+        b=Km+AoXR4QtahlTTZReqYIDRyocpPBIGkOoWVaWZrEWz/ugSb5/k89sxMd/zk6DmM/
+         XPkk2fq0szLBB3lwt/JJjRiqtiU2X+Fj8E7LkWBcGP6BA+Wk1ugbcAEC1ZkkpvqCCh
+         0zYgE7To7ssdQbR66UcW9s3Jqc0reFpaHBL/N3Cc=
+Date:   Tue, 25 Jul 2023 15:42:30 +0300
+From:   Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Petr Tesarik <petrtesarik@huaweicloud.com>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
@@ -71,31 +40,60 @@ Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         open list <linux-kernel@vger.kernel.org>,
         Roberto Sassu <roberto.sassu@huaweicloud.com>,
         petr@tesarici.cz, Geert Uytterhoeven <geert@linux-m68k.org>
-Content-Transfer-Encoding: quoted-printable
-Message-Id: <71E09AAE-1196-4D5A-8AB8-8E07263D0F2A@gmail.com>
+Subject: Re: [PATCH v1] sh: boards: fix CEU buffer size passed to
+ dma_declare_coherent_memory()
+Message-ID: <20230725124230.GG31069@pendragon.ideasonboard.com>
 References: <20230724120742.2187-1-petrtesarik@huaweicloud.com>
  <20230724171229.GC11977@pendragon.ideasonboard.com>
  <31ad16fe8f1435805185ba8e889512ec181a867e.camel@physik.fu-berlin.de>
  <20230724174331.GD11977@pendragon.ideasonboard.com>
  <314b21abaade55ba55ccdd930f9fdf24028cadf0.camel@physik.fu-berlin.de>
  <20230725110942.GB31069@pendragon.ideasonboard.com>
-To:     Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-X-Mailer: Apple Mail (2.3608.120.23.2.7)
+ <1835ec88216c9be58f9bce518575f6348158b231.camel@physik.fu-berlin.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <1835ec88216c9be58f9bce518575f6348158b231.camel@physik.fu-berlin.de>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Jul 25, 2023, at 20:09, Laurent Pinchart =
-<laurent.pinchart@ideasonboard.com> wrote:
+On Tue, Jul 25, 2023 at 01:38:25PM +0200, John Paul Adrian Glaubitz wrote:
+> On Tue, 2023-07-25 at 14:09 +0300, Laurent Pinchart wrote:
+> > On Tue, Jul 25, 2023 at 07:50:56AM +0200, John Paul Adrian Glaubitz wrote:
+> > > On Mon, 2023-07-24 at 20:43 +0300, Laurent Pinchart wrote:
+> > > > > arch/sh is being maintained again, so it's save to keep these boards. At some point, we're
+> > > > > going to convert the architecture to using Device Trees which should reduce the maintenance
+> > > > > burden anyways.
+> > > > 
+> > > > Keeping the architecture is fine for newer systems, but is anyone really
+> > > > maintaining the Renesas SH board ?
+> > > 
+> > > I own Renesas evaluation boards, including SH7785LCR-based and
+> > > SH7724-based boards.
+> > 
+> > Will you have time to port them to DT, or would you rather focus on
+> > J-core systems ? Do those boards still boot a mainline kernel ?
+> > 
+> > Dropping Renesas SH board files doesn't preclude anyone from moving them
+> > to DT, all the information will remain in the git history. Unless you
+> > plan to move to DT in a reasonably near future, I think dropping support
+> > for the CEU at least, if not the whole board files, could be a good
+> > option.
+> 
+> I'm not sure why you are trying to convince me to kill off support for SuperH
+> boards. I have just stepped up maintenance of arch/sh to keep SuperH hardware
+> supported in the kernel because I have been a maintainer of Debian's SuperH
+> port for several years now.
 
-> Will you have time to port them to DT, or would you rather focus on
-> J-core systems ? Do those boards still boot a mainline kernel ?
->=20
-> Dropping Renesas SH board files doesn't preclude anyone from moving =
-them
-> to DT, all the information will remain in the git history.=20
+If you're willing to maintain the SuperH support, that's nice :-) I'm
+not concerned about the arch side, but I'd like to drop the non-DT
+support in corresponding drivers in DRM and V4L2.
 
-J-Core developers and engineers are not in favor of gratuitously =
-dropping Hitachi/Renesas ports.  That=E2=80=99s our history.
+> There is also a small community of SuperH enthusiasts now hacking on the kernel
+> which is coming together for discussion in #linux-sh on libera IRC.
 
-J.=
+-- 
+Regards,
+
+Laurent Pinchart
