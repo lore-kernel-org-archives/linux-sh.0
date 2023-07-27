@@ -2,32 +2,32 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BD4F5EB64DD
-	for <linux-sh@archiver.kernel.org>; Sat, 29 Jul 2023 02:28:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B7092EB64DD
+	for <linux-sh@archiver.kernel.org>; Sat, 29 Jul 2023 03:15:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229535AbjG2C2Z (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 28 Jul 2023 22:28:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37512 "EHLO
+        id S235717AbjG2DPO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 28 Jul 2023 23:15:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47926 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229498AbjG2C2Y (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 28 Jul 2023 22:28:24 -0400
+        with ESMTP id S235470AbjG2DPM (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 28 Jul 2023 23:15:12 -0400
 Received: from mail.durme.pl (mail.durme.pl [217.182.69.186])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A6B5346B4
-        for <linux-sh@vger.kernel.org>; Fri, 28 Jul 2023 19:28:21 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 200FA4483
+        for <linux-sh@vger.kernel.org>; Fri, 28 Jul 2023 20:15:10 -0700 (PDT)
 Received: by mail.durme.pl (Postfix, from userid 1002)
-        id 23D2E551EE; Mon, 24 Jul 2023 07:40:59 +0000 (UTC)
+        id 723ED6453E; Thu, 27 Jul 2023 07:56:06 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=durme.pl; s=mail;
-        t=1690188289; bh=hFxZwVw4rIL+JwfEOGI47p+fdoVOAeqVswP6NWoHSHQ=;
+        t=1690444886; bh=hFxZwVw4rIL+JwfEOGI47p+fdoVOAeqVswP6NWoHSHQ=;
         h=Date:From:To:Subject:From;
-        b=Phy8TgzUrXS0aOT8IM3iKCdmxEyBDWdKGc96KRVLB8pWxWh/UGhiqspkPD/PX/rtA
-         KeMGCs42+1antS8yXJoa6VSPXIE11ueHJn839AhzPVgFSihRhSm9hQR45mbjF3ce36
-         B9xTHgr4Y9ctYagI3JnH96q4x3DZpzMsbVjU/9D4CvBJ+8Us39SndMgkaolgukFj6S
-         zgRaGJEAf8+UeMv9c+DALQdOY5j1HY0TNDIxBcjdZkmYBeZk2Eajxv7cX42AWVot/P
-         SAWq/VwMqSjIoqn6M/D/a0IjLWdkdQwOV5J0ZbFT3ZB10yWUAVpLnc7kg/SBfkL+6h
-         EF3uKGetBmPFw==
-Received: by mail.durme.pl for <linux-sh@vger.kernel.org>; Mon, 24 Jul 2023 07:40:36 GMT
-Message-ID: <20230724064501-0.1.39.d8j3.0.b9an4bdj7g@durme.pl>
-Date:   Mon, 24 Jul 2023 07:40:36 GMT
+        b=Le/SzVrtncy2P18/OsCOLQxOz7yiQfVBHhB+ectiCX10CVZjoyn+bXKEm51hIG9B3
+         69P6pPLdPJvljiXG0F4IyY2RWtVUCEfnAvx5yPUsjYODp78le5nO4ujAZycq83r/to
+         8XvMBlRTEnoLthPuB7DXwHuUnYDyJxDFk3fbJuMsFE9wDk6dZMhDCHMCyWrNqs51NE
+         8+r/t4bYfQEaJwXSU85SXwpU+NYqDuVHHfjbkJB/P4xXojNRk3SX9ynjOvlSS8eF+a
+         a9pBvlNGZ93rDd8o43jZ+MSSsmgtEfvEz46a/6p6tfTcHZGqQ3NfrzM1VMGDl0q2P4
+         NXhojuffnf/hg==
+Received: by mail.durme.pl for <linux-sh@vger.kernel.org>; Thu, 27 Jul 2023 07:55:38 GMT
+Message-ID: <20230727064501-0.1.3c.d8j3.0.ta8ixla54g@durme.pl>
+Date:   Thu, 27 Jul 2023 07:55:38 GMT
 From:   "Krystian Wieczorek" <krystian.wieczorek@durme.pl>
 To:     <linux-sh@vger.kernel.org>
 Subject: W sprawie samochodu
