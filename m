@@ -2,122 +2,348 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D60DC04FE0
-	for <linux-sh@archiver.kernel.org>; Thu, 27 Jul 2023 17:43:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 625A7C001DE
+	for <linux-sh@archiver.kernel.org>; Fri, 28 Jul 2023 08:17:10 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231934AbjG0RnJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 27 Jul 2023 13:43:09 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39234 "EHLO
+        id S234585AbjG1IRJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 28 Jul 2023 04:17:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55330 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229902AbjG0Rmx (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 27 Jul 2023 13:42:53 -0400
-Received: from mout-p-202.mailbox.org (mout-p-202.mailbox.org [80.241.56.172])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 799A730E3;
-        Thu, 27 Jul 2023 10:42:52 -0700 (PDT)
-Received: from smtp202.mailbox.org (smtp202.mailbox.org [10.196.197.202])
+        with ESMTP id S233663AbjG1IRI (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 28 Jul 2023 04:17:08 -0400
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.220.28])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B69DBD9;
+        Fri, 28 Jul 2023 01:17:06 -0700 (PDT)
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
         (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange ECDHE (P-384) server-signature RSA-PSS (4096 bits) server-digest SHA256)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
         (No client certificate requested)
-        by mout-p-202.mailbox.org (Postfix) with ESMTPS id 4RBdQK2JCDz9tB8;
-        Thu, 27 Jul 2023 19:42:49 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=cyphar.com; s=MBO0001;
-        t=1690479769;
-        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-         in-reply-to:in-reply-to:references:references;
-        bh=irvaKwjIRBfIMs3OM027g5G4TY2gjSeGrvplRFueXaU=;
-        b=UZDWQCSlVrWdtqreCk6pJhl6N2mvEBs8l+J0GZXLAJ/i0AyNILAKr29Y2HzpDc9MHho6C5
-        xVlOhswIJJkR5SSR4ws+giR/x20PVxaPyIM6O/iNQxvH7uAImdu2F/Zw48FGbEcZ6risS0
-        REEAuKwEzxnqm3M6cQCiZqnNt+7AoEXIgN0iyVEXl/IgRzie92zZ+gVSh1Z8MCS6kWkRql
-        HlKWkqhpMYcbmdMzT3dNoNMTNXKs91TI0m/a0jVKcoSIVgCZEWz4fVmF9rn+0qt15Qn/26
-        OISfzUoTd6FBgoUSvJSBOFNpfsyBzgTQSL6tDQROyhhl2eKXxJMNtKy6plit+w==
-Date:   Fri, 28 Jul 2023 03:42:22 +1000
-From:   Aleksa Sarai <cyphar@cyphar.com>
-To:     Christian Brauner <brauner@kernel.org>
-Cc:     Alexey Gladkov <legion@kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Arnd Bergmann <arnd@arndb.de>, linux-api@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, viro@zeniv.linux.org.uk,
-        Palmer Dabbelt <palmer@sifive.com>,
-        James.Bottomley@hansenpartnership.com, acme@kernel.org,
-        alexander.shishkin@linux.intel.com, axboe@kernel.dk,
-        benh@kernel.crashing.org, borntraeger@de.ibm.com, bp@alien8.de,
-        catalin.marinas@arm.com, christian@brauner.io, dalias@libc.org,
-        davem@davemloft.net, deepa.kernel@gmail.com, deller@gmx.de,
-        dhowells@redhat.com, fenghua.yu@intel.com, fweimer@redhat.com,
-        geert@linux-m68k.org, glebfm@altlinux.org, gor@linux.ibm.com,
-        hare@suse.com, hpa@zytor.com, ink@jurassic.park.msu.ru,
-        jhogan@kernel.org, kim.phillips@arm.com, ldv@altlinux.org,
-        linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
-        linux-ia64@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux@armlinux.org.uk, linuxppc-dev@lists.ozlabs.org,
-        luto@kernel.org, mattst88@gmail.com, mingo@redhat.com,
-        monstr@monstr.eu, mpe@ellerman.id.au, namhyung@kernel.org,
-        paulus@samba.org, peterz@infradead.org, ralf@linux-mips.org,
-        sparclinux@vger.kernel.org, stefan@agner.ch, tglx@linutronix.de,
-        tony.luck@intel.com, tycho@tycho.ws, will@kernel.org,
-        x86@kernel.org, ysato@users.sourceforge.jp
-Subject: Re: [PATCH v4 3/5] arch: Register fchmodat2, usually as syscall 452
-Message-ID: <20230727.174206-real.town.kosher.menu-lN1F8uSeAtB@cyphar.com>
-References: <cover.1689074739.git.legion@kernel.org>
- <cover.1689092120.git.legion@kernel.org>
- <a677d521f048e4ca439e7080a5328f21eb8e960e.1689092120.git.legion@kernel.org>
- <nbtxxotfsotuiepm7r4tegc4hy5qxe4dfjuqq7rm6qkkevooxh@4hacgjwit4or>
- <20230727-fangen-olympiade-85fcbdaf03d7@brauner>
+        by smtp-out1.suse.de (Postfix) with ESMTPS id 3ED0221A01;
+        Fri, 28 Jul 2023 08:17:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+        t=1690532225; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=ghht76QOTxzDxCda6HnQevUA6BKXH8t8KmvPf+xUsOs=;
+        b=K5ulzuJV6pcSr6AUW+hkFl9CVzZrvpcEQE5hietwTCPmxOX4JMeyXsDI1PSLuxtA2RS1pa
+        0jeHrjkvStN5dyKWBVEdAYPzK7WPFjSz6Jhoes0spXKODWjXcdQpbunMXiRVPbDfLIhJYy
+        F8kIMkAlkQ+eOqC/USm9n4i47rhLHro=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+        s=susede2_ed25519; t=1690532225;
+        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+         mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+        bh=ghht76QOTxzDxCda6HnQevUA6BKXH8t8KmvPf+xUsOs=;
+        b=IY3I4/9kU7fYl0uis6KfnvJ1XjTGgn0WOrS01uzglfcLE3Qq2Q0mACWeWlafmogHZ9ZqxT
+        bRkMnTku1y6PFMAA==
+Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
+        (No client certificate requested)
+        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id A3F4D133F7;
+        Fri, 28 Jul 2023 08:17:04 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([192.168.254.65])
+        by imap2.suse-dmz.suse.de with ESMTPSA
+        id eScdJYB5w2QRYwAAMHmgww
+        (envelope-from <pvorel@suse.cz>); Fri, 28 Jul 2023 08:17:04 +0000
+From:   Petr Vorel <pvorel@suse.cz>
+To:     linux-kernel@vger.kernel.org
+Cc:     Petr Vorel <pvorel@suse.cz>, linux-mips@vger.kernel.org,
+        linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        linux-kbuild@vger.kernel.org,
+        Masahiro Yamada <masahiroy@kernel.org>,
+        Jamal Hadi Salim <jhs@mojatatu.com>,
+        Paolo Abeni <pabeni@redhat.com>
+Subject: [PATCH 1/1] Remove CONFIG_NET_CLS_TCINDEX
+Date:   Fri, 28 Jul 2023 10:16:51 +0200
+Message-ID: <20230728081651.26533-1-pvorel@suse.cz>
+X-Mailer: git-send-email 2.41.0
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-        protocol="application/pgp-signature"; boundary="y33k3lm4leglkjmq"
-Content-Disposition: inline
-In-Reply-To: <20230727-fangen-olympiade-85fcbdaf03d7@brauner>
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+CONFIG_NET_CLS_TCINDEX has been removed in 8c710f75256b in v6.3-rc1,
+remove it's definition from configs.
 
---y33k3lm4leglkjmq
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Fixes: 8c710f75256b ("net/sched: Retire tcindex classifier")
+Signed-off-by: Petr Vorel <pvorel@suse.cz>
+---
+ arch/arm/configs/ixp4xx_defconfig           | 1 -
+ arch/mips/configs/gpr_defconfig             | 1 -
+ arch/mips/configs/ip22_defconfig            | 1 -
+ arch/mips/configs/ip27_defconfig            | 1 -
+ arch/mips/configs/malta_defconfig           | 1 -
+ arch/mips/configs/malta_kvm_defconfig       | 1 -
+ arch/mips/configs/malta_qemu_32r6_defconfig | 1 -
+ arch/mips/configs/maltaaprp_defconfig       | 1 -
+ arch/mips/configs/maltasmvp_defconfig       | 1 -
+ arch/mips/configs/maltasmvp_eva_defconfig   | 1 -
+ arch/mips/configs/maltaup_defconfig         | 1 -
+ arch/mips/configs/maltaup_xpa_defconfig     | 1 -
+ arch/mips/configs/mtx1_defconfig            | 1 -
+ arch/mips/configs/rb532_defconfig           | 1 -
+ arch/mips/configs/rm200_defconfig           | 1 -
+ arch/powerpc/configs/ppc6xx_defconfig       | 1 -
+ arch/sh/configs/se7712_defconfig            | 1 -
+ arch/sh/configs/se7721_defconfig            | 1 -
+ arch/sh/configs/sh7710voipgw_defconfig      | 1 -
+ arch/sh/configs/titan_defconfig             | 1 -
+ arch/xtensa/configs/common_defconfig        | 1 -
+ 21 files changed, 21 deletions(-)
 
-On 2023-07-27, Christian Brauner <brauner@kernel.org> wrote:
-> On Wed, Jul 26, 2023 at 02:43:41AM +1000, Aleksa Sarai wrote:
-> > On 2023-07-11, Alexey Gladkov <legion@kernel.org> wrote:
-> > > From: Palmer Dabbelt <palmer@sifive.com>
-> > >=20
-> > > This registers the new fchmodat2 syscall in most places as nuber 452,
-> > > with alpha being the exception where it's 562.  I found all these sit=
-es
-> > > by grepping for fspick, which I assume has found me everything.
-> >=20
-> > Shouldn't this patch be squashed with the patch that adds the syscall?
-> > At least, that's how I've usually seen it done...
->=20
-> Depends. Iirc, someone said they'd prefer for doing it in one patch
-> in some circumstances on some system call we added years ago. But otoh,
-> having the syscall wiring done separately makes it easy for arch
-> maintainers to ack only the wiring up part. Both ways are valid imho.
-> (cachestat() did it for x86 and then all the others separately. So
-> really it seems a bit all over the place depending on the scenario.)
+diff --git a/arch/arm/configs/ixp4xx_defconfig b/arch/arm/configs/ixp4xx_defconfig
+index 3cb995b9616a..9c7e55384386 100644
+--- a/arch/arm/configs/ixp4xx_defconfig
++++ b/arch/arm/configs/ixp4xx_defconfig
+@@ -75,7 +75,6 @@ CONFIG_NET_SCH_TBF=m
+ CONFIG_NET_SCH_GRED=m
+ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_INGRESS=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/gpr_defconfig b/arch/mips/configs/gpr_defconfig
+index 92fc0edbac47..12f3eed8a946 100644
+--- a/arch/mips/configs/gpr_defconfig
++++ b/arch/mips/configs/gpr_defconfig
+@@ -116,7 +116,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/ip22_defconfig b/arch/mips/configs/ip22_defconfig
+index 897e55579af0..ffba76c4c107 100644
+--- a/arch/mips/configs/ip22_defconfig
++++ b/arch/mips/configs/ip22_defconfig
+@@ -162,7 +162,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/ip27_defconfig b/arch/mips/configs/ip27_defconfig
+index b51f738a39a0..997ad8f0a5a8 100644
+--- a/arch/mips/configs/ip27_defconfig
++++ b/arch/mips/configs/ip27_defconfig
+@@ -63,7 +63,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/malta_defconfig b/arch/mips/configs/malta_defconfig
+index 743209047792..8e9f139f2b55 100644
+--- a/arch/mips/configs/malta_defconfig
++++ b/arch/mips/configs/malta_defconfig
+@@ -191,7 +191,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/malta_kvm_defconfig b/arch/mips/configs/malta_kvm_defconfig
+index dd2b9c181f32..b99d61facb28 100644
+--- a/arch/mips/configs/malta_kvm_defconfig
++++ b/arch/mips/configs/malta_kvm_defconfig
+@@ -195,7 +195,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/malta_qemu_32r6_defconfig b/arch/mips/configs/malta_qemu_32r6_defconfig
+index 82183ec6bc31..6f06bbe6b0b6 100644
+--- a/arch/mips/configs/malta_qemu_32r6_defconfig
++++ b/arch/mips/configs/malta_qemu_32r6_defconfig
+@@ -64,7 +64,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/maltaaprp_defconfig b/arch/mips/configs/maltaaprp_defconfig
+index 9a199867a5e7..372588557993 100644
+--- a/arch/mips/configs/maltaaprp_defconfig
++++ b/arch/mips/configs/maltaaprp_defconfig
+@@ -66,7 +66,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/maltasmvp_defconfig b/arch/mips/configs/maltasmvp_defconfig
+index e5502d66a474..6daaad737dee 100644
+--- a/arch/mips/configs/maltasmvp_defconfig
++++ b/arch/mips/configs/maltasmvp_defconfig
+@@ -67,7 +67,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/maltasmvp_eva_defconfig b/arch/mips/configs/maltasmvp_eva_defconfig
+index a378aad97138..39d4823253bb 100644
+--- a/arch/mips/configs/maltasmvp_eva_defconfig
++++ b/arch/mips/configs/maltasmvp_eva_defconfig
+@@ -68,7 +68,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/maltaup_defconfig b/arch/mips/configs/maltaup_defconfig
+index fc6f88cae7be..a23e55cb4bc7 100644
+--- a/arch/mips/configs/maltaup_defconfig
++++ b/arch/mips/configs/maltaup_defconfig
+@@ -65,7 +65,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/maltaup_xpa_defconfig b/arch/mips/configs/maltaup_xpa_defconfig
+index 97c2d7f530b3..d0d27c98c85c 100644
+--- a/arch/mips/configs/maltaup_xpa_defconfig
++++ b/arch/mips/configs/maltaup_xpa_defconfig
+@@ -192,7 +192,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/mtx1_defconfig b/arch/mips/configs/mtx1_defconfig
+index b64172179160..b0746ce65981 100644
+--- a/arch/mips/configs/mtx1_defconfig
++++ b/arch/mips/configs/mtx1_defconfig
+@@ -162,7 +162,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/rb532_defconfig b/arch/mips/configs/rb532_defconfig
+index 02ec6c1a5116..1d30d3950b3e 100644
+--- a/arch/mips/configs/rb532_defconfig
++++ b/arch/mips/configs/rb532_defconfig
+@@ -77,7 +77,6 @@ CONFIG_NET_SCH_CBQ=m
+ CONFIG_NET_SCH_PRIO=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/mips/configs/rm200_defconfig b/arch/mips/configs/rm200_defconfig
+index 7475c2cbea89..21807d982cd9 100644
+--- a/arch/mips/configs/rm200_defconfig
++++ b/arch/mips/configs/rm200_defconfig
+@@ -144,7 +144,6 @@ CONFIG_NET_SCH_GRED=m
+ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/powerpc/configs/ppc6xx_defconfig b/arch/powerpc/configs/ppc6xx_defconfig
+index f21170b8fa11..fc411b74c8d0 100644
+--- a/arch/powerpc/configs/ppc6xx_defconfig
++++ b/arch/powerpc/configs/ppc6xx_defconfig
+@@ -255,7 +255,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/sh/configs/se7712_defconfig b/arch/sh/configs/se7712_defconfig
+index dc854293da43..c01325bf97a9 100644
+--- a/arch/sh/configs/se7712_defconfig
++++ b/arch/sh/configs/se7712_defconfig
+@@ -57,7 +57,6 @@ CONFIG_NET_SCH_TBF=y
+ CONFIG_NET_SCH_GRED=y
+ CONFIG_NET_SCH_DSMARK=y
+ CONFIG_NET_SCH_NETEM=y
+-CONFIG_NET_CLS_TCINDEX=y
+ CONFIG_NET_CLS_ROUTE4=y
+ CONFIG_NET_CLS_FW=y
+ CONFIG_MTD=y
+diff --git a/arch/sh/configs/se7721_defconfig b/arch/sh/configs/se7721_defconfig
+index c891945b8a90..a1dfb666644f 100644
+--- a/arch/sh/configs/se7721_defconfig
++++ b/arch/sh/configs/se7721_defconfig
+@@ -56,7 +56,6 @@ CONFIG_NET_SCH_TBF=y
+ CONFIG_NET_SCH_GRED=y
+ CONFIG_NET_SCH_DSMARK=y
+ CONFIG_NET_SCH_NETEM=y
+-CONFIG_NET_CLS_TCINDEX=y
+ CONFIG_NET_CLS_ROUTE4=y
+ CONFIG_NET_CLS_FW=y
+ CONFIG_MTD=y
+diff --git a/arch/sh/configs/sh7710voipgw_defconfig b/arch/sh/configs/sh7710voipgw_defconfig
+index 7f742729df69..b0fd9a8f5fc7 100644
+--- a/arch/sh/configs/sh7710voipgw_defconfig
++++ b/arch/sh/configs/sh7710voipgw_defconfig
+@@ -26,7 +26,6 @@ CONFIG_NETFILTER=y
+ CONFIG_NET_SCHED=y
+ CONFIG_NET_SCH_CBQ=y
+ CONFIG_NET_CLS_BASIC=y
+-CONFIG_NET_CLS_TCINDEX=y
+ CONFIG_NET_CLS_ROUTE4=y
+ CONFIG_NET_CLS_U32=y
+ CONFIG_MTD=y
+diff --git a/arch/sh/configs/titan_defconfig b/arch/sh/configs/titan_defconfig
+index 871092753591..114d22466802 100644
+--- a/arch/sh/configs/titan_defconfig
++++ b/arch/sh/configs/titan_defconfig
+@@ -119,7 +119,6 @@ CONFIG_NET_SCH_DSMARK=m
+ CONFIG_NET_SCH_NETEM=m
+ CONFIG_NET_SCH_INGRESS=m
+ CONFIG_NET_CLS_BASIC=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+diff --git a/arch/xtensa/configs/common_defconfig b/arch/xtensa/configs/common_defconfig
+index fa9389869154..09e4a1d9d1f3 100644
+--- a/arch/xtensa/configs/common_defconfig
++++ b/arch/xtensa/configs/common_defconfig
+@@ -32,7 +32,6 @@ CONFIG_NET_SCH_TEQL=m
+ CONFIG_NET_SCH_TBF=m
+ CONFIG_NET_SCH_GRED=m
+ CONFIG_NET_SCH_DSMARK=m
+-CONFIG_NET_CLS_TCINDEX=m
+ CONFIG_NET_CLS_ROUTE4=m
+ CONFIG_NET_CLS_FW=m
+ CONFIG_NET_CLS_U32=m
+-- 
+2.41.0
 
-Fair enough!
-
---=20
-Aleksa Sarai
-Senior Software Engineer (Containers)
-SUSE Linux GmbH
-<https://www.cyphar.com/>
-
---y33k3lm4leglkjmq
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYKAB0WIQS2TklVsp+j1GPyqQYol/rSt+lEbwUCZMKsfgAKCRAol/rSt+lE
-b/FwAQChKTWhN1YMxOU/bLQz1S3i+RhA8DQHZpoCbh1FlOSYwAEAmOKfPG+e4zNA
-VW75+QkpKlGw0rY3TfjxW8YkGfonXgo=
-=/4Tp
------END PGP SIGNATURE-----
-
---y33k3lm4leglkjmq--
