@@ -2,119 +2,109 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51073C001DE
-	for <linux-sh@archiver.kernel.org>; Fri, 28 Jul 2023 18:42:38 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3B2B5EB64DD
+	for <linux-sh@archiver.kernel.org>; Fri, 28 Jul 2023 22:57:50 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232856AbjG1Smh (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 28 Jul 2023 14:42:37 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52194 "EHLO
+        id S231449AbjG1W5t (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 28 Jul 2023 18:57:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57318 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231368AbjG1Smg (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 28 Jul 2023 14:42:36 -0400
-Received: from brightrain.aerifal.cx (brightrain.aerifal.cx [216.12.86.13])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A4E0744B5
-        for <linux-sh@vger.kernel.org>; Fri, 28 Jul 2023 11:42:21 -0700 (PDT)
-Date:   Fri, 28 Jul 2023 14:42:12 -0400
-From:   "dalias@libc.org" <dalias@libc.org>
-To:     David Laight <David.Laight@ACULAB.COM>
-Cc:     'Aleksa Sarai' <cyphar@cyphar.com>,
-        Alexey Gladkov <legion@kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>,
-        Arnd Bergmann <arnd@arndb.de>,
-        "linux-api@vger.kernel.org" <linux-api@vger.kernel.org>,
-        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
-        "viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>,
-        "James.Bottomley@hansenpartnership.com" 
-        <James.Bottomley@hansenpartnership.com>,
-        "acme@kernel.org" <acme@kernel.org>,
-        "alexander.shishkin@linux.intel.com" 
-        <alexander.shishkin@linux.intel.com>,
-        "axboe@kernel.dk" <axboe@kernel.dk>,
-        "benh@kernel.crashing.org" <benh@kernel.crashing.org>,
-        "borntraeger@de.ibm.com" <borntraeger@de.ibm.com>,
-        "bp@alien8.de" <bp@alien8.de>,
-        "catalin.marinas@arm.com" <catalin.marinas@arm.com>,
-        "christian@brauner.io" <christian@brauner.io>,
-        "davem@davemloft.net" <davem@davemloft.net>,
-        "deepa.kernel@gmail.com" <deepa.kernel@gmail.com>,
-        "deller@gmx.de" <deller@gmx.de>,
-        "dhowells@redhat.com" <dhowells@redhat.com>,
-        "fenghua.yu@intel.com" <fenghua.yu@intel.com>,
-        "fweimer@redhat.com" <fweimer@redhat.com>,
-        "geert@linux-m68k.org" <geert@linux-m68k.org>,
-        "glebfm@altlinux.org" <glebfm@altlinux.org>,
-        "gor@linux.ibm.com" <gor@linux.ibm.com>,
-        "hare@suse.com" <hare@suse.com>, "hpa@zytor.com" <hpa@zytor.com>,
-        "ink@jurassic.park.msu.ru" <ink@jurassic.park.msu.ru>,
-        "jhogan@kernel.org" <jhogan@kernel.org>,
-        "kim.phillips@arm.com" <kim.phillips@arm.com>,
-        "ldv@altlinux.org" <ldv@altlinux.org>,
-        "linux-alpha@vger.kernel.org" <linux-alpha@vger.kernel.org>,
-        "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>,
-        "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>,
-        "linux-m68k@lists.linux-m68k.org" <linux-m68k@lists.linux-m68k.org>,
-        "linux-mips@vger.kernel.org" <linux-mips@vger.kernel.org>,
-        "linux-parisc@vger.kernel.org" <linux-parisc@vger.kernel.org>,
-        "linux-s390@vger.kernel.org" <linux-s390@vger.kernel.org>,
-        "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>,
-        "linux@armlinux.org.uk" <linux@armlinux.org.uk>,
-        "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>,
-        "luto@kernel.org" <luto@kernel.org>,
-        "mattst88@gmail.com" <mattst88@gmail.com>,
-        "mingo@redhat.com" <mingo@redhat.com>,
-        "monstr@monstr.eu" <monstr@monstr.eu>,
-        "mpe@ellerman.id.au" <mpe@ellerman.id.au>,
-        "namhyung@kernel.org" <namhyung@kernel.org>,
-        "paulus@samba.org" <paulus@samba.org>,
-        "peterz@infradead.org" <peterz@infradead.org>,
-        "ralf@linux-mips.org" <ralf@linux-mips.org>,
-        "sparclinux@vger.kernel.org" <sparclinux@vger.kernel.org>,
-        "stefan@agner.ch" <stefan@agner.ch>,
-        "tglx@linutronix.de" <tglx@linutronix.de>,
-        "tony.luck@intel.com" <tony.luck@intel.com>,
-        "tycho@tycho.ws" <tycho@tycho.ws>,
-        "will@kernel.org" <will@kernel.org>,
-        "x86@kernel.org" <x86@kernel.org>,
-        "ysato@users.sourceforge.jp" <ysato@users.sourceforge.jp>,
-        Palmer Dabbelt <palmer@sifive.com>
-Subject: Re: [PATCH v4 2/5] fs: Add fchmodat2()
-Message-ID: <20230728184212.GD20050@brightrain.aerifal.cx>
-References: <cover.1689074739.git.legion@kernel.org>
- <cover.1689092120.git.legion@kernel.org>
- <f2a846ef495943c5d101011eebcf01179d0c7b61.1689092120.git.legion@kernel.org>
- <njnhwhgmsk64e6vf3ur7fifmxlipmzez3r5g7ejozsrkbwvq7w@tu7w3ieystcq>
- <ZMEjlDNJkFpYERr1@example.org>
- <20230727.041348-imposing.uptake.velvet.nylon-712tDwzCAbCCoSGx@cyphar.com>
- <20230727.173441-loving.habit.lame.acrobat-V6VTPe8G4FRI@cyphar.com>
- <dc48b40748e24d3799e7ee66fa7e8cb4@AcuMS.aculab.com>
+        with ESMTP id S229463AbjG1W5t (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 28 Jul 2023 18:57:49 -0400
+Received: from mail-pl1-x635.google.com (mail-pl1-x635.google.com [IPv6:2607:f8b0:4864:20::635])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EC6DCBF
+        for <linux-sh@vger.kernel.org>; Fri, 28 Jul 2023 15:57:47 -0700 (PDT)
+Received: by mail-pl1-x635.google.com with SMTP id d9443c01a7336-1bbd03cb7c1so16960535ad.3
+        for <linux-sh@vger.kernel.org>; Fri, 28 Jul 2023 15:57:47 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=chromium.org; s=google; t=1690585067; x=1691189867;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=OqGEzOR5r6kH79o9SwA25U8njOcawYVrofop3YQ6YUY=;
+        b=fiGthZSlKO+TzVRMFQ/lllIkD1Hxo0n//085ngVGHX+MFVacNMT3jIfwGlotRfqjgi
+         7/P2vA/h8L+veUta3UBM+pWIrJvHr/5k6/Rjn4abuIqxwd7smLlUVI8+sxAVHHkqY9Dm
+         ClG4EhRzY0307ShUnA4g6h5b+AA+GZOvaUXcc=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1690585067; x=1691189867;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=OqGEzOR5r6kH79o9SwA25U8njOcawYVrofop3YQ6YUY=;
+        b=jm9nJlbslmYpS5lHSu/mzsKrZ4jHmOgN5JXIRHHMn8/d/zoZ5vrOgPBG/OVThcP6bE
+         XBjGnDwZbaCQKMKHa3S4VkUaC2Z95EEYUyuTL8z+SE9r+xhRD6oiEK6Zeokpv26RVGxy
+         JMWzbe/aAUaf59dC8oEFVHC6TonYuU0FLBPbWkeYu1mOp84QX+ZQaUtuKKogWLukvXbW
+         K+vzYnrAk9p6oPaG6hz4YwKtj7lxSoceyadKn9O082fXiwqLp2g39tHmkmle3gw/KPZ7
+         qAM6ArwLYU9+FIUN/33ysLYIZi5H/tKLHvn+VCL7i5kQ1zXIj/yuhiTZo5uk5qcU0xAg
+         EBiA==
+X-Gm-Message-State: ABy/qLZylxhmAgbIYF+0HwU0cxJWaGNMSs5KJPJ/d2nJU3hlINulmb1O
+        MQGJ5ZLiSJmx54iQ9tWvSJu9gA==
+X-Google-Smtp-Source: APBJJlFOw6OVfT4p2CaNm9atJ1j4OmKSy9hELnlIdDyAntpjKQSdNnE2D3nHAe//JnmbkZEc3Ervlw==
+X-Received: by 2002:a17:902:c405:b0:1bb:a85f:4645 with SMTP id k5-20020a170902c40500b001bba85f4645mr3324239plk.15.1690585067446;
+        Fri, 28 Jul 2023 15:57:47 -0700 (PDT)
+Received: from www.outflux.net (198-0-35-241-static.hfc.comcastbusiness.net. [198.0.35.241])
+        by smtp.gmail.com with ESMTPSA id p4-20020a170902eac400b001bb9b87ac95sm4082927pld.103.2023.07.28.15.57.46
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 28 Jul 2023 15:57:46 -0700 (PDT)
+Date:   Fri, 28 Jul 2023 15:57:45 -0700
+From:   Kees Cook <keescook@chromium.org>
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     linux-kernel@vger.kernel.org,
+        "Gustavo A. R. Silva" <gustavoars@kernel.org>,
+        linux-hardening@vger.kernel.org, linux-wireless@vger.kernel.org,
+        linux-mips@vger.kernel.org, linux-mtd@lists.infradead.org,
+        linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org
+Subject: Re: Build regressions/improvements in v6.5-rc3
+Message-ID: <202307281551.D894AA39@keescook>
+References: <CAHk-=wi4Yau-3Bsv2rXYmtXMTLaj3=Wyf4cdM6d89czFvkVsRQ@mail.gmail.com>
+ <20230724122626.1701631-1-geert@linux-m68k.org>
+ <88f83d73-781d-bdc-126-aa629cb368c@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <dc48b40748e24d3799e7ee66fa7e8cb4@AcuMS.aculab.com>
-User-Agent: Mutt/1.5.21 (2010-09-15)
+In-Reply-To: <88f83d73-781d-bdc-126-aa629cb368c@linux-m68k.org>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Jul 28, 2023 at 08:43:58AM +0000, David Laight wrote:
-> ....
-> > FWIW, I agree with Christian that these behaviours are not ideal (and
-> > I'm working on a series that might allow for these things to be properly
-> > blocked in the future) but there's also the consistency argument -- I
-> > don't think fchownat() is much safer to allow in this way than
-> > fchmodat() and (again) this behaviour is already possible through
-> > procfs.
+On Mon, Jul 24, 2023 at 02:43:02PM +0200, Geert Uytterhoeven wrote:
+> On Mon, 24 Jul 2023, Geert Uytterhoeven wrote:
+> > JFYI, when comparing v6.5-rc3[1] to v6.5-rc2[3], the summaries are:
+> >  - build errors: +5/-0
 > 
-> If the 'through procfs' involves readlink("/proc/self/fd/n") and
-> accessing through the returned path then the permission checks
-> are different.
-> Using the returned path requires search permissions on all the
-> directories.
+>   + /kisskb/src/include/linux/fortify-string.h: error: call to '__write_overflow_field' declared with attribute warning: detected write beyond size of field (1st parameter); maybe use struct_group()? [-Werror=attribute-warning]:  => 583:25, 493:25
+> 
+> mips-gcc13/mips-allmodconfig
+> 
+> Full context:
+> 
+>     In function 'fortify_memset_chk',
+> 	inlined from 'memset_io' at /kisskb/src/arch/mips/include/asm/io.h:486:2,
+> 	inlined from 'build_auth_frame' at /kisskb/src/drivers/net/wireless/legacy/ray_cs.c:2697:2:
+>     /kisskb/src/include/linux/fortify-string.h:493:25: error: call to '__write_overflow_field' declared with attribute warning: detected write beyond size of field (1st parameter); maybe use struct_group()? [-Werror=attribute-warning]
+>       493 |                         __write_overflow_field(p_size_field, size);
+> 	  |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+>     In function 'fortify_memcpy_chk',
+> 	inlined from 'memcpy_toio' at /kisskb/src/arch/mips/include/asm/io.h:494:2,
+> 	inlined from 'translate_frame' at /kisskb/src/drivers/net/wireless/legacy/ray_cs.c:955:3,
+> 	inlined from 'ray_hw_xmit.constprop' at /kisskb/src/drivers/net/wireless/legacy/ray_cs.c:912:12:
+>     /kisskb/src/include/linux/fortify-string.h:583:25: error: call to '__write_overflow_field' declared with attribute warning: detected write beyond size of field (1st parameter); maybe use struct_group()? [-Werror=attribute-warning]
+>       583 |                         __write_overflow_field(p_size_field, size);
+> 	  |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> 
+> Single-element flexible array abuse in drivers/net/wireless/legacy/rayctl.h:tx_msg.var
 
-That's *not* how "through procfs" works. The "magic symlinks" in
-/proc/*/fd are not actual symlinks that get dereferenced to the
-contents they readlink() to, but special-type objects that dereference
-directly to the underlying file associated with the open file
-description.
+^^^^
+is this line from you or is there a tool outputting this? Because, yes,
+very true:
 
-Rich
+struct tx_msg {
+    struct tib_structure tib;
+    struct phy_header phy;
+    struct mac_header mac;
+    UCHAR  var[1];
+};
+
+I'll send a patch.
+
+-- 
+Kees Cook
