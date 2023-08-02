@@ -2,186 +2,116 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 73CFCC04A6A
-	for <linux-sh@archiver.kernel.org>; Wed,  2 Aug 2023 15:57:49 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B54EC001E0
+	for <linux-sh@archiver.kernel.org>; Wed,  2 Aug 2023 17:32:00 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235254AbjHBP5s (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 2 Aug 2023 11:57:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46748 "EHLO
+        id S233268AbjHBRb7 convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 2 Aug 2023 13:31:59 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49484 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235123AbjHBP5q (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 2 Aug 2023 11:57:46 -0400
-Received: from mail-pl1-x633.google.com (mail-pl1-x633.google.com [IPv6:2607:f8b0:4864:20::633])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3F9B2E4C;
-        Wed,  2 Aug 2023 08:57:39 -0700 (PDT)
-Received: by mail-pl1-x633.google.com with SMTP id d9443c01a7336-1bc02bd4eafso143905ad.1;
-        Wed, 02 Aug 2023 08:57:39 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1690991858; x=1691596658;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :sender:from:to:cc:subject:date:message-id:reply-to;
-        bh=N9wNAhPqFgTbxLDfrmmbpVuzhrbWWgtM2NDp+mcitMY=;
-        b=QZgxZVXtdWxl4WWjLDKzIbJdAliyzaWxSLESrJszZdTcCo3INVM8UGhTS/jZAtsWeB
-         +PGBRAPBd73e+2PsISFdKkE686unn2wpu2dpZGf+p+A9UjcjqhaxUsdjM7leHIvM0ngm
-         3hvs41il3sA5uw3z45G99It0eWa8V66nPlksqD5NqUPMw+Exr4EocVDHcIdSbhTVQicV
-         LOgrQymHnGftByApwhc93Osky56PGSBsCioOrVhlqYLyJO4mrj1TbyHdgNORMUEvNuYe
-         onEVCpZsYOAA7LloUpoWpY1H+gMPoqbXK6uv8F6CkcTocjODDEOD9JZtqPbpKLq7Nsgt
-         LhRQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1690991859; x=1691596659;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :sender:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=N9wNAhPqFgTbxLDfrmmbpVuzhrbWWgtM2NDp+mcitMY=;
-        b=C5ClcSGIhdotvBeJ/L3o9fdP4p94Rjpo0vOAheFjIZsAoh2/6ezQw2y5KKEMOorOeE
-         nrPnx11KU4d6+QXq8WpZLFCLO10DeDu9arJPR3qCLqKlqBtGW8uqZQczBkwY9pPhJzp9
-         uOx+abwvhMWWmCyZPhwdFnENAggzMLEFVCjDXYOWRuJCcqwjxwTtqcQMc4DJORJ9DO1H
-         dCg1cXnTp0FL3NyoitoPp76/IqWhtNl2c0kvHC4gqrikdgTbKcFFXkMZuqICQRTzMtMG
-         N/JhG4anfvZjHDTsNsHEfsNI3PzJ4kGNXa77Mh6eAu1M5pjd7PkKdTNCn+enBD/eGx6H
-         zsJw==
-X-Gm-Message-State: ABy/qLZzouguAslP04M63Lk5IS0s3NYvKdT9KogPd8ArpnZhOxxe2OPi
-        9XfanCsK/8CVNSGo1QwfSBU=
-X-Google-Smtp-Source: APBJJlHsebdUak/go0iiZG98GxtaXMG+Is9rWwsCfHOJpX7lNvEsHOO7pvzOnlUL1KDJ26juBEbwvg==
-X-Received: by 2002:a17:902:ea09:b0:1b8:76ce:9d91 with SMTP id s9-20020a170902ea0900b001b876ce9d91mr19841513plg.1.1690991858140;
-        Wed, 02 Aug 2023 08:57:38 -0700 (PDT)
-Received: from ?IPV6:2600:1700:e321:62f0:329c:23ff:fee3:9d7c? ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
-        by smtp.gmail.com with ESMTPSA id b21-20020a170902d31500b001b89891bfc4sm12608481plc.199.2023.08.02.08.57.37
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 02 Aug 2023 08:57:37 -0700 (PDT)
-Sender: Guenter Roeck <groeck7@gmail.com>
-Message-ID: <65d29f18-8b1e-7f63-a377-a7520dc19b88@roeck-us.net>
-Date:   Wed, 2 Aug 2023 08:57:36 -0700
-MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.13.0
-Subject: Re: [PATCH] sh: fix asm-generic/io.h inclusion
-Content-Language: en-US
-To:     Arnd Bergmann <arnd@kernel.org>,
-        Andrew Morton <akpm@linux-foundation.org>
-Cc:     Arnd Bergmann <arnd@arndb.de>,
+        with ESMTP id S229901AbjHBRbk (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 2 Aug 2023 13:31:40 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1D5A3AA6;
+        Wed,  2 Aug 2023 10:29:21 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1qRFe6-002TUY-K1; Wed, 02 Aug 2023 19:28:26 +0200
+Received: from p5b13a085.dip0.t-ipconnect.de ([91.19.160.133] helo=suse-laptop.fritz.box)
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1qRFe6-000eVY-Bd; Wed, 02 Aug 2023 19:28:26 +0200
+Message-ID: <2d82e0312f7d667e36238938a3cb13c95903033e.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH v8 11/19] sh: add <asm-generic/io.h> including
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Arnd Bergmann <arnd@arndb.de>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
+        Baoquan He <bhe@redhat.com>
+Cc:     linux-kernel@vger.kernel.org,
+        Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org,
+        Christoph Hellwig <hch@lst.de>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Mike Rapoport <rppt@kernel.org>,
+        Matthew Wilcox <willy@infradead.org>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        Kefeng Wang <wangkefeng.wang@huawei.com>,
+        Niklas Schnelle <schnelle@linux.ibm.com>,
+        Stafford Horne <shorne@gmail.com>,
+        David Laight <David.Laight@aculab.com>,
+        Helge Deller <deller@gmx.de>,
+        Nathan Chancellor <nathan@kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Baoquan He <bhe@redhat.com>, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <20230802141658.2064864-1-arnd@kernel.org>
-From:   Guenter Roeck <linux@roeck-us.net>
-In-Reply-To: <20230802141658.2064864-1-arnd@kernel.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        Guenter Roeck <linux@roeck-us.net>
+Date:   Wed, 02 Aug 2023 19:28:24 +0200
+In-Reply-To: <39c79971-12fc-41fc-8cae-b2a0089ed034@app.fastmail.com>
+References: <20230706154520.11257-1-bhe@redhat.com>
+         <20230706154520.11257-12-bhe@redhat.com>
+         <CAMuHMdWmv-Jdvi7a04JGXuA2QARj8c8mpUvY7TOcetPkG4pW7A@mail.gmail.com>
+         <0f771b11539d5a3871691af901315ee2034b577c.camel@physik.fu-berlin.de>
+         <09094baf-dadf-4bce-9f63-f2a1f255f9a8@app.fastmail.com>
+         <c48f6f3c742eaf35e35882064ccf4ed07d4e63fe.camel@physik.fu-berlin.de>
+         <39c79971-12fc-41fc-8cae-b2a0089ed034@app.fastmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.4 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.19.160.133
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 8/2/23 07:16, Arnd Bergmann wrote:
-> From: Arnd Bergmann <arnd@arndb.de>
-> 
-> A recent cleanup patch started using the generic asm/io.h header from
-> the sh version, but unfortunately this caused build regressions in many
-> configurations, such as:
-> 
-> include/asm-generic/io.h:636:15: error: redefinition of ‘inb_p’
-> 
-> I added some of the missing defines that are needed to keep using the
-> sh specific implementations rather than the generic ones where they
-> clash. I build all sh defconfig files to catch the various combinations
-> of CONFIG_MMU, CONFIG_GENERIC_IOMAP and CONFIG_NO_IOPORT_MAP, this should
-> cover them all.
-> 
-> A lot of the sh specific functions are equivalent to the generic ones
-> and could in fact be removed, but it would be best to only do that with
-> actual runtime testing.
-> 
-> In particular, the indirect ioport_map() implementation is only used
-> for the "microdev" platform that appears to be broken beyond repair
-> for as long as the git history goes, so removing both microdev and the
-> custom ioport handling in favor of the asm-generic/io.h version would
-> be a great cleanup, but this can be done another time if anyone feels
-> motivated to clean up arch/sh.
-> 
-> Fixes: e41f1f7ff6c2b ("sh: add <asm-generic/io.h> including")
-> Link: https://lore.kernel.org/lkml/09094baf-dadf-4bce-9f63-f2a1f255f9a8@app.fastmail.com/
-> Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Hello Arnd!
 
-Tested-by: Guenter Roeck <linux@roeck-us.net>
-
-> ---
-> Andrew, can you pick this up into the mm tree on top of the
-> "sh: add <asm-generic/io.h> including" patch?
-> ---
->   arch/sh/include/asm/io.h          | 24 ++++++++++++++++++++++++
->   arch/sh/include/asm/io_noioport.h | 14 --------------
->   2 files changed, 24 insertions(+), 14 deletions(-)
+On Wed, 2023-08-02 at 16:19 +0200, Arnd Bergmann wrote:
+> On Tue, Aug 1, 2023, at 21:21, John Paul Adrian Glaubitz wrote:
 > 
-> diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-> index 24c560c065ec7..f2f38e9d489ac 100644
-> --- a/arch/sh/include/asm/io.h
-> +++ b/arch/sh/include/asm/io.h
-> @@ -119,6 +119,10 @@ void __raw_readsl(const void __iomem *addr, void *data, int longlen);
->   
->   __BUILD_MEMORY_STRING(__raw_, q, u64)
->   
-> +#define ioport_map ioport_map
-> +#define ioport_unmap ioport_unmap
-> +#define pci_iounmap pci_iounmap
-> +
->   #define ioread8 ioread8
->   #define ioread16 ioread16
->   #define ioread16be ioread16be
-> @@ -241,6 +245,26 @@ __BUILD_IOPORT_STRING(q, u64)
->   
->   #endif
->   
-> +#define inb(addr)      inb(addr)
-> +#define inw(addr)      inw(addr)
-> +#define inl(addr)      inl(addr)
-> +#define outb(x, addr)  outb((x), (addr))
-> +#define outw(x, addr)  outw((x), (addr))
-> +#define outl(x, addr)  outl((x), (addr))
-> +
-> +#define inb_p(addr)    inb(addr)
-> +#define inw_p(addr)    inw(addr)
-> +#define inl_p(addr)    inl(addr)
-> +#define outb_p(x, addr)        outb((x), (addr))
-> +#define outw_p(x, addr)        outw((x), (addr))
-> +#define outl_p(x, addr)        outl((x), (addr))
-> +
-> +#define insb insb
-> +#define insw insw
-> +#define insl insl
-> +#define outsb outsb
-> +#define outsw outsw
-> +#define outsl outsl
->   
->   #define IO_SPACE_LIMIT 0xffffffff
->   
-> diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
-> index 5ba4116b4265c..12dad91f41c1e 100644
-> --- a/arch/sh/include/asm/io_noioport.h
-> +++ b/arch/sh/include/asm/io_noioport.h
-> @@ -46,20 +46,6 @@ static inline void ioport_unmap(void __iomem *addr)
->   	BUG();
->   }
->   
-> -#define inb_p(addr)	inb(addr)
-> -#define inw_p(addr)	inw(addr)
-> -#define inl_p(addr)	inl(addr)
-> -#define outb_p(x, addr)	outb((x), (addr))
-> -#define outw_p(x, addr)	outw((x), (addr))
-> -#define outl_p(x, addr)	outl((x), (addr))
-> -
-> -#define insb insb
-> -#define insw insw
-> -#define insl insl
-> -#define outsb outsb
-> -#define outsw outsw
-> -#define outsl outsl
-> -
->   static inline void insb(unsigned long port, void *dst, unsigned long count)
->   {
->   	BUG();
+> > > I think ideally all the I/O port stuff in arch/sh/ could just be
+> > > removed after the conversion to asm-generic/io.h, but the
+> > > microdev_ioport_map() function oddity gets in the way of that,
+> > > unless someone wants to clean up that platform. As far as I
+> > > can tell, the ethernet, display, USB and PCI devices on it already
+> > > broke at some point (afbb9d8d5266b, 46bc85872040a), so it might
+> > > be easier to remove it entirely.
+> > 
+> > I don't have this particular hardware, so I cannot comment on this.
+> 
+> Sure, as I explained, I'm pretty sure that nobody has
+> tried to boot this hardware in a long time, so I did not
+> expect you to have one.
+> 
+> I'll try to follow up with a patch to remove the platform
+> later on, based on the explations above.
 
+There is no need to remove any platforms now as we're working on converting
+arch/sh to device trees anyway and will eventually get rid of all the board-
+specific code during that step.
+
+> > > Having the series go into linux-next sounds appropriate like this,
+> > > the entire purpose of that is to find such bugs and Andrew can jus
+> > > fold the fixup into the broken patch. 
+> > > 
+> > > Let me know if you prefer the simple version with the extra
+> > > #defines or if we should just use the generic inb/outb implementation
+> > > immediately and drop microdev in a separate patch.
+> > 
+> > Please go ahead with the simple version.
+> 
+> Done,
+
+Thanks,
+Adrian
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
