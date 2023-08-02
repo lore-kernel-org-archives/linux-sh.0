@@ -2,161 +2,131 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 51DDAC04A6A
-	for <linux-sh@archiver.kernel.org>; Wed,  2 Aug 2023 14:17:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3F5C2C001DF
+	for <linux-sh@archiver.kernel.org>; Wed,  2 Aug 2023 14:19:35 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231479AbjHBORN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 2 Aug 2023 10:17:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55898 "EHLO
+        id S232200AbjHBOTe (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 2 Aug 2023 10:19:34 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57718 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232866AbjHBORN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 2 Aug 2023 10:17:13 -0400
-Received: from dfw.source.kernel.org (dfw.source.kernel.org [IPv6:2604:1380:4641:c500::1])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8C6E910E;
-        Wed,  2 Aug 2023 07:17:11 -0700 (PDT)
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (2048 bits))
-        (No client certificate requested)
-        by dfw.source.kernel.org (Postfix) with ESMTPS id 21428619B5;
-        Wed,  2 Aug 2023 14:17:11 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6D854C433C7;
-        Wed,  2 Aug 2023 14:17:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1690985830;
-        bh=B6wokS1QD+AtP0pgfwxEUP2copic/VIFNqL65p+6WYw=;
-        h=From:To:Cc:Subject:Date:From;
-        b=I56sTFVX1OolflqSHCsVyzQtHsPanzB+RqXFFDGADmKF02s74FiP2eRXdLgzFbnMX
-         E8rRo1mb9qwfg/HT3zvz2YbjXy/B9DmZin3LIhFBTPGYS4FXlaluZcHmm7LP9m0+PI
-         oxhvuMkmipokvgmrno/0fBYQkd78VVW7HzawZmZYxw8GhwlKDhh+VyYb4pH6Weomxj
-         mRa6Y3Sab9vxHFQe5QHfXtVj8CfIzkHWPb847cXGJT8XgStNq8FmdODpO5COZ+K1vK
-         ITiraKkoLU0XS4AV6Ccq5VVkG67cm5VRFhUx6suxl481gb/oXlnblrAh9ppj7E6QLX
-         fZtUm7vSQd2Ig==
-From:   Arnd Bergmann <arnd@kernel.org>
-To:     Andrew Morton <akpm@linux-foundation.org>
-Cc:     Arnd Bergmann <arnd@arndb.de>,
-        Geert Uytterhoeven <geert@linux-m68k.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Baoquan He <bhe@redhat.com>,
-        Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH] sh: fix asm-generic/io.h inclusion
-Date:   Wed,  2 Aug 2023 16:16:41 +0200
-Message-Id: <20230802141658.2064864-1-arnd@kernel.org>
-X-Mailer: git-send-email 2.39.2
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+        with ESMTP id S231868AbjHBOT3 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 2 Aug 2023 10:19:29 -0400
+Received: from out3-smtp.messagingengine.com (out3-smtp.messagingengine.com [66.111.4.27])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 96910272A;
+        Wed,  2 Aug 2023 07:19:27 -0700 (PDT)
+Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
+        by mailout.nyi.internal (Postfix) with ESMTP id 09D8D5C0089;
+        Wed,  2 Aug 2023 10:19:27 -0400 (EDT)
+Received: from imap51 ([10.202.2.101])
+  by compute6.internal (MEProxy); Wed, 02 Aug 2023 10:19:27 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
+        :cc:content-type:content-type:date:date:from:from:in-reply-to
+        :in-reply-to:message-id:mime-version:references:reply-to:sender
+        :subject:subject:to:to; s=fm2; t=1690985967; x=1691072367; bh=BU
+        dHhNhEjX4ngx2jtG/4TPbrPOMxx6nkx3T9LDhPRYo=; b=mx5MMhewIy2oFRXKKw
+        wvhEueAMLBzedVFA5Hmi2B8U7uRIDJxC679m4oZbq/hdkvHaoWBFDiEIeswdPiH/
+        huIRfA3oKq0SZmbumzCEOJv/HiwpA7+dhvvY0SXNMRq8uHrANY7BpbMSl36yx73U
+        cGVNQdwaqKQROZPWfqSo2LZhV/l01HV/aTuXIKsqGtMhdZVAfusTlcHiRax+TEJ9
+        0muhBW3pRv8x3Q8tTpDYqhYYAODnd5WGu4W0Q1+WVHYiPQAAQTMpSEVa9JPV3uZf
+        tmMQazYaAsLtfzCWSN3hnLZ/bETPj2a6LrEjSTshUJoZ1K6nTk3x03hd3khsn8QI
+        9aVA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:cc:content-type:content-type:date:date
+        :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+        :message-id:mime-version:references:reply-to:sender:subject
+        :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
+        :x-sasl-enc; s=fm3; t=1690985967; x=1691072367; bh=BUdHhNhEjX4ng
+        x2jtG/4TPbrPOMxx6nkx3T9LDhPRYo=; b=tCqdEg34aM0lFWczPyq3c9sPPcLut
+        VPm17vo7WVHPJjF2pkDv5z0ecScCQtyazhuKad1Bt2DfVJUYexrzgHfOBaZHZIam
+        F++AX77tbOwojiBH3nAk9nG2kUf2mcBrPkCbgMlOtxX3TV70XY7OVJCISS9GG/dk
+        zLV4VQMwQtBZ1yGCuJmX7Dw8rQsMl+T1WUIkI5fAqHdo+mTNGRQMut5TAd0hbvy0
+        AONIKCrS2hULXURdIKm41ESUE0ouNwVkMp/qPLYnQOgD8sSQ/zwrjPf5EXvrn7F8
+        wKtlaqtXB03TGSLe1QajXMHFyNbs/GGaP3cJpvWV8gfLNUoYmJRoJDghg==
+X-ME-Sender: <xms:7GXKZCdwLfUemzGe_EP5hor1BJUfvMXU8ZRCXTADvKQJqfQ1fwS-aA>
+    <xme:7GXKZMPmBbX0Xlp4jUXFxIVDXcytP3LiHuyjZv1R4shBg-XQOIAKlc3TT5i4Rylgt
+    Qi3delCyOzHn-xfj1E>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrjeekgdejgecutefuodetggdotefrodftvf
+    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
+    uegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenuc
+    fjughrpefofgggkfgjfhffhffvvefutgesthdtredtreertdenucfhrhhomhepfdetrhhn
+    ugcuuegvrhhgmhgrnhhnfdcuoegrrhhnugesrghrnhgusgdruggvqeenucggtffrrghtth
+    gvrhhnpeffheeugeetiefhgeethfejgfdtuefggeejleehjeeutefhfeeggefhkedtkeet
+    ffenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpegrrh
+    hnugesrghrnhgusgdruggv
+X-ME-Proxy: <xmx:7GXKZDjL-i0B1kkvbWppm5sVdxBk0wgnWR5ejlXyPERSn2O46KJ9Xg>
+    <xmx:7GXKZP9C4BL-B1HfXPPc0D_GGJGe8P9mCvtTneNekgK487HERx1P3A>
+    <xmx:7GXKZOtkBafA77K2BTCJNlPYMgeYxm_i-8_bBrJBK3x5M2mrOAvxog>
+    <xmx:72XKZJmfIagEXMHBV391U4wB9ZMGdsv2kEx7GvYCVHgTA2ZwDvG3xQ>
+Feedback-ID: i56a14606:Fastmail
+Received: by mailuser.nyi.internal (Postfix, from userid 501)
+        id 7FA53B60089; Wed,  2 Aug 2023 10:19:24 -0400 (EDT)
+X-Mailer: MessagingEngine.com Webmail Interface
+User-Agent: Cyrus-JMAP/3.9.0-alpha0-624-g7714e4406d-fm-20230801.001-g7714e440
+Mime-Version: 1.0
+Message-Id: <39c79971-12fc-41fc-8cae-b2a0089ed034@app.fastmail.com>
+In-Reply-To: <c48f6f3c742eaf35e35882064ccf4ed07d4e63fe.camel@physik.fu-berlin.de>
+References: <20230706154520.11257-1-bhe@redhat.com>
+ <20230706154520.11257-12-bhe@redhat.com>
+ <CAMuHMdWmv-Jdvi7a04JGXuA2QARj8c8mpUvY7TOcetPkG4pW7A@mail.gmail.com>
+ <0f771b11539d5a3871691af901315ee2034b577c.camel@physik.fu-berlin.de>
+ <09094baf-dadf-4bce-9f63-f2a1f255f9a8@app.fastmail.com>
+ <c48f6f3c742eaf35e35882064ccf4ed07d4e63fe.camel@physik.fu-berlin.de>
+Date:   Wed, 02 Aug 2023 16:19:04 +0200
+From:   "Arnd Bergmann" <arnd@arndb.de>
+To:     "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
+        "Geert Uytterhoeven" <geert@linux-m68k.org>,
+        "Baoquan He" <bhe@redhat.com>
+Cc:     linux-kernel@vger.kernel.org,
+        "Andrew Morton" <akpm@linux-foundation.org>, linux-mm@kvack.org,
+        "Christoph Hellwig" <hch@lst.de>,
+        "Christophe Leroy" <christophe.leroy@csgroup.eu>,
+        "Mike Rapoport" <rppt@kernel.org>,
+        "Matthew Wilcox" <willy@infradead.org>,
+        "Alexander Gordeev" <agordeev@linux.ibm.com>,
+        "Kefeng Wang" <wangkefeng.wang@huawei.com>,
+        "Niklas Schnelle" <schnelle@linux.ibm.com>,
+        "Stafford Horne" <shorne@gmail.com>,
+        "David Laight" <David.Laight@aculab.com>,
+        "Helge Deller" <deller@gmx.de>,
+        "Nathan Chancellor" <nathan@kernel.org>,
+        "Yoshinori Sato" <ysato@users.sourceforge.jp>,
+        "Rich Felker" <dalias@libc.org>, linux-sh@vger.kernel.org,
+        "Guenter Roeck" <linux@roeck-us.net>
+Subject: Re: [PATCH v8 11/19] sh: add <asm-generic/io.h> including
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+On Tue, Aug 1, 2023, at 21:21, John Paul Adrian Glaubitz wrote:
 
-A recent cleanup patch started using the generic asm/io.h header from
-the sh version, but unfortunately this caused build regressions in many
-configurations, such as:
+>> I think ideally all the I/O port stuff in arch/sh/ could just be
+>> removed after the conversion to asm-generic/io.h, but the
+>> microdev_ioport_map() function oddity gets in the way of that,
+>> unless someone wants to clean up that platform. As far as I
+>> can tell, the ethernet, display, USB and PCI devices on it already
+>> broke at some point (afbb9d8d5266b, 46bc85872040a), so it might
+>> be easier to remove it entirely.
+>
+> I don't have this particular hardware, so I cannot comment on this.
 
-include/asm-generic/io.h:636:15: error: redefinition of ‘inb_p’
+Sure, as I explained, I'm pretty sure that nobody has
+tried to boot this hardware in a long time, so I did not
+expect you to have one.
 
-I added some of the missing defines that are needed to keep using the
-sh specific implementations rather than the generic ones where they
-clash. I build all sh defconfig files to catch the various combinations
-of CONFIG_MMU, CONFIG_GENERIC_IOMAP and CONFIG_NO_IOPORT_MAP, this should
-cover them all.
+I'll try to follow up with a patch to remove the platform
+later on, based on the explations above.
 
-A lot of the sh specific functions are equivalent to the generic ones
-and could in fact be removed, but it would be best to only do that with
-actual runtime testing.
+>> Having the series go into linux-next sounds appropriate like this,
+>> the entire purpose of that is to find such bugs and Andrew can jus
+>> fold the fixup into the broken patch. 
+>> 
+>> Let me know if you prefer the simple version with the extra
+>> #defines or if we should just use the generic inb/outb implementation
+>> immediately and drop microdev in a separate patch.
+>
+> Please go ahead with the simple version.
 
-In particular, the indirect ioport_map() implementation is only used
-for the "microdev" platform that appears to be broken beyond repair
-for as long as the git history goes, so removing both microdev and the
-custom ioport handling in favor of the asm-generic/io.h version would
-be a great cleanup, but this can be done another time if anyone feels
-motivated to clean up arch/sh.
+Done,
 
-Fixes: e41f1f7ff6c2b ("sh: add <asm-generic/io.h> including")
-Link: https://lore.kernel.org/lkml/09094baf-dadf-4bce-9f63-f2a1f255f9a8@app.fastmail.com/
-Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
----
-Andrew, can you pick this up into the mm tree on top of the
-"sh: add <asm-generic/io.h> including" patch?
----
- arch/sh/include/asm/io.h          | 24 ++++++++++++++++++++++++
- arch/sh/include/asm/io_noioport.h | 14 --------------
- 2 files changed, 24 insertions(+), 14 deletions(-)
-
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 24c560c065ec7..f2f38e9d489ac 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -119,6 +119,10 @@ void __raw_readsl(const void __iomem *addr, void *data, int longlen);
- 
- __BUILD_MEMORY_STRING(__raw_, q, u64)
- 
-+#define ioport_map ioport_map
-+#define ioport_unmap ioport_unmap
-+#define pci_iounmap pci_iounmap
-+
- #define ioread8 ioread8
- #define ioread16 ioread16
- #define ioread16be ioread16be
-@@ -241,6 +245,26 @@ __BUILD_IOPORT_STRING(q, u64)
- 
- #endif
- 
-+#define inb(addr)      inb(addr)
-+#define inw(addr)      inw(addr)
-+#define inl(addr)      inl(addr)
-+#define outb(x, addr)  outb((x), (addr))
-+#define outw(x, addr)  outw((x), (addr))
-+#define outl(x, addr)  outl((x), (addr))
-+
-+#define inb_p(addr)    inb(addr)
-+#define inw_p(addr)    inw(addr)
-+#define inl_p(addr)    inl(addr)
-+#define outb_p(x, addr)        outb((x), (addr))
-+#define outw_p(x, addr)        outw((x), (addr))
-+#define outl_p(x, addr)        outl((x), (addr))
-+
-+#define insb insb
-+#define insw insw
-+#define insl insl
-+#define outsb outsb
-+#define outsw outsw
-+#define outsl outsl
- 
- #define IO_SPACE_LIMIT 0xffffffff
- 
-diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
-index 5ba4116b4265c..12dad91f41c1e 100644
---- a/arch/sh/include/asm/io_noioport.h
-+++ b/arch/sh/include/asm/io_noioport.h
-@@ -46,20 +46,6 @@ static inline void ioport_unmap(void __iomem *addr)
- 	BUG();
- }
- 
--#define inb_p(addr)	inb(addr)
--#define inw_p(addr)	inw(addr)
--#define inl_p(addr)	inl(addr)
--#define outb_p(x, addr)	outb((x), (addr))
--#define outw_p(x, addr)	outw((x), (addr))
--#define outl_p(x, addr)	outl((x), (addr))
--
--#define insb insb
--#define insw insw
--#define insl insl
--#define outsb outsb
--#define outsw outsw
--#define outsl outsl
--
- static inline void insb(unsigned long port, void *dst, unsigned long count)
- {
- 	BUG();
--- 
-2.39.2
-
+     Arnd
