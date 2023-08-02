@@ -2,62 +2,45 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B54EC001E0
-	for <linux-sh@archiver.kernel.org>; Wed,  2 Aug 2023 17:32:00 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2795FC04E69
+	for <linux-sh@archiver.kernel.org>; Wed,  2 Aug 2023 17:40:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233268AbjHBRb7 convert rfc822-to-8bit (ORCPT
+        id S231912AbjHBRkQ convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 2 Aug 2023 13:31:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49484 "EHLO
+        Wed, 2 Aug 2023 13:40:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60348 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229901AbjHBRbk (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 2 Aug 2023 13:31:40 -0400
+        with ESMTP id S233657AbjHBRkG (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 2 Aug 2023 13:40:06 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C1D5A3AA6;
-        Wed,  2 Aug 2023 10:29:21 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 528E33583;
+        Wed,  2 Aug 2023 10:39:42 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qRFe6-002TUY-K1; Wed, 02 Aug 2023 19:28:26 +0200
+          id 1qRFfp-002UL6-Dq; Wed, 02 Aug 2023 19:30:13 +0200
 Received: from p5b13a085.dip0.t-ipconnect.de ([91.19.160.133] helo=suse-laptop.fritz.box)
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qRFe6-000eVY-Bd; Wed, 02 Aug 2023 19:28:26 +0200
-Message-ID: <2d82e0312f7d667e36238938a3cb13c95903033e.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v8 11/19] sh: add <asm-generic/io.h> including
+          id 1qRFfp-000el0-6B; Wed, 02 Aug 2023 19:30:13 +0200
+Message-ID: <373656535c754006ca1abe736fffa2be3925b0aa.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: fix asm-generic/io.h inclusion
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Arnd Bergmann <arnd@arndb.de>,
+To:     Arnd Bergmann <arnd@kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>
+Cc:     Arnd Bergmann <arnd@arndb.de>,
         Geert Uytterhoeven <geert@linux-m68k.org>,
-        Baoquan He <bhe@redhat.com>
-Cc:     linux-kernel@vger.kernel.org,
-        Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org,
-        Christoph Hellwig <hch@lst.de>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Mike Rapoport <rppt@kernel.org>,
-        Matthew Wilcox <willy@infradead.org>,
-        Alexander Gordeev <agordeev@linux.ibm.com>,
-        Kefeng Wang <wangkefeng.wang@huawei.com>,
-        Niklas Schnelle <schnelle@linux.ibm.com>,
-        Stafford Horne <shorne@gmail.com>,
-        David Laight <David.Laight@aculab.com>,
-        Helge Deller <deller@gmx.de>,
-        Nathan Chancellor <nathan@kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-        Guenter Roeck <linux@roeck-us.net>
-Date:   Wed, 02 Aug 2023 19:28:24 +0200
-In-Reply-To: <39c79971-12fc-41fc-8cae-b2a0089ed034@app.fastmail.com>
-References: <20230706154520.11257-1-bhe@redhat.com>
-         <20230706154520.11257-12-bhe@redhat.com>
-         <CAMuHMdWmv-Jdvi7a04JGXuA2QARj8c8mpUvY7TOcetPkG4pW7A@mail.gmail.com>
-         <0f771b11539d5a3871691af901315ee2034b577c.camel@physik.fu-berlin.de>
-         <09094baf-dadf-4bce-9f63-f2a1f255f9a8@app.fastmail.com>
-         <c48f6f3c742eaf35e35882064ccf4ed07d4e63fe.camel@physik.fu-berlin.de>
-         <39c79971-12fc-41fc-8cae-b2a0089ed034@app.fastmail.com>
+        Rich Felker <dalias@libc.org>, Baoquan He <bhe@redhat.com>,
+        Guenter Roeck <linux@roeck-us.net>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Date:   Wed, 02 Aug 2023 19:30:11 +0200
+In-Reply-To: <20230802141658.2064864-1-arnd@kernel.org>
+References: <20230802141658.2064864-1-arnd@kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 User-Agent: Evolution 3.48.4 
@@ -69,46 +52,117 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hello Arnd!
+Hi Arnd!
 
-On Wed, 2023-08-02 at 16:19 +0200, Arnd Bergmann wrote:
-> On Tue, Aug 1, 2023, at 21:21, John Paul Adrian Glaubitz wrote:
+On Wed, 2023-08-02 at 16:16 +0200, Arnd Bergmann wrote:
+> From: Arnd Bergmann <arnd@arndb.de>
 > 
-> > > I think ideally all the I/O port stuff in arch/sh/ could just be
-> > > removed after the conversion to asm-generic/io.h, but the
-> > > microdev_ioport_map() function oddity gets in the way of that,
-> > > unless someone wants to clean up that platform. As far as I
-> > > can tell, the ethernet, display, USB and PCI devices on it already
-> > > broke at some point (afbb9d8d5266b, 46bc85872040a), so it might
-> > > be easier to remove it entirely.
-> > 
-> > I don't have this particular hardware, so I cannot comment on this.
+> A recent cleanup patch started using the generic asm/io.h header from
+> the sh version, but unfortunately this caused build regressions in many
+> configurations, such as:
 > 
-> Sure, as I explained, I'm pretty sure that nobody has
-> tried to boot this hardware in a long time, so I did not
-> expect you to have one.
+> include/asm-generic/io.h:636:15: error: redefinition of ‘inb_p’
 > 
-> I'll try to follow up with a patch to remove the platform
-> later on, based on the explations above.
+> I added some of the missing defines that are needed to keep using the
+> sh specific implementations rather than the generic ones where they
+> clash. I build all sh defconfig files to catch the various combinations
+> of CONFIG_MMU, CONFIG_GENERIC_IOMAP and CONFIG_NO_IOPORT_MAP, this should
+> cover them all.
+> 
+> A lot of the sh specific functions are equivalent to the generic ones
+> and could in fact be removed, but it would be best to only do that with
+> actual runtime testing.
+> 
+> In particular, the indirect ioport_map() implementation is only used
+> for the "microdev" platform that appears to be broken beyond repair
+> for as long as the git history goes, so removing both microdev and the
+> custom ioport handling in favor of the asm-generic/io.h version would
+> be a great cleanup, but this can be done another time if anyone feels
+> motivated to clean up arch/sh.
 
-There is no need to remove any platforms now as we're working on converting
-arch/sh to device trees anyway and will eventually get rid of all the board-
-specific code during that step.
+Clean-up will happen with the device tree conversion.
 
-> > > Having the series go into linux-next sounds appropriate like this,
-> > > the entire purpose of that is to find such bugs and Andrew can jus
-> > > fold the fixup into the broken patch. 
-> > > 
-> > > Let me know if you prefer the simple version with the extra
-> > > #defines or if we should just use the generic inb/outb implementation
-> > > immediately and drop microdev in a separate patch.
-> > 
-> > Please go ahead with the simple version.
+> Fixes: e41f1f7ff6c2b ("sh: add <asm-generic/io.h> including")
+> Link: https://lore.kernel.org/lkml/09094baf-dadf-4bce-9f63-f2a1f255f9a8@app.fastmail.com/
+> Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> ---
+> Andrew, can you pick this up into the mm tree on top of the
+> "sh: add <asm-generic/io.h> including" patch?
+> ---
+>  arch/sh/include/asm/io.h          | 24 ++++++++++++++++++++++++
+>  arch/sh/include/asm/io_noioport.h | 14 --------------
+>  2 files changed, 24 insertions(+), 14 deletions(-)
 > 
-> Done,
+> diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+> index 24c560c065ec7..f2f38e9d489ac 100644
+> --- a/arch/sh/include/asm/io.h
+> +++ b/arch/sh/include/asm/io.h
+> @@ -119,6 +119,10 @@ void __raw_readsl(const void __iomem *addr, void *data, int longlen);
+>  
+>  __BUILD_MEMORY_STRING(__raw_, q, u64)
+>  
+> +#define ioport_map ioport_map
+> +#define ioport_unmap ioport_unmap
+> +#define pci_iounmap pci_iounmap
+> +
+>  #define ioread8 ioread8
+>  #define ioread16 ioread16
+>  #define ioread16be ioread16be
+> @@ -241,6 +245,26 @@ __BUILD_IOPORT_STRING(q, u64)
+>  
+>  #endif
+>  
+> +#define inb(addr)      inb(addr)
+> +#define inw(addr)      inw(addr)
+> +#define inl(addr)      inl(addr)
+> +#define outb(x, addr)  outb((x), (addr))
+> +#define outw(x, addr)  outw((x), (addr))
+> +#define outl(x, addr)  outl((x), (addr))
+> +
+> +#define inb_p(addr)    inb(addr)
+> +#define inw_p(addr)    inw(addr)
+> +#define inl_p(addr)    inl(addr)
+> +#define outb_p(x, addr)        outb((x), (addr))
+> +#define outw_p(x, addr)        outw((x), (addr))
+> +#define outl_p(x, addr)        outl((x), (addr))
+> +
+> +#define insb insb
+> +#define insw insw
+> +#define insl insl
+> +#define outsb outsb
+> +#define outsw outsw
+> +#define outsl outsl
+>  
+>  #define IO_SPACE_LIMIT 0xffffffff
+>  
+> diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
+> index 5ba4116b4265c..12dad91f41c1e 100644
+> --- a/arch/sh/include/asm/io_noioport.h
+> +++ b/arch/sh/include/asm/io_noioport.h
+> @@ -46,20 +46,6 @@ static inline void ioport_unmap(void __iomem *addr)
+>  	BUG();
+>  }
+>  
+> -#define inb_p(addr)	inb(addr)
+> -#define inw_p(addr)	inw(addr)
+> -#define inl_p(addr)	inl(addr)
+> -#define outb_p(x, addr)	outb((x), (addr))
+> -#define outw_p(x, addr)	outw((x), (addr))
+> -#define outl_p(x, addr)	outl((x), (addr))
+> -
+> -#define insb insb
+> -#define insw insw
+> -#define insl insl
+> -#define outsb outsb
+> -#define outsw outsw
+> -#define outsl outsl
+> -
+>  static inline void insb(unsigned long port, void *dst, unsigned long count)
+>  {
+>  	BUG();
 
-Thanks,
-Adrian
+Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
 -- 
  .''`.  John Paul Adrian Glaubitz
