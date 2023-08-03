@@ -2,98 +2,102 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 452A5C04A6A
-	for <linux-sh@archiver.kernel.org>; Thu,  3 Aug 2023 09:37:20 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id D7204C41513
+	for <linux-sh@archiver.kernel.org>; Thu,  3 Aug 2023 09:59:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235173AbjHCJhS convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 3 Aug 2023 05:37:18 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34036 "EHLO
+        id S235085AbjHCJ7Z (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 3 Aug 2023 05:59:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45698 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235174AbjHCJg1 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 3 Aug 2023 05:36:27 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 96CC335A1;
-        Thu,  3 Aug 2023 02:36:26 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qRUkq-001sGb-08; Thu, 03 Aug 2023 11:36:24 +0200
-Received: from p57bd9cac.dip0.t-ipconnect.de ([87.189.156.172] helo=suse-laptop.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qRUkp-00321y-Ow; Thu, 03 Aug 2023 11:36:23 +0200
-Message-ID: <13c836b31909f2eb64dcf2a5feb22c2a3173bba2.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 3/4] sh: remove superhyway bus support
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Arnd Bergmann <arnd@kernel.org>,
-        "D. Jeff Dionne" <djeffdionne@gmail.com>
-Cc:     linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
-Date:   Thu, 03 Aug 2023 11:36:22 +0200
-In-Reply-To: <4a3fae63-cf85-4e18-b785-1a438ec761aa@app.fastmail.com>
+        with ESMTP id S235116AbjHCJ7S (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 3 Aug 2023 05:59:18 -0400
+Received: from dfw.source.kernel.org (dfw.source.kernel.org [139.178.84.217])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A6D663A81
+        for <linux-sh@vger.kernel.org>; Thu,  3 Aug 2023 02:59:07 -0700 (PDT)
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (2048 bits))
+        (No client certificate requested)
+        by dfw.source.kernel.org (Postfix) with ESMTPS id DDF6861D29
+        for <linux-sh@vger.kernel.org>; Thu,  3 Aug 2023 09:59:06 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 18AB8C433C9;
+        Thu,  3 Aug 2023 09:59:05 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1691056746;
+        bh=5fI7/U96O/svCbo/exLZ+AoSAZig/ydM1Wn2uchQ8es=;
+        h=In-Reply-To:References:Date:From:To:Cc:Subject:From;
+        b=Lda71ZamqLE7DGG9s2kApPImV2AuQi4I57KpLBlKpnYe+WyYNquVC/bz9LNPrlasT
+         52Yq49WvSMkI0vv50tja8a/vb51RVNSlcEUM6h3Z889qs42TJXTdCLl0Ev6o8O/fdY
+         Dj9S7c8qYM+VNCmk2bochd+75m8UrXhgZiJflKR4dijKduT4CvCX9EJXeMwrJXr25N
+         831SNM78XyQmcqCxcpIEX94BjIZduhf9A+j3UVfKHSza0R0SEBuZ9LBJ3M0qQyybkn
+         GhQBXV0IncmJOf5fPN63agGqnd6atP1+5J0MHjxw/lkiymKiauDWPZv5kSkfWFmvrw
+         Z+bmPZ5aAX2ZQ==
+Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
+        by mailauth.nyi.internal (Postfix) with ESMTP id 023BB27C0054;
+        Thu,  3 Aug 2023 05:59:04 -0400 (EDT)
+Received: from imap51 ([10.202.2.101])
+  by compute6.internal (MEProxy); Thu, 03 Aug 2023 05:59:05 -0400
+X-ME-Sender: <xms:aHrLZAPLq_Pczb3lOUCvdTTjK5eHIjrqI11sIYa5HPcPQkEYciUVmQ>
+    <xme:aHrLZG8-RCEwBpb5fUgAxA-1ls__7WrIfgFMqAar_7DJHz42-Y0HMqnZki-D7RS55
+    UEver-HAEDcOpPVPA8>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrkedvgddvudcutefuodetggdotefrodftvf
+    curfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfghnecu
+    uegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmdenuc
+    fjughrpefofgggkfgjfhffhffvvefutgesthdtredtreertdenucfhrhhomhepfdetrhhn
+    ugcuuegvrhhgmhgrnhhnfdcuoegrrhhnugeskhgvrhhnvghlrdhorhhgqeenucggtffrrg
+    htthgvrhhnpedvveeigfetudegveeiledvgfevuedvgfetgeefieeijeejffeggeehudeg
+    tdevheenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpe
+    grrhhnugdomhgvshhmthhprghuthhhphgvrhhsohhnrghlihhthidquddvkeehudejtddv
+    gedqvdekjedttddvieegqdgrrhhnugeppehkvghrnhgvlhdrohhrghesrghrnhgusgdrug
+    gv
+X-ME-Proxy: <xmx:aHrLZHSn2kHEE6rXRhklo5OBO_qIlW_WwuvNmOzIOZV0nz05sMcz1Q>
+    <xmx:aHrLZIvwXrjLI0DJiDb7LXhj6G45_ksGDpGMbopheqAKTdu33nCtGA>
+    <xmx:aHrLZIcR8VIDn7OkiiA7NYG3AvQ8cFUWDPWBmBY9LPRsAduAigllMg>
+    <xmx:aHrLZNFrnG2fJ0gyqx0rdv1buTksyD-8N2ETKAMxjIATZnHLm8GJ4w>
+Feedback-ID: i36794607:Fastmail
+Received: by mailuser.nyi.internal (Postfix, from userid 501)
+        id 6536DB6008D; Thu,  3 Aug 2023 05:59:04 -0400 (EDT)
+X-Mailer: MessagingEngine.com Webmail Interface
+User-Agent: Cyrus-JMAP/3.9.0-alpha0-624-g7714e4406d-fm-20230801.001-g7714e440
+Mime-Version: 1.0
+Message-Id: <820f673e-f5d8-4e65-b72c-913320fe1616@app.fastmail.com>
+In-Reply-To: <13c836b31909f2eb64dcf2a5feb22c2a3173bba2.camel@physik.fu-berlin.de>
 References: <20230802184849.1019466-3-arnd@kernel.org>
-         <D28BDDE3-7FE6-4ACC-98B9-B6AB6D9518A3@gmail.com>
-         <fecb873aefad8dd4c1d89935cf8f7790e9ba231d.camel@physik.fu-berlin.de>
-         <4a3fae63-cf85-4e18-b785-1a438ec761aa@app.fastmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.4 
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 87.189.156.172
-X-ZEDAT-Hint: PO
+ <D28BDDE3-7FE6-4ACC-98B9-B6AB6D9518A3@gmail.com>
+ <fecb873aefad8dd4c1d89935cf8f7790e9ba231d.camel@physik.fu-berlin.de>
+ <4a3fae63-cf85-4e18-b785-1a438ec761aa@app.fastmail.com>
+ <13c836b31909f2eb64dcf2a5feb22c2a3173bba2.camel@physik.fu-berlin.de>
+Date:   Thu, 03 Aug 2023 11:58:43 +0200
+From:   "Arnd Bergmann" <arnd@kernel.org>
+To:     "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
+        "D. Jeff Dionne" <djeffdionne@gmail.com>
+Cc:     linux-sh@vger.kernel.org, "Rich Felker" <dalias@libc.org>,
+        "Yoshinori Sato" <ysato@users.sourceforge.jp>,
+        "Geert Uytterhoeven" <geert+renesas@glider.be>,
+        linux-kernel@vger.kernel.org, "Arnd Bergmann" <arnd@arndb.de>
+Subject: Re: [PATCH 3/4] sh: remove superhyway bus support
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Arnd!
+On Thu, Aug 3, 2023, at 11:36, John Paul Adrian Glaubitz wrote:
+> On Thu, 2023-08-03 at 11:19 +0200, Arnd Bergmann wrote:
+>> I looked at the clk conversion in the past, as this is not just
+>> needed for the DT work, but also to remove CONFIG_HAVE_LEGACY_CLK.
+>> The patch series I did a while ago renames the sh clk interfaces
+>> to no longer conflict with COMMON_CLK, which should allow it
+>> to coexist with a DT-enabled platform in the same kernel build.
+>> Let me know if you'd like me to dig out and rebase that series,
+>> it probably still applies and may help you here.
+>
+> Yes, that would be greatly appreciated. Please go ahead.
+>
+> FWIW, I am currently on vacation until August 15th, so I might be a bit
+> slow with open source stuff. I am using the free time to get things done
+> on my TODO list.
 
-On Thu, 2023-08-03 at 11:19 +0200, Arnd Bergmann wrote:
-> Applying this first should definitely help with the DT conversion,
-> especially not having to create a bus specific binding for superhyway
-> would help, as converting that to DT would be a complete rewrite
-> but also be untestable without drivers attaching to the bus.
+Ok, I'll start my own vacation on August 15, but should be able to
+send you what I had before then.
 
-OK, we'll discuss this on the #linux-sh IRC channel and if no one objects,
-I'm going to apply the series.
-
-> I would also recommend trying to eliminate most of the SoC
-> support for chips that only support a reference board but no
-> products or known user of the reference board itself. While
-> a lot of the conversion could be done fairly mechanical, at
-> least the clk driver for each chip is a huge effort.
-
-It depends on what Yoshinori plans for the device tree conversion. The
-latest version of his series was posted here [1]. But he promised to
-send a rebased and updated version soon.
-
-> I looked at the clk conversion in the past, as this is not just
-> needed for the DT work, but also to remove CONFIG_HAVE_LEGACY_CLK.
-> The patch series I did a while ago renames the sh clk interfaces
-> to no longer conflict with COMMON_CLK, which should allow it
-> to coexist with a DT-enabled platform in the same kernel build.
-> Let me know if you'd like me to dig out and rebase that series,
-> it probably still applies and may help you here.
-
-Yes, that would be greatly appreciated. Please go ahead.
-
-FWIW, I am currently on vacation until August 15th, so I might be a bit
-slow with open source stuff. I am using the free time to get things done
-on my TODO list.
-
-Adrian
-
-> [1] https://lore.kernel.org/all/20180507155543.GJ1392@brightrain.aerifal.cx/t/
-
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+       Arnd
