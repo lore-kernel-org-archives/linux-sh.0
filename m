@@ -2,90 +2,79 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6A7B4C001DF
-	for <linux-sh@archiver.kernel.org>; Thu,  3 Aug 2023 08:08:18 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E69A7C00528
+	for <linux-sh@archiver.kernel.org>; Thu,  3 Aug 2023 08:44:44 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233339AbjHCIHy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 3 Aug 2023 04:07:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39602 "EHLO
+        id S232391AbjHCIon convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 3 Aug 2023 04:44:43 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34518 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233491AbjHCIHg (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 3 Aug 2023 04:07:36 -0400
-Received: from mail-pl1-x631.google.com (mail-pl1-x631.google.com [IPv6:2607:f8b0:4864:20::631])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7C08B5FDC;
-        Thu,  3 Aug 2023 00:58:42 -0700 (PDT)
-Received: by mail-pl1-x631.google.com with SMTP id d9443c01a7336-1bb775625e2so4866145ad.1;
-        Thu, 03 Aug 2023 00:58:42 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20221208; t=1691049522; x=1691654322;
-        h=to:in-reply-to:cc:references:message-id:date:subject:mime-version
-         :from:content-transfer-encoding:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=26uR9UaiXXzwihC5bH3y0QcjO+NylXUnfJfeKoNSS1U=;
-        b=PN9WJQB4qfquB7JcbPe46Sddf1U4zmsqWtTEQEdrPUq1J8JLwfDK0j8KuIZY+ylXI7
-         /9JqTIUn63Yfiauzs9gaSRqZykC/byTihu9cy1KYNgpxAipF9N3vfin+5ceGzxPTRvul
-         vl3L0+lEcWK3+IGCbMZT4jJ0Q4jQmmaVtz3NiMhY1hm8nas4bGKNuoWsnRSoaALmgZh3
-         qaLGYTNwemfi9D4Ct6twVqhLkSSI/WwKo3dWj3Om0bRj4J0SSM067iVjs3NkiByJaBT6
-         PoJM5ANWDhjmlLK0nhNnMU89/8scto/7lPKUhOd84sTEwOa3wxbhEQ3tCX7MuwSB+S4t
-         QU5A==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1691049522; x=1691654322;
-        h=to:in-reply-to:cc:references:message-id:date:subject:mime-version
-         :from:content-transfer-encoding:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=26uR9UaiXXzwihC5bH3y0QcjO+NylXUnfJfeKoNSS1U=;
-        b=Rdm2tL5+7G4XuA1XiDaXFAG1bAun6Dtl0o8aVLGxzZnQ4anBqqUWHsChvHNHt3md1D
-         6l25gv7JUdK+C8Noiv1+M3zANyeiMbkMbaGJaO3LAITItVcidGnL5sjNXrICJiauP6M5
-         cHFBmk7K9CzWWv6ojwZBiXdzXHeEQFy292VpI69MTHTBtKVH1pfz9VsqwYgSQvPHN+hW
-         9gE4tP1So7CEd342+gM/TQFr70NXx9zQ9MysJqJSf9afnO2AX//2oeVw2pr1Fy1aUsVh
-         ZHRQcqcd9aGzFYJnqsHm435VZmN24piOO9pCXNjO7ZJ9pge9/upd5QJUHHFGYXvcCfqX
-         PWaA==
-X-Gm-Message-State: ABy/qLZrJa1wiuXnbq8gPnb/IhjZoUP2igncVl2QQ4ZD1sBk1cNsoNk/
-        bj6eq7y5iOZiCqDch4hpprrC/Dt7nbK3Iw==
-X-Google-Smtp-Source: APBJJlFJpRB6gvoyIuCHI0eI5TCfKtrpeiqsmVOJatGuG3eq7zs/BY48EDTcy7Rs0SVMA9ZaZkLc/g==
-X-Received: by 2002:a17:903:230b:b0:1b8:656f:76e7 with SMTP id d11-20020a170903230b00b001b8656f76e7mr22600601plh.23.1691049521874;
-        Thu, 03 Aug 2023 00:58:41 -0700 (PDT)
-Received: from smtpclient.apple (g1-27-253-251-130.bmobile.ne.jp. [27.253.251.130])
-        by smtp.gmail.com with ESMTPSA id e12-20020a170902ed8c00b001b9cea4e8a2sm13674877plj.293.2023.08.03.00.58.41
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 03 Aug 2023 00:58:41 -0700 (PDT)
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-From:   "D. Jeff Dionne" <djeffdionne@gmail.com>
-Mime-Version: 1.0 (1.0)
+        with ESMTP id S234574AbjHCIok (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 3 Aug 2023 04:44:40 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BDC2611D;
+        Thu,  3 Aug 2023 01:44:37 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1qRTwg-001WrE-8V; Thu, 03 Aug 2023 10:44:34 +0200
+Received: from p5b13a085.dip0.t-ipconnect.de ([91.19.160.133] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1qRTwg-002tWG-0z; Thu, 03 Aug 2023 10:44:34 +0200
+Message-ID: <fecb873aefad8dd4c1d89935cf8f7790e9ba231d.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH 3/4] sh: remove superhyway bus support
-Date:   Thu, 3 Aug 2023 16:58:38 +0900
-Message-Id: <D28BDDE3-7FE6-4ACC-98B9-B6AB6D9518A3@gmail.com>
-References: <20230802184849.1019466-3-arnd@kernel.org>
-Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>,
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     "D. Jeff Dionne" <djeffdionne@gmail.com>,
+        Arnd Bergmann <arnd@kernel.org>
+Cc:     linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Geert Uytterhoeven <geert+renesas@glider.be>,
         linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
-In-Reply-To: <20230802184849.1019466-3-arnd@kernel.org>
-To:     Arnd Bergmann <arnd@kernel.org>
-X-Mailer: iPhone Mail (19H12)
+Date:   Thu, 03 Aug 2023 10:44:33 +0200
+In-Reply-To: <D28BDDE3-7FE6-4ACC-98B9-B6AB6D9518A3@gmail.com>
+References: <20230802184849.1019466-3-arnd@kernel.org>
+         <D28BDDE3-7FE6-4ACC-98B9-B6AB6D9518A3@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.4 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.19.160.133
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Aug 3, 2023, at 04:15, Arnd Bergmann <arnd@kernel.org> wrote:
->=20
-> From: Arnd Bergmann <arnd@arndb.de>
->=20
-> superhyway was only referenced on sh4-202, which is now gone, so remove it=
- all as well.
->=20
-> I could find no trace of anything ever calling
-> superhyway_register_driver(), not in the git history but also not on the w=
-eb, so I assume this has never served any purpose on mainline kernels.
+Hi Jeff!
 
-I don=E2=80=99t know, but I think it is fairly safe to assume that there wer=
-e no superhyway implementations other than internal to SuperH Co (or Hitachi=
-).  Probably not at ST either.
+On Thu, 2023-08-03 at 16:58 +0900, D. Jeff Dionne wrote:
+> On Aug 3, 2023, at 04:15, Arnd Bergmann <arnd@kernel.org> wrote:
+> > 
+> > From: Arnd Bergmann <arnd@arndb.de>
+> > 
+> > superhyway was only referenced on sh4-202, which is now gone, so remove it all as well.
+> > 
+> > I could find no trace of anything ever calling
+> > superhyway_register_driver(), not in the git history but also not on the web, so I assume this has never served any purpose on mainline kernels.
+> 
+> I don’t know, but I think it is fairly safe to assume that there were no superhyway implementations other than internal to SuperH Co (or Hitachi).  Probably not at ST either.
+> 
+> I think this board, and infrastructure, can go without affecting any actual (even historical) user.  If anyone wants further conformation that there are/were no users of this in the wild, raise a flag and I will find out.
 
-I think this board, and infrastructure, can go without affecting any actual (=
-even historical) user.  If anyone wants further conformation that there are/=
-were no users of this in the wild, raise a flag and I will find out.
+OK, I'll think about applying this series. The thing is, we're going to convert SuperH
+to device trees anyways. We're waiting now Yoshinori to post a rebased version of the
+patch series.
 
-J.=
+Adrian
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
