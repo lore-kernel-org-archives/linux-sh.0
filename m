@@ -2,159 +2,98 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D4CC4C04A94
-	for <linux-sh@archiver.kernel.org>; Sat, 12 Aug 2023 08:02:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 679F3C001B0
+	for <linux-sh@archiver.kernel.org>; Mon, 14 Aug 2023 08:42:55 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235181AbjHLICf (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 12 Aug 2023 04:02:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33358 "EHLO
+        id S234797AbjHNImY convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 14 Aug 2023 04:42:24 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45192 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229634AbjHLICb (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 12 Aug 2023 04:02:31 -0400
-Received: from out1-smtp.messagingengine.com (out1-smtp.messagingengine.com [66.111.4.25])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D0F591FE6;
-        Sat, 12 Aug 2023 01:02:32 -0700 (PDT)
-Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
-        by mailout.nyi.internal (Postfix) with ESMTP id 15CFE5C0056;
-        Sat, 12 Aug 2023 04:02:32 -0400 (EDT)
-Received: from imap51 ([10.202.2.101])
-  by compute6.internal (MEProxy); Sat, 12 Aug 2023 04:02:32 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-        :cc:content-type:content-type:date:date:from:from:in-reply-to
-        :in-reply-to:message-id:mime-version:references:reply-to:sender
-        :subject:subject:to:to; s=fm3; t=1691827352; x=1691913752; bh=B7
-        pOJdGFDOf/BCasjh0dVOxmA3Mm35lZV2aH6kqC0w8=; b=bWL46N0sK4mIYpWzoj
-        J/+e+b8Mu9CpgyBLRhbmW/TyuCEnsAuKlS4X0lT5efId871OmOj5YcYmYg00NGPd
-        IcAELxQotBSuJ/90jbsZktoCZaBeDjcMja4UE7PY/KJ9BQxHMR8ttw19gadY4pLD
-        wcpu71/4NgDXLZF/K7TzADQEKciG8tdFwEV+hn9mwnLC982sMNooAap2Ahr2ic02
-        OX1TDcc92+mLu+noqL+P1+HfjKrPOssbrzLOWiTlGBYyQ2X6xUoDe8FH5hLbs8Zs
-        FmxsgM31F6ThFZX8SA1a+xBdVxbX9hhX71mg/b6+C5V15wIo2qBJ6zjh3xckiJob
-        8oqQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:cc:content-type:content-type:date:date
-        :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-        :message-id:mime-version:references:reply-to:sender:subject
-        :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
-        :x-sasl-enc; s=fm3; t=1691827352; x=1691913752; bh=B7pOJdGFDOf/B
-        Casjh0dVOxmA3Mm35lZV2aH6kqC0w8=; b=tJ1h5kA/J6E62tVerAQCZa0aQUiLa
-        dZExElcAFIrHaz4IwM7Ow1ltkUruuCWsOJCyh1z7aQtGI+w5HaBlSmZ+g3sMPCda
-        xubPC3utl1cj6/nHtnBh0zC5LTFR+KNkRg4EMhDLuERXDLZ4Aw4RkebGXJaIBZ2z
-        wqa854o60Ce1tMXNWniimZ3W3nrC3twAjPDF+DoFqhA6k/7W4Q8yP6gpTqTX3H4D
-        A1+7oickvOZ3pG8fapNcg2rld2K7G5tar0BTq01+PtwsrthFpU9JUN88b64SrWxE
-        i+I6EhM3NmuwXev5m6HLAkhNfUxNiuURcXLhz5qvBlOtnzaNWe1YrJFpg==
-X-ME-Sender: <xms:lDzXZLww55is2QMPDYjjRVLtLyoZjTnXsReClk3fNJpNGvX9Yp4KaA>
-    <xme:lDzXZDTEfg0QqMlQN_EwpPTwY-rhr-gEjTSPzFsEPH9b0QutV4uC-Wz-TzUkje1U5
-    ZrIr9BbeyiIc8d0k6k>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrleelgdduvdehucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
-    cujfgurhepofgfggfkjghffffhvfevufgtsehttdertderredtnecuhfhrohhmpedftehr
-    nhguuceuvghrghhmrghnnhdfuceorghrnhgusegrrhhnuggsrdguvgeqnecuggftrfgrth
-    htvghrnhepffehueegteeihfegtefhjefgtdeugfegjeelheejueethfefgeeghfektdek
-    teffnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomheprg
-    hrnhgusegrrhhnuggsrdguvg
-X-ME-Proxy: <xmx:lDzXZFWakJL6bP1C3CtyxCernVmFFVA4usDlWrWHbJV80fBcqyEDdQ>
-    <xmx:lDzXZFiAeZOhiK_1-3IRnA4TAG5simqdV9x1oAOMfe9e2PDVwrLUpQ>
-    <xmx:lDzXZNB5btGQ4E1l2bsVvCFcQWx3QMH1JlzzDkSwKyzK6IOlyrvoAw>
-    <xmx:mDzXZB1rv3zksY1BwcCii-YiQW0PH8eBdJskrEe3ags7tVQfE3dKGA>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.nyi.internal (Postfix, from userid 501)
-        id 3DD63B60089; Sat, 12 Aug 2023 04:02:28 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
-User-Agent: Cyrus-JMAP/3.9.0-alpha0-624-g7714e4406d-fm-20230801.001-g7714e440
-Mime-Version: 1.0
-Message-Id: <13f9c06a-f840-4010-ae2f-97d8b2883e76@app.fastmail.com>
-In-Reply-To: <ZNaVYh2qi0VQQKWf@antec>
-References: <20230810141947.1236730-1-arnd@kernel.org>
- <20230810141947.1236730-17-arnd@kernel.org> <ZNaVYh2qi0VQQKWf@antec>
-Date:   Sat, 12 Aug 2023 10:02:07 +0200
-From:   "Arnd Bergmann" <arnd@arndb.de>
-To:     "Stafford Horne" <shorne@gmail.com>,
-        "Arnd Bergmann" <arnd@kernel.org>
-Cc:     "Andrew Morton" <akpm@linux-foundation.org>,
-        linux-kernel@vger.kernel.org, "Matt Turner" <mattst88@gmail.com>,
-        "Vineet Gupta" <vgupta@kernel.org>,
-        "Russell King" <linux@armlinux.org.uk>,
-        "Catalin Marinas" <catalin.marinas@arm.com>,
-        "Will Deacon" <will@kernel.org>, guoren <guoren@kernel.org>,
-        "Brian Cain" <bcain@quicinc.com>,
-        "Huacai Chen" <chenhuacai@kernel.org>,
-        "WANG Xuerui" <kernel@xen0n.name>,
-        "Geert Uytterhoeven" <geert@linux-m68k.org>,
-        "Michal Simek" <monstr@monstr.eu>,
-        "Thomas Bogendoerfer" <tsbogend@alpha.franken.de>,
-        "Dinh Nguyen" <dinguyen@kernel.org>,
-        "Jonas Bonn" <jonas@southpole.se>,
-        "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
-        "Helge Deller" <deller@gmx.de>,
-        "Michael Ellerman" <mpe@ellerman.id.au>,
-        "Christophe Leroy" <christophe.leroy@csgroup.eu>,
-        "Palmer Dabbelt" <palmer@dabbelt.com>,
-        "Heiko Carstens" <hca@linux.ibm.com>,
-        "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
-        x86@kernel.org, "Borislav Petkov" <bp@alien8.de>,
-        "Nathan Chancellor" <nathan@kernel.org>,
-        "Nick Desaulniers" <ndesaulniers@google.com>,
-        "Guenter Roeck" <linux@roeck-us.net>,
-        "Stephen Rothwell" <sfr@canb.auug.org.au>,
-        linux-next <linux-next@vger.kernel.org>,
-        linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org,
-        "linux-csky@vger.kernel.org" <linux-csky@vger.kernel.org>,
-        linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org,
-        "linux-openrisc@vger.kernel.org" <linux-openrisc@vger.kernel.org>,
-        sparclinux@vger.kernel.org,
-        "Richard Henderson" <richard.henderson@linaro.org>,
-        "Ivan Kokshaysky" <ink@jurassic.park.msu.ru>,
-        "Stefan Kristiansson" <stefan.kristiansson@saunalahti.fi>,
-        "Yoshinori Sato" <ysato@users.sourceforge.jp>,
-        "Rich Felker" <dalias@libc.org>,
-        "David S . Miller" <davem@davemloft.net>,
-        "Chris Zankel" <chris@zankel.net>,
-        "Max Filippov" <jcmvbkbc@gmail.com>,
-        "Christian Brauner" <brauner@kernel.org>,
-        "Paul Walmsley" <paul.walmsley@sifive.com>,
-        "Albert Ou" <aou@eecs.berkeley.edu>,
-        "Youling Tang" <tangyouling@loongson.cn>,
-        "Tiezhu Yang" <yangtiezhu@loongson.cn>,
-        "Masahiro Yamada" <masahiroy@kernel.org>,
-        "Randy Dunlap" <rdunlap@infradead.org>,
-        "Masami Hiramatsu" <mhiramat@kernel.org>,
-        "Paul E. McKenney" <paulmck@kernel.org>,
-        "Miguel Ojeda" <ojeda@kernel.org>,
-        "Zhen Lei" <thunder.leizhen@huawei.com>,
-        "Xin Li" <xin3.li@intel.com>, "Nhat Pham" <nphamcs@gmail.com>,
-        "Greg Kroah-Hartman" <gregkh@linuxfoundation.org>,
-        =?UTF-8?Q?Marc_Aur=C3=A8le_La_France?= <tsi@tuyoix.net>,
-        "Johannes Weiner" <hannes@cmpxchg.org>,
-        linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-riscv@lists.infradead.org
-Subject: Re: [PATCH 16/17] [RFC] arch: turn -Wmissing-prototypes off conditionally
-Content-Type: text/plain
+        with ESMTP id S234860AbjHNImL (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 14 Aug 2023 04:42:11 -0400
+Received: from mail-yb1-f173.google.com (mail-yb1-f173.google.com [209.85.219.173])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4B83A10B;
+        Mon, 14 Aug 2023 01:42:11 -0700 (PDT)
+Received: by mail-yb1-f173.google.com with SMTP id 3f1490d57ef6-d62bdd1a97dso4176400276.3;
+        Mon, 14 Aug 2023 01:42:11 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20221208; t=1692002530; x=1692607330;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=QZne+Le5QqxdXNtZ7brJGNgIF3GQo0uhPPT5CceibE0=;
+        b=VbdNN1LK56aJpOfZagHrZM2p8L+MfzU+S0MYhwmRHcZ1RtInzxV+GXP4tBYPpjvZYc
+         KezZu/16u+KIFVI6AfNDXVqhLhdIxbzlTvBk5tfjAr8Fzg1M9Mhdlb2/0ccjIrto6n7/
+         WOxZlK9yeE7zLftHKuOduLrG8aXlpxyxm1lmDM3RSHDwkdJY+OP9VG80KwbTpPN/9+Z5
+         jDRfhtRVq4xZxWsPAg+mQzgc7YptwcJMlyt7STmcAnvgfDVhVhNki1lYmc+NyKgfzOAb
+         jaAm93mA96QJZGmirTimd7fmXREVAClTHsrCIbdB95fJs3o0cJ7VcLoCECZAQBks5gOZ
+         tMNw==
+X-Gm-Message-State: AOJu0YzTvmHcE/w9JPNmTBV14zDvQC3PDf4w1x4seoVzA0xBv9N0qK1M
+        z+17jlDD2CGL1MNhnORbdafFhS4BP7Cbpw==
+X-Google-Smtp-Source: AGHT+IGHz08kCZ+x3KT3qgo8LrWOjc0+TXxiP/8W2wpiWgfw+/gmS42Zj5VsOklA3QDe0iff+yCruA==
+X-Received: by 2002:a81:a54e:0:b0:586:a684:e7ba with SMTP id v14-20020a81a54e000000b00586a684e7bamr9625810ywg.39.1692002529781;
+        Mon, 14 Aug 2023 01:42:09 -0700 (PDT)
+Received: from mail-yb1-f178.google.com (mail-yb1-f178.google.com. [209.85.219.178])
+        by smtp.gmail.com with ESMTPSA id w13-20020a81a20d000000b005840bd271c5sm2596830ywg.100.2023.08.14.01.42.08
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 14 Aug 2023 01:42:08 -0700 (PDT)
+Received: by mail-yb1-f178.google.com with SMTP id 3f1490d57ef6-d62bdd1a97dso4176371276.3;
+        Mon, 14 Aug 2023 01:42:08 -0700 (PDT)
+X-Received: by 2002:a25:dc04:0:b0:d13:5ab9:827e with SMTP id
+ y4-20020a25dc04000000b00d135ab9827emr9522737ybe.16.1692002528140; Mon, 14 Aug
+ 2023 01:42:08 -0700 (PDT)
+MIME-Version: 1.0
+References: <20230802033737.9738-1-duoming@zju.edu.cn>
+In-Reply-To: <20230802033737.9738-1-duoming@zju.edu.cn>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Mon, 14 Aug 2023 10:41:56 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdWq4d7FJp6X_3=BQU-1=xvK1_jFJuq_7mTOaBJNXr1gEQ@mail.gmail.com>
+Message-ID: <CAMuHMdWq4d7FJp6X_3=BQU-1=xvK1_jFJuq_7mTOaBJNXr1gEQ@mail.gmail.com>
+Subject: Re: [PATCH] sh: push-switch: reorder cleanup operations to avoid UAF bug
+To:     Duoming Zhou <duoming@zju.edu.cn>
+Cc:     ysato@users.sourceforge.jp, dalias@libc.org,
+        glaubitz@physik.fu-berlin.de, kvalo@kernel.org, pavel@ucw.cz,
+        pabeni@redhat.com, rostedt@goodmis.org, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Aug 11, 2023, at 22:09, Stafford Horne wrote:
-> On Thu, Aug 10, 2023 at 04:19:34PM +0200, Arnd Bergmann wrote:
->> From: Arnd Bergmann <arnd@arndb.de>
-
->> arch/openrisc/mm/fault.c:44:17: error: no previous prototype for 'do_page_fault' [-Werror=missing-prototypes]
->> arch/openrisc/mm/tlb.c:188:13: error: no previous prototype for 'tlb_init' [-Werror=missing-prototypes]
+On Wed, Aug 2, 2023 at 5:46 AM Duoming Zhou <duoming@zju.edu.cn> wrote:
+> The original code puts flush_work() before timer_shutdown_sync()
+> in switch_drv_remove(). Although we use flush_work() to stop
+> the worker, it could be re-scheduled in switch_timer. As a result,
+> the UAF bug will happen. The detail is shown below:
 >
-> I'll try to get these fixed for 6.6.  I was looking at them recently but did not
-> actually make any changes and just put on my TODO.  Your series moves it up in
-> priority and it should be easy to get the fixes out.
+>       (cpu 0)                    |      (cpu 1)
+> switch_drv_remove()              |
+>  flush_work()                    |
+>   ...                            |  switch_timer //timer
+>                                  |   schedule_work(&psw->work)
+>  timer_shutdown_sync()           |
+>  ...                             |  switch_work_handler //worker
+>  kfree(psw) //free               |
+>                                  |   psw->state = 0 //use
+>
+> This patch puts timer_shutdown_sync() before flush_work() to
+> mitigate the bugs. As a result, the worker and timer could
+> be stopped safely before the deallocate operations.
+>
+> Fixes: 9f5e8eee5cfe ("sh: generic push-switch framework.")
+> Signed-off-by: Duoming Zhou <duoming@zju.edu.cn>
 
-Thanks!
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Since we already have the majority of architecture maintainers stepping
-in to fix the warnings, I wonder if I should just drop my patch 16/17
-completely and let the others handle it as well rather than shutting up
-the warnings. Only the asm-offsets change is really needed to compile
-test most of the kernel even with CONFIG_WERROR, and without that this
-is just some harmless output.
+Gr{oetje,eeting}s,
 
-    Arnd
+                        Geert
+
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
