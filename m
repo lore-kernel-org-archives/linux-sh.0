@@ -2,96 +2,94 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BF93BC7113B
-	for <linux-sh@archiver.kernel.org>; Thu, 24 Aug 2023 13:41:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BFB03C83003
+	for <linux-sh@archiver.kernel.org>; Thu, 24 Aug 2023 13:46:30 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241376AbjHXNlM (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 24 Aug 2023 09:41:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56496 "EHLO
+        id S240320AbjHXNqA convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 24 Aug 2023 09:46:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57432 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241417AbjHXNkw (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 24 Aug 2023 09:40:52 -0400
-Received: from mgamail.intel.com (mgamail.intel.com [134.134.136.100])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8004919A5;
-        Thu, 24 Aug 2023 06:40:49 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1692884449; x=1724420449;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:mime-version:content-transfer-encoding;
-  bh=cES7ePU5BGjB28LtnW6RTcai5kBpmKXPePQ4GMYMWeo=;
-  b=ZZ/32UhlOB5oZeLDB7m+TCORTJ/SZCrvXFuqz8LKD5XrFc1lvvEbDDw8
-   wMuSZHO9+alfGxHt3xMoYjKM4zZjKW+b6hA9H6fS6VKUw9RATJgGCOXpc
-   1d4HoL+L655eqPumOp30vQZaogZT/IuVyeqA4KOTZwVAvnmEzuUKrPc+G
-   bfsOVMkZF1eLVNtlPpbj80CPUGympQqO/nJCHoILQ6yIk0RalkKjSGdco
-   fmdkvmKn87prqLwNdhR2+dvrcSMfLbwslwxQelfGacicWzr3MwwV3y+AI
-   cKVC58yfJKiWBwQPNd7h+Vg/gNljoVbtNYCn0BBNiQB/CITsbQsg6zgK8
-   g==;
-X-IronPort-AV: E=McAfee;i="6600,9927,10812"; a="440792203"
-X-IronPort-AV: E=Sophos;i="6.02,195,1688454000"; 
-   d="scan'208";a="440792203"
-Received: from fmsmga008.fm.intel.com ([10.253.24.58])
-  by orsmga105.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Aug 2023 06:28:57 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6600,9927,10812"; a="802539698"
-X-IronPort-AV: E=Sophos;i="6.02,195,1688454000"; 
-   d="scan'208";a="802539698"
-Received: from abedekar-mobl1.ger.corp.intel.com (HELO ijarvine-mobl2.ger.corp.intel.com) ([10.251.213.29])
-  by fmsmga008-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 24 Aug 2023 06:28:55 -0700
-From:   =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>
-To:     linux-pci@vger.kernel.org, Bjorn Helgaas <helgaas@kernel.org>,
+        with ESMTP id S241572AbjHXNpo (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 24 Aug 2023 09:45:44 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5CFC51FDD;
+        Thu, 24 Aug 2023 06:45:28 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1qZAd5-002K93-PJ; Thu, 24 Aug 2023 15:44:07 +0200
+Received: from p57bd925a.dip0.t-ipconnect.de ([87.189.146.90] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1qZAd5-0034gd-9F; Thu, 24 Aug 2023 15:44:07 +0200
+Message-ID: <41c52315484c6ba60db0be5a19128a6d78ffd02d.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 03/14] sh: pci: Do PCI error check on own line
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Ilpo =?ISO-8859-1?Q?J=E4rvinen?= <ilpo.jarvinen@linux.intel.com>,
+        linux-pci@vger.kernel.org, Bjorn Helgaas <helgaas@kernel.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc:     =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>
-Subject: [PATCH 03/14] sh: pci: Do PCI error check on own line
-Date:   Thu, 24 Aug 2023 16:28:21 +0300
-Message-Id: <20230824132832.78705-4-ilpo.jarvinen@linux.intel.com>
-X-Mailer: git-send-email 2.30.2
-In-Reply-To: <20230824132832.78705-1-ilpo.jarvinen@linux.intel.com>
+        Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Date:   Thu, 24 Aug 2023 15:44:06 +0200
+In-Reply-To: <20230824132832.78705-4-ilpo.jarvinen@linux.intel.com>
 References: <20230824132832.78705-1-ilpo.jarvinen@linux.intel.com>
+         <20230824132832.78705-4-ilpo.jarvinen@linux.intel.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.4 
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 87.189.146.90
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Instead of a if condition with a line split, use the usual error
-handling pattern with a separate variable to improve readability.
+On Thu, 2023-08-24 at 16:28 +0300, Ilpo Järvinen wrote:
+> Instead of a if condition with a line split, use the usual error
+> handling pattern with a separate variable to improve readability.
+> 
+> No functional changes intended.
+> 
+> Signed-off-by: Ilpo Järvinen <ilpo.jarvinen@linux.intel.com>
+> ---
+>  arch/sh/drivers/pci/common.c | 7 ++++---
+>  1 file changed, 4 insertions(+), 3 deletions(-)
+> 
+> diff --git a/arch/sh/drivers/pci/common.c b/arch/sh/drivers/pci/common.c
+> index 2fd2b77e12ce..f59e5b9a6a80 100644
+> --- a/arch/sh/drivers/pci/common.c
+> +++ b/arch/sh/drivers/pci/common.c
+> @@ -53,15 +53,16 @@ int __init pci_is_66mhz_capable(struct pci_channel *hose,
+>  	unsigned short vid;
+>  	int cap66 = -1;
+>  	u16 stat;
+> +	int ret;
+>  
+>  	pr_info("PCI: Checking 66MHz capabilities...\n");
+>  
+>  	for (pci_devfn = 0; pci_devfn < 0xff; pci_devfn++) {
+>  		if (PCI_FUNC(pci_devfn))
+>  			continue;
+> -		if (early_read_config_word(hose, top_bus, current_bus,
+> -					   pci_devfn, PCI_VENDOR_ID, &vid) !=
+> -		    PCIBIOS_SUCCESSFUL)
+> +		ret = early_read_config_word(hose, top_bus, current_bus,
+> +					     pci_devfn, PCI_VENDOR_ID, &vid);
+> +		if (ret != PCIBIOS_SUCCESSFUL)
+>  			continue;
+>  		if (vid == 0xffff)
+>  			continue;
 
-No functional changes intended.
+Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
-Signed-off-by: Ilpo Järvinen <ilpo.jarvinen@linux.intel.com>
----
- arch/sh/drivers/pci/common.c | 7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
-
-diff --git a/arch/sh/drivers/pci/common.c b/arch/sh/drivers/pci/common.c
-index 2fd2b77e12ce..f59e5b9a6a80 100644
---- a/arch/sh/drivers/pci/common.c
-+++ b/arch/sh/drivers/pci/common.c
-@@ -53,15 +53,16 @@ int __init pci_is_66mhz_capable(struct pci_channel *hose,
- 	unsigned short vid;
- 	int cap66 = -1;
- 	u16 stat;
-+	int ret;
- 
- 	pr_info("PCI: Checking 66MHz capabilities...\n");
- 
- 	for (pci_devfn = 0; pci_devfn < 0xff; pci_devfn++) {
- 		if (PCI_FUNC(pci_devfn))
- 			continue;
--		if (early_read_config_word(hose, top_bus, current_bus,
--					   pci_devfn, PCI_VENDOR_ID, &vid) !=
--		    PCIBIOS_SUCCESSFUL)
-+		ret = early_read_config_word(hose, top_bus, current_bus,
-+					     pci_devfn, PCI_VENDOR_ID, &vid);
-+		if (ret != PCIBIOS_SUCCESSFUL)
- 			continue;
- 		if (vid == 0xffff)
- 			continue;
 -- 
-2.30.2
-
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
