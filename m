@@ -2,62 +2,114 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BF7A3C83F31
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A9A44C83F1C
 	for <linux-sh@archiver.kernel.org>; Wed, 30 Aug 2023 18:47:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243133AbjH3SqF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        id S242515AbjH3SqF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
         Wed, 30 Aug 2023 14:46:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43034 "EHLO
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53778 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242526AbjH3I6g (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 30 Aug 2023 04:58:36 -0400
-Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.245])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 81AFACDC
+        with ESMTP id S242514AbjH3I6a (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 30 Aug 2023 04:58:30 -0400
+Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.240])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2D770CCF
         for <linux-sh@vger.kernel.org>; Wed, 30 Aug 2023 01:58:27 -0700 (PDT)
 X-Country-Code: JP
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
         by hsmtpd-out-1.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
-        id a7c9e80e-d437-4be9-a03d-24f3b9c4bab6;
-        Wed, 30 Aug 2023 17:42:23 +0900 (JST)
+        id 606137b8-e2a7-4e55-97b2-a1765ff93c5d;
+        Wed, 30 Aug 2023 17:42:21 +0900 (JST)
 Received: from SIOS1075.ysato.name (al128006.dynamic.ppp.asahi-net.or.jp [111.234.128.6])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 742991C0372;
-        Wed, 30 Aug 2023 17:42:22 +0900 (JST)
+        by sakura.ysato.name (Postfix) with ESMTPSA id E85381C0015;
+        Wed, 30 Aug 2023 17:42:20 +0900 (JST)
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     linux-sh@vger.kernel.org
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>
-Subject: [RFC PATCH 09/12] of: FDT vaddr support for SH.
-Date:   Wed, 30 Aug 2023 17:42:10 +0900
-Message-Id: <fb76aed2eb920d4f6accb67774103eb478fe25fe.1693384846.git.ysato@users.sourceforge.jp>
+Subject: [RFC PATCH 00/12] Device Tree support for SH7751 based board
+Date:   Wed, 30 Aug 2023 17:42:01 +0900
+Message-Id: <cover.1693384846.git.ysato@users.sourceforge.jp>
 X-Mailer: git-send-email 2.39.2
-In-Reply-To: <cover.1693384846.git.ysato@users.sourceforge.jp>
-References: <cover.1693384846.git.ysato@users.sourceforge.jp>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-sh using virt address in FDT.
+This is an updated version of something I wrote about 7 years ago.
+Minimum support for R2D-plus and LANDISK.
+I think R2D-1 will work if you add AX88796 to dts.
+And board-specific functions and SCI's SPI functions are not supported.
 
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
----
- drivers/of/fdt.c | 3 +++
- 1 file changed, 3 insertions(+)
+Yoshinori Sato (12):
+  sh: Add OF target boards.
+  sh: Update OF handling.
+  sh: SH4 OF support.
+  clk: SH7750 / 7751 clk driver.
+  drivers/irqchip: Add SH7751 and boards specific irqchip.
+  drivers/pci: Add SH7751 PCI Host bridge driver.
+  clocksource: Update sh_tmu of handling.
+  mfd/sm501: Add OF properties.
+  of: FDT vaddr support for SH.
+  serial/sh-sci: Fix earlyprintk / earlycon.
+  sh: target dts.
+  sh: OF defconfig.
 
-diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
-index bf502ba8da95..846df856f258 100644
---- a/drivers/of/fdt.c
-+++ b/drivers/of/fdt.c
-@@ -643,6 +643,9 @@ void __init early_init_fdt_scan_reserved_mem(void)
- 		fdt_get_mem_rsv(initial_boot_params, n, &base, &size);
- 		if (!size)
- 			break;
-+#ifdef CONFIG_SUPERH
-+		base = virt_to_phys(base);
-+#endif
- 		memblock_reserve(base, size);
- 	}
- 
+ .../devicetree/bindings/display/sm501fb.txt   |  11 +
+ arch/sh/Kconfig                               |  12 +-
+ arch/sh/boards/Kconfig                        |  28 ++
+ arch/sh/boards/of-generic.c                   |  28 +-
+ arch/sh/boot/compressed/head_32.S             |   5 +-
+ arch/sh/boot/dts/include/dt-bindings          |   1 +
+ arch/sh/boot/dts/landisk.dts                  | 142 +++++++
+ arch/sh/boot/dts/rts7751r2dplus.dts           | 168 ++++++++
+ arch/sh/boot/dts/usl-5p.dts                   | 146 +++++++
+ arch/sh/configs/landisk-of_defconfig          | 161 ++++++++
+ arch/sh/configs/rts7751r2dplus-of_defconfig   | 159 ++++++++
+ arch/sh/drivers/Makefile                      |   2 +
+ arch/sh/include/asm/io.h                      |  10 +
+ arch/sh/include/asm/pci.h                     |   4 +
+ arch/sh/kernel/cpu/Makefile                   |   8 +-
+ arch/sh/kernel/cpu/clock.c                    |   3 +-
+ arch/sh/kernel/cpu/sh4/Makefile               |   2 +
+ arch/sh/kernel/head_32.S                      |   2 +-
+ arch/sh/kernel/setup.c                        |  26 +-
+ drivers/clk/Kconfig                           |   1 +
+ drivers/clk/Makefile                          |   1 +
+ drivers/clk/sh/Kconfig                        |   7 +
+ drivers/clk/sh/Makefile                       |   2 +
+ drivers/clk/sh/clk-sh7750.c                   | 193 +++++++++
+ drivers/clk/sh/clk-shdiv.c                    | 341 ++++++++++++++++
+ drivers/clocksource/sh_tmu.c                  |  33 +-
+ drivers/irqchip/Kconfig                       |   4 +
+ drivers/irqchip/Makefile                      |   1 +
+ drivers/irqchip/irq-iodata-julian.c           | 163 ++++++++
+ drivers/irqchip/irq-renesas-r2d.c             | 175 ++++++++
+ drivers/irqchip/irq-renesas-sh7751.c          | 186 +++++++++
+ drivers/mfd/sm501.c                           | 113 +++++-
+ drivers/of/fdt.c                              |   3 +
+ drivers/pci/controller/Kconfig                |   9 +
+ drivers/pci/controller/Makefile               |   1 +
+ drivers/pci/controller/pci-sh7751.c           | 382 ++++++++++++++++++
+ drivers/pci/controller/pci-sh7751.h           | 267 ++++++++++++
+ drivers/sh/Makefile                           |   2 +
+ drivers/tty/serial/sh-sci.c                   |  10 +-
+ 39 files changed, 2779 insertions(+), 33 deletions(-)
+ create mode 120000 arch/sh/boot/dts/include/dt-bindings
+ create mode 100644 arch/sh/boot/dts/landisk.dts
+ create mode 100644 arch/sh/boot/dts/rts7751r2dplus.dts
+ create mode 100644 arch/sh/boot/dts/usl-5p.dts
+ create mode 100644 arch/sh/configs/landisk-of_defconfig
+ create mode 100644 arch/sh/configs/rts7751r2dplus-of_defconfig
+ create mode 100644 drivers/clk/sh/Kconfig
+ create mode 100644 drivers/clk/sh/Makefile
+ create mode 100644 drivers/clk/sh/clk-sh7750.c
+ create mode 100644 drivers/clk/sh/clk-shdiv.c
+ create mode 100644 drivers/irqchip/irq-iodata-julian.c
+ create mode 100644 drivers/irqchip/irq-renesas-r2d.c
+ create mode 100644 drivers/irqchip/irq-renesas-sh7751.c
+ create mode 100644 drivers/pci/controller/pci-sh7751.c
+ create mode 100644 drivers/pci/controller/pci-sh7751.h
+
 -- 
 2.39.2
 
