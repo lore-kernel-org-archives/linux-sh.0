@@ -2,32 +2,32 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5FD35C83F20
-	for <linux-sh@archiver.kernel.org>; Wed, 30 Aug 2023 18:47:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 51E7BC83F30
+	for <linux-sh@archiver.kernel.org>; Wed, 30 Aug 2023 18:47:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242521AbjH3SqD (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 30 Aug 2023 14:46:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42982 "EHLO
+        id S243125AbjH3SqE (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 30 Aug 2023 14:46:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53782 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242517AbjH3I6d (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 30 Aug 2023 04:58:33 -0400
-Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.242])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 59748CD7
+        with ESMTP id S242515AbjH3I6a (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 30 Aug 2023 04:58:30 -0400
+Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.244])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2E00ACD2
         for <linux-sh@vger.kernel.org>; Wed, 30 Aug 2023 01:58:27 -0700 (PDT)
 X-Country-Code: JP
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
         by hsmtpd-out-0.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
-        id a2e55750-1fbb-4a4e-b1c6-5fc82ea759ba;
-        Wed, 30 Aug 2023 17:42:22 +0900 (JST)
+        id 7de84e88-2400-47ca-9cea-8dedb6d6dc3e;
+        Wed, 30 Aug 2023 17:42:21 +0900 (JST)
 Received: from SIOS1075.ysato.name (al128006.dynamic.ppp.asahi-net.or.jp [111.234.128.6])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 4B03F1C0210;
-        Wed, 30 Aug 2023 17:42:22 +0900 (JST)
+        by sakura.ysato.name (Postfix) with ESMTPSA id 1D6351C007F;
+        Wed, 30 Aug 2023 17:42:21 +0900 (JST)
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     linux-sh@vger.kernel.org
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>
-Subject: [RFC PATCH 08/12] mfd/sm501: Add OF properties.
-Date:   Wed, 30 Aug 2023 17:42:09 +0900
-Message-Id: <f622670c0af1bf01bf7c2f16241db0c36233a7d9.1693384846.git.ysato@users.sourceforge.jp>
+Subject: [RFC PATCH 01/12] sh: Add OF target boards.
+Date:   Wed, 30 Aug 2023 17:42:02 +0900
+Message-Id: <95d8b86480c60012252b37b9b13e5f709a2ec177.1693384846.git.ysato@users.sourceforge.jp>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <cover.1693384846.git.ysato@users.sourceforge.jp>
 References: <cover.1693384846.git.ysato@users.sourceforge.jp>
@@ -37,182 +37,131 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Some parameters only platform_device.
-Added same parameters in OF property.
-
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- .../devicetree/bindings/display/sm501fb.txt   |  11 ++
- drivers/mfd/sm501.c                           | 113 +++++++++++++++++-
- 2 files changed, 123 insertions(+), 1 deletion(-)
+ arch/sh/Kconfig        | 12 +++++++++---
+ arch/sh/boards/Kconfig | 28 ++++++++++++++++++++++++++++
+ 2 files changed, 37 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/display/sm501fb.txt b/Documentation/devicetree/bindings/display/sm501fb.txt
-index 1c79c267a57f..4c4920394431 100644
---- a/Documentation/devicetree/bindings/display/sm501fb.txt
-+++ b/Documentation/devicetree/bindings/display/sm501fb.txt
-@@ -20,6 +20,17 @@ Optional properties:
-   set different foreign endian.
- - big-endian: available on little endian systems, to
-   set different foreign endian.
-+- sm501,devices: select peripheral functions.
-+  available usb-host, usb-gadget, ssp0, ssp,1 uart0, uart1, accel,
-+            ac97, i2s, gpio and all.
-+- sm501,mclk: SM501 mclk frequency.
-+- sm501,m1xclk: SM501 m1xclk frequency.
-+- sm501,misc-timing: SM501 Miscellaneous Timing reg value.
-+- sm501,misc-control: SM501 Miscellaneous Control reg value.
-+- sm501,gpio-low: SM501 GPIO31-0 Control reg value.
-+- sm501,gpio-high: SM501 GPIO63-32 Control reg value.
-+- sm501,num-i2c: I2C channel number.
-+- sm501,gpio-i2c: I2C assigned GPIO.
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 2b3ce4fd3956..7a3e54bf0da9 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -64,10 +64,10 @@ config SUPERH
+ 	select MODULES_USE_ELF_RELA
+ 	select NEED_SG_DMA_LENGTH
+ 	select NO_DMA if !MMU && !DMA_COHERENT
+-	select NO_GENERIC_PCI_IOPORT_MAP if PCI
++	select NO_GENERIC_PCI_IOPORT_MAP if !SH_DEVICE_TREE
+ 	select OLD_SIGACTION
+ 	select OLD_SIGSUSPEND
+-	select PCI_DOMAINS if PCI
++	select PCI_DOMAINS if PCI && !SH_DEVICE_TREE
+ 	select PERF_EVENTS
+ 	select PERF_USE_VMALLOC
+ 	select RTC_LIB
+@@ -363,14 +363,17 @@ config CPU_SUBTYPE_SH7091
+ config CPU_SUBTYPE_SH7750R
+ 	bool "Support SH7750R processor"
+ 	select CPU_SH4
++	select COMMON_CLK_SH7750 if COMMMON_CLK
  
- Example for MPC5200:
- 	display@1,0 {
-diff --git a/drivers/mfd/sm501.c b/drivers/mfd/sm501.c
-index 28027982cf69..39871ca1b9f7 100644
---- a/drivers/mfd/sm501.c
-+++ b/drivers/mfd/sm501.c
-@@ -80,6 +80,9 @@ struct sm501_devdata {
- 	unsigned int			 irq;
- 	void __iomem			*regs;
- 	unsigned int			 rev;
-+#if defined(CONFIG_OF)
-+	struct device_node		*np;
-+#endif
- };
+ config CPU_SUBTYPE_SH7750S
+ 	bool "Support SH7750S processor"
+ 	select CPU_SH4
++	select COMMON_CLK_SH7750 if COMMMON_CLK
  
+ config CPU_SUBTYPE_SH7751
+ 	bool "Support SH7751 processor"
+ 	select CPU_SH4
++	select COMMON_CLK_SH7750 if COMMMON_CLK
+ 	help
+ 	  Select SH7751 if you have a 166 Mhz SH-4 HD6417751 CPU,
+ 	  or if you have a HD6417751R CPU.
+@@ -378,6 +381,8 @@ config CPU_SUBTYPE_SH7751
+ config CPU_SUBTYPE_SH7751R
+ 	bool "Support SH7751R processor"
+ 	select CPU_SH4
++	select COMMON_CLK_SH7750 if COMMMON_CLK
++	select PCI_SH7751 if SH_DEVICE_TREE
  
-@@ -1370,6 +1373,106 @@ static int sm501_init_dev(struct sm501_devdata *sm)
- 	return 0;
- }
+ config CPU_SUBTYPE_SH7760
+ 	bool "Support SH7760 processor"
+@@ -702,7 +707,7 @@ config BUILTIN_DTB_SOURCE
+ config ZERO_PAGE_OFFSET
+ 	hex
+ 	default "0x00010000" if PAGE_SIZE_64KB || SH_RTS7751R2D || \
+-				SH_7751_SOLUTION_ENGINE
++				SH_7751_SOLUTION_ENGINE || SH_RTS7751R2D_OF
+ 	default "0x00004000" if PAGE_SIZE_16KB || SH_SH03
+ 	default "0x00002000" if PAGE_SIZE_8KB
+ 	default "0x00001000"
+@@ -744,6 +749,7 @@ config ROMIMAGE_MMCIF
+ choice
+ 	prompt "Kernel command line"
+ 	optional
++	depends on !SH_DEVICE_TREE
+ 	default CMDLINE_OVERWRITE
+ 	help
+ 	  Setting this option allows the kernel command line arguments
+diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
+index fafe15d3ba1d..ffdada2a128d 100644
+--- a/arch/sh/boards/Kconfig
++++ b/arch/sh/boards/Kconfig
+@@ -16,9 +16,14 @@ config SH_DEVICE_TREE
+ 	bool
+ 	select OF
+ 	select OF_EARLY_FLATTREE
++	select OF_ADDRESS
+ 	select TIMER_OF
+ 	select COMMON_CLK
+ 	select GENERIC_CALIBRATE_DELAY
++	select GENERIC_IOMAP
++	select GENERIC_IRQ_CHIP
++	select SYS_SUPPORTS_PCI
++	select GENERIC_PCI_IOMAP if PCI
  
-+static unsigned int sm501_parse_devices_str(const char *str)
-+{
-+	char *sep;
-+	unsigned int device = 0;
-+	int i;
-+	int len;
-+	static const struct {
-+		char *devname;
-+		unsigned int devid;
-+	} devlist[] = {
-+		{ "usb-host", SM501_USE_USB_HOST },
-+		{ "usb-gadget", SM501_USE_USB_SLAVE },
-+		{ "ssp0", SM501_USE_SSP0 },
-+		{ "ssp1", SM501_USE_SSP1 },
-+		{ "uart0", SM501_USE_UART0 },
-+		{ "uart1", SM501_USE_UART1 },
-+		{ "accel", SM501_USE_FBACCEL },
-+		{ "ac97", SM501_USE_AC97 },
-+		{ "i2s", SM501_USE_I2S },
-+		{ "gpio", SM501_USE_GPIO },
-+		{ "all", SM501_USE_ALL },
-+	};
-+
-+	do {
-+		sep = strchr(str, ',');
-+		len = sep ? sep - str : strlen(str);
-+		for (i = 0; i < ARRAY_SIZE(devlist); i++) {
-+			if (strncasecmp(str, devlist[i].devname, len) == 0) {
-+				device |= devlist[i].devid;
-+				break;
-+			}
-+		}
-+		str = sep + 1;
-+	} while (sep);
-+	return device;
-+}
-+
-+#if defined(CONFIG_OF)
-+static void sm501_of_read_reg_init(struct sm501_devdata *sm,
-+				   const char *propname, struct sm501_reg_init *val)
-+{
-+	u32 u32_val;
-+
-+	if (!of_property_read_u32_index(sm->np, propname, 0, &u32_val))
-+		val->set = u32_val;
-+	if (!of_property_read_u32_index(sm->np, propname, 1, &u32_val))
-+		val->mask = u32_val;
-+}
-+
-+static int sm501_parse_dt(struct sm501_devdata *sm)
-+{
-+	struct sm501_platdata *plat;
-+	const char *devstr;
-+	u32 u32_val;
-+
-+	if (sm->np == NULL)
-+		return 0;
-+	plat = kzalloc(sizeof(struct sm501_platdata), GFP_KERNEL);
-+	if (plat == NULL)
-+		return -ENOMEM;
-+	plat->init = kzalloc(sizeof(struct sm501_initdata), GFP_KERNEL);
-+	if (plat->init == NULL)
-+		goto err;
-+
-+	if (!of_property_read_string(sm->np, "sm501,devices", &devstr))
-+		plat->init->devices = sm501_parse_devices_str(devstr);
-+	if (!of_property_read_u32_index(sm->np, "sm501,mclk", 0, &u32_val))
-+		plat->init->mclk = u32_val;
-+	if (!of_property_read_u32_index(sm->np, "sm501,m1xclk", 0, &u32_val))
-+		plat->init->m1xclk = u32_val;
-+	sm501_of_read_reg_init(sm, "sm501,misc-timing", &plat->init->misc_timing);
-+	sm501_of_read_reg_init(sm, "sm501,misc-control", &plat->init->misc_control);
-+	sm501_of_read_reg_init(sm, "sm501,gpio-low", &plat->init->gpio_low);
-+	sm501_of_read_reg_init(sm, "sm501,gpio-high", &plat->init->gpio_high);
-+
-+#ifdef CONFIG_MFD_SM501_GPIO
-+	if (plat->init->devices & SM501_USE_GPIO) {
-+		if (!of_property_read_u32_index(sm->np, "sm501,num-i2c", 0, &u32_val))
-+			plat->gpio_i2c_nr = u32_val;
-+	}
-+	if (plat->gpio_i2c_nr > 0) {
-+		plat->gpio_i2c = kcalloc(plat->gpio_i2c_nr,
-+					 sizeof(struct sm501_platdata_gpio_i2c),
-+					 GFP_KERNEL);
-+		if (plat->gpio_i2c == NULL)
-+			goto err;
-+		of_property_read_variable_u32(sm->np, "sm501,gpio-i2c",
-+					      plat->gpio_i2c,
-+					      plat->gpio_i2c_nr * 5);
-+	}
-+#endif
-+	sm->platdata = plat;
-+	return 0;
-+err:
-+	kfree(plat->init);
-+	kfree(plat);
-+	return -ENOMEM;
-+}
-+#endif
-+
- static int sm501_plat_probe(struct platform_device *dev)
- {
- 	struct sm501_devdata *sm;
-@@ -1384,7 +1487,6 @@ static int sm501_plat_probe(struct platform_device *dev)
- 	sm->dev = &dev->dev;
- 	sm->pdev_id = dev->id;
- 	sm->platdata = dev_get_platdata(&dev->dev);
--
- 	ret = platform_get_irq(dev, 0);
- 	if (ret < 0)
- 		goto err_res;
-@@ -1406,6 +1508,15 @@ static int sm501_plat_probe(struct platform_device *dev)
- 		goto err_res;
- 	}
+ config SH_JCORE_SOC
+ 	bool "J-Core SoC"
+@@ -161,6 +166,17 @@ config SH_RTS7751R2D
+ 	  Select RTS7751R2D if configuring for a Renesas Technology
+ 	  Sales SH-Graphics board.
  
-+#if defined(CONFIG_OF)
-+	if (dev->dev.of_node) {
-+		sm->np = dev->dev.of_node;
-+		ret = sm501_parse_dt(sm);
-+		if (ret)
-+			goto err_res;
-+	}
-+#endif
++config SH_RTS7751R2D_OF
++	bool "RTS7751R2D (DeviceTree)"
++	depends on CPU_SUBTYPE_SH7751R
++	select HAVE_PCI
++	select IO_TRAPPED if MMU
++	select SH_DEVICE_TREE
++	select COMMON_CLK
++	help
++	  Select RTS7751R2D if configuring for a Renesas Technology
++	  Sales SH-Graphics board. (Use DeviceTree)
 +
- 	platform_set_drvdata(dev, sm);
+ config SH_RSK
+ 	bool "Renesas Starter Kit"
+ 	depends on CPU_SUBTYPE_SH7201 || CPU_SUBTYPE_SH7203 || \
+@@ -300,8 +316,20 @@ config SH_LANDISK
+ 	bool "LANDISK"
+ 	depends on CPU_SUBTYPE_SH7751R
+ 	select HAVE_PCI
++	select SYS_SUPPORTS_PCI
++	help
++	  I-O DATA DEVICE, INC. "LANDISK Series" support.
++
++config SH_LANDISK_OF
++	bool "LANDISK (DeviceTree)"
++	depends on CPU_SUBTYPE_SH7751R
++	select HAVE_PCI
++	select SYS_SUPPORTS_PCI
++	select SH_DEVICE_TREE
++	select COMMON_CLK
+ 	help
+ 	  I-O DATA DEVICE, INC. "LANDISK Series" support.
++	  Use Device Tree.
  
- 	sm->regs = ioremap(sm->io_res->start, resource_size(sm->io_res));
+ config SH_TITAN
+ 	bool "TITAN"
 -- 
 2.39.2
 
