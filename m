@@ -2,32 +2,32 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 7F289C83F1A
-	for <linux-sh@archiver.kernel.org>; Wed, 30 Aug 2023 18:47:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 7D676C83F1B
+	for <linux-sh@archiver.kernel.org>; Wed, 30 Aug 2023 18:47:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231879AbjH3SqP (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 30 Aug 2023 14:46:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42990 "EHLO
+        id S242518AbjH3SqQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 30 Aug 2023 14:46:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42992 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242519AbjH3I6d (ORCPT
+        with ESMTP id S242520AbjH3I6d (ORCPT
         <rfc822;linux-sh@vger.kernel.org>); Wed, 30 Aug 2023 04:58:33 -0400
-Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.243])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 62E46CD8
+Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.237])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2D68DCC9
         for <linux-sh@vger.kernel.org>; Wed, 30 Aug 2023 01:58:27 -0700 (PDT)
 X-Country-Code: JP
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-        by hsmtpd-out-2.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
-        id 59038cc0-3c69-4435-bb1b-2b246741eb19;
-        Wed, 30 Aug 2023 17:42:21 +0900 (JST)
+        by hsmtpd-out-0.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
+        id ef776d6f-9244-44fd-bebf-7c8413ea21f2;
+        Wed, 30 Aug 2023 17:42:22 +0900 (JST)
 Received: from SIOS1075.ysato.name (al128006.dynamic.ppp.asahi-net.or.jp [111.234.128.6])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 46D011C0210;
+        by sakura.ysato.name (Postfix) with ESMTPSA id C3A721C0431;
         Wed, 30 Aug 2023 17:42:21 +0900 (JST)
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     linux-sh@vger.kernel.org
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>
-Subject: [RFC PATCH 02/12] sh: Update OF handling.
-Date:   Wed, 30 Aug 2023 17:42:03 +0900
-Message-Id: <184764e337b9fea92bed4576d776118984e31f38.1693384846.git.ysato@users.sourceforge.jp>
+Subject: [RFC PATCH 05/12] drivers/irqchip: Add SH7751 and boards specific irqchip.
+Date:   Wed, 30 Aug 2023 17:42:06 +0900
+Message-Id: <52f2118d33bea5e74d4ffda4b3d935772e743ec2.1693384846.git.ysato@users.sourceforge.jp>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <cover.1693384846.git.ysato@users.sourceforge.jp>
 References: <cover.1693384846.git.ysato@users.sourceforge.jp>
@@ -37,212 +37,588 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-- avoid build warning.
-- reserve external dtb area.
-- use generic interfaces on internal peripheral driver.
+- irq-renesas-sh7751: Renesas SH7751 internal INTC.
+- irq-renesas-r2d: Renesas RTS7751R2D external interrupt encoder.
+- irq-iodata-julian: IO DATA Device LANDISK external interrupt encoder.
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/boards/of-generic.c       | 28 +++++++++++++++++++++++++---
- arch/sh/boot/compressed/head_32.S |  5 +++--
- arch/sh/kernel/head_32.S          |  2 +-
- arch/sh/kernel/setup.c            | 26 +++++++++++++++++++++++++-
- 4 files changed, 54 insertions(+), 7 deletions(-)
+ drivers/irqchip/Kconfig              |   4 +
+ drivers/irqchip/Makefile             |   1 +
+ drivers/irqchip/irq-iodata-julian.c  | 163 +++++++++++++++++++++++
+ drivers/irqchip/irq-renesas-r2d.c    | 175 +++++++++++++++++++++++++
+ drivers/irqchip/irq-renesas-sh7751.c | 186 +++++++++++++++++++++++++++
+ 5 files changed, 529 insertions(+)
+ create mode 100644 drivers/irqchip/irq-iodata-julian.c
+ create mode 100644 drivers/irqchip/irq-renesas-r2d.c
+ create mode 100644 drivers/irqchip/irq-renesas-sh7751.c
 
-diff --git a/arch/sh/boards/of-generic.c b/arch/sh/boards/of-generic.c
-index f7f3e618e85b..ff4643b3deee 100644
---- a/arch/sh/boards/of-generic.c
-+++ b/arch/sh/boards/of-generic.c
-@@ -8,6 +8,7 @@
- #include <linux/of.h>
- #include <linux/of_clk.h>
- #include <linux/of_fdt.h>
-+#include <linux/of_platform.h>
- #include <linux/clocksource.h>
- #include <linux/irqchip.h>
- #include <asm/machvec.h>
-@@ -107,7 +108,7 @@ static int noopi(void)
- 	return 0;
- }
+diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
+index 09e422da482f..372b22d5183f 100644
+--- a/drivers/irqchip/Kconfig
++++ b/drivers/irqchip/Kconfig
+@@ -660,6 +660,10 @@ config APPLE_AIC
+ 	help
+ 	  Support for the Apple Interrupt Controller found on Apple Silicon SoCs,
+ 	  such as the M1.
++config RENESAS_SH_INTC
++	def_bool y if SH_DEVICE_TREE
++	select IRQ_DOMAIN
++	select IRQ_DOMAIN_HIERARCHY
  
--static void __init sh_of_mem_reserve(void)
-+static void __init sh_of_mem_init(void)
- {
- 	early_init_fdt_reserve_self();
- 	early_init_fdt_scan_reserved_mem();
-@@ -116,6 +117,8 @@ static void __init sh_of_mem_reserve(void)
- static void __init sh_of_setup(char **cmdline_p)
- {
- 	struct device_node *root;
-+	struct device_node *cpu;
-+	int freq;
- 
- 	sh_mv.mv_name = "Unknown SH model";
- 	root = of_find_node_by_path("/");
-@@ -125,6 +128,9 @@ static void __init sh_of_setup(char **cmdline_p)
- 	}
- 
- 	sh_of_smp_probe();
-+	cpu = of_find_node_by_name(NULL, "cpu");
-+	if (!of_property_read_u32(cpu, "clock-frequency", &freq))
-+		preset_lpj = freq / 500;
- }
- 
- static int sh_of_irq_demux(int irq)
-@@ -157,8 +163,7 @@ static struct sh_machine_vector __initmv sh_of_generic_mv = {
- 	.mv_init_irq	= sh_of_init_irq,
- 	.mv_clk_init	= sh_of_clk_init,
- 	.mv_mode_pins	= noopi,
--	.mv_mem_init	= noop,
--	.mv_mem_reserve	= sh_of_mem_reserve,
-+	.mv_mem_init	= sh_of_mem_init,
- };
- 
- struct sh_clk_ops;
-@@ -170,3 +175,20 @@ void __init __weak arch_init_clk_ops(struct sh_clk_ops **ops, int idx)
- void __init __weak plat_irq_setup(void)
- {
- }
+ config MCHP_EIC
+ 	bool "Microchip External Interrupt Controller"
+diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
+index ffd945fe71aa..a3859bdd0442 100644
+--- a/drivers/irqchip/Makefile
++++ b/drivers/irqchip/Makefile
+@@ -120,3 +120,4 @@ obj-$(CONFIG_IRQ_IDT3243X)		+= irq-idt3243x.o
+ obj-$(CONFIG_APPLE_AIC)			+= irq-apple-aic.o
+ obj-$(CONFIG_MCHP_EIC)			+= irq-mchp-eic.o
+ obj-$(CONFIG_SUNPLUS_SP7021_INTC)	+= irq-sp7021-intc.o
++obj-$(CONFIG_RENESAS_SH_INTC)		+= irq-renesas-sh7751.o irq-iodata-julian.o irq-renesas-r2d.o
+diff --git a/drivers/irqchip/irq-iodata-julian.c b/drivers/irqchip/irq-iodata-julian.c
+new file mode 100644
+index 000000000000..95e502904a68
+--- /dev/null
++++ b/drivers/irqchip/irq-iodata-julian.c
+@@ -0,0 +1,163 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * IO-DATA DEVICE LANDISK / USL-5P (a.k.a Julian) interrupt encoder
++ *
++ * Copyright (C) 2023 Yoshinori Sato
++ */
 +
-+static int __init sh_of_device_init(void)
++#include <linux/init.h>
++#include <linux/irq.h>
++#include <linux/irqchip.h>
++#include <linux/irqdomain.h>
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
++#include <linux/err.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++
++#define NUM_IRQ 16
++
++struct julian_intc_priv {
++	struct device *dev;
++	void __iomem *base;
++	struct irq_domain *irq_domain;
++};
++
++static struct julian_intc_priv *irq_data_to_priv(struct irq_data *data)
 +{
-+	pr_info("SH generic board support: populating platform devices\n");
-+	if (of_have_populated_dt()) {
-+		of_platform_populate(NULL, of_default_bus_match_table,
-+				     NULL, NULL);
-+	} else {
-+		pr_crit("Device tree not populated\n");
++	return data->domain->host_data;
++}
++
++static void julian_intc_mask_irq(struct irq_data *data)
++{
++	struct julian_intc_priv *priv = irq_data_to_priv(data);
++	int irq = data->irq;
++	u8 mask;
++
++	mask = __raw_readb(priv->base + 5);
++	mask &= ~(1 << (irq - 5));
++	__raw_writeb(mask, priv->base + 5);
++}
++
++static void julian_intc_unmask_irq(struct irq_data *data)
++{
++	struct julian_intc_priv *priv = irq_data_to_priv(data);
++	int irq = data->irq;
++	u8 mask;
++
++	mask = __raw_readb(priv->base + 5);
++	mask |= (1 << (irq - 5));
++	__raw_writeb(mask, priv->base + 5);
++}
++
++static struct irq_chip julian_intc_chip = {
++	.name		= "JULIAN-INTC",
++	.irq_unmask	= julian_intc_unmask_irq,
++	.irq_mask	= julian_intc_mask_irq,
++};
++
++static __init int julian_intc_map(struct irq_domain *h, unsigned int virq,
++			       irq_hw_number_t hw_irq_num)
++{
++	irq_set_chip_and_handler(virq, &julian_intc_chip, handle_level_irq);
++	irq_get_irq_data(virq)->chip_data = h->host_data;
++	irq_modify_status(virq, IRQ_NOREQUEST, IRQ_NOPROBE);
++	return 0;
++}
++
++static int julian_intc_translate(struct irq_domain *domain,
++			       struct irq_fwspec *fwspec, unsigned long *hwirq,
++			       unsigned int *type)
++{
++	if (fwspec->param[0] >= NUM_IRQ)
++		return -EINVAL;
++
++	switch (fwspec->param_count) {
++	case 2:
++		*type = fwspec->param[1];
++		fallthrough;
++	case 1:
++		*hwirq = fwspec->param[0];
++		break;
++	default:
++		return -EINVAL;
 +	}
 +	return 0;
 +}
-+arch_initcall_sync(sh_of_device_init);
 +
-+void intc_finalize(void)
++static const struct irq_domain_ops julian_intc_domain_ops = {
++	.map = julian_intc_map,
++	.translate = julian_intc_translate,
++};
++
++static int julian_intc_probe(struct platform_device *pdev)
 +{
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct julian_intc_priv *priv;
++	struct irq_domain *d;
++	int ret = 0;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->dev = dev;
++
++	priv->base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(priv->base))
++		return PTR_ERR(priv->base);
++
++	d = irq_domain_add_tree(np, &julian_intc_domain_ops, priv);
++	if (d == NULL) {
++		dev_err(dev, "cannot initialize irq domain\n");
++		kfree(priv);
++		ret = -ENOMEM;
++	} else {
++		priv->irq_domain = d;
++		irq_domain_update_bus_token(d, DOMAIN_BUS_WIRED);
++	}
++	return ret;
 +}
-diff --git a/arch/sh/boot/compressed/head_32.S b/arch/sh/boot/compressed/head_32.S
-index 7bb168133dbb..c5227ef636c3 100644
---- a/arch/sh/boot/compressed/head_32.S
-+++ b/arch/sh/boot/compressed/head_32.S
-@@ -15,7 +15,8 @@ startup:
- 	/* Load initial status register */
- 	mov.l   init_sr, r1
- 	ldc     r1, sr
--
-+	/* Save FDT address */
-+	mov	r4, r13
- 	/* Move myself to proper location if necessary */
- 	mova	1f, r0
- 	mov.l	1f, r2
-@@ -84,7 +85,7 @@ l1:
- 	/* Jump to the start of the decompressed kernel */
- 	mov.l	kernel_start_addr, r0
- 	jmp	@r0
--	nop
-+	  mov	r13,r4
- 	
- 	.align	2
- bss_start_addr:
-diff --git a/arch/sh/kernel/head_32.S b/arch/sh/kernel/head_32.S
-index b603b7968b38..28cd8806f67c 100644
---- a/arch/sh/kernel/head_32.S
-+++ b/arch/sh/kernel/head_32.S
-@@ -56,7 +56,7 @@ ENTRY(empty_zero_page)
-  */
- ENTRY(_stext)
- 	!			Initialize Status Register
--	mov.l	1f, r0		! MD=1, RB=0, BL=0, IMASK=0xF
-+	mov.l	1f, r0		! MD=1, RB=0, BL=1, IMASK=0xF
- 	ldc	r0, sr
- 	!			Initialize global interrupt mask
- #ifdef CONFIG_CPU_HAS_SR_RB
-diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-index b3da2757faaf..8389b673f2e8 100644
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -31,6 +31,7 @@
- #include <linux/memblock.h>
- #include <linux/of.h>
- #include <linux/of_fdt.h>
-+#include <linux/libfdt.h>
- #include <linux/uaccess.h>
- #include <uapi/linux/mount.h>
- #include <asm/io.h>
-@@ -79,7 +80,9 @@ extern int root_mountflags;
- #define RAMDISK_PROMPT_FLAG		0x8000
- #define RAMDISK_LOAD_FLAG		0x4000
- 
-+#ifndef CONFIG_OF
- static char __initdata command_line[COMMAND_LINE_SIZE] = { 0, };
-+#endif
- 
- static struct resource code_resource = {
- 	.name = "Kernel code",
-@@ -104,6 +107,10 @@ unsigned long memory_limit = 0;
- 
- static struct resource mem_resources[MAX_NUMNODES];
- 
-+#if defined(CONFIG_OF)
-+static void *dt_virt;
-+#endif
 +
- int l1i_cache_shape, l1d_cache_shape, l2_cache_shape;
- 
- static int __init early_parse_mem(char *p)
-@@ -180,7 +187,12 @@ void __init check_for_initrd(void)
- #ifndef CONFIG_GENERIC_CALIBRATE_DELAY
- void calibrate_delay(void)
- {
-+#ifndef CONFIG_OF
- 	struct clk *clk = clk_get(NULL, "cpu_clk");
-+#else
-+	struct device_node *cpu = of_find_node_by_name(NULL, "cpu");
-+	struct clk *clk = of_clk_get_by_name(cpu, NULL);
-+#endif
- 
- 	if (IS_ERR(clk))
- 		panic("Need a sane CPU clock definition!");
-@@ -249,7 +261,6 @@ void __init __weak plat_early_device_setup(void)
- void __ref sh_fdt_init(phys_addr_t dt_phys)
- {
- 	static int done = 0;
--	void *dt_virt;
- 
- 	/* Avoid calling an __init function on secondary cpus. */
- 	if (done) return;
-@@ -274,8 +285,16 @@ void __ref sh_fdt_init(phys_addr_t dt_phys)
- 
- void __init setup_arch(char **cmdline_p)
- {
-+#ifdef CONFIG_OF
-+#ifndef CONFIG_USE_BUILTIN_DTB
-+	memblock_reserve(__pa(dt_virt), fdt_totalsize(dt_virt));
-+#endif
-+	unflatten_device_tree();
-+#endif
- 	enable_mmu();
- 
++static int julian_intc_remove(struct platform_device *pdev)
++{
++	struct julian_intc_priv *priv = platform_get_drvdata(pdev);
 +
-+#ifndef CONFIG_OF
- 	ROOT_DEV = old_decode_dev(ORIG_ROOT_DEV);
- 
- 	printk(KERN_NOTICE "Boot params:\n"
-@@ -313,10 +332,15 @@ void __init setup_arch(char **cmdline_p)
- 	strlcat(command_line, CONFIG_CMDLINE, sizeof(command_line));
- #endif
- #endif
++	irq_domain_remove(priv->irq_domain);
++	return 0;
++}
++
++static const struct of_device_id julian_intc_dt_ids[] = {
++	{ .compatible = "iodata,julian-intc" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, julian_intc_dt_ids);
++
++static struct platform_driver julian_intc_device_driver = {
++	.probe		= julian_intc_probe,
++	.remove		= julian_intc_remove,
++	.driver		= {
++		.name	= "iodata_julian_intc",
++		.of_match_table	= julian_intc_dt_ids,
++	}
++};
++
++static int __init julian_intc_init(void)
++{
++	return platform_driver_register(&julian_intc_device_driver);
++}
++postcore_initcall(julian_intc_init);
++
++static void __exit julian_intc_exit(void)
++{
++	platform_driver_unregister(&julian_intc_device_driver);
++}
++module_exit(julian_intc_exit);
++
++MODULE_AUTHOR("Yoshinori Sato");
++MODULE_DESCRIPTION("IO-DATA JULIAN external interrupt encoder");
+diff --git a/drivers/irqchip/irq-renesas-r2d.c b/drivers/irqchip/irq-renesas-r2d.c
+new file mode 100644
+index 000000000000..595057c1f5aa
+--- /dev/null
++++ b/drivers/irqchip/irq-renesas-r2d.c
+@@ -0,0 +1,175 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Renesas RTS7751R2D interrupt encoder
++ *
++ * Copyright (C) 2023 Yoshinori Sato
++ */
++
++#include <linux/err.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/irqdomain.h>
++#include <linux/irq.h>
++#include <linux/module.h>
++#include <linux/of_irq.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++
++#define NUM_IRQ 15
++
++struct r2d_intc_priv {
++	struct device *dev;
++	void __iomem *base;
++	struct irq_domain *irq_domain;
++};
++
++static const int imask[] = {
++	1 << 11,	/* PCI INTD */
++	1 << 9,		/* CF IDE */
++	1 << 8,		/* CF CD */
++	1 << 12,	/* PCI INTC */
++	1 << 10,	/* SM501 */
++	1 << 6,		/* AX88796 / KEY */
++	1 << 5,		/* RTC ALARM */
++	1 << 4,		/* RTC T */
++	1 << 7,		/* SDCARD */
++	1 << 14,	/* PCI INTA */
++	1 << 13,	/* PCI INTB */
++	1 << 0,		/* EXT */
++	1 << 15,	/* TP */
++};
++
++static struct r2d_intc_priv *irq_data_to_priv(struct irq_data *data)
++{
++	return data->domain->host_data;
++}
++
++static void r2d_intc_mask_irq(struct irq_data *data)
++{
++	struct r2d_intc_priv *priv = irq_data_to_priv(data);
++	u16 mask;
++
++	mask = __raw_readw(priv->base);
++	mask &= ~(imask[data->irq]);
++	__raw_writew(mask, priv->base);
++}
++
++static void r2d_intc_unmask_irq(struct irq_data *data)
++{
++	struct r2d_intc_priv *priv = irq_data_to_priv(data);
++	u16 mask;
++
++	mask = __raw_readw(priv->base);
++	mask |= imask[data->irq];
++	__raw_writew(mask, priv->base);
++}
++
++static struct irq_chip r2d_intc_chip = {
++	.name		= "R2D-INTC",
++	.irq_unmask	= r2d_intc_unmask_irq,
++	.irq_mask	= r2d_intc_mask_irq,
++};
++
++static __init int r2d_intc_map(struct irq_domain *h, unsigned int virq,
++			       irq_hw_number_t hw_irq_num)
++{
++	irq_set_chip_and_handler(virq, &r2d_intc_chip, handle_level_irq);
++	irq_get_irq_data(virq)->chip_data = h->host_data;
++	irq_modify_status(virq, IRQ_NOREQUEST, IRQ_NOPROBE);
++	return 0;
++}
++
++static int r2d_intc_translate(struct irq_domain *domain,
++			       struct irq_fwspec *fwspec, unsigned long *hwirq,
++			       unsigned int *type)
++{
++	if (fwspec->param[0] >= NUM_IRQ)
++		return -EINVAL;
++
++	switch (fwspec->param_count) {
++	case 2:
++		*type = fwspec->param[1];
++		fallthrough;
++	case 1:
++		*hwirq = fwspec->param[0];
++		break;
++	default:
++		return -EINVAL;
++	}
++	return 0;
++}
++
++static const struct irq_domain_ops r2d_intc_domain_ops = {
++//	.alloc = r2d_intc_alloc,
++	.map = r2d_intc_map,
++	.translate = r2d_intc_translate,
++};
++
++static int r2d_intc_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct r2d_intc_priv *priv;
++	struct irq_domain *d;
++	int ret = 0;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->dev = dev;
++
++	priv->base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(priv->base))
++		return PTR_ERR(priv->base);
++
++	d = irq_domain_add_tree(np, &r2d_intc_domain_ops, priv);
++	if (d == NULL) {
++		dev_err(dev, "cannot initialize irq domain\n");
++		kfree(priv);
++		ret = -ENOMEM;
++	} else {
++		priv->irq_domain = d;
++		irq_domain_update_bus_token(d, DOMAIN_BUS_WIRED);
++	}
++	return ret;
++}
++
++static int r2d_intc_remove(struct platform_device *pdev)
++{
++	struct r2d_intc_priv *priv = platform_get_drvdata(pdev);
++
++	irq_domain_remove(priv->irq_domain);
++	return 0;
++}
++
++static const struct of_device_id r2d_intc_dt_ids[] = {
++	{ .compatible = "renesas,rts7751r2d-intc" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, r2d_intc_dt_ids);
++
++static struct platform_driver r2d_intc_device_driver = {
++	.probe		= r2d_intc_probe,
++	.remove		= r2d_intc_remove,
++	.driver		= {
++		.name	= "renesas_r2d_intc",
++		.of_match_table	= r2d_intc_dt_ids,
++	}
++};
++
++static int __init r2d_intc_init(void)
++{
++	return platform_driver_register(&r2d_intc_device_driver);
++}
++postcore_initcall(r2d_intc_init);
++
++static void __exit r2d_intc_exit(void)
++{
++	platform_driver_unregister(&r2d_intc_device_driver);
++}
++module_exit(r2d_intc_exit);
++
++MODULE_AUTHOR("Yoshinori Sato");
++MODULE_DESCRIPTION("Renesas RTS7751R2D external interrupt encoder");
+diff --git a/drivers/irqchip/irq-renesas-sh7751.c b/drivers/irqchip/irq-renesas-sh7751.c
+new file mode 100644
+index 000000000000..1c4b2be44c27
+--- /dev/null
++++ b/drivers/irqchip/irq-renesas-sh7751.c
+@@ -0,0 +1,186 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Renesas SH7751 interrupt controller driver
++ *
++ * Copyright 2023 Yoshinori Sato <ysato@users.sourceforge.jp>
++ */
++
++#include <linux/irq.h>
++#include <linux/irqchip.h>
++#include <linux/of_address.h>
++#include <linux/of_irq.h>
++#include <linux/of.h>
++#include <linux/io.h>
++
++static struct sh7751_intc_regs {
++	void *icr;
++	void *ipr;
++	void *intpri00;
++	void *intreq00;
++	void *intmsk00;
++	void *intmskclr00;
++} sh7751_regs;
++
++#define ICR_IRLM (1 << 7)
++
++static const unsigned int ipr_table[] = {
++	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, /* 0 - 7 */
++	0x41, 0xff, 0xff, 0x40, 0xff, 0xff, 0xff, 0xff, /* 8 - 15 */
++	0x03, 0x02, 0x01, 0x01, 0x00, 0x00, 0x00, 0x11, /* 16 - 23 */
++	0x11, 0x11, 0x11, 0x13, 0x12, 0x12, 0xff, 0xff, /* 24 - 31 */
++	0x30, 0x33, 0x32, 0x32, 0x32, 0x32, 0x32, 0x21, /* 32 - 39 */
++	0x21, 0x21, 0x21, 0x21, 0x32, 0x32, 0x32, 0x32, /* 40 - 47 */
++	0xff, 0xff, 0xff, 0x40, 0xff, 0xff, 0xff, 0xff, /* 48 - 55 */
++	0xff, 0xff, 0xff, 0x40, 0xff, 0xff, 0xff, 0xff, /* 56 - 63 */
++};
++
++static const unsigned int pri_table[] = {
++	0, 4, 4, 4, 4, 4, 4, 4,
++	8, 32, 32, 32, 12, 32, 32, 32,
++};
++
++/* Bitmap of IRQ masked */
++#define IMASK_PRIORITY	15
++
++static DECLARE_BITMAP(imask_mask, IMASK_PRIORITY);
++static int interrupt_priority;
++
++static inline void set_interrupt_registers(int ip)
++{
++	unsigned long __dummy;
++
++	asm volatile(
++#ifdef CONFIG_CPU_HAS_SR_RB
++		     "ldc	%2, r6_bank\n\t"
 +#endif
- 
-+#if !defined(CONFIG_OF) || defined(USE_BUILTIN_DTB)
- 	/* Save unparsed command line copy for /proc/cmdline */
- 	memcpy(boot_command_line, command_line, COMMAND_LINE_SIZE);
- 	*cmdline_p = command_line;
-+#else
-+	*cmdline_p = boot_command_line;
-+#endif
- 
- 	parse_early_param();
- 
++		     "stc	sr, %0\n\t"
++		     "and	#0xf0, %0\n\t"
++		     "shlr2	%0\n\t"
++		     "cmp/eq	#0x3c, %0\n\t"
++		     "bt/s	1f	! CLI-ed\n\t"
++		     " stc	sr, %0\n\t"
++		     "and	%1, %0\n\t"
++		     "or	%2, %0\n\t"
++		     "ldc	%0, sr\n"
++		     "1:"
++		     : "=&z" (__dummy)
++		     : "r" (~0xf0), "r" (ip << 4)
++		     : "t");
++}
++
++static void update_ipr(struct sh7751_intc_regs *reg, int irq, int on)
++{
++	unsigned int addr;
++	int pos;
++	uint16_t pri;
++
++	if (irq < 64) {
++		if (ipr_table[irq] != 0xff) {
++			addr = (ipr_table[irq] & 0xf0) >> 2;
++			pos = (ipr_table[irq] & 0x0f) * 4;
++			pri = ~(0x000f << pos);
++			pri &= __raw_readw(reg->ipr + addr);
++			if (on)
++				pri |= 1 << pos;
++			__raw_writew(pri, reg->ipr + addr);
++		}
++	} else {
++		if (pri_table[irq - 64] < 32) {
++			pos = pri_table[irq - 64];
++			pri = ~(0x000f << pos);
++			pri &= __raw_readw(reg->intpri00);
++			if (on)
++				pri |= 1 << pos;
++			__raw_writew(pri, reg->intpri00);
++		}
++	}
++}
++
++static void sh7751_disable_irq(struct irq_data *data)
++{
++	unsigned int irq = data->irq;
++	struct sh7751_intc_regs *reg = data->chip_data;
++	uint16_t icr = __raw_readw(reg->icr);
++
++	if (irq < 16 && (icr & ICR_IRLM) == 0) {
++		clear_bit(irq, imask_mask);
++		if (interrupt_priority < IMASK_PRIORITY - irq)
++			interrupt_priority = IMASK_PRIORITY - irq;
++		set_interrupt_registers(interrupt_priority);
++	} else
++		update_ipr(reg, irq, 0);
++}
++
++static void sh7751_enable_irq(struct irq_data *data)
++{
++	unsigned int irq = data->irq;
++	struct sh7751_intc_regs *reg = data->chip_data;
++	uint16_t icr = __raw_readw(reg->icr);
++
++	if (irq < 16 && (icr & ICR_IRLM) == 0) {
++		set_bit(irq, imask_mask);
++		interrupt_priority = IMASK_PRIORITY -
++		  find_first_bit(imask_mask, IMASK_PRIORITY);
++		set_interrupt_registers(interrupt_priority);
++	} else
++		update_ipr(reg, irq, 1);
++}
++
++struct irq_chip sh7751_irq_chip = {
++	.name		= "SH7751-INTC",
++	.irq_unmask	= sh7751_enable_irq,
++	.irq_mask	= sh7751_disable_irq,
++};
++
++static int irq_sh7751_map(struct irq_domain *h, unsigned int virq,
++				  irq_hw_number_t hw_irq_num)
++{
++	irq_set_chip_and_handler(virq, &sh7751_irq_chip, handle_level_irq);
++	irq_get_irq_data(virq)->chip_data = h->host_data;
++	irq_modify_status(virq, IRQ_NOREQUEST, IRQ_NOPROBE);
++	return 0;
++}
++static const struct irq_domain_ops irq_ops = {
++	.map = irq_sh7751_map,
++	.xlate  = irq_domain_xlate_onecell,
++};
++
++static int __init sh7751_intc_of_init(struct device_node *intc,
++				      struct device_node *parent)
++{
++	unsigned short icr;
++	struct irq_domain *domain;
++	void *intc_baseaddr;
++	void *intc_baseaddr2;
++
++	intc_baseaddr = of_iomap(intc, 0);
++	intc_baseaddr2 = of_iomap(intc, 1);
++	if (!intc_baseaddr) {
++		pr_err("Invalid INTC address\n");
++		return -EINVAL;
++	}
++
++	sh7751_regs.icr = intc_baseaddr;
++	sh7751_regs.ipr = intc_baseaddr + 4;
++	sh7751_regs.intpri00 = intc_baseaddr2;
++	sh7751_regs.intreq00 = intc_baseaddr2 + 0x20;
++	sh7751_regs.intmsk00 = intc_baseaddr2 + 0x40;
++	sh7751_regs.intmskclr00 = intc_baseaddr2 + 0x60;
++
++	if (of_property_read_bool(intc, "sh7751,irlm")) {
++		icr = __raw_readw(sh7751_regs.icr);
++		icr |= 0x80;	// IRLM = 1
++		__raw_writew(icr, sh7751_regs.icr);
++	}
++
++	domain = irq_domain_add_linear(intc, NR_IRQS, &irq_ops, &sh7751_regs);
++	if (!domain) {
++		pr_err("Unable to allocate domain handle\n");
++		return -ENOMEM;
++	}
++	irq_set_default_host(domain);
++	return 0;
++}
++
++IRQCHIP_DECLARE(sh_7751_intc,
++		"renesas,sh7751-intc", sh7751_intc_of_init);
 -- 
 2.39.2
 
