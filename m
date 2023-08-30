@@ -2,32 +2,32 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6F2D7C83F20
-	for <linux-sh@archiver.kernel.org>; Wed, 30 Aug 2023 18:47:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BC6DEC6FA8F
+	for <linux-sh@archiver.kernel.org>; Wed, 30 Aug 2023 18:47:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242516AbjH3SqT (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 30 Aug 2023 14:46:19 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43030 "EHLO
+        id S242686AbjH3SqW (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 30 Aug 2023 14:46:22 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43022 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242524AbjH3I6f (ORCPT
+        with ESMTP id S242523AbjH3I6f (ORCPT
         <rfc822;linux-sh@vger.kernel.org>); Wed, 30 Aug 2023 04:58:35 -0400
-Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.239])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7A25ACDB
+Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.237])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D0B04CE0
         for <linux-sh@vger.kernel.org>; Wed, 30 Aug 2023 01:58:27 -0700 (PDT)
 X-Country-Code: JP
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-        by hsmtpd-out-1.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
-        id 907ebb17-661d-4ac2-aeed-4ec8cbaa4e2f;
-        Wed, 30 Aug 2023 17:42:22 +0900 (JST)
+        by hsmtpd-out-0.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
+        id 7788272b-8231-470d-9820-d67b5a6fc3d2;
+        Wed, 30 Aug 2023 17:42:23 +0900 (JST)
 Received: from SIOS1075.ysato.name (al128006.dynamic.ppp.asahi-net.or.jp [111.234.128.6])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 2240F1C007F;
+        by sakura.ysato.name (Postfix) with ESMTPSA id D5A161C007F;
         Wed, 30 Aug 2023 17:42:22 +0900 (JST)
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     linux-sh@vger.kernel.org
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>
-Subject: [RFC PATCH 07/12] clocksource: Update sh_tmu of handling.
-Date:   Wed, 30 Aug 2023 17:42:08 +0900
-Message-Id: <2d323328fba6ac55a1c3cdcefe909fad3ab0d9dc.1693384846.git.ysato@users.sourceforge.jp>
+Subject: [RFC PATCH 11/12] sh: target dts.
+Date:   Wed, 30 Aug 2023 17:42:12 +0900
+Message-Id: <1a7d32f58935aee952750a088702f7f2798972d8.1693384846.git.ysato@users.sourceforge.jp>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <cover.1693384846.git.ysato@users.sourceforge.jp>
 References: <cover.1693384846.git.ysato@users.sourceforge.jp>
@@ -37,83 +37,504 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+- rts7751r2dplus - Renesas RTS7751R2D-PLUS board.
+- landisk - IO DATA DEVICE LANDISK
+- usl-5p - IO DATA DECVICE USL-5P
+
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- drivers/clocksource/sh_tmu.c | 33 +++++++++++++++++----------------
- 1 file changed, 17 insertions(+), 16 deletions(-)
+ arch/sh/boot/dts/include/dt-bindings |   1 +
+ arch/sh/boot/dts/landisk.dts         | 142 ++++++++++++++++++++++
+ arch/sh/boot/dts/rts7751r2dplus.dts  | 168 +++++++++++++++++++++++++++
+ arch/sh/boot/dts/usl-5p.dts          | 146 +++++++++++++++++++++++
+ 4 files changed, 457 insertions(+)
+ create mode 120000 arch/sh/boot/dts/include/dt-bindings
+ create mode 100644 arch/sh/boot/dts/landisk.dts
+ create mode 100644 arch/sh/boot/dts/rts7751r2dplus.dts
+ create mode 100644 arch/sh/boot/dts/usl-5p.dts
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index beffff81c00f..de65e1c96780 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -420,9 +420,6 @@ static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
- 	ced->suspend = sh_tmu_clock_event_suspend;
- 	ced->resume = sh_tmu_clock_event_resume;
- 
--	dev_info(&ch->tmu->pdev->dev, "ch%u: used for clock events\n",
--		 ch->index);
--
- 	clockevents_config_and_register(ced, ch->tmu->rate, 0x300, 0xffffffff);
- 
- 	ret = request_irq(ch->irq, sh_tmu_interrupt,
-@@ -500,12 +497,12 @@ static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
- 	tmu->model = SH_TMU;
- 	tmu->num_channels = 3;
- 
--	of_property_read_u32(np, "#renesas,channels", &tmu->num_channels);
--
--	if (tmu->num_channels != 2 && tmu->num_channels != 3) {
--		dev_err(&tmu->pdev->dev, "invalid number of channels %u\n",
--			tmu->num_channels);
--		return -EINVAL;
-+	if (of_property_read_u32(np, "#renesas,channels", &tmu->num_channels)) {
-+		if (tmu->num_channels != 2 && tmu->num_channels != 3) {
-+			dev_err(&tmu->pdev->dev,
-+				"invalid number of channels %u\n", tmu->num_channels);
-+			return -EINVAL;
-+		}
- 	}
- 
- 	return 0;
-@@ -513,7 +510,6 @@ static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
- 
- static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- {
--	unsigned int i;
- 	int ret;
- 
- 	tmu->pdev = pdev;
-@@ -535,6 +531,11 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 		return -ENXIO;
- 	}
- 
-+	if (tmu->num_channels < 2) {
-+		dev_err(&tmu->pdev->dev, "Invalid channels.\n");
-+		return -ENXIO;
-+	}
+diff --git a/arch/sh/boot/dts/include/dt-bindings b/arch/sh/boot/dts/include/dt-bindings
+new file mode 120000
+index 000000000000..08c00e4972fa
+--- /dev/null
++++ b/arch/sh/boot/dts/include/dt-bindings
+@@ -0,0 +1 @@
++../../../../../include/dt-bindings
+\ No newline at end of file
+diff --git a/arch/sh/boot/dts/landisk.dts b/arch/sh/boot/dts/landisk.dts
+new file mode 100644
+index 000000000000..0d0a5e44a2d7
+--- /dev/null
++++ b/arch/sh/boot/dts/landisk.dts
+@@ -0,0 +1,142 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Device Tree source for IO DATA DEVICE LANDISK
++ *
++ * Copyright 2023 Yoshinori Sato
++ */
 +
- 	/* Get hold of clock. */
- 	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
- 	if (IS_ERR(tmu->clk)) {
-@@ -573,12 +574,12 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	 * Use the first channel as a clock event device and the second channel
- 	 * as a clock source.
- 	 */
--	for (i = 0; i < tmu->num_channels; ++i) {
--		ret = sh_tmu_channel_setup(&tmu->channels[i], i,
--					   i == 0, i == 1, tmu);
--		if (ret < 0)
--			goto err_unmap;
--	}
-+	ret = sh_tmu_channel_setup(&tmu->channels[0], 0, false, true, tmu);
-+	if (ret < 0)
-+		goto err_unmap;
-+	ret = sh_tmu_channel_setup(&tmu->channels[1], 1, true, false, tmu);
-+	if (ret < 0)
-+		goto err_unmap;
- 
- 	platform_set_drvdata(pdev, tmu);
- 
++#include <dt-bindings/interrupt-controller/sh_intc.h>
++
++/dts-v1/;
++/ {
++	model = "IO-DATA Device LANDISK";
++	compatible = "iodata,landisk";
++	#address-cells = <1>;
++	#size-cells = <1>;
++	interrupt-parent = <&shintc>;
++	chosen {
++		stdout-path = &sci1;
++	};
++	aliases {
++		serial1 = &sci1;
++	};
++
++	oclk: oscillator {
++		#clock-cells = <0>;
++		compatible = "fixed-clock";
++		clock-frequency = <22222222>;
++	};
++	pllclk: pllclk {
++		compatible = "renesas,sh7750-pll-clock";
++		clocks = <&oclk>;
++		#clock-cells = <0>;
++		sh7750,md = <5>;
++		sh7750,rtype = <1>;
++		reg = <0xffc00000 2>, <0xffc00008 4>;
++	};
++	iclk: iclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <6>;
++		clock-output-names = "ick";
++	};
++	bclk: bclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <3>;
++		clock-output-names = "bck";
++	};
++	fclk: fclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <0>;
++		clock-output-names = "fck";
++	};
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		cpu@0 {
++		      compatible = "renesas,sh4", "renesas,sh";
++		      clock-frequency = <266666666>;
++		};
++	};
++	memory@c000000 {
++		device_type = "memory";
++		reg = <0x0c000000 0x4000000>;
++	};
++	shintc: interrupt-controller@ffd00000 {
++		compatible = "renesas,sh7751-intc";
++		#interrupt-cells = <2>;
++		#address-cells = <0>;
++		interrupt-controller;
++		reg = <0xffd00000 14>, <0xfe080000 128>;
++	};
++	julianintc: julianintc@a4000000 {
++		compatible = "iodata,julian-intc";
++		reg = <0xb0000000 0x08>;
++		interrupt-controller;
++		#address-cells = <1>;
++		#interrupt-cells = <2>;
++	};
++	sci1: serial@ffe80000 {
++		compatible = "renesas,scif";
++		reg = <0xffe80000 0x100>;
++		interrupts = <evt2irq(0x700) 0
++			      evt2irq(0x720) 0
++			      evt2irq(0x760) 0
++			      evt2irq(0x740) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++	};
++	tmu: timer@ffd80008 {
++		compatible = "renesas,tmu";
++		reg = <0xffd80000 12>;
++		interrupts = <evt2irq(0x400) 0
++			      evt2irq(0x420) 0
++			      evt2irq(0x440) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++		renesas,channels = <0x03>;
++	};
++
++	pci@fe200000 {
++		compatible = "renesas,sh7751-pci", "iodata,julian";
++		device_type = "pci";
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges = <0x02000000 0 0xfd000000 0xfd000000 0 0x01000000>,
++			 <0x01000000 0 0xfe240000 0xfe240000 0 0x00040000>;
++		reg = <0xfe200000 0x0400>,
++		      <0x0c000000 0x04000000>,
++		      <0xff800000 0x0030>;
++		#interrupt-cells = <1>;
++		interrupt-parent = <&julianintc>;
++		eth@0,0 {
++			reg = <0x0000 0 0 0 0>;
++			interrupts = <5 0>;
++		};
++		ata@1,0 {
++			reg = <0x0800 0 0 0 0>;
++			interrupts = <6 0>;
++		};
++		usb@2,0 {
++			reg = <0x1000 0 0 0 0>;
++			interrupts = <7 0>;
++		};
++		usb@2,1 {
++			reg = <0x1100 0 0 0 0>;
++			interrupts = <8 0>;
++		};
++		usb@2,2 {
++			reg = <0x1200 0 0 0 0>;
++			interrupts = <5 0>;
++		};
++	};
++};
+diff --git a/arch/sh/boot/dts/rts7751r2dplus.dts b/arch/sh/boot/dts/rts7751r2dplus.dts
+new file mode 100644
+index 000000000000..1d64753f47a2
+--- /dev/null
++++ b/arch/sh/boot/dts/rts7751r2dplus.dts
+@@ -0,0 +1,168 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Device Tree source for Renesas RTS7751R2D Plus
++ *
++ * Copyright 2023 Yoshinori Sato
++ */
++
++#include <dt-bindings/interrupt-controller/sh_intc.h>
++
++/dts-v1/;
++/ {
++	model = "Renesas RTS7715R2D Plus";
++	compatible = "renesas,r2dplus";
++	#address-cells = <1>;
++	#size-cells = <1>;
++	interrupt-parent = <&shintc>;
++	chosen {
++		stdout-path = &sci1;
++	};
++	aliases {
++		serial1 = &sci1;
++	};
++
++	oclk: oscillator {
++		#clock-cells = <0>;
++		compatible = "fixed-clock";
++		clock-frequency = <22222222>;
++	};
++	pllclk: pllclk {
++		compatible = "renesas,sh7750-pll-clock";
++		clocks = <&oclk>;
++		#clock-cells = <0>;
++		sh7750,md = <5>;
++		sh7750,rtype = <1>;
++		reg = <0xffc00000 2>, <0xffc00008 4>;
++	};
++	iclk: iclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <6>;
++		clock-output-names = "ick";
++	};
++	bclk: bclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <3>;
++		clock-output-names = "bck";
++	};
++	fclk: fclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <0>;
++		clock-output-names = "fck";
++	};
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		cpu@0 {
++		      compatible = "renesas,sh4", "renesas,sh";
++		      clock-frequency = <266666666>;
++		};
++	};
++	memory@c000000 {
++		device_type = "memory";
++		reg = <0x0c000000 0x4000000>;
++	};
++	shintc: interrupt-controller@ffd00000 {
++		compatible = "renesas,sh7751-intc";
++		#interrupt-cells = <2>;
++		#address-cells = <0>;
++		interrupt-controller;
++		reg = <0xffd00000 14>, <0xfe080000 128>;
++	};
++	r2dintc: r2dintc@a4000000 {
++		compatible = "renesas,rts7751r2d-intc";
++		reg = <0xa4000000 0x3a>;
++		interrupt-controller;
++		#address-cells = <1>;
++		#interrupt-cells = <2>;
++	};
++	sci1: serial@ffe80000 {
++		compatible = "renesas,scif";
++		reg = <0xffe80000 0x100>;
++		interrupts = <evt2irq(0x700) 0
++			      evt2irq(0x720) 0
++			      evt2irq(0x760) 0
++			      evt2irq(0x740) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++	};
++	tmu: timer@ffd80008 {
++		compatible = "renesas,tmu";
++		reg = <0xffd80000 12>;
++		interrupts = <evt2irq(0x400) 0
++			      evt2irq(0x420) 0
++			      evt2irq(0x440) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++		renesas,channels = <0x03>;
++	};
++
++	display@1,0 {
++		compatible = "smi,sm501";
++		reg = <0x10000000 0x03e00000
++		       0x13e00000 0x00200000>;
++		interrupt-parent = <&r2dintc>;
++		interrupts = <4 0>;
++		mode = "640x480-16@60";
++		little-endian;
++		sm501,devices = "usb-host,uart0";
++	};
++	compact-flash@b4001000 {
++		compatible = "ata-generic";
++		reg = <0xb4001000 0x0e>, <0xb400080c 2>;
++		reg-shift = <1>;
++		interrupt-parent = <&r2dintc>;
++		interrupts = <1 0>;
++	};
++
++	flash@0 {
++		compatible = "cfi-flash";
++		reg = <0x00000000 0x02000000>;
++		device-width = <2>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		partition@0 {
++			label = "U-Boot";
++			reg = <0x00000000 0x00040000>;
++		};
++		partition@1 {
++			label = "Environemt";
++			reg = <0x00040000 0x00040000>;
++		};
++		partition@2 {
++			label = "Kernel";
++			reg = <0x00080000 0x001c0000>;
++		};
++		partition@3 {
++			label = "Flash_FS";
++			reg = <0x00240000 0x00dc0000>;
++		};
++	};
++
++	pci@fe200000 {
++		compatible = "renesas,sh7751-pci", "renesas,r2d";
++		device_type = "pci";
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges = <0x02000000 0 0xfd000000 0xfd000000 0 0x01000000>,
++			 <0x01000000 0 0xfe240000 0xfe240000 0 0x00040000>;
++		reg = <0xfe200000 0x0400>,
++		      <0x0c000000 0x04000000>,
++		      <0xff800000 0x0030>;
++		#interrupt-cells = <1>;
++		interrupt-parent = <&r2dintc>;
++		eth@2,0 {
++			reg = <0x1000 0 0 0 0>;
++			interrupts = <3 0>;
++		};
++	};
++};
+diff --git a/arch/sh/boot/dts/usl-5p.dts b/arch/sh/boot/dts/usl-5p.dts
+new file mode 100644
+index 000000000000..3e6624c55c0e
+--- /dev/null
++++ b/arch/sh/boot/dts/usl-5p.dts
+@@ -0,0 +1,146 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Device Tree source for IO DATA DEVICE USL-5P
++ *
++ * Copyright 2023 Yoshinori Sato
++ */
++
++#include <dt-bindings/interrupt-controller/sh_intc.h>
++
++/dts-v1/;
++/ {
++	model = "IO-DATA Device USL-5P";
++	compatible = "iodata,usl-5p";
++	#address-cells = <1>;
++	#size-cells = <1>;
++	interrupt-parent = <&shintc>;
++	chosen {
++		stdout-path = &sci1;
++	};
++	aliases {
++		serial1 = &sci1;
++	};
++
++	oclk: oscillator {
++		#clock-cells = <0>;
++		compatible = "fixed-clock";
++		clock-frequency = <22222222>;
++	};
++	pllclk: pllclk {
++		compatible = "renesas,sh7750-pll-clock";
++		clocks = <&oclk>;
++		#clock-cells = <0>;
++		sh7750,md = <5>;
++		sh7750,rtype = <1>;
++		reg = <0xffc00000 2>, <0xffc00008 4>;
++	};
++	iclk: iclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <6>;
++		clock-output-names = "ick";
++	};
++	bclk: bclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <3>;
++		clock-output-names = "bck";
++	};
++	fclk: fclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <0>;
++		clock-output-names = "fck";
++	};
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		cpu@0 {
++		      compatible = "renesas,sh4", "renesas,sh";
++		      clock-frequency = <266666666>;
++		};
++	};
++	memory@c000000 {
++		device_type = "memory";
++		reg = <0x0c000000 0x4000000>;
++	};
++	shintc: interrupt-controller@ffd00000 {
++		compatible = "renesas,sh7751-intc";
++		#interrupt-cells = <2>;
++		#address-cells = <0>;
++		interrupt-controller;
++		reg = <0xffd00000 14>, <0xfe080000 128>;
++	};
++	julianintc: julianintc@a4000000 {
++		compatible = "iodata,julian-intc";
++		reg = <0xb0000000 0x08>;
++		interrupt-controller;
++		#address-cells = <1>;
++		#interrupt-cells = <2>;
++	};
++	sci1: serial@ffe80000 {
++		compatible = "renesas,scif";
++		reg = <0xffe80000 0x100>;
++		interrupts = <evt2irq(0x700) 0
++			      evt2irq(0x720) 0
++			      evt2irq(0x760) 0
++			      evt2irq(0x740) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++	};
++	tmu: timer@ffd80008 {
++		compatible = "renesas,tmu";
++		reg = <0xffd80000 12>;
++		interrupts = <evt2irq(0x400) 0
++			      evt2irq(0x420) 0
++			      evt2irq(0x440) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++		renesas,channels = <0x03>;
++	};
++
++	compact-flash@b4001000 {
++		compatible = "ata-generic";
++		reg = <0xb4000040 0x0e>, <0xb400002c 2>;
++		reg-shift = <1>;
++		interrupt-parent = <&julianintc>;
++		interrupts = <10 0>;
++	};
++
++	pci@fe200000 {
++		compatible = "renesas,sh7751-pci", "iodata,julian";
++		device_type = "pci";
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges = <0x02000000 0 0xfd000000 0xfd000000 0 0x01000000>,
++			 <0x01000000 0 0xfe240000 0xfe240000 0 0x00040000>;
++		reg = <0xfe200000 0x0400>,
++		      <0x0c000000 0x04000000>,
++		      <0xff800000 0x0030>;
++		#interrupt-cells = <1>;
++		interrupt-parent = <&julianintc>;
++		eth@0,0 {
++			reg = <0x0000 0 0 0 0>;
++			interrupts = <5 0>;
++		};
++		usb@2,0 {
++			reg = <0x1000 0 0 0 0>;
++			interrupts = <7 0>;
++		};
++		usb@2,1 {
++			reg = <0x1100 0 0 0 0>;
++			interrupts = <8 0>;
++		};
++		usb@2,2 {
++			reg = <0x1200 0 0 0 0>;
++			interrupts = <5 0>;
++		};
++	};
++};
 -- 
 2.39.2
 
