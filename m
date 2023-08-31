@@ -2,33 +2,33 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 72601C83F1D
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E708C83F1F
 	for <linux-sh@archiver.kernel.org>; Thu, 31 Aug 2023 01:12:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233166AbjHaBMP (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 30 Aug 2023 21:12:15 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41268 "EHLO
+        id S1344986AbjHaBMQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 30 Aug 2023 21:12:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41272 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344986AbjHaBMO (ORCPT
+        with ESMTP id S1344987AbjHaBMO (ORCPT
         <rfc822;linux-sh@vger.kernel.org>); Wed, 30 Aug 2023 21:12:14 -0400
-Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.238])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A2F93CE6
+Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.241])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7222ECE4
         for <linux-sh@vger.kernel.org>; Wed, 30 Aug 2023 18:12:08 -0700 (PDT)
 X-Country-Code: JP
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-        by hsmtpd-out-1.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
-        id d1c72fed-e7c1-48e5-ad1b-c6dd102acb9a;
+        by hsmtpd-out-2.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
+        id f1f37368-b028-419d-9883-ec77e2a92013;
         Thu, 31 Aug 2023 10:12:07 +0900 (JST)
 Received: from SIOS1075.flets-east.jp (al128006.dynamic.ppp.asahi-net.or.jp [111.234.128.6])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 316F71C0246;
-        Thu, 31 Aug 2023 10:12:07 +0900 (JST)
+        by sakura.ysato.name (Postfix) with ESMTPSA id 0438D1C0015;
+        Thu, 31 Aug 2023 10:12:06 +0900 (JST)
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     linux-sh@vger.kernel.org
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         glaubitz@physik.fu-berlin.de
-Subject: [RESEND RFC PATCH 12/12] sh: OF defconfig.
-Date:   Thu, 31 Aug 2023 10:11:59 +0900
-Message-Id: <67d119de7223c02deaa2ab71e262ea2ac819b93d.1693444193.git.ysato@users.sourceforge.jp>
+Subject: [RESEND RFC PATCH 11/12] sh: target dts.
+Date:   Thu, 31 Aug 2023 10:11:58 +0900
+Message-Id: <1a7d32f58935aee952750a088702f7f2798972d8.1693444193.git.ysato@users.sourceforge.jp>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <cover.1693444193.git.ysato@users.sourceforge.jp>
 References: <cover.1693444193.git.ysato@users.sourceforge.jp>
@@ -38,346 +38,504 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+- rts7751r2dplus - Renesas RTS7751R2D-PLUS board.
+- landisk - IO DATA DEVICE LANDISK
+- usl-5p - IO DATA DECVICE USL-5P
+
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/configs/landisk-of_defconfig        | 161 ++++++++++++++++++++
- arch/sh/configs/rts7751r2dplus-of_defconfig | 159 +++++++++++++++++++
- 2 files changed, 320 insertions(+)
- create mode 100644 arch/sh/configs/landisk-of_defconfig
- create mode 100644 arch/sh/configs/rts7751r2dplus-of_defconfig
+ arch/sh/boot/dts/include/dt-bindings |   1 +
+ arch/sh/boot/dts/landisk.dts         | 142 ++++++++++++++++++++++
+ arch/sh/boot/dts/rts7751r2dplus.dts  | 168 +++++++++++++++++++++++++++
+ arch/sh/boot/dts/usl-5p.dts          | 146 +++++++++++++++++++++++
+ 4 files changed, 457 insertions(+)
+ create mode 120000 arch/sh/boot/dts/include/dt-bindings
+ create mode 100644 arch/sh/boot/dts/landisk.dts
+ create mode 100644 arch/sh/boot/dts/rts7751r2dplus.dts
+ create mode 100644 arch/sh/boot/dts/usl-5p.dts
 
-diff --git a/arch/sh/configs/landisk-of_defconfig b/arch/sh/configs/landisk-of_defconfig
-new file mode 100644
-index 000000000000..0bd96aef77d8
+diff --git a/arch/sh/boot/dts/include/dt-bindings b/arch/sh/boot/dts/include/dt-bindings
+new file mode 120000
+index 000000000000..08c00e4972fa
 --- /dev/null
-+++ b/arch/sh/configs/landisk-of_defconfig
-@@ -0,0 +1,161 @@
-+CONFIG_SYSVIPC=y
-+CONFIG_LOG_BUF_SHIFT=14
-+CONFIG_NAMESPACES=y
-+CONFIG_EMBEDDED=y
-+CONFIG_PROFILING=y
-+CONFIG_CPU_SUBTYPE_SH7751R=y
-+CONFIG_MEMORY_START=0x0c000000
-+CONFIG_SH_LANDISK_OF=y
-+CONFIG_MODULES=y
-+CONFIG_SLAB=y
-+CONFIG_FLATMEM_MANUAL=y
-+CONFIG_NET=y
-+CONFIG_PACKET=y
-+CONFIG_UNIX=y
-+CONFIG_INET=y
-+# CONFIG_IPV6 is not set
-+CONFIG_PCI=y
-+CONFIG_HOTPLUG_PCI=y
-+CONFIG_UEVENT_HELPER=y
-+CONFIG_MTD=y
-+CONFIG_MTD_CMDLINE_PARTS=y
-+CONFIG_MTD_CFI=y
-+CONFIG_MTD_CFI_AMDSTD=y
-+CONFIG_MTD_PHYSMAP=y
-+CONFIG_BLK_DEV_RAM=y
-+CONFIG_BLK_DEV_SD=y
-+# CONFIG_BLK_DEV_BSG is not set
-+CONFIG_ATA=y
-+CONFIG_PATA_ATP867X=y
-+CONFIG_PATA_OF_PLATFORM=y
-+CONFIG_NETDEVICES=y
-+# CONFIG_NET_VENDOR_3COM is not set
-+# CONFIG_NET_VENDOR_ADAPTEC is not set
-+# CONFIG_NET_VENDOR_AGERE is not set
-+# CONFIG_NET_VENDOR_ALACRITECH is not set
-+# CONFIG_NET_VENDOR_ALTEON is not set
-+# CONFIG_NET_VENDOR_AMAZON is not set
-+# CONFIG_NET_VENDOR_AMD is not set
-+# CONFIG_NET_VENDOR_AQUANTIA is not set
-+# CONFIG_NET_VENDOR_ARC is not set
-+# CONFIG_NET_VENDOR_ASIX is not set
-+# CONFIG_NET_VENDOR_ATHEROS is not set
-+# CONFIG_NET_VENDOR_BROADCOM is not set
-+# CONFIG_NET_VENDOR_CADENCE is not set
-+# CONFIG_NET_VENDOR_CAVIUM is not set
-+# CONFIG_NET_VENDOR_CHELSIO is not set
-+# CONFIG_NET_VENDOR_CISCO is not set
-+# CONFIG_NET_VENDOR_CORTINA is not set
-+# CONFIG_NET_VENDOR_DAVICOM is not set
-+# CONFIG_NET_VENDOR_DEC is not set
-+# CONFIG_NET_VENDOR_DLINK is not set
-+# CONFIG_NET_VENDOR_EMULEX is not set
-+# CONFIG_NET_VENDOR_ENGLEDER is not set
-+# CONFIG_NET_VENDOR_EZCHIP is not set
-+# CONFIG_NET_VENDOR_FUNGIBLE is not set
-+# CONFIG_NET_VENDOR_GOOGLE is not set
-+# CONFIG_NET_VENDOR_HUAWEI is not set
-+# CONFIG_NET_VENDOR_INTEL is not set
-+# CONFIG_NET_VENDOR_ADI is not set
-+# CONFIG_NET_VENDOR_LITEX is not set
-+# CONFIG_NET_VENDOR_MARVELL is not set
-+# CONFIG_NET_VENDOR_MELLANOX is not set
-+# CONFIG_NET_VENDOR_MICREL is not set
-+# CONFIG_NET_VENDOR_MICROCHIP is not set
-+# CONFIG_NET_VENDOR_MICROSEMI is not set
-+# CONFIG_NET_VENDOR_MICROSOFT is not set
-+# CONFIG_NET_VENDOR_MYRI is not set
-+# CONFIG_NET_VENDOR_NI is not set
-+# CONFIG_NET_VENDOR_NATSEMI is not set
-+# CONFIG_NET_VENDOR_NETERION is not set
-+# CONFIG_NET_VENDOR_NETRONOME is not set
-+# CONFIG_NET_VENDOR_NVIDIA is not set
-+# CONFIG_NET_VENDOR_OKI is not set
-+# CONFIG_NET_VENDOR_PACKET_ENGINES is not set
-+# CONFIG_NET_VENDOR_PENSANDO is not set
-+# CONFIG_NET_VENDOR_QLOGIC is not set
-+# CONFIG_NET_VENDOR_BROCADE is not set
-+# CONFIG_NET_VENDOR_QUALCOMM is not set
-+# CONFIG_NET_VENDOR_RDC is not set
-+CONFIG_8139CP=y
-+# CONFIG_NET_VENDOR_RENESAS is not set
-+# CONFIG_NET_VENDOR_ROCKER is not set
-+# CONFIG_NET_VENDOR_SAMSUNG is not set
-+# CONFIG_NET_VENDOR_SEEQ is not set
-+# CONFIG_NET_VENDOR_SILAN is not set
-+# CONFIG_NET_VENDOR_SIS is not set
-+# CONFIG_NET_VENDOR_SOLARFLARE is not set
-+# CONFIG_NET_VENDOR_SMSC is not set
-+# CONFIG_NET_VENDOR_SOCIONEXT is not set
-+# CONFIG_NET_VENDOR_STMICRO is not set
-+# CONFIG_NET_VENDOR_SUN is not set
-+# CONFIG_NET_VENDOR_SYNOPSYS is not set
-+# CONFIG_NET_VENDOR_TEHUTI is not set
-+# CONFIG_NET_VENDOR_TI is not set
-+# CONFIG_NET_VENDOR_VERTEXCOM is not set
-+# CONFIG_NET_VENDOR_VIA is not set
-+# CONFIG_NET_VENDOR_WANGXUN is not set
-+# CONFIG_NET_VENDOR_WIZNET is not set
-+# CONFIG_NET_VENDOR_XILINX is not set
-+# CONFIG_INPUT_KEYBOARD is not set
-+# CONFIG_INPUT_MOUSE is not set
-+# CONFIG_SERIO is not set
-+CONFIG_SERIAL_8250=y
-+CONFIG_SERIAL_OF_PLATFORM=y
-+CONFIG_SERIAL_SH_SCI=y
-+# CONFIG_SERIAL_SH_SCI_CONSOLE is not set
-+CONFIG_SERIAL_SH_SCI_EARLYCON=y
-+CONFIG_HW_RANDOM=y
-+CONFIG_SPI=y
-+CONFIG_SPI_SH_SCI=y
-+CONFIG_MFD_SM501=y
-+CONFIG_FB=y
-+CONFIG_FB_SH_MOBILE_LCDC=m
-+CONFIG_FB_SM501=y
-+CONFIG_FRAMEBUFFER_CONSOLE=y
-+CONFIG_LOGO=y
-+# CONFIG_LOGO_LINUX_MONO is not set
-+# CONFIG_LOGO_LINUX_VGA16 is not set
-+# CONFIG_LOGO_LINUX_CLUT224 is not set
-+# CONFIG_LOGO_SUPERH_MONO is not set
-+# CONFIG_LOGO_SUPERH_VGA16 is not set
-+CONFIG_SOUND=y
-+CONFIG_SND=m
-+CONFIG_SND_YMFPCI=m
-+CONFIG_HID_A4TECH=y
-+CONFIG_HID_BELKIN=y
-+CONFIG_HID_CHERRY=y
-+CONFIG_HID_CHICONY=y
-+CONFIG_HID_CYPRESS=y
-+CONFIG_HID_EZKEY=y
-+CONFIG_HID_GYRATION=y
-+CONFIG_HID_ITE=y
-+CONFIG_HID_KENSINGTON=y
-+CONFIG_HID_REDRAGON=y
-+CONFIG_HID_MICROSOFT=y
-+CONFIG_HID_MONTEREY=y
-+CONFIG_HID_PANTHERLORD=y
-+CONFIG_HID_PETALYNX=y
-+CONFIG_HID_SAMSUNG=y
-+CONFIG_HID_SUNPLUS=y
-+CONFIG_USB=y
-+CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
-+CONFIG_USB_EHCI_HCD=y
-+CONFIG_USB_OHCI_HCD=y
-+CONFIG_USB_STORAGE=y
-+CONFIG_RTC_CLASS=y
-+CONFIG_RTC_DRV_R9701=y
-+CONFIG_COMMON_CLK_SH7750=y
-+CONFIG_EXT2_FS=y
-+CONFIG_MSDOS_FS=y
-+CONFIG_VFAT_FS=y
-+CONFIG_PROC_KCORE=y
-+CONFIG_TMPFS=y
-+CONFIG_MINIX_FS=y
-+CONFIG_NLS_CODEPAGE_932=y
-+CONFIG_INIT_STACK_NONE=y
-+CONFIG_CRC_T10DIF=y
-+CONFIG_DEBUG_INFO_DWARF5=y
-+CONFIG_DEBUG_FS=y
-+CONFIG_DEBUG_MEMORY_INIT=y
-+# CONFIG_FTRACE is not set
-diff --git a/arch/sh/configs/rts7751r2dplus-of_defconfig b/arch/sh/configs/rts7751r2dplus-of_defconfig
++++ b/arch/sh/boot/dts/include/dt-bindings
+@@ -0,0 +1 @@
++../../../../../include/dt-bindings
+\ No newline at end of file
+diff --git a/arch/sh/boot/dts/landisk.dts b/arch/sh/boot/dts/landisk.dts
 new file mode 100644
-index 000000000000..56b627142205
+index 000000000000..0d0a5e44a2d7
 --- /dev/null
-+++ b/arch/sh/configs/rts7751r2dplus-of_defconfig
-@@ -0,0 +1,159 @@
-+CONFIG_SYSVIPC=y
-+CONFIG_LOG_BUF_SHIFT=14
-+CONFIG_NAMESPACES=y
-+CONFIG_EMBEDDED=y
-+CONFIG_PROFILING=y
-+CONFIG_CPU_SUBTYPE_SH7751R=y
-+CONFIG_MEMORY_START=0x0c000000
-+CONFIG_SH_RTS7751R2D_OF=y
-+CONFIG_MODULES=y
-+CONFIG_SLAB=y
-+CONFIG_FLATMEM_MANUAL=y
-+CONFIG_NET=y
-+CONFIG_PACKET=y
-+CONFIG_UNIX=y
-+CONFIG_INET=y
-+# CONFIG_IPV6 is not set
-+CONFIG_PCI=y
-+CONFIG_HOTPLUG_PCI=y
-+CONFIG_UEVENT_HELPER=y
-+CONFIG_MTD=y
-+CONFIG_MTD_CMDLINE_PARTS=y
-+CONFIG_MTD_CFI=y
-+CONFIG_MTD_CFI_AMDSTD=y
-+CONFIG_MTD_PHYSMAP=y
-+CONFIG_BLK_DEV_RAM=y
-+CONFIG_BLK_DEV_SD=y
-+# CONFIG_BLK_DEV_BSG is not set
-+CONFIG_ATA=y
-+CONFIG_PATA_OF_PLATFORM=y
-+CONFIG_NETDEVICES=y
-+# CONFIG_NET_VENDOR_3COM is not set
-+# CONFIG_NET_VENDOR_ADAPTEC is not set
-+# CONFIG_NET_VENDOR_AGERE is not set
-+# CONFIG_NET_VENDOR_ALACRITECH is not set
-+# CONFIG_NET_VENDOR_ALTEON is not set
-+# CONFIG_NET_VENDOR_AMAZON is not set
-+# CONFIG_NET_VENDOR_AMD is not set
-+# CONFIG_NET_VENDOR_AQUANTIA is not set
-+# CONFIG_NET_VENDOR_ARC is not set
-+# CONFIG_NET_VENDOR_ASIX is not set
-+# CONFIG_NET_VENDOR_ATHEROS is not set
-+# CONFIG_NET_VENDOR_BROADCOM is not set
-+# CONFIG_NET_VENDOR_CADENCE is not set
-+# CONFIG_NET_VENDOR_CAVIUM is not set
-+# CONFIG_NET_VENDOR_CHELSIO is not set
-+# CONFIG_NET_VENDOR_CISCO is not set
-+# CONFIG_NET_VENDOR_CORTINA is not set
-+# CONFIG_NET_VENDOR_DAVICOM is not set
-+# CONFIG_NET_VENDOR_DEC is not set
-+# CONFIG_NET_VENDOR_DLINK is not set
-+# CONFIG_NET_VENDOR_EMULEX is not set
-+# CONFIG_NET_VENDOR_ENGLEDER is not set
-+# CONFIG_NET_VENDOR_EZCHIP is not set
-+# CONFIG_NET_VENDOR_FUNGIBLE is not set
-+# CONFIG_NET_VENDOR_GOOGLE is not set
-+# CONFIG_NET_VENDOR_HUAWEI is not set
-+# CONFIG_NET_VENDOR_INTEL is not set
-+# CONFIG_NET_VENDOR_ADI is not set
-+# CONFIG_NET_VENDOR_LITEX is not set
-+# CONFIG_NET_VENDOR_MARVELL is not set
-+# CONFIG_NET_VENDOR_MELLANOX is not set
-+# CONFIG_NET_VENDOR_MICREL is not set
-+# CONFIG_NET_VENDOR_MICROCHIP is not set
-+# CONFIG_NET_VENDOR_MICROSEMI is not set
-+# CONFIG_NET_VENDOR_MICROSOFT is not set
-+# CONFIG_NET_VENDOR_MYRI is not set
-+# CONFIG_NET_VENDOR_NI is not set
-+# CONFIG_NET_VENDOR_NATSEMI is not set
-+# CONFIG_NET_VENDOR_NETERION is not set
-+# CONFIG_NET_VENDOR_NETRONOME is not set
-+# CONFIG_NET_VENDOR_NVIDIA is not set
-+# CONFIG_NET_VENDOR_OKI is not set
-+# CONFIG_NET_VENDOR_PACKET_ENGINES is not set
-+# CONFIG_NET_VENDOR_PENSANDO is not set
-+# CONFIG_NET_VENDOR_QLOGIC is not set
-+# CONFIG_NET_VENDOR_BROCADE is not set
-+# CONFIG_NET_VENDOR_QUALCOMM is not set
-+# CONFIG_NET_VENDOR_RDC is not set
-+CONFIG_8139CP=y
-+# CONFIG_NET_VENDOR_RENESAS is not set
-+# CONFIG_NET_VENDOR_ROCKER is not set
-+# CONFIG_NET_VENDOR_SAMSUNG is not set
-+# CONFIG_NET_VENDOR_SEEQ is not set
-+# CONFIG_NET_VENDOR_SILAN is not set
-+# CONFIG_NET_VENDOR_SIS is not set
-+# CONFIG_NET_VENDOR_SOLARFLARE is not set
-+# CONFIG_NET_VENDOR_SMSC is not set
-+# CONFIG_NET_VENDOR_SOCIONEXT is not set
-+# CONFIG_NET_VENDOR_STMICRO is not set
-+# CONFIG_NET_VENDOR_SUN is not set
-+# CONFIG_NET_VENDOR_SYNOPSYS is not set
-+# CONFIG_NET_VENDOR_TEHUTI is not set
-+# CONFIG_NET_VENDOR_TI is not set
-+# CONFIG_NET_VENDOR_VERTEXCOM is not set
-+# CONFIG_NET_VENDOR_VIA is not set
-+# CONFIG_NET_VENDOR_WANGXUN is not set
-+# CONFIG_NET_VENDOR_WIZNET is not set
-+# CONFIG_NET_VENDOR_XILINX is not set
-+# CONFIG_INPUT_KEYBOARD is not set
-+# CONFIG_INPUT_MOUSE is not set
-+# CONFIG_SERIO is not set
-+CONFIG_SERIAL_8250=y
-+CONFIG_SERIAL_OF_PLATFORM=y
-+CONFIG_SERIAL_SH_SCI=y
-+# CONFIG_SERIAL_SH_SCI_CONSOLE is not set
-+CONFIG_SERIAL_SH_SCI_EARLYCON=y
-+CONFIG_HW_RANDOM=y
-+CONFIG_SPI=y
-+CONFIG_SPI_SH_SCI=y
-+CONFIG_MFD_SM501=y
-+CONFIG_FB=y
-+CONFIG_FB_SH_MOBILE_LCDC=m
-+CONFIG_FB_SM501=y
-+CONFIG_FRAMEBUFFER_CONSOLE=y
-+CONFIG_LOGO=y
-+# CONFIG_LOGO_LINUX_MONO is not set
-+# CONFIG_LOGO_LINUX_VGA16 is not set
-+# CONFIG_LOGO_LINUX_CLUT224 is not set
-+# CONFIG_LOGO_SUPERH_MONO is not set
-+# CONFIG_LOGO_SUPERH_VGA16 is not set
-+CONFIG_SOUND=y
-+CONFIG_SND=m
-+CONFIG_SND_YMFPCI=m
-+CONFIG_HID_A4TECH=y
-+CONFIG_HID_BELKIN=y
-+CONFIG_HID_CHERRY=y
-+CONFIG_HID_CHICONY=y
-+CONFIG_HID_CYPRESS=y
-+CONFIG_HID_EZKEY=y
-+CONFIG_HID_GYRATION=y
-+CONFIG_HID_ITE=y
-+CONFIG_HID_KENSINGTON=y
-+CONFIG_HID_REDRAGON=y
-+CONFIG_HID_MICROSOFT=y
-+CONFIG_HID_MONTEREY=y
-+CONFIG_HID_PANTHERLORD=y
-+CONFIG_HID_PETALYNX=y
-+CONFIG_HID_SAMSUNG=y
-+CONFIG_HID_SUNPLUS=y
-+CONFIG_USB=y
-+CONFIG_USB_ANNOUNCE_NEW_DEVICES=y
-+CONFIG_USB_OHCI_HCD=y
-+CONFIG_USB_STORAGE=y
-+CONFIG_RTC_CLASS=y
-+CONFIG_RTC_DRV_R9701=y
-+CONFIG_COMMON_CLK_SH7750=y
-+CONFIG_EXT2_FS=y
-+CONFIG_MSDOS_FS=y
-+CONFIG_VFAT_FS=y
-+CONFIG_PROC_KCORE=y
-+CONFIG_TMPFS=y
-+CONFIG_MINIX_FS=y
-+CONFIG_NLS_CODEPAGE_932=y
-+CONFIG_INIT_STACK_NONE=y
-+CONFIG_CRC_T10DIF=y
-+CONFIG_DEBUG_INFO_DWARF5=y
-+CONFIG_DEBUG_FS=y
-+CONFIG_DEBUG_MEMORY_INIT=y
-+# CONFIG_FTRACE is not set
++++ b/arch/sh/boot/dts/landisk.dts
+@@ -0,0 +1,142 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Device Tree source for IO DATA DEVICE LANDISK
++ *
++ * Copyright 2023 Yoshinori Sato
++ */
++
++#include <dt-bindings/interrupt-controller/sh_intc.h>
++
++/dts-v1/;
++/ {
++	model = "IO-DATA Device LANDISK";
++	compatible = "iodata,landisk";
++	#address-cells = <1>;
++	#size-cells = <1>;
++	interrupt-parent = <&shintc>;
++	chosen {
++		stdout-path = &sci1;
++	};
++	aliases {
++		serial1 = &sci1;
++	};
++
++	oclk: oscillator {
++		#clock-cells = <0>;
++		compatible = "fixed-clock";
++		clock-frequency = <22222222>;
++	};
++	pllclk: pllclk {
++		compatible = "renesas,sh7750-pll-clock";
++		clocks = <&oclk>;
++		#clock-cells = <0>;
++		sh7750,md = <5>;
++		sh7750,rtype = <1>;
++		reg = <0xffc00000 2>, <0xffc00008 4>;
++	};
++	iclk: iclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <6>;
++		clock-output-names = "ick";
++	};
++	bclk: bclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <3>;
++		clock-output-names = "bck";
++	};
++	fclk: fclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <0>;
++		clock-output-names = "fck";
++	};
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		cpu@0 {
++		      compatible = "renesas,sh4", "renesas,sh";
++		      clock-frequency = <266666666>;
++		};
++	};
++	memory@c000000 {
++		device_type = "memory";
++		reg = <0x0c000000 0x4000000>;
++	};
++	shintc: interrupt-controller@ffd00000 {
++		compatible = "renesas,sh7751-intc";
++		#interrupt-cells = <2>;
++		#address-cells = <0>;
++		interrupt-controller;
++		reg = <0xffd00000 14>, <0xfe080000 128>;
++	};
++	julianintc: julianintc@a4000000 {
++		compatible = "iodata,julian-intc";
++		reg = <0xb0000000 0x08>;
++		interrupt-controller;
++		#address-cells = <1>;
++		#interrupt-cells = <2>;
++	};
++	sci1: serial@ffe80000 {
++		compatible = "renesas,scif";
++		reg = <0xffe80000 0x100>;
++		interrupts = <evt2irq(0x700) 0
++			      evt2irq(0x720) 0
++			      evt2irq(0x760) 0
++			      evt2irq(0x740) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++	};
++	tmu: timer@ffd80008 {
++		compatible = "renesas,tmu";
++		reg = <0xffd80000 12>;
++		interrupts = <evt2irq(0x400) 0
++			      evt2irq(0x420) 0
++			      evt2irq(0x440) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++		renesas,channels = <0x03>;
++	};
++
++	pci@fe200000 {
++		compatible = "renesas,sh7751-pci", "iodata,julian";
++		device_type = "pci";
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges = <0x02000000 0 0xfd000000 0xfd000000 0 0x01000000>,
++			 <0x01000000 0 0xfe240000 0xfe240000 0 0x00040000>;
++		reg = <0xfe200000 0x0400>,
++		      <0x0c000000 0x04000000>,
++		      <0xff800000 0x0030>;
++		#interrupt-cells = <1>;
++		interrupt-parent = <&julianintc>;
++		eth@0,0 {
++			reg = <0x0000 0 0 0 0>;
++			interrupts = <5 0>;
++		};
++		ata@1,0 {
++			reg = <0x0800 0 0 0 0>;
++			interrupts = <6 0>;
++		};
++		usb@2,0 {
++			reg = <0x1000 0 0 0 0>;
++			interrupts = <7 0>;
++		};
++		usb@2,1 {
++			reg = <0x1100 0 0 0 0>;
++			interrupts = <8 0>;
++		};
++		usb@2,2 {
++			reg = <0x1200 0 0 0 0>;
++			interrupts = <5 0>;
++		};
++	};
++};
+diff --git a/arch/sh/boot/dts/rts7751r2dplus.dts b/arch/sh/boot/dts/rts7751r2dplus.dts
+new file mode 100644
+index 000000000000..1d64753f47a2
+--- /dev/null
++++ b/arch/sh/boot/dts/rts7751r2dplus.dts
+@@ -0,0 +1,168 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Device Tree source for Renesas RTS7751R2D Plus
++ *
++ * Copyright 2023 Yoshinori Sato
++ */
++
++#include <dt-bindings/interrupt-controller/sh_intc.h>
++
++/dts-v1/;
++/ {
++	model = "Renesas RTS7715R2D Plus";
++	compatible = "renesas,r2dplus";
++	#address-cells = <1>;
++	#size-cells = <1>;
++	interrupt-parent = <&shintc>;
++	chosen {
++		stdout-path = &sci1;
++	};
++	aliases {
++		serial1 = &sci1;
++	};
++
++	oclk: oscillator {
++		#clock-cells = <0>;
++		compatible = "fixed-clock";
++		clock-frequency = <22222222>;
++	};
++	pllclk: pllclk {
++		compatible = "renesas,sh7750-pll-clock";
++		clocks = <&oclk>;
++		#clock-cells = <0>;
++		sh7750,md = <5>;
++		sh7750,rtype = <1>;
++		reg = <0xffc00000 2>, <0xffc00008 4>;
++	};
++	iclk: iclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <6>;
++		clock-output-names = "ick";
++	};
++	bclk: bclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <3>;
++		clock-output-names = "bck";
++	};
++	fclk: fclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <0>;
++		clock-output-names = "fck";
++	};
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		cpu@0 {
++		      compatible = "renesas,sh4", "renesas,sh";
++		      clock-frequency = <266666666>;
++		};
++	};
++	memory@c000000 {
++		device_type = "memory";
++		reg = <0x0c000000 0x4000000>;
++	};
++	shintc: interrupt-controller@ffd00000 {
++		compatible = "renesas,sh7751-intc";
++		#interrupt-cells = <2>;
++		#address-cells = <0>;
++		interrupt-controller;
++		reg = <0xffd00000 14>, <0xfe080000 128>;
++	};
++	r2dintc: r2dintc@a4000000 {
++		compatible = "renesas,rts7751r2d-intc";
++		reg = <0xa4000000 0x3a>;
++		interrupt-controller;
++		#address-cells = <1>;
++		#interrupt-cells = <2>;
++	};
++	sci1: serial@ffe80000 {
++		compatible = "renesas,scif";
++		reg = <0xffe80000 0x100>;
++		interrupts = <evt2irq(0x700) 0
++			      evt2irq(0x720) 0
++			      evt2irq(0x760) 0
++			      evt2irq(0x740) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++	};
++	tmu: timer@ffd80008 {
++		compatible = "renesas,tmu";
++		reg = <0xffd80000 12>;
++		interrupts = <evt2irq(0x400) 0
++			      evt2irq(0x420) 0
++			      evt2irq(0x440) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++		renesas,channels = <0x03>;
++	};
++
++	display@1,0 {
++		compatible = "smi,sm501";
++		reg = <0x10000000 0x03e00000
++		       0x13e00000 0x00200000>;
++		interrupt-parent = <&r2dintc>;
++		interrupts = <4 0>;
++		mode = "640x480-16@60";
++		little-endian;
++		sm501,devices = "usb-host,uart0";
++	};
++	compact-flash@b4001000 {
++		compatible = "ata-generic";
++		reg = <0xb4001000 0x0e>, <0xb400080c 2>;
++		reg-shift = <1>;
++		interrupt-parent = <&r2dintc>;
++		interrupts = <1 0>;
++	};
++
++	flash@0 {
++		compatible = "cfi-flash";
++		reg = <0x00000000 0x02000000>;
++		device-width = <2>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		partition@0 {
++			label = "U-Boot";
++			reg = <0x00000000 0x00040000>;
++		};
++		partition@1 {
++			label = "Environemt";
++			reg = <0x00040000 0x00040000>;
++		};
++		partition@2 {
++			label = "Kernel";
++			reg = <0x00080000 0x001c0000>;
++		};
++		partition@3 {
++			label = "Flash_FS";
++			reg = <0x00240000 0x00dc0000>;
++		};
++	};
++
++	pci@fe200000 {
++		compatible = "renesas,sh7751-pci", "renesas,r2d";
++		device_type = "pci";
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges = <0x02000000 0 0xfd000000 0xfd000000 0 0x01000000>,
++			 <0x01000000 0 0xfe240000 0xfe240000 0 0x00040000>;
++		reg = <0xfe200000 0x0400>,
++		      <0x0c000000 0x04000000>,
++		      <0xff800000 0x0030>;
++		#interrupt-cells = <1>;
++		interrupt-parent = <&r2dintc>;
++		eth@2,0 {
++			reg = <0x1000 0 0 0 0>;
++			interrupts = <3 0>;
++		};
++	};
++};
+diff --git a/arch/sh/boot/dts/usl-5p.dts b/arch/sh/boot/dts/usl-5p.dts
+new file mode 100644
+index 000000000000..3e6624c55c0e
+--- /dev/null
++++ b/arch/sh/boot/dts/usl-5p.dts
+@@ -0,0 +1,146 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Device Tree source for IO DATA DEVICE USL-5P
++ *
++ * Copyright 2023 Yoshinori Sato
++ */
++
++#include <dt-bindings/interrupt-controller/sh_intc.h>
++
++/dts-v1/;
++/ {
++	model = "IO-DATA Device USL-5P";
++	compatible = "iodata,usl-5p";
++	#address-cells = <1>;
++	#size-cells = <1>;
++	interrupt-parent = <&shintc>;
++	chosen {
++		stdout-path = &sci1;
++	};
++	aliases {
++		serial1 = &sci1;
++	};
++
++	oclk: oscillator {
++		#clock-cells = <0>;
++		compatible = "fixed-clock";
++		clock-frequency = <22222222>;
++	};
++	pllclk: pllclk {
++		compatible = "renesas,sh7750-pll-clock";
++		clocks = <&oclk>;
++		#clock-cells = <0>;
++		sh7750,md = <5>;
++		sh7750,rtype = <1>;
++		reg = <0xffc00000 2>, <0xffc00008 4>;
++	};
++	iclk: iclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <6>;
++		clock-output-names = "ick";
++	};
++	bclk: bclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <3>;
++		clock-output-names = "bck";
++	};
++	fclk: fclk {
++		compatible = "renesas,sh7750-div-clock";
++		clocks = <&pllclk>;
++		#clock-cells = <0>;
++		reg = <0xffc00000 2>;
++		renesas,offset = <0>;
++		clock-output-names = "fck";
++	};
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		cpu@0 {
++		      compatible = "renesas,sh4", "renesas,sh";
++		      clock-frequency = <266666666>;
++		};
++	};
++	memory@c000000 {
++		device_type = "memory";
++		reg = <0x0c000000 0x4000000>;
++	};
++	shintc: interrupt-controller@ffd00000 {
++		compatible = "renesas,sh7751-intc";
++		#interrupt-cells = <2>;
++		#address-cells = <0>;
++		interrupt-controller;
++		reg = <0xffd00000 14>, <0xfe080000 128>;
++	};
++	julianintc: julianintc@a4000000 {
++		compatible = "iodata,julian-intc";
++		reg = <0xb0000000 0x08>;
++		interrupt-controller;
++		#address-cells = <1>;
++		#interrupt-cells = <2>;
++	};
++	sci1: serial@ffe80000 {
++		compatible = "renesas,scif";
++		reg = <0xffe80000 0x100>;
++		interrupts = <evt2irq(0x700) 0
++			      evt2irq(0x720) 0
++			      evt2irq(0x760) 0
++			      evt2irq(0x740) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++	};
++	tmu: timer@ffd80008 {
++		compatible = "renesas,tmu";
++		reg = <0xffd80000 12>;
++		interrupts = <evt2irq(0x400) 0
++			      evt2irq(0x420) 0
++			      evt2irq(0x440) 0>;
++		clocks = <&fclk>;
++		clock-names = "fck";
++		renesas,channels = <0x03>;
++	};
++
++	compact-flash@b4001000 {
++		compatible = "ata-generic";
++		reg = <0xb4000040 0x0e>, <0xb400002c 2>;
++		reg-shift = <1>;
++		interrupt-parent = <&julianintc>;
++		interrupts = <10 0>;
++	};
++
++	pci@fe200000 {
++		compatible = "renesas,sh7751-pci", "iodata,julian";
++		device_type = "pci";
++		bus-range = <0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		ranges = <0x02000000 0 0xfd000000 0xfd000000 0 0x01000000>,
++			 <0x01000000 0 0xfe240000 0xfe240000 0 0x00040000>;
++		reg = <0xfe200000 0x0400>,
++		      <0x0c000000 0x04000000>,
++		      <0xff800000 0x0030>;
++		#interrupt-cells = <1>;
++		interrupt-parent = <&julianintc>;
++		eth@0,0 {
++			reg = <0x0000 0 0 0 0>;
++			interrupts = <5 0>;
++		};
++		usb@2,0 {
++			reg = <0x1000 0 0 0 0>;
++			interrupts = <7 0>;
++		};
++		usb@2,1 {
++			reg = <0x1100 0 0 0 0>;
++			interrupts = <8 0>;
++		};
++		usb@2,2 {
++			reg = <0x1200 0 0 0 0>;
++			interrupts = <5 0>;
++		};
++	};
++};
 -- 
 2.39.2
 
