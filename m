@@ -2,33 +2,33 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BD03FC83F01
-	for <linux-sh@archiver.kernel.org>; Thu, 31 Aug 2023 01:12:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3AF3BC83F1A
+	for <linux-sh@archiver.kernel.org>; Thu, 31 Aug 2023 01:12:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S242247AbjHaBMN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 30 Aug 2023 21:12:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41174 "EHLO
+        id S1344988AbjHaBMO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 30 Aug 2023 21:12:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41220 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240151AbjHaBMM (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 30 Aug 2023 21:12:12 -0400
-Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.240])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8A83C1A2
-        for <linux-sh@vger.kernel.org>; Wed, 30 Aug 2023 18:12:07 -0700 (PDT)
+        with ESMTP id S243025AbjHaBMN (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 30 Aug 2023 21:12:13 -0400
+Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.239])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1070DCDB
+        for <linux-sh@vger.kernel.org>; Wed, 30 Aug 2023 18:12:08 -0700 (PDT)
 X-Country-Code: JP
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-        by hsmtpd-out-2.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
-        id 0eb39549-2267-4c5e-9a2a-14fe2921f297;
+        by hsmtpd-out-1.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
+        id a998a869-0bfc-4454-927a-f6592ed6cd0b;
         Thu, 31 Aug 2023 10:12:06 +0900 (JST)
 Received: from SIOS1075.flets-east.jp (al128006.dynamic.ppp.asahi-net.or.jp [111.234.128.6])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 74ADB1C0431;
-        Thu, 31 Aug 2023 10:12:05 +0900 (JST)
+        by sakura.ysato.name (Postfix) with ESMTPSA id 6710F1C0246;
+        Thu, 31 Aug 2023 10:12:06 +0900 (JST)
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     linux-sh@vger.kernel.org
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         glaubitz@physik.fu-berlin.de
-Subject: [RESEND RFC PATCH 03/12] sh: SH4 OF support.
-Date:   Thu, 31 Aug 2023 10:11:50 +0900
-Message-Id: <4a138cf1ff14ff6166a66851db7476096fa3f009.1693444193.git.ysato@users.sourceforge.jp>
+Subject: [RESEND RFC PATCH 08/12] mfd/sm501: Add OF properties.
+Date:   Thu, 31 Aug 2023 10:11:55 +0900
+Message-Id: <f622670c0af1bf01bf7c2f16241db0c36233a7d9.1693444193.git.ysato@users.sourceforge.jp>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <cover.1693444193.git.ysato@users.sourceforge.jp>
 References: <cover.1693444193.git.ysato@users.sourceforge.jp>
@@ -38,127 +38,182 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-- switch generic framework in clock / PCI.
+Some parameters only platform_device.
+Added same parameters in OF property.
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/drivers/Makefile        |  2 ++
- arch/sh/include/asm/io.h        | 10 ++++++++++
- arch/sh/include/asm/pci.h       |  4 ++++
- arch/sh/kernel/cpu/Makefile     |  8 ++++++--
- arch/sh/kernel/cpu/clock.c      |  3 ++-
- arch/sh/kernel/cpu/sh4/Makefile |  2 ++
- 6 files changed, 26 insertions(+), 3 deletions(-)
+ .../devicetree/bindings/display/sm501fb.txt   |  11 ++
+ drivers/mfd/sm501.c                           | 113 +++++++++++++++++-
+ 2 files changed, 123 insertions(+), 1 deletion(-)
 
-diff --git a/arch/sh/drivers/Makefile b/arch/sh/drivers/Makefile
-index 56b0acace6e7..eacbcefb26b2 100644
---- a/arch/sh/drivers/Makefile
-+++ b/arch/sh/drivers/Makefile
-@@ -5,7 +5,9 @@
+diff --git a/Documentation/devicetree/bindings/display/sm501fb.txt b/Documentation/devicetree/bindings/display/sm501fb.txt
+index 1c79c267a57f..4c4920394431 100644
+--- a/Documentation/devicetree/bindings/display/sm501fb.txt
++++ b/Documentation/devicetree/bindings/display/sm501fb.txt
+@@ -20,6 +20,17 @@ Optional properties:
+   set different foreign endian.
+ - big-endian: available on little endian systems, to
+   set different foreign endian.
++- sm501,devices: select peripheral functions.
++  available usb-host, usb-gadget, ssp0, ssp,1 uart0, uart1, accel,
++            ac97, i2s, gpio and all.
++- sm501,mclk: SM501 mclk frequency.
++- sm501,m1xclk: SM501 m1xclk frequency.
++- sm501,misc-timing: SM501 Miscellaneous Timing reg value.
++- sm501,misc-control: SM501 Miscellaneous Control reg value.
++- sm501,gpio-low: SM501 GPIO31-0 Control reg value.
++- sm501,gpio-high: SM501 GPIO63-32 Control reg value.
++- sm501,num-i2c: I2C channel number.
++- sm501,gpio-i2c: I2C assigned GPIO.
  
- obj-y		+= dma/ platform_early.o
+ Example for MPC5200:
+ 	display@1,0 {
+diff --git a/drivers/mfd/sm501.c b/drivers/mfd/sm501.c
+index 28027982cf69..39871ca1b9f7 100644
+--- a/drivers/mfd/sm501.c
++++ b/drivers/mfd/sm501.c
+@@ -80,6 +80,9 @@ struct sm501_devdata {
+ 	unsigned int			 irq;
+ 	void __iomem			*regs;
+ 	unsigned int			 rev;
++#if defined(CONFIG_OF)
++	struct device_node		*np;
++#endif
+ };
  
-+ifndef CONFIG_SH_DEVICE_TREE
- obj-$(CONFIG_PCI)		+= pci/
-+endif
- obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
- obj-$(CONFIG_PUSH_SWITCH)	+= push-switch.o
- obj-$(CONFIG_HEARTBEAT)		+= heartbeat.o
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index d8f3537ef57f..d14adf034780 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -292,4 +292,14 @@ static inline void iounmap(volatile void __iomem *addr) { }
- int valid_phys_addr_range(phys_addr_t addr, size_t size);
- int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
  
-+
-+#ifdef __KERNEL__
-+#define PCI_IOBASE	0xfe240000UL
-+
-+#define HAVE_ARCH_PIO_SIZE
-+#define PIO_OFFSET	PCI_IOBASE
-+#define PIO_MASK	0x3ffffUL
-+#define PIO_RESERVED	0x40000UL
-+#endif /* __KERNEL__ */
-+
- #endif /* __ASM_SH_IO_H */
-diff --git a/arch/sh/include/asm/pci.h b/arch/sh/include/asm/pci.h
-index 54c30126ea17..92b3bd604319 100644
---- a/arch/sh/include/asm/pci.h
-+++ b/arch/sh/include/asm/pci.h
-@@ -2,6 +2,7 @@
- #ifndef __ASM_SH_PCI_H
- #define __ASM_SH_PCI_H
- 
-+#ifndef CONFIG_SH_DEVICE_TREE
- /* Can be used to override the logic in pci_scan_bus for skipping
-    already-configured bus numbers - to be used for buggy BIOSes
-    or architectures with incomplete PCI setup by the loader */
-@@ -88,4 +89,7 @@ static inline int pci_proc_domain(struct pci_bus *bus)
- 	return hose->need_domain_info;
+@@ -1370,6 +1373,106 @@ static int sm501_init_dev(struct sm501_devdata *sm)
+ 	return 0;
  }
  
-+#else /* CONFIG_SH_DEVICE_TREE */
-+#include <asm-generic/pci.h>
++static unsigned int sm501_parse_devices_str(const char *str)
++{
++	char *sep;
++	unsigned int device = 0;
++	int i;
++	int len;
++	static const struct {
++		char *devname;
++		unsigned int devid;
++	} devlist[] = {
++		{ "usb-host", SM501_USE_USB_HOST },
++		{ "usb-gadget", SM501_USE_USB_SLAVE },
++		{ "ssp0", SM501_USE_SSP0 },
++		{ "ssp1", SM501_USE_SSP1 },
++		{ "uart0", SM501_USE_UART0 },
++		{ "uart1", SM501_USE_UART1 },
++		{ "accel", SM501_USE_FBACCEL },
++		{ "ac97", SM501_USE_AC97 },
++		{ "i2s", SM501_USE_I2S },
++		{ "gpio", SM501_USE_GPIO },
++		{ "all", SM501_USE_ALL },
++	};
++
++	do {
++		sep = strchr(str, ',');
++		len = sep ? sep - str : strlen(str);
++		for (i = 0; i < ARRAY_SIZE(devlist); i++) {
++			if (strncasecmp(str, devlist[i].devname, len) == 0) {
++				device |= devlist[i].devid;
++				break;
++			}
++		}
++		str = sep + 1;
++	} while (sep);
++	return device;
++}
++
++#if defined(CONFIG_OF)
++static void sm501_of_read_reg_init(struct sm501_devdata *sm,
++				   const char *propname, struct sm501_reg_init *val)
++{
++	u32 u32_val;
++
++	if (!of_property_read_u32_index(sm->np, propname, 0, &u32_val))
++		val->set = u32_val;
++	if (!of_property_read_u32_index(sm->np, propname, 1, &u32_val))
++		val->mask = u32_val;
++}
++
++static int sm501_parse_dt(struct sm501_devdata *sm)
++{
++	struct sm501_platdata *plat;
++	const char *devstr;
++	u32 u32_val;
++
++	if (sm->np == NULL)
++		return 0;
++	plat = kzalloc(sizeof(struct sm501_platdata), GFP_KERNEL);
++	if (plat == NULL)
++		return -ENOMEM;
++	plat->init = kzalloc(sizeof(struct sm501_initdata), GFP_KERNEL);
++	if (plat->init == NULL)
++		goto err;
++
++	if (!of_property_read_string(sm->np, "sm501,devices", &devstr))
++		plat->init->devices = sm501_parse_devices_str(devstr);
++	if (!of_property_read_u32_index(sm->np, "sm501,mclk", 0, &u32_val))
++		plat->init->mclk = u32_val;
++	if (!of_property_read_u32_index(sm->np, "sm501,m1xclk", 0, &u32_val))
++		plat->init->m1xclk = u32_val;
++	sm501_of_read_reg_init(sm, "sm501,misc-timing", &plat->init->misc_timing);
++	sm501_of_read_reg_init(sm, "sm501,misc-control", &plat->init->misc_control);
++	sm501_of_read_reg_init(sm, "sm501,gpio-low", &plat->init->gpio_low);
++	sm501_of_read_reg_init(sm, "sm501,gpio-high", &plat->init->gpio_high);
++
++#ifdef CONFIG_MFD_SM501_GPIO
++	if (plat->init->devices & SM501_USE_GPIO) {
++		if (!of_property_read_u32_index(sm->np, "sm501,num-i2c", 0, &u32_val))
++			plat->gpio_i2c_nr = u32_val;
++	}
++	if (plat->gpio_i2c_nr > 0) {
++		plat->gpio_i2c = kcalloc(plat->gpio_i2c_nr,
++					 sizeof(struct sm501_platdata_gpio_i2c),
++					 GFP_KERNEL);
++		if (plat->gpio_i2c == NULL)
++			goto err;
++		of_property_read_variable_u32(sm->np, "sm501,gpio-i2c",
++					      plat->gpio_i2c,
++					      plat->gpio_i2c_nr * 5);
++	}
 +#endif
- #endif /* __ASM_SH_PCI_H */
-diff --git a/arch/sh/kernel/cpu/Makefile b/arch/sh/kernel/cpu/Makefile
-index 46118236bf04..e462a9552c92 100644
---- a/arch/sh/kernel/cpu/Makefile
-+++ b/arch/sh/kernel/cpu/Makefile
-@@ -16,6 +16,10 @@ obj-$(CONFIG_ARCH_SHMOBILE)	+= shmobile/
- # Common interfaces.
- 
- obj-$(CONFIG_SH_ADC)		+= adc.o
-+ifndef CONFIG_COMMON_CLK
- obj-$(CONFIG_SH_CLK_CPG_LEGACY)	+= clock-cpg.o
--
--obj-y	+= irq/ init.o clock.o fpu.o pfc.o proc.o
-+endif
-+ifndef CONFIG_GENERIC_IRQ_CHIP
-+obj-y	+= irq/
-+endif
-+obj-y	+= init.o clock.o fpu.o pfc.o proc.o
-diff --git a/arch/sh/kernel/cpu/clock.c b/arch/sh/kernel/cpu/clock.c
-index 6fb34410d630..e6c75d4ba7e1 100644
---- a/arch/sh/kernel/cpu/clock.c
-+++ b/arch/sh/kernel/cpu/clock.c
-@@ -14,12 +14,13 @@
- #include <linux/kernel.h>
- #include <linux/init.h>
- #include <linux/clk.h>
-+#include <linux/of.h>
- #include <asm/clock.h>
- #include <asm/machvec.h>
- 
- int __init clk_init(void)
++	sm->platdata = plat;
++	return 0;
++err:
++	kfree(plat->init);
++	kfree(plat);
++	return -ENOMEM;
++}
++#endif
++
+ static int sm501_plat_probe(struct platform_device *dev)
  {
--	int ret;
-+	int ret = 0;
+ 	struct sm501_devdata *sm;
+@@ -1384,7 +1487,6 @@ static int sm501_plat_probe(struct platform_device *dev)
+ 	sm->dev = &dev->dev;
+ 	sm->pdev_id = dev->id;
+ 	sm->platdata = dev_get_platdata(&dev->dev);
+-
+ 	ret = platform_get_irq(dev, 0);
+ 	if (ret < 0)
+ 		goto err_res;
+@@ -1406,6 +1508,15 @@ static int sm501_plat_probe(struct platform_device *dev)
+ 		goto err_res;
+ 	}
  
- #ifndef CONFIG_COMMON_CLK
- 	ret = arch_clk_init();
-diff --git a/arch/sh/kernel/cpu/sh4/Makefile b/arch/sh/kernel/cpu/sh4/Makefile
-index 00c16331e07e..1e196c320b96 100644
---- a/arch/sh/kernel/cpu/sh4/Makefile
-+++ b/arch/sh/kernel/cpu/sh4/Makefile
-@@ -15,6 +15,7 @@ perf-$(CONFIG_CPU_SUBTYPE_SH7750)	:= perf_event.o
- perf-$(CONFIG_CPU_SUBTYPE_SH7750S)	:= perf_event.o
- perf-$(CONFIG_CPU_SUBTYPE_SH7091)	:= perf_event.o
++#if defined(CONFIG_OF)
++	if (dev->dev.of_node) {
++		sm->np = dev->dev.of_node;
++		ret = sm501_parse_dt(sm);
++		if (ret)
++			goto err_res;
++	}
++#endif
++
+ 	platform_set_drvdata(dev, sm);
  
-+ifndef CONFIG_OF
- # CPU subtype setup
- obj-$(CONFIG_CPU_SUBTYPE_SH7750)	+= setup-sh7750.o
- obj-$(CONFIG_CPU_SUBTYPE_SH7750R)	+= setup-sh7750.o
-@@ -32,6 +33,7 @@ endif
- 
- # Additional clocks by subtype
- clock-$(CONFIG_CPU_SUBTYPE_SH4_202)	+= clock-sh4-202.o
-+endif
- 
- obj-y					+= $(clock-y)
- obj-$(CONFIG_PERF_EVENTS)		+= $(perf-y)
+ 	sm->regs = ioremap(sm->io_res->start, resource_size(sm->io_res));
 -- 
 2.39.2
 
