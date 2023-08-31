@@ -2,33 +2,33 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E178BC83F16
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BD03FC83F01
 	for <linux-sh@archiver.kernel.org>; Thu, 31 Aug 2023 01:12:12 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239131AbjHaBMO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 30 Aug 2023 21:12:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41196 "EHLO
+        id S242247AbjHaBMN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 30 Aug 2023 21:12:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41174 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S238305AbjHaBMM (ORCPT
+        with ESMTP id S240151AbjHaBMM (ORCPT
         <rfc822;linux-sh@vger.kernel.org>); Wed, 30 Aug 2023 21:12:12 -0400
-Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.241])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D9BC6CD7
+Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.240])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8A83C1A2
         for <linux-sh@vger.kernel.org>; Wed, 30 Aug 2023 18:12:07 -0700 (PDT)
 X-Country-Code: JP
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
         by hsmtpd-out-2.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
-        id a7976d0c-e643-4e28-8db0-a52e898c5f88;
+        id 0eb39549-2267-4c5e-9a2a-14fe2921f297;
         Thu, 31 Aug 2023 10:12:06 +0900 (JST)
 Received: from SIOS1075.flets-east.jp (al128006.dynamic.ppp.asahi-net.or.jp [111.234.128.6])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 38B431C05E1;
-        Thu, 31 Aug 2023 10:12:06 +0900 (JST)
+        by sakura.ysato.name (Postfix) with ESMTPSA id 74ADB1C0431;
+        Thu, 31 Aug 2023 10:12:05 +0900 (JST)
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     linux-sh@vger.kernel.org
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         glaubitz@physik.fu-berlin.de
-Subject: [RESEND RFC PATCH 07/12] clocksource: Update sh_tmu of handling.
-Date:   Thu, 31 Aug 2023 10:11:54 +0900
-Message-Id: <2d323328fba6ac55a1c3cdcefe909fad3ab0d9dc.1693444193.git.ysato@users.sourceforge.jp>
+Subject: [RESEND RFC PATCH 03/12] sh: SH4 OF support.
+Date:   Thu, 31 Aug 2023 10:11:50 +0900
+Message-Id: <4a138cf1ff14ff6166a66851db7476096fa3f009.1693444193.git.ysato@users.sourceforge.jp>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <cover.1693444193.git.ysato@users.sourceforge.jp>
 References: <cover.1693444193.git.ysato@users.sourceforge.jp>
@@ -38,83 +38,127 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+- switch generic framework in clock / PCI.
+
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- drivers/clocksource/sh_tmu.c | 33 +++++++++++++++++----------------
- 1 file changed, 17 insertions(+), 16 deletions(-)
+ arch/sh/drivers/Makefile        |  2 ++
+ arch/sh/include/asm/io.h        | 10 ++++++++++
+ arch/sh/include/asm/pci.h       |  4 ++++
+ arch/sh/kernel/cpu/Makefile     |  8 ++++++--
+ arch/sh/kernel/cpu/clock.c      |  3 ++-
+ arch/sh/kernel/cpu/sh4/Makefile |  2 ++
+ 6 files changed, 26 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index beffff81c00f..de65e1c96780 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -420,9 +420,6 @@ static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
- 	ced->suspend = sh_tmu_clock_event_suspend;
- 	ced->resume = sh_tmu_clock_event_resume;
+diff --git a/arch/sh/drivers/Makefile b/arch/sh/drivers/Makefile
+index 56b0acace6e7..eacbcefb26b2 100644
+--- a/arch/sh/drivers/Makefile
++++ b/arch/sh/drivers/Makefile
+@@ -5,7 +5,9 @@
  
--	dev_info(&ch->tmu->pdev->dev, "ch%u: used for clock events\n",
--		 ch->index);
--
- 	clockevents_config_and_register(ced, ch->tmu->rate, 0x300, 0xffffffff);
+ obj-y		+= dma/ platform_early.o
  
- 	ret = request_irq(ch->irq, sh_tmu_interrupt,
-@@ -500,12 +497,12 @@ static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
- 	tmu->model = SH_TMU;
- 	tmu->num_channels = 3;
++ifndef CONFIG_SH_DEVICE_TREE
+ obj-$(CONFIG_PCI)		+= pci/
++endif
+ obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
+ obj-$(CONFIG_PUSH_SWITCH)	+= push-switch.o
+ obj-$(CONFIG_HEARTBEAT)		+= heartbeat.o
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index d8f3537ef57f..d14adf034780 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -292,4 +292,14 @@ static inline void iounmap(volatile void __iomem *addr) { }
+ int valid_phys_addr_range(phys_addr_t addr, size_t size);
+ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
  
--	of_property_read_u32(np, "#renesas,channels", &tmu->num_channels);
--
--	if (tmu->num_channels != 2 && tmu->num_channels != 3) {
--		dev_err(&tmu->pdev->dev, "invalid number of channels %u\n",
--			tmu->num_channels);
--		return -EINVAL;
-+	if (of_property_read_u32(np, "#renesas,channels", &tmu->num_channels)) {
-+		if (tmu->num_channels != 2 && tmu->num_channels != 3) {
-+			dev_err(&tmu->pdev->dev,
-+				"invalid number of channels %u\n", tmu->num_channels);
-+			return -EINVAL;
-+		}
- 	}
- 
- 	return 0;
-@@ -513,7 +510,6 @@ static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
- 
- static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- {
--	unsigned int i;
- 	int ret;
- 
- 	tmu->pdev = pdev;
-@@ -535,6 +531,11 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 		return -ENXIO;
- 	}
- 
-+	if (tmu->num_channels < 2) {
-+		dev_err(&tmu->pdev->dev, "Invalid channels.\n");
-+		return -ENXIO;
-+	}
 +
- 	/* Get hold of clock. */
- 	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
- 	if (IS_ERR(tmu->clk)) {
-@@ -573,12 +574,12 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	 * Use the first channel as a clock event device and the second channel
- 	 * as a clock source.
- 	 */
--	for (i = 0; i < tmu->num_channels; ++i) {
--		ret = sh_tmu_channel_setup(&tmu->channels[i], i,
--					   i == 0, i == 1, tmu);
--		if (ret < 0)
--			goto err_unmap;
--	}
-+	ret = sh_tmu_channel_setup(&tmu->channels[0], 0, false, true, tmu);
-+	if (ret < 0)
-+		goto err_unmap;
-+	ret = sh_tmu_channel_setup(&tmu->channels[1], 1, true, false, tmu);
-+	if (ret < 0)
-+		goto err_unmap;
++#ifdef __KERNEL__
++#define PCI_IOBASE	0xfe240000UL
++
++#define HAVE_ARCH_PIO_SIZE
++#define PIO_OFFSET	PCI_IOBASE
++#define PIO_MASK	0x3ffffUL
++#define PIO_RESERVED	0x40000UL
++#endif /* __KERNEL__ */
++
+ #endif /* __ASM_SH_IO_H */
+diff --git a/arch/sh/include/asm/pci.h b/arch/sh/include/asm/pci.h
+index 54c30126ea17..92b3bd604319 100644
+--- a/arch/sh/include/asm/pci.h
++++ b/arch/sh/include/asm/pci.h
+@@ -2,6 +2,7 @@
+ #ifndef __ASM_SH_PCI_H
+ #define __ASM_SH_PCI_H
  
- 	platform_set_drvdata(pdev, tmu);
++#ifndef CONFIG_SH_DEVICE_TREE
+ /* Can be used to override the logic in pci_scan_bus for skipping
+    already-configured bus numbers - to be used for buggy BIOSes
+    or architectures with incomplete PCI setup by the loader */
+@@ -88,4 +89,7 @@ static inline int pci_proc_domain(struct pci_bus *bus)
+ 	return hose->need_domain_info;
+ }
  
++#else /* CONFIG_SH_DEVICE_TREE */
++#include <asm-generic/pci.h>
++#endif
+ #endif /* __ASM_SH_PCI_H */
+diff --git a/arch/sh/kernel/cpu/Makefile b/arch/sh/kernel/cpu/Makefile
+index 46118236bf04..e462a9552c92 100644
+--- a/arch/sh/kernel/cpu/Makefile
++++ b/arch/sh/kernel/cpu/Makefile
+@@ -16,6 +16,10 @@ obj-$(CONFIG_ARCH_SHMOBILE)	+= shmobile/
+ # Common interfaces.
+ 
+ obj-$(CONFIG_SH_ADC)		+= adc.o
++ifndef CONFIG_COMMON_CLK
+ obj-$(CONFIG_SH_CLK_CPG_LEGACY)	+= clock-cpg.o
+-
+-obj-y	+= irq/ init.o clock.o fpu.o pfc.o proc.o
++endif
++ifndef CONFIG_GENERIC_IRQ_CHIP
++obj-y	+= irq/
++endif
++obj-y	+= init.o clock.o fpu.o pfc.o proc.o
+diff --git a/arch/sh/kernel/cpu/clock.c b/arch/sh/kernel/cpu/clock.c
+index 6fb34410d630..e6c75d4ba7e1 100644
+--- a/arch/sh/kernel/cpu/clock.c
++++ b/arch/sh/kernel/cpu/clock.c
+@@ -14,12 +14,13 @@
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/clk.h>
++#include <linux/of.h>
+ #include <asm/clock.h>
+ #include <asm/machvec.h>
+ 
+ int __init clk_init(void)
+ {
+-	int ret;
++	int ret = 0;
+ 
+ #ifndef CONFIG_COMMON_CLK
+ 	ret = arch_clk_init();
+diff --git a/arch/sh/kernel/cpu/sh4/Makefile b/arch/sh/kernel/cpu/sh4/Makefile
+index 00c16331e07e..1e196c320b96 100644
+--- a/arch/sh/kernel/cpu/sh4/Makefile
++++ b/arch/sh/kernel/cpu/sh4/Makefile
+@@ -15,6 +15,7 @@ perf-$(CONFIG_CPU_SUBTYPE_SH7750)	:= perf_event.o
+ perf-$(CONFIG_CPU_SUBTYPE_SH7750S)	:= perf_event.o
+ perf-$(CONFIG_CPU_SUBTYPE_SH7091)	:= perf_event.o
+ 
++ifndef CONFIG_OF
+ # CPU subtype setup
+ obj-$(CONFIG_CPU_SUBTYPE_SH7750)	+= setup-sh7750.o
+ obj-$(CONFIG_CPU_SUBTYPE_SH7750R)	+= setup-sh7750.o
+@@ -32,6 +33,7 @@ endif
+ 
+ # Additional clocks by subtype
+ clock-$(CONFIG_CPU_SUBTYPE_SH4_202)	+= clock-sh4-202.o
++endif
+ 
+ obj-y					+= $(clock-y)
+ obj-$(CONFIG_PERF_EVENTS)		+= $(perf-y)
 -- 
 2.39.2
 
