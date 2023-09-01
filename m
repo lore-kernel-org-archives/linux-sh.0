@@ -2,37 +2,37 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id AA24CCA0FE6
-	for <linux-sh@archiver.kernel.org>; Fri,  1 Sep 2023 13:34:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B0753CA0FE1
+	for <linux-sh@archiver.kernel.org>; Fri,  1 Sep 2023 13:40:13 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232143AbjIANeK convert rfc822-to-8bit (ORCPT
+        id S233098AbjIANkO convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 1 Sep 2023 09:34:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43968 "EHLO
+        Fri, 1 Sep 2023 09:40:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46234 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1349772AbjIANeI (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 1 Sep 2023 09:34:08 -0400
-Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.245])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C165310E9
-        for <linux-sh@vger.kernel.org>; Fri,  1 Sep 2023 06:34:03 -0700 (PDT)
+        with ESMTP id S231204AbjIANkN (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 1 Sep 2023 09:40:13 -0400
+Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.241])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 01DE2E4C
+        for <linux-sh@vger.kernel.org>; Fri,  1 Sep 2023 06:40:10 -0700 (PDT)
 X-Country-Code: JP
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
         by hsmtpd-out-0.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
-        id cbae3000-0f5d-4c6d-84c9-dfde4a462df0;
-        Fri, 01 Sep 2023 22:34:01 +0900 (JST)
+        id ee5cd20c-4cd3-4179-9c4f-8d0084efb590;
+        Fri, 01 Sep 2023 22:40:09 +0900 (JST)
 Received: from SIOS1075.ysato.ml (ZM005235.ppp.dion.ne.jp [222.8.5.235])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 8FC8A1C0323;
-        Fri,  1 Sep 2023 22:33:59 +0900 (JST)
-Date:   Fri, 01 Sep 2023 22:33:59 +0900
-Message-ID: <87jztauiew.wl-ysato@users.sourceforge.jp>
+        by sakura.ysato.name (Postfix) with ESMTPSA id 3E5951C01F0;
+        Fri,  1 Sep 2023 22:40:08 +0900 (JST)
+Date:   Fri, 01 Sep 2023 22:40:07 +0900
+Message-ID: <87h6oeui4o.wl-ysato@users.sourceforge.jp>
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     Geert Uytterhoeven <geert@linux-m68k.org>
 Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de
-Subject: Re: [RESEND RFC PATCH 09/12] of: FDT vaddr support for SH.
-In-Reply-To: <CAMuHMdVXWzjFEdMFrbMg9fK_Zub6E2jMPnwzOhpojA1QcrHbig@mail.gmail.com>
+Subject: Re: [RESEND RFC PATCH 07/12] clocksource: Update sh_tmu of handling.
+In-Reply-To: <CAMuHMdU7Yw49pKtHvNazY6ABb+wd=Ee4JYT4DB9Ff2qAkTFinQ@mail.gmail.com>
 References: <cover.1693444193.git.ysato@users.sourceforge.jp>
-        <fb76aed2eb920d4f6accb67774103eb478fe25fe.1693444193.git.ysato@users.sourceforge.jp>
-        <CAMuHMdVXWzjFEdMFrbMg9fK_Zub6E2jMPnwzOhpojA1QcrHbig@mail.gmail.com>
+        <2d323328fba6ac55a1c3cdcefe909fad3ab0d9dc.1693444193.git.ysato@users.sourceforge.jp>
+        <CAMuHMdU7Yw49pKtHvNazY6ABb+wd=Ee4JYT4DB9Ff2qAkTFinQ@mail.gmail.com>
 User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
  FLIM-LB/1.14.9 (=?ISO-8859-4?Q?Goj=F2?=) APEL-LB/10.8 EasyPG/1.0.0
  Emacs/28.2 (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
@@ -43,39 +43,105 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, 01 Sep 2023 22:11:01 +0900,
+On Fri, 01 Sep 2023 22:01:51 +0900,
 Geert Uytterhoeven wrote:
 > 
 > Hi Sato-san,
 > 
-> On Thu, Aug 31, 2023 at 5:18 AM Yoshinori Sato
+> On Thu, Aug 31, 2023 at 7:22 PM Yoshinori Sato
 > <ysato@users.sourceforge.jp> wrote:
-> > sh using virt address in FDT.
-> >
 > > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 > 
 > Thanks for your patch!
 > 
-> > --- a/drivers/of/fdt.c
-> > +++ b/drivers/of/fdt.c
-> > @@ -643,6 +643,9 @@ void __init early_init_fdt_scan_reserved_mem(void)
-> >                 fdt_get_mem_rsv(initial_boot_params, n, &base, &size);
-> >                 if (!size)
-> >                         break;
-> > +#ifdef CONFIG_SUPERH
-> > +               base = virt_to_phys(base);
-> > +#endif
+> > --- a/drivers/clocksource/sh_tmu.c
+> > +++ b/drivers/clocksource/sh_tmu.c
+> > @@ -420,9 +420,6 @@ static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
+> >         ced->suspend = sh_tmu_clock_event_suspend;
+> >         ced->resume = sh_tmu_clock_event_resume;
+> >
+> > -       dev_info(&ch->tmu->pdev->dev, "ch%u: used for clock events\n",
+> > -                ch->index);
+> > -
 > 
-> I guess this is a no-go.
-> Why can't you use physical address, like all other platforms?
-
-I changed this before so I don't remember the exact details,
-but I feel like it was related to the built-in DTB.
-I think the correct way is to handle it in the SH dependent part.
-
-> >                 memblock_reserve(base, size);
+> Why?
+> 
+> >         clockevents_config_and_register(ced, ch->tmu->rate, 0x300, 0xffffffff);
+> >
+> >         ret = request_irq(ch->irq, sh_tmu_interrupt,
+> > @@ -500,12 +497,12 @@ static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
+> >         tmu->model = SH_TMU;
+> >         tmu->num_channels = 3;
+> >
+> > -       of_property_read_u32(np, "#renesas,channels", &tmu->num_channels);
+> > -
+> > -       if (tmu->num_channels != 2 && tmu->num_channels != 3) {
+> > -               dev_err(&tmu->pdev->dev, "invalid number of channels %u\n",
+> > -                       tmu->num_channels);
+> > -               return -EINVAL;
+> > +       if (of_property_read_u32(np, "#renesas,channels", &tmu->num_channels)) {
+> > +               if (tmu->num_channels != 2 && tmu->num_channels != 3) {
+> > +                       dev_err(&tmu->pdev->dev,
+> > +                               "invalid number of channels %u\n", tmu->num_channels);
+> > +                       return -EINVAL;
+> > +               }
+> 
+> Why?
+> I understand TMU on SH7751 has 5 channels, so just extended the check?
+> 
+> Note that of_property_read_u32() returns zero on success.
+> 
 > >         }
 > >
+> >         return 0;
+> > @@ -513,7 +510,6 @@ static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
+> >
+> >  static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+> >  {
+> > -       unsigned int i;
+> >         int ret;
+> >
+> >         tmu->pdev = pdev;
+> > @@ -535,6 +531,11 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+> >                 return -ENXIO;
+> >         }
+> >
+> > +       if (tmu->num_channels < 2) {
+> > +               dev_err(&tmu->pdev->dev, "Invalid channels.\n");
+> > +               return -ENXIO;
+> > +       }
+> > +
+> 
+> Why?
+> 
+> >         /* Get hold of clock. */
+> >         tmu->clk = clk_get(&tmu->pdev->dev, "fck");
+> >         if (IS_ERR(tmu->clk)) {
+> > @@ -573,12 +574,12 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
+> >          * Use the first channel as a clock event device and the second channel
+> >          * as a clock source.
+> >          */
+> > -       for (i = 0; i < tmu->num_channels; ++i) {
+> > -               ret = sh_tmu_channel_setup(&tmu->channels[i], i,
+> > -                                          i == 0, i == 1, tmu);
+> > -               if (ret < 0)
+> > -                       goto err_unmap;
+> > -       }
+> > +       ret = sh_tmu_channel_setup(&tmu->channels[0], 0, false, true, tmu);
+> > +       if (ret < 0)
+> > +               goto err_unmap;
+> > +       ret = sh_tmu_channel_setup(&tmu->channels[1], 1, true, false, tmu);
+> > +       if (ret < 0)
+> > +               goto err_unmap;
+> 
+> Why,  oh why?...
+
+Sorry.
+This is the wrong version.
+I will update this to the correct one as I will also fix other parts.
+
+> >
+> >         platform_set_drvdata(pdev, tmu);
 > 
 > Gr{oetje,eeting}s,
 > 
