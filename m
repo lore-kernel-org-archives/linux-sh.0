@@ -2,56 +2,56 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B1CAECA0FE8
-	for <linux-sh@archiver.kernel.org>; Fri,  1 Sep 2023 13:02:05 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF7A8CA0FE6
+	for <linux-sh@archiver.kernel.org>; Fri,  1 Sep 2023 13:09:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233953AbjIANCH convert rfc822-to-8bit (ORCPT
+        id S232711AbjIANKA convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 1 Sep 2023 09:02:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60466 "EHLO
+        Fri, 1 Sep 2023 09:10:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60604 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231462AbjIANCG (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 1 Sep 2023 09:02:06 -0400
-Received: from mail-yw1-f182.google.com (mail-yw1-f182.google.com [209.85.128.182])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 36CFCE0
-        for <linux-sh@vger.kernel.org>; Fri,  1 Sep 2023 06:02:04 -0700 (PDT)
-Received: by mail-yw1-f182.google.com with SMTP id 00721157ae682-58d9ba95c78so20419267b3.1
-        for <linux-sh@vger.kernel.org>; Fri, 01 Sep 2023 06:02:04 -0700 (PDT)
+        with ESMTP id S231812AbjIANJ6 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 1 Sep 2023 09:09:58 -0400
+Received: from mail-yw1-f177.google.com (mail-yw1-f177.google.com [209.85.128.177])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E34DAE0
+        for <linux-sh@vger.kernel.org>; Fri,  1 Sep 2023 06:09:55 -0700 (PDT)
+Received: by mail-yw1-f177.google.com with SMTP id 00721157ae682-58fb73e26a6so20727447b3.1
+        for <linux-sh@vger.kernel.org>; Fri, 01 Sep 2023 06:09:55 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1693573323; x=1694178123;
+        d=1e100.net; s=20221208; t=1693573795; x=1694178595;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=Qev5VxCkMRIazk7rlQkvsPfcTh8CSe9KKvd8bfh/PIA=;
-        b=WCppAz/DAv/VFW7OppnnbKd7RbkOYbSqbZjXO9Sv61ea4JQpKdr39dU3vUpi8yJZn1
-         jZA8l/FwRiRaA7zvtCJ78ei32OQn/YCEaBLZxoza+Qp44SzRrBoYLBnYErWXFl0+ntZL
-         Wnjbfh82T3cL2uSBvIddTOMp8r3nkvmf9JD9K5oCagbcSZyreJroxew/gosRBDgZTee9
-         j+JWLx4/K3dt0o8UM3jRkXego1twTbrXauX0TG8x1Af6y3moSp5hVtzuwx1Y/pwDg6pg
-         Q181Vjz52G1Y9yZlPSRzXjCxv1CDpGRyxW8+9IdQ67dU70H4JtLJFf2NpoXAJgm/e6rF
-         0cAg==
-X-Gm-Message-State: AOJu0YyL7YQl8dq6S15M16fWgYxvqSUltwU5YpN+B/p9vS4a1GIC5BF5
-        a9IRgv7uQGONto9RBzM8iDcvHrRYerebHw==
-X-Google-Smtp-Source: AGHT+IEkMc9anV73ZEM541vbSEUMcMp8hidENo0NGSYIVwK/HMb7yJcy1OIuCIzGmAIItV5BxYoAhQ==
-X-Received: by 2002:a81:8641:0:b0:583:e958:39c6 with SMTP id w62-20020a818641000000b00583e95839c6mr2407864ywf.34.1693573323138;
-        Fri, 01 Sep 2023 06:02:03 -0700 (PDT)
-Received: from mail-yb1-f181.google.com (mail-yb1-f181.google.com. [209.85.219.181])
-        by smtp.gmail.com with ESMTPSA id y194-20020a0dd6cb000000b005950e1bbf11sm1030108ywd.60.2023.09.01.06.02.02
+        bh=uPz4NOvTWZ50fporlP0A/RbF5RHNoQ2Jkt4A9Cdsu8I=;
+        b=bRaPtqM1CBlVxgRfhD+y8PNF66RMPjJkW8+qRsYJZoyK+czMY4Ibj2J4Dr7UWYWEsJ
+         Ar5kzDzYeNCROlky5fW8ke0nyBzyOKTBp8FkoA3gZG9VzY5OSgNVNFK+2L/Ww9/uzpiw
+         b9tp5L8TOnOvJaYHpg400gKyzUkcnkxDb52FMr3AjwWQxsXwNNPopA+WDCOCv36/7trd
+         Va+4HvchxaqeQb4814ym74REwPoT7wIz+krdP2AQKB42AeP11gx+UZY0tt53tvl3K26C
+         dzVhBV4gRkFkbcf1aGYz6iCOGFLCvrb9hSBqu+8+5R6u5ctb0q3c8gz1oaQGSuMWViRh
+         GpFQ==
+X-Gm-Message-State: AOJu0YyNOtD1fkv7B8xALMBGvC4/hfvSMmQWSr7A2fqc1EQWWbdRbn5i
+        7f/vemKcKkVAqh1/enp/8rjqMRufrosvVA==
+X-Google-Smtp-Source: AGHT+IGRxF0ejAEG90ij/zlygQ5yjDTZQPh8xxSEG9rtyPutOVueyoSI50zeLxCvOOO9PmOn9X0k4A==
+X-Received: by 2002:a81:8741:0:b0:569:e7cb:cd4e with SMTP id x62-20020a818741000000b00569e7cbcd4emr2557404ywf.48.1693573794874;
+        Fri, 01 Sep 2023 06:09:54 -0700 (PDT)
+Received: from mail-yb1-f182.google.com (mail-yb1-f182.google.com. [209.85.219.182])
+        by smtp.gmail.com with ESMTPSA id v66-20020a814845000000b0058cd7816bcbsm1047038ywa.17.2023.09.01.06.09.54
         for <linux-sh@vger.kernel.org>
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 01 Sep 2023 06:02:03 -0700 (PDT)
-Received: by mail-yb1-f181.google.com with SMTP id 3f1490d57ef6-bcb6dbc477eso1538783276.1
-        for <linux-sh@vger.kernel.org>; Fri, 01 Sep 2023 06:02:02 -0700 (PDT)
-X-Received: by 2002:a25:3c6:0:b0:d4b:f4e4:62f4 with SMTP id
- 189-20020a2503c6000000b00d4bf4e462f4mr2691276ybd.10.1693573322704; Fri, 01
- Sep 2023 06:02:02 -0700 (PDT)
+        Fri, 01 Sep 2023 06:09:54 -0700 (PDT)
+Received: by mail-yb1-f182.google.com with SMTP id 3f1490d57ef6-d77c5414433so1545820276.0
+        for <linux-sh@vger.kernel.org>; Fri, 01 Sep 2023 06:09:54 -0700 (PDT)
+X-Received: by 2002:a25:d204:0:b0:d7a:c572:fa3 with SMTP id
+ j4-20020a25d204000000b00d7ac5720fa3mr3024226ybg.25.1693573794441; Fri, 01 Sep
+ 2023 06:09:54 -0700 (PDT)
 MIME-Version: 1.0
-References: <cover.1693444193.git.ysato@users.sourceforge.jp> <2d323328fba6ac55a1c3cdcefe909fad3ab0d9dc.1693444193.git.ysato@users.sourceforge.jp>
-In-Reply-To: <2d323328fba6ac55a1c3cdcefe909fad3ab0d9dc.1693444193.git.ysato@users.sourceforge.jp>
+References: <cover.1693444193.git.ysato@users.sourceforge.jp> <f622670c0af1bf01bf7c2f16241db0c36233a7d9.1693444193.git.ysato@users.sourceforge.jp>
+In-Reply-To: <f622670c0af1bf01bf7c2f16241db0c36233a7d9.1693444193.git.ysato@users.sourceforge.jp>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Fri, 1 Sep 2023 15:01:51 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdU7Yw49pKtHvNazY6ABb+wd=Ee4JYT4DB9Ff2qAkTFinQ@mail.gmail.com>
-Message-ID: <CAMuHMdU7Yw49pKtHvNazY6ABb+wd=Ee4JYT4DB9Ff2qAkTFinQ@mail.gmail.com>
-Subject: Re: [RESEND RFC PATCH 07/12] clocksource: Update sh_tmu of handling.
+Date:   Fri, 1 Sep 2023 15:09:43 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdXtJ4tn27n64avxDMpnO-kxF-pbcf=W1_1wuYAH0WSiow@mail.gmail.com>
+Message-ID: <CAMuHMdXtJ4tn27n64avxDMpnO-kxF-pbcf=W1_1wuYAH0WSiow@mail.gmail.com>
+Subject: Re: [RESEND RFC PATCH 08/12] mfd/sm501: Add OF properties.
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de
 Content-Type: text/plain; charset="UTF-8"
@@ -62,96 +62,141 @@ X-Mailing-List: linux-sh@vger.kernel.org
 
 Hi Sato-san,
 
-On Thu, Aug 31, 2023 at 7:22 PM Yoshinori Sato
+On Fri, Sep 1, 2023 at 12:23 AM Yoshinori Sato
 <ysato@users.sourceforge.jp> wrote:
+> Some parameters only platform_device.
+> Added same parameters in OF property.
+>
 > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 
 Thanks for your patch!
 
-> --- a/drivers/clocksource/sh_tmu.c
-> +++ b/drivers/clocksource/sh_tmu.c
-> @@ -420,9 +420,6 @@ static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
->         ced->suspend = sh_tmu_clock_event_suspend;
->         ced->resume = sh_tmu_clock_event_resume;
+> --- a/drivers/mfd/sm501.c
+> +++ b/drivers/mfd/sm501.c
+> @@ -80,6 +80,9 @@ struct sm501_devdata {
+>         unsigned int                     irq;
+>         void __iomem                    *regs;
+>         unsigned int                     rev;
+> +#if defined(CONFIG_OF)
+> +       struct device_node              *np;
+> +#endif
+
+"np" is only used during probing, so you can just pass it as a parameter
+instead.
+
+>  };
 >
-> -       dev_info(&ch->tmu->pdev->dev, "ch%u: used for clock events\n",
-> -                ch->index);
-> -
-
-Why?
-
->         clockevents_config_and_register(ced, ch->tmu->rate, 0x300, 0xffffffff);
 >
->         ret = request_irq(ch->irq, sh_tmu_interrupt,
-> @@ -500,12 +497,12 @@ static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
->         tmu->model = SH_TMU;
->         tmu->num_channels = 3;
->
-> -       of_property_read_u32(np, "#renesas,channels", &tmu->num_channels);
-> -
-> -       if (tmu->num_channels != 2 && tmu->num_channels != 3) {
-> -               dev_err(&tmu->pdev->dev, "invalid number of channels %u\n",
-> -                       tmu->num_channels);
-> -               return -EINVAL;
-> +       if (of_property_read_u32(np, "#renesas,channels", &tmu->num_channels)) {
-> +               if (tmu->num_channels != 2 && tmu->num_channels != 3) {
-> +                       dev_err(&tmu->pdev->dev,
-> +                               "invalid number of channels %u\n", tmu->num_channels);
-> +                       return -EINVAL;
-> +               }
-
-Why?
-I understand TMU on SH7751 has 5 channels, so just extended the check?
-
-Note that of_property_read_u32() returns zero on success.
-
->         }
->
+> @@ -1370,6 +1373,106 @@ static int sm501_init_dev(struct sm501_devdata *sm)
 >         return 0;
-> @@ -513,7 +510,6 @@ static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
+>  }
 >
->  static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
->  {
-> -       unsigned int i;
->         int ret;
->
->         tmu->pdev = pdev;
-> @@ -535,6 +531,11 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
->                 return -ENXIO;
->         }
->
-> +       if (tmu->num_channels < 2) {
-> +               dev_err(&tmu->pdev->dev, "Invalid channels.\n");
-> +               return -ENXIO;
-> +       }
+> +static unsigned int sm501_parse_devices_str(const char *str)
+
+This function is unused when COFNIG_OF=n, so please move inside the
+#idef below.
+
+> +{
+> +       char *sep;
+> +       unsigned int device = 0;
+> +       int i;
+
+unsigned int
+
+> +       int len;
+> +       static const struct {
+> +               char *devname;
+> +               unsigned int devid;
+> +       } devlist[] = {
+> +               { "usb-host", SM501_USE_USB_HOST },
+> +               { "usb-gadget", SM501_USE_USB_SLAVE },
+> +               { "ssp0", SM501_USE_SSP0 },
+> +               { "ssp1", SM501_USE_SSP1 },
+> +               { "uart0", SM501_USE_UART0 },
+> +               { "uart1", SM501_USE_UART1 },
+> +               { "accel", SM501_USE_FBACCEL },
+> +               { "ac97", SM501_USE_AC97 },
+> +               { "i2s", SM501_USE_I2S },
+> +               { "gpio", SM501_USE_GPIO },
+> +               { "all", SM501_USE_ALL },
+> +       };
 > +
+> +       do {
+> +               sep = strchr(str, ',');
+> +               len = sep ? sep - str : strlen(str);
+> +               for (i = 0; i < ARRAY_SIZE(devlist); i++) {
+> +                       if (strncasecmp(str, devlist[i].devname, len) == 0) {
+> +                               device |= devlist[i].devid;
+> +                               break;
+> +                       }
+> +               }
+> +               str = sep + 1;
+> +       } while (sep);
+> +       return device;
+> +}
+> +
+> +#if defined(CONFIG_OF)
+> +static void sm501_of_read_reg_init(struct sm501_devdata *sm,
+> +                                  const char *propname, struct sm501_reg_init *val)
+> +{
+> +       u32 u32_val;
+> +
+> +       if (!of_property_read_u32_index(sm->np, propname, 0, &u32_val))
+> +               val->set = u32_val;
+> +       if (!of_property_read_u32_index(sm->np, propname, 1, &u32_val))
+> +               val->mask = u32_val;
 
-Why?
+Error handling?
 
->         /* Get hold of clock. */
->         tmu->clk = clk_get(&tmu->pdev->dev, "fck");
->         if (IS_ERR(tmu->clk)) {
-> @@ -573,12 +574,12 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
->          * Use the first channel as a clock event device and the second channel
->          * as a clock source.
->          */
-> -       for (i = 0; i < tmu->num_channels; ++i) {
-> -               ret = sh_tmu_channel_setup(&tmu->channels[i], i,
-> -                                          i == 0, i == 1, tmu);
-> -               if (ret < 0)
-> -                       goto err_unmap;
-> -       }
-> +       ret = sh_tmu_channel_setup(&tmu->channels[0], 0, false, true, tmu);
-> +       if (ret < 0)
-> +               goto err_unmap;
-> +       ret = sh_tmu_channel_setup(&tmu->channels[1], 1, true, false, tmu);
-> +       if (ret < 0)
-> +               goto err_unmap;
+> +}
+> +
+> +static int sm501_parse_dt(struct sm501_devdata *sm)
+> +{
+> +       struct sm501_platdata *plat;
+> +       const char *devstr;
+> +       u32 u32_val;
+> +
+> +       if (sm->np == NULL)
+> +               return 0;
 
-Why,  oh why?...
+This cannot happen.
 
->
->         platform_set_drvdata(pdev, tmu);
+> +       plat = kzalloc(sizeof(struct sm501_platdata), GFP_KERNEL);
+
+devm_kzalloc(), to simplify error handling
+
+> +       if (plat == NULL)
+> +               return -ENOMEM;
+> +       plat->init = kzalloc(sizeof(struct sm501_initdata), GFP_KERNEL);
+
+devm_kzalloc()
+
+> +       if (plat->init == NULL)
+> +               goto err;
+> +
+> +       if (!of_property_read_string(sm->np, "sm501,devices", &devstr))
+> +               plat->init->devices = sm501_parse_devices_str(devstr);
+> +       if (!of_property_read_u32_index(sm->np, "sm501,mclk", 0, &u32_val))
+> +               plat->init->mclk = u32_val;
+> +       if (!of_property_read_u32_index(sm->np, "sm501,m1xclk", 0, &u32_val))
+> +               plat->init->m1xclk = u32_val;
+
+Do you need any error handling?
+
+>  static int sm501_plat_probe(struct platform_device *dev)
+>  {
+>         struct sm501_devdata *sm;
+> @@ -1384,7 +1487,6 @@ static int sm501_plat_probe(struct platform_device *dev)
+>         sm->dev = &dev->dev;
+>         sm->pdev_id = dev->id;
+>         sm->platdata = dev_get_platdata(&dev->dev);
+> -
+
+Please keep this blank line.
+
+>         ret = platform_get_irq(dev, 0);
+>         if (ret < 0)
+>                 goto err_res;
 
 Gr{oetje,eeting}s,
 
