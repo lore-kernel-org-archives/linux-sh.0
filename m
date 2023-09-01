@@ -2,56 +2,56 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5E3C4CA0FE5
-	for <linux-sh@archiver.kernel.org>; Fri,  1 Sep 2023 14:23:54 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 924D1CA0FE4
+	for <linux-sh@archiver.kernel.org>; Fri,  1 Sep 2023 14:26:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234756AbjIAOXz convert rfc822-to-8bit (ORCPT
+        id S233599AbjIAO00 convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 1 Sep 2023 10:23:55 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56346 "EHLO
+        Fri, 1 Sep 2023 10:26:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56384 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1349965AbjIAOXz (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 1 Sep 2023 10:23:55 -0400
-Received: from mail-yw1-f171.google.com (mail-yw1-f171.google.com [209.85.128.171])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B8F5D10CF
-        for <linux-sh@vger.kernel.org>; Fri,  1 Sep 2023 07:23:51 -0700 (PDT)
-Received: by mail-yw1-f171.google.com with SMTP id 00721157ae682-58dfe2d5b9aso128807b3.1
-        for <linux-sh@vger.kernel.org>; Fri, 01 Sep 2023 07:23:51 -0700 (PDT)
+        with ESMTP id S231247AbjIAO0Z (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 1 Sep 2023 10:26:25 -0400
+Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com [209.85.128.179])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 00B66CC5
+        for <linux-sh@vger.kernel.org>; Fri,  1 Sep 2023 07:26:22 -0700 (PDT)
+Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-58dfe2d5b9aso169317b3.1
+        for <linux-sh@vger.kernel.org>; Fri, 01 Sep 2023 07:26:22 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1693578231; x=1694183031;
+        d=1e100.net; s=20221208; t=1693578382; x=1694183182;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=XBtrdY4hNGcI2MtISEfGbeNIFjh8WnT71IEidT0/www=;
-        b=Vuv8CzcI/4UCXMCunWnVQzo2qeYJqfbYhea6aKWW+Bd0WpJUENk76Ot7n/D3npYV5s
-         53KTwInnzZEZ3uBZEWM4OSoKRlGMJC4vXMe3hR5bsPr/EsiE2wWt/LTWuNyAwVo8VGBh
-         1ipr5fKHgfBOx3JDOqe3HEDKolPkBjEO+9xgt7lPddB35BXvsNBS0f7rlVKWsdrweQqP
-         O31dYz4HCHCLDTGsy8+1io51Hjl6rzBLr6z4S64erEpZs4Vnp47VvM1eRqFb2407lj1t
-         33EsUcCAa1M6Ndwn708d8RVc+gfGLOoqQRa9dORdOMY3bm723PKfE98n3A+vXdH3q1k2
-         //oQ==
-X-Gm-Message-State: AOJu0Yywcrk+Cjwy2leUWH9S4y5CK/IHWCFbsAqbO9QchC0KAEvSloKj
-        d7usXgfWF1b268WGF02chI+mPHcWmvQcqQ==
-X-Google-Smtp-Source: AGHT+IEVyXlVkzAIxosLSTMfUPt2YdI5cp+iEohU7gIQ9In9mGU3iJ7e6eIFU4J1y6z25h7jTCQxzw==
-X-Received: by 2002:a0d:d605:0:b0:56c:f0c7:7d72 with SMTP id y5-20020a0dd605000000b0056cf0c77d72mr3792737ywd.4.1693578230720;
-        Fri, 01 Sep 2023 07:23:50 -0700 (PDT)
-Received: from mail-yw1-f182.google.com (mail-yw1-f182.google.com. [209.85.128.182])
-        by smtp.gmail.com with ESMTPSA id n83-20020a817256000000b00589b653b7adsm1095598ywc.136.2023.09.01.07.23.50
+        bh=rinMlOgd+oYxdRhWNbzuljXiSFeUvbdEcRzKJDidIvc=;
+        b=MDbpqzr2Nq4ymj454iD+ef0De6uYNKz9CmyTISK1B0yvV3dz1lEmGWiaOE7SzGkB/u
+         HgW6E0T55qdSaAKTHA0iMlJnPg7xwm9KV2eTO/Jkc8rxSSTzP4E4bxODmHJN6AeEX/Al
+         Zd85jXe04qCd20K5b1fQ/8Q54YNnc2aXzACzJLkRYvMW6SxwH05Wn86Kskpczux6HfRZ
+         2+0Ob1lvO3NbSDXBIRBxem18ncPv71lcm6uKQzC2AGpmnRLyz96DqgZfEyfDzFddvnvw
+         9bqvayP7Wkk8Dev7LT1opNEJufGMoebp9HArAy0IMenPcfAOAgcIlFljcJOpi9fjl5iv
+         jODw==
+X-Gm-Message-State: AOJu0YxHanycF1x9WxCg56nPRuh6fWKBY8tlu4kFr33T4wASZC+Lt/SM
+        JqAb2UkdGLVK4BXmSYNIF5yOFfSGSypo0Q==
+X-Google-Smtp-Source: AGHT+IF1MFEu6KZcHam+sMHE9HmaZisoLBYQC8OAVhVnM4484kc7xKFWpnLEkrK+/HSa5rBsOLgVfQ==
+X-Received: by 2002:a0d:db4f:0:b0:583:9db5:7e89 with SMTP id d76-20020a0ddb4f000000b005839db57e89mr3986654ywe.24.1693578381909;
+        Fri, 01 Sep 2023 07:26:21 -0700 (PDT)
+Received: from mail-yb1-f176.google.com (mail-yb1-f176.google.com. [209.85.219.176])
+        by smtp.gmail.com with ESMTPSA id i63-20020a0dc642000000b0058605521e6esm1081276ywd.125.2023.09.01.07.26.21
         for <linux-sh@vger.kernel.org>
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 01 Sep 2023 07:23:50 -0700 (PDT)
-Received: by mail-yw1-f182.google.com with SMTP id 00721157ae682-58d41109351so48227b3.1
-        for <linux-sh@vger.kernel.org>; Fri, 01 Sep 2023 07:23:50 -0700 (PDT)
-X-Received: by 2002:a81:a186:0:b0:56c:f547:e058 with SMTP id
- y128-20020a81a186000000b0056cf547e058mr4085015ywg.18.1693578230001; Fri, 01
- Sep 2023 07:23:50 -0700 (PDT)
+        Fri, 01 Sep 2023 07:26:21 -0700 (PDT)
+Received: by mail-yb1-f176.google.com with SMTP id 3f1490d57ef6-d74a012e613so19584276.1
+        for <linux-sh@vger.kernel.org>; Fri, 01 Sep 2023 07:26:21 -0700 (PDT)
+X-Received: by 2002:a25:e7d1:0:b0:d67:46c9:d0fd with SMTP id
+ e200-20020a25e7d1000000b00d6746c9d0fdmr3187606ybh.22.1693578381373; Fri, 01
+ Sep 2023 07:26:21 -0700 (PDT)
 MIME-Version: 1.0
-References: <cover.1693444193.git.ysato@users.sourceforge.jp> <1a7d32f58935aee952750a088702f7f2798972d8.1693444193.git.ysato@users.sourceforge.jp>
-In-Reply-To: <1a7d32f58935aee952750a088702f7f2798972d8.1693444193.git.ysato@users.sourceforge.jp>
+References: <cover.1693444193.git.ysato@users.sourceforge.jp> <95d8b86480c60012252b37b9b13e5f709a2ec177.1693444193.git.ysato@users.sourceforge.jp>
+In-Reply-To: <95d8b86480c60012252b37b9b13e5f709a2ec177.1693444193.git.ysato@users.sourceforge.jp>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Fri, 1 Sep 2023 16:23:38 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdX3qyNKTy3cRaD9md10jvNG_YqNsFfhizZEv22KNKTmBw@mail.gmail.com>
-Message-ID: <CAMuHMdX3qyNKTy3cRaD9md10jvNG_YqNsFfhizZEv22KNKTmBw@mail.gmail.com>
-Subject: Re: [RESEND RFC PATCH 11/12] sh: target dts.
+Date:   Fri, 1 Sep 2023 16:26:10 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdV0rmmi8=DyQL-WmMdFyo4g6obNXjWutNGEz=3QcO_d+g@mail.gmail.com>
+Message-ID: <CAMuHMdV0rmmi8=DyQL-WmMdFyo4g6obNXjWutNGEz=3QcO_d+g@mail.gmail.com>
+Subject: Re: [RESEND RFC PATCH 01/12] sh: Add OF target boards.
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de
 Content-Type: text/plain; charset="UTF-8"
@@ -62,322 +62,68 @@ X-Mailing-List: linux-sh@vger.kernel.org
 
 Hi Sato-san,
 
-On Fri, Sep 1, 2023 at 12:43 AM Yoshinori Sato
+On Thu, Aug 31, 2023 at 5:19 AM Yoshinori Sato
 <ysato@users.sourceforge.jp> wrote:
-> - rts7751r2dplus - Renesas RTS7751R2D-PLUS board.
-> - landisk - IO DATA DEVICE LANDISK
-> - usl-5p - IO DATA DECVICE USL-5P
+> --- a/arch/sh/Kconfig
+> +++ b/arch/sh/Kconfig
+
+> @@ -702,7 +707,7 @@ config BUILTIN_DTB_SOURCE
+>  config ZERO_PAGE_OFFSET
+>         hex
+>         default "0x00010000" if PAGE_SIZE_64KB || SH_RTS7751R2D || \
+> -                               SH_7751_SOLUTION_ENGINE
+> +                               SH_7751_SOLUTION_ENGINE || SH_RTS7751R2D_OF
+
+This is the only user of SH_RTS7751R2D_OF. Can we get rid of it?
+
+>         default "0x00004000" if PAGE_SIZE_16KB || SH_SH03
+>         default "0x00002000" if PAGE_SIZE_8KB
+>         default "0x00001000"
+
+> --- a/arch/sh/boards/Kconfig
+> +++ b/arch/sh/boards/Kconfig
+> @@ -161,6 +166,17 @@ config SH_RTS7751R2D
+>           Select RTS7751R2D if configuring for a Renesas Technology
+>           Sales SH-Graphics board.
 >
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-
-Thanks for your patch!
-
->  arch/sh/boot/dts/include/dt-bindings |   1 +
->  arch/sh/boot/dts/landisk.dts         | 142 ++++++++++++++++++++++
->  arch/sh/boot/dts/rts7751r2dplus.dts  | 168 +++++++++++++++++++++++++++
->  arch/sh/boot/dts/usl-5p.dts          | 146 +++++++++++++++++++++++
-
-None of the DTBs are listed in arch/sh/boot/dts/Makefile, so how do you
-build them without CONFIG_USE_BUILTIN_DTB/CONFIG_BUILTIN_DTB_SOURCE?
-
-To make "make dtbs" and "make dtbs_check" work, I added:
-
-     dtb-$(CONFIG_CPU_J2) += j2_mimas_v2.dtb
-     dtb-$(CONFIG_CPU_SUBTYPE_SH7751R) += landisk.dtb
-     dtb-$(CONFIG_CPU_SUBTYPE_SH7751R) += rts7751r2dplus.dtb
-     dtb-$(CONFIG_CPU_SUBTYPE_SH7751R) += usl-5p.dtb
-
-> --- /dev/null
-> +++ b/arch/sh/boot/dts/landisk.dts
-> @@ -0,0 +1,142 @@
-> +// SPDX-License-Identifier: GPL-2.0
-> +/*
-> + * Device Tree source for IO DATA DEVICE LANDISK
-> + *
-> + * Copyright 2023 Yoshinori Sato
-> + */
+> +config SH_RTS7751R2D_OF
+> +       bool "RTS7751R2D (DeviceTree)"
+> +       depends on CPU_SUBTYPE_SH7751R
+> +       select HAVE_PCI
+> +       select IO_TRAPPED if MMU
+> +       select SH_DEVICE_TREE
+> +       select COMMON_CLK
+> +       help
+> +         Select RTS7751R2D if configuring for a Renesas Technology
+> +         Sales SH-Graphics board. (Use DeviceTree)
 > +
-> +#include <dt-bindings/interrupt-controller/sh_intc.h>
+>  config SH_RSK
+>         bool "Renesas Starter Kit"
+>         depends on CPU_SUBTYPE_SH7201 || CPU_SUBTYPE_SH7203 || \
+> @@ -300,8 +316,20 @@ config SH_LANDISK
+>         bool "LANDISK"
+>         depends on CPU_SUBTYPE_SH7751R
+>         select HAVE_PCI
+> +       select SYS_SUPPORTS_PCI
+> +       help
+> +         I-O DATA DEVICE, INC. "LANDISK Series" support.
 > +
-> +/dts-v1/;
-> +/ {
-> +       model = "IO-DATA Device LANDISK";
-> +       compatible = "iodata,landisk";
+> +config SH_LANDISK_OF
+> +       bool "LANDISK (DeviceTree)"
+> +       depends on CPU_SUBTYPE_SH7751R
+> +       select HAVE_PCI
+> +       select SYS_SUPPORTS_PCI
+> +       select SH_DEVICE_TREE
+> +       select COMMON_CLK
+>         help
+>           I-O DATA DEVICE, INC. "LANDISK Series" support.
+> +         Use Device Tree.
+>
+>  config SH_TITAN
+>         bool "TITAN"
 
-compatible = "iodata,landisk", "renesas,sh7380", "renesas,sh7751r".
-
-> +       #address-cells = <1>;
-> +       #size-cells = <1>;
-> +       interrupt-parent = <&shintc>;
-
-Empty line between properties and subnodes (everywhere).
-
-> +       chosen {
-> +               stdout-path = &sci1;
-
-     stdout-path = "serial0";
-
-or
-
-     stdout-path = "serial0:9600n8";
-
-> +       };
-
-Empty line between subnodes (everywhere).
-
-> +       aliases {
-> +               serial1 = &sci1;
-> +       };
-> +
-> +       oclk: oscillator {
-> +               #clock-cells = <0>;
-> +               compatible = "fixed-clock";
-> +               clock-frequency = <22222222>;
-> +       };
-> +       pllclk: pllclk {
-> +               compatible = "renesas,sh7750-pll-clock";
-> +               clocks = <&oclk>;
-> +               #clock-cells = <0>;
-> +               sh7750,md = <5>;
-> +               sh7750,rtype = <1>;
-> +               reg = <0xffc00000 2>, <0xffc00008 4>;
-> +       };
-> +       iclk: iclk {
-> +               compatible = "renesas,sh7750-div-clock";
-> +               clocks = <&pllclk>;
-> +               #clock-cells = <0>;
-> +               reg = <0xffc00000 2>;
-> +               renesas,offset = <6>;
-> +               clock-output-names = "ick";
-> +       };
-> +       bclk: bclk {
-> +               compatible = "renesas,sh7750-div-clock";
-> +               clocks = <&pllclk>;
-> +               #clock-cells = <0>;
-> +               reg = <0xffc00000 2>;
-> +               renesas,offset = <3>;
-> +               clock-output-names = "bck";
-> +       };
-> +       fclk: fclk {
-> +               compatible = "renesas,sh7750-div-clock";
-> +               clocks = <&pllclk>;
-> +               #clock-cells = <0>;
-> +               reg = <0xffc00000 2>;
-> +               renesas,offset = <0>;
-> +               clock-output-names = "fck";
-> +       };
-
-Having individual clock nodes (especially if they use the same register
-block) is deprecated.  Please use a single node with compatible value
-e.g. "renesas,sh7751r-cpg" and "#clock-cells = <1>", and let the driver
-create all clocks itself.
-
-> +       sci1: serial@ffe80000 {
-
-label "scif" (serial@ffe00000 is "sci").
-
-> +               compatible = "renesas,scif";
-
-"renesas,scif-sh7751r", "renesas,scif" ?
-
-> +               reg = <0xffe80000 0x100>;
-> +               interrupts = <evt2irq(0x700) 0
-> +                             evt2irq(0x720) 0
-> +                             evt2irq(0x760) 0
-> +                             evt2irq(0x740) 0>;
-
-Please group using angular brackets:
-
-              interrupts = <evt2irq(0x700) 0>,
-                            <evt2irq(0x720) 0>,
-                            <evt2irq(0x760) 0>,
-                            <evt2irq(0x740) 0>;
-
-Missing interrupt-names
-
-> +               clocks = <&fclk>;
-> +               clock-names = "fck";
-> +       };
-> +       tmu: timer@ffd80008 {
-> +               compatible = "renesas,tmu";
-> +               reg = <0xffd80000 12>;
-> +               interrupts = <evt2irq(0x400) 0
-> +                             evt2irq(0x420) 0
-> +                             evt2irq(0x440) 0>;
-
-Please group using angular brackets
-
-> +               clocks = <&fclk>;
-> +               clock-names = "fck";
-> +               renesas,channels = <0x03>;
-
-renesas,channels = <5>;
-
-> +       };
-> +
-> +       pci@fe200000 {
-> +               compatible = "renesas,sh7751-pci", "iodata,julian";
-
-Most-specific first, i.e.
-
-    compatible = "iodata,julian", "renesas,sh7751-pci";
-
-(and we do need DT binding documentation!)
-
-However, "iodata,julian" is a too-generic name.
-
-> +               device_type = "pci";
-> +               bus-range = <0 0>;
-> +               #address-cells = <3>;
-> +               #size-cells = <2>;
-> +               ranges = <0x02000000 0 0xfd000000 0xfd000000 0 0x01000000>,
-> +                        <0x01000000 0 0xfe240000 0xfe240000 0 0x00040000>;
-> +               reg = <0xfe200000 0x0400>,
-> +                     <0x0c000000 0x04000000>,
-> +                     <0xff800000 0x0030>;
-> +               #interrupt-cells = <1>;
-> +               interrupt-parent = <&julianintc>;
-> +               eth@0,0 {
-> +                       reg = <0x0000 0 0 0 0>;
-> +                       interrupts = <5 0>;
-> +               };
-> +               ata@1,0 {
-> +                       reg = <0x0800 0 0 0 0>;
-> +                       interrupts = <6 0>;
-> +               };
-> +               usb@2,0 {
-> +                       reg = <0x1000 0 0 0 0>;
-> +                       interrupts = <7 0>;
-> +               };
-> +               usb@2,1 {
-> +                       reg = <0x1100 0 0 0 0>;
-> +                       interrupts = <8 0>;
-> +               };
-> +               usb@2,2 {
-> +                       reg = <0x1200 0 0 0 0>;
-> +                       interrupts = <5 0>;
-> +               };
-> +       };
-> +};
-
-All SoC-specific parts should be extracted into sh7751r.dtsi, so it can be
-shared by all board DTS files.
-
-> diff --git a/arch/sh/boot/dts/rts7751r2dplus.dts b/arch/sh/boot/dts/rts7751r2dplus.dts
-> new file mode 100644
-> index 000000000000..1d64753f47a2
-> --- /dev/null
-> +++ b/arch/sh/boot/dts/rts7751r2dplus.dts
-> @@ -0,0 +1,168 @@
-> +// SPDX-License-Identifier: GPL-2.0
-> +/*
-> + * Device Tree source for Renesas RTS7751R2D Plus
-> + *
-> + * Copyright 2023 Yoshinori Sato
-> + */
-> +
-> +#include <dt-bindings/interrupt-controller/sh_intc.h>
-> +
-> +/dts-v1/;
-> +/ {
-> +       model = "Renesas RTS7715R2D Plus";
-> +       compatible = "renesas,r2dplus";
-
-compatible = "renesas,r2dplus", "renesas,sh7751r".
-
-> +       display@1,0 {
-> +               compatible = "smi,sm501";
-> +               reg = <0x10000000 0x03e00000
-> +                      0x13e00000 0x00200000>;
-
-Please group using angular brackets.
-
-> +               interrupt-parent = <&r2dintc>;
-> +               interrupts = <4 0>;
-> +               mode = "640x480-16@60";
-> +               little-endian;
-> +               sm501,devices = "usb-host,uart0";
-> +       };
-
-> +       flash@0 {
-> +               compatible = "cfi-flash";
-> +               reg = <0x00000000 0x02000000>;
-> +               device-width = <2>;
-> +               #address-cells = <1>;
-> +               #size-cells = <1>;
-> +               partition@0 {
-
-Please wrap all partitions inside a "partitions" subnode.
-
-> +                       label = "U-Boot";
-> +                       reg = <0x00000000 0x00040000>;
-> +               };
-> +               partition@1 {
-
-partition@40000
-
-> +                       label = "Environemt";
-> +                       reg = <0x00040000 0x00040000>;
-> +               };
-> +               partition@2 {
-
-partition@80000
-
-> +                       label = "Kernel";
-> +                       reg = <0x00080000 0x001c0000>;
-> +               };
-> +               partition@3 {
-
-partition@240000
-
-> +                       label = "Flash_FS";
-> +                       reg = <0x00240000 0x00dc0000>;
-> +               };
-> +       };
-> +
-> +       pci@fe200000 {
-> +               compatible = "renesas,sh7751-pci", "renesas,r2d";
-
-compatible = "renesas,r2d", "renesas,sh7751-pci";
-
-However, "renesas,r2d" is a too-generic name.
-
-> +               device_type = "pci";
-> +               bus-range = <0 0>;
-> +               #address-cells = <3>;
-> +               #size-cells = <2>;
-> +               ranges = <0x02000000 0 0xfd000000 0xfd000000 0 0x01000000>,
-> +                        <0x01000000 0 0xfe240000 0xfe240000 0 0x00040000>;
-> +               reg = <0xfe200000 0x0400>,
-> +                     <0x0c000000 0x04000000>,
-> +                     <0xff800000 0x0030>;
-> +               #interrupt-cells = <1>;
-> +               interrupt-parent = <&r2dintc>;
-> +               eth@2,0 {
-> +                       reg = <0x1000 0 0 0 0>;
-> +                       interrupts = <3 0>;
-> +               };
-> +       };
-> +};
-
-> --- /dev/null
-> +++ b/arch/sh/boot/dts/usl-5p.dts
-> @@ -0,0 +1,146 @@
-> +// SPDX-License-Identifier: GPL-2.0
-> +/*
-> + * Device Tree source for IO DATA DEVICE USL-5P
-> + *
-> + * Copyright 2023 Yoshinori Sato
-> + */
-> +
-> +#include <dt-bindings/interrupt-controller/sh_intc.h>
-> +
-> +/dts-v1/;
-> +/ {
-> +       model = "IO-DATA Device USL-5P";
-> +       compatible = "iodata,usl-5p";
-
-compatible = "iodata,usl-5p", "renesas,sh7380", "renesas,sh7751r".
+Apart from the above, there are no users of the "<machine>_OF" symbols.
+Do we need them?
 
 Gr{oetje,eeting}s,
 
