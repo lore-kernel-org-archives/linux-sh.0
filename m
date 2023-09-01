@@ -2,56 +2,57 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D348CA0FE1
-	for <linux-sh@archiver.kernel.org>; Fri,  1 Sep 2023 12:27:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A8285CA0FE1
+	for <linux-sh@archiver.kernel.org>; Fri,  1 Sep 2023 12:50:16 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1349415AbjIAM1E convert rfc822-to-8bit (ORCPT
+        id S243788AbjIAMuR convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 1 Sep 2023 08:27:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43768 "EHLO
+        Fri, 1 Sep 2023 08:50:17 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44768 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1347272AbjIAM1D (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 1 Sep 2023 08:27:03 -0400
-Received: from mail-yw1-f178.google.com (mail-yw1-f178.google.com [209.85.128.178])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7E75010D4
-        for <linux-sh@vger.kernel.org>; Fri,  1 Sep 2023 05:27:00 -0700 (PDT)
-Received: by mail-yw1-f178.google.com with SMTP id 00721157ae682-59231a1ca9eso20339367b3.1
-        for <linux-sh@vger.kernel.org>; Fri, 01 Sep 2023 05:27:00 -0700 (PDT)
+        with ESMTP id S244046AbjIAMuR (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 1 Sep 2023 08:50:17 -0400
+Received: from mail-ot1-f46.google.com (mail-ot1-f46.google.com [209.85.210.46])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4D4DA1708
+        for <linux-sh@vger.kernel.org>; Fri,  1 Sep 2023 05:49:47 -0700 (PDT)
+Received: by mail-ot1-f46.google.com with SMTP id 46e09a7af769-6bf01bcb1aeso1542339a34.3
+        for <linux-sh@vger.kernel.org>; Fri, 01 Sep 2023 05:49:47 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20221208; t=1693571219; x=1694176019;
+        d=1e100.net; s=20221208; t=1693572557; x=1694177357;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=5N7rO2BU0AIrzW8I0nLPauaiNcBdHrQYP7m7W8wMp0o=;
-        b=fgrxfEdlH6z1uU17DB64Cpg9B3LJaSI4H5vlVPVc63jLZQazDdqZXMzGE0+pIyhpDA
-         22BsNkbcWmgb4gqZdGoOQ+hHGa/WAsqdXp0kDplWhNpuJgU0n8bFW6rqCX6sXKiemcMg
-         +P8TV0vzOs1WfBOYwwVRN2YINfYuIPcgq+gOADYZDDBTI6CkO/TvTK/iSIABDyxTZFOB
-         /eCoo702MkRnPQLSXLZ14OrQa9s5IlNg6PyzO6I5xniBWMqRzgQparJXnf6l5P7/S2FU
-         /kWXjgYrFn/zyy7s2hJ72yruqqKQ9V7Nl44WH41SD/UCmg69/3M8d0uBz7UXWoebihpl
-         aBmw==
-X-Gm-Message-State: AOJu0YyIN6AZwAVInF9ej94FzCtZHd16OgqYb2RS1otCN8925WGQ6qJd
-        PXwwt57pS2w6BBHWEE7h9V/Y2KXTrRUcbg==
-X-Google-Smtp-Source: AGHT+IFq2oBNinrj7D1LKdKqx4FeZGOPAwM0J85+yzRSLd62qWLKNi1/U38Rcj55ZZ3/gKeYG8UVJw==
-X-Received: by 2002:a81:a157:0:b0:595:320d:c9e2 with SMTP id y84-20020a81a157000000b00595320dc9e2mr2476438ywg.24.1693571219341;
-        Fri, 01 Sep 2023 05:26:59 -0700 (PDT)
-Received: from mail-yw1-f173.google.com (mail-yw1-f173.google.com. [209.85.128.173])
-        by smtp.gmail.com with ESMTPSA id h8-20020a816c08000000b0058451c12076sm1029365ywc.14.2023.09.01.05.26.59
+        bh=54pwaGpIk06nK1Q+ai1nKmQ5ccYsBJitNk7DgwKiWDg=;
+        b=jw1NY+trL+qcC9sPTy8RTll/X8yYkCdnnrlZu03Fw1nFESCs6sI3W3lxbXSwBEvgja
+         jZ2FEOuHnCywoWv96VTyRoXfSzccREGboU0k+xtW1OKgXfKeB3afYiv7c1QsZzjgjrGX
+         JglQgh0KukcILqPQ4PvA+JC0quUeyW3h244ZGIOamGc8ttG/ohsZnnbHBFpN7r9LMDQS
+         ShgvrmcCx16kgqlV9o5eRPWvFR6DiIzhkS3MN2Ps442L5NB77B2ETfqzEnwJ3CCByapD
+         yJB13Ug3qPOfIPV48UrgiwRewbZcKUuCLK0lLTa1hG5j00QFjb8ZRINmC8bNGQ8dIHv6
+         cPdw==
+X-Gm-Message-State: AOJu0YyWRVHdZFZ2uiXankrVMK+PuHbgB34aZsv4P/H+IbpfnMilND8N
+        qkX/5y+J8OnwiwEjhET8UFXBzwEkCb5/qA==
+X-Google-Smtp-Source: AGHT+IFnD/eBD3S1Ks2+wsJNe+dkr33H9kFVXBmXM5F8gydpxaMNifnPxDgY7yHtzn7b27zahMMEVg==
+X-Received: by 2002:a05:6358:4415:b0:139:be3d:d2fa with SMTP id z21-20020a056358441500b00139be3dd2famr1829008rwc.30.1693572556633;
+        Fri, 01 Sep 2023 05:49:16 -0700 (PDT)
+Received: from mail-yw1-f172.google.com (mail-yw1-f172.google.com. [209.85.128.172])
+        by smtp.gmail.com with ESMTPSA id c9-20020a814e09000000b005928d602f44sm1034110ywb.31.2023.09.01.05.49.16
         for <linux-sh@vger.kernel.org>
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 01 Sep 2023 05:26:59 -0700 (PDT)
-Received: by mail-yw1-f173.google.com with SMTP id 00721157ae682-5920efd91c7so20267667b3.2
-        for <linux-sh@vger.kernel.org>; Fri, 01 Sep 2023 05:26:59 -0700 (PDT)
-X-Received: by 2002:a25:8206:0:b0:d78:21e0:c06d with SMTP id
- q6-20020a258206000000b00d7821e0c06dmr2541480ybk.64.1693571218807; Fri, 01 Sep
- 2023 05:26:58 -0700 (PDT)
+        Fri, 01 Sep 2023 05:49:16 -0700 (PDT)
+Received: by mail-yw1-f172.google.com with SMTP id 00721157ae682-591ba8bd094so20338227b3.3
+        for <linux-sh@vger.kernel.org>; Fri, 01 Sep 2023 05:49:16 -0700 (PDT)
+X-Received: by 2002:a25:a447:0:b0:d7b:1f20:293c with SMTP id
+ f65-20020a25a447000000b00d7b1f20293cmr2337659ybi.1.1693572556027; Fri, 01 Sep
+ 2023 05:49:16 -0700 (PDT)
 MIME-Version: 1.0
-References: <cover.1693444193.git.ysato@users.sourceforge.jp> <541eb279023563f17245deabc32b9f65dbf92b9a.1693444193.git.ysato@users.sourceforge.jp>
-In-Reply-To: <541eb279023563f17245deabc32b9f65dbf92b9a.1693444193.git.ysato@users.sourceforge.jp>
+References: <cover.1693444193.git.ysato@users.sourceforge.jp> <52f2118d33bea5e74d4ffda4b3d935772e743ec2.1693444193.git.ysato@users.sourceforge.jp>
+In-Reply-To: <52f2118d33bea5e74d4ffda4b3d935772e743ec2.1693444193.git.ysato@users.sourceforge.jp>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Fri, 1 Sep 2023 14:26:47 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdVTJg9sKrhzGrWZu1-GmLtCRSSajPt59=E_v4uQ3N0Zdg@mail.gmail.com>
-Message-ID: <CAMuHMdVTJg9sKrhzGrWZu1-GmLtCRSSajPt59=E_v4uQ3N0Zdg@mail.gmail.com>
-Subject: Re: [RESEND RFC PATCH 04/12] clk: SH7750 / 7751 clk driver.
+Date:   Fri, 1 Sep 2023 14:49:04 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdV9-vJxt_PKnM715QL+9E7uaK4SVx-YtcTppHeufsmSFg@mail.gmail.com>
+Message-ID: <CAMuHMdV9-vJxt_PKnM715QL+9E7uaK4SVx-YtcTppHeufsmSFg@mail.gmail.com>
+Subject: Re: [RESEND RFC PATCH 05/12] drivers/irqchip: Add SH7751 and boards
+ specific irqchip.
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de
 Content-Type: text/plain; charset="UTF-8"
@@ -62,282 +63,442 @@ X-Mailing-List: linux-sh@vger.kernel.org
 
 Hi Sato-san,
 
-On Thu, Aug 31, 2023 at 11:32 AM Yoshinori Sato
-<ysato@users.sourceforge.jp> wrote:
-> Use COMMON_CLK framework clock driver.
->
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-
 Thanks for your patch!
 
-> --- /dev/null
-> +++ b/drivers/clk/sh/Kconfig
-> @@ -0,0 +1,7 @@
-> +config COMMON_CLK_SH7750
-> +       bool "Clcok driver for SH7750/SH7751"
+On Thu, Aug 31, 2023 at 4:37 PM Yoshinori Sato
+<ysato@users.sourceforge.jp> wrote:
+> - irq-renesas-sh7751: Renesas SH7751 internal INTC.
+> - irq-renesas-r2d: Renesas RTS7751R2D external interrupt encoder.
+> - irq-iodata-julian: IO DATA Device LANDISK external interrupt encoder.
 
-Clock
+Again, please split.
 
-> +       depends on CPU_SUBTYPE_SH7750 || CPU_SUBTYPE_SH7750S || \
-> +                  CPU_SUBTYPE_SH7750R || \
-> +                  CPU_SUBTYPE_SH7751 || CPU_SUBTYPE_SH7751R
+> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-|| COMPILE_TEST?
+> --- a/drivers/irqchip/Kconfig
+> +++ b/drivers/irqchip/Kconfig
+> @@ -660,6 +660,10 @@ config APPLE_AIC
+>         help
+>           Support for the Apple Interrupt Controller found on Apple Silicon SoCs,
+>           such as the M1.
 
-Anyway, I would do
+Please add a blank line here.
 
-    select COMMON_CLK_SH7750 if CPU_SUBTYPE_SH7750 || ...
+> +config RENESAS_SH_INTC
+> +       def_bool y if SH_DEVICE_TREE
+> +       select IRQ_DOMAIN
+> +       select IRQ_DOMAIN_HIERARCHY
+>
+>  config MCHP_EIC
+>         bool "Microchip External Interrupt Controller"
+> diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
+> index ffd945fe71aa..a3859bdd0442 100644
+> --- a/drivers/irqchip/Makefile
+> +++ b/drivers/irqchip/Makefile
+> @@ -120,3 +120,4 @@ obj-$(CONFIG_IRQ_IDT3243X)          += irq-idt3243x.o
+>  obj-$(CONFIG_APPLE_AIC)                        += irq-apple-aic.o
+>  obj-$(CONFIG_MCHP_EIC)                 += irq-mchp-eic.o
+>  obj-$(CONFIG_SUNPLUS_SP7021_INTC)      += irq-sp7021-intc.o
+> +obj-$(CONFIG_RENESAS_SH_INTC)          += irq-renesas-sh7751.o irq-iodata-julian.o irq-renesas-r2d.o
 
-at the top, and
+I think it makes sense to split this in 3 different config symbols.
 
-    bool "Clock driver for SH7750/SH7751" if COMPILE_TEST
-
-cfr. drivers/clk/renesas/Kconfig.
-
-BTW, do you plan to put all SuperH clock drivers under SH?
-For a simple CPG like in SH7750/7751 that could make sense.
-For the more complex ones like SH7724, you probably want to plug
-into the existing drivers/clk/renesas/renesas-cpg-mssr.c instead,
-as it is very similar to the CPG on later Renesas ARM SoCs.
-
-But even SH7751 has Standby Control registers with Module Stop
-bits...
-
-> +       help
-> +         This driver supports the Renesas SH7750 and SH7751 CPG.
-> diff --git a/drivers/clk/sh/Makefile b/drivers/clk/sh/Makefile
+> diff --git a/drivers/irqchip/irq-iodata-julian.c b/drivers/irqchip/irq-iodata-julian.c
 > new file mode 100644
-> index 000000000000..7122c37655aa
+> index 000000000000..95e502904a68
 > --- /dev/null
-> +++ b/drivers/clk/sh/Makefile
-> @@ -0,0 +1,2 @@
-> +obj-$(CONFIG_COMMON_CLK_SH7750) += clk-sh7750.o
-> +obj-$(CONFIG_COMMON_CLK_SH7750) += clk-shdiv.o
-
-These can be one line.
-
-> diff --git a/drivers/clk/sh/clk-sh7750.c b/drivers/clk/sh/clk-sh7750.c
-> new file mode 100644
-> index 000000000000..f41712a9cf44
-> --- /dev/null
-> +++ b/drivers/clk/sh/clk-sh7750.c
-> @@ -0,0 +1,193 @@
-> +// SPDX-License-Identifier: GPL-2.0+
+> +++ b/drivers/irqchip/irq-iodata-julian.c
+> @@ -0,0 +1,163 @@
+> +// SPDX-License-Identifier: GPL-2.0
 > +/*
-> + * Renesas SH7750/51 clock driver
+> + * IO-DATA DEVICE LANDISK / USL-5P (a.k.a Julian) interrupt encoder
+> + *
+> + * Copyright (C) 2023 Yoshinori Sato
+> + */
+> +
+> +#include <linux/init.h>
+> +#include <linux/irq.h>
+> +#include <linux/irqchip.h>
+> +#include <linux/irqdomain.h>
+> +#include <linux/of_address.h>
+
+Do you need this?
+
+> +#include <linux/of_irq.h>
+
+Do you need this?
+
+> +#include <linux/err.h>
+> +#include <linux/init.h>
+> +#include <linux/interrupt.h>
+> +#include <linux/io.h>
+> +#include <linux/module.h>
+> +#include <linux/platform_device.h>
+> +#include <linux/slab.h>
+> +
+> +#define NUM_IRQ 16
+> +
+> +struct julian_intc_priv {
+> +       struct device *dev;
+> +       void __iomem *base;
+> +       struct irq_domain *irq_domain;
+> +};
+> +
+> +static struct julian_intc_priv *irq_data_to_priv(struct irq_data *data)
+
+static inline
+
+> +{
+> +       return data->domain->host_data;
+> +}
+
+> +static __init int julian_intc_map(struct irq_domain *h, unsigned int virq,
+
+I don't think this can be __init...
+
+> +                              irq_hw_number_t hw_irq_num)
+> +{
+> +       irq_set_chip_and_handler(virq, &julian_intc_chip, handle_level_irq);
+> +       irq_get_irq_data(virq)->chip_data = h->host_data;
+> +       irq_modify_status(virq, IRQ_NOREQUEST, IRQ_NOPROBE);
+> +       return 0;
+> +}
+
+> +static int julian_intc_probe(struct platform_device *pdev)
+> +{
+> +       struct device *dev = &pdev->dev;
+> +       struct device_node *np = dev->of_node;
+> +       struct julian_intc_priv *priv;
+> +       struct irq_domain *d;
+> +       int ret = 0;
+> +
+> +       priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+> +       if (!priv)
+> +               return -ENOMEM;
+> +
+> +       priv->dev = dev;
+> +
+> +       priv->base = devm_platform_ioremap_resource(pdev, 0);
+> +       if (IS_ERR(priv->base))
+> +               return PTR_ERR(priv->base);
+> +
+> +       d = irq_domain_add_tree(np, &julian_intc_domain_ops, priv);
+> +       if (d == NULL) {
+> +               dev_err(dev, "cannot initialize irq domain\n");
+> +               kfree(priv);
+> +               ret = -ENOMEM;
+
+"return -ENOMEM;", so you can bail out early, remove the else below,
+and reduce indentation below.
+
+> +       } else {
+> +               priv->irq_domain = d;
+> +               irq_domain_update_bus_token(d, DOMAIN_BUS_WIRED);
+> +       }
+> +       return ret;
+> +}
+
+> +static int julian_intc_remove(struct platform_device *pdev)
+> +{
+> +       struct julian_intc_priv *priv = platform_get_drvdata(pdev);
+
+This won't work, as platform_set_drvdata() is never called.
+
+> +
+> +       irq_domain_remove(priv->irq_domain);
+> +       return 0;
+> +}
+> +
+> +static const struct of_device_id julian_intc_dt_ids[] = {
+> +       { .compatible = "iodata,julian-intc" },
+> +       {},
+
+Please no comma after a sentinel.
+
+> +};
+> +MODULE_DEVICE_TABLE(of, julian_intc_dt_ids);
+
+> --- /dev/null
+> +++ b/drivers/irqchip/irq-renesas-r2d.c
+> @@ -0,0 +1,175 @@
+> +// SPDX-License-Identifier: GPL-2.0
+> +/*
+> + * Renesas RTS7751R2D interrupt encoder
+> + *
+> + * Copyright (C) 2023 Yoshinori Sato
+> + */
+> +
+> +#include <linux/err.h>
+> +#include <linux/init.h>
+> +#include <linux/interrupt.h>
+> +#include <linux/io.h>
+> +#include <linux/irqdomain.h>
+> +#include <linux/irq.h>
+> +#include <linux/module.h>
+> +#include <linux/of_irq.h>
+
+Do you need this?
+
+> +#include <linux/platform_device.h>
+> +#include <linux/slab.h>
+> +
+> +#define NUM_IRQ 15
+> +
+> +struct r2d_intc_priv {
+> +       struct device *dev;
+> +       void __iomem *base;
+> +       struct irq_domain *irq_domain;
+> +};
+> +
+> +static const int imask[] = {
+
+unsigned int
+
+> +       1 << 11,        /* PCI INTD */
+> +       1 << 9,         /* CF IDE */
+> +       1 << 8,         /* CF CD */
+> +       1 << 12,        /* PCI INTC */
+> +       1 << 10,        /* SM501 */
+> +       1 << 6,         /* AX88796 / KEY */
+> +       1 << 5,         /* RTC ALARM */
+> +       1 << 4,         /* RTC T */
+> +       1 << 7,         /* SDCARD */
+> +       1 << 14,        /* PCI INTA */
+> +       1 << 13,        /* PCI INTB */
+> +       1 << 0,         /* EXT */
+> +       1 << 15,        /* TP */
+
+BIT(...)
+
+> +};
+> +
+> +static struct r2d_intc_priv *irq_data_to_priv(struct irq_data *data)
+
+static inline
+
+> +{
+> +       return data->domain->host_data;
+> +}
+
+> +static __init int r2d_intc_map(struct irq_domain *h, unsigned int virq,
+> +                              irq_hw_number_t hw_irq_num)
+
+I don't think this can be __init.
+
+> +{
+> +       irq_set_chip_and_handler(virq, &r2d_intc_chip, handle_level_irq);
+> +       irq_get_irq_data(virq)->chip_data = h->host_data;
+> +       irq_modify_status(virq, IRQ_NOREQUEST, IRQ_NOPROBE);
+> +       return 0;
+> +}
+
+> +static const struct irq_domain_ops r2d_intc_domain_ops = {
+> +//     .alloc = r2d_intc_alloc,
+
+Remove this line?
+
+> +       .map = r2d_intc_map,
+> +       .translate = r2d_intc_translate,
+> +};
+> +
+> +static int r2d_intc_probe(struct platform_device *pdev)
+> +{
+> +       struct device *dev = &pdev->dev;
+> +       struct device_node *np = dev->of_node;
+> +       struct r2d_intc_priv *priv;
+> +       struct irq_domain *d;
+> +       int ret = 0;
+> +
+> +       priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+> +       if (!priv)
+> +               return -ENOMEM;
+> +
+> +       priv->dev = dev;
+> +
+> +       priv->base = devm_platform_ioremap_resource(pdev, 0);
+> +       if (IS_ERR(priv->base))
+> +               return PTR_ERR(priv->base);
+> +
+> +       d = irq_domain_add_tree(np, &r2d_intc_domain_ops, priv);
+> +       if (d == NULL) {
+> +               dev_err(dev, "cannot initialize irq domain\n");
+> +               kfree(priv);
+> +               ret = -ENOMEM;
+
+"return -ENOMEM;", so you can bail out early, remove the else below,
+and reduce indentation below.
+
+> +       } else {
+> +               priv->irq_domain = d;
+> +               irq_domain_update_bus_token(d, DOMAIN_BUS_WIRED);
+> +       }
+> +       return ret;
+> +}
+> +
+> +static int r2d_intc_remove(struct platform_device *pdev)
+> +{
+> +       struct r2d_intc_priv *priv = platform_get_drvdata(pdev);
+
+This won't work, as platform_set_drvdata() is never called.
+
+> +
+> +       irq_domain_remove(priv->irq_domain);
+> +       return 0;
+> +}
+> +
+> +static const struct of_device_id r2d_intc_dt_ids[] = {
+> +       { .compatible = "renesas,rts7751r2d-intc" },
+> +       {},
+
+Please no comma after a sentinel.
+
+> +};
+> +MODULE_DEVICE_TABLE(of, r2d_intc_dt_ids);
+
+> --- /dev/null
+> +++ b/drivers/irqchip/irq-renesas-sh7751.c
+> @@ -0,0 +1,186 @@
+> +// SPDX-License-Identifier: GPL-2.0
+> +/*
+> + * Renesas SH7751 interrupt controller driver
 > + *
 > + * Copyright 2023 Yoshinori Sato <ysato@users.sourceforge.jp>
 > + */
 > +
-> +#include <linux/clk.h>
-
-Do you need the consumer API?
-
-> +#include <linux/clkdev.h>
-> +#include <linux/clk-provider.h>
-> +#include <linux/err.h>
-> +#include <linux/of.h>
+> +#include <linux/irq.h>
+> +#include <linux/irqchip.h>
 > +#include <linux/of_address.h>
-> +#include <linux/io.h>
-> +
-> +struct clk *sh_div_clk_register(struct device *dev, const char *name,
-> +                               const char *parent_name,
-> +                               void __iomem *reg, u8 shift, u8 width,
-> +                               const struct clk_div_table *table,
-> +                               spinlock_t *lock);
 
-Please move this to a (private) header file.  Else builds with W=1
-will complain about "warning: no previous prototype".
+Do you need this?
 
-> +
-> +static DEFINE_SPINLOCK(clklock);
-> +
-> +static struct clk_div_table pdiv_table[] = {
+> +#include <linux/of_irq.h>
 
-const
+Do you need this?
 
-> +       { .val = 0, .div = 2, },
-> +       { .val = 1, .div = 3, },
-> +       { .val = 2, .div = 4, },
-> +       { .val = 3, .div = 6, },
-> +       { .val = 4, .div = 8, },
-> +       { .val = 0, .div = 0, },
-> +};
-> +
-> +static struct clk_div_table div_table[] = {
-
-const
-
-> +       { .val = 0, .div = 1, },
-> +       { .val = 1, .div = 2, },
-> +       { .val = 2, .div = 3, },
-> +       { .val = 3, .div = 4, },
-> +       { .val = 4, .div = 6, },
-> +       { .val = 5, .div = 8, },
-> +       { .val = 0, .div = 0, },
-> +};
-> +
-> +struct pll_clock {
-> +       struct clk_hw hw;
-> +       void __iomem *frqcr;
-> +       void __iomem *wdt;
-> +       int md;
-
-u32
-
-> +       bool div1;
-> +};
-> +
-> +#define to_pll_clock(_hw) container_of(_hw, struct pll_clock, hw)
-> +
-> +static unsigned long pll_recalc_rate(struct clk_hw *hw,
-> +                                     unsigned long parent_rate)
+> +static void update_ipr(struct sh7751_intc_regs *reg, int irq, int on)
 > +{
-> +       struct pll_clock *pll_clock = to_pll_clock(hw);
-> +       unsigned long rate = parent_rate;
-> +       uint16_t frqcr;
-> +       static const int pll1[] = { 12, 12, 6, 12, 6, 12, 1};
-> +
-> +       frqcr = ioread16(pll_clock->frqcr);
-> +       if (frqcr & (1 << 10)) {
-
-Please add a define for "1 << 10" (or "BIT(10)").
-
-#define FRQCR_PLL1EN    BIT(10)
-
-> +               rate *= pll1[pll_clock->md];
-> +               if (pll_clock->md < 6 && pll_clock->div1)
-> +                       rate /= 2;
-> +       }
-> +       return rate;
-> +}
-> +
-> +static const struct clk_ops pll_ops = {
-> +       .recalc_rate = pll_recalc_rate,
-> +};
-> +
-> +static void __init sh7750_pll_clk_setup(struct device_node *node)
-> +{
-> +       unsigned int num_parents;
-> +       struct clk *clk;
-> +       const char *clk_name = node->name;
-> +       const char *parent_name;
-> +       struct pll_clock *pll_clock;
-> +       struct clk_init_data init;
-> +
-> +       num_parents = of_clk_get_parent_count(node);
-> +       if (num_parents < 1) {
-> +               pr_err("%s: no parent found", clk_name);
-> +               return;
-> +       }
-> +
-> +       pll_clock = kzalloc(sizeof(struct pll_clock), GFP_KERNEL);
-> +       if (!pll_clock)
-> +               return;
-> +
-> +       pll_clock->frqcr = of_iomap(node, 0);
-> +       if (pll_clock->frqcr == NULL) {
-> +               pr_err("%s: failed to map frequenct control register",
-
-frequency
-
-> +                      clk_name);
-> +               goto free_clock;
-> +       }
-> +
-> +       pll_clock->wdt = of_iomap(node, 1);
-> +       if (pll_clock->wdt == NULL) {
-> +               pr_err("%s: failed to map watchdog register", clk_name);
-> +               goto unmap_frqcr;
-> +       }
-> +
-> +       of_property_read_u32_index(node, "sh7750,md", 0, &pll_clock->md);
-
-R-Mobile A1 uses "renesas,mode" for this, cfr.
-Documentation/devicetree/bindings/clock/renesas,cpg-clocks.yaml
-
-> +       if (pll_clock->md >= 7) {
-> +               pr_err("%s: failed to clock mode setting (%d)\n",
-
-invalid clock mode setting?
-%u
-
-> +                      clk_name, pll_clock->md);
-> +               goto unmap_wdt;
-> +       }
-> +       pll_clock->div1 = !of_property_read_bool(node, "sh7750,rtype");
-
-Shouldn't this be derived from the compatible value instead?
-
-> +static void __init sh7750_div_clk_setup(struct device_node *node)
-> +{
-> +       unsigned int num_parents;
-> +       struct clk *clk;
-> +       const char *clk_name = node->name;
-> +       const char *parent_name;
-> +       void __iomem *freqcr = NULL;
-> +       int i;
+> +       unsigned int addr;
+> +       int pos;
 
 unsigned int
 
-> +       int num_clks;
-> +       int offset;
+> +       uint16_t pri;
 > +
-> +       num_parents = of_clk_get_parent_count(node);
-> +       if (num_parents < 1) {
-> +               pr_err("%s: no parent found", clk_name);
-> +               return;
+> +       if (irq < 64) {
+> +               if (ipr_table[irq] != 0xff) {
+> +                       addr = (ipr_table[irq] & 0xf0) >> 2;
+> +                       pos = (ipr_table[irq] & 0x0f) * 4;
+> +                       pri = ~(0x000f << pos);
+> +                       pri &= __raw_readw(reg->ipr + addr);
+> +                       if (on)
+> +                               pri |= 1 << pos;
+> +                       __raw_writew(pri, reg->ipr + addr);
+> +               }
+> +       } else {
+> +               if (pri_table[irq - 64] < 32) {
+
+else if
+
+> +                       pos = pri_table[irq - 64];
+> +                       pri = ~(0x000f << pos);
+> +                       pri &= __raw_readw(reg->intpri00);
+> +                       if (on)
+> +                               pri |= 1 << pos;
+> +                       __raw_writew(pri, reg->intpri00);
+> +               }
+> +       }
+> +}
+> +
+> +static void sh7751_disable_irq(struct irq_data *data)
+> +{
+> +       unsigned int irq = data->irq;
+> +       struct sh7751_intc_regs *reg = data->chip_data;
+> +       uint16_t icr = __raw_readw(reg->icr);
+> +
+> +       if (irq < 16 && (icr & ICR_IRLM) == 0) {
+> +               clear_bit(irq, imask_mask);
+> +               if (interrupt_priority < IMASK_PRIORITY - irq)
+> +                       interrupt_priority = IMASK_PRIORITY - irq;
+> +               set_interrupt_registers(interrupt_priority);
+> +       } else
+> +               update_ipr(reg, irq, 0);
+
+Missing curly braces for else case.
+
+> +}
+> +
+> +static void sh7751_enable_irq(struct irq_data *data)
+> +{
+> +       unsigned int irq = data->irq;
+> +       struct sh7751_intc_regs *reg = data->chip_data;
+> +       uint16_t icr = __raw_readw(reg->icr);
+> +
+> +       if (irq < 16 && (icr & ICR_IRLM) == 0) {
+> +               set_bit(irq, imask_mask);
+> +               interrupt_priority = IMASK_PRIORITY -
+> +                 find_first_bit(imask_mask, IMASK_PRIORITY);
+
+wrong indentation
+
+> +               set_interrupt_registers(interrupt_priority);
+> +       } else
+> +               update_ipr(reg, irq, 1);
+
+Missing curly braces for else case.
+
+> +}
+
+> +static int __init sh7751_intc_of_init(struct device_node *intc,
+> +                                     struct device_node *parent)
+> +{
+> +       unsigned short icr;
+
+u16
+
+> +       struct irq_domain *domain;
+> +       void *intc_baseaddr;
+> +       void *intc_baseaddr2;
+> +
+> +       intc_baseaddr = of_iomap(intc, 0);
+> +       intc_baseaddr2 = of_iomap(intc, 1);
+> +       if (!intc_baseaddr) {
+> +               pr_err("Invalid INTC address\n");
+> +               return -EINVAL;
 > +       }
 > +
-> +       num_clks = of_property_count_strings(node, "clock-output-names");
+> +       sh7751_regs.icr = intc_baseaddr;
+> +       sh7751_regs.ipr = intc_baseaddr + 4;
+> +       sh7751_regs.intpri00 = intc_baseaddr2;
+> +       sh7751_regs.intreq00 = intc_baseaddr2 + 0x20;
+> +       sh7751_regs.intmsk00 = intc_baseaddr2 + 0x40;
+> +       sh7751_regs.intmskclr00 = intc_baseaddr2 + 0x60;
+> +
+> +       if (of_property_read_bool(intc, "sh7751,irlm")) {
+> +               icr = __raw_readw(sh7751_regs.icr);
+> +               icr |= 0x80;    // IRLM = 1
 
-Please no more clock-output-names.
+#define ICR_IRLM BIT(7)
 
-> +CLK_OF_DECLARE(sh7750_div_clk, "renesas,sh7750-div-clock",
-> +              sh7750_div_clk_setup);
-> +CLK_OF_DECLARE(sh7750_pll_clk, "renesas,sh7750-pll-clock",
-> +              sh7750_pll_clk_setup);
-
-I think this should be a unified clock driver generating all clocks.
-As there are no bindings yet, I will comment on the DTS files instead.
-
-> diff --git a/drivers/clk/sh/clk-shdiv.c b/drivers/clk/sh/clk-shdiv.c
-> new file mode 100644
-> index 000000000000..2c016c413dd6
-> --- /dev/null
-> +++ b/drivers/clk/sh/clk-shdiv.c
-
-> +static const struct clk_ops sh_clk_divider_ops = {
-> +       .recalc_rate = sh_clk_divider_recalc_rate,
-> +       .round_rate = sh_clk_divider_round_rate,
-
-Please implement .determine_rate() instead of the deprecated
-.round_rate().
-
-> +       .set_rate = sh_clk_divider_set_rate,
-> +};
-
-> --- a/drivers/sh/Makefile
-> +++ b/drivers/sh/Makefile
-> @@ -2,7 +2,9 @@
->  #
->  # Makefile for the SuperH specific drivers.
->  #
-> +ifneq ($(CONFIG_RENESAS_SH_INTC),y)
->  obj-$(CONFIG_SH_INTC)                  += intc/
-> +endif
-
-This change does not belong in this patch.
-
->  ifneq ($(CONFIG_COMMON_CLK),y)
->  obj-$(CONFIG_HAVE_CLK)                 += clk/
->  endif
+> +               __raw_writew(icr, sh7751_regs.icr);
+> +       }
+> +
+> +       domain = irq_domain_add_linear(intc, NR_IRQS, &irq_ops, &sh7751_regs);
+> +       if (!domain) {
+> +               pr_err("Unable to allocate domain handle\n");
+> +               return -ENOMEM;
+> +       }
+> +       irq_set_default_host(domain);
+> +       return 0;
+> +}
+> +
+> +IRQCHIP_DECLARE(sh_7751_intc,
+> +               "renesas,sh7751-intc", sh7751_intc_of_init);
 
 Gr{oetje,eeting}s,
 
                         Geert
 
---
+-- 
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
