@@ -2,37 +2,37 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2AE95EB8FAF
-	for <linux-sh@archiver.kernel.org>; Wed,  6 Sep 2023 07:27:57 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6C42CEB8FAD
+	for <linux-sh@archiver.kernel.org>; Wed,  6 Sep 2023 08:05:39 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231147AbjIFH17 convert rfc822-to-8bit (ORCPT
+        id S233664AbjIFIFl convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 6 Sep 2023 03:27:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59854 "EHLO
+        Wed, 6 Sep 2023 04:05:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59690 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230361AbjIFH17 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 6 Sep 2023 03:27:59 -0400
-Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.245])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9CAD58E
-        for <linux-sh@vger.kernel.org>; Wed,  6 Sep 2023 00:27:54 -0700 (PDT)
+        with ESMTP id S229667AbjIFIFh (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 6 Sep 2023 04:05:37 -0400
+Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.243])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 081B4CF0
+        for <linux-sh@vger.kernel.org>; Wed,  6 Sep 2023 01:05:33 -0700 (PDT)
 X-Country-Code: JP
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-        by hsmtpd-out-2.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
-        id d9f3b702-85a9-4f4d-af18-c3e0e0860a3a;
-        Wed, 06 Sep 2023 16:27:52 +0900 (JST)
+        by hsmtpd-out-1.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
+        id c706ea35-9009-476b-882e-e101d5cd0c66;
+        Wed, 06 Sep 2023 17:05:31 +0900 (JST)
 Received: from SIOS1075.ysato.ml (al128006.dynamic.ppp.asahi-net.or.jp [111.234.128.6])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 0B1FD1C01AA;
-        Wed,  6 Sep 2023 16:27:51 +0900 (JST)
-Date:   Wed, 06 Sep 2023 16:27:50 +0900
-Message-ID: <87edjbvk09.wl-ysato@users.sourceforge.jp>
+        by sakura.ysato.name (Postfix) with ESMTPSA id 403751C0079;
+        Wed,  6 Sep 2023 17:05:30 +0900 (JST)
+Date:   Wed, 06 Sep 2023 17:05:29 +0900
+Message-ID: <87bkefvi9i.wl-ysato@users.sourceforge.jp>
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     Geert Uytterhoeven <geert@linux-m68k.org>
 Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de
-Subject: Re: [RESEND RFC PATCH 10/12] serial/sh-sci: Fix earlyprintk / earlycon.
-In-Reply-To: <CAMuHMdX6eGEFH9wbqWOV07gi=vcgfsdnnrZm9UG8wCjYRwRYsQ@mail.gmail.com>
+Subject: Re: [RESEND RFC PATCH 01/12] sh: Add OF target boards.
+In-Reply-To: <CAMuHMdV0rmmi8=DyQL-WmMdFyo4g6obNXjWutNGEz=3QcO_d+g@mail.gmail.com>
 References: <cover.1693444193.git.ysato@users.sourceforge.jp>
-        <8f12d3b4b5fdeae4e465fc8fbf843e2878f17b55.1693444193.git.ysato@users.sourceforge.jp>
-        <CAMuHMdX6eGEFH9wbqWOV07gi=vcgfsdnnrZm9UG8wCjYRwRYsQ@mail.gmail.com>
+        <95d8b86480c60012252b37b9b13e5f709a2ec177.1693444193.git.ysato@users.sourceforge.jp>
+        <CAMuHMdV0rmmi8=DyQL-WmMdFyo4g6obNXjWutNGEz=3QcO_d+g@mail.gmail.com>
 User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
  FLIM-LB/1.14.9 (=?ISO-8859-4?Q?Goj=F2?=) APEL-LB/10.8 EasyPG/1.0.0
  Emacs/28.2 (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
@@ -43,93 +43,73 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, 01 Sep 2023 22:26:14 +0900,
+On Fri, 01 Sep 2023 23:26:10 +0900,
 Geert Uytterhoeven wrote:
 > 
 > Hi Sato-san,
 > 
-> On Thu, Aug 31, 2023 at 11:23 AM Yoshinori Sato
+> On Thu, Aug 31, 2023 at 5:19 AM Yoshinori Sato
 > <ysato@users.sourceforge.jp> wrote:
-> > - earlyprintk having fault.
-> > - fix shortname conflict.
-> > - fix SCI regshift in SH4.
+> > --- a/arch/sh/Kconfig
+> > +++ b/arch/sh/Kconfig
+> 
+> > @@ -702,7 +707,7 @@ config BUILTIN_DTB_SOURCE
+> >  config ZERO_PAGE_OFFSET
+> >         hex
+> >         default "0x00010000" if PAGE_SIZE_64KB || SH_RTS7751R2D || \
+> > -                               SH_7751_SOLUTION_ENGINE
+> > +                               SH_7751_SOLUTION_ENGINE || SH_RTS7751R2D_OF
+> 
+> This is the only user of SH_RTS7751R2D_OF. Can we get rid of it?
+> 
+> >         default "0x00004000" if PAGE_SIZE_16KB || SH_SH03
+> >         default "0x00002000" if PAGE_SIZE_8KB
+> >         default "0x00001000"
+> 
+> > --- a/arch/sh/boards/Kconfig
+> > +++ b/arch/sh/boards/Kconfig
+> > @@ -161,6 +166,17 @@ config SH_RTS7751R2D
+> >           Select RTS7751R2D if configuring for a Renesas Technology
+> >           Sales SH-Graphics board.
 > >
-> > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> 
-> Thanks for your patch!
-> 
-> > --- a/drivers/tty/serial/sh-sci.c
-> > +++ b/drivers/tty/serial/sh-sci.c
-> > @@ -2721,7 +2721,7 @@ static int sci_remap_port(struct uart_port *port)
-> >         if (port->membase)
-> >                 return 0;
+> > +config SH_RTS7751R2D_OF
+> > +       bool "RTS7751R2D (DeviceTree)"
+> > +       depends on CPU_SUBTYPE_SH7751R
+> > +       select HAVE_PCI
+> > +       select IO_TRAPPED if MMU
+> > +       select SH_DEVICE_TREE
+> > +       select COMMON_CLK
+> > +       help
+> > +         Select RTS7751R2D if configuring for a Renesas Technology
+> > +         Sales SH-Graphics board. (Use DeviceTree)
+> > +
+> >  config SH_RSK
+> >         bool "Renesas Starter Kit"
+> >         depends on CPU_SUBTYPE_SH7201 || CPU_SUBTYPE_SH7203 || \
+> > @@ -300,8 +316,20 @@ config SH_LANDISK
+> >         bool "LANDISK"
+> >         depends on CPU_SUBTYPE_SH7751R
+> >         select HAVE_PCI
+> > +       select SYS_SUPPORTS_PCI
+> > +       help
+> > +         I-O DATA DEVICE, INC. "LANDISK Series" support.
+> > +
+> > +config SH_LANDISK_OF
+> > +       bool "LANDISK (DeviceTree)"
+> > +       depends on CPU_SUBTYPE_SH7751R
+> > +       select HAVE_PCI
+> > +       select SYS_SUPPORTS_PCI
+> > +       select SH_DEVICE_TREE
+> > +       select COMMON_CLK
+> >         help
+> >           I-O DATA DEVICE, INC. "LANDISK Series" support.
+> > +         Use Device Tree.
 > >
-> > -       if (port->dev->of_node || (port->flags & UPF_IOREMAP)) {
-> > +       if ((port->dev && port->dev->of_node) || (port->flags & UPF_IOREMAP)) {
+> >  config SH_TITAN
+> >         bool "TITAN"
 > 
-> Why is this needed? It works fine on arm32, arm64, and riscv.
-
-earlycon works fine, but the old earlyprintk was stuck.
-I don't think it's used much, but it's a problem if it doesn't work
-when checking old sh targets.
-
-> >                 port->membase = ioremap(port->mapbase, sport->reg_size);
-> >                 if (unlikely(!port->membase)) {
-> >                         dev_err(port->dev, "can't remap port#%d\n", port->line);
-> > @@ -3507,6 +3507,10 @@ static int __init early_console_setup(struct earlycon_device *device,
-> >         if (!device->port.membase)
-> >                 return -ENODEV;
-> >
-> > +       if (type == PORT_SCI &&
-> > +           (IS_ENABLED(CONFIG_CPU_SH3) || IS_ENABLED(CONFIG_CPU_SH4))) {
-> > +               device->port.regshift = 2;
-> > +       }
-> 
-> How do you run into this, given you don't have any SCI ports enabled
-> in your DTS, only SCIF?
-> 
-> Anyway, I think this should be fixed in sci_init_single(), by extending
-> the driver to support the more-or-less standard "reg-shift" DT property
-> (as I said before in
-> https://lore.kernel.org/all/CAMuHMdW2gxDzYbP_0Z90o8mHdUm_BV6e+gMHpELJx_g=ezAbdw@mail.gmail.com).
-
-earlycon cannot reference DeviceTree.
-If you give the value of reg-shift dynamically, you need to use a kernel
-parameter.
-I don't think this is necessary either, but it's a problem if it doesn't work.
-
-> >         device->port.serial_in = sci_serial_in;
-> >         device->port.serial_out = sci_serial_out;
-> >         device->port.type = type;
-> > @@ -3556,8 +3560,8 @@ static int __init hscif_early_console_setup(struct earlycon_device *device,
-> >
-> >  OF_EARLYCON_DECLARE(sci, "renesas,sci", sci_early_console_setup);
-> >  OF_EARLYCON_DECLARE(scif, "renesas,scif", scif_early_console_setup);
-> > -OF_EARLYCON_DECLARE(scif, "renesas,scif-r7s9210", rzscifa_early_console_setup);
-> > -OF_EARLYCON_DECLARE(scif, "renesas,scif-r9a07g044", rzscifa_early_console_setup);
-> > +OF_EARLYCON_DECLARE(rzscif, "renesas,scif-r7s9210", rzscifa_early_console_setup);
-> > +OF_EARLYCON_DECLARE(rzscif, "renesas,scif-r9a07g044", rzscifa_early_console_setup);
-> 
-> Why?
-
-The earlycon parameter uses the first name.
-If sh4 and rz use the same name, one of them will not work properly.
-
-> 
-> >  OF_EARLYCON_DECLARE(scifa, "renesas,scifa", scifa_early_console_setup);
-> >  OF_EARLYCON_DECLARE(scifb, "renesas,scifb", scifb_early_console_setup);
-> >  OF_EARLYCON_DECLARE(hscif, "renesas,hscif", hscif_early_console_setup);
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
-> --
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-> 
-> In personal conversations with technical people, I call myself a hacker. But
-> when I'm talking to journalists I just say "programmer" or something like that.
->                                 -- Linus Torvalds
+> Apart from the above, there are no users of the "<machine>_OF" symbols.
+> Do we need them?
 
 -- 
 Yosinori Sato
