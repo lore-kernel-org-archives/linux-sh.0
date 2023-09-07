@@ -2,37 +2,37 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 56C42EE14A9
-	for <linux-sh@archiver.kernel.org>; Thu,  7 Sep 2023 03:35:21 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E5D7EE14D7
+	for <linux-sh@archiver.kernel.org>; Thu,  7 Sep 2023 03:44:38 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231432AbjIGDfX convert rfc822-to-8bit (ORCPT
+        id S230503AbjIGDo2 convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 6 Sep 2023 23:35:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48784 "EHLO
+        Wed, 6 Sep 2023 23:44:28 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52922 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229782AbjIGDfW (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 6 Sep 2023 23:35:22 -0400
-Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.240])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1B8561700
-        for <linux-sh@vger.kernel.org>; Wed,  6 Sep 2023 20:35:18 -0700 (PDT)
+        with ESMTP id S229782AbjIGDo2 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 6 Sep 2023 23:44:28 -0400
+Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.241])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0AD20CA
+        for <linux-sh@vger.kernel.org>; Wed,  6 Sep 2023 20:44:23 -0700 (PDT)
 X-Country-Code: JP
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
         by hsmtpd-out-2.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
-        id 419151f4-36d5-487e-91f9-38dae4d1e072;
-        Thu, 07 Sep 2023 12:35:16 +0900 (JST)
+        id 33c31bc9-d828-4a57-82e6-dcd9a59fbe48;
+        Thu, 07 Sep 2023 12:44:21 +0900 (JST)
 Received: from SIOS1075.ysato.ml (al128006.dynamic.ppp.asahi-net.or.jp [111.234.128.6])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 1AFD91C0323;
-        Thu,  7 Sep 2023 12:35:14 +0900 (JST)
-Date:   Thu, 07 Sep 2023 12:35:13 +0900
-Message-ID: <871qfaveoe.wl-ysato@users.sourceforge.jp>
+        by sakura.ysato.name (Postfix) with ESMTPSA id CFE051C0079;
+        Thu,  7 Sep 2023 12:44:20 +0900 (JST)
+Date:   Thu, 07 Sep 2023 12:44:20 +0900
+Message-ID: <87y1hitzor.wl-ysato@users.sourceforge.jp>
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     Geert Uytterhoeven <geert@linux-m68k.org>
 Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de
-Subject: Re: [RESEND RFC PATCH 01/12] sh: Add OF target boards.
-In-Reply-To: <CAMuHMdV0rmmi8=DyQL-WmMdFyo4g6obNXjWutNGEz=3QcO_d+g@mail.gmail.com>
+Subject: Re: [RESEND RFC PATCH 04/12] clk: SH7750 / 7751 clk driver.
+In-Reply-To: <CAMuHMdVTJg9sKrhzGrWZu1-GmLtCRSSajPt59=E_v4uQ3N0Zdg@mail.gmail.com>
 References: <cover.1693444193.git.ysato@users.sourceforge.jp>
-        <95d8b86480c60012252b37b9b13e5f709a2ec177.1693444193.git.ysato@users.sourceforge.jp>
-        <CAMuHMdV0rmmi8=DyQL-WmMdFyo4g6obNXjWutNGEz=3QcO_d+g@mail.gmail.com>
+        <541eb279023563f17245deabc32b9f65dbf92b9a.1693444193.git.ysato@users.sourceforge.jp>
+        <CAMuHMdVTJg9sKrhzGrWZu1-GmLtCRSSajPt59=E_v4uQ3N0Zdg@mail.gmail.com>
 User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
  FLIM-LB/1.14.9 (=?ISO-8859-4?Q?Goj=F2?=) APEL-LB/10.8 EasyPG/1.0.0
  Emacs/28.2 (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
@@ -43,83 +43,294 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, 01 Sep 2023 23:26:10 +0900,
+On Fri, 01 Sep 2023 21:26:47 +0900,
 Geert Uytterhoeven wrote:
 > 
 > Hi Sato-san,
 > 
-> On Thu, Aug 31, 2023 at 5:19 AM Yoshinori Sato
+> On Thu, Aug 31, 2023 at 11:32 AM Yoshinori Sato
 > <ysato@users.sourceforge.jp> wrote:
-> > --- a/arch/sh/Kconfig
-> > +++ b/arch/sh/Kconfig
-> 
-> > @@ -702,7 +707,7 @@ config BUILTIN_DTB_SOURCE
-> >  config ZERO_PAGE_OFFSET
-> >         hex
-> >         default "0x00010000" if PAGE_SIZE_64KB || SH_RTS7751R2D || \
-> > -                               SH_7751_SOLUTION_ENGINE
-> > +                               SH_7751_SOLUTION_ENGINE || SH_RTS7751R2D_OF
-> 
-> This is the only user of SH_RTS7751R2D_OF. Can we get rid of it?
-> 
-> >         default "0x00004000" if PAGE_SIZE_16KB || SH_SH03
-> >         default "0x00002000" if PAGE_SIZE_8KB
-> >         default "0x00001000"
-> 
-> > --- a/arch/sh/boards/Kconfig
-> > +++ b/arch/sh/boards/Kconfig
-> > @@ -161,6 +166,17 @@ config SH_RTS7751R2D
-> >           Select RTS7751R2D if configuring for a Renesas Technology
-> >           Sales SH-Graphics board.
+> > Use COMMON_CLK framework clock driver.
 > >
-> > +config SH_RTS7751R2D_OF
-> > +       bool "RTS7751R2D (DeviceTree)"
-> > +       depends on CPU_SUBTYPE_SH7751R
-> > +       select HAVE_PCI
-> > +       select IO_TRAPPED if MMU
-> > +       select SH_DEVICE_TREE
-> > +       select COMMON_CLK
-> > +       help
-> > +         Select RTS7751R2D if configuring for a Renesas Technology
-> > +         Sales SH-Graphics board. (Use DeviceTree)
-> > +
-> >  config SH_RSK
-> >         bool "Renesas Starter Kit"
-> >         depends on CPU_SUBTYPE_SH7201 || CPU_SUBTYPE_SH7203 || \
-> > @@ -300,8 +316,20 @@ config SH_LANDISK
-> >         bool "LANDISK"
-> >         depends on CPU_SUBTYPE_SH7751R
-> >         select HAVE_PCI
-> > +       select SYS_SUPPORTS_PCI
-> > +       help
-> > +         I-O DATA DEVICE, INC. "LANDISK Series" support.
-> > +
-> > +config SH_LANDISK_OF
-> > +       bool "LANDISK (DeviceTree)"
-> > +       depends on CPU_SUBTYPE_SH7751R
-> > +       select HAVE_PCI
-> > +       select SYS_SUPPORTS_PCI
-> > +       select SH_DEVICE_TREE
-> > +       select COMMON_CLK
-> >         help
-> >           I-O DATA DEVICE, INC. "LANDISK Series" support.
-> > +         Use Device Tree.
-> >
-> >  config SH_TITAN
-> >         bool "TITAN"
+> > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 > 
-> Apart from the above, there are no users of the "<machine>_OF" symbols.
-> Do we need them?
+> Thanks for your patch!
+> 
+> > --- /dev/null
+> > +++ b/drivers/clk/sh/Kconfig
+> > @@ -0,0 +1,7 @@
+> > +config COMMON_CLK_SH7750
+> > +       bool "Clcok driver for SH7750/SH7751"
+> 
+> Clock
+> 
+> > +       depends on CPU_SUBTYPE_SH7750 || CPU_SUBTYPE_SH7750S || \
+> > +                  CPU_SUBTYPE_SH7750R || \
+> > +                  CPU_SUBTYPE_SH7751 || CPU_SUBTYPE_SH7751R
+> 
+> || COMPILE_TEST?
+> 
+> Anyway, I would do
+> 
+>     select COMMON_CLK_SH7750 if CPU_SUBTYPE_SH7750 || ...
+> 
+> at the top, and
+> 
+>     bool "Clock driver for SH7750/SH7751" if COMPILE_TEST
+> 
+> cfr. drivers/clk/renesas/Kconfig.
+> 
+> BTW, do you plan to put all SuperH clock drivers under SH?
+> For a simple CPG like in SH7750/7751 that could make sense.
+> For the more complex ones like SH7724, you probably want to plug
+> into the existing drivers/clk/renesas/renesas-cpg-mssr.c instead,
+> as it is very similar to the CPG on later Renesas ARM SoCs.
 
 OK.
-I added "OpenFirmware supported target boards" in Board Support.
-Once OF support is available, the old ones will be fine as departed.
+move to under drivers/clk/renesas.
 
+> But even SH7751 has Standby Control registers with Module Stop
+> bits...
+
+It is possible to stop modules, but it seems that there are not many modules
+that can be stopped.
+I haven't used it yet, so I would like to consider it as a next step.
+
+> > +       help
+> > +         This driver supports the Renesas SH7750 and SH7751 CPG.
+> > diff --git a/drivers/clk/sh/Makefile b/drivers/clk/sh/Makefile
+> > new file mode 100644
+> > index 000000000000..7122c37655aa
+> > --- /dev/null
+> > +++ b/drivers/clk/sh/Makefile
+> > @@ -0,0 +1,2 @@
+> > +obj-$(CONFIG_COMMON_CLK_SH7750) += clk-sh7750.o
+> > +obj-$(CONFIG_COMMON_CLK_SH7750) += clk-shdiv.o
+> 
+> These can be one line.
+> 
+> > diff --git a/drivers/clk/sh/clk-sh7750.c b/drivers/clk/sh/clk-sh7750.c
+> > new file mode 100644
+> > index 000000000000..f41712a9cf44
+> > --- /dev/null
+> > +++ b/drivers/clk/sh/clk-sh7750.c
+> > @@ -0,0 +1,193 @@
+> > +// SPDX-License-Identifier: GPL-2.0+
+> > +/*
+> > + * Renesas SH7750/51 clock driver
+> > + *
+> > + * Copyright 2023 Yoshinori Sato <ysato@users.sourceforge.jp>
+> > + */
+> > +
+> > +#include <linux/clk.h>
+> 
+> Do you need the consumer API?
+> 
+> > +#include <linux/clkdev.h>
+> > +#include <linux/clk-provider.h>
+> > +#include <linux/err.h>
+> > +#include <linux/of.h>
+> > +#include <linux/of_address.h>
+> > +#include <linux/io.h>
+> > +
+> > +struct clk *sh_div_clk_register(struct device *dev, const char *name,
+> > +                               const char *parent_name,
+> > +                               void __iomem *reg, u8 shift, u8 width,
+> > +                               const struct clk_div_table *table,
+> > +                               spinlock_t *lock);
+> 
+> Please move this to a (private) header file.  Else builds with W=1
+> will complain about "warning: no previous prototype".
+> 
+> > +
+> > +static DEFINE_SPINLOCK(clklock);
+> > +
+> > +static struct clk_div_table pdiv_table[] = {
+> 
+> const
+> 
+> > +       { .val = 0, .div = 2, },
+> > +       { .val = 1, .div = 3, },
+> > +       { .val = 2, .div = 4, },
+> > +       { .val = 3, .div = 6, },
+> > +       { .val = 4, .div = 8, },
+> > +       { .val = 0, .div = 0, },
+> > +};
+> > +
+> > +static struct clk_div_table div_table[] = {
+> 
+> const
+> 
+> > +       { .val = 0, .div = 1, },
+> > +       { .val = 1, .div = 2, },
+> > +       { .val = 2, .div = 3, },
+> > +       { .val = 3, .div = 4, },
+> > +       { .val = 4, .div = 6, },
+> > +       { .val = 5, .div = 8, },
+> > +       { .val = 0, .div = 0, },
+> > +};
+> > +
+> > +struct pll_clock {
+> > +       struct clk_hw hw;
+> > +       void __iomem *frqcr;
+> > +       void __iomem *wdt;
+> > +       int md;
+> 
+> u32
+> 
+> > +       bool div1;
+> > +};
+> > +
+> > +#define to_pll_clock(_hw) container_of(_hw, struct pll_clock, hw)
+> > +
+> > +static unsigned long pll_recalc_rate(struct clk_hw *hw,
+> > +                                     unsigned long parent_rate)
+> > +{
+> > +       struct pll_clock *pll_clock = to_pll_clock(hw);
+> > +       unsigned long rate = parent_rate;
+> > +       uint16_t frqcr;
+> > +       static const int pll1[] = { 12, 12, 6, 12, 6, 12, 1};
+> > +
+> > +       frqcr = ioread16(pll_clock->frqcr);
+> > +       if (frqcr & (1 << 10)) {
+> 
+> Please add a define for "1 << 10" (or "BIT(10)").
+> 
+> #define FRQCR_PLL1EN    BIT(10)
+> 
+> > +               rate *= pll1[pll_clock->md];
+> > +               if (pll_clock->md < 6 && pll_clock->div1)
+> > +                       rate /= 2;
+> > +       }
+> > +       return rate;
+> > +}
+> > +
+> > +static const struct clk_ops pll_ops = {
+> > +       .recalc_rate = pll_recalc_rate,
+> > +};
+> > +
+> > +static void __init sh7750_pll_clk_setup(struct device_node *node)
+> > +{
+> > +       unsigned int num_parents;
+> > +       struct clk *clk;
+> > +       const char *clk_name = node->name;
+> > +       const char *parent_name;
+> > +       struct pll_clock *pll_clock;
+> > +       struct clk_init_data init;
+> > +
+> > +       num_parents = of_clk_get_parent_count(node);
+> > +       if (num_parents < 1) {
+> > +               pr_err("%s: no parent found", clk_name);
+> > +               return;
+> > +       }
+> > +
+> > +       pll_clock = kzalloc(sizeof(struct pll_clock), GFP_KERNEL);
+> > +       if (!pll_clock)
+> > +               return;
+> > +
+> > +       pll_clock->frqcr = of_iomap(node, 0);
+> > +       if (pll_clock->frqcr == NULL) {
+> > +               pr_err("%s: failed to map frequenct control register",
+> 
+> frequency
+> 
+> > +                      clk_name);
+> > +               goto free_clock;
+> > +       }
+> > +
+> > +       pll_clock->wdt = of_iomap(node, 1);
+> > +       if (pll_clock->wdt == NULL) {
+> > +               pr_err("%s: failed to map watchdog register", clk_name);
+> > +               goto unmap_frqcr;
+> > +       }
+> > +
+> > +       of_property_read_u32_index(node, "sh7750,md", 0, &pll_clock->md);
+> 
+> R-Mobile A1 uses "renesas,mode" for this, cfr.
+> Documentation/devicetree/bindings/clock/renesas,cpg-clocks.yaml
+> 
+> > +       if (pll_clock->md >= 7) {
+> > +               pr_err("%s: failed to clock mode setting (%d)\n",
+> 
+> invalid clock mode setting?
+> %u
+> 
+> > +                      clk_name, pll_clock->md);
+> > +               goto unmap_wdt;
+> > +       }
+> > +       pll_clock->div1 = !of_property_read_bool(node, "sh7750,rtype");
+> 
+> Shouldn't this be derived from the compatible value instead?
+> 
+> > +static void __init sh7750_div_clk_setup(struct device_node *node)
+> > +{
+> > +       unsigned int num_parents;
+> > +       struct clk *clk;
+> > +       const char *clk_name = node->name;
+> > +       const char *parent_name;
+> > +       void __iomem *freqcr = NULL;
+> > +       int i;
+> 
+> unsigned int
+> 
+> > +       int num_clks;
+> > +       int offset;
+> > +
+> > +       num_parents = of_clk_get_parent_count(node);
+> > +       if (num_parents < 1) {
+> > +               pr_err("%s: no parent found", clk_name);
+> > +               return;
+> > +       }
+> > +
+> > +       num_clks = of_property_count_strings(node, "clock-output-names");
+> 
+> Please no more clock-output-names.
+> 
+> > +CLK_OF_DECLARE(sh7750_div_clk, "renesas,sh7750-div-clock",
+> > +              sh7750_div_clk_setup);
+> > +CLK_OF_DECLARE(sh7750_pll_clk, "renesas,sh7750-pll-clock",
+> > +              sh7750_pll_clk_setup);
+> 
+> I think this should be a unified clock driver generating all clocks.
+> As there are no bindings yet, I will comment on the DTS files instead.
+> 
+> > diff --git a/drivers/clk/sh/clk-shdiv.c b/drivers/clk/sh/clk-shdiv.c
+> > new file mode 100644
+> > index 000000000000..2c016c413dd6
+> > --- /dev/null
+> > +++ b/drivers/clk/sh/clk-shdiv.c
+> 
+> > +static const struct clk_ops sh_clk_divider_ops = {
+> > +       .recalc_rate = sh_clk_divider_recalc_rate,
+> > +       .round_rate = sh_clk_divider_round_rate,
+> 
+> Please implement .determine_rate() instead of the deprecated
+> .round_rate().
+> 
+> > +       .set_rate = sh_clk_divider_set_rate,
+> > +};
+> 
+> > --- a/drivers/sh/Makefile
+> > +++ b/drivers/sh/Makefile
+> > @@ -2,7 +2,9 @@
+> >  #
+> >  # Makefile for the SuperH specific drivers.
+> >  #
+> > +ifneq ($(CONFIG_RENESAS_SH_INTC),y)
+> >  obj-$(CONFIG_SH_INTC)                  += intc/
+> > +endif
+> 
+> This change does not belong in this patch.
+> 
+> >  ifneq ($(CONFIG_COMMON_CLK),y)
+> >  obj-$(CONFIG_HAVE_CLK)                 += clk/
+> >  endif
+> 
 > Gr{oetje,eeting}s,
 > 
 >                         Geert
 > 
-> -- 
+> --
 > Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 > 
 > In personal conversations with technical people, I call myself a hacker. But
