@@ -2,45 +2,43 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B124EE57F1
-	for <linux-sh@archiver.kernel.org>; Fri,  8 Sep 2023 10:23:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C5F0EE57EB
+	for <linux-sh@archiver.kernel.org>; Fri,  8 Sep 2023 10:33:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S243043AbjIHKXw convert rfc822-to-8bit (ORCPT
+        id S234101AbjIHKdN convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 8 Sep 2023 06:23:52 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45496 "EHLO
+        Fri, 8 Sep 2023 06:33:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41900 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S243145AbjIHKXu (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 8 Sep 2023 06:23:50 -0400
+        with ESMTP id S229686AbjIHKdM (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 8 Sep 2023 06:33:12 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 1E2BE1FC0;
-        Fri,  8 Sep 2023 03:23:09 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A618819A6;
+        Fri,  8 Sep 2023 03:33:08 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qeYcR-000mZf-Ob; Fri, 08 Sep 2023 12:21:43 +0200
+          id 1qeYe3-000myC-V2; Fri, 08 Sep 2023 12:23:23 +0200
 Received: from p5b13a40a.dip0.t-ipconnect.de ([91.19.164.10] helo=[192.168.178.81])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qeYcR-00250o-HD; Fri, 08 Sep 2023 12:21:43 +0200
-Message-ID: <456ea951a34b3c599d990eddd15fee490fbaee37.camel@physik.fu-berlin.de>
+          id 1qeYe3-0026GM-Na; Fri, 08 Sep 2023 12:23:23 +0200
+Message-ID: <b07d08b4c120ffdbadba6fd341aca5c63ff3275e.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH 4/4] sh: machvec: remove custom ioport_{un,}map()
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Arnd Bergmann <arnd@kernel.org>, linux-sh@vger.kernel.org,
-        Rich Felker <dalias@libc.org>,
+To:     Arnd Bergmann <arnd@kernel.org>
+Cc:     linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
         linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
-Date:   Fri, 08 Sep 2023 12:21:42 +0200
-In-Reply-To: <CAMuHMdVf6pBn2O61ynkdk9MDj0WiMt-12ffvpzfgL51Kz4_Jfg@mail.gmail.com>
+Date:   Fri, 08 Sep 2023 12:23:23 +0200
+In-Reply-To: <20230802184849.1019466-4-arnd@kernel.org>
 References: <20230802184849.1019466-1-arnd@kernel.org>
          <20230802184849.1019466-4-arnd@kernel.org>
-         <d737e5a40f7e2009222d98de7696cc78740869e3.camel@physik.fu-berlin.de>
-         <CAMuHMdVf6pBn2O61ynkdk9MDj0WiMt-12ffvpzfgL51Kz4_Jfg@mail.gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 User-Agent: Evolution 3.48.4 
@@ -52,26 +50,98 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Geert!
-
-On Fri, 2023-09-08 at 12:20 +0200, Geert Uytterhoeven wrote:
-> > Why aren't you removing the function ioport_unmap(void __iomem *addr) completely
-> > and just turn it into stub? Is it still referenced somewhere?
+On Wed, 2023-08-02 at 20:48 +0200, Arnd Bergmann wrote:
+> From: Arnd Bergmann <arnd@arndb.de>
 > 
-> Because architectures are supposed to implement it (there is no
-> __weak default).
+> These functions were only used on the microdev
+> board that is now gone, so remove them to simplify
+> the ioport handling.
 > 
-> An alternative would be to provide a dummy static inline, like
-> e.g. m68k does:
+> This could be further simplified to use the generic
+> I/O port accessors now.
 > 
-> arch/m68k/include/asm/kmap.h:#define ioport_unmap ioport_unmap
-> arch/m68k/include/asm/kmap.h:static inline void ioport_unmap(void __iomem *p)
-> arch/m68k/include/asm/kmap.h-{
-> arch/m68k/include/asm/kmap.h-}
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> ---
+>  arch/sh/include/asm/io.h      |  4 ++--
+>  arch/sh/include/asm/machvec.h |  5 -----
+>  arch/sh/kernel/ioport.c       | 13 +------------
+>  3 files changed, 3 insertions(+), 19 deletions(-)
+> 
+> diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+> index f2f38e9d489ac..ac521f287fa59 100644
+> --- a/arch/sh/include/asm/io.h
+> +++ b/arch/sh/include/asm/io.h
+> @@ -181,7 +181,7 @@ static inline void pfx##out##bwlq##p(type val, unsigned long port)	\
+>  {									\
+>  	volatile type *__addr;						\
+>  									\
+> -	__addr = __ioport_map(port, sizeof(type));			\
+> +	__addr = (void __iomem *)sh_io_port_base + port;		\
+>  	*__addr = val;							\
+>  	slow;								\
+>  }									\
+> @@ -191,7 +191,7 @@ static inline type pfx##in##bwlq##p(unsigned long port)			\
+>  	volatile type *__addr;						\
+>  	type __val;							\
+>  									\
+> -	__addr = __ioport_map(port, sizeof(type));			\
+> +	__addr = (void __iomem *)sh_io_port_base + port;		\
+>  	__val = *__addr;						\
+>  	slow;								\
+>  									\
+> diff --git a/arch/sh/include/asm/machvec.h b/arch/sh/include/asm/machvec.h
+> index 2b4b085e8f219..4e5314b921f19 100644
+> --- a/arch/sh/include/asm/machvec.h
+> +++ b/arch/sh/include/asm/machvec.h
+> @@ -19,11 +19,6 @@ struct sh_machine_vector {
+>  	int (*mv_irq_demux)(int irq);
+>  	void (*mv_init_irq)(void);
+>  
+> -#ifdef CONFIG_HAS_IOPORT_MAP
+> -	void __iomem *(*mv_ioport_map)(unsigned long port, unsigned int size);
+> -	void (*mv_ioport_unmap)(void __iomem *);
+> -#endif
+> -
+>  	int (*mv_clk_init)(void);
+>  	int (*mv_mode_pins)(void);
+>  
+> diff --git a/arch/sh/kernel/ioport.c b/arch/sh/kernel/ioport.c
+> index f39446a658bdb..c8aff8a20164d 100644
+> --- a/arch/sh/kernel/ioport.c
+> +++ b/arch/sh/kernel/ioport.c
+> @@ -12,15 +12,6 @@
+>  unsigned long sh_io_port_base __read_mostly = -1;
+>  EXPORT_SYMBOL(sh_io_port_base);
+>  
+> -void __iomem *__ioport_map(unsigned long addr, unsigned int size)
+> -{
+> -	if (sh_mv.mv_ioport_map)
+> -		return sh_mv.mv_ioport_map(addr, size);
+> -
+> -	return (void __iomem *)(addr + sh_io_port_base);
+> -}
+> -EXPORT_SYMBOL(__ioport_map);
+> -
+>  void __iomem *ioport_map(unsigned long port, unsigned int nr)
+>  {
+>  	void __iomem *ret;
+> @@ -29,13 +20,11 @@ void __iomem *ioport_map(unsigned long port, unsigned int nr)
+>  	if (ret)
+>  		return ret;
+>  
+> -	return __ioport_map(port, nr);
+> +	return (void __iomem *)(port + sh_io_port_base);
+>  }
+>  EXPORT_SYMBOL(ioport_map);
+>  
+>  void ioport_unmap(void __iomem *addr)
+>  {
+> -	if (sh_mv.mv_ioport_unmap)
+> -		sh_mv.mv_ioport_unmap(addr);
+>  }
+>  EXPORT_SYMBOL(ioport_unmap);
 
-OK, that explains it. Thanks!
-
-Adrian
+Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
 -- 
  .''`.  John Paul Adrian Glaubitz
