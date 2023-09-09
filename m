@@ -2,67 +2,81 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DAF33EE14C3
-	for <linux-sh@archiver.kernel.org>; Sat,  9 Sep 2023 21:54:44 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 65AD2EE14AA
+	for <linux-sh@archiver.kernel.org>; Sat,  9 Sep 2023 22:07:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1344910AbjIIVyr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 9 Sep 2023 17:54:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39150 "EHLO
+        id S232654AbjIIWHG convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 9 Sep 2023 18:07:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37372 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S1344639AbjIIVyq (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 9 Sep 2023 17:54:46 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id F17ED19C;
-        Sat,  9 Sep 2023 14:54:41 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPS id 9BF2EC433C9;
-        Sat,  9 Sep 2023 21:54:41 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1694296481;
-        bh=nyP7uqO6R+iSVichNhVA18dnJf3+qzMxpKlzslmoDG0=;
-        h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
-        b=AMdgyYwslpNTe+TPoHmlJLyzjEcwb9Rvr/6gnO1fodX6E7zuX0NTHjzIjZli3f15e
-         qpNuQC1vw05T1k4TorYrgr0KZVT6KQKXLArPJ3TJ9JUbnqGLEeFGeCVdpi/JFG1OVA
-         Lp35xvl/yK8aVqythgdXh3XRRtdPKk0phGs7BjtDsmb1FsFvh6vkyOiqDJvJ2va5rF
-         TW0rSPbWelnhkLjZNdaf9J8zOkd64ZcEO9FbdNaSiPQu3LqctvW2V0oaHJilTrpfE+
-         UBbwJREWIMEmLM05kKS+KZ9ijwfGZfiXijF5zlMuqcWVhIcazgqKXzPThd7U1DlSZx
-         pVPz46m1BF2Yg==
-Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
-        by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id 895BCE22AFC;
-        Sat,  9 Sep 2023 21:54:41 +0000 (UTC)
-Subject: Re: [GIT PULL] sh updates for v6.6
-From:   pr-tracker-bot@kernel.org
-In-Reply-To: <86e6baa7dc92b42440c1e07332c876530306eaa3.camel@physik.fu-berlin.de>
-References: <86e6baa7dc92b42440c1e07332c876530306eaa3.camel@physik.fu-berlin.de>
-X-PR-Tracked-List-Id: <linux-sh.vger.kernel.org>
-X-PR-Tracked-Message-Id: <86e6baa7dc92b42440c1e07332c876530306eaa3.camel@physik.fu-berlin.de>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.6-tag1
-X-PR-Tracked-Commit-Id: 246f80a0b17f8f582b2c0996db02998239057c65
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 6b8bb5b8d9b35fb43f0dbf9fd91b7d35e6232e08
-Message-Id: <169429648155.7760.11555251210149278120.pr-tracker-bot@kernel.org>
-Date:   Sat, 09 Sep 2023 21:54:41 +0000
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     Linus Torvalds <torvalds@linux-foundation.org>,
-        Duoming Zhou <duoming@zju.edu.cn>,
-        Petr Tesarik <petr.tesarik.ext@huawei.com>,
-        Rich Felker <dalias@libc.org>,
+        with ESMTP id S232487AbjIIWHF (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 9 Sep 2023 18:07:05 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0E987D9;
+        Sat,  9 Sep 2023 15:07:00 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1qf66U-003ZTJ-9l; Sun, 10 Sep 2023 00:06:58 +0200
+Received: from dynamic-089-014-158-203.89.14.pool.telefonica.de ([89.14.158.203] helo=[192.168.1.11])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1qf66U-002Ij2-2q; Sun, 10 Sep 2023 00:06:58 +0200
+Message-ID: <06b34c01b1781ae76df1f037bcde261f9bdc162e.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 1/4] sh: remove stale microdev board
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Arnd Bergmann <arnd@kernel.org>
+Cc:     linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-sh@vger.kernel.org,
-        linux-kernel <linux-kernel@vger.kernel.org>
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
+Date:   Sun, 10 Sep 2023 00:06:49 +0200
+In-Reply-To: <20230802184849.1019466-1-arnd@kernel.org>
+References: <20230802184849.1019466-1-arnd@kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.4 
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 89.14.158.203
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-The pull request you sent on Sat, 09 Sep 2023 22:29:11 +0200:
+Hi Arnd!
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.6-tag1
+On Wed, 2023-08-02 at 20:48 +0200, Arnd Bergmann wrote:
+> From: Arnd Bergmann <arnd@arndb.de>
+> 
+> This board was an early prototype platform for early SH4 CPUs and related
+> to the already removed SH5 cayman platform.
+> 
+> The microdev board itself has been kept in the tree for this long despite
+> being in a bad shape even 20 years ago when it got merged, with no working
+> PCI support and ugly workarounds for its I/O port implementation that
+> try to emulate PC style peripheral access despite being quite different
+> in reality.
+> 
+> As far as I can tell, the ethernet, display, USB and PCI devices on it
+> already broke at some point (afbb9d8d5266b, 46bc85872040a), so I
+> think we can just remove it entirely.
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/6b8bb5b8d9b35fb43f0dbf9fd91b7d35e6232e08
+The series didn't apply cleanly against v6.5-rc1.
 
-Thank you!
+Could you rebase against v6.6-rc1 once it's out so I can pick up this
+series for v6.7?
+
+Thanks,
+Adrian
 
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
