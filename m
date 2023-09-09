@@ -2,146 +2,104 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0C5F0EE57EB
-	for <linux-sh@archiver.kernel.org>; Fri,  8 Sep 2023 10:33:11 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 58AF9EE14C3
+	for <linux-sh@archiver.kernel.org>; Sat,  9 Sep 2023 20:29:43 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234101AbjIHKdN convert rfc822-to-8bit (ORCPT
+        id S233485AbjIIU3q convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 8 Sep 2023 06:33:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41900 "EHLO
+        Sat, 9 Sep 2023 16:29:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48854 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229686AbjIHKdM (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 8 Sep 2023 06:33:12 -0400
+        with ESMTP id S229645AbjIIU3n (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 9 Sep 2023 16:29:43 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A618819A6;
-        Fri,  8 Sep 2023 03:33:08 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 39AA519E;
+        Sat,  9 Sep 2023 13:29:38 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qeYe3-000myC-V2; Fri, 08 Sep 2023 12:23:23 +0200
-Received: from p5b13a40a.dip0.t-ipconnect.de ([91.19.164.10] helo=[192.168.178.81])
+          id 1qf4a0-003NNt-FK; Sat, 09 Sep 2023 22:29:20 +0200
+Received: from dynamic-089-014-158-203.89.14.pool.telefonica.de ([89.14.158.203] helo=[192.168.1.11])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qeYe3-0026GM-Na; Fri, 08 Sep 2023 12:23:23 +0200
-Message-ID: <b07d08b4c120ffdbadba6fd341aca5c63ff3275e.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 4/4] sh: machvec: remove custom ioport_{un,}map()
+          id 1qf4a0-0025rN-5I; Sat, 09 Sep 2023 22:29:20 +0200
+Message-ID: <86e6baa7dc92b42440c1e07332c876530306eaa3.camel@physik.fu-berlin.de>
+Subject: [GIT PULL] sh updates for v6.6
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Arnd Bergmann <arnd@kernel.org>
-Cc:     linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>,
+To:     Linus Torvalds <torvalds@linux-foundation.org>
+Cc:     Duoming Zhou <duoming@zju.edu.cn>,
+        Petr Tesarik <petr.tesarik.ext@huawei.com>,
+        Rich Felker <dalias@libc.org>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
-Date:   Fri, 08 Sep 2023 12:23:23 +0200
-In-Reply-To: <20230802184849.1019466-4-arnd@kernel.org>
-References: <20230802184849.1019466-1-arnd@kernel.org>
-         <20230802184849.1019466-4-arnd@kernel.org>
+        linux-sh@vger.kernel.org,
+        linux-kernel <linux-kernel@vger.kernel.org>
+Date:   Sat, 09 Sep 2023 22:29:11 +0200
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 User-Agent: Evolution 3.48.4 
 MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 91.19.164.10
+X-Originating-IP: 89.14.158.203
 X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, 2023-08-02 at 20:48 +0200, Arnd Bergmann wrote:
-> From: Arnd Bergmann <arnd@arndb.de>
-> 
-> These functions were only used on the microdev
-> board that is now gone, so remove them to simplify
-> the ioport handling.
-> 
-> This could be further simplified to use the generic
-> I/O port accessors now.
-> 
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> ---
->  arch/sh/include/asm/io.h      |  4 ++--
->  arch/sh/include/asm/machvec.h |  5 -----
->  arch/sh/kernel/ioport.c       | 13 +------------
->  3 files changed, 3 insertions(+), 19 deletions(-)
-> 
-> diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-> index f2f38e9d489ac..ac521f287fa59 100644
-> --- a/arch/sh/include/asm/io.h
-> +++ b/arch/sh/include/asm/io.h
-> @@ -181,7 +181,7 @@ static inline void pfx##out##bwlq##p(type val, unsigned long port)	\
->  {									\
->  	volatile type *__addr;						\
->  									\
-> -	__addr = __ioport_map(port, sizeof(type));			\
-> +	__addr = (void __iomem *)sh_io_port_base + port;		\
->  	*__addr = val;							\
->  	slow;								\
->  }									\
-> @@ -191,7 +191,7 @@ static inline type pfx##in##bwlq##p(unsigned long port)			\
->  	volatile type *__addr;						\
->  	type __val;							\
->  									\
-> -	__addr = __ioport_map(port, sizeof(type));			\
-> +	__addr = (void __iomem *)sh_io_port_base + port;		\
->  	__val = *__addr;						\
->  	slow;								\
->  									\
-> diff --git a/arch/sh/include/asm/machvec.h b/arch/sh/include/asm/machvec.h
-> index 2b4b085e8f219..4e5314b921f19 100644
-> --- a/arch/sh/include/asm/machvec.h
-> +++ b/arch/sh/include/asm/machvec.h
-> @@ -19,11 +19,6 @@ struct sh_machine_vector {
->  	int (*mv_irq_demux)(int irq);
->  	void (*mv_init_irq)(void);
->  
-> -#ifdef CONFIG_HAS_IOPORT_MAP
-> -	void __iomem *(*mv_ioport_map)(unsigned long port, unsigned int size);
-> -	void (*mv_ioport_unmap)(void __iomem *);
-> -#endif
-> -
->  	int (*mv_clk_init)(void);
->  	int (*mv_mode_pins)(void);
->  
-> diff --git a/arch/sh/kernel/ioport.c b/arch/sh/kernel/ioport.c
-> index f39446a658bdb..c8aff8a20164d 100644
-> --- a/arch/sh/kernel/ioport.c
-> +++ b/arch/sh/kernel/ioport.c
-> @@ -12,15 +12,6 @@
->  unsigned long sh_io_port_base __read_mostly = -1;
->  EXPORT_SYMBOL(sh_io_port_base);
->  
-> -void __iomem *__ioport_map(unsigned long addr, unsigned int size)
-> -{
-> -	if (sh_mv.mv_ioport_map)
-> -		return sh_mv.mv_ioport_map(addr, size);
-> -
-> -	return (void __iomem *)(addr + sh_io_port_base);
-> -}
-> -EXPORT_SYMBOL(__ioport_map);
-> -
->  void __iomem *ioport_map(unsigned long port, unsigned int nr)
->  {
->  	void __iomem *ret;
-> @@ -29,13 +20,11 @@ void __iomem *ioport_map(unsigned long port, unsigned int nr)
->  	if (ret)
->  		return ret;
->  
-> -	return __ioport_map(port, nr);
-> +	return (void __iomem *)(port + sh_io_port_base);
->  }
->  EXPORT_SYMBOL(ioport_map);
->  
->  void ioport_unmap(void __iomem *addr)
->  {
-> -	if (sh_mv.mv_ioport_unmap)
-> -		sh_mv.mv_ioport_unmap(addr);
->  }
->  EXPORT_SYMBOL(ioport_unmap);
+Hi Linus!
 
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+I am very late this merge window since I was rather busy the past month but
+as there are only two small fixes in this pull request, I hope you are still
+willing to pull the sh changes for v6.6.
+
+The first patch by Duoming Zhou fixes a use-after-free bug in the push-switch
+driver while the second one by Petr Tesarik addresses an issue where the call
+to dma_declare_coherent_memory() incorrectly passes the buffer end address
+instead of the buffer size as the size parameter.
+
+I expect the pull request for v6.7 much larger since we're currently working
+on converting arch/sh to using device trees for which the patches have now
+been posted on the linux-sh mailing list.
+ 
+The following changes since commit fdf0eaf11452d72945af31804e2a1048ee1b574c:
+
+  Linux 6.5-rc2 (2023-07-16 15:10:37 -0700)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.6-tag1
+
+for you to fetch changes up to 246f80a0b17f8f582b2c0996db02998239057c65:
+
+  sh: push-switch: Reorder cleanup operations to avoid use-after-free bug (2023-09-09 21:54:20 +0200)
+
+Thanks for pulling!
+
+Adrian
+
+----------------------------------------------------------------
+sh updates for v6.6
+
+- sh: push-switch: Reorder cleanup operations to avoid use-after-free bug
+- sh: boards: Fix CEU buffer size passed to dma_declare_coherent_memory()
+
+----------------------------------------------------------------
+Duoming Zhou (1):
+      sh: push-switch: Reorder cleanup operations to avoid use-after-free bug
+
+Petr Tesarik (1):
+      sh: boards: Fix CEU buffer size passed to dma_declare_coherent_memory()
+
+ arch/sh/boards/mach-ap325rxa/setup.c | 2 +-
+ arch/sh/boards/mach-ecovec24/setup.c | 6 ++----
+ arch/sh/boards/mach-kfr2r09/setup.c  | 2 +-
+ arch/sh/boards/mach-migor/setup.c    | 2 +-
+ arch/sh/boards/mach-se/7724/setup.c  | 6 ++----
+ arch/sh/drivers/push-switch.c        | 2 +-
+ 6 files changed, 8 insertions(+), 12 deletions(-)
 
 -- 
  .''`.  John Paul Adrian Glaubitz
