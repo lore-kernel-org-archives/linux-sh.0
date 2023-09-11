@@ -2,27 +2,27 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 98431CA0EC7
-	for <linux-sh@archiver.kernel.org>; Mon, 11 Sep 2023 21:49:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 173B3CA0EC3
+	for <linux-sh@archiver.kernel.org>; Mon, 11 Sep 2023 21:49:59 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1353540AbjIKVtu (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 11 Sep 2023 17:49:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:48626 "EHLO
+        id S1353743AbjIKVtx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 11 Sep 2023 17:49:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43386 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S242265AbjIKP0V (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Sep 2023 11:26:21 -0400
+        with ESMTP id S240941AbjIKO5f (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Sep 2023 10:57:35 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 54D24D8;
-        Mon, 11 Sep 2023 08:26:17 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 70DBBC433C7;
-        Mon, 11 Sep 2023 15:26:16 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 557A31B9;
+        Mon, 11 Sep 2023 07:57:31 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 739E3C433C8;
+        Mon, 11 Sep 2023 14:57:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1694445977;
-        bh=78Gvc+FV32NtYLsJitFpqXSj2QS+qAPVJEEmPu1B5bc=;
+        s=korg; t=1694444251;
+        bh=/Zv7PQHeFYBy0u0DhZDccdoAzXvlQsqMa+UO/cYQ1gg=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=zhtME26sbZXiWSgSNMSShAos5K038D+gHat+WOtK6i6cR6FwtVyhqVlENmHqdoGZc
-         Cq2h9JlsQYTdnEU83LBe1rxQ0i7iRjlbGhkG96G0HvFXmM9jpB8yOM+NAqTAn7MUwd
-         28wrATAMrTWw/GtI1Hafc+t2YRpQslJCsiCkvI8k=
+        b=hbN0bdxj/TBPWwXGOOGe2tAUUP7LRFXic0/WT77Q0SP9xqo9EIGc7mhlWb/FcwlsW
+         bXFxuxvQcKg6etGxJD/+8yqh9voWiRYBHEM3hgjfAQunWb3mNlj0GsMriGQ1kBz7SL
+         oEfB4eUvs44NbLAh9zc7DcGpm8Vi95UOIzmhXKYI=
 From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 To:     stable@vger.kernel.org
 Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
@@ -34,12 +34,12 @@ Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         Daniel Thompson <daniel.thompson@linaro.org>,
         Jingoo Han <jingoohan1@gmail.com>, linux-sh@vger.kernel.org,
         dri-devel@lists.freedesktop.org, Sam Ravnborg <sam@ravnborg.org>
-Subject: [PATCH 6.1 538/600] backlight/gpio_backlight: Compare against struct fb_info.device
-Date:   Mon, 11 Sep 2023 15:49:31 +0200
-Message-ID: <20230911134649.503409040@linuxfoundation.org>
+Subject: [PATCH 6.4 663/737] backlight/gpio_backlight: Compare against struct fb_info.device
+Date:   Mon, 11 Sep 2023 15:48:42 +0200
+Message-ID: <20230911134709.055998294@linuxfoundation.org>
 X-Mailer: git-send-email 2.42.0
-In-Reply-To: <20230911134633.619970489@linuxfoundation.org>
-References: <20230911134633.619970489@linuxfoundation.org>
+In-Reply-To: <20230911134650.286315610@linuxfoundation.org>
+References: <20230911134650.286315610@linuxfoundation.org>
 User-Agent: quilt/0.67
 X-stable: review
 X-Patchwork-Hint: ignore
@@ -49,7 +49,7 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-6.1-stable review patch.  If anyone has any objections, please let me know.
+6.4-stable review patch.  If anyone has any objections, please let me know.
 
 ------------------
 
