@@ -2,102 +2,106 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 98288CA0EC9
-	for <linux-sh@archiver.kernel.org>; Mon, 11 Sep 2023 21:50:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1B50ACA0EC7
+	for <linux-sh@archiver.kernel.org>; Mon, 11 Sep 2023 21:50:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1353633AbjIKVuD (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 11 Sep 2023 17:50:03 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40418 "EHLO
+        id S1353630AbjIKVuF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 11 Sep 2023 17:50:05 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55098 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237497AbjIKMyX (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Sep 2023 08:54:23 -0400
-Received: from mgamail.intel.com (mgamail.intel.com [192.55.52.136])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 83FCECEB;
-        Mon, 11 Sep 2023 05:54:18 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1694436858; x=1725972858;
-  h=from:to:cc:subject:date:message-id:mime-version:
-   content-transfer-encoding;
-  bh=/wVoKjEeeLBla+cD7axdVwdKaE7wsNtpVj0vYnNrywc=;
-  b=Z3fj7/2EfR1b3zuqQtYOaM4Yb6DW282iMlq+B69OcNKYepd0qNVuV31z
-   lJ73kZHdjxFHj+TdSw6+Tienu22amOVY35deP/3o4tQBqhmx1IZu061me
-   mowQRZu6GIIXfr4OL2ppgYe2Bp5OQT0efZv8a98PzYteMP0xNjXo0WfCR
-   Stql+xNZfXygVuAEZj5bYVo+uzIRNxe7pI2wEpIxKWO4BPQYZCu7dOLVI
-   k2/cXyVIluxOR581pjqjxBXyl3mcyjuF9AnB5Y3f2aL92VORQTRdUJYzD
-   x2zpBcpN37L8rNdxSf+y45Aeuxj2ZPu42IkvVRsNgXQPuKplyUgMG32fu
-   Q==;
-X-IronPort-AV: E=McAfee;i="6600,9927,10830"; a="357511140"
-X-IronPort-AV: E=Sophos;i="6.02,244,1688454000"; 
-   d="scan'208";a="357511140"
-Received: from fmsmga002.fm.intel.com ([10.253.24.26])
-  by fmsmga106.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2023 05:54:08 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6600,9927,10830"; a="858304123"
-X-IronPort-AV: E=Sophos;i="6.02,244,1688454000"; 
-   d="scan'208";a="858304123"
-Received: from mzarkov-mobl3.ger.corp.intel.com (HELO ijarvine-mobl2.ger.corp.intel.com) ([10.252.36.200])
-  by fmsmga002-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2023 05:54:02 -0700
-From:   =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>
-To:     Rob Herring <robh@kernel.org>, Bjorn Helgaas <helgaas@kernel.org>,
-        linux-pci@vger.kernel.org
-Cc:     linux-kernel@vger.kernel.org, 3chas3@gmail.com, brking@us.ibm.com,
-        dalias@libc.org, glaubitz@physik.fu-berlin.de,
-        ink@jurassic.park.msu.ru, jejb@linux.ibm.com, kw@linux.com,
-        linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-atm-general@lists.sourceforge.net,
-        linux-scsi@vger.kernel.org, linux-sh@vger.kernel.org,
-        lpieralisi@kernel.org, martin.petersen@oracle.com,
-        mattst88@gmail.com, netdev@vger.kernel.org,
-        richard.henderson@linaro.org, toan@os.amperecomputing.com,
-        ysato@users.sourceforge.jp,
-        =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>
-Subject: [PATCH v3 0/6] PCI/treewide: Cleanup/streamline PCI error code handling
-Date:   Mon, 11 Sep 2023 15:53:48 +0300
-Message-Id: <20230911125354.25501-1-ilpo.jarvinen@linux.intel.com>
-X-Mailer: git-send-email 2.30.2
+        with ESMTP id S242279AbjIKP0r (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Sep 2023 11:26:47 -0400
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 67401E4;
+        Mon, 11 Sep 2023 08:26:42 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 83757C433C9;
+        Mon, 11 Sep 2023 15:26:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+        s=korg; t=1694446002;
+        bh=EUGIBxSdmAjFmieVW7DJwK6CHb+ujANFOaFtxBP9u5g=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=AQYXCXI6xTkv8+au38xLCcs/HFJM9f7YDsUedPM35WSq0UVVD3gep8sUUvE9tDznM
+         m47DDEbY72f79wrRjY87O8flym+3+qDRqJErFwBaU8XfqHvBNsJJNz3DU0E2OZRTnj
+         yQvxCd4rl8WaOop5YR+athE2m1Ku21dcFuHVbdHc=
+From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To:     stable@vger.kernel.org
+Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        patches@lists.linux.dev, Thomas Zimmermann <tzimmermann@suse.de>,
+        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Lee Jones <lee@kernel.org>,
+        Daniel Thompson <daniel.thompson@linaro.org>,
+        Jingoo Han <jingoohan1@gmail.com>, linux-sh@vger.kernel.org,
+        dri-devel@lists.freedesktop.org,
+        Javier Martinez Canillas <javierm@redhat.com>,
+        Sam Ravnborg <sam@ravnborg.org>
+Subject: [PATCH 6.1 540/600] backlight/lv5207lp: Compare against struct fb_info.device
+Date:   Mon, 11 Sep 2023 15:49:33 +0200
+Message-ID: <20230911134649.561773969@linuxfoundation.org>
+X-Mailer: git-send-email 2.42.0
+In-Reply-To: <20230911134633.619970489@linuxfoundation.org>
+References: <20230911134633.619970489@linuxfoundation.org>
+User-Agent: quilt/0.67
+X-stable: review
+X-Patchwork-Hint: ignore
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-As the first step towards converting PCI accessor function return codes
-into normal errnos this series cleans up related code paths which have
-complicated multi-line construct to handle the PCI error checking.
+6.1-stable review patch.  If anyone has any objections, please let me know.
 
-I'd prefer these (the remaining ones) to be routed through PCI tree due
-to PCI accessor function return code conversion being built on top of
-them.
+------------------
 
-v3:
-- Return pci_generic_config_read32()'s error code directly
-- Removed already accepted patches
+From: Thomas Zimmermann <tzimmermann@suse.de>
+
+commit 1ca8819320fd84e7d95b04e7668efc5f9fe9fa5c upstream.
+
+Struct lv5207lp_platform_data refers to a platform device within
+the Linux device hierarchy. The test in lv5207lp_backlight_check_fb()
+compares it against the fbdev device in struct fb_info.dev, which
+is different. Fix the test by comparing to struct fb_info.device.
+
+Fixes a bug in the backlight driver and prepares fbdev for making
+struct fb_info.dev optional.
 
 v2:
-- Moved ret local var to the inner block (I2C: ali15x3)
-- Removed already accepted patches
+	* move renames into separate patch (Javier, Sam, Michael)
 
+Fixes: 82e5c40d88f9 ("backlight: Add Sanyo LV5207LP backlight driver")
+Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Lee Jones <lee@kernel.org>
+Cc: Daniel Thompson <daniel.thompson@linaro.org>
+Cc: Jingoo Han <jingoohan1@gmail.com>
+Cc: linux-sh@vger.kernel.org
+Cc: dri-devel@lists.freedesktop.org
+Cc: <stable@vger.kernel.org> # v3.12+
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
+Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
+Link: https://patchwork.freedesktop.org/patch/msgid/20230613110953.24176-6-tzimmermann@suse.de
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/video/backlight/lv5207lp.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Ilpo Järvinen (6):
-  alpha: Streamline convoluted PCI error handling
-  sh: pci: Do PCI error check on own line
-  atm: iphase: Do PCI error checks on own line
-  PCI: Do error check on own line to split long if conditions
-  PCI: xgene: Do PCI error check on own line & keep return value
-  scsi: ipr: Do PCI error checks on own line
+--- a/drivers/video/backlight/lv5207lp.c
++++ b/drivers/video/backlight/lv5207lp.c
+@@ -67,7 +67,7 @@ static int lv5207lp_backlight_check_fb(s
+ {
+ 	struct lv5207lp *lv = bl_get_data(backlight);
+ 
+-	return lv->pdata->fbdev == NULL || lv->pdata->fbdev == info->dev;
++	return lv->pdata->fbdev == NULL || lv->pdata->fbdev == info->device;
+ }
+ 
+ static const struct backlight_ops lv5207lp_backlight_ops = {
 
- arch/alpha/kernel/sys_miata.c      | 17 +++++++++--------
- arch/sh/drivers/pci/common.c       |  7 ++++---
- drivers/atm/iphase.c               | 20 +++++++++++---------
- drivers/pci/controller/pci-xgene.c |  7 ++++---
- drivers/pci/pci.c                  |  9 ++++++---
- drivers/pci/probe.c                |  6 +++---
- drivers/pci/quirks.c               |  6 +++---
- drivers/scsi/ipr.c                 | 12 ++++++++----
- 8 files changed, 48 insertions(+), 36 deletions(-)
-
--- 
-2.30.2
 
