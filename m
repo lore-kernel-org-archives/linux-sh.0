@@ -2,106 +2,100 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1586ECA0EC6
-	for <linux-sh@archiver.kernel.org>; Mon, 11 Sep 2023 21:50:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9C062CA0EC3
+	for <linux-sh@archiver.kernel.org>; Mon, 11 Sep 2023 21:50:36 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239997AbjIKVuV (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 11 Sep 2023 17:50:21 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43408 "EHLO
+        id S243854AbjIKVu1 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 11 Sep 2023 17:50:27 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35960 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240944AbjIKO5l (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Sep 2023 10:57:41 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 164FE1B9;
-        Mon, 11 Sep 2023 07:57:37 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 32EA6C433C7;
-        Mon, 11 Sep 2023 14:57:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1694444256;
-        bh=Dznp5youNcMrftsTclfp7+aaStsGZ9l1YRlYN59lz+Q=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=shAb8gD5m7mhVtM7W3PtXSmimHZiLf2ub+VOcB3360Tw9UhxMFtX2r1yDT9+yY/i+
-         VECGlq+7ALhVWtH4Jicfjd60ROwbBsrZHD2eNr1YfgrUspW6jDW0fHCTId5dpnorwU
-         J4hPbl/RXxu4a6lkPLGZ7O5tKNp4Egb6Nf3VIW9Y=
-From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To:     stable@vger.kernel.org
-Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        patches@lists.linux.dev, Thomas Zimmermann <tzimmermann@suse.de>,
-        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        with ESMTP id S236325AbjIKKRC (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Sep 2023 06:17:02 -0400
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id B8357E5F
+        for <linux-sh@vger.kernel.org>; Mon, 11 Sep 2023 03:16:13 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+        s=mimecast20190719; t=1694427372;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=Idpm1MsTIMkQeLscANw6c5qO2H9vlf95D23Ujw5h12Y=;
+        b=IiCse5ysEAlNAbrhjicki59YugzcYmSZvoiD4IIp9vGSB6bynIWRvG+F00AGCUMtMHlQYI
+        UKimmdRin1VOfTDU/vg4DEAzDs34jug7859oQZfUoFLOfVQmg+bAhWVQsN4s3gjxWDCz7J
+        W4r9aF9XoHucPRLy8iTQXMuPYTVf8mk=
+Received: from mimecast-mx02.redhat.com (mx-ext.redhat.com [66.187.233.73])
+ by relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ us-mta-140-ReNWdvrBOJOCrFLzcN4uOg-1; Mon, 11 Sep 2023 06:16:07 -0400
+X-MC-Unique: ReNWdvrBOJOCrFLzcN4uOg-1
+Received: from smtp.corp.redhat.com (int-mx03.intmail.prod.int.rdu2.redhat.com [10.11.54.3])
+        (using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+        (No client certificate requested)
+        by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 283503811F25;
+        Mon, 11 Sep 2023 10:16:07 +0000 (UTC)
+Received: from localhost (unknown [10.72.112.35])
+        by smtp.corp.redhat.com (Postfix) with ESMTPS id 315D110F1BE9;
+        Mon, 11 Sep 2023 10:16:05 +0000 (UTC)
+Date:   Mon, 11 Sep 2023 18:16:02 +0800
+From:   Baoquan He <bhe@redhat.com>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Lee Jones <lee@kernel.org>,
-        Daniel Thompson <daniel.thompson@linaro.org>,
-        Jingoo Han <jingoohan1@gmail.com>, linux-sh@vger.kernel.org,
-        dri-devel@lists.freedesktop.org,
-        Javier Martinez Canillas <javierm@redhat.com>,
-        Sam Ravnborg <sam@ravnborg.org>
-Subject: [PATCH 6.4 665/737] backlight/lv5207lp: Compare against struct fb_info.device
-Date:   Mon, 11 Sep 2023 15:48:44 +0200
-Message-ID: <20230911134709.119700346@linuxfoundation.org>
-X-Mailer: git-send-email 2.42.0
-In-Reply-To: <20230911134650.286315610@linuxfoundation.org>
-References: <20230911134650.286315610@linuxfoundation.org>
-User-Agent: quilt/0.67
-X-stable: review
-X-Patchwork-Hint: ignore
+        Andrew Morton <akpm@linux-foundation.org>,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] sh: mm: Re-add lost __ref to ioremap_prot() to fix
+ modpost warning
+Message-ID: <ZP7o4np4v0bth8dj@MiWiFi-R3L-srv>
+References: <20230911093850.1517389-1-geert+renesas@glider.be>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20230911093850.1517389-1-geert+renesas@glider.be>
+X-Scanned-By: MIMEDefang 3.1 on 10.11.54.3
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-6.4-stable review patch.  If anyone has any objections, please let me know.
+On 09/11/23 at 11:38am, Geert Uytterhoeven wrote:
+> When __ioremap_caller() was replaced by ioremap_prot(), the __ref
+> annotation added in commit af1415314a4190b8 ("sh: Flag
+> __ioremap_caller() __init_refok.") was removed, causing a modpost
+> warning:
+> 
+>     WARNING: modpost: vmlinux: section mismatch in reference: ioremap_prot+0x88 (section: .text) -> ioremap_fixed (section: .init.text)
+> 
+> ioremap_prot() calls ioremap_fixed() (which is marked __init), but only
+> before mem_init_done becomes true, so this is safe.  Hence fix this by
+> re-adding the lost __ref.
+> 
+> Fixes: 0453c9a78015cb22 ("sh: mm: convert to GENERIC_IOREMAP")
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+>  arch/sh/mm/ioremap.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
+> index c33b3daa4ad1a3e6..33d20f34560fd5cb 100644
+> --- a/arch/sh/mm/ioremap.c
+> +++ b/arch/sh/mm/ioremap.c
+> @@ -72,8 +72,8 @@ __ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
+>  #define __ioremap_29bit(offset, size, prot)		NULL
+>  #endif /* CONFIG_29BIT */
+>  
+> -void __iomem *ioremap_prot(phys_addr_t phys_addr, size_t size,
+> -			   unsigned long prot)
+> +void __iomem __ref *ioremap_prot(phys_addr_t phys_addr, size_t size,
+> +				 unsigned long prot)
 
-------------------
+Sorry for the mistake, and I possibly missed the warning when building. 
 
-From: Thomas Zimmermann <tzimmermann@suse.de>
+Reviewed-by: Baoquan He <bhe@redhat.com>
 
-commit 1ca8819320fd84e7d95b04e7668efc5f9fe9fa5c upstream.
-
-Struct lv5207lp_platform_data refers to a platform device within
-the Linux device hierarchy. The test in lv5207lp_backlight_check_fb()
-compares it against the fbdev device in struct fb_info.dev, which
-is different. Fix the test by comparing to struct fb_info.device.
-
-Fixes a bug in the backlight driver and prepares fbdev for making
-struct fb_info.dev optional.
-
-v2:
-	* move renames into separate patch (Javier, Sam, Michael)
-
-Fixes: 82e5c40d88f9 ("backlight: Add Sanyo LV5207LP backlight driver")
-Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Lee Jones <lee@kernel.org>
-Cc: Daniel Thompson <daniel.thompson@linaro.org>
-Cc: Jingoo Han <jingoohan1@gmail.com>
-Cc: linux-sh@vger.kernel.org
-Cc: dri-devel@lists.freedesktop.org
-Cc: <stable@vger.kernel.org> # v3.12+
-Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
-Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
-Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
-Link: https://patchwork.freedesktop.org/patch/msgid/20230613110953.24176-6-tzimmermann@suse.de
-Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
----
- drivers/video/backlight/lv5207lp.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- a/drivers/video/backlight/lv5207lp.c
-+++ b/drivers/video/backlight/lv5207lp.c
-@@ -67,7 +67,7 @@ static int lv5207lp_backlight_check_fb(s
- {
- 	struct lv5207lp *lv = bl_get_data(backlight);
- 
--	return lv->pdata->fbdev == NULL || lv->pdata->fbdev == info->dev;
-+	return lv->pdata->fbdev == NULL || lv->pdata->fbdev == info->device;
- }
- 
- static const struct backlight_ops lv5207lp_backlight_ops = {
-
+>  {
+>  	void __iomem *mapped;
+>  	pgprot_t pgprot = __pgprot(prot);
+> -- 
+> 2.34.1
+> 
 
