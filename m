@@ -2,80 +2,160 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4D403CA0EC7
+	by smtp.lore.kernel.org (Postfix) with ESMTP id F232DCA0EC3
 	for <linux-sh@archiver.kernel.org>; Mon, 11 Sep 2023 21:49:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1353334AbjIKVtm (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 11 Sep 2023 17:49:42 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57414 "EHLO
+        id S1353331AbjIKVth (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 11 Sep 2023 17:49:37 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47230 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235791AbjIKJjJ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Sep 2023 05:39:09 -0400
-Received: from xavier.telenet-ops.be (xavier.telenet-ops.be [IPv6:2a02:1800:120:4::f00:14])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BA0E2102
-        for <linux-sh@vger.kernel.org>; Mon, 11 Sep 2023 02:39:03 -0700 (PDT)
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:a989:d413:f41f:af52])
-        by xavier.telenet-ops.be with bizsmtp
-        id kZez2A00b43UkUk01Zez9u; Mon, 11 Sep 2023 11:39:01 +0200
-Received: from rox.of.borg ([192.168.97.57])
-        by ramsan.of.borg with esmtp (Exim 4.95)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1qfdNT-002zNf-F0;
-        Mon, 11 Sep 2023 11:38:59 +0200
-Received: from geert by rox.of.borg with local (Exim 4.95)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1qfdNj-006NE7-O5;
-        Mon, 11 Sep 2023 11:38:59 +0200
-From:   Geert Uytterhoeven <geert+renesas@glider.be>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Baoquan He <bhe@redhat.com>
-Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH] sh: mm: Re-add lost __ref to ioremap_prot() to fix modpost warning
-Date:   Mon, 11 Sep 2023 11:38:50 +0200
-Message-Id: <20230911093850.1517389-1-geert+renesas@glider.be>
-X-Mailer: git-send-email 2.34.1
+        with ESMTP id S237508AbjIKMyo (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Sep 2023 08:54:44 -0400
+Received: from mgamail.intel.com (mgamail.intel.com [192.55.52.136])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 97597E40;
+        Mon, 11 Sep 2023 05:54:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1694436880; x=1725972880;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=QCUHLcOIhxBRk27P/kLo+OYYTB7a6Wv3t3NHhSYLmJ0=;
+  b=gyuhulO1f4sSNWvKqFVmH51yb9CiwI0WX0vTlhOdWgZEkzRDh8i7oSUI
+   1HiI4MH5LzbH08Jlv96YouT0MWOVBEuA03qRfGoDE4Wfe03shkkf4vmmj
+   bjE1jNGb/c9u/ZxxxJvYxrzyjdbpr35vg2+vp97tehXw9JCNkd7LoAI2T
+   EZWKq1K2w365gAXnXvI0D5y8/hCRbY+7ub+CXWVpDJ02LEWoNz6VNxo1K
+   eZbrHc77ibTY91otw+Lcjg8Li0Xt7msRsQbLZCcsySLO0oz9d9KynZqSS
+   qWnov/S6qEfw5f5WQgfbOd9bJugrKROiUQrdrT32/2sJn7t0A1zLW7Sqv
+   Q==;
+X-IronPort-AV: E=McAfee;i="6600,9927,10830"; a="357511257"
+X-IronPort-AV: E=Sophos;i="6.02,244,1688454000"; 
+   d="scan'208";a="357511257"
+Received: from fmsmga002.fm.intel.com ([10.253.24.26])
+  by fmsmga106.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2023 05:54:40 -0700
+X-ExtLoop1: 1
+X-IronPort-AV: E=McAfee;i="6600,9927,10830"; a="858304426"
+X-IronPort-AV: E=Sophos;i="6.02,244,1688454000"; 
+   d="scan'208";a="858304426"
+Received: from mzarkov-mobl3.ger.corp.intel.com (HELO ijarvine-mobl2.ger.corp.intel.com) ([10.252.36.200])
+  by fmsmga002-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2023 05:54:34 -0700
+From:   =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>
+To:     Rob Herring <robh@kernel.org>, Bjorn Helgaas <helgaas@kernel.org>,
+        linux-pci@vger.kernel.org, Bjorn Helgaas <bhelgaas@google.com>,
+        linux-kernel@vger.kernel.org
+Cc:     3chas3@gmail.com, brking@us.ibm.com, dalias@libc.org,
+        glaubitz@physik.fu-berlin.de, ink@jurassic.park.msu.ru,
+        jejb@linux.ibm.com, kw@linux.com, linux-alpha@vger.kernel.org,
+        linux-arm-kernel@lists.infradead.org,
+        linux-atm-general@lists.sourceforge.net,
+        linux-scsi@vger.kernel.org, linux-sh@vger.kernel.org,
+        lpieralisi@kernel.org, martin.petersen@oracle.com,
+        mattst88@gmail.com, netdev@vger.kernel.org,
+        richard.henderson@linaro.org, toan@os.amperecomputing.com,
+        ysato@users.sourceforge.jp,
+        =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>
+Subject: [PATCH v3 4/6] PCI: Do error check on own line to split long if conditions
+Date:   Mon, 11 Sep 2023 15:53:52 +0300
+Message-Id: <20230911125354.25501-5-ilpo.jarvinen@linux.intel.com>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20230911125354.25501-1-ilpo.jarvinen@linux.intel.com>
+References: <20230911125354.25501-1-ilpo.jarvinen@linux.intel.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-When __ioremap_caller() was replaced by ioremap_prot(), the __ref
-annotation added in commit af1415314a4190b8 ("sh: Flag
-__ioremap_caller() __init_refok.") was removed, causing a modpost
-warning:
+Placing PCI error code check inside if condition usually results in
+need to split lines. Combined with additional conditions the if
+condition becomes messy.
 
-    WARNING: modpost: vmlinux: section mismatch in reference: ioremap_prot+0x88 (section: .text) -> ioremap_fixed (section: .init.text)
+Convert to the usual error handling pattern with an additional variable
+to improve code readability. In addition, reverse the logic in
+pci_find_vsec_capability() to get rid of &&.
 
-ioremap_prot() calls ioremap_fixed() (which is marked __init), but only
-before mem_init_done becomes true, so this is safe.  Hence fix this by
-re-adding the lost __ref.
+No functional changes intended.
 
-Fixes: 0453c9a78015cb22 ("sh: mm: convert to GENERIC_IOREMAP")
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Ilpo Järvinen <ilpo.jarvinen@linux.intel.com>
 ---
- arch/sh/mm/ioremap.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/pci/pci.c    | 9 ++++++---
+ drivers/pci/probe.c  | 6 +++---
+ drivers/pci/quirks.c | 6 +++---
+ 3 files changed, 12 insertions(+), 9 deletions(-)
 
-diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
-index c33b3daa4ad1a3e6..33d20f34560fd5cb 100644
---- a/arch/sh/mm/ioremap.c
-+++ b/arch/sh/mm/ioremap.c
-@@ -72,8 +72,8 @@ __ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
- #define __ioremap_29bit(offset, size, prot)		NULL
- #endif /* CONFIG_29BIT */
- 
--void __iomem *ioremap_prot(phys_addr_t phys_addr, size_t size,
--			   unsigned long prot)
-+void __iomem __ref *ioremap_prot(phys_addr_t phys_addr, size_t size,
-+				 unsigned long prot)
+diff --git a/drivers/pci/pci.c b/drivers/pci/pci.c
+index 59c01d68c6d5..5e51e8bd5c13 100644
+--- a/drivers/pci/pci.c
++++ b/drivers/pci/pci.c
+@@ -732,15 +732,18 @@ u16 pci_find_vsec_capability(struct pci_dev *dev, u16 vendor, int cap)
  {
- 	void __iomem *mapped;
- 	pgprot_t pgprot = __pgprot(prot);
+ 	u16 vsec = 0;
+ 	u32 header;
++	int ret;
+ 
+ 	if (vendor != dev->vendor)
+ 		return 0;
+ 
+ 	while ((vsec = pci_find_next_ext_capability(dev, vsec,
+ 						     PCI_EXT_CAP_ID_VNDR))) {
+-		if (pci_read_config_dword(dev, vsec + PCI_VNDR_HEADER,
+-					  &header) == PCIBIOS_SUCCESSFUL &&
+-		    PCI_VNDR_HEADER_ID(header) == cap)
++		ret = pci_read_config_dword(dev, vsec + PCI_VNDR_HEADER, &header);
++		if (ret != PCIBIOS_SUCCESSFUL)
++			continue;
++
++		if (PCI_VNDR_HEADER_ID(header) == cap)
+ 			return vsec;
+ 	}
+ 
+diff --git a/drivers/pci/probe.c b/drivers/pci/probe.c
+index ab2a4a3a4c06..0ad440190a32 100644
+--- a/drivers/pci/probe.c
++++ b/drivers/pci/probe.c
+@@ -1651,15 +1651,15 @@ static void pci_set_removable(struct pci_dev *dev)
+ static bool pci_ext_cfg_is_aliased(struct pci_dev *dev)
+ {
+ #ifdef CONFIG_PCI_QUIRKS
+-	int pos;
++	int pos, ret;
+ 	u32 header, tmp;
+ 
+ 	pci_read_config_dword(dev, PCI_VENDOR_ID, &header);
+ 
+ 	for (pos = PCI_CFG_SPACE_SIZE;
+ 	     pos < PCI_CFG_SPACE_EXP_SIZE; pos += PCI_CFG_SPACE_SIZE) {
+-		if (pci_read_config_dword(dev, pos, &tmp) != PCIBIOS_SUCCESSFUL
+-		    || header != tmp)
++		ret = pci_read_config_dword(dev, pos, &tmp);
++		if ((ret != PCIBIOS_SUCCESSFUL) || (header != tmp))
+ 			return false;
+ 	}
+ 
+diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
+index 5de09d2eb014..0d2e6b0f56cc 100644
+--- a/drivers/pci/quirks.c
++++ b/drivers/pci/quirks.c
+@@ -5383,7 +5383,7 @@ int pci_dev_specific_disable_acs_redir(struct pci_dev *dev)
+  */
+ static void quirk_intel_qat_vf_cap(struct pci_dev *pdev)
+ {
+-	int pos, i = 0;
++	int pos, i = 0, ret;
+ 	u8 next_cap;
+ 	u16 reg16, *cap;
+ 	struct pci_cap_saved_state *state;
+@@ -5429,8 +5429,8 @@ static void quirk_intel_qat_vf_cap(struct pci_dev *pdev)
+ 		pdev->pcie_mpss = reg16 & PCI_EXP_DEVCAP_PAYLOAD;
+ 
+ 		pdev->cfg_size = PCI_CFG_SPACE_EXP_SIZE;
+-		if (pci_read_config_dword(pdev, PCI_CFG_SPACE_SIZE, &status) !=
+-		    PCIBIOS_SUCCESSFUL || (status == 0xffffffff))
++		ret = pci_read_config_dword(pdev, PCI_CFG_SPACE_SIZE, &status);
++		if ((ret != PCIBIOS_SUCCESSFUL) || (status == 0xffffffff))
+ 			pdev->cfg_size = PCI_CFG_SPACE_SIZE;
+ 
+ 		if (pci_find_saved_cap(pdev, PCI_CAP_ID_EXP))
 -- 
-2.34.1
+2.30.2
 
