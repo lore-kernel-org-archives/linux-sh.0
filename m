@@ -2,101 +2,118 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8A352CA0EC6
-	for <linux-sh@archiver.kernel.org>; Mon, 11 Sep 2023 21:50:08 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C522ACA0EC7
+	for <linux-sh@archiver.kernel.org>; Mon, 11 Sep 2023 21:50:11 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1353772AbjIKVuH (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 11 Sep 2023 17:50:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:35756 "EHLO
+        id S239513AbjIKVuJ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 11 Sep 2023 17:50:09 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42426 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239513AbjIKOWh (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Sep 2023 10:22:37 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 98AE7E40;
-        Mon, 11 Sep 2023 07:22:33 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B417FC433C8;
-        Mon, 11 Sep 2023 14:22:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1694442153;
-        bh=I/6l7skrUhzfErj6wesPCWCRf2Lt9L3fFo0Fe6Aqfpw=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=icwXPAyXtT6qEGxGMlqnf1yax8eRIiP3MBkXsRxiN4IGvPnAnLCG6rLof+jF8mTuE
-         ezB3Y0BvKo7g9/nU8jLv1OiQk8c5WSvIMCWh+ox9B95FReYTjorpyFjBoyRQ9hz/Zt
-         pGBLefHCkEI2GoPAEcEzPu0vSxy96eTsgdrQaNJA=
-From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To:     stable@vger.kernel.org
-Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        patches@lists.linux.dev, Thomas Zimmermann <tzimmermann@suse.de>,
-        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Lee Jones <lee@kernel.org>,
-        Daniel Thompson <daniel.thompson@linaro.org>,
-        Jingoo Han <jingoohan1@gmail.com>, linux-sh@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, Sam Ravnborg <sam@ravnborg.org>
-Subject: [PATCH 6.5 664/739] backlight/gpio_backlight: Compare against struct fb_info.device
-Date:   Mon, 11 Sep 2023 15:47:43 +0200
-Message-ID: <20230911134709.653541686@linuxfoundation.org>
-X-Mailer: git-send-email 2.42.0
-In-Reply-To: <20230911134650.921299741@linuxfoundation.org>
-References: <20230911134650.921299741@linuxfoundation.org>
-User-Agent: quilt/0.67
-X-stable: review
-X-Patchwork-Hint: ignore
+        with ESMTP id S237504AbjIKMyd (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 11 Sep 2023 08:54:33 -0400
+Received: from mgamail.intel.com (mgamail.intel.com [192.55.52.136])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 95F19E4B;
+        Mon, 11 Sep 2023 05:54:29 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1694436869; x=1725972869;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=RKVN1bWO+6tJ6WlmxsOXbk1vq7oGMYXcJ+RHQjqKcpI=;
+  b=bUWitqMHJGU633zc/Q/sIHhMdeFHAvfs/B8VP5XJ6il1JBZefbVulsxG
+   fA00ac7Cnc/s2hzzvrtjBvHQ3abVM59iirsEfL44JgMnVu6E8DVTJ4YTY
+   aBqVxCFXyX9ZGPjAd/NlthlVSiv6WkggN8i4buRyBOEP7NGwdxvPoGxAQ
+   OwUqoudOJJ4x44nqUCJPy+vDr3jbUo9uSehQSSHUlmmBcws646fMBOMX/
+   98LC0B5OOerAZ/G6LP/Mp2YRY4UVMiox4xMS7d9fPR3z7eJfSOCRM0UDg
+   VxgSX5Qc2qeDjwjgj1kx6ibvN5N1OLjQg0I3nksP9OQY8E2fQVwvOFDkb
+   A==;
+X-IronPort-AV: E=McAfee;i="6600,9927,10830"; a="357511221"
+X-IronPort-AV: E=Sophos;i="6.02,244,1688454000"; 
+   d="scan'208";a="357511221"
+Received: from fmsmga002.fm.intel.com ([10.253.24.26])
+  by fmsmga106.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2023 05:54:29 -0700
+X-ExtLoop1: 1
+X-IronPort-AV: E=McAfee;i="6600,9927,10830"; a="858304289"
+X-IronPort-AV: E=Sophos;i="6.02,244,1688454000"; 
+   d="scan'208";a="858304289"
+Received: from mzarkov-mobl3.ger.corp.intel.com (HELO ijarvine-mobl2.ger.corp.intel.com) ([10.252.36.200])
+  by fmsmga002-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 11 Sep 2023 05:54:23 -0700
+From:   =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>
+To:     Rob Herring <robh@kernel.org>, Bjorn Helgaas <helgaas@kernel.org>,
+        linux-pci@vger.kernel.org, Chas Williams <3chas3@gmail.com>,
+        linux-atm-general@lists.sourceforge.net, netdev@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Cc:     brking@us.ibm.com, dalias@libc.org, glaubitz@physik.fu-berlin.de,
+        ink@jurassic.park.msu.ru, jejb@linux.ibm.com, kw@linux.com,
+        linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-scsi@vger.kernel.org, linux-sh@vger.kernel.org,
+        lpieralisi@kernel.org, martin.petersen@oracle.com,
+        mattst88@gmail.com, richard.henderson@linaro.org,
+        toan@os.amperecomputing.com, ysato@users.sourceforge.jp,
+        =?UTF-8?q?Ilpo=20J=C3=A4rvinen?= <ilpo.jarvinen@linux.intel.com>
+Subject: [PATCH v3 3/6] atm: iphase: Do PCI error checks on own line
+Date:   Mon, 11 Sep 2023 15:53:51 +0300
+Message-Id: <20230911125354.25501-4-ilpo.jarvinen@linux.intel.com>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20230911125354.25501-1-ilpo.jarvinen@linux.intel.com>
+References: <20230911125354.25501-1-ilpo.jarvinen@linux.intel.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-6.5-stable review patch.  If anyone has any objections, please let me know.
+In get_esi() PCI errors are checked inside line-split if conditions (in
+addition to the file not following the coding style). To make the code
+in get_esi() more readable, fix the coding style and use the usual
+error handling pattern with a separate variable.
 
-------------------
+In addition, initialization of 'error' variable at declaration is not
+needed.
 
-From: Thomas Zimmermann <tzimmermann@suse.de>
+No function changes intended.
 
-commit 7b91d017f77c1bda56f27c2f4bbb70de7c6eca08 upstream.
-
-Struct gpio_backlight_platform_data refers to a platform device within
-the Linux device hierarchy. The test in gpio_backlight_check_fb()
-compares it against the fbdev device in struct fb_info.dev, which
-is different. Fix the test by comparing to struct fb_info.device.
-
-Fixes a bug in the backlight driver and prepares fbdev for making
-struct fb_info.dev optional.
-
-v2:
-	* move renames into separate patch (Javier, Sam, Michael)
-
-Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
-Fixes: 8b770e3c9824 ("backlight: Add GPIO-based backlight driver")
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Rich Felker <dalias@libc.org>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Lee Jones <lee@kernel.org>
-Cc: Daniel Thompson <daniel.thompson@linaro.org>
-Cc: Jingoo Han <jingoohan1@gmail.com>
-Cc: linux-sh@vger.kernel.org
-Cc: dri-devel@lists.freedesktop.org
-Cc: <stable@vger.kernel.org> # v3.12+
-Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
-Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
-Link: https://patchwork.freedesktop.org/patch/msgid/20230613110953.24176-4-tzimmermann@suse.de
-Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Ilpo Järvinen <ilpo.jarvinen@linux.intel.com>
 ---
- drivers/video/backlight/gpio_backlight.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/atm/iphase.c | 20 +++++++++++---------
+ 1 file changed, 11 insertions(+), 9 deletions(-)
 
---- a/drivers/video/backlight/gpio_backlight.c
-+++ b/drivers/video/backlight/gpio_backlight.c
-@@ -35,7 +35,7 @@ static int gpio_backlight_check_fb(struc
- {
- 	struct gpio_backlight *gbl = bl_get_data(bl);
- 
--	return gbl->fbdev == NULL || gbl->fbdev == info->dev;
-+	return gbl->fbdev == NULL || gbl->fbdev == info->device;
- }
- 
- static const struct backlight_ops gpio_backlight_ops = {
-
+diff --git a/drivers/atm/iphase.c b/drivers/atm/iphase.c
+index 324148686953..9bba8f280a4d 100644
+--- a/drivers/atm/iphase.c
++++ b/drivers/atm/iphase.c
+@@ -2291,19 +2291,21 @@ static int get_esi(struct atm_dev *dev)
+ static int reset_sar(struct atm_dev *dev)  
+ {  
+ 	IADEV *iadev;  
+-	int i, error = 1;  
++	int i, error;
+ 	unsigned int pci[64];  
+ 	  
+ 	iadev = INPH_IA_DEV(dev);  
+-	for(i=0; i<64; i++)  
+-	  if ((error = pci_read_config_dword(iadev->pci,  
+-				i*4, &pci[i])) != PCIBIOS_SUCCESSFUL)  
+-  	      return error;  
++	for (i = 0; i < 64; i++) {
++		error = pci_read_config_dword(iadev->pci, i * 4, &pci[i]);
++		if (error != PCIBIOS_SUCCESSFUL)
++			return error;
++	}
+ 	writel(0, iadev->reg+IPHASE5575_EXT_RESET);  
+-	for(i=0; i<64; i++)  
+-	  if ((error = pci_write_config_dword(iadev->pci,  
+-					i*4, pci[i])) != PCIBIOS_SUCCESSFUL)  
+-	    return error;  
++	for (i = 0; i < 64; i++) {
++		error = pci_write_config_dword(iadev->pci, i * 4, pci[i]);
++		if (error != PCIBIOS_SUCCESSFUL)
++			return error;
++	}
+ 	udelay(5);  
+ 	return 0;  
+ }  
+-- 
+2.30.2
 
