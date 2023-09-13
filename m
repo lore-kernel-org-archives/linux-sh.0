@@ -2,137 +2,129 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BFD87EDEC4A
-	for <linux-sh@archiver.kernel.org>; Wed, 13 Sep 2023 12:32:52 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AE40BEDEC58
+	for <linux-sh@archiver.kernel.org>; Wed, 13 Sep 2023 14:08:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S240513AbjIMMc4 convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 13 Sep 2023 08:32:56 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57842 "EHLO
+        id S239563AbjIMOIw (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 13 Sep 2023 10:08:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54878 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S240502AbjIMMcz (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 13 Sep 2023 08:32:55 -0400
-Received: from mail-yw1-f170.google.com (mail-yw1-f170.google.com [209.85.128.170])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D2D119B4;
-        Wed, 13 Sep 2023 05:32:51 -0700 (PDT)
-Received: by mail-yw1-f170.google.com with SMTP id 00721157ae682-58d9ba95c78so68170267b3.1;
-        Wed, 13 Sep 2023 05:32:51 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1694608370; x=1695213170;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=niAJ2PizX/sYOBYMEFf6M6THGMgT7grLXGG+lDou3LM=;
-        b=tEE1/+SQ2YlF2rTLACLoTdeeCC947cXHxwP5s93NirDl1u+LzYnL3tuKv3p008E/tg
-         LqbrV35gokGmO/N70aTMl/qUgoKvQB0bBZGw9NrNhITjYLHFH2Rz/3zX4NIo5X5EWObq
-         Uayn6hSoUUOueQuOTMWaHC8Ro+gabe70jFRcjZPfjQBi88y7kmbUhN0opz1Ubdh6qtWM
-         Zgpp3xn+nSDXUMWesS5FyT7449qSRt/4YmMpug3+CRhtMlHgXrRVMPoS6KjI+sTXeaSq
-         ZJiepxrs6RgLD8W94in9FTsdhFUGO77joAKfXB8xGVUSJYbEMvjCOSwR43qr6rjYOAhI
-         k9Qg==
-X-Gm-Message-State: AOJu0Yx3/uV92a8aV8Bj5/yP9ivX+KAJljDFeaPJZBFOs7xuuZfyWuoY
-        YyI9aX08VvHYZGDRcvR7NNQ0icX+05FwjQ==
-X-Google-Smtp-Source: AGHT+IGrYZdSamip9uH0Ycvkzd6C98XJyNHlPK/YZl5vraY8oNgYtbkXYNExsGr9bseCTKzop0aaNw==
-X-Received: by 2002:a81:5e54:0:b0:570:63d3:9685 with SMTP id s81-20020a815e54000000b0057063d39685mr2460721ywb.25.1694608370624;
-        Wed, 13 Sep 2023 05:32:50 -0700 (PDT)
-Received: from mail-yw1-f174.google.com (mail-yw1-f174.google.com. [209.85.128.174])
-        by smtp.gmail.com with ESMTPSA id p63-20020a815b42000000b005837633d9cbsm3077942ywb.64.2023.09.13.05.32.49
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 13 Sep 2023 05:32:50 -0700 (PDT)
-Received: by mail-yw1-f174.google.com with SMTP id 00721157ae682-579de633419so68063517b3.3;
-        Wed, 13 Sep 2023 05:32:49 -0700 (PDT)
-X-Received: by 2002:a25:d303:0:b0:d7a:def7:b96a with SMTP id
- e3-20020a25d303000000b00d7adef7b96amr2179608ybf.53.1694608369635; Wed, 13 Sep
- 2023 05:32:49 -0700 (PDT)
-MIME-Version: 1.0
-References: <20230802184849.1019466-1-arnd@kernel.org> <20230802184849.1019466-4-arnd@kernel.org>
-In-Reply-To: <20230802184849.1019466-4-arnd@kernel.org>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Wed, 13 Sep 2023 14:32:38 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdVjmD357K-yxxW-jn-6vKsXTg+u1Psw9DftyxH=dQoMEg@mail.gmail.com>
-Message-ID: <CAMuHMdVjmD357K-yxxW-jn-6vKsXTg+u1Psw9DftyxH=dQoMEg@mail.gmail.com>
+        with ESMTP id S231767AbjIMOIv (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 13 Sep 2023 10:08:51 -0400
+Received: from out3-smtp.messagingengine.com (out3-smtp.messagingengine.com [66.111.4.27])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A5F1D19B1;
+        Wed, 13 Sep 2023 07:08:47 -0700 (PDT)
+Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
+        by mailout.nyi.internal (Postfix) with ESMTP id 027BB5C01DF;
+        Wed, 13 Sep 2023 10:08:45 -0400 (EDT)
+Received: from imap51 ([10.202.2.101])
+  by compute6.internal (MEProxy); Wed, 13 Sep 2023 10:08:45 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
+        :cc:content-transfer-encoding:content-type:content-type:date
+        :date:from:from:in-reply-to:in-reply-to:message-id:mime-version
+        :references:reply-to:sender:subject:subject:to:to; s=fm1; t=
+        1694614124; x=1694700524; bh=zfvZBncMMU2YSvF8BUaOv/NK0XFFKo70iWy
+        d6Cf7xKA=; b=mIsTU+Vay1BOgsSssEi9pxqX8d5xjC2FAs0wEWGO6ZUo2g7XGQ2
+        tdveal2n+J7T+8kCLJa/w1DI6ggOWzeBtSHYCTw9BPHWy+oebP7+E7QhiFwrni3K
+        oQUJjYaY7LZuftI86fVOooWFakp5Oa9wfA/FTfpNqZC/wrJI6Wd0PadD/lzwNfgz
+        hVTsPrdiErVsIUtA5fVNRxU/NN+UrFnP1LyaI44V01KCgdJltDegaEgzmIY4urVx
+        Gd8mHwiCSnXBV4v5ZWq+KLSZ6/nitS+h2OsrwXNpRz7Pl856YVBBObJhwJGGO4o0
+        cxeWXfhV+ypMsBQoflNrghozpNlRZeCNqCA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:cc:content-transfer-encoding
+        :content-type:content-type:date:date:feedback-id:feedback-id
+        :from:from:in-reply-to:in-reply-to:message-id:mime-version
+        :references:reply-to:sender:subject:subject:to:to:x-me-proxy
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
+        1694614124; x=1694700524; bh=zfvZBncMMU2YSvF8BUaOv/NK0XFFKo70iWy
+        d6Cf7xKA=; b=CDD267g20qfHMUwkKynraI/D+GMQKjjYBbBkySm+B0gaYPgN31R
+        c1wsnopuAmZw4zrVA+C1eHCxSCBaJP3Q6BWuDUHd1u4oj5C7+7+4aKWDEiSTySol
+        poy5SA/ijkT7TKjLMqcilvyQRbgDWPoi0zkQwYpWKNfMRcHoiT1qeJKvFhf8tXjT
+        CUGKuhS7rKEFVVuvO0corSteXY8xRsnb3xppaOVUZfssuZWD9Z1UzKsOpzKqzOU6
+        9uKK6vqGZPNPPpDVhs2dEGvjilJEsbE3ynIrJmBFFEQQC2EbXDFjhwYgyUQ9vl6G
+        bgwEqbo7kCsHCPkcmF/52Zm7ZY5pC9yy4Og==
+X-ME-Sender: <xms:bMIBZamlhTi-8sXNxckLiMjxdz0sUVZA2AfbDWFBFn2eS47nD7lz_Q>
+    <xme:bMIBZR17f7GU2-RLWWBTgNMfyK_mzX0nxXwnu7kmqhu1_RHTGZOeko-H6UD9QYIJF
+    pRnsSjHJIu3wJqBWa0>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrudeikedgjeefucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+    cujfgurhepofgfggfkjghffffhvfevufgtgfesthhqredtreerjeenucfhrhhomhepfdet
+    rhhnugcuuegvrhhgmhgrnhhnfdcuoegrrhhnugesrghrnhgusgdruggvqeenucggtffrrg
+    htthgvrhhnpeegfeejhedvledvffeijeeijeeivddvhfeliedvleevheejleetgedukedt
+    gfejveenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpe
+    grrhhnugesrghrnhgusgdruggv
+X-ME-Proxy: <xmx:bMIBZYrR_7eUvsOPuQgj0_Hayh0rYpBTxAArvCpo4h8ukZwO4xC1OA>
+    <xmx:bMIBZemfSUrrprzMjv_PzTxDBN679MuTpwvX6cODFVKm8ASMKuIzUg>
+    <xmx:bMIBZY0wFHylEvtf6-B15yCAajVg2A2wliNxvg96kTuiXky5IzmuVA>
+    <xmx:bMIBZbSqafD-EyKimLawZYZjVvncvzhMb_S5_ra_otgdU_JtEXDysA>
+Feedback-ID: i56a14606:Fastmail
+Received: by mailuser.nyi.internal (Postfix, from userid 501)
+        id 48B49B60089; Wed, 13 Sep 2023 10:08:44 -0400 (EDT)
+X-Mailer: MessagingEngine.com Webmail Interface
+User-Agent: Cyrus-JMAP/3.9.0-alpha0-745-g95dd7bea33-fm-20230905.001-g95dd7bea
+Mime-Version: 1.0
+Message-Id: <5dad2d86-78ea-4a39-8ee1-98e3eb134d36@app.fastmail.com>
+In-Reply-To: <CAMuHMdVjmD357K-yxxW-jn-6vKsXTg+u1Psw9DftyxH=dQoMEg@mail.gmail.com>
+References: <20230802184849.1019466-1-arnd@kernel.org>
+ <20230802184849.1019466-4-arnd@kernel.org>
+ <CAMuHMdVjmD357K-yxxW-jn-6vKsXTg+u1Psw9DftyxH=dQoMEg@mail.gmail.com>
+Date:   Wed, 13 Sep 2023 16:08:23 +0200
+From:   "Arnd Bergmann" <arnd@arndb.de>
+To:     "Geert Uytterhoeven" <geert@linux-m68k.org>,
+        "Arnd Bergmann" <arnd@kernel.org>
+Cc:     "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
+        linux-sh@vger.kernel.org, "Rich Felker" <dalias@libc.org>,
+        "Yoshinori Sato" <ysato@users.sourceforge.jp>,
+        linux-kernel@vger.kernel.org
 Subject: Re: [PATCH 4/4] sh: machvec: remove custom ioport_{un,}map()
-To:     Arnd Bergmann <arnd@kernel.org>
-Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+Content-Type: text/plain;charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Arnd,
-
-On Wed, Aug 2, 2023 at 8:49 PM Arnd Bergmann <arnd@kernel.org> wrote:
-> From: Arnd Bergmann <arnd@arndb.de>
+On Wed, Sep 13, 2023, at 14:32, Geert Uytterhoeven wrote:
+> On Wed, Aug 2, 2023 at 8:49=E2=80=AFPM Arnd Bergmann <arnd@kernel.org>=
+ wrote:
+>> From: Arnd Bergmann <arnd@arndb.de>
+>>
+>> These functions were only used on the microdev
+>> board that is now gone, so remove them to simplify
+>> the ioport handling.
+>>
+>> This could be further simplified to use the generic
+>> I/O port accessors now.
+>>
+>> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 >
-> These functions were only used on the microdev
-> board that is now gone, so remove them to simplify
-> the ioport handling.
+>> --- a/arch/sh/include/asm/io.h
+>> +++ b/arch/sh/include/asm/io.h
+>> @@ -181,7 +181,7 @@ static inline void pfx##out##bwlq##p(type val, un=
+signed long port)  \
+>>  {                                                                   =
+   \
+>>         volatile type *__addr;                                       =
+   \
+>>                                                                      =
+   \
+>> -       __addr =3D __ioport_map(port, sizeof(type));                 =
+     \
+>> +       __addr =3D (void __iomem *)sh_io_port_base + port;           =
+     \
 >
-> This could be further simplified to use the generic
-> I/O port accessors now.
+> Note that this adds unconditional users of sh_io_port_base, while
+> sh_io_port_base is provided by arch/sh/kernel/ioport.c, which is
+> currently only built if CONFIG_GENERIC_IOMAP=3Dn.
 >
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> This is not a problem yet, as the final part to enable GENERIC_IOMAP
+> on SH never made it upstream.  However, Sato-san's series enables
+> GENERIC_IOMAP for SH_DEVICE_TREE=3Dy builds, leading to a link failure.
 
-Thanks for your patch!
+Do you have a link to that series? I don't understand why you'd
+want to enable GENERIC_IOMAP on sh, given that its PIO accesses
+are always memory mapped in the end.
 
-> --- a/arch/sh/include/asm/io.h
-> +++ b/arch/sh/include/asm/io.h
-> @@ -181,7 +181,7 @@ static inline void pfx##out##bwlq##p(type val, unsigned long port)  \
->  {                                                                      \
->         volatile type *__addr;                                          \
->                                                                         \
-> -       __addr = __ioport_map(port, sizeof(type));                      \
-> +       __addr = (void __iomem *)sh_io_port_base + port;                \
+Is this needed for the trapped_io CF stuff?
 
-Note that this adds unconditional users of sh_io_port_base, while
-sh_io_port_base is provided by arch/sh/kernel/ioport.c, which is
-currently only built if CONFIG_GENERIC_IOMAP=n.
-
-This is not a problem yet, as the final part to enable GENERIC_IOMAP
-on SH never made it upstream.  However, Sato-san's series enables
-GENERIC_IOMAP for SH_DEVICE_TREE=y builds, leading to a link failure.
-
-A quick fix would be to always build the relevant parts:
-
---- a/arch/sh/kernel/Makefile
-+++ b/arch/sh/kernel/Makefile
-@@ -23,8 +23,8 @@ obj-y := head_32.o debugtraps.o dumpstack.o
-                 \
-
- ifndef CONFIG_GENERIC_IOMAP
- obj-y                          += iomap.o
--obj-$(CONFIG_HAS_IOPORT_MAP)   += ioport.o
- endif
-+obj-$(CONFIG_HAS_IOPORT_MAP)   += ioport.o
-
- obj-y                          += sys_sh32.o
- obj-y                          += cpu/
---- a/arch/sh/kernel/ioport.c
-+++ b/arch/sh/kernel/ioport.c
-@@ -12,6 +12,7 @@
- unsigned long sh_io_port_base __read_mostly = -1;
- EXPORT_SYMBOL(sh_io_port_base);
-
-+#ifndef CONFIG_GENERIC_IOMAP
- void __iomem *ioport_map(unsigned long port, unsigned int nr)
- {
-        void __iomem *ret;
-@@ -28,3 +29,4 @@ void ioport_unmap(void __iomem *addr)
- {
- }
- EXPORT_SYMBOL(ioport_unmap);
-+#endif /* !CONFIG_GENERIC_IOMAP */
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+       Arnd
