@@ -2,124 +2,125 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CF814EDEC5A
-	for <linux-sh@archiver.kernel.org>; Wed, 13 Sep 2023 14:24:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6588BEDEC5E
+	for <linux-sh@archiver.kernel.org>; Wed, 13 Sep 2023 14:30:41 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S241089AbjIMOYn convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 13 Sep 2023 10:24:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34094 "EHLO
+        id S238551AbjIMOao (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 13 Sep 2023 10:30:44 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50234 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241201AbjIMOYa (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 13 Sep 2023 10:24:30 -0400
-Received: from mail-yw1-f172.google.com (mail-yw1-f172.google.com [209.85.128.172])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 922D32716;
-        Wed, 13 Sep 2023 07:13:18 -0700 (PDT)
-Received: by mail-yw1-f172.google.com with SMTP id 00721157ae682-59b8f5b6c0aso31953027b3.0;
-        Wed, 13 Sep 2023 07:13:18 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1694614397; x=1695219197;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=QRpbpxG9eEjGpyBn7Kr+3oxPttjTha6vURJi3KhijJQ=;
-        b=Uau3NgWSGCkQ1+x31JG3pmeIX3d41+gO7alrOVH1u+V3Pof4PUwxqcK38OC/bHXhmM
-         1XS0npU56eSkKmKMCl9dJCN4kL9+Sg6Z+lURtTOba2CT/j1bM+Tu3d5RX4/YS9sYh3Pg
-         tYk1Iv0AFwCygf34zZ0g8SriNT+S9GICmlOtnnLlPdH1Dcpr3mOBhWq1YSU/Dfw+hwZK
-         TNoOHhqWzJ8GHVswExzEKIb3mvmd32Am75T8QMvA57OZyugBB9KH1dmMK8QXyutKtv3x
-         HOBs2CNKH3lp1BhvD2i31F3rXyVRs43Y0Z+hD6d8l7z+A1lmqIJgefKltarYdWOzdUNF
-         OP1g==
-X-Gm-Message-State: AOJu0Yy+iAmrk8xpABm9MRGXT7/zcYAhJXVDDiiPolQNzMKy5rZGrdpV
-        ibvn+pYUdxY3QM3yCll241hFAjTC0OnNUw==
-X-Google-Smtp-Source: AGHT+IHaxE1vFJ+272ldJhzTtPcpmgXRoJny6sCrqdKLc0zizQ2XED8qC2dTaG8bEJeZ/jjNxR49rg==
-X-Received: by 2002:a0d:d752:0:b0:59b:b894:eb98 with SMTP id z79-20020a0dd752000000b0059bb894eb98mr2852057ywd.19.1694614397583;
-        Wed, 13 Sep 2023 07:13:17 -0700 (PDT)
-Received: from mail-yb1-f169.google.com (mail-yb1-f169.google.com. [209.85.219.169])
-        by smtp.gmail.com with ESMTPSA id i190-20020a0dc6c7000000b0057a0e5b18e0sm3125175ywd.142.2023.09.13.07.13.17
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 13 Sep 2023 07:13:17 -0700 (PDT)
-Received: by mail-yb1-f169.google.com with SMTP id 3f1490d57ef6-d7b8d2631fdso6551415276.3;
-        Wed, 13 Sep 2023 07:13:17 -0700 (PDT)
-X-Received: by 2002:a25:4217:0:b0:d78:26a0:ab8b with SMTP id
- p23-20020a254217000000b00d7826a0ab8bmr2248584yba.55.1694614397158; Wed, 13
- Sep 2023 07:13:17 -0700 (PDT)
-MIME-Version: 1.0
-References: <20230802184849.1019466-1-arnd@kernel.org> <20230802184849.1019466-4-arnd@kernel.org>
- <CAMuHMdVjmD357K-yxxW-jn-6vKsXTg+u1Psw9DftyxH=dQoMEg@mail.gmail.com> <5dad2d86-78ea-4a39-8ee1-98e3eb134d36@app.fastmail.com>
-In-Reply-To: <5dad2d86-78ea-4a39-8ee1-98e3eb134d36@app.fastmail.com>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Wed, 13 Sep 2023 16:13:04 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdVYcvPL+JpPw9sA48=615cdfwa8d0LP-bVp0NWqbQ+JOw@mail.gmail.com>
-Message-ID: <CAMuHMdVYcvPL+JpPw9sA48=615cdfwa8d0LP-bVp0NWqbQ+JOw@mail.gmail.com>
-Subject: Re: [PATCH 4/4] sh: machvec: remove custom ioport_{un,}map()
-To:     Arnd Bergmann <arnd@arndb.de>
-Cc:     Arnd Bergmann <arnd@kernel.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        with ESMTP id S239984AbjIMOao (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 13 Sep 2023 10:30:44 -0400
+Received: from out3-smtp.messagingengine.com (out3-smtp.messagingengine.com [66.111.4.27])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2C2F192;
+        Wed, 13 Sep 2023 07:30:40 -0700 (PDT)
+Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
+        by mailout.nyi.internal (Postfix) with ESMTP id 988875C026F;
+        Wed, 13 Sep 2023 10:30:39 -0400 (EDT)
+Received: from imap51 ([10.202.2.101])
+  by compute6.internal (MEProxy); Wed, 13 Sep 2023 10:30:39 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
+        :cc:content-transfer-encoding:content-type:content-type:date
+        :date:from:from:in-reply-to:in-reply-to:message-id:mime-version
+        :references:reply-to:sender:subject:subject:to:to; s=fm1; t=
+        1694615439; x=1694701839; bh=NhpcqPVyhTViuvq4Fg+wUDv1BlytxzozHxC
+        RDkjhY08=; b=NMsb9PyQSsPsibltS40zPbm9eXfEAuMjBuyQzLTEp38luBZ+vgg
+        APRVixaifeUESQaGxQ2YgjN1uSTZwwMboTcL/M6RbB72P8/6piflNIzlu+6LoJ/r
+        MjdA7DYThkvYxfsY4hK+uU9qPfse0BydHC5YsrXC1LQcW1J44rfciTf1ivFKcMnF
+        TMHboi6fpE821jV5JCLPJvIbrHMghFtlEY4D6DMSAXpmNneqWKUj7sE8zQfIS2/U
+        81x9EOo78otROCCyL8U3D0AUWy9mF8DSiSvkuwmW4rYTScMMFrs56qAmLatxSk4a
+        VnMnfyIKbf8XkpqgGZFCHMT6WQOG4BgOO3w==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+        messagingengine.com; h=cc:cc:content-transfer-encoding
+        :content-type:content-type:date:date:feedback-id:feedback-id
+        :from:from:in-reply-to:in-reply-to:message-id:mime-version
+        :references:reply-to:sender:subject:subject:to:to:x-me-proxy
+        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
+        1694615439; x=1694701839; bh=NhpcqPVyhTViuvq4Fg+wUDv1BlytxzozHxC
+        RDkjhY08=; b=BGRvU8t5MYedFXtupTsPGt70fle0arCFF6mWvkdpnUaHrvXMXRg
+        OZi7b2hWaNFaJExZ1wIGRv/zM4f7myrDv7tQ3Xk2mfS/F2MaPMqicSPgrVr6Xb8+
+        5OY1cVXKuu6GhQzh5AMCUmRC5p2VJdN1iDgDzY7osyMGpuzOSqsQn578P5XW3r7O
+        3s35dWsFrCmzJyeYcNnuuxlJZd/d2mROYiFJgciF1r5UqFWbEvQxE6oV3D1TnO0M
+        ar0qpg2neZIXYtn7VsLadBYHBiMHlw74rSuuwn2jqMy/uFD0/w3SdotQfl1GOnm8
+        o2Q3XlCXXd70h/EJ5pfVX4cE9L/RaxzldUg==
+X-ME-Sender: <xms:jscBZcgvjzwfecPxptoMhcLog7PyxQqfrRzzPl2Gsf4Cg6OcwZwdNg>
+    <xme:jscBZVAkOzIqWpwPTNVkrQNzs78fyFeXElAzUDcJ3LcDoScxCOqU5YEDwIvdNH4vk
+    pmlJhyU8xkbdOp9WR0>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrudeikedgjeejucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+    cujfgurhepofgfggfkjghffffhvfevufgtgfesthhqredtreerjeenucfhrhhomhepfdet
+    rhhnugcuuegvrhhgmhgrnhhnfdcuoegrrhhnugesrghrnhgusgdruggvqeenucggtffrrg
+    htthgvrhhnpefgkeeuleegieeghfduudeltdekfeffjeeuleehleefudettddtgfevueef
+    feeigeenucffohhmrghinhepkhgvrhhnvghlrdhorhhgnecuvehluhhsthgvrhfuihiivg
+    eptdenucfrrghrrghmpehmrghilhhfrhhomheprghrnhgusegrrhhnuggsrdguvg
+X-ME-Proxy: <xmx:jscBZUGu7lZcBYwFKmf-Z9thGfu9jbKMcX4ifdlbk9hO3X6q0OLwjw>
+    <xmx:jscBZdQD_roqy8m2CQNwX6wq1LcaS1QmQw89qk3TvJOMPZNY9G6XfA>
+    <xmx:jscBZZzdS3GeUfH-w2t4FG8QojGtvVzqQaUE1v5RRsuYapeksv7MGw>
+    <xmx:j8cBZbuZfr969Bw-tQvozuBfnoJ7fdb7afnAvJhuMMWkJwY6xkjjfg>
+Feedback-ID: i56a14606:Fastmail
+Received: by mailuser.nyi.internal (Postfix, from userid 501)
+        id C94FEB60089; Wed, 13 Sep 2023 10:30:38 -0400 (EDT)
+X-Mailer: MessagingEngine.com Webmail Interface
+User-Agent: Cyrus-JMAP/3.9.0-alpha0-745-g95dd7bea33-fm-20230905.001-g95dd7bea
+Mime-Version: 1.0
+Message-Id: <190041c8-2d99-4bc3-adc3-6fbe902c1265@app.fastmail.com>
+In-Reply-To: <CAMuHMdVYcvPL+JpPw9sA48=615cdfwa8d0LP-bVp0NWqbQ+JOw@mail.gmail.com>
+References: <20230802184849.1019466-1-arnd@kernel.org>
+ <20230802184849.1019466-4-arnd@kernel.org>
+ <CAMuHMdVjmD357K-yxxW-jn-6vKsXTg+u1Psw9DftyxH=dQoMEg@mail.gmail.com>
+ <5dad2d86-78ea-4a39-8ee1-98e3eb134d36@app.fastmail.com>
+ <CAMuHMdVYcvPL+JpPw9sA48=615cdfwa8d0LP-bVp0NWqbQ+JOw@mail.gmail.com>
+Date:   Wed, 13 Sep 2023 16:30:18 +0200
+From:   "Arnd Bergmann" <arnd@arndb.de>
+To:     "Geert Uytterhoeven" <geert@linux-m68k.org>
+Cc:     "Arnd Bergmann" <arnd@kernel.org>,
+        "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
+        linux-sh@vger.kernel.org, "Rich Felker" <dalias@libc.org>,
+        "Yoshinori Sato" <ysato@users.sourceforge.jp>,
         linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+Subject: Re: [PATCH 4/4] sh: machvec: remove custom ioport_{un,}map()
+Content-Type: text/plain;charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Arnd,
-
-On Wed, Sep 13, 2023 at 4:08 PM Arnd Bergmann <arnd@arndb.de> wrote:
-> On Wed, Sep 13, 2023, at 14:32, Geert Uytterhoeven wrote:
-> > On Wed, Aug 2, 2023 at 8:49 PM Arnd Bergmann <arnd@kernel.org> wrote:
-> >> From: Arnd Bergmann <arnd@arndb.de>
-> >>
-> >> These functions were only used on the microdev
-> >> board that is now gone, so remove them to simplify
-> >> the ioport handling.
-> >>
-> >> This could be further simplified to use the generic
-> >> I/O port accessors now.
-> >>
-> >> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> >
-> >> --- a/arch/sh/include/asm/io.h
-> >> +++ b/arch/sh/include/asm/io.h
-> >> @@ -181,7 +181,7 @@ static inline void pfx##out##bwlq##p(type val, unsigned long port)  \
-> >>  {                                                                      \
-> >>         volatile type *__addr;                                          \
-> >>                                                                         \
-> >> -       __addr = __ioport_map(port, sizeof(type));                      \
-> >> +       __addr = (void __iomem *)sh_io_port_base + port;                \
-> >
-> > Note that this adds unconditional users of sh_io_port_base, while
-> > sh_io_port_base is provided by arch/sh/kernel/ioport.c, which is
-> > currently only built if CONFIG_GENERIC_IOMAP=n.
-> >
-> > This is not a problem yet, as the final part to enable GENERIC_IOMAP
-> > on SH never made it upstream.  However, Sato-san's series enables
-> > GENERIC_IOMAP for SH_DEVICE_TREE=y builds, leading to a link failure.
+On Wed, Sep 13, 2023, at 16:13, Geert Uytterhoeven wrote:
+> On Wed, Sep 13, 2023 at 4:08=E2=80=AFPM Arnd Bergmann <arnd@arndb.de> =
+wrote:
+>> On Wed, Sep 13, 2023, at 14:32, Geert Uytterhoeven wrote:
+>> > On Wed, Aug 2, 2023 at 8:49=E2=80=AFPM Arnd Bergmann <arnd@kernel.o=
+rg> wrote:
+>>
+>> Do you have a link to that series? I don't understand why you'd
+>> want to enable GENERIC_IOMAP on sh, given that its PIO accesses
+>> are always memory mapped in the end.
 >
-> Do you have a link to that series? I don't understand why you'd
-> want to enable GENERIC_IOMAP on sh, given that its PIO accesses
-> are always memory mapped in the end.
+> "[RESEND RFC PATCH 00/12] DeviceTree support for SH7751 based boards."
+> https://lore.kernel.org/linux-sh/cover.1693444193.git.ysato@users.sour=
+ceforge.jp/
 
-"[RESEND RFC PATCH 00/12] DeviceTree support for SH7751 based boards."
-https://lore.kernel.org/linux-sh/cover.1693444193.git.ysato@users.sourceforge.jp/
+Ok, thanks.
 
-In the meantime, there is a v2, which I wasn't aware of when I wrote
-my previous email, so perhaps my comment is no longer valid.
-"[RFC PATCH v2 00/30] Device Tree support for SH7751 based board"
-https://lore.kernel.org/linux-sh/cover.1694596125.git.ysato@users.sourceforge.jp
+> In the meantime, there is a v2, which I wasn't aware of when I wrote
+> my previous email, so perhaps my comment is no longer valid.
+> "[RFC PATCH v2 00/30] Device Tree support for SH7751 based board"
+> https://lore.kernel.org/linux-sh/cover.1694596125.git.ysato@users.sour=
+ceforge.jp
 
-> Is this needed for the trapped_io CF stuff?
+Right, it looks like the GENERIC_IOMAP part if gone from that
+series, and I also see that the PCI host bridge does not actually
+map the port I/O window. That's usually fine because very few
+drivers actually need it, and it also means that there should be
+no need for GENERIC_IOMAP or the simpler alternative.
 
-I don't know.
+The first version probably only did it accidentally, which is a
+common mistake, and I think the ones for hexagon, m68k, and
+mips can probably be removed as well with some simplifiations.
 
-Gr{oetje,eeting}s,
+x86 and ia64 want GENERIC_IOMAP because they require using
+custom instructions for accessing IORESOURCE_IO registers,
+but it's not really generic.
 
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+    Arnd
