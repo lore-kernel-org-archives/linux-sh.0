@@ -2,45 +2,44 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 50B77CA5537
-	for <linux-sh@archiver.kernel.org>; Wed, 13 Sep 2023 10:42:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5D719CA5537
+	for <linux-sh@archiver.kernel.org>; Wed, 13 Sep 2023 10:43:20 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S231643AbjIMKmT (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 13 Sep 2023 06:42:19 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46818 "EHLO
+        id S230422AbjIMKnX (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 13 Sep 2023 06:43:23 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54702 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239711AbjIMKmR (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 13 Sep 2023 06:42:17 -0400
+        with ESMTP id S233408AbjIMKnX (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 13 Sep 2023 06:43:23 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 96E3C19A8;
-        Wed, 13 Sep 2023 03:42:13 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 89FB6C433C9;
-        Wed, 13 Sep 2023 10:42:11 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A939D19B3;
+        Wed, 13 Sep 2023 03:43:16 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C766DC433C8;
+        Wed, 13 Sep 2023 10:43:14 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1694601733;
-        bh=M5gn560TFCcZ34DR2zUQPAjl6DQ+nk0P94HD77R6XT0=;
+        s=k20201202; t=1694601796;
+        bh=mgTU2OsXODY9FKisLi6oeiuKETeBV0zpQtqo9jl4dio=;
         h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-        b=ZZLF78a1zYuju5Mi56qZCqivmUedzAIZnvGJPoXh2zDhah0xH3RIfds+14c/v0klG
-         CVpCD1LnccNES82wl9YGt6Xs29DLAgCYtYMvgXPN7ejqJHJmbMpD1AnM9Y7IWDwDII
-         fw8lahiZIVIe3ecBuyKhuL8/4XXqifgWhlVAxaUCcfh9HCe495Bmhnshi/1kemazMP
-         FU6QuYhoI2EyjSpOAd1VWeohzzmpZklEykRcaesPbARuUjOp5DC2z9fMnaxrN9LOcI
-         k9IVN9JSeTZm4eZsKKPqqwFcxMSvs1Ysq0HJ/LAy969QX8TLgoult/LXqRuBZiQvAi
-         EtXgTC0LfZuIQ==
-Message-ID: <815e99da-d66b-993f-3c86-7a88dc6f413c@kernel.org>
-Date:   Wed, 13 Sep 2023 12:42:07 +0200
+        b=nqa1wfAe0eNRIqQFK/76F96LWA+eEsdqM/lejKLLesMTjrvlogiGA6G+PR1EyPrev
+         g8L26d5U/JSrFH16+z0jIYX5OTOaW/KPUmArxaj5y0hTc3rQC0pMDT69fpzMhlmdSU
+         ZJGP6sdF6xLR0x5tytFI7OBOd98Udmw/T44dyx11u8sODJeOVG6VZLNGNOfjJjQOWp
+         A6qNsh1q0k/SFjH7nSQdvJBTPg/5rweqPXUJnKflp7nHazxxoairdheyShGn+gxu2A
+         CjIv5RWolL5BfOx6j9ZDZfVJSKP7zkLobYs/jPzMPwZpVCbqW1e0FB/eg6ryMkiy8a
+         XIKZgvc+mcr9g==
+Message-ID: <2edce62c-ae8d-e39c-9287-ff7ae05773d2@kernel.org>
+Date:   Wed, 13 Sep 2023 12:43:11 +0200
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
  Thunderbird/102.15.0
-Subject: Re: [RFC PATCH v2 09/30] Documentation/devicetree: Add
- renesas,sh7751-pci binding document.
+Subject: Re: [RFC PATCH v2 10/30] drivers/clk: SH7750 / SH7751 CPG Driver
 Content-Language: en-US
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         linux-sh@vger.kernel.org
-Cc:     glaubitz@physik.fu-berlin.de, linux-pci@vger.kernel.org
+Cc:     glaubitz@physik.fu-berlin.de, linux-clk@vger.kernel.org
 References: <cover.1694596125.git.ysato@users.sourceforge.jp>
- <701db4418652fc2ed36570ac20d57117ec6941c5.1694596125.git.ysato@users.sourceforge.jp>
+ <a9a3e6f0dfdd1c5d6970d2decffef3c07d93476e.1694596125.git.ysato@users.sourceforge.jp>
 From:   Krzysztof Kozlowski <krzk@kernel.org>
-In-Reply-To: <701db4418652fc2ed36570ac20d57117ec6941c5.1694596125.git.ysato@users.sourceforge.jp>
+In-Reply-To: <a9a3e6f0dfdd1c5d6970d2decffef3c07d93476e.1694596125.git.ysato@users.sourceforge.jp>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 Precedence: bulk
@@ -50,27 +49,11 @@ X-Mailing-List: linux-sh@vger.kernel.org
 On 13/09/2023 11:23, Yoshinori Sato wrote:
 > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-You did not resolve several comments from previous version. I don't
-understand why, so I just assume this is not ready for review. Just
-quick look tells this wasn't tested and has multiple issues. Maybe that
-was the intention, but nothing is described in commit log confirming
-such intention.
-
-Therefore to be clear: that's a NAK.
-
-Also, standard template:
-
-Please use scripts/get_maintainers.pl to get a list of necessary people
-and lists to CC. It might happen, that command when run on an older
-kernel, gives you outdated entries. Therefore please be sure you base
-your patches on recent Linux kernel.
-
-You missed at least devicetree list (maybe more), so this won't be
-tested by automated tooling. Performing review on untested code might be
-a waste of time, thus I will skip this patch entirely till you follow
-the process allowing the patch to be tested.
-
-Please kindly resend and include all necessary To/Cc entries.
+1. Commit msg did not improve.
+2. Please use subject prefixes matching the subsystem. You can get them
+for example with `git log --oneline -- DIRECTORY_OR_FILE` on the
+directory your patch is touching. There is no "drivers" (except few
+subsystems, but not this one).
 
 
 Best regards,
