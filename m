@@ -2,45 +2,44 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 58335CA5537
-	for <linux-sh@archiver.kernel.org>; Wed, 13 Sep 2023 10:49:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B55F1CA5534
+	for <linux-sh@archiver.kernel.org>; Wed, 13 Sep 2023 10:50:23 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239871AbjIMKtp (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 13 Sep 2023 06:49:45 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60976 "EHLO
+        id S239743AbjIMKu0 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 13 Sep 2023 06:50:26 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58956 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239792AbjIMKtk (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 13 Sep 2023 06:49:40 -0400
+        with ESMTP id S239799AbjIMKuL (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 13 Sep 2023 06:50:11 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id AD6CE19BD
-        for <linux-sh@vger.kernel.org>; Wed, 13 Sep 2023 03:49:22 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C6500C433CC;
-        Wed, 13 Sep 2023 10:49:20 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7D3882105
+        for <linux-sh@vger.kernel.org>; Wed, 13 Sep 2023 03:49:45 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id F2BA9C433C8;
+        Wed, 13 Sep 2023 10:49:43 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1694602162;
-        bh=3Zko0cpkv7MbAkvNCGp50c+XYTavZfRoXqbPoHTW14A=;
+        s=k20201202; t=1694602185;
+        bh=/a5PoTFoOUj+TF5ozpRwq2LjoUGPlXs+MycXK54ubq0=;
         h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-        b=QNfJ5ze4ggox3Fj5J0rSl6gUFGvRW01r3aC0SBF05X1/Eqt52OcgPNZODWb6KXogI
-         CYPE62ihbBKwwz150wWfvq+jSyWpkysYl8NXFkRKxAuGWv9LIjE5oKiMR0DE/0Dtam
-         zUVolhDm1tfawdKCxdT33eIDEysWHjZlPMLxdVO3OxQsFVGkcP3w5w5lpZKPIIYc4n
-         54ZkyfsE6kHMvF+kPJjAATT4i2co9H9c2GZRi+Z96xn2HlxWjSZokLhVPfWKVqdoEE
-         lBTEN+r3oonCqkICKkvQCo4CwGAM6RiMgOuX3fZmYWxb/x5M8LpsYoRE00sQrQZiKE
-         Z2fx5XZRiTb8A==
-Message-ID: <dac176a0-3251-c5b3-4ae3-835bb266a8c1@kernel.org>
-Date:   Wed, 13 Sep 2023 12:49:17 +0200
+        b=efmp7bdAUNUKkLEmTHUc6UiddCZ0d5Qh0YPOC0mL+3lLoB6Cx5rRX5sI5OlAYAXXd
+         Nuqy1wpIpT6JpA51TXW0drn8vj0gMiqMWajZX91s8eRzGVa4+O/p6avpA59lWrv+Fr
+         uPHLZIF+piZUYsW30GBDGfocbTux/OOKFxd7h1sXhPm/Fz32AnNOB4QT16nPaDKZvv
+         3SH0iW3pTOlH/ED86YpKA63wUg7mcNPrXvST9pc7YCIhblDSXvxmBtoiNLe9UiHar7
+         145cYQPWi8t5r43Icqp2LhGqz4+fvURiuDjxRfyUTCZY9juf9Ar2ExZ3TO8UATi4pj
+         u8pyMUJ+l+ugQ==
+Message-ID: <83ecc09e-7a8b-0781-80e1-875977e027b8@kernel.org>
+Date:   Wed, 13 Sep 2023 12:49:41 +0200
 MIME-Version: 1.0
 User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
  Thunderbird/102.15.0
-Subject: Re: [RFC PATCH v2 23/30] arch/sh: Add SH7751 SoC Internal periphreal
- devicetree.
+Subject: Re: [RFC PATCH v2 26/30] arch/sh: RTS7751R2D Plus DeviceTree.
 Content-Language: en-US
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         linux-sh@vger.kernel.org
 Cc:     glaubitz@physik.fu-berlin.de
 References: <cover.1694596125.git.ysato@users.sourceforge.jp>
- <4bf42fc7a928e9a726ea20ee4e2168f993bb34f7.1694596125.git.ysato@users.sourceforge.jp>
+ <d63793503fbbc7d5ca7b40d6b31678d371b69c29.1694596125.git.ysato@users.sourceforge.jp>
 From:   Krzysztof Kozlowski <krzk@kernel.org>
-In-Reply-To: <4bf42fc7a928e9a726ea20ee4e2168f993bb34f7.1694596125.git.ysato@users.sourceforge.jp>
+In-Reply-To: <d63793503fbbc7d5ca7b40d6b31678d371b69c29.1694596125.git.ysato@users.sourceforge.jp>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 Precedence: bulk
@@ -49,34 +48,38 @@ X-Mailing-List: linux-sh@vger.kernel.org
 
 On 13/09/2023 11:23, Yoshinori Sato wrote:
 > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+
+
+No improvements in commit msg. No improvements in subject.
+
 > ---
->  arch/sh/boot/dts/sh7751.dtsi | 76 ++++++++++++++++++++++++++++++++++++
->  1 file changed, 76 insertions(+)
->  create mode 100644 arch/sh/boot/dts/sh7751.dtsi
+>  arch/sh/boot/dts/rts7751r2dplus.dts | 124 ++++++++++++++++++++++++++++
+>  1 file changed, 124 insertions(+)
+>  create mode 100644 arch/sh/boot/dts/rts7751r2dplus.dts
 > 
-> diff --git a/arch/sh/boot/dts/sh7751.dtsi b/arch/sh/boot/dts/sh7751.dtsi
+> diff --git a/arch/sh/boot/dts/rts7751r2dplus.dts b/arch/sh/boot/dts/rts7751r2dplus.dts
 > new file mode 100644
-> index 000000000000..749eab3bce9f
+> index 000000000000..a08061133841
 > --- /dev/null
-> +++ b/arch/sh/boot/dts/sh7751.dtsi
-> @@ -0,0 +1,76 @@
+> +++ b/arch/sh/boot/dts/rts7751r2dplus.dts
+> @@ -0,0 +1,124 @@
 > +// SPDX-License-Identifier: GPL-2.0
 > +/*
-> + * Device Tree Source for the SH7751 SoC
+> + * Device Tree Source for the Renesas RTS7751R2D Plus
 > + */
 > +
-> +#include <dt-bindings/interrupt-controller/sh_intc.h>
-> +#include <dt-bindings/clock/sh7750.h>
+> +/dts-v1/;
+> +
+> +#include "sh7751.dtsi"
 > +
 > +/ {
-> +	cpus {
-> +		#address-cells = <1>;
-> +		#size-cells = <0>;
-> +		cpu@0 {
-> +		      compatible = "renesas,sh7751r","renesas,sh4", "renesas,sh";
+> +	model = "Renesas RTS7715R2D Plus";
+> +	compatible = "renesas,r2dplus";
 
-Except missing spaces and incorrect indentation, where is this
-documented? Anyway it looks really odd to use such compatibles for CPUs.
+Missing bindings documentation. Incomplete compatible - missing SoC.
+
+Sorry, but this is nowhere ready for review. There are so many trivial
+issues to fix.
 
 
 Best regards,
