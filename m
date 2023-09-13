@@ -2,100 +2,129 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30DC2EDEC49
-	for <linux-sh@archiver.kernel.org>; Wed, 13 Sep 2023 12:23:30 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BFD87EDEC4A
+	for <linux-sh@archiver.kernel.org>; Wed, 13 Sep 2023 12:32:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236105AbjIMMXd convert rfc822-to-8bit (ORCPT
+        id S240513AbjIMMc4 convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 13 Sep 2023 08:23:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49474 "EHLO
+        Wed, 13 Sep 2023 08:32:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57842 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230029AbjIMMXc (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 13 Sep 2023 08:23:32 -0400
-Received: from mail-yb1-f173.google.com (mail-yb1-f173.google.com [209.85.219.173])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0372419AC
-        for <linux-sh@vger.kernel.org>; Wed, 13 Sep 2023 05:23:29 -0700 (PDT)
-Received: by mail-yb1-f173.google.com with SMTP id 3f1490d57ef6-d8165e3b209so512173276.1
-        for <linux-sh@vger.kernel.org>; Wed, 13 Sep 2023 05:23:28 -0700 (PDT)
+        with ESMTP id S240502AbjIMMcz (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 13 Sep 2023 08:32:55 -0400
+Received: from mail-yw1-f170.google.com (mail-yw1-f170.google.com [209.85.128.170])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D2D119B4;
+        Wed, 13 Sep 2023 05:32:51 -0700 (PDT)
+Received: by mail-yw1-f170.google.com with SMTP id 00721157ae682-58d9ba95c78so68170267b3.1;
+        Wed, 13 Sep 2023 05:32:51 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1694607808; x=1695212608;
+        d=1e100.net; s=20230601; t=1694608370; x=1695213170;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=M4szPnmgtqD0ol6EuahVWZ0nXWo5HhxDi5Pk48Bev/Q=;
-        b=JPSnhCX7AsMMA9AfZRNaMHmBdxulhHNobUBws2VIPfIr71nOS9qN4c7ISKkLM2BOze
-         tWYjur1XY4X7LjTIvJM+GHB5EvSrr0ySXOGyEyLqtmBY/JBmFixURUUYLw4SFHHyXt4p
-         CQs5A3VConvV3Mti/siCdIRIvtUPkuPzvLHfhY0Z3G0zYoMnNn8DFhkM2rDaj5ozpTZQ
-         d5qnN1ypAf3oK0pyRnLWAJlxiOCuj4qClt4Yom3Fuge9gl2gwA8A6OA8NdSfGvIDZ5F2
-         xrEHLlq0EFOnkxA9J0FJ63ylVTLHLshHF01ipXoSK8POd2bs92V61PAKg5EbNf0C6MRL
-         VGMA==
-X-Gm-Message-State: AOJu0YxrJb8btogfZNefL676+zyIQzDMDZgh+CQF/BqLuzb/SKrGpaZ+
-        tedSXECYZuJjhhnjN7BiSraEs8UtPX2bHw==
-X-Google-Smtp-Source: AGHT+IElGQjLA7GlKKkX3Zx240Iik2jwrQKLpQIxfacV53s8azKln6Aovv0ruB9QxYdli2dASzx48g==
-X-Received: by 2002:a25:add8:0:b0:d7b:8fe5:fa2c with SMTP id d24-20020a25add8000000b00d7b8fe5fa2cmr2607144ybe.19.1694607807929;
-        Wed, 13 Sep 2023 05:23:27 -0700 (PDT)
-Received: from mail-yw1-f181.google.com (mail-yw1-f181.google.com. [209.85.128.181])
-        by smtp.gmail.com with ESMTPSA id 17-20020a250511000000b00d74b144004bsm2718861ybf.12.2023.09.13.05.23.27
-        for <linux-sh@vger.kernel.org>
+        bh=niAJ2PizX/sYOBYMEFf6M6THGMgT7grLXGG+lDou3LM=;
+        b=tEE1/+SQ2YlF2rTLACLoTdeeCC947cXHxwP5s93NirDl1u+LzYnL3tuKv3p008E/tg
+         LqbrV35gokGmO/N70aTMl/qUgoKvQB0bBZGw9NrNhITjYLHFH2Rz/3zX4NIo5X5EWObq
+         Uayn6hSoUUOueQuOTMWaHC8Ro+gabe70jFRcjZPfjQBi88y7kmbUhN0opz1Ubdh6qtWM
+         Zgpp3xn+nSDXUMWesS5FyT7449qSRt/4YmMpug3+CRhtMlHgXrRVMPoS6KjI+sTXeaSq
+         ZJiepxrs6RgLD8W94in9FTsdhFUGO77joAKfXB8xGVUSJYbEMvjCOSwR43qr6rjYOAhI
+         k9Qg==
+X-Gm-Message-State: AOJu0Yx3/uV92a8aV8Bj5/yP9ivX+KAJljDFeaPJZBFOs7xuuZfyWuoY
+        YyI9aX08VvHYZGDRcvR7NNQ0icX+05FwjQ==
+X-Google-Smtp-Source: AGHT+IGrYZdSamip9uH0Ycvkzd6C98XJyNHlPK/YZl5vraY8oNgYtbkXYNExsGr9bseCTKzop0aaNw==
+X-Received: by 2002:a81:5e54:0:b0:570:63d3:9685 with SMTP id s81-20020a815e54000000b0057063d39685mr2460721ywb.25.1694608370624;
+        Wed, 13 Sep 2023 05:32:50 -0700 (PDT)
+Received: from mail-yw1-f174.google.com (mail-yw1-f174.google.com. [209.85.128.174])
+        by smtp.gmail.com with ESMTPSA id p63-20020a815b42000000b005837633d9cbsm3077942ywb.64.2023.09.13.05.32.49
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 13 Sep 2023 05:23:27 -0700 (PDT)
-Received: by mail-yw1-f181.google.com with SMTP id 00721157ae682-59bc97d7b3dso7371267b3.1
-        for <linux-sh@vger.kernel.org>; Wed, 13 Sep 2023 05:23:27 -0700 (PDT)
-X-Received: by 2002:a25:ae09:0:b0:d7b:908b:183f with SMTP id
- a9-20020a25ae09000000b00d7b908b183fmr6003456ybj.26.1694607807505; Wed, 13 Sep
- 2023 05:23:27 -0700 (PDT)
+        Wed, 13 Sep 2023 05:32:50 -0700 (PDT)
+Received: by mail-yw1-f174.google.com with SMTP id 00721157ae682-579de633419so68063517b3.3;
+        Wed, 13 Sep 2023 05:32:49 -0700 (PDT)
+X-Received: by 2002:a25:d303:0:b0:d7a:def7:b96a with SMTP id
+ e3-20020a25d303000000b00d7adef7b96amr2179608ybf.53.1694608369635; Wed, 13 Sep
+ 2023 05:32:49 -0700 (PDT)
 MIME-Version: 1.0
-References: <cover.1693444193.git.ysato@users.sourceforge.jp> <4a138cf1ff14ff6166a66851db7476096fa3f009.1693444193.git.ysato@users.sourceforge.jp>
-In-Reply-To: <4a138cf1ff14ff6166a66851db7476096fa3f009.1693444193.git.ysato@users.sourceforge.jp>
+References: <20230802184849.1019466-1-arnd@kernel.org> <20230802184849.1019466-4-arnd@kernel.org>
+In-Reply-To: <20230802184849.1019466-4-arnd@kernel.org>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Wed, 13 Sep 2023 14:23:14 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdV84_M9QG7DKvrgP-d2+FDh4NXFYPG5zt49hmgmxrAYwg@mail.gmail.com>
-Message-ID: <CAMuHMdV84_M9QG7DKvrgP-d2+FDh4NXFYPG5zt49hmgmxrAYwg@mail.gmail.com>
-Subject: Re: [RESEND RFC PATCH 03/12] sh: SH4 OF support.
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de
+Date:   Wed, 13 Sep 2023 14:32:38 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdVjmD357K-yxxW-jn-6vKsXTg+u1Psw9DftyxH=dQoMEg@mail.gmail.com>
+Message-ID: <CAMuHMdVjmD357K-yxxW-jn-6vKsXTg+u1Psw9DftyxH=dQoMEg@mail.gmail.com>
+Subject: Re: [PATCH 4/4] sh: machvec: remove custom ioport_{un,}map()
+To:     Arnd Bergmann <arnd@kernel.org>
+Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Sato-san,
+Hi Arnd,
 
-On Thu, Aug 31, 2023 at 5:22 AM Yoshinori Sato
-<ysato@users.sourceforge.jp> wrote:
-> - switch generic framework in clock / PCI.
+On Wed, Aug 2, 2023 at 8:49 PM Arnd Bergmann <arnd@kernel.org> wrote:
+> From: Arnd Bergmann <arnd@arndb.de>
 >
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+> These functions were only used on the microdev
+> board that is now gone, so remove them to simplify
+> the ioport handling.
+>
+> This could be further simplified to use the generic
+> I/O port accessors now.
+>
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+
+Thanks for your patch!
 
 > --- a/arch/sh/include/asm/io.h
 > +++ b/arch/sh/include/asm/io.h
-> @@ -292,4 +292,14 @@ static inline void iounmap(volatile void __iomem *addr) { }
->  int valid_phys_addr_range(phys_addr_t addr, size_t size);
->  int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
->
-> +
-> +#ifdef __KERNEL__
-> +#define PCI_IOBASE     0xfe240000UL
-> +
-> +#define HAVE_ARCH_PIO_SIZE
-> +#define PIO_OFFSET     PCI_IOBASE
-> +#define PIO_MASK       0x3ffffUL
-> +#define PIO_RESERVED   0x40000UL
-> +#endif /* __KERNEL__ */
-> +
+> @@ -181,7 +181,7 @@ static inline void pfx##out##bwlq##p(type val, unsigned long port)  \
+>  {                                                                      \
+>         volatile type *__addr;                                          \
+>                                                                         \
+> -       __addr = __ioport_map(port, sizeof(type));                      \
+> +       __addr = (void __iomem *)sh_io_port_base + port;                \
 
-Since commit b94692e84dccf12d ("sh: add <asm-generic/io.h> including")
-in v6.6-rc1, the new definitions must be inserted higher up, before
-the inclusion of <asm-generic/io.h>, to avoid:
+Note that this adds unconditional users of sh_io_port_base, while
+sh_io_port_base is provided by arch/sh/kernel/ioport.c, which is
+currently only built if CONFIG_GENERIC_IOMAP=n.
 
-    arch/sh/include/asm/io.h:322: warning: "PCI_IOBASE" redefined
-      322 | #define PCI_IOBASE      0xfe240000UL
-          |
-    include/asm-generic/io.h:527: note: this is the location of the
-previous definition
+This is not a problem yet, as the final part to enable GENERIC_IOMAP
+on SH never made it upstream.  However, Sato-san's series enables
+GENERIC_IOMAP for SH_DEVICE_TREE=y builds, leading to a link failure.
 
->  #endif /* __ASM_SH_IO_H */
+A quick fix would be to always build the relevant parts:
+
+--- a/arch/sh/kernel/Makefile
++++ b/arch/sh/kernel/Makefile
+@@ -23,8 +23,8 @@ obj-y := head_32.o debugtraps.o dumpstack.o
+                 \
+
+ ifndef CONFIG_GENERIC_IOMAP
+ obj-y                          += iomap.o
+-obj-$(CONFIG_HAS_IOPORT_MAP)   += ioport.o
+ endif
++obj-$(CONFIG_HAS_IOPORT_MAP)   += ioport.o
+
+ obj-y                          += sys_sh32.o
+ obj-y                          += cpu/
+--- a/arch/sh/kernel/ioport.c
++++ b/arch/sh/kernel/ioport.c
+@@ -12,6 +12,7 @@
+ unsigned long sh_io_port_base __read_mostly = -1;
+ EXPORT_SYMBOL(sh_io_port_base);
+
++#ifndef CONFIG_GENERIC_IOMAP
+ void __iomem *ioport_map(unsigned long port, unsigned int nr)
+ {
+        void __iomem *ret;
+@@ -28,3 +29,4 @@ void ioport_unmap(void __iomem *addr)
+ {
+ }
+ EXPORT_SYMBOL(ioport_unmap);
++#endif /* !CONFIG_GENERIC_IOMAP */
 
 Gr{oetje,eeting}s,
 
