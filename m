@@ -2,91 +2,151 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 23466EDE983
-	for <linux-sh@archiver.kernel.org>; Thu, 14 Sep 2023 06:23:56 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 663E3CA553E
+	for <linux-sh@archiver.kernel.org>; Thu, 14 Sep 2023 12:27:08 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230413AbjINGX7 convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 14 Sep 2023 02:23:59 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38260 "EHLO
+        id S238108AbjINM1K (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 14 Sep 2023 08:27:10 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59348 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234896AbjINGX7 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 14 Sep 2023 02:23:59 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DD24A98;
-        Wed, 13 Sep 2023 23:23:54 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.96)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qgflP-002rc2-1L; Thu, 14 Sep 2023 08:23:43 +0200
-Received: from p5b13a40a.dip0.t-ipconnect.de ([91.19.164.10] helo=suse-laptop.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.96)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qgflP-0030DN-0a; Thu, 14 Sep 2023 08:23:43 +0200
-Message-ID: <70e9fe45ca8bbe2dec5541a0c21bee3de8f82f91.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 4/4] sh: machvec: remove custom ioport_{un,}map()
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Arnd Bergmann <arnd@arndb.de>,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Arnd Bergmann <arnd@kernel.org>, linux-sh@vger.kernel.org,
-        Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-kernel@vger.kernel.org
-Date:   Thu, 14 Sep 2023 08:23:42 +0200
-In-Reply-To: <190041c8-2d99-4bc3-adc3-6fbe902c1265@app.fastmail.com>
-References: <20230802184849.1019466-1-arnd@kernel.org>
-         <20230802184849.1019466-4-arnd@kernel.org>
-         <CAMuHMdVjmD357K-yxxW-jn-6vKsXTg+u1Psw9DftyxH=dQoMEg@mail.gmail.com>
-         <5dad2d86-78ea-4a39-8ee1-98e3eb134d36@app.fastmail.com>
-         <CAMuHMdVYcvPL+JpPw9sA48=615cdfwa8d0LP-bVp0NWqbQ+JOw@mail.gmail.com>
-         <190041c8-2d99-4bc3-adc3-6fbe902c1265@app.fastmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.48.4 
+        with ESMTP id S237745AbjINM1J (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 14 Sep 2023 08:27:09 -0400
+Received: from gandalf.ozlabs.org (gandalf.ozlabs.org [150.107.74.76])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B6BF31FC9;
+        Thu, 14 Sep 2023 05:27:04 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ellerman.id.au;
+        s=201909; t=1694694421;
+        bh=IKd/xoLaYMNT3G43ojUHtX33LcBflkrUDAX5TgQ89VQ=;
+        h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
+        b=rYiR5HRfpS/tMJ5vZ04WGHK5tqlEmN3zl7YBnuBIj4iDXvSjRcMk3Bm1xQR4G2xqA
+         ch/6vWdPHmOC2BUMMk4XX30GKkFETwPb6UKi6HR3vSS9M+ZGF48pqFYfp4X0b6Xnoc
+         3IT8Xs1CRfVJWHkXJOg3XffMJXWhIzBrBfe0rLT/1FOwmVJNKXhzU+07wARKckah+G
+         1nYEufulJtii1DdLYzWI+dlftci66s6CJLfGerDALqoTxKf5zQo5DIOqkNkz913pHl
+         hiwkYuo8iIaiLSkIq8iYXaa9BldBulkzz3WoyK+kyoqd71CY/sNwj3K8X+Pby7L5LJ
+         Ni+zJOD6zygLg==
+Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
+        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+        (No client certificate requested)
+        by mail.ozlabs.org (Postfix) with ESMTPSA id 4Rmc544Ldlz4wxN;
+        Thu, 14 Sep 2023 22:26:48 +1000 (AEST)
+From:   Michael Ellerman <mpe@ellerman.id.au>
+To:     "Edgecombe, Rick P" <rick.p.edgecombe@intel.com>,
+        "Mehta, Sohil" <sohil.mehta@intel.com>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        "linux-arch@vger.kernel.org" <linux-arch@vger.kernel.org>,
+        "linux-api@vger.kernel.org" <linux-api@vger.kernel.org>
+Cc:     "svens@linux.ibm.com" <svens@linux.ibm.com>,
+        "catalin.marinas@arm.com" <catalin.marinas@arm.com>,
+        "schwab@linux-m68k.org" <schwab@linux-m68k.org>,
+        "brgerst@gmail.com" <brgerst@gmail.com>,
+        "alexander.shishkin@linux.intel.com" 
+        <alexander.shishkin@linux.intel.com>,
+        "linux-perf-users@vger.kernel.org" <linux-perf-users@vger.kernel.org>,
+        "x86@kernel.org" <x86@kernel.org>,
+        "monstr@monstr.eu" <monstr@monstr.eu>,
+        "borntraeger@linux.ibm.com" <borntraeger@linux.ibm.com>,
+        "dave.hansen@linux.intel.com" <dave.hansen@linux.intel.com>,
+        "christophe.leroy@csgroup.eu" <christophe.leroy@csgroup.eu>,
+        "mark.rutland@arm.com" <mark.rutland@arm.com>,
+        "glaubitz@physik.fu-berlin.de" <glaubitz@physik.fu-berlin.de>,
+        "dalias@libc.org" <dalias@libc.org>,
+        "lukas.bulwahn@gmail.com" <lukas.bulwahn@gmail.com>,
+        "rdunlap@infradead.org" <rdunlap@infradead.org>,
+        "tglx@linutronix.de" <tglx@linutronix.de>,
+        "hca@linux.ibm.com" <hca@linux.ibm.com>,
+        "linux@armlinux.org.uk" <linux@armlinux.org.uk>,
+        "sparclinux@vger.kernel.org" <sparclinux@vger.kernel.org>,
+        "arnd@arndb.de" <arnd@arndb.de>,
+        "linux-ia64@vger.kernel.org" <linux-ia64@vger.kernel.org>,
+        "ebiederm@xmission.com" <ebiederm@xmission.com>,
+        "Lutomirski, Andy" <luto@kernel.org>,
+        "jolsa@kernel.org" <jolsa@kernel.org>,
+        "linux-parisc@vger.kernel.org" <linux-parisc@vger.kernel.org>,
+        "akpm@linux-foundation.org" <akpm@linux-foundation.org>,
+        "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>,
+        "linuxppc-dev@lists.ozlabs.org" <linuxppc-dev@lists.ozlabs.org>,
+        "geert@linux-m68k.org" <geert@linux-m68k.org>,
+        "hpa@zytor.com" <hpa@zytor.com>,
+        "James.Bottomley@HansenPartnership.com" 
+        <James.Bottomley@HansenPartnership.com>,
+        "peterz@infradead.org" <peterz@infradead.org>,
+        "ink@jurassic.park.msu.ru" <ink@jurassic.park.msu.ru>,
+        "linux-m68k@lists.linux-m68k.org" <linux-m68k@lists.linux-m68k.org>,
+        "tsbogend@alpha.franken.de" <tsbogend@alpha.franken.de>,
+        "broonie@kernel.org" <broonie@kernel.org>,
+        "Hunter, Adrian" <adrian.hunter@intel.com>,
+        "acme@kernel.org" <acme@kernel.org>,
+        "ysato@users.sourceforge.jp" <ysato@users.sourceforge.jp>,
+        "deller@gmx.de" <deller@gmx.de>,
+        "debug@rivosinc.com" <debug@rivosinc.com>,
+        "rmclure@linux.ibm.com" <rmclure@linux.ibm.com>,
+        "gor@linux.ibm.com" <gor@linux.ibm.com>,
+        "slyich@gmail.com" <slyich@gmail.com>,
+        "npiggin@gmail.com" <npiggin@gmail.com>,
+        "agordeev@linux.ibm.com" <agordeev@linux.ibm.com>,
+        "chris@zankel.net" <chris@zankel.net>,
+        "mingo@redhat.com" <mingo@redhat.com>,
+        "linux-mips@vger.kernel.org" <linux-mips@vger.kernel.org>,
+        "linux-alpha@vger.kernel.org" <linux-alpha@vger.kernel.org>,
+        "mattst88@gmail.com" <mattst88@gmail.com>,
+        "linux-s390@vger.kernel.org" <linux-s390@vger.kernel.org>,
+        "linux-arm-kernel@lists.infradead.org" 
+        <linux-arm-kernel@lists.infradead.org>,
+        "jcmvbkbc@gmail.com" <jcmvbkbc@gmail.com>,
+        "bp@alien8.de" <bp@alien8.de>,
+        "richard.henderson@linaro.org" <richard.henderson@linaro.org>,
+        "irogers@google.com" <irogers@google.com>,
+        "namhyung@kernel.org" <namhyung@kernel.org>,
+        "will@kernel.org" <will@kernel.org>,
+        "davem@davemloft.net" <davem@davemloft.net>
+Subject: Re: [PATCH 2/2] arch: Reserve map_shadow_stack() syscall number for
+ all architectures
+In-Reply-To: <8b7106881fa227a64b4e951c6b9240a7126ac4a2.camel@intel.com>
+References: <20230911180210.1060504-1-sohil.mehta@intel.com>
+ <20230911180210.1060504-3-sohil.mehta@intel.com>
+ <8b7106881fa227a64b4e951c6b9240a7126ac4a2.camel@intel.com>
+Date:   Thu, 14 Sep 2023 22:26:47 +1000
+Message-ID: <871qf17xfc.fsf@mail.lhotse>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 91.19.164.10
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Arnd!
+"Edgecombe, Rick P" <rick.p.edgecombe@intel.com> writes:
+> On Mon, 2023-09-11 at 18:02 +0000, Sohil Mehta wrote:
+>> diff --git a/arch/powerpc/kernel/syscalls/syscall.tbl
+>> b/arch/powerpc/kernel/syscalls/syscall.tbl
+>> index 20e50586e8a2..2767b8a42636 100644
+>> --- a/arch/powerpc/kernel/syscalls/syscall.tbl
+>> +++ b/arch/powerpc/kernel/syscalls/syscall.tbl
+>> @@ -539,3 +539,4 @@
+>> =C2=A0450=C2=A0=C2=A0=C2=A0=C2=A0nospu=C2=A0=C2=A0=C2=A0set_mempolicy_ho=
+me_node=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0sys_set_mempol=
+icy_hom
+>> e_node
+>> =C2=A0451=C2=A0=C2=A0=C2=A0=C2=A0common=C2=A0=C2=A0cachestat=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0sys_cachestat
+>> =C2=A0452=C2=A0=C2=A0=C2=A0=C2=A0common=C2=A0=C2=A0fchmodat2=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0sys_fchmodat2
+>> +453=C2=A0=C2=A0=C2=A0=C2=A0common=C2=A0=C2=A0map_shadow_stack=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0sys_map_shadow_stack
+>
+> I noticed in powerpc, the not implemented syscalls are manually mapped
+> to sys_ni_syscall. It also has some special extra sys_ni_syscall()
+> implementation bits to handle both ARCH_HAS_SYSCALL_WRAPPER and
+> !ARCH_HAS_SYSCALL_WRAPPER. So wondering if it might need special
+> treatment. Did you see those parts?
 
-On Wed, 2023-09-13 at 16:30 +0200, Arnd Bergmann wrote:
-> > In the meantime, there is a v2, which I wasn't aware of when I wrote
-> > my previous email, so perhaps my comment is no longer valid.
-> > "[RFC PATCH v2 00/30] Device Tree support for SH7751 based board"
-> > https://lore.kernel.org/linux-sh/cover.1694596125.git.ysato@users.sourceforge.jp
-> 
-> Right, it looks like the GENERIC_IOMAP part if gone from that
-> series, and I also see that the PCI host bridge does not actually
-> map the port I/O window. That's usually fine because very few
-> drivers actually need it, and it also means that there should be
-> no need for GENERIC_IOMAP or the simpler alternative.
-> 
-> The first version probably only did it accidentally, which is a
-> common mistake, and I think the ones for hexagon, m68k, and
-> mips can probably be removed as well with some simplifiations.
-> 
-> x86 and ia64 want GENERIC_IOMAP because they require using
-> custom instructions for accessing IORESOURCE_IO registers,
-> but it's not really generic.
+I don't think it needs any special treatment. It's processed by the same
+script as other arches (scripts/syscalltbl.sh). So if there's no compat
+or native entry it will default to sys_ni_syscall.
 
-Would you suggest to apply your series before or after Yoshinori's series to
-convert arch/sh to device trees? If you want it to go in before the conversion,
-could you rebase your series against v6.6-rc1?
+I think it's just habit/historical that we always spell out sys_ni_syscall.
 
-I'm asking because the current version did not apply against v6.5-rc2.
-
-Adrian
-
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+cheers
