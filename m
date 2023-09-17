@@ -2,119 +2,101 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id D77A9EED60B
-	for <linux-sh@archiver.kernel.org>; Fri, 15 Sep 2023 15:50:32 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BF442CD37B4
+	for <linux-sh@archiver.kernel.org>; Sun, 17 Sep 2023 19:37:31 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S236207AbjIOPug (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 15 Sep 2023 11:50:36 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37014 "EHLO
+        id S234088AbjIQThE (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 17 Sep 2023 15:37:04 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39284 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S236284AbjIOPuH (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 15 Sep 2023 11:50:07 -0400
-Received: from out1-smtp.messagingengine.com (out1-smtp.messagingengine.com [66.111.4.25])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C9B692105;
-        Fri, 15 Sep 2023 08:49:56 -0700 (PDT)
-Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
-        by mailout.nyi.internal (Postfix) with ESMTP id 3DA855C017D;
-        Fri, 15 Sep 2023 11:49:56 -0400 (EDT)
-Received: from imap51 ([10.202.2.101])
-  by compute6.internal (MEProxy); Fri, 15 Sep 2023 11:49:56 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-        :cc:content-transfer-encoding:content-type:content-type:date
-        :date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-        :references:reply-to:sender:subject:subject:to:to; s=fm1; t=
-        1694792996; x=1694879396; bh=dpwVB3lD/aiImh0hE2EWGFv+6Vhj1x0vioh
-        vXWOOU5A=; b=NfLQ4W31pMO8GlVfcOfFIDHyG6dI5YF7Ld2vPBUF9ux6dQRb/iu
-        mXZ3fmY4qYhZriv9sMrb1OSG8wy5liAjsTf+r9Hyt+IMnMMNazexruACDO27UEET
-        kRfwOvzte584qka3xmh/WVsjvY4EDfccg07dVPqlWYqVeBT7HZPckQ/Fu8gVtExA
-        02opGgGPISPar/V5FaRfd7MV8vJGTAg5bwn0UlLystAH0jFa1OICSbn8fipNr5Lx
-        /LqTVi+vCHh6C+QfOdsmzyYqd4A4G1j9LJNd7YD5pxCpQG7wsm6yCuKeN6nLFNKX
-        IuBvjSAoA3LcAv2n5Am1Oy6zEXoLy4RTlAA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:cc:content-transfer-encoding
-        :content-type:content-type:date:date:feedback-id:feedback-id
-        :from:from:in-reply-to:in-reply-to:message-id:mime-version
-        :references:reply-to:sender:subject:subject:to:to:x-me-proxy
-        :x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
-        1694792996; x=1694879396; bh=dpwVB3lD/aiImh0hE2EWGFv+6Vhj1x0vioh
-        vXWOOU5A=; b=HKnbloQU1VSTccpNbE1a3nhB/ArsoCJqzJDkCkPZVJeIUr+mz45
-        +buxm3P08nGo5Sj7RzXcUhK1gPpLnACJMTux9GH1qf9wov6xXnM20rM/OwJ451dR
-        9EiBpihjPCMYEjNJdkE34o1Hz/SvG2Q3AHkQdAV3E3LFkRKJUWsZ31IMgpfVrnki
-        IxRHJV0Raf/CMxBb4CIyikYzG+XibbDkarFhvwVPhkb4DfVAONlqu+rQ3HSmxIt0
-        p/oeGiOGVuid2np4fQrDbWTex4X3izTNFQigE0FzUB5vgFPePxXQ8Rm0csvx9Z2L
-        todm/INuZIJ4HkrXdFWwGC066nIvzHeXQTg==
-X-ME-Sender: <xms:I30EZUQ1ee7uztWcF9bI1KP-7DbIQ_kjrAw9S051MLcIIZZwu7ED3Q>
-    <xme:I30EZRziHMq9V9d1kjespXijDlR1YIeG6HBG51sfcDyGwNJeNDWxviaIWfVel2eLM
-    uz2_mwoQeAXYRUK9Xk>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrudejvddgledtucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
-    cujfgurhepofgfggfkjghffffhvfevufgtgfesthhqredtreerjeenucfhrhhomhepfdet
-    rhhnugcuuegvrhhgmhgrnhhnfdcuoegrrhhnugesrghrnhgusgdruggvqeenucggtffrrg
-    htthgvrhhnpeegfeejhedvledvffeijeeijeeivddvhfeliedvleevheejleetgedukedt
-    gfejveenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpe
-    grrhhnugesrghrnhgusgdruggv
-X-ME-Proxy: <xmx:I30EZR3GobLkagyT1KT1UhuNGvZ9vZC7VJ4LKJk2t36x75jVYyV9sw>
-    <xmx:I30EZYDUfnRP74gWnXABcXf7-GhCKJ6K1bpLR5VliNUcMdBmOgs9Sg>
-    <xmx:I30EZdg-L68zRe6ACM3Y0ilTfxptdNyRoEb9QxOfHUH2YA1fePRXFA>
-    <xmx:JH0EZdfqSCiAbfcvuMOqvnGPBc4Qr-jkhYn7LLgVqkUeUIf9ffAarQ>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.nyi.internal (Postfix, from userid 501)
-        id BB664B60089; Fri, 15 Sep 2023 11:49:55 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
-User-Agent: Cyrus-JMAP/3.9.0-alpha0-745-g95dd7bea33-fm-20230905.001-g95dd7bea
-Mime-Version: 1.0
-Message-Id: <d2f5cdc1-4bff-4f1d-a7b2-38eee6a6a86d@app.fastmail.com>
-In-Reply-To: <CAMuHMdXyLHitBWOMp74cqtJbSs6q_4sPOEee+x72tE-E2G-KWg@mail.gmail.com>
-References: <20230802184849.1019466-1-arnd@kernel.org>
- <20230802184849.1019466-4-arnd@kernel.org>
- <CAMuHMdVjmD357K-yxxW-jn-6vKsXTg+u1Psw9DftyxH=dQoMEg@mail.gmail.com>
- <5dad2d86-78ea-4a39-8ee1-98e3eb134d36@app.fastmail.com>
- <CAMuHMdVYcvPL+JpPw9sA48=615cdfwa8d0LP-bVp0NWqbQ+JOw@mail.gmail.com>
- <190041c8-2d99-4bc3-adc3-6fbe902c1265@app.fastmail.com>
- <CAMuHMdXyLHitBWOMp74cqtJbSs6q_4sPOEee+x72tE-E2G-KWg@mail.gmail.com>
-Date:   Fri, 15 Sep 2023 17:49:34 +0200
-From:   "Arnd Bergmann" <arnd@arndb.de>
-To:     "Geert Uytterhoeven" <geert@linux-m68k.org>
-Cc:     "Arnd Bergmann" <arnd@kernel.org>,
-        "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
-        linux-sh@vger.kernel.org, "Rich Felker" <dalias@libc.org>,
-        "Yoshinori Sato" <ysato@users.sourceforge.jp>,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 4/4] sh: machvec: remove custom ioport_{un,}map()
-Content-Type: text/plain;charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+        with ESMTP id S239891AbjIQThD (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 17 Sep 2023 15:37:03 -0400
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B3E63103;
+        Sun, 17 Sep 2023 12:36:57 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B88F8C433C7;
+        Sun, 17 Sep 2023 19:36:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+        s=korg; t=1694979417;
+        bh=WYPLCF6Fcs+e55ESX9C/k2f6cxIfXCkcBgSzbIWLuzo=;
+        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+        b=OJP1HDh6GkEg+zk2GwyMLMwvbKLlqu4jmAzd1aF4rBBeSzFKDn+PnGnyJ80AF4qFU
+         DhV983Zj/yT7FhpsdEukdp4a4CRbbRfyfBMb03jVp4tKKw3CxYDJGHAsUWFzLfdX10
+         KIWA/4Ypja6NNHD+8E/oVROoB2yrePcGrCIaBnfM=
+From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+To:     stable@vger.kernel.org
+Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+        patches@lists.linux.dev, Thomas Zimmermann <tzimmermann@suse.de>,
+        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Lee Jones <lee@kernel.org>,
+        Daniel Thompson <daniel.thompson@linaro.org>,
+        Jingoo Han <jingoohan1@gmail.com>, linux-sh@vger.kernel.org,
+        dri-devel@lists.freedesktop.org, Sam Ravnborg <sam@ravnborg.org>
+Subject: [PATCH 5.10 280/406] backlight/gpio_backlight: Compare against struct fb_info.device
+Date:   Sun, 17 Sep 2023 21:12:14 +0200
+Message-ID: <20230917191108.685383417@linuxfoundation.org>
+X-Mailer: git-send-email 2.42.0
+In-Reply-To: <20230917191101.035638219@linuxfoundation.org>
+References: <20230917191101.035638219@linuxfoundation.org>
+User-Agent: quilt/0.67
+X-stable: review
+X-Patchwork-Hint: ignore
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Fri, Sep 15, 2023, at 17:41, Geert Uytterhoeven wrote:
-> On Wed, Sep 13, 2023 at 4:30=E2=80=AFPM Arnd Bergmann <arnd@arndb.de> =
-wrote:
->> On Wed, Sep 13, 2023, at 16:13, Geert Uytterhoeven wrote:
->>
->> Right, it looks like the GENERIC_IOMAP part if gone from that
->> series, and I also see that the PCI host bridge does not actually
->
-> No, 02/30 still enables it.
+5.10-stable review patch.  If anyone has any objections, please let me know.
 
-Ok.
+------------------
 
->> map the port I/O window. That's usually fine because very few
->> drivers actually need it, and it also means that there should be
->> no need for GENERIC_IOMAP or the simpler alternative.
->>
->> The first version probably only did it accidentally, which is a
->> common mistake, and I think the ones for hexagon, m68k, and
->> mips can probably be removed as well with some simplifiations.
->
-> When not selecting GENERIC_IOMAP in v2, the build fails with:
->
-> sh4-linux-gnu-ld: lib/devres.o: in function `pcim_iomap_release':
-> devres.c:(.text+0x234): undefined reference to `pci_iounmap'
+From: Thomas Zimmermann <tzimmermann@suse.de>
 
-Odd, that one is provided based on CONFIG_GENERIC_PCI_IOMAP
-and should be provided by common code, despite the similar
-naming this is unrelated to CONFIG_GENERIC_IOMAP.
+commit 7b91d017f77c1bda56f27c2f4bbb70de7c6eca08 upstream.
 
-    Arnd
+Struct gpio_backlight_platform_data refers to a platform device within
+the Linux device hierarchy. The test in gpio_backlight_check_fb()
+compares it against the fbdev device in struct fb_info.dev, which
+is different. Fix the test by comparing to struct fb_info.device.
+
+Fixes a bug in the backlight driver and prepares fbdev for making
+struct fb_info.dev optional.
+
+v2:
+	* move renames into separate patch (Javier, Sam, Michael)
+
+Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+Fixes: 8b770e3c9824 ("backlight: Add GPIO-based backlight driver")
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Rich Felker <dalias@libc.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Lee Jones <lee@kernel.org>
+Cc: Daniel Thompson <daniel.thompson@linaro.org>
+Cc: Jingoo Han <jingoohan1@gmail.com>
+Cc: linux-sh@vger.kernel.org
+Cc: dri-devel@lists.freedesktop.org
+Cc: <stable@vger.kernel.org> # v3.12+
+Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
+Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
+Link: https://patchwork.freedesktop.org/patch/msgid/20230613110953.24176-4-tzimmermann@suse.de
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/video/backlight/gpio_backlight.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/video/backlight/gpio_backlight.c
++++ b/drivers/video/backlight/gpio_backlight.c
+@@ -35,7 +35,7 @@ static int gpio_backlight_check_fb(struc
+ {
+ 	struct gpio_backlight *gbl = bl_get_data(bl);
+ 
+-	return gbl->fbdev == NULL || gbl->fbdev == info->dev;
++	return gbl->fbdev == NULL || gbl->fbdev == info->device;
+ }
+ 
+ static const struct backlight_ops gpio_backlight_ops = {
+
+
