@@ -2,41 +2,44 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id BF442CD37B4
-	for <linux-sh@archiver.kernel.org>; Sun, 17 Sep 2023 19:37:31 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 05194CD13CF
+	for <linux-sh@archiver.kernel.org>; Sun, 17 Sep 2023 19:38:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234088AbjIQThE (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 17 Sep 2023 15:37:04 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39284 "EHLO
+        id S239091AbjIQThg (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 17 Sep 2023 15:37:36 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39410 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S239891AbjIQThD (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 17 Sep 2023 15:37:03 -0400
+        with ESMTP id S239809AbjIQThJ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 17 Sep 2023 15:37:09 -0400
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B3E63103;
-        Sun, 17 Sep 2023 12:36:57 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B88F8C433C7;
-        Sun, 17 Sep 2023 19:36:56 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3DB49133;
+        Sun, 17 Sep 2023 12:37:04 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 41798C433C8;
+        Sun, 17 Sep 2023 19:37:03 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1694979417;
-        bh=WYPLCF6Fcs+e55ESX9C/k2f6cxIfXCkcBgSzbIWLuzo=;
+        s=korg; t=1694979423;
+        bh=FaHZs0H7L9XI4op+fCtKFIPP6DpxemZRSsishgD6eOc=;
         h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=OJP1HDh6GkEg+zk2GwyMLMwvbKLlqu4jmAzd1aF4rBBeSzFKDn+PnGnyJ80AF4qFU
-         DhV983Zj/yT7FhpsdEukdp4a4CRbbRfyfBMb03jVp4tKKw3CxYDJGHAsUWFzLfdX10
-         KIWA/4Ypja6NNHD+8E/oVROoB2yrePcGrCIaBnfM=
+        b=cc6mQmygtgnIfhDcNtjS1JfdcgMS7HW84uRDpKgwty2PyeTrnvUFhs8ScPjaLuEwJ
+         0/GMtilrR3WvQSyW7vldKdMcGcJEJvRmUK03/d7SxEem0Arfwgy61fXO3Bhc5gwczk
+         Rb/Dz3azDRWDIPuPBQEEDTEVg9ByOcy0xBY8ZtEY=
 From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 To:     stable@vger.kernel.org
 Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
         patches@lists.linux.dev, Thomas Zimmermann <tzimmermann@suse.de>,
         Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
         Lee Jones <lee@kernel.org>,
         Daniel Thompson <daniel.thompson@linaro.org>,
         Jingoo Han <jingoohan1@gmail.com>, linux-sh@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, Sam Ravnborg <sam@ravnborg.org>
-Subject: [PATCH 5.10 280/406] backlight/gpio_backlight: Compare against struct fb_info.device
-Date:   Sun, 17 Sep 2023 21:12:14 +0200
-Message-ID: <20230917191108.685383417@linuxfoundation.org>
+        dri-devel@lists.freedesktop.org,
+        Javier Martinez Canillas <javierm@redhat.com>,
+        Sam Ravnborg <sam@ravnborg.org>
+Subject: [PATCH 5.10 282/406] backlight/lv5207lp: Compare against struct fb_info.device
+Date:   Sun, 17 Sep 2023 21:12:16 +0200
+Message-ID: <20230917191108.743503537@linuxfoundation.org>
 X-Mailer: git-send-email 2.42.0
 In-Reply-To: <20230917191101.035638219@linuxfoundation.org>
 References: <20230917191101.035638219@linuxfoundation.org>
@@ -55,10 +58,10 @@ X-Mailing-List: linux-sh@vger.kernel.org
 
 From: Thomas Zimmermann <tzimmermann@suse.de>
 
-commit 7b91d017f77c1bda56f27c2f4bbb70de7c6eca08 upstream.
+commit 1ca8819320fd84e7d95b04e7668efc5f9fe9fa5c upstream.
 
-Struct gpio_backlight_platform_data refers to a platform device within
-the Linux device hierarchy. The test in gpio_backlight_check_fb()
+Struct lv5207lp_platform_data refers to a platform device within
+the Linux device hierarchy. The test in lv5207lp_backlight_check_fb()
 compares it against the fbdev device in struct fb_info.dev, which
 is different. Fix the test by comparing to struct fb_info.device.
 
@@ -68,9 +71,10 @@ struct fb_info.dev optional.
 v2:
 	* move renames into separate patch (Javier, Sam, Michael)
 
+Fixes: 82e5c40d88f9 ("backlight: Add Sanyo LV5207LP backlight driver")
 Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
-Fixes: 8b770e3c9824 ("backlight: Add GPIO-based backlight driver")
 Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc: Rich Felker <dalias@libc.org>
 Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 Cc: Lee Jones <lee@kernel.org>
@@ -79,24 +83,25 @@ Cc: Jingoo Han <jingoohan1@gmail.com>
 Cc: linux-sh@vger.kernel.org
 Cc: dri-devel@lists.freedesktop.org
 Cc: <stable@vger.kernel.org> # v3.12+
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
 Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
 Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
-Link: https://patchwork.freedesktop.org/patch/msgid/20230613110953.24176-4-tzimmermann@suse.de
+Link: https://patchwork.freedesktop.org/patch/msgid/20230613110953.24176-6-tzimmermann@suse.de
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- drivers/video/backlight/gpio_backlight.c |    2 +-
+ drivers/video/backlight/lv5207lp.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
---- a/drivers/video/backlight/gpio_backlight.c
-+++ b/drivers/video/backlight/gpio_backlight.c
-@@ -35,7 +35,7 @@ static int gpio_backlight_check_fb(struc
+--- a/drivers/video/backlight/lv5207lp.c
++++ b/drivers/video/backlight/lv5207lp.c
+@@ -67,7 +67,7 @@ static int lv5207lp_backlight_check_fb(s
  {
- 	struct gpio_backlight *gbl = bl_get_data(bl);
+ 	struct lv5207lp *lv = bl_get_data(backlight);
  
--	return gbl->fbdev == NULL || gbl->fbdev == info->dev;
-+	return gbl->fbdev == NULL || gbl->fbdev == info->device;
+-	return lv->pdata->fbdev == NULL || lv->pdata->fbdev == info->dev;
++	return lv->pdata->fbdev == NULL || lv->pdata->fbdev == info->device;
  }
  
- static const struct backlight_ops gpio_backlight_ops = {
+ static const struct backlight_ops lv5207lp_backlight_ops = {
 
 
