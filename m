@@ -2,106 +2,62 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3E48ECD13D1
-	for <linux-sh@archiver.kernel.org>; Sun, 17 Sep 2023 20:33:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B6876CD37B0
+	for <linux-sh@archiver.kernel.org>; Mon, 18 Sep 2023 07:43:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S239674AbjIQUdF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 17 Sep 2023 16:33:05 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38664 "EHLO
+        id S239982AbjIRHnT (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 18 Sep 2023 03:43:19 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55486 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S241060AbjIQUce (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 17 Sep 2023 16:32:34 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B8644E45;
-        Sun, 17 Sep 2023 13:32:04 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B9B7BC433CD;
-        Sun, 17 Sep 2023 20:32:03 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-        s=korg; t=1694982724;
-        bh=zEp33Ud01w+7j68B0EhU5mo26tnVXiBzLTHpAFUq+54=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=SJNo/goDZUoFu3qQWb74KOgh+6FOZCXHAPoi227WECENONNVds2QYYsReiPRc/5oV
-         lGm+WSGHYmoQaizIfRlVxikcG5PXgZvDWVmKThkODDEoYMjXYOoDZ1KLJcW/u41aQR
-         Ievqgo0gKDPUC1OKgqRbyTZc/bCJN/291GpWEBtA=
-From:   Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To:     stable@vger.kernel.org
-Cc:     Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        patches@lists.linux.dev, Thomas Zimmermann <tzimmermann@suse.de>,
-        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Lee Jones <lee@kernel.org>,
-        Daniel Thompson <daniel.thompson@linaro.org>,
-        Jingoo Han <jingoohan1@gmail.com>, linux-sh@vger.kernel.org,
-        dri-devel@lists.freedesktop.org,
-        Javier Martinez Canillas <javierm@redhat.com>,
-        Sam Ravnborg <sam@ravnborg.org>
-Subject: [PATCH 5.15 334/511] backlight/lv5207lp: Compare against struct fb_info.device
-Date:   Sun, 17 Sep 2023 21:12:41 +0200
-Message-ID: <20230917191121.880078650@linuxfoundation.org>
-X-Mailer: git-send-email 2.42.0
-In-Reply-To: <20230917191113.831992765@linuxfoundation.org>
-References: <20230917191113.831992765@linuxfoundation.org>
-User-Agent: quilt/0.67
-X-stable: review
-X-Patchwork-Hint: ignore
+        with ESMTP id S240164AbjIRHmu (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 18 Sep 2023 03:42:50 -0400
+Received: from laurent.telenet-ops.be (laurent.telenet-ops.be [IPv6:2a02:1800:110:4::f00:19])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 501D01A5
+        for <linux-sh@vger.kernel.org>; Mon, 18 Sep 2023 00:40:35 -0700 (PDT)
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:3473:9bed:ded:69a5])
+        by laurent.telenet-ops.be with bizsmtp
+        id nKgY2A00A0oXixJ01KgYnY; Mon, 18 Sep 2023 09:40:32 +0200
+Received: from geert (helo=localhost)
+        by ramsan.of.borg with local-esmtp (Exim 4.95)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1qi8rw-003wK3-6Y;
+        Mon, 18 Sep 2023 09:40:32 +0200
+Date:   Mon, 18 Sep 2023 09:40:32 +0200 (CEST)
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+To:     linux-kernel@vger.kernel.org
+cc:     linux-sh@vger.kernel.org
+Subject: Re: Build regressions/improvements in v6.6-rc2
+In-Reply-To: <20230918072701.233203-1-geert@linux-m68k.org>
+Message-ID: <956a7d16-13a9-2c7-c541-fcfb5d6d1be3@linux-m68k.org>
+References: <CAHk-=whW=fV2tnAreSbtPVpJxq++pyBZa3g+cxX8_V__WSZzCg@mail.gmail.com> <20230918072701.233203-1-geert@linux-m68k.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=US-ASCII; format=flowed
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-5.15-stable review patch.  If anyone has any objections, please let me know.
+On Mon, 18 Sep 2023, Geert Uytterhoeven wrote:
+> JFYI, when comparing v6.6-rc2[1] to v6.6-rc1[3], the summaries are:
+>  - build errors: +1/-0
+>  - build warnings: +1/-0
 
-------------------
+   + {standard input}: Error: expected symbol name:  => 1095
+   + {standard input}: Warning: end of file not at end of a line; newline inserted:  => 1094
 
-From: Thomas Zimmermann <tzimmermann@suse.de>
+sh4-gcc13/sh-allmodconfig
 
-commit 1ca8819320fd84e7d95b04e7668efc5f9fe9fa5c upstream.
+ICE
 
-Struct lv5207lp_platform_data refers to a platform device within
-the Linux device hierarchy. The test in lv5207lp_backlight_check_fb()
-compares it against the fbdev device in struct fb_info.dev, which
-is different. Fix the test by comparing to struct fb_info.device.
+> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/ce9ecca0238b140b88f43859b211c9fdfd8e5b70/ (all 237 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/0bb80ecc33a8fb5a682236443c1e740d5c917d1d/ (all 237 configs)
 
-Fixes a bug in the backlight driver and prepares fbdev for making
-struct fb_info.dev optional.
+Gr{oetje,eeting}s,
 
-v2:
-	* move renames into separate patch (Javier, Sam, Michael)
+ 						Geert
 
-Fixes: 82e5c40d88f9 ("backlight: Add Sanyo LV5207LP backlight driver")
-Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Lee Jones <lee@kernel.org>
-Cc: Daniel Thompson <daniel.thompson@linaro.org>
-Cc: Jingoo Han <jingoohan1@gmail.com>
-Cc: linux-sh@vger.kernel.org
-Cc: dri-devel@lists.freedesktop.org
-Cc: <stable@vger.kernel.org> # v3.12+
-Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
-Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
-Reviewed-by: Daniel Thompson <daniel.thompson@linaro.org>
-Link: https://patchwork.freedesktop.org/patch/msgid/20230613110953.24176-6-tzimmermann@suse.de
-Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
----
- drivers/video/backlight/lv5207lp.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
---- a/drivers/video/backlight/lv5207lp.c
-+++ b/drivers/video/backlight/lv5207lp.c
-@@ -67,7 +67,7 @@ static int lv5207lp_backlight_check_fb(s
- {
- 	struct lv5207lp *lv = bl_get_data(backlight);
- 
--	return lv->pdata->fbdev == NULL || lv->pdata->fbdev == info->dev;
-+	return lv->pdata->fbdev == NULL || lv->pdata->fbdev == info->device;
- }
- 
- static const struct backlight_ops lv5207lp_backlight_ops = {
-
-
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+ 							    -- Linus Torvalds
