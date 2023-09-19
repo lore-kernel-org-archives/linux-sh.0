@@ -2,84 +2,79 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 013E8C46CA1
-	for <linux-sh@archiver.kernel.org>; Mon, 18 Sep 2023 19:33:41 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BB97DCD3425
+	for <linux-sh@archiver.kernel.org>; Tue, 19 Sep 2023 00:00:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229458AbjIRTdq (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 18 Sep 2023 15:33:46 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45162 "EHLO
+        id S230313AbjISAA4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 18 Sep 2023 20:00:56 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34518 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229379AbjIRTdp (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 18 Sep 2023 15:33:45 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5E044F7;
-        Mon, 18 Sep 2023 12:33:40 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9E229C433C7;
-        Mon, 18 Sep 2023 19:33:39 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1695065620;
-        bh=+buqqO/wnxA4xEuxrSuwfqJ0mRpiDdrP2TUcBhwJcy4=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:From;
-        b=EP2czQnXqV3N/X+pRZ3nA3IWx9Wrh9dTvgTacetMYvPO53Kd83yuL2gu69e6GgQXt
-         nqJJ0rbiYlX9IMqs1uCuTu5k8PRA8bIVnukUODB3D9wr5vUCxeAuEiq6QfuTRoZbGY
-         N9uOjmzLLpcKlzQd+ILTKna0mSwLZEOtXQfLjNdK+uTbJKcSwUejh9TpyCJZOCgEG5
-         Kw0kM7uFvTgk/hUsTEuid8aRWJ0GPDQatmnlq/Athc3tR2374nuUvWkFF+MqK0tJRY
-         i1SKCkwRO5Ni8zeIwhIMWQhmalHYtID0DVURUIPCUvsSyg2l0C5z2aMWTNvGfJJyvF
-         bWhT++gEtXS1w==
-Date:   Mon, 18 Sep 2023 14:33:37 -0500
-From:   Bjorn Helgaas <helgaas@kernel.org>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de,
-        linux-pci@vger.kernel.org
-Subject: Re: [RFC PATCH v2 08/30] drivers/pci: Add SH7751 Host bridge
- controller
-Message-ID: <20230918193337.GA203483@bhelgaas>
+        with ESMTP id S230099AbjISAAz (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 18 Sep 2023 20:00:55 -0400
+Received: from mail-4022.proton.ch (mail-4022.proton.ch [185.70.40.22])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5AB5897;
+        Mon, 18 Sep 2023 17:00:49 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=n8pjl.ca;
+        s=protonmail2; t=1695081647; x=1695340847;
+        bh=Lli3Yj6tPCTPu+N9cNfbF8RCVOR8MAz0xLiJXkVxWMI=;
+        h=Date:To:From:Cc:Subject:Message-ID:In-Reply-To:References:
+         Feedback-ID:From:To:Cc:Date:Subject:Reply-To:Feedback-ID:
+         Message-ID:BIMI-Selector;
+        b=hlGTyd596DF2dmgY1RxK0nQKhn95J6GICdAnV17WrFbnFOG+MUmgHjlK7mvMUvSEW
+         Ny4WgaiMDNZDqse07BwO8txDjO1zp+XCxYLRYfUVTs73ENUZWdUW3K0uwPYGnlgd/G
+         BO/jK2xmW9w8NhmGRL9T08JW7TZ5A05Hcx9idS+msnB0qobVQ7g2S387X/W2cCyH+s
+         +cfQQ5WzCJy/YxylDrE93+mUvvi8MVrAFAbcB+EdRp/WqkuaiR2cNd0V5FTmvVb5+f
+         If3BANatKOYi35sl2kqXvBNdhpWK8CBBDctN/+jKC4EWv2dLWh3Nt1kHLo9r03mTki
+         KBwkIvgnmCEaw==
+Date:   Tue, 19 Sep 2023 00:00:34 +0000
+To:     segher@kernel.crashing.org
+From:   Peter Lafreniere <peter@n8pjl.ca>
+Cc:     anton.ivanov@cambridgegreys.com, geert@linux-m68k.org,
+        ink@jurassic.park.msu.ru, jack@suse.cz, johannes@sipsolutions.net,
+        linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+        linux-kernel@vger.kernel.org, linux-m68k@vger.kernel.org,
+        linux-mips@vger.kernel.org, linux-sh@vger.kernel.org,
+        linux-um@lists.infradead.org, linux@armlinux.org.uk,
+        linuxppc-dev@lists.ozlabs.org, peter@n8pjl.ca,
+        reiserfs-devel@vger.kernel.org, richard.henderson@linaro.org,
+        richard@nod.at, tsbogend@alpha.franken.de
+Subject: Re: [PATCH 0/7] arch/*: config: Remove ReiserFS from defconfig
+Message-ID: <20230919000026.7409-1-peter@n8pjl.ca>
+In-Reply-To: <20230918234108.GN19790@gate.crashing.org>
+References: <20230918175529.19011-1-peter@n8pjl.ca> <20230918234108.GN19790@gate.crashing.org>
+Feedback-ID: 53133685:user:proton
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <87db26af4a30210ab54519b91bb8541e88519185.1694596125.git.ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Sep 13, 2023 at 06:23:33PM +0900, Yoshinori Sato wrote:
+On Monday, September 18th, 2023 at 19:41, Segher Boessenkool <segher@kernel=
+.crashing.org> wrote:
+> On Mon, Sep 18, 2023 at 05:56:09PM +0000, Peter Lafreniere wrote:
+>=20
+> > ReiserFS has been considered deprecated for 19 months since commit
+> > eb103a51640e ("reiserfs: Deprecate reiserfs"). However, there are
+> > several architectures that still build it into their defconfig kernels.
+> >=20
+> > As ReiserFS will be removed in 2025, delete all ReiserFS-related option=
+s
+> > from defconfig files before the filesystem's removal.
+>=20
+>=20
+> This is essentially equivalent to deleting the filesystem now. Why do
+> this? Is there such a hurry?
 
-Update subject line and include a commit log.
+This is not equivalent to deleting the filesystem. The filesystem can still
+be configured into kernels, and few distros use a defconfig kernel anyway.
 
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> ---
->  drivers/pci/controller/Kconfig  | 9 +++++++++
->  drivers/pci/controller/Makefile | 1 +
->  2 files changed, 10 insertions(+)
-> 
-> diff --git a/drivers/pci/controller/Kconfig b/drivers/pci/controller/Kconfig
-> index c0c3f2824990..037ff44bd1e8 100644
-> --- a/drivers/pci/controller/Kconfig
-> +++ b/drivers/pci/controller/Kconfig
-> @@ -342,6 +342,15 @@ config PCIE_XILINX_CPM
->  	  Say 'Y' here if you want kernel support for the
->  	  Xilinx Versal CPM host bridge.
->  
-> +config PCI_SH7751
-> +	bool "Renesas SH7751 PCI controller"
-> +	depends on OF
-> +	depends on CPU_SUBTYPE_SH7751 || CPU_SUBTYPE_SH7751R || COMPILE_TEST
-> +	select PCI_HOST_COMMON
-> +	help
-> +	  Say 'Y' here if you want kernel to support the Renesas SH7751 PCI
-> +	  Host Bridge driver.
+>=20
+>=20
+> Segher
 
-Sort this so it appears in alpha order by vendor, device in
-menuconfig, etc.
+Cheers,
 
-Since I didn't get the entire series, here are the whitespace errors
-from git-am:
-
-  Applying: arch/sh: head_32.S passing FDT address to initialize function.
-  .git/rebase-apply/patch:25: trailing whitespace.
-  Applying: Documentation/devicetree: Add renesas,sh7751-cpg binding document.
-  .git/rebase-apply/patch:66: space before tab in indent.
-		  clocks = <&xtal>;
-  Applying: drivers/irqchip: SH7751 IRL external encoder with enable gate.
-  .git/rebase-apply/patch:33: new blank line at EOF.
+Peter Lafreniere
+<peter@n8pjl.ca>
 
