@@ -2,93 +2,58 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 9E2EDCE79AB
-	for <linux-sh@archiver.kernel.org>; Tue, 19 Sep 2023 16:16:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E105ECE79AC
+	for <linux-sh@archiver.kernel.org>; Wed, 20 Sep 2023 07:57:45 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230272AbjISQQN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 19 Sep 2023 12:16:13 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53272 "EHLO
+        id S233243AbjITH5t (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 20 Sep 2023 03:57:49 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60882 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229627AbjISQQM (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 19 Sep 2023 12:16:12 -0400
-Received: from mail-4317.proton.ch (mail-4317.proton.ch [185.70.43.17])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D9DD92
-        for <linux-sh@vger.kernel.org>; Tue, 19 Sep 2023 09:16:03 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=n8pjl.ca;
-        s=protonmail2; t=1695140160; x=1695399360;
-        bh=k2QmhXn3FHpsD31Ag66sjWvY57vLi94vGdI9Jg32c2Q=;
-        h=Date:To:From:Cc:Subject:Message-ID:In-Reply-To:References:
-         Feedback-ID:From:To:Cc:Date:Subject:Reply-To:Feedback-ID:
-         Message-ID:BIMI-Selector;
-        b=VjPOUfr+BDKot6jNtzfiNQUBn+0rrhZJiA59iRWy30aLqarcEfUbJl13WNuPnXIoW
-         NywHiVkOkN0sAhAj5HVCpUg5MCHPnoVtVm3uKwvnlLQz2bUOxdLprD9u+w4LbKTPgA
-         bnBfsyBEq3NfeW6N9NlCpqkwDvrEgdVVXns49DKnopvogQCzzy0NJzr2/B+6TZ37p2
-         pBG3Imgo+IjObhl+GtscMyMDCDfzeNnzpCBmxFsxt25WKmx+xpxmqyJ0hqsjVZLW+n
-         JXFusuE18XA6ozPVKnAkxmiePcriJHUHal7GefK+IYNNYtydrpkBO7Z/E7Jw9j+Yfj
-         +4CaTlaacEEcQ==
-Date:   Tue, 19 Sep 2023 16:15:41 +0000
-To:     geert@linux-m68k.org
-From:   Peter Lafreniere <peter@n8pjl.ca>
-Cc:     anton.ivanov@cambridgegreys.com, ink@jurassic.park.msu.ru,
-        jack@suse.cz, johannes@sipsolutions.net,
-        linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-kernel@vger.kernel.org, linux-m68k@vger.kernel.org,
-        linux-mips@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-um@lists.infradead.org, linux@armlinux.org.uk,
-        linuxppc-dev@lists.ozlabs.org, peter@n8pjl.ca,
-        reiserfs-devel@vger.kernel.org, richard.henderson@linaro.org,
-        richard@nod.at, segher@kernel.crashing.org,
-        tsbogend@alpha.franken.de
-Subject: Re: [PATCH 0/7] arch/*: config: Remove ReiserFS from defconfig
-Message-ID: <20230919161535.4774-1-peter@n8pjl.ca>
-In-Reply-To: <CAMuHMdXQ=xpeY3tmLXe1kgJbRtmVAn62rEhvzO+VB7GCgy4F8w@mail.gmail.com>
-References: <20230918175529.19011-1-peter@n8pjl.ca> <20230918234108.GN19790@gate.crashing.org> <20230919000026.7409-1-peter@n8pjl.ca> <20230919151630.GO19790@gate.crashing.org> <20230919155832.4179-1-peter@n8pjl.ca> <CAMuHMdXQ=xpeY3tmLXe1kgJbRtmVAn62rEhvzO+VB7GCgy4F8w@mail.gmail.com>
-Feedback-ID: 53133685:user:proton
+        with ESMTP id S232575AbjITH5s (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Sep 2023 03:57:48 -0400
+X-Greylist: delayed 391 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Wed, 20 Sep 2023 00:57:42 PDT
+Received: from mail.venturelinkage.com (mail.venturelinkage.com [80.211.143.151])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6DB1FA1
+        for <linux-sh@vger.kernel.org>; Wed, 20 Sep 2023 00:57:42 -0700 (PDT)
+Received: by mail.venturelinkage.com (Postfix, from userid 1002)
+        id DD8258283A; Wed, 20 Sep 2023 09:51:07 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=venturelinkage.com;
+        s=mail; t=1695196269;
+        bh=7iowqdzve/IIiUUjcEwx8j3uMrVqqiE7R9zbOCKRV9Q=;
+        h=Date:From:To:Subject:From;
+        b=la7p1w0qDnr/ICasQtsc+ToIZ6rSF2bAKomEMaV13kMtUfXZX3Q53TebpxCq9QhkQ
+         g4GIFOMBJh6AbVkqphoNmQ0IpMv5Ym7vDFLzUfhhr+h4SZ9/f/JFNi8lLHijq2AuLE
+         k/4WNlCzBgjrDNPp6hIkFZlme160y1KLUgee54I6Ye4XJrwQ6dzKlhZctVCGBhMR61
+         D7hmjM5LClAS1bPQzHYw+12kJCVlxiuOxFXzAK9QabMiH/5Y+fUzTIkEKMQF2DZnCH
+         K+Kd5B7J4yM70wFxpCHA9c5xSFCVl0xlIFx1LTUjpmaouA+86rV4TVteJh3d7JIKNj
+         OoKrEtm3pTIpg==
+Received: by mail.venturelinkage.com for <linux-sh@vger.kernel.org>; Wed, 20 Sep 2023 07:51:03 GMT
+Message-ID: <20230920084500-0.1.l.127b.0.q71kn7qsf7@venturelinkage.com>
+Date:   Wed, 20 Sep 2023 07:51:03 GMT
+From:   "Lukas Varga" <lukas.varga@venturelinkage.com>
+To:     <linux-sh@vger.kernel.org>
+Subject: =?UTF-8?Q?Popt=C3=A1vka?=
+X-Mailer: mail.venturelinkage.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Geert,
+Dobr=C3=A9 r=C3=A1no,
 
-On Tue, Sep 19, 2023 at 12:02, Geert Uytterhoeven <geert@linux-m68k.org> wr=
-ote:
->=20
-> Hi Peter,
->=20
-> On Tue, Sep 19, 2023 at 5:58=E2=80=AFPM Peter Lafreniere peter@n8pjl.ca w=
-rote:
->=20
-> > 2) Stops building an obsolete and largely-unused filesystem unnecessari=
-ly.
-> > Some hobbyist targets like m68k and alpha may prefer to keep all filesy=
-stems
-> > available until total removal, but others like arm and UML have no need=
- for
-> > ReiserFS to be built unless specifically configured.
->=20
->=20
-> As UML is used a lot for testing, isn't it actually counter-productive
-> to remove ReiserFS from the UML defconfig? The less testing it
-> receives, the higher the chance of introducing regressions.
+Dovolil jsem si V=C3=A1s kontaktovat, proto=C5=BEe m=C3=A1m z=C3=A1jem ov=
+=C4=9B=C5=99it mo=C5=BEnost nav=C3=A1z=C3=A1n=C3=AD spolupr=C3=A1ce.
 
-UML is used for testing, but in my view that makes the inclusion of
-ReiserFS in its defconfig even worse. Users of UML are trying to test a
-particular function, and so tend to use ext[2-4], as those are included in
-the defconfig and are well tested and stable. So there is no extra testing
-being done on ReiserFS due to its inclusion in the defconfig.
+Podporujeme firmy p=C5=99i z=C3=ADsk=C3=A1v=C3=A1n=C3=AD nov=C3=BDch obch=
+odn=C3=ADch z=C3=A1kazn=C3=ADk=C5=AF.
 
-Keeping UML's defconfig as slim as possible improves build times, which is
-particularly important for kernel testing and development.
+M=C5=AF=C5=BEeme si promluvit a poskytnout podrobnosti?
 
->=20
-> Gr{oetje,eeting}s,
->=20
-> Geert
->
+V p=C5=99=C3=ADpad=C4=9B z=C3=A1jmu V=C3=A1s bude kontaktovat n=C3=A1=C5=A1=
+ anglicky mluv=C3=ADc=C3=AD z=C3=A1stupce.
 
-Cheers,
-Peter Lafreniere=20
 
+Pozdravy
+Lukas Varga
