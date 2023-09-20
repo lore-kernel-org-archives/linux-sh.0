@@ -2,217 +2,122 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 0D76ACE79CF
-	for <linux-sh@archiver.kernel.org>; Wed, 20 Sep 2023 12:26:03 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C4532CE79D1
+	for <linux-sh@archiver.kernel.org>; Wed, 20 Sep 2023 12:30:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235817AbjITM0H (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 20 Sep 2023 08:26:07 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55522 "EHLO
+        id S234540AbjITMa5 convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 20 Sep 2023 08:30:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43298 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235946AbjITM0D (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Sep 2023 08:26:03 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D9815C6
-        for <linux-sh@vger.kernel.org>; Wed, 20 Sep 2023 05:25:54 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4433FC433CB;
-        Wed, 20 Sep 2023 12:25:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1695212754;
-        bh=aSlXio74zXOLFNUI0ByW9vzI5smz6GIgYDTZTNqu1PE=;
-        h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-        b=beSWC6erjUt64E/Qt4J6Jm+7yEzRx6Ua1+uSRszA419g7qGDGXPSb6QyM53675PyA
-         xeWgE2qbNmgQgYlQwgV7e+S1PWffxWzru4LHoz985jSabHQ1f9T5NirR9n6H/5K+h3
-         w3vQGSYPVKF//1Cd1j8qQmMCtVS0pIcKKRnxcbCArLDApRXFNRPvQzNgsaTkGom0k/
-         bn5nm33jO5JnQK37tLbdSy27LrsmAThCUoWYAZhQh/0u2jtmFaAB192vSci3+g07yw
-         XHLUly3AVLP/wND1Wpr/6Qc3GT+eZkGEdo0EQdSipmcQgYEL7w7kf8aeZN8QvCIBEp
-         feC9kLQhhCUVA==
-Date:   Wed, 20 Sep 2023 13:25:50 +0100
-From:   Lee Jones <lee@kernel.org>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de
-Subject: Re: [RFC PATCH v2 20/30] drivers/mfd: sm501 add some properties.
-Message-ID: <20230920122550.GF13143@google.com>
-References: <cover.1694596125.git.ysato@users.sourceforge.jp>
- <9c298d2dc42df60fdbbec395a8d790511e35c531.1694596125.git.ysato@users.sourceforge.jp>
+        with ESMTP id S235282AbjITMaz (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Sep 2023 08:30:55 -0400
+Received: from mail-yw1-f171.google.com (mail-yw1-f171.google.com [209.85.128.171])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D409CA
+        for <linux-sh@vger.kernel.org>; Wed, 20 Sep 2023 05:30:45 -0700 (PDT)
+Received: by mail-yw1-f171.google.com with SMTP id 00721157ae682-59ea6064e2eso34004827b3.2
+        for <linux-sh@vger.kernel.org>; Wed, 20 Sep 2023 05:30:45 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1695213044; x=1695817844;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=OpTLSwPU8tJNr8pyka6hDeGcM6izaFtpSb6acg1fy74=;
+        b=ThBNEt6bIZwzmGfMDkIDI+SPMzDVTR44GDepGc7OliFkakgyXkOVvT+o49sxD2VZd3
+         z/p4XiGhOw+IinTz7uFJ7uwNaiOlO/sC949wm+ew8Pjo73Pgil/i3tLMdC6RQh2Piznv
+         +6UoWdJUStHb3QOWxMVG3fSZybwpDbMq62cDTxeMAIHQqLmOlhCKsskNtFd2yNV+pRPm
+         +OqcDaLERP5fVfI45cO95sTqyDArUVSs4Sqqu+YqksqSGSVV0RCi3Hjc2X0SBFioWuEs
+         VOXuHeFVY10A1QOWUuYOLNHmITTfAdIDE4pj43gHN4fYdIrrnYxeNwyD8yvE9TBwNuSN
+         fdBQ==
+X-Gm-Message-State: AOJu0YxEigGRL7LhvKCE2B1amsZvp3ALpVsaOe9zQV5rA/qpTsdGezzA
+        dXiiOtEBY0kuUzb3bLMMr6obNqA9AVJ3wg==
+X-Google-Smtp-Source: AGHT+IEaBC/GFpVRjJeW/3qvR1GJYI9kUNsZ5XVWtbByWLOQZYuuF31SfOL9p7Wi2ajZTM5vPQ4xRQ==
+X-Received: by 2002:a0d:dfd8:0:b0:59a:b7b2:5f02 with SMTP id i207-20020a0ddfd8000000b0059ab7b25f02mr2332805ywe.18.1695213044654;
+        Wed, 20 Sep 2023 05:30:44 -0700 (PDT)
+Received: from mail-yw1-f172.google.com (mail-yw1-f172.google.com. [209.85.128.172])
+        by smtp.gmail.com with ESMTPSA id v185-20020a0dd3c2000000b00592548b2c47sm3763353ywd.80.2023.09.20.05.30.44
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 20 Sep 2023 05:30:44 -0700 (PDT)
+Received: by mail-yw1-f172.google.com with SMTP id 00721157ae682-59bcd927b45so71650847b3.1
+        for <linux-sh@vger.kernel.org>; Wed, 20 Sep 2023 05:30:44 -0700 (PDT)
+X-Received: by 2002:a81:a041:0:b0:59a:fa28:2b98 with SMTP id
+ x62-20020a81a041000000b0059afa282b98mr2370163ywg.17.1695213044081; Wed, 20
+ Sep 2023 05:30:44 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <9c298d2dc42df60fdbbec395a8d790511e35c531.1694596125.git.ysato@users.sourceforge.jp>
+References: <cover.1694596125.git.ysato@users.sourceforge.jp>
+ <e4dc419e3cc4f44d323aa3686333dafe83b68bce.1694596125.git.ysato@users.sourceforge.jp>
+ <cabf9417-e264-fb23-ddd4-24f51f7e72a2@kernel.org> <CAMuHMdWeh2DjSR9-WdDUKJhG_KwDhjUk_e-H3D_gSzVZ16ys9g@mail.gmail.com>
+ <25da64c6-cdb2-7758-71d3-fa8ae65de504@kernel.org>
+In-Reply-To: <25da64c6-cdb2-7758-71d3-fa8ae65de504@kernel.org>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Wed, 20 Sep 2023 14:30:32 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdX12e43Yax3GPxhE65mtDiaPfhwDd55DMbahcr=TXObOQ@mail.gmail.com>
+Message-ID: <CAMuHMdX12e43Yax3GPxhE65mtDiaPfhwDd55DMbahcr=TXObOQ@mail.gmail.com>
+Subject: Re: [RFC PATCH v2 25/30] include/dt-bindings: Add sh_intc IRQ - EVT
+ conversion helper
+To:     Krzysztof Kozlowski <krzk@kernel.org>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Subject line is wrong in many of your commits.
+Hi Krzysztof,
 
-Use `git log --online -- <subsystem>` to help you.
+On Wed, Sep 20, 2023 at 1:51 PM Krzysztof Kozlowski <krzk@kernel.org> wrote:
+> On 19/09/2023 15:02, Geert Uytterhoeven wrote:
+> > On Wed, Sep 13, 2023 at 12:50 PM Krzysztof Kozlowski <krzk@kernel.org> wrote:
+> >> On 13/09/2023 11:23, Yoshinori Sato wrote:
+> >>> --- /dev/null
+> >>> +++ b/include/dt-bindings/interrupt-controller/sh_intc.h
+> >>> @@ -0,0 +1,7 @@
+> >>> +/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+> >>> + *
+> >>> + * SH3/4 INTC EVT - IRQ conversion
+> >>> + */
+> >>> +
+> >>> +#define evt2irq(evt)         ((evt) >> 5)
+> >>> +#define irq2evt(irq)         ((irq) << 5)
+> >>
+> >> No, that's not a binding. Drop entire file.
+> >
+> > The issue is that the hardware documentation does not list interrupt
+> > numbers, but event codes.  The latter is a sparse address space.
+> > As the "interrupts" property needs interrupt numbers, we have two
+> > options:
+> >   1. Use hardcoded event codes and evt2irq() in DTS files.
+> >      This is the approach Sato-san took,
+> >   2. Use hardcoded interrupt numbers in DTS files.
+> >      This would avoids the need for the evt2irq() macro in the DT bindings,
+> >      but would make life slightly harder for the DTS writer and
+> >      for the casual reader, as the conversion needs to be done in
+> >      one's head.
+> >
+> > Note that the documentation for later SoCs that contain both a SuperH
+> > and an ARM CPU core, usually lists both the event code and the interrupt
+> > number, although the latter may be offset by 32 due to the SPI
+> > interrupt base.
+> >
+> > I agree we do not need irq2evt() in DTS, though.
+>
+> Is the macro used by the drivers? I have a feeling that not, so it would
+> not be suitable for the bindings, but rather as a header included in the
+> DTS.
 
-On Wed, 13 Sep 2023, Yoshinori Sato wrote:
+You mean irq2evt()? No, the new DT-aware drivers avoid the conversion
+from IRQ numbers to events codes by storing evt2irq() values in the
+interrupt table (see drivers/irqchip/irq-renesas-sh7751.c:iprmaps[]).
 
-> SM501's OF support is not enough parameter in platform device.
-> This change adds the missing parameter.
+Gr{oetje,eeting}s,
 
-You need more information.
-
-What currently doesn't work?  How does this help?
-
-How does it work?  What will happen if it's not applied?
-
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> ---
->  drivers/mfd/sm501.c | 113 ++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 113 insertions(+)
-
-Please resubmit this set and Cc it to everyone.
-
-I would like to see all of the changes please, since they are related.
-
-> diff --git a/drivers/mfd/sm501.c b/drivers/mfd/sm501.c
-> index 28027982cf69..82508f6d96da 100644
-> --- a/drivers/mfd/sm501.c
-> +++ b/drivers/mfd/sm501.c
-> @@ -1370,6 +1370,113 @@ static int sm501_init_dev(struct sm501_devdata *sm)
->  	return 0;
->  }
->  
-> +#if defined(CONFIG_OF)
-
-Avoid #ifery as much as possible.
-
-> +static unsigned int sm501_parse_devices_str(struct device_node *np)
-> +{
-> +	unsigned int device = 0;
-> +	unsigned int i, j;
-> +	unsigned int nstr;
-> +	const char *devstr;
-> +	static const struct {
-> +		char *devname;
-> +		unsigned int devid;
-> +	} devlist[] = {
-> +		{ "usb-host", SM501_USE_USB_HOST },
-> +		{ "usb-gadget", SM501_USE_USB_SLAVE },
-> +		{ "ssp0", SM501_USE_SSP0 },
-> +		{ "ssp1", SM501_USE_SSP1 },
-> +		{ "uart0", SM501_USE_UART0 },
-> +		{ "uart1", SM501_USE_UART1 },
-> +		{ "accel", SM501_USE_FBACCEL },
-> +		{ "ac97", SM501_USE_AC97 },
-> +		{ "i2s", SM501_USE_I2S },
-> +		{ "gpio", SM501_USE_GPIO },
-> +		{ "all", SM501_USE_ALL },
-> +	};
-> +
-> +	nstr = of_property_count_strings(np, "sm501,devices");
-> +	for (i = 0; i < nstr; i++) {
-> +		if (of_property_read_string_index(np, "sm501,devices", i, &devstr))
-
-Not a lot I can do without seeing the DT binding.
-
-> +			break;
-> +		for (j = 0; j < ARRAY_SIZE(devlist); j++) {
-> +			if (strcmp(devstr, devlist[j].devname) == 0) {
-> +				device |= devlist[j].devid;
-> +				goto next;
-> +			}
-> +		}
-> +next:
-> +	}
-> +	return device;
-> +}
-> +
-> +static void sm501_of_read_reg_init(struct device_node *np,
-> +				   const char *propname, struct sm501_reg_init *val)
-> +{
-> +	u32 u32_val[2];
-> +
-> +	if (!of_property_read_u32_array(np, propname, u32_val, sizeof(u32_val))) {
-> +		val->set = u32_val[0];
-> +		val->mask = u32_val[1];
-> +	} else {
-> +		val->set = 0;
-> +		val->mask = 0;
-> +	}
-> +}
-> +
-> +static int sm501_parse_dt(struct sm501_devdata *sm, struct device_node *np)
-> +{
-> +	struct sm501_platdata *plat;
-> +	u32 u32_val;
-> +
-> +	plat = devm_kzalloc(sm->dev, sizeof(struct sm501_platdata), GFP_KERNEL);
-
-sizeof(*plat)
-
-> +	if (plat == NULL)
-
-if (!plat)
-
-> +		return -ENOMEM;
-> +
-> +	plat->init = devm_kzalloc(sm->dev, sizeof(struct sm501_initdata), GFP_KERNEL);
-> +	if (plat->init == NULL)
-> +		return -ENOMEM;
-> +
-> +	plat->init->devices = sm501_parse_devices_str(np);
-> +
-> +	if (!of_property_read_u32_index(np, "sm501,mclk", 0, &u32_val))
-> +		plat->init->mclk = u32_val;
-> +	else
-> +		plat->init->mclk = 0;
-> +
-> +	if (!of_property_read_u32_index(np, "sm501,m1xclk", 0, &u32_val))
-> +		plat->init->m1xclk = u32_val;
-> +	else
-> +		plat->init->m1xclk = 0;
-> +
-> +	sm501_of_read_reg_init(np, "sm501,misc-timing", &plat->init->misc_timing);
-> +	sm501_of_read_reg_init(np, "sm501,misc-control", &plat->init->misc_control);
-> +	sm501_of_read_reg_init(np, "sm501,gpio-low", &plat->init->gpio_low);
-> +	sm501_of_read_reg_init(np, "sm501,gpio-high", &plat->init->gpio_high);
-> +
-> +#ifdef CONFIG_MFD_SM501_GPIO
-> +	if (plat->init->devices & SM501_USE_GPIO) {
-> +		if (!of_property_read_u32_index(np, "sm501,num-i2c", 0, &u32_val))
-> +			plat->gpio_i2c_nr = u32_val;
-> +		else
-> +			plat->gpio_i2c_nr = 0;
-> +	}
-> +	if (plat->gpio_i2c_nr > 0) {
-> +		int sz_gpio;
-> +
-> +		sz_gpio = sizeof(struct sm501_platdata_gpio_i2c) * plat->gpio_i2c_nr;
-> +		plat->gpio_i2c = devm_kzalloc(sm->dev, sz_gpio, GFP_KERNEL);
-> +		if (plat->gpio_i2c == NULL)
-> +			return -ENOMEM;
-> +
-> +		of_property_read_variable_u32(np, "sm501,gpio-i2c",
-> +					      plat->gpio_i2c, plat->gpio_i2c_nr * 5);
-> +	}
-> +#endif
-> +	sm->platdata = plat;
-> +	return 0;
-> +}
-> +#endif
-> +
->  static int sm501_plat_probe(struct platform_device *dev)
->  {
->  	struct sm501_devdata *sm;
-> @@ -1406,6 +1513,12 @@ static int sm501_plat_probe(struct platform_device *dev)
->  		goto err_res;
->  	}
->  
-> +	if (IS_ENABLED(CONFIG_OF) && dev->dev.of_node) {
-> +		ret = sm501_parse_dt(sm, dev->dev.of_node);
-> +		if (ret)
-> +			goto err_res;
-> +	}
-> +
->  	platform_set_drvdata(dev, sm);
->  
->  	sm->regs = ioremap(sm->io_res->start, resource_size(sm->io_res));
-> -- 
-> 2.39.2
-> 
+                        Geert
 
 -- 
-Lee Jones [李琼斯]
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
