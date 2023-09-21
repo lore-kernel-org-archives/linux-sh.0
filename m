@@ -2,50 +2,41 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A0C3BE7D0A7
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9143FE7D0A2
 	for <linux-sh@archiver.kernel.org>; Thu, 21 Sep 2023 18:12:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229586AbjIUSMa convert rfc822-to-8bit (ORCPT
+        id S229514AbjIUSMc convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 21 Sep 2023 14:12:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46954 "EHLO
+        Thu, 21 Sep 2023 14:12:32 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54274 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229648AbjIUSLT (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Sep 2023 14:11:19 -0400
+        with ESMTP id S229821AbjIUSLY (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Sep 2023 14:11:24 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0A2E6880B7;
-        Thu, 21 Sep 2023 10:38:50 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 003A788485;
+        Thu, 21 Sep 2023 10:38:54 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qjENN-003VFB-V1; Thu, 21 Sep 2023 09:45:29 +0200
+          id 1qjDkX-003HZ5-Oh; Thu, 21 Sep 2023 09:05:21 +0200
 Received: from p5b13a40a.dip0.t-ipconnect.de ([91.19.164.10] helo=[192.168.178.81])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qjENN-002Iwn-NI; Thu, 21 Sep 2023 09:45:29 +0200
-Message-ID: <f61e1f218ee4d5a87121c0e5ee0d8694364ea2dd.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 4/4] sh: machvec: remove custom ioport_{un,}map()
+          id 1qjDkX-0029eD-7S; Thu, 21 Sep 2023 09:05:21 +0200
+Message-ID: <cea63c1eb47c9a438d21bc1fce5a48e4b3235342.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] fbdev: sh7760fb: require FB=y to build cleanly
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Arnd Bergmann <arnd@arndb.de>,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Arnd Bergmann <arnd@kernel.org>, linux-sh@vger.kernel.org,
-        Rich Felker <dalias@libc.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        linux-kernel@vger.kernel.org
-Date:   Thu, 21 Sep 2023 09:45:29 +0200
-In-Reply-To: <d2f5cdc1-4bff-4f1d-a7b2-38eee6a6a86d@app.fastmail.com>
-References: <20230802184849.1019466-1-arnd@kernel.org>
-         <20230802184849.1019466-4-arnd@kernel.org>
-         <CAMuHMdVjmD357K-yxxW-jn-6vKsXTg+u1Psw9DftyxH=dQoMEg@mail.gmail.com>
-         <5dad2d86-78ea-4a39-8ee1-98e3eb134d36@app.fastmail.com>
-         <CAMuHMdVYcvPL+JpPw9sA48=615cdfwa8d0LP-bVp0NWqbQ+JOw@mail.gmail.com>
-         <190041c8-2d99-4bc3-adc3-6fbe902c1265@app.fastmail.com>
-         <CAMuHMdXyLHitBWOMp74cqtJbSs6q_4sPOEee+x72tE-E2G-KWg@mail.gmail.com>
-         <d2f5cdc1-4bff-4f1d-a7b2-38eee6a6a86d@app.fastmail.com>
+To:     Randy Dunlap <rdunlap@infradead.org>, linux-kernel@vger.kernel.org
+Cc:     Daniel Vetter <daniel@ffwll.ch>, Helge Deller <deller@gmx.de>,
+        linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org,
+        linux-sh@vger.kernel.org
+Date:   Thu, 21 Sep 2023 09:05:20 +0200
+In-Reply-To: <20230921060228.29041-1-rdunlap@infradead.org>
+References: <20230921060228.29041-1-rdunlap@infradead.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 User-Agent: Evolution 3.48.4 
@@ -57,42 +48,60 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi!
+Hi Randy!
 
-On Fri, 2023-09-15 at 17:49 +0200, Arnd Bergmann wrote:
-> On Fri, Sep 15, 2023, at 17:41, Geert Uytterhoeven wrote:
-> > On Wed, Sep 13, 2023 at 4:30 PM Arnd Bergmann <arnd@arndb.de> wrote:
-> > > On Wed, Sep 13, 2023, at 16:13, Geert Uytterhoeven wrote:
-> > > 
-> > > Right, it looks like the GENERIC_IOMAP part if gone from that
-> > > series, and I also see that the PCI host bridge does not actually
-> > 
-> > No, 02/30 still enables it.
+On Wed, 2023-09-20 at 23:02 -0700, Randy Dunlap wrote:
+> Fix build errors when CONFIG_FB=m and CONFIG_FB_SH7760=y:
 > 
-> Ok.
+> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o: in function `sh7760fb_probe':
+> sh7760fb.c:(.text+0x374): undefined reference to `framebuffer_alloc'
+> sh2-linux-ld: sh7760fb.c:(.text+0x394): undefined reference to `fb_videomode_to_var'
+> sh2-linux-ld: sh7760fb.c:(.text+0x3a0): undefined reference to `fb_alloc_cmap'
+> sh2-linux-ld: sh7760fb.c:(.text+0x3a4): undefined reference to `register_framebuffer'
+> sh2-linux-ld: sh7760fb.c:(.text+0x3ac): undefined reference to `fb_dealloc_cmap'
+> sh2-linux-ld: sh7760fb.c:(.text+0x434): undefined reference to `framebuffer_release'
+> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o: in function `sh7760fb_remove':
+> sh7760fb.c:(.text+0x800): undefined reference to `unregister_framebuffer'
+> sh2-linux-ld: sh7760fb.c:(.text+0x804): undefined reference to `fb_dealloc_cmap'
+> sh2-linux-ld: sh7760fb.c:(.text+0x814): undefined reference to `framebuffer_release'
+> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0xc): undefined reference to `fb_io_read'
+> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x10): undefined reference to `fb_io_write'
+> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x2c): undefined reference to `cfb_fillrect'
+> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x30): undefined reference to `cfb_copyarea'
+> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x34): undefined reference to `cfb_imageblit'
 > 
-> > > map the port I/O window. That's usually fine because very few
-> > > drivers actually need it, and it also means that there should be
-> > > no need for GENERIC_IOMAP or the simpler alternative.
-> > > 
-> > > The first version probably only did it accidentally, which is a
-> > > common mistake, and I think the ones for hexagon, m68k, and
-> > > mips can probably be removed as well with some simplifiations.
-> > 
-> > When not selecting GENERIC_IOMAP in v2, the build fails with:
-> > 
-> > sh4-linux-gnu-ld: lib/devres.o: in function `pcim_iomap_release':
-> > devres.c:(.text+0x234): undefined reference to `pci_iounmap'
+> Fixes: 4a25e41831ee ("video: sh7760fb: SH7760/SH7763 LCDC framebuffer driver")
+> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+> Cc: Daniel Vetter <daniel@ffwll.ch>
+> Cc: Helge Deller <deller@gmx.de>
+> Cc: linux-fbdev@vger.kernel.org
+> Cc: dri-devel@lists.freedesktop.org
+> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+> Cc: linux-sh@vger.kernel.org
+> ---
+>  drivers/video/fbdev/Kconfig |    2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> Odd, that one is provided based on CONFIG_GENERIC_PCI_IOMAP
-> and should be provided by common code, despite the similar
-> naming this is unrelated to CONFIG_GENERIC_IOMAP.
+> diff -- a/drivers/video/fbdev/Kconfig b/drivers/video/fbdev/Kconfig
+> --- a/drivers/video/fbdev/Kconfig
+> +++ b/drivers/video/fbdev/Kconfig
+> @@ -1762,7 +1762,7 @@ config FB_COBALT
+>  
+>  config FB_SH7760
+>  	bool "SH7760/SH7763/SH7720/SH7721 LCDC support"
+> -	depends on FB && (CPU_SUBTYPE_SH7760 || CPU_SUBTYPE_SH7763 \
+> +	depends on FB=y && (CPU_SUBTYPE_SH7760 || CPU_SUBTYPE_SH7763 \
+>  		|| CPU_SUBTYPE_SH7720 || CPU_SUBTYPE_SH7721)
+>  	select FB_IOMEM_HELPERS
+>  	help
 
-So, what would be the suggestion now to move forward? Shall I include this
-series for 6.7 or better wait until after Yoshinori's series to convert
-to device tree has been merged?
+Actually, Thomas Zimmermann already posted the same patch already on Monday ;-).
+
+See [1].
 
 Adrian
+
+> [1] https://marc.info/?l=dri-devel&m=169502772500717&w=2
 
 -- 
  .''`.  John Paul Adrian Glaubitz
