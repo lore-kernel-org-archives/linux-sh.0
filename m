@@ -2,109 +2,100 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2987FC04AAF
-	for <linux-sh@archiver.kernel.org>; Wed, 20 Sep 2023 16:57:04 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id A0C3BE7D0A7
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Sep 2023 18:12:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234855AbjITQ5I (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 20 Sep 2023 12:57:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57888 "EHLO
+        id S229586AbjIUSMa convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 21 Sep 2023 14:12:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46954 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234457AbjITQ5H (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 20 Sep 2023 12:57:07 -0400
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2001:67c:2178:6::1d])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9E67F99;
-        Wed, 20 Sep 2023 09:57:01 -0700 (PDT)
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by smtp-out2.suse.de (Postfix) with ESMTPS id 54B642017D;
-        Wed, 20 Sep 2023 16:57:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-        t=1695229020; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=arrJUNtqjU/izONia38ns6kqz5a2Ljs8vzyYYK7Z784=;
-        b=B5zucAFR4XyR8/5tRFN24icRoW3Li46w9AYROy5fgeQHJjHHmWe1VBSTJAgJzltxBUTQfj
-        A2xO9YmlmCUAHIhnO6bcsmBlTch94Tqw9Zrs2J99gUVXgRrg7N5SnwIhK/ADmsG7DqDXb5
-        NyDsDzox8Vmqa0S6njAX9jt6GCL7qPo=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-        s=susede2_ed25519; t=1695229020;
-        h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-         mime-version:mime-version:content-type:content-type:
-         content-transfer-encoding:content-transfer-encoding:
-         in-reply-to:in-reply-to:references:references;
-        bh=arrJUNtqjU/izONia38ns6kqz5a2Ljs8vzyYYK7Z784=;
-        b=TEI3317KDo5yb9aq6yYTvDHKSUd5zcn5XGrWvmgB48JFj1/RVX24vTZ5l0fScD+mlAMJpN
-        CaN28xdVs9HUPMBA==
-Received: from imap2.suse-dmz.suse.de (imap2.suse-dmz.suse.de [192.168.254.74])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature ECDSA (P-521) server-digest SHA512)
-        (No client certificate requested)
-        by imap2.suse-dmz.suse.de (Postfix) with ESMTPS id 420581333E;
-        Wed, 20 Sep 2023 16:57:00 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([192.168.254.65])
-        by imap2.suse-dmz.suse.de with ESMTPSA
-        id s1QXEFwkC2UDdgAAMHmgww
-        (envelope-from <jack@suse.cz>); Wed, 20 Sep 2023 16:57:00 +0000
-Received: by quack3.suse.cz (Postfix, from userid 1000)
-        id AE8E8A077D; Wed, 20 Sep 2023 18:56:59 +0200 (CEST)
-Date:   Wed, 20 Sep 2023 18:56:59 +0200
-From:   Jan Kara <jack@suse.cz>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     Peter Lafreniere <peter@n8pjl.ca>, segher@kernel.crashing.org,
-        anton.ivanov@cambridgegreys.com, ink@jurassic.park.msu.ru,
-        jack@suse.cz, johannes@sipsolutions.net,
-        linux-alpha@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-        linux-kernel@vger.kernel.org, linux-m68k@vger.kernel.org,
-        linux-mips@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-um@lists.infradead.org, linux@armlinux.org.uk,
-        linuxppc-dev@lists.ozlabs.org, reiserfs-devel@vger.kernel.org,
-        richard.henderson@linaro.org, richard@nod.at,
-        tsbogend@alpha.franken.de
-Subject: Re: [PATCH 0/7] arch/*: config: Remove ReiserFS from defconfig
-Message-ID: <20230920165659.coe7d2lydiaatoby@quack3>
-References: <20230918175529.19011-1-peter@n8pjl.ca>
- <20230918234108.GN19790@gate.crashing.org>
- <20230919000026.7409-1-peter@n8pjl.ca>
- <20230919151630.GO19790@gate.crashing.org>
- <20230919155832.4179-1-peter@n8pjl.ca>
- <CAMuHMdXQ=xpeY3tmLXe1kgJbRtmVAn62rEhvzO+VB7GCgy4F8w@mail.gmail.com>
+        with ESMTP id S229648AbjIUSLT (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Sep 2023 14:11:19 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0A2E6880B7;
+        Thu, 21 Sep 2023 10:38:50 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1qjENN-003VFB-V1; Thu, 21 Sep 2023 09:45:29 +0200
+Received: from p5b13a40a.dip0.t-ipconnect.de ([91.19.164.10] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1qjENN-002Iwn-NI; Thu, 21 Sep 2023 09:45:29 +0200
+Message-ID: <f61e1f218ee4d5a87121c0e5ee0d8694364ea2dd.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 4/4] sh: machvec: remove custom ioport_{un,}map()
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Arnd Bergmann <arnd@arndb.de>,
+        Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     Arnd Bergmann <arnd@kernel.org>, linux-sh@vger.kernel.org,
+        Rich Felker <dalias@libc.org>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-kernel@vger.kernel.org
+Date:   Thu, 21 Sep 2023 09:45:29 +0200
+In-Reply-To: <d2f5cdc1-4bff-4f1d-a7b2-38eee6a6a86d@app.fastmail.com>
+References: <20230802184849.1019466-1-arnd@kernel.org>
+         <20230802184849.1019466-4-arnd@kernel.org>
+         <CAMuHMdVjmD357K-yxxW-jn-6vKsXTg+u1Psw9DftyxH=dQoMEg@mail.gmail.com>
+         <5dad2d86-78ea-4a39-8ee1-98e3eb134d36@app.fastmail.com>
+         <CAMuHMdVYcvPL+JpPw9sA48=615cdfwa8d0LP-bVp0NWqbQ+JOw@mail.gmail.com>
+         <190041c8-2d99-4bc3-adc3-6fbe902c1265@app.fastmail.com>
+         <CAMuHMdXyLHitBWOMp74cqtJbSs6q_4sPOEee+x72tE-E2G-KWg@mail.gmail.com>
+         <d2f5cdc1-4bff-4f1d-a7b2-38eee6a6a86d@app.fastmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.4 
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAMuHMdXQ=xpeY3tmLXe1kgJbRtmVAn62rEhvzO+VB7GCgy4F8w@mail.gmail.com>
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.19.164.10
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue 19-09-23 18:02:39, Geert Uytterhoeven wrote:
-> Hi Peter,
-> 
-> On Tue, Sep 19, 2023 at 5:58 PM Peter Lafreniere <peter@n8pjl.ca> wrote:
-> >  2) Stops building an obsolete and largely-unused filesystem unnecessarily.
-> >     Some hobbyist targets like m68k and alpha may prefer to keep all filesystems
-> >     available until total removal, but others like arm and UML have no need for
-> >     ReiserFS to be built unless specifically configured.
-> 
-> As UML is used a lot for testing, isn't it actually counter-productive
-> to remove ReiserFS from the UML defconfig?  The less testing it
-> receives, the higher the chance of introducing regressions.
+Hi!
 
-The only testing I know about for reiserfs (besides build testing) is
-syzbot. And regarding the people / bots doing filesystem testing I know
-none of them uses UML. Rather it is x86 VMs these days where reiserfs is
-disabled in the defconfig for a *long* time (many years). Also when you do
-filesystem testing, you usually just test the few filesystems you care
-about and for which you have all the tools installed. So frankly I don't
-see a good reason to leave reiserfs enabled in defconfigs. But sure if
-m68k or other arch wants to keep reiserfs in it's defconfig for some
-consistency reasons, I'm fine with it. I just suspect that for most archs
-this is just a historical reason.
+On Fri, 2023-09-15 at 17:49 +0200, Arnd Bergmann wrote:
+> On Fri, Sep 15, 2023, at 17:41, Geert Uytterhoeven wrote:
+> > On Wed, Sep 13, 2023 at 4:30 PM Arnd Bergmann <arnd@arndb.de> wrote:
+> > > On Wed, Sep 13, 2023, at 16:13, Geert Uytterhoeven wrote:
+> > > 
+> > > Right, it looks like the GENERIC_IOMAP part if gone from that
+> > > series, and I also see that the PCI host bridge does not actually
+> > 
+> > No, 02/30 still enables it.
+> 
+> Ok.
+> 
+> > > map the port I/O window. That's usually fine because very few
+> > > drivers actually need it, and it also means that there should be
+> > > no need for GENERIC_IOMAP or the simpler alternative.
+> > > 
+> > > The first version probably only did it accidentally, which is a
+> > > common mistake, and I think the ones for hexagon, m68k, and
+> > > mips can probably be removed as well with some simplifiations.
+> > 
+> > When not selecting GENERIC_IOMAP in v2, the build fails with:
+> > 
+> > sh4-linux-gnu-ld: lib/devres.o: in function `pcim_iomap_release':
+> > devres.c:(.text+0x234): undefined reference to `pci_iounmap'
+> 
+> Odd, that one is provided based on CONFIG_GENERIC_PCI_IOMAP
+> and should be provided by common code, despite the similar
+> naming this is unrelated to CONFIG_GENERIC_IOMAP.
 
-								Honza
+So, what would be the suggestion now to move forward? Shall I include this
+series for 6.7 or better wait until after Yoshinori's series to convert
+to device tree has been merged?
+
+Adrian
+
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
