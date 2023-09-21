@@ -2,121 +2,93 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8B902E7D0B2
-	for <linux-sh@archiver.kernel.org>; Thu, 21 Sep 2023 21:20:51 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B9F0E7D0AB
+	for <linux-sh@archiver.kernel.org>; Thu, 21 Sep 2023 22:12:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232715AbjIUVUy (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 21 Sep 2023 17:20:54 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46084 "EHLO
+        id S233114AbjIUWMl convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 21 Sep 2023 18:12:41 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53246 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232801AbjIUVOw (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Sep 2023 17:14:52 -0400
-Received: from wnew1-smtp.messagingengine.com (wnew1-smtp.messagingengine.com [64.147.123.26])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A4FEA7EF5;
-        Thu, 21 Sep 2023 10:10:52 -0700 (PDT)
-Received: from compute6.internal (compute6.nyi.internal [10.202.2.47])
-        by mailnew.west.internal (Postfix) with ESMTP id 0FCFB2B00167;
-        Thu, 21 Sep 2023 08:27:35 -0400 (EDT)
-Received: from imap51 ([10.202.2.101])
-  by compute6.internal (MEProxy); Thu, 21 Sep 2023 08:27:37 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-        :cc:content-type:content-type:date:date:from:from:in-reply-to
-        :in-reply-to:message-id:mime-version:references:reply-to:sender
-        :subject:subject:to:to; s=fm1; t=1695299255; x=1695306455; bh=Xq
-        U4+PADbmN/YvqQXLrRCGcZ07y18plfxqgBBJgIpjw=; b=Xdx4hQsTzl4c24llIz
-        192HiWdE2r0Z17h7hha/5B+uybwHOw+lHySp5dgSFIyremltJv6BupWCCE7vqAtS
-        DUduuni5p7SDjaoxP7Y0c3dI1L3DDC96hM3q6xwLck95D6CeqCmsxrkKZ6Zgv2mQ
-        ih8pZz4GlPyAEKT2EByi/sbL53k7F9MpaztW3ubpkI67GluVKqoEgJAoZkJac6xf
-        L40yx+zPXQSonM/qQqXr+/44QEGY/LW3tmoWxfCIXGmvbDY8YlzEj56Y1t4Q3Ooi
-        aLhMW+mRkUenODaIJ7pTKXCN8HhFkJ2SLPpatk0e1cLMSpNqYk1QxmquZjzyFqfT
-        dFiw==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-        messagingengine.com; h=cc:cc:content-type:content-type:date:date
-        :feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-        :message-id:mime-version:references:reply-to:sender:subject
-        :subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
-        :x-sasl-enc; s=fm2; t=1695299255; x=1695306455; bh=XqU4+PADbmN/Y
-        vqQXLrRCGcZ07y18plfxqgBBJgIpjw=; b=AsHXnvbTE0NoKn8UR1wNiZEQ0Izgl
-        oJ1le/svDXQKmB5iunzfl757K0xMqaKgwpjVCaw2UuP2Vt2mi2RMkN55AQsiD+0o
-        /NGYpK0Q1N3N8f+y8hlvcaJaEnVYzzUXulTecLj6OPE2kfCABIE81WZlt/TQWRym
-        a3YS2kb9o3UDiIqmT6Muw7WaDcpWDjOLS4FEg9ERk6Zsv5Hp/uVcGqvfRusPbRxs
-        /TkNZpWQa1QyBFLzjTES+Opz/HvajxF5Bnwti4DvpslyUHWi81WsLXmneMghKGmm
-        5uLl0cSZ1BQNDmkjOK4WmcBmk5Rvp6jy4BVNblrnY0nqT6NYPATO7irCQ==
-X-ME-Sender: <xms:tzYMZUXcSuZhEjYsCWLs0tRkqLt6ojmPoMPl4a4ip4r-sgw8vTC6og>
-    <xme:tzYMZYnjV322WYYdSTMoXm4rPGFrj126uFz03pQ5jZLRtclncn1Vn2e5IKuSknQur
-    nwLBT-aUOiRNbskyLQ>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedviedrudekiedgheduucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
-    cujfgurhepofgfggfkjghffffhvfevufgtsehttdertderredtnecuhfhrohhmpedftehr
-    nhguuceuvghrghhmrghnnhdfuceorghrnhgusegrrhhnuggsrdguvgeqnecuggftrfgrth
-    htvghrnhepffehueegteeihfegtefhjefgtdeugfegjeelheejueethfefgeeghfektdek
-    teffnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomheprg
-    hrnhgusegrrhhnuggsrdguvg
-X-ME-Proxy: <xmx:tzYMZYZPhdycibP7W_ddmUBtLn0YGUONRmMTwUtOUl4FxP4TbdnjHQ>
-    <xmx:tzYMZTWsoHJEmyjcJspV67bM8725seq0dG7wF9ka6iwdPlA97rgN6Q>
-    <xmx:tzYMZem0QBzUTaJpXkKhVHcTIdTE5qwySok6bADpAf29P4FWOrLpBA>
-    <xmx:tzYMZdec6437asUuro7oN_lGHpAgzzqxstK0csnQRsD1an1TXXRMnjq-9-g>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.nyi.internal (Postfix, from userid 501)
-        id 0F24AB60089; Thu, 21 Sep 2023 08:27:34 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
-User-Agent: Cyrus-JMAP/3.9.0-alpha0-761-gece9e40c48-fm-20230913.001-gece9e40c
+        with ESMTP id S232756AbjIUWMQ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 21 Sep 2023 18:12:16 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B6DAB88486;
+        Thu, 21 Sep 2023 10:38:55 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1qjG4o-0001JE-6A; Thu, 21 Sep 2023 11:34:26 +0200
+Received: from p5b13a40a.dip0.t-ipconnect.de ([91.19.164.10] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1qjG4n-002kwl-Uq; Thu, 21 Sep 2023 11:34:26 +0200
+Message-ID: <fdab78c75a73f55b5ab496aff52b1b2855991bbd.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: mm: Re-add lost __ref to ioremap_prot() to fix
+ modpost warning
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Geert Uytterhoeven <geert+renesas@glider.be>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Baoquan He <bhe@redhat.com>
+Cc:     linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Date:   Thu, 21 Sep 2023 11:34:25 +0200
+In-Reply-To: <20230911093850.1517389-1-geert+renesas@glider.be>
+References: <20230911093850.1517389-1-geert+renesas@glider.be>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.48.4 
 MIME-Version: 1.0
-Message-Id: <c4a96578-b27c-44fa-82ef-1c5bf43b972a@app.fastmail.com>
-In-Reply-To: <20230921110424.215592-4-bhe@redhat.com>
-References: <20230921110424.215592-1-bhe@redhat.com>
- <20230921110424.215592-4-bhe@redhat.com>
-Date:   Thu, 21 Sep 2023 08:27:14 -0400
-From:   "Arnd Bergmann" <arnd@arndb.de>
-To:     "Baoquan He" <bhe@redhat.com>, linux-kernel@vger.kernel.org
-Cc:     Linux-Arch <linux-arch@vger.kernel.org>, linux-mm@kvack.org,
-        "Andrew Morton" <akpm@linux-foundation.org>,
-        "Jiaxun Yang" <jiaxun.yang@flygoat.com>,
-        "Michael Ellerman" <mpe@ellerman.id.au>,
-        "Geert Uytterhoeven" <geert@linux-m68k.org>,
-        "Luis Chamberlain" <mcgrof@kernel.org>,
-        "Christoph Hellwig" <hch@infradead.org>,
-        "Thomas Bogendoerfer" <tsbogend@alpha.franken.de>,
-        "Florian Fainelli" <f.fainelli@gmail.com>,
-        "Helge Deller" <deller@gmx.de>, linux-alpha@vger.kernel.org,
-        linux-hexagon@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org
-Subject: Re: [PATCH v5 3/4] arch/*/io.h: remove ioremap_uc in some architectures
-Content-Type: text/plain
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 91.19.164.10
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, Sep 21, 2023, at 07:04, Baoquan He wrote:
-> ioremap_uc() is only meaningful on old x86-32 systems with the PAT
-> extension, and on ia64 with its slightly unconventional ioremap()
-> behavior. So remove the ioremap_uc() definition in architecutures
-> other than x86 and ia64. These architectures all have asm-generic/io.h
-> included and will have the default ioremap_uc() definition which
-> returns NULL.
->
-> This changes the existing behaviour, while no need to worry about
-> any breakage because in the only callsite of ioremap_uc(), code
-> has been adjusted to eliminate the impact. Please see
-> atyfb_setup_generic() of drivers/video/fbdev/aty/atyfb_base.c.
->
-> If any new invocation of ioremap_uc() need be added, please consider
-> using ioremap() intead or adding a ARCH specific version if necessary.
->
-> Signed-off-by: Baoquan He <bhe@redhat.com>
-> Acked-by: Geert Uytterhoeven <geert@linux-m68k.org>
-> Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
-> Acked-by: Helge Deller <deller@gmx.de>  # parisc
-> Cc: linux-alpha@vger.kernel.org
-> Cc: linux-hexagon@vger.kernel.org
-> Cc: linux-m68k@lists.linux-m68k.org
-> Cc: linux-mips@vger.kernel.org
-> Cc: linux-parisc@vger.kernel.org
-> Cc: linuxppc-dev@lists.ozlabs.org
-> Cc: linux-sh@vger.kernel.org
-> Cc: sparclinux@vger.kernel.org
+On Mon, 2023-09-11 at 11:38 +0200, Geert Uytterhoeven wrote:
+> When __ioremap_caller() was replaced by ioremap_prot(), the __ref
+> annotation added in commit af1415314a4190b8 ("sh: Flag
+> __ioremap_caller() __init_refok.") was removed, causing a modpost
+> warning:
+> 
+>     WARNING: modpost: vmlinux: section mismatch in reference: ioremap_prot+0x88 (section: .text) -> ioremap_fixed (section: .init.text)
+> 
+> ioremap_prot() calls ioremap_fixed() (which is marked __init), but only
+> before mem_init_done becomes true, so this is safe.  Hence fix this by
+> re-adding the lost __ref.
+> 
+> Fixes: 0453c9a78015cb22 ("sh: mm: convert to GENERIC_IOREMAP")
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+>  arch/sh/mm/ioremap.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/arch/sh/mm/ioremap.c b/arch/sh/mm/ioremap.c
+> index c33b3daa4ad1a3e6..33d20f34560fd5cb 100644
+> --- a/arch/sh/mm/ioremap.c
+> +++ b/arch/sh/mm/ioremap.c
+> @@ -72,8 +72,8 @@ __ioremap_29bit(phys_addr_t offset, unsigned long size, pgprot_t prot)
+>  #define __ioremap_29bit(offset, size, prot)		NULL
+>  #endif /* CONFIG_29BIT */
+>  
+> -void __iomem *ioremap_prot(phys_addr_t phys_addr, size_t size,
+> -			   unsigned long prot)
+> +void __iomem __ref *ioremap_prot(phys_addr_t phys_addr, size_t size,
+> +				 unsigned long prot)
+>  {
+>  	void __iomem *mapped;
+>  	pgprot_t pgprot = __pgprot(prot);
 
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
