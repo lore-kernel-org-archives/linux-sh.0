@@ -2,84 +2,132 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 4589CCE7A81
-	for <linux-sh@archiver.kernel.org>; Mon, 25 Sep 2023 12:56:53 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id C0848CE7AB9
+	for <linux-sh@archiver.kernel.org>; Mon, 25 Sep 2023 18:16:09 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230448AbjIYM46 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 25 Sep 2023 08:56:58 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53920 "EHLO
+        id S230193AbjIYSQO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 25 Sep 2023 14:16:14 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33270 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229450AbjIYM45 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 25 Sep 2023 08:56:57 -0400
-Received: from albert.telenet-ops.be (albert.telenet-ops.be [IPv6:2a02:1800:110:4::f00:1a])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7D999FC
-        for <linux-sh@vger.kernel.org>; Mon, 25 Sep 2023 05:56:50 -0700 (PDT)
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:ee18:727e:6235:2ac2])
-        by albert.telenet-ops.be with bizsmtp
-        id qCwn2A00B4XpEKH06CwnFJ; Mon, 25 Sep 2023 14:56:48 +0200
-Received: from rox.of.borg ([192.168.97.57])
-        by ramsan.of.borg with esmtp (Exim 4.95)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1qkl8R-004XvW-64;
-        Mon, 25 Sep 2023 14:56:47 +0200
-Received: from geert by rox.of.borg with local (Exim 4.95)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1qkl8p-00FRoC-3P;
-        Mon, 25 Sep 2023 14:56:47 +0200
-From:   Geert Uytterhoeven <geert+renesas@glider.be>
-To:     Liam Girdwood <lgirdwood@gmail.com>,
-        Mark Brown <broonie@kernel.org>,
-        Jaroslav Kysela <perex@perex.cz>,
-        Takashi Iwai <tiwai@suse.com>,
-        Manuel Lauss <manuel.lauss@gmail.com>
-Cc:     alsa-devel@alsa-project.org, linux-sh@vger.kernel.org,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        kernel test robot <lkp@intel.com>
-Subject: [PATCH] ASoC: sh: dma-sh7760: Use %pad and %zu to format dma_addr_t and size_t
-Date:   Mon, 25 Sep 2023 14:56:46 +0200
-Message-Id: <20230925125646.3681807-1-geert+renesas@glider.be>
-X-Mailer: git-send-email 2.34.1
+        with ESMTP id S229777AbjIYSQN (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 25 Sep 2023 14:16:13 -0400
+Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 608AD103;
+        Mon, 25 Sep 2023 11:16:06 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
+        Content-Type:In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:
+        Message-ID:Sender:Reply-To:Content-ID:Content-Description;
+        bh=BKLraxw+2cT6Y1DNrlWQPp9jaHszQHQqGz00lrO3DWs=; b=WY3k3i7SsxkjKjTCxuOxR3+/SV
+        v05dJNNqoLtu50Yt6ROa5S1jMLxqBwYvCU/cex79wucm7LUem3++XIkXOOvIUl4BZ0o74YxXtvA/v
+        Cr4KaWmxiHp+gQZesQxZbJNs4yYPjqWE4KU39EqQAurpa91Ka+Behmm6YlJ8u/mu3rniBizz2SO9l
+        SCvLJ1cVVXhlLFRHVfgjQmSpigPm6fjDyOOuNwaj72lehYBZMymFqwmY8hlVlWfaKO5d+HPDG6UPr
+        6Mw29QgSTcYIXSmYDHvdrBMpYLxfSLSJFZ9sBh43DOWAd3Kq2NmBrM+OJ+9jVNZhZtQuOuTZe59nw
+        iUY8aEHw==;
+Received: from [2601:1c2:980:9ec0::9fed]
+        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
+        id 1qkq7f-00EoSA-1w;
+        Mon, 25 Sep 2023 18:15:55 +0000
+Message-ID: <f905a3ad-0259-4dae-8071-d3371b49f0c8@infradead.org>
+Date:   Mon, 25 Sep 2023 11:15:52 -0700
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: sh4-linux-ld: drivers/video/fbdev/sh7760fb.o:undefined reference
+ to `fb_io_read'
+Content-Language: en-US
+To:     Geert Uytterhoeven <geert@linux-m68k.org>
+Cc:     kernel test robot <lkp@intel.com>,
+        Thomas Zimmermann <tzimmermann@suse.de>,
+        oe-kbuild-all@lists.linux.dev, linux-kernel@vger.kernel.org,
+        Sam Ravnborg <sam@ravnborg.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        linux-fbdev@vger.kernel.org,
+        Linux-sh list <linux-sh@vger.kernel.org>
+References: <202309130632.LS04CPWu-lkp@intel.com>
+ <feadd6a5-0f56-4575-9891-3a7d88e69e64@infradead.org>
+ <CAMuHMdVRyaq5xT+2GGREHS95Nm86wHmmU0cE_qR5-eza1vMExw@mail.gmail.com>
+From:   Randy Dunlap <rdunlap@infradead.org>
+In-Reply-To: <CAMuHMdVRyaq5xT+2GGREHS95Nm86wHmmU0cE_qR5-eza1vMExw@mail.gmail.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-sound/soc/sh/dma-sh7760.c: In function ‘camelot_prepare’:
-./include/linux/kern_levels.h:5:25: warning: format ‘%lx’ expects argument of type ‘long unsigned int’, but argument 2 has type ‘unsigned int’ [-Wformat=]
-    5 | #define KERN_SOH        "\001"          /* ASCII Start Of Header */
-sound/soc/sh/dma-sh7760.c:198:9: note: in expansion of macro ‘pr_debug’
-  198 |         pr_debug("PCM data: addr 0x%08lx len %d\n",
-      |         ^~~~~~~~
 
-Fix this by using "%pad" and taking the address to format the DMA
-address.  While at it, use "%zu" to format size_t.
 
-Reported-by: kernel test robot <lkp@intel.com>
-Closes: https://lore.kernel.org/oe-kbuild-all/202309250903.XNAjFuxy-lkp@intel.com/
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- sound/soc/sh/dma-sh7760.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+On 9/25/23 00:32, Geert Uytterhoeven wrote:
+> Hi Randy,
+> 
+> On Wed, Sep 13, 2023 at 7:13 AM Randy Dunlap <rdunlap@infradead.org> wrote:
+>> On 9/12/23 15:42, kernel test robot wrote:
+>>> FYI, the error/warning was bisected to this commit, please ignore it if it's irrelevant.
+>>>
+>>> tree:   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git master
+>>> head:   3669558bdf354cd352be955ef2764cde6a9bf5ec
+>>> commit: 5f86367006c6a0662faaf36f753f437afe42fb63 fbdev/sh7760fb: Use fbdev I/O helpers
+>>> date:   6 weeks ago
+>>> config: sh-randconfig-r012-20230913 (https://download.01.org/0day-ci/archive/20230913/202309130632.LS04CPWu-lkp@intel.com/config)
+>>> compiler: sh4-linux-gcc (GCC) 13.2.0
+>>> reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20230913/202309130632.LS04CPWu-lkp@intel.com/reproduce)
+>>>
+>>> If you fix the issue in a separate patch/commit (i.e. not just a new version of
+>>> the same patch/commit), kindly add following tags
+>>> | Reported-by: kernel test robot <lkp@intel.com>
+>>> | Closes: https://lore.kernel.org/oe-kbuild-all/202309130632.LS04CPWu-lkp@intel.com/
+>>>
+>>> All errors (new ones prefixed by >>):
+>>>
+>>>    sh4-linux-ld: drivers/video/fbdev/sh7760fb.o: in function `sh7760fb_probe':
+>>>    sh7760fb.c:(.text+0x374): undefined reference to `framebuffer_alloc'
+>>>    sh4-linux-ld: sh7760fb.c:(.text+0x394): undefined reference to `fb_videomode_to_var'
+>>>    sh4-linux-ld: sh7760fb.c:(.text+0x39c): undefined reference to `fb_alloc_cmap'
+>>>    sh4-linux-ld: sh7760fb.c:(.text+0x3a4): undefined reference to `register_framebuffer'
+>>>    sh4-linux-ld: sh7760fb.c:(.text+0x3ac): undefined reference to `fb_dealloc_cmap'
+>>>    sh4-linux-ld: sh7760fb.c:(.text+0x434): undefined reference to `framebuffer_release'
+>>>    sh4-linux-ld: drivers/video/fbdev/sh7760fb.o: in function `sh7760fb_remove':
+>>>    sh7760fb.c:(.text+0x800): undefined reference to `unregister_framebuffer'
+>>>    sh4-linux-ld: sh7760fb.c:(.text+0x804): undefined reference to `fb_dealloc_cmap'
+>>>    sh4-linux-ld: sh7760fb.c:(.text+0x814): undefined reference to `framebuffer_release'
+>>>>> sh4-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0xc): undefined reference to `fb_io_read'
+>>>>> sh4-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x10): undefined reference to `fb_io_write'
+>>>    sh4-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x2c): undefined reference to `cfb_fillrect'
+>>>    sh4-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x30): undefined reference to `cfb_copyarea'
+>>>    sh4-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x34): undefined reference to `cfb_imageblit'
+>>
+>> The problem is CONFIG_FB=m and CONFIG_FB_SH7760=y.
+>>
+>> This can be fixed by this simple change ... if it's correct.
+>>
+>> or this Kconfig entry can be made into a tristate, but that may not
+>> help with booting a system.
+> 
+> What kind of problem do you foresee? Users could still configure it builtin
+> when needed.
 
-diff --git a/sound/soc/sh/dma-sh7760.c b/sound/soc/sh/dma-sh7760.c
-index 121e48f984c50cab..85fe126233528252 100644
---- a/sound/soc/sh/dma-sh7760.c
-+++ b/sound/soc/sh/dma-sh7760.c
-@@ -195,9 +195,9 @@ static int camelot_prepare(struct snd_soc_component *component,
- 	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
- 	struct camelot_pcm *cam = &cam_pcm_data[asoc_rtd_to_cpu(rtd, 0)->id];
- 
--	pr_debug("PCM data: addr 0x%08lx len %d\n",
--		 (u32)runtime->dma_addr, runtime->dma_bytes);
-- 
-+	pr_debug("PCM data: addr %pad len %zu\n", &runtime->dma_addr,
-+		 runtime->dma_bytes);
-+
- 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
- 		BRGREG(BRGATXSAR) = (unsigned long)runtime->dma_area;
- 		BRGREG(BRGATXTCR) = runtime->dma_bytes;
+I was hoping that someone who is familiar with this particular h/w
+could respond, but I agree with you:  I don't know of any reason to
+restrict this driver to builtin only.
+
+> I see no reason to restrict this to builtin.
+> The driver already has all MODULE_*() boilerplate.
+> 
+>> --- a/drivers/video/fbdev/Kconfig
+>> +++ b/drivers/video/fbdev/Kconfig
+>> @@ -1762,7 +1762,7 @@ config FB_COBALT
+>>
+>>  config FB_SH7760
+>>         bool "SH7760/SH7763/SH7720/SH7721 LCDC support"
+>> -       depends on FB && (CPU_SUBTYPE_SH7760 || CPU_SUBTYPE_SH7763 \
+>> +       depends on FB=y && (CPU_SUBTYPE_SH7760 || CPU_SUBTYPE_SH7763 \
+>>                 || CPU_SUBTYPE_SH7720 || CPU_SUBTYPE_SH7721)
+>>         select FB_IOMEM_HELPERS
+>>         help
+> 
+> Gr{oetje,eeting}s,
+> 
+>                         Geert
+> 
+
 -- 
-2.34.1
-
+~Randy
