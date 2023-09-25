@@ -2,104 +2,114 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id A52FCCE7A88
-	for <linux-sh@archiver.kernel.org>; Fri, 22 Sep 2023 23:27:16 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 41EF8CE7A89
+	for <linux-sh@archiver.kernel.org>; Mon, 25 Sep 2023 07:08:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230274AbjIVX1V (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Fri, 22 Sep 2023 19:27:21 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47934 "EHLO
+        id S232229AbjIYHI6 convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 25 Sep 2023 03:08:58 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:53934 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230203AbjIVX1U (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Fri, 22 Sep 2023 19:27:20 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 903001A5;
-        Fri, 22 Sep 2023 16:27:14 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:
-        Message-ID:Sender:Reply-To:Content-ID:Content-Description;
-        bh=e8yFnfvH8JKoyp3aR9fSLHVbC7SF8CuDkjkUeoufqfk=; b=JGXd2C0i6TG9hdIvK+EcQwcxjZ
-        e2EbPtXPYbToivjN0PcBI+CpyX1tperD4GPzxUU0nQMjl6QpkTBufReIFGz4l8vL0UwsT8qPyJxKP
-        d4qD20U98UCtEhtkJmFG8Vr+n0QAp5bB0jkdG7FR4yRr6UN1kTefoIJlauqPymdQk0rYsgiTkP5KN
-        Vm5UhTOBP0QVNA0Blua6DaZnYsf8+bSTAdJQPxyDVDUVRqJuXcgN080eZGHlxEJDDeeb+j2PiszA+
-        pOQEVatXhfFi9NAVF24VDGZZmFa9RtAFq1Z6B8Sp5S5zEfP3LELwI15MND2XhKIgU8WXKnjMwzBWW
-        muRgYyKg==;
-Received: from [2601:1c2:980:9ec0::9fed]
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1qjpYG-009yq5-19;
-        Fri, 22 Sep 2023 23:27:12 +0000
-Message-ID: <a2537bfc-d7c6-4afc-acb3-f049ba82249e@infradead.org>
-Date:   Fri, 22 Sep 2023 16:27:11 -0700
-MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] fbdev: sh7760fb: require FB=y to build cleanly
-Content-Language: en-US
+        with ESMTP id S231816AbjIYHI6 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 25 Sep 2023 03:08:58 -0400
+Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.242])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 245CDBC
+        for <linux-sh@vger.kernel.org>; Mon, 25 Sep 2023 00:08:51 -0700 (PDT)
+X-Country-Code: JP
+Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
+        by hsmtpd-out-1.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
+        id b7dd4dce-6f7a-43da-91e3-952603da2b77;
+        Mon, 25 Sep 2023 16:08:49 +0900 (JST)
+Received: from SIOS1075.ysato.ml (ZM005235.ppp.dion.ne.jp [222.8.5.235])
+        by sakura.ysato.name (Postfix) with ESMTPSA id D644D1C0275;
+        Mon, 25 Sep 2023 16:08:46 +0900 (JST)
+Date:   Mon, 25 Sep 2023 16:08:46 +0900
+Message-ID: <87msxau3up.wl-ysato@users.sourceforge.jp>
+From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     linux-kernel@vger.kernel.org, Daniel Vetter <daniel@ffwll.ch>,
-        Helge Deller <deller@gmx.de>, linux-fbdev@vger.kernel.org,
-        dri-devel@lists.freedesktop.org,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-sh@vger.kernel.org, Thomas Zimmermann <tzimmermann@suse.de>
-References: <20230921060228.29041-1-rdunlap@infradead.org>
- <CAMuHMdWBhCcUJw00ZzeHJ=x62RGP2MJ8H-AXRHxBrfOaGeU8Dw@mail.gmail.com>
-From:   Randy Dunlap <rdunlap@infradead.org>
-In-Reply-To: <CAMuHMdWBhCcUJw00ZzeHJ=x62RGP2MJ8H-AXRHxBrfOaGeU8Dw@mail.gmail.com>
+Cc:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Arnd Bergmann <arnd@arndb.de>, Arnd Bergmann <arnd@kernel.org>,
+        linux-sh@vger.kernel.org, Rich Felker <dalias@libc.org>,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 4/4] sh: machvec: remove custom ioport_{un,}map()
+In-Reply-To: <CAMuHMdXFSvyTGvYrc2af_Bba9hHNQ-taufOMXRPrKJGNiCP8mw@mail.gmail.com>
+References: <20230802184849.1019466-1-arnd@kernel.org>
+        <20230802184849.1019466-4-arnd@kernel.org>
+        <CAMuHMdVjmD357K-yxxW-jn-6vKsXTg+u1Psw9DftyxH=dQoMEg@mail.gmail.com>
+        <5dad2d86-78ea-4a39-8ee1-98e3eb134d36@app.fastmail.com>
+        <CAMuHMdVYcvPL+JpPw9sA48=615cdfwa8d0LP-bVp0NWqbQ+JOw@mail.gmail.com>
+        <190041c8-2d99-4bc3-adc3-6fbe902c1265@app.fastmail.com>
+        <CAMuHMdXyLHitBWOMp74cqtJbSs6q_4sPOEee+x72tE-E2G-KWg@mail.gmail.com>
+        <d2f5cdc1-4bff-4f1d-a7b2-38eee6a6a86d@app.fastmail.com>
+        <f61e1f218ee4d5a87121c0e5ee0d8694364ea2dd.camel@physik.fu-berlin.de>
+        <CAMuHMdXFSvyTGvYrc2af_Bba9hHNQ-taufOMXRPrKJGNiCP8mw@mail.gmail.com>
+User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
+ FLIM-LB/1.14.9 (=?ISO-8859-4?Q?Goj=F2?=) APEL-LB/10.8 EasyPG/1.0.0
+ Emacs/28.2 (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
+MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
 Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Geert,
+On Thu, 21 Sep 2023 17:52:29 +0900,
+Geert Uytterhoeven wrote:
+> 
+> Hi Adrian,
+> 
+> On Thu, Sep 21, 2023 at 9:45 AM John Paul Adrian Glaubitz
+> <glaubitz@physik.fu-berlin.de> wrote:
+> > On Fri, 2023-09-15 at 17:49 +0200, Arnd Bergmann wrote:
+> > > On Fri, Sep 15, 2023, at 17:41, Geert Uytterhoeven wrote:
+> > > > On Wed, Sep 13, 2023 at 4:30 PM Arnd Bergmann <arnd@arndb.de> wrote:
+> > > > > On Wed, Sep 13, 2023, at 16:13, Geert Uytterhoeven wrote:
+> > > > >
+> > > > > Right, it looks like the GENERIC_IOMAP part if gone from that
+> > > > > series, and I also see that the PCI host bridge does not actually
+> > > >
+> > > > No, 02/30 still enables it.
+> > >
+> > > Ok.
+> > >
+> > > > > map the port I/O window. That's usually fine because very few
+> > > > > drivers actually need it, and it also means that there should be
+> > > > > no need for GENERIC_IOMAP or the simpler alternative.
+> > > > >
+> > > > > The first version probably only did it accidentally, which is a
+> > > > > common mistake, and I think the ones for hexagon, m68k, and
+> > > > > mips can probably be removed as well with some simplifiations.
+> > > >
+> > > > When not selecting GENERIC_IOMAP in v2, the build fails with:
+> > > >
+> > > > sh4-linux-gnu-ld: lib/devres.o: in function `pcim_iomap_release':
+> > > > devres.c:(.text+0x234): undefined reference to `pci_iounmap'
+> > >
+> > > Odd, that one is provided based on CONFIG_GENERIC_PCI_IOMAP
+> > > and should be provided by common code, despite the similar
+> > > naming this is unrelated to CONFIG_GENERIC_IOMAP.
+> >
+> > So, what would be the suggestion now to move forward? Shall I include this
+> > series for 6.7 or better wait until after Yoshinori's series to convert
+> > to device tree has been merged?
+> 
+> I think including Arnd's cleanups (that is, his v2) in v6.7 is fine.
+> Sato-san's series needs more work, and is easy to fix for Arnd's cleanup
+> (just provide sh_io_port_base unconditionally).
 
+For devicetree support, we have been using GENERIC_IOMAP and GENERIC_PCI_IOMAP.
+This change has no effect, so it's okay to be merged first.
 
-On 9/22/23 00:23, Geert Uytterhoeven wrote:
-> Hi Randy,
+> Gr{oetje,eeting}s,
 > 
-> On Thu, Sep 21, 2023 at 10:43 PM Randy Dunlap <rdunlap@infradead.org> wrote:
->> Fix build errors when CONFIG_FB=m and CONFIG_FB_SH7760=y:
->>
->> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o: in function `sh7760fb_probe':
->> sh7760fb.c:(.text+0x374): undefined reference to `framebuffer_alloc'
->> sh2-linux-ld: sh7760fb.c:(.text+0x394): undefined reference to `fb_videomode_to_var'
->> sh2-linux-ld: sh7760fb.c:(.text+0x3a0): undefined reference to `fb_alloc_cmap'
->> sh2-linux-ld: sh7760fb.c:(.text+0x3a4): undefined reference to `register_framebuffer'
->> sh2-linux-ld: sh7760fb.c:(.text+0x3ac): undefined reference to `fb_dealloc_cmap'
->> sh2-linux-ld: sh7760fb.c:(.text+0x434): undefined reference to `framebuffer_release'
->> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o: in function `sh7760fb_remove':
->> sh7760fb.c:(.text+0x800): undefined reference to `unregister_framebuffer'
->> sh2-linux-ld: sh7760fb.c:(.text+0x804): undefined reference to `fb_dealloc_cmap'
->> sh2-linux-ld: sh7760fb.c:(.text+0x814): undefined reference to `framebuffer_release'
->> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0xc): undefined reference to `fb_io_read'
->> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x10): undefined reference to `fb_io_write'
->> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x2c): undefined reference to `cfb_fillrect'
->> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x30): undefined reference to `cfb_copyarea'
->> sh2-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x34): undefined reference to `cfb_imageblit'
->>
->> Fixes: 4a25e41831ee ("video: sh7760fb: SH7760/SH7763 LCDC framebuffer driver")
->> Signed-off-by: Randy Dunlap <rdunlap@infradead.org>
+>                         Geert
 > 
-> Thanks for your patch!
+> -- 
+> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 > 
->> --- a/drivers/video/fbdev/Kconfig
->> +++ b/drivers/video/fbdev/Kconfig
->> @@ -1762,7 +1762,7 @@ config FB_COBALT
->>
->>  config FB_SH7760
->>         bool "SH7760/SH7763/SH7720/SH7721 LCDC support"
->> -       depends on FB && (CPU_SUBTYPE_SH7760 || CPU_SUBTYPE_SH7763 \
->> +       depends on FB=y && (CPU_SUBTYPE_SH7760 || CPU_SUBTYPE_SH7763 \
->>                 || CPU_SUBTYPE_SH7720 || CPU_SUBTYPE_SH7721)
->>         select FB_IOMEM_HELPERS
->>         help
-> 
-> Any reason this can't become tristate instead?
-> drivers/video/fbdev/sh7760fb.c uses module_platform_driver(), and
-> already has all needed MODULE_*().
-
-That's what I tried to ask here:
-  https://lore.kernel.org/all/feadd6a5-0f56-4575-9891-3a7d88e69e64@infradead.org/
-but nobody replied to that.
+> In personal conversations with technical people, I call myself a hacker. But
+> when I'm talking to journalists I just say "programmer" or something like that.
+>                                 -- Linus Torvalds
 
 -- 
-~Randy
+Yosinori Sato
