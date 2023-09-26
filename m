@@ -2,132 +2,87 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C0848CE7AB9
-	for <linux-sh@archiver.kernel.org>; Mon, 25 Sep 2023 18:16:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CD9AE7D245
+	for <linux-sh@archiver.kernel.org>; Tue, 26 Sep 2023 07:38:26 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230193AbjIYSQO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 25 Sep 2023 14:16:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33270 "EHLO
+        id S229617AbjIZHia (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 26 Sep 2023 03:38:30 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40052 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229777AbjIYSQN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 25 Sep 2023 14:16:13 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 608AD103;
-        Mon, 25 Sep 2023 11:16:06 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:
-        Message-ID:Sender:Reply-To:Content-ID:Content-Description;
-        bh=BKLraxw+2cT6Y1DNrlWQPp9jaHszQHQqGz00lrO3DWs=; b=WY3k3i7SsxkjKjTCxuOxR3+/SV
-        v05dJNNqoLtu50Yt6ROa5S1jMLxqBwYvCU/cex79wucm7LUem3++XIkXOOvIUl4BZ0o74YxXtvA/v
-        Cr4KaWmxiHp+gQZesQxZbJNs4yYPjqWE4KU39EqQAurpa91Ka+Behmm6YlJ8u/mu3rniBizz2SO9l
-        SCvLJ1cVVXhlLFRHVfgjQmSpigPm6fjDyOOuNwaj72lehYBZMymFqwmY8hlVlWfaKO5d+HPDG6UPr
-        6Mw29QgSTcYIXSmYDHvdrBMpYLxfSLSJFZ9sBh43DOWAd3Kq2NmBrM+OJ+9jVNZhZtQuOuTZe59nw
-        iUY8aEHw==;
-Received: from [2601:1c2:980:9ec0::9fed]
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1qkq7f-00EoSA-1w;
-        Mon, 25 Sep 2023 18:15:55 +0000
-Message-ID: <f905a3ad-0259-4dae-8071-d3371b49f0c8@infradead.org>
-Date:   Mon, 25 Sep 2023 11:15:52 -0700
+        with ESMTP id S229612AbjIZHia (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 26 Sep 2023 03:38:30 -0400
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BF0B0E5
+        for <linux-sh@vger.kernel.org>; Tue, 26 Sep 2023 00:38:23 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D6CE8C433C8;
+        Tue, 26 Sep 2023 07:38:21 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1695713903;
+        bh=lAxQ/0UTOT6och3JNE/pLFZ/B7SYTjvg5W8X6grQGBY=;
+        h=From:To:Cc:In-Reply-To:References:Subject:Date:From;
+        b=D/eiAEd9O7qxPjQYtvyYsV5HfDWJqAGs+tQOLry/aU2hDtmR/zW5+YU1KtmydfsHp
+         C0J3CsoFZNG1AhbK+0Y6yhj0gsdTfd2g4w1YZhozlLPUtQkOFTTLVf11CgzofhXV8p
+         n4CwZWGDfuF0AjEyIuEsEnyohJZ2jUi8LY/CglKKJI3JhFj5iy0oTeeCzKliDrb27p
+         igIL6E9l4L+/aLKYxmaP///lzIu9Zqz1g3/wE6cU83jGpdxq5kixEpxnK+hTuvRd6D
+         KoLDpLPDCNSIGSmSBpQD+4m4p5essANZndQBCmB3f5ySBvnUyVh/63ndLohSJroQ/a
+         bMb+lPS3CIYRQ==
+From:   Mark Brown <broonie@kernel.org>
+To:     Liam Girdwood <lgirdwood@gmail.com>,
+        Jaroslav Kysela <perex@perex.cz>,
+        Takashi Iwai <tiwai@suse.com>,
+        Manuel Lauss <manuel.lauss@gmail.com>,
+        Geert Uytterhoeven <geert+renesas@glider.be>
+Cc:     alsa-devel@alsa-project.org, linux-sh@vger.kernel.org,
+        kernel test robot <lkp@intel.com>
+In-Reply-To: <20230925125646.3681807-1-geert+renesas@glider.be>
+References: <20230925125646.3681807-1-geert+renesas@glider.be>
+Subject: Re: [PATCH] ASoC: sh: dma-sh7760: Use %pad and %zu to format
+ dma_addr_t and size_t
+Message-Id: <169571390161.2496919.5867587395937945663.b4-ty@kernel.org>
+Date:   Tue, 26 Sep 2023 09:38:21 +0200
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: sh4-linux-ld: drivers/video/fbdev/sh7760fb.o:undefined reference
- to `fb_io_read'
-Content-Language: en-US
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     kernel test robot <lkp@intel.com>,
-        Thomas Zimmermann <tzimmermann@suse.de>,
-        oe-kbuild-all@lists.linux.dev, linux-kernel@vger.kernel.org,
-        Sam Ravnborg <sam@ravnborg.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-fbdev@vger.kernel.org,
-        Linux-sh list <linux-sh@vger.kernel.org>
-References: <202309130632.LS04CPWu-lkp@intel.com>
- <feadd6a5-0f56-4575-9891-3a7d88e69e64@infradead.org>
- <CAMuHMdVRyaq5xT+2GGREHS95Nm86wHmmU0cE_qR5-eza1vMExw@mail.gmail.com>
-From:   Randy Dunlap <rdunlap@infradead.org>
-In-Reply-To: <CAMuHMdVRyaq5xT+2GGREHS95Nm86wHmmU0cE_qR5-eza1vMExw@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
+X-Mailer: b4 0.13-dev-099c9
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+On Mon, 25 Sep 2023 14:56:46 +0200, Geert Uytterhoeven wrote:
+> sound/soc/sh/dma-sh7760.c: In function ‘camelot_prepare’:
+> ./include/linux/kern_levels.h:5:25: warning: format ‘%lx’ expects argument of type ‘long unsigned int’, but argument 2 has type ‘unsigned int’ [-Wformat=]
+>     5 | #define KERN_SOH        "\001"          /* ASCII Start Of Header */
+> sound/soc/sh/dma-sh7760.c:198:9: note: in expansion of macro ‘pr_debug’
+>   198 |         pr_debug("PCM data: addr 0x%08lx len %d\n",
+>       |         ^~~~~~~~
+> 
+> [...]
 
+Applied to
 
-On 9/25/23 00:32, Geert Uytterhoeven wrote:
-> Hi Randy,
-> 
-> On Wed, Sep 13, 2023 at 7:13 AM Randy Dunlap <rdunlap@infradead.org> wrote:
->> On 9/12/23 15:42, kernel test robot wrote:
->>> FYI, the error/warning was bisected to this commit, please ignore it if it's irrelevant.
->>>
->>> tree:   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git master
->>> head:   3669558bdf354cd352be955ef2764cde6a9bf5ec
->>> commit: 5f86367006c6a0662faaf36f753f437afe42fb63 fbdev/sh7760fb: Use fbdev I/O helpers
->>> date:   6 weeks ago
->>> config: sh-randconfig-r012-20230913 (https://download.01.org/0day-ci/archive/20230913/202309130632.LS04CPWu-lkp@intel.com/config)
->>> compiler: sh4-linux-gcc (GCC) 13.2.0
->>> reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20230913/202309130632.LS04CPWu-lkp@intel.com/reproduce)
->>>
->>> If you fix the issue in a separate patch/commit (i.e. not just a new version of
->>> the same patch/commit), kindly add following tags
->>> | Reported-by: kernel test robot <lkp@intel.com>
->>> | Closes: https://lore.kernel.org/oe-kbuild-all/202309130632.LS04CPWu-lkp@intel.com/
->>>
->>> All errors (new ones prefixed by >>):
->>>
->>>    sh4-linux-ld: drivers/video/fbdev/sh7760fb.o: in function `sh7760fb_probe':
->>>    sh7760fb.c:(.text+0x374): undefined reference to `framebuffer_alloc'
->>>    sh4-linux-ld: sh7760fb.c:(.text+0x394): undefined reference to `fb_videomode_to_var'
->>>    sh4-linux-ld: sh7760fb.c:(.text+0x39c): undefined reference to `fb_alloc_cmap'
->>>    sh4-linux-ld: sh7760fb.c:(.text+0x3a4): undefined reference to `register_framebuffer'
->>>    sh4-linux-ld: sh7760fb.c:(.text+0x3ac): undefined reference to `fb_dealloc_cmap'
->>>    sh4-linux-ld: sh7760fb.c:(.text+0x434): undefined reference to `framebuffer_release'
->>>    sh4-linux-ld: drivers/video/fbdev/sh7760fb.o: in function `sh7760fb_remove':
->>>    sh7760fb.c:(.text+0x800): undefined reference to `unregister_framebuffer'
->>>    sh4-linux-ld: sh7760fb.c:(.text+0x804): undefined reference to `fb_dealloc_cmap'
->>>    sh4-linux-ld: sh7760fb.c:(.text+0x814): undefined reference to `framebuffer_release'
->>>>> sh4-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0xc): undefined reference to `fb_io_read'
->>>>> sh4-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x10): undefined reference to `fb_io_write'
->>>    sh4-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x2c): undefined reference to `cfb_fillrect'
->>>    sh4-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x30): undefined reference to `cfb_copyarea'
->>>    sh4-linux-ld: drivers/video/fbdev/sh7760fb.o:(.rodata+0x34): undefined reference to `cfb_imageblit'
->>
->> The problem is CONFIG_FB=m and CONFIG_FB_SH7760=y.
->>
->> This can be fixed by this simple change ... if it's correct.
->>
->> or this Kconfig entry can be made into a tristate, but that may not
->> help with booting a system.
-> 
-> What kind of problem do you foresee? Users could still configure it builtin
-> when needed.
+   https://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git for-next
 
-I was hoping that someone who is familiar with this particular h/w
-could respond, but I agree with you:  I don't know of any reason to
-restrict this driver to builtin only.
+Thanks!
 
-> I see no reason to restrict this to builtin.
-> The driver already has all MODULE_*() boilerplate.
-> 
->> --- a/drivers/video/fbdev/Kconfig
->> +++ b/drivers/video/fbdev/Kconfig
->> @@ -1762,7 +1762,7 @@ config FB_COBALT
->>
->>  config FB_SH7760
->>         bool "SH7760/SH7763/SH7720/SH7721 LCDC support"
->> -       depends on FB && (CPU_SUBTYPE_SH7760 || CPU_SUBTYPE_SH7763 \
->> +       depends on FB=y && (CPU_SUBTYPE_SH7760 || CPU_SUBTYPE_SH7763 \
->>                 || CPU_SUBTYPE_SH7720 || CPU_SUBTYPE_SH7721)
->>         select FB_IOMEM_HELPERS
->>         help
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
+[1/1] ASoC: sh: dma-sh7760: Use %pad and %zu to format dma_addr_t and size_t
+      commit: 1056063756d7bbd5e49532278448cd28ecb8f359
 
--- 
-~Randy
+All being well this means that it will be integrated into the linux-next
+tree (usually sometime in the next 24 hours) and sent to Linus during
+the next merge window (or sooner if it is a bug fix), however if
+problems are discovered then the patch may be dropped or reverted.
+
+You may get further e-mails resulting from automated or manual testing
+and review of the tree, please engage with people reporting problems and
+send followup patches addressing any issues that are reported if needed.
+
+If any updates are required or you are submitting further changes they
+should be sent as incremental updates against current git, existing
+patches will not be replaced.
+
+Please add any relevant lists and maintainers to the CCs when replying
+to this mail.
+
+Thanks,
+Mark
+
