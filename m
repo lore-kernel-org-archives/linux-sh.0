@@ -2,87 +2,61 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 1CD9AE7D245
-	for <linux-sh@archiver.kernel.org>; Tue, 26 Sep 2023 07:38:26 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B717CE7D248
+	for <linux-sh@archiver.kernel.org>; Tue, 26 Sep 2023 07:47:24 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229617AbjIZHia (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 26 Sep 2023 03:38:30 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40052 "EHLO
+        id S232467AbjIZHr2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 26 Sep 2023 03:47:28 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50550 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229612AbjIZHia (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 26 Sep 2023 03:38:30 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BF0B0E5
-        for <linux-sh@vger.kernel.org>; Tue, 26 Sep 2023 00:38:23 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D6CE8C433C8;
-        Tue, 26 Sep 2023 07:38:21 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1695713903;
-        bh=lAxQ/0UTOT6och3JNE/pLFZ/B7SYTjvg5W8X6grQGBY=;
-        h=From:To:Cc:In-Reply-To:References:Subject:Date:From;
-        b=D/eiAEd9O7qxPjQYtvyYsV5HfDWJqAGs+tQOLry/aU2hDtmR/zW5+YU1KtmydfsHp
-         C0J3CsoFZNG1AhbK+0Y6yhj0gsdTfd2g4w1YZhozlLPUtQkOFTTLVf11CgzofhXV8p
-         n4CwZWGDfuF0AjEyIuEsEnyohJZ2jUi8LY/CglKKJI3JhFj5iy0oTeeCzKliDrb27p
-         igIL6E9l4L+/aLKYxmaP///lzIu9Zqz1g3/wE6cU83jGpdxq5kixEpxnK+hTuvRd6D
-         KoLDpLPDCNSIGSmSBpQD+4m4p5essANZndQBCmB3f5ySBvnUyVh/63ndLohSJroQ/a
-         bMb+lPS3CIYRQ==
-From:   Mark Brown <broonie@kernel.org>
-To:     Liam Girdwood <lgirdwood@gmail.com>,
-        Jaroslav Kysela <perex@perex.cz>,
-        Takashi Iwai <tiwai@suse.com>,
-        Manuel Lauss <manuel.lauss@gmail.com>,
-        Geert Uytterhoeven <geert+renesas@glider.be>
-Cc:     alsa-devel@alsa-project.org, linux-sh@vger.kernel.org,
-        kernel test robot <lkp@intel.com>
-In-Reply-To: <20230925125646.3681807-1-geert+renesas@glider.be>
-References: <20230925125646.3681807-1-geert+renesas@glider.be>
-Subject: Re: [PATCH] ASoC: sh: dma-sh7760: Use %pad and %zu to format
- dma_addr_t and size_t
-Message-Id: <169571390161.2496919.5867587395937945663.b4-ty@kernel.org>
-Date:   Tue, 26 Sep 2023 09:38:21 +0200
+        with ESMTP id S229556AbjIZHr2 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 26 Sep 2023 03:47:28 -0400
+Received: from mail.bizcodes.pl (mail.bizcodes.pl [151.80.57.56])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B6E1392
+        for <linux-sh@vger.kernel.org>; Tue, 26 Sep 2023 00:47:21 -0700 (PDT)
+Received: by mail.bizcodes.pl (Postfix, from userid 1002)
+        id 457B6A3815; Tue, 26 Sep 2023 07:46:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=bizcodes.pl; s=mail;
+        t=1695714401; bh=5QPMt7jNntM5ZbstM20BWsHIeLbmRE8lVU4Iu89IleQ=;
+        h=Date:From:To:Subject:From;
+        b=HTp6ZZ3xCZuwVG9AngCKP2p31SfsYZlEpapKYnqYC5xFF6MJ/VmvRxBHuoV9ZpY37
+         ivSvGyvDAH3GJApOvSkKreEJvAA22mbq5lcWrGuDaTNr+S9gUxIIjKix8rLEP0UsSp
+         yUJ8c9atzewUYbf0Fe6V9u0K0cWt2Up6+fOrjsyhVFvjUq2iqjsyrzfTJETY7TXldT
+         Rx9bLrx6zL6YcJtswaM58PQRGUUNFhPxGwUvcrxbX/wuV4LwE5WViKMDAc01cNZe5w
+         zPsl5EzKmsH4lDO5NYvRC2SD36crJHtGitnFMprcd5VSQ9cJgh7XdDZM73gKkd6Mgo
+         d2tidAQzetrdw==
+Received: by mail.bizcodes.pl for <linux-sh@vger.kernel.org>; Tue, 26 Sep 2023 07:45:45 GMT
+Message-ID: <20230926064500-0.1.bx.1fx3r.0.m6eqpb8dy5@bizcodes.pl>
+Date:   Tue, 26 Sep 2023 07:45:45 GMT
+From:   "Marcin Chruszcz" <marcin.chruszcz@bizcodes.pl>
+To:     <linux-sh@vger.kernel.org>
+Subject: Prezentacja
+X-Mailer: mail.bizcodes.pl
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-X-Mailer: b4 0.13-dev-099c9
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, 25 Sep 2023 14:56:46 +0200, Geert Uytterhoeven wrote:
-> sound/soc/sh/dma-sh7760.c: In function ‘camelot_prepare’:
-> ./include/linux/kern_levels.h:5:25: warning: format ‘%lx’ expects argument of type ‘long unsigned int’, but argument 2 has type ‘unsigned int’ [-Wformat=]
->     5 | #define KERN_SOH        "\001"          /* ASCII Start Of Header */
-> sound/soc/sh/dma-sh7760.c:198:9: note: in expansion of macro ‘pr_debug’
->   198 |         pr_debug("PCM data: addr 0x%08lx len %d\n",
->       |         ^~~~~~~~
-> 
-> [...]
+Dzie=C5=84 dobry!
 
-Applied to
+Czy m=C3=B3g=C5=82bym przedstawi=C4=87 rozwi=C4=85zanie, kt=C3=B3re umo=C5=
+=BCliwia monitoring ka=C5=BCdego auta w czasie rzeczywistym w tym jego po=
+zycj=C4=99, zu=C5=BCycie paliwa i przebieg?
 
-   https://git.kernel.org/pub/scm/linux/kernel/git/broonie/sound.git for-next
+Dodatkowo nasze narz=C4=99dzie minimalizuje koszty utrzymania samochod=C3=
+=B3w, skraca czas przejazd=C3=B3w, a tak=C5=BCe tworzenie planu tras czy =
+dostaw.
 
-Thanks!
+Z naszej wiedzy i do=C5=9Bwiadczenia korzysta ju=C5=BC ponad 49 tys. Klie=
+nt=C3=B3w. Monitorujemy 809 000 pojazd=C3=B3w na ca=C5=82ym =C5=9Bwiecie,=
+ co jest nasz=C4=85 najlepsz=C4=85 wizyt=C3=B3wk=C4=85.
 
-[1/1] ASoC: sh: dma-sh7760: Use %pad and %zu to format dma_addr_t and size_t
-      commit: 1056063756d7bbd5e49532278448cd28ecb8f359
+Bardzo prosz=C4=99 o e-maila zwrotnego, je=C5=9Bli mogliby=C5=9Bmy wsp=C3=
+=B3lnie om=C3=B3wi=C4=87 potencja=C5=82 wykorzystania takiego rozwi=C4=85=
+zania w Pa=C5=84stwa firmie.
 
-All being well this means that it will be integrated into the linux-next
-tree (usually sometime in the next 24 hours) and sent to Linus during
-the next merge window (or sooner if it is a bug fix), however if
-problems are discovered then the patch may be dropped or reverted.
 
-You may get further e-mails resulting from automated or manual testing
-and review of the tree, please engage with people reporting problems and
-send followup patches addressing any issues that are reported if needed.
-
-If any updates are required or you are submitting further changes they
-should be sent as incremental updates against current git, existing
-patches will not be replaced.
-
-Please add any relevant lists and maintainers to the CCs when replying
-to this mail.
-
-Thanks,
-Mark
-
+Pozdrawiam
+Marcin Chruszcz
