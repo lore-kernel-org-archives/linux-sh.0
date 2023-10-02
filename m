@@ -2,37 +2,37 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C47C5E784AC
-	for <linux-sh@archiver.kernel.org>; Mon,  2 Oct 2023 12:56:47 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CB1F8E784AC
+	for <linux-sh@archiver.kernel.org>; Mon,  2 Oct 2023 13:21:58 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S237192AbjJBM4s convert rfc822-to-8bit (ORCPT
+        id S236717AbjJBNWA convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 2 Oct 2023 08:56:48 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40362 "EHLO
+        Mon, 2 Oct 2023 09:22:00 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38902 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S237186AbjJBM4q (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 2 Oct 2023 08:56:46 -0400
-Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.239])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 96B04B4
-        for <linux-sh@vger.kernel.org>; Mon,  2 Oct 2023 05:56:41 -0700 (PDT)
+        with ESMTP id S237313AbjJBNV7 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 2 Oct 2023 09:21:59 -0400
+Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.243])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8C18DB3
+        for <linux-sh@vger.kernel.org>; Mon,  2 Oct 2023 06:21:56 -0700 (PDT)
 X-Country-Code: JP
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-        by hsmtpd-out-0.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
-        id 22f361e4-4b73-4186-9266-bd06340dfd16;
-        Mon, 02 Oct 2023 21:56:39 +0900 (JST)
+        by hsmtpd-out-1.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
+        id 91b66f99-5cc7-4aa4-9bc3-c50478876f4e;
+        Mon, 02 Oct 2023 22:21:54 +0900 (JST)
 Received: from SIOS1075.ysato.ml (ZM005235.ppp.dion.ne.jp [222.8.5.235])
-        by sakura.ysato.name (Postfix) with ESMTPSA id A65361C01AA;
-        Mon,  2 Oct 2023 21:56:37 +0900 (JST)
-Date:   Mon, 02 Oct 2023 21:56:37 +0900
-Message-ID: <87edidtc6y.wl-ysato@users.sourceforge.jp>
+        by sakura.ysato.name (Postfix) with ESMTPSA id E809B1C026E;
+        Mon,  2 Oct 2023 22:21:52 +0900 (JST)
+Date:   Mon, 02 Oct 2023 22:21:52 +0900
+Message-ID: <87bkdhtb0v.wl-ysato@users.sourceforge.jp>
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     Geert Uytterhoeven <geert@linux-m68k.org>
 Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de
-Subject: Re: [RFC PATCH v2 19/30] drivers/tty: sh-sci fix SH4 OF support.
-In-Reply-To: <CAMuHMdWxJO9P0k6rmFnwJVrwj7mumAaDnioOQmgzeKrRh41_2A@mail.gmail.com>
+Subject: Re: [RFC PATCH v2 26/30] arch/sh: RTS7751R2D Plus DeviceTree.
+In-Reply-To: <CAMuHMdUUEhev1F40FhiJyCENvca9YTx_hv1gT_DTXyVMCKjU8g@mail.gmail.com>
 References: <cover.1694596125.git.ysato@users.sourceforge.jp>
-        <cef5926b1fbf18d2a3aec93dca8f1a9fb579e643.1694596125.git.ysato@users.sourceforge.jp>
-        <CAMuHMdWxJO9P0k6rmFnwJVrwj7mumAaDnioOQmgzeKrRh41_2A@mail.gmail.com>
+        <d63793503fbbc7d5ca7b40d6b31678d371b69c29.1694596125.git.ysato@users.sourceforge.jp>
+        <CAMuHMdUUEhev1F40FhiJyCENvca9YTx_hv1gT_DTXyVMCKjU8g@mail.gmail.com>
 User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
  FLIM-LB/1.14.9 (=?ISO-8859-4?Q?Goj=F2?=) APEL-LB/10.8 EasyPG/1.0.0
  Emacs/28.2 (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
@@ -43,78 +43,172 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, 19 Sep 2023 21:25:06 +0900,
+On Tue, 19 Sep 2023 22:25:19 +0900,
 Geert Uytterhoeven wrote:
 > 
 > Hi Sato-san,
 > 
-> Thanks for your patch!
-> 
-> On Wed, Sep 13, 2023 at 11:26 AM Yoshinori Sato
+> On Wed, Sep 13, 2023 at 11:24 AM Yoshinori Sato
 > <ysato@users.sourceforge.jp> wrote:
-> > - fix earlycon name.
-> 
-> I guess you mean earlyprintk?
-> 
-> "Earlyprintk expects that all names used in OF_EARLYCON_DECLARE()
->  are unique".
-> 
-> > - fix earlyprintk hung (NULL pointer reference).
-> > - clocks property support.
-> >
 > > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 > 
-> > --- a/drivers/tty/serial/sh-sci.c
-> > +++ b/drivers/tty/serial/sh-sci.c
+> Thanks for your patch!
 > 
-> > @@ -2842,6 +2842,8 @@ static int sci_init_clocks(struct sci_port *sci_port, struct device *dev)
-> >                          * global "peripheral_clk" clock.
-> >                          */
-> >                         clk = devm_clk_get(dev, "peripheral_clk");
-> > +                       if (IS_ERR(clk))
-> > +                               clk = devm_clk_get(dev, NULL);
+> > --- /dev/null
+> > +++ b/arch/sh/boot/dts/rts7751r2dplus.dts
+> > @@ -0,0 +1,124 @@
+> > +// SPDX-License-Identifier: GPL-2.0
+> > +/*
+> > + * Device Tree Source for the Renesas RTS7751R2D Plus
+> > + */
+> > +
+> > +/dts-v1/;
+> > +
+> > +#include "sh7751.dtsi"
 > 
-> This should not be needed.
-> I guess this is a workaround for the lack of
+> #include "sh7751r.dtsi"?
 > 
->         clock-names = "fck";
-> 
-> in arch/sh/boot/dts/sh7751.dtsi?
-> 
-> "make dtbs_check
-> DT_SCHEMA_FILES=Documentation/devicetree/bindings/serial/renesas,scif.yaml"
-> would have told you ;-)
-> 
->     serial@ffe80000: 'clock-names' is a required property
-> 
-> >                         if (IS_ERR(clk))
-> >                                 return dev_err_probe(dev, PTR_ERR(clk),
-> >                                                      "failed to get %s\n",
-> > @@ -3555,8 +3557,8 @@ static int __init hscif_early_console_setup(struct earlycon_device *device,
-> >
-> >  OF_EARLYCON_DECLARE(sci, "renesas,sci", sci_early_console_setup);
-> >  OF_EARLYCON_DECLARE(scif, "renesas,scif", scif_early_console_setup);
-> > -OF_EARLYCON_DECLARE(scif, "renesas,scif-r7s9210", rzscifa_early_console_setup);
-> > -OF_EARLYCON_DECLARE(scif, "renesas,scif-r9a07g044", rzscifa_early_console_setup);
-> > +OF_EARLYCON_DECLARE(rzscif, "renesas,scif-r7s9210", rzscifa_early_console_setup);
-> > +OF_EARLYCON_DECLARE(rzscif, "renesas,scif-r9a07g044", rzscifa_early_console_setup);
-> 
-> Perhaps "rzscifa", to match the setup function prefix?
+> To make that work, you can create "sh7751.dtsi" that includes
+> "sh7751.dtsi" and overrides the parts that are different.
 
-With this change, specifying "earlycon=rzscif,0xe8007000" in
-the boot parameter will call rzscifa_early_console_setup.
-But it would be confusing if the names were not unified, so use "rzscifa"
-I'll make it.
+The only difference between 7751 and 7751R is CPG,
+so I don't differentiate between them.
 
-> >  OF_EARLYCON_DECLARE(scifa, "renesas,scifa", scifa_early_console_setup);
-> >  OF_EARLYCON_DECLARE(scifb, "renesas,scifb", scifb_early_console_setup);
-> >  OF_EARLYCON_DECLARE(hscif, "renesas,hscif", hscif_early_console_setup);
+Shall we write the CPG differences in sh7751r.dtsi?
+
+> > +
+> > +/ {
+> > +       model = "Renesas RTS7715R2D Plus";
+> > +       compatible = "renesas,r2dplus";
+> 
+> compatible = "renesas,r2dplus", "renesas,sh7751r", "renesas,sh7751".
+> 
+> And all these compatible values must be documented in the DT
+> binding documentation.
+> 
+> > +       #address-cells = <1>;
+> > +       #size-cells = <1>;
+> > +       interrupt-parent = <&shintc>;
+> > +
+> > +       aliases {
+> > +               serial0 = &scif1;
+> > +       };
+> > +
+> > +       chosen {
+> > +       };
+> > +
+> > +       clocks {
+> > +               xtal: oscillator {
+> > +                       #clock-cells = <0>;
+> > +                       compatible = "fixed-clock";
+> > +                       clock-frequency = <22222222>;
+> > +               };
+> 
+> Please
+> > +
+> > +               cpg: cpg@ffc00000 {
+> 
+> "&cpg"?
+> 
+> > +                       compatible = "renesas,sh7750r-cpg",
+> > +                                    "renesas,sh7750-cpg";
+> 
+> There should be no need to override the cpg's compatible value.
+> 
+> > +                       renesas,mode = <5>;
+> > +               };
+> > +       };
+> > +
+> > +       cpus {
+> > +               cpu@0 {
+> > +                     clock-frequency = <266666666>;
+> 
+> As the CPU clock is programmable, the "clock-frequency"
+> property should probably be replaced by a "clocks" property in the
+> base sh7751.dtsi.
+> 
+> > +               };
+> > +       };
+> > +
+> > +       memory@c000000 {
+> > +               device_type = "memory";
+> > +               reg = <0x0c000000 0x4000000>;
+> > +       };
+> > +
+> > +       r2dintc: sh7751irl_encoder@a4000000 {
+> > +               compatible = "renesas,sh7751-irl-ext";
+> > +               reg = <0xa4000000 0x02>;
+> > +               interrupt-controller;
+> > +               #address-cells = <1>;
+> > +               #interrupt-cells = <2>;
+> > +               sh7751irl,width = <16>;
+> > +               sh7751irl,polarity = <0>;
+> > +               sh7751irl,irqbit =<11>,         /* PCI INTD */
+> > +                                 <9>,          /* CF IDE */
+> > +                                 <8>,          /* CF CD */
+> > +                                 <12>,         /* PCI INTC */
+> > +                                 <10>,         /* SM501 */
+> > +                                 <6>,          /* KEY */
+> > +                                 <5>,          /* RTC ALARM */
+> > +                                 <4>,          /* RTC T */
+> > +                                 <7>,          /* SDCARD */
+> > +                                 <14>,         /* PCI INTA */
+> > +                                 <13>,         /* PCI INTB */
+> > +                                 <0>,          /* EXT */
+> > +                                 <15>;         /* TP */
+> > +       };
+> > +
+> > +       display@1,0 {
+> > +               compatible = "smi,sm501";
+> > +               reg = <0x10000000 0x03e00000
+> > +                      0x13e00000 0x00200000>;
+> > +               interrupt-parent = <&r2dintc>;
+> > +               interrupts = <4 0>;
+> > +               mode = "640x480-16@60";
+> > +               little-endian;
+> > +               sm501,devices = "usb-host","uart0";
+> > +       };
+> > +
+> > +       compact-flash@b4001000 {
+> > +               compatible = "ata-generic";
+> 
+> compact-flash@b4001000: compatible:0: 'ata-generic' is not one of
+> ['arm,vexpress-cf', 'fsl,mpc8349emitx-pata']
+> from schema $id: http://devicetree.org/schemas/ata/ata-generic.yaml#
+> 
+> > +               reg = <0xb4001000 0x0e>, <0xb400080c 2>;
+> > +               reg-shift = <1>;
+> > +               interrupt-parent = <&r2dintc>;
+> > +               interrupts = <1 0>;
+> > +       };
+> > +
+> > +       flash@0 {
+> > +               compatible = "cfi-flash";
+> > +               reg = <0x00000000 0x02000000>;
+> > +               device-width = <2>;
+> > +               #address-cells = <1>;
+> > +               #size-cells = <1>;
+> > +               partition@0 {
+> > +                       label = "U-Boot";
+> > +                       reg = <0x00000000 0x00040000>;
+> > +               };
+> > +               partition@1 {
+> > +                       label = "Environemt";
+> 
+> Environment
+> 
+> > +                       reg = <0x00040000 0x00040000>;
+> > +               };
+> 
+> Several of the above comments apply to "[RFC PATCH v2 27/30]
+> arch/sh: LANDISK DeviceTree." and "[RFC PATCH v2 28/30] arch/sh:
+> USL-5P DeviceTree.", too.
 > 
 > Gr{oetje,eeting}s,
 > 
 >                         Geert
 > 
-> -- 
+> --
 > Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 > 
 > In personal conversations with technical people, I call myself a hacker. But
