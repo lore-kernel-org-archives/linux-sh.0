@@ -2,303 +2,61 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 13C38CD613F
-	for <linux-sh@archiver.kernel.org>; Mon,  9 Oct 2023 21:22:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 154A6CD6907
+	for <linux-sh@archiver.kernel.org>; Tue, 10 Oct 2023 08:21:34 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1378876AbjJIVWI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 9 Oct 2023 17:22:08 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33966 "EHLO
+        id S1379443AbjJJIVb (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 10 Oct 2023 04:21:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41414 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234644AbjJIVVX (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 9 Oct 2023 17:21:23 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D2A5110E5;
-        Mon,  9 Oct 2023 14:20:45 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2E5E9C433C8;
-        Mon,  9 Oct 2023 21:20:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1696886445;
-        bh=Izus3StnMYpbpfGzcH3rYhOA83ytnmOL3p/SwGQe1R4=;
-        h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-        b=fUNZTck4iaJOeM8Je3T8WvINpFaFE1urkvmBB0giTm0St8bMQ0quQi+ggYYVRP50h
-         MahNO4+KavBiymB0NVI9XueRQWswedp5X3ZXh0GX0NqHzy+STs6J+OjLX6tyCJnsAh
-         I9eaIX1k9ArCepOmU9Puaps1+rQZghRG8u5NrYungLv8mpdOzHVfoogxkQM4Tab66C
-         7ObaYxQtU3/hMaWj5eWKTqZe/UYdyPous2VOaV+30c+HISS0AwVZDrJLVUNT9q//rP
-         DH2uu6ixRAvD7KQBwB+gyUasD8wt2LwYUN0ZsF4E+z52yoV+zJ7NHxDD1ThrW8D3OU
-         PjqwmudJAgOlA==
-From:   Arnd Bergmann <arnd@kernel.org>
-To:     Thomas Zimmermann <tzimmermann@suse.de>,
-        linux-fbdev@vger.kernel.org, dri-devel@lists.freedesktop.org
-Cc:     Arnd Bergmann <arnd@arndb.de>,
-        "David S. Miller" <davem@davemloft.net>,
-        "K. Y. Srinivasan" <kys@microsoft.com>,
-        Ard Biesheuvel <ardb@kernel.org>,
-        Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@quicinc.com>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Daniel Vetter <daniel@ffwll.ch>,
-        Dave Hansen <dave.hansen@linux.intel.com>,
-        David Airlie <airlied@gmail.com>,
-        Deepak Rawat <drawat.floss@gmail.com>,
-        Dexuan Cui <decui@microsoft.com>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Guo Ren <guoren@kernel.org>,
-        Haiyang Zhang <haiyangz@microsoft.com>,
-        Helge Deller <deller@gmx.de>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        Ingo Molnar <mingo@redhat.com>,
-        Javier Martinez Canillas <javierm@redhat.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Khalid Aziz <khalid@gonehiking.org>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Matt Turner <mattst88@gmail.com>,
-        Max Filippov <jcmvbkbc@gmail.com>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Russell King <linux@armlinux.org.uk>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        WANG Xuerui <kernel@xen0n.name>, Wei Liu <wei.liu@kernel.org>,
-        Will Deacon <will@kernel.org>, x86@kernel.org,
-        linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-arm-kernel@lists.infradead.org, linux-efi@vger.kernel.org,
-        linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-        linux-ia64@vger.kernel.org, loongarch@lists.linux.dev,
-        linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
-        sparclinux@vger.kernel.org, linux-hyperv@vger.kernel.org
-Subject: [PATCH v3 9/9] efi: move screen_info into efi init code
-Date:   Mon,  9 Oct 2023 23:18:45 +0200
-Message-Id: <20231009211845.3136536-10-arnd@kernel.org>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20231009211845.3136536-1-arnd@kernel.org>
-References: <20231009211845.3136536-1-arnd@kernel.org>
+        with ESMTP id S1379468AbjJJIVT (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 10 Oct 2023 04:21:19 -0400
+X-Greylist: delayed 452 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 10 Oct 2023 01:21:03 PDT
+Received: from mail.durme.pl (mail.durme.pl [217.182.69.186])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C84C9103
+        for <linux-sh@vger.kernel.org>; Tue, 10 Oct 2023 01:21:03 -0700 (PDT)
+Received: by mail.durme.pl (Postfix, from userid 1002)
+        id 156FA48A08; Tue, 10 Oct 2023 08:11:22 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=durme.pl; s=mail;
+        t=1696925517; bh=hFxZwVw4rIL+JwfEOGI47p+fdoVOAeqVswP6NWoHSHQ=;
+        h=Date:From:To:Subject:From;
+        b=L8vqkrtNkWqo+TIsIeegHtcx926k2KoZdu7OM52C/ahj8iskiVQUube60lP2Fwvjn
+         zdX9+z26opF+RLSCzue2by7/+mkjN4VqWhTMYLC2/fsDdkjlHKQsJNud3VyB7sIkEw
+         CI893oyUhB0kt0N2k4auBhR4M6AMMUkCbs+AQRJqoka7E3z02pA0eSHFRtXzsaoWiu
+         oUuwyDZCwOzbIzNxykoItae8PDTtTWfbZEJjTKiX17jynHxFC3GESwynAtYIf/X5dx
+         sBgxlLPEvj8X2QeewIsDJkFS5iW8a1B9gUpL14bsXJfI1nPJS9++rk25Qc/5g4kT89
+         62/wGm4RNi2dQ==
+Received: by mail.durme.pl for <linux-sh@vger.kernel.org>; Tue, 10 Oct 2023 08:11:10 GMT
+Message-ID: <20231010064500-0.1.4u.mx5d.0.okm17kmjza@durme.pl>
+Date:   Tue, 10 Oct 2023 08:11:10 GMT
+From:   "Krystian Wieczorek" <krystian.wieczorek@durme.pl>
+To:     <linux-sh@vger.kernel.org>
+Subject: W sprawie samochodu
+X-Mailer: mail.durme.pl
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Arnd Bergmann <arnd@arndb.de>
+Dzie=C5=84 dobry,
 
-After the vga console no longer relies on global screen_info, there are
-only two remaining use cases:
+chcieliby=C5=9Bmy zapewni=C4=87 Pa=C5=84stwu kompleksowe rozwi=C4=85zania=
+, je=C5=9Bli chodzi o system monitoringu GPS.
 
- - on the x86 architecture, it is used for multiple boot methods
-   (bzImage, EFI, Xen, kexec) to commucate the initial VGA or framebuffer
-   settings to a number of device drivers.
+Precyzyjne monitorowanie pojazd=C3=B3w na mapach cyfrowych, =C5=9Bledzeni=
+e ich parametr=C3=B3w eksploatacyjnych w czasie rzeczywistym oraz kontrol=
+a paliwa to kluczowe funkcjonalno=C5=9Bci naszego systemu.=20
 
- - on other architectures, it is only used as part of the EFI stub,
-   and only for the three sysfb framebuffers (simpledrm, simplefb, efifb).
+Organizowanie pracy pracownik=C3=B3w jest dzi=C4=99ki temu prostsze i bar=
+dziej efektywne, a oszcz=C4=99dno=C5=9Bci i optymalizacja w zakresie pono=
+szonych koszt=C3=B3w, maj=C4=85 dla ka=C5=BCdego przedsi=C4=99biorcy ogro=
+mne znaczenie.
 
-Remove the duplicate data structure definitions by moving it into the
-efi-init.c file that sets it up initially for the EFI case, leaving x86
-as an exception that retains its own definition for non-EFI boots.
+Dopasujemy nasz=C4=85 ofert=C4=99 do Pa=C5=84stwa oczekiwa=C5=84 i potrze=
+b organizacji. Czy mogliby=C5=9Bmy porozmawia=C4=87 o naszej propozycji?
 
-The added #ifdefs here are optional, I added them to further limit the
-reach of screen_info to configurations that have at least one of the
-users enabled.
 
-Reviewed-by: Ard Biesheuvel <ardb@kernel.org>
-Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
-Acked-by: Helge Deller <deller@gmx.de>
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
----
- arch/arm/kernel/setup.c                       |  4 ----
- arch/arm64/kernel/efi.c                       |  4 ----
- arch/arm64/kernel/image-vars.h                |  2 ++
- arch/loongarch/kernel/efi.c                   |  3 ++-
- arch/loongarch/kernel/image-vars.h            |  2 ++
- arch/loongarch/kernel/setup.c                 |  5 -----
- arch/riscv/kernel/image-vars.h                |  2 ++
- arch/riscv/kernel/setup.c                     |  5 -----
- drivers/firmware/efi/efi-init.c               | 14 +++++++++++++-
- drivers/firmware/efi/libstub/efi-stub-entry.c |  8 +++++++-
- 10 files changed, 28 insertions(+), 21 deletions(-)
-
-diff --git a/arch/arm/kernel/setup.c b/arch/arm/kernel/setup.c
-index c15dfdbe3d5ae..b808712e85981 100644
---- a/arch/arm/kernel/setup.c
-+++ b/arch/arm/kernel/setup.c
-@@ -939,10 +939,6 @@ static struct screen_info vgacon_screen_info = {
- };
- #endif
- 
--#if defined(CONFIG_EFI)
--struct screen_info screen_info;
--#endif
--
- static int __init customize_machine(void)
- {
- 	/*
-diff --git a/arch/arm64/kernel/efi.c b/arch/arm64/kernel/efi.c
-index 2b478ca356b00..52089f111c8db 100644
---- a/arch/arm64/kernel/efi.c
-+++ b/arch/arm64/kernel/efi.c
-@@ -71,10 +71,6 @@ static __init pteval_t create_mapping_protection(efi_memory_desc_t *md)
- 	return pgprot_val(PAGE_KERNEL_EXEC);
- }
- 
--/* we will fill this structure from the stub, so don't put it in .bss */
--struct screen_info screen_info __section(".data");
--EXPORT_SYMBOL(screen_info);
--
- int __init efi_create_mapping(struct mm_struct *mm, efi_memory_desc_t *md)
- {
- 	pteval_t prot_val = create_mapping_protection(md);
-diff --git a/arch/arm64/kernel/image-vars.h b/arch/arm64/kernel/image-vars.h
-index 35f3c79595137..5e4dc72ab1bda 100644
---- a/arch/arm64/kernel/image-vars.h
-+++ b/arch/arm64/kernel/image-vars.h
-@@ -27,7 +27,9 @@ PROVIDE(__efistub__text			= _text);
- PROVIDE(__efistub__end			= _end);
- PROVIDE(__efistub___inittext_end       	= __inittext_end);
- PROVIDE(__efistub__edata		= _edata);
-+#if defined(CONFIG_EFI_EARLYCON) || defined(CONFIG_SYSFB)
- PROVIDE(__efistub_screen_info		= screen_info);
-+#endif
- PROVIDE(__efistub__ctype		= _ctype);
- 
- PROVIDE(__pi___memcpy			= __pi_memcpy);
-diff --git a/arch/loongarch/kernel/efi.c b/arch/loongarch/kernel/efi.c
-index 9fc10cea21e10..df7db34024e61 100644
---- a/arch/loongarch/kernel/efi.c
-+++ b/arch/loongarch/kernel/efi.c
-@@ -115,7 +115,8 @@ void __init efi_init(void)
- 
- 	set_bit(EFI_CONFIG_TABLES, &efi.flags);
- 
--	init_screen_info();
-+	if (IS_ENABLED(CONFIG_EFI_EARLYCON) || IS_ENABLED(CONFIG_SYSFB))
-+		init_screen_info();
- 
- 	if (boot_memmap == EFI_INVALID_TABLE_ADDR)
- 		return;
-diff --git a/arch/loongarch/kernel/image-vars.h b/arch/loongarch/kernel/image-vars.h
-index e561989d02de9..5087416b9678d 100644
---- a/arch/loongarch/kernel/image-vars.h
-+++ b/arch/loongarch/kernel/image-vars.h
-@@ -12,7 +12,9 @@ __efistub_kernel_entry		= kernel_entry;
- __efistub_kernel_asize		= kernel_asize;
- __efistub_kernel_fsize		= kernel_fsize;
- __efistub_kernel_offset		= kernel_offset;
-+#if defined(CONFIG_EFI_EARLYCON) || defined(CONFIG_SYSFB)
- __efistub_screen_info		= screen_info;
-+#endif
- 
- #endif
- 
-diff --git a/arch/loongarch/kernel/setup.c b/arch/loongarch/kernel/setup.c
-index 0d5edf1f7e4a1..407cd6b49bef6 100644
---- a/arch/loongarch/kernel/setup.c
-+++ b/arch/loongarch/kernel/setup.c
-@@ -16,7 +16,6 @@
- #include <linux/dmi.h>
- #include <linux/efi.h>
- #include <linux/export.h>
--#include <linux/screen_info.h>
- #include <linux/memblock.h>
- #include <linux/initrd.h>
- #include <linux/ioport.h>
-@@ -57,10 +56,6 @@
- #define SMBIOS_CORE_PACKAGE_OFFSET	0x23
- #define LOONGSON_EFI_ENABLE		(1 << 3)
- 
--#ifdef CONFIG_EFI
--struct screen_info screen_info __section(".data");
--#endif
--
- unsigned long fw_arg0, fw_arg1, fw_arg2;
- DEFINE_PER_CPU(unsigned long, kernelsp);
- struct cpuinfo_loongarch cpu_data[NR_CPUS] __read_mostly;
-diff --git a/arch/riscv/kernel/image-vars.h b/arch/riscv/kernel/image-vars.h
-index ea1a10355ce90..3df30dd1c458b 100644
---- a/arch/riscv/kernel/image-vars.h
-+++ b/arch/riscv/kernel/image-vars.h
-@@ -28,7 +28,9 @@ __efistub__start_kernel		= _start_kernel;
- __efistub__end			= _end;
- __efistub__edata		= _edata;
- __efistub___init_text_end	= __init_text_end;
-+#if defined(CONFIG_EFI_EARLYCON) || defined(CONFIG_SYSFB)
- __efistub_screen_info		= screen_info;
-+#endif
- 
- #endif
- 
-diff --git a/arch/riscv/kernel/setup.c b/arch/riscv/kernel/setup.c
-index 0c466a50f1744..0624f44d43eca 100644
---- a/arch/riscv/kernel/setup.c
-+++ b/arch/riscv/kernel/setup.c
-@@ -15,7 +15,6 @@
- #include <linux/memblock.h>
- #include <linux/sched.h>
- #include <linux/console.h>
--#include <linux/screen_info.h>
- #include <linux/of_fdt.h>
- #include <linux/sched/task.h>
- #include <linux/smp.h>
-@@ -40,10 +39,6 @@
- 
- #include "head.h"
- 
--#if defined(CONFIG_EFI)
--struct screen_info screen_info __section(".data");
--#endif
--
- /*
-  * The lucky hart to first increment this variable will boot the other cores.
-  * This is used before the kernel initializes the BSS so it can't be in the
-diff --git a/drivers/firmware/efi/efi-init.c b/drivers/firmware/efi/efi-init.c
-index ef0820f1a9246..d4987d0130801 100644
---- a/drivers/firmware/efi/efi-init.c
-+++ b/drivers/firmware/efi/efi-init.c
-@@ -55,6 +55,15 @@ static phys_addr_t __init efi_to_phys(unsigned long addr)
- 
- extern __weak const efi_config_table_type_t efi_arch_tables[];
- 
-+/*
-+ * x86 defines its own screen_info and uses it even without EFI,
-+ * everything else can get it from here.
-+ */
-+#if !defined(CONFIG_X86) && (defined(CONFIG_SYSFB) || defined(CONFIG_EFI_EARLYCON))
-+struct screen_info screen_info __section(".data");
-+EXPORT_SYMBOL_GPL(screen_info);
-+#endif
-+
- static void __init init_screen_info(void)
- {
- 	struct screen_info *si;
-@@ -240,5 +249,8 @@ void __init efi_init(void)
- 	memblock_reserve(data.phys_map & PAGE_MASK,
- 			 PAGE_ALIGN(data.size + (data.phys_map & ~PAGE_MASK)));
- 
--	init_screen_info();
-+	if (IS_ENABLED(CONFIG_X86) ||
-+	    IS_ENABLED(CONFIG_SYSFB) ||
-+	    IS_ENABLED(CONFIG_EFI_EARLYCON))
-+		init_screen_info();
- }
-diff --git a/drivers/firmware/efi/libstub/efi-stub-entry.c b/drivers/firmware/efi/libstub/efi-stub-entry.c
-index 2f1902e5d4075..a6c0498351905 100644
---- a/drivers/firmware/efi/libstub/efi-stub-entry.c
-+++ b/drivers/firmware/efi/libstub/efi-stub-entry.c
-@@ -13,7 +13,13 @@ struct screen_info *alloc_screen_info(void)
- {
- 	if (IS_ENABLED(CONFIG_ARM))
- 		return __alloc_screen_info();
--	return (void *)&screen_info + screen_info_offset;
-+
-+	if (IS_ENABLED(CONFIG_X86) ||
-+	    IS_ENABLED(CONFIG_EFI_EARLYCON) ||
-+	    IS_ENABLED(CONFIG_SYSFB))
-+		return (void *)&screen_info + screen_info_offset;
-+
-+	return NULL;
- }
- 
- /*
--- 
-2.39.2
-
+Pozdrawiam
+Krystian Wieczorek
