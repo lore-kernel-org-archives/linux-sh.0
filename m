@@ -2,215 +2,108 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 49E64CDB487
-	for <linux-sh@archiver.kernel.org>; Sat, 14 Oct 2023 14:54:34 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 18B18CDB465
+	for <linux-sh@archiver.kernel.org>; Sat, 14 Oct 2023 17:11:14 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S233296AbjJNOyd (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 14 Oct 2023 10:54:33 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58502 "EHLO
+        id S230211AbjJNRLN (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sat, 14 Oct 2023 13:11:13 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:50634 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S233243AbjJNOy0 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 14 Oct 2023 10:54:26 -0400
-Received: from hsmtpd-def.xspmail.jp (hsmtpd-def.xspmail.jp [202.238.198.243])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DFAB3CC
-        for <linux-sh@vger.kernel.org>; Sat, 14 Oct 2023 07:54:24 -0700 (PDT)
-X-Country-Code: JP
-Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-        by hsmtpd-out-0.asahinet.cluster.xspmail.jp (Halon) with ESMTPA
-        id 17808261-b9b0-400d-b75c-92f1555e158b;
-        Sat, 14 Oct 2023 23:54:24 +0900 (JST)
-Received: from SIOS1075.ysato.name (ZM005235.ppp.dion.ne.jp [222.8.5.235])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 3BBC91C050D;
-        Sat, 14 Oct 2023 23:54:24 +0900 (JST)
-From:   Yoshinori Sato <ysato@users.sourceforge.jp>
-To:     linux-sh@vger.kernel.org
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        glaubitz@physik.fu-berlin.de, robh+dt@kernel.org,
-        krzysztof.kozlowski+dt@linaro.org, conor+dt@kernel.org,
-        devicetree@vger.kernel.org
-Subject: [RFC PATCH v3 30/35] arch/sh/boot/dts: RTS7751R2D Plus DeviceTree.
-Date:   Sat, 14 Oct 2023 23:54:05 +0900
-Message-Id: <bde5805e90c9e1338becba6f922c23d1b2e4fb21.1697199949.git.ysato@users.sourceforge.jp>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <cover.1697199949.git.ysato@users.sourceforge.jp>
+        with ESMTP id S230016AbjJNRLN (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sat, 14 Oct 2023 13:11:13 -0400
+Received: from mail-lj1-x22e.google.com (mail-lj1-x22e.google.com [IPv6:2a00:1450:4864:20::22e])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4FFD1B7
+        for <linux-sh@vger.kernel.org>; Sat, 14 Oct 2023 10:11:11 -0700 (PDT)
+Received: by mail-lj1-x22e.google.com with SMTP id 38308e7fff4ca-2c514cbbe7eso6566021fa.1
+        for <linux-sh@vger.kernel.org>; Sat, 14 Oct 2023 10:11:11 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1697303469; x=1697908269; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-language:in-reply-to:mime-version
+         :user-agent:date:message-id:from:references:cc:to:subject:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=xnpFYxcYbX/wkh2C1lVXSa7KxQnZsX9geyIhDRGDPtg=;
+        b=kug36SsNLSS9NvYGHVLmE7H1U4YO1tVK9SmVYTPVN0sNycCjGQJj5v3ZXFM0BV8jER
+         PjuLsMME6wYbQq8w0lV/B7G/kVNKB9zTcgMRPx9JkJji4RdCyJFFqqRwt9OWahxo6XwO
+         RDJJ+/iGVmYb81MzBxy02J9uWUS8jOp2nt0DjDqa8QU0Z/8cnhDGMpG51dLLoI4CMcMl
+         QNZh9qhvDrWd+PYpMgzkRzAdjZhHpFs9t3+7CASI0uaDrBJsMyEakyFJaxlGMz7dZt2u
+         yQvJwIU+EY41nqvHhVUyM4wy8wd0/qDI8rO4CeodbjArM5I5LEXcZNlW6xr6cTiWgnHR
+         dfcA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1697303469; x=1697908269;
+        h=content-transfer-encoding:content-language:in-reply-to:mime-version
+         :user-agent:date:message-id:from:references:cc:to:subject
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=xnpFYxcYbX/wkh2C1lVXSa7KxQnZsX9geyIhDRGDPtg=;
+        b=gu8b5tE4spVJD9HS7AJTnChrvFa2sCnwmKPVQkxz7l9+dcUIojQPRuj2Nq2BgYWyW7
+         AKyXnZK5rb3lmhjpP9p5wpPYQf4wx8jiAMtFvmOThKHavnwx2NVytJ8iQ18dEJt5RCJO
+         L3rsqkF7lSNLlHroBXtveVmro3BNdGYITqD3dOliv53h4tit+aQDN3NJJO4Le1I5z14j
+         JdbOK0i4oX1XrcNu9zid1hF0JgRl/lzSmXYuJ1qkyYJy7ijlk3y6HJ0fdiMq323ZL8Vm
+         wSaaLcP1O2jrLF88OPHRgRYzxkrmrNtSpNYNEVNh+1y516natVCoc2zR79nsbaKEgUc0
+         bjrQ==
+X-Gm-Message-State: AOJu0Yw0ZGp2ExADWn/3j5MuLEy11MpFmcWTLbfHUqUpw3ZATTdwKAg6
+        21LOV6Fw9RCd4lSe9gSknngQAQZd3C8=
+X-Google-Smtp-Source: AGHT+IF6eHeWrHKi+0MSeSs/GK+2hrXY9vaKpYWpb6bis9qr46wDjMNsS404Ef0iiYQxJVgt27bqUg==
+X-Received: by 2002:a2e:b896:0:b0:2c5:72e:6ff7 with SMTP id r22-20020a2eb896000000b002c5072e6ff7mr4194541ljp.24.1697303469087;
+        Sat, 14 Oct 2023 10:11:09 -0700 (PDT)
+Received: from [192.168.1.103] ([31.173.84.69])
+        by smtp.gmail.com with ESMTPSA id c9-20020a2e9d89000000b002b9ef00b10csm446249ljj.2.2023.10.14.10.11.08
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sat, 14 Oct 2023 10:11:08 -0700 (PDT)
+Subject: Re: [RFC PATCH v3 01/35] arch/sh/boot/compressed/head_32.S: passing
+ FDT address to initialize function.
+To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org
+Cc:     glaubitz@physik.fu-berlin.de
 References: <cover.1697199949.git.ysato@users.sourceforge.jp>
+ <ab4b20d4e37c0dc2f3baafc5a72971fc475db5fc.1697199949.git.ysato@users.sourceforge.jp>
+From:   Sergei Shtylyov <sergei.shtylyov@gmail.com>
+Message-ID: <785bec80-7ffa-ed85-9b4f-87a68cc62abf@gmail.com>
+Date:   Sat, 14 Oct 2023 20:11:06 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <ab4b20d4e37c0dc2f3baafc5a72971fc475db5fc.1697199949.git.ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Renesas RTS7751R2D Plus devicetree.
+On 10/14/23 5:53 PM, Yoshinori Sato wrote:
 
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
----
- arch/sh/boot/dts/rts7751r2dplus.dts | 157 ++++++++++++++++++++++++++++
- 1 file changed, 157 insertions(+)
- create mode 100644 arch/sh/boot/dts/rts7751r2dplus.dts
+> R4 is caller saved in SH ABI.
+> Save it so it doesn't get corrupted until it's needed for initialization.
+> 
+> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+> ---
+>  arch/sh/boot/compressed/head_32.S | 5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
+> 
+> diff --git a/arch/sh/boot/compressed/head_32.S b/arch/sh/boot/compressed/head_32.S
+> index 7bb168133dbb..c5227ef636c3 100644
+> --- a/arch/sh/boot/compressed/head_32.S
+> +++ b/arch/sh/boot/compressed/head_32.S
+> @@ -15,7 +15,8 @@ startup:
+>  	/* Load initial status register */
+>  	mov.l   init_sr, r1
+>  	ldc     r1, sr
+> -
+> +	/* Save FDT address */
+> +	mov	r4, r13
+>  	/* Move myself to proper location if necessary */
+>  	mova	1f, r0
+>  	mov.l	1f, r2
+> @@ -84,7 +85,7 @@ l1:
+>  	/* Jump to the start of the decompressed kernel */
+>  	mov.l	kernel_start_addr, r0
+>  	jmp	@r0
+> -	nop
+> +	  mov	r13,r4
 
-diff --git a/arch/sh/boot/dts/rts7751r2dplus.dts b/arch/sh/boot/dts/rts7751r2dplus.dts
-new file mode 100644
-index 000000000000..7fc9692da257
---- /dev/null
-+++ b/arch/sh/boot/dts/rts7751r2dplus.dts
-@@ -0,0 +1,157 @@
-+// SPDX-License-Identifier: GPL-2.0
-+/*
-+ * Device Tree Source for the Renesas RTS7751R2D Plus
-+ */
-+
-+/dts-v1/;
-+
-+#include "sh7751r.dtsi"
-+
-+/ {
-+	model = "Renesas RTS7715R2D Plus";
-+	compatible = "renesas,rts7751r2d", "renesas,sh7751r";
-+
-+	aliases {
-+		serial0 = &scif1;
-+	};
-+
-+	chosen {
-+		stdout-path = "serial0:115200n8";
-+	};
-+
-+	memory@c000000 {
-+		device_type = "memory";
-+		reg = <0x0c000000 0x4000000>;
-+	};
-+
-+	oscillator {
-+		clock-frequency = <22222222>;
-+	};
-+
-+	r2dintc: sh7751irl_encoder@a4000000 {
-+		compatible = "renesas,sh7751-irl-ext";
-+		reg = <0xa4000000 0x02>;
-+		interrupt-controller;
-+		#address-cells = <0>;
-+		#size-cells = <0>;
-+		#interrupt-cells = <1>;
-+		renesas,width = <16>;
-+		renesas,regtype = "enable";
-+		renesas,irqbit =  <11>,		/* PCI INTD */
-+				  <9>,		/* CF IDE */
-+				  <8>,		/* CF CD */
-+				  <12>,		/* PCI INTC */
-+				  <10>,		/* SM501 */
-+				  <6>,		/* KEY */
-+				  <5>,		/* RTC ALARM */
-+				  <4>,		/* RTC T */
-+				  <7>,		/* SDCARD */
-+				  <14>,		/* PCI INTA */
-+				  <13>,		/* PCI INTB */
-+				  <0>,		/* EXT */
-+				  <15>;		/* TP */
-+	};
-+
-+	display@1,0 {
-+		compatible = "smi,sm501";
-+		reg = <0x10000000 0x03e00000
-+		       0x13e00000 0x00200000>;
-+		interrupt-parent = <&r2dintc>;
-+		interrupts = <4>;
-+		mode = "640x480-16@60";
-+		little-endian;
-+		smi,devices = "usb-host","uart0";
-+		interrupt-name = "sm501";
-+		route = "own";
-+		swap-fb-endian;
-+
-+		crt {
-+			flags = "use_init_mode",
-+				"use_hwcursor",
-+				"use_hwaccel",
-+				"disable_at_exit";
-+		};
-+
-+		panel {
-+			bpp = <16>;
-+			edid = [00 ff ff ff ff ff ff 00 00 00 00 00 00 00 00 00
-+				00 00 01 04 00 00 00 00 00 00 00 00 00 00 00 00
-+				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+				00 00 00 00 00 00 f0 0a 80 fb 20 e0 25 10 32 60
-+				02 00 00 00 00 00 00 06 00 00 00 00 00 00 00 00
-+				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+				00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 bd];
-+			flags = "use_init_mode",
-+				"use_hwcursor",
-+				"use_hwaccel",
-+				"disable_at_exit";
-+		};
-+	};
-+
-+	compact-flash@b4001000 {
-+		compatible = "renesas,rts7751r2d-ata", "ata-generic";
-+		reg = <0xb4001000 0x0e>, <0xb400080c 2>;
-+		reg-shift = <1>;
-+		interrupt-parent = <&r2dintc>;
-+		interrupts = <1>;
-+	};
-+
-+	flash@0 {
-+		compatible = "cfi-flash";
-+		reg = <0x00000000 0x02000000>;
-+		device-width = <2>;
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+
-+		partition@0 {
-+			label = "U-Boot";
-+			reg = <0x00000000 0x00040000>;
-+		};
-+
-+		partition@1 {
-+			label = "Environemt";
-+			reg = <0x00040000 0x00040000>;
-+		};
-+
-+		partition@2 {
-+			label = "Kernel";
-+			reg = <0x00080000 0x001c0000>;
-+		};
-+
-+		partition@3 {
-+			label = "Flash_FS";
-+			reg = <0x00240000 0x00dc0000>;
-+		};
-+	};
-+
-+	soc {
-+		clock-controller@ffc00000 {
-+			renesas,mode = <5>;
-+		};
-+
-+		pci@fe200000 {
-+			compatible = "renesas,pci-sh7751";
-+			interrupt-parent = <&r2dintc>;
-+			renesas,bcr1 = <0x40080000>;
-+			renesas,intm = <0x0000c3ff>;
-+			renesas,aintm = <0x0000380f>;
-+			renesas,config = <1 0xfb900047>, <4 0xab000001>;
-+			renesas,mcrmask = <0x40000004>;
-+
-+			interrupt-map = <0x0000 0 0 1 &r2dintc 9>,
-+					<0x0000 0 0 2 &r2dintc 10>,
-+					<0x0000 0 0 3 &r2dintc 3>,
-+					<0x0000 0 0 4 &r2dintc 0>,
-+					<0x0800 0 0 1 &r2dintc 10>,
-+					<0x0800 0 0 2 &r2dintc 3>,
-+					<0x0800 0 0 3 &r2dintc 0>,
-+					<0x0800 0 0 4 &r2dintc 9>,
-+					<0x1000 0 0 1 &r2dintc 3>,
-+					<0x1000 0 0 2 &r2dintc 0>,
-+					<0x1000 0 0 3 &r2dintc 9>,
-+					<0x1000 0 0 4 &r2dintc 10>;
-+			interrupt-map-mask = <0x1800 0 0 7>;
-+		};
-+	};
-+};
--- 
-2.39.2
+   I thought the usual convention for the delay slots is to do extra indentation
+with 1 space, no? And you need a space after comma too... :-)
 
+[...]
+
+MBR, Sergey
