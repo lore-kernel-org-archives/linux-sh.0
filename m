@@ -2,69 +2,85 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 36975CDB483
-	for <linux-sh@archiver.kernel.org>; Sun, 15 Oct 2023 10:06:36 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CCF7CCDB482
+	for <linux-sh@archiver.kernel.org>; Sun, 15 Oct 2023 22:25:37 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230306AbjJOKGf (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sun, 15 Oct 2023 06:06:35 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54792 "EHLO
+        id S230436AbjJOWZb (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Sun, 15 Oct 2023 18:25:31 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39696 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230156AbjJOKG3 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sun, 15 Oct 2023 06:06:29 -0400
-Received: from gandalf.ozlabs.org (mail.ozlabs.org [IPv6:2404:9400:2221:ea00::3])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9D34D102;
-        Sun, 15 Oct 2023 03:06:25 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ellerman.id.au;
-        s=201909; t=1697364383;
-        bh=lQ471ge3JT3D/IyXiBK6OqZg4gy00/Wz1cpF1NMX1CI=;
-        h=From:To:Cc:In-Reply-To:References:Subject:Date:From;
-        b=Jgv8/cUxgQM27y6U//UT8VctmRJrqlUlqIr1QQTvvhugWnDzvcBYSj+SLZifK2jTQ
-         owmdqqRmmp8iY6chJq2Mlnpjbq6RAj8jt0kTavOSSUm2KQgIWHKXgDY5hnkI1rXRb9
-         NIdVXDDuIe1rtwQ5evX8B8s9Peo+r//MyCvLnEJu3WQv7amCnhXoAL+d5jvpc0YjYY
-         35406tFs9oyMdUOOMphj3mCWt3yUm5zVp0ckK6CxgcejWbG+0vkHDPW3MGFNsWQ5DX
-         tEUDQT8EKLC+kMhx0X8thKh1EhRV8sMxpXYvKiRh1qX2qbrIMTQ4XvICpOiJdoeKvz
-         ZQx5NpTCbYS3w==
-Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
-        (using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-         key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-        (No client certificate requested)
-        by mail.ozlabs.org (Postfix) with ESMTPSA id 4S7bVc4t2xz4wnw;
-        Sun, 15 Oct 2023 21:06:16 +1100 (AEDT)
-From:   Michael Ellerman <mpe@ellerman.id.au>
-To:     reiserfs-devel@vger.kernel.org, Peter Lafreniere <peter@n8pjl.ca>
-Cc:     jack@suse.cz, linux-kernel@vger.kernel.org, richard@nod.at,
-        anton.ivanov@cambridgegreys.com, johannes@sipsolutions.net,
-        linuxppc-dev@lists.ozlabs.org, linux-um@lists.infradead.org,
-        linux-sh@vger.kernel.org, tsbogend@alpha.franken.de,
-        linux-mips@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-        geert@linux-m68k.org, linux-arm-kernel@lists.infradead.org,
-        linux@armlinux.org.uk, linux-alpha@vger.kernel.org,
-        richard.henderson@linaro.org, ink@jurassic.park.msu.ru
-In-Reply-To: <20230918175529.19011-1-peter@n8pjl.ca>
-References: <20230918175529.19011-1-peter@n8pjl.ca>
-Subject: Re: (subset) [PATCH 0/7] arch/*: config: Remove ReiserFS from defconfig
-Message-Id: <169736429854.960528.1442206910501555108.b4-ty@ellerman.id.au>
-Date:   Sun, 15 Oct 2023 21:04:58 +1100
+        with ESMTP id S229500AbjJOWZ3 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Sun, 15 Oct 2023 18:25:29 -0400
+Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D3A0AAD;
+        Sun, 15 Oct 2023 15:25:24 -0700 (PDT)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 54600C433C8;
+        Sun, 15 Oct 2023 22:25:23 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+        s=k20201202; t=1697408724;
+        bh=7ukMZpn3B3PMt4B8/VVTfosLTYUdvhiBI+QB+7XKRY0=;
+        h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+        b=KWZ5gy8b6Cjo6C5VAZaLpO+CcCeY3Q+OTRtQqYf/8Bbb/yGehRR9k9yL9JXI/kSKB
+         /SuwwJ5ux1/78o/ve71KiA4BYBF6sPB3wRX4fpGjl+Nk3ZSjO4Iibop4jxg4yxrefS
+         rjI62WjQJOKr7kMfBZl45gADOTk1TVCQdaoRqfwJ2XexFfHdlGiS+WeeBMK2d0+mlm
+         y1Hx4f/Z+YZ4u/llEFkIKJfoW9SiTiO1eqmaE7HXVm/Z9d4zd2xILNzJDYAeRJUu6n
+         poKHhNv8nLnhiYZNgAhViOoU3VgSfgBUwnC/XxSoEXpnUACGPeZTtTVY55VSPPJOLT
+         hHhFMxh5RInRw==
+Message-ID: <fc7c1593-4bd2-45b0-9ed8-177ca3b9f17d@kernel.org>
+Date:   Mon, 16 Oct 2023 07:25:22 +0900
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+User-Agent: Mozilla Thunderbird
+Subject: Re: [RFC PATCH v3 28/35] Documentation/devicetree/bindings/ata:
+ ata-generic.yaml add usl-5p and rts7751r2d.
+Content-Language: en-US
+To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org
+Cc:     glaubitz@physik.fu-berlin.de, robh+dt@kernel.org,
+        krzysztof.kozlowski+dt@linaro.org, conor+dt@kernel.org,
+        linux-ide@vger.kernel.org, devicetree@vger.kernel.org
+References: <cover.1697199949.git.ysato@users.sourceforge.jp>
+ <0af21a9c4bf257c09254077c349bbb67530cb35c.1697199949.git.ysato@users.sourceforge.jp>
+From:   Damien Le Moal <dlemoal@kernel.org>
+Organization: Western Digital Research
+In-Reply-To: <0af21a9c4bf257c09254077c349bbb67530cb35c.1697199949.git.ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, 18 Sep 2023 17:56:09 +0000, Peter Lafreniere wrote:
-> ReiserFS has been considered deprecated for 19 months since commit
-> eb103a51640e ("reiserfs: Deprecate reiserfs"). However, there are
-> several architectures that still build it into their defconfig kernels.
+The patch title should be something like:
+
+dt-bindings: ata: ata-generic: add usl-5p and rts7751r2d
+
+without a period at the end.
+
+On 10/14/23 23:54, Yoshinori Sato wrote:
+> usl-5p and rts7751r2d using ata-generic driver.
+
+Please use a full sentence. There is no verb here.
+
 > 
-> As ReiserFS will be removed in 2025, delete all ReiserFS-related options
-> from defconfig files before the filesystem's removal.
+> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+> ---
+>  Documentation/devicetree/bindings/ata/ata-generic.yaml | 2 ++
+>  1 file changed, 2 insertions(+)
 > 
-> [...]
+> diff --git a/Documentation/devicetree/bindings/ata/ata-generic.yaml b/Documentation/devicetree/bindings/ata/ata-generic.yaml
+> index 0697927f3d7e..1025b3b351d0 100644
+> --- a/Documentation/devicetree/bindings/ata/ata-generic.yaml
+> +++ b/Documentation/devicetree/bindings/ata/ata-generic.yaml
+> @@ -18,6 +18,8 @@ properties:
+>        - enum:
+>            - arm,vexpress-cf
+>            - fsl,mpc8349emitx-pata
+> +          - iodata,usl-5p-ata
+> +          - renesas,rts7751r2d-ata
+>        - const: ata-generic
+>  
+>    reg:
 
-Applied to powerpc/next.
+-- 
+Damien Le Moal
+Western Digital Research
 
-[2/7] arch: powerpc: remove ReiserFS from defconfig
-      https://git.kernel.org/powerpc/c/c945e6f453a361b0e9daddd2be9c099d1b80d6f8
-
-cheers
