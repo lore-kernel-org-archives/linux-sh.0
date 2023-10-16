@@ -2,195 +2,139 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 119DEC41513
-	for <linux-sh@archiver.kernel.org>; Mon, 16 Oct 2023 09:59:17 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2ACB3CDB465
+	for <linux-sh@archiver.kernel.org>; Mon, 16 Oct 2023 11:55:48 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230418AbjJPJ7R (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 16 Oct 2023 05:59:17 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:38062 "EHLO
+        id S232745AbjJPLzr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 16 Oct 2023 07:55:47 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51204 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229459AbjJPJ7Q (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 16 Oct 2023 05:59:16 -0400
-Received: from mail-yb1-f179.google.com (mail-yb1-f179.google.com [209.85.219.179])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8C4F59C;
-        Mon, 16 Oct 2023 02:59:14 -0700 (PDT)
-Received: by mail-yb1-f179.google.com with SMTP id 3f1490d57ef6-d77ad095f13so4279981276.2;
-        Mon, 16 Oct 2023 02:59:14 -0700 (PDT)
+        with ESMTP id S233485AbjJPLzf (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 16 Oct 2023 07:55:35 -0400
+Received: from mail-ed1-x52b.google.com (mail-ed1-x52b.google.com [IPv6:2a00:1450:4864:20::52b])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0DB9711D
+        for <linux-sh@vger.kernel.org>; Mon, 16 Oct 2023 04:55:22 -0700 (PDT)
+Received: by mail-ed1-x52b.google.com with SMTP id 4fb4d7f45d1cf-533d31a8523so7475748a12.1
+        for <linux-sh@vger.kernel.org>; Mon, 16 Oct 2023 04:55:21 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=linaro.org; s=google; t=1697457320; x=1698062120; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from:references:cc
+         :to:content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=N6TBmVEV7VIOZF4/X4uTiyeFMAQOiRrLvH88SJprAF8=;
+        b=SzUtIjChtL+KxZpj5Ya8SQ1d+OdGRPFsgdIMv+Vd2JIMd5KIfULPXRJGqtpTUM5RD6
+         dC5lTwPdtEihz9PQhLgosDweCpUquhxzzOAr1ab2jgv28aI0hnF86q7nuPlVaKNtReTx
+         kPgNr7Liymbqs3IijDD9pDQNc8L9NSpDVyvP2zyEznHk6pqGxah+Sli08PoHzb5+7ZsC
+         dhZAFlfcJa6u7V0v/vJLkIwThgQqvsiyknhY66HhkpNoTwIeboBFETCpd4//z+LckWC2
+         qRTYr2iGkh3sgW8am4jiRUEUecnBAMMsZbJTt9tixpMr7/tV1OFQoiihlT2j9lqs9f38
+         P/Eg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1697450353; x=1698055153;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=i9GLVUGKessKoslJIZpAI7+l//jryIRXWw3bJSWd/JU=;
-        b=YpDAPKeVaVk1om3qEAtzdITkpkguvsjgbnlLajX5IRwq2TkM9TxIcL1p0S0ZmmVckF
-         A0x+ofvsJMYjROMp2PtTgDf1CU1Fo0Ylz+dq+We7gyYjX4h8UQH8zeTVJqsmn2DRLTJ5
-         SswsTJEzJxsypsRZ2hORFL680Cc9wtTQeHWr9p40xJ5JY22csfxEAvUDsPUe6hQ4marD
-         iNcRBKzq5hJ2cPl5VotwkrC1h6tCsn0EKlz5saQ29r7B2rR43Q1DSmGo/9ifiCRFj4c/
-         xXIh3fEKUTDXPvJjrh3kynCkyZqINJ52l4fZcn3c+bTTZBXWPBq+EU7/rhPr3VnsPTA8
-         f5lA==
-X-Gm-Message-State: AOJu0Yzmn5aPl+3Sq+cW4aiMGD9x2AQwmBanQ5emqVFkWnZmXJZbenrm
-        v8diF7JUoDbSZYE/rWdWJ4idOe8NfGvpAQ==
-X-Google-Smtp-Source: AGHT+IHDifpYoVg377WaVlCQbyVtL075I/N8OSBwyoKSlQwbzsy4Q39TGatkdfof4lMFOPSU9W6aXg==
-X-Received: by 2002:a25:a044:0:b0:d32:cd49:2469 with SMTP id x62-20020a25a044000000b00d32cd492469mr30483446ybh.24.1697450353351;
-        Mon, 16 Oct 2023 02:59:13 -0700 (PDT)
-Received: from mail-yw1-f171.google.com (mail-yw1-f171.google.com. [209.85.128.171])
-        by smtp.gmail.com with ESMTPSA id s10-20020a056902120a00b00d800eb5ac2asm2501003ybu.65.2023.10.16.02.59.12
+        d=1e100.net; s=20230601; t=1697457320; x=1698062120;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from:references:cc
+         :to:content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=N6TBmVEV7VIOZF4/X4uTiyeFMAQOiRrLvH88SJprAF8=;
+        b=km32z4cjqU8evANuTd/6D4joFqjKbRT7sDN/fUC/s2w35nTV3hf7W92TCbIvOi3qzD
+         uwJxdWDZ2Gqn12xSKaMeA/QR7G5qVsBSji4diy0A8rOhs21hjBOHc5iYLGXvmdyWh72l
+         /R7Uqyb1pDySGhAl/p75hG3hysTHTtKfc2D/AY/shf6SGg6OGuMjddLsLuGes9Frq1bz
+         vhJeegc/HwJALCKa0kdw5BwPIHBa3+IYToWXUuM8Mrw6AgrTXQh7R6ICw7886nIFWtr3
+         JfUIB7e21bD0U+Jh2OwUnwsyNhIXiVz9jlPf8j47yi78C8yVoJ3JWtDEEtFwaE9tAV3Z
+         tUIw==
+X-Gm-Message-State: AOJu0Ywz4oKK8XEpxtcOih/lzz3r021DBaAH4arjOqpquuAlS95rId4A
+        6C7fkNJGYPrAREZ434bcNZbN6+ipPLoiaX6U2hQ=
+X-Google-Smtp-Source: AGHT+IGAG4RsThXhRoCEcRNeQYuaSWT9sm+k8NErprv+TzH2tH0CpqiuOnfU6+481fvx9aDxEQeATg==
+X-Received: by 2002:a05:6402:2072:b0:53d:ec99:271 with SMTP id bd18-20020a056402207200b0053dec990271mr11003124edb.33.1697457320498;
+        Mon, 16 Oct 2023 04:55:20 -0700 (PDT)
+Received: from [192.168.1.20] ([178.197.219.154])
+        by smtp.gmail.com with ESMTPSA id eo15-20020a056402530f00b0053d9cb67248sm8478383edb.18.2023.10.16.04.55.19
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 16 Oct 2023 02:59:12 -0700 (PDT)
-Received: by mail-yw1-f171.google.com with SMTP id 00721157ae682-5a2536adaf3so58366447b3.2;
-        Mon, 16 Oct 2023 02:59:12 -0700 (PDT)
-X-Received: by 2002:a81:b661:0:b0:5a7:b9b1:c0bd with SMTP id
- h33-20020a81b661000000b005a7b9b1c0bdmr19215902ywk.11.1697450352391; Mon, 16
- Oct 2023 02:59:12 -0700 (PDT)
+        Mon, 16 Oct 2023 04:55:20 -0700 (PDT)
+Message-ID: <1bb96d99-6de0-4c04-866e-0c70fefb80e7@linaro.org>
+Date:   Mon, 16 Oct 2023 13:55:19 +0200
 MIME-Version: 1.0
-References: <cover.1694767208.git.geert+renesas@glider.be> <CAMuHMdWfBTKdXvZutg4LvWqBjuz-X=ZjzX0LKPqD=JxYuLoPRw@mail.gmail.com>
-In-Reply-To: <CAMuHMdWfBTKdXvZutg4LvWqBjuz-X=ZjzX0LKPqD=JxYuLoPRw@mail.gmail.com>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Mon, 16 Oct 2023 11:59:01 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdUF61V5qNyKbrTGxZfEJvCVuLO7q2R5MqZYkzRC_cNr0w@mail.gmail.com>
-Message-ID: <CAMuHMdUF61V5qNyKbrTGxZfEJvCVuLO7q2R5MqZYkzRC_cNr0w@mail.gmail.com>
-Subject: [GIT PULL v2] drm: renesas: shmobile: Atomic conversion + DT support
- (was: Re: [PATCH v4 00/41] drm: renesas: shmobile: Atomic conversion + DT support)
-To:     David Airlie <airlied@gmail.com>, Daniel Vetter <daniel@ffwll.ch>
-Cc:     Laurent Pinchart <laurent.pinchart@ideasonboard.com>,
-        Kieran Bingham <kieran.bingham+renesas@ideasonboard.com>,
-        Thomas Zimmermann <tzimmermann@suse.de>,
-        Magnus Damm <magnus.damm@gmail.com>,
-        DRI Development <dri-devel@lists.freedesktop.org>,
-        Linux-Renesas <linux-renesas-soc@vger.kernel.org>,
-        Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Rob Herring <robh+dt@kernel.org>,
-        Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
-        Conor Dooley <conor+dt@kernel.org>,
-        Mauro Carvalho Chehab <mchehab@kernel.org>,
-        Hans Verkuil <hverkuil@xs4all.nl>,
-        "open list:OPEN FIRMWARE AND FLATTENED DEVICE TREE BINDINGS" 
-        <devicetree@vger.kernel.org>,
-        Linux Media Mailing List <linux-media@vger.kernel.org>,
-        Linux Fbdev development list <linux-fbdev@vger.kernel.org>,
-        Linux-sh list <linux-sh@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+User-Agent: Mozilla Thunderbird
+Subject: Re: [RFC PATCH v3 10/35] Documentation/devicetree/bindings/pci:
+ renesas,pci-sh7751.yaml new file.
+Content-Language: en-US
+To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org
+Cc:     glaubitz@physik.fu-berlin.de, lpieralisi@kernel.org, kw@linux.com,
+        robh@kernel.org, krzysztof.kozlowski+dt@linaro.org,
+        conor+dt@kernel.org
+References: <cover.1697199949.git.ysato@users.sourceforge.jp>
+ <ef935285edcc1ddf56616ec0c7291749a266922e.1697199949.git.ysato@users.sourceforge.jp>
+From:   Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Autocrypt: addr=krzysztof.kozlowski@linaro.org; keydata=
+ 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
+ D2GYIS41Kv4Isx2dEFh+/Q==
+In-Reply-To: <ef935285edcc1ddf56616ec0c7291749a266922e.1697199949.git.ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-        Hi David, Daniel,
+On 14/10/2023 16:53, Yoshinori Sato wrote:
+> binding document for renesas,pci-sh7751.
+> 
+> 
 
-The following changes since commit 389af786f92ecdff35883551d54bf4e507ffcccb:
+One more comment - this was not tested so is not ready for review.
+Standard disclaimer:
 
-  Merge tag 'drm-intel-next-2023-09-29' of
-git://anongit.freedesktop.org/drm/drm-intel into drm-next (2023-10-04
-13:55:19 +1000)
+Please use scripts/get_maintainers.pl to get a list of necessary people
+and lists to CC. It might happen, that command when run on an older
+kernel, gives you outdated entries. Therefore please be sure you base
+your patches on recent Linux kernel.
 
-are available in the Git repository at:
+You missed at least devicetree list (maybe more), so this won't be
+tested by automated tooling. Performing review on untested code might be
+a waste of time, thus I will skip this patch entirely till you follow
+the process allowing the patch to be tested.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-drivers.git
-tags/shmob-drm-atomic-dt-tag2
+Please kindly resend and include all necessary To/Cc entries.
 
-for you to fetch changes up to 1399ebacbf590dfbac4fbba181dd1595b2fa10ba:
+Best regards,
+Krzysztof
 
-  drm: renesas: shmobile: Add DT support (2023-10-16 11:47:48 +0200)
-
-----------------------------------------------------------------
-drm: renesas: shmobile: Atomic conversion + DT support
-
-Currently, there are two drivers for the LCD controller on Renesas
-SuperH-based and ARM-based SH-Mobile and R-Mobile SoCs:
-  1. sh_mobile_lcdcfb, using the fbdev framework,
-  2. shmob_drm, using the DRM framework.
-However, only the former driver is used, as all platform support
-integrates the former.  None of these drivers support DT-based systems.
-
-Convert the SH-Mobile DRM driver to atomic modesetting, and add DT
-support, complemented by the customary set of fixes and improvements.
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Link: https://lore.kernel.org/r/cover.1694767208.git.geert+renesas@glider.be/
-
-Changes compared to v1:
-  - Rebase to drm-next,
-  - Add Acked-by.
-
-Thanks for pulling!
-
-----------------------------------------------------------------
-Geert Uytterhoeven (36):
-      MAINTAINER: Create entry for Renesas SH-Mobile DRM drivers
-      dt-bindings: display: Add Renesas SH-Mobile LCDC bindings
-      media: uapi: Add MEDIA_BUS_FMT_RGB666_2X9_BE format
-      drm: renesas: shmobile: Fix overlay plane disable
-      drm: renesas: shmobile: Fix ARGB32 overlay format typo
-      drm: renesas: shmobile: Correct encoder/connector types
-      drm: renesas: shmobile: Add support for Runtime PM
-      drm: renesas: shmobile: Restore indentation of shmob_drm_setup_clocks()
-      drm: renesas: shmobile: Use %p4cc to print fourcc code
-      drm: renesas: shmobile: Add missing YCbCr formats
-      drm: renesas: shmobile: Improve shmob_drm_format_info table
-      drm: renesas: shmobile: Improve error handling
-      drm: renesas: shmobile: Convert to use devm_request_irq()
-      drm: renesas: shmobile: Remove custom plane destroy callback
-      drm: renesas: shmobile: Use drmm_universal_plane_alloc()
-      drm: renesas: shmobile: Embed drm_device in shmob_drm_device
-      drm: renesas: shmobile: Convert container helpers to static
-inline functions
-      drm: renesas: shmobile: Replace .dev_private with container_of()
-      drm: renesas: shmobile: Use media bus formats in platform data
-      drm: renesas: shmobile: Move interface handling to connector setup
-      drm: renesas: shmobile: Unify plane allocation
-      drm: renesas: shmobile: Rename shmob_drm_crtc.crtc
-      drm: renesas: shmobile: Rename shmob_drm_connector.connector
-      drm: renesas: shmobile: Rename shmob_drm_plane.plane
-      drm: renesas: shmobile: Use drm_crtc_handle_vblank()
-      drm: renesas: shmobile: Move shmob_drm_crtc_finish_page_flip()
-      drm: renesas: shmobile: Wait for page flip when turning CRTC off
-      drm: renesas: shmobile: Turn vblank on/off when enabling/disabling CRTC
-      drm: renesas: shmobile: Shutdown the display on remove
-      drm: renesas: shmobile: Cleanup encoder
-      drm: renesas: shmobile: Atomic conversion part 1
-      drm: renesas: shmobile: Atomic conversion part 2
-      drm: renesas: shmobile: Use suspend/resume helpers
-      drm: renesas: shmobile: Remove internal CRTC state tracking
-      drm: renesas: shmobile: Atomic conversion part 3
-      drm: renesas: shmobile: Add DT support
-
-Laurent Pinchart (5):
-      drm: renesas: shmobile: Remove backlight support
-      drm: renesas: shmobile: Don't set display info width and height twice
-      drm: renesas: shmobile: Rename input clocks
-      drm: renesas: shmobile: Remove support for SYS panels
-      drm: renesas: shmobile: Use struct videomode in platform data
-
- .../bindings/display/renesas,shmobile-lcdc.yaml    | 130 +++++
- .../userspace-api/media/v4l/subdev-formats.rst     |  72 +++
- MAINTAINERS                                        |  13 +-
- drivers/gpu/drm/renesas/shmobile/Kconfig           |   3 +-
- drivers/gpu/drm/renesas/shmobile/Makefile          |   3 +-
- .../gpu/drm/renesas/shmobile/shmob_drm_backlight.c |  82 ---
- .../gpu/drm/renesas/shmobile/shmob_drm_backlight.h |  19 -
- drivers/gpu/drm/renesas/shmobile/shmob_drm_crtc.c  | 650 +++++++++------------
- drivers/gpu/drm/renesas/shmobile/shmob_drm_crtc.h  |  27 +-
- drivers/gpu/drm/renesas/shmobile/shmob_drm_drv.c   | 179 +++---
- drivers/gpu/drm/renesas/shmobile/shmob_drm_drv.h   |  18 +-
- drivers/gpu/drm/renesas/shmobile/shmob_drm_kms.c   |  77 ++-
- drivers/gpu/drm/renesas/shmobile/shmob_drm_kms.h   |   9 +-
- drivers/gpu/drm/renesas/shmobile/shmob_drm_plane.c | 326 ++++++-----
- drivers/gpu/drm/renesas/shmobile/shmob_drm_plane.h |   5 +-
- include/linux/platform_data/shmob_drm.h            |  57 +-
- include/uapi/linux/media-bus-format.h              |   3 +-
- 17 files changed, 860 insertions(+), 813 deletions(-)
- create mode 100644
-Documentation/devicetree/bindings/display/renesas,shmobile-lcdc.yaml
- delete mode 100644 drivers/gpu/drm/renesas/shmobile/shmob_drm_backlight.c
- delete mode 100644 drivers/gpu/drm/renesas/shmobile/shmob_drm_backlight.h
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
--- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
