@@ -2,83 +2,55 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 30EAECDB465
-	for <linux-sh@archiver.kernel.org>; Mon, 16 Oct 2023 07:26:50 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 18EEFCDB465
+	for <linux-sh@archiver.kernel.org>; Mon, 16 Oct 2023 08:03:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232025AbjJPH0u (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 16 Oct 2023 03:26:50 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55114 "EHLO
+        id S229791AbjJPIDx (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 16 Oct 2023 04:03:53 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45356 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S231360AbjJPH0t (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 16 Oct 2023 03:26:49 -0400
-Received: from baptiste.telenet-ops.be (baptiste.telenet-ops.be [IPv6:2a02:1800:120:4::f00:13])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 43862E8
-        for <linux-sh@vger.kernel.org>; Mon, 16 Oct 2023 00:26:46 -0700 (PDT)
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:441e:d899:20f9:b692])
-        by baptiste.telenet-ops.be with bizsmtp
-        id yXSj2A00K0qPBYQ01XSjS7; Mon, 16 Oct 2023 09:26:43 +0200
-Received: from geert (helo=localhost)
-        by ramsan.of.borg with local-esmtp (Exim 4.95)
-        (envelope-from <geert@linux-m68k.org>)
-        id 1qsHzv-006iJW-HK;
-        Mon, 16 Oct 2023 09:26:43 +0200
-Date:   Mon, 16 Oct 2023 09:26:43 +0200 (CEST)
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-To:     linux-kernel@vger.kernel.org
-cc:     linux-sh@vger.kernel.org
-Subject: Re: Build regressions/improvements in v6.6-rc6
-In-Reply-To: <20231016070610.677494-1-geert@linux-m68k.org>
-Message-ID: <f895f03-9661-9bd0-c112-84bc73df5057@linux-m68k.org>
-References: <CAHk-=whRt+O3rYh+0CxR7AbZVrEFgfTLubR9fLVxRpe9GGvB8g@mail.gmail.com> <20231016070610.677494-1-geert@linux-m68k.org>
+        with ESMTP id S231926AbjJPIDw (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 16 Oct 2023 04:03:52 -0400
+X-Greylist: delayed 640 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Mon, 16 Oct 2023 01:03:50 PDT
+Received: from mail.salesoptimize.pl (mail.salesoptimize.pl [195.231.64.117])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B4618DC
+        for <linux-sh@vger.kernel.org>; Mon, 16 Oct 2023 01:03:50 -0700 (PDT)
+Received: by mail.salesoptimize.pl (Postfix, from userid 1002)
+        id B372F84094; Mon, 16 Oct 2023 09:51:19 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=salesoptimize.pl;
+        s=mail; t=1697442692;
+        bh=0RBr9VZWoVDHl4huLrLyFadxMoVuqc/Wg5mabCfPKaM=;
+        h=Date:From:To:Subject:From;
+        b=ITR9JocY6LZz+ZRwBpfnC3stD3iBp2We/9SE/g5EsZOChpEE7JJkBS9JVqhPnTQez
+         8y2WpH7RO267o6lVVnOZRNiLrmtbqVEYW01yuPriCqgD82hC0ibq4WzgsSQF0z/hb6
+         VuB5S741Jf/sEcfkL5zGSwNFP8UBhBwgaSQZcaB1jo7UxwdF6hPLFEQ5zG7x+7lY/0
+         3zN2iKhi3UKJopu9oGbioO9gNfKZ34sGtLFMS/BWqyZ9PhiJcNZG8h62OoWksrfeSe
+         BoCfXZNrgdKm1pCTLhzZRBmTVitSm3KyM9fg48mFR7Sew3raD06amC7Ox3eLsq3c8f
+         OD3roPiaovDsw==
+Received: by mail.salesoptimize.pl for <linux-sh@vger.kernel.org>; Mon, 16 Oct 2023 07:50:54 GMT
+Message-ID: <20231016084500-0.1.o.3yt3.0.og8xah38jn@salesoptimize.pl>
+Date:   Mon, 16 Oct 2023 07:50:54 GMT
+From:   "Jerzy Maciejewski" <jerzy.maciejewski@salesoptimize.pl>
+To:     <linux-sh@vger.kernel.org>
+Subject: Zapytanie ofertowe 
+X-Mailer: mail.salesoptimize.pl
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII; format=flowed
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, 16 Oct 2023, Geert Uytterhoeven wrote:
-> JFYI, when comparing v6.6-rc6[1] to v6.6-rc5[3], the summaries are:
->  - build errors: +14/-0
+Dzie=C5=84 dobry,
 
-   + {standard input}: Error: displacement to undefined symbol .L100 overflows 12-bit field:  => 602
-   + {standard input}: Error: displacement to undefined symbol .L101 overflows 12-bit field:  => 607
-   + {standard input}: Error: displacement to undefined symbol .L102 overflows 8-bit field :  => 588
-   + {standard input}: Error: displacement to undefined symbol .L103 overflows 8-bit field :  => 593
-   + {standard input}: Error: displacement to undefined symbol .L149 overflows 8-bit field :  => 606
-   + {standard input}: Error: displacement to undefined symbol .L72 overflows 12-bit field:  => 589
-   + {standard input}: Error: displacement to undefined symbol .L73 overflows 12-bit field:  => 594
-   + {standard input}: Error: displacement to undefined symbol .L73 overflows 8-bit field :  => 580
-   + {standard input}: Error: displacement to undefined symbol .L74 overflows 8-bit field :  => 585
-   + {standard input}: Error: displacement to undefined symbol .L77 overflows 8-bit field :  => 607
-   + {standard input}: Error: displacement to undefined symbol .L78 overflows 8-bit field :  => 610
+Pozwoli=C5=82em sobie na kontakt, poniewa=C5=BC jestem zainteresowany wer=
+yfikacj=C4=85 mo=C5=BCliwo=C5=9Bci nawi=C4=85zania wsp=C3=B3=C5=82pracy.
 
-sh4-gcc11/sh-all{mod,yes}config
+Wspieramy firmy w pozyskiwaniu nowych klient=C3=B3w biznesowych.
 
-   + {standard input}: Error: missing operand:  => 612
+Czy mo=C5=BCemy porozmawia=C4=87 w celu przedstawienia szczeg=C3=B3=C5=82=
+owych informacji?=20
 
-   sh4-gcc11/sh-allyesconfig
 
-   + {standard input}: Error: pcrel too far: 933, 934 => 598, 572, 593, 936, 604, 937, 577, 599
-
-sh4-gcc12/sh-allmodconfig
-sh4-gcc11/sh-all{mod,yes}config
-
-   + {standard input}: Error: unknown pseudo-op: `.':  => 609
-
-sh4-gcc11/sh-allmodconfig
-
-All of the above are caused by ICEs, so nihil novum sub sole.
-
-> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/58720809f52779dc0f08e53e54b014209d13eebb/ (237 out of 239 configs)
-> [3] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/94f6f0550c625fab1f373bb86a6669b45e9748b3/ (all 239 configs)
-
-Gr{oetje,eeting}s,
-
- 						Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
- 							    -- Linus Torvalds
+Pozdrawiam serdecznie
+Jerzy Maciejewski
