@@ -2,125 +2,80 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 17106CDB465
-	for <linux-sh@archiver.kernel.org>; Mon, 16 Oct 2023 19:52:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2EAA7CDB474
+	for <linux-sh@archiver.kernel.org>; Mon, 16 Oct 2023 21:55:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232798AbjJPTwO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 16 Oct 2023 15:52:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57396 "EHLO
+        id S234201AbjJPVzv (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 16 Oct 2023 17:55:51 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:42280 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232365AbjJPTwN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 16 Oct 2023 15:52:13 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C278C8F;
-        Mon, 16 Oct 2023 12:52:11 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 324E4C433C7;
-        Mon, 16 Oct 2023 19:52:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1697485931;
-        bh=tx/j32H7gkpo8rzCPx1RKels7ySsiXUrEVypuCZW+Rk=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:From;
-        b=Ro72ZPfsanST3avObOZJpj6KOxt93TaskAnExlLoS8adtFfn86ub5H0aC0VQUXt7K
-         BMJb40xA72FR6I2b2eZj6pGeZBxLsdb/fY25gn6nx2Mx0b+zdTKV1FzkRDZbKPibhH
-         IPo4RZVvqYZ+jW0p3W+0VwTUY9i1BEiRlGjlbtCCDlvNTGXd/CaGGVAN/TD0jCNNLP
-         4H9FNfaIr5hXJW3ne5W9fVFCi9I2dA6ZnFFqNM/y2wSJqcNSfWEXAe3LZCe2AHnz5N
-         y3K8ZIBHJsXozp2cOu78rpIl2lzPZ+RigUfGnpqc5uPXhYKgyd25yo0KlQdtWK4Tzk
-         5bbBhSDPxhCKQ==
-Date:   Mon, 16 Oct 2023 14:52:09 -0500
-From:   Bjorn Helgaas <helgaas@kernel.org>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de,
-        lpieralisi@kernel.org, kw@linux.com, robh@kernel.org,
-        linux-pci@vger.kernel.org
-Subject: Re: [RFC PATCH v3 09/35] drivers/pci/controller: SH7751 PCI Host
- bridge driver.
-Message-ID: <20231016195209.GA1221606@bhelgaas>
+        with ESMTP id S233574AbjJPVzu (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 16 Oct 2023 17:55:50 -0400
+Received: from galois.linutronix.de (Galois.linutronix.de [IPv6:2a0a:51c0:0:12e:550::1])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C8F97A2
+        for <linux-sh@vger.kernel.org>; Mon, 16 Oct 2023 14:55:48 -0700 (PDT)
+From:   Thomas Gleixner <tglx@linutronix.de>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
+        s=2020; t=1697493346;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=W8i9gPcV8p3A2sKVvP7yokWUH9lwvfeDfZt3BLwWryk=;
+        b=mOsV65LsYJFPRGxYgIF5g3NfkBZ11BiX2BjzzqVnhzp6s8RcUtQH+n25demKjTntUZTieI
+        iJvP7E5RykL1UmKHblj/6Caf8863jSiLZw8zQCBEVjbim+B3Mf/XbIqBnc7z/tFLAXHCSl
+        bgyWGL6/hgWnQZ61fIR46jCedvSILKLadXgeUMw7wCemS9/+2zOTmYKl09YuFVP960Uz6C
+        mHxRidrJ1Gd7i4hKD7yl2QTtO/ilc8s2sVtQ30gFuAqwqslf5ySK1wltdSprXFAf8Al4Qh
+        Iv3irK0JiMbEI21hz0cPyGKQ1J1fV4ZeAZR19HCuFZG8UWpxG5iAkB7eyXJbWw==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
+        s=2020e; t=1697493346;
+        h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+         to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+         in-reply-to:in-reply-to:references:references;
+        bh=W8i9gPcV8p3A2sKVvP7yokWUH9lwvfeDfZt3BLwWryk=;
+        b=ZMNQyUoF5s1j+lBdzLJ51n9agtzj1Eaz0uyDL4yVR0oNZawnTKxG1073XuhlviGPLRQRrL
+        3GZJhVAihkZ/cVBA==
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org
+Cc:     maz@kernel.org
+Subject: Re: [RFC PATCH v3 16/35] drivers/irqchip: SH7751 IRL external
+ encoder with enable gate.
+In-Reply-To: <66f918fd93b7a98a548bd95de615353a43d1cbd1.camel@physik.fu-berlin.de>
+References: <cover.1697199949.git.ysato@users.sourceforge.jp>
+ <5dfc2f45fd9a701a92ba86800e4f6eba35d96ede.1697199949.git.ysato@users.sourceforge.jp>
+ <87edhu76d3.ffs@tglx>
+ <66f918fd93b7a98a548bd95de615353a43d1cbd1.camel@physik.fu-berlin.de>
+Date:   Mon, 16 Oct 2023 23:55:46 +0200
+Message-ID: <875y366xlp.ffs@tglx>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20231016172742.GA1215127@bhelgaas>
+Content-Type: text/plain
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Oct 16, 2023 at 12:27:42PM -0500, Bjorn Helgaas wrote:
-> "git am" complained about a couple whitespace errors elsewhere in this
-> series:
-> 
->   Applying: arch/sh/boot/compressed/head_32.S: passing FDT address to initialize function.
->   .git/rebase-apply/patch:25: trailing whitespace.
->   Applying: drivers/irqchip: SH7751 IRL external encoder with enable gate.
->   .git/rebase-apply/patch:33: new blank line at EOF.
+On Mon, Oct 16 2023 at 20:50, John Paul Adrian Glaubitz wrote:
+> On Mon, 2023-10-16 at 20:46 +0200, Thomas Gleixner wrote:
+>> > --- a/drivers/irqchip/Kconfig
+>> > +++ b/drivers/irqchip/Kconfig
+>> > @@ -688,4 +688,11 @@ config RENESAS_SH7751_INTC
+>> >  	  Support for the Renesas SH7751 On-chip interrupt controller.
+>> >  	  And external interrupt encoder for some targets.
+>> 
+>> ... I have no idea against which tree this is supposed to apply. None of
+>> the trees I usually use has the above. So I assume it's a patch in the
+>> same series, but what do I know.
+>
+> This shall eventually go through my sh-linux tree [1].
 
-BTW, I mentioned all these things and more a month or so ago:
+That's an actual tree management problem, which is completely
+independent of the review process.
 
-  https://lore.kernel.org/r/20230918191602.GA201859@bhelgaas
-  https://lore.kernel.org/r/20230918193337.GA203483@bhelgaas
-  https://lore.kernel.org/r/20230918193036.GA203163@bhelgaas
+Reviewing patches which depend on "unknown" other changes is per
+definition impossible and in this case it's even worse because the
+dependency affects the same subsystem, no?
 
-I *thought* this seemed familiar ;)
+Thanks,
 
-Bjorn
+        tglx
 
-> On Sat, Oct 14, 2023 at 11:53:44PM +0900, Yoshinori Sato wrote:
-> > pci-sh7751.h move from "arch/sh/drivers/pci/pci-sh7751.h"
-> > pci-sh7751.c convert from "arch/sh/drivers/pci/pci-sh7751.c"
-> 
-> Note the subject line conventions in drivers/pci (use "git log
-> --oneline" to see them): use something like this:
-> 
->   PCI: sh7751: Add SH7751 PCI host bridge driver
-> 
-> with no period at the end.
-> 
-> arch/sh/drivers/pci/pci-sh7751.h and arch/sh/drivers/pci/pci-sh7751.c
-> still exist after applying this series.  Better to have a single patch
-> that moves the content from arch/sh/drivers/pci/ to
-> drivers/pci/controller/.
-> 
-> Neither file looks like a simple move; there's a lot of reorganization
-> going on at the same time.  It's really difficult to review a patch
-> like that because we can't compare the content from before and after.
-> 
-> If you make a patch that does the cleanup/reorganization, and a
-> separate patch that is just a simple move, and you use "git mv" for
-> the move, git should notice that this is just a rename, and that diff
-> will be tiny.
-> 
-> One of the reorganization patches should be to incorporate the
-> pci-sh7751.h content directly into pci-sh7751.c.  Since it's only used
-> in pci-sh7751.c, there's really no advantage to having it in a
-> separate file.
-> 
-> Bjorn
-> 
-> > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > ---
-> >  drivers/pci/controller/Kconfig      |   9 +
-> >  drivers/pci/controller/Makefile     |   1 +
-> >  drivers/pci/controller/pci-sh7751.c | 285 ++++++++++++++++++++++++++++
-> >  drivers/pci/controller/pci-sh7751.h | 267 ++++++++++++++++++++++++++
-> >  4 files changed, 562 insertions(+)
-> >  create mode 100644 drivers/pci/controller/pci-sh7751.c
-> >  create mode 100644 drivers/pci/controller/pci-sh7751.h
-> > 
-> > diff --git a/drivers/pci/controller/Kconfig b/drivers/pci/controller/Kconfig
-> > index c0c3f2824990..037ff44bd1e8 100644
-> > --- a/drivers/pci/controller/Kconfig
-> > +++ b/drivers/pci/controller/Kconfig
-> > @@ -342,6 +342,15 @@ config PCIE_XILINX_CPM
-> >  	  Say 'Y' here if you want kernel support for the
-> >  	  Xilinx Versal CPM host bridge.
-> >  
-> > +config PCI_SH7751
-> > +	bool "Renesas SH7751 PCI controller"
-> > +	depends on OF
-> > +	depends on CPU_SUBTYPE_SH7751 || CPU_SUBTYPE_SH7751R || COMPILE_TEST
-> > +	select PCI_HOST_COMMON
-> > +	help
-> > +	  Say 'Y' here if you want kernel to support the Renesas SH7751 PCI
-> > +	  Host Bridge driver.
-> 
-> Move this so the menu entries stay sorted by vendor name.
-> 
-> Bjorn
+
