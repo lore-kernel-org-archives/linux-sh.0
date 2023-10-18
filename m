@@ -2,56 +2,56 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 23968CDB47E
-	for <linux-sh@archiver.kernel.org>; Wed, 18 Oct 2023 18:43:25 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 79DDDCDB47E
+	for <linux-sh@archiver.kernel.org>; Wed, 18 Oct 2023 18:48:46 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229726AbjJRSnZ convert rfc822-to-8bit (ORCPT
+        id S229947AbjJRSsq convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 18 Oct 2023 14:43:25 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51814 "EHLO
+        Wed, 18 Oct 2023 14:48:46 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52804 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229697AbjJRSnY (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 18 Oct 2023 14:43:24 -0400
-Received: from mail-yb1-f172.google.com (mail-yb1-f172.google.com [209.85.219.172])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3C695F7;
-        Wed, 18 Oct 2023 11:43:23 -0700 (PDT)
-Received: by mail-yb1-f172.google.com with SMTP id 3f1490d57ef6-d9c7bba32beso1282321276.1;
-        Wed, 18 Oct 2023 11:43:23 -0700 (PDT)
+        with ESMTP id S229965AbjJRSsp (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 18 Oct 2023 14:48:45 -0400
+Received: from mail-yw1-f180.google.com (mail-yw1-f180.google.com [209.85.128.180])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 961E211C;
+        Wed, 18 Oct 2023 11:48:40 -0700 (PDT)
+Received: by mail-yw1-f180.google.com with SMTP id 00721157ae682-5a7ad24b3aaso87685557b3.2;
+        Wed, 18 Oct 2023 11:48:40 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1697654602; x=1698259402;
+        d=1e100.net; s=20230601; t=1697654919; x=1698259719;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=EzAw4DKXW1u+vvSXADlvSYINv0hYvkwGHrJ3bJrdSu0=;
-        b=JKLt+1MDasX+YZHdKhxhWRd7OgjCoQABKBq5zapCHd4CzifG5cNQrUGikFvOKTGKkX
-         KE8xugbR55ALaeR99nwoVo8NzC/XMGfhkusQ8igZyfPST+sRz4osuwuHat/XP0dS8cZS
-         xJ+N3tBEzfh1ldR7TOX9mRpGRD6/estixdakfdgBSdGdcXatmRBraThFv6AKyXZhLmWQ
-         MnoQPTaKDiDG3tutz/CGiiU6xhf39DMJ1sTnm7EJqTwxBqbWwjzRSy4CyTWxhYo0zG6x
-         P6TFGJAEG3HDRUcEAEee2OSx7bbg9s5PZ3Glu6auPrr1naJnsAVu627PGtr9NjbH7nmg
-         5UGg==
-X-Gm-Message-State: AOJu0Yy5gAzlk0Pp4H4AKSE11bX1TQjNSjiI4vbIQtjSexklH88C0Ff4
-        vnlV45vtEJ7GNSiouauegtbCBBGZ82jxxw==
-X-Google-Smtp-Source: AGHT+IGP4gmC+HyQ6AsL2gTo/WJI8XkB1rz+lZJW61r0HnqG/4xRCSLrvJWMBgmQpJYHSxGk2ZU8oA==
-X-Received: by 2002:a25:b411:0:b0:d9a:5c30:c1e9 with SMTP id n17-20020a25b411000000b00d9a5c30c1e9mr243164ybj.35.1697654602310;
-        Wed, 18 Oct 2023 11:43:22 -0700 (PDT)
-Received: from mail-yb1-f169.google.com (mail-yb1-f169.google.com. [209.85.219.169])
-        by smtp.gmail.com with ESMTPSA id u14-20020a252e0e000000b00d9a43500f1dsm1463731ybu.28.2023.10.18.11.43.21
+        bh=IQXL/afvptNPAl+icwRE6UirM13RVwbeagZySKbyPUc=;
+        b=fu0FGdx4Ovtx7s8CcXC1lS3Q9NvnVFykfFwhkq/BO9yYtWnGQiKkrj9Mp7Zd0gB2fs
+         /0PbRlukKOO/qRAzviD2Ech1RoA4Vs7v6FO4EvloO5Bfjgx+WpsNr4c0j/kCALb5nHX1
+         q4pUy8FQK8WZXJDLT2nO7BDdwT5bWbyYcEQSP8Ax9o258LW8v/ynL6i5jeCKdpfQgpKs
+         3Zuu/ZoXKevpZQRMVZunoARguX/9aD1jQq7E5D+5Qf09kOixpsYN/QFDjmT5uNsQUYpB
+         dpRp17vRvq8DiR4gzYOSTDcwl5en8JTnCDMm4REgmr4pcJp9bAJOS0hcarABOHjst493
+         e80g==
+X-Gm-Message-State: AOJu0YymBWH8vdECQX8yr2+SEer0ssPfHA4u8KzuSsf4NbZhuW8vOiC0
+        LxOtAbmSoNV9Yw3wrygGw/PstJ/8opL4Jg==
+X-Google-Smtp-Source: AGHT+IHihTXj7X4hw6APkdCAfzrfQeFu94T0ynzTko/9pU6pQTYGL+r6GwSFc41p1nUqf0FjI3ZFZg==
+X-Received: by 2002:a5b:207:0:b0:d9a:d170:1b0f with SMTP id z7-20020a5b0207000000b00d9ad1701b0fmr254038ybl.12.1697654919521;
+        Wed, 18 Oct 2023 11:48:39 -0700 (PDT)
+Received: from mail-yw1-f174.google.com (mail-yw1-f174.google.com. [209.85.128.174])
+        by smtp.gmail.com with ESMTPSA id v33-20020a25fc21000000b00d865e9d394asm1500159ybd.14.2023.10.18.11.48.39
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 18 Oct 2023 11:43:21 -0700 (PDT)
-Received: by mail-yb1-f169.google.com with SMTP id 3f1490d57ef6-d9a58aa4983so8525035276.0;
-        Wed, 18 Oct 2023 11:43:21 -0700 (PDT)
-X-Received: by 2002:a25:404d:0:b0:d9a:3bee:2eeb with SMTP id
- n74-20020a25404d000000b00d9a3bee2eebmr174788yba.60.1697654601726; Wed, 18 Oct
- 2023 11:43:21 -0700 (PDT)
+        Wed, 18 Oct 2023 11:48:39 -0700 (PDT)
+Received: by mail-yw1-f174.google.com with SMTP id 00721157ae682-5a7ad24b3aaso87685247b3.2;
+        Wed, 18 Oct 2023 11:48:39 -0700 (PDT)
+X-Received: by 2002:a0d:df51:0:b0:5a7:d8f0:a30a with SMTP id
+ i78-20020a0ddf51000000b005a7d8f0a30amr152657ywe.28.1697654919012; Wed, 18 Oct
+ 2023 11:48:39 -0700 (PDT)
 MIME-Version: 1.0
-References: <cover.1697199949.git.ysato@users.sourceforge.jp> <2c63fdae1d2c60f478212d07898768b68f01b3b0.1697199949.git.ysato@users.sourceforge.jp>
-In-Reply-To: <2c63fdae1d2c60f478212d07898768b68f01b3b0.1697199949.git.ysato@users.sourceforge.jp>
+References: <cover.1697199949.git.ysato@users.sourceforge.jp> <35311df6cf65c9f110604cbbdecad2f15ac602b6.1697199949.git.ysato@users.sourceforge.jp>
+In-Reply-To: <35311df6cf65c9f110604cbbdecad2f15ac602b6.1697199949.git.ysato@users.sourceforge.jp>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Wed, 18 Oct 2023 20:43:09 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdU7GkqZQ14ExvaY7U8pEE5RJ=WJFH9TpNz1zLBY-2D=HQ@mail.gmail.com>
-Message-ID: <CAMuHMdU7GkqZQ14ExvaY7U8pEE5RJ=WJFH9TpNz1zLBY-2D=HQ@mail.gmail.com>
-Subject: Re: [RFC PATCH v3 27/35] Documentation/devicetree/bindings:
- vendor-prefix add IO DATA DEVICE Inc.
+Date:   Wed, 18 Oct 2023 20:48:25 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdVjyPchHd8Hzcy+1Pv-57M_eD9rPSDmT88M3bSeEUn86A@mail.gmail.com>
+Message-ID: <CAMuHMdVjyPchHd8Hzcy+1Pv-57M_eD9rPSDmT88M3bSeEUn86A@mail.gmail.com>
+Subject: Re: [RFC PATCH v3 29/35] Documentation/devicetree/bindings/soc/renesas/sh.yaml:
+ Add SH7751 based target.
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de,
         robh+dt@kernel.org, krzysztof.kozlowski+dt@linaro.org,
@@ -66,34 +66,72 @@ Hi Sato-san,
 
 On Sat, Oct 14, 2023 at 4:54 PM Yoshinori Sato
 <ysato@users.sourceforge.jp> wrote:
+> Renesas SuperH based target definition.
+>
 > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 
 Thanks for your patch!
 
-Please use a one-line prefix that matches the history of the file:
+Please use a one-line prefix that matches the history of the other
+files next to it:
 
-    dt-bindings: vendor-prefixes: Add IO DATA DEVICE Inc.
+    dt-bindings: soc: renesas: Document SH7751 based targets
 
-> --- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
-> +++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
-> @@ -657,6 +657,8 @@ patternProperties:
->      description: Inventec
->    "^inversepath,.*":
->      description: Inverse Path
-> +  "^iodata,.*":
-> +    description: IO DATA DEVICE Inc.
->    "^iom,.*":
->      description: Iomega Corporation
->    "^irondevice,.*":
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/soc/renesas/sh.yaml
+> @@ -0,0 +1,32 @@
+> +# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+> +%YAML 1.2
+> +---
+> +$id: http://devicetree.org/schemas/soc/renesas/sh.yaml#
+> +$schema: http://devicetree.org/meta-schemas/core.yaml#
+> +
+> +title: Renesas SuperH Platform
+> +
+> +maintainers:
+> +  - Yoshinori Sato <ysato@users.sourceforge.jp>
+> +
+> +properties:
+> +  $nodename:
+> +    const: '/'
+> +  compatible:
+> +    oneOf:
+> +      - description: RTS7751R2D Plus
+> +        items:
+> +          - enum:
+> +              - renesas,rts7751r2d # Renesas SH4 2D graphics board
+> +          - const: renesas,sh7751r
+> +
+> +      - description: Julian board
+> +        items:
+> +          - enum:
+> +              - iodata,landisk  # LANDISK HDL-U
+> +              - iodata,usl-5p   # USL-5P
 
-For the actual change:
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+These depend on "[RFC PATCH v3 27/35] Documentation/devicetree/bindings:
+vendor-prefix add IO DATA DEVICE Inc.", so that patch should be moved
+forward in the series.
 
+> +          - const: renesas,sh7751r
+
+Please merge both sections, as they use the same number of compatible
+values and the same fallback.
+
+> +
+> +additionalProperties: true
+> +
+> +...
+> --
+> 2.39.2
+>
+
+
+--
 Gr{oetje,eeting}s,
 
                         Geert
 
--- 
+--
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
