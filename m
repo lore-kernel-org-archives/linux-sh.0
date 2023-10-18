@@ -2,79 +2,442 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6600FCDB483
-	for <linux-sh@archiver.kernel.org>; Wed, 18 Oct 2023 12:46:23 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id DCC5FCDB482
+	for <linux-sh@archiver.kernel.org>; Wed, 18 Oct 2023 13:02:57 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230366AbjJRMqX convert rfc822-to-8bit (ORCPT
+        id S231202AbjJRNC5 convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 18 Oct 2023 08:46:23 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37772 "EHLO
+        Wed, 18 Oct 2023 09:02:57 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41300 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230202AbjJRMqW (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 18 Oct 2023 08:46:22 -0400
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9BACFA3
-        for <linux-sh@vger.kernel.org>; Wed, 18 Oct 2023 05:46:20 -0700 (PDT)
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qt5w3-002LxR-PE; Wed, 18 Oct 2023 14:46:03 +0200
-Received: from p5dc558c2.dip0.t-ipconnect.de ([93.197.88.194] helo=[192.168.178.81])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qt5w3-001rXj-Hn; Wed, 18 Oct 2023 14:46:03 +0200
-Message-ID: <6fdd4de08a97060b952e0bfa4dd3144d9c23e800.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH RFC] hw/sh4/sh7750: Add STBCR/STBCR2 register support
-From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     Geert Uytterhoeven <geert+renesas@glider.be>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc:     Guenter Roeck <linux@roeck-us.net>, qemu-devel@nongnu.org,
-        linux-sh@vger.kernel.org
-Date:   Wed, 18 Oct 2023 14:46:02 +0200
-In-Reply-To: <20231018124023.2927710-1-geert+renesas@glider.be>
-References: <20231018124023.2927710-1-geert+renesas@glider.be>
-Autocrypt: addr=glaubitz@physik.fu-berlin.de; prefer-encrypt=mutual;
- keydata=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
+        with ESMTP id S230296AbjJRNC5 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 18 Oct 2023 09:02:57 -0400
+Received: from mail-yw1-f180.google.com (mail-yw1-f180.google.com [209.85.128.180])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4F6CA118;
+        Wed, 18 Oct 2023 06:02:51 -0700 (PDT)
+Received: by mail-yw1-f180.google.com with SMTP id 00721157ae682-5a7d532da4bso84980697b3.2;
+        Wed, 18 Oct 2023 06:02:51 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1697634170; x=1698238970;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=Zn39POTUOHVRSr1tiTQ5eT1Akj0Jz+yj6bVZ2WVj9Kw=;
+        b=u4DvwDl7ruquL6mCg8N7Lg5vqLHEKlwNxH8F7IC4JXVc8tNF8ddNBgSeThUVIgY6wy
+         paqM4Fbo1XJqp1+YtUsL4w/lYItZM0JG4lG32rW6nH8xo113bkUgVNVyDV7hwj7wCGuL
+         KJwyPUQZljWRuFl91phC6z4izwWC0n2ivO318taucxiJn4DjXOkGQ4zecazNgSxdxN1i
+         Ux4IYnluqALAlXHZABJsBTKLu81IzxPxFeas0U1T0sZBBjZlXMhv/twevy1/fuTPqfXl
+         fdba+LqCQqnniFwNG3fAUQLdTzkdRVrH7pFLjUb/3xKcnAWUaG5YtFetAObnGTKq9qPA
+         14lQ==
+X-Gm-Message-State: AOJu0Yx9b+AZ+b1/Z7gfGS1i8317SXiprh7XslNdNErnMTcoWdQYd97t
+        Amb4Nm2dHWeX0htAf2zY4k2WmdR3rKGMmA==
+X-Google-Smtp-Source: AGHT+IFYw+l1f/DP5u4Jr230jxI8FU4+rdL7GZY8awo9wIU3sxAoLRcinrFlWDp4nXkLo0Va9Uuuhg==
+X-Received: by 2002:a0d:ddcd:0:b0:59c:aea:d877 with SMTP id g196-20020a0dddcd000000b0059c0aead877mr5278084ywe.40.1697634169937;
+        Wed, 18 Oct 2023 06:02:49 -0700 (PDT)
+Received: from mail-yb1-f179.google.com (mail-yb1-f179.google.com. [209.85.219.179])
+        by smtp.gmail.com with ESMTPSA id t202-20020a0dead3000000b005a1cc37aff1sm1460254ywe.20.2023.10.18.06.02.49
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 18 Oct 2023 06:02:49 -0700 (PDT)
+Received: by mail-yb1-f179.google.com with SMTP id 3f1490d57ef6-d9ac43d3b71so7332993276.0;
+        Wed, 18 Oct 2023 06:02:49 -0700 (PDT)
+X-Received: by 2002:a25:77c5:0:b0:d9a:44fd:c72b with SMTP id
+ s188-20020a2577c5000000b00d9a44fdc72bmr4986045ybc.13.1697634169463; Wed, 18
+ Oct 2023 06:02:49 -0700 (PDT)
+MIME-Version: 1.0
+References: <cover.1697199949.git.ysato@users.sourceforge.jp> <a772e1b6de89af22057d3af31cc03dcad7964fc7.1697199949.git.ysato@users.sourceforge.jp>
+In-Reply-To: <a772e1b6de89af22057d3af31cc03dcad7964fc7.1697199949.git.ysato@users.sourceforge.jp>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Wed, 18 Oct 2023 15:02:36 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdWzvgwxtQB1WgW=On7gPf66PR1DGtN2dVYxEmsAqTAYWg@mail.gmail.com>
+Message-ID: <CAMuHMdWzvgwxtQB1WgW=On7gPf66PR1DGtN2dVYxEmsAqTAYWg@mail.gmail.com>
+Subject: Re: [RFC PATCH v3 12/35] drivers/clk/renesas: clk-sh7750.c
+ SH7750/7751 CPG driver.
+To:     Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de,
+        mturquette@baylibre.com, sboyd@kernel.org,
+        linux-clk@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
-User-Agent: Evolution 3.50.0 
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-Originating-IP: 93.197.88.194
-X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Geert!
+Hi Sato-san,
 
-On Wed, 2023-10-18 at 14:40 +0200, Geert Uytterhoeven wrote:
-> The new Linux SH7750 clock driver uses the registers for power-down
-> mode control, causing a crash:
-> 
->     byte read to SH7750_STBCR_A7 (0x000000001fc00004) not supported
->     Aborted (core dumped)
-> 
-> Fix this by adding support for the Standby Control Registers STBCR and
-> STBCR2.
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On Sat, Oct 14, 2023 at 4:54 PM Yoshinori Sato
+<ysato@users.sourceforge.jp> wrote:
+> This driver supported SH7750/7751 PLL/Divider clock and module stop.
+>
+> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-Is this supposed to be applied on top of Yoshinori's DT conversion series?
+Thanks for your patch!
 
-Thanks,
-Adrian
+> ---
+>  drivers/clk/renesas/Kconfig      |  21 +-
+>  drivers/clk/renesas/Makefile     |   1 +
+>  drivers/clk/renesas/clk-sh7750.c | 787 +++++++++++++++++++++++++++++++
+>  3 files changed, 807 insertions(+), 2 deletions(-)
+>  create mode 100644 drivers/clk/renesas/clk-sh7750.c
+>
+> diff --git a/drivers/clk/renesas/Kconfig b/drivers/clk/renesas/Kconfig
+> index 37632a0659d8..c52c038ce715 100644
+> --- a/drivers/clk/renesas/Kconfig
+> +++ b/drivers/clk/renesas/Kconfig
+> @@ -1,8 +1,8 @@
+>  # SPDX-License-Identifier: GPL-2.0
+>
+>  config CLK_RENESAS
+> -       bool "Renesas SoC clock support" if COMPILE_TEST && !ARCH_RENESAS
+> -       default y if ARCH_RENESAS
+> +       bool "Renesas SoC clock support" if COMPILE_TEST && !ARCH_RENESAS && SUPERH
 
--- 
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+"!SUPERH", so the symbol becomes invisible but enabled on SH.
+
+> +       default y if ARCH_RENESAS || SUPERH
+>         select CLK_EMEV2 if ARCH_EMEV2
+>         select CLK_RZA1 if ARCH_R7S72100
+>         select CLK_R7S9210 if ARCH_R7S9210
+> @@ -39,6 +39,11 @@ config CLK_RENESAS
+>         select CLK_R9A07G054 if ARCH_R9A07G054
+>         select CLK_R9A09G011 if ARCH_R9A09G011
+>         select CLK_SH73A0 if ARCH_SH73A0
+> +       select CLK_SH7750 if CPU_SUBTYPE_SH7750
+> +       select CLK_SH7750 if CPU_SUBTYPE_SH7750S
+> +       select CLK_SH7750 if CPU_SUBTYPE_SH7750R
+> +       select CLK_SH7750 if CPU_SUBTYPE_SH7751
+> +       select CLK_SH7750 if CPU_SUBTYPE_SH7751R
+
+Please combine all of the above into a single statement using "||",
+like is done for other shared drivers.
+
+>
+>  if CLK_RENESAS
+>
+> @@ -188,6 +193,10 @@ config CLK_SH73A0
+>         select CLK_RENESAS_CPG_MSTP
+>         select CLK_RENESAS_DIV6
+>
+> +config CLK_SH7750
+> +       bool "SH7750/7751 family clock support" if COMPILE_TEST
+> +       help
+> +         This is a driver for SH7750 / SH7751 CPG.
+>
+>  # Family
+>  config CLK_RCAR_CPG_LIB
+> @@ -218,6 +227,14 @@ config CLK_RZG2L
+>         bool "Renesas RZ/{G2L,G2UL,V2L} family clock support" if COMPILE_TEST
+>         select RESET_CONTROLLER
+>
+> +config CLK_SH7750
+> +       bool "Renesas SH7750/7751 family clock support"
+
+"if COMPILE_TEST", so the symbol becomes invisible when auto-enabled.
+
+> +       depends on CPU_SUBTYPE_SH7750 || CPU_SUBTYPE_SH7750S || \
+> +                  CPU_SUBTYPE_SH7750R || \
+> +                  CPU_SUBTYPE_SH7751 || CPU_SUBTYPE_SH7751R || COMPILE_TEST
+
+Please drop this dependency, as it is not needed.
+
+> --- /dev/null
+> +++ b/drivers/clk/renesas/clk-sh7750.c
+
+> +static void sbcr_sw(struct clk_hw *hw, bool on)
+> +{
+> +       struct clk_gate *gate = to_clk_gate(hw);
+> +       u8 msk = BIT(gate->bit_idx);
+> +       u8 val;
+> +
+> +       val = readb(gate->reg);
+> +       if (on)
+> +               val &= ~msk;
+> +       else
+> +               val |= msk;
+> +       writeb(val, gate->reg);
+
+RMW (Read-Modify-Write) needs locking.
+
+> +}
+> +
+> +static int sbcr_enable(struct clk_hw *hw)
+> +{
+> +       sbcr_sw(hw, true);
+> +       return 0;
+> +}
+> +
+> +static void sbcr_disable(struct clk_hw *hw)
+> +{
+> +       sbcr_sw(hw, false);
+> +}
+> +
+> +static int sbcr_is_enabled(struct clk_hw *hw)
+> +{
+> +       u8 val;
+> +       struct clk_gate *gate = to_clk_gate(hw);
+> +
+> +       val = readb(gate->reg);
+> +       val &= 1 << gate->bit_idx;
+> +       return val != 0;
+> +}
+> +
+> +static const struct clk_ops gate_stbcr_ops = {
+> +       .enable = sbcr_enable,
+> +       .disable = sbcr_disable,
+> +       .is_enabled = sbcr_is_enabled,
+> +};
+
+These are almost identical to clk_gate_ops, except that they use
+8-bit instead of 32-bit register accesses.
+Perhaps you can extend the standard gate clock in drivers/clk/clk-gate.c
+instead, using a new CLK_GATE_* flag?
+
+> +
+> +static void clkstp00_sw(struct clk_hw *hw, bool on)
+> +{
+> +       u32 val;
+> +       struct clk_gate *gate = to_clk_gate(hw);
+> +
+> +       val = BIT(gate->bit_idx);
+> +       if (on)
+> +               writel(val, gate->reg + CLKSTPCLR00);
+> +       else
+> +               writel(val, gate->reg);
+> +}
+> +
+> +static int clkstp00_enable(struct clk_hw *hw)
+> +{
+> +       clkstp00_sw(hw, true);
+> +       return 0;
+> +}
+> +
+> +static void clkstp00_disable(struct clk_hw *hw)
+> +{
+> +       clkstp00_sw(hw, false);
+> +}
+> +
+> +static int clkstp00_is_enabled(struct clk_hw *hw)
+> +{
+> +       u8 val;
+> +       struct clk_gate *gate = to_clk_gate(hw);
+> +
+> +       val = readb(gate->reg);
+
+readl()?
+
+> +       val &= 1 << gate->bit_idx;
+> +       return val == 0;
+> +}
+> +
+> +static const struct clk_ops gate_clkstp00_ops = {
+> +       .enable = clkstp00_enable,
+> +       .disable = clkstp00_disable,
+> +       .is_enabled = clkstp00_is_enabled,
+> +};
+
+These look identical to clk_gate_ops, so you can just use
+clk_register_gate() instead?
+
+> +static int register_div(struct device_node *node, struct cpg_priv *cpg)
+> +{
+> +       static const char * const divout[] = {
+> +               "fck", "bck", "ick",
+> +       };
+> +       static const char * const mstpout[] = {
+> +               "sci_clk", "rtc_clk", "tmu012_clk",     /* STBCR */
+> +               "scif_clk", "dmac_clk",                 /* STBCR */
+> +               "ubc_clk", "sq_clk",                    /* STBCR2 */
+
+FTR, qemu does not support STBCR and STBCR2 yet, causing
+"qemu-system-sh4 -M r2d" to crash.  I have posted a patch to fix that:
+"[PATCH RFC] hw/sh4/sh7750: Add STBCR/STBCR2 register support"
+https://lore.kernel.org/all/20231018124023.2927710-1-geert+renesas@glider.be
+
+> +               "intc_clk", "tmu34_clk", "pcic_clk",    /* CLKSTP00 */
+> +       };
+
+The order of the entries in these two arrays is tied intimately to
+the values in include/dt-bindings/clock/sh7750.h.  Hence I think it
+would be good to reflect that in the data and code below, by using
+the SH7750_CPG_* identifier.
+
+> +       struct sh_clk_reg_arg args[ARRAY_SIZE(divout) + ARRAY_SIZE(mstpout)];
+> +       unsigned int i, j;
+> +       int ret;
+> +
+> +       for (i = 0; i < ARRAY_SIZE(divout); i++) {
+> +               args[i].type = CLK_DIV;
+> +               args[i].name  = divout[i];
+> +               args[i].parent = PLLOUT;
+> +               args[i].reg = cpg->frqcr;
+> +               args[i].ops = &sh_clk_divider_ops;
+> +               args[i].div.shift = i * 3;
+> +               args[i].div.width = 3;
+> +               args[i].div.table = (i == 0) ? pdiv_table : div_table;
+> +       }
+> +       for (i = 0, j = ARRAY_SIZE(divout); j < ARRAY_SIZE(args); i++, j++) {
+> +               args[j].type = CLK_GATE;
+> +               args[j].name  = mstpout[i];
+> +               args[j].parent = divout[0];
+> +               switch (i) {
+> +               case 0 ... 4:
+> +                       args[j].reg = cpg->frqcr + STBCR;
+> +                       args[j].gate.bit_idx = i;
+> +                       args[j].ops = &gate_stbcr_ops;
+> +                       break;
+> +               case 5 ... 6:
+> +                       args[j].reg = cpg->frqcr + STBCR2;
+> +                       args[j].gate.bit_idx = i - 5;
+> +                       args[j].ops = &gate_stbcr_ops;
+> +                       break;
+> +               case 7 ... 9:
+> +                       args[j].reg = cpg->clkstp00;
+> +                       args[j].gate.bit_idx = i - 7;
+> +                       args[j].ops = &gate_clkstp00_ops;
+> +                       break;
+> +               }
+> +       }
+> +
+> +       ret = _clk_register(node, ARRAY_SIZE(args), args,
+> +                           &cpg->clklock, &cpg->hw);
+> +       if (ret < 0)
+> +               pr_err("%pOF: failed to register clock (%d)\n",
+> +                      node, ret);
+> +       return ret;
+> +}
+> +
+> +static struct cpg_priv *sh7750_cpg_setup(struct device_node *node)
+> +{
+> +       unsigned int num_parents;
+> +       u32 mode;
+> +       struct cpg_priv *cpg;
+> +       int ret = 0;
+> +
+> +       num_parents = of_clk_get_parent_count(node);
+> +       if (num_parents < 1) {
+> +               pr_err("%s: no parent found", node->name);
+> +               return ERR_PTR(-ENODEV);
+> +       }
+> +
+> +       of_property_read_u32_index(node, "renesas,mode", 0, &mode);
+> +       if (mode >= 7) {
+> +               pr_err("%s: Invalid clock mode setting (%u)\n",
+> +                      node->name, mode);
+> +               return ERR_PTR(-EINVAL);
+> +       }
+> +
+> +       cpg = kzalloc(sizeof(struct cpg_priv), GFP_KERNEL);
+> +       if (!cpg) {
+> +               pr_err("%pOF: failed to alloc memory", node);
+
+No need to print an error message on allocation failure, as the
+core memory allocation code already took care of that.
+
+> +               return ERR_PTR(-ENOMEM);
+> +       }
+> +
+> +       cpg->frqcr = of_iomap(node, 0);
+> +       if (cpg->frqcr == NULL) {
+
+!cpg->frqcr
+
+> +               pr_err("%pOF: failed to map divide register", node);
+> +               ret = -ENODEV;
+> +               goto cpg_free;
+> +       }
+> +
+> +       cpg->clkstp00 = of_iomap(node, 1);
+> +       if (cpg->clkstp00 == NULL) {
+
+!cpg->clkstp00
+
+> +               pr_err("%pOF: failed to map clkstp00 register", node);
+> +               ret = -ENODEV;
+> +               goto unmap_frqcr;
+> +       }
+> +       cpg->mode = mode;
+> +
+> +       ret = register_pll(node, cpg);
+> +       if (ret < 0)
+> +               goto unmap_clkstp00;
+> +
+> +       ret = register_div(node, cpg);
+> +       if (ret < 0)
+> +               goto unmap_clkstp00;
+> +
+> +       return cpg;
+> +
+> +unmap_clkstp00:
+> +       iounmap(cpg->clkstp00);
+> +unmap_frqcr:
+> +       iounmap(cpg->frqcr);
+> +cpg_free:
+> +       kfree(cpg);
+> +       return ERR_PTR(ret);
+> +}
+> +
+> +static void __init sh7750_cpg_init(struct device_node *node)
+> +{
+> +       cpg_data = sh7750_cpg_setup(node);
+> +       if (IS_ERR(cpg_data))
+> +               cpg_data = NULL;
+> +       else
+> +               cpg_data->have_div1 = !of_device_is_compatible(node, "renesas,sh7750r");
+
+Please no explicit of_device_is_compatible() checks in code that is
+called through a compatible-based match.
+
+You can differentiate using multiple CLK_OF_DECLARE_DRIVER() stances,\
+each with a different init function.
+
+> +}
+> +
+> +CLK_OF_DECLARE_DRIVER(sh7750_cpg, "renesas,sh7750-cpg",
+> +                     sh7750_cpg_init);
+> +
+> +static int sh7750_cpg_probe(struct platform_device *pdev)
+> +{
+> +       if (cpg_data)
+> +               return 0;
+> +       cpg_data = sh7750_cpg_setup(pdev->dev.of_node);
+> +       if (IS_ERR(cpg_data))
+> +               return PTR_ERR(cpg_data);
+> +       cpg_data->have_div1 = (of_device_get_match_data(&pdev->dev) != NULL);
+> +       return 0;
+> +}
+> +
+> +static const struct of_device_id sh7750_cpg_of_match[] = {
+> +       { .compatible = "renesas,sh7750-cpg",
+> +         .data = (void *)1 },
+> +       { .compatible = "renesas,sh7750s-cpg",
+> +         .data = (void *)1 },
+> +       { .compatible = "renesas,sh7750r-cpg",
+> +         .data = 0 },
+> +       { .compatible = "renesas,sh7751-cpg",
+> +         .data = (void *)1 },
+> +       { .compatible = "renesas,sh7751r-cpg",
+> +         .data = 0 },
+> +       { }
+> +};
+> +
+> +static struct platform_driver sh7750_cpg_driver = {
+> +       .probe  = sh7750_cpg_probe,
+> +       .driver = {
+> +               .name = "sh7750-cpg",
+> +               .of_match_table = sh7750_cpg_of_match,
+> +       },
+> +};
+> +builtin_platform_driver(sh7750_cpg_driver);
+
+As the clock driver is always probed early through
+CLK_OF_DECLARE_DRIVER, what is the use of the extra platform driver?
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
