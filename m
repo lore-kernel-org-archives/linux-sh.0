@@ -2,58 +2,60 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 535AAC41513
-	for <linux-sh@archiver.kernel.org>; Wed, 18 Oct 2023 18:38:12 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 23968CDB47E
+	for <linux-sh@archiver.kernel.org>; Wed, 18 Oct 2023 18:43:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230119AbjJRSiM convert rfc822-to-8bit (ORCPT
+        id S229726AbjJRSnZ convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 18 Oct 2023 14:38:12 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:55694 "EHLO
+        Wed, 18 Oct 2023 14:43:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51814 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229702AbjJRSiM (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 18 Oct 2023 14:38:12 -0400
-Received: from mail-yw1-f178.google.com (mail-yw1-f178.google.com [209.85.128.178])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B3400118
-        for <linux-sh@vger.kernel.org>; Wed, 18 Oct 2023 11:38:10 -0700 (PDT)
-Received: by mail-yw1-f178.google.com with SMTP id 00721157ae682-5a7afd45199so90258987b3.0
-        for <linux-sh@vger.kernel.org>; Wed, 18 Oct 2023 11:38:10 -0700 (PDT)
+        with ESMTP id S229697AbjJRSnY (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 18 Oct 2023 14:43:24 -0400
+Received: from mail-yb1-f172.google.com (mail-yb1-f172.google.com [209.85.219.172])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3C695F7;
+        Wed, 18 Oct 2023 11:43:23 -0700 (PDT)
+Received: by mail-yb1-f172.google.com with SMTP id 3f1490d57ef6-d9c7bba32beso1282321276.1;
+        Wed, 18 Oct 2023 11:43:23 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1697654290; x=1698259090;
+        d=1e100.net; s=20230601; t=1697654602; x=1698259402;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=PfLSbOkhwmu5hviem8z7p8gpRsk4S7h5o19dl8a19Sk=;
-        b=ds2npSCX2ge903U/MK9ZvanD8sPY3rNr4L8+Uc/S+qS2S9JrpaZ7GebaAjjzuEG0+s
-         whMEXNSaRhb3BDVdlRrVyfc3fSBxux3h7jzCdkY7hMaGT/Z7PTpmeyEvYKZLqJmK9klk
-         QRPuZvAr8pnI+57olcDE6NzVz7tb7O95sDvvxPbnNEoReI1ZrWylVRW+yxs9lBcqHgMa
-         IYtZJyPrhK0V2O/2T2rBl+xTGoTdVvQBVjU4H+UZtDYRqVCd9xJW9R0jTsWMNGhIAaQp
-         X3gmhIpv+UmZxC7WOij0CCaHP9FBF6QVy9u0SPVF68HPhx/q6Q1I+Vi7dDh8rVf+nxLq
-         l2PA==
-X-Gm-Message-State: AOJu0YxRFOhKWMKM7cUEeQeeARq7KGLrp1ER64tTP72OX32V47P7ZGSI
-        VemIYuR1S40VVlJ5XOnWm2BgSKVEiERUWg==
-X-Google-Smtp-Source: AGHT+IGG1Ti12E3IOTmNFviKqbUtonnvkuCX6i2PcCb+7SnHXXMJ8LVHwoVoZIagfqcJoRSyy4yB9A==
-X-Received: by 2002:a81:5dc1:0:b0:569:e7cb:cd4e with SMTP id r184-20020a815dc1000000b00569e7cbcd4emr76951ywb.48.1697654289716;
-        Wed, 18 Oct 2023 11:38:09 -0700 (PDT)
-Received: from mail-yw1-f171.google.com (mail-yw1-f171.google.com. [209.85.128.171])
-        by smtp.gmail.com with ESMTPSA id p136-20020a0de68e000000b0058ddb62f99bsm1749153ywe.38.2023.10.18.11.38.09
-        for <linux-sh@vger.kernel.org>
+        bh=EzAw4DKXW1u+vvSXADlvSYINv0hYvkwGHrJ3bJrdSu0=;
+        b=JKLt+1MDasX+YZHdKhxhWRd7OgjCoQABKBq5zapCHd4CzifG5cNQrUGikFvOKTGKkX
+         KE8xugbR55ALaeR99nwoVo8NzC/XMGfhkusQ8igZyfPST+sRz4osuwuHat/XP0dS8cZS
+         xJ+N3tBEzfh1ldR7TOX9mRpGRD6/estixdakfdgBSdGdcXatmRBraThFv6AKyXZhLmWQ
+         MnoQPTaKDiDG3tutz/CGiiU6xhf39DMJ1sTnm7EJqTwxBqbWwjzRSy4CyTWxhYo0zG6x
+         P6TFGJAEG3HDRUcEAEee2OSx7bbg9s5PZ3Glu6auPrr1naJnsAVu627PGtr9NjbH7nmg
+         5UGg==
+X-Gm-Message-State: AOJu0Yy5gAzlk0Pp4H4AKSE11bX1TQjNSjiI4vbIQtjSexklH88C0Ff4
+        vnlV45vtEJ7GNSiouauegtbCBBGZ82jxxw==
+X-Google-Smtp-Source: AGHT+IGP4gmC+HyQ6AsL2gTo/WJI8XkB1rz+lZJW61r0HnqG/4xRCSLrvJWMBgmQpJYHSxGk2ZU8oA==
+X-Received: by 2002:a25:b411:0:b0:d9a:5c30:c1e9 with SMTP id n17-20020a25b411000000b00d9a5c30c1e9mr243164ybj.35.1697654602310;
+        Wed, 18 Oct 2023 11:43:22 -0700 (PDT)
+Received: from mail-yb1-f169.google.com (mail-yb1-f169.google.com. [209.85.219.169])
+        by smtp.gmail.com with ESMTPSA id u14-20020a252e0e000000b00d9a43500f1dsm1463731ybu.28.2023.10.18.11.43.21
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 18 Oct 2023 11:38:09 -0700 (PDT)
-Received: by mail-yw1-f171.google.com with SMTP id 00721157ae682-5a7c7262d5eso89971467b3.1
-        for <linux-sh@vger.kernel.org>; Wed, 18 Oct 2023 11:38:09 -0700 (PDT)
-X-Received: by 2002:a81:5303:0:b0:5a7:bc38:fff2 with SMTP id
- h3-20020a815303000000b005a7bc38fff2mr97985ywb.15.1697654289303; Wed, 18 Oct
- 2023 11:38:09 -0700 (PDT)
+        Wed, 18 Oct 2023 11:43:21 -0700 (PDT)
+Received: by mail-yb1-f169.google.com with SMTP id 3f1490d57ef6-d9a58aa4983so8525035276.0;
+        Wed, 18 Oct 2023 11:43:21 -0700 (PDT)
+X-Received: by 2002:a25:404d:0:b0:d9a:3bee:2eeb with SMTP id
+ n74-20020a25404d000000b00d9a3bee2eebmr174788yba.60.1697654601726; Wed, 18 Oct
+ 2023 11:43:21 -0700 (PDT)
 MIME-Version: 1.0
-References: <cover.1697199949.git.ysato@users.sourceforge.jp> <7b864c7ded52ace326c42b132708a6dc8ad9a606.1697199949.git.ysato@users.sourceforge.jp>
-In-Reply-To: <7b864c7ded52ace326c42b132708a6dc8ad9a606.1697199949.git.ysato@users.sourceforge.jp>
+References: <cover.1697199949.git.ysato@users.sourceforge.jp> <2c63fdae1d2c60f478212d07898768b68f01b3b0.1697199949.git.ysato@users.sourceforge.jp>
+In-Reply-To: <2c63fdae1d2c60f478212d07898768b68f01b3b0.1697199949.git.ysato@users.sourceforge.jp>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Wed, 18 Oct 2023 20:37:57 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdXQUm9CpNGXoXJvyDrhe_3J11MTTvV4_J0zKK9U6AUcqQ@mail.gmail.com>
-Message-ID: <CAMuHMdXQUm9CpNGXoXJvyDrhe_3J11MTTvV4_J0zKK9U6AUcqQ@mail.gmail.com>
-Subject: Re: [RFC PATCH v3 06/35] arch/sh/boards/of-generic.c: some cleanup.
+Date:   Wed, 18 Oct 2023 20:43:09 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdU7GkqZQ14ExvaY7U8pEE5RJ=WJFH9TpNz1zLBY-2D=HQ@mail.gmail.com>
+Message-ID: <CAMuHMdU7GkqZQ14ExvaY7U8pEE5RJ=WJFH9TpNz1zLBY-2D=HQ@mail.gmail.com>
+Subject: Re: [RFC PATCH v3 27/35] Documentation/devicetree/bindings:
+ vendor-prefix add IO DATA DEVICE Inc.
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de
+Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de,
+        robh+dt@kernel.org, krzysztof.kozlowski+dt@linaro.org,
+        conor+dt@kernel.org, devicetree@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 Precedence: bulk
@@ -68,26 +70,24 @@ On Sat, Oct 14, 2023 at 4:54 PM Yoshinori Sato
 
 Thanks for your patch!
 
-> --- a/arch/sh/boards/of-generic.c
-> +++ b/arch/sh/boards/of-generic.c
-> @@ -140,25 +132,13 @@ static void __init sh_of_init_irq(void)
->         irqchip_init();
->  }
->
-> -static int __init sh_of_clk_init(void)
-> -{
-> -#ifdef CONFIG_COMMON_CLK
-> -       /* Disabled pending move to COMMON_CLK framework. */
-> -       pr_info("SH generic board support: scanning for clk providers\n");
-> -       of_clk_init(NULL);
-> -#endif
-> -       return 0;
-> -}
-> -
+Please use a one-line prefix that matches the history of the file:
 
-Removing this breaks J2 for sure? I guess this should be merged with
-"[RFC PATCH v3 07/35] arch/sh/kernel/time.c: support COMMON_CLK."
-to avoid a bisection regression?
+    dt-bindings: vendor-prefixes: Add IO DATA DEVICE Inc.
+
+> --- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
+> +++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+> @@ -657,6 +657,8 @@ patternProperties:
+>      description: Inventec
+>    "^inversepath,.*":
+>      description: Inverse Path
+> +  "^iodata,.*":
+> +    description: IO DATA DEVICE Inc.
+>    "^iom,.*":
+>      description: Iomega Corporation
+>    "^irondevice,.*":
+
+For the actual change:
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
 Gr{oetje,eeting}s,
 
