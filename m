@@ -2,102 +2,122 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id E8242CDB47E
-	for <linux-sh@archiver.kernel.org>; Wed, 18 Oct 2023 08:23:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 2A84FCDB47E
+	for <linux-sh@archiver.kernel.org>; Wed, 18 Oct 2023 12:40:53 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230023AbjJRIXt convert rfc822-to-8bit (ORCPT
-        <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 18 Oct 2023 04:23:49 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45026 "EHLO
+        id S231211AbjJRMkw (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 18 Oct 2023 08:40:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43822 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S230001AbjJRIXs (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 18 Oct 2023 04:23:48 -0400
-Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com [209.85.128.179])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E8DA3C6
-        for <linux-sh@vger.kernel.org>; Wed, 18 Oct 2023 01:23:46 -0700 (PDT)
-Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-5a84204e7aeso50030377b3.0
-        for <linux-sh@vger.kernel.org>; Wed, 18 Oct 2023 01:23:46 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1697617426; x=1698222226;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=xwIlXUP+DJu4CTXfdNqKhYDl5JSh1iK96ENGaYDnae0=;
-        b=aQ/11cPvydH6sN4YWUnMLAwrdkUGZrahZNwjGA4U+/b7DlFLG/z72wrO1V7QcOvbEr
-         bLdAI8ze9zZv+WsmtezfKjswnhhqRNv34QmAgBhI3L8fdTvKB/SGYH14qJAcxm1F1tRl
-         gAvjLqKIsHQNo+My/rvY3qemFWPCJdQpSQ7xb/6l8cYDVxpbyAxI4n5ohQJN/gS7NA3t
-         P/PIer99zOPmXMkqI+VNalMM8G0nXdiiv475DpS0RDCOD6sxcMYSCEkECTI2cNsTAiFe
-         Ca/y1vTYsXxJ9QNW3IjElp6bMAEdTAiubUFwR1G5L/BSjVv8Xuu6dcVjKj0l6DreJbww
-         YZ8A==
-X-Gm-Message-State: AOJu0YxzNIR4WyPKmyM7USWHvi4XFO1TkX8Yz37BZCDVQN+AX+P/bTnC
-        UigapYJ62JapLmuvd6DTEZ+PKuwtvURShA==
-X-Google-Smtp-Source: AGHT+IFIKpK9kctzWyKB5yKMkQEjPmbeR8Yf3w6s4ElTq1PcWjuBro+SQMOIHK98EVmGttAeX37inw==
-X-Received: by 2002:a05:690c:f0b:b0:5a7:e125:478c with SMTP id dc11-20020a05690c0f0b00b005a7e125478cmr6064002ywb.42.1697617426007;
-        Wed, 18 Oct 2023 01:23:46 -0700 (PDT)
-Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com. [209.85.128.179])
-        by smtp.gmail.com with ESMTPSA id u133-20020a81848b000000b005a7a92a62besm1310366ywf.8.2023.10.18.01.23.45
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 18 Oct 2023 01:23:45 -0700 (PDT)
-Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-5a7c93507d5so78084897b3.2
-        for <linux-sh@vger.kernel.org>; Wed, 18 Oct 2023 01:23:45 -0700 (PDT)
-X-Received: by 2002:a81:7282:0:b0:577:189b:ad4 with SMTP id
- n124-20020a817282000000b00577189b0ad4mr5270052ywc.48.1697617425440; Wed, 18
- Oct 2023 01:23:45 -0700 (PDT)
-MIME-Version: 1.0
-References: <cover.1697199949.git.ysato@users.sourceforge.jp> <d9f9ca66b43371ce8cf80faffdfcdf593c9563ac.1697199949.git.ysato@users.sourceforge.jp>
-In-Reply-To: <d9f9ca66b43371ce8cf80faffdfcdf593c9563ac.1697199949.git.ysato@users.sourceforge.jp>
-From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Wed, 18 Oct 2023 10:23:32 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdW-+XxsZTtos+SMRd+--He3AsQCobiGCc5FHeuwv2XnoQ@mail.gmail.com>
-Message-ID: <CAMuHMdW-+XxsZTtos+SMRd+--He3AsQCobiGCc5FHeuwv2XnoQ@mail.gmail.com>
-Subject: Re: [RFC PATCH v3 18/35] drivers/tty/serial: sh-sci.c fix SH4 OF support.
+        with ESMTP id S230499AbjJRMkq (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 18 Oct 2023 08:40:46 -0400
+Received: from xavier.telenet-ops.be (xavier.telenet-ops.be [IPv6:2a02:1800:120:4::f00:14])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B63D0134
+        for <linux-sh@vger.kernel.org>; Wed, 18 Oct 2023 05:40:37 -0700 (PDT)
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:788:5cb7:d72f:3d60])
+        by xavier.telenet-ops.be with bizsmtp
+        id zQgZ2A00941Ju1s01QgZoX; Wed, 18 Oct 2023 14:40:34 +0200
+Received: from rox.of.borg ([192.168.97.57])
+        by ramsan.of.borg with esmtp (Exim 4.95)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1qt5qe-006roM-Kz;
+        Wed, 18 Oct 2023 14:40:33 +0200
+Received: from geert by rox.of.borg with local (Exim 4.95)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1qt5qi-00CHdL-V2;
+        Wed, 18 Oct 2023 14:40:32 +0200
+From:   Geert Uytterhoeven <geert+renesas@glider.be>
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 8BIT
+Cc:     Guenter Roeck <linux@roeck-us.net>, qemu-devel@nongnu.org,
+        linux-sh@vger.kernel.org,
+        Geert Uytterhoeven <geert+renesas@glider.be>
+Subject: [PATCH RFC] hw/sh4/sh7750: Add STBCR/STBCR2 register support
+Date:   Wed, 18 Oct 2023 14:40:23 +0200
+Message-Id: <20231018124023.2927710-1-geert+renesas@glider.be>
+X-Mailer: git-send-email 2.34.1
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Hi Sato-san,
+The new Linux SH7750 clock driver uses the registers for power-down
+mode control, causing a crash:
 
-Thanks for your patch!
+    byte read to SH7750_STBCR_A7 (0x000000001fc00004) not supported
+    Aborted (core dumped)
 
-On Sat, Oct 14, 2023 at 4:54 PM Yoshinori Sato
-<ysato@users.sourceforge.jp> wrote:
-> - fix earlycon name.
+Fix this by adding support for the Standby Control Registers STBCR and
+STBCR2.
 
-Note that to use earlycon, you currently need to enable EXPERT.
-So I propose to fix that using:
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+---
+[RFC PATCH v3 12/35] drivers/clk/renesas: clk-sh7750.c SH7750/7751 CPG driver.
+https://lore.kernel.org/all/a772e1b6de89af22057d3af31cc03dcad7964fc7.1697199949.git.ysato@users.sourceforge.jp
 
---- a/drivers/tty/serial/Kconfig
-+++ b/drivers/tty/serial/Kconfig
-@@ -658,7 +658,7 @@ config SERIAL_SH_SCI_EARLYCON
-        depends on SERIAL_SH_SCI=y
-        select SERIAL_CORE_CONSOLE
-        select SERIAL_EARLYCON
--       default ARCH_RENESAS
-+       default ARCH_RENESAS || SUPERH
+Accesses to CLKSTP00 and CLKSTCLK00 (0xfe0a0000/0x1e0a0000 and
+0xfe0a0008/0x1e0a0008) don't seem to cause any issues, although I can't
+see immediately where they are handled?
 
- config SERIAL_SH_SCI_DMA
-        bool "DMA support" if EXPERT
+---
+ hw/sh4/sh7750.c | 23 +++++++++++++++++++++--
+ 1 file changed, 21 insertions(+), 2 deletions(-)
 
-> - fix earlyprintk hung (NULL pointer reference).
-
-How do you actually use earlyprintk, as SH lacks the EARLY_PRINTK
-config symbol?
-
-Looks like tglx missed that when creating commit d0380e6c3c0f6edb
-("early_printk: consolidate random copies of identical code").
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
+diff --git a/hw/sh4/sh7750.c b/hw/sh4/sh7750.c
+index ebe0fd96d94ca17b..deeb83b4540bbf2b 100644
+--- a/hw/sh4/sh7750.c
++++ b/hw/sh4/sh7750.c
+@@ -59,6 +59,9 @@ typedef struct SH7750State {
+     uint16_t bcr3;
+     uint32_t bcr4;
+     uint16_t rfcr;
++    /* Power-Down Modes */
++    uint8_t stbcr;
++    uint8_t stbcr2;
+     /* PCMCIA controller */
+     uint16_t pcr;
+     /* IO ports */
+@@ -219,7 +222,13 @@ static void ignore_access(const char *kind, hwaddr addr)
+ 
+ static uint32_t sh7750_mem_readb(void *opaque, hwaddr addr)
+ {
++    SH7750State *s = opaque;
++
+     switch (addr) {
++    case SH7750_STBCR_A7:
++        return s->stbcr;
++    case SH7750_STBCR2_A7:
++        return s->stbcr2;
+     default:
+         error_access("byte read", addr);
+         abort();
+@@ -318,14 +327,24 @@ static uint32_t sh7750_mem_readl(void *opaque, hwaddr addr)
+ static void sh7750_mem_writeb(void *opaque, hwaddr addr,
+                               uint32_t mem_value)
+ {
++    SH7750State *s = opaque;
+ 
+     if (is_in_sdrmx(addr, 2) || is_in_sdrmx(addr, 3)) {
+         ignore_access("byte write", addr);
+         return;
+     }
+ 
+-    error_access("byte write", addr);
+-    abort();
++    switch (addr) {
++    case SH7750_STBCR_A7:
++        s->stbcr = mem_value;
++        return;
++    case SH7750_STBCR2_A7:
++        s->stbcr2 = mem_value;
++        return;
++    default:
++        error_access("byte write", addr);
++        abort();
++    }
+ }
+ 
+ static void sh7750_mem_writew(void *opaque, hwaddr addr,
 -- 
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+2.34.1
 
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
