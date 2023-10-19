@@ -2,63 +2,58 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 6B3E8CDB483
-	for <linux-sh@archiver.kernel.org>; Thu, 19 Oct 2023 11:39:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id EDFD9CDB483
+	for <linux-sh@archiver.kernel.org>; Thu, 19 Oct 2023 11:55:06 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235251AbjJSLjK convert rfc822-to-8bit (ORCPT
+        id S235292AbjJSLzG convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 19 Oct 2023 07:39:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57340 "EHLO
+        Thu, 19 Oct 2023 07:55:06 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33250 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235234AbjJSLjJ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 19 Oct 2023 07:39:09 -0400
-Received: from mail-yw1-f182.google.com (mail-yw1-f182.google.com [209.85.128.182])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E832D13D;
-        Thu, 19 Oct 2023 04:38:46 -0700 (PDT)
-Received: by mail-yw1-f182.google.com with SMTP id 00721157ae682-5a81ab75f21so80152697b3.2;
-        Thu, 19 Oct 2023 04:38:46 -0700 (PDT)
+        with ESMTP id S235256AbjJSLzF (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 19 Oct 2023 07:55:05 -0400
+Received: from mail-yw1-f178.google.com (mail-yw1-f178.google.com [209.85.128.178])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BBF2412D
+        for <linux-sh@vger.kernel.org>; Thu, 19 Oct 2023 04:55:03 -0700 (PDT)
+Received: by mail-yw1-f178.google.com with SMTP id 00721157ae682-5a7b92cd0ccso98351967b3.1
+        for <linux-sh@vger.kernel.org>; Thu, 19 Oct 2023 04:55:03 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1697715526; x=1698320326;
+        d=1e100.net; s=20230601; t=1697716503; x=1698321303;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=tEmcuppiYe9/vGVMnE/yydfS69UfeiisZ86D9IEml3c=;
-        b=s/gbeLOsEbiP/tI5/Ji8OiKumoX1Q94FzsnI0nC+yrJkb6jlnWa5k6E3OQTqeHP+iO
-         lKmVeGKlMx6ftovBBjDryxPZRY1n6NndI6QNHbgmbLbRErpgMASC754pxXDX3INsfwYE
-         nMvaVAjLcr2ORCjABYKPEm4PFRUq4KI4lcR9MpQiAUh7v84dBOV0wclfSerkQrcjYpT0
-         PbFZZ1ingKKUv/Fc7aIwfDvMpluFFfhTLobgmWgBpw5x+IofHKvXZVSVv1XeETfC3MhE
-         koZUTQ073x7kUoUjr+zpMxV0X69OVZvgdnQFk3l/958AhHn6ylHjKj6JVNm4W00zzTOQ
-         StXw==
-X-Gm-Message-State: AOJu0Yws7/1m50cMDSzeCWbpdZrJngB4dSPnltY/Y5uFK/n0xi9DwG9V
-        ehNuCcy2WCp8rVvDOjMb5FooYhvrlmsoug==
-X-Google-Smtp-Source: AGHT+IHTWaIaU94N1svppKvIPZVBV84TAu1XQUkmZ+ueg9ZP+2cL0CrmgkpHtox84xBzULKHBETEgA==
-X-Received: by 2002:a81:a0d5:0:b0:59b:d3cd:ffb6 with SMTP id x204-20020a81a0d5000000b0059bd3cdffb6mr2011656ywg.33.1697715525694;
-        Thu, 19 Oct 2023 04:38:45 -0700 (PDT)
+        bh=XGpflT/XOxSb9ElO8bdrVKOvwh5Q15JaGBBtfhiJu50=;
+        b=UXlUBZrbfmJpd7D7veddvLu6+5JmHcxQxxSOmr5LhQ89axiUbZu7LsxJ62pRLjgYh9
+         6nnWPo/He+lc4oWYJN9nikji3PxCzGhsNFoPl/Q/4HkpLVSnDFlwkH4tUGBwaT7m5CnU
+         KAweGXD3F4dMVGCewBtRl3QPH0jSBuPMr2UR9xwUoKQLGpK2wki5Gx4+YgFL5eTbAYnd
+         vmH7EEF+qGEmg18GV4VQekWNbLbaZeMdHdlSmsfeTHNXzeVYmi7E+mfVW+RMHYoIXsUB
+         LBJ4ZAZA9LHE3jpHL8JKVzNnOL82c17z/bOLAqO02YShHBbCFVseuR3HBfLjrKFBTQP6
+         YoRg==
+X-Gm-Message-State: AOJu0YyEBksY1vFwZPQYRaCe3Q7HExKMNKnrfh1TqnYzB7X9usvqcRZk
+        zXP1t5ypTWJdchc1FJzTnNc5xqgZH9Ig3w==
+X-Google-Smtp-Source: AGHT+IECB09fOq/E/kMeIGARykvFf/1JTEHNIU49BuibLWhq3lGKv1UjqtpslLWvudtE9tk35oQtcw==
+X-Received: by 2002:a81:48d4:0:b0:583:d8d4:7dfe with SMTP id v203-20020a8148d4000000b00583d8d47dfemr1743909ywa.31.1697716502781;
+        Thu, 19 Oct 2023 04:55:02 -0700 (PDT)
 Received: from mail-yb1-f177.google.com (mail-yb1-f177.google.com. [209.85.219.177])
-        by smtp.gmail.com with ESMTPSA id h185-20020a0df7c2000000b005869cf151ebsm2336476ywf.144.2023.10.19.04.38.45
+        by smtp.gmail.com with ESMTPSA id c186-20020a0ddac3000000b00592236855cesm2339879ywe.61.2023.10.19.04.55.02
+        for <linux-sh@vger.kernel.org>
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 19 Oct 2023 04:38:45 -0700 (PDT)
-Received: by mail-yb1-f177.google.com with SMTP id 3f1490d57ef6-d9ad67058fcso8392040276.1;
-        Thu, 19 Oct 2023 04:38:45 -0700 (PDT)
-X-Received: by 2002:a25:e057:0:b0:d9a:4b0f:402b with SMTP id
- x84-20020a25e057000000b00d9a4b0f402bmr2023488ybg.38.1697715525219; Thu, 19
- Oct 2023 04:38:45 -0700 (PDT)
+        Thu, 19 Oct 2023 04:55:02 -0700 (PDT)
+Received: by mail-yb1-f177.google.com with SMTP id 3f1490d57ef6-d9ac43d3b71so8543903276.0
+        for <linux-sh@vger.kernel.org>; Thu, 19 Oct 2023 04:55:02 -0700 (PDT)
+X-Received: by 2002:a25:a202:0:b0:d7f:af26:2c7e with SMTP id
+ b2-20020a25a202000000b00d7faf262c7emr1839437ybi.20.1697716502054; Thu, 19 Oct
+ 2023 04:55:02 -0700 (PDT)
 MIME-Version: 1.0
-References: <cover.1697199949.git.ysato@users.sourceforge.jp>
- <eee98f679a9e86180ce047de319edcd30ac38d8b.1697199949.git.ysato@users.sourceforge.jp>
- <CAMuHMdXFuXKDKu7EAtECtMhOZb+Mzjfz7KWQVTSeTNo5G7xqrg@mail.gmail.com>
-In-Reply-To: <CAMuHMdXFuXKDKu7EAtECtMhOZb+Mzjfz7KWQVTSeTNo5G7xqrg@mail.gmail.com>
+References: <cover.1697199949.git.ysato@users.sourceforge.jp> <23b14a38a073e8b5efd80c1931d8be1ea105797a.1697199949.git.ysato@users.sourceforge.jp>
+In-Reply-To: <23b14a38a073e8b5efd80c1931d8be1ea105797a.1697199949.git.ysato@users.sourceforge.jp>
 From:   Geert Uytterhoeven <geert@linux-m68k.org>
-Date:   Thu, 19 Oct 2023 13:38:34 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdUyzGvDt-XvOwwuc-sDknx1z+kbEHe+HhT_2yi-vx-v7w@mail.gmail.com>
-Message-ID: <CAMuHMdUyzGvDt-XvOwwuc-sDknx1z+kbEHe+HhT_2yi-vx-v7w@mail.gmail.com>
-Subject: Re: [RFC PATCH v3 15/35] Documentation/devicetree/bindings/interrupt-controller:
- Add renesas,sh7751-intc.yaml
+Date:   Thu, 19 Oct 2023 13:54:51 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdXhR47z9=Q1NahCKceKtwwUw9y5AtmQnqw4-u_BFQfi2w@mail.gmail.com>
+Message-ID: <CAMuHMdXhR47z9=Q1NahCKceKtwwUw9y5AtmQnqw4-u_BFQfi2w@mail.gmail.com>
+Subject: Re: [RFC PATCH v3 33/35] arch/sh: Add dtbs target support.
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de,
-        tglx@linutronix.de, maz@kernel.org, robh+dt@kernel.org,
-        krzysztof.kozlowski+dt@linaro.org, conor+dt@kernel.org,
-        devicetree@vger.kernel.org
+Cc:     linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 8BIT
 Precedence: bulk
@@ -67,42 +62,37 @@ X-Mailing-List: linux-sh@vger.kernel.org
 
 Hi Sato-san,
 
-On Thu, Oct 19, 2023 at 1:29 PM Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> On Sat, Oct 14, 2023 at 4:54 PM Yoshinori Sato
-> <ysato@users.sourceforge.jp> wrote:
-> > SH7751 interrupt controller binding definition.
-> >
-> > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
->
-> > --- /dev/null
-> > +++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,sh7751-intc.yaml
-> > @@ -0,0 +1,102 @@
-> > +# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
-> > +%YAML 1.2
-> > +---
-> > +$id: http://devicetree.org/schemas/interrupt-controller/renesas,sh7751-intc.yaml#
-> > +$schema: http://devicetree.org/meta-schemas/core.yaml#
-> > +
-> > +title: Renesas SH7751 Interrupt Controller
-> > +
-> > +maintainers:
-> > +  - Yoshinori Sato <ysato@users.sourceforge.jp>
-> > +
-> > +properties:
-> > +  compatible:
-> > +    items:
-> > +      - const: renesas,sh7751-intc
-> > +
-> > +  '#interrupt-cells':
-> > +    # an interrupt index and flags, as defined in interrupts.txt in
-> > +    # this directory
->
-> I think you can drop this comment.
->
-> > +    const: 2
+On Sat, Oct 14, 2023 at 4:54 PM Yoshinori Sato
+<ysato@users.sourceforge.jp> wrote:
+> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-And given the second cell is always zero, and the driver uses
-irq_domain_xlate_onecell, I guess this should be one instead?
+Thanks for your patch!
+
+> --- a/arch/sh/boot/dts/Makefile
+> +++ b/arch/sh/boot/dts/Makefile
+> @@ -1,2 +1,7 @@
+>  # SPDX-License-Identifier: GPL-2.0-only
+>  obj-$(CONFIG_USE_BUILTIN_DTB) += $(addsuffix .dtb.o, $(CONFIG_BUILTIN_DTB_SOURCE))
+> +
+> +dtb-$(CONFIG_CPU_J2) += j2_mimas_v2.dtb
+
+Please keep this a separate patch, and move it forward in the series
+(or submit it independently).
+
+> +dtb-$(CONFIG_CPU_SUBTYPE_SH7751R) += landisk.dtb
+
+This change should be moved into "[RFC PATCH v3 31/35] arch/sh/boot/dts:
+LANDISK DeviceTree.".
+
+> +dtb-$(CONFIG_CPU_SUBTYPE_SH7751R) += rts7751r2dplus.dtb
+
+This change should be moved into "[RFC PATCH v3 30/35] arch/sh/boot/dts:
+RTS7751R2D Plus DeviceTree.".
+
+> +dtb-$(CONFIG_CPU_SUBTYPE_SH7751R) += usl-5p.dtb
+
+This change should be moved into "[RFC PATCH v3 32/35] arch/sh/boot/dts:
+USL-5P DeviceTree.".
 
 Gr{oetje,eeting}s,
 
