@@ -2,80 +2,99 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 68FF9CDB465
-	for <linux-sh@archiver.kernel.org>; Thu, 19 Oct 2023 15:54:14 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id BF591CDB474
+	for <linux-sh@archiver.kernel.org>; Fri, 20 Oct 2023 07:11:03 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S235446AbjJSPyO (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 19 Oct 2023 11:54:14 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:60332 "EHLO
+        id S1376363AbjJTHLD convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Fri, 20 Oct 2023 03:11:03 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57062 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S235444AbjJSPyN (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 19 Oct 2023 11:54:13 -0400
-Received: from bombadil.infradead.org (bombadil.infradead.org [IPv6:2607:7c80:54:3::133])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6D2B0106;
-        Thu, 19 Oct 2023 08:54:12 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-        d=infradead.org; s=bombadil.20210309; h=Content-Transfer-Encoding:
-        Content-Type:In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:
-        Message-ID:Sender:Reply-To:Content-ID:Content-Description;
-        bh=LdbJgaTYB+ZQzgKSi+h2BV1oX12pf85anp/pR6Dc1x8=; b=EEp+yTP/MyV92d3H4Uv7r33BJc
-        3pQNxEz2pYnLMSP0eCNq8yHP1+4qX+p808UfIn4Tab8IQj6v6o4kMkpOXylZbc0PwKq868rjX8cPE
-        2aD6zm8pw7YKXUHcb+6S+UyPKVblooWl1CmQD77psgFG801AhON7wbv6pVHHKiDoncS5+NREQx7p8
-        D/dcg6rKId20UgDQ7TrlqAlkMWyEgPdRKd9SMswGKLCg5McyxHyCWRPVQllkXAtksAf76Qbyxnh+5
-        +iughfFkCJFAez+jkRliGf12gg68sJuEKZBvCRZyBGefRm/PVRvI5HGtOlxpXwS8OpJfeQFfd8VbG
-        Z0cFR4+A==;
-Received: from [50.53.46.231] (helo=[192.168.254.15])
-        by bombadil.infradead.org with esmtpsa (Exim 4.96 #2 (Red Hat Linux))
-        id 1qtVLQ-000GFV-0r;
-        Thu, 19 Oct 2023 15:53:56 +0000
-Message-ID: <4c6991b1-0016-4a4a-9bf5-34481fd63a3c@infradead.org>
-Date:   Thu, 19 Oct 2023 08:53:55 -0700
+        with ESMTP id S1376358AbjJTHLC (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Fri, 20 Oct 2023 03:11:02 -0400
+Received: from mail-yb1-f179.google.com (mail-yb1-f179.google.com [209.85.219.179])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 91EFF9F;
+        Fri, 20 Oct 2023 00:11:00 -0700 (PDT)
+Received: by mail-yb1-f179.google.com with SMTP id 3f1490d57ef6-d9a58f5f33dso510106276.1;
+        Fri, 20 Oct 2023 00:11:00 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1697785859; x=1698390659;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=/yQ1pnnABlqCWlk9yqltWeozn3MFhqYPzgGkh5zARTI=;
+        b=l3uO0b7ecOEleK8ifrBAS9LkiNGp9CF3rKzrQWVTny5i6D7fxsaV3EDu5Ze10qeapP
+         An22TwHBaSx3RLq8bGI4UggqLefZQIq8jWLpQOiPHn3GoYwTI14YQcqyAfFHowBRy1De
+         h7qCZSslEtDD6pVg7fW2epMpLO5/RBtPEeUdjC7+KNBwjZG9LMKiLGpo1QiYdLXhG5mp
+         ceXnyiLX0lwB3TgnqDRbWYuxRP0I977aDhlqLmJAQIMChdEQNaVkAyjHDM3AnOEi0Vam
+         eTysLZ+0D8e7X0AFIwOvXUgc+Hg7ZHlceLVny0A4hqCGwPjHEwrSD51LqUfZXvXredFS
+         5+xA==
+X-Gm-Message-State: AOJu0YwfAKRxA1mj+Fbd/DL0FlUBGd7XmAROQ7ki+Xax3kVhCZDWPEZK
+        EBdg4RLnLXvIt/Fdjhjp8hni1FHgk3mJOg==
+X-Google-Smtp-Source: AGHT+IG+ykv5c9XPzKfvfgHoWwwCJO39huXHzah061NFN1mZEIeHVlEbqAauDGFM0joVFejcUpuYEQ==
+X-Received: by 2002:a25:dc45:0:b0:d9a:52dc:15d4 with SMTP id y66-20020a25dc45000000b00d9a52dc15d4mr1030847ybe.52.1697785859384;
+        Fri, 20 Oct 2023 00:10:59 -0700 (PDT)
+Received: from mail-yw1-f172.google.com (mail-yw1-f172.google.com. [209.85.128.172])
+        by smtp.gmail.com with ESMTPSA id 9-20020a250d09000000b00d9c7bf8f32fsm375140ybn.42.2023.10.20.00.10.58
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 20 Oct 2023 00:10:58 -0700 (PDT)
+Received: by mail-yw1-f172.google.com with SMTP id 00721157ae682-5a7af52ee31so4916167b3.2;
+        Fri, 20 Oct 2023 00:10:58 -0700 (PDT)
+X-Received: by 2002:a05:690c:d96:b0:5a7:aa83:9fb with SMTP id
+ da22-20020a05690c0d9600b005a7aa8309fbmr1374227ywb.0.1697785858265; Fri, 20
+ Oct 2023 00:10:58 -0700 (PDT)
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
+References: <cover.1697708489.git.geert+renesas@glider.be> <c40972dfec3dcc6719808d5df388857360262878.1697708489.git.geert+renesas@glider.be>
+ <d0c6044f-11e0-4f00-b7e6-eaf1e72f17a5@infradead.org> <f432f363a97bc3e179db2c33c4b2f74027f8016b.camel@physik.fu-berlin.de>
+In-Reply-To: <f432f363a97bc3e179db2c33c4b2f74027f8016b.camel@physik.fu-berlin.de>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Fri, 20 Oct 2023 09:10:47 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdWnJ-BFxPZ-zVkP=euzMPAFnz1h6CRdNvPbuHwuspq1tQ@mail.gmail.com>
+Message-ID: <CAMuHMdWnJ-BFxPZ-zVkP=euzMPAFnz1h6CRdNvPbuHwuspq1tQ@mail.gmail.com>
 Subject: Re: [PATCH 1/2] sh: bios: Revive earlyprintk support
-Content-Language: en-US
-To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
+To:     John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc:     Randy Dunlap <rdunlap@infradead.org>,
         Jonathan Corbet <corbet@lwn.net>,
         Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
         Paul Gortmaker <paul.gortmaker@windriver.com>,
         Thomas Gleixner <tglx@linutronix.de>,
-        Magnus Damm <magnus.damm@gmail.com>
-Cc:     linux-doc@vger.kernel.org, linux-sh@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <cover.1697708489.git.geert+renesas@glider.be>
- <c40972dfec3dcc6719808d5df388857360262878.1697708489.git.geert+renesas@glider.be>
- <d0c6044f-11e0-4f00-b7e6-eaf1e72f17a5@infradead.org>
- <f432f363a97bc3e179db2c33c4b2f74027f8016b.camel@physik.fu-berlin.de>
-From:   Randy Dunlap <rdunlap@infradead.org>
-In-Reply-To: <f432f363a97bc3e179db2c33c4b2f74027f8016b.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+        Magnus Damm <magnus.damm@gmail.com>, linux-doc@vger.kernel.org,
+        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
+Hi Adrian,
 
-
-On 10/19/23 08:51, John Paul Adrian Glaubitz wrote:
-> Hello!
-> 
+On Thu, Oct 19, 2023 at 5:51 PM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
 > On Thu, 2023-10-19 at 08:48 -0700, Randy Dunlap wrote:
->>> +config EARLY_PRINTK
->>> +	bool "Early printk"
->>> +	depends on SH_STANDARD_BIOS
->>> +	help
->>> +	  Say Y here to redirect kernel printk messages to the serial port
->>> +	  used by the SH-IPL bootloader, starting very early in the boot
->>> +	  process and ending when the kernel's serial console is initialised.
->>> +	  This option is only useful while porting the kernel to a new machine,
->>
->> Can we expect to see new machine ports using arch/sh/ ?
-> 
+> > > +config EARLY_PRINTK
+> > > +   bool "Early printk"
+> > > +   depends on SH_STANDARD_BIOS
+> > > +   help
+> > > +     Say Y here to redirect kernel printk messages to the serial port
+> > > +     used by the SH-IPL bootloader, starting very early in the boot
+> > > +     process and ending when the kernel's serial console is initialised.
+> > > +     This option is only useful while porting the kernel to a new machine,
+> >
+> > Can we expect to see new machine ports using arch/sh/ ?
+>
 > There is J-Core which is new open source hardware based on arch/sh.
 
-OK, thanks.
+Do J-Core systems use the LinuxSH standard BIOS?
+Still, it can be useful while converting existing SH systems to DT.
+
+Gr{oetje,eeting}s,
+
+                        Geert
 
 -- 
-~Randy
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
