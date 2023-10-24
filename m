@@ -2,72 +2,83 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 5DC0AC00A8F
-	for <linux-sh@archiver.kernel.org>; Tue, 24 Oct 2023 14:53:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 8000FC07545
+	for <linux-sh@archiver.kernel.org>; Tue, 24 Oct 2023 15:08:25 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S1343546AbjJXOxC (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 24 Oct 2023 10:53:02 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:56396 "EHLO
+        id S229845AbjJXPIZ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 24 Oct 2023 11:08:25 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41142 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234560AbjJXOxB (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 24 Oct 2023 10:53:01 -0400
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 279B9B3;
-        Tue, 24 Oct 2023 07:53:00 -0700 (PDT)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 37CE6C433C7;
-        Tue, 24 Oct 2023 14:52:57 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1698159179;
-        bh=nksVzI2sxDyYwDK77Qh9hxtLz14PivSCoDF4mQ1mj4M=;
-        h=From:To:Cc:Subject:Date:From;
-        b=U16Q1nagA13WjsyrcYED+UgO0KdXjAHJxAU+n3rpd3ZUpmkIBNkBu3gpqgxL+2XnS
-         QCfnDZMDDr48vspTq6FbzfRkGKiL5iVVJxn7dPKtacOMB3UIYGdNKeMW9zd3NoVf5Y
-         V/BbtVZzMT6VG/GXa0kFIHsDSiQ5Kp8fS+29YN/VyrMTqthZD7upb3D0ly473Oig5L
-         abhyJip2bIy7BvNrl7pJ+nGrVEYaSFq8zciCTTTItv7GQZ2xp1bgbq9QrjJvWDyyU/
-         vaviig+xb8SZlBmHn9g+T8fxT8/gGiRrzU5YTdlWCUdUHfCLnPwGUw+PeRv48tJL1l
-         59OBo/Cb6GHrg==
-From:   "Masami Hiramatsu (Google)" <mhiramat@kernel.org>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        with ESMTP id S229441AbjJXPIZ (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 24 Oct 2023 11:08:25 -0400
+Received: from foss.arm.com (foss.arm.com [217.140.110.172])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 446B9BA;
+        Tue, 24 Oct 2023 08:08:22 -0700 (PDT)
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+        by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 91BA32F4;
+        Tue, 24 Oct 2023 08:09:02 -0700 (PDT)
+Received: from FVFF77S0Q05N.cambridge.arm.com (FVFF77S0Q05N.cambridge.arm.com [10.1.29.163])
+        by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id AD0633F762;
+        Tue, 24 Oct 2023 08:08:18 -0700 (PDT)
+Date:   Tue, 24 Oct 2023 16:08:12 +0100
+From:   Mark Rutland <mark.rutland@arm.com>
+To:     "Masami Hiramatsu (Google)" <mhiramat@kernel.org>
+Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc:     "wuqiang . matt" <wuqiang.matt@bytedance.com>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Peter Zijlstra <peterz@infradead.org>, mhiramat@kernel.org,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "wuqiang . matt" <wuqiang.matt@bytedance.com>,
+        Peter Zijlstra <peterz@infradead.org>,
         linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-trace-kernel@vger.kernel.org
-Subject: [PATCH] locking/atomic: sh: Use generic_cmpxchg_local for arch_cmpxchg_local()
-Date:   Tue, 24 Oct 2023 23:52:54 +0900
-Message-Id: <169815917362.8695.13904684741526725648.stgit@devnote2>
-X-Mailer: git-send-email 2.34.1
-User-Agent: StGit/0.19
+Subject: Re: [PATCH] locking/atomic: sh: Use generic_cmpxchg_local for
+ arch_cmpxchg_local()
+Message-ID: <ZTfd3A3Unz6SWFD3@FVFF77S0Q05N.cambridge.arm.com>
+References: <169815917362.8695.13904684741526725648.stgit@devnote2>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <169815917362.8695.13904684741526725648.stgit@devnote2>
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-From: Masami Hiramatsu (Google) <mhiramat@kernel.org>
+On Tue, Oct 24, 2023 at 11:52:54PM +0900, Masami Hiramatsu (Google) wrote:
+> From: Masami Hiramatsu (Google) <mhiramat@kernel.org>
+> 
+> Use generic_cmpxchg_local() for arch_cmpxchg_local() implementation
+> in SH architecture because it does not implement arch_cmpxchg_local().
 
-Use generic_cmpxchg_local() for arch_cmpxchg_local() implementation
-in SH architecture because it does not implement arch_cmpxchg_local().
+I do not think this is correct.
 
-Reported-by: kernel test robot <lkp@intel.com>
-Closes: https://lore.kernel.org/oe-kbuild-all/202310241310.Ir5uukOG-lkp@intel.com/
-Signed-off-by: Masami Hiramatsu (Google) <mhiramat@kernel.org>
----
- arch/sh/include/asm/cmpxchg.h |    2 ++
- 1 file changed, 2 insertions(+)
+The implementation in <asm-generic/cmpxchg-local.h> is UP-only (and it only
+disables interrupts), whereas arch/sh can be built SMP. We should probably add
+some guards into <asm-generic/cmpxchg-local.h> for that as we have in
+<asm-generic/cmpxchg.h>.
 
-diff --git a/arch/sh/include/asm/cmpxchg.h b/arch/sh/include/asm/cmpxchg.h
-index 288f6f38d98f..e920e61fb817 100644
---- a/arch/sh/include/asm/cmpxchg.h
-+++ b/arch/sh/include/asm/cmpxchg.h
-@@ -71,4 +71,6 @@ static inline unsigned long __cmpxchg(volatile void * ptr, unsigned long old,
- 				    (unsigned long)_n_, sizeof(*(ptr))); \
-   })
- 
-+#include <asm-generic/cmpxchg-local.h>
-+
- #endif /* __ASM_SH_CMPXCHG_H */
+I think the right thing to do here is to define arch_cmpxchg_local() in terms
+of arch_cmpxchg(), i.e. at the bottom of arch/sh's <asm/cmpxchg.h> add:
 
+#define arch_cmpxchg_local              arch_cmpxchg
+
+Mark.
+
+> 
+> Reported-by: kernel test robot <lkp@intel.com>
+> Closes: https://lore.kernel.org/oe-kbuild-all/202310241310.Ir5uukOG-lkp@intel.com/
+> Signed-off-by: Masami Hiramatsu (Google) <mhiramat@kernel.org>
+> ---
+>  arch/sh/include/asm/cmpxchg.h |    2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/arch/sh/include/asm/cmpxchg.h b/arch/sh/include/asm/cmpxchg.h
+> index 288f6f38d98f..e920e61fb817 100644
+> --- a/arch/sh/include/asm/cmpxchg.h
+> +++ b/arch/sh/include/asm/cmpxchg.h
+> @@ -71,4 +71,6 @@ static inline unsigned long __cmpxchg(volatile void * ptr, unsigned long old,
+>  				    (unsigned long)_n_, sizeof(*(ptr))); \
+>    })
+>  
+> +#include <asm-generic/cmpxchg-local.h>
+> +
+>  #endif /* __ASM_SH_CMPXCHG_H */
+> 
