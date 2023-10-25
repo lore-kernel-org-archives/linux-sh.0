@@ -2,183 +2,123 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id EC14BC0032E
-	for <linux-sh@archiver.kernel.org>; Wed, 25 Oct 2023 12:10:46 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9AB37C07545
+	for <linux-sh@archiver.kernel.org>; Wed, 25 Oct 2023 12:17:28 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232789AbjJYMKr (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Wed, 25 Oct 2023 08:10:47 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:49404 "EHLO
+        id S1343747AbjJYMR2 convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Wed, 25 Oct 2023 08:17:28 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34252 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232666AbjJYMKq (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Wed, 25 Oct 2023 08:10:46 -0400
-Received: from mail-pf1-x42e.google.com (mail-pf1-x42e.google.com [IPv6:2607:f8b0:4864:20::42e])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id E201FB0;
-        Wed, 25 Oct 2023 05:10:43 -0700 (PDT)
-Received: by mail-pf1-x42e.google.com with SMTP id d2e1a72fcca58-68fb85afef4so4832831b3a.1;
-        Wed, 25 Oct 2023 05:10:43 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1698235843; x=1698840643; darn=vger.kernel.org;
-        h=to:references:message-id:content-transfer-encoding:cc:date
-         :in-reply-to:from:subject:mime-version:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=bVRjJE3hwKNPZE3XQmsxuwp3mMYFAy3llPXqqRxtOD0=;
-        b=PJ2NFFFNa5jZMVkOcs5PoH7S9jxjMZmBevu0joBzKco2WnxP4UPHW51/GKBYbE5Rvk
-         AZ0cBTtHecp+Ev4yvQYtmYgUyYPCFecoAQr8lLpCL1gjUlVkRGkJPVh1EOAgzvHI+3uB
-         FYcHLBuM29c9ZDjE9J7LTglJQYOxgltI44VlUCT0HyLbx0ooqlFNAF+yzyAWAlEBuz4i
-         UD2vWBzyiC69rJi8sEOwYVv8Nr+PsbkD3LCvTq6BJTk8CvLh19hunpkIIFGorE5l2d8L
-         Qpe1xRPwSBRxFg0ubRGfTw+gIJasou9cjQ2pPiJ/+Mg/Ruu6m4Ixdi2dqKPDx4I+l4wc
-         yf7Q==
+        with ESMTP id S1343767AbjJYMR0 (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Wed, 25 Oct 2023 08:17:26 -0400
+Received: from mail-oi1-f172.google.com (mail-oi1-f172.google.com [209.85.167.172])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8877219F;
+        Wed, 25 Oct 2023 05:17:20 -0700 (PDT)
+Received: by mail-oi1-f172.google.com with SMTP id 5614622812f47-3b5220ea82cso296706b6e.0;
+        Wed, 25 Oct 2023 05:17:20 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1698235843; x=1698840643;
-        h=to:references:message-id:content-transfer-encoding:cc:date
-         :in-reply-to:from:subject:mime-version:x-gm-message-state:from:to:cc
+        d=1e100.net; s=20230601; t=1698236239; x=1698841039;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=bVRjJE3hwKNPZE3XQmsxuwp3mMYFAy3llPXqqRxtOD0=;
-        b=kgfEuRDlhH1AS0tzrrhrQwfIyYE1vmOp426y8Qy1//hCi+sblKPtm8bCbgCONq47OB
-         yWaDHuo7Ix/0+tqSUrAJGrrEWCKmqXmJpN75/FCwsxl6r9njF/DuaPkmZGIUlCACGAXM
-         z9AhkdwCrgWb+J3AGtqjPZ78Jl393GYw04fVhPl1xS1vZttHGR8EYfSgekbzr+xt8ZCH
-         8PWzlYeJK06QMeBMyXGu2oGFqmJQlFxVOfIfrYKx3iUEj3MO7ZdeGsLpUv36ZyqG4yEN
-         2xxv3y+oMw2C97nU9U9xmEP6TyVhOcwzcgZreRwZ2TYn/0au0xFVUlyBSo3w1MjX4BBS
-         ZL9Q==
-X-Gm-Message-State: AOJu0YwQt0pSYb5o36eFulxRghkxmFSWbLcmJ+tW7jsCrEO8migoM38a
-        b9Y0efcznfSBk1myfmHQEe8=
-X-Google-Smtp-Source: AGHT+IF8PPKnpu/s9bXQ5UkN74I5wasJ4XlOQB5Xn0oedpc8mvJ+XCWWO5jtGn4xym0m19TeLNHx8w==
-X-Received: by 2002:a62:f24c:0:b0:690:d620:7801 with SMTP id y12-20020a62f24c000000b00690d6207801mr10514512pfl.11.1698235843219;
-        Wed, 25 Oct 2023 05:10:43 -0700 (PDT)
-Received: from ibuprofen.lan (202-79-124-123.east.xps.vectant.ne.jp. [202.79.124.123])
-        by smtp.gmail.com with ESMTPSA id k11-20020aa7972b000000b0068bbd43a6e2sm9524762pfg.10.2023.10.25.05.10.40
-        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
-        Wed, 25 Oct 2023 05:10:42 -0700 (PDT)
-Content-Type: text/plain;
-        charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 13.4 \(3608.120.23.2.7\))
-Subject: Re: [RFC PATCH v3 25/35]
- Documentation/devicetree/bindings/sh/cpus.yaml: Add SH CPU.
-From:   "D. Jeff Dionne" <djeffdionne@gmail.com>
-In-Reply-To: <CAMuHMdUpwdmOGB6BRfWFcd3NJ5Gigui7JpsX_RzMJPT5fsNyyA@mail.gmail.com>
-Date:   Wed, 25 Oct 2023 21:10:38 +0900
+        bh=s928GPodxiFyTVYhjHx7bo5+mRGo8/ZxNiBtd95Cf+E=;
+        b=oeRfM6rP4lSM1FxFtOwTihHNdv3EwIkyZaUoh7GaZXVKgw5hzdRGe0MFbTDkc1ua6Q
+         hXEQ9CuL+DjtCKH1HNS4Ta6ZLrn5iLpHEse3oHJM+8MtAkUkYv8Mce2SGKzSed5KriYj
+         GaHJuQANplwc3A1SHNwOkMicDt0wZ6THfwJNNtFl3N2hrVQPSpN5XgGj9H8/nEhszD5p
+         HwmFeVMG0YGiigwUuXdwM9ADAL1F4zxerx5Wx/kGRHSym7ISS0gvE2sdNfnY/aS/+A3S
+         okaIixMlh5+oD7CKNTHDSnhBg0YYxk5UGvWkDpIrGjY8a0bkjtlD4J+O7F1FdhvGVAm0
+         kHzQ==
+X-Gm-Message-State: AOJu0YyZtWAsDxTOpZDjpNtV9J74l6qVLkpj6D54kRfqpS9ObvPSvdtk
+        LyzCqkoH8fK+Vi84O+jcMEW27lrvrNfBZg==
+X-Google-Smtp-Source: AGHT+IG4z2fwqhSc3jzV5zmbP+u6FPp5NM83+Nq+7+v483RIZaGUk+E4aD55n85CVrP5rS62yROC/A==
+X-Received: by 2002:a05:6808:1141:b0:3ab:870d:2d49 with SMTP id u1-20020a056808114100b003ab870d2d49mr21372026oiu.8.1698236239445;
+        Wed, 25 Oct 2023 05:17:19 -0700 (PDT)
+Received: from mail-yw1-f177.google.com (mail-yw1-f177.google.com. [209.85.128.177])
+        by smtp.gmail.com with ESMTPSA id t9-20020a252d09000000b00d974c72068fsm4418019ybt.4.2023.10.25.05.17.18
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 25 Oct 2023 05:17:18 -0700 (PDT)
+Received: by mail-yw1-f177.google.com with SMTP id 00721157ae682-5a87ac9d245so55788467b3.3;
+        Wed, 25 Oct 2023 05:17:18 -0700 (PDT)
+X-Received: by 2002:a25:25c9:0:b0:da0:478a:940 with SMTP id
+ l192-20020a2525c9000000b00da0478a0940mr4211358ybl.41.1698236238331; Wed, 25
+ Oct 2023 05:17:18 -0700 (PDT)
+MIME-Version: 1.0
+References: <cover.1697199949.git.ysato@users.sourceforge.jp>
+ <46ef748dd27127ef9b39fa6c97fe51e8d3422a4f.1697199949.git.ysato@users.sourceforge.jp>
+ <CAMuHMdU5brBPGuCaMra6pS4MRFvBFQ5vF9tEFVre=-032xuuMg@mail.gmail.com>
+ <87ttqf6jjq.wl-ysato@users.sourceforge.jp> <D779B53C-D508-4112-8340-CB11F35EBACA@gmail.com>
+ <CAMuHMdUpwdmOGB6BRfWFcd3NJ5Gigui7JpsX_RzMJPT5fsNyyA@mail.gmail.com> <38FB33F7-7740-4181-9F0F-902AC7D7C11C@gmail.com>
+In-Reply-To: <38FB33F7-7740-4181-9F0F-902AC7D7C11C@gmail.com>
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+Date:   Wed, 25 Oct 2023 14:17:06 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdV1+Ec=23pGrN-ZMDwx9xXgEeUs827J4768wmgfaOeCWg@mail.gmail.com>
+Message-ID: <CAMuHMdV1+Ec=23pGrN-ZMDwx9xXgEeUs827J4768wmgfaOeCWg@mail.gmail.com>
+Subject: Re: [RFC PATCH v3 25/35] Documentation/devicetree/bindings/sh/cpus.yaml:
+ Add SH CPU.
+To:     "D. Jeff Dionne" <djeffdionne@gmail.com>
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         linux-sh@vger.kernel.org, glaubitz@physik.fu-berlin.de,
         robh+dt@kernel.org, krzysztof.kozlowski+dt@linaro.org,
         conor+dt@kernel.org, devicetree@vger.kernel.org
-Content-Transfer-Encoding: quoted-printable
-Message-Id: <38FB33F7-7740-4181-9F0F-902AC7D7C11C@gmail.com>
-References: <cover.1697199949.git.ysato@users.sourceforge.jp>
- <46ef748dd27127ef9b39fa6c97fe51e8d3422a4f.1697199949.git.ysato@users.sourceforge.jp>
- <CAMuHMdU5brBPGuCaMra6pS4MRFvBFQ5vF9tEFVre=-032xuuMg@mail.gmail.com>
- <87ttqf6jjq.wl-ysato@users.sourceforge.jp>
- <D779B53C-D508-4112-8340-CB11F35EBACA@gmail.com>
- <CAMuHMdUpwdmOGB6BRfWFcd3NJ5Gigui7JpsX_RzMJPT5fsNyyA@mail.gmail.com>
-To:     Geert Uytterhoeven <geert@linux-m68k.org>
-X-Mailer: Apple Mail (2.3608.120.23.2.7)
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Oct 25, 2023, at 21:04, Geert Uytterhoeven <geert@linux-m68k.org> =
-wrote:
->=20
-> Hi Jeff,
+Hi Jeff,
 
-Hi Geert,
+On Wed, Oct 25, 2023 at 2:10 PM D. Jeff Dionne <djeffdionne@gmail.com> wrote:
+> On Oct 25, 2023, at 21:04, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+> > On Wed, Oct 25, 2023 at 1:33 PM D. Jeff Dionne <djeffdionne@gmail.com> wrote:
+> >>> On Oct 25, 2023, at 20:14, Yoshinori Sato <ysato@users.sourceforge.jp> wrote:
+> >>> On Wed, 18 Oct 2023 23:27:43 +0900,
+> >>> Geert Uytterhoeven wrote:
+> >>>> On Sat, Oct 14, 2023 at 4:54 PM Yoshinori Sato
+> >>>> <ysato@users.sourceforge.jp> wrote:
+> >>>>> Renesas SuperH binding definition.
+> >>>>>
+> >>>>> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+> >
+> >>>>> --- /dev/null
+> >>>>> +++ b/Documentation/devicetree/bindings/sh/cpus.yaml
 
->=20
-> On Wed, Oct 25, 2023 at 1:33=E2=80=AFPM D. Jeff Dionne =
-<djeffdionne@gmail.com> wrote:
->>> On Oct 25, 2023, at 20:14, Yoshinori Sato =
-<ysato@users.sourceforge.jp> wrote:
->>> On Wed, 18 Oct 2023 23:27:43 +0900,
->>> Geert Uytterhoeven wrote:
->>>> On Sat, Oct 14, 2023 at 4:54=E2=80=AFPM Yoshinori Sato
->>>> <ysato@users.sourceforge.jp> wrote:
->>>>> Renesas SuperH binding definition.
->>>>>=20
->>>>> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
->=20
->>>>> --- /dev/null
->>>>> +++ b/Documentation/devicetree/bindings/sh/cpus.yaml
->>>>> @@ -0,0 +1,45 @@
->>>>> +# SPDX-License-Identifier: GPL-2.0
->>>>> +%YAML 1.2
->>>>> +---
->>>>> +$id: http://devicetree.org/schemas/sh/cpus.yaml#
->>>>> +$schema: http://devicetree.org/meta-schemas/core.yaml#
->>>>> +
->>>>> +title: Renesas SuperH CPUs
->>>>> +
->>>>> +maintainers:
->>>>> +  - Yoshinori Sato <ysato@users.sourceforge.jp>
->>>>> +
->>>>> +description: |+
->>>>> +  The device tree allows to describe the layout of CPUs in a =
-system through
->>>>> +  the "cpus" node, which in turn contains a number of subnodes =
-(ie "cpu")
->>>>> +  defining properties for every cpu.
->>>>> +
->>>>> +  Bindings for CPU nodes follow the Devicetree Specification, =
-available from:
->>>>> +
->>>>> +  https://www.devicetree.org/specifications/
->>>>> +
->>>>> +properties:
->>>>> +  compatible:
->>>>> +    items:
->>>>> +      - enum:
->>>>=20
->>>> Missing
->>>>=20
->>>>   - jcore,j2
->=20
->> We must not imply that Renesas is responsible for J2, or that it is a =
-sanctioned SH core.
->=20
-> Compatible values do not declare any such endorsement.
->=20
->> J-Core has the responsibility for maintenance of those SH ISA =
-compatible cores.
->=20
-> The question is: does J2 implement the same instruction set as SH2,
-> i.e. can it run unmodified SH2 code?
+> >>>>> +properties:
+> >>>>> +  compatible:
+> >>>>> +    items:
+> >>>>> +      - enum:
+> >>>>
+> >>>> Missing
+> >>>>
+> >>>>   - jcore,j2
+> >
+> >> We must not imply that Renesas is responsible for J2, or that it is a sanctioned SH core.
+> >
+> > Compatible values do not declare any such endorsement.
+> >
+> >> J-Core has the responsibility for maintenance of those SH ISA compatible cores.
+> >
+> > The question is: does J2 implement the same instruction set as SH2,
+> > i.e. can it run unmodified SH2 code?
+>
+> It can run all SH2 code, but an SH2 cannot run all J2 code.
 
-It can run all SH2 code, but an SH2 cannot run all J2 code.
+This is exactly what
 
-The GCC compilers we use for J2 generate J2 code, not strictly SH2 code.
+    compatible = "jcore,j2", "renesas,sh2";
 
-The main difference is SH3 dynamic shift, and (S390 derived) Compare And =
-Swap.  The new FPU is in testing now, and AFAIK there is no FPU for SH2 =
-but I=E2=80=99m not sure.
+represents.
+Cfr. Section 2.3.1 ("compatible") of the Devicetree Specification
+https://www.devicetree.org/specifications
 
-Cheers,
-J.
+Gr{oetje,eeting}s,
 
+                        Geert
 
->>>>=20
->>>>> +          - renesas,sh4
->>>>=20
->>>>=20
->>>>> +      - const: renesas,sh
->>>>=20
->>>> I see arch/sh/boot/dts/j2_mimas_v2.dts lacks the fallback to
->>>> "renesas,sh", though.
->>>> Is there a common base of instructions that are available on all SH =
-cores?
->>>=20
->>> The base instruction set is sh2.
->>> Before that, there is sh1, but this is not compatible with Linux.
->>> I think it would be a good idea to change this to "renesas,sh2",
->=20
-> Gr{oetje,eeting}s,
->=20
->                        Geert
->=20
-> --=20
-> Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- =
-geert@linux-m68k.org
->=20
-> In personal conversations with technical people, I call myself a =
-hacker. But
-> when I'm talking to journalists I just say "programmer" or something =
-like that.
->                                -- Linus Torvalds
+-- 
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
