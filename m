@@ -2,219 +2,85 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 91D79C4332F
-	for <linux-sh@archiver.kernel.org>; Tue, 31 Oct 2023 01:44:09 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id B4384C4332F
+	for <linux-sh@archiver.kernel.org>; Thu,  2 Nov 2023 08:50:51 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S230297AbjJaBoK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 30 Oct 2023 21:44:10 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:33464 "EHLO
+        id S231216AbjKBIuw convert rfc822-to-8bit (ORCPT
+        <rfc822;linux-sh@archiver.kernel.org>);
+        Thu, 2 Nov 2023 04:50:52 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:52200 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229583AbjJaBoJ (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 30 Oct 2023 21:44:09 -0400
-Received: from mgamail.intel.com (mgamail.intel.com [134.134.136.65])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id B47E4C6;
-        Mon, 30 Oct 2023 18:44:06 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1698716646; x=1730252646;
-  h=date:from:to:cc:subject:message-id:references:
-   in-reply-to:mime-version;
-  bh=IIuVeGWprfq3VCuVfxahdPUFqQAabEMjDhoi4ZjKmo4=;
-  b=YDFf3w2VAOAAYZYIgGgrHjhogztYUohyJgBdj1a8gMGUm80DK6/rxuV0
-   YPc7FiM+tBrj3NGvmsKUKPjm4W1nH8lKxdZTJvE/sSf+PgAcqJAYPHww/
-   oxdb+4ZwUjvn0zIO38bSzaKnF6+wLW17eM4Gq4jBIDHlE4clpzl0gKanq
-   YpeK+yPkYkwgjFtQWrLAWFrtQY9iFUOXpOrkLz7jat54gy8gn6QIdR3Rh
-   23x/oDfa/gSMkCCOAcpj5/238Qe0z3h3wvh7m3/L/qljeCqfdnnfsmChQ
-   UBE9C7WGw3CD/UNWEgnO+ua3n0g1piAHni5eRmSzqEdzZ+ZfGmxbNDTE7
-   g==;
-X-IronPort-AV: E=McAfee;i="6600,9927,10879"; a="392056336"
-X-IronPort-AV: E=Sophos;i="6.03,264,1694761200"; 
-   d="scan'208";a="392056336"
-Received: from fmsmga002.fm.intel.com ([10.253.24.26])
-  by orsmga103.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 30 Oct 2023 18:44:06 -0700
-X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6600,9927,10879"; a="877332168"
-X-IronPort-AV: E=Sophos;i="6.03,264,1694761200"; 
-   d="scan'208";a="877332168"
-Received: from orsmsx601.amr.corp.intel.com ([10.22.229.14])
-  by fmsmga002.fm.intel.com with ESMTP/TLS/AES256-GCM-SHA384; 30 Oct 2023 18:44:05 -0700
-Received: from orsmsx611.amr.corp.intel.com (10.22.229.24) by
- ORSMSX601.amr.corp.intel.com (10.22.229.14) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2507.34; Mon, 30 Oct 2023 18:43:59 -0700
-Received: from orsmsx610.amr.corp.intel.com (10.22.229.23) by
- ORSMSX611.amr.corp.intel.com (10.22.229.24) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2507.34; Mon, 30 Oct 2023 18:43:59 -0700
-Received: from ORSEDG601.ED.cps.intel.com (10.7.248.6) by
- orsmsx610.amr.corp.intel.com (10.22.229.23) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.1.2507.34 via Frontend Transport; Mon, 30 Oct 2023 18:43:59 -0700
-Received: from NAM12-MW2-obe.outbound.protection.outlook.com (104.47.66.40) by
- edgegateway.intel.com (134.134.137.102) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.1.2507.34; Mon, 30 Oct 2023 18:43:59 -0700
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=XRUq9IVdbgI1tq278bGV3PdBaVJF1LouciAIHRn4cudbE8MrnrjfC9mlt+UTIRSg0su9hw4yhhn61i+K/k+UYq4xJF5pkyamP5x7RvBP/MF7YSsLZi1TEaoV2iM1FFm1fFv2KfsXmfGDs1yLJuO8na7e9Fc60vrrrrpYm+EyWROCqPGW2DU2+0D9DmsXCP0LH57xTjlZVgghr464ISE4Zzw/sDhnvMCw5PTqSGu6ep42Spqfmom/jL95ASttC3tROthtHsXXsJkD+Y642xnazuEkb51Tznw1a5MNwf8eejb/UZg9UrVWoesTFmFwEEnX0SLA+iKuAkfKN7nh9Zd5PA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=Dz8nKEkl2xpXabxmIK+V4ghf9k7cHXugVHrp3EOoA04=;
- b=cYiloLZxQWFUSVF3qMqWsb4XIgMLFxzZIyktQcOr81NzXK0Zyb+KIewijJ/DAot1NHqxg6sy1ZqMNwDoMsEMmkWoh+7brghkRYO4dt50f3WqxVMftx6Yk0faq4jjq5P/0qBevzgacmpuD6PFHnIldx4tjOqUwV2fVnbWxI5+Q2lQKHaxju5+RpH+SPI4AhEH5GWSLxY0fnYdhz9fjpOBLmdZSAhwVNOYyT9kRnCmVRLCTUqkViMBbRUpH0PSnqP5/+chjUs1qK07XrhlEcKYJ2+URKkiaX7ugMtUw/oRf7RCqVoU2+mC6tVva8JBO9rRsnkI2M3xx7KRgTHTLw65TA==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=intel.com; dmarc=pass action=none header.from=intel.com;
- dkim=pass header.d=intel.com; arc=none
-Authentication-Results: dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=intel.com;
-Received: from CY5PR11MB6392.namprd11.prod.outlook.com (2603:10b6:930:37::15)
- by DS0PR11MB8230.namprd11.prod.outlook.com (2603:10b6:8:158::21) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.6933.29; Tue, 31 Oct
- 2023 01:43:57 +0000
-Received: from CY5PR11MB6392.namprd11.prod.outlook.com
- ([fe80::15d3:7425:a09e:1c86]) by CY5PR11MB6392.namprd11.prod.outlook.com
- ([fe80::15d3:7425:a09e:1c86%4]) with mapi id 15.20.6933.028; Tue, 31 Oct 2023
- 01:43:56 +0000
-Date:   Tue, 31 Oct 2023 09:39:10 +0800
-From:   Yujie Liu <yujie.liu@intel.com>
-To:     Steven Rostedt <rostedt@goodmis.org>
-CC:     kernel test robot <lkp@intel.com>, <oe-kbuild-all@lists.linux.dev>,
-        <linux-kernel@vger.kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        <linux-sh@vger.kernel.org>
-Subject: Re: arch/sh/boot/compressed/misc.c:118:6: warning: no previous
- prototype for 'arch_ftrace_ops_list_func'
-Message-ID: <ZUBavpdmbsMvbHrr@yujie-X299>
-References: <202310310611.5RteDpO7-lkp@intel.com>
- <20231030183722.21712d18@gandalf.local.home>
-Content-Type: text/plain; charset="us-ascii"
-Content-Disposition: inline
-In-Reply-To: <20231030183722.21712d18@gandalf.local.home>
-X-ClientProxiedBy: KL1PR01CA0088.apcprd01.prod.exchangelabs.com
- (2603:1096:820:2::28) To CY5PR11MB6392.namprd11.prod.outlook.com
- (2603:10b6:930:37::15)
+        with ESMTP id S229818AbjKBIuv (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 2 Nov 2023 04:50:51 -0400
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7313B136;
+        Thu,  2 Nov 2023 01:50:35 -0700 (PDT)
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1qyTPI-000qeT-3k; Thu, 02 Nov 2023 09:50:28 +0100
+Received: from p5dc55299.dip0.t-ipconnect.de ([93.197.82.153] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1qyTPH-003vP4-Sj; Thu, 02 Nov 2023 09:50:28 +0100
+Message-ID: <96928c2a66e92b3ab91ee317cad825b311123368.camel@physik.fu-berlin.de>
+Subject: Re: arch/sh/boards/mach-hp6xx/hp6xx_apm.c:32:22: warning: variable
+ 'backup' set but not used
+From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To:     Masahiro Yamada <masahiroy@kernel.org>
+Cc:     oe-kbuild-all@lists.linux.dev, linux-kernel@vger.kernel.org,
+        Geert Uytterhoeven <geert@linux-m68k.org>,
+        linux-sh <linux-sh@vger.kernel.org>
+Date:   Thu, 02 Nov 2023 09:50:27 +0100
+In-Reply-To: <202311021607.1gLwwwRL-lkp@intel.com>
+References: <202311021607.1gLwwwRL-lkp@intel.com>
+Autocrypt: addr=glaubitz@physik.fu-berlin.de; prefer-encrypt=mutual;
+ keydata=mQINBE3JE9wBEADMrYGNfz3oz6XLw9XcWvuIxIlPWoTyw9BxTicfGAv0d87wngs9U+d52t/REggPePf34gb7/k8FBY1IgyxnZEB5NxUb1WtW0M3GUxpPx6gBZqOm7SK1ZW3oSORw+T7Aezl3Zq4Nr4Nptqx7fnLpXfRDs5iYO/GX8WuL8fkGS/gIXtxKewd0LkTlb6jq9KKq8qn8/BN5YEKqJlM7jsENyA5PIe2npN3MjEg6p+qFrmrzJRuFjjdf5vvGfzskrXCAKGlNjMMA4TgZvugOFmBI/iSyV0IOaj0uKhes0ZNX+lQFrOB4j6I5fTBy7L/T3W/pCWo3wVkknNYa8TDYT73oIZ7Aimv+k7OzRfnxsSOAZT8Re1Yt8mvzr6FHVFjr/VdyTtO5JgQZ6LEmvo4Ro+2ByBmCHORCQ0NJhD1U3avjGfvfslG999W0WEZLTeaGkBAN1yG/1bgGAytQQkD9NsVXqBy7S3LVv9bB844ysW5Aj1nvtgIz14E2WL8rbpfjJMXi7B5ha6Lxf3rFOgxpr6ZoEn+bGG4hmrO+/ReA4SerfMqwSTnjZsZvxMJsx2B9c8DaZE8GsA4I6lsihbJmXhw8i7Cta8Dx418wtEbXhL6m/UEk60O7QD1VBgGqDMnJDFSlvKa9D+tZde/kHSNmQmLLzxtDbNgBgmR0jUlmxirijnm8bwARAQABtEBKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6IChEZWJpYW4gUHJvamVjdCkgPGdsYXViaXR6QGRlYmlhbi5vcmc+iQI3BBMBCAAhBQJRnmPwAhsDBQsJCAcDBRUKCQgLBRYCAwEAAh4BAheAAAoJEHQmOzf1tfkTF0gQAJgvGiKf5YW6+Qyss1qGwf+KHXb/6gIThY6GpSIro9vL/UxaakRCOloaXXAs3KpgBULOO8+prqU8GIqcd8tE3YvQFvvO3rN+8bhOiiD0lFmQSEHcpCW5ZRpdh
+        J5wy1t9Ddb1K/7XGzen3Uzx9bjKgDyikM3js1VtJHaFr8FGt5gtZIBDgp8QM9IRCv/32mPQxqmsaTczEzSNxTBM6Tc2NwNLus3Yh5OnFdxk1jzk+Ajpnqd/E/M7/CU5QznDgIJyopcMtOArv9Er+xe3gAXHkFvnPqcP+9UpzHB5N0HPYn4k4hsOTiJ41FHUapq8d1AuzrWyqzF9aMUi2kbHJdUmt9V39BbJIgjCysZPyGtFhR42fXHDnPARjxtRRPesEhjOeHei9ioAsZfT6bX+l6kSf/9gaxEKQe3UCXd3wbw68sXcvhzBVBxhXM91+Y7deHhNihMtqPyEmSyGXTHOMODysRU453E+XXTr2HkZPx4NV1dA8Vlid2NcMQ0iItD+85xeVznc8xquY/c1vPBeqneBWaE530Eo5e3YA7OGrxHwHbet3E210ng+xU8zUjQrFXMJm3xNpOe45RwmhCAt5z1gDTk5qNgjNgnU3mDp9DX6IffS3g2UJ02JeTrBY4hMpdVlmGCVOm9xipcPHreVGEBbM4eQnYnwbaqjVBBvy2DyfyN/tFRKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6IChGcmVpZSBVbml2ZXJzaXRhZXQgQmVybGluKSA8Z2xhdWJpdHpAcGh5c2lrLmZ1LWJlcmxpbi5kZT6JAlEEEwEIADsCGwMFCwkIBwMFFQoJCAsFFgIDAQACHgECF4AWIQRi/4p1hOApVpVGAAZ0Jjs39bX5EwUCWhQoUgIZAQAKCRB0Jjs39bX5Ez/ID/98r9c4WUSgOHVPSMVcOVziMOi+zPWfF1OhOXW+atpTM4LSSp66196xOlDFHOdNNmO6kxckXAX9ptvpBc0mRxa7OrC168fKzqR7P75eTsJnVaOu+uI/vvgsbUIosYdkkekCxDAbYCUwmzNotIspnFbxiSPMNrpw7Ud/yQkS9TDYeXnrZDhBp7p5+naWCD/yMvh7yVCA4Ea8+xDVoX
+        +kjv6EHJrwVupOpMa39cGs2rKYZbWTazcflKH+bXG3FHBrwh9XRjA6A1CTeC/zTVNgGF6wvw/qT2x9tS7WeeZ1jvBCJub2cb07qIfuvxXiGcYGr+W4z9GuLCiWsMmoff/Gmo1aeMZDRYKLAZLGlEr6zkYh1Abtiz0YLqIYVbZAnf8dCjmYhuwPq77IeqSjqUqI2Cb0oOOlwRKVWDlqAeo0Bh8DrvZvBAojJf4HnQZ/pSz0yaRed/0FAmkVfV+1yR6BtRXhkRF6NCmguSITC96IzE26C6n5DBb43MR7Ga/mof4MUufnKADNG4qz57CBwENHyx6ftWJeWZNdRZq10o0NXuCJZf/iulHCWS/hFOM5ygfONq1Vsj2ZDSWvVpSLj+Ufd2QnmsnrCr1ZGcl72OC24AmqFWJY+IyReHWpuABEVZVeVDQooJ0K4yqucmrFR7HyH7oZGgR0CgYHCI+9yhrXHrQpyLQ/Sm9obiBQYXVsIEFkcmlhbiBHbGF1Yml0eiAoU1VTRSBMSU5VWCBHbWJIKSA8Z2xhdWJpdHpAc3VzZS5jb20+iQJOBBMBCAA4FiEEYv+KdYTgKVaVRgAGdCY7N/W1+RMFAloSyhICGwMFCwkIBwMFFQoJCAsFFgIDAQACHgECF4AACgkQdCY7N/W1+ROnkQ//X6LVYXPi1D8/XFsoi0HDCvZhbWSzcGw6MQZKmTk42mNFKm/OrYBJ9d1St4Q3nRwH/ELzGb8liA02d4Ul+DV1Sv3P540LzZ4mmCi9wV+4Ohn6cXfaJNaTmHy1dFvg1NrVjMqGAFZkhTXRAvjRIQItyRvL//gKaciyKB/T0C3CIzbuTLBqtZMIIuP5nIgkwBvdw6H7EQ7kqOAO85S4FDSum/cLwLzdKygyvmPNOOtxvxa9QIryLf6h7HfWg68DvGDqIV9ZBoi8JjYZrZzaBmlPV8Iwm52uYnzsKM/LoyZ0G4v2u/WEtQEl7deLJjKby3kKmZGh9hQ
+        YImvOkrd9z8LQSvu0e8Qm8+JbRCCqUGkAPrRDFIzH8nFCFGCU/V+4LT2j68KMbApLkDQAFEDBcQVJYGnOZf7eU/EtYQIqVmGEjdOP7Qf/yMFzhc9GBXeE5mbe0LwA5LOO74FDH5qjwB5KI6VkTWPoXJoZA5waVC2sUSYOnmwFINkCLyyDoWaL9ubSbU9KTouuNm4F6XIssMHuX4OIKA7b2Kn5qfUFbd0ls8d5mY2gKcXBfEY+eKkhmuwZhd/7kP10awC3DF3QGhgqpaS100JW8z78el7moijZONwqXCS3epUol6q1pJ+zcapcFzO3KqcHTdVOKh6CXQci3Yv5NXuWDs/l2dMH4t2NvZC5Ag0ETckULgEQAKwmloVWzF8PYh5jB9ATf07kpnirVYf/kDk+QuVMPlydwPjh6/awfkqZ3SRHAyIb+9IC66RLpaF4WSPVWGs307+pa5AmTm16vzYA0DJ7vvRPxPzxPYq6p2WTjFqbq0EYeNTIm0YotIkq/gB9iIUS+gjdnoGSA+n/dwnbu1Eud2aiMW16ILqhgdgitdeW3J7LMDFvWIlXoBQOSfXQDLAiPf+jPJYvgkmCAovYKtC3aTg3bFX2sZqOPsWBXV6Azd92/GMs4W4fyOYLVSEaXy/mI35PMQLH8+/MM4n0g3JEgdzRjwF77Oh8SnOdG73/j+rdrS6Zgfyq6aM5WWs6teopLWPe0LpchGPSVgohIA7OhCm+ME8fpVHuMkvXqPeXAVfmJS/gV5CUgDMsYEjst+QXgWnlEiK2Knx6WzZ+v54ncA4YP58cibPJj5Qbx4gi8KLY3tgIbWJ3QxIRkChLRGjEBIQ4vTLAhh3vtNEHoAr9xUb3h8MxqYWNWJUSLS4xeE3Bc9UrB599Hu7i0w3v6VDGVCndcVO91lq9DZVhtYOPSE8mgacHb/3LP0UOZWmGHor52oPNU3Dwg205u814sKOd2i0DmY+Lt4EkLwFIYGE0FLLTHZDjDp9D
+        0iKclQKt86xBRGH+2zUk3HRq4MArggXuA4CN1buCzqAHiONvLdnY9StRABEBAAGJAh8EGAEIAAkFAk3JFC4CGwwACgkQdCY7N/W1+ROvNxAAtYbssC+AZcU4+xU5uxYinefyhB+f6GsS0Ddupp/MkZD/y98cIql8XXdIZ6z8lHvJlDq0oOyizLpfqUkcT4GhwMbdSNYUGd9HCdY/0pAyFdiJkn++WM8+b+9nz4mC6vfh96imcK4KH/cjP7NG37El/xlshWrb6CqKPk4KxNK5rUMPNr7+/3GwwGHHkJtW0QfDa/GoD8hl2HI6IQI+zSXK2uIZ7tcFMN8g9OafwUZ7b+zbz1ldzqOwygliEuEaRHeiOhPrTdxgnj6kTnitZw7/hSVi5Mr8C4oHzWgi66Ov9vdmClTHQSEjWDeLOiBj61xhr6A8KPUVaOpAYZWBH4OvtnmjwsKuNCFXym2DcCywdjEdrLC+Ms5g6Dkd60BQz4/kHA7x+P9IAkPqkaWAEyHoEvM1OcUPJzy/JW2vWDXo2jjM8PEQfNIPtqDzid1s8aDLJsPLWlJnfUyMP2ydlTtR54oiVBlFwqqHoPIaJrwTkND5lgFiMIwup3+giLiDOBILtiOSpYxBfSJkz3GGacOb4Xcj8AXV1tpUo1dxAKpJ1ro0YHLJvOJ8nLiZyJsCabUePNRFprbh+srI+WIUVRm0D33bI1VEH2XUXZBL+AmfdKXbHAYtZ0anKgDbcwvlkBcHpA85NpRqjUQ4OerPqtCrWLHDpEwGUBlaQ//AGix+L9c=
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8BIT
+User-Agent: Evolution 3.50.1 
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: CY5PR11MB6392:EE_|DS0PR11MB8230:EE_
-X-MS-Office365-Filtering-Correlation-Id: 6dc9f114-e2c5-4105-de9f-08dbd9b2d857
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam: BCL:0;
-X-Microsoft-Antispam-Message-Info: +jKNdOT6WjUNqhxZDtwp0/aVxnCEuyjH7GEbDW2TeYeNh99CXJDDWJ41ps+fD8SlCRvWAHce0UGjUqB/K2N6LNhFb8hnLfC53PvScRROoOs5fGoEJwUHGw9nEXNHLSC20Awk3VA7WMddZbGNvepGZAWm+MLOYWDL9RFwhuC5lr5WJu9G5bq6WuLPJQZBFaqwlQmhbknpkUvqSuIPnd9lPsGFvhubswLu6Zm2yylDnONtCrP3cgA1lt6m8LQefsP3dfIduryVlRhnqiu9dXMUyElW4Sm/33IqEHZCoNDV3hL6sJL3XCJDSrbPEj12dG0GuZXHYoXbEVvvDqA/zkrADT9cCRH98j0k2zJRSHRn73r5ro/pm4r10iWzaI3cPN7YDopbMOHsNJEo4YnQKrHtHHU58UZY1poWZFoxqOWzIYElcMHdXO0YzXOeWwmSpvDAiA3+Zesf7FVdVj7t8mfb1PI0RrKq49Dl2vvdK8vXkv6yvyqMffHL5R43Mbvbf/J3n3u4/jkCRv+DqxUMcWgw9bhxldSziEdh1xmSJqN+U9DZuJU6YSkmE7T5plW5WPeqd5/AjnhbJ4bjMNVR8jVdCARIZAtZHBOuWW/vbUqwutenYKBEEX8ElNHo3W48zHmZ5MqI+b/StdNsBFdZ4sMbkg==
-X-Forefront-Antispam-Report: CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:CY5PR11MB6392.namprd11.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230031)(7916004)(39860400002)(396003)(366004)(346002)(376002)(136003)(230922051799003)(230173577357003)(230273577357003)(451199024)(1800799009)(186009)(64100799003)(6512007)(9686003)(26005)(6506007)(478600001)(6666004)(83380400001)(2906002)(33716001)(44832011)(41300700001)(66946007)(66556008)(66476007)(966005)(6486002)(8936002)(8676002)(316002)(54906003)(6916009)(5660300002)(4326008)(38100700002)(82960400001)(86362001);DIR:OUT;SFP:1102;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-MessageData-0: =?us-ascii?Q?YscuTze1MhexXMiJTZgKHMtN9Ww+RHucAoeGhD02+bkM2k3wYX4E2TlPTEhY?=
- =?us-ascii?Q?3qQHF5WaTM7GJN3gOYGMWBvG7VJVbo3Rvp1Ef70X7H23U12pZwkBSAOZrB6H?=
- =?us-ascii?Q?BYyiv5riMY6Zf0jKkx3Vdv1YLGiLMXGI31VKBog/vP3CoPa3Siu3N/Bn5T6q?=
- =?us-ascii?Q?epAxpYaITznYA/BYJkQ3d5l/D2brC8SvHzh6NBaiyIWw7XrtVB10u2nD4BUG?=
- =?us-ascii?Q?HvQo7CliwysFLYIGWi5hsUv0XiiOrYKWnPLPLTu6fT45jHxAlBorO8gfZVqK?=
- =?us-ascii?Q?cII3HSFWYAtkD13zKAmLbuFBdudasU3OYlOsuFh7XFszCH6VMiVcfu9hGl9E?=
- =?us-ascii?Q?Pa8MD2NUcFfZbEfGSebxFdw2l1PskOtzhZC8+3pfzkf8LI3xOTFCj96hFDT0?=
- =?us-ascii?Q?yP2u6zwBEYXBbAgEVCjb5UOc2lOBOKMqYbPQP+y+2BkcAJm0lp4++pfFp+BG?=
- =?us-ascii?Q?+5W/Cz7mywP/bBG1tNvjD42uZHXv9ACqOPwvskXsTNo29W8qkqjuR+5FC/vt?=
- =?us-ascii?Q?LPyOPJAuvSheVK5n/rGujPuBxZHcJg84z4XZiSSJBLcVhkHmiy2MMTGsYCH7?=
- =?us-ascii?Q?SfyHQHNIU773vBzjXdi+VBKGJnkFt0dVR8PFVUsx4vN5Kk8IpoIdZXn+VBAD?=
- =?us-ascii?Q?tL29iJy1u7nIpvDfhCHK1I5Z+T4X0j1Ov+kRXRqIXIsPTs1VPfv2gk7LW86p?=
- =?us-ascii?Q?zIoc4j8EbMMGAXLGtjCLPxRvhGha6v2fF0o0yia/GusfSEC8NnGa8Wrml7nS?=
- =?us-ascii?Q?/6L5+ibx/BcypAl8eNcGdPf1XEeSySAeOyVePgg8venE3UdpVdb/4zi0oAP2?=
- =?us-ascii?Q?XVQluLK5wmksA9Rmuam1kCkqVvwejcditQ2PYUXg7vytgzYsycKlK+OJZUaa?=
- =?us-ascii?Q?S0CGKhltrvvGk4N8HJELnnoYHRsHtOVgPyqZWlBjigC9s9rJJrfNntsmJT2Q?=
- =?us-ascii?Q?e2ZaTIov45iASXXrhMACQOen0xHkIEtgNJNn3/BshgZEdPZ7WT1ymmmQYO+Q?=
- =?us-ascii?Q?fdtBFONVVzg8CvfEnqDxZD4kDnmBXtgiTRBAQXMEShFjZGZ3mMn2FH0h7kXJ?=
- =?us-ascii?Q?eeoTNP9/OgBVE7av3jctuSXQQv+gw0qp/TxmUvKrR7PgvI+YGjhlrMfo5XIR?=
- =?us-ascii?Q?ONID3+z5tF10+b9liPB7Z8oTPcDf7qUPy6IbtvNhzmTqMv2aO27HvZ5O/Wme?=
- =?us-ascii?Q?VK1TFEA6rtVXLSK+B8LVEAO2LoP0lphfeOPaoz4RE1ta0FJBiNTOernlMs/8?=
- =?us-ascii?Q?TK56an5X/UbmEdphSMNz0z1Ys2a5n3pMMEhR2KD2ZkLSoucq5YISsq3iaLKa?=
- =?us-ascii?Q?hp9x9bD24o88NUR79F6N1FdMX/UNQhIgAsiBwpY21wx52lswxdQ5WYwgykE0?=
- =?us-ascii?Q?83CV/wzqm6ZC2mZJGEPKMqHtGJgnMbSx/kCAH/jdFvAIJxX9tVym2rFsCDtN?=
- =?us-ascii?Q?mnj32Hltk4IdjIB45L4kXtqqsnmTz7Dxa3IiZx1raFvgqTmWgHyC2ypVPfBI?=
- =?us-ascii?Q?cxXU6exI1XDW54Aip5aUyHg7NhE2y8vmj/gbFzia1TPqt9Lu0NzDcIpMh7dZ?=
- =?us-ascii?Q?BmPPDGrqZX/PeA69BWrIy9WhV4dO576upBERjtDg?=
-X-MS-Exchange-CrossTenant-Network-Message-Id: 6dc9f114-e2c5-4105-de9f-08dbd9b2d857
-X-MS-Exchange-CrossTenant-AuthSource: CY5PR11MB6392.namprd11.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 31 Oct 2023 01:43:56.9130
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: 46c98d88-e344-4ed4-8496-4ed7712e255d
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: B6DAXn7bRjLa7YMljz9tQ3TOI1BukdIIYpbfag0L6VSJgwf8VnS0/1wK6YN65rPYXp8T9nK7y+sKdP5lUNNlUQ==
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DS0PR11MB8230
-X-OriginatorOrg: intel.com
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-Originating-IP: 93.197.82.153
+X-ZEDAT-Hint: PO
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Mon, Oct 30, 2023 at 06:37:22PM -0400, Steven Rostedt wrote:
-> On Tue, 31 Oct 2023 06:15:04 +0800
-> kernel test robot <lkp@intel.com> wrote:
-> 
-> > Hi Steven,
-> > 
-> > FYI, the error/warning still remains.
-> > 
-> > tree:   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git master
-> > head:   14ab6d425e80674b6a0145f05719b11e82e64824
-> > commit: 17b251a290ba84a0c2c5c82df9596cb2e7207ca6 ftrace/sh: Add arch_ftrace_ops_list_func stub to have compressed image still link
-> > date:   2 years ago
-> > config: sh-allnoconfig (https://download.01.org/0day-ci/archive/20231031/202310310611.5RteDpO7-lkp@intel.com/config)
-> > compiler: sh4-linux-gcc (GCC) 13.2.0
-> > reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20231031/202310310611.5RteDpO7-lkp@intel.com/reproduce)
-> > 
-> > If you fix the issue in a separate patch/commit (i.e. not just a new version of
-> > the same patch/commit), kindly add following tags
-> > | Reported-by: kernel test robot <lkp@intel.com>
-> > | Closes: https://lore.kernel.org/oe-kbuild-all/202310310611.5RteDpO7-lkp@intel.com/
-> > 
-> > All warnings (new ones prefixed by >>):
-> > 
-> >    arch/sh/boot/compressed/misc.c:109:6: warning: no previous prototype for '__stack_chk_fail' [-Wmissing-prototypes]
-> >      109 | void __stack_chk_fail(void)
-> >          |      ^~~~~~~~~~~~~~~~
-> >    arch/sh/boot/compressed/misc.c:115:6: warning: no previous prototype for 'ftrace_stub' [-Wmissing-prototypes]
-> >      115 | void ftrace_stub(void)
-> >          |      ^~~~~~~~~~~
-> > >> arch/sh/boot/compressed/misc.c:118:6: warning: no previous prototype for 'arch_ftrace_ops_list_func' [-Wmissing-prototypes]  
-> >      118 | void arch_ftrace_ops_list_func(void)
-> >          |      ^~~~~~~~~~~~~~~~~~~~~~~~~
-> 
-> As the comment states, this is needed only because the linker script
-> vmlinux.lds.h references them, and it will not build without it.
-> 
-> If someone really cares, they could simply add a header to quiet these
-> warnings, but seriously, these functions are just stubs to allow the sh
-> boot portion use the vmlinux.lds.h linker script. These stubs are only for
-> satisfying linker references and are not used. I'm not going to be the one
-> to bother "fixing" it.
+Hi Masahiro,
 
-Thanks a lot for the details. We've configured the bot to ignore this on
-the reported commit.
+On Thu, 2023-11-02 at 16:42 +0800, kernel test robot wrote:
+> FYI, the error/warning still remains.
+> 
+> tree:   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git master
+> head:   21e80f3841c01aeaf32d7aee7bbc87b3db1aa0c6
+> commit: 706afcea16cd83fecb7c2229ccc31bb237ffdbef sh: Fix -Wmissing-include-dirs warnings for various platforms
+> date:   4 months ago
+> config: sh-hp6xx_defconfig (https://download.01.org/0day-ci/archive/20231102/202311021607.1gLwwwRL-lkp@intel.com/config)
+> compiler: sh4-linux-gcc (GCC) 13.2.0
+> reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20231102/202311021607.1gLwwwRL-lkp@intel.com/reproduce)
+> 
+> If you fix the issue in a separate patch/commit (i.e. not just a new version of
+> the same patch/commit), kindly add following tags
+> > Reported-by: kernel test robot <lkp@intel.com>
+> > Closes: https://lore.kernel.org/oe-kbuild-all/202311021607.1gLwwwRL-lkp@intel.com/
 
-Best Regards,
-Yujie
+Was there a patch posted to fix this?
 
-> 
-> -- Steve
-> 
-> 
-> >    arch/sh/boot/compressed/misc.c:128:6: warning: no previous prototype for 'decompress_kernel' [-Wmissing-prototypes]
-> >      128 | void decompress_kernel(void)
-> >          |      ^~~~~~~~~~~~~~~~~
-> > 
-> > 
-> > vim +/arch_ftrace_ops_list_func +118 arch/sh/boot/compressed/misc.c
-> > 
-> >    113	
-> >    114	/* Needed because vmlinux.lds.h references this */
-> >    115	void ftrace_stub(void)
-> >    116	{
-> >    117	}
-> >  > 118	void arch_ftrace_ops_list_func(void)  
-> >    119	{
-> >    120	}
-> >    121	
-> > 
-> 
-> 
+I will review your other patch today and send a PR to Linus later.
+
+Adrian
+
+-- 
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
