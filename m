@@ -2,47 +2,43 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 8177AC4332F
-	for <linux-sh@archiver.kernel.org>; Thu,  2 Nov 2023 08:58:42 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 4BC93C4332F
+	for <linux-sh@archiver.kernel.org>; Thu,  2 Nov 2023 16:12:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234811AbjKBI6n convert rfc822-to-8bit (ORCPT
+        id S235472AbjKBQMQ convert rfc822-to-8bit (ORCPT
         <rfc822;linux-sh@archiver.kernel.org>);
-        Thu, 2 Nov 2023 04:58:43 -0400
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:57600 "EHLO
+        Thu, 2 Nov 2023 12:12:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:39874 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234224AbjKBI6m (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Thu, 2 Nov 2023 04:58:42 -0400
+        with ESMTP id S235171AbjKBQMO (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Thu, 2 Nov 2023 12:12:14 -0400
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id EEA2DFB;
-        Thu,  2 Nov 2023 01:58:39 -0700 (PDT)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 40A4B13D;
+        Thu,  2 Nov 2023 09:12:11 -0700 (PDT)
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.95)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1qyTWw-000tZu-EU; Thu, 02 Nov 2023 09:58:22 +0100
+          id 1qyaIV-001TsH-OS; Thu, 02 Nov 2023 17:11:55 +0100
 Received: from p5dc55299.dip0.t-ipconnect.de ([93.197.82.153] helo=[192.168.178.81])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1qyTWw-003wP7-6h; Thu, 02 Nov 2023 09:58:22 +0100
-Message-ID: <296069ccc30a7a363c2b377aeabf67c88d7c70c1.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2] locking/atomic: sh: Use generic_cmpxchg_local for
- arch_cmpxchg_local()
+          id 1qyaIV-001Hrk-Hu; Thu, 02 Nov 2023 17:11:55 +0100
+Message-ID: <72eadf93a7b7d70ad47b72b6a70bc5f2a62e6ae8.camel@physik.fu-berlin.de>
+Subject: [GIT PULL] sh updates for v6.7
 From:   John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To:     "Masami Hiramatsu (Google)" <mhiramat@kernel.org>,
-        Yoshinori Sato <ysato@users.sourceforge.jp>,
+To:     Linus Torvalds <torvalds@linux-foundation.org>
+Cc:     Arnd Bergmann <arnd@arndb.de>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Masami Hiramatsu <mhiramat@kernel.org>,
         Rich Felker <dalias@libc.org>,
-        Geert Uytterhoeven <geert@linux-m68k.org>
-Cc:     "wuqiang . matt" <wuqiang.matt@bytedance.com>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Peter Zijlstra <peterz@infradead.org>,
-        linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-trace-kernel@vger.kernel.org
-Date:   Thu, 02 Nov 2023 09:58:21 +0100
-In-Reply-To: <169824660459.24340.14614817132696360531.stgit@devnote2>
-References: <169824660459.24340.14614817132696360531.stgit@devnote2>
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org,
+        linux-kernel <linux-kernel@vger.kernel.org>
+Date:   Thu, 02 Nov 2023 17:11:54 +0100
 Autocrypt: addr=glaubitz@physik.fu-berlin.de; prefer-encrypt=mutual;
  keydata=mQINBE3JE9wBEADMrYGNfz3oz6XLw9XcWvuIxIlPWoTyw9BxTicfGAv0d87wngs9U+d52t/REggPePf34gb7/k8FBY1IgyxnZEB5NxUb1WtW0M3GUxpPx6gBZqOm7SK1ZW3oSORw+T7Aezl3Zq4Nr4Nptqx7fnLpXfRDs5iYO/GX8WuL8fkGS/gIXtxKewd0LkTlb6jq9KKq8qn8/BN5YEKqJlM7jsENyA5PIe2npN3MjEg6p+qFrmrzJRuFjjdf5vvGfzskrXCAKGlNjMMA4TgZvugOFmBI/iSyV0IOaj0uKhes0ZNX+lQFrOB4j6I5fTBy7L/T3W/pCWo3wVkknNYa8TDYT73oIZ7Aimv+k7OzRfnxsSOAZT8Re1Yt8mvzr6FHVFjr/VdyTtO5JgQZ6LEmvo4Ro+2ByBmCHORCQ0NJhD1U3avjGfvfslG999W0WEZLTeaGkBAN1yG/1bgGAytQQkD9NsVXqBy7S3LVv9bB844ysW5Aj1nvtgIz14E2WL8rbpfjJMXi7B5ha6Lxf3rFOgxpr6ZoEn+bGG4hmrO+/ReA4SerfMqwSTnjZsZvxMJsx2B9c8DaZE8GsA4I6lsihbJmXhw8i7Cta8Dx418wtEbXhL6m/UEk60O7QD1VBgGqDMnJDFSlvKa9D+tZde/kHSNmQmLLzxtDbNgBgmR0jUlmxirijnm8bwARAQABtEBKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6IChEZWJpYW4gUHJvamVjdCkgPGdsYXViaXR6QGRlYmlhbi5vcmc+iQI3BBMBCAAhBQJRnmPwAhsDBQsJCAcDBRUKCQgLBRYCAwEAAh4BAheAAAoJEHQmOzf1tfkTF0gQAJgvGiKf5YW6+Qyss1qGwf+KHXb/6gIThY6GpSIro9vL/UxaakRCOloaXXAs3KpgBULOO8+prqU8GIqcd8tE3YvQFvvO3rN+8bhOiiD0lFmQSEHcpCW5ZRpdh
         J5wy1t9Ddb1K/7XGzen3Uzx9bjKgDyikM3js1VtJHaFr8FGt5gtZIBDgp8QM9IRCv/32mPQxqmsaTczEzSNxTBM6Tc2NwNLus3Yh5OnFdxk1jzk+Ajpnqd/E/M7/CU5QznDgIJyopcMtOArv9Er+xe3gAXHkFvnPqcP+9UpzHB5N0HPYn4k4hsOTiJ41FHUapq8d1AuzrWyqzF9aMUi2kbHJdUmt9V39BbJIgjCysZPyGtFhR42fXHDnPARjxtRRPesEhjOeHei9ioAsZfT6bX+l6kSf/9gaxEKQe3UCXd3wbw68sXcvhzBVBxhXM91+Y7deHhNihMtqPyEmSyGXTHOMODysRU453E+XXTr2HkZPx4NV1dA8Vlid2NcMQ0iItD+85xeVznc8xquY/c1vPBeqneBWaE530Eo5e3YA7OGrxHwHbet3E210ng+xU8zUjQrFXMJm3xNpOe45RwmhCAt5z1gDTk5qNgjNgnU3mDp9DX6IffS3g2UJ02JeTrBY4hMpdVlmGCVOm9xipcPHreVGEBbM4eQnYnwbaqjVBBvy2DyfyN/tFRKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6IChGcmVpZSBVbml2ZXJzaXRhZXQgQmVybGluKSA8Z2xhdWJpdHpAcGh5c2lrLmZ1LWJlcmxpbi5kZT6JAlEEEwEIADsCGwMFCwkIBwMFFQoJCAsFFgIDAQACHgECF4AWIQRi/4p1hOApVpVGAAZ0Jjs39bX5EwUCWhQoUgIZAQAKCRB0Jjs39bX5Ez/ID/98r9c4WUSgOHVPSMVcOVziMOi+zPWfF1OhOXW+atpTM4LSSp66196xOlDFHOdNNmO6kxckXAX9ptvpBc0mRxa7OrC168fKzqR7P75eTsJnVaOu+uI/vvgsbUIosYdkkekCxDAbYCUwmzNotIspnFbxiSPMNrpw7Ud/yQkS9TDYeXnrZDhBp7p5+naWCD/yMvh7yVCA4Ea8+xDVoX
@@ -60,39 +56,114 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Thu, 2023-10-26 at 00:10 +0900, Masami Hiramatsu (Google) wrote:
-> From: Masami Hiramatsu (Google) <mhiramat@kernel.org>
-> 
-> Use __generic_cmpxchg_local() for arch_cmpxchg_local() implementation
-> in SH architecture because it does not implement arch_cmpxchg_local().
-> 
-> Reported-by: kernel test robot <lkp@intel.com>
-> Closes: https://lore.kernel.org/oe-kbuild-all/202310241310.Ir5uukOG-lkp@intel.com/
-> Signed-off-by: Masami Hiramatsu (Google) <mhiramat@kernel.org>
-> ---
->  arch/sh/include/asm/cmpxchg.h |    9 +++++++++
->  1 file changed, 9 insertions(+)
-> 
-> diff --git a/arch/sh/include/asm/cmpxchg.h b/arch/sh/include/asm/cmpxchg.h
-> index 288f6f38d98f..5d617b3ef78f 100644
-> --- a/arch/sh/include/asm/cmpxchg.h
-> +++ b/arch/sh/include/asm/cmpxchg.h
-> @@ -71,4 +71,13 @@ static inline unsigned long __cmpxchg(volatile void * ptr, unsigned long old,
->  				    (unsigned long)_n_, sizeof(*(ptr))); \
->    })
->  
-> +#include <asm-generic/cmpxchg-local.h>
-> +
-> +#define arch_cmpxchg_local(ptr, o, n) ({				\
-> +	(__typeof__(*ptr))__generic_cmpxchg_local((ptr),		\
-> +						  (unsigned long)(o),	\
-> +						  (unsigned long)(n),	\
-> +						  sizeof(*(ptr)));	\
-> +})
-> +
->  #endif /* __ASM_SH_CMPXCHG_H */
+Hi Linus!
 
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+While the previously announced patch series for converting arch/sh to device trees is
+not yet ready for inclusion to mainline and therefore didn't make it for this pull
+request, there are still a small number changes for v6.7 which include one platform
+(board plus CPU and driver code) removal plus two fixes.
+
+The removal sent in by Arnd Bergmann concerns the microdev board which was an early
+SuperH prototype board that was never used in production. With the board removed, we
+were able to drop the now unused code for the SH4-202 CPU and well as the driver code
+for the superhyway bus and a custom implementation for ioport_map() and ioport_unmap()
+which will allow us to simplify ioport handling in the future.
+
+Another patch set by Geert Uytterhoeven revives SuperH BIOS earlyprintk support which got
+accidentally disabled in e76fe57447e88916 ("sh: Remove old early serial console code V2"),
+the second patch in the series updates the documentation.
+
+Finally, a patch by Masami Hiramatsu fixes a regression reported by the kernel test robot
+which uncovered that arch/sh is not implementing arch_cmpxchg_local() and therefore needs
+use __generic_cmpxchg_local() instead.
+
+The following changes since commit 0bb80ecc33a8fb5a682236443c1e740d5c917d1d:
+
+  Linux 6.6-rc1 (2023-09-10 16:28:41 -0700)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.7-tag1
+
+for you to fetch changes up to 63f1ee206170ad2363aa25fd99bd5ae529c690ae:
+
+  locking/atomic: sh: Use generic_cmpxchg_local for arch_cmpxchg_local() (2023-11-02 10:13:12 +0100)
+
+Thanks for pulling!
+
+Adrian
+
+----------------------------------------------------------------
+sh updates for v6.7
+
+- locking/atomic: sh: Use generic_cmpxchg_local for arch_cmpxchg_local()
+- Documentation: kernel-parameters: Add earlyprintk=bios on SH
+- sh: bios: Revive earlyprintk support
+- sh: machvec: Remove custom ioport_{un,}map()
+- sh: Remove superhyway bus support
+- sh: Remove unused SH4-202 support
+- sh: Remove stale microdev board
+
+----------------------------------------------------------------
+Arnd Bergmann (4):
+      sh: Remove stale microdev board
+      sh: Remove unused SH4-202 support
+      sh: Remove superhyway bus support
+      sh: machvec: Remove custom ioport_{un,}map()
+
+Geert Uytterhoeven (2):
+      sh: bios: Revive earlyprintk support
+      Documentation: kernel-parameters: Add earlyprintk=bios on SH
+
+Masami Hiramatsu (1):
+      locking/atomic: sh: Use generic_cmpxchg_local for arch_cmpxchg_local()
+
+ Documentation/admin-guide/kernel-parameters.txt |   3 +
+ Documentation/arch/sh/index.rst                 |   6 -
+ arch/sh/Kconfig                                 |  12 +-
+ arch/sh/Kconfig.debug                           |  11 ++
+ arch/sh/boards/Kconfig                          |   7 -
+ arch/sh/boards/Makefile                         |   1 -
+ arch/sh/boards/mach-microdev/Makefile           |   6 -
+ arch/sh/boards/mach-microdev/fdc37c93xapm.c     | 157 ----------------
+ arch/sh/boards/mach-microdev/io.c               | 123 -------------
+ arch/sh/boards/mach-microdev/irq.c              | 150 ---------------
+ arch/sh/boards/mach-microdev/setup.c            | 197 --------------------
+ arch/sh/configs/microdev_defconfig              |  42 -----
+ arch/sh/drivers/Makefile                        |   1 -
+ arch/sh/drivers/superhyway/Makefile             |   7 -
+ arch/sh/drivers/superhyway/ops-sh4-202.c        | 168 -----------------
+ arch/sh/include/asm/cmpxchg.h                   |   9 +
+ arch/sh/include/asm/io.h                        |   4 +-
+ arch/sh/include/asm/machvec.h                   |   5 -
+ arch/sh/include/mach-common/mach/microdev.h     |  69 -------
+ arch/sh/kernel/cpu/sh4/Makefile                 |   4 -
+ arch/sh/kernel/cpu/sh4/clock-sh4-202.c          | 174 ------------------
+ arch/sh/kernel/cpu/sh4/setup-sh4-202.c          | 139 --------------
+ arch/sh/kernel/ioport.c                         |  13 +-
+ drivers/net/ethernet/smsc/smc91x.h              |  19 --
+ drivers/sh/Makefile                             |   1 -
+ drivers/sh/superhyway/Makefile                  |   8 -
+ drivers/sh/superhyway/superhyway-sysfs.c        |  54 ------
+ drivers/sh/superhyway/superhyway.c              | 234 ------------------------
+ include/linux/superhyway.h                      | 107 -----------
+ 29 files changed, 27 insertions(+), 1704 deletions(-)
+ delete mode 100644 arch/sh/boards/mach-microdev/Makefile
+ delete mode 100644 arch/sh/boards/mach-microdev/fdc37c93xapm.c
+ delete mode 100644 arch/sh/boards/mach-microdev/io.c
+ delete mode 100644 arch/sh/boards/mach-microdev/irq.c
+ delete mode 100644 arch/sh/boards/mach-microdev/setup.c
+ delete mode 100644 arch/sh/configs/microdev_defconfig
+ delete mode 100644 arch/sh/drivers/superhyway/Makefile
+ delete mode 100644 arch/sh/drivers/superhyway/ops-sh4-202.c
+ delete mode 100644 arch/sh/include/mach-common/mach/microdev.h
+ delete mode 100644 arch/sh/kernel/cpu/sh4/clock-sh4-202.c
+ delete mode 100644 arch/sh/kernel/cpu/sh4/setup-sh4-202.c
+ delete mode 100644 drivers/sh/superhyway/Makefile
+ delete mode 100644 drivers/sh/superhyway/superhyway-sysfs.c
+ delete mode 100644 drivers/sh/superhyway/superhyway.c
+ delete mode 100644 include/linux/superhyway.h
+
 
 -- 
  .''`.  John Paul Adrian Glaubitz
