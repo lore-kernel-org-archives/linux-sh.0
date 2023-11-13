@@ -2,163 +2,100 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id CAF75C41535
-	for <linux-sh@archiver.kernel.org>; Sun, 12 Nov 2023 04:22:10 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CBFCAC4332F
+	for <linux-sh@archiver.kernel.org>; Mon, 13 Nov 2023 10:02:15 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229949AbjKLEWK (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Sat, 11 Nov 2023 23:22:10 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:43616 "EHLO
+        id S233320AbjKMKCQ (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 13 Nov 2023 05:02:16 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:51328 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229601AbjKLEWK (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Sat, 11 Nov 2023 23:22:10 -0500
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 232AB30D1;
-        Sat, 11 Nov 2023 20:22:07 -0800 (PST)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8CF58C433AB;
-        Sun, 12 Nov 2023 04:22:06 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1699762926;
-        bh=FJL4JNEf9Nr1DoflQgnKi0tfP9lyYuVjCmmad2iv8TA=;
-        h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-        b=FacYEZCQKy7zh6VsDp47yhkL+9he5Y+BzcuRtc1i6KHlTBkqaeroQJJDPLMRFLWD9
-         QNhskha1onUHVMj2O/qk8mK8c0vJZhiTXumXWS0CGWZks5ZJFrR6dvkAIDGJkCeV/t
-         6amg22+gEIHVdyPSQgk0L9lJZr+X87dXFazyXH2ThFIzgEMWpLCJskz/nC6CtTqsA+
-         Z9NTC9QINWCby1hgnVCHVFMOnhZXaqZYk/4H/uttsH8za+SgromnkZZytr79DMdLq5
-         z6fSwHr0XX/U0fb4cdcZFZDuYKieV7M2bNXh4VB6zTAsNqvA0mOlgafeRuwkTVq4La
-         Yez2M8oVwyWiQ==
-Received: by mail-ed1-f50.google.com with SMTP id 4fb4d7f45d1cf-52bd9ddb741so5252690a12.0;
-        Sat, 11 Nov 2023 20:22:06 -0800 (PST)
-X-Gm-Message-State: AOJu0Yw1fRuDc9XcvafNK/1x/b/M4Fh4EyZo0KDm9eGurcS/rIWfQqv0
-        VjXPKVOG7l2f08dG09H3CibhTWMVH9X87+xsUQs=
-X-Google-Smtp-Source: AGHT+IGKtBb4zpepnAgJWTPQf4OFL8Yxg0IypTLD7L38xtqORdph/fQnU2/w9oi/MfemCZAy/+rZ76w/2ug+y+JaBNQ=
-X-Received: by 2002:a05:6402:3d9:b0:53f:731a:e513 with SMTP id
- t25-20020a05640203d900b0053f731ae513mr2174574edw.25.1699762924720; Sat, 11
- Nov 2023 20:22:04 -0800 (PST)
+        with ESMTP id S232587AbjKMKCP (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 13 Nov 2023 05:02:15 -0500
+Received: from albert.telenet-ops.be (albert.telenet-ops.be [IPv6:2a02:1800:110:4::f00:1a])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0A5A8D52
+        for <linux-sh@vger.kernel.org>; Mon, 13 Nov 2023 02:02:11 -0800 (PST)
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:e81:b3d6:4f11:ac28])
+        by albert.telenet-ops.be with bizsmtp
+        id 9m292B0030WpEYl06m29vw; Mon, 13 Nov 2023 11:02:09 +0100
+Received: from geert (helo=localhost)
+        by ramsan.of.borg with local-esmtp (Exim 4.95)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1r2Tlh-009BsO-30;
+        Mon, 13 Nov 2023 11:02:09 +0100
+Date:   Mon, 13 Nov 2023 11:02:09 +0100 (CET)
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+To:     linux-kernel@vger.kernel.org
+cc:     Shubhrajyoti Datta <shubhrajyoti.datta@amd.com>,
+        Sai Krishna Potthuri <sai.krishna.potthuri@amd.com>,
+        linux-edac@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-sh@vger.kernel.org
+Subject: Re: Build regressions/improvements in v6.7-rc1
+In-Reply-To: <20231113093630.4164101-1-geert@linux-m68k.org>
+Message-ID: <60ca157e-6eff-d12c-9dc0-8aeab125edda@linux-m68k.org>
+References: <CAHk-=whuO0zmuxp_yorYFWdcrALpqjRPhWkmEy+7wcCnnDcPNA@mail.gmail.com> <20231113093630.4164101-1-geert@linux-m68k.org>
 MIME-Version: 1.0
-References: <20231108125843.3806765-1-arnd@kernel.org> <20231108125843.3806765-13-arnd@kernel.org>
-In-Reply-To: <20231108125843.3806765-13-arnd@kernel.org>
-From:   Guo Ren <guoren@kernel.org>
-Date:   Sat, 11 Nov 2023 23:21:53 -0500
-X-Gmail-Original-Message-ID: <CAJF2gTSEziwKn+f6DfZXRuzW1SXaWraKL2HdXMRkEOGyuHq3MQ@mail.gmail.com>
-Message-ID: <CAJF2gTSEziwKn+f6DfZXRuzW1SXaWraKL2HdXMRkEOGyuHq3MQ@mail.gmail.com>
-Subject: Re: [PATCH 12/22] csky: fix arch_jump_label_transform_static override
-To:     Arnd Bergmann <arnd@kernel.org>
-Cc:     Andrew Morton <akpm@linux-foundation.org>,
-        linux-kernel@vger.kernel.org,
-        Masahiro Yamada <masahiroy@kernel.org>,
-        linux-kbuild@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>,
-        Matt Turner <mattst88@gmail.com>,
-        Vineet Gupta <vgupta@kernel.org>,
-        Russell King <linux@armlinux.org.uk>,
-        Catalin Marinas <catalin.marinas@arm.com>,
-        Will Deacon <will@kernel.org>,
-        Steven Rostedt <rostedt@goodmis.org>,
-        Masami Hiramatsu <mhiramat@kernel.org>,
-        Mark Rutland <mark.rutland@arm.com>,
-        Peter Zijlstra <peterz@infradead.org>,
-        Ard Biesheuvel <ardb@kernel.org>,
-        Huacai Chen <chenhuacai@kernel.org>,
-        Greg Ungerer <gerg@linux-m68k.org>,
-        Michal Simek <monstr@monstr.eu>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        Dinh Nguyen <dinguyen@kernel.org>,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        Geoff Levand <geoff@infradead.org>,
-        Palmer Dabbelt <palmer@dabbelt.com>,
-        Heiko Carstens <hca@linux.ibm.com>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        "David S. Miller" <davem@davemloft.net>,
-        Andy Lutomirski <luto@kernel.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Ingo Molnar <mingo@redhat.com>, x86@kernel.org,
-        Helge Deller <deller@gmx.de>,
-        Sudip Mukherjee <sudipm.mukherjee@gmail.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Timur Tabi <timur@kernel.org>,
-        Kent Overstreet <kent.overstreet@linux.dev>,
-        David Woodhouse <dwmw2@infradead.org>,
-        "Naveen N. Rao" <naveen.n.rao@linux.ibm.com>,
-        Anil S Keshavamurthy <anil.s.keshavamurthy@intel.com>,
-        Kees Cook <keescook@chromium.org>,
-        Vincenzo Frascino <vincenzo.frascino@arm.com>,
-        Juri Lelli <juri.lelli@redhat.com>,
-        Vincent Guittot <vincent.guittot@linaro.org>,
-        Nathan Chancellor <nathan@kernel.org>,
-        Nick Desaulniers <ndesaulniers@google.com>,
-        Nicolas Schier <nicolas@fjasle.eu>,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        =?UTF-8?Q?Uwe_Kleine=2DK=C3=B6nig?= 
-        <u.kleine-koenig@pengutronix.de>, linux-alpha@vger.kernel.org,
-        linux-snps-arc@lists.infradead.org,
-        linux-arm-kernel@lists.infradead.org,
-        linux-trace-kernel@vger.kernel.org, linux-csky@vger.kernel.org,
-        loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-        linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-        linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-        linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-        netdev@vger.kernel.org, linux-parisc@vger.kernel.org,
-        linux-usb@vger.kernel.org, linux-fbdev@vger.kernel.org,
-        dri-devel@lists.freedesktop.org, linux-bcachefs@vger.kernel.org,
-        linux-mtd@lists.infradead.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=US-ASCII; format=flowed
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Wed, Nov 8, 2023 at 8:02=E2=80=AFAM Arnd Bergmann <arnd@kernel.org> wrot=
-e:
+On Mon, 13 Nov 2023, Geert Uytterhoeven wrote:
+> Below is the list of build error/warning regressions/improvements in
+> v6.7-rc1[1] compared to v6.6[2].
 >
-> From: Arnd Bergmann <arnd@arndb.de>
+> Summarized:
+>  - build errors: +20/-7
+>  - build warnings: +24/-8
 >
-> The arch_jump_label_transform_static() function in csky was originally me=
-ant to
-> override the generic __weak function, but that got changed to an #ifndef =
-check.
+> Note that there may be false regressions, as some logs are incomplete.
+> Still, they're build errors/warnings.
 >
-> This showed up as a missing-prototype warning:
-> arch/csky/kernel/jump_label.c:43:6: error: no previous prototype for 'arc=
-h_jump_label_transform_static' [-Werror=3Dmissing-prototypes]
+> Happy fixing! ;-)
 >
-> Change the method to use the new method of having a #define and a prototy=
-pe
-> for the global function.
+> Thanks to the linux-next team for providing the build service.
 >
-> Fixes: 7e6b9db27de9 ("jump_label: make initial NOP patching the special c=
-ase")
-> Fixes: 4e8bb4ba5a55 ("csky: Add jump-label implementation")
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> ---
->  arch/csky/include/asm/jump_label.h | 5 +++++
->  1 file changed, 5 insertions(+)
->
-> diff --git a/arch/csky/include/asm/jump_label.h b/arch/csky/include/asm/j=
-ump_label.h
-> index d488ba6084bc..98a3f4b168bd 100644
-> --- a/arch/csky/include/asm/jump_label.h
-> +++ b/arch/csky/include/asm/jump_label.h
-> @@ -43,5 +43,10 @@ static __always_inline bool arch_static_branch_jump(st=
-ruct static_key *key,
->         return true;
->  }
->
-> +enum jump_label_type;
-> +void arch_jump_label_transform_static(struct jump_entry *entry,
-> +                                     enum jump_label_type type);
-> +#define arch_jump_label_transform_static arch_jump_label_transform_stati=
-c
-> +
->  #endif  /* __ASSEMBLY__ */
->  #endif /* __ASM_CSKY_JUMP_LABEL_H */
-> --
-> 2.39.2
+> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/b85ea95d086471afb4ad062012a4d73cd328fa86/ (238 out of 239 configs)
+> [2] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/ffc253263a1375a65fa6c9f62a893e9767fbebfa/ (all 239 configs)
 >
 >
-Thank you!
-Reviewed-by: Guo Ren <guoren@kernel.org>
+> *** ERRORS ***
+>
+> 20 error regressions:
+>  + /kisskb/src/include/linux/compiler_types.h: error: call to '__compiletime_assert_654' declared with attribute error: FIELD_PREP: value too large for the field:  => 435:38
 
---=20
-Best Regards
- Guo Ren
+powerpc-gcc5/powerpc-allyesconfig
+drivers/edac/versal_edac.c: In function 'mc_probe':
+num_chans = FIELD_PREP(XDDR_REG_CONFIG0_NUM_CHANS_MASK, regval);
+
+>  + {standard input}: Error: displacement to undefined symbol .L100 overflows 8-bit field :  => 588
+>  + {standard input}: Error: displacement to undefined symbol .L104 overflows 8-bit field :  => 588
+>  + {standard input}: Error: displacement to undefined symbol .L105 overflows 8-bit field :  => 593
+>  + {standard input}: Error: displacement to undefined symbol .L134 overflows 8-bit field :  => 598
+>  + {standard input}: Error: displacement to undefined symbol .L72 overflows 12-bit field:  => 589
+>  + {standard input}: Error: displacement to undefined symbol .L73 overflows 8-bit field :  => 580
+>  + {standard input}: Error: displacement to undefined symbol .L75 overflows 12-bit field:  => 586, 589, 606
+>  + {standard input}: Error: displacement to undefined symbol .L76 overflows 8-bit field :  => 577, 580
+>  + {standard input}: Error: displacement to undefined symbol .L77 overflows 8-bit field : 582 => 607, 585
+>  + {standard input}: Error: displacement to undefined symbol .L78 overflows 8-bit field :  => 610
+>  + {standard input}: Error: displacement to undefined symbol .L80 overflows 8-bit field :  => 607, 601
+>  + {standard input}: Error: displacement to undefined symbol .L81 overflows 8-bit field : 606 => 604, 610
+>  + {standard input}: Error: displacement to undefined symbol .L96 overflows 12-bit field:  => 602
+>  + {standard input}: Error: displacement to undefined symbol .L97 overflows 12-bit field:  => 607
+>  + {standard input}: Error: displacement to undefined symbol .L98 overflows 12-bit field:  => 602
+>  + {standard input}: Error: invalid operands for opcode:  => 612
+>  + {standard input}: Error: missing operand:  => 612
+>  + {standard input}: Error: pcrel too far: 601, 598, 604, 577, 595, 574 => 590, 598, 599, 577, 596, 569, 604, 610, 572, 593
+>  + {standard input}: Error: unknown pseudo-op: `.l':  => 609
+
+sh4-gcc1[123]/sh-all{mod,yes}config ICE
+
+Gr{oetje,eeting}s,
+
+ 						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+ 							    -- Linus Torvalds
