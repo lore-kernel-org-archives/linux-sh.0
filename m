@@ -2,48 +2,48 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 264EFC4332F
-	for <linux-sh@archiver.kernel.org>; Tue, 14 Nov 2023 21:27:37 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 5F613C4332F
+	for <linux-sh@archiver.kernel.org>; Tue, 14 Nov 2023 21:29:17 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S234072AbjKNV1i (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 14 Nov 2023 16:27:38 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:41702 "EHLO
+        id S231617AbjKNV3T (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 14 Nov 2023 16:29:19 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58316 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S234061AbjKNV1i (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Nov 2023 16:27:38 -0500
+        with ESMTP id S231598AbjKNV3S (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Nov 2023 16:29:18 -0500
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 4BC0FC4
-        for <linux-sh@vger.kernel.org>; Tue, 14 Nov 2023 13:27:35 -0800 (PST)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E9812C433C8;
-        Tue, 14 Nov 2023 21:27:33 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id A7F17C4
+        for <linux-sh@vger.kernel.org>; Tue, 14 Nov 2023 13:29:15 -0800 (PST)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7DA0AC433C8;
+        Tue, 14 Nov 2023 21:29:14 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1699997254;
-        bh=MxkmLUf4AXTAJse/XmgFWA4HrXKHYbxrOjkeF77QT28=;
+        s=k20201202; t=1699997355;
+        bh=yz4DgbpIiADM6RgOkK+2WnJNH2P8wVc9Jf5lESxvosk=;
         h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-        b=SREoZ0cKWGZhRVuF9j0FSoLjuYVvYjTo0NnQlYXOUjGy+Uo4BLF61hsSFEq7XL1hX
-         qnokRo/iZgZZ3ZanwDrM5TUgBGPQqsBCaK3DpYH8BF2zoAswVcMDufm+f1PbnnyMZy
-         zUpzoT2RulyV29lfxiY1qgvwuLr5DDM22ItGB+psLoV3XQC/BQGVEV7rzoBQwHosPi
-         2SQuuni54LfADcmT4J5H//kmKMT5cAlZMZf3FPkNPE2WMiKC5SzFP1roMIhvqus9ZQ
-         0vZorIoQRou8T2rh5Kh47hXNVmP7oBQ7tRLDi+Zw2V2P1rZCGJGExBQFDHis4yE7fB
-         cZmXOBv7saPKA==
-Message-ID: <2bb8cd0d-3681-48a2-937f-5abd7cf6ae33@kernel.org>
-Date:   Tue, 14 Nov 2023 22:27:32 +0100
+        b=OCg/B7XPV2VX403mIUtxWQonAIOu5/75ag9vtxPSVDmA3ZuQGdtTUooxOFmMRyhk2
+         SgF0bsgyQkmzSRHsEzTXXmrR/4qXjzP2SKXqvxKNeD3BrTRFOh2Vm0ZTEPoeb5qGEp
+         oMtUrHh44Ew2WtS2Yc0bO0BEnzcAQ9js2sixcW97IR/xhDyO9P3dWzLoK4vVOyC9pl
+         gw30INoFcg1o1eAe5D1ExGnavdLIca942AHyPLvI6wdU6ypqFW8z7qsiVl893tA60L
+         6Lj6IsNCaYxM3tXmpIejBmvm7rvMMYpnThIqo4mVRrKw3HaM/OdUFDI1qWEqW0LkI/
+         X5rwUIqPczn2A==
+Message-ID: <bedbf527-0d34-47fe-9195-970ad87055db@kernel.org>
+Date:   Tue, 14 Nov 2023 22:29:13 +0100
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v4 13/37] dt-bindings: pci: pci-sh7751: Add SH7751 PCI
+Subject: Re: [PATCH v4 14/37] dt-bindings: clock: sh7750-cpg: Add
+ renesas,sh7750-cpg header.
 Content-Language: en-US
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         linux-sh@vger.kernel.org
-Cc:     Lorenzo Pieralisi <lpieralisi@kernel.org>,
-        =?UTF-8?Q?Krzysztof_Wilczy=C5=84ski?= <kw@linux.com>,
-        Rob Herring <robh@kernel.org>,
-        Bjorn Helgaas <bhelgaas@google.com>,
+Cc:     Geert Uytterhoeven <geert+renesas@glider.be>,
+        Michael Turquette <mturquette@baylibre.com>,
+        Stephen Boyd <sboyd@kernel.org>,
+        Rob Herring <robh+dt@kernel.org>,
         Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
         Conor Dooley <conor+dt@kernel.org>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
         Magnus Damm <magnus.damm@gmail.com>
 References: <cover.1699856600.git.ysato@users.sourceforge.jp>
- <f16957c3396af37aab328f577f5af19e369b299b.1699856600.git.ysato@users.sourceforge.jp>
+ <65cf2917d762e2f2933dbf9e8d61735b2bc4fb7b.1699856600.git.ysato@users.sourceforge.jp>
 From:   Krzysztof Kozlowski <krzk@kernel.org>
 Autocrypt: addr=krzk@kernel.org; keydata=
  xsFNBFVDQq4BEAC6KeLOfFsAvFMBsrCrJ2bCalhPv5+KQF2PS2+iwZI8BpRZoV+Bd5kWvN79
@@ -88,7 +88,7 @@ Autocrypt: addr=krzk@kernel.org; keydata=
  uZwJCLykjad45hsWcOGk3OcaAGQS6NDlfhM6O9aYNwGL6tGt/6BkRikNOs7VDEa4/HlbaSJo
  7FgndGw1kWmkeL6oQh7wBvYll2buKod4qYntmNKEicoHGU+x91Gcan8mCoqhJkbqrL7+nXG2
  5Q/GS5M9RFWS+nYyJh+c3OcfKqVcZQNANItt7+ULzdNJuhvTRRdC3g9hmCEuNSr+CLMdnRBY fv0=
-In-Reply-To: <f16957c3396af37aab328f577f5af19e369b299b.1699856600.git.ysato@users.sourceforge.jp>
+In-Reply-To: <65cf2917d762e2f2933dbf9e8d61735b2bc4fb7b.1699856600.git.ysato@users.sourceforge.jp>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 Precedence: bulk
@@ -96,25 +96,17 @@ List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
 On 14/11/2023 09:00, Yoshinori Sato wrote:
-> Renesas SH7751 PCI Controller json-schema.
+> SH7750 CPG Clock output define.
 > 
 > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> ---
 
-NAK, not tested. If it is not ready for review - please add some prefix
-"DO NOT MERGE" etc.
+My comments about lack of testing by automation apply to all the
+patches, so I will skip commenting. All my previous comments apply to
+this and to others.
 
-Please use scripts/get_maintainers.pl to get a list of necessary people
-and lists to CC. It might happen, that command when run on an older
-kernel, gives you outdated entries. Therefore please be sure you base
-your patches on recent Linux kernel.
-
-You missed at least devicetree list (maybe more), so this won't be
-tested by automated tooling. Performing review on untested code might be
-a waste of time, thus I will skip this patch entirely till you follow
-the process allowing the patch to be tested.
-
-Please kindly resend and include all necessary To/Cc entries.
+My comments from previous versions - v1, v2 and v3 including
+trivialities like full stop in subject, apply as well, so please
+implement them all for v5.
 
 Best regards,
 Krzysztof
