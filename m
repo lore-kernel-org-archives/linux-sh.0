@@ -2,31 +2,32 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 3CBFCC072A2
-	for <linux-sh@archiver.kernel.org>; Tue, 14 Nov 2023 08:00:48 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id CF95AC4332F
+	for <linux-sh@archiver.kernel.org>; Tue, 14 Nov 2023 08:00:54 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232281AbjKNIAt (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 14 Nov 2023 03:00:49 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:47020 "EHLO
+        id S232292AbjKNIA4 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 14 Nov 2023 03:00:56 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:54684 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232278AbjKNIAs (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Nov 2023 03:00:48 -0500
+        with ESMTP id S232254AbjKNIAz (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Nov 2023 03:00:55 -0500
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 6BA121A7
-        for <linux-sh@vger.kernel.org>; Tue, 14 Nov 2023 00:00:44 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id E6BCC19E
+        for <linux-sh@vger.kernel.org>; Tue, 14 Nov 2023 00:00:51 -0800 (PST)
 Received: from SIOS1075.ysato.name (ZM005235.ppp.dion.ne.jp [222.8.5.235])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 993AF1C0463;
-        Tue, 14 Nov 2023 17:00:43 +0900 (JST)
+        by sakura.ysato.name (Postfix) with ESMTPSA id 248191C0497;
+        Tue, 14 Nov 2023 17:00:51 +0900 (JST)
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     linux-sh@vger.kernel.org
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Daniel Lezcano <daniel.lezcano@linaro.org>,
-        Thomas Gleixner <tglx@linutronix.de>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Magnus Damm <magnus.damm@gmail.com>
-Subject: [PATCH v4 08/37] clocksource: sh_tmu: CLOCKSOURCE support.
-Date:   Tue, 14 Nov 2023 16:59:59 +0900
-Message-Id: <487844e4432fd9183d5879b66dc7acc95feefcf0.1699856600.git.ysato@users.sourceforge.jp>
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        Arnd Bergmann <arnd@arndb.de>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Baoquan He <bhe@redhat.com>, Guenter Roeck <linux@roeck-us.net>
+Subject: [PATCH v4 10/37] sh: Common PCI framework support
+Date:   Tue, 14 Nov 2023 17:00:01 +0900
+Message-Id: <65b5ddcbecfa05088b3889d0815588012dc816da.1699856600.git.ysato@users.sourceforge.jp>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <cover.1699856600.git.ysato@users.sourceforge.jp>
 References: <cover.1699856600.git.ysato@users.sourceforge.jp>
@@ -36,397 +37,166 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Allows initialization as CLOCKSOURCE.
+When CONFIG_OF=y, a common PCI framework is used.
+The new driver also needs to reference PCI headers, so move the
+necessary header files to a public location rather than a private one.
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- drivers/clocksource/sh_tmu.c | 161 +++++++++++++++++++++++------------
- 1 file changed, 106 insertions(+), 55 deletions(-)
+ arch/sh/include/asm/io.h                      | 40 +++++++++++++------
+ .../sh/{drivers/pci => include/asm}/pci-sh4.h |  7 ++--
+ .../{drivers/pci => include/asm}/pci-sh7751.h |  0
+ .../{drivers/pci => include/asm}/pci-sh7780.h |  0
+ arch/sh/include/asm/pci.h                     |  4 ++
+ 5 files changed, 36 insertions(+), 15 deletions(-)
+ rename arch/sh/{drivers/pci => include/asm}/pci-sh4.h (99%)
+ rename arch/sh/{drivers/pci => include/asm}/pci-sh7751.h (100%)
+ rename arch/sh/{drivers/pci => include/asm}/pci-sh7780.h (100%)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index beffff81c00f..e4ae83c9f7d4 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -17,6 +17,8 @@
- #include <linux/irq.h>
- #include <linux/module.h>
- #include <linux/of.h>
-+#include <linux/of_address.h>
-+#include <linux/of_irq.h>
- #include <linux/platform_device.h>
- #include <linux/pm_domain.h>
- #include <linux/pm_runtime.h>
-@@ -65,6 +67,7 @@ struct sh_tmu_device {
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index ac521f287fa5..ef9b774dd4c8 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -150,6 +150,7 @@ __BUILD_MEMORY_STRING(__raw_, q, u64)
+  */
+ #undef CONF_SLOWDOWN_IO
  
- 	bool has_clockevent;
- 	bool has_clocksource;
-+	const char *name;
- };
++#ifndef CONFIG_GENERIC_IOMAP
+ /*
+  * On SuperH I/O ports are memory mapped, so we access them using normal
+  * load/store instructions. sh_io_port_base is the virtual address to
+@@ -163,11 +164,7 @@ static inline void __set_io_port_base(unsigned long pbase)
+ 	barrier();
+ }
  
- #define TSTR -1 /* shared register */
-@@ -148,8 +151,8 @@ static int __sh_tmu_enable(struct sh_tmu_channel *ch)
- 	/* enable clock */
- 	ret = clk_enable(ch->tmu->clk);
- 	if (ret) {
--		dev_err(&ch->tmu->pdev->dev, "ch%u: cannot enable clock\n",
--			ch->index);
-+		pr_err("%s ch%u: cannot enable clock\n",
-+		       ch->tmu->name, ch->index);
- 		return ret;
- 	}
+-#ifdef CONFIG_GENERIC_IOMAP
+-#define __ioport_map ioport_map
+-#else
+ extern void __iomem *__ioport_map(unsigned long addr, unsigned int size);
+-#endif
  
-@@ -174,9 +177,10 @@ static int sh_tmu_enable(struct sh_tmu_channel *ch)
- 	if (ch->enable_count++ > 0)
- 		return 0;
+ #ifdef CONF_SLOWDOWN_IO
+ #define SLOW_DOWN_IO __raw_readw(sh_io_port_base)
+@@ -239,12 +236,6 @@ __BUILD_IOPORT_STRING(w, u16)
+ __BUILD_IOPORT_STRING(l, u32)
+ __BUILD_IOPORT_STRING(q, u64)
  
--	pm_runtime_get_sync(&ch->tmu->pdev->dev);
--	dev_pm_syscore_device(&ch->tmu->pdev->dev, true);
+-#else /* !CONFIG_HAS_IOPORT_MAP */
 -
-+	if (ch->tmu->pdev) {
-+		pm_runtime_get_sync(&ch->tmu->pdev->dev);
-+		dev_pm_syscore_device(&ch->tmu->pdev->dev, true);
-+	}
- 	return __sh_tmu_enable(ch);
- }
- 
-@@ -202,8 +206,10 @@ static void sh_tmu_disable(struct sh_tmu_channel *ch)
- 
- 	__sh_tmu_disable(ch);
- 
--	dev_pm_syscore_device(&ch->tmu->pdev->dev, false);
--	pm_runtime_put(&ch->tmu->pdev->dev);
-+	if (ch->tmu->pdev) {
-+		dev_pm_syscore_device(&ch->tmu->pdev->dev, false);
-+		pm_runtime_put(&ch->tmu->pdev->dev);
-+	}
- }
- 
- static void sh_tmu_set_next(struct sh_tmu_channel *ch, unsigned long delta,
-@@ -245,7 +251,7 @@ static irqreturn_t sh_tmu_interrupt(int irq, void *dev_id)
- 	return IRQ_HANDLED;
- }
- 
--static struct sh_tmu_channel *cs_to_sh_tmu(struct clocksource *cs)
-+static inline struct sh_tmu_channel *cs_to_sh_tmu(struct clocksource *cs)
- {
- 	return container_of(cs, struct sh_tmu_channel, cs);
- }
-@@ -292,7 +298,8 @@ static void sh_tmu_clocksource_suspend(struct clocksource *cs)
- 
- 	if (--ch->enable_count == 0) {
- 		__sh_tmu_disable(ch);
--		dev_pm_genpd_suspend(&ch->tmu->pdev->dev);
-+		if (ch->tmu->pdev)
-+			dev_pm_genpd_suspend(&ch->tmu->pdev->dev);
- 	}
- }
- 
-@@ -304,7 +311,8 @@ static void sh_tmu_clocksource_resume(struct clocksource *cs)
- 		return;
- 
- 	if (ch->enable_count++ == 0) {
--		dev_pm_genpd_resume(&ch->tmu->pdev->dev);
-+		if (ch->tmu->pdev)
-+			dev_pm_genpd_resume(&ch->tmu->pdev->dev);
- 		__sh_tmu_enable(ch);
- 	}
- }
-@@ -324,14 +332,14 @@ static int sh_tmu_register_clocksource(struct sh_tmu_channel *ch,
- 	cs->mask = CLOCKSOURCE_MASK(32);
- 	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
- 
--	dev_info(&ch->tmu->pdev->dev, "ch%u: used as clock source\n",
--		 ch->index);
-+	pr_info("%s ch%u: used as clock source\n",
-+		ch->tmu->name, ch->index);
- 
- 	clocksource_register_hz(cs, ch->tmu->rate);
- 	return 0;
- }
- 
--static struct sh_tmu_channel *ced_to_sh_tmu(struct clock_event_device *ced)
-+static inline struct sh_tmu_channel *ced_to_sh_tmu(struct clock_event_device *ced)
- {
- 	return container_of(ced, struct sh_tmu_channel, ced);
- }
-@@ -364,8 +372,8 @@ static int sh_tmu_clock_event_set_state(struct clock_event_device *ced,
- 	if (clockevent_state_oneshot(ced) || clockevent_state_periodic(ced))
- 		sh_tmu_disable(ch);
- 
--	dev_info(&ch->tmu->pdev->dev, "ch%u: used for %s clock events\n",
--		 ch->index, periodic ? "periodic" : "oneshot");
-+	pr_info("%s ch%u: used for %s clock events\n",
-+		ch->tmu->name, ch->index, periodic ? "periodic" : "oneshot");
- 	sh_tmu_clock_event_start(ch, periodic);
- 	return 0;
- }
-@@ -403,7 +411,8 @@ static void sh_tmu_clock_event_resume(struct clock_event_device *ced)
- }
- 
- static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
--				       const char *name)
-+				       const char *name,
-+				       struct device_node *np)
- {
- 	struct clock_event_device *ced = &ch->ced;
- 	int ret;
-@@ -417,30 +426,32 @@ static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
- 	ced->set_state_shutdown = sh_tmu_clock_event_shutdown;
- 	ced->set_state_periodic = sh_tmu_clock_event_set_periodic;
- 	ced->set_state_oneshot = sh_tmu_clock_event_set_oneshot;
--	ced->suspend = sh_tmu_clock_event_suspend;
--	ced->resume = sh_tmu_clock_event_resume;
+-#include <asm/io_noioport.h>
 -
--	dev_info(&ch->tmu->pdev->dev, "ch%u: used for clock events\n",
--		 ch->index);
-+	if (ch->tmu->pdev) {
-+		ced->suspend = sh_tmu_clock_event_suspend;
-+		ced->resume = sh_tmu_clock_event_resume;
-+	}
-+	pr_info("%s ch%u: used for clock events\n",
-+		ch->tmu->name, ch->index);
- 
- 	clockevents_config_and_register(ced, ch->tmu->rate, 0x300, 0xffffffff);
- 
- 	ret = request_irq(ch->irq, sh_tmu_interrupt,
- 			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
--			  dev_name(&ch->tmu->pdev->dev), ch);
-+			  ch->tmu->name, ch);
- 	if (ret) {
--		dev_err(&ch->tmu->pdev->dev, "ch%u: failed to request irq %d\n",
--			ch->index, ch->irq);
-+		pr_err("%s ch%u: failed to request irq %d\n",
-+		       ch->tmu->name, ch->index, ch->irq);
- 		return;
- 	}
- }
- 
- static int sh_tmu_register(struct sh_tmu_channel *ch, const char *name,
-+			   struct device_node *np,
- 			   bool clockevent, bool clocksource)
- {
- 	if (clockevent) {
- 		ch->tmu->has_clockevent = true;
--		sh_tmu_register_clockevent(ch, name);
-+		sh_tmu_register_clockevent(ch, name, np);
- 	} else if (clocksource) {
- 		ch->tmu->has_clocksource = true;
- 		sh_tmu_register_clocksource(ch, name);
-@@ -451,7 +462,8 @@ static int sh_tmu_register(struct sh_tmu_channel *ch, const char *name,
- 
- static int sh_tmu_channel_setup(struct sh_tmu_channel *ch, unsigned int index,
- 				bool clockevent, bool clocksource,
--				struct sh_tmu_device *tmu)
-+				struct sh_tmu_device *tmu,
-+				struct device_node *np)
- {
- 	/* Skip unused channels. */
- 	if (!clockevent && !clocksource)
-@@ -465,53 +477,59 @@ static int sh_tmu_channel_setup(struct sh_tmu_channel *ch, unsigned int index,
- 	else
- 		ch->base = tmu->mapbase + 8 + ch->index * 12;
- 
--	ch->irq = platform_get_irq(tmu->pdev, index);
-+	if (tmu->pdev)
-+		ch->irq = platform_get_irq(tmu->pdev, index);
-+	else
-+		ch->irq = of_irq_get(np, index);
- 	if (ch->irq < 0)
- 		return ch->irq;
- 
- 	ch->cs_enabled = false;
- 	ch->enable_count = 0;
- 
--	return sh_tmu_register(ch, dev_name(&tmu->pdev->dev),
-+	return sh_tmu_register(ch, tmu->name, np,
- 			       clockevent, clocksource);
- }
- 
--static int sh_tmu_map_memory(struct sh_tmu_device *tmu)
-+static int sh_tmu_map_memory(struct sh_tmu_device *tmu, struct device_node *np)
- {
- 	struct resource *res;
- 
--	res = platform_get_resource(tmu->pdev, IORESOURCE_MEM, 0);
--	if (!res) {
--		dev_err(&tmu->pdev->dev, "failed to get I/O memory\n");
--		return -ENXIO;
--	}
-+	if (tmu->pdev) {
-+		res = platform_get_resource(tmu->pdev, IORESOURCE_MEM, 0);
-+		if (!res) {
-+			pr_err("sh_tmu failed to get I/O memory\n");
-+			return -ENXIO;
-+		}
-+
-+		tmu->mapbase = ioremap(res->start, resource_size(res));
-+	} else
-+		tmu->mapbase = of_iomap(np, 0);
- 
--	tmu->mapbase = ioremap(res->start, resource_size(res));
- 	if (tmu->mapbase == NULL)
- 		return -ENXIO;
- 
- 	return 0;
- }
- 
--static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
-+static int sh_tmu_parse_dt(struct sh_tmu_device *tmu, struct device_node *np)
- {
--	struct device_node *np = tmu->pdev->dev.of_node;
+-#endif
 -
- 	tmu->model = SH_TMU;
- 	tmu->num_channels = 3;
- 
- 	of_property_read_u32(np, "#renesas,channels", &tmu->num_channels);
- 
- 	if (tmu->num_channels != 2 && tmu->num_channels != 3) {
--		dev_err(&tmu->pdev->dev, "invalid number of channels %u\n",
--			tmu->num_channels);
-+		pr_err("%s: invalid number of channels %u\n",
-+		       tmu->name, tmu->num_channels);
- 		return -EINVAL;
- 	}
- 
- 	return 0;
- }
- 
--static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
-+static int sh_tmu_setup(struct sh_tmu_device *tmu,
-+			struct platform_device *pdev, struct device_node *np)
- {
- 	unsigned int i;
- 	int ret;
-@@ -520,8 +538,13 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 
- 	raw_spin_lock_init(&tmu->lock);
- 
--	if (IS_ENABLED(CONFIG_OF) && pdev->dev.of_node) {
--		ret = sh_tmu_parse_dt(tmu);
-+	if (pdev)
-+		tmu->name = dev_name(&pdev->dev);
-+	else
-+		tmu->name = of_node_full_name(np);
-+
-+	if (IS_ENABLED(CONFIG_OF) && np) {
-+		ret = sh_tmu_parse_dt(tmu, np);
- 		if (ret < 0)
- 			return ret;
- 	} else if (pdev->dev.platform_data) {
-@@ -531,14 +554,17 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 		tmu->model = id->driver_data;
- 		tmu->num_channels = hweight8(cfg->channels_mask);
- 	} else {
--		dev_err(&tmu->pdev->dev, "missing platform data\n");
-+		pr_err("%s missing platform data\n", tmu->name);
- 		return -ENXIO;
- 	}
- 
- 	/* Get hold of clock. */
--	tmu->clk = clk_get(&tmu->pdev->dev, "fck");
-+	if (pdev)
-+		tmu->clk = clk_get(&tmu->pdev->dev, "fck");
-+	else
-+		tmu->clk = of_clk_get(np, 0);
- 	if (IS_ERR(tmu->clk)) {
--		dev_err(&tmu->pdev->dev, "cannot get clock\n");
-+		pr_err("%s: cannot get clock\n", tmu->name);
- 		return PTR_ERR(tmu->clk);
- 	}
- 
-@@ -555,9 +581,9 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	clk_disable(tmu->clk);
- 
- 	/* Map the memory resource. */
--	ret = sh_tmu_map_memory(tmu);
-+	ret = sh_tmu_map_memory(tmu, np);
- 	if (ret < 0) {
--		dev_err(&tmu->pdev->dev, "failed to remap I/O memory\n");
-+		pr_err("%s: failed to remap I/O memory\n", tmu->name);
- 		goto err_clk_unprepare;
- 	}
- 
-@@ -575,12 +601,12 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	 */
- 	for (i = 0; i < tmu->num_channels; ++i) {
- 		ret = sh_tmu_channel_setup(&tmu->channels[i], i,
--					   i == 0, i == 1, tmu);
-+					   i == 0, i == 1, tmu, np);
- 		if (ret < 0)
- 			goto err_unmap;
- 	}
--
--	platform_set_drvdata(pdev, tmu);
-+	if (pdev)
-+		platform_set_drvdata(pdev, tmu);
- 
- 	return 0;
- 
-@@ -594,6 +620,7 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
- 	return ret;
- }
- 
-+#ifndef CONFIG_SH_DEVICE_TREE
- static int sh_tmu_probe(struct platform_device *pdev)
- {
- 	struct sh_tmu_device *tmu = platform_get_drvdata(pdev);
-@@ -613,7 +640,7 @@ static int sh_tmu_probe(struct platform_device *pdev)
- 	if (tmu == NULL)
- 		return -ENOMEM;
- 
--	ret = sh_tmu_setup(tmu, pdev);
-+	ret = sh_tmu_setup(tmu, pdev, pdev->dev.of_node);
- 	if (ret) {
- 		kfree(tmu);
- 		pm_runtime_idle(&pdev->dev);
-@@ -631,7 +658,26 @@ static int sh_tmu_probe(struct platform_device *pdev)
- 
- 	return 0;
- }
-+#else
-+static int __init sh_tmu_of_register(struct device_node *np)
-+{
-+	struct sh_tmu_device *tmu;
-+	int ret;
-+
-+	tmu = kzalloc(sizeof(*tmu), GFP_KERNEL);
-+	if (tmu == NULL)
-+		return -ENOMEM;
-+
-+	ret = sh_tmu_setup(tmu, NULL, np);
-+	if (ret) {
-+		kfree(tmu);
-+		pr_warn("%pOF: Timer register failed (%d)", np, ret);
-+	}
-+	return ret;
-+}
-+#endif
- 
-+#ifndef CONFIG_SH_DEVICE_TREE
- static const struct platform_device_id sh_tmu_id_table[] = {
- 	{ "sh-tmu", SH_TMU },
- 	{ "sh-tmu-sh3", SH_TMU_SH3 },
-@@ -665,12 +711,17 @@ static void __exit sh_tmu_exit(void)
- 	platform_driver_unregister(&sh_tmu_device_driver);
- }
- 
-+subsys_initcall(sh_tmu_init);
-+module_exit(sh_tmu_exit);
+ #define inb(addr)      inb(addr)
+ #define inw(addr)      inw(addr)
+ #define inl(addr)      inl(addr)
+@@ -265,6 +256,21 @@ __BUILD_IOPORT_STRING(q, u64)
+ #define outsb outsb
+ #define outsw outsw
+ #define outsl outsl
++#else /* !CONFIG_GENERIC_IOMAP */
++#define __ioport_map ioport_map
 +#endif
 +
- #ifdef CONFIG_SUPERH
-+#ifdef CONFIG_SH_DEVICE_TREE
-+TIMER_OF_DECLARE(sh_tmu, "renesas,tmu", sh_tmu_of_register);
-+#else
- sh_early_platform_init("earlytimer", &sh_tmu_device_driver);
++#else /* !CONFIG_HAS_IOPORT_MAP */
++
++#define insb insb
++#define insw insw
++#define insl insl
++#define outsb outsb
++#define outsw outsw
++#define outsl outsl
++#include <asm/io_noioport.h>
++
++#endif
+ 
+ #define IO_SPACE_LIMIT 0xffffffff
+ 
+@@ -311,10 +317,20 @@ unsigned long long poke_real_address_q(unsigned long long addr,
+ #define xlate_dev_mem_ptr(p)	__va(p)
+ #define unxlate_dev_mem_ptr(p, v) do { } while (0)
+ 
+-#include <asm-generic/io.h>
+-
+ #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
+ int valid_phys_addr_range(phys_addr_t addr, size_t size);
+ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
+ 
++
++#ifdef __KERNEL__
++#define PCI_IOBASE	((void __iomem *)0xfe240000UL)
++
++#define HAVE_ARCH_PIO_SIZE
++#define PIO_OFFSET	0xfe240000UL
++#define PIO_MASK	0x3ffffUL
++#define PIO_RESERVED	0x40000UL
++#endif /* __KERNEL__ */
++
++#include <asm-generic/io.h>
++
+ #endif /* __ASM_SH_IO_H */
+diff --git a/arch/sh/drivers/pci/pci-sh4.h b/arch/sh/include/asm/pci-sh4.h
+similarity index 99%
+rename from arch/sh/drivers/pci/pci-sh4.h
+rename to arch/sh/include/asm/pci-sh4.h
+index 1543c50b6503..26a75841fbe2 100644
+--- a/arch/sh/drivers/pci/pci-sh4.h
++++ b/arch/sh/include/asm/pci-sh4.h
+@@ -5,9 +5,9 @@
+ #if defined(CONFIG_CPU_SUBTYPE_SH7780) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7785) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7763)
+-#include "pci-sh7780.h"
++#include <asm/pci-sh7780.h>
+ #else
+-#include "pci-sh7751.h"
++#include <asm/pci-sh7751.h>
  #endif
--
--subsys_initcall(sh_tmu_init);
--module_exit(sh_tmu_exit);
-+#endif
  
- MODULE_AUTHOR("Magnus Damm");
- MODULE_DESCRIPTION("SuperH TMU Timer Driver");
+ #include <asm/io.h>
+@@ -153,6 +153,7 @@
+   #define SH4_PCIPDTR_PB0	  0x000000001	/* Port 0 Enable */
+ #define SH4_PCIPDR		0x220		/* Port IO Data Register */
+ 
++#ifndef CONFIG_PCI_HOST_COMMON
+ /* arch/sh/kernel/drivers/pci/ops-sh4.c */
+ extern struct pci_ops sh4_pci_ops;
+ int pci_fixup_pcic(struct pci_channel *chan);
+@@ -178,5 +179,5 @@ static inline unsigned long pci_read_reg(struct pci_channel *chan,
+ {
+ 	return __raw_readl(chan->reg_base + reg);
+ }
+-
++#endif
+ #endif /* __PCI_SH4_H */
+diff --git a/arch/sh/drivers/pci/pci-sh7751.h b/arch/sh/include/asm/pci-sh7751.h
+similarity index 100%
+rename from arch/sh/drivers/pci/pci-sh7751.h
+rename to arch/sh/include/asm/pci-sh7751.h
+diff --git a/arch/sh/drivers/pci/pci-sh7780.h b/arch/sh/include/asm/pci-sh7780.h
+similarity index 100%
+rename from arch/sh/drivers/pci/pci-sh7780.h
+rename to arch/sh/include/asm/pci-sh7780.h
+diff --git a/arch/sh/include/asm/pci.h b/arch/sh/include/asm/pci.h
+index 54c30126ea17..92b3bd604319 100644
+--- a/arch/sh/include/asm/pci.h
++++ b/arch/sh/include/asm/pci.h
+@@ -2,6 +2,7 @@
+ #ifndef __ASM_SH_PCI_H
+ #define __ASM_SH_PCI_H
+ 
++#ifndef CONFIG_SH_DEVICE_TREE
+ /* Can be used to override the logic in pci_scan_bus for skipping
+    already-configured bus numbers - to be used for buggy BIOSes
+    or architectures with incomplete PCI setup by the loader */
+@@ -88,4 +89,7 @@ static inline int pci_proc_domain(struct pci_bus *bus)
+ 	return hose->need_domain_info;
+ }
+ 
++#else /* CONFIG_SH_DEVICE_TREE */
++#include <asm-generic/pci.h>
++#endif
+ #endif /* __ASM_SH_PCI_H */
 -- 
 2.39.2
 
