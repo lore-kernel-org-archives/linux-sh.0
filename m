@@ -2,30 +2,30 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id C7F96C074FE
-	for <linux-sh@archiver.kernel.org>; Tue, 14 Nov 2023 08:01:02 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 214AAC41535
+	for <linux-sh@archiver.kernel.org>; Tue, 14 Nov 2023 08:01:04 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232226AbjKNIBE (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 14 Nov 2023 03:01:04 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40600 "EHLO
+        id S232302AbjKNIBF (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 14 Nov 2023 03:01:05 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:40644 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232298AbjKNIBC (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Nov 2023 03:01:02 -0500
+        with ESMTP id S232278AbjKNIBE (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Nov 2023 03:01:04 -0500
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id BF46E19B
-        for <linux-sh@vger.kernel.org>; Tue, 14 Nov 2023 00:00:58 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id AADAD1B3
+        for <linux-sh@vger.kernel.org>; Tue, 14 Nov 2023 00:01:00 -0800 (PST)
 Received: from SIOS1075.ysato.name (ZM005235.ppp.dion.ne.jp [222.8.5.235])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 53B881C02FE;
-        Tue, 14 Nov 2023 17:00:58 +0900 (JST)
+        by sakura.ysato.name (Postfix) with ESMTPSA id 36D941C0463;
+        Tue, 14 Nov 2023 17:01:00 +0900 (JST)
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     linux-sh@vger.kernel.org
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         Thomas Gleixner <tglx@linutronix.de>,
         Geert Uytterhoeven <geert+renesas@glider.be>,
         Magnus Damm <magnus.damm@gmail.com>
-Subject: [PATCH v4 17/37] irqchip: Add SH7751 INTC driver
-Date:   Tue, 14 Nov 2023 17:00:08 +0900
-Message-Id: <e9f8cc0fc8a240adb11b3ad60197868401a3dd91.1699856600.git.ysato@users.sourceforge.jp>
+Subject: [PATCH v4 19/37] irqchip: SH7751 IRL external encoder with enable gate.
+Date:   Tue, 14 Nov 2023 17:00:10 +0900
+Message-Id: <b228e348eba6944e616e578b32be4910f0d88e39.1699856600.git.ysato@users.sourceforge.jp>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <cover.1699856600.git.ysato@users.sourceforge.jp>
 References: <cover.1699856600.git.ysato@users.sourceforge.jp>
@@ -35,338 +35,278 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Renesas SH7751 Internal interrupt controller driver.
+SH7751 have 15 level external interrupt.
+It is typically connected to the CPU through a priority encoder
+that can suppress requests.
+This driver provides a way to control those hardware with irqchip.
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- drivers/irqchip/Kconfig              |   8 +
- drivers/irqchip/Makefile             |   1 +
- drivers/irqchip/irq-renesas-sh7751.c | 290 +++++++++++++++++++++++++++
- 3 files changed, 299 insertions(+)
- create mode 100644 drivers/irqchip/irq-renesas-sh7751.c
+ drivers/irqchip/Kconfig                 |   7 +
+ drivers/irqchip/Makefile                |   2 +
+ drivers/irqchip/irq-renesas-sh7751irl.c | 227 ++++++++++++++++++++++++
+ 3 files changed, 236 insertions(+)
+ create mode 100644 drivers/irqchip/irq-renesas-sh7751irl.c
 
 diff --git a/drivers/irqchip/Kconfig b/drivers/irqchip/Kconfig
-index f7149d0f3d45..658523f65b1d 100644
+index 658523f65b1d..2a061c01f381 100644
 --- a/drivers/irqchip/Kconfig
 +++ b/drivers/irqchip/Kconfig
-@@ -679,4 +679,12 @@ config SUNPLUS_SP7021_INTC
- 	  chained controller, routing all interrupt source in P-Chip to
- 	  the primary controller on C-Chip.
+@@ -687,4 +687,11 @@ config RENESAS_SH7751_INTC
+ 	  Support for the Renesas SH7751 On-chip interrupt controller.
+ 	  And external interrupt encoder for some targets.
  
-+config RENESAS_SH7751_INTC
-+	bool "Renesas SH7751 Interrupt Controller"
-+	depends on SH_DEVICE_TREE || COMPILE_TEST
-+	select IRQ_DOMAIN_HIERARCHY
++config RENESAS_SH7751IRL_INTC
++	bool "Renesas SH7751 based target IRL encoder support."
++	depends on RENESAS_SH7751_INTC
 +	help
-+	  Support for the Renesas SH7751 On-chip interrupt controller.
-+	  And external interrupt encoder for some targets.
++	  Support for External Interrupt encoder
++	  on the some Renesas SH7751 based target.
 +
  endmenu
 diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
-index ffd945fe71aa..26c91d075e25 100644
+index 26c91d075e25..91df16726b1f 100644
 --- a/drivers/irqchip/Makefile
 +++ b/drivers/irqchip/Makefile
-@@ -120,3 +120,4 @@ obj-$(CONFIG_IRQ_IDT3243X)		+= irq-idt3243x.o
- obj-$(CONFIG_APPLE_AIC)			+= irq-apple-aic.o
+@@ -121,3 +121,5 @@ obj-$(CONFIG_APPLE_AIC)			+= irq-apple-aic.o
  obj-$(CONFIG_MCHP_EIC)			+= irq-mchp-eic.o
  obj-$(CONFIG_SUNPLUS_SP7021_INTC)	+= irq-sp7021-intc.o
-+obj-$(CONFIG_RENESAS_SH7751_INTC)	+= irq-renesas-sh7751.o
-diff --git a/drivers/irqchip/irq-renesas-sh7751.c b/drivers/irqchip/irq-renesas-sh7751.c
+ obj-$(CONFIG_RENESAS_SH7751_INTC)	+= irq-renesas-sh7751.o
++obj-$(CONFIG_RENESAS_SH7751IRL_INTC)	+= irq-renesas-sh7751irl.o
++
+diff --git a/drivers/irqchip/irq-renesas-sh7751irl.c b/drivers/irqchip/irq-renesas-sh7751irl.c
 new file mode 100644
-index 000000000000..f3bc150267c0
+index 000000000000..99ee5bf9fb1e
 --- /dev/null
-+++ b/drivers/irqchip/irq-renesas-sh7751.c
-@@ -0,0 +1,290 @@
++++ b/drivers/irqchip/irq-renesas-sh7751irl.c
+@@ -0,0 +1,227 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
-+ * Renesas SH7751 interrupt controller driver
++ * SH7751 based board IRL encoder driver
++ * (Renesas RTS7751R2D / IO DATA DEVICE LANDISK, USL-5P)
 + *
-+ * Copyright 2023 Yoshinori Sato <ysato@users.sourceforge.jp>
++ * Copyright (C) 2023 Yoshinori Sato
 + */
 +
++#include <linux/err.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/irqdomain.h>
 +#include <linux/irq.h>
 +#include <linux/irqchip.h>
-+#include <linux/of_address.h>
-+#include <linux/of_irq.h>
 +#include <linux/of.h>
-+#include <linux/io.h>
-+#include <dt-bindings/interrupt-controller/sh_intc.h>
++#include <linux/of_irq.h>
++#include <linux/of_address.h>
++#include <linux/slab.h>
++#include <linux/bitops.h>
 +
-+struct ipr {
-+	unsigned int off;
-+	unsigned int idx;
++struct sh7751irl_intc_priv {
++	struct irq_domain *irq_domain;
++	void __iomem	  *base;
++	unsigned int	  width;
++	bool		  invert;
++	u32		  enable_bit[NR_IRL];
 +};
 +
-+struct sh7751_intc_priv {
-+	void __iomem *base;
-+	void __iomem *intpri00;
-+	struct ipr   *iprmap[2];
-+	bool	     irlm;
-+};
-+
-+enum {
-+	R_ICR         = 0x00,
-+	R_IPR         = 0x04,
-+	R_INTPRI00    = 0x00,
-+	R_INTREQ00    = 0x20,
-+	R_INTMSK00    = 0x40,
-+	R_INTMSKCLR00 = 0x60,
-+};
-+
-+#define ICR_IRLM BIT(7)
-+
-+/*
-+ * SH7751 IRQ mapping
-+ *  IRQ16 - 63: Group0 - IPRA to IPRD
-+ *   IRQ16 - 31: external IRL input (ICR.IRLM is 0)
-+ *  IRQ80 - 92: Group1 - INTPRI00
-+ */
-+#define IRQ_START	16
-+#define MAX_IRL		(IRQ_START + NR_IRL)
-+#define GRP0_IRQ_END	63
-+#define GRP1_IRQ_START	80
-+#define IRQ_END		92
-+
-+#define NR_IPRMAP0	(GRP0_IRQ_END - IRQ_START + 1)
-+#define NR_IPRMAP1	(IRQ_END - GRP1_IRQ_START)
-+#define IPR_PRI_MASK	0x000f
-+
-+/*
-+ * IPR registers have 4bit priority x 4 entry (16bits)
-+ * Interrupts can be masked by setting pri to 0.
-+ */
-+static void update_ipr(struct sh7751_intc_priv *priv, unsigned int irq, u16 pri)
++static inline unsigned long get_reg(void __iomem *addr, unsigned int w)
 +{
-+	struct ipr *ipr = NULL;
-+	void __iomem *ipr_base;
-+	unsigned int offset;
-+	u16 mask;
-+
-+	if (irq < GRP1_IRQ_START) {
-+		/* Group0 */
-+		ipr = priv->iprmap[0];
-+		ipr += irq - IRQ_START;
-+		ipr_base = priv->base + R_IPR;
-+		offset = ipr->off;
-+	} else {
-+		/* Group1 */
-+		ipr = priv->iprmap[1];
-+		ipr += irq - GRP1_IRQ_START;
-+		ipr_base = priv->intpri00;
-+		offset = ipr->off - INTPRI00;
-+	}
-+	if (ipr->off != ~0) {
-+		mask = ~(IPR_PRI_MASK << ipr->idx);
-+		pri = (pri & IPR_PRI_MASK) << ipr->idx;
-+		mask &= __raw_readw(ipr_base + offset);
-+		__raw_writew(mask | pri, ipr_base + offset);
-+	} else {
-+		pr_warn_once("%s: undefined IPR in irq %u\n", __FILE__, irq);
++	switch (w) {
++	case 8:
++		return __raw_readb(addr);
++	case 16:
++		return __raw_readw(addr);
++	case 32:
++		return __raw_readl(addr);
++	default:
++		/* The size is checked when reading the properties. */
++		pr_err("%s: Invalid width %d", __FILE__, w);
++		return 0;
 +	}
 +}
 +
-+static inline bool is_valid_irq(unsigned int irq)
++static inline void set_reg(void __iomem *addr, unsigned int w, unsigned long val)
 +{
-+	/* IRQ16 - 63 */
-+	if (irq >= IRQ_START && irq < IRQ_START + NR_IPRMAP0)
-+		return true;
-+	/* IRQ80 - 92 */
-+	if (irq >= GRP1_IRQ_START && irq <= IRQ_END)
-+		return true;
-+	return false;
++	switch (w) {
++	case 8:
++		__raw_writeb(val, addr);
++		break;
++	case 16:
++		__raw_writew(val, addr);
++		break;
++	case 32:
++		__raw_writel(val, addr);
++		break;
++	default:
++		pr_err("%s: Invalid width %d", __FILE__, w);
++	}
 +}
 +
-+static inline struct sh7751_intc_priv *irq_data_to_priv(struct irq_data *data)
++static inline struct sh7751irl_intc_priv *irq_data_to_priv(struct irq_data *data)
 +{
 +	return data->domain->host_data;
 +}
 +
-+static void endisable_irq(struct irq_data *data, int enable)
++static void irl_endisable(struct irq_data *data, unsigned int enable)
 +{
-+	struct sh7751_intc_priv *priv;
-+	unsigned int irq;
++	struct sh7751irl_intc_priv *priv;
++	unsigned long val;
++	unsigned int irl;
 +
 +	priv = irq_data_to_priv(data);
++	irl = irqd_to_hwirq(data) - IRL_BASE_IRQ;
 +
-+	irq = irqd_to_hwirq(data);
-+	if (!is_valid_irq(irq)) {
-+		/* IRQ out of range */
-+		pr_warn_once("%s: IRQ %u is out of range\n", __FILE__, irq);
-+		return;
++	if (irl < NR_IRL && priv->enable_bit[irl] < priv->width) {
++		if (priv->invert)
++			enable = !enable;
++
++		val = get_reg(priv->base, priv->width);
++		if (enable)
++			set_bit(priv->enable_bit[irl], &val);
++		else
++			clear_bit(priv->enable_bit[irl], &val);
++		set_reg(priv->base, priv->width, val);
++	} else {
++		pr_err("%s: Invalid register define in IRL %u", __FILE__, irl);
 +	}
-+
-+	if (irq <= MAX_IRL && !priv->irlm)
-+		/* IRL encoded external interrupt */
-+		/* disable for SR.IMASK */
-+		update_sr_imask(irq - IRQ_START, enable);
-+	else
-+		/* Internal peripheral interrupt */
-+		/* mask for IPR priority 0 */
-+		update_ipr(priv, irq, enable);
 +}
 +
-+static void sh7751_mask_irq(struct irq_data *data)
++static void sh7751irl_intc_disable_irq(struct irq_data *data)
 +{
-+	endisable_irq(data, 0);
++	irl_endisable(data, 0);
 +}
 +
-+static void sh7751_unmask_irq(struct irq_data *data)
++static void sh7751irl_intc_enable_irq(struct irq_data *data)
 +{
-+	endisable_irq(data, 1);
++	irl_endisable(data, 1);
 +}
 +
-+static const struct irq_chip sh7751_irq_chip = {
-+	.name		= "SH7751-INTC",
-+	.irq_unmask	= sh7751_unmask_irq,
-+	.irq_mask	= sh7751_mask_irq,
++static struct irq_chip sh7751irl_intc_chip = {
++	.name		= "SH7751IRL-INTC",
++	.irq_enable	= sh7751irl_intc_enable_irq,
++	.irq_disable	= sh7751irl_intc_disable_irq,
 +};
 +
-+static int irq_sh7751_map(struct irq_domain *h, unsigned int virq,
-+			  irq_hw_number_t hw_irq_num)
++static int sh7751irl_intc_map(struct irq_domain *h, unsigned int virq,
++			       irq_hw_number_t hw_irq_num)
 +{
-+	irq_set_chip_and_handler(virq, &sh7751_irq_chip, handle_level_irq);
++	irq_set_chip_and_handler(virq, &sh7751irl_intc_chip, handle_level_irq);
 +	irq_get_irq_data(virq)->chip_data = h->host_data;
 +	irq_modify_status(virq, IRQ_NOREQUEST, IRQ_NOPROBE);
 +	return 0;
 +}
-+static const struct irq_domain_ops irq_ops = {
-+	.map    = irq_sh7751_map,
-+	.xlate  = irq_domain_xlate_onecell,
-+};
 +
-+static int __init load_ipr_map(struct device_node *intc,
-+			       struct sh7751_intc_priv *priv)
++static int sh7751irl_intc_translate(struct irq_domain *domain,
++			       struct irq_fwspec *fwspec, unsigned long *hwirq,
++			       unsigned int *type)
 +{
-+	struct property *ipr_map;
-+	unsigned int num_ipr, i;
-+	struct ipr *ipr;
-+	const __be32 *p;
-+	u32 irq;
++	if (fwspec->param[0] > NR_IRL)
++		return -EINVAL;
 +
-+	ipr_map = of_find_property(intc, "renesas,ipr-map", &num_ipr);
-+	if (IS_ERR(ipr_map))
-+		return PTR_ERR(ipr_map);
-+	num_ipr /= sizeof(u32);
-+	/* 3words per entry. */
-+	if (num_ipr % 3)
-+		goto error1;
-+	num_ipr /= 3;
-+	if (num_ipr >= NR_IPRMAP0 + NR_IPRMAP1)
-+		goto error1;
-+
-+	/* Allocate map array and fill in unassigned */
-+	priv->iprmap[0] = kmalloc_array(NR_IPRMAP0, sizeof(struct ipr), GFP_KERNEL);
-+	if (priv->iprmap[0] == NULL)
-+		return -ENOMEM;
-+	memset(priv->iprmap[0], ~0, NR_IPRMAP0 * sizeof(struct ipr));
-+	priv->iprmap[1] = kmalloc_array(NR_IPRMAP1, sizeof(struct ipr), GFP_KERNEL);
-+	if (priv->iprmap[1] == NULL) {
-+		kfree(priv->iprmap[0]);
-+		return -ENOMEM;
-+	}
-+	memset(priv->iprmap[1], ~0, NR_IPRMAP1 * sizeof(struct ipr));
-+
-+	p = NULL;
-+	for (; num_ipr > 0; num_ipr--) {
-+		/* 1st word - INTEVT code */
-+		p = of_prop_next_u32(ipr_map, p, &irq);
-+		if (!p)
-+			goto error;
-+		irq = evt2irq(irq);
-+		if (!is_valid_irq(irq))
-+			goto error;
-+		if (irq < GRP1_IRQ_START) {
-+			ipr = priv->iprmap[0];
-+			irq -= IRQ_START;
-+		} else {
-+			ipr = priv->iprmap[1];
-+			irq -= GRP1_IRQ_START;
-+		}
-+		ipr += irq;
-+		/* 2nd word - IPR register offset */
-+		p = of_prop_next_u32(ipr_map, p, &ipr->off);
-+		/* 3rd word - IPR register bit indx */
-+		p = of_prop_next_u32(ipr_map, p, &ipr->idx);
-+
-+		if ((ipr->off != INTPRI00 && ipr->off > IPRD) ||
-+		    ipr->idx > IPR_B12)
-+			goto error;
-+	}
-+
-+	for (ipr = priv->iprmap[0], i = 0; i < NR_IPRMAP0; ipr++, i++) {
-+		if (ipr->off != ~0) {
-+			pr_debug("INTEVT=%04x (%u) reg=IPR%c idx=%u\n",
-+				 irq2evt(i + IRQ_START), i + IRQ_START,
-+				 'A' + ipr->off / 4, ipr->idx);
-+		}
-+	}
-+	for (ipr = priv->iprmap[1], i = 0; i < NR_IPRMAP1; ipr++, i++) {
-+		if (ipr->off != ~0) {
-+			pr_debug("INTEVT=%04x (%u) reg=INTPRI00 idx=%u\n",
-+				 irq2evt(i + GRP1_IRQ_START), i + GRP1_IRQ_START,
-+				 ipr->idx);
-+		}
-+	}
-+	return 0;
-+error:
-+	kfree(priv->iprmap[0]);
-+	kfree(priv->iprmap[1]);
-+error1:
-+	pr_err("%pOFP: Failed to load renesas,ipr-map\n", intc);
-+	return -EINVAL;
-+}
-+
-+static int __init sh7751_intc_of_init(struct device_node *intc,
-+				      struct device_node *parent)
-+{
-+	struct sh7751_intc_priv *priv;
-+	void __iomem *base, *base2;
-+	struct irq_domain *domain;
-+	u16 icr;
-+	int ret;
-+
-+	base = of_iomap(intc, 0);
-+	base2 = of_iomap(intc, 1);
-+	if (!base || !base2) {
-+		pr_err("%pOFP: Invalid register definition\n", intc);
++	switch (fwspec->param_count) {
++	case 2:
++		*type = fwspec->param[1];
++		fallthrough;
++	case 1:
++		*hwirq = fwspec->param[0] + IRL_BASE_IRQ;
++		break;
++	default:
 +		return -EINVAL;
 +	}
-+
-+	priv = kzalloc(sizeof(struct sh7751_intc_priv), GFP_KERNEL);
-+	if (priv == NULL)
-+		return -ENOMEM;
-+
-+	ret = load_ipr_map(intc, priv);
-+	if (ret < 0) {
-+		kfree(priv);
-+		return ret;
-+	}
-+
-+	priv->base = base;
-+	priv->intpri00 = base2;
-+
-+	if (of_property_read_bool(intc, "renesas,irlm")) {
-+		priv->irlm = true;
-+		icr = __raw_readw(priv->base + R_ICR);
-+		icr |= ICR_IRLM;
-+		__raw_writew(icr, priv->base + R_ICR);
-+	}
-+
-+	domain = irq_domain_add_linear(intc, NR_IRQS, &irq_ops, priv);
-+	if (domain == NULL) {
-+		pr_err("%pOFP: cannot initialize irq domain\n", intc);
-+		kfree(priv);
-+		return -ENOMEM;
-+	}
-+
-+	irq_set_default_host(domain);
-+	pr_info("%pOFP: SH7751 Interrupt controller (%s external IRQ)",
-+		intc, priv->irlm ? "4 lines" : "15 level");
 +	return 0;
 +}
 +
-+IRQCHIP_DECLARE(sh_7751_intc,
-+		"renesas,sh7751-intc", sh7751_intc_of_init);
++static const struct irq_domain_ops sh7751irl_intc_domain_ops = {
++	.map = sh7751irl_intc_map,
++	.translate = sh7751irl_intc_translate,
++};
++
++static int __init load_irq_bit(struct device_node *node, struct sh7751irl_intc_priv *priv)
++{
++	struct property *enable_map;
++	const __be32 *p;
++	u32 nr_bits;
++	u32 irl;
++	int ret;
++
++	/* Fill in unused */
++	memset(priv->enable_bit, ~0, sizeof(priv->enable_bit));
++
++	enable_map = of_find_property(node, "renesas,enable-bit", &nr_bits);
++	if (IS_ERR(enable_map))
++		return PTR_ERR(enable_map);
++
++	nr_bits /= sizeof(u32);
++	/* 2words per entry. */
++	if (nr_bits % 2)
++		return -EINVAL;
++	nr_bits /= 2;
++	if (nr_bits > NR_IRL)
++		return -EINVAL;
++
++	ret = nr_bits;
++	p = NULL;
++	for (; nr_bits > 0; nr_bits--) {
++		/* 1st word - IRL */
++		p = of_prop_next_u32(enable_map, p, &irl);
++		if (!p || irl > NR_IRL)
++			return -EINVAL;
++		/* 2nd word - enable bit index */
++		p = of_prop_next_u32(enable_map, p, &priv->enable_bit[irl]);
++		if (priv->enable_bit[irl] >= priv->width)
++			return -EINVAL;
++	}
++	return ret;
++}
++
++static int __init sh7751irl_init(struct device_node *node, struct device_node *parent)
++{
++	struct sh7751irl_intc_priv *priv;
++	struct irq_domain *d;
++	void __iomem *base;
++	int ret = 0;
++
++	base = of_iomap(node, 0);
++	if (!base)
++		ret = -EINVAL;
++
++	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->base = base;
++	of_property_read_u32(node, "renesas,width", &priv->width);
++	if (priv->width != 8 && priv->width != 16 && priv->width != 32) {
++		pr_err("%pOFP: Invalid register width.\n", node);
++		ret = -EINVAL;
++		goto error;
++	}
++
++	priv->invert = of_property_read_bool(node, "renesas,set-to-disable");
++
++	ret = load_irq_bit(node, priv);
++	if (ret < 0) {
++		pr_err("%pOFP: Invalid register define.\n", node);
++		goto error;
++	}
++
++	d = irq_domain_add_tree(node, &sh7751irl_intc_domain_ops, priv);
++	if (d == NULL) {
++		pr_err("%pOFP: cannot initialize irq domain\n", node);
++		ret = -ENOMEM;
++		goto error;
++	}
++
++	priv->irq_domain = d;
++	irq_domain_update_bus_token(d, DOMAIN_BUS_WIRED);
++	pr_info("%pOFP: SH7751 External Interrupt encoder (input=%d)", node, ret);
++	return 0;
++error:
++	kfree(priv);
++	return ret;
++}
++
++IRQCHIP_DECLARE(renesas_sh7751_irl, "renesas,sh7751-irl-ext", sh7751irl_init);
 -- 
 2.39.2
 
