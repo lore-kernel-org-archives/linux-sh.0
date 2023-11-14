@@ -2,93 +2,107 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 356A6C4167D
-	for <linux-sh@archiver.kernel.org>; Tue, 14 Nov 2023 08:01:27 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 89F7EC4332F
+	for <linux-sh@archiver.kernel.org>; Tue, 14 Nov 2023 08:44:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232329AbjKNIB2 (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 14 Nov 2023 03:01:28 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:59628 "EHLO
+        id S232386AbjKNIoo (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 14 Nov 2023 03:44:44 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:45868 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232336AbjKNIB2 (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Nov 2023 03:01:28 -0500
-Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 549611A3
-        for <linux-sh@vger.kernel.org>; Tue, 14 Nov 2023 00:01:25 -0800 (PST)
-Received: from SIOS1075.ysato.name (ZM005235.ppp.dion.ne.jp [222.8.5.235])
-        by sakura.ysato.name (Postfix) with ESMTPSA id A5FBA1C058A;
-        Tue, 14 Nov 2023 17:01:24 +0900 (JST)
-From:   Yoshinori Sato <ysato@users.sourceforge.jp>
-To:     linux-sh@vger.kernel.org
-Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
+        with ESMTP id S232383AbjKNIon (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Nov 2023 03:44:43 -0500
+Received: from mail-lf1-x12d.google.com (mail-lf1-x12d.google.com [IPv6:2a00:1450:4864:20::12d])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6C70D1AC
+        for <linux-sh@vger.kernel.org>; Tue, 14 Nov 2023 00:44:39 -0800 (PST)
+Received: by mail-lf1-x12d.google.com with SMTP id 2adb3069b0e04-507a3b8b113so7512911e87.0
+        for <linux-sh@vger.kernel.org>; Tue, 14 Nov 2023 00:44:39 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1699951477; x=1700556277; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-language:in-reply-to:mime-version
+         :user-agent:date:message-id:from:references:cc:to:subject:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=alsjgVukxAaaCRca5VGVXkwLAgcro42wCnZAne3nZjU=;
+        b=IKvEJVjQc4U3T4h3XnyU7asmc7nbCfSdniOba7+i6AYP7eeaygtGpQ9W0svr6GI8w9
+         dKf/L2rZ68BPU/xKoxr7fFWpJElnx6ZPkhjZe9cQhMjGa0/RiIxsqIC72pPWyXyL4lOw
+         hlEk4RdTKORLDxzkYCj8slF0y/aQf/pc5OdTPkxDRxR1/63CrTpL8X8A7c9BhKkdGtYQ
+         J5GpA0OMyTYvoEenohFU9qRGOvziUjOPgYczStE6SAZSTPamtf/YP3Ok6at+AVqLOJuk
+         /Ts+22CIuwavgIdKshaUET3ojoa8IImh5pHQSUHNPWcxIaDsouH2upmvxgEDfBuy8gN9
+         +/yg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1699951477; x=1700556277;
+        h=content-transfer-encoding:content-language:in-reply-to:mime-version
+         :user-agent:date:message-id:from:references:cc:to:subject
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=alsjgVukxAaaCRca5VGVXkwLAgcro42wCnZAne3nZjU=;
+        b=gFqaw8oY9laekdapD6CmBS2oRpQI1Rnb2QHSA4be/NiaLt/Fqtn1DS+sc6RmMP0Rn8
+         OX0RBmfjDwugQZJuWeQI1kbqxkzHRSEPlHtXxNfRDezKf4am7JcrY46KrsTFfP5ClOAs
+         9YfEivyYb9ZmZrOoJJSdsFV+5BRPpPqrVVDYClOG+3kvRSYhIYLMxOZhsb/LOS1Z0za8
+         S7sjzXchA+ZZ53IpKvyWJtpXUFFE1KuPeEmMyXmIgMJMDQZvaF3Xw/U+Qbdi7SzCfD7n
+         kBn29PlERPeJBd7AzxHtMVvxvYoaNA3Wl/GCvu29DmvCd2m3UP2XqKU+AG94nyB3xY2R
+         tzKg==
+X-Gm-Message-State: AOJu0Yx21a/1sUupyNWSP1XfgToFjkID5y7wFs8Sf3UU5CN9BfCTzPd0
+        dWnjtbtbioarhdWlo0uj0aN3kK+xoXw=
+X-Google-Smtp-Source: AGHT+IF0GWwIa/uKhnPG0eflGMIj1Ext006rI7C4pc7m7sC4OLVvi3mX3gSwxpe2imbqK9lBig8N8A==
+X-Received: by 2002:a19:7507:0:b0:509:4559:27a9 with SMTP id y7-20020a197507000000b00509455927a9mr5866700lfe.8.1699951477113;
+        Tue, 14 Nov 2023 00:44:37 -0800 (PST)
+Received: from [192.168.1.103] ([178.176.75.241])
+        by smtp.gmail.com with ESMTPSA id s30-20020a195e1e000000b005079a3c872esm1268987lfb.240.2023.11.14.00.44.36
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 14 Nov 2023 00:44:36 -0800 (PST)
+Subject: Re: [PATCH v4 01/37] sh: passing FDT address to kernel startup.
+To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
+        linux-sh@vger.kernel.org
+Cc:     Rich Felker <dalias@libc.org>,
         John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Subject: [PATCH v4 37/37] sh: j2_defconfig: update
-Date:   Tue, 14 Nov 2023 17:00:28 +0900
-Message-Id: <b6076c1d315ee6fda3a481c32b31501eecbd1a62.1699856600.git.ysato@users.sourceforge.jp>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <cover.1699856600.git.ysato@users.sourceforge.jp>
 References: <cover.1699856600.git.ysato@users.sourceforge.jp>
+ <3b24a5ce5ecd00f8d48654ee2eff8340e2827169.1699856600.git.ysato@users.sourceforge.jp>
+From:   Sergei Shtylyov <sergei.shtylyov@gmail.com>
+Message-ID: <ae70a113-f37c-c2c7-306e-53b7c169f403@gmail.com>
+Date:   Tue, 14 Nov 2023 11:44:35 +0300
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101
+ Thunderbird/78.10.1
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+In-Reply-To: <3b24a5ce5ecd00f8d48654ee2eff8340e2827169.1699856600.git.ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset=utf-8
+Content-Language: en-US
+Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-I've changed some symbols related to DeviceTree,
-so let's take care of those changes.
+On 11/14/23 10:59 AM, Yoshinori Sato wrote:
 
-Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
----
- arch/sh/configs/j2_defconfig | 11 +++--------
- 1 file changed, 3 insertions(+), 8 deletions(-)
+> R4 is caller saved in SH ABI.
+> Save it so it doesn't get corrupted until it's needed for initialization.
+> 
+> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+> ---
+>  arch/sh/boot/compressed/head_32.S | 5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
+> 
+> diff --git a/arch/sh/boot/compressed/head_32.S b/arch/sh/boot/compressed/head_32.S
+> index 7bb168133dbb..b5ff297145b6 100644
+> --- a/arch/sh/boot/compressed/head_32.S
+> +++ b/arch/sh/boot/compressed/head_32.S
+> @@ -15,7 +15,8 @@ startup:
+>  	/* Load initial status register */
+>  	mov.l   init_sr, r1
+>  	ldc     r1, sr
+> -
+> +	/* Save FDT address */
+> +	mov	r4, r13
+>  	/* Move myself to proper location if necessary */
+>  	mova	1f, r0
+>  	mov.l	1f, r2
+> @@ -84,7 +85,7 @@ l1:
+>  	/* Jump to the start of the decompressed kernel */
+>  	mov.l	kernel_start_addr, r0
+>  	jmp	@r0
+> -	nop
+> +	 mov	r13,r4
 
-diff --git a/arch/sh/configs/j2_defconfig b/arch/sh/configs/j2_defconfig
-index 2eb81ebe3888..cdc8ed244618 100644
---- a/arch/sh/configs/j2_defconfig
-+++ b/arch/sh/configs/j2_defconfig
-@@ -1,18 +1,15 @@
--CONFIG_SMP=y
- CONFIG_SYSVIPC=y
- CONFIG_POSIX_MQUEUE=y
- CONFIG_NO_HZ=y
- CONFIG_HIGH_RES_TIMERS=y
- CONFIG_CPU_SUBTYPE_J2=y
- CONFIG_MEMORY_START=0x10000000
--CONFIG_MEMORY_SIZE=0x04000000
- CONFIG_CPU_BIG_ENDIAN=y
--CONFIG_SH_DEVICE_TREE=y
--CONFIG_SH_JCORE_SOC=y
-+CONFIG_SH_OF_BOARD=y
- CONFIG_HZ_100=y
-+CONFIG_SMP=y
- CONFIG_CMDLINE_OVERWRITE=y
- CONFIG_CMDLINE="console=ttyUL0 earlycon"
--CONFIG_BINFMT_ELF_FDPIC=y
- CONFIG_BINFMT_FLAT=y
- CONFIG_NET=y
- CONFIG_PACKET=y
-@@ -21,7 +18,6 @@ CONFIG_INET=y
- CONFIG_DEVTMPFS=y
- CONFIG_DEVTMPFS_MOUNT=y
- CONFIG_NETDEVICES=y
--CONFIG_SERIAL_EARLYCON=y
- CONFIG_SERIAL_UARTLITE=y
- CONFIG_SERIAL_UARTLITE_CONSOLE=y
- CONFIG_I2C=y
-@@ -30,8 +26,6 @@ CONFIG_SPI_JCORE=y
- CONFIG_WATCHDOG=y
- CONFIG_MMC=y
- CONFIG_MMC_SPI=y
--CONFIG_CLKSRC_JCORE_PIT=y
--CONFIG_JCORE_AIC=y
- CONFIG_EXT4_FS=y
- CONFIG_VFAT_FS=y
- CONFIG_FAT_DEFAULT_IOCHARSET="ascii"
-@@ -40,3 +34,4 @@ CONFIG_NLS_DEFAULT="utf8"
- CONFIG_NLS_CODEPAGE_437=y
- CONFIG_NLS_ASCII=y
- CONFIG_NLS_UTF8=y
-+CONFIG_INIT_STACK_NONE=y
--- 
-2.39.2
+   Space after comma still missing...
 
+[...]
+
+MBR, Sergey
