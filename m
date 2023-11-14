@@ -2,32 +2,30 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id DBCD6C4332F
-	for <linux-sh@archiver.kernel.org>; Tue, 14 Nov 2023 08:00:40 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 230F2C4167B
+	for <linux-sh@archiver.kernel.org>; Tue, 14 Nov 2023 08:00:42 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S232226AbjKNIAl (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 14 Nov 2023 03:00:41 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:37326 "EHLO
+        id S232241AbjKNIAn (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 14 Nov 2023 03:00:43 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46972 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232235AbjKNIAi (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Nov 2023 03:00:38 -0500
+        with ESMTP id S232242AbjKNIAm (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Nov 2023 03:00:42 -0500
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 278871A7
-        for <linux-sh@vger.kernel.org>; Tue, 14 Nov 2023 00:00:35 -0800 (PST)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTP id 95D6B19B
+        for <linux-sh@vger.kernel.org>; Tue, 14 Nov 2023 00:00:38 -0800 (PST)
 Received: from SIOS1075.ysato.name (ZM005235.ppp.dion.ne.jp [222.8.5.235])
-        by sakura.ysato.name (Postfix) with ESMTPSA id 3AB2D1C0314;
-        Tue, 14 Nov 2023 17:00:34 +0900 (JST)
+        by sakura.ysato.name (Postfix) with ESMTPSA id DACAA1C00A4;
+        Tue, 14 Nov 2023 17:00:37 +0900 (JST)
 From:   Yoshinori Sato <ysato@users.sourceforge.jp>
 To:     linux-sh@vger.kernel.org
 Cc:     Yoshinori Sato <ysato@users.sourceforge.jp>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Arnd Bergmann <arnd@arndb.de>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Randy Dunlap <rdunlap@infradead.org>
-Subject: [PATCH v4 02/37] sh: Kconfig unified OF supported targets.
-Date:   Tue, 14 Nov 2023 16:59:53 +0900
-Message-Id: <2e3530590d72257ac5cb657e4f4d4da3ec7d03e7.1699856600.git.ysato@users.sourceforge.jp>
+        Rob Herring <robh+dt@kernel.org>,
+        Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
+        Conor Dooley <conor+dt@kernel.org>
+Subject: [PATCH v4 04/37] dt-bindings: interrupt-controller: Add header for Renesas SH3/4 INTC.
+Date:   Tue, 14 Nov 2023 16:59:55 +0900
+Message-Id: <5d796f8d8e27a1c68f4103f9a0d92c84fb0bdda8.1699856600.git.ysato@users.sourceforge.jp>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <cover.1699856600.git.ysato@users.sourceforge.jp>
 References: <cover.1699856600.git.ysato@users.sourceforge.jp>
@@ -37,63 +35,36 @@ Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-Targets that support OF should be treated as one board.
+Renesas SH7751 Interrupt controller priority register define.
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/boards/Kconfig | 25 +++++++++++++++----------
- 1 file changed, 15 insertions(+), 10 deletions(-)
+ .../dt-bindings/interrupt-controller/sh_intc.h   | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+ create mode 100644 include/dt-bindings/interrupt-controller/sh_intc.h
 
-diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
-index 109bec4dad94..d95f078ff5c9 100644
---- a/arch/sh/boards/Kconfig
-+++ b/arch/sh/boards/Kconfig
-@@ -19,16 +19,10 @@ config SH_DEVICE_TREE
- 	select TIMER_OF
- 	select COMMON_CLK
- 	select GENERIC_CALIBRATE_DELAY
--
--config SH_JCORE_SOC
--	bool "J-Core SoC"
--	select SH_DEVICE_TREE
--	select CLKSRC_JCORE_PIT
--	select JCORE_AIC
--	depends on CPU_J2
--	help
--	  Select this option to include drivers core components of the
--	  J-Core SoC, including interrupt controllers and timers.
-+	select GENERIC_IOMAP
-+	select GENERIC_IRQ_CHIP
-+	select SYS_SUPPORTS_PCI
-+	select GENERIC_PCI_IOMAP if PCI
- 
- config SH_SOLUTION_ENGINE
- 	bool "SolutionEngine"
-@@ -293,6 +287,7 @@ config SH_LANDISK
- 	bool "LANDISK"
- 	depends on CPU_SUBTYPE_SH7751R
- 	select HAVE_PCI
-+	select SYS_SUPPORTS_PCI
- 	help
- 	  I-O DATA DEVICE, INC. "LANDISK Series" support.
- 
-@@ -369,6 +364,16 @@ config SH_APSH4AD0A
- 	help
- 	  Select AP-SH4AD-0A if configuring for an ALPHAPROJECT AP-SH4AD-0A.
- 
-+config SH_OF_BOARD
-+	bool "General Open Firmware boards"
-+	select SH_DEVICE_TREE
-+	select CLKSRC_JCORE_PIT if CPU_J2
-+	select JCORE_AIC if CPU_J2
-+	select HAVE_PCI if CPU_SUBTYPE_SH7751R
-+	help
-+	  This board means general OF supported targets.
+diff --git a/include/dt-bindings/interrupt-controller/sh_intc.h b/include/dt-bindings/interrupt-controller/sh_intc.h
+new file mode 100644
+index 000000000000..b399cd15e1a8
+--- /dev/null
++++ b/include/dt-bindings/interrupt-controller/sh_intc.h
+@@ -0,0 +1,16 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++ *
++ * SH3/4 INTC EVT - IRQ conversion
++ */
 +
++#define evt2irq(evt)		((evt) >> 5)
 +
- source "arch/sh/boards/mach-r2d/Kconfig"
- source "arch/sh/boards/mach-highlander/Kconfig"
- source "arch/sh/boards/mach-sdk7780/Kconfig"
++#define IPRA			0
++#define IPRB			4
++#define IPRC			8
++#define IPRD			12
++#define INTPRI00		256
++#define IPR_B12			12
++#define IPR_B8			8
++#define IPR_B4			4
++#define IPR_B0			0
 -- 
 2.39.2
 
