@@ -2,44 +2,49 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 2E5CDC4332F
-	for <linux-sh@archiver.kernel.org>; Tue, 14 Nov 2023 21:25:33 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 29034C4332F
+	for <linux-sh@archiver.kernel.org>; Tue, 14 Nov 2023 21:26:52 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229569AbjKNVZe (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Tue, 14 Nov 2023 16:25:34 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:46728 "EHLO
+        id S234061AbjKNV0x (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Tue, 14 Nov 2023 16:26:53 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:58900 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S232570AbjKNVZe (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Nov 2023 16:25:34 -0500
+        with ESMTP id S234101AbjKNV0v (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Tue, 14 Nov 2023 16:26:51 -0500
 Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 0B7A3C4
-        for <linux-sh@vger.kernel.org>; Tue, 14 Nov 2023 13:25:31 -0800 (PST)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 227F2C433C8;
-        Tue, 14 Nov 2023 21:25:30 +0000 (UTC)
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DA08D9D
+        for <linux-sh@vger.kernel.org>; Tue, 14 Nov 2023 13:26:47 -0800 (PST)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9C635C433C8;
+        Tue, 14 Nov 2023 21:26:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1699997130;
-        bh=Chln0XAasB8N+kyjgFCBd/VMzcU0OOFLHneza5HnYdg=;
+        s=k20201202; t=1699997207;
+        bh=G4UOyqFW7/2grUoRo1wpDfqGhvsX1iSaYuBOqWvnnKY=;
         h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-        b=i8AvjfWuGGn4PWPiNhigRonqqwLcos+89fIwqFvQXXCfHKZTBXGEmyT4vI7MyoRET
-         4SCG74JsbknOgx9D1CT6PvzcX47I92IvqkQT3vpr3pqvQLDIG7da/JOqCP5g+s8M1b
-         IMR7zpyx1p85fX0HMt91Ot9dZm9kIUcUbYD6oPZBIeoXUtddPTzbuhXLUgrguo/rPH
-         Jvdxr6wbwAtf/nttyl/13ocW7VHftDlh34HrLatyzDREWs/qr+y+7ooQD8cdes/k24
-         J4pvptlfg3BzxintRSuodeJVdmjdtes3TM1YyMC45w3pqRpU3yp0tI2Njm/DxxUu0a
-         33V56QBm7xhWA==
-Message-ID: <fb3f336e-3325-48eb-8ce2-63872e59858a@kernel.org>
-Date:   Tue, 14 Nov 2023 22:25:27 +0100
+        b=mBsrf4EuF+/yFCWdsnWNDY4+G6OwYQ/yXZc7oCU511yo/cSILszoxLw30Ybn+KT1N
+         DrZkZQnTtmd/nhSzFwIzw3uWFzegsFeHMin6r7xxdVjV5ks1q6GimvtxHAoScUBS8H
+         6jFeOcqEdUa4YzI8tN4Zk2jB0zscsWWfdIKAKEzYa38roVdXazU1QC5TUK1x7SQuht
+         W5/gZoThwoI0xzXcmEttkuQqjuSh3brI1kOA6KwkE5c0tqoQ1nch0xwAOzzIPzQQBJ
+         eFdPInV8dbgBWQ4fGpQHR0wQUHwXxZ7HvQ2zx8jNGEZhjXa/qEEXO8f7jHwBNNH4TQ
+         oQ8C1yaX/gaqg==
+Message-ID: <c7202095-1219-4cbd-ace4-23b6e7784f11@kernel.org>
+Date:   Tue, 14 Nov 2023 22:26:45 +0100
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v4 04/37] dt-bindings: interrupt-controller: Add header
- for Renesas SH3/4 INTC.
+Subject: Re: [PATCH v4 09/37] dt-bindings: timer: renesas,tmu: add
+ renesas,tmu-sh7750
+Content-Language: en-US
 To:     Yoshinori Sato <ysato@users.sourceforge.jp>,
         linux-sh@vger.kernel.org
-Cc:     Rob Herring <robh+dt@kernel.org>,
+Cc:     Daniel Lezcano <daniel.lezcano@linaro.org>,
+        Thomas Gleixner <tglx@linutronix.de>,
+        Rob Herring <robh+dt@kernel.org>,
         Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
-        Conor Dooley <conor+dt@kernel.org>
+        Conor Dooley <conor+dt@kernel.org>,
+        Geert Uytterhoeven <geert+renesas@glider.be>,
+        Magnus Damm <magnus.damm@gmail.com>,
+        Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 References: <cover.1699856600.git.ysato@users.sourceforge.jp>
- <5d796f8d8e27a1c68f4103f9a0d92c84fb0bdda8.1699856600.git.ysato@users.sourceforge.jp>
-Content-Language: en-US
+ <31c717c18bd94839d46c4de726cc573ff563b3e1.1699856600.git.ysato@users.sourceforge.jp>
 From:   Krzysztof Kozlowski <krzk@kernel.org>
 Autocrypt: addr=krzk@kernel.org; keydata=
  xsFNBFVDQq4BEAC6KeLOfFsAvFMBsrCrJ2bCalhPv5+KQF2PS2+iwZI8BpRZoV+Bd5kWvN79
@@ -84,67 +89,66 @@ Autocrypt: addr=krzk@kernel.org; keydata=
  uZwJCLykjad45hsWcOGk3OcaAGQS6NDlfhM6O9aYNwGL6tGt/6BkRikNOs7VDEa4/HlbaSJo
  7FgndGw1kWmkeL6oQh7wBvYll2buKod4qYntmNKEicoHGU+x91Gcan8mCoqhJkbqrL7+nXG2
  5Q/GS5M9RFWS+nYyJh+c3OcfKqVcZQNANItt7+ULzdNJuhvTRRdC3g9hmCEuNSr+CLMdnRBY fv0=
-In-Reply-To: <5d796f8d8e27a1c68f4103f9a0d92c84fb0bdda8.1699856600.git.ysato@users.sourceforge.jp>
+In-Reply-To: <31c717c18bd94839d46c4de726cc573ff563b3e1.1699856600.git.ysato@users.sourceforge.jp>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On 14/11/2023 08:59, Yoshinori Sato wrote:
-> Renesas SH7751 Interrupt controller priority register define.
+On 14/11/2023 09:00, Yoshinori Sato wrote:
+> Add SH7750 TMU entry.
 > 
 > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+
+Still not tested.
+
+I repeated it multiple times. Please answer below, whether you
+understand it:
+
+Please use scripts/get_maintainers.pl to get a list of necessary people
+and lists to CC. It might happen, that command when run on an older
+kernel, gives you outdated entries. Therefore please be sure you base
+your patches on recent Linux kernel.
+
+You missed at least devicetree list (maybe more), so this won't be
+tested by automated tooling. Performing review on untested code might be
+a waste of time, thus I will skip this patch entirely till you follow
+the process allowing the patch to be tested.
+
+Please kindly resend and include all necessary To/Cc entries.
+
 > ---
-
-I never received any answer to my comments and I do not see all of them
-addressed.
-
-I don't understand exactly why... old patches were called RFC, but this
-one is not.
-
-No one likes to repeat himself, so I will just ask - please implement
-entire feedback from all previous revisions.
-
-Including the missing testing (proper get_maintainers.pl).
-
-Otherwise it will be a string NAK.
-
->  .../dt-bindings/interrupt-controller/sh_intc.h   | 16 ++++++++++++++++
->  1 file changed, 16 insertions(+)
->  create mode 100644 include/dt-bindings/interrupt-controller/sh_intc.h
+>  .../devicetree/bindings/timer/renesas,tmu.yaml        | 11 ++++++++++-
+>  1 file changed, 10 insertions(+), 1 deletion(-)
 > 
-> diff --git a/include/dt-bindings/interrupt-controller/sh_intc.h b/include/dt-bindings/interrupt-controller/sh_intc.h
-> new file mode 100644
-> index 000000000000..b399cd15e1a8
-> --- /dev/null
-> +++ b/include/dt-bindings/interrupt-controller/sh_intc.h
-
-Naming based on compatible.
-
-> @@ -0,0 +1,16 @@
-> +/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
-> + *
-> + * SH3/4 INTC EVT - IRQ conversion
-> + */
-
-Missing guards.
-
+> diff --git a/Documentation/devicetree/bindings/timer/renesas,tmu.yaml b/Documentation/devicetree/bindings/timer/renesas,tmu.yaml
+> index a67e427a9e7e..925c2a691b25 100644
+> --- a/Documentation/devicetree/bindings/timer/renesas,tmu.yaml
+> +++ b/Documentation/devicetree/bindings/timer/renesas,tmu.yaml
+> @@ -21,6 +21,7 @@ properties:
+>    compatible:
+>      items:
+>        - enum:
+> +          - renesas,tmu-sh7750   # SH7750
+>            - renesas,tmu-r8a7740  # R-Mobile A1
+>            - renesas,tmu-r8a774a1 # RZ/G2M
+>            - renesas,tmu-r8a774b1 # RZ/G2N
+> @@ -46,7 +47,14 @@ properties:
+>  
+>    interrupts:
+>      minItems: 2
+> -    maxItems: 3
+> +    maxItems: 4
 > +
-> +#define evt2irq(evt)		((evt) >> 5)
-> +
-> +#define IPRA			0
-> +#define IPRB			4
-> +#define IPRC			8
-> +#define IPRD			12
-> +#define INTPRI00		256
-> +#define IPR_B12			12
-> +#define IPR_B8			8
-> +#define IPR_B4			4
-> +#define IPR_B0			0
+> +  interrupt-names:
+> +    items:
+> +      - const: tuni0
+> +      - const: tuni1
+> +      - const: tuni2
+> +      - const: ticpi2
 
-That's not a binding and I think we told this.
-
+Other variants should be constrained to three items.
 
 Best regards,
 Krzysztof
