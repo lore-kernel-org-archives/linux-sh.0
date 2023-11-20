@@ -2,83 +2,68 @@ Return-Path: <linux-sh-owner@vger.kernel.org>
 X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
 	aws-us-west-2-korg-lkml-1.web.codeaurora.org
 Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id 85A57C197A0
-	for <linux-sh@archiver.kernel.org>; Mon, 20 Nov 2023 18:16:06 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id E1DC1C197A0
+	for <linux-sh@archiver.kernel.org>; Mon, 20 Nov 2023 18:29:19 +0000 (UTC)
 Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
-        id S229754AbjKTSQI (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
-        Mon, 20 Nov 2023 13:16:08 -0500
-Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44806 "EHLO
+        id S231668AbjKTS3V (ORCPT <rfc822;linux-sh@archiver.kernel.org>);
+        Mon, 20 Nov 2023 13:29:21 -0500
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:34306 "EHLO
         lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-        with ESMTP id S229570AbjKTSQH (ORCPT
-        <rfc822;linux-sh@vger.kernel.org>); Mon, 20 Nov 2023 13:16:07 -0500
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C82D1BC
-        for <linux-sh@vger.kernel.org>; Mon, 20 Nov 2023 10:16:03 -0800 (PST)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2E554C433C8;
-        Mon, 20 Nov 2023 18:16:03 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-        s=k20201202; t=1700504163;
-        bh=JZkT7XSKth3smWxYN2XZaH+Wmhd2XRvAegz7wBiv1+s=;
-        h=Date:From:To:Cc:Subject:In-Reply-To:From;
-        b=EhSvRWScvSo54wyp8cGwMjEqRU6cV1J/NDQL/nUoXtdktqsr4UX+/6cdZR/Qw/cJl
-         7SPjo/Tfy9IlEvs0bWpNwQLfuT7/jDPNSX2KQRreuQnJv2GPSaZmRvHA3IPyneL8hb
-         qJVpcCvQG+DchdIQKyeWXV02NSVzW+QOA6xF5ZDew5xdpcDSoQUA8MN6gT58L2GTlD
-         N3LFqsjZWn73bVul38jPeU+2uXXufmeDbftp0LctfuvI+C1e94qT/f5XzGu+p5LYY0
-         Rm7nAYLmbPllgqB4ginhGSmqv3xJJ9Ka4JRpmNLu+WEfwWC72g9lhr0FcSBzxj939g
-         NXAjzDdvqp50Q==
-Date:   Mon, 20 Nov 2023 12:16:00 -0600
-From:   Bjorn Helgaas <helgaas@kernel.org>
-To:     Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc:     linux-sh@vger.kernel.org,
-        Lorenzo Pieralisi <lpieralisi@kernel.org>,
-        Krzysztof =?utf-8?Q?Wilczy=C5=84ski?= <kw@linux.com>,
-        Rob Herring <robh@kernel.org>,
-        Bjorn Helgaas <bhelgaas@google.com>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Magnus Damm <magnus.damm@gmail.com>
-Subject: Re: [PATCH v4 12/37] pci: pci-sh7751: Add SH7751 PCI driver
-Message-ID: <20231120181600.GA205977@bhelgaas>
+        with ESMTP id S229645AbjKTS3V (ORCPT
+        <rfc822;linux-sh@vger.kernel.org>); Mon, 20 Nov 2023 13:29:21 -0500
+Received: from laurent.telenet-ops.be (laurent.telenet-ops.be [IPv6:2a02:1800:110:4::f00:19])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 90917C9
+        for <linux-sh@vger.kernel.org>; Mon, 20 Nov 2023 10:29:16 -0800 (PST)
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:6bd9:a79:1d00:5285])
+        by laurent.telenet-ops.be with bizsmtp
+        id CiVE2B00u0Wid3g01iVEGM; Mon, 20 Nov 2023 19:29:14 +0100
+Received: from geert (helo=localhost)
+        by ramsan.of.borg with local-esmtp (Exim 4.95)
+        (envelope-from <geert@linux-m68k.org>)
+        id 1r591G-009smt-DO;
+        Mon, 20 Nov 2023 19:29:14 +0100
+Date:   Mon, 20 Nov 2023 19:29:14 +0100 (CET)
+From:   Geert Uytterhoeven <geert@linux-m68k.org>
+To:     linux-kernel@vger.kernel.org
+cc:     linux-sh@vger.kernel.org
+Subject: Re: Build regressions/improvements in v6.7-rc2
+In-Reply-To: <20231120163923.3778033-1-geert@linux-m68k.org>
+Message-ID: <29ec93f8-c23d-7a35-fbb2-40f9755da917@linux-m68k.org>
+References: <CAHk-=wj6j3U5r8ixVf_RQXwRYD03DuEqnX2ZsfYwvB-9YxQNLA@mail.gmail.com> <20231120163923.3778033-1-geert@linux-m68k.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <90c0f0810c778e4f515bb9d8582b501d77e2bf1a.1699856600.git.ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset=US-ASCII; format=flowed
 Precedence: bulk
 List-ID: <linux-sh.vger.kernel.org>
 X-Mailing-List: linux-sh@vger.kernel.org
 
-On Tue, Nov 14, 2023 at 05:00:03PM +0900, Yoshinori Sato wrote:
-> Renesas SH7751 CPU Internal PCI Controller driver.
+On Mon, 20 Nov 2023, Geert Uytterhoeven wrote:
+> JFYI, when comparing v6.7-rc2[1] to v6.7-rc1[3], the summaries are:
+>  - build errors: +11/-0
 
-I sent comments on this that seem to have been mostly ignored:
+   + {standard input}: Error: displacement to undefined symbol .L101 overflows 8-bit field :  => 593
+   + {standard input}: Error: displacement to undefined symbol .L105 overflows 8-bit field : 593 => 593, 590
+   + {standard input}: Error: displacement to undefined symbol .L135 overflows 8-bit field :  => 603
+   + {standard input}: Error: displacement to undefined symbol .L139 overflows 8-bit field :  => 606
+   + {standard input}: Error: displacement to undefined symbol .L73 overflows 12-bit field:  => 594
+   + {standard input}: Error: displacement to undefined symbol .L74 overflows 8-bit field :  => 585
+   + {standard input}: Error: displacement to undefined symbol .L76 overflows 12-bit field: 594 => 594, 591
+   + {standard input}: Error: displacement to undefined symbol .L77 overflows 8-bit field : 607, 585 => 607, 585, 582
+   + {standard input}: Error: displacement to undefined symbol .L81 overflows 8-bit field : 610, 604 => 606, 610, 604
+   + {standard input}: Error: displacement to undefined symbol .L99 overflows 12-bit field:  => 607
+   + {standard input}: Error: pcrel too far: 577, 569, 598, 596, 599, 590, 604, 593, 610, 572 => 596, 569, 577, 601, 610, 572, 604, 590, 599, 598, 593, 595, 574
 
-  https://lore.kernel.org/r/20231016172742.GA1215127@bhelgaas
+More sh4 ICE casualties.
 
-After this series, we have both:
+> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/98b1cc82c4affc16f5598d4fa14b1858671b2263/ (all 239 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/b85ea95d086471afb4ad062012a4d73cd328fa86/ (238 out of 239 configs)
 
-  arch/sh/drivers/pci/pci-sh7751.c
-  drivers/pci/controller/pci-sh7751.c
+Gr{oetje,eeting}s,
 
-They don't *look* very similar, so maybe we need both.  But I don't
-know what the difference is.
+ 						Geert
 
-Also git am complains when applying this series (also mentioned in the
-previous email above):
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
-  Applying: sh: passing FDT address to kernel startup.
-  .git/rebase-apply/patch:25: trailing whitespace.
-
-  warning: 1 line adds whitespace errors.
-  Applying: irqchip: SH7751 IRL external encoder with enable gate.
-  .git/rebase-apply/patch:33: new blank line at EOF.
-  +
-  warning: 1 line adds whitespace errors.
-
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> ---
->  drivers/pci/controller/Kconfig      |   9 +
->  drivers/pci/controller/Makefile     |   1 +
->  drivers/pci/controller/pci-sh7751.c | 293 ++++++++++++++++++++++++++++
->  3 files changed, 303 insertions(+)
->  create mode 100644 drivers/pci/controller/pci-sh7751.c
-
-Bjorn
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+ 							    -- Linus Torvalds
