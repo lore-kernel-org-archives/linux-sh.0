@@ -1,83 +1,102 @@
-Return-Path: <linux-sh+bounces-1-linux-sh=archiver.kernel.org@vger.kernel.org>
-X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
-	aws-us-west-2-korg-lkml-1.web.codeaurora.org
-Received: from am.mirrors.kernel.org (am.mirrors.kernel.org [147.75.80.249])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by smtp.lore.kernel.org (Postfix) with ESMTPS id CEA1EC197A0
-	for <linux-sh@archiver.kernel.org>; Mon, 20 Nov 2023 23:54:54 +0000 (UTC)
-Received: from smtp.subspace.kernel.org (wormhole.subspace.kernel.org [52.25.139.140])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by am.mirrors.kernel.org (Postfix) with ESMTPS id 4AA3D1F25089
-	for <linux-sh@archiver.kernel.org>; Mon, 20 Nov 2023 23:54:53 +0000 (UTC)
-Received: from localhost.localdomain (localhost.localdomain [127.0.0.1])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id B7EC93B2B7;
-	Mon, 20 Nov 2023 23:54:51 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="DXz+XwPx"
-Received: from smtp.kernel.org (relay.kernel.org [52.25.139.140])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id BA1AECD;
-	Mon, 20 Nov 2023 15:54:48 -0800 (PST)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4E136C433C7;
-	Mon, 20 Nov 2023 23:54:47 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1700524488;
-	bh=IkpIZj++DJgUNFvrpRT/go6WOMEZiOgtvEqU2kpcy+o=;
-	h=From:To:Cc:Subject:Date:From;
-	b=DXz+XwPxEaFg7E7aF4yQHNjaOd0eD2gksxKsFF5RcAx6Piy6+mqkPE/LFE6Y+w08D
-	 cKVqaeX3XHn0x6zx72LzYWnSwZYz1pG6/BSUTzdl9vZZfTHT9kzL2hTMYVIzgsLgb4
-	 3ZB2TnJOTaJkS50yuU2XazXA26XROj9RYl9aE1DDviJG6ilLzaxd1PDVRSwtpN4ce8
-	 lW6lOGVC7Fu2j/tBgfXexhrRCL47I7SZW4td35vY9QOVkYemQxl09jYzKWk1RnvOY/
-	 usQhTteBKJ/GyUHq0XDgSUsTha+EuXM2f/RMYCkm7b7GXqBQQngOUxtCDJKDf2vrSl
-	 34jcPPxiWQUkg==
-From: Masahiro Yamada <masahiroy@kernel.org>
-To: Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	linux-sh@vger.kernel.org
-Cc: Masahiro Yamada <masahiroy@kernel.org>,
-	linux-kernel@vger.kernel.org
-Subject: [PATCH] sh: remove unneeded $(foreach )
-Date: Tue, 21 Nov 2023 08:54:23 +0900
-Message-Id: <20231120235423.4103310-1-masahiroy@kernel.org>
-X-Mailer: git-send-email 2.40.1
+	dkim=pass (2048-bit key) header.d=ellerman.id.au header.i=@ellerman.id.au header.b="oWW1QkZz"
+Received: from gandalf.ozlabs.org (mail.ozlabs.org [IPv6:2404:9400:2221:ea00::3])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D83F1BC;
+	Mon, 20 Nov 2023 17:06:22 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ellerman.id.au;
+	s=201909; t=1700528778;
+	bh=a1oDztLoqCcees2awcLjiaomu8bb0ZU8fyFhFCJHT4Y=;
+	h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
+	b=oWW1QkZze+kq8dXCMwzP9xmtsiBPKW/hq5HCmqkQq67lD/f/fkTpd/U8FMenAoeLl
+	 J1jHM3vpiqO6+SZ8oTRmtfdXJh/kl4ccKcHX93lWk6Fma5jYDgW+qHGJ9G1c3wWEWD
+	 7wf1DanMy/hBgRK5n8rOjbSflcR7GKDrM1MFeaKqqOQQlvcOByEoS81ZnH8kRCiVRW
+	 Sitlo5WEKfvTkyRjxvm6DcVAjGDg3Q0vGj0AeAoNLiUIP8cnYZXsQFMSjypuMtAUTc
+	 2SzMvY2J7oKCYA9k2z45igYP3WpwqyzkKDLwx57xpFYnZrXJC9CTNoEySocvsKn9xW
+	 xnByzdpmU0vWQ==
+Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by mail.ozlabs.org (Postfix) with ESMTPSA id 4SZ5mB3sycz4wd7;
+	Tue, 21 Nov 2023 12:06:02 +1100 (AEDT)
+From: Michael Ellerman <mpe@ellerman.id.au>
+To: Ignat Korchagin <ignat@cloudflare.com>, eric.devolder@oracle.com
+Cc: linux@armlinux.org.uk, catalin.marinas@arm.com, will@kernel.org,
+ chenhuacai@kernel.org, geert@linux-m68k.org, tsbogend@alpha.franken.de,
+ James Bottomley <James.Bottomley@hansenpartnership.com>, deller@gmx.de,
+ ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de,
+ Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>,
+ Borislav Petkov <bp@alien8.de>, dave.hansen@linux.intel.com,
+ x86@kernel.org, linux-kernel <linux-kernel@vger.kernel.org>,
+ linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
+ loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+ linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+ linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+ linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, kernel@xen0n.name,
+ npiggin@gmail.com, christophe.leroy@csgroup.eu, paul.walmsley@sifive.com,
+ palmer@dabbelt.com, aou@eecs.berkeley.edu, hca@linux.ibm.com,
+ gor@linux.ibm.com, agordeev@linux.ibm.com, borntraeger@linux.ibm.com,
+ svens@linux.ibm.com, hpa@zytor.com, keescook@chromium.org,
+ paulmck@kernel.org, Peter Zijlstra <peterz@infradead.org>,
+ frederic@kernel.org, Andrew Morton <akpm@linux-foundation.org>, Ard
+ Biesheuvel <ardb@kernel.org>, samitolvanen@google.com,
+ juerg.haefliger@canonical.com, arnd@arndb.de, rmk+kernel@armlinux.org.uk,
+ linus.walleij@linaro.org, sebastian.reichel@collabora.com,
+ rppt@kernel.org, kirill.shutemov@linux.intel.com,
+ anshuman.khandual@arm.com, ziy@nvidia.com, masahiroy@kernel.org,
+ ndesaulniers@google.com, mhiramat@kernel.org, ojeda@kernel.org,
+ thunder.leizhen@huawei.com, xin3.li@intel.com, tj@kernel.org, Greg KH
+ <gregkh@linuxfoundation.org>, tsi@tuyoix.net, bhe@redhat.com,
+ hbathini@linux.ibm.com, sourabhjain@linux.ibm.com,
+ boris.ostrovsky@oracle.com, konrad.wilk@oracle.com, kernel-team
+ <kernel-team@cloudflare.com>
+Subject: Re: Potential config regression after 89cde455 ("kexec: consolidate
+ kexec and crash options into kernel/Kconfig.kexec")
+In-Reply-To: <CALrw=nHpRQQaQTP_jZfREgrQEMpS8jBF8JQCv4ygqXycE-StaA@mail.gmail.com>
+References: <CALrw=nHpRQQaQTP_jZfREgrQEMpS8jBF8JQCv4ygqXycE-StaA@mail.gmail.com>
+Date: Tue, 21 Nov 2023 12:05:59 +1100
+Message-ID: <87y1er6hl4.fsf@mail.lhotse>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
 
-There is no need to use $(foreach ...) for iterating over just one
-parameter.
+Ignat Korchagin <ignat@cloudflare.com> writes:
+> Good day!
+>
+> We have recently started to evaluate Linux 6.6 and noticed that we
+> cannot disable CONFIG_KEXEC anymore, but keep CONFIG_CRASH_DUMP
+> enabled. It seems to be related to commit 89cde455 ("kexec:
+> consolidate kexec and crash options into kernel/Kconfig.kexec"), where
+> a CONFIG_KEXEC dependency was added to CONFIG_CRASH_DUMP.
+>
+> In our current kernel (Linux 6.1) we only enable CONFIG_KEXEC_FILE
+> with enforced signature check to support the kernel crash dumping
+> functionality and would like to keep CONFIG_KEXEC disabled for
+> security reasons [1].
+>
+> I was reading the long commit message, but the reason for adding
+> CONFIG_KEXEC as a dependency for CONFIG_CRASH_DUMP evaded me. And I
+> believe from the implementation perspective CONFIG_KEXEC_FILE should
+> suffice here (as we successfully used it for crashdumps on Linux 6.1).
+>
+> Is there a reason for adding this dependency or is it just an
+> oversight? Would some solution of requiring either CONFIG_KEXEC or
+> CONFIG_KEXEC_FILE work here?
 
-Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
----
+I don't actually see any reason for CRASH_DUMP to depend on KEXEC or
+KEXEC_FILE.
 
- arch/sh/kernel/vsyscall/Makefile | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+None of the old CRASH_DUMP symbols depended on KEXEC AFAICS. Using
+something like:
 
-diff --git a/arch/sh/kernel/vsyscall/Makefile b/arch/sh/kernel/vsyscall/Makefile
-index 6e8664448048..118744d349e2 100644
---- a/arch/sh/kernel/vsyscall/Makefile
-+++ b/arch/sh/kernel/vsyscall/Makefile
-@@ -1,11 +1,10 @@
- # SPDX-License-Identifier: GPL-2.0
- obj-y += vsyscall.o vsyscall-syscall.o vsyscall-syms.o
- 
--$(obj)/vsyscall-syscall.o: \
--	$(foreach F,trapa,$(obj)/vsyscall-$F.so)
-+$(obj)/vsyscall-syscall.o: $(obj)/vsyscall-trapa.so
- 
- # Teach kbuild about targets
--targets += $(foreach F,trapa,vsyscall-$F.o vsyscall-$F.so)
-+targets += vsyscall-trapa.o vsyscall-traps.so
- targets += vsyscall-note.o vsyscall.lds vsyscall-dummy.o
- 
- # The DSO images are built using a special linker script
--- 
-2.40.1
+ $ git diff 89cde455..95d1fef5 | grep -A 3 "^-.*config CRASH_DUMP"
 
+It's reasonable to want to build a kernel that supports CRASH_DUMP (ie.
+can be a dump kernel), but doesn't support kexec and requires a regular
+reboot. Though I doubt anyone does that in practice?
 
+cheers
