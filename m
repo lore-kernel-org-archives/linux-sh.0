@@ -1,144 +1,98 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="BrK97EPT"
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D786510C
-	for <linux-sh@vger.kernel.org>; Tue, 21 Nov 2023 01:56:51 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1700560611;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=fPhHnmk39Y9ZPUQmNMZM/ZG0TQ3kydRNczl6JxMjmic=;
-	b=BrK97EPTcoWOIsSXhxD+pyl7+HZCnNyf8nTy31PodCOw8TujnJ9JNT/DRqpSgsWTBb0k/Z
-	7P5TB7Y7TKV5ORLyEnZA4w261ZgHufN3I/xyJu6eVRrHH6yYeg6sKfn/TV/C8qe55kImwU
-	iBhNTZqe7V707c+Lxm2mKS2Gze3F0Pc=
-Received: from mimecast-mx02.redhat.com (mx-ext.redhat.com [66.187.233.73])
- by relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-642-FAApqMXDNLKIjte47nBJcQ-1; Tue,
- 21 Nov 2023 04:56:47 -0500
-X-MC-Unique: FAApqMXDNLKIjte47nBJcQ-1
-Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.rdu2.redhat.com [10.11.54.5])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id C91B73813F30;
-	Tue, 21 Nov 2023 09:56:46 +0000 (UTC)
-Received: from localhost (unknown [10.72.112.97])
-	by smtp.corp.redhat.com (Postfix) with ESMTPS id C61FF502A;
-	Tue, 21 Nov 2023 09:56:44 +0000 (UTC)
-Date: Tue, 21 Nov 2023 17:56:42 +0800
-From: Baoquan He <bhe@redhat.com>
-To: Ignat Korchagin <ignat@cloudflare.com>
-Cc: eric_devolder@yahoo.com, linux@armlinux.org.uk, catalin.marinas@arm.com,
-	will@kernel.org, chenhuacai@kernel.org, geert@linux-m68k.org,
-	tsbogend@alpha.franken.de,
-	James Bottomley <James.Bottomley@hansenpartnership.com>,
-	deller@gmx.de, ysato@users.sourceforge.jp, dalias@libc.org,
-	glaubitz@physik.fu-berlin.de, Thomas Gleixner <tglx@linutronix.de>,
-	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-	dave.hansen@linux.intel.com, x86@kernel.org,
-	linux-kernel <linux-kernel@vger.kernel.org>,
-	linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
-	loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-	linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-	kernel@xen0n.name, mpe@ellerman.id.au, npiggin@gmail.com,
-	christophe.leroy@csgroup.eu, paul.walmsley@sifive.com,
-	palmer@dabbelt.com, aou@eecs.berkeley.edu, hca@linux.ibm.com,
-	gor@linux.ibm.com, agordeev@linux.ibm.com,
-	borntraeger@linux.ibm.com, svens@linux.ibm.com, hpa@zytor.com,
-	keescook@chromium.org, paulmck@kernel.org,
-	Peter Zijlstra <peterz@infradead.org>, frederic@kernel.org,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Ard Biesheuvel <ardb@kernel.org>, samitolvanen@google.com,
-	juerg.haefliger@canonical.com, arnd@arndb.de,
-	rmk+kernel@armlinux.org.uk, linus.walleij@linaro.org,
-	sebastian.reichel@collabora.com, rppt@kernel.org,
-	kirill.shutemov@linux.intel.com, anshuman.khandual@arm.com,
-	ziy@nvidia.com, masahiroy@kernel.org, ndesaulniers@google.com,
-	mhiramat@kernel.org, ojeda@kernel.org, thunder.leizhen@huawei.com,
-	xin3.li@intel.com, tj@kernel.org,
-	Greg KH <gregkh@linuxfoundation.org>, tsi@tuyoix.net,
-	hbathini@linux.ibm.com, sourabhjain@linux.ibm.com,
-	boris.ostrovsky@oracle.com, konrad.wilk@oracle.com,
-	kernel-team <kernel-team@cloudflare.com>
-Subject: Re: Potential config regression after 89cde455 ("kexec: consolidate
- kexec and crash options into kernel/Kconfig.kexec")
-Message-ID: <ZVx+2lfTckjv/kiq@MiWiFi-R3L-srv>
-References: <CALrw=nHpRQQaQTP_jZfREgrQEMpS8jBF8JQCv4ygqXycE-StaA@mail.gmail.com>
- <ZVwMzXxWkgonIAfc@MiWiFi-R3L-srv>
- <CALrw=nG8xsYw7XKyL_VMHtKiaBcQCKvC8UVp-C9-BdeN4A1Daw@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="D0eUIQ7y"
+Received: from mail-yw1-x112e.google.com (mail-yw1-x112e.google.com [IPv6:2607:f8b0:4864:20::112e])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 43711D6A;
+	Tue, 21 Nov 2023 05:43:07 -0800 (PST)
+Received: by mail-yw1-x112e.google.com with SMTP id 00721157ae682-5b383b4184fso61241677b3.1;
+        Tue, 21 Nov 2023 05:43:07 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1700574186; x=1701178986; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=J2jFoW0wBrxwvC3UXYdoI7e4rK6JjoL9RV6ETRvSTJs=;
+        b=D0eUIQ7yctSuBZfEjSKxJnHVFfz7lYp1J9acKXYD0Ouwo3eAFp7aOvThGu6xz75Xk6
+         IRSwlmUIi0gK0iWVo5TqI5BiPpwXPaPDZQ6W6AUY4UWVP1pykWDxZKlpEcQbQjzjmau9
+         ZBSfXRnzoDdCsY7hlyR+i2R0Ew20Fjjo3uUKuBqk5d450aN3o+p9vYeV8vcqdZlH63WF
+         jv00KgQYryWegThy0XYS49Ol0njsfl9hNmkTdeuGULFpMOjMGM5QNO/Cn4bTnITytzih
+         DZcXrQ6SiDwIXb8YpLsurOLP6MhViD7D8VCSevHJ8ZsYAt0U03cEiGux8wj+AHr+zvim
+         nRIw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1700574186; x=1701178986;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=J2jFoW0wBrxwvC3UXYdoI7e4rK6JjoL9RV6ETRvSTJs=;
+        b=hV3HhXT9vLiTkmZ4liBU9DJGZVxxqh6p83SVs34ToCCfrMg1/LLXh4/lZ2/BLIBlpj
+         NrkJz+b+g/EdrfiLLFXpiVRtnizVKzsW4jQDK5Q9Q+VXJiDG5VZpZe8i0jvMquaUn09l
+         Gsozx5Nbt8tDFiYclTDKB5NHwgiXf9DAiToFXHsxRpEIUlA1dlTaY7ffOK9qfE0ND7j6
+         2UBH+eJHZMBmtEmFljI3PRFabkcNo6w4e7eHHemlmupRO9XK2v63PTOAgh4+Lx0O6ox7
+         tHqvNGeWQLgELcreWILjwK1B6iG/rGKt/gV8JZsxMJs83fX2AIzlrH6n+oFqyNNdV059
+         4Sfg==
+X-Gm-Message-State: AOJu0YzcqB7jNLW8UsveMzUekA0tExCkDtVlmlox2VFvxtJGdb9nktBy
+	902qYQnlz5hbJ+2IMyiemrs=
+X-Google-Smtp-Source: AGHT+IE7zExNj2xD3/09eeu2XxcaCzvGOCX3w8yszWNCW6JxpL819+KOWL2DAlSHRSD2xYNRXLB8Dg==
+X-Received: by 2002:a05:690c:80a:b0:5cb:95e8:16ba with SMTP id bx10-20020a05690c080a00b005cb95e816bamr1655104ywb.46.1700574186241;
+        Tue, 21 Nov 2023 05:43:06 -0800 (PST)
+Received: from localhost ([2601:344:8301:57f0:e005:b808:45e:1b60])
+        by smtp.gmail.com with ESMTPSA id x83-20020a814a56000000b005bf57ef572dsm2975977ywa.140.2023.11.21.05.43.05
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 21 Nov 2023 05:43:05 -0800 (PST)
+Date: Tue, 21 Nov 2023 05:43:05 -0800
+From: Yury Norov <yury.norov@gmail.com>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: linux-kernel@vger.kernel.org,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+	Jan Kara <jack@suse.cz>,
+	Mirsad Todorovac <mirsad.todorovac@alu.unizg.hr>,
+	Matthew Wilcox <willy@infradead.org>,
+	Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+	Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
+	Maxim Kuvyrkov <maxim.kuvyrkov@linaro.org>,
+	Alexey Klimov <klimov.linux@gmail.com>
+Subject: Re: [PATCH 34/34] sh: rework ilsel_enable()
+Message-ID: <ZVyz6ctZVcDVM0N4@yury-ThinkPad>
+References: <20231118155105.25678-1-yury.norov@gmail.com>
+ <20231118155105.25678-35-yury.norov@gmail.com>
+ <6d29ae1cd7b20668b5307eb4292155bc59dad8ef.camel@physik.fu-berlin.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CALrw=nG8xsYw7XKyL_VMHtKiaBcQCKvC8UVp-C9-BdeN4A1Daw@mail.gmail.com>
-X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.5
+In-Reply-To: <6d29ae1cd7b20668b5307eb4292155bc59dad8ef.camel@physik.fu-berlin.de>
 
-On 11/21/23 at 07:53am, Ignat Korchagin wrote:
-> On Tue, Nov 21, 2023 at 1:50 AM Baoquan He <bhe@redhat.com> wrote:
-> >
-> > Eric DeVolder's Oracle mail address is not available anymore, add his
-> > current mail address he told me.
+On Sat, Nov 18, 2023 at 05:15:57PM +0100, John Paul Adrian Glaubitz wrote:
+> Hello Yury!
 > 
-> Thank you!
+> On Sat, 2023-11-18 at 07:51 -0800, Yury Norov wrote:
+> > Fix opencoded find_and_set_bit(), which also suppresses potential
+> > KCSAN warning.
+> > 
+> > Signed-off-by: Yury Norov <yury.norov@gmail.com>
+> > ---
+> >  arch/sh/boards/mach-x3proto/ilsel.c | 4 ++--
+> >  1 file changed, 2 insertions(+), 2 deletions(-)
+> > 
+> > diff --git a/arch/sh/boards/mach-x3proto/ilsel.c b/arch/sh/boards/mach-x3proto/ilsel.c
+> > index f0d5eb41521a..7fadc479a80b 100644
+> > --- a/arch/sh/boards/mach-x3proto/ilsel.c
+> > +++ b/arch/sh/boards/mach-x3proto/ilsel.c
+> > @@ -99,8 +99,8 @@ int ilsel_enable(ilsel_source_t set)
+> >  	}
+> >  
+> >  	do {
+> > -		bit = find_first_zero_bit(&ilsel_level_map, ILSEL_LEVELS);
+> > -	} while (test_and_set_bit(bit, &ilsel_level_map));
+> > +		bit = find_and_set_bit(&ilsel_level_map, ILSEL_LEVELS);
+> > +	} while (bit >= ILSEL_LEVELS);
+> >  
+> >  	__ilsel_enable(set, bit);
+> >  
 > 
-> > On 11/20/23 at 10:52pm, Ignat Korchagin wrote:
-> > > Good day!
-> > >
-> > > We have recently started to evaluate Linux 6.6 and noticed that we
-> > > cannot disable CONFIG_KEXEC anymore, but keep CONFIG_CRASH_DUMP
-> > > enabled. It seems to be related to commit 89cde455 ("kexec:
-> > > consolidate kexec and crash options into kernel/Kconfig.kexec"), where
-> > > a CONFIG_KEXEC dependency was added to CONFIG_CRASH_DUMP.
-> > >
-> > > In our current kernel (Linux 6.1) we only enable CONFIG_KEXEC_FILE
-> > > with enforced signature check to support the kernel crash dumping
-> > > functionality and would like to keep CONFIG_KEXEC disabled for
-> > > security reasons [1].
-> > >
-> > > I was reading the long commit message, but the reason for adding
-> > > CONFIG_KEXEC as a dependency for CONFIG_CRASH_DUMP evaded me. And I
-> > > believe from the implementation perspective CONFIG_KEXEC_FILE should
-> > > suffice here (as we successfully used it for crashdumps on Linux 6.1).
-> > >
-> > > Is there a reason for adding this dependency or is it just an
-> > > oversight? Would some solution of requiring either CONFIG_KEXEC or
-> > > CONFIG_KEXEC_FILE work here?
-> >
-> > I searched the patch history, found Eric didn't add the dependency on
-> > CONFIG_KEXEC at the beginning. Later a linux-next building failure with
-> > randconfig was reported, in there CONFIG_CRASH_DUMP enabled, while
-> > CONFIG_KEXEC is disabled. Finally Eric added the KEXEC dependency for
-> > CRASH_DUMP. Please see below link for more details:
-> >
-> > https://lore.kernel.org/all/3e8eecd1-a277-2cfb-690e-5de2eb7b988e@oracle.com/T/#u
-> 
-> Thank you for digging this up. However I'm still confused, because
-> this is exactly how we configure Linux 6.1 (although we do have
-> CONFIG_KEXEC_FILE enabled) and we don't have any problems. I believe
-> we did not investigate this issue properly.
-> 
-> > And besides, the newly added CONFIG_CRASH_HOTPLUG also needs
-> > CONFIG_KEXEC if the elfcorehdr is allowed to be manipulated when
-> > cpu/memory hotplug hapened.
-> 
-> This still feels like a regression to me: any crash dump support
-> should be independent of KEXEC syscalls being present. While probably
-> the common case (including us) that the crashing kernel and recovery
-> kernel are the same, they don't have to be. We need kexec syscall in
-> the crashing kernel, but crashdump support in the recovery kernel (but
-> the recovery kernel not having the kexec syscalls should be totally
-> fine). If we do require some code definitions from kexec - at most we
-> should put them under CONFIG_KEXEC_CORE.
+> The subject should mention the subsystem, i.e. "sh: mach-x3proto:".
 
-Hmm, I understand your concern. Will wait for Eric a while to see if he
-has any explannation or plan, otherwise I will check this.
-
+OK, will do in v2
