@@ -1,98 +1,162 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="D0eUIQ7y"
-Received: from mail-yw1-x112e.google.com (mail-yw1-x112e.google.com [IPv6:2607:f8b0:4864:20::112e])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 43711D6A;
-	Tue, 21 Nov 2023 05:43:07 -0800 (PST)
-Received: by mail-yw1-x112e.google.com with SMTP id 00721157ae682-5b383b4184fso61241677b3.1;
-        Tue, 21 Nov 2023 05:43:07 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b="FhGgruZs"
+Received: from mail-yw1-x112a.google.com (mail-yw1-x112a.google.com [IPv6:2607:f8b0:4864:20::112a])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 614BB1992
+	for <linux-sh@vger.kernel.org>; Tue, 21 Nov 2023 06:25:40 -0800 (PST)
+Received: by mail-yw1-x112a.google.com with SMTP id 00721157ae682-5cbcfdeaff3so4769767b3.0
+        for <linux-sh@vger.kernel.org>; Tue, 21 Nov 2023 06:25:40 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1700574186; x=1701178986; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=J2jFoW0wBrxwvC3UXYdoI7e4rK6JjoL9RV6ETRvSTJs=;
-        b=D0eUIQ7yctSuBZfEjSKxJnHVFfz7lYp1J9acKXYD0Ouwo3eAFp7aOvThGu6xz75Xk6
-         IRSwlmUIi0gK0iWVo5TqI5BiPpwXPaPDZQ6W6AUY4UWVP1pykWDxZKlpEcQbQjzjmau9
-         ZBSfXRnzoDdCsY7hlyR+i2R0Ew20Fjjo3uUKuBqk5d450aN3o+p9vYeV8vcqdZlH63WF
-         jv00KgQYryWegThy0XYS49Ol0njsfl9hNmkTdeuGULFpMOjMGM5QNO/Cn4bTnITytzih
-         DZcXrQ6SiDwIXb8YpLsurOLP6MhViD7D8VCSevHJ8ZsYAt0U03cEiGux8wj+AHr+zvim
-         nRIw==
+        d=linaro.org; s=google; t=1700576739; x=1701181539; darn=vger.kernel.org;
+        h=cc:to:subject:message-id:date:from:mime-version:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=dCTl+by/8OgzPkqiTTy1mu7iUQvkaM00OdF6QByqCRc=;
+        b=FhGgruZs5WQMJqYwgCqX69RUiOZAWt18vg+4MnG2tk2BVTFtcWomFpNh/5WgHKgUTG
+         9tHYJjR6VR0gs/6mMYNa2TprKEIAXxsPYTqihSgSsjak+MrJ5GI4qdt+lhop4bHQRABL
+         nvKi8WzVZWVJfKN8M+1BuFsPj2EtZDaFCoHSHGR2A+JFyp7srUxH9QgKie7t4mafS+EL
+         Xpy1mne8HKC9FZDN4/DXW+7W1k7Ga/Gy6YoBLl+h10hbgxaexjbS72I6BUV89wkQz2Pn
+         8kJaqcL09gLUUJvTZ8oO4q1+rsig9An2gWLnxWt+74QQFgC9qJChuxUOXyrUcJPjrvrk
+         aP8g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1700574186; x=1701178986;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=J2jFoW0wBrxwvC3UXYdoI7e4rK6JjoL9RV6ETRvSTJs=;
-        b=hV3HhXT9vLiTkmZ4liBU9DJGZVxxqh6p83SVs34ToCCfrMg1/LLXh4/lZ2/BLIBlpj
-         NrkJz+b+g/EdrfiLLFXpiVRtnizVKzsW4jQDK5Q9Q+VXJiDG5VZpZe8i0jvMquaUn09l
-         Gsozx5Nbt8tDFiYclTDKB5NHwgiXf9DAiToFXHsxRpEIUlA1dlTaY7ffOK9qfE0ND7j6
-         2UBH+eJHZMBmtEmFljI3PRFabkcNo6w4e7eHHemlmupRO9XK2v63PTOAgh4+Lx0O6ox7
-         tHqvNGeWQLgELcreWILjwK1B6iG/rGKt/gV8JZsxMJs83fX2AIzlrH6n+oFqyNNdV059
-         4Sfg==
-X-Gm-Message-State: AOJu0YzcqB7jNLW8UsveMzUekA0tExCkDtVlmlox2VFvxtJGdb9nktBy
-	902qYQnlz5hbJ+2IMyiemrs=
-X-Google-Smtp-Source: AGHT+IE7zExNj2xD3/09eeu2XxcaCzvGOCX3w8yszWNCW6JxpL819+KOWL2DAlSHRSD2xYNRXLB8Dg==
-X-Received: by 2002:a05:690c:80a:b0:5cb:95e8:16ba with SMTP id bx10-20020a05690c080a00b005cb95e816bamr1655104ywb.46.1700574186241;
-        Tue, 21 Nov 2023 05:43:06 -0800 (PST)
-Received: from localhost ([2601:344:8301:57f0:e005:b808:45e:1b60])
-        by smtp.gmail.com with ESMTPSA id x83-20020a814a56000000b005bf57ef572dsm2975977ywa.140.2023.11.21.05.43.05
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 21 Nov 2023 05:43:05 -0800 (PST)
-Date: Tue, 21 Nov 2023 05:43:05 -0800
-From: Yury Norov <yury.norov@gmail.com>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: linux-kernel@vger.kernel.org,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
-	Jan Kara <jack@suse.cz>,
-	Mirsad Todorovac <mirsad.todorovac@alu.unizg.hr>,
-	Matthew Wilcox <willy@infradead.org>,
-	Rasmus Villemoes <linux@rasmusvillemoes.dk>,
-	Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-	Maxim Kuvyrkov <maxim.kuvyrkov@linaro.org>,
-	Alexey Klimov <klimov.linux@gmail.com>
-Subject: Re: [PATCH 34/34] sh: rework ilsel_enable()
-Message-ID: <ZVyz6ctZVcDVM0N4@yury-ThinkPad>
-References: <20231118155105.25678-1-yury.norov@gmail.com>
- <20231118155105.25678-35-yury.norov@gmail.com>
- <6d29ae1cd7b20668b5307eb4292155bc59dad8ef.camel@physik.fu-berlin.de>
+        d=1e100.net; s=20230601; t=1700576739; x=1701181539;
+        h=cc:to:subject:message-id:date:from:mime-version:x-gm-message-state
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=dCTl+by/8OgzPkqiTTy1mu7iUQvkaM00OdF6QByqCRc=;
+        b=n5H+Rh1u6/HpyxAY4uDfavALvdfn5fxxgGsr/KBsRPz/wEg/fycgTFhlygDFdbBBit
+         hdZUNqGlYxDzfPUpclM0IU85q+NIXsm1wj0vnBWYn6nhfuhTXbNzZrpMUO3cnE+/9t/J
+         TEBBm+roGCKWP9ZISltklQd6fwdsw6EzV2UTL2Jn0Y9epY3THeEZIcMUpkl4v3Lb20OD
+         lukHUS3ZhdzBuz7hseVRNtVnVH4DJRcklrNMOAe5QjrFAPFM2KBiYnu9qmxaLhFdOQI9
+         mrZedpH0E6i/Agh7BKTrzzeKqa7aAsafjy91602KwkHEPUWm+yb21qNKXKfv+KqZvEMP
+         9PhA==
+X-Gm-Message-State: AOJu0Yxzvm/n0nvBC/17LvkfWVvpfKbu9khIovNp3aOAPUS3gc7nJ4ei
+	mjHQKpvOCkluX3KI7ybEZwkvDkocfqOIozu3JxC9BOrsY43KyYjDHbk=
+X-Google-Smtp-Source: AGHT+IFzC/P9VBpC/SW7HcjRqPIjGI6/u3317qHHutxgt4On71zUFgu360yHalbn7IBXSLbaUggzuHxl91TG21rj54k=
+X-Received: by 2002:a81:6588:0:b0:59a:d42c:5d50 with SMTP id
+ z130-20020a816588000000b0059ad42c5d50mr9563819ywb.52.1700576739223; Tue, 21
+ Nov 2023 06:25:39 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <6d29ae1cd7b20668b5307eb4292155bc59dad8ef.camel@physik.fu-berlin.de>
+From: Naresh Kamboju <naresh.kamboju@linaro.org>
+Date: Tue, 21 Nov 2023 19:55:27 +0530
+Message-ID: <CA+G9fYvcaozQvas-h55FPjXk+uomF2CyeYbWGCsXM8yGo4SZgA@mail.gmail.com>
+Subject: SuperH: fs/namespace.c: In function '__se_sys_listmount':
+ syscalls.h:258:9: internal compiler error: in change_address_1, at emit-rtl.c:2275
+To: linux-fsdevel@vger.kernel.org, open list <linux-kernel@vger.kernel.org>, 
+	regressions@lists.linux.dev, lkft-triage@lists.linaro.org, 
+	Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Miklos Szeredi <mszeredi@redhat.com>, Ian Kent <raven@themaw.net>, 
+	Christian Brauner <brauner@kernel.org>, Al Viro <viro@zeniv.linux.org.uk>, 
+	Arnd Bergmann <arnd@arndb.de>, Dan Carpenter <dan.carpenter@linaro.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, dalias@libc.org, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset="UTF-8"
 
-On Sat, Nov 18, 2023 at 05:15:57PM +0100, John Paul Adrian Glaubitz wrote:
-> Hello Yury!
-> 
-> On Sat, 2023-11-18 at 07:51 -0800, Yury Norov wrote:
-> > Fix opencoded find_and_set_bit(), which also suppresses potential
-> > KCSAN warning.
-> > 
-> > Signed-off-by: Yury Norov <yury.norov@gmail.com>
-> > ---
-> >  arch/sh/boards/mach-x3proto/ilsel.c | 4 ++--
-> >  1 file changed, 2 insertions(+), 2 deletions(-)
-> > 
-> > diff --git a/arch/sh/boards/mach-x3proto/ilsel.c b/arch/sh/boards/mach-x3proto/ilsel.c
-> > index f0d5eb41521a..7fadc479a80b 100644
-> > --- a/arch/sh/boards/mach-x3proto/ilsel.c
-> > +++ b/arch/sh/boards/mach-x3proto/ilsel.c
-> > @@ -99,8 +99,8 @@ int ilsel_enable(ilsel_source_t set)
-> >  	}
-> >  
-> >  	do {
-> > -		bit = find_first_zero_bit(&ilsel_level_map, ILSEL_LEVELS);
-> > -	} while (test_and_set_bit(bit, &ilsel_level_map));
-> > +		bit = find_and_set_bit(&ilsel_level_map, ILSEL_LEVELS);
-> > +	} while (bit >= ILSEL_LEVELS);
-> >  
-> >  	__ilsel_enable(set, bit);
-> >  
-> 
-> The subject should mention the subsystem, i.e. "sh: mach-x3proto:".
+The SuperH tinyconfig and allnoconfig builds started failing from 20231120 tag
+Please find the following builds warnings / errors.
 
-OK, will do in v2
+sh:
+  build:
+    * gcc-11-tinyconfig
+
+Reported-by: Linux Kernel Functional Testing <lkft@linaro.org>
+
+Build errors:
+----------
+make --silent --keep-going --jobs=8
+O=/home/tuxbuild/.cache/tuxmake/builds/1/build ARCH=sh
+CROSS_COMPILE=sh4-linux-gnu- 'CC=sccache sh4-linux-gnu-gcc'
+'HOSTCC=sccache gcc'
+  Generating include/generated/machtypes.h
+<stdin>:1519:2: warning: #warning syscall clone3 not implemented [-Wcpp]
+during RTL pass: final
+In file included from /builds/linux/fs/namespace.c:11:
+/builds/linux/fs/namespace.c: In function '__se_sys_listmount':
+/builds/linux/include/linux/syscalls.h:258:9: internal compiler error:
+in change_address_1, at emit-rtl.c:2275
+  258 |         }
+         \
+      |         ^
+/builds/linux/include/linux/syscalls.h:233:9: note: in expansion of
+macro '__SYSCALL_DEFINEx'
+  233 |         __SYSCALL_DEFINEx(x, sname, __VA_ARGS__)
+      |         ^~~~~~~~~~~~~~~~~
+/builds/linux/include/linux/syscalls.h:225:36: note: in expansion of
+macro 'SYSCALL_DEFINEx'
+  225 | #define SYSCALL_DEFINE4(name, ...) SYSCALL_DEFINEx(4, _##name,
+__VA_ARGS__)
+      |                                    ^~~~~~~~~~~~~~~
+/builds/linux/fs/namespace.c:5019:1: note: in expansion of macro
+'SYSCALL_DEFINE4'
+ 5019 | SYSCALL_DEFINE4(listmount, const struct mnt_id_req __user *, req,
+      | ^~~~~~~~~~~~~~~
+0x129d9d7 internal_error(char const*, ...)
+???:0
+0x5dbc4d fancy_abort(char const*, int, char const*)
+???:0
+0x7ddd3e adjust_address_1(rtx_def*, machine_mode, poly_int<1u, long>,
+int, int, int, poly_int<1u, long>)
+???:0
+0x81dd91 output_operand(rtx_def*, int)
+???:0
+0x81e5a4 output_asm_insn(char const*, rtx_def**)
+???:0
+0x8226a8 final_scan_insn(rtx_insn*, _IO_FILE*, int, int, int*)
+???:0
+Please submit a full bug report,
+with preprocessed source if appropriate.
+Please include the complete backtrace with any bug report.
+See <file:///usr/share/doc/gcc-11/README.Bugs> for instructions.
+{standard input}: Assembler messages:
+{standard input}:11800: Warning: end of file not at end of a line;
+newline inserted
+{standard input}:11856: Error: missing operand
+{standard input}:11856: Error: invalid operands for opcode
+{standard input}:11837: Error: displacement to undefined symbol .L2699
+overflows 8-bit field
+{standard input}:11690: Error: pcrel too far
+{standard input}:11705: Error: pcrel too far
+{standard input}:11707: Error: pcrel too far
+{standard input}:11712: Error: pcrel too far
+{standard input}:11719: Error: pcrel too far
+{standard input}:11732: Error: pcrel too far
+{standard input}:11737: Error: pcrel too far
+{standard input}:11760: Error: pcrel too far
+{standard input}:11772: Error: pcrel too far
+{standard input}:11777: Error: pcrel too far
+{standard input}:11778: Error: pcrel too far
+{standard input}:11788: Error: pcrel too far
+{standard input}:11791: Error: pcrel too far
+{standard input}:11807: Error: pcrel too far
+{standard input}:11809: Error: pcrel too far
+{standard input}:11844: Error: pcrel too far
+make[4]: *** [/builds/linux/scripts/Makefile.build:243: fs/namespace.o] Error 1
+
+
+kernel: 6.7.0-rc2
+git_repo: https://gitlab.com/Linaro/lkft/mirrors/next/linux-next
+git_ref: master
+git_sha: 07b677953b9dca02928be323e2db853511305fa9
+git_describe: next-20231121
+Test details: https://qa-reports.linaro.org/lkft/linux-next-master/build/next-20231121
+
+Regressions (compared to build next-20231117)
+------------------------------------------------------------------------
+
+sh:
+  build:
+    * gcc-8-allnoconfig
+    * gcc-11-tinyconfig
+    * gcc-11-allnoconfig
+    * gcc-8-tinyconfig
+
+Links:
+ - https://qa-reports.linaro.org/lkft/linux-next-master/build/next-20231121/testrun/21199202/suite/build/test/gcc-11-tinyconfig/history/
+ - https://qa-reports.linaro.org/lkft/linux-next-master/build/next-20231121/testrun/21199202/suite/build/test/gcc-11-tinyconfig/log
+
+
+--
+Linaro LKFT
+https://lkft.linaro.org
