@@ -1,128 +1,196 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="hgdqeObS";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="cLNVVaek"
-X-Greylist: delayed 608 seconds by postgrey-1.37 at lindbergh.monkeyblade.net; Tue, 21 Nov 2023 07:15:50 PST
-Received: from new2-smtp.messagingengine.com (new2-smtp.messagingengine.com [66.111.4.224])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 5DD30BB;
-	Tue, 21 Nov 2023 07:15:50 -0800 (PST)
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-	by mailnew.nyi.internal (Postfix) with ESMTP id 2B7105815D2;
-	Tue, 21 Nov 2023 10:05:39 -0500 (EST)
-Received: from imap51 ([10.202.2.101])
-  by compute5.internal (MEProxy); Tue, 21 Nov 2023 10:05:39 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-	:cc:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:sender
-	:subject:subject:to:to; s=fm3; t=1700579139; x=1700586339; bh=kU
-	zhY3aPA9uxQWEn4jiRHeQXcTUR9GIV1qaAWo562aw=; b=hgdqeObSLjCXCERey/
-	lhYeOe+4VGySwlXIiettstQFnTjTEjxu6tdt2flSUKkVEZ/8KvkKO/UGRnWa3PP9
-	6hcyusHXrWr9RwM6CbMTnoMWXbGBZPyanj//33swIsn4CvR7Ynv0VN26+SCBKymR
-	n2GgEKaZUo/JZT5OTIAIoZuWnZPoqE3VclbBkG+fLaojVD5U8AKQkIZoIj8i6spE
-	4UCFNSKM6xRWR7JqmjuwH+W5yyCi90AkORZ4gIa5kHP4qczmObtLaoZN/oMu7Dj4
-	ZwrGaLn6035M00bWIJwrQFHrUApywkRY2m15Ak0anscVepuEi/IBuM2/otX8JOW1
-	bZsA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:sender:subject
-	:subject:to:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender
-	:x-sasl-enc; s=fm1; t=1700579139; x=1700586339; bh=kUzhY3aPA9uxQ
-	WEn4jiRHeQXcTUR9GIV1qaAWo562aw=; b=cLNVVaekcEje0hKqj5BSAf0WltS6+
-	6At0E9xuZHlFuISR3cBCWfhb2BVFXksnV4sp4Jj5gOnv9Rjda9s2lGbdAA/1q8Z3
-	OLswZANcMl16M2EGu0JhLRG16ZIPCfPQBE0mBEKoYHF5bWXNwmadY/JXGQqzcMEZ
-	Hzpv6hz+vbUC6QF7KO9ZnXWArgr2mcroyD2vSz8wY/91uJOVPQ7vvsGvnnMCCwPU
-	UVd3eJPUnj0/UPQAVVZkp+KjyB5uEKYr38FjAHhMd3Tzs0x7/escjTuL4W5RRBqc
-	UtjzbjSxH5BTHJ1ee907FxmTQWARZ4BkBt8AbbOEty3U7TUzUI0w1lIng==
-X-ME-Sender: <xms:QcdcZaY19pQeUxvRaxOF_JYNyRwwxYro6C2QYa127G0LFDiYlK9pcg>
-    <xme:QcdcZdYXBlJId5GsbX5WdwfrxNBqVPIOGPvZ_EcafznBzIOyJ9qRvIsdVWJR6SXVl
-    Wm1jSkJEGyS6UzXXkY>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvkedrudegledgieehucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
-    cujfgurhepofgfggfkjghffffhvfevufgtsehttdertderredtnecuhfhrohhmpedftehr
-    nhguuceuvghrghhmrghnnhdfuceorghrnhgusegrrhhnuggsrdguvgeqnecuggftrfgrth
-    htvghrnhepffehueegteeihfegtefhjefgtdeugfegjeelheejueethfefgeeghfektdek
-    teffnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomheprg
-    hrnhgusegrrhhnuggsrdguvg
-X-ME-Proxy: <xmx:QcdcZU_Cquqtktz26f1F6Pj-3yE5wzdiL7UfD3vCv9cObuzs-mrdrQ>
-    <xmx:QcdcZcoh_zzCzJz8ZWSX1eAekoj-QQmEFCy32ntsgIKWn50E4Jursw>
-    <xmx:QcdcZVqjeL8az68VSD4BZgSiiW2pP0-KF4N-_AbeI7f61Cc7EGt_LQ>
-    <xmx:Q8dcZWTJsZcFozmSH9puz359823LiOBk5E5Tlm15Z4k7b_z5Y-ULNg>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.nyi.internal (Postfix, from userid 501)
-	id 5A704B60089; Tue, 21 Nov 2023 10:05:37 -0500 (EST)
-X-Mailer: MessagingEngine.com Webmail Interface
-User-Agent: Cyrus-JMAP/3.9.0-alpha0-1178-geeaf0069a7-fm-20231114.001-geeaf0069
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="BwWuuSDS"
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 9E17C191
+	for <linux-sh@vger.kernel.org>; Wed, 22 Nov 2023 01:34:44 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1700645683;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=+OTgZltwB2ZS+YZyn6PYgFPXeR3pdRlWkz0aWS8O4HE=;
+	b=BwWuuSDSvBZX8Mo7G/uzuxwxVixnrmmdqUnkZx0OtwE1DVMH27AH4c6jJvXbP/BVBm2pnd
+	77sZlTm5mtm89rkaBPL3o9nnd+bXlfVH6dL/cYz2vincEezSthdFNVSkUO8hR+dnyun2so
+	bzfx4LydAh4Vj2wfqlYfnQ+tbldTuWc=
+Received: from mimecast-mx02.redhat.com (mx-ext.redhat.com [66.187.233.73])
+ by relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
+ cipher=TLS_AES_256_GCM_SHA384) id us-mta-591-_biuZLCONCOAsgDXiclx4A-1; Wed,
+ 22 Nov 2023 04:34:40 -0500
+X-MC-Unique: _biuZLCONCOAsgDXiclx4A-1
+Received: from smtp.corp.redhat.com (int-mx07.intmail.prod.int.rdu2.redhat.com [10.11.54.7])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 8960E3C0FCA6;
+	Wed, 22 Nov 2023 09:34:39 +0000 (UTC)
+Received: from localhost (unknown [10.72.112.97])
+	by smtp.corp.redhat.com (Postfix) with ESMTPS id 2A80F1C060AE;
+	Wed, 22 Nov 2023 09:34:36 +0000 (UTC)
+Date: Wed, 22 Nov 2023 17:34:33 +0800
+From: Baoquan He <bhe@redhat.com>
+To: Ignat Korchagin <ignat@cloudflare.com>
+Cc: eric_devolder@yahoo.com, linux@armlinux.org.uk, catalin.marinas@arm.com,
+	will@kernel.org, chenhuacai@kernel.org, geert@linux-m68k.org,
+	tsbogend@alpha.franken.de,
+	James Bottomley <James.Bottomley@hansenpartnership.com>,
+	deller@gmx.de, ysato@users.sourceforge.jp, dalias@libc.org,
+	glaubitz@physik.fu-berlin.de, Thomas Gleixner <tglx@linutronix.de>,
+	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+	dave.hansen@linux.intel.com, x86@kernel.org,
+	linux-kernel <linux-kernel@vger.kernel.org>,
+	linux-arm-kernel@lists.infradead.org, linux-ia64@vger.kernel.org,
+	loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+	kernel@xen0n.name, mpe@ellerman.id.au, npiggin@gmail.com,
+	christophe.leroy@csgroup.eu, paul.walmsley@sifive.com,
+	palmer@dabbelt.com, aou@eecs.berkeley.edu, hca@linux.ibm.com,
+	gor@linux.ibm.com, agordeev@linux.ibm.com,
+	borntraeger@linux.ibm.com, svens@linux.ibm.com, hpa@zytor.com,
+	keescook@chromium.org, paulmck@kernel.org,
+	Peter Zijlstra <peterz@infradead.org>, frederic@kernel.org,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Ard Biesheuvel <ardb@kernel.org>, samitolvanen@google.com,
+	juerg.haefliger@canonical.com, arnd@arndb.de,
+	rmk+kernel@armlinux.org.uk, linus.walleij@linaro.org,
+	sebastian.reichel@collabora.com, rppt@kernel.org,
+	kirill.shutemov@linux.intel.com, anshuman.khandual@arm.com,
+	ziy@nvidia.com, masahiroy@kernel.org, ndesaulniers@google.com,
+	mhiramat@kernel.org, ojeda@kernel.org, thunder.leizhen@huawei.com,
+	xin3.li@intel.com, tj@kernel.org,
+	Greg KH <gregkh@linuxfoundation.org>, tsi@tuyoix.net,
+	hbathini@linux.ibm.com, sourabhjain@linux.ibm.com,
+	boris.ostrovsky@oracle.com, konrad.wilk@oracle.com,
+	kernel-team <kernel-team@cloudflare.com>
+Subject: Re: Potential config regression after 89cde455 ("kexec: consolidate
+ kexec and crash options into kernel/Kconfig.kexec")
+Message-ID: <ZV3LKVOokpx2WvKp@MiWiFi-R3L-srv>
+References: <CALrw=nHpRQQaQTP_jZfREgrQEMpS8jBF8JQCv4ygqXycE-StaA@mail.gmail.com>
+ <ZVwMzXxWkgonIAfc@MiWiFi-R3L-srv>
+ <CALrw=nG8xsYw7XKyL_VMHtKiaBcQCKvC8UVp-C9-BdeN4A1Daw@mail.gmail.com>
+ <CALrw=nH-vcROja2W23rUKEEZMZhxsQiNB4P_ZZQ-XhPHAJGxrg@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Message-Id: <b78e0487-d9e7-4584-8d6b-7de119ee7769@app.fastmail.com>
-In-Reply-To: 
- <CA+G9fYvcaozQvas-h55FPjXk+uomF2CyeYbWGCsXM8yGo4SZgA@mail.gmail.com>
-References: 
- <CA+G9fYvcaozQvas-h55FPjXk+uomF2CyeYbWGCsXM8yGo4SZgA@mail.gmail.com>
-Date: Tue, 21 Nov 2023 16:05:17 +0100
-From: "Arnd Bergmann" <arnd@arndb.de>
-To: "Naresh Kamboju" <naresh.kamboju@linaro.org>,
- linux-fsdevel@vger.kernel.org, "open list" <linux-kernel@vger.kernel.org>,
- regressions@lists.linux.dev, lkft-triage@lists.linaro.org,
- "Linux-sh list" <linux-sh@vger.kernel.org>
-Cc: "Miklos Szeredi" <mszeredi@redhat.com>, "Ian Kent" <raven@themaw.net>,
- "Christian Brauner" <brauner@kernel.org>,
- "Alexander Viro" <viro@zeniv.linux.org.uk>,
- "Dan Carpenter" <dan.carpenter@linaro.org>,
- "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
- "Rich Felker" <dalias@libc.org>,
- "Yoshinori Sato" <ysato@users.sourceforge.jp>
-Subject: Re: SuperH: fs/namespace.c: In function '__se_sys_listmount':
- syscalls.h:258:9: internal compiler error: in change_address_1, at
- emit-rtl.c:2275
-Content-Type: text/plain
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <CALrw=nH-vcROja2W23rUKEEZMZhxsQiNB4P_ZZQ-XhPHAJGxrg@mail.gmail.com>
+X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.7
 
-On Tue, Nov 21, 2023, at 15:25, Naresh Kamboju wrote:
-> The SuperH tinyconfig and allnoconfig builds started failing from 20231120 tag
-> Please find the following builds warnings / errors.
->
-> /builds/linux/include/linux/syscalls.h:233:9: note: in expansion of
-> macro '__SYSCALL_DEFINEx'
->   233 |         __SYSCALL_DEFINEx(x, sname, __VA_ARGS__)
->       |         ^~~~~~~~~~~~~~~~~
-> /builds/linux/include/linux/syscalls.h:225:36: note: in expansion of
-> macro 'SYSCALL_DEFINEx'
->   225 | #define SYSCALL_DEFINE4(name, ...) SYSCALL_DEFINEx(4, _##name,
-> __VA_ARGS__)
->       |                                    ^~~~~~~~~~~~~~~
-> /builds/linux/fs/namespace.c:5019:1: note: in expansion of macro
-> 'SYSCALL_DEFINE4'
->  5019 | SYSCALL_DEFINE4(listmount, const struct mnt_id_req __user *, req,
->       | ^~~~~~~~~~~~~~~
-> 0x129d9d7 internal_error(char const*, ...)
-> ???:0
-> 0x5dbc4d fancy_abort(char const*, int, char const*)
-> ???:0
-> 0x7ddd3e adjust_address_1(rtx_def*, machine_mode, poly_int<1u, long>,
-> int, int, int, poly_int<1u, long>)
-> ???:0
-> 0x81dd91 output_operand(rtx_def*, int)
-> ???:0
-> 0x81e5a4 output_asm_insn(char const*, rtx_def**)
-> ???:0
-> 0x8226a8 final_scan_insn(rtx_insn*, _IO_FILE*, int, int, int*)
-> ???:0
-> Please submit a full bug report,
-> with preprocessed source if appropriate.
-> Please include the complete backtrace with any bug report.
-> See <file:///usr/share/doc/gcc-11/README.Bugs> for instructions.
+On 11/21/23 at 09:43am, Ignat Korchagin wrote:
+> On Tue, Nov 21, 2023 at 7:53 AM Ignat Korchagin <ignat@cloudflare.com> wrote:
+> >
+> > On Tue, Nov 21, 2023 at 1:50 AM Baoquan He <bhe@redhat.com> wrote:
+> > >
+> > > Eric DeVolder's Oracle mail address is not available anymore, add his
+> > > current mail address he told me.
+> >
+> > Thank you!
+> >
+> > > On 11/20/23 at 10:52pm, Ignat Korchagin wrote:
+> > > > Good day!
+> > > >
+> > > > We have recently started to evaluate Linux 6.6 and noticed that we
+> > > > cannot disable CONFIG_KEXEC anymore, but keep CONFIG_CRASH_DUMP
+> > > > enabled. It seems to be related to commit 89cde455 ("kexec:
+> > > > consolidate kexec and crash options into kernel/Kconfig.kexec"), where
+> > > > a CONFIG_KEXEC dependency was added to CONFIG_CRASH_DUMP.
+> > > >
+> > > > In our current kernel (Linux 6.1) we only enable CONFIG_KEXEC_FILE
+> > > > with enforced signature check to support the kernel crash dumping
+> > > > functionality and would like to keep CONFIG_KEXEC disabled for
+> > > > security reasons [1].
+> > > >
+> > > > I was reading the long commit message, but the reason for adding
+> > > > CONFIG_KEXEC as a dependency for CONFIG_CRASH_DUMP evaded me. And I
+> > > > believe from the implementation perspective CONFIG_KEXEC_FILE should
+> > > > suffice here (as we successfully used it for crashdumps on Linux 6.1).
+> > > >
+> > > > Is there a reason for adding this dependency or is it just an
+> > > > oversight? Would some solution of requiring either CONFIG_KEXEC or
+> > > > CONFIG_KEXEC_FILE work here?
+> > >
+> > > I searched the patch history, found Eric didn't add the dependency on
+> > > CONFIG_KEXEC at the beginning. Later a linux-next building failure with
+> > > randconfig was reported, in there CONFIG_CRASH_DUMP enabled, while
+> > > CONFIG_KEXEC is disabled. Finally Eric added the KEXEC dependency for
+> > > CRASH_DUMP. Please see below link for more details:
+> > >
+> > > https://lore.kernel.org/all/3e8eecd1-a277-2cfb-690e-5de2eb7b988e@oracle.com/T/#u
+> >
+> > Thank you for digging this up. However I'm still confused, because
+> > this is exactly how we configure Linux 6.1 (although we do have
+> > CONFIG_KEXEC_FILE enabled) and we don't have any problems. I believe
+> > we did not investigate this issue properly.
+> 
+> I did some preliminary investigation for this. If I patch out the
+> dependency on CONFIG_KEXEC the kernel builds just fine for x86
+> (without CONFIG_CRASH_HOTPLUG - which is probably another issue) - so
+> this was the previous behaviour. I can see that the reported error is
+> for arm architecture and was able to reproduce it with a simple cross
+> compiler in Debian. However, I think it is still somehow related to
+> this patchset as the previous kernels (up to 6.5) build fine with just
+> CONFIG_CRASH_DUMP and without CONFIG_KEXEC for arm as well. So even
+> for arm it was introduced in 6.6.
 
-It's clearly a compiler bug, and I get the same thing with
-all sh4 compilers I have on my machine, I tried with gcc-7.5
-through gcc-13.
+Thanks for the information.
 
-I also see that the defconfigs work fine, so it's probably
-just hitting some weird corner case. You could try opening
-a bug report against gcc, but I'm not sure it's worth it.
+I haven't run the reproducer of issue reported on Eric's old patchset,
+while checkout to kernel 6.1, only s390 selected KEXEC for CRASH_DUMP
+already. And with the ARM building breakage, the simplest idea is 
+to select KEXEC only for ARM or S390 CRASH_DUMP. I plan to try the
+reproducer later. If you have any idea or draft patch, please feel free
+to post.
 
-      Arnd
+diff --git a/kernel/Kconfig.kexec b/kernel/Kconfig.kexec
+index 7aff28ded2f4..382dcd8d7a9d 100644
+--- a/kernel/Kconfig.kexec
++++ b/kernel/Kconfig.kexec
+@@ -97,7 +97,7 @@ config CRASH_DUMP
+        depends on ARCH_SUPPORTS_KEXEC
+        select CRASH_CORE
+        select KEXEC_CORE
+-       select KEXEC
++       select KEXEC if (ARM || S390)
+
+
+arch/s390/Kconfig in kernel 6.1:
+config CRASH_DUMP
+        bool "kernel crash dumps"
+        select KEXEC
+        help
+          Generate crash dump after being started by kexec.
+          Crash dump kernels are loaded in the main kernel with kexec-tools
+          into a specially reserved region and then later executed after
+          a crash by kdump/kexec.
+          Refer to <file:Documentation/s390/zfcpdump.rst> for more details on this.
+          This option also enables s390 zfcpdump.
+          See also <file:Documentation/s390/zfcpdump.rst>
+
+> 
+> > > And besides, the newly added CONFIG_CRASH_HOTPLUG also needs
+> > > CONFIG_KEXEC if the elfcorehdr is allowed to be manipulated when
+> > > cpu/memory hotplug hapened.
+> >
+> > This still feels like a regression to me: any crash dump support
+> > should be independent of KEXEC syscalls being present. While probably
+> > the common case (including us) that the crashing kernel and recovery
+> > kernel are the same, they don't have to be. We need kexec syscall in
+> > the crashing kernel, but crashdump support in the recovery kernel (but
+> > the recovery kernel not having the kexec syscalls should be totally
+> > fine). If we do require some code definitions from kexec - at most we
+> > should put them under CONFIG_KEXEC_CORE.
+> >
+> > > Thanks
+> > > Baoquan
+> > >
+> 
+> Ignat
+> 
+
