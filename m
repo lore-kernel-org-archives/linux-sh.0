@@ -1,137 +1,298 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 834E122EE7;
-	Thu, 23 Nov 2023 11:06:01 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C8E132557E
+	for <linux-sh@vger.kernel.org>; Thu, 23 Nov 2023 13:59:58 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="e0VyQ7PV"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E43DDC43395;
-	Thu, 23 Nov 2023 11:05:54 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Zf86Mpvv"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8D003C433C7;
+	Thu, 23 Nov 2023 13:59:56 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1700737561;
-	bh=9L6ia8ZbTYYVbHNB3z9LNyIFtb/pxWEiG5AGGJleqic=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=e0VyQ7PVXrgpHxXuRmTV8Wg6u7K/HjAAIEfu11YSMUUXsJVeV978M2gskJD8Avjb9
-	 ZB5kV6SE67ZAx7fc43cvAKQQcnfZ1BWg4eFGZWUJqIa5on//kgER/9tce+AIoFXgWk
-	 zowoZ5/rblNmUh7+n5DSkzof8B68ftWfi/4Bm3uFFM0OiYY9QfU9s/13gVPYGrLWfP
-	 dYIN19g0XPcGf5Nmb7Sg/RV1aH2dS4Rz+E9fs2rc8A8QVIcjSUPFmn5jrJzTXH3nKB
-	 fJcaV7yYwcK455NpW2ijR7YUCQVt+9Wq2658RaYTVnp6PTXXmkAhjphLHV/fQylLef
-	 elAqGL5fRFABA==
-From: Arnd Bergmann <arnd@kernel.org>
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Arnd Bergmann <arnd@arndb.de>,
-	"David S. Miller" <davem@davemloft.net>,
-	David Woodhouse <dwmw2@infradead.org>,
-	Dinh Nguyen <dinguyen@kernel.org>,
-	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-	Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Masahiro Yamada <masahiroy@kernel.org>,
-	Matt Turner <mattst88@gmail.com>,
-	Nathan Chancellor <nathan@kernel.org>,
-	Nicolas Schier <nicolas@fjasle.eu>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Rich Felker <dalias@libc.org>,
-	Richard Henderson <richard.henderson@linaro.org>,
-	Richard Weinberger <richard@nod.at>,
-	Stephen Rothwell <sfr@canb.auug.org.au>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Tudor Ambarus <tudor.ambarus@linaro.org>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	linux-arch@vger.kernel.org,
-	linux-alpha@vger.kernel.org,
-	linux-kbuild@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-mips@vger.kernel.org,
-	linux-mtd@lists.infradead.org,
-	linux-sh@vger.kernel.org,
-	linux-usb@vger.kernel.org,
-	sparclinux@vger.kernel.org,
-	x86@kernel.org,
-	Kees Cook <keescook@chromium.org>,
-	Palmer Dabbelt <palmer@rivosinc.com>
-Subject: [PATCH v3 6/6] Makefile.extrawarn: turn on missing-prototypes globally
-Date: Thu, 23 Nov 2023 12:05:06 +0100
-Message-Id: <20231123110506.707903-7-arnd@kernel.org>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20231123110506.707903-1-arnd@kernel.org>
-References: <20231123110506.707903-1-arnd@kernel.org>
+	s=k20201202; t=1700747998;
+	bh=N25XTanfILzzEPMq9f3q38jodI3w6KFzHpDYvVpV1Jw=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=Zf86MpvvpUSyuIWqTQjS6FkAPRZpwM4f+TeKXBvDhIluZe8wPdtw8WOOQQ6EEbW2t
+	 Lu84J2pQ84UIbTrGBNykTDwPJDkk101z3cmddNpeQBSPHWiWKp2YyIjOcK003TqAvv
+	 sJt3BWOPYTKPygoV+WYYHmCunOfO8WUaYpkqkmGy4y8bWnD3sVzFxUhN8qcLfUoAKh
+	 XnQueAxmARocyaMVPOqqOVqud3+ZhAGN3Pzqhn1SEay2g/yiqSHo7+eD9b7OlBS+8a
+	 nHS/7C6xM3V9XIK1t4poPziQpB2KLYcspvIia5M4q+hfjA04C3J2BhI+KJT4xbk6Db
+	 30PshTCWUnbNA==
+Date: Thu, 23 Nov 2023 13:59:53 +0000
+From: Lee Jones <lee@kernel.org>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-sh@vger.kernel.org, Helge Deller <deller@gmx.de>,
+	Thomas Zimmermann <tzimmermann@suse.de>,
+	Sam Ravnborg <sam@ravnborg.org>,
+	Javier Martinez Canillas <javierm@redhat.com>,
+	Rob Herring <robh@kernel.org>,
+	Uwe =?iso-8859-1?Q?Kleine-K=F6nig?= <u.kleine-koenig@pengutronix.de>
+Subject: Re: [PATCH v4 24/37] mfd: sm501: Convert platform_data to OF property
+Message-ID: <20231123135953.GF1243364@google.com>
+References: <cover.1699856600.git.ysato@users.sourceforge.jp>
+ <478cf6465ab23eaf00515b8d067101bec514358b.1699856600.git.ysato@users.sourceforge.jp>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <478cf6465ab23eaf00515b8d067101bec514358b.1699856600.git.ysato@users.sourceforge.jp>
 
-From: Arnd Bergmann <arnd@arndb.de>
+On Tue, 14 Nov 2023, Yoshinori Sato wrote:
 
-Over the years we went from > 1000 of warnings to under 100 earlier
-this year, and I sent patches to address all the ones that I saw with
-compile testing randcom configs on arm64, arm and x86 kernels. This is a
-really useful warning, as it catches real bugs when there are mismatched
-prototypes. In particular with kernel control flow integrity enabled,
-those are no longer allowed.
+> Various parameters of SM501 can be set using platform_data,
+> so parameters cannot be passed in the DeviceTree target.
+> Expands the parameters set in platform_data so that they can be
+> specified using DeviceTree properties.
+> 
+> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+> ---
+>  drivers/mfd/sm501.c           | 70 +++++++++++++++++++++++++++++++++++
+>  drivers/video/fbdev/sm501fb.c | 70 +++++++++++++++++++++++++++++++++--
+>  include/linux/sm501.h         |  3 +-
+>  3 files changed, 138 insertions(+), 5 deletions(-)
 
-I have done extensive testing to ensure that there are no new build
-errors or warnings on any configuration of x86, arm and arm64 builds.
-I also made sure that at least the both the normal defconfig and an
-allmodconfig build is clean for arc, csky, loongarch, m68k, microblaze,
-openrisc, parisc, powerpc, riscv, s390, and xtensa, with the respective
-maintainers doing most of the patches.
+Where are the Device Tree bindings?  Do they already exist?
 
-At this point, there are five architectures with a number of known
-regressions: alpha, nios2, mips, sh and sparc. In the previous version
-of this patch, I had turned off the missing prototype warnings for the 15
-architectures that still had issues, but since there are only five left,
-I think we can leave the rest to the maintainers (Cc'd here) as well.
+I'd be interested to see how well they fair with the DT maintainers.
 
-Cc: Richard Henderson <richard.henderson@linaro.org>
-Cc: Ivan Kokshaysky <ink@jurassic.park.msu.ru>
-Cc: Matt Turner <mattst88@gmail.com>
-Cc: Dinh Nguyen <dinguyen@kernel.org>
-Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: "David S. Miller" <davem@davemloft.net>
-Cc: linux-alpha@vger.kernel.org
-Cc: linux-mips@vger.kernel.org
-Cc: sparclinux@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
-Link: https://lore.kernel.org/lkml/20230810141947.1236730-1-arnd@kernel.org/
-Reviewed-by: Kees Cook <keescook@chromium.org>
-Acked-by: Palmer Dabbelt <palmer@rivosinc.com> # RISC-V
-Signed-off-by: Arnd Bergmann <arnd@arndb.de>
----
- scripts/Makefile.extrawarn | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+> diff --git a/drivers/mfd/sm501.c b/drivers/mfd/sm501.c
+> index 28027982cf69..4f9c9c5936ff 100644
+> --- a/drivers/mfd/sm501.c
+> +++ b/drivers/mfd/sm501.c
+> @@ -1370,6 +1370,69 @@ static int sm501_init_dev(struct sm501_devdata *sm)
+>  	return 0;
+>  }
+>  
+> +#ifdef CONFIG_OF
 
-diff --git a/scripts/Makefile.extrawarn b/scripts/Makefile.extrawarn
-index 1527199161d7..8e9170f932ea 100644
---- a/scripts/Makefile.extrawarn
-+++ b/scripts/Makefile.extrawarn
-@@ -17,6 +17,8 @@ KBUILD_CFLAGS += -Wno-format-security
- KBUILD_CFLAGS += -Wno-trigraphs
- KBUILD_CFLAGS += $(call cc-disable-warning,frame-address,)
- KBUILD_CFLAGS += $(call cc-disable-warning, address-of-packed-member)
-+KBUILD_CFLAGS += -Wmissing-declarations
-+KBUILD_CFLAGS += -Wmissing-prototypes
- 
- ifneq ($(CONFIG_FRAME_WARN),0)
- KBUILD_CFLAGS += -Wframe-larger-than=$(CONFIG_FRAME_WARN)
-@@ -95,10 +97,8 @@ export KBUILD_EXTRA_WARN
- ifneq ($(findstring 1, $(KBUILD_EXTRA_WARN)),)
- 
- KBUILD_CFLAGS += -Wextra -Wunused -Wno-unused-parameter
--KBUILD_CFLAGS += -Wmissing-declarations
- KBUILD_CFLAGS += $(call cc-option, -Wrestrict)
- KBUILD_CFLAGS += -Wmissing-format-attribute
--KBUILD_CFLAGS += -Wmissing-prototypes
- KBUILD_CFLAGS += -Wold-style-definition
- KBUILD_CFLAGS += -Wmissing-include-dirs
- KBUILD_CFLAGS += $(call cc-option, -Wunused-but-set-variable)
+I very much dislike #ifery in C files.
+
+> +static void sm501_of_read_reg_init(struct device_node *np,
+> +				   const char *propname, struct sm501_reg_init *val)
+> +{
+> +	u32 u32_val[2];
+> +
+> +	if (!of_property_read_u32_array(np, propname, u32_val, sizeof(u32_val))) {
+> +		val->set = u32_val[0];
+> +		val->mask = u32_val[1];
+> +	}
+> +}
+> +
+> +static int sm501_parse_dt(struct sm501_devdata *sm, struct device_node *np)
+> +{
+> +	struct sm501_platdata *plat;
+> +	u32 u32_val;
+> +
+> +	plat = devm_kzalloc(sm->dev, sizeof(*plat), GFP_KERNEL);
+> +	if (!plat)
+> +		return -ENOMEM;
+> +
+> +	plat->init = devm_kzalloc(sm->dev, sizeof(*plat->init), GFP_KERNEL);
+> +	if (!plat->init)
+> +		return -ENOMEM;
+> +
+> +	if (!of_property_read_u32(np, "smi,devices", &u32_val))
+> +		plat->init->devices = u32_val;
+> +
+> +	if (!of_property_read_u32(np, "smi,mclk", &u32_val))
+> +		plat->init->mclk = u32_val;
+> +
+> +	if (!of_property_read_u32(np, "smi,m1xclk", &u32_val))
+> +		plat->init->m1xclk = u32_val;
+> +
+> +	sm501_of_read_reg_init(np, "smi,misc-timing", &plat->init->misc_timing);
+> +	sm501_of_read_reg_init(np, "smi,misc-control", &plat->init->misc_control);
+> +	sm501_of_read_reg_init(np, "smi,gpio-low", &plat->init->gpio_low);
+> +	sm501_of_read_reg_init(np, "smi,gpio-high", &plat->init->gpio_high);
+
+So all of these properties are optional?
+
+> +#ifdef CONFIG_MFD_SM501_GPIO
+> +	if (plat->init->devices & SM501_USE_GPIO) {
+> +		if (!of_property_read_u32_index(np, "smi,num-i2c", 0, &u32_val))
+> +			plat->gpio_i2c_nr = u32_val;
+> +		else
+> +			plat->gpio_i2c_nr = 0;
+
+This is already zero, no?
+
+> +	}
+> +	if (plat->gpio_i2c_nr > 0) {
+> +		int sz_gpio;
+> +
+> +		sz_gpio = sizeof(struct sm501_platdata_gpio_i2c) * plat->gpio_i2c_nr;
+
+sizeof(plat->gpio_i2c) * plat->gpio_i2c_nr ?
+
+And put it inside the devm_kzalloc() call.
+
+> +		plat->gpio_i2c = devm_kzalloc(sm->dev, sz_gpio, GFP_KERNEL);
+> +		if (plat->gpio_i2c == NULL)
+
+if (!plat->gpio_i2c)
+
+> +			return -ENOMEM;
+> +
+> +		of_property_read_variable_u32(np, "smi,gpio-i2c",
+> +					      plat->gpio_i2c, sz_gpio / sizeof(int));
+> +	}
+> +#endif	/* CONFIG_MFD_SM501_GPIO */
+> +	sm->platdata = plat;
+> +	return 0;
+> +}
+> +#endif	/* CONFIG_OF */
+> +
+>  static int sm501_plat_probe(struct platform_device *dev)
+>  {
+>  	struct sm501_devdata *sm;
+> @@ -1406,6 +1469,13 @@ static int sm501_plat_probe(struct platform_device *dev)
+>  		goto err_res;
+>  	}
+>  
+> +#ifdef CONFIG_OF
+> +	if (dev->dev.of_node) {
+
+if (IS_ENABLED(CONFIG_OF) && dev->dev.of_node)
+
+... and let the compiler do the rest.
+
+> +		ret = sm501_parse_dt(sm, dev->dev.of_node);
+> +		if (ret)
+> +			goto err_res;
+> +	}
+> +#endif
+>  	platform_set_drvdata(dev, sm);
+>  
+>  	sm->regs = ioremap(sm->io_res->start, resource_size(sm->io_res));
+> diff --git a/drivers/video/fbdev/sm501fb.c b/drivers/video/fbdev/sm501fb.c
+> index d6fdc1737cd2..36a080dd35a1 100644
+> --- a/drivers/video/fbdev/sm501fb.c
+> +++ b/drivers/video/fbdev/sm501fb.c
+> @@ -1932,10 +1932,62 @@ static int sm501fb_start_one(struct sm501fb_info *info,
+>  	return 0;
+>  }
+>  
+> +#if defined(CONFIG_OF)
+> +static struct sm501_platdata_fbsub *read_fbsub(struct device_node *np, const char *ch_name)
+> +{
+> +	struct sm501_platdata_fbsub *fbsub = NULL;
+> +	struct fb_videomode *def_mode;
+> +	struct device_node *child;
+> +	const void *prop;
+> +	u32 flags;
+> +	u32 bpp;
+> +	int len;
+> +
+> +	child = of_get_child_by_name(np, ch_name);
+> +	if (child == NULL)
+> +		return NULL;
+> +
+> +	prop = of_get_property(child, "edid", &len);
+> +	if (prop && len == EDID_LENGTH) {
+> +		struct fb_monspecs *specs;
+> +		u8 *edid;
+> +
+> +		edid = kmemdup(prop, EDID_LENGTH, GFP_KERNEL);
+> +		if (edid) {
+> +			specs = kzalloc(sizeof(*specs), GFP_KERNEL);
+> +			if (specs) {
+> +				fb_edid_to_monspecs(edid, specs);
+> +				def_mode = specs->modedb;
+> +			}
+> +			kfree(specs);
+> +		}
+> +		kfree(edid);
+> +	}
+> +
+> +	if (of_property_read_u32(child, "bpp", &bpp))
+> +		bpp = 0;
+> +	if (of_property_read_u32(child, "smi,flags", &flags))
+> +		flags = 0;
+> +
+> +	if (def_mode || bpp || flags) {
+> +		fbsub = kzalloc(sizeof(*fbsub), GFP_KERNEL);
+> +		if (fbsub) {
+> +			fbsub->def_mode = def_mode;
+> +			fbsub->def_bpp = bpp;
+> +			fbsub->flags = flags;
+> +		}
+> +	}
+> +	return fbsub;
+> +}
+> +#endif
+
+All of this needs moving to the display driver.  And I have suspicions
+that all of the new code above should live there too.
+
+>  static int sm501fb_probe(struct platform_device *pdev)
+>  {
+> -	struct sm501fb_info *info;
+>  	struct device *dev = &pdev->dev;
+> +	struct sm501fb_info *info;
+> +	const void *prop;
+> +	const char *cp;
+> +	int len;
+>  	int ret;
+>  
+>  	/* allocate our framebuffers */
+> @@ -1957,9 +2009,7 @@ static int sm501fb_probe(struct platform_device *pdev)
+>  		int found = 0;
+>  #if defined(CONFIG_OF)
+>  		struct device_node *np = pdev->dev.parent->of_node;
+> -		const u8 *prop;
+> -		const char *cp;
+> -		int len;
+> +		struct sm501_platdata_fbsub *sub;
+>  
+>  		info->pdata = &sm501fb_def_pdata;
+>  		if (np) {
+> @@ -1974,6 +2024,18 @@ static int sm501fb_probe(struct platform_device *pdev)
+>  				if (info->edid_data)
+>  					found = 1;
+>  			}
+> +			if (of_property_read_bool(np, "route-crt-panel"))
+> +				info->pdata->fb_route = SM501_FB_CRT_PANEL;
+> +			else
+> +				info->pdata->fb_route = SM501_FB_OWN;
+> +			if (of_property_read_bool(np, "swap-fb-endian"))
+> +				info->pdata->flags |= SM501_FBPD_SWAP_FB_ENDIAN;
+> +			sub = read_fbsub(np, "crt");
+> +			if (sub)
+> +				info->pdata->fb_crt = sub;
+> +			sub = read_fbsub(np, "panel");
+> +			if (sub)
+> +				info->pdata->fb_pnl = sub;
+>  		}
+>  #endif
+>  		if (!found) {
+> diff --git a/include/linux/sm501.h b/include/linux/sm501.h
+> index 2f3488b2875d..5c9a683b0615 100644
+> --- a/include/linux/sm501.h
+> +++ b/include/linux/sm501.h
+> @@ -6,6 +6,8 @@
+>   *	Vincent Sanders <vince@simtec.co.uk>
+>  */
+>  
+> +#include <dt-bindings/display/sm501.h>
+> +
+>  extern int sm501_unit_power(struct device *dev,
+>  			    unsigned int unit, unsigned int to);
+>  
+> @@ -35,7 +37,6 @@ extern unsigned long sm501_modify_reg(struct device *dev,
+>  				      unsigned long clear);
+>  
+>  
+> -/* Platform data definitions */
+>  
+>  #define SM501FB_FLAG_USE_INIT_MODE	(1<<0)
+>  #define SM501FB_FLAG_DISABLE_AT_EXIT	(1<<1)
+> -- 
+> 2.39.2
+> 
+
 -- 
-2.39.2
-
+Lee Jones [李琼斯]
