@@ -1,38 +1,26 @@
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="glYuk8RX"
-Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.7])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8A384A7;
-	Mon,  4 Dec 2023 05:07:44 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1701695265; x=1733231265;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=UpKiTiLV03HLrMK8OyY7m+bGEMtR9L95NOiQzYClrhU=;
-  b=glYuk8RXPb0XnOqDmmVCjrF7jpJ9zshznGYsBwZnW6Lp6N9UB3wcJAfW
-   RcyKoR3vcNfNkawEw6PplM/CnnVsbAPCOO3ye8XRT4rN3XSwOLz9sb1hU
-   7C+6cD/D1sePV5R/GegF2Oygln5+FP4LpN8LETCbSj5emh7LU/EmbTFtR
-   dAUdaO++oeIOhU9+SvMmDwUTY7pfPCIkRyf2unXDWTJ2pYQAWOK2AA2Mv
-   93RpGe0s7/IwqU+loGPDWvrNJMvLWXNCZjdCDCe8Q32LqxnYlkjlPcodB
-   VrGEtbgUe6WUs5DZVI6UwsLf1e6rvg4sOZtvRq/3Q28morjoDvQUepAYu
-   w==;
-X-IronPort-AV: E=McAfee;i="6600,9927,10913"; a="15275177"
-X-IronPort-AV: E=Sophos;i="6.04,249,1695711600"; 
-   d="scan'208";a="15275177"
-Received: from orsmga007.jf.intel.com ([10.7.209.58])
-  by fmvoesa101.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 04 Dec 2023 05:07:37 -0800
-X-ExtLoop1: 1
-X-IronPort-AV: E=McAfee;i="6600,9927,10913"; a="763935696"
-X-IronPort-AV: E=Sophos;i="6.04,249,1695711600"; 
-   d="scan'208";a="763935696"
-Received: from smile.fi.intel.com ([10.237.72.54])
-  by orsmga007.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 04 Dec 2023 05:07:13 -0800
-Received: from andy by smile.fi.intel.com with local (Exim 4.97)
-	(envelope-from <andriy.shevchenko@linux.intel.com>)
-	id 1rA8fA-00000001kqj-2oCl;
-	Mon, 04 Dec 2023 15:07:04 +0200
-Date: Mon, 4 Dec 2023 15:07:04 +0200
-From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [IPv6:2a07:de40:b251:101:10:150:64:2])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 8D096AF;
+	Mon,  4 Dec 2023 10:51:04 -0800 (PST)
+Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 14A361FE6A;
+	Mon,  4 Dec 2023 18:51:02 +0000 (UTC)
+Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id F113513B65;
+	Mon,  4 Dec 2023 18:51:01 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([10.150.64.162])
+	by imap2.dmz-prg2.suse.org with ESMTPSA
+	id dGqaOpUfbmXlYQAAn2gu4w
+	(envelope-from <jack@suse.cz>); Mon, 04 Dec 2023 18:51:01 +0000
+Received: by quack3.suse.cz (Postfix, from userid 1000)
+	id 6870FA07DB; Mon,  4 Dec 2023 19:51:01 +0100 (CET)
+Date: Mon, 4 Dec 2023 19:51:01 +0100
+From: Jan Kara <jack@suse.cz>
 To: Yury Norov <yury.norov@gmail.com>
 Cc: linux-kernel@vger.kernel.org, "David S. Miller" <davem@davemloft.net>,
 	"H. Peter Anvin" <hpa@zytor.com>,
@@ -102,12 +90,13 @@ Cc: linux-kernel@vger.kernel.org, "David S. Miller" <davem@davemloft.net>,
 	Mirsad Todorovac <mirsad.todorovac@alu.unizg.hr>,
 	Matthew Wilcox <willy@infradead.org>,
 	Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+	Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
 	Maxim Kuvyrkov <maxim.kuvyrkov@linaro.org>,
 	Alexey Klimov <klimov.linux@gmail.com>,
 	Bart Van Assche <bvanassche@acm.org>,
 	Sergey Shtylyov <s.shtylyov@omp.ru>
 Subject: Re: [PATCH v2 00/35] bitops: add atomic find_bit() operations
-Message-ID: <ZW3O-P_98eubKxMU@smile.fi.intel.com>
+Message-ID: <20231204185101.ddmkvsr2xxsmoh2u@quack3>
 References: <20231203192422.539300-1-yury.norov@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
@@ -118,9 +107,48 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 In-Reply-To: <20231203192422.539300-1-yury.norov@gmail.com>
-Organization: Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
+X-Spamd-Bar: ++++++++++++++
+X-Spam-Score: 14.88
+X-Rspamd-Server: rspamd1
+Authentication-Results: smtp-out2.suse.de;
+	dkim=none;
+	spf=softfail (smtp-out2.suse.de: 2a07:de40:b281:104:10:150:64:98 is neither permitted nor denied by domain of jack@suse.cz) smtp.mailfrom=jack@suse.cz;
+	dmarc=none
+X-Rspamd-Queue-Id: 14A361FE6A
+X-Spamd-Result: default: False [14.88 / 50.00];
+	 RCVD_VIA_SMTP_AUTH(0.00)[];
+	 SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:98:from];
+	 TO_DN_SOME(0.00)[];
+	 R_SPF_SOFTFAIL(4.60)[~all];
+	 RCVD_COUNT_THREE(0.00)[3];
+	 MX_GOOD(-0.01)[];
+	 RCPT_COUNT_GT_50(0.00)[100];
+	 FREEMAIL_TO(0.00)[gmail.com];
+	 FROM_EQ_ENVFROM(0.00)[];
+	 R_DKIM_NA(2.20)[];
+	 MIME_TRACE(0.00)[0:+];
+	 FORGED_RECIPIENTS(2.00)[m:yury.norov@gmail.com,m:davem@davemloft.net,m:jejb@linux.ibm.com,m:haris.iqbal@ionos.com,m:akinobu.mita@gmail.com,m:akpm@linux-foundation.org,m:andersson@kernel.org,m:bp@alien8.de,m:brauner@kernel.org,m:dave.hansen@linux.intel.com,m:ecree.xilinx@gmail.com,m:edumazet@google.com,m:fenghua.yu@intel.com,m:geert@linux-m68k.org,m:gregory.greenman@intel.com,m:hughd@google.com,m:kuba@kernel.org,m:axboe@kernel.dk,m:jirislaby@kernel.org,m:kvalo@kernel.org,m:kgraul@linux.ibm.com,m:isdn@linux-pingi.de,m:keescook@chromium.org,m:leon@kernel.org,m:mark.rutland@arm.com,m:habetsm.xilinx@gmail.com,m:mchehab@kernel.org,m:mpe@ellerman.id.au,m:npiggin@gmail.com,m:peterz@infradead.org,m:dalias@libc.org,m:robh@kernel.org,m:robin.murphy@arm.com,m:seanjc@google.com,m:xueshuai@linux.alibaba.com,m:rostedt@goodmis.org,m:tsbogend@alpha.franken.de,m:tglx@linutronix.de,m:wenjia@linux.ibm.com,m:will@kernel.org,m:alsa-devel@alsa-project.org,m:linux-net-drivers@amd.com,m:mpi3mr-linuxdrv.pdl
+ @broadcom.com,m:x86@kernel.org,m:mirsad.todorovac@alu.unizg.hr,m:willy@infradead.org,m:andriy.shevchenko@linux.intel.com,m:maxim.kuvyrkov@linaro.org,m:klimov.linux@gmail.com,m:bvanassche@acm.org,s:s.shtylyov@omp.ru];
+	 BAYES_HAM(-3.00)[100.00%];
+	 ARC_NA(0.00)[];
+	 FROM_HAS_DN(0.00)[];
+	 FREEMAIL_ENVRCPT(0.00)[wp.pl,xs4all.nl];
+	 NEURAL_SPAM_SHORT(2.49)[0.832];
+	 TAGGED_RCPT(0.00)[];
+	 MIME_GOOD(-0.10)[text/plain];
+	 DMARC_NA(1.20)[suse.cz];
+	 TO_MATCH_ENVRCPT_SOME(0.00)[];
+	 NEURAL_SPAM_LONG(3.50)[1.000];
+	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email];
+	 FUZZY_BLOCKED(0.00)[rspamd.com];
+	 MID_RHS_NOT_FQDN(0.50)[];
+	 FREEMAIL_CC(0.00)[vger.kernel.org,davemloft.net,zytor.com,linux.ibm.com,microsoft.com,ionos.com,gmail.com,linux-foundation.org,kernel.org,alien8.de,nvidia.com,opensource.wdc.com,linux.intel.com,suse.de,google.com,intel.com,linux-m68k.org,linuxfoundation.org,xs4all.nl,redhat.com,perex.cz,ziepe.ca,kernel.dk,resnulli.us,linux-pingi.de,chromium.org,arm.com,ellerman.id.au,monstr.eu,suse.com,infradead.org,realtek.com,libc.org,linux.alibaba.com,wp.pl,goodmis.org,alpha.franken.de,linutronix.de,users.sourceforge.jp,marvell.com,alsa-project.org,lists.infradead.org,lists.linux.dev,lists.linux-m68k.org,amd.com,lists.ozlabs.org,broadcom.com,suse.cz,alu.unizg.hr,rasmusvillemoes.dk,linaro.org,acm.org,omp.ru];
+	 RCVD_TLS_ALL(0.00)[];
+	 SUSPICIOUS_RECIPS(1.50)[]
 
-On Sun, Dec 03, 2023 at 11:23:47AM -0800, Yury Norov wrote:
+Hello Yury!
+
+On Sun 03-12-23 11:23:47, Yury Norov wrote:
 > Add helpers around test_and_{set,clear}_bit() that allow to search for
 > clear or set bits and flip them atomically.
 > 
@@ -147,62 +175,12 @@ On Sun, Dec 03, 2023 at 11:23:47AM -0800, Yury Norov wrote:
 > 
 > Or:
 > 	return find_and_clear_bit(bitmap, nbits);
-> 
-> Obviously, the less routine code people have to write themself, the
-> less probability to make a mistake.
-> 
-> Those are not only handy helpers but also resolve a non-trivial
-> issue of using non-atomic find_bit() together with atomic
-> test_and_{set,clear)_bit().
-> 
-> The trick is that find_bit() implies that the bitmap is a regular
-> non-volatile piece of memory, and compiler is allowed to use such
-> optimization techniques like re-fetching memory instead of caching it.
-> 
-> For example, find_first_bit() is implemented like this:
-> 
->       for (idx = 0; idx * BITS_PER_LONG < sz; idx++) {
->               val = addr[idx];
->               if (val) {
->                       sz = min(idx * BITS_PER_LONG + __ffs(val), sz);
->                       break;
->               }
->       }
-> 
-> On register-memory architectures, like x86, compiler may decide to
-> access memory twice - first time to compare against 0, and second time
-> to fetch its value to pass it to __ffs().
-> 
-> When running find_first_bit() on volatile memory, the memory may get
-> changed in-between, and for instance, it may lead to passing 0 to
-> __ffs(), which is undefined. This is a potentially dangerous call.
-> 
-> find_and_clear_bit() as a wrapper around test_and_clear_bit()
-> naturally treats underlying bitmap as a volatile memory and prevents
-> compiler from such optimizations.
-> 
-> Now that KCSAN is catching exactly this type of situations and warns on
-> undercover memory modifications. We can use it to reveal improper usage
-> of find_bit(), and convert it to atomic find_and_*_bit() as appropriate.
-> 
-> The 1st patch of the series adds the following atomic primitives:
-> 
-> 	find_and_set_bit(addr, nbits);
-> 	find_and_set_next_bit(addr, nbits, start);
-> 	...
-> 
-> Here find_and_{set,clear} part refers to the corresponding
-> test_and_{set,clear}_bit function. Suffixes like _wrap or _lock
-> derive their semantics from corresponding find() or test() functions.
-> 
-> For brevity, the naming omits the fact that we search for zero bit in
-> find_and_set, and correspondingly search for set bit in find_and_clear
-> functions.
-> 
-> The patch also adds iterators with atomic semantics, like
-> for_each_test_and_set_bit(). Here, the naming rule is to simply prefix
-> corresponding atomic operation with 'for_each'.
-> 
+
+These are fine cleanups but they actually don't address the case that has
+triggered all these changes - namely the xarray use of find_next_bit() in
+xas_find_chunk().
+
+...
 > This series is a result of discussion [1]. All find_bit() functions imply
 > exclusive access to the bitmaps. However, KCSAN reports quite a number
 > of warnings related to find_bit() API. Some of them are not pointing
@@ -212,7 +190,16 @@ On Sun, Dec 03, 2023 at 11:23:47AM -0800, Yury Norov wrote:
 > If so, find_bit() can be annotated such that KCSAN will ignore it:
 > 
 >         bit = data_race(find_first_bit(bitmap, nbits));
-> 
+
+No, this is not a correct thing to do. If concurrent bitmap changes can
+happen, find_first_bit() as it is currently implemented isn't ever a safe
+choice because it can call __ffs(0) which is dangerous as you properly note
+above. I proposed adding READ_ONCE() into find_first_bit() / find_next_bit()
+implementation to fix this issue but you disliked that. So other option we
+have is adding find_first_bit() and find_next_bit() variants that take
+volatile 'addr' and we have to use these in code like xas_find_chunk()
+which cannot be converted to your new helpers.
+
 > This series addresses the other important case where people really need
 > atomic find ops. As the following patches show, the resulting code
 > looks safer and more verbose comparing to opencoded loops followed by
@@ -222,19 +209,23 @@ On Sun, Dec 03, 2023 at 11:23:47AM -0800, Yury Norov wrote:
 > switching find_bit() function to treat bitmaps as volatile arrays. On
 > the other hand, kernel robot in the same thread reported +3.7% to the
 > performance of will-it-scale.per_thread_ops test.
-> 
+
+It was actually me who reported the regression here [2] but whatever :)
+
+[2] https://lore.kernel.org/all/20231011150252.32737-1-jack@suse.cz
+
 > Assuming that our compilers are sane and generate better code against
 > properly annotated data, the above discrepancy doesn't look weird. When
 > running on non-volatile bitmaps, plain find_bit() outperforms atomic
 > find_and_bit(), and vice-versa.
+> 
+> So, all users of find_bit() API, where heavy concurrency is expected,
+> are encouraged to switch to atomic find_and_bit() as appropriate.
 
-...
+Well, all users where any concurrency can happen should switch. Otherwise
+they are prone to the (admittedly mostly theoretical) data race issue.
 
-In some cases the better improvements can be achieved by switching
-the (very) old code to utilise IDA framework.
-
+								Honza
 -- 
-With Best Regards,
-Andy Shevchenko
-
-
+Jan Kara <jack@suse.com>
+SUSE Labs, CR
