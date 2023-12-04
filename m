@@ -1,98 +1,53 @@
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="lLVN2nEs"
-Received: from mail-yw1-x1134.google.com (mail-yw1-x1134.google.com [IPv6:2607:f8b0:4864:20::1134])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id D7E4E114;
-	Sun,  3 Dec 2023 11:34:11 -0800 (PST)
-Received: by mail-yw1-x1134.google.com with SMTP id 00721157ae682-5cd81e76164so41280007b3.1;
-        Sun, 03 Dec 2023 11:34:11 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1701632050; x=1702236850; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=dDQ4TbM0XahyYNXKtKolVVF+ns22YUcdG8yY0a8mQfw=;
-        b=lLVN2nEsNLvmiKqSnhpTeraa/UzvF4iaevilv8uNpq3wNGxTGcSuhJlSUSvUG00v3/
-         t3ai2x+2JShocrXNB7xdmAjYB4zKnry/+bo34ACHrSQcYgWaPCDfJY5Jh77zsNOsoyys
-         aM5ItxQ+qzGuCxG5pC3OOsm37SrcNSlktShAGASOynpek37zBi3oMvgBfYgAHnvtFeK8
-         c7i46hNnrg8Kh43nTx5EtWFkX/7OoMxq0dPvJItzcef7ilpMwhsF+Jx8EpTDvQKBlkAG
-         DHMx0gBm6U6nLzdXFRvq28POePKTycsxmuRP6uP58S2gneP/QfKzn9oSvuBjx3SrOjm5
-         nysw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1701632050; x=1702236850;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=dDQ4TbM0XahyYNXKtKolVVF+ns22YUcdG8yY0a8mQfw=;
-        b=oONxTFni7DgY70XsMe9aE9tXZd4d41zYsV32ir05b/PcKo5QKEHNplVKhbgbLjY6zO
-         +bmBipjweXCnPEySjtdAAB+p7JC6iNRfEBA5Cgw46/+JgOof3uTqAuC1b0Yagmp5SJg5
-         GJMzeuY17H95S6ij/92JZYGk56gBsQ1A+eY9P96+UBRH/tRzogV5qWKa7tpoE6vgov0H
-         uMR8YSJAIJRSnCjA9H7F431lW3g/16r2RWS7ZKJJp9KDWgHhEOqYgM5hj2nsQvQLQkj/
-         GSyfSseQSEvgvQkBz2FDuxnJWiosnUgnmPxnEpkHMERiuqAz1uCSLEvs1gulDhMtxA+C
-         6GlA==
-X-Gm-Message-State: AOJu0Yw49t4dA9+Jo5ScvTxZx67YFoQrYhlsT6y016eFKP1iuOQO0IGC
-	ArqVPEhWiuuABb7UqRz/844z6QLHezt8Og==
-X-Google-Smtp-Source: AGHT+IGrgWTT1VXkOItmhhZtzkYYiWGpRkwsCUythGO3znmw0L9Nb8VqPAQNWs5Rvb8VaVG26JBSVA==
-X-Received: by 2002:a0d:f687:0:b0:5ca:eca:700b with SMTP id g129-20020a0df687000000b005ca0eca700bmr25634935ywf.52.1701632050006;
-        Sun, 03 Dec 2023 11:34:10 -0800 (PST)
-Received: from localhost ([2601:344:8301:57f0:cb98:c3e:57c:8191])
-        by smtp.gmail.com with ESMTPSA id i84-20020a0ddf57000000b005d79fce2daasm997549ywe.22.2023.12.03.11.34.08
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 03 Dec 2023 11:34:09 -0800 (PST)
-From: Yury Norov <yury.norov@gmail.com>
-To: linux-kernel@vger.kernel.org,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Yury Norov <yury.norov@gmail.com>,
-	linux-sh@vger.kernel.org
-Cc: Jan Kara <jack@suse.cz>,
-	Mirsad Todorovac <mirsad.todorovac@alu.unizg.hr>,
-	Matthew Wilcox <willy@infradead.org>,
-	Rasmus Villemoes <linux@rasmusvillemoes.dk>,
-	Andy Shevchenko <andriy.shevchenko@linux.intel.com>,
-	Maxim Kuvyrkov <maxim.kuvyrkov@linaro.org>,
-	Alexey Klimov <klimov.linux@gmail.com>,
-	Bart Van Assche <bvanassche@acm.org>,
-	Sergey Shtylyov <s.shtylyov@omp.ru>
-Subject: [PATCH v2 35/35] sh: mach-x3proto: rework ilsel_enable()
-Date: Sun,  3 Dec 2023 11:33:07 -0800
-Message-Id: <20231203193307.542794-34-yury.norov@gmail.com>
-X-Mailer: git-send-email 2.40.1
-In-Reply-To: <20231203193307.542794-1-yury.norov@gmail.com>
-References: <20231203192422.539300-1-yury.norov@gmail.com>
- <20231203193307.542794-1-yury.norov@gmail.com>
+Received: from andre.telenet-ops.be (andre.telenet-ops.be [IPv6:2a02:1800:120:4::f00:15])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 00468B9
+	for <linux-sh@vger.kernel.org>; Sun,  3 Dec 2023 23:48:41 -0800 (PST)
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:f143:dd2b:2cfe:eb7c])
+	by andre.telenet-ops.be with bizsmtp
+	id J7of2B00U5Tnyl2017ofko; Mon, 04 Dec 2023 08:48:40 +0100
+Received: from geert (helo=localhost)
+	by ramsan.of.borg with local-esmtp (Exim 4.95)
+	(envelope-from <geert@linux-m68k.org>)
+	id 1rA3h1-00Atvi-SB;
+	Mon, 04 Dec 2023 08:48:39 +0100
+Date: Mon, 4 Dec 2023 08:48:39 +0100 (CET)
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+To: linux-kernel@vger.kernel.org
+cc: linux-sh@vger.kernel.org
+Subject: Re: Build regressions/improvements in v6.7-rc4
+In-Reply-To: <20231203200454.396428-1-geert@linux-m68k.org>
+Message-ID: <beef78b-ca1e-6f3-5bbb-b9e38e3a57b8@linux-m68k.org>
+References: <CAHk-=wjsbytYq780PM-Wby_2rPabxg-WT-CRPZZaVYsmLiacHw@mail.gmail.com> <20231203200454.396428-1-geert@linux-m68k.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=US-ASCII; format=flowed
 
-Fix opencoded find_and_set_bit(), which also suppresses potential
-KCSAN warning.
+On Sun, 3 Dec 2023, Geert Uytterhoeven wrote:
+> JFYI, when comparing v6.7-rc4[1] to v6.7-rc3[3], the summaries are:
+>  - build errors: +6/-5
 
-CC: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Signed-off-by: Yury Norov <yury.norov@gmail.com>
----
- arch/sh/boards/mach-x3proto/ilsel.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+   + {standard input}: Error: displacement to undefined symbol .L105 overflows 8-bit field :  => 593
+   + {standard input}: Error: displacement to undefined symbol .L140 overflows 8-bit field :  => 606
+   + {standard input}: Error: displacement to undefined symbol .L76 overflows 12-bit field:  => 594
+   + {standard input}: Error: displacement to undefined symbol .L97 overflows 12-bit field:  => 607
+   + {standard input}: Error: pcrel too far: 610, 572, 590, 599, 593, 596, 569 => 596, 569, 593, 598, 610, 604, 572, 590, 599, 577
+   + {standard input}: Error: unknown pseudo-op: `.l':  => 609
 
-diff --git a/arch/sh/boards/mach-x3proto/ilsel.c b/arch/sh/boards/mach-x3proto/ilsel.c
-index f0d5eb41521a..7fadc479a80b 100644
---- a/arch/sh/boards/mach-x3proto/ilsel.c
-+++ b/arch/sh/boards/mach-x3proto/ilsel.c
-@@ -99,8 +99,8 @@ int ilsel_enable(ilsel_source_t set)
- 	}
- 
- 	do {
--		bit = find_first_zero_bit(&ilsel_level_map, ILSEL_LEVELS);
--	} while (test_and_set_bit(bit, &ilsel_level_map));
-+		bit = find_and_set_bit(&ilsel_level_map, ILSEL_LEVELS);
-+	} while (bit >= ILSEL_LEVELS);
- 
- 	__ilsel_enable(set, bit);
- 
--- 
-2.40.1
+SH ICE crickets.
 
+> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/33cc938e65a98f1d29d0a18403dbbee050dcad9a/ (all 239 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/2cc14f52aeb78ce3f29677c2de1f06c0e91471ab/ (all 239 configs)
+
+Gr{oetje,eeting}s,
+
+ 						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+ 							    -- Linus Torvalds
