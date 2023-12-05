@@ -1,9 +1,9 @@
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTP id 9EA6AA7
-	for <linux-sh@vger.kernel.org>; Tue,  5 Dec 2023 01:46:48 -0800 (PST)
+	by lindbergh.monkeyblade.net (Postfix) with ESMTP id D69C1A7
+	for <linux-sh@vger.kernel.org>; Tue,  5 Dec 2023 01:46:52 -0800 (PST)
 Received: from SIOS1075.ysato.name (ZM005235.ppp.dion.ne.jp [222.8.5.235])
-	by sakura.ysato.name (Postfix) with ESMTPSA id 33C531C0509;
-	Tue,  5 Dec 2023 18:46:46 +0900 (JST)
+	by sakura.ysato.name (Postfix) with ESMTPSA id 2A0FC1C06F4;
+	Tue,  5 Dec 2023 18:46:50 +0900 (JST)
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
 To: linux-sh@vger.kernel.org
 Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
@@ -70,9 +70,9 @@ Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
 	linux-pci@vger.kernel.org,
 	linux-serial@vger.kernel.org,
 	linux-fbdev@vger.kernel.org
-Subject: [DO NOT MERGE v5 22/37] dt-bindings: display: smi,sm501: SMI SM501 binding json-schema
-Date: Tue,  5 Dec 2023 18:45:41 +0900
-Message-Id: <f671beae8a8ebfd361f4c903bccce713135a169f.1701768028.git.ysato@users.sourceforge.jp>
+Subject: [DO NOT MERGE v5 24/37] dt-binding: sh: cpus: Add SH CPUs json-schema
+Date: Tue,  5 Dec 2023 18:45:43 +0900
+Message-Id: <c796ca5adc21c55f92968070e7f13201fe5b3f4a.1701768028.git.ysato@users.sourceforge.jp>
 X-Mailer: git-send-email 2.39.2
 In-Reply-To: <cover.1701768028.git.ysato@users.sourceforge.jp>
 References: <cover.1701768028.git.ysato@users.sourceforge.jp>
@@ -84,187 +84,93 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Define SM501 functions and modes.
+Renesas SH series and compatible ISA CPUs.
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- .../bindings/display/smi,sm501.yaml           | 134 ++++++++++++++++++
- include/dt-bindings/display/sm501.h           |  25 ++++
- 2 files changed, 159 insertions(+)
- create mode 100644 Documentation/devicetree/bindings/display/smi,sm501.yaml
- create mode 100644 include/dt-bindings/display/sm501.h
+ .../devicetree/bindings/sh/cpus.yaml          | 73 +++++++++++++++++++
+ 1 file changed, 73 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/sh/cpus.yaml
 
-diff --git a/Documentation/devicetree/bindings/display/smi,sm501.yaml b/Documentation/devicetree/bindings/display/smi,sm501.yaml
+diff --git a/Documentation/devicetree/bindings/sh/cpus.yaml b/Documentation/devicetree/bindings/sh/cpus.yaml
 new file mode 100644
-index 000000000000..df46600b8d4a
+index 000000000000..eb57e76e2aa2
 --- /dev/null
-+++ b/Documentation/devicetree/bindings/display/smi,sm501.yaml
-@@ -0,0 +1,134 @@
++++ b/Documentation/devicetree/bindings/sh/cpus.yaml
+@@ -0,0 +1,73 @@
 +# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 +%YAML 1.2
 +---
-+$id: http://devicetree.org/schemas/display/smi,sm501.yaml#
++$id: http://devicetree.org/schemas/sh/cpus.yaml#
 +$schema: http://devicetree.org/meta-schemas/core.yaml#
 +
-+title: Silicon Motion SM501 Mobile Multimedia Companion Chip
++title: Renesas SuperH CPUs
 +
 +maintainers:
-+  - Yoshinori Sato <ysato@user.sourceforge.jp>
++  - Yoshinori Sato <ysato@users.sourceforge.jp>
 +
-+description: |
-+  These DT bindings describe the SM501.
++description: |+
++  The device tree allows to describe the layout of CPUs in a system through
++  the "cpus" node, which in turn contains a number of subnodes (ie "cpu")
++  defining properties for every cpu.
++
++  Bindings for CPU nodes follow the Devicetree Specification, available from:
++
++  https://www.devicetree.org/specifications/
 +
 +properties:
 +  compatible:
-+    const:
-+      smi,sm501
++    items:
++      - enum:
++          - renesas,sh2a
++          - renesas,sh3
++          - renesas,sh4
++          - renesas,sh4a
++          - jcore,j2
++      - const: renesas,sh2
++
++  clock-frequency:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    description: |
++      CPU core clock freqency.
++
++  clocks: true
++
++  clock-names: true
 +
 +  reg:
-+    maxItems: 2
-+    description: |
-+     First entry: System Configuration register
-+     Second entry: IO space (Display Controller register)
-+
-+  interrupts:
-+    description: SM501 interrupt to the cpu should be described here.
-+
-+  interrupt-name: true
-+
-+  mode:
-+    $ref: /schemas/types.yaml#/definitions/string
-+    description: select a video mode
-+
-+  edid:
-+    description: |
-+      verbatim EDID data block describing attached display.
-+      Data from the detailed timing descriptor will be used to
-+      program the display controller.
-+
-+  little-endian:
-+    $ref: /schemas/types.yaml#/definitions/flag
-+    description: available on big endian systems, to set different foreign endian.
-+  big-endian:
-+    $ref: /schemas/types.yaml#/definitions/flag
-+    description: available on little endian systems, to set different foreign endian.
-+
-+  swap-fb-endian:
-+    $ref: /schemas/types.yaml#/definitions/flag
-+    description: swap framebuffer byteorder.
-+
-+  route-crt-panel:
-+    $ref: /schemas/types.yaml#/definitions/flag
-+    description: Panel output merge to CRT.
-+
-+  crt:
-+    description: CRT output control
-+
-+  panel:
-+    description: Panel output control
-+
-+  bpp:
 +    $ref: /schemas/types.yaml#/definitions/uint32
-+    description: Color depth
++    const: 0
 +
-+  smi,flags:
-+    $ref: /schemas/types.yaml#/definitions/uint32
-+    description: Display control flags.
-+
-+  smi,devices:
-+    $ref: /schemas/types.yaml#/definitions/uint32
-+    description: SM501 device function select.
-+
-+  smi,mclk:
-+    $ref: /schemas/types.yaml#/definitions/uint32
-+    description: mclk frequency.
-+
-+  smi,m1xclk:
-+    $ref: /schemas/types.yaml#/definitions/uint32
-+    description: m1xclk frequency.
-+
-+  smi,misc-timing:
-+    $ref: /schemas/types.yaml#/definitions/uint32
-+    description: Miscellaneous Timing reg value.
-+
-+  smi,misc-control:
-+    $ref: /schemas/types.yaml#/definitions/uint32
-+    description: Miscellaneous Control reg value.
-+
-+  smi,gpio-low:
-+    $ref: /schemas/types.yaml#/definitions/uint32
-+    description: GPIO0 to 31 Control reg value.
-+
-+  smi,gpio-high:
-+    $ref: /schemas/types.yaml#/definitions/uint32
-+    description: GPIO32 to 63 Control reg value.
-+
-+  smi,gpio-i2c:
-+    $ref: /schemas/types.yaml#/definitions/uint32-array
-+    minItems: 5
-+    description: |
-+      GPIO I2C bus number
-+      1st field - I2C bus number
-+      2nd Field - GPIO SDA
-+      3rd Field - GPIO SCL
-+      4th Field - Timeout
-+      5th Field - udelay
-+
-+additionalProperties: false
++  device_type: true
 +
 +required:
 +  - compatible
 +  - reg
-+  - interrupts
++  - device_type
 +
++additionalProperties: true
 +
 +examples:
-+  # MPC5200
 +  - |
-+    display@1,0 {
-+        compatible = "smi,sm501";
-+        reg = <0x00000000 0x00800000
-+               0x03e00000 0x00200000>;
-+        interrupts = <1 1 3>;
-+        mode = "640x480-32@60";
-+        edid = [00 ff ff ff ff ff ff 00 00 00 00 00 00 00 00 00
-+                00 00 01 04 00 00 00 00 00 00 00 00 00 00 00 00
-+                00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+                00 00 00 00 00 00 f0 0a 80 fb 20 e0 25 10 32 60
-+                02 00 00 00 00 00 00 06 00 00 00 00 00 00 00 00
-+                00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+                00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+                00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 bd];
++    #include <dt-bindings/clock/sh7750.h>
++    cpus {
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        cpu: cpu@0 {
++            compatible = "renesas,sh4", "renesas,sh2";
++            device_type = "cpu";
++            reg = <0>;
++            clocks = <&cpg SH7750_CPG_ICK>;
++            clock-names = "ick";
++            icache-size = <16384>;
++            icache-line-size = <32>;
++            dcache-size = <32768>;
++            dcache-line-size = <32>;
++        };
 +    };
-diff --git a/include/dt-bindings/display/sm501.h b/include/dt-bindings/display/sm501.h
-new file mode 100644
-index 000000000000..1be8490d7635
---- /dev/null
-+++ b/include/dt-bindings/display/sm501.h
-@@ -0,0 +1,25 @@
-+/* SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause */
-+
-+/* Platform data definitions */
-+
-+#define SM501FB_FLAG_USE_INIT_MODE	(1<<0)
-+#define SM501FB_FLAG_DISABLE_AT_EXIT	(1<<1)
-+#define SM501FB_FLAG_USE_HWCURSOR	(1<<2)
-+#define SM501FB_FLAG_USE_HWACCEL	(1<<3)
-+#define SM501FB_FLAG_PANEL_NO_FPEN	(1<<4)
-+#define SM501FB_FLAG_PANEL_NO_VBIASEN	(1<<5)
-+#define SM501FB_FLAG_PANEL_INV_FPEN	(1<<6)
-+#define SM501FB_FLAG_PANEL_INV_VBIASEN	(1<<7)
-+
-+#define SM501_USE_USB_HOST	(1<<0)
-+#define SM501_USE_USB_SLAVE	(1<<1)
-+#define SM501_USE_SSP0		(1<<2)
-+#define SM501_USE_SSP1		(1<<3)
-+#define SM501_USE_UART0		(1<<4)
-+#define SM501_USE_UART1		(1<<5)
-+#define SM501_USE_FBACCEL	(1<<6)
-+#define SM501_USE_AC97		(1<<7)
-+#define SM501_USE_I2S		(1<<8)
-+#define SM501_USE_GPIO		(1<<9)
-+
-+#define SM501_USE_ALL		(0xffffffff)
++...
 -- 
 2.39.2
 
