@@ -1,31 +1,32 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="cOaAVHWs"
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="e1p9J7Og"
 Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 59482171E
-	for <linux-sh@vger.kernel.org>; Thu,  7 Dec 2023 23:30:52 -0800 (PST)
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 7BE271731
+	for <linux-sh@vger.kernel.org>; Thu,  7 Dec 2023 23:31:00 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1702020651;
+	s=mimecast20190719; t=1702020659;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
 	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding;
-	bh=Lqd+oR1/9Yw4u2jQUrZmD5XRa3aKzcaLuNSBKTGkq30=;
-	b=cOaAVHWsnXTCLvtMA7x0RbFay647C582dY1NghcNDCnntmP9UmH3yJ9ZHwzQuX6vhEkvsw
-	UxUZrBaBqtamccZDXH+r+hpPBdw8XXxWLg1RdaTHRVhz/l5kgRPmOeXJ6aJT591L+MJoAK
-	jrEN0MY3gT5BG7JTs57d+1380c27lcA=
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=AFTgp6lfPOaLMwFRk/b9GnoxoPZWuc7zSIjL2Vb3cuA=;
+	b=e1p9J7OgDE5F6cY0FgxBTI+jYGhHSeBIHVGfXUBIPlANXOahFjtF3AHkwbFyUelHfez1N8
+	U2aQzPAfD/0vP4ry/a5vjfhBoZFasDAQh00it1u55nnPw5pzRZG1rjTNe4lftUOCdfzYB2
+	NP6V1rjiUUx0DC6g3YZB5qk/l+hVFEI=
 Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
  [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-47-owVotutEOF-CVKYkPKJ4lw-1; Fri, 08 Dec 2023 02:30:45 -0500
-X-MC-Unique: owVotutEOF-CVKYkPKJ4lw-1
+ us-mta-643-btMzKor2McqU7VqUp2Z8dg-1; Fri, 08 Dec 2023 02:30:55 -0500
+X-MC-Unique: btMzKor2McqU7VqUp2Z8dg-1
 Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.rdu2.redhat.com [10.11.54.5])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 449CC85A588;
-	Fri,  8 Dec 2023 07:30:44 +0000 (UTC)
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 7CCB4868902;
+	Fri,  8 Dec 2023 07:30:54 +0000 (UTC)
 Received: from fedora.redhat.com (unknown [10.72.112.9])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id 917B98CD0;
-	Fri,  8 Dec 2023 07:30:39 +0000 (UTC)
+	by smtp.corp.redhat.com (Postfix) with ESMTP id 33E808CD0;
+	Fri,  8 Dec 2023 07:30:49 +0000 (UTC)
 From: Baoquan He <bhe@redhat.com>
 To: linux-kernel@vger.kernel.org
 Cc: linux-next@vger.kernel.org,
@@ -39,9 +40,11 @@ Cc: linux-next@vger.kernel.org,
 	sfr@canb.auug.org.au,
 	ignat@cloudflare.com,
 	Baoquan He <bhe@redhat.com>
-Subject: [PATCH 0/5] kexec: fix the incorrect ifdeffery and dependency of CONFIG_KEXEC
-Date: Fri,  8 Dec 2023 15:30:31 +0800
-Message-ID: <20231208073036.7884-1-bhe@redhat.com>
+Subject: [PATCH 2/5] m68k, kexec: fix the incorrect ifdeffery and build dependency of CONFIG_KEXEC
+Date: Fri,  8 Dec 2023 15:30:33 +0800
+Message-ID: <20231208073036.7884-3-bhe@redhat.com>
+In-Reply-To: <20231208073036.7884-1-bhe@redhat.com>
+References: <20231208073036.7884-1-bhe@redhat.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -62,54 +65,49 @@ CONFIG_KEXEC_CORE=y
 CONFIG_CRASH_DUMP=y
 ===
 
-E.g on mips, below link error are seen:
---------------------------------------------------------------------
-mipsel-linux-ld: kernel/kexec_core.o: in function `kimage_free':
-kernel/kexec_core.c:(.text+0x2200): undefined reference to `machine_kexec_cleanup'
-mipsel-linux-ld: kernel/kexec_core.o: in function `__crash_kexec':
-kernel/kexec_core.c:(.text+0x2480): undefined reference to `machine_crash_shutdown'
-mipsel-linux-ld: kernel/kexec_core.c:(.text+0x2488): undefined reference to `machine_kexec'
-mipsel-linux-ld: kernel/kexec_core.o: in function `kernel_kexec':
-kernel/kexec_core.c:(.text+0x29b8): undefined reference to `machine_shutdown'
-mipsel-linux-ld: kernel/kexec_core.c:(.text+0x29c0): undefined reference to `machine_kexec'
---------------------------------------------------------------------
+Here, change the dependency of buinding machine_kexec.o relocate_kernel.o
+and the ifdeffery in asm/kexe.h to CONFIG_KEXEC_CORE.
 
-Here, change the incorrect dependency of building kexec_core related object
-files, and the ifdeffery on architectures from CONFIG_KEXEC to
-CONFIG_KEXEC_CORE.
+Signed-off-by: Baoquan He <bhe@redhat.com>
+---
+ arch/m68k/include/asm/kexec.h | 4 ++--
+ arch/m68k/kernel/Makefile     | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-Testing:
-========
-Passed on mips and loognarch with the LKP reproducer.
-
-Baoquan He (5):
-  loongarch, kexec: change dependency of object files
-  m68k, kexec: fix the incorrect ifdeffery and build dependency of
-    CONFIG_KEXEC
-  mips, kexec: fix the incorrect ifdeffery and dependency of
-    CONFIG_KEXEC
-  sh, kexec: fix the incorrect ifdeffery and dependency of CONFIG_KEXEC
-  x86, kexec: fix the wrong ifdeffery CONFIG_KEXEC
-
- arch/loongarch/kernel/Makefile  |  2 +-
- arch/m68k/include/asm/kexec.h   |  4 ++--
- arch/m68k/kernel/Makefile       |  2 +-
- arch/mips/cavium-octeon/smp.c   |  4 ++--
- arch/mips/include/asm/kexec.h   |  2 +-
- arch/mips/include/asm/smp-ops.h |  2 +-
- arch/mips/include/asm/smp.h     |  2 +-
- arch/mips/kernel/Makefile       |  2 +-
- arch/mips/kernel/smp-bmips.c    |  4 ++--
- arch/mips/kernel/smp-cps.c      | 10 +++++-----
- arch/mips/loongson64/reset.c    |  4 ++--
- arch/mips/loongson64/smp.c      |  2 +-
- arch/sh/include/asm/kexec.h     |  4 ++--
- arch/sh/kernel/Makefile         |  2 +-
- arch/sh/kernel/reboot.c         |  4 ++--
- arch/sh/kernel/setup.c          |  2 +-
- arch/x86/boot/compressed/acpi.c |  2 +-
- 17 files changed, 27 insertions(+), 27 deletions(-)
-
+diff --git a/arch/m68k/include/asm/kexec.h b/arch/m68k/include/asm/kexec.h
+index f5a8b2defa4b..3b0b64f0a353 100644
+--- a/arch/m68k/include/asm/kexec.h
++++ b/arch/m68k/include/asm/kexec.h
+@@ -2,7 +2,7 @@
+ #ifndef _ASM_M68K_KEXEC_H
+ #define _ASM_M68K_KEXEC_H
+ 
+-#ifdef CONFIG_KEXEC
++#ifdef CONFIG_KEXEC_CORE
+ 
+ /* Maximum physical address we can use pages from */
+ #define KEXEC_SOURCE_MEMORY_LIMIT (-1UL)
+@@ -25,6 +25,6 @@ static inline void crash_setup_regs(struct pt_regs *newregs,
+ 
+ #endif /* __ASSEMBLY__ */
+ 
+-#endif /* CONFIG_KEXEC */
++#endif /* CONFIG_KEXEC_CORE */
+ 
+ #endif /* _ASM_M68K_KEXEC_H */
+diff --git a/arch/m68k/kernel/Makefile b/arch/m68k/kernel/Makefile
+index 01fb69a5095f..f335bf3268a1 100644
+--- a/arch/m68k/kernel/Makefile
++++ b/arch/m68k/kernel/Makefile
+@@ -25,7 +25,7 @@ obj-$(CONFIG_PCI) += pcibios.o
+ 
+ obj-$(CONFIG_M68K_NONCOHERENT_DMA) += dma.o
+ 
+-obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o
++obj-$(CONFIG_KEXEC_CORE)	+= machine_kexec.o relocate_kernel.o
+ obj-$(CONFIG_BOOTINFO_PROC)	+= bootinfo_proc.o
+ obj-$(CONFIG_UBOOT)		+= uboot.o
+ 
 -- 
 2.41.0
 
