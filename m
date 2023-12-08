@@ -1,116 +1,208 @@
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="NLBzPOZm"
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id C9D621732
-	for <linux-sh@vger.kernel.org>; Thu,  7 Dec 2023 23:43:28 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1702021407;
+	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="Y3Pb+AHg";
+	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="Eu6uS/85"
+Received: from galois.linutronix.de (Galois.linutronix.de [193.142.43.55])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 2D9181723;
+	Fri,  8 Dec 2023 07:49:31 -0800 (PST)
+From: Thomas Gleixner <tglx@linutronix.de>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020; t=1702050569;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
 	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 in-reply-to:in-reply-to:references:references;
-	bh=mD12z3Ph+93M5Ou5tdqyf4RyVew89UEB1udxQaJBbFk=;
-	b=NLBzPOZmmbNiFFwTmwXd5FhwKmYRZ59aaQefyVzD8m0+QUHqcQjTBF+98Fv0qfLznCpHTP
-	oKfPzdB82aZHZhXFSEk3nCb3eZMh2zi1N9Haa9OUbSu/J1Er/CFw3xhS4BrVHxFlJmO9C0
-	NnCfy3t63hFAylp9HmGtwPVTNIvpDn4=
-Received: from mimecast-mx02.redhat.com (mx-ext.redhat.com [66.187.233.73])
- by relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-137-InC0YeG0PumZKyP_DYV22Q-1; Fri,
- 08 Dec 2023 02:42:43 -0500
-X-MC-Unique: InC0YeG0PumZKyP_DYV22Q-1
-Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.rdu2.redhat.com [10.11.54.5])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 37ABF3C0274D;
-	Fri,  8 Dec 2023 07:42:43 +0000 (UTC)
-Received: from localhost (unknown [10.72.112.9])
-	by smtp.corp.redhat.com (Postfix) with ESMTPS id 89CD58CD0;
-	Fri,  8 Dec 2023 07:42:42 +0000 (UTC)
-Date: Fri, 8 Dec 2023 15:42:39 +0800
-From: Baoquan He <bhe@redhat.com>
-To: linux-kernel@vger.kernel.org
-Cc: linux-next@vger.kernel.org, loongarch@lists.linux.dev,
-	kexec@lists.infradead.org, linux-m68k@lists.linux-m68k.org,
-	linux-mips@vger.kernel.org, linux-sh@vger.kernel.org,
-	x86@kernel.org, akpm@linux-foundation.org, eric_devolder@yahoo.com,
-	sfr@canb.auug.org.au, ignat@cloudflare.com
-Subject: Re: [PATCH 0/5] kexec: fix the incorrect ifdeffery and dependency of
- CONFIG_KEXEC
-Message-ID: <ZXLI748b85be459B@fedora>
-References: <20231208073036.7884-1-bhe@redhat.com>
+	bh=juCIKsOlSX2wDTW1S1v9bUaTdgo42s0VBtiTPZnusxI=;
+	b=Y3Pb+AHg+e/B+KFo6RhPjnjAT9uufkJH/wmuUin/ii/RkL12Xb2LhbwMU/slOoW1zVWfvy
+	3rtjqclt32IQoZln60DXTVkf9ZEeHYlHN5+ZUMlKpfQOQclzKYWoIgmA7FH2YMR91J15CS
+	MezsCBKRTiV4bTMqtHaAXu3JDO5QIvXFpREpHh0M9nU4cTTuAeug6upCWZxzg+fUpva7ZA
+	GI3z++jXDeIzjQs22W+ERv+BVjRBAktw0cI3t7dVIlV/8oEdeO5vL/723dD9gCzHGBpEJO
+	KGVc128do0lHRtNowz5Gn5UYy5Fv1/xN5obeFLZ97lUUpgDAZNdow5LwZDKSOw==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020e; t=1702050569;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=juCIKsOlSX2wDTW1S1v9bUaTdgo42s0VBtiTPZnusxI=;
+	b=Eu6uS/85eE+nCL+E90qXegkkjbKO7V0Thb4Yh5ee/9SQH4n9uJOPkkfQPemqOnndB/6QWH
+	b2rAtS9HnxV/kkDQ==
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Damien Le Moal
+ <dlemoal@kernel.org>, Rob Herring <robh+dt@kernel.org>, Krzysztof
+ Kozlowski <krzysztof.kozlowski+dt@linaro.org>, Conor Dooley
+ <conor+dt@kernel.org>, Geert Uytterhoeven <geert+renesas@glider.be>,
+ Michael Turquette <mturquette@baylibre.com>, Stephen Boyd
+ <sboyd@kernel.org>, David Airlie <airlied@gmail.com>, Daniel Vetter
+ <daniel@ffwll.ch>, Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
+ Maxime Ripard <mripard@kernel.org>, Thomas Zimmermann
+ <tzimmermann@suse.de>, Lorenzo Pieralisi <lpieralisi@kernel.org>,
+ Krzysztof =?utf-8?Q?Wilczy=C5=84ski?= <kw@linux.com>, Bjorn Helgaas
+ <bhelgaas@google.com>,
+ Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby
+ <jirislaby@kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Daniel
+ Lezcano <daniel.lezcano@linaro.org>, Rich Felker <dalias@libc.org>, John
+ Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Lee Jones
+ <lee@kernel.org>, Helge Deller <deller@gmx.de>, Heiko Stuebner
+ <heiko@sntech.de>, Jernej Skrabec <jernej.skrabec@gmail.com>, Chris Morgan
+ <macromorgan@hotmail.com>, Linus Walleij <linus.walleij@linaro.org>, Randy
+ Dunlap <rdunlap@infradead.org>, Arnd Bergmann <arnd@arndb.de>, Hyeonggon
+ Yoo <42.hyeyoo@gmail.com>, David Rientjes <rientjes@google.com>, Vlastimil
+ Babka <vbabka@suse.cz>, Baoquan He <bhe@redhat.com>, Andrew Morton
+ <akpm@linux-foundation.org>, Guenter Roeck <linux@roeck-us.net>, Stephen
+ Rothwell <sfr@canb.auug.org.au>, Guo Ren <guoren@kernel.org>, Javier
+ Martinez Canillas <javierm@redhat.com>, Azeem Shaikh
+ <azeemshaikh38@gmail.com>, Palmer Dabbelt <palmer@rivosinc.com>, Bin Meng
+ <bmeng@tinylab.org>, Max Filippov <jcmvbkbc@gmail.com>, Tom Rix
+ <trix@redhat.com>, Herve Codina <herve.codina@bootlin.com>, Jacky Huang
+ <ychuang3@nuvoton.com>, Lukas Bulwahn <lukas.bulwahn@gmail.com>, Jonathan
+ Corbet <corbet@lwn.net>, Biju Das <biju.das.jz@bp.renesas.com>, Uwe
+ =?utf-8?Q?Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>, Sam
+ Ravnborg
+ <sam@ravnborg.org>, Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
+ Sergey Shtylyov <s.shtylyov@omp.ru>, Laurent Pinchart
+ <laurent.pinchart+renesas@ideasonboard.com>, linux-ide@vger.kernel.org,
+ devicetree@vger.kernel.org, linux-kernel@vger.kernel.org,
+ linux-renesas-soc@vger.kernel.org, linux-clk@vger.kernel.org,
+ dri-devel@lists.freedesktop.org, linux-pci@vger.kernel.org,
+ linux-serial@vger.kernel.org, linux-fbdev@vger.kernel.org
+Subject: Re: [DO NOT MERGE v5 16/37] irqchip: Add SH7751 INTC driver
+In-Reply-To: <bdf5a5e2fb6de07e739a390665e5109e4165dc3d.1701768028.git.ysato@users.sourceforge.jp>
+References: <cover.1701768028.git.ysato@users.sourceforge.jp>
+ <bdf5a5e2fb6de07e739a390665e5109e4165dc3d.1701768028.git.ysato@users.sourceforge.jp>
+Date: Fri, 08 Dec 2023 16:49:28 +0100
+Message-ID: <874jgssnhz.ffs@tglx>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20231208073036.7884-1-bhe@redhat.com>
-X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.5
+Content-Type: text/plain
 
-Forgot adding kexec to CC, add it now.
+On Tue, Dec 05 2023 at 18:45, Yoshinori Sato wrote:
+> +static void endisable_irq(struct irq_data *data, int enable)
 
-On 12/08/23 at 03:30pm, Baoquan He wrote:
-> The select of KEXEC for CRASH_DUMP in kernel/Kconfig.kexec will be
-> dropped, then compiling errors will be triggered if below config
-> items are set:
-> 
-> ===
-> CONFIG_CRASH_CORE=y
-> CONFIG_KEXEC_CORE=y
-> CONFIG_CRASH_DUMP=y
-> ===
-> 
-> E.g on mips, below link error are seen:
-> --------------------------------------------------------------------
-> mipsel-linux-ld: kernel/kexec_core.o: in function `kimage_free':
-> kernel/kexec_core.c:(.text+0x2200): undefined reference to `machine_kexec_cleanup'
-> mipsel-linux-ld: kernel/kexec_core.o: in function `__crash_kexec':
-> kernel/kexec_core.c:(.text+0x2480): undefined reference to `machine_crash_shutdown'
-> mipsel-linux-ld: kernel/kexec_core.c:(.text+0x2488): undefined reference to `machine_kexec'
-> mipsel-linux-ld: kernel/kexec_core.o: in function `kernel_kexec':
-> kernel/kexec_core.c:(.text+0x29b8): undefined reference to `machine_shutdown'
-> mipsel-linux-ld: kernel/kexec_core.c:(.text+0x29c0): undefined reference to `machine_kexec'
-> --------------------------------------------------------------------
-> 
-> Here, change the incorrect dependency of building kexec_core related object
-> files, and the ifdeffery on architectures from CONFIG_KEXEC to
-> CONFIG_KEXEC_CORE.
-> 
-> Testing:
-> ========
-> Passed on mips and loognarch with the LKP reproducer.
-> 
-> Baoquan He (5):
->   loongarch, kexec: change dependency of object files
->   m68k, kexec: fix the incorrect ifdeffery and build dependency of
->     CONFIG_KEXEC
->   mips, kexec: fix the incorrect ifdeffery and dependency of
->     CONFIG_KEXEC
->   sh, kexec: fix the incorrect ifdeffery and dependency of CONFIG_KEXEC
->   x86, kexec: fix the wrong ifdeffery CONFIG_KEXEC
-> 
->  arch/loongarch/kernel/Makefile  |  2 +-
->  arch/m68k/include/asm/kexec.h   |  4 ++--
->  arch/m68k/kernel/Makefile       |  2 +-
->  arch/mips/cavium-octeon/smp.c   |  4 ++--
->  arch/mips/include/asm/kexec.h   |  2 +-
->  arch/mips/include/asm/smp-ops.h |  2 +-
->  arch/mips/include/asm/smp.h     |  2 +-
->  arch/mips/kernel/Makefile       |  2 +-
->  arch/mips/kernel/smp-bmips.c    |  4 ++--
->  arch/mips/kernel/smp-cps.c      | 10 +++++-----
->  arch/mips/loongson64/reset.c    |  4 ++--
->  arch/mips/loongson64/smp.c      |  2 +-
->  arch/sh/include/asm/kexec.h     |  4 ++--
->  arch/sh/kernel/Makefile         |  2 +-
->  arch/sh/kernel/reboot.c         |  4 ++--
->  arch/sh/kernel/setup.c          |  2 +-
->  arch/x86/boot/compressed/acpi.c |  2 +-
->  17 files changed, 27 insertions(+), 27 deletions(-)
-> 
-> -- 
-> 2.41.0
-> 
+bool enable?
 
+> +{
+> +	struct sh7751_intc_priv *priv;
+> +	unsigned int irq;
+> +
+> +	priv = irq_data_to_priv(data);
+> +
+> +	irq = irqd_to_hwirq(data);
+> +	if (!is_valid_irq(irq)) {
+> +		/* IRQ out of range */
+> +		pr_warn_once("%s: IRQ %u is out of range\n", __FILE__, irq);
+> +		return;
+> +	}
+> +
+> +	if (irq <= MAX_IRL && !priv->irlm)
+> +		/* IRL encoded external interrupt */
+> +		/* disable for SR.IMASK */
+> +		update_sr_imask(irq - IRQ_START, enable);
+> +	else
+> +		/* Internal peripheral interrupt */
+> +		/* mask for IPR priority 0 */
+> +		update_ipr(priv, irq, enable);
+
+Lacks curly brackets on the if/else
+
+> +static int irq_sh7751_map(struct irq_domain *h, unsigned int virq,
+> +			  irq_hw_number_t hw_irq_num)
+> +{
+> +	irq_set_chip_and_handler(virq, &sh7751_irq_chip, handle_level_irq);
+> +	irq_get_irq_data(virq)->chip_data = h->host_data;
+> +	irq_modify_status(virq, IRQ_NOREQUEST, IRQ_NOPROBE);
+> +	return 0;
+> +}
+> +static const struct irq_domain_ops irq_ops = {
+
+Newline before 'static ...'
+
+> +	.map    = irq_sh7751_map,
+> +	.xlate  = irq_domain_xlate_onecell,
+> +};
+> +
+> +static int __init load_ipr_map(struct device_node *intc,
+> +			       struct sh7751_intc_priv *priv)
+> +{
+> +	struct property *ipr_map;
+> +	unsigned int num_ipr, i;
+> +	struct ipr *ipr;
+> +	const __be32 *p;
+> +	u32 irq;
+> +
+> +	ipr_map = of_find_property(intc, "renesas,ipr-map", &num_ipr);
+> +	if (IS_ERR(ipr_map))
+> +		return PTR_ERR(ipr_map);
+> +	num_ipr /= sizeof(u32);
+> +	/* 3words per entry. */
+> +	if (num_ipr % 3)
+
+Three words per ... But you can spare the comment by doing:
+
+        if (num_ipr % WORDS_PER_ENTRY)
+
+> +		goto error1;
+> +	num_ipr /= 3;
+> +static int __init sh7751_intc_of_init(struct device_node *intc,
+> +				      struct device_node *parent)
+> +{
+> +	struct sh7751_intc_priv *priv;
+> +	void __iomem *base, *base2;
+> +	struct irq_domain *domain;
+> +	u16 icr;
+> +	int ret;
+> +
+> +	base = of_iomap(intc, 0);
+> +	base2 = of_iomap(intc, 1);
+> +	if (!base || !base2) {
+> +		pr_err("%pOFP: Invalid register definition\n", intc);
+
+What unmaps 'base' if 'base' is valid and base2 == NULL?
+
+> +		return -EINVAL;
+> +	}
+> +
+> +	priv = kzalloc(sizeof(struct sh7751_intc_priv), GFP_KERNEL);
+> +	if (priv == NULL)
+> +		return -ENOMEM;
+
+Leaks base[2] maps, no?
+
+> +	ret = load_ipr_map(intc, priv);
+> +	if (ret < 0) {
+> +		kfree(priv);
+> +		return ret;
+> +	}
+> +
+> +	priv->base = base;
+> +	priv->intpri00 = base2;
+> +
+> +	if (of_property_read_bool(intc, "renesas,irlm")) {
+> +		priv->irlm = true;
+> +		icr = __raw_readw(priv->base + R_ICR);
+> +		icr |= ICR_IRLM;
+> +		__raw_writew(icr, priv->base + R_ICR);
+> +	}
+> +
+> +	domain = irq_domain_add_linear(intc, NR_IRQS, &irq_ops, priv);
+> +	if (domain == NULL) {
+> +		pr_err("%pOFP: cannot initialize irq domain\n", intc);
+> +		kfree(priv);
+> +		return -ENOMEM;
+> +	}
+> +
+> +	irq_set_default_host(domain);
+> +	pr_info("%pOFP: SH7751 Interrupt controller (%s external IRQ)",
+> +		intc, priv->irlm ? "4 lines" : "15 level");
+> +	return 0;
+> +}
+> +
+> +IRQCHIP_DECLARE(sh_7751_intc,
+> +		"renesas,sh7751-intc", sh7751_intc_of_init);
+
+One line please.
+
+Thanks,
+
+        tglx
