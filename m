@@ -1,108 +1,122 @@
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b="m5XmGUXn"
-Received: from mail-oi1-x231.google.com (mail-oi1-x231.google.com [IPv6:2607:f8b0:4864:20::231])
-	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 6830CCD
-	for <linux-sh@vger.kernel.org>; Sun, 10 Dec 2023 22:24:09 -0800 (PST)
-Received: by mail-oi1-x231.google.com with SMTP id 5614622812f47-3ba0dfc9001so57291b6e.2
-        for <linux-sh@vger.kernel.org>; Sun, 10 Dec 2023 22:24:09 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20230601.gappssmtp.com; s=20230601; t=1702275848; x=1702880648; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :cc:to:subject:from:user-agent:mime-version:date:message-id:from:to
-         :cc:subject:date:message-id:reply-to;
-        bh=0baGklg81z4hbrRW+wcTSEXHa8S+7HSPypVCUaOF5uk=;
-        b=m5XmGUXnNJnA4jaB3Dgx38ChuZVIh3GwWrSx/Qih0+XKSwL+uot9xuLUtgSX3BhXN/
-         zVpOr9EzqAFsASV9pgtPtqztNpcg9rfVAdL1Qdy0Ox8npGvS6YE72mLVCpQcc70E+krU
-         vGhR2KEL2bzSjVP9r7cNH7Q7GuxQMzsr/Af3jcpSBT6nKVIsFzbEYJfgnGbsWYYSm/7J
-         6DtQdQfJdJ9WkW75nRYFd5BxdKfcrB7HBi/EFBhmv9v6/3bd4O0LnUItm/22eZqNrlIz
-         ChLtxdiUoQprxoXlSSdH0qUAUOpknlFocdo1vNjJNxzPl/sEp3Tvl0FioFER1iXFfRqw
-         B6Rg==
+Received: from mail-yw1-f175.google.com (mail-yw1-f175.google.com [209.85.128.175])
+	by lindbergh.monkeyblade.net (Postfix) with ESMTPS id 3764510A;
+	Mon, 11 Dec 2023 00:25:38 -0800 (PST)
+Received: by mail-yw1-f175.google.com with SMTP id 00721157ae682-5d6b9143782so35674707b3.0;
+        Mon, 11 Dec 2023 00:25:38 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1702275848; x=1702880648;
-        h=content-transfer-encoding:in-reply-to:content-language:references
-         :cc:to:subject:from:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=0baGklg81z4hbrRW+wcTSEXHa8S+7HSPypVCUaOF5uk=;
-        b=jky4PcGAQReUritpGTVwhKH17WSN+P55MSLbGBjorHurtUyePNQs1HpQTE59pd5W3E
-         47GajeyTVe79VvDJV36CRliZJJgKrggQx1xpMUpe7FXzgxA/UMzx+A+1HxQsq8DN57JJ
-         PPNhgIVWXBlDxk+8UP7a0ZDJqD98c2Q3W3qW6HX519IonfUPaLF5nrBPDst4sw0/qwPw
-         Aza3xSR0N3bYDJ9iAOE94eti8qce+SS0csbn6406dmVoJQ1EiyYHVtKnELKmGF3M3aY1
-         p+gYfc1ZkaUDgVMy6kEIFiBIl6MnkKXV6HFV0mTq+bpt8ZyNKhEx1Znm81XNki0cxLM+
-         u69A==
-X-Gm-Message-State: AOJu0YzL5I6tsQXKfD54SdIx2XhAhe0jC+ee47wRf1dtrDa8myeNrPzY
-	tcQ3yMA0lANAEG1EuhTDRxUU/Q==
-X-Google-Smtp-Source: AGHT+IGe45IML5eSHGATOicKvjaUjG7IF//Gy8r5qsZwNAmZVBGtX7GSR5mEcuMhJ1lNC0cBbNtaOg==
-X-Received: by 2002:a05:6808:148a:b0:3b2:e9ad:c01f with SMTP id e10-20020a056808148a00b003b2e9adc01fmr2234331oiw.44.1702275848714;
-        Sun, 10 Dec 2023 22:24:08 -0800 (PST)
-Received: from [192.168.1.4] ([136.62.51.249])
-        by smtp.gmail.com with ESMTPSA id bh20-20020a056808181400b003b83c516e62sm1694401oib.51.2023.12.10.22.24.08
+        d=1e100.net; s=20230601; t=1702283137; x=1702887937;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=j2eWe2oiRzSTkXAZdruL7FMLjSewImdzh7HyKdRxUqI=;
+        b=wt3Rq5OOiqu/yBHspSUY8gYpz2jKqNuD+wQmqfsrOE2IB2pr5KQw0CVNSKsYMfJg/R
+         mIV6FEIbf0QvNyR7BocY27xzU49XdRbh0ZtoLTJx5qw0VUBOM5RQX3dLgb2PiwBogaqa
+         uSL9I8AA2kLk44qIzJNMDSrcLPrUMW3fPEWbUUHSLcr/UNYEqLB+erVtXYQYghMkywhT
+         moS+KBbbIbTAuqGnbkBgf8fFDYuZwct5gwAMR2B1nvPmRnI8TOgVp06Rtl7OkFcBSIwG
+         3KXbzitAbhUipCQ6Fgkk9xZBhxBZCy4nC4/yqObD8nOUv1hfArEeA7yYCzrTZTojuEDc
+         5sJg==
+X-Gm-Message-State: AOJu0YwWOOb6kl9Utfo6YW9W23Ulsiu1YgsEL14CeoDx3eus8iOCD76F
+	r5dEla+HZ2ApE+ZiFBL9URxiktQlunAiQg==
+X-Google-Smtp-Source: AGHT+IGznTimJA4mSAu8adt3wu2sAMV0tN8lU0584QstnoDzM3+BXIPuN8HqHTzSSYsZE0s4uvfy5A==
+X-Received: by 2002:a0d:d48c:0:b0:5d3:e835:bd67 with SMTP id w134-20020a0dd48c000000b005d3e835bd67mr3107076ywd.41.1702283136935;
+        Mon, 11 Dec 2023 00:25:36 -0800 (PST)
+Received: from mail-yw1-f172.google.com (mail-yw1-f172.google.com. [209.85.128.172])
+        by smtp.gmail.com with ESMTPSA id q68-20020a818047000000b005d580a1fd70sm2796876ywf.75.2023.12.11.00.25.35
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 10 Dec 2023 22:24:08 -0800 (PST)
-Message-ID: <15441b8a-57fb-6212-9f99-3f3d6f75ac8f@landley.net>
-Date: Mon, 11 Dec 2023 00:29:49 -0600
+        Mon, 11 Dec 2023 00:25:36 -0800 (PST)
+Received: by mail-yw1-f172.google.com with SMTP id 00721157ae682-5d6b9143782so35674547b3.0;
+        Mon, 11 Dec 2023 00:25:35 -0800 (PST)
+X-Received: by 2002:a81:7285:0:b0:5d8:74e6:e4c5 with SMTP id
+ n127-20020a817285000000b005d874e6e4c5mr2853116ywc.98.1702283135734; Mon, 11
+ Dec 2023 00:25:35 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.10.0
-From: Rob Landley <rob@landley.net>
-Subject: Re: SuperH: fs/namespace.c: In function '__se_sys_listmount':
- syscalls.h:258:9: internal compiler error: in change_address_1, at
- emit-rtl.c:2275
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Arnd Bergmann <arnd@arndb.de>, Naresh Kamboju <naresh.kamboju@linaro.org>,
- Linux-sh list <linux-sh@vger.kernel.org>
-Cc: Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>
-References: <CA+G9fYvcaozQvas-h55FPjXk+uomF2CyeYbWGCsXM8yGo4SZgA@mail.gmail.com>
- <b78e0487-d9e7-4584-8d6b-7de119ee7769@app.fastmail.com>
- <bca7f1cc90f20cfc8ad719a518cb1254582287f4.camel@physik.fu-berlin.de>
-Content-Language: en-US
-In-Reply-To: <bca7f1cc90f20cfc8ad719a518cb1254582287f4.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+References: <20231208073036.7884-1-bhe@redhat.com> <ZXLI748b85be459B@fedora>
+In-Reply-To: <ZXLI748b85be459B@fedora>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 11 Dec 2023 09:25:24 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdWAaM+eJtiVbXXBO0xOmpqhrOiCO5itNsNdTiOxRXVtVw@mail.gmail.com>
+Message-ID: <CAMuHMdWAaM+eJtiVbXXBO0xOmpqhrOiCO5itNsNdTiOxRXVtVw@mail.gmail.com>
+Subject: Re: [PATCH 0/5] kexec: fix the incorrect ifdeffery and dependency of CONFIG_KEXEC
+To: Baoquan He <bhe@redhat.com>
+Cc: linux-kernel@vger.kernel.org, linux-next@vger.kernel.org, 
+	loongarch@lists.linux.dev, kexec@lists.infradead.org, 
+	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, 
+	linux-sh@vger.kernel.org, x86@kernel.org, akpm@linux-foundation.org, 
+	eric_devolder@yahoo.com, sfr@canb.auug.org.au, ignat@cloudflare.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 11/21/23 09:09, John Paul Adrian Glaubitz wrote:
-> On Tue, 2023-11-21 at 16:05 +0100, Arnd Bergmann wrote:
->> I also see that the defconfigs work fine, so it's probably
->> just hitting some weird corner case. You could try opening
->> a bug report against gcc, but I'm not sure it's worth it.
-> 
-> Please do and CC me and Oleg Endo who is still taking care of the backend.
+Hi Baoquan,
 
-Speaking of which, has anybody tracked down why building the sh2 big endian
-compiler breaks?
+On Fri, Dec 8, 2023 at 8:43=E2=80=AFAM Baoquan He <bhe@redhat.com> wrote:
+> Forgot adding kexec to CC, add it now.
+>
+> On 12/08/23 at 03:30pm, Baoquan He wrote:
+> > The select of KEXEC for CRASH_DUMP in kernel/Kconfig.kexec will be
+> > dropped, then compiling errors will be triggered if below config
+> > items are set:
+> >
+> > =3D=3D=3D
+> > CONFIG_CRASH_CORE=3Dy
+> > CONFIG_KEXEC_CORE=3Dy
+> > CONFIG_CRASH_DUMP=3Dy
+> > =3D=3D=3D
+> >
+> > E.g on mips, below link error are seen:
+> > --------------------------------------------------------------------
+> > mipsel-linux-ld: kernel/kexec_core.o: in function `kimage_free':
+> > kernel/kexec_core.c:(.text+0x2200): undefined reference to `machine_kex=
+ec_cleanup'
+> > mipsel-linux-ld: kernel/kexec_core.o: in function `__crash_kexec':
+> > kernel/kexec_core.c:(.text+0x2480): undefined reference to `machine_cra=
+sh_shutdown'
+> > mipsel-linux-ld: kernel/kexec_core.c:(.text+0x2488): undefined referenc=
+e to `machine_kexec'
+> > mipsel-linux-ld: kernel/kexec_core.o: in function `kernel_kexec':
+> > kernel/kexec_core.c:(.text+0x29b8): undefined reference to `machine_shu=
+tdown'
+> > mipsel-linux-ld: kernel/kexec_core.c:(.text+0x29c0): undefined referenc=
+e to `machine_kexec'
+> > --------------------------------------------------------------------
+> >
+> > Here, change the incorrect dependency of building kexec_core related ob=
+ject
+> > files, and the ifdeffery on architectures from CONFIG_KEXEC to
+> > CONFIG_KEXEC_CORE.
+> >
+> > Testing:
+> > =3D=3D=3D=3D=3D=3D=3D=3D
+> > Passed on mips and loognarch with the LKP reproducer.
+> >
+> > Baoquan He (5):
+> >   loongarch, kexec: change dependency of object files
+> >   m68k, kexec: fix the incorrect ifdeffery and build dependency of
+> >     CONFIG_KEXEC
+> >   mips, kexec: fix the incorrect ifdeffery and dependency of
+> >     CONFIG_KEXEC
+> >   sh, kexec: fix the incorrect ifdeffery and dependency of CONFIG_KEXEC
+> >   x86, kexec: fix the wrong ifdeffery CONFIG_KEXEC
 
-make OUTPUT=/home/landley/mcm/musl-cross-make/ccc/sh2eb-linux-muslfdpic-cross
-TARGET=sh2eb-linux-muslfdpic 'GCC_CONFIG=--disable-nls --disable-libquadmath
---disable-decimal-float --disable-multilib --enable-languages=c,c++
---with-cpu=mj2' 'COMMON_CONFIG=CFLAGS=" -g0 -O2" CXXFLAGS=" -g0 -O2"
-LDFLAGS=" -s" CC="i686-linux-musl-gcc -static --static" CXX="i686-linux-musl-g++
--static --static"' install -j2
-...
-"TARGET = sh2eb-linux-muslfdpic" \
-"HOST = " \
-"MUSL_SRCDIR = ../../../musl-1.2.4" \
-"GCC_SRCDIR = ../../../gcc-11.2.0" \
-"BINUTILS_SRCDIR = ../../../binutils-2.33.1" \
-"GMP_SRCDIR = ../../../gmp-6.1.2" \
-"MPC_SRCDIR = ../../../mpc-1.1.0" \
-"MPFR_SRCDIR = ../../../mpfr-4.0.2" \
- \
-"LINUX_SRCDIR = ../../../linux-6.6" \
-...
-/home/landley/mcm/musl-cross-make/build/local/sh2eb-linux-muslfdpic/src_gcc/libstdc++-v3/../libgcc/unwind-pe.h:
-In function 'const unsigned char* read_encoded_value_with_base(unsigned char,
-_Unwind_Ptr, const unsigned char*, _Unwind_Ptr*)':
-/home/landley/mcm/musl-cross-make/build/local/sh2eb-linux-muslfdpic/src_gcc/libstdc++-v3/../libgcc/unwind-pe.h:270:25:
-error: '_Unwind_gnu_Find_got' was not declared in this scope
-  270 |               result += _Unwind_gnu_Find_got ((_Unwind_Ptr) u);
-      |                         ^~~~~~~~~~~~~~~~~~~~
-make[6]: *** [Makefile:769: eh_call.lo] Error 1
+I understand this series is v3 of "[PATCH v2] kexec_core: change
+dependency of object files"? As this series does not contain a
+changelog, can you please summarize what was changed?
+Thanks!
 
-That's the newest versions in musl-cross-make. It worked with earlier package
-versions...
+Gr{oetje,eeting}s,
 
-Rob
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
