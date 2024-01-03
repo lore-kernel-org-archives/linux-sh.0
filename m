@@ -1,110 +1,81 @@
-Received: from mail-yw1-f182.google.com (mail-yw1-f182.google.com [209.85.128.182])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F26A018EA1;
-	Wed,  3 Jan 2024 11:54:21 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-yw1-f182.google.com with SMTP id 00721157ae682-5e7f0bf46a2so85256447b3.1;
-        Wed, 03 Jan 2024 03:54:21 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1704282861; x=1704887661;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=wZdpDg9MgC1yCbq1bYlsWWXIuzgecTcvyQdn+DaFzA4=;
-        b=FH+Q8NAdfw5Hr9O3BH/L3hwn4X/D4cF9k0EtVnMoHhVd5wmfQQSlG4aYvoBEUUv92U
-         xedHTUFDdpe5wRajzkM1csqI9nkOHe/lK2AZ66+cIg1D3Nu4PEEjRLcKn4zqWA5ezn9S
-         a4qeuBINdQzngtB6g6zLCLu+Evuv+Y+KUbkpbtey+Hit7KtBlAxAA8vnJfxDvKtzV8xj
-         uGHZTuv5PFDupkycMLrtxZuroBJQ91gKp1XwkWMsb7lbbcmZy64Bt7Ngm6/8edFSpEnS
-         rwD09Y2DEO3UfZ6FWbD4ayWfcblK/Rg/W9Ldf4QK9HXkvfld5mJ5SVu2B8kNrVdrbrDP
-         fj/g==
-X-Gm-Message-State: AOJu0Yx7ZY7ACWRqDV0N1Y3YIO3RTfILNA6NUxZt82npQlJgvER7jWYW
-	Au5ufPm1Wm2cQDHWhCYGPcreUMw+NvkRXw==
-X-Google-Smtp-Source: AGHT+IE2UwZpftRucAjwmasmsCYQOZPBjSwBKQ4ma4FiPd/ZMQVBVm2wMy1EllTYbq2fDrUEDreicg==
-X-Received: by 2002:a05:690c:34c8:b0:5e9:faad:b173 with SMTP id fp8-20020a05690c34c800b005e9faadb173mr8620106ywb.48.1704282860791;
-        Wed, 03 Jan 2024 03:54:20 -0800 (PST)
-Received: from mail-yw1-f173.google.com (mail-yw1-f173.google.com. [209.85.128.173])
-        by smtp.gmail.com with ESMTPSA id i131-20020a815489000000b005d317074440sm12909652ywb.79.2024.01.03.03.54.19
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 03 Jan 2024 03:54:19 -0800 (PST)
-Received: by mail-yw1-f173.google.com with SMTP id 00721157ae682-5e7c1012a42so85157117b3.3;
-        Wed, 03 Jan 2024 03:54:19 -0800 (PST)
-X-Received: by 2002:a81:8742:0:b0:5e7:7964:c1ea with SMTP id
- x63-20020a818742000000b005e77964c1eamr12605669ywf.46.1704282859111; Wed, 03
- Jan 2024 03:54:19 -0800 (PST)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C3F0E18EA2;
+	Wed,  3 Jan 2024 12:09:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id DF71121D8D;
+	Wed,  3 Jan 2024 12:09:17 +0000 (UTC)
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C333D13AA6;
+	Wed,  3 Jan 2024 12:09:17 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id piUeLm1OlWUzHwAAD6G6ig
+	(envelope-from <chrubis@suse.cz>); Wed, 03 Jan 2024 12:09:17 +0000
+Date: Wed, 3 Jan 2024 13:09:42 +0100
+From: Cyril Hrubis <chrubis@suse.cz>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Petr Vorel <pvorel@suse.cz>, ltp@lists.linux.it,
+	Li Wang <liwang@redhat.com>,
+	Andrea Cervesato <andrea.cervesato@suse.com>,
+	Greg Ungerer <gerg@linux-m68k.org>,
+	Jonathan Corbet <corbet@lwn.net>,
+	Randy Dunlap <rdunlap@infradead.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Christophe Lyon <christophe.lyon@linaro.org>,
+	linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
+	Linux ARM <linux-arm-kernel@lists.infradead.org>,
+	linux-riscv <linux-riscv@lists.infradead.org>,
+	Linux-sh list <linux-sh@vger.kernel.org>
+Subject: Re: [PATCH 00/36] Remove UCLINUX from LTP
+Message-ID: <ZZVOhlGPg5KRyS-F@yuki>
+References: <20240103015240.1065284-1-pvorel@suse.cz>
+ <CAMuHMdXGwyS-CL0vLdUP4Z4YEYhmcmDyC3YdGCnS=jFkqASqvw@mail.gmail.com>
+ <20240103114957.GD1073466@pevik>
+ <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20240103015240.1065284-1-pvorel@suse.cz> <CAMuHMdXGwyS-CL0vLdUP4Z4YEYhmcmDyC3YdGCnS=jFkqASqvw@mail.gmail.com>
- <20240103114957.GD1073466@pevik>
-In-Reply-To: <20240103114957.GD1073466@pevik>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 3 Jan 2024 12:54:07 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
-Message-ID: <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
-Subject: Re: [PATCH 00/36] Remove UCLINUX from LTP
-To: Petr Vorel <pvorel@suse.cz>
-Cc: ltp@lists.linux.it, Cyril Hrubis <chrubis@suse.cz>, Li Wang <liwang@redhat.com>, 
-	Andrea Cervesato <andrea.cervesato@suse.com>, Greg Ungerer <gerg@linux-m68k.org>, 
-	Jonathan Corbet <corbet@lwn.net>, Randy Dunlap <rdunlap@infradead.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Christophe Lyon <christophe.lyon@linaro.org>, 
-	linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org, 
-	Linux ARM <linux-arm-kernel@lists.infradead.org>, 
-	linux-riscv <linux-riscv@lists.infradead.org>, Linux-sh list <linux-sh@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
+X-Spam-Level: 
+X-Spam-Level: 
+Authentication-Results: smtp-out1.suse.de;
+	none
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	 REPLY(-4.00)[]
+X-Spam-Score: -4.00
+X-Rspamd-Queue-Id: DF71121D8D
+X-Spam-Flag: NO
 
-Hi Petr,
+Hi!
+> I am not sure I agree with this series.
+> Removing support for UCLINUX from LTP is almost a guarantee for
+> not noticing when more breakage is introduced.
+> 
+> How exactly is UCLINUX broken in LTP?
 
-On Wed, Jan 3, 2024 at 12:50=E2=80=AFPM Petr Vorel <pvorel@suse.cz> wrote:
-> > On Wed, Jan 3, 2024 at 2:52=E2=80=AFAM Petr Vorel <pvorel@suse.cz> wrot=
-e:
-> > > UCLINUX is broken in LTP and nobody really cares. Actually I dare to
-> > > say UCLINUX is dead. Therefore I prepared patchset to remove UCLINUX
-> > > from LTP. We have been actively removing UCLINUX from LTP during rewr=
-ite
-> > > tests to new LTP API. This removes the rest from the old tests (which
-> > > will be sooner or later rewritten to new API).
->
-> > > Because the patchset is quite big, I did not want to send it to maili=
-ng
-> > > lists (but I can do it if you want).
->
-> > > Can you please have look at my fork on gitlab, branch: remove-UCLINUX
-> > > https://gitlab.com/pevik/ltp/-/commits/remove-UCLINUX?ref_type=3Dhead=
-s
->
-> > > Build test:
-> > > https://github.com/pevik/ltp/actions/runs/7392470215
->
-> > Thanks for your series!
->
-> Thank you for your feedback.  May I add your Acked-by: tag to the series =
-when we
-> agree to merge?
+As far as we know noone is using it and nobody is maintaing it for a
+decade, so it's bitrotting and we do not have manpower to fix it, or
+rather we do not want to invest the scarcely limited resources we have
+into something that is niche at best. We asked repeatedly if anyone want
+to invest time into keeping it alive, but nobody answered the call so
+far and I doubt that it will happen at this point.
 
-I am not sure I agree with this series.
-Removing support for UCLINUX from LTP is almost a guarantee for
-not noticing when more breakage is introduced.
-
-How exactly is UCLINUX broken in LTP?
-
-Thanks!
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---=20
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
-
-In personal conversations with technical people, I call myself a hacker. Bu=
-t
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+-- 
+Cyril Hrubis
+chrubis@suse.cz
