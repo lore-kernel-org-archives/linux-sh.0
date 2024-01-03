@@ -1,91 +1,97 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yw1-f181.google.com (mail-yw1-f181.google.com [209.85.128.181])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0C08F1BDD4;
-	Tue, 19 Dec 2023 14:06:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b="Em1vznRo"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2A358C433C8;
-	Tue, 19 Dec 2023 14:06:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-	s=korg; t=1702994784;
-	bh=PJXSkoeYpe+bnJfmI13XMEa+S3LzbVn+UJHe6Z1cCwE=;
-	h=From:To:Cc:Subject:Date:From;
-	b=Em1vznRoZ4k7ykAlEpnzX2gaz93hRwOojzeAVtgTL1J/2szeLXm6SVVIZBsx368Nu
-	 r7h30nf4YJyfACpuU+8Yz7WtmmOyzKZx4jJjVDWwL88GZRNccf4jQtqD8WzEtfLrM3
-	 zYpPxi5t/eQ0H46e12lS0zMCJMs+keE0Fl1sIT3o=
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To: linux-kernel@vger.kernel.org
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	linux-sh@vger.kernel.org
-Subject: [PATCH] maple: make maple_bus_type static and const
-Date: Tue, 19 Dec 2023 15:06:19 +0100
-Message-ID: <2023121918-rejoicing-frostlike-d976@gregkh>
-X-Mailer: git-send-email 2.43.0
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 25A8818625;
+	Wed,  3 Jan 2024 09:46:49 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-yw1-f181.google.com with SMTP id 00721157ae682-5edfcba97e3so56103087b3.2;
+        Wed, 03 Jan 2024 01:46:49 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1704275209; x=1704880009;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=ihhhQFZaZR4+J27tLwPbBpD9wwAmji8BYJHqOMirIeI=;
+        b=EmJcfOGM+457bmt2vTw01wmY2hP7VeI+xzp6zHz2ntlho2l4ozsxsDY8zyyWBxxe+g
+         2A3WFTot8PzMx5ZloJ1l8rJP5Dp/6/Hleh5xLXI8EgepCBvtej/3l8tEKWc+rGRfcSNS
+         +dfLHkWnKYKgnkBFjwaAYjon5nF6DuLm6QRL3RcGGTmnI0R6YTh0BMO70EftoqZ7tPvq
+         hR4bh982ju9+QVxI2nb+/PdxcfW+zRmC9lkCDwik7KUcaTSGVuPQsAkKqEKOdYZBQA9y
+         rHIoJSaFrqJ+CHZgYpFGH40lfXwyxofHUmo9Mdw+jZP0Qu0b6KuNCwvikGkGb05NnN8T
+         IrWg==
+X-Gm-Message-State: AOJu0YyIRNTKJwfFZfAs0DwifgtO8BrIzBck9V6NC/zrN933dUnUUyM5
+	pwJbh2Iqg3RlS/vOeaYXrHsqdsANJuUjXw==
+X-Google-Smtp-Source: AGHT+IG5DoeCebu1mnPf6/+snrmyaMw4m2cgTIOf3MnEPMcsooUQPv+W+XJYZiEPdbWHmdx5xWXBiw==
+X-Received: by 2002:a81:9156:0:b0:5e8:7687:77c9 with SMTP id i83-20020a819156000000b005e8768777c9mr11218265ywg.1.1704275208963;
+        Wed, 03 Jan 2024 01:46:48 -0800 (PST)
+Received: from mail-yw1-f181.google.com (mail-yw1-f181.google.com. [209.85.128.181])
+        by smtp.gmail.com with ESMTPSA id r38-20020a814426000000b005f134299392sm3749487ywa.52.2024.01.03.01.46.47
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 03 Jan 2024 01:46:47 -0800 (PST)
+Received: by mail-yw1-f181.google.com with SMTP id 00721157ae682-5edfcba97e3so56102857b3.2;
+        Wed, 03 Jan 2024 01:46:47 -0800 (PST)
+X-Received: by 2002:a81:80c1:0:b0:5e8:6aba:9d18 with SMTP id
+ q184-20020a8180c1000000b005e86aba9d18mr14346275ywf.35.1704275207623; Wed, 03
+ Jan 2024 01:46:47 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1719; i=gregkh@linuxfoundation.org; h=from:subject:message-id; bh=PJXSkoeYpe+bnJfmI13XMEa+S3LzbVn+UJHe6Z1cCwE=; b=owGbwMvMwCRo6H6F97bub03G02pJDKmNi6NkpvyqYNE5Zl3w4cfrqRd3C6TPS5T8kv/+iSS7y pPpHmp/O2JZGASZGGTFFFm+bOM5ur/ikKKXoe1pmDmsTCBDGLg4BWAiOzYyLFhUwpnoNp8rIMNH U//z259ibRMfXWGYn9nw23L5/q1bmncfzpi6ccJunQtu/AA=
-X-Developer-Key: i=gregkh@linuxfoundation.org; a=openpgp; fpr=F4B60CC5BF78C2214A313DCB3147D40DDB2DFB29
-Content-Transfer-Encoding: 8bit
+References: <20240103015240.1065284-1-pvorel@suse.cz>
+In-Reply-To: <20240103015240.1065284-1-pvorel@suse.cz>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 3 Jan 2024 10:46:36 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdXGwyS-CL0vLdUP4Z4YEYhmcmDyC3YdGCnS=jFkqASqvw@mail.gmail.com>
+Message-ID: <CAMuHMdXGwyS-CL0vLdUP4Z4YEYhmcmDyC3YdGCnS=jFkqASqvw@mail.gmail.com>
+Subject: Re: [PATCH 00/36] Remove UCLINUX from LTP
+To: Petr Vorel <pvorel@suse.cz>
+Cc: ltp@lists.linux.it, Cyril Hrubis <chrubis@suse.cz>, Li Wang <liwang@redhat.com>, 
+	Andrea Cervesato <andrea.cervesato@suse.com>, Greg Ungerer <gerg@linux-m68k.org>, 
+	Jonathan Corbet <corbet@lwn.net>, Randy Dunlap <rdunlap@infradead.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Christophe Lyon <christophe.lyon@linaro.org>, 
+	linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org, 
+	Linux ARM <linux-arm-kernel@lists.infradead.org>, 
+	linux-riscv <linux-riscv@lists.infradead.org>, Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-There is no need to export maple_bus_type as no one uses it outside of
-maple.c, so make it static, AND make it const as it can be read-only as
-no one modifies it.
+Hi Petr,
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
----
- drivers/sh/maple/maple.c | 4 ++--
- include/linux/maple.h    | 1 -
- 2 files changed, 2 insertions(+), 3 deletions(-)
+CC other uClinux arch lists
 
-diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
-index e05473c5c267..16018009a5a6 100644
---- a/drivers/sh/maple/maple.c
-+++ b/drivers/sh/maple/maple.c
-@@ -59,6 +59,7 @@ struct maple_device_specify {
- static bool checked[MAPLE_PORTS];
- static bool empty[MAPLE_PORTS];
- static struct maple_device *baseunits[MAPLE_PORTS];
-+static const struct bus_type maple_bus_type;
- 
- /**
-  * maple_driver_register - register a maple driver
-@@ -773,11 +774,10 @@ static struct maple_driver maple_unsupported_device = {
- /*
-  * maple_bus_type - core maple bus structure
-  */
--struct bus_type maple_bus_type = {
-+static const struct bus_type maple_bus_type = {
- 	.name = "maple",
- 	.match = maple_match_bus_driver,
- };
--EXPORT_SYMBOL_GPL(maple_bus_type);
- 
- static struct device maple_bus = {
- 	.init_name = "maple",
-diff --git a/include/linux/maple.h b/include/linux/maple.h
-index 9b140272ee16..9aae44efcfd4 100644
---- a/include/linux/maple.h
-+++ b/include/linux/maple.h
-@@ -5,7 +5,6 @@
- #include <mach/maple.h>
- 
- struct device;
--extern struct bus_type maple_bus_type;
- 
- /* Maple Bus command and response codes */
- enum maple_code {
--- 
-2.43.0
+On Wed, Jan 3, 2024 at 2:52=E2=80=AFAM Petr Vorel <pvorel@suse.cz> wrote:
+> UCLINUX is broken in LTP and nobody really cares. Actually I dare to
+> say UCLINUX is dead. Therefore I prepared patchset to remove UCLINUX
+> from LTP. We have been actively removing UCLINUX from LTP during rewrite
+> tests to new LTP API. This removes the rest from the old tests (which
+> will be sooner or later rewritten to new API).
+>
+> Because the patchset is quite big, I did not want to send it to mailing
+> lists (but I can do it if you want).
+>
+> Can you please have look at my fork on gitlab, branch: remove-UCLINUX
+> https://gitlab.com/pevik/ltp/-/commits/remove-UCLINUX?ref_type=3Dheads
+>
+> Build test:
+> https://github.com/pevik/ltp/actions/runs/7392470215
 
+Thanks for your series!
+
+I see you only CCed linux-m68k, but AFAIK, uClinux is not restricted
+to m68k/coldfire, but also available on arm32, riscv, sh, and xtensa.
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--=20
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
