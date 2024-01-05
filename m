@@ -1,105 +1,109 @@
-Received: from mail-yw1-f169.google.com (mail-yw1-f169.google.com [209.85.128.169])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E46D722EE6
-	for <linux-sh@vger.kernel.org>; Fri,  5 Jan 2024 09:13:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-yw1-f169.google.com with SMTP id 00721157ae682-5e745891a69so13482907b3.2
-        for <linux-sh@vger.kernel.org>; Fri, 05 Jan 2024 01:13:33 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1704446012; x=1705050812;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=B+lpnBDaDmZh9hYlPdWVI3VgnOiKs6ssQbDJtTiE9Hk=;
-        b=evbeybzypkeufw3sXeJgVrNSMZ/fLs59Q68lY65XzsxjYsVy16EU3axj4hS5OHEF80
-         2EMd8Ek0g9MmmIO+M0+re1V0nuaj2/r83Mo+GGZpUVOa2bBwUwuCmP2DgDMXRZKpmk2h
-         ZvN40PxQZ5WjDdx+cKjAbLky9O9j62J7uAKVnrDIKNTfN1sa7rLa2iPEV/h4CHhpTlGk
-         yZHff5cE3dPTscJtsPmoUl4lVger7tJbqGheoVuiiy79n6L5j/+1UYnvY2VU+RqqE8r9
-         eKQz525BhGPe6zKxi07XphfltfXFwY2J7lDV1jWRXfcD2n9gInT9UOY1J/FB04m4/AIJ
-         F0jA==
-X-Gm-Message-State: AOJu0YzTZC+kkNcw21CPS7eKZbqFh0GeySX0oBCE+YO6KGO/yun3Ho5z
-	r8p1kIpeLK136pciNTwvad3YRW1moQFazg==
-X-Google-Smtp-Source: AGHT+IGuLYPSUJltUQoPy4vR/8Jt+VhjMHoZbMDvXQDCfdNur6M/oNVQJhRmcZgAugCuqFvXuYWBWw==
-X-Received: by 2002:a25:2e07:0:b0:dbd:4dd8:427b with SMTP id u7-20020a252e07000000b00dbd4dd8427bmr1550824ybu.81.1704446012616;
-        Fri, 05 Jan 2024 01:13:32 -0800 (PST)
-Received: from mail-yw1-f172.google.com (mail-yw1-f172.google.com. [209.85.128.172])
-        by smtp.gmail.com with ESMTPSA id j143-20020a25d295000000b00dbe9ee7be15sm333688ybg.14.2024.01.05.01.13.32
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 05 Jan 2024 01:13:32 -0800 (PST)
-Received: by mail-yw1-f172.google.com with SMTP id 00721157ae682-5e745891a69so13482817b3.2
-        for <linux-sh@vger.kernel.org>; Fri, 05 Jan 2024 01:13:32 -0800 (PST)
-X-Received: by 2002:a0d:e385:0:b0:5ed:c874:dcea with SMTP id
- m127-20020a0de385000000b005edc874dceamr1932813ywe.24.1704446012129; Fri, 05
- Jan 2024 01:13:32 -0800 (PST)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C7294249FA
+	for <linux-sh@vger.kernel.org>; Fri,  5 Jan 2024 09:17:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b="j1jqi5eZ"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 04446C433C7;
+	Fri,  5 Jan 2024 09:17:17 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
+	s=korg; t=1704446238;
+	bh=8RawTng96j6usboDPYnTuXRFNsRgKgbMmc/lbSET7rg=;
+	h=Subject:To:From:Date:From;
+	b=j1jqi5eZJl+XA/YhZhs+Pya6TL6XcKprf6RhixmYCihnbE5SgpEsroKmOTB0DxVso
+	 DEaWJO9KjgTTuEEaqmQoJPbLy6SHYGj/hRYvClkzxUluNS8qE/B1Jr0YvJl3+g48B0
+	 VuEU2jt6ATMennJ2+JjAUpLNSEtcdGPaCCcDBiNg=
+Subject: patch "maple: make maple_bus_type static and const" added to char-misc-next
+To: gregkh@linuxfoundation.org,dalias@libc.org,glaubitz@physik.fu-berlin.de,linux-sh@vger.kernel.org,ysato@users.sourceforge.jp
+From: <gregkh@linuxfoundation.org>
+Date: Fri, 05 Jan 2024 10:17:15 +0100
+Message-ID: <2024010515-senorita-valid-1ee0@gregkh>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <2024010439-cauterize-trash-b603@gregkh> <7bdec121c0ce916f4589dd4247f9482704373aee.camel@physik.fu-berlin.de>
- <2024010406-country-entire-262d@gregkh> <810666aa13f5309d52d47109d20c4cf511a628e7.camel@physik.fu-berlin.de>
- <2024010428-crank-snap-8ff8@gregkh> <8652ad54d8d15dbb52f8feec69bde939409ae18c.camel@physik.fu-berlin.de>
- <CAMuHMdW6rhSBD2JQrS6nE=3xEQk7nCJW-TEH8Nw64BPtjzoqEQ@mail.gmail.com> <33944cd25cbeb4f9d88ebf81f3b0cb8d368f742b.camel@physik.fu-berlin.de>
-In-Reply-To: <33944cd25cbeb4f9d88ebf81f3b0cb8d368f742b.camel@physik.fu-berlin.de>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 5 Jan 2024 10:13:20 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdV=sCNZ2KdSb8B66wYYbNMjNEm6quRRbVMZVRVJ3npJ9A@mail.gmail.com>
-Message-ID: <CAMuHMdV=sCNZ2KdSb8B66wYYbNMjNEm6quRRbVMZVRVJ3npJ9A@mail.gmail.com>
-Subject: Re: patch "maple: make maple_bus_type static and const" added to char-misc-testing
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Greg KH <gregkh@linuxfoundation.org>, dalias@libc.org, linux-sh@vger.kernel.org, 
-	ysato@users.sourceforge.jp
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=ANSI_X3.4-1968
+Content-Transfer-Encoding: 8bit
 
-Hi Adrian,
 
-On Thu, Jan 4, 2024 at 7:44=E2=80=AFPM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Thu, 2024-01-04 at 17:01 +0100, Geert Uytterhoeven wrote:
-> > > I don't understand the hurry.
-> >
-> > You really should aim to have your for-next branch ready by rc7, so
-> > testers can find and report most issues, and you can get them fixed,
-> > before the merge window opens.
->
-> Do testers not go on holiday vacations? I was just on vacation for two
-> weeks and I find it irritating that my work is now overridden because
-> of that.
+This is a note to let you know that I've just added the patch titled
 
-Everybody goes on holidays, once in a while.
+    maple: make maple_bus_type static and const
 
-But, you are unhappy about Linus Torvalds announcing during your
-holidays that there would be an extra rc, postponing the merge window
-by one week? And without this postponing you would have missed the
-merge window for sure, so this delay is actually beneficial to you?
+to my char-misc git tree which can be found at
+    git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/char-misc.git
+in the char-misc-next branch.
 
-The merge window is the period when Linus Torvalds merges new
-developments for the next kernel release.
-The merge window is not the period when maintainers review and collect
-new developments for the next kernel release.
+The patch will show up in the next release of the linux-next tree
+(usually sometime within the next 24 hours during the week.)
 
-If you are on holidays just before or during the merge window, you
-should prepare your branches, and send pull requests, before the merge
-window opens.  Several maintainers have already sent pull requests
-(the first arrived almost 2 weeks ago).
+The patch will also be merged in the next major kernel release
+during the merge window.
 
-Thanks!
+If you have any questions about this process, please let me know.
 
-Gr{oetje,eeting}s,
 
-                        Geert
+From e76933a9bfa9b7f28a387f2e13cb3e689adc200d Mon Sep 17 00:00:00 2001
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Tue, 19 Dec 2023 15:06:19 +0100
+Subject: maple: make maple_bus_type static and const
 
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
+There is no need to export maple_bus_type as no one uses it outside of
+maple.c, so make it static, AND make it const as it can be read-only as
+no one modifies it.
 
-In personal conversations with technical people, I call myself a hacker. Bu=
-t
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: <linux-sh@vger.kernel.org>
+Link: https://lore.kernel.org/r/2023121918-rejoicing-frostlike-d976@gregkh
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/sh/maple/maple.c | 4 ++--
+ include/linux/maple.h    | 1 -
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/sh/maple/maple.c b/drivers/sh/maple/maple.c
+index e05473c5c267..16018009a5a6 100644
+--- a/drivers/sh/maple/maple.c
++++ b/drivers/sh/maple/maple.c
+@@ -59,6 +59,7 @@ struct maple_device_specify {
+ static bool checked[MAPLE_PORTS];
+ static bool empty[MAPLE_PORTS];
+ static struct maple_device *baseunits[MAPLE_PORTS];
++static const struct bus_type maple_bus_type;
+ 
+ /**
+  * maple_driver_register - register a maple driver
+@@ -773,11 +774,10 @@ static struct maple_driver maple_unsupported_device = {
+ /*
+  * maple_bus_type - core maple bus structure
+  */
+-struct bus_type maple_bus_type = {
++static const struct bus_type maple_bus_type = {
+ 	.name = "maple",
+ 	.match = maple_match_bus_driver,
+ };
+-EXPORT_SYMBOL_GPL(maple_bus_type);
+ 
+ static struct device maple_bus = {
+ 	.init_name = "maple",
+diff --git a/include/linux/maple.h b/include/linux/maple.h
+index 9b140272ee16..9aae44efcfd4 100644
+--- a/include/linux/maple.h
++++ b/include/linux/maple.h
+@@ -5,7 +5,6 @@
+ #include <mach/maple.h>
+ 
+ struct device;
+-extern struct bus_type maple_bus_type;
+ 
+ /* Maple Bus command and response codes */
+ enum maple_code {
+-- 
+2.43.0
+
+
