@@ -1,163 +1,88 @@
-Received: from mail-io1-f52.google.com (mail-io1-f52.google.com [209.85.166.52])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2DD7717D5
-	for <linux-sh@vger.kernel.org>; Sat,  6 Jan 2024 03:52:01 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=landley.net
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b="gh7ATWRR"
-Received: by mail-io1-f52.google.com with SMTP id ca18e2360f4ac-7ba903342c2so14275339f.3
-        for <linux-sh@vger.kernel.org>; Fri, 05 Jan 2024 19:52:01 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20230601.gappssmtp.com; s=20230601; t=1704513121; x=1705117921; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=enno4RDG7Jc2tI8Uw9IJMPfOQP8dq6cok+ed1FX+/z8=;
-        b=gh7ATWRRRO4zPYNDnoVMr3CRnUPCarZxzyIwPDcu6zbDX5vLPvSxgIc9oKLWunSzS7
-         0udeuafrZu2rS8qq40IfQZN1ilDRFRgnUDM4lr3SflPG10c5tNCfQAYY/nti64n/FGG8
-         j9WIFQ4qy/tx8BrLonMjAVBJ1fvnWLffo/DYhCsYDikPt7qePXLFj4SYn5Slx3eFFdhB
-         CgFXyQ5VEYdGG9i/fCWtvJTiSOmSNNF9w8maQLGCGPW4fyfBifas7+HcXW1l4f0TQQsq
-         2zynch/KZyVcxm10xo1SxtlGuKqDPZtxGODQ+N0SRt0O/GeEbM8KMr17eZpz2dW0s2Gi
-         hJaA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1704513121; x=1705117921;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=enno4RDG7Jc2tI8Uw9IJMPfOQP8dq6cok+ed1FX+/z8=;
-        b=e6rDY6AUGrFPEvROhErZo7puKoDXttaC5VcJGgszVPD4MfKAo8QsYQuZ+dwpmWFvJl
-         a9nmZryU08YWOK1YjxURctmUfvnSDi69vpxqnL13Ouuo7BnmdIY+0Nn3Mmk8+c1oUOMQ
-         qnvNUzUdNhqoDGnn/oBOnYb1z+RqXGHybsEc/tfHf+78HckzONm2kdg9/ZknTYFHfFcW
-         WagfSevY4ldGDirocirsgXqbAuB81fZRFzIODvgQ+zcu/7iZzAZytvKBDiVDeEeRHJgq
-         bV5Vb21/m81OEpkik4gv8t5FtU+9ZrpKPqiHhfIZHT2A00TAy96esdpTBZKlFWE6M2p+
-         Ql9Q==
-X-Gm-Message-State: AOJu0YzcU+UYvLY08ZoNf8yUCQNJeeqMFbyt8Oum1InN1dZ3BiISMT9C
-	b35wbcBBNJQ7VEng/fYz02THyF2TEoQStQ==
-X-Google-Smtp-Source: AGHT+IGTddaSjZgOGB35qmivrEEVWMRiyLxFuiI9YqBmA2e7RS9koXVG6vidS0Xx6CzgCLA+n146Kw==
-X-Received: by 2002:a5d:8059:0:b0:7b4:28f8:519 with SMTP id b25-20020a5d8059000000b007b428f80519mr667420ior.25.1704513121061;
-        Fri, 05 Jan 2024 19:52:01 -0800 (PST)
-Received: from [172.16.32.83] ([198.232.126.202])
-        by smtp.gmail.com with ESMTPSA id ck15-20020a0566383f0f00b004665f85c6d7sm823366jab.4.2024.01.05.19.52.00
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 05 Jan 2024 19:52:00 -0800 (PST)
-Message-ID: <90c1ddc1-c608-30fc-d5aa-fdf63c90d055@landley.net>
-Date: Fri, 5 Jan 2024 21:58:30 -0600
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 99F3611721
+	for <linux-sh@vger.kernel.org>; Sun,  7 Jan 2024 21:39:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.95)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1rMarw-001Z62-6u; Sun, 07 Jan 2024 22:39:44 +0100
+Received: from p5b13a664.dip0.t-ipconnect.de ([91.19.166.100] helo=[192.168.178.81])
+          by inpost2.zedat.fu-berlin.de (Exim 4.95)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1rMarv-002czu-VS; Sun, 07 Jan 2024 22:39:44 +0100
+Message-ID: <9049a1d6346378bf945307d4866bde628ba7e542.camel@physik.fu-berlin.de>
+Subject: Re: patch "maple: make maple_bus_type static and const" added to
+ char-misc-testing
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Greg KH <gregkh@linuxfoundation.org>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, dalias@libc.org, 
+	linux-sh@vger.kernel.org, ysato@users.sourceforge.jp
+Date: Sun, 07 Jan 2024 22:39:43 +0100
+In-Reply-To: <2024010517-mousy-unfitted-ba9b@gregkh>
+References: <2024010439-cauterize-trash-b603@gregkh>
+	 <7bdec121c0ce916f4589dd4247f9482704373aee.camel@physik.fu-berlin.de>
+	 <2024010406-country-entire-262d@gregkh>
+	 <810666aa13f5309d52d47109d20c4cf511a628e7.camel@physik.fu-berlin.de>
+	 <2024010428-crank-snap-8ff8@gregkh>
+	 <8652ad54d8d15dbb52f8feec69bde939409ae18c.camel@physik.fu-berlin.de>
+	 <CAMuHMdW6rhSBD2JQrS6nE=3xEQk7nCJW-TEH8Nw64BPtjzoqEQ@mail.gmail.com>
+	 <33944cd25cbeb4f9d88ebf81f3b0cb8d368f742b.camel@physik.fu-berlin.de>
+	 <2024010536-snowboard-curtain-8e0d@gregkh>
+	 <537585054b4bb68e32153822a168af677c60708e.camel@physik.fu-berlin.de>
+	 <2024010517-mousy-unfitted-ba9b@gregkh>
+Autocrypt: addr=glaubitz@physik.fu-berlin.de; prefer-encrypt=mutual;
+ keydata=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
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.50.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.10.0
-Subject: Re: Call for nommu LTP maintainer [was: Re: [PATCH 00/36] Remove
- UCLINUX from LTP]
-Content-Language: en-US
-To: Petr Vorel <pvorel@suse.cz>
-Cc: Cyril Hrubis <chrubis@suse.cz>, Geert Uytterhoeven
- <geert@linux-m68k.org>, ltp@lists.linux.it, Li Wang <liwang@redhat.com>,
- Andrea Cervesato <andrea.cervesato@suse.com>,
- Greg Ungerer <gerg@linux-m68k.org>, Jonathan Corbet <corbet@lwn.net>,
- Randy Dunlap <rdunlap@infradead.org>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Christophe Lyon <christophe.lyon@linaro.org>,
- linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
- Linux ARM <linux-arm-kernel@lists.infradead.org>,
- linux-riscv <linux-riscv@lists.infradead.org>,
- Linux-sh list <linux-sh@vger.kernel.org>,
- automated-testing@lists.yoctoproject.org, buildroot@buildroot.org
-References: <20240103015240.1065284-1-pvorel@suse.cz>
- <CAMuHMdXGwyS-CL0vLdUP4Z4YEYhmcmDyC3YdGCnS=jFkqASqvw@mail.gmail.com>
- <20240103114957.GD1073466@pevik>
- <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
- <ZZVOhlGPg5KRyS-F@yuki> <5a1f1ff3-8a61-67cf-59a9-ce498738d912@landley.net>
- <20240105131135.GA1484621@pevik>
-From: Rob Landley <rob@landley.net>
-In-Reply-To: <20240105131135.GA1484621@pevik>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On 1/5/24 07:11, Petr Vorel wrote:
->> Nobody is maintaining "uclinux" because that was a distro, but you can build
->> nommu support in buildroot and such, and people do.
-> 
-> Right, there are nommu users. Will anybody join LTP development to maintain
-> nommu support in LTP? The needed work is to add this support to LTP new C API
-> [1] and use it in the relevant test. There is some implementation in the old
-> API, I have no idea how well it worked.
-> 
-> If nobody stands for maintaing nommu, we will have to delete it. There is nobody
-> from the current maintainers who is using LTP on nommu HW (that is the reason why
-> nommu support have not been implemented in the new API).
+On Fri, 2024-01-05 at 10:45 +0100, Greg KH wrote:
+> Maintainer roles are never "no one else can touch my portions of the
+> tree".  This specific cleanup patch was sent on December 19, and then
+> due to no response, I applied it to my tree on January 4, a little over
+> 2 week.
 
-I'm interested, but overwhelmed. Not sure I've got the spoons to come up to
-speed on a new project and give it regular attention just now.
+As I said before, I wasn't replying because I was on Christmas vacation.
 
-I see you cc'd buildroot (although the message might not go through if you
-aren't subscribed, dunno how clogged their moderation queue is these days, and
-the cc: list is long enough it might twig anyway). They had a nommu fix go in
-earlier this week (commit 98684ba7885b).
+> For a cleanup patch, that didn't add a new feature or do anything really
+> "serious", 2 weeks with no response makes me assume that no one objects
+> to it so I'll just sweep it up with the rest of those types of patches
+> and add them to my tree, especially as the merge window is about to
+> close for new stuff like this.
+>=20
+> Nothing special, this is how normal tree-wide changes happen all the
+> time, especially for "trivial" stuff like this.
 
-That said, qemu supports several nommu platforms and buildroot has defconfigs to
-build systems for them:
+Well, I'm still a newcomer to kernel development and I think it's desirable
+for newcomers to do the work themselves instead of the experienced people
+taking away the work.
 
-$ git clone git://buildroot.org/buildroot
-$ make help
-$ make list-defconfigs | grep qemu
-$ make qemu_ppc_bamboo_defconfig
-$ make
-  (time passes...)
->>> host-gettext-tiny 0.3.2 Extracting
-gzip -d -c
-/home/landley/buildroot/buildroot/dl/gettext-tiny/gettext-tiny-0.3.2.tar.gz |
-tar --strip-components=1 -C
-/home/landley/buildroot/buildroot/output/build/host-gettext-tiny-0.3.2   -xf -
-mkdir -p
-/home/landley/buildroot/buildroot/output/build/host-gettext-tiny-0.3.2/gettext-gnu
-xzcat /home/landley/buildroot/buildroot/dl/gettext-tiny/gettext-0.22.4.tar.xz |
-tar --strip-components=1 -C
-/home/landley/buildroot/buildroot/output/build/host-gettext-tiny-0.3.2/gettext-gnu
- -xf -
-xzcat: /home/landley/buildroot/buildroot/dl/gettext-tiny/gettext-0.22.4.tar.xz:
-No such file or directory
-tar: This does not look like a tar archive
-tar: Exiting with failure status due to previous errors
-make: *** [package/pkg-generic.mk:209:
-/home/landley/buildroot/buildroot/output/build/host-gettext-tiny-0.3.2/.stamp_extracted]
-Error 2
+I also would like to do this work at my own pace without being put under
+pressure to get things reviewed as soon as possible.
 
+Adrian
 
-Sigh, never build git pull du jour of anything, buildroot's having glitch du
-jour. But the point is:
-
-$ grep -rl bamboo board/
-board/qemu/ppc-bamboo/readme.txt
-$ cat board/qemu/ppc-bamboo/readme.txt
-Run the emulation with:
-
-qemu-system-ppc -nographic -M bamboo -kernel output/images/vmlinux -net
-nic,model=virtio-net-pci -net user # qemu_ppc_bamboo_defconfig
-
-The login prompt will appear in the terminal that started Qemu
--------------------
-
-In THEORY, once it builds an image (presumably using a tagged release version
-rather than expecting "continuous integration" to ever mean anything) you should
-be able to launch it with qemu. Assuming the instructions aren't also
-bit-rotted. (Or using one of the other nommu boards, I haven't gone through the
-whole list to see what they've got. I used to use a nommu arm board, but the
-linux kernel broke it when converting everything to device tree and not
-regression testing it.)
-
-Buildroot also apparently has an LTP package selectable in menuconfig:
-
-https://github.com/buildroot/buildroot/tree/master/package/ltp-testsuite
-
-But I haven't tried it...
-
-Rob
-
-P.S. I automate qemu testing all the time over in toybox, see testroot.sh under
-https://github.com/landley/toybox/tree/master/mkroot for an example.
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
