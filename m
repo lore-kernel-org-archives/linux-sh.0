@@ -1,8 +1,8 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 99F3611721
-	for <linux-sh@vger.kernel.org>; Sun,  7 Jan 2024 21:39:57 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 01BC711721
+	for <linux-sh@vger.kernel.org>; Sun,  7 Jan 2024 21:46:56 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
@@ -10,22 +10,22 @@ Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1rMarw-001Z62-6u; Sun, 07 Jan 2024 22:39:44 +0100
+          id 1rMayq-001a9M-NU; Sun, 07 Jan 2024 22:46:52 +0100
 Received: from p5b13a664.dip0.t-ipconnect.de ([91.19.166.100] helo=[192.168.178.81])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1rMarv-002czu-VS; Sun, 07 Jan 2024 22:39:44 +0100
-Message-ID: <9049a1d6346378bf945307d4866bde628ba7e542.camel@physik.fu-berlin.de>
+          id 1rMayq-002daJ-Fm; Sun, 07 Jan 2024 22:46:52 +0100
+Message-ID: <bde9cdb0b4e2cee74dd74aa7496a1d87f90f136e.camel@physik.fu-berlin.de>
 Subject: Re: patch "maple: make maple_bus_type static and const" added to
  char-misc-testing
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Greg KH <gregkh@linuxfoundation.org>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, dalias@libc.org, 
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Greg KH <gregkh@linuxfoundation.org>, dalias@libc.org, 
 	linux-sh@vger.kernel.org, ysato@users.sourceforge.jp
-Date: Sun, 07 Jan 2024 22:39:43 +0100
-In-Reply-To: <2024010517-mousy-unfitted-ba9b@gregkh>
+Date: Sun, 07 Jan 2024 22:46:51 +0100
+In-Reply-To: <CAMuHMdV=sCNZ2KdSb8B66wYYbNMjNEm6quRRbVMZVRVJ3npJ9A@mail.gmail.com>
 References: <2024010439-cauterize-trash-b603@gregkh>
 	 <7bdec121c0ce916f4589dd4247f9482704373aee.camel@physik.fu-berlin.de>
 	 <2024010406-country-entire-262d@gregkh>
@@ -34,9 +34,7 @@ References: <2024010439-cauterize-trash-b603@gregkh>
 	 <8652ad54d8d15dbb52f8feec69bde939409ae18c.camel@physik.fu-berlin.de>
 	 <CAMuHMdW6rhSBD2JQrS6nE=3xEQk7nCJW-TEH8Nw64BPtjzoqEQ@mail.gmail.com>
 	 <33944cd25cbeb4f9d88ebf81f3b0cb8d368f742b.camel@physik.fu-berlin.de>
-	 <2024010536-snowboard-curtain-8e0d@gregkh>
-	 <537585054b4bb68e32153822a168af677c60708e.camel@physik.fu-berlin.de>
-	 <2024010517-mousy-unfitted-ba9b@gregkh>
+	 <CAMuHMdV=sCNZ2KdSb8B66wYYbNMjNEm6quRRbVMZVRVJ3npJ9A@mail.gmail.com>
 Autocrypt: addr=glaubitz@physik.fu-berlin.de; prefer-encrypt=mutual;
  keydata=mQINBE3JE9wBEADMrYGNfz3oz6XLw9XcWvuIxIlPWoTyw9BxTicfGAv0d87wngs9U+d52t/REggPePf34gb7/k8FBY1IgyxnZEB5NxUb1WtW0M3GUxpPx6gBZqOm7SK1ZW3oSORw+T7Aezl3Zq4Nr4Nptqx7fnLpXfRDs5iYO/GX8WuL8fkGS/gIXtxKewd0LkTlb6jq9KKq8qn8/BN5YEKqJlM7jsENyA5PIe2npN3MjEg6p+qFrmrzJRuFjjdf5vvGfzskrXCAKGlNjMMA4TgZvugOFmBI/iSyV0IOaj0uKhes0ZNX+lQFrOB4j6I5fTBy7L/T3W/pCWo3wVkknNYa8TDYT73oIZ7Aimv+k7OzRfnxsSOAZT8Re1Yt8mvzr6FHVFjr/VdyTtO5JgQZ6LEmvo4Ro+2ByBmCHORCQ0NJhD1U3avjGfvfslG999W0WEZLTeaGkBAN1yG/1bgGAytQQkD9NsVXqBy7S3LVv9bB844ysW5Aj1nvtgIz14E2WL8rbpfjJMXi7B5ha6Lxf3rFOgxpr6ZoEn+bGG4hmrO+/ReA4SerfMqwSTnjZsZvxMJsx2B9c8DaZE8GsA4I6lsihbJmXhw8i7Cta8Dx418wtEbXhL6m/UEk60O7QD1VBgGqDMnJDFSlvKa9D+tZde/kHSNmQmLLzxtDbNgBgmR0jUlmxirijnm8bwARAQABtEBKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6IChEZWJpYW4gUHJvamVjdCkgPGdsYXViaXR6QGRlYmlhbi5vcmc+iQI3BBMBCAAhBQJRnmPwAhsDBQsJCAcDBRUKCQgLBRYCAwEAAh4BAheAAAoJEHQmOzf1tfkTF0gQAJgvGiKf5YW6+Qyss1qGwf+KHXb/6gIThY6GpSIro9vL/UxaakRCOloaXXAs3KpgBULOO8+prqU8GIqcd8tE3YvQFvvO3rN+8bhOiiD0lFmQSEHcpCW5ZRpdh
 	J5wy1t9Ddb1K/7XGzen3Uzx9bjKgDyikM3js1VtJHaFr8FGt5gtZIBDgp8QM9IRCv/32mPQxqmsaTczEzSNxTBM6Tc2NwNLus3Yh5OnFdxk1jzk+Ajpnqd/E/M7/CU5QznDgIJyopcMtOArv9Er+xe3gAXHkFvnPqcP+9UpzHB5N0HPYn4k4hsOTiJ41FHUapq8d1AuzrWyqzF9aMUi2kbHJdUmt9V39BbJIgjCysZPyGtFhR42fXHDnPARjxtRRPesEhjOeHei9ioAsZfT6bX+l6kSf/9gaxEKQe3UCXd3wbw68sXcvhzBVBxhXM91+Y7deHhNihMtqPyEmSyGXTHOMODysRU453E+XXTr2HkZPx4NV1dA8Vlid2NcMQ0iItD+85xeVznc8xquY/c1vPBeqneBWaE530Eo5e3YA7OGrxHwHbet3E210ng+xU8zUjQrFXMJm3xNpOe45RwmhCAt5z1gDTk5qNgjNgnU3mDp9DX6IffS3g2UJ02JeTrBY4hMpdVlmGCVOm9xipcPHreVGEBbM4eQnYnwbaqjVBBvy2DyfyN/tFRKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6IChGcmVpZSBVbml2ZXJzaXRhZXQgQmVybGluKSA8Z2xhdWJpdHpAcGh5c2lrLmZ1LWJlcmxpbi5kZT6JAlEEEwEIADsCGwMFCwkIBwMFFQoJCAsFFgIDAQACHgECF4AWIQRi/4p1hOApVpVGAAZ0Jjs39bX5EwUCWhQoUgIZAQAKCRB0Jjs39bX5Ez/ID/98r9c4WUSgOHVPSMVcOVziMOi+zPWfF1OhOXW+atpTM4LSSp66196xOlDFHOdNNmO6kxckXAX9ptvpBc0mRxa7OrC168fKzqR7P75eTsJnVaOu+uI/vvgsbUIosYdkkekCxDAbYCUwmzNotIspnFbxiSPMNrpw7Ud/yQkS9TDYeXnrZDhBp7p5+naWCD/yMvh7yVCA4Ea8+xDVoX
@@ -55,29 +53,39 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-On Fri, 2024-01-05 at 10:45 +0100, Greg KH wrote:
-> Maintainer roles are never "no one else can touch my portions of the
-> tree".  This specific cleanup patch was sent on December 19, and then
-> due to no response, I applied it to my tree on January 4, a little over
-> 2 week.
-
-As I said before, I wasn't replying because I was on Christmas vacation.
-
-> For a cleanup patch, that didn't add a new feature or do anything really
-> "serious", 2 weeks with no response makes me assume that no one objects
-> to it so I'll just sweep it up with the rest of those types of patches
-> and add them to my tree, especially as the merge window is about to
-> close for new stuff like this.
+On Fri, 2024-01-05 at 10:13 +0100, Geert Uytterhoeven wrote:
+> Everybody goes on holidays, once in a while.
 >=20
-> Nothing special, this is how normal tree-wide changes happen all the
-> time, especially for "trivial" stuff like this.
+> But, you are unhappy about Linus Torvalds announcing during your
+> holidays that there would be an extra rc, postponing the merge window
+> by one week? And without this postponing you would have missed the
+> merge window for sure, so this delay is actually beneficial to you?
 
-Well, I'm still a newcomer to kernel development and I think it's desirable
-for newcomers to do the work themselves instead of the experienced people
-taking away the work.
+No, I'm unhappy about the work being taken away from me just because I
+went on vacation. I'm still practicing all this being relatively new
+to the kernel work, after all.
 
-I also would like to do this work at my own pace without being put under
-pressure to get things reviewed as soon as possible.
+> The merge window is the period when Linus Torvalds merges new
+> developments for the next kernel release.
+> The merge window is not the period when maintainers review and collect
+> new developments for the next kernel release.
+
+I have done some reviews during the merge window before. It's not like the
+merge window is just open for one day. I know it's not how it's supposed
+to be, but I am also not sending huge pull requests, so it isn't really
+an issue at the moment.
+
+> If you are on holidays just before or during the merge window, you
+> should prepare your branches, and send pull requests, before the merge
+> window opens.  Several maintainers have already sent pull requests
+> (the first arrived almost 2 weeks ago).
+
+I am not getting paid for doing kernel stuff. I am doing this completely in
+my free time, on top of all the time and effort I am investing in Debian to
+still provide a distribution for older architectures. And, naturally, my
+primary job has priority over what I do for the kernel.
+
+Thus, I cannot always plan my kernel work with the upstream schedule.
 
 Adrian
 
