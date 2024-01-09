@@ -1,164 +1,136 @@
-Received: from mail-lf1-f49.google.com (mail-lf1-f49.google.com [209.85.167.49])
+Received: from mail-io1-f52.google.com (mail-io1-f52.google.com [209.85.166.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3F2B73C49C
-	for <linux-sh@vger.kernel.org>; Tue,  9 Jan 2024 18:41:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linaro.org
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2363D3D960
+	for <linux-sh@vger.kernel.org>; Tue,  9 Jan 2024 20:17:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=landley.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b="Q+co3ngm"
-Received: by mail-lf1-f49.google.com with SMTP id 2adb3069b0e04-50ea9daac4cso3454506e87.3
-        for <linux-sh@vger.kernel.org>; Tue, 09 Jan 2024 10:41:53 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b="V6uUpAPN"
+Received: by mail-io1-f52.google.com with SMTP id ca18e2360f4ac-7ba903342c2so248888539f.3
+        for <linux-sh@vger.kernel.org>; Tue, 09 Jan 2024 12:17:45 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linaro.org; s=google; t=1704825712; x=1705430512; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from:references:cc
-         :to:content-language:subject:user-agent:mime-version:date:message-id
+        d=landley-net.20230601.gappssmtp.com; s=20230601; t=1704831465; x=1705436265; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
          :from:to:cc:subject:date:message-id:reply-to;
-        bh=b3kY/sI+OewHLdAt8Sws7SovwxQjp4vZRhkHLuCSn/w=;
-        b=Q+co3ngm3QhNnSMVf1JtEQ9xRL+T6OdBUTkuBEfGHJ2TAHdIay644/+v4NxIXEw/R/
-         AWLhihcEiHGz+ay8oUrm4TN7Un39mw91e2TiQI2kCF6bVmwDBpqN2KPeBhmrusOGu9/j
-         D7pv5K3fswNu6IZynF0LyNIydwgPi4c/l4cPoggH1HzMLGxEkBEj2gsnGBpREKW7uZfO
-         XEPYEge8MNe5g0RnNsvfGdqBzyGD/AjD4lEuRnxopgOEV4G6a3H8cKOQHuJ/FR2M0JzN
-         Hkl41HY0GZW1ScZOzqDrEysoiEiPWGurVHDxQWAz6s5iF6Py6nKQJxKm5P8Z8W1jUjo4
-         jGTw==
+        bh=zvygCsnAZQSUX1OyBrWi0tyZLEH0CAk1fXUh+ZaJ3Lo=;
+        b=V6uUpAPN4uvL9v4m6KS3io6GQ4KJl/bVbOf/wTiGg8faPmhxgffs5YUP71+KavZN3p
+         iCTExOw14otoEx2QKRQ7GMWRN99onikdcVxXO+lHbBITaqOUYTDkhohy27kUAD6U/9Oe
+         pD7xRy5H2s9QSZqGM1AFAPIPsq+hG4Fu7WGcFpxV2RyTX3Brjjqib4UW4fOKus45htZ1
+         M0WM6Izr7vv/Sf1IM/z3nwYW6zqXp76JRxweIR67Ulm7HlMo1dWVbJSyNfnG5iqsiyMy
+         znZ7R0ljiOIdmyH++EGTcZJD/r1LMI0Vu7QgmOBJ0cDodf+V7it3+NX384WUIkLvPFkr
+         nxJQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1704825712; x=1705430512;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from:references:cc
-         :to:content-language:subject:user-agent:mime-version:date:message-id
+        d=1e100.net; s=20230601; t=1704831465; x=1705436265;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=b3kY/sI+OewHLdAt8Sws7SovwxQjp4vZRhkHLuCSn/w=;
-        b=jLmPP+NIkjQFHCWxMMjUGfGYv3gP6zm/asoGhcek87bkQEZV/H4FCxChp0E2TSyjXm
-         jh5IuCYfqAb0XMp87ABNuiEkOJVCZVoscGhZarmgWAeXG4FxeWSDUS2TGM+CSNTZPX+a
-         9pQsheu8E+wvkbfJdnDMIocDxXRn013cVOh4ypSlo404m0z1ZoXnXFb8SrgvmrqJAVty
-         Ss2a+OwvB5zplenvYlbpSgSWl+J/XgrAmWMdW6Ihpo71SFhBiFMPRw4eylm5yTQWD//S
-         pGC+g8QXknSP8XW/Qg8kjhcAFxf/BJvwPDPqPDIdir1vo/IqE6bWEJ0PRcVPH+rkJhoL
-         y8OQ==
-X-Gm-Message-State: AOJu0YxW34bdvV8S3TQn3DV/uAtn3hYY2hOI8wwh/FJaFTbW+o5B67N/
-	JhjCi0D3aTGxCfoFntXRu7VZRAMQ3xm3MA==
-X-Google-Smtp-Source: AGHT+IEIf5y9iCXRqGeQfwB4wQA61OuNMht8Vp0eJHsbfT3YBU5W1VDHv2z3upGwadxw7MEo4SYUBA==
-X-Received: by 2002:a19:8c0a:0:b0:50e:7c08:4350 with SMTP id o10-20020a198c0a000000b0050e7c084350mr2353230lfd.42.1704825711996;
-        Tue, 09 Jan 2024 10:41:51 -0800 (PST)
-Received: from [192.168.1.20] ([178.197.223.112])
-        by smtp.gmail.com with ESMTPSA id h22-20020a170906719600b00a2b9a6f1e9dsm242124ejk.10.2024.01.09.10.41.47
+        bh=zvygCsnAZQSUX1OyBrWi0tyZLEH0CAk1fXUh+ZaJ3Lo=;
+        b=ScaZ7AVAEHOPGCjwSTv6mK7VkjaoWGYdW04yYMOc4y08I0wc3/1zOwyLW2uN45QHwm
+         /crelw9oVgkB7KQH2J8DWpVyXMVI4LBSC1DfqVZ5GhRHLrFRrqcV92tLFHrIjCOzU56G
+         ZgScY8SlcAFMwif2HahQqw8jx3b7IiVSlY9WZjjahWLwtKBIC4nExGQ1Dtmc6vT5vZXe
+         3ZaNlOHhQugh3mq64lkybHgHzrm+MhqfbvsbPtaidvJHp/KIVILK+qLTsSrnVm+lrLpb
+         YWISrOTsHbyh2q8PoHKerYnpglV6h3yZt1H5Vm+U51gD66NCFe+Ge70IzEDasQxZ+Fzr
+         l04A==
+X-Gm-Message-State: AOJu0YwOjW5QOgXeumygf/5YzdByILGBHuVLd7WR5QvBg0Ib7dTMNMPN
+	SBDf/NXmOglNn1Jxv4ylMTjHMSKjkg1Okw==
+X-Google-Smtp-Source: AGHT+IHJDeszorYY5GFrmlMsgPhnGqSSgFTpBWcziFxtkUG5t0gPVrqEY0fdimh0r8UPafEYZce6pw==
+X-Received: by 2002:a6b:7e08:0:b0:7bc:4215:da28 with SMTP id i8-20020a6b7e08000000b007bc4215da28mr5504732iom.42.1704831465186;
+        Tue, 09 Jan 2024 12:17:45 -0800 (PST)
+Received: from [172.16.32.83] ([198.232.126.202])
+        by smtp.gmail.com with ESMTPSA id q5-20020a02a305000000b0046e4506fa75sm13527jai.26.2024.01.09.12.17.44
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 09 Jan 2024 10:41:51 -0800 (PST)
-Message-ID: <3666744f-0d34-477e-83bf-737ed7a4c230@linaro.org>
-Date: Tue, 9 Jan 2024 19:41:47 +0100
+        Tue, 09 Jan 2024 12:17:44 -0800 (PST)
+Message-ID: <a3d7f5ae-56c6-9cd8-2cda-2d50d12be9c4@landley.net>
+Date: Tue, 9 Jan 2024 14:24:22 -0600
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [DO NOT MERGE v6 04/37] dt-bindings: interrupt-controller: Add
- header for Renesas SH3/4 INTC.
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.0
+Subject: Re: Call for nommu LTP maintainer [was: Re: [PATCH 00/36] Remove
+ UCLINUX from LTP]
 Content-Language: en-US
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
-Cc: Damien Le Moal <dlemoal@kernel.org>, Rob Herring <robh+dt@kernel.org>,
- Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
- Conor Dooley <conor+dt@kernel.org>,
- Geert Uytterhoeven <geert+renesas@glider.be>,
- Michael Turquette <mturquette@baylibre.com>, Stephen Boyd
- <sboyd@kernel.org>, Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
- Maxime Ripard <mripard@kernel.org>, Thomas Zimmermann <tzimmermann@suse.de>,
- David Airlie <airlied@gmail.com>, Daniel Vetter <daniel@ffwll.ch>,
- Thomas Gleixner <tglx@linutronix.de>,
- Lorenzo Pieralisi <lpieralisi@kernel.org>,
- =?UTF-8?Q?Krzysztof_Wilczy=C5=84ski?= <kw@linux.com>,
- Bjorn Helgaas <bhelgaas@google.com>,
- Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
- Jiri Slaby <jirislaby@kernel.org>, Magnus Damm <magnus.damm@gmail.com>,
- Daniel Lezcano <daniel.lezcano@linaro.org>, Rich Felker <dalias@libc.org>,
+To: Petr Vorel <pvorel@suse.cz>
+Cc: Cyril Hrubis <chrubis@suse.cz>, Geert Uytterhoeven
+ <geert@linux-m68k.org>, ltp@lists.linux.it, Li Wang <liwang@redhat.com>,
+ Andrea Cervesato <andrea.cervesato@suse.com>,
+ Greg Ungerer <gerg@linux-m68k.org>, Jonathan Corbet <corbet@lwn.net>,
+ Randy Dunlap <rdunlap@infradead.org>,
  John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Lee Jones <lee@kernel.org>, Helge Deller <deller@gmx.de>,
- Heiko Stuebner <heiko@sntech.de>, Jernej Skrabec <jernej.skrabec@gmail.com>,
- Chris Morgan <macromorgan@hotmail.com>, Yang Xiwen
- <forbidden405@foxmail.com>, Sebastian Reichel <sre@kernel.org>,
- Linus Walleij <linus.walleij@linaro.org>,
- Randy Dunlap <rdunlap@infradead.org>, Arnd Bergmann <arnd@arndb.de>,
- Vlastimil Babka <vbabka@suse.cz>, Hyeonggon Yoo <42.hyeyoo@gmail.com>,
- David Rientjes <rientjes@google.com>, Baoquan He <bhe@redhat.com>,
- Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck
- <linux@roeck-us.net>, Stephen Rothwell <sfr@canb.auug.org.au>,
- Azeem Shaikh <azeemshaikh38@gmail.com>,
- Javier Martinez Canillas <javierm@redhat.com>,
- Max Filippov <jcmvbkbc@gmail.com>, Palmer Dabbelt <palmer@rivosinc.com>,
- Bin Meng <bmeng@tinylab.org>, Jonathan Corbet <corbet@lwn.net>,
- Jacky Huang <ychuang3@nuvoton.com>, Lukas Bulwahn <lukas.bulwahn@gmail.com>,
- Biju Das <biju.das.jz@bp.renesas.com>,
- =?UTF-8?Q?Uwe_Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>,
- Sam Ravnborg <sam@ravnborg.org>, Sergey Shtylyov <s.shtylyov@omp.ru>,
- Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
- Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
- linux-ide@vger.kernel.org, devicetree@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
- linux-clk@vger.kernel.org, dri-devel@lists.freedesktop.org,
- linux-pci@vger.kernel.org, linux-serial@vger.kernel.org,
- linux-fbdev@vger.kernel.org
-References: <cover.1704788539.git.ysato@users.sourceforge.jp>
- <b9cea5b530a6d68ea921174fbbda60afb8dd4432.1704788539.git.ysato@users.sourceforge.jp>
-From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
-Autocrypt: addr=krzysztof.kozlowski@linaro.org; keydata=
- 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
- D2GYIS41Kv4Isx2dEFh+/Q==
-In-Reply-To: <b9cea5b530a6d68ea921174fbbda60afb8dd4432.1704788539.git.ysato@users.sourceforge.jp>
+ Christophe Lyon <christophe.lyon@linaro.org>,
+ linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
+ Linux ARM <linux-arm-kernel@lists.infradead.org>,
+ linux-riscv <linux-riscv@lists.infradead.org>,
+ Linux-sh list <linux-sh@vger.kernel.org>,
+ automated-testing@lists.yoctoproject.org, buildroot@buildroot.org,
+ Niklas Cassel <niklas.cassel@wdc.com>
+References: <20240103015240.1065284-1-pvorel@suse.cz>
+ <CAMuHMdXGwyS-CL0vLdUP4Z4YEYhmcmDyC3YdGCnS=jFkqASqvw@mail.gmail.com>
+ <20240103114957.GD1073466@pevik>
+ <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
+ <ZZVOhlGPg5KRyS-F@yuki> <5a1f1ff3-8a61-67cf-59a9-ce498738d912@landley.net>
+ <20240105131135.GA1484621@pevik>
+ <90c1ddc1-c608-30fc-d5aa-fdf63c90d055@landley.net>
+ <20240108090338.GA1552643@pevik>
+From: Rob Landley <rob@landley.net>
+In-Reply-To: <20240108090338.GA1552643@pevik>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 09/01/2024 09:23, Yoshinori Sato wrote:
-> Renesas SH7751 Interrupt controller priority register define.
+On 1/8/24 03:03, Petr Vorel wrote:
+> Hi Rob, all,
 > 
+> [ Added Niklas Cassel, who is maintainer of qemu_riscv64_nommu_virt_defconfig in
+> buildroot ]
 
-Still not a binding.
+Hi Niklas!
 
-Some parts of my comments are implemented, others are just ignored
-(dropping the file, fixing full stop in commit msg). This is confusing.
-I don't know. Shall I just NAK it to make it clear?
+>> Buildroot also apparently has an LTP package selectable in menuconfig:
+> 
+>> https://github.com/buildroot/buildroot/tree/master/package/ltp-testsuite
+> 
+>> But I haven't tried it...
+> 
+> I'm the maintainer of the LTP package in buildroot in my private time.
+> BTW I spent quite a lot of time fixing LTP (and some other system packages,
+> e.g. nfs-utils) compilation on some old legacy architectures reported via
+> http://autobuild.buildroot.net/ I've never used in the reality.
+> But I certainly don't have time to drive nommu support in my private time.
+> I don't even have an interest, I don't use any nommu device.
 
-NAK
+I do, but I've never done much with LTP, and I have my hands full with toybox
+and mkroot already.
 
-Best regards,
-Krzysztof
+> Therefore nobody who is not involved in nommu will not find a time to support it
+> in LTP (support does not mean just to add the functionality to the new C API,
+> but run tests on nommu and fix failing bugs). I suppose nobody is paid to work
+> on nommu platforms, it would have to be a hobby project, right?
 
+A bunch of people are paid to work on nommu platforms, and I've worked with them
+a bunch, but none of them talk to linux-kernel. They find the culture toxic,
+insular, and categorically dismissive of their interests.
+
+For example, cortex-m is a large nommu platform on which vendors support Linux
+BSPs, but notice how page 8 of
+https://www.microsemi.com/document-portal/doc_view/132181-linux-cortex-m-users-manual
+points at a cross compiler toolchain from _2010_ and page 4 says they're booting
+a 2.6.33 kernel?
+
+I'm a bit weird in that I try to get CURRENT stuff to work on nommu, and a lot
+of people have been happy to consume my work, but getting any of them to post
+directly to linux-kernel is like pulling teeth.
+
+> But as I said, if anybody from nommu decides to maintain it in LTP, I'll try to
+> support him in my free time (review patches, give advices). And if nobody
+> stands, this patchset which removes the support in the old API will be merged
+> after next LTP release (in the end of January).
+
+What does the API migration do? Is there a page on it ala OABI vs EABI in arm or
+something?
+
+Rob
