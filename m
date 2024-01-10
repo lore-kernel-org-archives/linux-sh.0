@@ -1,12 +1,24 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 98FB43DB80;
-	Tue,  9 Jan 2024 23:17:56 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2313DC433C7;
-	Tue,  9 Jan 2024 23:17:51 +0000 (UTC)
-Message-ID: <461a6556-8f24-48f5-811a-498cb44f2d64@linux-m68k.org>
-Date: Wed, 10 Jan 2024 09:17:48 +1000
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B55C21376;
+	Wed, 10 Jan 2024 02:06:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="hEUsXdPE"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 18AEAC433F1;
+	Wed, 10 Jan 2024 02:06:07 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1704852375;
+	bh=K20e8jhxQctdn0EQe0a64CVvGFTYjmTc3LS7asQogyo=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=hEUsXdPExgJ/6tyvorNMmv2xbbnN/ksrlzf9XWoz4XzMSpDxk/Su9jRai8A6JmPqT
+	 CROg9vyX/uPgMa6hC3+dIv1+9VwRJuYOHwCZqh4PPAT20xe0N58/U93+wqZ4eMep+N
+	 C9Y9/Yl2ILJOSVXmlxmhAbkx+aAbO4RSpzEDkemhkakgnE8rlLiL7DE1D79+kIKw62
+	 c5+A6TL8g0sDmmmyWP6zXo51r4mcIw9+uHa66sJvr6wGG+GkGqe1ewkKXIi+ONI0Fz
+	 xX64W1DE45sKKqohJS8CPYy6lPEmA17vOTByyqBIbrhq4wLzLuEHnHNC1j3EhDfzcF
+	 aA908fHMhDbXQ==
+Message-ID: <c2f88d7b-cded-42ab-bc5c-3d9a723daa1f@kernel.org>
+Date: Wed, 10 Jan 2024 11:06:06 +0900
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -14,121 +26,76 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: Call for nommu LTP maintainer [was: Re: [PATCH 00/36] Remove
- UCLINUX from LTP]
+Subject: Re: [DO NOT MERGE v6 27/37] dt-bindings: ata: ata-generic: Add new
+ targets
 Content-Language: en-US
-To: Rob Landley <rob@landley.net>, Petr Vorel <pvorel@suse.cz>
-Cc: Cyril Hrubis <chrubis@suse.cz>, Geert Uytterhoeven
- <geert@linux-m68k.org>, ltp@lists.linux.it, Li Wang <liwang@redhat.com>,
- Andrea Cervesato <andrea.cervesato@suse.com>,
- Jonathan Corbet <corbet@lwn.net>, Randy Dunlap <rdunlap@infradead.org>,
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
+Cc: Rob Herring <robh+dt@kernel.org>,
+ Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
+ Conor Dooley <conor+dt@kernel.org>,
+ Geert Uytterhoeven <geert+renesas@glider.be>,
+ Michael Turquette <mturquette@baylibre.com>, Stephen Boyd
+ <sboyd@kernel.org>, Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
+ Maxime Ripard <mripard@kernel.org>, Thomas Zimmermann <tzimmermann@suse.de>,
+ David Airlie <airlied@gmail.com>, Daniel Vetter <daniel@ffwll.ch>,
+ Thomas Gleixner <tglx@linutronix.de>,
+ Lorenzo Pieralisi <lpieralisi@kernel.org>,
+ =?UTF-8?Q?Krzysztof_Wilczy=C5=84ski?= <kw@linux.com>,
+ Bjorn Helgaas <bhelgaas@google.com>,
+ Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+ Jiri Slaby <jirislaby@kernel.org>, Magnus Damm <magnus.damm@gmail.com>,
+ Daniel Lezcano <daniel.lezcano@linaro.org>, Rich Felker <dalias@libc.org>,
  John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Christophe Lyon <christophe.lyon@linaro.org>,
- linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
- Linux ARM <linux-arm-kernel@lists.infradead.org>,
- linux-riscv <linux-riscv@lists.infradead.org>,
- Linux-sh list <linux-sh@vger.kernel.org>,
- automated-testing@lists.yoctoproject.org, buildroot@buildroot.org,
- Niklas Cassel <niklas.cassel@wdc.com>
-References: <20240103015240.1065284-1-pvorel@suse.cz>
- <CAMuHMdXGwyS-CL0vLdUP4Z4YEYhmcmDyC3YdGCnS=jFkqASqvw@mail.gmail.com>
- <20240103114957.GD1073466@pevik>
- <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
- <ZZVOhlGPg5KRyS-F@yuki> <5a1f1ff3-8a61-67cf-59a9-ce498738d912@landley.net>
- <20240105131135.GA1484621@pevik>
- <90c1ddc1-c608-30fc-d5aa-fdf63c90d055@landley.net>
- <20240108090338.GA1552643@pevik>
- <a3d7f5ae-56c6-9cd8-2cda-2d50d12be9c4@landley.net>
-From: Greg Ungerer <gerg@linux-m68k.org>
-In-Reply-To: <a3d7f5ae-56c6-9cd8-2cda-2d50d12be9c4@landley.net>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+ Lee Jones <lee@kernel.org>, Helge Deller <deller@gmx.de>,
+ Heiko Stuebner <heiko@sntech.de>, Jernej Skrabec <jernej.skrabec@gmail.com>,
+ Chris Morgan <macromorgan@hotmail.com>, Yang Xiwen
+ <forbidden405@foxmail.com>, Sebastian Reichel <sre@kernel.org>,
+ Linus Walleij <linus.walleij@linaro.org>,
+ Randy Dunlap <rdunlap@infradead.org>, Arnd Bergmann <arnd@arndb.de>,
+ Vlastimil Babka <vbabka@suse.cz>, Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+ David Rientjes <rientjes@google.com>, Baoquan He <bhe@redhat.com>,
+ Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck
+ <linux@roeck-us.net>, Stephen Rothwell <sfr@canb.auug.org.au>,
+ Azeem Shaikh <azeemshaikh38@gmail.com>,
+ Javier Martinez Canillas <javierm@redhat.com>,
+ Max Filippov <jcmvbkbc@gmail.com>, Palmer Dabbelt <palmer@rivosinc.com>,
+ Bin Meng <bmeng@tinylab.org>, Jonathan Corbet <corbet@lwn.net>,
+ Jacky Huang <ychuang3@nuvoton.com>, Lukas Bulwahn <lukas.bulwahn@gmail.com>,
+ Biju Das <biju.das.jz@bp.renesas.com>,
+ =?UTF-8?Q?Uwe_Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>,
+ Sam Ravnborg <sam@ravnborg.org>, Sergey Shtylyov <s.shtylyov@omp.ru>,
+ Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
+ Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+ linux-ide@vger.kernel.org, devicetree@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+ linux-clk@vger.kernel.org, dri-devel@lists.freedesktop.org,
+ linux-pci@vger.kernel.org, linux-serial@vger.kernel.org,
+ linux-fbdev@vger.kernel.org
+References: <cover.1704788539.git.ysato@users.sourceforge.jp>
+ <06fdb2cf7927681acf3099b826390ef75ba321af.1704788539.git.ysato@users.sourceforge.jp>
+From: Damien Le Moal <dlemoal@kernel.org>
+Organization: Western Digital Research
+In-Reply-To: <06fdb2cf7927681acf3099b826390ef75ba321af.1704788539.git.ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-
-On 10/1/24 06:24, Rob Landley wrote:
-> On 1/8/24 03:03, Petr Vorel wrote:
->> Hi Rob, all,
->>
->> [ Added Niklas Cassel, who is maintainer of qemu_riscv64_nommu_virt_defconfig in
->> buildroot ]
+On 1/9/24 17:23, Yoshinori Sato wrote:
+> Added new ata-generic target.
+> - iodata,usl-5p-ata
+> - renesas,rts7751r2d-ata
 > 
-> Hi Niklas!
-> 
->>> Buildroot also apparently has an LTP package selectable in menuconfig:
->>
->>> https://github.com/buildroot/buildroot/tree/master/package/ltp-testsuite
->>
->>> But I haven't tried it...
->>
->> I'm the maintainer of the LTP package in buildroot in my private time.
->> BTW I spent quite a lot of time fixing LTP (and some other system packages,
->> e.g. nfs-utils) compilation on some old legacy architectures reported via
->> http://autobuild.buildroot.net/ I've never used in the reality.
->> But I certainly don't have time to drive nommu support in my private time.
->> I don't even have an interest, I don't use any nommu device.
-> 
-> I do, but I've never done much with LTP, and I have my hands full with toybox
-> and mkroot already.
-> 
->> Therefore nobody who is not involved in nommu will not find a time to support it
->> in LTP (support does not mean just to add the functionality to the new C API,
->> but run tests on nommu and fix failing bugs). I suppose nobody is paid to work
->> on nommu platforms, it would have to be a hobby project, right?
-> 
-> A bunch of people are paid to work on nommu platforms, and I've worked with them
-> a bunch, but none of them talk to linux-kernel. They find the culture toxic,
-> insular, and categorically dismissive of their interests.
+> Each boards have simple IDE Interface. Use ATA generic driver.
 
-I have been involved in the kernel nommu space for 20 years, and sure, there is
-some of that. But mostly spending some time and effort to get involved pays off.
-I have seen potential contributors show up with some arrogant attitudes too,
-so it cuts both ways here.
+This looks OK to me, so feel free to add:
 
-The m68k community I have been part of has been nothing but welcoming. The mm
-people have tried hard to keep nommu support up-to-date where almost none of them
-actually have a vested interest in doing so.
+Acked-by: Damien Le Moal <dlemoal@kernel.org>
 
-What I have seen is that many companies working in this space just don't want
-to spend the time and effort to go mainline. That is a business decision they
-make, and that is fine. Heck my work in actual mainline has never really been
-paid for by any company and I have sunk a _lot_ of time into it. (Full disclosure
-I did get paid to work on early porting and support - just not geting it into
-mainline and maintain it there).
+Note: The "DO NOT MERGE" patch prefix almost got me to immediately delete this
+37 patches in my inbox... If you wish to get this work merged after review,
+please use the regular "PATCH" prefix. No worries, the series will not be merged
+until is is reviewed :)
 
+-- 
+Damien Le Moal
+Western Digital Research
 
-> For example, cortex-m is a large nommu platform on which vendors support Linux
-> BSPs, but notice how page 8 of
-> https://www.microsemi.com/document-portal/doc_view/132181-linux-cortex-m-users-manual
-> points at a cross compiler toolchain from _2010_ and page 4 says they're booting
-> a 2.6.33 kernel?
-
-Any company/person who follows the route of not working with the linux kernel
-community to get their work included is going to inevitably get stuck on older
-versions of everything.
-
-
-> I'm a bit weird in that I try to get CURRENT stuff to work on nommu, and a lot
-> of people have been happy to consume my work, but getting any of them to post
-> directly to linux-kernel is like pulling teeth.
-
-I regularly test nommu configurations (as in every kernel rc and release) on m68k
-and at least every release on other architectures like arm(*) and recently on
-riscv as well.
-
-(*) somewhat annoyingly needing a minor patch to run the versatile qemu platform
-     I like to test with. But hey, that is on me :-)
-
-Regards
-Greg
-
-
-
->> But as I said, if anybody from nommu decides to maintain it in LTP, I'll try to
->> support him in my free time (review patches, give advices). And if nobody
->> stands, this patchset which removes the support in the old API will be merged
->> after next LTP release (in the end of January).
-> 
-> What does the API migration do? Is there a page on it ala OABI vs EABI in arm or
-> something?
-> 
-> Rob
