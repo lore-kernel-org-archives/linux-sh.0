@@ -1,281 +1,175 @@
-Received: from mail-qt1-f173.google.com (mail-qt1-f173.google.com [209.85.160.173])
+Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B068DDBE
-	for <linux-sh@vger.kernel.org>; Wed, 10 Jan 2024 05:40:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=landley.net
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AA1EC38DED
+	for <linux-sh@vger.kernel.org>; Wed, 10 Jan 2024 07:19:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linaro.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b="l5kumSo9"
-Received: by mail-qt1-f173.google.com with SMTP id d75a77b69052e-427a3887483so26987081cf.3
-        for <linux-sh@vger.kernel.org>; Tue, 09 Jan 2024 21:40:52 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b="q6sF3G8U"
+Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-40e43e489e4so42629085e9.1
+        for <linux-sh@vger.kernel.org>; Tue, 09 Jan 2024 23:19:33 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20230601.gappssmtp.com; s=20230601; t=1704865251; x=1705470051; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=Wl6KplL8vfqqzv9XIvHtOm+qlgn0/YVCH+xMxC333j8=;
-        b=l5kumSo9gPYCHA71oE8j29E8n3vIEr1EhGa6lI6eJYTmgtJvxEqkOmA7Iq16reb3Os
-         eREYnOj0wvcoMA4rWJcsRP58jogWi/AuGHG4D3mdiAFEBWq+wunmah1bBXF7luNL//Sn
-         Qa2AsD+U+GndQ57dew8imRLdHrZi6KSsVl4UgvI7M5wkjGjUEmx2eAq28dssVBQDGOcc
-         Bo77YqLOf+x8C+8LctR2txNI+t1/HsGYEHIhFiHVta0mtpQywfEuiTJGb+SwkbC1ocS0
-         Yj9VtSfEH9vE7JVj7AZFLfr0uXQ3snOvsC1YjYHKXgUZpZOBa1+jXvfChxFNvcWh/blM
-         CMZA==
+        d=linaro.org; s=google; t=1704871172; x=1705475972; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to;
+        bh=u4hM6n1Tji6UXY28XNcMRm8koasqLSM706A4viv/sjY=;
+        b=q6sF3G8UCxwbcG9qGRIEb4TeFwbM0jfjrxh/R1IOHgG/gvFy0oN35sauwSJpO5KXHX
+         ezLXXSuZMg47MSfUZoXXNTY17MSkHcie07IjIsajmYopEWwkutzfKo6uEDRfeJM8BTPf
+         tzsq2YQJsQeoOIgZum4GYpjoLL2/sBlUmgFJqTpUDvHctG4cQpBiVwMWjrYxpZcF7akx
+         yZuICbUmTnaoYqbGVX4TAskgPL2U5IBKDxCJYD0nJlMMz+h9IGScfn0fiEY34/2KqNDG
+         hTA+0CRI9EGLWf+PjlTir7W0oZaLxhP60imVlrQqvD87lQ38r8CCpIc3CbCkM5JLDBPA
+         83tQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1704865251; x=1705470051;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=Wl6KplL8vfqqzv9XIvHtOm+qlgn0/YVCH+xMxC333j8=;
-        b=TYGq6FpVWYuPFUgvXhCx4s7yIi3hj9XjKmJRfbGKnsq+4OR3i1cROkv6WnxXJrUcIS
-         afPnTSqp+mR7b2l32dUy+BJi/wq+TQXy3YvsNGB9IgyCeq3Qwc9bXdAwbWoSPMwgIysB
-         SwXFvprHUsnGDnrHga41mdSfg3Hoz2rDsIhZmo51H+i0szM7lqaotwr7vnOc0hEokTT3
-         YauVPpQ04XjXiEOC8KVVg7ex6HjIcSdf7BXbUfkrI0ntsmmDerY08tFsewPfbQI5Etkb
-         Ar17Fphpc0WJaOTZODRvyjYP+Q3b2QojcnhuYbrOM47MOmS5A2jG9M6Bu1Ki1M4gkA1b
-         tE3g==
-X-Gm-Message-State: AOJu0Yy6ipQiQoRSZipEmEkrq+ecMRIR4vun5of31EGSZUkzdNrc0UpW
-	nHmavk/tNK6AvMktDevutXJPTXM9wt3xLw==
-X-Google-Smtp-Source: AGHT+IE8kWehfow24cvasfCahOteXRnQwmSQ0KUU70I6cj4jEzLcuNUg6AgxZgtVGm7CpYkCj/gbDA==
-X-Received: by 2002:a05:622a:588:b0:429:b76a:c3fa with SMTP id c8-20020a05622a058800b00429b76ac3famr202269qtb.26.1704865251286;
-        Tue, 09 Jan 2024 21:40:51 -0800 (PST)
-Received: from [172.16.32.83] ([198.232.126.202])
-        by smtp.gmail.com with ESMTPSA id cr14-20020a05622a428e00b0042997333149sm1497591qtb.63.2024.01.09.21.40.49
+        d=1e100.net; s=20230601; t=1704871172; x=1705475972;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=u4hM6n1Tji6UXY28XNcMRm8koasqLSM706A4viv/sjY=;
+        b=E/wGqUwrsQUThkjsQIGxyxzzUlPT3AoQL1aueiHjMyjoD/TyA8q8Nq7/l/vyYxKEhg
+         X/kqiD55nZ7G8Uv2j7PgmvNLA8GLugDvCFpvssGoP1jbKEzuK2Rg/SkVQvyegRiz2Km5
+         qEaJIZ9/7Ts3TBrIaNuHhI7wbD3VGJBLRJ/YGjvdvE9CnrnciH60P/0fqo5kmKdoHCGm
+         +N54xOPYoetG2/LtYEzyOjeApCSf+0QfGmnz45fHAZIn30o3TLW7hbhChJSo7UNvTJOL
+         lhrn100JQYUZsXJ2bX3lCioh15QVnHC3yCBaqhHdt0vWgWOA/xiaigckaF58yZ/40zmK
+         JS7w==
+X-Gm-Message-State: AOJu0YzHucFht9131iaH0yLHP5X8Uq9TsEkbERIvy/RqDAfJWENqQG5O
+	bY2lipwlw+gkhVS5hg1Sxb/FIDFqR+r+TQ==
+X-Google-Smtp-Source: AGHT+IEjGTQoJbPpHPZtdbQppWgxlfoWVb9PU9Tm0reAhz6z1OUmwMvSKgJYzAU78HRY47W3+jHpTg==
+X-Received: by 2002:a05:600c:1548:b0:40e:36ba:e571 with SMTP id f8-20020a05600c154800b0040e36bae571mr290225wmg.6.1704871171869;
+        Tue, 09 Jan 2024 23:19:31 -0800 (PST)
+Received: from [192.168.1.20] ([178.197.223.112])
+        by smtp.gmail.com with ESMTPSA id fa24-20020a05600c519800b0040e490cb666sm1083553wmb.12.2024.01.09.23.19.28
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 09 Jan 2024 21:40:51 -0800 (PST)
-Message-ID: <b3a8b9db-86ee-47c6-96e2-baa2cba61404@landley.net>
-Date: Tue, 9 Jan 2024 23:47:27 -0600
+        Tue, 09 Jan 2024 23:19:31 -0800 (PST)
+Message-ID: <8cae92cf-ac7f-4e73-b28b-ee543a9064d9@linaro.org>
+Date: Wed, 10 Jan 2024 08:19:27 +0100
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.10.0
-Subject: Re: Call for nommu LTP maintainer [was: Re: [PATCH 00/36] Remove
- UCLINUX from LTP]
-Content-Language: en-US
-To: Greg Ungerer <gerg@linux-m68k.org>, Petr Vorel <pvorel@suse.cz>
-Cc: Cyril Hrubis <chrubis@suse.cz>, Geert Uytterhoeven
- <geert@linux-m68k.org>, ltp@lists.linux.it, Li Wang <liwang@redhat.com>,
- Andrea Cervesato <andrea.cervesato@suse.com>,
- Jonathan Corbet <corbet@lwn.net>, Randy Dunlap <rdunlap@infradead.org>,
+User-Agent: Mozilla Thunderbird
+Subject: Re: [DO NOT MERGE v6 27/37] dt-bindings: ata: ata-generic: Add new
+ targets
+To: Damien Le Moal <dlemoal@kernel.org>,
+ Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
+Cc: Rob Herring <robh+dt@kernel.org>,
+ Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
+ Conor Dooley <conor+dt@kernel.org>,
+ Geert Uytterhoeven <geert+renesas@glider.be>,
+ Michael Turquette <mturquette@baylibre.com>, Stephen Boyd
+ <sboyd@kernel.org>, Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
+ Maxime Ripard <mripard@kernel.org>, Thomas Zimmermann <tzimmermann@suse.de>,
+ David Airlie <airlied@gmail.com>, Daniel Vetter <daniel@ffwll.ch>,
+ Thomas Gleixner <tglx@linutronix.de>,
+ Lorenzo Pieralisi <lpieralisi@kernel.org>,
+ =?UTF-8?Q?Krzysztof_Wilczy=C5=84ski?= <kw@linux.com>,
+ Bjorn Helgaas <bhelgaas@google.com>,
+ Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+ Jiri Slaby <jirislaby@kernel.org>, Magnus Damm <magnus.damm@gmail.com>,
+ Daniel Lezcano <daniel.lezcano@linaro.org>, Rich Felker <dalias@libc.org>,
  John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Christophe Lyon <christophe.lyon@linaro.org>,
- linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
- Linux ARM <linux-arm-kernel@lists.infradead.org>,
- linux-riscv <linux-riscv@lists.infradead.org>,
- Linux-sh list <linux-sh@vger.kernel.org>,
- automated-testing@lists.yoctoproject.org, buildroot@buildroot.org,
- Niklas Cassel <niklas.cassel@wdc.com>
-References: <20240103015240.1065284-1-pvorel@suse.cz>
- <CAMuHMdXGwyS-CL0vLdUP4Z4YEYhmcmDyC3YdGCnS=jFkqASqvw@mail.gmail.com>
- <20240103114957.GD1073466@pevik>
- <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
- <ZZVOhlGPg5KRyS-F@yuki> <5a1f1ff3-8a61-67cf-59a9-ce498738d912@landley.net>
- <20240105131135.GA1484621@pevik>
- <90c1ddc1-c608-30fc-d5aa-fdf63c90d055@landley.net>
- <20240108090338.GA1552643@pevik>
- <a3d7f5ae-56c6-9cd8-2cda-2d50d12be9c4@landley.net>
- <461a6556-8f24-48f5-811a-498cb44f2d64@linux-m68k.org>
-From: Rob Landley <rob@landley.net>
-In-Reply-To: <461a6556-8f24-48f5-811a-498cb44f2d64@linux-m68k.org>
+ Lee Jones <lee@kernel.org>, Helge Deller <deller@gmx.de>,
+ Heiko Stuebner <heiko@sntech.de>, Jernej Skrabec <jernej.skrabec@gmail.com>,
+ Chris Morgan <macromorgan@hotmail.com>, Yang Xiwen
+ <forbidden405@foxmail.com>, Sebastian Reichel <sre@kernel.org>,
+ Linus Walleij <linus.walleij@linaro.org>,
+ Randy Dunlap <rdunlap@infradead.org>, Arnd Bergmann <arnd@arndb.de>,
+ Vlastimil Babka <vbabka@suse.cz>, Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+ David Rientjes <rientjes@google.com>, Baoquan He <bhe@redhat.com>,
+ Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck
+ <linux@roeck-us.net>, Stephen Rothwell <sfr@canb.auug.org.au>,
+ Azeem Shaikh <azeemshaikh38@gmail.com>,
+ Javier Martinez Canillas <javierm@redhat.com>,
+ Max Filippov <jcmvbkbc@gmail.com>, Palmer Dabbelt <palmer@rivosinc.com>,
+ Bin Meng <bmeng@tinylab.org>, Jonathan Corbet <corbet@lwn.net>,
+ Jacky Huang <ychuang3@nuvoton.com>, Lukas Bulwahn <lukas.bulwahn@gmail.com>,
+ Biju Das <biju.das.jz@bp.renesas.com>,
+ =?UTF-8?Q?Uwe_Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>,
+ Sam Ravnborg <sam@ravnborg.org>, Sergey Shtylyov <s.shtylyov@omp.ru>,
+ Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
+ Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+ linux-ide@vger.kernel.org, devicetree@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+ linux-clk@vger.kernel.org, dri-devel@lists.freedesktop.org,
+ linux-pci@vger.kernel.org, linux-serial@vger.kernel.org,
+ linux-fbdev@vger.kernel.org
+References: <cover.1704788539.git.ysato@users.sourceforge.jp>
+ <06fdb2cf7927681acf3099b826390ef75ba321af.1704788539.git.ysato@users.sourceforge.jp>
+ <c2f88d7b-cded-42ab-bc5c-3d9a723daa1f@kernel.org>
+Content-Language: en-US
+From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Autocrypt: addr=krzysztof.kozlowski@linaro.org; keydata=
+ xsFNBFVDQq4BEAC6KeLOfFsAvFMBsrCrJ2bCalhPv5+KQF2PS2+iwZI8BpRZoV+Bd5kWvN79
+ cFgcqTTuNHjAvxtUG8pQgGTHAObYs6xeYJtjUH0ZX6ndJ33FJYf5V3yXqqjcZ30FgHzJCFUu
+ JMp7PSyMPzpUXfU12yfcRYVEMQrmplNZssmYhiTeVicuOOypWugZKVLGNm0IweVCaZ/DJDIH
+ gNbpvVwjcKYrx85m9cBVEBUGaQP6AT7qlVCkrf50v8bofSIyVa2xmubbAwwFA1oxoOusjPIE
+ J3iadrwpFvsZjF5uHAKS+7wHLoW9hVzOnLbX6ajk5Hf8Pb1m+VH/E8bPBNNYKkfTtypTDUCj
+ NYcd27tjnXfG+SDs/EXNUAIRefCyvaRG7oRYF3Ec+2RgQDRnmmjCjoQNbFrJvJkFHlPeHaeS
+ BosGY+XWKydnmsfY7SSnjAzLUGAFhLd/XDVpb1Een2XucPpKvt9ORF+48gy12FA5GduRLhQU
+ vK4tU7ojoem/G23PcowM1CwPurC8sAVsQb9KmwTGh7rVz3ks3w/zfGBy3+WmLg++C2Wct6nM
+ Pd8/6CBVjEWqD06/RjI2AnjIq5fSEH/BIfXXfC68nMp9BZoy3So4ZsbOlBmtAPvMYX6U8VwD
+ TNeBxJu5Ex0Izf1NV9CzC3nNaFUYOY8KfN01X5SExAoVTr09ewARAQABzTRLcnp5c3p0b2Yg
+ S296bG93c2tpIDxrcnp5c3p0b2Yua296bG93c2tpQGxpbmFyby5vcmc+wsGUBBMBCgA+FiEE
+ m9B+DgxR+NWWd7dUG5NDfTtBYpsFAmI+BxMCGwMFCRRfreEFCwkIBwIGFQoJCAsCBBYCAwEC
+ HgECF4AACgkQG5NDfTtBYptgbhAAjAGunRoOTduBeC7V6GGOQMYIT5n3OuDSzG1oZyM4kyvO
+ XeodvvYv49/ng473E8ZFhXfrre+c1olbr1A8pnz9vKVQs9JGVa6wwr/6ddH7/yvcaCQnHRPK
+ mnXyP2BViBlyDWQ71UC3N12YCoHE2cVmfrn4JeyK/gHCvcW3hUW4i5rMd5M5WZAeiJj3rvYh
+ v8WMKDJOtZFXxwaYGbvFJNDdvdTHc2x2fGaWwmXMJn2xs1ZyFAeHQvrp49mS6PBQZzcx0XL5
+ cU9ZjhzOZDn6Apv45/C/lUJvPc3lo/pr5cmlOvPq1AsP6/xRXsEFX/SdvdxJ8w9KtGaxdJuf
+ rpzLQ8Ht+H0lY2On1duYhmro8WglOypHy+TusYrDEry2qDNlc/bApQKtd9uqyDZ+rx8bGxyY
+ qBP6bvsQx5YACI4p8R0J43tSqWwJTP/R5oPRQW2O1Ye1DEcdeyzZfifrQz58aoZrVQq+innR
+ aDwu8qDB5UgmMQ7cjDSeAQABdghq7pqrA4P8lkA7qTG+aw8Z21OoAyZdUNm8NWJoQy8m4nUP
+ gmeeQPRc0vjp5JkYPgTqwf08cluqO6vQuYL2YmwVBIbO7cE7LNGkPDA3RYMu+zPY9UUi/ln5
+ dcKuEStFZ5eqVyqVoZ9eu3RTCGIXAHe1NcfcMT9HT0DPp3+ieTxFx6RjY3kYTGLOwU0EVUNc
+ NAEQAM2StBhJERQvgPcbCzjokShn0cRA4q2SvCOvOXD+0KapXMRFE+/PZeDyfv4dEKuCqeh0
+ hihSHlaxTzg3TcqUu54w2xYskG8Fq5tg3gm4kh1Gvh1LijIXX99ABA8eHxOGmLPRIBkXHqJY
+ oHtCvPc6sYKNM9xbp6I4yF56xVLmHGJ61KaWKf5KKWYgA9kfHufbja7qR0c6H79LIsiYqf92
+ H1HNq1WlQpu/fh4/XAAaV1axHFt/dY/2kU05tLMj8GjeQDz1fHas7augL4argt4e+jum3Nwt
+ yupodQBxncKAUbzwKcDrPqUFmfRbJ7ARw8491xQHZDsP82JRj4cOJX32sBg8nO2N5OsFJOcd
+ 5IE9v6qfllkZDAh1Rb1h6DFYq9dcdPAHl4zOj9EHq99/CpyccOh7SrtWDNFFknCmLpowhct9
+ 5ZnlavBrDbOV0W47gO33WkXMFI4il4y1+Bv89979rVYn8aBohEgET41SpyQz7fMkcaZU+ok/
+ +HYjC/qfDxT7tjKXqBQEscVODaFicsUkjheOD4BfWEcVUqa+XdUEciwG/SgNyxBZepj41oVq
+ FPSVE+Ni2tNrW/e16b8mgXNngHSnbsr6pAIXZH3qFW+4TKPMGZ2rZ6zITrMip+12jgw4mGjy
+ 5y06JZvA02rZT2k9aa7i9dUUFggaanI09jNGbRA/ABEBAAHCwXwEGAEKACYCGwwWIQSb0H4O
+ DFH41ZZ3t1Qbk0N9O0FimwUCYDzvagUJFF+UtgAKCRAbk0N9O0Fim9JzD/0auoGtUu4mgnna
+ oEEpQEOjgT7l9TVuO3Qa/SeH+E0m55y5Fjpp6ZToc481za3xAcxK/BtIX5Wn1mQ6+szfrJQ6
+ 59y2io437BeuWIRjQniSxHz1kgtFECiV30yHRgOoQlzUea7FgsnuWdstgfWi6LxstswEzxLZ
+ Sj1EqpXYZE4uLjh6dW292sO+j4LEqPYr53hyV4I2LPmptPE9Rb9yCTAbSUlzgjiyyjuXhcwM
+ qf3lzsm02y7Ooq+ERVKiJzlvLd9tSe4jRx6Z6LMXhB21fa5DGs/tHAcUF35hSJrvMJzPT/+u
+ /oVmYDFZkbLlqs2XpWaVCo2jv8+iHxZZ9FL7F6AHFzqEFdqGnJQqmEApiRqH6b4jRBOgJ+cY
+ qc+rJggwMQcJL9F+oDm3wX47nr6jIsEB5ZftdybIzpMZ5V9v45lUwmdnMrSzZVgC4jRGXzsU
+ EViBQt2CopXtHtYfPAO5nAkIvKSNp3jmGxZw4aTc5xoAZBLo0OV+Ezo71pg3AYvq0a3/oGRG
+ KQ06ztUMRrj8eVtpImjsWCd0bDWRaaR4vqhCHvAG9iWXZu4qh3ipie2Y0oSJygcZT7H3UZxq
+ fyYKiqEmRuqsvv6dcbblD8ZLkz1EVZL6djImH5zc5x8qpVxlA0A0i23v5QvN00m6G9NFF0Le
+ D2GYIS41Kv4Isx2dEFh+/Q==
+In-Reply-To: <c2f88d7b-cded-42ab-bc5c-3d9a723daa1f@kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-
-
-On 1/9/24 17:17, Greg Ungerer wrote:
+On 10/01/2024 03:06, Damien Le Moal wrote:
+> On 1/9/24 17:23, Yoshinori Sato wrote:
+>> Added new ata-generic target.
+>> - iodata,usl-5p-ata
+>> - renesas,rts7751r2d-ata
+>>
+>> Each boards have simple IDE Interface. Use ATA generic driver.
 > 
-> On 10/1/24 06:24, Rob Landley wrote:
->> On 1/8/24 03:03, Petr Vorel wrote:
->>> Hi Rob, all,
->>>
->>> [ Added Niklas Cassel, who is maintainer of qemu_riscv64_nommu_virt_defconfig in
->>> buildroot ]
->> 
->> Hi Niklas!
->> 
->>>> Buildroot also apparently has an LTP package selectable in menuconfig:
->>>
->>>> https://github.com/buildroot/buildroot/tree/master/package/ltp-testsuite
->>>
->>>> But I haven't tried it...
->>>
->>> I'm the maintainer of the LTP package in buildroot in my private time.
->>> BTW I spent quite a lot of time fixing LTP (and some other system packages,
->>> e.g. nfs-utils) compilation on some old legacy architectures reported via
->>> http://autobuild.buildroot.net/ I've never used in the reality.
->>> But I certainly don't have time to drive nommu support in my private time.
->>> I don't even have an interest, I don't use any nommu device.
->> 
->> I do, but I've never done much with LTP, and I have my hands full with toybox
->> and mkroot already.
->> 
->>> Therefore nobody who is not involved in nommu will not find a time to support it
->>> in LTP (support does not mean just to add the functionality to the new C API,
->>> but run tests on nommu and fix failing bugs). I suppose nobody is paid to work
->>> on nommu platforms, it would have to be a hobby project, right?
->> 
->> A bunch of people are paid to work on nommu platforms, and I've worked with them
->> a bunch, but none of them talk to linux-kernel. They find the culture toxic,
->> insular, and categorically dismissive of their interests.
+> This looks OK to me, so feel free to add:
 > 
-> I have been involved in the kernel nommu space for 20 years, and sure, there is
-> some of that. But mostly spending some time and effort to get involved pays off.
-> I have seen potential contributors show up with some arrogant attitudes too,
-> so it cuts both ways here.
+> Acked-by: Damien Le Moal <dlemoal@kernel.org>
 > 
-> The m68k community I have been part of has been nothing but welcoming. The mm
-> people have tried hard to keep nommu support up-to-date where almost none of them
-> actually have a vested interest in doing so.
-> 
-> What I have seen is that many companies working in this space just don't want
-> to spend the time and effort to go mainline.
+> Note: The "DO NOT MERGE" patch prefix almost got me to immediately delete this
+> 37 patches in my inbox... If you wish to get this work merged after review,
+> please use the regular "PATCH" prefix. No worries, the series will not be merged
+> until is is reviewed :)
 
-Sometimes they don't bother. Sometimes there's a language barrier. Sometimes
-they can't get anything newer than 2.6 working because that's the BSP they were
-given so what's the point of trying to engage upstream? Sometimes they think
-it's their upstream vendor's responsibility. Sometimes they poke their head up
-and get it bit off ala http://landley.net/notes-2008.html#11-12-2008 and then
-that serves as a warning to others for generations. Sometimes the company's
-legal department thinks it's a terrible idea to attract attention from people
-like the SFLC. And sometimes...
+The point of DO NOT MERGE was that feedback was not being implemented
+and same set of patches with same issues were kept sending. :/
 
+Best regards,
+Krzysztof
 
-The SmartFusion 2 project I was doing on cortex-m was for a project that was to
-be launched into space on a NASA rocket, and thus fell under ITAR export
-regulations (as the entire US space program has since 1996 due to
-https://en.wikipedia.org/wiki/International_Traffic_in_Arms_Regulations#:~:text=Intelsat
-) and my manager explained it to me as:
-
-"If I buy a screwdriver from Home Depot, it's just a screwdriver. If I use it to
-turn a screw on a spacecraft it is now a munition and cannot be discussed with
-non-US persons".
-
-The stupid linked above was:
-
-1) cryptography was categorized as a munition until Bill Clinton relaxed it via
-executive order, because 56 bit https was preventing anybody from trusting the
-web with their credit card data.
-
-2) Before that, in 1996, china wanted to launch a satellite into space with
-crypto stuff so they negotiated with the USA to get some cryptographic hardware
-which was delivered/installed under armed guard and escorted to the launch pad.
-
-3) The rocket blew up on launch, scattering debris over a chinese city (becuase
-of COURSE china's rocket launches go over large population centers). The crypto
-hardware was never recovered.
-
-4) It became a scandal. Congress freaked. And somehow in the scuffle ITAR export
-regulations were extended from cryptography to the entire US space program.
-
-5) The US space program dried up and blew away, as engineers had to choose
-between "I can work on space stuff" and "I can have any sort of professional
-network online". (Because who online is a "non-US person"? That includes canada.
-You can't discuss ITAR subjects with canadians. Or foreign nationals living in
-the USA. You couldn't ask Alan Cox a question about an ITAR project.)
-
-So that's a whole category that stays very quiet about what they do, and whose
-legal analysis of the GPL is "we're making 3 of these and shooting them into
-space, if you retrieve one from space and demand source code from us we will
-forward you to the relevant federal agencies, and there's a nonzero chance
-you'll be on a black site in Diego Garcia within 24 hours where they will figure
-out how you did that. Or maybe you'll get the code. Who knows?"
-
-Me, I try to avoid that kind of contract...
-
-> That is a business decision they
-> make, and that is fine. Heck my work in actual mainline has never really been
-> paid for by any company and I have sunk a _lot_ of time into it. (Full disclosure
-> I did get paid to work on early porting and support - just not geting it into
-> mainline and maintain it there).
-
-The thing is if you post something _once_ it gets ignored, and if you follow-up
-long enough for it to go in (which often takes years), it will then get ripped
-out again a few years later because "we never hear from anybody who uses this".
-
-Engaging with the community is signing up for an ongoing commitment.
-
->> For example, cortex-m is a large nommu platform on which vendors support Linux
->> BSPs, but notice how page 8 of
->> https://www.microsemi.com/document-portal/doc_view/132181-linux-cortex-m-users-manual
->> points at a cross compiler toolchain from _2010_ and page 4 says they're booting
->> a 2.6.33 kernel?
-> 
-> Any company/person who follows the route of not working with the linux kernel
-> community to get their work included is going to inevitably get stuck on older
-> versions of everything.
-
-I fight hard to get current versions of everything to work on all my supported
-targets. This requires regular regression testing, and I maintain a pile of
-patches that I post here periodically but I fully admit will probably never go in:
-
-  https://lkml.iu.edu/hypermail/linux/kernel/2302.2/05594.html
-
-(Sigh, now that 6.7 is out I should post the new round...)
-
-People who want to use my kernels as a source are welcome to do so (and I've
-seen my patches quietly show up in other projects), but getting upstream to
-actually _fix_ anything? Every one of those patches had a link to the previous
-time it was posted to the list and ignored.
-
-I mean literally, the first of those patches teaches the makefile to autodetect
-whether $PREFIX-cc is gcc or llvm and just do the right thing, and I was told
-that they actively didn't want it to:
-
-https://lkml.iu.edu/hypermail/linux/kernel/2302.2/07184.html
-
-That is modern linux-kernel development.
-
->> I'm a bit weird in that I try to get CURRENT stuff to work on nommu, and a lot
->> of people have been happy to consume my work, but getting any of them to post
->> directly to linux-kernel is like pulling teeth.
-> 
-> I regularly test nommu configurations (as in every kernel rc and release) on m68k
-> and at least every release on other architectures like arm(*) and recently on
-> riscv as well.
-
-Sigh, I should start caring about riscv. I added or1k support, I should do
-riscv. (Except I did or1k because I found it in actual hardware, the Orange Pi
-3b's power controller is an or1k asic so I needed an or1k toolchain to build
-some of u-boot's firmware or else the board couldn't reboot, and there was a
-qemu-system-or1k already, which turned into adding it to mkroot via a long
-https://lore.kernel.org/openrisc/ZX1xbs_AGdgLgcx7@antec/ thread with its
-developers. Alas I still can't get qemu to exit (I.E. virtually reboot or power
-off), apparently I need to reinstall my laptop to have a new enough version of
-python 3 to build a newer qemu with. It's on the todo list...)
-
-I still have a hard time considering riscv anything other than open source's
-version of Itanium. Promises of ubiquity, but even a 28 nanometer mask is still
-6 figures before you run any wafers and your mask build process is sucking in
-all the black box libraries the fab can sell you, so what does "open" really get
-you here? Cortex-m got cheap when the superh patents expired so Arm didn't have
-to pay royalties to hitachi (renesas?) for the thumb instruction set anymore,
-and they belt those suckers en masse amortizing the up-front costs over ENORMOUS
-volume.
-
-And yes, j-core was trying to fix the closed source library and toolchain issues
-back when I was still working with them. Among other things fishing
-Google/skywater's openlane toolchain build out of their magic docker and
-reproducing it under a vanilla debootstrap, ala
-https://github.com/j-core/openlane-vhdl-build (As with most corporate
-clusterfscks, once you dig far enough it turns out you can throw over 90% of it
-out...)
-
-But these days I'm trying to get toybox to 1.0...
-
-> (*) somewhat annoyingly needing a minor patch to run the versatile qemu platform
->      I like to test with. But hey, that is on me :-)
-
-I would very much like to add more nommu targets to mkroot, can I get your
-build/config info offline? (I tried fishing configs out of buildroot a couple
-years ago, but after the THIRD one where the secret was "use very old versions
-of packages, the current stuff is broken"... And the problems were things like
-"the conversion to device tree deleted a huge chunk of this infrastructure", not
-simple fixes.)
-
-> Regards
-> Greg
-
-Rob
