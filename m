@@ -1,242 +1,196 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-ot1-f53.google.com (mail-ot1-f53.google.com [209.85.210.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3A82B4D113;
-	Wed, 10 Jan 2024 14:14:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D09B4A9B5;
+	Wed, 10 Jan 2024 14:28:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=roeck-us.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="axywVzU0";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="OxbBVAmg";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="axywVzU0";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="OxbBVAmg"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 2EA9C1FD4F;
-	Wed, 10 Jan 2024 14:14:57 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1704896097;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=l+y97negwruEwGRvrpJNRJsVcpzY8X3VX6VhDUdV1Xc=;
-	b=axywVzU0qfXkI0dwkXp2+fXubEDIJhi6loKe7hEmkc3ShqFyIvVAs/4GU9OXR9+MUbmWzQ
-	2Tjc6bYN7j0JXrPmpJlypsM8+wRYVei7aFYxlVp9XL8o094G3ziXurTe67oDaIH20b8tNc
-	L+r6nB9M6mb8qw+JGCfsXpLURskFp6g=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1704896097;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=l+y97negwruEwGRvrpJNRJsVcpzY8X3VX6VhDUdV1Xc=;
-	b=OxbBVAmgoTmOcYfw7uE2vG0Xe/o4jWPGi3hB1LW68Qe2hl8mffzjDJMGzDWV4/zabNp1G0
-	YUh1dz1o7sXtlCAA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1704896097;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=l+y97negwruEwGRvrpJNRJsVcpzY8X3VX6VhDUdV1Xc=;
-	b=axywVzU0qfXkI0dwkXp2+fXubEDIJhi6loKe7hEmkc3ShqFyIvVAs/4GU9OXR9+MUbmWzQ
-	2Tjc6bYN7j0JXrPmpJlypsM8+wRYVei7aFYxlVp9XL8o094G3ziXurTe67oDaIH20b8tNc
-	L+r6nB9M6mb8qw+JGCfsXpLURskFp6g=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1704896097;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=l+y97negwruEwGRvrpJNRJsVcpzY8X3VX6VhDUdV1Xc=;
-	b=OxbBVAmgoTmOcYfw7uE2vG0Xe/o4jWPGi3hB1LW68Qe2hl8mffzjDJMGzDWV4/zabNp1G0
-	YUh1dz1o7sXtlCAA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 90FFF1398A;
-	Wed, 10 Jan 2024 14:14:56 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([10.150.64.162])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id +XwGIWCmnmUgcQAAD6G6ig
-	(envelope-from <pvorel@suse.cz>); Wed, 10 Jan 2024 14:14:56 +0000
-Date: Wed, 10 Jan 2024 15:14:55 +0100
-From: Petr Vorel <pvorel@suse.cz>
-To: Tim Bird <tim.bird@sony.com>
-Cc: Cyril Hrubis <chrubis@suse.cz>, Rob Landley <rob@landley.net>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	"ltp@lists.linux.it" <ltp@lists.linux.it>,
-	Li Wang <liwang@redhat.com>,
-	Andrea Cervesato <andrea.cervesato@suse.com>,
-	Greg Ungerer <gerg@linux-m68k.org>,
-	Jonathan Corbet <corbet@lwn.net>,
-	Randy Dunlap <rdunlap@infradead.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Christophe Lyon <christophe.lyon@linaro.org>,
-	"linux-m68k@lists.linux-m68k.org" <linux-m68k@lists.linux-m68k.org>,
-	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-	Linux ARM <linux-arm-kernel@lists.infradead.org>,
-	linux-riscv <linux-riscv@lists.infradead.org>,
-	Linux-sh list <linux-sh@vger.kernel.org>,
-	"automated-testing@lists.yoctoproject.org" <automated-testing@lists.yoctoproject.org>,
-	"buildroot@buildroot.org" <buildroot@buildroot.org>,
-	Niklas Cassel <niklas.cassel@wdc.com>
-Subject: Re: [Automated-testing] Call for nommu LTP maintainer [was: Re:
- [PATCH 00/36] Remove UCLINUX from LTP]
-Message-ID: <20240110141455.GC1698252@pevik>
-Reply-To: Petr Vorel <pvorel@suse.cz>
-References: <CAMuHMdXGwyS-CL0vLdUP4Z4YEYhmcmDyC3YdGCnS=jFkqASqvw@mail.gmail.com>
- <20240103114957.GD1073466@pevik>
- <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
- <ZZVOhlGPg5KRyS-F@yuki>
- <5a1f1ff3-8a61-67cf-59a9-ce498738d912@landley.net>
- <20240105131135.GA1484621@pevik>
- <90c1ddc1-c608-30fc-d5aa-fdf63c90d055@landley.net>
- <20240108090338.GA1552643@pevik>
- <ZZvJXTshFUYSaMVH@yuki>
- <SA3PR13MB6372498CC6372F8B16237244FD6A2@SA3PR13MB6372.namprd13.prod.outlook.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="Nyea32r8"
+Received: by mail-ot1-f53.google.com with SMTP id 46e09a7af769-6ddeb015ec6so1049707a34.0;
+        Wed, 10 Jan 2024 06:28:51 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1704896930; x=1705501730; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from:references:cc
+         :to:content-language:subject:user-agent:mime-version:date:message-id
+         :sender:from:to:cc:subject:date:message-id:reply-to;
+        bh=zIaoX1yjQhXHbsmhohdAZwhtmgurjO4w2Fx+LKGYccs=;
+        b=Nyea32r8R/C0mH32mtZ2WbQtXIE5o7xBaJxVL2XElvGvYMcoXcaDenqoh/0pw4HbND
+         vE4hLziPzckFewL+k6T5sg89paRFXvq/gdaVZAsFsnoo7LL9M1Wtx+Fey/9qCrSPBcVa
+         jN+FgYp7SDzwPb5UzA8UywD8oJDlWpbF1Xdp1j+xLu4038TX668QfBKoL1QhiBzf4N3I
+         748+Wq+6lN3ARvco0eLpHK2lDGS0p/5L2dAltHdKLBhCM3t8810/6UORJj9MeJAlSsl4
+         EeAH3+vVKQvfiyZhfKNyTkSEwMHTMYcZA4YBKxWtHNsWXAlo0wboUKnFrIUrB6gxR/HY
+         lYwA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1704896930; x=1705501730;
+        h=content-transfer-encoding:in-reply-to:autocrypt:from:references:cc
+         :to:content-language:subject:user-agent:mime-version:date:message-id
+         :sender:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=zIaoX1yjQhXHbsmhohdAZwhtmgurjO4w2Fx+LKGYccs=;
+        b=B3U9Uk3UY9T1/gTYCPAkfOrUriffv2BQo7EllAd7QmDJ2McW80wJd2pbpLoGMG65Ge
+         jdXBzflSWttq2IoaAQFcWI02+Zvcxoq35416SaNKMHkzfzbKjgNZ/QI0JGODIs8lDhJB
+         qiau+7kiNp5MUVoB+t5EUopPqTn/q2n0+ANuj6tseuFJBzMy4G2a/gdafodcDbSnfuT6
+         n06WVriHXuGs8NVfVscSeow7U1b2mEN9k+qODx+qdcSpf8M2h5Lz2VLNgcztbx5FGJYC
+         opYQflUSEot0+VYNYkmbofnYcKYywwBeAADYlEbB5sajcAy4y1qtDMKm2xtZoJMMQqJG
+         hc6A==
+X-Gm-Message-State: AOJu0Yy6+V7okdryRmjebv/O9COr2cqYeksXgBZ6bSFJ3oIszmWdlUZK
+	r7PpmBOYAyC1kLf8UlrBE6c=
+X-Google-Smtp-Source: AGHT+IG7sLERgE1XfKcrO3RXf8zO3OfNiwPA15eOOZxyAfLlJXqm615gjKSh1CGFCVXN4fmaNYQHXQ==
+X-Received: by 2002:a05:6871:4319:b0:203:ceec:933c with SMTP id lu25-20020a056871431900b00203ceec933cmr845505oab.69.1704896930388;
+        Wed, 10 Jan 2024 06:28:50 -0800 (PST)
+Received: from ?IPV6:2600:1700:e321:62f0:329c:23ff:fee3:9d7c? ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
+        by smtp.gmail.com with ESMTPSA id x190-20020a6363c7000000b005cd945c0399sm3608310pgb.80.2024.01.10.06.28.46
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 10 Jan 2024 06:28:49 -0800 (PST)
+Sender: Guenter Roeck <groeck7@gmail.com>
+Message-ID: <a854bbd3-2862-4ea4-b14d-aab2d89ac2df@roeck-us.net>
+Date: Wed, 10 Jan 2024 06:28:45 -0800
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <SA3PR13MB6372498CC6372F8B16237244FD6A2@SA3PR13MB6372.namprd13.prod.outlook.com>
-Authentication-Results: smtp-out2.suse.de;
-	none
-X-Spam-Level: 
-X-Spam-Score: -2.50
-X-Spamd-Result: default: False [-2.50 / 50.00];
-	 ARC_NA(0.00)[];
-	 HAS_REPLYTO(0.30)[pvorel@suse.cz];
-	 REPLYTO_EQ_FROM(0.00)[];
-	 FROM_HAS_DN(0.00)[];
-	 TO_DN_SOME(0.00)[];
-	 TO_DN_EQ_ADDR_SOME(0.00)[];
-	 TO_MATCH_ENVRCPT_ALL(0.00)[];
-	 MIME_GOOD(-0.10)[text/plain];
-	 RCVD_VIA_SMTP_AUTH(0.00)[];
-	 RCVD_COUNT_THREE(0.00)[3];
-	 DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	 NEURAL_HAM_SHORT(-0.20)[-1.000];
-	 RCPT_COUNT_TWELVE(0.00)[20];
-	 FUZZY_BLOCKED(0.00)[rspamd.com];
-	 FROM_EQ_ENVFROM(0.00)[];
-	 MIME_TRACE(0.00)[0:+];
-	 MID_RHS_NOT_FQDN(0.50)[];
-	 RCVD_TLS_ALL(0.00)[];
-	 BAYES_HAM(-3.00)[100.00%]
-X-Spam-Flag: NO
+User-Agent: Mozilla Thunderbird
+Subject: Re: [DO NOT MERGE v6 26/37] dt-bindings: vendor-prefixes: Add smi
+Content-Language: en-US
+To: Geert Uytterhoeven <geert@linux-m68k.org>, Conor Dooley <conor@kernel.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org,
+ Damien Le Moal <dlemoal@kernel.org>, Rob Herring <robh+dt@kernel.org>,
+ Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
+ Conor Dooley <conor+dt@kernel.org>,
+ Geert Uytterhoeven <geert+renesas@glider.be>,
+ Michael Turquette <mturquette@baylibre.com>, Stephen Boyd
+ <sboyd@kernel.org>, Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
+ Maxime Ripard <mripard@kernel.org>, Thomas Zimmermann <tzimmermann@suse.de>,
+ David Airlie <airlied@gmail.com>, Daniel Vetter <daniel@ffwll.ch>,
+ Thomas Gleixner <tglx@linutronix.de>,
+ Lorenzo Pieralisi <lpieralisi@kernel.org>,
+ =?UTF-8?Q?Krzysztof_Wilczy=C5=84ski?= <kw@linux.com>,
+ Bjorn Helgaas <bhelgaas@google.com>,
+ Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+ Jiri Slaby <jirislaby@kernel.org>, Magnus Damm <magnus.damm@gmail.com>,
+ Daniel Lezcano <daniel.lezcano@linaro.org>, Rich Felker <dalias@libc.org>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ Lee Jones <lee@kernel.org>, Helge Deller <deller@gmx.de>,
+ Heiko Stuebner <heiko@sntech.de>, Jernej Skrabec <jernej.skrabec@gmail.com>,
+ Chris Morgan <macromorgan@hotmail.com>, Yang Xiwen
+ <forbidden405@foxmail.com>, Sebastian Reichel <sre@kernel.org>,
+ Linus Walleij <linus.walleij@linaro.org>,
+ Randy Dunlap <rdunlap@infradead.org>, Arnd Bergmann <arnd@arndb.de>,
+ Vlastimil Babka <vbabka@suse.cz>, Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+ David Rientjes <rientjes@google.com>, Baoquan He <bhe@redhat.com>,
+ Andrew Morton <akpm@linux-foundation.org>,
+ Stephen Rothwell <sfr@canb.auug.org.au>,
+ Azeem Shaikh <azeemshaikh38@gmail.com>,
+ Javier Martinez Canillas <javierm@redhat.com>,
+ Max Filippov <jcmvbkbc@gmail.com>, Palmer Dabbelt <palmer@rivosinc.com>,
+ Bin Meng <bmeng@tinylab.org>, Jonathan Corbet <corbet@lwn.net>,
+ Jacky Huang <ychuang3@nuvoton.com>, Lukas Bulwahn <lukas.bulwahn@gmail.com>,
+ Biju Das <biju.das.jz@bp.renesas.com>,
+ =?UTF-8?Q?Uwe_Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>,
+ Sam Ravnborg <sam@ravnborg.org>, Sergey Shtylyov <s.shtylyov@omp.ru>,
+ Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
+ Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+ linux-ide@vger.kernel.org, devicetree@vger.kernel.org,
+ linux-kernel@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+ linux-clk@vger.kernel.org, dri-devel@lists.freedesktop.org,
+ linux-pci@vger.kernel.org, linux-serial@vger.kernel.org,
+ linux-fbdev@vger.kernel.org
+References: <cover.1704788539.git.ysato@users.sourceforge.jp>
+ <c8aaf67e3fcdb7e60632c53a784691aabfc7733e.1704788539.git.ysato@users.sourceforge.jp>
+ <20240109-fructose-bundle-05d01033277b@spud>
+ <CAMuHMdU1z64QHJOVd3jUsOfyuDApB1+khkUV8PvjoKbwsi327g@mail.gmail.com>
+From: Guenter Roeck <linux@roeck-us.net>
+Autocrypt: addr=linux@roeck-us.net; keydata=
+ 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
+ mDW4+i+XlNFUPUYMrIKi9joBhu18ssf5i5Q=
+In-Reply-To: <CAMuHMdU1z64QHJOVd3jUsOfyuDApB1+khkUV8PvjoKbwsi327g@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-Hi Tim, all,
+On 1/10/24 03:23, Geert Uytterhoeven wrote:
+> Hi Conor,
+> 
+> On Tue, Jan 9, 2024 at 7:06 PM Conor Dooley <conor@kernel.org> wrote:
+>> On Tue, Jan 09, 2024 at 05:23:23PM +0900, Yoshinori Sato wrote:
+>>> Add Silicon Mortion Technology Corporation
+> 
+> Motion
+> 
+>>> https://www.siliconmotion.com/
+>>>
+>>> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+>>> ---
+>>>   Documentation/devicetree/bindings/vendor-prefixes.yaml | 2 ++
+>>>   1 file changed, 2 insertions(+)
+>>>
+>>> diff --git a/Documentation/devicetree/bindings/vendor-prefixes.yaml b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+>>> index 94ed63d9f7de..a338bdd743ab 100644
+>>> --- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
+>>> +++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+>>> @@ -1283,6 +1283,8 @@ patternProperties:
+>>>       description: Skyworks Solutions, Inc.
+>>>     "^smartlabs,.*":
+>>>       description: SmartLabs LLC
+>>> +  "^smi,.*":
+>>> +    description: Silicon Motion Technology Corporation
+>>
+>> How come "smi" is used for a company with this name?
+>> Why is it not something like SMTC? There's probably some history here
+>> that I am unaware of.
+> 
+> See Documentation/devicetree/bindings/display/sm501fb.txt
+> The stock ticker is "SIMO", though.
+> https://www.nasdaq.com/market-activity/stocks/simo
+> 
 
-> > -----Original Message-----
-> > From: automated-testing@lists.yoctoproject.org <automated-testing@lists.yoctoproject.org> On Behalf Of Cyril Hrubis
-> > Hi!
-> > > But as I said, if anybody from nommu decides to maintain it in LTP, I'll try to
-> > > support him in my free time (review patches, give advices). And if nobody
-> > > stands, this patchset which removes the support in the old API will be merged
-> > > after next LTP release (in the end of January).
+ From https://en.wikipedia.org/wiki/Silicon_Motion:
 
-> > Let me highlight this part, we are eager to help anybody who is willing
-> > to pick the nommu work, but we do not have resources to drive it.
+"Controllers are marketed under the “SMI” brand,
+  enterprise-grade SSDs under the "Shannon Systems" brand.
+"
 
-> I have a couple of comments here.
-
-> I think it would be good to give a little bit more time to try to find a helper/maintainer
-> for this.  As Rob pointed out, a lot of embedded Linux developers are using very old
-> kernels (and, if they are using LTP, likely very old versions of LTP).  They are also
-> notorious for not being active on the mailing lists.  So this might take some active
-> outreach to find helpers.  (I realize that this thread is part of this
-> outreach effort).  For this reason, I'd like a few more weeks to try to advertise this
-> need within the embedded Linux community.
-
-Thank you.
-
-> I am not using nommu systems myself, so I'm in a similar position as Petr in terms
-> of it not making much sense for me to be the maintainer.  However, having said that,
-> I have had for a few years now an idea for a background project related to LTP
-> that might make this a more interesting fit for me.  Sony uses NuttX, and is considering
-> using Zephyr in some of our low-end processor systems.  This includes some nommu
-> systems.  For some time now, I have wanted to experiment with using LTP to test
-> the compatibility of those systems with the Linux system APIs.  In full disclosure,
-> I have no idea if this is a feasible or useful idea or not.  But it's something I'd like
-> to investigate.
-
-> I realize that testing non-Linux RTOSes is out-of-scope for LTP.  But given that that is
-> something I would like to do, and that it might be relevant to the Linux nommu tests,
-> I would humbly request a few weeks to investigate this before the nommu code is removed.
-> This delay would be to see if it would make sense for me to volunteer to help out with
-> maintaining this otherwise abandoned code.
-
-> I can't promise anything, but I'd like to find out more about:
-> 1) what parts of the current LTP are not supporting nommu (what's currently broken),
-The new C API, I described it in my reply to Rob:
-https://lore.kernel.org/ltp/20240110133358.GB1698252@pevik/
-
-But I don't know whether the code in the old API was even working,
-whole old API suffered with random failures, that was one of the reasons to
-write a new one from the scratch.
-
-> 2) how much code we're talking about, and
-
-There was FORK_OR_VFORK(), which would probably in the new API call vfork() for
-nommu targets (tst_old_flush() is probably not needed in the new API).
-
-There is a special handling of getopts in lib/parse_opts.c + -C param for it.
-One would have to integrate these two functions from lib/self_exec.c to the new
-API (and port them to use new API via tst_test.h with #define
-TST_NO_DEFAULT_MAIN):
-
-    void maybe_run_child(void (*child)(), const char *fmt, ...);
-    int self_exec(const char *argv0, const char *fmt, ...);
-
-char *child_args is somehow integrated to lib/tst_test.c via -C arg, I haven't
-found what uses that option.
-
-There is m4, that would be usable (m4/ltp-nommu-linux.m4).
-
-Various tests and testsuites were not compiled for nommu (e.g. capget).
-
-There is MAP_PRIVATE_EXCEPT_UCLINUX constant to avoid using MAP_PRIVATE on
-uClinux, who knows if this is relevant on nommu?
-
-> 3) what the desired roadmap going forward would be, to continue to support this code.
-
-All LTP tests are being rewritten to use new API since 2016 (new API was
-introduced in 20160510), thus we are loosing the support with old API going
-away. Sure, I can hold on this patchset and we continue removing the
-functionality tests manually. But sooner or later it's gone.
-
-One can check files which had special handling in the old API:
-
-$ git grep -l UCLINUX 20160126 -- testcases/ | wc -l
-173
-
-What is supported now:
-
-$ git grep -l UCLINUX  -- testcases/  |wc -l
-55
-
-=> We have now removed nearly 2/3 of it (this means we're arguing about 1/3 of
-the tests which initially somehow supported nommu).
-
-Kind regards,
-Petr
-
-> Thanks,
->  -- Tim
-
-
-
-> -=-=-=-=-=-=-=-=-=-=-=-
-> Links: You receive all messages sent to this group.
-> View/Reply Online (#1271): https://lists.yoctoproject.org/g/automated-testing/message/1271
-> Mute This Topic: https://lists.yoctoproject.org/mt/103541824/3616762
-> Group Owner: automated-testing+owner@lists.yoctoproject.org
-> Unsubscribe: https://lists.yoctoproject.org/g/automated-testing/unsub [pvorel@suse.cz]
-> -=-=-=-=-=-=-=-=-=-=-=-
-
+Guenter
 
