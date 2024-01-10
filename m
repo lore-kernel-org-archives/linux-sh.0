@@ -1,240 +1,124 @@
-Received: from mail-qk1-f175.google.com (mail-qk1-f175.google.com [209.85.222.175])
+Received: from mail-yb1-f179.google.com (mail-yb1-f179.google.com [209.85.219.179])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF5E84D5B4
-	for <linux-sh@vger.kernel.org>; Wed, 10 Jan 2024 19:17:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=landley.net
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 712194EB22;
+	Wed, 10 Jan 2024 19:45:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=roeck-us.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b="MxkfUlMy"
-Received: by mail-qk1-f175.google.com with SMTP id af79cd13be357-78329cb6742so174424485a.0
-        for <linux-sh@vger.kernel.org>; Wed, 10 Jan 2024 11:17:15 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="QmyIgXFH"
+Received: by mail-yb1-f179.google.com with SMTP id 3f1490d57ef6-dbedb1ee3e4so3791761276.3;
+        Wed, 10 Jan 2024 11:45:20 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20230601.gappssmtp.com; s=20230601; t=1704914234; x=1705519034; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=dVeghFTfEKwCnZqoaITfL2C3OqeDo91GFIUdqHYe6xU=;
-        b=MxkfUlMymra3i7vsoh6/f/mfGYB2XS+u9VirHY434R9J3GQPpiLYiPkYmx41BcMnSv
-         v1e9442lR+3mVpOhfWecRU/wg6A6G1nrc0hhMIL+jMiEnvrYwNUTzam8iKo6zP9yccuk
-         d5Qm1tXNplWliHinraZ2Fs4+HS6GxcwKpWBKOIEI+4VaQ/zSOYIsjwrNLxYimitXI/ih
-         Rc0m26NV6EADUm18aRqTthyDu913XoXhee9fnsnEgEXyjL4s8AqRMMpCN1JZjsw3ycJY
-         IbYKaVlHqFh5YG5wju7s4+67FQNOEmIO3R2ZitUAf6cXC99cI8yUDkULq7Sl0p32pLvt
-         ERjg==
+        d=gmail.com; s=20230601; t=1704915919; x=1705520719; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:sender:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=8zRr9k3M5lt1NLGiBm4LGGbEU76LPHiRlYHf6Ykn1Ys=;
+        b=QmyIgXFHRA92s3vFtTVyO5j+k1gQkY68yBDL64620m6Qwqb9HZcY7isSAZYh9d5/tm
+         9UuVfIyz8zVX1N/QD6Rw0cedIcVI2rcQW2CKDd/ZDzpeLDT3NWlddg3asTxBvog7x4i7
+         OBJh0CbNwmvsjK8k6FgjMQp2TUoYeov7thXqGAfDQ7A6UUwb/waOVddFVryszWrIKJsR
+         SnwDvpUHja4SNAiUhWyAiVAyXoxeFfShZ/jw/ut2Nz+c/IDHC1HZiydnW9JDa+oRd6aF
+         nEeMDFbluTOu13sLop5hGJU1hJN9ov2dMNlkaDStCgmZLyX2RBHBQNHobsHlWB74SBU6
+         Ae4g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1704914234; x=1705519034;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=dVeghFTfEKwCnZqoaITfL2C3OqeDo91GFIUdqHYe6xU=;
-        b=rYDpm+C6NGCtbAIqR+8O4HQGuo2uGINN5/coklLWtJcE5GyRpz/thQwMAmoGIajHKW
-         nNT2Mctip5qvmLzaI7KQTG42W7SMGO7iT0roxFjWCk/1x/THhmPSzKfotKNkjRNb7aMt
-         fQppy8z3q6BojUXXUBKNMRFWNuZ3Dmx4b4NwprBfo8k/XfHwnAMoOwnGuG1LC7UGKz6g
-         Zud7QYHiQSJO8pYCSte9AfZsk1MIkKf4CdAieuuuZ95zkuD91DoQTC4E6zj8X/fEYUo8
-         CR8YDm04J0j2rgstRnVz2s0tH60mKgbIqZeAlHG0hlrqU3Ni0+WJMQpxxIALt8V9UmmS
-         oUNg==
-X-Gm-Message-State: AOJu0YwI64UCQd7pEIJKYTedaLz17AjbooU9BrEBpMPA3/arY2uPptgw
-	xHzWqWLJAn3q5b60e7U4UHyXs0LS2WRWXw==
-X-Google-Smtp-Source: AGHT+IFBLddxdTc58MefjwJbm3rpNUvZuoZw01f+SN8/20c7qP+g4Wbqx7KwDLaVAoQ2dQCOfpGd4w==
-X-Received: by 2002:ac8:57cf:0:b0:429:bc00:ef25 with SMTP id w15-20020ac857cf000000b00429bc00ef25mr24399qta.122.1704914234609;
-        Wed, 10 Jan 2024 11:17:14 -0800 (PST)
-Received: from [172.16.32.83] ([198.232.126.202])
-        by smtp.gmail.com with ESMTPSA id hb5-20020a05622a2b4500b0042830a16af7sm1985351qtb.62.2024.01.10.11.17.12
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 10 Jan 2024 11:17:14 -0800 (PST)
-Message-ID: <40996ea1-3417-1c2f-ddd2-e6ed45cb6f4b@landley.net>
-Date: Wed, 10 Jan 2024 13:23:51 -0600
+        d=1e100.net; s=20230601; t=1704915919; x=1705520719;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:sender:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=8zRr9k3M5lt1NLGiBm4LGGbEU76LPHiRlYHf6Ykn1Ys=;
+        b=BKT2qwxmJ3wcOM0prF4WQo18C+H0ocKL+7dC3Ca7Y3ymf2CoC0HC+xy7HZ2fOSzVVe
+         VgEqWi7suHfQ0JpWoM8OQ8djygt+agzfYOc1U4DSykAMIEOae2fWDLPTDihWirS0c5PI
+         ZmIju8BKk11+ObmOxxciZ70zRkkL/M9Oy3v1/uNv2kx8MJtehFa+gN4J/5mH4vadHrs6
+         igiMpVzED5tG969zLjwi0FxfTfeSRx2ytc3q89Xfcq8ak/dGb0JA39+wv5lv6960tzO0
+         /zlvG6BQKxtB8Clg3WVyT1Zm5YYUPnYKyhi/cWOpukivOLSKT5jBp8aUwmA9PbObDDav
+         5lVw==
+X-Gm-Message-State: AOJu0YzrEFPgO5WkZ5wwUpvjvyfu7sblOh8X/+6BK0PFF20zeOlLHBp6
+	7GBZ0F2ID/dOhzRSGdvRc3FSPgd22+VN3Q==
+X-Google-Smtp-Source: AGHT+IHIC4STcmIVvHNojmmb+kWLZtF32D5cncsDs8Rdjedin7IsN3qjxeZAoMn26pYsOd81Vi25VQ==
+X-Received: by 2002:a25:9f85:0:b0:dbd:5be1:1768 with SMTP id u5-20020a259f85000000b00dbd5be11768mr133994ybq.73.1704915919301;
+        Wed, 10 Jan 2024 11:45:19 -0800 (PST)
+Received: from server.roeck-us.net ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
+        by smtp.gmail.com with ESMTPSA id i29-20020a25b21d000000b00dbccc57e9c8sm1615656ybj.56.2024.01.10.11.45.18
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 10 Jan 2024 11:45:18 -0800 (PST)
+Sender: Guenter Roeck <groeck7@gmail.com>
+Date: Wed, 10 Jan 2024 11:45:16 -0800
+From: Guenter Roeck <linux@roeck-us.net>
+To: Arnd Bergmann <arnd@kernel.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Arnd Bergmann <arnd@arndb.de>,
+	"David S. Miller" <davem@davemloft.net>,
+	David Woodhouse <dwmw2@infradead.org>,
+	Dinh Nguyen <dinguyen@kernel.org>,
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+	Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Masahiro Yamada <masahiroy@kernel.org>,
+	Matt Turner <mattst88@gmail.com>,
+	Nathan Chancellor <nathan@kernel.org>,
+	Nicolas Schier <nicolas@fjasle.eu>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Rich Felker <dalias@libc.org>,
+	Richard Henderson <richard.henderson@linaro.org>,
+	Richard Weinberger <richard@nod.at>,
+	Stephen Rothwell <sfr@canb.auug.org.au>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Tudor Ambarus <tudor.ambarus@linaro.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	linux-arch@vger.kernel.org, linux-alpha@vger.kernel.org,
+	linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-mips@vger.kernel.org, linux-mtd@lists.infradead.org,
+	linux-sh@vger.kernel.org, linux-usb@vger.kernel.org,
+	sparclinux@vger.kernel.org, x86@kernel.org,
+	Kees Cook <keescook@chromium.org>,
+	Palmer Dabbelt <palmer@rivosinc.com>
+Subject: Re: [PATCH v3 6/6] Makefile.extrawarn: turn on missing-prototypes
+ globally
+Message-ID: <ab94f844-a4ec-4b4f-b67b-2b67347596d9@roeck-us.net>
+References: <20231123110506.707903-1-arnd@kernel.org>
+ <20231123110506.707903-7-arnd@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.10.0
-Subject: Re: [Automated-testing] Call for nommu LTP maintainer [was: Re:
- [PATCH 00/36] Remove UCLINUX from LTP]
-Content-Language: en-US
-To: Petr Vorel <pvorel@suse.cz>, Tim Bird <tim.bird@sony.com>
-Cc: Cyril Hrubis <chrubis@suse.cz>, Geert Uytterhoeven
- <geert@linux-m68k.org>, "ltp@lists.linux.it" <ltp@lists.linux.it>,
- Li Wang <liwang@redhat.com>, Andrea Cervesato <andrea.cervesato@suse.com>,
- Greg Ungerer <gerg@linux-m68k.org>, Jonathan Corbet <corbet@lwn.net>,
- Randy Dunlap <rdunlap@infradead.org>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Christophe Lyon <christophe.lyon@linaro.org>,
- "linux-m68k@lists.linux-m68k.org" <linux-m68k@lists.linux-m68k.org>,
- "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
- Linux ARM <linux-arm-kernel@lists.infradead.org>,
- linux-riscv <linux-riscv@lists.infradead.org>,
- Linux-sh list <linux-sh@vger.kernel.org>,
- "automated-testing@lists.yoctoproject.org"
- <automated-testing@lists.yoctoproject.org>,
- "buildroot@buildroot.org" <buildroot@buildroot.org>,
- Niklas Cassel <niklas.cassel@wdc.com>
-References: <CAMuHMdXGwyS-CL0vLdUP4Z4YEYhmcmDyC3YdGCnS=jFkqASqvw@mail.gmail.com>
- <20240103114957.GD1073466@pevik>
- <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
- <ZZVOhlGPg5KRyS-F@yuki> <5a1f1ff3-8a61-67cf-59a9-ce498738d912@landley.net>
- <20240105131135.GA1484621@pevik>
- <90c1ddc1-c608-30fc-d5aa-fdf63c90d055@landley.net>
- <20240108090338.GA1552643@pevik> <ZZvJXTshFUYSaMVH@yuki>
- <SA3PR13MB6372498CC6372F8B16237244FD6A2@SA3PR13MB6372.namprd13.prod.outlook.com>
- <20240110141455.GC1698252@pevik>
-From: Rob Landley <rob@landley.net>
-In-Reply-To: <20240110141455.GC1698252@pevik>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20231123110506.707903-7-arnd@kernel.org>
 
-On 1/10/24 08:14, Petr Vorel wrote:
-> There is MAP_PRIVATE_EXCEPT_UCLINUX constant to avoid using MAP_PRIVATE on
-> uClinux, who knows if this is relevant on nommu?
-
-MAP_PRIVATE creates a copy-on-write mapping, and doing copy-on-write requires an
-MMU. (You mark it read only in the page table, take a fault when they try to
-write, the fault handler allocates a new physical page, copies the old contents
-to it, marks it writeable, and returns allowing the write to complete to the new
-page.)
-
-On NOMMU you can MAP_SHARED and MAP_ANON, but not MAP_PRIVATE.
-
-Swap is implemented kind of similarly, except when you recycle pages you mark
-them as neither readable nor writeable in the page table, schedule the page's
-contents to be written to disk, suspend the process so the scheduler can go run
-something else, and then when you get the I/O completion interrupt you mark the
-page free so whatever else needed a page can use it. And then when the process
-tries to access the page the fault handler reverses the process, allocating a
-new physical page and load in the contents back in while the process is
-suspended waiting for that to finish. Can't do that without an MMU either.
-
->> 3) what the desired roadmap going forward would be, to continue to support this code.
+On Thu, Nov 23, 2023 at 12:05:06PM +0100, Arnd Bergmann wrote:
+> From: Arnd Bergmann <arnd@arndb.de>
 > 
-> All LTP tests are being rewritten to use new API since 2016 (new API was
-> introduced in 20160510), thus we are loosing the support with old API going
-> away. Sure, I can hold on this patchset and we continue removing the
-> functionality tests manually. But sooner or later it's gone.
-
-You can't fork() on nommu because copies of the mappings have different
-addresses, meaning any pointers in the copied mappings would point into the OLD
-mappings (belonging to the parent process), and fixing them up is 100%
-equivalent to the "garbage collection in C" problem. (It's AI-complete. Of the
-C3PO kind, not the "autocorrect with syntax checking" kind.) People get hung up
-on the "it would be very inefficient to do that because no copy-on-write"
-problem and miss the "the child couldn't FUNCTION because its pointer variables
-all contain parent addresses" problem.
-
-So instead vfork() creates a child with all the same memory mappings (a bit like
-a thread) and freezes the parent process until that child discards those
-mappings, either by calling exec() or _exit(). (At which point the parent gets
-un-suspended.)
-
-The child can do quite a lot of setup before calling exec, it already has its
-own filehandle table for example, but it has to be really careful about MEMORY.
-Anything it writes to global variables the parent will see, any changes to the
-heap persist in the parent, and anything it writes to local variables the parent
-MAY see. (Systems have historically differed about whether the vfork() child
-gets a new stack like a thread would, or keeps using the parent's mapping since
-the new stack would be quickly discarded anyway. If you call into a new setup()
-function after vfork() it doesn't matter much either way, but do NOT return from
-the function that called vfork(): either your new stack hasn't got anything to
-return to or you'll corrupt the parent's stack by overwriting its return address
-so when the parent exits from its current function it jumps to la-la land.)
-
-The OTHER fun thing about nommu is you can't run conventional ELF binaries,
-because everything is linked at fixed address. So you might be able to run ONE
-instance of the program as your init task, assuming those addresses were
-available even then, but as soon as you try to run a second one it's a conflict.
-
-The quick and dirty work around is to make PIE binaries, which can relocate
-everything into available space, which works but doesn't scale. The problem with
-ELF PIE is that everything is linked contiguously from a single base pointer,
-meaning your text, rodata, data, and bss segments are all one linear blob. So if
-you run two instances of bash, you've loaded two copies of the test and the
-rodoata. This fills up your memory fast.
-
-AND PIE requires contiguous memory, which nommu is bad at providing because it
-has no page tables to remap stuff. With an mmu it can coalesce scattered
-physical pages into a virtually contiguous range, but without an mmu you can
-have plenty of memory free but in tiny chunks, none big enough to satisfy an
-allocation request.
-
-So they invented FDPIC, which is ELF with FOUR base pointers. Each major section
-(rodata, text, data, and bss) has its own base pointer, so you need to find
-smaller chunks of memory to load them into (and thus it can work on a more
-fragmented system), AND it means that two instances of the same program can
-share the read-only sections (rodata and text) so you only need new copies of
-the writeable segments (data and bss. And the heap. And the stack.)
-
-(The earlier binflt format is an a.out variant with 4 base pointers. FDPIC is
-the ELF version of the same idea. Since a.out went bye-bye binflt is obsolete,
-but not everybody's moved off it yet because so many nommu people are still
-using 2.6 or even earlier, and also using gcc 3.x or 2.x toolchains.)
-
-Oh, the OTHER thing is none of this is deferred allocation, it's all up front.
-On systems with mmu you can populate large empty virtual mappings that read as
-zeroed but it's actually redundant copy-on-write instances of the zero page, and
-when you write to them it takes a soft fault and the fault handler allocates the
-page you dirtied when you dirty it. On nommu, if you want a 4 megabyte mapping
-you have to find 4 contiguous megabyte and allocate it immediately, or else the
-mmap() or malloc() returns failure. (On systems with mmu malloc() almost never
-returns NULL, because you've got virtual address space coming out of your ears
-and if you ACTUALLY run out of memory that's happens way later, the OOM killer
-triggers long after malloc() returned success. But on a nommu system, malloc()
-returns NULL all the time, even if you THINK you have enough memory, because
-what's left is too fragmented to contain a free chunk THAT BIG...)
-
-This impacts the stack. On MMU Linux, the default stack size is 8 megs but it's
-seldom all used. On nommu linux, that would be RIDICULOUS because A) it would
-always be allocated to its full size right up front, B) you'd need contiguous
-memory for it. So instead you set the default stack size when building the
-linker (you can also set it on the ld command line), and common sizes range from
-8k to maybe 256k depending on what you expect to be running. Toybox tries not to
-use more than 16k stack, although I usually test it with 32k on nommu. (There's
-no guard page to tell you when you went off the edge, because no MMU so no page
-faults, but you can check that the stack page at end-16k is still clean at exit
-if you like. Some nommu hardware has range registers, but Linux has never
-supported them that I'm aware of.)
-
-There's not THAT much to learn about NOMMU. It could all be covered in an hour
-presentation at a conference, I expect?
-
-> One can check files which had special handling in the old API:
+> Over the years we went from > 1000 of warnings to under 100 earlier
+> this year, and I sent patches to address all the ones that I saw with
+> compile testing randcom configs on arm64, arm and x86 kernels. This is a
+> really useful warning, as it catches real bugs when there are mismatched
+> prototypes. In particular with kernel control flow integrity enabled,
+> those are no longer allowed.
 > 
-> $ git grep -l UCLINUX 20160126 -- testcases/ | wc -l
-> 173
+> I have done extensive testing to ensure that there are no new build
+> errors or warnings on any configuration of x86, arm and arm64 builds.
+> I also made sure that at least the both the normal defconfig and an
+> allmodconfig build is clean for arc, csky, loongarch, m68k, microblaze,
+> openrisc, parisc, powerpc, riscv, s390, and xtensa, with the respective
+> maintainers doing most of the patches.
 > 
-> What is supported now:
+> At this point, there are five architectures with a number of known
+> regressions: alpha, nios2, mips, sh and sparc. In the previous version
+> of this patch, I had turned off the missing prototype warnings for the 15
+> architectures that still had issues, but since there are only five left,
+> I think we can leave the rest to the maintainers (Cc'd here) as well.
 > 
-> $ git grep -l UCLINUX  -- testcases/  |wc -l
-> 55
 
-UCLINUX is a long-dead distro. Linaro died in the dot-com crash and its founder
-Jeff Dionne moved to Japan for his next gig and never came back. On the way out
-he handed uclinux off to someone else, who didn't do a lot of work maintaining
-it. Most of the actual support went "upstream" into various packages (linux and
-busybox and gcc and so on) before the handoff, so you didn't NEED uclinux anymore.
+Not sure I understand why this was so important that it warrants the
+resulting buildtest failures.
 
-The real nail in the coffin is the inheritor of uclinux never migrated it off
-CVS, and then the disk holding the CVS archive crashed with no backup. He came
-out with a couple more releases after that by monkey-patching the last release's
-filesystem, but the writing was on the wall and it rolled to a stop.
+FWIW, I'll disable WERROR in my build tests for the affected architectures.
+That is kind of counter-productive, but the only real alternative would be
+to stop build (and sometimes, such as for ppc, runtime) tests entirely,
+which would be even worse.
 
-I did a triage of its last release (from 2014) as part of my toybox roadmap:
-
-https://landley.net/toybox/roadmap.html#uclinux
-
-> => We have now removed nearly 2/3 of it (this means we're arguing about 1/3 of
-> the tests which initially somehow supported nommu).
-
-I'd like to get more tests supporting nommu. Possibly the approach here is just
-get ANYTHING working with the new api, and then whack-a-mole more tests in as we go.
-
-Other than lacking fork(), restricted mmap(), different executable packaging,
-smaller stack size, having to actually test the return from malloc(), no page
-faults if you follow a wild pointer, and the complete lack of swap space...
-
-Unless I missed something, it's otherwise normal Linux? (People comfortable with
-threads can still do all their thread tricks on nommu systems. And the Turtle
-board I'm using is an SMP nommu system, they do exist. :)
-
-Rob
+Guenter
