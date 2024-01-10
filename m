@@ -1,120 +1,155 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 39538EC2;
-	Wed, 10 Jan 2024 14:46:41 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id D0237C433F1;
-	Wed, 10 Jan 2024 14:46:37 +0000 (UTC)
-Message-ID: <aef3568c-7894-49c9-a7aa-b3c58b822b91@linux-m68k.org>
-Date: Thu, 11 Jan 2024 00:46:35 +1000
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF6914CB28;
+	Wed, 10 Jan 2024 16:11:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="a3/tV8d/"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1B2CAC433C7;
+	Wed, 10 Jan 2024 16:11:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1704903118;
+	bh=TjB+hX1j46U+CflASkOHj4zTVTFUzA+ZbdAbWk2ryio=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=a3/tV8d/TpSrMMPBNe5Bio2tR6BViJo6DwIaOLYJ6dXTqqXN76rzMj52xy/TIVYU7
+	 YzbZtfDGI1pGi7Q//oC4Lp0Acc/UwQQCLOjmh7jQh7VaiOqDdh1HTPGwZSaIbsiby+
+	 cCWurXhUDUygFH/SHOzL1xtk0z4CjUb628cwyw7KwK5NQyVn9isyvX7rtXkjU4nI6S
+	 DQNgr5OzBM4Aitk1dNvvk+XrhQ2Lg0d0lHZa/o80mZ7ygooh+LXNeO/Yn7VkenHUa+
+	 tA/u0+X+ndRiC+QBeR8hwS9cofweI4PMtsBo9b5Fdo2xUbrp3dUKq39pJv1WiqrCDO
+	 edCMvCyR2u92g==
+Date: Wed, 10 Jan 2024 16:11:44 +0000
+From: Conor Dooley <conor@kernel.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org,
+	Damien Le Moal <dlemoal@kernel.org>,
+	Rob Herring <robh+dt@kernel.org>,
+	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
+	Conor Dooley <conor+dt@kernel.org>,
+	Geert Uytterhoeven <geert+renesas@glider.be>,
+	Michael Turquette <mturquette@baylibre.com>,
+	Stephen Boyd <sboyd@kernel.org>,
+	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
+	Maxime Ripard <mripard@kernel.org>,
+	Thomas Zimmermann <tzimmermann@suse.de>,
+	David Airlie <airlied@gmail.com>, Daniel Vetter <daniel@ffwll.ch>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Lorenzo Pieralisi <lpieralisi@kernel.org>,
+	Krzysztof =?utf-8?Q?Wilczy=C5=84ski?= <kw@linux.com>,
+	Bjorn Helgaas <bhelgaas@google.com>,
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+	Jiri Slaby <jirislaby@kernel.org>,
+	Magnus Damm <magnus.damm@gmail.com>,
+	Daniel Lezcano <daniel.lezcano@linaro.org>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Lee Jones <lee@kernel.org>, Helge Deller <deller@gmx.de>,
+	Heiko Stuebner <heiko@sntech.de>,
+	Jernej Skrabec <jernej.skrabec@gmail.com>,
+	Chris Morgan <macromorgan@hotmail.com>,
+	Yang Xiwen <forbidden405@foxmail.com>,
+	Sebastian Reichel <sre@kernel.org>,
+	Linus Walleij <linus.walleij@linaro.org>,
+	Randy Dunlap <rdunlap@infradead.org>, Arnd Bergmann <arnd@arndb.de>,
+	Vlastimil Babka <vbabka@suse.cz>,
+	Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+	David Rientjes <rientjes@google.com>, Baoquan He <bhe@redhat.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Guenter Roeck <linux@roeck-us.net>,
+	Stephen Rothwell <sfr@canb.auug.org.au>,
+	Azeem Shaikh <azeemshaikh38@gmail.com>,
+	Javier Martinez Canillas <javierm@redhat.com>,
+	Max Filippov <jcmvbkbc@gmail.com>,
+	Palmer Dabbelt <palmer@rivosinc.com>, Bin Meng <bmeng@tinylab.org>,
+	Jonathan Corbet <corbet@lwn.net>,
+	Jacky Huang <ychuang3@nuvoton.com>,
+	Lukas Bulwahn <lukas.bulwahn@gmail.com>,
+	Biju Das <biju.das.jz@bp.renesas.com>,
+	Uwe =?iso-8859-1?Q?Kleine-K=F6nig?= <u.kleine-koenig@pengutronix.de>,
+	Sam Ravnborg <sam@ravnborg.org>,
+	Sergey Shtylyov <s.shtylyov@omp.ru>,
+	Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
+	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+	linux-ide@vger.kernel.org, devicetree@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+	linux-clk@vger.kernel.org, dri-devel@lists.freedesktop.org,
+	linux-pci@vger.kernel.org, linux-serial@vger.kernel.org,
+	linux-fbdev@vger.kernel.org
+Subject: Re: [DO NOT MERGE v6 26/37] dt-bindings: vendor-prefixes: Add smi
+Message-ID: <20240110-sincere-tripod-9d34175fcbce@spud>
+References: <cover.1704788539.git.ysato@users.sourceforge.jp>
+ <c8aaf67e3fcdb7e60632c53a784691aabfc7733e.1704788539.git.ysato@users.sourceforge.jp>
+ <20240109-fructose-bundle-05d01033277b@spud>
+ <CAMuHMdU1z64QHJOVd3jUsOfyuDApB1+khkUV8PvjoKbwsi327g@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: Call for nommu LTP maintainer [was: Re: [PATCH 00/36] Remove
- UCLINUX from LTP]
-Content-Language: en-US
-To: Rob Landley <rob@landley.net>, Petr Vorel <pvorel@suse.cz>
-Cc: Cyril Hrubis <chrubis@suse.cz>, Geert Uytterhoeven
- <geert@linux-m68k.org>, ltp@lists.linux.it, Li Wang <liwang@redhat.com>,
- Andrea Cervesato <andrea.cervesato@suse.com>,
- Jonathan Corbet <corbet@lwn.net>, Randy Dunlap <rdunlap@infradead.org>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Christophe Lyon <christophe.lyon@linaro.org>,
- linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
- Linux ARM <linux-arm-kernel@lists.infradead.org>,
- linux-riscv <linux-riscv@lists.infradead.org>,
- Linux-sh list <linux-sh@vger.kernel.org>,
- automated-testing@lists.yoctoproject.org, buildroot@buildroot.org,
- Niklas Cassel <niklas.cassel@wdc.com>
-References: <20240103015240.1065284-1-pvorel@suse.cz>
- <CAMuHMdXGwyS-CL0vLdUP4Z4YEYhmcmDyC3YdGCnS=jFkqASqvw@mail.gmail.com>
- <20240103114957.GD1073466@pevik>
- <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
- <ZZVOhlGPg5KRyS-F@yuki> <5a1f1ff3-8a61-67cf-59a9-ce498738d912@landley.net>
- <20240105131135.GA1484621@pevik>
- <90c1ddc1-c608-30fc-d5aa-fdf63c90d055@landley.net>
- <20240108090338.GA1552643@pevik>
- <a3d7f5ae-56c6-9cd8-2cda-2d50d12be9c4@landley.net>
- <461a6556-8f24-48f5-811a-498cb44f2d64@linux-m68k.org>
- <b3a8b9db-86ee-47c6-96e2-baa2cba61404@landley.net>
-From: Greg Ungerer <gerg@linux-m68k.org>
-In-Reply-To: <b3a8b9db-86ee-47c6-96e2-baa2cba61404@landley.net>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/signed; micalg=pgp-sha256;
+	protocol="application/pgp-signature"; boundary="NUFAcOAItrfxYJZq"
+Content-Disposition: inline
+In-Reply-To: <CAMuHMdU1z64QHJOVd3jUsOfyuDApB1+khkUV8PvjoKbwsi327g@mail.gmail.com>
 
 
-On 10/1/24 15:47, Rob Landley wrote:
-> On 1/9/24 17:17, Greg Ungerer wrote:
->> On 10/1/24 06:24, Rob Landley wrote:
->>> I'm a bit weird in that I try to get CURRENT stuff to work on nommu, and a lot
->>> of people have been happy to consume my work, but getting any of them to post
->>> directly to linux-kernel is like pulling teeth.
->>
->> I regularly test nommu configurations (as in every kernel rc and release) on m68k
->> and at least every release on other architectures like arm(*) and recently on
->> riscv as well.
-> 
-> Sigh, I should start caring about riscv. I added or1k support, I should do
-> riscv. (Except I did or1k because I found it in actual hardware, the Orange Pi
-> 3b's power controller is an or1k asic so I needed an or1k toolchain to build
-> some of u-boot's firmware or else the board couldn't reboot, and there was a
-> qemu-system-or1k already, which turned into adding it to mkroot via a long
-> https://lore.kernel.org/openrisc/ZX1xbs_AGdgLgcx7@antec/ thread with its
-> developers. Alas I still can't get qemu to exit (I.E. virtually reboot or power
-> off), apparently I need to reinstall my laptop to have a new enough version of
-> python 3 to build a newer qemu with. It's on the todo list...)
-> 
-> I still have a hard time considering riscv anything other than open source's
-> version of Itanium. Promises of ubiquity, but even a 28 nanometer mask is still
-> 6 figures before you run any wafers and your mask build process is sucking in
-> all the black box libraries the fab can sell you, so what does "open" really get
-> you here? Cortex-m got cheap when the superh patents expired so Arm didn't have
-> to pay royalties to hitachi (renesas?) for the thumb instruction set anymore,
-> and they belt those suckers en masse amortizing the up-front costs over ENORMOUS
-> volume.
-> 
-> And yes, j-core was trying to fix the closed source library and toolchain issues
-> back when I was still working with them. Among other things fishing
-> Google/skywater's openlane toolchain build out of their magic docker and
-> reproducing it under a vanilla debootstrap, ala
-> https://github.com/j-core/openlane-vhdl-build (As with most corporate
-> clusterfscks, once you dig far enough it turns out you can throw over 90% of it
-> out...)
-> 
-> But these days I'm trying to get toybox to 1.0...
-> 
->> (*) somewhat annoyingly needing a minor patch to run the versatile qemu platform
->>       I like to test with. But hey, that is on me :-)
-> 
-> I would very much like to add more nommu targets to mkroot, can I get your
-> build/config info offline? (I tried fishing configs out of buildroot a couple
-> years ago, but after the THIRD one where the secret was "use very old versions
-> of packages, the current stuff is broken"... And the problems were things like
-> "the conversion to device tree deleted a huge chunk of this infrastructure", not
-> simple fixes.)
+--NUFAcOAItrfxYJZq
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Maybe getting a little off-topic here, but I'll just send links here.
-Who knows it might be useful to others.
+On Wed, Jan 10, 2024 at 12:23:37PM +0100, Geert Uytterhoeven wrote:
+> Hi Conor,
+>=20
+> On Tue, Jan 9, 2024 at 7:06=E2=80=AFPM Conor Dooley <conor@kernel.org> wr=
+ote:
+> > On Tue, Jan 09, 2024 at 05:23:23PM +0900, Yoshinori Sato wrote:
+> > > Add Silicon Mortion Technology Corporation
+>=20
+> Motion
+>=20
+> > > https://www.siliconmotion.com/
+> > >
+> > > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+> > > ---
+> > >  Documentation/devicetree/bindings/vendor-prefixes.yaml | 2 ++
+> > >  1 file changed, 2 insertions(+)
+> > >
+> > > diff --git a/Documentation/devicetree/bindings/vendor-prefixes.yaml b=
+/Documentation/devicetree/bindings/vendor-prefixes.yaml
+> > > index 94ed63d9f7de..a338bdd743ab 100644
+> > > --- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
+> > > +++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+> > > @@ -1283,6 +1283,8 @@ patternProperties:
+> > >      description: Skyworks Solutions, Inc.
+> > >    "^smartlabs,.*":
+> > >      description: SmartLabs LLC
+> > > +  "^smi,.*":
+> > > +    description: Silicon Motion Technology Corporation
+> >
+> > How come "smi" is used for a company with this name?
+> > Why is it not something like SMTC? There's probably some history here
+> > that I am unaware of.
+>=20
+> See Documentation/devicetree/bindings/display/sm501fb.txt
+> The stock ticker is "SIMO", though.
+> https://www.nasdaq.com/market-activity/stocks/simo
 
-Recently I have been experimenting with minimal builds, this is a bunch of
-scripts, configs and a couple of patches I currently have:
+If there's an existing user, there's little reason to stand in the way I
+think.
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
 
-     https://github.com/gregungerer/simple-linux
+Cheers,
+Conor.
 
-Mostly the kernel builds use the architecture defconfigs, but for armnommu
-versatile it was easier to use a dedicated config and patch:
+--NUFAcOAItrfxYJZq
+Content-Type: application/pgp-signature; name="signature.asc"
 
-     https://github.com/gregungerer/simple-linux/blob/master/configs/linux-6.6-armnommu-versatile.config
-     https://github.com/gregungerer/simple-linux/blob/master/patches/linux-6.6-armnommu-versatile.patch
+-----BEGIN PGP SIGNATURE-----
 
-Anyway the scripting uses the newest package versions of everything
-(binutils, gcc, linux, uClibc, busybox).
+iHUEABYIAB0WIQRh246EGq/8RLhDjO14tDGHoIJi0gUCZZ7BwAAKCRB4tDGHoIJi
+0q9OAQDdFxNbk8a1RbWhCTMkuhEoMnbyCFIJrJbkoyX9CvOgjgEA+TlXk2NSR1lR
+ie4wsGsQcBrpiUsYvM61XxlwsOPsRgg=
+=6SO8
+-----END PGP SIGNATURE-----
 
-Regards
-Greg
-
-
+--NUFAcOAItrfxYJZq--
