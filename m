@@ -1,125 +1,175 @@
-Received: from new4-smtp.messagingengine.com (new4-smtp.messagingengine.com [66.111.4.230])
+Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 256B74F602;
-	Wed, 10 Jan 2024 20:44:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E09304F5E9;
+	Wed, 10 Jan 2024 21:17:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="KWnMut0t";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="EXwWXkvv"
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-	by mailnew.nyi.internal (Postfix) with ESMTP id 1864C580ACA;
-	Wed, 10 Jan 2024 15:44:04 -0500 (EST)
-Received: from imap51 ([10.202.2.101])
-  by compute5.internal (MEProxy); Wed, 10 Jan 2024 15:44:04 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-	:cc:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm2; t=1704919444; x=1704926644; bh=swCJD9Fvop
-	hNa/YkfcNjNrylvPuJdTYmLEobiCsz9KQ=; b=KWnMut0tt2cIG/amb4AXGI5g8w
-	YoCQshQyMCD7PX1QHoaWnhx8BmDenZ13YFz0Q4oWEGwQziz58V/PuWWsRKpr4az6
-	3TPX50+gs88afAypjeSE13kGIrQ3OEttOSWf/K+g0PAKgJaLHlTeCu85jjYjsc+e
-	om4sYKVwBB2Gxa49uQdH+Z4KKOzSbPrH3A8CbfrIMu93271HA5XmO534EJAN7tel
-	8kkoTj8BtG4yF3FmVqPUuu3UzTaIK0qstUExFmGa7RPFtUn7SLqq2/C6pQxbmNs0
-	sqgwZEcIR2vHgCFG0D9hf8QEICU2tZM43LubweRGEI33P6NHNtD8ZxoLwxgA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-	fm2; t=1704919444; x=1704926644; bh=swCJD9FvophNa/YkfcNjNrylvPuJ
-	dTYmLEobiCsz9KQ=; b=EXwWXkvvpnzWDZJ8zWZ4YSDRAy1pijyf4PqvHWBwyITV
-	7b0Q6JQ9rJKeGQM5QP0wePvrCc9tJT3sGtmQ86bKTrPGCy8FFcudtpbOcMrDORKF
-	MV0jI3A39lpJ/WqA2PWNIgOuYaCtOOWx+bJ3PdRnpOzZoPgsrCLn4Ym673cQNmil
-	/Heoj6JgIeuCrtAUjR8I31wnDEwbw1MJ27N0BVslb3vL5NoeIgyfQ1aQG+w+XT8m
-	UQRaDfMD+9rdyAgHJJzO3pGRtIa4eMpdwE7Dm9Ye1WWXYwZHvR1weYmeZFSkNCyX
-	e3hOvm01aKeaxwTQ2mO0Rq76NNyPDPa/FzKHOP81qw==
-X-ME-Sender: <xms:kQGfZU8PlM7CA0aYK4V6brNP6R0d-zxdQJ1P3IxWYzfnex5J1NLJ3Q>
-    <xme:kQGfZcualeFJQYSYSx3XzEPC3UMwFQk3uY8lZJt040GkYS2RxvSbljuRnElArHrJg
-    7psyMHAF2iDoupcp3c>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvkedrvdeiuddgudefkecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpqfgfvfdpuffrtefokffrpgfnqfgh
-    necuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivghnthhsucdlqddutddtmd
-    enucfjughrpefofgggkfgjfhffhffvvefutgesthdtredtreertdenucfhrhhomhepfdet
-    rhhnugcuuegvrhhgmhgrnhhnfdcuoegrrhhnugesrghrnhgusgdruggvqeenucggtffrrg
-    htthgvrhhnpeffheeugeetiefhgeethfejgfdtuefggeejleehjeeutefhfeeggefhkedt
-    keetffenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhrohhmpe
-    grrhhnugesrghrnhgusgdruggv
-X-ME-Proxy: <xmx:kQGfZaCiSSrv3HJIjW5lrIlpJBs13VbbS-aW4LFRoMspyJTWIsB6Pg>
-    <xmx:kQGfZUdq2Rm9UmEj06v-BC3916J0934HbGLgr2_jP14x35GiAeAsbA>
-    <xmx:kQGfZZPOxR7MLcGy09RbjxNxZZ2XJR_bdXbzXGquNFT9yhSOF-CyXg>
-    <xmx:lAGfZZKrTcf0Bt-eKNY4pGrAfMPlN32u2wpFiIhGjkd3ET5RsOprnw>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.nyi.internal (Postfix, from userid 501)
-	id C88EEB6008D; Wed, 10 Jan 2024 15:44:01 -0500 (EST)
-X-Mailer: MessagingEngine.com Webmail Interface
-User-Agent: Cyrus-JMAP/3.9.0-alpha0-1374-gc37f3abe3d-fm-20240102.001-gc37f3abe
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="m1j82+jb";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="Apx2R6UA"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1704921461; x=1736457461;
+  h=from:to:cc:subject:date:message-id:references:
+   in-reply-to:content-id:content-transfer-encoding:
+   mime-version;
+  bh=b3/x+NVwIv4zyU9+V7EOtGVmS1MiBfeSBIDXCUFJYNY=;
+  b=m1j82+jbetBVZl4ecUBcYjPUnuPEJ8ZpVlE+6f7WqHSPplUNe1BrE0ek
+   UF/dbSWQhvpcZs6DcqKFEQZr9kzESltm/PpLdY5TCqljKs/rIpn6ZFNIL
+   H2OLD9nmpyoc5ZCH/n11Rg2rpWa0PfbFPWQWLLi1HaXlXD9nEg0aLKgm0
+   4WeAP+YFJ9JKseK2K9P6GWjDJRMQQuaPaxwsZyIivtNsIHV8KPo57vmYj
+   7tSmprMPoPWPG300eYg2lKOP6sxwj49KPwnUqaoQBpMNY2d/wJtI00ihY
+   Sul6gmMF+a805YHGMFUuFVfpd8KTLKaYR6+gTEAqk6Z+ZfRr175XVrBGk
+   w==;
+X-CSE-ConnectionGUID: FJl8ZIHhTF+so6h/iXswdQ==
+X-CSE-MsgGUID: i9boEqsqS1iE+3bIXWv0RA==
+X-IronPort-AV: E=Sophos;i="6.04,184,1695657600"; 
+   d="scan'208";a="7068361"
+Received: from mail-co1nam11lp2169.outbound.protection.outlook.com (HELO NAM11-CO1-obe.outbound.protection.outlook.com) ([104.47.56.169])
+  by ob1.hgst.iphmx.com with ESMTP; 11 Jan 2024 05:17:36 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=iWqqOp8ca60lTyJy7isrvApIB2rS3hXZWt/sb/qMC2jnkJF08zTD8yxPVzATlgtvXp7DyTzsdBq67sEQEiiXhDvaj1ppH2dSvhJePxFG8TxGpBRxA2aSYY4eCc4kee17JcVsZr41yGjPA6iTd5cgytXJahtBxU/um+lipf/lQjUr3wtWtpgzwp1ECnvgYwRfSWNvaV61+zBzb7iTYrDXz3e7lwzp074jkC7Tu/1ihmybVzmdCHwPsacN4LxnXdmBsjQpKdgrUSuAU7rSUzBza5IsI6lbHzCVqQ6w4CdNEu3hABKDwO5N1KM3W3CdVpl/JR5kYgfc1bd3ivVivDkwsA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=b3/x+NVwIv4zyU9+V7EOtGVmS1MiBfeSBIDXCUFJYNY=;
+ b=TUu05vIM3onw5ShQbuFOI1RgY28nQaZwyyAWfwTDnO+0EHS9hpbOEbspuoGHbjUq6h6w4kNx8FL8vrVpblbnWmL/Gmltodadtumyga/GlWfMA81sMTsag/3tLgfxdQyL8a/B6EnrCalpVi8gK6ufcqlI8Tj6I9A3WOqusmGNWuthb4D7xkT0YihpBEllPCWj+LU0yapMd6JPRmAnfIoQ06r0kdiYpKGiEtXoG7FwsjvAlY3hiSw+oVPbijtdmS0WIqCrPn0XD9WnPBgrQGuB6uN8+2K/9pinUNONbdenJ9F6/FoNWVB7lrSMg/lXYnhftJK1YoeXy6TWmSOB1m2ZkQ==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=b3/x+NVwIv4zyU9+V7EOtGVmS1MiBfeSBIDXCUFJYNY=;
+ b=Apx2R6UA9psyo6qiQ8okAERk1tdfio4DQkQvl7hB6TYjvO3OjTsFb1NwoNBiKePbWppq89IN9EcKsEmSvZe0LPCKohR2ani1nwbcXrczoblB3dJnNKCFGqjjPV0xM603AOQG/NDQEfxQTWTft7Wr+B1OhD6DCCVKnmsAasKayBw=
+Received: from BL0PR04MB4850.namprd04.prod.outlook.com (2603:10b6:208:5f::14)
+ by BN0PR04MB8205.namprd04.prod.outlook.com (2603:10b6:408:15c::11) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7181.17; Wed, 10 Jan
+ 2024 21:17:33 +0000
+Received: from BL0PR04MB4850.namprd04.prod.outlook.com
+ ([fe80::56e9:30a:5826:79fa]) by BL0PR04MB4850.namprd04.prod.outlook.com
+ ([fe80::56e9:30a:5826:79fa%4]) with mapi id 15.20.7181.018; Wed, 10 Jan 2024
+ 21:17:33 +0000
+From: Niklas Cassel <Niklas.Cassel@wdc.com>
+To: Rob Landley <rob@landley.net>
+CC: Petr Vorel <pvorel@suse.cz>, Tim Bird <tim.bird@sony.com>, Cyril Hrubis
+	<chrubis@suse.cz>, Geert Uytterhoeven <geert@linux-m68k.org>,
+	"ltp@lists.linux.it" <ltp@lists.linux.it>, Li Wang <liwang@redhat.com>,
+	Andrea Cervesato <andrea.cervesato@suse.com>, Greg Ungerer
+	<gerg@linux-m68k.org>, Jonathan Corbet <corbet@lwn.net>, Randy Dunlap
+	<rdunlap@infradead.org>, John Paul Adrian Glaubitz
+	<glaubitz@physik.fu-berlin.de>, Christophe Lyon <christophe.lyon@linaro.org>,
+	"linux-m68k@lists.linux-m68k.org" <linux-m68k@lists.linux-m68k.org>,
+	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>, Linux ARM
+	<linux-arm-kernel@lists.infradead.org>, linux-riscv
+	<linux-riscv@lists.infradead.org>, Linux-sh list <linux-sh@vger.kernel.org>,
+	"automated-testing@lists.yoctoproject.org"
+	<automated-testing@lists.yoctoproject.org>, "buildroot@buildroot.org"
+	<buildroot@buildroot.org>
+Subject: Re: [Automated-testing] Call for nommu LTP maintainer [was: Re:
+ [PATCH 00/36] Remove UCLINUX from LTP]
+Thread-Topic: [Automated-testing] Call for nommu LTP maintainer [was: Re:
+ [PATCH 00/36] Remove UCLINUX from LTP]
+Thread-Index: AQHaQhGbMR/7MaUknku9yjrZLvyb+bDPsNGAgAO+XIiAACGIAA==
+Date: Wed, 10 Jan 2024 21:17:33 +0000
+Message-ID: <ZZ8JbCPd3rq4u7iG@x1-carbon>
+References:
+ <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
+ <ZZVOhlGPg5KRyS-F@yuki> <5a1f1ff3-8a61-67cf-59a9-ce498738d912@landley.net>
+ <20240105131135.GA1484621@pevik>
+ <90c1ddc1-c608-30fc-d5aa-fdf63c90d055@landley.net>
+ <20240108090338.GA1552643@pevik> <ZZvJXTshFUYSaMVH@yuki>
+ <SA3PR13MB6372498CC6372F8B16237244FD6A2@SA3PR13MB6372.namprd13.prod.outlook.com>
+ <20240110141455.GC1698252@pevik>
+ <40996ea1-3417-1c2f-ddd2-e6ed45cb6f4b@landley.net>
+In-Reply-To: <40996ea1-3417-1c2f-ddd2-e6ed45cb6f4b@landley.net>
+Accept-Language: en-US
+Content-Language: en-US
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
+authentication-results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+x-ms-publictraffictype: Email
+x-ms-traffictypediagnostic: BL0PR04MB4850:EE_|BN0PR04MB8205:EE_
+x-ms-office365-filtering-correlation-id: 5335a178-577a-4fd1-6f39-08dc12218fbc
+wdcipoutbound: EOP-TRUE
+x-ms-exchange-senderadcheck: 1
+x-ms-exchange-antispam-relay: 0
+x-microsoft-antispam: BCL:0;
+x-microsoft-antispam-message-info:
+ 2AGQOBr5hNUb8tiBxtQ5GOq9maAvTLTndTo6bZT9iOc8dokGOH+mkm2WadUmYfC9vCIXqruubLSUIvDJL6nmohm1CIfmTgR0ILnqHYk1S0cYe9fWkjf4jkq/r4xzk7x94uia0LpK/TogjgGnl3/OZ7VuqaFUkxjauxs5axIym4MAHc4MPprkF3isGwZheGQ54YQ97LAD5NgGiy0IcJgaAhjWz/1ETpt2FOx59VyKRoX3Ofxbc2fgOdsYr0Q+DUo9tey9sV8ktY5olOF+K6YPmAHBM1Fk1LE9UiGrjmbT4gHwPCzt41uF2/bCv0CinY0Qek5TtIPl9ro0dpbjCHfj99taeKAIEAvOmibhdTsKgTo9ltI0+s1SqCRH8IIwW/fXB+8nbOm/r7d8DG9H/J1bdev8A87tuBf9fQhT5vwn/yojMBWARKYSx3OCA3JSGqLJxGR9ktdM/lfWLLkKmTNaW/dCT7gMdoDTPSTINkLIjeZIgYlvK9c5IQ0OFkmOqHw68SvxqHxU8Gts4rLWav5S3UNr4lt7Vg312FvFB6ng81Hm1WGffDT7vu/HD6p7yYJn9wmtxX61BfQcGIAt4T138cvkJx47L2ArmVXjWDhU3FzYdlvl2Sh09P7NUGy+gWDW
+x-forefront-antispam-report:
+ CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:BL0PR04MB4850.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230031)(7916004)(39860400002)(136003)(366004)(346002)(376002)(396003)(230922051799003)(1800799012)(451199024)(186009)(64100799003)(7416002)(5660300002)(4744005)(8936002)(8676002)(38070700009)(4326008)(2906002)(41300700001)(33716001)(478600001)(38100700002)(122000001)(26005)(76116006)(71200400001)(6512007)(9686003)(91956017)(66946007)(66556008)(6916009)(66446008)(66476007)(6506007)(316002)(54906003)(64756008)(86362001)(6486002)(82960400001);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0:
+ =?us-ascii?Q?E28fibFmwXdzfjbvsy3NJ70Ss2vpnTk7fX7fdEvcjNQCO8rtnwxN7uhKwxIi?=
+ =?us-ascii?Q?Tyus+PcGD33hKuQ0wjvGMKGht0riS693mz/SdJheYma83Z+A7w2EGmvTZXpc?=
+ =?us-ascii?Q?N4QzAZWrdy0pcXsdjpGPBmQvTbrXD4QXbDSGDgnteZyLLG6y4vOUJw0SjvCC?=
+ =?us-ascii?Q?x2OafVEBr04vMLUDW1MtKBgG6UPJqb4HNzCXEeUH/DUTE7pes5eRGXhmbYoj?=
+ =?us-ascii?Q?KnpGGmAhXjb4V3itYCN5tDQhpmR9TvRmyNRPc61nZRaurPEhleeZPmDy5t3/?=
+ =?us-ascii?Q?RZQfZOaumSqWw9eJ0FIPVW/v6JQ6fDq82R8qYW20cJAgBRixnwW7PBaF9bQK?=
+ =?us-ascii?Q?ZGCCi4RxBLGwK1w2D8Dd2anAgpYI4tStnNP3el6i5mXxqHA5rFC6eua/dwBg?=
+ =?us-ascii?Q?lLkcxxIFiBf3N4M6jefswyh0AAGYrA47OYq1wWEvkrLrqBtmpLHPiBUwrO3B?=
+ =?us-ascii?Q?oBFE1bH0ij0JVXaBDEtNsMjHKuvFnEqX8oPN8bU4zHIPJAeOSP3Y8i+meaVa?=
+ =?us-ascii?Q?FAIcIwdhMDWnwrSC9ipRzhZPOL4UG3egeo7XumTAf/2HcNz+7p5w9TrZocak?=
+ =?us-ascii?Q?EbDQRzBRPsbLZrnO464ngQlHuTeAWn7AV+gho5wmuoYLNNehtV4hWoMx0aE1?=
+ =?us-ascii?Q?6w5E3USoAAD4PBX6SrG5dZGo+dqk4T9As3qJwZ59nRwVm2g312OXdZ7YDj54?=
+ =?us-ascii?Q?jlk9Y8KapQ7SIIlBJBao9N4Yi0U2vpz1wpLqXLUiVwFgf56pOQRYa+L4vIBK?=
+ =?us-ascii?Q?iTwu4z8yCARkkhSiGcOwx2D2z9N+hcOvMCfGVBjl6oA3iDWs85keNZbXyF5e?=
+ =?us-ascii?Q?3UGaR4ulIxggbGoUFMqVLS0EzcAQ3gZoayx9x5P5bZyZ888PMliscUhWxgyn?=
+ =?us-ascii?Q?H8ygWqr2yGF1HL50OzY+3Rb5HjNto3ZMbziXnnPRvoMnu0hdy3WVWgTDrEFf?=
+ =?us-ascii?Q?0x3LE66sLM1IETWArasxMnSWYBY0Oaq/uEGrKmUk5Iiwu+UwoboF95OUatZc?=
+ =?us-ascii?Q?Aik//akhIZ0TaQpvadVZCw4x6jy56R7fTSFozlKwq7Qq2ulJmXLM7N0Enzcy?=
+ =?us-ascii?Q?pQgkmI+rhgHAuZeJ6Ye/3Q9U2ldqrhD68ZB3ks48ep+IcuQeeNkeE8/Ur2mf?=
+ =?us-ascii?Q?BWJayDkqArQ679iVuQ9yr/305s/kzW7dFPlbfIUATzNvMgX7YWY5sbzgiQR+?=
+ =?us-ascii?Q?HISMBMRGHgRnVV94pFq58K/VD7o3m2yZIaugz7PiTAXtGTI45rFi8ukq6g2V?=
+ =?us-ascii?Q?Bge2YKMN9eeS55c71eQBmPV91LgCNr4eP2AvHWFPyL34eoBkl/UX7CPEfdHG?=
+ =?us-ascii?Q?lz0HaWe3P0SBC9YENzcCPomHmHgMlY8QN53+9+RF4udFRV/L+ZArTvPUzbz6?=
+ =?us-ascii?Q?HHOiFdJyulIWV3F6Ff3wJPyAQ+3Awr7ATeI98qoNu7U81GfckMu3tnj48Ht0?=
+ =?us-ascii?Q?TZtk2SzG8FhdVfF/1gmDtf15v1/Hh8t/Lp0KEyN1cX3DchLnrXIcZBey2EQ9?=
+ =?us-ascii?Q?ASi4oQ3kO0JRYaaxhjhyk+TvyAAOZe+uTg70XonMgGnQmNenkrF31xHQv1jW?=
+ =?us-ascii?Q?BEav9VRJkojbDe3XHHSUpPHCB6ZCkcU6NWxJ4k5Yp4ytsfM17Ll1tU/ni2cO?=
+ =?us-ascii?Q?pA=3D=3D?=
+Content-Type: text/plain; charset="us-ascii"
+Content-ID: <D0EE684CEEEBCB4F9B30529F4622F2BC@namprd04.prod.outlook.com>
+Content-Transfer-Encoding: quoted-printable
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Message-Id: <7a79c037-ac91-448a-b6e0-b38cacccd971@app.fastmail.com>
-In-Reply-To: <ab94f844-a4ec-4b4f-b67b-2b67347596d9@roeck-us.net>
-References: <20231123110506.707903-1-arnd@kernel.org>
- <20231123110506.707903-7-arnd@kernel.org>
- <ab94f844-a4ec-4b4f-b67b-2b67347596d9@roeck-us.net>
-Date: Wed, 10 Jan 2024 21:43:40 +0100
-From: "Arnd Bergmann" <arnd@arndb.de>
-To: "Guenter Roeck" <linux@roeck-us.net>, "Arnd Bergmann" <arnd@kernel.org>
-Cc: "Andrew Morton" <akpm@linux-foundation.org>,
- "David S . Miller" <davem@davemloft.net>,
- "David Woodhouse" <dwmw2@infradead.org>,
- "Dinh Nguyen" <dinguyen@kernel.org>,
- "Greg Kroah-Hartman" <gregkh@linuxfoundation.org>,
- "Ivan Kokshaysky" <ink@jurassic.park.msu.ru>,
- "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
- "Michael Ellerman" <mpe@ellerman.id.au>,
- "Masahiro Yamada" <masahiroy@kernel.org>,
- "Matt Turner" <mattst88@gmail.com>,
- "Nathan Chancellor" <nathan@kernel.org>,
- "Nicolas Schier" <nicolas@fjasle.eu>,
- "Peter Zijlstra" <peterz@infradead.org>, "Rich Felker" <dalias@libc.org>,
- "Richard Henderson" <richard.henderson@linaro.org>,
- "Richard Weinberger" <richard@nod.at>,
- "Stephen Rothwell" <sfr@canb.auug.org.au>,
- "Thomas Bogendoerfer" <tsbogend@alpha.franken.de>,
- "Tudor Ambarus" <tudor.ambarus@linaro.org>,
- "Yoshinori Sato" <ysato@users.sourceforge.jp>,
- Linux-Arch <linux-arch@vger.kernel.org>, linux-alpha@vger.kernel.org,
- linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-mips@vger.kernel.org, linux-mtd@lists.infradead.org,
- linux-sh@vger.kernel.org, linux-usb@vger.kernel.org,
- sparclinux@vger.kernel.org, x86@kernel.org,
- "Kees Cook" <keescook@chromium.org>,
- "Palmer Dabbelt" <palmer@rivosinc.com>
-Subject: Re: [PATCH v3 6/6] Makefile.extrawarn: turn on missing-prototypes globally
-Content-Type: text/plain
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	KxJ6n7KptPQC0IsWWxLkAi5SKHDASz8X4e2/XRkPKViPutqtSzW+6HTW4wirjNJnYvmjwdx2XP5oejDJAFahISxlwOHT6EzqKu8TZY1uEc0EMl/54cWBu//GmML1edA0tOZlByb3+zJlXG2DQs59paddfSHsHQf8lAVSFZ0EkxiOBe2bvtA/jepi7bzd6WLyuRyY8PMjvHU0IMqVwOy7f8WBvT/xw4ImOoZHOl7CaoBfDUEhLTYzli/0UTu2O/Lu4Ed94PoKdGAK5VJ8c5SYReFieeZMZHHUlWjYq4oCKOwR6Z9vdqIWLqvYkEY4WNZmK+kQTn1o7nvH4TcL/HviUapOck6ad2Yn61YXOdtnTuBBIxcyEAbH0djms7bcyz/+N7xuZFuEASkWVW/GYETXsg1tidcSh66po/XiB3Qb42vj9bNwI0zPr8QedL80/pTdM/y9iZ+vzGgxr+2m3WIX4bo85QBxyiLX3I5EYed1jgOMzOhOKoX1mpG9jkwrNXzfvnc3c8x5ItpK2Li3kmnJxauiDYtUtYrpBnd+7ELTAgIZ55BnOPo2jJrRo3e2lpyYEEKIEMZVZx82pQC7aiCfpH87c8TxxxklV+7go5EGIs2h2fztUWXRkfjWXHM+QGHc
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: BL0PR04MB4850.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 5335a178-577a-4fd1-6f39-08dc12218fbc
+X-MS-Exchange-CrossTenant-originalarrivaltime: 10 Jan 2024 21:17:33.3934
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: RCiK2NIFFVcpTKzw/4XxnJbcNdCPegZHqth4w6rgSbiPQTvBBtfJvZySDNcvEJmLSnXl0wrYZvSJseQh723M/Q==
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: BN0PR04MB8205
 
-On Wed, Jan 10, 2024, at 20:45, Guenter Roeck wrote:
-> On Thu, Nov 23, 2023 at 12:05:06PM +0100, Arnd Bergmann wrote:
->> At this point, there are five architectures with a number of known
->> regressions: alpha, nios2, mips, sh and sparc. In the previous version
->> of this patch, I had turned off the missing prototype warnings for the 15
->> architectures that still had issues, but since there are only five left,
->> I think we can leave the rest to the maintainers (Cc'd here) as well.
->> 
->
-> Not sure I understand why this was so important that it warrants the
-> resulting buildtest failures.
->
-> FWIW, I'll disable WERROR in my build tests for the affected architectures.
-> That is kind of counter-productive, but the only real alternative would be
-> to stop build (and sometimes, such as for ppc, runtime) tests entirely,
-> which would be even worse.
+On Wed, Jan 10, 2024 at 01:23:51PM -0600, Rob Landley wrote:
+> UCLINUX is a long-dead distro. Linaro died in the dot-com crash and its f=
+ounder
+> Jeff Dionne moved to Japan for his next gig and never came back. On the w=
+ay out
+> he handed uclinux off to someone else, who didn't do a lot of work mainta=
+ining
+> it. Most of the actual support went "upstream" into various packages (lin=
+ux and
+> busybox and gcc and so on) before the handoff, so you didn't NEED uclinux=
+ anymore.
 
-If you prefer, I can go back to the older version and just disable
-the warning for the architectures with defconfig build failures. I did
-a lot of fixes for mips, so at least defconfig and allmodconfig
-should be fine now, leaving only alpha, nios2, sh and sparc as
-far as I can tell, at least once Linus merges the asm-generic
-pull request hat has a bunch of the currently missing fixes.
+s/Linaro/Lineo/
 
-   Arnd
+
+Kind regards,
+Niklas=
