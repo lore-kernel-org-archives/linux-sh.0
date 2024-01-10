@@ -1,155 +1,177 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-io1-f45.google.com (mail-io1-f45.google.com [209.85.166.45])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CF6914CB28;
-	Wed, 10 Jan 2024 16:11:58 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 547224D129
+	for <linux-sh@vger.kernel.org>; Wed, 10 Jan 2024 18:16:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=landley.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="a3/tV8d/"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1B2CAC433C7;
-	Wed, 10 Jan 2024 16:11:46 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1704903118;
-	bh=TjB+hX1j46U+CflASkOHj4zTVTFUzA+ZbdAbWk2ryio=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=a3/tV8d/TpSrMMPBNe5Bio2tR6BViJo6DwIaOLYJ6dXTqqXN76rzMj52xy/TIVYU7
-	 YzbZtfDGI1pGi7Q//oC4Lp0Acc/UwQQCLOjmh7jQh7VaiOqDdh1HTPGwZSaIbsiby+
-	 cCWurXhUDUygFH/SHOzL1xtk0z4CjUb628cwyw7KwK5NQyVn9isyvX7rtXkjU4nI6S
-	 DQNgr5OzBM4Aitk1dNvvk+XrhQ2Lg0d0lHZa/o80mZ7ygooh+LXNeO/Yn7VkenHUa+
-	 tA/u0+X+ndRiC+QBeR8hwS9cofweI4PMtsBo9b5Fdo2xUbrp3dUKq39pJv1WiqrCDO
-	 edCMvCyR2u92g==
-Date: Wed, 10 Jan 2024 16:11:44 +0000
-From: Conor Dooley <conor@kernel.org>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Rob Herring <robh+dt@kernel.org>,
-	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
-	Conor Dooley <conor+dt@kernel.org>,
-	Geert Uytterhoeven <geert+renesas@glider.be>,
-	Michael Turquette <mturquette@baylibre.com>,
-	Stephen Boyd <sboyd@kernel.org>,
-	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
-	Maxime Ripard <mripard@kernel.org>,
-	Thomas Zimmermann <tzimmermann@suse.de>,
-	David Airlie <airlied@gmail.com>, Daniel Vetter <daniel@ffwll.ch>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Lorenzo Pieralisi <lpieralisi@kernel.org>,
-	Krzysztof =?utf-8?Q?Wilczy=C5=84ski?= <kw@linux.com>,
-	Bjorn Helgaas <bhelgaas@google.com>,
-	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-	Jiri Slaby <jirislaby@kernel.org>,
-	Magnus Damm <magnus.damm@gmail.com>,
-	Daniel Lezcano <daniel.lezcano@linaro.org>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Lee Jones <lee@kernel.org>, Helge Deller <deller@gmx.de>,
-	Heiko Stuebner <heiko@sntech.de>,
-	Jernej Skrabec <jernej.skrabec@gmail.com>,
-	Chris Morgan <macromorgan@hotmail.com>,
-	Yang Xiwen <forbidden405@foxmail.com>,
-	Sebastian Reichel <sre@kernel.org>,
-	Linus Walleij <linus.walleij@linaro.org>,
-	Randy Dunlap <rdunlap@infradead.org>, Arnd Bergmann <arnd@arndb.de>,
-	Vlastimil Babka <vbabka@suse.cz>,
-	Hyeonggon Yoo <42.hyeyoo@gmail.com>,
-	David Rientjes <rientjes@google.com>, Baoquan He <bhe@redhat.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Guenter Roeck <linux@roeck-us.net>,
-	Stephen Rothwell <sfr@canb.auug.org.au>,
-	Azeem Shaikh <azeemshaikh38@gmail.com>,
-	Javier Martinez Canillas <javierm@redhat.com>,
-	Max Filippov <jcmvbkbc@gmail.com>,
-	Palmer Dabbelt <palmer@rivosinc.com>, Bin Meng <bmeng@tinylab.org>,
-	Jonathan Corbet <corbet@lwn.net>,
-	Jacky Huang <ychuang3@nuvoton.com>,
-	Lukas Bulwahn <lukas.bulwahn@gmail.com>,
-	Biju Das <biju.das.jz@bp.renesas.com>,
-	Uwe =?iso-8859-1?Q?Kleine-K=F6nig?= <u.kleine-koenig@pengutronix.de>,
-	Sam Ravnborg <sam@ravnborg.org>,
-	Sergey Shtylyov <s.shtylyov@omp.ru>,
-	Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
-	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
-	linux-ide@vger.kernel.org, devicetree@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
-	linux-clk@vger.kernel.org, dri-devel@lists.freedesktop.org,
-	linux-pci@vger.kernel.org, linux-serial@vger.kernel.org,
-	linux-fbdev@vger.kernel.org
-Subject: Re: [DO NOT MERGE v6 26/37] dt-bindings: vendor-prefixes: Add smi
-Message-ID: <20240110-sincere-tripod-9d34175fcbce@spud>
-References: <cover.1704788539.git.ysato@users.sourceforge.jp>
- <c8aaf67e3fcdb7e60632c53a784691aabfc7733e.1704788539.git.ysato@users.sourceforge.jp>
- <20240109-fructose-bundle-05d01033277b@spud>
- <CAMuHMdU1z64QHJOVd3jUsOfyuDApB1+khkUV8PvjoKbwsi327g@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b="Xy8sjHRK"
+Received: by mail-io1-f45.google.com with SMTP id ca18e2360f4ac-7bef44df5c6so30102839f.0
+        for <linux-sh@vger.kernel.org>; Wed, 10 Jan 2024 10:16:42 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=landley-net.20230601.gappssmtp.com; s=20230601; t=1704910601; x=1705515401; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=lo1VQ4EJOV7cREJOABitf1hSk8b65EfBHPgIFVrB/OQ=;
+        b=Xy8sjHRKS5oV3l6+1MSvL0Q/xnsezaFObS9tI/uGbjpWCEnbIBvjOv8k6msf/RQ8ty
+         aFtj+sdvLE4GlNqD5Q23nO5c0Q0ihMMT2RTx9uEseWcBQskVRx4LNAldFfFeMaY5AbyO
+         wVtdhz2ahB/rqhni56amjFK9CTZ+eEubOVFYmot/jyXah4MCALeXQDPkH9azFB0FsyVJ
+         i5gZDvOdSBgbP5QGkDmiYs/PJI/CBTxgqf8yyaAC8z1Oe/tzgs52ffPYpsopJb5I048P
+         7JEQRRH8hE4N6tS7/0pAJqm9ARmiRH8gMoQMjHlh0y13c/WeZ67yj9kswVQ78io1u4rp
+         tbRw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1704910601; x=1705515401;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=lo1VQ4EJOV7cREJOABitf1hSk8b65EfBHPgIFVrB/OQ=;
+        b=jDUN+P1SaRp56W3E9nbOu2KaPEKvrY7aWJ2nrgiR+49O4covKAAkg2QGWZCv3wsruv
+         Iv0OmLnJujM9t5jtqFPa0Rc8z4JIInFRmkm36rd94dJunSxciPC+QlECtW0IRZnX7cm+
+         9e+EK6E4kCdj1yM15MjyCYHrUsjSm3U4glW6r/X6bKfjqDPaxQm/4MNVIslwfLAJuElj
+         4i6ucI/7AMErzq3MWxssGUwM/OnzPCjI0tkEePxudYD9oNFvApFuemrgCVdG2XglhvY6
+         0k6ZWU6rqMmY1eEUs8YM7PRkiaMYONlNU22y410v8PEqkXSwM+BpJ7T8fxEp7nVqFc4F
+         TtWg==
+X-Gm-Message-State: AOJu0YzYX5Q5vXTGgF5KXwJpT+YbZ0NKbhLTlwtx8EZDl++gu5s1zVBU
+	DnVIFWH9HRLnhxpGJMLYNJF5uykyUOIm5g==
+X-Google-Smtp-Source: AGHT+IE4EzhYPa/LzL9jotCAfZZS/ofuHIbVxibF33Hm19VsMiO5K5RqGzW8lAvCC04sDZHn23tGgw==
+X-Received: by 2002:a05:6e02:1c0e:b0:35d:4463:5dd2 with SMTP id l14-20020a056e021c0e00b0035d44635dd2mr375930ilh.16.1704910601268;
+        Wed, 10 Jan 2024 10:16:41 -0800 (PST)
+Received: from [172.16.32.83] ([198.232.126.202])
+        by smtp.gmail.com with ESMTPSA id c21-20020a02c9d5000000b0046b4a8df4f1sm1423121jap.75.2024.01.10.10.16.40
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 10 Jan 2024 10:16:40 -0800 (PST)
+Message-ID: <c065bbb0-e5cb-04ae-cedc-258264162405@landley.net>
+Date: Wed, 10 Jan 2024 12:23:19 -0600
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
-	protocol="application/pgp-signature"; boundary="NUFAcOAItrfxYJZq"
-Content-Disposition: inline
-In-Reply-To: <CAMuHMdU1z64QHJOVd3jUsOfyuDApB1+khkUV8PvjoKbwsi327g@mail.gmail.com>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.0
+Subject: Re: Call for nommu LTP maintainer [was: Re: [PATCH 00/36] Remove
+ UCLINUX from LTP]
+Content-Language: en-US
+To: Petr Vorel <pvorel@suse.cz>
+Cc: Cyril Hrubis <chrubis@suse.cz>, Geert Uytterhoeven
+ <geert@linux-m68k.org>, ltp@lists.linux.it, Li Wang <liwang@redhat.com>,
+ Andrea Cervesato <andrea.cervesato@suse.com>,
+ Greg Ungerer <gerg@linux-m68k.org>, Jonathan Corbet <corbet@lwn.net>,
+ Randy Dunlap <rdunlap@infradead.org>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ Christophe Lyon <christophe.lyon@linaro.org>,
+ linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
+ Linux ARM <linux-arm-kernel@lists.infradead.org>,
+ linux-riscv <linux-riscv@lists.infradead.org>,
+ Linux-sh list <linux-sh@vger.kernel.org>,
+ automated-testing@lists.yoctoproject.org, buildroot@buildroot.org,
+ Niklas Cassel <niklas.cassel@wdc.com>
+References: <20240103015240.1065284-1-pvorel@suse.cz>
+ <CAMuHMdXGwyS-CL0vLdUP4Z4YEYhmcmDyC3YdGCnS=jFkqASqvw@mail.gmail.com>
+ <20240103114957.GD1073466@pevik>
+ <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
+ <ZZVOhlGPg5KRyS-F@yuki> <5a1f1ff3-8a61-67cf-59a9-ce498738d912@landley.net>
+ <20240105131135.GA1484621@pevik>
+ <90c1ddc1-c608-30fc-d5aa-fdf63c90d055@landley.net>
+ <20240108090338.GA1552643@pevik>
+ <a3d7f5ae-56c6-9cd8-2cda-2d50d12be9c4@landley.net>
+ <20240110133358.GB1698252@pevik>
+From: Rob Landley <rob@landley.net>
+In-Reply-To: <20240110133358.GB1698252@pevik>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
+On 1/10/24 07:33, Petr Vorel wrote:
+>> I'm a bit weird in that I try to get CURRENT stuff to work on nommu, and a lot
+>> of people have been happy to consume my work, but getting any of them to post
+>> directly to linux-kernel is like pulling teeth.
+> 
+> Interesting, thanks for sharing this. BTW I'm not saying anybody is using nommu,
+> but I wonder if anybody really test it with LTP. And if yes, I wonder why we
+> don't have reports about tests broken in new API.
 
---NUFAcOAItrfxYJZq
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I don't expect a lot of nommu users are aware you ever _could_ run LTP on nommu.
 
-On Wed, Jan 10, 2024 at 12:23:37PM +0100, Geert Uytterhoeven wrote:
-> Hi Conor,
->=20
-> On Tue, Jan 9, 2024 at 7:06=E2=80=AFPM Conor Dooley <conor@kernel.org> wr=
-ote:
-> > On Tue, Jan 09, 2024 at 05:23:23PM +0900, Yoshinori Sato wrote:
-> > > Add Silicon Mortion Technology Corporation
->=20
-> Motion
->=20
-> > > https://www.siliconmotion.com/
-> > >
-> > > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > > ---
-> > >  Documentation/devicetree/bindings/vendor-prefixes.yaml | 2 ++
-> > >  1 file changed, 2 insertions(+)
-> > >
-> > > diff --git a/Documentation/devicetree/bindings/vendor-prefixes.yaml b=
-/Documentation/devicetree/bindings/vendor-prefixes.yaml
-> > > index 94ed63d9f7de..a338bdd743ab 100644
-> > > --- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
-> > > +++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
-> > > @@ -1283,6 +1283,8 @@ patternProperties:
-> > >      description: Skyworks Solutions, Inc.
-> > >    "^smartlabs,.*":
-> > >      description: SmartLabs LLC
-> > > +  "^smi,.*":
-> > > +    description: Silicon Motion Technology Corporation
-> >
-> > How come "smi" is used for a company with this name?
-> > Why is it not something like SMTC? There's probably some history here
-> > that I am unaware of.
->=20
-> See Documentation/devicetree/bindings/display/sm501fb.txt
-> The stock ticker is "SIMO", though.
-> https://www.nasdaq.com/market-activity/stocks/simo
+But I'd like to get nommu more regularly supported. You _should_ be able to
+build a musl-linux userspace with busybox or toybox and be able to build a
+recognizable system (even an alpine-alike) which could then get the basic
+plumbing regression tested on qemu even without access to nommu hardware.
 
-If there's an existing user, there's little reason to stand in the way I
-think.
-Acked-by: Conor Dooley <conor.dooley@microchip.com>
+>> > But as I said, if anybody from nommu decides to maintain it in LTP, I'll try to
+>> > support him in my free time (review patches, give advices). And if nobody
+>> > stands, this patchset which removes the support in the old API will be merged
+>> > after next LTP release (in the end of January).
+> 
+>> What does the API migration do? Is there a page on it ala OABI vs EABI in arm or
+>> something?
+> 
+> New C API is documented at our wiki: the API for using in the tests [1]
+> and the library itself [2]. (We also have shell API, but we can ignore it for
+> nommu.)
 
-Cheers,
-Conor.
+I'm writing a bash-compatible shell, which (thanks to Elliott forwarding
+questions) has involved surprisingly long threads with the bash maintainer about
+weird corner cases neither the man page nor my testing made clear:
 
---NUFAcOAItrfxYJZq
-Content-Type: application/pgp-signature; name="signature.asc"
+http://lists.landley.net/pipermail/toybox-landley.net/2023-July/029631.html
 
------BEGIN PGP SIGNATURE-----
+(Alas I try NOT to involve him because when I bring stuff up he keeps FIXING
+BASH which from my point of view just makes it a moving target...)
 
-iHUEABYIAB0WIQRh246EGq/8RLhDjO14tDGHoIJi0gUCZZ7BwAAKCRB4tDGHoIJi
-0q9OAQDdFxNbk8a1RbWhCTMkuhEoMnbyCFIJrJbkoyX9CvOgjgEA+TlXk2NSR1lR
-ie4wsGsQcBrpiUsYvM61XxlwsOPsRgg=
-=6SO8
------END PGP SIGNATURE-----
+Anyway, running the shell API on nommu doesn't seem out of the question, but
+probably not any time soon. (The fact the shell isn't finished yet is one of the
+big REASONS I haven't got enough time to take on LTP. That and I haven't started
+writing "awk" and "make" yet". And I need to cycle back to
+https://landley.net/notes-2023.html#12-10-2023 . And after that debian, ala
+https://peertube.debian.social/w/chzkKrMvEczG7qQyjbMKPr and
+https://peertube.debian.social/w/45XroN9CnbYLNLKQH3GD9F . And follow up on
+https://lists.gnu.org/archive/html/coreutils/2023-08/msg00009.html . And...)
 
---NUFAcOAItrfxYJZq--
+> All files in lib/ directory which include tst_test.h are part of new C API. Main
+> file is lib/tst_test.c.
+
+safe_fork(), safe_clone(), fork_testrun()...
+
+> LTP tests, which has been rewritten to new API include
+> tst_test.h, they are in testcases/ directory. Library has it's own tests (for
+> testing regression in in lib/newlib_tests/*.c.
+
+Library meaning... libc? Or does LTP have a library?
+
+> The reason why Cyril wrote in 2016 new C API was that the old API was buggy
+> (tests randomly fails). Tests which are still using the old API (there is
+> ongoing rewrite) include test.h. The old API is not much documented.
+> 
+> Feel free to ask any more question.
+
+My standard questions are "what does success look like" and "how do I reproduce
+the problem".
+
+For the first: if there previously was nommu support in LTP, what's the last
+version that's known to work? Is there an existing build/test setup that can be
+reproduced?
+
+For the second... If I try to run LTP on sh2eb (my current nommu test board)
+with the current LTP... do I get a build break? Additional test failures at
+runtime? You talk about "removing nommu support", but... what's the current
+status? (A subset of tests still use the old api...?)
+
+Yes I need to read https://github.com/linux-test-project/ltp/wiki/C-Test-API but
+I also need to know how to build LTP from source. I'm looking at the README's
+list of "autoconf, automake, m4, pkgconf / pkg-config" and wincing
+significantly. (What does gnu/autoconf DO here? Disable tests? I never
+understand why anybody uses that giant hairball of complexity. Half of cross
+compiling is figuring out how to lie to autoconf, and my normal workaround for
+that is to bootstrap a target system and build natively, but while I've gotten
+gcc to run natively on nommu systems, I never _tried_ gnu/autoconf.
+Bootstrapping some subset of LFS on a nommu system so it has the dependencies
+LFS needs to natively build seems like the long way 'round...
+
+(I am not the right guy for "make it work the easy way". I am the guy who will
+step on every land mine between here and there. I code by debugging an empty
+screen. If I don't start from "known working" setup... it would take a while.)
+
+Rob
