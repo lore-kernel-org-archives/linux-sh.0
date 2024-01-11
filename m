@@ -1,110 +1,139 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A179215EBD;
-	Thu, 11 Jan 2024 13:19:25 +0000 (UTC)
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0C866C433F1;
-	Thu, 11 Jan 2024 13:19:20 +0000 (UTC)
-Message-ID: <d602919e-2cfb-455a-8a90-76f649d92b39@linux-m68k.org>
-Date: Thu, 11 Jan 2024 23:19:18 +1000
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 35D6E390;
+	Thu, 11 Jan 2024 14:59:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="nHYalyDO"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6F65AC43390;
+	Thu, 11 Jan 2024 14:59:30 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1704985170;
+	bh=obzljcLiJ4GpVaa5SSKo4cJxW9OvkYGDmnjlyQfIlZI=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=nHYalyDOvAOPCXFghAM1koa8SyyhhJbx2NS7oaSccjGMgH7hd8K6PgCbgUYNNxNlV
+	 RmGKdU8H/qelbOpHbdK6lY3z94gtQDkXFLwmXpIo6se2QKdb2/eJHuEYRWwCvqRZqz
+	 d6c/2VhyfKTHc2AOeMEj2o2oEeAhfzNCGN+6T/O6RApd1aGtGh6rdqf/jl/505e4yX
+	 2vkmubzDVpwuYZ5TSUe6C8cnpmoESUorVaftbQJbcjgGD8ONaUd6KceQOl+dy+Jwil
+	 R5sfhQjmbOfzkWmuihvw8I2rFw5SlSma30PRhfosHts/KPzeyEknOc/usqeCbKIhN0
+	 6Aj8MjPf72M2w==
+Date: Thu, 11 Jan 2024 08:59:28 -0600
+From: Rob Herring <robh@kernel.org>
+To: Conor Dooley <conor@kernel.org>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	linux-sh@vger.kernel.org, Damien Le Moal <dlemoal@kernel.org>,
+	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
+	Conor Dooley <conor+dt@kernel.org>,
+	Geert Uytterhoeven <geert+renesas@glider.be>,
+	Michael Turquette <mturquette@baylibre.com>,
+	Stephen Boyd <sboyd@kernel.org>,
+	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
+	Maxime Ripard <mripard@kernel.org>,
+	Thomas Zimmermann <tzimmermann@suse.de>,
+	David Airlie <airlied@gmail.com>, Daniel Vetter <daniel@ffwll.ch>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Lorenzo Pieralisi <lpieralisi@kernel.org>,
+	Krzysztof =?utf-8?Q?Wilczy=C5=84ski?= <kw@linux.com>,
+	Bjorn Helgaas <bhelgaas@google.com>,
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+	Jiri Slaby <jirislaby@kernel.org>,
+	Magnus Damm <magnus.damm@gmail.com>,
+	Daniel Lezcano <daniel.lezcano@linaro.org>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Lee Jones <lee@kernel.org>, Helge Deller <deller@gmx.de>,
+	Heiko Stuebner <heiko@sntech.de>,
+	Jernej Skrabec <jernej.skrabec@gmail.com>,
+	Chris Morgan <macromorgan@hotmail.com>,
+	Yang Xiwen <forbidden405@foxmail.com>,
+	Sebastian Reichel <sre@kernel.org>,
+	Linus Walleij <linus.walleij@linaro.org>,
+	Randy Dunlap <rdunlap@infradead.org>, Arnd Bergmann <arnd@arndb.de>,
+	Vlastimil Babka <vbabka@suse.cz>,
+	Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+	David Rientjes <rientjes@google.com>, Baoquan He <bhe@redhat.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Guenter Roeck <linux@roeck-us.net>,
+	Stephen Rothwell <sfr@canb.auug.org.au>,
+	Azeem Shaikh <azeemshaikh38@gmail.com>,
+	Javier Martinez Canillas <javierm@redhat.com>,
+	Max Filippov <jcmvbkbc@gmail.com>,
+	Palmer Dabbelt <palmer@rivosinc.com>, Bin Meng <bmeng@tinylab.org>,
+	Jonathan Corbet <corbet@lwn.net>,
+	Jacky Huang <ychuang3@nuvoton.com>,
+	Lukas Bulwahn <lukas.bulwahn@gmail.com>,
+	Biju Das <biju.das.jz@bp.renesas.com>,
+	Uwe =?iso-8859-1?Q?Kleine-K=F6nig?= <u.kleine-koenig@pengutronix.de>,
+	Sam Ravnborg <sam@ravnborg.org>,
+	Sergey Shtylyov <s.shtylyov@omp.ru>,
+	Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>,
+	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+	linux-ide@vger.kernel.org, devicetree@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+	linux-clk@vger.kernel.org, dri-devel@lists.freedesktop.org,
+	linux-pci@vger.kernel.org, linux-serial@vger.kernel.org,
+	linux-fbdev@vger.kernel.org
+Subject: Re: [DO NOT MERGE v6 26/37] dt-bindings: vendor-prefixes: Add smi
+Message-ID: <20240111145928.GA538344-robh@kernel.org>
+References: <cover.1704788539.git.ysato@users.sourceforge.jp>
+ <c8aaf67e3fcdb7e60632c53a784691aabfc7733e.1704788539.git.ysato@users.sourceforge.jp>
+ <20240109-fructose-bundle-05d01033277b@spud>
+ <CAMuHMdU1z64QHJOVd3jUsOfyuDApB1+khkUV8PvjoKbwsi327g@mail.gmail.com>
+ <20240110-sincere-tripod-9d34175fcbce@spud>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [Automated-testing] Call for nommu LTP maintainer [was: Re:
- [PATCH 00/36] Remove UCLINUX from LTP]
-Content-Language: en-US
-To: Geert Uytterhoeven <geert@linux-m68k.org>, Rob Landley <rob@landley.net>
-Cc: Petr Vorel <pvorel@suse.cz>, Tim Bird <tim.bird@sony.com>,
- Cyril Hrubis <chrubis@suse.cz>, "ltp@lists.linux.it" <ltp@lists.linux.it>,
- Li Wang <liwang@redhat.com>, Andrea Cervesato <andrea.cervesato@suse.com>,
- Jonathan Corbet <corbet@lwn.net>, Randy Dunlap <rdunlap@infradead.org>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Christophe Lyon <christophe.lyon@linaro.org>,
- "linux-m68k@lists.linux-m68k.org" <linux-m68k@lists.linux-m68k.org>,
- "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
- Linux ARM <linux-arm-kernel@lists.infradead.org>,
- linux-riscv <linux-riscv@lists.infradead.org>,
- Linux-sh list <linux-sh@vger.kernel.org>,
- "automated-testing@lists.yoctoproject.org"
- <automated-testing@lists.yoctoproject.org>,
- "buildroot@buildroot.org" <buildroot@buildroot.org>,
- Niklas Cassel <niklas.cassel@wdc.com>
-References: <CAMuHMdXGwyS-CL0vLdUP4Z4YEYhmcmDyC3YdGCnS=jFkqASqvw@mail.gmail.com>
- <20240103114957.GD1073466@pevik>
- <CAMuHMdX0s0gLRoPtjJmDnSmZ_MNY590dN+JxM1HKAL1g_bjX+w@mail.gmail.com>
- <ZZVOhlGPg5KRyS-F@yuki> <5a1f1ff3-8a61-67cf-59a9-ce498738d912@landley.net>
- <20240105131135.GA1484621@pevik>
- <90c1ddc1-c608-30fc-d5aa-fdf63c90d055@landley.net>
- <20240108090338.GA1552643@pevik> <ZZvJXTshFUYSaMVH@yuki>
- <SA3PR13MB6372498CC6372F8B16237244FD6A2@SA3PR13MB6372.namprd13.prod.outlook.com>
- <20240110141455.GC1698252@pevik>
- <40996ea1-3417-1c2f-ddd2-e6ed45cb6f4b@landley.net>
- <CAMuHMdX5ACKVBQvEwMi7KHZkSVGZPJoocEC1wosfB7zc0u2mbA@mail.gmail.com>
-From: Greg Ungerer <gerg@linux-m68k.org>
-In-Reply-To: <CAMuHMdX5ACKVBQvEwMi7KHZkSVGZPJoocEC1wosfB7zc0u2mbA@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <20240110-sincere-tripod-9d34175fcbce@spud>
 
+On Wed, Jan 10, 2024 at 04:11:44PM +0000, Conor Dooley wrote:
+> On Wed, Jan 10, 2024 at 12:23:37PM +0100, Geert Uytterhoeven wrote:
+> > Hi Conor,
+> > 
+> > On Tue, Jan 9, 2024 at 7:06 PM Conor Dooley <conor@kernel.org> wrote:
+> > > On Tue, Jan 09, 2024 at 05:23:23PM +0900, Yoshinori Sato wrote:
+> > > > Add Silicon Mortion Technology Corporation
+> > 
+> > Motion
+> > 
+> > > > https://www.siliconmotion.com/
+> > > >
+> > > > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+> > > > ---
+> > > >  Documentation/devicetree/bindings/vendor-prefixes.yaml | 2 ++
+> > > >  1 file changed, 2 insertions(+)
+> > > >
+> > > > diff --git a/Documentation/devicetree/bindings/vendor-prefixes.yaml b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+> > > > index 94ed63d9f7de..a338bdd743ab 100644
+> > > > --- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
+> > > > +++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+> > > > @@ -1283,6 +1283,8 @@ patternProperties:
+> > > >      description: Skyworks Solutions, Inc.
+> > > >    "^smartlabs,.*":
+> > > >      description: SmartLabs LLC
+> > > > +  "^smi,.*":
+> > > > +    description: Silicon Motion Technology Corporation
+> > >
+> > > How come "smi" is used for a company with this name?
+> > > Why is it not something like SMTC? There's probably some history here
+> > > that I am unaware of.
+> > 
+> > See Documentation/devicetree/bindings/display/sm501fb.txt
+> > The stock ticker is "SIMO", though.
+> > https://www.nasdaq.com/market-activity/stocks/simo
+> 
+> If there's an existing user, there's little reason to stand in the way I
+> think.
+> Acked-by: Conor Dooley <conor.dooley@microchip.com>
 
-On 11/1/24 23:11, Geert Uytterhoeven wrote:
-> Hi Rob,
-> 
-> On Wed, Jan 10, 2024 at 8:17 PM Rob Landley <rob@landley.net> wrote:
->> You can't fork() on nommu because copies of the mappings have different
->> addresses, meaning any pointers in the copied mappings would point into the OLD
->> mappings (belonging to the parent process), and fixing them up is 100%
->> equivalent to the "garbage collection in C" problem. (It's AI-complete. Of the
->> C3PO kind, not the "autocorrect with syntax checking" kind.) People get hung up
->> on the "it would be very inefficient to do that because no copy-on-write"
->> problem and miss the "the child couldn't FUNCTION because its pointer variables
->> all contain parent addresses" problem.
-> 
-> Actually you can implement fork(), if you teach the compiler to use
-> separate stacks for return addresses and data:
->    - The first stack would contain only absolute addresses, to be
->      relocated after copying,
->    - The second stack would contain integers and relative pointers
->      (see FDPIC below), which do not need relocation after copying.
-> 
->> The OTHER fun thing about nommu is you can't run conventional ELF binaries,
->> because everything is linked at fixed address. So you might be able to run ONE
->> instance of the program as your init task, assuming those addresses were
->> available even then, but as soon as you try to run a second one it's a conflict.
->>
->> The quick and dirty work around is to make PIE binaries, which can relocate
->> everything into available space, which works but doesn't scale. The problem with
->> ELF PIE is that everything is linked contiguously from a single base pointer,
->> meaning your text, rodata, data, and bss segments are all one linear blob. So if
->> you run two instances of bash, you've loaded two copies of the test and the
->> rodoata. This fills up your memory fast.
->>
->> AND PIE requires contiguous memory, which nommu is bad at providing because it
->> has no page tables to remap stuff. With an mmu it can coalesce scattered
->> physical pages into a virtually contiguous range, but without an mmu you can
->> have plenty of memory free but in tiny chunks, none big enough to satisfy an
->> allocation request.
->>
->> So they invented FDPIC, which is ELF with FOUR base pointers. Each major section
->> (rodata, text, data, and bss) has its own base pointer, so you need to find
->> smaller chunks of memory to load them into (and thus it can work on a more
->> fragmented system), AND it means that two instances of the same program can
->> share the read-only sections (rodata and text) so you only need new copies of
->> the writeable segments (data and bss. And the heap. And the stack.)
-> 
-> Or Amiga LoadSeg() relocatable binaries and shared libraries ;-)
-> As this supported splitting code, data, and bss in lots of smaller
-> hunks, it could counter fragmented memory quite well.
-> 
-> BTW, can't you run and thus test nommu-binaries under normal Linux, too?
+Or reason not to apply, so I'm applying this.
 
-Yes, you can. The flat format loader can be built for MMU arm and m68k Linux.
-It will happily load and run flat format binaries on normal VM Linux.
-I test that often on m68k (on ColdFire platforms).
+BTW, 'RFC' is the standard way to say 'DO NOT MERGE'.
 
-Regards
-Greg
-
+Rob
