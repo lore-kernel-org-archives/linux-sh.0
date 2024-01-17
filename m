@@ -1,165 +1,113 @@
-Received: from mail-yw1-f169.google.com (mail-yw1-f169.google.com [209.85.128.169])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0975014282;
-	Wed, 17 Jan 2024 10:06:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.169
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1E03C200DE;
+	Wed, 17 Jan 2024 14:08:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1705485978; cv=none; b=pQBfCZa5Xvg+AfObSRFSv6xGACocS7axxPOJkr5ptCbNWh+PyPeCVpxWlw5qNQskovfXS3DBdePfN/VsGlXbeMh/t+DPxYKX5k2vm71ED3uHvCjMhC/JeCcwgGD+VEpe+RIkciK5seXZyIcrU9/MnA6DM1rF3lhJc3k2KwU7Sqs=
+	t=1705500518; cv=none; b=u1KCRhivcF/uRyoMLRNhdbp2yAMKPRpMbC48xEutrM9GE+TCPpBMVY3eOUj8Xdjl69IFMdb9ecZfEjvKGP6EuxRtG6FeBQ/AePR5KNL6xHZFwR8CznN3oP11cVdI3xjEpccAqHHzKVoXPkDAcD6VygElHbpUAo2EfB9X33PmLiU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1705485978; c=relaxed/simple;
-	bh=+cxx2b/N2LvNg0nWquPf/YpjQZ5mfMypJFmZWd9uQdc=;
-	h=Received:X-Google-DKIM-Signature:X-Gm-Message-State:
-	 X-Google-Smtp-Source:X-Received:Received:Received:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:
-	 X-Gmail-Original-Message-ID:Message-ID:Subject:To:Cc:Content-Type:
-	 Content-Transfer-Encoding; b=tBoWVinOOOmBbgRDjAGq9ns14o2g5VemiOeTCg7rmZ+DoPGbJT7PsjpOlWBwBENr2aJrXQo5971fe1EeRrzwYMMOSZG036+B4NiDk9DNWZ0md+jAn4unqncTkVIeRuCUTpMYFwum1WCYVKGFLnAhp38fGxhzI70iZS0sEa1ZRvI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.128.169
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-yw1-f169.google.com with SMTP id 00721157ae682-5f68af028afso92131237b3.2;
-        Wed, 17 Jan 2024 02:06:15 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1705485975; x=1706090775;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=ktKDg1Kr1k5upORAnFgj9TjW3VLUUCKOkhGf1ZiTWq0=;
-        b=mFJmS23fQc++YO/zFXRwgtK6yS1H0p2B67RZ2WrktMJuaSr5q5ZP3fK9FDOT2tjwKl
-         wBxJEpMKMTENBQzLKB+5gNSc7haazIGK4bGuaz8TK6YBCOAllduQ84NTI3IvaI6++QIc
-         Jn9Zw2idHIJB3te/cb2s13XR1OdnPUX5xBmcjeUJasUnKZEKoSM1XMoTPqj1T87k84UT
-         qEFtmf+LnWplPEoZ65rE101grFNd28WywjsWwRenMZNh7TkKG/GcnLx82yL3LQKFCtEq
-         DsVssmQvaLX2oXctuwnWlxFux+KEcdc1PABMOxRAIU8+UsGk8aJyLtw/EHJwPn7yFLKd
-         dvxg==
-X-Gm-Message-State: AOJu0YwyXFpO1PtvBCus81+IgUNlnvrvx4eAom/zIY7agMz4xtctefIn
-	TY0sYB6u9Q8JzIdrL/VneoD5tnu31BOVvQ==
-X-Google-Smtp-Source: AGHT+IGvsKro72mIsn7zC0rDold1fCYfQbqHaTRxf3TuiU8P9HI/5ZCiNSd7B6rJpaD3yJoF6v7fBw==
-X-Received: by 2002:a81:e602:0:b0:5ee:65b3:f289 with SMTP id u2-20020a81e602000000b005ee65b3f289mr4814207ywl.3.1705485974739;
-        Wed, 17 Jan 2024 02:06:14 -0800 (PST)
-Received: from mail-yw1-f173.google.com (mail-yw1-f173.google.com. [209.85.128.173])
-        by smtp.gmail.com with ESMTPSA id d4-20020a0ddb04000000b005ff5fc95e34sm982467ywe.55.2024.01.17.02.06.14
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 17 Jan 2024 02:06:14 -0800 (PST)
-Received: by mail-yw1-f173.google.com with SMTP id 00721157ae682-5e54d40cca2so83078567b3.3;
-        Wed, 17 Jan 2024 02:06:14 -0800 (PST)
-X-Received: by 2002:a05:690c:fd5:b0:5ee:7299:e2cf with SMTP id
- dg21-20020a05690c0fd500b005ee7299e2cfmr5153857ywb.52.1705485974135; Wed, 17
- Jan 2024 02:06:14 -0800 (PST)
+	s=arc-20240116; t=1705500518; c=relaxed/simple;
+	bh=qjYGIkHICpe0Z0dACHKFFmyiWosuvqoeWCRjzmSc9hw=;
+	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
+	 Mail-Followup-To:References:MIME-Version:Content-Type:
+	 Content-Disposition:In-Reply-To; b=K+zm1lLShhcgrYiIeRJaE2x/vlM4NfUnmyScNqmXv2SehDsloR1p2iAm1Sf/hvNEIfQHxDheS2RA6c/kRmc0FFdC4hEf0jJ5h5PmpXzgyJDbk1dVqecQFV1L61tdh1tw1Nco4ncSZtboQ6Q5kC0HLobaYIAUTicCqRs9rAtdaYo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Jxq1VhGe; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Jxq1VhGe"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2C7D7C433C7;
+	Wed, 17 Jan 2024 14:08:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1705500517;
+	bh=qjYGIkHICpe0Z0dACHKFFmyiWosuvqoeWCRjzmSc9hw=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=Jxq1VhGeBHXXzjpnwUH+hoiBgw4k7S2cHqouGInnFW2VI8pBU/srH+FipPV6FFAiA
+	 CjSD9tbuYuaIusakunF7ikLsHn29ZPflFYeHO1/47LvT2cN4T7rSNGFtyIMaIAfga8
+	 60qa1sTSYCNsVfH9Kjt9A17tU0G5dS7AY+GT9k4mWFkmEJmo+jZ6hLpFXNfMnHOtRi
+	 YiR8UTT9g6UciTH3rwq2s04/Nss2ZdCYr9E1pluxfYEhy9Qe5kMbX5t0of0sPi1nP8
+	 O5wz1wFIIT9sm3k/Uy+vO9A6MJXNgSB/fiuvwvCRpc6GXFRyjRhznare4nxQNRaU0R
+	 0ltb+zjIrj/tg==
+Date: Wed, 17 Jan 2024 15:08:33 +0100
+From: Wolfram Sang <wsa@kernel.org>
+To: Conor Dooley <conor@kernel.org>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Daniel Lezcano <daniel.lezcano@linaro.org>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Rob Herring <robh+dt@kernel.org>,
+	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
+	Conor Dooley <conor+dt@kernel.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	devicetree@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+	linux-sh@vger.kernel.org
+Subject: Re: [PATCH] dt-bindings: timer: renesas,tmu: Document input capture
+ interrupt
+Message-ID: <ZaffYczD0E34zNMo@ninjato>
+Mail-Followup-To: Wolfram Sang <wsa@kernel.org>,
+	Conor Dooley <conor@kernel.org>,
+	Laurent Pinchart <laurent.pinchart@ideasonboard.com>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Daniel Lezcano <daniel.lezcano@linaro.org>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Rob Herring <robh+dt@kernel.org>,
+	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
+	Conor Dooley <conor+dt@kernel.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	devicetree@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+	linux-sh@vger.kernel.org
+References: <fb1e38c93e62221f94304edd980a2fb79c1f2995.1705325608.git.geert+renesas@glider.be>
+ <20240115-wages-secluded-b44f4eb13323@spud>
+ <CAMuHMdWY3D45NGHvGXSZRLZz4TyCRgRCQLZV6CzYs=mSFcherw@mail.gmail.com>
+ <20240115170807.GJ5869@pendragon.ideasonboard.com>
+ <20240116-coasting-pastrami-1dda8d1025d0@spud>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1704788539.git.ysato@users.sourceforge.jp>
- <bc794e2165244bd0cee81bc0106f1e2d1bef1613.1704788539.git.ysato@users.sourceforge.jp>
- <CACRpkdYLsf-uWdMCTpieji7u1-H3oTGojvC4xm7Erox97XJ6RQ@mail.gmail.com> <8734uwwavx.wl-ysato@users.sourceforge.jp>
-In-Reply-To: <8734uwwavx.wl-ysato@users.sourceforge.jp>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 17 Jan 2024 11:06:02 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdX_2Tgm2LLM1TgFrkLdokD99gAeKHJWrKy9Y2A+wtf5RA@mail.gmail.com>
-Message-ID: <CAMuHMdX_2Tgm2LLM1TgFrkLdokD99gAeKHJWrKy9Y2A+wtf5RA@mail.gmail.com>
-Subject: Re: [DO NOT MERGE v6 17/37] dt-bindings: interrupt-controller:
- renesas,sh7751-intc: Add json-schema
-To: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Linus Walleij <linus.walleij@linaro.org>, linux-sh@vger.kernel.org, 
-	Damien Le Moal <dlemoal@kernel.org>, Rob Herring <robh+dt@kernel.org>, 
-	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>, Conor Dooley <conor+dt@kernel.org>, 
-	Geert Uytterhoeven <geert+renesas@glider.be>, Michael Turquette <mturquette@baylibre.com>, 
-	Stephen Boyd <sboyd@kernel.org>, Maarten Lankhorst <maarten.lankhorst@linux.intel.com>, 
-	Maxime Ripard <mripard@kernel.org>, Thomas Zimmermann <tzimmermann@suse.de>, 
-	David Airlie <airlied@gmail.com>, Daniel Vetter <daniel@ffwll.ch>, 
-	Thomas Gleixner <tglx@linutronix.de>, Lorenzo Pieralisi <lpieralisi@kernel.org>, 
-	=?UTF-8?Q?Krzysztof_Wilczy=C5=84ski?= <kw@linux.com>, 
-	Bjorn Helgaas <bhelgaas@google.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, 
-	Jiri Slaby <jirislaby@kernel.org>, Magnus Damm <magnus.damm@gmail.com>, 
-	Daniel Lezcano <daniel.lezcano@linaro.org>, Rich Felker <dalias@libc.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Lee Jones <lee@kernel.org>, 
-	Helge Deller <deller@gmx.de>, Heiko Stuebner <heiko@sntech.de>, 
-	Jernej Skrabec <jernej.skrabec@gmail.com>, Chris Morgan <macromorgan@hotmail.com>, 
-	Yang Xiwen <forbidden405@foxmail.com>, Sebastian Reichel <sre@kernel.org>, 
-	Randy Dunlap <rdunlap@infradead.org>, Arnd Bergmann <arnd@arndb.de>, Vlastimil Babka <vbabka@suse.cz>, 
-	Hyeonggon Yoo <42.hyeyoo@gmail.com>, David Rientjes <rientjes@google.com>, Baoquan He <bhe@redhat.com>, 
-	Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck <linux@roeck-us.net>, 
-	Stephen Rothwell <sfr@canb.auug.org.au>, Azeem Shaikh <azeemshaikh38@gmail.com>, 
-	Javier Martinez Canillas <javierm@redhat.com>, Max Filippov <jcmvbkbc@gmail.com>, 
-	Palmer Dabbelt <palmer@rivosinc.com>, Bin Meng <bmeng@tinylab.org>, 
-	Jonathan Corbet <corbet@lwn.net>, Jacky Huang <ychuang3@nuvoton.com>, 
-	Lukas Bulwahn <lukas.bulwahn@gmail.com>, Biju Das <biju.das.jz@bp.renesas.com>, 
-	=?UTF-8?Q?Uwe_Kleine=2DK=C3=B6nig?= <u.kleine-koenig@pengutronix.de>, 
-	Sam Ravnborg <sam@ravnborg.org>, Sergey Shtylyov <s.shtylyov@omp.ru>, 
-	Michael Karcher <kernel@mkarcher.dialup.fu-berlin.de>, 
-	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-ide@vger.kernel.org, 
-	devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-renesas-soc@vger.kernel.org, linux-clk@vger.kernel.org, 
-	dri-devel@lists.freedesktop.org, linux-pci@vger.kernel.org, 
-	linux-serial@vger.kernel.org, linux-fbdev@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="BnJW/9g9dKSPOiUT"
+Content-Disposition: inline
+In-Reply-To: <20240116-coasting-pastrami-1dda8d1025d0@spud>
+
+
+--BnJW/9g9dKSPOiUT
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-Hi Sato-san,
 
-On Wed, Jan 17, 2024 at 10:46=E2=80=AFAM Yoshinori Sato
-<ysato@users.sourceforge.jp> wrote:
-> On Tue, 09 Jan 2024 21:30:34 +0900,
-> Linus Walleij wrote:
-> > On Tue, Jan 9, 2024 at 9:24=E2=80=AFAM Yoshinori Sato
-> > <ysato@users.sourceforge.jp> wrote:
-> >
-> > > +  renesas,icr-irlm:
-> > > +    $ref: /schemas/types.yaml#/definitions/flag
-> > > +    description: If true four independent interrupt requests mode (I=
-CR.IRLM is 1).
-> > > +
-> > > +  renesas,ipr-map:
-> > > +    $ref: /schemas/types.yaml#/definitions/uint32-array
-> > > +    description: |
-> > > +      IRQ to IPR mapping definition.
-> > > +      1st - INTEVT code
-> > > +      2nd - Register
-> > > +      3rd - bit index
-> >
-> > (...)
-> >
-> > > +            renesas,ipr-map =3D <0x240 IPRD IPR_B12>, /* IRL0 */
-> > > +                              <0x2a0 IPRD IPR_B8>,  /* IRL1 */
-> > > +                              <0x300 IPRD IPR_B4>,  /* IRL2 */
-> > > +                              <0x360 IPRD IPR_B0>,  /* IRL3 */
-> > (...)
-> >
-> > Is it really necessary to have all this in the device tree?
-> >
-> > You know from the compatible that this is "renesas,sh7751-intc"
-> > and I bet this table will be the same for any sh7751 right?
-> >
-> > Then just put it in a table in the driver instead and skip this from
-> > the device tree and bindings. If more interrupt controllers need
-> > to be supported by the driver, you can simply look up the table from
-> > the compatible string.
->
-> The SH interrupt controller has the same structure, only this part is dif=
-ferent for each SoC.
-> Currently, we are targeting only the 7751, but in the future we plan to h=
-andle all SoCs.
-> Is it better to differentiate SoC only by compatible?
+> > Maybe writing this as
+> >=20
+> >       - description: Underflow interrupt, channel 0
+> >       - description: Underflow interrupt, channel 1
+> >       - description: Underflow interrupt, channel 2
+> >       - description: Input capture interrupt, channel 2
+>=20
+> I, for one, prefer this wording.
 
-Yes, it is better to differentiate SoC only by compatible value.
+I agree.
 
-When you describe all differences explicitly using properties, you
-might discover later that you missed something important, causing
-backwards compatibility issues with old DTBs.
-DT is a stable ABI, while you can always update a driver when needed.
 
-Gr{oetje,eeting}s,
+--BnJW/9g9dKSPOiUT
+Content-Type: application/pgp-signature; name="signature.asc"
 
-                        Geert
+-----BEGIN PGP SIGNATURE-----
 
---=20
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
+iQIzBAABCgAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAmWn32EACgkQFA3kzBSg
+KbaH3g/9FB2Z/5Mpn3Q8jmWo+Xi/7IOOZYsMhlye6Vh3DXao/Yp9kjgUF6+/vnJi
+F/Xf4k4mKWN/mP+NEdMvm2QuJsWeRtWXHNHBK+en2AIhTxRLDTFb6g/B614VCTyQ
+9haXR7RQndmsYwnfvbflHy0wzkRV31Bpp738fWYMUv39XqBePftZw6+j8yok0Zg2
+Boy3HpirVMUUjSJvDUVmYEnsON8/LWUK23q7XldORcUn8zbE2lg13lEntKW9tZjk
+6vsSAHs2bjhRjl3sIBGPVHafDoGZSf2l4P2d7Z+ttlzeFryQVUnpih4L6E3ddhfq
+DqiiNwJY8UEDBOdDFCIHu6MoJcn5HkUVJmcDTJU9jAzvQuwr5ZJqBO3HIC4XeErz
+YAM7MFTsvt0MkxvMxRuaip8dmMMtArZ9+WgZjxL/BBezysw44CCI/gbt+UQ7RIBM
+ySlWtcx5dARH56I1CEUhBOc1NyNVhtcd6fYxOVP1BakeOCy8F0XFtmvrcRqzNDVa
+0EcqN2jRKfbqsPN0oP6al7mA2P40yVV4fFEwzX/NQ2ZW3OVPhXyrJQI6XmOrhdkk
+fkpo+3raNI/kBLgSS/TvMonwlgO8ax6xbzsaiLIeaPgEyafuWEh3ux4RGp2B8AzX
+1075MNXwlFvlmBsp8T3v0YIHiZ/wur9Q0KaIJFHIPMyzQoHGMGg=
+=E/0h
+-----END PGP SIGNATURE-----
 
-In personal conversations with technical people, I call myself a hacker. Bu=
-t
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+--BnJW/9g9dKSPOiUT--
