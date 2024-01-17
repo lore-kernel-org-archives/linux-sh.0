@@ -1,163 +1,127 @@
-Received: from mail-yw1-f170.google.com (mail-yw1-f170.google.com [209.85.128.170])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E9DF41CF9A;
-	Tue, 16 Jan 2024 19:17:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.170
+Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 2C183C121;
+	Wed, 17 Jan 2024 09:52:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=153.127.30.23
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1705432637; cv=none; b=ku3pstpP3UhE3kt02GkKcLBI2bl5Qr29CpL4RR2mt5L9bTrCTsg6AtTe62R0mEm1gTybXsE2DvreT7SAUwoHq6/wpPftTzsYTYXbfoVT+BbZisfkzSplIPMltCtxQE52w7HmFyifNZXaCIqLArpdghztsJCMei5B8pfb+49ohls=
+	t=1705485132; cv=none; b=M4adgzi1hG1usKcyB4kqG9/kwNwRlp3nDN7PLdd1sb00XhdmRDyNSB0qvtsl6irfSqQWkCj533oBaRgQGc/y2U5rGRTq4ZY4cYj0ThEjFK2kigfMw/YqUe+eFTxR+zD9BPKFRE6aeIA9U2LYR/PkDkHFf+DZQUIbT+qodrbObzc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1705432637; c=relaxed/simple;
-	bh=9I7YyZPgpZUSOyaxMUI9VIR0QfiqbLybOfWU35SYZF4=;
-	h=Received:X-Google-DKIM-Signature:X-Gm-Message-State:
-	 X-Google-Smtp-Source:X-Received:Received:Received:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:
-	 X-Gmail-Original-Message-ID:Message-ID:Subject:To:Cc:Content-Type:
-	 Content-Transfer-Encoding; b=WbykxYsXpMtSnPpNBtZNR/4jbubxxqrOiCCWP/GBkJLQZXz0+W0tTI6tu3BMe0foFvnGUtdZw3ydLSlHusmheJTIFeQUb03Z7fndIUCtYfRpEuGwKOlQ254tjTFtSwr2hblUWoelG+OHCZMmAG4evkIDnx8b62FYfeMr2K811MU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.170
-Received: by mail-yw1-f170.google.com with SMTP id 00721157ae682-5ebca94cf74so97871567b3.0;
-        Tue, 16 Jan 2024 11:17:15 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1705432634; x=1706037434;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=CIvFeeK6Pq4WtOkZORdSST2d5hJuslQ8+bqOPyEGAQ4=;
-        b=otkTmzOYhktmxwDZvdJTtZy74jVjn1Tos5DqCzujDDlMaVOKcWQn6zveKxesrYGKtZ
-         Zh8f4HtaR3PbZFFxNzRW6ceLXXBLpfpRQBVLt9b8F6Ye9xgF3ExzxkjsDg9BTaIzu4aY
-         7nSLdDhBXP1diePfsWl3Z9bYB00OnxJWWebyu6d5zbIhJGa+8Yrd4tFrPePRViL8Xuqg
-         YpCKiBlX1Qquqtc2QZG7KrDF3RoN09qS/4mvLzjYEsI/EOQGE/GgcD4FjVFFobTfXHI/
-         UrxjFrDU8mH76RVUn7fV2mATPt+f+JRLwzob3CykeruyatRzaJ7muLGre5ycGoi2dcLn
-         BchQ==
-X-Gm-Message-State: AOJu0YzmddcXqvMWNvjrbHTApP2nRbXNu/ta9pQZWDmAgm78XzaBPilb
-	7Fj6NmO6yKlnkdaJR+7NiRI4RZ5LDij2uA==
-X-Google-Smtp-Source: AGHT+IGc/36JJMqIYi9vRPfpY1Kl4SM54e9FLgfy5QLBYI1840qqPoL5Q0Bnq1jMKWxgFC+2sUYl6g==
-X-Received: by 2002:a81:ac59:0:b0:5ff:5646:283d with SMTP id z25-20020a81ac59000000b005ff5646283dmr1007103ywj.76.1705432634629;
-        Tue, 16 Jan 2024 11:17:14 -0800 (PST)
-Received: from mail-yw1-f176.google.com (mail-yw1-f176.google.com. [209.85.128.176])
-        by smtp.gmail.com with ESMTPSA id fr3-20020a05690c358300b005ff4c76ceb3sm910917ywb.145.2024.01.16.11.17.14
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 16 Jan 2024 11:17:14 -0800 (PST)
-Received: by mail-yw1-f176.google.com with SMTP id 00721157ae682-5ebca94cf74so97871407b3.0;
-        Tue, 16 Jan 2024 11:17:14 -0800 (PST)
-X-Received: by 2002:a25:c882:0:b0:db5:4c11:6278 with SMTP id
- y124-20020a25c882000000b00db54c116278mr3878445ybf.31.1705432634106; Tue, 16
- Jan 2024 11:17:14 -0800 (PST)
+	s=arc-20240116; t=1705485132; c=relaxed/simple;
+	bh=1fXBZ0F6PnMKVX2UfbVlTh+qiCRuwH+ropgNz+S7/3U=;
+	h=Received:Date:Message-ID:From:To:Cc:Subject:In-Reply-To:
+	 References:User-Agent:MIME-Version:Content-Type:
+	 Content-Transfer-Encoding; b=FxE1DC7yEPQFQNKcmXiDnPvG9hh8Q8cvzW8JWCwkrxWo+lorRcrwqGDsNuzDswhe1doQfOYD8y/DNnQtF55GXZsQVRFJEWUdgvPpPU+dqznIOZR8M9bnNnzgfwBOz17bpCHHQF+M/swi6+1uTot+kAXpmsc6D2KkI3+3XioX8j0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=users.sourceforge.jp; spf=fail smtp.mailfrom=users.sourceforge.jp; arc=none smtp.client-ip=153.127.30.23
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=users.sourceforge.jp
+Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=users.sourceforge.jp
+Received: from SIOS1075.ysato.ml (al128006.dynamic.ppp.asahi-net.or.jp [111.234.128.6])
+	by sakura.ysato.name (Postfix) with ESMTPSA id B272C1C00D1;
+	Wed, 17 Jan 2024 18:46:10 +0900 (JST)
+Date: Wed, 17 Jan 2024 18:46:10 +0900
+Message-ID: <8734uwwavx.wl-ysato@users.sourceforge.jp>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Linus Walleij <linus.walleij@linaro.org>
+Cc: linux-sh@vger.kernel.org,	Damien Le Moal <dlemoal@kernel.org>,	Rob
+ Herring <robh+dt@kernel.org>,	Krzysztof Kozlowski
+ <krzysztof.kozlowski+dt@linaro.org>,	Conor Dooley <conor+dt@kernel.org>,
+	Geert Uytterhoeven <geert+renesas@glider.be>,	Michael Turquette
+ <mturquette@baylibre.com>,	Stephen Boyd <sboyd@kernel.org>,	Maarten
+ Lankhorst <maarten.lankhorst@linux.intel.com>,	Maxime Ripard
+ <mripard@kernel.org>,	Thomas Zimmermann <tzimmermann@suse.de>,	David Airlie
+ <airlied@gmail.com>,	Daniel Vetter <daniel@ffwll.ch>,	Thomas Gleixner
+ <tglx@linutronix.de>,	Lorenzo Pieralisi <lpieralisi@kernel.org>,	Krzysztof
+ =?ISO-8859-2?Q?Wilczy=F1ski?= <kw@linux.com>,	Bjorn Helgaas
+ <bhelgaas@google.com>,	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+	Jiri Slaby <jirislaby@kernel.org>,	Magnus Damm <magnus.damm@gmail.com>,
+	Daniel Lezcano <daniel.lezcano@linaro.org>,	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,	Lee Jones
+ <lee@kernel.org>,	Helge Deller <deller@gmx.de>,	Heiko Stuebner
+ <heiko@sntech.de>,	Jernej Skrabec <jernej.skrabec@gmail.com>,	Chris Morgan
+ <macromorgan@hotmail.com>,	Yang Xiwen <forbidden405@foxmail.com>,	Sebastian
+ Reichel <sre@kernel.org>,	Randy Dunlap <rdunlap@infradead.org>,	Arnd
+ Bergmann <arnd@arndb.de>,	Vlastimil Babka <vbabka@suse.cz>,	Hyeonggon Yoo
+ <42.hyeyoo@gmail.com>,	David Rientjes <rientjes@google.com>,	Baoquan He
+ <bhe@redhat.com>,	Andrew Morton <akpm@linux-foundation.org>,	Guenter Roeck
+ <linux@roeck-us.net>,	Stephen Rothwell <sfr@canb.auug.org.au>,	Azeem Shaikh
+ <azeemshaikh38@gmail.com>,	Javier Martinez Canillas <javierm@redhat.com>,
+	Max Filippov <jcmvbkbc@gmail.com>,	Palmer Dabbelt <palmer@rivosinc.com>,
+	Bin Meng <bmeng@tinylab.org>,	Jonathan Corbet <corbet@lwn.net>,	Jacky Huang
+ <ychuang3@nuvoton.com>,	Lukas Bulwahn <lukas.bulwahn@gmail.com>,	Biju Das
+ <biju.das.jz@bp.renesas.com>,	Uwe =?ISO-8859-1?Q?Kleine-K=F6nig?=
+ <u.kleine-koenig@pengutronix.de>,	Sam Ravnborg <sam@ravnborg.org>,	Sergey
+ Shtylyov <s.shtylyov@omp.ru>,	Michael Karcher
+ <kernel@mkarcher.dialup.fu-berlin.de>,	Laurent Pinchart
+ <laurent.pinchart+renesas@ideasonboard.com>,	linux-ide@vger.kernel.org,
+	devicetree@vger.kernel.org,	linux-kernel@vger.kernel.org,
+	linux-renesas-soc@vger.kernel.org,	linux-clk@vger.kernel.org,
+	dri-devel@lists.freedesktop.org,	linux-pci@vger.kernel.org,
+	linux-serial@vger.kernel.org,	linux-fbdev@vger.kernel.org
+Subject: Re: [DO NOT MERGE v6 17/37] dt-bindings: interrupt-controller: renesas,sh7751-intc: Add json-schema
+In-Reply-To: <CACRpkdYLsf-uWdMCTpieji7u1-H3oTGojvC4xm7Erox97XJ6RQ@mail.gmail.com>
+References: <cover.1704788539.git.ysato@users.sourceforge.jp>
+	<bc794e2165244bd0cee81bc0106f1e2d1bef1613.1704788539.git.ysato@users.sourceforge.jp>
+	<CACRpkdYLsf-uWdMCTpieji7u1-H3oTGojvC4xm7Erox97XJ6RQ@mail.gmail.com>
+User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
+ FLIM-LB/1.14.9 (=?ISO-8859-4?Q?Goj=F2?=) APEL-LB/10.8 EasyPG/1.0.0
+ Emacs/28.2 (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-References: <fb1e38c93e62221f94304edd980a2fb79c1f2995.1705325608.git.geert+renesas@glider.be>
- <20240115-wages-secluded-b44f4eb13323@spud> <CAMuHMdWY3D45NGHvGXSZRLZz4TyCRgRCQLZV6CzYs=mSFcherw@mail.gmail.com>
- <20240115170807.GJ5869@pendragon.ideasonboard.com> <20240116-coasting-pastrami-1dda8d1025d0@spud>
-In-Reply-To: <20240116-coasting-pastrami-1dda8d1025d0@spud>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 16 Jan 2024 20:17:02 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdUfyqR8AisO7NcBqHK=Poty+dJYG=hqk=iaWYf7eQCZQQ@mail.gmail.com>
-Message-ID: <CAMuHMdUfyqR8AisO7NcBqHK=Poty+dJYG=hqk=iaWYf7eQCZQQ@mail.gmail.com>
-Subject: Re: [PATCH] dt-bindings: timer: renesas,tmu: Document input capture interrupt
-To: Conor Dooley <conor@kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Daniel Lezcano <daniel.lezcano@linaro.org>, Thomas Gleixner <tglx@linutronix.de>, 
-	Rob Herring <robh+dt@kernel.org>, 
-	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>, Conor Dooley <conor+dt@kernel.org>, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, devicetree@vger.kernel.org, 
-	linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: quoted-printable
 
-Hi Conor, Laurent,
+On Tue, 09 Jan 2024 21:30:34 +0900,
+Linus Walleij wrote:
+>=20
+> Hi Yoshinori,
+>=20
+> thanks for your patch!
+>=20
+> On Tue, Jan 9, 2024 at 9:24=E2=80=AFAM Yoshinori Sato
+> <ysato@users.sourceforge.jp> wrote:
+>=20
+> > +  renesas,icr-irlm:
+> > +    $ref: /schemas/types.yaml#/definitions/flag
+> > +    description: If true four independent interrupt requests mode (ICR=
+.IRLM is 1).
+> > +
+> > +  renesas,ipr-map:
+> > +    $ref: /schemas/types.yaml#/definitions/uint32-array
+> > +    description: |
+> > +      IRQ to IPR mapping definition.
+> > +      1st - INTEVT code
+> > +      2nd - Register
+> > +      3rd - bit index
+>=20
+> (...)
+>=20
+> > +            renesas,ipr-map =3D <0x240 IPRD IPR_B12>, /* IRL0 */
+> > +                              <0x2a0 IPRD IPR_B8>,  /* IRL1 */
+> > +                              <0x300 IPRD IPR_B4>,  /* IRL2 */
+> > +                              <0x360 IPRD IPR_B0>,  /* IRL3 */
+> (...)
+>=20
+> Is it really necessary to have all this in the device tree?
+>=20
+> You know from the compatible that this is "renesas,sh7751-intc"
+> and I bet this table will be the same for any sh7751 right?
+>=20
+> Then just put it in a table in the driver instead and skip this from
+> the device tree and bindings. If more interrupt controllers need
+> to be supported by the driver, you can simply look up the table from
+> the compatible string.
 
-On Tue, Jan 16, 2024 at 6:34=E2=80=AFPM Conor Dooley <conor@kernel.org> wro=
-te:
-> On Mon, Jan 15, 2024 at 07:08:07PM +0200, Laurent Pinchart wrote:
-> > On Mon, Jan 15, 2024 at 05:48:18PM +0100, Geert Uytterhoeven wrote:
-> > > On Mon, Jan 15, 2024 at 5:13=E2=80=AFPM Conor Dooley <conor@kernel.or=
-g> wrote:
-> > > > On Mon, Jan 15, 2024 at 02:45:39PM +0100, Geert Uytterhoeven wrote:
-> > > > > Some Timer Unit (TMU) instances with 3 channels support a fourth
-> > > > > interrupt: an input capture interrupt for the third channel.
-> > > > >
-> > > > > While at it, document the meaning of the four interrupts, and add
-> > > > > "interrupt-names" for clarity.
-> > > > >
-> > > > > Update the example to match reality.
-> > > > >
-> > > > > Inspired by a patch by Yoshinori Sato for SH.
-> > > > >
-> > > > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > >
-> > > > > --- a/Documentation/devicetree/bindings/timer/renesas,tmu.yaml
-> > > > > +++ b/Documentation/devicetree/bindings/timer/renesas,tmu.yaml
-> > > > > @@ -46,7 +46,19 @@ properties:
-> > > > >
-> > > > >    interrupts:
-> > > > >      minItems: 2
-> > > > > -    maxItems: 3
-> > > > > +    items:
-> > > > > +      - description: Underflow interrupt 0
-> > > > > +      - description: Underflow interrupt 1
-> > > > > +      - description: Underflow interrupt 2
-> > > > > +      - description: Input capture interrupt 2
-> > > >
-> > > > Seeing "input capture interrupt 2" makes me wonder, are there two (=
-or
-> > > > more!) other input capture interrupts that are still out there,
-> > > > undocumented, and looking for a home?
-> >
-> > Maybe writing this as
-> >
-> >       - description: Underflow interrupt, channel 0
-> >       - description: Underflow interrupt, channel 1
-> >       - description: Underflow interrupt, channel 2
-> >       - description: Input capture interrupt, channel 2
->
-> I, for one, prefer this wording.
+The SH interrupt controller has the same structure, only this part is diffe=
+rent for each SoC.
+Currently, we are targeting only the 7751, but in the future we plan to han=
+dle all SoCs.
+Is it better to differentiate SoC only by compatible?
 
-Fine for me.
-
-> > I'm also wondering if we really need to add interrupt-names. Drivers
-> > can't depend on the names due to backward compatibility, what benefit
-> > does it bring to add them to the bindings ?
-
-I like adding names if there are multiple items, especially if not all
-of them have the same type.  Before, we just had a single interrupt
-per channel.
-
-I am also wary of another weird variant showing up eventually, with
-e.g. 4 channels, or multiple input capture interrupts.
-
-> Adding a -names property and not making it required has always seemed
-> like a waste of time to me. Granted, making it required post-factum has
-> other problems, so I am inclined to agree that it adds nothing.
-
-I should have mentioned that I do have another local patch, to be
-submitted after all DTS files have been updated ;-)
-
-    [WIP] dt-bindings: timer: renesas,tmu: Make interrupt-names required
-
-    Now all in-tree users have been updated, make interrupt-names required.
-
-> > > SoCs can have multiple TMU instances.
-> > > Each TMU instance has 2 or 3 timer channels.
-> > > Each timer channel has an underflow interrupt.
-> > > Only the third channel may have an optional input capture interrupt
-> > > (which is not supported yet by the Linux driver).
-> > > Hence each instance can have 2, 3, or 4 interrupts.
-
-Gr{oetje,eeting}s,
-
-                        Geert
+> Yours,
+> Linus Walleij
+>=20
 
 --=20
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
-
-In personal conversations with technical people, I call myself a hacker. Bu=
-t
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+Yosinori Sato
