@@ -1,18 +1,18 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D268624B32;
-	Thu, 18 Jan 2024 14:57:46 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C18C71E87A;
+	Thu, 18 Jan 2024 15:13:14 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1705589870; cv=none; b=c2dcJ12OOEiJ7JHxfJKYX+IxZ/LViwpGzKFADU5whZq0wtnT+d5R3mfuq/O2XSsAqC4KfeC5X3j57rVZu+mHe+EFP4yQ05v4vQQ1tAZuzS2GRH0f9nfmGU39USTsZzQegspKcMSQYipPSNdqmhQQy8OAz0q3JeWF1H3dHgCUtKc=
+	t=1705590797; cv=none; b=lgb2l9kbVKRXLDdVSkCWxw6zSPAVlpfcNQwQZVZCi2Bhq3CUGIL/HZqEWsB9vL9ZO+pQQNEM2FhMzeFh76jVizYPddrKYLraVTPQU393BJrT5GZa2+48sG1VR5qsIyUKOa+EGQwbfJGgGAwcvp2NI713KzT0baCLIp92sy7d1OQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1705589870; c=relaxed/simple;
-	bh=9vG04yUoo2s196yOGMlC3D8vecQCNCa6UnsnMYuaq2o=;
+	s=arc-20240116; t=1705590797; c=relaxed/simple;
+	bh=HA+yl7JUgK6rfG95IRvvutnL0l0IbYnwov7L190PDqM=;
 	h=Received:Received:Message-ID:Subject:From:To:Cc:Date:In-Reply-To:
 	 References:Autocrypt:Content-Type:Content-Transfer-Encoding:
 	 User-Agent:MIME-Version:X-Original-Sender:X-Originating-IP:
-	 X-ZEDAT-Hint; b=J8ukLx9U6GoL+uvZEhBeJcdt4CZMx0rwQ9GS6QhIaLvv4uqiIM+KJjwDJbDMpwfJSIOP8NPOTyah89uABm8LwaTyFH0wxbjCF90y8wLnCSg9GkkibKuGj1RtHu58R16V8Cn1AvmI9QukV4taXVzJg8JizwxJvm2ENk0Njcq50ic=
+	 X-ZEDAT-Hint; b=KgzFd2nyiikZvVbfWMZGgSg+9cTMon5xFzH8vVnVptyUorNxFcEKqz+hknep/HwJ+l8+FP5JBWKB2wOFxBytjTuY471SqMFwMwbqk8YIoBseWPwvKy7re0dn7FJuw8pkUoByvDD0MmiIB1G/ogoRpYgxL4oy3AA+bgqzey1T3ck=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
@@ -21,27 +21,23 @@ Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1rQTpj-000p61-ND; Thu, 18 Jan 2024 15:57:31 +0100
+          id 1rQU4n-000y2E-Dj; Thu, 18 Jan 2024 16:13:05 +0100
 Received: from p5dc556fd.dip0.t-ipconnect.de ([93.197.86.253] helo=[192.168.178.20])
           by inpost2.zedat.fu-berlin.de (Exim 4.95)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1rQTpj-003N7a-FJ; Thu, 18 Jan 2024 15:57:31 +0100
-Message-ID: <4e4dfece5f2f44c6fc826735ddef67ca3c3ac2dc.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: ecovec24: Rename missed backlight field from fbdev
- to dev
+          id 1rQU4n-003QEM-6C; Thu, 18 Jan 2024 16:13:05 +0100
+Message-ID: <2d56cfadba0d5b831661415f8181ff7fc9768780.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: remove unneeded $(foreach )
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Geert Uytterhoeven <geert+renesas@glider.be>, Yoshinori Sato
- <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Thomas
- Zimmermann <tzimmermann@suse.de>, Sam Ravnborg <sam@ravnborg.org>, Daniel
- Thompson <daniel.thompson@linaro.org>
-Cc: linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, 
- linux-fbdev@vger.kernel.org, linux-kernel@vger.kernel.org, kernel test
- robot <lkp@intel.com>
-Date: Thu, 18 Jan 2024 15:57:30 +0100
-In-Reply-To: <20230925111022.3626362-1-geert+renesas@glider.be>
-References: <20230925111022.3626362-1-geert+renesas@glider.be>
+To: Masahiro Yamada <masahiroy@kernel.org>, Yoshinori Sato
+	 <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	linux-sh@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Date: Thu, 18 Jan 2024 16:13:04 +0100
+In-Reply-To: <20231120235423.4103310-1-masahiroy@kernel.org>
+References: <20231120235423.4103310-1-masahiroy@kernel.org>
 Autocrypt: addr=glaubitz@physik.fu-berlin.de; prefer-encrypt=mutual;
  keydata=mQINBE3JE9wBEADMrYGNfz3oz6XLw9XcWvuIxIlPWoTyw9BxTicfGAv0d87wngs9U+d52t/REggPePf34gb7/k8FBY1IgyxnZEB5NxUb1WtW0M3GUxpPx6gBZqOm7SK1ZW3oSORw+T7Aezl3Zq4Nr4Nptqx7fnLpXfRDs5iYO/GX8WuL8fkGS/gIXtxKewd0LkTlb6jq9KKq8qn8/BN5YEKqJlM7jsENyA5PIe2npN3MjEg6p+qFrmrzJRuFjjdf5vvGfzskrXCAKGlNjMMA4TgZvugOFmBI/iSyV0IOaj0uKhes0ZNX+lQFrOB4j6I5fTBy7L/T3W/pCWo3wVkknNYa8TDYT73oIZ7Aimv+k7OzRfnxsSOAZT8Re1Yt8mvzr6FHVFjr/VdyTtO5JgQZ6LEmvo4Ro+2ByBmCHORCQ0NJhD1U3avjGfvfslG999W0WEZLTeaGkBAN1yG/1bgGAytQQkD9NsVXqBy7S3LVv9bB844ysW5Aj1nvtgIz14E2WL8rbpfjJMXi7B5ha6Lxf3rFOgxpr6ZoEn+bGG4hmrO+/ReA4SerfMqwSTnjZsZvxMJsx2B9c8DaZE8GsA4I6lsihbJmXhw8i7Cta8Dx418wtEbXhL6m/UEk60O7QD1VBgGqDMnJDFSlvKa9D+tZde/kHSNmQmLLzxtDbNgBgmR0jUlmxirijnm8bwARAQABtEBKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6IChEZWJpYW4gUHJvamVjdCkgPGdsYXViaXR6QGRlYmlhbi5vcmc+iQI3BBMBCAAhBQJRnmPwAhsDBQsJCAcDBRUKCQgLBRYCAwEAAh4BAheAAAoJEHQmOzf1tfkTF0gQAJgvGiKf5YW6+Qyss1qGwf+KHXb/6gIThY6GpSIro9vL/UxaakRCOloaXXAs3KpgBULOO8+prqU8GIqcd8tE3YvQFvvO3rN+8bhOiiD0lFmQSEHcpCW5ZRpdh
 	J5wy1t9Ddb1K/7XGzen3Uzx9bjKgDyikM3js1VtJHaFr8FGt5gtZIBDgp8QM9IRCv/32mPQxqmsaTczEzSNxTBM6Tc2NwNLus3Yh5OnFdxk1jzk+Ajpnqd/E/M7/CU5QznDgIJyopcMtOArv9Er+xe3gAXHkFvnPqcP+9UpzHB5N0HPYn4k4hsOTiJ41FHUapq8d1AuzrWyqzF9aMUi2kbHJdUmt9V39BbJIgjCysZPyGtFhR42fXHDnPARjxtRRPesEhjOeHei9ioAsZfT6bX+l6kSf/9gaxEKQe3UCXd3wbw68sXcvhzBVBxhXM91+Y7deHhNihMtqPyEmSyGXTHOMODysRU453E+XXTr2HkZPx4NV1dA8Vlid2NcMQ0iItD+85xeVznc8xquY/c1vPBeqneBWaE530Eo5e3YA7OGrxHwHbet3E210ng+xU8zUjQrFXMJm3xNpOe45RwmhCAt5z1gDTk5qNgjNgnU3mDp9DX6IffS3g2UJ02JeTrBY4hMpdVlmGCVOm9xipcPHreVGEBbM4eQnYnwbaqjVBBvy2DyfyN/tFRKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6IChGcmVpZSBVbml2ZXJzaXRhZXQgQmVybGluKSA8Z2xhdWJpdHpAcGh5c2lrLmZ1LWJlcmxpbi5kZT6JAlEEEwEIADsCGwMFCwkIBwMFFQoJCAsFFgIDAQACHgECF4AWIQRi/4p1hOApVpVGAAZ0Jjs39bX5EwUCWhQoUgIZAQAKCRB0Jjs39bX5Ez/ID/98r9c4WUSgOHVPSMVcOVziMOi+zPWfF1OhOXW+atpTM4LSSp66196xOlDFHOdNNmO6kxckXAX9ptvpBc0mRxa7OrC168fKzqR7P75eTsJnVaOu+uI/vvgsbUIosYdkkekCxDAbYCUwmzNotIspnFbxiSPMNrpw7Ud/yQkS9TDYeXnrZDhBp7p5+naWCD/yMvh7yVCA4Ea8+xDVoX
@@ -60,45 +56,35 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-On Mon, 2023-09-25 at 13:10 +0200, Geert Uytterhoeven wrote:
-> One instance of gpio_backlight_platform_data.fbdev was renamed, but the
-> second instance was forgotten, causing a build failure:
+On Tue, 2023-11-21 at 08:54 +0900, Masahiro Yamada wrote:
+> There is no need to use $(foreach ...) for iterating over just one
+> parameter.
 >=20
->     arch/sh/boards/mach-ecovec24/setup.c: In function =E2=80=98arch_setup=
-=E2=80=99:
->     arch/sh/boards/mach-ecovec24/setup.c:1223:37: error: =E2=80=98struct =
-gpio_backlight_platform_data=E2=80=99 has no member named =E2=80=98fbdev=E2=
-=80=99; did you mean =E2=80=98dev=E2=80=99?
->      1223 |                 gpio_backlight_data.fbdev =3D NULL;
-> 	  |                                     ^~~~~
-> 	  |                                     dev
->=20
-> Fix this by updating the second instance.
->=20
-> Fixes: ed369def91c1579a ("backlight/gpio_backlight: Rename field 'fbdev' =
-to 'dev'")
-> Reported-by: kernel test robot <lkp@intel.com>
-> Closes: https://lore.kernel.org/oe-kbuild-all/202309231601.Uu6qcRnU-lkp@i=
-ntel.com/
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
 > ---
->  arch/sh/boards/mach-ecovec24/setup.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
 >=20
-> diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-e=
-covec24/setup.c
-> index 3be293335de54512..7a788d44cc73496c 100644
-> --- a/arch/sh/boards/mach-ecovec24/setup.c
-> +++ b/arch/sh/boards/mach-ecovec24/setup.c
-> @@ -1220,7 +1220,7 @@ static int __init arch_setup(void)
->  		lcdc_info.ch[0].num_modes		=3D ARRAY_SIZE(ecovec_dvi_modes);
+>  arch/sh/kernel/vsyscall/Makefile | 5 ++---
+>  1 file changed, 2 insertions(+), 3 deletions(-)
+>=20
+> diff --git a/arch/sh/kernel/vsyscall/Makefile b/arch/sh/kernel/vsyscall/M=
+akefile
+> index 6e8664448048..118744d349e2 100644
+> --- a/arch/sh/kernel/vsyscall/Makefile
+> +++ b/arch/sh/kernel/vsyscall/Makefile
+> @@ -1,11 +1,10 @@
+>  # SPDX-License-Identifier: GPL-2.0
+>  obj-y +=3D vsyscall.o vsyscall-syscall.o vsyscall-syms.o
 > =20
->  		/* No backlight */
-> -		gpio_backlight_data.fbdev =3D NULL;
-> +		gpio_backlight_data.dev =3D NULL;
+> -$(obj)/vsyscall-syscall.o: \
+> -	$(foreach F,trapa,$(obj)/vsyscall-$F.so)
+> +$(obj)/vsyscall-syscall.o: $(obj)/vsyscall-trapa.so
 > =20
->  		gpio_set_value(GPIO_PTA2, 1);
->  		gpio_set_value(GPIO_PTU1, 1);
+>  # Teach kbuild about targets
+> -targets +=3D $(foreach F,trapa,vsyscall-$F.o vsyscall-$F.so)
+> +targets +=3D vsyscall-trapa.o vsyscall-traps.so
+>  targets +=3D vsyscall-note.o vsyscall.lds vsyscall-dummy.o
+> =20
+>  # The DSO images are built using a special linker script
 
 Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
