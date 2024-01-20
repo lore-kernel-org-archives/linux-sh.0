@@ -1,112 +1,190 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.12])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6980FD53C
-	for <linux-sh@vger.kernel.org>; Sat, 20 Jan 2024 12:29:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 66905F9F2;
+	Sat, 20 Jan 2024 13:58:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.12
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1705753773; cv=none; b=i7jXK5AavopSFKwwc4FHLXqY5/zYJQIvdOM2PCfVyJH2JJjmTOunN4koNOc8A0LgHkz7yaAGLlX5tx5DxedIRwmq0ZltEjcWBd6DY9my9eQ9+e0CoyPVWT38YQB1+/FrYdiHE+H17pIMFJi6m1xxMAaAEgIcOHm9Bga6+CFYL1Y=
+	t=1705759128; cv=none; b=mp3XwtrotRhyAZKDfGQU1YzLNFkVBKb4F3AtyIGW34fuJtPLTtn8sYuGW1ayZJxvht0nYh4tpwDN6oxVcAaRGJSaHLUyl1AJlKBuCoNx/dd8My+xPMIL6Ap2OHPGFX2sCv2Y2j6hlrhdj/C6CQgHQ3UYAhzNg2ujKqxLjc0G/uA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1705753773; c=relaxed/simple;
-	bh=it1wSYAzeRH+iXbba4Unbk91bxpKZPe9tnstsgHfeMM=;
-	h=Message-ID:Subject:From:To:Cc:Date:Content-Type:MIME-Version; b=sSaOdxQsX5dD/AEFKqsIv0go97SV6PJYeDd6P5I0uxZk0UtQHADcdMmtNBYXE4FTCxZKfbkAeqwPEc6PkOVwkSY//TJmYPfnjEHK91ymmoo16xgGHAixALZQbaYmjrvR/kAIxbF1e0oWPeb3rRdhU6pLLFaO78rCYdzyHcx6j8M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.95)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1rRATI-000Xjq-PP; Sat, 20 Jan 2024 13:29:12 +0100
-Received: from dynamic-077-191-009-007.77.191.pool.telefonica.de ([77.191.9.7] helo=[192.168.1.11])
-          by inpost2.zedat.fu-berlin.de (Exim 4.95)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1rRATI-00181V-IC; Sat, 20 Jan 2024 13:29:12 +0100
-Message-ID: <f66b859bbf36d33b6998be5d64d536eeb7c75db4.camel@physik.fu-berlin.de>
-Subject: [GIT PULL] sh updates for v6.8
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Masahiro Yamada
-	 <masahiroy@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich
-	Felker <dalias@libc.org>, linux-sh <linux-sh@vger.kernel.org>
-Date: Sat, 20 Jan 2024 13:29:11 +0100
-Autocrypt: addr=glaubitz@physik.fu-berlin.de; prefer-encrypt=mutual;
- keydata=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
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.50.3 
+	s=arc-20240116; t=1705759128; c=relaxed/simple;
+	bh=D7c3vMf9ccSBFZdgQbSr1dRX1CxiKZpITQQp7zG1YTU=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=ftds1or4uS800/snygX52dEeb0sv/3aV8U1iWDvv5P+bEwHMd/SSCaIe33LhsxmvLOv9I4mrXlkawOSDSQU8m8BqE8gFupLGJsSrtMWwoFQxJS40N0HbHxOFLMBfUr9O7vc9gSJYsHu/mrdDFA+bGMDasADI5jhgEY6a7xT+0DY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=A4EsLcXF; arc=none smtp.client-ip=198.175.65.12
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="A4EsLcXF"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1705759126; x=1737295126;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=D7c3vMf9ccSBFZdgQbSr1dRX1CxiKZpITQQp7zG1YTU=;
+  b=A4EsLcXFptu9zt9cMF8vIbGgPveudmdkyPUvuLx3o/5b6NUIzc+jWzYR
+   x7IAbs8mSt9GHXouObLiXJfqQaE5kIHiIQbdrS+C4hnbZ9j0+h04A2liq
+   za5s2k9MmzI6jueH6NJqpFPoPFc3WbThl5oME0Emv1ix6MNJLZynQj3eU
+   D2Q8C/vMH5Kc8TV1yZ2nnctWOKgz3Eo4ug8cPC5l3hFz9xoMB3ojRzQtg
+   qmOrNFhFdn0pfPLhtGX10zZdcWxJ6SzWRRdWAp3lXxI9Bgubq9E7aJxN3
+   q7YVpReXa4Xchnpqc8GAGsbxpo/1j07mUzHYAzw9ftagfB47uMDjwQZNR
+   Q==;
+X-IronPort-AV: E=McAfee;i="6600,9927,10959"; a="8314740"
+X-IronPort-AV: E=Sophos;i="6.05,208,1701158400"; 
+   d="scan'208";a="8314740"
+Received: from orviesa003.jf.intel.com ([10.64.159.143])
+  by orvoesa104.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 20 Jan 2024 05:58:45 -0800
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.05,208,1701158400"; 
+   d="scan'208";a="834696"
+Received: from lkp-server01.sh.intel.com (HELO 961aaaa5b03c) ([10.239.97.150])
+  by orviesa003.jf.intel.com with ESMTP; 20 Jan 2024 05:58:40 -0800
+Received: from kbuild by 961aaaa5b03c with local (Exim 4.96)
+	(envelope-from <lkp@intel.com>)
+	id 1rRBrq-00058A-04;
+	Sat, 20 Jan 2024 13:58:38 +0000
+Date: Sat, 20 Jan 2024 21:58:16 +0800
+From: kernel test robot <lkp@intel.com>
+To: Baoquan He <bhe@redhat.com>, linux-kernel@vger.kernel.org
+Cc: oe-kbuild-all@lists.linux.dev, kexec@lists.infradead.org,
+	x86@kernel.org, linux-arm-kernel@lists.infradead.org,
+	linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
+	linux-sh@vger.kernel.org, linux-mips@vger.kernel.org,
+	linux-riscv@lists.infradead.org, loongarch@lists.linux.dev,
+	akpm@linux-foundation.org, ebiederm@xmission.com,
+	hbathini@linux.ibm.com, piliu@redhat.com, viro@zeniv.linux.org.uk,
+	Baoquan He <bhe@redhat.com>
+Subject: Re: [PATCH v2 11/14] arm, crash: wrap crash dumping code into crash
+ related ifdefs
+Message-ID: <202401202159.9a6W0aOH-lkp@intel.com>
+References: <20240119145241.769622-12-bhe@redhat.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20240119145241.769622-12-bhe@redhat.com>
 
-Hi Linus,
+Hi Baoquan,
 
-since the large patch series to convert arch/sh to device tree support has =
-not
-been finalized yet due to various maintainers still asking for changes to t=
-he
-series, this pull request ended up being rather small consisting of just tw=
-o
-fixes.
+kernel test robot noticed the following build errors:
 
-The first patch by Geert Uytterhoeven addresses a build failure introduced =
-by
-ed369def91c1579a ("backlight/gpio_backlight: Rename field 'fbdev' to 'dev'"=
-)
-in the EcoVec platform code. And the second patch by Masahiro Yamada remove=
-s
-an unnecessary $(foreach ...) found in a Makefile of the vsyscall code.
+[auto build test ERROR on linus/master]
+[cannot apply to tip/x86/core arm64/for-next/core powerpc/next powerpc/fixes v6.7 next-20240119]
+[If your patch is applied to the wrong git tree, kindly drop us a note.
+And when submitting patch, we suggest to use '--base' as documented in
+https://git-scm.com/docs/git-format-patch#_base_tree_information]
 
-The following changes since commit b85ea95d086471afb4ad062012a4d73cd328fa86=
-:
+url:    https://github.com/intel-lab-lkp/linux/commits/Baoquan-He/kexec-split-crashkernel-reservation-code-out-from-crash_core-c/20240119-225820
+base:   linus/master
+patch link:    https://lore.kernel.org/r/20240119145241.769622-12-bhe%40redhat.com
+patch subject: [PATCH v2 11/14] arm, crash: wrap crash dumping code into crash related ifdefs
+config: arm-allnoconfig (https://download.01.org/0day-ci/archive/20240120/202401202159.9a6W0aOH-lkp@intel.com/config)
+compiler: arm-linux-gnueabi-gcc (GCC) 13.2.0
+reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20240120/202401202159.9a6W0aOH-lkp@intel.com/reproduce)
 
-  Linux 6.7-rc1 (2023-11-12 16:19:07 -0800)
+If you fix the issue in a separate patch/commit (i.e. not just a new version of
+the same patch/commit), kindly add following tags
+| Reported-by: kernel test robot <lkp@intel.com>
+| Closes: https://lore.kernel.org/oe-kbuild-all/202401202159.9a6W0aOH-lkp@intel.com/
 
-are available in the Git repository at:
+All errors (new ones prefixed by >>):
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/=
-sh-for-v6.8-tag1
+   arch/arm/kernel/setup.c: In function 'reserve_crashkernel':
+>> arch/arm/kernel/setup.c:1036:63: error: 'SECTION_SIZE' undeclared (first use in this function); did you mean 'SECTIONS_SHIFT'?
+    1036 |                 start = memblock_phys_alloc_range(crash_size, SECTION_SIZE,
+         |                                                               ^~~~~~~~~~~~
+         |                                                               SECTIONS_SHIFT
+   arch/arm/kernel/setup.c:1036:63: note: each undeclared identifier is reported only once for each function it appears in
+   In file included from arch/arm/include/asm/efi.h:12,
+                    from arch/arm/kernel/setup.c:37:
+   arch/arm/include/asm/fixmap.h: At top level:
+   arch/arm/include/asm/fixmap.h:39:35: warning: '__end_of_fixed_addresses' defined but not used [-Wunused-const-variable=]
+      39 | static const enum fixed_addresses __end_of_fixed_addresses =
+         |                                   ^~~~~~~~~~~~~~~~~~~~~~~~
 
-for you to fetch changes up to 99fe83ab3bb0e8aac4d45a9361919794336b2ba8:
 
-  sh: vsyscall: Remove unnecessary $(foreach ...) (2024-01-19 11:57:12 +010=
-0)
+vim +1036 arch/arm/kernel/setup.c
 
-Thanks for pulling!
+3c57fb43c8fcbe Mika Westerberg 2010-05-10   995  
+3c57fb43c8fcbe Mika Westerberg 2010-05-10   996  /**
+3c57fb43c8fcbe Mika Westerberg 2010-05-10   997   * reserve_crashkernel() - reserves memory are for crash kernel
+3c57fb43c8fcbe Mika Westerberg 2010-05-10   998   *
+3c57fb43c8fcbe Mika Westerberg 2010-05-10   999   * This function reserves memory area given in "crashkernel=" kernel command
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1000   * line parameter. The memory reserved is used by a dump capture kernel when
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1001   * primary kernel is crashing.
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1002   */
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1003  static void __init reserve_crashkernel(void)
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1004  {
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1005  	unsigned long long crash_size, crash_base;
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1006  	unsigned long long total_mem;
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1007  	int ret;
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1008  
+8f460484669cba Baoquan He      2024-01-19  1009  	if (!IS_ENABLED(CONFIG_CRASH_RESERVE))
+8f460484669cba Baoquan He      2024-01-19  1010  		return;
+8f460484669cba Baoquan He      2024-01-19  1011  
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1012  	total_mem = get_total_mem();
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1013  	ret = parse_crashkernel(boot_command_line, total_mem,
+a9e1a3d84e4a0e Baoquan He      2023-09-14  1014  				&crash_size, &crash_base,
+a9e1a3d84e4a0e Baoquan He      2023-09-14  1015  				NULL, NULL);
+9d17f337230642 Austin Kim      2022-04-01  1016  	/* invalid value specified or crashkernel=0 */
+9d17f337230642 Austin Kim      2022-04-01  1017  	if (ret || !crash_size)
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1018  		return;
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1019  
+61603016e2122b Russell King    2016-03-14  1020  	if (crash_base <= 0) {
+d0506a2395eb07 Russell King    2016-04-01  1021  		unsigned long long crash_max = idmap_to_phys((u32)~0);
+67556d7a851c20 Russell King    2017-07-19  1022  		unsigned long long lowmem_max = __pa(high_memory - 1) + 1;
+67556d7a851c20 Russell King    2017-07-19  1023  		if (crash_max > lowmem_max)
+67556d7a851c20 Russell King    2017-07-19  1024  			crash_max = lowmem_max;
+a7259df7670240 Mike Rapoport   2021-09-02  1025  
+a7259df7670240 Mike Rapoport   2021-09-02  1026  		crash_base = memblock_phys_alloc_range(crash_size, CRASH_ALIGN,
+a7259df7670240 Mike Rapoport   2021-09-02  1027  						       CRASH_ALIGN, crash_max);
+61603016e2122b Russell King    2016-03-14  1028  		if (!crash_base) {
+61603016e2122b Russell King    2016-03-14  1029  			pr_err("crashkernel reservation failed - No suitable area found.\n");
+61603016e2122b Russell King    2016-03-14  1030  			return;
+61603016e2122b Russell King    2016-03-14  1031  		}
+61603016e2122b Russell King    2016-03-14  1032  	} else {
+a7259df7670240 Mike Rapoport   2021-09-02  1033  		unsigned long long crash_max = crash_base + crash_size;
+61603016e2122b Russell King    2016-03-14  1034  		unsigned long long start;
+61603016e2122b Russell King    2016-03-14  1035  
+a7259df7670240 Mike Rapoport   2021-09-02 @1036  		start = memblock_phys_alloc_range(crash_size, SECTION_SIZE,
+a7259df7670240 Mike Rapoport   2021-09-02  1037  						  crash_base, crash_max);
+a7259df7670240 Mike Rapoport   2021-09-02  1038  		if (!start) {
+61603016e2122b Russell King    2016-03-14  1039  			pr_err("crashkernel reservation failed - memory is in use.\n");
+61603016e2122b Russell King    2016-03-14  1040  			return;
+61603016e2122b Russell King    2016-03-14  1041  		}
+61603016e2122b Russell King    2016-03-14  1042  	}
+61603016e2122b Russell King    2016-03-14  1043  
+1b0f6681fcbc0e Olof Johansson  2013-12-05  1044  	pr_info("Reserving %ldMB of memory at %ldMB for crashkernel (System RAM: %ldMB)\n",
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1045  		(unsigned long)(crash_size >> 20),
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1046  		(unsigned long)(crash_base >> 20),
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1047  		(unsigned long)(total_mem >> 20));
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1048  
+f7f0b7dc720f81 Russell King    2016-08-02  1049  	/* The crashk resource must always be located in normal mem */
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1050  	crashk_res.start = crash_base;
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1051  	crashk_res.end = crash_base + crash_size - 1;
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1052  	insert_resource(&iomem_resource, &crashk_res);
+f7f0b7dc720f81 Russell King    2016-08-02  1053  
+f7f0b7dc720f81 Russell King    2016-08-02  1054  	if (arm_has_idmap_alias()) {
+f7f0b7dc720f81 Russell King    2016-08-02  1055  		/*
+f7f0b7dc720f81 Russell King    2016-08-02  1056  		 * If we have a special RAM alias for use at boot, we
+f7f0b7dc720f81 Russell King    2016-08-02  1057  		 * need to advertise to kexec tools where the alias is.
+f7f0b7dc720f81 Russell King    2016-08-02  1058  		 */
+f7f0b7dc720f81 Russell King    2016-08-02  1059  		static struct resource crashk_boot_res = {
+f7f0b7dc720f81 Russell King    2016-08-02  1060  			.name = "Crash kernel (boot alias)",
+f7f0b7dc720f81 Russell King    2016-08-02  1061  			.flags = IORESOURCE_BUSY | IORESOURCE_MEM,
+f7f0b7dc720f81 Russell King    2016-08-02  1062  		};
+f7f0b7dc720f81 Russell King    2016-08-02  1063  
+f7f0b7dc720f81 Russell King    2016-08-02  1064  		crashk_boot_res.start = phys_to_idmap(crash_base);
+f7f0b7dc720f81 Russell King    2016-08-02  1065  		crashk_boot_res.end = crashk_boot_res.start + crash_size - 1;
+f7f0b7dc720f81 Russell King    2016-08-02  1066  		insert_resource(&iomem_resource, &crashk_boot_res);
+f7f0b7dc720f81 Russell King    2016-08-02  1067  	}
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1068  }
+3c57fb43c8fcbe Mika Westerberg 2010-05-10  1069  
 
-Adrian
-
-----------------------------------------------------------------
-sh updates for v6.8
-
-- sh: vsyscall: Remove unnecessary $(foreach ...)
-- sh: ecovec24: Rename missed backlight field from fbdev to dev
-
-----------------------------------------------------------------
-Geert Uytterhoeven (1):
-      sh: ecovec24: Rename missed backlight field from fbdev to dev
-
-Masahiro Yamada (1):
-      sh: vsyscall: Remove unnecessary $(foreach ...)
-
- arch/sh/boards/mach-ecovec24/setup.c | 2 +-
- arch/sh/kernel/vsyscall/Makefile     | 5 ++---
- 2 files changed, 3 insertions(+), 4 deletions(-)
-
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+-- 
+0-DAY CI Kernel Test Service
+https://github.com/intel/lkp-tests/wiki
