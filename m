@@ -1,63 +1,147 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 74F49125DA
-	for <linux-sh@vger.kernel.org>; Sat, 20 Jan 2024 17:29:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C622F134D0
+	for <linux-sh@vger.kernel.org>; Sun, 21 Jan 2024 01:55:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1705771794; cv=none; b=Nfa28HzfWuekj1v50g2rgYUf93eAkvrIYn/drTSiHikQfkv5lYtaLFiw+bDKg97sIhl9LbkjJ4SXGnVf0aPszit63gGBy0shADtocAfTbyZ+bdx3kXlm0uG8am73kKX/iFZwaoog8lGfZEUto6I+SaaMX/Jgr4teL8seJePyZxM=
+	t=1705802143; cv=none; b=e6xjZbnPUZXT47ierZnLcZ4Y7+k5cGREAI1382FgLztbdToTF+D8Oc1BBp79M5kf2fFTFt2eBEGdFyj+oOzqrowSzW7mgCRxQ7hbG3/CjCe8mj0Oc+TwwXlyHvSHlP1Lqkvh5t1AB9aQ8k02IXsbw3H/gmkU1ZzRFh6DOtNaj8M=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1705771794; c=relaxed/simple;
-	bh=hssXSEq39nvsONlSQ/fl+ueVOXiT1TfoxoA6J5yyZtk=;
-	h=Subject:From:In-Reply-To:References:Message-Id:Date:To:Cc; b=Bs9iqK0w5SsQRNDp0XHljPLo76RE1PV3T9Qfq8AKjKAHcK22v92zD69VygCMzE0SVS3n6RUPsywcVINTaAiyfl2uNC2K747wtCA20q9A614i8Var/c9gyAIS1svqTfdNekGO5GjToAx/XrnQHlpmi037DDZA2pp3TeA5hV3rOIg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SibxHJgi; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1705802143; c=relaxed/simple;
+	bh=F07fcMUCVAhZ2po5qnBsuN6WuYRNvBEurPJ6lfARstY=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=jTeTnbr1kQuYkWJgSU5PkratszdPHdbSFvP4VP2sfTkd43l8Ktv/2pYEpK4gJb7vxQu7PIPSYonf1vLjOVm2xRbMO6AraPhJwcwbWPn3JZEc6i/RXy0W7qLZcxaCb2+fBgKpsVhn41LAFfWxgw8ymPekliSyeppfDqLVtMnUe8U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=Ak+Dibr1; arc=none smtp.client-ip=170.10.129.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SibxHJgi"
-Received: by smtp.kernel.org (Postfix) with ESMTPS id D1F05C433F1;
-	Sat, 20 Jan 2024 17:29:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1705771793;
-	bh=hssXSEq39nvsONlSQ/fl+ueVOXiT1TfoxoA6J5yyZtk=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
-	b=SibxHJgiPXzotxTaTyYUGtNp06GitmgiN/BbZxk4QQ2DRggwOluPEt6rPmDjUoHuG
-	 bfAVEPbTTFF8S6OxcwU4iwMowhQRsmcuzHBrBoumbwAYWf6w9zrsxk2bHnNA52/RkH
-	 8/0p/10XUsznkuM6WrT1jMvavGm6VAU+iuC7m7kDImCPvWp9+9ImL2iRejNgNHUbPM
-	 5xTFkxwEzZhOuFRrsBj6nJGxzcGxKseNNyadExBTfuOnmzrysMIicVXRKCti2OluBG
-	 8LZm/d6tfPrwQ+GCc4Fkvt98a/s73Ah9/oojKGxphpDfQ4LDM9Z3AOGCRYpm6kUkhv
-	 /XrFyquoMeL0w==
-Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
-	by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id C262ED8C970;
-	Sat, 20 Jan 2024 17:29:53 +0000 (UTC)
-Subject: Re: [GIT PULL] sh updates for v6.8
-From: pr-tracker-bot@kernel.org
-In-Reply-To: <f66b859bbf36d33b6998be5d64d536eeb7c75db4.camel@physik.fu-berlin.de>
-References: <f66b859bbf36d33b6998be5d64d536eeb7c75db4.camel@physik.fu-berlin.de>
-X-PR-Tracked-List-Id: <linux-sh.vger.kernel.org>
-X-PR-Tracked-Message-Id: <f66b859bbf36d33b6998be5d64d536eeb7c75db4.camel@physik.fu-berlin.de>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.8-tag1
-X-PR-Tracked-Commit-Id: 99fe83ab3bb0e8aac4d45a9361919794336b2ba8
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 125514880ddd381fdaaa4d11f32afdb55f1c0307
-Message-Id: <170577179379.28838.8226395177609765095.pr-tracker-bot@kernel.org>
-Date: Sat, 20 Jan 2024 17:29:53 +0000
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, Geert Uytterhoeven <geert+renesas@glider.be>, Masahiro Yamada <masahiroy@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh <linux-sh@vger.kernel.org>
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="Ak+Dibr1"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1705802139;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Bn2lkxxGrsi3E9Vcx5NFx8RtBRe4v7W5psgsNCHmDng=;
+	b=Ak+Dibr1FCJBwu59M+szqYrFMurngkYybSCz40DgcaN/FN0foN3qHK03OeTfzPJF6t8FzY
+	ll36sUY5ZsY2GvQgruA6/8fbe2plhiQhbPoe+EwYeSeUXuE9sM6mM4vDjrwUciFP73NYAY
+	sn8bbpEW39QIFr7Iw6eN9Bg4ECWDRZ0=
+Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
+ [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-471-1HnnZH15OaydAjxT0WE9tA-1; Sat, 20 Jan 2024 20:55:35 -0500
+X-MC-Unique: 1HnnZH15OaydAjxT0WE9tA-1
+Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.rdu2.redhat.com [10.11.54.5])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 0A53885A588;
+	Sun, 21 Jan 2024 01:55:35 +0000 (UTC)
+Received: from localhost (unknown [10.72.116.12])
+	by smtp.corp.redhat.com (Postfix) with ESMTPS id B83D651D5;
+	Sun, 21 Jan 2024 01:55:33 +0000 (UTC)
+Date: Sun, 21 Jan 2024 09:55:29 +0800
+From: Baoquan He <bhe@redhat.com>
+To: kernel test robot <lkp@intel.com>
+Cc: linux-kernel@vger.kernel.org, llvm@lists.linux.dev,
+	oe-kbuild-all@lists.linux.dev, kexec@lists.infradead.org,
+	x86@kernel.org, linux-arm-kernel@lists.infradead.org,
+	linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
+	linux-sh@vger.kernel.org, linux-mips@vger.kernel.org,
+	linux-riscv@lists.infradead.org, loongarch@lists.linux.dev,
+	akpm@linux-foundation.org, ebiederm@xmission.com,
+	hbathini@linux.ibm.com, piliu@redhat.com, viro@zeniv.linux.org.uk
+Subject: Re: [PATCH v2 11/14] arm, crash: wrap crash dumping code into crash
+ related ifdefs
+Message-ID: <Zax5kXfiREk2bDbu@MiWiFi-R3L-srv>
+References: <20240119145241.769622-12-bhe@redhat.com>
+ <202401202057.aPg08Eh8-lkp@intel.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <202401202057.aPg08Eh8-lkp@intel.com>
+X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.5
 
-The pull request you sent on Sat, 20 Jan 2024 13:29:11 +0100:
+On 01/20/24 at 08:13pm, kernel test robot wrote:
+> Hi Baoquan,
+> 
+> kernel test robot noticed the following build errors:
+> 
+> [auto build test ERROR on linus/master]
+> [cannot apply to tip/x86/core arm64/for-next/core powerpc/next powerpc/fixes v6.7 next-20240119]
+> [If your patch is applied to the wrong git tree, kindly drop us a note.
+> And when submitting patch, we suggest to use '--base' as documented in
+> https://git-scm.com/docs/git-format-patch#_base_tree_information]
+> 
+> url:    https://github.com/intel-lab-lkp/linux/commits/Baoquan-He/kexec-split-crashkernel-reservation-code-out-from-crash_core-c/20240119-225820
+> base:   linus/master
+> patch link:    https://lore.kernel.org/r/20240119145241.769622-12-bhe%40redhat.com
+> patch subject: [PATCH v2 11/14] arm, crash: wrap crash dumping code into crash related ifdefs
+> config: arm-randconfig-001-20240120 (https://download.01.org/0day-ci/archive/20240120/202401202057.aPg08Eh8-lkp@intel.com/config)
+> compiler: clang version 18.0.0git (https://github.com/llvm/llvm-project d92ce344bf641e6bb025b41b3f1a77dd25e2b3e9)
+> reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20240120/202401202057.aPg08Eh8-lkp@intel.com/reproduce)
+> 
+> If you fix the issue in a separate patch/commit (i.e. not just a new version of
+> the same patch/commit), kindly add following tags
+> | Reported-by: kernel test robot <lkp@intel.com>
+> | Closes: https://lore.kernel.org/oe-kbuild-all/202401202057.aPg08Eh8-lkp@intel.com/
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.8-tag1
+Thanks for reporting this, I can reproduce it.
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/125514880ddd381fdaaa4d11f32afdb55f1c0307
+In the provided config, it has:
 
-Thank you!
+# CONFIG_MMU is not set
+and all kexec/kdump related config items are unset. 
 
+The if (!IS_ENABLED(CONFIG_CRASH_RESERVE)) checking will cause funciton
+reserve_crashkernel() is compiled, but not built in. With CONFIG_MMU=no,
+SECTION_SIZE is undefined on arm. So fix it by wrapping up
+reserve_crashkernel() inside CONFIG_CRASH_RESERVE ifdeffery scope.
+
+
+From d580b65f6aa042233e228aab45609c3de88ab29e Mon Sep 17 00:00:00 2001
+From: Baoquan He <bhe@redhat.com>
+Date: Mon, 15 Jan 2024 22:32:19 -0500
+Subject: [PATCH] arm, crash: wrap crash dumping code into crash related ifdefs
+Content-type: text/plain
+
+Now crash codes under kernel/ folder has been split out from kexec
+code, crash dumping can be separated from kexec reboot in config
+items on arm with some adjustments.
+
+Here use CONFIG_CRASH_RESERVE ifdef to replace CONFIG_KEXEC ifdef.
+
+Signed-off-by: Baoquan He <bhe@redhat.com>
+---
+ arch/arm/kernel/setup.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/kernel/setup.c b/arch/arm/kernel/setup.c
+index ff2299ce1ad7..7b33b157fca0 100644
+--- a/arch/arm/kernel/setup.c
++++ b/arch/arm/kernel/setup.c
+@@ -979,7 +979,7 @@ static int __init init_machine_late(void)
+ }
+ late_initcall(init_machine_late);
+ 
+-#ifdef CONFIG_KEXEC
++#ifdef CONFIG_CRASH_RESERVE
+ /*
+  * The crash region must be aligned to 128MB to avoid
+  * zImage relocating below the reserved region.
+@@ -1066,7 +1066,7 @@ static void __init reserve_crashkernel(void)
+ }
+ #else
+ static inline void reserve_crashkernel(void) {}
+-#endif /* CONFIG_KEXEC */
++#endif /* CONFIG_CRASH_RESERVE*/
+ 
+ void __init hyp_mode_check(void)
+ {
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+2.41.0
+
