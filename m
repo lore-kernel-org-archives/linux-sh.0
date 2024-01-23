@@ -1,199 +1,105 @@
-Received: from wout4-smtp.messagingengine.com (wout4-smtp.messagingengine.com [64.147.123.20])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yw1-f173.google.com (mail-yw1-f173.google.com [209.85.128.173])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 430415F858;
-	Tue, 23 Jan 2024 14:21:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=64.147.123.20
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 454D6481C7;
+	Tue, 23 Jan 2024 16:36:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.173
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1706019701; cv=none; b=OPJs9xME0cXRUlLLAhRFb+ARqA8Ewxpwat3jdiyIxavfu6qb2VoqovQZDpqg0syoqvvbb6gcrtpbm7L7w5wRrDeniihanq0vM0fsRmLlnDVKKJZyIsJgp69yzQi7NRVVC0l4+YSpMze1FzkqecV3LOxQDhvX+tkoH0kXemp5374=
+	t=1706027774; cv=none; b=Hrv1gX1fDPzt5Ni2p5OJSwmPa/WpxfoKStAFVgpjjSLo4zJ+Yv5iePODjX8WPg1u8DnIFPALdykWH7cTfAfZl6hdC8MIqNkIH+10mGEJ8tFDrUs5ylF4CF9gWETcf64U4AhFih/dMg01WpHt7KE3n3WUoRpolcPQ2sn0N+E4nbs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1706019701; c=relaxed/simple;
-	bh=BWxFJ6f+lO7oLYsKbxzaJnDar3I13n2vm78DWeqz9IY=;
-	h=MIME-Version:Message-Id:In-Reply-To:References:Date:From:To:Cc:
-	 Subject:Content-Type; b=FGurJrD2FVc2LQPBukY/6oCCxfahRa/wu+ND5YE51PM39x/do822ysbdaIDpyaGZGCKCeQY2LlsLiAVZRqBJ4lFUV4SztbjbbyH2wBGyOqY26m6eoT3Lbm+PcLHTpVHLpjld4AZk/jh6iqfMOYDuouGM6byvOX+40+fXGMYrJLM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de; spf=pass smtp.mailfrom=arndb.de; dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b=PKayuLNr; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=iaeyMu9I; arc=none smtp.client-ip=64.147.123.20
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="PKayuLNr";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="iaeyMu9I"
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-	by mailout.west.internal (Postfix) with ESMTP id F2C013200A04;
-	Tue, 23 Jan 2024 09:21:36 -0500 (EST)
-Received: from imap51 ([10.202.2.101])
-  by compute5.internal (MEProxy); Tue, 23 Jan 2024 09:21:38 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-	:cc:content-transfer-encoding:content-type:content-type:date
-	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm2; t=1706019696;
-	 x=1706106096; bh=Wb2LadyDq3EncKOixdkKXF1xf+5ToI114DbbSpnU1nY=; b=
-	PKayuLNrs/RNOnY9Pm3PTRTDtc1BuvHxlCD7DuFwY3X2d3w/3n1RTZ9LkQQmom3/
-	w6idujhcC4sf3BbCM5+B3rKAeN6o49DZxzKkXiUHhjhwBc48BWX6QQG9FBbGrESz
-	dY9isiD4klmX7hDZxIpR0XAo9bx2f3HmXbcXHrgnWu377wYBVGHNDJeydLYODUm3
-	R2v4IQChjpBjq1THZkrhojBT62tPQZhhhJX7vhM3GS1LAQ5MUjk8AsVhFsBFrQgH
-	doe9VBd2+6WHeaR4G96Yes5cYzvayqaI2fWvhDYf/ZZHo1Zb7cz6wduRTcnHpKrW
-	6kE0Ci1RccWeYTA5fc/t/A==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=1706019696; x=
-	1706106096; bh=Wb2LadyDq3EncKOixdkKXF1xf+5ToI114DbbSpnU1nY=; b=i
-	aeyMu9IQJm8viLVFcRG2+AfApl0inhRKl32d9bxe+ynOLxLBL2s/6xnBdR+sart7
-	wAZAjiA4uL/DTaIWBboS2/YhhyDMgMYyxOQ4f604bM7uJzQt+e/9izTFd+xJifVo
-	xQ50WHbYZD/V2ZAwYra6Pek4hm9CLQF0AsKq4BVdceSEFeVHgMY+a42IjHl2qdAC
-	3tidNdDH6brWPgcA3qtQ97S9I8mHpThso03DUhwzCMsTMvIaulq1IZgWkWvjI17h
-	qB/abhBsPAnPQnf0Ws70h0wwPbXzEqjR98NOYls5N0AIzgYtr4Y02V+Cwfh6GpX1
-	RL81i2NKrtG69Wlsq/MXA==
-X-ME-Sender: <xms:b8uvZZutZyYhjvm11xsbDHd-yctTohxrZ96EclPn7v7Uk295CAYxIA>
-    <xme:b8uvZSdJ-DzXvh4tLWbWKsloyBAkMqIGhWu0zDscTRdh84QtuWV6_vntH6OGKUGWc
-    o9tQr6gGnuPR811080>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvkedrvdekkedgieduucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
-    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
-    cujfgurhepofgfggfkjghffffhvfevufgtgfesthhqredtreerjeenucfhrhhomhepfdet
-    rhhnugcuuegvrhhgmhgrnhhnfdcuoegrrhhnugesrghrnhgusgdruggvqeenucggtffrrg
-    htthgvrhhnpefgkeeuleegieeghfduudeltdekfeffjeeuleehleefudettddtgfevueef
-    feeigeenucffohhmrghinhepkhgvrhhnvghlrdhorhhgnecuvehluhhsthgvrhfuihiivg
-    eptdenucfrrghrrghmpehmrghilhhfrhhomheprghrnhgusegrrhhnuggsrdguvg
-X-ME-Proxy: <xmx:b8uvZcyHxEDFbucCwS_wdJTB7xZCjv4VpoI1kQNX4uuVdNYjj6sBQw>
-    <xmx:b8uvZQOGooI-lZsO5yozfuK-_cjQpfLDCPfU0iE3UrR2Mn2j9dL4qQ>
-    <xmx:b8uvZZ-FoQRRZFNwPBfm4zrKoG5PrhcOqTLtRYQnZkkS4F1E545I9g>
-    <xmx:cMuvZdVu3pmkvuhw0wgTNHs20QG_zyCJ2SI5aNTi4b7I7-93_VGCkA>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.nyi.internal (Postfix, from userid 501)
-	id C023DB6008D; Tue, 23 Jan 2024 09:21:35 -0500 (EST)
-X-Mailer: MessagingEngine.com Webmail Interface
-User-Agent: Cyrus-JMAP/3.11.0-alpha0-119-ga8b98d1bd8-fm-20240108.001-ga8b98d1b
+	s=arc-20240116; t=1706027774; c=relaxed/simple;
+	bh=slEEUvS5yWbLFstaB903ZyuNsFWyRLdO8mIwBpg5IAU=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=P6VqP3r2hMkiFn6FnnvSAYLoCHGQgwU7w465Se5b5AaXUHGDl1KJ+REQTCxaY/+PqW+gryshJgSZpE/KQK7uBHHdQRbY+u+koKBAMrb3VfB9ovYd6bp6yRLKtE1N8heRGuSKCDWS6ZCmvSyUXnSFAwKyVojcC2s6Hbf1peevgQo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.128.173
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-yw1-f173.google.com with SMTP id 00721157ae682-5ff7dd8d7ceso39502627b3.0;
+        Tue, 23 Jan 2024 08:36:12 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1706027771; x=1706632571;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=kiyJdU6PhJ45i7bpAb37xxoLaCkKdVvy6nsNT0rREKI=;
+        b=fqMAkn7fSTalC6KTfzhiFjuE6tGpbOHxkxaWmiZFClCPzNA6pj8UOH0RN3AGJWuqI0
+         rWUaLnfa8HyPI1bf2fvESxAFecFSZRBejo7WJ8zR5J3INzSI3ttoaykSuNTrdVhCn37b
+         IW6c5qbKgTCPtXD4EbgUFyVK7zWAgTK1iU0gyf2kAjmwlhrWzbaLIgh5u7bSbhDGirsY
+         1t15TF4m4TrBNOr0vwFWAQRObQR9KXMhDlgAPMoe51Fa9WZrmXsaThRY+/iwuQQGoNyQ
+         +RQuPnFHcM2dLI+JCanKnsDGYV2yRJ2+T09G3lXJWm3SmocnUkWFe9tGcf/fQUBgPrfP
+         HXKQ==
+X-Gm-Message-State: AOJu0YzxfKPMaT6UlMWlGpT69MbBR3xZMTD2IljXjGK+wcf7osd4tzM6
+	nauWHNyP0JfcRwYHn7XBkA1eZs5cVloQF7bSVFvaHd8Pq64dPuKXxw4wlca7Fg4=
+X-Google-Smtp-Source: AGHT+IE5K5XiSLyq3cMkoMyANm3Uj1BZNOKVoyZ1EF23j+Yi14/cnOWshf4GezQ5elVZTh9TcX4CYw==
+X-Received: by 2002:a0d:fec1:0:b0:5ff:5d73:2fb1 with SMTP id o184-20020a0dfec1000000b005ff5d732fb1mr5732575ywf.93.1706027770173;
+        Tue, 23 Jan 2024 08:36:10 -0800 (PST)
+Received: from mail-yw1-f174.google.com (mail-yw1-f174.google.com. [209.85.128.174])
+        by smtp.gmail.com with ESMTPSA id cj3-20020a05690c0b0300b005a7d46770f2sm10110488ywb.83.2024.01.23.08.36.09
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 23 Jan 2024 08:36:09 -0800 (PST)
+Received: by mail-yw1-f174.google.com with SMTP id 00721157ae682-60032f9e510so8447797b3.2;
+        Tue, 23 Jan 2024 08:36:09 -0800 (PST)
+X-Received: by 2002:a81:4746:0:b0:5fc:d382:4bfc with SMTP id
+ u67-20020a814746000000b005fcd3824bfcmr5185832ywa.97.1706027769362; Tue, 23
+ Jan 2024 08:36:09 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Message-Id: <0229fa60-2d87-4b1c-b9f0-6f04c6e4dbdd@app.fastmail.com>
-In-Reply-To: <d03e90ca-8485-4d1b-5ec1-c3398e0e8da@linux-m68k.org>
-References: 
- <CAHk-=wiB4iHTtfZKiy5pC24uOjun4fbj4kSX0=ZnGsOXadMf6g@mail.gmail.com>
- <20240123111235.3097079-1-geert@linux-m68k.org>
- <d03e90ca-8485-4d1b-5ec1-c3398e0e8da@linux-m68k.org>
-Date: Tue, 23 Jan 2024 15:21:14 +0100
-From: "Arnd Bergmann" <arnd@arndb.de>
-To: "Geert Uytterhoeven" <geert@linux-m68k.org>, linux-kernel@vger.kernel.org
-Cc: linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
- sparclinux@vger.kernel.org, intel-xe@lists.freedesktop.org,
- dri-devel@lists.freedesktop.org, linux-mtd@lists.infradead.org,
- mpi3mr-linuxdrv.pdl@broadcom.com, linux-scsi@vger.kernel.org,
- "Chris Zankel" <chris@zankel.net>, "Max Filippov" <jcmvbkbc@gmail.com>,
- linux-hardening@vger.kernel.org, qat-linux@intel.com,
- linux-crypto@vger.kernel.org,
- "intel-wired-lan@lists.osuosl.org" <intel-wired-lan@lists.osuosl.org>,
- Netdev <netdev@vger.kernel.org>
-Subject: Re: Build regressions/improvements in v6.8-rc1
-Content-Type: text/plain;charset=utf-8
+References: <20240123132335.2034611-1-arnd@kernel.org> <1ab7594855718e24ddc629ebbab1edc8bdcd799a.camel@physik.fu-berlin.de>
+ <8d37ad26-efdf-4e10-9a72-d49e37de0307@app.fastmail.com> <f00ef92b6ed93babe677e2585a7cad26347d2988.camel@physik.fu-berlin.de>
+In-Reply-To: <f00ef92b6ed93babe677e2585a7cad26347d2988.camel@physik.fu-berlin.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 23 Jan 2024 17:35:56 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdVZp6aM8DmC-VrOqPwh=9DLSDmeDW0k=thOah-Di2Xh5w@mail.gmail.com>
+Message-ID: <CAMuHMdVZp6aM8DmC-VrOqPwh=9DLSDmeDW0k=thOah-Di2Xh5w@mail.gmail.com>
+Subject: Re: [PATCH] sh: use generic uaccess
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Arnd Bergmann <arnd@arndb.de>, Arnd Bergmann <arnd@kernel.org>, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-riscv@lists.infradead.org
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, Jan 23, 2024, at 12:45, Geert Uytterhoeven wrote:
+Hi Adrian,
 
->> 68 error regressions:
+On Tue, Jan 23, 2024 at 3:20=E2=80=AFPM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> On Tue, 2024-01-23 at 15:14 +0100, Arnd Bergmann wrote:
+> > On Tue, Jan 23, 2024, at 14:55, John Paul Adrian Glaubitz wrote:
+> > >
+> > > Wouldn't that make these operations slower or do you think that GCC i=
+s able
+> > > to optimize this well enough?
+> >
+> > It's only single load/store instructions, so it should make no
+> > difference. If anything, the generic code should allow the compiler
+> > to have better register allocation and produce better output than
+> > the assembler version (which is how this avoids the ICE), but it's
+> > unlikely to be noticeably either.
 >
->>  + /kisskb/src/arch/powerpc/sysdev/udbg_memcons.c: error: no previous=
- prototype for 'memcons_getc' [-Werror=3Dmissing-prototypes]:  =3D> 80:5
->>  + /kisskb/src/arch/powerpc/sysdev/udbg_memcons.c: error: no previous=
- prototype for 'memcons_getc_poll' [-Werror=3Dmissing-prototypes]:  =3D>=
- 57:5
->>  + /kisskb/src/arch/powerpc/sysdev/udbg_memcons.c: error: no previous=
- prototype for 'memcons_putc' [-Werror=3Dmissing-prototypes]:  =3D> 44:6
->
-> powerpc-gcc{5,12,13}/ppc64_book3e_allmodconfig
+> I have not seen an ICE on v6.8-rc1 so far. What config was it that trigge=
+red it?
 
-I now sent patches for powerpc booke warnings
+v6.8-rc1/sh4-gcc12/sh-allmodconfig
+v6.8-rc1/sh4-gcc11/sh-allyesconfig
+v6.8-rc1/sh4-gcc13/sh-allmodconfig
+v6.8-rc1/sh4-gcc13/sh-allyesconfig
 
->>  + /kisskb/src/arch/sh/kernel/cpu/init.c: error: no previous prototyp=
-e for 'l2_cache_init' [-Werror=3Dmissing-prototypes]:  =3D> 99:29
->
-> sh4-gcc1[123]/se7{619,750}_defconfig
-> sh4-gcc1[123]/sh-{all{mod,no,yes},def}config
-> sh4-gcc11/sh-allnoconfig
+e.g. http://kisskb.ellerman.id.au/kisskb/buildresult/15111229/
 
-I assume the sh maintainers will eventually get to that
+Gr{oetje,eeting}s,
 
->>  + /kisskb/src/arch/sparc/include/asm/floppy_64.h: error: no previous=
- prototype for 'sparc_floppy_irq' [-Werror=3Dmissing-prototypes]:  =3D> =
-200:13
->>  + /kisskb/src/arch/sparc/include/asm/floppy_64.h: error: no previous=
- prototype for 'sun_pci_fd_dma_callback' [-Werror=3Dmissing-prototypes]:=
-  =3D> 437:6
->
-> sparc64-gcc{5,11,12,13}/sparc64-allmodconfig
+                        Geert
 
-Andrew Morton did a patch for the sparc warnings, and Andreas Larsson
-is joining as a maintainer, so hopefully he can pick that up soon.
-> sparc64-gcc{5,1[123]}/sparc64-allmodconfig
->
->>  + /kisskb/src/arch/sparc/vdso/vclock_gettime.c: error: no previous p=
-rototype for '__vdso_clock_gettime' [-Werror=3Dmissing-prototypes]:  =3D=
-> 254:1
->>  + /kisskb/src/arch/sparc/vdso/vclock_gettime.c: error: no previous p=
-rototype for '__vdso_clock_gettime_stick' [-Werror=3Dmissing-prototypes]=
-:  =3D> 282:1
->>  + /kisskb/src/arch/sparc/vdso/vclock_gettime.c: error: no previous p=
-rototype=20
+--=20
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
 
-There are prototypes in include/vdso/gettime.h that should be
-used here, but unfortunately the sparc implementation does
-not match the prototypes because sparc is missing the gettime64
-support.
-
-> sparc64-gcc{5,12,13}/sparc64-{allno,def}config
-> sparc64-gcc11/sparc64-{all{mod,no},def}config
->
->>  + /kisskb/src/arch/x86/um/shared/sysdep/kernel-offsets.h: error: no =
-previous prototype for =E2=80=98foo=E2=80=99 [-Werror=3Dmissing-prototyp=
-es]:  =3D> 9:6
->
-> um-x86_64-gcc12/um-{all{mod,yes},def}config
-
-I made a patch for arch/um yesterday.
-
-> sparc64-gcc1[12]/sparc64-allmodconfig
->
->>  + /kisskb/src/drivers/scsi/mpi3mr/mpi3mr_transport.c: error: the fra=
-me size of 1680 bytes is larger than 1536 bytes [-Werror=3Dframe-larger-=
-than=3D]:  =3D> 1818:1
-
-I sent a patch in November when the regression started, missed
-the reply about needing another change
-https://lore.kernel.org/all/CAFdVvOxH4UQjww4124E2ttuTgknzkHoPxVSFOQgLfoV=
-_dkANwQ@mail.gmail.com/
-
->>  + {standard input}: Error: displacement to undefined symbol .L105 ov=
-erflows 8-bit field :  =3D> 590, 593
->>  + {standard input}: Error: displacement to undefined symbol .L135 ov=
-erflows 8-bit field :  =3D> 603
->>  + {standard input}: Error: displacement to undefined symbol .L140 ov=
-erflows 8-bit field :  =3D> 606
->>  + {standard input}: Error: displacement to undefined symbol .L76 ove=
-rflows 12-bit field:  =3D> 591, 594
->>  + {standard input}: Error: displacement to undefined symbol .L77 ove=
-rflows 8-bit field : 607 =3D> 607, 582, 585
->>  + {standard input}: Error: displacement to undefined symbol .L97 ove=
-rflows 12-bit field:  =3D> 607
->>  + {standard input}: Error: pcrel too far: 604, 590, 577, 593, 572, 5=
-69, 598, 599, 596, 610 =3D> 610, 574, 599, 569, 598, 596, 601, 590, 604,=
- 595, 572, 577, 593
->
-> SH ICE crickets
-
-Linus did a patch for the syscall, and I sent another one for
-arch/sh to prevent this from happening again:
-
-https://lore.kernel.org/all/CAHk-=3Dwjh6Cypo8WC-McXgSzCaou3UXccxB+7PVeSu=
-GR8AjCphg@mail.gmail.com/
-https://lore.kernel.org/all/07d8877b-d933-46f4-8ca4-c10ed602f37e@app.fas=
-tmail.com/
-
-Resent mine now.
-
-      Arnd
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
