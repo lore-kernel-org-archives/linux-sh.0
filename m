@@ -1,147 +1,135 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oo1-f44.google.com (mail-oo1-f44.google.com [209.85.161.44])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C622F134D0
-	for <linux-sh@vger.kernel.org>; Sun, 21 Jan 2024 01:55:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EF00F5FDCC
+	for <linux-sh@vger.kernel.org>; Tue, 23 Jan 2024 00:36:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.161.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1705802143; cv=none; b=e6xjZbnPUZXT47ierZnLcZ4Y7+k5cGREAI1382FgLztbdToTF+D8Oc1BBp79M5kf2fFTFt2eBEGdFyj+oOzqrowSzW7mgCRxQ7hbG3/CjCe8mj0Oc+TwwXlyHvSHlP1Lqkvh5t1AB9aQ8k02IXsbw3H/gmkU1ZzRFh6DOtNaj8M=
+	t=1705970168; cv=none; b=KddFKdycp1fKwbm5OIaHIE9V9vGH45Bm6VTzks3rsRInvwdBllZvE+9tkKVAv3n7NWFLH2Rt20EdeHWBZtGdNtOrGIW51KKO6XBbCeddTh+96rqE/kqE7xb/FQzZvmE+LuoBB5VIqrEjEtjp+kASi1KJ1hpSdr+K0k3b4rj49bM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1705802143; c=relaxed/simple;
-	bh=F07fcMUCVAhZ2po5qnBsuN6WuYRNvBEurPJ6lfARstY=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=jTeTnbr1kQuYkWJgSU5PkratszdPHdbSFvP4VP2sfTkd43l8Ktv/2pYEpK4gJb7vxQu7PIPSYonf1vLjOVm2xRbMO6AraPhJwcwbWPn3JZEc6i/RXy0W7qLZcxaCb2+fBgKpsVhn41LAFfWxgw8ymPekliSyeppfDqLVtMnUe8U=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=Ak+Dibr1; arc=none smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1705970168; c=relaxed/simple;
+	bh=ZK9PQLCXLKqeI6EmNJVF0wuj6cnB4GzhbTbrgojBZ9E=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 MIME-Version; b=N+ZaFjb+n+o0T34M3YLrMGDR4meINTljSnVd9Pd8A39rxyk6KPkTQcQlAktMqMFHT8Bueh8zgNYe5BymU53QAORG4wKgSHf4/65r5NBuBpHQG6Qxr93yQeysoqvC3KSW2Q7w1k4L7Cd97nzhEb/eGZtfsDHt18r1YmINqLEPKM8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=chromium.org; spf=pass smtp.mailfrom=chromium.org; dkim=pass (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b=kfSIlFZA; arc=none smtp.client-ip=209.85.161.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=chromium.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=chromium.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="Ak+Dibr1"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1705802139;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Bn2lkxxGrsi3E9Vcx5NFx8RtBRe4v7W5psgsNCHmDng=;
-	b=Ak+Dibr1FCJBwu59M+szqYrFMurngkYybSCz40DgcaN/FN0foN3qHK03OeTfzPJF6t8FzY
-	ll36sUY5ZsY2GvQgruA6/8fbe2plhiQhbPoe+EwYeSeUXuE9sM6mM4vDjrwUciFP73NYAY
-	sn8bbpEW39QIFr7Iw6eN9Bg4ECWDRZ0=
-Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
- [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-471-1HnnZH15OaydAjxT0WE9tA-1; Sat, 20 Jan 2024 20:55:35 -0500
-X-MC-Unique: 1HnnZH15OaydAjxT0WE9tA-1
-Received: from smtp.corp.redhat.com (int-mx05.intmail.prod.int.rdu2.redhat.com [10.11.54.5])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 0A53885A588;
-	Sun, 21 Jan 2024 01:55:35 +0000 (UTC)
-Received: from localhost (unknown [10.72.116.12])
-	by smtp.corp.redhat.com (Postfix) with ESMTPS id B83D651D5;
-	Sun, 21 Jan 2024 01:55:33 +0000 (UTC)
-Date: Sun, 21 Jan 2024 09:55:29 +0800
-From: Baoquan He <bhe@redhat.com>
-To: kernel test robot <lkp@intel.com>
-Cc: linux-kernel@vger.kernel.org, llvm@lists.linux.dev,
-	oe-kbuild-all@lists.linux.dev, kexec@lists.infradead.org,
-	x86@kernel.org, linux-arm-kernel@lists.infradead.org,
-	linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
-	linux-sh@vger.kernel.org, linux-mips@vger.kernel.org,
-	linux-riscv@lists.infradead.org, loongarch@lists.linux.dev,
-	akpm@linux-foundation.org, ebiederm@xmission.com,
-	hbathini@linux.ibm.com, piliu@redhat.com, viro@zeniv.linux.org.uk
-Subject: Re: [PATCH v2 11/14] arm, crash: wrap crash dumping code into crash
- related ifdefs
-Message-ID: <Zax5kXfiREk2bDbu@MiWiFi-R3L-srv>
-References: <20240119145241.769622-12-bhe@redhat.com>
- <202401202057.aPg08Eh8-lkp@intel.com>
+	dkim=pass (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="kfSIlFZA"
+Received: by mail-oo1-f44.google.com with SMTP id 006d021491bc7-598699c0f1eso2026825eaf.2
+        for <linux-sh@vger.kernel.org>; Mon, 22 Jan 2024 16:36:05 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=chromium.org; s=google; t=1705970165; x=1706574965; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=k6q/05jnWeDl9wgQC0c2qm9hOe5mPaDwj5Q60EimLqQ=;
+        b=kfSIlFZA6fnZU+ngo0vOwEzFDExHHTpN9Sow18ZXhBmwklUjezd2BJwZiMKy0piJTl
+         4S/GC0HoUkS+YyL+Os4PbRA3MBBX89iR5oWnbdTnM7yJzHxrTZIRFmOU53gEIPpylooi
+         prjdon2a1bSZf5Zp3sMoN16NHSNlQWhdqYDCk=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1705970165; x=1706574965;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=k6q/05jnWeDl9wgQC0c2qm9hOe5mPaDwj5Q60EimLqQ=;
+        b=TC1cjERAcr5WuM7tnkADacMfcBsGKRhwh7TcDd4QC/lsxiKST8e3OWCz1i42QlFbLV
+         Nf+oXJrlmxAX4Vmdj68K5+M0sBqrhH86NpYlMhKHMRhvM5thjjhW+bEi8qG53gCp9+VQ
+         rLThxYzcwWrAWyZ+AUHDjQ6VUx2yH+jiZz554ooSzvgKPs3OKTSVhTSULLWmvht1Erxe
+         UiSiVVzxWzK8pwmPSVZaOAIfqs/+R/bwMytiEowRlsMj3ky4eVwZmfWj28M7Pd0Fo3jR
+         0/hMSTcI3jW6vdntMEzOVPGC8VzzSVoSVpBYjBLIbXG+kJoY8jHdfQiwxLFoicsIVBcR
+         K5yA==
+X-Gm-Message-State: AOJu0YxLveFYt0ZYV9Arc02Oa4PiNRdzlV3leeijjo6J2ifgtYGlISc0
+	w7KFeh5TVPtNBZd8deSO3TrEQ8D78PtoWJhz5B0bcdhduO8e3C551dmQBJBMvQ==
+X-Google-Smtp-Source: AGHT+IFKzSLUEO//rfGN7z0yklmQ5nmdIr50yIhfprlff4HJFkLJGsjAr2HPDwPu40EicdjBjXXTcQ==
+X-Received: by 2002:a05:6358:6f89:b0:170:c91a:b466 with SMTP id s9-20020a0563586f8900b00170c91ab466mr3835144rwn.23.1705970164998;
+        Mon, 22 Jan 2024 16:36:04 -0800 (PST)
+Received: from www.outflux.net ([198.0.35.241])
+        by smtp.gmail.com with ESMTPSA id 8-20020a631648000000b005ccf10e73b8sm8711311pgw.91.2024.01.22.16.35.56
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 22 Jan 2024 16:35:59 -0800 (PST)
+From: Kees Cook <keescook@chromium.org>
+To: linux-hardening@vger.kernel.org
+Cc: Kees Cook <keescook@chromium.org>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	linux-sh@vger.kernel.org,
+	"Gustavo A. R. Silva" <gustavoars@kernel.org>,
+	Bill Wendling <morbo@google.com>,
+	Justin Stitt <justinstitt@google.com>,
+	linux-kernel@vger.kernel.org
+Subject: [PATCH 73/82] sh: Refactor intentional wrap-around test
+Date: Mon, 22 Jan 2024 16:27:48 -0800
+Message-Id: <20240123002814.1396804-73-keescook@chromium.org>
+X-Mailer: git-send-email 2.34.1
+In-Reply-To: <20240122235208.work.748-kees@kernel.org>
+References: <20240122235208.work.748-kees@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <202401202057.aPg08Eh8-lkp@intel.com>
-X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.5
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1873; i=keescook@chromium.org;
+ h=from:subject; bh=ZK9PQLCXLKqeI6EmNJVF0wuj6cnB4GzhbTbrgojBZ9E=;
+ b=owEBbQKS/ZANAwAKAYly9N/cbcAmAcsmYgBlrwgLPxEAqie9ltCp6SXpHxJz4a8frf9JpRCdW
+ Ks3k+P95JSJAjMEAAEKAB0WIQSlw/aPIp3WD3I+bhOJcvTf3G3AJgUCZa8ICwAKCRCJcvTf3G3A
+ JvckEACcdyYY2SIWpI3UA8mAOkYcOxPIionsaXUa6hl6QfIhatPHcfLoS0jDS13mORx6DesE8QR
+ cEMphGUFZaW309UODp7aj2yCE0TFoSPXkaVTK17BfmoRQIwhtk0f8XfbAE5ingmsTuXMtAnJOsC
+ TuJCmFXEgdPGKvUH3Xb36aFDcfbo+XCAUnEJNX2SZCgGukPkeLLLbjS8PvuLCJtMMEnECnnR1B1
+ G/OOQHRWemIAHGZHOxhqiqTULKLtQDEb9ah+eWfzVXVhPlSrg2dTXOvPz6UzqYDBuoGKwF5BOIt
+ eXzxRTA/iyaVaOWQawo8BpS7RbJQO6ZgXrwtWcTjjEheh7JWOgHGzCIKRfW2kG45QTP3evtFpIA
+ kOvZdB51R6QuF6t47RBV550QbgsF80t2UmsPYjsToEE0nPBdZ26Iq3l2lQxqDG1fxHv71r2LzjW
+ DH+rai0uNuRUpzJ7IMpon9RPoW2yuFaProOmaiX21mVY9baklpdewo53p9mh/6iRCJ/vuUq/xSi
+ kmUDoE7kbNyXIda7pkfffdCgpbBKQDzjA8F8iTmT9Zrw/O0z3Om2bC/qlgXNnZQLwenVATU5Qrj
+ 1otM6joYjNE87mYWGpZ614abu55pynw/87WeqCPNKZuArSS6+IqDTjPVGcwDtTjK4KqNff/y6iO TlhNUzg3ntPt4Qw==
+X-Developer-Key: i=keescook@chromium.org; a=openpgp; fpr=A5C3F68F229DD60F723E6E138972F4DFDC6DC026
+Content-Transfer-Encoding: 8bit
 
-On 01/20/24 at 08:13pm, kernel test robot wrote:
-> Hi Baoquan,
-> 
-> kernel test robot noticed the following build errors:
-> 
-> [auto build test ERROR on linus/master]
-> [cannot apply to tip/x86/core arm64/for-next/core powerpc/next powerpc/fixes v6.7 next-20240119]
-> [If your patch is applied to the wrong git tree, kindly drop us a note.
-> And when submitting patch, we suggest to use '--base' as documented in
-> https://git-scm.com/docs/git-format-patch#_base_tree_information]
-> 
-> url:    https://github.com/intel-lab-lkp/linux/commits/Baoquan-He/kexec-split-crashkernel-reservation-code-out-from-crash_core-c/20240119-225820
-> base:   linus/master
-> patch link:    https://lore.kernel.org/r/20240119145241.769622-12-bhe%40redhat.com
-> patch subject: [PATCH v2 11/14] arm, crash: wrap crash dumping code into crash related ifdefs
-> config: arm-randconfig-001-20240120 (https://download.01.org/0day-ci/archive/20240120/202401202057.aPg08Eh8-lkp@intel.com/config)
-> compiler: clang version 18.0.0git (https://github.com/llvm/llvm-project d92ce344bf641e6bb025b41b3f1a77dd25e2b3e9)
-> reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20240120/202401202057.aPg08Eh8-lkp@intel.com/reproduce)
-> 
-> If you fix the issue in a separate patch/commit (i.e. not just a new version of
-> the same patch/commit), kindly add following tags
-> | Reported-by: kernel test robot <lkp@intel.com>
-> | Closes: https://lore.kernel.org/oe-kbuild-all/202401202057.aPg08Eh8-lkp@intel.com/
+In an effort to separate intentional arithmetic wrap-around from
+unexpected wrap-around, we need to refactor places that depend on this
+kind of math. One of the most common code patterns of this is:
 
-Thanks for reporting this, I can reproduce it.
+	VAR + value < VAR
 
-In the provided config, it has:
+Notably, this is considered "undefined behavior" for signed and pointer
+types, which the kernel works around by using the -fno-strict-overflow
+option in the build[1] (which used to just be -fwrapv). Regardless, we
+want to get the kernel source to the position where we can meaningfully
+instrument arithmetic wrap-around conditions and catch them when they
+are unexpected, regardless of whether they are signed[2], unsigned[3],
+or pointer[4] types.
 
-# CONFIG_MMU is not set
-and all kexec/kdump related config items are unset. 
+Refactor open-coded wrap-around addition test to use add_would_overflow().
+This paves the way to enabling the wrap-around sanitizers in the future.
 
-The if (!IS_ENABLED(CONFIG_CRASH_RESERVE)) checking will cause funciton
-reserve_crashkernel() is compiled, but not built in. With CONFIG_MMU=no,
-SECTION_SIZE is undefined on arm. So fix it by wrapping up
-reserve_crashkernel() inside CONFIG_CRASH_RESERVE ifdeffery scope.
-
-
-From d580b65f6aa042233e228aab45609c3de88ab29e Mon Sep 17 00:00:00 2001
-From: Baoquan He <bhe@redhat.com>
-Date: Mon, 15 Jan 2024 22:32:19 -0500
-Subject: [PATCH] arm, crash: wrap crash dumping code into crash related ifdefs
-Content-type: text/plain
-
-Now crash codes under kernel/ folder has been split out from kexec
-code, crash dumping can be separated from kexec reboot in config
-items on arm with some adjustments.
-
-Here use CONFIG_CRASH_RESERVE ifdef to replace CONFIG_KEXEC ifdef.
-
-Signed-off-by: Baoquan He <bhe@redhat.com>
+Link: https://git.kernel.org/linus/68df3755e383e6fecf2354a67b08f92f18536594 [1]
+Link: https://github.com/KSPP/linux/issues/26 [2]
+Link: https://github.com/KSPP/linux/issues/27 [3]
+Link: https://github.com/KSPP/linux/issues/344 [4]
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Kees Cook <keescook@chromium.org>
 ---
- arch/arm/kernel/setup.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/sh/kernel/sys_sh.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/kernel/setup.c b/arch/arm/kernel/setup.c
-index ff2299ce1ad7..7b33b157fca0 100644
---- a/arch/arm/kernel/setup.c
-+++ b/arch/arm/kernel/setup.c
-@@ -979,7 +979,7 @@ static int __init init_machine_late(void)
- }
- late_initcall(init_machine_late);
+diff --git a/arch/sh/kernel/sys_sh.c b/arch/sh/kernel/sys_sh.c
+index a5a7b33ed81a..e390caeb8c00 100644
+--- a/arch/sh/kernel/sys_sh.c
++++ b/arch/sh/kernel/sys_sh.c
+@@ -66,7 +66,7 @@ asmlinkage int sys_cacheflush(unsigned long addr, unsigned long len, int op)
+ 	 * Verify that the specified address region actually belongs
+ 	 * to this process.
+ 	 */
+-	if (addr + len < addr)
++	if (add_would_overflow(addr, len))
+ 		return -EFAULT;
  
--#ifdef CONFIG_KEXEC
-+#ifdef CONFIG_CRASH_RESERVE
- /*
-  * The crash region must be aligned to 128MB to avoid
-  * zImage relocating below the reserved region.
-@@ -1066,7 +1066,7 @@ static void __init reserve_crashkernel(void)
- }
- #else
- static inline void reserve_crashkernel(void) {}
--#endif /* CONFIG_KEXEC */
-+#endif /* CONFIG_CRASH_RESERVE*/
- 
- void __init hyp_mode_check(void)
- {
+ 	mmap_read_lock(current->mm);
 -- 
-2.41.0
+2.34.1
 
