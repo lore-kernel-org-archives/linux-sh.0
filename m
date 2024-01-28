@@ -1,118 +1,109 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f42.google.com (mail-wm1-f42.google.com [209.85.128.42])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 982FC11C84
-	for <linux-sh@vger.kernel.org>; Fri, 26 Jan 2024 06:07:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1BC541113;
+	Sun, 28 Jan 2024 01:28:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1706249259; cv=none; b=A1pAW2D24LdHbDKn02cZJ7z4kADz+Sxg05ofZzuFsomJk+YhQQl4TmsngOeKHGa6lZa3FOw2m+SCHH3Plt+Wl40BZWRJpv1r2Fckq0QCL6MFhH74Z/+EhuU54yAQVWdxsD8NtUQsv/sXcuxD+rdcV5se0OM8FVw3RmQBywLd4XY=
+	t=1706405314; cv=none; b=Qwt8xtXah76J5rS5bxF3dQeUEzJ12zmagObSJmyPF2e1AQYG90UOxjPrlQp2LaL5oY98BfLw4VAh2dX85CzYdi26fageoStOcjUs5GB3Q0q7cNGs6M07ED9TN21mhoXsztaewgxZSqZ8ZD6Tg4bFc7yatLFrgDuwtRjCDODJ2i8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1706249259; c=relaxed/simple;
-	bh=DAbJ/11kkWV3NfOW/ZZ47OvYR00ddrGOrBip2EkiS9w=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=qxXGADP/KvdlyTJDuRnBqxT2SaWbsifVHI8Xy60AcUDcO1iKChKkEGdL1PxmU3v/UKBbjP/zDseA5zcjK5zmcqZ3pLFMAx58KdVpI45Bf8vLR0okYMP2PxXIMIlA6Y3Nmg7N0ufe+exyWqcUwWfApbxzOkfZg3Qo6buC9KNASkc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=DU0CFc04; arc=none smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1706405314; c=relaxed/simple;
+	bh=+4n89C+gEBtsQDw1jUm0K1mb6NFfpf8Q6IFymcXODF4=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=BD7z5VTrQGkGADBhcms8mLrH38xzj+VJXarU8unfKhl491nSTJVz7SiYFV26dKH/XKaZC/b8s4gEMhncFDuadBSoqNsQIh6qqCgyiCFthoZi+fHcAw3dmauq3L7YKJVJfg9Co6EGx0P+t6hQDVE86iKGiljl9zUgEjfZ/JLnSVA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=R9KKIBt6; arc=none smtp.client-ip=209.85.128.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="DU0CFc04"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1706249256;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=z72p/1NCFMOucyopgj4TN6714b15v6kjfWKT6hd64FE=;
-	b=DU0CFc04VHmtu8ZLll/iRJhhcriw3TXzpgiHxUwNFZXgkEa/mfy5OAChi7EKfUUi+w95KP
-	ikpU+H8JLdMAelFyRmPNPXx41hFnFywhnkJkxSb1u8lmdVsBWJZfC7JSPl5JEaXu1pOC9t
-	lh7KL7c6hbYjIVfvjybBUjFre5sqaew=
-Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
- [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-551-Dvx_BaF4N36KKDvV0yy-Nw-1; Fri, 26 Jan 2024 01:07:33 -0500
-X-MC-Unique: Dvx_BaF4N36KKDvV0yy-Nw-1
-Received: from smtp.corp.redhat.com (int-mx09.intmail.prod.int.rdu2.redhat.com [10.11.54.9])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 19D621013664;
-	Fri, 26 Jan 2024 06:07:32 +0000 (UTC)
-Received: from localhost (unknown [10.72.116.117])
-	by smtp.corp.redhat.com (Postfix) with ESMTPS id 925AD492BC6;
-	Fri, 26 Jan 2024 06:07:30 +0000 (UTC)
-Date: Fri, 26 Jan 2024 14:07:27 +0800
-From: Baoquan He <bhe@redhat.com>
-To: Nathan Chancellor <nathan@kernel.org>
-Cc: linux-kernel@vger.kernel.org, kexec@lists.infradead.org, x86@kernel.org,
-	linux-arm-kernel@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-	linux-mips@vger.kernel.org, linux-riscv@lists.infradead.org,
-	loongarch@lists.linux.dev, akpm@linux-foundation.org,
-	ebiederm@xmission.com, hbathini@linux.ibm.com, piliu@redhat.com,
-	viro@zeniv.linux.org.uk
-Subject: Re: [PATCH linux-next v3 00/14] Split crash out from kexec and clean
- up related config items
-Message-ID: <ZbNMHwVhWxMyvKH/@MiWiFi-R3L-srv>
-References: <20240124051254.67105-1-bhe@redhat.com>
- <20240126045551.GA126645@dev-arch.thelio-3990X>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="R9KKIBt6"
+Received: by mail-wm1-f42.google.com with SMTP id 5b1f17b1804b1-40ef5316e01so440655e9.3;
+        Sat, 27 Jan 2024 17:28:32 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1706405311; x=1707010111; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=oUXUIxIBKb7yXVS8ERVW4fwa4sKRyx0T69mWwoqQkWg=;
+        b=R9KKIBt68sXTqDQdUnwHKECV9ZMWozyiVb7XXW5420kXxWdIzYkMOJXOAf33tRzpnY
+         2nxRsPCAXY4Us2zG9F1Y0Gv+8DyOYU3vJrm5sLUK7zwZEgF32Pb84HZ6Wno+QZBbfZEX
+         ORCIQ+AXkbrlHJUU7uRdeW3skVzO884z8tPGWBdG9AZ235fcldjkFg+Y1ZCeQ+29dh5O
+         HYCzYvVhZrKFMqjuCyOCoFKtY1HZfFp3Q1TmFUd8uhi9GrFak+2eIxwmWjU4M3ssOoHm
+         i3JQxc041y+srtxPxAm1Ta8EKVWwnJ6thMHB9Q0aCkqJKWmFTnuUCp7J46ELEvxOHXeo
+         REQA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1706405311; x=1707010111;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=oUXUIxIBKb7yXVS8ERVW4fwa4sKRyx0T69mWwoqQkWg=;
+        b=os7HCsgWA1WRker45HgFcyo+icXLZ8rghjM2giGfN/ZmxI1VuVClVIX2qhTokPYPBK
+         RGEm0Slpm2+KL3s5qeDYMotOeExsz3WaTmYbJnip7CJ51AW/OzI2RMyruWOgYE9mJpXP
+         bPTTo00Csm0Wxf3HBTfF8AsidqDcc8KjW9JR/Ie3OmWQaeWSaXvFpsYrG9OGvPEThgxh
+         opoqLfXF4wPeHwojdAZaJcKeALenw0QjoiDg4iP1vO0GPnJt+1U/pzRjHus667AeKlGm
+         xznQ6BVtem7M1gbi4NqfkYmGos6JFycABCzzVDxJgzuBWPEzni4TrxQWCooQ0ja76mxN
+         ATEA==
+X-Gm-Message-State: AOJu0YxMfFLdQY4v/Ui3/I0odvaqKUyDIHTDR/7CE22buAAaETuNYhUI
+	4iUxEmSB3Cpmk3bNUyihhwW7TmpYY4+FLgljzHx7/dAEo5/YDjs6P3EUTfHjaHMBkw==
+X-Google-Smtp-Source: AGHT+IHept3nMUj4LCYzYJiT9LNHHbS9INXuvww5u4glPmCjjXCtKxmvIBnhSwXHbRZoEWgm1HAkmA==
+X-Received: by 2002:a05:600c:1396:b0:40e:a569:3555 with SMTP id u22-20020a05600c139600b0040ea5693555mr2037091wmf.35.1706405310998;
+        Sat, 27 Jan 2024 17:28:30 -0800 (PST)
+Received: from ?IPV6:2001:678:a5c:1204:db7b:6df3:1a86:f66a? (soda.int.kasm.eu. [2001:678:a5c:1204:db7b:6df3:1a86:f66a])
+        by smtp.gmail.com with ESMTPSA id p6-20020a05600c1d8600b0040ee76ae773sm4537228wms.19.2024.01.27.17.28.29
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sat, 27 Jan 2024 17:28:30 -0800 (PST)
+Message-ID: <0b14826b-9373-4458-919d-1da2a62d4226@gmail.com>
+Date: Sun, 28 Jan 2024 02:28:28 +0100
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20240126045551.GA126645@dev-arch.thelio-3990X>
-X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.9
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH linux-next v3 01/14] kexec: split crashkernel reservation
+ code out from crash_core.c
+Content-Language: en-US, sv-SE
+To: Baoquan He <bhe@redhat.com>, linux-kernel@vger.kernel.org
+Cc: kexec@lists.infradead.org, x86@kernel.org,
+ linux-arm-kernel@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
+ linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+ linux-mips@vger.kernel.org, linux-riscv@lists.infradead.org,
+ loongarch@lists.linux.dev, akpm@linux-foundation.org, ebiederm@xmission.com,
+ hbathini@linux.ibm.com, piliu@redhat.com, viro@zeniv.linux.org.uk
+References: <20240124051254.67105-1-bhe@redhat.com>
+ <20240124051254.67105-2-bhe@redhat.com>
+From: Klara Modin <klarasmodin@gmail.com>
+In-Reply-To: <20240124051254.67105-2-bhe@redhat.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-On 01/25/24 at 09:55pm, Nathan Chancellor wrote:
-...... 
-> I am seeing a few build failures in my test matrix on next-20240125 that
-> appear to be caused by this series although I have not bisected. Some
-> reproduction steps:
+Hi,
 
-Thanks for trying this, I have reproduced the linking failure on arm,
-will work out a way to fix it.
+On 2024-01-24 06:12, Baoquan He wrote:
+> And also add config item CRASH_RESERVE to control its enabling of the
+> codes. And update config items which has relationship with crashkernel
+> reservation.
+> 
+> And also change ifdeffery from CONFIG_CRASH_CORE to CONFIG_CRASH_RESERVE
+> when those scopes are only crashkernel reservation related.
 
-It's weird, I remember I have built these and passed.
+> diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+> index 502986237cb6..a9243e0948a3 100644
+> --- a/arch/x86/Kconfig
+> +++ b/arch/x86/Kconfig
+> @@ -2106,7 +2106,7 @@ config ARCH_SUPPORTS_CRASH_HOTPLUG
+>   	def_bool y
+>   
+>   config ARCH_HAS_GENERIC_CRASHKERNEL_RESERVATION
+> -	def_bool CRASH_CORE
+> +	def_bool CRASH_RESEERVE
+>   
+>   config PHYSICAL_START
+>   	hex "Physical address where the kernel is loaded" if (EXPERT || CRASH_DUMP)
 
-> 
-> $ curl -LSso .config https://git.alpinelinux.org/aports/plain/community/linux-edge/config-edge.armv7
-> $ make -skj"$(nproc)" ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- olddefconfig all
-> ...
-> arm-linux-gnueabi-ld: arch/arm/kernel/machine_kexec.o: in function `arch_crash_save_vmcoreinfo':
-> machine_kexec.c:(.text+0x488): undefined reference to `vmcoreinfo_append_str'
-> ...
-> 
-> $ curl -LSso .config https://github.com/archlinuxarm/PKGBUILDs/raw/master/core/linux-aarch64/config
-> $ make -skj"$(nproc)" ARCH=arm64 CROSS_COMPILE=aarch64-linux- olddefconfig all
-> ...
-> aarch64-linux-ld: kernel/kexec_file.o: in function `kexec_walk_memblock.constprop.0':
-> kexec_file.c:(.text+0x314): undefined reference to `crashk_res'
-> aarch64-linux-ld: kernel/kexec_file.o: relocation R_AARCH64_ADR_PREL_PG_HI21 against symbol `crashk_res' which may bind externally can not be used when making a shared object; recompile with -fPIC
-> kexec_file.c:(.text+0x314): dangerous relocation: unsupported relocation
-> aarch64-linux-ld: kexec_file.c:(.text+0x318): undefined reference to `crashk_res'
-> aarch64-linux-ld: drivers/of/kexec.o: in function `of_kexec_alloc_and_setup_fdt':
-> kexec.c:(.text+0x580): undefined reference to `crashk_res'
-> aarch64-linux-ld: drivers/of/kexec.o: relocation R_AARCH64_ADR_PREL_PG_HI21 against symbol `crashk_res' which may bind externally can not be used when making a shared object; recompile with -fPIC
-> kexec.c:(.text+0x580): dangerous relocation: unsupported relocation
-> aarch64-linux-ld: kexec.c:(.text+0x584): undefined reference to `crashk_res'
-> aarch64-linux-ld: kexec.c:(.text+0x590): undefined reference to `crashk_res'
-> aarch64-linux-ld: kexec.c:(.text+0x5b0): undefined reference to `crashk_low_res'
-> aarch64-linux-ld: drivers/of/kexec.o: relocation R_AARCH64_ADR_PREL_PG_HI21 against symbol `crashk_low_res' which may bind externally can not be used when making a shared object; recompile with -fPIC
-> kexec.c:(.text+0x5b0): dangerous relocation: unsupported relocation
-> aarch64-linux-ld: kexec.c:(.text+0x5b4): undefined reference to `crashk_low_res'
-> aarch64-linux-ld: kexec.c:(.text+0x5c0): undefined reference to `crashk_low_res'
-> ...
-> 
-> $ curl -LSso .config https://git.alpinelinux.org/aports/plain/community/linux-edge/config-edge.x86_64
-> $ make -skj"$(nproc)" ARCH=x86_64 CROSS_COMPILE=x86_64-linux- olddefconfig all
-> ...
-> x86_64-linux-ld: arch/x86/xen/mmu_pv.o: in function `paddr_vmcoreinfo_note':
-> mmu_pv.c:(.text+0x3af3): undefined reference to `vmcoreinfo_note'
-> ...
-> 
-> Cheers,
-> Nathan
-> 
+CRASH_RESEERVE is probably a typo and should be CRASH_RESERVE (with the 
+former ARCH_HAS_GENERIC_CRASHKERNEL_RESERVATION isn't defined in my 
+.config and `crashkernel=...` parameter has no effect).
 
+Kind regards,
+Klara Modin
