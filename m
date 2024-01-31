@@ -1,40 +1,47 @@
-Received: from albert.telenet-ops.be (albert.telenet-ops.be [195.130.137.90])
+Received: from andre.telenet-ops.be (andre.telenet-ops.be [195.130.132.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A30BB12A148
-	for <linux-sh@vger.kernel.org>; Wed, 31 Jan 2024 16:09:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.137.90
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7442812A17A
+	for <linux-sh@vger.kernel.org>; Wed, 31 Jan 2024 16:11:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.132.53
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1706717382; cv=none; b=q/PZj05oKNJ8uUIdJTDgHKIK9AFtAvGcEkhPw8HcDOhI1UjNmxZC43hKBLhAc0pz86Bm9FsZHSqerlfbpBXKJm4F61k77qbxB4BcVkj6CIo3wHD9+/04JcGfgcbCMuUhz/N1KQhYRdZnM2wZbtEUnGKoihqnMZnfMdBrImxIdDw=
+	t=1706717519; cv=none; b=Q32jXt0wRWn7yhD3Hb0RVDAv/CGCtiD7nOgXKpAyFNQzL+iwBgoFN3v5/zqCBEHMEp6H1vYM2kIi8ZRVI01N8U8LgjirX2vrtg7vQ0jmvQdfm5CPi7ZwXKOTLbPkok4lzqlqb2EBMibqKmqZd1pqd+02p8CJk9Mwu4lC/zFI8gw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1706717382; c=relaxed/simple;
-	bh=4RL/w/D+JHU+k8ENIavvpxCr8XQWjO8Rks06Xew+uDo=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=pEFxjQm2EMftP3dx1Fw7AR+MJpTIIc1Jhduyd++T7+Pufv5BxVtS84yp8EumWjV6bLzF40/qZK2SLQZU/PmvUGJIr8xqVKZaHq8D8clIQmsGIMuiN8zRGokci6FsRRukoO6S+uiutcrl5k4LuCMeUWYV8Gb7+3mtW+PnU821dvM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.137.90
+	s=arc-20240116; t=1706717519; c=relaxed/simple;
+	bh=etiQOCiZU9tDAlchggQr10q8COercMMXKaVDFoX+q74=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=mKVTzUozpRh/ioDVcRhWRMjQxS41kDZp/WHmGUAJBoGJNDPcsskvY8paQLl28l/W+d08P6qz/2zTonsapUsCWjnqLXYQgMeTLrw+ICufRpTEBFcFJlp1O88/Pke+PW+iX0H5d7Jga9q/b25TZPRyB7FkfnikrSW57Q9luFcXVVQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.132.53
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
 Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:88f0:c83b:bafa:cdc3])
-	by albert.telenet-ops.be with bizsmtp
-	id hU9X2B00N4efzLr06U9XBs; Wed, 31 Jan 2024 17:09:32 +0100
+	by andre.telenet-ops.be with bizsmtp
+	id hUBq2B00N4efzLr01UBqR2; Wed, 31 Jan 2024 17:11:55 +0100
 Received: from rox.of.borg ([192.168.97.57])
 	by ramsan.of.borg with esmtp (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rVD8h-00GrUz-9d;
-	Wed, 31 Jan 2024 17:09:31 +0100
+	id 1rVDAw-00GrV5-9U;
+	Wed, 31 Jan 2024 17:11:50 +0100
 Received: from geert by rox.of.borg with local (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rVD9X-008lVm-HS;
-	Wed, 31 Jan 2024 17:09:31 +0100
+	id 1rVDBm-008lXe-Ht;
+	Wed, 31 Jan 2024 17:11:50 +0100
 From: Geert Uytterhoeven <geert+renesas@glider.be>
-To: Wolfram Sang <wsa+renesas@sang-engineering.com>,
-	Andi Shyti <andi.shyti@kernel.org>
-Cc: linux-renesas-soc@vger.kernel.org,
-	linux-i2c@vger.kernel.org,
+To: Daniel Lezcano <daniel.lezcano@linaro.org>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Rob Herring <robh+dt@kernel.org>,
+	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
+	Conor Dooley <conor+dt@kernel.org>,
+	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
+	Wolfram Sang <wsa+renesas@sang-engineering.com>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: devicetree@vger.kernel.org,
+	linux-renesas-soc@vger.kernel.org,
 	linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
 	Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH v2] i2c: sh_mobile: Switch R-Mobile A1/APE6 and SH-Mobile AG5 to new frequency calculation
-Date: Wed, 31 Jan 2024 17:09:30 +0100
-Message-Id: <93f3b97c20164510ed80928500a8d443d7e23adb.1706717315.git.geert+renesas@glider.be>
+Subject: [PATCH v2] dt-bindings: timer: renesas,tmu: Document input capture interrupt
+Date: Wed, 31 Jan 2024 17:11:45 +0100
+Message-Id: <8cb38b5236213a467c6c0073f97ccc4bfd5a39ff.1706717378.git.geert+renesas@glider.be>
 X-Mailer: git-send-email 2.34.1
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
@@ -44,86 +51,66 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Switch the R-Mobile A1, R-Mobile APE6, and SH-Mobile AG5 SoCs to the new
-frequency calculation formula, to (a) avoid running the I2C bus too fast,
-and (b) bring the low/high ratio closer to the recommended ratio 5/4.
+Some Timer Unit (TMU) instances with 3 channels support a fourth
+interrupt: an input capture interrupt for the third channel.
 
-As this makes fast_clock_dt_config and v2_freq_calc_dt_config identical,
-merge them into a single fast_clock_dt_config.
+While at it, document the meaning of the four interrupts, and add
+"interrupt-names" for clarity.
 
-Legacy SH users (sh7343, sh7366, and sh772[234]) are left alone, and
-still use the old formula.
+Update the example to match reality.
 
-Measurement results on R-Mobile APE6 and SH-Mobile AG5 (fck=104 MHz,
-clks_per_count=2):
-  100 kHz: 106 kHz LH=1.12 before, 99.6 kHz L/H=1.22 after
-  400 kHz: 384 kHz LH=1.67 before, 392 kHz L/H=1.27 after
-
-Measurement results on R-Mobile A1 (fck=49.5 MHz, clks_per_count=1):
-  100 kHz: 106 kHz L/H=1.09 before, 99.6 kHz L/H=1.20 after
+Inspired by a patch by Yoshinori Sato for SH.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
 v2:
-  - Merge fast_clock_dt_config and v2_freq_calc_dt_config,
-  - Document that legacy SH users are untouched.
----
- drivers/i2c/busses/i2c-sh_mobile.c | 27 +++++++++++----------------
- 1 file changed, 11 insertions(+), 16 deletions(-)
+  - Reword interrupt descriptions.
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index 5adbe62cf6212865..c65ac3d7eadc5b58 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -773,7 +773,7 @@ static int sh_mobile_i2c_r8a7740_workaround(struct sh_mobile_i2c_data *pd)
- 	iic_wr(pd, ICCR, ICCR_TRS);
- 	udelay(10);
+The corresponding DTS updates can be found in series "[PATCH 0/2]
+ARM/arm64: dts: renesas: Improve TMU interrupt descriptions".
+https://lore.kernel.org/r/cover.1705325654.git.geert+renesas@glider.be
+Once the DTS updates are upstream, "interrupt-names" can be made
+required.
+---
+ .../devicetree/bindings/timer/renesas,tmu.yaml | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/timer/renesas,tmu.yaml b/Documentation/devicetree/bindings/timer/renesas,tmu.yaml
+index a67e427a9e7e22aa..84bbe15028a1de94 100644
+--- a/Documentation/devicetree/bindings/timer/renesas,tmu.yaml
++++ b/Documentation/devicetree/bindings/timer/renesas,tmu.yaml
+@@ -46,7 +46,19 @@ properties:
  
--	return sh_mobile_i2c_init(pd);
-+	return sh_mobile_i2c_v2_init(pd);
- }
+   interrupts:
+     minItems: 2
+-    maxItems: 3
++    items:
++      - description: Underflow interrupt, channel 0
++      - description: Underflow interrupt, channel 1
++      - description: Underflow interrupt, channel 2
++      - description: Input capture interrupt, channel 2
++
++  interrupt-names:
++    minItems: 2
++    items:
++      - const: tuni0
++      - const: tuni1
++      - const: tuni2
++      - const: ticpi2
  
- static const struct sh_mobile_dt_config default_dt_config = {
-@@ -782,11 +782,6 @@ static const struct sh_mobile_dt_config default_dt_config = {
- };
- 
- static const struct sh_mobile_dt_config fast_clock_dt_config = {
--	.clks_per_count = 2,
--	.setup = sh_mobile_i2c_init,
--};
--
--static const struct sh_mobile_dt_config v2_freq_calc_dt_config = {
- 	.clks_per_count = 2,
- 	.setup = sh_mobile_i2c_v2_init,
- };
-@@ -799,17 +794,17 @@ static const struct sh_mobile_dt_config r8a7740_dt_config = {
- static const struct of_device_id sh_mobile_i2c_dt_ids[] = {
- 	{ .compatible = "renesas,iic-r8a73a4", .data = &fast_clock_dt_config },
- 	{ .compatible = "renesas,iic-r8a7740", .data = &r8a7740_dt_config },
--	{ .compatible = "renesas,iic-r8a774c0", .data = &v2_freq_calc_dt_config },
--	{ .compatible = "renesas,iic-r8a7790", .data = &v2_freq_calc_dt_config },
--	{ .compatible = "renesas,iic-r8a7791", .data = &v2_freq_calc_dt_config },
--	{ .compatible = "renesas,iic-r8a7792", .data = &v2_freq_calc_dt_config },
--	{ .compatible = "renesas,iic-r8a7793", .data = &v2_freq_calc_dt_config },
--	{ .compatible = "renesas,iic-r8a7794", .data = &v2_freq_calc_dt_config },
--	{ .compatible = "renesas,iic-r8a7795", .data = &v2_freq_calc_dt_config },
--	{ .compatible = "renesas,iic-r8a77990", .data = &v2_freq_calc_dt_config },
-+	{ .compatible = "renesas,iic-r8a774c0", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-r8a7790", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-r8a7791", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-r8a7792", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-r8a7793", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-r8a7794", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-r8a7795", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,iic-r8a77990", .data = &fast_clock_dt_config },
- 	{ .compatible = "renesas,iic-sh73a0", .data = &fast_clock_dt_config },
--	{ .compatible = "renesas,rcar-gen2-iic", .data = &v2_freq_calc_dt_config },
--	{ .compatible = "renesas,rcar-gen3-iic", .data = &v2_freq_calc_dt_config },
-+	{ .compatible = "renesas,rcar-gen2-iic", .data = &fast_clock_dt_config },
-+	{ .compatible = "renesas,rcar-gen3-iic", .data = &fast_clock_dt_config },
- 	{ .compatible = "renesas,rmobile-iic", .data = &default_dt_config },
- 	{},
- };
+   clocks:
+     maxItems: 1
+@@ -100,7 +112,9 @@ examples:
+             reg = <0xffd80000 0x30>;
+             interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>,
+                          <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>,
+-                         <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>;
++                         <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>,
++                         <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
++            interrupt-names = "tuni0", "tuni1", "tuni2", "ticpi2";
+             clocks = <&mstp0_clks R8A7779_CLK_TMU0>;
+             clock-names = "fck";
+             power-domains = <&sysc R8A7779_PD_ALWAYS_ON>;
 -- 
 2.34.1
 
