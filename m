@@ -1,107 +1,78 @@
-Received: from mail.zeus03.de (www.zeus03.de [194.117.254.33])
+Received: from 6.mo583.mail-out.ovh.net (6.mo583.mail-out.ovh.net [178.32.119.138])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8675938DD4
-	for <linux-sh@vger.kernel.org>; Wed, 31 Jan 2024 20:34:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=194.117.254.33
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 77DDD4403
+	for <linux-sh@vger.kernel.org>; Thu,  1 Feb 2024 01:25:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=178.32.119.138
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1706733303; cv=none; b=mLMfy9If2kZ558V+hms3DFhRoGftA0n/TJ2ZixRqPufpCbdZHg9jq0D1EP2Tn0ZLKbVn//48spx9qlOFmDhFvD+O9s+bKQNoRsZEHSbFB6J1uLPdGZ9UvCvKhazPmgq1GgQziUfq4CVlfsdMEoZUdvkGKDiil9rXRhwavXH7d50=
+	t=1706750748; cv=none; b=KE7H+9oSoMvhfa2VNDNW/bmuOdPcLEh/HP6r8txpwMD7MP2V6OG1EVlX+xqQljjGVX541eCGZtwwDepo37WkAc/73CAe33ZhG9AzYAauDR9q6nIw0Tb+ud2uoy0embY7ZyjLwfGkBHqGIiSuFakWwAjapFuxjiEiH9tR2JBIxLQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1706733303; c=relaxed/simple;
-	bh=55r4DJdVPqJSTlDSqPP1f6IOgEgWDBWfOU61w5rSsYQ=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=a/ZfAd+mISXewPmS0egxNo2pOkoqT7ydKn5/uIEHejPZrhMciQLauFrq8MHHaAi5/uLEAGOo0Q4Ok573dZ93yR/slIyvwXyS+MCbGU1lTRhN+PAaD6XIOfsR3l3+5KJ6J53sNV+qnkqznnbyVBMPgzoUlyoG1tzPBKimdJRA27s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sang-engineering.com; spf=pass smtp.mailfrom=sang-engineering.com; dkim=pass (2048-bit key) header.d=sang-engineering.com header.i=@sang-engineering.com header.b=dYa6uv7d; arc=none smtp.client-ip=194.117.254.33
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sang-engineering.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sang-engineering.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=sang-engineering.com header.i=@sang-engineering.com header.b="dYa6uv7d"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	sang-engineering.com; h=date:from:to:cc:subject:message-id
-	:references:mime-version:content-type:in-reply-to; s=k1; bh=arZw
-	p/8R5WW54rU3GpYm/oAt4moxKmQe1MlLvVQEJwU=; b=dYa6uv7d2DOdy3YPfB6e
-	bzR5HLr3uJW5H7UuGeqyGZk9LLiilGJ4aU4ue2XRuqCTUPLySvnsvUycMEfwMrU3
-	iqktLGUllwrkfGFq6W7hJpUNhmyqbe3K3tapPLwDClXxO+gG64gBg9x4WjKpOiTV
-	B0hXnD5Mdk1L+TfMhyP8q6EhFiD7g+kqLY+GF6TmeAEb0gR5GLVfwgqEAjViQipf
-	BIBJHqaM9ApC21HfqTf5fY83wluZtL5K6lqjnjqDK9zUNbPFUHbSUMPclKYZjBxr
-	L2xbdM6ZJTNztxELhcCdh1tYTkaADEmcpvuI9Cq5r7Z3j8iuJoSSQeA8YW/tHRMb
-	CA==
-Received: (qmail 3320434 invoked from network); 31 Jan 2024 21:34:57 +0100
-Received: by mail.zeus03.de with ESMTPSA (TLS_AES_256_GCM_SHA384 encrypted, authenticated); 31 Jan 2024 21:34:57 +0100
-X-UD-Smtp-Session: l3s3148p1@rsPoz0MQ9t1ehhtJ
-Date: Wed, 31 Jan 2024 21:34:56 +0100
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Andi Shyti <andi.shyti@kernel.org>, linux-renesas-soc@vger.kernel.org,
-	linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org
-Subject: Re: [PATCH v2] i2c: sh_mobile: Switch R-Mobile A1/APE6 and SH-Mobile
- AG5 to new frequency calculation
-Message-ID: <Zbqu8K3gBth83YBV@shikoro>
-Mail-Followup-To: Wolfram Sang <wsa+renesas@sang-engineering.com>,
-	Geert Uytterhoeven <geert+renesas@glider.be>,
-	Andi Shyti <andi.shyti@kernel.org>,
-	linux-renesas-soc@vger.kernel.org, linux-i2c@vger.kernel.org,
-	linux-sh@vger.kernel.org
+	s=arc-20240116; t=1706750748; c=relaxed/simple;
+	bh=SJyruhk8di3+s0IFG1DaDJLPgvRj9rA6PUe5z5vSynI=;
+	h=From:To:Cc:In-Reply-To:References:Subject:Message-Id:Date:
+	 MIME-Version:Content-Type; b=IWoj9iQjuMl7AaKOnjMtqbhbRCCa6K3M4qTv0GcWaiNBGfNqYE8A/M7e/0mAINAv8lU3tR8V3fh3Crp1ueYPQk8vB5Q6Pr7qdlKh0gzZ0h7YTncM2iCOaT52GJnjmzaaIt8eJK4PwpBSpP1REPl72+uUTMVM+MnCelG7pIgdbp8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org; spf=pass smtp.mailfrom=etezian.org; arc=none smtp.client-ip=178.32.119.138
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=kernel.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=etezian.org
+Received: from director9.ghost.mail-out.ovh.net (unknown [10.109.176.211])
+	by mo583.mail-out.ovh.net (Postfix) with ESMTP id D6F6F263DC
+	for <linux-sh@vger.kernel.org>; Wed, 31 Jan 2024 22:55:58 +0000 (UTC)
+Received: from ghost-submission-6684bf9d7b-qnxlc (unknown [10.110.178.109])
+	by director9.ghost.mail-out.ovh.net (Postfix) with ESMTPS id E62891FDEA;
+	Wed, 31 Jan 2024 22:55:57 +0000 (UTC)
+Received: from etezian.org ([37.59.142.103])
+	by ghost-submission-6684bf9d7b-qnxlc with ESMTPSA
+	id a6okHf3PumWafAAALVocug
+	(envelope-from <andi@etezian.org>); Wed, 31 Jan 2024 22:55:57 +0000
+Authentication-Results:garm.ovh; auth=pass (GARM-103G00550b5628a-d37b-4c62-bb6d-ee46a59a6475,
+                    F33A5955C440BB32736DBBB85AFDD5E0974CF895) smtp.auth=andi@etezian.org
+X-OVh-ClientIp:89.217.109.169
+From: Andi Shyti <andi.shyti@kernel.org>
+To: Wolfram Sang <wsa+renesas@sang-engineering.com>, 
+ Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: linux-renesas-soc@vger.kernel.org, linux-i2c@vger.kernel.org, 
+ linux-sh@vger.kernel.org
+In-Reply-To: <93f3b97c20164510ed80928500a8d443d7e23adb.1706717315.git.geert+renesas@glider.be>
 References: <93f3b97c20164510ed80928500a8d443d7e23adb.1706717315.git.geert+renesas@glider.be>
+Subject: Re: [PATCH v2] i2c: sh_mobile: Switch R-Mobile A1/APE6 and
+ SH-Mobile AG5 to new frequency calculation
+Message-Id: <170674175669.3296177.3403969696614918570.b4-ty@kernel.org>
+Date: Wed, 31 Jan 2024 23:55:56 +0100
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="vM70xDzKZMWzvl6C"
-Content-Disposition: inline
-In-Reply-To: <93f3b97c20164510ed80928500a8d443d7e23adb.1706717315.git.geert+renesas@glider.be>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-Mailer: b4 0.12.4
+X-Ovh-Tracer-Id: 14987416613218880247
+X-VR-SPAMSTATE: OK
+X-VR-SPAMSCORE: 0
+X-VR-SPAMCAUSE: gggruggvucftvghtrhhoucdtuddrgedvkedrfedutddgtdefucetufdoteggodetrfdotffvucfrrhhofhhilhgvmecuqfggjfdpvefjgfevmfevgfenuceurghilhhouhhtmecuhedttdenucenucfjughrpefhvfevjghfuffkffggtgfgofesthejredtredtjeenucfhrhhomheptehnughiucfuhhihthhiuceorghnughirdhshhihthhisehkvghrnhgvlhdrohhrgheqnecuggftrfgrthhtvghrnhepffetheduffdvhfdugfffudfgjeejudehheegfeeguefhieeugffhgfeuffdvgfefnecuffhomhgrihhnpehkvghrnhgvlhdrohhrghenucfkphepuddvjedrtddrtddruddpkeelrddvudejrddutdelrdduieelpdefjedrheelrddugedvrddutdefnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehinhgvthepuddvjedrtddrtddruddpmhgrihhlfhhrohhmpeeorghnughisegvthgviihirghnrdhorhhgqedpnhgspghrtghpthhtohepuddprhgtphhtthhopehlihhnuhigqdhshhesvhhgvghrrdhkvghrnhgvlhdrohhrghdpoffvtefjohhsthepmhhoheekfedpmhhouggvpehsmhhtphhouhht
 
+Hi
 
---vM70xDzKZMWzvl6C
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Wed, Jan 31, 2024 at 05:09:30PM +0100, Geert Uytterhoeven wrote:
+On Wed, 31 Jan 2024 17:09:30 +0100, Geert Uytterhoeven wrote:
 > Switch the R-Mobile A1, R-Mobile APE6, and SH-Mobile AG5 SoCs to the new
 > frequency calculation formula, to (a) avoid running the I2C bus too fast,
 > and (b) bring the low/high ratio closer to the recommended ratio 5/4.
->=20
+> 
 > As this makes fast_clock_dt_config and v2_freq_calc_dt_config identical,
 > merge them into a single fast_clock_dt_config.
->=20
-> Legacy SH users (sh7343, sh7366, and sh772[234]) are left alone, and
-> still use the old formula.
->=20
-> Measurement results on R-Mobile APE6 and SH-Mobile AG5 (fck=3D104 MHz,
-> clks_per_count=3D2):
->   100 kHz: 106 kHz LH=3D1.12 before, 99.6 kHz L/H=3D1.22 after
->   400 kHz: 384 kHz LH=3D1.67 before, 392 kHz L/H=3D1.27 after
->=20
-> Measurement results on R-Mobile A1 (fck=3D49.5 MHz, clks_per_count=3D1):
->   100 kHz: 106 kHz L/H=3D1.09 before, 99.6 kHz L/H=3D1.20 after
->=20
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> 
+> [...]
 
-Reviewed-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Applied to i2c/i2c-host on
 
+git://git.kernel.org/pub/scm/linux/kernel/git/andi.shyti/linux.git
 
---vM70xDzKZMWzvl6C
-Content-Type: application/pgp-signature; name="signature.asc"
+Thank you,
+Andi
 
------BEGIN PGP SIGNATURE-----
+Patches applied
+===============
+[1/1] i2c: sh_mobile: Switch R-Mobile A1/APE6 and SH-Mobile AG5 to new frequency calculation
+      commit: 5266be22421c9419ec239486c7f38bf997739fce
 
-iQIzBAABCgAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAmW6ruwACgkQFA3kzBSg
-KbZzkA//WYXKNuGbeFivJqiXWF/FyXgO3RQ0bn/JoD+OAptNuFSzZeDMnot/B/40
-/iEu1Z8e6NKepuCe44TA/pfbcfNDx7xjXE0DFPcXAciN6B4yIT3yJ1QNfZq5L5tW
-KF0UoRizepEBWcKmVXQXyCun4XyEDgGPqEw7fvqz/HKOVbhfNm3sg9K5Y6mXm7pe
-lz7zTlm5i6Gb716XUtY2ZsG3pnSfzDLFPjGE+QE2N5+YboGwQu96kcvD5jgiO5TU
-chSIxIkQUfAcRb9QMV3IEn4XnSvgi+NP0e/D/u4ABWFnGc4QcYgCxoAp/+F2fv1t
-GYLN++qLrGBBwavfrtNiie7GHIZw+g9OY2ZTv22hq2/c1Dwxf2Oe1AzCQA/qivv/
-W21abJnseqfCLZ6I8UMA6mjGaGm9LdPWZzaSzDedPCFrMe7U62OgLX8fVv+Xuw0F
-VuVFt6TRAhEqvnbqC+5aCrRR8MWpb8jcLxMMTNzBsPBaXByY/NOi+EOVjan0eBGv
-8wab5ZsJB44w5ibh6Vop1kWjBudjFrIMFjhEt9lGX8atpskis3oFUXylhxOcT/FZ
-CSPngyvLDIxlYvkcGH+9Rn3htE4YqhBu1/J9W9SWl9Ek1mZvcx6JXIDE2s3Y7E3c
-EC/wEhvdS7IrBfXOsE8Acaaq3RBdC0MiE98dbceG9VwRuOwrcO4=
-=czUo
------END PGP SIGNATURE-----
-
---vM70xDzKZMWzvl6C--
