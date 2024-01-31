@@ -1,16 +1,16 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0021569E01;
-	Wed, 31 Jan 2024 11:03:58 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 88E4469DFD;
+	Wed, 31 Jan 2024 11:19:30 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1706699042; cv=none; b=WAXfizk4iPVITH8S5nfbQyTllFtxhfImCtFxL7Qjt5h1RRn1AJ+zKvA3X84t6Joyf/keJg1uo9erApsOk4fMFn7ikPYlr8NLoRqf+i6YmNQoL9xeutYWwDZ7+ZBlzsA/ygv79ztwwcMAEVmnryBLS52V3R2cYycHlxL2iaIhTk4=
+	t=1706699973; cv=none; b=T4m6keq6lpkBvqwEikQMCXfUmnvLV5wn121D5EqTZN+n3dn2npylkfKKo2lb8c3kQp+XDVUXf9aQWaQ10t2/tF62t7rpf37ODbUEf3MmdjQMruuhVZesMnI0qUpwQsV9QQ4OgShnO5qIrmCQnh3i0WHnkGvCrRZNvNNqkdDRvF0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1706699042; c=relaxed/simple;
-	bh=MF15pQugtdlnNOn8GYPnjqNliIbbwugYe4jmkof3kak=;
+	s=arc-20240116; t=1706699973; c=relaxed/simple;
+	bh=KD5gA39H2F6P8qf58mKxdp3HwRTzgPQmb5ZfXerPl/A=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=c22qBiYmge12ULWEvVVw0xLOC8uh691EGqWMXQsbuFHkuh1K6+En/PpgClQU0CvuyhYdX/3QZF3JWrOS70l25aCexeL2XOWScw9OfawYPWg0rPi4TadkVZVOKrYFRhsOvr1WChBpAruf/WfT1XmWJ+VFATXKXrfJO5TjkKf0BZ8=
+	 Content-Type:MIME-Version; b=HLgnoF5jCc5+6mzXR4Xs0yuzRtYJ56kR80RrJaWIKosNJIbg7UXGUR2nXNPxZyghmH0pwzTQw0cPcLDHo0yUGK+g9hucGaVmjCP+TkcmOdD9FdZ7NMkjKrAzk15Xcb1C1oJyO6Eg+ZF5s4shPJI8heI5SMNLyvmUC667ZJjxIfI=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
@@ -19,14 +19,14 @@ Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1rV8Nd-00000003zED-3sxC; Wed, 31 Jan 2024 12:03:45 +0100
+          id 1rV8cm-000000047SY-0sFL; Wed, 31 Jan 2024 12:19:24 +0100
 Received: from p57bd970d.dip0.t-ipconnect.de ([87.189.151.13] helo=[192.168.178.20])
           by inpost2.zedat.fu-berlin.de (Exim 4.97)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1rV8Nd-00000003d3G-2n9P; Wed, 31 Jan 2024 12:03:45 +0100
-Message-ID: <494586ed5a0871cf7cfd005f513577952306a0bc.camel@physik.fu-berlin.de>
+          id 1rV8cl-00000003f7B-44AB; Wed, 31 Jan 2024 12:19:24 +0100
+Message-ID: <fe057f57aba0f8a9040d4700d27f5bd478032925.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH] sh: Fix build with CONFIG_UBSAN=y
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 To: Kees Cook <keescook@chromium.org>, Yoshinori Sato
@@ -35,9 +35,10 @@ Cc: kernel test robot <lkp@intel.com>, Rich Felker <dalias@libc.org>,
  Masahiro Yamada <masahiroy@kernel.org>, Nicolas Schier <n.schier@avm.de>,
  linux-sh@vger.kernel.org,  linux-kernel@vger.kernel.org,
  linux-hardening@vger.kernel.org
-Date: Wed, 31 Jan 2024 12:03:44 +0100
-In-Reply-To: <20240130232717.work.088-kees@kernel.org>
+Date: Wed, 31 Jan 2024 12:19:22 +0100
+In-Reply-To: <494586ed5a0871cf7cfd005f513577952306a0bc.camel@physik.fu-berlin.de>
 References: <20240130232717.work.088-kees@kernel.org>
+	 <494586ed5a0871cf7cfd005f513577952306a0bc.camel@physik.fu-berlin.de>
 Autocrypt: addr=glaubitz@physik.fu-berlin.de; prefer-encrypt=mutual;
  keydata=mQINBE3JE9wBEADMrYGNfz3oz6XLw9XcWvuIxIlPWoTyw9BxTicfGAv0d87wngs9U+d52t/REggPePf34gb7/k8FBY1IgyxnZEB5NxUb1WtW0M3GUxpPx6gBZqOm7SK1ZW3oSORw+T7Aezl3Zq4Nr4Nptqx7fnLpXfRDs5iYO/GX8WuL8fkGS/gIXtxKewd0LkTlb6jq9KKq8qn8/BN5YEKqJlM7jsENyA5PIe2npN3MjEg6p+qFrmrzJRuFjjdf5vvGfzskrXCAKGlNjMMA4TgZvugOFmBI/iSyV0IOaj0uKhes0ZNX+lQFrOB4j6I5fTBy7L/T3W/pCWo3wVkknNYa8TDYT73oIZ7Aimv+k7OzRfnxsSOAZT8Re1Yt8mvzr6FHVFjr/VdyTtO5JgQZ6LEmvo4Ro+2ByBmCHORCQ0NJhD1U3avjGfvfslG999W0WEZLTeaGkBAN1yG/1bgGAytQQkD9NsVXqBy7S3LVv9bB844ysW5Aj1nvtgIz14E2WL8rbpfjJMXi7B5ha6Lxf3rFOgxpr6ZoEn+bGG4hmrO+/ReA4SerfMqwSTnjZsZvxMJsx2B9c8DaZE8GsA4I6lsihbJmXhw8i7Cta8Dx418wtEbXhL6m/UEk60O7QD1VBgGqDMnJDFSlvKa9D+tZde/kHSNmQmLLzxtDbNgBgmR0jUlmxirijnm8bwARAQABtEBKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6IChEZWJpYW4gUHJvamVjdCkgPGdsYXViaXR6QGRlYmlhbi5vcmc+iQI3BBMBCAAhBQJRnmPwAhsDBQsJCAcDBRUKCQgLBRYCAwEAAh4BAheAAAoJEHQmOzf1tfkTF0gQAJgvGiKf5YW6+Qyss1qGwf+KHXb/6gIThY6GpSIro9vL/UxaakRCOloaXXAs3KpgBULOO8+prqU8GIqcd8tE3YvQFvvO3rN+8bhOiiD0lFmQSEHcpCW5ZRpdh
 	J5wy1t9Ddb1K/7XGzen3Uzx9bjKgDyikM3js1VtJHaFr8FGt5gtZIBDgp8QM9IRCv/32mPQxqmsaTczEzSNxTBM6Tc2NwNLus3Yh5OnFdxk1jzk+Ajpnqd/E/M7/CU5QznDgIJyopcMtOArv9Er+xe3gAXHkFvnPqcP+9UpzHB5N0HPYn4k4hsOTiJ41FHUapq8d1AuzrWyqzF9aMUi2kbHJdUmt9V39BbJIgjCysZPyGtFhR42fXHDnPARjxtRRPesEhjOeHei9ioAsZfT6bX+l6kSf/9gaxEKQe3UCXd3wbw68sXcvhzBVBxhXM91+Y7deHhNihMtqPyEmSyGXTHOMODysRU453E+XXTr2HkZPx4NV1dA8Vlid2NcMQ0iItD+85xeVznc8xquY/c1vPBeqneBWaE530Eo5e3YA7OGrxHwHbet3E210ng+xU8zUjQrFXMJm3xNpOe45RwmhCAt5z1gDTk5qNgjNgnU3mDp9DX6IffS3g2UJ02JeTrBY4hMpdVlmGCVOm9xipcPHreVGEBbM4eQnYnwbaqjVBBvy2DyfyN/tFRKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6IChGcmVpZSBVbml2ZXJzaXRhZXQgQmVybGluKSA8Z2xhdWJpdHpAcGh5c2lrLmZ1LWJlcmxpbi5kZT6JAlEEEwEIADsCGwMFCwkIBwMFFQoJCAsFFgIDAQACHgECF4AWIQRi/4p1hOApVpVGAAZ0Jjs39bX5EwUCWhQoUgIZAQAKCRB0Jjs39bX5Ez/ID/98r9c4WUSgOHVPSMVcOVziMOi+zPWfF1OhOXW+atpTM4LSSp66196xOlDFHOdNNmO6kxckXAX9ptvpBc0mRxa7OrC168fKzqR7P75eTsJnVaOu+uI/vvgsbUIosYdkkekCxDAbYCUwmzNotIspnFbxiSPMNrpw7Ud/yQkS9TDYeXnrZDhBp7p5+naWCD/yMvh7yVCA4Ea8+xDVoX
@@ -58,47 +59,60 @@ X-ZEDAT-Hint: PO
 
 Hi Kees,
 
-On Tue, 2024-01-30 at 15:27 -0800, Kees Cook wrote:
-> The early boot stub for sh had UBSan instrumentation present where it is
-> not supported. Disable it for this part of the build.
+On Wed, 2024-01-31 at 12:03 +0100, John Paul Adrian Glaubitz wrote:
+> Hi Kees,
 >=20
->   sh4-linux-ld: arch/sh/boot/compressed/misc.o: in function `zlib_inflate=
-_table':
->   misc.c:(.text+0x670): undefined reference to `__ubsan_handle_shift_out_=
-of_bounds'
+> On Tue, 2024-01-30 at 15:27 -0800, Kees Cook wrote:
+> > The early boot stub for sh had UBSan instrumentation present where it i=
+s
+> > not supported. Disable it for this part of the build.
+> >=20
+> >   sh4-linux-ld: arch/sh/boot/compressed/misc.o: in function `zlib_infla=
+te_table':
+> >   misc.c:(.text+0x670): undefined reference to `__ubsan_handle_shift_ou=
+t_of_bounds'
+> >=20
+> > Reported-by: kernel test robot <lkp@intel.com>
+> > Closes: https://lore.kernel.org/oe-kbuild-all/202401310416.s8HLiLnC-lkp=
+@intel.com/
+> > Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+> > Cc: Rich Felker <dalias@libc.org>
+> > Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+> > Cc: Masahiro Yamada <masahiroy@kernel.org>
+> > Cc: Nicolas Schier <n.schier@avm.de>
+> > Cc: linux-sh@vger.kernel.org
+> > Signed-off-by: Kees Cook <keescook@chromium.org>
+> > ---
+> >  arch/sh/boot/compressed/Makefile | 1 +
+> >  1 file changed, 1 insertion(+)
+> >=20
+> > diff --git a/arch/sh/boot/compressed/Makefile b/arch/sh/boot/compressed=
+/Makefile
+> > index b5e29f99c02c..6c6c791a1d06 100644
+> > --- a/arch/sh/boot/compressed/Makefile
+> > +++ b/arch/sh/boot/compressed/Makefile
+> > @@ -12,6 +12,7 @@ targets :=3D vmlinux vmlinux.bin vmlinux.bin.gz vmlin=
+ux.bin.bz2 \
+> >             vmlinux.bin.lzma vmlinux.bin.xz vmlinux.bin.lzo $(OBJECTS)
+> > =20
+> >  GCOV_PROFILE :=3D n
+> > +UBSAN_SANITIZE :=3D n
+> > =20
+> >  #
+> >  # IMAGE_OFFSET is the load offset of the compression loader
 >=20
-> Reported-by: kernel test robot <lkp@intel.com>
-> Closes: https://lore.kernel.org/oe-kbuild-all/202401310416.s8HLiLnC-lkp@i=
-ntel.com/
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Cc: Masahiro Yamada <masahiroy@kernel.org>
-> Cc: Nicolas Schier <n.schier@avm.de>
-> Cc: linux-sh@vger.kernel.org
-> Signed-off-by: Kees Cook <keescook@chromium.org>
-> ---
->  arch/sh/boot/compressed/Makefile | 1 +
->  1 file changed, 1 insertion(+)
->=20
-> diff --git a/arch/sh/boot/compressed/Makefile b/arch/sh/boot/compressed/M=
-akefile
-> index b5e29f99c02c..6c6c791a1d06 100644
-> --- a/arch/sh/boot/compressed/Makefile
-> +++ b/arch/sh/boot/compressed/Makefile
-> @@ -12,6 +12,7 @@ targets :=3D vmlinux vmlinux.bin vmlinux.bin.gz vmlinux=
-.bin.bz2 \
->             vmlinux.bin.lzma vmlinux.bin.xz vmlinux.bin.lzo $(OBJECTS)
-> =20
->  GCOV_PROFILE :=3D n
-> +UBSAN_SANITIZE :=3D n
-> =20
->  #
->  # IMAGE_OFFSET is the load offset of the compression loader
+> Thanks for the patch. I'm looking into this now and will provide the revi=
+ew later.
 
-Thanks for the patch. I'm looking into this now and will provide the review=
- later.
+I tried to reproduce the error using your tree and the branch devel/overflo=
+w/ubsan-only
+minus the above patch and using the provided config but I'm unable to repro=
+duce the
+error above.
 
+Am I missing anything?
+
+Thanks,
 Adrian
 
 --=20
