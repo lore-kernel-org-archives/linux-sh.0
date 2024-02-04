@@ -1,148 +1,292 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC0893CF41;
-	Fri,  2 Feb 2024 11:06:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C7BBC15E5A9
+	for <linux-sh@vger.kernel.org>; Sun,  4 Feb 2024 03:26:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1706872003; cv=none; b=LEv6FhqHmiGcR+P8aTCT0Qk09WdKTedL3AZwnztEUC928nyRliCJDdFZVUS964S4QBTlfUplJxlkHserI5oTGSeVPcvzwWUftfv37WXd7R0ejDMc+ZLTpm3Z6BmrRfy6aZ8nKSckwXwNEanFEkVPuAPnWLZ9YE+bZUcJ9dgLDAI=
+	t=1707017185; cv=none; b=lqN88HH4XOPDcEQrQQgdOhDfLqVEKGE8wxu/xOcGw1H/J8wDpWzz2Tso45OmC3dZiRRgZqRL5l8cKfI5Midr5B5iggKgjsGSqFe/1xh7NmdXjvguW8M51fTAeTvhVJBC+WcuMDWWJX4oTFJbQ943+u20rkHSZ7rzFpuFoQmVUeQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1706872003; c=relaxed/simple;
-	bh=CWY1KewRrcDzL4IL+GfzSLoZDzO1t9oWLwAOkVeq6RQ=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=qiEI6EqnA8UsYE1DRoRhi0tCnukBluuuxZEBq+K8fF5Uk11BEDKXJu5apm78jP6vGQw9HOybVo4qJc4cRORCiL4T+okGGaRWONzLD8t05w2bsy1SKL716HflJXfH+5MuZ3SHCFYDx+Suk+P3LhvXA4t0Cpl8s+Lm4ZWnmal+Sc8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.97)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1rVrNK-0000000365V-2lNu; Fri, 02 Feb 2024 12:06:26 +0100
-Received: from ip-185-104-138-54.ptr.icomera.net ([185.104.138.54] helo=[172.18.187.1])
-          by inpost2.zedat.fu-berlin.de (Exim 4.97)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1rVrNK-00000001k1T-1DEY; Fri, 02 Feb 2024 12:06:26 +0100
-Message-ID: <9fda57fc1b1ba6ad9bd6f7df3fb12674d0f4f940.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: Fix build with CONFIG_UBSAN=y
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Kees Cook <keescook@chromium.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, kernel test robot
-	 <lkp@intel.com>, Rich Felker <dalias@libc.org>, Masahiro Yamada
-	 <masahiroy@kernel.org>, Nicolas Schier <n.schier@avm.de>, 
-	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-hardening@vger.kernel.org
-Date: Fri, 02 Feb 2024 12:06:22 +0100
-In-Reply-To: <202402020228.BBEF7DAC@keescook>
-References: <20240130232717.work.088-kees@kernel.org>
-	 <494586ed5a0871cf7cfd005f513577952306a0bc.camel@physik.fu-berlin.de>
-	 <fe057f57aba0f8a9040d4700d27f5bd478032925.camel@physik.fu-berlin.de>
-	 <202402020228.BBEF7DAC@keescook>
-Autocrypt: addr=glaubitz@physik.fu-berlin.de; prefer-encrypt=mutual;
- keydata=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
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.50.3 
+	s=arc-20240116; t=1707017185; c=relaxed/simple;
+	bh=cCrUgip/wd0GQevGmH2jhQsDZoc4azCewghl3pZSqRw=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=mzzspYfHhJUrVvGdfYD+2GHmgDRiMdVc0cx/fcOVZX5mG++tcq6SGqpYyo0sK0eogLQKjAdmm+if8i0HPh5DMVOLCnRECRfFwWRDsfJZLzNcQom/57Y30DoUIDfnL9vDyzK7j2rIHNwifrm+qPBn+qHNaZJq0ZDrG4RerZTZDaY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=g+wbH4xV; arc=none smtp.client-ip=170.10.133.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="g+wbH4xV"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1707017180;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=eysYxb9qJ6RxmbOxjXjjrpSobYnMDkjTn7GmoY0o3W4=;
+	b=g+wbH4xVR5TIYGbaJPaTOUcd6/yTBulfvWmc3axUFTVbL4AyCT7rt+Ig59r0dh0FV5SVC3
+	3kajx+qSUwJf92cHEKcZHsod704pldGgsWDrVkSB/rfAFiGj8wwuIubIeD98JOfyAjAvyl
+	vsMFTS53aCvNX3PNUao8USQUk5fGLcw=
+Received: from mimecast-mx02.redhat.com (mx-ext.redhat.com [66.187.233.73])
+ by relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
+ cipher=TLS_AES_256_GCM_SHA384) id us-mta-220-x_mqoEOfNmSyHGbxxMyZPQ-1; Sat,
+ 03 Feb 2024 22:26:17 -0500
+X-MC-Unique: x_mqoEOfNmSyHGbxxMyZPQ-1
+Received: from smtp.corp.redhat.com (int-mx04.intmail.prod.int.rdu2.redhat.com [10.11.54.4])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id D9FBD1C0514F;
+	Sun,  4 Feb 2024 03:26:16 +0000 (UTC)
+Received: from localhost (unknown [10.72.116.13])
+	by smtp.corp.redhat.com (Postfix) with ESMTPS id ED10F2026F95;
+	Sun,  4 Feb 2024 03:26:15 +0000 (UTC)
+Date: Sun, 4 Feb 2024 11:26:12 +0800
+From: Baoquan He <bhe@redhat.com>
+To: Hari Bathini <hbathini@linux.ibm.com>
+Cc: linux-kernel@vger.kernel.org, kexec@lists.infradead.org, x86@kernel.org,
+	linux-arm-kernel@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
+	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+	linux-mips@vger.kernel.org, linux-riscv@lists.infradead.org,
+	loongarch@lists.linux.dev, akpm@linux-foundation.org,
+	ebiederm@xmission.com, piliu@redhat.com, viro@zeniv.linux.org.uk
+Subject: Re: [PATCH v2 00/14] Split crash out from kexec and clean up related
+ config items
+Message-ID: <Zb8D1ASrgX0qVm9z@MiWiFi-R3L-srv>
+References: <20240119145241.769622-1-bhe@redhat.com>
+ <9101bb07-70f1-476c-bec9-ec67e9899744@linux.ibm.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <9101bb07-70f1-476c-bec9-ec67e9899744@linux.ibm.com>
+X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.4
 
-Hi Kees,
+On 02/02/24 at 10:53am, Hari Bathini wrote:
+> Hi Baoquan,
+> 
+> On 19/01/24 8:22 pm, Baoquan He wrote:
+> > Motivation:
+> > =============
+> > Previously, LKP reported a building error. When investigating, it can't
+> > be resolved reasonablly with the present messy kdump config items.
+> > 
+> >   https://lore.kernel.org/oe-kbuild-all/202312182200.Ka7MzifQ-lkp@intel.com/
+> > 
+> > The kdump (crash dumping) related config items could causes confusions:
+> > 
+> > Firstly,
+> > ---
+> > CRASH_CORE enables codes including
+> >   - crashkernel reservation;
+> >   - elfcorehdr updating;
+> >   - vmcoreinfo exporting;
+> >   - crash hotplug handling;
+> > 
+> > Now fadump of powerpc, kcore dynamic debugging and kdump all selects
+> > CRASH_CORE, while fadump
+> >   - fadump needs crashkernel parsing, vmcoreinfo exporting, and accessing
+> >     global variable 'elfcorehdr_addr';
+> >   - kcore only needs vmcoreinfo exporting;
+> >   - kdump needs all of the current kernel/crash_core.c.
+> > 
+> > So only enabling PROC_CORE or FA_DUMP will enable CRASH_CORE, this
+> > mislead people that we enable crash dumping, actual it's not.
+> > 
+> > Secondly,
+> > ---
+> > It's not reasonable to allow KEXEC_CORE select CRASH_CORE.
+> > 
+> > Because KEXEC_CORE enables codes which allocate control pages, copy
+> > kexec/kdump segments, and prepare for switching. These codes are
+> > shared by both kexec reboot and kdump. We could want kexec reboot,
+> > but disable kdump. In that case, CRASH_CORE should not be selected.
+> > 
+> >   --------------------
+> >   CONFIG_CRASH_CORE=y
+> >   CONFIG_KEXEC_CORE=y
+> >   CONFIG_KEXEC=y
+> >   CONFIG_KEXEC_FILE=y
+> >      ---------------------
+> > 
+> > Thirdly,
+> > ---
+> > It's not reasonable to allow CRASH_DUMP select KEXEC_CORE.
+> > 
+> > That could make KEXEC_CORE, CRASH_DUMP are enabled independently from
+> > KEXEC or KEXEC_FILE. However, w/o KEXEC or KEXEC_FILE, the KEXEC_CORE
+> > code built in doesn't make any sense because no kernel loading or
+> > switching will happen to utilize the KEXEC_CORE code.
+> >   ---------------------
+> >   CONFIG_CRASH_CORE=y
+> >   CONFIG_KEXEC_CORE=y
+> >   CONFIG_CRASH_DUMP=y
+> >   ---------------------
+> > 
+> > In this case, what is worse, on arch sh and arm, KEXEC relies on MMU,
+> > while CRASH_DUMP can still be enabled when !MMU, then compiling error is
+> > seen as the lkp test robot reported in above link.
+> > 
+> >   ------arch/sh/Kconfig------
+> >   config ARCH_SUPPORTS_KEXEC
+> >           def_bool MMU
+> > 
+> >   config ARCH_SUPPORTS_CRASH_DUMP
+> >           def_bool BROKEN_ON_SMP
+> >   ---------------------------
+> > 
+> > Changes:
+> > ===========
+> > 1, split out crash_reserve.c from crash_core.c;
+> > 2, split out vmcore_infoc. from crash_core.c;
+> > 3, move crash related codes in kexec_core.c into crash_core.c;
+> > 4, remove dependency of FA_DUMP on CRASH_DUMP;
+> > 5, clean up kdump related config items;
+> > 6, wrap up crash codes in crash related ifdefs on all 9 arch-es
+> >     which support crash dumping;
+> > 
+> > Achievement:
+> > ===========
+> > With above changes, I can rearrange the config item logic as below (the right
+> > item depends on or is selected by the left item):
+> > 
+> >      PROC_KCORE -----------> VMCORE_INFO
+> > 
+> >                 |----------> VMCORE_INFO
+> >      FA_DUMP----|
+> >                 |----------> CRASH_RESERVE
+> 
+> FA_DUMP also needs PROC_VMCORE (CRASH_DUMP by dependency, I guess).
+> So, the FA_DUMP related changes here will need a relook..
 
-On Fri, 2024-02-02 at 02:32 -0800, Kees Cook wrote:
-> On Wed, Jan 31, 2024 at 12:19:22PM +0100, John Paul Adrian Glaubitz wrote=
-:
-> > Hi Kees,
-> >=20
-> > On Wed, 2024-01-31 at 12:03 +0100, John Paul Adrian Glaubitz wrote:
-> > > Hi Kees,
-> > >=20
-> > > On Tue, 2024-01-30 at 15:27 -0800, Kees Cook wrote:
-> > > > The early boot stub for sh had UBSan instrumentation present where =
-it is
-> > > > not supported. Disable it for this part of the build.
-> > > >=20
-> > > >   sh4-linux-ld: arch/sh/boot/compressed/misc.o: in function `zlib_i=
-nflate_table':
-> > > >   misc.c:(.text+0x670): undefined reference to `__ubsan_handle_shif=
-t_out_of_bounds'
-> > > >=20
-> > > > Reported-by: kernel test robot <lkp@intel.com>
-> > > > Closes: https://lore.kernel.org/oe-kbuild-all/202401310416.s8HLiLnC=
--lkp@intel.com/
-> > > > Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > > > Cc: Rich Felker <dalias@libc.org>
-> > > > Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> > > > Cc: Masahiro Yamada <masahiroy@kernel.org>
-> > > > Cc: Nicolas Schier <n.schier@avm.de>
-> > > > Cc: linux-sh@vger.kernel.org
-> > > > Signed-off-by: Kees Cook <keescook@chromium.org>
-> > > > ---
-> > > >  arch/sh/boot/compressed/Makefile | 1 +
-> > > >  1 file changed, 1 insertion(+)
-> > > >=20
-> > > > diff --git a/arch/sh/boot/compressed/Makefile b/arch/sh/boot/compre=
-ssed/Makefile
-> > > > index b5e29f99c02c..6c6c791a1d06 100644
-> > > > --- a/arch/sh/boot/compressed/Makefile
-> > > > +++ b/arch/sh/boot/compressed/Makefile
-> > > > @@ -12,6 +12,7 @@ targets :=3D vmlinux vmlinux.bin vmlinux.bin.gz v=
-mlinux.bin.bz2 \
-> > > >             vmlinux.bin.lzma vmlinux.bin.xz vmlinux.bin.lzo $(OBJEC=
-TS)
-> > > > =20
-> > > >  GCOV_PROFILE :=3D n
-> > > > +UBSAN_SANITIZE :=3D n
-> > > > =20
-> > > >  #
-> > > >  # IMAGE_OFFSET is the load offset of the compression loader
-> > >=20
-> > > Thanks for the patch. I'm looking into this now and will provide the =
-review later.
-> >=20
-> > I tried to reproduce the error using your tree and the branch devel/ove=
-rflow/ubsan-only
-> > minus the above patch and using the provided config but I'm unable to r=
-eproduce the
-> > error above.
-> >=20
-> > Am I missing anything?
->=20
-> When I use GCC 13.2 (I'm specifically on Ubuntu 23.10) and the randconfig
-> linked from the report:
-> https://download.01.org/0day-ci/archive/20240131/202401310416.s8HLiLnC-lk=
-p@intel.com/config
-> (which is notably enabling CONFIG_UBSAN=3Dy and CONFIG_UBSAN_SHIFT=3Dy) t=
-hen I
-> see at the final link stage:
->=20
-> /usr/bin/sh4-linux-gnu-ld: arch/sh/boot/compressed/misc.o: in function `z=
-lib_inflate_table':
-> misc.c:(.text+0x650): undefined reference to `__ubsan_handle_shift_out_of=
-_bounds'
-> ...
->=20
-> After the patch, it's solved.
+Thanks for checking this.
 
-OK, let me test with gcc 13.x. My build host is currently running openSUSE =
-Leap 15.5.
+So FA_DUMP needs vmcoreinfo exporting, crashkernel reservation,
+/proc/vmcore. Then it's easy to adjust the kernel config item of FA_DUMP
+to make it select CRASH_DUMP. Except of this, do you have concern about
+the current code and Kconfig refactorying?
 
-Adrian
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+                           ---->VMCORE_INFO
+                         /|
+FA_DUMP--> CRASH_DUMP-->/-|---->CRASH_RESERVE
+                        \ |
+                          \---->PROC_VMCORE
+
+
+> 
+> 
+> >                                                      ---->VMCORE_INFO
+> >                                                     /
+> >                                                     |---->CRASH_RESERVE
+> >      KEXEC      --|                                /|
+> >                   |--> KEXEC_CORE--> CRASH_DUMP-->/-|---->PROC_VMCORE
+> >      KEXEC_FILE --|                               \ |
+> >                                                     \---->CRASH_HOTPLUG
+> > 
+> > 
+> >      KEXEC      --|
+> >                   |--> KEXEC_CORE (for kexec reboot only)
+> >      KEXEC_FILE --|
+> > 
+> > Test
+> > ========
+> > On all 8 architectures, including x86_64, arm64, s390x, sh, arm, mips,
+> > riscv, loongarch, I did below three cases of config item setting and
+> > building all passed. Let me take configs on x86_64 as exampmle here:
+> > 
+> > (1) Both CONFIG_KEXEC and KEXEC_FILE is unset, then all kexec/kdump
+> > items are unset automatically:
+> > # Kexec and crash features
+> > # CONFIG_KEXEC is not set
+> > # CONFIG_KEXEC_FILE is not set
+> > # end of Kexec and crash features
+> > 
+> > (2) set CONFIG_KEXEC_FILE and 'make olddefconfig':
+> > ---------------
+> > # Kexec and crash features
+> > CONFIG_CRASH_RESERVE=y
+> > CONFIG_VMCORE_INFO=y
+> > CONFIG_KEXEC_CORE=y
+> > CONFIG_KEXEC_FILE=y
+> > CONFIG_CRASH_DUMP=y
+> > CONFIG_CRASH_HOTPLUG=y
+> > CONFIG_CRASH_MAX_MEMORY_RANGES=8192
+> > # end of Kexec and crash features
+> > ---------------
+> > 
+> > (3) unset CONFIG_CRASH_DUMP in case 2 and execute 'make olddefconfig':
+> > ------------------------
+> > # Kexec and crash features
+> > CONFIG_KEXEC_CORE=y
+> > CONFIG_KEXEC_FILE=y
+> > # end of Kexec and crash features
+> > ------------------------
+> > 
+> > Note:
+> > For ppc, it needs investigation to make clear how to split out crash
+> > code in arch folder.
+> 
+> On powerpc, both kdump and fadump need PROC_VMCORE & CRASH_DUMP.
+> Hope that clears things. So, patch 3/14 breaks things for FA_DUMP..
+
+I see it now. We can easily fix that with below patch. What do you
+think?
+
+By the way, do you have chance to help test these on powerpc system?
+I can find ppc64le machine, while I don't know how to operate to test
+fadump.
+
+From fa8e6c3930d4f22f2b3768399c5bf0523c17adde Mon Sep 17 00:00:00 2001
+From: Baoquan He <bhe@redhat.com>
+Date: Sun, 4 Feb 2024 11:06:54 +0800
+Subject: [PATCH] power/fadump: make FA_DUMP select CRASH_DUMP
+Content-type: text/plain
+
+FA_DUMP which is similar with kdump needs vmcoreinfo exporting,
+crashkernel reservation and /proc/vmcore file . After refactoring crash
+related codes and Kconfig items, make FA_DUMP select CRASH_DUMP. Now
+the dependency layout is like below:
+
+                           ---->VMCORE_INFO
+                         /|
+FA_DUMP--> CRASH_DUMP-->/-|---->CRASH_RESERVE
+                        \ |
+                          \---->PROC_VMCORE
+
+Signed-off-by: Baoquan He <bhe@redhat.com>
+---
+ arch/powerpc/Kconfig | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index f182fb354bef..d5d4c890f010 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -695,8 +695,7 @@ config ARCH_SELECTS_CRASH_DUMP
+ config FA_DUMP
+ 	bool "Firmware-assisted dump"
+ 	depends on PPC64 && (PPC_RTAS || PPC_POWERNV)
+-	select VMCORE_INFO
+-	select CRASH_RESERVE
++	select CRASH_DUMP
+ 	help
+ 	  A robust mechanism to get reliable kernel crash dump with
+ 	  assistance from firmware. This approach does not use kexec,
+-- 
+2.41.0
+
+
+> 
+> > Hope Hari and Pingfan can help have a look, see if
+> > it's doable. Now, I make it either have both kexec and crash enabled, or
+> > disable both of them altogether.
+> 
+> 
+> Sure. I will take a closer look...
+
+Thanks a lot. Please feel free to post patches to make that, or I can do
+it with your support or suggestion.
+
