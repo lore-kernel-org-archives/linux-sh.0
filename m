@@ -1,125 +1,90 @@
-Received: from mail-pl1-f178.google.com (mail-pl1-f178.google.com [209.85.214.178])
+Received: from mail-yw1-f173.google.com (mail-yw1-f173.google.com [209.85.128.173])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F207F22339;
-	Sun,  4 Feb 2024 15:14:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.178
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A8F4925565;
+	Sun,  4 Feb 2024 20:45:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.173
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707059682; cv=none; b=LrmVsM9O1EtNTuW4oRduGiJr9MW5RZVpmPbf6PxkWPiT7XAIuJ0sGH8xwoLxIQ0Yq64XKp8uS9B9xlrCt0C2bt8+Y+0dAfTBvldIUC4tTbf8s8LI7zuUcfK+F3ttev5zcd0UixPhVbUnPgu8VLAVYumyzt4pgJaL8bXw8f6WwnI=
+	t=1707079518; cv=none; b=t7Qy92lmHhgAoPBmFbio124KRIoTdtYqTQbHAE1kiTlYpg8vhKxSeMoUNP/Vc1AdL+J6WLOaKse1zap1Tpfs3A6PkF6sO2NjqmjQ3X17zAz7J9J+eztBOSYiCGVFIENjZDZZBdJhvmc+z3yQoiUlDMhDgT8Wn2nJwtBY0Oci1Qo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1707059682; c=relaxed/simple;
-	bh=unFrVMxFKdtlqsueW7SbasHzGEZbQ6TZB8LIc+Kh/8g=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc; b=R/0MqcGOnOBDif3bhe2tXXbkknTgEky9Sj4Gwrz2fWw2+rkBtDPqyD3NYit4cZuWoFOAsC/iUvGBxc1MDI4sauiuXdAql8gbvFAzRCbB7aOqTnKT3Q4Bm1o4JsBtxORQ9/DMmTZ/u4Q/rIcRHohiW9ZLbh4jAmF4ZOyDP9CFW0I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=marliere.net; spf=pass smtp.mailfrom=gmail.com; dkim=fail (0-bit key) header.d=marliere.net header.i=@marliere.net header.b=hoJc365J reason="key not found in DNS"; arc=none smtp.client-ip=209.85.214.178
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=marliere.net
+	s=arc-20240116; t=1707079518; c=relaxed/simple;
+	bh=JV+Wd7Im5aUUnZOUfc6fuLxpDqIGzgX3N5TERiynJ3g=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=o4Lq47or0nA+sRy8iVnbHafbqjfpPFmPZUuy9JtNh1htb+9vxKVRJ6CXFyugufTbg1YMs0j7CYwd0XGhRSX2KAj0tjb9nig+KyfuMjk9bWw5oKNpDT05S5nu/iIdeyCv7qyQa0N/gQ2mNK5QCpp+DkhvrzUpFi0ZkaynWZm8mkU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.128.173
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=fail reason="key not found in DNS" (0-bit key) header.d=marliere.net header.i=@marliere.net header.b="hoJc365J"
-Received: by mail-pl1-f178.google.com with SMTP id d9443c01a7336-1d7881b1843so31613965ad.3;
-        Sun, 04 Feb 2024 07:14:40 -0800 (PST)
+Received: by mail-yw1-f173.google.com with SMTP id 00721157ae682-604059403e9so37321557b3.3;
+        Sun, 04 Feb 2024 12:45:16 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1707059680; x=1707664480;
-        h=cc:to:message-id:content-transfer-encoding:mime-version:subject
-         :date:dkim-signature:from:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=xVaWgQ1LmZY0En2Gv1UD7y3r8EXSlwnu8I23/WONgF4=;
-        b=h9IyzhDSDsQQMOCVxt2fS5mTXqSINSleYtZrqQHQrOzLAbCO/tRjKn+qQm1ud3Xo2N
-         j4gK5jsqvUu62lSlQU7hDKArM3S0gGo+oZi5sT/VkL93sxz3JHiKsCLvxLV2gI5Ef4w2
-         pUampbDCtEH6CqEMVC4oTi8LRxdqL1fwHy68R3Takum7souMCnzBjKcJw17/12rpK3Tz
-         fixOE/CdfbukEytPgNj5Uz0hQK+2yksZDiUQCwPqfvX1YJXA9X5bEnCH0vcKNyfJSH6G
-         8MBtLMtqMJ5PqNpQ0n8y7bzBfDqqKxQhxf2RNEKGM3qw5fBhHfP40HdGenxJ5sIRS7Rx
-         ndtw==
-X-Gm-Message-State: AOJu0YxY2juFe2OwX/HUrloIPpSGVJrpYFx9C+kX6uqWIyd3spd5c+bB
-	kq2HIJyfjWQSnkh3tTGt1fQYk40hdVtFTnW4GBuntkHO79+6OfhX3TKKiSkZ5iZYKQ==
-X-Google-Smtp-Source: AGHT+IGDzq37VVdp17hoYkuKaFrCKYQpGo+DEPCydb82x+tNqHr6PhSxcFI+1ZycGEhxE+/NgMLn2A==
-X-Received: by 2002:a05:6a21:3a47:b0:19e:2a1e:9650 with SMTP id zu7-20020a056a213a4700b0019e2a1e9650mr8502299pzb.38.1707059680256;
-        Sun, 04 Feb 2024 07:14:40 -0800 (PST)
-X-Forwarded-Encrypted: i=0; AJvYcCWIYkZHoemoqL767NAqkaGmbRzZCLG0NEQRhqW9NTjXZQ6RzQHf1i7zNPf3DWvGQmF0XxBr4rXPU9SAfEQaspXjAjslEKd73LydnsV33pcNJK21rSs+YQ1Z1JewIhNptsH8t7GNRyi0B/kvjhi7Aeqp4c69ubhU+KphirzU9GTnxVDOqCsr6kee5IN8I94XjVTx1nKWi1Je
-Received: from mail.marliere.net ([24.199.118.162])
-        by smtp.gmail.com with ESMTPSA id g9-20020aa78189000000b006da96503d9fsm4913302pfi.109.2024.02.04.07.14.39
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 04 Feb 2024 07:14:39 -0800 (PST)
-From: "Ricardo B. Marliere" <ricardo@marliere.net>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=marliere.net;
-	s=2023; t=1707059678;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding;
-	bh=xVaWgQ1LmZY0En2Gv1UD7y3r8EXSlwnu8I23/WONgF4=;
-	b=hoJc365JYKgNUQj3hn22YIOD8f0t7HndiNGa+bD/gkkHXV14IzEYyMpG9/y6Gd70aFYcr5
-	kWoBvHJAzMFqYFN7HcuKpdN85moNHcAg11sDZkpeBXyDmjb1fUZZ40P8oq+/X5sUuWwBIp
-	t7hSOpHuxTHxOuzUNMFL6qaYYUzf0fsI9k9ZEKG5g8tM3sgwTKHWuwY3h6/gwIyATF0Vs9
-	uX6UqZZ7WAcWalCughPwentMfqrXkjWxArJmKhHiOGtnJjyL0bKmsr1lgHULkXVxYwYHHR
-	mlzbvlyDbmyDea1unm7/mgp9jxhgn2PCxuFchG1rHytL1THgFyYF+ZgmS4FKsA==
-Authentication-Results: ORIGINATING;
-	auth=pass smtp.auth=ricardo@marliere.net smtp.mailfrom=ricardo@marliere.net
-Date: Sun, 04 Feb 2024 12:15:09 -0300
-Subject: [PATCH] dma: dma-sysfs: make dma_subsys const
+        d=1e100.net; s=20230601; t=1707079515; x=1707684315;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=ETqMOhIHhZm5B+JmMLekbYgg8mbEjlb7o4YBTagCBfE=;
+        b=OcPwCOgChJwcu82Xx9b3cgDJJ08DSmZHW6WW+3Fasw+CHDJaT8rxFJHzPxXOZr5h0a
+         vAB9ATmd/C2BG6im6g6Cqjd2md5KzY9SRvZ/tedvtGIhbUViIBqvfGR7xAAkxwLwRPaU
+         se0ici8mn5qEdtdJmN1Ykk+E5/ZQaj6ziuRyjR2IRrA9Ajjab8zEXUB7cl4w5JInQGY1
+         HV7ui0gkKBz4hs2e+fimF6bdZOWaPNpEZlxSEN23CIHke7SXghtwJ0d6R2hvCrLrzdQn
+         XG1GVMP7w+IX9EybBVv9NzHVPdrmC+M9HJ+SOcCEimISoAA4NWz/q/lsdOa3Yl6YbiWf
+         8zwg==
+X-Gm-Message-State: AOJu0YwzZqHihLyn2ipUXEK9A7Fwk4FQdedj6iJyKYawcn8Wqxf8fSHl
+	APNzvKx/Y4gOff/gMTYBRXDTpb6X3waYUVj5h0gUfKCyE4ViDqYUmVg7wWFOHLc=
+X-Google-Smtp-Source: AGHT+IGptP2xJ/CGR7KW169i938wFOVfzJSBn22spRyWblkLTpa2/khfPuDw6vmXJ7BO09sNM21E5w==
+X-Received: by 2002:a0d:cb91:0:b0:5eb:de3c:fbff with SMTP id n139-20020a0dcb91000000b005ebde3cfbffmr11332633ywd.27.1707079514969;
+        Sun, 04 Feb 2024 12:45:14 -0800 (PST)
+X-Forwarded-Encrypted: i=0; AJvYcCWVCQnqNf6lDYtSGelqcFT3SgQ7Wmp1lYmP7uAKNyVEnXxIqvCY1wkgBDqHAs929j1egLrhxorvrMiy3tKgHq8NCh01AzzS0Ja7oTCHlHBNJjJlU4JGYBFPhsD2B+xy1Pm0HIjpRHA=
+Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com. [209.85.128.179])
+        by smtp.gmail.com with ESMTPSA id y194-20020a0dd6cb000000b0060418fc78eesm1620673ywd.80.2024.02.04.12.45.14
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 04 Feb 2024 12:45:14 -0800 (PST)
+Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-6045db1b5a1so2333747b3.2;
+        Sun, 04 Feb 2024 12:45:14 -0800 (PST)
+X-Received: by 2002:a81:4422:0:b0:5ff:91d8:42b0 with SMTP id
+ r34-20020a814422000000b005ff91d842b0mr10970588ywa.46.1707079514424; Sun, 04
+ Feb 2024 12:45:14 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20240204-bus_cleanup-sh-v1-1-44ced951bb16@marliere.net>
-X-B4-Tracking: v=1; b=H4sIAPypv2UC/6tWKk4tykwtVrJSqFYqSi3LLM7MzwNyDHUUlJIzE
- vPSU3UzU4B8JSMDIxMDIwMT3aTS4vjknNTEvNIC3eIMXbMU42RDY7OURLOkJCWgpoKi1LTMCrC
- B0bG1tQD0gQiSYAAAAA==
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, 
- Rich Felker <dalias@libc.org>, 
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
- Greg Kroah-Hartman <gregkh@linuxfoundation.org>, 
- "Ricardo B. Marliere" <ricardo@marliere.net>
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1063; i=ricardo@marliere.net;
- h=from:subject:message-id; bh=unFrVMxFKdtlqsueW7SbasHzGEZbQ6TZB8LIc+Kh/8g=;
- b=owEBbQKS/ZANAwAKAckLinxjhlimAcsmYgBlv6n9FGNJyod4DtP0WFNNlPJ/fSSPQH8L0WfqL
- wkAkwvOqSKJAjMEAAEKAB0WIQQDCo6eQk7jwGVXh+HJC4p8Y4ZYpgUCZb+p/QAKCRDJC4p8Y4ZY
- phNhEACW1zdIRC1W3ggdTI9lW8Xlbv7ns5oeBSNfr0yiKF7lDbcy6aCRQP/IXJgajOZz7xJIbfI
- Lzpu1IgUAGRoz4VE5sXuZkicDgMQX84SLLQ1up5XTNfeV+I7IH6wifAz/f48WcWlyj6pTDXC8nQ
- 5ko62B8nwrd5L0z3jTebDZKhFjY4fMTchGa3mwPZdzMpesZ2Af17l86VLxosgvMYVWOyq0UE7Br
- Rh7Fl9DFPmzJ8392xoxXsghD6ylRiu0w5/bMt1KDCQ21MR9krQmzyPldmxtpwqAlfqqFXn7cQlk
- Ph/T6zM5Ry3viUp8/ftEMW/xUMSVAe/43yaA+xkb2aYmWlXkyl7Iin+tP3UPRe31JkihAk6XuHk
- F+l+CGwZFp5XN1o+S1CndSG+AMIApTXhOi5yToaOpzPpb+wDS3zi1UbrdChwtxpE38TpOp0A16n
- z9uJKv3gOPadodMGE6XHr3TItTqpqCRc/9+tGDbho7pTUoD9/F2GtNVdwALOptwZMZgPFxz45bL
- 724uuVsDtRNG3JCDXbne/cA+S1axsI+ZXALwmRjOsKvFVnzSlVkcOD2o6pX+Sl/QWS1XqJaenv/
- dtf1AjcX/UCwaR75GRsLJeE3nS2M5mZEHZPHcaxMHWoRjd8Eibl9O4W7ivjV0gdWhmF3edayi2N
- kwKfr824GMROhyg==
-X-Developer-Key: i=ricardo@marliere.net; a=openpgp;
- fpr=030A8E9E424EE3C0655787E1C90B8A7C638658A6
+References: <20240204-bus_cleanup-sh-v1-1-44ced951bb16@marliere.net>
+In-Reply-To: <20240204-bus_cleanup-sh-v1-1-44ced951bb16@marliere.net>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 4 Feb 2024 21:45:02 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdXHtUVM9ACXQUPJeGt6e6GgJgbN89Qj0HDc0HzetzNjUw@mail.gmail.com>
+Message-ID: <CAMuHMdXHtUVM9ACXQUPJeGt6e6GgJgbN89Qj0HDc0HzetzNjUw@mail.gmail.com>
+Subject: Re: [PATCH] dma: dma-sysfs: make dma_subsys const
+To: "Ricardo B. Marliere" <ricardo@marliere.net>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, linux-sh@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Now that the driver core can properly handle constant struct bus_type,
-move the dma_subsys variable to be a constant structure as well,
-placing it into read-only memory which can not be modified at runtime.
+On Sun, Feb 4, 2024 at 4:14=E2=80=AFPM Ricardo B. Marliere <ricardo@marlier=
+e.net> wrote:
+> Now that the driver core can properly handle constant struct bus_type,
+> move the dma_subsys variable to be a constant structure as well,
+> placing it into read-only memory which can not be modified at runtime.
+>
+> Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+> Suggested-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+> Signed-off-by: Ricardo B. Marliere <ricardo@marliere.net>
 
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Suggested-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Signed-off-by: Ricardo B. Marliere <ricardo@marliere.net>
----
- arch/sh/drivers/dma/dma-sysfs.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/arch/sh/drivers/dma/dma-sysfs.c b/arch/sh/drivers/dma/dma-sysfs.c
-index 431bc18f0a41..9f666280d80c 100644
---- a/arch/sh/drivers/dma/dma-sysfs.c
-+++ b/arch/sh/drivers/dma/dma-sysfs.c
-@@ -15,7 +15,7 @@
- #include <linux/string.h>
- #include <asm/dma.h>
- 
--static struct bus_type dma_subsys = {
-+static const struct bus_type dma_subsys = {
- 	.name = "dma",
- 	.dev_name = "dma",
- };
+Gr{oetje,eeting}s,
 
----
-base-commit: 6613476e225e090cc9aad49be7fa504e290dd33d
-change-id: 20240204-bus_cleanup-sh-6d3c136da6bb
+                        Geert
 
-Best regards,
--- 
-Ricardo B. Marliere <ricardo@marliere.net>
+--=20
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
 
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
