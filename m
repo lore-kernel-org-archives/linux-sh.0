@@ -1,123 +1,106 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from mx0a-0031df01.pphosted.com (mx0a-0031df01.pphosted.com [205.220.168.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3048C38DC3;
-	Fri,  9 Feb 2024 13:28:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B4E8A1FB3;
+	Sat, 10 Feb 2024 00:32:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=205.220.168.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707485323; cv=none; b=U8JmrWmvZGhlnFwOLq4BjnpFHOCARYajBz0eOOSZhQfRi4SDhwudlk2akLItqTr6t9ZbS1tuBNxuUdFqTa6UTBVVekLSvFKzGRzmiKwYDdTZiqqwaQFSEM13F9KUgfMWOxG486ftvz6FQ/diCchYGCzXjjz+U0yjA+rwigbNH9Y=
+	t=1707525146; cv=none; b=bse8fGydcZUbNM4CHObZ6TIdCvjNvl4er2Y32nTQXXde5RIX/yE0HEdZHkBzqJXlH1uEZpXiIdRj5Q4lN5eJAQVoXScBE49GiACzm+PDf0ZZbiy6im7OhK8dBt15SRKX8XiG1fyq23cdh9gETXHj2lZyzktPNpsWehr7UrY2I58=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1707485323; c=relaxed/simple;
-	bh=lNwTY81xFGQbjGbLm8+cb2M71UePFXEZSG+wq4uR8/0=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=hjJ8yRS6Lgy6pChBPK5dyFMTnxatzZRUPMeTuV/hO26oBmCH8t1wSP+Zc+XDgtZN9t2WcdNQ9lGD50c8FxOGoabrpeutpCyT4d2d6f1bzWgmhH0D9Bc1LqcoNuQo0t5VOCgTEusj5CSIFhYeLk9PfeV0z9NsBzRmqDa1r4bD8UA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=TqhVnpYg; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1707525146; c=relaxed/simple;
+	bh=86ofy+kM5/T8yxYifh+rhywEk+E0E7T2saCw5ZL4pS4=;
+	h=From:To:CC:Subject:Date:Message-ID:MIME-Version:Content-Type; b=AGjeDFcB29lk0BZzEu114Tu+thmtHtGPzcckk5sAvGyWmnFcCCuT2DMzkig8WXcnPdjZ+GmnShQ/bwUZO3oOI/hJpK70eFG7F3GUxTl0/cD6p9FkB3Go7h/WVrcFFkBqKFAmKricZtcdiJ+eUYBCCOmsQeIsmSzDypWEhZ++uhQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com; spf=pass smtp.mailfrom=quicinc.com; dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b=BI11iwot; arc=none smtp.client-ip=205.220.168.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=quicinc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="TqhVnpYg"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2C573C433C7;
-	Fri,  9 Feb 2024 13:28:41 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1707485322;
-	bh=lNwTY81xFGQbjGbLm8+cb2M71UePFXEZSG+wq4uR8/0=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=TqhVnpYgBK7Pzno8i3+QFBdi4DvhtmjwhZHCbUT7XLZBPkEJzVlY7NWZqa/ojIXn9
-	 BXyH6d0TcfN8YiiqCmJsBkLGfGul+YOUJlkH/tbJpgK/ex8QiFah4ZxVqH2ZnhSrWj
-	 OGojN55a+WWcakscLCPcVsEdfDRMCF9pCtj6upqZsLhQcL8gQFODqS5GlSsq66lwDC
-	 jXIMtSydrg0DMk85WAS7hguZdP7THZaTEOErrKI2d63mVyF/l4O+mgJsCDxyXi+R9e
-	 31RzfGeWMoHM1vWuQ+8dmreuAGFIO+fxcHEv8UKEvpWOP+rBLUtW8euDmV6WMz6+8s
-	 CLDcn7O++RlyA==
-Date: Fri, 9 Feb 2024 13:28:37 +0000
-From: Lee Jones <lee@kernel.org>
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Wolfram Sang <wsa+renesas@sang-engineering.com>,
-	linux-renesas-soc@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-	linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
-Subject: Re: [PATCH 0/6] mfd: tmio: simplify header and move to platform_data
-Message-ID: <20240209132837.GJ689448@google.com>
-References: <20240209015817.14627-8-wsa+renesas@sang-engineering.com>
- <CAPDyKFpmfgwJ5dJFmORhg1tBewzhB_jrWikpX=b23r-joN91SA@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b="BI11iwot"
+Received: from pps.filterd (m0279862.ppops.net [127.0.0.1])
+	by mx0a-0031df01.pphosted.com (8.17.1.24/8.17.1.24) with ESMTP id 419Nts6s031351;
+	Sat, 10 Feb 2024 00:29:48 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=quicinc.com; h=
+	from:to:cc:subject:date:message-id:mime-version:content-type; s=
+	qcppdkim1; bh=Y+AILw3pX1T29zesxJoDs7erTQv/gDbeD35hCxK6nqc=; b=BI
+	11iwotVsHW4+YaVnK6MfOXbxyVFhGjjb7xTNKbO6c+0r8/TTeZnKJPcIA/bZrZxh
+	I1IfTPs5Gc9Vt7G8KjJGaGgL7UtHuBybizvQml1skqiDwNd2HF0xVuEio/6NdcuP
+	mL2TeLoY0dzn+9pw9P7v3rv9cnnLIRzgKBtzujicQwVsfkpe4iNj97Vey7bS/A1r
+	p/A+3uwcUjM2IMHGfyJXVrZiP/HmwTFSUTJ61djqQaXAK80AmnvYGBxUuOTh3dSF
+	TdXTPy28w+kL0dm3+24tS6jxna/hb5tyO80GpgGGsCa3LRogzbhdx38B4+p7EpaG
+	p25KzyVD5G73vZ+prKrg==
+Received: from nalasppmta02.qualcomm.com (Global_NAT1.qualcomm.com [129.46.96.20])
+	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 3w5u2k8c02-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Sat, 10 Feb 2024 00:29:48 +0000 (GMT)
+Received: from nalasex01b.na.qualcomm.com (nalasex01b.na.qualcomm.com [10.47.209.197])
+	by NALASPPMTA02.qualcomm.com (8.17.1.5/8.17.1.5) with ESMTPS id 41A0TlCw025917
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Sat, 10 Feb 2024 00:29:47 GMT
+Received: from th-lint-014.qualcomm.com (10.80.80.8) by
+ nalasex01b.na.qualcomm.com (10.47.209.197) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.1118.40; Fri, 9 Feb 2024 16:29:44 -0800
+From: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
+To: <chenhuacai@kernel.org>, <jonas@southpole.se>,
+        <stefan.kristiansson@saunalahti.fi>, <shorne@gmail.com>,
+        <ysato@users.sourceforge.jp>, <dalias@libc.org>,
+        <glaubitz@physik.fu-berlin.de>, <robh+dt@kernel.org>,
+        <frowand.list@gmail.com>
+CC: <linux-openrisc@vger.kernel.org>, <loongarch@lists.linux.dev>,
+        <linux-sh@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
+        <devicetree@vger.kernel.org>, <kernel@quicinc.com>,
+        Oreoluwa Babatunde
+	<quic_obabatun@quicinc.com>
+Subject: [PATCH 0/3] Restructure init sequence to set aside reserved memory earlier
+Date: Fri, 9 Feb 2024 16:29:28 -0800
+Message-ID: <1707524971-146908-1-git-send-email-quic_obabatun@quicinc.com>
+X-Mailer: git-send-email 2.7.4
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAPDyKFpmfgwJ5dJFmORhg1tBewzhB_jrWikpX=b23r-joN91SA@mail.gmail.com>
+Content-Type: text/plain
+X-ClientProxiedBy: nasanex01a.na.qualcomm.com (10.52.223.231) To
+ nalasex01b.na.qualcomm.com (10.47.209.197)
+X-QCInternal: smtphost
+X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=5800 signatures=585085
+X-Proofpoint-ORIG-GUID: _wH-3-rOkUcyW1AYOaxCUEVnFN9qy5ZW
+X-Proofpoint-GUID: _wH-3-rOkUcyW1AYOaxCUEVnFN9qy5ZW
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.272,Aquarius:18.0.1011,Hydra:6.0.619,FMLib:17.11.176.26
+ definitions=2024-02-09_20,2024-02-08_01,2023-05-22_02
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 spamscore=0 clxscore=1011
+ lowpriorityscore=0 suspectscore=0 mlxlogscore=510 bulkscore=0
+ impostorscore=0 malwarescore=0 mlxscore=0 priorityscore=1501 phishscore=0
+ adultscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.19.0-2401310000 definitions=main-2402100002
 
-On Fri, 09 Feb 2024, Ulf Hansson wrote:
+The loongarch, openric, and sh architectures allocate memory from
+memblock before it gets the chance to set aside reserved memory regions.
+This means that there is a possibility for memblock to allocate from
+memory regions that are supposed to be reserved.
 
-> On Fri, 9 Feb 2024 at 02:59, Wolfram Sang
-> <wsa+renesas@sang-engineering.com> wrote:
-> >
-> > The MFD parts of the TMIO have been removed by Arnd, so that only the
-> > SD/MMC related functionality is left. Remove the outdated remains in the
-> > public header file and then move it to platform_data as the data is now
-> > specific for the SD/MMC part.
-> >
-> > Based on 6.8-rc3, build bot is happy. Branch is here:
-> >
-> > git://git.kernel.org/pub/scm/linux/kernel/git/wsa/linux.git renesas/sdhi/tmio-simplification
-> >
-> > I'd suggest this goes via the MFD tree, so the series would need acks
-> > from the MMC and SH maintainers. Is that okay with everyone?
-> 
-> Wouldn't it be better to funnel this via the mmc tree? In that way, we
-> can easily avoid conflicts with additional renesas-mmc driver changes
-> that we have in pipe.
+This series makes changes to the arch specific setup code to call the
+functions responsible for setting aside the reserved memory regions earlier
+in the init sequence.
+Hence, by the time memblock starts being used to allocate memory, the
+reserved memory regions should already be set aside, and it will no
+longer be possible for allocations to come from them.
 
-You could say the same about changes SH, MFD and Platform Data have in
-the pipe.
+I am currnetly using an arm64 device, and so I will need assistance from
+the relevant arch maintainers to help check if this breaks anything from
+compilation to device bootup.
 
-> Or perhaps there are other changes that make the mfd tree preferred?
+Oreoluwa Babatunde (3):
+  loongarch: Call arch_mem_init() before platform_init() in the init
+    sequence
+  openrisc: Call setup_memory() earlier in the init sequence
+  sh: Call paging_init() earlier in the init sequence
 
-MFD is usually preferred since the parent device usually lives there and
-we are well accustomed to merging multi-subsystem related sets.
-
-It doesn't really matter how this is merged.  The only stipulation is
-that whoever applies the set does so on a succinct, immutable, tagged
-branch and sends out a pull-request for everyone else to pull from.
-
-If you want to do that, there are no complains from me.
-
-> > All the best!
-> >
-> >    Wolfram
-> >
-> >
-> > Wolfram Sang (6):
-> >   mfd: tmio: remove obsolete platform_data
-> >   mfd: tmio: remove obsolete io accessors
-> >   mmc: tmio/sdhi: fix includes
-> >   mfd: tmio: update include files
-> >   mfd: tmio: sanitize comments
-> >   mfd: tmio: move header to platform_data
-> >
-> >  MAINTAINERS                                   |   2 +-
-> >  arch/sh/boards/board-sh7757lcr.c              |   2 +-
-> >  arch/sh/boards/mach-ap325rxa/setup.c          |   2 +-
-> >  arch/sh/boards/mach-ecovec24/setup.c          |   2 +-
-> >  arch/sh/boards/mach-kfr2r09/setup.c           |   2 +-
-> >  arch/sh/boards/mach-migor/setup.c             |   2 +-
-> >  arch/sh/boards/mach-se/7724/setup.c           |   2 +-
-> >  drivers/mmc/host/renesas_sdhi_core.c          |   2 +-
-> >  drivers/mmc/host/renesas_sdhi_internal_dmac.c |   5 +-
-> >  drivers/mmc/host/renesas_sdhi_sys_dmac.c      |   5 +-
-> >  drivers/mmc/host/tmio_mmc_core.c              |   3 +-
-> >  drivers/mmc/host/uniphier-sd.c                |   2 +-
-> >  include/linux/mfd/tmio.h                      | 133 ------------------
-> >  include/linux/platform_data/tmio.h            |  64 +++++++++
-> >  14 files changed, 81 insertions(+), 147 deletions(-)
-> >  delete mode 100644 include/linux/mfd/tmio.h
-> >  create mode 100644 include/linux/platform_data/tmio.h
-> >
-> > --
-> > 2.43.0
-> >
-> >
+ arch/loongarch/kernel/setup.c | 2 +-
+ arch/openrisc/kernel/setup.c  | 6 +++---
+ arch/sh/kernel/setup.c        | 4 ++--
+ 3 files changed, 6 insertions(+), 6 deletions(-)
 
 -- 
-Lee Jones [李琼斯]
