@@ -1,119 +1,146 @@
-Received: from mx0b-0031df01.pphosted.com (mx0b-0031df01.pphosted.com [205.220.180.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pl1-f178.google.com (mail-pl1-f178.google.com [209.85.214.178])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1428D364;
-	Sat, 10 Feb 2024 00:32:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=205.220.180.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D82F654FB3;
+	Sat, 10 Feb 2024 15:12:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.178
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707525147; cv=none; b=fQYwDf4Snc5hcQa0tNk0B0MefTb7vgBRB3BJFTDF5QqclOMRcypNJeJQv994leCJpeGLYWcEMYAF4Sw9p2+lFRzR43NweFmIHSOWo8zm2hR3SftxgO7fuNLwrWUd5UqDl2f1qqEXqQI0stMUpOJJjQKvg8hWimwh1VevBU/cAWo=
+	t=1707577964; cv=none; b=eqSvQ6DcZs1e1oegjx9L+avdW1Upi5Z9l/oGFLykFbHfCcMEB3rJCEaTuw5CERcVzxJn+KrGSEfQcGzBIrANs7HnVcBfjDnrCrWNR6cI+s+7zKKNUgWxhvKPASIdcaYbo72m6vFtLmLJSjYO8hmx9WySbQjkIEJpa31GtbefMVc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1707525147; c=relaxed/simple;
-	bh=tWs/RdzKNSpeNzDiKFrH3scRraIzvGSczheN43Mzbmk=;
-	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=ghC+ZCEEqMREE8kll4PVffpUUWi/ZomsAV1lS93tuRKKbs0Kb9rmkMeiFSIAu7JVDeFmKvCe5S2zZIBDnoPNoa7xU2/5lTQYLmZWrYbsk+bz3VWhAUKulHu/tJBdgchiNVBpcD/QH1NwdQB1IpHxOAN9utiEEYp0OAV4il7HbUw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com; spf=pass smtp.mailfrom=quicinc.com; dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b=i1e/u8ml; arc=none smtp.client-ip=205.220.180.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=quicinc.com
+	s=arc-20240116; t=1707577964; c=relaxed/simple;
+	bh=iTIO5bGoB4ZilWo6UjR4D1Rg7K9rc5sfkyk8gOgeG6k=;
+	h=Date:From:To:Cc:Subject:Message-ID:MIME-Version:Content-Type:
+	 Content-Disposition; b=gHLszU08lRpCH3HC6OKYVbDp4dKYNn6AttKeCqcYrevoUNxLb1fUkzflwExJFLghEcpixxckysGvvmERZ0o8wcCw/GDLZU/Uv09iDN+GBhzDQzAQ7gksMCxQDHM2OKpimdvvtsFEMKTkAu/24wLVFuK40WZ40TtVrRpUvR16K0g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=roeck-us.net; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=g9SLJrnM; arc=none smtp.client-ip=209.85.214.178
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=roeck-us.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b="i1e/u8ml"
-Received: from pps.filterd (m0279868.ppops.net [127.0.0.1])
-	by mx0a-0031df01.pphosted.com (8.17.1.24/8.17.1.24) with ESMTP id 41A0A2jM028423;
-	Sat, 10 Feb 2024 00:29:51 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=quicinc.com; h=
-	from:to:cc:subject:date:message-id:in-reply-to:references
-	:mime-version:content-type; s=qcppdkim1; bh=d6dqZepJKO2rTUXSkKqD
-	A+q3/xHQWCJswgErNvcSL/I=; b=i1e/u8mlsbL3zHlvANP1b06qPEQG4XpUsU1O
-	RI6JisAzcGzNtLCMDbMsp5OsDe50MEK/uvAtV+yzh/DrMduN74hmxR/HpCK+qx6L
-	afGn63vRw53qHV68rhtzeDkFFTeYZJvs8NujfaZGtVZnee7nweGGZjqyYYhae48z
-	72I2pr0FNfd8G9uAM19fBdwUKX6ezo7/Bk5qxBl3MT3pQg0vJMVf+fpDBH77cqhb
-	SGSk4FqX2kNc6ANjKZ8VVRtuOTVr5+xeWfVoK2yLm8Lx8hESxF/9MfvqNHPUKFAX
-	x5PMpFyZRXT/3/UgA5R8e1iBiUmooHsN4geJyi76pULcA09b4A==
-Received: from nalasppmta05.qualcomm.com (Global_NAT1.qualcomm.com [129.46.96.20])
-	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 3w5m159bts-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Sat, 10 Feb 2024 00:29:50 +0000 (GMT)
-Received: from nalasex01b.na.qualcomm.com (nalasex01b.na.qualcomm.com [10.47.209.197])
-	by NALASPPMTA05.qualcomm.com (8.17.1.5/8.17.1.5) with ESMTPS id 41A0Tn2A011721
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Sat, 10 Feb 2024 00:29:49 GMT
-Received: from th-lint-014.qualcomm.com (10.80.80.8) by
- nalasex01b.na.qualcomm.com (10.47.209.197) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.1118.40; Fri, 9 Feb 2024 16:29:46 -0800
-From: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
-To: <chenhuacai@kernel.org>, <jonas@southpole.se>,
-        <stefan.kristiansson@saunalahti.fi>, <shorne@gmail.com>,
-        <ysato@users.sourceforge.jp>, <dalias@libc.org>,
-        <glaubitz@physik.fu-berlin.de>, <robh+dt@kernel.org>,
-        <frowand.list@gmail.com>
-CC: <linux-openrisc@vger.kernel.org>, <loongarch@lists.linux.dev>,
-        <linux-sh@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-        <devicetree@vger.kernel.org>, <kernel@quicinc.com>,
-        Oreoluwa Babatunde
-	<quic_obabatun@quicinc.com>
-Subject: [PATCH 3/3] sh: Call paging_init() earlier in the init sequence
-Date: Fri, 9 Feb 2024 16:29:31 -0800
-Message-ID: <1707524971-146908-4-git-send-email-quic_obabatun@quicinc.com>
-X-Mailer: git-send-email 2.7.4
-In-Reply-To: <1707524971-146908-1-git-send-email-quic_obabatun@quicinc.com>
-References: <1707524971-146908-1-git-send-email-quic_obabatun@quicinc.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="g9SLJrnM"
+Received: by mail-pl1-f178.google.com with SMTP id d9443c01a7336-1d7232dcb3eso16217165ad.2;
+        Sat, 10 Feb 2024 07:12:42 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1707577962; x=1708182762; darn=vger.kernel.org;
+        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
+         :sender:from:to:cc:subject:date:message-id:reply-to;
+        bh=CAwb6SlMI0NW4wrBgE4BjEZeBVnJ7/pDceRjOIxEIxg=;
+        b=g9SLJrnMS8EdX2mWp8OwsywMQb3ZJ6Mj3gT+O/1S1OzBNEgKSdaxhoe/nySFe96xPX
+         9RVa1/h6+hDLtNqXnKuKioyy5PISxPGcXUMeTz0QlYDMbGjaCs5dyj++cZg6JWI03El3
+         p+U91vZTLdls6SAXDr48vfz45t5BSXq4LhceK3rDepFhagW4d2K+7x2u9mRRlEX8+TNN
+         T0Pb8YjrOxsXgA/cr7wbMxX9LrwIHzF6Ng4UeO7lcFtgNZAH2FfjNFW+cfiPQ9RfK/UO
+         Nj8dD05C6j0VhKHZ3LZ9KaOnBWbhuTVYBGpraTO9KaKnRIZMhZCzPeasXI7gfmuXEPib
+         t7zw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1707577962; x=1708182762;
+        h=content-disposition:mime-version:message-id:subject:cc:to:from:date
+         :sender:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=CAwb6SlMI0NW4wrBgE4BjEZeBVnJ7/pDceRjOIxEIxg=;
+        b=QFGVY6kYoYfaoCosUT+W3yHtIK4ysu81FDXnB2gUCRO6RhnxwWHi+eJ/bx5oTfwMhV
+         +DR2nHesXC9Qg9YYT7S2We9FZoOmTGCalzs7A4Xl4C8EyKhyhRWzEcZImrQE1QHVbClh
+         eQ0Vg0EbY7nKuVPjbGQDbv0TPrF89SS8TgaUt4WkSFB12kYbMzCSyPoUm5oNnH+oR4yC
+         bUXwngDASOX7waQsgvS6NNdjMwj+E7Mzh51mf7DRfbbTAcPTIy/TLgarBdaMzRgwGUP6
+         pXHC1gxZkVb8m6WmERv5/gfPJRE/9oxJbJl1tzBt1zdCQ472t6FX9OnNe9+ROOyO5dU9
+         x7mA==
+X-Gm-Message-State: AOJu0Yy3GMq1SrQv3bYBWQvmo4yLdbMwbeLLeA3XI5cci/NElarB35fe
+	pLRXExRxXo882OBzJvBQXLfXA+Jer3IZP/OdJf7dd0rqbzmT8izAkx1hzuKQ
+X-Google-Smtp-Source: AGHT+IFe8aIc+Flf04LZehzrsL9WPaNcHC3QmKqdfS3f6/ejzw1UW3om74cfRNnVYoZZHzV72qnIyw==
+X-Received: by 2002:a17:903:40c4:b0:1d7:7347:d80e with SMTP id t4-20020a17090340c400b001d77347d80emr2521087pld.37.1707577961837;
+        Sat, 10 Feb 2024 07:12:41 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AJvYcCVZQoHCC4TSupUv2aTjaeCQ1SMY+I+EhSNgr/eUCHVOon1OLL5nYmHjsBzCQzlsUsR5nr1y9DDD3h7ogkui1Uuaoe1MbEMnkZEi4rWdJYGnuRgVjDnYtAah32xwzfDRDLc4bChbAUqRtBEg4jkS2bjvEwd09AAzv/RtjANquO1qutExdZ8=
+Received: from server.roeck-us.net ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
+        by smtp.gmail.com with ESMTPSA id ja15-20020a170902efcf00b001d8d0487edbsm3155929plb.223.2024.02.10.07.12.40
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 10 Feb 2024 07:12:41 -0800 (PST)
+Sender: Guenter Roeck <groeck7@gmail.com>
+Date: Sat, 10 Feb 2024 07:12:39 -0800
+From: Guenter Roeck <linux@roeck-us.net>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Problems with csum_partial with misaligned buffers on sh4 platform
+Message-ID: <65ed7c95-712c-410b-84f3-58496b0c9649@roeck-us.net>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain
-X-ClientProxiedBy: nasanex01a.na.qualcomm.com (10.52.223.231) To
- nalasex01b.na.qualcomm.com (10.47.209.197)
-X-QCInternal: smtphost
-X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=5800 signatures=585085
-X-Proofpoint-GUID: Ayi3Q_Ob1ob7P-VVfjTiuXJiq6E1gt_K
-X-Proofpoint-ORIG-GUID: Ayi3Q_Ob1ob7P-VVfjTiuXJiq6E1gt_K
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.272,Aquarius:18.0.1011,Hydra:6.0.619,FMLib:17.11.176.26
- definitions=2024-02-09_20,2024-02-08_01,2023-05-22_02
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxscore=0 suspectscore=0
- bulkscore=0 mlxlogscore=862 lowpriorityscore=0 clxscore=1015 spamscore=0
- priorityscore=1501 adultscore=0 malwarescore=0 impostorscore=0
- phishscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.19.0-2401310000 definitions=main-2402100002
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-The unflatten_device_tree() function contains a call to
-memblock_alloc(). This is a problem because this allocation is done
-before any of the reserved memory is set aside in paging_init().
-This means that there is a possibility for memblock to allocate from
-any of the memory regions that are supposed to be set aside as reserved.
+Hi,
 
-Hence, move the call to paging_init() to be earlier in the init
-sequence so that the reserved memory regions are set aside before any
-allocations are done using memblock.
+when running checksum unit tests on sh4 qemu emulations, I get the following
+errors.
 
-Signed-off-by: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
----
- arch/sh/kernel/setup.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+    KTAP version 1
+    # Subtest: checksum
+    # module: checksum_kunit
+    1..5
+    # test_csum_fixed_random_inputs: ASSERTION FAILED at lib/checksum_kunit.c:500
+    Expected ( u64)result == ( u64)expec, but
+        ( u64)result == 53378 (0xd082)
+        ( u64)expec == 33488 (0x82d0)
+    not ok 1 test_csum_fixed_random_inputs
+    # test_csum_all_carry_inputs: ASSERTION FAILED at lib/checksum_kunit.c:525
+    Expected ( u64)result == ( u64)expec, but
+        ( u64)result == 65281 (0xff01)
+        ( u64)expec == 65280 (0xff00)
+    not ok 2 test_csum_all_carry_inputs
+    # test_csum_no_carry_inputs: ASSERTION FAILED at lib/checksum_kunit.c:573
+    Expected ( u64)result == ( u64)expec, but
+        ( u64)result == 65535 (0xffff)
+        ( u64)expec == 65534 (0xfffe)
+    not ok 3 test_csum_no_carry_inputs
+    ok 4 test_ip_fast_csum
+    ok 5 test_csum_ipv6_magic
+# checksum: pass:2 fail:3 skip:0 total:5
 
-diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-index d3175f0..ea40798 100644
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -322,6 +322,8 @@ void __init setup_arch(char **cmdline_p)
- 	/* Let earlyprintk output early console messages */
- 	sh_early_platform_driver_probe("earlyprintk", 1, 1);
- 
-+	paging_init();
-+
- #ifdef CONFIG_OF_EARLY_FLATTREE
- #ifdef CONFIG_USE_BUILTIN_DTB
- 	unflatten_and_copy_device_tree();
-@@ -330,8 +332,6 @@ void __init setup_arch(char **cmdline_p)
- #endif
- #endif
- 
--	paging_init();
--
- 	/* Perform the machine specific initialisation */
- 	if (likely(sh_mv.mv_setup))
- 		sh_mv.mv_setup(cmdline_p);
--- 
+The above is with from a little endian system. On a big endian system,
+the test result is as follows.
+
+    KTAP version 1
+    # Subtest: checksum
+    # module: checksum_kunit
+    1..5
+    # test_csum_fixed_random_inputs: ASSERTION FAILED at lib/checksum_kunit.c:500
+    Expected ( u64)result == ( u64)expec, but
+        ( u64)result == 33488 (0x82d0)
+        ( u64)expec == 53378 (0xd082)
+    not ok 1 test_csum_fixed_random_inputs
+    # test_csum_all_carry_inputs: ASSERTION FAILED at lib/checksum_kunit.c:525
+    Expected ( u64)result == ( u64)expec, but
+        ( u64)result == 65281 (0xff01)
+        ( u64)expec == 255 (0xff)
+    not ok 2 test_csum_all_carry_inputs
+    # test_csum_no_carry_inputs: ASSERTION FAILED at lib/checksum_kunit.c:565
+    Expected ( u64)result == ( u64)expec, but
+        ( u64)result == 1020 (0x3fc)
+        ( u64)expec == 0 (0x0)
+    not ok 3 test_csum_no_carry_inputs
+    # test_ip_fast_csum: ASSERTION FAILED at lib/checksum_kunit.c:589
+    Expected ( u64)expected == ( u64)csum_result, but
+        ( u64)expected == 55939 (0xda83)
+        ( u64)csum_result == 33754 (0x83da)
+    not ok 4 test_ip_fast_csum
+    # test_csum_ipv6_magic: ASSERTION FAILED at lib/checksum_kunit.c:617
+    Expected ( u64)expected_csum_ipv6_magic[i] == ( u64)csum_ipv6_magic(saddr, daddr, len, proto, csum), but
+        ( u64)expected_csum_ipv6_magic[i] == 6356 (0x18d4)
+        ( u64)csum_ipv6_magic(saddr, daddr, len, proto, csum) == 43586 (0xaa42)
+    not ok 5 test_csum_ipv6_magic
+# checksum: pass:0 fail:5 skip:0 total:5
+
+Note that test_ip_fast_csum and test_csum_ipv6_magic fail on all big endian
+systems due to a bug in the test code, unrelated to this problem.
+
+Analysis shows that the errors are seen only if the buffer is misaligned.
+Looking into arch/sh/lib/checksum.S, I found commit cadc4e1a2b4d2 ("sh:
+Handle calling csum_partial with misaligned data") which seemed to be
+related. Reverting that commit fixes the problem.
+This suggests that something may be wrong with that commit. Alternatively,
+of course, it may be possible that something is wrong with the qemu
+emulation, but that seems unlikely.
+
+Thanks,
+Guenter
