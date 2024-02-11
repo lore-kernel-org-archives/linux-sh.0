@@ -1,187 +1,97 @@
-Received: from mail-ot1-f53.google.com (mail-ot1-f53.google.com [209.85.210.53])
+Received: from mail-qk1-f179.google.com (mail-qk1-f179.google.com [209.85.222.179])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2F995FBF3;
-	Sun, 11 Feb 2024 03:41:29 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1196C59141;
+	Sun, 11 Feb 2024 09:53:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.179
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707622891; cv=none; b=llbM5Gbqxbg165A51saD1ANnKBsIfIAI4jU+NyiF7vsP0pNkhEzvKo65q/jcSpM/G5zJCr3NH+GNdJ7M+XTP3lEpiyRJzCJ74A2f8WMEDAGr4hPNjcAUz74leYmQyVj6+SujwB2c5O1cyhiHRQD2CcG/qSU2rdVGsCMQBod5VMw=
+	t=1707645236; cv=none; b=P5cq4U1l17xFVATWHRf9MM+5kvLq9FWeF0p3mbxkAQkWyRI/M6dp4YLi1ajZh3oEvWk1rt6rius5By8W6JtKRVuPORp6y+sZhG1JphMbSlAM099eecDV2nSRIfA2L8svuFZ8OsdWLl6dAl6WYCpB7lJVWMcmALRgvgqcll5MmNw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1707622891; c=relaxed/simple;
-	bh=auuCPbN9842/RrHszjOgD6O5M0WHx3WynlBp7vOvpEA=;
-	h=Content-Type:From:Mime-Version:Subject:Date:Message-Id:References:
-	 Cc:In-Reply-To:To; b=YRPwA+d4VnIm3g5eBbsCZaoNY/z5K+O2AgssliIVDMTBn4iZP8kYESf56ZMrbP+IUMKzyIhYMPlqFhxWb4IK0Yw8q7+t5MlJWFwaoKoMgPthb7mlqJkQ6W/nli6Iq99yYDy1mH7yZ6sujUuhY6hz2AKBqaFP5Mdn6nRV6bPWM9Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=ZKDxWTUr; arc=none smtp.client-ip=209.85.210.53
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+	s=arc-20240116; t=1707645236; c=relaxed/simple;
+	bh=I7YZwRT/usHmRZRp/Ua6UZNQvDq03jokdgJSQkJx8ZM=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=NryFFYUpvQlNP3FL8216/xOnfE6J4jQ/+5Ci47/wL9PfYsDYXj/VKxPtzjbXdsRsuMS5MCKN9Y86GVsBvCLLr+qtFzO/nIvRJEEJ44PpGjmD/eSexs5WX6ud1th1Ru5EQeE/7cVOI1aSK7UuCmDTn3I48oAufybzlGfgi0+5L28=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.222.179
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="ZKDxWTUr"
-Received: by mail-ot1-f53.google.com with SMTP id 46e09a7af769-6e2bd53235fso1119963a34.2;
-        Sat, 10 Feb 2024 19:41:29 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1707622889; x=1708227689; darn=vger.kernel.org;
-        h=to:in-reply-to:cc:references:message-id:date:subject:mime-version
-         :from:content-transfer-encoding:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=57WDDKI88C6M85fhcIOHg/OvMgqM+Mfmauuh7lerMR0=;
-        b=ZKDxWTUrIBuOjdJ3gjoZy9+ZHKDIsaML7R1PAinKTfl/197TnbPkc/itgzKdAO+cgt
-         S6CJRvkDkx7oMmFJuPkHmOkpYNipo6zWkw4A65NSEvnu7/f+QzY+yKqN1QcRjNdpGsiz
-         Ivs3p7kEF2ENcb5+oZWYRYmnWULhloN0OPXZpWgKBMtlH8qaLoovT+KtnHtg8bz1DB8t
-         Y354fqLIhdI2k6pIQpkpO7/ip2+s9oU/AlTFRsBIu5KivEA7MADFoD2KeJw9SX8B9g6w
-         nnBC1AqxVAelm1igkSYs7s9s9HZgADClMvPLCjAdDs1nT7SCDRsb14Cr6yak3/UTx2Py
-         px7g==
+Received: by mail-qk1-f179.google.com with SMTP id af79cd13be357-7857964f57aso95575185a.1;
+        Sun, 11 Feb 2024 01:53:53 -0800 (PST)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1707622889; x=1708227689;
-        h=to:in-reply-to:cc:references:message-id:date:subject:mime-version
-         :from:content-transfer-encoding:x-gm-message-state:from:to:cc
+        d=1e100.net; s=20230601; t=1707645233; x=1708250033;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=57WDDKI88C6M85fhcIOHg/OvMgqM+Mfmauuh7lerMR0=;
-        b=MCWlN6SniC+pAGaQqyucVsaikxk8NtKhGasBe5vD4qoun0m9aumEwHbK/DmmljOpGx
-         jOdJz2DoyI+lBtMAyaHzLweiTq/UZ5CtrXCbcFvmhwTgwwWMUvXsYLW1o93ve8qhA8LF
-         WBE+71f+Va+uGgGqTYI9PBqJlykqAeSzx8cGU8aW879yOHJ9B68Xsb2W1n6oUsD1Xfdg
-         pUVkBX94BIVGNrKVr2Uz0snABU2X0vbUkCtXZi1iREkjB5Yg1jMoCNIcKlXuqWoDRi/m
-         3kvub/WBWFg8GYniQp5NmzEsHejQdu7WI5f7s3pdvqh7s+5cZDvB2ELhSe9fr887nth7
-         IXTQ==
-X-Gm-Message-State: AOJu0Yw23niRjcGm6uNSXcV1Zpft/Tard4KaHyurF5C/J8ATgNrR7P5f
-	fF1FZmv/k0C7MjIvtdXtOfxCIBJqSSqO/CRtWYhg7LjrIRcoDSXJSFSrjC3QsyQ=
-X-Google-Smtp-Source: AGHT+IEpH4avlqXDRFEkcw9u7eAiA0lwggEyglw3VFz2+sARS1ltKot/tRXDCboms7SGAOAie+E5Lw==
-X-Received: by 2002:a05:6358:618c:b0:176:d2dc:5115 with SMTP id w12-20020a056358618c00b00176d2dc5115mr4168500rww.20.1707622889002;
-        Sat, 10 Feb 2024 19:41:29 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AJvYcCXI2x1ZqeBGAloHSIT66e8M3mFAswPnjNJRV038X6bqt20nNIiwbey2D2InI/x/O1/Cxn2U4dbF410IbiTFXA8iwluIUREAzTN/kc6TcIYsaglkR+yBxtT787+M+aSvXM5/pl/PVZxBME4J4g4/PeKUsjP5gk+jZWZNzOrSC6PlMzVMcZ/g1/Igvdzri49MAQWNbgs=
-Received: from smtpclient.apple (g1-27-253-251-175.bmobile.ne.jp. [27.253.251.175])
-        by smtp.gmail.com with ESMTPSA id d20-20020a170903209400b001d8e4de7a44sm3678407plc.127.2024.02.10.19.41.28
+        bh=0RvRmHt+r/0Yyk/VeH3rIf5h0w1G4j3Mo4jl/7Uv/FU=;
+        b=vP6xso8WxFI1fhh3mhv5Ucr2PGx5O1ikiqLM4kTc0OYH/tmW2feRAXwRqPyRhYDnow
+         jzy8Rm4+aJk41thc3z1F1VS1IA78INerx8wVHj2NktGTcSYHWaUyTQ9Xcsn+Genw57uu
+         Kv1TGmJHBqWCO1xteyr0UW+W/vjUA9FG3LGT9DabzBDnX6f7zoAwtc8dFyte1pclIVQP
+         ai4ra08uDz/jGDCW5AMBcMjCq1975JKgBv3CSEVH39v44Hlynrdd7FIoqtdckRuNPBGh
+         y3AohsSv+XabUz4JKpspOm5rY1YLG/ZcTnEroJEg3bWQxQNl3M0SbDLxTN89b7VQUcJK
+         VeJQ==
+X-Gm-Message-State: AOJu0YzvRG5ojb3m+28Yzg/pb2Wp8BqYCzpaIsnanDF25wKAOxvMhZFl
+	nUiIsoOTlslpjnDvGhD+laABIWPu8P3Nh3usJ/BlQ5gSWIq0h1dE9O8s14bjTmQ=
+X-Google-Smtp-Source: AGHT+IFvOwg1zd0A4PC3nUVjxgaRSJa+7ErW7hQCfQXkbFz1cvwGS51Lf9w3PSjYhGsX6A4a5Cr3NA==
+X-Received: by 2002:a05:620a:4153:b0:783:e9ba:7d4b with SMTP id k19-20020a05620a415300b00783e9ba7d4bmr5115622qko.49.1707645232544;
+        Sun, 11 Feb 2024 01:53:52 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AJvYcCWzBikxsSKV31rzOvWhNSuFsi7eqUndeY/GLXxXsXsnrGD4DaWMJrP5PiP8YmVAnc7zZqUH3ni4dzdMCnvVrtCXlsj1ebiD0cWMXO103Ggrnf5iYtfQ4Sba3yZNWnJAUZYPwi5c+iM=
+Received: from mail-yb1-f171.google.com (mail-yb1-f171.google.com. [209.85.219.171])
+        by smtp.gmail.com with ESMTPSA id v19-20020a81a553000000b005fff0d150adsm670175ywg.122.2024.02.11.01.53.51
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 10 Feb 2024 19:41:28 -0800 (PST)
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
-From: "D. Jeff Dionne" <djeffdionne@gmail.com>
+        Sun, 11 Feb 2024 01:53:51 -0800 (PST)
+Received: by mail-yb1-f171.google.com with SMTP id 3f1490d57ef6-dc74435c428so2194685276.2;
+        Sun, 11 Feb 2024 01:53:51 -0800 (PST)
+X-Received: by 2002:a25:9347:0:b0:dc7:32b1:b7ea with SMTP id
+ g7-20020a259347000000b00dc732b1b7eamr2843172ybo.46.1707645231510; Sun, 11 Feb
+ 2024 01:53:51 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0 (1.0)
-Subject: Re: Problems with csum_partial with misaligned buffers on sh4 platform
-Date: Sun, 11 Feb 2024 12:41:16 +0900
-Message-Id: <8C704EE6-7B5E-4569-B9C3-84B2CBADA102@gmail.com>
-References: <0a0fbbd8-17dd-4f4c-9513-f3ac9749890b@roeck-us.net>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
- linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+MIME-Version: 1.0
+References: <65ed7c95-712c-410b-84f3-58496b0c9649@roeck-us.net>
+ <aedf7b7f39f820de555f1c41b6a8d663738eb3a2.camel@physik.fu-berlin.de> <0a0fbbd8-17dd-4f4c-9513-f3ac9749890b@roeck-us.net>
 In-Reply-To: <0a0fbbd8-17dd-4f4c-9513-f3ac9749890b@roeck-us.net>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 11 Feb 2024 10:53:39 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdVt1Ebjf0X6X=rvFsr4aOcGc2c=RBViWP3cbAodNQJ4tg@mail.gmail.com>
+Message-ID: <CAMuHMdVt1Ebjf0X6X=rvFsr4aOcGc2c=RBViWP3cbAodNQJ4tg@mail.gmail.com>
+Subject: Re: Problems with csum_partial with misaligned buffers on sh4 platform
 To: Guenter Roeck <linux@roeck-us.net>
-X-Mailer: iPhone Mail (21D61)
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, 
+	linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-I remember there being problems with alignment on SH targets in the network s=
-tack.  IIRC, wireguard triggered it in actual use, seems to me it had to do w=
-ith skb alignment.
+Hi G=C3=BCnter,
 
-Rich Felker may remember more, but I don=E2=80=99t think we implemented a (c=
-omplete) solution.
-
-Cheers,
-J.
-
-> On 11 Feb 2024, at 07:03, Guenter Roeck <linux@roeck-us.net> wrote:
->=20
-> =EF=BB=BFHi Adrian,
->=20
->> On 2/10/24 12:12, John Paul Adrian Glaubitz wrote:
->> Hi Guenter,
->>> On Sat, 2024-02-10 at 07:12 -0800, Guenter Roeck wrote:
->>> when running checksum unit tests on sh4 qemu emulations, I get the follo=
-wing
->>> errors.
->>>=20
->>>     KTAP version 1
->>>     # Subtest: checksum
->>>     # module: checksum_kunit
->>>     1..5
->>>     # test_csum_fixed_random_inputs: ASSERTION FAILED at lib/checksum_ku=
-nit.c:500
->>>     Expected ( u64)result =3D=3D ( u64)expec, but
->>>         ( u64)result =3D=3D 53378 (0xd082)
->>>         ( u64)expec =3D=3D 33488 (0x82d0)
->>>     not ok 1 test_csum_fixed_random_inputs
->>>     # test_csum_all_carry_inputs: ASSERTION FAILED at lib/checksum_kunit=
-.c:525
->>>     Expected ( u64)result =3D=3D ( u64)expec, but
->>>         ( u64)result =3D=3D 65281 (0xff01)
->>>         ( u64)expec =3D=3D 65280 (0xff00)
->>>     not ok 2 test_csum_all_carry_inputs
->>>     # test_csum_no_carry_inputs: ASSERTION FAILED at lib/checksum_kunit.=
-c:573
->>>     Expected ( u64)result =3D=3D ( u64)expec, but
->>>         ( u64)result =3D=3D 65535 (0xffff)
->>>         ( u64)expec =3D=3D 65534 (0xfffe)
->>>     not ok 3 test_csum_no_carry_inputs
->>>     ok 4 test_ip_fast_csum
->>>     ok 5 test_csum_ipv6_magic
->>> # checksum: pass:2 fail:3 skip:0 total:5
->>>=20
->>> The above is with from a little endian system. On a big endian system,
->>> the test result is as follows.
->>>=20
->>>     KTAP version 1
->>>     # Subtest: checksum
->>>     # module: checksum_kunit
->>>     1..5
->>>     # test_csum_fixed_random_inputs: ASSERTION FAILED at lib/checksum_ku=
-nit.c:500
->>>     Expected ( u64)result =3D=3D ( u64)expec, but
->>>         ( u64)result =3D=3D 33488 (0x82d0)
->>>         ( u64)expec =3D=3D 53378 (0xd082)
->>>     not ok 1 test_csum_fixed_random_inputs
->>>     # test_csum_all_carry_inputs: ASSERTION FAILED at lib/checksum_kunit=
-.c:525
->>>     Expected ( u64)result =3D=3D ( u64)expec, but
->>>         ( u64)result =3D=3D 65281 (0xff01)
->>>         ( u64)expec =3D=3D 255 (0xff)
->>>     not ok 2 test_csum_all_carry_inputs
->>>     # test_csum_no_carry_inputs: ASSERTION FAILED at lib/checksum_kunit.=
-c:565
->>>     Expected ( u64)result =3D=3D ( u64)expec, but
->>>         ( u64)result =3D=3D 1020 (0x3fc)
->>>         ( u64)expec =3D=3D 0 (0x0)
->>>     not ok 3 test_csum_no_carry_inputs
->>>     # test_ip_fast_csum: ASSERTION FAILED at lib/checksum_kunit.c:589
->>>     Expected ( u64)expected =3D=3D ( u64)csum_result, but
->>>         ( u64)expected =3D=3D 55939 (0xda83)
->>>         ( u64)csum_result =3D=3D 33754 (0x83da)
->>>     not ok 4 test_ip_fast_csum
->>>     # test_csum_ipv6_magic: ASSERTION FAILED at lib/checksum_kunit.c:617=
-
->>>     Expected ( u64)expected_csum_ipv6_magic[i] =3D=3D ( u64)csum_ipv6_ma=
-gic(saddr, daddr, len, proto, csum), but
->>>         ( u64)expected_csum_ipv6_magic[i] =3D=3D 6356 (0x18d4)
->>>         ( u64)csum_ipv6_magic(saddr, daddr, len, proto, csum) =3D=3D 435=
-86 (0xaa42)
->>>     not ok 5 test_csum_ipv6_magic
->>> # checksum: pass:0 fail:5 skip:0 total:5
->>>=20
->>> Note that test_ip_fast_csum and test_csum_ipv6_magic fail on all big end=
-ian
->>> systems due to a bug in the test code, unrelated to this problem.
->>>=20
->>> Analysis shows that the errors are seen only if the buffer is misaligned=
-.
->>> Looking into arch/sh/lib/checksum.S, I found commit cadc4e1a2b4d2 ("sh:
->>> Handle calling csum_partial with misaligned data") which seemed to be
->>> related. Reverting that commit fixes the problem.
->>> This suggests that something may be wrong with that commit. Alternativel=
-y,
->>> of course, it may be possible that something is wrong with the qemu
->>> emulation, but that seems unlikely.
->> I have not run these tests before. Can you tell me how these are run,
->> so I can verify these reproduce on real hardware?
->=20
+On Sat, Feb 10, 2024 at 10:59=E2=80=AFPM Guenter Roeck <linux@roeck-us.net>=
+ wrote:
+> On 2/10/24 12:12, John Paul Adrian Glaubitz wrote:
+> > I have not run these tests before. Can you tell me how these are run,
+> > so I can verify these reproduce on real hardware?
+>
 > Enabling CONFIG_KUNIT and CONFIG_CHECKSUM_KUNIT on top of a working
 > configuration should do the trick. Both can be built as module,
 > so presumably one can build and load them separately. I have not tried
 > that, though - I always build them into the kernel and boot the resulting
 > image.
->=20
-> Hope this helps,
-> Guenter
->=20
->=20
+
+Yes, you can build and load them as modules separately; that's what
+I do on m68k (and yes, the checksum test fails on m68k, as it is
+big endian).
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--=20
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
