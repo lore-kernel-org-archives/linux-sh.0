@@ -1,97 +1,102 @@
-Received: from mail-qk1-f179.google.com (mail-qk1-f179.google.com [209.85.222.179])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1196C59141;
-	Sun, 11 Feb 2024 09:53:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.179
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E3F1E5A785;
+	Sun, 11 Feb 2024 10:39:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707645236; cv=none; b=P5cq4U1l17xFVATWHRf9MM+5kvLq9FWeF0p3mbxkAQkWyRI/M6dp4YLi1ajZh3oEvWk1rt6rius5By8W6JtKRVuPORp6y+sZhG1JphMbSlAM099eecDV2nSRIfA2L8svuFZ8OsdWLl6dAl6WYCpB7lJVWMcmALRgvgqcll5MmNw=
+	t=1707648002; cv=none; b=mofnqjhShjQXaVyV/mLEUIH5fN+bRc2qO+1nVX3wmCJIRGKAVTsxtQ94Sp2TraPnbox7WkkxuB16+5yl1Tq3PiWFNmlSSPvbpnxeGJsGcrn7FNIP80znhFHJS7vzkU/AHXZr3xerPXP1fAg/qUCrD2EqF7Nc1FwiBjb3qe4ytBY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1707645236; c=relaxed/simple;
-	bh=I7YZwRT/usHmRZRp/Ua6UZNQvDq03jokdgJSQkJx8ZM=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=NryFFYUpvQlNP3FL8216/xOnfE6J4jQ/+5Ci47/wL9PfYsDYXj/VKxPtzjbXdsRsuMS5MCKN9Y86GVsBvCLLr+qtFzO/nIvRJEEJ44PpGjmD/eSexs5WX6ud1th1Ru5EQeE/7cVOI1aSK7UuCmDTn3I48oAufybzlGfgi0+5L28=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.222.179
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-qk1-f179.google.com with SMTP id af79cd13be357-7857964f57aso95575185a.1;
-        Sun, 11 Feb 2024 01:53:53 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1707645233; x=1708250033;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=0RvRmHt+r/0Yyk/VeH3rIf5h0w1G4j3Mo4jl/7Uv/FU=;
-        b=vP6xso8WxFI1fhh3mhv5Ucr2PGx5O1ikiqLM4kTc0OYH/tmW2feRAXwRqPyRhYDnow
-         jzy8Rm4+aJk41thc3z1F1VS1IA78INerx8wVHj2NktGTcSYHWaUyTQ9Xcsn+Genw57uu
-         Kv1TGmJHBqWCO1xteyr0UW+W/vjUA9FG3LGT9DabzBDnX6f7zoAwtc8dFyte1pclIVQP
-         ai4ra08uDz/jGDCW5AMBcMjCq1975JKgBv3CSEVH39v44Hlynrdd7FIoqtdckRuNPBGh
-         y3AohsSv+XabUz4JKpspOm5rY1YLG/ZcTnEroJEg3bWQxQNl3M0SbDLxTN89b7VQUcJK
-         VeJQ==
-X-Gm-Message-State: AOJu0YzvRG5ojb3m+28Yzg/pb2Wp8BqYCzpaIsnanDF25wKAOxvMhZFl
-	nUiIsoOTlslpjnDvGhD+laABIWPu8P3Nh3usJ/BlQ5gSWIq0h1dE9O8s14bjTmQ=
-X-Google-Smtp-Source: AGHT+IFvOwg1zd0A4PC3nUVjxgaRSJa+7ErW7hQCfQXkbFz1cvwGS51Lf9w3PSjYhGsX6A4a5Cr3NA==
-X-Received: by 2002:a05:620a:4153:b0:783:e9ba:7d4b with SMTP id k19-20020a05620a415300b00783e9ba7d4bmr5115622qko.49.1707645232544;
-        Sun, 11 Feb 2024 01:53:52 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AJvYcCWzBikxsSKV31rzOvWhNSuFsi7eqUndeY/GLXxXsXsnrGD4DaWMJrP5PiP8YmVAnc7zZqUH3ni4dzdMCnvVrtCXlsj1ebiD0cWMXO103Ggrnf5iYtfQ4Sba3yZNWnJAUZYPwi5c+iM=
-Received: from mail-yb1-f171.google.com (mail-yb1-f171.google.com. [209.85.219.171])
-        by smtp.gmail.com with ESMTPSA id v19-20020a81a553000000b005fff0d150adsm670175ywg.122.2024.02.11.01.53.51
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 11 Feb 2024 01:53:51 -0800 (PST)
-Received: by mail-yb1-f171.google.com with SMTP id 3f1490d57ef6-dc74435c428so2194685276.2;
-        Sun, 11 Feb 2024 01:53:51 -0800 (PST)
-X-Received: by 2002:a25:9347:0:b0:dc7:32b1:b7ea with SMTP id
- g7-20020a259347000000b00dc732b1b7eamr2843172ybo.46.1707645231510; Sun, 11 Feb
- 2024 01:53:51 -0800 (PST)
+	s=arc-20240116; t=1707648002; c=relaxed/simple;
+	bh=7wXV45yaeMU9Lx3AYZF5L9CqLCL35Zw98/+vU2kj8xU=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=bHzIbuIvmfxTGR2BHWoHyWeoDxDD/fNkwtbM6C/3xqt4OOspymSYwB96i0SZDmzkHShmraE6ScLMQ5MM39YX8KpOJcBT14tynwEZuviboGy7w6jAD8MvK7UJ1cR2lvDuEaLmH/QEL3f+wrA3p6XXqvEHEXN2RLiVkwmwoDzO9jw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.97)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1rZ7FW-00000003XEc-40rB; Sun, 11 Feb 2024 11:39:50 +0100
+Received: from dynamic-089-014-110-122.89.14.pool.telefonica.de ([89.14.110.122] helo=[192.168.178.20])
+          by inpost2.zedat.fu-berlin.de (Exim 4.97)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1rZ7FW-00000000Q2U-32WB; Sun, 11 Feb 2024 11:39:50 +0100
+Message-ID: <cd1a36a234c8fc61c5febe646ae0f05ed20ae32a.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: Fix build with CONFIG_UBSAN=y
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Kees Cook <keescook@chromium.org>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, kernel test robot
+	 <lkp@intel.com>, Rich Felker <dalias@libc.org>, Masahiro Yamada
+	 <masahiroy@kernel.org>, Nicolas Schier <n.schier@avm.de>, 
+	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-hardening@vger.kernel.org
+Date: Sun, 11 Feb 2024 11:39:49 +0100
+In-Reply-To: <9fda57fc1b1ba6ad9bd6f7df3fb12674d0f4f940.camel@physik.fu-berlin.de>
+References: <20240130232717.work.088-kees@kernel.org>
+	 <494586ed5a0871cf7cfd005f513577952306a0bc.camel@physik.fu-berlin.de>
+	 <fe057f57aba0f8a9040d4700d27f5bd478032925.camel@physik.fu-berlin.de>
+	 <202402020228.BBEF7DAC@keescook>
+	 <9fda57fc1b1ba6ad9bd6f7df3fb12674d0f4f940.camel@physik.fu-berlin.de>
+Autocrypt: addr=glaubitz@physik.fu-berlin.de; prefer-encrypt=mutual;
+ keydata=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
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.50.3 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <65ed7c95-712c-410b-84f3-58496b0c9649@roeck-us.net>
- <aedf7b7f39f820de555f1c41b6a8d663738eb3a2.camel@physik.fu-berlin.de> <0a0fbbd8-17dd-4f4c-9513-f3ac9749890b@roeck-us.net>
-In-Reply-To: <0a0fbbd8-17dd-4f4c-9513-f3ac9749890b@roeck-us.net>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sun, 11 Feb 2024 10:53:39 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdVt1Ebjf0X6X=rvFsr4aOcGc2c=RBViWP3cbAodNQJ4tg@mail.gmail.com>
-Message-ID: <CAMuHMdVt1Ebjf0X6X=rvFsr4aOcGc2c=RBViWP3cbAodNQJ4tg@mail.gmail.com>
-Subject: Re: Problems with csum_partial with misaligned buffers on sh4 platform
-To: Guenter Roeck <linux@roeck-us.net>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-Hi G=C3=BCnter,
+Hi Kees,
 
-On Sat, Feb 10, 2024 at 10:59=E2=80=AFPM Guenter Roeck <linux@roeck-us.net>=
- wrote:
-> On 2/10/24 12:12, John Paul Adrian Glaubitz wrote:
-> > I have not run these tests before. Can you tell me how these are run,
-> > so I can verify these reproduce on real hardware?
->
-> Enabling CONFIG_KUNIT and CONFIG_CHECKSUM_KUNIT on top of a working
-> configuration should do the trick. Both can be built as module,
-> so presumably one can build and load them separately. I have not tried
-> that, though - I always build them into the kernel and boot the resulting
-> image.
+On Fri, 2024-02-02 at 12:06 +0100, John Paul Adrian Glaubitz wrote:
+> > When I use GCC 13.2 (I'm specifically on Ubuntu 23.10) and the randconf=
+ig
+> > linked from the report:
+> > https://download.01.org/0day-ci/archive/20240131/202401310416.s8HLiLnC-=
+lkp@intel.com/config
+> > (which is notably enabling CONFIG_UBSAN=3Dy and CONFIG_UBSAN_SHIFT=3Dy)=
+ then I
+> > see at the final link stage:
+> >=20
+> > /usr/bin/sh4-linux-gnu-ld: arch/sh/boot/compressed/misc.o: in function =
+`zlib_inflate_table':
+> > misc.c:(.text+0x650): undefined reference to `__ubsan_handle_shift_out_=
+of_bounds'
+> > ...
+> >=20
+> > After the patch, it's solved.
+>=20
+> OK, let me test with gcc 13.x. My build host is currently running openSUS=
+E Leap 15.5.
 
-Yes, you can build and load them as modules separately; that's what
-I do on m68k (and yes, the checksum test fails on m68k, as it is
-big endian).
+I just wanted to try reproduce the problem again with the reproducer in [1]=
+ as well
+as with gcc-13.2.0, but your branch devel/overflow/ubsan-only no longer exi=
+sts.
 
-Gr{oetje,eeting}s,
+Can you tell me where to find the patches now?
 
-                        Geert
+Adrian
+
+> [1] https://download.01.org/0day-ci/archive/20240131/202401310416.s8HLiLn=
+C-lkp@intel.com/reproduce
 
 --=20
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
-
-In personal conversations with technical people, I call myself a hacker. Bu=
-t
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
