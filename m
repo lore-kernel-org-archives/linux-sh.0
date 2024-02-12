@@ -1,97 +1,105 @@
-Received: from mail.zeus03.de (www.zeus03.de [194.117.254.33])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pf1-f181.google.com (mail-pf1-f181.google.com [209.85.210.181])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1F1F03A28E
-	for <linux-sh@vger.kernel.org>; Mon, 12 Feb 2024 12:12:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=194.117.254.33
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C088B3FE3E
+	for <linux-sh@vger.kernel.org>; Mon, 12 Feb 2024 18:26:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.181
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707739980; cv=none; b=H/bK27LTsXKA23JebKnU2l01EDUNmGUb8S+DSqzr1WQtZCgcx0oRDJnWuvtiqpVvvINvqoUhA4PhdgyDUmHMaKY4Jil3Iisw8YzZcYlTKxLNvlIfSwAj+8yxNVqqlY3uHFkpXtDWZFfaiAhK30sfOF3VVkswxP976JK03a2XB+0=
+	t=1707762367; cv=none; b=s9CtWjrDhvp15L/VtcinnU6P6r8CYZxx3mbo1up+Ui4BpxnlvmpZBoA9EW8/e4symV8KXBiIwnNhemKDoBrpNJ/dbQ0V8oqAeOmu5U6o0vp/nLqWaguHZric1NWxFjZBMrR/J/5WhXavmb+/4f1doH9IqY03uhDpzkh1LhFTwPo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1707739980; c=relaxed/simple;
-	bh=JJID6F7jqLHRWeoC4iyAEKo0jO08alUsrFdpbpIKcnw=;
+	s=arc-20240116; t=1707762367; c=relaxed/simple;
+	bh=yAUHypRlpeoME/JqFNQ6+yrqIWhow/SYsyub6kJOuL8=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=dPor8Mb5fjgSoRz508FiwpSb87LeXCkG3v1lDzDQlca+Le2tVgk++e0eI+Ew/mPVmLDkCUht4ZDB0fmmkYxqmwl2pD2PUQ9bBe3tFrFEP4PDsUV/U6bKpwWvZhX0eCriztk6ngmhUbfmJH3Z4Mg32joeRAR6TB9kneJ+7cfggVo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sang-engineering.com; spf=pass smtp.mailfrom=sang-engineering.com; dkim=pass (2048-bit key) header.d=sang-engineering.com header.i=@sang-engineering.com header.b=J4AgM9ro; arc=none smtp.client-ip=194.117.254.33
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sang-engineering.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sang-engineering.com
+	 Content-Type:Content-Disposition:In-Reply-To; b=Ig1ccow7FI+pPUj6wdJLuqN0HrIUFUfajQxM8hYlBtaUrTlrnJh1m04MlWNDi7yKpxMCP1ZtPVLYpTqwXJzvr8AcOq+quVrPiQo8el43WRRMGZkpjC8q8dcv2WlPqOge9jCM0J05Z3Cu/BYvuJGCn4esw+aNczLy3a5Gn53XjaA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=chromium.org; spf=pass smtp.mailfrom=chromium.org; dkim=pass (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b=EddX1/Gg; arc=none smtp.client-ip=209.85.210.181
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=chromium.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=chromium.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=sang-engineering.com header.i=@sang-engineering.com header.b="J4AgM9ro"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	sang-engineering.com; h=date:from:to:cc:subject:message-id
-	:references:mime-version:content-type:in-reply-to; s=k1; bh=Av+Z
-	w72XMMFy5JIv8FNYIcdnZNiuXEaLFUQ4ZS3b3ps=; b=J4AgM9roICuQi7Jkud1m
-	0Vg1pK1jOtVGjtPgGxRRNr9ay9CUFHEFBshRvBtvKhrZ3M8926JgceBjAco0H5HH
-	rASATTrjjljdBXLUQf8j39d7LJk3Q1KyUYBiZdk91Ai+2VyILrPQ8IdXTr0QRQOL
-	W14hW8Vwa7hIZgPe7Jgwx0Ub8dgMsB5Gg7mRVt8rmgBNgZXWWOVyLphvBYM/+QRr
-	W/yHcE0P/J88T8mYybhmcjYm2I4N4clOhcNvh8/r8/GboostT2YLHlfzqP1OIULO
-	b7TxjKanC3ossl2DUPRGS96Hk+C+CoHQjp3aypAbmJSRBruQ8Ehq2sDRX+oAORJi
-	OA==
-Received: (qmail 472363 invoked from network); 12 Feb 2024 13:12:48 +0100
-Received: by mail.zeus03.de with ESMTPSA (TLS_AES_256_GCM_SHA384 encrypted, authenticated); 12 Feb 2024 13:12:48 +0100
-X-UD-Smtp-Session: l3s3148p1@BZkmMi4REL0ujnsZ
-Date: Mon, 12 Feb 2024 13:12:46 +0100
-From: Wolfram Sang <wsa+renesas@sang-engineering.com>
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: Lee Jones <lee@kernel.org>, linux-renesas-soc@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-	linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
-Subject: Re: [PATCH 0/6] mfd: tmio: simplify header and move to platform_data
-Message-ID: <ZcoLPnA8TEAgBk8O@shikoro>
-Mail-Followup-To: Wolfram Sang <wsa+renesas@sang-engineering.com>,
-	Ulf Hansson <ulf.hansson@linaro.org>, Lee Jones <lee@kernel.org>,
-	linux-renesas-soc@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
-	linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
-References: <20240209015817.14627-8-wsa+renesas@sang-engineering.com>
- <CAPDyKFpmfgwJ5dJFmORhg1tBewzhB_jrWikpX=b23r-joN91SA@mail.gmail.com>
- <20240209132837.GJ689448@google.com>
- <CAPDyKFpho16DU7OorMgXDqiyfFfgM_tWu+DZZOHd0gbjtBw_Cg@mail.gmail.com>
+	dkim=pass (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="EddX1/Gg"
+Received: by mail-pf1-f181.google.com with SMTP id d2e1a72fcca58-6e09493eb8eso2036619b3a.1
+        for <linux-sh@vger.kernel.org>; Mon, 12 Feb 2024 10:26:05 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=chromium.org; s=google; t=1707762365; x=1708367165; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=kelddDkBCW+g7SFvND6ka4Ang08zpm8PxHIejMLmNTs=;
+        b=EddX1/GgAbEeDtEik8j732OAX1GG6mqLZtclhFqcdrWHYPFo8uRuaTgLmC6EN8s1Xm
+         yjaS0Qr0GnJvXBOvtBsaWomiMvHmKolRP6NZJQdMi12UfCRcUYQ8yQvpJd7zAYf6nKC0
+         8ZlTTuEq3m8rJaWpUwYs6m352PJQjeMUZKanM=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1707762365; x=1708367165;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=kelddDkBCW+g7SFvND6ka4Ang08zpm8PxHIejMLmNTs=;
+        b=u3RHF6qlJ3F3ZHVZJ2WB47M7+V0+FGWkJ9Qbxp0mgibN3ygxjIDAnQ6bNV2fVLohiq
+         atggFIjG49ApcxaF1NyP1rLSeiCNGaHZMGMRE8Srlc7FL5/cL4mVvq3X/8kphvMW/KdJ
+         q6Kge5OgB6epNync04k6I7VhIdlkJtY4fV5NOd3HH+Y7pf29BknfSl0dcuezONupYUi7
+         ekc1sZ157c58KfNsxWnR6uSv6V/oJjggOE1J8W4L+VMTIWsjvKN/+GFULn/v6JBPzzWL
+         ZslEiRDO6FQnDkIgI0gMZTOiHwjCYPVdHnob16L+PRw2I+7KHSrnLOYoN49cY23kTUpZ
+         VnYw==
+X-Forwarded-Encrypted: i=1; AJvYcCXGdiIJfxSDxSsD9IlWOl8K0heelGuwtusOXpPgKxJ+UTH3a6RD7vZ8zlCrF+16ZCFTgHLmW4ARvDCCWWos+TWrqqpA47aWEVw=
+X-Gm-Message-State: AOJu0YxWSvWOUVGdmXzysmcNlZZP1bKmgWkLZs31LGoBopNr61kUcVFH
+	7xb1TyYk+YcEuCa86zzwCgNnmVrYRzh9B1ChN+wmqDWVKLKitNiVcAIjxJO0sg==
+X-Google-Smtp-Source: AGHT+IHm5PSmStcCD2PbOKmO9HvYx5jctVUpwg+mA5CidbOqS112sDrGysxA8yytheZf5F/8il7XBA==
+X-Received: by 2002:a05:6a21:1788:b0:19d:e644:7c9 with SMTP id nx8-20020a056a21178800b0019de64407c9mr294312pzb.22.1707762364941;
+        Mon, 12 Feb 2024 10:26:04 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AJvYcCWtL7E/Ga3300LiXSPhQpKnlGv08BNISJBi/jBmB7YmHJiNT6YrIQwiAH9I8vBkaTBnDjziwBfcfr/PRvJMQEI8SyNDGq1QbgjzYxA4X2r9uBkF/UY/uZQ3V5lh4HO3EpicV3EyoRKeTXLxIIbov/L8ZEWORYZO7ID1Et7cPita3g01WnaoCTcRtV6KzD1U8GLFhX2Ha8muf8PRlXkVwUWaCzIxmISUdN05pQZSnlU2BQJq7yf2C0SNBCfe+oknwnOhWh64uJgcdqSJ36FShA==
+Received: from www.outflux.net ([198.0.35.241])
+        by smtp.gmail.com with ESMTPSA id u189-20020a6385c6000000b005d8c1ce4443sm743664pgd.88.2024.02.12.10.26.04
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 12 Feb 2024 10:26:04 -0800 (PST)
+Date: Mon, 12 Feb 2024 10:26:03 -0800
+From: Kees Cook <keescook@chromium.org>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
+	kernel test robot <lkp@intel.com>, Rich Felker <dalias@libc.org>,
+	Masahiro Yamada <masahiroy@kernel.org>,
+	Nicolas Schier <n.schier@avm.de>, linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-hardening@vger.kernel.org
+Subject: Re: [PATCH] sh: Fix build with CONFIG_UBSAN=y
+Message-ID: <202402121025.B0B6E47@keescook>
+References: <20240130232717.work.088-kees@kernel.org>
+ <494586ed5a0871cf7cfd005f513577952306a0bc.camel@physik.fu-berlin.de>
+ <fe057f57aba0f8a9040d4700d27f5bd478032925.camel@physik.fu-berlin.de>
+ <202402020228.BBEF7DAC@keescook>
+ <9fda57fc1b1ba6ad9bd6f7df3fb12674d0f4f940.camel@physik.fu-berlin.de>
+ <cd1a36a234c8fc61c5febe646ae0f05ed20ae32a.camel@physik.fu-berlin.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="WPOTux91JoqdkWnh"
-Content-Disposition: inline
-In-Reply-To: <CAPDyKFpho16DU7OorMgXDqiyfFfgM_tWu+DZZOHd0gbjtBw_Cg@mail.gmail.com>
-
-
---WPOTux91JoqdkWnh
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
+In-Reply-To: <cd1a36a234c8fc61c5febe646ae0f05ed20ae32a.camel@physik.fu-berlin.de>
 
-Hi Lee, Ulf,
+On Sun, Feb 11, 2024 at 11:39:49AM +0100, John Paul Adrian Glaubitz wrote:
+> Hi Kees,
+> 
+> On Fri, 2024-02-02 at 12:06 +0100, John Paul Adrian Glaubitz wrote:
+> > > When I use GCC 13.2 (I'm specifically on Ubuntu 23.10) and the randconfig
+> > > linked from the report:
+> > > https://download.01.org/0day-ci/archive/20240131/202401310416.s8HLiLnC-lkp@intel.com/config
+> > > (which is notably enabling CONFIG_UBSAN=y and CONFIG_UBSAN_SHIFT=y) then I
+> > > see at the final link stage:
+> > > 
+> > > /usr/bin/sh4-linux-gnu-ld: arch/sh/boot/compressed/misc.o: in function `zlib_inflate_table':
+> > > misc.c:(.text+0x650): undefined reference to `__ubsan_handle_shift_out_of_bounds'
+> > > ...
+> > > 
+> > > After the patch, it's solved.
+> > 
+> > OK, let me test with gcc 13.x. My build host is currently running openSUSE Leap 15.5.
+> 
+> I just wanted to try reproduce the problem again with the reproducer in [1] as well
+> as with gcc-13.2.0, but your branch devel/overflow/ubsan-only no longer exists.
+> 
+> Can you tell me where to find the patches now?
 
-> Please add my ack for the mmc related changes.
+Sure, they're in -next, but for an -rc2 based tree, see:
+https://git.kernel.org/pub/scm/linux/kernel/git/kees/linux.git/log/?h=for-next/kspp
 
-I prepared v2 of the series: rebased to rc4, acks added, capitalized
-first letter... waiting for buildbot now before resending.
-
-Thanks,
-
-   Wolfram
-
-
---WPOTux91JoqdkWnh
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iQIzBAABCgAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAmXKCzoACgkQFA3kzBSg
-KbbXFA/5Adwpk7uBvG4XZys/soyfhY5STCt46XOyDGvVtx3OOA7yyElFgTX5vLdG
-3gSN1ibYROPMSIxKzKIWzWld7qllopX2PXgSbMlZT4sefYSYy7/LrAHSu1yT8wwg
-RGMTqxTWG0JuihBlXjSWqaSmf80SROg/Z7FvQmjtTqC+9r4tnMSgU7YiBkrLh4+X
-1gkmvyfiejTG9vMCBy9JIUB+Ytgstga9bl34YZVtJcw8ibzXuFoZkipBJeNdSW9i
-xh5bD9jXLAI0fflgi40hTvACfPasmPGjaEQL8AmfK0O7J2BWQNBOkfrW8DcdnofC
-sqGZU5iZf/JwjtwjNInst1NqmEk+lbg/gkO9gnOsISTTbdX2B5M4A+2OETNHcQTn
-5BtssULqamCN/L4Br3+ezOY+WEBAiqKzKe6hAY+omjGmdgNS+ZjAnRHVnJYrl8M5
-X1BMDGzmam5d3L9ShLtW2wx4UbXBJtSlKJIIa9Se5G0rE7awSonTVyCwwdYYqKPA
-55abvqJw7jyWQWxoXgZLp/Ncax/9sy2UUek3j2QQ7VKLpBjf4KNBL8BjIfoD8/Ib
-HKQHNuNkRqw6ThByS0dRD+gSbYePx/H50TKMLnGJcA668vUeUF3EPDrzvC0AnVVw
-Ay4novGRFFNxzh+yjzRN499TGr+qipzt1fW6naQ/QbKfsTgXpvs=
-=aoMa
------END PGP SIGNATURE-----
-
---WPOTux91JoqdkWnh--
+-- 
+Kees Cook
