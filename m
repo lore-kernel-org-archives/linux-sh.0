@@ -1,107 +1,97 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yb1-f171.google.com (mail-yb1-f171.google.com [209.85.219.171])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 976D21B813;
-	Wed, 14 Feb 2024 13:03:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8FA5D5FDD4;
+	Wed, 14 Feb 2024 16:17:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.171
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707915834; cv=none; b=AbtcI12rcK0k+LFosUNwilX5LDGML94EqQ2QUAqs4qJJySDSWXDwpjVNoCbSmhqyuRzHLTGHKsM0cuu5iswQZZvYJMeV9JGnEB/UubS8LAp/9dwl2JJtvRitcOPvPqzB49/n03J7WlJkhFAov0qlX2jGvgGxguE2H4Gn0HpyWyQ=
+	t=1707927423; cv=none; b=e9HoqIOux6FDXi1G+qAFvdls5VVFQDxGkQOoL25nO32k6W4myrPUZ7mdnkX05WCeFF8kCVtftH/CSHw1jmEkWBOY3C3WUmLfeB8u0gm/b2jR695gwpSd1q5UCdmtUJl10Q7erfB3IORhUPdjTeS3yPrPJHSvvOX6saxonCDMeXQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1707915834; c=relaxed/simple;
-	bh=Y5cCv6WN3AG3tMIqacma1w2YSEMZ6JaBHyisxC12c9w=;
+	s=arc-20240116; t=1707927423; c=relaxed/simple;
+	bh=+KwuCyZcD1ytf8ee3jyMUEjAWvDs1bXqvMEmBHJWRI8=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=UXwdbTZSOrryKwlob7xGvdHrK4UUVzJn84vpVQdAP6stEDNCDdGfHvgLeWIGTD+5iSzKQP4j1qTKWTuON/7bWW9lEeZq5FN31HCjLE3FoXMrYIx8dv13bEhRLBx9CgVmOj6cspIu2LMje01qFLxhDLQ2GR8+/jI0IwGBc7nLgwY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=AvcT8YJo; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="AvcT8YJo"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6FED8C43143;
-	Wed, 14 Feb 2024 13:03:54 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1707915834;
-	bh=Y5cCv6WN3AG3tMIqacma1w2YSEMZ6JaBHyisxC12c9w=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=AvcT8YJoQNZs8sfRDTkmYygA8l0Kza6K8KEPY6U7YF/29oo0kvqwp44UZBHOO9osR
-	 TK4RFyjNq+qR4wlkN6n+/wJeiSFhvBNfCAObgM80sJtGSwoUvEgYM7erDzssa3Fx8B
-	 rxHRY+UhSYZjUxn+MgyDUGzHqPBf7DIS2+9n2BX6DogXsBakeZgX3CVQ6HNVmQJ2H9
-	 yg/6H+xw9ZzE5Sxgpwj4QToZs1eY5dOaaUEd2NWIZNm3z+/fcmPObmj+mQtJQzz4e3
-	 leKlh4ZGTJMSOlFYXtUASBH4/14g80J141xiKM29JjkRFxnMLfX5eKDJcXmKTbLqrx
-	 cYW5Fi/ic4yUA==
-Received: by mail-ed1-f53.google.com with SMTP id 4fb4d7f45d1cf-5638aa9a5c2so529040a12.3;
-        Wed, 14 Feb 2024 05:03:54 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AJvYcCWD6j/DH0k7FIsBz9pEDIpD8O8mzLMWlyx9IzfvbXEUGGoOQO/vT2OHGcnqNWdYdXVO/ROcW6ElcmFJLpNFgtkPpuxueGhmfpU/u+ndLuG+SJNzXmAX07OuJjsxmyO1j3A5d6f/7N2LJkPK8dOpwbL5z0LWsfYK94qc911wogbZ3P2N3vMHUfVQ98BddLknqdh24pK9kuwXy+9j1DWu0aY/xXU=
-X-Gm-Message-State: AOJu0YwqZyjH+kx1ouDtvBdKHvfwwQicj386I1Xn5gNDdtZmfdbN2x+q
-	7ZirB/LGfgQSufG3l/iN1qcFXTnisuguHLg0N1VsYjikMFrlGkidyaiIT+tnMoJuJpkPyhmhtLZ
-	6F8rFK+Sj/J/Y0c9lZOQUG1gLZ18=
-X-Google-Smtp-Source: AGHT+IGDqSWASlPOhhqmPfhR917mdVVEr1HDL41oniwRUbx8hEYlWBy0XN5Ku7zm3JoyjDeFMN3Gw5snyzzzzutcjwg=
-X-Received: by 2002:a05:6402:514f:b0:562:9f3:afeb with SMTP id
- n15-20020a056402514f00b0056209f3afebmr1987648edd.20.1707915832828; Wed, 14
- Feb 2024 05:03:52 -0800 (PST)
+	 To:Cc:Content-Type; b=EnGRfQv3ifwctkJk/jLuC5rVvH6YDsIHxmaqfbHFPtyP/pwYKGRrYxq1oH5mvJHN+szJcchnxJBbsPV3G3BuHFNat8NQFC0iO6gJl7XvhiAJ1EK5HdLqszUbE/PHOTa73OivRSuF0f44trpQKGb53miaog1uFLevWZgfCcnrElA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.219.171
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-yb1-f171.google.com with SMTP id 3f1490d57ef6-db3a09e96daso4754168276.3;
+        Wed, 14 Feb 2024 08:17:01 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1707927419; x=1708532219;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=eL9tA3rhy6+CNRIITZCNAmgKdS1I6ZY4AAyMY1xF/sk=;
+        b=pPWUc9ooy6a4E0X2+nnn/CFWp2fTk4v1GdqFn6QKemRX8y8BwHpegbvEfr4LWQLiq7
+         PLUZqJEYEqh0n/ZNbTkhs8K7xskpLix86rzYpj3ICEmOXWuoRT5nHySPNOMEhM5KnGIv
+         phhMeizRv2mQM8WRmF0gi0yM2zo/XKR97o6oCg71trEA33G81JFe3mH/63Y1Tu+POpPX
+         AI23P9UaowooqnRRtw2wShZ5W8u37NhzM+AEAllYZx7Cyk5TeQ14sb92ms6fOunR/Ls4
+         /aisGih/SGDY0ZDe4VKK42Va7pFOYDL+4kfDuy4hH/uzAIHSJv7CMxCzkVw+Na4fGxJH
+         Cysw==
+X-Forwarded-Encrypted: i=1; AJvYcCVRmvnB3E/MpvpkrpFlQE2tjDRwvnb4M6Dcx0CAqjVtmrb/BGt4WObYPjtawbrxIrgRt1j0NKaw6oJDqCZVZ2nfVsio2QhJ/xb466B6DcNhsP63ctwgQS/Ohy6YLiOKvxvk1bCQEbMZx1SjFcgsnww0O+Sl9/evtYuhqgElc/s9Y/M=
+X-Gm-Message-State: AOJu0Yw5m3xRXcyooikco2cZyoV3cjo0X4xtOVQwG4MZVD9uAQuZpOrZ
+	GfObeihFYqPzYvvOJnHitDaeFtLJ7wg1/fUPPYEpk/iz1Yu2KEUV0vZ/X2HWfWI=
+X-Google-Smtp-Source: AGHT+IG35l5QoZ9kxEYz2EfT3Mq6Kk0qe0sG+A/GAqVyEiYCsnWERBk0HHn/sbRwYKS60GzaWO2RTg==
+X-Received: by 2002:a0d:e343:0:b0:604:eb7f:30f4 with SMTP id m64-20020a0de343000000b00604eb7f30f4mr2811767ywe.31.1707927419179;
+        Wed, 14 Feb 2024 08:16:59 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AJvYcCWxFZYsqj7BcYSmrO565+ZwZ+f1/iRf3vk8hIJE7G7xsrniSnZZPDEof0g9oewzSHZwvBG1GyRrcyMGAHm9xr2hpINKmuXfrDwp+J5WNV6O1vjOaoZKiCnT3dn51pdhoGUPpcJpQDwRJbjQ2G8EVObF7mmfnHF3BPpj4ac2KUvHOww=
+Received: from mail-yb1-f178.google.com (mail-yb1-f178.google.com. [209.85.219.178])
+        by smtp.gmail.com with ESMTPSA id t145-20020a818397000000b005ffcb4765c9sm522613ywf.28.2024.02.14.08.16.57
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 14 Feb 2024 08:16:57 -0800 (PST)
+Received: by mail-yb1-f178.google.com with SMTP id 3f1490d57ef6-dc74e33fe1bso5562794276.0;
+        Wed, 14 Feb 2024 08:16:57 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AJvYcCVM4E1Ri204hUXbTALa+Wi7a+lWmIKqP33ih2ZpW9dTHPQouDtzSbsy/XIYf5c9uxqjcTVkdDQBcw9xhkhhxRhoGYuL6BELrOL3FcpjU6HBV3U5BmDpZXbhpnPj6GbRyieW6/+MpJxHkRZL3jqxLKX9mwr6vUg2l7sx2DoPXWpNvnI=
+X-Received: by 2002:a25:8682:0:b0:dc7:776b:5e4a with SMTP id
+ z2-20020a258682000000b00dc7776b5e4amr2417997ybk.56.1707927417345; Wed, 14 Feb
+ 2024 08:16:57 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <1707524971-146908-1-git-send-email-quic_obabatun@quicinc.com> <1707524971-146908-2-git-send-email-quic_obabatun@quicinc.com>
-In-Reply-To: <1707524971-146908-2-git-send-email-quic_obabatun@quicinc.com>
-From: Huacai Chen <chenhuacai@kernel.org>
-Date: Wed, 14 Feb 2024 21:03:49 +0800
-X-Gmail-Original-Message-ID: <CAAhV-H5f5e-cCaX7Gr20oG8F-aywJcosLn4ajxx2SQWoB8JtSA@mail.gmail.com>
-Message-ID: <CAAhV-H5f5e-cCaX7Gr20oG8F-aywJcosLn4ajxx2SQWoB8JtSA@mail.gmail.com>
-Subject: Re: [PATCH 1/3] loongarch: Call arch_mem_init() before
- platform_init() in the init sequence
-To: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
-Cc: jonas@southpole.se, stefan.kristiansson@saunalahti.fi, shorne@gmail.com, 
-	ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de, 
-	robh+dt@kernel.org, frowand.list@gmail.com, linux-openrisc@vger.kernel.org, 
-	loongarch@lists.linux.dev, linux-sh@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, devicetree@vger.kernel.org, kernel@quicinc.com
+References: <20240213220221.2380-8-wsa+renesas@sang-engineering.com> <20240213220221.2380-14-wsa+renesas@sang-engineering.com>
+In-Reply-To: <20240213220221.2380-14-wsa+renesas@sang-engineering.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 14 Feb 2024 17:16:45 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdV6oh4x4LQKu7-UTMU+g1WGnUehyN+vJcGug2EZFuyf7w@mail.gmail.com>
+Message-ID: <CAMuHMdV6oh4x4LQKu7-UTMU+g1WGnUehyN+vJcGug2EZFuyf7w@mail.gmail.com>
+Subject: Re: [PATCH v2 6/6] mfd: tmio: Move header to platform_data
+To: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Cc: linux-renesas-soc@vger.kernel.org, Lee Jones <lee@kernel.org>, 
+	Ulf Hansson <ulf.hansson@linaro.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
+	Rich Felker <dalias@libc.org>, Kunihiko Hayashi <hayashi.kunihiko@socionext.com>, 
+	Masami Hiramatsu <mhiramat@kernel.org>, linux-kernel@vger.kernel.org, 
+	linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, 
+	linux-arm-kernel@lists.infradead.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Hi, Oreoluwa,
+On Tue, Feb 13, 2024 at 11:04=E2=80=AFPM Wolfram Sang
+<wsa+renesas@sang-engineering.com> wrote:
+> All the MFD components are gone from the header meanwhile. Only the MMC
+> relevant data is left which makes it a platform_data for the MMC
+> controller. Move the header to the now fitting directory.
+>
+> Signed-off-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+> Acked-by: Lee Jones <lee@kernel.org>
+> Acked-by: Ulf Hansson <ulf.hansson@linaro.org> # For MMC
+> Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
-On Sat, Feb 10, 2024 at 8:29=E2=80=AFAM Oreoluwa Babatunde
-<quic_obabatun@quicinc.com> wrote:
->
-> The platform_init() function which is called during device bootup
-> contains a few calls to memblock_alloc().
-> This is an issue because these allocations are done before reserved
-> memory regions are set aside in arch_mem_init().
-> This means that there is a possibility for memblock to allocate memory
-> from any of the reserved memory regions.
->
-> Hence, move the call to arch_mem_init() to be earlier in the init
-> sequence so that all reserved memory is set aside before any allocations
-> are made with memblock.
->
-> Signed-off-by: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
-> ---
->  arch/loongarch/kernel/setup.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/arch/loongarch/kernel/setup.c b/arch/loongarch/kernel/setup.=
-c
-> index edf2bba..66c307c 100644
-> --- a/arch/loongarch/kernel/setup.c
-> +++ b/arch/loongarch/kernel/setup.c
-> @@ -597,8 +597,8 @@ void __init setup_arch(char **cmdline_p)
->         parse_early_param();
->         reserve_initrd_mem();
->
-> -       platform_init();
->         arch_mem_init(cmdline_p);
-> +       platform_init();
-Thank you for your patch, but I think we cannot simply exchange their
-order. If I'm right, you try to move all memblock_reserve() as early
-as possible, but both arch_mem_init() and platform_init() call
-memblock_reserve(), we should do a complete refactor for this. And
-since it works with the existing order, we can simply keep it as is
-now.
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Huacai
+Gr{oetje,eeting}s,
 
->
->         resource_init();
->  #ifdef CONFIG_SMP
-> --
+                        Geert
+
+--=20
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
