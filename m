@@ -1,16 +1,16 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 653E055E54;
-	Wed, 14 Feb 2024 12:52:38 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 918101CA80;
+	Wed, 14 Feb 2024 12:56:34 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1707915161; cv=none; b=dWsFM+Rg4AIkHZ2cPeaRPhJz22+v6Q5Xfr3OPjfOOXc+FivKR2CoDN/0r5RIVEJGhx2lx/nCrRQuRYlea/5XPlVtC2B8xoCeYj+Qh1WrQp7qCN8bbzHfihhQ8KQR65Qb86pJv+McpvqpMNWPFJAxv6/O6PW7Y7NDpuBDINWh2Wk=
+	t=1707915397; cv=none; b=K4LbjIZ3Q6GxDmatb02dB9irkdVaangLz+7u8ajsJXcKEq0IaChX6O7jqc8h+6FFQnyCa+1KHwZuR4oRx5LYsh11ezky2wax3u1gQmJu88W+Y+Ve89ziQa8ErsI8C4Tw8W1ILKtbxvPUTvP7z+59vVan6IksRB5Q64YUGnEfLuk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1707915161; c=relaxed/simple;
-	bh=HsLH1H+02TO+1p+dWEXVex14/w0w08tWbI3lYHJX+Zk=;
+	s=arc-20240116; t=1707915397; c=relaxed/simple;
+	bh=9KP51v8g426C052o40ETxWaaLSpZ29CdN5+5aPmpyu8=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=IHFP0PQjMvPfbJMbkuuCAxaQAXlP510HKUqTcAwDUmmeN29WexwDL3lv20zkXs6tpRl3R3haxbd7nsx/fS7NHhJFnTw4DSyMedmsQwS4ij/SuoNJjFWfRFqTSOSY3+76zE4QSZ0E63AC9WOsTxosUrReyWHelnrnx9m2VW+INCM=
+	 Content-Type:MIME-Version; b=RivbYxjE9NZm6JyIZI76F/Imq+g53sJ477iF5O+CtfPWX68BpQ4s0p4P+TpG8xT8avcU0UHcSPkZqfwBy0/JV8lU3yuQyEc3yzoYoAIQfLJ3KzUNpaw799p9yt8CTkPT6eW3eZlfGdUZuWLaSpiyuAfUwSFOiHozq4f/xiEG0nA=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
@@ -19,32 +19,22 @@ Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1raEkZ-000000028xY-1IjO; Wed, 14 Feb 2024 13:52:31 +0100
+          id 1raEoS-000000029vB-0udY; Wed, 14 Feb 2024 13:56:32 +0100
 Received: from dynamic-077-191-118-037.77.191.pool.telefonica.de ([77.191.118.37] helo=[192.168.178.20])
           by inpost2.zedat.fu-berlin.de (Exim 4.97)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1raEkZ-00000003pPq-0L9d; Wed, 14 Feb 2024 13:52:31 +0100
-Message-ID: <93572a771cb3a0b36a9213f18dd43c034c84cf6d.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: Fix build with CONFIG_UBSAN=y
+          id 1raEoS-00000003q0l-01E3; Wed, 14 Feb 2024 13:56:32 +0100
+Message-ID: <e411e5ff09db2eabb2ddd2a6f7bd0db67b76ff7a.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: hd64461: Make setup_hd64461 static
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Kees Cook <keescook@chromium.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, kernel test robot
-	 <lkp@intel.com>, Rich Felker <dalias@libc.org>, Masahiro Yamada
-	 <masahiroy@kernel.org>, Nicolas Schier <n.schier@avm.de>, 
-	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-hardening@vger.kernel.org
-Date: Wed, 14 Feb 2024 13:52:30 +0100
-In-Reply-To: <178e0bebb1a85efebce1f504122ee190c068e0c9.camel@physik.fu-berlin.de>
-References: <20240130232717.work.088-kees@kernel.org>
-	 <494586ed5a0871cf7cfd005f513577952306a0bc.camel@physik.fu-berlin.de>
-	 <fe057f57aba0f8a9040d4700d27f5bd478032925.camel@physik.fu-berlin.de>
-	 <202402020228.BBEF7DAC@keescook>
-	 <9fda57fc1b1ba6ad9bd6f7df3fb12674d0f4f940.camel@physik.fu-berlin.de>
-	 <cd1a36a234c8fc61c5febe646ae0f05ed20ae32a.camel@physik.fu-berlin.de>
-	 <202402121025.B0B6E47@keescook>
-	 <178e0bebb1a85efebce1f504122ee190c068e0c9.camel@physik.fu-berlin.de>
+To: Artur Rojek <contact@artur-rojek.eu>, Yoshinori Sato
+	 <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Date: Wed, 14 Feb 2024 13:56:31 +0100
+In-Reply-To: <20240211193451.106795-1-contact@artur-rojek.eu>
+References: <20240211193451.106795-1-contact@artur-rojek.eu>
 Autocrypt: addr=glaubitz@physik.fu-berlin.de; prefer-encrypt=mutual;
  keydata=mQINBE3JE9wBEADMrYGNfz3oz6XLw9XcWvuIxIlPWoTyw9BxTicfGAv0d87wngs9U+d52t/REggPePf34gb7/k8FBY1IgyxnZEB5NxUb1WtW0M3GUxpPx6gBZqOm7SK1ZW3oSORw+T7Aezl3Zq4Nr4Nptqx7fnLpXfRDs5iYO/GX8WuL8fkGS/gIXtxKewd0LkTlb6jq9KKq8qn8/BN5YEKqJlM7jsENyA5PIe2npN3MjEg6p+qFrmrzJRuFjjdf5vvGfzskrXCAKGlNjMMA4TgZvugOFmBI/iSyV0IOaj0uKhes0ZNX+lQFrOB4j6I5fTBy7L/T3W/pCWo3wVkknNYa8TDYT73oIZ7Aimv+k7OzRfnxsSOAZT8Re1Yt8mvzr6FHVFjr/VdyTtO5JgQZ6LEmvo4Ro+2ByBmCHORCQ0NJhD1U3avjGfvfslG999W0WEZLTeaGkBAN1yG/1bgGAytQQkD9NsVXqBy7S3LVv9bB844ysW5Aj1nvtgIz14E2WL8rbpfjJMXi7B5ha6Lxf3rFOgxpr6ZoEn+bGG4hmrO+/ReA4SerfMqwSTnjZsZvxMJsx2B9c8DaZE8GsA4I6lsihbJmXhw8i7Cta8Dx418wtEbXhL6m/UEk60O7QD1VBgGqDMnJDFSlvKa9D+tZde/kHSNmQmLLzxtDbNgBgmR0jUlmxirijnm8bwARAQABtEBKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6IChEZWJpYW4gUHJvamVjdCkgPGdsYXViaXR6QGRlYmlhbi5vcmc+iQI3BBMBCAAhBQJRnmPwAhsDBQsJCAcDBRUKCQgLBRYCAwEAAh4BAheAAAoJEHQmOzf1tfkTF0gQAJgvGiKf5YW6+Qyss1qGwf+KHXb/6gIThY6GpSIro9vL/UxaakRCOloaXXAs3KpgBULOO8+prqU8GIqcd8tE3YvQFvvO3rN+8bhOiiD0lFmQSEHcpCW5ZRpdh
 	J5wy1t9Ddb1K/7XGzen3Uzx9bjKgDyikM3js1VtJHaFr8FGt5gtZIBDgp8QM9IRCv/32mPQxqmsaTczEzSNxTBM6Tc2NwNLus3Yh5OnFdxk1jzk+Ajpnqd/E/M7/CU5QznDgIJyopcMtOArv9Er+xe3gAXHkFvnPqcP+9UpzHB5N0HPYn4k4hsOTiJ41FHUapq8d1AuzrWyqzF9aMUi2kbHJdUmt9V39BbJIgjCysZPyGtFhR42fXHDnPARjxtRRPesEhjOeHei9ioAsZfT6bX+l6kSf/9gaxEKQe3UCXd3wbw68sXcvhzBVBxhXM91+Y7deHhNihMtqPyEmSyGXTHOMODysRU453E+XXTr2HkZPx4NV1dA8Vlid2NcMQ0iItD+85xeVznc8xquY/c1vPBeqneBWaE530Eo5e3YA7OGrxHwHbet3E210ng+xU8zUjQrFXMJm3xNpOe45RwmhCAt5z1gDTk5qNgjNgnU3mDp9DX6IffS3g2UJ02JeTrBY4hMpdVlmGCVOm9xipcPHreVGEBbM4eQnYnwbaqjVBBvy2DyfyN/tFRKb2huIFBhdWwgQWRyaWFuIEdsYXViaXR6IChGcmVpZSBVbml2ZXJzaXRhZXQgQmVybGluKSA8Z2xhdWJpdHpAcGh5c2lrLmZ1LWJlcmxpbi5kZT6JAlEEEwEIADsCGwMFCwkIBwMFFQoJCAsFFgIDAQACHgECF4AWIQRi/4p1hOApVpVGAAZ0Jjs39bX5EwUCWhQoUgIZAQAKCRB0Jjs39bX5Ez/ID/98r9c4WUSgOHVPSMVcOVziMOi+zPWfF1OhOXW+atpTM4LSSp66196xOlDFHOdNNmO6kxckXAX9ptvpBc0mRxa7OrC168fKzqR7P75eTsJnVaOu+uI/vvgsbUIosYdkkekCxDAbYCUwmzNotIspnFbxiSPMNrpw7Ud/yQkS9TDYeXnrZDhBp7p5+naWCD/yMvh7yVCA4Ea8+xDVoX
@@ -63,50 +53,38 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-Hi Kees,
-
-On Mon, 2024-02-12 at 19:45 +0100, John Paul Adrian Glaubitz wrote:
-> On Mon, 2024-02-12 at 10:26 -0800, Kees Cook wrote:
-> > > I just wanted to try reproduce the problem again with the reproducer =
-in [1] as well
-> > > as with gcc-13.2.0, but your branch devel/overflow/ubsan-only no long=
-er exists.
-> > >=20
-> > > Can you tell me where to find the patches now?
-> >=20
-> > Sure, they're in -next, but for an -rc2 based tree, see:
-> > https://git.kernel.org/pub/scm/linux/kernel/git/kees/linux.git/log/?h=
-=3Dfor-next/kspp
+On Sun, 2024-02-11 at 20:34 +0100, Artur Rojek wrote:
+> Enforce internal linkage for setup_hd64461.
 >=20
-> OK, thanks. I will give it a try with gcc-13.
+> This fixes the following error:
+> arch/sh/cchips/hd6446x/hd64461.c:75:12: error: no previous prototype for =
+'setup_hd64461' [-Werror=3Dmissing-prototypes]
+>=20
+> Signed-off-by: Artur Rojek <contact@artur-rojek.eu>
+> ---
+>  arch/sh/cchips/hd6446x/hd64461.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>=20
+> diff --git a/arch/sh/cchips/hd6446x/hd64461.c b/arch/sh/cchips/hd6446x/hd=
+64461.c
+> index f3fba967445a..81764882d87d 100644
+> --- a/arch/sh/cchips/hd6446x/hd64461.c
+> +++ b/arch/sh/cchips/hd6446x/hd64461.c
+> @@ -72,7 +72,7 @@ static void hd64461_irq_demux(struct irq_desc *desc)
+>  	}
+>  }
+> =20
+> -int __init setup_hd64461(void)
+> +static int __init setup_hd64461(void)
+>  {
+>  	int irq_base, i;
+> =20
 
-I'm still unable to reproduce the error that the kernel test robot reported=
-.
+Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
-I'm using gcc-13:
+I will merge this patch for 6.9 tonight.
 
-glaubitz@node54:/data/home/glaubitz/linux-kees> sh4-linux-gcc
-sh4-linux-gcc: fatal error: no input files
-compilation terminated.
-glaubitz@node54:/data/home/glaubitz/linux-kees> sh4-linux-gcc --version
-sh4-linux-gcc (GCC) 13.2.0
-Copyright (C) 2023 Free Software Foundation, Inc.
-This is free software; see the source for copying conditions.  There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-glaubitz@node54:/data/home/glaubitz/linux-kees>
-
-I checked out your tree and the for-next/kspp branch.
-
-Then fetched the config that triggered the bug like this:
-
-$ wget https://download.01.org/0day-ci/archive/20240131/202401310416.s8HLiL=
-nC-lkp@intel.com/config -O .config
-
-Building the kernel with "make -j32 uImage" works fine. No errors except fo=
-r
-some unreleated warnings that still need to be fixed.
-
+Thanks,
 Adrian
 
 --=20
