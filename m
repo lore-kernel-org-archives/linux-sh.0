@@ -1,96 +1,173 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 37AED78B5E
-	for <linux-sh@vger.kernel.org>; Wed, 21 Feb 2024 13:44:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4738C8121A;
+	Wed, 21 Feb 2024 16:14:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1708523054; cv=none; b=dqxCMiWcsGpnWcFGC2XxMytxTi2xnEkiYuKG7ipWcJ+3jjfvx2BUowONg+KbvjKrNaYQNJbjtofS0hPTi8Il0LBbOu79RRhuYiK9RZNgfedkmaEn+/VtK50c7hq6qEtxpuqDCx11PgTk6eVFUEKo/c50hKbxHL1KiSFDMjsRhSI=
+	t=1708532078; cv=none; b=dLp3+HOI9zTHoScSJ3TKblFyT+lVhQDu9nPXJ3HZtYCltc/bDYVF879kBUw0vg/A9zIaacxoN0Ya8mMqdWNfiw4o85wMB1IxLNoH5PqRkvewAbYmkqe4eg3ZTjFx1t9zBH1KAk1BTl9saQSN5ippo9ZNbYQVrBJH9PaAOJihdoc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1708523054; c=relaxed/simple;
-	bh=MrsZ6R8kVdxd/n4xz6d/BNCiT9VSGP+MbjDNCaoodJE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=aSbd3NjuFmRcyulps49cMyKra5glDwC5yVxyP3Iu3uswPfHfHaH8sneuM9j4SeoWHFuWzSrCn1+BkNjVmRNxDY8k6YHAuFUOFLlk1aW8b/PWEKeRUSQZKpNPOYI0tXbP5ISEDmIO8OUViB5L+AfbVTonnFrXMocj/LDo4zuB26o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=WWA+wJgn; arc=none smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="WWA+wJgn"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1708523052;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kjg3ALQw4zFfCtoxrqU3mC8VARBMiLwWXwoSwpKkxVk=;
-	b=WWA+wJgnLDUk370kmYH/LehaT5Ve7heAzmR4VSiu2MrpVJh8BmRE2z/UFKzKRiaOfZgGtD
-	A/fOipeYFFzCZGG08IJSMpx57l2knMjOJF0GsqISk6o0vLD1LvuCY7T8cIa5CPRlYZkjeH
-	oeEW8XEwxGs2SJZzs2Yr9i27QBSchLo=
-Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
- [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-583-viBCBzv1MZWeE0zNlD0FTQ-1; Wed, 21 Feb 2024 08:44:09 -0500
-X-MC-Unique: viBCBzv1MZWeE0zNlD0FTQ-1
-Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.rdu2.redhat.com [10.11.54.6])
+	s=arc-20240116; t=1708532078; c=relaxed/simple;
+	bh=2iWCWyWeXir+yENq3pCgwfuM/1uLLEcUhOADN7bYtWI=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=ZsjYn5UeBOm0fVIQveJUzmWLghxWqBIZ/6WmKc/biMeuhB0SUE4HjRQB9gD8HqSTSjqy6Vgxs0nisZC2YW2uq3YWPNihq8ur2hIWTNVm3lL+fsv9E6bE0Y4lqDxmmMSIRiWPFD7YfWeBzNct1WPnQQKgWPxLangzqt2adWgemAQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
+Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 1712C867943;
-	Wed, 21 Feb 2024 13:44:08 +0000 (UTC)
-Received: from localhost (unknown [10.72.116.2])
-	by smtp.corp.redhat.com (Postfix) with ESMTPS id 21A5F2166B36;
-	Wed, 21 Feb 2024 13:44:06 +0000 (UTC)
-Date: Wed, 21 Feb 2024 21:44:04 +0800
-From: Baoquan He <bhe@redhat.com>
-To: Hari Bathini <hbathini@linux.ibm.com>
-Cc: linux-s390@vger.kernel.org, piliu@redhat.com, linux-sh@vger.kernel.org,
-	x86@kernel.org, kexec@lists.infradead.org,
-	linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org,
-	ebiederm@xmission.com, loongarch@lists.linux.dev,
-	linux-riscv@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
-	akpm@linux-foundation.org, linux-arm-kernel@lists.infradead.org,
-	viro@zeniv.linux.org.uk
-Subject: Re: [PATCH v2 00/14] Split crash out from kexec and clean up related
- config items
-Message-ID: <ZdX+JMKsQWheE0B0@MiWiFi-R3L-srv>
-References: <20240119145241.769622-1-bhe@redhat.com>
- <9101bb07-70f1-476c-bec9-ec67e9899744@linux.ibm.com>
- <Zb8D1ASrgX0qVm9z@MiWiFi-R3L-srv>
- <559f2595-1477-4ef0-80e4-85ae8b426de7@linux.ibm.com>
+	by smtp-out1.suse.de (Postfix) with ESMTPS id A53D42222F;
+	Wed, 21 Feb 2024 16:14:34 +0000 (UTC)
+Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id 0385813A42;
+	Wed, 21 Feb 2024 16:14:33 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([10.150.64.162])
+	by imap2.dmz-prg2.suse.org with ESMTPSA
+	id KMI5O2kh1mVrYwAAn2gu4w
+	(envelope-from <tzimmermann@suse.de>); Wed, 21 Feb 2024 16:14:33 +0000
+From: Thomas Zimmermann <tzimmermann@suse.de>
+To: arnd@arndb.de,
+	javierm@redhat.com,
+	deller@gmx.de,
+	suijingfeng@loongson.cn
+Cc: linux-arch@vger.kernel.org,
+	dri-devel@lists.freedesktop.org,
+	linux-fbdev@vger.kernel.org,
+	sparclinux@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-parisc@vger.kernel.org,
+	linux-mips@vger.kernel.org,
+	linux-m68k@lists.linux-m68k.org,
+	loongarch@lists.linux.dev,
+	linux-arm-kernel@lists.infradead.org,
+	linux-snps-arc@lists.infradead.org,
+	linux-kernel@vger.kernel.org,
+	Thomas Zimmermann <tzimmermann@suse.de>,
+	"James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+	"David S. Miller" <davem@davemloft.net>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Ingo Molnar <mingo@redhat.com>,
+	Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>
+Subject: [PATCH 1/3] arch: Select fbdev helpers with CONFIG_VIDEO
+Date: Wed, 21 Feb 2024 17:05:24 +0100
+Message-ID: <20240221161431.8245-2-tzimmermann@suse.de>
+X-Mailer: git-send-email 2.43.0
+In-Reply-To: <20240221161431.8245-1-tzimmermann@suse.de>
+References: <20240221161431.8245-1-tzimmermann@suse.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <559f2595-1477-4ef0-80e4-85ae8b426de7@linux.ibm.com>
-X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.6
+Content-Transfer-Encoding: 8bit
+X-Spam-Level: 
+Authentication-Results: smtp-out1.suse.de;
+	none
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	 REPLY(-4.00)[]
+X-Spam-Score: -4.00
+X-Rspamd-Queue-Id: A53D42222F
+X-Spam-Flag: NO
 
-On 02/21/24 at 11:15am, Hari Bathini wrote:
-> Hi Baoquan,
-> 
-> On 04/02/24 8:56 am, Baoquan He wrote:
-> > > > Hope Hari and Pingfan can help have a look, see if
-> > > > it's doable. Now, I make it either have both kexec and crash enabled, or
-> > > > disable both of them altogether.
-> > > 
-> > > Sure. I will take a closer look...
-> > Thanks a lot. Please feel free to post patches to make that, or I can do
-> > it with your support or suggestion.
-> 
-> Tested your changes and on top of these changes, came up with the below
-> changes to get it working for powerpc:
-> 
-> 
-> https://lore.kernel.org/all/20240213113150.1148276-1-hbathini@linux.ibm.com/
-> 
-> Please take a look.
+Various Kconfig options selected the per-architecture helpers for
+fbdev. But none of the contained code depends on fbdev. Standardize
+on CONFIG_VIDEO, which will allow to add more general helpers for
+video functionality.
 
-I added a comment to the patch 1 consulting if the "struct crash_mem" is
-appropriate to cover other cases except of kdump memory regions. I am
-wondering if its name need be adjusted, or other kind of memory you
-mentioned can use other structures or create a new one.
+CONFIG_VIDEO protects each architecture's video/ directory. This
+allows for the use of more fine-grained control for each directory's
+files, such as the use of CONFIG_STI_CORE on parisc.
 
-If it's has to be done like that, it's fine. 
+Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+Cc: "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>
+Cc: Helge Deller <deller@gmx.de>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Andreas Larsson <andreas@gaisler.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Borislav Petkov <bp@alien8.de>
+Cc: Dave Hansen <dave.hansen@linux.intel.com>
+Cc: x86@kernel.org
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+---
+ arch/parisc/Makefile      | 2 +-
+ arch/sparc/Makefile       | 4 ++--
+ arch/sparc/video/Makefile | 2 +-
+ arch/x86/Makefile         | 2 +-
+ arch/x86/video/Makefile   | 3 ++-
+ 5 files changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/arch/parisc/Makefile b/arch/parisc/Makefile
+index 316f84f1d15c8..21b8166a68839 100644
+--- a/arch/parisc/Makefile
++++ b/arch/parisc/Makefile
+@@ -119,7 +119,7 @@ export LIBGCC
+ 
+ libs-y	+= arch/parisc/lib/ $(LIBGCC)
+ 
+-drivers-y += arch/parisc/video/
++drivers-$(CONFIG_VIDEO) += arch/parisc/video/
+ 
+ boot	:= arch/parisc/boot
+ 
+diff --git a/arch/sparc/Makefile b/arch/sparc/Makefile
+index 5f60359361312..757451c3ea1df 100644
+--- a/arch/sparc/Makefile
++++ b/arch/sparc/Makefile
+@@ -59,8 +59,8 @@ endif
+ libs-y                 += arch/sparc/prom/
+ libs-y                 += arch/sparc/lib/
+ 
+-drivers-$(CONFIG_PM) += arch/sparc/power/
+-drivers-$(CONFIG_FB) += arch/sparc/video/
++drivers-$(CONFIG_PM)    += arch/sparc/power/
++drivers-$(CONFIG_VIDEO) += arch/sparc/video/
+ 
+ boot := arch/sparc/boot
+ 
+diff --git a/arch/sparc/video/Makefile b/arch/sparc/video/Makefile
+index 6baddbd58e4db..9dd82880a027a 100644
+--- a/arch/sparc/video/Makefile
++++ b/arch/sparc/video/Makefile
+@@ -1,3 +1,3 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ 
+-obj-$(CONFIG_FB) += fbdev.o
++obj-y	+= fbdev.o
+diff --git a/arch/x86/Makefile b/arch/x86/Makefile
+index 15a5f4f2ff0aa..c0ea612c62ebe 100644
+--- a/arch/x86/Makefile
++++ b/arch/x86/Makefile
+@@ -265,7 +265,7 @@ drivers-$(CONFIG_PCI)            += arch/x86/pci/
+ # suspend and hibernation support
+ drivers-$(CONFIG_PM) += arch/x86/power/
+ 
+-drivers-$(CONFIG_FB_CORE) += arch/x86/video/
++drivers-$(CONFIG_VIDEO) += arch/x86/video/
+ 
+ ####
+ # boot loader support. Several targets are kept for legacy purposes
+diff --git a/arch/x86/video/Makefile b/arch/x86/video/Makefile
+index 5ebe48752ffc4..9dd82880a027a 100644
+--- a/arch/x86/video/Makefile
++++ b/arch/x86/video/Makefile
+@@ -1,2 +1,3 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+-obj-$(CONFIG_FB_CORE)		+= fbdev.o
++
++obj-y	+= fbdev.o
+-- 
+2.43.0
 
