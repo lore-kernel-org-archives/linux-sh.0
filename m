@@ -1,137 +1,161 @@
-Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.13])
+Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FEF979E1;
-	Fri, 23 Feb 2024 01:27:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.13
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 273AA11197;
+	Fri, 23 Feb 2024 05:42:11 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.158.5
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1708651640; cv=none; b=Mae98+TuRCFSAVnVZQMayJ97e692BcoqtxAUDtgo3alq3GkzX40uEKI9l4eRDXJSWW6C+ki45r0iMU5y+VIhHiLYNjUSnQwgBC5fUdcB63NiBgyoc3s4kQDat0qU6aOPHT8b8n5x20zLbVcRZtnbPJLW7y0eGtgm1ROhbuO+pkk=
+	t=1708666933; cv=none; b=Snn5z/muJunja7ovJL/8ko4qYCG9V2HKLTHxIBBCvJxLmNReh7pcEaQJDPTWmng5AjwJfK4NBgizZFPYt2KOk3QD1ijv1qXLeyb9FCCA+rzwrDkpEAoj16f8Ma7I5SsDsnKIFoZHekBF3Cepo76TeQOlnOW+ei6NRec6Moa1MS8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1708651640; c=relaxed/simple;
-	bh=VJfzL6GLEaZMoUqazrxisfj34PLQuSNA02WLHhDPT4k=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=a8ETOUUteJk46Cx6DI6O8scVD/qI874fqH3Rt5rDk6qyTLdJQRjUj5237VMIilZRRRym635B+1M6d7ifQz0nCJNdG3u81a/po1KiVqucQj9Ml3OlpclyG27/mauYkm1rl6zTQmR5lKYPlaXIS/UR3KI3tYRihFq4lTqb0woUU/k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=LpdCZBp9; arc=none smtp.client-ip=198.175.65.13
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
+	s=arc-20240116; t=1708666933; c=relaxed/simple;
+	bh=SI7kMRn05atkzPWWDHvqKa6ulctOtyW+iA5d9blVERw=;
+	h=Message-ID:Date:Subject:To:Cc:References:From:In-Reply-To:
+	 Content-Type:MIME-Version; b=AQutHQdEqRhSE3ITkkOuEGNJzKi+T6JDO/Z/f8v/yGFPdgD6mlIG+hc1zc4kUplgcY6satAgKbpi7wtkuehaJvwliCCnODEQZnaEIn3ejdZGEaIszbRpJx00UFclfGHo9iA20foBQK1zoGPTOsL0zV1/GIWLZaH1pmp3cmZb1to=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=YO0gqY9t; arc=none smtp.client-ip=148.163.158.5
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="LpdCZBp9"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
-  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
-  t=1708651638; x=1740187638;
-  h=date:from:to:cc:subject:message-id:references:
-   mime-version:in-reply-to;
-  bh=VJfzL6GLEaZMoUqazrxisfj34PLQuSNA02WLHhDPT4k=;
-  b=LpdCZBp9dhFIIgtBdS4jFXFuqQKkaB2vJ/hsogVcQYEdTIm2tKSaQ3wS
-   8G5JCIyHVhU213hGOCea465UhwZgyodbLd4M/iDu1BGwQW45RAHNxLtu6
-   XesxHPmEeXlKuLwkNgMkfcrhlo0DinziUKifjYi9w+1u/b3wgmuw0S8MD
-   QIez8EIi682kcMnGnTjFUIyBbPqgcxnS1nYy5mNobPyZIQrEZDdLBvD4G
-   MT8ZOHJp5GzvK+3mXAjUU6mP7umP1knqUmICgxfc1wGDLEBo5KcXltXMa
-   jaZWpp67OG6EqS3IgostuJF2qH8x4Shbnpg6W6k6mxoW4UjS+9DMk+DQd
-   g==;
-X-IronPort-AV: E=McAfee;i="6600,9927,10992"; a="14072581"
-X-IronPort-AV: E=Sophos;i="6.06,179,1705392000"; 
-   d="scan'208";a="14072581"
-Received: from orviesa008.jf.intel.com ([10.64.159.148])
-  by orvoesa105.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 22 Feb 2024 17:27:18 -0800
-X-ExtLoop1: 1
-X-IronPort-AV: E=Sophos;i="6.06,179,1705392000"; 
-   d="scan'208";a="6192032"
-Received: from lkp-server02.sh.intel.com (HELO 3c78fa4d504c) ([10.239.97.151])
-  by orviesa008.jf.intel.com with ESMTP; 22 Feb 2024 17:27:11 -0800
-Received: from kbuild by 3c78fa4d504c with local (Exim 4.96)
-	(envelope-from <lkp@intel.com>)
-	id 1rdKL6-0006vK-2c;
-	Fri, 23 Feb 2024 01:27:02 +0000
-Date: Fri, 23 Feb 2024 09:26:10 +0800
-From: kernel test robot <lkp@intel.com>
-To: Thomas Zimmermann <tzimmermann@suse.de>, arnd@arndb.de,
-	javierm@redhat.com, deller@gmx.de, suijingfeng@loongson.cn
-Cc: oe-kbuild-all@lists.linux.dev, linux-arch@vger.kernel.org,
-	dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org,
-	sparclinux@vger.kernel.org, linux-sh@vger.kernel.org,
-	linuxppc-dev@lists.ozlabs.org, linux-parisc@vger.kernel.org,
-	linux-mips@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-	loongarch@lists.linux.dev, linux-arm-kernel@lists.infradead.org,
-	linux-snps-arc@lists.infradead.org, linux-kernel@vger.kernel.org,
-	Thomas Zimmermann <tzimmermann@suse.de>,
-	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-	"H. Peter Anvin" <hpa@zytor.com>
-Subject: Re: [PATCH 2/3] arch: Remove struct fb_info from video helpers
-Message-ID: <202402230941.JZdvHHEX-lkp@intel.com>
-References: <20240221161431.8245-3-tzimmermann@suse.de>
+	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="YO0gqY9t"
+Received: from pps.filterd (m0353722.ppops.net [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 41N5RXw3004732;
+	Fri, 23 Feb 2024 05:41:52 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
+ subject : to : cc : references : from : in-reply-to : content-type :
+ content-transfer-encoding : mime-version; s=pp1;
+ bh=9W7fRpp8Cej2/m5IqM60+RYoP+1x8jnLMKf+yYsewb0=;
+ b=YO0gqY9t0bx79WYOElJAN7nfMxSwEMvUjlvxhvpKChKkvWhhMbq5C6e3f3JID70WzZUB
+ rPBCjbR++48o+ovfcULGU+OdjbZ4R8nFMX5SfUQvDcU0Ieojf7C0+3Pkk+i3qZBGKol6
+ xdbYSNp6gBIDl484VQG7sXpbA3VO+BD4S6UYLA6sTLlR6W8gezf4EYZD4aKIu+DMpJd5
+ 35eQJeacQafTSwc5cDy7sngWhidEKvsxUgYCF14kz3QykXv+1dQdF2126FH4VuUD3E8h
+ muSaq9/gRXVvHlCI57GSuG3fKPKwp+Bz7a/oHCw+PHPETndzRum38dBSdp42+48oPJUB sg== 
+Received: from pps.reinject (localhost [127.0.0.1])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3wen7vg7n8-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Fri, 23 Feb 2024 05:41:52 +0000
+Received: from m0353722.ppops.net (m0353722.ppops.net [127.0.0.1])
+	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 41N5Sx6S007880;
+	Fri, 23 Feb 2024 05:41:51 GMT
+Received: from ppma13.dal12v.mail.ibm.com (dd.9e.1632.ip4.static.sl-reverse.com [50.22.158.221])
+	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3wen7vg7mu-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Fri, 23 Feb 2024 05:41:51 +0000
+Received: from pps.filterd (ppma13.dal12v.mail.ibm.com [127.0.0.1])
+	by ppma13.dal12v.mail.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 41N3awRg031187;
+	Fri, 23 Feb 2024 05:41:50 GMT
+Received: from smtprelay05.fra02v.mail.ibm.com ([9.218.2.225])
+	by ppma13.dal12v.mail.ibm.com (PPS) with ESMTPS id 3wb9bmawmw-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Fri, 23 Feb 2024 05:41:50 +0000
+Received: from smtpav05.fra02v.mail.ibm.com (smtpav05.fra02v.mail.ibm.com [10.20.54.104])
+	by smtprelay05.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 41N5fkDf9503378
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Fri, 23 Feb 2024 05:41:48 GMT
+Received: from smtpav05.fra02v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id B6C262004B;
+	Fri, 23 Feb 2024 05:41:46 +0000 (GMT)
+Received: from smtpav05.fra02v.mail.ibm.com (unknown [127.0.0.1])
+	by IMSVA (Postfix) with ESMTP id 9D0082004D;
+	Fri, 23 Feb 2024 05:41:42 +0000 (GMT)
+Received: from [9.43.109.8] (unknown [9.43.109.8])
+	by smtpav05.fra02v.mail.ibm.com (Postfix) with ESMTP;
+	Fri, 23 Feb 2024 05:41:42 +0000 (GMT)
+Message-ID: <386202f8-852c-477e-b9c4-f37896559a34@linux.ibm.com>
+Date: Fri, 23 Feb 2024 11:11:41 +0530
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2 00/14] Split crash out from kexec and clean up related
+ config items
+Content-Language: en-US
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-s390@vger.kernel.org, Baoquan He <bhe@redhat.com>, piliu@redhat.com,
+        linux-sh@vger.kernel.org, x86@kernel.org, kexec@lists.infradead.org,
+        linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org,
+        ebiederm@xmission.com, loongarch@lists.linux.dev,
+        linux-riscv@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
+        linux-arm-kernel@lists.infradead.org, viro@zeniv.linux.org.uk
+References: <20240119145241.769622-1-bhe@redhat.com>
+ <9101bb07-70f1-476c-bec9-ec67e9899744@linux.ibm.com>
+ <Zb8D1ASrgX0qVm9z@MiWiFi-R3L-srv>
+ <559f2595-1477-4ef0-80e4-85ae8b426de7@linux.ibm.com>
+ <20240221125752.36fbfe9c307496313198b60f@linux-foundation.org>
+ <3393a42f-d9b3-4031-bdef-78bb2ce758f1@linux.ibm.com>
+ <20240222132936.e7dc50acbf5d1b653cb2e02c@linux-foundation.org>
+From: Hari Bathini <hbathini@linux.ibm.com>
+In-Reply-To: <20240222132936.e7dc50acbf5d1b653cb2e02c@linux-foundation.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+X-TM-AS-GCONF: 00
+X-Proofpoint-GUID: 1e6y87d1DlwScItsjN2uRAkEKSoC1BFr
+X-Proofpoint-ORIG-GUID: dp_4k7D0Bmax-JRhiGBq4xwolmlG7ETz
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-UnRewURL: 0 URL was un-rewritten
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20240221161431.8245-3-tzimmermann@suse.de>
-
-Hi Thomas,
-
-kernel test robot noticed the following build errors:
-
-[auto build test ERROR on tip/x86/core]
-[also build test ERROR on deller-parisc/for-next arnd-asm-generic/master linus/master v6.8-rc5]
-[cannot apply to next-20240222]
-[If your patch is applied to the wrong git tree, kindly drop us a note.
-And when submitting patch, we suggest to use '--base' as documented in
-https://git-scm.com/docs/git-format-patch#_base_tree_information]
-
-url:    https://github.com/intel-lab-lkp/linux/commits/Thomas-Zimmermann/arch-Select-fbdev-helpers-with-CONFIG_VIDEO/20240222-001622
-base:   tip/x86/core
-patch link:    https://lore.kernel.org/r/20240221161431.8245-3-tzimmermann%40suse.de
-patch subject: [PATCH 2/3] arch: Remove struct fb_info from video helpers
-config: x86_64-rhel-8.3 (https://download.01.org/0day-ci/archive/20240223/202402230941.JZdvHHEX-lkp@intel.com/config)
-compiler: gcc-12 (Debian 12.2.0-14) 12.2.0
-reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20240223/202402230941.JZdvHHEX-lkp@intel.com/reproduce)
-
-If you fix the issue in a separate patch/commit (i.e. not just a new version of
-the same patch/commit), kindly add following tags
-| Reported-by: kernel test robot <lkp@intel.com>
-| Closes: https://lore.kernel.org/oe-kbuild-all/202402230941.JZdvHHEX-lkp@intel.com/
-
-All errors (new ones prefixed by >>):
-
-   ld: vmlinux.o: in function `fbcon_select_primary':
->> drivers/video/fbdev/core/fbcon.c:2944: undefined reference to `video_is_primary_device'
-   ld: vmlinux.o: in function `fb_io_mmap':
-   drivers/video/fbdev/core/fb_io_fops.c:164: undefined reference to `pgprot_framebuffer'
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.272,Aquarius:18.0.1011,Hydra:6.0.619,FMLib:17.11.176.26
+ definitions=2024-02-22_15,2024-02-22_01,2023-05-22_02
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxscore=0 bulkscore=0
+ malwarescore=0 mlxlogscore=999 lowpriorityscore=0 adultscore=0
+ priorityscore=1501 impostorscore=0 phishscore=0 suspectscore=0
+ clxscore=1015 spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2311290000 definitions=main-2402230038
 
 
-vim +2944 drivers/video/fbdev/core/fbcon.c
 
-  2939	
-  2940	#ifdef CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY
-  2941	static void fbcon_select_primary(struct fb_info *info)
-  2942	{
-  2943		if (!map_override && primary_device == -1 &&
-> 2944		    video_is_primary_device(info->device)) {
-  2945			int i;
-  2946	
-  2947			printk(KERN_INFO "fbcon: %s (fb%i) is primary device\n",
-  2948			       info->fix.id, info->node);
-  2949			primary_device = info->node;
-  2950	
-  2951			for (i = first_fb_vc; i <= last_fb_vc; i++)
-  2952				con2fb_map_boot[i] = primary_device;
-  2953	
-  2954			if (con_is_bound(&fb_con)) {
-  2955				printk(KERN_INFO "fbcon: Remapping primary device, "
-  2956				       "fb%i, to tty %i-%i\n", info->node,
-  2957				       first_fb_vc + 1, last_fb_vc + 1);
-  2958				info_idx = primary_device;
-  2959			}
-  2960		}
-  2961	
+On 23/02/24 2:59 am, Andrew Morton wrote:
+> On Thu, 22 Feb 2024 10:47:29 +0530 Hari Bathini <hbathini@linux.ibm.com> wrote:
+> 
+>>
+>>
+>> On 22/02/24 2:27 am, Andrew Morton wrote:
+>>> On Wed, 21 Feb 2024 11:15:00 +0530 Hari Bathini <hbathini@linux.ibm.com> wrote:
+>>>
+>>>> On 04/02/24 8:56 am, Baoquan He wrote:
+>>>>>>> Hope Hari and Pingfan can help have a look, see if
+>>>>>>> it's doable. Now, I make it either have both kexec and crash enabled, or
+>>>>>>> disable both of them altogether.
+>>>>>>
+>>>>>> Sure. I will take a closer look...
+>>>>> Thanks a lot. Please feel free to post patches to make that, or I can do
+>>>>> it with your support or suggestion.
+>>>>
+>>>> Tested your changes and on top of these changes, came up with the below
+>>>> changes to get it working for powerpc:
+>>>>
+>>>>    
+>>>> https://lore.kernel.org/all/20240213113150.1148276-1-hbathini@linux.ibm.com/
+>>>
+>>> So can we take it that you're OK with Baoquan's series as-is?
+>>
+>> Hi Andrew,
+>>
+>> If you mean
+>>
+>> v3 (https://lore.kernel.org/all/20240124051254.67105-1-bhe@redhat.com/)
+>> +
+>> follow-up from Baoquan
+>> (https://lore.kernel.org/all/Zb8D1ASrgX0qVm9z@MiWiFi-R3L-srv/)
+>>
+>> Yes.
+>>
+> 
+> Can I add your Acked-by: and/or Tested-by: to the patches in this series?
 
--- 
-0-DAY CI Kernel Test Service
-https://github.com/intel/lkp-tests/wiki
+Sure, Andrew.
+
+Acked-by: Hari Bathini <hbathini@linux.ibm.com>
+
+for..
+
+Patches 1-5 & 8 in:
+
+   https://lore.kernel.org/all/20240124051254.67105-1-bhe@redhat.com/
+
+and this follow-up patch:
+
+   https://lore.kernel.org/all/Zb8D1ASrgX0qVm9z@MiWiFi-R3L-srv/
+
+Thanks
+Hari
