@@ -1,161 +1,82 @@
-Received: from mx0b-001b2d01.pphosted.com (mx0b-001b2d01.pphosted.com [148.163.158.5])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 273AA11197;
-	Fri, 23 Feb 2024 05:42:11 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.158.5
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A40C881AC6;
+	Fri, 23 Feb 2024 15:20:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1708666933; cv=none; b=Snn5z/muJunja7ovJL/8ko4qYCG9V2HKLTHxIBBCvJxLmNReh7pcEaQJDPTWmng5AjwJfK4NBgizZFPYt2KOk3QD1ijv1qXLeyb9FCCA+rzwrDkpEAoj16f8Ma7I5SsDsnKIFoZHekBF3Cepo76TeQOlnOW+ei6NRec6Moa1MS8=
+	t=1708701602; cv=none; b=GbIHosWtYkcVaarDhG05Jf+58RJnG8f8oVRpgjkD+yZEogo0HSRRXBL2rXfIRn0ePZJYUPs9LGnEmRYHvNwmSnhYKBypjJwR6l622zcyGvYNBwngoZ/6uGs8HTFFHvSNZ+GG3bnZ80iLjRCcdVs0L008OmBRvB5CLNq57dAAXFI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1708666933; c=relaxed/simple;
-	bh=SI7kMRn05atkzPWWDHvqKa6ulctOtyW+iA5d9blVERw=;
-	h=Message-ID:Date:Subject:To:Cc:References:From:In-Reply-To:
-	 Content-Type:MIME-Version; b=AQutHQdEqRhSE3ITkkOuEGNJzKi+T6JDO/Z/f8v/yGFPdgD6mlIG+hc1zc4kUplgcY6satAgKbpi7wtkuehaJvwliCCnODEQZnaEIn3ejdZGEaIszbRpJx00UFclfGHo9iA20foBQK1zoGPTOsL0zV1/GIWLZaH1pmp3cmZb1to=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=YO0gqY9t; arc=none smtp.client-ip=148.163.158.5
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
+	s=arc-20240116; t=1708701602; c=relaxed/simple;
+	bh=LTGuP5mwgDes1iDc674SKmGbovpo1+4tFu8cnR0ZZFg=;
+	h=From:To:Cc:In-Reply-To:References:Subject:Message-Id:Date:
+	 MIME-Version:Content-Type; b=awSj1ZUAmDP0y10VS1wJiX7Y+URMvQkP+2A3WCGfbJSKQYtaME8JXOVfO1E8rr6AwojXjZ4xi8AiaOA7uldn8z0Cn0eI2Q7JWSHt5Qe63NkP0mtNHAo0lMmY+zGzlf2Z1QiEdh53X19wIxQ2OH6T7HXz3IfDeo261YlC8gjDwmo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Vc7r6UhM; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="YO0gqY9t"
-Received: from pps.filterd (m0353722.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.17.1.19/8.17.1.19) with ESMTP id 41N5RXw3004732;
-	Fri, 23 Feb 2024 05:41:52 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=message-id : date :
- subject : to : cc : references : from : in-reply-to : content-type :
- content-transfer-encoding : mime-version; s=pp1;
- bh=9W7fRpp8Cej2/m5IqM60+RYoP+1x8jnLMKf+yYsewb0=;
- b=YO0gqY9t0bx79WYOElJAN7nfMxSwEMvUjlvxhvpKChKkvWhhMbq5C6e3f3JID70WzZUB
- rPBCjbR++48o+ovfcULGU+OdjbZ4R8nFMX5SfUQvDcU0Ieojf7C0+3Pkk+i3qZBGKol6
- xdbYSNp6gBIDl484VQG7sXpbA3VO+BD4S6UYLA6sTLlR6W8gezf4EYZD4aKIu+DMpJd5
- 35eQJeacQafTSwc5cDy7sngWhidEKvsxUgYCF14kz3QykXv+1dQdF2126FH4VuUD3E8h
- muSaq9/gRXVvHlCI57GSuG3fKPKwp+Bz7a/oHCw+PHPETndzRum38dBSdp42+48oPJUB sg== 
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3wen7vg7n8-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 23 Feb 2024 05:41:52 +0000
-Received: from m0353722.ppops.net (m0353722.ppops.net [127.0.0.1])
-	by pps.reinject (8.17.1.5/8.17.1.5) with ESMTP id 41N5Sx6S007880;
-	Fri, 23 Feb 2024 05:41:51 GMT
-Received: from ppma13.dal12v.mail.ibm.com (dd.9e.1632.ip4.static.sl-reverse.com [50.22.158.221])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3wen7vg7mu-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 23 Feb 2024 05:41:51 +0000
-Received: from pps.filterd (ppma13.dal12v.mail.ibm.com [127.0.0.1])
-	by ppma13.dal12v.mail.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 41N3awRg031187;
-	Fri, 23 Feb 2024 05:41:50 GMT
-Received: from smtprelay05.fra02v.mail.ibm.com ([9.218.2.225])
-	by ppma13.dal12v.mail.ibm.com (PPS) with ESMTPS id 3wb9bmawmw-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 23 Feb 2024 05:41:50 +0000
-Received: from smtpav05.fra02v.mail.ibm.com (smtpav05.fra02v.mail.ibm.com [10.20.54.104])
-	by smtprelay05.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 41N5fkDf9503378
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Fri, 23 Feb 2024 05:41:48 GMT
-Received: from smtpav05.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id B6C262004B;
-	Fri, 23 Feb 2024 05:41:46 +0000 (GMT)
-Received: from smtpav05.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 9D0082004D;
-	Fri, 23 Feb 2024 05:41:42 +0000 (GMT)
-Received: from [9.43.109.8] (unknown [9.43.109.8])
-	by smtpav05.fra02v.mail.ibm.com (Postfix) with ESMTP;
-	Fri, 23 Feb 2024 05:41:42 +0000 (GMT)
-Message-ID: <386202f8-852c-477e-b9c4-f37896559a34@linux.ibm.com>
-Date: Fri, 23 Feb 2024 11:11:41 +0530
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 00/14] Split crash out from kexec and clean up related
- config items
-Content-Language: en-US
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-s390@vger.kernel.org, Baoquan He <bhe@redhat.com>, piliu@redhat.com,
-        linux-sh@vger.kernel.org, x86@kernel.org, kexec@lists.infradead.org,
-        linux-kernel@vger.kernel.org, linux-mips@vger.kernel.org,
-        ebiederm@xmission.com, loongarch@lists.linux.dev,
-        linux-riscv@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
-        linux-arm-kernel@lists.infradead.org, viro@zeniv.linux.org.uk
-References: <20240119145241.769622-1-bhe@redhat.com>
- <9101bb07-70f1-476c-bec9-ec67e9899744@linux.ibm.com>
- <Zb8D1ASrgX0qVm9z@MiWiFi-R3L-srv>
- <559f2595-1477-4ef0-80e4-85ae8b426de7@linux.ibm.com>
- <20240221125752.36fbfe9c307496313198b60f@linux-foundation.org>
- <3393a42f-d9b3-4031-bdef-78bb2ce758f1@linux.ibm.com>
- <20240222132936.e7dc50acbf5d1b653cb2e02c@linux-foundation.org>
-From: Hari Bathini <hbathini@linux.ibm.com>
-In-Reply-To: <20240222132936.e7dc50acbf5d1b653cb2e02c@linux-foundation.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-X-TM-AS-GCONF: 00
-X-Proofpoint-GUID: 1e6y87d1DlwScItsjN2uRAkEKSoC1BFr
-X-Proofpoint-ORIG-GUID: dp_4k7D0Bmax-JRhiGBq4xwolmlG7ETz
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-UnRewURL: 0 URL was un-rewritten
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Vc7r6UhM"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C901AC43390;
+	Fri, 23 Feb 2024 15:20:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1708701602;
+	bh=LTGuP5mwgDes1iDc674SKmGbovpo1+4tFu8cnR0ZZFg=;
+	h=From:To:Cc:In-Reply-To:References:Subject:Date:From;
+	b=Vc7r6UhMjw6tOffkYu/nSuOneuQKW3B34b0TZdfdc3TTLoU9rHgTbTi4ahBzCyAs+
+	 LWGx9Qm/T6lhL6dH5bpphrtEJEOu+5WpxLVdggwgfACcZuYraP48QKr9r12h5pfPaE
+	 cplw6LDQEmTB5lgWia4mJcYaThHX9xYL/ajxYOz6U7zaNQH594QFqUNlLYWCvxLm+V
+	 7vro2yg5hlcO8FBJrGIUnRoY/+D9syFqIp853hPqQnLjkV3eHdCuf7CeudLSf8xl5o
+	 t63WHI05Z6+99MAW9RjcCqBAUAwiDIgGrzKU//tfYXxPpZ46EsqzJK3W1YXLsQhSLH
+	 A3fStTR3JMGxQ==
+From: Lee Jones <lee@kernel.org>
+To: linux-renesas-soc@vger.kernel.org, 
+ Wolfram Sang <wsa+renesas@sang-engineering.com>
+Cc: Lee Jones <lee@kernel.org>, linux-arm-kernel@lists.infradead.org, 
+ linux-kernel@vger.kernel.org, linux-mmc@vger.kernel.org, 
+ linux-sh@vger.kernel.org
+In-Reply-To: <20240213220221.2380-8-wsa+renesas@sang-engineering.com>
+References: <20240213220221.2380-8-wsa+renesas@sang-engineering.com>
+Subject: Re: [PATCH v2 0/6] mfd: tmio: simplify header and move to
+ platform_data
+Message-Id: <170870160052.1698319.4712751560931025638.b4-ty@kernel.org>
+Date: Fri, 23 Feb 2024 15:20:00 +0000
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.272,Aquarius:18.0.1011,Hydra:6.0.619,FMLib:17.11.176.26
- definitions=2024-02-22_15,2024-02-22_01,2023-05-22_02
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxscore=0 bulkscore=0
- malwarescore=0 mlxlogscore=999 lowpriorityscore=0 adultscore=0
- priorityscore=1501 impostorscore=0 phishscore=0 suspectscore=0
- clxscore=1015 spamscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.12.0-2311290000 definitions=main-2402230038
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+X-Mailer: b4 0.12.4
 
-
-
-On 23/02/24 2:59 am, Andrew Morton wrote:
-> On Thu, 22 Feb 2024 10:47:29 +0530 Hari Bathini <hbathini@linux.ibm.com> wrote:
+On Tue, 13 Feb 2024 23:02:19 +0100, Wolfram Sang wrote:
+> Changes since v1:
 > 
->>
->>
->> On 22/02/24 2:27 am, Andrew Morton wrote:
->>> On Wed, 21 Feb 2024 11:15:00 +0530 Hari Bathini <hbathini@linux.ibm.com> wrote:
->>>
->>>> On 04/02/24 8:56 am, Baoquan He wrote:
->>>>>>> Hope Hari and Pingfan can help have a look, see if
->>>>>>> it's doable. Now, I make it either have both kexec and crash enabled, or
->>>>>>> disable both of them altogether.
->>>>>>
->>>>>> Sure. I will take a closer look...
->>>>> Thanks a lot. Please feel free to post patches to make that, or I can do
->>>>> it with your support or suggestion.
->>>>
->>>> Tested your changes and on top of these changes, came up with the below
->>>> changes to get it working for powerpc:
->>>>
->>>>    
->>>> https://lore.kernel.org/all/20240213113150.1148276-1-hbathini@linux.ibm.com/
->>>
->>> So can we take it that you're OK with Baoquan's series as-is?
->>
->> Hi Andrew,
->>
->> If you mean
->>
->> v3 (https://lore.kernel.org/all/20240124051254.67105-1-bhe@redhat.com/)
->> +
->> follow-up from Baoquan
->> (https://lore.kernel.org/all/Zb8D1ASrgX0qVm9z@MiWiFi-R3L-srv/)
->>
->> Yes.
->>
+> * rebased to rc4
+> * collected all needed acks (Thanks!)
+> * capitalized first letter in commit subject
 > 
-> Can I add your Acked-by: and/or Tested-by: to the patches in this series?
+> The MFD parts of the TMIO have been removed by Arnd, so that only the
+> SD/MMC related functionality is left. Remove the outdated remains in the
+> public header file and then move it to platform_data as the data is now
+> specific for the SD/MMC part.
+> 
+> [...]
 
-Sure, Andrew.
+Applied, thanks!
 
-Acked-by: Hari Bathini <hbathini@linux.ibm.com>
+[1/6] mfd: tmio: Remove obsolete platform_data
+      commit: 58d6d15662e4039fab7d786f0426843befa77ad4
+[2/6] mfd: tmio: Remove obsolete io accessors
+      commit: e927d7bac109d8ca1729dda47a8dbc220efdb50e
+[3/6] mmc: tmio/sdhi: Fix includes
+      commit: bed05c68aa8f078206143700cd37e42a0084155f
+[4/6] mfd: tmio: Update include files
+      commit: 3ef94c41db82573dc1e1dd6c259aec8ef6caaaf3
+[5/6] mfd: tmio: Sanitize comments
+      commit: 2d417dda59123b9523a19ce75fea3fd1056c3b4c
+[6/6] mfd: tmio: Move header to platform_data
+      commit: 858b29729c9d319b9cd1441646cc3af246d3c3f9
 
-for..
+--
+Lee Jones [李琼斯]
 
-Patches 1-5 & 8 in:
-
-   https://lore.kernel.org/all/20240124051254.67105-1-bhe@redhat.com/
-
-and this follow-up patch:
-
-   https://lore.kernel.org/all/Zb8D1ASrgX0qVm9z@MiWiFi-R3L-srv/
-
-Thanks
-Hari
