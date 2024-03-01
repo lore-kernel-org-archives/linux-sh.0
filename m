@@ -1,30 +1,30 @@
-Received: from albert.telenet-ops.be (albert.telenet-ops.be [195.130.137.90])
+Received: from michel.telenet-ops.be (michel.telenet-ops.be [195.130.137.88])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DA27556B63
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0CDBA56B66
 	for <linux-sh@vger.kernel.org>; Fri,  1 Mar 2024 21:02:45 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.137.90
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.137.88
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709326968; cv=none; b=GT9/v4aE85jpbDl/O8HdBTh++lv47pQeczT971kl675lbU64nB6ZSiwAFDXNkTTivTOPxu8ZKwuK6A0xKafp8PXFe8QY/Ub3LKmE/Bi1SbeD8ohVtdaJKF95/kx7HpZiyFaIM17Orla/8rJ4GQRWmpGukkaRGM+9pylB1hIPoL0=
+	t=1709326968; cv=none; b=LT6UlzVOrxDSGQrl+IhwMDriSXTGNJkjZ/H1Lj0lv/SMRP45Lfeke6nj+7Fr1FWrEW0T3VPxLDrDXdkhYVgHR5EuZA33Fg9Sbebp2oHh/35a/iT8aZsf6+XtrlHucpMiMOxDscQPQ+N9Hgh2x+of0A4sSmLgBG7R+QMFT4DwHgw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1709326968; c=relaxed/simple;
-	bh=/tBZ2iSdN8OLbtFWmDoI6rwg+iFBUAwva2wRvq50svo=;
+	bh=rBxoEAWdBSYWw6guM59u0mev4vtFqxQLPZ9mMn81aww=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=Dbu+LP0qHJTNadJY82FBtTqFgioSesCJ2zJ1OQv8LzpHQozsdbl+RYIaFrOoazLYvxqukpeW4NsMERWmOaua4Pvm7NETa+hFFA2R5xJzLJAG5LA3v3De9ogcb0W+aYfoNT/8UOpOKBc7yV5f1GXgBdccbYTByPgcqnSNn8jDIZE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.137.90
+	 MIME-Version; b=s8mAxFdpljbrBigs9EuHXftAcHYa45fuBw36HnaNeYYokXsV7f6TCu+fGYt5bhFZdVNkolmQT/0h9Fq2h79G+TkQ08ScN6w//UjfmLVuKjhvQzyKeVSJ+oCucA/+5f1YqK/1yI1UJ2x8xW7uGMpWrb6bjTRWBdCb41bimYcKP/0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.137.88
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
 Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:db22:6af9:7d18:6ee8])
-	by albert.telenet-ops.be with bizsmtp
-	id tZ2e2B00D1TWuYv06Z2eSm; Fri, 01 Mar 2024 22:02:43 +0100
+	by michel.telenet-ops.be with bizsmtp
+	id tZ2e2B00B1TWuYv06Z2ewy; Fri, 01 Mar 2024 22:02:43 +0100
 Received: from rox.of.borg ([192.168.97.57])
 	by ramsan.of.borg with esmtp (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rgA1T-0024gt-EB;
+	id 1rgA1T-0024ge-Bc;
 	Fri, 01 Mar 2024 22:02:38 +0100
 Received: from geert by rox.of.borg with local (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rgA1e-00D8s0-8T;
+	id 1rgA1e-00D8rf-5i;
 	Fri, 01 Mar 2024 22:02:38 +0100
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 To: Yoshinori Sato <ysato@users.sourceforge.jp>,
@@ -42,9 +42,9 @@ Cc: Steven Rostedt <rostedt@goodmis.org>,
 	linux-sh@vger.kernel.org,
 	linux-trace-kernel@vger.kernel.org,
 	Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH 14/20] sh: sh7786: Remove unused sh7786_usb_use_exclock()
-Date: Fri,  1 Mar 2024 22:02:28 +0100
-Message-Id: <a87c6c0edcf81937b8eb2c899d286d82d71ad513.1709326528.git.geert+renesas@glider.be>
+Subject: [PATCH 10/20] sh: nommu: Add missing #include <asm/cacheflush.h>
+Date: Fri,  1 Mar 2024 22:02:24 +0100
+Message-Id: <d4b2a43fcedddee3d27cfd87ff2e0bf511588aa0.1709326528.git.geert+renesas@glider.be>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1709326528.git.geert+renesas@glider.be>
 References: <cover.1709326528.git.geert+renesas@glider.be>
@@ -56,40 +56,28 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-arch/sh/kernel/cpu/sh4a/setup-sh7786.c:411:13: warning: no previous prototype for 'sh7786_usb_use_exclock' [-Wmissing-prototypes]
-
-Upstream never had a user of sh7786_usb_use_exclock(), remove it.
+arch/sh/mm/nommu.c:76:13: warning: no previous prototype for 'kmap_coherent_init' [-Wmissing-prototypes]
+arch/sh/mm/nommu.c:80:7: warning: no previous prototype for 'kmap_coherent' [-Wmissing-prototypes]
+arch/sh/mm/nommu.c:86:6: warning: no previous prototype for 'kunmap_coherent' [-Wmissing-prototypes]
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c | 14 --------------
- 1 file changed, 14 deletions(-)
+ arch/sh/mm/nommu.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-index 74620f30b19badbd..c048842d8a589866 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-@@ -400,20 +400,6 @@ static struct platform_device *sh7786_devices[] __initdata = {
- 	&usb_ohci_device,
- };
- 
--/*
-- * Please call this function if your platform board
-- * use external clock for USB
-- * */
--#define USBCTL0		0xffe70858
--#define CLOCK_MODE_MASK 0xffffff7f
--#define EXT_CLOCK_MODE  0x00000080
--
--void __init sh7786_usb_use_exclock(void)
--{
--	u32 val = __raw_readl(USBCTL0) & CLOCK_MODE_MASK;
--	__raw_writel(val | EXT_CLOCK_MODE, USBCTL0);
--}
--
- #define USBINITREG1	0xffe70094
- #define USBINITREG2	0xffe7009c
- #define USBINITVAL1	0x00ff0040
+diff --git a/arch/sh/mm/nommu.c b/arch/sh/mm/nommu.c
+index 78c4b6e6d33ba3af..fa3dc9428a737ffe 100644
+--- a/arch/sh/mm/nommu.c
++++ b/arch/sh/mm/nommu.c
+@@ -10,6 +10,8 @@
+ #include <linux/init.h>
+ #include <linux/string.h>
+ #include <linux/mm.h>
++
++#include <asm/cacheflush.h>
+ #include <asm/tlbflush.h>
+ #include <asm/page.h>
+ #include <linux/uaccess.h>
 -- 
 2.34.1
 
