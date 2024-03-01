@@ -1,30 +1,30 @@
 Received: from xavier.telenet-ops.be (xavier.telenet-ops.be [195.130.132.52])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B3E757300
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9328357303
 	for <linux-sh@vger.kernel.org>; Fri,  1 Mar 2024 21:02:51 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.132.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709326974; cv=none; b=fsptVLoKlF2HiemhOHcE5FJ7nQoiEb5LUwqj1Ibz4tMGpJze5z5OYtWWso3aIcPj36qGsg6jWEeRtaSB1ywalQS6gXFvItlSs+Gr/pVotZAE42hRAtSdEdYcDpuqfIPndK3qEeDdQ2iwqcNrBYtoaLNh6OuT8XKs6tdylUuW6ak=
+	t=1709326974; cv=none; b=QWEbEc/7uMYLozHwQt+JvBlC/smzEpqf5bnblotEAbaUGgpo3K7vsDxUGN73/OZgVRycgtb5O2sQZoR9ASFwp5k3rHvl9Lja0qNcWKrRb6XMbo+XojJnpzAmLjbBVbc2IS+r1JD//7BMiP3svc3BB/54jEVim1TkBGSYa2JUUEY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1709326974; c=relaxed/simple;
-	bh=vEl5nxIEuJjotrXH/NuuNutlo2SHKOIwPzsZzJtKDHg=;
+	bh=v+444xnXxm36FIpSo81QsrCLOG8RoDU8XmcZ0Zk0Ylg=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=JUZEq5Ice2aFqX5eUhvADs3jeay5Ygd/P0o4L6jwlk0gYCF7C3rtXKitA/Zfi21PgJDvYy6JkLj/FmYLwpq+y7+qq9NutW3Gwf8If+ZvD9KLUIpBJOwZMcTUBpE347eyseFY+hRWGWVTqoxudn238JY2gUUugH/5hzIWV8zJblE=
+	 MIME-Version; b=p5GzhzxeC8iHtUgN63eXnB8Yvr5uSqKP994T8DycJ/YmuFBnm3yPdj+yD1rboMO52QNq0P1Eo2FvKlnH+b15aoSYklVGWX6fyAIq3pz2zXIUiCmIaRb6dWPYZrhJvqs2syYcUXgv8QHOrDixZghF+GWBV6LImiSS+qCpPyto8d8=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.132.52
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
 Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:db22:6af9:7d18:6ee8])
 	by xavier.telenet-ops.be with bizsmtp
-	id tZ2e2B00B1TWuYv01Z2eDd; Fri, 01 Mar 2024 22:02:44 +0100
+	id tZ2e2B00A1TWuYv01Z2eDc; Fri, 01 Mar 2024 22:02:44 +0100
 Received: from rox.of.borg ([192.168.97.57])
 	by ramsan.of.borg with esmtp (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rgA1T-0024gy-Ep;
+	id 1rgA1T-0024gq-DV;
 	Fri, 01 Mar 2024 22:02:38 +0100
 Received: from geert by rox.of.borg with local (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rgA1e-00D8s4-98;
+	id 1rgA1e-00D8ru-7o;
 	Fri, 01 Mar 2024 22:02:38 +0100
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 To: Yoshinori Sato <ysato@users.sourceforge.jp>,
@@ -42,9 +42,9 @@ Cc: Steven Rostedt <rostedt@goodmis.org>,
 	linux-sh@vger.kernel.org,
 	linux-trace-kernel@vger.kernel.org,
 	Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH 15/20] sh: smp: Fix missing prototypes
-Date: Fri,  1 Mar 2024 22:02:29 +0100
-Message-Id: <6b6b9a84b30ee56f57f409a7550c69d4aece5dc3.1709326528.git.geert+renesas@glider.be>
+Subject: [PATCH 13/20] sh: sh2a: Add missing #include <asm/processor.h>
+Date: Fri,  1 Mar 2024 22:02:27 +0100
+Message-Id: <8314dd9a966394dd1fd82d88095c57d9778fcfc9.1709326528.git.geert+renesas@glider.be>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1709326528.git.geert+renesas@glider.be>
 References: <cover.1709326528.git.geert+renesas@glider.be>
@@ -56,41 +56,26 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-arch/sh/kernel/smp.c:173:17: warning: no previous prototype for 'start_secondary' [-Wmissing-prototypes]
-arch/sh/kernel/smp.c:324:5: warning: no previous prototype for 'setup_profiling_timer' [-Wmissing-prototypes]
-
-Make start_secondary() static, as it is only used in this file.
-Include <linux/profile.h> to fix the other warning.
-
-There are no users outside this file, so make it static.
+arch/sh/kernel/cpu/sh2a/opcode_helper.c:34:14: warning: no previous prototype for 'instruction_size' [-Wmissing-prototypes]
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/kernel/smp.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/sh/kernel/cpu/sh2a/opcode_helper.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
-index 5cf35a774dc70082..b3ea50aabba3d7f2 100644
---- a/arch/sh/kernel/smp.c
-+++ b/arch/sh/kernel/smp.c
-@@ -21,6 +21,8 @@
- #include <linux/sched/hotplug.h>
- #include <linux/atomic.h>
- #include <linux/clockchips.h>
-+#include <linux/profile.h>
-+
- #include <asm/processor.h>
- #include <asm/mmu_context.h>
- #include <asm/smp.h>
-@@ -170,7 +172,7 @@ void native_play_dead(void)
- }
- #endif
+diff --git a/arch/sh/kernel/cpu/sh2a/opcode_helper.c b/arch/sh/kernel/cpu/sh2a/opcode_helper.c
+index c509081d90b9affe..fcf53f5827eb286c 100644
+--- a/arch/sh/kernel/cpu/sh2a/opcode_helper.c
++++ b/arch/sh/kernel/cpu/sh2a/opcode_helper.c
+@@ -8,6 +8,8 @@
+  */
+ #include <linux/kernel.h>
  
--asmlinkage void start_secondary(void)
-+static asmlinkage void start_secondary(void)
- {
- 	unsigned int cpu = smp_processor_id();
- 	struct mm_struct *mm = &init_mm;
++#include <asm/processor.h>
++
+ /*
+  * Instructions on SH are generally fixed at 16-bits, however, SH-2A
+  * introduces some 32-bit instructions. Since there are no real
 -- 
 2.34.1
 
