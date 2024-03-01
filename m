@@ -1,30 +1,30 @@
-Received: from andre.telenet-ops.be (andre.telenet-ops.be [195.130.132.53])
+Received: from albert.telenet-ops.be (albert.telenet-ops.be [195.130.137.90])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 95F9056B79
-	for <linux-sh@vger.kernel.org>; Fri,  1 Mar 2024 21:02:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.132.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C02EF56777
+	for <linux-sh@vger.kernel.org>; Fri,  1 Mar 2024 21:02:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.137.90
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709326969; cv=none; b=W2zT8+VeMCfNMFXfnLrxsnOM+ytrsGO0k20L2sCSCR0VbGDy+LFK0amDLb0il0n9WMwaLOhn4UF7Fl5Fzy4eqnOllnQ9Zv+v1D30u38PEC+d/btixO5ZbEykd887kX0+/2hJWH7U9GKvGSmTFKzhVyaxohLb1iBPbYStmSx2XZA=
+	t=1709326969; cv=none; b=jCGsnOgu2WJLJSND2A45qawZiuIpqCCpNXhHMMKtd96EKsf+/uxInWsNrmI2+m8imoIEyA3i/u49JLq5krViJkKO8nYaZXy1oPEv8E48KG6WFmfeLs1VOtMziF83FG1sDMwChV9cdIHToWktcMnOXH5Z9cof5P7U1D3RXpGHtgg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1709326969; c=relaxed/simple;
-	bh=EZEhIwE/QBgRULd7GoitNkRuUOEqvN0i53K34hNtFRY=;
+	bh=URqkyiSHZkMO/3vSWWbKavtNNGIsgwfUfwcUzGhcOHY=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=cSfcfhC5/yKrZgKA4QjvbiZi0SItqUxuoeJfBnO5R+wtJyveitmOIU9a9uoA1Y7xseUfeyLlMpZHp3RnkuYsqfmquYScVDhksOQJ7t98Dm/74Q95lnBCZnih5kfB9/iWoMbobggYVdP5aXe915kfP8ApTXpIpIhNpMct51zF3gM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.132.53
+	 MIME-Version; b=PrsY+iMUSLAxme3AqtSThrYr/WJZ7HId9hoTBUzwkuQ2p5nmOn8ZXa7OzeH8GSyoR8Sw2/TmjzcaNHZs4SZ2j15vmC1lCKe4wK/FtoYpOpWiNn/jP02k8N7+c/4Xd1LFP9uxzw9fZEJi4BBEIJXX62xNyET2j37G16TJq//nDVQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.137.90
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
 Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:db22:6af9:7d18:6ee8])
-	by andre.telenet-ops.be with bizsmtp
-	id tZ2e2B0091TWuYv01Z2en1; Fri, 01 Mar 2024 22:02:44 +0100
+	by albert.telenet-ops.be with bizsmtp
+	id tZ2e2B00F1TWuYv06Z2eSn; Fri, 01 Mar 2024 22:02:43 +0100
 Received: from rox.of.borg ([192.168.97.57])
 	by ramsan.of.borg with esmtp (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rgA1T-0024h3-G7;
+	id 1rgA1T-0024hB-HR;
 	Fri, 01 Mar 2024 22:02:38 +0100
 Received: from geert by rox.of.borg with local (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rgA1e-00D8sF-AS;
+	id 1rgA1e-00D8sO-Bm;
 	Fri, 01 Mar 2024 22:02:38 +0100
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 To: Yoshinori Sato <ysato@users.sourceforge.jp>,
@@ -42,9 +42,9 @@ Cc: Steven Rostedt <rostedt@goodmis.org>,
 	linux-sh@vger.kernel.org,
 	linux-trace-kernel@vger.kernel.org,
 	Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH 17/20] sh: kprobes: Make trampoline_probe_handler() static
-Date: Fri,  1 Mar 2024 22:02:31 +0100
-Message-Id: <42f30b7f767ee1293f6e687a605f7d907ae2daa6.1709326528.git.geert+renesas@glider.be>
+Subject: [PATCH 19/20] sh: dwarf: Make dwarf_lookup_fde() static
+Date: Fri,  1 Mar 2024 22:02:33 +0100
+Message-Id: <55e8261a354e8ec4d375754e404c6c1d303af715.1709326528.git.geert+renesas@glider.be>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1709326528.git.geert+renesas@glider.be>
 References: <cover.1709326528.git.geert+renesas@glider.be>
@@ -56,28 +56,28 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-arch/sh/kernel/kprobes.c:299:15: warning: no previous prototype for 'trampoline_probe_handler' [-Wmissing-prototypes]
+arch/sh/kernel/dwarf.c:347:19: warning: no previous prototype for 'dwarf_lookup_fde' [-Wmissing-prototypes]
 
 There are no users outside this file, so make it static.
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/kernel/kprobes.c | 2 +-
+ arch/sh/kernel/dwarf.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/kernel/kprobes.c b/arch/sh/kernel/kprobes.c
-index 74051b8ddf3e7bf9..d8c2e399d6e50794 100644
---- a/arch/sh/kernel/kprobes.c
-+++ b/arch/sh/kernel/kprobes.c
-@@ -296,7 +296,7 @@ static void __used kretprobe_trampoline_holder(void)
- /*
-  * Called when we hit the probe point at __kretprobe_trampoline
+diff --git a/arch/sh/kernel/dwarf.c b/arch/sh/kernel/dwarf.c
+index bf8682e718303051..45c8ae20d10957db 100644
+--- a/arch/sh/kernel/dwarf.c
++++ b/arch/sh/kernel/dwarf.c
+@@ -344,7 +344,7 @@ static struct dwarf_cie *dwarf_lookup_cie(unsigned long cie_ptr)
+  *	dwarf_lookup_fde - locate the FDE that covers pc
+  *	@pc: the program counter
   */
--int __kprobes trampoline_probe_handler(struct kprobe *p, struct pt_regs *regs)
-+static int __kprobes trampoline_probe_handler(struct kprobe *p, struct pt_regs *regs)
+-struct dwarf_fde *dwarf_lookup_fde(unsigned long pc)
++static struct dwarf_fde *dwarf_lookup_fde(unsigned long pc)
  {
- 	regs->pc = __kretprobe_trampoline_handler(regs, NULL);
- 
+ 	struct rb_node **rb_node = &fde_root.rb_node;
+ 	struct dwarf_fde *fde = NULL;
 -- 
 2.34.1
 
