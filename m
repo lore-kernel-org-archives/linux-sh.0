@@ -1,31 +1,31 @@
 Received: from andre.telenet-ops.be (andre.telenet-ops.be [195.130.132.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E6A7A56B86
-	for <linux-sh@vger.kernel.org>; Fri,  1 Mar 2024 21:02:45 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4B8F856B77
+	for <linux-sh@vger.kernel.org>; Fri,  1 Mar 2024 21:02:46 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.132.53
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709326971; cv=none; b=sx8Z3QND2kIMxKrsikfSQNQKsxI7gb+W5sk9U55l7FPys/Vy+muVbV9eoyaLRan02enh2bzb0+cQJsZoEokm9qzD0LvrpucXvHEowP4rMjjtGc26taAVPXTz6bDtjIhq4EUxaz/IOyakLsx+gXrrAFGhFaYMWo3U5ps1N24yJ7A=
+	t=1709326972; cv=none; b=loIzdTJl2otMkV2hZMwKFDnZHoyQ68lp8Tdd+sYWfm25HDpv4ngWTt+Jco0Mr56AfgcCBoz0OgdIGYvvHzrFdoJGl7kCTAj2kz7LP4UQ9hhuIHQwYI8hOthALJ40HAwGU/fsiwHSGQFfWsRtIlu7Q/JZRDpYbi1wXhJQpBiCc/4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709326971; c=relaxed/simple;
-	bh=1Synhu8Wj+iI/4pFeBUM+/X8uo4aR7TufZvYlYZi3oc=;
+	s=arc-20240116; t=1709326972; c=relaxed/simple;
+	bh=+1TX2uH6QO5tL1EOUSBU0x1mpJCfTuOWxVFI4K9w8AQ=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=T0I21su9QbNNv8XbfE6T4g0ax5PW0v2knYDMB7nw+7v44a8NU/SwU0gjplqqpbEjuREc85/pUjADSOGgxTAIqQVgId7pJQsYgSgCaK0WviKKjo5HYa3Sb9j/qyzKXWrE2PWJMuzFPkn/h7PRoYlGpQ6hV1D9uid+ogALdq6vefY=
+	 MIME-Version:Content-Type; b=MHT53UMJtw1V/l6Bl/KCSNlx1nQwj+PU5i1qsuqS/Q3akMHtqImrfcdfu4Z+HPRDCPXHAZhZ2aOnDHJtKg/Cd82huq94zn7w7ni9SGRH6f08wGrdOUcReUrdyjtSwKzkG3jmygtxT98ZdMBs+RrduxWEWPq7koWwVasZ4EQixIU=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.132.53
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
 Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:db22:6af9:7d18:6ee8])
 	by andre.telenet-ops.be with bizsmtp
-	id tZ2e2B0031TWuYv01Z2emx; Fri, 01 Mar 2024 22:02:44 +0100
+	id tZ2e2B0041TWuYv01Z2emy; Fri, 01 Mar 2024 22:02:44 +0100
 Received: from rox.of.borg ([192.168.97.57])
 	by ramsan.of.borg with esmtp (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rgA1T-0024g3-5U;
+	id 1rgA1T-0024gD-7H;
 	Fri, 01 Mar 2024 22:02:38 +0100
 Received: from geert by rox.of.borg with local (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rgA1d-00D8qz-Vn;
-	Fri, 01 Mar 2024 22:02:37 +0100
+	id 1rgA1e-00D8rC-1c;
+	Fri, 01 Mar 2024 22:02:38 +0100
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 To: Yoshinori Sato <ysato@users.sourceforge.jp>,
 	Rich Felker <dalias@libc.org>,
@@ -42,9 +42,9 @@ Cc: Steven Rostedt <rostedt@goodmis.org>,
 	linux-sh@vger.kernel.org,
 	linux-trace-kernel@vger.kernel.org,
 	Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH 01/20] sh: pgtable: Fix missing prototypes
-Date: Fri,  1 Mar 2024 22:02:15 +0100
-Message-Id: <aa1328ea3327d6685aab76d5787cb77c996052c0.1709326528.git.geert+renesas@glider.be>
+Subject: [PATCH 04/20] sh: tlb: Add missing forward declaration for handle_tlbmiss()
+Date: Fri,  1 Mar 2024 22:02:18 +0100
+Message-Id: <23ec2c88168bd5b7e294828221531eed2f3eede8.1709326528.git.geert+renesas@glider.be>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1709326528.git.geert+renesas@glider.be>
 References: <cover.1709326528.git.geert+renesas@glider.be>
@@ -54,43 +54,44 @@ List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-arch/sh/mm/pgtable.c:12:6: warning: no previous prototype for 'pgd_ctor' [-Wmissing-prototypes]
-arch/sh/mm/pgtable.c:34:8: warning: no previous prototype for 'pgd_alloc' [-Wmissing-prototypes]
-arch/sh/mm/pgtable.c:39:6: warning: no previous prototype for 'pgd_free' [-Wmissing-prototypes]
-arch/sh/mm/pgtable.c:45:6: warning: no previous prototype for 'pud_populate' [-Wmissing-prototypes]
-arch/sh/mm/pgtable.c:50:8: warning: no previous prototype for 'pmd_alloc_one' [-Wmissing-prototypes]
-arch/sh/mm/pgtable.c:55:6: warning: no previous prototype for 'pmd_free' [-Wmissing-prototypes]
-
-Make pgd_ctor() static, as it is only used in this file.
-Include <asm/pgalloc.h> to fix the other warnings.
+arch/sh/mm/tlbex_32.c:22:1: warning: no previous prototype for ‘handle_tlbmiss’ [-Wmissing-prototypes]
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/mm/pgtable.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/sh/include/asm/tlb.h | 4 ++++
+ arch/sh/mm/tlbex_32.c     | 1 +
+ 2 files changed, 5 insertions(+)
 
-diff --git a/arch/sh/mm/pgtable.c b/arch/sh/mm/pgtable.c
-index cf7ce4b5735954bf..3a4085ea0161fe56 100644
---- a/arch/sh/mm/pgtable.c
-+++ b/arch/sh/mm/pgtable.c
-@@ -2,12 +2,14 @@
- #include <linux/mm.h>
- #include <linux/slab.h>
- 
-+#include <asm/pgalloc.h>
+diff --git a/arch/sh/include/asm/tlb.h b/arch/sh/include/asm/tlb.h
+index aeb8915e92549609..ddf324bfb9a09721 100644
+--- a/arch/sh/include/asm/tlb.h
++++ b/arch/sh/include/asm/tlb.h
+@@ -24,6 +24,10 @@ static inline void tlb_unwire_entry(void)
+ 	BUG();
+ }
+ #endif /* CONFIG_CPU_SH4 */
 +
- static struct kmem_cache *pgd_cachep;
- #if PAGETABLE_LEVELS > 2
- static struct kmem_cache *pmd_cachep;
- #endif
++asmlinkage int handle_tlbmiss(struct pt_regs *regs, unsigned long error_code,
++			      unsigned long address);
++
+ #endif /* CONFIG_MMU */
+ #endif /* __ASSEMBLY__ */
+ #endif /* __ASM_SH_TLB_H */
+diff --git a/arch/sh/mm/tlbex_32.c b/arch/sh/mm/tlbex_32.c
+index 1c53868632ee4c69..7d58578c15f4ef55 100644
+--- a/arch/sh/mm/tlbex_32.c
++++ b/arch/sh/mm/tlbex_32.c
+@@ -14,6 +14,7 @@
+ #include <linux/kdebug.h>
+ #include <asm/mmu_context.h>
+ #include <asm/thread_info.h>
++#include <asm/tlb.h>
  
--void pgd_ctor(void *x)
-+static void pgd_ctor(void *x)
- {
- 	pgd_t *pgd = x;
- 
+ /*
+  * Called with interrupts disabled.
 -- 
 2.34.1
 
