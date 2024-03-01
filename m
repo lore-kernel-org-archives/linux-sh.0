@@ -1,30 +1,30 @@
-Received: from xavier.telenet-ops.be (xavier.telenet-ops.be [195.130.132.52])
+Received: from baptiste.telenet-ops.be (baptiste.telenet-ops.be [195.130.132.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B35B56B9E
-	for <linux-sh@vger.kernel.org>; Fri,  1 Mar 2024 21:02:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.132.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A599556B77
+	for <linux-sh@vger.kernel.org>; Fri,  1 Mar 2024 21:02:53 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.132.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709326975; cv=none; b=WEXDfai/3pvbdvhPdnnClCDg+qJv53A6MlyM1tIjuxO8kSKdvsIG9ad/B/PPN0lzp71Fy7BlUSeAzFSDa/Smlg0aNiDq2oLXUJK0udnkKib6G9VRsqhIEFuFRnyhrZ3EJQg8YO7qIsoncm6kQPyZUJyRjU0HpUF5ZC6r6suk1Uk=
+	t=1709326975; cv=none; b=a+qT9PmygEzLHqv/o7Fd+knbfLcEg77rmvVKkQZcmre6/fWrtrK7i4AHsVuG5RbHx+rU0+4VE3iumMiCPoLNopMOSgjjOqi+kmvO0gCo7lF4YStWjaJdgotj6nyWNRAF2580HAiKZu3BCzcySvZgZcc+GW4aXwJvNOYxViv8qh4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1709326975; c=relaxed/simple;
-	bh=NsThTAdLO7OgfNZz5CNxYC6AYTZXGKyH/bMvLFNMAiE=;
+	bh=XQY+hwm/pWBlN5cYBxNabpimlfOZYJcYfzShDnZXI5Q=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=Do33lKJpiTQzrZ2kR3JmTkJFabJV/6Mnl9xZpBOUUhNx/KiKWkqywcKWSkUFk30Bsq+8rLoBm0vr8RVK4nTOmNkM65RFYUjMrepY1JUKWRAH44MN34kpvETCU6hZQQyY/wik+kg64OP40Cl32bBHwfneUm89NnGvrqBDmiYMKZA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.132.52
+	 MIME-Version:Content-Type; b=WEWq257CpG5vcuSnXcSKudl/ppq5knWvQk0JGeuA1guORm5yvIZZOPeUCG2zD//XR+XMBy9OsJMsxYjl7LYYFlUAs9N3mW+5hBBdFqZq6DeNlFGSxqH7o90/wsPRt5uvnMXYWYUQ35GWRD0kbJo41AXUDCwpIkre/WKhnt4WFDE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.132.51
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
 Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:db22:6af9:7d18:6ee8])
-	by xavier.telenet-ops.be with bizsmtp
-	id tZ2e2B00C1TWuYv01Z2eDe; Fri, 01 Mar 2024 22:02:44 +0100
+	by baptiste.telenet-ops.be with bizsmtp
+	id tZ2e2B0041TWuYv01Z2eXk; Fri, 01 Mar 2024 22:02:45 +0100
 Received: from rox.of.borg ([192.168.97.57])
 	by ramsan.of.borg with esmtp (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rgA1T-0024h7-Gu;
+	id 1rgA1T-0024gJ-80;
 	Fri, 01 Mar 2024 22:02:38 +0100
 Received: from geert by rox.of.borg with local (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rgA1e-00D8sK-B7;
+	id 1rgA1e-00D8rG-2I;
 	Fri, 01 Mar 2024 22:02:38 +0100
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 To: Yoshinori Sato <ysato@users.sourceforge.jp>,
@@ -42,9 +42,9 @@ Cc: Steven Rostedt <rostedt@goodmis.org>,
 	linux-sh@vger.kernel.org,
 	linux-trace-kernel@vger.kernel.org,
 	Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH 18/20] sh: kprobes: Remove unneeded kprobe_opcode_t casts
-Date: Fri,  1 Mar 2024 22:02:32 +0100
-Message-Id: <fc22b990d869fc2005990159d8072ae2774b1396.1709326528.git.geert+renesas@glider.be>
+Subject: [PATCH 05/20] sh: return_address: Add missing #include <asm/ftrace.h>
+Date: Fri,  1 Mar 2024 22:02:19 +0100
+Message-Id: <45685f62c9132aca5dc3c028471218393b51f34c.1709326528.git.geert+renesas@glider.be>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1709326528.git.geert+renesas@glider.be>
 References: <cover.1709326528.git.geert+renesas@glider.be>
@@ -54,38 +54,30 @@ List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-There is no need to cast a kprobe_opcode_t pointer to a kprobe_opcode_t
-pointer.
+arch/sh/kernel/return_address.c:49:7: warning: no previous prototype for ‘return_address’ [-Wmissing-prototypes]
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/kernel/kprobes.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/sh/kernel/return_address.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/sh/kernel/kprobes.c b/arch/sh/kernel/kprobes.c
-index d8c2e399d6e50794..49c4ffd782d6d6c5 100644
---- a/arch/sh/kernel/kprobes.c
-+++ b/arch/sh/kernel/kprobes.c
-@@ -39,7 +39,7 @@ static DEFINE_PER_CPU(struct kprobe, saved_next_opcode2);
+diff --git a/arch/sh/kernel/return_address.c b/arch/sh/kernel/return_address.c
+index 8838094c9ff9444f..2ce22f11eab37839 100644
+--- a/arch/sh/kernel/return_address.c
++++ b/arch/sh/kernel/return_address.c
+@@ -7,7 +7,9 @@
+  */
+ #include <linux/kernel.h>
+ #include <linux/module.h>
++
+ #include <asm/dwarf.h>
++#include <asm/ftrace.h>
  
- int __kprobes arch_prepare_kprobe(struct kprobe *p)
- {
--	kprobe_opcode_t opcode = *(kprobe_opcode_t *) (p->addr);
-+	kprobe_opcode_t opcode = *p->addr;
+ #ifdef CONFIG_DWARF_UNWINDER
  
- 	if (OPCODE_RTE(opcode))
- 		return -EFAULT;	/* Bad breakpoint */
-@@ -248,7 +248,7 @@ static int __kprobes kprobe_handler(struct pt_regs *regs)
- 	p = get_kprobe(addr);
- 	if (!p) {
- 		/* Not one of ours: let kernel handle it */
--		if (*(kprobe_opcode_t *)addr != BREAKPOINT_INSTRUCTION) {
-+		if (*addr != BREAKPOINT_INSTRUCTION) {
- 			/*
- 			 * The breakpoint instruction was removed right
- 			 * after we hit it. Another cpu has removed
 -- 
 2.34.1
 
