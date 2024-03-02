@@ -1,53 +1,72 @@
-Received: from baptiste.telenet-ops.be (baptiste.telenet-ops.be [195.130.132.51])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.15])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A5A2B56B8F
-	for <linux-sh@vger.kernel.org>; Fri,  1 Mar 2024 21:02:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.132.51
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B777163CB;
+	Sat,  2 Mar 2024 00:17:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=198.175.65.15
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709326975; cv=none; b=Pqkc9N/nF3v7J46Vpo7Pji+Ut+F0sAquMyTE0fanqLnscCye4W9ht5LV5OMAfPPyKGbLK+fsRBUru4mu544I6eOax6j2jeBp/CUuYMDqrTUINLb1lQVbu9KYlVBCW5myollWsULl6T91Mc36xeE/IHN3+akrbfw7KcZ1HYawvEs=
+	t=1709338651; cv=none; b=vE07EeAPh0ed6LkvHIcf6xO1AnzECpx2WP1W7zOjb4iHm6soUZvvFLmofVbjK3fwE1y6j8sDS02PKu+mUiV4UG+7zP1IkfmQIpbsisvn3fgfNKuNHA1xtLZqyoAHKftJOjjxhBwN16VVIbWy0e35AmkRXP/DixI9dCHLSPsWCc0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709326975; c=relaxed/simple;
-	bh=7LYvyH+kMuatRbK3+hd5eTn3ke7Rmr09AkuZvFjVoD0=;
+	s=arc-20240116; t=1709338651; c=relaxed/simple;
+	bh=xbWkxQYQam1S+ncDPTZ2nNpXwaU0bA5k+3cegEBrWhU=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=M3u77MgL1xL1pODS92BFLSl3yQQnv3jiFwQ+2gGn+GQxsW8LRUBssfC5yq6ZpJ3Wy2NH1c9sLclkG192NIGCZSPVphh/iRVad2TfcFK+ddz/QF06VaHCW5LIL8XbYIC2qfdi0Ekr6zzOE2EJwUtlwOEUydxi6lQYmq5h6D3Sh8E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.132.51
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:db22:6af9:7d18:6ee8])
-	by baptiste.telenet-ops.be with bizsmtp
-	id tZ2e2B00F1TWuYv01Z2eXq; Fri, 01 Mar 2024 22:02:45 +0100
-Received: from rox.of.borg ([192.168.97.57])
-	by ramsan.of.borg with esmtp (Exim 4.95)
-	(envelope-from <geert@linux-m68k.org>)
-	id 1rgA1T-0024hH-IE;
-	Fri, 01 Mar 2024 22:02:38 +0100
-Received: from geert by rox.of.borg with local (Exim 4.95)
-	(envelope-from <geert@linux-m68k.org>)
-	id 1rgA1e-00D8sT-CV;
-	Fri, 01 Mar 2024 22:02:38 +0100
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-To: Yoshinori Sato <ysato@users.sourceforge.jp>,
+	 MIME-Version; b=f7XrE8iKfdoo0p6rgCyBAzhlCNeoCFKMp7Gn+J9OQecq7J0BlOG2zuw432RTPwKHwtIP8dqBg0naCV6OugeQqY+osfqtjh1GshTS5N6YaHG7IGxYYUD7MZtF08MDXKOZWP0KXQdd3ckllhRppKOqtMvnca3/IrlMXcoXZ2mQd5k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=MaAP4KNP; arc=none smtp.client-ip=198.175.65.15
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="MaAP4KNP"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1709338649; x=1740874649;
+  h=from:to:cc:subject:date:message-id:in-reply-to:
+   references:mime-version:content-transfer-encoding;
+  bh=xbWkxQYQam1S+ncDPTZ2nNpXwaU0bA5k+3cegEBrWhU=;
+  b=MaAP4KNPIX1IZ90su3zqAi0C2rEjhqoorZlR//BBjRkVJAM01MSexq4S
+   4tM8WCLjKtFCTUi4x78tSadt+HX+hg4Rbl9RWhZKxyzbdPRXGp0RjpDr0
+   mky2GJ/vAO++L1NDZdYvzG6AkSyAggeVjYRnpK9rS6zGxN2OpmJXeTG0r
+   IA9dDtYvlj/2hwGxI7jcilIMFU9xvwo564liFO4z8KnBCavKRU+6fqYAO
+   WSOS9NCjoYM8jvKVMYLgzBfFwKyXjFph7DSJResy6cevOQA0w+UaDP2ux
+   rXO+WlDYs6Fu0tyatZ38uYDHDHHdPeg3c0n0/KpL5/nWKv3B8dIXV7e6R
+   Q==;
+X-IronPort-AV: E=McAfee;i="6600,9927,11000"; a="7715777"
+X-IronPort-AV: E=Sophos;i="6.06,197,1705392000"; 
+   d="scan'208";a="7715777"
+Received: from fmviesa008.fm.intel.com ([10.60.135.148])
+  by orvoesa107.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Mar 2024 16:17:29 -0800
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.06,197,1705392000"; 
+   d="scan'208";a="8495990"
+Received: from thwood-mobl1.amr.corp.intel.com (HELO rpedgeco-desk4.intel.com) ([10.251.7.75])
+  by fmviesa008-auth.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 01 Mar 2024 16:17:28 -0800
+From: Rick Edgecombe <rick.p.edgecombe@intel.com>
+To: rick.p.edgecombe@intel.com
+Cc: Liam.Howlett@oracle.com,
+	akpm@linux-foundation.org,
+	bp@alien8.de,
+	broonie@kernel.org,
+	dave.hansen@linux.intel.com,
+	debug@rivosinc.com,
+	hpa@zytor.com,
+	keescook@chromium.org,
+	kirill.shutemov@linux.intel.com,
+	luto@kernel.org,
+	mingo@redhat.com,
+	peterz@infradead.org,
+	sparclinux@vger.kernel.org,
+	tglx@linutronix.de,
+	x86@kernel.org,
+	Sato <ysato@users.sourceforge.jp>,
 	Rich Felker <dalias@libc.org>,
 	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Arnd Bergmann <arnd@arndb.de>
-Cc: Steven Rostedt <rostedt@goodmis.org>,
-	Masami Hiramatsu <mhiramat@kernel.org>,
-	Mark Rutland <mark.rutland@arm.com>,
-	Will Deacon <will@kernel.org>,
-	"Aneesh Kumar K . V" <aneesh.kumar@linux.ibm.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Nick Piggin <npiggin@gmail.com>,
-	Peter Zijlstra <peterz@infradead.org>,
-	linux-sh@vger.kernel.org,
-	linux-trace-kernel@vger.kernel.org,
-	Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH 20/20] [RFC] sh: dma: Remove unused functionality
-Date: Fri,  1 Mar 2024 22:02:34 +0100
-Message-Id: <2beb81fdd7592a94329e3c9a6ba56959f6094019.1709326528.git.geert+renesas@glider.be>
+	linux-sh@vger.kernel.org
+Subject: [RFC v2.1 09/12] sh: Use initializer for struct vm_unmapped_area_info
+Date: Fri,  1 Mar 2024 16:17:11 -0800
+Message-Id: <20240302001714.674091-9-rick.p.edgecombe@intel.com>
 X-Mailer: git-send-email 2.34.1
-In-Reply-To: <cover.1709326528.git.geert+renesas@glider.be>
-References: <cover.1709326528.git.geert+renesas@glider.be>
+In-Reply-To: <20240302001714.674091-1-rick.p.edgecombe@intel.com>
+References: <20240226190951.3240433-6-rick.p.edgecombe@intel.com>
+ <20240302001714.674091-1-rick.p.edgecombe@intel.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -56,195 +75,121 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-dma_extend(), get_dma_info_by_name(), register_chan_caps(), and
-request_dma_bycap() are unused.  Remove them, and all related code.
+Future changes will need to add a new member to struct
+vm_unmapped_area_info. This would cause trouble for any call site that
+doesn't initialize the struct. Currently every caller sets each field
+manually, so if new fields are added they will be unitialized and the core
+code parsing the struct will see garbage in the new field.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+It could be possible to initialize the new field manually to 0 at each
+call site. This and a couple other options were discussed, and the
+consensus (see links) was that in general the best way to accomplish this
+would be via static initialization with designated field initiators.
+Having some struct vm_unmapped_area_info instances not zero initialized
+will put those sites at risk of feeding garbage into vm_unmapped_area() if
+the convention is to zero initialize the struct and any new field addition
+misses a call site that initializes each field manually.
+
+It could be possible to leave the code mostly untouched, and just change
+the line:
+struct vm_unmapped_area_info info
+to:
+struct vm_unmapped_area_info info = {};
+
+However, that would leave cleanup for the fields that are manually set
+to zero, as it would no longer be required.
+
+So to be reduce the chance of bugs via uninitialized fields, instead
+simply continue the process to initialize the struct this way tree wide.
+This will zero any unspecified members. Move the field initializers to the
+struct declaration when they are known at that time. Leave the fields out
+that were manually initialized to zero, as this would be redundant for
+designated initializers.
+
+Signed-off-by: Rick Edgecombe <rick.p.edgecombe@intel.com>
+Cc: Sato <ysato@users.sourceforge.jp>
+Cc: Rich Felker <dalias@libc.org>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: linux-sh@vger.kernel.org
+Link: https://lore.kernel.org/lkml/202402280912.33AEE7A9CF@keescook/#t
+Link: https://lore.kernel.org/lkml/j7bfvig3gew3qruouxrh7z7ehjjafrgkbcmg6tcghhfh3rhmzi@wzlcoecgy5rs/
 ---
- arch/sh/drivers/dma/dma-api.c | 116 ----------------------------------
- arch/sh/include/asm/dma.h     |   7 --
- 2 files changed, 123 deletions(-)
+Hi,
 
-diff --git a/arch/sh/drivers/dma/dma-api.c b/arch/sh/drivers/dma/dma-api.c
-index f49097fa634c36d4..87e5a892887360f5 100644
---- a/arch/sh/drivers/dma/dma-api.c
-+++ b/arch/sh/drivers/dma/dma-api.c
-@@ -41,21 +41,6 @@ struct dma_info *get_dma_info(unsigned int chan)
+This patch was split and refactored out of a tree-wide change [0] to just
+zero-init each struct vm_unmapped_area_info. The overall goal of the
+series is to help shadow stack guard gaps. Currently, there is only one
+arch with shadow stacks, but two more are in progress. It is 0day tested
+only.
+
+Thanks,
+
+Rick
+
+[0] https://lore.kernel.org/lkml/20240226190951.3240433-6-rick.p.edgecombe@intel.com/
+---
+ arch/sh/mm/mmap.c | 25 +++++++++++++------------
+ 1 file changed, 13 insertions(+), 12 deletions(-)
+
+diff --git a/arch/sh/mm/mmap.c b/arch/sh/mm/mmap.c
+index b82199878b45..000a86c752c1 100644
+--- a/arch/sh/mm/mmap.c
++++ b/arch/sh/mm/mmap.c
+@@ -57,7 +57,12 @@ unsigned long arch_get_unmapped_area(struct file *filp, unsigned long addr,
+ 	struct mm_struct *mm = current->mm;
+ 	struct vm_area_struct *vma;
+ 	int do_colour_align;
+-	struct vm_unmapped_area_info info;
++	struct vm_unmapped_area_info info = {
++		.length = len,
++		.low_limit = TASK_UNMAPPED_BASE,
++		.high_limit = TASK_SIZE,
++		.align_offset = pgoff << PAGE_SHIFT,
++	};
+ 
+ 	if (flags & MAP_FIXED) {
+ 		/* We do not accept a shared mapping if it would violate
+@@ -88,12 +93,7 @@ unsigned long arch_get_unmapped_area(struct file *filp, unsigned long addr,
+ 			return addr;
+ 	}
+ 
+-	info.flags = 0;
+-	info.length = len;
+-	info.low_limit = TASK_UNMAPPED_BASE;
+-	info.high_limit = TASK_SIZE;
+ 	info.align_mask = do_colour_align ? (PAGE_MASK & shm_align_mask) : 0;
+-	info.align_offset = pgoff << PAGE_SHIFT;
+ 	return vm_unmapped_area(&info);
  }
- EXPORT_SYMBOL(get_dma_info);
  
--struct dma_info *get_dma_info_by_name(const char *dmac_name)
--{
--	struct dma_info *info;
--
--	list_for_each_entry(info, &registered_dmac_list, list) {
--		if (dmac_name && (strcmp(dmac_name, info->name) != 0))
--			continue;
--		else
--			return info;
--	}
--
--	return NULL;
--}
--EXPORT_SYMBOL(get_dma_info_by_name);
--
- static unsigned int get_nr_channels(void)
- {
- 	struct dma_info *info;
-@@ -101,66 +86,6 @@ int get_dma_residue(unsigned int chan)
- }
- EXPORT_SYMBOL(get_dma_residue);
+@@ -106,7 +106,13 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
+ 	struct mm_struct *mm = current->mm;
+ 	unsigned long addr = addr0;
+ 	int do_colour_align;
+-	struct vm_unmapped_area_info info;
++	struct vm_unmapped_area_info info = {
++		.flags = VM_UNMAPPED_AREA_TOPDOWN,
++		.length = len,
++		.low_limit = PAGE_SIZE,
++		.high_limit = mm->mmap_base,
++		.align_offset = pgoff << PAGE_SHIFT
++	};
  
--static int search_cap(const char **haystack, const char *needle)
--{
--	const char **p;
--
--	for (p = haystack; *p; p++)
--		if (strcmp(*p, needle) == 0)
--			return 1;
--
--	return 0;
--}
--
--/**
-- * request_dma_bycap - Allocate a DMA channel based on its capabilities
-- * @dmac: List of DMA controllers to search
-- * @caps: List of capabilities
-- *
-- * Search all channels of all DMA controllers to find a channel which
-- * matches the requested capabilities. The result is the channel
-- * number if a match is found, or %-ENODEV if no match is found.
-- *
-- * Note that not all DMA controllers export capabilities, in which
-- * case they can never be allocated using this API, and so
-- * request_dma() must be used specifying the channel number.
-- */
--int request_dma_bycap(const char **dmac, const char **caps, const char *dev_id)
--{
--	unsigned int found = 0;
--	struct dma_info *info;
--	const char **p;
--	int i;
--
--	BUG_ON(!dmac || !caps);
--
--	list_for_each_entry(info, &registered_dmac_list, list)
--		if (strcmp(*dmac, info->name) == 0) {
--			found = 1;
--			break;
--		}
--
--	if (!found)
--		return -ENODEV;
--
--	for (i = 0; i < info->nr_channels; i++) {
--		struct dma_channel *channel = &info->channels[i];
--
--		if (unlikely(!channel->caps))
--			continue;
--
--		for (p = caps; *p; p++) {
--			if (!search_cap(channel->caps, *p))
--				break;
--			if (request_dma(channel->chan, dev_id) == 0)
--				return channel->chan;
--		}
--	}
--
--	return -EINVAL;
--}
--EXPORT_SYMBOL(request_dma_bycap);
--
- int request_dma(unsigned int chan, const char *dev_id)
- {
- 	struct dma_channel *channel = { 0 };
-@@ -213,35 +138,6 @@ void dma_wait_for_completion(unsigned int chan)
- }
- EXPORT_SYMBOL(dma_wait_for_completion);
+ 	if (flags & MAP_FIXED) {
+ 		/* We do not accept a shared mapping if it would violate
+@@ -138,12 +144,7 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
+ 			return addr;
+ 	}
  
--int register_chan_caps(const char *dmac, struct dma_chan_caps *caps)
--{
--	struct dma_info *info;
--	unsigned int found = 0;
--	int i;
--
--	list_for_each_entry(info, &registered_dmac_list, list)
--		if (strcmp(dmac, info->name) == 0) {
--			found = 1;
--			break;
--		}
--
--	if (unlikely(!found))
--		return -ENODEV;
--
--	for (i = 0; i < info->nr_channels; i++, caps++) {
--		struct dma_channel *channel;
--
--		if ((info->first_channel_nr + i) != caps->ch_num)
--			return -EINVAL;
--
--		channel = &info->channels[i];
--		channel->caps = caps->caplist;
--	}
--
--	return 0;
--}
--EXPORT_SYMBOL(register_chan_caps);
--
- void dma_configure_channel(unsigned int chan, unsigned long flags)
- {
- 	struct dma_info *info = get_dma_info(chan);
-@@ -267,18 +163,6 @@ int dma_xfer(unsigned int chan, unsigned long from,
- }
- EXPORT_SYMBOL(dma_xfer);
+-	info.flags = VM_UNMAPPED_AREA_TOPDOWN;
+-	info.length = len;
+-	info.low_limit = PAGE_SIZE;
+-	info.high_limit = mm->mmap_base;
+ 	info.align_mask = do_colour_align ? (PAGE_MASK & shm_align_mask) : 0;
+-	info.align_offset = pgoff << PAGE_SHIFT;
+ 	addr = vm_unmapped_area(&info);
  
--int dma_extend(unsigned int chan, unsigned long op, void *param)
--{
--	struct dma_info *info = get_dma_info(chan);
--	struct dma_channel *channel = get_dma_channel(chan);
--
--	if (info->ops->extend)
--		return info->ops->extend(channel, op, param);
--
--	return -ENOSYS;
--}
--EXPORT_SYMBOL(dma_extend);
--
- static int dma_proc_show(struct seq_file *m, void *v)
- {
- 	struct dma_info *info = v;
-diff --git a/arch/sh/include/asm/dma.h b/arch/sh/include/asm/dma.h
-index c8bee3f985a29393..6b6d409956d17f09 100644
---- a/arch/sh/include/asm/dma.h
-+++ b/arch/sh/include/asm/dma.h
-@@ -56,7 +56,6 @@ struct dma_ops {
- 	int (*get_residue)(struct dma_channel *chan);
- 	int (*xfer)(struct dma_channel *chan);
- 	int (*configure)(struct dma_channel *chan, unsigned long flags);
--	int (*extend)(struct dma_channel *chan, unsigned long op, void *param);
- };
- 
- struct dma_channel {
-@@ -118,8 +117,6 @@ extern int dma_xfer(unsigned int chan, unsigned long from,
- #define dma_read_page(chan, from, to)	\
- 	dma_read(chan, from, to, PAGE_SIZE)
- 
--extern int request_dma_bycap(const char **dmac, const char **caps,
--			     const char *dev_id);
- extern int get_dma_residue(unsigned int chan);
- extern struct dma_info *get_dma_info(unsigned int chan);
- extern struct dma_channel *get_dma_channel(unsigned int chan);
-@@ -128,10 +125,6 @@ extern void dma_configure_channel(unsigned int chan, unsigned long flags);
- 
- extern int register_dmac(struct dma_info *info);
- extern void unregister_dmac(struct dma_info *info);
--extern struct dma_info *get_dma_info_by_name(const char *dmac_name);
--
--extern int dma_extend(unsigned int chan, unsigned long op, void *param);
--extern int register_chan_caps(const char *dmac, struct dma_chan_caps *capslist);
- 
- /* arch/sh/drivers/dma/dma-sysfs.c */
- extern int dma_create_sysfs_files(struct dma_channel *, struct dma_info *);
+ 	/*
 -- 
 2.34.1
 
