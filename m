@@ -1,147 +1,214 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-oa1-f50.google.com (mail-oa1-f50.google.com [209.85.160.50])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7CE2D33E5
-	for <linux-sh@vger.kernel.org>; Sun,  3 Mar 2024 04:25:57 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 23F8069E08;
+	Sun,  3 Mar 2024 16:11:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.160.50
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709439959; cv=none; b=i2vEdUF4Otfr3ENLdbkpyjdZAsj9397/mwMi7Cvh3bpJud8cZQCDtqySLhN09ajyigNbUURfQPNYIz6qvDtTtvP6bJ0pfLsz9U062tLfKIhuB4TESocCItfSH7gQo02aN2OSSmerYhK25Tlj+y06e2zY3rVzOi4au4Y8NvVT7is=
+	t=1709482279; cv=none; b=QHSemGjagMfJ7lejCPmI4p7IMo1yAYHx7FmJP0T3HTN96gFzbNRQVNmq9zL/JdpFtCYhFwzUwpugHw064BmJBsCA+Wx3VL0gJMX0bCbhzCS5W9oggOeJksY+qLOcmWtlvnaUj/06/ApnTrGqprR9V+iMgAPOJ3mJIeX1VfTgz0E=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709439959; c=relaxed/simple;
-	bh=JGEMTSw+h3Tskj6UQtxs7o4Z1kUEuraMEQeoCqx4kXk=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=uXwkSKejIh87QhAamK3Dz+aGNALgoxICbCSGZci8HJia36oVqTZeA9pl7oey77rD/zU6EA9Eh8/sydTK+GNyG3/+dK1+C3P9KA0ju90ClvZ890w7rAs0ZW4EGpig9xGLgDwuisEVMBSUIz/viGhc28K/LS//rDwG7rtpfFmeY4A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=hukGhqiu; arc=none smtp.client-ip=170.10.133.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="hukGhqiu"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1709439956;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=4tP8cj/EkhDB5rHKjBPyA2CO06IZFpZarql6Oarbplo=;
-	b=hukGhqiuJeFgRdHct88YXKqESX6QvXkAPx3+Q9nia7VjetwjGg43G0Z8XJtNE4YqFzriJi
-	WUFrBPQyIuqhJqUrin+E0iBNWZlid6dKcjX7T5L3AYGMqaIvZ9mdi1DcoYATeKXYq4Xxv7
-	5MtVyHiexllB7PVWqzkrmRjJETRNUpk=
-Received: from mimecast-mx02.redhat.com (mx-ext.redhat.com [66.187.233.73])
- by relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-408-coMkeA93Ow-062Wa0M69gA-1; Sat,
- 02 Mar 2024 23:25:53 -0500
-X-MC-Unique: coMkeA93Ow-062Wa0M69gA-1
-Received: from smtp.corp.redhat.com (int-mx06.intmail.prod.int.rdu2.redhat.com [10.11.54.6])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 5D71429AB40A;
-	Sun,  3 Mar 2024 04:25:53 +0000 (UTC)
-Received: from [10.22.32.39] (unknown [10.22.32.39])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id 994452166B31;
-	Sun,  3 Mar 2024 04:25:52 +0000 (UTC)
-Message-ID: <87fe0004-0e53-4b7a-b19d-c6b37c8db8dc@redhat.com>
-Date: Sat, 2 Mar 2024 23:25:51 -0500
+	s=arc-20240116; t=1709482279; c=relaxed/simple;
+	bh=QvEtrdlYIYZjdD7RzpqyWpmTMSYBhgTq9HB8V56Vbvg=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=c3dF0YsxntrzVpc/X6ICNxTYPkYIWhhSy19p/nXSQ6IdvIYmo6d+0QYn1XDx8SCxU3PbpH18Zlp6tS8Xa2WihEHLOcat+2RffoObgzhHA+BgYVTMhx1v15Euq6JALa86RWK54yctsrmwF0tjk7oHUs49IAI4GLZvDvZbFjOUBdM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.160.50
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-oa1-f50.google.com with SMTP id 586e51a60fabf-22034c323a3so1871372fac.0;
+        Sun, 03 Mar 2024 08:11:16 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1709482276; x=1710087076;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=xpYeZIYDjOTNBHhnHMM1ZX731nmJnhY6r1aOvNDc+9s=;
+        b=eTVN2hD/7C+z5dwzEFRZWphPh+NKVyBbSNQxj1n5xKNuR+/O2Eiqu20u0cHaLH5Vc/
+         KEJmFO60IsepYCRB+r33MGPe8KoV+Ccm6a3jS0RbDJZo4zqo6eS326nYwZAwDoxKxI9T
+         FaEUemlLIPTZSAWBtD6q2QqLY5WkOj7U3jzECajqwSGNeMJIzdiWSLw9/Lm1YSJGf4RA
+         OpaSbN5gm6BsmFt2UWkYIo2jGQaKQ7HZenuzm15eVizDXKrk71sTa9Y5kDW5HYM/lZqo
+         Tg+mnb6CTwATgjxDdPtsVX+V2DH6DQci9o9i8k0gjJAf62nyqRctaHKgkzIOWUTaICGl
+         E/hQ==
+X-Forwarded-Encrypted: i=1; AJvYcCUV1Iq68UHq94Gt1VJ+DRJkPZEXnW5uFQyiVu/ZeLydkgJTQ59Oe6yYzJCyDsVIxR2HxiPTWhCXb8my52d2lZ2fys8sLCiKofy+CLI7/P6p3v7wrCm9LB99VndfSDL5S8VJhxQltt6M3phkPSKUxeunLNHd/ANnzN2YwPT7Rg6SLMNL
+X-Gm-Message-State: AOJu0YzQonC8hDZzHMNqsSgYP9bvtbSLUjm2yYZvJVOSu1kz+zlZ8P9b
+	swncnAYzEOWcjpwpU7cbqeLbGLcrQbNoGoqZ0KprA7VVbBT3yeBIMK6ETBAGGsM=
+X-Google-Smtp-Source: AGHT+IGdc2fsFA7Ak0HYPEgmHCep7mGiBEu0yfDED0QMQag2vENbD//HJf5G0h3vs6i6wPXmR0oAvg==
+X-Received: by 2002:a05:6871:7412:b0:21f:d862:2ad7 with SMTP id nw18-20020a056871741200b0021fd8622ad7mr8071533oac.5.1709482275613;
+        Sun, 03 Mar 2024 08:11:15 -0800 (PST)
+Received: from mail-ot1-f48.google.com (mail-ot1-f48.google.com. [209.85.210.48])
+        by smtp.gmail.com with ESMTPSA id lt10-20020a05687142ca00b0021a70aa7cedsm2055405oab.34.2024.03.03.08.11.15
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 03 Mar 2024 08:11:15 -0800 (PST)
+Received: by mail-ot1-f48.google.com with SMTP id 46e09a7af769-6e432514155so2064257a34.1;
+        Sun, 03 Mar 2024 08:11:15 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AJvYcCXGeaM/qul2ckNDHs7SdNedOAkjAZ521FT3HZE2FckQ3PyQTuL1ia4DYa14JxDu2goX9rug5ccNCbxRaGwoYtR0a+GQmHVcF+LkyJQqXh1/4vS5YWdxMW+DSoPT0nV9ufohT6cMNpnCl42brv9mX7KUKk++xxozUW7/mTDOM8qZsIJu
+X-Received: by 2002:a05:6808:1690:b0:3c1:8498:239b with SMTP id
+ bb16-20020a056808169000b003c18498239bmr8548891oib.59.1709482275070; Sun, 03
+ Mar 2024 08:11:15 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH/RFC] locking/spinlocks: Make __raw_* lock ops static
-Content-Language: en-US
-To: Geert Uytterhoeven <geert+renesas@glider.be>,
- Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>,
- Will Deacon <will@kernel.org>, Boqun Feng <boqun.feng@gmail.com>,
- Arnd Bergmann <arnd@arndb.de>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 References: <c395b02613572131568bc1fd1bc456d20d1a5426.1709325647.git.geert+renesas@glider.be>
-From: Waiman Long <longman@redhat.com>
-In-Reply-To: <c395b02613572131568bc1fd1bc456d20d1a5426.1709325647.git.geert+renesas@glider.be>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.6
+ <87fe0004-0e53-4b7a-b19d-c6b37c8db8dc@redhat.com>
+In-Reply-To: <87fe0004-0e53-4b7a-b19d-c6b37c8db8dc@redhat.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 3 Mar 2024 17:11:02 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdX+mpc5++8h4oM98FTPAdV-c8TzscTQA095Wzssae6amg@mail.gmail.com>
+Message-ID: <CAMuHMdX+mpc5++8h4oM98FTPAdV-c8TzscTQA095Wzssae6amg@mail.gmail.com>
+Subject: Re: [PATCH/RFC] locking/spinlocks: Make __raw_* lock ops static
+To: Waiman Long <longman@redhat.com>
+Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>, 
+	Will Deacon <will@kernel.org>, Boqun Feng <boqun.feng@gmail.com>, Arnd Bergmann <arnd@arndb.de>, 
+	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-s390 <linux-s390@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 3/1/24 15:43, Geert Uytterhoeven wrote:
-> sh/sdk7786_defconfig (CONFIG_GENERIC_LOCKBREAK=y and
-> CONFIG_DEBUG_LOCK_ALLOC=n):
+Hi Waiman,
+
+CC s390
+
+On Sun, Mar 3, 2024 at 5:25=E2=80=AFAM Waiman Long <longman@redhat.com> wro=
+te:
+> On 3/1/24 15:43, Geert Uytterhoeven wrote:
+> > sh/sdk7786_defconfig (CONFIG_GENERIC_LOCKBREAK=3Dy and
+> > CONFIG_DEBUG_LOCK_ALLOC=3Dn):
+> >
+> > kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__=
+raw_spin_lock' [-Wmissing-prototypes]
+> > kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__=
+raw_spin_lock_irqsave' [-Wmissing-prototypes]
+> > kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__=
+raw_spin_lock_irq' [-Wmissing-prototypes]
+> > kernel/locking/spinlock.c:103:17: warning: no previous prototype for '_=
+_raw_spin_lock_bh' [-Wmissing-prototypes]
+> > kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__=
+raw_read_lock' [-Wmissing-prototypes]
+> > kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__=
+raw_read_lock_irqsave' [-Wmissing-prototypes]
+> > kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__=
+raw_read_lock_irq' [-Wmissing-prototypes]
+> > kernel/locking/spinlock.c:103:17: warning: no previous prototype for '_=
+_raw_read_lock_bh' [-Wmissing-prototypes]
+> > kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__=
+raw_write_lock' [-Wmissing-prototypes]
+> > kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__=
+raw_write_lock_irqsave' [-Wmissing-prototypes]
+> > kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__=
+raw_write_lock_irq' [-Wmissing-prototypes]
+> > kernel/locking/spinlock.c:103:17: warning: no previous prototype for '_=
+_raw_write_lock_bh' [-Wmissing-prototypes]
+> >
+> > Fix this by making the __raw_* lock ops static.
+> >
+> > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> > ---
+> > Compile-tested only.
+> >
+> > Is SH really the only SMP platform where CONFIG_GENERIC_LOCKBREAK=3Dy?
+> > ---
+> >   kernel/locking/spinlock.c | 8 ++++----
+> >   1 file changed, 4 insertions(+), 4 deletions(-)
+> >
+> > diff --git a/kernel/locking/spinlock.c b/kernel/locking/spinlock.c
+> > index 8475a0794f8c5ad2..7009b568e6255d64 100644
+> > --- a/kernel/locking/spinlock.c
+> > +++ b/kernel/locking/spinlock.c
+> > @@ -65,7 +65,7 @@ EXPORT_PER_CPU_SYMBOL(__mmiowb_state);
+> >    * towards that other CPU that it should break the lock ASAP.
+> >    */
+> >   #define BUILD_LOCK_OPS(op, locktype)                                 =
+       \
+> > -void __lockfunc __raw_##op##_lock(locktype##_t *lock)                 =
+       \
+> > +static void __lockfunc __raw_##op##_lock(locktype##_t *lock)         \
+> >   {                                                                   \
+> >       for (;;) {                                                      \
+> >               preempt_disable();                                      \
+> > @@ -77,7 +77,7 @@ void __lockfunc __raw_##op##_lock(locktype##_t *lock)=
+                       \
+> >       }                                                               \
+> >   }                                                                   \
+> >                                                                       \
+> > -unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock)=
+       \
+> > +static unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t=
+ *lock) \
+> >   {                                                                   \
+> >       unsigned long flags;                                            \
+> >                                                                       \
+> > @@ -95,12 +95,12 @@ unsigned long __lockfunc __raw_##op##_lock_irqsave(=
+locktype##_t *lock)    \
+> >       return flags;                                                   \
+> >   }                                                                   \
+> >                                                                       \
+> > -void __lockfunc __raw_##op##_lock_irq(locktype##_t *lock)            \
+> > +static void __lockfunc __raw_##op##_lock_irq(locktype##_t *lock)     \
+> >   {                                                                   \
+> >       _raw_##op##_lock_irqsave(lock);                                 \
+> >   }                                                                   \
+> >                                                                       \
+> > -void __lockfunc __raw_##op##_lock_bh(locktype##_t *lock)             \
+> > +static void __lockfunc __raw_##op##_lock_bh(locktype##_t *lock)       =
+       \
+> >   {                                                                   \
+> >       unsigned long flags;                                            \
+> >                                                                       \
 >
-> kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_spin_lock' [-Wmissing-prototypes]
-> kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_spin_lock_irqsave' [-Wmissing-prototypes]
-> kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_spin_lock_irq' [-Wmissing-prototypes]
-> kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_spin_lock_bh' [-Wmissing-prototypes]
-> kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_read_lock' [-Wmissing-prototypes]
-> kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_read_lock_irqsave' [-Wmissing-prototypes]
-> kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_read_lock_irq' [-Wmissing-prototypes]
-> kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_read_lock_bh' [-Wmissing-prototypes]
-> kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_write_lock' [-Wmissing-prototypes]
-> kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_write_lock_irqsave' [-Wmissing-prototypes]
-> kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_write_lock_irq' [-Wmissing-prototypes]
-> kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_write_lock_bh' [-Wmissing-prototypes]
+> This may not work if CONFIG_GENERIC_LOCKBREAK is defined. We had been
+
+sdk7786_defconfig sets CONFIG_GENERIC_LOCKBREAK=3Dy?
+
+FTR, I checked all defconfigs, and it's set in three of them:
+  - s390/debug_defconfig
+  - sh/sdk7786_defconfig
+  - sh/shx3_defconfig
+
+However, the first one has CONFIG_DEBUG_LOCK_ALLOC=3Dy, so the issue
+does not trigger there (but see below).
+
+> talking about taking out CONFIG_GENERIC_LOCKBREAK before. See the thread
+> in [1]. However, we didn't proceed further at that time as we weren't
+> totally sure if there were still some configurations that required
+> CONFIG_GENERIC_LOCKBREAK.
 >
-> Fix this by making the __raw_* lock ops static.
+> [1] https://lore.kernel.org/lkml/20211022120058.1031690-1-arnd@kernel.org=
+/
 >
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
-> Compile-tested only.
->
-> Is SH really the only SMP platform where CONFIG_GENERIC_LOCKBREAK=y?
-> ---
->   kernel/locking/spinlock.c | 8 ++++----
->   1 file changed, 4 insertions(+), 4 deletions(-)
->
-> diff --git a/kernel/locking/spinlock.c b/kernel/locking/spinlock.c
-> index 8475a0794f8c5ad2..7009b568e6255d64 100644
-> --- a/kernel/locking/spinlock.c
-> +++ b/kernel/locking/spinlock.c
-> @@ -65,7 +65,7 @@ EXPORT_PER_CPU_SYMBOL(__mmiowb_state);
->    * towards that other CPU that it should break the lock ASAP.
->    */
->   #define BUILD_LOCK_OPS(op, locktype)					\
-> -void __lockfunc __raw_##op##_lock(locktype##_t *lock)			\
-> +static void __lockfunc __raw_##op##_lock(locktype##_t *lock)		\
->   {									\
->   	for (;;) {							\
->   		preempt_disable();					\
-> @@ -77,7 +77,7 @@ void __lockfunc __raw_##op##_lock(locktype##_t *lock)			\
->   	}								\
->   }									\
->   									\
-> -unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock)	\
-> +static unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock) \
->   {									\
->   	unsigned long flags;						\
->   									\
-> @@ -95,12 +95,12 @@ unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock)	\
->   	return flags;							\
->   }									\
->   									\
-> -void __lockfunc __raw_##op##_lock_irq(locktype##_t *lock)		\
-> +static void __lockfunc __raw_##op##_lock_irq(locktype##_t *lock)	\
->   {									\
->   	_raw_##op##_lock_irqsave(lock);					\
->   }									\
->   									\
-> -void __lockfunc __raw_##op##_lock_bh(locktype##_t *lock)		\
-> +static void __lockfunc __raw_##op##_lock_bh(locktype##_t *lock)		\
->   {									\
->   	unsigned long flags;						\
->   									\
+> Anyway, without taking out CONFIG_GENERIC_LOCKBREAK, the proper way to
+> fix this issue is probably to declare the proper function prototypes in
+> include/linux/rwlock_api_smp.h and include/linux/spinlock_api_smp.h when
+> CONFIG_GENERIC_LOCKBREAK is defined.
 
-This may not work if CONFIG_GENERIC_LOCKBREAK is defined. We had been 
-talking about taking out CONFIG_GENERIC_LOCKBREAK before. See the thread 
-in [1]. However, we didn't proceed further at that time as we weren't 
-totally sure if there were still some configurations that required 
-CONFIG_GENERIC_LOCKBREAK.
+What is the point of adding function prototypes to header files if the
+functions don't seem to be called outside kernel/locking/spinlock.c?
+Or is that part of the breakage?
 
-[1] https://lore.kernel.org/lkml/20211022120058.1031690-1-arnd@kernel.org/
+I do not have an sdk7786 or shx3, so I do not know if the kernel
+actually boots/works.
 
-Anyway, without taking out CONFIG_GENERIC_LOCKBREAK, the proper way to 
-fix this issue is probably to declare the proper function prototypes in 
-include/linux/rwlock_api_smp.h and include/linux/spinlock_api_smp.h when 
-CONFIG_GENERIC_LOCKBREAK is defined.
+The warnings are also seen with s390/debug_defconfig after changing
+CONFIG_DEBUG_LOCK_ALLOC=3Dn
+CONFIG_DEBUG_WW_MUTEX_SLOWPATH=3Dn
+CONFIG_LOCK_STAT=3Dn
+CONFIG_PROVE_LOCKING=3Dn
+Probably that is the easiest config to test on actual hardware?
 
-Cheers,
-Longman
+Thanks!
 
+Gr{oetje,eeting}s,
+
+                        Geert
+
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
