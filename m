@@ -1,30 +1,30 @@
-Received: from laurent.telenet-ops.be (laurent.telenet-ops.be [195.130.137.89])
+Received: from baptiste.telenet-ops.be (baptiste.telenet-ops.be [195.130.132.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3A3AF78B7E
-	for <linux-sh@vger.kernel.org>; Mon,  4 Mar 2024 19:10:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.137.89
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D7C77AE5C
+	for <linux-sh@vger.kernel.org>; Mon,  4 Mar 2024 19:10:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.132.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709579457; cv=none; b=kqZjBVmNStuMrBZFt0yoVFpxGFT2GQG/+0bCjhAI96jOyCfNg195wEb73K3/cOZLmDl7mXTdr3hrTk03C7UP+kRx5lsmjBtOu/YvTJAh9FtmK7nVgfVHZ28h2mu0mWcaTFgEfxzVhRHNFTlvfbE8YWUxvpg0WEYlLRmUZS7EvV0=
+	t=1709579461; cv=none; b=tVkzcZrbSxyQqyV/6mKt8HfrxYMf4bsZ3/Zy44lITFbphozTcQFLAHiF9uiXvbtzrsp2YZrZG00jynfVgxru4ZcLzucSoT1XW7pKvI8nYz+NbGl7Jtbfl2DYbUi1sWMKO/wUT9TLW/dkBbvpjaT1vSKOFTqD3tO/1fEfBpStTWc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709579457; c=relaxed/simple;
-	bh=1NU2jdozNlhSkJZyevmnH2H6GJDZ1F/40k7wWV+RudM=;
+	s=arc-20240116; t=1709579461; c=relaxed/simple;
+	bh=H/gQxfV3suXjIp6hEocMHk10NKKhL2CfpxOu/Ql0GOw=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=rHrCmyvfdfnVbKvw+1FkI+Pyyb1hZYLIQbtPttbZfc8QlzcqW+DKuBz5L0OIRtHYV8SP95+c/e1K3W/9m4NeRrC2P4ktJpxHdMsAHCBwUBqM0JwzG2uCP9Oa+GEk+skEfwYrMTRON7ZvrBswWOllXpp1NVG35Ye/+ASoKCeXxQ4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.137.89
+	 MIME-Version:Content-Type; b=OeMunFtida4RJMmoCYDGhSVBqr0rtscO4jpmCTyUm+Yy3OzoFJcSSOzIne+WHU+EiuqFa7DvjBP9Kv0xLBi7wkp1Z4d5TRnjooRLqa3S9nsAHYKn/cXMAb8HBL7uW7Ous0lyMZWgoBufmMmrfz6xQ6ZqJFFfgutybotcDJtVd/M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.132.51
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be
 Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
 Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:2716:1247:52e8:4f90])
-	by laurent.telenet-ops.be with bizsmtp
-	id ujAr2B00K2qflky01jArdj; Mon, 04 Mar 2024 20:10:52 +0100
+	by baptiste.telenet-ops.be with bizsmtp
+	id ujAr2B00F2qflky01jAr7d; Mon, 04 Mar 2024 20:10:52 +0100
 Received: from rox.of.borg ([192.168.97.57])
 	by ramsan.of.borg with esmtp (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rhDhv-002KKB-OM;
+	id 1rhDhv-002KJx-Lw;
 	Mon, 04 Mar 2024 20:10:51 +0100
 Received: from geert by rox.of.borg with local (Exim 4.95)
 	(envelope-from <geert@linux-m68k.org>)
-	id 1rhDi7-00BCct-DV;
+	id 1rhDi7-00BCcj-Bz;
 	Mon, 04 Mar 2024 20:10:51 +0100
 From: Geert Uytterhoeven <geert+renesas@glider.be>
 To: Yoshinori Sato <ysato@users.sourceforge.jp>,
@@ -34,9 +34,9 @@ To: Yoshinori Sato <ysato@users.sourceforge.jp>,
 Cc: linux-sh@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
 	Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH 5/7] sh: sh7757lcr: Make init_sh7757lcr_IRQ() static
-Date: Mon,  4 Mar 2024 20:10:47 +0100
-Message-Id: <fba00424b5b0bee0f9b9cbc63d649a86854d202f.1709579038.git.geert+renesas@glider.be>
+Subject: [PATCH 3/7] sh: mach-highlander: Add missing #include <mach/highlander.h>
+Date: Mon,  4 Mar 2024 20:10:45 +0100
+Message-Id: <bbbc833d2c5b565122baaf9277ddf4a2f2cadead.1709579038.git.geert+renesas@glider.be>
 X-Mailer: git-send-email 2.34.1
 In-Reply-To: <cover.1709579038.git.geert+renesas@glider.be>
 References: <cover.1709579038.git.geert+renesas@glider.be>
@@ -46,30 +46,28 @@ List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-arch/sh/boards/board-sh7757lcr.c:572:13: warning: no previous prototype for 'init_sh7757lcr_IRQ' [-Wmissing-prototypes]
-
-There are no users outside this file, so make it static.
+arch/sh/boards/mach-highlander/pinmux-r7785rp.c:9:13: warning: no previous prototype for ‘highlander_plat_pinmux_setup’ [-Wmissing-prototypes]
 
 Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 ---
- arch/sh/boards/board-sh7757lcr.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/sh/boards/mach-highlander/pinmux-r7785rp.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
-index 4014c042d2a5a5c2..bca54e489e11678e 100644
---- a/arch/sh/boards/board-sh7757lcr.c
-+++ b/arch/sh/boards/board-sh7757lcr.c
-@@ -569,7 +569,7 @@ static int __init sh7757lcr_devices_setup(void)
- arch_initcall(sh7757lcr_devices_setup);
+diff --git a/arch/sh/boards/mach-highlander/pinmux-r7785rp.c b/arch/sh/boards/mach-highlander/pinmux-r7785rp.c
+index 703179faf652b242..689bd8732d9eedbc 100644
+--- a/arch/sh/boards/mach-highlander/pinmux-r7785rp.c
++++ b/arch/sh/boards/mach-highlander/pinmux-r7785rp.c
+@@ -5,6 +5,7 @@
+ #include <linux/init.h>
+ #include <linux/gpio.h>
+ #include <cpu/sh7785.h>
++#include <mach/highlander.h>
  
- /* Initialize IRQ setting */
--void __init init_sh7757lcr_IRQ(void)
-+static void __init init_sh7757lcr_IRQ(void)
+ void __init highlander_plat_pinmux_setup(void)
  {
- 	plat_irq_setup_pins(IRQ_MODE_IRQ7654);
- 	plat_irq_setup_pins(IRQ_MODE_IRQ3210);
 -- 
 2.34.1
 
