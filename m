@@ -1,170 +1,118 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yw1-f170.google.com (mail-yw1-f170.google.com [209.85.128.170])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 74C5A1854
-	for <linux-sh@vger.kernel.org>; Mon,  4 Mar 2024 02:54:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E49A5249EA;
+	Mon,  4 Mar 2024 10:34:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.170
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709520855; cv=none; b=IEL6r8wAF+xwcQI/h8e9eS8jVH0kXV2K0p8mFqRWAoyLg8wJnJ2IPUpfBzWyIgnYm2CJ+VNBgY0iKV8MUgTFaKVi5bCncrL4hsCSvAwN7Xh38/Am8CECQDRB8QLLpycEHWnbaup1p4kniAE9m+LANkKYYEduiyo67xUm8kt2ZM8=
+	t=1709548467; cv=none; b=FiamtVMRm2Kjy7lw6oaM3hVK5gCzi9X7AEnvXdFQJX3Znf+fVLUK38In0D8J+j4YuVmgftgtcZtPZGzEJ4kFg/Aw3H4z5tckAeBP3/3rVMjVxyceI3PaGimiRgmVqoHSYfJXyoXPW8Ivn92VQh6WfZxWY7skyAciDmNHfcOSLzg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709520855; c=relaxed/simple;
-	bh=xdSiMK7kjjGZRlGul3QgzLnwYbT1W966o/MZNoy7N9E=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=GVEv4fsJqPXL/l6C4VbMSJheluXUDsOE08n1WUiOnA2I4LDW8EBLBGIaAy7/ZMV9z7fBK4jj7FedVDjfUSDmidU+MMklEDhuIfvf4m8uLcSE8D+MwAKNEvcr4AJlI0LxywdXvmzyFw0cPY3U7G9/PrkVdX+xHKEFXreZIbsuZe0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=YxA5/NQR; arc=none smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="YxA5/NQR"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1709520852;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=bUCvEG7ZPFwX6+W3DZtnUtBmleJUDEj8UA3febVhuUw=;
-	b=YxA5/NQR3VmtFQu5ULCj2HOqydiTcWRIj4Kr1W9qDzfKQljO8ewIn/ZqNENBWweIgrZvfq
-	hrxMhiHNhsoWEPf2omI2Usc4kzwL0rulC3oKEaIdmBGKRStK44NF3SOsUobZJ2NiIsgg1r
-	osIYThKCXRgwo2TdO0Lt82R+cAPt9LI=
-Received: from mimecast-mx02.redhat.com (mx-ext.redhat.com [66.187.233.73])
- by relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-157-eDWbzhTBMrCNWuWvzMiDrw-1; Sun,
- 03 Mar 2024 21:54:07 -0500
-X-MC-Unique: eDWbzhTBMrCNWuWvzMiDrw-1
-Received: from smtp.corp.redhat.com (int-mx03.intmail.prod.int.rdu2.redhat.com [10.11.54.3])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id 432FB1C060C8;
-	Mon,  4 Mar 2024 02:54:07 +0000 (UTC)
-Received: from [10.22.16.80] (unknown [10.22.16.80])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id B789B1121313;
-	Mon,  4 Mar 2024 02:54:06 +0000 (UTC)
-Message-ID: <fad87131-8952-4c67-9208-e7c4683c0234@redhat.com>
-Date: Sun, 3 Mar 2024 21:54:06 -0500
+	s=arc-20240116; t=1709548467; c=relaxed/simple;
+	bh=GnMIo/pAd4JHLRP1VZXlqka2oS6REd7bI010ZIuZm+8=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=lWWAZkN5KgK6+v3otMxYDOs9JAiea7ElbHF2po36GFvLufwQm1adhBa2r9mSFNVyAPYkJzxbsPHMc3q/5NBsVHPoeCpK84+ZNQubEmjW8PoEBLTZF3Hbt3eqzBqtW5JxDnixIkVnM9/pYQGff9mX4w50WE34VRPECEK0lZlAvz8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.128.170
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-yw1-f170.google.com with SMTP id 00721157ae682-60821136c5aso28861637b3.1;
+        Mon, 04 Mar 2024 02:34:25 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1709548463; x=1710153263;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=GnMIo/pAd4JHLRP1VZXlqka2oS6REd7bI010ZIuZm+8=;
+        b=Tgnt8DTX9VYO85UQCn5zwwWOhHYNRPCia7Lb5QsrxqSx59dXlny2BKlhdadQgxUf2a
+         lzt2NOL282XgeQQ0h9SPLdu3t68Rx4mRYhfFDXraTDv/o6tbHyCnWlHiMuHqytPrT0oS
+         J0ZlAqMGSRIBkwQm0+CtiR7VsFFjftGL7Nk9pR50zuso2Gp1zS8D8imErE7tqZH0zjB4
+         f22JuXINqas4scXn2BJeQ5z4yA0OQGuga3WTSRrUjnLukvjdYmGwYD2/QnWe8b5D0rIA
+         1QoicaN+buxY9PItdBx1bv0g3obxji2v+CFeDaiRKeQ+kFRR4MDmGfyN4DgxJdVxlVBX
+         BwUA==
+X-Forwarded-Encrypted: i=1; AJvYcCVhD9GAXg0D6xNuEVD+cuZa9A5MVmk4i/Fqer/00pfSQsAkIowrSXCchhGXlcVfEyvxYUaUEFjwd+JKczirnRxumQ5TAeutm6LirV3UtH0XVyzLgSSZqFXQlVkJ84RxBXEcXgrFXuSp2ZVnvQN5WSAyvhNDcCI2mzWuuRUa0MkJ/g==
+X-Gm-Message-State: AOJu0Yw9ph6Q9aciFyHKSMLl9iinqgOlHFAJ1NEvHAKWq+QA8VrSLK/q
+	kX7IfHfU/s3cm9Oe/1qhU9zbAMF1Ad2o38SUY5PilOudDbbhVyIwaFOLyMx0gOs=
+X-Google-Smtp-Source: AGHT+IHX930ZUrQfn3sruS1o3KTGvcsMAaJR2gpkCVcT9jsiz2lXYaGoLy4Csg21BIWb1vOGL7pj5g==
+X-Received: by 2002:a81:9847:0:b0:608:c440:620a with SMTP id p68-20020a819847000000b00608c440620amr7990467ywg.13.1709548462884;
+        Mon, 04 Mar 2024 02:34:22 -0800 (PST)
+Received: from mail-yw1-f178.google.com (mail-yw1-f178.google.com. [209.85.128.178])
+        by smtp.gmail.com with ESMTPSA id u62-20020a816041000000b00607c9160c22sm2553915ywb.119.2024.03.04.02.34.22
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 04 Mar 2024 02:34:22 -0800 (PST)
+Received: by mail-yw1-f178.google.com with SMTP id 00721157ae682-60982a6d8a7so36294867b3.0;
+        Mon, 04 Mar 2024 02:34:22 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AJvYcCUzWclLHPvm8Tgx2cHWhjBo9UqVKzt1pxcsl3Qr1zRE581xlyNsv3Nm9uJHIsAU1ucnSo+sxludaeGNWTwnKmRSRKcuxEVSL2gfbSvBX2OjiMzVmu+ElVamX9nOCKOY3dlTlM0tnhExIvuCprJiA6SDUZUkesbLsBEZWF5agU3ANQ==
+X-Received: by 2002:a81:6d15:0:b0:609:879c:a72c with SMTP id
+ i21-20020a816d15000000b00609879ca72cmr7227414ywc.42.1709548462066; Mon, 04
+ Mar 2024 02:34:22 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH/RFC] locking/spinlocks: Make __raw_* lock ops static
-Content-Language: en-US
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Peter Zijlstra <peterz@infradead.org>, Ingo Molnar <mingo@redhat.com>,
- Will Deacon <will@kernel.org>, Boqun Feng <boqun.feng@gmail.com>,
- Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-s390 <linux-s390@vger.kernel.org>
-References: <c395b02613572131568bc1fd1bc456d20d1a5426.1709325647.git.geert+renesas@glider.be>
- <87fe0004-0e53-4b7a-b19d-c6b37c8db8dc@redhat.com>
- <CAMuHMdX+mpc5++8h4oM98FTPAdV-c8TzscTQA095Wzssae6amg@mail.gmail.com>
-From: Waiman Long <longman@redhat.com>
-In-Reply-To: <CAMuHMdX+mpc5++8h4oM98FTPAdV-c8TzscTQA095Wzssae6amg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.3
+References: <010ea3a0-929e-4912-ad22-9f0cf5b1a3e2@redhat.com>
+In-Reply-To: <010ea3a0-929e-4912-ad22-9f0cf5b1a3e2@redhat.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 4 Mar 2024 11:34:09 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdX2CtKuY5GS=sJL2rYhixzgtXBQQpef-h=2GKRX-cNOjg@mail.gmail.com>
+Message-ID: <CAMuHMdX2CtKuY5GS=sJL2rYhixzgtXBQQpef-h=2GKRX-cNOjg@mail.gmail.com>
+Subject: Re: pm_runtime_early_init() defined but not used, except on SuperH
+ which has its own definition ?
+To: Hans de Goede <hdegoede@redhat.com>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, "Rafael J. Wysocki" <rafael@kernel.org>, 
+	Pavel Machek <pavel@ucw.cz>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-sh@vger.kernel.org, 
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux PM <linux-pm@vger.kernel.org>, 
+	Bartosz Golaszewski <brgl@bgdev.pl>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
+CC Bartosz
 
-On 3/3/24 11:11, Geert Uytterhoeven wrote:
-> Hi Waiman,
+On Sun, Mar 3, 2024 at 8:53=E2=80=AFPM Hans de Goede <hdegoede@redhat.com> =
+wrote:
 >
-> CC s390
+> Hi All,
 >
-> On Sun, Mar 3, 2024 at 5:25 AM Waiman Long <longman@redhat.com> wrote:
->> On 3/1/24 15:43, Geert Uytterhoeven wrote:
->>> sh/sdk7786_defconfig (CONFIG_GENERIC_LOCKBREAK=y and
->>> CONFIG_DEBUG_LOCK_ALLOC=n):
->>>
->>> kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_spin_lock' [-Wmissing-prototypes]
->>> kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_spin_lock_irqsave' [-Wmissing-prototypes]
->>> kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_spin_lock_irq' [-Wmissing-prototypes]
->>> kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_spin_lock_bh' [-Wmissing-prototypes]
->>> kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_read_lock' [-Wmissing-prototypes]
->>> kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_read_lock_irqsave' [-Wmissing-prototypes]
->>> kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_read_lock_irq' [-Wmissing-prototypes]
->>> kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_read_lock_bh' [-Wmissing-prototypes]
->>> kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_write_lock' [-Wmissing-prototypes]
->>> kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_write_lock_irqsave' [-Wmissing-prototypes]
->>> kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_write_lock_irq' [-Wmissing-prototypes]
->>> kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_write_lock_bh' [-Wmissing-prototypes]
->>>
->>> Fix this by making the __raw_* lock ops static.
->>>
->>> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->>> ---
->>> Compile-tested only.
->>>
->>> Is SH really the only SMP platform where CONFIG_GENERIC_LOCKBREAK=y?
->>> ---
->>>    kernel/locking/spinlock.c | 8 ++++----
->>>    1 file changed, 4 insertions(+), 4 deletions(-)
->>>
->>> diff --git a/kernel/locking/spinlock.c b/kernel/locking/spinlock.c
->>> index 8475a0794f8c5ad2..7009b568e6255d64 100644
->>> --- a/kernel/locking/spinlock.c
->>> +++ b/kernel/locking/spinlock.c
->>> @@ -65,7 +65,7 @@ EXPORT_PER_CPU_SYMBOL(__mmiowb_state);
->>>     * towards that other CPU that it should break the lock ASAP.
->>>     */
->>>    #define BUILD_LOCK_OPS(op, locktype)                                        \
->>> -void __lockfunc __raw_##op##_lock(locktype##_t *lock)                        \
->>> +static void __lockfunc __raw_##op##_lock(locktype##_t *lock)         \
->>>    {                                                                   \
->>>        for (;;) {                                                      \
->>>                preempt_disable();                                      \
->>> @@ -77,7 +77,7 @@ void __lockfunc __raw_##op##_lock(locktype##_t *lock)                       \
->>>        }                                                               \
->>>    }                                                                   \
->>>                                                                        \
->>> -unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock)       \
->>> +static unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock) \
->>>    {                                                                   \
->>>        unsigned long flags;                                            \
->>>                                                                        \
->>> @@ -95,12 +95,12 @@ unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock)    \
->>>        return flags;                                                   \
->>>    }                                                                   \
->>>                                                                        \
->>> -void __lockfunc __raw_##op##_lock_irq(locktype##_t *lock)            \
->>> +static void __lockfunc __raw_##op##_lock_irq(locktype##_t *lock)     \
->>>    {                                                                   \
->>>        _raw_##op##_lock_irqsave(lock);                                 \
->>>    }                                                                   \
->>>                                                                        \
->>> -void __lockfunc __raw_##op##_lock_bh(locktype##_t *lock)             \
->>> +static void __lockfunc __raw_##op##_lock_bh(locktype##_t *lock)              \
->>>    {                                                                   \
->>>        unsigned long flags;                                            \
->>>                                                                        \
->> This may not work if CONFIG_GENERIC_LOCKBREAK is defined. We had been
-> sdk7786_defconfig sets CONFIG_GENERIC_LOCKBREAK=y?
+> I noticed that drivers/base/power/power.h defines pm_runtime_early_init()
+> but nothing under drivers/base uses this.
 >
-> FTR, I checked all defconfigs, and it's set in three of them:
->    - s390/debug_defconfig
->    - sh/sdk7786_defconfig
->    - sh/shx3_defconfig
+> A grep over the entire tree shows that arch/sh/drivers/platform_early.c
+> does use pm_runtime_early_init() but rather then including
+> drivers/base/power/power.h it has its own definition / private copy
+> of both device_pm_init_common() and pm_runtime_early_init() from
+> drivers/base/power/power.h ???
 >
-> However, the first one has CONFIG_DEBUG_LOCK_ALLOC=y, so the issue
-> does not trigger there (but see below).
-
-I was worrying about any of the INLINE_*_LOCK* config being turned on. 
-It turns out that setting GENERIC_LOCKBREAK will not allow those locking 
-functions to be inlined. So my concern is not warranted.
-
-With that, I think your patch should be safe.
-
-Acked-by: Waiman Long <longman@redhat.com>
-
-It will be nice if you can document that either in the change log or in 
-a comment.
-
-Still the lock-break lock variants are simple TaS locks with preemption 
-turned on in between successive attempts to acquire the lock. It will be 
-slow and is only suitable for system with small number of cores. The 
-long term goal should be to get rid of these variants and 
-CONFIG_GENERIC_LOCKBREAK if possible.
-
-Cheers,
-Longman
-
+> Also the private copy of pm_runtime_early_init() in
+> arch/sh/drivers/platform_early.c differs from the unused one
+> in drivers/base/power/power.h, but only when CONFIG_PM is not set.
+>
+> When CONFIG_PM is not set then the pm_runtime_early_init() in
+> arch/sh/drivers/platform_early.c is a no-op, where as the one in
+> drivers/base/power/power.h still calls device_pm_init_common()
+> in this case ...
+>
+> I also wonder if given that pm_runtime_early_init() is not
+> used with the exception of arch/sh/drivers/platform_early.c
+> if the dev->power.early_init flag check in
+> device_pm_init_common() is really necessary ?
+>
+> On non SuperH the only (1) caller of device_pm_init_common()
+> is device_pm_init(), so it seems to me that the code to
+> avoid doing device_pm_init_common() twice is unnecessary.
+>
+> Actually it seems to me that the entire contents of
+> device_pm_init_common() can be moved inside device_pm_init()
+> and the dev->power.early_init can be completely dropped (2).
+>
+> Regards,
+>
+> Hans
+>
+>
+> 1) Well pm_runtime_early_init() calls it too, but that itself
+> is unused and can be removed, removing it is even ok-ish
+> for SuperH since that has its own copy anyways.
+>
+> 2) With the exception that all of this is still necessary
+> for SuperH I guess.
