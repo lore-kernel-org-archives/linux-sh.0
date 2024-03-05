@@ -1,77 +1,155 @@
-Received: from andre.telenet-ops.be (andre.telenet-ops.be [195.130.132.53])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9CF947AE70
-	for <linux-sh@vger.kernel.org>; Mon,  4 Mar 2024 19:10:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.132.53
+Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id D5AEC4500B;
+	Tue,  5 Mar 2024 07:05:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=153.127.30.23
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709579462; cv=none; b=STI8e1YQWFMMUMzE9h5MfjaWWP0JWBcs88QAYCeNbOcFc+PLoAIo0IxoFFpZmcLo+FPiGE09L2CBerqomWic1mDbx6aSC3/P21ol5oAed7oWVsxLSEMR6Nu6jmDVhhLcXU58h7U5L99y6FPI9MsnCGRD+vdSOb+3rXx5xnOEXhs=
+	t=1709622335; cv=none; b=B1dEQxPcsnTitqb00w1gyDdsZ4TtEPwwjluLN5k2EIGDG2badXgeFIHvONpZj75/RqK+dNNuWvWMXjbP6XiWuSP6dUM0n6I7vUsFAK+xZGy9FnsVOT1ArKu2PLbXREgDHedeaA/9R7dpXrW6eVznGdR6s4QxzLtX5OqZlSJ+5i4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709579462; c=relaxed/simple;
-	bh=E+qJDFY6zi9Nz5E3gi8d133G0ewbF7dK4ZuSWuhwbU4=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=RA6tRZN6ZxpEAr6TH1laHvmWPbmjabe/wXo3h3bjHN/70NtXNFqxEN0G0w0EbZDRjoZzg1Rcz131BcNmJrQgDLeSadqNOYyJ3Cy7zc4lvBuHYWcq0zhKV6v/Rh8H9xYkvs88LydWzeIWNCj6P/wtvS0arVAHY16xCtc4sZDZ+HU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.132.53
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed40:2716:1247:52e8:4f90])
-	by andre.telenet-ops.be with bizsmtp
-	id ujAr2B00F2qflky01jArLi; Mon, 04 Mar 2024 20:10:52 +0100
-Received: from rox.of.borg ([192.168.97.57])
-	by ramsan.of.borg with esmtp (Exim 4.95)
-	(envelope-from <geert@linux-m68k.org>)
-	id 1rhDhv-002KKF-PG;
-	Mon, 04 Mar 2024 20:10:51 +0100
-Received: from geert by rox.of.borg with local (Exim 4.95)
-	(envelope-from <geert@linux-m68k.org>)
-	id 1rhDi7-00BCcx-EG;
-	Mon, 04 Mar 2024 20:10:51 +0100
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-To: Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
+	s=arc-20240116; t=1709622335; c=relaxed/simple;
+	bh=XIzBUHoiVeCQAMPUCNXTA2fFmTK4/1wOs2592jH8r1U=;
+	h=Date:Message-ID:From:To:Cc:Subject:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=SByelEwC0M2pniIqF7jf+vXZoNWGcR3TOUbUQV74DnHWHg3AtcwNVK5dmF4zcy0m1grsq8gQTOSHqq5EX+df2na7drkbv4gTeKwIPYIC3jkM5kVESLKbtwd8YV/tZ2brsft8owq7PZ4zT3ahcoyA19sqyO+u0gD25Th/nFQHBNk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=users.sourceforge.jp; spf=fail smtp.mailfrom=users.sourceforge.jp; arc=none smtp.client-ip=153.127.30.23
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=users.sourceforge.jp
+Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=users.sourceforge.jp
+Received: from SIOS1075.ysato.ml (ZM005235.ppp.dion.ne.jp [222.8.5.235])
+	by sakura.ysato.name (Postfix) with ESMTPSA id 38F3D1C00A0;
+	Tue,  5 Mar 2024 15:56:29 +0900 (JST)
+Date: Tue, 05 Mar 2024 15:56:26 +0900
+Message-ID: <87bk7tjhet.wl-ysato@users.sourceforge.jp>
+From: Yoshinori Sato <ysato@users.sourceforge.jp>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Rich Felker <dalias@libc.org>,
 	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Arnd Bergmann <arnd@arndb.de>
-Cc: linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH 6/7] sh: sh7757: Add missing #include <asm/mmzone.h>
-Date: Mon,  4 Mar 2024 20:10:48 +0100
-Message-Id: <c9c26472151d16a2ca91f14bccd64af07a6abdd8.1709579038.git.geert+renesas@glider.be>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <cover.1709579038.git.geert+renesas@glider.be>
-References: <cover.1709579038.git.geert+renesas@glider.be>
+	Arnd Bergmann <arnd@arndb.de>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	Masami Hiramatsu <mhiramat@kernel.org>,
+	Mark Rutland <mark.rutland@arm.com>,
+	Will Deacon <will@kernel.org>,
+	"Aneesh Kumar K . V" <aneesh.kumar@linux.ibm.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Nick Piggin <npiggin@gmail.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	linux-sh@vger.kernel.org,
+	linux-trace-kernel@vger.kernel.org
+Subject: Re: [PATCH 08/20] sh: boot: Add proper forward declarations
+In-Reply-To: <2614d991c816ece903ef47c715bcc53881d34f3f.1709326528.git.geert+renesas@glider.be>
+References: <cover.1709326528.git.geert+renesas@glider.be>
+	<2614d991c816ece903ef47c715bcc53881d34f3f.1709326528.git.geert+renesas@glider.be>
+User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
+ FLIM-LB/1.14.9 (=?ISO-8859-4?Q?Goj=F2?=) APEL-LB/10.8 EasyPG/1.0.0
+ Emacs/28.2 (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
+Content-Type: text/plain; charset=ISO-8859-7
+Content-Transfer-Encoding: quoted-printable
 
-arch/sh/kernel/cpu/sh4a/setup-sh7757.c:1240:13: warning: no previous prototype for ‘plat_mem_setup’ [-Wmissing-prototypes]
+On Sat, 02 Mar 2024 06:02:22 +0900,
+Geert Uytterhoeven wrote:
+>=20
+> arch/sh/boot/compressed/cache.c:2:5: warning: no previous prototype for =
+=A1cache_control=A2 [-Wmissing-prototypes]
+> arch/sh/boot/compressed/misc.c:115:6: warning: no previous prototype for =
+=A1ftrace_stub=A2 [-Wmissing-prototypes]
+> arch/sh/boot/compressed/misc.c:118:6: warning: no previous prototype for =
+=A1arch_ftrace_ops_list_func=A2 [-Wmissing-prototypes]
+> arch/sh/boot/compressed/misc.c:128:6: warning: no previous prototype for =
+=A1decompress_kernel=A2 [-Wmissing-prototypes]
+>=20
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+>  arch/sh/boot/compressed/cache.c |  3 +++
+>  arch/sh/boot/compressed/cache.h | 10 ++++++++++
+>  arch/sh/boot/compressed/misc.c  |  8 +++-----
+>  arch/sh/boot/compressed/misc.h  |  9 +++++++++
+>  4 files changed, 25 insertions(+), 5 deletions(-)
+>  create mode 100644 arch/sh/boot/compressed/cache.h
+>  create mode 100644 arch/sh/boot/compressed/misc.h
+>=20
+> diff --git a/arch/sh/boot/compressed/cache.c b/arch/sh/boot/compressed/ca=
+che.c
+> index 31e04ff4841ed084..95c1e73ccbb7e011 100644
+> --- a/arch/sh/boot/compressed/cache.c
+> +++ b/arch/sh/boot/compressed/cache.c
+> @@ -1,4 +1,7 @@
+>  // SPDX-License-Identifier: GPL-2.0
+> +
+> +#include "cache.h"
+> +
+>  int cache_control(unsigned int command)
+>  {
+>  	volatile unsigned int *p =3D (volatile unsigned int *) 0x80000000;
+> diff --git a/arch/sh/boot/compressed/cache.h b/arch/sh/boot/compressed/ca=
+che.h
+> new file mode 100644
+> index 0000000000000000..b622b68c87f59b97
+> --- /dev/null
+> +++ b/arch/sh/boot/compressed/cache.h
+> @@ -0,0 +1,10 @@
+> +/* SPDX-License-Identifier: GPL-2.0 */
+> +#ifndef CACHE_H
+> +#define CACHE_H
+> +
+> +#define CACHE_ENABLE	0
+> +#define CACHE_DISABLE	1
+> +
+> +int cache_control(unsigned int command);
+> +
+> +#endif /* CACHE_H */
+> diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/mis=
+c.c
+> index ca05c99a3d5b488d..5178150ca6650dcf 100644
+> --- a/arch/sh/boot/compressed/misc.c
+> +++ b/arch/sh/boot/compressed/misc.c
+> @@ -16,6 +16,9 @@
+>  #include <asm/addrspace.h>
+>  #include <asm/page.h>
+> =20
+> +#include "cache.h"
+> +#include "misc.h"
+> +
+>  /*
+>   * gzip declarations
+>   */
+> @@ -26,11 +29,6 @@
+>  #undef memcpy
+>  #define memzero(s, n)     memset ((s), 0, (n))
+> =20
+> -/* cache.c */
+> -#define CACHE_ENABLE      0
+> -#define CACHE_DISABLE     1
+> -int cache_control(unsigned int command);
+> -
+>  extern char input_data[];
+>  extern int input_len;
+>  static unsigned char *output;
+> diff --git a/arch/sh/boot/compressed/misc.h b/arch/sh/boot/compressed/mis=
+c.h
+> new file mode 100644
+> index 0000000000000000..2b4534faa3052857
+> --- /dev/null
+> +++ b/arch/sh/boot/compressed/misc.h
+> @@ -0,0 +1,9 @@
+> +/* SPDX-License-Identifier: GPL-2.0 */
+> +#ifndef MISC_H
+> +#define MISC_H
+> +
+> +void arch_ftrace_ops_list_func(void);
+> +void decompress_kernel(void);
+> +void ftrace_stub(void);
+> +
+> +#endif /* MISC_H */
+> --=20
+> 2.34.1
+>=20
+>=20
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
----
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c | 3 +++
- 1 file changed, 3 insertions(+)
+This cache control is from SH5, so it is no longer needed.
+I think it's better to simply delete chace.c and cache_control.
 
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-index 67e330b7ea4621e9..2ad19a0c5e04ef2a 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-@@ -17,8 +17,11 @@
- #include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
- #include <linux/usb/ohci_pdriver.h>
-+
- #include <cpu/dma-register.h>
- #include <cpu/sh7757.h>
-+
-+#include <asm/mmzone.h>
- #include <asm/platform_early.h>
- 
- static struct plat_sci_port scif2_platform_data = {
--- 
-2.34.1
-
+--=20
+Yosinori Sato
