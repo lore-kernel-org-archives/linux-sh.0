@@ -1,155 +1,87 @@
-Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id D5AEC4500B;
-	Tue,  5 Mar 2024 07:05:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=153.127.30.23
+Received: from sipsolutions.net (s3.sipsolutions.net [168.119.38.16])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 577DF59B7F;
+	Tue,  5 Mar 2024 10:59:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=168.119.38.16
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709622335; cv=none; b=B1dEQxPcsnTitqb00w1gyDdsZ4TtEPwwjluLN5k2EIGDG2badXgeFIHvONpZj75/RqK+dNNuWvWMXjbP6XiWuSP6dUM0n6I7vUsFAK+xZGy9FnsVOT1ArKu2PLbXREgDHedeaA/9R7dpXrW6eVznGdR6s4QxzLtX5OqZlSJ+5i4=
+	t=1709636376; cv=none; b=aZz03g1KirEZW+iCT4kNzJbaAwc+A++gSJtpE46aUl58h0pIQFPRRfByPNJNvKGhhNzHD57ChrWTKMpwpP1DOgko5zPn1HzVskTEG3ZTzedOzeyvlWrAhMFFVLpAsYY+lGsfP1O2SVSInrO48+DmRE/RMgt6Oo+RFMe0GnZdvgo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709622335; c=relaxed/simple;
-	bh=XIzBUHoiVeCQAMPUCNXTA2fFmTK4/1wOs2592jH8r1U=;
-	h=Date:Message-ID:From:To:Cc:Subject:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=SByelEwC0M2pniIqF7jf+vXZoNWGcR3TOUbUQV74DnHWHg3AtcwNVK5dmF4zcy0m1grsq8gQTOSHqq5EX+df2na7drkbv4gTeKwIPYIC3jkM5kVESLKbtwd8YV/tZ2brsft8owq7PZ4zT3ahcoyA19sqyO+u0gD25Th/nFQHBNk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=users.sourceforge.jp; spf=fail smtp.mailfrom=users.sourceforge.jp; arc=none smtp.client-ip=153.127.30.23
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=users.sourceforge.jp
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=users.sourceforge.jp
-Received: from SIOS1075.ysato.ml (ZM005235.ppp.dion.ne.jp [222.8.5.235])
-	by sakura.ysato.name (Postfix) with ESMTPSA id 38F3D1C00A0;
-	Tue,  5 Mar 2024 15:56:29 +0900 (JST)
-Date: Tue, 05 Mar 2024 15:56:26 +0900
-Message-ID: <87bk7tjhet.wl-ysato@users.sourceforge.jp>
-From: Yoshinori Sato <ysato@users.sourceforge.jp>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Arnd Bergmann <arnd@arndb.de>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	Masami Hiramatsu <mhiramat@kernel.org>,
-	Mark Rutland <mark.rutland@arm.com>,
-	Will Deacon <will@kernel.org>,
-	"Aneesh Kumar K . V" <aneesh.kumar@linux.ibm.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Nick Piggin <npiggin@gmail.com>,
-	Peter Zijlstra <peterz@infradead.org>,
-	linux-sh@vger.kernel.org,
-	linux-trace-kernel@vger.kernel.org
-Subject: Re: [PATCH 08/20] sh: boot: Add proper forward declarations
-In-Reply-To: <2614d991c816ece903ef47c715bcc53881d34f3f.1709326528.git.geert+renesas@glider.be>
-References: <cover.1709326528.git.geert+renesas@glider.be>
-	<2614d991c816ece903ef47c715bcc53881d34f3f.1709326528.git.geert+renesas@glider.be>
-User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
- FLIM-LB/1.14.9 (=?ISO-8859-4?Q?Goj=F2?=) APEL-LB/10.8 EasyPG/1.0.0
- Emacs/28.2 (x86_64-pc-linux-gnu) MULE/6.0 (HANACHIRUSATO)
+	s=arc-20240116; t=1709636376; c=relaxed/simple;
+	bh=rkU/EUWBtwWWABqUxTFkTNu+QCtdjbQlVV4iGQMgjT8=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=m2JUoL61m6nwAzeLs7V1xWdu+Z76w4eci5hdBe9OpDw49sp4Y31fOleCVVNzBDaSNEUBvF8xPWPehptTjyGWupux3YPQ1OneutJdPKb4mERinxuRtOiLnbyrRfoXxkpm3S/yyCVfPa7fXKtRamGRjuuRPQ36RSiQoUSXy9gxZew=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=sipsolutions.net; spf=pass smtp.mailfrom=sipsolutions.net; dkim=pass (2048-bit key) header.d=sipsolutions.net header.i=@sipsolutions.net header.b=X7C4VvEe; arc=none smtp.client-ip=168.119.38.16
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=sipsolutions.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sipsolutions.net
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=sipsolutions.net header.i=@sipsolutions.net header.b="X7C4VvEe"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=sipsolutions.net; s=mail; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
+	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:Resent-To:
+	Resent-Cc:Resent-Message-ID; bh=FUU17H/883Su4y5t0ORguJT8aM0bkdnEyWS9d9zukeE=;
+	t=1709636375; x=1710845975; b=X7C4VvEe0XoukI77UaTDV4bGeCXBV771Gu9ERiz88HDBiMA
+	wiNhlP1PONCTqxxUB9re9XIa88z3+CUro2HByrE1SwpDCdmvJ9HpF6TuZok1Fd4UpvUKgtgeg1AO/
+	0vlwVi61MyGG2XAo8o11z/RxWuMl+aNIbXcBVj0pouC7eK8arBWgyrhCIT8tdKCfgrVLIKd+PbO9V
+	G/oFZNV3Uy8fq6YJZcgmiGaNWrnsz/DSuBFPGa+1OSISxTVNDNv7guStZ8OyeTzVhDLBGavPzligP
+	ihDx+kYtd9pcb9l2YFWRSJVg8dShtvbYbV2G+j6R2scs2U/kaX2K0cICt89n95ZA==;
+Received: by sipsolutions.net with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.97)
+	(envelope-from <johannes@sipsolutions.net>)
+	id 1rhSVn-00000002j5H-3fnE;
+	Tue, 05 Mar 2024 11:59:08 +0100
+Message-ID: <65f6e65e90ca5f134ef1a238a38ab02a6c1c3360.camel@sipsolutions.net>
+Subject: Re: [PATCH 3/4] arch: define CONFIG_PAGE_SIZE_*KB on all
+ architectures
+From: Johannes Berg <johannes@sipsolutions.net>
+To: Arnd Bergmann <arnd@kernel.org>, Thomas Gleixner <tglx@linutronix.de>, 
+ Vincenzo Frascino <vincenzo.frascino@arm.com>, Kees Cook
+ <keescook@chromium.org>, Anna-Maria Behnsen <anna-maria@linutronix.de>
+Cc: Arnd Bergmann <arnd@arndb.de>, Matt Turner <mattst88@gmail.com>, Vineet
+ Gupta <vgupta@kernel.org>, Russell King <linux@armlinux.org.uk>, Catalin
+ Marinas <catalin.marinas@arm.com>, Guo Ren <guoren@kernel.org>, Brian Cain
+ <bcain@quicinc.com>, Huacai Chen <chenhuacai@kernel.org>, Geert
+ Uytterhoeven <geert@linux-m68k.org>, Michal Simek <monstr@monstr.eu>,
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>, Helge Deller
+ <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>, Christophe Leroy
+ <christophe.leroy@csgroup.eu>, Palmer Dabbelt <palmer@dabbelt.com>, John
+ Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,  Andreas Larsson
+ <andreas@gaisler.com>, Richard Weinberger <richard@nod.at>, x86@kernel.org,
+ Max Filippov <jcmvbkbc@gmail.com>, Andy Lutomirski <luto@kernel.org>, Jan
+ Kiszka <jan.kiszka@siemens.com>, Kieran Bingham <kbingham@kernel.org>,
+ Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, 
+ linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, 
+ linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org, 
+ linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev, 
+ linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org, 
+ linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org, 
+ linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, 
+ linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+ sparclinux@vger.kernel.org,  linux-um@lists.infradead.org
+Date: Tue, 05 Mar 2024 11:59:05 +0100
+In-Reply-To: <20240226161414.2316610-4-arnd@kernel.org>
+References: <20240226161414.2316610-1-arnd@kernel.org>
+	 <20240226161414.2316610-4-arnd@kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.50.4 (3.50.4-1.fc39) 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
-Content-Type: text/plain; charset=ISO-8859-7
-Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+X-malware-bazaar: not-scanned
 
-On Sat, 02 Mar 2024 06:02:22 +0900,
-Geert Uytterhoeven wrote:
+On Mon, 2024-02-26 at 17:14 +0100, Arnd Bergmann wrote:
 >=20
-> arch/sh/boot/compressed/cache.c:2:5: warning: no previous prototype for =
-=A1cache_control=A2 [-Wmissing-prototypes]
-> arch/sh/boot/compressed/misc.c:115:6: warning: no previous prototype for =
-=A1ftrace_stub=A2 [-Wmissing-prototypes]
-> arch/sh/boot/compressed/misc.c:118:6: warning: no previous prototype for =
-=A1arch_ftrace_ops_list_func=A2 [-Wmissing-prototypes]
-> arch/sh/boot/compressed/misc.c:128:6: warning: no previous prototype for =
-=A1decompress_kernel=A2 [-Wmissing-prototypes]
->=20
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> ---
->  arch/sh/boot/compressed/cache.c |  3 +++
->  arch/sh/boot/compressed/cache.h | 10 ++++++++++
->  arch/sh/boot/compressed/misc.c  |  8 +++-----
->  arch/sh/boot/compressed/misc.h  |  9 +++++++++
->  4 files changed, 25 insertions(+), 5 deletions(-)
->  create mode 100644 arch/sh/boot/compressed/cache.h
->  create mode 100644 arch/sh/boot/compressed/misc.h
->=20
-> diff --git a/arch/sh/boot/compressed/cache.c b/arch/sh/boot/compressed/ca=
-che.c
-> index 31e04ff4841ed084..95c1e73ccbb7e011 100644
-> --- a/arch/sh/boot/compressed/cache.c
-> +++ b/arch/sh/boot/compressed/cache.c
-> @@ -1,4 +1,7 @@
->  // SPDX-License-Identifier: GPL-2.0
-> +
-> +#include "cache.h"
-> +
->  int cache_control(unsigned int command)
->  {
->  	volatile unsigned int *p =3D (volatile unsigned int *) 0x80000000;
-> diff --git a/arch/sh/boot/compressed/cache.h b/arch/sh/boot/compressed/ca=
-che.h
-> new file mode 100644
-> index 0000000000000000..b622b68c87f59b97
-> --- /dev/null
-> +++ b/arch/sh/boot/compressed/cache.h
-> @@ -0,0 +1,10 @@
-> +/* SPDX-License-Identifier: GPL-2.0 */
-> +#ifndef CACHE_H
-> +#define CACHE_H
-> +
-> +#define CACHE_ENABLE	0
-> +#define CACHE_DISABLE	1
-> +
-> +int cache_control(unsigned int command);
-> +
-> +#endif /* CACHE_H */
-> diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/mis=
-c.c
-> index ca05c99a3d5b488d..5178150ca6650dcf 100644
-> --- a/arch/sh/boot/compressed/misc.c
-> +++ b/arch/sh/boot/compressed/misc.c
-> @@ -16,6 +16,9 @@
->  #include <asm/addrspace.h>
->  #include <asm/page.h>
-> =20
-> +#include "cache.h"
-> +#include "misc.h"
-> +
->  /*
->   * gzip declarations
->   */
-> @@ -26,11 +29,6 @@
->  #undef memcpy
->  #define memzero(s, n)     memset ((s), 0, (n))
-> =20
-> -/* cache.c */
-> -#define CACHE_ENABLE      0
-> -#define CACHE_DISABLE     1
-> -int cache_control(unsigned int command);
-> -
->  extern char input_data[];
->  extern int input_len;
->  static unsigned char *output;
-> diff --git a/arch/sh/boot/compressed/misc.h b/arch/sh/boot/compressed/mis=
-c.h
-> new file mode 100644
-> index 0000000000000000..2b4534faa3052857
-> --- /dev/null
-> +++ b/arch/sh/boot/compressed/misc.h
-> @@ -0,0 +1,9 @@
-> +/* SPDX-License-Identifier: GPL-2.0 */
-> +#ifndef MISC_H
-> +#define MISC_H
-> +
-> +void arch_ftrace_ops_list_func(void);
-> +void decompress_kernel(void);
-> +void ftrace_stub(void);
-> +
-> +#endif /* MISC_H */
-> --=20
-> 2.34.1
->=20
->=20
+>  arch/um/Kconfig                    | 1 +
+>  arch/um/include/asm/page.h         | 2 +-
 
-This cache control is from SH5, so it is no longer needed.
-I think it's better to simply delete chace.c and cache_control.
 
---=20
-Yosinori Sato
+LGTM, thanks.
+
+Acked-by: Johannes Berg <johannes@sipsolutions.net>
+
+johannes
