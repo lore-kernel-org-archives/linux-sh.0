@@ -1,92 +1,107 @@
-Received: from galois.linutronix.de (Galois.linutronix.de [193.142.43.55])
+Received: from metis.whiteo.stw.pengutronix.de (metis.whiteo.stw.pengutronix.de [185.203.201.7])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D3EEF13A276;
-	Wed,  6 Mar 2024 17:18:00 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=193.142.43.55
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 496D1134BF
+	for <linux-sh@vger.kernel.org>; Wed,  6 Mar 2024 21:20:09 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=185.203.201.7
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709745482; cv=none; b=bkbXulTAv8KkhIhi2+vQC5+MCKNpnCG/BgXb8hcNfyaR2wn0gjzcrNp0MANBIShB4HxlisDbiEanxa8laOmc9P5YCORPyTI2jky1hrjqaJGprt2uAuyqJhW4IrPCXOFXlzlhSDzH1WHAGRw+RcIAFi6SmjZWoTs94ZtwhMDp58M=
+	t=1709760013; cv=none; b=cljIBpVIkN0vPwBQs5Unrpy20XNfoLOWFuACwMNZIlfrz/Pz2JsAvqiKtrlmTvEv8cA9WSYh1KjZG5OfB3rukDPg/JHFNcqhYL/+wBFzXquN69BReaa8YUTEkLD8F8DlZHtXph7gcXZKeKU9c5grjOrvfQRCmY4QH1v0q9NkUqE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709745482; c=relaxed/simple;
-	bh=cGH9oveyYZrJR4sQqUZvr3RgdUZ1IunEgpUKcc2IsXA=;
-	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
-	 MIME-Version:Content-Type; b=EFA4SKJrBZMn5PK0p7EnN6aDEyYQcEJ6NUeUa3KsqDIoTRqRXPVvqlXjb+xjKS+RGhj4C25ZzKQWEYbcOjMWf17EWxPLODL3hJiWGXHzJ5ECOxUIJuQPoaOcHSP5X3143ForH3TlRm82xPSXLTLVBpNNRnqgO1n4U+BY4wtfnVs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de; spf=pass smtp.mailfrom=linutronix.de; dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=gDCCIQT1; dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b=Ba8NRrLO; arc=none smtp.client-ip=193.142.43.55
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linutronix.de
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="gDCCIQT1";
-	dkim=permerror (0-bit key) header.d=linutronix.de header.i=@linutronix.de header.b="Ba8NRrLO"
-From: Thomas Gleixner <tglx@linutronix.de>
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-	s=2020; t=1709745479;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=/OQqHSSiFO9QvgB4mY2J+LyWd+etZHTC3EZIIQab4fo=;
-	b=gDCCIQT1qxbWXTzhufSmoNS52MsO6T6khcDRU4R/DvjT4G7MoNh9Ky1nmGGMUA5kBJGmB5
-	azsjDUOsuP8fnYd10g8AahY82D+0bOAV5U3WP5daAn+croDLWUY3Ux3Xh7i9JWhMGu7ILz
-	CZx/MWC+XoyW1OE1/HgI9ImOzMQ3Hsu7ZGgFD0XsFBH1gJkU/OqCW7ZFdp75gTfSAIe5PP
-	r0Jjoh6AeTDkw4LFACDFt43V3o5FzJyQ23zOJdJCOPm4FdIlpDNblApjxSKyFng8p2xu18
-	6rz3+EZYW43r4daGc6RkeHzoLH9pHS88uirHCfRuC4FSfS7+MEcP8Bkyg26BgA==
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-	s=2020e; t=1709745479;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=/OQqHSSiFO9QvgB4mY2J+LyWd+etZHTC3EZIIQab4fo=;
-	b=Ba8NRrLO9SKa1kou0+rIbBztNEAwJsDv3WFMK2NllzRQnMhckZV3x6THtTFG81tO6REjSx
-	6aQnDwMJIY/8bAAA==
-To: Arnd Bergmann <arnd@kernel.org>, Anna-Maria Behnsen
- <anna-maria@linutronix.de>, Vincenzo Frascino <vincenzo.frascino@arm.com>,
- Kees Cook <keescook@chromium.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, Matt Turner <mattst88@gmail.com>, Vineet
- Gupta <vgupta@kernel.org>, Russell King <linux@armlinux.org.uk>, Catalin
- Marinas <catalin.marinas@arm.com>, Guo Ren <guoren@kernel.org>, Brian Cain
- <bcain@quicinc.com>, Huacai Chen <chenhuacai@kernel.org>, Geert
- Uytterhoeven <geert@linux-m68k.org>, Michal Simek <monstr@monstr.eu>,
- Thomas Bogendoerfer <tsbogend@alpha.franken.de>, Helge Deller
- <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>, Christophe Leroy
- <christophe.leroy@csgroup.eu>, Palmer Dabbelt <palmer@dabbelt.com>, John
- Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Andreas Larsson
- <andreas@gaisler.com>, Richard Weinberger <richard@nod.at>,
- x86@kernel.org, Max Filippov <jcmvbkbc@gmail.com>, Andy Lutomirski
- <luto@kernel.org>, Jan Kiszka <jan.kiszka@siemens.com>, Kieran Bingham
- <kbingham@kernel.org>, Andrew Morton <akpm@linux-foundation.org>,
- linux-kernel@vger.kernel.org, linux-alpha@vger.kernel.org,
- linux-snps-arc@lists.infradead.org, linux-arm-kernel@lists.infradead.org,
- linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
- loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
- linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
- linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
- linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
- linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
- linux-um@lists.infradead.org
-Subject: Re: [v2 PATCH 0/3] arch: mm, vdso: consolidate PAGE_SIZE definition
-In-Reply-To: <20240306141453.3900574-1-arnd@kernel.org>
-References: <20240306141453.3900574-1-arnd@kernel.org>
-Date: Wed, 06 Mar 2024 18:17:58 +0100
-Message-ID: <87wmqfth2x.ffs@tglx>
+	s=arc-20240116; t=1709760013; c=relaxed/simple;
+	bh=pnwgk882TFy2NEAr8PKIavVFArqSnIjQ0tDYENNBNs4=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type; b=ofzsQB5Bld2CHamaUlYdYxhg5pmjbVtjEZAUp5ykWfZbB39U2+rcLYNNN/Qeb1Bjti7bss4JKLvkD21P9pMuwxpPXHOWZjhsQccnQF22qXfRiM8FWVAr+zDxh0ja4m8hCPnE+THG6ke8eMjZNh4af4om+TFGlSJCy68gpblugZE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=pengutronix.de; spf=pass smtp.mailfrom=pengutronix.de; arc=none smtp.client-ip=185.203.201.7
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=pengutronix.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=pengutronix.de
+Received: from drehscheibe.grey.stw.pengutronix.de ([2a0a:edc0:0:c01:1d::a2])
+	by metis.whiteo.stw.pengutronix.de with esmtps (TLS1.3:ECDHE_RSA_AES_256_GCM_SHA384:256)
+	(Exim 4.92)
+	(envelope-from <ukl@pengutronix.de>)
+	id 1rhyg8-0006eB-Tb; Wed, 06 Mar 2024 22:19:56 +0100
+Received: from [2a0a:edc0:0:900:1d::77] (helo=ptz.office.stw.pengutronix.de)
+	by drehscheibe.grey.stw.pengutronix.de with esmtps  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.94.2)
+	(envelope-from <ukl@pengutronix.de>)
+	id 1rhyg3-004otZ-Ty; Wed, 06 Mar 2024 22:19:51 +0100
+Received: from ukl by ptz.office.stw.pengutronix.de with local (Exim 4.96)
+	(envelope-from <ukl@pengutronix.de>)
+	id 1rhyg3-000so7-2h;
+	Wed, 06 Mar 2024 22:19:51 +0100
+From: =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>,
+	Duoming Zhou <duoming@zju.edu.cn>,
+	linux-sh@vger.kernel.org,
+	kernel@vpengutronix.de
+Subject: [PATCH] sh: push-switch: Convert to platform remove callback returning void
+Date: Wed,  6 Mar 2024 22:19:47 +0100
+Message-ID: <20240306211947.97103-2-u.kleine-koenig@pengutronix.de>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=UTF-8
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1804; i=u.kleine-koenig@pengutronix.de; h=from:subject; bh=pnwgk882TFy2NEAr8PKIavVFArqSnIjQ0tDYENNBNs4=; b=owGbwMvMwMXY3/A7olbonx/jabUkhtQXd7/8Wxu82vV0d5TGXCXhNyeMmFJus7GZ1qrZboyry bh/XFq0k9GYhYGRi0FWTJHFvnFNplWVXGTn2n+XYQaxMoFMYeDiFICJxDhxMCw9XPn7q4ph+rad 749eXhn/Jl1a0Po8b3qpiuT20ANcK/zjzy32P8+nW/zV6vUfF4Vdm65EN5kpL5tp3bjBoqE98kd gvp/Jk7wedcUXKpnTn7V6rOfUPhznlV0VNyWhqap95qybhTOyhcodr/rPan/EdDbyYczEf1MOqU 9Q4rdM+ROhLTTF7udU3WdnJNT+/rZ05pASCJg9oenAzpj8d7X2FYcCVbvNJpZm/c9lYp3sGbpcy Ez5hFB+/4+7hTNTrk/n3f/JblpjxDmj5m16MpOXBz76JvajSHFz3ZGikl2s57X/yOfuqnujsKiv RdjgcVJe6mP+E0+9Lj2PcdxztTTgywuXLXVyKQm6ewwsAA==
+X-Developer-Key: i=u.kleine-koenig@pengutronix.de; a=openpgp; fpr=0D2511F322BFAB1C1580266BE2DCDD9132669BD6
+Content-Transfer-Encoding: 8bit
+X-SA-Exim-Connect-IP: 2a0a:edc0:0:c01:1d::a2
+X-SA-Exim-Mail-From: ukl@pengutronix.de
+X-SA-Exim-Scanned: No (on metis.whiteo.stw.pengutronix.de); SAEximRunCond expanded to false
+X-PTX-Original-Recipient: linux-sh@vger.kernel.org
 
-On Wed, Mar 06 2024 at 15:14, Arnd Bergmann wrote:
-> From: Arnd Bergmann <arnd@arndb.de>
->
-> Naresh noticed that the newly added usage of the PAGE_SIZE macro in
-> include/vdso/datapage.h introduced a build regression. I had an older
-> patch that I revived to have this defined through Kconfig rather than
-> through including asm/page.h, which is not allowed in vdso code.
->
-> The vdso patch series now has a temporary workaround, but I still want to
-> get this into v6.9 so we can place the hack with CONFIG_PAGE_SIZE
-> in the vdso.
+The .remove() callback for a platform driver returns an int which makes
+many driver authors wrongly assume it's possible to do error handling by
+returning an error code. However the value returned is ignored (apart
+from emitting a warning) and this typically results in resource leaks.
 
-Thank you for cleaning this up!
+To improve here there is a quest to make the remove callback return
+void. In the first step of this quest all drivers are converted to
+.remove_new(), which already returns void. Eventually after all drivers
+are converted, .remove_new() will be renamed to .remove().
 
-      tglx
+Trivially convert this driver from always returning zero in the remove
+callback to the void returning variant.
+
+Signed-off-by: Uwe Kleine-König <u.kleine-koenig@pengutronix.de>
+---
+ arch/sh/drivers/push-switch.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/arch/sh/drivers/push-switch.c b/arch/sh/drivers/push-switch.c
+index 6ecba5f521eb..362e4860bf52 100644
+--- a/arch/sh/drivers/push-switch.c
++++ b/arch/sh/drivers/push-switch.c
+@@ -91,7 +91,7 @@ static int switch_drv_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static int switch_drv_remove(struct platform_device *pdev)
++static void switch_drv_remove(struct platform_device *pdev)
+ {
+ 	struct push_switch *psw = platform_get_drvdata(pdev);
+ 	struct push_switch_platform_info *psw_info = pdev->dev.platform_data;
+@@ -106,13 +106,11 @@ static int switch_drv_remove(struct platform_device *pdev)
+ 	free_irq(irq, pdev);
+ 
+ 	kfree(psw);
+-
+-	return 0;
+ }
+ 
+ static struct platform_driver switch_driver = {
+ 	.probe		= switch_drv_probe,
+-	.remove		= switch_drv_remove,
++	.remove_new	= switch_drv_remove,
+ 	.driver		= {
+ 		.name	= DRV_NAME,
+ 	},
+
+base-commit: 11afac187274a6177a7ac82997f8691c0f469e41
+-- 
+2.43.0
+
