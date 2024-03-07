@@ -1,100 +1,105 @@
-Received: from mail-yw1-f169.google.com (mail-yw1-f169.google.com [209.85.128.169])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from gandalf.ozlabs.org (gandalf.ozlabs.org [150.107.74.76])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A64A3823C4
-	for <linux-sh@vger.kernel.org>; Thu,  7 Mar 2024 08:41:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.169
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 678111292CD;
+	Thu,  7 Mar 2024 12:34:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=150.107.74.76
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709800883; cv=none; b=DHs9TQMowAaoYyF1rLF1t8YPf5s0BsOFegx4UrH9dBY0D6N8nuJYbJkzEiuFBKyTxjUnPqz8H3OyXL6ogLVNJmYHOXgJBl1H8uErHGMPhyVu+Rma4R7zE1H6A5rkUdv+tbRejtdLQdSKxLltU1/qfZzFPyTvD0MPOAd269hZcUc=
+	t=1709814854; cv=none; b=q9lnFMreDpziGRypK1KILGcPa70m7PVKWYjypoUs0OGANROERInDPwob40yrAPcLR5cidJ0AzGHwQTLrRyYrVlf93kQ+rs9qy768vv6kr2oq+m6GlT1MWUlkSjz/l2WQi6HfggPXPNrTpB1vW6XICi7oYUT6LtyMU9wvWIsstMU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709800883; c=relaxed/simple;
-	bh=dmbcXPAfzjHm0Kb8Ee1YEnxPXSZDi2NYb84yeB30Y1A=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=DUdLXqx3ZfFkBX4cTagfn5piugVA/1AL6EtGCNSOFcKQhVOVor+i+rePdyq/j0BIbfVAj/6isKvdTYJYP+vSV9Vxa6ubSDkYGiam83miE3yYoDQpTNyGV4k/Z4NA/cLjYi5mxUkeEttxysbYmlQLOOVpYCdupsTo7RFO6+nmu+c=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.128.169
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-yw1-f169.google.com with SMTP id 00721157ae682-607c5679842so6310717b3.2
-        for <linux-sh@vger.kernel.org>; Thu, 07 Mar 2024 00:41:20 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1709800879; x=1710405679;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=VnsB0fuBjJ70ccWufOaEQy3EKsLWZhwQxLd7Vrj1NkY=;
-        b=ACKwemb1tjzhjcnTnsnP8zAsOVzYH9noaJmcOlC321DOfxcraf/55dENv72YyeAn61
-         zljzrW+3Hu/Uyrb8zETRj+GNE8mNnY6YIPUACfJtZB0s0Oz3RYq2GDLFS71Ol1o4ePTH
-         egHWvnYoTbxuKKt2N9MTQSBCS9DA9QjkVwCvKAp2RZ+9l+iIojaCOcb8iujIhBbpg9hI
-         Cx6u/bkUYSPuoHEJeffzn5NKijLIf284SiYB7zHHUHx5pitT2PL18JPtn/ZXAsC4/0V8
-         bwQ6cWRyzlb0Usbu3cV85E4LE1LAmNO6JUkf9AbIfrPwh1Q1xaAzddgf4Q5Bbb8FA+ot
-         C1xQ==
-X-Forwarded-Encrypted: i=1; AJvYcCW7HPaf/Xz4DomrDLqgxVkVOBhU7aPZw0oZpoNnjeUrLIS2uyaZBTboIFTCnRRiJbAjMHvW9LgY97ZdGnelwMGMaHQMKi/v5U4=
-X-Gm-Message-State: AOJu0YxUZ+aBgxb3rqt26cUbh8AdU3KHpCYM9tAI14VrNnKItQi42okN
-	3GhM18xqxouGb/YCC6rbsCi9Thf7AChzz8e239BcoIjUsrfrBpLt8Gh4ndkyGt4=
-X-Google-Smtp-Source: AGHT+IHI82zm8ZoNBkkpywhvQp+bLQ+91l2kzYLcb7X06apDLV8qo+LjwjWi4AWofn8O+uahKsrvjA==
-X-Received: by 2002:a0d:ddcb:0:b0:604:2c8:e49f with SMTP id g194-20020a0dddcb000000b0060402c8e49fmr17238950ywe.50.1709800878816;
-        Thu, 07 Mar 2024 00:41:18 -0800 (PST)
-Received: from mail-yb1-f170.google.com (mail-yb1-f170.google.com. [209.85.219.170])
-        by smtp.gmail.com with ESMTPSA id n39-20020a81af27000000b0060485f86449sm4058375ywh.69.2024.03.07.00.41.18
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 07 Mar 2024 00:41:18 -0800 (PST)
-Received: by mail-yb1-f170.google.com with SMTP id 3f1490d57ef6-dc6d8bd612dso615506276.1
-        for <linux-sh@vger.kernel.org>; Thu, 07 Mar 2024 00:41:18 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AJvYcCXRDdKvT880lZ2PGudKfxzVl9tsa73o9w81qrCQXkDdxQVjvEywDe7XKPvQPCXVY2veEDaiPpJ+yEAA2Wiebg9Em4Jz3RLfgrk=
-X-Received: by 2002:a5b:748:0:b0:dcf:6122:ccec with SMTP id
- s8-20020a5b0748000000b00dcf6122ccecmr14953419ybq.36.1709800878264; Thu, 07
- Mar 2024 00:41:18 -0800 (PST)
+	s=arc-20240116; t=1709814854; c=relaxed/simple;
+	bh=A8FmQi+nWttuZkN0OHf+hc97YU7oIRy5k7+znlJGMlI=;
+	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
+	 MIME-Version:Content-Type; b=fKP66HIDcPfXHGPsU0JkipDg/5RGLq2YWeUE8am3xOhEQu/7tObarZHXNmX707H7b7ua6+apWri1YZrfnza11jgzDfNdBIEoB2kxMnxfepxG0AuCQln3VHbMHw7bi/xswijfy3ymVljb061baJ6QuCgvrh9zznkVtC4aMtBnKh4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=ellerman.id.au; spf=pass smtp.mailfrom=ellerman.id.au; dkim=pass (2048-bit key) header.d=ellerman.id.au header.i=@ellerman.id.au header.b=m2hV8+Uz; arc=none smtp.client-ip=150.107.74.76
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=ellerman.id.au
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=ellerman.id.au
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=ellerman.id.au header.i=@ellerman.id.au header.b="m2hV8+Uz"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ellerman.id.au;
+	s=201909; t=1709814848;
+	bh=5GCSx/SWwEQN6H1v+rlc6aQIECBTZdtYZCIuJdaUGZc=;
+	h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
+	b=m2hV8+UzshtbVo1SMQpGCIZAVMu9h2hQvtpDC9CkF6Ead01MUqjonBYL92rbYu9o5
+	 eONdwUL5JV+qzsPtqxYxcbEZTnxik/VNQnkbfcaMbISw7CbDppUAmAH/9P3sku/f8b
+	 i2LMQgXCW1DJms0NeuRTzJ0tBX4bUIMqKowAPBctWZSTjYyNqR0YILGQIfrcB30lQJ
+	 AxLogULtOaYvLPcYayeLz0xu9HzQh3oaG4608ibo49kkmjQLQ5CoPOkqEhC/05rYgX
+	 JxgCpZfY9Df2KdR0oUWson/F66hS7hXm3iPnnhME1f/unkDf0IfUz0QTmy9qELYv1z
+	 htVjJ1WY+KwZQ==
+Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by mail.ozlabs.org (Postfix) with ESMTPSA id 4Tr7yd1VsMz4wc8;
+	Thu,  7 Mar 2024 23:34:01 +1100 (AEDT)
+From: Michael Ellerman <mpe@ellerman.id.au>
+To: Arnd Bergmann <arnd@kernel.org>, Anna-Maria Behnsen
+ <anna-maria@linutronix.de>, Thomas Gleixner <tglx@linutronix.de>, Vincenzo
+ Frascino <vincenzo.frascino@arm.com>, Kees Cook <keescook@chromium.org>
+Cc: Arnd Bergmann <arnd@arndb.de>, Matt Turner <mattst88@gmail.com>, Vineet
+ Gupta <vgupta@kernel.org>, Russell King <linux@armlinux.org.uk>, Catalin
+ Marinas <catalin.marinas@arm.com>, Guo Ren <guoren@kernel.org>, Brian Cain
+ <bcain@quicinc.com>, Huacai Chen <chenhuacai@kernel.org>, Geert
+ Uytterhoeven <geert@linux-m68k.org>, Michal Simek <monstr@monstr.eu>,
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>, Helge Deller
+ <deller@gmx.de>, Christophe Leroy <christophe.leroy@csgroup.eu>, Palmer
+ Dabbelt <palmer@dabbelt.com>, John Paul Adrian Glaubitz
+ <glaubitz@physik.fu-berlin.de>, Andreas Larsson <andreas@gaisler.com>,
+ Richard Weinberger <richard@nod.at>, x86@kernel.org, Max Filippov
+ <jcmvbkbc@gmail.com>, Andy Lutomirski <luto@kernel.org>, Jan Kiszka
+ <jan.kiszka@siemens.com>, Kieran Bingham <kbingham@kernel.org>, Andrew
+ Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org,
+ linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+ linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+ linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
+ linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+ linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
+ linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+ linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+ sparclinux@vger.kernel.org, linux-um@lists.infradead.org
+Subject: Re: [PATCH v2 2/3] arch: simplify architecture specific page size
+ configuration
+In-Reply-To: <20240306141453.3900574-3-arnd@kernel.org>
+References: <20240306141453.3900574-1-arnd@kernel.org>
+ <20240306141453.3900574-3-arnd@kernel.org>
+Date: Thu, 07 Mar 2024 23:34:00 +1100
+Message-ID: <878r2unruv.fsf@mail.lhotse>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20240306211947.97103-2-u.kleine-koenig@pengutronix.de>
-In-Reply-To: <20240306211947.97103-2-u.kleine-koenig@pengutronix.de>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 7 Mar 2024 09:41:05 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdVa6WZs5xCoQpEgn+Ta=mN4h75DN2dDxm-4eyh4wrrtHg@mail.gmail.com>
-Message-ID: <CAMuHMdVa6WZs5xCoQpEgn+Ta=mN4h75DN2dDxm-4eyh4wrrtHg@mail.gmail.com>
-Subject: Re: [PATCH] sh: push-switch: Convert to platform remove callback
- returning void
-To: =?UTF-8?Q?Uwe_Kleine=2DK=C3=B6nig?= <u.kleine-koenig@pengutronix.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Geert Uytterhoeven <geert+renesas@glider.be>, 
-	Duoming Zhou <duoming@zju.edu.cn>, linux-sh@vger.kernel.org, kernel@vpengutronix.de
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain
 
-On Wed, Mar 6, 2024 at 10:20=E2=80=AFPM Uwe Kleine-K=C3=B6nig
-<u.kleine-koenig@pengutronix.de> wrote:
-> The .remove() callback for a platform driver returns an int which makes
-> many driver authors wrongly assume it's possible to do error handling by
-> returning an error code. However the value returned is ignored (apart
-> from emitting a warning) and this typically results in resource leaks.
+Arnd Bergmann <arnd@kernel.org> writes:
+> From: Arnd Bergmann <arnd@arndb.de>
 >
-> To improve here there is a quest to make the remove callback return
-> void. In the first step of this quest all drivers are converted to
-> .remove_new(), which already returns void. Eventually after all drivers
-> are converted, .remove_new() will be renamed to .remove().
+> arc, arm64, parisc and powerpc all have their own Kconfig symbols
+> in place of the common CONFIG_PAGE_SIZE_4KB symbols. Change these
+> so the common symbols are the ones that are actually used, while
+> leaving the arhcitecture specific ones as the user visible
+> place for configuring it, to avoid breaking user configs.
 >
-> Trivially convert this driver from always returning zero in the remove
-> callback to the void returning variant.
+> Reviewed-by: Christophe Leroy <christophe.leroy@csgroup.eu> (powerpc32)
+> Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+> Acked-by: Helge Deller <deller@gmx.de> # parisc
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> ---
+> No changes from v1
 >
-> Signed-off-by: Uwe Kleine-K=C3=B6nig <u.kleine-koenig@pengutronix.de>
+>  arch/arc/Kconfig                  |  3 +++
+>  arch/arc/include/uapi/asm/page.h  |  6 ++----
+>  arch/arm64/Kconfig                | 29 +++++++++++++----------------
+>  arch/arm64/include/asm/page-def.h |  2 +-
+>  arch/parisc/Kconfig               |  3 +++
+>  arch/parisc/include/asm/page.h    | 10 +---------
+>  arch/powerpc/Kconfig              | 31 ++++++-------------------------
+>  arch/powerpc/include/asm/page.h   |  2 +-
+>  scripts/gdb/linux/constants.py.in |  2 +-
+>  scripts/gdb/linux/mm.py           |  2 +-
+>  10 files changed, 32 insertions(+), 58 deletions(-)
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Michael Ellerman <mpe@ellerman.id.au> (powerpc)
 
-Gr{oetje,eeting}s,
-
-                        Geert
-
---=20
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
-
-In personal conversations with technical people, I call myself a hacker. Bu=
-t
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+cheers
