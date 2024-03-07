@@ -1,148 +1,100 @@
-Received: from gandalf.ozlabs.org (gandalf.ozlabs.org [150.107.74.76])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yw1-f169.google.com (mail-yw1-f169.google.com [209.85.128.169])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 278023FB16;
-	Wed,  6 Mar 2024 23:41:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=150.107.74.76
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A64A3823C4
+	for <linux-sh@vger.kernel.org>; Thu,  7 Mar 2024 08:41:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.169
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1709768482; cv=none; b=awTI0mhN82gEeAvB3C3J787toCMnN17gVRfNAI/6d8ty1gvTdw99tqqdM+FJiLvWJfBuq44XKPvr6Ka6E3EG8RZrWTSGzTckap+kZdZxOVf+tIZofMcvKtLUcULVSi78cJpTtV2V4o9nVi6G4p5lolD+HsOkqiL07gSSUrAzdSg=
+	t=1709800883; cv=none; b=DHs9TQMowAaoYyF1rLF1t8YPf5s0BsOFegx4UrH9dBY0D6N8nuJYbJkzEiuFBKyTxjUnPqz8H3OyXL6ogLVNJmYHOXgJBl1H8uErHGMPhyVu+Rma4R7zE1H6A5rkUdv+tbRejtdLQdSKxLltU1/qfZzFPyTvD0MPOAd269hZcUc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1709768482; c=relaxed/simple;
-	bh=dZ6jOLMDzgPZpijPacAiasUg5Crtb+AP4LxE80M2xBA=;
-	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
-	 MIME-Version:Content-Type; b=iHuEzZsu/Urn8zldaiQ5j7gzq7GJ0CTbGgp67QIz72WiI+U5gLTWlVlL5x/hkMHlzYSsaA/mHWW497z+fQSp0kyu9Jzw63h7t9EVYEfjScasjKTy5baSAkmsV9DIXOLagUXW9H6/eGvrDEXdd3NUu6o6Al788cDBoF29z2idXTw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=ellerman.id.au; spf=pass smtp.mailfrom=ellerman.id.au; dkim=pass (2048-bit key) header.d=ellerman.id.au header.i=@ellerman.id.au header.b=dfxSn7ES; arc=none smtp.client-ip=150.107.74.76
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=ellerman.id.au
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=ellerman.id.au
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ellerman.id.au header.i=@ellerman.id.au header.b="dfxSn7ES"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ellerman.id.au;
-	s=201909; t=1709768472;
-	bh=OHx3bVLlXnvaD4Lk/LqRAXihRU8d5iuk+jHowRU57+A=;
-	h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
-	b=dfxSn7ESt9feXa7Ah5VgnrgsTR94t0TrfqG0PcTuTf3mOM2nYClb7KzncEO44oWvJ
-	 z177IwNoKxwaRwuRElWO9dM9vGP1BGgcQEfox5PbPq0mqdcUVphkGszRXScQ0d7mcO
-	 jW4ikoUKpq/rq3DBl50CSj6CPBHJDbwDqtBF6NxW+foiGgFyBpZYE+I728npTZNMg3
-	 1t/2+QbQypMyzr9+0O+l4J8vO9YugJeJGU6R2JxmPiIz07vqQ4qeSoMI/Ta1CVt4Pi
-	 EW9aQ8ONAeTLEZ2I6yd+B+il/wLckJElOl67KFtvN0q8NsP2LkndTztEXc4YygJJsv
-	 te7iy+1YEdhjg==
-Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mail.ozlabs.org (Postfix) with ESMTPSA id 4Tqppm50HGz4wcN;
-	Thu,  7 Mar 2024 10:41:04 +1100 (AEDT)
-From: Michael Ellerman <mpe@ellerman.id.au>
-To: Arnd Bergmann <arnd@kernel.org>, Anna-Maria Behnsen
- <anna-maria@linutronix.de>, Thomas Gleixner <tglx@linutronix.de>, Vincenzo
- Frascino <vincenzo.frascino@arm.com>, Kees Cook <keescook@chromium.org>
-Cc: Arnd Bergmann <arnd@arndb.de>, Matt Turner <mattst88@gmail.com>, Vineet
- Gupta <vgupta@kernel.org>, Russell King <linux@armlinux.org.uk>, Catalin
- Marinas <catalin.marinas@arm.com>, Guo Ren <guoren@kernel.org>, Brian Cain
- <bcain@quicinc.com>, Huacai Chen <chenhuacai@kernel.org>, Geert
- Uytterhoeven <geert@linux-m68k.org>, Michal Simek <monstr@monstr.eu>,
- Thomas Bogendoerfer <tsbogend@alpha.franken.de>, Helge Deller
- <deller@gmx.de>, Christophe Leroy <christophe.leroy@csgroup.eu>, Palmer
- Dabbelt <palmer@dabbelt.com>, John Paul Adrian Glaubitz
- <glaubitz@physik.fu-berlin.de>, Andreas Larsson <andreas@gaisler.com>,
- Richard Weinberger <richard@nod.at>, x86@kernel.org, Max Filippov
- <jcmvbkbc@gmail.com>, Andy Lutomirski <luto@kernel.org>, Jan Kiszka
- <jan.kiszka@siemens.com>, Kieran Bingham <kbingham@kernel.org>, Andrew
- Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org,
- linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
- linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
- linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
- linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
- linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
- linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
- linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
- sparclinux@vger.kernel.org, linux-um@lists.infradead.org
-Subject: Re: [PATCH v2 1/3] arch: consolidate existing CONFIG_PAGE_SIZE_*KB
- definitions
-In-Reply-To: <20240306141453.3900574-2-arnd@kernel.org>
-References: <20240306141453.3900574-1-arnd@kernel.org>
- <20240306141453.3900574-2-arnd@kernel.org>
-Date: Thu, 07 Mar 2024 10:41:02 +1100
-Message-ID: <87sf13nd2p.fsf@mail.lhotse>
+	s=arc-20240116; t=1709800883; c=relaxed/simple;
+	bh=dmbcXPAfzjHm0Kb8Ee1YEnxPXSZDi2NYb84yeB30Y1A=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=DUdLXqx3ZfFkBX4cTagfn5piugVA/1AL6EtGCNSOFcKQhVOVor+i+rePdyq/j0BIbfVAj/6isKvdTYJYP+vSV9Vxa6ubSDkYGiam83miE3yYoDQpTNyGV4k/Z4NA/cLjYi5mxUkeEttxysbYmlQLOOVpYCdupsTo7RFO6+nmu+c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.128.169
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-yw1-f169.google.com with SMTP id 00721157ae682-607c5679842so6310717b3.2
+        for <linux-sh@vger.kernel.org>; Thu, 07 Mar 2024 00:41:20 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1709800879; x=1710405679;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=VnsB0fuBjJ70ccWufOaEQy3EKsLWZhwQxLd7Vrj1NkY=;
+        b=ACKwemb1tjzhjcnTnsnP8zAsOVzYH9noaJmcOlC321DOfxcraf/55dENv72YyeAn61
+         zljzrW+3Hu/Uyrb8zETRj+GNE8mNnY6YIPUACfJtZB0s0Oz3RYq2GDLFS71Ol1o4ePTH
+         egHWvnYoTbxuKKt2N9MTQSBCS9DA9QjkVwCvKAp2RZ+9l+iIojaCOcb8iujIhBbpg9hI
+         Cx6u/bkUYSPuoHEJeffzn5NKijLIf284SiYB7zHHUHx5pitT2PL18JPtn/ZXAsC4/0V8
+         bwQ6cWRyzlb0Usbu3cV85E4LE1LAmNO6JUkf9AbIfrPwh1Q1xaAzddgf4Q5Bbb8FA+ot
+         C1xQ==
+X-Forwarded-Encrypted: i=1; AJvYcCW7HPaf/Xz4DomrDLqgxVkVOBhU7aPZw0oZpoNnjeUrLIS2uyaZBTboIFTCnRRiJbAjMHvW9LgY97ZdGnelwMGMaHQMKi/v5U4=
+X-Gm-Message-State: AOJu0YxUZ+aBgxb3rqt26cUbh8AdU3KHpCYM9tAI14VrNnKItQi42okN
+	3GhM18xqxouGb/YCC6rbsCi9Thf7AChzz8e239BcoIjUsrfrBpLt8Gh4ndkyGt4=
+X-Google-Smtp-Source: AGHT+IHI82zm8ZoNBkkpywhvQp+bLQ+91l2kzYLcb7X06apDLV8qo+LjwjWi4AWofn8O+uahKsrvjA==
+X-Received: by 2002:a0d:ddcb:0:b0:604:2c8:e49f with SMTP id g194-20020a0dddcb000000b0060402c8e49fmr17238950ywe.50.1709800878816;
+        Thu, 07 Mar 2024 00:41:18 -0800 (PST)
+Received: from mail-yb1-f170.google.com (mail-yb1-f170.google.com. [209.85.219.170])
+        by smtp.gmail.com with ESMTPSA id n39-20020a81af27000000b0060485f86449sm4058375ywh.69.2024.03.07.00.41.18
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 07 Mar 2024 00:41:18 -0800 (PST)
+Received: by mail-yb1-f170.google.com with SMTP id 3f1490d57ef6-dc6d8bd612dso615506276.1
+        for <linux-sh@vger.kernel.org>; Thu, 07 Mar 2024 00:41:18 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AJvYcCXRDdKvT880lZ2PGudKfxzVl9tsa73o9w81qrCQXkDdxQVjvEywDe7XKPvQPCXVY2veEDaiPpJ+yEAA2Wiebg9Em4Jz3RLfgrk=
+X-Received: by 2002:a5b:748:0:b0:dcf:6122:ccec with SMTP id
+ s8-20020a5b0748000000b00dcf6122ccecmr14953419ybq.36.1709800878264; Thu, 07
+ Mar 2024 00:41:18 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain
+References: <20240306211947.97103-2-u.kleine-koenig@pengutronix.de>
+In-Reply-To: <20240306211947.97103-2-u.kleine-koenig@pengutronix.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 7 Mar 2024 09:41:05 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdVa6WZs5xCoQpEgn+Ta=mN4h75DN2dDxm-4eyh4wrrtHg@mail.gmail.com>
+Message-ID: <CAMuHMdVa6WZs5xCoQpEgn+Ta=mN4h75DN2dDxm-4eyh4wrrtHg@mail.gmail.com>
+Subject: Re: [PATCH] sh: push-switch: Convert to platform remove callback
+ returning void
+To: =?UTF-8?Q?Uwe_Kleine=2DK=C3=B6nig?= <u.kleine-koenig@pengutronix.de>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Geert Uytterhoeven <geert+renesas@glider.be>, 
+	Duoming Zhou <duoming@zju.edu.cn>, linux-sh@vger.kernel.org, kernel@vpengutronix.de
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Hi Arnd,
-
-Arnd Bergmann <arnd@kernel.org> writes:
-> From: Arnd Bergmann <arnd@arndb.de>
+On Wed, Mar 6, 2024 at 10:20=E2=80=AFPM Uwe Kleine-K=C3=B6nig
+<u.kleine-koenig@pengutronix.de> wrote:
+> The .remove() callback for a platform driver returns an int which makes
+> many driver authors wrongly assume it's possible to do error handling by
+> returning an error code. However the value returned is ignored (apart
+> from emitting a warning) and this typically results in resource leaks.
 >
-> These four architectures define the same Kconfig symbols for configuring
-> the page size. Move the logic into a common place where it can be shared
-> with all other architectures.
+> To improve here there is a quest to make the remove callback return
+> void. In the first step of this quest all drivers are converted to
+> .remove_new(), which already returns void. Eventually after all drivers
+> are converted, .remove_new() will be renamed to .remove().
 >
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> ---
-> Changes from v1:
->  - improve Kconfig help texts
->  - fix Hexagon Kconfig
+> Trivially convert this driver from always returning zero in the remove
+> callback to the void returning variant.
 >
->  arch/Kconfig                      | 92 ++++++++++++++++++++++++++++++-
->  arch/hexagon/Kconfig              | 24 ++------
->  arch/hexagon/include/asm/page.h   |  6 +-
->  arch/loongarch/Kconfig            | 21 ++-----
->  arch/loongarch/include/asm/page.h | 10 +---
->  arch/mips/Kconfig                 | 58 ++-----------------
->  arch/mips/include/asm/page.h      | 16 +-----
->  arch/sh/include/asm/page.h        | 13 +----
->  arch/sh/mm/Kconfig                | 42 ++++----------
->  9 files changed, 121 insertions(+), 161 deletions(-)
+> Signed-off-by: Uwe Kleine-K=C3=B6nig <u.kleine-koenig@pengutronix.de>
 
-There's a few "help" lines missing, which breaks the build:
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-  arch/Kconfig:1134: syntax error
-  arch/Kconfig:1133: invalid statement
-  arch/Kconfig:1134: invalid statement
-  arch/Kconfig:1135:warning: ignoring unsupported character '.'
-  arch/Kconfig:1135:warning: ignoring unsupported character '.'
-  arch/Kconfig:1135: invalid statement
-  arch/Kconfig:1136: invalid statement
-  arch/Kconfig:1137:warning: ignoring unsupported character '.'
-  arch/Kconfig:1137: invalid statement
-  arch/Kconfig:1143: syntax error
-  arch/Kconfig:1142: invalid statement
-  arch/Kconfig:1143: invalid statement
-  arch/Kconfig:1144:warning: ignoring unsupported character '.'
-  arch/Kconfig:1144: invalid statement
-  arch/Kconfig:1145: invalid statement
-  arch/Kconfig:1146: invalid statement
-  arch/Kconfig:1147: invalid statement
-  arch/Kconfig:1148:warning: ignoring unsupported character '.'
-  arch/Kconfig:1148: invalid statement
-  make[4]: *** [../scripts/kconfig/Makefile:85: syncconfig] Error 1
+Gr{oetje,eeting}s,
 
-Fixup diff is:
+                        Geert
 
-diff --git a/arch/Kconfig b/arch/Kconfig
-index 56d45a75f625..f2295fa3b48c 100644
---- a/arch/Kconfig
-+++ b/arch/Kconfig
-@@ -1130,6 +1130,7 @@ config PAGE_SIZE_16KB
- config PAGE_SIZE_32KB
-        bool "32KiB pages"
-        depends on HAVE_PAGE_SIZE_32KB
-+       help
-          Using 32KiB page size will result in slightly higher performance
-          kernel at the price of higher memory consumption compared to
-          16KiB pages.  This option is available only on cnMIPS cores.
-@@ -1139,6 +1140,7 @@ config PAGE_SIZE_32KB
- config PAGE_SIZE_64KB
-        bool "64KiB pages"
-        depends on HAVE_PAGE_SIZE_64KB
-+       help
-          Using 64KiB page size will result in slightly higher performance
-          kernel at the price of much higher memory consumption compared to
-          4KiB or 16KiB pages.
+--=20
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
 
-
-cheers
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
