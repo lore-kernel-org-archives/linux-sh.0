@@ -1,65 +1,60 @@
-Received: from mail-pl1-f171.google.com (mail-pl1-f171.google.com [209.85.214.171])
+Received: from mail-pg1-f175.google.com (mail-pg1-f175.google.com [209.85.215.175])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7398213F43C;
-	Tue, 12 Mar 2024 17:03:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 78D4E143753
+	for <linux-sh@vger.kernel.org>; Tue, 12 Mar 2024 22:01:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.175
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1710263028; cv=none; b=RQVxQtIrYHe/94jAEevfS8qEPgqRterFStoJfr/rxyB4ah0xYdRE9z7GWSeRwM152vAOnuAqGLZRZqXdQlmzbeOoE9zA+LryIqXAaLpf5roHVIdDL7rzD6uBI04DK2fBrcqwOxpXy+U7k0yVSzvOqrtlYDVJ63bfyTB8Jl2emlU=
+	t=1710280862; cv=none; b=rCb0i7bbbiKWnF+YjZnWBp2G3jsuabbdwDyApAu+IjV74O/jOsXzkrmgErloZPgkXGQkbyMkz7DCOhbi/XCiN/19uykPsjrxTb5PvA9YVkzfXk0VesZYiEtqBAO1MlbZZDUP1X/jkISOQpjl2JruCuV9HR8y9Db0ueN6BWIDCYo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1710263028; c=relaxed/simple;
-	bh=aXK16bg6wFU939Q5hQXiPa2mmiaErST3M/uq0N+/d0M=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=aRyHv/mEPt/KonPt1qER8oQNO85l9v0dnw8Sxx/aKDi/nTnv4XdqG7S7fAXJBHQwuVi8Ix6fyb6LBMk3YXTPb/S/UIYdMYGfvHmIMeDoaUGMeCzaODNXzt/YYaEj2fA2XM4Z9kcH1og0NE2MiinHuFlTlHas/eT3SrWLO9rxmHE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=roeck-us.net; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=AkJDfD8d; arc=none smtp.client-ip=209.85.214.171
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=roeck-us.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1710280862; c=relaxed/simple;
+	bh=wGnHuFYICWDAqpBS7st1+d1ZNPu8frSboYhyV8sLtoc=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=mudyd/jfk48brR9XbYm7DWq72MlNTduALiH1axnrrCqPoRQfDknoE4P9OrQmM55ZS3jhE7F7aObhkNS+7GfByvZfnAilI8aqdYKEtUQbhoc9GyL08VNVn2RB9rYssRAa4X5+HCCj2KRd4mivxtEC3//QKFD6ZBkarBiB8Ol+irc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=chromium.org; spf=pass smtp.mailfrom=chromium.org; dkim=pass (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b=IdtI2Ovp; arc=none smtp.client-ip=209.85.215.175
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=chromium.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=chromium.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="AkJDfD8d"
-Received: by mail-pl1-f171.google.com with SMTP id d9443c01a7336-1dd9568fc51so22813665ad.2;
-        Tue, 12 Mar 2024 10:03:47 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="IdtI2Ovp"
+Received: by mail-pg1-f175.google.com with SMTP id 41be03b00d2f7-53fa455cd94so5110259a12.2
+        for <linux-sh@vger.kernel.org>; Tue, 12 Mar 2024 15:01:00 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1710263026; x=1710867826; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:sender:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=f6JeHPuNf2fPfe8/IgMEBFCbi+8s7x8ZP+Ypz6wTBFE=;
-        b=AkJDfD8dIT0XkorCvtWCXld9660bxGyCxgYYHwK1dP6jTMwBiOoImKTxegP9eY/L2+
-         ULyXUByH35/epJtHBmGHffmyV5gVlYDKXQl3zSiH7N/n2uY4qgpW2K4nM5xaOmx4xCiV
-         IyiTqC5vYksM8XUli0sn2bU0b8+MvK3MtElZ8JP7hh/CiphchxYrBiMe5rSwsL1IIBXX
-         h/9TngYVo9PGMPkoRF+ccYZ3wwqF1CoK3CEk2CO/+fO1CmZAk40KNzV8qJYNimkMs76r
-         jalEiGaSMZ8XZqtiHc0VBcVCabby5+RVTNIC7DHd/Vgt352lf/UrPVWUSkzuvGlP74XX
-         1IhQ==
+        d=chromium.org; s=google; t=1710280859; x=1710885659; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=lLq08iYnVcnWuDzFJHO0LDnyeIZ1/WCj/v6YSvUnsiY=;
+        b=IdtI2OvpSorUoROtlC29BT/59AfyqYkwITljCmkf2/G6/yKSNivtz6BNk3sZ+rAX7b
+         l6ajD7icfu/XgUu+s078GIcdEyRoVcRDW9XU5RI8qxd89Wq6BBoRgr6qtnnN+9LkHN6E
+         xYOdDeOVyTgi57HS7d3uMuSeHPmFAHrcyPKVc=
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1710263026; x=1710867826;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:sender:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to;
-        bh=f6JeHPuNf2fPfe8/IgMEBFCbi+8s7x8ZP+Ypz6wTBFE=;
-        b=W003Q3DEGIw2ie+YE8i7XBizeG7QTiuW59A77BFB7NioJEFXNldOGEa9eYMlyC+stQ
-         QYbRvQrkb5K2btceiEjTfClIC6CQETJhONclkI7P8/0DGZbaIvAuYEy/1fBvYP/YR3S0
-         ZIAT99edEXzJeFlPfL0irAWGYnT7Cs3ONNC+S9ieH8ynzcw6PPfdQGBd+NnpNFeGm3JL
-         h6VSI4rkKh0z5kb1epuFO+9/2UEm52zxyRrrfwU5B0T0YcmsQ4Uy/BfzgkmHhQTDmZEL
-         EjLKEEnrZ1MJY2HtPsH/q5AG9rls4Jf5nRLf8lrb9/J8dO15hhT7ekOLa9zYIiHCqQ0u
-         bxhQ==
-X-Forwarded-Encrypted: i=1; AJvYcCWEp2okZOCa7sqE9hFnA8U04gwIbWULiO1u/KHQ6OOu+Q/BnSoBeiwXQbxJI5gsLkkKGVJlXFAuxpI4CPQl/ZmJTSyb3oBhkbApMIiTwO6M/YsPTljVZ8KV8GxdOL42DqlFbv/CO1unf82hE66ZBmtL0vwEGnKUzxxPqLjEimfZjDLbWIX4nkNc8r/akDUYySIL+X5sftOJb8qAKdi7jXgWHXB75fe5b2/GerQd7uo6WNA7yT2Ypr8RHW3XZ28LuGdElryYZp6+CuTy3DH2yh/lrsmdamCMbg==
-X-Gm-Message-State: AOJu0YxAODUmli+DmE7cbfn9j6kpRL4tq78vRNEqkIe/OmBuOXFP6Egx
-	SnyEc1Dm74cn9pHVB2ipaLH8F4vHSo6f74Ay+s2ppDf8xZMl0sFWeI/PGI8w
-X-Google-Smtp-Source: AGHT+IFeKRBmX0VW7sv5rUHfZ0tynia7OwMdWO6tHkvskc+E+k+IhaoGejd1DMN70lLMBnMgohEXxQ==
-X-Received: by 2002:a17:903:483:b0:1dc:fba1:1522 with SMTP id jj3-20020a170903048300b001dcfba11522mr6685263plb.41.1710263026027;
-        Tue, 12 Mar 2024 10:03:46 -0700 (PDT)
-Received: from server.roeck-us.net ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
-        by smtp.gmail.com with ESMTPSA id e10-20020a170902f1ca00b001dd75d4c78csm7006194plc.221.2024.03.12.10.03.44
+        d=1e100.net; s=20230601; t=1710280859; x=1710885659;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=lLq08iYnVcnWuDzFJHO0LDnyeIZ1/WCj/v6YSvUnsiY=;
+        b=AnQmGAo51CYCUvwcVIyQzGZRb+8UE0u9cocXwRSDmC5DUyQc9jPPaLAX6QxmZy7YVW
+         Z8DiAqYdM3uOAC6y+nb3p++fYsYn2jSRMer1Wm3rawZkcsY9bvR/cUnZ27z96iJoYFyB
+         xviIu2wlpgeun0CEYsPzJC+emmITuSKt6a90S6wOQa2sPhBDwSYGCsdbsiz7Bn+2RRYM
+         u1N4YC2SSDCVtxH7szJE/b1AwSp/2VJxo2eRhnkzUcOttBeQg5fQczHZSeYfMqkc/enM
+         8FpUqvaYIhFQxQ9pRZbSW750Abb21fhCniAf11ww9/5+ptGJ6i4YIMdw7SXANCD1BVZR
+         d8bQ==
+X-Forwarded-Encrypted: i=1; AJvYcCUSOi2oo+Fb1oSxVGoRVHjcXBm2O3AOeBZJehzifyJML/lV/fcog8ddTCU5CTaSW05y6dRjPIEHWjko6cSp3o+ydm084G+O2o4=
+X-Gm-Message-State: AOJu0YwHQD4ZA9WK0rXVg/38/2Qp0g6k/GXgYKKh99IEB9QXdAjlUbcA
+	mZ43BB4qTQxkCgah+XDe9UBnhCCc9Axx5IAbyD2xcBf5lJf80M18In/jbymfhg==
+X-Google-Smtp-Source: AGHT+IHdha0C7GHgTOtn+h7GC1nV2SuVFIKnwQ0XR5LyRaxyHLt5ciUVNw2VJKedo24c6BQYxDb+PA==
+X-Received: by 2002:a17:90a:8b02:b0:299:4cc5:aa25 with SMTP id y2-20020a17090a8b0200b002994cc5aa25mr2853635pjn.25.1710280859551;
+        Tue, 12 Mar 2024 15:00:59 -0700 (PDT)
+Received: from www.outflux.net ([198.0.35.241])
+        by smtp.gmail.com with ESMTPSA id u8-20020a170902e5c800b001ddb57a4dffsm2232631plf.132.2024.03.12.15.00.58
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 12 Mar 2024 10:03:44 -0700 (PDT)
-Sender: Guenter Roeck <groeck7@gmail.com>
-From: Guenter Roeck <linux@roeck-us.net>
-To: linux-kselftest@vger.kernel.org
-Cc: David Airlie <airlied@gmail.com>,
+        Tue, 12 Mar 2024 15:00:59 -0700 (PDT)
+Date: Tue, 12 Mar 2024 15:00:58 -0700
+From: Kees Cook <keescook@chromium.org>
+To: Guenter Roeck <linux@roeck-us.net>
+Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>,
 	Arnd Bergmann <arnd@arndb.de>,
-	=?UTF-8?q?Ma=C3=ADra=20Canal?= <mcanal@igalia.com>,
+	=?iso-8859-1?Q?Ma=EDra?= Canal <mcanal@igalia.com>,
 	Dan Carpenter <dan.carpenter@linaro.org>,
-	Kees Cook <keescook@chromium.org>,
 	Daniel Diaz <daniel.diaz@linaro.org>,
 	David Gow <davidgow@google.com>,
 	Arthur Grillo <arthurgrillo@riseup.net>,
@@ -68,138 +63,63 @@ Cc: David Airlie <airlied@gmail.com>,
 	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
 	Andrew Morton <akpm@linux-foundation.org>,
 	Maxime Ripard <mripard@kernel.org>,
-	=?UTF-8?q?Ville=20Syrj=C3=A4l=C3=A4?= <ville.syrjala@linux.intel.com>,
+	Ville =?iso-8859-1?Q?Syrj=E4l=E4?= <ville.syrjala@linux.intel.com>,
 	Daniel Vetter <daniel@ffwll.ch>,
 	Thomas Zimmermann <tzimmermann@suse.de>,
-	dri-devel@lists.freedesktop.org,
-	kunit-dev@googlegroups.com,
-	linux-arch@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org,
-	linux-doc@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-parisc@vger.kernel.org,
-	linuxppc-dev@lists.ozlabs.org,
-	linux-riscv@lists.infradead.org,
-	linux-s390@vger.kernel.org,
-	linux-sh@vger.kernel.org,
-	loongarch@lists.linux.dev,
-	netdev@lists.linux.dev,
-	Guenter Roeck <linux@roeck-us.net>
-Subject: [PATCH 14/14] powerpc: Add support for suppressing warning backtraces
-Date: Tue, 12 Mar 2024 10:03:09 -0700
-Message-Id: <20240312170309.2546362-15-linux@roeck-us.net>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <20240312170309.2546362-1-linux@roeck-us.net>
+	dri-devel@lists.freedesktop.org, kunit-dev@googlegroups.com,
+	linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+	linux-sh@vger.kernel.org, loongarch@lists.linux.dev,
+	netdev@lists.linux.dev
+Subject: Re: [PATCH 01/14] bug/kunit: Core support for suppressing warning
+ backtraces
+Message-ID: <202403121500.64A2C02@keescook>
 References: <20240312170309.2546362-1-linux@roeck-us.net>
+ <20240312170309.2546362-2-linux@roeck-us.net>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20240312170309.2546362-2-linux@roeck-us.net>
 
-Add name of functions triggering warning backtraces to the __bug_table
-object section to enable support for suppressing WARNING backtraces.
+On Tue, Mar 12, 2024 at 10:02:56AM -0700, Guenter Roeck wrote:
+> Some unit tests intentionally trigger warning backtraces by passing
+> bad parameters to API functions. Such unit tests typically check the
+> return value from those calls, not the existence of the warning backtrace.
+> 
+> Such intentionally generated warning backtraces are neither desirable
+> nor useful for a number of reasons.
+> - They can result in overlooked real problems.
+> - A warning that suddenly starts to show up in unit tests needs to be
+>   investigated and has to be marked to be ignored, for example by
+>   adjusting filter scripts. Such filters are ad-hoc because there is
+>   no real standard format for warnings. On top of that, such filter
+>   scripts would require constant maintenance.
+> 
+> One option to address problem would be to add messages such as "expected
+> warning backtraces start / end here" to the kernel log.  However, that
+> would again require filter scripts, it might result in missing real
+> problematic warning backtraces triggered while the test is running, and
+> the irrelevant backtrace(s) would still clog the kernel log.
+> 
+> Solve the problem by providing a means to identify and suppress specific
+> warning backtraces while executing test code.
+> 
+> Cc: Dan Carpenter <dan.carpenter@linaro.org>
+> Cc: Daniel Diaz <daniel.diaz@linaro.org>
+> Cc: Naresh Kamboju <naresh.kamboju@linaro.org>
+> Cc: Kees Cook <keescook@chromium.org>
+> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 
-To limit image size impact, the pointer to the function name is only added
-to the __bug_table section if both CONFIG_KUNIT and CONFIG_DEBUG_BUGVERBOSE
-are enabled. Otherwise, the __func__ assembly parameter is replaced with a
-(dummy) NULL parameter to avoid an image size increase due to unused
-__func__ entries (this is necessary because __func__ is not a define but a
-virtual variable).
+Yup, this looks fine to me.
 
-Signed-off-by: Guenter Roeck <linux@roeck-us.net>
----
- arch/powerpc/include/asm/bug.h | 37 +++++++++++++++++++++++++---------
- 1 file changed, 28 insertions(+), 9 deletions(-)
+Reviewed-by: Kees Cook <keescook@chromium.org>
 
-diff --git a/arch/powerpc/include/asm/bug.h b/arch/powerpc/include/asm/bug.h
-index 1db485aacbd9..330d4983f90e 100644
---- a/arch/powerpc/include/asm/bug.h
-+++ b/arch/powerpc/include/asm/bug.h
-@@ -14,6 +14,9 @@
- 	 .section __bug_table,"aw"
- 5001:	 .4byte \addr - .
- 	 .4byte 5002f - .
-+#if IS_ENABLED(CONFIG_KUNIT)
-+	 .4byte 0
-+#endif
- 	 .short \line, \flags
- 	 .org 5001b+BUG_ENTRY_SIZE
- 	 .previous
-@@ -32,30 +35,46 @@
- #endif /* verbose */
- 
- #else /* !__ASSEMBLY__ */
--/* _EMIT_BUG_ENTRY expects args %0,%1,%2,%3 to be FILE, LINE, flags and
--   sizeof(struct bug_entry), respectively */
-+/* _EMIT_BUG_ENTRY expects args %0,%1,%2,%3,%4 to be FILE, __func__, LINE, flags
-+   and sizeof(struct bug_entry), respectively */
- #ifdef CONFIG_DEBUG_BUGVERBOSE
-+
-+#if IS_ENABLED(CONFIG_KUNIT)
-+# define HAVE_BUG_FUNCTION
-+# define __BUG_FUNC_PTR	"	.4byte %1 - .\n"
-+#else
-+# define __BUG_FUNC_PTR
-+#endif /* IS_ENABLED(CONFIG_KUNIT) */
-+
- #define _EMIT_BUG_ENTRY				\
- 	".section __bug_table,\"aw\"\n"		\
- 	"2:	.4byte 1b - .\n"		\
- 	"	.4byte %0 - .\n"		\
--	"	.short %1, %2\n"		\
--	".org 2b+%3\n"				\
-+	__BUG_FUNC_PTR				\
-+	"	.short %2, %3\n"		\
-+	".org 2b+%4\n"				\
- 	".previous\n"
- #else
- #define _EMIT_BUG_ENTRY				\
- 	".section __bug_table,\"aw\"\n"		\
- 	"2:	.4byte 1b - .\n"		\
--	"	.short %2\n"			\
--	".org 2b+%3\n"				\
-+	"	.short %3\n"			\
-+	".org 2b+%4\n"				\
- 	".previous\n"
- #endif
- 
-+#ifdef HAVE_BUG_FUNCTION
-+# define __BUG_FUNC	__func__
-+#else
-+# define __BUG_FUNC	NULL
-+#endif
-+
- #define BUG_ENTRY(insn, flags, ...)			\
- 	__asm__ __volatile__(				\
- 		"1:	" insn "\n"			\
- 		_EMIT_BUG_ENTRY				\
--		: : "i" (__FILE__), "i" (__LINE__),	\
-+		: : "i" (__FILE__), "i" (__BUG_FUNC),	\
-+		  "i" (__LINE__),			\
- 		  "i" (flags),				\
- 		  "i" (sizeof(struct bug_entry)),	\
- 		  ##__VA_ARGS__)
-@@ -80,7 +99,7 @@
- 		if (x)						\
- 			BUG();					\
- 	} else {						\
--		BUG_ENTRY(PPC_TLNEI " %4, 0", 0, "r" ((__force long)(x)));	\
-+		BUG_ENTRY(PPC_TLNEI " %5, 0", 0, "r" ((__force long)(x)));	\
- 	}							\
- } while (0)
- 
-@@ -90,7 +109,7 @@
- 		if (__ret_warn_on)				\
- 			__WARN();				\
- 	} else {						\
--		BUG_ENTRY(PPC_TLNEI " %4, 0",			\
-+		BUG_ENTRY(PPC_TLNEI " %5, 0",			\
- 			  BUGFLAG_WARNING | BUGFLAG_TAINT(TAINT_WARN),	\
- 			  "r" (__ret_warn_on));	\
- 	}							\
 -- 
-2.39.2
-
+Kees Cook
