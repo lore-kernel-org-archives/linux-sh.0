@@ -1,72 +1,84 @@
-Received: from mail-pf1-f180.google.com (mail-pf1-f180.google.com [209.85.210.180])
+Received: from mail-ej1-f51.google.com (mail-ej1-f51.google.com [209.85.218.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A3FF310A28
-	for <linux-sh@vger.kernel.org>; Wed, 13 Mar 2024 03:18:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.180
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 09766171AF
+	for <linux-sh@vger.kernel.org>; Wed, 13 Mar 2024 07:39:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1710299915; cv=none; b=JBT0/Jd6MXuCXoEewCKHohcMXyyaWs4T5v4N+/8ADzc8fzLjugRBnoUn4UFYuNxYY1IcjTN2fr1nxeSy2oiUGr42ospBmTa7KaQpAX3v7J8tLZX7XwQSMaEDx3/uaGh0cyHKFPYwwd3HcGzkltGHZX90sRf2UBG3r5DbpP3Ruc8=
+	t=1710315577; cv=none; b=mTg/hbPM9klYdcEJqueZbzIXqIdFSZ6VmI3QA3+SBaF1668EzKJamHIa8r9CMMd+gp8rYTttql07VNrkF6koF7gw/NP6d6ao7CtfgjK2v6y6QdjJNKUupchN/bI9iFakSMHy3O82yR42EBQVTg5L8qlfh6jdRYvhDfNKNuOhsTc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1710299915; c=relaxed/simple;
-	bh=DiuiKuasqVoMN5PUXSR4ob9TkaURBd7jOgolAmglw7g=;
+	s=arc-20240116; t=1710315577; c=relaxed/simple;
+	bh=AvANucvrZ/fsPo2yOI31iWo1FDKNiABMfD22ldNz5dc=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=kxQ3X+DsCMePR4oxzV2stGz9YCNRW8xriMzvdl4QtCvzS8m4GD3hu/JMEP2sGxM2zO1IUPAXLyTnudb6lqsKZteZROIkumCtggi6XXYfj9JVvKEx4WgpHMPPWVoTaTgL64iRFdoeQhEcfsrMW/AkmSBgURQQvL1Qzb0vN/DzqNQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=chromium.org; spf=pass smtp.mailfrom=chromium.org; dkim=pass (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b=eGA9w2dG; arc=none smtp.client-ip=209.85.210.180
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=chromium.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=chromium.org
+	 Content-Type:Content-Disposition:In-Reply-To; b=f46uC6xpTb3wPHYhtSzPqm/cqVnhIIV5zEvG91FWFc0lMZRkVOoeEBbNDmjZfDoZ7Riolm0d0euFCXtVKwf2txrTR2K23+JVu8MbHnuDWsPUJafUoPOPOFa+1PHvlakuOijgJ+QV/aFkqmeWkkGhIQKltO2L4Gm6q6D+KZF+YZs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org; spf=pass smtp.mailfrom=linaro.org; dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b=GdnaITHH; arc=none smtp.client-ip=209.85.218.51
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linaro.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="eGA9w2dG"
-Received: by mail-pf1-f180.google.com with SMTP id d2e1a72fcca58-6e6adf257fdso1067764b3a.0
-        for <linux-sh@vger.kernel.org>; Tue, 12 Mar 2024 20:18:32 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b="GdnaITHH"
+Received: by mail-ej1-f51.google.com with SMTP id a640c23a62f3a-a44e3176120so817003966b.1
+        for <linux-sh@vger.kernel.org>; Wed, 13 Mar 2024 00:39:33 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=chromium.org; s=google; t=1710299912; x=1710904712; darn=vger.kernel.org;
+        d=linaro.org; s=google; t=1710315572; x=1710920372; darn=vger.kernel.org;
         h=in-reply-to:content-disposition:mime-version:references:message-id
          :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=ErBpDoChwJS3Dz9w/fXRIf25+ofQNHhqhOBTpwuSEJ8=;
-        b=eGA9w2dG6q1CQgb5Usjj+KJ7Bn7vKT0CT5NkdhpLTHrihdjZ04QxLhB6Lw4IXPVpFT
-         MvxNWCpUtuLd3fGpQXbAcdpfdl0TT68oLyCBMtkHAQ1Uu14XZ045je9BUlPDWMSZt7Ci
-         NQ6+OFbxxMUrqGfM9Bbwo7nhDvbeMdsY7eQC4=
+        bh=AvANucvrZ/fsPo2yOI31iWo1FDKNiABMfD22ldNz5dc=;
+        b=GdnaITHHnDyTc59DrnY/aK1qBmW4s8v+1Wlo7OaXKXq57D0uGr0gsQX/ItX/BACBPM
+         mCpMOjziUb+3Mn5COgkXtUpoeoLEcXZCGTpgGjzVyLc+VMKae2PiFkxwSu99rRhGu5PL
+         h0DwhApPO9cJtQFK8IR03dSWBM+quu8+QvheMmkAeD9cyenRXDT5FzO/WA+ETkmUxyZa
+         SN1VD6WkfLXCEc+IYf4zf/JHE0Wo1vDZsy4xcu7u+lDW5Wu0D+wy0+1TtlvzrncNvHlr
+         tpridwRMpXbbySaNM/TBwn2tAXOaruwSht9ctgRneZZUslHQzUPXkKVV6MMDE1ceGHf3
+         4nnw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1710299912; x=1710904712;
+        d=1e100.net; s=20230601; t=1710315572; x=1710920372;
         h=in-reply-to:content-disposition:mime-version:references:message-id
          :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=ErBpDoChwJS3Dz9w/fXRIf25+ofQNHhqhOBTpwuSEJ8=;
-        b=S8cCXc8Y3Ywj7gX1eykFvAFvTqljaAJR2Asjt13N7M6zlV/aQpqyOtow9SzWSWEQbG
-         YKnvy4vaWGgx1Ubjr3uqLDtUy/NxhleFW3by4k3wl2yWY+cwvkXljfh7he/fvD04jWnc
-         wNhd2xJcLUngecYpGkFzN0w0rMill1YzvUIqiDRSvbDcpoho7WLKkIS0lvizxemMqU0H
-         GYYFGZoZYwHP7ty9U4ktRU8WwHZUsfz/DMuGrTOkaga87Y/oOtxQFcxKvI+3rauT69FP
-         iPcwtstuUHLJTlegGjAUnMnDrsNsjUBHFJbhbw3Xs7IH0ZSrlf51SDUaElOK7isaG0OD
-         DkFg==
-X-Forwarded-Encrypted: i=1; AJvYcCX+/grYlVid0I3jt9tMlvreFy7uA+MLM+xBqQdlBcWR6Ni2R9I3DNPn35BUc6dDH46HqVNES6BBp0mqbIFvUzKJFGFl+1HexYY=
-X-Gm-Message-State: AOJu0YwKng48PrvfGN2x3OG1C9zdb6Tl0KIk6gudjCj2Q7Yo3HKESOok
-	41QSQIvmXG04iT2kQKg0EvOYOYOsTVjXQL4sKKYLQOkvsY3TlIq6yb6tCwQRSQ==
-X-Google-Smtp-Source: AGHT+IFroIThZzohrORMRyBf4q2SfGniRe6Qp1geTDUSL9THSEZPoi4A4hryzimt0s4DNs3AfM3qQw==
-X-Received: by 2002:a05:6a00:181d:b0:6e5:d3b9:2d06 with SMTP id y29-20020a056a00181d00b006e5d3b92d06mr1621988pfa.21.1710299912048;
-        Tue, 12 Mar 2024 20:18:32 -0700 (PDT)
-Received: from www.outflux.net ([198.0.35.241])
-        by smtp.gmail.com with ESMTPSA id c1-20020aa78c01000000b006e697bd5285sm3892427pfd.203.2024.03.12.20.18.31
+        bh=AvANucvrZ/fsPo2yOI31iWo1FDKNiABMfD22ldNz5dc=;
+        b=cQ24vYeRU/bA2edwE5KoqFpbSXo0kFef9/nQpLB//j7PkAHLRL4nMCEFXWl4B3zVsh
+         ZhHbedQiH8fbU4Q3YueADLcr1iNQe2beDJ48FUepHK2Sllt0zC+19BT86fQz81ZT9HLd
+         vghiu+BAEQk6myh8/arqG2qOIm2nKs5S6nSyCP6Tyh3rzvGkEdaT+zmNpzzA1BgF4gsA
+         jk10tIPaCEblU9CcNE6TZCWPilA7Ebn2pc61TWsjocWFeYuPspUjnEIB61PyRmChiwfm
+         5x8Yt3FL8sl8yo3g0SQJywplwjZZMkXUavRSiwvrC4PYbrQj81C66z2fw3r58hCdvawt
+         YtoA==
+X-Forwarded-Encrypted: i=1; AJvYcCWx5sPmx5d9AypBzRxhOzIS8ASGh6aPTDnjnch+pE3+ZzMlUKq04g88Gh+o8RTyZvIhjebPZND9o/8xw6sjSgcjWCAJ+yeAFpE=
+X-Gm-Message-State: AOJu0YwApPhYCTi51NIY7BK5amUaPATlf6m1kw7Q08r4ybKP4ddBg/sJ
+	yJyBiIrCTt2Um24LoO3mVcWkFghsnhXstCXieWNrd0dYFCYPVmD7KzMN/vr8pQo=
+X-Google-Smtp-Source: AGHT+IH38GneADkyKtRbEkb8+HLK5ZsZNpyhD22lE4uk6eUmiwmdHa00scLatPQEFNYx/T2Y2VkSUg==
+X-Received: by 2002:a17:906:2ccb:b0:a41:3e39:b918 with SMTP id r11-20020a1709062ccb00b00a413e39b918mr7484516ejr.24.1710315572226;
+        Wed, 13 Mar 2024 00:39:32 -0700 (PDT)
+Received: from localhost ([102.222.70.76])
+        by smtp.gmail.com with ESMTPSA id qx26-20020a170906fcda00b00a45a687b52asm4578781ejb.213.2024.03.13.00.39.31
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 12 Mar 2024 20:18:31 -0700 (PDT)
-Date: Tue, 12 Mar 2024 20:18:31 -0700
-From: Kees Cook <keescook@chromium.org>
-To: Rick Edgecombe <rick.p.edgecombe@intel.com>
-Cc: Liam.Howlett@oracle.com, akpm@linux-foundation.org, bp@alien8.de,
-	broonie@kernel.org, dave.hansen@linux.intel.com, debug@rivosinc.com,
-	hpa@zytor.com, kirill.shutemov@linux.intel.com, luto@kernel.org,
-	mingo@redhat.com, peterz@infradead.org, tglx@linutronix.de,
-	x86@kernel.org, christophe.leroy@csgroup.eu,
-	linux-kernel@vger.kernel.org, linux-mm@kvack.org,
-	linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-	linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
-	loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-	sparclinux@vger.kernel.org
-Subject: Re: [PATCH v3 08/12] treewide: Use initializer for struct
- vm_unmapped_area_info
-Message-ID: <202403122018.DCCE1E000@keescook>
-References: <20240312222843.2505560-1-rick.p.edgecombe@intel.com>
- <20240312222843.2505560-9-rick.p.edgecombe@intel.com>
+        Wed, 13 Mar 2024 00:39:31 -0700 (PDT)
+Date: Wed, 13 Mar 2024 10:39:28 +0300
+From: Dan Carpenter <dan.carpenter@linaro.org>
+To: Guenter Roeck <linux@roeck-us.net>
+Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>,
+	Arnd Bergmann <arnd@arndb.de>,
+	=?iso-8859-1?Q?Ma=EDra?= Canal <mcanal@igalia.com>,
+	Kees Cook <keescook@chromium.org>,
+	Daniel Diaz <daniel.diaz@linaro.org>,
+	David Gow <davidgow@google.com>,
+	Arthur Grillo <arthurgrillo@riseup.net>,
+	Brendan Higgins <brendan.higgins@linux.dev>,
+	Naresh Kamboju <naresh.kamboju@linaro.org>,
+	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Maxime Ripard <mripard@kernel.org>,
+	Ville =?iso-8859-1?Q?Syrj=E4l=E4?= <ville.syrjala@linux.intel.com>,
+	Daniel Vetter <daniel@ffwll.ch>,
+	Thomas Zimmermann <tzimmermann@suse.de>,
+	dri-devel@lists.freedesktop.org, kunit-dev@googlegroups.com,
+	linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+	linux-sh@vger.kernel.org, loongarch@lists.linux.dev,
+	netdev@lists.linux.dev
+Subject: Re: [PATCH 00/14] Add support for suppressing warning backtraces
+Message-ID: <43ef4ef4-303b-45c6-aa50-3e0982c93bd7@moroto.mountain>
+References: <20240312170309.2546362-1-linux@roeck-us.net>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -75,19 +87,12 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20240312222843.2505560-9-rick.p.edgecombe@intel.com>
+In-Reply-To: <20240312170309.2546362-1-linux@roeck-us.net>
 
-On Tue, Mar 12, 2024 at 03:28:39PM -0700, Rick Edgecombe wrote:
-> So to be reduce the chance of bugs via uninitialized fields, perform a
-> tree wide change using the consensus for the best general way to do this
-> change. Use C99 static initializing to zero the struct and remove and
-> statements that simply set members to zero.
-> 
-> Signed-off-by: Rick Edgecombe <rick.p.edgecombe@intel.com>
+Thanks!
 
-Thanks! This looks to do exactly what it describes. :)
+Acked-by: Dan Carpenter <dan.carpenter@linaro.org>
 
-Reviewed-by: Kees Cook <keescook@chromium.org>
+regards,
+dan carpenter
 
--- 
-Kees Cook
