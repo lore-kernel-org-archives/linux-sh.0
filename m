@@ -1,146 +1,221 @@
-Received: from mail-yw1-f175.google.com (mail-yw1-f175.google.com [209.85.128.175])
+Received: from mail-yb1-f177.google.com (mail-yb1-f177.google.com [209.85.219.177])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7620B5CDD0;
-	Thu, 14 Mar 2024 07:57:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.175
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 968C25914E;
+	Thu, 14 Mar 2024 13:04:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.177
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1710403080; cv=none; b=UM9nFDWnkkZ5FwXTkxsLnVCFWd+hQ6knS4j5zNm+e9ZUZzD56Ob53e4F3emFVM5PCtIEDmhb9uOs9e7hBu04qjsU7VOFRwo+22kD0q6i5pHWNLI55v+QYkqoF1mzdT7X8uYVsbh8WhVoo8GWKSugh54/Uox4ALKC1tjws6BBZQ8=
+	t=1710421487; cv=none; b=KynuO7N868j3aJcIRmfHhhsTm2b6to0TxW0rNMBM4yN7Dw0J/Xu4kGoQ/S67SGiCjkSMfpe6mJOSBrSyltje67qKRR4ig/ewxp6OpL/iXnhiTG2t6BgZS2NZv+rqhNwXAwBjqtIazPwgGkBJekeU6kCUeJuDXKgSTJ8E4DfzPKc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1710403080; c=relaxed/simple;
-	bh=GdqPCgNgGmabZKEFpqVELT68B4Ci/C3EGXs0bq1Jxn0=;
+	s=arc-20240116; t=1710421487; c=relaxed/simple;
+	bh=oN/Suplky2WREBBkofEnWky69rIUocuFFOuR7GOODqw=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=BR8fLGSuZssgWH/23WXU0GWHn1P6ZbVe5x+x99/L7qSKLbcC+hB/7xKiySql/xqzjVEwoOBSksp6Lwh3fCDR0rixEcvPeM0XGIFIPEy7vohRJ/x/2mCRwpbqK6kEjN4vr6I1Tko6huhMWAggai3Zbox4StgN/vspkshCgRrjR50=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.128.175
+	 To:Cc:Content-Type; b=I7zOobOFEIqb50ZBdlTpD4aw4MEl63gpDzMJ/bGIHxJjkjO1wT6OClKD6aP7GwJP00q4oZLn2QrTlJDyuXOZaBb5sKiN1PYwVsfXFkJ9qCmdkruqX2SLPAGcLCsDE8eDAbQ+TX/S87girh6o2GIJmdo24HeGDGQzx1BfMj4Y8UM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.219.177
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-yw1-f175.google.com with SMTP id 00721157ae682-60cbcd04de9so7169477b3.2;
-        Thu, 14 Mar 2024 00:57:58 -0700 (PDT)
+Received: by mail-yb1-f177.google.com with SMTP id 3f1490d57ef6-d9b9adaf291so781847276.1;
+        Thu, 14 Mar 2024 06:04:44 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1710403077; x=1711007877;
+        d=1e100.net; s=20230601; t=1710421481; x=1711026281;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=+kd7vHFr5fszcwgfp701zhW6bd0WPIDQKlsKOb1KQCg=;
-        b=lMe1DXW0WrWCpubE+3C5xY2IzSQ5NIFMB7yJcy59XNxNtiDWhS0IWkIi6OA4wlyEmo
-         OTAU5X8PnJV0CvNID0DZRildiKvxEtlA2bswMzMeD41ITtgS8VYVOumGb1FW8khYCY5H
-         CD3EnTR32pSlPBREkANXiLGilv+J9HREZ0EqDcaRORGgfMDfIofVBT9A0BYMjKAT+ISM
-         pe7fqRjPnhx0nXJE7oO1a4W4Ftk3ydAHG+NCB6jELOykInahVpfJ7vSpfaPKRCbtJIGv
-         Rkeqk8MwJdAeeNnSEDkuoDU03UCHqdVGtTWVRxLItH682hKUm4/TUdGGlApLp06e4bKK
-         dcVw==
-X-Forwarded-Encrypted: i=1; AJvYcCUyBq0dQZjHir8vdPngXIiQvW1JHCxsS06B4J19EXPL/2dKM/XP4R2MiFK4808Iz+t1APlMaiHfH3w6MUhUvmPpsqcW2zMGG2KH/wnGVgkChpZb/2iVwSsCfBPM8DOhNEMcRLW9Zo1LDgfRcTq2h3YhnEDUsbQwUoZTyWZQ3g+JgYWdYY5JZMQL/mKNOAiTaLZhbnvvVBVtxir4+XD90ufpDgKMHajHdsdLDXY/p1dlYkFvVJbtJ24kzqtDZ3KAglQqMZjOX9yLC8V6KNo2Ay5nlveOm2LgnQ==
-X-Gm-Message-State: AOJu0YxMtpFprSlsV82qvRMyPBygDyBXNtrI15NkZjNTYOYwqZimq0Bz
-	5Zh/h6IEj6NW3Jq7bP4E4CFCLkaH3liwo/J5iQQX/3eLbIXW+mVpq1QsJOgVQF0=
-X-Google-Smtp-Source: AGHT+IEZFYhzEtoQw3tAL/5lmIa7kFpXxibw5TyrBGKAQ/5uRwdUFocJWz6+3q1/7sg0ctuSNtoK7g==
-X-Received: by 2002:a81:6fc5:0:b0:608:2b27:9e6d with SMTP id k188-20020a816fc5000000b006082b279e6dmr938672ywc.28.1710403077438;
-        Thu, 14 Mar 2024 00:57:57 -0700 (PDT)
-Received: from mail-yw1-f173.google.com (mail-yw1-f173.google.com. [209.85.128.173])
-        by smtp.gmail.com with ESMTPSA id m85-20020a0dca58000000b00607ad76d855sm175127ywd.67.2024.03.14.00.57.57
+        bh=srIuOcu64Am4aw6QGP73uY2LpO277zav8MQ/JrV7vTI=;
+        b=sObJcG2T6orhL4nC1w4vsu2azMfbeLeOYeA+++dKTPVurzZVEJQrSoQrfkzWWpluNm
+         eKE5o2uxvf4HEyIm0OXsoYN+su6lo1qR3MxWLw5j8plQPZypkqvjatN+BVgJYTqZV+Qy
+         Vqg3TLzr7mMJ+lUdJiD9j2RDexAdj7zMHplyRk0jnHxTXDCBKFe8cfKeXGTVLlKZYg68
+         UOozOPq5YLVQ4qpjx/CyC2EbsLkWBNA2kLH56rM4d11AQGOrFswnue3sMf7uD3D4/KGA
+         U9nSJERhCX/RaWLU42P88xmz0kjhAZZg3KyTfJi2JNmrUYQ8FP1B1/LHf7pj1Z2+90ul
+         TKaw==
+X-Forwarded-Encrypted: i=1; AJvYcCUO6f0lfSc4o1bgklj72r6+LWIkr3jdkjSxdo13mabk2BIpSWSs241jXfPBuKtz+4AhSivvi/MpXZnKzffNjoHbXOYXUkSxPleD0T0haTuUz5scd4IxVzbpAStfYKZ6Xls1SPfL/ee9GxaldOC5cY/Z6wIyZ8sb8gu0PzVKIZUvLcBAf9G6aA==
+X-Gm-Message-State: AOJu0Yw5FLBtHQbhRq3ZcIFvsWUjU9Cf809qh2WCMAPCX2K0u6j7fHFZ
+	VshS4Cz3QVQwFNQxx/37Imno43V9ftriOqaqf2o4taoLgZOkPHeF0+5R1lcS1Ts=
+X-Google-Smtp-Source: AGHT+IH7tnqHtUKoKPCU/IS9gaSFZ+3JXmWW9/7hWoaHKJ3LWt8DkQdOgwb6l+HXa7W/ZJmIHfQ3nw==
+X-Received: by 2002:a25:3357:0:b0:dd0:bb34:1e77 with SMTP id z84-20020a253357000000b00dd0bb341e77mr1411929ybz.53.1710421481336;
+        Thu, 14 Mar 2024 06:04:41 -0700 (PDT)
+Received: from mail-yb1-f172.google.com (mail-yb1-f172.google.com. [209.85.219.172])
+        by smtp.gmail.com with ESMTPSA id b8-20020a25bb48000000b00dcc620f4139sm239411ybk.14.2024.03.14.06.04.40
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 14 Mar 2024 00:57:57 -0700 (PDT)
-Received: by mail-yw1-f173.google.com with SMTP id 00721157ae682-60a15449303so8187117b3.0;
-        Thu, 14 Mar 2024 00:57:57 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCVhnKJQSoKtCulOFOpM2dzulvMxAbkZTvxcVLriv6WivpmxhG87fYEFsewjpRhaPDI28/z65+qxHDXVXJWwMwsk8c1OSvY4MFgxPYtZJTnPQgo5ZUEBXHZlwV6vWlh01qQYKnVYWpETC2XCfiu0hUB2/aLJ4tZtc0agGynKH0+fCCB9y/WXywXojV2/mJuBZfd6qdJ04mCaKcpXlRKoVKYtl2qn/eo0jGutHXW1p4s6RC3SPtc/4i730Rc8RdBFCzUJccb99ul55gE2PfMbj4406QSUA6YAIg==
-X-Received: by 2002:a0d:ea4c:0:b0:609:239a:d0fc with SMTP id
- t73-20020a0dea4c000000b00609239ad0fcmr990474ywe.38.1710403077141; Thu, 14 Mar
- 2024 00:57:57 -0700 (PDT)
+        Thu, 14 Mar 2024 06:04:40 -0700 (PDT)
+Received: by mail-yb1-f172.google.com with SMTP id 3f1490d57ef6-db4364ecd6aso698044276.2;
+        Thu, 14 Mar 2024 06:04:40 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCVdtTt2uYQ11yRJxQwSNME3IC9eFMrSVuAV+1eZQW3pvarqJtDlWvRRSBPNNC3RVoA52wZNigvqYGLI/CpAO6Yvamaa4WPf4k54H+eOJHU8+C27ptzztqiMh30YJYJA2xAsr7AkX0mOIOsCmOXf2qsr1PaeaaOxLlWJZ/CK3xtOVsDWr8f5gg==
+X-Received: by 2002:a25:ce13:0:b0:dc7:43fe:e124 with SMTP id
+ x19-20020a25ce13000000b00dc743fee124mr1577816ybe.11.1710421479845; Thu, 14
+ Mar 2024 06:04:39 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20240312170309.2546362-1-linux@roeck-us.net> <20240312170309.2546362-12-linux@roeck-us.net>
-In-Reply-To: <20240312170309.2546362-12-linux@roeck-us.net>
+References: <20240313181602.156840-1-biju.das.jz@bp.renesas.com>
+ <20240313181602.156840-4-biju.das.jz@bp.renesas.com> <CAMuHMdUMEA2d9+H7GwDDLTfeXp2fAyBTt8jpihOzjCEMUuSK-A@mail.gmail.com>
+ <OSAPR01MB15874373FDCB149EA67D4BD086292@OSAPR01MB1587.jpnprd01.prod.outlook.com>
+In-Reply-To: <OSAPR01MB15874373FDCB149EA67D4BD086292@OSAPR01MB1587.jpnprd01.prod.outlook.com>
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Thu, 14 Mar 2024 08:57:45 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdXHKfd8agPGx+MjvC4cjW5F6DEeVec3Moe-=LLkrT3CXQ@mail.gmail.com>
-Message-ID: <CAMuHMdXHKfd8agPGx+MjvC4cjW5F6DEeVec3Moe-=LLkrT3CXQ@mail.gmail.com>
-Subject: Re: [PATCH 11/14] s390: Add support for suppressing warning backtraces
-To: Guenter Roeck <linux@roeck-us.net>
-Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>, 
-	Arnd Bergmann <arnd@arndb.de>, =?UTF-8?B?TWHDrXJhIENhbmFs?= <mcanal@igalia.com>, 
-	Dan Carpenter <dan.carpenter@linaro.org>, Kees Cook <keescook@chromium.org>, 
-	Daniel Diaz <daniel.diaz@linaro.org>, David Gow <davidgow@google.com>, 
-	Arthur Grillo <arthurgrillo@riseup.net>, Brendan Higgins <brendan.higgins@linux.dev>, 
-	Naresh Kamboju <naresh.kamboju@linaro.org>, 
-	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>, 
-	Andrew Morton <akpm@linux-foundation.org>, Maxime Ripard <mripard@kernel.org>, 
-	=?UTF-8?B?VmlsbGUgU3lyasOkbMOk?= <ville.syrjala@linux.intel.com>, 
-	Daniel Vetter <daniel@ffwll.ch>, Thomas Zimmermann <tzimmermann@suse.de>, dri-devel@lists.freedesktop.org, 
-	kunit-dev@googlegroups.com, linux-arch@vger.kernel.org, 
-	linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, 
-	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, 
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, 
-	loongarch@lists.linux.dev, netdev@lists.linux.dev
+Date: Thu, 14 Mar 2024 14:04:28 +0100
+X-Gmail-Original-Message-ID: <CAMuHMdWOZdJujd7+Tycn144-fqM7a6bsnJ0+82Ndqk69jTTf+w@mail.gmail.com>
+Message-ID: <CAMuHMdWOZdJujd7+Tycn144-fqM7a6bsnJ0+82Ndqk69jTTf+w@mail.gmail.com>
+Subject: Re: [PATCH v2 3/5] usb: renesas_usbhs: Update usbhs pipe
+ configuration for RZ/G2L family
+To: Biju Das <biju.das.jz@bp.renesas.com>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Huy Nguyen <huy.nguyen.wh@renesas.com>, 
+	Magnus Damm <magnus.damm@gmail.com>, Rob Herring <robh@kernel.org>, 
+	Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, 
+	Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>, 
+	=?UTF-8?Q?Uwe_Kleine=2DK=C3=B6nig?= <u.kleine-koenig@pengutronix.de>, 
+	"linux-usb@vger.kernel.org" <linux-usb@vger.kernel.org>, 
+	"linux-renesas-soc@vger.kernel.org" <linux-renesas-soc@vger.kernel.org>, 
+	Prabhakar Mahadev Lad <prabhakar.mahadev-lad.rj@bp.renesas.com>, 
+	"biju.das.au" <biju.das.au@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Hi G=C3=BCnter,
+Hi Biju,
 
-On Tue, Mar 12, 2024 at 6:06=E2=80=AFPM Guenter Roeck <linux@roeck-us.net> =
-wrote:
-> Add name of functions triggering warning backtraces to the __bug_table
-> object section to enable support for suppressing WARNING backtraces.
->
-> To limit image size impact, the pointer to the function name is only adde=
-d
-> to the __bug_table section if both CONFIG_KUNIT and CONFIG_DEBUG_BUGVERBO=
-SE
-> are enabled. Otherwise, the __func__ assembly parameter is replaced with =
-a
-> (dummy) NULL parameter to avoid an image size increase due to unused
-> __func__ entries (this is necessary because __func__ is not a define but =
-a
-> virtual variable).
->
-> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+On Thu, Mar 14, 2024 at 1:49=E2=80=AFPM Biju Das <biju.das.jz@bp.renesas.co=
+m> wrote:
+> > From: Geert Uytterhoeven <geert@linux-m68k.org>
+> > On Wed, Mar 13, 2024 at 7:16=E2=80=AFPM Biju Das <biju.das.jz@bp.renesa=
+s.com> wrote:
+> > > From: Huy Nguyen <huy.nguyen.wh@renesas.com>
+> > > The RZ/G2L family SoCs has 10 PIPE buffers compared to 16 pipe buffer=
+s
+> > > on RZ/A2M. Update the pipe configuration for RZ/G2L family SoCs and
+> > > use family SoC specific compatible to handle this difference.
+> > >
+> > > Added SoC specific compatible to OF table toavoid ABI breakage with
+> > > old DTB. To optimize memory usage the SoC specific compatible will be
+> > > removed later.
+> > >
+> > > Signed-off-by: Huy Nguyen <huy.nguyen.wh@renesas.com>
+> > > Signed-off-by: Biju Das <biju.das.jz@bp.renesas.com>
 
-Thanks for your patch!
-
-> --- a/arch/s390/include/asm/bug.h
-> +++ b/arch/s390/include/asm/bug.h
-> @@ -8,19 +8,30 @@
+> > > --- a/drivers/usb/renesas_usbhs/common.c
+> > > +++ b/drivers/usb/renesas_usbhs/common.c
+> > > @@ -640,8 +656,13 @@ static int usbhs_probe(struct platform_device
+> > > *pdev)
+> > >
+> > >         /* set default param if platform doesn't have */
+> > >         if (usbhs_get_dparam(priv, has_new_pipe_configs)) {
+> > > -               priv->dparam.pipe_configs =3D usbhsc_new_pipe;
+> > > -               priv->dparam.pipe_size =3D ARRAY_SIZE(usbhsc_new_pipe=
+);
+> > > +               if (info->driver_param.pipe_configs) {
+> > > +                       priv->dparam.pipe_configs =3D info->driver_pa=
+ram.pipe_configs;
+> > > +                       priv->dparam.pipe_size =3D info->driver_param=
+.pipe_size;
+> > > +               } else {
+> > > +                       priv->dparam.pipe_configs =3D usbhsc_new_pipe=
+;
+> > > +                       priv->dparam.pipe_size =3D ARRAY_SIZE(usbhsc_=
+new_pipe);
+> > > +               }
+> >
+> > I think it would be cleaner to populate
+> > renesas_usbhs_platform_info.driver_param.pipe_{configs,size} everywhere=
+, and use info-
+> > >driver_param.pipe_{configs,size} unconditionally.
 >
->  #ifdef CONFIG_DEBUG_BUGVERBOSE
+> You mean, drop static and share the usbhsc_rcar_new_pipe[] to {rcar3,rcar=
+2,rza,rza2}
+> Like [1]??
 >
-> +#if IS_ENABLED(CONFIG_KUNIT)
-> +# define HAVE_BUG_FUNCTION
-> +# define __BUG_FUNC_PTR        "       .long   %0-.\n"
-> +# define __BUG_FUNC    __func__
-> +#else
-> +# define __BUG_FUNC_PTR
-> +# define __BUG_FUNC    NULL
-> +#endif /* IS_ENABLED(CONFIG_KUNIT) */
+>
+> [1]
+> diff --git a/drivers/usb/renesas_usbhs/common.h b/drivers/usb/renesas_usb=
+hs/common.h
+> index 3fb5bc94dc0d..9dde537c4e2f 100644
+> --- a/drivers/usb/renesas_usbhs/common.h
+> +++ b/drivers/usb/renesas_usbhs/common.h
+>
+> +extern struct renesas_usbhs_driver_pipe_config usbhsc_rcar_new_pipe[];
 > +
->  #define __EMIT_BUG(x) do {                                     \
->         asm_inline volatile(                                    \
->                 "0:     mc      0,0\n"                          \
->                 ".section .rodata.str,\"aMS\",@progbits,1\n"    \
->                 "1:     .asciz  \""__FILE__"\"\n"               \
->                 ".previous\n"                                   \
-> -               ".section __bug_table,\"awM\",@progbits,%2\n"   \
-> +               ".section __bug_table,\"awM\",@progbits,%3\n"   \
+> diff --git a/drivers/usb/renesas_usbhs/rcar2.c b/drivers/usb/renesas_usbh=
+s/rcar2.c
+> index 52756fc2ac9c..3117f76ab556 100644
+> --- a/drivers/usb/renesas_usbhs/rcar2.c
+> +++ b/drivers/usb/renesas_usbhs/rcar2.c
+> @@ -69,7 +69,8 @@ const struct renesas_usbhs_platform_info usbhs_rcar_gen=
+2_plat_info =3D {
+>                 .get_id =3D usbhs_get_id_as_gadget,
+>         },
+>         .driver_param =3D {
+> +               .pipe_configs =3D usbhsc_rcar_new_pipe,
+> +               .pipe_size =3D 16,
 
-This change conflicts with commit 3938490e78f443fb ("s390/bug:
-remove entry size from __bug_table section") in linus/master.
-I guess it should just be dropped?
+Yes, something like that.
 
->                 "2:     .long   0b-.\n"                         \
->                 "       .long   1b-.\n"                         \
-> -               "       .short  %0,%1\n"                        \
-> -               "       .org    2b+%2\n"                        \
-> +               __BUG_FUNC_PTR                                  \
-> +               "       .short  %1,%2\n"                        \
-> +               "       .org    2b+%3\n"                        \
->                 ".previous\n"                                   \
-> -               : : "i" (__LINE__),                             \
-> +               : : "i" (__BUG_FUNC),                           \
-> +                   "i" (__LINE__),                             \
->                     "i" (x),                                    \
->                     "i" (sizeof(struct bug_entry)));            \
->  } while (0)
+> > >         } else if (!priv->dparam.pipe_configs) {
+> > >                 priv->dparam.pipe_configs =3D usbhsc_default_pipe;
+> > >                 priv->dparam.pipe_size =3D
+> > > ARRAY_SIZE(usbhsc_default_pipe); diff --git
+
+> > > --- a/drivers/usb/renesas_usbhs/rza2.c
+> > > +++ b/drivers/usb/renesas_usbhs/rza2.c
+> > > @@ -58,6 +58,36 @@ static int usbhs_rza2_power_ctrl(struct platform_d=
+evice *pdev,
+> > >         return retval;
+> > >  }
+> > >
+> [1]
+> > > +/* commonly used on RZ/G2L family */
+> > > +static struct renesas_usbhs_driver_pipe_config usbhsc_rzg2l_pipe[] =
+=3D {
+> > > +       RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_CONTROL, 64, 0x00, false=
+),
+> > > +       RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_ISOC, 1024, 0x08, true),
+> > > +       RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_ISOC, 1024, 0x28, true),
+> > > +       RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_BULK, 512, 0x48, true),
+> > > +       RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_BULK, 512, 0x58, true),
+> > > +       RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_BULK, 512, 0x68, true),
+> > > +       RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_INT, 64, 0x04, false),
+> > > +       RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_INT, 64, 0x05, false),
+> > > +       RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_INT, 64, 0x06, false),
+> > > +       RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_INT, 64, 0x07, false), }=
+;
+>
+> > This is similar (but slightly different) from usbhsc_default_pipe[].
+> > Can RZ/G2L work with usbhsc_default_pipe[] instead?  If yes, you could =
+just set  .has_new_pipe_configs
+> > to zero instead of adding new code/data.
+>
+> All our customers are using [1] compared to default_pipe[2], from HW manu=
+al, I feel [1] is better
+> as it involves fewer interrupts. Can we replace [2] with [1]?
+>
+> The difference is setting double buffer on Isochronous Transfers.
+>
+> Setting the buffer operating mode enables high-speed data transfers with =
+fewer interrupts
+> to be performed by using double-buffering and continuous transfer of data=
+ packets.
+
+OK.
+
+> Since [1] is better compared to [2], if SH can work with [1], we can
+> replace [2] with [1], do we have any SH platform to test this?
+
+I don't have an sh7757lcr or ecovec24 to test. But the risk looks low.
+
+So it looks like a good idea to have two patches:
+  1. Improve usbhsc_default_pipe[] for isochronous transfers,
+  2. Fix support for RZ/G2L using the default 10-entry pipe.
+
+> [2]
+>         RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_CONTROL, 64, 0x00, false),
+>         RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_ISOC, 1024, 0x08, false),
+>         RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_ISOC, 1024, 0x18, false),
+>         RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_BULK, 512, 0x28, true),
+>         RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_BULK, 512, 0x38, true),
+>         RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_BULK, 512, 0x48, true),
+>         RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_INT, 64, 0x04, false),
+>         RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_INT, 64, 0x05, false),
+>         RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_INT, 64, 0x06, false),
+>         RENESAS_USBHS_PIPE(USB_ENDPOINT_XFER_INT, 64, 0x07, false),
 
 Gr{oetje,eeting}s,
 
