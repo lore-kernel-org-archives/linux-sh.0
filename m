@@ -1,61 +1,37 @@
-Received: from mail-pf1-f176.google.com (mail-pf1-f176.google.com [209.85.210.176])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from wp530.webpack.hosteurope.de (wp530.webpack.hosteurope.de [80.237.130.52])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8528A51C5D;
-	Mon, 18 Mar 2024 15:32:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.176
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E399374CB;
+	Mon, 18 Mar 2024 15:58:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=80.237.130.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1710775937; cv=none; b=p35AkBNZQAPpGm4U5kYcLBpnyrOgX9jIAyAHteV+XgEbHZ6+M8fSuyBoIuuxt+9SGz+6OldB89JgTKiThrkMXeGJLxsL6UNRHwX9+dv0rDMaN4ixy9o3399PRVA72RaA0JV+exKf81+ZZz9nbUoXKJshytaJ+3OJDOg/coBHwR8=
+	t=1710777530; cv=none; b=JPVCFHLryA+fr4O/BDHhXiYAPOQQgrtqjY7+Oh15y5BiXMSjnDMLdIUiwrGPGH+w9BSV4muSIyBWZBQkcCCA4n9LBkjiBkCdPHYyULfNQBpPhWXDx1w169A7yh6sMM+F6XFd20+ouJFDO0tzB+r6KbjcPZvJzLZI5ayNVonh/7c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1710775937; c=relaxed/simple;
-	bh=yBaChVBN26OVyTrZJMYrc++M8ytlVQCQcgeinGTH8yw=;
+	s=arc-20240116; t=1710777530; c=relaxed/simple;
+	bh=02hLa+502nthqIpJ3Rj+S+Vi3TlZ9i7evQxRTLzmvl8=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=l4leCK9YIMKedDnMjY1jic3XUyVWMfKWmkHC/DMm0VW43D2+T4sfuNuH1cJcHhF5PbnyIZVLgoigjv41XnX+jzhDOl41Od1Hq/Ork3+Lf2TBCWQBtdlNDYQIKtzwbLKEi/MczuoFg75KXrb5xSUkc4gbc1kzKL/FDP6CPgo7/oo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=roeck-us.net; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=RD4IFQuO; arc=none smtp.client-ip=209.85.210.176
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=roeck-us.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	 In-Reply-To:Content-Type; b=RPHKHjFKJ0FgvfUVC5DIs3lXszdFiJFnGaEQSFJ+zpP90F0bLb7C7qE5i8TDDIs/fs2YGkL6ydEHwZwGFk6GPMHH/XRTzsdk20W12RiD9j9rMOqcXToXdQIi4q+9brE4DYIhQnyQV5zCfY+QF+fMt03ixewm4oqQ3UUI24NzBUo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=leemhuis.info; spf=pass smtp.mailfrom=leemhuis.info; dkim=pass (2048-bit key) header.d=leemhuis.info header.i=@leemhuis.info header.b=SLvwGWdq; arc=none smtp.client-ip=80.237.130.52
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=leemhuis.info
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=leemhuis.info
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="RD4IFQuO"
-Received: by mail-pf1-f176.google.com with SMTP id d2e1a72fcca58-6e709e0c123so1544440b3a.1;
-        Mon, 18 Mar 2024 08:32:15 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1710775935; x=1711380735; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from:references:cc
-         :to:content-language:subject:user-agent:mime-version:date:message-id
-         :sender:from:to:cc:subject:date:message-id:reply-to;
-        bh=EfY/qiqxT4YwaL7SKZu6dl0J+rA9algw3GQFNprsafI=;
-        b=RD4IFQuOWAINHr/SlirJ3yg9fJs4YGHVyplXRnii+65fGWUQVHKyd1oIMI3XFhZ6di
-         0ESwPY1kneY/ObONB3qqF3OaUgFeBZWB7+4Q31dOEqCLFy96C0qpTuarCZdAnrDBOCTt
-         CXtYXhAzwNGQUXbZxIlOoCd8nw0kEmp87FVvzIXzP4PKR6f35MCqGhj+Y/P39/AbJkwe
-         fvfr+Y5lCo8YZlpwjBa01h/AvRQ6DG6xKv1pCfKUbBO3pxVRyNw5bWsqHw+kiw1G460f
-         j488tq/61zRZZMBBkFdaCOl3el3NUg4PTGAPWXlfMoB57XBCz8umKk4WPkpJoKFZIO2X
-         pu2w==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1710775935; x=1711380735;
-        h=content-transfer-encoding:in-reply-to:autocrypt:from:references:cc
-         :to:content-language:subject:user-agent:mime-version:date:message-id
-         :sender:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=EfY/qiqxT4YwaL7SKZu6dl0J+rA9algw3GQFNprsafI=;
-        b=BdgcUHDyNc8QGKVxxQKj7Dk3Pk8KjIzmswyCL74NXsK0sgB3epRqX6R078mBZu3Om8
-         FzaA0XPB/pFotfbCYn5mVEYk06rHKV+7Rax2HY8aqjmXxI0oTMRaZoVZrq5MB0LO3eKl
-         w4fDrUoOsqjCLF4JmeEAXlUSvgArzPFRB6+1/F8MOv3KjOCy9dmCPw2HBynxawLcXSFY
-         EThZ5UE0qc+61tqnACE38XZ6tGfn8AiNTSiqFQbZfbZEGbQemwFVnpx/ZQvZvalaObIf
-         QWm8M0ucEL+T+w2hwYK+Hvcfqeu2ZXvuot6gH6fD8iPjRE9fW+x+zsr//siogzjB0/1+
-         +9Aw==
-X-Forwarded-Encrypted: i=1; AJvYcCWtmQjlk6/iFf+YyrIjqjFuXRiEyv2ci9hXcafF2BgkTOpwtmRBKAJaJVKSSEtrTJa5fQNPlrrBJ0gbx7Z/SgzWHM0P33tzB5OufXFFC79JsbbkZdw1HoouMmQiPJ9qCJknM4eLmoE=
-X-Gm-Message-State: AOJu0YywnYZXj1uu8R08dpCV4AMFPdzdydJew78IBRqSSXmRox5mLhny
-	X0uZ6Lr1dHlqGIK6X2itlE6Yn71e75zP031J6DMWfaDrw1au5axg
-X-Google-Smtp-Source: AGHT+IHy7cTYyxD4ekxt8FwUB/vQynTebQsg8xAvkWhqUtRSZrDnlwu48HcqVKnSJVZIruDgChZGZw==
-X-Received: by 2002:a05:6a00:178e:b0:6e6:9552:cf33 with SMTP id s14-20020a056a00178e00b006e69552cf33mr23495pfg.31.1710775934773;
-        Mon, 18 Mar 2024 08:32:14 -0700 (PDT)
-Received: from ?IPV6:2600:1700:e321:62f0:329c:23ff:fee3:9d7c? ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
-        by smtp.gmail.com with ESMTPSA id p19-20020a62ab13000000b006e6c0f8ce1bsm8099015pff.47.2024.03.18.08.32.13
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 18 Mar 2024 08:32:14 -0700 (PDT)
-Sender: Guenter Roeck <groeck7@gmail.com>
-Message-ID: <93ad802f-c152-4461-9f9f-c338f58a000d@roeck-us.net>
-Date: Mon, 18 Mar 2024 08:32:12 -0700
+	dkim=pass (2048-bit key) header.d=leemhuis.info header.i=@leemhuis.info header.b="SLvwGWdq"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=leemhuis.info; s=he214686; h=Content-Transfer-Encoding:Content-Type:
+	In-Reply-To:Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:
+	Message-ID:From:Sender:Reply-To:Subject:Date:Message-ID:To:Cc:MIME-Version:
+	Content-Type:Content-Transfer-Encoding:Content-ID:Content-Description:
+	In-Reply-To:References; bh=4dpC3v9e7yNk/nqbEoKg8rGA46wzi6nH/HPa6PvvuGI=;
+	t=1710777528; x=1711209528; b=SLvwGWdqhFHvB/9eQojjGJ9lIEPWvnzD1b8HtpH+zTS8BDZ
+	sUSKPCXl3+6Bm/IqyA8NFQxyHjDqof5lMZyMOOTYppjtApLE3I6b8TOqew6ptPnXZsULOEN/Id+Em
+	ZumpAM++iFg+uJg2hrgWH1Qxh75ipjXZVJrSpSljz9k9UEnRgtMreeDihYLyoXenv0nSj0YK+Skde
+	yD3lWCH1NdvuZBMl9e5bOXU7DbEXNGixWLCHMnyTBGxb88ZYrx3sdQpjm9ezgIMVRKY5JnzmUfXL9
+	m9yqEFQB4mBRJ9RJP7aL1G3nlbCNPPlCjfXvE/I5tD6fiAIrBEl3h4P7pMGynTwA==;
+Received: from [2a02:8108:8980:2478:8cde:aa2c:f324:937e]; authenticated
+	by wp530.webpack.hosteurope.de running ExIM with esmtpsa (TLS1.3:ECDHE_RSA_AES_128_GCM_SHA256:128)
+	id 1rmFNt-0004i8-8b; Mon, 18 Mar 2024 16:58:45 +0100
+Message-ID: <dfabddd0-7284-480f-8c6c-135fb169a11c@leemhuis.info>
+Date: Mon, 18 Mar 2024 16:58:44 +0100
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -65,8 +41,9 @@ MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
 Subject: Re: Problems with csum_partial with misaligned buffers on sh4
  platform
-Content-Language: en-US
-To: Linux regressions mailing list <regressions@lists.linux.dev>,
+Content-Language: en-US, de-DE
+To: Guenter Roeck <linux@roeck-us.net>,
+ Linux regressions mailing list <regressions@lists.linux.dev>,
  Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc: Rich Felker <dalias@libc.org>,
  John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
@@ -74,77 +51,76 @@ Cc: Rich Felker <dalias@libc.org>,
 References: <65ed7c95-712c-410b-84f3-58496b0c9649@roeck-us.net>
  <351dfebd-c09f-470e-8b03-cc904753b136@roeck-us.net>
  <2b54a5d8-b317-4df7-ab2e-d63a352dd77d@leemhuis.info>
-From: Guenter Roeck <linux@roeck-us.net>
-Autocrypt: addr=linux@roeck-us.net; keydata=
- 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
- mDW4+i+XlNFUPUYMrIKi9joBhu18ssf5i5Q=
-In-Reply-To: <2b54a5d8-b317-4df7-ab2e-d63a352dd77d@leemhuis.info>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+ <93ad802f-c152-4461-9f9f-c338f58a000d@roeck-us.net>
+From: "Linux regression tracking (Thorsten Leemhuis)"
+ <regressions@leemhuis.info>
+Reply-To: Linux regressions mailing list <regressions@lists.linux.dev>
+In-Reply-To: <93ad802f-c152-4461-9f9f-c338f58a000d@roeck-us.net>
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
+X-bounce-key: webpack.hosteurope.de;regressions@leemhuis.info;1710777528;418c2201;
+X-HE-SMSGID: 1rmFNt-0004i8-8b
 
-On 3/18/24 08:04, Linux regression tracking (Thorsten Leemhuis) wrote:
-> On 11.03.24 18:04, Guenter Roeck wrote:
->> On Sat, Feb 10, 2024 at 07:12:39AM -0800, Guenter Roeck wrote:
+On 18.03.24 16:32, Guenter Roeck wrote:
+> On 3/18/24 08:04, Linux regression tracking (Thorsten Leemhuis) wrote:
+>> On 11.03.24 18:04, Guenter Roeck wrote:
+>>> On Sat, Feb 10, 2024 at 07:12:39AM -0800, Guenter Roeck wrote:
+>>>>
+>>>> when running checksum unit tests on sh4 qemu emulations, I get the
+>>>> following
+>>>> errors.
 >>>
->>> when running checksum unit tests on sh4 qemu emulations, I get the following
->>> errors.
+>>> Adding to regression tracker.
+>>>
+>>> #regzbot ^introduced cadc4e1a2b4d2
 >>
->> Adding to regression tracker.
->>
->> #regzbot ^introduced cadc4e1a2b4d2
+>> Hmmm, thx for that, but well, I'm a bit taken back and forth here. That
+>> commit afaics is from v3.0-rc1 and Linus iirc at least once said
+>> something along the lines of "a regression only reported after a long
+>> time at some point becomes just a bug". I'd say that applies there,
+>> which is why I'm wondering if tracking this really is worth it.
 > 
-> Hmmm, thx for that, but well, I'm a bit taken back and forth here. That
-> commit afaics is from v3.0-rc1 and Linus iirc at least once said
-> something along the lines of "a regression only reported after a long
-> time at some point becomes just a bug". I'd say that applies there,
-> which is why I'm wondering if tracking this really is worth it.
-> 
+> Not my call to make. I'll keep in mind to not add "bugs" to the regression
+> tracker in the future.
 
-Not my call to make. I'll keep in mind to not add "bugs" to the regression
-tracker in the future. Feel free to drop.
+From my side there is no need for you to keep that in mind, as "somewhat
+added this regression to the tracking" might be something that will
+occasionally make a developer finally fix the problem -- which is why I
+waited a few days with today's reply. :-D
 
-For my understanding, what is "a long time" ?
+> Feel free to drop.
 
-Thanks,
-Guenter
+Let me do that:
 
+#regzbot inconclusive: really old regression
+
+> For my understanding, what is "a long time" ?
+
+That is a good question and I guess the answer like so often in kernel
+land depends on the regression in question. :-/ Also note that that
+"iirc" really was meant like it, as I might misremember. I just checked
+and found two related quotes, but the situations are somewhat different:
+
+https://lore.kernel.org/all/CAHk-=wis_qQy4oDNynNKi5b7Qhosmxtoj1jxo5wmB6SRUwQUBQ@mail.gmail.com/
+"""
+And yes, I do consider "regression in an earlier release" to be a
+regression that needs fixing.
+
+There's obviously a time limit: if that "regression in an earlier
+release" was a year or more ago, and just took forever for people to
+notice, and it had semantic changes that now mean that fixing the
+regression could cause a _new_ regression, then that can cause me to
+go "Oh, now the new semantics are what we have to live with".
+"""
+
+And also:
+https://lore.kernel.org/all/CAHk-=wiVi7mSrsMP=fLXQrXK_UimybW=ziLOwSzFTtoXUacWVQ@mail.gmail.com/
+"""
+And obviously, if users take years to even notice that something
+broke, or if we have sane ways to work around the breakage that
+doesn't make for too much trouble for users (ie "ok, there are a
+handful of users, and they can use a kernel command line to work
+around it" kind of things) we've also been a bit less strict.
+"""
+
+Ciao, Thorsten
