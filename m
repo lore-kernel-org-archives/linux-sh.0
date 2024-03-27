@@ -1,170 +1,214 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 69CAC1E52C;
-	Wed, 27 Mar 2024 19:39:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0BB2254FAC;
+	Wed, 27 Mar 2024 20:44:58 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1711568368; cv=none; b=FcxLBpnxJPTGsCQKJMaOehbjOnGZv0TNC/pyZ6T7tdFg+uBHQwVGc16bCJcdyNA+71PziK55Za2q+3nBvJUVGuDRHK1jSOYkaQ+9cYpBwUfrfdDVkO+Pv/3MXf5WgcytgMqIv95wAePvIIhynu03vdW+N3nNEUjVYn9UexMxuxI=
+	t=1711572300; cv=none; b=W6Nibvlhf26XX2T4hP6OyLWEC1mRfyEKbP/4kZrm7PHmlKIqINFdPmwTFU2odb3F0gDDQ2pyiT7mV6wN7zAFAewbPS0CzDbv6bEvfaUhComOiF27PBvmw7GTlW5YNvU1R/8YSK01lco2Tl5szMPWMPnz8uM9vOnT/03DtQ6Oi74=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1711568368; c=relaxed/simple;
-	bh=mgDCCV9DYm3gE81YovhkygNKHO9RS0DsGnhFgu3kHyA=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=ohTEiRVoma0GCSa7EZZ90JwMYtXJic6dw9IzrR9wHmJQ9MtPyovNYumX29+ZdXjgF61t624A31HreBfXT0zzfYOWEhomcosS0n6pTOUuJuYSomT1MhJBycaoToZ++zc1eKJDPY3BzxV7cmdCFuSRbFmNes9+sEUpW4BKTRVKy5o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SKHszxO4; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1711572300; c=relaxed/simple;
+	bh=OrF18IDFwI6flGgEpimPzRhp+XTrybACCnJ/SNmMJ9o=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=pbNgBg+VLg/iLsBwxyKMfwl87q7q5PwmNzLRhkCVawz+kfu82TYonnG8XiFSTz8+4qzh3HaW8s8UvawXkUmS3PYAwprnph9FBGQ2fHsW/vdfsFbqfFk05dbSv2YstAqLlMgDFFyl+g6/9Q90NX5ZpoIZUmjXQczi/LZ3Bwwon2A=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=J5DnRALO; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=qKAtjPYe; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=J5DnRALO; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=qKAtjPYe; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SKHszxO4"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3492BC433C7;
-	Wed, 27 Mar 2024 19:39:22 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1711568368;
-	bh=mgDCCV9DYm3gE81YovhkygNKHO9RS0DsGnhFgu3kHyA=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=SKHszxO4HY0/TKQKrYd5xjeNheZExttn6ouZSQo7RamEADgZOHEGKOgxLgWnDAQsX
-	 TQk1EiCgbOjPSXUXVDKc1GHuMb8JYfr2n9dUTSMBL4fPlQCFaWvqtzr7SljGX8ozL0
-	 d+GxeE8i5/jrK3YAq+PzsRs9yg9Ub9Ye0zUWxbvydciwA80gaS/Cm+ZdJSIaW62wjN
-	 8mgdqhfJd0T7WESQFdfsQPBT5oU/lItq2D11cSo/Qk/7TSLc6IaPfRphmumfAFxMTP
-	 w0oml1KABCZkKYStlxNthCpMKTFGN6FZPoQQlay9J46ava0AXCk2S+OoNd/Q7U91J0
-	 LlcAACEC05P/g==
-Date: Wed, 27 Mar 2024 19:39:20 +0000
-From: Simon Horman <horms@kernel.org>
-To: Guenter Roeck <linux@roeck-us.net>
-Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>,
-	Arnd Bergmann <arnd@arndb.de>,
-	=?utf-8?B?TWHDrXJh?= Canal <mcanal@igalia.com>,
-	Dan Carpenter <dan.carpenter@linaro.org>,
-	Kees Cook <keescook@chromium.org>,
-	Daniel Diaz <daniel.diaz@linaro.org>,
-	David Gow <davidgow@google.com>,
-	Arthur Grillo <arthurgrillo@riseup.net>,
-	Brendan Higgins <brendan.higgins@linux.dev>,
-	Naresh Kamboju <naresh.kamboju@linaro.org>,
-	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Maxime Ripard <mripard@kernel.org>,
-	Ville =?utf-8?B?U3lyasOkbMOk?= <ville.syrjala@linux.intel.com>,
-	Daniel Vetter <daniel@ffwll.ch>,
-	Thomas Zimmermann <tzimmermann@suse.de>,
-	dri-devel@lists.freedesktop.org, kunit-dev@googlegroups.com,
-	linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-	linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-	linux-sh@vger.kernel.org, loongarch@lists.linux.dev,
-	netdev@vger.kernel.org,
-	Linux Kernel Functional Testing <lkft@linaro.org>
-Subject: Re: [PATCH v2 12/14] sh: Add support for suppressing warning
- backtraces
-Message-ID: <20240327193920.GV403975@kernel.org>
-References: <20240325175248.1499046-1-linux@roeck-us.net>
- <20240325175248.1499046-13-linux@roeck-us.net>
- <20240327144431.GL403975@kernel.org>
- <320aacc6-b7e5-4c3d-948e-d0743ab26c5d@roeck-us.net>
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="J5DnRALO";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="qKAtjPYe";
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="J5DnRALO";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="qKAtjPYe"
+Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 18AAC229DB;
+	Wed, 27 Mar 2024 20:44:57 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1711572297; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=gvNYpjPCMP3bY8u5dBMnCwR0tl6uUjrhgXbs0rKvAd0=;
+	b=J5DnRALO8oxp1paKt25KLzQ/CWLNr0nEdbAXmUacLVmFY6BetSYDsDGtJbDgzF6nh3pI11
+	bir5J0VQ5Thx0TUrKUf0lp3V6ZLwiYVhjiiZNEiGKxv5sW0Kt/jDdaBuWNiuoOGZhO7KdK
+	5JSNjhEuVdoOHCc4X9YHLcIA/wtS1FI=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1711572297;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=gvNYpjPCMP3bY8u5dBMnCwR0tl6uUjrhgXbs0rKvAd0=;
+	b=qKAtjPYe0YZLjXfM54u9I6bl6MmSDiPCLddSbLHuhcjvV51ZGW/oSYV4yrQi3yrAwbUSek
+	buJJaf1BirRZUxAQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1711572297; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=gvNYpjPCMP3bY8u5dBMnCwR0tl6uUjrhgXbs0rKvAd0=;
+	b=J5DnRALO8oxp1paKt25KLzQ/CWLNr0nEdbAXmUacLVmFY6BetSYDsDGtJbDgzF6nh3pI11
+	bir5J0VQ5Thx0TUrKUf0lp3V6ZLwiYVhjiiZNEiGKxv5sW0Kt/jDdaBuWNiuoOGZhO7KdK
+	5JSNjhEuVdoOHCc4X9YHLcIA/wtS1FI=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1711572297;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=gvNYpjPCMP3bY8u5dBMnCwR0tl6uUjrhgXbs0rKvAd0=;
+	b=qKAtjPYe0YZLjXfM54u9I6bl6MmSDiPCLddSbLHuhcjvV51ZGW/oSYV4yrQi3yrAwbUSek
+	buJJaf1BirRZUxAQ==
+Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id 898E313AB3;
+	Wed, 27 Mar 2024 20:44:56 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap2.dmz-prg2.suse.org with ESMTPSA
+	id E2GmH0iFBGZ2FQAAn2gu4w
+	(envelope-from <tzimmermann@suse.de>); Wed, 27 Mar 2024 20:44:56 +0000
+From: Thomas Zimmermann <tzimmermann@suse.de>
+To: arnd@arndb.de,
+	javierm@redhat.com,
+	deller@gmx.de,
+	sui.jingfeng@linux.dev
+Cc: linux-arch@vger.kernel.org,
+	dri-devel@lists.freedesktop.org,
+	linux-fbdev@vger.kernel.org,
+	sparclinux@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-parisc@vger.kernel.org,
+	linux-mips@vger.kernel.org,
+	linux-m68k@lists.linux-m68k.org,
+	loongarch@lists.linux.dev,
+	linux-arm-kernel@lists.infradead.org,
+	linux-snps-arc@lists.infradead.org,
+	linux-kernel@vger.kernel.org,
+	Thomas Zimmermann <tzimmermann@suse.de>
+Subject: [PATCH v2 0/3] arch: Remove fbdev dependency from video helpers
+Date: Wed, 27 Mar 2024 21:41:28 +0100
+Message-ID: <20240327204450.14914-1-tzimmermann@suse.de>
+X-Mailer: git-send-email 2.44.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <320aacc6-b7e5-4c3d-948e-d0743ab26c5d@roeck-us.net>
+Content-Transfer-Encoding: 8bit
+X-Spam-Level: 
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.de header.s=susede2_rsa header.b=J5DnRALO;
+	dkim=pass header.d=suse.de header.s=susede2_ed25519 header.b=qKAtjPYe
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spamd-Result: default: False [-1.51 / 50.00];
+	 RCVD_VIA_SMTP_AUTH(0.00)[];
+	 SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:98:from];
+	 TO_DN_SOME(0.00)[];
+	 R_MISSING_CHARSET(2.50)[];
+	 BROKEN_CONTENT_TYPE(1.50)[];
+	 RCVD_COUNT_THREE(0.00)[3];
+	 DKIM_TRACE(0.00)[suse.de:+];
+	 MX_GOOD(-0.01)[];
+	 NEURAL_HAM_SHORT(-0.20)[-1.000];
+	 FREEMAIL_TO(0.00)[arndb.de,redhat.com,gmx.de,linux.dev];
+	 FROM_EQ_ENVFROM(0.00)[];
+	 MIME_TRACE(0.00)[0:+];
+	 BAYES_HAM(-3.00)[100.00%];
+	 ARC_NA(0.00)[];
+	 R_DKIM_ALLOW(-0.20)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	 FROM_HAS_DN(0.00)[];
+	 DWL_DNSWL_MED(-2.00)[suse.de:dkim];
+	 FREEMAIL_ENVRCPT(0.00)[gmx.de];
+	 TO_MATCH_ENVRCPT_ALL(0.00)[];
+	 MIME_GOOD(-0.10)[text/plain];
+	 NEURAL_HAM_LONG(-1.00)[-1.000];
+	 DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	 RCPT_COUNT_TWELVE(0.00)[18];
+	 MID_CONTAINS_FROM(1.00)[];
+	 FUZZY_BLOCKED(0.00)[rspamd.com];
+	 RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -1.51
+X-Rspamd-Queue-Id: 18AAC229DB
+X-Spam-Flag: NO
 
-On Wed, Mar 27, 2024 at 08:10:51AM -0700, Guenter Roeck wrote:
-> On 3/27/24 07:44, Simon Horman wrote:
-> > On Mon, Mar 25, 2024 at 10:52:46AM -0700, Guenter Roeck wrote:
-> > > Add name of functions triggering warning backtraces to the __bug_table
-> > > object section to enable support for suppressing WARNING backtraces.
-> > > 
-> > > To limit image size impact, the pointer to the function name is only added
-> > > to the __bug_table section if both CONFIG_KUNIT_SUPPRESS_BACKTRACE and
-> > > CONFIG_DEBUG_BUGVERBOSE are enabled. Otherwise, the __func__ assembly
-> > > parameter is replaced with a (dummy) NULL parameter to avoid an image size
-> > > increase due to unused __func__ entries (this is necessary because __func__
-> > > is not a define but a virtual variable).
-> > > 
-> > > Tested-by: Linux Kernel Functional Testing <lkft@linaro.org>
-> > > Acked-by: Dan Carpenter <dan.carpenter@linaro.org>
-> > > Signed-off-by: Guenter Roeck <linux@roeck-us.net>
-> > > ---
-> > > - Rebased to v6.9-rc1
-> > > - Added Tested-by:, Acked-by:, and Reviewed-by: tags
-> > > - Introduced KUNIT_SUPPRESS_BACKTRACE configuration option
-> > > 
-> > >   arch/sh/include/asm/bug.h | 26 ++++++++++++++++++++++----
-> > >   1 file changed, 22 insertions(+), 4 deletions(-)
-> > > 
-> > > diff --git a/arch/sh/include/asm/bug.h b/arch/sh/include/asm/bug.h
-> > > index 05a485c4fabc..470ce6567d20 100644
-> > > --- a/arch/sh/include/asm/bug.h
-> > > +++ b/arch/sh/include/asm/bug.h
-> > > @@ -24,21 +24,36 @@
-> > >    * The offending file and line are encoded in the __bug_table section.
-> > >    */
-> > >   #ifdef CONFIG_DEBUG_BUGVERBOSE
-> > > +
-> > > +#ifdef CONFIG_KUNIT_SUPPRESS_BACKTRACE
-> > > +# define HAVE_BUG_FUNCTION
-> > > +# define __BUG_FUNC_PTR	"\t.long %O2\n"
-> > > +#else
-> > > +# define __BUG_FUNC_PTR
-> > > +#endif /* CONFIG_KUNIT_SUPPRESS_BACKTRACE */
-> > > +
-> > 
-> > Hi Guenter,
-> > 
-> > a minor nit from my side: this change results in a Kernel doc warning.
-> > 
-> >       .../bug.h:29: warning: expecting prototype for _EMIT_BUG_ENTRY(). Prototype was for HAVE_BUG_FUNCTION() instead
-> > 
-> > Perhaps either the new code should be placed above the Kernel doc,
-> > or scripts/kernel-doc should be enhanced?
-> > 
-> 
-> Thanks a lot for the feedback.
-> 
-> The definition block needs to be inside CONFIG_DEBUG_BUGVERBOSE,
-> so it would be a bit odd to move it above the documentation
-> just to make kerneldoc happy. I am not really sure that to do
-> about it.
+Make architecture helpers for display functionality depend on general
+video functionality instead of fbdev. This avoids the dependency on
+fbdev and makes the functionality available for non-fbdev code.
 
-FWIIW, I agree that would be odd.
-But perhaps the #ifdef could also move above the Kernel doc?
-Maybe not a great idea, but the best one I've had so far.
+Patch 1 replaces the variety of Kconfig options that control the
+Makefiles with CONFIG_VIDEO. More fine-grained control of the build
+can then be done within each video/ directory; see parisc for an
+example.
 
-> I'll wait for comments from others before making any changes.
-> 
-> Thanks,
-> Guenter
-> 
-> > >   #define _EMIT_BUG_ENTRY				\
-> > >   	"\t.pushsection __bug_table,\"aw\"\n"	\
-> > >   	"2:\t.long 1b, %O1\n"			\
-> > > -	"\t.short %O2, %O3\n"			\
-> > > -	"\t.org 2b+%O4\n"			\
-> > > +	__BUG_FUNC_PTR				\
-> > > +	"\t.short %O3, %O4\n"			\
-> > > +	"\t.org 2b+%O5\n"			\
-> > >   	"\t.popsection\n"
-> > >   #else
-> > >   #define _EMIT_BUG_ENTRY				\
-> > >   	"\t.pushsection __bug_table,\"aw\"\n"	\
-> > >   	"2:\t.long 1b\n"			\
-> > > -	"\t.short %O3\n"			\
-> > > -	"\t.org 2b+%O4\n"			\
-> > > +	"\t.short %O4\n"			\
-> > > +	"\t.org 2b+%O5\n"			\
-> > >   	"\t.popsection\n"
-> > >   #endif
-> > > +#ifdef HAVE_BUG_FUNCTION
-> > > +# define __BUG_FUNC	__func__
-> > > +#else
-> > > +# define __BUG_FUNC	NULL
-> > > +#endif
-> > > +
-> > >   #define BUG()						\
-> > >   do {							\
-> > >   	__asm__ __volatile__ (				\
-> > 
-> > ...
-> 
+Patch 2 replaces fb_is_primary_device() with video_is_primary_device(),
+which has no dependencies on fbdev. The implementation remains identical
+on all affected platforms. There's one minor change in fbcon, which is
+the only caller of fb_is_primary_device().
+
+Patch 3 renames the source and files from fbdev to video.
+
+v2:
+- improve cover letter
+- rebase onto v6.9-rc1
+
+Thomas Zimmermann (3):
+  arch: Select fbdev helpers with CONFIG_VIDEO
+  arch: Remove struct fb_info from video helpers
+  arch: Rename fbdev header and source files
+
+ arch/arc/include/asm/fb.h                    |  8 ------
+ arch/arc/include/asm/video.h                 |  8 ++++++
+ arch/arm/include/asm/fb.h                    |  6 -----
+ arch/arm/include/asm/video.h                 |  6 +++++
+ arch/arm64/include/asm/fb.h                  | 10 --------
+ arch/arm64/include/asm/video.h               | 10 ++++++++
+ arch/loongarch/include/asm/{fb.h => video.h} |  8 +++---
+ arch/m68k/include/asm/{fb.h => video.h}      |  8 +++---
+ arch/mips/include/asm/{fb.h => video.h}      | 12 ++++-----
+ arch/parisc/Makefile                         |  2 +-
+ arch/parisc/include/asm/fb.h                 | 14 -----------
+ arch/parisc/include/asm/video.h              | 16 ++++++++++++
+ arch/parisc/video/Makefile                   |  2 +-
+ arch/parisc/video/{fbdev.c => video-sti.c}   |  9 ++++---
+ arch/powerpc/include/asm/{fb.h => video.h}   |  8 +++---
+ arch/powerpc/kernel/pci-common.c             |  2 +-
+ arch/sh/include/asm/fb.h                     |  7 ------
+ arch/sh/include/asm/video.h                  |  7 ++++++
+ arch/sparc/Makefile                          |  4 +--
+ arch/sparc/include/asm/{fb.h => video.h}     | 15 +++++------
+ arch/sparc/video/Makefile                    |  2 +-
+ arch/sparc/video/fbdev.c                     | 26 --------------------
+ arch/sparc/video/video.c                     | 25 +++++++++++++++++++
+ arch/x86/Makefile                            |  2 +-
+ arch/x86/include/asm/fb.h                    | 19 --------------
+ arch/x86/include/asm/video.h                 | 21 ++++++++++++++++
+ arch/x86/video/Makefile                      |  3 ++-
+ arch/x86/video/{fbdev.c => video.c}          | 21 +++++++---------
+ drivers/video/fbdev/core/fbcon.c             |  2 +-
+ include/asm-generic/Kbuild                   |  2 +-
+ include/asm-generic/{fb.h => video.h}        | 17 +++++++------
+ include/linux/fb.h                           |  2 +-
+ 32 files changed, 154 insertions(+), 150 deletions(-)
+ delete mode 100644 arch/arc/include/asm/fb.h
+ create mode 100644 arch/arc/include/asm/video.h
+ delete mode 100644 arch/arm/include/asm/fb.h
+ create mode 100644 arch/arm/include/asm/video.h
+ delete mode 100644 arch/arm64/include/asm/fb.h
+ create mode 100644 arch/arm64/include/asm/video.h
+ rename arch/loongarch/include/asm/{fb.h => video.h} (86%)
+ rename arch/m68k/include/asm/{fb.h => video.h} (86%)
+ rename arch/mips/include/asm/{fb.h => video.h} (76%)
+ delete mode 100644 arch/parisc/include/asm/fb.h
+ create mode 100644 arch/parisc/include/asm/video.h
+ rename arch/parisc/video/{fbdev.c => video-sti.c} (78%)
+ rename arch/powerpc/include/asm/{fb.h => video.h} (76%)
+ delete mode 100644 arch/sh/include/asm/fb.h
+ create mode 100644 arch/sh/include/asm/video.h
+ rename arch/sparc/include/asm/{fb.h => video.h} (75%)
+ delete mode 100644 arch/sparc/video/fbdev.c
+ create mode 100644 arch/sparc/video/video.c
+ delete mode 100644 arch/x86/include/asm/fb.h
+ create mode 100644 arch/x86/include/asm/video.h
+ rename arch/x86/video/{fbdev.c => video.c} (66%)
+ rename include/asm-generic/{fb.h => video.h} (89%)
+
+-- 
+2.44.0
+
