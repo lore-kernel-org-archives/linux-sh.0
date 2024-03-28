@@ -1,66 +1,38 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5AA2C657BD
-	for <linux-sh@vger.kernel.org>; Thu, 28 Mar 2024 09:50:51 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EB6C0535A4;
+	Thu, 28 Mar 2024 11:05:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.21
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1711619455; cv=none; b=ljM0zPVVs7kJNa/kyFzrhY1I2g8Iz9jQRigdbk4gSPEvAGNEzprvmQr2WGmnosJVg2HsRK6gK3/fznt1Uqll+AcChPGOpae6tql1p/InTF5gw0iNGLPXzuUrMMBpPjwelszGlQ2JDXq+HyhWtWYym11RpVFVcI/e+axIbwx0aVk=
+	t=1711623933; cv=none; b=Q24Te9j1kCpdzR7sF1e71oe8T6U4LfyMu8Cq/rT9ez3ZBlK8F1Wuty2EMg2n8FbHHdaNjPatc2vBOsrbLcVeqQwgno1w8jVMejf9CduZ8HPIm7NaWQwogZwm8CPpXFx2QkPuJx4So75blHU0PA+G58Vvev1i1ceWjUbAlH9yb3U=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1711619455; c=relaxed/simple;
-	bh=IC+w1/aG7/S0e85a60pC7lSi5fxH02gmkfHkY/6WOcA=;
+	s=arc-20240116; t=1711623933; c=relaxed/simple;
+	bh=RxwgDtb3KKDcytkXAi7wGQBpphqqgNo2Idn6VQ7P3jw=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=eLiwf2G6Mtn56b4jo5pmMrmU7RKoS92X/A7IJ3atKNQ/+rQDfHTnU0aaHsz7BpSi60L8MSfsd4dvyTCpbge5ovhS/Mev3Rvgo7D3IVPcK7KkPe5FeifE/JJpbZFGoSxjW2PAFOdRyqxC9qZJ+5pXSNdJUxyHfHbjJuQhgyRvn8g=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=aLmklekO; arc=none smtp.client-ip=170.10.133.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	 In-Reply-To:Content-Type; b=g+NWqeFWrnPNeBrjDS02c5tQcI6IDdX0D0gbVnHHd7TIjnEZywM4rmSOUK2lc17hIqvdr/d4tRVj1ldhN5U+ofRVvt5L/pxk1PybQ2/wCl7y3JNtDHzBXXI2vEHEIp6tJIJeenvjiVXA6H6oaKJz/0mn9L1kz86Eh33/yIIAQPA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.de; spf=pass smtp.mailfrom=gmx.de; dkim=pass (2048-bit key) header.d=gmx.de header.i=deller@gmx.de header.b=C4TYakAa; arc=none smtp.client-ip=212.227.17.21
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="aLmklekO"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1711619450;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-	bh=nxtLpj+iBP9Xt1HHnMn0rZUp2jdjxbDETMue+PmYl4I=;
-	b=aLmklekOFnozbxt++LYlBOC+UOL7k/BHqyPgkCanxiihydrYWahcfjS1lYNfyWFzDgrY9J
-	TMubl7BefYT4XXnXmsRNTnF1sUYeBpzaquM7kiZ1a/ZH2YNx0V+lvpnbJVLSWGfveJrC6X
-	3H8O+sxz9AyxLFEPlirtQ5IXHHapYjk=
-Received: from mail-wr1-f71.google.com (mail-wr1-f71.google.com
- [209.85.221.71]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-498-Ch2PmeCuP5eUa3eSmFaKHQ-1; Thu, 28 Mar 2024 05:50:48 -0400
-X-MC-Unique: Ch2PmeCuP5eUa3eSmFaKHQ-1
-Received: by mail-wr1-f71.google.com with SMTP id ffacd0b85a97d-33ed44854ddso366510f8f.2
-        for <linux-sh@vger.kernel.org>; Thu, 28 Mar 2024 02:50:48 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1711619447; x=1712224247;
-        h=content-transfer-encoding:in-reply-to:organization:autocrypt:from
-         :references:cc:to:content-language:subject:user-agent:mime-version
-         :date:message-id:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=nxtLpj+iBP9Xt1HHnMn0rZUp2jdjxbDETMue+PmYl4I=;
-        b=bLP2DPP6IT38e3Gp3yBEN0JUVK3qgDeAC0TlBrRC5FX4KpTi8IhYkwmJd17u4NFmQ9
-         zq3whD6E0Q+6iRBm18/7b4XDQmlkTt5Op8KwuB3tuynI06ftMmsie6Aj1a32Ihv0sTHP
-         r/nhAoZuyBjasqsrmUSvT46qO0jQxzRsxUgAx6tRIH+jU94x6ohBlnQ/R1ibu/oWviDd
-         WzuUtWBwAcZqD5g4Fb/bhoUrP8QyR3w0AormNubRug0otOV2011jLLkkv/AVTNZ5J6zs
-         9sxlqOEjzRdnUa6kjPlZdAEvd92BXj66Nd5t0vOELvwf30p79aCOrBPLDYHCtQD1rHv9
-         kb8g==
-X-Forwarded-Encrypted: i=1; AJvYcCWruQIUHui+rl3I4nMj+90pV1YAGgEaZKAhO+a887qpSR3K2KVS68JkwQTdMIqcdiXJwjZ4DF6cz7XUONH9KfM5sm2fGCM0qeE=
-X-Gm-Message-State: AOJu0YxZPBQIT09FL3q6El+79jeBT/gdEUr6b4BWAn3ujJbWFlhfC/ae
-	20c3jD7t524LWxEY3PlcRWTlu4xVL0Q7QQFI8ativlm+GEoC8BcdYPzW/lclzCGk2LwOwbp4onV
-	xAY45JesfYcUqPV3scXgJfJJhcuUdIy5C4zyvl9/lGOkfvnowUBD0X8wR
-X-Received: by 2002:a5d:6b87:0:b0:33e:7402:f4d3 with SMTP id n7-20020a5d6b87000000b0033e7402f4d3mr1830853wrx.33.1711619447542;
-        Thu, 28 Mar 2024 02:50:47 -0700 (PDT)
-X-Google-Smtp-Source: AGHT+IEyrKrZ3N50ui+bWTg50EQbEelvWiqsIQ+BxNpbWjJq6gih2eNzSfvyD9RigouCStOuyiIO3g==
-X-Received: by 2002:a5d:6b87:0:b0:33e:7402:f4d3 with SMTP id n7-20020a5d6b87000000b0033e7402f4d3mr1830833wrx.33.1711619447065;
-        Thu, 28 Mar 2024 02:50:47 -0700 (PDT)
-Received: from ?IPV6:2003:cb:c714:3600:8033:4189:6bd4:ea29? (p200300cbc7143600803341896bd4ea29.dip0.t-ipconnect.de. [2003:cb:c714:3600:8033:4189:6bd4:ea29])
-        by smtp.gmail.com with ESMTPSA id l3-20020a5d5603000000b0033e03d37685sm1281329wrv.55.2024.03.28.02.50.45
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 28 Mar 2024 02:50:46 -0700 (PDT)
-Message-ID: <0e1dccfe-c181-444b-b124-05bec5cfd055@redhat.com>
-Date: Thu, 28 Mar 2024 10:50:45 +0100
+	dkim=pass (2048-bit key) header.d=gmx.de header.i=deller@gmx.de header.b="C4TYakAa"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.de;
+	s=s31663417; t=1711623862; x=1712228662; i=deller@gmx.de;
+	bh=9/16Qzrw3seVqIzw3vOPat5jqGCo0xh0NQwrsRCPyY4=;
+	h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:
+	 In-Reply-To;
+	b=C4TYakAaZ0uRrmB4kYbMMObcroodqai+f8r9F+1JkXTmB34rM6P4dApxX3VVfiJu
+	 djO9PSqy8gALD4P1buiRcQwbplf3kvVIJBpsze9N9dHIys97x9j8e7xB9Fbo8YiP/
+	 FnVL/uuTY2Z7Ar9YuAocpSn0q46F5dLPp08TMHaNi50wSPQJZPScHEcz42YGW+P0E
+	 902g/MEPvKRc7k8IIaKGKFaCGXqMHEG6oi/EMgdDS+tosgXvLSPfhGHm7n9ok5XCV
+	 D1sYs1erxG+lSoRLxADDe9jJ/P+3Osre6YItkylC10Pwv3B6ZyiGmwGnuZ8Qxohs0
+	 c+a/oQjsSG3p/OBJ+w==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [10.8.0.6] ([78.94.87.245]) by mail.gmx.net (mrgmx104
+ [212.227.17.168]) with ESMTPSA (Nemesis) id 1MC34X-1rzRet11Th-00CVKE; Thu, 28
+ Mar 2024 12:04:22 +0100
+Message-ID: <b5a8bc60-ad16-407d-9e57-c224467c3f06@gmx.de>
+Date: Thu, 28 Mar 2024 12:04:14 +0100
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -68,368 +40,365 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH RFC 0/3] mm/gup: consistently call it GUP-fast
-To: Mike Rapoport <rppt@kernel.org>, Arnd Bergmann <arnd@arndb.de>
-Cc: Vineet Gupta <vgupta@kernel.org>, peterx <peterx@redhat.com>,
- linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>,
- Jason Gunthorpe <jgg@nvidia.com>, John Hubbard <jhubbard@nvidia.com>,
- linux-arm-kernel@lists.infradead.org, loongarch@lists.linux.dev,
- linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
- linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-mm@kvack.org,
- linux-perf-users@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- x86@kernel.org, Ryan Roberts <ryan.roberts@arm.com>,
- Alexander Viro <viro@zeniv.linux.org.uk>, Matt Turner <mattst88@gmail.com>,
- Alexey Brodkin <abrodkin@synopsys.com>
-References: <20240327130538.680256-1-david@redhat.com> <ZgQ5hNltQ2DHQXps@x1n>
- <3922460a-4d01-4ecb-b8c5-7c57fd46f3fd@redhat.com>
- <dc1433ea-4e59-4ab7-83fb-23b393020980@app.fastmail.com>
- <3360dba8-0fac-4126-b72b-abc036957d6a@kernel.org>
- <10da3ced-9a79-4ebb-a77d-1aa49cc61952@app.fastmail.com>
- <ZgUZCBNloC-grPWJ@kernel.org>
-From: David Hildenbrand <david@redhat.com>
-Autocrypt: addr=david@redhat.com; keydata=
- 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
- WNyWQQ==
-Organization: Red Hat
-In-Reply-To: <ZgUZCBNloC-grPWJ@kernel.org>
-X-Mimecast-Spam-Score: 0
-X-Mimecast-Originator: redhat.com
+Subject: Re: [PATCH v2 2/3] arch: Remove struct fb_info from video helpers
+To: Thomas Zimmermann <tzimmermann@suse.de>, arnd@arndb.de,
+ javierm@redhat.com, sui.jingfeng@linux.dev
+Cc: linux-arch@vger.kernel.org, dri-devel@lists.freedesktop.org,
+ linux-fbdev@vger.kernel.org, sparclinux@vger.kernel.org,
+ linux-sh@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+ linux-parisc@vger.kernel.org, linux-mips@vger.kernel.org,
+ linux-m68k@lists.linux-m68k.org, loongarch@lists.linux.dev,
+ linux-arm-kernel@lists.infradead.org, linux-snps-arc@lists.infradead.org,
+ linux-kernel@vger.kernel.org,
+ "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+ "David S. Miller" <davem@davemloft.net>,
+ Andreas Larsson <andreas@gaisler.com>, Thomas Gleixner <tglx@linutronix.de>,
+ Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+ Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+ "H. Peter Anvin" <hpa@zytor.com>
+References: <20240327204450.14914-1-tzimmermann@suse.de>
+ <20240327204450.14914-3-tzimmermann@suse.de>
 Content-Language: en-US
+From: Helge Deller <deller@gmx.de>
+Autocrypt: addr=deller@gmx.de; keydata=
+ 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
+In-Reply-To: <20240327204450.14914-3-tzimmermann@suse.de>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:MkWerH/kos999V3d+lXJIMTQR7GQxw4lOR8ujKMTFrxBBP7ED+v
+ nCbh+i8OdPfgMXpIGn8F/RzVnZUcX6qDw8V3E3UjKq7SahbOvuUOOuYxXCXnsnkfPvuPSPx
+ NctfQzZG6pYQPeGTYdE4BZyLtBUkECsbnyx+wy41zWcvFfBUL0ZdEV+vBIMDG1cUK97B23Y
+ bYcjwlnnFHbk9uuxDY1Pg==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:Dx/DFQx+Tp4=;1jQ9Mrb8iRQltfotF+w9pgqJHIU
+ iECm7T+rje2zL8zTenHrlnXQeSQONr+FaCg++dwSppO9FrKmnOynFxtQ1jyXodrNmfRA4EM2C
+ /kdonCGFZRVMEC4AcjMX7CNdfXgsm1PmDtM2PS0PsIbyNKOmJmCtNuuG9DOEoRGaKT/OmufGQ
+ cPT3e2vNV5TO0H5v5dN3qXQpwQcMUyCRRykHrNNkHaaDaRr/ZzOBfPtwoGtzil4eqbx0TIkOo
+ 8I9XEksMi45hN+vQgsIabvbBnXPxG+Fuihr1d57qQ+/UR6jSOef4YNJR55CwHf1yV8LWeYcB9
+ tMEXYafQh0yPfMWzJ/yu1u/wJ3NKEd2pT+8YrPOaGbbIZdkF8PejKNoHpYUdHS2t/xLztKwTh
+ rhlz/heBK6RM48buMgfEBqNqUpsDlZKNwFNN7Z4o95iliHLA7+giKcS18HKNrDh3XshSVQ2rZ
+ VjcTSxmIH+kh7TpiRLkEqeKTKJS0KelvWbmjfRs9p6Kzhvwo29FqEGgfH1hafrj9jW6PzlK/h
+ A/QFPSlM7XYYaxDZleWtbvkBLV1BepzjXr5+iOVTsm4uM4c25HzPeMxhc8oDU4L6YKB+pLEO3
+ Aw+jKKaQp4sVRDwv9GzTF3Q55ZVvXsp/UU7zdvWVV4TxP3x3RxjHolkwUKBZujW9XbU4hlCvT
+ BLm2eTF4CFq1OGxuF4fB8uaJdeSD3OhcfM1hRXrkJhc63H2CmU8Ox39fu3XsON7uxF6uoGbKr
+ oR/lcEwnqlmBE3cSgbdmfMEkH+kJSathXvIL/qcBBkiopu6f0im4JDJQZnzpo5SbJjDZAQ0uQ
+ uiyyFR4ac2BxBvD3fYVQocyztn+eex+y0OBO5nR6HM7pM=
 
-On 28.03.24 08:15, Mike Rapoport wrote:
-> On Thu, Mar 28, 2024 at 07:09:13AM +0100, Arnd Bergmann wrote:
->> On Thu, Mar 28, 2024, at 06:51, Vineet Gupta wrote:
->>> On 3/27/24 09:22, Arnd Bergmann wrote:
->>>> On Wed, Mar 27, 2024, at 16:39, David Hildenbrand wrote:
->>>>> On 27.03.24 16:21, Peter Xu wrote:
->>>>>> On Wed, Mar 27, 2024 at 02:05:35PM +0100, David Hildenbrand wrote:
->>>>>>
->>>>>> I'm not sure what config you tried there; as I am doing some build tests
->>>>>> recently, I found turning off CONFIG_SAMPLES + CONFIG_GCC_PLUGINS could
->>>>>> avoid a lot of issues, I think it's due to libc missing.  But maybe not the
->>>>>> case there.
->>>>> CCin Arnd; I use some of his compiler chains, others from Fedora directly. For
->>>>> example for alpha and arc, the Fedora gcc is "13.2.1".
->>>>> But there is other stuff like (arc):
->>>>>
->>>>> ./arch/arc/include/asm/mmu-arcv2.h: In function 'mmu_setup_asid':
->>>>> ./arch/arc/include/asm/mmu-arcv2.h:82:9: error: implicit declaration of
->>>>> function 'write_aux_reg' [-Werro
->>>>> r=implicit-function-declaration]
->>>>>      82 |         write_aux_reg(ARC_REG_PID, asid | MMU_ENABLE);
->>>>>         |         ^~~~~~~~~~~~~
->>>> Seems to be missing an #include of soc/arc/aux.h, but I can't
->>>> tell when this first broke without bisecting.
->>>
->>> Weird I don't see this one but I only have gcc 12 handy ATM.
->>>
->>>      gcc version 12.2.1 20230306 (ARC HS GNU/Linux glibc toolchain -
->>> build 1360)
->>>
->>> I even tried W=1 (which according to scripts/Makefile.extrawarn) should
->>> include -Werror=implicit-function-declaration but don't see this still.
->>>
->>> Tomorrow I'll try building a gcc 13.2.1 for ARC.
->>
->> David reported them with the toolchains I built at
->> https://mirrors.edge.kernel.org/pub/tools/crosstool/
->> I'm fairly sure the problem is specific to the .config
->> and tree, not the toolchain though.
-> 
-> This happens with defconfig and both gcc 12.2.0 and gcc 13.2.0 from your
-> crosstools. I also see these on the current Linus' tree:
-> 
-> arc/kernel/ptrace.c:342:16: warning: no previous prototype for 'syscall_trace_enter' [-Wmissing-prototypes]
-> arch/arc/kernel/kprobes.c:193:15: warning: no previous prototype for 'arc_kprobe_handler' [-Wmissing-prototypes]
-> 
-> This fixed the warning about write_aux_reg for me, probably Vineet would
-> want this include somewhere else...
-> 
-> diff --git a/arch/arc/include/asm/mmu-arcv2.h b/arch/arc/include/asm/mmu-arcv2.h
-> index ed9036d4ede3..0fca342d7b79 100644
-> --- a/arch/arc/include/asm/mmu-arcv2.h
-> +++ b/arch/arc/include/asm/mmu-arcv2.h
-> @@ -69,6 +69,8 @@
->   
->   #ifndef __ASSEMBLY__
->   
-> +#include <asm/arcregs.h>
+On 3/27/24 21:41, Thomas Zimmermann wrote:
+> The per-architecture video helpers do not depend on struct fb_info
+> or anything else from fbdev. Remove it from the interface and replace
+> fb_is_primary_device() with video_is_primary_device(). The new helper
+
+Since you rename this function, wouldn't something similar to
+
+device_is_primary_display()
+	or
+device_is_primary_console()
+	or
+is_primary_graphics_device()
+	or
+is_primary_display_device()
+
+be a better name?
+
+Helge
+
+> is similar in functionality, but can operate on non-fbdev devices.
+>
+> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+> Cc: "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>
+> Cc: Helge Deller <deller@gmx.de>
+> Cc: "David S. Miller" <davem@davemloft.net>
+> Cc: Andreas Larsson <andreas@gaisler.com>
+> Cc: Thomas Gleixner <tglx@linutronix.de>
+> Cc: Ingo Molnar <mingo@redhat.com>
+> Cc: Borislav Petkov <bp@alien8.de>
+> Cc: Dave Hansen <dave.hansen@linux.intel.com>
+> Cc: x86@kernel.org
+> Cc: "H. Peter Anvin" <hpa@zytor.com>
+> ---
+>   arch/parisc/include/asm/fb.h     |  8 +++++---
+>   arch/parisc/video/fbdev.c        |  9 +++++----
+>   arch/sparc/include/asm/fb.h      |  7 ++++---
+>   arch/sparc/video/fbdev.c         | 17 ++++++++---------
+>   arch/x86/include/asm/fb.h        |  8 +++++---
+>   arch/x86/video/fbdev.c           | 18 +++++++-----------
+>   drivers/video/fbdev/core/fbcon.c |  2 +-
+>   include/asm-generic/fb.h         | 11 ++++++-----
+>   8 files changed, 41 insertions(+), 39 deletions(-)
+>
+> diff --git a/arch/parisc/include/asm/fb.h b/arch/parisc/include/asm/fb.h
+> index 658a8a7dc5312..ed2a195a3e762 100644
+> --- a/arch/parisc/include/asm/fb.h
+> +++ b/arch/parisc/include/asm/fb.h
+> @@ -2,11 +2,13 @@
+>   #ifndef _ASM_FB_H_
+>   #define _ASM_FB_H_
+>
+> -struct fb_info;
+> +#include <linux/types.h>
 > +
->   struct mm_struct;
->   extern int pae40_exist_but_not_enab(void);
-
-
-Here are all err+warn I see with my configs on Linus' tree from today (not mm-unstable).
-Most of them are warnings due to missing prototypes or missing "clone3".
-
-Parisc64 seems to be a bit more broken. Maybe nobody cares about parisc64 anymore? Or
-it's a toolchain issue, don't know.
-
-xtensa is also broken, but "invalid register" smells like a toolchain issue to me.
-
-
-Maybe all known/expected, just posting it if anybody cares. I can share my full build script
-on request.
-
-
-
-[INFO] Compiling alpha
-[INFO] 0 errors
-[INFO] 102 warnings
-[PASS]
-
-$ cat alpha_log  | grep warn
-<stdin>:1519:2: warning: #warning syscall clone3 not implemented [-Wcpp]
-arch/alpha/lib/checksum.c:45:9: warning: no previous prototype for 'csum_tcpudp_magic' [-Wmissing-prototypes]
-arch/alpha/lib/checksum.c:54:8: warning: no previous prototype for 'csum_tcpudp_nofold' [-Wmissing-prototypes]
-arch/alpha/lib/checksum.c:145:9: warning: no previous prototype for 'ip_fast_csum' [-Wmissing-prototypes]
-arch/alpha/lib/checksum.c:163:8: warning: no previous prototype for 'csum_partial' [-Wmissing-prototypes]
-arch/alpha/lib/checksum.c:180:9: warning: no previous prototype for 'ip_compute_csum' [-Wmissing-prototypes]
-arch/alpha/kernel/traps.c:211:1: warning: no previous prototype for 'do_entArith' [-Wmissing-prototypes]
-arch/alpha/kernel/traps.c:233:1: warning: no previous prototype for 'do_entIF' [-Wmissing-prototypes]
-arch/alpha/kernel/traps.c:400:1: warning: no previous prototype for 'do_entDbg' [-Wmissing-prototypes]
-arch/alpha/kernel/traps.c:436:1: warning: no previous prototype for 'do_entUna' [-Wmissing-prototypes]
-arch/alpha/kernel/traps.c:721:1: warning: no previous prototype for 'do_entUnaUser' [-Wmissing-prototypes]
-arch/alpha/mm/init.c:261:1: warning: no previous prototype for 'srm_paging_stop' [-Wmissing-prototypes]
-arch/alpha/lib/fpreg.c:20:1: warning: no previous prototype for 'alpha_read_fp_reg' [-Wmissing-prototypes]
-[....]
-
-[INFO] Compiling arc
-[INFO] 0 errors
-[INFO] 2 warnings
-[PASS]
-
-$ cat arc_log  | grep warn
-arch/arc/kernel/ptrace.c:342:16: warning: no previous prototype for 'syscall_trace_enter' [-Wmissing-prototypes]
-arch/arc/kernel/kprobes.c:193:15: warning: no previous prototype for 'arc_kprobe_handler' [-Wmissing-prototypes]
-
-
-[INFO] Compiling hexagon
-[INFO] 0 errors
-[INFO] 1 warnings
-[PASS]
-
-  $ cat hexagon_log  | grep warn
-<stdin>:1519:2: warning: syscall clone3 not implemented [-W#warnings]
-  1519 | #warning syscall clone3 not implemented
-1 warning generated.
-
-
-[INFO] Compiling mips64
-[INFO] 0 errors
-[INFO] 15 warnings
-[PASS]
-
-  $ cat mips64_log  | grep warn
-arch/mips/sibyte/bcm1480/setup.c:104:13: warning: no previous prototype for 'bcm1480_setup' [-Wmissing-prototypes]
-arch/mips/sibyte/bcm1480/irq.c:200:13: warning: no previous prototype for 'init_bcm1480_irqs' [-Wmissing-prototypes]
-arch/mips/sibyte/bcm1480/time.c:10:13: warning: no previous prototype for 'plat_time_init' [-Wmissing-prototypes]
-arch/mips/sibyte/bcm1480/smp.c:49:6: warning: no previous prototype for 'bcm1480_smp_init' [-Wmissing-prototypes]
-arch/mips/sibyte/bcm1480/smp.c:158:6: warning: no previous prototype for 'bcm1480_mailbox_interrupt' [-Wmissing-prototypes]
-arch/mips/sibyte/swarm/setup.c:59:5: warning: no previous prototype for 'swarm_be_handler' [-Wmissing-prototypes]
-arch/mips/sibyte/swarm/rtc_xicor1241.c:108:5: warning: no previous prototype for 'xicor_set_time' [-Wmissing-prototypes]
-arch/mips/sibyte/swarm/rtc_xicor1241.c:167:10: warning: no previous prototype for 'xicor_get_time' [-Wmissing-prototypes]
-arch/mips/sibyte/swarm/rtc_xicor1241.c:203:5: warning: no previous prototype for 'xicor_probe' [-Wmissing-prototypes]
-arch/mips/sibyte/swarm/rtc_m41t81.c:139:5: warning: no previous prototype for 'm41t81_set_time' [-Wmissing-prototypes]
-arch/mips/sibyte/swarm/rtc_m41t81.c:186:10: warning: no previous prototype for 'm41t81_get_time' [-Wmissing-prototypes]
-arch/mips/sibyte/swarm/rtc_m41t81.c:219:5: warning: no previous prototype for 'm41t81_probe' [-Wmissing-prototypes]
-arch/mips/mm/cerr-sb1.c:165:17: warning: no previous prototype for 'sb1_cache_error' [-Wmissing-prototypes]
-arch/mips/kernel/cevt-bcm1480.c:96:6: warning: no previous prototype for 'sb1480_clockevent_init' [-Wmissing-prototypes]
-arch/mips/kernel/csrc-bcm1480.c:37:13: warning: no previous prototype for 'sb1480_clocksource_init' [-Wmissing-prototypes]
-
-
-[INFO] Compiling mips32-xpa
-[INFO] 0 errors
-[INFO] 1 warnings
-[PASS]
-
-$ cat mips32-xpa_log | grep warn
-drivers/uio/uio.c:795:16: warning: cast to pointer from integer of different size [-Wint-to-pointer-cast]
-
-
-[INFO] Compiling mips32-alchemy
-[INFO] 0 errors
-[INFO] 1 warnings
-[PASS]
-
-$ cat mips32-alchemy_log  | grep warn
-drivers/net/ethernet/amd/au1000_eth.c:574:6: warning: no previous prototype for 'au1000_ReleaseDB' [-Wmissing-prototypes]
-
-
-[INFO] Compiling nios2
-[INFO] 0 errors
-[INFO] 35 warnings
-[PASS]
-
-$ cat nios2_log | grep warn
-<stdin>:1519:2: warning: #warning syscall clone3 not implemented [-Wcpp]
-arch/nios2/lib/memcpy.c:160:7: warning: no previous prototype for 'memcpy' [-Wmissing-prototypes]
-arch/nios2/lib/memcpy.c:194:7: warning: no previous prototype for 'memcpyb' [-Wmissing-prototypes]
-arch/nios2/mm/dma-mapping.c:21:6: warning: no previous prototype for 'arch_sync_dma_for_device' [-Wmissing-prototypes]
-arch/nios2/mm/dma-mapping.c:45:6: warning: no previous prototype for 'arch_sync_dma_for_cpu' [-Wmissing-prototypes]
-arch/nios2/mm/dma-mapping.c:63:6: warning: no previous prototype for 'arch_dma_prep_coherent' [-Wmissing-prototypes]
-arch/nios2/mm/dma-mapping.c:70:7: warning: no previous prototype for 'arch_dma_set_uncached' [-Wmissing-prototypes]
-arch/nios2/kernel/irq.c:19:17: warning: no previous prototype for 'do_IRQ' [-Wmissing-prototypes]
-arch/nios2/kernel/process.c:34:6: warning: no previous prototype for 'arch_cpu_idle' [-Wmissing-prototypes]
-arch/nios2/kernel/process.c:43:6: warning: no previous prototype for 'machine_restart' [-Wmissing-prototypes]
-arch/nios2/kernel/process.c:54:6: warning: no previous prototype for 'machine_halt' [-Wmissing-prototypes]
-arch/nios2/kernel/process.c:66:6: warning: no previous prototype for 'machine_power_off' [-Wmissing-prototypes]
-arch/nios2/kernel/process.c:152:6: warning: no previous prototype for 'dump' [-Wmissing-prototypes]
-arch/nios2/kernel/process.c:253:16: warning: no previous prototype for 'nios2_clone' [-Wmissing-prototypes]
-[...]
-
-
-[INFO] Compiling parisc64
-[INFO] 79 errors
-[INFO] 54 warnings
-[FAIL]
-
-$ cat parisc64_log  | grep error
-ipc/sem.c:1284:18: error: 'struct semid64_ds' has no member named 'sem_otime_high'; did you mean 'sem_otime'?
-ipc/sem.c:1285:18: error: 'struct semid64_ds' has no member named 'sem_ctime_high'; did you mean 'sem_ctime'?
-././include/linux/compiler_types.h:449:45: error: call to '__compiletime_assert_276' declared with attribute error: BUILD_BUG_ON failed: sizeof(struct semid64_ds) != 80
-ipc/msg.c:567:12: error: 'struct msqid64_ds' has no member named 'msg_stime_high'; did you mean 'msg_stime'?
-ipc/msg.c:568:12: error: 'struct msqid64_ds' has no member named 'msg_rtime_high'; did you mean 'msg_rtime'?
-ipc/msg.c:569:12: error: 'struct msqid64_ds' has no member named 'msg_ctime_high'; did you mean 'msg_ctime'?
-ipc/shm.c:1137:15: error: 'struct shmid64_ds' has no member named 'shm_atime_high'; did you mean 'shm_atime'?
-ipc/shm.c:1138:15: error: 'struct shmid64_ds' has no member named 'shm_dtime_high'; did you mean 'shm_dtime'?
-ipc/shm.c:1139:15: error: 'struct shmid64_ds' has no member named 'shm_ctime_high'; did you mean 'shm_ctime'?
-././include/linux/compiler_types.h:449:45: error: call to '__compiletime_assert_390' declared with attribute error: BUILD_BUG_ON failed: offsetof(struct dst_entry, __rcuref) & 63
-././include/linux/compiler_types.h:449:45: error: call to '__compiletime_assert_374' declared with attribute error: BUILD_BUG_ON failed: offsetof(struct dst_entry, __rcuref) & 63
-././include/linux/compiler_types.h:449:45: error: call to '__compiletime_assert_382' declared with attribute error: BUILD_BUG_ON failed: offsetof(struct dst_entry, __rcuref) & 63
-[...]
-
-
-[INFO] Compiling sh
-[INFO] 0 errors
-[INFO] 39 warnings
-[PASS]
-
-  $ cat sh_log | grep warn
-<stdin>:1519:2: warning: #warning syscall clone3 not implemented [-Wcpp]
-arch/sh/mm/cache-shx3.c:18:13: warning: no previous prototype for 'shx3_cache_init' [-Wmissing-prototypes]
-arch/sh/mm/flush-sh4.c:106:13: warning: no previous prototype for 'sh4__flush_region_init' [-Wmissing-prototypes]
-arch/sh/mm/cache-sh4.c:384:13: warning: no previous prototype for 'sh4_cache_init' [-Wmissing-prototypes]
-arch/sh/kernel/return_address.c:49:7: warning: no previous prototype for 'return_address' [-Wmissing-prototypes]
-arch/sh/mm/pgtable.c:10:6: warning: no previous prototype for 'pgd_ctor' [-Wmissing-prototypes]
-arch/sh/mm/pgtable.c:32:8: warning: no previous prototype for 'pgd_alloc' [-Wmissing-prototypes]
-arch/sh/mm/pgtable.c:37:6: warning: no previous prototype for 'pgd_free' [-Wmissing-prototypes]
-arch/sh/mm/pgtable.c:43:6: warning: no previous prototype for 'pud_populate' [-Wmissing-prototypes]
-arch/sh/mm/pgtable.c:48:8: warning: no previous prototype for 'pmd_alloc_one' [-Wmissing-prototypes]
-arch/sh/mm/pgtable.c:53:6: warning: no previous prototype for 'pmd_free' [-Wmissing-prototypes]
-arch/sh/mm/tlbex_32.c:22:1: warning: no previous prototype for 'handle_tlbmiss' [-Wmissing-prototypes]
-arch/sh/kernel/sys_sh.c:58:16: warning: no previous prototype for 'sys_cacheflush' [-Wmissing-prototypes]
-[...]
-
-
-[INFO] Compiling sparc32
-[INFO] 0 errors
-[INFO] 1 warnings
-[PASS]
-
-$ cat sparc32_log | grep warn
-<stdin>:1519:2: warning: #warning syscall clone3 not implemented [-Wcpp]
-
-
-[INFO] Compiling sparc64
-[INFO] 0 errors
-[INFO] 26 warnings
-[PASS]
-
-$ cat sparc64_log | grep warn
-<stdin>:1519:2: warning: #warning syscall clone3 not implemented [-Wcpp]
-arch/sparc/vdso/vma.c:246:12: warning: no previous prototype for 'init_vdso_image' [-Wmissing-prototypes]
-arch/sparc/vdso/vclock_gettime.c:254:1: warning: no previous prototype for '__vdso_clock_gettime' [-Wmissing-prototypes]
-arch/sparc/vdso/vclock_gettime.c:282:1: warning: no previous prototype for '__vdso_clock_gettime_stick' [-Wmissing-prototypes]
-arch/sparc/vdso/vclock_gettime.c:307:1: warning: no previous prototype for '__vdso_gettimeofday' [-Wmissing-prototypes]
-arch/sparc/vdso/vclock_gettime.c:343:1: warning: no previous prototype for '__vdso_gettimeofday_stick' [-Wmissing-prototypes]
-arch/sparc/kernel/traps_64.c:253:6: warning: no previous prototype for 'is_no_fault_exception' [-Wmissing-prototypes]
-arch/sparc/kernel/traps_64.c:2035:6: warning: no previous prototype for 'do_mcd_err' [-Wmissing-prototypes]
-[...]
-
-
-[INFO] Compiling uml64
-[INFO] 0 errors
-[INFO] 51 warnings
-[PASS]
-
-  $ cat uml64_log | grep warn
-arch/x86/um/user-offsets.c:17:6: warning: no previous prototype for 'foo' [-Wmissing-prototypes]
-./arch/x86/um/shared/sysdep/kernel-offsets.h:9:6: warning: no previous prototype for 'foo' [-Wmissing-prototypes]
-arch/x86/um/bugs_64.c:9:6: warning: no previous prototype for 'arch_check_bugs' [-Wmissing-prototypes]
-arch/x86/um/bugs_64.c:13:6: warning: no previous prototype for 'arch_examine_signal' [-Wmissing-prototypes]
-arch/x86/um/fault.c:18:5: warning: no previous prototype for 'arch_fixup' [-Wmissing-prototypes]
-arch/x86/um/ptrace_64.c:111:5: warning: no previous prototype for 'poke_user' [-Wmissing-prototypes]
-arch/x86/um/ptrace_64.c:171:5: warning: no previous prototype for 'peek_user' [-Wmissing-prototypes]
-arch/um/os-Linux/main.c:187:7: warning: no previous prototype for '__wrap_malloc' [-Wmissing-prototypes]
-arch/um/os-Linux/main.c:208:7: warning: no previous prototype for '__wrap_calloc' [-Wmissing-prototypes]
-arch/um/os-Linux/main.c:222:6: warning: no previous prototype for '__wrap_free' [-Wmissing-prototypes]
-arch/um/os-Linux/mem.c:28:6: warning: no previous prototype for 'kasan_map_memory' [-Wmissing-prototypes]
-arch/um/os-Linux/mem.c:212:13: warning: no previous prototype for 'check_tmpexec' [-Wmissing-prototypes]
-arch/um/os-Linux/signal.c:75:6: warning: no previous prototype for 'sig_handler' [-Wmissing-prototypes]
-arch/um/os-Linux/signal.c:111:6: warning: no previous prototype for 'timer_alarm_handler' [-Wmissing-prototypes]
-[...]
-
-
-[INFO] Compiling xtensa
-[INFO] 1 errors
-[INFO] 1 warnings
-[FAIL]
-
-  $ cat xtensa_log | grep Error
-./arch/xtensa/include/asm/initialize_mmu.h:57: Error: invalid register 'atomctl' for 'wsr' instruction
-make[4]: *** [scripts/Makefile.build:362: arch/xtensa/kernel/head.o] Error 1
-make[3]: *** [scripts/Makefile.build:485: arch/xtensa/kernel] Error 2
-make[2]: *** [scripts/Makefile.build:485: arch/xtensa] Error 2
-make[1]: *** [/home/dhildenb/git/linux-cross/Makefile:1919: .] Error 2
-make: *** [Makefile:240: __sub-make] Error 2
-
-
--- 
-Cheers,
-
-David / dhildenb
+> +struct device;
+>
+>   #if defined(CONFIG_STI_CORE)
+> -int fb_is_primary_device(struct fb_info *info);
+> -#define fb_is_primary_device fb_is_primary_device
+> +bool video_is_primary_device(struct device *dev);
+> +#define video_is_primary_device video_is_primary_device
+>   #endif
+>
+>   #include <asm-generic/fb.h>
+> diff --git a/arch/parisc/video/fbdev.c b/arch/parisc/video/fbdev.c
+> index e4f8ac99fc9e0..540fa0c919d59 100644
+> --- a/arch/parisc/video/fbdev.c
+> +++ b/arch/parisc/video/fbdev.c
+> @@ -5,12 +5,13 @@
+>    * Copyright (C) 2001-2002 Thomas Bogendoerfer <tsbogend@alpha.franken=
+.de>
+>    */
+>
+> -#include <linux/fb.h>
+>   #include <linux/module.h>
+>
+>   #include <video/sticore.h>
+>
+> -int fb_is_primary_device(struct fb_info *info)
+> +#include <asm/fb.h>
+> +
+> +bool video_is_primary_device(struct device *dev)
+>   {
+>   	struct sti_struct *sti;
+>
+> @@ -21,6 +22,6 @@ int fb_is_primary_device(struct fb_info *info)
+>   		return true;
+>
+>   	/* return true if it's the default built-in framebuffer driver */
+> -	return (sti->dev =3D=3D info->device);
+> +	return (sti->dev =3D=3D dev);
+>   }
+> -EXPORT_SYMBOL(fb_is_primary_device);
+> +EXPORT_SYMBOL(video_is_primary_device);
+> diff --git a/arch/sparc/include/asm/fb.h b/arch/sparc/include/asm/fb.h
+> index 24440c0fda490..07f0325d6921c 100644
+> --- a/arch/sparc/include/asm/fb.h
+> +++ b/arch/sparc/include/asm/fb.h
+> @@ -3,10 +3,11 @@
+>   #define _SPARC_FB_H_
+>
+>   #include <linux/io.h>
+> +#include <linux/types.h>
+>
+>   #include <asm/page.h>
+>
+> -struct fb_info;
+> +struct device;
+>
+>   #ifdef CONFIG_SPARC32
+>   static inline pgprot_t pgprot_framebuffer(pgprot_t prot,
+> @@ -18,8 +19,8 @@ static inline pgprot_t pgprot_framebuffer(pgprot_t pro=
+t,
+>   #define pgprot_framebuffer pgprot_framebuffer
+>   #endif
+>
+> -int fb_is_primary_device(struct fb_info *info);
+> -#define fb_is_primary_device fb_is_primary_device
+> +bool video_is_primary_device(struct device *dev);
+> +#define video_is_primary_device video_is_primary_device
+>
+>   static inline void fb_memcpy_fromio(void *to, const volatile void __io=
+mem *from, size_t n)
+>   {
+> diff --git a/arch/sparc/video/fbdev.c b/arch/sparc/video/fbdev.c
+> index bff66dd1909a4..e46f0499c2774 100644
+> --- a/arch/sparc/video/fbdev.c
+> +++ b/arch/sparc/video/fbdev.c
+> @@ -1,26 +1,25 @@
+>   // SPDX-License-Identifier: GPL-2.0
+>
+>   #include <linux/console.h>
+> -#include <linux/fb.h>
+> +#include <linux/device.h>
+>   #include <linux/module.h>
+>
+> +#include <asm/fb.h>
+>   #include <asm/prom.h>
+>
+> -int fb_is_primary_device(struct fb_info *info)
+> +bool video_is_primary_device(struct device *dev)
+>   {
+> -	struct device *dev =3D info->device;
+> -	struct device_node *node;
+> +	struct device_node *node =3D dev->of_node;
+>
+>   	if (console_set_on_cmdline)
+> -		return 0;
+> +		return false;
+>
+> -	node =3D dev->of_node;
+>   	if (node && node =3D=3D of_console_device)
+> -		return 1;
+> +		return true;
+>
+> -	return 0;
+> +	return false;
+>   }
+> -EXPORT_SYMBOL(fb_is_primary_device);
+> +EXPORT_SYMBOL(video_is_primary_device);
+>
+>   MODULE_DESCRIPTION("Sparc fbdev helpers");
+>   MODULE_LICENSE("GPL");
+> diff --git a/arch/x86/include/asm/fb.h b/arch/x86/include/asm/fb.h
+> index c3b9582de7efd..999db33792869 100644
+> --- a/arch/x86/include/asm/fb.h
+> +++ b/arch/x86/include/asm/fb.h
+> @@ -2,17 +2,19 @@
+>   #ifndef _ASM_X86_FB_H
+>   #define _ASM_X86_FB_H
+>
+> +#include <linux/types.h>
+> +
+>   #include <asm/page.h>
+>
+> -struct fb_info;
+> +struct device;
+>
+>   pgprot_t pgprot_framebuffer(pgprot_t prot,
+>   			    unsigned long vm_start, unsigned long vm_end,
+>   			    unsigned long offset);
+>   #define pgprot_framebuffer pgprot_framebuffer
+>
+> -int fb_is_primary_device(struct fb_info *info);
+> -#define fb_is_primary_device fb_is_primary_device
+> +bool video_is_primary_device(struct device *dev);
+> +#define video_is_primary_device video_is_primary_device
+>
+>   #include <asm-generic/fb.h>
+>
+> diff --git a/arch/x86/video/fbdev.c b/arch/x86/video/fbdev.c
+> index 1dd6528cc947c..4d87ce8e257fe 100644
+> --- a/arch/x86/video/fbdev.c
+> +++ b/arch/x86/video/fbdev.c
+> @@ -7,7 +7,6 @@
+>    *
+>    */
+>
+> -#include <linux/fb.h>
+>   #include <linux/module.h>
+>   #include <linux/pci.h>
+>   #include <linux/vgaarb.h>
+> @@ -25,20 +24,17 @@ pgprot_t pgprot_framebuffer(pgprot_t prot,
+>   }
+>   EXPORT_SYMBOL(pgprot_framebuffer);
+>
+> -int fb_is_primary_device(struct fb_info *info)
+> +bool video_is_primary_device(struct device *dev)
+>   {
+> -	struct device *device =3D info->device;
+> -	struct pci_dev *pci_dev;
+> +	struct pci_dev *pdev;
+>
+> -	if (!device || !dev_is_pci(device))
+> -		return 0;
+> +	if (!dev_is_pci(dev))
+> +		return false;
+>
+> -	pci_dev =3D to_pci_dev(device);
+> +	pdev =3D to_pci_dev(dev);
+>
+> -	if (pci_dev =3D=3D vga_default_device())
+> -		return 1;
+> -	return 0;
+> +	return (pdev =3D=3D vga_default_device());
+>   }
+> -EXPORT_SYMBOL(fb_is_primary_device);
+> +EXPORT_SYMBOL(video_is_primary_device);
+>
+>   MODULE_LICENSE("GPL");
+> diff --git a/drivers/video/fbdev/core/fbcon.c b/drivers/video/fbdev/core=
+/fbcon.c
+> index 46823c2e2ba12..85c5c8cbc680a 100644
+> --- a/drivers/video/fbdev/core/fbcon.c
+> +++ b/drivers/video/fbdev/core/fbcon.c
+> @@ -2939,7 +2939,7 @@ void fbcon_remap_all(struct fb_info *info)
+>   static void fbcon_select_primary(struct fb_info *info)
+>   {
+>   	if (!map_override && primary_device =3D=3D -1 &&
+> -	    fb_is_primary_device(info)) {
+> +	    video_is_primary_device(info->device)) {
+>   		int i;
+>
+>   		printk(KERN_INFO "fbcon: %s (fb%i) is primary device\n",
+> diff --git a/include/asm-generic/fb.h b/include/asm-generic/fb.h
+> index 6ccabb400aa66..4788c1e1c6bc0 100644
+> --- a/include/asm-generic/fb.h
+> +++ b/include/asm-generic/fb.h
+> @@ -10,8 +10,9 @@
+>   #include <linux/io.h>
+>   #include <linux/mm_types.h>
+>   #include <linux/pgtable.h>
+> +#include <linux/types.h>
+>
+> -struct fb_info;
+> +struct device;
+>
+>   #ifndef pgprot_framebuffer
+>   #define pgprot_framebuffer pgprot_framebuffer
+> @@ -23,11 +24,11 @@ static inline pgprot_t pgprot_framebuffer(pgprot_t p=
+rot,
+>   }
+>   #endif
+>
+> -#ifndef fb_is_primary_device
+> -#define fb_is_primary_device fb_is_primary_device
+> -static inline int fb_is_primary_device(struct fb_info *info)
+> +#ifndef video_is_primary_device
+> +#define video_is_primary_device video_is_primary_device
+> +static inline bool video_is_primary_device(struct device *dev)
+>   {
+> -	return 0;
+> +	return false;
+>   }
+>   #endif
+>
 
