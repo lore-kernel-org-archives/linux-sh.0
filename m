@@ -1,149 +1,99 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from mailrelay6-1.pub.mailoutpod3-cph3.one.com (mailrelay6-1.pub.mailoutpod3-cph3.one.com [46.30.211.245])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2BD9822EED;
-	Thu, 28 Mar 2024 07:16:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 03FB2524AD
+	for <linux-sh@vger.kernel.org>; Thu, 28 Mar 2024 07:24:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=46.30.211.245
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1711610169; cv=none; b=BXE428iIXpSTk2JsvdtKCyNXB91bsmr+ucHMqRQ1HUyMAgAP3XbDFQNaK1ux03u4L6O4erMYuuMrWSSKamxrLf7f5cLOkJioQQl61hkczlsY7zwCks8pqsn2Hw/cqbiHYim/ZiykTLtVUlaAYhncnTWmy9lejcrefYA8YfRlA7I=
+	t=1711610650; cv=none; b=RGoFPXAAHQP7Pp9FBVtdYjg3d6sDSUddKladDgxIpR70B0gTdXgMSv+eHfzDGFS6jYM4lkLl5VIamkNTrKgbGRfi9+c1zWdoThxalebQfV28jriC7rm0ms9gO6I8EREYvdm3k3Sp+l1CUjGWeWoVNybiVMxa7iv3Bk2+gIvxhMw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1711610169; c=relaxed/simple;
-	bh=r1JsHv6zvguqW90jyEY0U/U4DMDGMKwYQjCJCqIjmk0=;
+	s=arc-20240116; t=1711610650; c=relaxed/simple;
+	bh=lC/MAxDKVedxYYDbpstaB8/CiL11IsiPeCS0mpthbj8=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=P7OQ/qSronR2jM6NmP59ZEgEk57TYrWQmo8NeUC1Og0SVylxp8nxV5+KvcbZiFchW7hYj+2kq7ki6/i7QIBZYfEBtHmFzoa+IAdGE+66XtlcBhJ8sLbXrwMCpoLkwMz+GYzNmrAl4OzstnbCLzOLof8ZZmdxNpm5yxqp5yqrd84=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=NAmN/m71; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=RTF/WEKXKv0TyQk3/xi0ZK+604J7cWPXsBuH8brabZeJemjw7GcbgC5+KDEelV87hNbUqmZantYmyOf5PN62xzHzOpFHjECV9A3Fd4v4+VApSRA2A6mARdxrdabcbcSC+j6imVhX0roCAb3zRrAHTPEOnLi8A2A9S+iXrHPSmnw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=ravnborg.org; spf=none smtp.mailfrom=ravnborg.org; dkim=pass (2048-bit key) header.d=ravnborg.org header.i=@ravnborg.org header.b=ZE4ko+rx; dkim=permerror (0-bit key) header.d=ravnborg.org header.i=@ravnborg.org header.b=F5ZG3jPw; arc=none smtp.client-ip=46.30.211.245
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=ravnborg.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=ravnborg.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="NAmN/m71"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 13A23C433F1;
-	Thu, 28 Mar 2024 07:16:02 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1711610168;
-	bh=r1JsHv6zvguqW90jyEY0U/U4DMDGMKwYQjCJCqIjmk0=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=NAmN/m71xn3ib012g07l8sC+gyJIzFt9fFK3jdDigIHga4g8Fy0g4u0A9zMTn2G8y
-	 Hz/ArW+aqXuqTPb2fPpftu20+1RkDRzP/XFJQhHXJMj8KYnoe5TCRWhoGwSsNg3v4T
-	 H3jfZDkvrEoo5QMLri7RoQDmFW3FyBYt4qgxPfkHDpAB+8Ajo8fibnxufZyqfjrguR
-	 dBNlncXj4g94p9pzTUeGHFe+ZO+Z9/1/QE5YeVvQ97AoXIN+LsdR2yhA69cvKvdLXt
-	 K7hfz3k4p687HCWjsBvcGXgtiDBmENV6h+EZI1V7LNtQhQ+nyZGFPEfci2N6376cIj
-	 b9N3P6mb8dHLA==
-Date: Thu, 28 Mar 2024 09:15:20 +0200
-From: Mike Rapoport <rppt@kernel.org>
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: Vineet Gupta <vgupta@kernel.org>, David Hildenbrand <david@redhat.com>,
-	peterx <peterx@redhat.com>, linux-kernel@vger.kernel.org,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Jason Gunthorpe <jgg@nvidia.com>,
-	John Hubbard <jhubbard@nvidia.com>,
-	linux-arm-kernel@lists.infradead.org, loongarch@lists.linux.dev,
-	linux-mips@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-	linux-mm@kvack.org, linux-perf-users@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, x86@kernel.org,
-	Ryan Roberts <ryan.roberts@arm.com>,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Matt Turner <mattst88@gmail.com>,
-	Alexey Brodkin <abrodkin@synopsys.com>
-Subject: Re: [PATCH RFC 0/3] mm/gup: consistently call it GUP-fast
-Message-ID: <ZgUZCBNloC-grPWJ@kernel.org>
-References: <20240327130538.680256-1-david@redhat.com>
- <ZgQ5hNltQ2DHQXps@x1n>
- <3922460a-4d01-4ecb-b8c5-7c57fd46f3fd@redhat.com>
- <dc1433ea-4e59-4ab7-83fb-23b393020980@app.fastmail.com>
- <3360dba8-0fac-4126-b72b-abc036957d6a@kernel.org>
- <10da3ced-9a79-4ebb-a77d-1aa49cc61952@app.fastmail.com>
+	dkim=pass (2048-bit key) header.d=ravnborg.org header.i=@ravnborg.org header.b="ZE4ko+rx";
+	dkim=permerror (0-bit key) header.d=ravnborg.org header.i=@ravnborg.org header.b="F5ZG3jPw"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=ravnborg.org; s=rsa2;
+	h=in-reply-to:content-type:mime-version:references:message-id:subject:cc:to:
+	 from:date:from;
+	bh=gya7IPEuSu6MJQjEiIDquH7exohl6PUqhigJxnlATAE=;
+	b=ZE4ko+rxCKWftwAo8NczSWsuqHjEGGfU6uUbSIvP9K7fRjmUyo4Xr6m3BNAQARjmG/LX8288MYqxa
+	 qrdk8dPJqF9CYmvYKIuCC2KeC1KUOqccJBBkzOKfv28rtFurrRJni2BtWG1TH9wXZ4K99dnFf8V5MD
+	 HZ1gA7bs8n86UELzO/3mtmm9tYEeJ1jNRSMFTH1fTc77A4UCALepeO491AxJF+4LLzM+MLxKLdACw9
+	 4pMSRnDxAVYcWBUnWQrf3ZIk6pJCXrGR5H7uq2oOnDFOYI+oh/4/BJhyLEjVShZXd+FvQVzGTZFYI4
+	 XSSV3BEarvEACwRvDNnbMC1B5JbFC8Q==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed;
+	d=ravnborg.org; s=ed2;
+	h=in-reply-to:content-type:mime-version:references:message-id:subject:cc:to:
+	 from:date:from;
+	bh=gya7IPEuSu6MJQjEiIDquH7exohl6PUqhigJxnlATAE=;
+	b=F5ZG3jPwCujGHPqRnIkMdiF/ub3mtz9R1CndiSD3xivl8FAjmngZD0HN2Qu0BtwII0e2ZNTa1qmYb
+	 0bYRExmAw==
+X-HalOne-ID: 25d22949-ecd4-11ee-9cc7-bd80189f112a
+Received: from ravnborg.org (2-105-2-98-cable.dk.customer.tdc.net [2.105.2.98])
+	by mailrelay6.pub.mailoutpod3-cph3.one.com (Halon) with ESMTPSA
+	id 25d22949-ecd4-11ee-9cc7-bd80189f112a;
+	Thu, 28 Mar 2024 07:24:03 +0000 (UTC)
+Date: Thu, 28 Mar 2024 08:24:01 +0100
+From: Sam Ravnborg <sam@ravnborg.org>
+To: Thomas Zimmermann <tzimmermann@suse.de>
+Cc: arnd@arndb.de, javierm@redhat.com, deller@gmx.de,
+	sui.jingfeng@linux.dev, linux-arch@vger.kernel.org,
+	dri-devel@lists.freedesktop.org, linux-fbdev@vger.kernel.org,
+	sparclinux@vger.kernel.org, linux-sh@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org, linux-parisc@vger.kernel.org,
+	linux-mips@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+	loongarch@lists.linux.dev, linux-arm-kernel@lists.infradead.org,
+	linux-snps-arc@lists.infradead.org, linux-kernel@vger.kernel.org,
+	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+	"David S. Miller" <davem@davemloft.net>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>
+Subject: Re: [PATCH v2 1/3] arch: Select fbdev helpers with CONFIG_VIDEO
+Message-ID: <20240328072401.GB1573630@ravnborg.org>
+References: <20240327204450.14914-1-tzimmermann@suse.de>
+ <20240327204450.14914-2-tzimmermann@suse.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <10da3ced-9a79-4ebb-a77d-1aa49cc61952@app.fastmail.com>
+In-Reply-To: <20240327204450.14914-2-tzimmermann@suse.de>
 
-On Thu, Mar 28, 2024 at 07:09:13AM +0100, Arnd Bergmann wrote:
-> On Thu, Mar 28, 2024, at 06:51, Vineet Gupta wrote:
-> > On 3/27/24 09:22, Arnd Bergmann wrote:
-> >> On Wed, Mar 27, 2024, at 16:39, David Hildenbrand wrote:
-> >>> On 27.03.24 16:21, Peter Xu wrote:
-> >>>> On Wed, Mar 27, 2024 at 02:05:35PM +0100, David Hildenbrand wrote:
-> >>>>
-> >>>> I'm not sure what config you tried there; as I am doing some build tests
-> >>>> recently, I found turning off CONFIG_SAMPLES + CONFIG_GCC_PLUGINS could
-> >>>> avoid a lot of issues, I think it's due to libc missing.  But maybe not the
-> >>>> case there.
-> >>> CCin Arnd; I use some of his compiler chains, others from Fedora directly. For
-> >>> example for alpha and arc, the Fedora gcc is "13.2.1".
-> >>> But there is other stuff like (arc):
-> >>>
-> >>> ./arch/arc/include/asm/mmu-arcv2.h: In function 'mmu_setup_asid':
-> >>> ./arch/arc/include/asm/mmu-arcv2.h:82:9: error: implicit declaration of 
-> >>> function 'write_aux_reg' [-Werro
-> >>> r=implicit-function-declaration]
-> >>>     82 |         write_aux_reg(ARC_REG_PID, asid | MMU_ENABLE);
-> >>>        |         ^~~~~~~~~~~~~
-> >> Seems to be missing an #include of soc/arc/aux.h, but I can't
-> >> tell when this first broke without bisecting.
-> >
-> > Weird I don't see this one but I only have gcc 12 handy ATM.
-> >
-> >     gcc version 12.2.1 20230306 (ARC HS GNU/Linux glibc toolchain -
-> > build 1360)
-> >
-> > I even tried W=1 (which according to scripts/Makefile.extrawarn) should
-> > include -Werror=implicit-function-declaration but don't see this still.
-> >
-> > Tomorrow I'll try building a gcc 13.2.1 for ARC.
+On Wed, Mar 27, 2024 at 09:41:29PM +0100, Thomas Zimmermann wrote:
+> Various Kconfig options selected the per-architecture helpers for
+> fbdev. But none of the contained code depends on fbdev. Standardize
+> on CONFIG_VIDEO, which will allow to add more general helpers for
+> video functionality.
 > 
-> David reported them with the toolchains I built at
-> https://mirrors.edge.kernel.org/pub/tools/crosstool/
-> I'm fairly sure the problem is specific to the .config
-> and tree, not the toolchain though.
-
-This happens with defconfig and both gcc 12.2.0 and gcc 13.2.0 from your
-crosstools. I also see these on the current Linus' tree:
-
-arc/kernel/ptrace.c:342:16: warning: no previous prototype for 'syscall_trace_enter' [-Wmissing-prototypes]
-arch/arc/kernel/kprobes.c:193:15: warning: no previous prototype for 'arc_kprobe_handler' [-Wmissing-prototypes]
-
-This fixed the warning about write_aux_reg for me, probably Vineet would
-want this include somewhere else...
-
-diff --git a/arch/arc/include/asm/mmu-arcv2.h b/arch/arc/include/asm/mmu-arcv2.h
-index ed9036d4ede3..0fca342d7b79 100644
---- a/arch/arc/include/asm/mmu-arcv2.h
-+++ b/arch/arc/include/asm/mmu-arcv2.h
-@@ -69,6 +69,8 @@
- 
- #ifndef __ASSEMBLY__
- 
-+#include <asm/arcregs.h>
-+
- struct mm_struct;
- extern int pae40_exist_but_not_enab(void);
- 
- 
-> >>> or (alpha)
-> >>>
-> >>> WARNING: modpost: "saved_config" [vmlinux] is COMMON symbol
-> >>> ERROR: modpost: "memcpy" [fs/reiserfs/reiserfs.ko] undefined!
-> >>> ERROR: modpost: "memcpy" [fs/nfs/nfs.ko] undefined!
-> >>> ERROR: modpost: "memcpy" [fs/nfs/nfsv3.ko] undefined!
-> >>> ERROR: modpost: "memcpy" [fs/nfsd/nfsd.ko] undefined!
-> >>> ERROR: modpost: "memcpy" [fs/lockd/lockd.ko] undefined!
-> >>> ERROR: modpost: "memcpy" [crypto/crypto.ko] undefined!
-> >>> ERROR: modpost: "memcpy" [crypto/crypto_algapi.ko] undefined!
-> >>> ERROR: modpost: "memcpy" [crypto/aead.ko] undefined!
-> >>> ERROR: modpost: "memcpy" [crypto/crypto_skcipher.ko] undefined!
-> >>> ERROR: modpost: "memcpy" [crypto/seqiv.ko] undefined!
-> >
-> > Are these from ARC build or otherwise ?
+> CONFIG_VIDEO protects each architecture's video/ directory. This
+> allows for the use of more fine-grained control for each directory's
+> files, such as the use of CONFIG_STI_CORE on parisc.
 > 
-> This was arch/alpha.
+> v2:
+> - sparc: rebased onto Makefile changes
 > 
->       Arnd
+> Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+> Cc: "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>
+> Cc: Helge Deller <deller@gmx.de>
+> Cc: "David S. Miller" <davem@davemloft.net>
+> Cc: Andreas Larsson <andreas@gaisler.com>
+> Cc: Thomas Gleixner <tglx@linutronix.de>
+> Cc: Ingo Molnar <mingo@redhat.com>
+> Cc: Borislav Petkov <bp@alien8.de>
+> Cc: Dave Hansen <dave.hansen@linux.intel.com>
+> Cc: x86@kernel.org
+> Cc: "H. Peter Anvin" <hpa@zytor.com>
 
--- 
-Sincerely yours,
-Mike.
+Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
