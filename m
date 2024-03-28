@@ -1,38 +1,33 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5117812F368;
-	Thu, 28 Mar 2024 15:00:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.22
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CE0B04437B;
+	Thu, 28 Mar 2024 17:46:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1711638042; cv=none; b=L/noUV9EDB3LtnQTUHEoiWI1PljA5oXYlKN7BcmqDUQFKuNasH8ks2n3T9xT/IebMVW28mBrO8i3ebKn+xNyZPGrYLvzvowCzem85rdHtE/GzEFdgne0je9C9BgnemjV6EsXqv1TfwOHZKPv4Cc/3CL9MS7xKptrxOj615oMaxI=
+	t=1711648013; cv=none; b=iHvl/TV/6Wp93vqmwr+2qnaJWhj0/ds2wULTpKP3q9CP7Q3dne0x/jYC/ePraxfJ37AyZp1r6ZXnbVsdglSCVDenCb8FtSZmIt6R759tEyfn3tjYr5dkeD9OCK1cfEzSF09a6+TPVT2E6Ea8AlI8PtqvoHYcCGMoeB2RlVEkncI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1711638042; c=relaxed/simple;
-	bh=YDPVzfrvCv+pzuXSEy32SACNexDWUcs4tGK+eCOtLyM=;
+	s=arc-20240116; t=1711648013; c=relaxed/simple;
+	bh=YNR7A+kRgAjMXDjHr2JB1yywFqUpQ/6e+8DUHAu4Nlg=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=HV7kjQTTDK/b52zBeHmGs5xFROyftDHhDR1+4OBhJmpWP7vCs5a1VVVBkqwR82d6Ldnu3cMLc8Si4Uzo81XUGoV6sLTHGjisAIRCKwo3c+xILLMbFm/VNRCpI4qnUjnlQZLpVnzVzqOjG+w2/kSrqenh+juxZCX9AFdq9ML4200=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.de; spf=pass smtp.mailfrom=gmx.de; dkim=pass (2048-bit key) header.d=gmx.de header.i=deller@gmx.de header.b=Wx3CBzYB; arc=none smtp.client-ip=212.227.17.22
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.de
+	 In-Reply-To:Content-Type; b=Nm/tXP2+yIQtZXI2ONJodO/9rf7GC3aUVWsbRsSTqQ9eFG8xrAaOojvomVLTGu8xrB3Jz8S1oiB8j8oh45v0Ox1GzQuUBpwf8yqnh+6QVKxw2ShsHUqjxKk8TUyQfXNy5E4rvNbX4vZU/S2/gpU4X7IvNhS3YQvYj50G+44/mGI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=f0dgZsew; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.de header.i=deller@gmx.de header.b="Wx3CBzYB"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.de;
-	s=s31663417; t=1711637973; x=1712242773; i=deller@gmx.de;
-	bh=YDPVzfrvCv+pzuXSEy32SACNexDWUcs4tGK+eCOtLyM=;
-	h=X-UI-Sender-Class:Date:Subject:To:Cc:References:From:
-	 In-Reply-To;
-	b=Wx3CBzYBHr9nc/IRrk2z31GjbumaJZ/bAeCu4XyCdbBU9LgVrXbM5+XVE4MK+Eni
-	 ECldR0xODKA2jN8dW/Aou8jEzj8GdkC0NE1P7w9vRpx5MVIIEfXmfuBWMPJHcmuHC
-	 U2FPSUmWWRFicjFyplPA4lu5eldSexmlLDznzqXSxXt8yhARHmtuPF+JmYIhxkJsD
-	 wmkzWQcVHnqvh2gMgE22wVm/+OEDs87HS5o9sdV6TwHCLBJy6s5bRFDe6Avc6wf7S
-	 KY+qaIG/fGQg8vhqEWHGNMe8gHs1RQ3p3xedh2r44boU7Rb865PHfMbnKel/Z5zXh
-	 3FHelrpVAg0gw9421w==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from [10.8.0.6] ([78.94.87.245]) by mail.gmx.net (mrgmx105
- [212.227.17.168]) with ESMTPSA (Nemesis) id 1Mof57-1se6Ht3RxR-00p0hR; Thu, 28
- Mar 2024 15:59:33 +0100
-Message-ID: <2a017fe8-5261-4ad9-a958-85f147185e07@gmx.de>
-Date: Thu, 28 Mar 2024 15:59:27 +0100
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="f0dgZsew"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 65F2CC433C7;
+	Thu, 28 Mar 2024 17:46:51 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1711648012;
+	bh=YNR7A+kRgAjMXDjHr2JB1yywFqUpQ/6e+8DUHAu4Nlg=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=f0dgZsewbfCG8PiA45FJQw1TL/EasYUMhLz2/QhlXeqqfXOMfSFzRv9IkgTHijlFV
+	 FhqTfFXUmCq641ywYGBQNJBov/tcSVKyclO43CvFgYl4vG0jR5PyLIGzGCMyZLU3uq
+	 upLsVvNze+XfKUgkqPNlhtRQ4CV0x+8HigCh3u2WrcBvzfPqQuTABnjeZ6Hvb3VE8w
+	 6ZvOi3ANgqwkkwdMuKgaXo07dtclbN/G0YdTFjA+6G2vfiNmaVW0Ibuf2jgixdXOzz
+	 yzc01GzZXuDW31OzbOufYEa/h1z/NE2Qj9VquGG7bkMy752oMrsKA8KOWYY6NXnc2q
+	 ClRqTQBAOutLg==
+Message-ID: <1ea303d0-b5c6-4185-b6ae-8836c5ac0469@kernel.org>
+Date: Thu, 28 Mar 2024 10:46:50 -0700
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -40,123 +35,116 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 2/3] arch: Remove struct fb_info from video helpers
-To: Thomas Zimmermann <tzimmermann@suse.de>, arnd@arndb.de,
- javierm@redhat.com, sui.jingfeng@linux.dev
-Cc: linux-arch@vger.kernel.org, dri-devel@lists.freedesktop.org,
- linux-fbdev@vger.kernel.org, sparclinux@vger.kernel.org,
- linux-sh@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
- linux-parisc@vger.kernel.org, linux-mips@vger.kernel.org,
- linux-m68k@lists.linux-m68k.org, loongarch@lists.linux.dev,
- linux-arm-kernel@lists.infradead.org, linux-snps-arc@lists.infradead.org,
- linux-kernel@vger.kernel.org,
- "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
- "David S. Miller" <davem@davemloft.net>,
- Andreas Larsson <andreas@gaisler.com>, Thomas Gleixner <tglx@linutronix.de>,
- Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
- Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
- "H. Peter Anvin" <hpa@zytor.com>
-References: <20240327204450.14914-1-tzimmermann@suse.de>
- <20240327204450.14914-3-tzimmermann@suse.de>
- <b5a8bc60-ad16-407d-9e57-c224467c3f06@gmx.de>
- <9db306b2-b102-4bf5-a120-e1d279269fe9@suse.de>
+Subject: Re: [PATCH RFC 0/3] mm/gup: consistently call it GUP-fast
+To: Mike Rapoport <rppt@kernel.org>, Arnd Bergmann <arnd@arndb.de>
+Cc: Vineet Gupta <vgupta@kernel.org>, David Hildenbrand <david@redhat.com>,
+ peterx <peterx@redhat.com>, linux-kernel@vger.kernel.org,
+ Andrew Morton <akpm@linux-foundation.org>, Jason Gunthorpe <jgg@nvidia.com>,
+ John Hubbard <jhubbard@nvidia.com>, linux-arm-kernel@lists.infradead.org,
+ loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
+ linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
+ linux-sh@vger.kernel.org, linux-mm@kvack.org,
+ linux-perf-users@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+ x86@kernel.org, Ryan Roberts <ryan.roberts@arm.com>,
+ Alexander Viro <viro@zeniv.linux.org.uk>, Matt Turner <mattst88@gmail.com>,
+ Alexey Brodkin <abrodkin@synopsys.com>
+References: <20240327130538.680256-1-david@redhat.com> <ZgQ5hNltQ2DHQXps@x1n>
+ <3922460a-4d01-4ecb-b8c5-7c57fd46f3fd@redhat.com>
+ <dc1433ea-4e59-4ab7-83fb-23b393020980@app.fastmail.com>
+ <3360dba8-0fac-4126-b72b-abc036957d6a@kernel.org>
+ <10da3ced-9a79-4ebb-a77d-1aa49cc61952@app.fastmail.com>
+ <ZgUZCBNloC-grPWJ@kernel.org>
 Content-Language: en-US
-From: Helge Deller <deller@gmx.de>
-Autocrypt: addr=deller@gmx.de; keydata=
- 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
-In-Reply-To: <9db306b2-b102-4bf5-a120-e1d279269fe9@suse.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:7SWJg03mME+2vw8fb9mxmZKSJMDEo0mYJI2J/T0ImsQ5mhttnG0
- iBaFsAdrlSeIFpZ0cWgCd4uGlQYlXcUi5Zpcy3iAYz1i9QHGWtLhhZjLv9Z8Ir6J86LVacs
- +aQYyTrzgmYujTZODvUjFNl/NjPQnY2fRMy5lxrzpb922oh+DGwCAsIOL3IYfo3osCDms6X
- 1BKDcYxw9teL2gTlonvnA==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:in3ib8DI/UQ=;kh/43hDUJpFePNUZFXuwCb/rS5P
- JVZy5WsGUNMASMfYITGnTfXwAZvBSre8fCLA2J/O9Ngw2Cwll7f/hr4EPqpMUpF2hxAC35mB5
- G0o9h78NFccWc2ws1B3AdrZu1rEYkNmbvCcS56DNZ5DuL3UZ6ITCynCyaTt3ov5bk0uYnCITB
- Mvehl1G3RNQ14AsbOmooCI+J0iOcfyw9C66+Et+qlTvNIW0GRjK32nj8mDAmPS9ACbtGe0Kvm
- zDX0ouKF5ojMIc+uUrloPg7D4YRfLzwVMhiDqzm2JtkeUMEe4WtbUzPMo3uiAEjYii/UZ3zPn
- 65e72gFqvW4nq9lY3sagPOXNFFPrQaGWSHYqsXd8V2ixzeI3fNH3L2fvhaI9PDRVvi7znyToe
- 5c8MbhTVNubRLjH+cNgUlXaDG2HznwhCWYSeZ5LPBSqSsDb41UQx+O9/6vYAI4E/GvObWZSCK
- bhaEACmJUbskma36CBnIHqR/EaysUI7QZCrJIZkFRzWpLYozhJKCzo8eXX/S/CkXeHo7CVQpu
- NxoLBKCn9d0vQN+ke9+yG/RFGY8cL5a8G+51OoMxOkZ2w5+Ss5WAD45Qx7Gur1Y/ZW2yVq5iz
- XcI5ggmsCUcFa77bh94EtF90IO8OWbdeXDxQvZU+N1uIBfbo/qbuHM6kmeoQa+EdjNDqalYOW
- XFxeXi6ieCII8Ate1L9ZJKDhkch5ZmCrOAyMRwELBctemqSgFY+xDZz388EZoj+800Sex6I8V
- prXBpkeMYRJfXCyhkdu23g986R2pWQOr2jthIQ+3HGlQJORhYv5zUSjqtYGHtbbaIomcDQj2y
- QZfDoRCjtYIGXEaBfiO1+mXRWAMicXr5tMFCqwXztkUUg=
+From: Vineet Gupta <vgupta@kernel.org>
+In-Reply-To: <ZgUZCBNloC-grPWJ@kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-On 3/28/24 14:33, Thomas Zimmermann wrote:
-> Am 28.03.24 um 12:04 schrieb Helge Deller:
->> On 3/27/24 21:41, Thomas Zimmermann wrote:
->>> The per-architecture video helpers do not depend on struct fb_info
->>> or anything else from fbdev. Remove it from the interface and replace
->>> fb_is_primary_device() with video_is_primary_device(). The new helper
->>
->> Since you rename this function, wouldn't something similar to
->>
->> device_is_primary_display()
->> =C2=A0=C2=A0=C2=A0=C2=A0or
->> device_is_primary_console()
->> =C2=A0=C2=A0=C2=A0=C2=A0or
->> is_primary_graphics_device()
->> =C2=A0=C2=A0=C2=A0=C2=A0or
->> is_primary_display_device()
->>
->> be a better name?
->
-> The video_ prefix is there to signal that the code is part of the video =
-subsystem.
->
-> But there's too much code that tried to figure out a default video
-> device. So I actually have different plans for this function. I'd
-> like to replace it with a helper that returns the default device
-> instead of just testing for it. Sample code for x86 is already in
-> vgaarb.c. [1] The function's name would then be
-> video_default_device() and return the appropriate struct device*.
-> video_is_primary device() will be removed. This rename here is the
-> easiest step towards the new helper. Ok?
-Sounds ok.
 
-Helge
+On 3/28/24 00:15, Mike Rapoport wrote:
+> On Thu, Mar 28, 2024 at 07:09:13AM +0100, Arnd Bergmann wrote:
+>> On Thu, Mar 28, 2024, at 06:51, Vineet Gupta wrote:
+>>> On 3/27/24 09:22, Arnd Bergmann wrote:
+>>>> On Wed, Mar 27, 2024, at 16:39, David Hildenbrand wrote:
+>>>>> On 27.03.24 16:21, Peter Xu wrote:
+>>>>>> On Wed, Mar 27, 2024 at 02:05:35PM +0100, David Hildenbrand wrote:
+>>>>>>
+>>>>>> I'm not sure what config you tried there; as I am doing some build tests
+>>>>>> recently, I found turning off CONFIG_SAMPLES + CONFIG_GCC_PLUGINS could
+>>>>>> avoid a lot of issues, I think it's due to libc missing.  But maybe not the
+>>>>>> case there.
+>>>>> CCin Arnd; I use some of his compiler chains, others from Fedora directly. For
+>>>>> example for alpha and arc, the Fedora gcc is "13.2.1".
+>>>>> But there is other stuff like (arc):
+>>>>>
+>>>>> ./arch/arc/include/asm/mmu-arcv2.h: In function 'mmu_setup_asid':
+>>>>> ./arch/arc/include/asm/mmu-arcv2.h:82:9: error: implicit declaration of 
+>>>>> function 'write_aux_reg' [-Werro
+>>>>> r=implicit-function-declaration]
+>>>>>     82 |         write_aux_reg(ARC_REG_PID, asid | MMU_ENABLE);
+>>>>>        |         ^~~~~~~~~~~~~
+>>>> Seems to be missing an #include of soc/arc/aux.h, but I can't
+>>>> tell when this first broke without bisecting.
+>>> Weird I don't see this one but I only have gcc 12 handy ATM.
+>>>
+>>>     gcc version 12.2.1 20230306 (ARC HS GNU/Linux glibc toolchain -
+>>> build 1360)
+>>>
+>>> I even tried W=1 (which according to scripts/Makefile.extrawarn) should
+>>> include -Werror=implicit-function-declaration but don't see this still.
+>>>
+>>> Tomorrow I'll try building a gcc 13.2.1 for ARC.
+>> David reported them with the toolchains I built at
+>> https://mirrors.edge.kernel.org/pub/tools/crosstool/
+>> I'm fairly sure the problem is specific to the .config
+>> and tree, not the toolchain though.
+> This happens with defconfig and both gcc 12.2.0 and gcc 13.2.0 from your
+> crosstools. I also see these on the current Linus' tree:
+>
+> arc/kernel/ptrace.c:342:16: warning: no previous prototype for 'syscall_trace_enter' [-Wmissing-prototypes]
+> arch/arc/kernel/kprobes.c:193:15: warning: no previous prototype for 'arc_kprobe_handler' [-Wmissing-prototypes]
+
+Yep these two I could trigger and fix posted [1]
+
+> This fixed the warning about write_aux_reg for me, probably Vineet would
+> want this include somewhere else...
+>
+> diff --git a/arch/arc/include/asm/mmu-arcv2.h b/arch/arc/include/asm/mmu-arcv2.h
+> index ed9036d4ede3..0fca342d7b79 100644
+> --- a/arch/arc/include/asm/mmu-arcv2.h
+> +++ b/arch/arc/include/asm/mmu-arcv2.h
+> @@ -69,6 +69,8 @@
+>  
+>  #ifndef __ASSEMBLY__
+>  
+> +#include <asm/arcregs.h>
+> +
+>  struct mm_struct;
+>  extern int pae40_exist_but_not_enab(void);
+
+Thx Mike. Indeed the fix is trivial but on tip of tree I still can't
+trigger the warning to even test anything. I'm at following with my
+other fixes.
+
+    2024-03-27 962490525cff Merge tag 'probes-fixes-v6.9-rc1' of
+git://git.kernel.org/pub/scm/linux/kernel/git/trace/linux-trace  
+
+I tried defconfig build as well as the exact config from Linaro report
+[2], and/or various toolchains: from snps github, Arnd's crosstool
+toolchain.
+Granted all of these are linux toolchains - I vaguely remember at some
+time, baremetal elf32 toolchain behaved differently due to different
+defaults etc.
+I have a feeling this was something transient which got fixed up due to
+order of header includes etc.
+
+Anyone in the followup email David only reported 2 warnings which have
+been tended to as mentioned above - will be sent to Linus soon.
+
+[1]
+http://lists.infradead.org/pipermail/linux-snps-arc/2024-March/007916.html
+[2]
+https://storage.tuxsuite.com/public/linaro/lkft/builds/2eA2VSZdDsL0DMBBhjoauN9IVoK/
+
+Thx,
+-Vineet
