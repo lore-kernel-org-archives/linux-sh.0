@@ -1,131 +1,224 @@
-Received: from mail-pg1-f179.google.com (mail-pg1-f179.google.com [209.85.215.179])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 322D41FBA;
-	Fri, 29 Mar 2024 15:40:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.179
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AF6613985A;
+	Fri, 29 Mar 2024 20:35:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1711726810; cv=none; b=HdL6QUR0uK57/gTcFmuwvsxwp7Is231eNnIyOK3oJoSeiErgq7txZMZXkemJ706h/3MmF23TBwrqyhDa9y9T797U3gTA7l+PYCyGN3Vb9GQ6TMhG45bwnPk+c/GXRpXpOdQ5QM7Yl7gPnUD9NcZZiU/zvvniuIML2PnCNLTipfo=
+	t=1711744502; cv=none; b=fjcYnOCS7m7++i3mArJETlO99jp5LHVpDekfQ1dZyeMRjBF0Cpe2hAUeUh2A4DcERRQvb3/72zlFOhXnasMv3uwJDatB2vi6zhTUazXTg8DkWm3iACGEOAO17G8ZyrRSvG2VBCQOb1TYOIZ8Ue6RVuO2+O0Zb7+44GJq7IXaYNk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1711726810; c=relaxed/simple;
-	bh=XCgoZLnAXnGDp3scNF5htnbob5J7JStC8D45eQoM9R4=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=oCDryKTCwNBa1XESY+HXrS2fCn9Ozuiym1DVVy5CR6Vvze0hKrsJPXVEBXqEViTLFl7Ah4vNuiXZkU1sw6aoJwNBYy/7swRzdJ6OJ4/g2oFdS5u6stGkcvDtlZvAxMIncnK4B4wXmzWtYqljaYhhZLEz+CdqsKwIqq45swgykpU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=roeck-us.net; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=MUnOUR7H; arc=none smtp.client-ip=209.85.215.179
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=roeck-us.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1711744502; c=relaxed/simple;
+	bh=1F3bC9AfluAx91aimWFrXnEkMkyhFJNbxwKmrZG2b8A=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=G5m4m4klNzHchv/BCT9LAxOunHNrRG5DniTGhZxfquKU2Y+5GL5EBmjVQhVT8gyUxaqW9x8dKZHhDQyqbgpeTkCOlH0oaYaAi2JgP+/hXICleYyN1nG/9uDj6lqzsMNni7Vl6viIdW0A3GDviyJB4Ixk0z4xyDAK1WJnM3JMMzg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=0N/h/M4o; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=pmoyIzmQ; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="MUnOUR7H"
-Received: by mail-pg1-f179.google.com with SMTP id 41be03b00d2f7-53fa455cd94so1519286a12.2;
-        Fri, 29 Mar 2024 08:40:09 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1711726808; x=1712331608; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:sender:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=iN31wd2vCkiTGMz1OBtEaB4JW8VyiA1XbISlyEebr3E=;
-        b=MUnOUR7HY6vwYa92neIZHYGUvH5I1dF1Bo7/9/nYC/METJ1LcvRfTJ3UrdSMmUe6FC
-         gOsAAcZI5fuMBtnYd1XYteTpD7iilDnzNJGQCDkjNtdSbNtsjQ+H+tT/p1giGio6N6XG
-         c/fOoWgNLNBTXbnefO75MQyI51dLo+b1SVQJb2BkA3/hB5pZIlony882eQZu9ZFNh0ep
-         33bUFemjBqO3ZNk+x0tiQjkOnJ9fcXv2MQdOFypkFGG4FahpdXL6b/Vj7wCz/gfVSbTO
-         MJv/wJzO/jQ7Kdcxmde4Pb9pySSflIuFcgkUN32tfKWGxoR+Pm6mK6F5SJkvChQwYmRp
-         iBRw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1711726808; x=1712331608;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:sender:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=iN31wd2vCkiTGMz1OBtEaB4JW8VyiA1XbISlyEebr3E=;
-        b=UZeXNTugUFF7ZLvxjcEC/t4b+REmywz0B1oaHxSC/FPLuIS2hcg1pnvyr0iY283ORN
-         J5yEbOt82e+srx1WEoeZxx18mHADhxIVjqxIVbQNtO4YiNF84vQOwZMaHanx1QVhiyzi
-         30wGweoNPXMcu+4ZWuBv3tB2/AoFu/tSpvKnPAWTc7R6lGG+QXfoQhPIQ7qjxKDGkZ/v
-         ZJQajuGvmLhkcxFBNd/VvXMN8OomN4lQ8AYg3AZRV7z5QGBJz9SzBiYDR89eJ0i3NxkZ
-         b5QdJT8wzr3pwABneBZST1fjtCVvHVrB0uBTt6LeVO0XZJ6PaIXbQAQEZLISaKtvJJrU
-         M9VA==
-X-Forwarded-Encrypted: i=1; AJvYcCVJOnvfqDstoGNWqya9c2CpvRlfeBuOGCz4oaW4BjNSstCi+JbsgNWSWKPkJTvDezGHP1l1yt3hbnjRuFMnFnP+ODAPa9B0KTgUzCTR4wBP509TYdlj1Yoc63C0gBx0PyATOTXRoU50jgTOCW5LOyzh02XO+PpOPZrzO6aKzu2WEDkkG11VeaYfUts4cuOCmJsj3BdXu8Ah9dTKuzXBAT0pXxXfErO3rzYezy4btqFL9YZzGWecZIDTEK13C8CLPsUfnn+9dXWOLXiWYAyrOYsmXUR2uml0icj4IJpVvUdrtlcQ8t8eBsSlQqEEb3VDGg==
-X-Gm-Message-State: AOJu0Yzacj+0ODnB61m4DFEwTd9U4g+aPd/faEYvzFALoBq7a3kkjEky
-	RWWg6gr0dcatrVIFarTUu05/TalspZjQ1+zHRsDZleqZmcPuyvLR
-X-Google-Smtp-Source: AGHT+IF0O7HII5MYlv2g0E+BHBSm5qRGKAR+0KxI+xwk6+g8c7fXn65jtKX0C7ci+tZdnr/ge20LGw==
-X-Received: by 2002:a05:6a20:3c90:b0:1a5:6bfb:76de with SMTP id b16-20020a056a203c9000b001a56bfb76demr2694088pzj.2.1711726808383;
-        Fri, 29 Mar 2024 08:40:08 -0700 (PDT)
-Received: from server.roeck-us.net ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
-        by smtp.gmail.com with ESMTPSA id m9-20020a170902db0900b001dd578121d4sm3581907plx.204.2024.03.29.08.40.06
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 29 Mar 2024 08:40:07 -0700 (PDT)
-Sender: Guenter Roeck <groeck7@gmail.com>
-Date: Fri, 29 Mar 2024 08:40:05 -0700
-From: Guenter Roeck <linux@roeck-us.net>
-To: Simon Horman <horms@kernel.org>
-Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>,
-	Arnd Bergmann <arnd@arndb.de>,
-	=?iso-8859-1?Q?Ma=EDra?= Canal <mcanal@igalia.com>,
-	Dan Carpenter <dan.carpenter@linaro.org>,
-	Kees Cook <keescook@chromium.org>,
-	Daniel Diaz <daniel.diaz@linaro.org>,
-	David Gow <davidgow@google.com>,
-	Arthur Grillo <arthurgrillo@riseup.net>,
-	Brendan Higgins <brendan.higgins@linux.dev>,
-	Naresh Kamboju <naresh.kamboju@linaro.org>,
-	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Maxime Ripard <mripard@kernel.org>,
-	Ville =?iso-8859-1?Q?Syrj=E4l=E4?= <ville.syrjala@linux.intel.com>,
-	Daniel Vetter <daniel@ffwll.ch>,
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="0N/h/M4o";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="pmoyIzmQ"
+Received: from imap2.dmz-prg2.suse.org (imap2.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:98])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id EFC633528A;
+	Fri, 29 Mar 2024 20:34:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1711744499; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=MEcgOTyAQAoXByBYKUR2lBKOa8ZhmGZAbpGTc5urdcs=;
+	b=0N/h/M4oFKP9e6JE78XEh1S/v6uJSKh1uvA1wPsCajar4AYYVB5MtoSQURwicU0FjTA3ZA
+	61MBm+lwJkoVB7qIrNvH3IDBG4ar+09OTaZYiATVbRQqTa3K+2VbkUVT17xAR/I3rqyXWN
+	Z87CE1W9k4JpKCgCEwSFnBh/TZXfcOY=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1711744499;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=MEcgOTyAQAoXByBYKUR2lBKOa8ZhmGZAbpGTc5urdcs=;
+	b=pmoyIzmQMCIpxEEegRU389t/9HfEGPbkrxeN/Z4w3PlV59F1yC09nX/ACLDPrFrN/Qx5Ay
+	FEGw4evB+gjhIACQ==
+Authentication-Results: smtp-out1.suse.de;
+	dkim=none
+Received: from imap2.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap2.dmz-prg2.suse.org (Postfix) with ESMTPS id 06E2013A8B;
+	Fri, 29 Mar 2024 20:34:58 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap2.dmz-prg2.suse.org with ESMTPSA
+	id 2ONmAPIlB2YTPgAAn2gu4w
+	(envelope-from <tzimmermann@suse.de>); Fri, 29 Mar 2024 20:34:58 +0000
+From: Thomas Zimmermann <tzimmermann@suse.de>
+To: arnd@arndb.de,
+	sam@ravnborg.org,
+	javierm@redhat.com,
+	deller@gmx.de,
+	sui.jingfeng@linux.dev
+Cc: linux-arch@vger.kernel.org,
+	dri-devel@lists.freedesktop.org,
+	linux-fbdev@vger.kernel.org,
+	sparclinux@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-parisc@vger.kernel.org,
+	linux-mips@vger.kernel.org,
+	linux-m68k@lists.linux-m68k.org,
+	loongarch@lists.linux.dev,
+	linux-arm-kernel@lists.infradead.org,
+	linux-snps-arc@lists.infradead.org,
+	linux-kernel@vger.kernel.org,
 	Thomas Zimmermann <tzimmermann@suse.de>,
-	dri-devel@lists.freedesktop.org, kunit-dev@googlegroups.com,
-	linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-	linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-	linux-sh@vger.kernel.org, loongarch@lists.linux.dev,
-	netdev@vger.kernel.org,
-	Linux Kernel Functional Testing <lkft@linaro.org>
-Subject: Re: [PATCH v2 12/14] sh: Add support for suppressing warning
- backtraces
-Message-ID: <d7663e19-74d5-478d-becc-0a080075e7d6@roeck-us.net>
-References: <20240325175248.1499046-1-linux@roeck-us.net>
- <20240325175248.1499046-13-linux@roeck-us.net>
- <20240327144431.GL403975@kernel.org>
- <320aacc6-b7e5-4c3d-948e-d0743ab26c5d@roeck-us.net>
- <20240327193920.GV403975@kernel.org>
+	"James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
+	"David S. Miller" <davem@davemloft.net>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Ingo Molnar <mingo@redhat.com>,
+	Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	x86@kernel.org,
+	"H. Peter Anvin" <hpa@zytor.com>
+Subject: [PATCH v3 1/3] arch: Select fbdev helpers with CONFIG_VIDEO
+Date: Fri, 29 Mar 2024 21:32:10 +0100
+Message-ID: <20240329203450.7824-2-tzimmermann@suse.de>
+X-Mailer: git-send-email 2.44.0
+In-Reply-To: <20240329203450.7824-1-tzimmermann@suse.de>
+References: <20240329203450.7824-1-tzimmermann@suse.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20240327193920.GV403975@kernel.org>
+Content-Transfer-Encoding: 8bit
+X-Spam-Score: 2.89
+X-Spam-Flag: NO
+X-Spamd-Bar: ++
+X-Spamd-Result: default: False [2.89 / 50.00];
+	 ARC_NA(0.00)[];
+	 RCVD_VIA_SMTP_AUTH(0.00)[];
+	 FROM_HAS_DN(0.00)[];
+	 TO_DN_SOME(0.00)[];
+	 FREEMAIL_ENVRCPT(0.00)[gmx.de];
+	 R_MISSING_CHARSET(2.50)[];
+	 MIME_GOOD(-0.10)[text/plain];
+	 TO_MATCH_ENVRCPT_ALL(0.00)[];
+	 BROKEN_CONTENT_TYPE(1.50)[];
+	 DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:98:from];
+	 NEURAL_HAM_LONG(-1.00)[-1.000];
+	 RCVD_COUNT_THREE(0.00)[3];
+	 DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	 MX_GOOD(-0.01)[];
+	 NEURAL_HAM_SHORT(-0.20)[-0.999];
+	 RCPT_COUNT_TWELVE(0.00)[28];
+	 MID_CONTAINS_FROM(1.00)[];
+	 DBL_BLOCKED_OPENRESOLVER(0.00)[suse.de:email,intel.com:email];
+	 FREEMAIL_TO(0.00)[arndb.de,ravnborg.org,redhat.com,gmx.de,linux.dev];
+	 FUZZY_BLOCKED(0.00)[rspamd.com];
+	 FROM_EQ_ENVFROM(0.00)[];
+	 R_DKIM_NA(2.20)[];
+	 MIME_TRACE(0.00)[0:+];
+	 RCVD_TLS_ALL(0.00)[];
+	 BAYES_HAM(-3.00)[100.00%]
+X-Spam-Level: **
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Queue-Id: EFC633528A
 
-On Wed, Mar 27, 2024 at 07:39:20PM +0000, Simon Horman wrote:
-[ ... ]
-> > > 
-> > > Hi Guenter,
-> > > 
-> > > a minor nit from my side: this change results in a Kernel doc warning.
-> > > 
-> > >       .../bug.h:29: warning: expecting prototype for _EMIT_BUG_ENTRY(). Prototype was for HAVE_BUG_FUNCTION() instead
-> > > 
-> > > Perhaps either the new code should be placed above the Kernel doc,
-> > > or scripts/kernel-doc should be enhanced?
-> > > 
-> > 
-> > Thanks a lot for the feedback.
-> > 
-> > The definition block needs to be inside CONFIG_DEBUG_BUGVERBOSE,
-> > so it would be a bit odd to move it above the documentation
-> > just to make kerneldoc happy. I am not really sure that to do
-> > about it.
-> 
-> FWIIW, I agree that would be odd.
-> But perhaps the #ifdef could also move above the Kernel doc?
-> Maybe not a great idea, but the best one I've had so far.
-> 
+Various Kconfig options selected the per-architecture helpers for
+fbdev. But none of the contained code depends on fbdev. Standardize
+on CONFIG_VIDEO, which will allow to add more general helpers for
+video functionality.
 
-I did that for the next version of the patch series. It is a bit more
-clumsy, so I left it as separate patch on top of this patch. I'd
-still like to get input from others before making the change final.
+CONFIG_VIDEO protects each architecture's video/ directory. This
+allows for the use of more fine-grained control for each directory's
+files, such as the use of CONFIG_STI_CORE on parisc.
 
-Thanks,
-Guenter
+v2:
+- sparc: rebased onto Makefile changes
+
+Signed-off-by: Thomas Zimmermann <tzimmermann@suse.de>
+Reviewed-by: Sam Ravnborg <sam@ravnborg.org>
+Cc: "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>
+Cc: Helge Deller <deller@gmx.de>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Andreas Larsson <andreas@gaisler.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Borislav Petkov <bp@alien8.de>
+Cc: Dave Hansen <dave.hansen@linux.intel.com>
+Cc: x86@kernel.org
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+---
+ arch/parisc/Makefile      | 2 +-
+ arch/sparc/Makefile       | 4 ++--
+ arch/sparc/video/Makefile | 2 +-
+ arch/x86/Makefile         | 2 +-
+ arch/x86/video/Makefile   | 3 ++-
+ 5 files changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/arch/parisc/Makefile b/arch/parisc/Makefile
+index 316f84f1d15c8..21b8166a68839 100644
+--- a/arch/parisc/Makefile
++++ b/arch/parisc/Makefile
+@@ -119,7 +119,7 @@ export LIBGCC
+ 
+ libs-y	+= arch/parisc/lib/ $(LIBGCC)
+ 
+-drivers-y += arch/parisc/video/
++drivers-$(CONFIG_VIDEO) += arch/parisc/video/
+ 
+ boot	:= arch/parisc/boot
+ 
+diff --git a/arch/sparc/Makefile b/arch/sparc/Makefile
+index 2a03daa68f285..757451c3ea1df 100644
+--- a/arch/sparc/Makefile
++++ b/arch/sparc/Makefile
+@@ -59,8 +59,8 @@ endif
+ libs-y                 += arch/sparc/prom/
+ libs-y                 += arch/sparc/lib/
+ 
+-drivers-$(CONFIG_PM) += arch/sparc/power/
+-drivers-$(CONFIG_FB_CORE) += arch/sparc/video/
++drivers-$(CONFIG_PM)    += arch/sparc/power/
++drivers-$(CONFIG_VIDEO) += arch/sparc/video/
+ 
+ boot := arch/sparc/boot
+ 
+diff --git a/arch/sparc/video/Makefile b/arch/sparc/video/Makefile
+index d4d83f1702c61..9dd82880a027a 100644
+--- a/arch/sparc/video/Makefile
++++ b/arch/sparc/video/Makefile
+@@ -1,3 +1,3 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ 
+-obj-$(CONFIG_FB_CORE) += fbdev.o
++obj-y	+= fbdev.o
+diff --git a/arch/x86/Makefile b/arch/x86/Makefile
+index 662d9d4033e6b..b80d15c29ecc6 100644
+--- a/arch/x86/Makefile
++++ b/arch/x86/Makefile
+@@ -260,7 +260,7 @@ drivers-$(CONFIG_PCI)            += arch/x86/pci/
+ # suspend and hibernation support
+ drivers-$(CONFIG_PM) += arch/x86/power/
+ 
+-drivers-$(CONFIG_FB_CORE) += arch/x86/video/
++drivers-$(CONFIG_VIDEO) += arch/x86/video/
+ 
+ ####
+ # boot loader support. Several targets are kept for legacy purposes
+diff --git a/arch/x86/video/Makefile b/arch/x86/video/Makefile
+index 5ebe48752ffc4..9dd82880a027a 100644
+--- a/arch/x86/video/Makefile
++++ b/arch/x86/video/Makefile
+@@ -1,2 +1,3 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+-obj-$(CONFIG_FB_CORE)		+= fbdev.o
++
++obj-y	+= fbdev.o
+-- 
+2.44.0
+
