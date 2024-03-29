@@ -1,31 +1,31 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 37A911C9EB1;
-	Fri, 29 Mar 2024 12:45:13 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 635B936ACD0;
+	Fri, 29 Mar 2024 12:47:11 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1711716313; cv=none; b=TYrLfe4bEEvGticUI/kuUVgUjY5wGAj0mFgBOp6qNRQlogiEmbpHxIELUq2+eEhS3k10TJvHjD/qeB8Ej2AMDaaWPOIynF+EFKkFquJ36CyaO0ggr4IFAQTS88vi51QyPJVBuJZJOgEVIG7Qp7gi+e7c4PCeQz47rYCO8DxQquk=
+	t=1711716431; cv=none; b=R8OkdB3gVCntiqUwTYYj+no5DqL1ZHcOx1Yb4nmitKgFtp9YFZqQ3bbVD6zIGT5t9bZV+P3V3zQt8F9pAohyOFSN1HfDfOHQk0KSn4rQBCpa2rwG2+5mgi0trhY94oLYX4dbBtxqeJcXXJcF4SLeJ/9dXghvnA2DUm5zI2h0XHE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1711716313; c=relaxed/simple;
-	bh=/+N/yT27Ws0m/5w/1cIOi4gBNiyyDit7r4do8MHX5j0=;
+	s=arc-20240116; t=1711716431; c=relaxed/simple;
+	bh=sQkVl30sdVY6EK+DB5C9ADEQCWIPNWJaMiTM9v1dMv4=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=B98bI8IoEdVTxbythAqwDqjCciZEAO38vnqVlLJKDuBbSgwcuaTtQOQYX8Jew2aXqitvj2BsIGe9k+SK1nZaZ9xtOyfvyZSduhKZC9pkLpfEdyAQa4opGyKEbTJsbPqJ+FhqXtJP7ynR0UiEb3y/FyWVySJkScT7X869gTBVz2E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=qznAJO2O; arc=none smtp.client-ip=10.30.226.201
+	 MIME-Version; b=MnzL3fX4kVxrDIAp2lKeYSA0ZihRWj775+uK/Shhm+1g6j100F6gX8M8uTYXzMEqw/xEwzKta+3AQeTDwvQJXiyQvZX4P361bMu3Q8adyYIsmnk+DLTddmJMb3DROvPmJPFu89BsO1QBRVdmNdIfytecM7h47HmNzn4jKGhqRuA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=BQzTxuqW; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="qznAJO2O"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E4369C433C7;
-	Fri, 29 Mar 2024 12:45:11 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="BQzTxuqW"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id CE14EC43399;
+	Fri, 29 Mar 2024 12:47:09 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1711716313;
-	bh=/+N/yT27Ws0m/5w/1cIOi4gBNiyyDit7r4do8MHX5j0=;
+	s=k20201202; t=1711716431;
+	bh=sQkVl30sdVY6EK+DB5C9ADEQCWIPNWJaMiTM9v1dMv4=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=qznAJO2O4I6HCEmdAp/JtxeJyFpp0aGvMosvTJrE8vFcffPTdZljCDU3BCRK6buqN
-	 gyrNB0PaQBsmGL77fopXvaJZLhUvvppqT93vpFsXsIpGaUmNeePhjtyG7InUkDuGqE
-	 e7+5byH52/L9a2+mWpP+WX3f37YnTCmTbQnMUPvHGrb7zyozfwqIg0nJUU+xsyRbig
-	 urXV+2iOXo5Wmb1WE3MSBl9iTPTUH6r1I66jEVadK/OZfWpY39EuU2KzduVg8Aqnoy
-	 QHnP0VtP+UI5c/heSRPCnNKJwSVXfTTLjdMzKtD0djdnmjAFCsYWRipbXy05pC04Wr
-	 Aa0Q62NZujHrg==
+	b=BQzTxuqW2N5P0I4rNJbLK+/QkWa3r31Udp2bdLCC8TmU16OF78vzayxN1IrQdm0MQ
+	 VzsAveq4V+QU8mfi2Zmr+32g9Gc8dy0G4/ja6jQIWXaldr+1dG07VDMfTohbVX6DYT
+	 Z+F5X3KILS8hSc0VFY68Kirk91OU2cw6ID/tmpApRugwZDJKYXzqAn3LATJcO9/48L
+	 vBTDf+g+ifSUjMcA6YbUC4WtepdbUkIEKh5ojA1hGiXVewy+edxbf6DxZIkXqawpcG
+	 8cQTXbmOgsdqlgcRyh882rNufgy3TrJkIiJyDN4NJrlxadWTR4STPSH1LaZc8KurOd
+	 OSwwBi21wB2Ww==
 From: Sasha Levin <sashal@kernel.org>
 To: linux-kernel@vger.kernel.org,
 	stable@vger.kernel.org
@@ -38,12 +38,12 @@ Cc: Kees Cook <keescook@chromium.org>,
 	Nicolas Schier <n.schier@avm.de>,
 	linux-sh@vger.kernel.org,
 	Sasha Levin <sashal@kernel.org>
-Subject: [PATCH AUTOSEL 6.6 55/75] sh: Fix build with CONFIG_UBSAN=y
-Date: Fri, 29 Mar 2024 08:42:36 -0400
-Message-ID: <20240329124330.3089520-55-sashal@kernel.org>
+Subject: [PATCH AUTOSEL 6.1 35/52] sh: Fix build with CONFIG_UBSAN=y
+Date: Fri, 29 Mar 2024 08:45:29 -0400
+Message-ID: <20240329124605.3091273-35-sashal@kernel.org>
 X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20240329124330.3089520-1-sashal@kernel.org>
-References: <20240329124330.3089520-1-sashal@kernel.org>
+In-Reply-To: <20240329124605.3091273-1-sashal@kernel.org>
+References: <20240329124605.3091273-1-sashal@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -52,7 +52,7 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 X-stable: review
 X-Patchwork-Hint: Ignore
-X-stable-base: Linux 6.6.23
+X-stable-base: Linux 6.1.83
 Content-Transfer-Encoding: 8bit
 
 From: Kees Cook <keescook@chromium.org>
@@ -81,10 +81,10 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  1 file changed, 1 insertion(+)
 
 diff --git a/arch/sh/boot/compressed/Makefile b/arch/sh/boot/compressed/Makefile
-index b5e29f99c02c8..6c6c791a1d063 100644
+index 591125c42d49d..ec3e78c5bff1e 100644
 --- a/arch/sh/boot/compressed/Makefile
 +++ b/arch/sh/boot/compressed/Makefile
-@@ -12,6 +12,7 @@ targets := vmlinux vmlinux.bin vmlinux.bin.gz vmlinux.bin.bz2 \
+@@ -19,6 +19,7 @@ targets := vmlinux vmlinux.bin vmlinux.bin.gz vmlinux.bin.bz2 \
             vmlinux.bin.lzma vmlinux.bin.xz vmlinux.bin.lzo $(OBJECTS)
  
  GCOV_PROFILE := n
