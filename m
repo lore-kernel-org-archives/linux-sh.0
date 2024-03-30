@@ -1,106 +1,99 @@
-Received: from mail-ot1-f46.google.com (mail-ot1-f46.google.com [209.85.210.46])
+Received: from mail-il1-f172.google.com (mail-il1-f172.google.com [209.85.166.172])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ED6B35231
-	for <linux-sh@vger.kernel.org>; Sat, 30 Mar 2024 02:06:09 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.46
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BA96233EA
+	for <linux-sh@vger.kernel.org>; Sat, 30 Mar 2024 04:35:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.166.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1711764371; cv=none; b=K1TZS0J7Jqx2UnmXcWZ2jXYKkbIavTnsTwNHopF+Q/qtS9rQMoZpb4tLhJuURDdceJ7ODDdgAqb+ib6cnD0WKiaANgYqH2qXQ5la8FGKQ9c0uc6jENj+vyPA9Pk1K6akM9P1gEXzbOSoNTkiQRl/Bnfl46amN9g5tXH8oSMzdUg=
+	t=1711773307; cv=none; b=NfZ0Q/zh1wVkw7WmogSwK2yWcX8fPopMvWvFlkYZveEzeqsCTETU2y0kDkkkulO/LrenWhFJxMqGBOMZaoAkj3pQazZHC7SG6pCJmrBZZEvhTpV1ilQjazi3li8/TYKPM79Aq2aInO/4xMHVWcMcEDB+1EvyhhRDqUQ4x2YaPqc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1711764371; c=relaxed/simple;
-	bh=t0Hz0IPe/fb7iYcCk0H6dJUvRpizatFmMMLfnMLxuG0=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=R62nG30BLP1PrJxvfEBicXPJf83WsW3JX30Dn7cR1Km2qUOeTFH1A9OeKwX3ehL3tajpkgKIQrv00iiaKXEUQ8ZTcVtnoRCxNHyDBAHeJiifuG9o7dVG3vIsUMYJiqcJ8JWTrWTOFRqqWxR/TPWIm6MF50oOJXKqYZNJHU1/h/Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=chromium.org; spf=pass smtp.mailfrom=chromium.org; dkim=pass (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b=YwcfqojT; arc=none smtp.client-ip=209.85.210.46
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=chromium.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=chromium.org
+	s=arc-20240116; t=1711773307; c=relaxed/simple;
+	bh=KESsGVL3oQ1Tct2/upTcGdKcslstjs6sa4QhcS3OUb8=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=O5nX6CsbfX1iBFRFCSXqTstAljtG60ZbC/UQBsIDbVwkdpXudcO3ozUGFawpsQIlx5sWH17anN1tU4P61SFTX2T3FZWNv1/AjlQk3tZmoliz5KobSbzSr44cj8Dg/Og9iNDWpIKk3OEkAH5Rw21DSwkLjtuB7qS6nUl6JLZaRo4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=none smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b=pn+I6jol; arc=none smtp.client-ip=209.85.166.172
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=landley.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=chromium.org header.i=@chromium.org header.b="YwcfqojT"
-Received: by mail-ot1-f46.google.com with SMTP id 46e09a7af769-6e6a9e2e2b6so1309820a34.1
-        for <linux-sh@vger.kernel.org>; Fri, 29 Mar 2024 19:06:09 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b="pn+I6jol"
+Received: by mail-il1-f172.google.com with SMTP id e9e14a558f8ab-36867dfe940so8647825ab.3
+        for <linux-sh@vger.kernel.org>; Fri, 29 Mar 2024 21:35:05 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=chromium.org; s=google; t=1711764369; x=1712369169; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=OZoxhsymi+AEBAv8CEqRs1EG6a56Ts64GeVC5M6dE6M=;
-        b=YwcfqojTBmq/j10fo1+5GhvVHns3eg2r44YjY9moRlsTTliqCske+a48shWkooaHTz
-         i11c+nQ+d7qNyBUyRLiKl8xUrWB6+KwT0UueYxDq5kW8ksdJ/eIvT47RE5B4T7qJk77Y
-         PcILGqYrb44B6nkLfpJeABEYWM3NDSCWn8tTc=
+        d=landley-net.20230601.gappssmtp.com; s=20230601; t=1711773305; x=1712378105; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=L+ftDv20t3wS0Lsp+7lIK+iX7cApQwfKmXsWpq65Q1o=;
+        b=pn+I6jol3VZursntEQ0kfg6PNtqDv6fzj+HujyJXw4SONL9CJ8gmjf5w8hS3CnClhT
+         DuzeWzSIsxxMGWdfMUdz6l5JsiZFoQEqJ1PlVCzm93VS0RqG7VrfwI4ers5ivM1b9BXp
+         Xf5tGj7ewRfsCXl1Gx1bVFopbSDiMp8e0PApo3fFvZVe4OjiG1h7TqMt4uE0D9lZmEAt
+         rhWvaKA/zeflu4PDRRLvLdpCdyD6xr8ZsppcsbivxCGvdqc8oTdHrsTUcI3zjYfrrAz3
+         r2xzoN7xDymOxGcIEb9pMGf8GMNc2jlKA8huKEvvTgJN1spctAwIoFq7ypTMbJKcRCnq
+         CjGw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1711764369; x=1712369169;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=OZoxhsymi+AEBAv8CEqRs1EG6a56Ts64GeVC5M6dE6M=;
-        b=Q1V+XWGIp8anK4WSYwvKTIYzXXvuzsKOnj/saSoHMReu5Sfko5sfgthhkTb6n5rnm2
-         Zs2C/0l4Apd28UqmuS4Ic4QdIb+ZV2TEqBUHzlm1y1pltazNwDW9mMyavQ3VI1O3ehD1
-         08FZcUqUF8i7IUIV4n8t7LyLDeVeb/6DwCVgPhx4g8+XzlD5xQ1bRCrZAaSwEYMELU3W
-         lZK1SvmYS0F1AhgfJIvaBC79wUCcDocSSCPHGpXeg2doK5sIBzAzdwX1o4aMIBl5dLhc
-         Hrv/9BGwlrCab9GaHWRzoF9thUOmBu8qyLUSRQKl1xaDxCd8sOPkV7y2hPGuYN/SmTWN
-         aLrg==
-X-Forwarded-Encrypted: i=1; AJvYcCXUJ8DSe4vrl+huFCMd54BBeN2ztdAXzXgYORZdWOWi5IO6nyR1sVV+H0FFKEuaH/LnrWfHfykLMIZWXZJKAknKZ/aDl1h8Wss=
-X-Gm-Message-State: AOJu0YzfbPbs3A+4DXwtpBoIysrqK+KbJwyrOtFjaQvzFeg6KiF6nlK1
-	wGeS+9jgxxCIl5o6HeMFfu03G1zb3Dp4jdwI8739km0KPr90z/M/Q5xSCosMGg==
-X-Google-Smtp-Source: AGHT+IHwHlTfLV9GfVQAhEexD8rGmEIWClX4bK7Ct2vKWmplx2znlAy02xAfUSs94N3Wc3qoALt16Q==
-X-Received: by 2002:a05:6358:5409:b0:183:4d1d:dcaa with SMTP id u9-20020a056358540900b001834d1ddcaamr4207104rwe.3.1711764369017;
-        Fri, 29 Mar 2024 19:06:09 -0700 (PDT)
-Received: from www.outflux.net ([198.0.35.241])
-        by smtp.gmail.com with ESMTPSA id o11-20020a17090ac70b00b0029bc9c34a39sm5670564pjt.50.2024.03.29.19.06.08
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 29 Mar 2024 19:06:08 -0700 (PDT)
-Date: Fri, 29 Mar 2024 19:06:07 -0700
-From: Kees Cook <keescook@chromium.org>
-To: Sasha Levin <sashal@kernel.org>
-Cc: linux-kernel@vger.kernel.org, stable@vger.kernel.org,
-	kernel test robot <lkp@intel.com>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Masahiro Yamada <masahiroy@kernel.org>,
-	Nicolas Schier <n.schier@avm.de>, linux-sh@vger.kernel.org
-Subject: Re: [PATCH AUTOSEL 6.8 75/98] sh: Fix build with CONFIG_UBSAN=y
-Message-ID: <202403291905.7749C8A8@keescook>
-References: <20240329123919.3087149-1-sashal@kernel.org>
- <20240329123919.3087149-75-sashal@kernel.org>
+        d=1e100.net; s=20230601; t=1711773305; x=1712378105;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=L+ftDv20t3wS0Lsp+7lIK+iX7cApQwfKmXsWpq65Q1o=;
+        b=wKIflgN/pBtLBUuso1gBsXBqFDJZ4KZkLK22akqO9ugrvvtEA3YrEGFdgKvXVKo68O
+         jIsw94/dWo8YfTGIDz888e9VNIaSHpEvryam0YQM0NEtilCU5CSO5plHEefFTGILST5R
+         puuNZDunhtXqxXNkuMpbKykzTLQ+VAL/u+gzZdVwSu5ATu0+45jJ68R/DrQ6V2K/HN+d
+         Oui1qoM5fqccprKSBze0LGGL+ey3ztBGEtfSuCQE9AXpqF2xZvGoPRLBYwWAEzO1b/0a
+         n4JZyGB+4lgII3n5JbrZbRbube/QVYte0pk/PAf3SQ/T2mqOB/PzBIAFDIVG21BJdMsC
+         lYUw==
+X-Forwarded-Encrypted: i=1; AJvYcCVvscqqGAJ/TVvL+dqySyp7lTVWzW6s3Hep6NKU8DLp7ezsfS/6Dma0OL0EB94y53ci5ABFruwVq6xy9kf4GbWUjcVx/aV6l2c=
+X-Gm-Message-State: AOJu0Yx5GfSiXxsr4czZq9ym3p3vLsRdSR2egEObiWt23IAvywzpFyJX
+	HRHkM9d8BwRZeUZ7fyN6XmVik5vtIY35Um9iQXu38b1ux3GupiM5VOiPEktaPdI=
+X-Google-Smtp-Source: AGHT+IGVLCNwHHytCGoayaTDND3tvqRbKIuPONixjN7UAmpNoIbU9H30r7YohRTWJyBUdfew/qU6jQ==
+X-Received: by 2002:a05:6e02:268a:b0:365:cd40:c1e7 with SMTP id bz10-20020a056e02268a00b00365cd40c1e7mr4188375ilb.11.1711773304829;
+        Fri, 29 Mar 2024 21:35:04 -0700 (PDT)
+Received: from [172.16.32.83] ([198.232.126.202])
+        by smtp.gmail.com with ESMTPSA id x4-20020a920604000000b003684edeba7esm1442888ilg.88.2024.03.29.21.35.03
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 29 Mar 2024 21:35:04 -0700 (PDT)
+Message-ID: <7b28fe62-a1e9-1359-72aa-1dc75409d118@landley.net>
+Date: Fri, 29 Mar 2024 23:44:01 -0500
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20240329123919.3087149-75-sashal@kernel.org>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.0
+Subject: Re: [PATCH] sh: j2: drop incorrect SPI controller max frequency
+ property
+Content-Language: en-US
+To: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>,
+ Rob Herring <robh@kernel.org>,
+ Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
+ Conor Dooley <conor+dt@kernel.org>,
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ devicetree@vger.kernel.org, linux-sh@vger.kernel.org,
+ linux-kernel@vger.kernel.org
+Cc: Kousik Sanagavarapu <five231003@gmail.com>
+References: <20240322064221.25776-1-krzysztof.kozlowski@linaro.org>
+From: Rob Landley <rob@landley.net>
+In-Reply-To: <20240322064221.25776-1-krzysztof.kozlowski@linaro.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Fri, Mar 29, 2024 at 08:37:46AM -0400, Sasha Levin wrote:
-> From: Kees Cook <keescook@chromium.org>
+On 3/22/24 01:42, Krzysztof Kozlowski wrote:
+> The J2 SPI controller bindings never allowed spi-max-frequency property
+> in the controller node.  Neither old spi-bus.txt bindings, nor new DT
+> schema allows it.  Linux driver does not parse that property from
+> controller node, thus drop it from DTS as incorrect hardware
+> description.  The SPI child device has already the same property with
+> the same value, so functionality should not be affected.
 > 
-> [ Upstream commit e36b70fb8c707a0688960184380bc151390d671b ]
-> 
-> The early boot stub for sh had UBSan instrumentation present where it is
-> not supported. Disable it for this part of the build.
-> 
->   sh4-linux-ld: arch/sh/boot/compressed/misc.o: in function `zlib_inflate_table':
->   misc.c:(.text+0x670): undefined reference to `__ubsan_handle_shift_out_of_bounds'
-> 
-> Reported-by: kernel test robot <lkp@intel.com>
-> Closes: https://lore.kernel.org/oe-kbuild-all/202401310416.s8HLiLnC-lkp@intel.com/
-> Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-> Cc: Rich Felker <dalias@libc.org>
-> Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> Cc: Masahiro Yamada <masahiroy@kernel.org>
-> Cc: Nicolas Schier <n.schier@avm.de>
-> Cc:  <linux-sh@vger.kernel.org>
-> Link: https://lore.kernel.org/r/20240130232717.work.088-kees@kernel.org
-> Signed-off-by: Kees Cook <keescook@chromium.org>
-> Signed-off-by: Sasha Levin <sashal@kernel.org>
+> Cc: Kousik Sanagavarapu <five231003@gmail.com>
+> Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
 
-Same as the other:
+Tested-by: Rob Landley <rob@landley.net>
 
-This is harmless to backport, but doesn't do anything. (The UBSAN
-changes needing this are only in Linus's tree.)
+(By which I mean a 6.8 kernel with this patch applied booted to a shell prompt
+on my J2 turtle board.)
 
--Kees
-
--- 
-Kees Cook
+Rob
