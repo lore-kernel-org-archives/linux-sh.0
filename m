@@ -1,91 +1,29 @@
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 52EF65473D;
-	Thu,  4 Apr 2024 05:00:55 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 3C53854911
+	for <linux-sh@vger.kernel.org>; Thu,  4 Apr 2024 05:00:55 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=153.127.30.23
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1712206857; cv=none; b=nMUMNZreBgoyE2c/FCVHNvEwvhRSMhv7vH9VyKESCWusb8OFhVirmHpA5bOsCmkMpk36kPgrqSU1tcubBeQt3+PLRSqtyp7yJ0svLh7P44bHIkgEXJfJEezmAZtzBnCt/fTy6ySAtr+wkRqIO+Lt8rW8mnJebbqc5BuMN2OuVss=
+	t=1712206857; cv=none; b=NKQoFTT1BS4kYWgKM4PSXBpIZOoMBIwtv7aOOKVxsk6CIjCcpqubfX4coeF9p1GfPNGYlWCbNXIy+2aatlfPp8NesFxCU/RP9X4KbJpPxxSovpYdx7ZY+q+u5PIfdyOH4JoHmIQ9oQgcaf7L/p5A/21Bwx3whi0ZZ5xd8QeQiK0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1712206857; c=relaxed/simple;
-	bh=Zl34havtMWRq2iGwzVo/GzpE+MdC5jA9xgxGJw9XNA0=;
+	bh=s7z/DJLA2hvdIV/rv9zwgO39neOGHSX5TSCrrrQvjFc=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=aH8FYCkOIc/ke3qs94haOuvpUC8O6lF0KT2Xz/BHy99r9x7JFzYPsJRyfRDXNFyJK2vRuymoyX4QXJfg484Bq0Mh19PymhfKcP7haT0ygCODL7rCX73sT0+4NkDs0QuUdTM5Vv8+sDQWLGVVTzOQydTj41AxbBkyLqHx/DLLUSQ=
+	 MIME-Version; b=X47kEV0mycV9eAn/ynR1hmrJT3M/dMVFoPOPpAALXDYk2J4asPykpqsYKaIzfFH6kHANDajQVrt2EPeCNpsz1PBgsfi8H/gtqB+sBNVlMcMYFDH1v9mDcPArrLPafa0032GeWmwF/C+btqeAN4V3NcW93eI46xPTUoYlLxUQ/UE=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=users.sourceforge.jp; spf=fail smtp.mailfrom=users.sourceforge.jp; arc=none smtp.client-ip=153.127.30.23
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=users.sourceforge.jp
 Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=users.sourceforge.jp
 Received: from SIOS1075.ysato.name (al128006.dynamic.ppp.asahi-net.or.jp [111.234.128.6])
-	by sakura.ysato.name (Postfix) with ESMTPSA id 1B6FC1C0912;
-	Thu,  4 Apr 2024 14:00:53 +0900 (JST)
+	by sakura.ysato.name (Postfix) with ESMTPSA id 250741C03E3;
+	Thu,  4 Apr 2024 14:00:55 +0900 (JST)
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
 To: linux-sh@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Niklas Cassel <cassel@kernel.org>,
-	Rob Herring <robh@kernel.org>,
-	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
-	Conor Dooley <conor+dt@kernel.org>,
-	Geert Uytterhoeven <geert+renesas@glider.be>,
-	Michael Turquette <mturquette@baylibre.com>,
-	Stephen Boyd <sboyd@kernel.org>,
-	David Airlie <airlied@gmail.com>,
-	Daniel Vetter <daniel@ffwll.ch>,
-	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
-	Maxime Ripard <mripard@kernel.org>,
-	Thomas Zimmermann <tzimmermann@suse.de>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Bjorn Helgaas <bhelgaas@google.com>,
-	Lorenzo Pieralisi <lpieralisi@kernel.org>,
-	=?UTF-8?q?Krzysztof=20Wilczy=C5=84ski?= <kw@linux.com>,
-	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-	Jiri Slaby <jirislaby@kernel.org>,
-	Magnus Damm <magnus.damm@gmail.com>,
-	Daniel Lezcano <daniel.lezcano@linaro.org>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Lee Jones <lee@kernel.org>,
-	Helge Deller <deller@gmx.de>,
-	Heiko Stuebner <heiko.stuebner@cherry.de>,
-	Shawn Guo <shawnguo@kernel.org>,
-	Sebastian Reichel <sre@kernel.org>,
-	Chris Morgan <macromorgan@hotmail.com>,
-	Linus Walleij <linus.walleij@linaro.org>,
-	Arnd Bergmann <arnd@arndb.de>,
-	David Rientjes <rientjes@google.com>,
-	Hyeonggon Yoo <42.hyeyoo@gmail.com>,
-	Vlastimil Babka <vbabka@suse.cz>,
-	Baoquan He <bhe@redhat.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Guenter Roeck <linux@roeck-us.net>,
-	Kefeng Wang <wangkefeng.wang@huawei.com>,
-	Stephen Rothwell <sfr@canb.auug.org.au>,
-	Javier Martinez Canillas <javierm@redhat.com>,
-	Guo Ren <guoren@kernel.org>,
-	Azeem Shaikh <azeemshaikh38@gmail.com>,
-	Max Filippov <jcmvbkbc@gmail.com>,
-	Jonathan Corbet <corbet@lwn.net>,
-	Jacky Huang <ychuang3@nuvoton.com>,
-	Herve Codina <herve.codina@bootlin.com>,
-	Manikanta Guntupalli <manikanta.guntupalli@amd.com>,
-	Anup Patel <apatel@ventanamicro.com>,
-	Biju Das <biju.das.jz@bp.renesas.com>,
-	=?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>,
-	Sam Ravnborg <sam@ravnborg.org>,
-	Sergey Shtylyov <s.shtylyov@omp.ru>,
-	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
-	linux-ide@vger.kernel.org,
-	devicetree@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-renesas-soc@vger.kernel.org,
-	linux-clk@vger.kernel.org,
-	dri-devel@lists.freedesktop.org,
-	linux-pci@vger.kernel.org,
-	linux-serial@vger.kernel.org,
-	linux-fbdev@vger.kernel.org
-Subject: [PATCH v7 10/37] sh: Common PCI Framework driver support.
-Date: Thu,  4 Apr 2024 13:59:37 +0900
-Message-Id: <1dc50e154999c1cf5f13949fdd7d049fa363c34b.1712205900.git.ysato@users.sourceforge.jp>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Subject: [DO NOT MERGE v7 11/36] dt-bindings: pci: pci-sh7751: Add SH7751 PCI
+Date: Thu,  4 Apr 2024 13:59:38 +0900
+Message-Id: <4d3b2398e724dfa0682eb6108dfca2ae6593b3ee.1712041249.git.ysato@users.sourceforge.jp>
 X-Mailer: git-send-email 2.39.2
-In-Reply-To: <cover.1712205900.git.ysato@users.sourceforge.jp>
-References: <cover.1712205900.git.ysato@users.sourceforge.jp>
+In-Reply-To: <cover.1712041249.git.ysato@users.sourceforge.jp>
+References: <cover.1712041249.git.ysato@users.sourceforge.jp>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -94,85 +32,109 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Add New OF based PCI Host driver.
-This driver conflicts some point in legacy PCI driver.
-To resolve the conflict, I made some changes to the legacy driver.
+Renesas SH7751 PCI Controller json-schema.
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- arch/sh/include/asm/io.h  |  6 ++++++
- arch/sh/include/asm/pci.h |  4 ++++
- arch/sh/kernel/iomap.c    | 18 ++++++++++++++++++
- 3 files changed, 28 insertions(+)
+ .../bindings/pci/renesas,sh7751-pci.yaml      | 89 +++++++++++++++++++
+ 1 file changed, 89 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/pci/renesas,sh7751-pci.yaml
 
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 5c544cf5201b..29b5f996cde3 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -20,6 +20,7 @@
- #include <asm/page.h>
- #include <linux/pgtable.h>
- #include <asm-generic/iomap.h>
-+#include <linux/ioport.h>
- 
- #define __IO_PREFIX     generic
- #include <asm/io_generic.h>
-@@ -310,4 +311,9 @@ unsigned long long poke_real_address_q(unsigned long long addr,
- int valid_phys_addr_range(phys_addr_t addr, size_t size);
- int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
- 
-+#if defined(CONFIG_PCI) && !defined(CONFIG_GENERIC_IOMAP)
-+#define pci_remap_iospace pci_remap_iospace
-+int pci_remap_iospace(const struct resource *res, phys_addr_t phys_addr);
-+#endif
+diff --git a/Documentation/devicetree/bindings/pci/renesas,sh7751-pci.yaml b/Documentation/devicetree/bindings/pci/renesas,sh7751-pci.yaml
+new file mode 100644
+index 000000000000..115c2bb67339
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pci/renesas,sh7751-pci.yaml
+@@ -0,0 +1,89 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/pci/renesas,sh7751-pci.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
 +
- #endif /* __ASM_SH_IO_H */
-diff --git a/arch/sh/include/asm/pci.h b/arch/sh/include/asm/pci.h
-index 54c30126ea17..92b3bd604319 100644
---- a/arch/sh/include/asm/pci.h
-+++ b/arch/sh/include/asm/pci.h
-@@ -2,6 +2,7 @@
- #ifndef __ASM_SH_PCI_H
- #define __ASM_SH_PCI_H
- 
-+#ifndef CONFIG_SH_DEVICE_TREE
- /* Can be used to override the logic in pci_scan_bus for skipping
-    already-configured bus numbers - to be used for buggy BIOSes
-    or architectures with incomplete PCI setup by the loader */
-@@ -88,4 +89,7 @@ static inline int pci_proc_domain(struct pci_bus *bus)
- 	return hose->need_domain_info;
- }
- 
-+#else /* CONFIG_SH_DEVICE_TREE */
-+#include <asm-generic/pci.h>
-+#endif
- #endif /* __ASM_SH_PCI_H */
-diff --git a/arch/sh/kernel/iomap.c b/arch/sh/kernel/iomap.c
-index 0a0dff4e66de..d1b8e496ca23 100644
---- a/arch/sh/kernel/iomap.c
-+++ b/arch/sh/kernel/iomap.c
-@@ -160,3 +160,21 @@ void iowrite32_rep(void __iomem *addr, const void *src, unsigned long count)
- 	mmio_outsl(addr, src, count);
- }
- EXPORT_SYMBOL(iowrite32_rep);
++title: Renesas SH7751 PCI Host controller
 +
-+#if defined(pci_remap_iospace)
-+int pci_remap_iospace(const struct resource *res, phys_addr_t phys_addr)
-+{
-+	unsigned long vaddr = res->start;
++maintainers:
++  - Yoshinori Sato <ysato@users.sourceforge.jp>
 +
-+	if (!(res->flags & IORESOURCE_IO))
-+		return -EINVAL;
++allOf:
++  - $ref: /schemas/pci/pci-bus.yaml#
 +
-+	if (res->end > IO_SPACE_LIMIT)
-+		return -EINVAL;
++properties:
++  compatible:
++    const: renesas,sh7751-pci
 +
-+	__set_io_port_base(phys_addr);
-+	return vmap_page_range(vaddr, vaddr + resource_size(res), phys_addr,
-+			       pgprot_device(PAGE_KERNEL));
-+}
-+EXPORT_SYMBOL(pci_remap_iospace);
-+#endif
++  reg:
++    minItems: 2
++    maxItems: 2
++
++  reg-names:
++    items:
++      - const: PCI Controller
++      - const: Bus State Controller
++
++  "#interrupt-cells":
++    const: 1
++
++  "#address-cells":
++    const: 3
++
++  "#size-cells":
++    const: 2
++
++  ranges: true
++
++  dma-ranges: true
++
++  interrupt-controller: true
++
++  renesas,bus-arbit-round-robin:
++    $ref: /schemas/types.yaml#/definitions/flag
++    description: |
++      Set DMA bus arbitration to round robin.
++
++required:
++  - compatible
++  - reg
++  - "#interrupt-cells"
++  - "#address-cells"
++  - "#size-cells"
++  - ranges
++  - interrupt-map
++  - interrupt-map-mask
++
++unevaluatedProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/interrupt-controller/irq.h>
++    pci@fe200000 {
++            compatible = "renesas,sh7751-pci";
++            #address-cells = <3>;
++            #size-cells = <2>;
++            #interrupt-cells = <1>;
++            interrupt-controller;
++            device_type = "pci";
++            bus-range = <0 0>;
++            ranges = <0x02000000 0 0xfd000000 0xfd000000 0 0x01000000>,
++                     <0x01000000 0 0x00000000 0xfe240000 0 0x00040000>;
++            dma-ranges = <0x02000000 0 0xc000000 0x0c000000 0 0x04000000>;
++            reg = <0xfe200000 0x0400>,
++                  <0xff800000 0x0100>;
++            interrupt-map = <0x0000 0 0 1 &julianintc 5 IRQ_TYPE_LEVEL_LOW>,
++                            <0x0000 0 0 2 &julianintc 6 IRQ_TYPE_LEVEL_LOW>,
++                            <0x0000 0 0 3 &julianintc 7 IRQ_TYPE_LEVEL_LOW>,
++                            <0x0000 0 0 4 &julianintc 8 IRQ_TYPE_LEVEL_LOW>,
++                            <0x0800 0 0 1 &julianintc 6 IRQ_TYPE_LEVEL_LOW>,
++                            <0x0800 0 0 2 &julianintc 7 IRQ_TYPE_LEVEL_LOW>,
++                            <0x0800 0 0 3 &julianintc 8 IRQ_TYPE_LEVEL_LOW>,
++                            <0x0800 0 0 4 &julianintc 5 IRQ_TYPE_LEVEL_LOW>,
++                            <0x1000 0 0 1 &julianintc 7 IRQ_TYPE_LEVEL_LOW>,
++                            <0x1000 0 0 2 &julianintc 8 IRQ_TYPE_LEVEL_LOW>,
++                            <0x1000 0 0 3 &julianintc 5 IRQ_TYPE_LEVEL_LOW>,
++                            <0x1000 0 0 4 &julianintc 6 IRQ_TYPE_LEVEL_LOW>;
++            interrupt-map-mask = <0x1800 0 0 7>;
++    };
 -- 
 2.39.2
 
