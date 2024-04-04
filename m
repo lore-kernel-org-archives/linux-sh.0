@@ -1,91 +1,29 @@
 Received: from sakura.ysato.name (ik1-413-38519.vs.sakura.ne.jp [153.127.30.23])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id B15024642A;
-	Thu,  4 Apr 2024 05:01:20 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id ABA7574C1B
+	for <linux-sh@vger.kernel.org>; Thu,  4 Apr 2024 05:01:21 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=153.127.30.23
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1712206882; cv=none; b=pV+EtgDiCDuq0lj6MrPOoUfr4984T6rNyfO+GATs9Z0tF1ULAr6qArc9cSyaQQ8DyZ9LtEVYl6TPXU0lrrn9zn3Mx1kWo/2v8Ls2uQEq/fSe+P6WVeSXov70ompxZCTrbcAelpP5Gt6erOo0QDViSXoNtEwLQXorO/ZL1YCnurc=
+	t=1712206883; cv=none; b=Yk6a927x/CGhT/QXov+Fn5bCdVh/gisJFi0ZNa6arq/epyXReg5c8WvWqQODl05LBDWgtXNxECruVGePtjk8od4IMhLl54l4U78Yp43EAUG11iv2zykDSIxlwZoLHmOMam44jDG6P/RSObVnM/lPRSb4s4JubrUuD0H9uity8fg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1712206882; c=relaxed/simple;
-	bh=RfBIVerSVY5ro3iClkCuqoyBsbZfPpMYmGiZieoqKAU=;
+	s=arc-20240116; t=1712206883; c=relaxed/simple;
+	bh=yT32dw2MA1l/u3K8YlVvTRqYbgKjGsuCai8CvdMaens=;
 	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=RRk21OWuKexCZxDtqlzKiqDwdw9rsOwzqKIphxEFxJTjbWltrUch6Q8n83viHGFHE/Urd1aRo1O4FaZni45LPhy3/NwDJFqX/vGB1Vd2lzC+gAhsZLM83yDozF+GqTCMjqIUsc3W20Mj2gvlntLHtG1HLSLmTvX1pMyjYUheGVY=
+	 MIME-Version; b=mctPi8MqTfuHblF1V1Hgngnkj8zK3l0ph3C1QO0a+/6AKkf1Ih6DCAunpGb3IqStD4vBNo0kX7xy+u4NhYpKNN1lhBtAZk9jqNMzhIVagu3GOCF7ccXmD1jwmfA2MvpDTGzYQlCSuJ+SBxvYyhC7EtN9vB+ehRijkjduyx4jeM0=
 ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=users.sourceforge.jp; spf=fail smtp.mailfrom=users.sourceforge.jp; arc=none smtp.client-ip=153.127.30.23
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=users.sourceforge.jp
 Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=users.sourceforge.jp
 Received: from SIOS1075.ysato.name (al128006.dynamic.ppp.asahi-net.or.jp [111.234.128.6])
-	by sakura.ysato.name (Postfix) with ESMTPSA id AEDF81C0B3E;
-	Thu,  4 Apr 2024 14:01:18 +0900 (JST)
+	by sakura.ysato.name (Postfix) with ESMTPSA id 9CDD91C0DCB;
+	Thu,  4 Apr 2024 14:01:20 +0900 (JST)
 From: Yoshinori Sato <ysato@users.sourceforge.jp>
 To: linux-sh@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Damien Le Moal <dlemoal@kernel.org>,
-	Niklas Cassel <cassel@kernel.org>,
-	Rob Herring <robh@kernel.org>,
-	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
-	Conor Dooley <conor+dt@kernel.org>,
-	Geert Uytterhoeven <geert+renesas@glider.be>,
-	Michael Turquette <mturquette@baylibre.com>,
-	Stephen Boyd <sboyd@kernel.org>,
-	David Airlie <airlied@gmail.com>,
-	Daniel Vetter <daniel@ffwll.ch>,
-	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
-	Maxime Ripard <mripard@kernel.org>,
-	Thomas Zimmermann <tzimmermann@suse.de>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Bjorn Helgaas <bhelgaas@google.com>,
-	Lorenzo Pieralisi <lpieralisi@kernel.org>,
-	=?UTF-8?q?Krzysztof=20Wilczy=C5=84ski?= <kw@linux.com>,
-	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-	Jiri Slaby <jirislaby@kernel.org>,
-	Magnus Damm <magnus.damm@gmail.com>,
-	Daniel Lezcano <daniel.lezcano@linaro.org>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Lee Jones <lee@kernel.org>,
-	Helge Deller <deller@gmx.de>,
-	Heiko Stuebner <heiko.stuebner@cherry.de>,
-	Shawn Guo <shawnguo@kernel.org>,
-	Sebastian Reichel <sre@kernel.org>,
-	Chris Morgan <macromorgan@hotmail.com>,
-	Linus Walleij <linus.walleij@linaro.org>,
-	Arnd Bergmann <arnd@arndb.de>,
-	David Rientjes <rientjes@google.com>,
-	Hyeonggon Yoo <42.hyeyoo@gmail.com>,
-	Vlastimil Babka <vbabka@suse.cz>,
-	Baoquan He <bhe@redhat.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Guenter Roeck <linux@roeck-us.net>,
-	Kefeng Wang <wangkefeng.wang@huawei.com>,
-	Stephen Rothwell <sfr@canb.auug.org.au>,
-	Javier Martinez Canillas <javierm@redhat.com>,
-	Guo Ren <guoren@kernel.org>,
-	Azeem Shaikh <azeemshaikh38@gmail.com>,
-	Max Filippov <jcmvbkbc@gmail.com>,
-	Jonathan Corbet <corbet@lwn.net>,
-	Jacky Huang <ychuang3@nuvoton.com>,
-	Herve Codina <herve.codina@bootlin.com>,
-	Manikanta Guntupalli <manikanta.guntupalli@amd.com>,
-	Anup Patel <apatel@ventanamicro.com>,
-	Biju Das <biju.das.jz@bp.renesas.com>,
-	=?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>,
-	Sam Ravnborg <sam@ravnborg.org>,
-	Sergey Shtylyov <s.shtylyov@omp.ru>,
-	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>,
-	linux-ide@vger.kernel.org,
-	devicetree@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-renesas-soc@vger.kernel.org,
-	linux-clk@vger.kernel.org,
-	dri-devel@lists.freedesktop.org,
-	linux-pci@vger.kernel.org,
-	linux-serial@vger.kernel.org,
-	linux-fbdev@vger.kernel.org
-Subject: [PATCH v7 23/37] dt-bindings: display: sm501 register definition helper
-Date: Thu,  4 Apr 2024 14:00:02 +0900
-Message-Id: <dac98a697c8e850054f984964af62a209f241c83.1712205900.git.ysato@users.sourceforge.jp>
+Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
+Subject: [DO NOT MERGE v7 24/36] dt-binding: sh: cpus: Add SH CPUs json-schema
+Date: Thu,  4 Apr 2024 14:00:04 +0900
+Message-Id: <a0d5a48ff2dd9e07942a16b538b6a6a03aa8ec06.1712041249.git.ysato@users.sourceforge.jp>
 X-Mailer: git-send-email 2.39.2
-In-Reply-To: <cover.1712205900.git.ysato@users.sourceforge.jp>
-References: <cover.1712205900.git.ysato@users.sourceforge.jp>
+In-Reply-To: <cover.1712041249.git.ysato@users.sourceforge.jp>
+References: <cover.1712041249.git.ysato@users.sourceforge.jp>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -94,96 +32,81 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Miscellaneous Timing and Miscellaneous Control registers definition.
+Renesas SH series and compatible ISA CPUs.
 
 Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 ---
- include/dt-bindings/display/sm501.h | 76 +++++++++++++++++++++++++++++
- 1 file changed, 76 insertions(+)
- create mode 100644 include/dt-bindings/display/sm501.h
+ .../devicetree/bindings/sh/cpus.yaml          | 61 +++++++++++++++++++
+ 1 file changed, 61 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/sh/cpus.yaml
 
-diff --git a/include/dt-bindings/display/sm501.h b/include/dt-bindings/display/sm501.h
+diff --git a/Documentation/devicetree/bindings/sh/cpus.yaml b/Documentation/devicetree/bindings/sh/cpus.yaml
 new file mode 100644
-index 000000000000..a6c6943642e4
+index 000000000000..43e079b8753d
 --- /dev/null
-+++ b/include/dt-bindings/display/sm501.h
-@@ -0,0 +1,76 @@
-+/* SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause */
-+#ifndef __DT_BINDING_DISPALY_SM501__
-+#define __DT_BINDING_DISPALY_SM501__
++++ b/Documentation/devicetree/bindings/sh/cpus.yaml
+@@ -0,0 +1,61 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/sh/cpus.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
 +
-+/* Miscellaneous Conntrol */
-+#define SM501_MISC_CONTROL_PAD_24	0
-+#define SM501_MISC_CONTROL_PAD_12	1
-+#define SM501_MISC_CONTROL_PAD_8	2
++title: Renesas SuperH CPUs
 +
-+#define SM501_MISC_CONTROL_USBCLK_XTAL	0
-+#define SM501_MISC_CONTROL_USBCLK_96MHZ	1
-+#define SM501_MISC_CONTROL_USBCLK_48MHZ	2
++maintainers:
++  - Yoshinori Sato <ysato@users.sourceforge.jp>
 +
-+#define SM501_MISC_CONTROL_RFSH_8US	0
-+#define SM501_MISC_CONTROL_RFSH_16US	1
-+#define SM501_MISC_CONTROL_RFSH_32US	2
-+#define SM501_MISC_CONTROL_RFSH_64US	3
++description: |+
++  Definition of CPU core with Renesas SuperH and compatible instruction set.
 +
-+#define SM501_MISC_CONTROL_HOLD_EMPTY	0
-+#define SM501_MISC_CONTROL_HOLD_8TR	1
-+#define SM501_MISC_CONTROL_HOLD_16TR	2
-+#define SM501_MISC_CONTROL_HOLD_24TR	3
-+#define SM501_MISC_CONTROL_HOLD_32TR	4
++properties:
++  compatible:
++    anyOf:
++      - items:
++          - enum:
++              - renesas,sh2a
++              - renesas,sh3
++              - renesas,sh4
++              - renesas,sh4a
++              - jcore,j2
++          - const: renesas,sh2
++      - const: renesas,sh2
 +
-+/* Miscellaneous timing */
-+#define SM501_MISC_TIMING_EX_HOLD_0	0
-+#define SM501_MISC_TIMING_EX_HOLD_16	1
-+#define SM501_MISC_TIMING_EX_HOLD_32	2
-+#define SM501_MISC_TIMING_EX_HOLD_48	3
-+#define SM501_MISC_TIMING_EX_HOLD_64	4
-+#define SM501_MISC_TIMING_EX_HOLD_80	5
-+#define SM501_MISC_TIMING_EX_HOLD_96	6
-+#define SM501_MISC_TIMING_EX_HOLD_112	7
-+#define SM501_MISC_TIMING_EX_HOLD_128	8
-+#define SM501_MISC_TIMING_EX_HOLD_144	9
-+#define SM501_MISC_TIMING_EX_HOLD_160	10
-+#define SM501_MISC_TIMING_EX_HOLD_176	11
-+#define SM501_MISC_TIMING_EX_HOLD_192	12
-+#define SM501_MISC_TIMING_EX_HOLD_208	13
-+#define SM501_MISC_TIMING_EX_HOLD_224	14
-+#define SM501_MISC_TIMING_EX_HOLD_240	15
++  clocks:
++    maxItems: 1
 +
-+#define SM501_MISC_TIMING_XC_INTERNAL	0
-+#define SM501_MISC_TIMING_XC_HCLK	1
-+#define SM501_MISC_TIMING_XC_GPIO	2
++  reg:
++    maxItems: 1
 +
-+#define SM501_MISC_TIMING_SM_DIV1	0
-+#define SM501_MISC_TIMING_SM_DIV2	1
-+#define SM501_MISC_TIMING_SM_DIV4	2
-+#define SM501_MISC_TIMING_SM_DIV8	3
-+#define SM501_MISC_TIMING_SM_DIV16	4
-+#define SM501_MISC_TIMING_SM_DIV32	5
-+#define SM501_MISC_TIMING_SM_DIV64	6
-+#define SM501_MISC_TIMING_SM_DIV128	7
-+#define SM501_MISC_TIMING_SM_DIV3	8
-+#define SM501_MISC_TIMING_SM_DIV6	9
-+#define SM501_MISC_TIMING_SM_DIV12	10
-+#define SM501_MISC_TIMING_SM_DIV24	11
-+#define SM501_MISC_TIMING_SM_DIV48	12
-+#define SM501_MISC_TIMING_SM_DIV96	13
-+#define SM501_MISC_TIMING_SM_DIV192	14
-+#define SM501_MISC_TIMING_SM_DIV384	15
++  device_type: true
 +
-+#define SM501_MISC_TIMING_DIV336MHZ	0
-+#define SM501_MISC_TIMING_DIV288MHZ	1
-+#define SM501_MISC_TIMING_DIV240MHZ	2
-+#define SM501_MISC_TIMING_DIV192MHZ	3
++required:
++  - compatible
++  - reg
++  - device_type
 +
-+#define SM501_MISC_TIMING_DELAY_NONE	0
-+#define SM501_MISC_TIMING_DELAY_0_5	1
-+#define SM501_MISC_TIMING_DELAY_1_0	2
-+#define SM501_MISC_TIMING_DELAY_1_5	3
-+#define SM501_MISC_TIMING_DELAY_2_0	4
-+#define SM501_MISC_TIMING_DELAY_2_5	5
 +
-+#endif
++examples:
++  - |
++    #include <dt-bindings/clock/sh7750-cpg.h>
++    cpus {
++        #address-cells = <1>;
++        #size-cells = <0>;
++
++        cpu: cpu@0 {
++            compatible = "renesas,sh4", "renesas,sh2";
++            device_type = "cpu";
++            reg = <0>;
++            clocks = <&cpg SH7750_CPG_ICK>;
++            clock-names = "ick";
++            icache-size = <16384>;
++            icache-line-size = <32>;
++            dcache-size = <32768>;
++            dcache-line-size = <32>;
++        };
++    };
++...
 -- 
 2.39.2
 
