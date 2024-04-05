@@ -1,96 +1,104 @@
-Received: from mail-yw1-f172.google.com (mail-yw1-f172.google.com [209.85.128.172])
+Received: from mail-yb1-f169.google.com (mail-yb1-f169.google.com [209.85.219.169])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B85718E1D
-	for <linux-sh@vger.kernel.org>; Fri,  5 Apr 2024 12:21:41 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.172
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9450316DEA5;
+	Fri,  5 Apr 2024 12:32:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.169
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1712319703; cv=none; b=UKq2gRJ06ELYcSTpPi1ovnmTQctlikQjheuet5MOn0u51gzU0Ox1W/uO3HHA/Koa/YA8CTnNgLOw8m8kelQSxNEuK5lfeYIroABHNvuB2fr6UNvUArrhWQSQOY1OoBtGwQjuNMzGv/4SLkbhBFQHhDa8YjqzpHGrdt0fvPvekbA=
+	t=1712320332; cv=none; b=oin4xQYxqoesX1p7kEm88v1LcIh7REm/H1Rzpb9u+5UluRhArQVu0C6F+EwJ4U5jRNnSUQA5wFLx+QDL2gItMyysVApvupI2zBKHch2nkVx9Qe3zwHJRr294onE7ngZYvGsvxvzuo7ktMiwi1BHNkjXxsUkwxu4NmzDKUeCOCSM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1712319703; c=relaxed/simple;
-	bh=Bq7o5USuldxgBk0/nu7y+KKeWelhogpyuCIcxVp+8QU=;
+	s=arc-20240116; t=1712320332; c=relaxed/simple;
+	bh=RB1Wd/l8LoElaNdtvFRK6lkrvSeTO+EqCHYvOY2uo9k=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=BXqEVjxhEJkvgQ4AfPA2Ekew8v1Yc7YKPgWZ4UKfghVsftAOexC//6aXkp+GEhkyfQgEKTPXVed68a0VryF8uRH/pDqNwEPeuhPkQ8xTFrSn2HDfoNZ28AtrOuPE2IMoJLam1kNKSuY2mookuKCEZOqbw5FN2iJvzOon4VQ8lxw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.128.172
+	 To:Cc:Content-Type; b=Vcd53BblRdWhkH3/OY2IylBbqdArQoDEDQAU89QBqfVv7YYdWsINkBCHusfKJcP3zgsQdZ2CCr85kOcRGLKq4Aw9se/dtPDwa1lwgpJqEJZXS/2eeMzDv2PUpKSeP7dzunik+V5eB0QO5QZVfX5OsvxsbEI7/fJu/cmUEWwciws=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.219.169
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-yw1-f172.google.com with SMTP id 00721157ae682-617dfcf80aeso575887b3.3
-        for <linux-sh@vger.kernel.org>; Fri, 05 Apr 2024 05:21:41 -0700 (PDT)
+Received: by mail-yb1-f169.google.com with SMTP id 3f1490d57ef6-dcc71031680so2104444276.2;
+        Fri, 05 Apr 2024 05:32:10 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1712319700; x=1712924500;
+        d=1e100.net; s=20230601; t=1712320328; x=1712925128;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=1qkJorPFjt4lvfj6l7hOuCIgouJoo7FbR7pUP8VKifM=;
-        b=mpvXAdLiuxkW+n9nlMorLcqVQDHKbgobyF0I4F8ORyCcAZ/fGDnpj71ZUBaIk7iHw0
-         1yRQAelQl+DXtAVn2d6NrcU1181bS2rYlck7+JNZMozoMAyi2Bb0v4Lt5vI/0OlAhRwl
-         pTgWqWFB7PiGyMll/3X7I5oDsED2AXxwFIdlZx38FZN6yEIfb6smo1l/sIW2/cwvPXW/
-         Ub1kEwFY6XEymMsEcPv0zwdZl4XQqyk+c8LiD7CtG5sSVNjMb2MpN2k9PaUBF+5v5qtq
-         ZPa0hlEpb3TEMlbgF3a3/gMssPRUb59zUTv363uqiFdyxFHHPR6v3o6Uxkq23fYavfyO
-         T+Eg==
-X-Forwarded-Encrypted: i=1; AJvYcCUUAEkZwJMoEEU0EfvNk4ieD4WlLP7JLgxI0MB8sGNTs9PDwZEsCrVNPvfojTpdL0/cbQl4wkyg2iP9TZYhaeoRGC3Rfd8QSbc=
-X-Gm-Message-State: AOJu0Yzd1qj+FKIrr7NKsbhF4dWtV9Df7e6b9dVaAua63GuK2Z4MxySs
-	ZDfPSTaZoEcRr+AX8D5VqvC3GHKJu6phiIRgOMqgh9KZDGtQofZFs240iXC2BeA=
-X-Google-Smtp-Source: AGHT+IGba4aqGgtffUXCVxZivDBZKC+MkOkO4hdlD1IfgHaJ6TRumPkoBuOyrhjBEAey/dHZbqF3DQ==
-X-Received: by 2002:a81:5fc6:0:b0:615:1375:af0c with SMTP id t189-20020a815fc6000000b006151375af0cmr916688ywb.26.1712319700177;
-        Fri, 05 Apr 2024 05:21:40 -0700 (PDT)
-Received: from mail-yb1-f180.google.com (mail-yb1-f180.google.com. [209.85.219.180])
-        by smtp.gmail.com with ESMTPSA id hr9-20020a05690c640900b00615227e92bcsm327029ywb.94.2024.04.05.05.21.40
-        for <linux-sh@vger.kernel.org>
+        bh=/bPulDFyqKcNHOqZbTas5oGwjflVlb0IvXxADWNRbac=;
+        b=MPlvI2s8USkd0KUwDLyzT+44IipyacqoM3eSrOXEnaE+gq/5eri1jvCAFInTymt60z
+         REU/Xv5JsI4t7qr17Xnw+FIDmUxaLz7gsDwdCATDwL4saADckMYtHthVLdhZjH4WnVkI
+         HNmDc5maAvcDHpP8QIc+gi4SIJ7qQHSvwOpCpAw14M34yvFCdM4lTsL//m/wELHt3DrF
+         xCzxk0tHygg8yKgui6SNjP9VEBw9MCjbiZR9HYwoxG9s1tsg1f3UKX2ja26i2NdU7l6K
+         IF6LPaov4qX7thKBssjGWuISdK8f4InaEyHqbsyt6dnrBeG3EEVVFTShBlccg7+s9F3F
+         AZVQ==
+X-Forwarded-Encrypted: i=1; AJvYcCWL5nURRwxemR+6FpvigBrmySRwBvKpTecJEy/+pr7a/EPAndTOjR1HayG/9Cwqlxk1bQHM9EH6lT/rfRGBLnCz1SSwBQ03t9FaEezpmkYkReHuLJhfU93oj3ltN6sRC0VvGpnpDpeqITVL8H3noqnNYVa7xvMWbD8HbQA0geo9wf9XXi30uxCvWsVdrgft6rHgcKw/6kreLrVOWUp0Zj7Ww+cJNduKmoj9PlChpSP6qyq+Yvwt4/i9VTAbDYg1js+vlRnsdYmQaXBe2BEK6VrEXkOIVoX48ghA6ij+LwxKLjzxYsUo9NLl9GydVMZRYi0SIQA0UqQ8fDy/6FdrKGj7Qx59s7lf0Ovu443QwAKZhY05OJRpi2g=
+X-Gm-Message-State: AOJu0YzEmVMQJ17wtrOGRxANtnDxvTZ4n3IIxa58hBJWlw07SqnqyyIe
+	Vhmkx6r/UINMq4po4OpwPVcvZiW/5XlcYCRpEU6lwQK/5/+1wIQOtr6wJq+Az4k=
+X-Google-Smtp-Source: AGHT+IGgevHEpkwMOS5F8pl4dvxc5ZuXVYL1BPsil8rGe3AWrEo/ncgGoEdKh0U9XNWHI/dLAToN5Q==
+X-Received: by 2002:a5b:ac6:0:b0:dc6:d457:ac92 with SMTP id a6-20020a5b0ac6000000b00dc6d457ac92mr984772ybr.31.1712320327715;
+        Fri, 05 Apr 2024 05:32:07 -0700 (PDT)
+Received: from mail-yw1-f181.google.com (mail-yw1-f181.google.com. [209.85.128.181])
+        by smtp.gmail.com with ESMTPSA id h4-20020a25b184000000b00dcf35be9f51sm284055ybj.24.2024.04.05.05.32.06
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 05 Apr 2024 05:21:40 -0700 (PDT)
-Received: by mail-yb1-f180.google.com with SMTP id 3f1490d57ef6-dc6d8bd618eso2095477276.3
-        for <linux-sh@vger.kernel.org>; Fri, 05 Apr 2024 05:21:40 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCXJWldT8U7lZ+p1AAUkV9AKatPMJolY5NMcy8XBm+HMUtIaspzN0N4zbYn4I0HENpLZYe4+MnkaTkogIYlK9sLsx2ulwg6ondU=
-X-Received: by 2002:a5b:983:0:b0:dcc:fe97:f899 with SMTP id
- c3-20020a5b0983000000b00dccfe97f899mr1079755ybq.24.1712319699784; Fri, 05 Apr
- 2024 05:21:39 -0700 (PDT)
+        Fri, 05 Apr 2024 05:32:07 -0700 (PDT)
+Received: by mail-yw1-f181.google.com with SMTP id 00721157ae682-6151d2489b4so23214527b3.0;
+        Fri, 05 Apr 2024 05:32:06 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCWCCz7fA2Scgs08FC+THMGTgCJv9gl18fLbu1NXBD3XzOowX1J9JcPetsrnxejSXGejHF+zEgnxKFVCryqhlpXFJLiq8yL9Ok95qeT9dVG16h9hICUfo2sOC80D4xpJv5saikGuc+5vBPGB+DmhdCAI044MiNxsoco8Ipre4i6/Er5NMsFq5TejWgZ2ESX8iTy19C+7OO8WOuJHYlCQwAujhrufjL8tccWpg7TajjzsOoIJty+1t8QPiM4CJwBktcNvAvplAFecd2lTEZ8bE1bpEpqLs9jcitN5ETCzEYTVp5luw4SM0BwiTPXmMp8SZwD8F/oGc02IUWHwYVhgsbMX3G+BhIwkQGWfTox/izi0nC6dt/xETRw=
+X-Received: by 2002:a5b:4ca:0:b0:dcd:19ba:10df with SMTP id
+ u10-20020a5b04ca000000b00dcd19ba10dfmr1040280ybp.56.1712320326217; Fri, 05
+ Apr 2024 05:32:06 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1712205900.git.ysato@users.sourceforge.jp> <e5f6a857-1296-e110-a3b2-c05d08522371@landley.net>
-In-Reply-To: <e5f6a857-1296-e110-a3b2-c05d08522371@landley.net>
+References: <cover.1712207606.git.ysato@users.sourceforge.jp> <4ac65d0f311e890c1ca92bf057c70954ec7ac351.1712207606.git.ysato@users.sourceforge.jp>
+In-Reply-To: <4ac65d0f311e890c1ca92bf057c70954ec7ac351.1712207606.git.ysato@users.sourceforge.jp>
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Fri, 5 Apr 2024 14:21:27 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdWL0aHmZS7NuZO5AUhn=zmNDG+fPZzmG--DyZr-LFwZ-Q@mail.gmail.com>
-Message-ID: <CAMuHMdWL0aHmZS7NuZO5AUhn=zmNDG+fPZzmG--DyZr-LFwZ-Q@mail.gmail.com>
-Subject: Re: [RESEND v7 00/37] Device Tree support for SH7751 based board
-To: Rob Landley <rob@landley.net>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Linux-sh list <linux-sh@vger.kernel.org>
+Date: Fri, 5 Apr 2024 14:31:54 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdXvL0fWGrn+KNDvXcioYnY-=3WmGtcdFkC82L7tL__+wA@mail.gmail.com>
+Message-ID: <CAMuHMdXvL0fWGrn+KNDvXcioYnY-=3WmGtcdFkC82L7tL__+wA@mail.gmail.com>
+Subject: Re: [RESEND v7 09/37] dt-binding: Add compatible SH7750 SoC
+To: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-sh@vger.kernel.org, Damien Le Moal <dlemoal@kernel.org>, 
+	Niklas Cassel <cassel@kernel.org>, Rob Herring <robh@kernel.org>, 
+	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>, Conor Dooley <conor+dt@kernel.org>, 
+	Geert Uytterhoeven <geert+renesas@glider.be>, Michael Turquette <mturquette@baylibre.com>, 
+	Stephen Boyd <sboyd@kernel.org>, David Airlie <airlied@gmail.com>, Daniel Vetter <daniel@ffwll.ch>, 
+	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>, Maxime Ripard <mripard@kernel.org>, 
+	Thomas Zimmermann <tzimmermann@suse.de>, Thomas Gleixner <tglx@linutronix.de>, 
+	Bjorn Helgaas <bhelgaas@google.com>, Lorenzo Pieralisi <lpieralisi@kernel.org>, 
+	=?UTF-8?Q?Krzysztof_Wilczy=C5=84ski?= <kw@linux.com>, 
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jirislaby@kernel.org>, 
+	Magnus Damm <magnus.damm@gmail.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, 
+	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+	Lee Jones <lee@kernel.org>, Helge Deller <deller@gmx.de>, 
+	Heiko Stuebner <heiko.stuebner@cherry.de>, Shawn Guo <shawnguo@kernel.org>, 
+	Sebastian Reichel <sre@kernel.org>, Chris Morgan <macromorgan@hotmail.com>, 
+	Linus Walleij <linus.walleij@linaro.org>, Arnd Bergmann <arnd@arndb.de>, 
+	David Rientjes <rientjes@google.com>, Hyeonggon Yoo <42.hyeyoo@gmail.com>, 
+	Vlastimil Babka <vbabka@suse.cz>, Baoquan He <bhe@redhat.com>, 
+	Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck <linux@roeck-us.net>, 
+	Kefeng Wang <wangkefeng.wang@huawei.com>, Stephen Rothwell <sfr@canb.auug.org.au>, 
+	Javier Martinez Canillas <javierm@redhat.com>, Guo Ren <guoren@kernel.org>, 
+	Azeem Shaikh <azeemshaikh38@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>, 
+	Jonathan Corbet <corbet@lwn.net>, Jacky Huang <ychuang3@nuvoton.com>, 
+	Herve Codina <herve.codina@bootlin.com>, 
+	Manikanta Guntupalli <manikanta.guntupalli@amd.com>, Anup Patel <apatel@ventanamicro.com>, 
+	Biju Das <biju.das.jz@bp.renesas.com>, 
+	=?UTF-8?Q?Uwe_Kleine=2DK=C3=B6nig?= <u.kleine-koenig@pengutronix.de>, 
+	Sam Ravnborg <sam@ravnborg.org>, Sergey Shtylyov <s.shtylyov@omp.ru>, 
+	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-ide@vger.kernel.org, 
+	devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-renesas-soc@vger.kernel.org, linux-clk@vger.kernel.org, 
+	dri-devel@lists.freedesktop.org, linux-pci@vger.kernel.org, 
+	linux-serial@vger.kernel.org, linux-fbdev@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Hi Rob,
+On Thu, Apr 4, 2024 at 7:15=E2=80=AFAM Yoshinori Sato
+<ysato@users.sourceforge.jp> wrote:
+> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 
-On Fri, Apr 5, 2024 at 2:09=E2=80=AFPM Rob Landley <rob@landley.net> wrote:
-> On 4/4/24 00:14, Yoshinori Sato wrote:
-> > This is an updated version of something I wrote about 7 years ago.
-> > Minimum support for R2D-plus and LANDISK.
-> > I think R2D-1 will work if you add AX88796 to dts.
-> > And board-specific functions and SCI's SPI functions are not supported.
-> >
-> > You can get it working with qemu found here.
-> > https://gitlab.com/yoshinori.sato/qemu/-/tree/landisk
->
-> I was hoping to get a device tree kernel to boot with static device tree =
-on the
-> existing linux-sh qemu. (The main new features I want from an updated sh4=
- qemu
-> are a working battery backed up clock and more physical memory...)
->
-> Is there somewhere I can get the kernel patch list in git or something? I
-> haven't got tooling set up to conveniently fish 37 patches out of an mbox=
- file,
-> and would like to test this. (I moved last month and my physical sh7751 h=
-ardware
-> is in a storage container.)
-
-b4 am fe69e328ec617f91a09fa2d00506ba1a664085d8.1712207606.git.ysato@users.s=
-ourceforge.jp
-git am ./v7_20240404_ysato_sh_passing_fdt_address_to_kernel_startup.mbx
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
 Gr{oetje,eeting}s,
 
