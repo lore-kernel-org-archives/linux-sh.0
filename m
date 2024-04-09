@@ -1,551 +1,633 @@
-Received: from mx0b-0031df01.pphosted.com (mx0b-0031df01.pphosted.com [205.220.180.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6A08614831C;
-	Mon,  8 Apr 2024 21:33:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=205.220.180.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7858D8060C
+	for <linux-sh@vger.kernel.org>; Tue,  9 Apr 2024 08:29:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.54
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1712612028; cv=none; b=lUHcTGDsFgMOxYKhUG36iAWTxmk1luJnxWW0InYDF5bFw2HBk3J+UNZwSEmsGjAC95jMmv/q1LFAtIZxjR+7Gg+p3YlMdaCsrw111D9GsNm9QR1CiJsmqStOynrn1Xm3zxkIpW/n9Yby68lnpL/9DNtTMkbFRhG6TbNzHVm8qYk=
+	t=1712651387; cv=none; b=HC2N7LLdjvF6OvQPhH1seKHo3Wk3GhMFSqZdtQ2VCyMBdQKywSbTmMjFUUJY6V22I+K9aMn/qnn5Sl8SE59YW9POFNrwIcwXMgkW/OLnfVQPaAdNJWtnRLyZyjYia8TGlF7dcL9g3HrC196wfVYClpgkah3KfYr/ol2epq2eEdE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1712612028; c=relaxed/simple;
-	bh=+cRDILoePVa3X0tY61PfvKN0oL7YnGt6dEjuNylwZVk=;
-	h=Message-ID:Date:MIME-Version:Subject:To:CC:References:From:
-	 In-Reply-To:Content-Type; b=CQUY/yKw6TZJtd7QuYitGZHS1NGTy8a3A+ac+nOr5p+jln1APai+qv1sDHeF95WhllaCmcDEQth2+HJiLK0GM95gEpRTuoP3qP8neBtgc4RFCfsV2Yf4o8Hk8rdQ8P1T0Ug89jICdxMNRMj8tuj+JzlHG999BS2V9k+c/Riy4FY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com; spf=pass smtp.mailfrom=quicinc.com; dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b=VvXupPG9; arc=none smtp.client-ip=205.220.180.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=quicinc.com
+	s=arc-20240116; t=1712651387; c=relaxed/simple;
+	bh=lOL3EcgBlxZ+eAODsuPIOgP1X3b81dCMdGCCYazPZv8=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=NsVVOAif5n0LIap5LesA71PWDOJC+EgT8TxPjEhaLtLoDTjaSjwTDZq2ojEqgd/ce/yRgR0Cbe6BCOBqFrB7LrpxGBHYhUFC2kvuXlYifgMvNKV8nqYrSTdYuzSVWenkZ1igv9ckDo/zNB+D+hQNkf0sdEITsZqZbpF5JYZXSrU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=2RDlYc2d; arc=none smtp.client-ip=209.85.128.54
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b="VvXupPG9"
-Received: from pps.filterd (m0279868.ppops.net [127.0.0.1])
-	by mx0a-0031df01.pphosted.com (8.17.1.24/8.17.1.24) with ESMTP id 438LRRDg017634;
-	Mon, 8 Apr 2024 21:32:22 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=quicinc.com; h=
-	message-id:date:mime-version:subject:to:cc:references:from
-	:in-reply-to:content-type:content-transfer-encoding; s=
-	qcppdkim1; bh=cDMYRCrXSE+2mItn5T4tls+ytjwHBG/ODIwK6NRQ86M=; b=Vv
-	XupPG9J/90h7NCPahz1JF02ZaaC9LABCuaKmVEGklkew4+USnJ5Zfv4UGv3d5dbB
-	0/IilIBdY7cj3X0HzzCP6bICRHIFZwWL470iL15MzRmSnMSq66xsA0oj9hIZkr4T
-	t8cncyh8alYwUMLMI1sZ53ilJba3pLS28EZ3HL5T6eZekfv22tI7bgDzMJA+a+kx
-	4g7fVID6ODzZY/rv+nAnbAX4hnn/bx5/IDIrPC46FP50e3/KHW4L8ungCQASUjAN
-	byeeXsCGJospomG/I1Veh9mPSU0q+/IA9kwH9dNCsf4SHAMH7o7yI7CtAL9FW2K7
-	9jt3Q1CW42xi8O9v3VSQ==
-Received: from nalasppmta05.qualcomm.com (Global_NAT1.qualcomm.com [129.46.96.20])
-	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 3xcbg3hv10-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 08 Apr 2024 21:32:22 +0000 (GMT)
-Received: from nalasex01a.na.qualcomm.com (nalasex01a.na.qualcomm.com [10.47.209.196])
-	by NALASPPMTA05.qualcomm.com (8.17.1.5/8.17.1.5) with ESMTPS id 438LWKs1022697
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 8 Apr 2024 21:32:20 GMT
-Received: from [10.110.52.150] (10.80.80.8) by nalasex01a.na.qualcomm.com
- (10.47.209.196) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.2.1544.4; Mon, 8 Apr 2024
- 14:32:18 -0700
-Message-ID: <67799341-d27f-4a46-9874-0fc12b6e56d4@quicinc.com>
-Date: Mon, 8 Apr 2024 14:32:17 -0700
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="2RDlYc2d"
+Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-41641a889ccso42575e9.1
+        for <linux-sh@vger.kernel.org>; Tue, 09 Apr 2024 01:29:43 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20230601; t=1712651382; x=1713256182; darn=vger.kernel.org;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=ccA57KjnzzkavDXadbFjmxtZqSKhkrbjz3oz/3/71MY=;
+        b=2RDlYc2djo29WP9ZadtQlRTh4wVT7j/0yXZu6xcaTxrMsH7F4PKi68HbG9khEaWhJX
+         RsvmMHtd2B1BMPtxVEYffkwGrmyYHiUfI0QE8FaSBkawhN6CUXHS8GhsTLIvq+WtLAYr
+         9YhlXK2nTenwF4uYHu7ADkSx/4Iyetk9YWVoyO4XY1WPe+SRDFzmNEU0TgqzfuQS/JJt
+         GJyb5T80/LmdOVGPf5rvrc3hnwARBKvFLtm7g66ZwMYDIsue6VclB1/pptbMnyHtiZOD
+         Qv71aHemaO/i+O3a6xxtVRomOKZ4/D4oLJFjYE7p76odsxgxA7smEBGEAeLZJd/cQbbL
+         Z9FA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1712651382; x=1713256182;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=ccA57KjnzzkavDXadbFjmxtZqSKhkrbjz3oz/3/71MY=;
+        b=NOE9vihcMtFXwMiYRwiWkGPOP9KpFCThvaYo+FKqUhHvtl1A6dJKaWDz554uxIDHlw
+         3i9RW+LhBGRmNvtOu1cVpadMFFsWPoxmhGRAl+w6gPhxX3q+3aZahH6liYOs0GUDxVVo
+         yLdCRWV+yO8f3QL7UubH99iSrq+9MJ8LlYBzq9/O+MO1vLK7FzXctJE3d0dKQX4mZQYL
+         g/w4MUwvd+LGI4UUQ89m7MQUmlz5RKmoOWd1Gvjw3o9fUkQha/SKqWBAip2bbBPOO5Yg
+         7yepfMTNQx+uJZhrUuUwPCkP3UHUel0C5mVgSFUkRsxKIcLt/VdbLuHgbUe0WO8wv9b1
+         C6RA==
+X-Forwarded-Encrypted: i=1; AJvYcCWjvhLuaZ+z54HOnrgoCIK/b+oQaqjGLMbDoPUoR4QWRTOgrcuQtna0DBJgnfmCxSwlgHKltY2J2cSx4LHJHDo+qrrjqWWObSI=
+X-Gm-Message-State: AOJu0YyM+EO698O41b1D+eWwSlkJvkRD5Oauk3UkkN1lEqZQDsJJ2o1R
+	Cp1XzXWxcN+8I0K5NT2GH0/yeK+Patei3Oy3ECY/ibPNYA/vFIUz4nhLpAqLVkt4hpKUNUr0YKC
+	S3T6XFi/ol8SF1arubqu0/RdrpNFTLMM9McGG
+X-Google-Smtp-Source: AGHT+IGN60qikBJ2TnvXDkLiAKeGKJtA8lMoXuaba+mNhsm81NX1Ko+ouWfYtBMoYyMS+yzPrbNrpDENV0LLD28XTxw=
+X-Received: by 2002:a05:600c:314c:b0:416:7f8a:c6ea with SMTP id
+ h12-20020a05600c314c00b004167f8ac6eamr92410wmo.1.1712651381537; Tue, 09 Apr
+ 2024 01:29:41 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v7 11/37] pci: pci-sh7751: Add SH7751 PCI driver
-Content-Language: en-US
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, <linux-sh@vger.kernel.org>
-CC: Damien Le Moal <dlemoal@kernel.org>, Niklas Cassel <cassel@kernel.org>,
-        Rob Herring <robh@kernel.org>,
-        Krzysztof Kozlowski
-	<krzysztof.kozlowski+dt@linaro.org>,
-        Conor Dooley <conor+dt@kernel.org>,
-        Geert Uytterhoeven <geert+renesas@glider.be>,
-        Michael Turquette
-	<mturquette@baylibre.com>,
-        Stephen Boyd <sboyd@kernel.org>, David Airlie
-	<airlied@gmail.com>,
-        Daniel Vetter <daniel@ffwll.ch>,
-        Maarten Lankhorst
-	<maarten.lankhorst@linux.intel.com>,
-        Maxime Ripard <mripard@kernel.org>,
-        Thomas Zimmermann <tzimmermann@suse.de>,
-        Thomas Gleixner
-	<tglx@linutronix.de>,
-        Bjorn Helgaas <bhelgaas@google.com>,
-        Lorenzo Pieralisi
-	<lpieralisi@kernel.org>,
-        =?UTF-8?Q?Krzysztof_Wilczy=C5=84ski?=
-	<kw@linux.com>,
-        Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Jiri Slaby
-	<jirislaby@kernel.org>,
-        Magnus Damm <magnus.damm@gmail.com>,
-        Daniel Lezcano
-	<daniel.lezcano@linaro.org>,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian
- Glaubitz <glaubitz@physik.fu-berlin.de>,
-        Lee Jones <lee@kernel.org>, Helge
- Deller <deller@gmx.de>,
-        Heiko Stuebner <heiko.stuebner@cherry.de>,
-        Shawn Guo
-	<shawnguo@kernel.org>, Sebastian Reichel <sre@kernel.org>,
-        Chris Morgan
-	<macromorgan@hotmail.com>,
-        Linus Walleij <linus.walleij@linaro.org>,
-        Arnd
- Bergmann <arnd@arndb.de>, David Rientjes <rientjes@google.com>,
-        Hyeonggon Yoo
-	<42.hyeyoo@gmail.com>, Vlastimil Babka <vbabka@suse.cz>,
-        Baoquan He
-	<bhe@redhat.com>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        Guenter Roeck
-	<linux@roeck-us.net>,
-        Kefeng Wang <wangkefeng.wang@huawei.com>,
-        Stephen
- Rothwell <sfr@canb.auug.org.au>,
-        Javier Martinez Canillas
-	<javierm@redhat.com>,
-        Guo Ren <guoren@kernel.org>, Azeem Shaikh
-	<azeemshaikh38@gmail.com>,
-        Max Filippov <jcmvbkbc@gmail.com>, Jonathan Corbet
-	<corbet@lwn.net>,
-        Jacky Huang <ychuang3@nuvoton.com>,
-        Herve Codina
-	<herve.codina@bootlin.com>,
-        Manikanta Guntupalli
-	<manikanta.guntupalli@amd.com>,
-        Anup Patel <apatel@ventanamicro.com>,
-        Biju
- Das <biju.das.jz@bp.renesas.com>,
-        =?UTF-8?Q?Uwe_Kleine-K=C3=B6nig?=
-	<u.kleine-koenig@pengutronix.de>,
-        Sam Ravnborg <sam@ravnborg.org>, Sergey
- Shtylyov <s.shtylyov@omp.ru>,
-        Laurent Pinchart
-	<laurent.pinchart+renesas@ideasonboard.com>,
-        <linux-ide@vger.kernel.org>, <devicetree@vger.kernel.org>,
-        <linux-kernel@vger.kernel.org>, <linux-renesas-soc@vger.kernel.org>,
-        <linux-clk@vger.kernel.org>, <dri-devel@lists.freedesktop.org>,
-        <linux-pci@vger.kernel.org>, <linux-serial@vger.kernel.org>,
-        <linux-fbdev@vger.kernel.org>
-References: <cover.1712205900.git.ysato@users.sourceforge.jp>
- <8c44b3e28da65cf47ff6bd53cf8e9cf30f2b4cb0.1712205900.git.ysato@users.sourceforge.jp>
-From: Mayank Rana <quic_mrana@quicinc.com>
-In-Reply-To: <8c44b3e28da65cf47ff6bd53cf8e9cf30f2b4cb0.1712205900.git.ysato@users.sourceforge.jp>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-Content-Transfer-Encoding: 7bit
-X-ClientProxiedBy: nasanex01b.na.qualcomm.com (10.46.141.250) To
- nalasex01a.na.qualcomm.com (10.47.209.196)
-X-QCInternal: smtphost
-X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=5800 signatures=585085
-X-Proofpoint-GUID: QTmdEg8hX0i7wt9O5TSSNsWfP4Kq0fQa
-X-Proofpoint-ORIG-GUID: QTmdEg8hX0i7wt9O5TSSNsWfP4Kq0fQa
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.272,Aquarius:18.0.1011,Hydra:6.0.619,FMLib:17.11.176.26
- definitions=2024-04-08_17,2024-04-05_02,2023-05-22_02
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 bulkscore=0 phishscore=0
- clxscore=1011 priorityscore=1501 suspectscore=0 impostorscore=0
- adultscore=0 spamscore=0 mlxlogscore=999 malwarescore=0 mlxscore=0
- lowpriorityscore=0 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.19.0-2404010003 definitions=main-2404080165
+References: <20240403131936.787234-1-linux@roeck-us.net> <20240403131936.787234-2-linux@roeck-us.net>
+In-Reply-To: <20240403131936.787234-2-linux@roeck-us.net>
+From: David Gow <davidgow@google.com>
+Date: Tue, 9 Apr 2024 16:29:27 +0800
+Message-ID: <CABVgOSkNmmEn05B3HKopWt4T=6rNHCNgrd1JkQo46CS6C9hYJg@mail.gmail.com>
+Subject: Re: [PATCH v3 01/15] bug/kunit: Core support for suppressing warning backtraces
+To: Guenter Roeck <linux@roeck-us.net>
+Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>, 
+	Arnd Bergmann <arnd@arndb.de>, =?UTF-8?B?TWHDrXJhIENhbmFs?= <mcanal@igalia.com>, 
+	Dan Carpenter <dan.carpenter@linaro.org>, Kees Cook <keescook@chromium.org>, 
+	Daniel Diaz <daniel.diaz@linaro.org>, Arthur Grillo <arthurgrillo@riseup.net>, 
+	Brendan Higgins <brendan.higgins@linux.dev>, Naresh Kamboju <naresh.kamboju@linaro.org>, 
+	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>, 
+	Andrew Morton <akpm@linux-foundation.org>, Maxime Ripard <mripard@kernel.org>, 
+	=?UTF-8?B?VmlsbGUgU3lyasOkbMOk?= <ville.syrjala@linux.intel.com>, 
+	Daniel Vetter <daniel@ffwll.ch>, Thomas Zimmermann <tzimmermann@suse.de>, dri-devel@lists.freedesktop.org, 
+	kunit-dev@googlegroups.com, linux-arch@vger.kernel.org, 
+	linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, 
+	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, 
+	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, 
+	loongarch@lists.linux.dev, netdev@vger.kernel.org, x86@kernel.org, 
+	Linux Kernel Functional Testing <lkft@linaro.org>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256;
+	boundary="00000000000043157f0615a5b94a"
 
-Hi,
+--00000000000043157f0615a5b94a
+Content-Type: text/plain; charset="UTF-8"
 
-On 4/3/2024 9:59 PM, Yoshinori Sato wrote:
-> Renesas SH7751 CPU Internal PCI Controller driver.
-> 
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+On Wed, 3 Apr 2024 at 21:19, Guenter Roeck <linux@roeck-us.net> wrote:
+>
+> Some unit tests intentionally trigger warning backtraces by passing
+> bad parameters to API functions. Such unit tests typically check the
+> return value from those calls, not the existence of the warning backtrace.
+>
+> Such intentionally generated warning backtraces are neither desirable
+> nor useful for a number of reasons.
+> - They can result in overlooked real problems.
+> - A warning that suddenly starts to show up in unit tests needs to be
+>   investigated and has to be marked to be ignored, for example by
+>   adjusting filter scripts. Such filters are ad-hoc because there is
+>   no real standard format for warnings. On top of that, such filter
+>   scripts would require constant maintenance.
+>
+> One option to address problem would be to add messages such as "expected
+> warning backtraces start / end here" to the kernel log.  However, that
+> would again require filter scripts, it might result in missing real
+> problematic warning backtraces triggered while the test is running, and
+> the irrelevant backtrace(s) would still clog the kernel log.
+>
+> Solve the problem by providing a means to identify and suppress specific
+> warning backtraces while executing test code. Since the new functionality
+> results in an image size increase of about 1% if CONFIG_KUNIT is enabled,
+> provide configuration option KUNIT_SUPPRESS_BACKTRACE to be able to disable
+> the new functionality. This option is by default enabled since almost all
+> systems with CONFIG_KUNIT enabled will want to benefit from it.
+>
+> Cc: Dan Carpenter <dan.carpenter@linaro.org>
+> Cc: Daniel Diaz <daniel.diaz@linaro.org>
+> Cc: Naresh Kamboju <naresh.kamboju@linaro.org>
+> Cc: Kees Cook <keescook@chromium.org>
+> Tested-by: Linux Kernel Functional Testing <lkft@linaro.org>
+> Acked-by: Dan Carpenter <dan.carpenter@linaro.org>
+> Reviewed-by: Kees Cook <keescook@chromium.org>
+> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
 > ---
->   drivers/pci/controller/Kconfig      |   9 +
->   drivers/pci/controller/Makefile     |   1 +
->   drivers/pci/controller/pci-sh7751.c | 342 ++++++++++++++++++++++++++++
->   3 files changed, 352 insertions(+)
->   create mode 100644 drivers/pci/controller/pci-sh7751.c
-> 
-> diff --git a/drivers/pci/controller/Kconfig b/drivers/pci/controller/Kconfig
-> index e534c02ee34f..a2fd917a2e03 100644
-> --- a/drivers/pci/controller/Kconfig
-> +++ b/drivers/pci/controller/Kconfig
-> @@ -353,6 +353,15 @@ config PCIE_XILINX_CPM
->   	  Say 'Y' here if you want kernel support for the
->   	  Xilinx Versal CPM host bridge.
->   
-> +config PCI_SH7751
-> +	bool "Renesas SH7751 PCI controller"
-> +	depends on OF
-> +	depends on CPU_SUBTYPE_SH7751 || CPU_SUBTYPE_SH7751R || COMPILE_TEST
-> +	select PCI_HOST_COMMON
-> +	help
-> +	  Say 'Y' here if you want kernel to support the Renesas SH7751 PCI
-> +	  Host Bridge driver.
-> +
->   source "drivers/pci/controller/cadence/Kconfig"
->   source "drivers/pci/controller/dwc/Kconfig"
->   source "drivers/pci/controller/mobiveil/Kconfig"
-> diff --git a/drivers/pci/controller/Makefile b/drivers/pci/controller/Makefile
-> index f2b19e6174af..aa97e5d74e58 100644
-> --- a/drivers/pci/controller/Makefile
-> +++ b/drivers/pci/controller/Makefile
-> @@ -40,6 +40,7 @@ obj-$(CONFIG_PCI_LOONGSON) += pci-loongson.o
->   obj-$(CONFIG_PCIE_HISI_ERR) += pcie-hisi-error.o
->   obj-$(CONFIG_PCIE_APPLE) += pcie-apple.o
->   obj-$(CONFIG_PCIE_MT7621) += pcie-mt7621.o
-> +obj-$(CONFIG_PCI_SH7751) += pci-sh7751.o
->   
->   # pcie-hisi.o quirks are needed even without CONFIG_PCIE_DW
->   obj-y				+= dwc/
-> diff --git a/drivers/pci/controller/pci-sh7751.c b/drivers/pci/controller/pci-sh7751.c
+
+Sorry it took so long to get to this.
+
+I love the idea, we've needed this for a while.
+
+There are some downsides to this being entirely based on the name of
+the function which contains WARN(). Partly because there could be
+several WARN()s within a function, and there'd be overlap, and partly
+because the function name is never actually printed during a warning
+(it may come from the stack trace, but that can be misleading with
+inlined functions).  I don't think either of these are showstoppers,
+though, but it'd be nice to extend this in the future with (a) other
+ways of identifying warnings, such as the format string, and (b) print
+the function name in the report, if it's present. The function name is
+probably a good middle ground, complexity-wise, though, so I'm happy
+to have it thus far.
+
+ I also think we're missing some opportunities to integrate this
+better with existing KUnit infrastructure, like the
+action/resource/cleanup system. In particular, it'd be nice to have a
+way of ensuring that suppressions won't get leaked if the test aborts
+between START_SUPPRESSED_WARNING() and END_SUPPRESSED_WARNING(). It's
+not difficult to use this as-is, but it'd be nice to have some
+helpers, rather than having to, for instance:
+KUNIT_DEFINE_ACTION_WRAPPER(kunit_stop_suppressing_warning,
+__end_suppress_warning, struct __suppressed_warning *);
+DEFINE_SUPPRESSED_WARNING(vfree);
+START_SUPPRESSED_WARNING(vfree);
+kunit_add_action(test, kunit_stop_suppressing_warning, (void
+*)&__kunit_suppress_vfree);
+
+(With the note that the DEFINE_SUPPRESSED_WARNING() will have to be
+global, or put on the heap, lest it become a dangling pointer by the
+time the suppression has stopped.)
+
+Equally, do we want to make the
+__{start,end,is}_suppress[ed]_warning()  functions KUnit 'hooks'? This
+would allow them to be used in modules which don't depend directly on
+KUnit. I suspect it's not important in this case: but worth keeping in
+mind in case we find a situation where we'd need to suppress a warning
+elsewhere.
+
+These are all things which could be added/changed in follow-up
+patches, though, so I don't think they're blockers. Otherwise, this
+looks good: perhaps the naming could be a bit more consistent with
+other KUnit things, but that depends on how much we want this to be 'a
+part of KUnit' versus an independent bit of functionality.
+
+> v2:
+> - Rebased to v6.9-rc1
+> - Added Tested-by:, Acked-by:, and Reviewed-by: tags
+> - Added CONFIG_KUNIT_SUPPRESS_BACKTRACE configuration option,
+>   enabled by default
+> v3:
+> - Rebased to v6.9-rc2
+>
+>  include/asm-generic/bug.h | 16 +++++++++---
+>  include/kunit/bug.h       | 51 +++++++++++++++++++++++++++++++++++++++
+>  include/kunit/test.h      |  1 +
+>  include/linux/bug.h       | 13 ++++++++++
+>  lib/bug.c                 | 51 ++++++++++++++++++++++++++++++++++++---
+>  lib/kunit/Kconfig         |  9 +++++++
+>  lib/kunit/Makefile        |  6 +++--
+>  lib/kunit/bug.c           | 40 ++++++++++++++++++++++++++++++
+>  8 files changed, 178 insertions(+), 9 deletions(-)
+>  create mode 100644 include/kunit/bug.h
+>  create mode 100644 lib/kunit/bug.c
+>
+> diff --git a/include/asm-generic/bug.h b/include/asm-generic/bug.h
+> index 6e794420bd39..c170b6477689 100644
+> --- a/include/asm-generic/bug.h
+> +++ b/include/asm-generic/bug.h
+> @@ -18,6 +18,7 @@
+>  #endif
+>
+>  #ifndef __ASSEMBLY__
+> +#include <kunit/bug.h>
+>  #include <linux/panic.h>
+>  #include <linux/printk.h>
+>
+> @@ -39,8 +40,14 @@ struct bug_entry {
+>  #ifdef CONFIG_DEBUG_BUGVERBOSE
+>  #ifndef CONFIG_GENERIC_BUG_RELATIVE_POINTERS
+>         const char      *file;
+> +#ifdef HAVE_BUG_FUNCTION
+> +       const char      *function;
+> +#endif
+>  #else
+>         signed int      file_disp;
+> +#ifdef HAVE_BUG_FUNCTION
+> +       signed int      function_disp;
+> +#endif
+>  #endif
+>         unsigned short  line;
+>  #endif
+> @@ -96,15 +103,18 @@ extern __printf(1, 2) void __warn_printk(const char *fmt, ...);
+>  #define __WARN()               __WARN_printf(TAINT_WARN, NULL)
+>  #define __WARN_printf(taint, arg...) do {                              \
+>                 instrumentation_begin();                                \
+> -               warn_slowpath_fmt(__FILE__, __LINE__, taint, arg);      \
+> +               if (!IS_SUPPRESSED_WARNING(__func__))                   \
+> +                       warn_slowpath_fmt(__FILE__, __LINE__, taint, arg);\
+>                 instrumentation_end();                                  \
+>         } while (0)
+>  #else
+>  #define __WARN()               __WARN_FLAGS(BUGFLAG_TAINT(TAINT_WARN))
+>  #define __WARN_printf(taint, arg...) do {                              \
+>                 instrumentation_begin();                                \
+> -               __warn_printk(arg);                                     \
+> -               __WARN_FLAGS(BUGFLAG_NO_CUT_HERE | BUGFLAG_TAINT(taint));\
+> +               if (!IS_SUPPRESSED_WARNING(__func__)) {                 \
+> +                       __warn_printk(arg);                             \
+> +                       __WARN_FLAGS(BUGFLAG_NO_CUT_HERE | BUGFLAG_TAINT(taint));\
+> +               }                                                       \
+>                 instrumentation_end();                                  \
+>         } while (0)
+>  #define WARN_ON_ONCE(condition) ({                             \
+> diff --git a/include/kunit/bug.h b/include/kunit/bug.h
 > new file mode 100644
-> index 000000000000..a5340689f737
+> index 000000000000..bd0fe047572b
 > --- /dev/null
-> +++ b/drivers/pci/controller/pci-sh7751.c
-> @@ -0,0 +1,342 @@
+> +++ b/include/kunit/bug.h
+> @@ -0,0 +1,51 @@
+> +/* SPDX-License-Identifier: GPL-2.0 */
+> +/*
+> + * KUnit helpers for backtrace suppression
+> + *
+> + * Copyright (c) 2024 Guenter Roeck <linux@roeck-us.net>
+> + */
+> +
+> +#ifndef _KUNIT_BUG_H
+> +#define _KUNIT_BUG_H
+> +
+> +#ifndef __ASSEMBLY__
+> +
+> +#include <linux/kconfig.h>
+> +
+> +#ifdef CONFIG_KUNIT_SUPPRESS_BACKTRACE
+> +
+> +#include <linux/stringify.h>
+> +#include <linux/types.h>
+> +
+> +struct __suppressed_warning {
+> +       struct list_head node;
+> +       const char *function;
+> +};
+> +
+> +void __start_suppress_warning(struct __suppressed_warning *warning);
+> +void __end_suppress_warning(struct __suppressed_warning *warning);
+> +bool __is_suppressed_warning(const char *function);
+
+Do we want to call these '__kunit_start_suppress_warning', etc., to
+match other similar functions exported by KUnit to be used in macros,
+et al.
+
+> +
+> +#define DEFINE_SUPPRESSED_WARNING(func)        \
+> +       struct __suppressed_warning __kunit_suppress_##func = \
+
+We use the __kunit_ prefix here...
+
+> +               { .function = __stringify(func) }
+> +
+> +#define START_SUPPRESSED_WARNING(func) \
+> +       __start_suppress_warning(&__kunit_suppress_##func)
+> +
+> +#define END_SUPPRESSED_WARNING(func) \
+> +       __end_suppress_warning(&__kunit_suppress_##func)
+> +
+> +#define IS_SUPPRESSED_WARNING(func) \
+> +       __is_suppressed_warning(func)
+> +
+
+Similarly, do we want to give these KUNIT_ prefixes to match other KUnit macros.
+
+One possibility would be to have both KUNIT_- and non-KUNIT_-
+variants, the latter of which accepts a struct kunit*, and registers
+the suppression with the test for automated cleanup.
+
+
+> +#else /* CONFIG_KUNIT_SUPPRESS_BACKTRACE */
+> +
+> +#define DEFINE_SUPPRESSED_WARNING(func)
+> +#define START_SUPPRESSED_WARNING(func)
+> +#define END_SUPPRESSED_WARNING(func)
+> +#define IS_SUPPRESSED_WARNING(func) (false)
+> +
+> +#endif /* CONFIG_KUNIT_SUPPRESS_BACKTRACE */
+> +#endif /* __ASSEMBLY__ */
+> +#endif /* _KUNIT_BUG_H */
+> diff --git a/include/kunit/test.h b/include/kunit/test.h
+> index 61637ef32302..d0c44594d34c 100644
+> --- a/include/kunit/test.h
+> +++ b/include/kunit/test.h
+> @@ -10,6 +10,7 @@
+>  #define _KUNIT_TEST_H
+>
+>  #include <kunit/assert.h>
+> +#include <kunit/bug.h>
+>  #include <kunit/try-catch.h>
+>
+>  #include <linux/args.h>
+> diff --git a/include/linux/bug.h b/include/linux/bug.h
+> index 348acf2558f3..c668762dc76a 100644
+> --- a/include/linux/bug.h
+> +++ b/include/linux/bug.h
+> @@ -36,6 +36,9 @@ static inline int is_warning_bug(const struct bug_entry *bug)
+>         return bug->flags & BUGFLAG_WARNING;
+>  }
+>
+> +void bug_get_file_function_line(struct bug_entry *bug, const char **file,
+> +                               const char **function, unsigned int *line);
+> +
+>  void bug_get_file_line(struct bug_entry *bug, const char **file,
+>                        unsigned int *line);
+>
+> @@ -62,6 +65,16 @@ static inline enum bug_trap_type report_bug(unsigned long bug_addr,
+>  }
+>
+>  struct bug_entry;
+> +static inline void bug_get_file_function_line(struct bug_entry *bug,
+> +                                             const char **file,
+> +                                             const char **function,
+> +                                             unsigned int *line)
+> +{
+> +       *file = NULL;
+> +       *function = NULL;
+> +       *line = 0;
+> +}
+> +
+>  static inline void bug_get_file_line(struct bug_entry *bug, const char **file,
+>                                      unsigned int *line)
+>  {
+> diff --git a/lib/bug.c b/lib/bug.c
+> index e0ff21989990..aa8bb12b9809 100644
+> --- a/lib/bug.c
+> +++ b/lib/bug.c
+> @@ -26,6 +26,14 @@
+>         when CONFIG_DEBUG_BUGVERBOSE is not enabled, so you must generate
+>         the values accordingly.
+>
+> +  2a.Optionally implement support for the "function" entry in struct
+> +     bug_entry. This entry must point to the name of the function triggering
+> +     the warning or bug trap (normally __func__). This is only needed if
+> +     both CONFIG_DEBUG_BUGVERBOSE and CONFIG_KUNIT_SUPPRESS_BACKTRACE are
+> +     enabled and if the architecture wants to implement support for suppressing
+> +     warning backtraces. The architecture must define HAVE_BUG_FUNCTION if it
+> +     adds pointers to function names to struct bug_entry.
+> +
+>    3. Implement the trap
+>       - In the illegal instruction trap handler (typically), verify
+>         that the fault was in kernel mode, and call report_bug()
+> @@ -127,14 +135,21 @@ static inline struct bug_entry *module_find_bug(unsigned long bugaddr)
+>  }
+>  #endif
+>
+> -void bug_get_file_line(struct bug_entry *bug, const char **file,
+> -                      unsigned int *line)
+> +void bug_get_file_function_line(struct bug_entry *bug, const char **file,
+> +                               const char **function, unsigned int *line)
+>  {
+> +       *function = NULL;
+>  #ifdef CONFIG_DEBUG_BUGVERBOSE
+>  #ifdef CONFIG_GENERIC_BUG_RELATIVE_POINTERS
+>         *file = (const char *)&bug->file_disp + bug->file_disp;
+> +#ifdef HAVE_BUG_FUNCTION
+> +       *function = (const char *)&bug->function_disp + bug->function_disp;
+> +#endif
+>  #else
+>         *file = bug->file;
+> +#ifdef HAVE_BUG_FUNCTION
+> +       *function = bug->function;
+> +#endif
+>  #endif
+>         *line = bug->line;
+>  #else
+> @@ -143,6 +158,13 @@ void bug_get_file_line(struct bug_entry *bug, const char **file,
+>  #endif
+>  }
+>
+> +void bug_get_file_line(struct bug_entry *bug, const char **file, unsigned int *line)
+> +{
+> +       const char *function;
+> +
+> +       bug_get_file_function_line(bug, file, &function, line);
+> +}
+> +
+>  struct bug_entry *find_bug(unsigned long bugaddr)
+>  {
+>         struct bug_entry *bug;
+> @@ -157,8 +179,9 @@ struct bug_entry *find_bug(unsigned long bugaddr)
+>  static enum bug_trap_type __report_bug(unsigned long bugaddr, struct pt_regs *regs)
+>  {
+>         struct bug_entry *bug;
+> -       const char *file;
+> +       const char *file, *function;
+
+As mentioned, I'd love to see the function plumbed through and
+reported some day, both to make it easier to know what to suppress,
+and also because it's possibly more reliable even outside the
+suppression use-case. Could be a follow-up patch later, though.
+
+
+>         unsigned line, warning, once, done;
+> +       char __maybe_unused sym[KSYM_SYMBOL_LEN];
+>
+>         if (!is_valid_bugaddr(bugaddr))
+>                 return BUG_TRAP_TYPE_NONE;
+> @@ -169,12 +192,32 @@ static enum bug_trap_type __report_bug(unsigned long bugaddr, struct pt_regs *re
+>
+>         disable_trace_on_warning();
+>
+> -       bug_get_file_line(bug, &file, &line);
+> +       bug_get_file_function_line(bug, &file, &function, &line);
+> +#if defined(CONFIG_KUNIT_SUPPRESS_BACKTRACE) && defined(CONFIG_KALLSYMS)
+> +       if (!function) {
+> +               /*
+> +                * This will be seen if report_bug is called on an architecture
+> +                * with no architecture-specific support for suppressing warning
+> +                * backtraces, if CONFIG_DEBUG_BUGVERBOSE is not enabled, or if
+> +                * the calling code is from assembler which does not record a
+> +                * function name. Extracting the function name from the bug
+> +                * address is less than perfect since compiler optimization may
+> +                * result in 'bugaddr' pointing to a function which does not
+> +                * actually trigger the warning, but it is better than no
+> +                * suppression at all.
+> +                */
+> +               sprint_symbol_no_offset(sym, bugaddr);
+> +               function = sym;
+> +       }
+> +#endif /* defined(CONFIG_KUNIT_SUPPRESS_BACKTRACE) && defined(CONFIG_KALLSYMS) */
+>
+>         warning = (bug->flags & BUGFLAG_WARNING) != 0;
+>         once = (bug->flags & BUGFLAG_ONCE) != 0;
+>         done = (bug->flags & BUGFLAG_DONE) != 0;
+>
+> +       if (warning && IS_SUPPRESSED_WARNING(function))
+> +               return BUG_TRAP_TYPE_WARN;
+> +
+>         if (warning && once) {
+>                 if (done)
+>                         return BUG_TRAP_TYPE_WARN;
+> diff --git a/lib/kunit/Kconfig b/lib/kunit/Kconfig
+> index 68a6daec0aef..b1b899265acc 100644
+> --- a/lib/kunit/Kconfig
+> +++ b/lib/kunit/Kconfig
+> @@ -15,6 +15,15 @@ menuconfig KUNIT
+>
+>  if KUNIT
+>
+> +config KUNIT_SUPPRESS_BACKTRACE
+> +       bool "KUnit - Enable backtrace suppression"
+> +       default y
+> +       help
+> +         Enable backtrace suppression for KUnit. If enabled, backtraces
+> +         generated intentionally by KUnit tests are suppressed. Disable
+> +         to reduce kernel image size if image size is more important than
+> +         suppression of backtraces generated by KUnit tests.
+> +
+>  config KUNIT_DEBUGFS
+>         bool "KUnit - Enable /sys/kernel/debug/kunit debugfs representation" if !KUNIT_ALL_TESTS
+>         default KUNIT_ALL_TESTS
+> diff --git a/lib/kunit/Makefile b/lib/kunit/Makefile
+> index 309659a32a78..545b57c3be48 100644
+> --- a/lib/kunit/Makefile
+> +++ b/lib/kunit/Makefile
+> @@ -14,8 +14,10 @@ ifeq ($(CONFIG_KUNIT_DEBUGFS),y)
+>  kunit-objs +=                          debugfs.o
+>  endif
+>
+> -# KUnit 'hooks' are built-in even when KUnit is built as a module.
+> -obj-y +=                               hooks.o
+> +# KUnit 'hooks' and bug handling are built-in even when KUnit is built
+> +# as a module.
+> +obj-y +=                               hooks.o \
+> +                                       bug.o
+>
+>  obj-$(CONFIG_KUNIT_TEST) +=            kunit-test.o
+>
+> diff --git a/lib/kunit/bug.c b/lib/kunit/bug.c
+> new file mode 100644
+> index 000000000000..f93544d7a9d1
+> --- /dev/null
+> +++ b/lib/kunit/bug.c
+> @@ -0,0 +1,40 @@
 > +// SPDX-License-Identifier: GPL-2.0
 > +/*
-> + * SH7751 PCI driver
-> + * Copyright (C) 2023 Yoshinori Sato
+> + * KUnit helpers for backtrace suppression
+> + *
+> + * Copyright (c) 2024 Guenter Roeck <linux@roeck-us.net>
 > + */
 > +
-> +#include <linux/kernel.h>
-> +#include <linux/module.h>
-> +#include <linux/of_address.h>
-> +#include <linux/of_pci.h>
-> +#include <linux/of_platform.h>
-> +#include <linux/pci-ecam.h>
-> +#include <linux/platform_device.h>
-> +#include <linux/io.h>
-> +#include <linux/pci.h>
-> +#include <linux/dma-direct.h>
-> +#include <asm/addrspace.h>
-can you consider to rearranging headers into alphabetically sorted order ?
+> +#include <kunit/bug.h>
+> +#include <linux/export.h>
+> +#include <linux/list.h>
+> +#include <linux/string.h>
 > +
-> +/* PCICR and PCICLKCR write enable magic key */
-> +#define PCIC_WE_KEY		(0xa5 << 24)
+> +static LIST_HEAD(suppressed_warnings);
 > +
-> +/* PCIC registers */
-> +/* 0x0000 - 0x00ff mapped to PCI device configuration space */
-> +#define PCIC_PCICR		0x100	/* PCI Control Register */
-> +#define PCIC_PCICR_TRSB		BIT(9)	/* Target Read Single */
-> +#define PCIC_PCICR_BSWP		BIT(8)	/* Target Byte Swap */
-> +#define PCIC_PCICR_PLUP		BIT(7)	/* Enable PCI Pullup */
-> +#define PCIC_PCICR_ARBM		BIT(6)	/* PCI Arbitration Mode */
-> +#define PCIC_PCICR_MD10		BIT(5)	/* MD10 status */
-> +#define PCIC_PCICR_MD9		BIT(4)	/* MD9 status */
-> +#define PCIC_PCICR_SERR		BIT(3)	/* SERR output assert */
-> +#define PCIC_PCICR_INTA		BIT(2)	/* INTA output assert */
-> +#define PCIC_PCICR_PRST		BIT(1)	/* PCI Reset Assert */
-> +#define PCIC_PCICR_CFIN		BIT(0)	/* Central Fun. Init Done */
-> +
-> +#define PCIC_PCILSR0		0x104	/* PCI Local Space Register0 */
-> +#define PCIC_PCILSR1		0x108	/* PCI Local Space Register1 */
-> +#define PCIC_PCILAR0		0x10c	/* PCI Local Addr Register1 */
-> +#define PCIC_PCILAR1		0x110	/* PCI Local Addr Register1 */
-> +#define PCIC_PCIINT		0x114	/* PCI Interrupt Register */
-> +#define PCIC_PCIINTM		0x118	/* PCI Interrupt Mask */
-> +#define PCIC_PCIALR		0x11c	/* Error Address Register */
-> +#define PCIC_PCICLR		0x120	/* Error Command/Data */
-> +#define PCIC_PCIAINT		0x130	/* Arbiter Interrupt Register */
-> +#define PCIC_PCIAINTM		0x134	/* Arbiter Int. Mask Register */
-> +#define PCIC_PCIBMLR		0x138	/* Error Bus Master Register */
-> +#define PCIC_PCIDMABT		0x140	/* DMA Transfer Arb. Register */
-> +#define PCIC_PCIPAR		0x1c0	/* PIO Address Register */
-> +#define PCIC_PCIMBR		0x1c4	/* Memory Base Address */
-> +#define PCIC_PCIIOBR		0x1c8	/* I/O Base Address Register */
-> +
-> +#define PCIC_PCIPINT		0x1cc	/* Power Mgmnt Int. Register */
-> +#define PCIC_PCIPINT_D3		BIT(1)	/* D3 Pwr Mgmt. Interrupt */
-> +#define PCIC_PCIPINT_D0		BIT(0)	/* D0 Pwr Mgmt. Interrupt */
-> +
-> +#define PCIC_PCIPINTM		0x1d0	/* Power Mgmnt Mask Register */
-> +#define PCIC_PCICLKR		0x1d4	/* Clock Ctrl. Register */
-> +#define PCIC_PCIBCR1		0x1e0	/* Memory BCR1 Register */
-> +#define PCIC_PCIBCR2		0x1e4	/* Memory BCR2 Register */
-> +#define PCIC_PCIWCR1		0x1e8	/* Wait Control 1 Register */
-> +#define PCIC_PCIWCR2		0x1ec	/* Wait Control 2 Register */
-> +#define PCIC_PCIWCR3		0x1f0	/* Wait Control 3 Register */
-> +#define PCIC_PCIMCR		0x1f4	/* Memory Control Register */
-> +#define PCIC_PCIBCR3		0x1f8	/* Memory BCR3 Register */
-> +#define PCIC_PCIPDR		0x220	/* Port IO Data Register */
-> +
-> +/* PCI IDs */
-> +/* Hitachi is the company that led to Renesas. */
-> +/* The SH7751 was designed by Hitachi, so it has a Hitachi ID. */
-multi-line comments way ?
-> +#define PCI_VENDOR_ID_HITACHI	0x1054
-> +#define PCI_DEVICE_ID_SH7751	0x3505
-> +#define PCI_DEVICE_ID_SH7751R	0x350e
-> +
-> +/* BSC registers */
-> +/* Copy BSC setting to PCI BSC */
-> +#define BSC_BCR1		0x0000
-> +#define BSC_BCR1_SLAVE		BIT(30)
-> +#define BSC_BCR1_BRQEN		BIT(19)
-> +#define BSC_BCR2		0x0004
-> +#define BSC_BCR3		0x0050
-> +#define BSC_WCR1		0x0008
-> +#define BSC_WCR2		0x000c
-> +#define BSC_WCR3		0x0010
-> +#define BSC_MCR			0x0014
-> +#define BSC_MCR_MRSET		BIT(30)
-> +#define BSC_MCR_RFSH		BIT(2)
-> +
-> +/* PCIC access wrapper */
-> +#define pcic_writel(val, base, reg)	writel(val, base + (reg))
-> +#define pcic_readl(base, reg)		readl(base + (reg))
-Do you really needed these new macros ? Is it for better readability ?
-> +/*
-> + * We need to avoid collisions with `mirrored' VGA ports
-> + * and other strange ISA hardware, so we always want the
-> + * addresses to be allocated in the 0x000-0x0ff region
-> + * modulo 0x400.
-> + */
-> +#define IO_REGION_BASE 0x1000
-> +resource_size_t pcibios_align_resource(void *data, const struct resource *res,
-> +				resource_size_t size, resource_size_t align)
+> +void __start_suppress_warning(struct __suppressed_warning *warning)
 > +{
-> +	resource_size_t start = res->start;
-> +
-> +	if (res->flags & IORESOURCE_IO) {
-> +		if (start < PCIBIOS_MIN_IO + IO_REGION_BASE)
-> +			start = PCIBIOS_MIN_IO + IO_REGION_BASE;
-> +
-> +		/*
-> +		 * Put everything into 0x00-0xff region modulo 0x400.
-> +		 */
-single line comment would work. no ?
-> +		if (start & 0x300)
-> +			start = (start + 0x3ff) & ~0x3ff;
-> +	}
-> +
-> +	return start;
+> +       list_add(&warning->node, &suppressed_warnings);
 > +}
+> +EXPORT_SYMBOL_GPL(__start_suppress_warning);
 > +
-> +static int setup_pci_bsc(struct device *dev, void __iomem *pcic,
-> +			 void __iomem *bsc, unsigned int area, bool bcr3)
+> +void __end_suppress_warning(struct __suppressed_warning *warning)
 > +{
-> +	u32 word;
-> +
-> +	word = __raw_readl(bsc + BSC_BCR1);
-> +	/* check BCR for SDRAM in area */
-> +	if (((word >> area) & 1) == 0) {
-> +		dev_err(dev, "Area %u is not configured for SDRAM. BCR1=0x%x\n",
-> +			area, word);
-> +		return -EINVAL;
-> +	}
-> +	word |= BSC_BCR1_SLAVE;		/* PCIC BSC is slave only */
-> +	pcic_writel(word, pcic, PCIC_PCIBCR1);
-> +
-> +	word = __raw_readw(bsc + BSC_BCR2);
-> +	/* check BCR2 for 32bit SDRAM interface*/
-> +	if (((word >> (area << 1)) & 0x3) != 0x3) {
-> +		dev_err(dev, "Area %u is not 32 bit SDRAM. BCR2=0x%x\n",
-> +			area, word);
-> +		return -EINVAL;
-> +	}
-> +	pcic_writel(word, pcic, PCIC_PCIBCR2);
-> +
-> +	if (bcr3) {
-> +		/* BCR3 have only SH7751R */
-> +		word = __raw_readw(bsc + BSC_BCR3);
-> +		pcic_writel(word, pcic, PCIC_PCIBCR3);
-> +	}
-> +
-> +	/* configure the wait control registers */
-> +	word = __raw_readl(bsc + BSC_WCR1);
-> +	pcic_writel(word, pcic, PCIC_PCIWCR1);
-> +	word = __raw_readl(bsc + BSC_WCR2);
-> +	pcic_writel(word, pcic, PCIC_PCIWCR2);
-> +	word = __raw_readl(bsc + BSC_WCR3);
-> +	pcic_writel(word, pcic, PCIC_PCIWCR3);
-> +	word = __raw_readl(bsc + BSC_MCR);
-> +	/* Clear MRSET and RFSH bit */
-> +	word &= ~(BSC_MCR_MRSET | BSC_MCR_RFSH);
-> +	pcic_writel(word, pcic, PCIC_PCIMCR);
-> +
-> +	return 0;
+> +       list_del(&warning->node);
 > +}
+> +EXPORT_SYMBOL_GPL(__end_suppress_warning);
 > +
-> +#define NUM_AREA 7
-> +static int set_pci_ranges(struct device *dev,
-> +			  void __iomem *pcic, void __iomem *bsc, bool bcr3)
+> +bool __is_suppressed_warning(const char *function)
 > +{
-> +	struct resource_entry *dma, *tmp;
-> +	struct pci_host_bridge *bridge;
-> +	u32 bsc_done[NUM_AREA];
-> +	unsigned int la;
+> +       struct __suppressed_warning *warning;
 > +
-> +	bridge = dev_get_drvdata(dev);
-> +	pcic_writel(0, pcic, PCIC_PCILAR0);
-> +	pcic_writel(0, pcic, PCIC_PCILAR1);
-> +	la = 0;
-> +	memset(&bsc_done, 0, sizeof(bsc_done));
-> +	resource_list_for_each_entry_safe(dma, tmp, &bridge->dma_ranges) {
-> +		struct resource *res = dma->res;
-> +		unsigned int area;
-> +		u32 word;
+> +       if (!function)
+> +               return false;
 > +
-> +		switch (resource_type(res)) {
-> +		case IORESOURCE_IO:
-> +			/* BAR0 is I/O space */
-> +			word = res->start | 1;
-> +			pcic_writel(word, pcic, PCI_BASE_ADDRESS_0);
-> +			word = pcic_readl(pcic, PCI_COMMAND);
-> +			word |= PCI_COMMAND_IO;
-> +			pcic_writel(word, pcic, PCI_COMMAND);
-> +			break;
-> +		case IORESOURCE_MEM:
-> +			if (la > 4) {
-> +				dev_err(dev, "Invalid range definition.\n");
-> +				return -EINVAL;
-> +			}
-> +			area = (res->start >> 26) & 0x07;
-> +			word = res->end - res->start;
-> +			if (area >= NUM_AREA) {
-> +				/* Area 7 is reserved. */
-> +				dev_info(dev, "Invalid local address 0x%08x. Ignore it.\n",
-> +					 res->start);
-> +				break;
-> +			}
-> +			pcic_writel(res->start, pcic, PCI_BASE_ADDRESS_1 + la);
-> +			/* if dummy entry, skip BSC setup */
-> +			if (word < 4)
-> +				break;
-> +			/* BAR1 is local area 0, BAR2 is local area 1 */
-> +			pcic_writel(word, pcic, PCIC_PCILSR0 + la);
-> +			word = P2SEGADDR(res->start);
-> +			pcic_writel(word, pcic, PCIC_PCILAR0 + la);
-> +			la += 4;
-> +			if (!bsc_done[area]) {
-> +				/* check BCR for SDRAM in specified area. And setup PCI BSC. */
-> +				if (setup_pci_bsc(dev, pcic, bsc, area, bcr3))
-> +					return -EINVAL;
-> +				bsc_done[area] = 1;
-> +			}
-> +			break;
-> +		}
-> +	}
-> +	return 0;
+> +       list_for_each_entry(warning, &suppressed_warnings, node) {
+> +               if (!strcmp(function, warning->function))
+> +                       return true;
+> +       }
+> +       return false;
 > +}
-> +
-> +static int sh7751_pci_probe(struct platform_device *pdev)
-> +{
-> +	struct resource *res, *bscres;
-> +	void __iomem *pcic;
-> +	void __iomem *bsc;
-> +	u16 vid, did;
-> +	u32 word;
-> +	int ret;
-> +
-> +	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-> +	if (IS_ERR(res))
-> +		return PTR_ERR(res);
-> +	pcic = ioremap(res->start, res->end - res->start + 1);
-Can you consider using devm_platform_ioremap_resource() API ?
-> +	bscres = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-> +	bsc = devm_ioremap_resource(&pdev->dev, bscres);
-> +	if (IS_ERR(bsc))
-> +		return PTR_ERR(bsc);
-Same as above.
-> +	/* check for SH7751/SH7751R hardware */
-> +	word = pcic_readl(pcic, PCI_VENDOR_ID);
-> +	vid = word & 0xffff;
-> +	did = word >> 16;
-> +	if ((vid != PCI_VENDOR_ID_HITACHI) ||
-> +	    ((did != PCI_DEVICE_ID_SH7751) &&
-> +	     (did != PCI_DEVICE_ID_SH7751R))) {
-> +		dev_err(&pdev->dev, "This is not an SH7751(R)\n");
-error handling missing iounmap(pcic)
-> +		return -ENODEV;
-> +	}
-> +	dev_info(&pdev->dev, "PCI core found at %pR\n", res);
-> +
-> +	/* Set the BCR's to enable PCI access */
-> +	word = __raw_readl(bsc + BSC_BCR1);
-> +	word |= BSC_BCR1_BRQEN;
-> +	__raw_writel(word, bsc + BSC_BCR1);
-> +
-> +	/* Turn the clocks back on (not done in reset)*/
-> +	pcic_writel(PCIC_WE_KEY | 0, pcic, PCIC_PCICLKR);
-> +	/* Clear Powerdown IRQ's (not done in reset) */
-> +	word = PCIC_PCIPINT_D3 | PCIC_PCIPINT_D0;
-> +	pcic_writel(word, pcic, PCIC_PCIPINT);
-> +
-> +	/* set the command/status */
-> +	word = PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER |
-> +		PCI_COMMAND_PARITY | PCI_COMMAND_WAIT;
-> +	pcic_writel(word, pcic, PCI_COMMAND);
-> +
-> +	/* define this host as the host bridge */
-> +	word = PCI_BASE_CLASS_BRIDGE << 24;
-> +	pcic_writel(word, pcic, PCI_CLASS_REVISION);
-> +
-> +	ret = pci_host_common_probe(pdev);
-> +	if (ret) {
-> +		dev_err(&pdev->dev, "Initialize failed (%d)\n", ret);
-> +		return ret;
-> +	}
-> +
-> +	/* Set IO and Mem windows to local address */
-> +	if (set_pci_ranges(&pdev->dev, pcic, bsc,
-> +			   did == PCI_DEVICE_ID_SH7751R))
-> +		return -EINVAL;
-error handling to call pci_host_common_remove() ?
-> +	pcic_writel(0, pcic, PCIC_PCIIOBR);
-> +
-> +	if (of_property_read_bool(pdev->dev.of_node, "renesas,bus-arbit-round-robin"))
-> +		word |= BIT(0);
-> +	else
-> +		word = 0;
-> +	pcic_writel(word, pcic, PCIC_PCIDMABT);
-> +
-> +	/* SH7751 init done, set central function init complete */
-> +	/* use round robin mode to stop a device starving/overrunning */
-multi-line comment ?
-> +	word = PCIC_PCICR_CFIN | PCIC_PCICR_ARBM;
-> +	pcic_writel(PCIC_WE_KEY | word, pcic, PCIC_PCICR);
-> +
-> +	return 0;
-> +}
-> +
-> +/*
-> + * Direct access to PCI hardware...
-> + */
-> +#define CONFIG_CMD(bus, devfn, where) \
-> +	(0x80000000 | (bus->number << 16) | (devfn << 8) | (where & ~3))
-> +
-> +static void __iomem *sh4_pci_map_bus(struct pci_bus *bus,
-> +				     unsigned int devfn, int where)
-> +{
-> +	struct pci_config_window *cfg = bus->sysdata;
-> +	void __iomem *pcic = (void __iomem *)cfg->res.start;
-> +
-> +	pcic_writel(CONFIG_CMD(bus, devfn, where), pcic, PCIC_PCIPAR);
-> +	return pcic + PCIC_PCIPDR;
-> +}
-> +
-> +static const struct pci_ecam_ops pci_sh7751_bus_ops = {
-> +	.pci_ops	= {
-> +		.map_bus = sh4_pci_map_bus,
-> +		.read    = pci_generic_config_read32,
-> +		.write   = pci_generic_config_write32,
-> +	}
-> +};
-> +
-> +static const struct of_device_id sh7751_pci_of_match[] = {
-> +	{ .compatible = "renesas,sh7751-pci",
-> +	  .data = &pci_sh7751_bus_ops },
-> +	{ }
-> +};
-> +MODULE_DEVICE_TABLE(of, sh7751_pci_of_match);
-> +
-> +static struct platform_driver sh7751_pci_driver = {
-> +	.driver = {
-> +		.name = "sh7751-pci",
-> +		.of_match_table = sh7751_pci_of_match,
-> +	},
-> +	.probe = sh7751_pci_probe,
-> +};
-> +module_platform_driver(sh7751_pci_driver);
-> +
-> +MODULE_DESCRIPTION("SH7751 PCI driver");
+> +EXPORT_SYMBOL_GPL(__is_suppressed_warning);
+> --
+> 2.39.2
+>
+
+Thanks,
+-- David
+
+--00000000000043157f0615a5b94a
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIIPqgYJKoZIhvcNAQcCoIIPmzCCD5cCAQExDzANBglghkgBZQMEAgEFADALBgkqhkiG9w0BBwGg
+gg0EMIIEtjCCA56gAwIBAgIQeAMYYHb81ngUVR0WyMTzqzANBgkqhkiG9w0BAQsFADBMMSAwHgYD
+VQQLExdHbG9iYWxTaWduIFJvb3QgQ0EgLSBSMzETMBEGA1UEChMKR2xvYmFsU2lnbjETMBEGA1UE
+AxMKR2xvYmFsU2lnbjAeFw0yMDA3MjgwMDAwMDBaFw0yOTAzMTgwMDAwMDBaMFQxCzAJBgNVBAYT
+AkJFMRkwFwYDVQQKExBHbG9iYWxTaWduIG52LXNhMSowKAYDVQQDEyFHbG9iYWxTaWduIEF0bGFz
+IFIzIFNNSU1FIENBIDIwMjAwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCvLe9xPU9W
+dpiHLAvX7kFnaFZPuJLey7LYaMO8P/xSngB9IN73mVc7YiLov12Fekdtn5kL8PjmDBEvTYmWsuQS
+6VBo3vdlqqXZ0M9eMkjcKqijrmDRleudEoPDzTumwQ18VB/3I+vbN039HIaRQ5x+NHGiPHVfk6Rx
+c6KAbYceyeqqfuJEcq23vhTdium/Bf5hHqYUhuJwnBQ+dAUcFndUKMJrth6lHeoifkbw2bv81zxJ
+I9cvIy516+oUekqiSFGfzAqByv41OrgLV4fLGCDH3yRh1tj7EtV3l2TngqtrDLUs5R+sWIItPa/4
+AJXB1Q3nGNl2tNjVpcSn0uJ7aFPbAgMBAAGjggGKMIIBhjAOBgNVHQ8BAf8EBAMCAYYwHQYDVR0l
+BBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQIMAYBAf8CAQAwHQYDVR0OBBYEFHzM
+CmjXouseLHIb0c1dlW+N+/JjMB8GA1UdIwQYMBaAFI/wS3+oLkUkrk1Q+mOai97i3Ru8MHsGCCsG
+AQUFBwEBBG8wbTAuBggrBgEFBQcwAYYiaHR0cDovL29jc3AyLmdsb2JhbHNpZ24uY29tL3Jvb3Ry
+MzA7BggrBgEFBQcwAoYvaHR0cDovL3NlY3VyZS5nbG9iYWxzaWduLmNvbS9jYWNlcnQvcm9vdC1y
+My5jcnQwNgYDVR0fBC8wLTAroCmgJ4YlaHR0cDovL2NybC5nbG9iYWxzaWduLmNvbS9yb290LXIz
+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
+7xDrOPfX3COqq162RFg/MFcGA1UdIARQME4wCQYHZ4EMAQUBATBBBgkrBgEEAaAyASgwNDAyBggr
+BgEFBQcCARYmaHR0cHM6Ly93d3cuZ2xvYmFsc2lnbi5jb20vcmVwb3NpdG9yeS8wDAYDVR0TAQH/
+BAIwADCBmgYIKwYBBQUHAQEEgY0wgYowPgYIKwYBBQUHMAGGMmh0dHA6Ly9vY3NwLmdsb2JhbHNp
+Z24uY29tL2NhL2dzYXRsYXNyM3NtaW1lY2EyMDIwMEgGCCsGAQUFBzAChjxodHRwOi8vc2VjdXJl
+Lmdsb2JhbHNpZ24uY29tL2NhY2VydC9nc2F0bGFzcjNzbWltZWNhMjAyMC5jcnQwHwYDVR0jBBgw
+FoAUfMwKaNei6x4schvRzV2Vb4378mMwRgYDVR0fBD8wPTA7oDmgN4Y1aHR0cDovL2NybC5nbG9i
+YWxzaWduLmNvbS9jYS9nc2F0bGFzcjNzbWltZWNhMjAyMC5jcmwwDQYJKoZIhvcNAQELBQADggEB
+AK0lDd6/eSh3qHmXaw1YUfIFy07B25BEcTvWgOdla99gF1O7sOsdYaTz/DFkZI5ghjgaPJCovgla
+mRMfNcxZCfoBtsB7mAS6iOYjuwFOZxi9cv6jhfiON6b89QWdMaPeDddg/F2Q0bxZ9Z2ZEBxyT34G
+wlDp+1p6RAqlDpHifQJW16h5jWIIwYisvm5QyfxQEVc+XH1lt+taSzCfiBT0ZLgjB9Sg+zAo8ys6
+5PHxFaT2a5Td/fj5yJ5hRSrqy/nj/hjT14w3/ZdX5uWg+cus6VjiiR/5qGSZRjHt8JoApD6t6/tg
+ITv8ZEy6ByumbU23nkHTMOzzQSxczHkT+0q10/MxggJqMIICZgIBATBoMFQxCzAJBgNVBAYTAkJF
+MRkwFwYDVQQKExBHbG9iYWxTaWduIG52LXNhMSowKAYDVQQDEyFHbG9iYWxTaWduIEF0bGFzIFIz
+IFNNSU1FIENBIDIwMjACEAHS+TgZvH/tCq5FcDC0n9IwDQYJYIZIAWUDBAIBBQCggdQwLwYJKoZI
+hvcNAQkEMSIEIIOVQ6jwtkykbkD9amzlnbTHyE0Or6zi3BACy3iruk4SMBgGCSqGSIb3DQEJAzEL
+BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTI0MDQwOTA4Mjk0MlowaQYJKoZIhvcNAQkPMVww
+WjALBglghkgBZQMEASowCwYJYIZIAWUDBAEWMAsGCWCGSAFlAwQBAjAKBggqhkiG9w0DBzALBgkq
+hkiG9w0BAQowCwYJKoZIhvcNAQEHMAsGCWCGSAFlAwQCATANBgkqhkiG9w0BAQEFAASCAQCtHWwf
+mfxClU2onqR3lXpGpINgyKUw3mJPMZ2BKHpZm6FwjOdSewD4tJCFQ08wIVRlRkilRaWBdqvjCd+F
+Ow0O2i7RWiS9Uv6B86Cyc5hP/SgbDecrwJ1OzYfm/1AxXEKcPGTip6ms8d3g2EAyQ+SQiM3DM06a
+etT36e4P5cxQWoZ1CvbC2swun7Dd7wCN8UuWTrF9E9xiMTPXDHgsQVBXAda8FlwvkjDDqEH7uuId
+VmiVn9Osn0BAU4eEpCP/5Q4mJwNM+WIbtK+XsEKX1JIw3ajR9szm85DUUKWBhQfp+x/uF+xWrXNf
+PD1HLD5osEEsfCuPtFTZemoY05vKK9H3
+--00000000000043157f0615a5b94a--
