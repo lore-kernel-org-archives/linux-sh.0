@@ -1,198 +1,108 @@
-Received: from mail-yw1-f169.google.com (mail-yw1-f169.google.com [209.85.128.169])
+Received: from mail-pl1-f169.google.com (mail-pl1-f169.google.com [209.85.214.169])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9784E12F38D;
-	Tue,  9 Apr 2024 13:56:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.169
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B7434156870;
+	Tue,  9 Apr 2024 18:11:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.169
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1712671003; cv=none; b=mfZopuTpUQoQ5Bv3rs+q4wcAHhinAMtuWvXYjVB+oR6RMOgSMAxun8T/D+gRYKebROARyHZ+4GeaV+ZJqm7CtT0xuNP6p71pB4IlcuNt38xmgM3dTfGWqNLtfMUQTZMJAvYmFqTEV3xfmNM99NvPkZM9PbGSXMExvKCdJgsaniA=
+	t=1712686266; cv=none; b=Y6CxGQ0GUf2ehi0stcvZpABUFDO68EsyQ4ZZjGei7E0IAiTpzANV0cdpU1Sd60JMih0sBiPznkbh9NyQ7ILA0RtnAj7NO5rCk9MhOD8qNyINsmuYGPlRlZsWeAu4HTfzypV7xc/EAiZAGozoN3qf3CIWcjZ5tQm7Uoh6xcUVmII=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1712671003; c=relaxed/simple;
-	bh=uiUPa934IC8G79R0cHkfdU2hmpF5TUHtkMcYQceZcSQ=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=rEm/3CfL+b80IhaHFO/qyMJXKKOKIjRlRo/WFieZH0oXnSd+G49Pb2SU4V3K5ZRahGAzYuJ3GOFDptWFQfKsdthdHTMrwiEvRdd5iLKBYuf3JX795F5ZWcWCKOB/A++VLAbQICD0DZ6o4ZX6aj3BdYCvzvbnWBJZNNKF550myOM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.128.169
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+	s=arc-20240116; t=1712686266; c=relaxed/simple;
+	bh=HqaMdhT5LRYjCxR6gMHB6EOhgxJSaOa8vauHB4zv+2E=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=VEcXLkEQW6JyFiEwmibcC3WtjFMfD79IkVnGtESa8JlYs4ay5DUpopaCaLfXmKFzko6SIUQtdxstnBUDafbxRBsJKoGPCrdA7Vk860hmUqt0Am/x1Qg+YQ4VBolz/2UF1AjyYYVKUKz3CWRCQ2HF0kScy+9Ca0RDkS80k4Y0/YQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=roeck-us.net; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=FttKq7Yz; arc=none smtp.client-ip=209.85.214.169
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=roeck-us.net
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-yw1-f169.google.com with SMTP id 00721157ae682-6181237230dso21065807b3.2;
-        Tue, 09 Apr 2024 06:56:40 -0700 (PDT)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="FttKq7Yz"
+Received: by mail-pl1-f169.google.com with SMTP id d9443c01a7336-1e220e40998so37525675ad.1;
+        Tue, 09 Apr 2024 11:11:04 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1712686264; x=1713291064; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:sender:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=J9dSAKFdynyhKujjaxO9n/FtMdq9OcS8F/T8JeifJ1k=;
+        b=FttKq7YzQibSu3QkW5wm1cfur0Sb9eg8CtXs6WKUr9zGDaPWl6iuiLJeLdFeC/iNY4
+         8LFySLpve+36Cug69jRdkAr49JZayGOQ+h79XwJLmN+RGRoU5XlOio1N1e8jd9GEJEmv
+         JRMv+qzkoHFdB1b4Bxkp0G2VFJ3rVPH65aFOHo/NDDOX/PNkNDIVWpjBAvpVTOv7ykb3
+         9ug8dXeQdHgfj6UX7ce9WAcNpBnhctkosX4i9G4T6hn4u3kGmYVz8wHyawwXjvaARlGr
+         yFs6XU8whVQDxMNKSkr4yiUhYOMcVBmPngklvhlTodqo1z1xR4SxxVKF1dlxKqaRVvui
+         668g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1712670997; x=1713275797;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+        d=1e100.net; s=20230601; t=1712686264; x=1713291064;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:sender:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=2HZbjvWyXpSYd1puM+93tZG9TcNwqCrELS7hscC5PVY=;
-        b=CwEUYTOmSUBXgCsg3mYwTIIgCdg05HTnnQL2fCs5MBT3RKP8AwiaFZ5sNLrfzav40q
-         eVUu9kOeot7bwJ7GNVxqpX4Nth3fcuM9cytM7ea629NX8VjvMSaxDYq0gBF25wOn8CQF
-         0RySLVFl7g2g6seyOS0pem0XG1trr66o88NPt57ak4sCNFf99pRm35eaNr8neSOq+tFB
-         343Hm0CeYSEQHUgtFOKALjYA2fhGfItctrW/iu2YtQmOimO0cGLzLwTuSAxys/zBiSvb
-         n4c7CraPsNJs6VmZCc8gvTF5C44ThtXJ5xKTUXk/7VJS579msALTWdbwOI+NMi6IC/vl
-         gGTQ==
-X-Forwarded-Encrypted: i=1; AJvYcCWZXPQTK8ugJajyO2tRjyDW021M1AqDliF0ZB3j0np1Lr3RWZhAK04LnlAvOg5RO+b+lVVUYlDenHIg4Y7Y3Ykz1tdlfqHF6EOucPPdB/i2rfMFDPo/DJV5w4EVBpVx48MwIfQy24sHNrvNvwgKkBqRnfyw6+hptnRYh2vSf2KYS9kQOupv0UjB/qGrVB+ajRpR1NsOBxxKY8nYrESyBVO625P+xPSRL2I9sS2tDc71ajErHdruzLysJ1K9tCS23nCgKxcvVA/oOTNlua7eMYzNEuTohBSk6nZz9oyygvFXJf1/RexKDZvwuqGYb92zTYkMEfKGOZVPDdMB6nS2wJiByFTfPXxzZn7GGjrhsY3CVuaMP9xM0TU=
-X-Gm-Message-State: AOJu0Yygj3rR9vfvqVOM/WbydP3tii9a5c8MpHdYL2DhCsR/9YcpjLFu
-	KmWfN36gEdp80ziyDNvxbQJrRvHrPUfhLfpzHmEOUD19cKIKeG4G98vl0S/vlZg=
-X-Google-Smtp-Source: AGHT+IGh+8mu6y5ErUruD07FecBSGrLFypzV2tzoJvfI8kksdhp9gQwcjaZ4TqEXL/3+PJzmy3leAQ==
-X-Received: by 2002:a81:a10f:0:b0:611:191e:1de8 with SMTP id y15-20020a81a10f000000b00611191e1de8mr11665488ywg.18.1712670995713;
-        Tue, 09 Apr 2024 06:56:35 -0700 (PDT)
-Received: from mail-yb1-f172.google.com (mail-yb1-f172.google.com. [209.85.219.172])
-        by smtp.gmail.com with ESMTPSA id dg7-20020a05690c0fc700b006144d568e98sm2171547ywb.28.2024.04.09.06.56.34
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 09 Apr 2024 06:56:35 -0700 (PDT)
-Received: by mail-yb1-f172.google.com with SMTP id 3f1490d57ef6-dcbef31a9dbso3624658276.1;
-        Tue, 09 Apr 2024 06:56:34 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCX/48xkhiI5juYIGQ3ENYufchuOd0c2yhFKM/vDJdZH3sEqXZW6oe7juLSOt3fVSQxDCUpXNfCWEfKXphCFwTd2jjphx3LAUnXzf8HlvM4EJh240wzsz9b1JSmjAn7TCcyySnYRcxF8kMkPfrHcR/RSFk0h1gabPD+t/m3NNz361CvjWyyQVeq/VFaDnID303H06hAA/OtE2lGC80aNvYhjnVOZqmxgMwA2ly+URGBoB6eHHLcY3rxoQsj9bed73MoIdoIoAYvD1jIJ5Ec52w2P5V2ExKeyqY6opFTL7lRv2Vdoo3+zpVNysTM3zH1eVLMU9RDDfW5P3j1on91F7d1S+e2xZTnGhKRuplXyO/NsWr6xB9yXGFM=
-X-Received: by 2002:a5b:40c:0:b0:dc6:b779:7887 with SMTP id
- m12-20020a5b040c000000b00dc6b7797887mr8362504ybp.20.1712670994533; Tue, 09
- Apr 2024 06:56:34 -0700 (PDT)
+        bh=J9dSAKFdynyhKujjaxO9n/FtMdq9OcS8F/T8JeifJ1k=;
+        b=HP7vlWjUZAWHHrddjNVv3YgPx0I5azs3kmojBst3vtYYxrA1D71oIL1wOH19ZY4TUs
+         ftaKyJOnrw+v9UBFB6a0bqBKbqbLpNs68NhxBc6I4UQlLhfvlyNm7sZzP5HRpPyyMRxw
+         QVJ6GxsL0bzbuCMLLppGiH+IjkYaaBcj2IV9fcIdUXrq2ShDqTfQuupwK8tiTUbdR8OO
+         OkNIo0AogoEn0JW5q0nLKvHf37jwnzqqiZbnxJXTcIE6YW9tbYBas7IdP4x23WyjvAjD
+         FN0NrJuAkwufQY83aDqkWLEtN1t1r1vTmI+aONn9zP6XzWpktxVLO4uGULpNYulWc91k
+         CGAA==
+X-Forwarded-Encrypted: i=1; AJvYcCWOIUq17MX3ojkp1V6Cw9t8Qzn0i7G+B0PGVWhNdNF0DHrikTZ1ScpOCibZaWUiQp6wgT+fg9eMxG/BrIIsRv+ANw33tAjJ8YbWCmPgmBXNdd2CZ9lphiimSkE8vBeIC6loU/9Ymmbt0q30VcajpRlnS34lU1J3DxmLpI8px8Vrd/4WT97R1PLf03PTLkeZ8F32eeVIrP3AiQyVZfVGiTyuaal6tu0B5qARapkRPBBrrJpzrPwvQfwmsTJSMHcsEjkaej8h+uRDEB1Drihu5D3Nyx/memLkjrg5udbv9++s8OCrYu/nGgSZYMTdhiMc7Q==
+X-Gm-Message-State: AOJu0YzL7OMOZU2B65EthKr0eCDvgim79p+ud0OvzG96sNBtdoh9Tnph
+	832vI1K28ki+3abjxbs+JvC89QxEWnzd7y3ealZCI+MUo6NH3lPv
+X-Google-Smtp-Source: AGHT+IGrjPVdFECKS3becNGGDDo38peM0R3uLnfzfKLi+hNrIYGQpqn6EkGBto25qlTyktqlNq6njg==
+X-Received: by 2002:a17:902:82c8:b0:1e2:3e1e:3d9 with SMTP id u8-20020a17090282c800b001e23e1e03d9mr529751plz.63.1712686263974;
+        Tue, 09 Apr 2024 11:11:03 -0700 (PDT)
+Received: from server.roeck-us.net ([2600:1700:e321:62f0:329c:23ff:fee3:9d7c])
+        by smtp.gmail.com with ESMTPSA id j18-20020a170902f25200b001e256cb48f7sm9195770plc.197.2024.04.09.11.11.03
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 09 Apr 2024 11:11:03 -0700 (PDT)
+Sender: Guenter Roeck <groeck7@gmail.com>
+Date: Tue, 9 Apr 2024 11:11:02 -0700
+From: Guenter Roeck <linux@roeck-us.net>
+To: David Gow <davidgow@google.com>
+Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>,
+	Arnd Bergmann <arnd@arndb.de>,
+	=?iso-8859-1?Q?Ma=EDra?= Canal <mcanal@igalia.com>,
+	Dan Carpenter <dan.carpenter@linaro.org>,
+	Kees Cook <keescook@chromium.org>,
+	Daniel Diaz <daniel.diaz@linaro.org>,
+	Arthur Grillo <arthurgrillo@riseup.net>,
+	Brendan Higgins <brendan.higgins@linux.dev>,
+	Naresh Kamboju <naresh.kamboju@linaro.org>,
+	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Maxime Ripard <mripard@kernel.org>,
+	Ville =?iso-8859-1?Q?Syrj=E4l=E4?= <ville.syrjala@linux.intel.com>,
+	Daniel Vetter <daniel@ffwll.ch>,
+	Thomas Zimmermann <tzimmermann@suse.de>,
+	dri-devel@lists.freedesktop.org, kunit-dev@googlegroups.com,
+	linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+	linux-sh@vger.kernel.org, loongarch@lists.linux.dev,
+	netdev@vger.kernel.org, x86@kernel.org,
+	Linux Kernel Functional Testing <lkft@linaro.org>
+Subject: Re: [PATCH v3 03/15] kunit: Add test cases for backtrace warning
+ suppression
+Message-ID: <aad25d52-83ed-492f-9d56-71d26895173b@roeck-us.net>
+References: <20240403131936.787234-1-linux@roeck-us.net>
+ <20240403131936.787234-4-linux@roeck-us.net>
+ <CABVgOSknXkT=WU-fwi5wP4bWv04DKByxSYAPmhYhC--FaQH-PQ@mail.gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1712207606.git.ysato@users.sourceforge.jp> <4a9b59733c7a8e7d042f3987ca6bf601eea5b30d.1712207606.git.ysato@users.sourceforge.jp>
-In-Reply-To: <4a9b59733c7a8e7d042f3987ca6bf601eea5b30d.1712207606.git.ysato@users.sourceforge.jp>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 9 Apr 2024 15:56:22 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdUVEj-TEV5iYjknTKOJ0_MBO8sMzc6-7NSAL-XoxLGn9g@mail.gmail.com>
-Message-ID: <CAMuHMdUVEj-TEV5iYjknTKOJ0_MBO8sMzc6-7NSAL-XoxLGn9g@mail.gmail.com>
-Subject: Re: [RESEND v7 08/37] clocksource: sh_tmu: CLOCKSOURCE support.
-To: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: linux-sh@vger.kernel.org, Damien Le Moal <dlemoal@kernel.org>, 
-	Niklas Cassel <cassel@kernel.org>, Rob Herring <robh@kernel.org>, 
-	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>, Conor Dooley <conor+dt@kernel.org>, 
-	Geert Uytterhoeven <geert+renesas@glider.be>, Michael Turquette <mturquette@baylibre.com>, 
-	Stephen Boyd <sboyd@kernel.org>, David Airlie <airlied@gmail.com>, Daniel Vetter <daniel@ffwll.ch>, 
-	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>, Maxime Ripard <mripard@kernel.org>, 
-	Thomas Zimmermann <tzimmermann@suse.de>, Thomas Gleixner <tglx@linutronix.de>, 
-	Bjorn Helgaas <bhelgaas@google.com>, Lorenzo Pieralisi <lpieralisi@kernel.org>, 
-	=?UTF-8?Q?Krzysztof_Wilczy=C5=84ski?= <kw@linux.com>, 
-	Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jirislaby@kernel.org>, 
-	Magnus Damm <magnus.damm@gmail.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, 
-	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
-	Lee Jones <lee@kernel.org>, Helge Deller <deller@gmx.de>, 
-	Heiko Stuebner <heiko.stuebner@cherry.de>, Shawn Guo <shawnguo@kernel.org>, 
-	Sebastian Reichel <sre@kernel.org>, Chris Morgan <macromorgan@hotmail.com>, 
-	Linus Walleij <linus.walleij@linaro.org>, Arnd Bergmann <arnd@arndb.de>, 
-	David Rientjes <rientjes@google.com>, Hyeonggon Yoo <42.hyeyoo@gmail.com>, 
-	Vlastimil Babka <vbabka@suse.cz>, Baoquan He <bhe@redhat.com>, 
-	Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck <linux@roeck-us.net>, 
-	Kefeng Wang <wangkefeng.wang@huawei.com>, Stephen Rothwell <sfr@canb.auug.org.au>, 
-	Javier Martinez Canillas <javierm@redhat.com>, Guo Ren <guoren@kernel.org>, 
-	Azeem Shaikh <azeemshaikh38@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>, 
-	Jonathan Corbet <corbet@lwn.net>, Jacky Huang <ychuang3@nuvoton.com>, 
-	Herve Codina <herve.codina@bootlin.com>, 
-	Manikanta Guntupalli <manikanta.guntupalli@amd.com>, Anup Patel <apatel@ventanamicro.com>, 
-	Biju Das <biju.das.jz@bp.renesas.com>, 
-	=?UTF-8?Q?Uwe_Kleine=2DK=C3=B6nig?= <u.kleine-koenig@pengutronix.de>, 
-	Sam Ravnborg <sam@ravnborg.org>, Sergey Shtylyov <s.shtylyov@omp.ru>, 
-	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-ide@vger.kernel.org, 
-	devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-renesas-soc@vger.kernel.org, linux-clk@vger.kernel.org, 
-	dri-devel@lists.freedesktop.org, linux-pci@vger.kernel.org, 
-	linux-serial@vger.kernel.org, linux-fbdev@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CABVgOSknXkT=WU-fwi5wP4bWv04DKByxSYAPmhYhC--FaQH-PQ@mail.gmail.com>
 
-Hi Sato-san,
+On Tue, Apr 09, 2024 at 04:29:42PM +0800, David Gow wrote:
+> > +ifeq ($(CCONFIG_KUNIT_SUPPRESS_BACKTRACE),y)
+> 
+> s/CCONFIG_/CONFIG_/ ?
+> 
+> 
+Odd, I know I tested this (and it still works ;-).
+The additional "C" must have slipped in at some point.
+Thanks for noticing!
 
-On Thu, Apr 4, 2024 at 7:15=E2=80=AFAM Yoshinori Sato
-<ysato@users.sourceforge.jp> wrote:
-> Allows initialization as CLOCKSOURCE.
->
-> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
-
-Thanks for your patch!
-
-> --- a/drivers/clocksource/sh_tmu.c
-> +++ b/drivers/clocksource/sh_tmu.c
-
-> @@ -495,7 +514,12 @@ static int sh_tmu_map_memory(struct sh_tmu_device *t=
-mu)
->
->  static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
->  {
-> -       struct device_node *np =3D tmu->pdev->dev.of_node;
-> +       struct device_node *np;
-
-Technically, np might be used uninitialized.
-
-> +
-> +       if (tmu->pdev)
-> +               np =3D tmu->pdev->dev.of_node;
-
-If you would set up tmu->np in sh_tmu_setup_pdev()...
-
-> +       if (tmu->np)
-> +               np =3D tmu->np;
-
-... you could just assign np =3D tmu->np unconditionally.
-
->
->         tmu->model =3D SH_TMU;
->         tmu->num_channels =3D 3;
-
-> @@ -665,6 +734,7 @@ static void __exit sh_tmu_exit(void)
->         platform_driver_unregister(&sh_tmu_device_driver);
->  }
->
-> +TIMER_OF_DECLARE(sh_tmu, "renesas,tmu", sh_tmu_of_register);
-
-As there are now two entry points, the device is actually probed twice:
-once from TIMER_OF_DECLARE/sh_tmu_of_register(), and a second
-time from platform_driver/sh_tmu_probe().
-
-E.g. on Armadillo-800-EVA with R-Mobile A1 (booting Linux on ARM
-(not SH), and using TMU as the main clock source):
-
-    timer@fff80000 ch0: used for clock events
-    timer@fff80000 ch0: used for periodic clock events
-    timer@fff80000 ch1: used as clock source
-    clocksource: timer@fff80000: mask: 0xffffffff max_cycles:
-0xffffffff, max_idle_ns: 154445288668 ns
-    ...
-    fff80000.timer ch0: used for clock events
-    genirq: Flags mismatch irq 16. 00015a04 (fff80000.timer) vs.
-00015a04 (timer@fff80000)
-    fff80000.timer ch0: failed to request irq 16
-    fff80000.timer ch1: used as clock source
-    clocksource: fff80000.timer: mask: 0xffffffff max_cycles:
-0xffffffff, max_idle_ns: 154445288668 ns
-
-After this, the timer seems to be stuck, and the boot is blocked.
-
-On Marzen with R-Car H1 (booting Linux on ARM (not SH), and using
-arm_global_timer as the main clock source), I also see the double
-timer probe, but no such lock-up.  I expect you to see the double
-timer probe on SH775x, too?
-
-The double probe can be fixed by adding a call to
-of_node_set_flag(np, OF_POPULATED) at the end of sh_tmu_of_register()
-in case of success, cfr. [1].
-
-I haven't found the cause of the stuck timer on R-Mobile A1 yet;
-both the TMU clock and the A4R power domain seem to be activated...
-
->  #ifdef CONFIG_SUPERH
->  sh_early_platform_init("earlytimer", &sh_tmu_device_driver);
->  #endif
-
-[1] "[PATCH] clocksource/drivers/renesas-ostm: Avoid reprobe after
-successful early probe"
-    https://lore.kernel.org/all/bd027379713cbaafa21ffe9e848ebb7f475ca0e7.17=
-10930542.git.geert+renesas@glider.be/
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
-
-In personal conversations with technical people, I call myself a hacker. Bu=
-t
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+Guenter
