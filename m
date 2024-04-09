@@ -1,45 +1,45 @@
 Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1C017157E60
-	for <linux-sh@vger.kernel.org>; Tue,  9 Apr 2024 19:26:23 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 787C015749E
+	for <linux-sh@vger.kernel.org>; Tue,  9 Apr 2024 19:26:32 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1712690784; cv=none; b=dIBi96h6mCYpj7qeexRvVaR3p7ecVJKYxO214lo9QUBQbPREu5vypFmOsIVii+MMur+LGM2kiX2OoJsZJ21KR65unEUvHjPQ7Bn/REMdWNKzI3JjsP+BJie7pV4SXiou2JcokU2ZQihNgEZj5RitTt0ijKT3dpb0LXsjWTgLsvM=
+	t=1712690794; cv=none; b=fxnUgWYRmLsJVTqBy8r+vMJsrbIYzh++uoPnHIsc/mKLxvS8LCQDNeizKQ0IsMEaHXcJycP4IFCQ7rv7YcHcE24mZApYXvj4NJEFpPVhFuPRD83lWT8TH4dQyY666yi8JhpL4h5jjL+HY5uZLlYQOaKaLstgA9uFDQhWtN5xU3I=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1712690784; c=relaxed/simple;
-	bh=67HUJ37QTSZsMQ5QZmRvA1nLGckTDZres9pW7a3nEco=;
+	s=arc-20240116; t=1712690794; c=relaxed/simple;
+	bh=nXBxw9Nb3AKmpwNJSf0KetfSq5IM5scHwHyH6e628A8=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=ozduM6JnIR/qcWvJo1cE3KiJDTSsioc4eD2tLKZgnc3q52wXr6eQ4VCofHSLnETsJy+/B7luYHSiSySizapU/505hqvxZdtTsqMmFXql8F6kx95MT1YJ4Pb/DifEQ17UWg8t54kvZ7hwVhDySRR+YxERJjHN85gfeP8wWw+GaA4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=MRkPhZop; arc=none smtp.client-ip=170.10.129.124
+	 MIME-Version; b=Dv6nTtZnQFgBrJxhJ+0qH7df6ss/jPM9E23Tsq7aj3t9xbtTNPYi8n6dmuIqU97ILoQQyJqYVUyCjZrw3g+eFKaqhrvy0DeMlSoEfgkTMEzQeE+9hd/yBvNx0//oHSEUien6REhSSbLb5UVGU1Ojme/LPWS3Egs6piELbGsupVc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=W/Ddhfer; arc=none smtp.client-ip=170.10.129.124
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="MRkPhZop"
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="W/Ddhfer"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1712690782;
+	s=mimecast20190719; t=1712690791;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
 	 to:to:cc:cc:mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=P0NYc9fiw7RbFbzUOP+c9IZVrablCrwSqa05Gf/mEjM=;
-	b=MRkPhZopLD85z+QKPK/W6g2mmnRUgUj9hZSDEhzZF9Hss99WhVuuhACtITrrM8BNjBONJB
-	pCzKtp4l+PzCKz+cVPQo4I8/cAERuoGbpaJcc57QNGfGrQAgh32zU8m89KDpIx57ynf8av
-	BvEEg2U2ohXCXDu0ru6+2SATPov/mDk=
-Received: from mimecast-mx02.redhat.com (mimecast-mx02.redhat.com
- [66.187.233.88]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-227-LSK2VHheNtull5pEDNikGw-1; Tue, 09 Apr 2024 15:26:18 -0400
-X-MC-Unique: LSK2VHheNtull5pEDNikGw-1
+	bh=NywHbuKGZjP8K2r9cm/m6NcEBx0o+/6jkDGUacCW2cY=;
+	b=W/Ddhferi9MtfZkSEawsa9pVEB1fb+YFeMUrLXjGuBZwdYsfPNHyk/2XpjiupyKvQ5kdKT
+	WUWjjfNn7yxRfU7OZkl6yHr4Lm50Zt6P6VyvVRXquXHV/Wv1l5OkoR0y994e+Lb4wG+vmd
+	yp5LS5uvhjJfrTRHY2P5L0P3wxjcreM=
+Received: from mimecast-mx02.redhat.com (mx-ext.redhat.com [66.187.233.73])
+ by relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
+ cipher=TLS_AES_256_GCM_SHA384) id us-mta-695-RFd2M04MNAeCUlOs7BBABg-1; Tue,
+ 09 Apr 2024 15:26:29 -0400
+X-MC-Unique: RFd2M04MNAeCUlOs7BBABg-1
 Received: from smtp.corp.redhat.com (int-mx02.intmail.prod.int.rdu2.redhat.com [10.11.54.2])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
 	(No client certificate requested)
-	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id EBA28890521;
-	Tue,  9 Apr 2024 19:26:16 +0000 (UTC)
+	by mimecast-mx02.redhat.com (Postfix) with ESMTPS id F246E1C0512F;
+	Tue,  9 Apr 2024 19:26:27 +0000 (UTC)
 Received: from t14s.redhat.com (unknown [10.39.192.106])
-	by smtp.corp.redhat.com (Postfix) with ESMTP id 9815E40B4979;
-	Tue,  9 Apr 2024 19:26:08 +0000 (UTC)
+	by smtp.corp.redhat.com (Postfix) with ESMTP id 3D11840B497B;
+	Tue,  9 Apr 2024 19:26:17 +0000 (UTC)
 From: David Hildenbrand <david@redhat.com>
 To: linux-kernel@vger.kernel.org
 Cc: linux-mm@kvack.org,
@@ -67,9 +67,9 @@ Cc: linux-mm@kvack.org,
 	Miaohe Lin <linmiaohe@huawei.com>,
 	Naoya Horiguchi <naoya.horiguchi@nec.com>,
 	Richard Chang <richardycc@google.com>
-Subject: [PATCH v1 14/18] mm/migrate_device: use folio_mapcount() in migrate_vma_check_page()
-Date: Tue,  9 Apr 2024 21:22:57 +0200
-Message-ID: <20240409192301.907377-15-david@redhat.com>
+Subject: [PATCH v1 15/18] trace/events/page_ref: trace the raw page mapcount value
+Date: Tue,  9 Apr 2024 21:22:58 +0200
+Message-ID: <20240409192301.907377-16-david@redhat.com>
 In-Reply-To: <20240409192301.907377-1-david@redhat.com>
 References: <20240409192301.907377-1-david@redhat.com>
 Precedence: bulk
@@ -82,56 +82,41 @@ Content-Transfer-Encoding: 8bit
 X-Scanned-By: MIMEDefang 3.4.1 on 10.11.54.2
 
 We want to limit the use of page_mapcount() to the places where it is
-absolutely necessary. Let's convert migrate_vma_check_page() to work on
-a folio internally so we can remove the page_mapcount() usage.
+absolutely necessary. We already trace raw page->refcount, raw page->flags
+and raw page->mapping, and don't involve any folios. Let's also trace the
+raw mapcount value that does not consider the entire mapcount of large
+folios, and we don't add "1" to it.
 
-Note that we reject any large folios.
-
-There is a lot more folio conversion to be had, but that has to wait for
-another day. No functional change intended.
+When dealing with typed folios, this makes a lot more sense. ... and
+it's for debugging purposes only either way.
 
 Signed-off-by: David Hildenbrand <david@redhat.com>
 ---
- mm/migrate_device.c | 12 +++++++-----
- 1 file changed, 7 insertions(+), 5 deletions(-)
+ include/trace/events/page_ref.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/mm/migrate_device.c b/mm/migrate_device.c
-index d40b46ae9d65..b929b450b77c 100644
---- a/mm/migrate_device.c
-+++ b/mm/migrate_device.c
-@@ -324,6 +324,8 @@ static void migrate_vma_collect(struct migrate_vma *migrate)
-  */
- static bool migrate_vma_check_page(struct page *page, struct page *fault_page)
- {
-+	struct folio *folio = page_folio(page);
-+
- 	/*
- 	 * One extra ref because caller holds an extra reference, either from
- 	 * isolate_lru_page() for a regular page, or migrate_vma_collect() for
-@@ -336,18 +338,18 @@ static bool migrate_vma_check_page(struct page *page, struct page *fault_page)
- 	 * check them than regular pages, because they can be mapped with a pmd
- 	 * or with a pte (split pte mapping).
- 	 */
--	if (PageCompound(page))
-+	if (folio_test_large(folio))
- 		return false;
- 
- 	/* Page from ZONE_DEVICE have one extra reference */
--	if (is_zone_device_page(page))
-+	if (folio_is_zone_device(folio))
- 		extra++;
- 
- 	/* For file back page */
--	if (page_mapping(page))
--		extra += 1 + page_has_private(page);
-+	if (folio_mapping(folio))
-+		extra += 1 + folio_has_private(folio);
- 
--	if ((page_count(page) - extra) > page_mapcount(page))
-+	if ((folio_ref_count(folio) - extra) > folio_mapcount(folio))
- 		return false;
- 
- 	return true;
+diff --git a/include/trace/events/page_ref.h b/include/trace/events/page_ref.h
+index 8a99c1cd417b..fe33a255b7d0 100644
+--- a/include/trace/events/page_ref.h
++++ b/include/trace/events/page_ref.h
+@@ -30,7 +30,7 @@ DECLARE_EVENT_CLASS(page_ref_mod_template,
+ 		__entry->pfn = page_to_pfn(page);
+ 		__entry->flags = page->flags;
+ 		__entry->count = page_ref_count(page);
+-		__entry->mapcount = page_mapcount(page);
++		__entry->mapcount = atomic_read(&page->_mapcount);
+ 		__entry->mapping = page->mapping;
+ 		__entry->mt = get_pageblock_migratetype(page);
+ 		__entry->val = v;
+@@ -79,7 +79,7 @@ DECLARE_EVENT_CLASS(page_ref_mod_and_test_template,
+ 		__entry->pfn = page_to_pfn(page);
+ 		__entry->flags = page->flags;
+ 		__entry->count = page_ref_count(page);
+-		__entry->mapcount = page_mapcount(page);
++		__entry->mapcount = atomic_read(&page->_mapcount);
+ 		__entry->mapping = page->mapping;
+ 		__entry->mt = get_pageblock_migratetype(page);
+ 		__entry->val = v;
 -- 
 2.44.0
 
