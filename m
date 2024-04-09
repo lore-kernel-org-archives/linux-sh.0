@@ -1,254 +1,198 @@
-Received: from mail-ed1-f48.google.com (mail-ed1-f48.google.com [209.85.208.48])
+Received: from mail-yw1-f169.google.com (mail-yw1-f169.google.com [209.85.128.169])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AE84285641
-	for <linux-sh@vger.kernel.org>; Tue,  9 Apr 2024 08:30:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.48
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9784E12F38D;
+	Tue,  9 Apr 2024 13:56:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.169
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1712651404; cv=none; b=rJEfa4ZQ8W4GmS8RJTaWgh6p31+QKToCGEU9Jaqtm7XuhEvxJlmkeLRpepTMKP/bnti3j5jTIvylklqpG02nN9LFdCe8xaoXmcgYQeYanAGkYIxHTSi6PxvI6AOgJAhD5Lcpd8LoEfeyaEdzfsyDkJNdCMqQbgMbKY27nDRmoP4=
+	t=1712671003; cv=none; b=mfZopuTpUQoQ5Bv3rs+q4wcAHhinAMtuWvXYjVB+oR6RMOgSMAxun8T/D+gRYKebROARyHZ+4GeaV+ZJqm7CtT0xuNP6p71pB4IlcuNt38xmgM3dTfGWqNLtfMUQTZMJAvYmFqTEV3xfmNM99NvPkZM9PbGSXMExvKCdJgsaniA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1712651404; c=relaxed/simple;
-	bh=2wcTh/1kuRhpK+eq7Zgjrd1WYspSwy8YmOZOIbUnSp4=;
+	s=arc-20240116; t=1712671003; c=relaxed/simple;
+	bh=uiUPa934IC8G79R0cHkfdU2hmpF5TUHtkMcYQceZcSQ=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=ThbPF242bkkKELd+KvI96r1HMCdz2mxkHif/wYSMON/WdhEPk+iMyH+oCYWvYqljSSOZgA0b2aolABe3TPTyDp5ENp4wlaDm6umgTGdEQmqD7BZ2JQfKSRb1cjMG+tfhr6ADK2c/bdGeVKyahHdUVa/Fww0YgunCoegPZ9mlgxE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com; spf=pass smtp.mailfrom=google.com; dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b=C2sylkMi; arc=none smtp.client-ip=209.85.208.48
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=google.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.b="C2sylkMi"
-Received: by mail-ed1-f48.google.com with SMTP id 4fb4d7f45d1cf-56e67402a3fso10128a12.0
-        for <linux-sh@vger.kernel.org>; Tue, 09 Apr 2024 01:30:02 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20230601; t=1712651401; x=1713256201; darn=vger.kernel.org;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=obXZYswJ0BqI/s7x9jQ/cUoniwM/RPBwvZLLDs9eCAk=;
-        b=C2sylkMimsQFV2R1mda9QkCzT1E3ztoWE4cIoFwwU4A02yEC6fRm+QejgyLL9emv4h
-         N7fGNg1BgLXhTTKiczztDMFW39TC8qFvhZBPtC2JIJMDPe0pQBepNY9xQ4gwMtVTP1MS
-         H5NJ9GuHH7YIGAv+b6GskIxCXIHbDIQdcVrTla4yeUsu1Ie72vSdKKWIrrnfNMlIwdLJ
-         jPgV8M4X1xAtxJiEVjlK4/coTZyUNrKaW3Hy76+Sc97lpyGuUgualS/+xGUBBSOOEvaK
-         LLEOc8Qtj5DgWXZKmRlmRrlGkLctjVmKHTwDJFyoWSI5hSFF2zYyQIgJHSUDzrV1ccpe
-         RgMA==
+	 To:Cc:Content-Type; b=rEm/3CfL+b80IhaHFO/qyMJXKKOKIjRlRo/WFieZH0oXnSd+G49Pb2SU4V3K5ZRahGAzYuJ3GOFDptWFQfKsdthdHTMrwiEvRdd5iLKBYuf3JX795F5ZWcWCKOB/A++VLAbQICD0DZ6o4ZX6aj3BdYCvzvbnWBJZNNKF550myOM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.128.169
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-yw1-f169.google.com with SMTP id 00721157ae682-6181237230dso21065807b3.2;
+        Tue, 09 Apr 2024 06:56:40 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1712651401; x=1713256201;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=obXZYswJ0BqI/s7x9jQ/cUoniwM/RPBwvZLLDs9eCAk=;
-        b=NtsJP7idnxDdkQZu6VURnUusiyNJQGO7Bcc8n99M6hbcJ2EC18zkJXZXw72WW778JG
-         ZKvk6oUayywzgUvq2dRkIqOcSKHoegXuoANIs9fHEOTzq/m2PS+yn9ny6gusnKyV0lET
-         SmaA9JxTP7dIBGAXFlgSDB47fk5h8nGk1L3bxqxCnrURn/18BvFFidj89Ol0dP42t0d1
-         gPVNLEpXsX9GjdfIIfJCwn9Hb/W24weXUWbqtWr6zV0Ag8QAAkc2PvIAX/ATn5DLie7C
-         UVJmiuyiAAZStSdGPqA2QO6V3bmlPvj29ZUbLccr2cz0kaUQnXkXwV+ZvpreVqMjqLa6
-         iVfA==
-X-Forwarded-Encrypted: i=1; AJvYcCWGEM/8NG4v7T7Ao4mB3fM9FNG7+owNQ00zyjaCRgjfDuvaqtmFpsXEtPjgz7DsuqentMxF2h/XBMT4aD71otFpjKJTXKm5Fj4=
-X-Gm-Message-State: AOJu0YzXVCWFly1Za3fjQ3Tpfv/d6pf1ikBbGwXmCm/TuS83wfJ2MtFN
-	MANSk21JxA1RgYdlGF5SXmjKovWMHb8EOPXvYhsBirKhcJITvuFeuyLvHls5anoDgRNOXBLOR78
-	4WAaXz0YrBIMLqe9h6V3Ky+hC8rf+3rL7VQn6
-X-Google-Smtp-Source: AGHT+IHYaeERcEkkmGD/A4tACg9YKD4kdNmAMVD2CKRyiAat0V+rnkCQ2SItMKP8w6Jo/7F9MnxE50/WwG55IF7tH+4=
-X-Received: by 2002:aa7:d7da:0:b0:56e:76e:6ea9 with SMTP id
- e26-20020aa7d7da000000b0056e076e6ea9mr106213eds.6.1712651400934; Tue, 09 Apr
- 2024 01:30:00 -0700 (PDT)
+        d=1e100.net; s=20230601; t=1712670997; x=1713275797;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=2HZbjvWyXpSYd1puM+93tZG9TcNwqCrELS7hscC5PVY=;
+        b=CwEUYTOmSUBXgCsg3mYwTIIgCdg05HTnnQL2fCs5MBT3RKP8AwiaFZ5sNLrfzav40q
+         eVUu9kOeot7bwJ7GNVxqpX4Nth3fcuM9cytM7ea629NX8VjvMSaxDYq0gBF25wOn8CQF
+         0RySLVFl7g2g6seyOS0pem0XG1trr66o88NPt57ak4sCNFf99pRm35eaNr8neSOq+tFB
+         343Hm0CeYSEQHUgtFOKALjYA2fhGfItctrW/iu2YtQmOimO0cGLzLwTuSAxys/zBiSvb
+         n4c7CraPsNJs6VmZCc8gvTF5C44ThtXJ5xKTUXk/7VJS579msALTWdbwOI+NMi6IC/vl
+         gGTQ==
+X-Forwarded-Encrypted: i=1; AJvYcCWZXPQTK8ugJajyO2tRjyDW021M1AqDliF0ZB3j0np1Lr3RWZhAK04LnlAvOg5RO+b+lVVUYlDenHIg4Y7Y3Ykz1tdlfqHF6EOucPPdB/i2rfMFDPo/DJV5w4EVBpVx48MwIfQy24sHNrvNvwgKkBqRnfyw6+hptnRYh2vSf2KYS9kQOupv0UjB/qGrVB+ajRpR1NsOBxxKY8nYrESyBVO625P+xPSRL2I9sS2tDc71ajErHdruzLysJ1K9tCS23nCgKxcvVA/oOTNlua7eMYzNEuTohBSk6nZz9oyygvFXJf1/RexKDZvwuqGYb92zTYkMEfKGOZVPDdMB6nS2wJiByFTfPXxzZn7GGjrhsY3CVuaMP9xM0TU=
+X-Gm-Message-State: AOJu0Yygj3rR9vfvqVOM/WbydP3tii9a5c8MpHdYL2DhCsR/9YcpjLFu
+	KmWfN36gEdp80ziyDNvxbQJrRvHrPUfhLfpzHmEOUD19cKIKeG4G98vl0S/vlZg=
+X-Google-Smtp-Source: AGHT+IGh+8mu6y5ErUruD07FecBSGrLFypzV2tzoJvfI8kksdhp9gQwcjaZ4TqEXL/3+PJzmy3leAQ==
+X-Received: by 2002:a81:a10f:0:b0:611:191e:1de8 with SMTP id y15-20020a81a10f000000b00611191e1de8mr11665488ywg.18.1712670995713;
+        Tue, 09 Apr 2024 06:56:35 -0700 (PDT)
+Received: from mail-yb1-f172.google.com (mail-yb1-f172.google.com. [209.85.219.172])
+        by smtp.gmail.com with ESMTPSA id dg7-20020a05690c0fc700b006144d568e98sm2171547ywb.28.2024.04.09.06.56.34
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 09 Apr 2024 06:56:35 -0700 (PDT)
+Received: by mail-yb1-f172.google.com with SMTP id 3f1490d57ef6-dcbef31a9dbso3624658276.1;
+        Tue, 09 Apr 2024 06:56:34 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCX/48xkhiI5juYIGQ3ENYufchuOd0c2yhFKM/vDJdZH3sEqXZW6oe7juLSOt3fVSQxDCUpXNfCWEfKXphCFwTd2jjphx3LAUnXzf8HlvM4EJh240wzsz9b1JSmjAn7TCcyySnYRcxF8kMkPfrHcR/RSFk0h1gabPD+t/m3NNz361CvjWyyQVeq/VFaDnID303H06hAA/OtE2lGC80aNvYhjnVOZqmxgMwA2ly+URGBoB6eHHLcY3rxoQsj9bed73MoIdoIoAYvD1jIJ5Ec52w2P5V2ExKeyqY6opFTL7lRv2Vdoo3+zpVNysTM3zH1eVLMU9RDDfW5P3j1on91F7d1S+e2xZTnGhKRuplXyO/NsWr6xB9yXGFM=
+X-Received: by 2002:a5b:40c:0:b0:dc6:b779:7887 with SMTP id
+ m12-20020a5b040c000000b00dc6b7797887mr8362504ybp.20.1712670994533; Tue, 09
+ Apr 2024 06:56:34 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20240403131936.787234-1-linux@roeck-us.net> <20240403131936.787234-5-linux@roeck-us.net>
-In-Reply-To: <20240403131936.787234-5-linux@roeck-us.net>
-From: David Gow <davidgow@google.com>
-Date: Tue, 9 Apr 2024 16:29:49 +0800
-Message-ID: <CABVgOSkk-QhmemH0p_VmiLrqLDs7SxD-mc-mjzfE4+1tj5mB+w@mail.gmail.com>
-Subject: Re: [PATCH v3 04/15] kunit: Add documentation for warning backtrace
- suppression API
-To: Guenter Roeck <linux@roeck-us.net>
-Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>, 
-	Arnd Bergmann <arnd@arndb.de>, =?UTF-8?B?TWHDrXJhIENhbmFs?= <mcanal@igalia.com>, 
-	Dan Carpenter <dan.carpenter@linaro.org>, Kees Cook <keescook@chromium.org>, 
-	Daniel Diaz <daniel.diaz@linaro.org>, Arthur Grillo <arthurgrillo@riseup.net>, 
-	Brendan Higgins <brendan.higgins@linux.dev>, Naresh Kamboju <naresh.kamboju@linaro.org>, 
-	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>, 
-	Andrew Morton <akpm@linux-foundation.org>, Maxime Ripard <mripard@kernel.org>, 
-	=?UTF-8?B?VmlsbGUgU3lyasOkbMOk?= <ville.syrjala@linux.intel.com>, 
-	Daniel Vetter <daniel@ffwll.ch>, Thomas Zimmermann <tzimmermann@suse.de>, dri-devel@lists.freedesktop.org, 
-	kunit-dev@googlegroups.com, linux-arch@vger.kernel.org, 
-	linux-arm-kernel@lists.infradead.org, linux-doc@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, linux-parisc@vger.kernel.org, 
-	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org, 
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, 
-	loongarch@lists.linux.dev, netdev@vger.kernel.org, x86@kernel.org, 
-	Linux Kernel Functional Testing <lkft@linaro.org>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256;
-	boundary="000000000000679f3c0615a5ba12"
-
---000000000000679f3c0615a5ba12
+References: <cover.1712207606.git.ysato@users.sourceforge.jp> <4a9b59733c7a8e7d042f3987ca6bf601eea5b30d.1712207606.git.ysato@users.sourceforge.jp>
+In-Reply-To: <4a9b59733c7a8e7d042f3987ca6bf601eea5b30d.1712207606.git.ysato@users.sourceforge.jp>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Tue, 9 Apr 2024 15:56:22 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdUVEj-TEV5iYjknTKOJ0_MBO8sMzc6-7NSAL-XoxLGn9g@mail.gmail.com>
+Message-ID: <CAMuHMdUVEj-TEV5iYjknTKOJ0_MBO8sMzc6-7NSAL-XoxLGn9g@mail.gmail.com>
+Subject: Re: [RESEND v7 08/37] clocksource: sh_tmu: CLOCKSOURCE support.
+To: Yoshinori Sato <ysato@users.sourceforge.jp>
+Cc: linux-sh@vger.kernel.org, Damien Le Moal <dlemoal@kernel.org>, 
+	Niklas Cassel <cassel@kernel.org>, Rob Herring <robh@kernel.org>, 
+	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>, Conor Dooley <conor+dt@kernel.org>, 
+	Geert Uytterhoeven <geert+renesas@glider.be>, Michael Turquette <mturquette@baylibre.com>, 
+	Stephen Boyd <sboyd@kernel.org>, David Airlie <airlied@gmail.com>, Daniel Vetter <daniel@ffwll.ch>, 
+	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>, Maxime Ripard <mripard@kernel.org>, 
+	Thomas Zimmermann <tzimmermann@suse.de>, Thomas Gleixner <tglx@linutronix.de>, 
+	Bjorn Helgaas <bhelgaas@google.com>, Lorenzo Pieralisi <lpieralisi@kernel.org>, 
+	=?UTF-8?Q?Krzysztof_Wilczy=C5=84ski?= <kw@linux.com>, 
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jirislaby@kernel.org>, 
+	Magnus Damm <magnus.damm@gmail.com>, Daniel Lezcano <daniel.lezcano@linaro.org>, 
+	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
+	Lee Jones <lee@kernel.org>, Helge Deller <deller@gmx.de>, 
+	Heiko Stuebner <heiko.stuebner@cherry.de>, Shawn Guo <shawnguo@kernel.org>, 
+	Sebastian Reichel <sre@kernel.org>, Chris Morgan <macromorgan@hotmail.com>, 
+	Linus Walleij <linus.walleij@linaro.org>, Arnd Bergmann <arnd@arndb.de>, 
+	David Rientjes <rientjes@google.com>, Hyeonggon Yoo <42.hyeyoo@gmail.com>, 
+	Vlastimil Babka <vbabka@suse.cz>, Baoquan He <bhe@redhat.com>, 
+	Andrew Morton <akpm@linux-foundation.org>, Guenter Roeck <linux@roeck-us.net>, 
+	Kefeng Wang <wangkefeng.wang@huawei.com>, Stephen Rothwell <sfr@canb.auug.org.au>, 
+	Javier Martinez Canillas <javierm@redhat.com>, Guo Ren <guoren@kernel.org>, 
+	Azeem Shaikh <azeemshaikh38@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>, 
+	Jonathan Corbet <corbet@lwn.net>, Jacky Huang <ychuang3@nuvoton.com>, 
+	Herve Codina <herve.codina@bootlin.com>, 
+	Manikanta Guntupalli <manikanta.guntupalli@amd.com>, Anup Patel <apatel@ventanamicro.com>, 
+	Biju Das <biju.das.jz@bp.renesas.com>, 
+	=?UTF-8?Q?Uwe_Kleine=2DK=C3=B6nig?= <u.kleine-koenig@pengutronix.de>, 
+	Sam Ravnborg <sam@ravnborg.org>, Sergey Shtylyov <s.shtylyov@omp.ru>, 
+	Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-ide@vger.kernel.org, 
+	devicetree@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-renesas-soc@vger.kernel.org, linux-clk@vger.kernel.org, 
+	dri-devel@lists.freedesktop.org, linux-pci@vger.kernel.org, 
+	linux-serial@vger.kernel.org, linux-fbdev@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Wed, 3 Apr 2024 at 21:19, Guenter Roeck <linux@roeck-us.net> wrote:
+Hi Sato-san,
+
+On Thu, Apr 4, 2024 at 7:15=E2=80=AFAM Yoshinori Sato
+<ysato@users.sourceforge.jp> wrote:
+> Allows initialization as CLOCKSOURCE.
 >
-> Document API functions for suppressing warning backtraces.
+> Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+
+Thanks for your patch!
+
+> --- a/drivers/clocksource/sh_tmu.c
+> +++ b/drivers/clocksource/sh_tmu.c
+
+> @@ -495,7 +514,12 @@ static int sh_tmu_map_memory(struct sh_tmu_device *t=
+mu)
 >
-> Tested-by: Linux Kernel Functional Testing <lkft@linaro.org>
-> Acked-by: Dan Carpenter <dan.carpenter@linaro.org>
-> Reviewed-by: Kees Cook <keescook@chromium.org>
-> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
-> ---
+>  static int sh_tmu_parse_dt(struct sh_tmu_device *tmu)
+>  {
+> -       struct device_node *np =3D tmu->pdev->dev.of_node;
+> +       struct device_node *np;
 
-This looks good to me: thanks for adding the documentation!
+Technically, np might be used uninitialized.
 
-If we add integration between this and the KUnit resource system,
-we'll need to add that to this documentation.
+> +
+> +       if (tmu->pdev)
+> +               np =3D tmu->pdev->dev.of_node;
 
-I wonder if it would make sense to have an example where the
-DEFINE_SUPPRESSED_WARNING() is global, e.g., in the test init/exit
-functions. That might overcomplicate it a bit.
+If you would set up tmu->np in sh_tmu_setup_pdev()...
 
-It also might be nice to document the individual macros with kerneldoc
-comments. (Though, that could equally fit in patch #1).
+> +       if (tmu->np)
+> +               np =3D tmu->np;
 
-Still, this is the most important bit, so I'm happy to have it as-is.
+... you could just assign np =3D tmu->np unconditionally.
 
-Reviewed-by: David Gow <davidgow@google.com>
-
-Cheers,
--- David
-
-
-> v2:
-> - Rebased to v6.9-rc1
-> - Added Tested-by:, Acked-by:, and Reviewed-by: tags
-> v3:
-> - Rebased to v6.9-rc2
 >
->  Documentation/dev-tools/kunit/usage.rst | 30 ++++++++++++++++++++++++-
->  1 file changed, 29 insertions(+), 1 deletion(-)
->
-> diff --git a/Documentation/dev-tools/kunit/usage.rst b/Documentation/dev-tools/kunit/usage.rst
-> index 22955d56b379..8d3d36d4103d 100644
-> --- a/Documentation/dev-tools/kunit/usage.rst
-> +++ b/Documentation/dev-tools/kunit/usage.rst
-> @@ -157,6 +157,34 @@ Alternatively, one can take full control over the error message by using
->         if (some_setup_function())
->                 KUNIT_FAIL(test, "Failed to setup thing for testing");
->
-> +Suppressing warning backtraces
-> +------------------------------
-> +
-> +Some unit tests trigger warning backtraces either intentionally or as side
-> +effect. Such backtraces are normally undesirable since they distract from
-> +the actual test and may result in the impression that there is a problem.
-> +
-> +Such backtraces can be suppressed. To suppress a backtrace in some_function(),
-> +use the following code.
-> +
-> +.. code-block:: c
-> +
-> +       static void some_test(struct kunit *test)
-> +       {
-> +               DEFINE_SUPPRESSED_WARNING(some_function);
-> +
-> +               START_SUPPRESSED_WARNING(some_function);
-> +               trigger_backtrace();
-> +               END_SUPPRESSED_WARNING(some_function);
-> +       }
-> +
-> +SUPPRESSED_WARNING_COUNT() returns the number of suppressed backtraces. If the
-> +suppressed backtrace was triggered on purpose, this can be used to check if
-> +the backtrace was actually triggered.
-> +
-> +.. code-block:: c
-> +
-> +       KUNIT_EXPECT_EQ(test, SUPPRESSED_WARNING_COUNT(some_function), 1);
->
->  Test Suites
->  ~~~~~~~~~~~
-> @@ -857,4 +885,4 @@ For example:
->                 dev_managed_string = devm_kstrdup(fake_device, "Hello, World!");
->
->                 // Everything is cleaned up automatically when the test ends.
-> -       }
-> \ No newline at end of file
-> +       }
-> --
-> 2.39.2
->
+>         tmu->model =3D SH_TMU;
+>         tmu->num_channels =3D 3;
 
---000000000000679f3c0615a5ba12
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+> @@ -665,6 +734,7 @@ static void __exit sh_tmu_exit(void)
+>         platform_driver_unregister(&sh_tmu_device_driver);
+>  }
+>
+> +TIMER_OF_DECLARE(sh_tmu, "renesas,tmu", sh_tmu_of_register);
 
-MIIPqgYJKoZIhvcNAQcCoIIPmzCCD5cCAQExDzANBglghkgBZQMEAgEFADALBgkqhkiG9w0BBwGg
-gg0EMIIEtjCCA56gAwIBAgIQeAMYYHb81ngUVR0WyMTzqzANBgkqhkiG9w0BAQsFADBMMSAwHgYD
-VQQLExdHbG9iYWxTaWduIFJvb3QgQ0EgLSBSMzETMBEGA1UEChMKR2xvYmFsU2lnbjETMBEGA1UE
-AxMKR2xvYmFsU2lnbjAeFw0yMDA3MjgwMDAwMDBaFw0yOTAzMTgwMDAwMDBaMFQxCzAJBgNVBAYT
-AkJFMRkwFwYDVQQKExBHbG9iYWxTaWduIG52LXNhMSowKAYDVQQDEyFHbG9iYWxTaWduIEF0bGFz
-IFIzIFNNSU1FIENBIDIwMjAwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCvLe9xPU9W
-dpiHLAvX7kFnaFZPuJLey7LYaMO8P/xSngB9IN73mVc7YiLov12Fekdtn5kL8PjmDBEvTYmWsuQS
-6VBo3vdlqqXZ0M9eMkjcKqijrmDRleudEoPDzTumwQ18VB/3I+vbN039HIaRQ5x+NHGiPHVfk6Rx
-c6KAbYceyeqqfuJEcq23vhTdium/Bf5hHqYUhuJwnBQ+dAUcFndUKMJrth6lHeoifkbw2bv81zxJ
-I9cvIy516+oUekqiSFGfzAqByv41OrgLV4fLGCDH3yRh1tj7EtV3l2TngqtrDLUs5R+sWIItPa/4
-AJXB1Q3nGNl2tNjVpcSn0uJ7aFPbAgMBAAGjggGKMIIBhjAOBgNVHQ8BAf8EBAMCAYYwHQYDVR0l
-BBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQIMAYBAf8CAQAwHQYDVR0OBBYEFHzM
-CmjXouseLHIb0c1dlW+N+/JjMB8GA1UdIwQYMBaAFI/wS3+oLkUkrk1Q+mOai97i3Ru8MHsGCCsG
-AQUFBwEBBG8wbTAuBggrBgEFBQcwAYYiaHR0cDovL29jc3AyLmdsb2JhbHNpZ24uY29tL3Jvb3Ry
-MzA7BggrBgEFBQcwAoYvaHR0cDovL3NlY3VyZS5nbG9iYWxzaWduLmNvbS9jYWNlcnQvcm9vdC1y
-My5jcnQwNgYDVR0fBC8wLTAroCmgJ4YlaHR0cDovL2NybC5nbG9iYWxzaWduLmNvbS9yb290LXIz
-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
-7xDrOPfX3COqq162RFg/MFcGA1UdIARQME4wCQYHZ4EMAQUBATBBBgkrBgEEAaAyASgwNDAyBggr
-BgEFBQcCARYmaHR0cHM6Ly93d3cuZ2xvYmFsc2lnbi5jb20vcmVwb3NpdG9yeS8wDAYDVR0TAQH/
-BAIwADCBmgYIKwYBBQUHAQEEgY0wgYowPgYIKwYBBQUHMAGGMmh0dHA6Ly9vY3NwLmdsb2JhbHNp
-Z24uY29tL2NhL2dzYXRsYXNyM3NtaW1lY2EyMDIwMEgGCCsGAQUFBzAChjxodHRwOi8vc2VjdXJl
-Lmdsb2JhbHNpZ24uY29tL2NhY2VydC9nc2F0bGFzcjNzbWltZWNhMjAyMC5jcnQwHwYDVR0jBBgw
-FoAUfMwKaNei6x4schvRzV2Vb4378mMwRgYDVR0fBD8wPTA7oDmgN4Y1aHR0cDovL2NybC5nbG9i
-YWxzaWduLmNvbS9jYS9nc2F0bGFzcjNzbWltZWNhMjAyMC5jcmwwDQYJKoZIhvcNAQELBQADggEB
-AK0lDd6/eSh3qHmXaw1YUfIFy07B25BEcTvWgOdla99gF1O7sOsdYaTz/DFkZI5ghjgaPJCovgla
-mRMfNcxZCfoBtsB7mAS6iOYjuwFOZxi9cv6jhfiON6b89QWdMaPeDddg/F2Q0bxZ9Z2ZEBxyT34G
-wlDp+1p6RAqlDpHifQJW16h5jWIIwYisvm5QyfxQEVc+XH1lt+taSzCfiBT0ZLgjB9Sg+zAo8ys6
-5PHxFaT2a5Td/fj5yJ5hRSrqy/nj/hjT14w3/ZdX5uWg+cus6VjiiR/5qGSZRjHt8JoApD6t6/tg
-ITv8ZEy6ByumbU23nkHTMOzzQSxczHkT+0q10/MxggJqMIICZgIBATBoMFQxCzAJBgNVBAYTAkJF
-MRkwFwYDVQQKExBHbG9iYWxTaWduIG52LXNhMSowKAYDVQQDEyFHbG9iYWxTaWduIEF0bGFzIFIz
-IFNNSU1FIENBIDIwMjACEAHS+TgZvH/tCq5FcDC0n9IwDQYJYIZIAWUDBAIBBQCggdQwLwYJKoZI
-hvcNAQkEMSIEIMXhuV4hAHg3WgSFIsVm8yZuEYXLcz0bF2GnnCPTizkFMBgGCSqGSIb3DQEJAzEL
-BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTI0MDQwOTA4MzAwMVowaQYJKoZIhvcNAQkPMVww
-WjALBglghkgBZQMEASowCwYJYIZIAWUDBAEWMAsGCWCGSAFlAwQBAjAKBggqhkiG9w0DBzALBgkq
-hkiG9w0BAQowCwYJKoZIhvcNAQEHMAsGCWCGSAFlAwQCATANBgkqhkiG9w0BAQEFAASCAQBDmb9s
-luNjFtSKUt94yd39an5GkioJdQi7RC0pT3hYcoy6KF55ujlFc7E549YObxZARF6tf59fXC/TQ1nI
-VkzuQXeeCx3jyjDBT2X/hZ/8/vo281f9Gi5wZmL51A+PK4VqiMELHh+2a1y1YRNlpwT8M4860S9j
-OCpKRcQFu1NMo9RHq35B2nYyjsqJCVJvEhvkhZXKyfSKXwYqH2VzB5YRJdrtGPFFMNsEFOOWOLZ3
-YmzFe3uye13PO4CKPtjeic5tmA6SrmKVXs78+06XherENkLGiMkChl3KDKXAr8dz3M+bmur0vO3k
-b/OoQc4mFepL31ZARxwvAIoOcJB1bh/F
---000000000000679f3c0615a5ba12--
+As there are now two entry points, the device is actually probed twice:
+once from TIMER_OF_DECLARE/sh_tmu_of_register(), and a second
+time from platform_driver/sh_tmu_probe().
+
+E.g. on Armadillo-800-EVA with R-Mobile A1 (booting Linux on ARM
+(not SH), and using TMU as the main clock source):
+
+    timer@fff80000 ch0: used for clock events
+    timer@fff80000 ch0: used for periodic clock events
+    timer@fff80000 ch1: used as clock source
+    clocksource: timer@fff80000: mask: 0xffffffff max_cycles:
+0xffffffff, max_idle_ns: 154445288668 ns
+    ...
+    fff80000.timer ch0: used for clock events
+    genirq: Flags mismatch irq 16. 00015a04 (fff80000.timer) vs.
+00015a04 (timer@fff80000)
+    fff80000.timer ch0: failed to request irq 16
+    fff80000.timer ch1: used as clock source
+    clocksource: fff80000.timer: mask: 0xffffffff max_cycles:
+0xffffffff, max_idle_ns: 154445288668 ns
+
+After this, the timer seems to be stuck, and the boot is blocked.
+
+On Marzen with R-Car H1 (booting Linux on ARM (not SH), and using
+arm_global_timer as the main clock source), I also see the double
+timer probe, but no such lock-up.  I expect you to see the double
+timer probe on SH775x, too?
+
+The double probe can be fixed by adding a call to
+of_node_set_flag(np, OF_POPULATED) at the end of sh_tmu_of_register()
+in case of success, cfr. [1].
+
+I haven't found the cause of the stuck timer on R-Mobile A1 yet;
+both the TMU clock and the A4R power domain seem to be activated...
+
+>  #ifdef CONFIG_SUPERH
+>  sh_early_platform_init("earlytimer", &sh_tmu_device_driver);
+>  #endif
+
+[1] "[PATCH] clocksource/drivers/renesas-ostm: Avoid reprobe after
+successful early probe"
+    https://lore.kernel.org/all/bd027379713cbaafa21ffe9e848ebb7f475ca0e7.17=
+10930542.git.geert+renesas@glider.be/
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
