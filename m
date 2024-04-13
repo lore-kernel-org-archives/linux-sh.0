@@ -1,87 +1,183 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from NAM12-BN8-obe.outbound.protection.outlook.com (mail-bn8nam12on2059.outbound.protection.outlook.com [40.107.237.59])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8FCE013E04A
-	for <linux-sh@vger.kernel.org>; Thu, 11 Apr 2024 07:49:17 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1712821759; cv=none; b=dy3uKPp+PtZmzBBMAusU/3EGSZT8vweOfRW+nC23Vs9E+IDo8eWOXpmMU2uJjxNhbAzayCdbeuA8sN6lHFSlDsawcz9OVGh2yh/hddk5D7g+dirb97KUbXNkTA5b+wsPRWqHQEvd1afaUWE3iaHXyiHSYlAe0hAz7u6NtUBSfW0=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1712821759; c=relaxed/simple;
-	bh=15b2dti6RiuucuRsqHU8rP3/9exG1w4ESCBKLySLqjs=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=lPMNExhqC+V41n4zuHQtslDqX1OniqrBB7UxED/0JUr6vBkxPSm7Y/eu+fGV8gw7mxaPKm/Cz3nfDPcD25JwQ9/X/iTFChp2DH9JeQxPLb4mcA2m9MUgAUVvv+jEHFNWCDw2XNn78NR7GgB5WZnrC4MQsbRDV+nHa57mJ09pDEM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=APPBN9tJ; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 82BAB4F20A;
+	Sat, 13 Apr 2024 20:08:04 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=40.107.237.59
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1713038886; cv=fail; b=sacb96EtupCf/Q56CGVErXPPfYva3MLIoyHm7MPKXe5o0orF9hthdGvD4RXd1s6kTFqt2m9cb6znFE25uox3vxIwC5rJlVV7dNYmZVjs9CUBkkK0IDYerx4hiBU/X+RWjfdxdMC7P9f0bdsvPaBRQF4RLePnrW2Nn5fL6d3HkjI=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1713038886; c=relaxed/simple;
+	bh=HNNzN3334tX/pU3zEVAjlWFi1Ge7jvyKR0KtNp1OsAY=;
+	h=Message-ID:Date:MIME-Version:Subject:To:CC:References:From:
+	 In-Reply-To:Content-Type; b=ofzWirSLUuxR+mkot1sGQVvBTSTX2Cubp+c+wrUhT54kKuEI/0B9yBkMuFFr9blZWbV0nftHLjJbHXT1fRW5IysXZ3gokd50fdzrLq/cixNwRO1xyzN5nwOzl2B7N7V08IEBDqAJHiLiG3Sy4Ct5ojRUcDgm1PlRYFDZaTM0lRI=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com; spf=fail smtp.mailfrom=nvidia.com; dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b=YtkWpABM; arc=fail smtp.client-ip=40.107.237.59
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=nvidia.com
+Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=nvidia.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="APPBN9tJ"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
-	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=9pV1nrMfy3E0LNGc5SBoitV2OSn8AQf0D9r0ElwfztA=; t=1712821757; x=1713426557; 
-	b=APPBN9tJT4b037gOmvNBJg7Q8LXLNTUByd716ZxJKetCiQX/O+3j1/dCmpXqKv9QDzcGDB6mQLK
-	loVyX3kwE4cNbEa8H1HBlpbCdEpI0UikNzsW3ygRwZ44ViY0Vp+I3sgnJGeVmCh3R7hzO48eNaRxb
-	/EdHsaJjfq3tf4YsG7dhpJmVpCUZ8MGLW6YEY/yhy2KTY4i7X5+kxjhRouKUv85FvgTI8un4SdMbb
-	Z3Y4Fh24SdMEv3hp/5WhvpnK0hNWeWIsrOrVessbvgKtqpF2KvOyPQBqSrCkFSoyoO8QMdc+y+e9X
-	bGYBScWOEl2ke6kkCk26nny9oJEbT8S62d+w==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.97)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1rupBJ-000000035Jw-3aeH; Thu, 11 Apr 2024 09:49:13 +0200
-Received: from p5b13a9fd.dip0.t-ipconnect.de ([91.19.169.253] helo=[192.168.178.20])
-          by inpost2.zedat.fu-berlin.de (Exim 4.97)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1rupBJ-00000002aTy-2gnM; Thu, 11 Apr 2024 09:49:13 +0200
-Message-ID: <cca269f66f5acb6f38bbe169f7c739f1e65eb0ac.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: push-switch: Convert to platform remove callback
- returning void
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Uwe =?ISO-8859-1?Q?Kleine-K=F6nig?= <u.kleine-koenig@pengutronix.de>, 
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
-Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Duoming Zhou
-	 <duoming@zju.edu.cn>, linux-sh@vger.kernel.org, kernel@pengutronix.de
-Date: Thu, 11 Apr 2024 09:49:13 +0200
-In-Reply-To: <293d667c491ab0c2e02a7c6b64ec384aedaa6fb7.camel@physik.fu-berlin.de>
-References: <20240306211947.97103-2-u.kleine-koenig@pengutronix.de>
-	 <fwfwlvyuznwzwejg3iqvnvgolxaqfo3aod5gbydgbwpj5l4xmr@y7fuszpv7kry>
-	 <293d667c491ab0c2e02a7c6b64ec384aedaa6fb7.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.52.0 
+	dkim=pass (2048-bit key) header.d=Nvidia.com header.i=@Nvidia.com header.b="YtkWpABM"
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
+ b=j8WuDCbX66hoJbEa46MaN65oRrqhNUby6oAamMBXdNECD+Q59zYhCCgzP7H/xdqWH8vFzx3p8o3a2epxFU9W8NCns7TSgBX5D6qiXtTd9/r1oDSlC/2m7t3IKdjS8t19JODXcrXx1wkKom43uDadTgv25CQfMUETOQz1dcAcf4c9aBrV7N4EhGhOJxbYP1w8bw4iJ+ilfLuo1MX9aILv0xYaZ0vYLqchY2O9Rij8+PQXGCccoudHsVKiUEU9GmvEeMv4j5vOFY5doXT85TfJaAgxHT808ReTWjmZC1jK3yvRJVLKNEQ+7tiRu1CxU2kplSHgwVe9P/LlsffYf3sK4g==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector9901;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=7Ldy4aGEadHWsLGVGxixwC5Xmy2B/Sn2gi1wsIlA9SU=;
+ b=Da6YMRIVZO465D4FtfVtCRK95c/jRORMYs0cGjimzDW9Jp1f2xdr8crlah0f2FzjtMnp3we4/zJwrnhKrsIWXVznKnhHar3SSxdAJuTIGgd9FrtGgAa2z/DrHtWPqnsui7B9pBwj1fMLhhj4JurwtgWfyrdeL9P0v/K3m7McHuqz0nVCf8bgzQCjGbw/19obdEaFdofE7f7Zcu9Lp5uoyskCfbtIldaHzhNE82h+zblNNGF8dQ/SsA+cBME4GjOfHuWoIzWIYrnyp9rIFhrf+LIJr0H5jfe5djvO5il8F1+J8ATvLYVbDNxK8N2VdO8WalKi8qOIpYDULf1ZuoH4Yg==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass (sender ip is
+ 216.228.117.160) smtp.rcpttodomain=redhat.com smtp.mailfrom=nvidia.com;
+ dmarc=pass (p=reject sp=reject pct=100) action=none header.from=nvidia.com;
+ dkim=none (message not signed); arc=none (0)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=Nvidia.com;
+ s=selector2;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=7Ldy4aGEadHWsLGVGxixwC5Xmy2B/Sn2gi1wsIlA9SU=;
+ b=YtkWpABMS/AR9OW1eZo36RHZPgUsbLCreM+F1KcnV8GQ2QFG7cNXMlb5Pec01dEuhKHKejfelddquUVOLRuqYV5Yy0kME3I+C/BMZQD8H2BtNKpY2U3gHntE6qPE8I0QksztK6QgFIdpQK5kUAgBxEO2E5YBJD0ERHTEyEDMKR1QghBcjRlhRjydIhzCmip4818DjiC3JyaznjIZgsonFToRThxKhmyRE/FXNC5/sSujeiANmYKyYPyk5aBh4Xhh2p8vNzf+vBTfzrg3Zv86MM056pbpJIkLY+OEYDwpn/cRKgyP69gVUruGnxKDAq5mCAGGA4iNShI47zZeddNzaw==
+Received: from SA0PR11CA0034.namprd11.prod.outlook.com (2603:10b6:806:d0::9)
+ by CY5PR12MB6647.namprd12.prod.outlook.com (2603:10b6:930:40::11) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7409.54; Sat, 13 Apr
+ 2024 20:07:59 +0000
+Received: from SN1PEPF0002636C.namprd02.prod.outlook.com
+ (2603:10b6:806:d0:cafe::60) by SA0PR11CA0034.outlook.office365.com
+ (2603:10b6:806:d0::9) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7472.31 via Frontend
+ Transport; Sat, 13 Apr 2024 20:07:59 +0000
+X-MS-Exchange-Authentication-Results: spf=pass (sender IP is 216.228.117.160)
+ smtp.mailfrom=nvidia.com; dkim=none (message not signed)
+ header.d=none;dmarc=pass action=none header.from=nvidia.com;
+Received-SPF: Pass (protection.outlook.com: domain of nvidia.com designates
+ 216.228.117.160 as permitted sender) receiver=protection.outlook.com;
+ client-ip=216.228.117.160; helo=mail.nvidia.com; pr=C
+Received: from mail.nvidia.com (216.228.117.160) by
+ SN1PEPF0002636C.mail.protection.outlook.com (10.167.241.137) with Microsoft
+ SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.20.7452.22 via Frontend Transport; Sat, 13 Apr 2024 20:07:59 +0000
+Received: from rnnvmail201.nvidia.com (10.129.68.8) by mail.nvidia.com
+ (10.129.200.66) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.2.986.41; Sat, 13 Apr
+ 2024 13:07:53 -0700
+Received: from [10.110.48.28] (10.126.230.35) by rnnvmail201.nvidia.com
+ (10.129.68.8) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.2.1258.12; Sat, 13 Apr
+ 2024 13:07:52 -0700
+Message-ID: <24b88e53-a1fe-4fba-a7b5-ffcbeba88a73@nvidia.com>
+Date: Sat, 13 Apr 2024 13:07:52 -0700
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v1 1/3] mm/gup: consistently name GUP-fast functions
+To: David Hildenbrand <david@redhat.com>, <linux-kernel@vger.kernel.org>
+CC: <linux-mm@kvack.org>, Andrew Morton <akpm@linux-foundation.org>, "Mike
+ Rapoport" <rppt@kernel.org>, Jason Gunthorpe <jgg@nvidia.com>, Peter Xu
+	<peterx@redhat.com>, <linux-arm-kernel@lists.infradead.org>,
+	<loongarch@lists.linux.dev>, <linux-mips@vger.kernel.org>,
+	<linuxppc-dev@lists.ozlabs.org>, <linux-s390@vger.kernel.org>,
+	<linux-sh@vger.kernel.org>, <linux-perf-users@vger.kernel.org>,
+	<linux-fsdevel@vger.kernel.org>, <linux-riscv@lists.infradead.org>,
+	<x86@kernel.org>
+References: <20240402125516.223131-1-david@redhat.com>
+ <20240402125516.223131-2-david@redhat.com>
+Content-Language: en-US
+From: John Hubbard <jhubbard@nvidia.com>
+In-Reply-To: <20240402125516.223131-2-david@redhat.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
+Content-Transfer-Encoding: 7bit
+X-ClientProxiedBy: rnnvmail201.nvidia.com (10.129.68.8) To
+ rnnvmail201.nvidia.com (10.129.68.8)
+X-EOPAttributedMessage: 0
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SN1PEPF0002636C:EE_|CY5PR12MB6647:EE_
+X-MS-Office365-Filtering-Correlation-Id: 40dcf203-1e71-41f9-509f-08dc5bf56ae6
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;
+X-Microsoft-Antispam-Message-Info:
+	/Yh8kiGrxSEYZAQRKZ4+LFpmEH/MXvcK7Bd6ZaKz5mXR7hSl3pBC9OcSHtRPRLv68jtBcL9wDJRMrFW3BwZegnfwQ8Da65eoEJppmnIDnCcY/xfsHHyNWwtEoA/p6HNwQZtQ13xxNzzKQuMFn/ESRAS4fp6g/6oIsgOknsu+EISPCQA21IiTdonAk9nJbN2ndwv/l7DlutS3tZ4MZjoVssLon/GRUlB5D8Wwl5/q+4CocXjkIQa1QLF4eYj9RuIe0lycJrwFKsUEEnVz5u/8VEoaaOYoqxAp4ytevAFWDvKqt4PneEbKWQWBTzyJrlqv9bquDur6v4/jbEH1ujo71HwxFXRIshg8A7jL2mWRitO1fM9v5pZVAdaRN6XwtLwaqxOBVuxCbxC5eer25cFzLWYbB7TNGTHZC+AdBUgwyD6ltsH4a0hy3d2pyWsL3nybbuNzwslnhaMNRlkSqKDeb3Sorm6mmBS3fc7Hnm0gUdI85AiqR9fFvHkmxZKcXZoq1jAtZM3Jp+7dq5sUFwB3xzIweBzh0hb0QiQVjhE+34A5rLvlExI3Oiil5qCoVDIyPtsnfpUgQY3/hyHFGagnlS5FEuvRulIh0PW6Nl31NgPJLTjQDiPTLoW0aBBDldsm3am/hrsyS1p9aXn4WO1vH/EnPrbFTvfADdXyakOf49ffZWIOy8i49rBsuSBMQduj21y0LEmmCdyNXwOuB2Brs+E7O5p5EGgNGV3Nclobg/Z/3GPHxZXIW6eyRlWTzKvj
+X-Forefront-Antispam-Report:
+	CIP:216.228.117.160;CTRY:US;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:mail.nvidia.com;PTR:dc6edge1.nvidia.com;CAT:NONE;SFS:(13230031)(1800799015)(7416005)(376005)(82310400014)(36860700004);DIR:OUT;SFP:1101;
+X-OriginatorOrg: Nvidia.com
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 13 Apr 2024 20:07:59.6800
+ (UTC)
+X-MS-Exchange-CrossTenant-Network-Message-Id: 40dcf203-1e71-41f9-509f-08dc5bf56ae6
+X-MS-Exchange-CrossTenant-Id: 43083d15-7273-40c1-b7db-39efd9ccc17a
+X-MS-Exchange-CrossTenant-OriginalAttributedTenantConnectingIp: TenantId=43083d15-7273-40c1-b7db-39efd9ccc17a;Ip=[216.228.117.160];Helo=[mail.nvidia.com]
+X-MS-Exchange-CrossTenant-AuthSource:
+	SN1PEPF0002636C.namprd02.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Anonymous
+X-MS-Exchange-CrossTenant-FromEntityHeader: HybridOnPrem
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: CY5PR12MB6647
 
-On Thu, 2024-04-11 at 09:47 +0200, John Paul Adrian Glaubitz wrote:
-> On Thu, 2024-04-11 at 09:18 +0200, Uwe Kleine-K=C3=B6nig wrote:
-> > Apart from Geert's positive review reply I didn't get any feedback on
-> > this patch and it didn't appear in next yet.
->=20
-> The plan was to get everything approved before merging it for next
-> as a partial conversion to device tree for SH would probably cause
-> problems.
+On 4/2/24 5:55 AM, David Hildenbrand wrote:
+> Let's consistently call the "fast-only" part of GUP "GUP-fast" and rename
+> all relevant internal functions to start with "gup_fast", to make it
+> clearer that this is not ordinary GUP. The current mixture of
+> "lockless", "gup" and "gup_fast" is confusing.
+> 
+> Further, avoid the term "huge" when talking about a "leaf" -- for
+> example, we nowadays check pmd_leaf() because pmd_huge() is gone. For the
+> "hugepd"/"hugepte" stuff, it's part of the name ("is_hugepd"), so that
+> stays.
+> 
+> What remains is the "external" interface:
+> * get_user_pages_fast_only()
+> * get_user_pages_fast()
+> * pin_user_pages_fast()
+> 
+> The high-level internal functions for GUP-fast (+slow fallback) are now:
+> * internal_get_user_pages_fast() -> gup_fast_fallback()
+> * lockless_pages_from_mm() -> gup_fast()
+> 
+> The basic GUP-fast walker functions:
+> * gup_pgd_range() -> gup_fast_pgd_range()
+> * gup_p4d_range() -> gup_fast_p4d_range()
+> * gup_pud_range() -> gup_fast_pud_range()
+> * gup_pmd_range() -> gup_fast_pmd_range()
+> * gup_pte_range() -> gup_fast_pte_range()
+> * gup_huge_pgd()  -> gup_fast_pgd_leaf()
+> * gup_huge_pud()  -> gup_fast_pud_leaf()
+> * gup_huge_pmd()  -> gup_fast_pmd_leaf()
 
-Oops, sorry. I confused patches here.
+This is my favorite cleanup of 2024 so far. The above mix was confusing
+even if one worked on this file all day long--you constantly have to
+translate from function name, to "is this fast or slow?". whew.
 
-I'll pick it up for 6.10.
 
-Adrian
+> 
+> The weird hugepd stuff:
+> * gup_huge_pd() -> gup_fast_hugepd()
+> * gup_hugepte() -> gup_fast_hugepte()
+> 
+> The weird devmap stuff:
+> * __gup_device_huge_pud() -> gup_fast_devmap_pud_leaf()
+> * __gup_device_huge_pmd   -> gup_fast_devmap_pmd_leaf()
+> * __gup_device_huge()     -> gup_fast_devmap_leaf()
+> * undo_dev_pagemap()      -> gup_fast_undo_dev_pagemap()
+> 
+> Helper functions:
+> * unpin_user_pages_lockless() -> gup_fast_unpin_user_pages()
+> * gup_fast_folio_allowed() is already properly named
+> * gup_fast_permitted() is already properly named
+> 
+> With "gup_fast()", we now even have a function that is referred to in
+> comment in mm/mmu_gather.c.
+> 
+> Reviewed-by: Jason Gunthorpe <jgg@nvidia.com>
+> Reviewed-by: Mike Rapoport (IBM) <rppt@kernel.org>
+> Signed-off-by: David Hildenbrand <david@redhat.com>
+> ---
+>   mm/gup.c | 205 ++++++++++++++++++++++++++++---------------------------
+>   1 file changed, 103 insertions(+), 102 deletions(-)
+> 
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Reviewed-by: John Hubbard <jhubbard@nvidia.com>
+
+
+thanks,
+-- 
+John Hubbard
+NVIDIA
+
