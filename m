@@ -1,114 +1,132 @@
-Received: from mail-vs1-f43.google.com (mail-vs1-f43.google.com [209.85.217.43])
+Received: from mail-pl1-f173.google.com (mail-pl1-f173.google.com [209.85.214.173])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2FA3F57876
-	for <linux-sh@vger.kernel.org>; Mon, 15 Apr 2024 10:47:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.217.43
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A7C58127E28;
+	Tue, 16 Apr 2024 10:40:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.173
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1713178035; cv=none; b=VtZAD4gGq1qwR3eubjFbfRzacl+gnsDfSY80qorvhjslkE8ubC/Cbzc/89mfxJ32ubSaSUkLVOYpgUbxCXUn71eiQIbCRo7RWaO498ZhQUZxJcti5jlLLQ5iAsb7J+x76NcdgSCjWB362FIeaydDIwPabWyp5NTi6Qwa9uoX+yo=
+	t=1713264034; cv=none; b=QjFagpmOMMFqyI6V5P1ectfGq6gyXbVOkg9srC2zhOsk1EdUKw5g4Ym2+dDvX6qfEU6S8vynjsjU4sVDhYjHMhi03n24SyFMF/sacTjhp/y09FIGgfUVMgK5WM5pyWb46HXNoIGXTkZbWWyUgFHYl28wpObLVB98SbfWhk4Rhrk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1713178035; c=relaxed/simple;
-	bh=W2Fbao+/FlwxfuGH1OFvZW2kvHWXUxBXy9sroyi2Gh0=;
-	h=MIME-Version:From:Date:Message-ID:Subject:To:Cc:Content-Type; b=Xui0O0wHb4NcFBnBXc75ikFYpAs9P4Yam3LfJHCnyYI0LIZlRhPZgcoUzovm8distMAJI+3X4zlaLWBz7R1eR0OpFfwLOF2imPfpkna2Ce/Sv466A7OsA7GQvP/DEfG4OyF5qkAdm8v4UP0foJZmeySSv6w2OUR/0FitjUANgGU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org; spf=pass smtp.mailfrom=linaro.org; dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b=GgCYMAmR; arc=none smtp.client-ip=209.85.217.43
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linaro.org
+	s=arc-20240116; t=1713264034; c=relaxed/simple;
+	bh=yf9ORU5VqJIrPlSmwr54fZQAo/+CCskqhWV5tfkQ+NQ=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 MIME-Version; b=R5flRRQ/zkvG6inWLZq4U27HWPZHF+y+CtTbmpHPxaQo+/+iZtBdtiXCVOTgQDCT4uIheCiTS1DwxNZHI7va5qgJ6WFZDcmSnHdWtGhpIq1EBI/nKK2BB43cmcKARHbey++YsdlqkBT7BhjGgGNALNONBcUMCd/BwziwijC+k+U=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=JAAJR2Tv; arc=none smtp.client-ip=209.85.214.173
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b="GgCYMAmR"
-Received: by mail-vs1-f43.google.com with SMTP id ada2fe7eead31-479c0e8b1c5so894711137.1
-        for <linux-sh@vger.kernel.org>; Mon, 15 Apr 2024 03:47:13 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="JAAJR2Tv"
+Received: by mail-pl1-f173.google.com with SMTP id d9443c01a7336-1e4f341330fso34767955ad.0;
+        Tue, 16 Apr 2024 03:40:33 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linaro.org; s=google; t=1713178033; x=1713782833; darn=vger.kernel.org;
-        h=cc:to:subject:message-id:date:from:mime-version:from:to:cc:subject
-         :date:message-id:reply-to;
-        bh=5kbitX8QbhgxnsV5uCd0z4f/iShjUxkr6d7+ekg5tWU=;
-        b=GgCYMAmRx3oR3IwqHhCAAzppu7jBJndHHIemaE/dDrZzLwIbVz2vSyEF1fwNwlKi3J
-         unT4b+vNvAoA4N9fYO+ohqdbZdjzuRcpwdWr0e8BkJLMigBH+mj+W3OLCwPKuQKPs1MU
-         mlFY98HFmeBDcjeq7tsb8QsSK3eVGT42mspwhODnm/o4Pd2eLBW53LKYTsC39ciJ83Xb
-         lCDCSNqeulGVBve5ayyfZeE9nKJvjXCK2cfc54jZc6hmQz4EF77isuNHYelB6OrDy22G
-         1/wQzu4cKh17DK13euQVm1e8bwCF1HZ/K6Eg98bibP4us6Tl0Y5ltPdapOEAqpKVom9u
-         c5tQ==
+        d=gmail.com; s=20230601; t=1713264033; x=1713868833; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=w1z8VdCeJne2MyXf+8c+fA7mb2A/BjtvAD0nnKEdogs=;
+        b=JAAJR2TvWa/3opGUBZlZKjryTMfddqRLI3k8m72zfeVdWOetSLRPDpO3iWu85CTkp9
+         FXjlxWx0ahblezk4FHStiTXyHS+2+Sc4B3arIZguOaZLq8wV317DQ2KEdTVtgMsMoGaN
+         4DA/pEd28VqqRjHkBvQ/jeWJihEXq+08Cy6ZzQvzX3jD1EDPy2ifSZp6LcZ0O5as14MG
+         WuGoa/MUYLBKgiECCg5jYHLXH1B9+xMsxja9Jm+B3bA2olQ5t24XHV02uTl5hx/9yTNG
+         DBC/uZTKHZIusOI64HxYivCuo2U1QWRni9Zxty0qwOLsxaSdcHmI4VAtLOBf52ug3bdc
+         ogYA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1713178033; x=1713782833;
-        h=cc:to:subject:message-id:date:from:mime-version:x-gm-message-state
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=5kbitX8QbhgxnsV5uCd0z4f/iShjUxkr6d7+ekg5tWU=;
-        b=SeFn/LRG9/jX4rHKuLl8QVXvgTHvPiTKbzTyfcLend0O/injY1yPPuOyuLZga0kwnl
-         dJQCQRJfsmbWxi3jnAFcqrIWgGIJsqdz+HSHFi+UmBTwsk8N2wJsiexHsid2dT9J2w8L
-         dyxxqPvygz57a6/DIB1B1QpO1DapUCaeKJ0sUlwV0R3UaT+7BC1ly6AP4c5L6BGkDjdf
-         auB87pq6YlLVjEON9iRndUfHF7o67Kv/EtkadnzRFutt59jqA31GoRbAWcO6VKal1y89
-         lycZGFMQbLaqLvSgAe09Z4elpfHP1Yuqn03RgAp34iKDGJqeRCDvRPBzLP09a1O1PK0V
-         6jvQ==
-X-Forwarded-Encrypted: i=1; AJvYcCUVZAMnLevRGk/6yaHJldcIJx+obaDQc9LDOvhtE2uVoxhi4wmYfdYkB/rLa+sasaw0MSlXWQ9PjTR+XYkmhNuPdwIO2p8aT/E=
-X-Gm-Message-State: AOJu0Yy2+cS51k2COik2LjwgFBD8VkyT+Kfj+iGjICqe5iANXE84QnW2
-	ukxdE8V/AdE/KyXGMvt9MmK/rrShbJAvsHdso2/fLf9hKuHhcLCHD9W8pbfKlfZU+o/+B4x5wYF
-	A15leNzEqh98tWIAaDs64XtqhhHhNwxIh21SHJQ==
-X-Google-Smtp-Source: AGHT+IE4veDIOcK0vTkuxFAc8PebEblKLgDeLZg7etQEi0PYMGKyP1c0eS0dCvLk7/PMRnxeklqAIbshIYBCJ0ceNwA=
-X-Received: by 2002:a05:6102:3590:b0:47b:8ef7:bc1e with SMTP id
- h16-20020a056102359000b0047b8ef7bc1emr175678vsu.15.1713178032756; Mon, 15 Apr
- 2024 03:47:12 -0700 (PDT)
+        d=1e100.net; s=20230601; t=1713264033; x=1713868833;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=w1z8VdCeJne2MyXf+8c+fA7mb2A/BjtvAD0nnKEdogs=;
+        b=bAsrbranPg7YoEMy5Wh4NwHdOLicgCy0tg/JDolaI1547Mjs32rYJh0EpAUNFd/PsG
+         tjtB2GFOLaoDF5HEDckDhIGH+aqBoSAckZJNH7DhBZy2PX8VDz8pBdYJjGjNCqpzSsdO
+         Vk8ucn6wSiuzXjLPtDhpxG7Ds+/xbIEGSpDxiEpX9NktBXDNqGN3M9/HUoMDes09Myq+
+         VJcVHW13HoPGJSEmXK9NiQD6Wuwf1vClSL+xZiriispSkfHfRHzpD6jaYOSta8oXw+IM
+         Fe/6WQRm5UB/wwMRfQUbD8SeFXa8NMgwqgs9PWN+Gav2l+L281r9mrpxlESkkSEJZlRt
+         E7Kg==
+X-Forwarded-Encrypted: i=1; AJvYcCVKiE9kecZBcKfjP2Gx0d9bhAzhUTVG+Y8yTT4B3ahM/6Qk0vyitSwKvfVgQxQghWEsNL4ffX7iIYKH1fF5ByD3XgwXu0zJLtfdWW0R/WnJBkoRAtFTlaJQJkrFXQdVC72tCkiYmsrH+QKE+JCiKp4tHYdhyXvXudf9k3ykALxDX2VzJGv/wBuXzYp71Bf7l6g4ENSw+KEYTjOij4JPbm4Q4Or5BTCiVBojdz/SH6T8/fPXrTZGq67ZdaL2GTsl/RY8dXHmLvDDbE72eIrLKY+S2GSdnUcE1bJ9OfpjfQ==
+X-Gm-Message-State: AOJu0YxKZSvSrpGlscb8hByQmuGlsoym7WfVmVj/o3NoY3SuCZrEpmEr
+	X4sbULmCDiokFB3WS6Jut/GN5N9EkW6Wzg99C8yUVU5ob3Kn5/8P
+X-Google-Smtp-Source: AGHT+IEVE6JlEBgyeNQ8vkUPkRaSgWDWUYr0hp6JGZgymhUxvXFOsOst8mFB35mbNtNEl3G7ds+cRQ==
+X-Received: by 2002:a17:902:ed15:b0:1e4:9616:d967 with SMTP id b21-20020a170902ed1500b001e49616d967mr9788274pld.15.1713264032862;
+        Tue, 16 Apr 2024 03:40:32 -0700 (PDT)
+Received: from LancedeMBP.lan ([112.10.225.217])
+        by smtp.gmail.com with ESMTPSA id b2-20020a170903228200b001e53bb92093sm9410890plh.228.2024.04.16.03.40.27
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 16 Apr 2024 03:40:32 -0700 (PDT)
+From: Lance Yang <ioworker0@gmail.com>
+To: david@redhat.com
+Cc: akpm@linux-foundation.org,
+	cgroups@vger.kernel.org,
+	chris@zankel.net,
+	corbet@lwn.net,
+	dalias@libc.org,
+	fengwei.yin@intel.com,
+	glaubitz@physik.fu-berlin.de,
+	hughd@google.com,
+	jcmvbkbc@gmail.com,
+	linmiaohe@huawei.com,
+	linux-doc@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-mm@kvack.org,
+	linux-sh@vger.kernel.org,
+	linux-trace-kernel@vger.kernel.org,
+	muchun.song@linux.dev,
+	naoya.horiguchi@nec.com,
+	peterx@redhat.com,
+	richardycc@google.com,
+	ryan.roberts@arm.com,
+	shy828301@gmail.com,
+	willy@infradead.org,
+	ysato@users.sourceforge.jp,
+	ziy@nvidia.com,
+	Lance Yang <ioworker0@gmail.com>
+Subject: Re: [PATCH v1 05/18] mm: improve folio_likely_mapped_shared() using the mapcount of large folios
+Date: Tue, 16 Apr 2024 18:40:08 +0800
+Message-Id: <20240416104008.41979-1-ioworker0@gmail.com>
+X-Mailer: git-send-email 2.33.1
+In-Reply-To: <20240409192301.907377-6-david@redhat.com>
+References: <20240409192301.907377-6-david@redhat.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-From: Naresh Kamboju <naresh.kamboju@linaro.org>
-Date: Mon, 15 Apr 2024 16:17:01 +0530
-Message-ID: <CA+G9fYvMdqT3BFNkspktVVtVqd=en8-x3Oz1Ekfia+cceV2LHQ@mail.gmail.com>
-Subject: sh: arc: cmpxchg.h:50:12: error: implicit declaration of function
- 'cmpxchg_emu_u8' [-Werror=implicit-function-declaration]
-To: open list <linux-kernel@vger.kernel.org>, lkft-triage@lists.linaro.org, 
-	Linux Regressions <regressions@lists.linux.dev>
-Cc: Arnd Bergmann <arnd@arndb.de>, "Paul E. McKenney" <paulmck@kernel.org>, 
-	Linux-sh list <linux-sh@vger.kernel.org>, linux-snps-arc@lists.infradead.org, 
-	Vineet Gupta <vgupta@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-The arc and sh defconfig builds failed due to following build warnings / errors
-on the Linux next-20240415 with gcc-9 and gcc-11.
+Hey David,
 
-Reported-by: Linux Kernel Functional Testing <lkft@linaro.org>
+Maybe I spotted a bug below.
 
-Following builds failed.
-sh:
-arc:
- - defconfig
- - tinyconfig
- - allnoconfig
- - vdk_hs38_smp_defconfig
+[...]
+ static inline bool folio_likely_mapped_shared(struct folio *folio)
+ {
+-	return page_mapcount(folio_page(folio, 0)) > 1;
++	int mapcount = folio_mapcount(folio);
++
++	/* Only partially-mappable folios require more care. */
++	if (!folio_test_large(folio) || unlikely(folio_test_hugetlb(folio)))
++		return mapcount > 1;
++
++	/* A single mapping implies "mapped exclusively". */
++	if (mapcount <= 1)
++		return false;
++
++	/* If any page is mapped more than once we treat it "mapped shared". */
++	if (folio_entire_mapcount(folio) || mapcount > folio_nr_pages(folio))
++		return true;
 
-Build log:
---------
-In file included from arch/arc/include/asm/atomic.h:13,
-                 from include/linux/atomic.h:7,
-                 from include/asm-generic/bitops/lock.h:5,
-                 from arch/arc/include/asm/bitops.h:188,
-                 from include/linux/bitops.h:70,
-                 from include/linux/log2.h:12,
-                 from kernel/bounds.c:13:
-include/linux/atomic/atomic-arch-fallback.h: In function 'raw_atomic_cmpxchg':
-arch/arc/include/asm/cmpxchg.h:50:12: error: implicit declaration of
-function 'cmpxchg_emu_u8' [-Werror=implicit-function-declaration]
-   50 |   _prev_ = cmpxchg_emu_u8((volatile u8 *)_p_, _o_, _n_); \
-      |            ^~~~~~~~~~~~~~
+bug: if a PMD-mapped THP is exclusively mapped, the folio_entire_mapcount()
+function will return 1 (atomic_read(&folio->_entire_mapcount) + 1).
 
-Steps to reproduce:
----
-# tuxmake --runtime podman --target-arch arc --toolchain gcc-9
---kconfig defconfig
-# tuxmake --runtime podman --target-arch sh --toolchain gcc-11
---kconfig defconfig
+IIUC, when mapping a PMD entry for the entire THP, folio->_entire_mapcount
+increments from -1 to 0.
 
+Thanks,
+Lance
 
-Links:
----
- - https://qa-reports.linaro.org/lkft/linux-next-master/build/next-20240415/testrun/23463978/suite/build/test/gcc-9-defconfig/details/
- - https://storage.tuxsuite.com/public/linaro/lkft/builds/2f7sIl2MlKB5Fgq7JtTpYQ9lnXw/
- - https://qa-reports.linaro.org/lkft/linux-next-master/build/next-20240415/testrun/23463981/suite/build/test/gcc-11-defconfig/details/
-
-
---
-Linaro LKFT
-https://lkft.linaro.org
++
++	/* Let's guess based on the first subpage. */
++	return atomic_read(&folio->_mapcount) > 0;
+ }
+[...]
