@@ -1,68 +1,88 @@
-Received: from out199-18.us.a.mail.aliyun.com (out199-18.us.a.mail.aliyun.com [47.90.199.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yw1-f170.google.com (mail-yw1-f170.google.com [209.85.128.170])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 94FA863E;
-	Fri, 19 Apr 2024 09:03:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=47.90.199.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8F0AD4D131;
+	Fri, 19 Apr 2024 09:14:01 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.170
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1713517403; cv=none; b=m+O8DngoRKxxttusUntahmNIzpTC11cA/fhj8nu0pVGvmbJgyNgQ7o7f5e5+HUbIhTM+CfBcdD70qsbnVLt+rfbZFe5adVy5tcluw2dsfDLgGyn4myx2Orc2DvDJJ7GmxUtDQTfeVgorRj3yQq4JSjW58VXFssei94GdPPJK/yQ=
+	t=1713518043; cv=none; b=CnkRXhTbn7WZurG9Og0z1L70UCjU01Z332ZrvwGlbpTCAiLUiqg5Fr1WwWUKacnc/yfU7uhOAUhpPBTvyLRasH2exzGVrNXFbBiXhJvnIlrUDvnHT2ZMjOZecIKYX038VZbimToTE5bcE00UI56arEqocaegc+eSajVRjdUqDAI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1713517403; c=relaxed/simple;
-	bh=r7Ueo3QrwRq1LyGSoZ1jq9O1XRvuYMvB/OSyodQmiP8=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=NKb3nljCV7LrtxhtKk2ZB+VnG2afUPpsOz8lLd9zkw999v4hU8opjjMndHkJ4Ahyzlr7snjCjTnEuODnstrQVXQCgkd9o55puaay/1cPh5WZ/PeVJM1xOm1sIPGpOrBkssCpjED4KHZ2ZhK1rreNyXQmh5ICZKIMhzJe63HCtmk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com; spf=pass smtp.mailfrom=linux.alibaba.com; dkim=pass (1024-bit key) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.b=Idho3yEw; arc=none smtp.client-ip=47.90.199.18
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.alibaba.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.b="Idho3yEw"
-DKIM-Signature:v=1; a=rsa-sha256; c=relaxed/relaxed;
-	d=linux.alibaba.com; s=default;
-	t=1713517381; h=From:To:Subject:Date:Message-Id:MIME-Version;
-	bh=ZRVUqPqFKY9UkFb8maKJ04mKt/601F+KNCAqbJtq7Tw=;
-	b=Idho3yEwv2yWHpGtXi7ieAmyDcy93X6Sfe8ub435dRU0auxYT1qeyKOfHlY0uUSfx4/HqsGRw9/OoZFNbIEw/dT5mPLM2EtLdg7xSvqJLMLafddlE0W58U6LRZ+VIyZg/PWGIfSSNYFpFND6fTG0qBb/mRyyBlaUEFgXFTjfB0A=
-X-Alimail-AntiSpam:AC=PASS;BC=-1|-1;BR=01201311R521e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=ay29a033018045192;MF=yang.lee@linux.alibaba.com;NM=1;PH=DS;RN=6;SR=0;TI=SMTPD_---0W4rnyph_1713517380;
-Received: from localhost(mailfrom:yang.lee@linux.alibaba.com fp:SMTPD_---0W4rnyph_1713517380)
-          by smtp.aliyun-inc.com;
-          Fri, 19 Apr 2024 17:03:01 +0800
-From: Yang Li <yang.lee@linux.alibaba.com>
-To: ysato@users.sourceforge.jp,
-	dalias@libc.org,
-	glaubitz@physik.fu-berlin.de
-Cc: linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Yang Li <yang.lee@linux.alibaba.com>
-Subject: [PATCH -next] dma: Add dev_id parameter description in request_dma_bycap
-Date: Fri, 19 Apr 2024 17:02:59 +0800
-Message-Id: <20240419090259.39542-1-yang.lee@linux.alibaba.com>
-X-Mailer: git-send-email 2.20.1.7.g153144c
+	s=arc-20240116; t=1713518043; c=relaxed/simple;
+	bh=H1XCE8POymxb9O0nL575s1AZcXMw7/i6tvt14CsEffo=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=mprpwPp9mSsSHZX9kjKE/AP1wbkYhY0/vp13iZUHf2UTK/EiCQlEuzz8bX+TMz0IWnTxg4R2eGFEx6NEGkcGECKNeiC3KQ5l/v11eJ0CsyhXlPq88osUVbTVR9NfvU0CFmDK91nvtp9GcMXCVT8kmbbb5+5FCKptFAEpakD7c7E=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.128.170
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-yw1-f170.google.com with SMTP id 00721157ae682-61804067da0so18737837b3.0;
+        Fri, 19 Apr 2024 02:14:01 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1713518040; x=1714122840;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=9gVMY8E21Fl9ECgjygikdUcrBwHveHTBHkiJds8LbEk=;
+        b=IIbMmn4Dc1t1lTR5ZrUZfzqtgoV3XpmsRJZoq5uQfLpS8/G+alyayPgs6u56u9bzRN
+         IMw0PpnEOS2rz0mlG1MY0QaC/UrUui2vQ/4dLbjD1FCGaRVthpF2J0C0/1Yv3YAJC9Wf
+         vJh52/sj3De4c5/YLTB+1yp3M7/u6jAEmoekf23pP9MFPPeuHFc5dnzrbOn5PD7bZqqu
+         7ygpA3fhciZvp1b3WketftVHc6cabjedraZIl8Z7IlrgnyY+ySloBdi5tnREXYC+1fF2
+         C+5sS6TMCeMQiCmGfdtdDpVWuFywe/9RBeyP63iyxHAGlC0WwjwrbbDtZOhyr1TlIs+P
+         K/Ig==
+X-Forwarded-Encrypted: i=1; AJvYcCUNPO9UDNE+eWBOtaaaW7mXbzPMeIUgKTkmjyOWKELNPnvRjs1aw1wkLVwzLGXF/zLeKeABzqNCx8TTfmv41Hcrsw4oTDeSC0u5eHCsXonr94qNWIh65lXKlOBVGQfNhBsERdeXA48=
+X-Gm-Message-State: AOJu0Yzlxa8tj+yQ8TgWmbszyIAYHACZgpjweoAhpUXYu7laTEPyNFzy
+	dM69gy/Zz+35JvkXBVSN99sfYgeZiIKxVmrTtzExBVNNt+YxhuqQxdNP7OR4
+X-Google-Smtp-Source: AGHT+IFEQJiC0JAJIwBOXvxzOJd8FBY8nlca64lUsWW/hoAZqj2pYbNtGfcuxfYUQKKbKpDLiXGvjw==
+X-Received: by 2002:a05:690c:c02:b0:61a:f127:34c9 with SMTP id cl2-20020a05690c0c0200b0061af12734c9mr1457465ywb.17.1713518040034;
+        Fri, 19 Apr 2024 02:14:00 -0700 (PDT)
+Received: from mail-yb1-f178.google.com (mail-yb1-f178.google.com. [209.85.219.178])
+        by smtp.gmail.com with ESMTPSA id m3-20020a0de303000000b006152af6131dsm701484ywe.119.2024.04.19.02.13.59
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 19 Apr 2024 02:13:59 -0700 (PDT)
+Received: by mail-yb1-f178.google.com with SMTP id 3f1490d57ef6-de45f3f092bso2224907276.0;
+        Fri, 19 Apr 2024 02:13:59 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCXpcWiTyt/dIuBDgc5hcvgYB2Z3v8haBsRAk699AFdp6zatkvd8VvJXCrN5XfyE6i31IzOAzCpz8coVj1PyEv83hgfqwolPm5XawTp4LI0VLmCJXIN89kR6meTWkSlgxfXTTMiP6xE=
+X-Received: by 2002:a25:8185:0:b0:dd0:972b:d218 with SMTP id
+ p5-20020a258185000000b00dd0972bd218mr1282834ybk.41.1713518039110; Fri, 19 Apr
+ 2024 02:13:59 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20240419090259.39542-1-yang.lee@linux.alibaba.com>
+In-Reply-To: <20240419090259.39542-1-yang.lee@linux.alibaba.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Fri, 19 Apr 2024 11:13:46 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdX-+32mM9pyh+RsH0oUrJrzvLi=x4OZ3MMy-_Xv_9_PKQ@mail.gmail.com>
+Message-ID: <CAMuHMdX-+32mM9pyh+RsH0oUrJrzvLi=x4OZ3MMy-_Xv_9_PKQ@mail.gmail.com>
+Subject: Re: [PATCH -next] dma: Add dev_id parameter description in request_dma_bycap
+To: Yang Li <yang.lee@linux.alibaba.com>
+Cc: ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de, 
+	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-This patch adds the missing description for the dev_id parameter in the
-kernel documentation for the request_dma_bycap function.
+On Fri, Apr 19, 2024 at 11:03=E2=80=AFAM Yang Li <yang.lee@linux.alibaba.co=
+m> wrote:
+> This patch adds the missing description for the dev_id parameter in the
+> kernel documentation for the request_dma_bycap function.
+>
+> Signed-off-by: Yang Li <yang.lee@linux.alibaba.com>
 
-Signed-off-by: Yang Li <yang.lee@linux.alibaba.com>
----
- arch/sh/drivers/dma/dma-api.c | 1 +
- 1 file changed, 1 insertion(+)
+Fixes: db9b99d461ddbbaa ("sh: dma-api channel capability extensions.")
+Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-diff --git a/arch/sh/drivers/dma/dma-api.c b/arch/sh/drivers/dma/dma-api.c
-index 89cd4a3b4cca..65005d348877 100644
---- a/arch/sh/drivers/dma/dma-api.c
-+++ b/arch/sh/drivers/dma/dma-api.c
-@@ -116,6 +116,7 @@ static int search_cap(const char **haystack, const char *needle)
-  * request_dma_bycap - Allocate a DMA channel based on its capabilities
-  * @dmac: List of DMA controllers to search
-  * @caps: List of capabilities
-+ * @dev_id: Unique identifier for the device that is requesting a DMA channel
-  *
-  * Search all channels of all DMA controllers to find a channel which
-  * matches the requested capabilities. The result is the channel
--- 
-2.20.1.7.g153144c
+Gr{oetje,eeting}s,
 
+                        Geert
+
+--=20
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
