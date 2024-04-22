@@ -1,135 +1,93 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yb1-f170.google.com (mail-yb1-f170.google.com [209.85.219.170])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E38A62CA8;
-	Mon, 22 Apr 2024 02:28:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1A6D2146011;
+	Mon, 22 Apr 2024 12:39:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.170
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1713752893; cv=none; b=utC0wr5sMu1kROyaTOrraqPggfnx4ZeE5BCc/2I2z1hz6ZGfBHaY1ZESWA9StEFuxLhZaw2+EJ2kBUTJjx6zcam93jqKWJ02HWSXfUkzqt49b4kBcyLlA36dR3d2l6CHz+bkXfR3OfM0FfpalWBoPGz5V1eVOBekgk6SMCqE+wA=
+	t=1713789557; cv=none; b=kiH9CDwaDNyVYXWqrLbrGRf/dItdonXVJ3bUP5AUUxZQO/DvZ4XG9ehdppuVBfByCpL3kEk48KUC5G2DOcmMCFQCAeJv+HM5ovRG0GCLYLjSV5vvl3fWUMlcjp8pcr5ghwBFJVhf7oG8s8W3d8UIg79LSPiw/Fmg9EDY3jXyPK8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1713752893; c=relaxed/simple;
-	bh=V3J+dZjlVRVuGxpt2BvlNuZeDPKEzUoaUQImwYXDqb8=;
+	s=arc-20240116; t=1713789557; c=relaxed/simple;
+	bh=1xYqXXOCg8cH+eLna2SIoRUtXjWDA5Opt7wSg5dXJww=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=gOq2fKelyqsUR2881BsCfMpikDQNHnGgn01Kn/1qJvRP7RgKEQ+sMhKFlc7mN9cSlhwe7q8m6WkVdUwbF+cVT0RAkgIMyYZlE+tQ0PDyBoJn4DwHJNqhDxpStj3+nM4ahD94ayJOryOpXYuiDy1CkD9etkE8A8Wq04i2ltwhQSE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SoQgb5Xu; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SoQgb5Xu"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6C568C2BD10;
-	Mon, 22 Apr 2024 02:28:12 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1713752892;
-	bh=V3J+dZjlVRVuGxpt2BvlNuZeDPKEzUoaUQImwYXDqb8=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc:From;
-	b=SoQgb5Xu/qAftX+fnAmiPRfxmFjkyjj1xmYMTH+XKeq95hWU9Ylan/z4THnbpM7pR
-	 BprPPWafl18P8xQBF9xfsD500AkDkVqdu+nI8bFp4L243Xf5Sp5fH7JWLFiByqCDWg
-	 tlR/Es5nOni6kVI+4SwtzNZY/A8esPO8iAT7gAgU5OAf/xzc694gNYWiDQ1XoAkKF9
-	 WDA7zyvkgI4Paqu4gE6Ba+XMNv3sRXH9INkbTk970sXkUaJ3j7/jb5NpU8fXx+NLcw
-	 P8PGAFzUL8FsefnkZlNnTTEsW14dVpNo90TxCKX3UsKwLO2Ag8nOV8+VOk8oDHaswn
-	 Q53qrmf3KHWMA==
-Received: by mail-lj1-f175.google.com with SMTP id 38308e7fff4ca-2db101c11feso24300221fa.0;
-        Sun, 21 Apr 2024 19:28:12 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCWXxohJ6ZAx2K4tnead/dvx9nTdXoHvdAGIpFc4W5BaNn0y3A+56tWgTEZ0WlecBrAppUZ/5Z/JaFjEI/Yw+d6iFWFmPV8wmR1cwguO0C2GsM2IkJgupkNJXXAU9iCRpJ4GHEXh2Jk=
-X-Gm-Message-State: AOJu0YxsLtRpUrWCHmpwvYGXhtKzrmkwA19fr2C2hay26k90lZAIP64D
-	WY/vxIsjLShJBboT+yZ06wqXo6Ykz1sZqwYs9scKz9/ccQq7MxGf09Ow2G0dnGrWcnotqkCrwuN
-	w6kd/SvhikY4A/qTg7b4nSjHGIUk=
-X-Google-Smtp-Source: AGHT+IFrV9OmRbRKvaOhpQhnQ7DlGsG8CgkAy1ZsedVEVvDGIv820SOXLEXBhWXMrKJNg1NMjYlLu7xEdI7V8C/X7s8=
-X-Received: by 2002:a2e:9cd7:0:b0:2d8:79d6:454d with SMTP id
- g23-20020a2e9cd7000000b002d879d6454dmr2853128ljj.23.1713752891086; Sun, 21
- Apr 2024 19:28:11 -0700 (PDT)
+	 To:Cc:Content-Type; b=H1sjGbwc/K1g083iRyy8Gb4OFX6oSCrMKGaEMTqRgrYRLkZD4NRB2BWKDBd+d1t71D5L4P9yWg4WnywDoT20NJr2P8o1VBPizaeLprHt21Ed+mn8VSDRyxNcoG2zwv1MTT4YJHs/+Z4RYXCxBdQvpE6XFobqsxSDVu4IR4hUhE8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.219.170
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-yb1-f170.google.com with SMTP id 3f1490d57ef6-de466c64161so4552369276.3;
+        Mon, 22 Apr 2024 05:39:15 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1713789555; x=1714394355;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=xMBL1qo4g2eaajNMXZyEJbZLC89YfXgje/CzAO+pyC4=;
+        b=SREk4G04Vr51JcLtUHKsjiB5DseaT1u0y0wMla7SMOlvl2R4iWaArfJHJSb0Y0g/S3
+         o0MwTX3EdZPJuZboEnTOqrI160q3Jw3DpYYNNy4wjrNE21qS3njk2P3Lw0fOnE+t+RtV
+         uBosZ6QGrVdAxrWL9FLljseDdKAaoFz3QikjrfgBZU5SsAJMVe1VqmJRf2j1kWp2i752
+         dzD6mwQV2rDo1iHYvEID5Ywi3VoypNlpQtnXlde55qzAXQ/lSNac4W0D3nNuIQ29/pl2
+         kWQCR9s8z1ZUXBGsEe4UyGqoBvgNB8omSA/+YilXPkSd4nKO7s9z4KH/zXHwlbxgkuPh
+         nGIw==
+X-Gm-Message-State: AOJu0YyPhzeNP1ySJHj5+kLIrQAcS6MAV/u9Hda8plJeO+2qo5g6aQ1b
+	j81VLAVIrhoKkrNUkX3I8GX68UD8Y2AitoNgKc6dFt9FFedIr0DdHTIDtLHv
+X-Google-Smtp-Source: AGHT+IFoYQxllOPUi1dR8w+zve6uhTrIjk0cU8qEEDxWhi9OWbIVixZwRWJq5ch+SGSeIB57nVEiiA==
+X-Received: by 2002:a25:5f45:0:b0:de0:ea71:9ec9 with SMTP id h5-20020a255f45000000b00de0ea719ec9mr9228855ybm.1.1713789554630;
+        Mon, 22 Apr 2024 05:39:14 -0700 (PDT)
+Received: from mail-yb1-f176.google.com (mail-yb1-f176.google.com. [209.85.219.176])
+        by smtp.gmail.com with ESMTPSA id y9-20020a2586c9000000b00dc9c5991ecdsm1920014ybm.50.2024.04.22.05.39.14
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 22 Apr 2024 05:39:14 -0700 (PDT)
+Received: by mail-yb1-f176.google.com with SMTP id 3f1490d57ef6-de469a634fbso4432496276.2;
+        Mon, 22 Apr 2024 05:39:14 -0700 (PDT)
+X-Received: by 2002:a25:213:0:b0:de4:5f9a:157a with SMTP id
+ 19-20020a250213000000b00de45f9a157amr10282671ybc.36.1713789554244; Mon, 22
+ Apr 2024 05:39:14 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20240421120824.2713923-1-masahiroy@kernel.org>
- <20240421120824.2713923-2-masahiroy@kernel.org> <80d969b70038f5c0de6f2d912cb1f6b395eea94a.camel@physik.fu-berlin.de>
-In-Reply-To: <80d969b70038f5c0de6f2d912cb1f6b395eea94a.camel@physik.fu-berlin.de>
-From: Masahiro Yamada <masahiroy@kernel.org>
-Date: Mon, 22 Apr 2024 11:27:34 +0900
-X-Gmail-Original-Message-ID: <CAK7LNASyu9=7MQ0zd8doGEENN7GHxupg+fkpK3FCktyjVwLfjw@mail.gmail.com>
-Message-ID: <CAK7LNASyu9=7MQ0zd8doGEENN7GHxupg+fkpK3FCktyjVwLfjw@mail.gmail.com>
-Subject: Re: [PATCH 1/2] sh: convert the last use of 'optional' property in Kconfig
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org
+References: <CAHk-=whdUP62_7N6s837tTFjvmcGxyRnMGwnVnZwn2fDVf5E8A@mail.gmail.com>
+ <20240422123617.1363267-1-geert@linux-m68k.org>
+In-Reply-To: <20240422123617.1363267-1-geert@linux-m68k.org>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Mon, 22 Apr 2024 14:39:02 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdV0yf++WWeih15YVHomAaji9mW+VYg0B4sTDNhD28FY3A@mail.gmail.com>
+Message-ID: <CAMuHMdV0yf++WWeih15YVHomAaji9mW+VYg0B4sTDNhD28FY3A@mail.gmail.com>
+Subject: Re: Build regressions/improvements in v6.9-rc4
+To: linux-kernel@vger.kernel.org
+Cc: Linux-sh list <linux-sh@vger.kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, Apr 22, 2024 at 2:51=E2=80=AFAM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
->
-> Hi Masahiro,
->
-> On Sun, 2024-04-21 at 21:08 +0900, Masahiro Yamada wrote:
-> > The 'choice' statement is primarily used to exclusively select one
-> > option, but the 'optional' property allows all entries to be disabled.
-> >
-> > This feature is only used in arch/sh/Kconfig because the equivalent
-> > outcome can be achieved by inserting one more entry as a place-holder.
-> > This approach is commonly used, for example, LTO_NONE, DEBUG_INFO_NONE,
-> > INITRAMFS_COMPRESSION_NONE, etc.
-> >
-> > The 'optional' property support will be removed from Kconfig.
-> >
-> > This commit converts the last user.
-> >
-> > Note:
-> >  The 'default CMDLINE_OVERWRITE' statement does not work as intended
-> >  in combination with 'optional'. If neither CONFIG_CMDLINE_OVERWRITE
-> >  nor CONFIG_CMD_EXTEND is specified in a defconfig file, both of them
-> >  are disabled. This is a bug. To maintain the current behavior, I
-> >  added CONFIG_CMD_NO_MODIFY=3Dy to those defconfig files.
->          ^^^^^^^^^^^^^^^^^^^^^^
->      This would be CMDLINE_NO_MODIFY as used in the actual Kconfig files.
->
-> I am fine with the change per se, but could you rename CMDLINE_NO_MODIFY =
-to
-> CMDLINE_FROM_BOOTLOADER as it's used on the other architectures such as a=
-rm
-> and powerpc, preferably using the same help text.
+On Mon, Apr 22, 2024 at 2:36=E2=80=AFPM Geert Uytterhoeven <geert@linux-m68=
+k.org> wrote:
+> Below is the list of build error/warning regressions/improvements in
+> v6.9-rc4[1] compared to v6.8[2].
+> JFYI, when comparing v6.9-rc4[1] to v6.9-rc3[3], the summaries are:
+>   - build errors: +1/-0
 
+  + /kisskb/src/arch/sh/kernel/return_address.c: error: no previous
+prototype for 'return_address' [-Werror=3Dmissing-prototypes]:  =3D> 14:7
 
+sh4-gcc13/sh-allmodconfig (seen before in other sh configs)
 
-OK, but the sh behavior is different from
-early_init_dt_scan_chosen().
+> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/0bbac3facb5d6cc=
+0171c45c9873a2dc96bea9680/ (all 138 configs)
+> [3] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/fec50db7033ea47=
+8773b159e0e2efb135270e3b7/ (all 138 configs)
 
+Gr{oetje,eeting}s,
 
-I will drop this part:
-"If the boot loader doesn't provide any, the default
-kernel command string provided in CMDLINE will be used."
-
-
-
-
-config CMDLINE_FROM_BOOTLOADER
-       bool "Use bootloader kernel arguments"
-       help
-         Uses the command-line options passed by the boot loader.
-
-
-
-
-
-
-
->
-> Also, I usually prefer the first word in the subject to be capitalized, i=
-.e..
->
->         sh: Convert the last use of 'optional' property in Kconfig
->
-> Thanks,
-> Adrian
->
-> --
->  .''`.  John Paul Adrian Glaubitz
-> : :' :  Debian Developer
-> `. `'   Physicist
->   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
->
-
+                        Geert
 
 --=20
-Best Regards
-Masahiro Yamada
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
