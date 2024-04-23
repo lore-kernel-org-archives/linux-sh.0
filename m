@@ -1,211 +1,126 @@
-Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com [209.85.128.179])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0b-0031df01.pphosted.com (mx0b-0031df01.pphosted.com [205.220.180.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 53ADB153BE7
-	for <linux-sh@vger.kernel.org>; Mon, 22 Apr 2024 17:40:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.179
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1066A44C86;
+	Tue, 23 Apr 2024 23:32:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=205.220.180.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1713807660; cv=none; b=SXdz3KWq8TK8gIF1WPh4MLHbYajws2Kbr2PPt2J9wAAjkmwHE6yGdfgBQPWrgw8/zApKkA9poFV5VGZSAxjQ4YaiAn/s1q+Ea7n3Gtwa2+rhbbW5u8NUcjC4VnTk5/2zCbDWLxXWiIRzL7+bPALY8GwpTLVZAB89Wn/yAwSs65M=
+	t=1713915164; cv=none; b=p3YAPr9+mMgPGB8+7OC+TH4Hjz5aId9qzMJspdAo8Ht9XpA3dEGw73ndw7I4Gwo7M1DFnOA2mu5cjXzXxyifUig1y5zbqUSIUCtiKStK9s7ZhBi2bAzsHlHEDOQcg74Wskmrjg6QjQRWlstXjmDe6AZvWIHEh9nMI0nylAFfItw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1713807660; c=relaxed/simple;
-	bh=p8f3mDhOFdkK6vQBSO2RmHu0Eih8xW1uX/u+4OJ4ags=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=fg5H8QEf/Hc9xW+FDYCMzPBlR26RNUYgtdpGdFxtTd4GpyV1CFmtnbs255yGB2QOC4Duoakzpm948YE4A9q1fu5X8NExAel4ulyrosrUAby8kxaiCTeI4TXvJQOkpmF/NIgGXgLDsbEIwfnyo2lCwJF33Qcrrlk81x2j4A3Dv6w=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rivosinc.com; spf=pass smtp.mailfrom=rivosinc.com; dkim=pass (2048-bit key) header.d=rivosinc-com.20230601.gappssmtp.com header.i=@rivosinc-com.20230601.gappssmtp.com header.b=tL9uo/+V; arc=none smtp.client-ip=209.85.128.179
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rivosinc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=rivosinc.com
+	s=arc-20240116; t=1713915164; c=relaxed/simple;
+	bh=PtODIwdNe+bcAg/fpYn1U2uSPxKWfe4QrTVb1dGFzYM=;
+	h=From:To:CC:Subject:Date:Message-ID:MIME-Version:Content-Type; b=I24yKOQk3ivSNPvzZB+8AdGA2srBIw0HfyIfnbMCV1pV7Cqodo60N2T+yqf6bnatY/a+3zGQdvfQFxX652f12ivHyfu6IhN8yhqymmQj3lA9i/Zjpg3zMK7b6RR/JzWZLf66eOiqAnYKEw7jdeJRB2SfasOLs3OGI5Q2WYKGC3k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com; spf=pass smtp.mailfrom=quicinc.com; dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b=Ags+LoJm; arc=none smtp.client-ip=205.220.180.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=quicinc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=rivosinc-com.20230601.gappssmtp.com header.i=@rivosinc-com.20230601.gappssmtp.com header.b="tL9uo/+V"
-Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-61ae4743d36so50886547b3.2
-        for <linux-sh@vger.kernel.org>; Mon, 22 Apr 2024 10:40:58 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=rivosinc-com.20230601.gappssmtp.com; s=20230601; t=1713807657; x=1714412457; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=8oSz86JzOY9DQvGvueAGk0oxmVKc1JpB72xgEu0TDts=;
-        b=tL9uo/+V2uI9u12Ii9xymlGAoiD2oECwTjm956XUQxxl2D8pCCLu9ZtWW/X8v7Sq2P
-         7BxAp+XaVdiBzqL/8LJiogRdbATSfn6r14GyzFu/bjZNLRr283ahd4jFW1VCjZ3xEs5s
-         IGSsw+0M2orJrQvtJXjqVQ9lRfPPGfoqlYcFA1WiRZ9lZTceFrB1ilqgG2OX8cBU9w45
-         AnzEF1VOu4dCjuj8/Ewd+GehaNAlElR2eLM7//3R0r85DMIMyd6d5Y2L+Hlu7+DzhQAu
-         V0ECdVN0H+DFzkHV6qSajV+P5Yh+XBAv7Ot+eFzF8yx/NZIIz4Yv+9zuRHenLq5tS6+J
-         4iHA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1713807657; x=1714412457;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=8oSz86JzOY9DQvGvueAGk0oxmVKc1JpB72xgEu0TDts=;
-        b=YOngem3FXln9Zi3JS2n2qAFhon8NEwdbgYaITtQrZTe12uyQD5wJ1/iMg6azv+j/V6
-         MOnszbfANKNWQhKgRqaRcqK2ZS/PKcH95WOsz+xyPfXrMpocpTsI95HQpRwHovv9aBNZ
-         4D1IXP6j5TpZjZ9ykBEIqjEf2YS+cfgqc9vaF1Qs3LIZIweuLp7ayHeM1pKy8ITFZw2r
-         XmrEToIFBnlEOON9PneVQbTJjeu+s3GFI9juzaKr3rKDX/J0zGDCRhvHpqEppPkt6mMy
-         M3VbIz1o1lJS/5v3+SUfLaAt5jznBZ27by6Scc8u2M9uwpmvBR3caPfB+A2dRLCVqCaG
-         040g==
-X-Forwarded-Encrypted: i=1; AJvYcCWHKBSbZ2yOZ5n5+Oc5FTfWoEiqh9PZ0gp9kce+6zPumZawjzA/BkNrtRwyD5/bYDWVnnItnz59+AQGAqbnP8pbdshL0zlvl04=
-X-Gm-Message-State: AOJu0Ywtv8AtStboHde7EBZ5lrkQHT1cbCD7KyiLL5QwyHguG8/eqHHF
-	Uf+1tZGPfAJgEF7hoBkySsY0HRoXsU2YpAZ5MAR090WQIlI6l8ZmIEjvwTsfsc0=
-X-Google-Smtp-Source: AGHT+IF6LQ8zdofhxJ/PNSOv5IQXexYxxfrsaWAs34RmUulyK1yyuZ4SFyNwWs4DcElioVxSqpYRPw==
-X-Received: by 2002:a05:690c:3685:b0:617:c9b0:e12c with SMTP id fu5-20020a05690c368500b00617c9b0e12cmr10651242ywb.38.1713807655898;
-        Mon, 22 Apr 2024 10:40:55 -0700 (PDT)
-Received: from ghost ([50.146.0.2])
-        by smtp.gmail.com with ESMTPSA id r29-20020a81441d000000b00608876ed731sm2060370ywa.126.2024.04.22.10.40.54
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 22 Apr 2024 10:40:55 -0700 (PDT)
-Date: Mon, 22 Apr 2024 13:40:53 -0400
-From: Charlie Jenkins <charlie@rivosinc.com>
-To: Guenter Roeck <linux@roeck-us.net>
-Cc: linux-kselftest@vger.kernel.org, David Airlie <airlied@gmail.com>,
-	Arnd Bergmann <arnd@arndb.de>,
-	=?iso-8859-1?Q?Ma=EDra?= Canal <mcanal@igalia.com>,
-	Dan Carpenter <dan.carpenter@linaro.org>,
-	Kees Cook <keescook@chromium.org>,
-	Daniel Diaz <daniel.diaz@linaro.org>,
-	David Gow <davidgow@google.com>,
-	Arthur Grillo <arthurgrillo@riseup.net>,
-	Brendan Higgins <brendan.higgins@linux.dev>,
-	Naresh Kamboju <naresh.kamboju@linaro.org>,
-	Maarten Lankhorst <maarten.lankhorst@linux.intel.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Maxime Ripard <mripard@kernel.org>,
-	Ville =?iso-8859-1?Q?Syrj=E4l=E4?= <ville.syrjala@linux.intel.com>,
-	Daniel Vetter <daniel@ffwll.ch>,
-	Thomas Zimmermann <tzimmermann@suse.de>,
-	dri-devel@lists.freedesktop.org, kunit-dev@googlegroups.com,
-	linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-	linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-	linux-sh@vger.kernel.org, loongarch@lists.linux.dev,
-	netdev@vger.kernel.org, x86@kernel.org,
-	Linux Kernel Functional Testing <lkft@linaro.org>,
-	Paul Walmsley <paul.walmsley@sifive.com>,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	Albert Ou <aou@eecs.berkeley.edu>
-Subject: Re: [PATCH v3 14/15] riscv: Add support for suppressing warning
- backtraces
-Message-ID: <ZiahJT8MTFqAlD5A@ghost>
-References: <20240403131936.787234-1-linux@roeck-us.net>
- <20240403131936.787234-15-linux@roeck-us.net>
+	dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b="Ags+LoJm"
+Received: from pps.filterd (m0279872.ppops.net [127.0.0.1])
+	by mx0a-0031df01.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 43NNRsZa023272;
+	Tue, 23 Apr 2024 23:32:22 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=quicinc.com; h=
+	from:to:cc:subject:date:message-id:mime-version
+	:content-transfer-encoding:content-type; s=qcppdkim1; bh=LJ1D41v
+	sL9OuSiqmo9PlB5k3GVvlK5C768SPmzKMyzA=; b=Ags+LoJm6QAa4ItyxcMGkb4
+	abFXFphIk16p7OTsrhdCdnCgeZW/kW83tOfMY2iLTZfvQY0Bp4/YPJgzrr6lHNgh
+	951YVH4YyHjsxHXZn3Ixq4TArF4aDgJb0zdHG/ehihPz0X2j/Q3Dh+9LKocyg1GW
+	VSfhuQM5gquiHcDbResn0zHkM5Fj3hJY3nj+7jG2qPZhL7bVuavzGyG0iMgEM8ge
+	7WFMWZcFAAzxdL4Rrb9lbjPZs7rk10UWSYqKzSp8ZtMdSjR7v9qaHoSlV/A8x3jw
+	RvyufP3N/xGBtWJfrCKL0FXWixXXDfhqaxgXIjuePZ7p7cqU5d72+6tREHIfHNQ=
+	=
+Received: from nalasppmta05.qualcomm.com (Global_NAT1.qualcomm.com [129.46.96.20])
+	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 3xp9aa2ptc-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 23 Apr 2024 23:32:22 +0000 (GMT)
+Received: from nalasex01b.na.qualcomm.com (nalasex01b.na.qualcomm.com [10.47.209.197])
+	by NALASPPMTA05.qualcomm.com (8.17.1.5/8.17.1.5) with ESMTPS id 43NNWLcS032294
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 23 Apr 2024 23:32:21 GMT
+Received: from hu-obabatun-lv.qualcomm.com (10.49.16.6) by
+ nalasex01b.na.qualcomm.com (10.47.209.197) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.1544.9; Tue, 23 Apr 2024 16:32:18 -0700
+From: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
+To: <ysato@users.sourceforge.jp>, <dalias@libc.org>,
+        <glaubitz@physik.fu-berlin.de>
+CC: <akpm@linux-foundation.org>, <linux-sh@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>, <robh+dt@kernel.org>,
+        <kernel@quicinc.com>, Oreoluwa Babatunde <quic_obabatun@quicinc.com>,
+        Rob Herring <robh@kernel.org>
+Subject: [PATCH v2] sh: Call paging_init() earlier in the init sequence
+Date: Tue, 23 Apr 2024 16:31:50 -0700
+Message-ID: <20240423233150.74302-1-quic_obabatun@quicinc.com>
+X-Mailer: git-send-email 2.34.1
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20240403131936.787234-15-linux@roeck-us.net>
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-ClientProxiedBy: nalasex01c.na.qualcomm.com (10.47.97.35) To
+ nalasex01b.na.qualcomm.com (10.47.209.197)
+X-QCInternal: smtphost
+X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=5800 signatures=585085
+X-Proofpoint-GUID: jsnF7tXTfziMa_uh5TBx30HVCn70jfiM
+X-Proofpoint-ORIG-GUID: jsnF7tXTfziMa_uh5TBx30HVCn70jfiM
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1011,Hydra:6.0.650,FMLib:17.11.176.26
+ definitions=2024-04-23_18,2024-04-23_02,2023-05-22_02
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscore=1011 mlxlogscore=999
+ bulkscore=0 mlxscore=0 lowpriorityscore=0 phishscore=0 malwarescore=0
+ impostorscore=0 adultscore=0 spamscore=0 suspectscore=0 priorityscore=1501
+ classifier=spam adjust=0 reason=mlx scancount=1 engine=8.19.0-2404010003
+ definitions=main-2404230065
 
-On Wed, Apr 03, 2024 at 06:19:35AM -0700, Guenter Roeck wrote:
-> Add name of functions triggering warning backtraces to the __bug_table
-> object section to enable support for suppressing WARNING backtraces.
-> 
-> To limit image size impact, the pointer to the function name is only added
-> to the __bug_table section if both CONFIG_KUNIT_SUPPRESS_BACKTRACE and
-> CONFIG_DEBUG_BUGVERBOSE are enabled. Otherwise, the __func__ assembly
-> parameter is replaced with a (dummy) NULL parameter to avoid an image size
-> increase due to unused __func__ entries (this is necessary because __func__
-> is not a define but a virtual variable).
-> 
-> To simplify the implementation, unify the __BUG_ENTRY_ADDR and
-> __BUG_ENTRY_FILE macros into a single macro named __BUG_REL() which takes
-> the address, file, or function reference as parameter.
-> 
-> Tested-by: Linux Kernel Functional Testing <lkft@linaro.org>
-> Acked-by: Dan Carpenter <dan.carpenter@linaro.org>
-> Cc: Paul Walmsley <paul.walmsley@sifive.com>
-> Cc: Palmer Dabbelt <palmer@dabbelt.com>
-> Cc: Albert Ou <aou@eecs.berkeley.edu>
-> Signed-off-by: Guenter Roeck <linux@roeck-us.net>
-> ---
-> v2:
-> - Rebased to v6.9-rc1
-> - Added Tested-by:, Acked-by:, and Reviewed-by: tags
-> - Introduced KUNIT_SUPPRESS_BACKTRACE configuration option
-> v3:
-> - Rebased to v6.9-rc2
-> 
->  arch/riscv/include/asm/bug.h | 38 ++++++++++++++++++++++++------------
->  1 file changed, 26 insertions(+), 12 deletions(-)
-> 
-> diff --git a/arch/riscv/include/asm/bug.h b/arch/riscv/include/asm/bug.h
-> index 1aaea81fb141..79f360af4ad8 100644
-> --- a/arch/riscv/include/asm/bug.h
-> +++ b/arch/riscv/include/asm/bug.h
-> @@ -30,26 +30,39 @@
->  typedef u32 bug_insn_t;
->  
->  #ifdef CONFIG_GENERIC_BUG_RELATIVE_POINTERS
-> -#define __BUG_ENTRY_ADDR	RISCV_INT " 1b - ."
-> -#define __BUG_ENTRY_FILE	RISCV_INT " %0 - ."
-> +#define __BUG_REL(val)	RISCV_INT " " __stringify(val) " - ."
->  #else
-> -#define __BUG_ENTRY_ADDR	RISCV_PTR " 1b"
-> -#define __BUG_ENTRY_FILE	RISCV_PTR " %0"
-> +#define __BUG_REL(val)	RISCV_PTR " " __stringify(val)
->  #endif
->  
->  #ifdef CONFIG_DEBUG_BUGVERBOSE
-> +
-> +#ifdef CONFIG_KUNIT_SUPPRESS_BACKTRACE
-> +# define HAVE_BUG_FUNCTION
-> +# define __BUG_FUNC_PTR	__BUG_REL(%1)
-> +#else
-> +# define __BUG_FUNC_PTR
-> +#endif /* CONFIG_KUNIT_SUPPRESS_BACKTRACE */
-> +
->  #define __BUG_ENTRY			\
-> -	__BUG_ENTRY_ADDR "\n\t"		\
-> -	__BUG_ENTRY_FILE "\n\t"		\
-> -	RISCV_SHORT " %1\n\t"		\
-> -	RISCV_SHORT " %2"
-> +	__BUG_REL(1b) "\n\t"		\
-> +	__BUG_REL(%0) "\n\t"		\
-> +	__BUG_FUNC_PTR "\n\t"		\
-> +	RISCV_SHORT " %2\n\t"		\
-> +	RISCV_SHORT " %3"
->  #else
->  #define __BUG_ENTRY			\
-> -	__BUG_ENTRY_ADDR "\n\t"		\
-> -	RISCV_SHORT " %2"
-> +	__BUG_REL(1b) "\n\t"		\
-> +	RISCV_SHORT " %3"
->  #endif
->  
->  #ifdef CONFIG_GENERIC_BUG
-> +#ifdef HAVE_BUG_FUNCTION
-> +# define __BUG_FUNC	__func__
-> +#else
-> +# define __BUG_FUNC	NULL
-> +#endif
-> +
->  #define __BUG_FLAGS(flags)					\
->  do {								\
->  	__asm__ __volatile__ (					\
-> @@ -58,10 +71,11 @@ do {								\
->  			".pushsection __bug_table,\"aw\"\n\t"	\
->  		"2:\n\t"					\
->  			__BUG_ENTRY "\n\t"			\
-> -			".org 2b + %3\n\t"                      \
-> +			".org 2b + %4\n\t"                      \
->  			".popsection"				\
->  		:						\
-> -		: "i" (__FILE__), "i" (__LINE__),		\
-> +		: "i" (__FILE__), "i" (__BUG_FUNC),		\
-> +		  "i" (__LINE__),				\
->  		  "i" (flags),					\
->  		  "i" (sizeof(struct bug_entry)));              \
->  } while (0)
-> -- 
-> 2.39.2
-> 
-> 
-> _______________________________________________
-> linux-riscv mailing list
-> linux-riscv@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-riscv
+The unflatten_device_tree() function contains a call to
+memblock_alloc(). This is a problem because this allocation is done
+before any of the reserved memory is set aside in paging_init().
+This means that there is a possibility for memblock to allocate from
+any of the memory regions that are supposed to be set aside as reserved.
 
-Reviewed-by: Charlie Jenkins <charlie@rivosinc.com>
+Hence, move the call to paging_init() to be earlier in the init
+sequence so that the reserved memory regions are set aside before any
+allocations are done using memblock.
 
-- Charlie
+Reviewed-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
+---
+v2:
+- Added Rob Herrings Reviewed-by.
+- cc Andrew Morton to assist with merging this for sh architecture.
+  Similar change made for loongarch and openrisc in v1 have already
+  been merged.
+
+v1:
+https://lore.kernel.org/all/1707524971-146908-4-git-send-email-quic_obabatun@quicinc.com/
+
+ arch/sh/kernel/setup.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+index 620e5cf8ae1e..98c8473e130d 100644
+--- a/arch/sh/kernel/setup.c
++++ b/arch/sh/kernel/setup.c
+@@ -322,6 +322,8 @@ void __init setup_arch(char **cmdline_p)
+ 	/* Let earlyprintk output early console messages */
+ 	sh_early_platform_driver_probe("earlyprintk", 1, 1);
+ 
++	paging_init();
++
+ #ifdef CONFIG_OF_EARLY_FLATTREE
+ #ifdef CONFIG_USE_BUILTIN_DTB
+ 	unflatten_and_copy_device_tree();
+@@ -330,8 +332,6 @@ void __init setup_arch(char **cmdline_p)
+ #endif
+ #endif
+ 
+-	paging_init();
+-
+ 	/* Perform the machine specific initialisation */
+ 	if (likely(sh_mv.mv_setup))
+ 		sh_mv.mv_setup(cmdline_p);
+-- 
+2.34.1
 
