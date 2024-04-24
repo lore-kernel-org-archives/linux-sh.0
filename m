@@ -1,97 +1,161 @@
-Received: from mail-yb1-f174.google.com (mail-yb1-f174.google.com [209.85.219.174])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mail.avm.de (mail.avm.de [212.42.244.94])
+	(using TLSv1.2 with cipher DHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 161BC15AAB1
-	for <linux-sh@vger.kernel.org>; Wed, 24 Apr 2024 12:05:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.174
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 49FE915ADAD;
+	Wed, 24 Apr 2024 12:24:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.42.244.94
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1713960328; cv=none; b=RgBSZbrU1P1HAok3/GDrVFurbwQTnZEG2JADx44/QX98WBnNhUXQX/MoK0tkTz4S4H8FG+2p3kIJ9mHRVPMUpiMw2wISHnV2lxpqboy5ZCmx03mqpHLGObrcoPMGPtSkwIIZMmtOEgFi9VU5XL5ROpAfUG/0duZ7lKm0XRivMbI=
+	t=1713961470; cv=none; b=HgqLL3BiTVgG2FGDg4TCJahQazNn9D6gCKhFvaKXwlFcuxiwP3KphkU3HYIKlBsfN2/tQ+7m9y0WtIwCEzDEc6FjvZgBaHoH1vTGJ2ETQQAsxKztj7zp7MCwLS3pz+XSqznVGyHv9LSTlYurydiKtBebVXABUHPg/5wDNzwx6LM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1713960328; c=relaxed/simple;
-	bh=9UM4iGKiB2NyiGN7Qw/hLObNC65imW+ASsj696wnrvs=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=uxKeNchlHqJ2ZaVqZKVGFTEtdN/qJao4qBV6PF4qilXH6T83xjVEBL4e8MPE/DphwadurjvR5KZtlm4Ow7uLb8dbpasiG/xfP03ti7KYBI9kG+1wbUHQiSyxd/UALrSZhixMPUgu/+SgAuCyq0vHGsjmx6rEV/1afE5WAWw/7Ps=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.219.174
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-yb1-f174.google.com with SMTP id 3f1490d57ef6-de54b28c41eso2195054276.0
-        for <linux-sh@vger.kernel.org>; Wed, 24 Apr 2024 05:05:23 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1713960322; x=1714565122;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=7XV03de7We9x8LeV5vg9UhXU3HnB+gyBGStDmY6jLL0=;
-        b=g8BmRoZSwx58NrUrZz/puMvfp0wt9UVmDmLk5AVTOdJP7aHE9Ss9TTBrZXCMbnHL0f
-         XNIWHPN0cNstvS+bcKASE5+zO//Q/itv+0MTI/tJArpmspHuYNtG5GWlRmt3oBh4Ptn3
-         cjSV+1yCz1wndoy7DPzugkN+YEcvPxJ4PeR5LF+4BzKdq8C2JuFJn0hMaJ2ZdP9Lrhiw
-         04I27eCK1B9WiDCB9p9hFQHTN7PEY2nlJJWhMEUAOER0NtzvPK0ubFMaU5HcWzIYbA+b
-         8yYHq6ojGUmKEzPuBHFt4ntxr2aQB52Cdc71cv+BmM6RJeRQFbqDJxJUAlj8Uf3Y6yxD
-         D71A==
-X-Gm-Message-State: AOJu0YxU9hJehMN1K/bPQtxN7/dbej3gZX/4tH91mUrmEIJnGoDt7rZ8
-	0nUBAO6z0+senkv/SsWQ26E8KX7NW+bRuG7JAckiwtOh0pbWjw7G1n//8w0J
-X-Google-Smtp-Source: AGHT+IH9A0AOF8ve+bqVgDICCOG7vI5GEf4XNsGCaxBdjLwTJsxlNCYKhCQwWoeubJIbLKCzZe2ANw==
-X-Received: by 2002:a25:680f:0:b0:de4:6e64:ea7e with SMTP id d15-20020a25680f000000b00de46e64ea7emr2264212ybc.31.1713960322251;
-        Wed, 24 Apr 2024 05:05:22 -0700 (PDT)
-Received: from mail-yb1-f171.google.com (mail-yb1-f171.google.com. [209.85.219.171])
-        by smtp.gmail.com with ESMTPSA id d63-20020a256842000000b00dcb02a7e071sm3185714ybc.35.2024.04.24.05.05.21
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 24 Apr 2024 05:05:22 -0700 (PDT)
-Received: by mail-yb1-f171.google.com with SMTP id 3f1490d57ef6-de54b28c41eso2194939276.0
-        for <linux-sh@vger.kernel.org>; Wed, 24 Apr 2024 05:05:21 -0700 (PDT)
-X-Received: by 2002:a05:6902:1b02:b0:dcf:411a:3d22 with SMTP id
- eh2-20020a0569021b0200b00dcf411a3d22mr2423576ybb.60.1713960321509; Wed, 24
- Apr 2024 05:05:21 -0700 (PDT)
+	s=arc-20240116; t=1713961470; c=relaxed/simple;
+	bh=bfQI4Yq0CyiT7iayneJPtPZ0mu3Owe3QmD6Ot4PZCd4=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=d1LAI6oBGmkB1bzh5qTozZo1yCPFTzwoPj5jjMteLWw3dpEWmPdjpa5XUQFaNEqyw5S2XOLMjY6j/aRxFguqLbFE0s6PRUSTLfP0QNDsfqLYsf53xfuNDYXXns3FpXXADzjN3dtUnsOc+5j6i9d3N8qn78kPA/Kj3AhcICVRlDc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=avm.de; spf=pass smtp.mailfrom=avm.de; dkim=pass (1024-bit key) header.d=avm.de header.i=@avm.de header.b=sKyi2idq; arc=none smtp.client-ip=212.42.244.94
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=avm.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=avm.de
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=avm.de header.i=@avm.de header.b="sKyi2idq"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=avm.de; s=mail;
+	t=1713961443; bh=bfQI4Yq0CyiT7iayneJPtPZ0mu3Owe3QmD6Ot4PZCd4=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=sKyi2idqZcDH+tgmc9hbaskD5ctWLBkt7vnl7pbMPq181SHLSEWfh50lFb3m8bv0I
+	 hPcJ7413r8l6dYZa2TLhNcZPF4620HYDJbVClbs9OOZgYum7QfQUV6cSw3Yu9Ou85t
+	 v8VF7LBwTbiJDLW4PVyFumgdxgFdnRyOUESnTDco=
+Received: from mail-auth.avm.de (dovecot-mx-01.avm.de [212.42.244.71])
+	by mail.avm.de (Postfix) with ESMTPS;
+	Wed, 24 Apr 2024 14:24:03 +0200 (CEST)
+Received: from buildd.core.avm.de (buildd-sv-01.avm.de [172.16.0.225])
+	by mail-auth.avm.de (Postfix) with ESMTPA id 1BD9780472;
+	Wed, 24 Apr 2024 14:24:03 +0200 (CEST)
+Received: by buildd.core.avm.de (Postfix, from userid 1000)
+	id 101DA18334E; Wed, 24 Apr 2024 14:24:03 +0200 (CEST)
+Date: Wed, 24 Apr 2024 14:24:03 +0200
+From: Nicolas Schier <n.schier@avm.de>
+To: Masahiro Yamada <masahiroy@kernel.org>
+Cc: linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	linux-sh@vger.kernel.org, Jonathan Corbet <corbet@lwn.net>,
+	Nathan Chancellor <nathan@kernel.org>, linux-doc@vger.kernel.org
+Subject: Re: [PATCH v2 2/2] kconfig: remove 'optional' property support
+Message-ID: <Zij545f6JVmmbcoj@buildd.core.avm.de>
+References: <20240422164104.2869507-1-masahiroy@kernel.org>
+ <20240422164104.2869507-3-masahiroy@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1709326528.git.geert+renesas@glider.be>
-In-Reply-To: <cover.1709326528.git.geert+renesas@glider.be>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 24 Apr 2024 14:05:09 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdWug+QyJcwiCdo1b1reL2KU700cwkxmyNFHq-TfLYZ9pA@mail.gmail.com>
-Message-ID: <CAMuHMdWug+QyJcwiCdo1b1reL2KU700cwkxmyNFHq-TfLYZ9pA@mail.gmail.com>
-Subject: Re: [PATCH 00/20] sh: Fix missing prototypes
-To: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+In-Reply-To: <20240422164104.2869507-3-masahiroy@kernel.org>
+X-purgate-ID: 149429::1713961443-BD53ED52-146531E8/0/0
+X-purgate-type: clean
+X-purgate-size: 2753
+X-purgate-Ad: Categorized by eleven eXpurgate (R) http://www.eleven.de
+X-purgate: This mail is considered clean (visit http://www.eleven.de for further information)
+X-purgate: clean
 
-(reducing the audience)
+On Tue, Apr 23, 2024 at 01:41:04AM +0900, Masahiro Yamada wrote:
+> The 'choice' statement is primarily used to exclusively select one
+> option, but the 'optional' property allows all entries to be disabled.
+> 
+> In the following example, both A and B can be disabled simultaneously:
+> 
+>     choice
+>             prompt "choose A, B, or nothing"
+>             optional
+> 
+>     config A
+>             bool "A"
+> 
+>     config B
+>             bool "B"
+> 
+>     endchoice
+> 
+> You can achieve the equivalent outcome by other means.
+> 
+> A common solution is to add another option to guard the choice block.
+> In the following example, you can set ENABLE_A_B_CHOICE=n to disable
+> the entire choice block:
+> 
+>     choice
+>             prompt "choose A or B"
+>             depends on ENABLE_A_B_CHOICE
+> 
+>     config A
+>             bool "A"
+> 
+>     config B
+>             bool "B"
+> 
+>     endchoice
+> 
+> Another approach is to insert one more entry as a place-holder:
+> 
+>     choice
+>             prompt "choose A, B, or disable both"
+> 
+>     config A
+>             bool "A"
+> 
+>     config B
+>             bool "B"
+> 
+>     config DISABLE_A_AND_B
+>             bool "choose this to disable both A and B"
+> 
+>     endchoice
+> 
+> Some real examples are DEBUG_INFO_NONE, INITRAMFS_COMPRESSION_NONE,
+> LTO_NONE, etc.
+> 
+> The 'optional' property is even more unnecessary for a tristate choice.
+> 
+> Without the 'optional' property, you can disable A and B; you can set
+> 'm' in the choice prompt, and disable A and B individually:
+> 
+>     choice
+>             prompt "choose one built-in or make them modular"
+> 
+>     config A
+>             tristate "A"
+> 
+>     config B
+>             tristate "B"
+> 
+>     endchoice
+> 
+> In conclusion, the 'optional' property was unneeded.
+> 
+> Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
+> ---
+> 
+> (no changes since v1)
 
-On Fri, Mar 1, 2024 at 10:02=E2=80=AFPM Geert Uytterhoeven
-<geert+renesas@glider.be> wrote:
-> This patch series fixes several "no previous prototype for <foo>"
-> warnings when building a kernel for SuperH.
+thanks for the patch!
 
-This series is still valid, except for [PATCH 08/20][1], which got a v2[2].
-Please let me know if you want me to resend a v2 of the full series.
+I found just one small remnant that probably should be removed as well:
 
-Thanks!
+diff --git a/scripts/kconfig/tests/choice/__init__.py b/scripts/kconfig/tests/choice/__init__.py
+index 4318fce05912f..05e162220085c 100644
+--- a/scripts/kconfig/tests/choice/__init__.py
++++ b/scripts/kconfig/tests/choice/__init__.py
+@@ -8,4 +8,2 @@ The behavior of 'y' choice is intuitive.  If choice values are tristate,
+ the choice can be 'm' where each value can be enabled independently.
+-Also, if a choice is marked as 'optional', the whole choice can be
+-invisible.
+ """
 
-[1] "[PATCH 08/20] sh: boot: Add proper forward declarations"
-    https://lore.kernel.org/r/2614d991c816ece903ef47c715bcc53881d34f3f.1709=
-326528.git.geert+renesas@glider.be
+Reviewed-by: Nicolas Schier <n.schier@avm.de>
 
-[2] "[PATCH v2] sh: boot: Add proper forward declarations"
-    https://lore.kernel.org/r/b7ea770a3bf26fb2a5f59f4bb83072b2526f7134.1713=
-959841.git.geert+renesas@glider.be
+Kind regards,
+Nicolas
 
-Gr{oetje,eeting}s,
 
-                        Geert
-
---=20
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
-
-In personal conversations with technical people, I call myself a hacker. Bu=
-t
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+PS: For other reviewers, this patch (set) depends on
+https://lore.kernel.org/linux-kbuild/20240422161054.2867285-1-masahiroy@kernel.org/
