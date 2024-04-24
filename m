@@ -1,105 +1,124 @@
-Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
+Received: from mail-ot1-f49.google.com (mail-ot1-f49.google.com [209.85.210.49])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1DF61157478
-	for <linux-sh@vger.kernel.org>; Wed, 24 Apr 2024 06:48:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 42F96157489;
+	Wed, 24 Apr 2024 06:59:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1713941325; cv=none; b=oXCIK7uHwaPl6zFxkOdAyClD6eEuoyGGqqVQavwcFymBCONh5juFwVld799ikBG84LlE/QTq7lvXWfm/jOOtJ9nYkQhTpW6dwGZgMW99tdq3jhsxsvUJpMaaHaFJlW6+PL6gfbpOoFh0tJrv7ddX30YpMYKHVmpLLo1CKjsFe5g=
+	t=1713941961; cv=none; b=gZIXgX9hRD4icIzo8Chcab+SEaE6v0SKEK6tHwikKJBdwTpSKtMin9cWN44mgY5jaswod7LQaEZN0lap1hbYanr9mCWNstSthBSMMY1E2vWPu3kkwX2ji4AK7Mb2bYmrWviu0kv4nnUaLrrNul5Vj32swRLz9GqgcRDs7jon2BE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1713941325; c=relaxed/simple;
-	bh=5CU6mL+iQliAjVWbjAM7cnzdrrPIzC97UjspUCLrXDA=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=TS00jppWQzRF69jpJLoT5+orD9c8/anivq5xlmtbBN/F9rdnGkksJ+iuF1Oa7n6GxPo31vv/Of+3oB/YBDCczrSfS4ydQsS2bmf4jfUYUfgNDmYt/d62cJHgrmIVXeCIVeu6tNjlxstTJXjHOFrfuvqsIxFeZtCd6FkGiNLYBY0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org; spf=pass smtp.mailfrom=linaro.org; dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b=vNfExcaV; arc=none smtp.client-ip=209.85.128.54
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linaro.org
+	s=arc-20240116; t=1713941961; c=relaxed/simple;
+	bh=jAHDmzsFsjVVBqJnc/5HKSRpUTtI3iSAfhWByWRHiks=;
+	h=Content-Type:Mime-Version:Subject:From:In-Reply-To:Date:Cc:
+	 Message-Id:References:To; b=s/d2VhGnH6giYYisXnQcrRebbYYBnW56CIpz/DaNhLAAbRXyHgpRQLbmPujie0VNMBkeR7GQKDbzaiZbDGfhvjj0/jsy6OHALyayeTs+uUNlMAn/LSkTA3bYvl35flwMbFhGKerDuUXvK77TzqoymhBnr2HB9daN/E77WrgqKqc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=iu4HIMX7; arc=none smtp.client-ip=209.85.210.49
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b="vNfExcaV"
-Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-41a1d2a7b81so2881875e9.0
-        for <linux-sh@vger.kernel.org>; Tue, 23 Apr 2024 23:48:43 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="iu4HIMX7"
+Received: by mail-ot1-f49.google.com with SMTP id 46e09a7af769-6eb86b69e65so3858405a34.3;
+        Tue, 23 Apr 2024 23:59:20 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linaro.org; s=google; t=1713941322; x=1714546122; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+        d=gmail.com; s=20230601; t=1713941959; x=1714546759; darn=vger.kernel.org;
+        h=to:references:message-id:content-transfer-encoding:cc:date
+         :in-reply-to:from:subject:mime-version:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=r61Kb7IQFeca73kF1CUdR8Nck6Yrqjf3CouDIb1P98U=;
-        b=vNfExcaVYtlcpgdiHeOUgMU6utCfNEbc93oR4bUOnhUCA3WyreMkDNujfzC1SNjrnj
-         eLTK/uoVJODb5R/DcYNOW788rcl3TNNxcpZ8WzyyhRzsdhnfeTn0lQnquK87D7lx6Pe9
-         bi8TlNXddmq3+lUAJY4+xfWZ54KDbg0uRXsi2CI6I4taEClUqAMhw49vAG//NdC4RyDD
-         O9ouiL3GDjxnLpUqxgAw6nrCI1l9AEwK32bZe6NzIY5kOGNCM+f0QAqvTxD/i+KZz4W8
-         r2HJ7UIS0mgexa7N5fOwtam6U/1EjuYRQ9iA6GE+mon6C/lylu3ljAk1lkLopZ1rz9dg
-         Enbw==
+        bh=YWZZ+dn7fNGUKxcBZFkHNk8wd/FNa/kDs6IcDRWi3xA=;
+        b=iu4HIMX7C2FCi73z2vU2EpXkGiM9wSzdit0MBJMqHfCyRmpTJqcs/icntgTG/SJUIh
+         Q8PSAOTbRWL5HGZTEmzU8t+1qOsvoVfP6DJi5JQWPMzagn1EtD/BQtrStackcHcFJUCd
+         W4HSSp74M4fWwR4XbGc3ZcYfpsdeeJg0YkHnvG8ZB3ImIPpUAh0242Y4U2v+8quEhCcI
+         L7l9vca89beStKD6VlCpGdSEG0nxM9ZHlSxM5RX8zkxh2rVFl8sNWUQhhnnPZU/hOo3v
+         Hg654QXfTNDZ1YkibUx6Xug/EZoOQjKyuJtbt5SaH/lUXYc3sovzS+HwI7rW+fEDiuHV
+         mMNA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1713941322; x=1714546122;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+        d=1e100.net; s=20230601; t=1713941959; x=1714546759;
+        h=to:references:message-id:content-transfer-encoding:cc:date
+         :in-reply-to:from:subject:mime-version:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=r61Kb7IQFeca73kF1CUdR8Nck6Yrqjf3CouDIb1P98U=;
-        b=ARQ7T3isB/9mBL728ZzhtQaaaiJVjid2FkkjjuaNj8MavLUr+rChXJLI96nyZGhJp5
-         fdP5cHvCBGPZcqeYiwIkGqm+w3IfTxqtBbTox8gmDaB3n2Y1Jwfi4XYkav/1V95JMpKG
-         k9uouFFWCmzJvgv+X0X2EBuqAZPG3ZMssMupaGTVwiCJ3jO/wvrYnMRtglU0fpeF2mDq
-         ME9KL9x91CkTGx/T6oXU/wNOg3NRseJrqMJhGBJz53b58WS7Wu2R454f4vgpWK9rk7gN
-         K8yNjrFWhIp8w1pUhu0xaqtbao/LjjqS0AXmbw5G7sLNl1lGa3Tnvh2ocZ+7/rylnZIO
-         L4EQ==
-X-Forwarded-Encrypted: i=1; AJvYcCVRhgs7lF49ItEOFW6sdzujoaOh0KQBhqu28vbeUCX+WNUDZJOn6MFv0eYd+y4V2lt9hBAICizm538aXALwkLv0EbjEg4y6/rY=
-X-Gm-Message-State: AOJu0YzZUFBF9oRbxkFml03EAQuzEbU5OYFgSc/UHYewQbXBQN7FQtN6
-	+HqBkcLg7D2u9S4YYfukcx/2m/MgGdvVU0XBBNXs6tiPoKw8zP4tgandPLlVwF8FJG815aekHAE
-	C8xI=
-X-Google-Smtp-Source: AGHT+IHaQADJgMwIajA8lFxEUdw1lpqkdpyaVAJFqWUQcrZ+ZPia4iTy725UEakhayBhM96AyPmpog==
-X-Received: by 2002:a05:600c:3b91:b0:417:e316:fbb3 with SMTP id n17-20020a05600c3b9100b00417e316fbb3mr1013641wms.15.1713941322494;
-        Tue, 23 Apr 2024 23:48:42 -0700 (PDT)
-Received: from krzk-bin.. ([178.197.223.16])
-        by smtp.gmail.com with ESMTPSA id iv19-20020a05600c549300b004186c58a9b5sm22433236wmb.44.2024.04.23.23.48.40
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 23 Apr 2024 23:48:41 -0700 (PDT)
-From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
-To: Rob Herring <robh@kernel.org>,
-	Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
-	Conor Dooley <conor+dt@kernel.org>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	devicetree@vger.kernel.org,
-	linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
-Cc: Kousik Sanagavarapu <five231003@gmail.com>
-Subject: Re: [PATCH] sh: j2: drop incorrect SPI controller max frequency property
-Date: Wed, 24 Apr 2024 08:48:36 +0200
-Message-ID: <171394121882.41568.17609347008268237958.b4-ty@linaro.org>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20240322064221.25776-1-krzysztof.kozlowski@linaro.org>
-References: <20240322064221.25776-1-krzysztof.kozlowski@linaro.org>
+        bh=YWZZ+dn7fNGUKxcBZFkHNk8wd/FNa/kDs6IcDRWi3xA=;
+        b=iOcZZHx2o8zzMzdtxQKIUx6MRpT8nNdcWlvXPexSKVV6aJVGSxhk0bDm4H0bCYH5EH
+         o028KjQ0yW+Uk8EaznblDcRoD2rZMdm/xrc+b4XKq/XYMEdUFxYhrpkWuZh3g7RWNBsn
+         JRf1SIpViqt+pn3GxdTtKj0J3F9tvtFaYnbxow462hM9RRBFPxiOLB0HTLdQYlNRw0sr
+         NQOjI4GvVrnoEwHKh5FH2E2UP/UWI+G6oBAebcjhVZ/KZJW+NJU+cZKeRqrKO7OmUlZX
+         I9NQAJHuuGkQRHBFlkRQPEXKfglPYiDRtfTSCEzDKliYRhvO6vFwpo3GZaFPDu4zjfLc
+         I/QQ==
+X-Forwarded-Encrypted: i=1; AJvYcCWRM6IIzGZiEtNNeV16ekEa5yoGmFJ0EFeH7Kah5R4tS6RUdhraS6Danf4qxvMI6NVToGI3DjnfZyIBoR+M7EPpdjR2vKxeWNuxbP1PBGvYNXOynFm7z+shWy4WNEQZrcn3S37/wez2N0gVov40Hnx8zzaUdfQPizS9qMKayOlgDaP5
+X-Gm-Message-State: AOJu0YzhZIiR3sP3WTbCKm7QCNtqM978FCafQYGu2/LkJNkUHHPp8nS9
+	DF18gQO70aw06A1yHmMpA50RP2+Q0BMfj9bdvHRoC1RP1H7BQxfc
+X-Google-Smtp-Source: AGHT+IEOwg+BGEAz6/fsGPOw13LZuPP//HeGC7vsQd1OrWYlk42LFeKMCA0+u5KPiL1CSu6naAcP+A==
+X-Received: by 2002:a05:6870:a3d1:b0:21f:412a:87a8 with SMTP id h17-20020a056870a3d100b0021f412a87a8mr1940555oak.41.1713941959153;
+        Tue, 23 Apr 2024 23:59:19 -0700 (PDT)
+Received: from smtpclient.apple (120-51-0-113.east.xps.vectant.ne.jp. [120.51.0.113])
+        by smtp.gmail.com with ESMTPSA id x37-20020a056a000be500b006edcceffcb0sm10754234pfu.161.2024.04.23.23.59.16
+        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 23 Apr 2024 23:59:18 -0700 (PDT)
+Content-Type: text/plain;
+	charset=utf-8
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Mime-Version: 1.0 (Mac OS X Mail 16.0 \(3774.500.171.1.1\))
+Subject: Re: [PATCH] sh: j2: drop incorrect SPI controller max frequency
+ property
+From: "D. Jeff Dionne" <djeffdionne@gmail.com>
+In-Reply-To: <171394121882.41568.17609347008268237958.b4-ty@linaro.org>
+Date: Wed, 24 Apr 2024 15:59:04 +0900
+Cc: Rob Herring <robh@kernel.org>,
+ Krzysztof Kozlowski <krzysztof.kozlowski+dt@linaro.org>,
+ Conor Dooley <conor+dt@kernel.org>,
+ Yoshinori Sato <ysato@users.sourceforge.jp>,
+ Rich Felker <dalias@libc.org>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ devicetree@vger.kernel.org,
+ linux-sh@vger.kernel.org,
+ linux-kernel@vger.kernel.org,
+ Kousik Sanagavarapu <five231003@gmail.com>
+Content-Transfer-Encoding: quoted-printable
+Message-Id: <A9A1C6C4-2B40-4769-9C9D-3A4DB2C27C95@gmail.com>
+References: <20240322064221.25776-1-krzysztof.kozlowski@linaro.org>
+ <171394121882.41568.17609347008268237958.b4-ty@linaro.org>
+To: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+X-Mailer: Apple Mail (2.3774.500.171.1.1)
 
+Adrian,
 
-On Fri, 22 Mar 2024 07:42:21 +0100, Krzysztof Kozlowski wrote:
-> The J2 SPI controller bindings never allowed spi-max-frequency property
-> in the controller node.  Neither old spi-bus.txt bindings, nor new DT
-> schema allows it.  Linux driver does not parse that property from
-> controller node, thus drop it from DTS as incorrect hardware
-> description.  The SPI child device has already the same property with
-> the same value, so functionality should not be affected.
-> 
-> [...]
+IMHO, this driver should go through the SH tree.  Thanks Rob, for =
+testing the patch.
 
-Month passed, no replies from maintainers about picking it up. Dunno, looks
-abandoned, so let me grab this. If anyone else wants to pick it up, let me
-know.
+J.
 
-Applied, thanks!
+> On Apr 24, 2024, at 3:48=E2=80=AFPM, Krzysztof Kozlowski =
+<krzysztof.kozlowski@linaro.org> wrote:
+>=20
+>=20
+> On Fri, 22 Mar 2024 07:42:21 +0100, Krzysztof Kozlowski wrote:
+>> The J2 SPI controller bindings never allowed spi-max-frequency =
+property
+>> in the controller node.  Neither old spi-bus.txt bindings, nor new DT
+>> schema allows it.  Linux driver does not parse that property from
+>> controller node, thus drop it from DTS as incorrect hardware
+>> description.  The SPI child device has already the same property with
+>> the same value, so functionality should not be affected.
+>>=20
+>> [...]
+>=20
+> Month passed, no replies from maintainers about picking it up. Dunno, =
+looks
+> abandoned, so let me grab this. If anyone else wants to pick it up, =
+let me
+> know.
+>=20
+> Applied, thanks!
+>=20
+> [1/1] sh: j2: drop incorrect SPI controller max frequency property
+>      =
+https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux-dt.git/commit/?=
+h=3Dnext/dt&id=3Dcc92bf017f7c66c8a4050c61a7d11ddfd43f5cee
+>=20
+> Best regards,
+> --=20
+> Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+>=20
 
-[1/1] sh: j2: drop incorrect SPI controller max frequency property
-      https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux-dt.git/commit/?h=next/dt&id=cc92bf017f7c66c8a4050c61a7d11ddfd43f5cee
-
-Best regards,
--- 
-Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
