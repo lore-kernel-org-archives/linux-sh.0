@@ -1,126 +1,84 @@
-Received: from mx0b-0031df01.pphosted.com (mx0b-0031df01.pphosted.com [205.220.180.131])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1066A44C86;
-	Tue, 23 Apr 2024 23:32:42 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=205.220.180.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C158585C59;
+	Wed, 24 Apr 2024 04:47:11 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1713915164; cv=none; b=p3YAPr9+mMgPGB8+7OC+TH4Hjz5aId9qzMJspdAo8Ht9XpA3dEGw73ndw7I4Gwo7M1DFnOA2mu5cjXzXxyifUig1y5zbqUSIUCtiKStK9s7ZhBi2bAzsHlHEDOQcg74Wskmrjg6QjQRWlstXjmDe6AZvWIHEh9nMI0nylAFfItw=
+	t=1713934035; cv=none; b=O4BLNKuAv6aYnK11FX4NoYSVQwjCnZWgxxC7li+4/ZNBpxjUxfbECVCQE+0QBIm1jZzvNs3rN7/P/V9SEa9dJkgY8GP+tiPgpD21XeftP/b6N2G5Sx9AFjNgl6vF8RAMxCk/wo9pg8AbMCz3coJ2HydIXU9nejLL8aj6NySybDw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1713915164; c=relaxed/simple;
-	bh=PtODIwdNe+bcAg/fpYn1U2uSPxKWfe4QrTVb1dGFzYM=;
-	h=From:To:CC:Subject:Date:Message-ID:MIME-Version:Content-Type; b=I24yKOQk3ivSNPvzZB+8AdGA2srBIw0HfyIfnbMCV1pV7Cqodo60N2T+yqf6bnatY/a+3zGQdvfQFxX652f12ivHyfu6IhN8yhqymmQj3lA9i/Zjpg3zMK7b6RR/JzWZLf66eOiqAnYKEw7jdeJRB2SfasOLs3OGI5Q2WYKGC3k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com; spf=pass smtp.mailfrom=quicinc.com; dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b=Ags+LoJm; arc=none smtp.client-ip=205.220.180.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=quicinc.com
+	s=arc-20240116; t=1713934035; c=relaxed/simple;
+	bh=TBvnoEQcxOobd66GRpTkzGK29Z7TtnC7+5EEfw7++Mg=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=AnmWAkLpH7wBLiqYqnpRNdRvZ2z3L1C61GvUaiWExQDoghYxUkQF8mK/qVHIk4NPJGAO/chyMEnDeIJ3nSsGWZsHxAB9VBOcp3BjjGZCrCbyF5qjcJMyU4KOetwz6AWB5KDmW1acYVtOBTeuElSfnZh+Dy6ryB/dKWBCsiAIShw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=c1QULi3p; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b="Ags+LoJm"
-Received: from pps.filterd (m0279872.ppops.net [127.0.0.1])
-	by mx0a-0031df01.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 43NNRsZa023272;
-	Tue, 23 Apr 2024 23:32:22 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=quicinc.com; h=
-	from:to:cc:subject:date:message-id:mime-version
-	:content-transfer-encoding:content-type; s=qcppdkim1; bh=LJ1D41v
-	sL9OuSiqmo9PlB5k3GVvlK5C768SPmzKMyzA=; b=Ags+LoJm6QAa4ItyxcMGkb4
-	abFXFphIk16p7OTsrhdCdnCgeZW/kW83tOfMY2iLTZfvQY0Bp4/YPJgzrr6lHNgh
-	951YVH4YyHjsxHXZn3Ixq4TArF4aDgJb0zdHG/ehihPz0X2j/Q3Dh+9LKocyg1GW
-	VSfhuQM5gquiHcDbResn0zHkM5Fj3hJY3nj+7jG2qPZhL7bVuavzGyG0iMgEM8ge
-	7WFMWZcFAAzxdL4Rrb9lbjPZs7rk10UWSYqKzSp8ZtMdSjR7v9qaHoSlV/A8x3jw
-	RvyufP3N/xGBtWJfrCKL0FXWixXXDfhqaxgXIjuePZ7p7cqU5d72+6tREHIfHNQ=
-	=
-Received: from nalasppmta05.qualcomm.com (Global_NAT1.qualcomm.com [129.46.96.20])
-	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 3xp9aa2ptc-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 23 Apr 2024 23:32:22 +0000 (GMT)
-Received: from nalasex01b.na.qualcomm.com (nalasex01b.na.qualcomm.com [10.47.209.197])
-	by NALASPPMTA05.qualcomm.com (8.17.1.5/8.17.1.5) with ESMTPS id 43NNWLcS032294
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Tue, 23 Apr 2024 23:32:21 GMT
-Received: from hu-obabatun-lv.qualcomm.com (10.49.16.6) by
- nalasex01b.na.qualcomm.com (10.47.209.197) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.1544.9; Tue, 23 Apr 2024 16:32:18 -0700
-From: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
-To: <ysato@users.sourceforge.jp>, <dalias@libc.org>,
-        <glaubitz@physik.fu-berlin.de>
-CC: <akpm@linux-foundation.org>, <linux-sh@vger.kernel.org>,
-        <linux-kernel@vger.kernel.org>, <robh+dt@kernel.org>,
-        <kernel@quicinc.com>, Oreoluwa Babatunde <quic_obabatun@quicinc.com>,
-        Rob Herring <robh@kernel.org>
-Subject: [PATCH v2] sh: Call paging_init() earlier in the init sequence
-Date: Tue, 23 Apr 2024 16:31:50 -0700
-Message-ID: <20240423233150.74302-1-quic_obabatun@quicinc.com>
-X-Mailer: git-send-email 2.34.1
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="c1QULi3p"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
+	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=U49s6lS0kYZ2hBt5Nhxm/gouRaxZ/KmWkJlxsY0WEWg=; t=1713934031; x=1714538831; 
+	b=c1QULi3pSQHQfSWq9YFadNvxdObC/6pw6y4spKpqfPmod9f130xXPQZ9mQEPTeEC64KhZha/Mem
+	8fuZPVHwEveIuNodpnVNQL0Z+Hlpuqbu65LAkYfp2CC74f/deqV5A4G1XQuXCXui2lrmS2/e8p8GK
+	wAk4TYF9ypI52S92ZPODKLGJSPp3aS+A8kQx+neKq1w0xYY6aEST8kyVM20VHhAq2y7SiZseIEVq3
+	EBsIUYVso8pTiZLKky0HCxd1U/TrJqzB7AjXIDhGCAjIPnl9NZlPCJREtdOGm3Fk+OWoHVvUNB8FU
+	8XcnM19PLGOWGBJBKW20Z3pC0EE/z5FO0cSw==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.97)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1rzUX8-000000025fm-1akv; Wed, 24 Apr 2024 06:47:02 +0200
+Received: from [80.95.105.245] (helo=[172.16.2.143])
+          by inpost2.zedat.fu-berlin.de (Exim 4.97)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1rzUX8-00000000iLK-0eEo; Wed, 24 Apr 2024 06:47:02 +0200
+Message-ID: <ef14ac524b205037303afb3ca04b6456f6709c13.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH v2] sh: Call paging_init() earlier in the init sequence
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Oreoluwa Babatunde <quic_obabatun@quicinc.com>, 
+	ysato@users.sourceforge.jp, dalias@libc.org
+Cc: akpm@linux-foundation.org, linux-sh@vger.kernel.org, 
+ linux-kernel@vger.kernel.org, robh+dt@kernel.org, kernel@quicinc.com, Rob
+ Herring <robh@kernel.org>
+Date: Wed, 24 Apr 2024 06:47:01 +0200
+In-Reply-To: <20240423233150.74302-1-quic_obabatun@quicinc.com>
+References: <20240423233150.74302-1-quic_obabatun@quicinc.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.52.0 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
-X-ClientProxiedBy: nalasex01c.na.qualcomm.com (10.47.97.35) To
- nalasex01b.na.qualcomm.com (10.47.209.197)
-X-QCInternal: smtphost
-X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=5800 signatures=585085
-X-Proofpoint-GUID: jsnF7tXTfziMa_uh5TBx30HVCn70jfiM
-X-Proofpoint-ORIG-GUID: jsnF7tXTfziMa_uh5TBx30HVCn70jfiM
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1011,Hydra:6.0.650,FMLib:17.11.176.26
- definitions=2024-04-23_18,2024-04-23_02,2023-05-22_02
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscore=1011 mlxlogscore=999
- bulkscore=0 mlxscore=0 lowpriorityscore=0 phishscore=0 malwarescore=0
- impostorscore=0 adultscore=0 spamscore=0 suspectscore=0 priorityscore=1501
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.19.0-2404010003
- definitions=main-2404230065
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-The unflatten_device_tree() function contains a call to
-memblock_alloc(). This is a problem because this allocation is done
-before any of the reserved memory is set aside in paging_init().
-This means that there is a possibility for memblock to allocate from
-any of the memory regions that are supposed to be set aside as reserved.
+On Tue, 2024-04-23 at 16:31 -0700, Oreoluwa Babatunde wrote:
+> Reviewed-by: Rob Herring <robh@kernel.org>
+> Signed-off-by: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
+> ---
+> v2:
+> - Added Rob Herrings Reviewed-by.
+> - cc Andrew Morton to assist with merging this for sh architecture.
+>   Similar change made for loongarch and openrisc in v1 have already
+>   been merged.
 
-Hence, move the call to paging_init() to be earlier in the init
-sequence so that the reserved memory regions are set aside before any
-allocations are done using memblock.
+I'll do it no later than this weekend. Please don't put me under pressure.
 
-Reviewed-by: Rob Herring <robh@kernel.org>
-Signed-off-by: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
----
-v2:
-- Added Rob Herrings Reviewed-by.
-- cc Andrew Morton to assist with merging this for sh architecture.
-  Similar change made for loongarch and openrisc in v1 have already
-  been merged.
+Adrian
 
-v1:
-https://lore.kernel.org/all/1707524971-146908-4-git-send-email-quic_obabatun@quicinc.com/
-
- arch/sh/kernel/setup.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-index 620e5cf8ae1e..98c8473e130d 100644
---- a/arch/sh/kernel/setup.c
-+++ b/arch/sh/kernel/setup.c
-@@ -322,6 +322,8 @@ void __init setup_arch(char **cmdline_p)
- 	/* Let earlyprintk output early console messages */
- 	sh_early_platform_driver_probe("earlyprintk", 1, 1);
- 
-+	paging_init();
-+
- #ifdef CONFIG_OF_EARLY_FLATTREE
- #ifdef CONFIG_USE_BUILTIN_DTB
- 	unflatten_and_copy_device_tree();
-@@ -330,8 +332,6 @@ void __init setup_arch(char **cmdline_p)
- #endif
- #endif
- 
--	paging_init();
--
- 	/* Perform the machine specific initialisation */
- 	if (likely(sh_mv.mv_setup))
- 		sh_mv.mv_setup(cmdline_p);
--- 
-2.34.1
-
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
