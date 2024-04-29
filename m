@@ -1,61 +1,56 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 183D816415
-	for <linux-sh@vger.kernel.org>; Mon, 29 Apr 2024 07:24:45 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D480812E7C
+	for <linux-sh@vger.kernel.org>; Mon, 29 Apr 2024 07:46:45 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714375490; cv=none; b=lCU4IpEySKoBGZIdsqt8t+BF8Wu+lkb+Ue/au9M0X3aaYYwalHQ6T1ycD4Ls50y5T9sevSVdh+kWTFcOq7yU/XMhJI7mfSUivCkb6dAbIpOGn/t7y8nunTn1/LT1gnnu3nOFbEqS2dr77BFoO1R6lMKOtDrRGUyxYj1g8jxPwS0=
+	t=1714376809; cv=none; b=Zs6K1kxt0q6f+SmAmR6sk1EGSLCNSjfGlmg1boysLQ+UfjDv4/Z/5Q/nRu3YfYHr499thPZ5qxMxigc5bLeAJBbhCIhd6jMV3++6o+vw2A2XeehVe/olFgdU89PbROUX79VgS9fwWehAU6osmL/5nIiKdVMrPvF2XiySTritSrc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714375490; c=relaxed/simple;
-	bh=PkcWPRnMagBTxWA9DDlcNgBj0zUAwT8eVf8EgB8Vn/I=;
+	s=arc-20240116; t=1714376809; c=relaxed/simple;
+	bh=bV0OgeouqCdXMw2QUlhph8G6MXVcjC0yPnDFwEqrCNg=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=p/zIcIhWtsgx2ToNsd5XwHGSBsIx5xwPMWiRlO94RBkladfwNqoN5JokTZk0FPSuBzCRm8TfrMEJZZviPFvXCJcTLA2EbS/n07sfkCVO3CH8f68RVMa2yXENc4rlnzNDlRirciUGfsSYOUEe/RjLZVKFYmbyM9neTcP8kkz5/lE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=nlcyfqFX; arc=none smtp.client-ip=130.133.4.66
+	 Content-Type:MIME-Version; b=Cbl8QT4N3CKWmdy08vJiLu89jVKkEDWztqHswbzLEBcWKod5+P5J5c1XlQfxzZaDRbrxvqgCTjLqztuiYweIONgl6dl+K1n14Ilw4ATPzRMgJ/JAUPlOZIRtxs2FI+g/YzXMiMRYe59Bm1wvC4FfdA1oW8JYx/RnvRnUPJTeVTU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=X3aBQ611; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="nlcyfqFX"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="X3aBQ611"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
 	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
 	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
 	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=5LFg4cI/XF3jGTI+K2eUg6zwG8nTwhx0biNdn9Xraz0=; t=1714375486; x=1714980286; 
-	b=nlcyfqFXErmY/dKX5q5YxAUQCI/lJ7UVSxxR90U64Z7frt6mP9/8IkK68o89CnkE4N4Iimm2UTQ
-	swKd9PakPdqFGydvVzGQFWojYSJSFJE6btTQ9A1+PZn5kstSZJ3G+BX0t4rU4ZXFdqw4JGtW+Aj1t
-	QwJnQ7rg0vyEy44kvu0i9eP8seY9V8/R7KMVPWMsqsd9PwJhwW2FVJ86mAz8kDgFToOM2dXMSAzti
-	kwf4FiFmRCPtFcx/JDke2UxbAJstsDzcjavgmxtgPULlOUkTp9WIbyOKhRMJnJnV3cTwGrto8Qqo/
-	f2C6/XuviX8vBBEVPHftIe7gbmwfo7BnM8tw==;
+	bh=tDZuwNJIH5+x096VUQm5yzkiWSplNR8GeyRgiavZf+0=; t=1714376805; x=1714981605; 
+	b=X3aBQ611tGKnlsJE50WB/YjsiFb+dKzWGUXqP/GtMYw6IDHl8iJlZ5s3fXONbjISHGMblOVKMhi
+	LP9v+o0grgiRbPLQ3XfZCUIkWVYrP+v52v6DqQSGyWwNXQlIBwQL94xffYHzk8/0ubE6m3U84Zfcy
+	5846v9AewPn0+X9BK+LfYJhbbEYUyJMYCwWVfRj/A9x6Q7Q0WdTO9RuHMp8xgWfbd9yBkT9BKeWTa
+	El5P/gnpxjWeAzCIqRwHkJhd37y7jg1X5cZ2TNpo2Ie81GJkV9UUJcf7taTyX+lOxdim46VEvdT03
+	1I+MZbaeSMCAT2Zpsmyh4HfupMrrIpuJWBYQ==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.97)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1s1LNI-00000003EiV-269r; Mon, 29 Apr 2024 09:24:32 +0200
-Received: from dynamic-077-191-138-057.77.191.pool.telefonica.de ([77.191.138.57] helo=suse-laptop.fritz.box)
+          id 1s1Lij-00000003O8w-2d2a; Mon, 29 Apr 2024 09:46:41 +0200
+Received: from dynamic-077-191-138-057.77.191.pool.telefonica.de ([77.191.138.57] helo=[192.168.178.20])
           by inpost2.zedat.fu-berlin.de (Exim 4.97)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1s1LNI-000000018Vi-1EJx; Mon, 29 Apr 2024 09:24:32 +0200
-Message-ID: <dd9e54809bd03628551552ff953b6416f6464bd9.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: push-switch: Convert to platform remove callback
- returning void
+          id 1s1Lij-00000001C6l-1myc; Mon, 29 Apr 2024 09:46:41 +0200
+Message-ID: <d5f53c4c490d0058956f6a501191107c4b148720.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: boot: Remove sh5 cache handling
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Uwe =?ISO-8859-1?Q?Kleine-K=F6nig?= <u.kleine-koenig@pengutronix.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
- <dalias@libc.org>,  Duoming Zhou <duoming@zju.edu.cn>,
- kernel@pengutronix.de, Geert Uytterhoeven <geert+renesas@glider.be>, 
- linux-sh@vger.kernel.org
-Date: Mon, 29 Apr 2024 09:24:31 +0200
-In-Reply-To: <pc2glhr46ei3pyl46a3mb6wfkikzr4z6s7ltjlsdglwwd6aroy@yfvjdcwe4gid>
-References: <20240306211947.97103-2-u.kleine-koenig@pengutronix.de>
-	 <fwfwlvyuznwzwejg3iqvnvgolxaqfo3aod5gbydgbwpj5l4xmr@y7fuszpv7kry>
-	 <293d667c491ab0c2e02a7c6b64ec384aedaa6fb7.camel@physik.fu-berlin.de>
-	 <cca269f66f5acb6f38bbe169f7c739f1e65eb0ac.camel@physik.fu-berlin.de>
-	 <pc2glhr46ei3pyl46a3mb6wfkikzr4z6s7ltjlsdglwwd6aroy@yfvjdcwe4gid>
+To: Geert Uytterhoeven <geert+renesas@glider.be>, Yoshinori Sato
+	 <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Arnd Bergmann
+	 <arnd@arndb.de>
+Cc: linux-sh@vger.kernel.org
+Date: Mon, 29 Apr 2024 09:46:40 +0200
+In-Reply-To: <23e9b3fd0d78e46c9fc1835852ba226aba92c3ca.1713959531.git.geert+renesas@glider.be>
+References: 
+	<23e9b3fd0d78e46c9fc1835852ba226aba92c3ca.1713959531.git.geert+renesas@glider.be>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.52.0 
@@ -68,26 +63,90 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-On Mon, 2024-04-29 at 09:22 +0200, Uwe Kleine-K=C3=B6nig wrote:
-> On Thu, Apr 11, 2024 at 09:49:13AM +0200, John Paul Adrian Glaubitz wrote=
-:
-> > On Thu, 2024-04-11 at 09:47 +0200, John Paul Adrian Glaubitz wrote:
-> > > On Thu, 2024-04-11 at 09:18 +0200, Uwe Kleine-K=C3=B6nig wrote:
-> > > > Apart from Geert's positive review reply I didn't get any feedback =
-on
-> > > > this patch and it didn't appear in next yet.
-> > >=20
-> > > The plan was to get everything approved before merging it for next
-> > > as a partial conversion to device tree for SH would probably cause
-> > > problems.
-> >=20
-> > Oops, sorry. I confused patches here.
-> >=20
-> > I'll pick it up for 6.10.
->=20
-> The patch didn't make it into next yet. Is this expected?
+Hi Geert,
 
-Already working on it.
+On Wed, 2024-04-24 at 13:54 +0200, Geert Uytterhoeven wrote:
+> Commit 37744feebc086908 ("sh: remove sh5 support") in v5.8 forgot to
+> remove the sh5 cache handling.
+>=20
+> Suggested-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+>  arch/sh/boot/compressed/Makefile |  2 +-
+>  arch/sh/boot/compressed/cache.c  | 13 -------------
+>  arch/sh/boot/compressed/misc.c   |  7 -------
+>  3 files changed, 1 insertion(+), 21 deletions(-)
+>  delete mode 100644 arch/sh/boot/compressed/cache.c
+>=20
+> diff --git a/arch/sh/boot/compressed/Makefile b/arch/sh/boot/compressed/M=
+akefile
+> index 6c6c791a1d0630e2..54efed53c8918eef 100644
+> --- a/arch/sh/boot/compressed/Makefile
+> +++ b/arch/sh/boot/compressed/Makefile
+> @@ -5,7 +5,7 @@
+>  # create a compressed vmlinux image from the original vmlinux
+>  #
+> =20
+> -OBJECTS :=3D head_32.o misc.o cache.o piggy.o \
+> +OBJECTS :=3D head_32.o misc.o piggy.o \
+>             ashiftrt.o ashldi3.o ashrsi3.o ashlsi3.o lshrsi3.o
+> =20
+>  targets :=3D vmlinux vmlinux.bin vmlinux.bin.gz vmlinux.bin.bz2 \
+> diff --git a/arch/sh/boot/compressed/cache.c b/arch/sh/boot/compressed/ca=
+che.c
+> deleted file mode 100644
+> index 31e04ff4841ed084..0000000000000000
+> --- a/arch/sh/boot/compressed/cache.c
+> +++ /dev/null
+> @@ -1,13 +0,0 @@
+> -// SPDX-License-Identifier: GPL-2.0
+> -int cache_control(unsigned int command)
+> -{
+> -	volatile unsigned int *p =3D (volatile unsigned int *) 0x80000000;
+> -	int i;
+> -
+> -	for (i =3D 0; i < (32 * 1024); i +=3D 32) {
+> -		(void)*p;
+> -		p +=3D (32 / sizeof(int));
+> -	}
+> -
+> -	return 0;
+> -}
+> diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/mis=
+c.c
+> index ca05c99a3d5b488d..195367d40031f9e9 100644
+> --- a/arch/sh/boot/compressed/misc.c
+> +++ b/arch/sh/boot/compressed/misc.c
+> @@ -26,11 +26,6 @@
+>  #undef memcpy
+>  #define memzero(s, n)     memset ((s), 0, (n))
+> =20
+> -/* cache.c */
+> -#define CACHE_ENABLE      0
+> -#define CACHE_DISABLE     1
+> -int cache_control(unsigned int command);
+> -
+>  extern char input_data[];
+>  extern int input_len;
+>  static unsigned char *output;
+> @@ -139,8 +134,6 @@ void decompress_kernel(void)
+>  	free_mem_end_ptr =3D free_mem_ptr + HEAP_SIZE;
+> =20
+>  	puts("Uncompressing Linux... ");
+> -	cache_control(CACHE_ENABLE);
+>  	__decompress(input_data, input_len, NULL, NULL, output, 0, NULL, error)=
+;
+> -	cache_control(CACHE_DISABLE);
+>  	puts("Ok, booting the kernel.\n");
+>  }
+
+Interesting, looking at boot/compressed/cache.c, it seems that the whole co=
+de
+is actually a no-op and does nothing but increasing a pointer. So I agree w=
+e
+should just delete it.
+
+Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
 Adrian
 
