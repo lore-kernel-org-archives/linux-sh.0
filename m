@@ -1,122 +1,131 @@
-Received: from mail-yw1-f176.google.com (mail-yw1-f176.google.com [209.85.128.176])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8907815E8B
-	for <linux-sh@vger.kernel.org>; Mon, 29 Apr 2024 08:29:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.176
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AD9921118D
+	for <linux-sh@vger.kernel.org>; Mon, 29 Apr 2024 08:30:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714379379; cv=none; b=muw/WupD8UrFiCYuaUgOo+/uWOK6GLZRUMmjJ8LtUGMx9XUhSnm1WXodcod8d9vx7bG9BY5u/N4cF7ZAGcJwVKTv11/klxRqKn+WUjaESQgdVb5XRttSHfXsO/SXcDnNI+blz+zkHv9+axgpbezUFJmksfQ5OmVAD3153MSS/GE=
+	t=1714379423; cv=none; b=B6f+7+7b99nJKIfYw686K6uiR0/CJkRvU9Cwil8vQULYzrFb+P+l7VS+gX4MqCfOSOWs+g4IObQnHbX5MduV1JBJnA22g/BvxtI5tv9jkDHoiDJ2LefwpYl1eeJtSFlkTWJezE2maWq93cl8wOd4UMMx3Q07oDU9N76Km/c6kMg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714379379; c=relaxed/simple;
-	bh=n23cp+0MKJSv6s7t1/FasoRnS9VRaYPwOM3fs4ziZik=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=HNjaVPxzTSPli+AdeyTtbRhmEIv9VMCg3I5jcj7TzbPjohUdZuI0Ie/36DT1W/ZQP6CBrJnkipqHDjGg1uZCiDwrOFfTeHFJdgj9L0flgg6D4LJBVLA66zEcgHbOCONqNrYBxVF3+h1hezeRjIic/v5bMWP0DMYMrMwL1yQ6GnQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.128.176
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-yw1-f176.google.com with SMTP id 00721157ae682-61af74a010aso41090587b3.0
-        for <linux-sh@vger.kernel.org>; Mon, 29 Apr 2024 01:29:37 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1714379375; x=1714984175;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=qP838ybLo0vClxDieydL/8Gj4Tsl9YbKZ/29WjcXSiM=;
-        b=uNUYuAxN24ykrqAiasDxP8LZntNGuoNtB3fhQJ+MfmpyQB4SyzqbpyeOlfSoVCLC58
-         yEK9fC1lKRHDdwCjOYs+rvfv79PeTEC4yhjul2kLPbOfiscExZirCkfR6w3wtmGp3JGN
-         vdnyCjyRDa8hxYzEhCiswhOiWeV/yfixiBA9RQ8uOrFNvr9vmrcQ0Al5ShSoz7M43g42
-         9EVqwF7unZUenSoBc5onldNVQ20KGi5FyTaYl4Xtk6gw4ccZgdv3bFcQLqtgVxYZTI6D
-         qCb8kMO7K09wa9IlWOQo8ZSdOp2TWkrRdPzCHKIpCVY7wF/RYJhbov5kHFud5spx4hSZ
-         joOA==
-X-Forwarded-Encrypted: i=1; AJvYcCV0HduXQW4s1wiyJs9/jSF0nrBG3fWX7QCjHkcwALBwpvvut7hncv4dG0HCKuLLwUpeLKGJgciDUyjVFM9uXrFzMgXpJO8LFLw=
-X-Gm-Message-State: AOJu0Yx72/b0WIr291ev7X3Zq0vu8/Z4yth9LHJHv+MXdil8bA4CyvIz
-	FxTnoETR4R7eOnXI8tHGWi9XUR71zfqcFTeDMcEkn/ofDEqwLcwWvM1Kv7nD
-X-Google-Smtp-Source: AGHT+IE0VRQLCVrlG6LIJW9P4AbROuLWoqdylXSI4NNTnMOdw8l2V17BESNO4938j2nnRj0GkmsMEQ==
-X-Received: by 2002:a05:690c:6401:b0:61a:d21f:a131 with SMTP id hr1-20020a05690c640100b0061ad21fa131mr10775179ywb.37.1714379375533;
-        Mon, 29 Apr 2024 01:29:35 -0700 (PDT)
-Received: from mail-yw1-f172.google.com (mail-yw1-f172.google.com. [209.85.128.172])
-        by smtp.gmail.com with ESMTPSA id v3-20020a81b703000000b00615bd0701c7sm5298501ywh.118.2024.04.29.01.29.35
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 29 Apr 2024 01:29:35 -0700 (PDT)
-Received: by mail-yw1-f172.google.com with SMTP id 00721157ae682-61acfd3fd3fso45002977b3.1
-        for <linux-sh@vger.kernel.org>; Mon, 29 Apr 2024 01:29:35 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCWC4Ytc6hnW/wSJcv8u1qSZlZ32zz5TDcExd4s1Ou8nWFoyvawnXq4+yiBYXSMI7UZ6RkydbQPPx0bj+b3W2kSi3o4DAKZPdEE=
-X-Received: by 2002:a05:690c:3391:b0:61a:d3ac:5b51 with SMTP id
- fl17-20020a05690c339100b0061ad3ac5b51mr9413022ywb.38.1714379374988; Mon, 29
- Apr 2024 01:29:34 -0700 (PDT)
+	s=arc-20240116; t=1714379423; c=relaxed/simple;
+	bh=JaLaOtqIvYUrl9HpniFpibDtduN6o7ct7rcxygYn6Nk=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=GRlbG21DIdYfoiFrNkdcRHEcNlqCpjNj0Bq34stTnrz62XPE9wTXHWuXo2bxuG0A+toBM7o598QL1VaKREjjKHChMc9xXXfyECtOQIB8q6R3chhfMOFcLUkY3d5hImxdUpI1DBiTiWC2oesBc19eF5+l58Fbb2sQWxKzjkQRWJ0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=OFgikepa; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="OFgikepa"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
+	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=6BLmq4wMfJdn6WWMnnTU3e/n9xRo0JCnuj/jgRy3i38=; t=1714379421; x=1714984221; 
+	b=OFgikepadzLkxVsCw9nsBPsohzHOd3incrmV278JYOWJ1pICQkVzT6AMLQdgd6K6NzTeclJXYLS
+	MVSO40rS4X0idZ9f883TyEcg9wp8OFuvy1t+Eno7A7/e2I4jO1LnGNs6PG6qbt3S4hJDzPX56Afr/
+	cCBXlOuKVC38tp5gyOzIwjCceJycCpv0aQlF+XciG1apyvUE6dXdO3LDXu6az+n2UyyQpU+eaq0jA
+	dsSePlGPzcerPsn+uH3sEhN2d3ceN6W9wYKxUy1AdsoY2OqES9K/KAnA+Xk2BuJfej98rlUsCo8N2
+	4uGm0hDkFwRcmAS4ALwlKR35X//JebuiHGQQ==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.97)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1s1MOn-00000003fum-3zti; Mon, 29 Apr 2024 10:30:09 +0200
+Received: from dynamic-077-191-138-057.77.191.pool.telefonica.de ([77.191.138.57] helo=[192.168.178.20])
+          by inpost2.zedat.fu-berlin.de (Exim 4.97)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1s1MOn-00000001KBp-34Kh; Mon, 29 Apr 2024 10:30:09 +0200
+Message-ID: <9e26c50be78ff415f484cb9af9546a49002d3851.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: push-switch: Convert to platform remove callback
+ returning void
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Uwe =?ISO-8859-1?Q?Kleine-K=F6nig?= <u.kleine-koenig@pengutronix.de>, 
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>
+Cc: Geert Uytterhoeven <geert+renesas@glider.be>, Duoming Zhou
+	 <duoming@zju.edu.cn>, linux-sh@vger.kernel.org, kernel@vpengutronix.de
+Date: Mon, 29 Apr 2024 10:30:08 +0200
+In-Reply-To: <20240306211947.97103-2-u.kleine-koenig@pengutronix.de>
+References: <20240306211947.97103-2-u.kleine-koenig@pengutronix.de>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.52.0 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <23e9b3fd0d78e46c9fc1835852ba226aba92c3ca.1713959531.git.geert+renesas@glider.be>
- <d5f53c4c490d0058956f6a501191107c4b148720.camel@physik.fu-berlin.de>
- <CAMuHMdW5jMg4K454S=jQkU7EZUXyKYetqFVejL0ft1uxAJQpGQ@mail.gmail.com>
- <23a3abf08f358588ef448c1a2f2ef53013ce6b69.camel@physik.fu-berlin.de>
- <CAMuHMdXRDRfTB7WCP8O2ubgN3_9L6Hz2yEcUY3urFksM-2FEmg@mail.gmail.com> <09d677ad889a0bc2d7ae4324e0ca3e90d741b23b.camel@physik.fu-berlin.de>
-In-Reply-To: <09d677ad889a0bc2d7ae4324e0ca3e90d741b23b.camel@physik.fu-berlin.de>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Mon, 29 Apr 2024 10:29:22 +0200
-X-Gmail-Original-Message-ID: <CAMuHMdWrzme7Nr400-fcsYQx9Pir38COKGGMjnQG3fcpTHt_bg@mail.gmail.com>
-Message-ID: <CAMuHMdWrzme7Nr400-fcsYQx9Pir38COKGGMjnQG3fcpTHt_bg@mail.gmail.com>
-Subject: Re: [PATCH] sh: boot: Remove sh5 cache handling
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
-	Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-Hi Adrian,
+On Wed, 2024-03-06 at 22:19 +0100, Uwe Kleine-K=C3=B6nig wrote:
+> The .remove() callback for a platform driver returns an int which makes
+> many driver authors wrongly assume it's possible to do error handling by
+> returning an error code. However the value returned is ignored (apart
+> from emitting a warning) and this typically results in resource leaks.
+>=20
+> To improve here there is a quest to make the remove callback return
+> void. In the first step of this quest all drivers are converted to
+> .remove_new(), which already returns void. Eventually after all drivers
+> are converted, .remove_new() will be renamed to .remove().
+>=20
+> Trivially convert this driver from always returning zero in the remove
+> callback to the void returning variant.
+>=20
+> Signed-off-by: Uwe Kleine-K=C3=B6nig <u.kleine-koenig@pengutronix.de>
+> ---
+>  arch/sh/drivers/push-switch.c | 6 ++----
+>  1 file changed, 2 insertions(+), 4 deletions(-)
+>=20
+> diff --git a/arch/sh/drivers/push-switch.c b/arch/sh/drivers/push-switch.=
+c
+> index 6ecba5f521eb..362e4860bf52 100644
+> --- a/arch/sh/drivers/push-switch.c
+> +++ b/arch/sh/drivers/push-switch.c
+> @@ -91,7 +91,7 @@ static int switch_drv_probe(struct platform_device *pde=
+v)
+>  	return ret;
+>  }
+> =20
+> -static int switch_drv_remove(struct platform_device *pdev)
+> +static void switch_drv_remove(struct platform_device *pdev)
+>  {
+>  	struct push_switch *psw =3D platform_get_drvdata(pdev);
+>  	struct push_switch_platform_info *psw_info =3D pdev->dev.platform_data;
+> @@ -106,13 +106,11 @@ static int switch_drv_remove(struct platform_device=
+ *pdev)
+>  	free_irq(irq, pdev);
+> =20
+>  	kfree(psw);
+> -
+> -	return 0;
+>  }
+> =20
+>  static struct platform_driver switch_driver =3D {
+>  	.probe		=3D switch_drv_probe,
+> -	.remove		=3D switch_drv_remove,
+> +	.remove_new	=3D switch_drv_remove,
+>  	.driver		=3D {
+>  		.name	=3D DRV_NAME,
+>  	},
+>=20
+> base-commit: 11afac187274a6177a7ac82997f8691c0f469e41
 
-On Mon, Apr 29, 2024 at 10:22=E2=80=AFAM John Paul Adrian Glaubitz
-<glaubitz@physik.fu-berlin.de> wrote:
-> On Mon, 2024-04-29 at 10:06 +0200, Geert Uytterhoeven wrote:
-> > On Mon, Apr 29, 2024 at 9:52=E2=80=AFAM John Paul Adrian Glaubitz
-> > <glaubitz@physik.fu-berlin.de> wrote:
-> > >
-> > > Don't have the 32-bit SH CPUs any caches? The code itself is uncondit=
-ionally executed,
-> > > it seems.
-> >
-> > They do. E.g. SH7751 has 8+8 KiB of L1 cache.
-> > But e.g. sh7724 has 32+32KiB L1 cache, and 256 KiB of unified L2 cache.
-> > SH772[34] have l2_cache_init() to enable the L2 cache, so probably they
-> > boot with L2 disabled, and we are fine.
->
-> Understood. But what exactly was the job of cache_control() when all it
-> does was flushing the cache area? The cache is not enabled or disabled
+Thanks for elaborate explanation in the commit message which makes it much
+easier to understand the changes and the reasoning behind it. I fully agree
+with the changes.
 
-I assume flushing the cache was needed to push all code written to RAM.
+Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 
-> here, is it?
-
-No, it is not enabled or disabled. Probably that was planned for later,
-cfr. the command parameter.
-
-> Also, I was wondering whether this could be related to the boot lockups
-> that I am seeing on my SH-7786LCR which stops after printing "Uncompressi=
-ng
-> Linux...".
-
-I doubt it, unless reading from 0x80000000 causes a lock-up...
-
-
-> I will test later this week whether your patch actually fixes this issue.
-
-... in which case my patch will help ;-)
-
-Gr{oetje,eeting}s,
-
-                        Geert
+Adrian
 
 --=20
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
-
-In personal conversations with technical people, I call myself a hacker. Bu=
-t
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
