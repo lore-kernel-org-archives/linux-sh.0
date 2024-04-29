@@ -1,91 +1,99 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from mx0a-0031df01.pphosted.com (mx0a-0031df01.pphosted.com [205.220.168.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D41A886634;
-	Mon, 29 Apr 2024 17:26:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8D792128830;
+	Mon, 29 Apr 2024 17:55:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=205.220.168.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714411597; cv=none; b=AOEpu64U8nfSWg6xgbQbwiYAHKBFyg7M2Jm0YxKTLHTp+ULLnQ4z2v1Y+Kiwony0hmCsCjHYHFyo9ckCV912ZoDLbMVy+f1brC8UsPhp6Ij2G7c3xZgW6SVfANZ1RQvwxTSQBtiW5Z4RiOHDCAQYl/UjioWmSdk2z7ro03VF68Y=
+	t=1714413309; cv=none; b=JYklWgs3LExhP7Jvr1pWhCsSNlYkZ25FC3YypOU9/i4WdPhupEIdcLFkQoj26QOC+gMjn6H6iOqJREQDzZZgqrwarRnxUs0bpCzaPoOcQUrq+q6xe7N1pST97mqfoBXXGmayA9k4vMdqRWFA8rgBhF0YxcosiGPyMF+dveAtWS4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714411597; c=relaxed/simple;
-	bh=w07M/vaw50sNjlO6CMuybn5nRpOkqiRmdT3SgCEP3Jo=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=AO+6u4vXnfV2Lths1bHfIyVYaNP28BDdCmjSinkRHPwO/r4cvMbnXAfPwzqWq5vPSYbfH/FR87pptK0LRLsw8rQXwcO5rrXTOHAOKKRcstkF2eHFLabYBxcpKC2afC3CkbydY1tb3UpkWGluIhZHabv1Xn/BgwVzrN7mbB8O6XE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=Octz1rqy; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1714413309; c=relaxed/simple;
+	bh=vO3XR6uiSOnKDe6UToyLusq6Q1hWe4JEOoTuox8IlS4=;
+	h=Message-ID:Date:MIME-Version:Subject:To:CC:References:From:
+	 In-Reply-To:Content-Type; b=leSf7NOIEuRvs9HRjCrX9touW41NjSxPQoeiPj6gm2jPP9BDn1EcfIJKTwwkpwKfwfrjZgKAfzh9jT2YPU7fYJEx6HabcOy69/Oz0h0ugxDA+9slRcGZgxmdTIHWxrqkdjrmXE2mjhDU9os1cvadOjOfS51Me8rHZguH1MHqGvM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com; spf=pass smtp.mailfrom=quicinc.com; dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b=mgkhqObk; arc=none smtp.client-ip=205.220.168.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=quicinc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="Octz1rqy"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
-	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=r4nv9lqGpL5EGgvBQaVdji0KjEOJdAny/DoV/cKu4uk=; t=1714411593; x=1715016393; 
-	b=Octz1rqyfZo7K6W/ymQfTxjwICJOwp/HULD0VUNVqB9WB6BUrELf9S2I9m9oAi5MYU1Wpbah3XR
-	6z/SYETmHwgqvGl8IltZUR5yV7Jmj9gA0qtPNNC8KI0pZEZn0BRvg1C/IaTrYE617B1P3TSOxhS3A
-	tlqgvLzd4Hh5KGQtACi0w/BJIEtDY1JNwr4ArXudopddIKyIz6Mq9lPdp6OpxPA09pjgdb3O+YVW4
-	29ifsy3t4ZUMrx+ncUbp1HQA1375JW5Ox9bqADyiXdJfbawFAnIeQ9KJWJyBAHc80A5QRBer61+l9
-	Px+ovkS3Meku+iBp5IgU/8tlhPZRCzUdzxow==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.97)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1s1Ulp-00000002bEb-2d8Z; Mon, 29 Apr 2024 19:26:29 +0200
-Received: from dynamic-077-191-138-057.77.191.pool.telefonica.de ([77.191.138.57] helo=[192.168.178.20])
-          by inpost2.zedat.fu-berlin.de (Exim 4.97)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1s1Ulp-00000003Dr9-1kVo; Mon, 29 Apr 2024 19:26:29 +0200
-Message-ID: <9b3f9acd208842bb3c419b7f9bb40e1fe98f0c40.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2] sh: Call paging_init() earlier in the init sequence
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Oreoluwa Babatunde <quic_obabatun@quicinc.com>, 
-	ysato@users.sourceforge.jp, dalias@libc.org
-Cc: akpm@linux-foundation.org, linux-sh@vger.kernel.org, 
- linux-kernel@vger.kernel.org, robh+dt@kernel.org, kernel@quicinc.com, Rob
- Herring <robh@kernel.org>
-Date: Mon, 29 Apr 2024 19:26:28 +0200
-In-Reply-To: <b7296e60-1911-4302-b472-b0ae11cd3d87@quicinc.com>
-References: <20240423233150.74302-1-quic_obabatun@quicinc.com>
-	 <6ba5b226dfcbae3d9c789bb6943089621b315d65.camel@physik.fu-berlin.de>
-	 <b7296e60-1911-4302-b472-b0ae11cd3d87@quicinc.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.52.0 
+	dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b="mgkhqObk"
+Received: from pps.filterd (m0279864.ppops.net [127.0.0.1])
+	by mx0a-0031df01.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 43TEQG9q021880;
+	Mon, 29 Apr 2024 17:54:48 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=quicinc.com; h=
+	message-id:date:mime-version:subject:to:cc:references:from
+	:in-reply-to:content-type:content-transfer-encoding; s=
+	qcppdkim1; bh=vO3XR6uiSOnKDe6UToyLusq6Q1hWe4JEOoTuox8IlS4=; b=mg
+	khqObkAWXdQhPxUu3M53zsmmXNzhhrMi4kj2eTLYdUXlGRKPJNuDEB47xBN8xB5e
+	sjqJjdPzbPQvrQwLC7BE/rrn21bUXKTOgUmlNRZr6KWhs+krv0qYr4Pss0B/8btU
+	RCpOqL83E0sxkx97t7zCh+ogsTM8wLw7I4Vw9SvyODi1zLiQFworLoTcG2h/8/HV
+	AQSECwibDvgDcKYaJwwVSXBl6zrSS2JZxWjdaIzykGme5PXE/S+TdXSt2gICn+FI
+	F55MnjWi+rNGItgKlN75qQjHFyam3d5DbZuf6z3uOep2971lcM8gZ1shrgvDS8nn
+	11QjQ91hmoMWw72QWxRw==
+Received: from nalasppmta03.qualcomm.com (Global_NAT1.qualcomm.com [129.46.96.20])
+	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 3xtbv89tyh-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Mon, 29 Apr 2024 17:54:47 +0000 (GMT)
+Received: from nalasex01b.na.qualcomm.com (nalasex01b.na.qualcomm.com [10.47.209.197])
+	by NALASPPMTA03.qualcomm.com (8.17.1.5/8.17.1.5) with ESMTPS id 43THskcI013392
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Mon, 29 Apr 2024 17:54:46 GMT
+Received: from [10.71.110.192] (10.80.80.8) by nalasex01b.na.qualcomm.com
+ (10.47.209.197) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.2.1544.9; Mon, 29 Apr
+ 2024 10:54:43 -0700
+Message-ID: <be14d211-cc3d-4014-a52e-64e589d93798@quicinc.com>
+Date: Mon, 29 Apr 2024 10:54:43 -0700
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2] sh: Call paging_init() earlier in the init sequence
+Content-Language: en-US
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        <ysato@users.sourceforge.jp>, <dalias@libc.org>
+CC: <akpm@linux-foundation.org>, <linux-sh@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>, <robh+dt@kernel.org>,
+        <kernel@quicinc.com>, Rob Herring <robh@kernel.org>
+References: <20240423233150.74302-1-quic_obabatun@quicinc.com>
+ <6ba5b226dfcbae3d9c789bb6943089621b315d65.camel@physik.fu-berlin.de>
+ <b7296e60-1911-4302-b472-b0ae11cd3d87@quicinc.com>
+ <9b3f9acd208842bb3c419b7f9bb40e1fe98f0c40.camel@physik.fu-berlin.de>
+From: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
+In-Reply-To: <9b3f9acd208842bb3c419b7f9bb40e1fe98f0c40.camel@physik.fu-berlin.de>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+X-ClientProxiedBy: nasanex01a.na.qualcomm.com (10.52.223.231) To
+ nalasex01b.na.qualcomm.com (10.47.209.197)
+X-QCInternal: smtphost
+X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=5800 signatures=585085
+X-Proofpoint-ORIG-GUID: xWU3bm_CAKwD0y2vieM2ZvpxATCYgY-X
+X-Proofpoint-GUID: xWU3bm_CAKwD0y2vieM2ZvpxATCYgY-X
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1011,Hydra:6.0.650,FMLib:17.11.176.26
+ definitions=2024-04-29_15,2024-04-29_01,2023-05-22_02
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 clxscore=1015 mlxlogscore=659
+ mlxscore=0 impostorscore=0 malwarescore=0 spamscore=0 bulkscore=0
+ priorityscore=1501 lowpriorityscore=0 phishscore=0 adultscore=0
+ suspectscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.19.0-2404010003 definitions=main-2404290115
 
-Hi Oreoluwa,
 
-On Mon, 2024-04-29 at 09:28 -0700, Oreoluwa Babatunde wrote:
-> Here are links to the corresponding changes on Loongarch and Openrisc.
->=20
-> - Loongarch:
-> https://lore.kernel.org/all/20240218151403.2206980-1-chenhuacai@loongson.=
-cn/
->=20
-> - Openrisc:
-> https://lore.kernel.org/all/1707524971-146908-3-git-send-email-quic_obaba=
-tun@quicinc.com/
-
-Great, thanks a lot! I will apply all reviewed patches to my sh-linux tree =
-tomorrow.
-
-Thanks,
-Adrian
-
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+On 4/29/2024 10:26 AM, John Paul Adrian Glaubitz wrote:
+> Hi Oreoluwa,
+>
+> On Mon, 2024-04-29 at 09:28 -0700, Oreoluwa Babatunde wrote:
+>> Here are links to the corresponding changes on Loongarch and Openrisc.
+>>
+>> - Loongarch:
+>> https://lore.kernel.org/all/20240218151403.2206980-1-chenhuacai@loongson.cn/
+>>
+>> - Openrisc:
+>> https://lore.kernel.org/all/1707524971-146908-3-git-send-email-quic_obabatun@quicinc.com/
+> Great, thanks a lot! I will apply all reviewed patches to my sh-linux tree tomorrow.
+>
+> Thanks,
+> Adrian
+Thank you!
