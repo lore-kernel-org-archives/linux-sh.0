@@ -1,60 +1,56 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B589150292;
-	Wed,  1 May 2024 09:14:19 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C916208B6
+	for <linux-sh@vger.kernel.org>; Wed,  1 May 2024 09:26:06 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714554861; cv=none; b=j6RxaAdmssQGAiqypvcJbT48xmesLS0BTklWiNB5DMS4ZkumJ07cwN/6bzGmMIOetciPbqdAmBU+YJR0eu5uIhj4XOp0ATVwoANMsyecdUxfHJsMgJ1tHe2DXlh9zE0D48tK+jIJulQaIHmjT3vkAwGGYfZpLH/4N7tsQrZUe30=
+	t=1714555569; cv=none; b=louCil5YJ8d70Ifw90WbEsJKyCd8pOvlj24c4hpzPFIdLWFlvrzwxYi2K4bX5pgAqKz0/i/t+CqTILWaRWYyDy8k6DoMfs6DNpDXnGxR8kb1/igiB/rPZoKZ10VVMCEvzrSfcf4lM+mxlJCQ+WUMFyuL1kTCtjRKoZQk5jddd8k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714554861; c=relaxed/simple;
-	bh=7iwCUPmgbAilYH+cT6NBLywDyu+dsovWKl+e0m1QWu4=;
+	s=arc-20240116; t=1714555569; c=relaxed/simple;
+	bh=NV9MiS3mGd4AXCboUAA9URDd73qde3AGK6MA/eZvzJo=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=Mx2JiYV5k9Rg+ztVmb79CpLIGn1LXuxzknEKnDgPpzhlv6uJuf3aZkdHpJQQfLRUcryxXwgE9z/XAk5B11kJczeqK6v30QKq3KlLH7Du9B8EzxgTum7WxpWHfxmkbnsd81cQc0yu7tVpJXG8uFfORjMpKPsUVMlz/XHOJ59LFoo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=eMPiFVtn; arc=none smtp.client-ip=130.133.4.66
+	 Content-Type:MIME-Version; b=CaeU8nOKl+4NhNdq9siCCKQbQmBRjG0Sv4UfJgfky9p3+wIM5dakPfF5mwhUyz5oKiqrVKVJKl3zJ7L1qEZ4YaiFNAgoO8FNRFuukriLVLIBGqVaP/vRYimfSrOVphgCe//eRQE2fuxVFmIP/No0eS1hblTo3slYlFEXUS/rQiU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=nXhWw0ot; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="eMPiFVtn"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="nXhWw0ot"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
 	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
 	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
 	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=XZgPAplKGsbYVTcUmYpJ5ug+4DYIsNnlBBZ+/UCzGHA=; t=1714554859; x=1715159659; 
-	b=eMPiFVtnxwm42yog2knNnBG2BuxV63hgLneJ05Zmj3n23rqCMYkOPqmzGxSK2wgldlYQZOV4KZY
-	tIfsBnN0SuxtI9RgwDXw3QDA09o1z5CAeuxNQZTu1jDv0AvM/YeJ80KS64OYb2Qzgp3rVV7vCr2RY
-	hheDbZ3PNaSZ29Pl2akwLkcXnH6dd8iC8+wJvOluy661hv/Opjn2tPhaVuyPUiuy+SW3HDZBowNP+
-	cDawmXGls1WaiXeeUH+QlUMEtN+/JsqbSx0hV+wdgvNCLJ9ciIBQgL90v3Y4SeeLsJEGTzs42SVte
-	DeUETjQSg2mz9GwA6ENhMtVDNnVqSi3EXMxA==;
+	bh=diJM/isYU5oIai8m9DUnNwJ1j0Qb/4ZfMmLit8ARba8=; t=1714555566; x=1715160366; 
+	b=nXhWw0otC1AzaNpspLyqZEv8mYsW2ZzI5+SaEvpSuD/0GuDJ46U1+ObiSXgcBsCTQXWzYO5S/s6
+	3furNCSQdRopGe5u1wQcnFu9tgH5zKPNqtAIuqjP04Pk9dTysRGd/Rg+FucRFYLNP/yKi/AroDm1n
+	oUIHgq7xgUjX5Mj2xP308FcIS8wpPyx1zXzj7XHRqYj5jV2glblp4OuFRruR2pUI/Wj+3Tl3sr/Zs
+	n0mXqYI+4tgt19ThGZjDy4qswYWEZScT54UWRzF0iJFALIg/Fc8lpx+6wIQiUQ5jjiAF4D/o8ycWH
+	O4Co7kUmbvSPrd2J9AHziP/j7RLDaTeEj+EQ==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.97)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1s262X-000000004uI-1wn8; Wed, 01 May 2024 11:14:13 +0200
+          id 1s26Dy-000000007d8-2JaR; Wed, 01 May 2024 11:26:02 +0200
 Received: from dynamic-078-054-136-214.78.54.pool.telefonica.de ([78.54.136.214] helo=[192.168.178.20])
           by inpost2.zedat.fu-berlin.de (Exim 4.97)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1s262X-000000006ag-0xO0; Wed, 01 May 2024 11:14:13 +0200
-Message-ID: <952ee5e1f9492bc3f3799582ccc47c1f31d26fe8.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 00/20] sh: Fix missing prototypes
+          id 1s26Dy-000000009un-1Jk0; Wed, 01 May 2024 11:26:02 +0200
+Message-ID: <527c044218bfe2da6d6c8c63e29131bff7984c10.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: boot: Remove sh5 cache handling
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 To: Geert Uytterhoeven <geert+renesas@glider.be>, Yoshinori Sato
 	 <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Arnd Bergmann
 	 <arnd@arndb.de>
-Cc: Steven Rostedt <rostedt@goodmis.org>, Masami Hiramatsu
- <mhiramat@kernel.org>,  Mark Rutland <mark.rutland@arm.com>, Will Deacon
- <will@kernel.org>, "Aneesh Kumar K . V" <aneesh.kumar@linux.ibm.com>,
- Andrew Morton <akpm@linux-foundation.org>,  Nick Piggin
- <npiggin@gmail.com>, Peter Zijlstra <peterz@infradead.org>,
- linux-sh@vger.kernel.org,  linux-trace-kernel@vger.kernel.org
-Date: Wed, 01 May 2024 11:14:12 +0200
-In-Reply-To: <cover.1709326528.git.geert+renesas@glider.be>
-References: <cover.1709326528.git.geert+renesas@glider.be>
+Cc: linux-sh@vger.kernel.org
+Date: Wed, 01 May 2024 11:26:01 +0200
+In-Reply-To: <23e9b3fd0d78e46c9fc1835852ba226aba92c3ca.1713959531.git.geert+renesas@glider.be>
+References: 
+	<23e9b3fd0d78e46c9fc1835852ba226aba92c3ca.1713959531.git.geert+renesas@glider.be>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.52.0 
@@ -69,88 +65,91 @@ X-ZEDAT-Hint: PO
 
 Hi Geert,
 
-On Fri, 2024-03-01 at 22:02 +0100, Geert Uytterhoeven wrote:
-> 	Hi all,
+On Wed, 2024-04-24 at 13:54 +0200, Geert Uytterhoeven wrote:
+> Commit 37744feebc086908 ("sh: remove sh5 support") in v5.8 forgot to
+> remove the sh5 cache handling.
 >=20
-> This patch series fixes several "no previous prototype for <foo>"
-> warnings when building a kernel for SuperH.
+> Suggested-by: Yoshinori Sato <ysato@users.sourceforge.jp>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+>  arch/sh/boot/compressed/Makefile |  2 +-
+>  arch/sh/boot/compressed/cache.c  | 13 -------------
+>  arch/sh/boot/compressed/misc.c   |  7 -------
+>  3 files changed, 1 insertion(+), 21 deletions(-)
+>  delete mode 100644 arch/sh/boot/compressed/cache.c
 >=20
-> Known issues:
->   - The various warnings about cache functions are not yet fixed, but
->     I didn't want to hold off the rest of this series,
->   - sdk7786_defconfig needs "[PATCH/RFC] locking/spinlocks: Make __raw_*
->     lock ops static" [1],
->   - Probably there are more warnings to fix, I didn't build all
->     defconfigs.
->=20
-> This has been boot-tested on landisk and on qemu/rts7751r2d.
->=20
-> Thanks for your comments!
->=20
-> [1] https://lore.kernel.org/linux-sh/c395b02613572131568bc1fd1bc456d20d1a=
-5426.1709325647.git.geert+renesas@glider.be
->=20
-> Geert Uytterhoeven (20):
->   sh: pgtable: Fix missing prototypes
->   sh: fpu: Add missing forward declarations
->   sh: syscall: Add missing forward declaration for sys_cacheflush()
->   sh: tlb: Add missing forward declaration for handle_tlbmiss()
->   sh: return_address: Add missing #include <asm/ftrace.h>
->   sh: traps: Add missing #include <asm/setup.h>
->   sh: hw_breakpoint: Add missing forward declaration for
->     arch_bp_generic_fields()
->   sh: boot: Add proper forward declarations
->   sh: ftrace: Fix missing prototypes
->   sh: nommu: Add missing #include <asm/cacheflush.h>
->   sh: math-emu: Add missing #include <asm/fpu.h>
->   sh: dma: Remove unused dmac_search_free_channel()
->   sh: sh2a: Add missing #include <asm/processor.h>
->   sh: sh7786: Remove unused sh7786_usb_use_exclock()
->   sh: smp: Fix missing prototypes
->   sh: kprobes: Merge arch_copy_kprobe() into arch_prepare_kprobe()
->   sh: kprobes: Make trampoline_probe_handler() static
->   sh: kprobes: Remove unneeded kprobe_opcode_t casts
->   sh: dwarf: Make dwarf_lookup_fde() static
->   [RFC] sh: dma: Remove unused functionality
->=20
->  arch/sh/boot/compressed/cache.c         |   3 +
->  arch/sh/boot/compressed/cache.h         |  10 ++
->  arch/sh/boot/compressed/misc.c          |   8 +-
->  arch/sh/boot/compressed/misc.h          |   9 ++
->  arch/sh/drivers/dma/dma-api.c           | 143 ------------------------
->  arch/sh/include/asm/dma.h               |   7 --
->  arch/sh/include/asm/fpu.h               |   3 +
->  arch/sh/include/asm/ftrace.h            |  10 ++
->  arch/sh/include/asm/hw_breakpoint.h     |   2 +
->  arch/sh/include/asm/syscalls.h          |   1 +
->  arch/sh/include/asm/tlb.h               |   4 +
->  arch/sh/kernel/cpu/sh2a/opcode_helper.c |   2 +
->  arch/sh/kernel/cpu/sh4a/setup-sh7786.c  |  14 ---
->  arch/sh/kernel/dwarf.c                  |   2 +-
->  arch/sh/kernel/kprobes.c                |  13 +--
->  arch/sh/kernel/return_address.c         |   2 +
->  arch/sh/kernel/smp.c                    |   4 +-
->  arch/sh/kernel/traps.c                  |  10 +-
->  arch/sh/kernel/traps_32.c               |   1 +
->  arch/sh/math-emu/math.c                 |   2 +
->  arch/sh/mm/nommu.c                      |   2 +
->  arch/sh/mm/pgtable.c                    |   4 +-
->  arch/sh/mm/tlbex_32.c                   |   1 +
->  23 files changed, 68 insertions(+), 189 deletions(-)
->  create mode 100644 arch/sh/boot/compressed/cache.h
->  create mode 100644 arch/sh/boot/compressed/misc.h
->=20
+> diff --git a/arch/sh/boot/compressed/Makefile b/arch/sh/boot/compressed/M=
+akefile
+> index 6c6c791a1d0630e2..54efed53c8918eef 100644
+> --- a/arch/sh/boot/compressed/Makefile
+> +++ b/arch/sh/boot/compressed/Makefile
+> @@ -5,7 +5,7 @@
+>  # create a compressed vmlinux image from the original vmlinux
+>  #
+> =20
+> -OBJECTS :=3D head_32.o misc.o cache.o piggy.o \
+> +OBJECTS :=3D head_32.o misc.o piggy.o \
+>             ashiftrt.o ashldi3.o ashrsi3.o ashlsi3.o lshrsi3.o
+> =20
+>  targets :=3D vmlinux vmlinux.bin vmlinux.bin.gz vmlinux.bin.bz2 \
+> diff --git a/arch/sh/boot/compressed/cache.c b/arch/sh/boot/compressed/ca=
+che.c
+> deleted file mode 100644
+> index 31e04ff4841ed084..0000000000000000
+> --- a/arch/sh/boot/compressed/cache.c
+> +++ /dev/null
+> @@ -1,13 +0,0 @@
+> -// SPDX-License-Identifier: GPL-2.0
+> -int cache_control(unsigned int command)
+> -{
+> -	volatile unsigned int *p =3D (volatile unsigned int *) 0x80000000;
+> -	int i;
+> -
+> -	for (i =3D 0; i < (32 * 1024); i +=3D 32) {
+> -		(void)*p;
+> -		p +=3D (32 / sizeof(int));
+> -	}
+> -
+> -	return 0;
+> -}
+> diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/mis=
+c.c
+> index ca05c99a3d5b488d..195367d40031f9e9 100644
+> --- a/arch/sh/boot/compressed/misc.c
+> +++ b/arch/sh/boot/compressed/misc.c
+> @@ -26,11 +26,6 @@
+>  #undef memcpy
+>  #define memzero(s, n)     memset ((s), 0, (n))
+> =20
+> -/* cache.c */
+> -#define CACHE_ENABLE      0
+> -#define CACHE_DISABLE     1
+> -int cache_control(unsigned int command);
+> -
+>  extern char input_data[];
+>  extern int input_len;
+>  static unsigned char *output;
+> @@ -139,8 +134,6 @@ void decompress_kernel(void)
+>  	free_mem_end_ptr =3D free_mem_ptr + HEAP_SIZE;
+> =20
+>  	puts("Uncompressing Linux... ");
+> -	cache_control(CACHE_ENABLE);
+>  	__decompress(input_data, input_len, NULL, NULL, output, 0, NULL, error)=
+;
+> -	cache_control(CACHE_DISABLE);
+>  	puts("Ok, booting the kernel.\n");
+>  }
 
-For the whole series:
+Could you maybe send a version of this patch which will apply on top
+of your first series "sh: Fix missing prototypes"?
 
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+I'm asking because this patch conflicts with patch #8 from the series
+which still fixes some missing protoype warnings for the following
+functions, so we can't drop patch #8:
 
-I would still like to get feedback from Yoshinori on patch #20 though, i.e.
-
-	"sh: dma: Remove unused functionality".
-
-On the other hand, we could just merge this series and re-add the functions
-later if we decide they're still needed.
+- void arch_ftrace_ops_list_func(void);
+- void decompress_kernel(void);
+- void ftrace_stub(void);
 
 Adrian
 
