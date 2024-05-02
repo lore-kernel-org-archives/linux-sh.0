@@ -1,57 +1,55 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DE21557333;
-	Thu,  2 May 2024 10:29:51 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D91835A0F8;
+	Thu,  2 May 2024 10:31:58 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714645793; cv=none; b=dqWHpJHzz3oHzMOA8m96bMFEXpzCw8j1x/m8Ec9f3jQG32dNwSy426bEfVnt5TDkpeXfV0Ht2jnu4LnxyvzDK+SbWh2LpxJTeH5glBAa9uBBtm0ag5qCJBaepqD5Wo9Pg36DkTcmhq2SUyu8pZSE9igLHOYkdjzY8RIL4KG5PZ4=
+	t=1714645922; cv=none; b=Yee6NkDGm/zuAm2IXF4M2/VUkssoMdn2deqn55aQ1YaantHBZ/ckhePeF7fX9LmXTwJHatc/D55hH6QP+IO7JXkoOv4eq1MsHVx8fBpR4C/gKPOK8p+hjFr/dPjXVzSzndDpRfR5VUsfZGuKdXAZ+mmK5xWvmjO1D3B5w6uqsIM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714645793; c=relaxed/simple;
-	bh=O+x6zlED+zDMOemCx1e2RcNkUseJEOjblAholmx+D/0=;
+	s=arc-20240116; t=1714645922; c=relaxed/simple;
+	bh=Da4+eR7XE6IbAMa48VcRB0SaIiLrNv/1XK4YaJFKaDE=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=lvp0X5/1xKqVlFq3drSd4d+UCuXQgc7rCmLpBVIRFMbTuZHtjiTXD4Y31w0bvwsGoWSwQ9zNHxPY0VmUcrenyqPozzuZy3OIWEHZ3Ss/kMa4iNYeDd9IsyMG304jAcQn44bdRbZ3Ys9+4alqv7wiXF1jP8W4i4DdzWY+fpFG3uQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=aBfG9AzH; arc=none smtp.client-ip=130.133.4.66
+	 Content-Type:MIME-Version; b=u3UbeOada9X7iuwjWhJM5CqwSQGf9zEMeT4yF2skrmcnvaObcZSlO8BMXlKyGgrq3dwHI84gGnvsesAAEbAp4XALQuYCXeRMJflLx3wNJY0o5Al50khgbybHwyGXbwDi9j7frZU2aiBxOevNGesz9fx39RVCj3wQkkHj+y70vBY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=bpT9eH6W; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="aBfG9AzH"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="bpT9eH6W"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
 	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
 	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
 	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=PPcqclq5JazTzzPM+WzlgQe+U+YyPREGD6xfGzxYCAg=; t=1714645792; x=1715250592; 
-	b=aBfG9AzHudapO//64X1AkPDh+zAuauV8WXkqxFw6QJajcqMlxmXj1NsfJiM4jgMGyv4NKeRCXzQ
-	asRC2vusRcSeo2WGs2X1M87fOwbFZiltCKTF/n6X+7zPutdo1U65y/Gx9+BMcFSlzWRXt3YrEBfMa
-	ey2F5rFA78hjLZl0EB/ETb4KlsESAJHUU/QsFc/Td0oqQ81eFIAaTOv0WArDi7u8VkVXNzrOnQG5s
-	eNYHtGtVIQmVx2ENofhbHPwsQapDgxY81NPdW/8lJJcvZIHLe8sq/3AHkvBSwSNAm1n4eu3Y1DkQ9
-	Ll31B0FOWzaOOJPAEo1t+hgUp2HiDq1nL+ew==;
+	bh=hr8bu2LObnNnEnBECK9K132QleQOiYq/S4hpvwrzk8Q=; t=1714645918; x=1715250718; 
+	b=bpT9eH6WEhi9Vi/NL4VqxAFRcOBYPdOitkssTHyog2ir8/zBZfUs87iK1s/kEWc7s9GmsX5Dh45
+	GvS1bahrgHdG3L4PgtmvE8f3E/6Zmio789+3bn4VUJEgV8szNz+SaRhRxUwHrMcy5V7wNdTandT2D
+	QxZ2YuBAC1jB+EGPANGuzpNOBiISmhh0YZheM0jS13t4PYfvKqBFIEv450RJDChJ3t3DbmgHaM7AD
+	AMWxXk1JIeaDjbpNxzGtoFvvIU3NO+TmiJopFwRigQuPRGLnvVbZgcZ9yiikAi8pmlvcYQyzFC9ge
+	l69AOWMCknuYZ51xHFS/f7IaMhdQt05XFRcg==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.97)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1s2ThE-00000001zK7-1ayC; Thu, 02 May 2024 12:29:48 +0200
+          id 1s2TjH-000000020K0-2jRF; Thu, 02 May 2024 12:31:55 +0200
 Received: from p57bd90e8.dip0.t-ipconnect.de ([87.189.144.232] helo=[192.168.178.20])
           by inpost2.zedat.fu-berlin.de (Exim 4.97)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1s2ThE-000000007k2-0fxW; Thu, 02 May 2024 12:29:48 +0200
-Message-ID: <b00e0adc72815e465cf32fc5505445cfceeeca84.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v2] sh: Call paging_init() earlier in the init sequence
+          id 1s2TjH-0000000082Q-1rpx; Thu, 02 May 2024 12:31:55 +0200
+Message-ID: <98810f30345bff398b23f61ffcf5ecb874402c0a.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH -next] dma: Add dev_id parameter description in
+ request_dma_bycap
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Oreoluwa Babatunde <quic_obabatun@quicinc.com>, 
-	ysato@users.sourceforge.jp, dalias@libc.org
-Cc: akpm@linux-foundation.org, linux-sh@vger.kernel.org, 
- linux-kernel@vger.kernel.org, robh+dt@kernel.org, kernel@quicinc.com, Rob
- Herring <robh@kernel.org>, Rob Landley <rob@landley.net>
-Date: Thu, 02 May 2024 12:29:47 +0200
-In-Reply-To: <72ec7831604326e852eb228072b1d817bab829fb.camel@physik.fu-berlin.de>
-References: <20240423233150.74302-1-quic_obabatun@quicinc.com>
-	 <72ec7831604326e852eb228072b1d817bab829fb.camel@physik.fu-berlin.de>
+To: Yang Li <yang.lee@linux.alibaba.com>, ysato@users.sourceforge.jp, 
+	dalias@libc.org
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Date: Thu, 02 May 2024 12:31:54 +0200
+In-Reply-To: <20240419090259.39542-1-yang.lee@linux.alibaba.com>
+References: <20240419090259.39542-1-yang.lee@linux.alibaba.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.52.0 
@@ -64,51 +62,38 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-Hi Oreoluwa,
+Hi Yang,
 
-On Wed, 2024-05-01 at 19:18 +0200, John Paul Adrian Glaubitz wrote:
-> Hi Oreoluwa,
+On Fri, 2024-04-19 at 17:02 +0800, Yang Li wrote:
+> This patch adds the missing description for the dev_id parameter in the
+> kernel documentation for the request_dma_bycap function.
 >=20
-> On Tue, 2024-04-23 at 16:31 -0700, Oreoluwa Babatunde wrote:
-> > The unflatten_device_tree() function contains a call to
-> > memblock_alloc(). This is a problem because this allocation is done
-> > before any of the reserved memory is set aside in paging_init().
-> > This means that there is a possibility for memblock to allocate from
-> > any of the memory regions that are supposed to be set aside as reserved=
-.
-> >=20
-> > Hence, move the call to paging_init() to be earlier in the init
-> > sequence so that the reserved memory regions are set aside before any
-> > allocations are done using memblock.
+> Signed-off-by: Yang Li <yang.lee@linux.alibaba.com>
+> ---
+>  arch/sh/drivers/dma/dma-api.c | 1 +
+>  1 file changed, 1 insertion(+)
 >=20
-> I was just about to merge your patch when I ran a git blame on the code i=
-n
-> arch/sh/kernel/setup.c and noticed the following commit by Rich Felker:
->=20
-> commit eb6b6930a70faefe04479a71088cc10366782d9a
-> Author: Rich Felker <dalias@libc.org>
-> Date:   Mon Jul 31 01:27:50 2017 -0400
->=20
->     sh: fix memory corruption of unflattened device tree
->    =20
->     unflatten_device_tree() makes use of memblock allocation, and
->     therefore must be called before paging_init() migrates the memblock
->     allocation data to the bootmem framework. Otherwise the record of the
->     allocation for the expanded device tree will be lost, and will
->     eventually be clobbered when allocated for another use.
->    =20
->     Signed-off-by: Rich Felker <dalias@libc.org>
->=20
-> It looks like that the call to unflatten_device_tree() before paging_init=
-()
-> is intentional and needed for the device tree to be preserved in memory
-> after running paging_init().
->=20
-> @Geert: Do you have any comments on this patch?
-> @Rob: Could you test this patch on your J2 board and report back?
+> diff --git a/arch/sh/drivers/dma/dma-api.c b/arch/sh/drivers/dma/dma-api.=
+c
+> index 89cd4a3b4cca..65005d348877 100644
+> --- a/arch/sh/drivers/dma/dma-api.c
+> +++ b/arch/sh/drivers/dma/dma-api.c
+> @@ -116,6 +116,7 @@ static int search_cap(const char **haystack, const ch=
+ar *needle)
+>   * request_dma_bycap - Allocate a DMA channel based on its capabilities
+>   * @dmac: List of DMA controllers to search
+>   * @caps: List of capabilities
+> + * @dev_id: Unique identifier for the device that is requesting a DMA ch=
+annel
+>   *
+>   * Search all channels of all DMA controllers to find a channel which
+>   * matches the requested capabilities. The result is the channel
 
-I'm skipping this patch for v6.10 now for the aforementioned reasons.
+This patch is now obsolete since search_cap() was removed in for-next by Ge=
+ert
+Uytterhoven in 89256d73 ("sh: dma: Remove unused functionality").
 
+Thanks,
 Adrian
 
 --=20
