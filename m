@@ -1,133 +1,103 @@
-Received: from laurent.telenet-ops.be (laurent.telenet-ops.be [195.130.137.89])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6F3BB44374
-	for <linux-sh@vger.kernel.org>; Thu,  2 May 2024 12:11:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.137.89
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B023B41C60;
+	Thu,  2 May 2024 13:33:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714651866; cv=none; b=SCRIdQ0m++b/fMkiZKZMzQqtbDRLX+eB3nyTbnhlDnA9NvMofwhQe/V9JE46SIRj1zK57Q0tg0AkZZ/6ZZiOoozkaWfLXyQKx0kZ2Zv5SODZCp4A/tyGCrby1YSKuI1VOChH7Yrrh7HFgf08HZjK7VaoHohd0carw8lmGTxs4LU=
+	t=1714656830; cv=none; b=PG4iO/alb6nPzWMp3c2e3A6WCYAhHw+eiVBK7/rQYKOXtKeYKFKHPwUmYkcL0q0diXGX5HuoQ9E10LXozWtvde+01569GgT0zX9OKCldjQKIlFRhv01KcQW/9s63hkWX7jg/mWrGO5fpnT9OF7mQNEDHzvbEjwANx8VCs26VlaM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714651866; c=relaxed/simple;
-	bh=J0ys2nCMeqQznpcv3TvixEojj3WOQhbihu0iZmOz7CM=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=LzApeta3rRtNomUiBm1qGR5GZxbY5zFL/Z5A3k/pw2+voNUHKsEoEX8DRpze+J+LYMPJUshXSE+jWDiNA0Msn3oJdrRnKyE+J0w3ZixNV5m5K1dV8DMRgN0FEAaD0RofBvBX4s8CEltnES5MMdzvV1pReUCEwSaeryo26aX82Lc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.137.89
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed80:93f:7d7e:5c98:dabc])
-	by laurent.telenet-ops.be with bizsmtp
-	id JCB12C00P3PjoSD01CB1XB; Thu, 02 May 2024 14:11:02 +0200
-Received: from rox.of.borg ([192.168.97.57])
-	by ramsan.of.borg with esmtp (Exim 4.95)
-	(envelope-from <geert@linux-m68k.org>)
-	id 1s2VGR-0034NX-Be;
-	Thu, 02 May 2024 14:11:01 +0200
-Received: from geert by rox.of.borg with local (Exim 4.95)
-	(envelope-from <geert@linux-m68k.org>)
-	id 1s2VHB-004jt6-I9;
-	Thu, 02 May 2024 14:11:01 +0200
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-To: Peter Zijlstra <peterz@infradead.org>,
-	Ingo Molnar <mingo@redhat.com>,
-	Will Deacon <will@kernel.org>,
-	Waiman Long <longman@redhat.com>,
-	Boqun Feng <boqun.feng@gmail.com>,
-	Arnd Bergmann <arnd@arndb.de>
-Cc: linux-kernel@vger.kernel.org,
-	linux-sh@vger.kernel.org,
-	linux-s390@vger.kernel.org,
-	Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH resend v2] locking/spinlocks: Make __raw_* lock ops static
-Date: Thu,  2 May 2024 14:10:59 +0200
-Message-Id: <d3300a978761220729b58367f7051212826b0f16.1714651617.git.geert+renesas@glider.be>
-X-Mailer: git-send-email 2.34.1
+	s=arc-20240116; t=1714656830; c=relaxed/simple;
+	bh=/S7AtR8fKpgwqpaJ4A1qTHav5smcrL3bhTiibfOG55k=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=cLXDPxzg2PbhwjFaVTGHhkhjuQHkyyZgHIftSdTHiFTsCZme9VKRixPwmjL9meY1F20wwx4VU4mDaGvDttY8UyIF4rv/x6bpfm5bTQLzUzO8bJCKCeFN8gq35LOYGWtSe6er4ipMRIPxoI7pbaCZHSP8BbmE1NLySiM1LVofLVk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Qhp54mU9; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Qhp54mU9"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 20B42C113CC;
+	Thu,  2 May 2024 13:33:50 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1714656830;
+	bh=/S7AtR8fKpgwqpaJ4A1qTHav5smcrL3bhTiibfOG55k=;
+	h=Date:From:To:Cc:Subject:Reply-To:References:In-Reply-To:From;
+	b=Qhp54mU9jSSXO0Ilw5t8MMapJa5zcPhdM7R/X2INQGEYXTACs8zzcib5Rqs3EgxCj
+	 veRnIhxG15azWVufx1iZFF87MuXz+ByGER8OjVUnRC0e/V5c7xjc+Oa3c9LxcLRuYW
+	 LWxD6fVUp4TIpgBONS39StM80YhPGgF4nB9un5+oyTnXU8M0oKajjxTJH/eYpMv4tQ
+	 m7ILTBNi1VCcl4olk1JSxpTyffW8LsK3arQ5WIkP95XaRWDkZct6bjkUqqX1R3lksy
+	 RLIgtIsz/SnMo4CevZWIMUlTLSEFmm0Mf/uG+N/XEs5lREqxXHmZDErRU3z4jj+8Xu
+	 JZcthxNuirWRw==
+Received: by paulmck-ThinkPad-P17-Gen-1.home (Postfix, from userid 1000)
+	id BC0A6CE0A32; Thu,  2 May 2024 06:33:49 -0700 (PDT)
+Date: Thu, 2 May 2024 06:33:49 -0700
+From: "Paul E. McKenney" <paulmck@kernel.org>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org,
+	elver@google.com, akpm@linux-foundation.org, tglx@linutronix.de,
+	peterz@infradead.org, dianders@chromium.org, pmladek@suse.com,
+	arnd@arndb.de, torvalds@linux-foundation.org, kernel-team@meta.com,
+	Andi Shyti <andi.shyti@linux.intel.com>,
+	Palmer Dabbelt <palmer@rivosinc.com>,
+	Masami Hiramatsu <mhiramat@kernel.org>, linux-sh@vger.kernel.org
+Subject: Re: [PATCH v2 cmpxchg 12/13] sh: Emulate one-byte cmpxchg
+Message-ID: <9a4e1928-961d-43af-9951-71786b97062a@paulmck-laptop>
+Reply-To: paulmck@kernel.org
+References: <b67e79d4-06cb-4a45-a906-b9e0fbae22c5@paulmck-laptop>
+ <20240501230130.1111603-12-paulmck@kernel.org>
+ <1376850f47279e3a3f4f40e3de2784ae3ac30414.camel@physik.fu-berlin.de>
+ <b7ae0feb-d401-43ee-8d5f-ce62ca224638@paulmck-laptop>
+ <6f7743601fe7bd50c2855a8fd1ed8f766ef03cac.camel@physik.fu-berlin.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <6f7743601fe7bd50c2855a8fd1ed8f766ef03cac.camel@physik.fu-berlin.de>
 
-If CONFIG_GENERIC_LOCKBREAK=y and CONFIG_DEBUG_LOCK_ALLOC=n
-(e.g. sh/sdk7786_defconfig):
+On Thu, May 02, 2024 at 07:11:52AM +0200, John Paul Adrian Glaubitz wrote:
+> On Wed, 2024-05-01 at 22:06 -0700, Paul E. McKenney wrote:
+> > > Does cmpxchg_emu_u8() have any advantages over the native xchg_u8()?
+> > 
+> > That would be 8-bit xchg() rather than 8-byte cmpxchg(), correct?
+> 
+> Indeed. I realized this after sending my reply.
 
-    kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_spin_lock' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_spin_lock_irqsave' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_spin_lock_irq' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_spin_lock_bh' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_read_lock' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_read_lock_irqsave' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_read_lock_irq' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_read_lock_bh' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_write_lock' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_write_lock_irqsave' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_write_lock_irq' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_write_lock_bh' [-Wmissing-prototypes]
+No problem, as I do know that feeling!
 
-All __raw_* lock ops are internal functions without external callers.
-Hence fix this by making them static.
+> > Or am I missing something subtle here that makes sh also support one-byte
+> > (8-bit) cmpxchg()?
+> 
+> Is there an explanation available that explains the rationale behind the
+> series, so I can learn more about it?
 
-Note that if CONFIG_GENERIC_LOCKBREAK=y, no lock ops are inlined, as all
-of CONFIG_INLINE_*_LOCK* depend on !GENERIC_LOCKBREAK.
+We have some places in mainline that need one-byte cmpxchg(), so this
+series provides emulation for architectures that do not support this
+notion.
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Waiman Long <longman@redhat.com>
----
-Compile-tested on all defconfigs that have CONFIG_GENERIC_LOCKBREAK=y:
-  - sh/sdk7786_defconfig,
-  - sh/shx3_defconfig,
-  - s390/debug_defconfig,
-and also on s390/debug_defconfig after changing:
-    CONFIG_DEBUG_LOCK_ALLOC=n
-    CONFIG_DEBUG_WW_MUTEX_SLOWPATH=n
-    CONFIG_LOCK_STAT=n
-    CONFIG_PROVE_LOCKING=n
+> Also, I am opposed to removing Alpha entirely as it's still being actively
+> maintained in Debian and Gentoo and works well.
 
-v2:
-  - Add Acked-by,
-  - Drop RFC,
-  - Improve patch description.
----
- kernel/locking/spinlock.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+Understood, and this sort of compatibility consideration is why this
+version of this patchset does not emulate two-byte (16-bit) cmpxchg()
+operations.  The original (RFC) series did emulate these, which does
+not work on a few architectures that do not provide 16-bit load/store
+instructions, hence no 16-bit support in this series.
 
-diff --git a/kernel/locking/spinlock.c b/kernel/locking/spinlock.c
-index 8475a0794f8c5ad2..7009b568e6255d64 100644
---- a/kernel/locking/spinlock.c
-+++ b/kernel/locking/spinlock.c
-@@ -65,7 +65,7 @@ EXPORT_PER_CPU_SYMBOL(__mmiowb_state);
-  * towards that other CPU that it should break the lock ASAP.
-  */
- #define BUILD_LOCK_OPS(op, locktype)					\
--void __lockfunc __raw_##op##_lock(locktype##_t *lock)			\
-+static void __lockfunc __raw_##op##_lock(locktype##_t *lock)		\
- {									\
- 	for (;;) {							\
- 		preempt_disable();					\
-@@ -77,7 +77,7 @@ void __lockfunc __raw_##op##_lock(locktype##_t *lock)			\
- 	}								\
- }									\
- 									\
--unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock)	\
-+static unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock) \
- {									\
- 	unsigned long flags;						\
- 									\
-@@ -95,12 +95,12 @@ unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock)	\
- 	return flags;							\
- }									\
- 									\
--void __lockfunc __raw_##op##_lock_irq(locktype##_t *lock)		\
-+static void __lockfunc __raw_##op##_lock_irq(locktype##_t *lock)	\
- {									\
- 	_raw_##op##_lock_irqsave(lock);					\
- }									\
- 									\
--void __lockfunc __raw_##op##_lock_bh(locktype##_t *lock)		\
-+static void __lockfunc __raw_##op##_lock_bh(locktype##_t *lock)		\
- {									\
- 	unsigned long flags;						\
- 									\
--- 
-2.34.1
+So this one-byte-only series affects only Alpha systems lacking
+single-byte load/store instructions.  If I understand correctly, Alpha
+21164A (EV56) and later *do* have single-byte load/store instructions,
+and thus are still just fine.  In fact, it looks like EV56 also has
+two-byte load/store instructions, and so would have been OK with
+the original one-/two-byte RFC series.
 
+Arnd will not be shy about correcting me if I am wrong.  ;-)
+
+> Adrian
+> 
+> -- 
+>  .''`.  John Paul Adrian Glaubitz
+> : :' :  Debian Developer
+> `. `'   Physicist
+>   `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
