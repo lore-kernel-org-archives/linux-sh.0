@@ -1,109 +1,201 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yb1-f172.google.com (mail-yb1-f172.google.com [209.85.219.172])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 70B5B1527BD;
-	Thu,  2 May 2024 07:08:28 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 072971CD31;
+	Thu,  2 May 2024 07:21:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714633711; cv=none; b=NsR/PxlypwAtiTMxT5QgI9cZnk4GfaPW9I/WiHz92a5qlJZfusT93FaWloz5RS73z/LEbiwA7nojgHQV7sL22+3wUCokl4EYr6Wq84gAbBaXEFCCMSnxXaLtB08GpjI9t/rpfa92/6rvlD4HHVMhuys1rWnUGDtnaExT3gtX8oA=
+	t=1714634480; cv=none; b=EdvZjUHqL89Py6rKVhUVhyWoIsKrqjKeUzWrRge8uZi5An1xts3P2efDdaO1jxHdwDiXxoTDFqlW7xh/tK6MmyaLXYhx3TPyF2vmqeMAAQlVl8tzI0Pe+7czFwm2+DpbMP4UWkpDeg7SmZ+y7SzJaWkLG1rj/FnRLhtsFdseoiU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714633711; c=relaxed/simple;
-	bh=jwAQQgcvlDBD3PKFIiitvp1hnJcuZTvnd950vkUPzC8=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=VJfnHS/2e//Wb8kHCXERzybjewdgFm+0h+xP6YTGoSPBdP9uxQC3SHN6PFQzQEBya2EtEVgr+EgsenZxm8BdiyydQLulNv6amt9ZO0kz2cBnS9Vlduap9Pnvweu49Ka3fxvO92Iq4JZ5nPnkkdCbdJBBtg51vVfUPP/ENdIF0lM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=Sr7kHyh2; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="Sr7kHyh2"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
-	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=asVza8Tx0SMAOfx0Xl0rSXcgqp5UqebxCAAIkYewzJ0=; t=1714633708; x=1715238508; 
-	b=Sr7kHyh2D5uXEKQwxGBQr/iQxXrWN0sSz/CwBLs/JISjKSb2VtBvLTWln2EAj5HwlMty657AvUm
-	ClTxS8CdvPOM6XTUYv5lzineTbKmWTTjRqVWY9TEu9uuPdBshD50T9MC3sHHxrUaGno6nuknb9c65
-	Kq5eui61bsURnYW/gJ+tNlx0LeOZrd3pBWQKEurvRmQwz1JiDh+mDfuqHWLsPEepv2LMPZmWwHdhi
-	n0ygCeSpZWZM581Q+bLfClXuwMUxnXIZFVs6SXwpOmxstmAhbCYqdDn22EgY0z6Yeu51ze9RAsgGE
-	5Ty2FHthowB6uKd98cRIFNgDwaPsjE/OyN5w==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.97)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1s2QYD-00000000J20-1UoH; Thu, 02 May 2024 09:08:17 +0200
-Received: from p57bd90e8.dip0.t-ipconnect.de ([87.189.144.232] helo=[192.168.178.20])
-          by inpost2.zedat.fu-berlin.de (Exim 4.97)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1s2QYD-00000003b2C-0VdL; Thu, 02 May 2024 09:08:17 +0200
-Message-ID: <05008f7660cfcfec16bd81da1314a3f9e103bcbb.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 20/20] [RFC] sh: dma: Remove unused functionality
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
- <dalias@libc.org>,  Arnd Bergmann <arnd@arndb.de>, Steven Rostedt
- <rostedt@goodmis.org>, Masami Hiramatsu <mhiramat@kernel.org>, Mark Rutland
- <mark.rutland@arm.com>, Will Deacon <will@kernel.org>, "Aneesh Kumar K . V"
- <aneesh.kumar@linux.ibm.com>, Andrew Morton <akpm@linux-foundation.org>,
- Nick Piggin <npiggin@gmail.com>, Peter Zijlstra <peterz@infradead.org>,
- linux-sh@vger.kernel.org,  linux-trace-kernel@vger.kernel.org
-Date: Thu, 02 May 2024 09:08:16 +0200
-In-Reply-To: <CAMuHMdUsVz3ph0AD21a1Xz0CBc9ni4ipdS8AhWRJkywm7K2G4Q@mail.gmail.com>
-References: <cover.1709326528.git.geert+renesas@glider.be>
-	 <2beb81fdd7592a94329e3c9a6ba56959f6094019.1709326528.git.geert+renesas@glider.be>
-	 <4f302ebb109fb0528a7de4f552e78ee0dd9595c0.camel@physik.fu-berlin.de>
-	 <950ecbb643db322a953bb048b451702246ca9031.camel@physik.fu-berlin.de>
-	 <CAMuHMdUsVz3ph0AD21a1Xz0CBc9ni4ipdS8AhWRJkywm7K2G4Q@mail.gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.52.0 
+	s=arc-20240116; t=1714634480; c=relaxed/simple;
+	bh=aMR9JSzBugnFdGzC7oW37CSM2SHXLH9wKHs5yoyxVjI=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=RViycAo6FNFbCoIlWNhyPULY+rW692KfDZ9t8rv4rAvUqP5xsYYoVQoYPrpGqVBNemIuxV1bL1cfzWh7az/G7lNB7jMydXSQ5/Kk5n0V0bDqzUstkjF7l7vDrFMD+zKDoAw1RVUxchFQfV3eL5blPvaKEJnSP8Kx6NtdQzdQxrI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.219.172
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-yb1-f172.google.com with SMTP id 3f1490d57ef6-dc236729a2bso7669447276.0;
+        Thu, 02 May 2024 00:21:18 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1714634477; x=1715239277;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=d3h8OHZvBcOiq+Yulnbt5Wx1RNFCijX/7KF1ix5Zccw=;
+        b=N7Gsd64l97htXuLC08qtsqAdcm+Afi/rB1gFColVU35NMPElnw3OTKNDGPr5KwNLAZ
+         sI3KAU7tp89BfLwoFFsda9GYtHOuCJDiQ1cPzq/q1eD9seb1U5ZsQhJF1ucwVnIkhzTQ
+         adzmMzpS8qL6sRe8kqPQgVKnzj3VJgEqWjasZtSTOAaPiiejZSy+8iGsLYMjHkUNIjfR
+         vRC012wtPf2aaekNxDQLO6FJRIL39JekMVt8DhgKzJeZGcxmHrLGuNl4ScvIZ+HXj/IQ
+         i+netgVidsxOTkxuFrRIsuFSOGMOj6LY1c9x9tTaqBUuEPfTG7XEMxeaXcmcwnsloo+h
+         BHEw==
+X-Forwarded-Encrypted: i=1; AJvYcCVf5/vTWO3WHbpqcubMcZqb9urjrPO8pvTMxtiRlCW4s19jc/Oh7jglkSH3HOmOeZ1A9imU2Zldcheg9eJpyH6qzB++Nnl3YWV8aRViRS2eaDItqtFvTQkIqSFYs2AUIxgVl6jhGYY=
+X-Gm-Message-State: AOJu0YxCWwSp0NNenFki/srCHPOaxoF9OFF7dMJ5oRkrrX+ALQAahpL0
+	pDv4Ru1bxc4dsuxSIVHbBzC0pUX9F7BZTHJgxJqvn+PjG1JZGrRI5BktOR9J
+X-Google-Smtp-Source: AGHT+IFzM3lRZL5W/UNWGiYZyUzKCRRkxKXlfs6Gv3GRGAbwbCE58ZQMn+GtfBBIkXd+huh6P79mRg==
+X-Received: by 2002:a25:d388:0:b0:de5:5575:99b5 with SMTP id e130-20020a25d388000000b00de5557599b5mr4847991ybf.0.1714634476635;
+        Thu, 02 May 2024 00:21:16 -0700 (PDT)
+Received: from mail-yw1-f169.google.com (mail-yw1-f169.google.com. [209.85.128.169])
+        by smtp.gmail.com with ESMTPSA id x193-20020a254aca000000b00de5a5fcee44sm80734yba.13.2024.05.02.00.21.15
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 02 May 2024 00:21:16 -0700 (PDT)
+Received: by mail-yw1-f169.google.com with SMTP id 00721157ae682-61bec6bab2bso26602597b3.1;
+        Thu, 02 May 2024 00:21:15 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCWwTbIcG/+cVwUgx31HDZSItKE/pG1+Ip8Am73RnT8WD2oHygu4pBTC32Gm9D7MlDN6g2S2LpC84MGCkbI5PFU66aIZkOxvXEcIt69DAfhycwPIi2dDIz69ce/uqwyvpTCrIb6hrsI=
+X-Received: by 2002:a25:9249:0:b0:de5:4cbf:a517 with SMTP id
+ e9-20020a259249000000b00de54cbfa517mr5395855ybo.10.1714634475345; Thu, 02 May
+ 2024 00:21:15 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+References: <20240324231804.841099-1-linux@roeck-us.net> <059d03a5da257660fa0bc188c6cc8d0152e97704.camel@physik.fu-berlin.de>
+ <a9ac59cd-82db-45a0-9f85-ec3880c54dbf@roeck-us.net> <cb8d3d2a-b843-49d5-a219-10a29b5877d0@roeck-us.net>
+ <1e77ade4fb1d924ffaf226cb946ba3314ba59a1d.camel@physik.fu-berlin.de> <fb0293d85dbf82341c6b7e4d56fe8f1d23f7768a.camel@physik.fu-berlin.de>
+In-Reply-To: <fb0293d85dbf82341c6b7e4d56fe8f1d23f7768a.camel@physik.fu-berlin.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 2 May 2024 09:21:03 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdVcE79i0RPQHJBJjpXY6U-M-AQ2gh+C25u_777PZgPxXQ@mail.gmail.com>
+Message-ID: <CAMuHMdVcE79i0RPQHJBJjpXY6U-M-AQ2gh+C25u_777PZgPxXQ@mail.gmail.com>
+Subject: Re: [PATCH] Revert "sh: Handle calling csum_partial with misaligned data"
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Guenter Roeck <linux@roeck-us.net>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
+	Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Hi Geert,
+On Wed, May 1, 2024 at 10:28=E2=80=AFAM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> On Tue, 2024-04-02 at 16:09 +0200, John Paul Adrian Glaubitz wrote:
+> > On Tue, 2024-04-02 at 07:06 -0700, Guenter Roeck wrote:
+> > > On Mon, Mar 25, 2024 at 07:34:00AM -0700, Guenter Roeck wrote:
+> > > > On 3/25/24 00:39, John Paul Adrian Glaubitz wrote:
+> > > > > Hi Guenter,
+> > > > >
+> > > > > On Sun, 2024-03-24 at 16:18 -0700, Guenter Roeck wrote:
+> > > > > > This reverts commit cadc4e1a2b4d20d0cc0e81f2c6ba0588775e54e5.
+> > > > > >
+> > > > > > Commit cadc4e1a2b4d ("sh: Handle calling csum_partial with misa=
+ligned
+> > > > > > data") causes bad checksum calculations on unaligned data. Reve=
+rting
+> > > > > > it fixes the problem.
+> > > > > >
+> > > > > >      # Subtest: checksum
+> > > > > >      # module: checksum_kunit
+> > > > > >      1..5
+> > > > > >      # test_csum_fixed_random_inputs: ASSERTION FAILED at lib/c=
+hecksum_kunit.c:500
+> > > > > >      Expected ( u64)result =3D=3D ( u64)expec, but
+> > > > > >          ( u64)result =3D=3D 53378 (0xd082)
+> > > > > >          ( u64)expec =3D=3D 33488 (0x82d0)
+> > > > > >      # test_csum_fixed_random_inputs: pass:0 fail:1 skip:0 tota=
+l:1
+> > > > > >      not ok 1 test_csum_fixed_random_inputs
+> > > > > >      # test_csum_all_carry_inputs: ASSERTION FAILED at lib/chec=
+ksum_kunit.c:525
+> > > > > >      Expected ( u64)result =3D=3D ( u64)expec, but
+> > > > > >          ( u64)result =3D=3D 65281 (0xff01)
+> > > > > >          ( u64)expec =3D=3D 65280 (0xff00)
+> > > > > >      # test_csum_all_carry_inputs: pass:0 fail:1 skip:0 total:1
+> > > > > >      not ok 2 test_csum_all_carry_inputs
+> > > > > >      # test_csum_no_carry_inputs: ASSERTION FAILED at lib/check=
+sum_kunit.c:573
+> > > > > >      Expected ( u64)result =3D=3D ( u64)expec, but
+> > > > > >          ( u64)result =3D=3D 65535 (0xffff)
+> > > > > >          ( u64)expec =3D=3D 65534 (0xfffe)
+> > > > > >      # test_csum_no_carry_inputs: pass:0 fail:1 skip:0 total:1
+> > > > > >      not ok 3 test_csum_no_carry_inputs
+> > > > > >      # test_ip_fast_csum: pass:1 fail:0 skip:0 total:1
+> > > > > >      ok 4 test_ip_fast_csum
+> > > > > >      # test_csum_ipv6_magic: pass:1 fail:0 skip:0 total:1
+> > > > > >      ok 5 test_csum_ipv6_magic
+> > > > > >   # checksum: pass:2 fail:3 skip:0 total:5
+> > > > > >   # Totals: pass:2 fail:3 skip:0 total:5
+> > > > > > not ok 22 checksum
+> > > > >
+> > > > > Can you tell me how the tests are run so I can try to verify this=
+ on real hardware?
+> > > > >
+> > > >
+> > > > Enabling CONFIG_KUNIT and CHECKSUM_KUNIT and booting with those tes=
+ts enabled
+> > > > should do it.
+> > > >
+> > >
+> > > Did you have time to test this on real hardware ?
+> >
+> > Not yet. I just returned from Easter holidays and need to get synced wi=
+th work first.
+>
+> I might have to skip this for v6.10 as I haven't been able to test this y=
+et.
+>
+> I agree with the change in general, but I want to make sure I can reprodu=
+ce
+> this on real hardware.
 
-On Thu, 2024-05-02 at 09:03 +0200, Geert Uytterhoeven wrote:
-> On Wed, May 1, 2024 at 3:58=E2=80=AFPM John Paul Adrian Glaubitz
-> <glaubitz@physik.fu-berlin.de> wrote:
-> > On Wed, 2024-05-01 at 11:12 +0200, John Paul Adrian Glaubitz wrote:
-> > > On Fri, 2024-03-01 at 22:02 +0100, Geert Uytterhoeven wrote:
-> > > > dma_extend(), get_dma_info_by_name(), register_chan_caps(), and
-> > > > request_dma_bycap() are unused.  Remove them, and all related code.
-> > > >=20
-> > > > Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
->=20
-> > > I assume we could re-add these again in case we need them, but it wou=
-ld be good
-> > > if Yoshinori could comment on whether we should keep these functions =
-or not.
-> >=20
-> > I was wondering: Could there be any userland tools using these DMA func=
-tions?
->=20
-> They cannot be called from userspace, as there is no API for that.
-> They can only be called from inside the kernel, or from a kernel module
-> (possibly out-of-tree).
+On landisk:
 
-OK, thanks for the confirmation. Then I think it's safe to remove them.
+ KTAP version 1
+ 1..1
+     KTAP version 1
+     # Subtest: checksum
+     # module: checksum_kunit
+     1..5
+-    # test_csum_fixed_random_inputs: ASSERTION FAILED at
+lib/checksum_kunit.c:500
+-    Expected ( u64)result =3D=3D ( u64)expec, but
+-        ( u64)result =3D=3D 53378 (0xd082)
+-        ( u64)expec =3D=3D 33488 (0x82d0)
+-    not ok 1 test_csum_fixed_random_inputs
+-    # test_csum_all_carry_inputs: ASSERTION FAILED at lib/checksum_kunit.c=
+:525
+-    Expected ( u64)result =3D=3D ( u64)expec, but
+-        ( u64)result =3D=3D 65281 (0xff01)
+-        ( u64)expec =3D=3D 65280 (0xff00)
+-    not ok 2 test_csum_all_carry_inputs
+-    # test_csum_no_carry_inputs: ASSERTION FAILED at lib/checksum_kunit.c:=
+573
+-    Expected ( u64)result =3D=3D ( u64)expec, but
+-        ( u64)result =3D=3D 65535 (0xffff)
+-        ( u64)expec =3D=3D 65534 (0xfffe)
+-    not ok 3 test_csum_no_carry_inputs
++    # test_csum_fixed_random_inputs: Test should be marked slow
+(runtime: 9.814991070s)
++    ok 1 test_csum_fixed_random_inputs
++    # test_csum_all_carry_inputs: Test should be marked slow
+(runtime: 19.621274580s)
++    ok 2 test_csum_all_carry_inputs
++    # test_csum_no_carry_inputs: Test should be marked slow (runtime:
+19.614096540s)
++    ok 3 test_csum_no_carry_inputs
+     ok 4 test_ip_fast_csum
+     ok 5 test_csum_ipv6_magic
+-# checksum: pass:2 fail:3 skip:0 total:5
+-# Totals: pass:2 fail:3 skip:0 total:5
+-not ok 1 checksum
++# checksum: pass:5 fail:0 skip:0 total:5
++# Totals: pass:5 fail:0 skip:0 total:5
++ok 1 checksum
 
-I will apply both your series tonight and the rest of the patches except
-for the one that moves the paging_init() around as it turns out the current
-positioning is intentional.
+As we aim for correctness over performance:
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Adrian
+However, given the big impact on performance, it would be great if
+someone could find out what's wrong with the optimized version.
+
+Gr{oetje,eeting}s,
+
+                        Geert
 
 --=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
