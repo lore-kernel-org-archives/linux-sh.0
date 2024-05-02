@@ -1,114 +1,142 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 31477168B10;
-	Wed,  1 May 2024 23:01:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BCB7D12E75;
+	Thu,  2 May 2024 04:53:00 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714604493; cv=none; b=ESw3IBFe0L6VyFb+JpevCuAggcCs0RowuYtH2bLoo/Tbipfam5b5ZUoUYAOYVR5QOj4jOr7+wyf3X9fFNQf8JrcRTbvL+4i26d7O4w0ujjkhWsUqRk+MBe7YG5AV23pcaXWqNDvg/YnX+H62I4RtZPQ0RO7rarH4Qu0ASJ5exXQ=
+	t=1714625584; cv=none; b=k6w5ZRTjPFAFT/yOS+HErYONghVEEjSTiJQT1GPQnF7YRcOj5MXNfz63BzcHgr4gR0tpmAakVWcafWONA/zktPkEWV2bdVIspP5lkwat/CRbXRYXzAf8KHpg/H++yLHWKQGw+keDhnX0SRMqsrLBNsdp+sYnvdwNM88HpMIOTnM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714604493; c=relaxed/simple;
-	bh=PpSTQpZbHQunQSUzzPQvUIJ+CP30HDC9CfjkaUYmrk4=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=eaGLkvhzKPB+P9gI7SM71TMpys8ER/wPvXiUQZcdV72AcUXmv65EBqdyQpakM2DT+Qm6CzN/mMZG1Sn+W1xZaS3cTrOpiR3vY5Caw29AROX2Vog+cp1hwi3j+Kr9rOvRuvogfgB4WbGU0VZLjgefB6vPUJnSUFUps79tJXLBcnY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=udk4pKYq; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1714625584; c=relaxed/simple;
+	bh=Be1NO7/RwxW2Ftlfxne9kCWldkjf/e42obNSaNj/LAo=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=EE+4j4HXsmSmLevpqWf3ruynf4cRagonnXvsbEOnEeZk4ByNk5OPgVpEeFXZX6UyXApFeMb9KGaYgfLVpzjIiydsMcRs8Rx05QH+R9O0dFH7U/lQh/mRTIoNoiUmSTZxfYqYyu7UkvF2Zu/edfHIwEJSGjddXEzwIyF3uC9zUME=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=n5hAjaXl; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="udk4pKYq"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id AC62FC4AF63;
-	Wed,  1 May 2024 23:01:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1714604492;
-	bh=PpSTQpZbHQunQSUzzPQvUIJ+CP30HDC9CfjkaUYmrk4=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
-	b=udk4pKYqRq0ueXXLHSRjrkKMd/zpUR+9miHTot+JmCll3YBJkGiBLy86jszq+qFzF
-	 GeiObNB8nitkHY1DOg59JDhvvnvfgvAlFcK0cjZqjpZ/ssuPrnPX606CQdDWYZA9vm
-	 ONxY1yJYUndEIBYXfeTXWQQYDUw79U1RTnQDHrE3HBeEN5D2Yh4dVy5ZnfXIHoTenM
-	 tVSKIczrGG7Zg4rkoYiLRrVdBAN2aYxyZiKsbOGqpPEQMk5hRz6G23DnMoepDRx0me
-	 ZhR/DNTlAzRfa6sR+giejx0/bFLv/kZQfz865i0CFh/ldfTHdBFcL3zRfpLmXyCB1T
-	 XVsxhkv6E0z/g==
-Received: by paulmck-ThinkPad-P17-Gen-1.home (Postfix, from userid 1000)
-	id DCFFECE2A4B; Wed,  1 May 2024 16:01:31 -0700 (PDT)
-From: "Paul E. McKenney" <paulmck@kernel.org>
-To: linux-arch@vger.kernel.org,
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="n5hAjaXl"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
+	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=/eMsYhPVNNcz2vMoRM5ukXsDie/BKIKYyU9ZchLdKu4=; t=1714625580; x=1715230380; 
+	b=n5hAjaXldDS8Ad9R+oAPVdPigwenDWreiKYyCJFdYbc6Fs8i03Y9X0SqUU9rmIlCRU5uShFztOv
+	Rx/UzFjz18ak8237vsx9JCqspLhfuXxk5r8pfRieqeYE3plgf4vuvCV+PtzclkOSvwKYWUVsseVpV
+	nPcXRQfNMmhjmvtTpxuW5zQFjEcYLHH7wz5/4mAtTrAah+BiZScjUtu5pg1xL+X3yzjpCxYeGqzw3
+	L8I4nDJWUsCX32AFpjtqrSz7IQ7bUQ0wNSsHQjlWbAEteHjoFngZ0JtYEdmwnovjxdVv2hiHNfTzF
+	lmEr7QpbJCvPvuWMR0q2V+AI1zlNvcm6+joQ==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.97)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1s2ORD-00000003upy-0WBi; Thu, 02 May 2024 06:52:55 +0200
+Received: from p57bd90e8.dip0.t-ipconnect.de ([87.189.144.232] helo=suse-laptop.fritz.box)
+          by inpost2.zedat.fu-berlin.de (Exim 4.97)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1s2ORC-00000003GON-3gV9; Thu, 02 May 2024 06:52:55 +0200
+Message-ID: <1376850f47279e3a3f4f40e3de2784ae3ac30414.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH v2 cmpxchg 12/13] sh: Emulate one-byte cmpxchg
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: "Paul E. McKenney" <paulmck@kernel.org>, linux-arch@vger.kernel.org, 
 	linux-kernel@vger.kernel.org
-Cc: elver@google.com,
-	akpm@linux-foundation.org,
-	tglx@linutronix.de,
-	peterz@infradead.org,
-	dianders@chromium.org,
-	pmladek@suse.com,
-	arnd@arndb.de,
-	torvalds@linux-foundation.org,
-	kernel-team@meta.com,
-	"Paul E. McKenney" <paulmck@kernel.org>,
-	Andi Shyti <andi.shyti@linux.intel.com>,
-	Palmer Dabbelt <palmer@rivosinc.com>,
-	Masami Hiramatsu <mhiramat@kernel.org>,
-	linux-sh@vger.kernel.org
-Subject: [PATCH v2 cmpxchg 12/13] sh: Emulate one-byte cmpxchg
-Date: Wed,  1 May 2024 16:01:29 -0700
-Message-Id: <20240501230130.1111603-12-paulmck@kernel.org>
-X-Mailer: git-send-email 2.40.1
-In-Reply-To: <b67e79d4-06cb-4a45-a906-b9e0fbae22c5@paulmck-laptop>
+Cc: elver@google.com, akpm@linux-foundation.org, tglx@linutronix.de, 
+ peterz@infradead.org, dianders@chromium.org, pmladek@suse.com,
+ arnd@arndb.de,  torvalds@linux-foundation.org, kernel-team@meta.com, Andi
+ Shyti <andi.shyti@linux.intel.com>, Palmer Dabbelt <palmer@rivosinc.com>,
+ Masami Hiramatsu <mhiramat@kernel.org>, linux-sh@vger.kernel.org
+Date: Thu, 02 May 2024 06:52:53 +0200
+In-Reply-To: <20240501230130.1111603-12-paulmck@kernel.org>
 References: <b67e79d4-06cb-4a45-a906-b9e0fbae22c5@paulmck-laptop>
+	 <20240501230130.1111603-12-paulmck@kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.52.0 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-Use the new cmpxchg_emu_u8() to emulate one-byte cmpxchg() on sh.
+Hi Paul,
 
-[ paulmck: Drop two-byte support per Arnd Bergmann feedback. ]
-[ paulmck: Apply feedback from Naresh Kamboju. ]
-[ Apply Geert Uytterhoeven feedback. ]
+On Wed, 2024-05-01 at 16:01 -0700, Paul E. McKenney wrote:
+> Use the new cmpxchg_emu_u8() to emulate one-byte cmpxchg() on sh.
+>=20
+> [ paulmck: Drop two-byte support per Arnd Bergmann feedback. ]
+> [ paulmck: Apply feedback from Naresh Kamboju. ]
+> [ Apply Geert Uytterhoeven feedback. ]
+>=20
+> Signed-off-by: Paul E. McKenney <paulmck@kernel.org>
+> Cc: Andi Shyti <andi.shyti@linux.intel.com>
+> Cc: Palmer Dabbelt <palmer@rivosinc.com>
+> Cc: Masami Hiramatsu <mhiramat@kernel.org>
+> Cc: Arnd Bergmann <arnd@arndb.de>
+> Cc: <linux-sh@vger.kernel.org>
+> ---
+>  arch/sh/Kconfig               | 1 +
+>  arch/sh/include/asm/cmpxchg.h | 3 +++
+>  2 files changed, 4 insertions(+)
+>=20
+> diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+> index 2ad3e29f0ebec..f47e9ccf4efd2 100644
+> --- a/arch/sh/Kconfig
+> +++ b/arch/sh/Kconfig
+> @@ -16,6 +16,7 @@ config SUPERH
+>  	select ARCH_HIBERNATION_POSSIBLE if MMU
+>  	select ARCH_MIGHT_HAVE_PC_PARPORT
+>  	select ARCH_WANT_IPC_PARSE_VERSION
+> +	select ARCH_NEED_CMPXCHG_1_EMU
+>  	select CPU_NO_EFFICIENT_FFS
+>  	select DMA_DECLARE_COHERENT
+>  	select GENERIC_ATOMIC64
+> diff --git a/arch/sh/include/asm/cmpxchg.h b/arch/sh/include/asm/cmpxchg.=
+h
+> index 5d617b3ef78f7..1e5dc5ccf7bf5 100644
+> --- a/arch/sh/include/asm/cmpxchg.h
+> +++ b/arch/sh/include/asm/cmpxchg.h
+> @@ -9,6 +9,7 @@
+> =20
+>  #include <linux/compiler.h>
+>  #include <linux/types.h>
+> +#include <linux/cmpxchg-emu.h>
+> =20
+>  #if defined(CONFIG_GUSA_RB)
+>  #include <asm/cmpxchg-grb.h>
+> @@ -56,6 +57,8 @@ static inline unsigned long __cmpxchg(volatile void * p=
+tr, unsigned long old,
+>  		unsigned long new, int size)
+>  {
+>  	switch (size) {
+> +	case 1:
+> +		return cmpxchg_emu_u8(ptr, old, new);
+>  	case 4:
+>  		return __cmpxchg_u32(ptr, old, new);
+>  	}
 
-Signed-off-by: Paul E. McKenney <paulmck@kernel.org>
-Cc: Andi Shyti <andi.shyti@linux.intel.com>
-Cc: Palmer Dabbelt <palmer@rivosinc.com>
-Cc: Masami Hiramatsu <mhiramat@kernel.org>
-Cc: Arnd Bergmann <arnd@arndb.de>
-Cc: <linux-sh@vger.kernel.org>
----
- arch/sh/Kconfig               | 1 +
- arch/sh/include/asm/cmpxchg.h | 3 +++
- 2 files changed, 4 insertions(+)
+Thanks for the patch. However, I don't quite understand its purpose.
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 2ad3e29f0ebec..f47e9ccf4efd2 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -16,6 +16,7 @@ config SUPERH
- 	select ARCH_HIBERNATION_POSSIBLE if MMU
- 	select ARCH_MIGHT_HAVE_PC_PARPORT
- 	select ARCH_WANT_IPC_PARSE_VERSION
-+	select ARCH_NEED_CMPXCHG_1_EMU
- 	select CPU_NO_EFFICIENT_FFS
- 	select DMA_DECLARE_COHERENT
- 	select GENERIC_ATOMIC64
-diff --git a/arch/sh/include/asm/cmpxchg.h b/arch/sh/include/asm/cmpxchg.h
-index 5d617b3ef78f7..1e5dc5ccf7bf5 100644
---- a/arch/sh/include/asm/cmpxchg.h
-+++ b/arch/sh/include/asm/cmpxchg.h
-@@ -9,6 +9,7 @@
- 
- #include <linux/compiler.h>
- #include <linux/types.h>
-+#include <linux/cmpxchg-emu.h>
- 
- #if defined(CONFIG_GUSA_RB)
- #include <asm/cmpxchg-grb.h>
-@@ -56,6 +57,8 @@ static inline unsigned long __cmpxchg(volatile void * ptr, unsigned long old,
- 		unsigned long new, int size)
- {
- 	switch (size) {
-+	case 1:
-+		return cmpxchg_emu_u8(ptr, old, new);
- 	case 4:
- 		return __cmpxchg_u32(ptr, old, new);
- 	}
--- 
-2.40.1
+There is already a case for 8-byte cmpxchg in the switch statement below:
 
+        case 1:                                         \
+                __xchg__res =3D xchg_u8(__xchg_ptr, x);   \
+                break;
+
+Does cmpxchg_emu_u8() have any advantages over the native xchg_u8()?
+
+Thanks,
+Adrian
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
