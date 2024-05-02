@@ -1,130 +1,103 @@
-Received: from mail-ej1-f53.google.com (mail-ej1-f53.google.com [209.85.218.53])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DCFC957CA1
-	for <linux-sh@vger.kernel.org>; Thu,  2 May 2024 22:25:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 83ADF42056;
+	Thu,  2 May 2024 23:12:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714688716; cv=none; b=rVvBbkw0LW2vdagmaq2+DeHLCq2cdnS2Gqx8PVIglCodwKyC8L3H/BVIElzxUq/cZEVtvOiuxR5UD5Eis0W6SRCVpswrJLRkS14AqyYgGHrGPMbGAa4xT1YoCBzDkz8YN3RAeQQm5/wVpIpAr80WwTSCWJ5zPC7fCu6tQ0frzMw=
+	t=1714691565; cv=none; b=rNmjdacY1BDMfANrBxG35sPprSnVlCK6aBTO9b4AAvy2ug3vbfCFeM5OHt4yUpuETI2jtP00tuNZwKV292RvYG4R9CQpIe2WU3sgYMV8LP0MLF6mBrGMZ6dPxaubl+JXmDq24p9nZ3l0HirMyVwfsdBy5O4htgKAgMw2ZMvK3kU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714688716; c=relaxed/simple;
-	bh=qnKN9L3Z0Au55/oPWH4SsCKSSflxsoIcUt2AGUKIs6U=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=YJRq0+xcuGhPS1boMWL20vn1xZTR+Zm1IxtnJ6xf7uJqrYmpVRXrXir0rxulayG/z+OOi7rALLWw0emIy/hpJPPjwSL8UgDi9/IvPvYMXG1/QZ80lfeU2sbRFpFMCQQkSIO9IO9knCJNKnCrGaLR5lSTy5rvqJET7KWh31b8p40=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org; spf=pass smtp.mailfrom=linuxfoundation.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=QP5+yV5Y; arc=none smtp.client-ip=209.85.218.53
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linuxfoundation.org
+	s=arc-20240116; t=1714691565; c=relaxed/simple;
+	bh=TtQvW0/ZSCONrgzyA1qdsSq+lg8LR2BWPI/SrrOPqTA=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=IacIV/QifQf9cVV0qYZm7LvwvxikM2bQ0xx03TU/kgShrSiLvsI6hIlqPonxh0dy1iSNUhCXb8LfgOS8EwFXNYLEBRW2bf+Gg835mznMaNgy/ytkrZHeF/VnDoIS+/6Gv2YlodJp5qvR6rp6ubpf6ITZzmS7WkRtpryOVTbJdDs=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ETNdkf05; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="QP5+yV5Y"
-Received: by mail-ej1-f53.google.com with SMTP id a640c23a62f3a-a55911bff66so1115241266b.0
-        for <linux-sh@vger.kernel.org>; Thu, 02 May 2024 15:25:14 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google; t=1714688713; x=1715293513; darn=vger.kernel.org;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=r8L1plbBpC5b8hbxFDn23VRySV0QK2bnDqJWgg6u+KQ=;
-        b=QP5+yV5YykizLib3LmpeMaqWToyKZDLApr5cTXdCGJvwvnczWHF6tUH0J7iLFTF+Qs
-         pk2WRN+nhAND0dmqITSRYBG8oK0BcV4BqZvI1cjlR1nsX0JqSniGGEvLMA92dVQk+SkB
-         urxXEbkpTKCr0ATBLePhF0jDSeqDCZOtwrvjU=
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1714688713; x=1715293513;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=r8L1plbBpC5b8hbxFDn23VRySV0QK2bnDqJWgg6u+KQ=;
-        b=pfIoIYw8a2Zli14l1oLHny6zjRI2t8TT1bB0CZB3pdHlQYGU8H8jiTw2NQhZTiu2QE
-         RdVCvzuGHLuLhWSYYOxhXRdwleAh7BQ3eb4x96EIfN/RaExfbK1JvLflBt3AbSOL/J6e
-         rzVP7+ii963pD19onyE/e6wFoJFpi3Y4kKBpZtkRjsc27Ky2xPNuPfgTmgrMbG8tMf7j
-         59sfKqKSxVV+pEUuvHEW4bWqR2mS4cWmcpjByHF2Zskf6NPM8TUZ2tdnj1EjJxKxX+id
-         /ZwWLR+0toS1lGaOh6drNLX0FvTmdsl3JtUX2PDzgbna3K8sdUDKR4WbMK0skme61hIZ
-         SuGQ==
-X-Forwarded-Encrypted: i=1; AJvYcCUR4b6IXhti5bV9hB/VpDoXuYn2sJOwjwYsa89MyC05CwcyRShRo38Xl545fGL/NJ7YNTzTFwEzQDZM7rUKEpOSI4kOWcNSZMY=
-X-Gm-Message-State: AOJu0Yxfk72UjpLQwi0z8nil2tRUosnTTcJmn5tnvEjgfwFh4jT8jXwp
-	ATwrdRm1QTUT1L3hlL9c2NpzLZMACytkmftFkfH4cY8xCSQq45QBLCAPIdsODwOHiy20ZVONTvs
-	59gYMWA==
-X-Google-Smtp-Source: AGHT+IHY80C7S+ykY9L85w5IXBg/2YlQIpnouxX6hCpNzjIrrOFVmjkXrPmDk38nzRqdj7xYYabPXg==
-X-Received: by 2002:a17:906:cf83:b0:a55:75f6:ce0f with SMTP id um3-20020a170906cf8300b00a5575f6ce0fmr483170ejb.13.1714688712978;
-        Thu, 02 May 2024 15:25:12 -0700 (PDT)
-Received: from mail-wr1-f43.google.com (mail-wr1-f43.google.com. [209.85.221.43])
-        by smtp.gmail.com with ESMTPSA id w11-20020a17090652cb00b00a4da28f42f1sm999302ejn.177.2024.05.02.15.25.12
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 02 May 2024 15:25:12 -0700 (PDT)
-Received: by mail-wr1-f43.google.com with SMTP id ffacd0b85a97d-34db22374f3so1834236f8f.2
-        for <linux-sh@vger.kernel.org>; Thu, 02 May 2024 15:25:12 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCUgJFn5lKCYIW/bQSbajLr6Mt/T3OE5/+KPscamIpa9YlbIU6PGredykb7zXpM5PjloS86LayciQdDWf/UASK0a9ZLi3Ju4gQI=
-X-Received: by 2002:a17:906:2b94:b0:a59:4101:433e with SMTP id
- m20-20020a1709062b9400b00a594101433emr448463ejg.35.1714688229488; Thu, 02 May
- 2024 15:17:09 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ETNdkf05"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 236F0C113CC;
+	Thu,  2 May 2024 23:12:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1714691565;
+	bh=TtQvW0/ZSCONrgzyA1qdsSq+lg8LR2BWPI/SrrOPqTA=;
+	h=Date:From:To:Cc:Subject:Reply-To:References:In-Reply-To:From;
+	b=ETNdkf05c90wLRFtuo3itrE3t33QU2QVWuu5jYT48FmyzfrkNcO7kOVGonsQUSCbY
+	 f2sOBPJBmFuj0D/OtHLAc2WxtGhAWObLauu9sV+0Ahx8kTqrcjtCiVFfhouj1aww5c
+	 3A8K5ZXOn+ukFgZ7lu46UXPV1wUKaeEmSZn/rXCqK8DFMVDUVhlS7zG4T5UOLYWEcN
+	 xKiO0eZ51H6Tc/DW8tM1BeY07nxAuLbqI0ZuiQ8kMMassJwXQzQgAHyqjQy9HMpjAY
+	 UEJ+GeqML7Wn7ZLrYQf7yicsOooQgJbRWAFkVIIvpqerR6uRcAMo7y7XCb32lmQ49V
+	 Yan4bS1qgAFaQ==
+Received: by paulmck-ThinkPad-P17-Gen-1.home (Postfix, from userid 1000)
+	id C644DCE0991; Thu,  2 May 2024 16:12:44 -0700 (PDT)
+Date: Thu, 2 May 2024 16:12:44 -0700
+From: "Paul E. McKenney" <paulmck@kernel.org>
+To: Al Viro <viro@zeniv.linux.org.uk>
+Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org,
+	elver@google.com, akpm@linux-foundation.org, tglx@linutronix.de,
+	peterz@infradead.org, dianders@chromium.org, pmladek@suse.com,
+	arnd@arndb.de, torvalds@linux-foundation.org, kernel-team@meta.com,
+	Andi Shyti <andi.shyti@linux.intel.com>,
+	Palmer Dabbelt <palmer@rivosinc.com>,
+	Masami Hiramatsu <mhiramat@kernel.org>, linux-sh@vger.kernel.org
+Subject: Re: [PATCH v2 cmpxchg 12/13] sh: Emulate one-byte cmpxchg
+Message-ID: <3dac400c-d18f-4f4e-b598-cad6948362d6@paulmck-laptop>
+Reply-To: paulmck@kernel.org
+References: <b67e79d4-06cb-4a45-a906-b9e0fbae22c5@paulmck-laptop>
+ <20240501230130.1111603-12-paulmck@kernel.org>
+ <1376850f47279e3a3f4f40e3de2784ae3ac30414.camel@physik.fu-berlin.de>
+ <b7ae0feb-d401-43ee-8d5f-ce62ca224638@paulmck-laptop>
+ <6f7743601fe7bd50c2855a8fd1ed8f766ef03cac.camel@physik.fu-berlin.de>
+ <9a4e1928-961d-43af-9951-71786b97062a@paulmck-laptop>
+ <20240502205345.GK2118490@ZenIV>
+ <0a429959-935d-4800-8d0c-4e010951996d@paulmck-laptop>
+ <20240502220757.GL2118490@ZenIV>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <b67e79d4-06cb-4a45-a906-b9e0fbae22c5@paulmck-laptop>
- <20240501230130.1111603-12-paulmck@kernel.org> <1376850f47279e3a3f4f40e3de2784ae3ac30414.camel@physik.fu-berlin.de>
- <b7ae0feb-d401-43ee-8d5f-ce62ca224638@paulmck-laptop> <6f7743601fe7bd50c2855a8fd1ed8f766ef03cac.camel@physik.fu-berlin.de>
- <9a4e1928-961d-43af-9951-71786b97062a@paulmck-laptop> <20240502205345.GK2118490@ZenIV>
- <20240502210122.GA2322432@ZenIV>
-In-Reply-To: <20240502210122.GA2322432@ZenIV>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Thu, 2 May 2024 15:16:52 -0700
-X-Gmail-Original-Message-ID: <CAHk-=wj-Jt7MgFC4-yr6DdvCVDoy1nu0W9W2zmaGZm6u=b2qTg@mail.gmail.com>
-Message-ID: <CAHk-=wj-Jt7MgFC4-yr6DdvCVDoy1nu0W9W2zmaGZm6u=b2qTg@mail.gmail.com>
-Subject: Re: alpha cmpxchg.h (was Re: [PATCH v2 cmpxchg 12/13] sh: Emulate
- one-byte cmpxchg)
-To: Al Viro <viro@zeniv.linux.org.uk>
-Cc: "Paul E. McKenney" <paulmck@kernel.org>, 
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, linux-arch@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, elver@google.com, akpm@linux-foundation.org, 
-	tglx@linutronix.de, peterz@infradead.org, dianders@chromium.org, 
-	pmladek@suse.com, arnd@arndb.de, kernel-team@meta.com, 
-	Andi Shyti <andi.shyti@linux.intel.com>, Palmer Dabbelt <palmer@rivosinc.com>, 
-	Masami Hiramatsu <mhiramat@kernel.org>, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20240502220757.GL2118490@ZenIV>
 
-On Thu, 2 May 2024 at 14:01, Al Viro <viro@zeniv.linux.org.uk> wrote:
->
-> +static inline unsigned long
-> +____xchg_u8(volatile char *m, unsigned long val)
-> +{
-> +       unsigned long ret, tmp, addr64;
-> +
-> +       __asm__ __volatile__(
-> +       "       andnot  %4,7,%3\n"
-> +       "       insbl   %1,%4,%1\n"
-> +       "1:     ldq_l   %2,0(%3)\n"
-> +       "       extbl   %2,%4,%0\n"
-> +       "       mskbl   %2,%4,%2\n"
-> +       "       or      %1,%2,%2\n"
-> +       "       stq_c   %2,0(%3)\n"
-> +       "       beq     %2,2f\n"
-> +       ".subsection 2\n"
-> +       "2:     br      1b\n"
-> +       ".previous"
-> +       : "=&r" (ret), "=&r" (val), "=&r" (tmp), "=&r" (addr64)
-> +       : "r" ((long)m), "1" (val) : "memory");
-> +
-> +       return ret;
-> +}
+On Thu, May 02, 2024 at 11:07:57PM +0100, Al Viro wrote:
+> On Thu, May 02, 2024 at 02:18:48PM -0700, Paul E. McKenney wrote:
+> 
+> > If you are only ever doing atomic read-modify-write operations on the
+> > byte in question, then agreed, you don't care about byte loads and stores.
+> > 
+> > But there are use cases that do mix smp_store_release() with cmpxchg(),
+> > and those use cases won't work unless at least byte store is implemented.
+> > Or I suppose that we could use cmpxchg() instead of smp_store_release(),
+> > but that is wasteful for architectures that do support byte stores.
+> > 
+> > So EV56 adds the byte loads and stores needed for those use cases.
+> > 
+> > Or am I missing your point?
+> 
+> arch/alpha/include/cmpxchg.h:
+> #define arch_cmpxchg(ptr, o, n)                                         \
+> ({                                                                      \
+>         __typeof__(*(ptr)) __ret;                                       \
+>         __typeof__(*(ptr)) _o_ = (o);                                   \
+>         __typeof__(*(ptr)) _n_ = (n);                                   \
+>         smp_mb();                                                       \
+>         __ret = (__typeof__(*(ptr))) __cmpxchg((ptr),                   \
+>                 (unsigned long)_o_, (unsigned long)_n_, sizeof(*(ptr)));\
+>         smp_mb();                                                       \
+>         __ret;                                                          \
+> })
+> 
+> Are those smp_mb() in there enough?
+> 
+> I'm probably missing your point, though - what mix of cmpxchg and
+> smp_store_release on 8bit values?
 
-Side note: if you move this around, I think you should just uninline
-it too and turn it into a function call.
+One of RCU's state machines uses smp_store_release() to start the
+state machine (only one task gets to do this) and cmpxchg() to update
+state beyond that point.  And the state is 8 bits so that it and other
+state fits into 32 bits to allow a single check for multiple conditions
+elsewhere.
 
-This inline asm doesn't actually take any advantage of the inlining.
-The main reason to inline something like this is that you could then
-deal with different compile-time alignments better than using the
-generic software sequence. But that's not what the inline asm actually
-does, and it uses the worst-case code sequence for inserting the byte.
-
-Put that together with "byte and word xchg are rare", and it really
-smells to me like we shouldn't be inlining this.
-
-Now, the 32-bit and 64-bit cases are different - more common, but also
-much simpler code sequences. They seem worth inlining.
-
-That said, maybe for alpha, the "just move code around" is better than
-"fix up old bad decisions" just because the effort is lower.
-
-              Linus
+							Thanx, Paul
