@@ -1,124 +1,102 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from fout8-smtp.messagingengine.com (fout8-smtp.messagingengine.com [103.168.172.151])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 66BCD193;
-	Fri,  3 May 2024 00:16:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3EDF11514E5;
+	Fri,  3 May 2024 15:29:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.151
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714695404; cv=none; b=UbLAFCsnFXc46wxr+4VN8PoeW5/GCvrmDiTvNCJJLK9oYeWdy5M8gs09SWJOviQA88tpCNsKm699g9s1qpuagg1yMaQP8sruOfCLlsZpcPoZTJB1woSAT6TIjUtvhQzVSN1cBHnPBD2T3YSWeaGwkwWO34+A2/EtJZD5yhtZG7Y=
+	t=1714750167; cv=none; b=LmZuMp+/ZDCzvL60q+wLJRNAUuHhlMv2bnrQVLfFQbmWx3ZzWaIyF7OcMWiDSllDokFpXrKGpB9hUbguy2ucDlAvyc+tVPHoLZwbf15lC1RiLnsU5IcqUPENhCn2Tx2QIv3l172gTwz5QHvYqTX5j3rN8y52EwgxQS3ATED3RVs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714695404; c=relaxed/simple;
-	bh=rF9pMJbFN+/L4ZoAlKzy29Ti9M/pRpKGV6oAQsWdR1U=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=TldA1HSUdQY98zpPCdVb247szETIQhxneaBONMiLDdJyiIm5vBHDLgU28Gvm7RfxilEB+YRQnYkRSfrHcsCfZqyI7jXDhq6fN3qcjAZxtlqP7xxMc5dWeV0mXbyXkXxwUxY9cIWixvjjxAS6s++BiCxazYHRHZqppcnrf5bF3+E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=jE9MBYW0; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1714750167; c=relaxed/simple;
+	bh=PaJ11yyj1u29gk5++0CUbqbvDFcDQTeM1r/sMnrKg80=;
+	h=MIME-Version:Message-Id:In-Reply-To:References:Date:From:To:Cc:
+	 Subject:Content-Type; b=SyOXzmpVQlrQzJ2GrCvm255C7nwD7Oa/2elDdCEfGdXFe55dNXkRL+FKnmbeoU2AsM8ENpnUL0vKOUoDUA8dX4gJGaRo0wRMM8fpu2rs6O3udQz0yw3Cx9bZr1PXpJ70eqYJbNROWT1dy2GgdxkoeeEitCLyNF82uVBK9iSMYxU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de; spf=pass smtp.mailfrom=arndb.de; dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b=iCIMBune; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=YGYORuir; arc=none smtp.client-ip=103.168.172.151
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="jE9MBYW0"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DB5AEC113CC;
-	Fri,  3 May 2024 00:16:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1714695403;
-	bh=rF9pMJbFN+/L4ZoAlKzy29Ti9M/pRpKGV6oAQsWdR1U=;
-	h=Date:From:To:Cc:Subject:Reply-To:References:In-Reply-To:From;
-	b=jE9MBYW0/uaiCob3sBSXc2FxZEpI/ydtwE3pxzz5xa2XMBRbKxWJQqBuHx4GxhoMG
-	 UV2PnD7x/vzSR1Q4Pg6hyuWqDlr0iBM9NO/Tr/d9ILgFtJlvvLVEcVKhljk0NYlG89
-	 t5xNgfMtE3mw4AIOahzMQ65c8Ca8uiDA0+1ym/EhJA1I53mR1aOuSwJlHpnSsHZmYW
-	 mpqtznkmFzkVVioPIyVBgmeWuDpb4V4P4hV9w6qEfCMXjtSWUho4OVhG+Igqr60ov7
-	 dyFgeqK/1gwvKD0bgzMkyXMrV2OsA8+S8Xf/VmSjeXwsOHm43y5OwM1Vf/3NoFO6mu
-	 cpcW2JKaHJVqQ==
-Received: by paulmck-ThinkPad-P17-Gen-1.home (Postfix, from userid 1000)
-	id 754DCCE0991; Thu,  2 May 2024 17:16:43 -0700 (PDT)
-Date: Thu, 2 May 2024 17:16:43 -0700
-From: "Paul E. McKenney" <paulmck@kernel.org>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: Al Viro <viro@zeniv.linux.org.uk>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org,
-	elver@google.com, akpm@linux-foundation.org, tglx@linutronix.de,
-	peterz@infradead.org, dianders@chromium.org, pmladek@suse.com,
-	arnd@arndb.de, kernel-team@meta.com,
-	Andi Shyti <andi.shyti@linux.intel.com>,
-	Palmer Dabbelt <palmer@rivosinc.com>,
-	Masami Hiramatsu <mhiramat@kernel.org>, linux-sh@vger.kernel.org
-Subject: Re: [PATCH v2 cmpxchg 12/13] sh: Emulate one-byte cmpxchg
-Message-ID: <628950f5-b220-48cb-a3a6-818be9e46f40@paulmck-laptop>
-Reply-To: paulmck@kernel.org
-References: <20240501230130.1111603-12-paulmck@kernel.org>
- <1376850f47279e3a3f4f40e3de2784ae3ac30414.camel@physik.fu-berlin.de>
- <b7ae0feb-d401-43ee-8d5f-ce62ca224638@paulmck-laptop>
- <6f7743601fe7bd50c2855a8fd1ed8f766ef03cac.camel@physik.fu-berlin.de>
- <9a4e1928-961d-43af-9951-71786b97062a@paulmck-laptop>
- <20240502205345.GK2118490@ZenIV>
- <0a429959-935d-4800-8d0c-4e010951996d@paulmck-laptop>
- <20240502220757.GL2118490@ZenIV>
- <3dac400c-d18f-4f4e-b598-cad6948362d6@paulmck-laptop>
- <CAHk-=whaCSxengJHP82WUwrjKjYsVeD_zEN_We+gmyHpJJayoQ@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="iCIMBune";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="YGYORuir"
+Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
+	by mailfout.nyi.internal (Postfix) with ESMTP id 7458013800CE;
+	Fri,  3 May 2024 11:29:25 -0400 (EDT)
+Received: from imap51 ([10.202.2.101])
+  by compute5.internal (MEProxy); Fri, 03 May 2024 11:29:25 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
+	:cc:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm2; t=1714750165; x=1714836565; bh=wY9DfsGGwL
+	3WFFF4rDuowcVoD3Ri5Gt9+AThm6ztR9E=; b=iCIMBune9biZ7be+dtUP878Q93
+	Sf0/XN8Sm61VPWCl1b9XK9If8cW2NiSS5w8EN0UdqYwtWGC3lSFvxF7sK3ZoUXid
+	5GjXllhLlIQJlyGLKwpwZSQhLHi9iGX82dEGqYJebU3idupbr9mH/XwyWj0oduvF
+	dUz5eEp9/javg0G5T9NUaSVglGyA9v8/mRLxLArru1L5igJOrYs2YUWreSrOwuHM
+	CVWLY8ndAFhGtAYovQyFB2GnGehAOAhxahrl3fHIIa2ZihXc1GT1iqEhIpOlS0Yf
+	/v2Y1GOUoLhcGagBCanDzlDDDoSP55O6gaC/niPzveq/W5uG+Jxfvm4WD7XA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
+	fm3; t=1714750165; x=1714836565; bh=wY9DfsGGwL3WFFF4rDuowcVoD3Ri
+	5Gt9+AThm6ztR9E=; b=YGYORuirzvgEP0dcRoZGmyspLXOo9wube2DJxbfTkMkp
+	pSAyVvzV2X8BfeyP036rsP6YbbUa31Z9bl3rkPV8q5/WGPfRk9Cw9/MK8lAums1N
+	05B9yIqHGJPstrbSw34nT/W/6Wu3BbSKGp7rS0bN7N6O3eK67ugjij3+HValFMvt
+	7SHUIIM2VQOonhAY3JHTRnmmzeu0AP1HnKNyaf55JcNnxDETqCs0oO2LmInbVcdu
+	ygz3WG6a8ImuZp8LsKjGOeaNW3edEe95Ak7x44udV75neIGR6ifS7xiaJfklKpGI
+	XXLMYaKRieG8lu+pZgEWV+nvBhcqLqJ68z7i1RVGWQ==
+X-ME-Sender: <xms:1AI1Zgt-RIf_MVtvc0LxunzLgTpoVcbbLYSEIa1hyWRYUFiD8CIQHQ>
+    <xme:1AI1ZteogSVAZzkbj9oTdYREHhPVxjCqEGNlGGfJTwPaihNSEop06Q-q30wvqDJep
+    4fCBjLFa0eHCvwjEY0>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvledrvddvtddgkeekucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnhhtshculddquddttddmne
+    cujfgurhepofgfggfkjghffffhvfevufgtsehttdertderredtnecuhfhrohhmpedftehr
+    nhguuceuvghrghhmrghnnhdfuceorghrnhgusegrrhhnuggsrdguvgeqnecuggftrfgrth
+    htvghrnhepffehueegteeihfegtefhjefgtdeugfegjeelheejueethfefgeeghfektdek
+    teffnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpehmrghilhhfrhhomheprg
+    hrnhgusegrrhhnuggsrdguvg
+X-ME-Proxy: <xmx:1AI1ZrxleoU7IxogrTww9AbE64uBICl1mz4_eLBng6a7XhGVW_5e8Q>
+    <xmx:1AI1ZjOlt-JjJyw4GOyKHNjqRF3I2A828aNCnba5Xgdx-mcNldY4iw>
+    <xmx:1AI1Zg_t5Ed5yE51wnoAw7ipvQj1dt8MiH-w0kjpB-_Qpd81NgpqOw>
+    <xmx:1AI1ZrUFL1bIWpD3lQZXqt7G_yN21Kblz2B54NWe1vNc13E_hoY1Sw>
+    <xmx:1QI1Zhj1BGPg0_SHCyV2Ty4IxZgKxMv84vxZso-bp7v4cPVRi_L31pPt>
+Feedback-ID: i56a14606:Fastmail
+Received: by mailuser.nyi.internal (Postfix, from userid 501)
+	id 96CCDB6008D; Fri,  3 May 2024 11:29:24 -0400 (EDT)
+X-Mailer: MessagingEngine.com Webmail Interface
+User-Agent: Cyrus-JMAP/3.11.0-alpha0-417-gddc99d37d-fm-hotfix-20240424.001-g2c179674
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <CAHk-=whaCSxengJHP82WUwrjKjYsVeD_zEN_We+gmyHpJJayoQ@mail.gmail.com>
+Message-Id: <2f8cfd1d-a478-4666-a181-040c8d92e8fd@app.fastmail.com>
+In-Reply-To: <c281bb8e-0719-4b28-a637-56615ad16913@suse.de>
+References: <20240329203450.7824-1-tzimmermann@suse.de>
+ <c281bb8e-0719-4b28-a637-56615ad16913@suse.de>
+Date: Fri, 03 May 2024 17:29:04 +0200
+From: "Arnd Bergmann" <arnd@arndb.de>
+To: "Thomas Zimmermann" <tzimmermann@suse.de>,
+ "Sam Ravnborg" <sam@ravnborg.org>,
+ "Javier Martinez Canillas" <javierm@redhat.com>,
+ "Helge Deller" <deller@gmx.de>, sui.jingfeng@linux.dev
+Cc: Linux-Arch <linux-arch@vger.kernel.org>, dri-devel@lists.freedesktop.org,
+ linux-fbdev@vger.kernel.org, sparclinux@vger.kernel.org,
+ linux-sh@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+ linux-parisc@vger.kernel.org, linux-mips@vger.kernel.org,
+ linux-m68k@lists.linux-m68k.org, loongarch@lists.linux.dev,
+ linux-arm-kernel@lists.infradead.org, linux-snps-arc@lists.infradead.org,
+ linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v3 0/3] arch: Remove fbdev dependency from video helpers
+Content-Type: text/plain
 
-On Thu, May 02, 2024 at 04:32:35PM -0700, Linus Torvalds wrote:
-> On Thu, 2 May 2024 at 16:12, Paul E. McKenney <paulmck@kernel.org> wrote:
-> >
-> > One of RCU's state machines uses smp_store_release() to start the
-> > state machine (only one task gets to do this) and cmpxchg() to update
-> > state beyond that point.  And the state is 8 bits so that it and other
-> > state fits into 32 bits to allow a single check for multiple conditions
-> > elsewhere.
-> 
-> Note that since alpha lacks the release-acquire model, it's always
-> going to be a full memory barrier before the store.
-> 
-> And then the store turns into a load-mask-store for older alphas.
-> 
-> So it's going to be a complete mess from a performance standpoint regardless.
+On Fri, Apr 5, 2024, at 11:04, Thomas Zimmermann wrote:
+> Hi,
+>
+> if there are no further comments, can this series be merged through 
+> asm-generic?
 
-And on those older machines, a mess functionally because the other
-three bytes in that same 32-bit word can be concurrently updated.
-Hence Arnd's patch being necessary here.
+Sorry for the delay, I've merged these for asm-generic now.
 
-EV56 and later all have single-byte stores, so they are OK.  They were
-introduced in the mid-1990s, so even they are antiques.  ;-)
-
-> Happily, I doubt anybody really cares.
-
-Here is hoping!
-
-> I've occasionally wondered if we have situations where the
-> "smp_store_release()" only cares about previous *writes* being ordered
-> (ie a "smp_wmb()+WRITE_ONCE" would be sufficient).
-
-Back in the day, rcu_assign_pointer() worked this way.  But later there
-were a few use cases where ordering prior reads was needed.
-
-And in this case, we just barely need that full store-release
-functionality.  There is a preceding mutex lock-unlock pair that provides
-a full barrier post-boot on almost all systems.
-
-> It makes no difference on x86 (all stores are relases), power64 (wmb
-> and store_release are both LWSYNC) or arm64 (str is documentated to be
-> cheaper than DMB).
-> 
-> On alpha, smp_wmb()+WRITE_ONCE() is cheaper than smp_store_release(),
-> but nobody sane cares.
-> 
-> But *if* we have a situation where the "smp_store_release()" might be
-> just a "previous writes need to be visible" rather than ordering
-> previous reads too, we could maybe introduce that kind of op. I
-> _think_ the RCU writes tend to be of that kind?
-
-Most of the time, rcu_assign_pointer() only needs to order prior writes,
-not both reads and writes.  In theory, we could make an something like
-an rcu_assign_pointer_reads_too(), though hopefully with a shorter name,
-and go back to smp_wmb() for rcu_assign_pointer().
-
-But in practice, I am having a really hard time convincing myself that
-it would be worth it.
-
-							Thanx, Paul
+      Arnd
