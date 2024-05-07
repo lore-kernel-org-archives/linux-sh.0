@@ -1,39 +1,48 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0b-0031df01.pphosted.com (mx0b-0031df01.pphosted.com [205.220.180.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 65D444AED7;
-	Fri,  3 May 2024 15:32:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1CC93745E4;
+	Tue,  7 May 2024 21:42:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=205.220.180.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1714750360; cv=none; b=OV2HBrgiY1KaF0JyMP7xOWziQPefEMO8QP7XoLBQwdnytO9OTbb5MfyZVQ1YCIVYvZszbUqVXYmzlBf0g86oTGUvk2qr22FqUYLAUGGr5mo/dh8QXFgqrdlzZOBle6RiAKGO+vfK2n8kBp8iNADz9lLSBGh3oFC6L4xqK7VTxP4=
+	t=1715118173; cv=none; b=RqLLNzdSnCEJyUDpQZsb3xI1zwQiv/KBpR4rwnNlASu8dtL+JaP99NBdg6+BMXm5Mxu6mHfDXfssz+aBTJdyWwbPTaV8c+W6g6yPRro4GsFHnSw3w5dDsv1ISYL37C7PCHBPSserrVssp4CyEVy4sf0Qf0Mqy/lPgKTPuoGvizg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1714750360; c=relaxed/simple;
-	bh=tKoOu+7zl6984Zo1ilV+FMzyq8BU3CQhO45WpXQ6Rhw=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=JjNuW4iDGL/Q8BlLS90LZvTpzFp51oQiZC37VpoyS8GJNHN2UUBFKOaA9BAjQ5BrozyN2YLgpCj9lFSovTDlrnazYAWOJxZDFK9SihqRqk8DDT395Psr7de2L+dVUqqeFJWhhC3v88HoQKUaSikhP9TlkLlyZyqC7sdu0qyk7lU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id AB5E833B95;
-	Fri,  3 May 2024 15:32:37 +0000 (UTC)
-Authentication-Results: smtp-out1.suse.de;
-	none
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2BFDA139CB;
-	Fri,  3 May 2024 15:32:36 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([10.150.64.162])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id G/TgBZQDNWZ9LgAAD6G6ig
-	(envelope-from <tzimmermann@suse.de>); Fri, 03 May 2024 15:32:36 +0000
-Message-ID: <ec59624e-c872-4205-a45c-97163ae33301@suse.de>
-Date: Fri, 3 May 2024 17:32:35 +0200
+	s=arc-20240116; t=1715118173; c=relaxed/simple;
+	bh=U7DObR7C46rOp9WAJ9Kp1t+6jdidsG351JAUz0jNDZw=;
+	h=Message-ID:Date:MIME-Version:Subject:To:CC:References:From:
+	 In-Reply-To:Content-Type; b=deSI8DhSzMIMix4abJznsyZ0FnV0vMADCFpMCRbhWGjJGz6J/Hdx+3R6eMp+WFo9ROkh6TY2rhoiRU760wsQYDzo5S1lvGiPpb73Uo3CXGwR5S6Wa11uVZqj3lwAmrJrfcBMRxahWv2IZnyoMbjiIzPlr6rnSlD5bO6OT9gCyTo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com; spf=pass smtp.mailfrom=quicinc.com; dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b=bPJ5vXwf; arc=none smtp.client-ip=205.220.180.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=quicinc.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b="bPJ5vXwf"
+Received: from pps.filterd (m0279868.ppops.net [127.0.0.1])
+	by mx0a-0031df01.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 447KJshZ017981;
+	Tue, 7 May 2024 21:42:20 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=quicinc.com; h=
+	message-id:date:mime-version:subject:to:cc:references:from
+	:in-reply-to:content-type:content-transfer-encoding; s=
+	qcppdkim1; bh=gDELcenDVUTdOR/ZE4H7s3yaDipCvxPwDJjdsHdy2uk=; b=bP
+	J5vXwfzUH5ib/0JhhS3oOojemgAFrRvcUUX1ZVH/iT+Z0iRMljIsxhlA24MLzlSc
+	7Kg2kRAyELip9ydW/nF+G8fcC/IMBqWZ00m3eJ0tXhHq+lxCWH01pW8p+tsbQvaP
+	ESjuaYp5lyNeRD7v6oFkV6WqkaHdYVAJI2XWptJHxDQ88xkPa1Xcj4LLZ4pIjv6f
+	cbNfN1LgpxPDvbU0Fd+BtjG/pqjHhC0+qzNxJpSkLIj7pJVLv3gAXfivDgel8xFs
+	NY5HxlQ4OkjzlvEY0DXsuDSdT+BWBSmpsn7yB9pRUz0DZEwnCKf/E0AOxLt2wJwV
+	KBrcNnN1/PZMxZSrH1sA==
+Received: from nalasppmta02.qualcomm.com (Global_NAT1.qualcomm.com [129.46.96.20])
+	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 3xyspr0ayb-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 07 May 2024 21:42:19 +0000 (GMT)
+Received: from nalasex01b.na.qualcomm.com (nalasex01b.na.qualcomm.com [10.47.209.197])
+	by NALASPPMTA02.qualcomm.com (8.17.1.5/8.17.1.5) with ESMTPS id 447LgIj5010004
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
+	Tue, 7 May 2024 21:42:18 GMT
+Received: from [10.110.119.86] (10.80.80.8) by nalasex01b.na.qualcomm.com
+ (10.47.209.197) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.2.1544.9; Tue, 7 May 2024
+ 14:42:14 -0700
+Message-ID: <ec5f3194-7e9e-4cc9-86b9-02a204649246@quicinc.com>
+Date: Tue, 7 May 2024 14:42:05 -0700
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -41,86 +50,101 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v3 0/3] arch: Remove fbdev dependency from video helpers
-To: Arnd Bergmann <arnd@arndb.de>, Sam Ravnborg <sam@ravnborg.org>,
- Javier Martinez Canillas <javierm@redhat.com>, Helge Deller <deller@gmx.de>,
- sui.jingfeng@linux.dev
-Cc: Linux-Arch <linux-arch@vger.kernel.org>, dri-devel@lists.freedesktop.org,
- linux-fbdev@vger.kernel.org, sparclinux@vger.kernel.org,
- linux-sh@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
- linux-parisc@vger.kernel.org, linux-mips@vger.kernel.org,
- linux-m68k@lists.linux-m68k.org, loongarch@lists.linux.dev,
- linux-arm-kernel@lists.infradead.org, linux-snps-arc@lists.infradead.org,
- linux-kernel@vger.kernel.org
-References: <20240329203450.7824-1-tzimmermann@suse.de>
- <c281bb8e-0719-4b28-a637-56615ad16913@suse.de>
- <2f8cfd1d-a478-4666-a181-040c8d92e8fd@app.fastmail.com>
+Subject: Re: [PATCH v2] sh: Call paging_init() earlier in the init sequence
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        <ysato@users.sourceforge.jp>, <dalias@libc.org>
+CC: <akpm@linux-foundation.org>, <linux-sh@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>, <robh+dt@kernel.org>,
+        <kernel@quicinc.com>, Rob Herring <robh@kernel.org>,
+        Rob Landley <rob@landley.net>
+References: <20240423233150.74302-1-quic_obabatun@quicinc.com>
+ <72ec7831604326e852eb228072b1d817bab829fb.camel@physik.fu-berlin.de>
+ <b00e0adc72815e465cf32fc5505445cfceeeca84.camel@physik.fu-berlin.de>
 Content-Language: en-US
-From: Thomas Zimmermann <tzimmermann@suse.de>
-Autocrypt: addr=tzimmermann@suse.de; keydata=
- xsBNBFs50uABCADEHPidWt974CaxBVbrIBwqcq/WURinJ3+2WlIrKWspiP83vfZKaXhFYsdg
- XH47fDVbPPj+d6tQrw5lPQCyqjwrCPYnq3WlIBnGPJ4/jreTL6V+qfKRDlGLWFjZcsrPJGE0
- BeB5BbqP5erN1qylK9i3gPoQjXGhpBpQYwRrEyQyjuvk+Ev0K1Jc5tVDeJAuau3TGNgah4Yc
- hdHm3bkPjz9EErV85RwvImQ1dptvx6s7xzwXTgGAsaYZsL8WCwDaTuqFa1d1jjlaxg6+tZsB
- 9GluwvIhSezPgnEmimZDkGnZRRSFiGP8yjqTjjWuf0bSj5rUnTGiyLyRZRNGcXmu6hjlABEB
- AAHNJ1Rob21hcyBaaW1tZXJtYW5uIDx0emltbWVybWFubkBzdXNlLmRlPsLAjgQTAQgAOAIb
- AwULCQgHAgYVCgkICwIEFgIDAQIeAQIXgBYhBHIX+6yM6c9jRKFo5WgNwR1TC3ojBQJftODH
- AAoJEGgNwR1TC3ojx1wH/0hKGWugiqDgLNXLRD/4TfHBEKmxIrmfu9Z5t7vwUKfwhFL6hqvo
- lXPJJKQpQ2z8+X2vZm/slsLn7J1yjrOsoJhKABDi+3QWWSGkaGwRJAdPVVyJMfJRNNNIKwVb
- U6B1BkX2XDKDGffF4TxlOpSQzdtNI/9gleOoUA8+jy8knnDYzjBNOZqLG2FuTdicBXblz0Mf
- vg41gd9kCwYXDnD91rJU8tzylXv03E75NCaTxTM+FBXPmsAVYQ4GYhhgFt8S2UWMoaaABLDe
- 7l5FdnLdDEcbmd8uLU2CaG4W2cLrUaI4jz2XbkcPQkqTQ3EB67hYkjiEE6Zy3ggOitiQGcqp
- j//OwE0EWznS4AEIAMYmP4M/V+T5RY5at/g7rUdNsLhWv1APYrh9RQefODYHrNRHUE9eosYb
- T6XMryR9hT8XlGOYRwKWwiQBoWSDiTMo/Xi29jUnn4BXfI2px2DTXwc22LKtLAgTRjP+qbU6
- 3Y0xnQN29UGDbYgyyK51DW3H0If2a3JNsheAAK+Xc9baj0LGIc8T9uiEWHBnCH+RdhgATnWW
- GKdDegUR5BkDfDg5O/FISymJBHx2Dyoklv5g4BzkgqTqwmaYzsl8UxZKvbaxq0zbehDda8lv
- hFXodNFMAgTLJlLuDYOGLK2AwbrS3Sp0AEbkpdJBb44qVlGm5bApZouHeJ/+n+7r12+lqdsA
- EQEAAcLAdgQYAQgAIAIbDBYhBHIX+6yM6c9jRKFo5WgNwR1TC3ojBQJftOH6AAoJEGgNwR1T
- C3ojVSkIALpAPkIJPQoURPb1VWjh34l0HlglmYHvZszJWTXYwavHR8+k6Baa6H7ufXNQtThR
- yIxJrQLW6rV5lm7TjhffEhxVCn37+cg0zZ3j7zIsSS0rx/aMwi6VhFJA5hfn3T0TtrijKP4A
- SAQO9xD1Zk9/61JWk8OysuIh7MXkl0fxbRKWE93XeQBhIJHQfnc+YBLprdnxR446Sh8Wn/2D
- Ya8cavuWf2zrB6cZurs048xe0UbSW5AOSo4V9M0jzYI4nZqTmPxYyXbm30Kvmz0rYVRaitYJ
- 4kyYYMhuULvrJDMjZRvaNe52tkKAvMevcGdt38H4KSVXAylqyQOW5zvPc4/sq9c=
-In-Reply-To: <2f8cfd1d-a478-4666-a181-040c8d92e8fd@app.fastmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+From: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
+In-Reply-To: <b00e0adc72815e465cf32fc5505445cfceeeca84.camel@physik.fu-berlin.de>
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: 7bit
-X-Rspamd-Pre-Result: action=no action;
-	module=replies;
-	Message is reply to one we originated
-X-Rspamd-Pre-Result: action=no action;
-	module=replies;
-	Message is reply to one we originated
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	REPLY(-4.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -4.00
-X-Rspamd-Queue-Id: AB5E833B95
+X-ClientProxiedBy: nasanex01b.na.qualcomm.com (10.46.141.250) To
+ nalasex01b.na.qualcomm.com (10.47.209.197)
+X-QCInternal: smtphost
+X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=5800 signatures=585085
+X-Proofpoint-ORIG-GUID: FeRwHS4RWyL3Ea5FIRgdOCFmwjviY9ox
+X-Proofpoint-GUID: FeRwHS4RWyL3Ea5FIRgdOCFmwjviY9ox
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1039,Hydra:6.0.650,FMLib:17.11.176.26
+ definitions=2024-05-07_13,2024-05-06_02,2023-05-22_02
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 lowpriorityscore=0
+ spamscore=0 clxscore=1011 malwarescore=0 suspectscore=0 priorityscore=1501
+ mlxscore=0 impostorscore=0 mlxlogscore=772 bulkscore=0 adultscore=0
+ phishscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.19.0-2405010000 definitions=main-2405070150
 
 
-
-Am 03.05.24 um 17:29 schrieb Arnd Bergmann:
-> On Fri, Apr 5, 2024, at 11:04, Thomas Zimmermann wrote:
->> Hi,
+On 5/2/2024 3:29 AM, John Paul Adrian Glaubitz wrote:
+> Hi Oreoluwa,
+>
+> On Wed, 2024-05-01 at 19:18 +0200, John Paul Adrian Glaubitz wrote:
+>> Hi Oreoluwa,
 >>
->> if there are no further comments, can this series be merged through
->> asm-generic?
-> Sorry for the delay, I've merged these for asm-generic now.
+>> On Tue, 2024-04-23 at 16:31 -0700, Oreoluwa Babatunde wrote:
+>>> The unflatten_device_tree() function contains a call to
+>>> memblock_alloc(). This is a problem because this allocation is done
+>>> before any of the reserved memory is set aside in paging_init().
+>>> This means that there is a possibility for memblock to allocate from
+>>> any of the memory regions that are supposed to be set aside as reserved.
+>>>
+>>> Hence, move the call to paging_init() to be earlier in the init
+>>> sequence so that the reserved memory regions are set aside before any
+>>> allocations are done using memblock.
+>> I was just about to merge your patch when I ran a git blame on the code in
+>> arch/sh/kernel/setup.c and noticed the following commit by Rich Felker:
+>>
+>> commit eb6b6930a70faefe04479a71088cc10366782d9a
+>> Author: Rich Felker <dalias@libc.org>
+>> Date:   Mon Jul 31 01:27:50 2017 -0400
+>>
+>>     sh: fix memory corruption of unflattened device tree
+>>     
+>>     unflatten_device_tree() makes use of memblock allocation, and
+>>     therefore must be called before paging_init() migrates the memblock
+>>     allocation data to the bootmem framework. Otherwise the record of the
+>>     allocation for the expanded device tree will be lost, and will
+>>     eventually be clobbered when allocated for another use.
+>>     
+>>     Signed-off-by: Rich Felker <dalias@libc.org>
+>>
+>> It looks like that the call to unflatten_device_tree() before paging_init()
+>> is intentional and needed for the device tree to be preserved in memory
+>> after running paging_init().
+Hi John,
 
-Thank you so much!
+Thank you for pointing this out.
 
->
->        Arnd
->
+memblock_alloc() marks all its allocations as reserved by calling
+memblock_reserve().
+https://elixir.bootlin.com/linux/latest/source/mm/memblock.c#L1463
 
--- 
---
-Thomas Zimmermann
-Graphics Driver Developer
-SUSE Software Solutions Germany GmbH
-Frankenstrasse 146, 90461 Nuernberg, Germany
-GF: Ivo Totev, Andrew Myers, Andrew McDonald, Boudien Moerman
-HRB 36809 (AG Nuernberg)
+This should normally stop other users from allocating from within that
+region of memory.
 
+But in this case, since all the free memory regions have already been
+transferred over to the bootmem framework by paging_init(), I am not
+sure if that logic will still hold for the unflatten_deivcetree allocated memory.
+
+The main goal of this patch is to make sure that the reserved memory
+regions defined in the DT are set aside before any memblock allocations
+are done (which includes the allocation done by unflatten_devicetree).
+
+Hence, I can restructure the patch to only remove the portion of code that is
+is responsible for setting aside the DT defined reserved memory regions from
+within paging_init(), and move it above the unflatten_devicetree() call.
+https://elixir.bootlin.com/linux/latest/source/arch/sh/mm/init.c#L292
+
+I will explore further and possibly restructure this patch based on my findings.
+
+Thank you!
+Oreoluwa
+>>
+>> @Geert: Do you have any comments on this patch?
+>> @Rob: Could you test this patch on your J2 board and report back?
