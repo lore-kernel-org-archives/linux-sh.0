@@ -1,46 +1,46 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 471164F883
-	for <linux-sh@vger.kernel.org>; Mon, 13 May 2024 22:31:36 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A9EA21E495
+	for <linux-sh@vger.kernel.org>; Tue, 14 May 2024 11:09:35 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1715639500; cv=none; b=hUSY1Z/ziPd0/tAfJ0HUvd5bCwbZVfGsjpj6qWa/Jck3LQh3nXzywUZIlAu+8oMIm2GU6Rw5IfFILqxxT6yqCHuvjvxKvsbq/HfpNSTOTrfzexV/cmCaJ2udFnO8KwgoQ256CT9YXnSH4zMtUl4SnI/HIjDvmyD7Z8KRNNoMrOI=
+	t=1715684980; cv=none; b=C9irIdHq0wUx8reEdEvPFtdDcRIj5ju4A9McqPBheeDxMUDc2kxJNTPWQ9OFsx0vfGBCpETrrr+TrzCbxNHH2inbJfekQWHgF8GoZDSsJFiwejn9R2Mx6QMr5zdQt1Q/QQntrggDsqy7dBtxPIk6dwdTBF6MtYl0Y7rdzFH1tf8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1715639500; c=relaxed/simple;
-	bh=MKSoY19olU2TaA0AHyuiCNOc4VA+B7q/olktQ6ModJE=;
-	h=Message-ID:Subject:From:To:Cc:Date:Content-Type:MIME-Version; b=OouDlcqhnG/CwukyarViJBLkrn7USMIQH1kIqv+9JsDME9KLxIYtnmrz3uY9UzLs265g6/VVMp3KY9zkClEKhiiw+QrT1s+j4o7cTFr5OdB2kcOQiFQW8c36lldxcan0PfVUClRqYBSVnrn3aFi2/e6QJDB++WOki49Ykbp+owI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=QW1W7qAc; arc=none smtp.client-ip=130.133.4.66
+	s=arc-20240116; t=1715684980; c=relaxed/simple;
+	bh=BHYDICkkHjsWhU2j4405SDeoyBWaVWTjfsEsZZ9XhPQ=;
+	h=Message-ID:Subject:From:To:Cc:Date:Content-Type:MIME-Version; b=YQcGZxTh/YqLYfaJBtgCcE7pH94K+VheE8liASPQfKrjula+Zk3l9kj/ogdNOO25Ope/3PgCzH0af/cs1h1IuauOpj+s4eDuiO5YukoREL4Q99CQbBdjweZhC1orf1qM9peO2I68XzOSvKlgdp8Ii6U5Oe3pCfNbeWBCf2XQs5o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=iYZwBfIb; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="QW1W7qAc"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="iYZwBfIb"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:Date:Cc:To:From:Subject:Message-ID:Sender:Reply-To:Content-ID:
 	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
 	:Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
 	List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=Qxgsh99CdnnyYWRLILMtymTD9trDqieVMRCTBo1DfoY=; t=1715639496; x=1716244296; 
-	b=QW1W7qAcw6L38BdRkfG64bp9U1eaaB61f0deQWwlOwV6Ami4k3W3My+pyBtIt1kEPngxkI1/IQA
-	fpFM46c5JvfjZWvlMBzTyMN2jlBZvEahTUq9FaIEXlU592S9ZFV76y+ZJQKLmDsa4eIjm3/acEDVk
-	qsPmjNpzSC8+MIi2wfudxTVm+uUl3gFasTomDliYRws7gvqCxMcCdV/V5t1gZZBkWmiK3/FyGpJa8
-	a/q9hL+nZQZ/mh+bwUnhCrO65qn37jBXShRMsVXESOFO+/bAUxSmbSiTiKXjQjfdf6MsaxvAAIfoQ
-	GkCvpGbsH5oRyUcTvg6+gvDJRHl5oMug4oXw==;
+	bh=JjKVBM6KrvfjYyudKg4bpNjTEu2gxTdAtooRFqzRk9U=; t=1715684975; x=1716289775; 
+	b=iYZwBfIb+ryoMpbMALhbo3Cj16XkFToT5dAjPRyoGVgbrN1lDuuNx6Ip0wkOu0q8qpWQk4FPkmY
+	dYHA03mWziYiWxoXp0Ntyrumh4EG5XH0V5nu9iRPg9piePMnz4zXN8lRBsstknVdgEVun4L3ZuRZY
+	/vYRltvb1NB+LYnHUHYeGAP3QBtwazAVILbtJXaoLeiUbn/RUReY/AKVr07sZRlRc6mApgrpzXhKJ
+	GzQtYYuQ24lKmIH6hUzuUPcxhQdqp/iZCbYFrDXo3/UHdnFEwTDwRXUgMIHh6c0ysSf4ariCmeMeL
+	iDa3VT6i68dhE54VehARKWbjv3Soi9FgZBwg==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.97)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1s6eCe-00000002aHN-1afF; Tue, 14 May 2024 00:31:28 +0200
+          id 1s6q27-00000000exq-0YCc; Tue, 14 May 2024 13:09:23 +0200
 Received: from p5b13a15c.dip0.t-ipconnect.de ([91.19.161.92] helo=[192.168.178.20])
           by inpost2.zedat.fu-berlin.de (Exim 4.97)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1s6eCe-000000048Eb-0DPt; Tue, 14 May 2024 00:31:28 +0200
-Message-ID: <80eaf34723abe96744f0a9b2859679cc88783433.camel@physik.fu-berlin.de>
-Subject: [GIT PULL] sh updates for v6.10
+          id 1s6q26-00000002Zw0-2ZAB; Tue, 14 May 2024 13:09:23 +0200
+Message-ID: <890fcdd5233a30bee2871537d3899add66cc6c6a.camel@physik.fu-berlin.de>
+Subject: [GIT PULL] sh updates for v6.10 (CORRECTION)
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
 To: Linus Torvalds <torvalds@linux-foundation.org>
 Cc: Artur Rojek <contact@artur-rojek.eu>, Geert Uytterhoeven
@@ -49,7 +49,7 @@ Cc: Artur Rojek <contact@artur-rojek.eu>, Geert Uytterhoeven
  =?ISO-8859-1?Q?Kleine-K=F6nig?= <u.kleine-koenig@pengutronix.de>, Rich
  Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>,
  linux-sh <linux-sh@vger.kernel.org>
-Date: Tue, 14 May 2024 00:31:27 +0200
+Date: Tue, 14 May 2024 13:09:21 +0200
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.52.1 
@@ -78,11 +78,14 @@ just remove them as they were added but never used. Another one of these wa=
 rnings
 was eliminated by removing the left-over sh5 cache handling support, a chan=
 ge that
-was suggested by Yoshinori Sato. While at it, Geert also removed two unneed=
-ed casts
-to kprobe_opcode_t in the kprobes code.
+was suggested by Yoshinori Sato and, finally, the last of these warnings wa=
+s fixed
+by guarding the function setup_profiling_timer() with CONFIG_PROFILING. Whi=
+le at it,
+Geert also removed two unneeded casts to kprobe_opcode_t in the kprobes cod=
+e.
 
-Another change by Guenter Roeck was contributed to fix errors that were rep=
+Another change was contributed by Guenter Roeck to fix errors that were rep=
 orted during
 checksum unit tests. The fix actually reverts the older change cadc4e1a2b4d=
  ("sh: Handle
