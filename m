@@ -1,63 +1,147 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B82053E15
-	for <linux-sh@vger.kernel.org>; Tue, 14 May 2024 18:41:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C211E282E1
+	for <linux-sh@vger.kernel.org>; Thu, 16 May 2024 20:25:42 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1715712112; cv=none; b=A+R8VeqGHRWnWK3snF6iLkt5/viHukEjleL8m6e2duuJzrk/V1aYrKy5i8bt58VzEdqXbCbmYCU3LzJwwjNoD0jAXD8zScLiQH9KCVZ9AVkCN/sY9JFg6D2wzKrmg65i7jmUgaJd1t6RGneUAdSUlCxAIink7vurY9zII3wzROo=
+	t=1715891144; cv=none; b=D2IbVUOSuW2TyRhQNt4kXptinYQ0EkvPtNptY3b6CfstU2CNh4eHfEPlDuFifagNM2MIAETbJBK9jm8RZQzQuYFjXF5vGu3f5/iq2lWIWjOWxKJpyWepTNP8W0V56BZqwlRvmYjSANEqco0OWUklxR3WmcW4yfhr3aJIv2XTRNo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1715712112; c=relaxed/simple;
-	bh=mXF+cifl3numsAwZ1J5yBOk9m00YF7cMuvAepcG9aFc=;
-	h=Subject:From:In-Reply-To:References:Message-Id:Date:To:Cc; b=JKoR9NHB2QonAYdl2b0FAsEVHmXeFUwWRzGmzDZfyAIpGonsSZQrIJGrPDPVFwhhYCm+mIs3K8YDXdxb3aCzivta79Gq1sF8zdADzjIN2VCaUntARQ7epDx9Re/NwQNO/ZywjNsE0KyPYWqK5ufqf3oOeXvSUFCiRO4Cy17YKa8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=n3qcXb3t; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1715891144; c=relaxed/simple;
+	bh=UVTh/wHgrDImkHexSwe4pikqqPivQUcm5RPx4VxH2kw=;
+	h=Date:From:To:Cc:Subject:Message-ID:MIME-Version:Content-Type:
+	 Content-Disposition; b=Q+5M9NbEIgKkx8IsOEU8AYAmkLDAaCm0dANkC36g18xgSy/ODRXg49Djc4Ifiwej1hmjWLNFHPpbgOQColdd5tfm9szxrudQ4pGNwhbee965rgBBL/nlO4PTOLCx0rT5LrtpLNtvI+v19ttuF+lfwTwwHzVqLLOLUubKJF5q3bA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=ZzmJPGvi; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=2bxU9Ffz; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=ZzmJPGvi; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=2bxU9Ffz; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="n3qcXb3t"
-Received: by smtp.kernel.org (Postfix) with ESMTPS id 4A39AC2BD10;
-	Tue, 14 May 2024 18:41:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1715712112;
-	bh=mXF+cifl3numsAwZ1J5yBOk9m00YF7cMuvAepcG9aFc=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
-	b=n3qcXb3tb3wdYrh2fbUsQdV0mkx9GOD83YXKxDhUZlrGFKF6S0Ovy62g/DmtPbmQF
-	 6Njd1ZpGDbtwIbw4w98OZVF6OodyBmX9pacHSRJyAWxaJ7/UhlvCMqF/qv26kxZXFC
-	 UekBDQE9Q9KBPwCK14LhWK8FGSV4M0Le2r3DixnpqzjB44ADL5dFpkJ5iX6G5/sp4M
-	 3UPVXGlaocaNfw8wlXA1DUEq31HGba2fnFXzDWobBLkcKFNYLIQQLPZ2th2T6p3Xkm
-	 SkDB+QPTtGEurLstyQzFJ6/4mAfLpodS43ppPQlzf/hC24oU3XRgrp8ks9HWCnwDjd
-	 BTbPpZyQ2Dn+w==
-Received: from aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (localhost.localdomain [127.0.0.1])
-	by aws-us-west-2-korg-oddjob-1.ci.codeaurora.org (Postfix) with ESMTP id 4355DC43339;
-	Tue, 14 May 2024 18:41:52 +0000 (UTC)
-Subject: Re: [GIT PULL] sh updates for v6.10
-From: pr-tracker-bot@kernel.org
-In-Reply-To: <80eaf34723abe96744f0a9b2859679cc88783433.camel@physik.fu-berlin.de>
-References: <80eaf34723abe96744f0a9b2859679cc88783433.camel@physik.fu-berlin.de>
-X-PR-Tracked-List-Id: <linux-sh.vger.kernel.org>
-X-PR-Tracked-Message-Id: <80eaf34723abe96744f0a9b2859679cc88783433.camel@physik.fu-berlin.de>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.10-tag1
-X-PR-Tracked-Commit-Id: efe976b7eecfa3f81e241da67d1a511e30a87779
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: c59cebe8ff779df029d19e5525d4557fd70a769b
-Message-Id: <171571211224.4202.18138972939250794765.pr-tracker-bot@kernel.org>
-Date: Tue, 14 May 2024 18:41:52 +0000
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, Artur Rojek <contact@artur-rojek.eu>, Geert Uytterhoeven <geert+renesas@glider.be>, Guenter Roeck <linux@roeck-us.net>, Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>, Uwe =?ISO-8859-1?Q?Kleine-K=F6nig?= <u.kleine-koenig@pengutronix.de>, Rich Felker <dalias@libc.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh <linux-sh@vger.kernel.org>
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="ZzmJPGvi";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="2bxU9Ffz";
+	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="ZzmJPGvi";
+	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="2bxU9Ffz"
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 8365B34EED;
+	Thu, 16 May 2024 20:25:34 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1715891134; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type;
+	bh=6XUPoY9/XW5YAoS5bjuK4zffCvXdJJFcLFOR5mMhWRE=;
+	b=ZzmJPGviaGNICG276KlSoNUoIItWaqMYTR4Sebh3j/u7mJX6DxI7ayGuKCwMAOm4HFlRsD
+	KfCJ0yuDHcQwg/bQ5fzawroNEZdruvItIrg7C3ErMva8pXZLiEsMV3Euzi7bA9pXZ2Z8Ky
+	hsawFhUy1vrq4mtZbv6apkfzkOIH+Pg=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1715891134;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type;
+	bh=6XUPoY9/XW5YAoS5bjuK4zffCvXdJJFcLFOR5mMhWRE=;
+	b=2bxU9FfzwXFv6EDl1E5qN+8dXmx8Z6/rfLxNF1CHgXfGIvWxcEJLEA+AGaOyt7egJDhA+X
+	DhykX0Kwbs69I3CQ==
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.de header.s=susede2_rsa header.b=ZzmJPGvi;
+	dkim=pass header.d=suse.de header.s=susede2_ed25519 header.b=2bxU9Ffz
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
+	t=1715891134; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type;
+	bh=6XUPoY9/XW5YAoS5bjuK4zffCvXdJJFcLFOR5mMhWRE=;
+	b=ZzmJPGviaGNICG276KlSoNUoIItWaqMYTR4Sebh3j/u7mJX6DxI7ayGuKCwMAOm4HFlRsD
+	KfCJ0yuDHcQwg/bQ5fzawroNEZdruvItIrg7C3ErMva8pXZLiEsMV3Euzi7bA9pXZ2Z8Ky
+	hsawFhUy1vrq4mtZbv6apkfzkOIH+Pg=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
+	s=susede2_ed25519; t=1715891134;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type;
+	bh=6XUPoY9/XW5YAoS5bjuK4zffCvXdJJFcLFOR5mMhWRE=;
+	b=2bxU9FfzwXFv6EDl1E5qN+8dXmx8Z6/rfLxNF1CHgXfGIvWxcEJLEA+AGaOyt7egJDhA+X
+	DhykX0Kwbs69I3CQ==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3BA6713991;
+	Thu, 16 May 2024 20:25:34 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id mjGYC75rRmZjDAAAD6G6ig
+	(envelope-from <osalvador@suse.de>); Thu, 16 May 2024 20:25:34 +0000
+Date: Thu, 16 May 2024 22:25:28 +0200
+From: Oscar Salvador <osalvador@suse.de>
+To: glaubitz@physik.fu-berlin.de
+Cc: geert+renesas@glider.be, david@redhat.com, linux-sh@vger.kernel.org
+Subject: drop memory-hotplug on superH
+Message-ID: <ZkZruHmlKd7GaRHs@localhost.localdomain>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.98 / 50.00];
+	BAYES_HAM(-2.97)[99.88%];
+	SUSPICIOUS_RECIPS(1.50)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_DKIM_ALLOW(-0.20)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	ARC_NA(0.00)[];
+	MISSING_XM_UA(0.00)[];
+	TAGGED_RCPT(0.00)[renesas];
+	MIME_TRACE(0.00)[0:+];
+	FUZZY_BLOCKED(0.00)[rspamd.com];
+	RCVD_TLS_ALL(0.00)[];
+	RCPT_COUNT_THREE(0.00)[4];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.de:dkim];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
+	DKIM_TRACE(0.00)[suse.de:+]
+X-Rspamd-Action: no action
+X-Rspamd-Queue-Id: 8365B34EED
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Spam-Flag: NO
+X-Spam-Score: -2.98
 
-The pull request you sent on Tue, 14 May 2024 00:31:27 +0200:
+Hi,
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.10-tag1
+After talking to Adrian Glaubitz about superH and memory-hotplug, he mentioned
+that currently superH runs only on 32bits (there was a 64bit version but no is
+longer supported?).
+The thing is that since the below commit
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/c59cebe8ff779df029d19e5525d4557fd70a769b
+   commit 7ec58a2b941ed88986694d037e38012738323171
+   Author: David Hildenbrand <david@redhat.com>
+   Date:   Fri Nov 5 13:44:28 2021 -0700
 
-Thank you!
+       mm/memory_hotplug: restrict CONFIG_MEMORY_HOTPLUG to 64 bit
+
+
+
+we no longer support memory-hotplug on 32bit platforms, so let us drop the
+memory-hotplug code for superH because it is a no-op at the moment.
+If there is ever a 64bit platform again, we shall re-implement it, and we
+shall do it on CONFIG_SPARSEMEM_VMEMMAP, since we plan do make memory-hotplug
+dependant on that, and drop support for CONFIG_SPARSEMEM &&
+!CONFIG_SPARSEMEM_VMEMMAP environments.
+
+I prepared two patches at [1] that drop the code and the CONFIG_MEMORY_HOTPLUG_foo
+from the Kconfigs.
+
+Let me know if you are fine with that and I shall send it.
+
+Thanks
+
+[1] https://github.com/leberus/linux/tree/deprecate-memhotplug-sh
 
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+Oscar Salvador
+SUSE Labs
