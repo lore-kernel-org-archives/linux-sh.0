@@ -1,85 +1,131 @@
-Received: from mail-pf1-f181.google.com (mail-pf1-f181.google.com [209.85.210.181])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1C26622
-	for <linux-sh@vger.kernel.org>; Fri, 17 May 2024 01:11:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.181
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 58337C8D1;
+	Sat, 18 May 2024 09:08:49 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1715908319; cv=none; b=VEmN/NtNC9jxUjRtUbQOcgidbEvESkNCgzePUUkgQktwoQhJR0+UdXyedGhFp3YkbYydVkgbRqJp6sCxIDNe1uDPivby7zS/a3iX4nBYU/K4Hl+2/8Izl9Y5eg2ykMg+eu3mUfjmucF2I/HiIBdQmBthU2IMGcboTxvCed2BTHg=
+	t=1716023334; cv=none; b=Mf3ugzPE8j8UldbYwNSdm/4Eqq9n/tXVOt7ZkbgIbnpUwgZjWVsTP24mT/1UNuI1++6gc2w+dEoD7ykgS5tSaZ/rvYgTZpM+nS8eetV/PddhIGJ6f2KayAatSgFKF+6HJuRYVVENP1NM6qI1vw8nR6REot0fRe1KN0QC09Y3F2s=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1715908319; c=relaxed/simple;
-	bh=AuYRAylKkV/HN0SZhDOF5G13bZ5TFSDnA2nhwsuBR7I=;
-	h=Content-Type:From:Mime-Version:Subject:Date:Message-Id:References:
-	 Cc:In-Reply-To:To; b=JG1GdKnCKfZvAaam8YgkChF/F7JonPTpmbRVNJyBh/W210PU4t9GHCNmzpmx9fqBLXkoV1OSTBnOicdTQIPkCA5ANtvCZKwGP+GxKsHXDign3AJkr6A8u7Ek9sPiRLYP/7KjLsv8HO6lEow0Ypo3ZZeDlihuCwJ3XUOVmZOV0jc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=SXWPq4po; arc=none smtp.client-ip=209.85.210.181
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1716023334; c=relaxed/simple;
+	bh=bVysb/cwrM9Pn6QGUWbl+Ro5RzhkM5yqNN7jrETzyyA=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=hzi8UEq1HgrIRhFvMWjJJEhZGpAggC1EABncXm70uas0u6kgENz6mvwS+kksvCBfHtDGeWSWGdmPeF5mcYjZP8l8/ULYI241RUD79bMps69JGWhaOVvdNfUFBdCk0dXSN9C08cXePOpsmk1mW01+R36jXKt3gxQBxF7X3082B9I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=JIXWx0jc; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="SXWPq4po"
-Received: by mail-pf1-f181.google.com with SMTP id d2e1a72fcca58-6f447976de7so789330b3a.1
-        for <linux-sh@vger.kernel.org>; Thu, 16 May 2024 18:11:58 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1715908318; x=1716513118; darn=vger.kernel.org;
-        h=to:in-reply-to:cc:references:message-id:date:subject:mime-version
-         :from:content-transfer-encoding:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=AuYRAylKkV/HN0SZhDOF5G13bZ5TFSDnA2nhwsuBR7I=;
-        b=SXWPq4poBbX63KpTmU4Q9eo1HKiFSpfsG9d9Vp7JUT4iMw9g+tTEuVl8R6CJjWU3FA
-         1Jz7e17pj0fUdGttluSkGZSdOgErS0tFGziPS3O7CLLFnPbABlJVN2hTjlV4J119ldKa
-         4yeN6XKHmHNxGp3P/L19eqc2d13JilcJK/8T57XoykpG4J/qZvxcN2w03GUa+1JqM8Au
-         9qav6KVJf8B9pBEsnEwZv/IAlmJ/9TrfwX+mXqOMy/V7yKwXNCFtCMZevrUxavOIYDQu
-         MbcDcQsUUCAacNpTXTVSmjtzfGMMf9TjZnLyei/oGU8Mz3jEO/EjG7J9hu22UV+jRKwI
-         8Vvg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1715908318; x=1716513118;
-        h=to:in-reply-to:cc:references:message-id:date:subject:mime-version
-         :from:content-transfer-encoding:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=AuYRAylKkV/HN0SZhDOF5G13bZ5TFSDnA2nhwsuBR7I=;
-        b=JmKNZfbbnVBCHX1llM/ZclQdfPb1I9tupeqXosIBDLv5u3aiC5qOj3OWYg1zA4lGpd
-         pxYX/20mdb0Klqnq05tIS/fohWjgqwI+vkECdKajtIwxm61eWsEWUBmNlBmO9WC0Z8OA
-         UEwLnxzNO7jzlq0ChX6YVlKqPAypFfUTd1L2K4WTpQza/A1Q5MaOo8YVasiUfycG8UbR
-         sKHm0YqNCC4qlLD15rw9gw8xX60INljHKRguh/9B105mgFQcX1w2TiQBp50Pf/nmOjof
-         3KIRblZQbBqh7cFcGGUEvLnF42yrHkmXa76txjFt+End1p7he9q2Aoni11S16OH/Tj0V
-         So1w==
-X-Forwarded-Encrypted: i=1; AJvYcCU5YkoThM/aRyM564KA8N4MZqLVSJ15r0yD4IzMy0sQqKrywScE77Ce75ysT7oDSWl9+oz9ECDz1FNVMJKVxKKbUZbuBMeNf8s=
-X-Gm-Message-State: AOJu0Ywctdnp/QnuCvVEPwSaQ0WzEyTFWknaI3sA8z8tGsvmB5lU53hS
-	YJiO5I/LRewsn10RwS7tQYMeVd+gvDMU86qsjEzH2/cbATTZWtxa
-X-Google-Smtp-Source: AGHT+IER/jgl4yKbzqN7COdwShFJdDFW3ZPliivrjMi+NDinHi6on4651gf3ybqCFQTTm2PWrzcnXg==
-X-Received: by 2002:a05:6a20:9f0b:b0:1af:df89:4e6a with SMTP id adf61e73a8af0-1afdf895185mr18882990637.51.1715908317956;
-        Thu, 16 May 2024 18:11:57 -0700 (PDT)
-Received: from smtpclient.apple (g1-27-253-251-207.bmobile.ne.jp. [27.253.251.207])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-1ef0c136843sm145728025ad.235.2024.05.16.18.11.57
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 16 May 2024 18:11:57 -0700 (PDT)
-Content-Type: text/plain; charset=us-ascii
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="JIXWx0jc"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
+	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=1a0C79DkdyNfWuSIhpXXfpQISUKfKWxaR+an4LJg0Cw=; t=1716023330; x=1716628130; 
+	b=JIXWx0jctZvXnqcErr+3sSV5apKLlSgTQjonmBZVS45oZcpMNbwEebER5UZJBEzSMGhZDCP7PJN
+	h5jiab7J2xtO7IWJdAdJ1aBJr82y6tZpQ8r7xy+H5ViKn9mzObyFUNO/F9FgWOGFMOhRz2gR0vVr5
+	0/zNv4s2F8amm03ZFsrEnj/EfmsVG+ExiraqgiYRrKam9IKGg+UCC0i2EQDexL4Qz77kXbesE6eUx
+	itj9aMYp28rMvdB7y5sbfMwyGk4kMm6XSyjPdpG9H8EhFTS66NPvRGkOA2beiqLBDPiFkqLGgBQsI
+	L4gAr4tS2+2d1U/BI1N6cAKfkJZU1xRUxXMQ==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.97)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1s8G3N-00000002L83-1Dc1; Sat, 18 May 2024 11:08:33 +0200
+Received: from dynamic-077-188-054-221.77.188.pool.telefonica.de ([77.188.54.221] helo=[192.168.178.20])
+          by inpost2.zedat.fu-berlin.de (Exim 4.97)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1s8G3M-00000003h1e-3i5d; Sat, 18 May 2024 11:08:33 +0200
+Message-ID: <455e40c03314294f9c2e64480aa69f8261a3f2d5.camel@physik.fu-berlin.de>
+Subject: Re: [RESEND v7 00/37] Device Tree support for SH7751 based board
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Yoshinori Sato <ysato@users.sourceforge.jp>, linux-sh@vger.kernel.org
+Cc: Damien Le Moal <dlemoal@kernel.org>, Niklas Cassel <cassel@kernel.org>, 
+ Rob Herring <robh@kernel.org>, Krzysztof Kozlowski
+ <krzysztof.kozlowski+dt@linaro.org>, Conor Dooley <conor+dt@kernel.org>,
+ Geert Uytterhoeven <geert+renesas@glider.be>, Michael Turquette
+ <mturquette@baylibre.com>, Stephen Boyd <sboyd@kernel.org>, David Airlie
+ <airlied@gmail.com>,  Daniel Vetter <daniel@ffwll.ch>, Maarten Lankhorst
+ <maarten.lankhorst@linux.intel.com>, Maxime Ripard <mripard@kernel.org>,
+ Thomas Zimmermann <tzimmermann@suse.de>, Thomas Gleixner
+ <tglx@linutronix.de>, Bjorn Helgaas <bhelgaas@google.com>, Lorenzo
+ Pieralisi <lpieralisi@kernel.org>, Krzysztof =?UTF-8?Q?Wilczy=C5=84ski?=
+ <kw@linux.com>,  Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri
+ Slaby <jirislaby@kernel.org>, Magnus Damm <magnus.damm@gmail.com>,  Daniel
+ Lezcano <daniel.lezcano@linaro.org>, Rich Felker <dalias@libc.org>, Lee
+ Jones <lee@kernel.org>, Helge Deller <deller@gmx.de>, Heiko Stuebner
+ <heiko.stuebner@cherry.de>, Shawn Guo <shawnguo@kernel.org>,  Sebastian
+ Reichel <sre@kernel.org>, Chris Morgan <macromorgan@hotmail.com>, Linus
+ Walleij <linus.walleij@linaro.org>, Arnd Bergmann <arnd@arndb.de>, David
+ Rientjes <rientjes@google.com>, Hyeonggon Yoo <42.hyeyoo@gmail.com>,
+ Vlastimil Babka <vbabka@suse.cz>, Baoquan He <bhe@redhat.com>, Andrew
+ Morton <akpm@linux-foundation.org>, Guenter Roeck <linux@roeck-us.net>,
+ Kefeng Wang <wangkefeng.wang@huawei.com>, Stephen Rothwell
+ <sfr@canb.auug.org.au>,  Javier Martinez Canillas <javierm@redhat.com>, Guo
+ Ren <guoren@kernel.org>, Azeem Shaikh <azeemshaikh38@gmail.com>, Max
+ Filippov <jcmvbkbc@gmail.com>, Jonathan Corbet <corbet@lwn.net>, Jacky
+ Huang <ychuang3@nuvoton.com>, Herve Codina <herve.codina@bootlin.com>,
+ Manikanta Guntupalli <manikanta.guntupalli@amd.com>,  Anup Patel
+ <apatel@ventanamicro.com>, Biju Das <biju.das.jz@bp.renesas.com>, Uwe
+ =?ISO-8859-1?Q?Kleine-K=F6nig?= <u.kleine-koenig@pengutronix.de>, Sam
+ Ravnborg <sam@ravnborg.org>, Sergey Shtylyov <s.shtylyov@omp.ru>, Laurent
+ Pinchart <laurent.pinchart+renesas@ideasonboard.com>, 
+ linux-ide@vger.kernel.org, devicetree@vger.kernel.org, 
+ linux-kernel@vger.kernel.org, linux-renesas-soc@vger.kernel.org, 
+ linux-clk@vger.kernel.org, dri-devel@lists.freedesktop.org, 
+ linux-pci@vger.kernel.org, linux-serial@vger.kernel.org, 
+ linux-fbdev@vger.kernel.org
+Date: Sat, 18 May 2024 11:08:30 +0200
+In-Reply-To: <cover.1712205900.git.ysato@users.sourceforge.jp>
+References: <cover.1712205900.git.ysato@users.sourceforge.jp>
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
-From: "D. Jeff Dionne" <djeffdionne@gmail.com>
+User-Agent: Evolution 3.52.1 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0 (1.0)
-Subject: Re: drop memory-hotplug on superH
-Date: Fri, 17 May 2024 10:11:45 +0900
-Message-Id: <C7951B02-F75A-44C3-A3F4-F57EA05CDE94@gmail.com>
-References: <ZkZruHmlKd7GaRHs@localhost.localdomain>
-Cc: glaubitz@physik.fu-berlin.de, geert+renesas@glider.be, david@redhat.com,
- linux-sh@vger.kernel.org
-In-Reply-To: <ZkZruHmlKd7GaRHs@localhost.localdomain>
-To: Oscar Salvador <osalvador@suse.de>
-X-Mailer: iPhone Mail (21E236)
+MIME-Version: 1.0
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On May 17, 2024, at 05:25, Oscar Salvador <osalvador@suse.de> wrote:
+Hi Yoshinori,
 
-Agree
+On Thu, 2024-04-04 at 14:14 +0900, Yoshinori Sato wrote:
+> Sorry. previus mail is thread broken.
+>=20
+> This is an updated version of something I wrote about 7 years ago.
+> Minimum support for R2D-plus and LANDISK.
+> I think R2D-1 will work if you add AX88796 to dts.
+> And board-specific functions and SCI's SPI functions are not supported.
+>=20
+> You can get it working with qemu found here.
+> https://gitlab.com/yoshinori.sato/qemu/-/tree/landisk
+>=20
+> v7 changes.
+> - sh/kernel/setup.c: fix kernel parameter handling.
+> - clk-sh7750.c: cleanup.
+> - sh_tmu.c: cleanup.
+> - irq-renesas-sh7751.c: IPR definition move to code.
+> - irq-renesas-sh7751irl.c: update register definition.
+> - pci-sh7751.c: Register initialization fix.=20
+> - sm501 and sm501fb: Re-design Device Tree properties.
 
-> we no longer support memory-hotplug on 32bit platforms, so let us drop the=
+Could you push your v7 version to your Gitlab [1] repository so I can fetch
+it from there?
 
-> memory-hotplug code for superH because it is a no-op at the moment.
-> If there is ever a 64bit platform again, we shall re-implement it, and we
-> shall do it on CONFIG_SPARSEMEM_VMEMMAP, since we plan do make memory-hotp=
-lug
-> dependant on that, and drop support for CONFIG_SPARSEMEM &&
-> !CONFIG_SPARSEMEM_VMEMMAP environments.
+Thanks,
+Adrian
+
+> [1] https://gitlab.com/yoshinori.sato/linux
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
