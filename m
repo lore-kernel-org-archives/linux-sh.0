@@ -1,127 +1,97 @@
-Received: from mx0b-0031df01.pphosted.com (mx0b-0031df01.pphosted.com [205.220.180.131])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D636034CDE;
-	Mon, 20 May 2024 18:05:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=205.220.180.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8EDBD1847;
+	Mon, 20 May 2024 18:24:54 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1716228304; cv=none; b=XhXirj86UXBDMRKKpJhxZWlVQhMj42As2Pxlt1/gqqPTKKvaPuGaBdslrMEjP4SGK/FJVZR8p8dn9lhkm0+4voZKJeGfpE62VnzZzFCsLTF64iA+n1JHxTxHmWqlLF5n4UuTJGh8Rlt40zSpVQUdv81lLhh+QPla6yUUrQpvnMo=
+	t=1716229498; cv=none; b=a8WZCvVewLQlbaMYlwK9BBrgbhLogIk7BmKm+e5zERneW63rBhIFJSCGBuZBgIKYenO4FN7oN6rMux4nXag80A0gQf7iZeKmhdfKzZPALaEa2WmQk24LTuxBLoMTuXbH2sucnleQBCd9Z5gGHR4AU5N6LJmyhBg6TmnvkIHDW+c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1716228304; c=relaxed/simple;
-	bh=kPBtia4xzyfEHTggusZtDrxjOdowelLRyYrYWeNkILQ=;
-	h=Message-ID:Date:MIME-Version:Subject:To:CC:References:From:
-	 In-Reply-To:Content-Type; b=f5R/miFMCeYDdl/+mmPjQ39TF3WBS/DI4riYJyz9NMJf5pi2Q5GX29OhdnUtb6qB0AWC+n9MhFgC1tF3j0hfqrbDDb/SRPc/3tuV3erS8/EAe3Ll5WxWLKNk4Cnqmg6XDvccZ3cw1BCCR2ntk+gxRIkfrPzGd9LkRmShbpO+b24=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com; spf=pass smtp.mailfrom=quicinc.com; dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b=oPqJRmaL; arc=none smtp.client-ip=205.220.180.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=quicinc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=quicinc.com
+	s=arc-20240116; t=1716229498; c=relaxed/simple;
+	bh=embwZJeyhc3d/eQBQ2AmwUIIJANut56abOXK/YW3yJM=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=FlaPdyIfxjo/VB7v46RiX3XRO9qlMJ2r0CDVZm5UWShSBr8JJb7nv7lKNMSX6ynfuzPx+Jch4QICNaEkTjoEN2gLtKXNePr6T24P2s+X11hEr3vo9LUqneErhvzMui205Q/26AtIX8kKZ/N51mtqXOxNuOVAcsXEdw34cpIDDWI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=hgUFtytb; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com header.b="oPqJRmaL"
-Received: from pps.filterd (m0279869.ppops.net [127.0.0.1])
-	by mx0a-0031df01.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 44KBrKQx019730;
-	Mon, 20 May 2024 18:04:40 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=quicinc.com; h=
-	message-id:date:mime-version:subject:to:cc:references:from
-	:in-reply-to:content-type:content-transfer-encoding; s=
-	qcppdkim1; bh=kPBtia4xzyfEHTggusZtDrxjOdowelLRyYrYWeNkILQ=; b=oP
-	qJRmaLWnD1kxfGyLqrhRLraaRQxTiPHZ34Yr70W5m31c5hQrsi/w2EVEc/1h5MNP
-	/xwaCAuJhuwn/6d3SwZkPYfELmhCh4lphZrtWnGfr229fq+AYsW+REjL8QwZxohl
-	gUp6hSA2yPN31s/W1ET0d3ZeTfZFsm4//GqeoUCtblCMhssvIkYPulXrHXFGWDpg
-	W8njs4W/zWi3LoGQU6hAcW3lDn9aXg9M32CqYOELDkvuD96fHLxUkUI96apyj/Hf
-	gHHaP0piTndidCTZHdYiaZQQ0a4x9jeL/IyH3k+2zjnktVo544JpoosyowWNl0Hf
-	LlY5PY7O1VYJJf1xI6PQ==
-Received: from nalasppmta03.qualcomm.com (Global_NAT1.qualcomm.com [129.46.96.20])
-	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 3y6n4p4d8s-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 20 May 2024 18:04:40 +0000 (GMT)
-Received: from nalasex01b.na.qualcomm.com (nalasex01b.na.qualcomm.com [10.47.209.197])
-	by NALASPPMTA03.qualcomm.com (8.17.1.5/8.17.1.5) with ESMTPS id 44KI4JEw007304
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Mon, 20 May 2024 18:04:19 GMT
-Received: from [10.110.126.173] (10.80.80.8) by nalasex01b.na.qualcomm.com
- (10.47.209.197) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.2.1544.9; Mon, 20 May
- 2024 11:04:15 -0700
-Message-ID: <e6436f2f-ac51-4f18-90f2-e39a2ff1c520@quicinc.com>
-Date: Mon, 20 May 2024 11:03:50 -0700
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="hgUFtytb"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
+	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=zwEmpdKTmgjz2scPBDSL4o03FYFjxO3vSlNGyHJLelg=; t=1716229494; x=1716834294; 
+	b=hgUFtytblmdL0XcSezFeeqG5jBBgynRhT+8wQwOJFwCZNnSz3UxB7xvBIPFB1IbrYpX8+sCSRei
+	5JdEQy1f1boAG1GpdU9g9jlrv5D2e+i2oX/JuqR62OiqZN19p1qGrYbxR0tRb24ASUfrpIL6jZ4o3
+	kMZKVYoQMhynqRzoeHdV0J/QVhoKCGRsoqS9spBFTKnNAhFPh8dRcY+bmN3aEcr70LB5PzdzHAbUf
+	DywqjT17b6Rlc86TjZQ1LDtA7FZ2TOeLmyo2RbP6C88unibN1ZMEiTwTYQ/OM2cTKWVhyzWmrhrQf
+	0c6r//wVfWJUS3URASlrI6DsoARw6ibUWFPw==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.97)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1s97go-00000001bFA-2fJU; Mon, 20 May 2024 20:24:50 +0200
+Received: from p57bd9a40.dip0.t-ipconnect.de ([87.189.154.64] helo=[192.168.178.20])
+          by inpost2.zedat.fu-berlin.de (Exim 4.97)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1s97go-00000002MIw-1hpz; Mon, 20 May 2024 20:24:50 +0200
+Message-ID: <7130f36dcf6f2272fa61eb1477f881ccea0375f8.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH v2] sh: Call paging_init() earlier in the init sequence
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Oreoluwa Babatunde <quic_obabatun@quicinc.com>, 
+	ysato@users.sourceforge.jp, dalias@libc.org
+Cc: akpm@linux-foundation.org, linux-sh@vger.kernel.org, 
+ linux-kernel@vger.kernel.org, robh+dt@kernel.org, kernel@quicinc.com, Rob
+ Herring <robh@kernel.org>, Rob Landley <rob@landley.net>
+Date: Mon, 20 May 2024 20:24:49 +0200
+In-Reply-To: <e6436f2f-ac51-4f18-90f2-e39a2ff1c520@quicinc.com>
+References: <20240423233150.74302-1-quic_obabatun@quicinc.com>
+	 <72ec7831604326e852eb228072b1d817bab829fb.camel@physik.fu-berlin.de>
+	 <b00e0adc72815e465cf32fc5505445cfceeeca84.camel@physik.fu-berlin.de>
+	 <ec5f3194-7e9e-4cc9-86b9-02a204649246@quicinc.com>
+	 <0e813c8498bf3d9ed5d8fd5b171ac9980dc2999c.camel@physik.fu-berlin.de>
+	 <e6436f2f-ac51-4f18-90f2-e39a2ff1c520@quicinc.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.52.1 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] sh: Call paging_init() earlier in the init sequence
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        <ysato@users.sourceforge.jp>, <dalias@libc.org>
-CC: <akpm@linux-foundation.org>, <linux-sh@vger.kernel.org>,
-        <linux-kernel@vger.kernel.org>, <robh+dt@kernel.org>,
-        <kernel@quicinc.com>, Rob Herring <robh@kernel.org>,
-        Rob Landley <rob@landley.net>
-References: <20240423233150.74302-1-quic_obabatun@quicinc.com>
- <72ec7831604326e852eb228072b1d817bab829fb.camel@physik.fu-berlin.de>
- <b00e0adc72815e465cf32fc5505445cfceeeca84.camel@physik.fu-berlin.de>
- <ec5f3194-7e9e-4cc9-86b9-02a204649246@quicinc.com>
- <0e813c8498bf3d9ed5d8fd5b171ac9980dc2999c.camel@physik.fu-berlin.de>
-Content-Language: en-US
-From: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
-In-Reply-To: <0e813c8498bf3d9ed5d8fd5b171ac9980dc2999c.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 7bit
-X-ClientProxiedBy: nasanex01b.na.qualcomm.com (10.46.141.250) To
- nalasex01b.na.qualcomm.com (10.47.209.197)
-X-QCInternal: smtphost
-X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=5800 signatures=585085
-X-Proofpoint-ORIG-GUID: fnn3RhToGM7W8LpYoAZBiwrfbmQxHCc6
-X-Proofpoint-GUID: fnn3RhToGM7W8LpYoAZBiwrfbmQxHCc6
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1039,Hydra:6.0.650,FMLib:17.12.28.16
- definitions=2024-05-20_09,2024-05-17_03,2024-05-17_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 priorityscore=1501
- bulkscore=0 lowpriorityscore=0 mlxscore=0 malwarescore=0 spamscore=0
- impostorscore=0 clxscore=1015 phishscore=0 suspectscore=0 adultscore=0
- mlxlogscore=624 classifier=spam adjust=0 reason=mlx scancount=1
- engine=8.19.0-2405010000 definitions=main-2405200145
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
+Hi Oreoluwa,
 
-On 5/7/2024 3:41 PM, John Paul Adrian Glaubitz wrote:
-> Hello Oreoluwa,
->
-> On Tue, 2024-05-07 at 14:42 -0700, Oreoluwa Babatunde wrote:
->> memblock_alloc() marks all its allocations as reserved by calling
->> memblock_reserve().
->> https://elixir.bootlin.com/linux/latest/source/mm/memblock.c#L1463
->>
->> This should normally stop other users from allocating from within that
->> region of memory.
->>
->> But in this case, since all the free memory regions have already been
->> transferred over to the bootmem framework by paging_init(), I am not
->> sure if that logic will still hold for the unflatten_deivcetree allocated memory.
->>
->> The main goal of this patch is to make sure that the reserved memory
->> regions defined in the DT are set aside before any memblock allocations
->> are done (which includes the allocation done by unflatten_devicetree).
->>
->> Hence, I can restructure the patch to only remove the portion of code that is
->> is responsible for setting aside the DT defined reserved memory regions from
->> within paging_init(), and move it above the unflatten_devicetree() call.
->> https://elixir.bootlin.com/linux/latest/source/arch/sh/mm/init.c#L292
->>
->> I will explore further and possibly restructure this patch based on my findings.
-> OK, sounds like a plan. In the meantime, I have set up my J2 Turtle Board and
-> I am actually now able to test patches for this target, so that I would be
-> able to verify that your patch didn't break anything.
->
-> However, I think for v6.10 I think the ship has sailed.
->
-> Adrian
-Hi Adrian,
+On Mon, 2024-05-20 at 11:03 -0700, Oreoluwa Babatunde wrote:
+> I have uploaded v3 of this patch now.
+> https://lore.kernel.org/all/20240520175802.2002183-1-quic_obabatun@quicin=
+c.com/
+>=20
+> In this new version, paging_init() is left in its original position and o=
+nly the portion
+> of code that is responsible for setting aside the reserved memory regions=
+ is moved.
 
-I have uploaded v3 of this patch now.
-https://lore.kernel.org/all/20240520175802.2002183-1-quic_obabatun@quicinc.com/
+Thanks a lot for the updated version.
 
-In this new version, paging_init() is left in its original position and only the portion
-of code that is responsible for setting aside the reserved memory regions is moved.
+I will give it a try later this week as we had a public holiday in Germany
+today and therefore enjoyed an extended weekend.
 
-Thank you!
-Oreoluwa
+If it doesn't break anything and Geert is happy with the change as well,
+I'll pick it up for v6.11.
+
+Adrian
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
