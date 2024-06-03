@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5D3CF1CD35;
-	Fri, 31 May 2024 09:57:05 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BEC06131182;
+	Mon,  3 Jun 2024 15:54:48 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1717149425; cv=none; b=G3XdTga2krT/U3hOn7davQ/wxbcVaccYs1RIR6zOWy/ymL1O18Uxk2TnmpfKewfBaXHgCVy6YGkBnowmQg99yLuNZdQvRU0Fph2w6xYo/pYgjNns2IQUEB3btyerL+v/4VCirNJQiQ6aZcQu34S2YtjEacbmSYGTZXKlYIyLGww=
+	t=1717430089; cv=none; b=d8idxIkEnsMeCpYHwkr7SrWAztcbcSHcl0PffJkyU5n7Nbri4kaDh7MvtE7MRTDHfXYT74oK35unDupsIQLfyNfPi3kbyRwKwXy9RNQdNP2T5TkY0rgsCXHuUcy9+b64Oa9LdquwuAKySyNaQTUN+ymFYDeIVALiXX0cfs3ILDM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1717149425; c=relaxed/simple;
-	bh=pG1FuJNpg4iD5VvuUxyaJG1TPUBzdsFzeembK8i33cE=;
+	s=arc-20240116; t=1717430089; c=relaxed/simple;
+	bh=/mqwg4w9jJOykMYUTyLRSt9g531pR70Ydsxqn4u/d+o=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=QSooPByyUkRjkWzBjLh9BoUUR0xWLdDPQmL7VUmXupIGXM6npxUaaZ4ppyNso7km0sJopNLEs4TVdEg5IgahXYmSWpUKq5934p0e6xDaSUltaW92PinNGwqv020vsZa3iIBGASytf3rySiuJNqEWwmCnncAqwLZ6wB96oRCi8RE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=hu5bMmVB; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=T0OGUMOEjNw+VmgXurlJuA7BDLIHJjGx+81Qaox/AB37XGuRu4IH7GxMQ/QkAFBbucC/DKNKZ6yirTLmNUgABknqC3ZNMq3621a3xWSqQdZjhtsBXoE3sJDboTNS9mxIJh7BJjVKX9mqxb7HQzhW+g6SYmv7XixV+oZpMKanF6Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=SKCKUK+6; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="hu5bMmVB"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 65A56C116B1;
-	Fri, 31 May 2024 09:56:53 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="SKCKUK+6"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C9B30C2BD10;
+	Mon,  3 Jun 2024 15:54:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1717149424;
-	bh=pG1FuJNpg4iD5VvuUxyaJG1TPUBzdsFzeembK8i33cE=;
+	s=k20201202; t=1717430088;
+	bh=/mqwg4w9jJOykMYUTyLRSt9g531pR70Ydsxqn4u/d+o=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=hu5bMmVBc986akPDt9Ge9tIAY28LTFO3zwiOt/Joe+hTEGWcqkK1uspvfXfUgXXxe
-	 37xIAg+mkLYdlb3Hs9WdiXpCF1VeQrUhl78CihP1szlXYNSBa15MdkJ/xVV25GxxSe
-	 GoFHLTigYu0YGr12LUzpQPJDP6vTnVpL49ILbXi3zxAMPLAoxFNkYdK1EVTmNJFn7f
-	 CA1vM3tFKh3BQ8+a2Mrj8F6+o+ltODCoNMa/d4HHrTNiLP+FE/f+tft+dne1biNKt8
-	 EM2SBRlBln82aT4Aeemi64mL4//CHv+Iem7UQVhtCKN9l9VGh3B5qbmCfUa1q0Ty4h
-	 r2ZCGXufem1Qw==
-Date: Fri, 31 May 2024 10:56:50 +0100
-From: Lee Jones <lee@kernel.org>
+	b=SKCKUK+6SCKeWy0UyNbLs+BB50UwRzhJv4efMVYn6OgVCU8qKZOoOpikzAgyrDe1O
+	 c4yv7tSWwpos/H3uofzMHk3UaF+4OmLwFpp1u5SQZwX++JqcvFKzrN05AwuXi8pwiv
+	 l3OcNKpTom+E1RJSLQlmWM821dK+GFMnMb3xAiZ0CgSOXYuEjCMHNczULBEfDw6rFU
+	 6gL3Bl5JsihcjAqCZXhoGKU3e8X27voOnp9v0TqxQX3FKdnFAthexAWnpBGY29zyKJ
+	 GBUKCdxh3msMwIIQB/IY/VIEyArSMLRvKmyPeHrKA3Nmh3jHArbXt61pSR6XGaMBej
+	 70tQt7QWPZM7A==
+Date: Mon, 3 Jun 2024 10:54:45 -0500
+From: Rob Herring <robh@kernel.org>
 To: Yoshinori Sato <ysato@users.sourceforge.jp>
 Cc: linux-sh@vger.kernel.org, Damien Le Moal <dlemoal@kernel.org>,
-	Niklas Cassel <cassel@kernel.org>, Rob Herring <robh@kernel.org>,
+	Niklas Cassel <cassel@kernel.org>,
 	Krzysztof Kozlowski <krzk+dt@kernel.org>,
 	Conor Dooley <conor+dt@kernel.org>,
 	Geert Uytterhoeven <geert+renesas@glider.be>,
@@ -50,7 +50,7 @@ Cc: linux-sh@vger.kernel.org, Damien Le Moal <dlemoal@kernel.org>,
 	Daniel Lezcano <daniel.lezcano@linaro.org>,
 	Rich Felker <dalias@libc.org>,
 	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Helge Deller <deller@gmx.de>,
+	Lee Jones <lee@kernel.org>, Helge Deller <deller@gmx.de>,
 	Heiko Stuebner <heiko.stuebner@cherry.de>,
 	Neil Armstrong <neil.armstrong@linaro.org>,
 	Chris Morgan <macromorgan@hotmail.com>,
@@ -83,149 +83,103 @@ Cc: linux-sh@vger.kernel.org, Damien Le Moal <dlemoal@kernel.org>,
 	linux-clk@vger.kernel.org, dri-devel@lists.freedesktop.org,
 	linux-pci@vger.kernel.org, linux-serial@vger.kernel.org,
 	linux-fbdev@vger.kernel.org
-Subject: Re: [DO NOT MERGE v8 23/36] mfd: sm501: Convert platform_data to OF
- property
-Message-ID: <20240531095650.GD8682@google.com>
+Subject: Re: [DO NOT MERGE v8 19/36] dt-bindings: interrupt-controller:
+ renesas,sh7751-irl-ext: Add json-schema
+Message-ID: <20240603155445.GA501876-robh@kernel.org>
 References: <cover.1716965617.git.ysato@users.sourceforge.jp>
- <c139d3a42c61d978296aa2e513de073c643e4fbe.1716965617.git.ysato@users.sourceforge.jp>
+ <e35aa188e5176544c6884f2d1d7aa1b242a51acf.1716965617.git.ysato@users.sourceforge.jp>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <c139d3a42c61d978296aa2e513de073c643e4fbe.1716965617.git.ysato@users.sourceforge.jp>
+In-Reply-To: <e35aa188e5176544c6884f2d1d7aa1b242a51acf.1716965617.git.ysato@users.sourceforge.jp>
 
-On Wed, 29 May 2024, Yoshinori Sato wrote:
-
-> Various parameters of SM501 can be set using platform_data,
-> so parameters cannot be passed in the DeviceTree target.
-> Expands the parameters set in platform_data so that they can be
-> specified using DeviceTree properties.
+On Wed, May 29, 2024 at 05:01:05PM +0900, Yoshinori Sato wrote:
+> Renesas SH7751 external interrupt encoder json-schema.
 > 
 > Signed-off-by: Yoshinori Sato <ysato@users.sourceforge.jp>
 > ---
->  drivers/mfd/sm501.c           | 238 ++++++++++++++++++++++++++++++++++
->  drivers/video/fbdev/sm501fb.c |  87 +++++++++++++
->  2 files changed, 325 insertions(+)
+>  .../renesas,sh7751-irl-ext.yaml               | 57 +++++++++++++++++++
+>  1 file changed, 57 insertions(+)
+>  create mode 100644 Documentation/devicetree/bindings/interrupt-controller/renesas,sh7751-irl-ext.yaml
 > 
-> diff --git a/drivers/mfd/sm501.c b/drivers/mfd/sm501.c
-> index b3592982a83b..d373aded0c3b 100644
-> --- a/drivers/mfd/sm501.c
-> +++ b/drivers/mfd/sm501.c
-> @@ -20,6 +20,7 @@
->  #include <linux/gpio/driver.h>
->  #include <linux/gpio/machine.h>
->  #include <linux/slab.h>
-> +#include <linux/clk.h>
->  
->  #include <linux/sm501.h>
->  #include <linux/sm501-regs.h>
-> @@ -82,6 +83,16 @@ struct sm501_devdata {
->  	unsigned int			 rev;
->  };
->  
-> +struct sm501_config_props_uint {
-> +	char *name;
-> +	u32 shift;
-> +};
+> diff --git a/Documentation/devicetree/bindings/interrupt-controller/renesas,sh7751-irl-ext.yaml b/Documentation/devicetree/bindings/interrupt-controller/renesas,sh7751-irl-ext.yaml
+> new file mode 100644
+> index 000000000000..ff70d57b86cd
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/interrupt-controller/renesas,sh7751-irl-ext.yaml
+> @@ -0,0 +1,57 @@
+> +# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+> +%YAML 1.2
+> +---
+> +$id: http://devicetree.org/schemas/interrupt-controller/renesas,sh7751-irl-ext.yaml#
+> +$schema: http://devicetree.org/meta-schemas/core.yaml#
 > +
-> +struct sm501_config_props_flag {
-> +	char *clr_name;
-> +	char *set_name;
-> +	u32 bit;
-> +};
->  
->  #define MHZ (1000 * 1000)
->  
-> @@ -1370,6 +1381,227 @@ static int sm501_init_dev(struct sm501_devdata *sm)
->  	return 0;
->  }
->  
-> +#define FIELD_WIDTH 4
-> +struct dt_values {
-> +	char *name;
-> +	unsigned int offset;
-> +	unsigned int width;
-> +	char *val[(1 << FIELD_WIDTH) + 1];
-> +};
+> +title: Renesas SH7751 external interrupt encoder with enable regs.
 > +
-> +#define fld(_name, _offset, _width, ...)	\
-> +	{ \
-> +		.name = _name, \
-> +		.offset = _offset, \
-> +		.width = _width,	\
-> +		.val = { __VA_ARGS__, NULL},	\
-> +	}
+> +maintainers:
+> +  - Yoshinori Sato <ysato@users.sourceforge.jp>
 > +
-> +static const struct dt_values misc_timing[] = {
-> +	fld("ex", 28, 4,
-> +	    "none", "16", "32", "48", "64", "80", "96", "112",
-> +	    "128", "144", "160", "176", "192", "208", "224", "240"),
-> +	fld("xc", 24, 2, "internal-pll", "hclk", "gpio30"),
-> +	fld("us", 23, 1, "disable", "enable"),
-> +	fld("ssm1", 20, 1, "288", "divider"),
-> +	fld("sm1", 16, 4,
-> +	    "1", "2", "4", "8", "16", "32", "64", "128",
-> +	    "3", "6", "12", "24", "48", "96", "192", "384"),
-> +	fld("ssm0", 12, 1, "288", "divider"),
-> +	fld("sm0", 8, 4,
-> +	    "1", "2", "4", "8", "16", "32", "64", "128",
-> +	    "3", "6", "12", "24", "48", "96", "192", "384"),
-> +	fld("deb", 7, 1, "input-reference", "output"),
-> +	fld("a", 6, 1, "no-acpi", "acpi"),
-> +	fld("divider", 4, 2, "336", "288", "240", "192"),
-> +	fld("u", 3, 1, "normal", "simulation"),
-> +	fld("delay", 0, 3, "none", "0.5", "1.0", "1.5", "2.0", "2.5"),
-> +	{ .name = NULL },
-> +};
+> +description:
+> +  This is the generally used external interrupt encoder on SH7751 based boards.
 > +
-> +static const struct dt_values misc_control[] = {
-> +	fld("pad", 30, 2, "24", "12", "8"),
-> +	fld("usbclk", 28, 2, "xtal", "96", "48"),
-> +	fld("ssp", 27, 1, "uart1", "ssp1"),
-> +	fld("lat", 26, 1, "disable", "enable"),
-> +	fld("fp", 25, 1, "18", "24"),
-> +	fld("freq", 24, 1, "24", "12"),
-> +	fld("refresh", 21, 2, "8", "16", "32", "64"),
-> +	fld("hold", 18, 3, "fifo-empty", "8", "16", "24", "32"),
-> +	fld("sh", 17, 1, "active-low", "active-high"),
-> +	fld("ii", 16, 1, "normal", "inverted"),
-> +	fld("pll", 15, 1, "disable", "enable"),
-> +	fld("gap", 13, 2, "0"),
-> +	fld("dac", 12, 1, "enable", "disable"),
-> +	fld("mc", 11, 1, "cpu", "8051"),
-> +	fld("bl", 10, 8, "1"),
-> +	fld("usb", 9, 1, "master", "slave"),
-> +	fld("vr", 4, 1, "0x1e00000", "0x3e00000"),
-> +	{ .name = NULL },
-> +};
+> +properties:
+> +  compatible:
+> +    items:
+> +      - const: renesas,sh7751-irl-ext
+> +
+> +  reg: true
 
-I've been avoiding this set for a while now!
+Needs to define how many and what they are.
 
-I appreciate the amount of work that you've put into this, but this is a
-bit of a disaster.  It's a hell of lot of over-complex infrastructure
-just to pull out some values from DT.
+> +
+> +  interrupt-controller: true
+> +
+> +  '#interrupt-cells':
+> +    const: 2
+> +
+> +  '#address-cells':
+> +    const: 0
+> +
+> +  renesas,set-to-disable:
+> +    $ref: /schemas/types.yaml#/definitions/flag
+> +    description: Invert enable registers. Setting the bit to 0 enables interrupts.
+> +
+> +  renesas,enable-reg:
+> +    $ref: /schemas/types.yaml#/definitions/uint32-array
+> +    description: |
 
-Forgive me if I have this wrong, but it looks like you're defining
-various structs then populating static versions with hard-coded offsets
-into DT arrays!  Then you have a bunch of hoop-jumpy functions to
-firstly parse the offset-structs, then conduct look-ups to pull the
-final value which in turn gets shifted into an encoded variable ready
-for to write out to the registers.  Bonkers.
+Don't need '|'.
 
-What does 'timing' even mean in this context?  Clocks?
+> +      IRQ enable register bit mapping
 
-What other devices require this kind of handling?  Why is this device so
-different from all other supported devices to date?  Instead of
-attempting to shoehorn this into a 20 year old driver, why not reshape
-it to bring it into alignment with how we do things today?
+This needs a better description and constraints? Number of entries in 
+the array or values of the entries.
 
-E.g. handle all clocking from the clock driver, all display settings
-(including timing?) from the display driver, etc.
-
--- 
-Lee Jones [李琼斯]
+> +
+> +required:
+> +  - compatible
+> +  - reg
+> +  - interrupt-controller
+> +  - '#interrupt-cells'
+> +  - renesas,enable-reg
+> +
+> +additionalProperties: false
+> +
+> +examples:
+> +  - |
+> +    r2dintc: interrupt-controller@a4000000 {
+> +        compatible = "renesas,sh7751-irl-ext";
+> +        reg = <0xa4000000 0x02>;
+> +        interrupt-controller;
+> +        #address-cells = <0>;
+> +        #interrupt-cells = <2>;
+> +        renesas,enable-reg = <12 9 10 3 0 4 1 2 8 5 6 7 15 15 15 11>;
+> +    };
+> -- 
+> 2.39.2
+> 
