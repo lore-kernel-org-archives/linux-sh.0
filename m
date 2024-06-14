@@ -1,78 +1,94 @@
-Received: from NAM10-MW2-obe.outbound.protection.outlook.com (mail-mw2nam10on2059.outbound.protection.outlook.com [40.107.94.59])
+Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C01214AD0C;
-	Thu, 13 Jun 2024 18:21:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=40.107.94.59
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1718302867; cv=fail; b=BvlXANusw+GZDrpIoTy9fOe80RxoFRwbj7Vmq9fsDeT4Ea6NVKAw/RIGaUYigI869X4fTDpZmpOrFb68cKulsOfnHAj7VDy4EX8wLj6Ork6ZUckRwIKlGnb6S8EhnPibd2JZ9nq+V7mVL1oRjBbJ/T9sRfk8PxWtVP37kPEX8LI=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1718302867; c=relaxed/simple;
-	bh=mLM0JJ5J+DlRoRzgAwtESJl1A7QxGuEycZmwSQx6fy0=;
-	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=rXTRvCnAWkop3+AgYzXGzyS3kfS6y2w++WpQ+fPXYnWehtT2f3zJniXPICyEihlWwnauVJyZCJe5aET22Afw83xgwqvD3GY7zUlFmaYcOFyuJ70JGC9tsIxn7Xwt7JIP3z1PSskGHok7lTUu5pUyFBL6uctwRR3OsOe94FKSKgc=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=amd.com; spf=fail smtp.mailfrom=amd.com; dkim=pass (1024-bit key) header.d=amd.com header.i=@amd.com header.b=WF5ve2zU; arc=fail smtp.client-ip=40.107.94.59
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=amd.com
-Authentication-Results: smtp.subspace.kernel.org; spf=fail smtp.mailfrom=amd.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 46A3C2AEE9;
+	Fri, 14 Jun 2024 09:28:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1718357294; cv=none; b=WmumhJpjWXEmclV1y3HLvPRj23EBAv+aOS49Pzqn6Vb/nCXE9g6C5cicFNjaDnfyqSoRU0YDUj7kksdSxwO81OSlEOHE16NiSCyfQmw5sNMoG4k3q5k5ObfkzwyWghPYKOCX3ADDs6WFc1imVfUdAjXA6qa0pAHBJsi0JvQH1r4=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1718357294; c=relaxed/simple;
+	bh=prViNruXaplkIxh+X59Uxa4c4C3WYXYBdnkSq4UnATM=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=Q2IEEyH24r4Bhv99HXHKIxHx7Xv8DgKmS2rOWbTwOti2XTGVIY4otWoeN5/eduUDLbijP37byBmcz7RXWdeH5lFNpkzB1UNPOkMSOxsSAYq0wrfk9F4ke5kigrASO5NiaRnwvbF8aW7jSS/y6+o/NzN/N7kbenAsOkIVzqgBqKg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=u/iXU3Cu; arc=none smtp.client-ip=90.155.50.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=amd.com header.i=@amd.com header.b="WF5ve2zU"
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector9901; d=microsoft.com; cv=none;
- b=CIxW/xYntALr7MEqGTx9U0LV9b1ULXIpD4JYjcR6UFIzOW0yIGPBG4oYWs5b20J6YJkXl6KI4NUWr79aSnxYNGEO9NVN7nqIhVikTz5VycWOgwWIqTRXDVHowOMCapzqwm7xO/MRXNCzl7yHtFKQoJ9cRZVAQiZzhDPGvtHxu+a0+ZqQQfs5pfYkL3TCS2nCOGbEeaECVpEhWK0c7+HJZsPCdLDjW6Ildw07iWJuLze7qf71w3sTECwu2HDjNnFLKke0/g7pK/I9HEV8w01j0653txWgfqH+LQRpoRdIBpHorydrA+EuF2i42aqjdvVHbZ4ZhoVZ4Oar9f5QYqYhhw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector9901;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=f9rvNrb1dw6niVdiyuZ+02P3rAdH4uSssIVn0bFt6ME=;
- b=Yzte+4wYJG6YqOGUbBTwuE8hGCcekmfhcVX/HKqjwljuOsLq26/DfPsAtAnkXMW0gvvF4waFHMrFi9KC4rQ+bwcaKBfqzBWDjY1wy5jTpDQyhKStKWLDP8gtpCQY7maUuEpcQ9wMWw92gVQEI83ys0E84GwTQceFABkYbwiMXSUpuyhk4VgzEyGw1NeJfSXptkSast4jjQnjNVJ+SF1sApfF/3Wqij9txmVjhk6sIRiGIXle55LGv+0D35IM/jG1KylJSPylk2WUzG/iWC9v9PB2p/2J/VBO7rVvG0m8Z/4I7G+FJcgpx1+Z2rRvRCct/IaaCe62OWIGDoruoKmlgA==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass (sender ip is
- 165.204.84.17) smtp.rcpttodomain=vger.kernel.org smtp.mailfrom=amd.com;
- dmarc=pass (p=quarantine sp=quarantine pct=100) action=none
- header.from=amd.com; dkim=none (message not signed); arc=none (0)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=amd.com; s=selector1;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=f9rvNrb1dw6niVdiyuZ+02P3rAdH4uSssIVn0bFt6ME=;
- b=WF5ve2zUEDfeg2mUcMbhe9w4UlXOGZYMl0rgHdnHem7a28T0cN9FD2dIzBWUUmprNOVkVMPcKYGaFIeOpvr0BwOQGyosgMCJkHUdPOnNJrvVuhCS+QQB8BYtyjAmVWdUTqgabV4nLWaHYPG2r5njHk80tAZesXnEkHmTeqkdTKA=
-Received: from BLAP220CA0002.NAMP220.PROD.OUTLOOK.COM (2603:10b6:208:32c::7)
- by MN2PR12MB4237.namprd12.prod.outlook.com (2603:10b6:208:1d6::7) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7677.21; Thu, 13 Jun
- 2024 18:21:03 +0000
-Received: from BL6PEPF00022571.namprd02.prod.outlook.com
- (2603:10b6:208:32c:cafe::9e) by BLAP220CA0002.outlook.office365.com
- (2603:10b6:208:32c::7) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7677.24 via Frontend
- Transport; Thu, 13 Jun 2024 18:21:03 +0000
-X-MS-Exchange-Authentication-Results: spf=pass (sender IP is 165.204.84.17)
- smtp.mailfrom=amd.com; dkim=none (message not signed)
- header.d=none;dmarc=pass action=none header.from=amd.com;
-Received-SPF: Pass (protection.outlook.com: domain of amd.com designates
- 165.204.84.17 as permitted sender) receiver=protection.outlook.com;
- client-ip=165.204.84.17; helo=SATLEXMB04.amd.com; pr=C
-Received: from SATLEXMB04.amd.com (165.204.84.17) by
- BL6PEPF00022571.mail.protection.outlook.com (10.167.249.39) with Microsoft
- SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id
- 15.20.7677.15 via Frontend Transport; Thu, 13 Jun 2024 18:21:03 +0000
-Received: from BLRKPRNAYAK.amd.com (10.180.168.240) by SATLEXMB04.amd.com
- (10.181.40.145) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) id 15.1.2507.39; Thu, 13 Jun
- 2024 13:20:54 -0500
-From: K Prateek Nayak <kprateek.nayak@amd.com>
-To: <linux-kernel@vger.kernel.org>
-CC: "Gautham R. Shenoy" <gautham.shenoy@amd.com>, K Prateek Nayak
-	<kprateek.nayak@amd.com>, Yoshinori Sato <ysato@users.sourceforge.jp>, "Rich
- Felker" <dalias@libc.org>, John Paul Adrian Glaubitz
-	<glaubitz@physik.fu-berlin.de>, "Rafael J. Wysocki" <rafael@kernel.org>,
-	Daniel Lezcano <daniel.lezcano@linaro.org>, Ingo Molnar <mingo@redhat.com>,
-	Peter Zijlstra <peterz@infradead.org>, Juri Lelli <juri.lelli@redhat.com>,
-	Vincent Guittot <vincent.guittot@linaro.org>, Dietmar Eggemann
-	<dietmar.eggemann@arm.com>, Steven Rostedt <rostedt@goodmis.org>, Ben Segall
-	<bsegall@google.com>, Mel Gorman <mgorman@suse.de>, "Daniel Bristot de
- Oliveira" <bristot@redhat.com>, Valentin Schneider <vschneid@redhat.com>,
-	<linux-sh@vger.kernel.org>, <linux-pm@vger.kernel.org>
-Subject: [PATCH v2 09/14] sh/thread_info: Introduce TIF_NOTIFY_IPI flag
-Date: Thu, 13 Jun 2024 18:16:08 +0000
-Message-ID: <20240613181613.4329-10-kprateek.nayak@amd.com>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20240613181613.4329-1-kprateek.nayak@amd.com>
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="u/iXU3Cu"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=k5Jozg+gaCeSQ8tXyXAfQ8zvUH35mGnejlLYGUNU73c=; b=u/iXU3CuapkrBpGgNpXL7oKWw2
+	akDjIAg46tPSfA09potIFN7iNNRLBOcOWOruqnNqrpF1A3vztyYK1CNKi+YApQjX3TSGtWpbWvyjk
+	2QqPlMXSDtQKcOldgtX8kcSD5J30dKJYqKq6+Uz9Dpx2rr4E2LSxU/hTB06ppUtiMhmkFRH1tWGFL
+	SfzhC+xbBy+GIFrMIMF6R5HPq1V6egCAlbsXOj1XPxLUL9MBd97xrATfvTJKkPgIW/99fc5N3cCoO
+	8Ohm27l1SS86ljlIsb/2oqUYH2Fu/E6Ki2TnRAQh7OggP52Coo4MDKT6lhmrwNRr9/Jrmz4YKJWVc
+	W386n8dQ==;
+Received: from j130084.upc-j.chello.nl ([24.132.130.84] helo=noisy.programming.kicks-ass.net)
+	by casper.infradead.org with esmtpsa (Exim 4.97.1 #2 (Red Hat Linux))
+	id 1sI3E1-0000000GowQ-3hJA;
+	Fri, 14 Jun 2024 09:28:01 +0000
+Received: by noisy.programming.kicks-ass.net (Postfix, from userid 1000)
+	id 2A6ED300886; Fri, 14 Jun 2024 11:28:01 +0200 (CEST)
+Date: Fri, 14 Jun 2024 11:28:01 +0200
+From: Peter Zijlstra <peterz@infradead.org>
+To: K Prateek Nayak <kprateek.nayak@amd.com>
+Cc: linux-kernel@vger.kernel.org,
+	"Gautham R. Shenoy" <gautham.shenoy@amd.com>,
+	Richard Henderson <richard.henderson@linaro.org>,
+	Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+	Matt Turner <mattst88@gmail.com>,
+	Russell King <linux@armlinux.org.uk>, Guo Ren <guoren@kernel.org>,
+	Michal Simek <monstr@monstr.eu>, Dinh Nguyen <dinguyen@kernel.org>,
+	Jonas Bonn <jonas@southpole.se>,
+	Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+	Stafford Horne <shorne@gmail.com>,
+	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+	Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	"Naveen N. Rao" <naveen.n.rao@linux.ibm.com>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	"David S. Miller" <davem@davemloft.net>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	"H. Peter Anvin" <hpa@zytor.com>,
+	"Rafael J. Wysocki" <rafael@kernel.org>,
+	Daniel Lezcano <daniel.lezcano@linaro.org>,
+	Juri Lelli <juri.lelli@redhat.com>,
+	Vincent Guittot <vincent.guittot@linaro.org>,
+	Dietmar Eggemann <dietmar.eggemann@arm.com>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	Ben Segall <bsegall@google.com>, Mel Gorman <mgorman@suse.de>,
+	Daniel Bristot de Oliveira <bristot@redhat.com>,
+	Valentin Schneider <vschneid@redhat.com>,
+	Andrew Donnellan <ajd@linux.ibm.com>,
+	Benjamin Gray <bgray@linux.ibm.com>,
+	Frederic Weisbecker <frederic@kernel.org>,
+	Xin Li <xin3.li@intel.com>, Kees Cook <keescook@chromium.org>,
+	Rick Edgecombe <rick.p.edgecombe@intel.com>,
+	Tony Battersby <tonyb@cybernetics.com>,
+	Bjorn Helgaas <bhelgaas@google.com>,
+	Brian Gerst <brgerst@gmail.com>, Leonardo Bras <leobras@redhat.com>,
+	Imran Khan <imran.f.khan@oracle.com>,
+	"Paul E. McKenney" <paulmck@kernel.org>,
+	Rik van Riel <riel@surriel.com>,
+	Tim Chen <tim.c.chen@linux.intel.com>,
+	David Vernet <void@manifault.com>,
+	Julia Lawall <julia.lawall@inria.fr>, linux-alpha@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
+	sparclinux@vger.kernel.org, linux-pm@vger.kernel.org,
+	x86@kernel.org
+Subject: Re: [PATCH v2 00/14] Introducing TIF_NOTIFY_IPI flag
+Message-ID: <20240614092801.GL8774@noisy.programming.kicks-ass.net>
 References: <20240613181613.4329-1-kprateek.nayak@amd.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
@@ -80,111 +96,138 @@ List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
-X-ClientProxiedBy: SATLEXMB04.amd.com (10.181.40.145) To SATLEXMB04.amd.com
- (10.181.40.145)
-X-EOPAttributedMessage: 0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: BL6PEPF00022571:EE_|MN2PR12MB4237:EE_
-X-MS-Office365-Filtering-Correlation-Id: 721f758b-4425-48ad-2763-08dc8bd595a8
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
-	BCL:0;ARA:13230035|376009|7416009|1800799019|36860700008|82310400021;
-X-Microsoft-Antispam-Message-Info:
-	=?us-ascii?Q?+L626wHwRik02EUbWohq9XxhqFdstdozYU7zDUTaacGIbS221mhxzkR8JYC2?=
- =?us-ascii?Q?4EoTLfBcPSG1Er+Xc0LxME1b9XrxZ7APKMgd9I45o1kl5vSn7uIPPZ6JqX/Q?=
- =?us-ascii?Q?bL3iJJZldiOUZb35Qf7gXGZejtFgfYpJb2teaZdmlR8to6WMHA95y9DO6KIF?=
- =?us-ascii?Q?4vJMqY9KDo6xNiXUWS1cNOy6zHcD38KYatPTABrsPEX9wgHx0tk0pES1Daze?=
- =?us-ascii?Q?rmC4VShoDRgah61IohO0pTZoDOIEbE5VxiSiGe5YmF6qvtTtsiY+IVFb0F1i?=
- =?us-ascii?Q?vORrQYG9LESthFlI0xb5X+cLCPsq+7Va8u6L9Ms2dlHcQZiTHYSehTe8gAcD?=
- =?us-ascii?Q?8LLcHqEru+75icKLAQZKQgXvOrYE+nMZccuBnI6ub9qJsBKONlpTKRQFCQOf?=
- =?us-ascii?Q?vvy0lETNVocOrhAp1/wEFc/p3wTOLzBhL9TEQ6vGFR0mwfEHKbFilvoH0D/U?=
- =?us-ascii?Q?/hIUs+YC0KoLwW8btu4n8HR2QYj7+RONKr5V7w8CTvlZGn2i5J8ZVcLZ8I83?=
- =?us-ascii?Q?7z0BNC9v4ypZWyOAG0Q0rMrd+UP5snzpJ6ttCNV9mB8DMM5NcyY4q6rS2+4b?=
- =?us-ascii?Q?Nl67jbCNgaI0jmk8sipfFDRs/0IU+s8Cx6gUGpm56DfkoKum+pgz9OCtIvyh?=
- =?us-ascii?Q?+244LLJfKF0cVPMuEIZ/D1wFVF6s+ZUUYr8djM1GV7M1DHjvt0PWYbJPWtT4?=
- =?us-ascii?Q?DjJf2I9dBC8xeLZ5VDyt5xIwe0lZobTkDuL3m5Uy/D7VlE+72voOZbjOi+Oa?=
- =?us-ascii?Q?cw4fJsO0XSruu4gHOq491ceSAXKkfxrAPM2CHdB2vSF1+At77MXn54WBUXy+?=
- =?us-ascii?Q?4boCO54p9hMmb8g4eJZ+rLQJqYnvA5SwgRUW7reUIjnZ7G2PtmJSS8WmPBWd?=
- =?us-ascii?Q?k1ezaaBR60at+QNLzuS8GNeaJxLQ1DNqbSamkdUwDu35XJXYmVlre57p3Dez?=
- =?us-ascii?Q?acN60vKoG01Gm6e8VnLcuCxlLv1Hdzu5Ruc9+4tCQlEmQNwJWeidh38+56oY?=
- =?us-ascii?Q?GnmKurbyWWGTo6fYYFApKqq4vWCLRr6TCvRo7CazfqkGgzu4cAxzcfodzDNK?=
- =?us-ascii?Q?dwJW6baBUO2Wu5q9gdVZfzj8X70oqJdD7bRzLuxzhGaD0r8j4Otex9LtCkK+?=
- =?us-ascii?Q?CA8DC7Jb47XX08ojc5q9/fElqSFot+Ox4mhlauA1kcw1uy9e2avnte61LHwH?=
- =?us-ascii?Q?uc13c2PswD8nBFrCz7kxJOYsZU6iI+bXiW1l8zaGCC58wu86VYQq4hIR7uRg?=
- =?us-ascii?Q?Qj+a1sdvXQUsRCto1PSm8hylTV+Xa/nCdx2pQmjgyLBGL6DByp3+PoXNkObf?=
- =?us-ascii?Q?l30KixZ42pJWeVaSnMA5Qv9nJIi3dxmgBWNxXeNLyiVzV4ZAkpmuSZ529H5m?=
- =?us-ascii?Q?IxOsP2Ygtgwh7pNlVDAqbLYLO3MQvv/FmdrazCk5E0xkWxaqGQ=3D=3D?=
-X-Forefront-Antispam-Report:
-	CIP:165.204.84.17;CTRY:US;LANG:en;SCL:1;SRV:;IPV:CAL;SFV:NSPM;H:SATLEXMB04.amd.com;PTR:InfoDomainNonexistent;CAT:NONE;SFS:(13230035)(376009)(7416009)(1800799019)(36860700008)(82310400021);DIR:OUT;SFP:1101;
-X-OriginatorOrg: amd.com
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 13 Jun 2024 18:21:03.2231
- (UTC)
-X-MS-Exchange-CrossTenant-Network-Message-Id: 721f758b-4425-48ad-2763-08dc8bd595a8
-X-MS-Exchange-CrossTenant-Id: 3dd8961f-e488-4e60-8e11-a82d994e183d
-X-MS-Exchange-CrossTenant-OriginalAttributedTenantConnectingIp: TenantId=3dd8961f-e488-4e60-8e11-a82d994e183d;Ip=[165.204.84.17];Helo=[SATLEXMB04.amd.com]
-X-MS-Exchange-CrossTenant-AuthSource:
-	BL6PEPF00022571.namprd02.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Anonymous
-X-MS-Exchange-CrossTenant-FromEntityHeader: HybridOnPrem
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: MN2PR12MB4237
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20240613181613.4329-1-kprateek.nayak@amd.com>
 
-Add support for TIF_NOTIFY_IPI on SuperH. With TIF_NOTIFY_IPI, a sender
-sending an IPI to an idle CPU in TIF_POLLING mode will set the
-TIF_NOTIFY_IPI flag in the target's idle tasks's thread_info to pull the
-CPU out of idle, as opposed to setting TIF_NEED_RESCHED previously. This
-avoids spurious calls to schedule_idle() in cases where an IPI does not
-necessarily wake up a task on the idle CPU.
+On Thu, Jun 13, 2024 at 06:15:59PM +0000, K Prateek Nayak wrote:
+> Effects of call_function_single_prep_ipi()
+> ==========================================
+> 
+> To pull a TIF_POLLING thread out of idle to process an IPI, the sender
+> sets the TIF_NEED_RESCHED bit in the idle task's thread info in
+> call_function_single_prep_ipi() and avoids sending an actual IPI to the
+> target. As a result, the scheduler expects a task to be enqueued when
+> exiting the idle path. This is not the case with non-polling idle states
+> where the idle CPU exits the non-polling idle state to process the
+> interrupt, and since need_resched() returns false, soon goes back to
+> idle again.
+> 
+> When TIF_NEED_RESCHED flag is set, do_idle() will call schedule_idle(),
+> a large part of which runs with local IRQ disabled. In case of ipistorm,
+> when measuring IPI throughput, this large IRQ disabled section delays
+> processing of IPIs. Further auditing revealed that in absence of any
+> runnable tasks, pick_next_task_fair(), which is called from the
+> pick_next_task() fast path, will always call newidle_balance() in this
+> scenario, further increasing the time spent in the IRQ disabled section.
+> 
+> Following is the crude visualization of the problem with relevant
+> functions expanded:
+> --
+> CPU0							CPU1
+> ====							====
+> 							do_idle() {
+> 								__current_set_polling();
+> 								...
+> 								monitor(addr);
+> 								if (!need_resched())
+> 									mwait() {
+> 									/* Waiting */
+> smp_call_function_single(CPU1, func, wait = 1) {				...
+> 	...									...
+> 	set_nr_if_polling(CPU1) {						...
+> 		/* Realizes CPU1 is polling */					...
+> 		try_cmpxchg(addr,						...
+> 			    &val,						...
+> 			    val | _TIF_NEED_RESCHED);				...
+> 	} /* Does not send an IPI */						...
+> 	...								} /* mwait exit due to write at addr */
+> 	csd_lock_wait() {					} 
+> 	/* Waiting */						preempt_set_need_resched();
+> 		...						__current_clr_polling();
+> 		...						flush_smp_call_function_queue() {
+> 		...							func();
+> 	} /* End of wait */					}
+> }								schedule_idle() {
+> 									...
+> 									local_irq_disable();
+> smp_call_function_single(CPU1, func, wait = 1) {			...
+> 	...								...
+> 	arch_send_call_function_single_ipi(CPU1);			...
+> 						\			...
+> 						 \			newidle_balance() {
+> 						  \				...
+> 					      /* Delay */			...
+> 						    \			}
+> 					     	     \			...
+> 						      \-------------->	local_irq_enable();
+> 									/* Processes the IPI */
+> --
+> 
+> 
+> Skipping newidle_balance()
+> ==========================
+> 
+> In an earlier attempt to solve the challenge of the long IRQ disabled
+> section, newidle_balance() was skipped when a CPU waking up from idle
+> was found to have no runnable tasks, and was transitioning back to
+> idle [2]. Tim [3] and David [4] had pointed out that newidle_balance()
+> may be viable for CPUs that are idling with tick enabled, where the
+> newidle_balance() has the opportunity to pull tasks onto the idle CPU.
 
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>
-Cc: Rich Felker <dalias@libc.org>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: "Rafael J. Wysocki" <rafael@kernel.org>
-Cc: Daniel Lezcano <daniel.lezcano@linaro.org>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Peter Zijlstra <peterz@infradead.org>
-Cc: Juri Lelli <juri.lelli@redhat.com>
-Cc: Vincent Guittot <vincent.guittot@linaro.org>
-Cc: Dietmar Eggemann <dietmar.eggemann@arm.com>
-Cc: Steven Rostedt <rostedt@goodmis.org>
-Cc: Ben Segall <bsegall@google.com>
-Cc: Mel Gorman <mgorman@suse.de>
-Cc: Daniel Bristot de Oliveira <bristot@redhat.com>
-Cc: Valentin Schneider <vschneid@redhat.com>
-Cc: K Prateek Nayak <kprateek.nayak@amd.com>
-Cc: linux-sh@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
-Cc: linux-pm@vger.kernel.org
-Signed-off-by: K Prateek Nayak <kprateek.nayak@amd.com>
----
-v1..v2:
-o No changes.
----
- arch/sh/include/asm/thread_info.h | 2 ++
- 1 file changed, 2 insertions(+)
+I don't think we should be relying on this in any way shape or form.
+NOHZ can kill that tick at any time.
 
-diff --git a/arch/sh/include/asm/thread_info.h b/arch/sh/include/asm/thread_info.h
-index 9f19a682d315..8cd9d2a5361b 100644
---- a/arch/sh/include/asm/thread_info.h
-+++ b/arch/sh/include/asm/thread_info.h
-@@ -106,6 +106,7 @@ extern void init_thread_xstate(void);
- #define TIF_SECCOMP		6	/* secure computing */
- #define TIF_NOTIFY_RESUME	7	/* callback before returning to user */
- #define TIF_SYSCALL_TRACEPOINT	8	/* for ftrace syscall instrumentation */
-+#define TIF_NOTIFY_IPI		9	/* Pending IPI on TIF_POLLLING idle CPU */
- #define TIF_POLLING_NRFLAG	17	/* true if poll_idle() is polling TIF_NEED_RESCHED */
- #define TIF_MEMDIE		18	/* is terminating due to OOM killer */
+Also, semantically, calling newidle from the idle thread is just daft.
+You're really not newly idle in that case.
+
+> Vincent [5] pointed out a case where the idle load kick will fail to
+> run on an idle CPU since the IPI handler launching the ILB will check
+> for need_resched(). In such cases, the idle CPU relies on
+> newidle_balance() to pull tasks towards itself.
+
+Is this the need_resched() in _nohz_idle_balance() ? Should we change
+this to 'need_resched() && (rq->nr_running || rq->ttwu_pending)' or
+something long those lines?
+
+I mean, it's fairly trivial to figure out if there really is going to be
+work there.
+
+> Using an alternate flag instead of NEED_RESCHED to indicate a pending
+> IPI was suggested as the correct approach to solve this problem on the
+> same thread.
+
+So adding per-arch changes for this seems like something we shouldn't
+unless there really is no other sane options.
+
+That is, I really think we should start with something like the below
+and then fix any fallout from that.
+
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 0935f9d4bb7b..cfa45338ae97 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -5799,7 +5800,7 @@ static inline struct task_struct *
+ __pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
+ {
+ 	const struct sched_class *class;
+-	struct task_struct *p;
++	struct task_struct *p = NULL;
  
-@@ -118,6 +119,7 @@ extern void init_thread_xstate(void);
- #define _TIF_SECCOMP		(1 << TIF_SECCOMP)
- #define _TIF_NOTIFY_RESUME	(1 << TIF_NOTIFY_RESUME)
- #define _TIF_SYSCALL_TRACEPOINT	(1 << TIF_SYSCALL_TRACEPOINT)
-+#define _TIF_NOTIFY_IPI		(1 << TIF_NOTIFY_IPI)
- #define _TIF_POLLING_NRFLAG	(1 << TIF_POLLING_NRFLAG)
+ 	/*
+ 	 * Optimization: we know that if all tasks are in the fair class we can
+@@ -5810,9 +5811,11 @@ __pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
+ 	if (likely(!sched_class_above(prev->sched_class, &fair_sched_class) &&
+ 		   rq->nr_running == rq->cfs.h_nr_running)) {
  
- /* work to do in syscall trace */
--- 
-2.34.1
-
+-		p = pick_next_task_fair(rq, prev, rf);
+-		if (unlikely(p == RETRY_TASK))
+-			goto restart;
++		if (rq->nr_running) {
++			p = pick_next_task_fair(rq, prev, rf);
++			if (unlikely(p == RETRY_TASK))
++				goto restart;
++		}
+ 
+ 		/* Assume the next prioritized class is idle_sched_class */
+ 		if (!p) {
