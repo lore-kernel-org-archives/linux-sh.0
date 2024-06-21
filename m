@@ -1,91 +1,75 @@
-Received: from mx0a-001b2d01.pphosted.com (mx0a-001b2d01.pphosted.com [148.163.156.1])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pl1-f174.google.com (mail-pl1-f174.google.com [209.85.214.174])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6022523769;
-	Fri, 21 Jun 2024 14:21:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.156.1
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 646B619479;
+	Fri, 21 Jun 2024 14:30:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.174
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1718979677; cv=none; b=omb+QVeaJBD6XTYKErlq3WrNSmTxsNeULoXzZ4kwi+k5YZF/lQmibRq6oUYw6PTHhUyJKwr1yrf71LnsIUOsP8bBz/sYcW20i3N3zUoV0bGuA+Jj/I0dd7W1AbN1K21zPXqOPpvHUT9arhI2JueQp9ljEAgzV57fkl/VLMUqc1U=
+	t=1718980228; cv=none; b=cwZh2Iwbhz8DT1ZlVA8/hr+uFu5eTBT1Fb2JSItF9gigGpaTZuAbJoXLJ1NPocPFUdzJTe5eIbVR6UTVtckIQZ2x1a6tfcqjG9ttP/k91/SxWNtw9QdZZ3HYjcaCzE0EuShOniOGCjRGaTDt/it/9sMSs/ZWDBislqGJULSviSo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1718979677; c=relaxed/simple;
-	bh=FRsrRHuesg0WeyyGyORG1XpSZdf8zna/n7dNXMr5zrM=;
+	s=arc-20240116; t=1718980228; c=relaxed/simple;
+	bh=C9qYOkGelv2XUpeHQ8wIQkxwtn7jroXl2kr91jaYimM=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=miXjN8KWQJO1/H01OQgB14SoCg9G0oBYYsBR/BPm3i1Ys11RP8Smrc3es6kqr1DloZF56ZCgIAjIyyGaEEtWPpifpS04hfiyT9dHHmhAHEykJsivIPkAiQGtGyTKRwQDKFDrhP6+RuOomwTv1kFMPpS2zzNQQNQPelEOwiVsNoo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com; spf=pass smtp.mailfrom=linux.ibm.com; dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b=fjrdfSXq; arc=none smtp.client-ip=148.163.156.1
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.ibm.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.ibm.com
+	 Content-Type:Content-Disposition:In-Reply-To; b=eQC+Cs35/bCvtw8xs3b+vXCMBNYXCyigWgwoBX/0Ubfo8IUjUWZLH15mJcEMQSxFH7ZsfrwQaObI6eOPoA3R0nZMKXMC843Utlupl6Wjsb3ZD47uCa0Hvq69r3B72VlrYDfUJBRaOTfN7aAp4/69092l6U3flMrKG875tehY6i8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=gwdbRiwz; arc=none smtp.client-ip=209.85.214.174
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ibm.com header.i=@ibm.com header.b="fjrdfSXq"
-Received: from pps.filterd (m0356517.ppops.net [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 45LDpjwd007918;
-	Fri, 21 Jun 2024 14:20:05 GMT
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ibm.com; h=date
-	:from:to:cc:subject:message-id:references:mime-version
-	:content-type:in-reply-to; s=pp1; bh=sJJqCuieG7oXQ6BEgRLEOKCBvgY
-	hb+zAYJQBFLYnTZg=; b=fjrdfSXqB/WD9xddv5VQuyP8JhdNDSB9dZNjWi46S4w
-	Xw44JjUlI4LQieEWSqAt2at+16Znm1Skf5x65TV/adGvT7CQpYYeowsC83MAemwv
-	THbcKszsl5psJ4Xx1cYRkPdKiqqWSvloOGk9BgtrP3LaxZ69yL+023iw8mdczChq
-	jlkXeFbQUfj50sB7Lpi/eFXF68lz4A/WA75cqSqb6Q3a3AKFXWMyprLWg4IZm6vn
-	F+Uw+6bHsGAUPYISefAy9iOIJmAk/5ilNpKVTEzYATdTxa7Bi0BS6R8DKWfZZ+Pg
-	CXJpBMnSWxNx/BscnHmx7NH8tKzzKCsiKDXVXusyefw==
-Received: from pps.reinject (localhost [127.0.0.1])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3ywajp049w-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 21 Jun 2024 14:20:04 +0000 (GMT)
-Received: from m0356517.ppops.net (m0356517.ppops.net [127.0.0.1])
-	by pps.reinject (8.18.0.8/8.18.0.8) with ESMTP id 45LEK3u1031783;
-	Fri, 21 Jun 2024 14:20:03 GMT
-Received: from ppma13.dal12v.mail.ibm.com (dd.9e.1632.ip4.static.sl-reverse.com [50.22.158.221])
-	by mx0a-001b2d01.pphosted.com (PPS) with ESMTPS id 3ywajp049s-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 21 Jun 2024 14:20:03 +0000 (GMT)
-Received: from pps.filterd (ppma13.dal12v.mail.ibm.com [127.0.0.1])
-	by ppma13.dal12v.mail.ibm.com (8.17.1.19/8.17.1.19) with ESMTP id 45LCAh6E025663;
-	Fri, 21 Jun 2024 14:20:02 GMT
-Received: from smtprelay01.fra02v.mail.ibm.com ([9.218.2.227])
-	by ppma13.dal12v.mail.ibm.com (PPS) with ESMTPS id 3yvrqv7kug-1
-	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Fri, 21 Jun 2024 14:20:02 +0000
-Received: from smtpav02.fra02v.mail.ibm.com (smtpav02.fra02v.mail.ibm.com [10.20.54.101])
-	by smtprelay01.fra02v.mail.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id 45LEJwsl50921746
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
-	Fri, 21 Jun 2024 14:20:01 GMT
-Received: from smtpav02.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id D7C1920043;
-	Fri, 21 Jun 2024 14:19:58 +0000 (GMT)
-Received: from smtpav02.fra02v.mail.ibm.com (unknown [127.0.0.1])
-	by IMSVA (Postfix) with ESMTP id 62BBC20040;
-	Fri, 21 Jun 2024 14:19:57 +0000 (GMT)
-Received: from osiris (unknown [9.171.32.192])
-	by smtpav02.fra02v.mail.ibm.com (Postfix) with ESMTPS;
-	Fri, 21 Jun 2024 14:19:57 +0000 (GMT)
-Date: Fri, 21 Jun 2024 16:19:55 +0200
-From: Heiko Carstens <hca@linux.ibm.com>
-To: Arnd Bergmann <arnd@kernel.org>
-Cc: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Arnd Bergmann <arnd@arndb.de>,
-        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-        linux-mips@vger.kernel.org, Helge Deller <deller@gmx.de>,
-        linux-parisc@vger.kernel.org, "David S. Miller" <davem@davemloft.net>,
-        Andreas Larsson <andreas@gaisler.com>, sparclinux@vger.kernel.org,
-        Michael Ellerman <mpe@ellerman.id.au>,
-        Nicholas Piggin <npiggin@gmail.com>,
-        Christophe Leroy <christophe.leroy@csgroup.eu>,
-        "Naveen N . Rao" <naveen.n.rao@linux.ibm.com>,
-        linuxppc-dev@lists.ozlabs.org, Brian Cain <bcain@quicinc.com>,
-        linux-hexagon@vger.kernel.org, Guo Ren <guoren@kernel.org>,
-        linux-csky@vger.kernel.org, linux-s390@vger.kernel.org,
-        Rich Felker <dalias@libc.org>,
-        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-        linux-sh@vger.kernel.org, "H. Peter Anvin" <hpa@zytor.com>,
-        Alexander Viro <viro@zeniv.linux.org.uk>,
-        Christian Brauner <brauner@kernel.org>, linux-fsdevel@vger.kernel.org,
-        libc-alpha@sourceware.org, musl@lists.openwall.com, ltp@lists.linux.it,
-        stable@vger.kernel.org
-Subject: Re: [PATCH 02/15] syscalls: fix compat_sys_io_pgetevents_time64 usage
-Message-ID: <20240621141955.14882-C-hca@linux.ibm.com>
-References: <20240620162316.3674955-1-arnd@kernel.org>
- <20240620162316.3674955-3-arnd@kernel.org>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gwdbRiwz"
+Received: by mail-pl1-f174.google.com with SMTP id d9443c01a7336-1f700e4cb92so18569545ad.2;
+        Fri, 21 Jun 2024 07:30:27 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1718980227; x=1719585027; darn=vger.kernel.org;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
+        bh=KdsPqr4pTjdk7OKzEKkqrsHBuqyR7Uqn4Y9WWtRu7DY=;
+        b=gwdbRiwzVk/s4WtuBham41qCTok1woEH4DLDktuj6yNbUqVuMfogrJZ7eXp5VRKprn
+         0r+cc2mMP0wJeTFF7l4L08PDQ8LSaQaj3eNynr+TTBWuZvMNHXQtbt90ni/ntIg1DYdj
+         yiG1H/svYk7hrY/LwQUEOZHIsShuSh7KG/dZ1sN3PUT3DWAhaBD9KPetk7fI7dpUBGHn
+         uLwk+TsloLjN6gL4ZMx06Qd/GV9DBR+IEpPM9bM7xtQesyhhzMLcVTLjYDc4xhhzLzBx
+         BoTYdyBm5QoUnu+ysI3dgu5OHWnpfvxHlidq2QX5PfycbxSZ30xuDvUwbBk6rRRBo/+V
+         cWMA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1718980227; x=1719585027;
+        h=in-reply-to:content-disposition:mime-version:references:message-id
+         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=KdsPqr4pTjdk7OKzEKkqrsHBuqyR7Uqn4Y9WWtRu7DY=;
+        b=jAIENSTiZO/ff8CO4WYaiyGd89B+nOXp8e3ODWeyaumGAyNzLCDOIvwL1CWqbstQdr
+         6SqwT6CIvBLztj9+gUFTwz7m2fN3l2zHnpFLFK3jBiikzpoYE7+WaqByOLiQsz/jsvjS
+         gPEAyZrEdxK9SDuyJSAS30hdni2uwpaH+fCztWoDsaM08Lil+rskVgZ5lypi9a1ulF7F
+         xDPmQLW/9qGcFfQqomFxeFFe2/jMM+pun4Vcz3bl+Q17Cr12Bx3qrCeau6DSx5gcpOGw
+         fX09X5c6J5mxSd/Yv+u/YfDeNmZCNVK79SXeoEQo9i2Z4KU7cixt7pPhk9P+pXZ1ODz4
+         BVdA==
+X-Forwarded-Encrypted: i=1; AJvYcCURf+hQI5Iv0XLxidWW1FL4vY32AkwdFgXbPyJcT3+FHPqerUqqJIIRCWgBLc4NwxIAa6BYmOllxGqKBREdk63HaxbrZAce/3o=
+X-Gm-Message-State: AOJu0Yx15fIFjah7eO23UVE/XFqwTxS4x/mR/EIdyzu3jDmpVJ0FbuxQ
+	ah2CIxguKfewrEqgcttkXQHtHqIqLyi/N15F/eVuLIxo+ibASKEJ
+X-Google-Smtp-Source: AGHT+IEzh0eQJ1MaaD/+q47vXon+0x0K3sIw+WHNgKvN8TcM1jN1H1kKzTczyA+tCqswDM9nkARGbw==
+X-Received: by 2002:a17:902:c103:b0:1eb:fc2:1eed with SMTP id d9443c01a7336-1f9aa41802emr76036295ad.41.1718980226505;
+        Fri, 21 Jun 2024 07:30:26 -0700 (PDT)
+Received: from localhost ([216.228.127.128])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-1f9eb3c6156sm14660665ad.138.2024.06.21.07.30.24
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 21 Jun 2024 07:30:25 -0700 (PDT)
+Date: Fri, 21 Jun 2024 07:30:22 -0700
+From: Yury Norov <yury.norov@gmail.com>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: linux-kernel@vger.kernel.org,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	Geert Uytterhoeven <geert+renesas@glider.be>,
+	linux-sh@vger.kernel.org, Alexey Klimov <alexey.klimov@linaro.org>,
+	Bart Van Assche <bvanassche@acm.org>, Jan Kara <jack@suse.cz>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	Matthew Wilcox <willy@infradead.org>,
+	Mirsad Todorovac <mirsad.todorovac@alu.unizg.hr>,
+	Rasmus Villemoes <linux@rasmusvillemoes.dk>,
+	Sergey Shtylyov <s.shtylyov@omp.ru>
+Subject: Re: [PATCH v4 33/40] sh: mach-x3proto: optimize ilsel_enable()
+Message-ID: <ZnWOfuIdjB5Hhf3M@yury-ThinkPad>
+References: <20240620175703.605111-1-yury.norov@gmail.com>
+ <20240620175703.605111-34-yury.norov@gmail.com>
+ <4bd2e538d70d8acbdc8da7b0fdb05b93e0614e43.camel@physik.fu-berlin.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -94,50 +78,87 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20240620162316.3674955-3-arnd@kernel.org>
-X-TM-AS-GCONF: 00
-X-Proofpoint-ORIG-GUID: YXfrRffn6TYyLSwBDXqaZzkqoKWr1mYq
-X-Proofpoint-GUID: Z5Ojicv41iCrwMxI3gZzmAFXZezdhIwz
-X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1039,Hydra:6.0.680,FMLib:17.12.28.16
- definitions=2024-06-21_06,2024-06-21_01,2024-05-17_01
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0 mlxlogscore=379 mlxscore=0
- malwarescore=0 impostorscore=0 spamscore=0 priorityscore=1501 adultscore=0
- bulkscore=0 lowpriorityscore=0 suspectscore=0 phishscore=0 clxscore=1011
- classifier=spam adjust=0 reason=mlx scancount=1 engine=8.19.0-2406140001
- definitions=main-2406210101
+In-Reply-To: <4bd2e538d70d8acbdc8da7b0fdb05b93e0614e43.camel@physik.fu-berlin.de>
 
-On Thu, Jun 20, 2024 at 06:23:03PM +0200, Arnd Bergmann wrote:
-> From: Arnd Bergmann <arnd@arndb.de>
+On Fri, Jun 21, 2024 at 10:48:44AM +0200, John Paul Adrian Glaubitz wrote:
+> Hi Yury,
 > 
-> Using sys_io_pgetevents() as the entry point for compat mode tasks
-> works almost correctly, but misses the sign extension for the min_nr
-> and nr arguments.
+> thanks for your patch!
 > 
-> This was addressed on parisc by switching to
-> compat_sys_io_pgetevents_time64() in commit 6431e92fc827 ("parisc:
-> io_pgetevents_time64() needs compat syscall in 32-bit compat mode"),
-> as well as by using more sophisticated system call wrappers on x86 and
-> s390. However, arm64, mips, powerpc, sparc and riscv still have the
-> same bug.
+> On Thu, 2024-06-20 at 10:56 -0700, Yury Norov wrote:
+> > Simplify ilsel_enable() by using find_and_set_bit().
+> > 
+> > Geert also pointed the bug in the old implementation:
+> > 
+> > 	I don't think the old code worked as intended: the first time
+> > 	no free bit is found, bit would have been ILSEL_LEVELS, and
+> > 	test_and_set_bit() would have returned false, thus terminating
+> > 	the loop, and continuing with an out-of-range bit value? Hence
+> > 	to work correctly, bit ILSEL_LEVELS of ilsel_level_map should
+> > 	have been initialized to one?  Or am I missing something?
+> > 
+> > The new code does not have that issue.
+> > 
+> > CC: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+> > Signed-off-by: Yury Norov <yury.norov@gmail.com>
+> > Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> > ---
+> >  arch/sh/boards/mach-x3proto/ilsel.c | 5 +++--
+> >  1 file changed, 3 insertions(+), 2 deletions(-)
+> > 
+> > diff --git a/arch/sh/boards/mach-x3proto/ilsel.c b/arch/sh/boards/mach-x3proto/ilsel.c
+> > index f0d5eb41521a..35b585e154f0 100644
+> > --- a/arch/sh/boards/mach-x3proto/ilsel.c
+> > +++ b/arch/sh/boards/mach-x3proto/ilsel.c
+> > @@ -8,6 +8,7 @@
+> >   */
+> >  #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+> >  
+> > +#include <linux/find_atomic.h>
+> >  #include <linux/init.h>
+> >  #include <linux/kernel.h>
+> >  #include <linux/module.h>
+> > @@ -99,8 +100,8 @@ int ilsel_enable(ilsel_source_t set)
+> >  	}
+> >  
+> >  	do {
+> > -		bit = find_first_zero_bit(&ilsel_level_map, ILSEL_LEVELS);
+> > -	} while (test_and_set_bit(bit, &ilsel_level_map));
+> > +		bit = find_and_set_bit(&ilsel_level_map, ILSEL_LEVELS);
+> > +	} while (bit >= ILSEL_LEVELS);
+> >  
+> >  	__ilsel_enable(set, bit);
 > 
-> Changes all of them over to use compat_sys_io_pgetevents_time64()
-> like parisc already does. This was clearly the intention when the
-> function was originally added, but it got hooked up incorrectly in
-> the tables.
+> I will need to take a closer look at the whole code in ilsel_enable() to understand what's
+> happening here. If Geert's explanation is correct, it sounds more like you're fixing a bug
+> and saying you're optimizing the function in the patch subject would sound more like an
+> euphemism.
 > 
-> Cc: stable@vger.kernel.org
-> Fixes: 48166e6ea47d ("y2038: add 64-bit time_t syscalls to all 32-bit architectures")
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> ---
->  arch/arm64/include/asm/unistd32.h         | 2 +-
->  arch/mips/kernel/syscalls/syscall_n32.tbl | 2 +-
->  arch/mips/kernel/syscalls/syscall_o32.tbl | 2 +-
->  arch/powerpc/kernel/syscalls/syscall.tbl  | 2 +-
->  arch/s390/kernel/syscalls/syscall.tbl     | 2 +-
->  arch/sparc/kernel/syscalls/syscall.tbl    | 2 +-
->  arch/x86/entry/syscalls/syscall_32.tbl    | 2 +-
->  include/uapi/asm-generic/unistd.h         | 2 +-
->  8 files changed, 8 insertions(+), 8 deletions(-)
+> Also, I think we should add a Fixes tag if possible in case your patch fixes an actual bug.
+> 
+> I will have a closer look over the weekend.
 
-Acked-by: Heiko Carstens <hca@linux.ibm.com> # s390
+Hi John,
+
+The problem is that if the ilsel_level_map if dense, the @bit
+will be set to ILSEL_LEVELS. The following test_and_set_bit()
+will therefore access a bit beyond the end of bitmap. Which in
+turn is undef.
+
+I'm not familiar to the subsystem as whole, so I can't say if it's
+ever possible to have the ilsel_level_map all set. If you take a
+look that would be great.
+
+If this series will not move, the fix for this code would be:
+
+  do {
+          bit = find_first_zero_bit(&ilsel_level_map, ILSEL_LEVELS);
+  } while (bit >= ILSEL_LEVELS || test_and_set_bit(bit, &ilsel_level_map));
+
+It would work, but because find_first_zero_bit() is not designed to
+work correctly in concurrent environment, it may trigger KCSAN and/or
+return something non-relevant. See cover letter on this series for
+details.
+
+Thanks,
+Yury
