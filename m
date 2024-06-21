@@ -1,69 +1,60 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E5B4616B3B9;
-	Fri, 21 Jun 2024 08:44:52 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AF7A118E20;
+	Fri, 21 Jun 2024 08:48:49 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1718959497; cv=none; b=AqPgWN8KafgjtFv3wU3+JZzjpFfnG8Q1dhGyAhsM1vq6p6+dgzcIYX40slwBouBAnFn3DxlX9kFuU3LxgwUbPS3ptwncfVhPn+xe/0PyszANCwqYY7FMzmmwrhyvX3t9Uf015bs2z63jhBpEmk5HK77o5ucoLtP7fYn7PzPE/oc=
+	t=1718959732; cv=none; b=e5iyJERz2V/64gDmWp/k744CP343h+ENy+5cO0Uj47uR+bqFBR4jZqR4CicKU8olsqHG6bxQGcSHUDtsPK/6+4t6vPPViuVdDeSgcmo6+Vgbn7g0PN+qqTk0WQH9ByVMzvBeDVw5NuPCuw051Ui6wQF1w/XVWBxpej7U7IeaBsc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1718959497; c=relaxed/simple;
-	bh=RpckdAUHxpE3PguMTPlZMv4GmZLmasBaPDXDoZBRkPE=;
+	s=arc-20240116; t=1718959732; c=relaxed/simple;
+	bh=E8CCwaNxTOtcgV/FCnCW/+NV+DJ2IGbkxo3fNLla1NQ=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=B1CA3F0EUmzrmjwx0mYeSNp8SThqYBKpd8gGnmqgacQInj3O1sksbnhDllZUiXysFcC+FfY5m7UjlfZYMs92o5oiZuyfIzarZeny55pch6+xHNKAx0gED8jzCl8uQmT7PvafQxl7Y+T7EggEubYlpDGZagSoqms3nZqTXF9UjQs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=nYaDaquc; arc=none smtp.client-ip=130.133.4.66
+	 Content-Type:MIME-Version; b=Wno4Dv1ZoxcYQifZXZ3pLAK9zlpKKag1GBjyJYZVw1hMxzAAMISDABXLz36vUP5lYGpiWigGolXdN1VLh9yPKyg1ZQQAiQNZN31llFEiQqNXsrcpyUer7+5HlpTgmBnKjYVbK/sIW3wFO/Nh2kduAFaUBvXZ9+wvtiTsnNOtXlE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=K4OGeB1S; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="nYaDaquc"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="K4OGeB1S"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
 	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
 	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
 	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=vnRm0j85otx50gSN5LqFcKunoR/H3ua98B1Wub0g2Lg=; t=1718959493; x=1719564293; 
-	b=nYaDaqucSyVb876NSrVRp8vKQ8Gio7rL52u3C9JteReAhHge663w9C8FI4MJy4UhSTZEgQoeOrC
-	/v3OwEkDDyvtTF3QzkgVojyEUsorci95sFQz63qlvqh7eAsB8RKpNLS28/BIgdkjCQi+HJkSriKyE
-	2AYMwbo5n+vOqE/hzI85JKoBbUu+W6Grt6xd1SQsLisACSVSJUIYIa9tk2OgTwnbI/wOy81FMKQum
-	0uo24gEar31ZBfMSX6ZvJhN6ddbfnzk2Cap/eOYzwJrPXmBFicXRoWiHvrXhRN/UlEHbPOKVbiZTq
-	ILs1NWlCWp/Gsu707DGha15ifXAoq9eXjdsQ==;
+	bh=ix+NkQr4REwpET3Ad0FPePtCiykRvKA7YhCWjna0BtM=; t=1718959729; x=1719564529; 
+	b=K4OGeB1SeImIDsvwtlYNCGuUjOuePBtA1sjqaj3ov7ONsX1XEhByUvvL1wcjrom1sah5a6BQlDu
+	L34LuGT0vu70UfCNa7GQwN7r2SDSW7Abl9e+6AeQXLAXKUKnQdanlMHaJzg9mDcQDdiKZlzeaZ/So
+	0sLCfYqSlJya0WUMDWe9zibMSkfYbNWrnhr/4+9AlLidKKFSZSxoNJiwwEp6ccxblNgQsu1LYUc+R
+	fk+lu9E/046IsdoTBLVfJcYY14IojvXBPlmKo1+K4t2GNScudg+Y8bA6J+7OFuJSr0/Gi747/ePol
+	CJx0NzdGvPWyqkhqf1QjJrOkjFRcY7w/9o/Q==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.97)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1sKZsu-00000001rSo-3cOK; Fri, 21 Jun 2024 10:44:41 +0200
-Received: from p5b13a475.dip0.t-ipconnect.de ([91.19.164.117] helo=suse-laptop-2.fritz.box)
+          id 1sKZwr-00000001vJq-19HR; Fri, 21 Jun 2024 10:48:45 +0200
+Received: from p5b13a475.dip0.t-ipconnect.de ([91.19.164.117] helo=[192.168.178.20])
           by inpost2.zedat.fu-berlin.de (Exim 4.97)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1sKZsv-00000001cr3-0HzV; Fri, 21 Jun 2024 10:44:41 +0200
-Message-ID: <366548c1a0d9749e42c0d0c993414a353c9b0b02.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH 09/15] sh: rework sync_file_range ABI
+          id 1sKZwr-00000001dOn-2Cnm; Fri, 21 Jun 2024 10:48:45 +0200
+Message-ID: <4bd2e538d70d8acbdc8da7b0fdb05b93e0614e43.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH v4 33/40] sh: mach-x3proto: optimize ilsel_enable()
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Arnd Bergmann <arnd@kernel.org>, linux-arch@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Cc: Arnd Bergmann <arnd@arndb.de>, Thomas Bogendoerfer
- <tsbogend@alpha.franken.de>, linux-mips@vger.kernel.org, Helge Deller
- <deller@gmx.de>, linux-parisc@vger.kernel.org, "David S. Miller"
- <davem@davemloft.net>, Andreas Larsson <andreas@gaisler.com>, 
- sparclinux@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, Nicholas
- Piggin <npiggin@gmail.com>, Christophe Leroy <christophe.leroy@csgroup.eu>,
- "Naveen N . Rao" <naveen.n.rao@linux.ibm.com>,
- linuxppc-dev@lists.ozlabs.org, Brian Cain <bcain@quicinc.com>,
- linux-hexagon@vger.kernel.org, Guo Ren <guoren@kernel.org>, 
- linux-csky@vger.kernel.org, Heiko Carstens <hca@linux.ibm.com>, 
- linux-s390@vger.kernel.org, Rich Felker <dalias@libc.org>, 
- linux-sh@vger.kernel.org, "H. Peter Anvin" <hpa@zytor.com>, Alexander Viro
- <viro@zeniv.linux.org.uk>, Christian Brauner <brauner@kernel.org>, 
- linux-fsdevel@vger.kernel.org, libc-alpha@sourceware.org, 
- musl@lists.openwall.com, ltp@lists.linux.it, stable@vger.kernel.org
-Date: Fri, 21 Jun 2024 10:44:39 +0200
-In-Reply-To: <20240620162316.3674955-10-arnd@kernel.org>
-References: <20240620162316.3674955-1-arnd@kernel.org>
-	 <20240620162316.3674955-10-arnd@kernel.org>
+To: Yury Norov <yury.norov@gmail.com>, linux-kernel@vger.kernel.org, 
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
+ Geert Uytterhoeven <geert+renesas@glider.be>, linux-sh@vger.kernel.org
+Cc: Alexey Klimov <alexey.klimov@linaro.org>, Bart Van Assche
+ <bvanassche@acm.org>, Jan Kara <jack@suse.cz>, Linus Torvalds
+ <torvalds@linux-foundation.org>, Matthew Wilcox <willy@infradead.org>, 
+ Mirsad Todorovac <mirsad.todorovac@alu.unizg.hr>, Rasmus Villemoes
+ <linux@rasmusvillemoes.dk>, Sergey Shtylyov <s.shtylyov@omp.ru>
+Date: Fri, 21 Jun 2024 10:48:44 +0200
+In-Reply-To: <20240620175703.605111-34-yury.norov@gmail.com>
+References: <20240620175703.605111-1-yury.norov@gmail.com>
+	 <20240620175703.605111-34-yury.norov@gmail.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.52.2 
@@ -76,105 +67,68 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-Hi Arnd,
+Hi Yury,
 
 thanks for your patch!
 
-On Thu, 2024-06-20 at 18:23 +0200, Arnd Bergmann wrote:
-> From: Arnd Bergmann <arnd@arndb.de>
+On Thu, 2024-06-20 at 10:56 -0700, Yury Norov wrote:
+> Simplify ilsel_enable() by using find_and_set_bit().
 >=20
-> The unusual function calling conventions on superh ended up causing
-                                              ^^^^^^
-                                       It's spelled SuperH
-
-> sync_file_range to have the wrong argument order, with the 'flags'
-> argument getting sorted before 'nbytes' by the compiler.
+> Geert also pointed the bug in the old implementation:
 >=20
-> In userspace, I found that musl, glibc, uclibc and strace all expect the
-> normal calling conventions with 'nbytes' last, so changing the kernel
-> to match them should make all of those work.
+> 	I don't think the old code worked as intended: the first time
+> 	no free bit is found, bit would have been ILSEL_LEVELS, and
+> 	test_and_set_bit() would have returned false, thus terminating
+> 	the loop, and continuing with an out-of-range bit value? Hence
+> 	to work correctly, bit ILSEL_LEVELS of ilsel_level_map should
+> 	have been initialized to one?  Or am I missing something?
 >=20
-> In order to be able to also fix libc implementations to work with existin=
-g
-> kernels, they need to be able to tell which ABI is used. An easy way
-> to do this is to add yet another system call using the sync_file_range2
-> ABI that works the same on all architectures.
+> The new code does not have that issue.
 >=20
-> Old user binaries can now work on new kernels, and new binaries can
-> try the new sync_file_range2() to work with new kernels or fall back
-> to the old sync_file_range() version if that doesn't exist.
->=20
-> Cc: stable@vger.kernel.org
-> Fixes: 75c92acdd5b1 ("sh: Wire up new syscalls.")
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> CC: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+> Signed-off-by: Yury Norov <yury.norov@gmail.com>
+> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
 > ---
->  arch/sh/kernel/sys_sh32.c           | 11 +++++++++++
->  arch/sh/kernel/syscalls/syscall.tbl |  3 ++-
->  2 files changed, 13 insertions(+), 1 deletion(-)
+>  arch/sh/boards/mach-x3proto/ilsel.c | 5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
 >=20
-> diff --git a/arch/sh/kernel/sys_sh32.c b/arch/sh/kernel/sys_sh32.c
-> index 9dca568509a5..d5a4f7c697d8 100644
-> --- a/arch/sh/kernel/sys_sh32.c
-> +++ b/arch/sh/kernel/sys_sh32.c
-> @@ -59,3 +59,14 @@ asmlinkage int sys_fadvise64_64_wrapper(int fd, u32 of=
-fset0, u32 offset1,
->  				 (u64)len0 << 32 | len1, advice);
->  #endif
->  }
-> +
-> +/*
-> + * swap the arguments the way that libc wants it instead of
+> diff --git a/arch/sh/boards/mach-x3proto/ilsel.c b/arch/sh/boards/mach-x3=
+proto/ilsel.c
+> index f0d5eb41521a..35b585e154f0 100644
+> --- a/arch/sh/boards/mach-x3proto/ilsel.c
+> +++ b/arch/sh/boards/mach-x3proto/ilsel.c
+> @@ -8,6 +8,7 @@
+>   */
+>  #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+> =20
+> +#include <linux/find_atomic.h>
+>  #include <linux/init.h>
+>  #include <linux/kernel.h>
+>  #include <linux/module.h>
+> @@ -99,8 +100,8 @@ int ilsel_enable(ilsel_source_t set)
+>  	}
+> =20
+>  	do {
+> -		bit =3D find_first_zero_bit(&ilsel_level_map, ILSEL_LEVELS);
+> -	} while (test_and_set_bit(bit, &ilsel_level_map));
+> +		bit =3D find_and_set_bit(&ilsel_level_map, ILSEL_LEVELS);
+> +	} while (bit >=3D ILSEL_LEVELS);
+> =20
+>  	__ilsel_enable(set, bit);
 
-I think "swap the arguments to the order that libc wants them" would
-be easier to understand here.
+I will need to take a closer look at the whole code in ilsel_enable() to un=
+derstand what's
+happening here. If Geert's explanation is correct, it sounds more like you'=
+re fixing a bug
+and saying you're optimizing the function in the patch subject would sound =
+more like an
+euphemism.
 
-> + * moving flags ahead of the 64-bit nbytes argument
-> + */
-> +SYSCALL_DEFINE6(sh_sync_file_range6, int, fd, SC_ARG64(offset),
-> +                SC_ARG64(nbytes), unsigned int, flags)
-> +{
-> +        return ksys_sync_file_range(fd, SC_VAL64(loff_t, offset),
-> +                                    SC_VAL64(loff_t, nbytes), flags);
-> +}
-> diff --git a/arch/sh/kernel/syscalls/syscall.tbl b/arch/sh/kernel/syscall=
-s/syscall.tbl
-> index bbf83a2db986..c55fd7696d40 100644
-> --- a/arch/sh/kernel/syscalls/syscall.tbl
-> +++ b/arch/sh/kernel/syscalls/syscall.tbl
-> @@ -321,7 +321,7 @@
->  311	common	set_robust_list			sys_set_robust_list
->  312	common	get_robust_list			sys_get_robust_list
->  313	common	splice				sys_splice
-> -314	common	sync_file_range			sys_sync_file_range
-> +314	common	sync_file_range			sys_sh_sync_file_range6
-                                                                 ^^^^^^ Why=
- the suffix 6 here?
+Also, I think we should add a Fixes tag if possible in case your patch fixe=
+s an actual bug.
 
->  315	common	tee				sys_tee
->  316	common	vmsplice			sys_vmsplice
->  317	common	move_pages			sys_move_pages
-> @@ -395,6 +395,7 @@
->  385	common	pkey_alloc			sys_pkey_alloc
->  386	common	pkey_free			sys_pkey_free
->  387	common	rseq				sys_rseq
-> +388	common	sync_file_range2		sys_sync_file_range2
->  # room for arch specific syscalls
->  393	common	semget				sys_semget
->  394	common	semctl				sys_semctl
+I will have a closer look over the weekend.
 
-I wonder how you discovered this bug. Did you look up the calling conventio=
-n on SuperH
-and compare the argument order for the sys_sync_file_range system call docu=
-mented there
-with the order in the kernel?
-
-Did you also check what order libc uses? I would expect libc on SuperH miso=
-rdering the
-arguments as well unless I am missing something. Or do we know that the cod=
-e is actually
-currently broken?
-
-Thanks,
 Adrian
 
 --=20
