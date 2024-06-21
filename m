@@ -1,164 +1,172 @@
-Received: from mail-pl1-f174.google.com (mail-pl1-f174.google.com [209.85.214.174])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 646B619479;
-	Fri, 21 Jun 2024 14:30:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.174
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C8A07208C4;
+	Fri, 21 Jun 2024 16:30:30 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.22
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1718980228; cv=none; b=cwZh2Iwbhz8DT1ZlVA8/hr+uFu5eTBT1Fb2JSItF9gigGpaTZuAbJoXLJ1NPocPFUdzJTe5eIbVR6UTVtckIQZ2x1a6tfcqjG9ttP/k91/SxWNtw9QdZZ3HYjcaCzE0EuShOniOGCjRGaTDt/it/9sMSs/ZWDBislqGJULSviSo=
+	t=1718987433; cv=none; b=fFaD7wztPvbJWv9Bc3QWSkJl0NZSZ1Ex2/6kK5m5H/HXJcFv7qQ6Hkb2cr7Rgp8XXJCKRkXyppmbqmKNwJGFlrwHZHqLlKfR0rDJHOliuiuXnmRB0Ydyi7Df55+cmlht2+KxawOguZ6TVx4Tod5CNnatjJdituHvLOUG8zFnsyI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1718980228; c=relaxed/simple;
-	bh=C9qYOkGelv2XUpeHQ8wIQkxwtn7jroXl2kr91jaYimM=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=eQC+Cs35/bCvtw8xs3b+vXCMBNYXCyigWgwoBX/0Ubfo8IUjUWZLH15mJcEMQSxFH7ZsfrwQaObI6eOPoA3R0nZMKXMC843Utlupl6Wjsb3ZD47uCa0Hvq69r3B72VlrYDfUJBRaOTfN7aAp4/69092l6U3flMrKG875tehY6i8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=gwdbRiwz; arc=none smtp.client-ip=209.85.214.174
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1718987433; c=relaxed/simple;
+	bh=TaVSF8Wo6axT8++84WQ+MyVXhldB4MqulOKt1aiG610=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=mVEQZhqgc6AweIvkCDJCFyarbcmms7jWLTsNESDuPc5qlU4BjCNRBcM7gZxnXAy2lXugJE7Xyq4jv9seU1rmqLi+FhSFod+JWyIzK29hnhosaniGNUeOc6DrCeIzgfxTqn9jpHTLuxbRBmdAnFbxCXuMWIRM5YojOxvNbr2Dd7c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.de; spf=pass smtp.mailfrom=gmx.de; dkim=pass (2048-bit key) header.d=gmx.de header.i=deller@gmx.de header.b=dGyJ89S3; arc=none smtp.client-ip=212.227.17.22
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="gwdbRiwz"
-Received: by mail-pl1-f174.google.com with SMTP id d9443c01a7336-1f700e4cb92so18569545ad.2;
-        Fri, 21 Jun 2024 07:30:27 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1718980227; x=1719585027; darn=vger.kernel.org;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=KdsPqr4pTjdk7OKzEKkqrsHBuqyR7Uqn4Y9WWtRu7DY=;
-        b=gwdbRiwzVk/s4WtuBham41qCTok1woEH4DLDktuj6yNbUqVuMfogrJZ7eXp5VRKprn
-         0r+cc2mMP0wJeTFF7l4L08PDQ8LSaQaj3eNynr+TTBWuZvMNHXQtbt90ni/ntIg1DYdj
-         yiG1H/svYk7hrY/LwQUEOZHIsShuSh7KG/dZ1sN3PUT3DWAhaBD9KPetk7fI7dpUBGHn
-         uLwk+TsloLjN6gL4ZMx06Qd/GV9DBR+IEpPM9bM7xtQesyhhzMLcVTLjYDc4xhhzLzBx
-         BoTYdyBm5QoUnu+ysI3dgu5OHWnpfvxHlidq2QX5PfycbxSZ30xuDvUwbBk6rRRBo/+V
-         cWMA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1718980227; x=1719585027;
-        h=in-reply-to:content-disposition:mime-version:references:message-id
-         :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to;
-        bh=KdsPqr4pTjdk7OKzEKkqrsHBuqyR7Uqn4Y9WWtRu7DY=;
-        b=jAIENSTiZO/ff8CO4WYaiyGd89B+nOXp8e3ODWeyaumGAyNzLCDOIvwL1CWqbstQdr
-         6SqwT6CIvBLztj9+gUFTwz7m2fN3l2zHnpFLFK3jBiikzpoYE7+WaqByOLiQsz/jsvjS
-         gPEAyZrEdxK9SDuyJSAS30hdni2uwpaH+fCztWoDsaM08Lil+rskVgZ5lypi9a1ulF7F
-         xDPmQLW/9qGcFfQqomFxeFFe2/jMM+pun4Vcz3bl+Q17Cr12Bx3qrCeau6DSx5gcpOGw
-         fX09X5c6J5mxSd/Yv+u/YfDeNmZCNVK79SXeoEQo9i2Z4KU7cixt7pPhk9P+pXZ1ODz4
-         BVdA==
-X-Forwarded-Encrypted: i=1; AJvYcCURf+hQI5Iv0XLxidWW1FL4vY32AkwdFgXbPyJcT3+FHPqerUqqJIIRCWgBLc4NwxIAa6BYmOllxGqKBREdk63HaxbrZAce/3o=
-X-Gm-Message-State: AOJu0Yx15fIFjah7eO23UVE/XFqwTxS4x/mR/EIdyzu3jDmpVJ0FbuxQ
-	ah2CIxguKfewrEqgcttkXQHtHqIqLyi/N15F/eVuLIxo+ibASKEJ
-X-Google-Smtp-Source: AGHT+IEzh0eQJ1MaaD/+q47vXon+0x0K3sIw+WHNgKvN8TcM1jN1H1kKzTczyA+tCqswDM9nkARGbw==
-X-Received: by 2002:a17:902:c103:b0:1eb:fc2:1eed with SMTP id d9443c01a7336-1f9aa41802emr76036295ad.41.1718980226505;
-        Fri, 21 Jun 2024 07:30:26 -0700 (PDT)
-Received: from localhost ([216.228.127.128])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-1f9eb3c6156sm14660665ad.138.2024.06.21.07.30.24
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 21 Jun 2024 07:30:25 -0700 (PDT)
-Date: Fri, 21 Jun 2024 07:30:22 -0700
-From: Yury Norov <yury.norov@gmail.com>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: linux-kernel@vger.kernel.org,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	Geert Uytterhoeven <geert+renesas@glider.be>,
-	linux-sh@vger.kernel.org, Alexey Klimov <alexey.klimov@linaro.org>,
-	Bart Van Assche <bvanassche@acm.org>, Jan Kara <jack@suse.cz>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	Matthew Wilcox <willy@infradead.org>,
-	Mirsad Todorovac <mirsad.todorovac@alu.unizg.hr>,
-	Rasmus Villemoes <linux@rasmusvillemoes.dk>,
-	Sergey Shtylyov <s.shtylyov@omp.ru>
-Subject: Re: [PATCH v4 33/40] sh: mach-x3proto: optimize ilsel_enable()
-Message-ID: <ZnWOfuIdjB5Hhf3M@yury-ThinkPad>
-References: <20240620175703.605111-1-yury.norov@gmail.com>
- <20240620175703.605111-34-yury.norov@gmail.com>
- <4bd2e538d70d8acbdc8da7b0fdb05b93e0614e43.camel@physik.fu-berlin.de>
+	dkim=pass (2048-bit key) header.d=gmx.de header.i=deller@gmx.de header.b="dGyJ89S3"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.de;
+	s=s31663417; t=1718987346; x=1719592146; i=deller@gmx.de;
+	bh=TaVSF8Wo6axT8++84WQ+MyVXhldB4MqulOKt1aiG610=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=dGyJ89S3Mtnb3qCeqKQ7dNrV2AX+MBvXvpFOS5qdU5StBNeSfBhj3npOOzwCrL2I
+	 OWu4Iw7nLS7C7FqGCqb9jP0mHnSAWNDp/B7oOpqNyH+7RhIwXCY7R/TwxqQG61hYm
+	 /IvwIpeBjt0GepWOMNkDAIUg6eRs65R2+nmi0nxpCsYyDq2gK2tPySnYyWpVG8S43
+	 ZvQEf501RrASQFyXuehQg5sXe2oBtvJ5uLn25WBdeSp2PKuSAq3KMcugDsB48Eqww
+	 CywDG9/PCKvur0T1ok3M2r3j5b7JRp7HrudYWXhNrBq8o2LuvA8pkp74qNhDfJjtS
+	 rCoZwjkgBr8NtnIQgA==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from [192.168.20.55] ([109.250.63.133]) by mail.gmx.net (mrgmx104
+ [212.227.17.168]) with ESMTPSA (Nemesis) id 1MfHEJ-1srq1Z2d4N-00ddIK; Fri, 21
+ Jun 2024 18:29:06 +0200
+Message-ID: <cd7fdd76-8da0-4d43-9d1c-c93aed4c0f5d@gmx.de>
+Date: Fri, 21 Jun 2024 18:28:58 +0200
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <4bd2e538d70d8acbdc8da7b0fdb05b93e0614e43.camel@physik.fu-berlin.de>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 07/15] parisc: use generic sys_fanotify_mark
+ implementation
+To: Arnd Bergmann <arnd@arndb.de>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ Arnd Bergmann <arnd@kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>,
+ linux-kernel@vger.kernel.org
+Cc: Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+ linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
+ "David S . Miller" <davem@davemloft.net>,
+ Andreas Larsson <andreas@gaisler.com>, sparclinux@vger.kernel.org,
+ Michael Ellerman <mpe@ellerman.id.au>, Nicholas Piggin <npiggin@gmail.com>,
+ Christophe Leroy <christophe.leroy@csgroup.eu>,
+ "Naveen N. Rao" <naveen.n.rao@linux.ibm.com>, linuxppc-dev@lists.ozlabs.org,
+ Brian Cain <bcain@quicinc.com>, linux-hexagon@vger.kernel.org,
+ guoren <guoren@kernel.org>,
+ "linux-csky@vger.kernel.org" <linux-csky@vger.kernel.org>,
+ Heiko Carstens <hca@linux.ibm.com>, linux-s390@vger.kernel.org,
+ Rich Felker <dalias@libc.org>, linux-sh@vger.kernel.org,
+ "H. Peter Anvin" <hpa@zytor.com>, Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>, linux-fsdevel@vger.kernel.org,
+ Xi Ruoyao <libc-alpha@sourceware.org>,
+ "musl@lists.openwall.com" <musl@lists.openwall.com>,
+ LTP List <ltp@lists.linux.it>,
+ Adhemerval Zanella Netto <adhemerval.zanella@linaro.org>
+References: <20240620162316.3674955-1-arnd@kernel.org>
+ <20240620162316.3674955-8-arnd@kernel.org>
+ <e80809ba-ee81-47a5-9b08-54b11f118a78@gmx.de>
+ <1537113c4396cd043a08a72bdca80cccfa2d54d9.camel@physik.fu-berlin.de>
+ <ba14c4fb-e6a7-46b3-a030-081482264a99@app.fastmail.com>
+ <a623c1979ac494d01977abe6dfc22e8381dc6e4f.camel@physik.fu-berlin.de>
+ <83613d85-53f9-4644-be68-4f438abe2e52@app.fastmail.com>
+Content-Language: en-US
+From: Helge Deller <deller@gmx.de>
+Autocrypt: addr=deller@gmx.de; keydata=
+ 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
+In-Reply-To: <83613d85-53f9-4644-be68-4f438abe2e52@app.fastmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:qzcGugqMcbMY+YWYJmVsNMJLSzXL1IFC+qPqRPEqwIjeHu1j8dW
+ eKrd9zTKO8WqTBd1atZ9gk73fhgOsLFzmyt55jQz2EE0lv7OLTEi8eH1tERMhO+XealwSx1
+ UGgBBAPSpMfKRXJChZsTA9t/N/bEd9WMNnHEwTU1TsTs3cyh1vRWNfUsERYHddYMxe16B2C
+ 4cE95QxNZt3dO/ZdT1fcQ==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:qkvA0SU8VBk=;7/QatZvg+BRxv1QkYdIagec8md0
+ /gpUIUeNoh2h5Zc2DzrKSZAqUU/Uw+GnsiaAaeHEHI+myLKBBKPB0CZ4PI9GoNYcjlvRwC+Dt
+ cj4SKrgECYJdrasgoF20T9r9P8F4BOUJuHY7LfSfBt6aBQXc93SxHPI1b2yssJl0RJaoaYxmY
+ oLb2/KG/hDplIAs8CJ6xU8ciG5YfyKU1j1+jkWw1MQPFc3+e4aIxLiTSvFRncW/p38cwcMayq
+ jza45P6I18yIb0lDFwYxfYx7JtvcYmz49tEM+mRNWRo0sqZOKrDutFk2bIfcxantsC9mqHxQs
+ 5a3j94hFYF0GycjrDV+oesj7qYVBuU6oYunEsd60beMeznHHR3ImzBXx0U+lZ1yg5DwK5B7CI
+ QesCueVCEB/qYbWnjOn2wcuR9pB1PIHB4z/V43nmRFpwUH1vi3CFARq2AflaUsICu5nwLy9Xf
+ Qkf/FIQ2HAWc3Nz8D7NpxmuEdmmXn1uUlfNkFMEIMvZS08xsLcvFw7HawfxyG3k0NSKzQBLpm
+ ja62fYS6SAKuF+UBiwKzX5eFg26Sbjq3sh26tyiYHSDDdClW4X5tok+KvIYORgrjWs4GT9uCM
+ 6aaMHjRJ+tik9fPg2gVvQPbCJ7BZasXiujTtGovW47pMTNieoSrWh7Q3faXOlVgg6VgWPvFQn
+ dRdHVRBA7/oVEYpoz4lYuxsnHQfksXpjaFITA0DK0Gs+syZDYB8Aqpcri4MPk01+eWrlM5X8c
+ 1YVFCGgstmmLXXu2b3Sj6ehNnDt85oZyT/Iy1bR4HWd48jJY/zu80u6vzoZmdVbwkKjEt+2ip
+ ExQiXgsj0tPfrUnUe2j3FBUQbV3FxfoNfx2osTCe+13E8=
 
-On Fri, Jun 21, 2024 at 10:48:44AM +0200, John Paul Adrian Glaubitz wrote:
-> Hi Yury,
-> 
-> thanks for your patch!
-> 
-> On Thu, 2024-06-20 at 10:56 -0700, Yury Norov wrote:
-> > Simplify ilsel_enable() by using find_and_set_bit().
-> > 
-> > Geert also pointed the bug in the old implementation:
-> > 
-> > 	I don't think the old code worked as intended: the first time
-> > 	no free bit is found, bit would have been ILSEL_LEVELS, and
-> > 	test_and_set_bit() would have returned false, thus terminating
-> > 	the loop, and continuing with an out-of-range bit value? Hence
-> > 	to work correctly, bit ILSEL_LEVELS of ilsel_level_map should
-> > 	have been initialized to one?  Or am I missing something?
-> > 
-> > The new code does not have that issue.
-> > 
-> > CC: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> > Signed-off-by: Yury Norov <yury.norov@gmail.com>
-> > Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> > ---
-> >  arch/sh/boards/mach-x3proto/ilsel.c | 5 +++--
-> >  1 file changed, 3 insertions(+), 2 deletions(-)
-> > 
-> > diff --git a/arch/sh/boards/mach-x3proto/ilsel.c b/arch/sh/boards/mach-x3proto/ilsel.c
-> > index f0d5eb41521a..35b585e154f0 100644
-> > --- a/arch/sh/boards/mach-x3proto/ilsel.c
-> > +++ b/arch/sh/boards/mach-x3proto/ilsel.c
-> > @@ -8,6 +8,7 @@
-> >   */
-> >  #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-> >  
-> > +#include <linux/find_atomic.h>
-> >  #include <linux/init.h>
-> >  #include <linux/kernel.h>
-> >  #include <linux/module.h>
-> > @@ -99,8 +100,8 @@ int ilsel_enable(ilsel_source_t set)
-> >  	}
-> >  
-> >  	do {
-> > -		bit = find_first_zero_bit(&ilsel_level_map, ILSEL_LEVELS);
-> > -	} while (test_and_set_bit(bit, &ilsel_level_map));
-> > +		bit = find_and_set_bit(&ilsel_level_map, ILSEL_LEVELS);
-> > +	} while (bit >= ILSEL_LEVELS);
-> >  
-> >  	__ilsel_enable(set, bit);
-> 
-> I will need to take a closer look at the whole code in ilsel_enable() to understand what's
-> happening here. If Geert's explanation is correct, it sounds more like you're fixing a bug
-> and saying you're optimizing the function in the patch subject would sound more like an
-> euphemism.
-> 
-> Also, I think we should add a Fixes tag if possible in case your patch fixes an actual bug.
-> 
-> I will have a closer look over the weekend.
+On 6/21/24 11:52, Arnd Bergmann wrote:
+> On Fri, Jun 21, 2024, at 11:03, John Paul Adrian Glaubitz wrote:
+>> On Fri, 2024-06-21 at 10:56 +0200, Arnd Bergmann wrote:
+>>> Feel free to pick up the sh patch directly, I'll just merge whatever
+>>> is left in the end. I mainly want to ensure we can get all the bugfixe=
+s
+>>> done for v6.10 so I can build my longer cleanup series on top of it
+>>> for 6.11.
+>>
+>> This series is still for 6.10?
+>
+> Yes, these are all the bugfixes that I think we want to backport
+> to stable kernels, so it makes sense to merge them as quickly as
+> possible. The actual stuff I'm working on will come as soon as
+> I have it in a state for public review and won't need to be
+> backported.
 
-Hi John,
+Ah, OK.... in that case would you please keep the two parisc
+patches in your git tree? I didn't plan to send a new pull
+request during v6.10, so it's easier for me if you keep them
+and send them together with your other remaining patches.
+(I'll drop them now from the parisc tree)
 
-The problem is that if the ilsel_level_map if dense, the @bit
-will be set to ILSEL_LEVELS. The following test_and_set_bit()
-will therefore access a bit beyond the end of bitmap. Which in
-turn is undef.
+I tested both patches, so you may add:
+Tested-by: Helge Deller <deller@gmx.de>
+Acked-by: Helge Deller <deller@gmx.de>
 
-I'm not familiar to the subsystem as whole, so I can't say if it's
-ever possible to have the ilsel_level_map all set. If you take a
-look that would be great.
-
-If this series will not move, the fix for this code would be:
-
-  do {
-          bit = find_first_zero_bit(&ilsel_level_map, ILSEL_LEVELS);
-  } while (bit >= ILSEL_LEVELS || test_and_set_bit(bit, &ilsel_level_map));
-
-It would work, but because find_first_zero_bit() is not designed to
-work correctly in concurrent environment, it may trigger KCSAN and/or
-return something non-relevant. See cover letter on this series for
-details.
-
-Thanks,
-Yury
+Thank you!
+Helge
