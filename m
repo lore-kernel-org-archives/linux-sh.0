@@ -1,75 +1,117 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from mail.zeus03.de (zeus03.de [194.117.254.33])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 32C541AAE30;
-	Thu,  4 Jul 2024 09:28:58 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5F2FB6FC1
+	for <linux-sh@vger.kernel.org>; Sun,  7 Jul 2024 05:41:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=194.117.254.33
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1720085339; cv=none; b=HzNbUJkeUTjT34SCzbneZZpCKbqU38OQxKQO+IdSkk1tITtTKQ1mvMM/h1A2l4TLcagzrDNRhrcgNQwH1FkImeebBGw3jVZ6Cu9MbG3kB38pvkJ1bhsaql4oitr4A2/MrvVr1rB7IAUKaa98zIDVZJJqohR/PBxg+vByQY7fbnw=
+	t=1720330885; cv=none; b=off6KST/XaQF/XYZV7JRXcNuDroxD1VWlEEu7bD0aIjIYY6X3Ts2El+BjQOrTXAk/OssSnr0ZgumndMFbnkjpkDyXa1dS+eCVuPkFRUIyB8C+UNfFgiEEVPvP2I1CdRkdhN03hOMZElzQg9EgdFDPgGom57czn7xmyh3VpFvhyM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1720085339; c=relaxed/simple;
-	bh=RAU682pllQ3Qwzdcw44X5tDRqFgQveq+4ErPH8vDthE=;
+	s=arc-20240116; t=1720330885; c=relaxed/simple;
+	bh=54TshYdjTFTyT0bm//p325eJ7KyUzGZQ/yI61XlND3k=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=JzglVGb6OM4KvQOw5Tdbz7k7EYSXEOumpLDeMhmdCJaiWCW8OGp10CJ1wqGz78D9glGGdc3/IRWFitmFNtb+V5TXvaxgBP2VJa6Cj6hOC/ZGdaZsCZUVe3ZH69skIoBzCZujMFW1XoLcbq7zzX24wtUseiXW8agRs4BxZIivJoU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b=WsErD0F2; arc=none smtp.client-ip=10.30.226.201
+	 Content-Type:Content-Disposition:In-Reply-To; b=iQDDgMmYmLr2LyVnWnwlqCnaqZlZVvIIkkqCAKUZWfY0o6v/+nbwY0X5vbntm32Ri69J+0e8Z9NYFOjE2jv2gw4Yi4rZS5ds94AQ89oElZKnD5pwcC8bCdKaRXIDKMqR1+Q+HMkNZcNRii/Zxv0BDATW41jiktfBLcUScx7UdIE=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sang-engineering.com; spf=pass smtp.mailfrom=sang-engineering.com; dkim=pass (2048-bit key) header.d=sang-engineering.com header.i=@sang-engineering.com header.b=IPlYaaXA; arc=none smtp.client-ip=194.117.254.33
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=sang-engineering.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=sang-engineering.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b="WsErD0F2"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1619AC3277B;
-	Thu,  4 Jul 2024 09:28:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-	s=korg; t=1720085338;
-	bh=RAU682pllQ3Qwzdcw44X5tDRqFgQveq+4ErPH8vDthE=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=WsErD0F2Dnok9dLeG96r/JEVtpzxttD4/6V0yWRtJlXN+DW3lv4/CDub/JMnjSsxS
-	 U4QAbF7C09QoJ7fdWOiToWRxwNJutAKNs8HMCcOPtHOuBg8kTMBQBXZ1xGjk41HOWf
-	 Qu7HKyyDH7uPS4ncn1pSruXHz/LMPMp5RHtE+eSY=
-Date: Thu, 4 Jul 2024 11:25:11 +0200
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Arnd Bergmann <arnd@arndb.de>,
-	Naresh Kamboju <naresh.kamboju@linaro.org>, stable@vger.kernel.org,
-	patches@lists.linux.dev, linux-kernel@vger.kernel.org,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Guenter Roeck <linux@roeck-us.net>, shuah <shuah@kernel.org>,
-	patches@kernelci.org, lkft-triage@lists.linaro.org,
-	Pavel Machek <pavel@denx.de>, Jon Hunter <jonathanh@nvidia.com>,
-	Florian Fainelli <f.fainelli@gmail.com>,
-	Sudip Mukherjee <sudipm.mukherjee@gmail.com>, srw@sladewatkins.net,
-	rwarsow@gmx.de, Conor Dooley <conor@kernel.org>,
-	Allen <allen.lkml@gmail.com>, Mark Brown <broonie@kernel.org>,
-	Dan Carpenter <dan.carpenter@linaro.org>,
-	Anders Roxell <anders.roxell@linaro.org>,
-	Linux-sh list <linux-sh@vger.kernel.org>,
-	Rich Felker <dalias@libc.org>
-Subject: Re: [PATCH 5.4 000/189] 5.4.279-rc1 review
-Message-ID: <2024070402-gallows-schematic-ce53@gregkh>
-References: <20240703102841.492044697@linuxfoundation.org>
- <CA+G9fYvAkELSdWF1EYyjS=d_jvCJD0O=aPnZFHUGnhYy6c1VCg@mail.gmail.com>
- <72ddde27-e2e2-4a46-a2ab-4d20a7a9424f@app.fastmail.com>
- <c497d1abee4bf37663488c3a80e042a25303c0c4.camel@physik.fu-berlin.de>
+	dkim=pass (2048-bit key) header.d=sang-engineering.com header.i=@sang-engineering.com header.b="IPlYaaXA"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	sang-engineering.com; h=date:from:to:cc:subject:message-id
+	:references:mime-version:content-type:in-reply-to; s=k1; bh=Id5g
+	KhGTHs9OJ43RUBWKvLyw6xg79PIts1vBUkV6i60=; b=IPlYaaXAWna59U4y+1jZ
+	Z2SbWi3/wd64EkaXPb/PfeNE6HACwhWlOltgXV78dsbZrxxQFSdItx422EpFOi5n
+	+dOu8Ma6/98xbBDTS8UTst3canFKMXvYHDNcD8J4hBdB+ELYA1zN6v+VXMiVz7xB
+	wKjh/emkMBqIzBGjfvW1RWRKzmHnANHJ5nP2zJEPcfKDisp5aWIa7fQuHigkVYyD
+	8tmCxGDfdQT21bEHbXv6tw+EgO/1k+UlF7vchP1KEdEIOZOcOOqHkpaf/QQ6euKA
+	SV9AZ8wk5SDo1DNqVmtj5RotU8sn+hwgHMA4IIZ4GWK2cesq3uB+JQNX/fp6XXif
+	Yw==
+Received: (qmail 4010647 invoked from network); 7 Jul 2024 07:41:18 +0200
+Received: by mail.zeus03.de with ESMTPSA (TLS_AES_256_GCM_SHA384 encrypted, authenticated); 7 Jul 2024 07:41:18 +0200
+X-UD-Smtp-Session: l3s3148p1@N7zmvqEc3qxQT+F6
+Date: Sun, 7 Jul 2024 07:41:17 +0200
+From: Wolfram Sang <wsa+renesas@sang-engineering.com>
+To: Lee Jones <lee@kernel.org>
+Cc: linux-renesas-soc@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	linux-kernel@vger.kernel.org, linux-mmc@vger.kernel.org,
+	linux-sh@vger.kernel.org
+Subject: Re: [PATCH v2 0/6] mfd: tmio: simplify header and move to
+ platform_data
+Message-ID: <Zooqfe1sJQsvltwj@shikoro>
+Mail-Followup-To: Wolfram Sang <wsa+renesas@sang-engineering.com>,
+	Lee Jones <lee@kernel.org>, linux-renesas-soc@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
+	linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+References: <20240213220221.2380-8-wsa+renesas@sang-engineering.com>
+ <170870160052.1698319.4712751560931025638.b4-ty@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="fNHf+Thy2CjldTx0"
+Content-Disposition: inline
+In-Reply-To: <170870160052.1698319.4712751560931025638.b4-ty@kernel.org>
+
+
+--fNHf+Thy2CjldTx0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <c497d1abee4bf37663488c3a80e042a25303c0c4.camel@physik.fu-berlin.de>
+Content-Transfer-Encoding: quoted-printable
 
-On Wed, Jul 03, 2024 at 08:42:42PM +0200, John Paul Adrian Glaubitz wrote:
-> Hi Arnd,
-> 
-> On Wed, 2024-07-03 at 20:34 +0200, Arnd Bergmann wrote:
-> > Rich and Adrian, let me know if you would submit a
-> > tested backport stable@vger.kernel.org yourself, if you
-> > want help backporting my patch, or if we should just
-> > leave the existing state in the LTS kernels.
-> 
-> I think it's safe to keep the existing state in the old LTS kernels
-> as most SH users will be on the latest kernel anyway.
+On Fri, Feb 23, 2024 at 03:20:00PM +0000, Lee Jones wrote:
+> On Tue, 13 Feb 2024 23:02:19 +0100, Wolfram Sang wrote:
+> > Changes since v1:
+> >=20
+> > * rebased to rc4
+> > * collected all needed acks (Thanks!)
+> > * capitalized first letter in commit subject
+> >=20
+> > The MFD parts of the TMIO have been removed by Arnd, so that only the
+> > SD/MMC related functionality is left. Remove the outdated remains in the
+> > public header file and then move it to platform_data as the data is now
+> > specific for the SD/MMC part.
+> >=20
+> > [...]
+>=20
+> Applied, thanks!
+>=20
+> [1/6] mfd: tmio: Remove obsolete platform_data
+>       commit: 58d6d15662e4039fab7d786f0426843befa77ad4
+> [2/6] mfd: tmio: Remove obsolete io accessors
+>       commit: e927d7bac109d8ca1729dda47a8dbc220efdb50e
+> [3/6] mmc: tmio/sdhi: Fix includes
+>       commit: bed05c68aa8f078206143700cd37e42a0084155f
+> [4/6] mfd: tmio: Update include files
+>       commit: 3ef94c41db82573dc1e1dd6c259aec8ef6caaaf3
+> [5/6] mfd: tmio: Sanitize comments
+>       commit: 2d417dda59123b9523a19ce75fea3fd1056c3b4c
+> [6/6] mfd: tmio: Move header to platform_data
+>       commit: 858b29729c9d319b9cd1441646cc3af246d3c3f9
 
-Thanks, I'll drop it from these older kernels now.
+This series is not upstream yet?
 
-greg k-h
+
+--fNHf+Thy2CjldTx0
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAABCgAdFiEEOZGx6rniZ1Gk92RdFA3kzBSgKbYFAmaKKnoACgkQFA3kzBSg
+KbZIKw/+JIjCcXe3JYSrcOsZWdIj7JXJJLj4HILlSIJ9N8wZC3897IMZ7+aAHyze
+115MselHsV3BfY4oyRfKJSXZQKkCYRE7jXkN03Ly398PHxhlpW52ej9jAOjHXH2s
+hpWADUCc/Z7rlgMINAF+0yndCmLpEB7MkjFJswED7DFcwlMg+jg8hN7LE439wN1B
+a+l5ZnNegAOtBwQPGXNAuYzG8alS4jSc1+HoSKwtLCFyKSTLT4ONDW8+QnAxNge0
+6i7hoCiZtVp7N9rhpTtAv+lpA15Low9o+Msp9R0wWTKWLyFTBn7Ok/QbZT6Cz1c3
+sVYvEVismu5HnB7if5tN6rtH3G83p5rusZyo6qLPptCevBNCJD4eGPAjM26UOhed
+B4fZbCztyXg9npCZtZjzS1Ta4QMmQ79Bo14TQNfB5Z2C28gjijSOes7FrWO7V6nr
+gDxwQOMPkyAmSCusyd19ftSd0aMWo8vr2f/AZV30j3IO0GM/jcWZCPtqLxIsIIJD
+pG+xa8oLku3zfmgGMv1oIe7tXoXZSw2/+uD6yID38L/8cNVaBzYsCmqKUDswfiPy
+6vKqjsCXnD87ATA6TM1H6ClJiwW5JqXtuZptIFvocpIdfwTkQEFjgH0IxsUNfvdN
+1YDDp1Qlbe63FW5twOIJYQ1BrRqfsqmEnC0vEKdepokFQG5IIJM=
+=sLOL
+-----END PGP SIGNATURE-----
+
+--fNHf+Thy2CjldTx0--
