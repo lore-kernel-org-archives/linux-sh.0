@@ -1,192 +1,213 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B2C172A1AA;
-	Tue, 16 Jul 2024 10:42:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 969EB196C7C;
+	Tue, 16 Jul 2024 11:14:06 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1721126559; cv=none; b=etRjccUF4ry3YW7RX4cmIi70aAA8ZscZLjM13ONQcHo5RgCq7LPlyvWilPFfA2WNZ0Usbi4FCjrGZxufVbjt7RjhANE3qdGQiKasUxjXfRWpxrO9dVlKN9dRIHtS0rVoHVJRCmPTFFszlq0Kz64Lh5TpJ/3gPVBmAL9LjyFAIZw=
+	t=1721128446; cv=none; b=PGmDqMMbtRy9CAWz7D1zktLqh1NaOcCne1iZTw5GPB/+LfyMPhMWyB0wW6640ARlSHo97dYKk4i4+YVbkI+wuABOVJj0vE5nFdAwOBy6AB2kwGDNTMKmMG76ehF1ec+RDuLV3AXkQ8u9Xb3H9s6+1Aodp0jlTAEAeg7fV9H1DAM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1721126559; c=relaxed/simple;
-	bh=7RFgBSAJPt04ugNtDQl1deQ9AiecSraMLJ21oXU/DcU=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=ArdLaO+7UgH6Q5wJNVR5jkcGYtkU6fSZg7DdZNaM9+W8pnjA4N50giYTfn1pNU0ves6m4MXnfc/c4Hnhl9SfaOn8E0AUKEjTLpZFvFZIYSnBg7DnjCAGhp0i5eXbgimqs1XJFj25S43Joj8CCDdWs2+yIenqSkBe1JcJCdZ0Cc0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=P4Osg0Yc; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1721128446; c=relaxed/simple;
+	bh=if+tcTirPJEjQZ9+hNu3pbhZeoosE+eYDqBL2iUCmhY=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=rHy1+azpywQVftRFwwIaCKDX/5CtPveQ5O7R0NTs8TBe4J5CRr5eXXGb7qbbJSDcKL1ulgHrcaPPCMSIr7sArLtLSbJNFHHdT+3Kcuyk4R/GN5i3YA0wMHlizmy/ZhAZU8VIKqISD5UhBNfYEfdB3evuspQWQ7OySAM0i1nKDBo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=X0VhN6dJ; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="P4Osg0Yc"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
-	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=SCZEah6PrbXpH+8WsAlk6jvlK8Lxwf0+bb+aHDaft3Q=; t=1721126555; x=1721731355; 
-	b=P4Osg0YcIpE/9ickX5HeyJ7iCJ4buHCDKscwAJLZ5e+2zIpBEvYTHgpXTRd40FviSDEPP644fXy
-	4UMVMboTGyu/cJ7W9TQoCYpx6JmYd6sOirXvjK+42yKLVdVgveWkBA5aAJNAo8ZwIQIAZ+tYGuI3P
-	mqpOC4s7hWd69r+WpTniJZUeS03E4fnaL302Xc6BRQnYD/PWCtmQtylnnzE6WdH2JgsXXm+qvqVdw
-	GYf2IRRCETkRXA3HePTZKPYBUkSFt2aMe8DFEGrqO844DheoeczUZVuttrSQXPiZ1UjSU4/N6L57M
-	udTnOqPTPkDidhw/gEoPGJSB/XUYHkSG6tQQ==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.98)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1sTfda-00000000z39-3Z71; Tue, 16 Jul 2024 12:42:26 +0200
-Received: from p5b13a475.dip0.t-ipconnect.de ([91.19.164.117] helo=[192.168.178.20])
-          by inpost2.zedat.fu-berlin.de (Exim 4.98)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1sTfda-000000023xN-2euo; Tue, 16 Jul 2024 12:42:26 +0200
-Message-ID: <831887db73d9eafc50940315ed44139107bd5f2a.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v4] sh: Restructure setup code to reserve memory regions
- earlier
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Oreoluwa Babatunde <quic_obabatun@quicinc.com>, 
-	ysato@users.sourceforge.jp, dalias@libc.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
- robh+dt@kernel.org,  kernel@quicinc.com
-Date: Tue, 16 Jul 2024 12:42:25 +0200
-In-Reply-To: <121b8077-bc6d-42a3-8ec2-c792e84bd947@quicinc.com>
-References: <20240711214438.3920702-1-quic_obabatun@quicinc.com>
-	 <a68b7cd0e3b143f023414feca279deb768d43575.camel@physik.fu-berlin.de>
-	 <121b8077-bc6d-42a3-8ec2-c792e84bd947@quicinc.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.52.3 
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="X0VhN6dJ"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B5C31C116B1;
+	Tue, 16 Jul 2024 11:13:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1721128446;
+	bh=if+tcTirPJEjQZ9+hNu3pbhZeoosE+eYDqBL2iUCmhY=;
+	h=From:To:Cc:Subject:Date:From;
+	b=X0VhN6dJqtR1KjO/1/PYElok6T5zjLlAKyzAypL4irsN/XbVAZy4V4Ko34zh46mCO
+	 InPiqKaVQ28tbxcwQ4aVimRVIlcIG7FVByt+0X2HkmQfxKOSXpmdUg7tVXXoPVH3O7
+	 BbMLzCEmNdPLheUOe2MVcpjILhanEbMxkyz6KTiQZpDiolKr6j+cpBRJ2wk7C/sjqQ
+	 hk60jD7l8cR3gBkksbgwjOCoU9d6TY2/m3y2t9kHZ617IrSe3LuiYwKTxaVw+SfXFM
+	 /XDwcDu/Py0vDadDsPVCXJ0VUNSQL7zgFwuHdJEjuK5Diy7HEvAJBTt1a5YVs8Sy7X
+	 kjipDXq1Ftupw==
+From: Mike Rapoport <rppt@kernel.org>
+To: linux-kernel@vger.kernel.org
+Cc: Alexander Gordeev <agordeev@linux.ibm.com>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Arnd Bergmann <arnd@arndb.de>,
+	Borislav Petkov <bp@alien8.de>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	Dan Williams <dan.j.williams@intel.com>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	David Hildenbrand <david@redhat.com>,
+	"David S. Miller" <davem@davemloft.net>,
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+	Heiko Carstens <hca@linux.ibm.com>,
+	Huacai Chen <chenhuacai@kernel.org>,
+	Ingo Molnar <mingo@redhat.com>,
+	Jiaxun Yang <jiaxun.yang@flygoat.com>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Jonathan Cameron <jonathan.cameron@huawei.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Mike Rapoport <rppt@kernel.org>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	"Rafael J. Wysocki" <rafael@kernel.org>,
+	Rob Herring <robh@kernel.org>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Vasily Gorbik <gor@linux.ibm.com>,
+	Will Deacon <will@kernel.org>,
+	linux-arm-kernel@lists.infradead.org,
+	loongarch@lists.linux.dev,
+	linux-mips@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	sparclinux@vger.kernel.org,
+	linux-acpi@vger.kernel.org,
+	linux-cxl@vger.kernel.org,
+	nvdimm@lists.linux.dev,
+	devicetree@vger.kernel.org,
+	linux-arch@vger.kernel.org,
+	linux-mm@kvack.org,
+	x86@kernel.org
+Subject: [PATCH 00/17] mm: introduce numa_memblks
+Date: Tue, 16 Jul 2024 14:13:29 +0300
+Message-ID: <20240716111346.3676969-1-rppt@kernel.org>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Transfer-Encoding: 8bit
 
-Hi Oreoluwa,
+From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
 
-On Mon, 2024-07-15 at 17:12 -0700, Oreoluwa Babatunde wrote:
-> On 7/13/2024 12:58 AM, John Paul Adrian Glaubitz wrote:
->=20
-> Hi Adrian,
->=20
-> > > diff --git a/arch/sh/include/asm/setup.h b/arch/sh/include/asm/setup.=
-h
-> > > index 84bb23a771f3..f8b814fb1c7f 100644
-> > > --- a/arch/sh/include/asm/setup.h
-> > > +++ b/arch/sh/include/asm/setup.h
-> > > @@ -19,7 +19,6 @@
-> > >  #define COMMAND_LINE ((char *) (PARAM+0x100))
-> > > =20
-> > >  void sh_mv_setup(void);
-> > > -void check_for_initrd(void);
-> > >  void per_cpu_trap_init(void);
-> > >  void sh_fdt_init(phys_addr_t dt_phys);
-> > > =20
-> > > diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
-> > > index 620e5cf8ae1e..8477491f4ffd 100644
-> > > --- a/arch/sh/kernel/setup.c
-> > > +++ b/arch/sh/kernel/setup.c
-> > > @@ -35,6 +35,7 @@
-> > >  #include <asm/io.h>
-> > >  #include <asm/page.h>
-> > >  #include <asm/elf.h>
-> > > +#include <asm/kexec.h>
-> > >  #include <asm/sections.h>
-> > >  #include <asm/irq.h>
-> > >  #include <asm/setup.h>
-> > > @@ -114,7 +115,7 @@ static int __init early_parse_mem(char *p)
-> > >  }
-> > >  early_param("mem", early_parse_mem);
-> > > =20
-> > > -void __init check_for_initrd(void)
-> > > +static void __init check_for_initrd(void)
-> > >  {
-> > >  #ifdef CONFIG_BLK_DEV_INITRD
-> > >  	unsigned long start, end;
-> > > @@ -172,6 +173,42 @@ void __init check_for_initrd(void)
-> > >  #endif
-> > >  }
-> > Making check_for_initrd() static seems like an unrelated change to me o=
-r am
-> > I missing something? If yes, it should go into a separate patch.
-> ack.
-> > > +static void __init early_reserve_mem(void)
-> > > +{
-> > > +	unsigned long start_pfn;
-> > > +	u32 zero_base =3D (u32)__MEMORY_START + (u32)PHYSICAL_OFFSET;
-> > > +	u32 start =3D zero_base + (u32)CONFIG_ZERO_PAGE_OFFSET;
-> > > +
-> > > +	/*
-> > > +	 * Partially used pages are not usable - thus
-> > > +	 * we are rounding upwards:
-> > > +	 */
-> > > +	start_pfn =3D PFN_UP(__pa(_end));
-> > > +
-> > > +	/*
-> > > +	 * Reserve the kernel text and Reserve the bootmem bitmap. We do
-> > > +	 * this in two steps (first step was init_bootmem()), because
-> > > +	 * this catches the (definitely buggy) case of us accidentally
-> > > +	 * initializing the bootmem allocator with an invalid RAM area.
-> > > +	 */
-> > > +	memblock_reserve(start, (PFN_PHYS(start_pfn) + PAGE_SIZE - 1) - sta=
-rt);
-> > > +
-> > > +	/*
-> > > +	 * Reserve physical pages below CONFIG_ZERO_PAGE_OFFSET.
-> > > +	 */
-> > > +	if (CONFIG_ZERO_PAGE_OFFSET !=3D 0)
-> > > +		memblock_reserve(zero_base, CONFIG_ZERO_PAGE_OFFSET);
-> > > +
-> > > +	/*
-> > > +	 * Handle additional early reservations
-> > > +	 */
-> > > +	check_for_initrd();
-> > > +	reserve_crashkernel();
-> > > +
-> > > +	if (sh_mv.mv_mem_reserve)
-> > > +		sh_mv.mv_mem_reserve();
-> > > +}
-> > > +
-> > >  #ifndef CONFIG_GENERIC_CALIBRATE_DELAY
-> > >  void calibrate_delay(void)
-> > >  {
-> > I'm not really happy with moving early_reserve_mem() from mm/init.c to
-> > kernel/setup.c. Can't we just leave it where it is while still keeping
-> > the changes to paging_init()?
-> ack.
-> >=20
-> > > @@ -319,9 +356,14 @@ void __init setup_arch(char **cmdline_p)
-> > > =20
-> > >  	sh_mv_setup();
-> > > =20
-> > > +	sh_mv.mv_mem_init();
-> > > +
-> > >  	/* Let earlyprintk output early console messages */
-> > >  	sh_early_platform_driver_probe("earlyprintk", 1, 1);
-> > > =20
-> > > +	/* set aside reserved memory regions */
-> > > +	early_reserve_mem();
-> > > +
-> > >  #ifdef CONFIG_OF_EARLY_FLATTREE
-> > >  #ifdef CONFIG_USE_BUILTIN_DTB
-> > >  	unflatten_and_copy_device_tree();
->=20
-> I'll make adjustments based on your comments and
-> resend another version.
+Hi,
 
-Okay, I will wait with my pull request to Linus a few more days then.
+Following the discussion about handling of CXL fixed memory windows on
+arm64 [1] I decided to bite the bullet and move numa_memblks from x86 to
+the generic code so they will be available on arm64/riscv and maybe on
+loongarch sometime later.
 
-Thanks so much for being super patient with me. It took me way too long
-to test and review your patch, but I hope in the end we'll get the best
-possible version merged.
+While it could be possible to use memblock to describe CXL memory windows,
+it currently lacks notion of unpopulated memory ranges and numa_memblks
+does implement this.
 
-Adrian
+Another reason to make numa_memblks generic is that both arch_numa (arm64
+and riscv) and loongarch use trimmed copy of x86 code although there is no
+fundamental reason why the same code cannot be used on all these platforms.
+Having numa_memblks in mm/ will make it's interaction with ACPI and FDT
+more consistent and I believe will reduce maintenance burden.
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+And with generic numa_memblks it is (almost) straightforward to enable NUMA
+emulation on arm64 and riscv.
+
+The first 5 commits in this series are cleanups that are not strictly
+related to numa_memblks.
+
+Commits 6-11 slightly reorder code in x86 to allow extracting numa_memblks
+and NUMA emulation to the generic code.
+
+Commits 12-14 actually move the code from arch/x86/ to mm/ and commit 15
+does some aftermath cleanups.
+
+Commit 16 switches arch_numa to numa_memblks.
+
+Commit 17 enables usage of phys_to_target_node() and
+memory_add_physaddr_to_nid() with numa_memblks.
+
+[1] https://lore.kernel.org/all/20240529171236.32002-1-Jonathan.Cameron@huawei.com/
+
+Mike Rapoport (Microsoft) (17):
+  mm: move kernel/numa.c to mm/
+  MIPS: sgi-ip27: make NODE_DATA() the same as on all other
+    architectures
+  MIPS: loongson64: rename __node_data to node_data
+  arch, mm: move definition of node_data to generic code
+  arch, mm: pull out allocation of NODE_DATA to generic code
+  x86/numa: simplify numa_distance allocation
+  x86/numa: move FAKE_NODE_* defines to numa_emu
+  x86/numa_emu: simplify allocation of phys_dist
+  x86/numa_emu: split __apicid_to_node update to a helper function
+  x86/numa_emu: use a helper function to get MAX_DMA32_PFN
+  x86/numa: numa_{add,remove}_cpu: make cpu parameter unsigned
+  mm: introduce numa_memblks
+  mm: move numa_distance and related code from x86 to numa_memblks
+  mm: introduce numa_emulation
+  mm: make numa_memblks more self-contained
+  arch_numa: switch over to numa_memblks
+  mm: make range-to-target_node lookup facility a part of numa_memblks
+
+ arch/arm64/include/asm/Kbuild                 |   1 +
+ arch/arm64/include/asm/mmzone.h               |  13 -
+ arch/arm64/include/asm/topology.h             |   1 +
+ arch/loongarch/include/asm/Kbuild             |   1 +
+ arch/loongarch/include/asm/mmzone.h           |  16 -
+ arch/loongarch/include/asm/topology.h         |   1 +
+ arch/loongarch/kernel/numa.c                  |  21 -
+ arch/mips/include/asm/mach-ip27/mmzone.h      |   1 -
+ .../mips/include/asm/mach-loongson64/mmzone.h |   4 -
+ arch/mips/loongson64/numa.c                   |  20 +-
+ arch/mips/sgi-ip27/ip27-memory.c              |   2 +-
+ arch/powerpc/include/asm/mmzone.h             |   6 -
+ arch/powerpc/mm/numa.c                        |  26 +-
+ arch/riscv/include/asm/Kbuild                 |   1 +
+ arch/riscv/include/asm/mmzone.h               |  13 -
+ arch/riscv/include/asm/topology.h             |   4 +
+ arch/s390/include/asm/Kbuild                  |   1 +
+ arch/s390/include/asm/mmzone.h                |  17 -
+ arch/s390/kernel/numa.c                       |   3 -
+ arch/sh/include/asm/mmzone.h                  |   3 -
+ arch/sh/mm/init.c                             |   7 +-
+ arch/sh/mm/numa.c                             |   3 -
+ arch/sparc/include/asm/mmzone.h               |   4 -
+ arch/sparc/mm/init_64.c                       |  11 +-
+ arch/x86/Kconfig                              |   9 +-
+ arch/x86/include/asm/Kbuild                   |   1 +
+ arch/x86/include/asm/mmzone.h                 |   6 -
+ arch/x86/include/asm/mmzone_32.h              |  17 -
+ arch/x86/include/asm/mmzone_64.h              |  18 -
+ arch/x86/include/asm/numa.h                   |  24 +-
+ arch/x86/include/asm/sparsemem.h              |   9 -
+ arch/x86/mm/Makefile                          |   1 -
+ arch/x86/mm/amdtopology.c                     |   1 +
+ arch/x86/mm/numa.c                            | 618 +-----------------
+ arch/x86/mm/numa_internal.h                   |  24 -
+ drivers/acpi/numa/srat.c                      |   1 +
+ drivers/base/Kconfig                          |   1 +
+ drivers/base/arch_numa.c                      | 223 ++-----
+ drivers/cxl/Kconfig                           |   2 +-
+ drivers/dax/Kconfig                           |   2 +-
+ drivers/of/of_numa.c                          |   1 +
+ include/asm-generic/mmzone.h                  |   5 +
+ include/asm-generic/numa.h                    |   6 +-
+ include/linux/numa.h                          |   5 +
+ include/linux/numa_memblks.h                  |  58 ++
+ kernel/Makefile                               |   1 -
+ kernel/numa.c                                 |  26 -
+ mm/Kconfig                                    |  11 +
+ mm/Makefile                                   |   3 +
+ mm/numa.c                                     |  57 ++
+ {arch/x86/mm => mm}/numa_emulation.c          |  42 +-
+ mm/numa_memblks.c                             | 565 ++++++++++++++++
+ 52 files changed, 847 insertions(+), 1070 deletions(-)
+ delete mode 100644 arch/arm64/include/asm/mmzone.h
+ delete mode 100644 arch/loongarch/include/asm/mmzone.h
+ delete mode 100644 arch/riscv/include/asm/mmzone.h
+ delete mode 100644 arch/s390/include/asm/mmzone.h
+ delete mode 100644 arch/x86/include/asm/mmzone.h
+ delete mode 100644 arch/x86/include/asm/mmzone_32.h
+ delete mode 100644 arch/x86/include/asm/mmzone_64.h
+ create mode 100644 include/asm-generic/mmzone.h
+ create mode 100644 include/linux/numa_memblks.h
+ delete mode 100644 kernel/numa.c
+ create mode 100644 mm/numa.c
+ rename {arch/x86/mm => mm}/numa_emulation.c (94%)
+ create mode 100644 mm/numa_memblks.c
+
+
+base-commit: 22a40d14b572deb80c0648557f4bd502d7e83826
+-- 
+2.43.0
+
