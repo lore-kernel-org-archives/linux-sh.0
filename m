@@ -1,66 +1,66 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 33E3E181304
-	for <linux-sh@vger.kernel.org>; Wed, 17 Jul 2024 14:35:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C356F181B89
+	for <linux-sh@vger.kernel.org>; Wed, 17 Jul 2024 14:42:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1721226938; cv=none; b=NcdTyTT2E+o7FnP+HRK9DHJRq7gMZ6CSDSlEZh9NjdyVwkX+w1pB0T1xbQiPQ8Qsd/BLzgzYdUD1NFoDH9Is5gFJDmPpQ4l4ElP0pBQyiIAvSbFBKa1rMQR9pP5y/KogXRpFgXTiJZdJyKrUP7HKnO4Qj/Jcudmby9DgTGQbh88=
+	t=1721227379; cv=none; b=nz5kpbRLRBiUbtlrBUprFJI1UVAOpBgscfX3OIKnwWCalch77L4o9/zylqB9V3x3V8NK5AWmoKjBiI9wMmIfm9jF50dTm078uCTuCw5lgk/2SEMEBfxonAtnOeI9adOqFBIw3m4zISkol6VncRdxnJbPRi+AurRPfAznUWVN5sE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1721226938; c=relaxed/simple;
-	bh=cE2tn/xXAU4fTyf4A7GSlpRx0wek3DWIwCjC+4cyVmc=;
+	s=arc-20240116; t=1721227379; c=relaxed/simple;
+	bh=zUVIvHCsTCCXlgAEsrezINakY7JgduDyy2tKWsIjEJc=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=F1u70c9BiDTt0fcrb+9DyT1Fws5uggXkmH83cT+H6bbdgM5nQdbTHbSvhKiroVbjIWogz6QIMN0e7An38v9QRkdoKRi+UbYDcUlt0a7ifW0lNtEzGfiqSzD/sxRTVNfR7R6ZvzxWEXjVlcXp31ITngU3tkhGrqV1pOBpe/+z54Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=QH7qYYaE; arc=none smtp.client-ip=170.10.129.124
+	 In-Reply-To:Content-Type; b=Yx9mzkijVCIRxKT6qTXAFHIgr76w3BY+6CPwDfVic4kEbyS2dGo93pXvsCaIvI9bPreg0NmT1TeX4MF5dztGKNwIBdJB2pFJOQ6m8hNQgp5ymz/iHKtzhYhhKtOVuvHM4F7NXnHcND95epI1R3a33Zy837TR17YDXW+ot1fYGMo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=KnAhcoV/; arc=none smtp.client-ip=170.10.133.124
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="QH7qYYaE"
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="KnAhcoV/"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1721226936;
+	s=mimecast20190719; t=1721227376;
 	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
 	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
-	bh=N1ZA4THI/NaMS6hGpfXHfX7B4XiRlWC0xjiP6EIcxcw=;
-	b=QH7qYYaEqCETSgezUk6gHH8IDUZ3XLySmeqCfUBl9xk0+wc7aNd5hXA29mTCbnri3Rye1I
-	eK3vOwWZH6MC6unaHWWABIMvsnLsIvrxX/bPPzsjG8Jy4RkAD05Nf2KYNLf0LCoqjkr8I5
-	4uWiZ+611DfoAS7GIqLxJKeiCV/fu34=
-Received: from mail-wm1-f71.google.com (mail-wm1-f71.google.com
- [209.85.128.71]) by relay.mimecast.com with ESMTP with STARTTLS
+	bh=M2vL8rRc69gotddfUAFMWYk4nVzDmp9tj4adCdBDziU=;
+	b=KnAhcoV/nrmH/vNi6zw7j1gfWPjlqpxQDxYgyLcQ2bQsH0b0qZC7WKEkMUgy1vGHN3kMYi
+	T0/qOGrbOmwSgz0gQHSPbSFgV2X96gsfcf0KDQyIl4U7PXtJcIJt+7NeEeTxErkPSGgcGs
+	wmUNL9ctheChx1/4+FTQOOV8dTqoDyA=
+Received: from mail-ej1-f70.google.com (mail-ej1-f70.google.com
+ [209.85.218.70]) by relay.mimecast.com with ESMTP with STARTTLS
  (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-227-Y9IrB_WNMTi7wJyTmURGfw-1; Wed, 17 Jul 2024 10:35:34 -0400
-X-MC-Unique: Y9IrB_WNMTi7wJyTmURGfw-1
-Received: by mail-wm1-f71.google.com with SMTP id 5b1f17b1804b1-426724679f0so4454505e9.0
-        for <linux-sh@vger.kernel.org>; Wed, 17 Jul 2024 07:35:34 -0700 (PDT)
+ us-mta-128-DYi8WXUJNWqiD8S1WULKiw-1; Wed, 17 Jul 2024 10:42:53 -0400
+X-MC-Unique: DYi8WXUJNWqiD8S1WULKiw-1
+Received: by mail-ej1-f70.google.com with SMTP id a640c23a62f3a-a77cb9467beso135110066b.0
+        for <linux-sh@vger.kernel.org>; Wed, 17 Jul 2024 07:42:53 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1721226934; x=1721831734;
+        d=1e100.net; s=20230601; t=1721227372; x=1721832172;
         h=content-transfer-encoding:in-reply-to:organization:autocrypt
          :content-language:from:references:cc:to:subject:user-agent
          :mime-version:date:message-id:x-gm-message-state:from:to:cc:subject
          :date:message-id:reply-to;
-        bh=N1ZA4THI/NaMS6hGpfXHfX7B4XiRlWC0xjiP6EIcxcw=;
-        b=n2LMAV9AYYwL1GKglbB6T28mOIg6xa8kFYusJmBJ0ztuMcQRlXtL/Dwi25T/5p/PFH
-         t8FVHavsBg4lLaqc/fWfp9BaDzWY1b33YPKya4h65g/6q3MBkg4H8JLqFTXGpWLIxUaz
-         8xBmr9Rc+O5P7iChmOC1TAbcxOIvjfXGXVbtw1OMNdmB8+tV7HGbLL3bQg9kFM1UJWWe
-         ydnYH7xKSns/pT/tp/sFoNuxvtsLYmi/6ZugR8kVQRixzAKlfy+KckfiOow0fGDEy58E
-         3GnfSOf1uFpor3q5Xfg4OcJoS3T/MkGq0p5TtTLAuzU2hZCQtjDcj7nioGwA+1/pxzmP
-         lPfw==
-X-Forwarded-Encrypted: i=1; AJvYcCUcbGE6KEVpxApSnRZDiyl2rOijx0HaMftyAs5cHTF7V7imSwA9Jql12A4yJjESlZ5295XGmWM4E6lEF8lPk5ASTIgSNnSUZLY=
-X-Gm-Message-State: AOJu0Yz2DxPyWQ+Zrv13ROhU1NBXIyrk/WugGUGnMJ4S/82FCoq81Dt1
-	Jn4rUxV80Magvh31d+ZA1jNRx4PLhKMrCj5oT0HZnYWTyg1gz2Es9d5RtnQoha+7pj+rMKjuTQu
-	ds15EAvkCxOU3chw80GY6FYnAs6QcftE1SxoC5H+HcxzgFx/wL8n4mT1/
-X-Received: by 2002:a05:600c:5121:b0:426:618a:a092 with SMTP id 5b1f17b1804b1-427bb8e85c4mr39358885e9.13.1721226933820;
-        Wed, 17 Jul 2024 07:35:33 -0700 (PDT)
-X-Google-Smtp-Source: AGHT+IEX70FS4S+9yQpWhIxbutDmeW8IdP8r1sizijP5dFKFOs14MIR+fctf34DTHwiKpauxrYwt+w==
-X-Received: by 2002:a05:600c:5121:b0:426:618a:a092 with SMTP id 5b1f17b1804b1-427bb8e85c4mr39358625e9.13.1721226933478;
-        Wed, 17 Jul 2024 07:35:33 -0700 (PDT)
+        bh=M2vL8rRc69gotddfUAFMWYk4nVzDmp9tj4adCdBDziU=;
+        b=JBV+MLzjBL8SEnHkAIEcC1q373d382baG5z1vq5USRNuzO2n66AC/aDo5I32QenNmy
+         hAHanhWYIJw/aLcIQwh5r8HNFJ2fK25ZPtn1LvMcwCBymyKcCRm/y/C5Ypm9VPtDjJ2V
+         82OE/RbBNV0kCXC80N0SMpWTml8CtyXAqMaHBlHrL/E++7PEBRXUHO8ANn0Aw/lEU+n0
+         3L3azNytPkS9rjWilvOEOwXLWHGQoyzibRFFqYH/3+Kt/1PLrUxjuJysEJow28RkqBfl
+         rGbXvBxnEijJHLOBJcxhPa8YXS7Jg9xHo/GTUgJcf2nnNJ9GNPHfDwJ9DY58YLnBE/uM
+         3jWA==
+X-Forwarded-Encrypted: i=1; AJvYcCUwJA77Bv0JG9y6ZK4GuYTEBG1m+ajoXhK8pi9ZWkjkWpHp8vDttwIMRZEexltQhiPxi6YJsJH1oTt3zy0B8JYK2Ok1HpJ3wAY=
+X-Gm-Message-State: AOJu0YzSoQfR7ZbonPg4xM4L3c03IlpHl01pY7HWIDUnJkM+AUhv4jEq
+	6gkekT43gZSmXeMG8qqVj7c0BgY1LHB8/xZtx6tRsi9gAMwhsLfTTozeXow++mt5neJXneR8OTh
+	vCyXbYVpTEequKTcyU9wAjVIW7AwCyBAAqpC+2wYBn+Dudr42vb7JiEfW
+X-Received: by 2002:a17:906:1c0f:b0:a6f:46f1:5434 with SMTP id a640c23a62f3a-a79eda04168mr521687266b.6.1721227372353;
+        Wed, 17 Jul 2024 07:42:52 -0700 (PDT)
+X-Google-Smtp-Source: AGHT+IEi6DrDSqxxObcD+4KvqZEIVIf6XCAhrJ0LWIBdtNZjezxwhMU5bcwwGQ0tRJ1krbBOftaEqw==
+X-Received: by 2002:a17:906:1c0f:b0:a6f:46f1:5434 with SMTP id a640c23a62f3a-a79eda04168mr521682366b.6.1721227371866;
+        Wed, 17 Jul 2024 07:42:51 -0700 (PDT)
 Received: from ?IPV6:2003:cb:c714:c00:b08b:a871:ce99:dfde? (p200300cbc7140c00b08ba871ce99dfde.dip0.t-ipconnect.de. [2003:cb:c714:c00:b08b:a871:ce99:dfde])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-427c77a8078sm244165e9.18.2024.07.17.07.35.31
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-a79bc5d2018sm453924466b.85.2024.07.17.07.42.49
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 17 Jul 2024 07:35:33 -0700 (PDT)
-Message-ID: <bceb7745-dfbc-446c-9fc0-38aa8ae4cb6a@redhat.com>
-Date: Wed, 17 Jul 2024 16:35:31 +0200
+        Wed, 17 Jul 2024 07:42:51 -0700 (PDT)
+Message-ID: <220da8ed-337a-4b1e-badf-2bff1d36e6c3@redhat.com>
+Date: Wed, 17 Jul 2024 16:42:48 +0200
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -68,7 +68,8 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 01/17] mm: move kernel/numa.c to mm/
+Subject: Re: [PATCH 05/17] arch, mm: pull out allocation of NODE_DATA to
+ generic code
 To: Mike Rapoport <rppt@kernel.org>, linux-kernel@vger.kernel.org
 Cc: Alexander Gordeev <agordeev@linux.ibm.com>,
  Andreas Larsson <andreas@gaisler.com>,
@@ -96,7 +97,7 @@ Cc: Alexander Gordeev <agordeev@linux.ibm.com>,
  devicetree@vger.kernel.org, linux-arch@vger.kernel.org, linux-mm@kvack.org,
  x86@kernel.org
 References: <20240716111346.3676969-1-rppt@kernel.org>
- <20240716111346.3676969-2-rppt@kernel.org>
+ <20240716111346.3676969-6-rppt@kernel.org>
 From: David Hildenbrand <david@redhat.com>
 Autocrypt: addr=david@redhat.com; keydata=
  xsFNBFXLn5EBEAC+zYvAFJxCBY9Tr1xZgcESmxVNI/0ffzE/ZQOiHJl6mGkmA1R7/uUpiCjJ
@@ -143,7 +144,7 @@ Autocrypt: addr=david@redhat.com; keydata=
  jPrnvUsUUsjRoRNJjKKA/REq+sAnhkNPPZ/NNMjaZ5b8Tovi8C0tmxiCHaQYqj7G2rgnT0kt
  WNyWQQ==
 Organization: Red Hat
-In-Reply-To: <20240716111346.3676969-2-rppt@kernel.org>
+In-Reply-To: <20240716111346.3676969-6-rppt@kernel.org>
 X-Mimecast-Spam-Score: 0
 X-Mimecast-Originator: redhat.com
 Content-Language: en-US
@@ -153,12 +154,88 @@ Content-Transfer-Encoding: 7bit
 On 16.07.24 13:13, Mike Rapoport wrote:
 > From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
 > 
-> The stub functions in kernel/numa.c belong to mm/ rather than to kernel/
+> Architectures that support NUMA duplicate the code that allocates
+> NODE_DATA on the node-local memory with slight variations in reporting
+> of the addresses where the memory was allocated.
+> 
+> Use x86 version as the basis for the generic alloc_node_data() function
+> and call this function in architecture specific numa initialization.
 > 
 > Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
 > ---
 
-Acked-by: David Hildenbrand <david@redhat.com>
+[...]
+
+> diff --git a/arch/mips/loongson64/numa.c b/arch/mips/loongson64/numa.c
+> index 9208eaadf690..909f6cec3a26 100644
+> --- a/arch/mips/loongson64/numa.c
+> +++ b/arch/mips/loongson64/numa.c
+> @@ -81,12 +81,8 @@ static void __init init_topology_matrix(void)
+>   
+>   static void __init node_mem_init(unsigned int node)
+>   {
+> -	struct pglist_data *nd;
+>   	unsigned long node_addrspace_offset;
+>   	unsigned long start_pfn, end_pfn;
+> -	unsigned long nd_pa;
+> -	int tnid;
+> -	const size_t nd_size = roundup(sizeof(pg_data_t), SMP_CACHE_BYTES);
+
+One interesting change is that we now always round up to full pages on 
+architectures where we previously rounded up to SMP_CACHE_BYTES.
+
+I assume we don't really expect a significant growth in memory 
+consumption that we care about, especially because most systems with 
+many nodes also have  quite some memory around.
+
+
+> -/* Allocate NODE_DATA for a node on the local memory */
+> -static void __init alloc_node_data(int nid)
+> -{
+> -	const size_t nd_size = roundup(sizeof(pg_data_t), PAGE_SIZE);
+> -	u64 nd_pa;
+> -	void *nd;
+> -	int tnid;
+> -
+> -	/*
+> -	 * Allocate node data.  Try node-local memory and then any node.
+> -	 * Never allocate in DMA zone.
+> -	 */
+> -	nd_pa = memblock_phys_alloc_try_nid(nd_size, SMP_CACHE_BYTES, nid);
+> -	if (!nd_pa) {
+> -		pr_err("Cannot find %zu bytes in any node (initial node: %d)\n",
+> -		       nd_size, nid);
+> -		return;
+> -	}
+> -	nd = __va(nd_pa);
+> -
+> -	/* report and initialize */
+> -	printk(KERN_INFO "NODE_DATA(%d) allocated [mem %#010Lx-%#010Lx]\n", nid,
+> -	       nd_pa, nd_pa + nd_size - 1);
+> -	tnid = early_pfn_to_nid(nd_pa >> PAGE_SHIFT);
+> -	if (tnid != nid)
+> -		printk(KERN_INFO "    NODE_DATA(%d) on node %d\n", nid, tnid);
+> -
+> -	node_data[nid] = nd;
+> -	memset(NODE_DATA(nid), 0, sizeof(pg_data_t));
+> -
+> -	node_set_online(nid);
+> -}
+> -
+>   /**
+>    * numa_cleanup_meminfo - Cleanup a numa_meminfo
+>    * @mi: numa_meminfo to clean up
+> @@ -571,6 +538,7 @@ static int __init numa_register_memblks(struct numa_meminfo *mi)
+>   			continue;
+>   
+>   		alloc_node_data(nid);
+> +		node_set_online(nid);
+>   	}
+
+I can spot that we only remove a single node_set_online() call from x86.
+
+What about all the other architectures? Will there be any change in 
+behavior for them? Or do we simply set the nodes online later once more?
 
 -- 
 Cheers,
