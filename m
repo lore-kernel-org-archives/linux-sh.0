@@ -1,60 +1,52 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BE15814B08A;
-	Tue, 23 Jul 2024 07:57:15 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AB5F714B082
+	for <linux-sh@vger.kernel.org>; Tue, 23 Jul 2024 08:29:04 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1721721439; cv=none; b=NvFIcbRuGV6uQ5fOufB2LLU9efiDzfqcgTvKhXqCzCiGmVW+vXJMBjUr/lyLy8b+OLj5F9+mHvlqvTkwdNy8P3hy0BOuz4bh7mmFJGPy8DGKmKQxPpZeotxqjCr75t0JtqpsxksbiLNSqDvibigs3VoY4cVNDpHZHqWPoe6vdoQ=
+	t=1721723348; cv=none; b=McileL7fNZHn9K7ymSgi+uXsqCQbL2xqlhA5wkCZ/e7gnewq+xOdLtyuVWnqVQuiDNwnLV9ASYQD9qFgAO/ILah7yYy7gX4w4KklQxsYevbkjyOcR/enf/jiNYFJQCViaQc1dTEI5TQkfZk5OcUpc4spE7u3gQwvR/G/dg2e3BI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1721721439; c=relaxed/simple;
-	bh=wnJ9pNLUHxA7kxh4RBSUeBXEOgCbqfzL9FdC3ImKuG8=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=OyvdOOYZKma+dlFCTut9Y2slRdWqaMDzpGSvE7Iq1pb0MERpxmVfeI062TtFwfyz8EubIfQt+kS2tp9kX+o8rWXvZqZx6+jZsT7oOU/zt/gxD8rW/So74ZvXE/gEKXg+sRxiM2Rs+4p7oylUpQgKXdNpCl3ldenCihuzEYXzma0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=nfRy98L0; arc=none smtp.client-ip=130.133.4.66
+	s=arc-20240116; t=1721723348; c=relaxed/simple;
+	bh=sOdyJObdIYM75Z8CvydTybkoQXU3vc4PCOmj/wQLEgs=;
+	h=Message-ID:Subject:From:To:Cc:Date:Content-Type:MIME-Version; b=j9jPJexRb//i4wiygxXKICLDB9UQ8Nj/1K5+s9VXTVQJ1MfU9cmFvAOtLM+IAOfZqDPjEWgVBGBK/NffWOMSvMb6MaF2YeYMpyVB8UzvoR0+0y0zrqhXcJ37yjmszmu0hd122w25kTDK9qEjGVRU5PHEPaB4YeDYyxFwJE5SZdA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=I1txTEX5; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="nfRy98L0"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="I1txTEX5"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
-	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=ti3iYOoAZ4cKNtccnPGKPwzJ+setr/cMX0cIJgV4LLM=; t=1721721436; x=1722326236; 
-	b=nfRy98L0q0dag7U0JVgy2VHhi+UlJSTfLoykOPjA9N2bpV3HO870P9AD11uNpn4r3USM100Cm1f
-	mcUrCU3mAi5FeaK9+Zu6+wg6q77RBhfG1YO3qcGTPok9aDeVHbYUDdilLmK89RSd4bSZ4825JsHyB
-	iXu3Uz/j0GZVPGXneMY25OYHWh+tEptywk710cHNtb9hLjhw5g51DUE6Ns19cDKLByW8zHpNmZKxZ
-	h8W4SHVKZdhrD2FeRrQn82YpUow8Lwfh6U77WVLPPVVCYxLNf09E2BPPZBKCok0BrIGdzddIikoTb
-	r6NgRfuW08CElTDpEsw6qMcQ09h4HicHL2fw==;
+	Content-Type:Date:Cc:To:From:Subject:Message-ID:Sender:Reply-To:Content-ID:
+	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+	:Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+	List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=ZOHOwdhqfhi2jUesVsQnc+Z+W82ysKIfaShgvMR7/aA=; t=1721723344; x=1722328144; 
+	b=I1txTEX5GEOA8QFOmsTDjdr7RcJ7cY7UCN2FdrHuPSFORiKR0dFvSZOCq/mT3u+Vh3IABgJ1YD+
+	RWH90LJ5jgNAoe7lWBITn3djqrID84yWu2rgQOQGR7+JWfYckV2mrdxDk8UcQgNJw7+vB1QnzggXn
+	/XAfATgSZyynR/oPWfOSVc2iv0TamUrXnLsGvgJDBH/6+wOmb79ynuSU3BQkCfPu30+JyAqF47kx7
+	voE+sIcGgvoSzdkOgWBNBXntlmCgm3kfiFztk91gc3GtFV9yWZCfYIExZlt+ZJ7zydUUgBtWHtTKV
+	pzBrycHK4CWJizKcsNUhahO9vNu4AhO7cfgw==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.98)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1sWAOQ-00000002mxu-2cyM; Tue, 23 Jul 2024 09:57:06 +0200
+          id 1sWAtJ-000000030c8-01Bw; Tue, 23 Jul 2024 10:29:01 +0200
 Received: from dynamic-089-012-111-099.89.12.pool.telefonica.de ([89.12.111.99] helo=[192.168.178.20])
           by inpost2.zedat.fu-berlin.de (Exim 4.98)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1sWAOQ-00000003bhf-1m6A; Tue, 23 Jul 2024 09:57:06 +0200
-Message-ID: <d12de025cfb71bcf2a86aa54251aac20f16d32b7.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH v4] sh: Restructure setup code to reserve memory regions
- earlier
+          id 1sWAtI-00000003gDT-3NRS; Tue, 23 Jul 2024 10:29:00 +0200
+Message-ID: <285ec5d64bc9ce8a8aef6d1f3f81c00da587584f.camel@physik.fu-berlin.de>
+Subject: [GIT PULL] sh updates for v6.11
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Oreoluwa Babatunde <quic_obabatun@quicinc.com>, 
-	ysato@users.sourceforge.jp, dalias@libc.org
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
- robh+dt@kernel.org,  kernel@quicinc.com
-Date: Tue, 23 Jul 2024 09:57:05 +0200
-In-Reply-To: <636943c1-6e32-4dd1-abdd-5a110e9aa07c@quicinc.com>
-References: <20240711214438.3920702-1-quic_obabatun@quicinc.com>
-	 <a68b7cd0e3b143f023414feca279deb768d43575.camel@physik.fu-berlin.de>
-	 <121b8077-bc6d-42a3-8ec2-c792e84bd947@quicinc.com>
-	 <831887db73d9eafc50940315ed44139107bd5f2a.camel@physik.fu-berlin.de>
-	 <636943c1-6e32-4dd1-abdd-5a110e9aa07c@quicinc.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Jeff Johnson <quic_jjohnson@quicinc.com>, Oscar Salvador
+ <osalvador@suse.de>,  Rich Felker <dalias@libc.org>, Yoshinori Sato
+ <ysato@users.sourceforge.jp>, linux-sh <linux-sh@vger.kernel.org>
+Date: Tue, 23 Jul 2024 10:29:00 +0200
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.52.3 
@@ -67,22 +59,64 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-Hi Oreluwa,
+Hi Linus,
 
-On Wed, 2024-07-17 at 19:22 -0700, Oreoluwa Babatunde wrote:
-> Thanks for your feedback and for working with me on this.
-> I have uploaded a new version here:
-> https://lore.kernel.org/all/20240718021822.1545976-1-quic_obabatun@quicin=
-c.com/
->=20
-> Please let me know if this properly addresses your comments.
+my pull request with sh updates is rather small this time and contains just=
+ three
+changes. The first change by Oscar Salvador drops support for memory hotplu=
+g and
+hotremove for sh as the kernel stopped supporting it on 32-bit platforms si=
+nce
+7ec58a2b941e ("mm/memory_hotplug: restrict CONFIG_MEMORY_HOTPLUG to 64 bit"=
+), this
+includes a follow-up change to update all affected KConfig and config files=
+. The
+third change comes from Jeff Johnson which adds the missing MODULE_DESCRIPT=
+ION()
+macro to the push-switch driver.
 
-Thanks. I'll have another look this week, including testing.
+The following changes since commit 1613e604df0cd359cf2a7fbd9be7a0bcfacfabd0=
+:
 
-But I have decided to send the pull request to Linus for v6.11 now,
-so I don't have to hurry with the review.
+  Linux 6.10-rc1 (2024-05-26 15:20:12 -0700)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/=
+sh-for-v6.11-tag1
+
+for you to fetch changes up to 0c5e964dad29aff321d4c006193d45d292756165:
+
+  sh: push-switch: Add missing MODULE_DESCRIPTION() macro (2024-07-16 17:52=
+:36 +0200)
+
+Thanks for pulling!
 
 Adrian
+
+----------------------------------------------------------------
+sh updates for v6.11
+
+- sh: push-switch: Add missing MODULE_DESCRIPTION() macro
+- sh: Kconfig: Drop CONFIG_MEMORY_{HOTPLUG,HOTREMOVE}
+- sh: Drop support for memory hotplug and memory hotremove
+
+----------------------------------------------------------------
+Jeff Johnson (1):
+      sh: push-switch: Add missing MODULE_DESCRIPTION() macro
+
+Oscar Salvador (2):
+      sh: Drop support for memory hotplug and memory hotremove
+      sh: Kconfig: Drop CONFIG_MEMORY_{HOTPLUG,HOTREMOVE}
+
+ arch/sh/Kconfig                     |  2 --
+ arch/sh/configs/apsh4ad0a_defconfig |  2 --
+ arch/sh/configs/sdk7786_defconfig   |  2 --
+ arch/sh/configs/shx3_defconfig      |  2 --
+ arch/sh/drivers/push-switch.c       |  1 +
+ arch/sh/mm/Kconfig                  |  4 ----
+ arch/sh/mm/init.c                   | 28 ----------------------------
+ 7 files changed, 1 insertion(+), 40 deletions(-)
 
 --=20
  .''`.  John Paul Adrian Glaubitz
