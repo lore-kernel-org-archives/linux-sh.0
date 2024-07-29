@@ -1,155 +1,103 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from andre.telenet-ops.be (andre.telenet-ops.be [195.130.132.53])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9A1B41A286;
-	Fri, 26 Jul 2024 09:40:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B2B9684E0D
+	for <linux-sh@vger.kernel.org>; Mon, 29 Jul 2024 09:35:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.132.53
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1721986831; cv=none; b=cSKIVcGjEuOI9NDHxWdnPFSYJGadddiqw0Bw/0X10KKNQXsK+T586XWkmjViHLQBi75JLWTcx9H8jD/kPQa1zuF3d+av7WhxwGg7eOxlMiDVNHR1rTzuAL+3Qb/YC/yfXZCT/5G/nII3OjHukfkaWkPJm2ERsBsTgwytbSaoGUY=
+	t=1722245752; cv=none; b=CZGJ2p9+5mw9SdIrPt9DCx/yS9B6mp7iooTAlvpcgHL8FaUbrs+mKUBvrodILx+yTIe2OHOSv+2lvSCuYxMGI5tLHUTtvS+izq3/i5ooWIIEDiBQuEBMiT5a6vh9VYmQGDy/WJMLK4gJHc54xmGRXGcHSvObAUcuOZLgVlHz7V8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1721986831; c=relaxed/simple;
-	bh=/W5kbKWSvcsVRYIH6lNhUURaeOalcNxprGj7xwqXc8w=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=EBFRF6w5Vc95asL3rDHbR9IyvGpyJW8RyLF4m8jvJfeiZ9TbNfkxFXhNTkEgyb2EfbKzOkhe8itvQ8yDnIc34LaRSjJTPpRK1uaaclvpze6DmYhMZ1ytM4j6x22UoK01mD6eCTSao2XH4fzP6WxwehwuZW3EQQVd+ba9Yh5W9zg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=erbBnHVt; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="erbBnHVt"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9535FC32782;
-	Fri, 26 Jul 2024 09:40:17 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1721986830;
-	bh=/W5kbKWSvcsVRYIH6lNhUURaeOalcNxprGj7xwqXc8w=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=erbBnHVtheMUAGs7sb6st1OpVR9FaIVHYj78yec90OKFphlkSZV5k/wAOzf9v7bHw
-	 qD/B4sk/oLODwsgv3p0XiErsiTqRDrNBJUfunPPt2ly/fcLhz146SfXfrJeznvLkZe
-	 U5MzHL6oELYwecQ5CE2FRGA7zc5ak6Om4kOHFE+xDor4Bpwaxj+6BMtxs9zpKRb0zj
-	 t0frO2fOt1mK8tuZJlZLn78/gGZpvARM3U+4DMaFSKK7j8fCZBwVSU2h9+v0uuhWmf
-	 doJp2N540bOFVoqeMi8DgOk/gCs4xM/TGYVOkNqWaGGBNobmAGDB5q2iYuCtHTHaiN
-	 kQwqqR1cv6trg==
-Date: Fri, 26 Jul 2024 12:40:03 +0300
-From: Mike Rapoport <rppt@kernel.org>
-To: Zi Yan <ziy@nvidia.com>
-Cc: linux-kernel@vger.kernel.org,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Christophe Leroy <christophe.leroy@csgroup.eu>,
-	Dan Williams <dan.j.williams@intel.com>,
-	Dave Hansen <dave.hansen@linux.intel.com>,
-	David Hildenbrand <david@redhat.com>,
-	"David S. Miller" <davem@davemloft.net>,
-	Davidlohr Bueso <dave@stgolabs.net>,
-	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-	Heiko Carstens <hca@linux.ibm.com>,
-	Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>,
-	Jiaxun Yang <jiaxun.yang@flygoat.com>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Jonathan Cameron <jonathan.cameron@huawei.com>,
-	Jonathan Corbet <corbet@lwn.net>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	"Rafael J. Wysocki" <rafael@kernel.org>,
-	Rob Herring <robh@kernel.org>,
-	Samuel Holland <samuel.holland@sifive.com>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Vasily Gorbik <gor@linux.ibm.com>, Will Deacon <will@kernel.org>,
-	devicetree@vger.kernel.org, linux-acpi@vger.kernel.org,
-	linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-	linux-cxl@vger.kernel.org, linux-doc@vger.kernel.org,
-	linux-mips@vger.kernel.org, linux-mm@kvack.org,
-	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-	linux-sh@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-	loongarch@lists.linux.dev, nvdimm@lists.linux.dev,
-	sparclinux@vger.kernel.org, x86@kernel.org
-Subject: Re: [PATCH v2 00/25] mm: introduce numa_memblks
-Message-ID: <ZqNu8zwjhiTkbpIB@kernel.org>
-References: <20240723064156.4009477-1-rppt@kernel.org>
- <1D474894-F8AC-427B-8F90-5A6808E77CC5@nvidia.com>
- <6336C276-113E-4D93-A09E-13420A6438D8@nvidia.com>
- <231F6DF6-96C8-4149-92CF-4FC03C9FE357@nvidia.com>
+	s=arc-20240116; t=1722245752; c=relaxed/simple;
+	bh=u8fssbfHLReHgwFcYSSHWp/ORzdxoBuiW/cGlV/ryAs=;
+	h=Date:From:To:cc:Subject:In-Reply-To:Message-ID:References:
+	 MIME-Version:Content-Type; b=cVUHFZRnv5lHVWGOf0k2AJIYb69EiaiaRbkMoOlowrLrpdfcTdDIXB1dLPHdfV+wngAvML1x/n9T++KOAZ8zcdFhgFh1GJHUikcxLKI/1DX8nz6bogDts8U8+O/7WvAG9CWMPKlcimEYrbfChp4zUx4W/+wDzXSfObEUp9rW0BM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.132.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed80:4441:3808:f850:4280])
+	by andre.telenet-ops.be with bizsmtp
+	id tMbo2C0080ZURL201MboMp; Mon, 29 Jul 2024 11:35:49 +0200
+Received: from geert (helo=localhost)
+	by ramsan.of.borg with local-esmtp (Exim 4.95)
+	(envelope-from <geert@linux-m68k.org>)
+	id 1sYMnE-003sYs-9i;
+	Mon, 29 Jul 2024 11:35:48 +0200
+Date: Mon, 29 Jul 2024 11:35:48 +0200 (CEST)
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+To: linux-kernel@vger.kernel.org
+cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, 
+    linux-mips@vger.kernel.org, dm-devel@lists.linux.dev, 
+    linuxppc-dev@lists.ozlabs.org, linux-btrfs@vger.kernel.org, 
+    intel-xe@lists.freedesktop.org, Arnd Bergmann <arnd@arndb.de>, 
+    linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
+Subject: Re: Build regressions/improvements in v6.11-rc1
+In-Reply-To: <20240729092807.2235937-1-geert@linux-m68k.org>
+Message-ID: <bd4e9928-17b3-9257-8ba7-6b7f9bbb639a@linux-m68k.org>
+References: <CAHk-=wiyNokz0d3b=GRORij=mGvwoYHy=+bv6m2Hu_VqNdg66g@mail.gmail.com> <20240729092807.2235937-1-geert@linux-m68k.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <231F6DF6-96C8-4149-92CF-4FC03C9FE357@nvidia.com>
+Content-Type: text/plain; charset=US-ASCII; format=flowed
 
-On Wed, Jul 24, 2024 at 10:48:42PM -0400, Zi Yan wrote:
-> On 24 Jul 2024, at 20:35, Zi Yan wrote:
-> > On 24 Jul 2024, at 18:44, Zi Yan wrote:
-> >>
-> >> Hi,
-> >>
-> >> I have tested this series on both x86_64 and arm64. It works fine on x86_64.
-> >> All numa=fake= options work as they did before the series.
-> >>
-> >> But I am not able to boot the kernel (no printout at all) on arm64 VM
-> >> (Mac mini M1 VMWare). By git bisecting, arch_numa: switch over to numa_memblks
-> >> is the first patch causing the boot failure. I see the warning:
-> >>
-> >> WARNING: modpost: vmlinux: section mismatch in reference: numa_add_cpu+0x1c (section: .text) -> early_cpu_to_node (section: .init.text)
-> >>
-> >> I am not sure if it is red herring or not, since changing early_cpu_to_node
-> >> to cpu_to_node in numa_add_cpu() from mm/numa_emulation.c did get rid of the
-> >> warning, but the system still failed to boot.
-> >>
-> >> Please note that you need binutils 2.40 to build the arm64 kernel, since there
-> >> is a bug(https://sourceware.org/bugzilla/show_bug.cgi?id=31924) in 2.42 preventing
-> >> arm64 kernel from booting as well.
-> >>
-> >> My config is attached.
-> >
-> > I get more info after adding earlycon to the boot option.
-> > pgdat is NULL, causing issues when free_area_init_node() is dereferencing
-> > it at first WARN_ON.
-> >
-> > FYI, my build is this series on top of v6.10 instead of the base commit,
-> > where the series applies cleanly on top v6.10.
-> 
-> OK, the issue comes from that my arm64 VM has no ACPI but x86_64 VM has it,
-> thus on arm64 VM numa_init(arch_acpi_numa_ini) failed in arch_numa_init()
-> and the code falls back to numa_init(dummy_numa_init). In dummy_numa_init(),
-> before patch 23 "arch_numa: switch over to numa_memblks", numa_add_memblk()
-> from drivers/base/arch_numa.c is called on arm64, which unconditionally
-> set 0 to numa_nodes_parsed. This is missing in the x86 version of
-> numa_add_memblk(), which is now used by all arch. By adding the patch
-> below, my arm64 kernel boots in the VM.
-> 
-> 
-> diff --git a/drivers/base/arch_numa.c b/drivers/base/arch_numa.c
-> index 806550239d08..354f15b8d9b7 100644
-> --- a/drivers/base/arch_numa.c
-> +++ b/drivers/base/arch_numa.c
-> @@ -279,6 +279,7 @@ static int __init dummy_numa_init(void)
->                 pr_err("NUMA init failed\n");
->                 return ret;
->         }
-> +       node_set(0, numa_nodes_parsed);
-> 
->         numa_off = true;
->         return 0;
-> 
-> 
-> Feel free to add
-> 
-> Tested-by: Zi Yan <ziy@nvidia.com> # for x86_64 and arm64
-> 
-> after you incorporate the fix.
+On Mon, 29 Jul 2024, Geert Uytterhoeven wrote:
+> Below is the list of build error/warning regressions/improvements in
+> v6.11-rc1[1] compared to v6.10[2].
+>
+> Summarized:
+>  - build errors: +7/-22
 
-Thanks a lot for testing, debugging and fixing! 
-> 
-> --
-> Best Regards,
-> Yan, Zi
+> [1] http://kisskb.ellerman.id.au/kisskb/branch/linus/head/8400291e289ee6b2bf9779ff1c83a291501f017b/ (all 132 configs)
 
+> 7 error regressions:
+>  + /kisskb/src/arch/mips/sgi-ip22/ip22-gio.c: error: initialization of 'int (*)(struct device *, const struct device_driver *)' from incompatible pointer type 'int (*)(struct device *, struct device_driver *)' [-Werror=incompatible-pointer-types]:  => 384:14
 
+mips-gcc8/ip22_defconfig
 
--- 
-Sincerely yours,
-Mike.
+>  + /kisskb/src/drivers/md/dm-integrity.c: error: logical not is only applied to the left hand side of comparison [-Werror=logical-not-parentheses]:  => 4718:45
+
+powerpc-gcc5/powerpc-all{mod,yes}config
+powerpc-gcc5/ppc64le_allmodconfig
+
+>  + /kisskb/src/fs/btrfs/inode.c: error: 'location.objectid' may be used uninitialized in this function [-Werror=maybe-uninitialized]:  => 5603:9
+>  + /kisskb/src/fs/btrfs/inode.c: error: 'location.type' may be used uninitialized in this function [-Werror=maybe-uninitialized]:  => 5674:5
+
+m68k-gcc8/m68k-allmodconfig
+mips-gcc8/mips-allmodconfig
+powerpc-gcc5/powerpc-all{mod,yes}config
+powerpc-gcc5/ppc64_defconfig
+
+>  + /kisskb/src/include/linux/compiler_types.h: error: call to '__compiletime_assert_933' declared with attribute error: FIELD_GET: mask is not constant:  => 510:38
+>  + /kisskb/src/include/linux/compiler_types.h: error: call to '__compiletime_assert_934' declared with attribute error: FIELD_GET: mask is not constant:  => 510:38
+
+     inlined from 'xe_oa_set_prop_oa_format' at /kisskb/src/drivers/gpu/drm/xe/xe_oa.c:1664:6:
+
+powerpc-gcc5/powerpc-all{yes,mod}config
+powerpc-gcc5/powerpc-allmodconfig
+powerpc-gcc5/ppc64le_allmodconfig
+
+(fix sent)
+
+>  + /kisskb/src/kernel/fork.c: error: #warning clone3() entry point is missing, please fix [-Werror=cpp]:  => 3072:2
+
+sh4-gcc13/se{7619,7750}_defconfig
+sh4-gcc13/sh-all{mod,no,yes}config
+sh4-gcc13/sh-defconfig
+sparc64-gcc5/sparc-allnoconfig
+sparc64-gcc{5,13}/sparc32_defconfig
+sparc64-gcc{5,13}/sparc64-{allno,def}config
+sparc64-gcc13/sparc-all{mod,no}config
+sparc64-gcc13/sparc64-allmodconfig
+
+Gr{oetje,eeting}s,
+
+ 						Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+ 							    -- Linus Torvalds
