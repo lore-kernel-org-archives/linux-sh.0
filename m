@@ -1,133 +1,154 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8A79C149C60;
-	Mon,  5 Aug 2024 20:37:41 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A828D8F62;
+	Tue,  6 Aug 2024 01:28:00 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1722890261; cv=none; b=VyMGhhVCt9F5N+8ZsowL3bmWZaNNs1IUQN1p07TKxi0IEsOkPDp85rT2Eun7TSzwTN5Iiv8fa1LeveyEqJkpX56REfaQiQtIDeL3RJUP4FAsF0XVeQBH47jVcUFftc8XSa3h96K59jg0rE3ECNHbAnPM1f44obhjrpqp6AKVUvQ=
+	t=1722907680; cv=none; b=YHuhFpQZ1NM+NHoBpnel75/KrdwR0iMCWB5R/xmQjlL76f2JxmmgJdj3XUMm+Xq1Xj02G2YtXCihvDPARBW6e/JF3Y9OFoPT0cRyNO+WfGbCujrB5mXO5lmUy19857suSikZ4cVNrTuziwBuR/2EkykcMtLKigUNZu5GBLAKZXQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1722890261; c=relaxed/simple;
-	bh=qdRuOti9XNlLltkR78ltAp8iub7ZiaEGkve5ZQKgRXs=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Pc04VQjcCngW/HvjKCfRW2IYnMJQ0cmyqcTO1Wc44W+q4zd6W4B5OpnnYGmJpPnKFBmt8AvgBHa3lViJHzJOv2zndQgO9ogdHuZZ+lQ7RlTeOsR50ukTmMnOcU/FaAre5qJFobpaKML6hxJIt09pAoq3F/WxWdgnWzu1zydv5t0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=bF0xgt41; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1722907680; c=relaxed/simple;
+	bh=aIfOxL3rtOChdt3CLqv4K7JL0Tufmfdr6MR2r8LWXZM=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=Ol0LgcZSO/FuY1npU2DlTkyGyMxhSqeG3WLPB75SZGx7WVdn9uilT+uNPjNdYQ+FFLZa7ICCpGA1RqR/HGTrho7AssYBe3hEdm/o4QozsSA0ogRfaNiI1Tcj9XVhepC1xjKH8jol8o6Anfe6r23eoHvZSY4VQYCrCrqr7AeeLHU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=DEzjgHGN; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="bF0xgt41"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 087EBC4AF0E;
-	Mon,  5 Aug 2024 20:37:25 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="DEzjgHGN"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 66AF2C32782;
+	Tue,  6 Aug 2024 01:27:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1722890261;
-	bh=qdRuOti9XNlLltkR78ltAp8iub7ZiaEGkve5ZQKgRXs=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=bF0xgt419GbxyCGFRj0fNjByi1OtMInAxUy0fO7kuEExoo6r6jeZMXGjN5ikPGLYH
-	 /M1nzHizackmgautp/VnDSLRxQXCurMyrYVEwg5Yf+PdgGkwhSt7ZiA1a6tEsPe3+w
-	 oJPfE55fHB91q50vVv1vV9hAXYemhAyhr6OpNgWOOvXUx9/9Vw4S7evidbf87YcNj+
-	 pEPIiDW05PYUn8lRlujrJ1DKbY3WIHytjXuNelSTWpy7nXBiYR1lO2v9ZQh4g3aHrR
-	 PgFXkbijAdUJ0BywpuS1YJGB4AvPiLFgG1t0OrXdtLJEh5IFQJb88z75ZKH8cfv8oU
-	 ALk7ATW/rOneA==
-Date: Mon, 5 Aug 2024 23:35:22 +0300
-From: Mike Rapoport <rppt@kernel.org>
-To: Dan Williams <dan.j.williams@intel.com>
-Cc: linux-kernel@vger.kernel.org,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Christophe Leroy <christophe.leroy@csgroup.eu>,
-	Dave Hansen <dave.hansen@linux.intel.com>,
-	David Hildenbrand <david@redhat.com>,
-	"David S. Miller" <davem@davemloft.net>,
-	Davidlohr Bueso <dave@stgolabs.net>,
-	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-	Heiko Carstens <hca@linux.ibm.com>,
-	Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>,
-	Jiaxun Yang <jiaxun.yang@flygoat.com>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Jonathan Cameron <jonathan.cameron@huawei.com>,
-	Jonathan Corbet <corbet@lwn.net>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	"Rafael J. Wysocki" <rafael@kernel.org>,
-	Rob Herring <robh@kernel.org>,
-	Samuel Holland <samuel.holland@sifive.com>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Vasily Gorbik <gor@linux.ibm.com>, Will Deacon <will@kernel.org>,
-	Zi Yan <ziy@nvidia.com>, devicetree@vger.kernel.org,
-	linux-acpi@vger.kernel.org, linux-arch@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org, linux-cxl@vger.kernel.org,
-	linux-doc@vger.kernel.org, linux-mips@vger.kernel.org,
-	linux-mm@kvack.org, linux-riscv@lists.infradead.org,
-	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
-	linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
-	nvdimm@lists.linux.dev, sparclinux@vger.kernel.org, x86@kernel.org
-Subject: Re: [PATCH v3 11/26] x86/numa: use get_pfn_range_for_nid to verify
- that node spans memory
-Message-ID: <ZrE3ijXA3efepKcH@kernel.org>
-References: <20240801060826.559858-1-rppt@kernel.org>
- <20240801060826.559858-12-rppt@kernel.org>
- <66b1302ce5fd3_c1448294d3@dwillia2-xfh.jf.intel.com.notmuch>
+	s=k20201202; t=1722907680;
+	bh=aIfOxL3rtOChdt3CLqv4K7JL0Tufmfdr6MR2r8LWXZM=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=DEzjgHGNlgbqmK2mVmCz9C8IEZB2HDN2a8ja+5OLyah6qlvRrnd8pl0P7Ixfw3EEP
+	 y7rDUY0KtiET+W6nUHVLdmj38iQHKpHvmOqat4kcVmocatbu8YmGfwf4zzEAFN8/DN
+	 66d/dxGS7yLdybB6gOAxxqRdm9Fm8sBYuGqQpFlLzfvdtSd4PTvQB2KnvJ5UwnAaK/
+	 0C8PMyQ+Jt/KHMj2U9RoCyMbRVwRFrGkTfefzdRMrNMvUiy/2VrF7b40r9C16PLYCu
+	 5xMrsRfazUFhSFrZiyy+yeIJg1qgE9laFK+WIgWLL9J86XaFH93FpaMQpe5Wi5kDC6
+	 dMi66ky02syCA==
+Message-ID: <eacb9a3c-0d76-47d2-8b80-59d6a58fe4b4@kernel.org>
+Date: Mon, 5 Aug 2024 18:27:57 -0700
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <66b1302ce5fd3_c1448294d3@dwillia2-xfh.jf.intel.com.notmuch>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH cmpxchg 2/3] ARC: Emulate one-byte cmpxchg
+To: "Paul E. McKenney" <paulmck@kernel.org>, linux-arch@vger.kernel.org,
+ linux-kernel@vger.kernel.org
+Cc: elver@google.com, akpm@linux-foundation.org, tglx@linutronix.de,
+ peterz@infradead.org, torvalds@linux-foundation.org, arnd@arndb.de,
+ geert@linux-m68k.org, palmer@rivosinc.com, mhiramat@kernel.org,
+ linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+ Vineet Gupta <vgupta@kernel.org>, Andi Shyti <andi.shyti@linux.intel.com>,
+ Andrzej Hajda <andrzej.hajda@intel.com>
+References: <c1b7f3a2-da50-4dfb-af6f-a1898eaf2b79@paulmck-laptop>
+ <20240805192119.56816-2-paulmck@kernel.org>
+Content-Language: en-US
+From: Vineet Gupta <vgupta@kernel.org>
+In-Reply-To: <20240805192119.56816-2-paulmck@kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Mon, Aug 05, 2024 at 01:03:56PM -0700, Dan Williams wrote:
-> Mike Rapoport wrote:
-> > From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
-> > 
-> > Instead of looping over numa_meminfo array to detect node's start and
-> > end addresses use get_pfn_range_for_init().
-> > 
-> > This is shorter and make it easier to lift numa_memblks to generic code.
-> > 
-> > Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
-> > Tested-by: Zi Yan <ziy@nvidia.com> # for x86_64 and arm64
-> > ---
-> >  arch/x86/mm/numa.c | 13 +++----------
-> >  1 file changed, 3 insertions(+), 10 deletions(-)
-> > 
-> > diff --git a/arch/x86/mm/numa.c b/arch/x86/mm/numa.c
-> > index edfc38803779..cfe7e5477cf8 100644
-> > --- a/arch/x86/mm/numa.c
-> > +++ b/arch/x86/mm/numa.c
-> > @@ -521,17 +521,10 @@ static int __init numa_register_memblks(struct numa_meminfo *mi)
-> >  
-> >  	/* Finally register nodes. */
-> >  	for_each_node_mask(nid, node_possible_map) {
-> > -		u64 start = PFN_PHYS(max_pfn);
-> > -		u64 end = 0;
-> > +		unsigned long start_pfn, end_pfn;
-> >  
-> > -		for (i = 0; i < mi->nr_blks; i++) {
-> > -			if (nid != mi->blk[i].nid)
-> > -				continue;
-> > -			start = min(mi->blk[i].start, start);
-> > -			end = max(mi->blk[i].end, end);
-> > -		}
-> > -
-> > -		if (start >= end)
-> > +		get_pfn_range_for_nid(nid, &start_pfn, &end_pfn);
-> > +		if (start_pfn >= end_pfn)
-> 
-> Assuming I understand why this works, would it be worth a comment like:
-> 
-> "Note, get_pfn_range_for_nid() depends on memblock_set_node() having
->  already happened"
+Hi Paul,
 
-Will add a comment, sure.
- 
-> ...at least that context was not part of the diff so took me second to
-> figure out how this works.
-> 
+On 8/5/24 12:21, Paul E. McKenney wrote:
+> Use the new cmpxchg_emu_u8() to emulate one-byte cmpxchg() on arc.
+>
+> [ paulmck: Drop two-byte support per Arnd Bergmann feedback. ]
+> [ paulmck: Apply feedback from Naresh Kamboju. ]
+> [ paulmck: Apply kernel test robot feedback. ]
+>
+> Signed-off-by: Paul E. McKenney <paulmck@kernel.org>
+> Cc: Vineet Gupta <vgupta@kernel.org>
+> Cc: Andi Shyti <andi.shyti@linux.intel.com>
+> Cc: Andrzej Hajda <andrzej.hajda@intel.com>
+> Cc: Arnd Bergmann <arnd@arndb.de>
+> Cc: Palmer Dabbelt <palmer@rivosinc.com>
+> Cc: <linux-snps-arc@lists.infradead.org>
+> ---
+>  arch/arc/Kconfig               |  1 +
+>  arch/arc/include/asm/cmpxchg.h | 33 ++++++++++++++++++++++++---------
+>  2 files changed, 25 insertions(+), 9 deletions(-)
+>
+> diff --git a/arch/arc/Kconfig b/arch/arc/Kconfig
+> index fd0b0a0d4686a..163608fd49d18 100644
+> --- a/arch/arc/Kconfig
+> +++ b/arch/arc/Kconfig
+> @@ -13,6 +13,7 @@ config ARC
+>  	select ARCH_HAS_SETUP_DMA_OPS
+>  	select ARCH_HAS_SYNC_DMA_FOR_CPU
+>  	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
+> +	select ARCH_NEED_CMPXCHG_1_EMU
+>  	select ARCH_SUPPORTS_ATOMIC_RMW if ARC_HAS_LLSC
+>  	select ARCH_32BIT_OFF_T
+>  	select BUILDTIME_TABLE_SORT
+> diff --git a/arch/arc/include/asm/cmpxchg.h b/arch/arc/include/asm/cmpxchg.h
+> index e138fde067dea..2102ce076f28b 100644
+> --- a/arch/arc/include/asm/cmpxchg.h
+> +++ b/arch/arc/include/asm/cmpxchg.h
+> @@ -8,6 +8,7 @@
+>  
+>  #include <linux/build_bug.h>
+>  #include <linux/types.h>
+> +#include <linux/cmpxchg-emu.h>
+>  
+>  #include <asm/barrier.h>
+>  #include <asm/smp.h>
+> @@ -46,6 +47,9 @@
+>  	__typeof__(*(ptr)) _prev_;					\
+>  									\
+>  	switch(sizeof((_p_))) {						\
+> +	case 1:								\
+> +		_prev_ = (__typeof__(*(ptr)))cmpxchg_emu_u8((volatile u8 *)_p_, (uintptr_t)_o_, (uintptr_t)_n_);	\
+> +		break;							\
+>  	case 4:								\
+>  		_prev_ = __cmpxchg(_p_, _o_, _n_);			\
+>  		break;							\
+> @@ -65,16 +69,27 @@
+>  	__typeof__(*(ptr)) _prev_;					\
+>  	unsigned long __flags;						\
+>  									\
+> -	BUILD_BUG_ON(sizeof(_p_) != 4);					\
 
--- 
-Sincerely yours,
-Mike.
+Is this alone not sufficient: i.e. for !LLSC let the atomic op happen
+under a spin-lock for non 4 byte quantities as well.
+
+> +	switch(sizeof((_p_))) {						\
+> +	case 1:								\
+> +		__flags = cmpxchg_emu_u8((volatile u8 *)_p_, (uintptr_t)_o_, (uintptr_t)_n_);	\
+> +		_prev_ = (__typeof__(*(ptr)))__flags;			\
+> +		break;							\
+> +		break;							\
+
+FWIW, the 2nd break seems extraneous.
+
+> +	case 4:								\
+> +		/*							\
+> +		 * spin lock/unlock provide the needed smp_mb()		\
+> +		 * before/after						\
+> +		 */							\
+> +		atomic_ops_lock(__flags);				\
+> +		_prev_ = *_p_;						\
+> +		if (_prev_ == _o_)					\
+> +			*_p_ = _n_;					\
+> +		atomic_ops_unlock(__flags);				\
+> +		break;							\
+> +	default:							\
+> +		BUILD_BUG();						\
+> +	}								\
+>  									\
+> -	/*								\
+> -	 * spin lock/unlock provide the needed smp_mb() before/after	\
+> -	 */								\
+> -	atomic_ops_lock(__flags);					\
+> -	_prev_ = *_p_;							\
+> -	if (_prev_ == _o_)						\
+> -		*_p_ = _n_;						\
+> -	atomic_ops_unlock(__flags);					\
+>  	_prev_;								\
+>  })
+
+-Vineet
