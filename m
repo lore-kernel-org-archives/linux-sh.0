@@ -1,33 +1,66 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9BCEE320C;
-	Tue,  6 Aug 2024 04:44:41 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A9E0C1C9ED7
+	for <linux-sh@vger.kernel.org>; Tue,  6 Aug 2024 13:05:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1722919481; cv=none; b=CeC11x8n3MS2iWbKnn+whOPvXVitdEozUFCGOuCtMZLHCHzqDwcWvj7xIUdRWe582StWxJ2LOHmyhnj93FzC2x5hi/M+S3QRezpFGiQ8wlgAg3LE8s/esdw/kdR4c1H51bUhgr8I7Jv4Nsq50y04HNKK2JIw7uXrTd/opj++8QQ=
+	t=1722949517; cv=none; b=KxtegDRDdHhxaXFX/NerZK3qizJnLFZm3L+BAAGSY+BOOPIo0fE9DiMhrFSJujxRCk59NTHamZIvtr4Qw7giyKgDbQTb6FLg7bffiRDrH91nku2ghYY22mksepF/9rNxOa+9J2eDNU/Bu58+mQ1FrnUzSuLM5JU78Zm4bY2OLmk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1722919481; c=relaxed/simple;
-	bh=vnxcGwfLIU1KeSbJki1TxNVfFqhuJYfk0wotkvkiEgc=;
+	s=arc-20240116; t=1722949517; c=relaxed/simple;
+	bh=TP+b0YSIIsDD4y4rkrToKJh1FYgm2hkAD/y9iEnO8Ug=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=aCRPnJcFzyHdPi0QvBr9gPG4qnSqn9kZ0I3D4AAaBcHupnAsKBeVDZFWHE4yDkPucWT6ZL1154dQSSGSoQoHHg1Mxh3ax55+U1JMRwFvCrzmdmyP9dXJuJ3zoteeCns9Vq9OIk0CLL3BeRntJVLSyGlfh3SEqno5Fi3AVRCkBY0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QlNqqKrH; arc=none smtp.client-ip=10.30.226.201
+	 In-Reply-To:Content-Type; b=na/tts1FAYYg3mhyvvnZDwArWON2s4Zy9sdewE5wfTFgIQjmtJnaEaYle5HQq27RlmAX6OaSbESeqAhJUgY2opGtiVM3Q3901YEEG95STbibA4sM5vlNkEN8uU7g2d9evcf1fIfZ2URD84FhMLuLr9f4+6n2owbFn2tRLcBwFvI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=c3edYHbd; arc=none smtp.client-ip=170.10.133.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QlNqqKrH"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 819F8C32786;
-	Tue,  6 Aug 2024 04:44:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1722919481;
-	bh=vnxcGwfLIU1KeSbJki1TxNVfFqhuJYfk0wotkvkiEgc=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
-	b=QlNqqKrHRxxYLXdWUqusdxZxHlcjbXFbapkERYHUjVVQPu66ulZrF2xzCQeqLr4OF
-	 oGQhqk2Sx4mwsLzzPMCDpUedq1D69xFHiUE2eoYm607Uu220e5yfoDpU/ObP1KN/oI
-	 MByQDqW5yx+iKA2e5V/LmzsxvE5A+hBP6t11Wek2vPb5XzBvop10wDVCMY6aW5Ro47
-	 AoeA1I9qB1k0mr2BjPkIS7keAi12shDJS7b+O/D2u7ow6NfWVZ3HLtcAHf4q2HtIBz
-	 n3kvQqC/zfDRbsD9CjbEmfK0UQ3sq02RfLHHlRkw/ClaA68k8zurP8c008TCcBEWE3
-	 EB2fHxx1NxRTg==
-Message-ID: <c9952ed7-9e8a-4142-b70c-8ddb14bf90de@kernel.org>
-Date: Mon, 5 Aug 2024 21:44:39 -0700
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="c3edYHbd"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1722949514;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references:autocrypt:autocrypt;
+	bh=2OksTN73HxjsIsPl77kQrWLaGS0nfyIcgwcT/pZ9bvc=;
+	b=c3edYHbdV7WIyipZhQEIEbjdrVNC5mMM0VMmF9h46fc3PAqDx39MnDqSbIKEcy77Bjhgmr
+	n74SE+zywyuIPax5RYQcdUN/PVe3Y4ozVICkRlEDvPKz67SETiS3lKpdKi+KCk2DNunrV6
+	rnSd3rEHDI54RBu6//MhEpxowOIKwU4=
+Received: from mail-ej1-f69.google.com (mail-ej1-f69.google.com
+ [209.85.218.69]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-224-zniCpVfrMpGzY0ujnhJLGw-1; Tue, 06 Aug 2024 09:05:13 -0400
+X-MC-Unique: zniCpVfrMpGzY0ujnhJLGw-1
+Received: by mail-ej1-f69.google.com with SMTP id a640c23a62f3a-a7aa3181bc2so45016566b.0
+        for <linux-sh@vger.kernel.org>; Tue, 06 Aug 2024 06:05:13 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1722949512; x=1723554312;
+        h=content-transfer-encoding:in-reply-to:organization:autocrypt
+         :content-language:from:references:cc:to:subject:user-agent
+         :mime-version:date:message-id:x-gm-message-state:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=2OksTN73HxjsIsPl77kQrWLaGS0nfyIcgwcT/pZ9bvc=;
+        b=r0vw6oa5rOziqUUzet2VGufag16vx7yv4hid6GYTtzrUGPiIl0uWf4N9EKjicFaqO6
+         ONSTrEB566gWo/Lj2bUi3NX7/ut/jBAFkxQRdHxuEfPNR1a/kaHdLqbqVqls1lmfjQYG
+         lrfTTFUn/QwcRx/lETxEk/aDuEP9zd2f7BcMybi5IAJMfjMRmKfNi1b0I06M7MkCsITs
+         C5nFparfFJoYG4WLbQHCI/jzwgpRZKKF+QIfZsnry7bHYN8+9PXpQBerHPX6zKqgSJiP
+         F441/jttlMuF+ZJcngbcnDi7gK24GPmdXShbON25YYE1lgR5Kv6GXh039XWEEskm6sko
+         OAkw==
+X-Forwarded-Encrypted: i=1; AJvYcCVFfz6sDRPo51uisO2VeBa4AQGDepMC3IZBS8rV1iVfKl7IPeGwkuEw2MkP+jcxRKpPBtukmYe5/Q==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yw9JLyPDXRXkOYinjatvcFSdGJoeYVexXHY/NK5AoI5ADZd3VLD
+	vidDCJ9vP8EWuFmVs1FkaliKxEuHn4UHK5oemuJJtfOVTDrm5q1qeHsqrEomw02gZAWool20guz
+	DeCERI4uFLkyBm2uuyoHdVQdsQ2G1nshGrQcBW56yKDJfPM9lmc2J4mr7
+X-Received: by 2002:a17:907:d92:b0:a77:deb2:8b01 with SMTP id a640c23a62f3a-a7dc4fd89c8mr1523740366b.1.1722949512275;
+        Tue, 06 Aug 2024 06:05:12 -0700 (PDT)
+X-Google-Smtp-Source: AGHT+IF4VEl7CRhNLkeZ8kGCy+77PRKCTJdFsXXGg5cULvkdg3s5MpQ0XvVjnTTjpGy7TbqbES+Rlw==
+X-Received: by 2002:a17:907:d92:b0:a77:deb2:8b01 with SMTP id a640c23a62f3a-a7dc4fd89c8mr1523733166b.1.1722949511728;
+        Tue, 06 Aug 2024 06:05:11 -0700 (PDT)
+Received: from ?IPV6:2003:cb:c73f:8500:f83c:3602:5300:88af? (p200300cbc73f8500f83c3602530088af.dip0.t-ipconnect.de. [2003:cb:c73f:8500:f83c:3602:5300:88af])
+        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-a7dc9e8674dsm558172166b.146.2024.08.06.06.05.08
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 06 Aug 2024 06:05:11 -0700 (PDT)
+Message-ID: <df47ba66-47cc-40ec-99f2-0b030114d804@redhat.com>
+Date: Tue, 6 Aug 2024 15:05:06 +0200
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -35,177 +68,112 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH cmpxchg 2/3] ARC: Emulate one-byte cmpxchg
-To: paulmck@kernel.org, Vineet Gupta <vgupta@kernel.org>
-Cc: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org,
- elver@google.com, akpm@linux-foundation.org, tglx@linutronix.de,
- peterz@infradead.org, torvalds@linux-foundation.org, arnd@arndb.de,
- geert@linux-m68k.org, palmer@rivosinc.com, mhiramat@kernel.org,
- linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
- Andi Shyti <andi.shyti@linux.intel.com>,
- Andrzej Hajda <andrzej.hajda@intel.com>
-References: <c1b7f3a2-da50-4dfb-af6f-a1898eaf2b79@paulmck-laptop>
- <20240805192119.56816-2-paulmck@kernel.org>
- <eacb9a3c-0d76-47d2-8b80-59d6a58fe4b4@kernel.org>
- <3353ac4f-97ed-471b-bd19-96e0dbc41612@paulmck-laptop>
+Subject: Re: [PATCH v3 02/26] MIPS: sgi-ip27: make NODE_DATA() the same as on
+ all other architectures
+To: Mike Rapoport <rppt@kernel.org>, linux-kernel@vger.kernel.org
+Cc: Alexander Gordeev <agordeev@linux.ibm.com>,
+ Andreas Larsson <andreas@gaisler.com>,
+ Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>,
+ Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>,
+ Christophe Leroy <christophe.leroy@csgroup.eu>,
+ Dan Williams <dan.j.williams@intel.com>,
+ Dave Hansen <dave.hansen@linux.intel.com>,
+ "David S. Miller" <davem@davemloft.net>, Davidlohr Bueso
+ <dave@stgolabs.net>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+ Heiko Carstens <hca@linux.ibm.com>, Huacai Chen <chenhuacai@kernel.org>,
+ Ingo Molnar <mingo@redhat.com>, Jiaxun Yang <jiaxun.yang@flygoat.com>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ Jonathan Cameron <jonathan.cameron@huawei.com>,
+ Jonathan Corbet <corbet@lwn.net>, Michael Ellerman <mpe@ellerman.id.au>,
+ Palmer Dabbelt <palmer@dabbelt.com>, "Rafael J. Wysocki"
+ <rafael@kernel.org>, Rob Herring <robh@kernel.org>,
+ Samuel Holland <samuel.holland@sifive.com>,
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+ Thomas Gleixner <tglx@linutronix.de>, Vasily Gorbik <gor@linux.ibm.com>,
+ Will Deacon <will@kernel.org>, Zi Yan <ziy@nvidia.com>,
+ devicetree@vger.kernel.org, linux-acpi@vger.kernel.org,
+ linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+ linux-cxl@vger.kernel.org, linux-doc@vger.kernel.org,
+ linux-mips@vger.kernel.org, linux-mm@kvack.org,
+ linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+ linux-sh@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+ loongarch@lists.linux.dev, nvdimm@lists.linux.dev,
+ sparclinux@vger.kernel.org, x86@kernel.org
+References: <20240801060826.559858-1-rppt@kernel.org>
+ <20240801060826.559858-3-rppt@kernel.org>
+From: David Hildenbrand <david@redhat.com>
+Autocrypt: addr=david@redhat.com; keydata=
+ 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
+ WNyWQQ==
+Organization: Red Hat
+In-Reply-To: <20240801060826.559858-3-rppt@kernel.org>
+X-Mimecast-Spam-Score: 0
+X-Mimecast-Originator: redhat.com
 Content-Language: en-US
-From: Vineet Gupta <vgupta@kernel.org>
-In-Reply-To: <3353ac4f-97ed-471b-bd19-96e0dbc41612@paulmck-laptop>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 
+On 01.08.24 08:08, Mike Rapoport wrote:
+> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
+> 
+> sgi-ip27 is the only system that defines NODE_DATA() differently than
+> the rest of NUMA machines.
+> 
+> Add node_data array of struct pglist pointers that will point to
+> __node_data[node]->pglist and redefine NODE_DATA() to use node_data
+> array.
+> 
+> This will allow pulling declaration of node_data to the generic mm code
+> in the next commit.
+> 
+> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+> ---
 
+Acked-by: David Hildenbrand <david@redhat.com>
 
-On 8/5/24 21:28, Paul E. McKenney wrote:
-> On Mon, Aug 05, 2024 at 06:27:57PM -0700, Vineet Gupta wrote:
->> Hi Paul,
->>
->> On 8/5/24 12:21, Paul E. McKenney wrote:
->>> Use the new cmpxchg_emu_u8() to emulate one-byte cmpxchg() on arc.
->>>
->>> [ paulmck: Drop two-byte support per Arnd Bergmann feedback. ]
->>> [ paulmck: Apply feedback from Naresh Kamboju. ]
->>> [ paulmck: Apply kernel test robot feedback. ]
->>>
->>> Signed-off-by: Paul E. McKenney <paulmck@kernel.org>
->>> Cc: Vineet Gupta <vgupta@kernel.org>
->>> Cc: Andi Shyti <andi.shyti@linux.intel.com>
->>> Cc: Andrzej Hajda <andrzej.hajda@intel.com>
->>> Cc: Arnd Bergmann <arnd@arndb.de>
->>> Cc: Palmer Dabbelt <palmer@rivosinc.com>
->>> Cc: <linux-snps-arc@lists.infradead.org>
->>> ---
->>>  arch/arc/Kconfig               |  1 +
->>>  arch/arc/include/asm/cmpxchg.h | 33 ++++++++++++++++++++++++---------
->>>  2 files changed, 25 insertions(+), 9 deletions(-)
->>>
->>> diff --git a/arch/arc/Kconfig b/arch/arc/Kconfig
->>> index fd0b0a0d4686a..163608fd49d18 100644
->>> --- a/arch/arc/Kconfig
->>> +++ b/arch/arc/Kconfig
->>> @@ -13,6 +13,7 @@ config ARC
->>>  	select ARCH_HAS_SETUP_DMA_OPS
->>>  	select ARCH_HAS_SYNC_DMA_FOR_CPU
->>>  	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
->>> +	select ARCH_NEED_CMPXCHG_1_EMU
->>>  	select ARCH_SUPPORTS_ATOMIC_RMW if ARC_HAS_LLSC
->>>  	select ARCH_32BIT_OFF_T
->>>  	select BUILDTIME_TABLE_SORT
->>> diff --git a/arch/arc/include/asm/cmpxchg.h b/arch/arc/include/asm/cmpxchg.h
->>> index e138fde067dea..2102ce076f28b 100644
->>> --- a/arch/arc/include/asm/cmpxchg.h
->>> +++ b/arch/arc/include/asm/cmpxchg.h
->>> @@ -8,6 +8,7 @@
->>>  
->>>  #include <linux/build_bug.h>
->>>  #include <linux/types.h>
->>> +#include <linux/cmpxchg-emu.h>
->>>  
->>>  #include <asm/barrier.h>
->>>  #include <asm/smp.h>
->>> @@ -46,6 +47,9 @@
->>>  	__typeof__(*(ptr)) _prev_;					\
->>>  									\
->>>  	switch(sizeof((_p_))) {						\
->>> +	case 1:								\
->>> +		_prev_ = (__typeof__(*(ptr)))cmpxchg_emu_u8((volatile u8 *)_p_, (uintptr_t)_o_, (uintptr_t)_n_);	\
->>> +		break;							\
->>>  	case 4:								\
->>>  		_prev_ = __cmpxchg(_p_, _o_, _n_);			\
->>>  		break;							\
->>> @@ -65,16 +69,27 @@
->>>  	__typeof__(*(ptr)) _prev_;					\
->>>  	unsigned long __flags;						\
->>>  									\
->>> -	BUILD_BUG_ON(sizeof(_p_) != 4);					\
->> Is this alone not sufficient: i.e. for !LLSC let the atomic op happen
->> under a spin-lock for non 4 byte quantities as well.
-> Now that you mention it, that would be a lot simpler.
->
->>> +	switch(sizeof((_p_))) {						\
->>> +	case 1:								\
->>> +		__flags = cmpxchg_emu_u8((volatile u8 *)_p_, (uintptr_t)_o_, (uintptr_t)_n_);	\
->>> +		_prev_ = (__typeof__(*(ptr)))__flags;			\
->>> +		break;							\
->>> +		break;							\
->> FWIW, the 2nd break seems extraneous.
-> And to your earlier point, the first break as well.  ;-)
->
-> How does the updated patch below look?  Or did I miss your point?
->
-> 							Thanx, Paul
->
-> ------------------------------------------------------------------------
->
-> commit 96c1107797ca329fe203818cdfda2fe5f5a9a82e
-> Author: Paul E. McKenney <paulmck@kernel.org>
-> Date:   Mon Mar 18 01:27:35 2024 -0700
->
->     ARC: Emulate one-byte cmpxchg
->     
->     Use the new cmpxchg_emu_u8() to emulate one-byte cmpxchg() on arc.
->     
->     [ paulmck: Drop two-byte support per Arnd Bergmann feedback. ]
->     [ paulmck: Apply feedback from Naresh Kamboju. ]
->     [ paulmck: Apply kernel test robot feedback. ]
->     [ paulmck: Apply feedback from Vineet Gupta. ]
->     
->     Signed-off-by: Paul E. McKenney <paulmck@kernel.org>
->     Cc: Vineet Gupta <vgupta@kernel.org>
->     Cc: Andi Shyti <andi.shyti@linux.intel.com>
->     Cc: Andrzej Hajda <andrzej.hajda@intel.com>
->     Cc: Arnd Bergmann <arnd@arndb.de>
->     Cc: Palmer Dabbelt <palmer@rivosinc.com>
->     Cc: <linux-snps-arc@lists.infradead.org>
+-- 
+Cheers,
 
-Acked-by: Vineet Gupta <vgupta@kernel.org>
-
-Thx,
--Vineet
-
->
-> diff --git a/arch/arc/Kconfig b/arch/arc/Kconfig
-> index fd0b0a0d4686a..163608fd49d18 100644
-> --- a/arch/arc/Kconfig
-> +++ b/arch/arc/Kconfig
-> @@ -13,6 +13,7 @@ config ARC
->  	select ARCH_HAS_SETUP_DMA_OPS
->  	select ARCH_HAS_SYNC_DMA_FOR_CPU
->  	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
-> +	select ARCH_NEED_CMPXCHG_1_EMU
->  	select ARCH_SUPPORTS_ATOMIC_RMW if ARC_HAS_LLSC
->  	select ARCH_32BIT_OFF_T
->  	select BUILDTIME_TABLE_SORT
-> diff --git a/arch/arc/include/asm/cmpxchg.h b/arch/arc/include/asm/cmpxchg.h
-> index e138fde067dea..58045c8983404 100644
-> --- a/arch/arc/include/asm/cmpxchg.h
-> +++ b/arch/arc/include/asm/cmpxchg.h
-> @@ -8,6 +8,7 @@
->  
->  #include <linux/build_bug.h>
->  #include <linux/types.h>
-> +#include <linux/cmpxchg-emu.h>
->  
->  #include <asm/barrier.h>
->  #include <asm/smp.h>
-> @@ -46,6 +47,9 @@
->  	__typeof__(*(ptr)) _prev_;					\
->  									\
->  	switch(sizeof((_p_))) {						\
-> +	case 1:								\
-> +		_prev_ = (__typeof__(*(ptr)))cmpxchg_emu_u8((volatile u8 *)_p_, (uintptr_t)_o_, (uintptr_t)_n_);	\
-> +		break;							\
->  	case 4:								\
->  		_prev_ = __cmpxchg(_p_, _o_, _n_);			\
->  		break;							\
-> @@ -65,8 +69,6 @@
->  	__typeof__(*(ptr)) _prev_;					\
->  	unsigned long __flags;						\
->  									\
-> -	BUILD_BUG_ON(sizeof(_p_) != 4);					\
-> -									\
->  	/*								\
->  	 * spin lock/unlock provide the needed smp_mb() before/after	\
->  	 */								\
-
+David / dhildenb
 
