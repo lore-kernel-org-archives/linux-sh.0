@@ -1,103 +1,141 @@
-Received: from mail-ej1-f45.google.com (mail-ej1-f45.google.com [209.85.218.45])
+Received: from mail-yw1-f171.google.com (mail-yw1-f171.google.com [209.85.128.171])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 61947194085
-	for <linux-sh@vger.kernel.org>; Tue, 20 Aug 2024 15:32:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.45
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 36BD8189F3E
+	for <linux-sh@vger.kernel.org>; Tue, 20 Aug 2024 21:17:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.171
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724167936; cv=none; b=q70YFtLnTqqdP4HjDfWyUlRcBFHWzNZTOswd7DkwAf7Wu3iD/XspJLCtgSHUnry3WuXGxA1tcgN6lw2pArNilDXhXHQqwfbLjyCigEReJSNjNaSRG6p9j23Gi7ejpH+2xagcs8fC3+8ccxF5YPcVBUXW5lV0PLfRf1Ljac+COeA=
+	t=1724188640; cv=none; b=ghFEwvyN0qS4fL3TBgnaih4A6ZYnIps0MRPF+7BDVCLQgqRE+KKCPXWzO7NPeM1XzW67y19gbrGfI3UFkOCC60TD0nTJM+034aUYfQCZfv2pAJ4v2AVCaw5Kr2myPlr+OQSS6WZuqI+otFnGnbkOrtQdBzm0iCoyIe0N4M9SLUo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724167936; c=relaxed/simple;
-	bh=MiDlbS6ff17tWH6m3MZ6F9tz3FBlacdmGvTetKNSYdk=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=Ljo2m8Rlf3OkA8Gm9div/vhtLhwSZ+Ljo6rApDp+B4pUNbbGu2yr85VsOJXPYLOlF8nNMAGM35LS+kuansqqUjwnlI+0pRtkA59T/UY6ljK4UpBmIVaq/vxKOpG+8HaipOGTf6VihfdkcXB7qVgAX7aiFGDqFfe6jFDiWeY1sp4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org; spf=pass smtp.mailfrom=linuxfoundation.org; dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b=UHYOOkxN; arc=none smtp.client-ip=209.85.218.45
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-foundation.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linuxfoundation.org
+	s=arc-20240116; t=1724188640; c=relaxed/simple;
+	bh=mOUCcvaI+h5g3H3w3+SiuGlOuZAvb4zAmyyA5RojPzc=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=T3oIRxV8rfuyzhlg9+TGFJ8vR0WoFlfLA1bFp0ivW0u9PslDFpzLB/+LUmDiFWIJC6BzV+pQRMUuqeX1JIU/puvR+KRwxHTdHj4LXJLQiTfGlp/AaMwSLl8ZYbZqtegynGyHV6NqStWGOUWn1gszx09b3aXsd7KbJ3AKizSAik8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=none smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b=w/G3QBvK; arc=none smtp.client-ip=209.85.128.171
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=landley.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux-foundation.org header.i=@linux-foundation.org header.b="UHYOOkxN"
-Received: by mail-ej1-f45.google.com with SMTP id a640c23a62f3a-a7aabb71bb2so617712966b.2
-        for <linux-sh@vger.kernel.org>; Tue, 20 Aug 2024 08:32:14 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b="w/G3QBvK"
+Received: by mail-yw1-f171.google.com with SMTP id 00721157ae682-6b47ff8a59aso32263307b3.2
+        for <linux-sh@vger.kernel.org>; Tue, 20 Aug 2024 14:17:17 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linux-foundation.org; s=google; t=1724167932; x=1724772732; darn=vger.kernel.org;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:from:to:cc:subject:date:message-id:reply-to;
-        bh=reG4/g7c03D2ee4fl6pmLF83MA+CK6ivPFyQdUf/2ns=;
-        b=UHYOOkxNVXM29kamtryO07bOv8PDGfz6NrY3GUn0HaOsR79Wdv/4EdikNHzwzqmuuf
-         2WyVDsWNsLf5e5enYY45o6eRvNlHTjCRnmTo9bSmQQRfznhtX+GTjjjw3CbXiIosGWew
-         OmJEgsHyLVBzXKWa+G2/qnm/66SLAMFvq+d1U=
+        d=landley-net.20230601.gappssmtp.com; s=20230601; t=1724188637; x=1724793437; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=GOcODjceGC7ZkW4fB/YT/SWFmfr0YR2DkMYRyu0vLoM=;
+        b=w/G3QBvKbQBEO/K594bJQEnljtGmmlR8E32evTV/Dk6fweGKTSaUZ9R4C+Y3PQlBr5
+         OwZRRiOLZV82Gbw+FOF4hhHn3Y7V/wXXY2X62mnXyCs1TPXksISmUFOPEOv302CBFj1U
+         BAE5O9bo7NLYasnrFtOPGvo+dIT6NEodZp0UeXjGDpDK9lW3UNua8h+uOYPs7t8kW3Gd
+         2ggkXdgK/XaGlRAE0fOP6Rzl8QJuXJuwg8Brk61y40MqqgNGKOzljB0wl42wmVZ1r0EK
+         sPJa2bskzVdtloQJdCS5nlRw3wy20GSRe1GpdqvhozhkPPPKiS8um8c2JSjbNyGwGdtQ
+         SrmA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1724167932; x=1724772732;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=reG4/g7c03D2ee4fl6pmLF83MA+CK6ivPFyQdUf/2ns=;
-        b=D2GdbcAFj0KwU29MAF8uy9xTaFpbLHe3c0Ciw+B8zqxyeuDi1goNjc+OToIFKZj9dN
-         GciMsitZhdXurcjQUqxyIKtT8xbZvaiIlDZb22ILMewsxJv71ETKM6SCBd4y7QUPOb1D
-         l5Uc5l+YnUIkIastmN9pPijTm7E+EMoIxpMqeuKrWFq1FFdDD1VyHxvxobtdALU07S0u
-         lsVaqDKjaB5YYBcTGbQS0gAYoZjIDGXiVMa+xk8Dsi1taGfRbtDCKXdtbYTH9A/LERmE
-         J8nuuWrJ6QUbTbvQuKaqKCVQue4VcD453B2ED2iVJgYaWBDN2uHAFf3KY488xVV7EnQU
-         nZRw==
-X-Forwarded-Encrypted: i=1; AJvYcCXqjGqgJPm1EHkbSf0gKyVP58Djyg7d9acULPFKvwKoRKTztg0HXytX4/O/b4Mko5oJfXZBh24M+MHh1f7uZ+yaMERH5nw/alU=
-X-Gm-Message-State: AOJu0YzuqFjonTcvJtGYHHTGkOc7dk/KzXAtSGh3PhplNm2+vpKjEJ/K
-	svRBN7urz4QlGCHP/5Jk5rMWJCUDgCIt5fvKSnB9kBOW8yF0oS0qMMn7+zLxOvvL/qSuB5qzh6l
-	EOEojGw==
-X-Google-Smtp-Source: AGHT+IF1LP0T5TlygOyFfh/n6OURjo1jWc9HeERK2AcUTiUTu06t2FElX1+fL41meu+dk55rat1Akw==
-X-Received: by 2002:a17:907:e204:b0:a7a:c812:36bb with SMTP id a640c23a62f3a-a83928aa084mr1055356966b.8.1724167932162;
-        Tue, 20 Aug 2024 08:32:12 -0700 (PDT)
-Received: from mail-ed1-f45.google.com (mail-ed1-f45.google.com. [209.85.208.45])
-        by smtp.gmail.com with ESMTPSA id a640c23a62f3a-a83838c687csm768897866b.9.2024.08.20.08.32.11
-        for <linux-sh@vger.kernel.org>
+        d=1e100.net; s=20230601; t=1724188637; x=1724793437;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=GOcODjceGC7ZkW4fB/YT/SWFmfr0YR2DkMYRyu0vLoM=;
+        b=RtXjMg46gCgjo6vnGGqOdQTzc9UEg5FKg8H4d1GxsPpajJBVGhZ1udpSOOjz0ma6kL
+         5/5Uzl/UlnGWXLRdH1Mb1eNYoToUkgbK/uGu09Ai4Q9AaZCid8JcxVIfiLrLoAWXIAg6
+         ALHex3rEfKYjnMEg3ytJrkD9DbD0yL9n+N8Zd+koAJLQAcu/rqFsJctvnzSA1vH+tPaS
+         OXMGUX441yEeIRPUnSdKHwFb44jpGSP8EUUF7q/QdWgORJu0fpMyK/vbY1TESaMPBdVG
+         KKPYdTwYUdD/nEnpRKluz7nfzDbc8CXHyV42Qj4/VVj8r5B4rn9IPGzRgFInOFMlvk2K
+         iETg==
+X-Forwarded-Encrypted: i=1; AJvYcCX4F1vQHfEM782wlOfQpeVmd6pjm0xNz8c15dLXsOAbNQ2mL9LLPUXMLD7at9T6VEi0dEZmXYHE8g==@vger.kernel.org
+X-Gm-Message-State: AOJu0YygIw4AvrkTs1N0n4Fb9oQT+fS3aGKQFr4m1g0xBCIdtO2ip8zQ
+	tnntuI8LnLJuTiG6rNkVLQhWGTlBzTEgA3NkFyrbqBfL4ovN6vkzEXZOA5/alMc=
+X-Google-Smtp-Source: AGHT+IH694ptJUT+W4npveoCOkWoEd/Bd4Fd/tTcyPr4LbEtrypfJeZqkWp1OWOohPWwkgyUxuRYrg==
+X-Received: by 2002:a05:690c:6591:b0:6ad:ba92:1731 with SMTP id 00721157ae682-6c0a0ae8507mr6885217b3.41.1724188637088;
+        Tue, 20 Aug 2024 14:17:17 -0700 (PDT)
+Received: from [172.16.32.83] ([198.232.126.202])
+        by smtp.gmail.com with ESMTPSA id af79cd13be357-7a66f388703sm62392285a.25.2024.08.20.14.17.15
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 20 Aug 2024 08:32:11 -0700 (PDT)
-Received: by mail-ed1-f45.google.com with SMTP id 4fb4d7f45d1cf-5becc379f3fso4369624a12.3
-        for <linux-sh@vger.kernel.org>; Tue, 20 Aug 2024 08:32:11 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AJvYcCXT4BBQOgpEspkmfwNj3ufstkOIbyjhGtzA+k5RoZ84iERuOIx/IFOII3lAx/9fZme0hpa01pddnoOy+eD89AjgTou1UyTyM60=
-X-Received: by 2002:a05:6402:2710:b0:57c:c166:ba6 with SMTP id
- 4fb4d7f45d1cf-5beca5c5750mr8152922a12.19.1724167931490; Tue, 20 Aug 2024
- 08:32:11 -0700 (PDT)
+        Tue, 20 Aug 2024 14:17:16 -0700 (PDT)
+Message-ID: <dff57198-7955-ec09-8909-671982834673@landley.net>
+Date: Tue, 20 Aug 2024 16:31:13 -0500
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20240812082605.743814-1-mpe@ellerman.id.au> <20240819185253.GA2333884@thelio-3990X>
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
+ Thunderbird/102.10.0
+Subject: Re: [PATCH v2 1/4] mm: Add optional close() to struct
+ vm_special_mapping
+Content-Language: en-US
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+ Michael Ellerman <mpe@ellerman.id.au>
+Cc: Nathan Chancellor <nathan@kernel.org>, Guo Ren <guoren@kernel.org>,
+ Brian Cain <bcain@quicinc.com>, Dinh Nguyen <dinguyen@kernel.org>,
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ Richard Weinberger <richard@nod.at>,
+ Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+ Johannes Berg <johannes@sipsolutions.net>, linux-mm@kvack.org,
+ linuxppc-dev@lists.ozlabs.org, akpm@linux-foundation.org,
+ christophe.leroy@csgroup.eu, jeffxu@google.com, Liam.Howlett@oracle.com,
+ linux-kernel@vger.kernel.org, npiggin@gmail.com, oliver.sang@intel.com,
+ pedro.falcato@gmail.com, linux-um@lists.infradead.org,
+ linux-csky@vger.kernel.org, linux-hexagon <linux-hexagon@vger.kernel.org>,
+ Linux-sh list <linux-sh@vger.kernel.org>
+References: <20240812082605.743814-1-mpe@ellerman.id.au>
+ <20240819185253.GA2333884@thelio-3990X>
  <CAHk-=wj9QPhG4CjiX8YLRC1wHj_Qs-T8wJi0WEhkfp0cszvB9w@mail.gmail.com>
- <20240819195120.GA1113263@thelio-3990X> <CAHk-=wgsDJ+sA1T01YT-z5TXs3zxJ54f0VDApkZ1pgcr8T=myQ@mail.gmail.com>
- <CAHk-=wjzYKrwSDK3PFMC1C2x37aKzEuC7dVxg0kGt8h+vjZfjQ@mail.gmail.com> <87y14rso9o.fsf@mail.lhotse>
-In-Reply-To: <87y14rso9o.fsf@mail.lhotse>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Tue, 20 Aug 2024 08:31:55 -0700
-X-Gmail-Original-Message-ID: <CAHk-=wiS7PMtL6oR6acNgWZr0NN4Ax4PQD_CYJKCiKS0mT=Z7A@mail.gmail.com>
-Message-ID: <CAHk-=wiS7PMtL6oR6acNgWZr0NN4Ax4PQD_CYJKCiKS0mT=Z7A@mail.gmail.com>
-Subject: Re: [PATCH v2 1/4] mm: Add optional close() to struct vm_special_mapping
-To: Michael Ellerman <mpe@ellerman.id.au>
-Cc: Nathan Chancellor <nathan@kernel.org>, Guo Ren <guoren@kernel.org>, Brian Cain <bcain@quicinc.com>, 
-	Dinh Nguyen <dinguyen@kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, 
-	Rich Felker <dalias@libc.org>, John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
-	Richard Weinberger <richard@nod.at>, Anton Ivanov <anton.ivanov@cambridgegreys.com>, 
-	Johannes Berg <johannes@sipsolutions.net>, linux-mm@kvack.org, 
-	linuxppc-dev@lists.ozlabs.org, akpm@linux-foundation.org, 
-	christophe.leroy@csgroup.eu, jeffxu@google.com, Liam.Howlett@oracle.com, 
-	linux-kernel@vger.kernel.org, npiggin@gmail.com, oliver.sang@intel.com, 
-	pedro.falcato@gmail.com, linux-um@lists.infradead.org, 
-	linux-csky@vger.kernel.org, linux-hexagon <linux-hexagon@vger.kernel.org>, 
-	Linux-sh list <linux-sh@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+ <20240819195120.GA1113263@thelio-3990X>
+ <CAHk-=wgsDJ+sA1T01YT-z5TXs3zxJ54f0VDApkZ1pgcr8T=myQ@mail.gmail.com>
+ <CAHk-=wjzYKrwSDK3PFMC1C2x37aKzEuC7dVxg0kGt8h+vjZfjQ@mail.gmail.com>
+ <87y14rso9o.fsf@mail.lhotse>
+ <CAHk-=wiS7PMtL6oR6acNgWZr0NN4Ax4PQD_CYJKCiKS0mT=Z7A@mail.gmail.com>
+From: Rob Landley <rob@landley.net>
+In-Reply-To: <CAHk-=wiS7PMtL6oR6acNgWZr0NN4Ax4PQD_CYJKCiKS0mT=Z7A@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Mon, 19 Aug 2024 at 23:26, Michael Ellerman <mpe@ellerman.id.au> wrote:
->
-> Linus Torvalds <torvalds@linux-foundation.org> writes:
-> > +static struct vm_special_mapping vdso_mapping = {
-> > +     .name = "[vdso]",
-> > +     .pages = syscall_pages;
->                               ^
->                               should be ,
+On 8/20/24 10:31, Linus Torvalds wrote:
+> On Mon, 19 Aug 2024 at 23:26, Michael Ellerman <mpe@ellerman.id.au> wrote:
+>>
+>> Linus Torvalds <torvalds@linux-foundation.org> writes:
+>> > +static struct vm_special_mapping vdso_mapping = {
+>> > +     .name = "[vdso]",
+>> > +     .pages = syscall_pages;
+>>                               ^
+>>                               should be ,
+> 
+> Ack. Changed here locally.
 
-Ack. Changed here locally. But I assume you also don't actually test sh...
+Hexagon also has &&vdso_page which I don't understand (but have a toolchain for
+somewhere to at least smoketest...)
 
-It would be good to get acks from the architectures that still used
-the legacy interface.
+> But I assume you also don't actually test sh...
 
-              Linus
+But I do.
+
+Aside: arch/sh smoketests easily under qemu, here's a relocatable binary toolchain:
+
+  wget https://landley.net/bin/toolchains/latest/sh4-linux-musl-cross.tar.xz
+  tar xvf sh4-linux-musl-cross-tar.xz
+  CROSS_COMPILE=$PWD/sh4-linux-musl-cross/bin/sh4-linux-musl-
+
+And https://landley.net/bin/mkroot/latest/sh4.tgz is a tiny qemu-system-sh4
+system with kernel + initramfs.cpio.gz + run-qemu.sh with the config used to
+build it under docs/ and as the first three lines of docs/linux-miniconfig
+record, the kernel is arch/sh/boot/zImage.
+
+You can keep the initramfs.cpio.gz and run-qemu.sh and swap out the kernel for a
+quick boot to shell prompt under qemu. Serial console is qemu's stdin/stdout,
+"exit" to shut down the emulator.
+
+The build script, if you care, is 400 lines of bash:
+
+  https://github.com/landley/toybox/blob/master/mkroot/mkroot.sh
+
+> It would be good to get acks from the architectures that still used
+> the legacy interface.
+
+I'll give arch/sh a whirl. Can somebody answer my above hexagon question?
+
+>               Linus
+
+Rob
