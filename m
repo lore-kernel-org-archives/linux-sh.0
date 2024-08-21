@@ -1,86 +1,115 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 879507D07D;
-	Wed, 21 Aug 2024 18:02:19 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5B3171B2EE2;
+	Wed, 21 Aug 2024 18:10:13 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724263339; cv=none; b=DHAENtlhqAVOVsPZpZocYsyi0IX4WkKTEx2MAFFjMkaq6UAwpf9NZLKPEkTwyvQfFe/U3s4nIgu5GjS8P/FUp8Q0KNQUNW8CMAvpb5KJ9FtCQMHntuTaQWewS2WeT4dmN+quvu+KqDjrNIoy8reWoCSvtXsvzt9FtPEQC0PK4vQ=
+	t=1724263813; cv=none; b=t82yHDDB3NFEEL/dtI+6ccQMU95TR692Jw5aCpapeaqkksjJAg4kiw9WizlATHVjuSAkhTaU/ezdBDy7jxKY/EdUyoJobLa3ZoWTYMjOQ3WaqmYO5uYh4SKmNjIfW8+QyaMV7l9l+0s2lknVhxHkVhlMssy84McFePPvQ/1GlZs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724263339; c=relaxed/simple;
-	bh=McNAGRZDnJ7u79fmlszPR8St8pd0flKr5dQvmUicyWg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=c94iYK/Yfc6PODCyzHLhba4QBZmBEaQ9Vu/Tq2GnrgIULlAN6trhX7tGpef30xF/bWKoUYzcvYFdoiho6Zz5PP/UZDgfb/ulsjxYySNH9DAI6UwSanflvjrLrfXbPePkRMWKvbjguPqofECSZO2a52nnt8gcbE7r8X0704XCYf0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=c9fH/UCw; arc=none smtp.client-ip=10.30.226.201
+	s=arc-20240116; t=1724263813; c=relaxed/simple;
+	bh=rRjox4fY0egq63DbDfR2UVfQKrpoEipdNtPZ92fJEcw=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 MIME-Version; b=CnWXTODCUdK7uCrPqJTenh/U/OxpW1uX1ML1a/DNBQTuADKiP+WPPjnCx6pliObtY/7Dz3iPeOf3q2BviYc/WHuPogmCoBlRCfXsmffobhvocPoHLpponIpkovelwq9Knr9DudHkssp2uEMzLj0vgDFh3vrXHCxC6ClpFSlSJfw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Ml6UOk07; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="c9fH/UCw"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 07ED8C32781;
-	Wed, 21 Aug 2024 18:02:19 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Ml6UOk07"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 315AEC4AF0E;
+	Wed, 21 Aug 2024 18:10:13 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1724263339;
-	bh=McNAGRZDnJ7u79fmlszPR8St8pd0flKr5dQvmUicyWg=;
-	h=Date:From:To:Cc:Subject:Reply-To:References:In-Reply-To:From;
-	b=c9fH/UCwU4ovqXBiXcpHiMBfm5emz7PVbY4+KAe+V9wvRs5Y8v9Z0V4ajuP1Q26a6
-	 skPF4b52M7xH25Xneik/dnR35/M3KAGhdOSCczgMjdN18xPLgpNBCcMcXLDwFtqwVf
-	 C8CjdOqD862ATRW1q5+ER0btPtUzdL2sRmDL2oc03TbX6cbtJdA8KZEPjYf1/vfozI
-	 xXANc7Tqiqjo3rf37jLTZk2saQJoIVNh24SX89MS3k4pittEFa0a8MIIlDnBX1pwbk
-	 ytbfRZzuwg15DBxxOwqjjG+UdREaDVK2EgHrSYNSqUnXIwAYAFgRPH8RQup57RUvN8
-	 o+bclw4MRIsfQ==
+	s=k20201202; t=1724263813;
+	bh=rRjox4fY0egq63DbDfR2UVfQKrpoEipdNtPZ92fJEcw=;
+	h=From:To:Cc:Subject:Date:In-Reply-To:References:From;
+	b=Ml6UOk07YO3enrVKQ0NNvDl9iFc3hFp4f1iRte27zuWvaJhi3eZYvzOkIXMwf2jtY
+	 keMUS1yVsT+NdB9i0aillOCvpZhd0/wbKYrOEs1TX2q6t/7Exj6ZfIf+gYF+NyWNP9
+	 DGb3HZj3ZOkWwN1Mw8swjA3a8trSybB24Pgs4EkngRtNkvjPHi0/tARtCFE/2LF3U3
+	 QF5FtUkk9Icwxut7BsViLwZUblDd+5qW3wP1nW9bYoOZ2ZbvUv10LBKOUjnRODkSrl
+	 7eIzte7H+FM/aY1HJf8LjAR6Xa4bif9gk86LcblyVuRMBs9HiiWCgkYd6L+xO2GQur
+	 e63b+kYObalcg==
 Received: by paulmck-ThinkPad-P17-Gen-1.home (Postfix, from userid 1000)
-	id 99434CE160F; Wed, 21 Aug 2024 11:02:18 -0700 (PDT)
-Date: Wed, 21 Aug 2024 11:02:18 -0700
+	id BFF71CE16C8; Wed, 21 Aug 2024 11:10:12 -0700 (PDT)
 From: "Paul E. McKenney" <paulmck@kernel.org>
-To: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: elver@google.com, akpm@linux-foundation.org, tglx@linutronix.de,
-	peterz@infradead.org, torvalds@linux-foundation.org, arnd@arndb.de,
-	geert@linux-m68k.org, palmer@rivosinc.com, mhiramat@kernel.org,
-	linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org
-Subject: [PATCH v2 cmpxchg 0/3] Provide emulation for one-byte cmpxchg() for
- v6.12
-Message-ID: <04a6010c-536d-4906-bf7c-b2335a2f54b0@paulmck-laptop>
-Reply-To: paulmck@kernel.org
-References: <c1b7f3a2-da50-4dfb-af6f-a1898eaf2b79@paulmck-laptop>
+To: linux-arch@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	elver@google.com
+Cc: akpm@linux-foundation.org,
+	tglx@linutronix.de,
+	peterz@infradead.org,
+	torvalds@linux-foundation.org,
+	arnd@arndb.de,
+	geert@linux-m68k.org,
+	kernel-team@meta.com,
+	"Paul E. McKenney" <paulmck@kernel.org>,
+	Andi Shyti <andi.shyti@linux.intel.com>,
+	Palmer Dabbelt <palmer@rivosinc.com>,
+	Masami Hiramatsu <mhiramat@kernel.org>,
+	linux-sh@vger.kernel.org,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Subject: [PATCH v2 cmpxchg 3/3] sh: Emulate one-byte cmpxchg
+Date: Wed, 21 Aug 2024 11:10:11 -0700
+Message-Id: <20240821181011.2604152-3-paulmck@kernel.org>
+X-Mailer: git-send-email 2.40.1
+In-Reply-To: <04a6010c-536d-4906-bf7c-b2335a2f54b0@paulmck-laptop>
+References: <04a6010c-536d-4906-bf7c-b2335a2f54b0@paulmck-laptop>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <c1b7f3a2-da50-4dfb-af6f-a1898eaf2b79@paulmck-laptop>
+Content-Transfer-Encoding: 8bit
 
-Hello!
+Use the new cmpxchg_emu_u8() to emulate one-byte cmpxchg() on sh.
 
-This series provides an emulation function for one-byte cmpxchg(),
-and uses it for the remaining architectures not supporting these in
-hardware and not providing emulation.  The emulation is in terms of
-the fully ordered four-byte cmpxchg() that is supplied by all of these
-architectures.  The emulation has been used in mainline since v6.9
-by csky.
+[ paulmck: Drop two-byte support per Arnd Bergmann feedback. ]
+[ paulmck: Apply feedback from Naresh Kamboju. ]
+[ Apply Geert Uytterhoeven feedback. ]
 
-Once this emulation is in place for all architectures needing
-it, RCU Tasks will use this capability in place of the current
-rcu_trc_cmpxchg_need_qs() open-coding of this emulation.
+Signed-off-by: Paul E. McKenney <paulmck@kernel.org>
+Cc: Andi Shyti <andi.shyti@linux.intel.com>
+Cc: Palmer Dabbelt <palmer@rivosinc.com>
+Cc: Masami Hiramatsu <mhiramat@kernel.org>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: <linux-sh@vger.kernel.org>
+Acked-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+---
+ arch/sh/Kconfig               | 1 +
+ arch/sh/include/asm/cmpxchg.h | 3 +++
+ 2 files changed, 4 insertions(+)
 
-1.	xtensa: Emulate one-byte cmpxchg.
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 1aa3c4a0c5b27..e9103998cca91 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -14,6 +14,7 @@ config SUPERH
+ 	select ARCH_HIBERNATION_POSSIBLE if MMU
+ 	select ARCH_MIGHT_HAVE_PC_PARPORT
+ 	select ARCH_WANT_IPC_PARSE_VERSION
++	select ARCH_NEED_CMPXCHG_1_EMU
+ 	select CPU_NO_EFFICIENT_FFS
+ 	select DMA_DECLARE_COHERENT
+ 	select GENERIC_ATOMIC64
+diff --git a/arch/sh/include/asm/cmpxchg.h b/arch/sh/include/asm/cmpxchg.h
+index 5d617b3ef78f7..1e5dc5ccf7bf5 100644
+--- a/arch/sh/include/asm/cmpxchg.h
++++ b/arch/sh/include/asm/cmpxchg.h
+@@ -9,6 +9,7 @@
+ 
+ #include <linux/compiler.h>
+ #include <linux/types.h>
++#include <linux/cmpxchg-emu.h>
+ 
+ #if defined(CONFIG_GUSA_RB)
+ #include <asm/cmpxchg-grb.h>
+@@ -56,6 +57,8 @@ static inline unsigned long __cmpxchg(volatile void * ptr, unsigned long old,
+ 		unsigned long new, int size)
+ {
+ 	switch (size) {
++	case 1:
++		return cmpxchg_emu_u8(ptr, old, new);
+ 	case 4:
+ 		return __cmpxchg_u32(ptr, old, new);
+ 	}
+-- 
+2.40.1
 
-2.	ARC: Emulate one-byte cmpxchg.
-
-3.	sh: Emulate one-byte cmpxchg.
-
-Changes since v1:
-
-o	Add acked-by tags.
-
-						Thanx, Paul
-
-------------------------------------------------------------------------
-
- arc/Kconfig                  |    1 +
- arc/include/asm/cmpxchg.h    |    6 ++++--
- sh/Kconfig                   |    1 +
- sh/include/asm/cmpxchg.h     |    3 +++
- xtensa/Kconfig               |    1 +
- xtensa/include/asm/cmpxchg.h |    2 ++
- 6 files changed, 12 insertions(+), 2 deletions(-)
