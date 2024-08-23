@@ -1,172 +1,162 @@
-Received: from mail-pf1-f195.google.com (mail-pf1-f195.google.com [209.85.210.195])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BED151CF2A1;
-	Thu, 22 Aug 2024 17:43:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.195
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5F57D1E4B2
+	for <linux-sh@vger.kernel.org>; Fri, 23 Aug 2024 00:04:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724348626; cv=none; b=of0fP+0729CBTwgXJ+G6wV1I0CXLh/4xAQ3Qs1ywN/mGiz+KbslY6u9hnixrLVJkGRMWkfxg0agCaH8MrtoaNqQPcQuML54WHP3ssH67YkIGymfR8eFt9enK70UB5+L5OnVGWwVNB47MhfyKlWUbrsn9YqN7l796PApTYkVUkCA=
+	t=1724371466; cv=none; b=FXPqy92UOjFJ5CJbpnwhv4j3YZICZolK/crf0o/QsfCK+c1X0+oR1nO55MolQmvtVw/24LqHXxa8pEW72pxAU1GJXJ27C8/QTEKldRvh7HahSa4+fHw57z9zqmCslObuGKZpnt+EPgJk+0JbFsvHrPuX44YICiRrwgcvV0UxKgE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724348626; c=relaxed/simple;
-	bh=NFJyZNClpVUHx0Z3NXNiq6kpWDX+CueV3L4clx5uBrg=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=pYhcCsEfcISmHVbpSJdZtoCNuzfBA/cHiKHRYHGLucKP8ud37S1rq4ekevIvpRzGbWjRtuoR8nzaoLmS7uO4/d/vURIwxgmpw2LBvMEPkurOmqJ7n53OpG/WAv7bxKqb5BqvP96xvW2yUfc6hAJlgAGFcGf09r5OZUg9JEeM5zQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=dSOWVQZw; arc=none smtp.client-ip=209.85.210.195
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1724371466; c=relaxed/simple;
+	bh=3QnAdixYo6jA5LfHGge4JAkNB7yoXQF4pxxURUN8JXE=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=tOhPLyCkm0GBQZEYjSg2qU0s1PlVnZt2b0dewlAC9QzQ+4QerDID/lV2fqzwl9RfuhbgN4PLx+oR3b99R2pGrBnYJbU6nnugNsJ85mPaVptjOZ7KvXz1c2vK50G/ia3wDm2Ga2Q18Fx8w9G5WIqVKux1GvzVRkeTbeE+ys9FUjc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=ON0z/daj; arc=none smtp.client-ip=170.10.133.124
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dSOWVQZw"
-Received: by mail-pf1-f195.google.com with SMTP id d2e1a72fcca58-7141b04e7b5so726464b3a.2;
-        Thu, 22 Aug 2024 10:43:44 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1724348624; x=1724953424; darn=vger.kernel.org;
-        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
-         :mime-version:subject:date:from:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=flQt4FT94ocjxfYVsDsgAIXjhRxl01ohtqmqMtZp6jc=;
-        b=dSOWVQZwhOcxjVN5NhMtpWMc0b4V2cUbWjyNtqKKOSKnkmYyO6Vj43Frn4EyO3C9PA
-         lgVmN0XYJRCg6keRGP1QEj36Tw7oyhhhpRBSbsJ9qoKpXKO9Bcft9R6RPPmGOa2ktSy1
-         KHikYBdIuAOYe5BL4JggNPW0R6KRpKc2ILlupWu1E6I4dixdJv/4N0Tkgi5ZiMQZJfeX
-         st609SF7ifqipGGesTl3QVHbRaq2CiffN10cs+Fp/SmggfhTRDgTDYCRJAjVKo5jNq62
-         EY9gc9bvEbZP9LULIER18n9V6fCGCfNKl+FfOZczz+zme/eBKct68wn7KR1FJL2qPpkl
-         xZMg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1724348624; x=1724953424;
-        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
-         :mime-version:subject:date:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=flQt4FT94ocjxfYVsDsgAIXjhRxl01ohtqmqMtZp6jc=;
-        b=mXeWGN0phtdJj+9RzgU3jxZFXCq7XCDM+ywV5h4Tl0dww3tjhvT9GFU1WsU2i48HqN
-         8jezbm93jrieXu4SDprYOcHfNxeMGBu1N6FiQZrWS+pNoLkAmOoXG9W8RYDKxAvQ304P
-         gE7sSeWvWazUcBCSB5eJRSgSBy03Hlp4fnEkycNNt5A1tGt2nPPx2luwJ3CVONtk9q14
-         Z/95GRa7MySPXg40glNYzjTvjdSvWY/mqilx4cgPMmIqwwS3hD5iquLk3h05U8cJUw65
-         nMrQ3KdWxBJleu3z91/YP22HtE9eBEWvbyyiypEKZWJSbV/vcNrYA+0v6E0sUXyVTD6K
-         Ga6A==
-X-Forwarded-Encrypted: i=1; AJvYcCVCDbTORMXC3NYrfyvkY6IzP32VoXBuxjEMj9uivGyuvO5byyeEpsq074dUCzBIwuINBBiuae/+630=@vger.kernel.org, AJvYcCVVHajNRqg8yddsy3nZPkHvKWmdI00xSXzoGJIiXeUkw02eT/CyiFu/mawPfgIlQ+dNIDKI1bMl7d4DiJI=@vger.kernel.org, AJvYcCX1YHG6vS72A55wZmw0qs3+jwQOaOwwbaJT5guVVJj2c+a86/pxjH6Wt4HugmpUlAmRwxJknDlcdgTZZ/0=@vger.kernel.org, AJvYcCXsso/i4PhipK/btJL3okGONJleKufxokeRYkXEQQif3epVKpY/HeP8zqiJZetld2w4KPfAV1EKPI78JA==@vger.kernel.org
-X-Gm-Message-State: AOJu0Yx+8aQULUBd70iuyfT3f1SRCEh56/uUBQMuTuWSa3DTpuo2dy1R
-	NG2/19n+WLkFHmV/d4dzAFlHRmxBreBaRiSuxk16c9d8W6RC6RJ0
-X-Google-Smtp-Source: AGHT+IFGkELVvNa0lI1frVFe6EWSijWeT2NndQtVRkhY3tXIvi6/Nr7KdOgUntuymQnVsLZZV1NHsQ==
-X-Received: by 2002:a05:6a20:cfa4:b0:1c4:9c27:77a5 with SMTP id adf61e73a8af0-1cad7fb3fd0mr7479354637.31.1724348623824;
-        Thu, 22 Aug 2024 10:43:43 -0700 (PDT)
-Received: from localhost ([103.156.242.194])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-71434af17ebsm1583180b3a.3.2024.08.22.10.43.42
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 22 Aug 2024 10:43:43 -0700 (PDT)
-From: Celeste Liu <coelacanthushex@gmail.com>
-X-Google-Original-From: Celeste Liu <CoelacanthusHex@gmail.com>
-Date: Fri, 23 Aug 2024 01:43:29 +0800
-Subject: [PATCH v2 4/4] arm: defconfig: drop RT_GROUP_SCHED=y from
- bcm2835/tegra/omap2plus
+	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="ON0z/daj"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1724371463;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=HHqbq1AQSOY5EcS479bGVBSadv/yHMIWF28e/YV8WdA=;
+	b=ON0z/dajkrSyPS5QqkOqQfNn8q70Dpr3pIAGQukIfCsgKn9vxlcwBezFraob/MG0BXnKcm
+	reC5GvpSUeJ1N0ZfLqtZyvi9pg1JvVSLyWkM1H3S/zDRvwcoP+XLB5xfDCZ+UlA0Wu7yem
+	qTBCFaKfR0TQhGJOyQUeGj/Ewjo+z1k=
+Received: from mx-prod-mc-01.mail-002.prod.us-west-2.aws.redhat.com
+ (ec2-54-186-198-63.us-west-2.compute.amazonaws.com [54.186.198.63]) by
+ relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
+ cipher=TLS_AES_256_GCM_SHA384) id us-mta-622-Q2zfLi0YMr2QKG2BabfBhQ-1; Thu,
+ 22 Aug 2024 20:04:18 -0400
+X-MC-Unique: Q2zfLi0YMr2QKG2BabfBhQ-1
+Received: from mx-prod-int-05.mail-002.prod.us-west-2.aws.redhat.com (mx-prod-int-05.mail-002.prod.us-west-2.aws.redhat.com [10.30.177.17])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	by mx-prod-mc-01.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 0352B1955BF4;
+	Fri, 23 Aug 2024 00:04:14 +0000 (UTC)
+Received: from localhost (unknown [10.72.112.51])
+	by mx-prod-int-05.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id ACCC819560A3;
+	Fri, 23 Aug 2024 00:04:10 +0000 (UTC)
+Date: Fri, 23 Aug 2024 08:04:06 +0800
+From: Baoquan He <bhe@redhat.com>
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: linux-kernel@vger.kernel.org, Dave Vasilevsky <dave@vasilevsky.ca>,
+	Michael Ellerman <mpe@ellerman.id.au>, kexec@lists.infradead.org,
+	debian-powerpc@lists.debian.org, x86@kernel.org,
+	linux-arm-kernel@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
+	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+	linux-mips@vger.kernel.org, linux-riscv@lists.infradead.org,
+	loongarch@lists.linux.dev, akpm@linux-foundation.org,
+	ebiederm@xmission.com, hbathini@linux.ibm.com, piliu@redhat.com,
+	viro@zeniv.linux.org.uk, Sam James <sam@gentoo.org>
+Subject: Re: [PATCH linux-next v3 05/14] crash: clean up kdump related config
+ items
+Message-ID: <ZsfR9rdMt8yn1+Bz@MiWiFi-R3L-srv>
+References: <20240124051254.67105-1-bhe@redhat.com>
+ <20240124051254.67105-6-bhe@redhat.com>
+ <a9d9ecd1ed8d62eae47ec26257093495e6cbd44a.camel@physik.fu-berlin.de>
+ <ZscCMLfNbj2MDiaB@MiWiFi-R3L-srv>
+ <c5e9996e4d2ba2a0849d65f68e3dce94fffc5828.camel@physik.fu-berlin.de>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20240823-fix-riscv-rt_group_sched-v2-4-e4dbae24f7e1@gmail.com>
-References: <20240823-fix-riscv-rt_group_sched-v2-0-e4dbae24f7e1@gmail.com>
-In-Reply-To: <20240823-fix-riscv-rt_group_sched-v2-0-e4dbae24f7e1@gmail.com>
-To: Paul Walmsley <paul.walmsley@sifive.com>, 
- Palmer Dabbelt <palmer@dabbelt.com>, Albert Ou <aou@eecs.berkeley.edu>, 
- Guo Ren <guoren@kernel.org>, Anup Patel <anup@brainfault.org>, 
- Heinrich Schuchardt <heinrich.schuchardt@canonical.com>, 
- Huacai Chen <chenhuacai@kernel.org>, WANG Xuerui <kernel@xen0n.name>, 
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
- Russell King <linux@armlinux.org.uk>, 
- Florian Fainelli <florian.fainelli@broadcom.com>, 
- Broadcom internal kernel review list <bcm-kernel-feedback-list@broadcom.com>, 
- Ray Jui <rjui@broadcom.com>, Scott Branden <sbranden@broadcom.com>, 
- Tony Lindgren <tony@atomide.com>, Thierry Reding <thierry.reding@gmail.com>, 
- Jonathan Hunter <jonathanh@nvidia.com>
-Cc: Palmer Dabbelt <palmer@rivosinc.com>, linux-riscv@lists.infradead.org, 
- linux-kernel@vger.kernel.org, loongarch@lists.linux.dev, 
- linux-sh@vger.kernel.org, linux-arm-kernel@lists.infradead.org, 
- linux-rpi-kernel@lists.infradead.org, linux-omap@vger.kernel.org, 
- linux-tegra@vger.kernel.org, Stefan Wahren <wahrenst@gmx.net>, 
- Kevin Hilman <khilman@baylibre.com>, 
- Celeste Liu <CoelacanthusHex@gmail.com>
-X-Mailer: b4 0.14.1
-X-Developer-Signature: v=1; a=openpgp-sha256; l=2823;
- i=CoelacanthusHex@gmail.com; h=from:subject:message-id;
- bh=NFJyZNClpVUHx0Z3NXNiq6kpWDX+CueV3L4clx5uBrg=;
- b=owJ4nJvAy8zAJfY4pvNJRPo6U8bTakkMaccrDivyM1yYePqvmKhQXbdc0o4/M99VH9rqbjfrd
- C2704FIwfKOUhYGMS4GWTFFFrGdT18vK330YRmvyQyYOaxMIEMYuDgF4CKcjAwdc84dWeL8XvrP
- oXWq2Tvq7x9Qlrtz8PpheXWhu2maxd+PMfyvY/2cPcnsqtDXK2v61hZlLJVe4rPDPnSvlHrjhGk
- +FpHMAC41TKg=
-X-Developer-Key: i=CoelacanthusHex@gmail.com; a=openpgp;
- fpr=892EBC7DC392DFF9C9C03F1D15F4180E73787863
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <c5e9996e4d2ba2a0849d65f68e3dce94fffc5828.camel@physik.fu-berlin.de>
+X-Scanned-By: MIMEDefang 3.0 on 10.30.177.17
 
-Commit 673ce00c5d6c ("ARM: omap2plus_defconfig: Add support for distros
-with systemd") said it's because of recommendation from systemd. But
-systemd changed their recommendation later.[1]
+On 08/22/24 at 11:37am, John Paul Adrian Glaubitz wrote:
+> Hi Baoquan,
+> 
+> On Thu, 2024-08-22 at 17:17 +0800, Baoquan He wrote:
+> > > The change to enable CONFIG_CRASH_DUMP by default apparently broke the boot
+> > > on 32-bit Power Macintosh systems which fail after GRUB with:
+> > > 
+> > > 	"Error: You can't boot a kdump kernel from OF!"
+> > > 
+> > > We may have to turn this off for 32-bit Power Macintosh systems.
+> > > 
+> > > See this thread on debian-powerpc ML: https://lists.debian.org/debian-powerpc/2024/07/msg00001.html
+> > 
+> > If so, fix need be made.
+> > 
+> > We may need change in ARCH_SUPPORTS_CRASH_DUMP of ppc, can you or anyone
+> > post a patch? I don't know how to identify 32-bit Power Macintosh.
+> > 
+> > arch/powerpc/Kconfig:
+> > ===
+> > config ARCH_SUPPORTS_CRASH_DUMP
+> >         def_bool PPC64 || PPC_BOOK3S_32 || PPC_85xx || (44x && !SMP)
+> >         
+> > config ARCH_SELECTS_CRASH_DUMP
+> >         def_bool y
+> >         depends on CRASH_DUMP
+> >         select RELOCATABLE if PPC64 || 44x || PPC_85xx
+> > ......
+> > config PHYSICAL_START
+> >         hex "Physical address where the kernel is loaded" if PHYSICAL_START_BOOL
+> >         default "0x02000000" if PPC_BOOK3S && CRASH_DUMP && !NONSTATIC_KERNEL
+> >         default "0x00000000"
+> 
+> I think the architecture does support crash dumps, but I think the kernel has to
+> be booted from kexec in this case. Booting a kernel with CRASH_DUMP enabled won't
+> work from Open Firmware. So, I think CRASH_DUMP should just be disabled for
+> PPC_BOOK3S_32 by default and users who want to use it on these systems, will have to
+> enable it explicitly.
 
-For cgroup v1, if turned on, and there's any cgroup in the "cpu" hierarchy it
-needs an RT budget assigned, otherwise the processes in it will not be able to
-get RT at all. The problem with RT group scheduling is that it requires the
-budget assigned but there's no way we could assign a default budget, since the
-values to assign are both upper and lower time limits, are absolute, and need to
-be sum up to < 1 for each individal cgroup. That means we cannot really come up
-with values that would work by default in the general case.[2]
+If so, below patch possiblly can fix it. Can you help check if it's OK?
 
-For cgroup v2, it's almost unusable as well. If it turned on, the cpu controller
-can only be enabled when all RT processes are in the root cgroup. But it will
-lose the benefits of cgroup v2 if all RT process were placed in the same cgroup.
+From dd5318dc5dcd66521b31214f0e5921f258532ef8 Mon Sep 17 00:00:00 2001
+From: Baoquan He <bhe@redhat.com>
+Date: Fri, 23 Aug 2024 07:37:38 +0800
+Subject: [PATCH] powerpc/crash: do not default to enable CRASH_DUMP for
+ PPC_BOOK3S_32 system
+Content-type: text/plain
 
-Red Hat, Gentoo, Arch Linux and Debian all disable it. systemd also doesn't
-support it.
+Recently it's reported that PowerPC macMini system failed to boot up.
+It's because CONFIG_CRASH_DUMP=y is set by default on the system since
+kernel 6.9, and that makes CONFIG_PHYSICAL_START not equaling 0 any
+more and causes failure of normal kernel bootup.
 
-[1]: https://github.com/systemd/systemd/commit/f4e74be1856b3ac058acbf1be321c31d5299f69f
-[2]: https://bugzilla.redhat.com/show_bug.cgi?id=1229700
+The link of error report can be found here:
 
-Tested-by: Stefan Wahren <wahrenst@gmx.net>
-Acked-by: Kevin Hilman <khilman@baylibre.com>
-Signed-off-by: Celeste Liu <CoelacanthusHex@gmail.com>
+https://lists.debian.org/debian-powerpc/2024/07/msg00001.html
+
+And copy the code snippet here for reference:
+arch/powerpc/Kconfig:
+==================
+config KERNEL_START
+        hex "Virtual address of kernel base" if KERNEL_START_BOOL
+        default PAGE_OFFSET if PAGE_OFFSET_BOOL
+        default "0xc2000000" if CRASH_DUMP && !NONSTATIC_KERNEL
+        default "0xc0000000"
+
+So let's stop enabling CRASH_DUMP by default on PPC_BOOK3S_32.
+
+Signed-off-by: Baoquan He <bhe@redhat.com>
 ---
- arch/arm/configs/bcm2835_defconfig   | 1 -
- arch/arm/configs/omap2plus_defconfig | 1 -
- arch/arm/configs/tegra_defconfig     | 1 -
- 3 files changed, 3 deletions(-)
+ arch/powerpc/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/bcm2835_defconfig b/arch/arm/configs/bcm2835_defconfig
-index b5f0bd8dd536..27dc3bf6b124 100644
---- a/arch/arm/configs/bcm2835_defconfig
-+++ b/arch/arm/configs/bcm2835_defconfig
-@@ -7,7 +7,6 @@ CONFIG_BSD_PROCESS_ACCT=y
- CONFIG_BSD_PROCESS_ACCT_V3=y
- CONFIG_LOG_BUF_SHIFT=18
- CONFIG_CFS_BANDWIDTH=y
--CONFIG_RT_GROUP_SCHED=y
- CONFIG_CGROUP_FREEZER=y
- CONFIG_CPUSETS=y
- CONFIG_CGROUP_DEVICE=y
-diff --git a/arch/arm/configs/omap2plus_defconfig b/arch/arm/configs/omap2plus_defconfig
-index 3a166c2f02bd..9cb265c8d414 100644
---- a/arch/arm/configs/omap2plus_defconfig
-+++ b/arch/arm/configs/omap2plus_defconfig
-@@ -13,7 +13,6 @@ CONFIG_MEMCG=y
- CONFIG_BLK_CGROUP=y
- CONFIG_CGROUP_SCHED=y
- CONFIG_CFS_BANDWIDTH=y
--CONFIG_RT_GROUP_SCHED=y
- CONFIG_CGROUP_FREEZER=y
- CONFIG_CPUSETS=y
- CONFIG_CGROUP_DEVICE=y
-diff --git a/arch/arm/configs/tegra_defconfig b/arch/arm/configs/tegra_defconfig
-index d2a094ad360c..3a9bda2bf422 100644
---- a/arch/arm/configs/tegra_defconfig
-+++ b/arch/arm/configs/tegra_defconfig
-@@ -6,7 +6,6 @@ CONFIG_IKCONFIG=y
- CONFIG_IKCONFIG_PROC=y
- CONFIG_CGROUPS=y
- CONFIG_CGROUP_SCHED=y
--CONFIG_RT_GROUP_SCHED=y
- CONFIG_CGROUP_FREEZER=y
- CONFIG_CGROUP_CPUACCT=y
- CONFIG_CGROUP_DEBUG=y
-
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index d7b09b064a8a..dc5ca58be1d6 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -680,7 +680,7 @@ config RELOCATABLE_TEST
+ 	  relocation code.
+ 
+ config ARCH_SUPPORTS_CRASH_DUMP
+-	def_bool PPC64 || PPC_BOOK3S_32 || PPC_85xx || (44x && !SMP)
++	def_bool PPC64 || PPC_85xx || (44x && !SMP)
+ 
+ config ARCH_SELECTS_CRASH_DUMP
+ 	def_bool y
 -- 
-2.46.0
+2.41.0
 
