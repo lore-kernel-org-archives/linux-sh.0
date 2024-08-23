@@ -1,113 +1,99 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9EAFA1C694
-	for <linux-sh@vger.kernel.org>; Fri, 23 Aug 2024 01:59:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 039AB6E2AE;
+	Fri, 23 Aug 2024 07:16:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724378349; cv=none; b=KPl7GHv/dkqVIEeE3XMi9yMZRf/P254oxmK4J5q9TN6VXTCzu1NUVlc6ZpLebtN7SAyEFBBcq851cnRZCjDhIGWGFFIq3AIRHSigOE3Qd8l+QtD2O88W6RITDi+VJJ76u9Cwj/ZryU0qlU7cYI3m78ds4F05hC4vu/23wKr7dSw=
+	t=1724397391; cv=none; b=RZZVV49Z7hz+I2vjUqm7GXE2+9KKNVd9Z4Sq1rNPGw0govg5XIv20PgpKqwN9MOGVLrSWwFiIvNZbcvS7GwC60NcHcWZdezOVGyPfMKSTiFknv+6qoXv2s9LXgfSgyNtoEonpOcJybmzZ+ag2IPWC3puM0WWYAhrs8DMo2LbB/M=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724378349; c=relaxed/simple;
-	bh=KAOIasN/hhonSibrWmd5NGn4sRRLCj6E3rhDNzfzvcs=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=Lpg0j3Yzg03JXtKQbkuAD6fgwovheNhSnGy++8c1uLVM86VyxOLuSNuI87uIXCNj+Rq1XrVLkAP84wi8jb2FDaTJk/ZnC1QA407qe4f0Aq6izFu4HJR73KQDEfnZJyN7gohiKtF9CMQy8XdcLUPWeC/jizZZEy7khKGKgwJ2dPg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=cgBGb+JT; arc=none smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1724397391; c=relaxed/simple;
+	bh=l4qRphXzx3k4dAvC2xAgBVCblSVt7e1tB7WBcYH6I2A=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=ErVlkI2a88Bt3IvvdXBaSLasaAKf9irUXNmelmkA0OsL7/xzjfdeebcmI9HO1buBNSHms0cb5htUalKe1UINUD/7BsR0OQO4gOrZdMo1dNtpGIu7Ug5SxdfLlJJpJiRS9A9cTWtFtHSJaq7D+6Z3qwtNfsbHKz+0RWNCeIVTvkg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=EJ6dHGqr; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="cgBGb+JT"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1724378345;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=vptUsTTd+Ahgj+G0OF7GYw9gEl0AVQwqRfpIh4Og1O8=;
-	b=cgBGb+JTqUh0bWXozDUPuCa2UhTui6fWXP22nbY5qeRtJ582WHwikyeTgwqr+3amNjniCF
-	B/vhC6w/6NrTCPDsjfIsryHM55A9b26S5Xt4CGgU9IwOfW3ZYUqTTpU0HCk9AlVRS7pChO
-	v4t8PTBWPUB5X6Y3daKKng9QJjnCtl0=
-Received: from mx-prod-mc-04.mail-002.prod.us-west-2.aws.redhat.com
- (ec2-54-186-198-63.us-west-2.compute.amazonaws.com [54.186.198.63]) by
- relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-691-soz-U4RROwaHLeJV3p9How-1; Thu,
- 22 Aug 2024 21:59:02 -0400
-X-MC-Unique: soz-U4RROwaHLeJV3p9How-1
-Received: from mx-prod-int-05.mail-002.prod.us-west-2.aws.redhat.com (mx-prod-int-05.mail-002.prod.us-west-2.aws.redhat.com [10.30.177.17])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mx-prod-mc-04.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 4E6A61955D45;
-	Fri, 23 Aug 2024 01:58:58 +0000 (UTC)
-Received: from localhost (unknown [10.72.112.51])
-	by mx-prod-int-05.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 2E2AD1956053;
-	Fri, 23 Aug 2024 01:58:54 +0000 (UTC)
-Date: Fri, 23 Aug 2024 09:58:49 +0800
-From: Baoquan He <bhe@redhat.com>
-To: Dave Vasilevsky <dave@vasilevsky.ca>
-Cc: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	linux-kernel@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>,
-	kexec@lists.infradead.org, debian-powerpc@lists.debian.org,
-	x86@kernel.org, linux-arm-kernel@lists.infradead.org,
-	linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
-	linux-sh@vger.kernel.org, linux-mips@vger.kernel.org,
-	linux-riscv@lists.infradead.org, loongarch@lists.linux.dev,
-	akpm@linux-foundation.org, ebiederm@xmission.com,
-	hbathini@linux.ibm.com, piliu@redhat.com, viro@zeniv.linux.org.uk,
-	Sam James <sam@gentoo.org>
-Subject: Re: [PATCH linux-next v3 05/14] crash: clean up kdump related config
- items
-Message-ID: <Zsfs2VhE0lTY2tpO@MiWiFi-R3L-srv>
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="EJ6dHGqr"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
+	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=l7IPZ3AaL3TYIUYzSS0Hq6JrLJlHTIOmiTWkTNBFYJI=; t=1724397387; x=1725002187; 
+	b=EJ6dHGqrf9Da1agdqiVRpH68TQG3a5C/uNnYiTSzXk1fNL/YzZXD1BRIlptJuTOJfRMArWJ2gzh
+	2VR8rimisQ0aBNkMcgzK8djYmZNkk/yAc0pNdZ3zYJ323cEjPGKgX1GQhw//aDk8fTS41BwfAITQC
+	/mOwBps+c+rloxATmTQj31eF5UF2pb59p0oqe/BFGLD/SWRCx/9sxjP+1w3JBBsGO0WrDBO+99ylA
+	OMc3QQnovTltlthcrwNaXvTEs9ZS2E6AOagwLdsGhD9HCaixXulus6MiFP1OARtccbC5BvM2GN3JK
+	yLTxOL1dRRliM/ImJq/XOY0WG+YvMrDZAM3w==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.98)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1shOWy-00000002p5y-3SYy; Fri, 23 Aug 2024 09:16:20 +0200
+Received: from p5b13a2bf.dip0.t-ipconnect.de ([91.19.162.191] helo=[192.168.178.20])
+          by inpost2.zedat.fu-berlin.de (Exim 4.98)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1shOWy-0000000256e-2Oml; Fri, 23 Aug 2024 09:16:20 +0200
+Message-ID: <c74e24213fd98b252a2a1ff02a107005e50f4f7b.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH linux-next v3 05/14] crash: clean up kdump related
+ config items
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Dave Vasilevsky <dave@vasilevsky.ca>, Baoquan He <bhe@redhat.com>
+Cc: linux-kernel@vger.kernel.org, Michael Ellerman <mpe@ellerman.id.au>, 
+ kexec@lists.infradead.org, debian-powerpc@lists.debian.org, x86@kernel.org,
+  linux-arm-kernel@lists.infradead.org, linuxppc-dev@lists.ozlabs.org, 
+ linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+ linux-mips@vger.kernel.org,  linux-riscv@lists.infradead.org,
+ loongarch@lists.linux.dev,  akpm@linux-foundation.org,
+ ebiederm@xmission.com, hbathini@linux.ibm.com,  piliu@redhat.com,
+ viro@zeniv.linux.org.uk, Sam James <sam@gentoo.org>
+Date: Fri, 23 Aug 2024 09:16:19 +0200
+In-Reply-To: <768dfe3e-c437-40cc-96a5-6c5b34b2d19d@vasilevsky.ca>
 References: <20240124051254.67105-1-bhe@redhat.com>
- <20240124051254.67105-6-bhe@redhat.com>
- <a9d9ecd1ed8d62eae47ec26257093495e6cbd44a.camel@physik.fu-berlin.de>
- <ZscCMLfNbj2MDiaB@MiWiFi-R3L-srv>
- <c5e9996e4d2ba2a0849d65f68e3dce94fffc5828.camel@physik.fu-berlin.de>
- <ZsfR9rdMt8yn1+Bz@MiWiFi-R3L-srv>
- <768dfe3e-c437-40cc-96a5-6c5b34b2d19d@vasilevsky.ca>
+	 <20240124051254.67105-6-bhe@redhat.com>
+	 <a9d9ecd1ed8d62eae47ec26257093495e6cbd44a.camel@physik.fu-berlin.de>
+	 <ZscCMLfNbj2MDiaB@MiWiFi-R3L-srv>
+	 <c5e9996e4d2ba2a0849d65f68e3dce94fffc5828.camel@physik.fu-berlin.de>
+	 <ZsfR9rdMt8yn1+Bz@MiWiFi-R3L-srv>
+	 <768dfe3e-c437-40cc-96a5-6c5b34b2d19d@vasilevsky.ca>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.52.4 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <768dfe3e-c437-40cc-96a5-6c5b34b2d19d@vasilevsky.ca>
-X-Scanned-By: MIMEDefang 3.0 on 10.30.177.17
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On 08/22/24 at 08:41pm, Dave Vasilevsky wrote:
-> On 2024-08-22 20:04, Baoquan He wrote:
-> > If so, below patch possiblly can fix it. Can you help check if it's OK?
-> 
-> That removes the possibility of enabling CRASH_DUMP on PPC_BOOK3S_32, even when booting via other mechanisms. Maybe it would be best to just make it not-default? Please take a look at this patch:
-> 
-
-This is a good mimic of ARCH_DEFAULT_KEXEC_IMAGE_VERIFY_SIG and the
-correspondent KEXEC_IMAGE_VERIFY_SIG. It looks good to me, as long as no
-one complain we introduce too many knobs.
-
-Can you post this formally so that people can review it?
-
-> 
+On Thu, 2024-08-22 at 20:41 -0400, Dave Vasilevsky wrote:
 > From d6e5fe3a45f46f1aa01914648c443291d956de9e Mon Sep 17 00:00:00 2001
 > From: Dave Vasilevsky <dave@vasilevsky.ca>
 > Date: Thu, 22 Aug 2024 20:13:46 -0400
-> Subject: [PATCH] powerpc: Default to CRASH_DUMP=n when Open Firmware boot is
+> Subject: [PATCH] powerpc: Default to CRASH_DUMP=3Dn when Open Firmware bo=
+ot is
 >  likely
 > MIME-Version: 1.0
-> Content-Type: text/plain; charset=UTF-8
+> Content-Type: text/plain; charset=3DUTF-8
 > Content-Transfer-Encoding: 8bit
-> 
+>=20
 > Open Firmware is unable to boot a kernel where PHYSICAL_START is
 > non-zero, which occurs when CRASH_DUMP is on.
-> 
+>=20
 > On PPC_BOOK3S_32, the most common way of booting is Open Firmware, so
 > most users probably don't want CRASH_DUMP. Users booting via some
 > other mechanism can turn it on explicitly.
-> 
+>=20
 > Signed-off-by: Dave Vasilevsky <dave@vasilevsky.ca>
-> Reported-by: Reimar Döffinger <Reimar.Doeffinger@gmx.de>
+> Reported-by: Reimar D=C3=B6ffinger <Reimar.Doeffinger@gmx.de>
 > Fixes: 75bc255a7444
 > ---
 >  arch/arm/Kconfig       | 3 +++
@@ -121,7 +107,7 @@ Can you post this formally so that people can review it?
 >  arch/x86/Kconfig       | 3 +++
 >  kernel/Kconfig.kexec   | 2 +-
 >  10 files changed, 29 insertions(+), 1 deletion(-)
-> 
+>=20
 > diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
 > index 54b2bb817a7f..200995052690 100644
 > --- a/arch/arm/Kconfig
@@ -129,12 +115,13 @@ Can you post this formally so that people can review it?
 > @@ -1597,6 +1597,9 @@ config ATAGS_PROC
 >  config ARCH_SUPPORTS_CRASH_DUMP
 >  	def_bool y
->  
+> =20
 > +config ARCH_DEFAULT_CRASH_DUMP
 > +	def_bool y
 > +
 >  config AUTO_ZRELADDR
->  	bool "Auto calculation of the decompressed kernel image address" if !ARCH_MULTIPLATFORM
+>  	bool "Auto calculation of the decompressed kernel image address" if !AR=
+CH_MULTIPLATFORM
 >  	default !(ARCH_FOOTBRIDGE || ARCH_RPC || ARCH_SA1100)
 > diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
 > index a2f8ff354ca6..43e08cc8204f 100644
@@ -143,13 +130,13 @@ Can you post this formally so that people can review it?
 > @@ -1558,6 +1558,9 @@ config ARCH_DEFAULT_KEXEC_IMAGE_VERIFY_SIG
 >  config ARCH_SUPPORTS_CRASH_DUMP
 >  	def_bool y
->  
+> =20
 > +config ARCH_DEFAULT_CRASH_DUMP
 > +	def_bool y
 > +
 >  config ARCH_HAS_GENERIC_CRASHKERNEL_RESERVATION
 >  	def_bool CRASH_RESERVE
->  
+> =20
 > diff --git a/arch/loongarch/Kconfig b/arch/loongarch/Kconfig
 > index 70f169210b52..ce232ddcd27d 100644
 > --- a/arch/loongarch/Kconfig
@@ -157,7 +144,7 @@ Can you post this formally so that people can review it?
 > @@ -599,6 +599,9 @@ config ARCH_SUPPORTS_KEXEC
 >  config ARCH_SUPPORTS_CRASH_DUMP
 >  	def_bool y
->  
+> =20
 > +config ARCH_DEFAULT_CRASH_DUMP
 > +	def_bool y
 > +
@@ -171,7 +158,7 @@ Can you post this formally so that people can review it?
 > @@ -2881,6 +2881,9 @@ config ARCH_SUPPORTS_KEXEC
 >  config ARCH_SUPPORTS_CRASH_DUMP
 >  	def_bool y
->  
+> =20
 > +config ARCH_DEFAULT_CRASH_DUMP
 > +	def_bool y
 > +
@@ -185,7 +172,7 @@ Can you post this formally so that people can review it?
 > @@ -682,6 +682,10 @@ config RELOCATABLE_TEST
 >  config ARCH_SUPPORTS_CRASH_DUMP
 >  	def_bool PPC64 || PPC_BOOK3S_32 || PPC_85xx || (44x && !SMP)
->  
+> =20
 > +config ARCH_DEFAULT_CRASH_DUMP
 > +	bool
 > +	default y if !PPC_BOOK3S_32
@@ -200,13 +187,13 @@ Can you post this formally so that people can review it?
 > @@ -880,6 +880,9 @@ config ARCH_SUPPORTS_KEXEC_PURGATORY
 >  config ARCH_SUPPORTS_CRASH_DUMP
 >  	def_bool y
->  
+> =20
 > +config ARCH_DEFAULT_CRASH_DUMP
 > +	def_bool y
 > +
 >  config ARCH_HAS_GENERIC_CRASHKERNEL_RESERVATION
 >  	def_bool CRASH_RESERVE
->  
+> =20
 > diff --git a/arch/s390/Kconfig b/arch/s390/Kconfig
 > index a822f952f64a..05a1fb408471 100644
 > --- a/arch/s390/Kconfig
@@ -214,12 +201,12 @@ Can you post this formally so that people can review it?
 > @@ -275,6 +275,9 @@ config ARCH_SUPPORTS_CRASH_DUMP
 >  	  This option also enables s390 zfcpdump.
 >  	  See also <file:Documentation/arch/s390/zfcpdump.rst>
->  
+> =20
 > +config ARCH_DEFAULT_CRASH_DUMP
 > +	def_bool y
 > +
 >  menu "Processor type and features"
->  
+> =20
 >  config HAVE_MARCH_Z10_FEATURES
 > diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
 > index 1aa3c4a0c5b2..3a6338962636 100644
@@ -228,13 +215,13 @@ Can you post this formally so that people can review it?
 > @@ -549,6 +549,9 @@ config ARCH_SUPPORTS_KEXEC
 >  config ARCH_SUPPORTS_CRASH_DUMP
 >  	def_bool BROKEN_ON_SMP
->  
+> =20
 > +config ARCH_DEFAULT_CRASH_DUMP
 > +	def_bool y
 > +
 >  config ARCH_SUPPORTS_KEXEC_JUMP
 >  	def_bool y
->  
+> =20
 > diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
 > index 007bab9f2a0e..aa4666bb9e9c 100644
 > --- a/arch/x86/Kconfig
@@ -242,19 +229,19 @@ Can you post this formally so that people can review it?
 > @@ -2087,6 +2087,9 @@ config ARCH_SUPPORTS_KEXEC_JUMP
 >  config ARCH_SUPPORTS_CRASH_DUMP
 >  	def_bool X86_64 || (X86_32 && HIGHMEM)
->  
+> =20
 > +config ARCH_DEFAULT_CRASH_DUMP
 > +	def_bool y
 > +
 >  config ARCH_SUPPORTS_CRASH_HOTPLUG
 >  	def_bool y
->  
+> =20
 > diff --git a/kernel/Kconfig.kexec b/kernel/Kconfig.kexec
 > index 6c34e63c88ff..4d111f871951 100644
 > --- a/kernel/Kconfig.kexec
 > +++ b/kernel/Kconfig.kexec
 > @@ -97,7 +97,7 @@ config KEXEC_JUMP
->  
+> =20
 >  config CRASH_DUMP
 >  	bool "kernel crash dumps"
 > -	default y
@@ -262,7 +249,13 @@ Can you post this formally so that people can review it?
 >  	depends on ARCH_SUPPORTS_CRASH_DUMP
 >  	depends on KEXEC_CORE
 >  	select VMCORE_INFO
-> -- 
-> 2.34.1
-> 
 
+It should be disabled on m68k and sh by default as well.
+
+Adrian
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
