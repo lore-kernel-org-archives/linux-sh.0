@@ -1,123 +1,90 @@
-Received: from mail.ozlabs.org (gandalf.ozlabs.org [150.107.74.76])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 42637635;
-	Mon, 26 Aug 2024 02:03:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=150.107.74.76
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 36CF18C11;
+	Mon, 26 Aug 2024 05:39:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724637787; cv=none; b=T26xRxqoUo/wnDpjtaxVCGsQ+B+NS4k7VwM+Qv9o42gwMWK/gZKYk66lnCFiB0HhMpUkLyR9BoWbU92DOuDFCxjE+hRH0MtRpvAUxgyD08Q/y7Artme+06TthJsxwc4sqH4rwx30rZbmOKVI87jG3WVLQbj6HwyDDUmLt/3KVT8=
+	t=1724650753; cv=none; b=QqjF+1NEFUD6mCUIVYl5sNddSyhLPvB0rxta1zSWIkcUL3yWodXjtjSuqLxbcWOZXKAQ3AI4choRdmdBzYmgEpB0/ofHpKhkJobwwakLoqBgNeq5Ij8MfZ3UVDug7m/RbukEhY7J8oUMbNIm9azYiH2W+TCk8meq1FxuqnyhZFw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724637787; c=relaxed/simple;
-	bh=iZPTkUdRtMyV1BqTXCZaiKhLQDTQ3GiPB+uOmVL19ks=;
-	h=From:To:Cc:Subject:In-Reply-To:References:Date:Message-ID:
-	 MIME-Version:Content-Type; b=ElthGle/SITd1XpwTH2viBNpNwLiuifKMoRO36QgjsGciCpKhuSestyhDYE2UlVYphmZ8gqnngbMbjIkXeWJLWXELLxCKtdX6YgPdNO8maJILbQxh8hybmmGtu86R71gZAw940i4dyBN1xiwzSDvVtR+hSpCA+rSeK451ocLaUo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=ellerman.id.au; spf=pass smtp.mailfrom=ellerman.id.au; dkim=pass (2048-bit key) header.d=ellerman.id.au header.i=@ellerman.id.au header.b=VHGPtgj3; arc=none smtp.client-ip=150.107.74.76
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=ellerman.id.au
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=ellerman.id.au
+	s=arc-20240116; t=1724650753; c=relaxed/simple;
+	bh=lYVNKITBsfAKckN7qsoiYfRhfMDN1xeuGFUOSh1/PVA=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=R501W2Gaq6x3kFNGbokmi45JiEyCfyOVNzU6Lm9pBtESe/o8QzBiK0eyx3IbpfBm4t6aYj5rIRCqEvIVzXxefW9VOruAA9Io2hvf2KJvxdJI8cDvk9gfFEmAykwZwSrxlBk9d0O8owjk9YUWquSufTmKnH+EAjgmeOXDZDVrebw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=fjaeorAC; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=ellerman.id.au header.i=@ellerman.id.au header.b="VHGPtgj3"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ellerman.id.au;
-	s=201909; t=1724637782;
-	bh=dZljPhuAr0mbkeN13uZvN48XWKzlLsshYIWJUncVcO0=;
-	h=From:To:Cc:Subject:In-Reply-To:References:Date:From;
-	b=VHGPtgj3ZZH12Ev7NLX3TF4pSlkYdY9+3Nos8qj7Ugrk3Qd7UBTWOtWCw67MgXYWv
-	 Qf2bSQC2kE+6RnAmHrsiymxESd/vrerKgDKnxQbFnzMGj9QoZhKM4BG813fBkW7/oy
-	 z6/RR90YfTlKCPEcpUglj1BtK76nlsKyI9rwR+9dNJFdSKB9WERcPawXYYaYWesu3G
-	 qO2lMQfKPcsW0jJphnqBQ0sQ9kXdFOOxx2o6xJ+jdhIoe3PL2bPg8u7lSQ8ia2DLv4
-	 1IKHQh9Xc0kwVaDtqJFt7AUOf/uVLWHWmUo277slyXLTsvcl221QRZpYtO03eTe8IU
-	 rQ67+TcLWw9cw==
-Received: from authenticated.ozlabs.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(Client did not present a certificate)
-	by mail.ozlabs.org (Postfix) with ESMTPSA id 4WsYq848z1z4wbR;
-	Mon, 26 Aug 2024 12:02:59 +1000 (AEST)
-From: Michael Ellerman <mpe@ellerman.id.au>
-To: Geert Uytterhoeven <geert@linux-m68k.org>, Dave Vasilevsky
- <dave@vasilevsky.ca>
-Cc: glaubitz@physik.fu-berlin.de, bhe@redhat.com,
- linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
- kexec@lists.infradead.org, linux-kernel@vger.kernel.org, Reimar
- =?utf-8?Q?D=C3=B6ffinger?=
- <Reimar.Doeffinger@gmx.de>
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="fjaeorAC"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
+	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=LfT86w0DD1Bxg2yTlCdTPH77SKbVGJZWodC7UbCGiEE=; t=1724650749; x=1725255549; 
+	b=fjaeorACY/fjP57jdfiar6CKv3uNaAUqeIdb9eyHvPdYPCMH5+hHFl743jq5/oV/IcX3gZioH9t
+	MyYZ9aLQG//dc91S1S92/gudLbnw0vCqH1tRw59pcPLUbPi2HNfui9Z3E6p1yPh7tHdNTAO+V8h6V
+	jRDtYPPJILqA3DkrlhKUTElY6XWZRKX7uGvbsItPDfQOh/fQltcr0qnd6tx24hhy7hYNOVueMSbza
+	jGi0xGSnTLOBcf1qLUVP28FykVnkHwfaGbERAoopmPRtgwT3GCnq7OswffaT0XtXjGv4F27BgV9HB
+	jplCqTo1CFzbUq+ibGPVQMzAptJG2dOmuUuQ==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.98)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1siSRK-00000003X59-0z93; Mon, 26 Aug 2024 07:38:54 +0200
+Received: from p5b13a2bf.dip0.t-ipconnect.de ([91.19.162.191] helo=[192.168.178.20])
+          by inpost2.zedat.fu-berlin.de (Exim 4.98)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1siSRJ-00000002r7f-46hv; Mon, 26 Aug 2024 07:38:54 +0200
+Message-ID: <c1fd73a3941c54e58420d7555524cd6baeebfb96.camel@physik.fu-berlin.de>
 Subject: Re: [PATCH] crash: Default to CRASH_DUMP=n when support for it is
  unlikely
-In-Reply-To: <CAMuHMdVYNhFJ+qBDP3_fi9oeHsgOL0vqPe1YqE18+M8n1onssw@mail.gmail.com>
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Michael Ellerman <mpe@ellerman.id.au>, Geert Uytterhoeven
+	 <geert@linux-m68k.org>, Dave Vasilevsky <dave@vasilevsky.ca>
+Cc: bhe@redhat.com, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
+  kexec@lists.infradead.org, linux-kernel@vger.kernel.org, Reimar
+ =?ISO-8859-1?Q?D=F6ffinger?= <Reimar.Doeffinger@gmx.de>
+Date: Mon, 26 Aug 2024 07:38:53 +0200
+In-Reply-To: <87frqsghws.fsf@mail.lhotse>
 References: <20240823125156.104775-1-dave@vasilevsky.ca>
- <CAMuHMdVYNhFJ+qBDP3_fi9oeHsgOL0vqPe1YqE18+M8n1onssw@mail.gmail.com>
-Date: Mon, 26 Aug 2024 12:02:59 +1000
-Message-ID: <87frqsghws.fsf@mail.lhotse>
+	 <CAMuHMdVYNhFJ+qBDP3_fi9oeHsgOL0vqPe1YqE18+M8n1onssw@mail.gmail.com>
+	 <87frqsghws.fsf@mail.lhotse>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.52.4 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-Geert Uytterhoeven <geert@linux-m68k.org> writes:
-> Hi Dave,
->
-> On Fri, Aug 23, 2024 at 2:54=E2=80=AFPM Dave Vasilevsky <dave@vasilevsky.=
-ca> wrote:
->> Fixes boot failures on 6.9 on PPC_BOOK3S_32 machines using
->> Open Firmware. On these machines, the kernel refuses to boot
->> from non-zero PHYSICAL_START, which occurs when CRASH_DUMP is on.
->>
->> Since most PPC_BOOK3S_32 machines boot via Open Firmware, it should
->> default to off for them. Users booting via some other mechanism
->> can still turn it on explicitly.
->>
->> Also defaults to CRASH_DUMP=3Dn on sh.
->>
->> Signed-off-by: Dave Vasilevsky <dave@vasilevsky.ca>
->> Reported-by: Reimar D=C3=B6ffinger <Reimar.Doeffinger@gmx.de>
->> Closes: https://lists.debian.org/debian-powerpc/2024/07/msg00001.html
->> Fixes: 75bc255a7444 ("crash: clean up kdump related config items")
->
-> Thanks for your patch!
->
->> --- a/kernel/Kconfig.kexec
->> +++ b/kernel/Kconfig.kexec
->> @@ -97,7 +97,7 @@ config KEXEC_JUMP
->>
->>  config CRASH_DUMP
->>         bool "kernel crash dumps"
->> -       default y
->> +       default ARCH_DEFAULT_CRASH_DUMP
->>         depends on ARCH_SUPPORTS_CRASH_DUMP
->>         depends on KEXEC_CORE
->>         select VMCORE_INFO
->
-> IMHO CRASH_DUMP should just default to n, like most kernel options, as
-> it enables non-trivial extra functionality: the kernel source tree has
-> more than 100 locations that check if CONFIG_CRASH_DUMP is enabled.
->
-> Letting it default to enabled also conflicts with the spirit of the
-> help text for the symbol:
->
->           Generate crash dump after being started by kexec.
->           This should be normally only set in special crash dump kernels
->           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
->           which are loaded in the main kernel with kexec-tools into
->           a specially reserved region and then later executed after
->           a crash by kdump/kexec. The crash dump kernel must be compiled
->           to a memory address not used by the main kernel or BIOS using
->           PHYSICAL_START, or it must be built as a relocatable image
->           (CONFIG_RELOCATABLE=3Dy).
->           For more details see Documentation/admin-guide/kdump/kdump.rst
->
->           For s390, this option also enables zfcpdump.
->           See also <file:Documentation/arch/s390/zfcpdump.rst>
->
-> What is so special about CRASH_DUMP, that it should be enabled by
-> default?
-=20
-The reality is that essentially all distros enable it. Because they
-don't want to manage separate kernel / crash-kernel packages.
+Hi Michael,
 
-So IMHO having it enabled by default in upstream does make sense,
-because it more closely matches what distros/users actually run.
+On Mon, 2024-08-26 at 12:02 +1000, Michael Ellerman wrote:
+> > What is so special about CRASH_DUMP, that it should be enabled by
+> > default?
+> =20
+> The reality is that essentially all distros enable it. Because they
+> don't want to manage separate kernel / crash-kernel packages.
+>=20
+> So IMHO having it enabled by default in upstream does make sense,
+> because it more closely matches what distros/users actually run.
 
-cheers
+Well, at least Debian did not enable it by default as otherwise we wouldn't
+have noticed this change downstream.
+
+Adrian
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
