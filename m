@@ -1,80 +1,276 @@
-Received: from mail-qk1-f171.google.com (mail-qk1-f171.google.com [209.85.222.171])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 221BD63D;
-	Mon, 26 Aug 2024 06:03:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 723564F215;
+	Mon, 26 Aug 2024 06:55:57 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724652229; cv=none; b=q4f6PYcHI0P8VUrRZbPSnf7mA+csOTm2owqRrqltBDctGRyPGXzb0/5WZE4pz4AIyFYsxBNusQeYkbD7bOj1al54s1r3yeRp2HRfxWH4lRc+zZR9UNBJDx2Y7ko9L6ap2GiVd8WC25A/Bo4nCZ59RUJ8M2RA7k5wej0gohwjMnM=
+	t=1724655358; cv=none; b=CfP12XsevXbBgVbia0GDYem1ntQr6Ocd8FnusiIRyloDgGjxCKqhMVWRL3GNl4KWJ80/0O7PW2Kn+VPpx8Wh2f8fKh/gFXV/gmivv3AxlyroYvXQiuYeTnx4zm91i5DD0ZKe1HZdHCVwFBM7LzqU6OPmh9vPYch5DvMZfGobc/c=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724652229; c=relaxed/simple;
-	bh=OEc1AA/Hm7QtzuLM/vWQtj2xwRyRGlukW51DLdslNa4=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=WDggQugDV0KDrAKpSVX88Rv4JFbnphzTyIISNFAsoDaebFIGThj+Bf9Bcy21TEcG2xxfUw2WqDcPsSIXfsXiLbFCQ77dpWlFkIGtkqoa6bBHQT4Ji38DWJ0Qna1fd3d2EH4PsDzeVf9sggmWN0p85kt+pwH9lR1wm/vruLKCLIA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=vasilevsky.ca; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.222.171
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=vasilevsky.ca
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-qk1-f171.google.com with SMTP id af79cd13be357-7a1d984ed52so244393585a.0;
-        Sun, 25 Aug 2024 23:03:47 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1724652227; x=1725257027;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=ZKXjBrfmroCoc+jNcJVKdc7dB1QcJh0d700AGCluMS4=;
-        b=DC5fiqLcq7N2BM0xC9ijm26UMS/u7oC+8wTQB4V7cc+j27v1VME6keH/cQE9Ynh+9g
-         P1xt1X/nByBJc2mTOykFasszybLPg1/iok0AavBB1NIUOL0ILFkcGiEWepHVKSSoiz0/
-         jqAiblD6QR7pj+0xYRqv5nGh0w5QgDF2ccidgVvF016VnyPQDRtbjVYZw6Nmt2n2stMx
-         GCM//KEXDeZEo9Cj1NnA/Q/g1F890zydFOXLvZ70zepou4PCnn/XYvT3xuZfdbgmzSZx
-         gSsRad5vknmVPA6hlYKA3RnVv8uyenMGk5GZGcUsrAi8/WdYQ9xkhDUJaJ6XhkU1fJcy
-         7mRg==
-X-Forwarded-Encrypted: i=1; AJvYcCUeNU20ZoeNSnCNP4KCqaJVBqFi80hDxcofabwnhz1qeMiSiqZvHuxn26X7kUE1h+DeqifV+XVmaAc=@vger.kernel.org, AJvYcCVL1QYAJxu/KTq/ELpzRfs3Fk6V2+lDIGUpu8TnAKIF5Zo7KP3gXDw5Ri7MpFuS+jx/em382HhrZuuDK54=@vger.kernel.org
-X-Gm-Message-State: AOJu0Yzuqq8TiVSv1nK1JsgkXZAnov30KpE111LHKdhaqQnATv6Bu+BK
-	5ihZdmbZxZJrLwAxidZufrozpAxviISsUtiNRM1bCqE4rO24PHbN
-X-Google-Smtp-Source: AGHT+IGSGyPTkUxMgB/i4Zy4QLzMECErNv2aanCJjyDmWf6JxbREWcMAfmUgTeNndDbjPNgn8lnisA==
-X-Received: by 2002:a05:6214:3d98:b0:6b0:7f36:8ae3 with SMTP id 6a1803df08f44-6c16dc93d89mr90352156d6.32.1724652226893;
-        Sun, 25 Aug 2024 23:03:46 -0700 (PDT)
-Received: from [192.168.2.219] (bras-base-mtrlpq3141w-grc-05-65-93-184-127.dsl.bell.ca. [65.93.184.127])
-        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-6c162db0991sm43641976d6.91.2024.08.25.23.03.45
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 25 Aug 2024 23:03:46 -0700 (PDT)
-Message-ID: <94540d05-12ab-49b8-9e37-04a29f5cdf77@vasilevsky.ca>
-Date: Mon, 26 Aug 2024 02:03:44 -0400
+	s=arc-20240116; t=1724655358; c=relaxed/simple;
+	bh=L/aook0QwHcdg37wGphar1mRAzQLD0+59DpQQhC48dI=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=QuLUkAbORtekStvNtJiRBnVN9JFmKQXYDer9EdfkTFVeGEsQiusJHJx3jCZVGx5Wnwb1Q/RVxqmbd4EXUFcnjG5+vK23vd8jhICoUAMfMOw5+qPKFi+ppsqvYDleuTEU3NHtyTnP2artjVQvePyrOVR7Lcf8ZFcFM5IOl4rim7k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=T/n0cfR9; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="T/n0cfR9"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8C266C9303E;
+	Mon, 26 Aug 2024 06:55:42 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1724655356;
+	bh=L/aook0QwHcdg37wGphar1mRAzQLD0+59DpQQhC48dI=;
+	h=From:To:Cc:Subject:Date:From;
+	b=T/n0cfR9L7TYz6mB1xehBPXcOYHc5dmouBtvHl2TTn5DDOswnhgESuEPcK8q37K9g
+	 xYpo93KvR7ZQkbQHu1QubINO37+DX8tYfsCdbq/c0dIX5rQUs9hNBV95JC2R8TCnl8
+	 M+qhqET3G8uiJk7hxbIaIROgfIMVKAu7C8KxMYZGtz0NwT9YjfKnBxN1SQN6NZhzAQ
+	 cMTS21PqbQUT7Mi73Y02XweCRbmJXkJZIPsOGztY5xzcYfc7gIRojDohOl/3vMrnKC
+	 IYREW4GAVVjMYbbGq8bxDj203wj1T3Rnyj6Cc+viddK8Fb8pXQFN01Rj13nPDXayqo
+	 9zhHMcT23xBvg==
+From: Mike Rapoport <rppt@kernel.org>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Andreas Larsson <andreas@gaisler.com>,
+	Andy Lutomirski <luto@kernel.org>,
+	Arnd Bergmann <arnd@arndb.de>,
+	Borislav Petkov <bp@alien8.de>,
+	Brian Cain <bcain@quicinc.com>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	Dinh Nguyen <dinguyen@kernel.org>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Guo Ren <guoren@kernel.org>,
+	Helge Deller <deller@gmx.de>,
+	Huacai Chen <chenhuacai@kernel.org>,
+	Ingo Molnar <mingo@redhat.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Kent Overstreet <kent.overstreet@linux.dev>,
+	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
+	Luis Chamberlain <mcgrof@kernel.org>,
+	Mark Rutland <mark.rutland@arm.com>,
+	Masami Hiramatsu <mhiramat@kernel.org>,
+	Matt Turner <mattst88@gmail.com>,
+	Max Filippov <jcmvbkbc@gmail.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Michal Simek <monstr@monstr.eu>,
+	Mike Rapoport <rppt@kernel.org>,
+	Oleg Nesterov <oleg@redhat.com>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Richard Weinberger <richard@nod.at>,
+	Russell King <linux@armlinux.org.uk>,
+	Song Liu <song@kernel.org>,
+	Stafford Horne <shorne@gmail.com>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Uladzislau Rezki <urezki@gmail.com>,
+	Vineet Gupta <vgupta@kernel.org>,
+	Will Deacon <will@kernel.org>,
+	bpf@vger.kernel.org,
+	linux-alpha@vger.kernel.org,
+	linux-arch@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	linux-csky@vger.kernel.org,
+	linux-hexagon@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org,
+	linux-mm@kvack.org,
+	linux-modules@vger.kernel.org,
+	linux-openrisc@vger.kernel.org,
+	linux-parisc@vger.kernel.org,
+	linux-riscv@lists.infradead.org,
+	linux-sh@vger.kernel.org,
+	linux-snps-arc@lists.infradead.org,
+	linux-trace-kernel@vger.kernel.org,
+	linux-um@lists.infradead.org,
+	linuxppc-dev@lists.ozlabs.org,
+	loongarch@lists.linux.dev,
+	sparclinux@vger.kernel.org,
+	x86@kernel.org
+Subject: [PATCH v2 0/8] x86/module: use large ROX pages for text allocations
+Date: Mon, 26 Aug 2024 09:55:24 +0300
+Message-ID: <20240826065532.2618273-1-rppt@kernel.org>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] crash: Default to CRASH_DUMP=n when support for it is
- unlikely
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Michael Ellerman <mpe@ellerman.id.au>,
- Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: bhe@redhat.com, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org,
- kexec@lists.infradead.org, linux-kernel@vger.kernel.org,
- =?UTF-8?Q?Reimar_D=C3=B6ffinger?= <Reimar.Doeffinger@gmx.de>
-References: <20240823125156.104775-1-dave@vasilevsky.ca>
- <CAMuHMdVYNhFJ+qBDP3_fi9oeHsgOL0vqPe1YqE18+M8n1onssw@mail.gmail.com>
- <87frqsghws.fsf@mail.lhotse>
- <c1fd73a3941c54e58420d7555524cd6baeebfb96.camel@physik.fu-berlin.de>
-Content-Language: en-US
-From: Dave Vasilevsky <dave@vasilevsky.ca>
-In-Reply-To: <c1fd73a3941c54e58420d7555524cd6baeebfb96.camel@physik.fu-berlin.de>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 
-On 2024-08-26 01:38, John Paul Adrian Glaubitz wrote:
-> On Mon, 2024-08-26 at 12:02 +1000, Michael Ellerman wrote:
->> So IMHO having it enabled by default in upstream does make sense,
->> because it more closely matches what distros/users actually run.
-> 
-> Well, at least Debian did not enable it by default as otherwise we wouldn't
-> have noticed this change downstream.
+From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
 
-Debian does enable it explicitly on some supported architectures, but not all: https://salsa.debian.org/search?group_id=2107&nav_source=navbar&project_id=18670&repository_ref=master&scope=blobs&search=path%3Aconfig+CRASH_DUMP&search_code=true
+Hi,
 
-By my count, 6.9's new default affected mips, powerpc (32-bit), riscv, and sh in Debian.
+These patches add support for using large ROX pages for allocations of
+executable memory on x86.
 
--Dave
+They address Andy's comments [1] about having executable mappings for code
+that was not completely formed.
+
+The approach taken is to allocate ROX memory along with writable but not
+executable memory and use the writable copy to perform relocations and
+alternatives patching. After the module text gets into its final shape, the
+contents of the writable memory is copied into the actual ROX location
+using text poking.
+
+The allocations of the ROX memory use vmalloc(VMAP_ALLOW_HUGE_MAP) to
+allocate PMD aligned memory, fill that memory with invalid instructions and
+in the end remap it as ROX. Portions of these large pages are handed out to
+execmem_alloc() callers without any changes to the permissions. When the
+memory is freed with execmem_free() it is invalidated again so that it
+won't contain stale instructions.
+
+The module memory allocation, x86 code dealing with relocations and
+alternatives patching take into account the existence of the two copies,
+the writable memory and the ROX memory at the actual allocated virtual
+address.
+
+The patches are available at git:
+https://git.kernel.org/pub/scm/linux/kernel/git/rppt/linux.git/log/?h=execmem/x86-rox/v2
+
+[1] https://lore.kernel.org/all/a17c65c6-863f-4026-9c6f-a04b659e9ab4@app.fastmail.com
+
+Since RFC: https://lore.kernel.org/all/20240411160526.2093408-1-rppt@kernel.org
+* update changelog about HUGE_VMAP allocations (Christophe) 
+* move module_writable_address() from x86 to modules core (Ingo)
+* rename execmem_invalidate() to execmem_fill_trapping_insns() (Peter)
+* call alternatives_smp_unlock() after module text in-place is up to
+  date (Nadav)
+
+Mike Rapoport (Microsoft) (7):
+  mm: vmalloc: group declarations depending on CONFIG_MMU together
+  mm: vmalloc: don't account for number of nodes for HUGE_VMAP allocations
+  asm-generic: introduce text-patching.h
+  module: prepare to handle ROX allocations for text
+  x86/module: perpare module loading for ROX allocations of text
+  execmem: add support for cache of large ROX pages
+  x86/module: enable ROX caches for module text
+
+Song Liu (1):
+  ftrace: Add swap_func to ftrace_process_locs()
+
+ arch/alpha/include/asm/Kbuild                 |   1 +
+ arch/arc/include/asm/Kbuild                   |   1 +
+ .../include/asm/{patch.h => text-patching.h}  |   0
+ arch/arm/kernel/ftrace.c                      |   2 +-
+ arch/arm/kernel/jump_label.c                  |   2 +-
+ arch/arm/kernel/kgdb.c                        |   2 +-
+ arch/arm/kernel/patch.c                       |   2 +-
+ arch/arm/probes/kprobes/core.c                |   2 +-
+ arch/arm/probes/kprobes/opt-arm.c             |   2 +-
+ .../asm/{patching.h => text-patching.h}       |   0
+ arch/arm64/kernel/ftrace.c                    |   2 +-
+ arch/arm64/kernel/jump_label.c                |   2 +-
+ arch/arm64/kernel/kgdb.c                      |   2 +-
+ arch/arm64/kernel/patching.c                  |   2 +-
+ arch/arm64/kernel/probes/kprobes.c            |   2 +-
+ arch/arm64/kernel/traps.c                     |   2 +-
+ arch/arm64/net/bpf_jit_comp.c                 |   2 +-
+ arch/csky/include/asm/Kbuild                  |   1 +
+ arch/hexagon/include/asm/Kbuild               |   1 +
+ arch/loongarch/include/asm/Kbuild             |   1 +
+ arch/m68k/include/asm/Kbuild                  |   1 +
+ arch/microblaze/include/asm/Kbuild            |   1 +
+ arch/mips/include/asm/Kbuild                  |   1 +
+ arch/nios2/include/asm/Kbuild                 |   1 +
+ arch/openrisc/include/asm/Kbuild              |   1 +
+ .../include/asm/{patch.h => text-patching.h}  |   0
+ arch/parisc/kernel/ftrace.c                   |   2 +-
+ arch/parisc/kernel/jump_label.c               |   2 +-
+ arch/parisc/kernel/kgdb.c                     |   2 +-
+ arch/parisc/kernel/kprobes.c                  |   2 +-
+ arch/parisc/kernel/patch.c                    |   2 +-
+ arch/powerpc/include/asm/kprobes.h            |   2 +-
+ .../asm/{code-patching.h => text-patching.h}  |   0
+ arch/powerpc/kernel/crash_dump.c              |   2 +-
+ arch/powerpc/kernel/epapr_paravirt.c          |   2 +-
+ arch/powerpc/kernel/jump_label.c              |   2 +-
+ arch/powerpc/kernel/kgdb.c                    |   2 +-
+ arch/powerpc/kernel/kprobes.c                 |   2 +-
+ arch/powerpc/kernel/module_32.c               |   2 +-
+ arch/powerpc/kernel/module_64.c               |   2 +-
+ arch/powerpc/kernel/optprobes.c               |   2 +-
+ arch/powerpc/kernel/process.c                 |   2 +-
+ arch/powerpc/kernel/security.c                |   2 +-
+ arch/powerpc/kernel/setup_32.c                |   2 +-
+ arch/powerpc/kernel/setup_64.c                |   2 +-
+ arch/powerpc/kernel/static_call.c             |   2 +-
+ arch/powerpc/kernel/trace/ftrace.c            |   2 +-
+ arch/powerpc/kernel/trace/ftrace_64_pg.c      |   2 +-
+ arch/powerpc/lib/code-patching.c              |   2 +-
+ arch/powerpc/lib/feature-fixups.c             |   2 +-
+ arch/powerpc/lib/test-code-patching.c         |   2 +-
+ arch/powerpc/lib/test_emulate_step.c          |   2 +-
+ arch/powerpc/mm/book3s32/mmu.c                |   2 +-
+ arch/powerpc/mm/book3s64/hash_utils.c         |   2 +-
+ arch/powerpc/mm/book3s64/slb.c                |   2 +-
+ arch/powerpc/mm/kasan/init_32.c               |   2 +-
+ arch/powerpc/mm/mem.c                         |   2 +-
+ arch/powerpc/mm/nohash/44x.c                  |   2 +-
+ arch/powerpc/mm/nohash/book3e_pgtable.c       |   2 +-
+ arch/powerpc/mm/nohash/tlb.c                  |   2 +-
+ arch/powerpc/net/bpf_jit_comp.c               |   2 +-
+ arch/powerpc/perf/8xx-pmu.c                   |   2 +-
+ arch/powerpc/perf/core-book3s.c               |   2 +-
+ arch/powerpc/platforms/85xx/smp.c             |   2 +-
+ arch/powerpc/platforms/86xx/mpc86xx_smp.c     |   2 +-
+ arch/powerpc/platforms/cell/smp.c             |   2 +-
+ arch/powerpc/platforms/powermac/smp.c         |   2 +-
+ arch/powerpc/platforms/powernv/idle.c         |   2 +-
+ arch/powerpc/platforms/powernv/smp.c          |   2 +-
+ arch/powerpc/platforms/pseries/smp.c          |   2 +-
+ arch/powerpc/xmon/xmon.c                      |   2 +-
+ arch/riscv/errata/andes/errata.c              |   2 +-
+ arch/riscv/errata/sifive/errata.c             |   2 +-
+ arch/riscv/errata/thead/errata.c              |   2 +-
+ .../include/asm/{patch.h => text-patching.h}  |   0
+ arch/riscv/include/asm/uprobes.h              |   2 +-
+ arch/riscv/kernel/alternative.c               |   2 +-
+ arch/riscv/kernel/cpufeature.c                |   3 +-
+ arch/riscv/kernel/ftrace.c                    |   2 +-
+ arch/riscv/kernel/jump_label.c                |   2 +-
+ arch/riscv/kernel/patch.c                     |   2 +-
+ arch/riscv/kernel/probes/kprobes.c            |   2 +-
+ arch/riscv/net/bpf_jit_comp64.c               |   2 +-
+ arch/riscv/net/bpf_jit_core.c                 |   2 +-
+ arch/sh/include/asm/Kbuild                    |   1 +
+ arch/sparc/include/asm/Kbuild                 |   1 +
+ arch/um/kernel/um_arch.c                      |  16 +-
+ arch/x86/entry/vdso/vma.c                     |   3 +-
+ arch/x86/include/asm/alternative.h            |  14 +-
+ arch/x86/include/asm/text-patching.h          |   1 +
+ arch/x86/kernel/alternative.c                 | 160 ++++++----
+ arch/x86/kernel/ftrace.c                      |  41 ++-
+ arch/x86/kernel/module.c                      |  45 ++-
+ arch/x86/mm/init.c                            |  26 +-
+ arch/xtensa/include/asm/Kbuild                |   1 +
+ include/asm-generic/text-patching.h           |   5 +
+ include/linux/execmem.h                       |  25 ++
+ include/linux/ftrace.h                        |   2 +
+ include/linux/module.h                        |   9 +
+ include/linux/moduleloader.h                  |   4 +
+ include/linux/text-patching.h                 |  15 +
+ include/linux/vmalloc.h                       |  60 ++--
+ kernel/module/main.c                          |  77 ++++-
+ kernel/module/strict_rwx.c                    |   3 +
+ kernel/trace/ftrace.c                         |  13 +-
+ mm/execmem.c                                  | 301 +++++++++++++++++-
+ mm/vmalloc.c                                  |   9 +-
+ 107 files changed, 746 insertions(+), 235 deletions(-)
+ rename arch/arm/include/asm/{patch.h => text-patching.h} (100%)
+ rename arch/arm64/include/asm/{patching.h => text-patching.h} (100%)
+ rename arch/parisc/include/asm/{patch.h => text-patching.h} (100%)
+ rename arch/powerpc/include/asm/{code-patching.h => text-patching.h} (100%)
+ rename arch/riscv/include/asm/{patch.h => text-patching.h} (100%)
+ create mode 100644 include/asm-generic/text-patching.h
+ create mode 100644 include/linux/text-patching.h
+
+
+base-commit: 47ac09b91befbb6a235ab620c32af719f8208399
+-- 
+2.43.0
+
