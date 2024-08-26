@@ -1,132 +1,102 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B2BD164A;
-	Mon, 26 Aug 2024 17:28:37 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5F47E54648;
+	Mon, 26 Aug 2024 19:56:01 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724693317; cv=none; b=kW0KnR2yGbattM2zbt/D7lrKbmyHY8FKUvUxmEqicafr0YYvqDQCg9D414VzArW5UAoLgcB85yjsB2YIhMBQ9pj5kxMpYsPt5fEWuo2jLrW8xIt6EgAUCDbnx/nhLM6uMzclxBa08s1WtOo7xkusS2z0qgAtqBJpktgAoZiOaWQ=
+	t=1724702161; cv=none; b=TpTKgn3BxD5JIFevZLTFfEUrYZWg/hoKOnE7+T0I0nnx43Gt/EZMbwPrf/dMJ8yYvlR8sRu+Hy59KZvHuZ6Rr2qNaYQN20W13dDRWUaOitUB/GTJEP5lyxtUuc71GXl/AJUsvbRAYB1s386x9CK1XBRCH5tROOGJLiL1SVA98Jk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724693317; c=relaxed/simple;
-	bh=Ah1MYcJfpVaPDZCj/MgYPfBVJo43ln+VDcKQfM/BWW0=;
-	h=Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=F0vJuB4enMf3kzX5w92GGjgpsS14IY3U78m1dP1LqdjuRTbkrmE7/1p6+62IWa4VSSS9IXuOm/ij9PxvLfDGCDYIOreZRpO9VqbJ8l7adlo09mkcJdQ+bEByMEFVsKuXzHUdV5LrCmwNVmGObV8zg6akptUVLJ+lZkfWB04lDGk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B0E6AC8B7B5;
-	Mon, 26 Aug 2024 17:28:29 +0000 (UTC)
-Date: Mon, 26 Aug 2024 13:29:09 -0400
-From: Steven Rostedt <rostedt@goodmis.org>
-To: Mike Rapoport <rppt@kernel.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Andreas Larsson
- <andreas@gaisler.com>, Andy Lutomirski <luto@kernel.org>, Arnd Bergmann
- <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>, Brian Cain
- <bcain@quicinc.com>, Catalin Marinas <catalin.marinas@arm.com>, Christoph
- Hellwig <hch@infradead.org>, Christophe Leroy
- <christophe.leroy@csgroup.eu>, Dave Hansen <dave.hansen@linux.intel.com>,
- Dinh Nguyen <dinguyen@kernel.org>, Geert Uytterhoeven
- <geert@linux-m68k.org>, Guo Ren <guoren@kernel.org>, Helge Deller
- <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar
- <mingo@redhat.com>, Johannes Berg <johannes@sipsolutions.net>, John Paul
- Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Kent Overstreet
- <kent.overstreet@linux.dev>, "Liam R. Howlett" <Liam.Howlett@oracle.com>,
- Luis Chamberlain <mcgrof@kernel.org>, Mark Rutland <mark.rutland@arm.com>,
- Masami Hiramatsu <mhiramat@kernel.org>, Matt Turner <mattst88@gmail.com>,
- Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>,
- Michal Simek <monstr@monstr.eu>, Oleg Nesterov <oleg@redhat.com>, Palmer
- Dabbelt <palmer@dabbelt.com>, Peter Zijlstra <peterz@infradead.org>,
- Richard Weinberger <richard@nod.at>, Russell King <linux@armlinux.org.uk>,
- Song Liu <song@kernel.org>, Stafford Horne <shorne@gmail.com>, Thomas
- Bogendoerfer <tsbogend@alpha.franken.de>, Thomas Gleixner
- <tglx@linutronix.de>, Uladzislau Rezki <urezki@gmail.com>, Vineet Gupta
- <vgupta@kernel.org>, Will Deacon <will@kernel.org>, bpf@vger.kernel.org,
- linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
- linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
- linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
- linux-mm@kvack.org, linux-modules@vger.kernel.org,
- linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
- linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
- linux-snps-arc@lists.infradead.org, linux-trace-kernel@vger.kernel.org,
- linux-um@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
- loongarch@lists.linux.dev, sparclinux@vger.kernel.org, x86@kernel.org
-Subject: Re: [PATCH v2 5/8] ftrace: Add swap_func to ftrace_process_locs()
-Message-ID: <20240826132909.306b08fc@gandalf.local.home>
-In-Reply-To: <20240826065532.2618273-6-rppt@kernel.org>
-References: <20240826065532.2618273-1-rppt@kernel.org>
-	<20240826065532.2618273-6-rppt@kernel.org>
-X-Mailer: Claws Mail 3.20.0git84 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
+	s=arc-20240116; t=1724702161; c=relaxed/simple;
+	bh=wGxjIAFTwaejtggHWXZuDgCwxLBZTkCB+uUES7gFwb8=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=MQaDNyKY2/KVdUgNu4RDJIi1QTmzGADTdmymP0kQwU2fcX2EFVQmrlGXrgjgGd4T4ITwow+IZzxTiDADiiwBvfvy1ZQSIpXDTkYE460fTS0QF7sb5NEpr+A3CY6g7ghViZPT/+6wKTH9QTLwxP12iFYKqCQayitDjgkrOjwr3Y4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=HXaV5LWE; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="HXaV5LWE"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id DC7F3C4FE89;
+	Mon, 26 Aug 2024 19:56:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1724702161;
+	bh=wGxjIAFTwaejtggHWXZuDgCwxLBZTkCB+uUES7gFwb8=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=HXaV5LWEmT/LQFxPV7jriO64KkTHVHIDB+Kh84aqyOUbOqdBKinLhWxW7v30qsDfi
+	 T1XDZPsseN1rThL7/E6jaosenWAA941LR77fR1KqQSBL7C6sy9olEfqnDDVUBND/Xu
+	 qbtrUfkB/B0RVU5r96622EogXGyMd6kHDIdGGPCWKXmiK3hz8J83yXiG+m+CLsF0IO
+	 fHMMNJUru2Lzj0DGZKkW71Pt0K+Z4XHFz1qG079OoRWkmU2EzpPlbQnUR2g+nB2mnX
+	 sYPXL7gCe9ZdWxuDBNve0okHBMc7z9hIGnFaPMOXnULU1tNDg1eMBG5GM4mZ24K9jZ
+	 P/ZDbLRuoCqQw==
+Date: Mon, 26 Aug 2024 12:56:00 -0700
+From: Kees Cook <kees@kernel.org>
+To: Kaixiong Yu <yukaixiong@huawei.com>
+Cc: akpm@linux-foundation.org, mcgrof@kernel.org,
+	ysato@users.sourceforge.jp, dalias@libc.org,
+	glaubitz@physik.fu-berlin.de, luto@kernel.org, tglx@linutronix.de,
+	bp@alien8.de, dave.hansen@linux.intel.com, hpa@zytor.com,
+	viro@zeniv.linux.org.uk, brauner@kernel.org, jack@suse.cz,
+	j.granados@samsung.com, willy@infradead.org,
+	Liam.Howlett@oracle.com, vbabka@suse.cz, lorenzo.stoakes@oracle.com,
+	trondmy@kernel.org, anna@kernel.org, chuck.lever@oracle.com,
+	jlayton@kernel.org, neilb@suse.de, okorniev@redhat.com,
+	Dai.Ngo@oracle.com, tom@talpey.com, davem@davemloft.net,
+	edumazet@google.com, kuba@kernel.org, pabeni@redhat.com,
+	paul@paul-moore.com, jmorris@namei.org, linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-mm@kvack.org, linux-nfs@vger.kernel.org,
+	netdev@vger.kernel.org, linux-security-module@vger.kernel.org,
+	wangkefeng.wang@huawei.com
+Subject: Re: [PATCH -next 12/15] fs: dcache: move the sysctl into its own file
+Message-ID: <202408261253.D155EA0@keescook>
+References: <20240826120449.1666461-1-yukaixiong@huawei.com>
+ <20240826120449.1666461-13-yukaixiong@huawei.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20240826120449.1666461-13-yukaixiong@huawei.com>
 
-On Mon, 26 Aug 2024 09:55:29 +0300
-Mike Rapoport <rppt@kernel.org> wrote:
-
-> From: Song Liu <song@kernel.org>
+On Mon, Aug 26, 2024 at 08:04:46PM +0800, Kaixiong Yu wrote:
+> The sysctl_vfs_cache_pressure belongs to fs/dcache.c, move it to
+> its own file from kernel/sysctl.c. As a part of fs/dcache.c cleaning,
+> sysctl_vfs_cache_pressure is changed to a static variable, and export
+> vfs_pressure_ratio with EXPORT_SYMBOL_GPL to be used by other files.
+> And move the unneeded include(linux/dcache.h).
 > 
-> ftrace_process_locs sorts module mcount, which is inside RO memory. Add a
-> ftrace_swap_func so that archs can use RO-memory-poke function to do the
-> sorting.
-
-Can you add the above as a comment above the ftrace_swap_func() function?
-
-Thanks,
-
--- Steve
-
-> 
-> Signed-off-by: Song Liu <song@kernel.org>
-> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+> Signed-off-by: Kaixiong Yu <yukaixiong@huawei.com>
 > ---
->  include/linux/ftrace.h |  2 ++
->  kernel/trace/ftrace.c  | 13 ++++++++++++-
->  2 files changed, 14 insertions(+), 1 deletion(-)
+>  fs/dcache.c            | 21 +++++++++++++++++++--
+>  include/linux/dcache.h |  7 +------
+>  kernel/sysctl.c        |  9 ---------
+>  3 files changed, 20 insertions(+), 17 deletions(-)
 > 
-> diff --git a/include/linux/ftrace.h b/include/linux/ftrace.h
-> index fd5e84d0ec47..b794dcb7cae8 100644
-> --- a/include/linux/ftrace.h
-> +++ b/include/linux/ftrace.h
-> @@ -1188,4 +1188,6 @@ unsigned long arch_syscall_addr(int nr);
->  
->  #endif /* CONFIG_FTRACE_SYSCALLS */
->  
-> +void ftrace_swap_func(void *a, void *b, int n);
+> diff --git a/fs/dcache.c b/fs/dcache.c
+> index 1af75fa68638..8717d5026cda 100644
+> --- a/fs/dcache.c
+> +++ b/fs/dcache.c
+> @@ -73,8 +73,13 @@
+>   * If no ancestor relationship:
+>   * arbitrary, since it's serialized on rename_lock
+>   */
+> -int sysctl_vfs_cache_pressure __read_mostly = 100;
+> -EXPORT_SYMBOL_GPL(sysctl_vfs_cache_pressure);
+> +static int sysctl_vfs_cache_pressure __read_mostly = 100;
 > +
->  #endif /* _LINUX_FTRACE_H */
-> diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
-> index 4c28dd177ca6..9829979f3a46 100644
-> --- a/kernel/trace/ftrace.c
-> +++ b/kernel/trace/ftrace.c
-> @@ -6989,6 +6989,17 @@ static void test_is_sorted(unsigned long *start,
-> unsigned long count) }
->  #endif
->  
-> +void __weak ftrace_swap_func(void *a, void *b, int n)
+> +unsigned long vfs_pressure_ratio(unsigned long val)
 > +{
-> +	unsigned long t;
-> +
-> +	WARN_ON_ONCE(n != sizeof(t));
-> +
-> +	t = *((unsigned long *)a);
-> +	*(unsigned long *)a = *(unsigned long *)b;
-> +	*(unsigned long *)b = t;
+> +	return mult_frac(val, sysctl_vfs_cache_pressure, 100);
 > +}
-> +
->  static int ftrace_process_locs(struct module *mod,
->  			       unsigned long *start,
->  			       unsigned long *end)
-> @@ -7016,7 +7027,7 @@ static int ftrace_process_locs(struct module *mod,
->  	 */
->  	if (!IS_ENABLED(CONFIG_BUILDTIME_MCOUNT_SORT) || mod) {
->  		sort(start, count, sizeof(*start),
-> -		     ftrace_cmp_ips, NULL);
-> +		     ftrace_cmp_ips, ftrace_swap_func);
->  	} else {
->  		test_is_sorted(start, count);
->  	}
+> +EXPORT_SYMBOL_GPL(vfs_pressure_ratio);
 
+This was a static inline, but AFAICT it's only called through
+alloc_super() which is hardly "fast path". If this series gets another
+version it may be worth calling out this inline->out-of-line change in
+the commit log.
+
+I don't think it's a blocker, but I'm not a VFS maintainer. :)
+
+-- 
+Kees Cook
