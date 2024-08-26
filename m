@@ -1,274 +1,132 @@
-Received: from szxga01-in.huawei.com (szxga01-in.huawei.com [45.249.212.187])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C8C6197531;
-	Mon, 26 Aug 2024 12:06:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.187
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B2BD164A;
+	Mon, 26 Aug 2024 17:28:37 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724673970; cv=none; b=Chmw6pdObgsTwqueqwazjVUL8b0d7nNaHQHF78Rmr7kDxPkfQUYIzTrTB/ONnnSchVSNuXDnfSfaz6X3xpFmk90moWa45gK0RgK9Ujp3msQf1fKxjdBxuoUwzKNefIRggLik6wwmIbfKeIzCYjA6mnmL/yplFifxlqyCDg+e9Ms=
+	t=1724693317; cv=none; b=kW0KnR2yGbattM2zbt/D7lrKbmyHY8FKUvUxmEqicafr0YYvqDQCg9D414VzArW5UAoLgcB85yjsB2YIhMBQ9pj5kxMpYsPt5fEWuo2jLrW8xIt6EgAUCDbnx/nhLM6uMzclxBa08s1WtOo7xkusS2z0qgAtqBJpktgAoZiOaWQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724673970; c=relaxed/simple;
-	bh=KldVUeX39PpggDsu+Wf1GFrDnDnFH5AuvGTmfuGY5h8=;
-	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=LRaaTm13f974bv14TD0z73nvGTK34kQ9Q0PsPKNStUFC8OQ+VBgzwJENNDB1U8q4uzs8aHnaunquE6PCALTACDV03zIGPWLG62I1lszo7D7pdQyVpgqAJt/CJS6YqDAZrhmrGx7kvizqPs3PduW6uC03NKJICIlzrH2k9YNmfQw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com; spf=pass smtp.mailfrom=huawei.com; arc=none smtp.client-ip=45.249.212.187
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
-Received: from mail.maildlp.com (unknown [172.19.162.254])
-	by szxga01-in.huawei.com (SkyGuard) with ESMTP id 4Wsq9r2SqhzyRCP;
-	Mon, 26 Aug 2024 20:05:04 +0800 (CST)
-Received: from kwepemh100016.china.huawei.com (unknown [7.202.181.102])
-	by mail.maildlp.com (Postfix) with ESMTPS id 7E5691800D0;
-	Mon, 26 Aug 2024 20:05:32 +0800 (CST)
-Received: from huawei.com (10.175.113.32) by kwepemh100016.china.huawei.com
- (7.202.181.102) with Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.2.1544.11; Mon, 26 Aug
- 2024 20:05:30 +0800
-From: Kaixiong Yu <yukaixiong@huawei.com>
-To: <akpm@linux-foundation.org>, <mcgrof@kernel.org>
-CC: <ysato@users.sourceforge.jp>, <dalias@libc.org>,
-	<glaubitz@physik.fu-berlin.de>, <luto@kernel.org>, <tglx@linutronix.de>,
-	<bp@alien8.de>, <dave.hansen@linux.intel.com>, <hpa@zytor.com>,
-	<viro@zeniv.linux.org.uk>, <brauner@kernel.org>, <jack@suse.cz>,
-	<kees@kernel.org>, <j.granados@samsung.com>, <willy@infradead.org>,
-	<Liam.Howlett@oracle.com>, <vbabka@suse.cz>, <lorenzo.stoakes@oracle.com>,
-	<trondmy@kernel.org>, <anna@kernel.org>, <chuck.lever@oracle.com>,
-	<jlayton@kernel.org>, <neilb@suse.de>, <okorniev@redhat.com>,
-	<Dai.Ngo@oracle.com>, <tom@talpey.com>, <davem@davemloft.net>,
-	<edumazet@google.com>, <kuba@kernel.org>, <pabeni@redhat.com>,
-	<paul@paul-moore.com>, <jmorris@namei.org>, <linux-sh@vger.kernel.org>,
-	<linux-kernel@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
-	<linux-mm@kvack.org>, <linux-nfs@vger.kernel.org>, <netdev@vger.kernel.org>,
-	<linux-security-module@vger.kernel.org>, <wangkefeng.wang@huawei.com>
-Subject: [PATCH -next 05/15] mm: util: move sysctls into it own files
-Date: Mon, 26 Aug 2024 20:04:39 +0800
-Message-ID: <20240826120449.1666461-6-yukaixiong@huawei.com>
-X-Mailer: git-send-email 2.25.1
-In-Reply-To: <20240826120449.1666461-1-yukaixiong@huawei.com>
-References: <20240826120449.1666461-1-yukaixiong@huawei.com>
+	s=arc-20240116; t=1724693317; c=relaxed/simple;
+	bh=Ah1MYcJfpVaPDZCj/MgYPfBVJo43ln+VDcKQfM/BWW0=;
+	h=Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=F0vJuB4enMf3kzX5w92GGjgpsS14IY3U78m1dP1LqdjuRTbkrmE7/1p6+62IWa4VSSS9IXuOm/ij9PxvLfDGCDYIOreZRpO9VqbJ8l7adlo09mkcJdQ+bEByMEFVsKuXzHUdV5LrCmwNVmGObV8zg6akptUVLJ+lZkfWB04lDGk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B0E6AC8B7B5;
+	Mon, 26 Aug 2024 17:28:29 +0000 (UTC)
+Date: Mon, 26 Aug 2024 13:29:09 -0400
+From: Steven Rostedt <rostedt@goodmis.org>
+To: Mike Rapoport <rppt@kernel.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Andreas Larsson
+ <andreas@gaisler.com>, Andy Lutomirski <luto@kernel.org>, Arnd Bergmann
+ <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>, Brian Cain
+ <bcain@quicinc.com>, Catalin Marinas <catalin.marinas@arm.com>, Christoph
+ Hellwig <hch@infradead.org>, Christophe Leroy
+ <christophe.leroy@csgroup.eu>, Dave Hansen <dave.hansen@linux.intel.com>,
+ Dinh Nguyen <dinguyen@kernel.org>, Geert Uytterhoeven
+ <geert@linux-m68k.org>, Guo Ren <guoren@kernel.org>, Helge Deller
+ <deller@gmx.de>, Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar
+ <mingo@redhat.com>, Johannes Berg <johannes@sipsolutions.net>, John Paul
+ Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, Kent Overstreet
+ <kent.overstreet@linux.dev>, "Liam R. Howlett" <Liam.Howlett@oracle.com>,
+ Luis Chamberlain <mcgrof@kernel.org>, Mark Rutland <mark.rutland@arm.com>,
+ Masami Hiramatsu <mhiramat@kernel.org>, Matt Turner <mattst88@gmail.com>,
+ Max Filippov <jcmvbkbc@gmail.com>, Michael Ellerman <mpe@ellerman.id.au>,
+ Michal Simek <monstr@monstr.eu>, Oleg Nesterov <oleg@redhat.com>, Palmer
+ Dabbelt <palmer@dabbelt.com>, Peter Zijlstra <peterz@infradead.org>,
+ Richard Weinberger <richard@nod.at>, Russell King <linux@armlinux.org.uk>,
+ Song Liu <song@kernel.org>, Stafford Horne <shorne@gmail.com>, Thomas
+ Bogendoerfer <tsbogend@alpha.franken.de>, Thomas Gleixner
+ <tglx@linutronix.de>, Uladzislau Rezki <urezki@gmail.com>, Vineet Gupta
+ <vgupta@kernel.org>, Will Deacon <will@kernel.org>, bpf@vger.kernel.org,
+ linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
+ linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+ linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org,
+ linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+ linux-mm@kvack.org, linux-modules@vger.kernel.org,
+ linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
+ linux-riscv@lists.infradead.org, linux-sh@vger.kernel.org,
+ linux-snps-arc@lists.infradead.org, linux-trace-kernel@vger.kernel.org,
+ linux-um@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
+ loongarch@lists.linux.dev, sparclinux@vger.kernel.org, x86@kernel.org
+Subject: Re: [PATCH v2 5/8] ftrace: Add swap_func to ftrace_process_locs()
+Message-ID: <20240826132909.306b08fc@gandalf.local.home>
+In-Reply-To: <20240826065532.2618273-6-rppt@kernel.org>
+References: <20240826065532.2618273-1-rppt@kernel.org>
+	<20240826065532.2618273-6-rppt@kernel.org>
+X-Mailer: Claws Mail 3.20.0git84 (GTK+ 2.24.33; x86_64-pc-linux-gnu)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
-X-ClientProxiedBy: dggems706-chm.china.huawei.com (10.3.19.183) To
- kwepemh100016.china.huawei.com (7.202.181.102)
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 
-This moves all util related sysctls to its own file, as part of the
-kernel/sysctl.c cleaning, also removes redundant external
-variable declarations and function declarations.
+On Mon, 26 Aug 2024 09:55:29 +0300
+Mike Rapoport <rppt@kernel.org> wrote:
 
-Signed-off-by: Kaixiong Yu <yukaixiong@huawei.com>
----
- include/linux/mm.h   | 11 --------
- include/linux/mman.h |  2 --
- kernel/sysctl.c      | 37 ------------------------
- mm/util.c            | 67 ++++++++++++++++++++++++++++++++++++++------
- 4 files changed, 59 insertions(+), 58 deletions(-)
+> From: Song Liu <song@kernel.org>
+> 
+> ftrace_process_locs sorts module mcount, which is inside RO memory. Add a
+> ftrace_swap_func so that archs can use RO-memory-poke function to do the
+> sorting.
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index ae41092f4328..a04543984a46 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -200,17 +200,6 @@ extern int sysctl_max_map_count;
- extern unsigned long sysctl_user_reserve_kbytes;
- extern unsigned long sysctl_admin_reserve_kbytes;
- 
--extern int sysctl_overcommit_memory;
--extern int sysctl_overcommit_ratio;
--extern unsigned long sysctl_overcommit_kbytes;
--
--int overcommit_ratio_handler(const struct ctl_table *, int, void *, size_t *,
--		loff_t *);
--int overcommit_kbytes_handler(const struct ctl_table *, int, void *, size_t *,
--		loff_t *);
--int overcommit_policy_handler(const struct ctl_table *, int, void *, size_t *,
--		loff_t *);
--
- #if defined(CONFIG_SPARSEMEM) && !defined(CONFIG_SPARSEMEM_VMEMMAP)
- #define nth_page(page,n) pfn_to_page(page_to_pfn((page)) + (n))
- #define folio_page_idx(folio, p)	(page_to_pfn(p) - folio_pfn(folio))
-diff --git a/include/linux/mman.h b/include/linux/mman.h
-index bcb201ab7a41..e62ef272d140 100644
---- a/include/linux/mman.h
-+++ b/include/linux/mman.h
-@@ -58,8 +58,6 @@
- 		| MAP_HUGE_1GB)
- 
- extern int sysctl_overcommit_memory;
--extern int sysctl_overcommit_ratio;
--extern unsigned long sysctl_overcommit_kbytes;
- extern struct percpu_counter vm_committed_as;
- 
- #ifdef CONFIG_SMP
-diff --git a/kernel/sysctl.c b/kernel/sysctl.c
-index 184d39944e16..ad3ac6f6c808 100644
---- a/kernel/sysctl.c
-+++ b/kernel/sysctl.c
-@@ -2030,29 +2030,6 @@ static struct ctl_table kern_table[] = {
- };
- 
- static struct ctl_table vm_table[] = {
--	{
--		.procname	= "overcommit_memory",
--		.data		= &sysctl_overcommit_memory,
--		.maxlen		= sizeof(sysctl_overcommit_memory),
--		.mode		= 0644,
--		.proc_handler	= overcommit_policy_handler,
--		.extra1		= SYSCTL_ZERO,
--		.extra2		= SYSCTL_TWO,
--	},
--	{
--		.procname	= "overcommit_ratio",
--		.data		= &sysctl_overcommit_ratio,
--		.maxlen		= sizeof(sysctl_overcommit_ratio),
--		.mode		= 0644,
--		.proc_handler	= overcommit_ratio_handler,
--	},
--	{
--		.procname	= "overcommit_kbytes",
--		.data		= &sysctl_overcommit_kbytes,
--		.maxlen		= sizeof(sysctl_overcommit_kbytes),
--		.mode		= 0644,
--		.proc_handler	= overcommit_kbytes_handler,
--	},
- 	{
- 		.procname	= "dirtytime_expire_seconds",
- 		.data		= &dirtytime_expire_interval,
-@@ -2133,20 +2110,6 @@ static struct ctl_table vm_table[] = {
- 		.extra1		= SYSCTL_ZERO,
- 	},
- #endif
--	{
--		.procname	= "user_reserve_kbytes",
--		.data		= &sysctl_user_reserve_kbytes,
--		.maxlen		= sizeof(sysctl_user_reserve_kbytes),
--		.mode		= 0644,
--		.proc_handler	= proc_doulongvec_minmax,
--	},
--	{
--		.procname	= "admin_reserve_kbytes",
--		.data		= &sysctl_admin_reserve_kbytes,
--		.maxlen		= sizeof(sysctl_admin_reserve_kbytes),
--		.mode		= 0644,
--		.proc_handler	= proc_doulongvec_minmax,
--	},
- #ifdef CONFIG_HAVE_ARCH_MMAP_RND_BITS
- 	{
- 		.procname	= "mmap_rnd_bits",
-diff --git a/mm/util.c b/mm/util.c
-index 2bfae12ade7e..04a677f04ca9 100644
---- a/mm/util.c
-+++ b/mm/util.c
-@@ -12,6 +12,7 @@
- #include <linux/security.h>
- #include <linux/swap.h>
- #include <linux/swapops.h>
-+#include <linux/sysctl.h>
- #include <linux/mman.h>
- #include <linux/hugetlb.h>
- #include <linux/vmalloc.h>
-@@ -903,14 +904,16 @@ int folio_mc_copy(struct folio *dst, struct folio *src)
- EXPORT_SYMBOL(folio_mc_copy);
- 
- int sysctl_overcommit_memory __read_mostly = OVERCOMMIT_GUESS;
--int sysctl_overcommit_ratio __read_mostly = 50;
--unsigned long sysctl_overcommit_kbytes __read_mostly;
-+static int sysctl_overcommit_ratio __read_mostly = 50;
-+static unsigned long sysctl_overcommit_kbytes __read_mostly;
- int sysctl_max_map_count __read_mostly = DEFAULT_MAX_MAP_COUNT;
- unsigned long sysctl_user_reserve_kbytes __read_mostly = 1UL << 17; /* 128MB */
- unsigned long sysctl_admin_reserve_kbytes __read_mostly = 1UL << 13; /* 8MB */
- 
--int overcommit_ratio_handler(const struct ctl_table *table, int write, void *buffer,
--		size_t *lenp, loff_t *ppos)
-+#ifdef CONFIG_SYSCTL
-+
-+static int overcommit_ratio_handler(const struct ctl_table *table, int write,
-+				void *buffer, size_t *lenp, loff_t *ppos)
- {
- 	int ret;
- 
-@@ -925,8 +928,8 @@ static void sync_overcommit_as(struct work_struct *dummy)
- 	percpu_counter_sync(&vm_committed_as);
- }
- 
--int overcommit_policy_handler(const struct ctl_table *table, int write, void *buffer,
--		size_t *lenp, loff_t *ppos)
-+static int overcommit_policy_handler(const struct ctl_table *table, int write,
-+				void *buffer, size_t *lenp, loff_t *ppos)
- {
- 	struct ctl_table t;
- 	int new_policy = -1;
-@@ -961,8 +964,8 @@ int overcommit_policy_handler(const struct ctl_table *table, int write, void *bu
- 	return ret;
- }
- 
--int overcommit_kbytes_handler(const struct ctl_table *table, int write, void *buffer,
--		size_t *lenp, loff_t *ppos)
-+static int overcommit_kbytes_handler(const struct ctl_table *table, int write,
-+				void *buffer, size_t *lenp, loff_t *ppos)
- {
- 	int ret;
- 
-@@ -972,6 +975,54 @@ int overcommit_kbytes_handler(const struct ctl_table *table, int write, void *bu
- 	return ret;
- }
- 
-+static struct ctl_table util_sysctl_table[] = {
-+	{
-+		.procname	= "overcommit_memory",
-+		.data		= &sysctl_overcommit_memory,
-+		.maxlen		= sizeof(sysctl_overcommit_memory),
-+		.mode		= 0644,
-+		.proc_handler	= overcommit_policy_handler,
-+		.extra1		= SYSCTL_ZERO,
-+		.extra2		= SYSCTL_TWO,
-+	},
-+	{
-+		.procname	= "overcommit_ratio",
-+		.data		= &sysctl_overcommit_ratio,
-+		.maxlen		= sizeof(sysctl_overcommit_ratio),
-+		.mode		= 0644,
-+		.proc_handler	= overcommit_ratio_handler,
-+	},
-+	{
-+		.procname	= "overcommit_kbytes",
-+		.data		= &sysctl_overcommit_kbytes,
-+		.maxlen		= sizeof(sysctl_overcommit_kbytes),
-+		.mode		= 0644,
-+		.proc_handler	= overcommit_kbytes_handler,
-+	},
-+	{
-+		.procname	= "user_reserve_kbytes",
-+		.data		= &sysctl_user_reserve_kbytes,
-+		.maxlen		= sizeof(sysctl_user_reserve_kbytes),
-+		.mode		= 0644,
-+		.proc_handler	= proc_doulongvec_minmax,
-+	},
-+	{
-+		.procname	= "admin_reserve_kbytes",
-+		.data		= &sysctl_admin_reserve_kbytes,
-+		.maxlen		= sizeof(sysctl_admin_reserve_kbytes),
-+		.mode		= 0644,
-+		.proc_handler	= proc_doulongvec_minmax,
-+	},
-+};
-+
-+static int __init init_vm_util_sysctls(void)
-+{
-+	register_sysctl_init("vm", util_sysctl_table);
-+	return 0;
-+}
-+subsys_initcall(init_vm_util_sysctls);
-+#endif /* CONFIG_SYSCTL */
-+
- /*
-  * Committed memory limit enforced when OVERCOMMIT_NEVER policy is used
-  */
--- 
-2.25.1
+Can you add the above as a comment above the ftrace_swap_func() function?
+
+Thanks,
+
+-- Steve
+
+> 
+> Signed-off-by: Song Liu <song@kernel.org>
+> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+> ---
+>  include/linux/ftrace.h |  2 ++
+>  kernel/trace/ftrace.c  | 13 ++++++++++++-
+>  2 files changed, 14 insertions(+), 1 deletion(-)
+> 
+> diff --git a/include/linux/ftrace.h b/include/linux/ftrace.h
+> index fd5e84d0ec47..b794dcb7cae8 100644
+> --- a/include/linux/ftrace.h
+> +++ b/include/linux/ftrace.h
+> @@ -1188,4 +1188,6 @@ unsigned long arch_syscall_addr(int nr);
+>  
+>  #endif /* CONFIG_FTRACE_SYSCALLS */
+>  
+> +void ftrace_swap_func(void *a, void *b, int n);
+> +
+>  #endif /* _LINUX_FTRACE_H */
+> diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
+> index 4c28dd177ca6..9829979f3a46 100644
+> --- a/kernel/trace/ftrace.c
+> +++ b/kernel/trace/ftrace.c
+> @@ -6989,6 +6989,17 @@ static void test_is_sorted(unsigned long *start,
+> unsigned long count) }
+>  #endif
+>  
+> +void __weak ftrace_swap_func(void *a, void *b, int n)
+> +{
+> +	unsigned long t;
+> +
+> +	WARN_ON_ONCE(n != sizeof(t));
+> +
+> +	t = *((unsigned long *)a);
+> +	*(unsigned long *)a = *(unsigned long *)b;
+> +	*(unsigned long *)b = t;
+> +}
+> +
+>  static int ftrace_process_locs(struct module *mod,
+>  			       unsigned long *start,
+>  			       unsigned long *end)
+> @@ -7016,7 +7027,7 @@ static int ftrace_process_locs(struct module *mod,
+>  	 */
+>  	if (!IS_ENABLED(CONFIG_BUILDTIME_MCOUNT_SORT) || mod) {
+>  		sort(start, count, sizeof(*start),
+> -		     ftrace_cmp_ips, NULL);
+> +		     ftrace_cmp_ips, ftrace_swap_func);
+>  	} else {
+>  		test_is_sorted(start, count);
+>  	}
 
