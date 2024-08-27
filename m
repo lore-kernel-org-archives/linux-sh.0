@@ -1,61 +1,81 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9819C16BE14
-	for <linux-sh@vger.kernel.org>; Tue, 27 Aug 2024 09:02:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=170.10.133.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5AA3A1C5792;
+	Tue, 27 Aug 2024 15:43:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724749335; cv=none; b=MN+OBM6vYwfP/PnPc5W7Huipxl3urApPNsZfMOOqGPA7c+oUE4hmGuLclLSYsUrjkbXnhCrsYBnLhbdGbciw1I7J1QARlCksbjOmTcNtt+cUbcNGuUY6DuRUd03yxQOqC2w50DMzoEK/uV2/AlmXoCvOSKyPfbvk9mfjTCrx/8I=
+	t=1724773409; cv=none; b=YZKizRVOkzZX5ds3msz1Z6gczEMA4tLMXkoZpKfXZQDPLCJnnkiHAuAetuszhW599cDH4z+B0bQqRJmtgqpiVm1fNEOBWfvpXF5rr4Rj8GF3XK+8a7Xh+LBl8AMz2aoif5kFr+YM+bcYYhSk6rkesG2IFQdv/m7jayKpd6BmP3o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724749335; c=relaxed/simple;
-	bh=CNgje/G2UMnIInNFSzspq8/Z5XpdG66fBhV4nVsqiOw=;
+	s=arc-20240116; t=1724773409; c=relaxed/simple;
+	bh=gLN6XrXPe8lnOYBY+qE6Br7q9z15uQyViI2cYvrjDUQ=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=T7mhgHE6Nc+Iemi1Asv2IsmjqFHFHPYOpCx4vz5K74yWGWDI86W+jRmX8CTSQRBkYn+rcNNnP8X9drvfq7UBiLQcmEoMHe1/oHH+jRqoFsBBqAvODzjit4gAewuD/SbnqkCEZRjWoZ/PI6asIbzQQoxBpdytYQl31GlffV4s4P8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=dgp6agpq; arc=none smtp.client-ip=170.10.133.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	 Content-Type:Content-Disposition:In-Reply-To; b=Od33bOhcw1GpRXUEH88TvMilofZpTVAkWCKcAPdYK8wv/VqJrhchShe8pqCo19CVmveCY7goFnVNymTMihw6msAlyZXjuHiEkPIxR49duSk9PgU9+SnMPabgm7rfAluJtcVTXEYP2OGTAcEeJBmDDCEms8GXOA1tz4UayaH0Gz4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=pJjeZGdR; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="dgp6agpq"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1724749332;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=outpxqXc6KM2Oo4/0nqD4smTGWGwDj3DOJrNewpgErA=;
-	b=dgp6agpqlSJc07JJsv+eXN33QWCP0zMDcbSFyO+/dICmjEsR74TYOPbkVfyBdhV22122XS
-	bgcpMAc2PyVNaeLN3HYs2NVdmdR45Xbt3uU6B+5dYan6RTd5UeWqJ9cYBj9h0QqzsBHH7J
-	0Hk9GcWbTVPSB1b+hsuCyB8A9Mf/f0M=
-Received: from mx-prod-mc-01.mail-002.prod.us-west-2.aws.redhat.com
- (ec2-54-186-198-63.us-west-2.compute.amazonaws.com [54.186.198.63]) by
- relay.mimecast.com with ESMTP with STARTTLS (version=TLSv1.3,
- cipher=TLS_AES_256_GCM_SHA384) id us-mta-468-rv4ABExJM5egEclpNPuyLA-1; Tue,
- 27 Aug 2024 05:02:08 -0400
-X-MC-Unique: rv4ABExJM5egEclpNPuyLA-1
-Received: from mx-prod-int-02.mail-002.prod.us-west-2.aws.redhat.com (mx-prod-int-02.mail-002.prod.us-west-2.aws.redhat.com [10.30.177.15])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	by mx-prod-mc-01.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 7B6471955BFE;
-	Tue, 27 Aug 2024 09:02:05 +0000 (UTC)
-Received: from localhost (unknown [10.72.112.42])
-	by mx-prod-int-02.mail-002.prod.us-west-2.aws.redhat.com (Postfix) with ESMTPS id 416C019560AA;
-	Tue, 27 Aug 2024 09:02:02 +0000 (UTC)
-Date: Tue, 27 Aug 2024 17:01:58 +0800
-From: Baoquan He <bhe@redhat.com>
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>,
-	Dave Vasilevsky <dave@vasilevsky.ca>, linuxppc-dev@lists.ozlabs.org,
-	linux-sh@vger.kernel.org, mpe@ellerman.id.au,
-	kexec@lists.infradead.org, linux-kernel@vger.kernel.org,
-	Reimar =?iso-8859-1?Q?D=F6ffinger?= <Reimar.Doeffinger@gmx.de>
-Subject: Re: [PATCH] crash: Default to CRASH_DUMP=n when support for it is
- unlikely
-Message-ID: <Zs2WBgtADYxzVMyt@MiWiFi-R3L-srv>
-References: <20240823125156.104775-1-dave@vasilevsky.ca>
- <CAMuHMdVYNhFJ+qBDP3_fi9oeHsgOL0vqPe1YqE18+M8n1onssw@mail.gmail.com>
- <09c29a3c4879d4ce5d8b97fd60d8ba5e38bed979.camel@physik.fu-berlin.de>
- <Zs1wpHxfTcwKr517@MiWiFi-R3L-srv>
- <f355e26eead641f5f281372aadf9dee7de19a4c7.camel@physik.fu-berlin.de>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="pJjeZGdR"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C0C93C4DE0D;
+	Tue, 27 Aug 2024 15:43:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1724773408;
+	bh=gLN6XrXPe8lnOYBY+qE6Br7q9z15uQyViI2cYvrjDUQ=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=pJjeZGdRlRZciwiSds7ncOoFJeP+wPAbVUVeY1LlTa56La6oD/XycPb3ju2I/Si6N
+	 bNsP9pfRPVziKGgn/Q7CZW62Bt7rl9iXHC+NkqAHxIdvlozlUPOn7DKQtQl24SAAKo
+	 NVAJkyrxO3xLQShBOmpHzZcPcSpDnuVLQLFIjp6TCSAVJcQE/Q6oni4wO6fU4ZsrHD
+	 4ovVIvkGw6loTWaFlHze4az9iCCc+TXdBuzKzGsuhZ4ATm4q785T8iPGoGLrAdyrZK
+	 3tUYk2k2P5uZy+/qiIPItAj2gx6xlt89fXh5S1kblIuw6KS4FNa+7dzFK9H80hz+VW
+	 wYQnWN9qfNMIA==
+Date: Tue, 27 Aug 2024 18:40:35 +0300
+From: Mike Rapoport <rppt@kernel.org>
+To: Steven Rostedt <rostedt@goodmis.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Andy Lutomirski <luto@kernel.org>, Arnd Bergmann <arnd@arndb.de>,
+	Borislav Petkov <bp@alien8.de>, Brian Cain <bcain@quicinc.com>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	Dinh Nguyen <dinguyen@kernel.org>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
+	Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Kent Overstreet <kent.overstreet@linux.dev>,
+	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
+	Luis Chamberlain <mcgrof@kernel.org>,
+	Mark Rutland <mark.rutland@arm.com>,
+	Masami Hiramatsu <mhiramat@kernel.org>,
+	Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Michal Simek <monstr@monstr.eu>, Oleg Nesterov <oleg@redhat.com>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Richard Weinberger <richard@nod.at>,
+	Russell King <linux@armlinux.org.uk>, Song Liu <song@kernel.org>,
+	Stafford Horne <shorne@gmail.com>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Uladzislau Rezki <urezki@gmail.com>,
+	Vineet Gupta <vgupta@kernel.org>, Will Deacon <will@kernel.org>,
+	bpf@vger.kernel.org, linux-alpha@vger.kernel.org,
+	linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org, linux-mm@kvack.org,
+	linux-modules@vger.kernel.org, linux-openrisc@vger.kernel.org,
+	linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
+	linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+	linux-trace-kernel@vger.kernel.org, linux-um@lists.infradead.org,
+	linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
+	sparclinux@vger.kernel.org, x86@kernel.org
+Subject: Re: [PATCH v2 5/8] ftrace: Add swap_func to ftrace_process_locs()
+Message-ID: <Zs3zcwyygUk4_X8y@kernel.org>
+References: <20240826065532.2618273-1-rppt@kernel.org>
+ <20240826065532.2618273-6-rppt@kernel.org>
+ <20240826132909.306b08fc@gandalf.local.home>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -64,33 +84,78 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <f355e26eead641f5f281372aadf9dee7de19a4c7.camel@physik.fu-berlin.de>
-X-Scanned-By: MIMEDefang 3.0 on 10.30.177.15
+In-Reply-To: <20240826132909.306b08fc@gandalf.local.home>
 
-On 08/27/24 at 08:37am, John Paul Adrian Glaubitz wrote:
-> On Tue, 2024-08-27 at 14:22 +0800, Baoquan He wrote:
-> > About why it's enabled by default, as Michael has explained in another
-> > thread, distros usualy needs to enable it by default because vmcore
-> > dumping is a very important feature on servers, even guest instances. 
-> > Even though kdump codes are enabled to built in, not providing
-> > crashkernel= value won't make vmcore dumping take effect, it won't cost
-> > system resources in that case.
+On Mon, Aug 26, 2024 at 01:29:09PM -0400, Steven Rostedt wrote:
+> On Mon, 26 Aug 2024 09:55:29 +0300
+> Mike Rapoport <rppt@kernel.org> wrote:
 > 
-> OK, thanks for the explanation. But as we have found out in the mean time,
-> the assumption was wrong to enable it by default for all architectures as
-> some architectures cannot boot a crash dump kernel with their default bootloader
-> but only through kexec.
+> > From: Song Liu <song@kernel.org>
+> > 
+> > ftrace_process_locs sorts module mcount, which is inside RO memory. Add a
+> > ftrace_swap_func so that archs can use RO-memory-poke function to do the
+> > sorting.
 > 
-> Can we have a follow-up patch to disable crash dump kernels where they're
-> not needed? I mean, not every platform supported by Linux is obviously a
-> x86-based or POWER-based server.
+> Can you add the above as a comment above the ftrace_swap_func() function?
 
-Yes, while isn't Dave's patch a good one to fix it? In Dave's patch, the
-default enabling of CRASH_DUMP has been taken off, change to rely on
-ARCH_DEFAULT_CRASH_DUMP provided by each arch.
+Sure.
+ 
+> Thanks,
+> 
+> -- Steve
+> 
+> > 
+> > Signed-off-by: Song Liu <song@kernel.org>
+> > Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+> > ---
+> >  include/linux/ftrace.h |  2 ++
+> >  kernel/trace/ftrace.c  | 13 ++++++++++++-
+> >  2 files changed, 14 insertions(+), 1 deletion(-)
+> > 
+> > diff --git a/include/linux/ftrace.h b/include/linux/ftrace.h
+> > index fd5e84d0ec47..b794dcb7cae8 100644
+> > --- a/include/linux/ftrace.h
+> > +++ b/include/linux/ftrace.h
+> > @@ -1188,4 +1188,6 @@ unsigned long arch_syscall_addr(int nr);
+> >  
+> >  #endif /* CONFIG_FTRACE_SYSCALLS */
+> >  
+> > +void ftrace_swap_func(void *a, void *b, int n);
+> > +
+> >  #endif /* _LINUX_FTRACE_H */
+> > diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
+> > index 4c28dd177ca6..9829979f3a46 100644
+> > --- a/kernel/trace/ftrace.c
+> > +++ b/kernel/trace/ftrace.c
+> > @@ -6989,6 +6989,17 @@ static void test_is_sorted(unsigned long *start,
+> > unsigned long count) }
+> >  #endif
+> >  
+> > +void __weak ftrace_swap_func(void *a, void *b, int n)
+> > +{
+> > +	unsigned long t;
+> > +
+> > +	WARN_ON_ONCE(n != sizeof(t));
+> > +
+> > +	t = *((unsigned long *)a);
+> > +	*(unsigned long *)a = *(unsigned long *)b;
+> > +	*(unsigned long *)b = t;
+> > +}
+> > +
+> >  static int ftrace_process_locs(struct module *mod,
+> >  			       unsigned long *start,
+> >  			       unsigned long *end)
+> > @@ -7016,7 +7027,7 @@ static int ftrace_process_locs(struct module *mod,
+> >  	 */
+> >  	if (!IS_ENABLED(CONFIG_BUILDTIME_MCOUNT_SORT) || mod) {
+> >  		sort(start, count, sizeof(*start),
+> > -		     ftrace_cmp_ips, NULL);
+> > +		     ftrace_cmp_ips, ftrace_swap_func);
+> >  	} else {
+> >  		test_is_sorted(start, count);
+> >  	}
+> 
 
- config CRASH_DUMP
-        bool "kernel crash dumps"
--       default y
-+       default ARCH_DEFAULT_CRASH_DUMP
-
+-- 
+Sincerely yours,
+Mike.
