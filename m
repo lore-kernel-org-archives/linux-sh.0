@@ -1,60 +1,60 @@
-Received: from mail-pl1-f181.google.com (mail-pl1-f181.google.com [209.85.214.181])
+Received: from mail-pl1-f171.google.com (mail-pl1-f171.google.com [209.85.214.171])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9EB6E15854D
-	for <linux-sh@vger.kernel.org>; Wed, 28 Aug 2024 05:49:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.181
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 062D2158A3D
+	for <linux-sh@vger.kernel.org>; Wed, 28 Aug 2024 05:49:50 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.171
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724824189; cv=none; b=N+PTfDdcPEJ62rftUoHq0pJCWKXfgLjTAkf8WNsUrLKNn46VjlGWBuqwndjKEHRACmYd2k1BdZIg1K1aAncjckZU+IsgGQ+fAzklXVMtnE/dVW9IVV2xEQW/gwxK8V/XqOzHJYX9vgs8/hDuFqGijUDJohnHxsDFiy8v5Z+Mk6E=
+	t=1724824192; cv=none; b=mw6qCJjSzXi7s9MZVNMXWP8ezZqFY1fHJsXGSSAhBUFIzRE08MzkwsL1ILcVO/lxZkapn4DLWQwu7XxiqTgWmY5m/6u+acx4KM0gjM2INAjN2SQY9Mr5Po/gXrOvLhodgS+y80fRfLuFMCNIYQBxa6WUQCS8QLUX27cBz06m/PY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724824189; c=relaxed/simple;
-	bh=ib/vcnYDgaY2P7lUbSF3YkIC17EmCG0vvapvjDW6XVw=;
+	s=arc-20240116; t=1724824192; c=relaxed/simple;
+	bh=efrv8gA6WD0kUzxMoz7FX/k/QnHAbRwwUgR0y2hEUd8=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=r5JoFLuHfcO2sieKD1qo6QHD1aAkbvf7RC1/HUZd1Zale7VuOX/2/wmK/79rL3Turcjh4uWnFoWzpAFGnP+5/licowQZuyfFwzg17xQmxVRBr+ebDHOikOHRVPLgkq19U2PhVPEGD8e47ZCgU/3nyjSMWrXzWsjy6W6cyA/Y7q4=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rivosinc.com; spf=pass smtp.mailfrom=rivosinc.com; dkim=pass (2048-bit key) header.d=rivosinc-com.20230601.gappssmtp.com header.i=@rivosinc-com.20230601.gappssmtp.com header.b=ULGwyoHr; arc=none smtp.client-ip=209.85.214.181
+	 In-Reply-To:To:Cc; b=oBjgCxerI79rWnQno2JMWnUeqPbb3AcKG1xZuk9jK9B8Uk7Eehhp1PulvH3rT2LkTnIvShPS6ftxsdm/hQV+YHKjNGNdC6m6GC5B15GfdswlmZUaN7zUS4N13Bez/6DqB6S8LGcwDMhKCF9niMpj5C3doEBd9gGUdQvaneFHCLU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rivosinc.com; spf=pass smtp.mailfrom=rivosinc.com; dkim=pass (2048-bit key) header.d=rivosinc-com.20230601.gappssmtp.com header.i=@rivosinc-com.20230601.gappssmtp.com header.b=xHkxY+Tq; arc=none smtp.client-ip=209.85.214.171
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rivosinc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=rivosinc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=rivosinc-com.20230601.gappssmtp.com header.i=@rivosinc-com.20230601.gappssmtp.com header.b="ULGwyoHr"
-Received: by mail-pl1-f181.google.com with SMTP id d9443c01a7336-201e64607a5so45277315ad.2
-        for <linux-sh@vger.kernel.org>; Tue, 27 Aug 2024 22:49:47 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=rivosinc-com.20230601.gappssmtp.com header.i=@rivosinc-com.20230601.gappssmtp.com header.b="xHkxY+Tq"
+Received: by mail-pl1-f171.google.com with SMTP id d9443c01a7336-2020b730049so49696385ad.3
+        for <linux-sh@vger.kernel.org>; Tue, 27 Aug 2024 22:49:50 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=rivosinc-com.20230601.gappssmtp.com; s=20230601; t=1724824187; x=1725428987; darn=vger.kernel.org;
+        d=rivosinc-com.20230601.gappssmtp.com; s=20230601; t=1724824190; x=1725428990; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :mime-version:subject:date:from:from:to:cc:subject:date:message-id
          :reply-to;
-        bh=fVwUzK3Wi136bLF1beJbPIYrhSgOvSQiUtDec+6VrAU=;
-        b=ULGwyoHrD09zX+/631qHxxwvdPI8iaUy78Esakrmx6yMvAVH0+TZLKTulSFhvMaH6D
-         i3pWgAvtwUf5bcm9Sj6OEaWx4mDnB8ywMFmehi5dTSTS30CiBKw3XGfnS93bYa2c+fgi
-         ++U92Az0H4KzZ/Pmv5QhwDwNY9TZ1CaNCtp19JZ3PeTP6Ql2m3jGNfY6WdEjxjKu+jHn
-         jzVpbJRylgf79FnevycVdcgkZkZh4XZuwgQPE7Wk7/V0sUriDrb2FTpSy0lfntm7QhdL
-         vt4sOWAsMOoXnoF/TwmhzZXqO1UvuCwINPHPbkEmG7O5JKHFDYZvuVj1BXkjFIbqN55v
-         6m0Q==
+        bh=01svQ9ue7Mr4CWZ3Wn0HVoOhr4xAPnLaZCO9CnTXUgc=;
+        b=xHkxY+Tqnax3ywVHWyBD2R9IZoxXX5+jyVDhT2/MUchy1ONegKg5Ar80c8eSI2FTDf
+         80ls4IqX4MGlY2JzotSBJ+SF+TM7FY2AxxhZ3Fp/6DNPeFT3w49bVLFcSNnmNxSiZE8H
+         aEPiTcZcL0d5zdp/O0XDYpti9mVBtQ3TCgU3EbPU913l1kqN0YZYsCAS+MPOQLejk3p8
+         hN+W9PO+c57qRYomlNUudAb3zf+54Rka8BMVWKwOjHiUBnbRAjSUBW/89EOE5/VEnWI4
+         QGJE0gqm+mD1f36EgQpgszxOPaK2RwsXjKUCZHDdm/9DUPTISZrdWs2vdYnctq0C61Jc
+         UaqA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1724824187; x=1725428987;
+        d=1e100.net; s=20230601; t=1724824190; x=1725428990;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :mime-version:subject:date:from:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to;
-        bh=fVwUzK3Wi136bLF1beJbPIYrhSgOvSQiUtDec+6VrAU=;
-        b=oRkN13KK4d7ms/bMXs1pYbgdnj3XMW9EtsZW9qB4wiJLaZhLOnUCRL2He40LrDyu8Y
-         F9KVZQnliZR2ySJjujN5pQYQSz5RREB3E7c/ShNDd7Xm+eHgLBvmY6tBX63EGpqWwE2z
-         6I7METrIMKLAIFLoWwHhFE8q7icB9H8JKtmFMsW3mwd/EZ5FCwJSFHzvl2chBfqKXpKY
-         KJ4jEh0UUWqeM6gedWU4Yw66STbD0YYM+jwFqwAutIVS/7T2V8z3YhflSHTd/3PWsFzJ
-         yElnzRHhtWtz9xWy/cZ08Jjtbm4ZvP+Fh+9kVDsdfewtz9mSpHmiFl/B05CItxBsNCis
-         7ngg==
-X-Forwarded-Encrypted: i=1; AJvYcCVa0uuJePoLX5MzVSoKFLgrFh52jvweDUVtcFoN/sixDndSntnHI9bYOPF3mpD9OelcE+A7g8mttQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxtnELmWRjr8/zRdo3oiPafLj6qAi/QxlQiY3zIZ3GbSV52gWoK
-	xSJPzeckQFYo4p7YG5rhh58qfVHZZgye12z7Un+XSLDPcRKiTv2Tn6CE3SV7gQQ=
-X-Google-Smtp-Source: AGHT+IFs6bhbKPqiE/XUyq+o9y28MS2XMnZalJw5Zqf2sXjfONhgRAKfe8uENwidGpxKTHXbXFBJcg==
-X-Received: by 2002:a17:903:41d1:b0:202:54a5:deaf with SMTP id d9443c01a7336-2039e4fbd80mr220740285ad.57.1724824186699;
-        Tue, 27 Aug 2024 22:49:46 -0700 (PDT)
+        bh=01svQ9ue7Mr4CWZ3Wn0HVoOhr4xAPnLaZCO9CnTXUgc=;
+        b=JWS6TJB8QbDaOlEfW1zj4CvOVTyjZ8JFO1pcVS86G1mmbfZ1NxkaFY6u9FVXCvUwSY
+         9yxtrMPXQRfvlWSVUq6TyyktXoYfUGlYDtGTnkjkyJG7pA92QzbkGxOWdfWBLuXTSSew
+         5U8QSHwSDI/88b0AV7nRY5jr9xtys0h+IUc2oXHyqgvjCHr/zPTUCmckVatREZaQp+35
+         g3MDT8zLv+nQ3ye/SE/3nPTLQ6hGEddgoo9/NpYERHz7EZnrMITqWJK5Dy4vfueiOLRg
+         nBBwDLlXyjh2CQd9B4fTXRZhk0Lx0kYnt9Rbu41QkLGWPGXVO6MLSnN6+Bt8jSEmpHBF
+         aF3w==
+X-Forwarded-Encrypted: i=1; AJvYcCXE76DOUxLd7NFyvJh6GbF8oCG4QpUvdJOwag4s4iiZJh/Z4HqkRhkDDQDwnJjU1K2lqG2eglzB3Q==@vger.kernel.org
+X-Gm-Message-State: AOJu0YzRijgj+OjjUK5Eape2nbnIarDbWCMkmGei8u8OGVatex1DWueF
+	jXbHeZ16D2Vo5sAvES9oGP27FDgb3ghB1UjWpDw2NyGIVsU1K6KYwuJlV59eaT8=
+X-Google-Smtp-Source: AGHT+IFEjwUM/ElshIB7y6tneVtatsCyua8fDLSA2/rXWwDoWBaTV3bT3kKjnxkFupcj6i3KTQazzg==
+X-Received: by 2002:a17:903:41c6:b0:1fa:449:1dd6 with SMTP id d9443c01a7336-2039e510e6emr137316635ad.48.1724824190164;
+        Tue, 27 Aug 2024 22:49:50 -0700 (PDT)
 Received: from charlie.ba.rivosinc.com ([64.71.180.162])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-203855df0c4sm92092495ad.157.2024.08.27.22.49.43
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-203855df0c4sm92092495ad.157.2024.08.27.22.49.46
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 27 Aug 2024 22:49:45 -0700 (PDT)
+        Tue, 27 Aug 2024 22:49:49 -0700 (PDT)
 From: Charlie Jenkins <charlie@rivosinc.com>
-Date: Tue, 27 Aug 2024 22:49:12 -0700
-Subject: [PATCH 06/16] arm64: mm: Support MAP_BELOW_HINT
+Date: Tue, 27 Aug 2024 22:49:13 -0700
+Subject: [PATCH 07/16] powerpc: mm: Support MAP_BELOW_HINT
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -63,7 +63,7 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20240827-patches-below_hint_mmap-v1-6-46ff2eb9022d@rivosinc.com>
+Message-Id: <20240827-patches-below_hint_mmap-v1-7-46ff2eb9022d@rivosinc.com>
 References: <20240827-patches-below_hint_mmap-v1-0-46ff2eb9022d@rivosinc.com>
 In-Reply-To: <20240827-patches-below_hint_mmap-v1-0-46ff2eb9022d@rivosinc.com>
 To: Arnd Bergmann <arnd@arndb.de>, Paul Walmsley <paul.walmsley@sifive.com>, 
@@ -101,12 +101,12 @@ Cc: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org,
  linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, 
  linux-kselftest@vger.kernel.org, Charlie Jenkins <charlie@rivosinc.com>
 X-Mailer: b4 0.13.0
-X-Developer-Signature: v=1; a=openpgp-sha256; l=2070; i=charlie@rivosinc.com;
- h=from:subject:message-id; bh=ib/vcnYDgaY2P7lUbSF3YkIC17EmCG0vvapvjDW6XVw=;
- b=owGbwMvMwCHWx5hUnlvL8Y3xtFoSQ9q5XXGJ67WyV1982VXredvh0ENd1glLC4s4HJVXs9RbW
- X20a7/aUcrCIMbBICumyMJzrYG59Y5+2VHRsgkwc1iZQIYwcHEKwETa9BkZOnYYvlBTj2FUnbDH
- vODh/SmrdzHc++GxrUXG77agmXy8LCPDkyuNIo53Hzx7czND5bWgC3vzEimd+TtdNE+3T847GKz
- FAwA=
+X-Developer-Signature: v=1; a=openpgp-sha256; l=2284; i=charlie@rivosinc.com;
+ h=from:subject:message-id; bh=efrv8gA6WD0kUzxMoz7FX/k/QnHAbRwwUgR0y2hEUd8=;
+ b=owGbwMvMwCHWx5hUnlvL8Y3xtFoSQ9q5XfETrh9IO7T/uFjUxMhNQooG1iuWi1pdtJg6YcLD7
+ VUZ209HdpSyMIhxMMiKKbLwXGtgbr2jX3ZUtGwCzBxWJpAhDFycAjARbV+GvyIzjrH36plzvXDr
+ 3H/Wo2jj7SdL50ufO/vC42XF9noOjvuMDF8DvSaxHlpya2VRHMuNXyrdOxW6nj44wHJxyn8TwWv
+ XdrEDAA==
 X-Developer-Key: i=charlie@rivosinc.com; a=openpgp;
  fpr=7D834FF11B1D8387E61C776FFB10D1F27D6B1354
 
@@ -115,32 +115,19 @@ arch_get_mmap_end().
 
 Signed-off-by: Charlie Jenkins <charlie@rivosinc.com>
 ---
- arch/arm64/include/asm/processor.h | 34 +++++++++++++++++++++++++++++-----
- 1 file changed, 29 insertions(+), 5 deletions(-)
+ arch/powerpc/include/asm/task_size_64.h | 36 +++++++++++++++++++++++++++------
+ 1 file changed, 30 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm64/include/asm/processor.h b/arch/arm64/include/asm/processor.h
-index a67ca119bb91..39aabb1619f6 100644
---- a/arch/arm64/include/asm/processor.h
-+++ b/arch/arm64/include/asm/processor.h
-@@ -92,12 +92,36 @@
- #endif /* CONFIG_COMPAT */
+diff --git a/arch/powerpc/include/asm/task_size_64.h b/arch/powerpc/include/asm/task_size_64.h
+index 239b363841aa..a37a5a81365d 100644
+--- a/arch/powerpc/include/asm/task_size_64.h
++++ b/arch/powerpc/include/asm/task_size_64.h
+@@ -72,12 +72,36 @@
+ #define STACK_TOP_MAX TASK_SIZE_USER64
+ #define STACK_TOP (is_32bit_task() ? STACK_TOP_USER32 : STACK_TOP_USER64)
  
- #ifndef CONFIG_ARM64_FORCE_52BIT
--#define arch_get_mmap_end(addr, len, flags) \
--		(((addr) > DEFAULT_MAP_WINDOW) ? TASK_SIZE : DEFAULT_MAP_WINDOW)
-+#define arch_get_mmap_end(addr, len, flags)							\
-+({												\
-+	unsigned long mmap_end;									\
-+	typeof(flags) _flags = (flags);								\
-+	typeof(addr) _addr = (addr);								\
-+	typeof(len) _len = (len);								\
-+	if (_flags & MAP_BELOW_HINT && _addr != 0 && ((_addr + _len) > BIT(VA_BITS - 1)))	\
-+		mmap_end = (_addr + _len);							\
-+	else											\
-+		mmap_end = ((_addr > DEFAULT_MAP_WINDOW) ? TASK_SIZE : DEFAULT_MAP_WINDOW);	\
-+	mmap_end										\
-+})
-+
+-#define arch_get_mmap_base(addr, len, base, flags) \
+-	(((addr) > DEFAULT_MAP_WINDOW) ? (base) + TASK_SIZE - DEFAULT_MAP_WINDOW : (base))
 +#define arch_get_mmap_base(addr, len, base, flags)					\
 +({											\
 +	unsigned long mmap_base;							\
@@ -155,15 +142,29 @@ index a67ca119bb91..39aabb1619f6 100644
 +		mmap_end = ((_addr > DEFAULT_MAP_WINDOW) ?				\
 +				_base + TASK_SIZE - DEFAULT_MAP_WINDOW :		\
 +				_base);							\
-+	mmap_end									\
++	mmap_end;									\
 +})
  
--#define arch_get_mmap_base(addr, len, base, flags) ((addr > DEFAULT_MAP_WINDOW) ? \
--					base + TASK_SIZE - DEFAULT_MAP_WINDOW :\
--					base)
- #endif /* CONFIG_ARM64_FORCE_52BIT */
+-#define arch_get_mmap_end(addr, len, flags) \
+-	(((addr) > DEFAULT_MAP_WINDOW) || \
+-	 (((flags) & MAP_FIXED) && ((addr) + (len) > DEFAULT_MAP_WINDOW)) ? TASK_SIZE : \
+-									    DEFAULT_MAP_WINDOW)
++#define arch_get_mmap_end(addr, len, flags)							\
++({												\
++	unsigned long mmap_end;									\
++	typeof(flags) _flags = (flags);								\
++	typeof(addr) _addr = (addr);								\
++	typeof(len) _len = (len);								\
++	if (_flags & MAP_BELOW_HINT && _addr != 0 && ((_addr + _len) > BIT(VA_BITS - 1)))	\
++		mmap_end = (_addr + _len);							\
++	else											\
++		mmap_end = (((_addr) > DEFAULT_MAP_WINDOW) ||					\
++				(((_flags) & MAP_FIXED) && ((_addr) + (_len) > DEFAULT_MAP_WINDOW))\
++				? TASK_SIZE : DEFAULT_MAP_WINDOW)				\
++	mmap_end;										\
++})
  
- extern phys_addr_t arm64_dma_phys_limit;
+ #endif /* _ASM_POWERPC_TASK_SIZE_64_H */
 
 -- 
 2.45.0
