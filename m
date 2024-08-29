@@ -1,59 +1,59 @@
 Received: from mail-pf1-f172.google.com (mail-pf1-f172.google.com [209.85.210.172])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6C59E1AC43B
-	for <linux-sh@vger.kernel.org>; Wed, 28 Aug 2024 21:40:01 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 34B4E16D306
+	for <linux-sh@vger.kernel.org>; Thu, 29 Aug 2024 07:14:28 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1724881204; cv=none; b=hYZC8jYLBWCbO13mbN2zkXOLfFY5jOLsvSHaZTuSeDtM8+6rMzo9UzaLhB9l30sxDuOKTCz77gJuZKH4+qon0cUfPfinbAhk2fS+mYEwmp6rAMVBmg9nNTqaqRy0I08OIfPz/gHjgFR+EfWji8lco2VPcwJ0HtDbYSLXYCdZ2Ck=
+	t=1724915672; cv=none; b=ORMp3wpYneJZfttmpjEX7s9jvmgwCWaKEmmV1pJ8k2vOiRei6APc5A8cFnEW53SNS+YJ4z2H7vHm271YGZLv2+8q5dNqnVZki7M46sqRFCUTAXHEDVqOfmAoeeco26eE+kjgAwCBAYmpX4xh8mMPtVBCiLUlCJmadBwFUP+FNsk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1724881204; c=relaxed/simple;
-	bh=PjNUGL92xmeOpwvBaXbghjKwroCzTSHxKfeh9WaJjJQ=;
+	s=arc-20240116; t=1724915672; c=relaxed/simple;
+	bh=mNPIeGFfgjC58ulUTJ+p+Pb5VTFBXszyjEecP5hXE0g=;
 	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=dMWMwee+LJGU6ZChL5JkD/jdHKNfblDc/M6A2U09sI+eLs9relN4zPA5NECfVBgudsilzYLvctPhvu3WTR+cvb6jGUOWtXS6HgSZzGDVxE8yRDqy9yQzYihrxKuSDiYDwLvg01QnrvsCv9s+2jOWjq0L2qleaosESqEw5mBNPWk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rivosinc.com; spf=pass smtp.mailfrom=rivosinc.com; dkim=pass (2048-bit key) header.d=rivosinc-com.20230601.gappssmtp.com header.i=@rivosinc-com.20230601.gappssmtp.com header.b=amFX/hSM; arc=none smtp.client-ip=209.85.210.172
+	 Content-Type:Content-Disposition:In-Reply-To; b=OLwshiBirKWkk0CYH5n4gHVVLrApQq9lVwJO0oGkOTRdjxVKAiBoN7Zmaa9AXN+gV4XVS9qypjo/jfaYMsL5yvFrRcdtVwwA7GbsEpD1MF1tJzO/0bkIIDZeF4Qb/flitRkyGX108KPRIVrRlmzpASeAxdf9IqIUC+8MdT9n3Vw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rivosinc.com; spf=pass smtp.mailfrom=rivosinc.com; dkim=pass (2048-bit key) header.d=rivosinc-com.20230601.gappssmtp.com header.i=@rivosinc-com.20230601.gappssmtp.com header.b=PIIEhp54; arc=none smtp.client-ip=209.85.210.172
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rivosinc.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=rivosinc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=rivosinc-com.20230601.gappssmtp.com header.i=@rivosinc-com.20230601.gappssmtp.com header.b="amFX/hSM"
-Received: by mail-pf1-f172.google.com with SMTP id d2e1a72fcca58-7106cf5771bso186b3a.2
-        for <linux-sh@vger.kernel.org>; Wed, 28 Aug 2024 14:40:01 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=rivosinc-com.20230601.gappssmtp.com header.i=@rivosinc-com.20230601.gappssmtp.com header.b="PIIEhp54"
+Received: by mail-pf1-f172.google.com with SMTP id d2e1a72fcca58-71433cba1b7so248374b3a.0
+        for <linux-sh@vger.kernel.org>; Thu, 29 Aug 2024 00:14:28 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=rivosinc-com.20230601.gappssmtp.com; s=20230601; t=1724881200; x=1725486000; darn=vger.kernel.org;
+        d=rivosinc-com.20230601.gappssmtp.com; s=20230601; t=1724915668; x=1725520468; darn=vger.kernel.org;
         h=in-reply-to:content-disposition:mime-version:references:message-id
          :subject:cc:to:from:date:from:to:cc:subject:date:message-id:reply-to;
-        bh=XeNJBfO0ja/8g6kzTOhNFElQs2waKVPJgdUV/DsW4nc=;
-        b=amFX/hSMwzctKsrQXye8xYNlWnipNgOW50TOLc6MMF66891EjQaMhV65yx06kfBoQJ
-         Jop9MVWNe7+VNnS6uMiJ7Du5ihefkq9SHnyJtXM+83F4zDtV1XnR5iIwisC47dySVayf
-         el4AK3Fve8+FOfyvas1KQgN7erNlh0asqs/QWom/BbhI+GyMVUSFP9hahbWsqTtEZ0Uw
-         5BghwlWtUAfJZ8LhcONb0ufsarkm+/v55gY7cZV1HUXyk8wfr2oqf5hAH6aqzJtWRNtb
-         EJRnvtnaYykpmYG4cWRvyRay4ksiN6+85TFQmRf4Ken3oQfjXx+TMXQLg2QTcvsxVIsp
-         lqKA==
+        bh=59qS8d6E7jAm/hvEeiY72pf/LRpSv6Q2qjD/8hJgS38=;
+        b=PIIEhp54GOUcEbiVG3smr8WA1ZLj8nAAx5k3WfnPUD++LVzbh72TtgNZcQqA4Loc69
+         SfxWVNo8xkoGeVS3KZsCBKyJ2HN+N+B9N3tFN/48xOhqVeDVHX/S/1hCPBb2gol/BP8J
+         hdzWRj3w25NqzOwmdHVXrDu8ncd9378ljlADKQRHSxz9v9cv6+fdtr6Kbo+mzYoXkNsv
+         3HDohwlD3A3RWzUyLLsEVoJt10ASz2Dn+1GZvl7GWagfRXsztJXa/8zKZL3MmKhws1e1
+         AhDILhheeUphBmdl/ETIszbSXtndhDvM2zL9L6igHZOVUdCnhWWLRPxOcFwaz0A7HXyH
+         1r7Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1724881200; x=1725486000;
+        d=1e100.net; s=20230601; t=1724915668; x=1725520468;
         h=in-reply-to:content-disposition:mime-version:references:message-id
          :subject:cc:to:from:date:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to;
-        bh=XeNJBfO0ja/8g6kzTOhNFElQs2waKVPJgdUV/DsW4nc=;
-        b=ISqpMRACEmQoTxEFEkA4E/xcGRjZyFmoZhjxQ3trmlciZfaeSi/eNRib7M0lud9Rdm
-         Bb3lc6h0KnJgONBqgP3z6I9lQnFhuN23V4aiODAOEuVWryrmUPDKaCkIeQr/ZUP7ibaZ
-         oshIpWQBhkFlWOBsQgVNqhq9voXyIug0X2+mx9JOZmU0k+7lIlyf0oDlhtPPgQb+OFh5
-         j7fKii5iSXW9TvVErE2Uww6qwFnt2I2Nd+WtH7KpDklVoGzYser9VF90qJ8hx2FtUJM5
-         C/s+uqqPGk+kms3Ai/aC42gXjPA4cqEJZpNdvEGN86+/MYhlyg/QuP8JR9iqDR5G3+qc
-         ii7w==
-X-Forwarded-Encrypted: i=1; AJvYcCVtsgmrBVai3mhkaDVP7h5pqkv6O9IXaVB3GgMzGwtOjomh8jnudwM2vTwz+QvyOpJhva7YP1KS0g==@vger.kernel.org
-X-Gm-Message-State: AOJu0YzW9L5z5JFhh+Pfs+dRuSjsmP8Ewf2/f21xr+B7MDq8MtBa4wPI
-	njgvyC4+bEcz8s5n7DFqC/QgN59RYhYrNoJqDiH5MQ/my7p1pBrPXsJ9c0e/o9A=
-X-Google-Smtp-Source: AGHT+IFaC7yLAKucAQ+jfC2ojeS1SzrNuL0Qf0TeCvZ+3dsJBG9fozmVtsZvCPOeq6REFPvrFRD1LQ==
-X-Received: by 2002:a05:6a00:2e87:b0:714:2ba6:e5c9 with SMTP id d2e1a72fcca58-715dfaf1fddmr1045535b3a.7.1724881200137;
-        Wed, 28 Aug 2024 14:40:00 -0700 (PDT)
-Received: from ghost ([50.145.13.30])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-7cd9ac98286sm9939173a12.5.2024.08.28.14.39.56
+        bh=59qS8d6E7jAm/hvEeiY72pf/LRpSv6Q2qjD/8hJgS38=;
+        b=qg4Bat1H14p7kk5i4dEX4TS2d7f7oxxWi2whbEe4WHYxyUNpgI3+epMZLjji0+lXJY
+         35JqhIbDg2mzOPHQYsMozz3rMQzM1NgPtEY5gZWz0+hV8Kx0uiU7xiv9WRsys0Fw8IU1
+         Hs/Ib5Vp0pUegt5aFFEKPx6QvTjR5nojrkcXU8L7YK+qhTyCijUF+FKJM6sVNHu3ROcf
+         z1PnkOaii7lizBAMn2OJPTrsaA0kC/91Rwthhy8y8Zbxe8Ewat7lsQrFPycQ6U2JP+73
+         VgG9R0by5VOkgrT68jTR9DR1TuXdF7/D884WvVjox5aOhARN6t42BbAy8tQNlb18ljLV
+         Oz5A==
+X-Forwarded-Encrypted: i=1; AJvYcCXD3MYXicllOq7GURo2ZvHq+Kn2m3zGOGBCRa75NIPT3trRgg3VJ3X9oJulrPDljM0ihWljMd5vQA==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yz7SKqtNPgeL4N4BQO57PYT6NGUT6Hw1G0PiPFSbm3jtk9/BQMG
+	YtWX/flKQ1TPFoaAZD7ZpONw5r441am6qwyBL3t1JunCwGRPuO8TXSK8cN3bFHg=
+X-Google-Smtp-Source: AGHT+IFxhM4cuDGdAmG+3DSZ8PIKqAZRC1xEgxgW4g8JXtjfrvLb83nabdJs3AxBg2ozZcKKdgajyA==
+X-Received: by 2002:a05:6a20:e196:b0:1c4:c1cd:a29d with SMTP id adf61e73a8af0-1cce101c8fdmr2021570637.28.1724915668227;
+        Thu, 29 Aug 2024 00:14:28 -0700 (PDT)
+Received: from ghost (c-67-164-127-253.hsd1.ca.comcast.net. [67.164.127.253])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-715e56d9716sm545002b3a.174.2024.08.29.00.14.23
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 28 Aug 2024 14:39:59 -0700 (PDT)
-Date: Wed, 28 Aug 2024 14:39:55 -0700
+        Thu, 29 Aug 2024 00:14:27 -0700 (PDT)
+Date: Thu, 29 Aug 2024 00:14:22 -0700
 From: Charlie Jenkins <charlie@rivosinc.com>
-To: "Liam R. Howlett" <Liam.Howlett@oracle.com>
+To: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>
 Cc: Arnd Bergmann <arnd@arndb.de>, Paul Walmsley <paul.walmsley@sifive.com>,
 	Palmer Dabbelt <palmer@dabbelt.com>,
 	Albert Ou <aou@eecs.berkeley.edu>,
@@ -65,8 +65,8 @@ Cc: Arnd Bergmann <arnd@arndb.de>, Paul Walmsley <paul.walmsley@sifive.com>,
 	Naveen N Rao <naveen@kernel.org>,
 	Muchun Song <muchun.song@linux.dev>,
 	Andrew Morton <akpm@linux-foundation.org>,
+	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
 	Vlastimil Babka <vbabka@suse.cz>,
-	Lorenzo Stoakes <lorenzo.stoakes@oracle.com>,
 	Thomas Gleixner <tglx@linutronix.de>,
 	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
 	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
@@ -99,10 +99,9 @@ Cc: Arnd Bergmann <arnd@arndb.de>, Paul Walmsley <paul.walmsley@sifive.com>,
 	linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
 	sparclinux@vger.kernel.org, linux-kselftest@vger.kernel.org
 Subject: Re: [PATCH 00/16] mm: Introduce MAP_BELOW_HINT
-Message-ID: <Zs+ZK6Q2U9dm19yR@ghost>
+Message-ID: <ZtAfzrOMitPlx96X@ghost>
 References: <20240827-patches-below_hint_mmap-v1-0-46ff2eb9022d@rivosinc.com>
- <dbqqojpvqodfxavt4fxugoj3a2ppk5b4b3sp77qsmbg33sc2em@fhjccbxaihrh>
- <Zs+Ppk0ANaUah7p9@ghost>
+ <2570b1ea-d2a4-4bcb-9bb3-8d979657c56a@lucifer.local>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -111,250 +110,214 @@ List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <Zs+Ppk0ANaUah7p9@ghost>
+In-Reply-To: <2570b1ea-d2a4-4bcb-9bb3-8d979657c56a@lucifer.local>
 
-On Wed, Aug 28, 2024 at 01:59:18PM -0700, Charlie Jenkins wrote:
-> On Wed, Aug 28, 2024 at 02:31:42PM -0400, Liam R. Howlett wrote:
-> > * Charlie Jenkins <charlie@rivosinc.com> [240828 01:49]:
-> > > Some applications rely on placing data in free bits addresses allocated
-> > > by mmap. Various architectures (eg. x86, arm64, powerpc) restrict the
-> > > address returned by mmap to be less than the maximum address space,
-> > > unless the hint address is greater than this value.
-> > 
-> > Wait, what arch(s) allows for greater than the max?  The passed hint
-> > should be where we start searching, but we go to the lower limit then
-> > start at the hint and search up (or vice-versa on the directions).
-> > 
+On Wed, Aug 28, 2024 at 07:19:36PM +0100, Lorenzo Stoakes wrote:
+> On Tue, Aug 27, 2024 at 10:49:06PM GMT, Charlie Jenkins wrote:
+> > Some applications rely on placing data in free bits addresses allocated
+> > by mmap. Various architectures (eg. x86, arm64, powerpc) restrict the
+> > address returned by mmap to be less than the maximum address space,
+> > unless the hint address is greater than this value.
+> >
+> > On arm64 this barrier is at 52 bits and on x86 it is at 56 bits. This
+> > flag allows applications a way to specify exactly how many bits they
+> > want to be left unused by mmap. This eliminates the need for
+> > applications to know the page table hierarchy of the system to be able
+> > to reason which addresses mmap will be allowed to return.
+> >
+> > ---
+> > riscv made this feature of mmap returning addresses less than the hint
+> > address the default behavior. This was in contrast to the implementation
+> > of x86/arm64 that have a single boundary at the 5-level page table
+> > region. However this restriction proved too great -- the reduced
+> > address space when using a hint address was too small.
+> >
+> > A patch for riscv [1] reverts the behavior that broke userspace. This
+> > series serves to make this feature available to all architectures.
 > 
-> I worded this awkwardly. On arm64 there is a page-table boundary at 48
-> bits and at 52 bits. On x86 the boundaries are at 48 bits and 57 bits.
-> The max value mmap is able to return on arm64 is 48 bits if the hint
-> address uses 48 bits or less, even if the architecture supports 5-level
-> paging and thus addresses can be 52 bits. Applications can opt-in to
-> using up to 52-bits in an address by using a hint address greater than
-> 48 bits. x86 has the same behavior but with 57 bits instead of 52.
+> I'm a little confused as to the justification for this - you broke RISC V by
+> doing this, and have now reverted it, but now offer the same behaviour that
+> broke RISC V to all other architectures?
 > 
-> This reason this exists is because some applications arbitrarily replace
-> bits in virtual addresses with data with an assumption that the address
-> will not be using any of the bits above bit 48 in the virtual address.
-> As hardware with larger address spaces was released, x86 decided to
-> build safety guards into the kernel to allow the applications that made
-> these assumptions to continue to work on this different hardware.
-> 
-> This causes all application that use a hint address to silently be
-> restricted to 48-bit addresses. The goal of this flag is to have a way
-> for applications to explicitly request how many bits they want mmap to
-> use.
-> 
-> > I don't understand how unmapping works on a higher address; we would
-> > fail to free it on termination of the application.
-> > 
-> > Also, there are archs that map outside of the VMAs, which are freed by
-> > freeing from the prev->vm_end to next->vm_start, so I don't understand
-> > what that looks like in this reality as well.
-> > 
-> > > 
-> > > On arm64 this barrier is at 52 bits and on x86 it is at 56 bits. This
-> > > flag allows applications a way to specify exactly how many bits they
-> > > want to be left unused by mmap. This eliminates the need for
-> > > applications to know the page table hierarchy of the system to be able
-> > > to reason which addresses mmap will be allowed to return.
-> > 
-> > But, why do they need to know today?  We have a limit for this don't we?
-> 
-> The limit is different for different architectures. On x86 the limit is
-> 57 bits, and on arm64 it is 52 bits. So in the theoretical case that an
-> application requires 10 bits free in a virtual address, the application
-> would always work on arm64 regardless of the hint address, but on x86 if
-> the hint address is greater than 48 bits then the application will not
-> work.
-> 
-> The goal of this flag is to have consistent and tunable behavior of
-> mmap() when it is desired to ensure that mmap() only returns addresses
-> that use some number of bits.
-> 
-> > 
-> > Also, these upper limits are how some archs use the upper bits that you
-> > are trying to use.
-> > 
-> 
-> It does not eliminate the existing behavior of the architectures to
-> place this upper limits, it instead provides a way to have consistent
-> behavior across all architectures.
-> 
-> > > 
-> > > ---
-> > > riscv made this feature of mmap returning addresses less than the hint
-> > > address the default behavior. This was in contrast to the implementation
-> > > of x86/arm64 that have a single boundary at the 5-level page table
-> > > region. However this restriction proved too great -- the reduced
-> > > address space when using a hint address was too small.
-> > 
-> > Yes, the hint is used to group things close together so it would
-> > literally be random chance on if you have enough room or not (aslr and
-> > all).
-> > 
-> > > 
-> > > A patch for riscv [1] reverts the behavior that broke userspace. This
-> > > series serves to make this feature available to all architectures.
-> > 
-> > I don't fully understand this statement, you say it broke userspace so
-> > now you are porting it to everyone?  This reads as if you are braking
-> > the userspace on all architectures :)
-> 
-> It was the default for mmap on riscv. The difference here is that it is now
-> enabled by a flag instead. Instead of making the flag specific to riscv,
-> I figured that other architectures might find it useful as well.
-> 
-> > 
-> > If you fail to find room below, then your application fails as there is
-> > no way to get the upper bits you need.  It would be better to fix this
-> > in userspace - if your application is returned too high an address, then
-> > free it and exit because it's going to fail anyways.
-> > 
-> 
-> This flag is trying to define an API that is more robust than the
-> current behavior on that x86 and arm64 which implicitly restricts mmap()
-> addresses to 48 bits. A solution could be to just write in the docs that
-> mmap() will always exhaust all addresses below the hint address before
-> returning an address that is above the hint address. However a flag that
-> defines this behavior seems more intuitive.
-> 
-> > > 
-> > > I have only tested on riscv and x86.
-> > 
-> > This should be an RFC then.
-> 
-> Fair enough.
-> 
-> > 
-> > > There is a tremendous amount of
-> > > duplicated code in mmap so the implementations across architectures I
-> > > believe should be mostly consistent. I added this feature to all
-> > > architectures that implement either
-> > > arch_get_mmap_end()/arch_get_mmap_base() or
-> > > arch_get_unmapped_area_topdown()/arch_get_unmapped_area(). I also added
-> > > it to the default behavior for arch_get_mmap_end()/arch_get_mmap_base().
-> > 
-> > Way too much duplicate code.  We should be figuring out how to make this
-> > all work with the same code.
-> > 
-> > This is going to make the cloned code problem worse.
-> 
-> That would require standardizing every architecture with the generic
-> mmap() framework that arm64 has developed. That is far outside the scope
-> of this patch, but would be a great area to research for each of the
-> architectures that do not use the generic framework.
+> I mean this is how this reads, so I might be being ungenerous here :) but would
+> be good to clarify what the value-add is here.
 
-Thinking about this again, I could drop support for all architectures
-that do not implement arch_get_mmap_base()/arch_get_mmap_end().
+Yeah I did not do a good job of explaining this! Having this be the
+default behavior was broken, not that this feature in general was
+broken.
 
 > 
-> - Charlie
+> I also wonder at use of a new MAP_ flag, they're a limited resource and we
+> should only ever add them if we _really_ need to. This seems a bit niche and
+> specific to be making such a big change for including touching a bunch of pretty
+> sensitive arch-specific code.
+>
+> We have the ability to change how mmap() functions through 'personalities'
+> though of course this would impact every mmap() call in the process.
 > 
-> > 
-> > > 
-> > > Link: https://lore.kernel.org/lkml/20240826-riscv_mmap-v1-2-cd8962afe47f@rivosinc.com/T/ [1]
-> > > 
-> > > To: Arnd Bergmann <arnd@arndb.de>
-> > > To: Paul Walmsley <paul.walmsley@sifive.com>
-> > > To: Palmer Dabbelt <palmer@dabbelt.com>
-> > > To: Albert Ou <aou@eecs.berkeley.edu>
-> > > To: Catalin Marinas <catalin.marinas@arm.com>
-> > > To: Will Deacon <will@kernel.org>
-> > > To: Michael Ellerman <mpe@ellerman.id.au>
-> > > To: Nicholas Piggin <npiggin@gmail.com>
-> > > To: Christophe Leroy <christophe.leroy@csgroup.eu>
-> > > To: Naveen N Rao <naveen@kernel.org>
-> > > To: Muchun Song <muchun.song@linux.dev>
-> > > To: Andrew Morton <akpm@linux-foundation.org>
-> > > To: Liam R. Howlett <Liam.Howlett@oracle.com>
-> > > To: Vlastimil Babka <vbabka@suse.cz>
-> > > To: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>
-> > > To: Thomas Gleixner <tglx@linutronix.de>
-> > > To: Ingo Molnar <mingo@redhat.com>
-> > > To: Borislav Petkov <bp@alien8.de>
-> > > To: Dave Hansen <dave.hansen@linux.intel.com>
-> > > To: x86@kernel.org
-> > > To: H. Peter Anvin <hpa@zytor.com>
-> > > To: Huacai Chen <chenhuacai@kernel.org>
-> > > To: WANG Xuerui <kernel@xen0n.name>
-> > > To: Russell King <linux@armlinux.org.uk>
-> > > To: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
-> > > To: James E.J. Bottomley <James.Bottomley@HansenPartnership.com>
-> > > To: Helge Deller <deller@gmx.de>
-> > > To: Alexander Gordeev <agordeev@linux.ibm.com>
-> > > To: Gerald Schaefer <gerald.schaefer@linux.ibm.com>
-> > > To: Heiko Carstens <hca@linux.ibm.com>
-> > > To: Vasily Gorbik <gor@linux.ibm.com>
-> > > To: Christian Borntraeger <borntraeger@linux.ibm.com>
-> > > To: Sven Schnelle <svens@linux.ibm.com>
-> > > To: Yoshinori Sato <ysato@users.sourceforge.jp>
-> > > To: Rich Felker <dalias@libc.org>
-> > > To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-> > > To: David S. Miller <davem@davemloft.net>
-> > > To: Andreas Larsson <andreas@gaisler.com>
-> > > To: Shuah Khan <shuah@kernel.org>
-> > > To: Alexandre Ghiti <alexghiti@rivosinc.com>
-> > > Cc: linux-arch@vger.kernel.org
-> > > Cc: linux-kernel@vger.kernel.org
-> > > Cc: Palmer Dabbelt <palmer@rivosinc.com>
-> > > Cc: linux-riscv@lists.infradead.org
-> > > Cc: linux-arm-kernel@lists.infradead.org
-> > > Cc: linuxppc-dev@lists.ozlabs.org
-> > > Cc: linux-mm@kvack.org
-> > > Cc: loongarch@lists.linux.dev
-> > > Cc: linux-mips@vger.kernel.org
-> > > Cc: linux-parisc@vger.kernel.org
-> > > Cc: linux-s390@vger.kernel.org
-> > > Cc: linux-sh@vger.kernel.org
-> > > Cc: sparclinux@vger.kernel.org
-> > > Cc: linux-kselftest@vger.kernel.org
-> > > Signed-off-by: Charlie Jenkins <charlie@rivosinc.com>
-> > > 
-> > > ---
-> > > Charlie Jenkins (16):
-> > >       mm: Add MAP_BELOW_HINT
-> > >       riscv: mm: Do not restrict mmap address based on hint
-> > >       mm: Add flag and len param to arch_get_mmap_base()
-> > >       mm: Add generic MAP_BELOW_HINT
-> > >       riscv: mm: Support MAP_BELOW_HINT
-> > >       arm64: mm: Support MAP_BELOW_HINT
-> > >       powerpc: mm: Support MAP_BELOW_HINT
-> > >       x86: mm: Support MAP_BELOW_HINT
-> > >       loongarch: mm: Support MAP_BELOW_HINT
-> > >       arm: mm: Support MAP_BELOW_HINT
-> > >       mips: mm: Support MAP_BELOW_HINT
-> > >       parisc: mm: Support MAP_BELOW_HINT
-> > >       s390: mm: Support MAP_BELOW_HINT
-> > >       sh: mm: Support MAP_BELOW_HINT
-> > >       sparc: mm: Support MAP_BELOW_HINT
-> > >       selftests/mm: Create MAP_BELOW_HINT test
-> > > 
-> > >  arch/arm/mm/mmap.c                           | 10 ++++++++
-> > >  arch/arm64/include/asm/processor.h           | 34 ++++++++++++++++++++++----
-> > >  arch/loongarch/mm/mmap.c                     | 11 +++++++++
-> > >  arch/mips/mm/mmap.c                          |  9 +++++++
-> > >  arch/parisc/include/uapi/asm/mman.h          |  1 +
-> > >  arch/parisc/kernel/sys_parisc.c              |  9 +++++++
-> > >  arch/powerpc/include/asm/task_size_64.h      | 36 +++++++++++++++++++++++-----
-> > >  arch/riscv/include/asm/processor.h           | 32 -------------------------
-> > >  arch/s390/mm/mmap.c                          | 10 ++++++++
-> > >  arch/sh/mm/mmap.c                            | 10 ++++++++
-> > >  arch/sparc/kernel/sys_sparc_64.c             |  8 +++++++
-> > >  arch/x86/kernel/sys_x86_64.c                 | 25 ++++++++++++++++---
-> > >  fs/hugetlbfs/inode.c                         |  2 +-
-> > >  include/linux/sched/mm.h                     | 34 ++++++++++++++++++++++++--
-> > >  include/uapi/asm-generic/mman-common.h       |  1 +
-> > >  mm/mmap.c                                    |  2 +-
-> > >  tools/arch/parisc/include/uapi/asm/mman.h    |  1 +
-> > >  tools/include/uapi/asm-generic/mman-common.h |  1 +
-> > >  tools/testing/selftests/mm/Makefile          |  1 +
-> > >  tools/testing/selftests/mm/map_below_hint.c  | 29 ++++++++++++++++++++++
-> > >  20 files changed, 216 insertions(+), 50 deletions(-)
-> > > ---
-> > > base-commit: 5be63fc19fcaa4c236b307420483578a56986a37
-> > > change-id: 20240827-patches-below_hint_mmap-b13d79ae1c55
-> > > -- 
-> > > - Charlie
-> > > 
+> Overall I'm really not hugely convinced by this, it feels like userland
+> could find better ways of doing this (mostly you'd do a PROT_NONE mmap() to
+> reserve a domain and mprotect() it on allocation or mmap() over it).
+> 
+> So I just struggle to see the purpose myself. BUT absolutely I may be
+> missing context/others may have a view on the value of this. So happy to
+> stand corrected.
+> 
+> >
+> > I have only tested on riscv and x86. There is a tremendous amount of
+> 
+> Yeah, OK this is crazy, you can't really submit something as non-RFC that
+> touches every single arch and not test it.
+> 
+> I also feel like we need more justification than 'this is a neat thing that
+> we use in RISC V sometimes' conceptually for such a big change.
+
+I will send out a new version that does a much better job at explaining!
+This is not something that is done on riscv ever currently. This is
+something that is done on other architectures such as x86 and arm64.
+This flag is to make similar behavior (the ability to force mmap to
+return addresses that have a constrained address space) available to all
+architectures.
+
+> 
+> Also your test program is currently completely broken afaict (have
+> commented on it directly). I also feel like your test program is a little
+> rudimentary, and should test some edge cases close to the limit etc.
+> 
+> So I think this is a NACK until there is testing across the board and a little
+> more justification.
+> 
+> Feel free to respin, but I think any future revisions should be RFC until
+> we're absolutely sure on testing/justification.
+> 
+> I appreciate your efforts here so sorry to be negative, but just obviously
+> want to make sure this is functional and trades off added complexity for
+> value for the kernel and userland :)
+> 
+
+Totally understand thank you! After reviewing comments I have realized
+that I made this much more complicated than it needs to be. This should
+be able to be done without changing any architecture specific code. That
+will mostly eliminate all of the complexity, but still has the downside
+of consuming a MAP_ flag.
+
+- Charlie
+
+> Thanks!
+> 
+> > duplicated code in mmap so the implementations across architectures I
+> > believe should be mostly consistent. I added this feature to all
+> > architectures that implement either
+> > arch_get_mmap_end()/arch_get_mmap_base() or
+> > arch_get_unmapped_area_topdown()/arch_get_unmapped_area(). I also added
+> > it to the default behavior for arch_get_mmap_end()/arch_get_mmap_base().
+> >
+> > Link: https://lore.kernel.org/lkml/20240826-riscv_mmap-v1-2-cd8962afe47f@rivosinc.com/T/ [1]
+> >
+> > To: Arnd Bergmann <arnd@arndb.de>
+> > To: Paul Walmsley <paul.walmsley@sifive.com>
+> > To: Palmer Dabbelt <palmer@dabbelt.com>
+> > To: Albert Ou <aou@eecs.berkeley.edu>
+> > To: Catalin Marinas <catalin.marinas@arm.com>
+> > To: Will Deacon <will@kernel.org>
+> > To: Michael Ellerman <mpe@ellerman.id.au>
+> > To: Nicholas Piggin <npiggin@gmail.com>
+> > To: Christophe Leroy <christophe.leroy@csgroup.eu>
+> > To: Naveen N Rao <naveen@kernel.org>
+> > To: Muchun Song <muchun.song@linux.dev>
+> > To: Andrew Morton <akpm@linux-foundation.org>
+> > To: Liam R. Howlett <Liam.Howlett@oracle.com>
+> > To: Vlastimil Babka <vbabka@suse.cz>
+> > To: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>
+> > To: Thomas Gleixner <tglx@linutronix.de>
+> > To: Ingo Molnar <mingo@redhat.com>
+> > To: Borislav Petkov <bp@alien8.de>
+> > To: Dave Hansen <dave.hansen@linux.intel.com>
+> > To: x86@kernel.org
+> > To: H. Peter Anvin <hpa@zytor.com>
+> > To: Huacai Chen <chenhuacai@kernel.org>
+> > To: WANG Xuerui <kernel@xen0n.name>
+> > To: Russell King <linux@armlinux.org.uk>
+> > To: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+> > To: James E.J. Bottomley <James.Bottomley@HansenPartnership.com>
+> > To: Helge Deller <deller@gmx.de>
+> > To: Alexander Gordeev <agordeev@linux.ibm.com>
+> > To: Gerald Schaefer <gerald.schaefer@linux.ibm.com>
+> > To: Heiko Carstens <hca@linux.ibm.com>
+> > To: Vasily Gorbik <gor@linux.ibm.com>
+> > To: Christian Borntraeger <borntraeger@linux.ibm.com>
+> > To: Sven Schnelle <svens@linux.ibm.com>
+> > To: Yoshinori Sato <ysato@users.sourceforge.jp>
+> > To: Rich Felker <dalias@libc.org>
+> > To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+> > To: David S. Miller <davem@davemloft.net>
+> > To: Andreas Larsson <andreas@gaisler.com>
+> > To: Shuah Khan <shuah@kernel.org>
+> > To: Alexandre Ghiti <alexghiti@rivosinc.com>
+> > Cc: linux-arch@vger.kernel.org
+> > Cc: linux-kernel@vger.kernel.org
+> > Cc: Palmer Dabbelt <palmer@rivosinc.com>
+> > Cc: linux-riscv@lists.infradead.org
+> > Cc: linux-arm-kernel@lists.infradead.org
+> > Cc: linuxppc-dev@lists.ozlabs.org
+> > Cc: linux-mm@kvack.org
+> > Cc: loongarch@lists.linux.dev
+> > Cc: linux-mips@vger.kernel.org
+> > Cc: linux-parisc@vger.kernel.org
+> > Cc: linux-s390@vger.kernel.org
+> > Cc: linux-sh@vger.kernel.org
+> > Cc: sparclinux@vger.kernel.org
+> > Cc: linux-kselftest@vger.kernel.org
+> > Signed-off-by: Charlie Jenkins <charlie@rivosinc.com>
+> >
+> > ---
+> > Charlie Jenkins (16):
+> >       mm: Add MAP_BELOW_HINT
+> >       riscv: mm: Do not restrict mmap address based on hint
+> >       mm: Add flag and len param to arch_get_mmap_base()
+> >       mm: Add generic MAP_BELOW_HINT
+> >       riscv: mm: Support MAP_BELOW_HINT
+> >       arm64: mm: Support MAP_BELOW_HINT
+> >       powerpc: mm: Support MAP_BELOW_HINT
+> >       x86: mm: Support MAP_BELOW_HINT
+> >       loongarch: mm: Support MAP_BELOW_HINT
+> >       arm: mm: Support MAP_BELOW_HINT
+> >       mips: mm: Support MAP_BELOW_HINT
+> >       parisc: mm: Support MAP_BELOW_HINT
+> >       s390: mm: Support MAP_BELOW_HINT
+> >       sh: mm: Support MAP_BELOW_HINT
+> >       sparc: mm: Support MAP_BELOW_HINT
+> >       selftests/mm: Create MAP_BELOW_HINT test
+> >
+> >  arch/arm/mm/mmap.c                           | 10 ++++++++
+> >  arch/arm64/include/asm/processor.h           | 34 ++++++++++++++++++++++----
+> >  arch/loongarch/mm/mmap.c                     | 11 +++++++++
+> >  arch/mips/mm/mmap.c                          |  9 +++++++
+> >  arch/parisc/include/uapi/asm/mman.h          |  1 +
+> >  arch/parisc/kernel/sys_parisc.c              |  9 +++++++
+> >  arch/powerpc/include/asm/task_size_64.h      | 36 +++++++++++++++++++++++-----
+> >  arch/riscv/include/asm/processor.h           | 32 -------------------------
+> >  arch/s390/mm/mmap.c                          | 10 ++++++++
+> >  arch/sh/mm/mmap.c                            | 10 ++++++++
+> >  arch/sparc/kernel/sys_sparc_64.c             |  8 +++++++
+> >  arch/x86/kernel/sys_x86_64.c                 | 25 ++++++++++++++++---
+> >  fs/hugetlbfs/inode.c                         |  2 +-
+> >  include/linux/sched/mm.h                     | 34 ++++++++++++++++++++++++--
+> >  include/uapi/asm-generic/mman-common.h       |  1 +
+> >  mm/mmap.c                                    |  2 +-
+> >  tools/arch/parisc/include/uapi/asm/mman.h    |  1 +
+> >  tools/include/uapi/asm-generic/mman-common.h |  1 +
+> >  tools/testing/selftests/mm/Makefile          |  1 +
+> >  tools/testing/selftests/mm/map_below_hint.c  | 29 ++++++++++++++++++++++
+> >  20 files changed, 216 insertions(+), 50 deletions(-)
+> > ---
+> > base-commit: 5be63fc19fcaa4c236b307420483578a56986a37
+> > change-id: 20240827-patches-below_hint_mmap-b13d79ae1c55
+> > --
+> > - Charlie
+> >
+> >
+> > _______________________________________________
+> > linux-riscv mailing list
+> > linux-riscv@lists.infradead.org
+> > http://lists.infradead.org/mailman/listinfo/linux-riscv
