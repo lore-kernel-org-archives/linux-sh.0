@@ -1,198 +1,99 @@
-Received: from mail-pg1-f182.google.com (mail-pg1-f182.google.com [209.85.215.182])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from szxga03-in.huawei.com (szxga03-in.huawei.com [45.249.212.189])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 090991AD5F4
-	for <linux-sh@vger.kernel.org>; Thu,  5 Sep 2024 21:16:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.182
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8886A182B3;
+	Fri,  6 Sep 2024 02:35:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.189
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1725570982; cv=none; b=BwWAbdenoDr5jnGGfK4sVGT7BxabEYrFKw2GWG1XdNGFNxSPJtd991qeEL3sFlgggmzIvKa2gwL25fPc92F+OfMEFFG8hmDRmJrGjSlLalr2irmH1DihXOi5FRb4VXimJ638InyH8WdIiWx7aa+aOLstWu3A8dBZWoIFtg4tjNA=
+	t=1725590117; cv=none; b=mBdT4a9iojyV4aoTMLplwqnCKtk1ohE+R3gTr22gVSqryZQanJNlKo0ZzK6XTT636kY2Psw8N/6xEgptC9ArXrZRJVtM7IKd70kBPMi6lZLFgh6ca+uoMC2mAkVEYfslZzn1S5Bi1GWbRxdc1efuqmVCV4I7x6/TEExVpMnYOR8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1725570982; c=relaxed/simple;
-	bh=v+6JyaTNEum7sQVRfCLlZa2h0GjRhYNybjctqPTjXjI=;
-	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=knqn7kmbR36e//w+6piXGbSbjzT6WD3qZvKN7xR0LQFm6jyvVOLF1N5Memfiktg2Q5PqNmALrf/r3EjDBKnfU4YYNWzGjvZBUKVdl86RsFqH/I3YarOOMIUwY0MHXJdiW0mFup/wbOKN/rpM5bLqTHULMNfpqsLiSzPntDwy/Ao=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rivosinc.com; spf=pass smtp.mailfrom=rivosinc.com; dkim=pass (2048-bit key) header.d=rivosinc-com.20230601.gappssmtp.com header.i=@rivosinc-com.20230601.gappssmtp.com header.b=KRtbqZ34; arc=none smtp.client-ip=209.85.215.182
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=rivosinc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=rivosinc.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=rivosinc-com.20230601.gappssmtp.com header.i=@rivosinc-com.20230601.gappssmtp.com header.b="KRtbqZ34"
-Received: by mail-pg1-f182.google.com with SMTP id 41be03b00d2f7-6c5bcb8e8edso985244a12.2
-        for <linux-sh@vger.kernel.org>; Thu, 05 Sep 2024 14:16:19 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=rivosinc-com.20230601.gappssmtp.com; s=20230601; t=1725570979; x=1726175779; darn=vger.kernel.org;
-        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
-         :mime-version:subject:date:from:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=BC+wwN1fePLvWLzJkRJwUgtVdOqgdkSuyAR2hC6nLRw=;
-        b=KRtbqZ348/BYDeSXaw6rSlS5k2zXiAMIjzgBEeEP4dracgdhRjL501rYq2KzvMc4ol
-         oVaLvqQdJaPg7ZYy3p720p7SwjXIDvOdyqPNoj4AKMDMihujaa27sWgHa+P68nBIrYKJ
-         8ZoBHU7gSnjWsl6XHUMTiAXXLam0Bwer+P3eUH5Ne4dIouK6XN00aqvD72skHJ6fWB+j
-         /ZXFOC2aThFAkkuzfuQb7aXIEXGYERAZna5R+stF3HpGJ3zUSZSjy3+ekGJpuFDto751
-         iU5ZIfZbepk9HiTLSMmYkIt1Qe2cGA0aaHt8PyrxBYbQgyTkfzEJw4OVAdA5KqLHPn33
-         rJyw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1725570979; x=1726175779;
-        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
-         :mime-version:subject:date:from:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=BC+wwN1fePLvWLzJkRJwUgtVdOqgdkSuyAR2hC6nLRw=;
-        b=H9wKPZAWiB5M7zfEkWNev/ZOhPbfosUo/sKV0kVDyK9Z6BsuFXgF1pkw3ixNkIMd/6
-         v4ukxNELzqvQE7jaUvEqNk83eUFrKbZwT2VPPqhjjUrIFeVrbuPhJJ00WJZKsdSnLqzx
-         RBB9vNSZ5YzPNmihTgTsO0C0CYgYtxKjhmuLgEzF6qF4lNezPYu7kmbffly3UelniSsn
-         wrI+uX/iBZ1VfSyydBiRJ/v4CoNshuYjlHS5iPZfyAYJzYvriWYs2CfQtOLjdKNH5fQT
-         c04+rx9c7l+lIULMCEYfPdfJnXH+CxQ+6Y4w73j5QShrsNknn9085mrye5TqnneNhd+s
-         5C/A==
-X-Forwarded-Encrypted: i=1; AJvYcCUA6vBWMUAne5wzQyR7vmRP+s0VLWR/8OqCd9uyxS97LCW5xXEAYPoXIWqAsrBG02knYuNBu0zgzQ==@vger.kernel.org
-X-Gm-Message-State: AOJu0YxNziyOKZWIQAV3UGY4m1kUYT/e8YCHhy89ftLG1h6cUX7CbCpS
-	We6QOM1MkDuv4fPf7DMK7J7gtqjR9e9occCyX9pjtTjssLrXFA683dl/yi6ewRg=
-X-Google-Smtp-Source: AGHT+IEZNTxfv2Eh4MhBvC/nCmC/+9uGBr1mJ2SunSW5zA4oMdQE9dzvz6pYsZBAUp5dcakacvTYeg==
-X-Received: by 2002:a05:6a20:6f08:b0:1c6:a680:ef3d with SMTP id adf61e73a8af0-1cf1d13329emr317665637.28.1725570979059;
-        Thu, 05 Sep 2024 14:16:19 -0700 (PDT)
-Received: from charlie.ba.rivosinc.com ([64.71.180.162])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-7d4fbda7abesm3775746a12.61.2024.09.05.14.16.15
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 05 Sep 2024 14:16:18 -0700 (PDT)
-From: Charlie Jenkins <charlie@rivosinc.com>
-Date: Thu, 05 Sep 2024 14:15:52 -0700
-Subject: [PATCH RFC v3 2/2] selftests/mm: Create ADDR_LIMIT_47BIT test
+	s=arc-20240116; t=1725590117; c=relaxed/simple;
+	bh=WhQeqFtAGTX6XYbCEXQ9ZmWwEhxISb8ziXHJQ0oDfDI=;
+	h=Subject:References:CC:From:To:Message-ID:Date:MIME-Version:
+	 In-Reply-To:Content-Type; b=Z23a5oZw5yw94Bs4ksokfXcDl8RFKaRdswhgnULjC7vXUppsggfeIRGO14vda3uV3P0+te43405sNxjH3pFs9N4XEta0zx5FB7V6EmBq8QsvsnuCnMPWq/REn7YUX7NPtXhq6thhzfL8gb278jyWpFMCIIuasifaVUXWfRYTDCc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com; spf=pass smtp.mailfrom=huawei.com; arc=none smtp.client-ip=45.249.212.189
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
+Received: from mail.maildlp.com (unknown [172.19.162.254])
+	by szxga03-in.huawei.com (SkyGuard) with ESMTP id 4X0KvS2Qykz69Wr;
+	Fri,  6 Sep 2024 10:30:12 +0800 (CST)
+Received: from kwepemh100016.china.huawei.com (unknown [7.202.181.102])
+	by mail.maildlp.com (Postfix) with ESMTPS id A052E1800F2;
+	Fri,  6 Sep 2024 10:35:11 +0800 (CST)
+Received: from [10.174.178.75] (10.174.178.75) by
+ kwepemh100016.china.huawei.com (7.202.181.102) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.1544.11; Fri, 6 Sep 2024 10:35:09 +0800
+Subject: Re: [PATCH v2 -next 00/15] sysctl: move sysctls from vm_table into
+ its own files
+References: <CGME20240903033105eucas1p2b9d0b874da268fecb49905d90340de09@eucas1p2.samsung.com>
+ <20240903033011.2870608-1-yukaixiong@huawei.com>
+ <20240903203837.cbzs3ziuh6eq4kvo@joelS2.panther.com>
+CC: <guohanjun@huawei.com>, <ysato@users.osdn.me>, <dalias@libc.org>,
+	<glaubitz@physik.fu-berlin.de>, <luto@kernel.org>, <tglx@linutronix.de>,
+	<bp@alien8.de>, <dave.hansen@linux.intel.com>, <hpa@zytor.com>,
+	<viro@zeniv.linux.org.uk>, <brauner@kernel.org>, <jack@suse.cz>,
+	<kees@kernel.org>, <willy@infradead.org>, <Liam.Howlett@oracle.com>,
+	<vbabka@suse.cz>, <lorenzo.stoakes@oracle.com>, <trondmy@kernel.org>,
+	<anna@kernel.org>, <chuck.lever@oracle.com>, <jlayton@kernel.org>,
+	<neilb@suse.de>, <okorniev@redhat.com>, <Dai.Ngo@oracle.com>,
+	<tom@talpey.com>, <davem@davemloft.net>, <edumazet@google.com>,
+	<kuba@kernel.org>, <pabeni@redhat.com>, <paul@paul-moore.com>,
+	<jmorris@namei.org>, <linux-sh@vger.kernel.org>,
+	<linux-kernel@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
+	<linux-mm@kvack.org>, <linux-nfs@vger.kernel.org>, <netdev@vger.kernel.org>,
+	<linux-security-module@vger.kernel.org>, <wangkefeng.wang@huawei.com>
+From: yukaixiong <yukaixiong@huawei.com>
+To:
+	<"wangkefeng.wang@huawei.com liushixin2@huawei.com liuyongqiang13@huawei.com tongtiangen@huawei.com sunnanyong@huawei.com mawupeng1@huawei.com zuoze1@huawei.com zhangpeng362@huawei.com tujinjiang@huawei.com yaolulu5"@huawei.com>
+Message-ID: <0a12953b-0d11-00d2-ef0e-454d0e3d98f3@huawei.com>
+Date: Fri, 6 Sep 2024 10:35:08 +0800
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:45.0) Gecko/20100101
+ Thunderbird/45.7.1
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20240905-patches-below_hint_mmap-v3-2-3cd5564efbbb@rivosinc.com>
-References: <20240905-patches-below_hint_mmap-v3-0-3cd5564efbbb@rivosinc.com>
-In-Reply-To: <20240905-patches-below_hint_mmap-v3-0-3cd5564efbbb@rivosinc.com>
-To: Arnd Bergmann <arnd@arndb.de>, 
- Richard Henderson <richard.henderson@linaro.org>, 
- Ivan Kokshaysky <ink@jurassic.park.msu.ru>, 
- Matt Turner <mattst88@gmail.com>, Vineet Gupta <vgupta@kernel.org>, 
- Russell King <linux@armlinux.org.uk>, Guo Ren <guoren@kernel.org>, 
- Huacai Chen <chenhuacai@kernel.org>, WANG Xuerui <kernel@xen0n.name>, 
- Thomas Bogendoerfer <tsbogend@alpha.franken.de>, 
- "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>, 
- Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>, 
- Nicholas Piggin <npiggin@gmail.com>, 
- Christophe Leroy <christophe.leroy@csgroup.eu>, 
- Naveen N Rao <naveen@kernel.org>, 
- Alexander Gordeev <agordeev@linux.ibm.com>, 
- Gerald Schaefer <gerald.schaefer@linux.ibm.com>, 
- Heiko Carstens <hca@linux.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>, 
- Christian Borntraeger <borntraeger@linux.ibm.com>, 
- Sven Schnelle <svens@linux.ibm.com>, 
- Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, 
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>, 
- "David S. Miller" <davem@davemloft.net>, 
- Andreas Larsson <andreas@gaisler.com>, Thomas Gleixner <tglx@linutronix.de>, 
- Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>, 
- Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org, 
- "H. Peter Anvin" <hpa@zytor.com>, Andy Lutomirski <luto@kernel.org>, 
- Peter Zijlstra <peterz@infradead.org>, Muchun Song <muchun.song@linux.dev>, 
- Andrew Morton <akpm@linux-foundation.org>, 
- "Liam R. Howlett" <Liam.Howlett@oracle.com>, 
- Vlastimil Babka <vbabka@suse.cz>, 
- Lorenzo Stoakes <lorenzo.stoakes@oracle.com>, Shuah Khan <shuah@kernel.org>, 
- Christoph Hellwig <hch@infradead.org>, Michal Hocko <mhocko@suse.com>, 
- "Kirill A. Shutemov" <kirill@shutemov.name>, 
- Chris Torek <chris.torek@gmail.com>
-Cc: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, 
- linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org, 
- linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org, 
- loongarch@lists.linux.dev, linux-mips@vger.kernel.org, 
- linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, 
- linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, 
- sparclinux@vger.kernel.org, linux-mm@kvack.org, 
- linux-kselftest@vger.kernel.org, linux-abi-devel@lists.sourceforge.net, 
- Charlie Jenkins <charlie@rivosinc.com>
-X-Mailer: b4 0.13.0
-X-Developer-Signature: v=1; a=openpgp-sha256; l=2582; i=charlie@rivosinc.com;
- h=from:subject:message-id; bh=v+6JyaTNEum7sQVRfCLlZa2h0GjRhYNybjctqPTjXjI=;
- b=owGbwMvMwCHWx5hUnlvL8Y3xtFoSQ9ot+RkaGxaJ/61aKCWQFuW4/RLXZ/ZytuJlXCePW/lm/
- BEMfPmgo5SFQYyDQVZMkYXnWgNz6x39sqOiZRNg5rAygQxh4OIUgIl8VmJkmJ40y3j9/d1mFyvf
- My3sVpqs+9/6YNER2ftWy07b31r7azfDfzfJmfzFLLNYSxYW7GExLQoUvbVs9j2GHob0FXfdby4
- 9wwcA
-X-Developer-Key: i=charlie@rivosinc.com; a=openpgp;
- fpr=7D834FF11B1D8387E61C776FFB10D1F27D6B1354
+In-Reply-To: <20240903203837.cbzs3ziuh6eq4kvo@joelS2.panther.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
+Content-Transfer-Encoding: 8bit
+X-ClientProxiedBy: dggpeml100009.china.huawei.com (7.185.36.95) To
+ kwepemh100016.china.huawei.com (7.202.181.102)
 
-Add a selftest for the ADDR_LIMIT_47BIT personality flag that mmaps
-until it runs out of space and ensures no addresses are allocated above
-47 bits.
 
-Signed-off-by: Charlie Jenkins <charlie@rivosinc.com>
----
- tools/testing/selftests/mm/.gitignore              |  1 +
- tools/testing/selftests/mm/Makefile                |  1 +
- tools/testing/selftests/mm/map_47bit_personality.c | 34 ++++++++++++++++++++++
- 3 files changed, 36 insertions(+)
 
-diff --git a/tools/testing/selftests/mm/.gitignore b/tools/testing/selftests/mm/.gitignore
-index da030b43e43b..918ef05e180d 100644
---- a/tools/testing/selftests/mm/.gitignore
-+++ b/tools/testing/selftests/mm/.gitignore
-@@ -32,6 +32,7 @@ mlock-random-test
- virtual_address_range
- gup_test
- va_128TBswitch
-+map_47bit_personality
- map_fixed_noreplace
- write_to_hugetlbfs
- hmm-tests
-diff --git a/tools/testing/selftests/mm/Makefile b/tools/testing/selftests/mm/Makefile
-index cfad627e8d94..2e95fd545409 100644
---- a/tools/testing/selftests/mm/Makefile
-+++ b/tools/testing/selftests/mm/Makefile
-@@ -50,6 +50,7 @@ TEST_GEN_FILES += hugepage-shm
- TEST_GEN_FILES += hugepage-vmemmap
- TEST_GEN_FILES += khugepaged
- TEST_GEN_FILES += madv_populate
-+TEST_GEN_FILES += map_47bit_personality
- TEST_GEN_FILES += map_fixed_noreplace
- TEST_GEN_FILES += map_hugetlb
- TEST_GEN_FILES += map_populate
-diff --git a/tools/testing/selftests/mm/map_47bit_personality.c b/tools/testing/selftests/mm/map_47bit_personality.c
-new file mode 100644
-index 000000000000..453412990c21
---- /dev/null
-+++ b/tools/testing/selftests/mm/map_47bit_personality.c
-@@ -0,0 +1,34 @@
-+// SPDX-License-Identifier: GPL-2.0
-+/*
-+ * Test the ADDR_LIMIT_47BIT personality flag.
-+ */
-+#include <sys/syscall.h>
-+#include <sys/mman.h>
-+#include <errno.h>
-+#include "../kselftest.h"
-+
-+#define LENGTH (100000000)
-+
-+#define ADDR_LIMIT_47BIT	0x10000000
-+#define BIT47			1UL << 47
-+
-+/*
-+ * Map memory with ADDR_LIMIT_47BIT until no memory left. Ensure that all returned
-+ * addresses are below 47 bits.
-+ */
-+int main(int argc, char **argv)
-+{
-+	void *addr;
-+
-+	syscall(__NR_personality, ADDR_LIMIT_47BIT);
-+
-+	do {
-+		addr = mmap(0, LENGTH, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-+	} while (addr != MAP_FAILED && (unsigned long)addr < BIT47);
-+
-+	if (errno == ENOMEM)
-+		ksft_test_result_pass("ADDR_LIMIT_47BIT works\n");
-+	else
-+		ksft_test_result_fail("mmap returned address above 47 bits with ADDR_LIMIT_47BIT with addr: %p and err: %s\n",
-+				      addr, strerror(errno));
-+}
+On 2024/9/4 4:38, Joel Granados wrote:
+> On Tue, Sep 03, 2024 at 11:29:56AM +0800, Kaixiong Yu wrote:
+>> This patch series moves sysctls of vm_table in kernel/sysctl.c to
+>> places where they actually belong, and do some related code clean-ups.
+>> After this patch series, all sysctls in vm_table have been moved into its
+>> own files, meanwhile, delete vm_table.
+>>
+>> All the modifications of this patch series base on
+>> linux-next(tags/next-20240902). To test this patch series, the code was
+>> compiled with both the CONFIG_SYSCTL enabled and disabled on arm64 and
+>> x86_64 architectures. After this patch series is applied, all files
+>> under /proc/sys/vm can be read or written normally.
+> This move make a lot of sense. The question with these multi-subsystem
+> patchsets is how do they go into mainline. For now I have added this to
+> sysctl-testing to see if it needs more work. I can push this through the
+> sysctl subsystem, but you need to get reviewed-by for all of the commits
+> in different subsystems. I'm also fine with this going in through some
+> other subsys if anyone wants to take it?
+>
+> Best
+>
 
--- 
-2.45.0
+Thx，Joel!:-)
 
+Hello，everyone!
+
+This patch series has been reviewed by Kees, Jan Kara, Christian 
+Brauner, and acked
+by Anna Schumaker, Paul Moore. As Joel said, this patch series need to 
+get reviewed-by
+for all of the commits in different subsystems. I would appreciate it if 
+you could review
+this patch series as soon as possible !:-)
