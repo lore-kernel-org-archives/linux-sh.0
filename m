@@ -1,185 +1,71 @@
-Received: from fhigh3-smtp.messagingengine.com (fhigh3-smtp.messagingengine.com [103.168.172.154])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yb1-f177.google.com (mail-yb1-f177.google.com [209.85.219.177])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B0E114C5AE;
-	Sun,  8 Sep 2024 11:26:31 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.154
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1237917554A;
+	Sun,  8 Sep 2024 19:57:55 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.177
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1725794794; cv=none; b=WLT3NBmDpcWc8wBAQCGpyeAQS8PMCy4fGTLalsiD5tmcSnfzdBdRHQyvqR1CiWrMnF6fZb09N+KYZeJxQRkIAnE4SQdjI0vA5JpOdRdB3GxQgbSD5kuF/8uRKKq4r8g1MHOnk0F+VbQjzYJyj0DkQFPsDdjfSXDH9fkDafQmUUY=
+	t=1725825478; cv=none; b=mVc1EuDb49BWfUG8Sdw3fdezlnBncNr/njCUTn3B3hPRDz0WJMJSxEN3/d6MkXGCL51qYXTSUczfOxSd456Ac++mpDy2EZbjGUaTTmvQMNT2371Y39AAWUeTweTQr09aiBcTj/xk8hmnsXSAsRykwEfwPZtODK4Ew0W7WdYj25A=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1725794794; c=relaxed/simple;
-	bh=s22LiCvHg5GCcJ/0gjfyATBl5wTKkAzg5feHIKI+9mg=;
-	h=MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
-	 Subject:Content-Type; b=aYcxkp484MmM+FrfRhD5VqerfdH0vkf5usJzw9Ghkfl4K39nUeCD69aafatkYKxxoX0GF9+PfHeBSmsv7DyVf5SfxfjGmFZ8kqhvwHMb4IYPV86KsFqp/Z9O6HSxvWhcCllcb1GxDdYIG4+LTUYbentBtcLlj05RkPYMWq0BieU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=flygoat.com; spf=pass smtp.mailfrom=flygoat.com; dkim=pass (2048-bit key) header.d=flygoat.com header.i=@flygoat.com header.b=oHOi2tzi; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=fg90YUwB; arc=none smtp.client-ip=103.168.172.154
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=flygoat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flygoat.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=flygoat.com header.i=@flygoat.com header.b="oHOi2tzi";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="fg90YUwB"
-Received: from phl-compute-09.internal (phl-compute-09.phl.internal [10.202.2.49])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id 303BC1140239;
-	Sun,  8 Sep 2024 07:26:31 -0400 (EDT)
-Received: from phl-imap-12 ([10.202.2.86])
-  by phl-compute-09.internal (MEProxy); Sun, 08 Sep 2024 07:26:31 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=flygoat.com; h=
-	cc:cc:content-transfer-encoding:content-type:content-type:date
-	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm2; t=1725794791;
-	 x=1725881191; bh=XEUlxjTawgkGJUbuV5995m7w7A2+JrHLDxzMf66rOFU=; b=
-	oHOi2tziFYipU/36G0P4pMedwfORQXdZAEe5c9Wj6Pkgv2OwPwT8YruLqHeDtPPl
-	aYsVkmP6MoSs3CPhOdnNnBGy1EB5dQRcXluTi7nR3uZ/IDhEp7vIUihrBhkfgOQR
-	4j/c6PqoGTCGYa4f9b5UUfA47nFjzGxrAO5K6afnIZDUmCftz5UOHhJvGMudLFdR
-	rSgAL4fXR0uC4GGqwHMng2woukdSPh5Nqwjlr2tYXmkYDBL4QJWPUAkQDVZrkSYD
-	oCgX/0eT5ac+iDDRk/ni/6T8yfLtxVDLu3kVGfhB6uGlgNQxAoF7BKg/Uo7g09m6
-	MdYX7iA0mE0HTDF/kiQgZw==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=1725794791; x=
-	1725881191; bh=XEUlxjTawgkGJUbuV5995m7w7A2+JrHLDxzMf66rOFU=; b=f
-	g90YUwBHInWhIR7eot/GF/L5V8rTEiLKyfgrEwEGaITOsFWt+MRMHpLTuqzTFmCc
-	HA44h/q1BXd4iJMNi4nfHe6z24uwouoQ4RMWlqcwyKrjROgMakTgYu6gfEHlzrUr
-	i0hjfXXqfZRRehxdtj+aZa+1cwviPfTK+T6zzG6WGuFIe0xPI7jQ2Y3nPhlYRt37
-	Z5c7fxczZEhGsHiXmlTZFd3F73OxlTU5QGWxZSnZ3oUznMRj9qp+QkcdwGmLd5ZU
-	LjBieS65NRQt0Ufia4wkB0gY7cNhU/+mjeq4n2QgZCei4VKJJM5vk5T2uR8ZIyce
-	A8dS7WV0a6DERl6qoyLBg==
-X-ME-Sender: <xms:5ondZv5EyLULksTd86Gox8AAQuTkdW8_EDaOnSzJ807aoMMq3SvXKw>
-    <xme:5ondZk6wX3pv5Yj08ahY3NmdyrnN8xyC9XqeN4JEBp7G18z0_I04to5vGA7mByLdc
-    zyCAe6ZBI3bkPAOBEU>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeeftddrudeihedgfeelucetufdoteggodetrfdotf
-    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdggtfgfnhhsuhgsshgtrhhisggvpdfu
-    rfetoffkrfgpnffqhgenuceurghilhhouhhtmecufedttdenucesvcftvggtihhpihgvnh
-    htshculddquddttddmnecujfgurhepofggfffhvfevkfgjfhfutgfgsehtqhertdertdej
-    necuhfhrohhmpedflfhirgiguhhnucgjrghnghdfuceojhhirgiguhhnrdihrghnghesfh
-    hlhihgohgrthdrtghomheqnecuggftrfgrthhtvghrnhepjeehfeduvddtgffgvdffkeet
-    hefhlefgvdevvdekuefffeekheehgeevhfevteejnecuvehluhhsthgvrhfuihiivgeptd
-    enucfrrghrrghmpehmrghilhhfrhhomhepjhhirgiguhhnrdihrghnghesfhhlhihgohgr
-    thdrtghomhdpnhgspghrtghpthhtohepuddvpdhmohguvgepshhmthhpohhuthdprhgtph
-    htthhopehlihhnuhigqdgrlhhphhgrsehvghgvrhdrkhgvrhhnvghlrdhorhhgpdhrtghp
-    thhtoheplhhinhhugidqrghrtghhsehvghgvrhdrkhgvrhhnvghlrdhorhhgpdhrtghpth
-    htoheplhhinhhugidqtghskhihsehvghgvrhdrkhgvrhhnvghlrdhorhhgpdhrtghpthht
-    oheplhhinhhugidqkhgvrhhnvghlsehvghgvrhdrkhgvrhhnvghlrdhorhhgpdhrtghpth
-    htoheplhhinhhugidqkhhsvghlfhhtvghsthesvhhgvghrrdhkvghrnhgvlhdrohhrghdp
-    rhgtphhtthhopehlihhnuhigqdhmihhpshesvhhgvghrrdhkvghrnhgvlhdrohhrghdprh
-    gtphhtthhopehlihhnuhigqdhprghrihhstgesvhhgvghrrdhkvghrnhgvlhdrohhrghdp
-    rhgtphhtthhopehlihhnuhigqdhsfeeltdesvhhgvghrrdhkvghrnhgvlhdrohhrghdprh
-    gtphhtthhopehlihhnuhigqdhshhesvhhgvghrrdhkvghrnhgvlhdrohhrgh
-X-ME-Proxy: <xmx:5ondZmd9bDZgTBNLmCVK9WctNnt9UdyUUYLzicp8fRUQJOEeEHozCQ>
-    <xmx:5ondZgJbs9ZbQEnjCxeIQX3jr6jp32cCYqcxW8vB_4rDfb71lY8o7g>
-    <xmx:5ondZjJQPWwtLvEPjhQrPNIUhMsNJM9qEgpuiiWJGtcO2UPfCU6EbA>
-    <xmx:5ondZpytJvdFgsOqTwWS9Vs06wpz46tg4dTRIE_gHhIODGZYtV_FWQ>
-    <xmx:54ndZlxfc3c_LrCS3N9s-1LqRMFbltsGr3zCZwtJfxdiMSPhLMCNLrFL>
-Feedback-ID: ifd894703:Fastmail
-Received: by mailuser.phl.internal (Postfix, from userid 501)
-	id 900D51C20065; Sun,  8 Sep 2024 07:26:30 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
+	s=arc-20240116; t=1725825478; c=relaxed/simple;
+	bh=6iRQ4ycMPuueLuQbrmkO5BYrgQaV5z5SVussbCyOKoM=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=JJXBE+icaEp8SGPWmF3ntaSaOut/1NBNz8tOQ/LXC8ZalDuNy1jrubdYpdIB2McZjwtnH4rdjph7xJyfEf6xpONR1Yh9lCnOxCCDxB+YasX49jQHUfyqbAXQWNQKIPsa4we+6lXePW+4Jq/IAwcpuEKpE+0NPH0XZwrZDIaI5X4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=vasilevsky.ca; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.219.177
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=vasilevsky.ca
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-yb1-f177.google.com with SMTP id 3f1490d57ef6-e02b79c6f21so4218105276.2;
+        Sun, 08 Sep 2024 12:57:55 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1725825475; x=1726430275;
+        h=content-transfer-encoding:in-reply-to:from:content-language
+         :references:cc:to:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=6iRQ4ycMPuueLuQbrmkO5BYrgQaV5z5SVussbCyOKoM=;
+        b=hMYSJXWQveeBIzsHNU6pUQwZ3zdIzJm237c4B3/KA48tmaq076Invff2qT4Fc2aQu6
+         oZ3OfC8lzIGgAR8F1n8pBBnjNtHEqqo5bpqIdA7Hpa2osiqLJL2wRTXrzRGkLLpmgs1x
+         IT8+ymKZzd3UsELtmCPJX/ASt1JNnoVn3e0FqHrVseB0OTVH7fDK14l93MsRXXVd/s9+
+         CKnPNX737uYEGJH6xChcqANWfhvAIlhVOcwV26BbpHj3ExOFOmV1fQMt7ftCnxj93lAx
+         mN8WcODhPVA6a0KBaCAJRvYj1zi3IVaNXBBrWMYF1yjkLTmaOORM9tcfO5oCD/oIUbEd
+         8MVg==
+X-Forwarded-Encrypted: i=1; AJvYcCWeo3507guALs0WN48A/aAIzD9nlCJzboqhfMtu7d6c/h3MMJTWkizWQiGQFzhMufNiy+xHpOP2R7YbKu4=@vger.kernel.org, AJvYcCX6WUWvOteYutmYYxiPC7HkBrmbHSYBNkC457cstD6xnGtSJ3rmHEvmwtTD3u/DpqddQwt/9jMKY5o=@vger.kernel.org
+X-Gm-Message-State: AOJu0YyyLJ6HXVwwp9LYeuB5MDCeOK8ooARHwfrxMbrLZQOpLQF6wnsD
+	xFTzaPOV3hvpNnjWyc/IGhjgeFbuubkP5M49SRD2yXzX8hK/MatR
+X-Google-Smtp-Source: AGHT+IHbDiMdtH2pqnAbxLEMjAlHcuY4ygwDQW8Q8ews50/boV7RDQlibc4OTUwRVZ+TyW4cporrAg==
+X-Received: by 2002:a25:cece:0:b0:e1d:436c:3b4f with SMTP id 3f1490d57ef6-e1d436c3bd7mr5094797276.50.1725825474790;
+        Sun, 08 Sep 2024 12:57:54 -0700 (PDT)
+Received: from [192.168.2.254] ([70.24.204.168])
+        by smtp.gmail.com with ESMTPSA id d75a77b69052e-45822e7723asm14597531cf.22.2024.09.08.12.57.53
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 08 Sep 2024 12:57:54 -0700 (PDT)
+Message-ID: <c04fe24a-26e6-44b5-a2dd-00eac589e36b@vasilevsky.ca>
+Date: Sun, 8 Sep 2024 15:57:42 -0400
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Date: Sun, 08 Sep 2024 12:26:09 +0100
-From: "Jiaxun Yang" <jiaxun.yang@flygoat.com>
-To: "Charlie Jenkins" <charlie@rivosinc.com>,
- "Arnd Bergmann" <arnd@arndb.de>,
- "Richard Henderson" <richard.henderson@linaro.org>,
- "Ivan Kokshaysky" <ink@jurassic.park.msu.ru>,
- "Matt Turner" <mattst88@gmail.com>, "Vineet Gupta" <vgupta@kernel.org>,
- "Russell King" <linux@armlinux.org.uk>, "Guo Ren" <guoren@kernel.org>,
- "Huacai Chen" <chenhuacai@kernel.org>, "Xuerui Wang" <kernel@xen0n.name>,
- "Thomas Bogendoerfer" <tsbogend@alpha.franken.de>,
- "James Bottomley" <James.Bottomley@hansenpartnership.com>,
- "Helge Deller" <deller@gmx.de>, "Michael Ellerman" <mpe@ellerman.id.au>,
- "Nicholas Piggin" <npiggin@gmail.com>,
- "Christophe Leroy" <christophe.leroy@csgroup.eu>,
- "Naveen N Rao" <naveen@kernel.org>,
- "Alexander Gordeev" <agordeev@linux.ibm.com>,
- "Gerald Schaefer" <gerald.schaefer@linux.ibm.com>,
- "Heiko Carstens" <hca@linux.ibm.com>,
- "Vasily Gorbik" <gor@linux.ibm.com>,
- "Christian Borntraeger" <borntraeger@linux.ibm.com>,
- "Sven Schnelle" <svens@linux.ibm.com>,
- "Yoshinori Sato" <ysato@users.sourceforge.jp>,
- "Rich Felker" <dalias@libc.org>,
- "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
- "David S . Miller" <davem@davemloft.net>,
- "Andreas Larsson" <andreas@gaisler.com>,
- "Thomas Gleixner" <tglx@linutronix.de>, "Ingo Molnar" <mingo@redhat.com>,
- "Borislav Petkov" <bp@alien8.de>,
- "Dave Hansen" <dave.hansen@linux.intel.com>, x86@kernel.org,
- "H. Peter Anvin" <hpa@zytor.com>, "Andy Lutomirski" <luto@kernel.org>,
- "Peter Zijlstra" <peterz@infradead.org>,
- "Muchun Song" <muchun.song@linux.dev>,
- "Andrew Morton" <akpm@linux-foundation.org>,
- "Liam R. Howlett" <Liam.Howlett@oracle.com>,
- "Vlastimil Babka" <vbabka@suse.cz>,
- "Lorenzo Stoakes" <lorenzo.stoakes@oracle.com>,
- "Shuah Khan" <shuah@kernel.org>, "Christoph Hellwig" <hch@infradead.org>,
- "Michal Hocko" <mhocko@suse.com>,
- "Kirill A. Shutemov" <kirill@shutemov.name>,
- "Chris Torek" <chris.torek@gmail.com>
-Cc: linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
- linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
- loongarch@lists.linux.dev,
- "linux-mips@vger.kernel.org" <linux-mips@vger.kernel.org>,
- linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
- linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
- sparclinux@vger.kernel.org, linux-mm@kvack.org,
- linux-kselftest@vger.kernel.org, linux-abi-devel@lists.sourceforge.net
-Message-Id: <53384dc9-38c9-4d05-bcde-a3552fbed7ac@app.fastmail.com>
-In-Reply-To: 
- <20240905-patches-below_hint_mmap-v3-0-3cd5564efbbb@rivosinc.com>
-References: <20240905-patches-below_hint_mmap-v3-0-3cd5564efbbb@rivosinc.com>
-Subject: Re: [PATCH RFC v3 0/2] mm: Introduce ADDR_LIMIT_47BIT personality flag
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] crash: Default to CRASH_DUMP=n when support for it is
+ unlikely
+To: glaubitz@physik.fu-berlin.de, bhe@redhat.com,
+ linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, mpe@ellerman.id.au,
+ kexec@lists.infradead.org, linux-kernel@vger.kernel.org
+Cc: =?UTF-8?Q?Reimar_D=C3=B6ffinger?= <Reimar.Doeffinger@gmx.de>
+References: <20240823125156.104775-1-dave@vasilevsky.ca>
+Content-Language: en-US
+From: Dave Vasilevsky <dave@vasilevsky.ca>
+In-Reply-To: <20240823125156.104775-1-dave@vasilevsky.ca>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+I received a notification from Patchwork that my patch is now in the state "Handled Elsewhere".[0] Does that mean someone merged it somewhere? Or that I should be using a different mailing list? Or something else?
+
+I'd appreciate some guidance.
+
+Thanks,
+Dave
 
 
-
-=E5=9C=A82024=E5=B9=B49=E6=9C=885=E6=97=A5=E4=B9=9D=E6=9C=88 =E4=B8=8B=E5=
-=8D=8810:15=EF=BC=8CCharlie Jenkins=E5=86=99=E9=81=93=EF=BC=9A
-> Some applications rely on placing data in free bits addresses allocated
-> by mmap. Various architectures (eg. x86, arm64, powerpc) restrict the
-> address returned by mmap to be less than the 48-bit address space,
-> unless the hint address uses more than 47 bits (the 48th bit is reserv=
-ed
-> for the kernel address space).
->
-> The riscv architecture needs a way to similarly restrict the virtual
-> address space. On the riscv port of OpenJDK an error is thrown if
-> attempted to run on the 57-bit address space, called sv57 [1].  golang
-> has a comment that sv57 support is not complete, but there are some
-> workarounds to get it to mostly work [2].
->
-> These applications work on x86 because x86 does an implicit 47-bit
-> restriction of mmap() address that contain a hint address that is less
-> than 48 bits.
->
-> Instead of implicitly restricting the address space on riscv (or any
-> current/future architecture), provide a flag to the personality syscall
-> that can be used to ensure an application works in any arbitrary VA
-> space. A similar feature has already been implemented by the personali=
-ty
-> syscall in ADDR_LIMIT_32BIT.
->
-> This flag will also allow seemless compatibility between all
-> architectures, so applications like Go and OpenJDK that use bits in a
-> virtual address can request the exact number of bits they need in a
-> generic way. The flag can be checked inside of vm_unmapped_area() so
-> that this flag does not have to be handled individually by each
-> architecture.=20
-
-Tested-by: Jiaxun Yang <jiaxun.yang@flygoat.com>
-
-Tested on MIPS VA 48 system, fixed pointer tagging on mozjs!
-
-Thanks!
-
-[...]
---=20
-- Jiaxun
+[0] http://patchwork.ozlabs.org/project/linuxppc-dev/patch/20240823125156.104775-1-dave@vasilevsky.ca/
