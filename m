@@ -1,178 +1,96 @@
-Received: from fhigh5-smtp.messagingengine.com (fhigh5-smtp.messagingengine.com [103.168.172.156])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-yw1-f176.google.com (mail-yw1-f176.google.com [209.85.128.176])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CA1D62746B;
-	Wed, 11 Sep 2024 07:25:30 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.156
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1E0EE13BAEE
+	for <linux-sh@vger.kernel.org>; Wed, 11 Sep 2024 07:29:59 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.176
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1726039533; cv=none; b=qerDN4Xtf28HvmD93Ed4HJ9DdXVP80bdd9nJqh06cR0cpT3JIAOwTqoAtLo4LW52YMiAHLERo38o+7MriThqz2XXdikYpBBbpMOl4nin8EivgvU3J7VIfLLiz1Cbsvi2lZ26hRmPeMffUVWRQkeIgaLersHbTJmxpAbtlrG74hE=
+	t=1726039802; cv=none; b=EedmCsOnmf8mj3u4AMdYy5f9gAxBcLJGxbzZ/stflMZErNR0dd+s1TUnXl5wXVg3gwoY+ITMXtGUX+R48a2xhO7JQyUhxSFSLJGvI0DhWkMkKdBhjKcON+6sftlCT9+E2/Btg+Z37s9yHFyKuwmGve/a8XITZU28zW9tJbJTYU8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1726039533; c=relaxed/simple;
-	bh=ETLIKsU+6j3dbE0k0YACQOp91RGJ8e3OeoJa4Cxcffs=;
-	h=MIME-Version:Date:From:To:Message-Id:In-Reply-To:References:
-	 Subject:Content-Type; b=KGfzXzjsvo+q3RlAiQmg2omTdGMAQK2s8tn7bWzEr/GoU7xb6W9da2Do5jtvzA1EqLxyy7W5FLSCA1IkJ2X9eWuDc33fxT3Tmjblv7425ypqBXmwij82v5T5XS6RHjmPcyNuJa0LddNxVQx555NWm+9UfTBregbkSzzMEIHq24M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de; spf=pass smtp.mailfrom=arndb.de; dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b=F9rNEoeX; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=iHb72+mh; arc=none smtp.client-ip=103.168.172.156
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=arndb.de header.i=@arndb.de header.b="F9rNEoeX";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="iHb72+mh"
-Received: from phl-compute-10.internal (phl-compute-10.phl.internal [10.202.2.50])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id DDD0C1140240;
-	Wed, 11 Sep 2024 03:25:29 -0400 (EDT)
-Received: from phl-imap-11 ([10.202.2.101])
-  by phl-compute-10.internal (MEProxy); Wed, 11 Sep 2024 03:25:29 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-	:content-transfer-encoding:content-type:content-type:date:date
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm1; t=1726039529;
-	 x=1726125929; bh=yCULKLzEw1t/f1sPt/nrm6FrZBRX7uDhUSLEPSMpBQQ=; b=
-	F9rNEoeXKRYFxLjIk6eWo1N3gMclbpeQ4mgz4w/7cs9zcRDxkyX0Agm0WNqgCD2W
-	Z7VyyBFKG6orB8gELxqQHkPsZcor9zgyhSaWnMODwD5IWoNXBCfuTJGnX8SoseKi
-	eZdTmPVJZj29qoghoSOoRCe1AaE/65K57zLJI8b3R6sjqoIkd1qVqWJ1TaT8Hk+/
-	caAys40jlQbCO53cxkBQpbv8n3T+XSXoiscoHdGG+NlKQd95f2KcMzzTKCCQIKVA
-	PmMIBu478Mygj7KL8uE9ChBcat9bONZcEEsZk5fbfhalKZdLHb9JNlc/ZUUljrPK
-	7deYeUcezD6jBuhp5knKYw==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:content-transfer-encoding:content-type
-	:content-type:date:date:feedback-id:feedback-id:from:from
-	:in-reply-to:in-reply-to:message-id:mime-version:references
-	:reply-to:subject:subject:to:to:x-me-proxy:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=1726039529; x=
-	1726125929; bh=yCULKLzEw1t/f1sPt/nrm6FrZBRX7uDhUSLEPSMpBQQ=; b=i
-	Hb72+mhQrasBkqcf21vPbxa4UB9x2/tuvmT6y+NJmJyl2py0sIVynyrlpW9jey9I
-	QJ4QERkexr8fEESdSpc5HnseScjtuuv3ksr8SnTZnXN7Fv3NtghoGaxEKas1BowI
-	1tAbWOF2iikDni2CUFp49Dox8KhYNKF1uhUzMkO98i6hO8wclK+bKHkwuT6PMGtJ
-	yJuiVLpH+NSq/7upriOuVH7rOiZSG/zUmhOKkEYP4iSxXhjNb8uKrugDYk4N2Do6
-	V7ekBaAaXpEHA6UcL1+ASGMC45d/AthQxpmT2tux7hrHgGS0DepRcSLxPbdKv9Xk
-	e9T2+zMwzn9LwNSVZT0sg==
-X-ME-Sender: <xms:6UXhZt3m-pMBRlHMZU--b0W5KR7cdzcUBC9XeArjzwkTaiuk1cOvgA>
-    <xme:6UXhZkH28C7mLvG5siINNulUqZzKMzVZr-Gl-G4qHmLVJ1GN32rNUxQeZqTGPZMDR
-    JyWviMcm_XBsNwLJNM>
-X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgeeftddrudejtddguddulecutefuodetggdotefrod
-    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpggftfghnshhusghstghrihgsvgdp
-    uffrtefokffrpgfnqfghnecuuegrihhlohhuthemuceftddtnecusecvtfgvtghiphhivg
-    hnthhsucdlqddutddtmdenucfjughrpefoggffhffvkfgjfhfutgfgsehtjeertdertddt
-    necuhfhrohhmpedftehrnhguuceuvghrghhmrghnnhdfuceorghrnhgusegrrhhnuggsrd
-    guvgeqnecuggftrfgrthhtvghrnhephfekledtffefhffghfetteehuefhgfetgefhtdeu
-    feduueeltefghedtjeeifffhnecuvehluhhsthgvrhfuihiivgeptdenucfrrghrrghmpe
-    hmrghilhhfrhhomheprghrnhgusegrrhhnuggsrdguvgdpnhgspghrtghpthhtohepuddv
-    pdhmohguvgepshhmthhpohhuthdprhgtphhtthhopehlihhnuhigqdgrlhhphhgrsehvgh
-    gvrhdrkhgvrhhnvghlrdhorhhgpdhrtghpthhtoheplhhinhhugidqrghrtghhsehvghgv
-    rhdrkhgvrhhnvghlrdhorhhgpdhrtghpthhtoheplhhinhhugidqtghskhihsehvghgvrh
-    drkhgvrhhnvghlrdhorhhgpdhrtghpthhtoheplhhinhhugidqkhgvrhhnvghlsehvghgv
-    rhdrkhgvrhhnvghlrdhorhhgpdhrtghpthhtoheplhhinhhugidqkhhsvghlfhhtvghsth
-    esvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopehlihhnuhigqdhmihhpshes
-    vhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopehlihhnuhigqdhprghrihhstg
-    esvhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopehlihhnuhigqdhsfeeltdes
-    vhhgvghrrdhkvghrnhgvlhdrohhrghdprhgtphhtthhopehlihhnuhigqdhshhesvhhgvg
-    hrrdhkvghrnhgvlhdrohhrgh
-X-ME-Proxy: <xmx:6UXhZt6XI9N7K5x4FuO5Jep1e4nhCE-fajk4GZfRPdu_E-1ecOdOcQ>
-    <xmx:6UXhZq2JJKpyeLi1DOP4afQLZO2hhoYgij5qeTxPZprwZ_VXUQUTeQ>
-    <xmx:6UXhZgHR_3IqQxzu4b1epWpksbhP_QqWwqItj78HEyYVo40zEiQfxQ>
-    <xmx:6UXhZr9_hdiUOaREZuhLCbLUz3rUa94b8KuKNRBZutD7A3WOkXcswQ>
-    <xmx:6UXhZj8AB8bxwabQoO712cDT24Zu-1llJWVXq4kLXrEIhdkN-l9wFQ-s>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.phl.internal (Postfix, from userid 501)
-	id 466A32220072; Wed, 11 Sep 2024 03:25:29 -0400 (EDT)
-X-Mailer: MessagingEngine.com Webmail Interface
+	s=arc-20240116; t=1726039802; c=relaxed/simple;
+	bh=cjjaHCI8mNXu9Hwd/4D/Np03pWTpzgz4jBBiaQz8j64=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=tjpCZGfZCygw6DwL7X6JBNJ+RQ7B6PnCNumZLuk/V2dyxrivWm2jZkVN4KCSzYA1XLvBuZ+D4bRs261s+yMH2qcNGc7QLqaC9euN66R0+FCF08zhu2TS4U7IWGCLdZ/8PWM1gMXpfUI+qdyv8ORYp8S4rPTJDAvALUVeY3RAfgU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.128.176
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Received: by mail-yw1-f176.google.com with SMTP id 00721157ae682-6d74ff7216eso59337767b3.1
+        for <linux-sh@vger.kernel.org>; Wed, 11 Sep 2024 00:29:59 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1726039798; x=1726644598;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=BOk1FOCcSSBwtC4d1EyvDirnO1scOxPxa13ggfz8vRg=;
+        b=uc1aKOJvop7rSYueUqvNjem9G5HHqFs72qQ+OkG/O4qWRx6kC82bBv3YxfNFqTof28
+         h1nh6HZZWnxkVG4WLixKooygNhhFuaHC3B8gCDJeLjQSJ7zmMjm2FxUdmnFkuhs+zkHd
+         +KqogdFl0PhMKvLoc2BXvabgaFlTTtxh3ycdljPlVEfGt4wl5uWH+b6qJXdvxKxaRlWa
+         kFfGZCX726gjwLnN+9bsV6b431LuBKlArOh12b71CEN5xDAFknr+U9Remssxvc3D/0Yq
+         9h4H571ykU0a1yzNQwFiH5HMH8mHGoghHyyXMtXf/cYlt3+LDVls1dCxRvGejpy+qxnL
+         m1uA==
+X-Forwarded-Encrypted: i=1; AJvYcCWBdmZVnO7oDv8HJCYSjH0llYAVZOVOUxoSw3bv+/VIfyUYskMriJnYKE34Tw/3doc/ddgZ/NXgyQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0Yz74VZkAURxu2yKUlBal4tsZq+e8E4xOF7qqSdSDZUM7rp9n2G9
+	qyJAwAgjtl/z3d6r2M/YwzuZOyxDHyHXgubE0OPo+Bu/anakaI9LyjDo/jCi
+X-Google-Smtp-Source: AGHT+IHVVZ1UAMNn+pQedJ7PEV/TZ/8627T2dnQIlhW5o+Ri4y1ahWRVBxa7y3fQQ8a+/0+aDYhKGA==
+X-Received: by 2002:a05:690c:c1e:b0:6db:98ad:86a with SMTP id 00721157ae682-6db98ad0960mr44441517b3.40.1726039798476;
+        Wed, 11 Sep 2024 00:29:58 -0700 (PDT)
+Received: from mail-yw1-f170.google.com (mail-yw1-f170.google.com. [209.85.128.170])
+        by smtp.gmail.com with ESMTPSA id 00721157ae682-6db9652d024sm5917157b3.141.2024.09.11.00.29.58
+        for <linux-sh@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 11 Sep 2024 00:29:58 -0700 (PDT)
+Received: by mail-yw1-f170.google.com with SMTP id 00721157ae682-6d49cec2a5dso59033997b3.3
+        for <linux-sh@vger.kernel.org>; Wed, 11 Sep 2024 00:29:58 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AJvYcCWNNc3LqkqlxOGvyTBH7UqyXt2mX8OygMftOkPiZyHuwpMe0jdQy1tumruFfHpRWyk7Xy+8Mprkdw==@vger.kernel.org
+X-Received: by 2002:a05:690c:39b:b0:6d3:be51:6d03 with SMTP id
+ 00721157ae682-6db44f2c1damr187680177b3.23.1726039797973; Wed, 11 Sep 2024
+ 00:29:57 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Date: Wed, 11 Sep 2024 07:25:08 +0000
-From: "Arnd Bergmann" <arnd@arndb.de>
-To: "Charlie Jenkins" <charlie@rivosinc.com>,
- "Liam R. Howlett" <Liam.Howlett@oracle.com>,
- "Catalin Marinas" <catalin.marinas@arm.com>, guoren <guoren@kernel.org>,
- "Richard Henderson" <richard.henderson@linaro.org>,
- "Ivan Kokshaysky" <ink@jurassic.park.msu.ru>,
- "Matt Turner" <mattst88@gmail.com>, "Vineet Gupta" <vgupta@kernel.org>,
- "Russell King" <linux@armlinux.org.uk>,
- "Huacai Chen" <chenhuacai@kernel.org>, "WANG Xuerui" <kernel@xen0n.name>,
- "Thomas Bogendoerfer" <tsbogend@alpha.franken.de>,
- "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
- "Helge Deller" <deller@gmx.de>, "Michael Ellerman" <mpe@ellerman.id.au>,
- "Nicholas Piggin" <npiggin@gmail.com>,
- "Christophe Leroy" <christophe.leroy@csgroup.eu>,
- "Naveen N Rao" <naveen@kernel.org>,
- "Alexander Gordeev" <agordeev@linux.ibm.com>,
- "Gerald Schaefer" <gerald.schaefer@linux.ibm.com>,
- "Heiko Carstens" <hca@linux.ibm.com>,
- "Vasily Gorbik" <gor@linux.ibm.com>,
- "Christian Borntraeger" <borntraeger@linux.ibm.com>,
- "Sven Schnelle" <svens@linux.ibm.com>,
- "Yoshinori Sato" <ysato@users.sourceforge.jp>,
- "Rich Felker" <dalias@libc.org>,
- "John Paul Adrian Glaubitz" <glaubitz@physik.fu-berlin.de>,
- "David S . Miller" <davem@davemloft.net>,
- "Andreas Larsson" <andreas@gaisler.com>,
- "Thomas Gleixner" <tglx@linutronix.de>, "Ingo Molnar" <mingo@redhat.com>,
- "Borislav Petkov" <bp@alien8.de>,
- "Dave Hansen" <dave.hansen@linux.intel.com>, x86@kernel.org,
- "H. Peter Anvin" <hpa@zytor.com>, "Andy Lutomirski" <luto@kernel.org>,
- "Peter Zijlstra" <peterz@infradead.org>,
- "Muchun Song" <muchun.song@linux.dev>,
- "Andrew Morton" <akpm@linux-foundation.org>,
- "Vlastimil Babka" <vbabka@suse.cz>,
- "Lorenzo Stoakes" <lorenzo.stoakes@oracle.com>, shuah <shuah@kernel.org>,
- "Christoph Hellwig" <hch@infradead.org>,
- "Michal Hocko" <mhocko@suse.com>,
- "Kirill A. Shutemov" <kirill@shutemov.name>,
- "Chris Torek" <chris.torek@gmail.com>,
- Linux-Arch <linux-arch@vger.kernel.org>, linux-kernel@vger.kernel.org,
- linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
- linux-arm-kernel@lists.infradead.org,
- "linux-csky@vger.kernel.org" <linux-csky@vger.kernel.org>,
- loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
- linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
- linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
- sparclinux@vger.kernel.org, linux-mm@kvack.org,
- linux-kselftest@vger.kernel.org, linux-abi-devel@lists.sourceforge.net
-Message-Id: <8130e50c-01e2-45c3-a516-45f5499311f2@app.fastmail.com>
-In-Reply-To: <ZuDoExckq21fePoe@ghost>
-References: <20240905-patches-below_hint_mmap-v3-0-3cd5564efbbb@rivosinc.com>
- <20240905-patches-below_hint_mmap-v3-1-3cd5564efbbb@rivosinc.com>
- <9fc4746b-8e9d-4a75-b966-e0906187e6b7@app.fastmail.com>
- <CAJF2gTTVX9CFM3oRZZP3hGExwVwA_=n1Lrq_0DQKWA+-ZbOekg@mail.gmail.com>
- <f23b18c6-1856-4b59-9ba3-59809b425c81@app.fastmail.com>
- <Ztrq8PBLJ3QuFJz7@arm.com>
- <oshwto46wbbgneiayj63umllyozm3c4267rvpszqzaopwnt2l7@6mxl5vydtons>
- <ZuDoExckq21fePoe@ghost>
-Subject: Re: [PATCH RFC v3 1/2] mm: Add personality flag to limit address to 47 bits
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+References: <20240910001612.88569-1-marek.vasut+renesas@mailbox.org>
+ <20240910172151.GG4252@bill-the-cat> <1cd4c1c1-b709-43aa-aff8-14cb1d21aee2@mailbox.org>
+ <CAMuHMdVvHtVmH+YP=m20U9-buXKi1+Kwcrkf8vWhQYagcg4JRQ@mail.gmail.com> <2c133f811fca225a0f796b8b94b16e63b33e56a6.camel@physik.fu-berlin.de>
+In-Reply-To: <2c133f811fca225a0f796b8b94b16e63b33e56a6.camel@physik.fu-berlin.de>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Wed, 11 Sep 2024 09:29:46 +0200
+X-Gmail-Original-Message-ID: <CAMuHMdXv3yAwPpw2-qoKB8ijb+sA+U73t5-HQgtAoU04NRJs2A@mail.gmail.com>
+Message-ID: <CAMuHMdXv3yAwPpw2-qoKB8ijb+sA+U73t5-HQgtAoU04NRJs2A@mail.gmail.com>
+Subject: Re: [PATCH] sh: cache: Fill in invalidate_icache_all()
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: Marek Vasut <marek.vasut@mailbox.org>, Tom Rini <trini@konsulko.com>, 
+	Marek Vasut <marek.vasut+renesas@mailbox.org>, u-boot@lists.denx.de, 
+	Ilias Apalodimas <ilias.apalodimas@linaro.org>, Nobuhiro Iwamatsu <iwamatsu@nigauri.org>, 
+	Linux-sh list <linux-sh@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Wed, Sep 11, 2024, at 00:45, Charlie Jenkins wrote:
-> On Tue, Sep 10, 2024 at 03:08:14PM -0400, Liam R. Howlett wrote:
+Hi Adrian,
+
+On Wed, Sep 11, 2024 at 9:23=E2=80=AFAM John Paul Adrian Glaubitz
+<glaubitz@physik.fu-berlin.de> wrote:
+> Odd, I haven't received the original mail.
 >
-> I responded to Arnd in the other thread, but I am still not convinced
-> that the solution that x86 and arm64 have selected is the best solution.
-> The solution of defaulting to 47 bits does allow applications the
-> ability to get addresses that are below 47 bits. However, due to
-> differences across architectures it doesn't seem possible to have all
-> architectures default to the same value. Additionally, this flag will be
-> able to help users avoid potential bugs where a hint address is passed
-> that causes upper bits of a VA to be used.
->
-> The other issue I have with this is that if there is not a hint address
-> specified to be greater than 47 bits on x86, then mmap() may return an
-> address that is greater than 47-bits. The documentation in
-> Documentation/arch/x86/x86_64/5level-paging.rst says:
->
-> "If hint address set above 47-bit, but MAP_FIXED is not specified, we try
-> to look for unmapped area by specified address. If it's already
-> occupied, we look for unmapped area in *full* address space, rather than
-> from 47-bit window."
+> @Marek: Could you resent your patch CC'ing the current maintainers of arc=
+h/sh?
 
-This is also in the commit message of b569bab78d8d ("x86/mm: Prepare
-to expose larger address space to userspace"), which introduced it.
-However, I don't actually see the fallback to the full address space,
-instead the actual behavior seems to be the same as arm64.
+It is a patch for U-Boot, not for the kernel.
+Full thread at https://lore.kernel.org/2c133f811fca225a0f796b8b94b16e63b33e=
+56a6.camel@physik.fu-berlin.de/
 
-Am I missing something in the x86 implementation, or do we just
-need to update the documentation?
+Gr{oetje,eeting}s,
 
-      Arnd
+                        Geert
+
+--=20
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
+.org
+
+In personal conversations with technical people, I call myself a hacker. Bu=
+t
+when I'm talking to journalists I just say "programmer" or something like t=
+hat.
+                                -- Linus Torvalds
