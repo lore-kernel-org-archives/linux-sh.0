@@ -1,215 +1,357 @@
-Received: from mail-ot1-f50.google.com (mail-ot1-f50.google.com [209.85.210.50])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0b-00069f02.pphosted.com (mx0b-00069f02.pphosted.com [205.220.177.32])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E426840C03
-	for <linux-sh@vger.kernel.org>; Fri, 13 Sep 2024 02:55:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.50
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1726196157; cv=none; b=LlZ9umliAgN+lpL2Df2NDAeZmB0w8JcqsHZCPYooeefk3ls00Wqay4EA618ImlADJdmIV4OE3MYR2FXRMDUyJH4y3Cg2IxD2WGbKBhsVd/UvPMCErHk4LdHOK1/4t9HmrbdJz1KFsym/MOrR/Bn4gWJzjNYqroY0GcBkEjNiHtQ=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1726196157; c=relaxed/simple;
-	bh=4pCVVm+IdujmarRypHhg7gVqX0USvdIt9y+qYTPMzBM=;
-	h=Content-Type:Message-ID:Date:MIME-Version:To:From:Subject; b=TcCDQqoSq+EHq6WP2supQPf4Gdc/tJ/5LpMHttRUiPWzvCwcrvk5xyfi0oxpNCsoesGuCSIXVG0QNX5RUfhP2gp7MCC7kKQk5///YXZSAiVwO+327y2e9xXfD8kvsVMi/xs6CXJ750zhNvg8xl1WpRzE7UY8a3LKmE/8CLc7N10=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net; spf=pass smtp.mailfrom=landley.net; dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b=gbiGRPb2; arc=none smtp.client-ip=209.85.210.50
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=landley.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=landley.net
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2364C1BD016;
+	Fri, 13 Sep 2024 07:43:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=205.220.177.32
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1726213404; cv=fail; b=jRSZRg6/7lvx8uVPSxLWrdOtMFEOTei3V2BwjXSlV/fSMnCxd5BEMfXn38efcvjP5eqSoxSF7vgboMYM+IvWV6ZbxIgMuAih9BupJhT7QpsQtyIg5Gh3Xo5f2TBgBLHzvoL5SDD6aw1cX9Pf6b0qtPxuGs+Pbpj52F9fGw2DM9c=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1726213404; c=relaxed/simple;
+	bh=D8Qsd+p62WW/LJLUBiJx8P3eOTcqImJGQxkXdHVAdjs=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:Content-Type:
+	 Content-Disposition:In-Reply-To:MIME-Version; b=oPkcdS1zXi46TjWbTfZM37hMCOeqVYU2RX7M8qbAwvetXK4TCxm2XBrqvreJyi0xjMqpkeemwl4HUv/O6y6U5KDYx0nuU5DZAqyDsn9mIxGEY3hxSyRtIlKMFar5omSIgSZeokw3pC3lHZwbD2MV0kdKjj8Gkn8FUm7eZ1ty7I8=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=oracle.com; spf=pass smtp.mailfrom=oracle.com; dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b=h+rnHyjd; dkim=pass (1024-bit key) header.d=oracle.onmicrosoft.com header.i=@oracle.onmicrosoft.com header.b=gPsRzLaq; arc=fail smtp.client-ip=205.220.177.32
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=oracle.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=oracle.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=landley-net.20230601.gappssmtp.com header.i=@landley-net.20230601.gappssmtp.com header.b="gbiGRPb2"
-Received: by mail-ot1-f50.google.com with SMTP id 46e09a7af769-710daaadd9bso906306a34.2
-        for <linux-sh@vger.kernel.org>; Thu, 12 Sep 2024 19:55:54 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=oracle.com header.i=@oracle.com header.b="h+rnHyjd";
+	dkim=pass (1024-bit key) header.d=oracle.onmicrosoft.com header.i=@oracle.onmicrosoft.com header.b="gPsRzLaq"
+Received: from pps.filterd (m0246631.ppops.net [127.0.0.1])
+	by mx0b-00069f02.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id 48D7BVlo014250;
+	Fri, 13 Sep 2024 07:41:48 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=oracle.com; h=
+	date:from:to:cc:subject:message-id:references:content-type
+	:content-transfer-encoding:in-reply-to:mime-version; s=
+	corp-2023-11-20; bh=D8Qsd+p62WW/LJLUBiJx8P3eOTcqImJGQxkXdHVAdjs=; b=
+	h+rnHyjdzNE2V8l7QMCyW3ewbHzJ5Lj4ajFKAYVYCoSPkIzRnDJHMEetzc6WbLtL
+	VBbgJwUgU29MYsUom0QP/VoaN2AcAA8zxqkBd6OcspmLVeK2yQbveVR8uEGG7ssA
+	gUGrb4XOyUAEWbupCUQ2g66V115YWaCNPYnjsGOkJvsOiqaY6io+rEz7JQixBAeX
+	kQxRZLiohMyisEof+PeUeaURrItKmSg6NcCIzfplU851cwioK3Wl3/FM6zeRhnGc
+	DCa1kOw1Hj4k2+h2nOWAppx0gW6doJidRW15R+Giavy+ENJ3RQzb3iTe0UaQQm1J
+	MC1wiaHkMmWZ9B98AKTazg==
+Received: from phxpaimrmta03.imrmtpd1.prodappphxaev1.oraclevcn.com (phxpaimrmta03.appoci.oracle.com [138.1.37.129])
+	by mx0b-00069f02.pphosted.com (PPS) with ESMTPS id 41gdm2vxmr-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Fri, 13 Sep 2024 07:41:48 +0000 (GMT)
+Received: from pps.filterd (phxpaimrmta03.imrmtpd1.prodappphxaev1.oraclevcn.com [127.0.0.1])
+	by phxpaimrmta03.imrmtpd1.prodappphxaev1.oraclevcn.com (8.18.1.2/8.18.1.2) with ESMTP id 48D6JEIm000301;
+	Fri, 13 Sep 2024 07:41:46 GMT
+Received: from nam12-bn8-obe.outbound.protection.outlook.com (mail-bn8nam12lp2176.outbound.protection.outlook.com [104.47.55.176])
+	by phxpaimrmta03.imrmtpd1.prodappphxaev1.oraclevcn.com (PPS) with ESMTPS id 41gd9e0fdb-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=OK);
+	Fri, 13 Sep 2024 07:41:46 +0000
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=cu06ToTiLWNQm8yLnO7ecnXD7DfAe6sbu1UL5MY8EwxwOMFASyIIcVhTwygbr90LEV0DqvC2cTL+K4ji93N/uoW+P5VckXcv9RvlDEttzQ6xqp467f/4U6UpLrxmu27clKK8it7JXVjvqVD99Qoi75H7iae0AAUREih5Knvm6VNu8s1uBj9XIcNFTn5y91XeivyLg9PTVYwwtRWTAZL452aIiCGHSb7RObHmDXKEUSB9BzAhYZVRmwrkEIc7YHMDpghWZp9TgtS9OFV1CujzQ3wSNfth+z8oKlcy+DusGGocC7+3HC1H3/cO3uHM8CKv2Gc7gPYm5AK2BVwSQ0mYgw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=D8Qsd+p62WW/LJLUBiJx8P3eOTcqImJGQxkXdHVAdjs=;
+ b=tNE16uDoNWsEZDXM4KK7YHiUhNmKmEFgmZfZ43HiZg7cjKhEA4Gm4MosKUCHRV33cev5Rqo8KtYH8nOlECRg7DPv4qMJzvOrNVoG6BvRwkUOutCaxJbKARXQkqrAiahkS44oXaSAnR4HH+JPf+shDQHKm63tYgBRJqrsB1J0UAc8xs4cc+zOB6bBNmhSN0Fp7RoJcxX3FTN2Vqi1xEu3vTrRr54A6RBDvELqPHQEagm5sffQGXB5OQfuMJ2120AX/Qd40ZW9chVPx9Hu6T59bp3MZ6jBQztGQFkAB2tz3KSN2xtWR2MMzGywc6p4gf1BiRJaXuPdgWbLgAiwErxtfA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=oracle.com; dmarc=pass action=none header.from=oracle.com;
+ dkim=pass header.d=oracle.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=landley-net.20230601.gappssmtp.com; s=20230601; t=1726196154; x=1726800954; darn=vger.kernel.org;
-        h=subject:from:to:content-language:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to;
-        bh=y084YwtBrAeQYeNJK2R/sPLBTQOclA0VaE5hZrR2JB0=;
-        b=gbiGRPb2DfZS6kKzts59BwIcJTTzkk6tpYsf0LYJb1eojOeOTFaMPJuHJavqWgvSRh
-         fvuyVOztacB0YIOrFNEMGrCLer85OMhuooQGZqXxD48zy/f7Ey/pxGnfOeOIgA5gVS4y
-         OOllNPGnpvG24YTjqeBYC88o+NgUgdG3D6r46fpeg530K+7UVBQEq/Gk5wAaRWfytK/h
-         KMTYTA6P1o0vZZYmGGNy2GprBnPnSfsmaDweGk6g1X1/e2/DOaF+GNvaMgpkZy7821jd
-         0MkIfxED1+00i0cOYVsAnOxXcFYMHQrABioVhWkR22X8BQTR3xIjqXDv4mJRSY228ZV0
-         BiBA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1726196154; x=1726800954;
-        h=subject:from:to:content-language:user-agent:mime-version:date
-         :message-id:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to;
-        bh=y084YwtBrAeQYeNJK2R/sPLBTQOclA0VaE5hZrR2JB0=;
-        b=Y+TSRzHcuVdsRcnwO9x2n9cxD0HdlS0OhCd82igslmNb4CPXIyoUAq7LdF2QxnV+NI
-         LdCKUGMXGYHHsBfQ1DywvwbYpo0S2JKifwvV8UfR59FIX/7U6J4CNKpu6s4nrOhjDrxj
-         G9zltldBFUx/9JakhtwEzyMbtC5q0LYVCFyQZXmW/s4Vx4/2E+jyj1FqnloAaelSgoF4
-         2JNGEz6fJBTSMdT/GwCZUy9es6NVTdF/KJyMScij7nFZaoXvoUfmlCFAnTqY47zAj6a1
-         oodawGLPoS0ndVHetEDvyW0bCrQndX+0qiW3P4UxIddnMcKJoudR7xCjF9z2UgIUw1OU
-         OK6g==
-X-Gm-Message-State: AOJu0YzJ9jRNqw73kJ/Y4+kj4d6ZLWZjPl7nd/XMMohSdr0JafQT9unB
-	IXjQI/fmSXTtp2Y6hbLpsuIGmXDkG2YcOiNz9y8vy7qYv8x9oc4fTCCURmPq8qJOE//0bzyvzid
-	fjek=
-X-Google-Smtp-Source: AGHT+IGpkjbuRRaIJOfIAgRMplHhAw4QILDcXNWhHIPunPyVjId7QFt3mde/VJY3KJZArEzwX9e/Kw==
-X-Received: by 2002:a05:6830:65c6:b0:710:eb9a:f8d1 with SMTP id 46e09a7af769-71109486190mr5708798a34.17.1726196153681;
-        Thu, 12 Sep 2024 19:55:53 -0700 (PDT)
-Received: from [192.168.43.7] (M111108020212.v4.enabler.ne.jp. [111.108.20.212])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-7db1fbbf69csm2428531a12.44.2024.09.12.19.55.52
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 12 Sep 2024 19:55:53 -0700 (PDT)
-Content-Type: multipart/mixed; boundary="------------9XcUTwgllYyIEUT0TdW1gO0I"
-Message-ID: <02cb40b3-ca86-5402-34e7-501331e00a09@landley.net>
-Date: Thu, 12 Sep 2024 22:10:37 -0500
+ d=oracle.onmicrosoft.com; s=selector2-oracle-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=D8Qsd+p62WW/LJLUBiJx8P3eOTcqImJGQxkXdHVAdjs=;
+ b=gPsRzLaq2Q117oXvXVmItspF0HIAZrwMs99NZ/zJ8nCNcsz9sZuoaC0YhHUzxoUsqcufVrgXu5en7X6oieqVrRKvzPQHp9+jb5EKKH0a5sNf+HEQPkG1qSShwxL/dW7zdTLEjnjPbTGYD4P/9YC3Whl3V+tjw7ZT/xotRvwHn2Q=
+Received: from SJ0PR10MB5613.namprd10.prod.outlook.com (2603:10b6:a03:3d0::5)
+ by PH0PR10MB4664.namprd10.prod.outlook.com (2603:10b6:510:41::11) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.20.7982.9; Fri, 13 Sep
+ 2024 07:41:38 +0000
+Received: from SJ0PR10MB5613.namprd10.prod.outlook.com
+ ([fe80::4239:cf6f:9caa:940e]) by SJ0PR10MB5613.namprd10.prod.outlook.com
+ ([fe80::4239:cf6f:9caa:940e%5]) with mapi id 15.20.7962.018; Fri, 13 Sep 2024
+ 07:41:38 +0000
+Date: Fri, 13 Sep 2024 08:41:34 +0100
+From: Lorenzo Stoakes <lorenzo.stoakes@oracle.com>
+To: Charlie Jenkins <charlie@rivosinc.com>
+Cc: Catalin Marinas <catalin.marinas@arm.com>,
+        "Liam R. Howlett" <Liam.Howlett@oracle.com>,
+        Arnd Bergmann <arnd@arndb.de>, guoren <guoren@kernel.org>,
+        Richard Henderson <richard.henderson@linaro.org>,
+        Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+        Matt Turner <mattst88@gmail.com>, Vineet Gupta <vgupta@kernel.org>,
+        Russell King <linux@armlinux.org.uk>,
+        Huacai Chen <chenhuacai@kernel.org>, WANG Xuerui <kernel@xen0n.name>,
+        Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+        "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
+        Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>,
+        Nicholas Piggin <npiggin@gmail.com>,
+        Christophe Leroy <christophe.leroy@csgroup.eu>,
+        Naveen N Rao <naveen@kernel.org>,
+        Alexander Gordeev <agordeev@linux.ibm.com>,
+        Gerald Schaefer <gerald.schaefer@linux.ibm.com>,
+        Heiko Carstens <hca@linux.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>,
+        Christian Borntraeger <borntraeger@linux.ibm.com>,
+        Sven Schnelle <svens@linux.ibm.com>,
+        Yoshinori Sato <ysato@users.sourceforge.jp>,
+        Rich Felker <dalias@libc.org>,
+        John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+        "David S . Miller" <davem@davemloft.net>,
+        Andreas Larsson <andreas@gaisler.com>,
+        Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>,
+        Borislav Petkov <bp@alien8.de>,
+        Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+        "H. Peter Anvin" <hpa@zytor.com>, Andy Lutomirski <luto@kernel.org>,
+        Peter Zijlstra <peterz@infradead.org>,
+        Muchun Song <muchun.song@linux.dev>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Vlastimil Babka <vbabka@suse.cz>, shuah <shuah@kernel.org>,
+        Christoph Hellwig <hch@infradead.org>, Michal Hocko <mhocko@suse.com>,
+        "Kirill A. Shutemov" <kirill@shutemov.name>,
+        Chris Torek <chris.torek@gmail.com>,
+        Linux-Arch <linux-arch@vger.kernel.org>, linux-kernel@vger.kernel.org,
+        linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+        linux-arm-kernel@lists.infradead.org,
+        "linux-csky@vger.kernel.org" <linux-csky@vger.kernel.org>,
+        loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
+        linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+        linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+        sparclinux@vger.kernel.org, linux-mm@kvack.org,
+        linux-kselftest@vger.kernel.org, linux-abi-devel@lists.sourceforge.net
+Subject: Re: [PATCH RFC v3 1/2] mm: Add personality flag to limit address to
+ 47 bits
+Message-ID: <d873a994-4efa-4d3a-bdae-5d9a3eff29f2@lucifer.local>
+References: <20240905-patches-below_hint_mmap-v3-0-3cd5564efbbb@rivosinc.com>
+ <20240905-patches-below_hint_mmap-v3-1-3cd5564efbbb@rivosinc.com>
+ <9fc4746b-8e9d-4a75-b966-e0906187e6b7@app.fastmail.com>
+ <CAJF2gTTVX9CFM3oRZZP3hGExwVwA_=n1Lrq_0DQKWA+-ZbOekg@mail.gmail.com>
+ <f23b18c6-1856-4b59-9ba3-59809b425c81@app.fastmail.com>
+ <Ztrq8PBLJ3QuFJz7@arm.com>
+ <oshwto46wbbgneiayj63umllyozm3c4267rvpszqzaopwnt2l7@6mxl5vydtons>
+ <ZuDoExckq21fePoe@ghost>
+ <ZuHfp0_tAQhaymdy@arm.com>
+ <ZuKHpFB+uWuJe2xm@ghost>
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: 8bit
+In-Reply-To: <ZuKHpFB+uWuJe2xm@ghost>
+X-ClientProxiedBy: LO4P123CA0446.GBRP123.PROD.OUTLOOK.COM
+ (2603:10a6:600:1a9::19) To SJ0PR10MB5613.namprd10.prod.outlook.com
+ (2603:10b6:a03:3d0::5)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101
- Thunderbird/102.10.0
-Content-Language: en-US
-To: Linux-sh list <linux-sh@vger.kernel.org>
-From: Rob Landley <rob@landley.net>
-Subject: 6.11.0-rc7 sh4eb "irq 123 nobody cared" panic?
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SJ0PR10MB5613:EE_|PH0PR10MB4664:EE_
+X-MS-Office365-Filtering-Correlation-Id: 990babd1-23ab-4013-2fc9-08dcd3c77fd9
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam: BCL:0;ARA:13230040|7416014|376014|366016|1800799024;
+X-Microsoft-Antispam-Message-Info:
+	=?utf-8?B?bGV0b3h2MkZRRHFjR3F1SW93N2hhQVgwWFZrVS9JZU5MWW5yeEhCQU5uNU5P?=
+ =?utf-8?B?K3d1Vk9CWnc0aHB4d1RqbnZIZnMvWVFYdkZYVkxXZmRxa2UzemxRSlJyZkxl?=
+ =?utf-8?B?ejZGM09pditNamxnUUs3eWcwQlVKZXdWMWNnY2sraUN0MWVMYnc3ZEJWTWlw?=
+ =?utf-8?B?SGtYVmMwN0VnZ3BBbHBMZVhDWjY1WkYyYXM0c2lNMDEwQXZvUGU4UzRWQzZP?=
+ =?utf-8?B?djZ0M0hPNFB6NXVUYkgxcjJhb3pFcDBLNyt5dE83eGs2QXNlTWV4UmRvMDZQ?=
+ =?utf-8?B?TDRjL2xVM2RqbWcyemxjd3ZtSGNPOVBnNUl1bk8rZEtneGlYR3Fhb3VRSHdz?=
+ =?utf-8?B?MFVsVjNMWFlXOTNERTB5YmM4Y05MMHF4M2RPUEk2SUx2Wkl6enpvQlhCSksy?=
+ =?utf-8?B?Z3l1a2h1Y0hqbkFwY3d3MkhpYTNrSklSRlRwcFEveEpzY2VPMmZ0K2tpZFp2?=
+ =?utf-8?B?RERaYTJqNzBodE5wcVp4SS91d2FvMUxXUElhOXZKWjNjU01kQjFjaHFDZ3Vx?=
+ =?utf-8?B?OW1ScGlDQjBpN1hvcnZPVUFrdW1Ja3RLUnIybjZ4dXZ2enUyTVdScnJSQzk4?=
+ =?utf-8?B?bTZmejRObUZlN2xpMnYySmVQWXI2V2FzeGI2MjJjcnhtSnQzMHF0RGxRenlr?=
+ =?utf-8?B?elNGRFBoTWNnNk5rUjFvUHZDZ0lzT0U5d1E0Z2JvMHdOVUdlQlFJNytqQlU1?=
+ =?utf-8?B?TkE3S0VDeEtjelJTc0VFd0taU2M1RUoza0JaWlMyejJvREc4VGVCdWxaUnpk?=
+ =?utf-8?B?SGMrM0xlVXVjZXZ2SXlWSjN4elRTL2hjU2xXOEtwTXBqOUhOeU5TVTZBUjBO?=
+ =?utf-8?B?SVpUemhXc0E0V0hva1FGK01jcHlJc1Bmbkt1K2ptdTNlZVJBUURNdGx2UEoz?=
+ =?utf-8?B?MlpPbWFQU292TVpXaE00SzJObDJPNjZydkFUMTJTdDFlSWNVQjJwa1RRSHJl?=
+ =?utf-8?B?RUVSVkNJcFhQYlJVZms2Vkp0bi9tVkhwQ1djUjJaaTdsV0xhVTlEY09pSks1?=
+ =?utf-8?B?Wjh1Qm9MdDdKMnNYbDhlZlNGbTVrRGpHSER0YTdjUnJUUzZ2eUNUV0Y3cDFP?=
+ =?utf-8?B?ZU12d09MdUo2ajJ3NE5Va2krWmhzRUxoRjhFb3gvek43R2JORVJWZzZpV3VC?=
+ =?utf-8?B?TnpqY2V2SWNoTVR6QkFKdVloMXIvcHg3cktSdnNFWCtJdUpyUmgxOHhLbU5r?=
+ =?utf-8?B?cy9zUzJRN1lCZHpnVmVFL3B6ZjlTa0F0ampFelVjMHQ2eGRxcG9RRHBVNzNp?=
+ =?utf-8?B?Vm9xSFF5YkVNc0M5Zi9wZ2VaM2ZLWHA5ekNYVU1ldnhnU1BleWNrOGZzYWNh?=
+ =?utf-8?B?VE8xTlhKMUFpM3hLM2cwb292SGduY1U1VGZjWlZIUTQveWYzMjFoSHMxbzR0?=
+ =?utf-8?B?S3ZlT0JJNHRkZVpWcHM0bndQWW9QWXBDREhBTVRpMWZqWS9kWUJtMmNEVVVN?=
+ =?utf-8?B?aWs1MkQ1dnFLbi9ZdmxCTDdpUytpTlZuQnJrVVFVQkRIUlVyWUlmd2lxNVJ5?=
+ =?utf-8?B?bHZpWmx4RzBKMmR2UE5tdWhLNVZWSkE3OVBYeWJEc094WDI0eUxZc2Fadk1s?=
+ =?utf-8?B?MTU2TldNZkZxMGVHNENJcWlhVHIwdjdWOWIyZjh4T2c5Z1J3QW9tRFlmay84?=
+ =?utf-8?B?ZXc4YUZ0NzJYQVNYNlJyUkdBTURod1hsenNRaUk4MUxGU25iaEphUFIvTlV1?=
+ =?utf-8?B?T0g0cmZnendMYUhEc1ZkaG5ESTVZakphUmZtWU1XajlwMGpabjFkM2ZiWEx3?=
+ =?utf-8?B?bG9yS0NVOW5hdEpqWHM3TjJZZmJBYjlzWmlHNjBZM2FvS2E5OGNUc3JoMlh4?=
+ =?utf-8?B?Nk51VmF6U2dFaXdZbVNWZz09?=
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SJ0PR10MB5613.namprd10.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(7416014)(376014)(366016)(1800799024);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?utf-8?B?NmZ1WlVSTUUyY3hvcFgwelVRV0RVWUIyQmNja3lTeThNZ0syODhsdkFjUG5x?=
+ =?utf-8?B?elVrODJBMStteVFmTnVTOC9PYjh2WTUwbE8wVmFxWmdoZXJVRjNFcURDckta?=
+ =?utf-8?B?Z2lnNlFITmZqYXU3R0hDM1dpL1UzeG8wSUdWSXAzYUFKaGgwRmVid1lXY1cw?=
+ =?utf-8?B?aWhUVkVmMm9lN1Q3NSt3KzlQN3BKMnU4UjRzWWtQZk52N3dJcnFDWW14ZHNt?=
+ =?utf-8?B?ZjhreDJjK0dOMmliV21abUFCLzVEZEFQcW9YVzNQNXpXOWRaczBkcTBmdEFl?=
+ =?utf-8?B?cThtWkVISi9OVGJnVUNwOFFac0d3NzZtb09JSG9iU092bnp4a3pqRjJoQVJk?=
+ =?utf-8?B?b2dES0lMeUkzS1M1R3pWam1zSC9DN2NRcnZSK1psTHlaZ1ZYaE9SWWZuUUFS?=
+ =?utf-8?B?Q0FsZ2FpK1dDS0JMbVFwNzR4QkZ2NnUwd0tPNGsybDBOZloxRjhNUWtRenZL?=
+ =?utf-8?B?amJDT3FOUWZ4VlZJaXVweU5kenVqbnNlSXRseFJYbWRDdDkrcTV6SDBxQmRu?=
+ =?utf-8?B?cVFITXJZR0tXWEJUV0tEck9XcjFxVTdaMnI1cjlpNnl1dEtRQlUyVDBTT2hX?=
+ =?utf-8?B?WUY3eDQ1YTdORGRlWmxDSGlnQnNBUkkwdTdPak1RMzlPMmZHeHdKMkIxYWFQ?=
+ =?utf-8?B?b05leTJqYmlZd2MrZFJ6d1FIRzFTZFZRQnZnV0RJM0hSQjdnSTRHWE54SUZo?=
+ =?utf-8?B?Ykw5T0NDY2twaTU4RnZ2a3pQMUxmMDVvSXFjcGY4clBTVlI1TjMzaVRreFBX?=
+ =?utf-8?B?UTZ6MTYyNnJObi9pMjltd2p1UXZKYlZ0OFdQNE9wK1ZrK3paTXRaK041KzdI?=
+ =?utf-8?B?dlFjQStoak1qZXU2WFc2QWR6QVh1TWN5bW1VOXMvd0hKZGVTaHJqNGF0TTRl?=
+ =?utf-8?B?Q3RWcXYvM28xZXE5V1RPWXVDRmdUekovdjIyZmxQc1VpVGFvRFVMRExhZmYx?=
+ =?utf-8?B?VWJiUDV5Y210V0dIck9nV1BRQU1pL1NVTm9kbVRXSG1oWFovM0s4K3BIUXc0?=
+ =?utf-8?B?K0lTcWxuVVc5cWJDR2tGK3ZaM3ErWFRpSjNxUlVRMmJFRCtCWlQyWDNPdG1N?=
+ =?utf-8?B?MDViYzhraGk2UzVkbkE1NWRiWGNEbTBMY3FIS0ZZUjFQaTV2TFZGWUtmTXlT?=
+ =?utf-8?B?TnBZQ1hWaDNoSjZ6UCtpWXBIZVBoYTZOSkJZWWVJOEhOWnJWYmNTLzNoVTRC?=
+ =?utf-8?B?L0ZJYmE0MTc1NVE3aUMzMlM4TFlobnI3NDBZeWo4cUlkdkFDcFRTMGk0cUV6?=
+ =?utf-8?B?Tzl1enZEU2VZM2xuakptMDdudytxVSt5RmxTeVRuaXk5OFVCSUs4MHJXN0ho?=
+ =?utf-8?B?VTlWcEJvc1dGRzJ0NXVkaWV3R09ydTM2R2VOZENyaWpRSlZoR1FvSGxEUndV?=
+ =?utf-8?B?UFo1Z1NzVDZERkhKSWNmYVZwaXhidGFHQVlwdFNKYTJ4Y2NUV2hsVlJGZDcw?=
+ =?utf-8?B?OGNZRmRWL0E4cE9CVUZDbTVaaFcya3prZGExTXFiZTd3SHl2LzJ2bGlWdlpo?=
+ =?utf-8?B?UW93VmEweWlWM216ME0yZ0pmZEpsMk5ONDhtSGtWbGNkaFN1aFZ4SlU2aTVK?=
+ =?utf-8?B?TDlvOHd5bzFDS0YvL3I4aFlHUmZnN3BrVXBwb2o1K0pEMHJqS3l6MWhaT3ov?=
+ =?utf-8?B?bDJ6b1JOdlhGelBVOU5TT21OYkpJWXU1RGxSb0tPSnp2Ny81d2RvSjArelgv?=
+ =?utf-8?B?andXY1FKMExzOHVBTFQ4V1NBZ0UybVVWWHNWU0FMM09wZmZJN1Q1dUpzR05w?=
+ =?utf-8?B?UmtWN0lkaFBpQVpWdjNYVXB3VGpCM1JSZ0laWVlZR3lXdjhQRWtObTIvaWtG?=
+ =?utf-8?B?WjBnazk0UGxzakxVYklKN2hla1dMQXRQMkhMS0tKb1hGdzlhMGVFVFRvUm1V?=
+ =?utf-8?B?Z1ZBUmMvRnJoL01FU3VxcDg2b1V1ZWRWeFpYMkhLdE1MU01nbm1XaWVZbzdm?=
+ =?utf-8?B?WXpuSjN0SkM0eHlLYVh3K291UmhiakZFbmdHRG1oMFRldnRyMHN3RzU5dFVk?=
+ =?utf-8?B?SVBFRTg3aHlNOFA0cFBvcHNFRU5ubU1vYWlSUzdRNzJPdFJvaW9sekhLcGx0?=
+ =?utf-8?B?VDdnZVZsejVyTDFKVTcwTWJNUGNDVWVkQTlVbTJpYWV4RGhEQiszTXZEVkJS?=
+ =?utf-8?B?OXp3R0hOdkxDeFl5bU5BbnNzcHBCQVhTMUZ4bVMyUm84WnZianhkVXpXQVFJ?=
+ =?utf-8?B?M0l3OUxKZUdWWWc3WUZMVXR3SGtweU0zSld3U2JzK1BhMkptb1U2QklJa0kw?=
+ =?utf-8?B?SERxQ0hZYkdpWVh2Ny90VEYvVTRBPT0=?=
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	Qa0fWl7zk7gHEBDs/9OGNnrF/w7hH2W5IU7QlUAYbRF0HIG9jvoGs4TKD9EmEJGhyTIqbmg9G+icBLmro35ixXBuzrrnzv3IKNu7Ko/iliDN40JqSqerTeG/hh3crm+hFpxvuZDluNfPUDNtq4uhxZVIZE+B6jjUmYZiizSk0mmG6kJf0QhycoRAZukLNrh53Ndpp1mgqPwtQXr3kkBBj2OSIkma+7kDU5o/q+8nyZI/iyU0KSDpLCOlOy0D4y8N0aCLYfGAfSsy8ayStw1E++uvxIghUln4gPxL4eKQviY0H5fyJ93uP77YuckD6wnT022FrHvlAvIqNMs/qWVdKxFUhEIR6pEd7b5tKe108ZtN2X+q8t/ZSt+YWYA9yYuAaXM9GUVyr7RmPzU/qI2knTAukFTh+0BqHwUUtVhXfhRSGAzvwpJAXPxN5P4L297rLtLh7KxV+m5+NAPi138HIi4r4u7F7k10Pd2oCEyye9c92lm4/vNwOrdKg/GWIb3iIqeue3GzDYcQYcq/Eckp4TKugZQE1qiBxjMzfIwUL7e0oSQpcDxjlRkh5edv74BzkWkXyYHL8bgVCz1ih6WP7Btd+wb9BrbL+JZ2QAFBesI=
+X-OriginatorOrg: oracle.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 990babd1-23ab-4013-2fc9-08dcd3c77fd9
+X-MS-Exchange-CrossTenant-AuthSource: SJ0PR10MB5613.namprd10.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 13 Sep 2024 07:41:38.0352
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: 4e2c6054-71cb-48f1-bd6c-3a9705aca71b
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: WSM31kaqwQTvTR9Q2/R/XE/o7zSbViY03Ft7YTMXSqmjOH+6q+OVStQ5koJz09O4cMOKfYDZAMml7IlUI2yqsfXHe4OOjpJX2tnUTiGakH0=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: PH0PR10MB4664
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1039,Hydra:6.0.680,FMLib:17.12.60.29
+ definitions=2024-09-13_04,2024-09-12_01,2024-09-02_01
+X-Proofpoint-Spam-Details: rule=notspam policy=default score=0 spamscore=0 suspectscore=0
+ mlxlogscore=999 mlxscore=0 malwarescore=0 phishscore=0 adultscore=0
+ bulkscore=0 classifier=spam adjust=0 reason=mlx scancount=1
+ engine=8.12.0-2408220000 definitions=main-2409130052
+X-Proofpoint-GUID: BKO-C6EVIEUXnKZ6RDOnEyJcDe-QaW6n
+X-Proofpoint-ORIG-GUID: BKO-C6EVIEUXnKZ6RDOnEyJcDe-QaW6n
 
-This is a multi-part message in MIME format.
---------------9XcUTwgllYyIEUT0TdW1gO0I
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+On Wed, Sep 11, 2024 at 11:18:12PM GMT, Charlie Jenkins wrote:
+> On Wed, Sep 11, 2024 at 07:21:27PM +0100, Catalin Marinas wrote:
+> > On Tue, Sep 10, 2024 at 05:45:07PM -0700, Charlie Jenkins wrote:
+> > > On Tue, Sep 10, 2024 at 03:08:14PM -0400, Liam R. Howlett wrote:
+> > > > * Catalin Marinas <catalin.marinas@arm.com> [240906 07:44]:
+> > > > > On Fri, Sep 06, 2024 at 09:55:42AM +0000, Arnd Bergmann wrote:
+> > > > > > On Fri, Sep 6, 2024, at 09:14, Guo Ren wrote:
+> > > > > > > On Fri, Sep 6, 2024 at 3:18 PM Arnd Bergmann <arnd@arndb.de> wrote:
+> > > > > > >> It's also unclear to me how we want this flag to interact with
+> > > > > > >> the existing logic in arch_get_mmap_end(), which attempts to
+> > > > > > >> limit the default mapping to a 47-bit address space already.
+> > > > > > >
+> > > > > > > To optimize RISC-V progress, I recommend:
+> > > > > > >
+> > > > > > > Step 1: Approve the patch.
+> > > > > > > Step 2: Update Go and OpenJDK's RISC-V backend to utilize it.
+> > > > > > > Step 3: Wait approximately several iterations for Go & OpenJDK
+> > > > > > > Step 4: Remove the 47-bit constraint in arch_get_mmap_end()
+> >
+> > Point 4 is an ABI change. What guarantees that there isn't still
+> > software out there that relies on the old behaviour?
+>
+> Yeah I don't think it would be desirable to remove the 47 bit
+> constraint in architectures that already have it.
+>
+> >
+> > > > > > I really want to first see a plausible explanation about why
+> > > > > > RISC-V can't just implement this using a 47-bit DEFAULT_MAP_WINDOW
+> > > > > > like all the other major architectures (x86, arm64, powerpc64),
+> > > > >
+> > > > > FWIW arm64 actually limits DEFAULT_MAP_WINDOW to 48-bit in the default
+> > > > > configuration. We end up with a 47-bit with 16K pages but for a
+> > > > > different reason that has to do with LPA2 support (I doubt we need this
+> > > > > for the user mapping but we need to untangle some of the macros there;
+> > > > > that's for a separate discussion).
+> > > > >
+> > > > > That said, we haven't encountered any user space problems with a 48-bit
+> > > > > DEFAULT_MAP_WINDOW. So I also think RISC-V should follow a similar
+> > > > > approach (47 or 48 bit default limit). Better to have some ABI
+> > > > > consistency between architectures. One can still ask for addresses above
+> > > > > this default limit via mmap().
+> > > >
+> > > > I think that is best as well.
+> > > >
+> > > > Can we please just do what x86 and arm64 does?
+> > >
+> > > I responded to Arnd in the other thread, but I am still not convinced
+> > > that the solution that x86 and arm64 have selected is the best solution.
+> > > The solution of defaulting to 47 bits does allow applications the
+> > > ability to get addresses that are below 47 bits. However, due to
+> > > differences across architectures it doesn't seem possible to have all
+> > > architectures default to the same value. Additionally, this flag will be
+> > > able to help users avoid potential bugs where a hint address is passed
+> > > that causes upper bits of a VA to be used.
+> >
+> > The reason we added this limit on arm64 is that we noticed programs
+> > using the top 8 bits of a 64-bit pointer for additional information.
+> > IIRC, it wasn't even openJDK but some JavaScript JIT. We could have
+> > taught those programs of a new flag but since we couldn't tell how many
+> > are out there, it was the safest to default to a smaller limit and opt
+> > in to the higher one. Such opt-in is via mmap() but if you prefer a
+> > prctl() flag, that's fine by me as well (though I think this should be
+> > opt-in to higher addresses rather than opt-out of the higher addresses).
+>
+> The mmap() flag was used in previous versions but was decided against
+> because this feature is more useful if it is process-wide. A
+> personality() flag was chosen instead of a prctl() flag because there
+> existed other flags in personality() that were similar. I am tempted to
+> use prctl() however because then we could have an additional arg to
+> select the exact number of bits that should be reserved (rather than
+> being fixed at 47 bits).
 
-Anybody else see this? I have it in the boot log of a test system from monday,
-just got around to looking closer and the boot failed with...
+I am very much not in favour of a prctl(), it would require us to add state
+limiting the address space and the timing of it becomes critical. Then we
+have the same issue we do with the other proposals as to - what happens if
+this is too low?
 
-printk: legacy console [netcon0] enabled
-netconsole: network logging started
-Freeing initrd memory: 560K
-irq 123: nobody cared (try booting with the "irqpoll" option)
-CPU: 0 UID: 0 PID: 19 Comm: scsi_eh_0 Not tainted 6.11.0-rc7 #1
-Stack: (0x8ca2dc3c to 0x8ca2e000)
-dc20:                                                                8c3a09b2
-dc40: 000000f0 8c431048 00000000 8c39b81c 8c01142c 8c80f900 8c39b674 8c04fb0c
-dc60: 0000007b 00000000 00010000 8c80f90c 8c80f900 8c80f900 8c80f900 00000000
-dc80: 8c04d5a0 8c9c571c 8c9c60a0 8c9c55a4 00010000 8c80f90c 00000000 8c80f900
-dca0: 8c050140 8c80f940 8c80f90c 8c80f900 8c04c8d0 8ca2dd6c 00000000 00000011
-dcc0: 8c4df9a0 8c3a7000 8c0150ec 00000000 8c3a6fd8 400080f1 8c01142c 00000000
-dce0: 40008000 69ae3000 00000000 fffff800 ffed35c6 00000800 8c9c4000 8ca2ddd8
-dd00: 00000000 8ca2dd6c 8c9c55a4 8c9c60a0 8c9c571c 8ca2dd34 8c255e06 8c255e06
-dd20: 40008000 00000000 000007ff 69ae3000 ffffffff 8c253d04 8c9c563c 00000000
-dd40: 8c9c5634 00000000 fafbfcfd 00000000 00000000 00000000 00000000 000000ec
-dd60: 00000000 8ca2dd64 8ca2dd64 8ff138c2 00000200 00000200 00000000 00000000
-dd80: 8c2567fc 8c9c60a0 8c9c4000 00000001 8ca2ddd8 00000001 8c9c6200 00000000
-dda0: 8c9c6200 00000200 00000000 00000001 00000000 00000000 8ca2dde8 00000001
-ddc0: 00000000 00000001 8c9c629e 8c9c6400 8c9c68bc 8c9c61b4 00000046 01080000
-dde0: 00000000 00000000 b0ec0000 00000000 8c9c58a4 00000004 00000000 00000002
-de00: 000000fc 8c9c68bc 8c261ab2 8c9c5660 00000001 8c253d04 8c9c619c 8c9c60a0
-de20: 00000000 8c9c57e8 00000000 8c264784 8c9c5660 00000000 00000000 00000000
-de40: 8c9c69e8 8c9c4000 8c9c4000 8c01142c 8c9c68bc 8c011424 00000000 00000000
-de60: 8c9c6a2c 00000000 8c264514 8c264124 00000000 00000000 8c260740 8c9c4000
-de80: 00000000 8c264124 8c25febc 8c2627ce 00000000 00000000 8c264124 8c264514
-dea0: 8c25e9b4 8c253cac 8c9c4000 8c264784 00000000 8c9c2040 8c264784 8c264310
-dec0: 8c9c4000 8c01142c 00000000 8c264124 00000000 00000000 8c9c4000 8c264784
-dee0: 8c2623a8 8c9c687c 8c37d2b4 00010000 8c253d04 8c9c57e8 00000000 00000000
-df00: 8c9c6a40 8c9c687c 8c9c68bc 8c262742 00804000 8c9c2040 8c01142c 8c9c4000
-df20: 00000000 8ca2df2c 8c9c2000 8ca2df2c 8ca2df2c 8c243894 8c243828 8c9c20bc
-df40: 00000000 8c01142c 8c9c2000 8c3a2a8e 8ca2df6c 8c9c2000 8c243828 8c01142c
-df60: 00000000 8c037772 8c827d54 8c9c2000 8c243828 8c01142c 00000000 8c92b800
-df80: 8c93c3a0 8c0151c4 8c84bf38 8c8285dc 8c011424 00000000 8c01142c 8c46b41c
-dfa0: 8c03e4d8 00000000 00000000 00000000 00000000 8c93c3a0 8c0376dc 00000000
-dfc0: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-dfe0: 00000000 00000000 00000000 40008000 00000000 00000000 00000000 00000000
+What is 'too low' varies by architecture, and for 32-bit architectures
+could get quite... problematic.
 
-Call trace:
- [<8c39b81c>] __report_bad_irq+0x34/0xac
- [<8c01142c>] arch_local_irq_restore+0x0/0x24
- [<8c39b674>] _printk+0x0/0x24
- [<8c04fb0c>] note_interrupt+0x24c/0x29c
- [<8c04d5a0>] handle_irq_event+0x54/0x84
- [<8c050140>] handle_level_irq+0x68/0x110
- [<8c04c8d0>] generic_handle_irq+0x1c/0x30
- [<8c3a7000>] do_IRQ+0x28/0x50
- [<8c0150ec>] ret_from_exception+0x0/0xc
- [<8c3a6fd8>] do_IRQ+0x0/0x50
- [<8c01142c>] arch_local_irq_restore+0x0/0x24
- [<8c255e06>] ata_exec_internal+0x176/0x428
- [<8c255e06>] ata_exec_internal+0x176/0x428
- [<8c253d04>] ata_dev_next+0x0/0x94
- [<8c2567fc>] ata_dev_read_id+0x164/0x454
- [<8c261ab2>] ata_eh_recover+0x6f6/0xe18
- [<8c253d04>] ata_dev_next+0x0/0x94
- [<8c264784>] ata_sff_postreset+0x0/0xb4
- [<8c01142c>] arch_local_irq_restore+0x0/0x24
- [<8c011424>] arch_local_save_flags+0x0/0x8
- [<8c264514>] ata_sff_prereset+0x0/0x94
- [<8c264124>] ata_sff_softreset+0x0/0x15c
- [<8c260740>] ata_eh_autopsy+0x24/0xd8
- [<8c264124>] ata_sff_softreset+0x0/0x15c
- [<8c25febc>] ata_eh_link_autopsy+0x0/0x860
- [<8c2627ce>] ata_do_eh+0x5a/0xfc
- [<8c264124>] ata_sff_softreset+0x0/0x15c
- [<8c264514>] ata_sff_prereset+0x0/0x94
- [<8c25e9b4>] ata_eh_link_report+0x0/0x5f8
- [<8c253cac>] ata_link_next+0x0/0x58
- [<8c264784>] ata_sff_postreset+0x0/0xb4
- [<8c264784>] ata_sff_postreset+0x0/0xb4
- [<8c264310>] ata_sff_error_handler+0x90/0xcc
- [<8c01142c>] arch_local_irq_restore+0x0/0x24
- [<8c264124>] ata_sff_softreset+0x0/0x15c
- [<8c264784>] ata_sff_postreset+0x0/0xb4
- [<8c2623a8>] ata_scsi_port_error_handler+0x110/0x450
- [<8c37d2b4>] memset+0x0/0x8c
- [<8c253d04>] ata_dev_next+0x0/0x94
- [<8c262742>] ata_scsi_error+0x5a/0x8c
- [<8c01142c>] arch_local_irq_restore+0x0/0x24
- [<8c243894>] scsi_error_handler+0x6c/0x2c4
- [<8c243828>] scsi_error_handler+0x0/0x2c4
- [<8c01142c>] arch_local_irq_restore+0x0/0x24
- [<8c3a2a8e>] schedule+0x1a/0xf0
- [<8c243828>] scsi_error_handler+0x0/0x2c4
- [<8c01142c>] arch_local_irq_restore+0x0/0x24
- [<8c037772>] kthread+0x96/0xc4
- [<8c243828>] scsi_error_handler+0x0/0x2c4
- [<8c01142c>] arch_local_irq_restore+0x0/0x24
- [<8c0151c4>] ret_from_kernel_thread+0xc/0x14
- [<8c011424>] arch_local_save_flags+0x0/0x8
- [<8c01142c>] arch_local_irq_restore+0x0/0x24
- [<8c03e4d8>] schedule_tail+0x0/0x58
- [<8c0376dc>] kthread+0x0/0xc4
+And again, wha is the RoI here - we introducing maintenance burden and edge
+cases vs. the x86 solution in order to... accommodate things that need more
+than 128 TiB of address space? A problem that does not appear to exist in
+reality?
 
-handlers:
-[<(ptrval)>] ata_sff_interrupt
-Disabling IRQ #123
-ata1.01: qc timeout after 5000 msecs (cmd 0xec)
-ata1.01: failed to IDENTIFY (I/O error, err_mask=0x4)
---------------9XcUTwgllYyIEUT0TdW1gO0I
-Content-Type: text/plain; charset=UTF-8; name="linux-miniconfig"
-Content-Disposition: attachment; filename="linux-miniconfig"
-Content-Transfer-Encoding: base64
+I suggested the personality approach as the least impactful compromise way
+of this series working, but I think after what Arnd has said (and please
+forgive me if I've missed further discussion have been dipping in and out
+of this!) - adapting risc v to the approach we take elsewhere seems the
+most sensible solution to me.
 
-IyBtYWtlIEFSQ0g9c2ggYWxsbm9jb25maWcgS0NPTkZJR19BTExDT05GSUc9bGludXgtbWlu
-aWNvbmZpZwojIG1ha2UgQVJDSD1zaCAtaiAkKG5wcm9jKQojIGJvb3Qgdm1saW51eCBjb25z
-b2xlPXR0eVMwCgojIGFyY2hpdGVjdHVyZSBpbmRlcGVuZGVudApDT05GSUdfUEFOSUNfVElN
-RU9VVD0xCkNPTkZJR19OT19IWj15CkNPTkZJR19ISUdIX1JFU19USU1FUlM9eQpDT05GSUdf
-UkRfR1pJUD15CkNPTkZJR19CSU5GTVRfRUxGPXkKQ09ORklHX0JJTkZNVF9TQ1JJUFQ9eQpD
-T05GSUdfQkxLX0RFVj15CkNPTkZJR19CTEtfREVWX0lOSVRSRD15CkNPTkZJR19CTEtfREVW
-X0xPT1A9eQpDT05GSUdfRVhUNF9GUz15CkNPTkZJR19FWFQ0X1VTRV9GT1JfRVhUMj15CkNP
-TkZJR19WRkFUX0ZTPXkKQ09ORklHX0ZBVF9ERUZBVUxUX1VURjg9eQpDT05GSUdfTUlTQ19G
-SUxFU1lTVEVNUz15CkNPTkZJR19OTFNfQ09ERVBBR0VfNDM3PXkKQ09ORklHX05MU19JU084
-ODU5XzE9eQpDT05GSUdfU1FVQVNIRlM9eQpDT05GSUdfU1FVQVNIRlNfWEFUVFI9eQpDT05G
-SUdfU1FVQVNIRlNfWkxJQj15CkNPTkZJR19UTVBGUz15CkNPTkZJR19UTVBGU19QT1NJWF9B
-Q0w9eQpDT05GSUdfREVWVE1QRlM9eQpDT05GSUdfREVWVE1QRlNfTU9VTlQ9eQpDT05GSUdf
-TkVUPXkKQ09ORklHX05FVERFVklDRVM9eQpDT05GSUdfTkVUX0NPUkU9eQpDT05GSUdfTkVU
-Q09OU09MRT15CkNPTkZJR19QQUNLRVQ9eQpDT05GSUdfVU5JWD15CkNPTkZJR19JTkVUPXkK
-Q09ORklHX0lQVjY9eQpDT05GSUdfRVRIRVJORVQ9eQpDT05GSUdfQ09NUEFUXzMyQklUX1RJ
-TUU9eQpDT05GSUdfRUFSTFlfUFJJTlRLPXkKQ09ORklHX0lLQ09ORklHPXkKQ09ORklHX0lL
-Q09ORklHX1BST0M9eQoKIyBhcmNoaXRlY3R1cmUgc3BlY2lmaWMKQ09ORklHX0NQVV9TVUJU
-WVBFX0oyPXkKQ09ORklHX0NQVV9CSUdfRU5ESUFOPXkKQ09ORklHX1NIX0pDT1JFX1NPQz15
-CkNPTkZJR19TTVA9eQpDT05GSUdfSkNPUkVfRU1BQz15CkNPTkZJR19GTEFUTUVNX01BTlVB
-TD15CkNPTkZJR19NRU1PUllfU1RBUlQ9MHgxMDAwMDAwMApDT05GSUdfQ01ETElORV9PVkVS
-V1JJVEU9eQpDT05GSUdfRE5PVElGWT15CkNPTkZJR19GVVNFX0ZTPXkKQ09ORklHX0lOT1RJ
-RllfVVNFUj15CkNPTkZJR19TUEk9eQpDT05GSUdfU1BJX0pDT1JFPXkKQ09ORklHX1NFUklB
-TF9VQVJUTElURT15CkNPTkZJR19TRVJJQUxfVUFSVExJVEVfQ09OU09MRT15CkNPTkZJR19Q
-V1JTRVFfU0lNUExFPXkKQ09ORklHX01NQz15CkNPTkZJR19NTUNfQkxPQ0s9eQpDT05GSUdf
-TU1DX1NQST15CkNPTkZJR19VSU89eQpDT05GSUdfVUlPX1BEUlZfR0VOSVJRPXkKQ09ORklH
-X01URD15CkNPTkZJR19NVERfU1BJX05PUj15CkNPTkZJR19NVERfU1NUMjVMPXkKQ09ORklH
-X01URF9PRl9QQVJUUz15CkNPTkZJR19CSU5GTVRfRUxGX0ZEUElDPXkKQ09ORklHX0JJTkZN
-VF9NSVNDPXkKQ09ORklHX0kyQz15CkNPTkZJR19JMkNfSEVMUEVSX0FVVE89eQpDT05GSUdf
-Q01ETElORT0iY29uc29sZT10dHlVTDAgZWFybHljb24iCgojIGFyY2hpdGVjdHVyZSBleHRy
-YQpDT05GSUdfSU5JVFJBTUZTX1NPVVJDRT0iL2hvbWUvbGFuZGxleS9qdW5rL3RveWJveC9y
-b290L3NoMmViL2ZzIgo=
+This remains something we can revisit in future if this turns out to be
+egregious.
 
---------------9XcUTwgllYyIEUT0TdW1gO0I--
+>
+> Opting-in to the higher address space is reasonable. However, it is not
+> my preference, because the purpose of this flag is to ensure that
+> allocations do not exceed 47-bits, so it is a clearer ABI to have the
+> applications that want this guarantee to be the ones setting the flag,
+> rather than the applications that want the higher bits setting the flag.
+
+Perfect is the enemy of the good :) and an idealised solution may not end
+up being something everybody can agree on.
+
+>
+> - Charlie
+>
+> >
+> > --
+> > Catalin
+>
+>
+>
