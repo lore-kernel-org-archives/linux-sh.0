@@ -1,121 +1,211 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from relay1.mymailcheap.com (relay1.mymailcheap.com [144.217.248.100])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5B3A6A2D
-	for <linux-sh@vger.kernel.org>; Fri, 27 Sep 2024 13:17:59 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9F9F0170854;
+	Fri, 27 Sep 2024 16:21:43 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=144.217.248.100
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1727443082; cv=none; b=o0+q3Xe1HR2grpeQp9xNMa59B/AbM41asXFsRF7Kl6/DLIvrCf+U7NuegP7Et9Lhn9SxCqBWns3zdNCMdgyTYAIT5im3f5h5CuKGEeMpuLjUh2HjOt6qD+96l0dLsYlybMX63xJ2nfGaFi2lHSYdPr6psJPgmT4TrdTV4cjBDc8=
+	t=1727454105; cv=none; b=GF/1ZeI0rnH/chSSoSuTlccm0Q7nYsLl0SajgsbviugsPDtTWAPXhkA4fPGNesF1ka0vg3k12YUjJRKoAMKSlVX2WyurKBX/PMmYIAR/c1IhH8MZTM/8EO69L9c7F5pWhruUg1egY8nMKXHN8LBdHk60ZkPa4difHKF479Wd4s8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1727443082; c=relaxed/simple;
-	bh=/YSFxjai4ZWykabA5Q8op2feBg0szzJ3f3+oTSV4RhI=;
-	h=Message-ID:Subject:From:To:Cc:Date:Content-Type:MIME-Version; b=jP9jdPDhJ/UMnm8iBC+CfYESapHeYiBtSNWo1ekntNXpbBdrTB/oyFMN7J9BwJvSB//EJBxXTDVZYzHWeZUk42m/bMSQr9T7gREGmDMKRBbCxOR+/rBAXhYxftRhXa+P2tEp6HC6NdHrQJqW6rhtMAMAiCLoktnfG7XmMmHTnAE=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=NgyDZCfU; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1727454105; c=relaxed/simple;
+	bh=AxPMeG2FdOLZJZ+q46E4+IvQWObSATSIrFU0BmjPRSk=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=tu0PgHSH76SOBOPEMRK4GQcxvCTcJMjCTZRdN69jyND7Jiulp5cys6HSZPgskkmR1YeA2JSPXaLboC/GC2DJKqKhS8dBSuioVGvVd7vnRq3L/hjutZ2T4PNxe5kKfO98lLguH5ohtOOzvGj/thFAsiRU+vLdFjCdkj8FgqGjFrU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=aosc.io; spf=pass smtp.mailfrom=aosc.io; dkim=pass (1024-bit key) header.d=aosc.io header.i=@aosc.io header.b=U8brWSp4; arc=none smtp.client-ip=144.217.248.100
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=aosc.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=aosc.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="NgyDZCfU"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:Date:Cc:To:From:Subject:Message-ID:Sender:Reply-To:Content-ID:
-	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
-	:Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
-	List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=kPwcekGPosHAYzTpH1uQ8JMMUTGDT6ty0IVAGLuQyfA=; t=1727443079; x=1728047879; 
-	b=NgyDZCfUbQi3bnZjK8C7XLe6RlYqgbqjVnczFphP+/5gI+KhMHzHu3EmK0Dlof3y5iN5qnucpv/
-	fB0TIhAAinUhPeH8U3U5/vSTbTkSl8wMeNc3+Ii+raZShdX/Hn5ORgwSOXSk86PWqg5xgAMk+Jimd
-	RoaPCXqvcuY7h/NNCVX74ZOxro9c6OwjP0gRWnW5lmFokAn5vLTUhKS5wa590HU3czv+HCOorI8AK
-	aB5k1a6JP0vkclH/xoYgIwCDPgPOjNVesnEM/r7BQ2Ra8Qy+BygMKvFNgIqcCcZ1RFIJpp5m7ip8f
-	KITczcjg1WWfyvJ1zPx8Y1rBYvKM1/O9R2EA==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.98)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1suAqy-00000000Qrv-3hed; Fri, 27 Sep 2024 15:17:48 +0200
-Received: from p57bd904e.dip0.t-ipconnect.de ([87.189.144.78] helo=[192.168.178.20])
-          by inpost2.zedat.fu-berlin.de (Exim 4.98)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1suAqy-000000022nM-32rx; Fri, 27 Sep 2024 15:17:48 +0200
-Message-ID: <37b245abd7eaee997eabaf74aeb02bd7d5f2e983.camel@physik.fu-berlin.de>
-Subject: [GIT PULL] sh updates for v6.12
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh <linux-sh@vger.kernel.org>, Yoshinori Sato
- <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh
- <linux-sh@vger.kernel.org>, Hongbo Li <lihongbo22@huawei.com>, Gaosheng Cui
- <cuigaosheng1@huawei.com>
-Date: Fri, 27 Sep 2024 15:17:48 +0200
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.52.4 
+	dkim=pass (1024-bit key) header.d=aosc.io header.i=@aosc.io header.b="U8brWSp4"
+Received: from nf1.mymailcheap.com (nf1.mymailcheap.com [51.75.14.91])
+	by relay1.mymailcheap.com (Postfix) with ESMTPS id 447CA3E9E8;
+	Fri, 27 Sep 2024 16:21:42 +0000 (UTC)
+Received: from mail20.mymailcheap.com (mail20.mymailcheap.com [51.83.111.147])
+	by nf1.mymailcheap.com (Postfix) with ESMTPSA id 299894075D;
+	Fri, 27 Sep 2024 16:21:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=aosc.io; s=default;
+	t=1727454100; bh=AxPMeG2FdOLZJZ+q46E4+IvQWObSATSIrFU0BmjPRSk=;
+	h=Date:Subject:To:Cc:References:From:In-Reply-To:From;
+	b=U8brWSp4oWZ3+9xwnIoBM/tYm1gyahmvgDH33kHnAc1BOEChhkO9YWsyr2KKiHZOH
+	 ZK35u2QHUlfymMT422oV/r4i4Ax9iW1xXsJMZJeCayacZI+A+ibgMwOhLYj5q3C2S5
+	 qqul+Zc5A/pZzQR3eCbRFEgQe/MOU4GHSHFks3O8=
+Received: from [198.18.0.1] (unknown [58.32.43.121])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
+	(No client certificate requested)
+	by mail20.mymailcheap.com (Postfix) with ESMTPSA id DCB0041431;
+	Fri, 27 Sep 2024 16:21:36 +0000 (UTC)
+Message-ID: <3ac98e7e-3524-45c4-90e3-ee730a5143ee@aosc.io>
+Date: Sat, 28 Sep 2024 00:21:32 +0800
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+User-Agent: Thunderbird Daily
+Subject: Re: [PATCH V2 3/3] SH: cpuinfo: Fix a warning for
+ CONFIG_CPUMASK_OFFSTACK
+To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ Huacai Chen <chenhuacai@gmail.com>
+Cc: Huacai Chen <chenhuacai@loongson.cn>, Arnd Bergmann <arnd@arndb.de>,
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
+ loongarch@lists.linux.dev, linux-arch@vger.kernel.org,
+ linux-kernel@vger.kernel.org, Guo Ren <guoren@kernel.org>,
+ Xuerui Wang <kernel@xen0n.name>, Jiaxun Yang <jiaxun.yang@flygoat.com>,
+ linux-mips@vger.kernel.org, linux-sh@vger.kernel.org, stable@vger.kernel.org
+References: <20220714084136.570176-1-chenhuacai@loongson.cn>
+ <20220714084136.570176-3-chenhuacai@loongson.cn>
+ <3a5a4bee5c0739a3b988a328376a6eed3c385fda.camel@physik.fu-berlin.de>
+ <CAAhV-H5bw3xcym2-GpyntQEad1h2eB8xDQGwVr_bRRKAOakzoQ@mail.gmail.com>
+ <8947f91ba1a10f98723a5982f0fc13ee589d3bf7.camel@physik.fu-berlin.de>
+ <a45f1209-ff29-4010-b035-921cb136d58d@aosc.io>
+ <fbc1dde6650a3e729fab57decbb5bf4ef14436ce.camel@physik.fu-berlin.de>
+Content-Language: en-US
+From: Kexy Biscuit <kexybiscuit@aosc.io>
+In-Reply-To: <fbc1dde6650a3e729fab57decbb5bf4ef14436ce.camel@physik.fu-berlin.de>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
+X-Rspamd-Server: nf1.mymailcheap.com
+X-Rspamd-Queue-Id: 299894075D
+X-Rspamd-Action: no action
+X-Spamd-Result: default: False [-2.09 / 10.00];
+	BAYES_HAM(-2.00)[95.08%];
+	MIME_GOOD(-0.10)[text/plain];
+	XM_UA_NO_VERSION(0.01)[];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_COUNT_ONE(0.00)[1];
+	ASN(0.00)[asn:16276, ipnet:51.83.0.0/16, country:FR];
+	MIME_TRACE(0.00)[0:+];
+	FREEMAIL_TO(0.00)[physik.fu-berlin.de,gmail.com];
+	MID_RHS_MATCH_FROM(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_TWELVE(0.00)[16];
+	FROM_EQ_ENVFROM(0.00)[];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	TO_DN_SOME(0.00)[]
 
-Hi Linus,
+Hi Adrian
 
-here is my round of sh updates for v6.12. This pull request is again rather=
- small
-but we have more patches in the queue that still need to be reviewed and te=
-sted,
-I expect to send these out for v6.13.
+On 9/27/2024 5:06 PM, John Paul Adrian Glaubitz wrote:
+> Hi,
+> 
+> On Fri, 2024-09-27 at 13:31 +0800, Kexy Biscuit wrote:
+>> On 3/19/2024 1:12 AM, John Paul Adrian Glaubitz wrote:
+>>> Hi Hucai,
+>>>
+>>> On Mon, 2024-03-18 at 22:21 +0800, Huacai Chen wrote:
+>>>> Hi, SuperH maintainers,
+>>>>
+>>>> On Wed, Feb 8, 2023 at 8:59 PM John Paul Adrian Glaubitz
+>>>> <glaubitz@physik.fu-berlin.de> wrote:
+>>>>>
+>>>>> On Thu, 2022-07-14 at 16:41 +0800, Huacai Chen wrote:
+>>>>>> When CONFIG_CPUMASK_OFFSTACK and CONFIG_DEBUG_PER_CPU_MAPS is selected,
+>>>>>> cpu_max_bits_warn() generates a runtime warning similar as below while
+>>>>>> we show /proc/cpuinfo. Fix this by using nr_cpu_ids (the runtime limit)
+>>>>>> instead of NR_CPUS to iterate CPUs.
+>>>>>>
+>>>>>> [    3.052463] ------------[ cut here ]------------
+>>>>>> [    3.059679] WARNING: CPU: 3 PID: 1 at include/linux/cpumask.h:108 show_cpuinfo+0x5e8/0x5f0
+>>>>>> [    3.070072] Modules linked in: efivarfs autofs4
+>>>>>> [    3.076257] CPU: 0 PID: 1 Comm: systemd Not tainted 5.19-rc5+ #1052
+>>>>>> [    3.099465] Stack : 9000000100157b08 9000000000f18530 9000000000cf846c 9000000100154000
+>>>>>> [    3.109127]         9000000100157a50 0000000000000000 9000000100157a58 9000000000ef7430
+>>>>>> [    3.118774]         90000001001578e8 0000000000000040 0000000000000020 ffffffffffffffff
+>>>>>> [    3.128412]         0000000000aaaaaa 1ab25f00eec96a37 900000010021de80 900000000101c890
+>>>>>> [    3.138056]         0000000000000000 0000000000000000 0000000000000000 0000000000aaaaaa
+>>>>>> [    3.147711]         ffff8000339dc220 0000000000000001 0000000006ab4000 0000000000000000
+>>>>>> [    3.157364]         900000000101c998 0000000000000004 9000000000ef7430 0000000000000000
+>>>>>> [    3.167012]         0000000000000009 000000000000006c 0000000000000000 0000000000000000
+>>>>>> [    3.176641]         9000000000d3de08 9000000001639390 90000000002086d8 00007ffff0080286
+>>>>>> [    3.186260]         00000000000000b0 0000000000000004 0000000000000000 0000000000071c1c
+>>>>>> [    3.195868]         ...
+>>>>>> [    3.199917] Call Trace:
+>>>>>> [    3.203941] [<90000000002086d8>] show_stack+0x38/0x14c
+>>>>>> [    3.210666] [<9000000000cf846c>] dump_stack_lvl+0x60/0x88
+>>>>>> [    3.217625] [<900000000023d268>] __warn+0xd0/0x100
+>>>>>> [    3.223958] [<9000000000cf3c90>] warn_slowpath_fmt+0x7c/0xcc
+>>>>>> [    3.231150] [<9000000000210220>] show_cpuinfo+0x5e8/0x5f0
+>>>>>> [    3.238080] [<90000000004f578c>] seq_read_iter+0x354/0x4b4
+>>>>>> [    3.245098] [<90000000004c2e90>] new_sync_read+0x17c/0x1c4
+>>>>>> [    3.252114] [<90000000004c5174>] vfs_read+0x138/0x1d0
+>>>>>> [    3.258694] [<90000000004c55f8>] ksys_read+0x70/0x100
+>>>>>> [    3.265265] [<9000000000cfde9c>] do_syscall+0x7c/0x94
+>>>>>> [    3.271820] [<9000000000202fe4>] handle_syscall+0xc4/0x160
+>>>>>> [    3.281824] ---[ end trace 8b484262b4b8c24c ]---
+>>>>>>
+>>>>>> Cc: stable@vger.kernel.org
+>>>>>> Signed-off-by: Huacai Chen <chenhuacai@loongson.cn>
+>>>>>> ---
+>>>>>>    arch/sh/kernel/cpu/proc.c | 2 +-
+>>>>>>    1 file changed, 1 insertion(+), 1 deletion(-)
+>>>>>>
+>>>>>> diff --git a/arch/sh/kernel/cpu/proc.c b/arch/sh/kernel/cpu/proc.c
+>>>>>> index a306bcd6b341..5f6d0e827bae 100644
+>>>>>> --- a/arch/sh/kernel/cpu/proc.c
+>>>>>> +++ b/arch/sh/kernel/cpu/proc.c
+>>>>>> @@ -132,7 +132,7 @@ static int show_cpuinfo(struct seq_file *m, void *v)
+>>>>>>
+>>>>>>    static void *c_start(struct seq_file *m, loff_t *pos)
+>>>>>>    {
+>>>>>> -     return *pos < NR_CPUS ? cpu_data + *pos : NULL;
+>>>>>> +     return *pos < nr_cpu_ids ? cpu_data + *pos : NULL;
+>>>>>>    }
+>>>>>>    static void *c_next(struct seq_file *m, void *v, loff_t *pos)
+>>>>>>    {
+>>>>>
+>>>>> I build-tested the patch and also booted the patched kernel successfully
+>>>>> on my SH-7785LCR board.
+>>>>>
+>>>>> Showing the contents of /proc/cpuinfo works fine, too:
+>>>>>
+>>>>> root@tirpitz:~> cat /proc/cpuinfo
+>>>>> machine         : SH7785LCR
+>>>>> processor       : 0
+>>>>> cpu family      : sh4a
+>>>>> cpu type        : SH7785
+>>>>> cut             : 7.x
+>>>>> cpu flags       : fpu perfctr llsc
+>>>>> cache type      : split (harvard)
+>>>>> icache size     : 32KiB (4-way)
+>>>>> dcache size     : 32KiB (4-way)
+>>>>> address sizes   : 32 bits physical
+>>>>> bogomips        : 599.99
+>>>>> root@tirpitz:~>
+>>>>>
+>>>>> Tested-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+>>>>>
+>>>>> I am not sure yet whether the change is also correct as I don't know whether
+>>>>> it's possible to change the number of CPUs at runtime on SuperH.
+>>>> Can this patch be merged? This is the only one still unmerged in the
+>>>> whole series.
+>>>
+>>> Thanks for the reminder. I will pick it up for 6.10.
+>>>
+>>> Got sick this week, so I can't pick up anymore patches for 6.9 and will just
+>>> send Linus a PR later this week.
+>>>
+>>> Adrian
+>>>
+>>
+>> Gentle ping on this, can we get this patch merged into 6.12?
+> 
+> Thanks a lot for the reminder. Since the merge window is about to close, I'll
+> pick this up for 6.13 as it hasn't been reviewed yet from what I can see.
+> 
+> I will definitely pick it up for 6.13 and I'm sorry for the very long delay.
+> 
+> However, when this patch got posted back then, I wasn't a kernel maintainer yet.
+> 
+> Adrian
+> 
 
-The first change by Gaosheng Cui removes unused declarations which have bee=
-n obsoleted
-since commit 5a4053b23262 ("sh: Kill off dead boards.") and the second by h=
-is colleague
-Hongbo Li replaces the use of the unsafe simple_strtoul() with the safer ks=
-trtoul()
-function in the sh interrupt controller driver code.
+Thank you so much for taking care of this patch, congrats on your new role!
 
-The following changes since commit 8400291e289ee6b2bf9779ff1c83a291501f017b=
-:
-
-  Linux 6.11-rc1 (2024-07-28 14:19:55 -0700)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/=
-sh-for-v6.12-tag1
-
-for you to fetch changes up to c3e878ca7b6663d2ad77a6e17460fc47a2347f4a:
-
-  sh: intc: Replace simple_strtoul() with kstrtoul() (2024-09-26 17:25:29 +=
-0200)
-
-Thanks for pulling!
-
-Adrian
-
-----------------------------------------------------------------
-sh updates for v6.12
-
-- sh: intc: Replace simple_strtoul() with kstrtoul()
-- sh: Remove unused declarations for make_maskreg_irq() and irq_mask_regist=
-er
-
-----------------------------------------------------------------
-Gaosheng Cui (1):
-      sh: Remove unused declarations for make_maskreg_irq() and irq_mask_re=
-gister
-
-Hongbo Li (1):
-      sh: intc: Replace simple_strtoul() with kstrtoul()
-
- arch/sh/include/asm/irq.h   | 6 ------
- drivers/sh/intc/userimask.c | 5 ++++-
- 2 files changed, 4 insertions(+), 7 deletions(-)
-
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+-- 
+Best Regards,
+Kexy Biscuit
