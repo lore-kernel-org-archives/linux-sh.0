@@ -1,63 +1,132 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from relay4-d.mail.gandi.net (relay4-d.mail.gandi.net [217.70.183.196])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2CD51157A72
-	for <linux-sh@vger.kernel.org>; Fri, 27 Sep 2024 17:25:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F1C5D1F95A;
+	Sun, 29 Sep 2024 20:35:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.70.183.196
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1727457920; cv=none; b=Lu0uw17SjmjacISOUvWSg3JYvtjnSj0xNBLUFKU1CNIScJHYnOdtL1+7aXSQOEpxMYi5oH9enUBc3wg0VyBX33LC8uKEMXE2tuY80yOoBrfm5rZQCia+6ITDO9Okyvkx4V3rRdyuYDF0erqef6vw3LwKmqg88Y1pItbkLnyHIhE=
+	t=1727642106; cv=none; b=A7dSxoHvqV2nf6rFLcV4nDtOELF3DA7QeVKUbzP29hdCBmlueczn2M1N5gd63fvG3S96DmYxn36Da+zE0uHQLE3Zyg7siQZ98GFYjcyDBWB6wmnkQihsPawF4bOnlmkoQwXU0tTjF9s92A3KZsHiVSqPr8iyQiNYLQ/235U1aWw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1727457920; c=relaxed/simple;
-	bh=eNY/30W3RkWPtCg5aZajHM+k7gbHtam46jZkYs6nRmM=;
-	h=Subject:From:In-Reply-To:References:Message-Id:Date:To:Cc; b=oxo/UvR7yIPrIBfvMj6SVfnrH8ZFp77TCQ2kVBisLYmJ6kdP9BCbnN4PKWc9OOpgesHqw6JaqhFaRaqtZp0C/gzNIZvmxhzAm5S77To5zSSeXADvey33Po+ZOD9bEXtXQOif084LwhL8gNBTSumx0iM6AQA4Jf1RqTF0MYIjM04=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=oFMxBmii; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="oFMxBmii"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 104D9C4CEC4;
-	Fri, 27 Sep 2024 17:25:20 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1727457920;
-	bh=eNY/30W3RkWPtCg5aZajHM+k7gbHtam46jZkYs6nRmM=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc:From;
-	b=oFMxBmiih9Je4V+mRofDOcOtqbpurjI0/GgYlREqiyd9Of7F6oMec/DsDtlQ194jo
-	 eGDkCOZx/HFSnPVArxjFGe5wXTGOw5j/uaaIEixo9K5rgT7xohPcAt+6HVUJQob4Kd
-	 jv0D7w70lFF0IMzs3HjJsZOVThoa5d62lggo+ZSc6ujkaLACRu6Bf+cU5NZ3NwJhcN
-	 tjEXhRi2h93unfupN6ocSFiNQYA5/1y0JK3ugXigQNo2aKeEm+vIlztkLZB46ZELS5
-	 B83VhASK8dPOJjztaeJJ85cA3OcV9k+zIHtshG4cMMrnISIhg7JkxFh913s7WyQnqf
-	 80FG3aqUE/sGg==
-Received: from [10.30.226.235] (localhost [IPv6:::1])
-	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id EB5863809A80;
-	Fri, 27 Sep 2024 17:25:23 +0000 (UTC)
-Subject: Re: [GIT PULL] sh updates for v6.12
-From: pr-tracker-bot@kernel.org
-In-Reply-To: <37b245abd7eaee997eabaf74aeb02bd7d5f2e983.camel@physik.fu-berlin.de>
-References: <37b245abd7eaee997eabaf74aeb02bd7d5f2e983.camel@physik.fu-berlin.de>
-X-PR-Tracked-List-Id: <linux-sh.vger.kernel.org>
-X-PR-Tracked-Message-Id: <37b245abd7eaee997eabaf74aeb02bd7d5f2e983.camel@physik.fu-berlin.de>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.12-tag1
-X-PR-Tracked-Commit-Id: c3e878ca7b6663d2ad77a6e17460fc47a2347f4a
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: ec38498450a96a8d85f0409d9e4a41415cde9c1d
-Message-Id: <172745792251.2030610.3723087033784615350.pr-tracker-bot@kernel.org>
-Date: Fri, 27 Sep 2024 17:25:22 +0000
-To: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, linux-sh <linux-sh@vger.kernel.org>, Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, linux-sh <linux-sh@vger.kernel.org>, Hongbo Li <lihongbo22@huawei.com>, Gaosheng Cui <cuigaosheng1@huawei.com>
+	s=arc-20240116; t=1727642106; c=relaxed/simple;
+	bh=DLAuxEpvSOj0ujPKSoEJPWt33cOwsZsk0QVYKAyfS+w=;
+	h=MIME-Version:Date:From:To:Cc:Subject:In-Reply-To:References:
+	 Message-ID:Content-Type; b=Z7z8H8/gpcMMFFM1V3qhkG3ZqUItYipNitaKTWcfoWgUNcoEmx549lfOcCey18x2LUhn4jAbgR+jTdN1tdUgKiDOoSlqH6sbmAAFNenhwjWuRJO1HUnZ0qVeZkDns5vQih4pSO2Q5pGFv4/XrmCNT0wm84c/KPH4XzJC/NMPa2Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu; spf=pass smtp.mailfrom=artur-rojek.eu; arc=none smtp.client-ip=217.70.183.196
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=artur-rojek.eu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=artur-rojek.eu
+Received: by mail.gandi.net (Postfix) with ESMTPSA id CB155E0002;
+	Sun, 29 Sep 2024 20:34:54 +0000 (UTC)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+Date: Sun, 29 Sep 2024 22:34:54 +0200
+From: Artur Rojek <contact@artur-rojek.eu>
+To: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
+Cc: dalias@libc.org, glaubitz@physik.fu-berlin.de,
+ ysato@users.sourceforge.jp, kernel@quicinc.com,
+ linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, robh+dt@kernel.org,
+ Geert Uytterhoeven <geert+renesas@glider.be>
+Subject: Re: [PATCH v5 1/2] sh: Restructure call site for early_reserve_mem()
+In-Reply-To: <20240718021822.1545976-2-quic_obabatun@quicinc.com>
+References: <20240718021822.1545976-1-quic_obabatun@quicinc.com>
+ <20240718021822.1545976-2-quic_obabatun@quicinc.com>
+Message-ID: <f36740a3b7f5a4b031aa656533403f1f@artur-rojek.eu>
+X-Sender: contact@artur-rojek.eu
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Content-Transfer-Encoding: 7bit
+X-GND-Sasl: contact@artur-rojek.eu
 
-The pull request you sent on Fri, 27 Sep 2024 15:17:48 +0200:
+On 2024-07-18 04:18, Oreoluwa Babatunde wrote:
+> early_reserve_mem() reserves memory for important regions in the kernel
+> such as kernel text region and bootmem bitmap.
+> Reserving these memory regions should take precedence over any other
+> reserved memory allocations so that the system does not unknowingly
+> reserve them for some other use case.
+> 
+> Hence, move the call site of early_reserve_mem() out of the
+> paging_init() function and into an earlier point in setup_arch()
+> 
+> Signed-off-by: Oreoluwa Babatunde <quic_obabatun@quicinc.com>
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/sh-for-v6.12-tag1
+Hi Oreoluwa,
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/ec38498450a96a8d85f0409d9e4a41415cde9c1d
+the patch is looking fine to me. Verified on J2 Turtle Board.
 
-Thank you!
+Reviewed-by: Artur Rojek <contact@artur-rojek.eu>
 
--- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+Cheers,
+Artur
+
+> ---
+>  arch/sh/include/asm/mmu.h | 1 +
+>  arch/sh/kernel/setup.c    | 3 +++
+>  arch/sh/mm/init.c         | 5 ++---
+>  3 files changed, 6 insertions(+), 3 deletions(-)
+> 
+> diff --git a/arch/sh/include/asm/mmu.h b/arch/sh/include/asm/mmu.h
+> index 172e329fd92d..696e303a2f19 100644
+> --- a/arch/sh/include/asm/mmu.h
+> +++ b/arch/sh/include/asm/mmu.h
+> @@ -96,6 +96,7 @@ static inline int pmb_unmap(void __iomem *addr)
+> 
+>  #endif /* CONFIG_PMB */
+> 
+> +void __init early_reserve_mem(void);
+>  static inline void __iomem *
+>  pmb_remap(phys_addr_t phys, unsigned long size, pgprot_t prot)
+>  {
+> diff --git a/arch/sh/kernel/setup.c b/arch/sh/kernel/setup.c
+> index 620e5cf8ae1e..3b0bc191a2a2 100644
+> --- a/arch/sh/kernel/setup.c
+> +++ b/arch/sh/kernel/setup.c
+> @@ -40,6 +40,7 @@
+>  #include <asm/setup.h>
+>  #include <asm/clock.h>
+>  #include <asm/smp.h>
+> +#include <asm/mmu.h>
+>  #include <asm/mmu_context.h>
+>  #include <asm/mmzone.h>
+>  #include <asm/processor.h>
+> @@ -319,6 +320,8 @@ void __init setup_arch(char **cmdline_p)
+> 
+>  	sh_mv_setup();
+> 
+> +	early_reserve_mem();
+> +
+>  	/* Let earlyprintk output early console messages */
+>  	sh_early_platform_driver_probe("earlyprintk", 1, 1);
+> 
+> diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+> index bf1b54055316..643e3617c6a6 100644
+> --- a/arch/sh/mm/init.c
+> +++ b/arch/sh/mm/init.c
+> @@ -19,6 +19,7 @@
+>  #include <linux/io.h>
+>  #include <linux/dma-mapping.h>
+>  #include <linux/export.h>
+> +#include <asm/mmu.h>
+>  #include <asm/mmu_context.h>
+>  #include <asm/mmzone.h>
+>  #include <asm/kexec.h>
+> @@ -242,7 +243,7 @@ static void __init do_init_bootmem(void)
+>  	sparse_init();
+>  }
+> 
+> -static void __init early_reserve_mem(void)
+> +void __init early_reserve_mem(void)
+>  {
+>  	unsigned long start_pfn;
+>  	u32 zero_base = (u32)__MEMORY_START + (u32)PHYSICAL_OFFSET;
+> @@ -282,8 +283,6 @@ void __init paging_init(void)
+> 
+>  	sh_mv.mv_mem_init();
+> 
+> -	early_reserve_mem();
+> -
+>  	/*
+>  	 * Once the early reservations are out of the way, give the
+>  	 * platforms a chance to kick out some memory.
