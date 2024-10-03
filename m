@@ -1,134 +1,214 @@
-Received: from albert.telenet-ops.be (albert.telenet-ops.be [195.130.137.90])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.14])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 189F86FB0
-	for <linux-sh@vger.kernel.org>; Wed,  2 Oct 2024 15:04:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.137.90
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 559CC3D994;
+	Thu,  3 Oct 2024 04:23:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=192.198.163.14
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1727881445; cv=none; b=kkaPi4hOZaB/VVjF/CFLzY8NjDit4Nv4xrgBB2CSFKhQpv8cVe/HkX1KRTqx/Lv6sDCTghqie9JJEvw5tfTrpVUalw2AlqbW9zd/smzpS+epIGhEF76UfMohGqw8qxMWfTcVwSwZvd8/9jXG/2M5dM6ZQzqKYn+yeLJb470AtL8=
+	t=1727929403; cv=none; b=Aw9WeJWu+HCvOh3QAGpuL8Fo4vRo9bo3slj1jm98TxKtOZ9emJLX5l0DPt/tct7JoOEfU9g7+y7z3B0uyBWHS4KJbB6gBUIzGzZi3oem4fPqxU4FAuGhwMYWqW2oRgdhqf3fajE+7j98O2m6VQM8zDGJ0hhP+Tja51U3Lui8dTE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1727881445; c=relaxed/simple;
-	bh=lEgBy/6Tl2+mIg/szUca7enHsJ6t1zZRiLyTNp98rXw=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=DxurnQD0BkmOY2e5hS+rQgErExj1+mj5eX0OkvhbBg2TgbfrMcL+G5KHn5tH/QOYud9VmKNaVwHY/AI9cZK/qum/xOPnyirITL94iygAeQYEkGiDXjzFVKunZocRG2Qe4gOeVcypFJxOUsee4SzgLVcspa5+/Qk3XTtn7tVCcxM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.137.90
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
-Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed80:80d:3d68:c8fe:1932])
-	by albert.telenet-ops.be with cmsmtp
-	id KT3z2D00V4Qoffy06T3zu0; Wed, 02 Oct 2024 17:04:01 +0200
-Received: from rox.of.borg ([192.168.97.57])
-	by ramsan.of.borg with esmtp (Exim 4.95)
-	(envelope-from <geert@linux-m68k.org>)
-	id 1sw0tL-00180F-9h;
-	Wed, 02 Oct 2024 17:03:59 +0200
-Received: from geert by rox.of.borg with local (Exim 4.95)
-	(envelope-from <geert@linux-m68k.org>)
-	id 1sw0tT-005oa1-H8;
-	Wed, 02 Oct 2024 17:03:59 +0200
-From: Geert Uytterhoeven <geert+renesas@glider.be>
-To: Peter Zijlstra <peterz@infradead.org>,
-	Ingo Molnar <mingo@redhat.com>,
-	Will Deacon <will@kernel.org>,
-	Waiman Long <longman@redhat.com>,
-	Boqun Feng <boqun.feng@gmail.com>,
-	Arnd Bergmann <arnd@arndb.de>,
-	Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org,
-	linux-sh@vger.kernel.org,
-	linux-s390@vger.kernel.org,
-	Geert Uytterhoeven <geert+renesas@glider.be>
-Subject: [PATCH v2 resend2] locking/spinlocks: Make __raw_* lock ops static
-Date: Wed,  2 Oct 2024 17:03:55 +0200
-Message-Id: <7201d7fb408375c6c4df541270d787b1b4a32354.1727879348.git.geert+renesas@glider.be>
-X-Mailer: git-send-email 2.34.1
+	s=arc-20240116; t=1727929403; c=relaxed/simple;
+	bh=EtmmmjmtCv7y2r6N/47etXvFSsaT+TfFyuK+t624T28=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=im/AdGn9MxnXUZBhykXZImK44dUr6COOK7YS7KYXkfTi01P7jJ2Qrsq42GopiWvhGrfzJ5wDanhSNvdNP4M+L963dpjmdHc6hi+tvzXIKsP+mURnGGBJhkudK38FP4GaMRVbuFkNLLtl0XvYEarl019RsbkrRxuNZ6GTNt8GuQc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com; spf=pass smtp.mailfrom=intel.com; dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b=ZVb0sTwZ; arc=none smtp.client-ip=192.198.163.14
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.b="ZVb0sTwZ"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1727929401; x=1759465401;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=EtmmmjmtCv7y2r6N/47etXvFSsaT+TfFyuK+t624T28=;
+  b=ZVb0sTwZ2lbmoUIolVSx7RvQ5Fd0GSL40DhLpFzFDeOUwEq4SEFn5Jwp
+   mIKjjhpe0KRP+C1I/+BqiKR9TWEMVK93fBm6DDeoj3KKvwJsQG3jWEDQm
+   m20K1NHsZ+T40IkGm9JJ6rQnTP44Qfy9lwzyo9EI66t2J/Xp/3S8i6291
+   m3LHH6m0tLnz+oYs4IwlrN18q7kA4ZQsAEBrgx3neBJ8wpZayJ2CCeor3
+   mjyu58WTTpE2lgGBb/E1ASc4KAcJOwDuf8AaVSXA/lw/ojBdOKI5dnWna
+   vRcBnHOXiM4RODi2qJzfnchDP4G+RVq5vvwVXjsrNE9A7ly6mNkW09K6q
+   Q==;
+X-CSE-ConnectionGUID: YzxE45n6RZmUKNrIKZ2QEA==
+X-CSE-MsgGUID: QHtcoUqpSrazORJbRsUt+g==
+X-IronPort-AV: E=McAfee;i="6700,10204,11213"; a="27290994"
+X-IronPort-AV: E=Sophos;i="6.11,173,1725346800"; 
+   d="scan'208";a="27290994"
+Received: from orviesa003.jf.intel.com ([10.64.159.143])
+  by fmvoesa108.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 02 Oct 2024 21:23:20 -0700
+X-CSE-ConnectionGUID: WkoeICGXRPSQ1BhbC3+oiA==
+X-CSE-MsgGUID: r5WHHwS8RfqeYPAtPz/yNA==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.11,173,1725346800"; 
+   d="scan'208";a="79072842"
+Received: from lkp-server01.sh.intel.com (HELO a48cf1aa22e8) ([10.239.97.150])
+  by orviesa003.jf.intel.com with ESMTP; 02 Oct 2024 21:23:13 -0700
+Received: from kbuild by a48cf1aa22e8 with local (Exim 4.96)
+	(envelope-from <lkp@intel.com>)
+	id 1swDMt-000024-1U;
+	Thu, 03 Oct 2024 04:23:11 +0000
+Date: Thu, 3 Oct 2024 12:23:06 +0800
+From: kernel test robot <lkp@intel.com>
+To: Julian Vetter <jvetter@kalrayinc.com>, Arnd Bergmann <arnd@arndb.de>,
+	Russell King <linux@armlinux.org.uk>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Will Deacon <will@kernel.org>, Guo Ren <guoren@kernel.org>,
+	Huacai Chen <chenhuacai@kernel.org>,
+	WANG Xuerui <kernel@xen0n.name>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Richard Henderson <richard.henderson@linaro.org>,
+	Ivan Kokshaysky <ink@jurassic.park.msu.ru>,
+	Matt Turner <mattst88@gmail.com>,
+	"James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
+	Helge Deller <deller@gmx.de>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Richard Weinberger <richard@nod.at>,
+	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+	Johannes Berg <johannes@sipsolutions.net>
+Cc: oe-kbuild-all@lists.linux.dev,
+	Linux Memory Management List <linux-mm@kvack.org>,
+	linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
+	linux-csky@vger.kernel.org, loongarch@lists.linux.dev,
+	linux-m68k@lists.linux-m68k.org, linux-alpha@vger.kernel.org,
+	linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org,
+	linux-um@lists.infradead.org
+Subject: Re: [PATCH v7 01/10] Consolidate IO memcpy/memset into iomap_copy.c
+Message-ID: <202410031104.2bzZJyNF-lkp@intel.com>
+References: <20240930132321.2785718-2-jvetter@kalrayinc.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20240930132321.2785718-2-jvetter@kalrayinc.com>
 
-If CONFIG_GENERIC_LOCKBREAK=y and CONFIG_DEBUG_LOCK_ALLOC=n
-(e.g. sh/sdk7786_defconfig):
+Hi Julian,
 
-    kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_spin_lock' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_spin_lock_irqsave' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_spin_lock_irq' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_spin_lock_bh' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_read_lock' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_read_lock_irqsave' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_read_lock_irq' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_read_lock_bh' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_write_lock' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_write_lock_irqsave' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_write_lock_irq' [-Wmissing-prototypes]
-    kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_write_lock_bh' [-Wmissing-prototypes]
+kernel test robot noticed the following build errors:
 
-All __raw_* lock ops are internal functions without external callers.
-Hence fix this by making them static.
+[auto build test ERROR on arm64/for-next/core]
+[also build test ERROR on deller-parisc/for-next linus/master arm/for-next arm/fixes v6.12-rc1 next-20241002]
+[If your patch is applied to the wrong git tree, kindly drop us a note.
+And when submitting patch, we suggest to use '--base' as documented in
+https://git-scm.com/docs/git-format-patch#_base_tree_information]
 
-Note that if CONFIG_GENERIC_LOCKBREAK=y, no lock ops are inlined, as all
-of CONFIG_INLINE_*_LOCK* depend on !GENERIC_LOCKBREAK.
+url:    https://github.com/intel-lab-lkp/linux/commits/Julian-Vetter/Consolidate-IO-memcpy-memset-into-iomap_copy-c/20240930-213742
+base:   https://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux.git for-next/core
+patch link:    https://lore.kernel.org/r/20240930132321.2785718-2-jvetter%40kalrayinc.com
+patch subject: [PATCH v7 01/10] Consolidate IO memcpy/memset into iomap_copy.c
+config: powerpc-allnoconfig (https://download.01.org/0day-ci/archive/20241003/202410031104.2bzZJyNF-lkp@intel.com/config)
+compiler: powerpc-linux-gcc (GCC) 14.1.0
+reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20241003/202410031104.2bzZJyNF-lkp@intel.com/reproduce)
 
-Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
-Acked-by: Waiman Long <longman@redhat.com>
----
-Compile-tested on all defconfigs that have CONFIG_GENERIC_LOCKBREAK=y:
-  - sh/sdk7786_defconfig,
-  - sh/shx3_defconfig,
-  - s390/debug_defconfig,
-and also on s390/debug_defconfig after changing:
-    CONFIG_DEBUG_LOCK_ALLOC=n
-    CONFIG_DEBUG_WW_MUTEX_SLOWPATH=n
-    CONFIG_LOCK_STAT=n
-    CONFIG_PROVE_LOCKING=n
+If you fix the issue in a separate patch/commit (i.e. not just a new version of
+the same patch/commit), kindly add following tags
+| Reported-by: kernel test robot <lkp@intel.com>
+| Closes: https://lore.kernel.org/oe-kbuild-all/202410031104.2bzZJyNF-lkp@intel.com/
 
-v2:
-  - Add Acked-by,
-  - Drop RFC,
-  - Improve patch description.
----
- kernel/locking/spinlock.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+All errors (new ones prefixed by >>):
 
-diff --git a/kernel/locking/spinlock.c b/kernel/locking/spinlock.c
-index 438c6086d540ecc4..7685defd7c5262e4 100644
---- a/kernel/locking/spinlock.c
-+++ b/kernel/locking/spinlock.c
-@@ -65,7 +65,7 @@ EXPORT_PER_CPU_SYMBOL(__mmiowb_state);
-  * towards that other CPU that it should break the lock ASAP.
-  */
- #define BUILD_LOCK_OPS(op, locktype)					\
--void __lockfunc __raw_##op##_lock(locktype##_t *lock)			\
-+static void __lockfunc __raw_##op##_lock(locktype##_t *lock)		\
- {									\
- 	for (;;) {							\
- 		preempt_disable();					\
-@@ -77,7 +77,7 @@ void __lockfunc __raw_##op##_lock(locktype##_t *lock)			\
- 	}								\
- }									\
- 									\
--unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock)	\
-+static unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock) \
- {									\
- 	unsigned long flags;						\
- 									\
-@@ -95,12 +95,12 @@ unsigned long __lockfunc __raw_##op##_lock_irqsave(locktype##_t *lock)	\
- 	return flags;							\
- }									\
- 									\
--void __lockfunc __raw_##op##_lock_irq(locktype##_t *lock)		\
-+static void __lockfunc __raw_##op##_lock_irq(locktype##_t *lock)	\
- {									\
- 	_raw_##op##_lock_irqsave(lock);					\
- }									\
- 									\
--void __lockfunc __raw_##op##_lock_bh(locktype##_t *lock)		\
-+static void __lockfunc __raw_##op##_lock_bh(locktype##_t *lock)		\
- {									\
- 	unsigned long flags;						\
- 									\
+   In file included from include/linux/io.h:14,
+                    from include/linux/irq.h:20,
+                    from arch/powerpc/include/asm/hardirq.h:6,
+                    from include/linux/hardirq.h:11,
+                    from include/linux/interrupt.h:11,
+                    from include/linux/kernel_stat.h:8,
+                    from include/linux/cgroup.h:25,
+                    from include/linux/memcontrol.h:13,
+                    from include/linux/swap.h:9,
+                    from include/linux/suspend.h:5,
+                    from arch/powerpc/kernel/asm-offsets.c:21:
+>> arch/powerpc/include/asm/io.h:709:23: error: conflicting types for 'memcpy_fromio'; have 'void(void *, const volatile void *, size_t)' {aka 'void(void *, const volatile void *, unsigned int)'}
+     709 | #define memcpy_fromio memcpy_fromio
+         |                       ^~~~~~~~~~~~~
+   include/asm-generic/io.h:105:13: note: in expansion of macro 'memcpy_fromio'
+     105 | extern void memcpy_fromio(void *to, const volatile void __iomem *from,
+         |             ^~~~~~~~~~~~~
+   arch/powerpc/include/asm/io-defs.h:58:18: note: previous definition of 'memcpy_fromio' with type 'void(void *, const volatile void *, long unsigned int)'
+      58 | DEF_PCI_AC_NORET(memcpy_fromio, (void *d, const PCI_IO_ADDR s, unsigned long n),
+         |                  ^~~~~~~~~~~~~
+   arch/powerpc/include/asm/io.h:664:20: note: in definition of macro 'DEF_PCI_AC_NORET'
+     664 | static inline void name at                                      \
+         |                    ^~~~
+>> arch/powerpc/include/asm/io.h:710:21: error: conflicting types for 'memcpy_toio'; have 'void(volatile void *, const void *, size_t)' {aka 'void(volatile void *, const void *, unsigned int)'}
+     710 | #define memcpy_toio memcpy_toio
+         |                     ^~~~~~~~~~~
+   include/asm-generic/io.h:107:13: note: in expansion of macro 'memcpy_toio'
+     107 | extern void memcpy_toio(volatile void __iomem *to, const void *from,
+         |             ^~~~~~~~~~~
+   arch/powerpc/include/asm/io-defs.h:60:18: note: previous definition of 'memcpy_toio' with type 'void(volatile void *, const void *, long unsigned int)'
+      60 | DEF_PCI_AC_NORET(memcpy_toio, (PCI_IO_ADDR d, const void *s, unsigned long n),
+         |                  ^~~~~~~~~~~
+   arch/powerpc/include/asm/io.h:664:20: note: in definition of macro 'DEF_PCI_AC_NORET'
+     664 | static inline void name at                                      \
+         |                    ^~~~
+>> arch/powerpc/include/asm/io.h:708:19: error: conflicting types for 'memset_io'; have 'void(volatile void *, int,  size_t)' {aka 'void(volatile void *, int,  unsigned int)'}
+     708 | #define memset_io memset_io
+         |                   ^~~~~~~~~
+   include/asm-generic/io.h:109:13: note: in expansion of macro 'memset_io'
+     109 | extern void memset_io(volatile void __iomem *dst, int c, size_t count);
+         |             ^~~~~~~~~
+   arch/powerpc/include/asm/io-defs.h:56:18: note: previous definition of 'memset_io' with type 'void(volatile void *, int,  long unsigned int)'
+      56 | DEF_PCI_AC_NORET(memset_io, (PCI_IO_ADDR a, int c, unsigned long n),
+         |                  ^~~~~~~~~
+   arch/powerpc/include/asm/io.h:664:20: note: in definition of macro 'DEF_PCI_AC_NORET'
+     664 | static inline void name at                                      \
+         |                    ^~~~
+   make[3]: *** [scripts/Makefile.build:117: arch/powerpc/kernel/asm-offsets.s] Error 1
+   make[3]: Target 'prepare' not remade because of errors.
+   make[2]: *** [Makefile:1193: prepare0] Error 2
+   make[2]: Target 'prepare' not remade because of errors.
+   make[1]: *** [Makefile:224: __sub-make] Error 2
+   make[1]: Target 'prepare' not remade because of errors.
+   make: *** [Makefile:224: __sub-make] Error 2
+   make: Target 'prepare' not remade because of errors.
+
+
+vim +709 arch/powerpc/include/asm/io.h
+
+4cb3cee03d558f include/asm-powerpc/io.h      Benjamin Herrenschmidt 2006-11-11  676  
+4cb3cee03d558f include/asm-powerpc/io.h      Benjamin Herrenschmidt 2006-11-11  677  /* Some drivers check for the presence of readq & writeq with
+4cb3cee03d558f include/asm-powerpc/io.h      Benjamin Herrenschmidt 2006-11-11  678   * a #ifdef, so we make them happy here.
+4cb3cee03d558f include/asm-powerpc/io.h      Benjamin Herrenschmidt 2006-11-11  679   */
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  680  #define readb readb
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  681  #define readw readw
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  682  #define readl readl
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  683  #define writeb writeb
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  684  #define writew writew
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  685  #define writel writel
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  686  #define readsb readsb
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  687  #define readsw readsw
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  688  #define readsl readsl
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  689  #define writesb writesb
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  690  #define writesw writesw
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  691  #define writesl writesl
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  692  #define inb inb
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  693  #define inw inw
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  694  #define inl inl
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  695  #define outb outb
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  696  #define outw outw
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  697  #define outl outl
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  698  #define insb insb
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  699  #define insw insw
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  700  #define insl insl
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  701  #define outsb outsb
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  702  #define outsw outsw
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21  703  #define outsl outsl
+68a64357d15ae4 include/asm-powerpc/io.h      Benjamin Herrenschmidt 2006-11-13  704  #ifdef __powerpc64__
+4cb3cee03d558f include/asm-powerpc/io.h      Benjamin Herrenschmidt 2006-11-11  705  #define readq	readq
+4cb3cee03d558f include/asm-powerpc/io.h      Benjamin Herrenschmidt 2006-11-11  706  #define writeq	writeq
+68a64357d15ae4 include/asm-powerpc/io.h      Benjamin Herrenschmidt 2006-11-13  707  #endif
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21 @708  #define memset_io memset_io
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21 @709  #define memcpy_fromio memcpy_fromio
+894fa235eb4ca0 arch/powerpc/include/asm/io.h Christophe Leroy       2020-11-21 @710  #define memcpy_toio memcpy_toio
+68a64357d15ae4 include/asm-powerpc/io.h      Benjamin Herrenschmidt 2006-11-13  711  
+
 -- 
-2.34.1
-
+0-DAY CI Kernel Test Service
+https://github.com/intel/lkp-tests/wiki
