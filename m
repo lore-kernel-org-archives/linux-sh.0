@@ -1,112 +1,84 @@
-Received: from mail-pg1-f171.google.com (mail-pg1-f171.google.com [209.85.215.171])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6B3BC1779A5
-	for <linux-sh@vger.kernel.org>; Thu,  3 Oct 2024 16:46:55 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.215.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5A34C146A72;
+	Fri,  4 Oct 2024 10:08:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1727974017; cv=none; b=FKw+5ISod6VPvL23VIlwjuRUC48Ga5x/plvdFllvXmpRGNJ0ulcgS93eXh8tMF9aeltdRuaFHmT2FaNcVwpzVcumvhyv4IgVf/RS+SCK1fjtbsXyuetpaXVP3RD8NNmBD1+AYLbWdcpHIF7dV7krsKpqjeH0NjNbV7q3+fmx1CQ=
+	t=1728036525; cv=none; b=Pjc7PvgS/XRP6czD1+2V/hX8oWXJCo3oaKypN0olG+tCw4hFv+wJ0ON724aCiO3WlbhVFeU4lm5NDtGvxCKb8HtObZGDnsd4FMv0ir1qPAnaMoZrHgBmxcT9k8eUyhITs/jYpa+DdICPkHXy2cLCLn4qDXJ6Z2WvN48M9AfiuIY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1727974017; c=relaxed/simple;
-	bh=EwT3q9EsnCa7yrZWUCyRNUjVCTNH45yR8vvcQYT/i1Y=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=WacdB9RxNDrI5s8bxd7ZCO8fMk3AmmB93a27x1z7Ni3Wm8zOXzlL0SA85i7+KkDc2aBoghn1+opdjFLAzfrTIlbZJdvMeldQWo2wigyvr88zNNbLb+dShhvggR+HJwOIiVVgu4w0gmzg4sE2dL7FDqdyy+KLjaWeb8xG3VxYR8E=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org; spf=pass smtp.mailfrom=linaro.org; dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b=uatXi8xH; arc=none smtp.client-ip=209.85.215.171
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linaro.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linaro.org
+	s=arc-20240116; t=1728036525; c=relaxed/simple;
+	bh=GMIxrpyZ7lWGEEHcirtrn9Tag+b3HbRGsmWpQIAcR8c=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=tP7NByUFl68yhb6fwdEbZSyXjIrBEVgMnexDgGTrGxUqrC8LvS7hMZMZSJSqqK9LvkoyKMwnSM/bgQB3PdWQDL0dCD8eeVw43spd8UibTbUi8Wd8sbwhuf68SqRc8Al04NemtTx5NUfMKX9zN2usQePTW9NU1haJ9A270HvGSI8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=NdHNdaFc; arc=none smtp.client-ip=90.155.50.34
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=linaro.org header.i=@linaro.org header.b="uatXi8xH"
-Received: by mail-pg1-f171.google.com with SMTP id 41be03b00d2f7-7db233cef22so878941a12.0
-        for <linux-sh@vger.kernel.org>; Thu, 03 Oct 2024 09:46:55 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=linaro.org; s=google; t=1727974015; x=1728578815; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=RW5P1Arx8XPYT/NPFqMkITFeiGycXbJcANO3qtPPvbA=;
-        b=uatXi8xHkUqeCRDr5Mlfvk0MQ7i+Nps7epYpKwfgqrQRySXt99qKBhbRaMqzKGY+tS
-         OIILTTs16rkouA4DCwtOCgugHYZ1rF2oUSWAOPqourYu+pstKMN50Zy6PbC5TnxhfXc8
-         H0P7LVQeSJlpJsVQ6k7sQKEiG+zt7wQAmyeC1x3aH2n4rdeOKOJ/FTSqCmN1aKpRN6VV
-         KfJ6kMjnomN0iZhMexd+6BBmqinzauQsPlsDnPUocmILborbu/Wn3eXu3N9HJhpQykQh
-         GWosPjT/vKjbFLkWvjARTDnbRXScsqHn9e8VnprsXgwtA+/X355H36ntcB+C2fELdeeJ
-         TUmg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1727974015; x=1728578815;
-        h=content-transfer-encoding:in-reply-to:from:content-language
-         :references:cc:to:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=RW5P1Arx8XPYT/NPFqMkITFeiGycXbJcANO3qtPPvbA=;
-        b=jgOwXLfbUAA3qL/IbgRUH7M5CHdNhT64F9qLuZK+Zc4niK+FClBZW5GXrNJNteVvC7
-         yRmOBPf/0OjKmKPWZ2vvYktu76d0yeMLG58d2ZXysWOtHwIhity83knxgrZRW8c5b841
-         smKO08VMAxLzv7X0+ZuMkzKR4OWj3zMywSLwixOnuJmMsYJPg0PYrdXnew2GPGYESRC9
-         a8DYEvhhzC4YoGKjOoYuk3Q5AdXITtVfYyjEkgbX6yp0djFXTcdV27zqyXAFzluMBgIV
-         uAcXr8zGpFzQGXtC6LesmHaY6LClEOFJr4BEA2b7qCz6JQenwkO3f6YV5jtPC0hLJ8lp
-         72kw==
-X-Forwarded-Encrypted: i=1; AJvYcCW+54XlmmA35djHNbI7jt9mgEtMlzegZjCdq8Y+zyX6qaKqO7asqK6JlMWjgqo5eb7CMMksMQlbRw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyWWCOe0igkl4kRJVwNR9yh66uM2NoAPaonYfHkxh8wL5WVQY7V
-	GPxThbrofs1b/CllwQgOTpaKncOZphTnpAD9HGzR89MSzCRQHD1w4w63vH9APIs=
-X-Google-Smtp-Source: AGHT+IHrNLnq312K7GVWKGT1Vo9Ff69i9ensfXAZGMY12ruPSu/BXqZiVZ26a2jiItIAw0CUa22nFw==
-X-Received: by 2002:a05:6a20:cf84:b0:1d2:e8f6:81e with SMTP id adf61e73a8af0-1d5db1bf932mr10105522637.24.1727974014772;
-        Thu, 03 Oct 2024 09:46:54 -0700 (PDT)
-Received: from [192.168.0.4] (174-21-81-121.tukw.qwest.net. [174.21.81.121])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-7e9dbcf13b6sm1055380a12.8.2024.10.03.09.46.53
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 03 Oct 2024 09:46:54 -0700 (PDT)
-Message-ID: <a4f85184-73d4-44e4-bddd-0c1775ed9f50@linaro.org>
-Date: Thu, 3 Oct 2024 09:46:50 -0700
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="NdHNdaFc"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=xaIy+tdNmAOIqcYnnJ2OzNqLnsHQb5n/Nh5bV5Dh8k8=; b=NdHNdaFcsueRNxvgLKJtfa0YDt
+	nuJhx0CS9W4YnLjcOqKeTTCLN+wIlSKYr21+6l3iQV1KnccgEwwyBtsJgBqv3PyqtYfcF40fhQoMo
+	fB9+GLPYxxKmQOWUQUkEFNHmdRXutxI/jZDxTPtYqhEaLfbSlvk9/uTiGVszM7ulpTmlXaBtQRKj7
+	4S2jLAG3Rx3dgOUsjP3v3H1JtClOE9GdC6CPrJDy8tBtLVjN2VrqM8142/DMEBAuYCWeXpq96uvWg
+	cokpvIxZ1m+XQUcQcZjVxNeBTW9wkMcokLH3Pko0GWUGNcJvYKFt/matGeUd6RQFOYwPO0KwbW4uk
+	ummA1yMQ==;
+Received: from j130084.upc-j.chello.nl ([24.132.130.84] helo=noisy.programming.kicks-ass.net)
+	by casper.infradead.org with esmtpsa (Exim 4.98 #2 (Red Hat Linux))
+	id 1swfEi-0000000A91d-3iFx;
+	Fri, 04 Oct 2024 10:08:38 +0000
+Received: by noisy.programming.kicks-ass.net (Postfix, from userid 1000)
+	id 87FBB30083E; Fri,  4 Oct 2024 12:08:36 +0200 (CEST)
+Date: Fri, 4 Oct 2024 12:08:36 +0200
+From: Peter Zijlstra <peterz@infradead.org>
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Ingo Molnar <mingo@redhat.com>, Will Deacon <will@kernel.org>,
+	Waiman Long <longman@redhat.com>, Boqun Feng <boqun.feng@gmail.com>,
+	Arnd Bergmann <arnd@arndb.de>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org,
+	linux-s390@vger.kernel.org
+Subject: Re: [PATCH v2 resend2] locking/spinlocks: Make __raw_* lock ops
+ static
+Message-ID: <20241004100836.GP18071@noisy.programming.kicks-ass.net>
+References: <7201d7fb408375c6c4df541270d787b1b4a32354.1727879348.git.geert+renesas@glider.be>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v7 01/10] Consolidate IO memcpy/memset into iomap_copy.c
-To: Julian Vetter <jvetter@kalrayinc.com>, Arnd Bergmann <arnd@arndb.de>,
- Russell King <linux@armlinux.org.uk>,
- Catalin Marinas <catalin.marinas@arm.com>, Will Deacon <will@kernel.org>,
- Guo Ren <guoren@kernel.org>, Huacai Chen <chenhuacai@kernel.org>,
- WANG Xuerui <kernel@xen0n.name>, Andrew Morton <akpm@linux-foundation.org>,
- Geert Uytterhoeven <geert@linux-m68k.org>,
- Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner
- <mattst88@gmail.com>,
- "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
- Helge Deller <deller@gmx.de>, Yoshinori Sato <ysato@users.sourceforge.jp>,
- Rich Felker <dalias@libc.org>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Richard Weinberger <richard@nod.at>,
- Anton Ivanov <anton.ivanov@cambridgegreys.com>,
- Johannes Berg <johannes@sipsolutions.net>
-Cc: linux-arm-kernel@lists.infradead.org, linux-kernel@vger.kernel.org,
- linux-csky@vger.kernel.org, loongarch@lists.linux.dev,
- linux-m68k@lists.linux-m68k.org, linux-alpha@vger.kernel.org,
- linux-parisc@vger.kernel.org, linux-sh@vger.kernel.org,
- linux-um@lists.infradead.org, linux-arch@vger.kernel.org,
- Yann Sionneau <ysionneau@kalrayinc.com>
-References: <20240930132321.2785718-1-jvetter@kalrayinc.com>
- <20240930132321.2785718-2-jvetter@kalrayinc.com>
-Content-Language: en-US
-From: Richard Henderson <richard.henderson@linaro.org>
-In-Reply-To: <20240930132321.2785718-2-jvetter@kalrayinc.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <7201d7fb408375c6c4df541270d787b1b4a32354.1727879348.git.geert+renesas@glider.be>
 
-On 9/30/24 06:23, Julian Vetter wrote:
-> +void memset_io(volatile void __iomem *dst, int c, size_t count)
-> +{
-> +	uintptr_t qc = (u8)c;
+On Wed, Oct 02, 2024 at 05:03:55PM +0200, Geert Uytterhoeven wrote:
+> If CONFIG_GENERIC_LOCKBREAK=y and CONFIG_DEBUG_LOCK_ALLOC=n
+> (e.g. sh/sdk7786_defconfig):
+> 
+>     kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_spin_lock' [-Wmissing-prototypes]
+>     kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_spin_lock_irqsave' [-Wmissing-prototypes]
+>     kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_spin_lock_irq' [-Wmissing-prototypes]
+>     kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_spin_lock_bh' [-Wmissing-prototypes]
+>     kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_read_lock' [-Wmissing-prototypes]
+>     kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_read_lock_irqsave' [-Wmissing-prototypes]
+>     kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_read_lock_irq' [-Wmissing-prototypes]
+>     kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_read_lock_bh' [-Wmissing-prototypes]
+>     kernel/locking/spinlock.c:68:17: warning: no previous prototype for '__raw_write_lock' [-Wmissing-prototypes]
+>     kernel/locking/spinlock.c:80:26: warning: no previous prototype for '__raw_write_lock_irqsave' [-Wmissing-prototypes]
+>     kernel/locking/spinlock.c:98:17: warning: no previous prototype for '__raw_write_lock_irq' [-Wmissing-prototypes]
+>     kernel/locking/spinlock.c:103:17: warning: no previous prototype for '__raw_write_lock_bh' [-Wmissing-prototypes]
+> 
+> All __raw_* lock ops are internal functions without external callers.
+> Hence fix this by making them static.
+> 
+> Note that if CONFIG_GENERIC_LOCKBREAK=y, no lock ops are inlined, as all
+> of CONFIG_INLINE_*_LOCK* depend on !GENERIC_LOCKBREAK.
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> Acked-by: Waiman Long <longman@redhat.com>
 
-Missed one change to 'long'
-
-> +
-> +	qc |= qc << 8;
-> +	qc |= qc << 16;
-> +
-> +#ifdef CONFIG_64BIT
-> +	qc |= qc << 32;
-> +#endif
-
-Could be 'qc *= -1ul / 0xff;'
-
-
-r~
+Thanks!
