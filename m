@@ -1,107 +1,88 @@
-Received: from zeniv.linux.org.uk (zeniv.linux.org.uk [62.89.141.173])
+Received: from eu-smtp-delivery-151.mimecast.com (eu-smtp-delivery-151.mimecast.com [185.58.85.151])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0D51313665B;
-	Sun,  6 Oct 2024 14:59:07 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=62.89.141.173
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1FE3D18A6A8
+	for <linux-sh@vger.kernel.org>; Sun,  6 Oct 2024 18:51:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=185.58.85.151
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1728226751; cv=none; b=CAOwwh6gb30/XCz20wY6THnt+XsX3rWA4UTewhgl9S2ONFITJwwh4TQ6ae9IFKyfLv13HG00kBxk3JKVO3fyU+j9BkDXKt9iu8E8T/nMg9FqPu1Kco0+NKnhQ+0s1OT0lg1Q35RHA+G8JKhMPXEbBn4CPPVUfGAAlUWwWnxP4OQ=
+	t=1728240707; cv=none; b=ZcqOL+4Gh7r8irZo84Znqtg5IFHscJRTNMocwNavVHqEHTipb52uhTWyXKzlTzv7BcOUKN9rpdXNtX1Wp6tSSqKU3RKkpRWxo+vUz6iXqk3KMkzujpvNpo1LKsrdclkL7uMMZqp1YCcgtFvybV5qjARkh/zNUURJMVr9P73vqug=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1728226751; c=relaxed/simple;
-	bh=aZIyK0YX9RB1Yi01JNjPLgy28xsvKkXz8fEnxnLlZXg=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=nTe3evuaU83hpFrcByrBYXIagFW8KLVCgCnfYmoSThpYCbCr4VdHJxFxxENj/sLaXqTM1Gqr1i6EL9CgY9coLqptFahPp1dcIdZqwaRC243olr36SZvpXfeyXmWAbMnUUBX3OBKMD0Sw2k+dfwFImAEnJn/UqGnUCH/nxoEikow=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zeniv.linux.org.uk; spf=none smtp.mailfrom=ftp.linux.org.uk; dkim=pass (2048-bit key) header.d=linux.org.uk header.i=@linux.org.uk header.b=Ym5kQUjt; arc=none smtp.client-ip=62.89.141.173
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zeniv.linux.org.uk
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=ftp.linux.org.uk
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=linux.org.uk header.i=@linux.org.uk header.b="Ym5kQUjt"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=linux.org.uk; s=zeniv-20220401; h=Sender:In-Reply-To:Content-Type:
-	MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=QjaM5k9qqJvchGVL0bXBB8KvEd+WrkzXBDa2YMdrjdE=; b=Ym5kQUjtP6Dd9OwFUXGvXnWioY
-	wZDDdxmGBO5Nh6hBKstzXXUHYdcnxEuktG17KW4lqXwW2x5sqvFM7mFPaNJPWOFyxIz+rbVF9HNs5
-	sTl+zw6W+PsAb83XpQOTAgQaZFbLwWTz5Ne0oSzir8MLlnz1+bijsRoiBOGoSSyv908vaVW3H3Mtc
-	dnd09+IPd5K6u683QoytSS3TepbbHEzHzcYWNO3tMcVIXt/bmeK6F6o+DoP4sVS3lmun60RRoABep
-	5azAeIBPC110DvZjWc43lgMUVLlpFwZAKrqbKELDkwbyv27ERTUmyioMtaoYcIdEXgGOo3Stavnop
-	RNNpg/bw==;
-Received: from viro by zeniv.linux.org.uk with local (Exim 4.98 #2 (Red Hat Linux))
-	id 1sxSiu-00000001MPd-0X0j;
-	Sun, 06 Oct 2024 14:59:04 +0000
-Date: Sun, 6 Oct 2024 15:59:04 +0100
-From: Al Viro <viro@zeniv.linux.org.uk>
-To: kernel test robot <oliver.sang@intel.com>
-Cc: Christian =?iso-8859-1?Q?G=F6ttsche?= <cgzones@googlemail.com>,
-	oe-lkp@lists.linux.dev, lkp@intel.com,
-	linux-fsdevel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>,
-	Christian Brauner <brauner@kernel.org>, linux-alpha@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org,
-	linux-m68k@lists.linux-m68k.org, linux-kernel@vger.kernel.org,
-	linux-mips@vger.kernel.org, linux-parisc@vger.kernel.org,
-	linuxppc-dev@lists.ozlabs.org, linux-s390@vger.kernel.org,
-	linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-	audit@vger.kernel.org, linux-api@vger.kernel.org,
-	linux-arch@vger.kernel.org
-Subject: Re: [viro-vfs:work.xattr2] [fs/xattr]  64d47e878a:
- xfstests.xfs.046.fail
-Message-ID: <20241006145904.GE4017910@ZenIV>
-References: <202410062250.ee92fca7-oliver.sang@intel.com>
+	s=arc-20240116; t=1728240707; c=relaxed/simple;
+	bh=aZwIzvlOJcv/ji8nAJdTx51gC2Ws1xeuOlP3sOSFvS0=;
+	h=From:To:CC:Subject:Date:Message-ID:References:In-Reply-To:
+	 MIME-Version:Content-Type; b=l99pVtihWMp6DAxF30mQFwAHYsQ+oqmVPl59EkcvY2dPxCni9A4YGgW/Q+GOyAOwJyaw9qf0UFa7ojlYkZqUU5cbqV24KTgD2S7EjsFgKZZl1/cKQZKEopq+KvVahFrdTJgrplgXSMWPjt1wb59+5Iqa5whmWF04Ri8agccfFxQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=ACULAB.COM; spf=pass smtp.mailfrom=aculab.com; arc=none smtp.client-ip=185.58.85.151
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=ACULAB.COM
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=aculab.com
+Received: from AcuMS.aculab.com (156.67.243.121 [156.67.243.121]) by
+ relay.mimecast.com with ESMTP with both STARTTLS and AUTH (version=TLSv1.2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384) id
+ uk-mta-136-9bgpC3x0OgWrMeD0Qb2vqQ-1; Sun, 06 Oct 2024 19:51:42 +0100
+X-MC-Unique: 9bgpC3x0OgWrMeD0Qb2vqQ-1
+Received: from AcuMS.Aculab.com (10.202.163.4) by AcuMS.aculab.com
+ (10.202.163.4) with Microsoft SMTP Server (TLS) id 15.0.1497.48; Sun, 6 Oct
+ 2024 19:50:48 +0100
+Received: from AcuMS.Aculab.com ([::1]) by AcuMS.aculab.com ([::1]) with mapi
+ id 15.00.1497.048; Sun, 6 Oct 2024 19:50:48 +0100
+From: David Laight <David.Laight@ACULAB.COM>
+To: 'Richard Henderson' <richard.henderson@linaro.org>, Julian Vetter
+	<jvetter@kalrayinc.com>, Arnd Bergmann <arnd@arndb.de>, Russell King
+	<linux@armlinux.org.uk>, Catalin Marinas <catalin.marinas@arm.com>, "Will
+ Deacon" <will@kernel.org>, Guo Ren <guoren@kernel.org>, Huacai Chen
+	<chenhuacai@kernel.org>, WANG Xuerui <kernel@xen0n.name>, Andrew Morton
+	<akpm@linux-foundation.org>, Geert Uytterhoeven <geert@linux-m68k.org>, "Ivan
+ Kokshaysky" <ink@jurassic.park.msu.ru>, Matt Turner <mattst88@gmail.com>,
+	"James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>, "Helge
+ Deller" <deller@gmx.de>, Yoshinori Sato <ysato@users.sourceforge.jp>, "Rich
+ Felker" <dalias@libc.org>, John Paul Adrian Glaubitz
+	<glaubitz@physik.fu-berlin.de>, Richard Weinberger <richard@nod.at>, "Anton
+ Ivanov" <anton.ivanov@cambridgegreys.com>, Johannes Berg
+	<johannes@sipsolutions.net>
+CC: "linux-arm-kernel@lists.infradead.org"
+	<linux-arm-kernel@lists.infradead.org>, "linux-kernel@vger.kernel.org"
+	<linux-kernel@vger.kernel.org>, "linux-csky@vger.kernel.org"
+	<linux-csky@vger.kernel.org>, "loongarch@lists.linux.dev"
+	<loongarch@lists.linux.dev>, "linux-m68k@lists.linux-m68k.org"
+	<linux-m68k@lists.linux-m68k.org>, "linux-alpha@vger.kernel.org"
+	<linux-alpha@vger.kernel.org>, "linux-parisc@vger.kernel.org"
+	<linux-parisc@vger.kernel.org>, "linux-sh@vger.kernel.org"
+	<linux-sh@vger.kernel.org>, "linux-um@lists.infradead.org"
+	<linux-um@lists.infradead.org>, "linux-arch@vger.kernel.org"
+	<linux-arch@vger.kernel.org>, Yann Sionneau <ysionneau@kalrayinc.com>
+Subject: RE: [PATCH v7 01/10] Consolidate IO memcpy/memset into iomap_copy.c
+Thread-Topic: [PATCH v7 01/10] Consolidate IO memcpy/memset into iomap_copy.c
+Thread-Index: AQHbFbPJWS6K2t1cH0OJGabOTiBjIbJ6FaUQ
+Date: Sun, 6 Oct 2024 18:50:48 +0000
+Message-ID: <5bbdbf01d4584a14ae1e16281eb95837@AcuMS.aculab.com>
+References: <20240930132321.2785718-1-jvetter@kalrayinc.com>
+ <20240930132321.2785718-2-jvetter@kalrayinc.com>
+ <a4f85184-73d4-44e4-bddd-0c1775ed9f50@linaro.org>
+In-Reply-To: <a4f85184-73d4-44e4-bddd-0c1775ed9f50@linaro.org>
+Accept-Language: en-GB, en-US
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+x-ms-exchange-transport-fromentityheader: Hosted
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <202410062250.ee92fca7-oliver.sang@intel.com>
-Sender: Al Viro <viro@ftp.linux.org.uk>
+X-Mimecast-Spam-Score: 0
+X-Mimecast-Originator: aculab.com
+Content-Language: en-US
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: base64
 
-On Sun, Oct 06, 2024 at 10:20:57PM +0800, kernel test robot wrote:
+RnJvbTogUmljaGFyZCBIZW5kZXJzb24NCj4gU2VudDogMDMgT2N0b2JlciAyMDI0IDE3OjQ3DQo+
+IA0KPiBPbiA5LzMwLzI0IDA2OjIzLCBKdWxpYW4gVmV0dGVyIHdyb3RlOg0KPiA+ICt2b2lkIG1l
+bXNldF9pbyh2b2xhdGlsZSB2b2lkIF9faW9tZW0gKmRzdCwgaW50IGMsIHNpemVfdCBjb3VudCkN
+Cj4gPiArew0KPiA+ICsJdWludHB0cl90IHFjID0gKHU4KWM7DQo+IA0KPiBNaXNzZWQgb25lIGNo
+YW5nZSB0byAnbG9uZycNCj4gDQo+ID4gKw0KPiA+ICsJcWMgfD0gcWMgPDwgODsNCj4gPiArCXFj
+IHw9IHFjIDw8IDE2Ow0KPiA+ICsNCj4gPiArI2lmZGVmIENPTkZJR182NEJJVA0KPiA+ICsJcWMg
+fD0gcWMgPDwgMzI7DQo+ID4gKyNlbmRpZg0KPiANCj4gQ291bGQgYmUgJ3FjICo9IC0xdWwgLyAw
+eGZmOycNCg0KCXFjICo9IH4wdWwgLyAweGZmOw0KDQp3b3VsZCBiZSBzbGlnaHRseSBiZXR0ZXIu
+DQoNCglEYXZpZA0KDQo+IA0KPiANCj4gcn4NCg0KLQ0KUmVnaXN0ZXJlZCBBZGRyZXNzIExha2Vz
+aWRlLCBCcmFtbGV5IFJvYWQsIE1vdW50IEZhcm0sIE1pbHRvbiBLZXluZXMsIE1LMSAxUFQsIFVL
+DQpSZWdpc3RyYXRpb24gTm86IDEzOTczODYgKFdhbGVzKQ0K
 
-> xfs/046       - output mismatch (see /lkp/benchmarks/xfstests/results//xfs/046.out.bad)
->     --- tests/xfs/046.out	2024-09-30 21:13:44.000000000 +0000
->     +++ /lkp/benchmarks/xfstests/results//xfs/046.out.bad	2024-10-06 05:31:50.379495110 +0000
->     @@ -34,4 +34,8 @@
->      xfsrestore: restore complete: SECS seconds elapsed
->      xfsrestore: Restore Status: SUCCESS
->      Comparing listing of dump directory with restore directory
->     +ls: /fs/scratch/dumpdir/sub/a-link: No such file or directory
->     +ls: /fs/scratch/dumpdir/sub/b-link: No such file or directory
->     +ls: /fs/scratch/restoredir/dumpdir/sub/a-link: No such file or directory
->     +ls: /fs/scratch/restoredir/dumpdir/sub/b-link: No such file or directory
->     ...
->     (Run 'diff -u /lkp/benchmarks/xfstests/tests/xfs/046.out /lkp/benchmarks/xfstests/results//xfs/046.out.bad'  to see the entire diff)
-> Ran: xfs/046
-> Failures: xfs/046
-> Failed 1 of 1 tests
-
-*stares*
-
-D'oh...  Inverted sense for AT_SYMLINK_NOFOLLOW => LOOKUP_FLAGS...
-
-Try this:
-
-diff --git a/fs/xattr.c b/fs/xattr.c
-index 0b506b6565b7..b96cca3f4bf8 100644
---- a/fs/xattr.c
-+++ b/fs/xattr.c
-@@ -721,7 +721,7 @@ static int path_setxattrat(int dfd, const char __user *pathname,
- 	if ((at_flags & ~(AT_SYMLINK_NOFOLLOW | AT_EMPTY_PATH)) != 0)
- 		return -EINVAL;
- 
--	if (at_flags & AT_SYMLINK_NOFOLLOW)
-+	if (!(at_flags & AT_SYMLINK_NOFOLLOW))
- 		lookup_flags = LOOKUP_FOLLOW;
- 
- 	error = setxattr_copy(name, &ctx);
-@@ -880,7 +880,7 @@ static ssize_t path_getxattrat(int dfd, const char __user *pathname,
- 		return file_getxattr(fd_file(f), &ctx);
- 	} else {
- 		int lookup_flags = 0;
--		if (at_flags & AT_SYMLINK_NOFOLLOW)
-+		if (!(at_flags & AT_SYMLINK_NOFOLLOW))
- 			lookup_flags = LOOKUP_FOLLOW;
- 		return filename_getxattr(dfd, filename, lookup_flags, &ctx);
- 	}
