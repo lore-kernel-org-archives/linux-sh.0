@@ -1,183 +1,154 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7C9378F6A;
-	Thu, 10 Oct 2024 21:43:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7759814D6F9;
+	Thu, 10 Oct 2024 22:54:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1728596620; cv=none; b=TIO74AusEzuDDoB9u97YnsFW1JiO6eW4wbildsP1moZyOUAMQQwgodHkuTfwReX4OC/7v1lnVL6hkU1uvbd6O+r5LLMdNxlI2/uu7iD1S8dl+qNfSLJCSiZikQ8L4Mhn5VQw0AqJemI9EVDtugy2YIc+5wLj1FEAUrnb7yiLy50=
+	t=1728600857; cv=none; b=edvVwIMv/uSuuTeYfXUaIvAQxtfCMJ6j9/azAupsStM9AC9v1ojywydz7gw54XdarbgXTEq6AoeI+e8QoW2PgsgRuS7KHuvQOrkdbZGapUPeHq8P+I8PXu3WZxTBTPAo9M2hhLRBuxlohx/35i1UieecMCblqbaoKcPuR1ksxAw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1728596620; c=relaxed/simple;
-	bh=Oec2XcEHnRVkA96bUDHw8C1REQbckjcVfS0072SQmrI=;
-	h=Content-Type:MIME-Version:From:To:Cc:Subject:In-reply-to:
-	 References:Date:Message-id; b=B5L7NnZ0dGNXTkEAEIOy3l2QfLlxrCq7f9sCGyJDlrJeixUq4ckeIAT8mBtf/LJPdWsHk7apwqT8a4uwHKAlmiEMq53r6aHBfWYMGCDRdh84eDOfQ5FHMMt4UeRY+RwTsIgww/A+D1EavEJxbou11IUqnz8Q6LgwkRGNexL9eW0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de; spf=pass smtp.mailfrom=suse.de; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=a5JJZfoF; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=RVWaGtvm; dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b=a5JJZfoF; dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b=RVWaGtvm; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=suse.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.de
+	s=arc-20240116; t=1728600857; c=relaxed/simple;
+	bh=dRFHj5mtH0xn8PBj2ZbOuI6o6u0ly0QH1iws5fctk8A=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=dlyrANTR49TIms1r6cbk02Vsc8uMP6JqFfBKZ0WmjqDyP6aQURMg8bNtMN3cBEPscbvVnvlF3NuqR8fPHCGQI1FmqkBWk6cbmcPE710QDExqjxoHuRHwBgvHQZw4fO0yH7bYV6UHfroaYjMzU7mfGf9+7S2tyUUf2RK9FlnPf2Q=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=QiUIOLSB; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="a5JJZfoF";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="RVWaGtvm";
-	dkim=pass (1024-bit key) header.d=suse.de header.i=@suse.de header.b="a5JJZfoF";
-	dkim=permerror (0-bit key) header.d=suse.de header.i=@suse.de header.b="RVWaGtvm"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 9EE701FE77;
-	Thu, 10 Oct 2024 21:43:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1728596616; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=2BLVaQNxwgGS4hs6TdXQIhC+xDJeoNKY0cDCGry5g1U=;
-	b=a5JJZfoFKe+RffAGjiKiKDWGT8xkOirsMEpsysJkAqadTXwun3xEaq+O1DDhmCym/ShUAr
-	bh6o8s+5amzjhUKHJnUM3MjSWDU96GIHeZ5JirpVokB7w49CHI6ce9E5XSIGInUQDMXvIs
-	bKwfMlBCqKX+9eQIEw5/w9q3lx/DeMs=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1728596616;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=2BLVaQNxwgGS4hs6TdXQIhC+xDJeoNKY0cDCGry5g1U=;
-	b=RVWaGtvmGJPTmtqJbLqdObnWbVcu3Y0VGtbW3Wku/80a//iKt2toqNptyvNguHWiO4MuUt
-	WI7rq9k5AOyVqwDQ==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.de; s=susede2_rsa;
-	t=1728596616; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=2BLVaQNxwgGS4hs6TdXQIhC+xDJeoNKY0cDCGry5g1U=;
-	b=a5JJZfoFKe+RffAGjiKiKDWGT8xkOirsMEpsysJkAqadTXwun3xEaq+O1DDhmCym/ShUAr
-	bh6o8s+5amzjhUKHJnUM3MjSWDU96GIHeZ5JirpVokB7w49CHI6ce9E5XSIGInUQDMXvIs
-	bKwfMlBCqKX+9eQIEw5/w9q3lx/DeMs=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.de;
-	s=susede2_ed25519; t=1728596616;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=2BLVaQNxwgGS4hs6TdXQIhC+xDJeoNKY0cDCGry5g1U=;
-	b=RVWaGtvmGJPTmtqJbLqdObnWbVcu3Y0VGtbW3Wku/80a//iKt2toqNptyvNguHWiO4MuUt
-	WI7rq9k5AOyVqwDQ==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CE73113A6E;
-	Thu, 10 Oct 2024 21:43:18 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id IPoSIXZKCGeEZwAAD6G6ig
-	(envelope-from <neilb@suse.de>); Thu, 10 Oct 2024 21:43:18 +0000
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="QiUIOLSB"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9E7BFC4CEC5;
+	Thu, 10 Oct 2024 22:54:13 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1728600856;
+	bh=dRFHj5mtH0xn8PBj2ZbOuI6o6u0ly0QH1iws5fctk8A=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=QiUIOLSBcasoVYYND8KdWz7eQh/+0boOgNRGeOQlhf5jvA1/EBnMYKjn5VICJ3eAY
+	 cnnu9shlCLMfTHHTHra7MnZ0rLJlXd0Hph0c0PBZ21X9KTVg4eVdzFCTR7+dIRdltD
+	 hxCWp0qmt+fIbgTEcIZSFHp2Q6iE2wK9yyyZ4vyAJOkCE63MHkbL8C+vAlgxvUIB86
+	 jOXbNmyf7S3aQkYS+MyXLrzvy5GjYypHqnc1WER+qWs986tCcEJrL1436xfNVNVaY8
+	 SuEhjakzc9ZUyRU5YtUSasIp4EiqD3HrJhbPDpQFeVHrdwLEF3yFgOYnlD+BEfVYYI
+	 t/83JFWrskzLQ==
+Date: Thu, 10 Oct 2024 15:54:11 -0700
+From: Nathan Chancellor <nathan@kernel.org>
+To: Mike Rapoport <rppt@kernel.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Andy Lutomirski <luto@kernel.org>, Ard Biesheuvel <ardb@kernel.org>,
+	Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>,
+	Brian Cain <bcain@quicinc.com>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	Dinh Nguyen <dinguyen@kernel.org>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
+	Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Kent Overstreet <kent.overstreet@linux.dev>,
+	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
+	Luis Chamberlain <mcgrof@kernel.org>,
+	Mark Rutland <mark.rutland@arm.com>,
+	Masami Hiramatsu <mhiramat@kernel.org>,
+	Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Michal Simek <monstr@monstr.eu>, Oleg Nesterov <oleg@redhat.com>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Richard Weinberger <richard@nod.at>,
+	Russell King <linux@armlinux.org.uk>, Song Liu <song@kernel.org>,
+	Stafford Horne <shorne@gmail.com>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Uladzislau Rezki <urezki@gmail.com>,
+	Vineet Gupta <vgupta@kernel.org>, Will Deacon <will@kernel.org>,
+	bpf@vger.kernel.org, linux-alpha@vger.kernel.org,
+	linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org, linux-mm@kvack.org,
+	linux-modules@vger.kernel.org, linux-openrisc@vger.kernel.org,
+	linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
+	linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+	linux-trace-kernel@vger.kernel.org, linux-um@lists.infradead.org,
+	linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
+	sparclinux@vger.kernel.org, x86@kernel.org
+Subject: Re: [PATCH v5 6/8] x86/module: perpare module loading for ROX
+ allocations of text
+Message-ID: <20241010225411.GA922684@thelio-3990X>
+References: <20241009180816.83591-1-rppt@kernel.org>
+ <20241009180816.83591-7-rppt@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-From: "NeilBrown" <neilb@suse.de>
-To: "Jeff Layton" <jlayton@kernel.org>
-Cc: "Kaixiong Yu" <yukaixiong@huawei.com>, akpm@linux-foundation.org,
- mcgrof@kernel.org, ysato@users.sourceforge.jp, dalias@libc.org,
- glaubitz@physik.fu-berlin.de, luto@kernel.org, tglx@linutronix.de,
- mingo@redhat.com, bp@alien8.de, dave.hansen@linux.intel.com, hpa@zytor.com,
- viro@zeniv.linux.org.uk, brauner@kernel.org, jack@suse.cz, kees@kernel.org,
- j.granados@samsung.com, willy@infradead.org, Liam.Howlett@oracle.com,
- vbabka@suse.cz, lorenzo.stoakes@oracle.com, trondmy@kernel.org,
- anna@kernel.org, chuck.lever@oracle.com, okorniev@redhat.com,
- Dai.Ngo@oracle.com, tom@talpey.com, davem@davemloft.net, edumazet@google.com,
- kuba@kernel.org, pabeni@redhat.com, paul@paul-moore.com, jmorris@namei.org,
- linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-fsdevel@vger.kernel.org, linux-mm@kvack.org, linux-nfs@vger.kernel.org,
- netdev@vger.kernel.org, linux-security-module@vger.kernel.org,
- dhowells@redhat.com, haifeng.xu@shopee.com, baolin.wang@linux.alibaba.com,
- shikemeng@huaweicloud.com, dchinner@redhat.com, bfoster@redhat.com,
- souravpanda@google.com, hannes@cmpxchg.org, rientjes@google.com,
- pasha.tatashin@soleen.com, david@redhat.com, ryan.roberts@arm.com,
- ying.huang@intel.com, yang@os.amperecomputing.com, zev@bewilderbeest.net,
- serge@hallyn.com, vegard.nossum@oracle.com, wangkefeng.wang@huawei.com,
- sunnanyong@huawei.com
-Subject: Re: [PATCH v3 -next 11/15] sunrpc: use vfs_pressure_ratio() helper
-In-reply-to: <12ec5b63b17b360f2e249a4de0ac7b86e09851a3.camel@kernel.org>
-References: <>, <12ec5b63b17b360f2e249a4de0ac7b86e09851a3.camel@kernel.org>
-Date: Fri, 11 Oct 2024 08:43:15 +1100
-Message-id: <172859659591.444407.1507982523726708908@noble.neil.brown.name>
-X-Spam-Score: -4.30
-X-Spamd-Result: default: False [-4.30 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_DN_SOME(0.00)[];
-	MISSING_XM_UA(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.de:s=susede2_rsa,suse.de:s=susede2_ed25519];
-	FUZZY_BLOCKED(0.00)[rspamd.com];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	R_RATELIMIT(0.00)[from(RLewrxuus8mos16izbn)];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCPT_COUNT_GT_50(0.00)[60];
-	TO_MATCH_ENVRCPT_SOME(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo]
-X-Spam-Flag: NO
-X-Spam-Level: 
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20241009180816.83591-7-rppt@kernel.org>
 
-On Fri, 11 Oct 2024, Jeff Layton wrote:
-> On Thu, 2024-10-10 at 23:22 +0800, Kaixiong Yu wrote:
-> > Use vfs_pressure_ratio() to simplify code.
-> >=20
-> > Signed-off-by: Kaixiong Yu <yukaixiong@huawei.com>
-> > Reviewed-by: Kees Cook <kees@kernel.org>
-> > Acked-by: Anna Schumaker <anna.schumaker@oracle.com>
-> > ---
-> >  net/sunrpc/auth.c | 2 +-
-> >  1 file changed, 1 insertion(+), 1 deletion(-)
-> >=20
-> > diff --git a/net/sunrpc/auth.c b/net/sunrpc/auth.c
-> > index 04534ea537c8..3d2b51d7e934 100644
-> > --- a/net/sunrpc/auth.c
-> > +++ b/net/sunrpc/auth.c
-> > @@ -489,7 +489,7 @@ static unsigned long
-> >  rpcauth_cache_shrink_count(struct shrinker *shrink, struct shrink_contro=
-l *sc)
-> > =20
-> >  {
-> > -	return number_cred_unused * sysctl_vfs_cache_pressure / 100;
-> > +	return vfs_pressure_ratio(number_cred_unused);
-> >  }
-> > =20
-> >  static void
->=20
-> Acked-by: Jeff Layton <jlayton@kernel.org>
->=20
+Hi Mike,
 
-I realise this is a bit of a tangent, and I'm not objecting to this
-patch, but I wonder what the justification is for using
-vfs_cache_pressure here.  The sysctl is documented as
+On Wed, Oct 09, 2024 at 09:08:14PM +0300, Mike Rapoport wrote:
+> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
+> 
+> When module text memory will be allocated with ROX permissions, the
+> memory at the actual address where the module will live will contain
+> invalid instructions and there will be a writable copy that contains the
+> actual module code.
+> 
+> Update relocations and alternatives patching to deal with it.
+> 
+> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
 
-   This percentage value controls the tendency of the kernel to reclaim
-   the memory which is used for caching of directory and inode objects.
+I bisected a boot failure that I see with CONFIG_CFI_CLANG enabled to
+this change as commit be712757cabd ("x86/module: perpare module loading
+for ROX allocations of text") in -next.
 
-So it can sensibly be used for dentries and inode, and for anything
-directly related like the nfs access cache (which is attached to inodes)
-and the nfs xattr cache.
+  $ echo CONFIG_CFI_CLANG=y >arch/x86/configs/cfi.config
 
-But the sunrpc cred cache scales with the number of active users, not
-the number of inodes/dentries.
+  $ make -skj"$(nproc)" ARCH=x86_64 LLVM=1 mrproper defconfig cfi.config bzImage
 
-So I think this should simply "return number_cred_unused;".
+  $ curl -LSs https://github.com/ClangBuiltLinux/boot-utils/releases/download/20230707-182910/x86_64-rootfs.cpio.zst | zstd -d >rootfs.cpio
 
-What do others think?
+  $ qemu-system-x86_64 \
+      -display none \
+      -nodefaults \
+      -M q35 \
+      -d unimp,guest_errors \
+      -append 'console=ttyS0 earlycon=uart8250,io,0x3f8' \
+      -kernel arch/x86/boot/bzImage \
+      -initrd rootfs.cpio \
+      -cpu host \
+      -enable-kvm \
+      -m 512m \
+      -smp 8 \
+      -serial mon:stdio
+  [    0.000000] Linux version 6.12.0-rc2-00140-gbe712757cabd (nathan@n3-xlarge-x86) (ClangBuiltLinux clang version 19.1.0 (https://github.com/llvm/llvm-project.git a4bf6cd7cfb1a1421ba92bca9d017b49936c55e4), ClangBuiltLinux LLD 19.1.0 (https://github.com/llvm/llvm-project.git a4bf6cd7cfb1a1421ba92bca9d017b49936c55e4)) #1 SMP PREEMPT_DYNAMIC Thu Oct 10 22:42:57 UTC 2024
+  ...
+  [    0.092204] Speculative Store Bypass: Mitigation: Speculative Store Bypass disabled via prctl
+  [    0.093207] TAA: Mitigation: TSX disabled
+  [    0.093711] MMIO Stale Data: Mitigation: Clear CPU buffers
+  [    0.094228] x86/fpu: Supporting XSAVE feature 0x001: 'x87 floating point registers'
+  [    0.095203] x86/fpu: Supporting XSAVE feature 0x002: 'SSE registers'
+  [    0.096203] x86/fpu: Supporting XSAVE feature 0x004: 'AVX registers'
+  [    0.097203] x86/fpu: Supporting XSAVE feature 0x020: 'AVX-512 opmask'
+  [    0.098003] x86/fpu: Supporting XSAVE feature 0x040: 'AVX-512 Hi256'
+  [    0.098203] x86/fpu: Supporting XSAVE feature 0x080: 'AVX-512 ZMM_Hi256'
+  [    0.099203] x86/fpu: Supporting XSAVE feature 0x200: 'Protection Keys User registers'
+  [    0.100204] x86/fpu: xstate_offset[2]:  576, xstate_sizes[2]:  256
+  [    0.101204] x86/fpu: xstate_offset[5]:  832, xstate_sizes[5]:   64
+  [    0.102203] x86/fpu: xstate_offset[6]:  896, xstate_sizes[6]:  512
+  [    0.103204] x86/fpu: xstate_offset[7]: 1408, xstate_sizes[7]: 1024
+  [    0.104051] x86/fpu: xstate_offset[9]: 2432, xstate_sizes[9]:    8
+  [    0.104204] x86/fpu: Enabled xstate features 0x2e7, context size is 2440 bytes, using 'compacted' format.
 
-NeilBrown
+then nothing after that. Boot is successful if CFI is not enabled (the
+initrd will just shutdown the machine after printing the version string).
 
+If there is any further information I can provide or patches I can test,
+I am more than happy to do so.
+
+Cheers,
+Nathan
