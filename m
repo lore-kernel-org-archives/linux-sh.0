@@ -1,61 +1,84 @@
-Received: from mail-pf1-f193.google.com (mail-pf1-f193.google.com [209.85.210.193])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5B92C14A099
-	for <linux-sh@vger.kernel.org>; Sat, 12 Oct 2024 21:58:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.210.193
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7C3BB2AD18;
+	Sun, 13 Oct 2024 08:47:33 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1728770321; cv=none; b=NV9xYF72o9RrhJMty047Hhbk/ok2i7/0X9uDgVyDTXq8vauCrd9uJBQg8graIPcuf/9wK7PCs3XecqnVcXsGgx6eQiZzX8hstRlALX+tz65IGfeRrqTUb60kuI3rEyyV2xQPQqFW+OWnxrHr3yaRyMdF3GbhhbG4U2CBZjxu0dc=
+	t=1728809253; cv=none; b=ZBP2jS1zWUwdHFhlOMpJiE8y8fDIwDkgpTLiP6bjZTNSdsmxh0XI4nBiKcYdkQhdnXt1XH66Tyz8gZclfA1onLz11IcZ6nSPXjJwVVtbkWWlqDH9+KdboqfvvU4NEzlEZY5+ygVqLqmXWn5M9RdKGIDwjE0taVUCsfDaxhgXLaA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1728770321; c=relaxed/simple;
-	bh=4p9zMCHyTvIHqWb+RiLLmYJIcUZSBcLyXxn110UCViQ=;
-	h=From:Message-ID:To:Subject:Date:MIME-Version:Content-Type; b=a5lUMdIgCdKb5WjWKF8415Dbb5KzFsQvLP215CQ64FaLfMbGtbldmxnNo24dMUNMF+XpKCp7tgnjximoUKV1K140D3yIzb914nrkY0aHha3kT0OPhiTt9hufUkVPPfhAqQua7KZrtDsWe+oowhpTvUVVSJY66xegZk31CRsN3Bc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=GH/x5Yc2; arc=none smtp.client-ip=209.85.210.193
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1728809253; c=relaxed/simple;
+	bh=oCkJ2115ozRiZPDG4YoFw9nArbpLGJybX01Iv//69uE=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=Ygnui3j1dp0vTwYL36AbZ8rQMm94Kb5QuV/3bce/6xN+todAZtzBWtCG7/n24nYsXbPsldBGWLiNWMecdojowQG9shqma41CUyUmjrMlwESL38BzRn/sNmW5e/3KEvOlWDQ26kh2r5r3NX7L+Q7pQ8XYZYpGMjIBuOKPzvdD3r8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=E8OMxiME; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="GH/x5Yc2"
-Received: by mail-pf1-f193.google.com with SMTP id d2e1a72fcca58-71e483c83dbso1327583b3a.3
-        for <linux-sh@vger.kernel.org>; Sat, 12 Oct 2024 14:58:40 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20230601; t=1728770319; x=1729375119; darn=vger.kernel.org;
-        h=mime-version:date:subject:to:reply-to:message-id:from:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=4p9zMCHyTvIHqWb+RiLLmYJIcUZSBcLyXxn110UCViQ=;
-        b=GH/x5Yc2pioPSoKkVNOYAfR9qnKCpC8WSl2Nz9yVw2TxPikgxZrIJW2xjTJXEv98xM
-         4OiSpXOpkneLZAuHLMQQp6PVa4YzDnVVUYRLxnfDh4k/uBnV9Ro80xLZVsI2UxjETC05
-         fT86/u5zdfhzCn98Xlp/y2Bx4gXSv5LO+Fhxg3/dj5ImPRMM+75PugX8r3cCvzOKGKYy
-         RSfzIYrDm56nJ9MsaTnO1iaf+UZ9sCXG2sz+8W4QSW6cLDPkOHal397v33OaEweJ/RGh
-         ocbSZkFw9m+tLT7nHEZdUQMjXaid8Br6WB2Tb2Yur4PrMBlZ5opF9H3MeB2PZpgJVLSv
-         XTCA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1728770319; x=1729375119;
-        h=mime-version:date:subject:to:reply-to:message-id:from
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=4p9zMCHyTvIHqWb+RiLLmYJIcUZSBcLyXxn110UCViQ=;
-        b=ldRqEE+c84OegE/EJ+aAvlZgsh8x39doSy/hulr3cjwhMNsj/9QuhkeuzxUKYgQ6t6
-         8Z0D6w3c0yTVIGY4oRzDf8HnUXlk9gESFkNwuIeEFLBf4S+2CzIjroobTEzLu/L4+diY
-         /jGAO/tDqByqSGwPl6TSNl4j8avWNaQ4lLjSjOcDBwix9V2XWXzAnAI7KQpNpzbLTiRf
-         foFhFhG/p53UD2pBXICMNveTVRxSZwPbFg1bsF7JQIaumMDDJyKKtCNx5YSYdN2P3B5U
-         2s3InxMmrXPl718GD+byhiQueEDBbMetfyRy0TfS8hPijMnoTB+ASoeMEvCAPW/wSpy5
-         4yxQ==
-X-Gm-Message-State: AOJu0YyXVD5D4iko6TwM1hXTMad3l05sXqA8EsvehAkmUwgxPXGiQtr2
-	Vl11VBZdKqHobf2gyviH9AWag8NNddY2+dA/RXGv82CQIYHrmQny/zp/CET+
-X-Google-Smtp-Source: AGHT+IH0P88BwQTNsYAsyFPs866e7JS/4Fr11dhhdCIk0enrztuE92Sa5ZLYwh/bUMYJ9uNzz1QqCQ==
-X-Received: by 2002:a05:6a00:9a1:b0:71d:f215:1d96 with SMTP id d2e1a72fcca58-71e37e287e7mr11888296b3a.6.1728770319335;
-        Sat, 12 Oct 2024 14:58:39 -0700 (PDT)
-Received: from [103.67.163.162] ([103.67.163.162])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-71e3e3ce90fsm3011756b3a.60.2024.10.12.14.58.38
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 12 Oct 2024 14:58:38 -0700 (PDT)
-From: Josey Swihart <peeldona3@gmail.com>
-X-Google-Original-From: Josey Swihart <joswihart@outlook.com>
-Message-ID: <d5d6de0cf4a29308349b434bb837687a4881b978cc86e633dbfd25f9ce8d0de1@mx.google.com>
-Reply-To: joswihart@outlook.com
-To: linux-sh@vger.kernel.org
-Subject: Yamaha Piano 10/12
-Date: Sat, 12 Oct 2024 17:58:36 -0400
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="E8OMxiME"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 00D61C4CECD;
+	Sun, 13 Oct 2024 08:47:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1728809253;
+	bh=oCkJ2115ozRiZPDG4YoFw9nArbpLGJybX01Iv//69uE=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=E8OMxiMEktF+GQmyT4EDIYDJPag5y6VDyo/Ga7wsRXJJ99cwzji7jLF1sUHlppQrC
+	 kfjLbesywWMnxfXjdxF/ttfJW0S6OCnAeNyYzQJk2u4D3I/IHI9w4eKpfc6/PVtfuE
+	 WndRqsL5ofKVGyFE9G/gSdQ0nGfWKHlQ3BhJP58mfPjvLaZMFmHfTrH7D6YY90Mj1Y
+	 Bf6s6/XciGtUwI6Emh7Lkdsn+ce052geMCuH5U+Tb+yPiRy+C2Qz+9+N2Qx0N42A/1
+	 /daXS+24OOYM/5Gk5f/vkwwYyUK7ykCQAd22G6E+/Xf2yKVuhiVY41QpTSBy6H62Ks
+	 p+MyUT+rRu6SQ==
+Date: Sun, 13 Oct 2024 11:43:41 +0300
+From: Mike Rapoport <rppt@kernel.org>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Andy Lutomirski <luto@kernel.org>, Ard Biesheuvel <ardb@kernel.org>,
+	Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>,
+	Brian Cain <bcain@quicinc.com>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	Dinh Nguyen <dinguyen@kernel.org>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
+	Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Kent Overstreet <kent.overstreet@linux.dev>,
+	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
+	Luis Chamberlain <mcgrof@kernel.org>,
+	Mark Rutland <mark.rutland@arm.com>,
+	Masami Hiramatsu <mhiramat@kernel.org>,
+	Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Michal Simek <monstr@monstr.eu>, Oleg Nesterov <oleg@redhat.com>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Richard Weinberger <richard@nod.at>,
+	Russell King <linux@armlinux.org.uk>, Song Liu <song@kernel.org>,
+	Stafford Horne <shorne@gmail.com>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Uladzislau Rezki <urezki@gmail.com>,
+	Vineet Gupta <vgupta@kernel.org>, Will Deacon <will@kernel.org>,
+	bpf@vger.kernel.org, linux-alpha@vger.kernel.org,
+	linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org, linux-mm@kvack.org,
+	linux-modules@vger.kernel.org, linux-openrisc@vger.kernel.org,
+	linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
+	linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+	linux-trace-kernel@vger.kernel.org, linux-um@lists.infradead.org,
+	linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
+	sparclinux@vger.kernel.org, x86@kernel.org
+Subject: Re: [PATCH v5 7/8] execmem: add support for cache of large ROX pages
+Message-ID: <ZwuIPZkjX0CfzhjS@kernel.org>
+References: <20241009180816.83591-1-rppt@kernel.org>
+ <20241009180816.83591-8-rppt@kernel.org>
+ <Zwd7GRyBtCwiAv1v@infradead.org>
+ <ZwfPPZrxHzQgYfx7@kernel.org>
+ <ZwjXz0dz-RldVNx0@infradead.org>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -63,10 +86,36 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <ZwjXz0dz-RldVNx0@infradead.org>
 
-Hello,
+On Fri, Oct 11, 2024 at 12:46:23AM -0700, Christoph Hellwig wrote:
+> On Thu, Oct 10, 2024 at 03:57:33PM +0300, Mike Rapoport wrote:
+> > On Wed, Oct 09, 2024 at 11:58:33PM -0700, Christoph Hellwig wrote:
+> > > On Wed, Oct 09, 2024 at 09:08:15PM +0300, Mike Rapoport wrote:
+> > > >  /**
+> > > >   * struct execmem_info - architecture parameters for code allocations
+> > > > + * @fill_trapping_insns: set memory to contain instructions that will trap
+> > > >   * @ranges: array of parameter sets defining architecture specific
+> > > >   * parameters for executable memory allocations. The ranges that are not
+> > > >   * explicitly initialized by an architecture use parameters defined for
+> > > >   * @EXECMEM_DEFAULT.
+> > > >   */
+> > > >  struct execmem_info {
+> > > > +	void (*fill_trapping_insns)(void *ptr, size_t size, bool writable);
+> > > >  	struct execmem_range	ranges[EXECMEM_TYPE_MAX];
+> > > 
+> > > Why is the filler an indirect function call and not an architecture
+> > > hook?
+> > 
+> > The idea is to keep everything together and have execmem_info describe all
+> > that architecture needs. 
+> 
+> But why?  That's pretty different from our normal style of arch hooks,
+> and introduces an indirect call in a security sensitive area.
 
-I?m offering my late husband?s Yamaha piano to anyone who would truly appreciate it. If you or someone you know would be interested in receiving this instrument for free, please don?t hesitate to contact me.
+Will change to __weak hook. 
 
-Warm regards,
-Josey
+-- 
+Sincerely yours,
+Mike.
