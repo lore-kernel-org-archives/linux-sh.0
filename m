@@ -1,161 +1,212 @@
-Received: from szxga05-in.huawei.com (szxga05-in.huawei.com [45.249.212.191])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 560D819F104;
-	Thu, 24 Oct 2024 08:07:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.191
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 11EAC1C1753;
+	Thu, 24 Oct 2024 08:17:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1729757242; cv=none; b=lXBx968ig4F+2uTpSjEKET9iVZ0Yfc1FZ2htkZNNNMzTF+yOFD4OavpGFkBemlmbvHXsypc8ZDtFvtPQH8go6A/Hrut5bCA545nrWtwD7tNdPsz5Skv3Pqce65CwfEcC3IkPdKvebRruX5kMBru9RrccwzVaqGw6ko8phiCByEQ=
+	t=1729757850; cv=none; b=iVCPWxqAnsujoZZVTrLA9XoEh8jY+P+Y4FRKL9RwSHCfJzhElR55hGw18j4QhIkvySr6DIWKmPB2o74qxyrolG4YFRbMGUmrpqf+wISDiAJ5R0OKuROFoer5YB0zmA8xk6/2f1HyajhCrr/7tAb/UxKlHoQtpnv1lhooIgUGhBc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1729757242; c=relaxed/simple;
-	bh=KBY3Xq32mH8OhQWVjBV/Bq8SdNGCd36z6O+Nh0qKmDQ=;
-	h=Subject:To:References:CC:From:Message-ID:Date:MIME-Version:
-	 In-Reply-To:Content-Type; b=ehn7treRhPiyNJlmiSIwgNY/U9Ipmih4TKg45PfBUMHDQOQVHU+OpEoz9TBIVht/X8JJ8Zynu0aJd/03LXAE+z3ScDJNd06v3LUrwhsnl/ZCqWyzBzapn6m30dMSojcIqvqEVZ/9UxujjbXVhzFT6Xpd69BL31AK1iN3q88wIwo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com; spf=pass smtp.mailfrom=huawei.com; arc=none smtp.client-ip=45.249.212.191
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
-Received: from mail.maildlp.com (unknown [172.19.88.214])
-	by szxga05-in.huawei.com (SkyGuard) with ESMTP id 4XYz193blfz1HLRk;
-	Thu, 24 Oct 2024 16:02:53 +0800 (CST)
-Received: from kwepemh100016.china.huawei.com (unknown [7.202.181.102])
-	by mail.maildlp.com (Postfix) with ESMTPS id 603111A016C;
-	Thu, 24 Oct 2024 16:07:15 +0800 (CST)
-Received: from [10.174.179.93] (10.174.179.93) by
- kwepemh100016.china.huawei.com (7.202.181.102) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.1544.11; Thu, 24 Oct 2024 16:07:11 +0800
-Subject: Re: [PATCH v3 -next 00/15] sysctl: move sysctls from vm_table into
- its own files
-To: Joel Granados <j.granados@samsung.com>
-References: <CGME20241010141133eucas1p1999f17c74198d3880cbd345276bcd3bd@eucas1p1.samsung.com>
- <20241010152215.3025842-1-yukaixiong@huawei.com>
- <ngknhtecptqk56gtiikvb5mdujhtxdyngzndiaz7ifslzrki7q@4wcykosdnsna>
-CC: <akpm@linux-foundation.org>, <mcgrof@kernel.org>, <ysato@users.osdn.me>,
-	<dalias@libc.org>, <glaubitz@physik.fu-berlin.de>, <luto@kernel.org>,
-	<tglx@linutronix.de>, <mingo@redhat.com>, <bp@alien8.de>,
-	<dave.hansen@linux.intel.com>, <hpa@zytor.com>, <viro@zeniv.linux.org.uk>,
-	<brauner@kernel.org>, <jack@suse.cz>, <kees@kernel.org>,
-	<willy@infradead.org>, <Liam.Howlett@oracle.com>, <vbabka@suse.cz>,
-	<lorenzo.stoakes@oracle.com>, <trondmy@kernel.org>, <anna@kernel.org>,
-	<chuck.lever@oracle.com>, <jlayton@kernel.org>, <neilb@suse.de>,
-	<okorniev@redhat.com>, <Dai.Ngo@oracle.com>, <tom@talpey.com>,
-	<davem@davemloft.net>, <edumazet@google.com>, <kuba@kernel.org>,
-	<pabeni@redhat.com>, <paul@paul-moore.com>, <jmorris@namei.org>,
-	<linux-sh@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-	<linux-fsdevel@vger.kernel.org>, <linux-mm@kvack.org>,
-	<linux-nfs@vger.kernel.org>, <netdev@vger.kernel.org>,
-	<linux-security-module@vger.kernel.org>, <dhowells@redhat.com>,
-	<haifeng.xu@shopee.com>, <baolin.wang@linux.alibaba.com>,
-	<shikemeng@huaweicloud.com>, <dchinner@redhat.com>, <bfoster@redhat.com>,
-	<souravpanda@google.com>, <hannes@cmpxchg.org>, <rientjes@google.com>,
-	<pasha.tatashin@soleen.com>, <david@redhat.com>, <ryan.roberts@arm.com>,
-	<ying.huang@intel.com>, <yang@os.amperecomputing.com>,
-	<zev@bewilderbeest.net>, <serge@hallyn.com>, <vegard.nossum@oracle.com>,
-	<wangkefeng.wang@huawei.com>, <sunnanyong@huawei.com>
-From: yukaixiong <yukaixiong@huawei.com>
-Message-ID: <79b33640-fc81-b4c1-4967-30189d9a4b23@huawei.com>
-Date: Thu, 24 Oct 2024 16:07:10 +0800
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:45.0) Gecko/20100101
- Thunderbird/45.7.1
+	s=arc-20240116; t=1729757850; c=relaxed/simple;
+	bh=Ox/ZYsBrrmbPK3A2QSUcQ8QfXoa69FGJYXDNNRcdBnE=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=FYHTSMJeMw6+i3oRT/+mzh6oStFV+NEaxc1JpjnyaoZ3xql9AaiFDVtmjVyf93aKXxocZPK10yYFpy5TDBs4jJDoeW953iR2cCJvQYXPNdoDZ1en6MvWbqkbgV4WIA2ROdQ7WO7c8hLjoUqjonmemb32zkAgyV1WMYSuQyqipBU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=kUYTT8Tx; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="kUYTT8Tx"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 612D5C4CEC7;
+	Thu, 24 Oct 2024 08:16:57 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1729757849;
+	bh=Ox/ZYsBrrmbPK3A2QSUcQ8QfXoa69FGJYXDNNRcdBnE=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=kUYTT8Tx/x5v0ueXFlaIbTgM/tC1LFzcQH/Bk/9E/G27ofyIbDJ7VnB94NYJst0cv
+	 rwM3dJS8U0ddWOUUXyYJ5U2DbjwqikH39DsU8Z9vNeIPIaGV5iltmAX+1Y07CtyHuu
+	 qjH8xAIYsTm3k2jYsPE3Yg78rgh4kjznfSO7VPR6GqKUwnNvv6GGqa5UsKhK6x1lWv
+	 w5QasDDvCUMmBgmW/lX8F5rn9hH0iBupLlusSquog8hp4ocLfovmnzNHmy5eiFqmmK
+	 d1E2Of3Az/DoYE4MNq3gGFDCWEofW+6fRLAOpgssfQgrtruzoRtxJno9OxgV2pJlkI
+	 Cl6tQ0r75+5yg==
+Date: Thu, 24 Oct 2024 11:13:11 +0300
+From: Mike Rapoport <rppt@kernel.org>
+To: Nathan Chancellor <nathan@kernel.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Luis Chamberlain <mcgrof@kernel.org>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Andy Lutomirski <luto@kernel.org>, Ard Biesheuvel <ardb@kernel.org>,
+	Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>,
+	Brian Cain <bcain@quicinc.com>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	Dinh Nguyen <dinguyen@kernel.org>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
+	Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Kent Overstreet <kent.overstreet@linux.dev>,
+	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
+	Mark Rutland <mark.rutland@arm.com>,
+	Masami Hiramatsu <mhiramat@kernel.org>,
+	Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Michal Simek <monstr@monstr.eu>, Oleg Nesterov <oleg@redhat.com>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Peter Zijlstra <peterz@infradead.org>,
+	Richard Weinberger <richard@nod.at>,
+	Russell King <linux@armlinux.org.uk>, Song Liu <song@kernel.org>,
+	Stafford Horne <shorne@gmail.com>,
+	Steven Rostedt <rostedt@goodmis.org>,
+	Suren Baghdasaryan <surenb@google.com>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Uladzislau Rezki <urezki@gmail.com>,
+	Vineet Gupta <vgupta@kernel.org>, Will Deacon <will@kernel.org>,
+	bpf@vger.kernel.org, linux-alpha@vger.kernel.org,
+	linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org, linux-mm@kvack.org,
+	linux-modules@vger.kernel.org, linux-openrisc@vger.kernel.org,
+	linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
+	linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+	linux-trace-kernel@vger.kernel.org, linux-um@lists.infradead.org,
+	linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
+	sparclinux@vger.kernel.org, x86@kernel.org
+Subject: Re: [PATCH v6 6/8] x86/module: prepare module loading for ROX
+ allocations of text
+Message-ID: <ZxoBlwkh528r-vef@kernel.org>
+References: <20241016122424.1655560-1-rppt@kernel.org>
+ <20241016122424.1655560-7-rppt@kernel.org>
+ <20241021221519.GA3567210@thelio-3990X>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <ngknhtecptqk56gtiikvb5mdujhtxdyngzndiaz7ifslzrki7q@4wcykosdnsna>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
-Content-Transfer-Encoding: 7bit
-X-ClientProxiedBy: dggpeml500026.china.huawei.com (7.185.36.106) To
- kwepemh100016.china.huawei.com (7.202.181.102)
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20241021221519.GA3567210@thelio-3990X>
 
+Hi Nathan,
 
-
-On 2024/10/21 15:22, Joel Granados wrote:
-> On Thu, Oct 10, 2024 at 11:22:00PM +0800, Kaixiong Yu wrote:
->> This patch series moves sysctls of vm_table in kernel/sysctl.c to
->> places where they actually belong, and do some related code clean-ups.
->> After this patch series, all sysctls in vm_table have been moved into its
->> own files, meanwhile, delete vm_table.
->>
->> All the modifications of this patch series base on
->> linux-next(tags/next-20241010). To test this patch series, the code was
->> compiled with both the CONFIG_SYSCTL enabled and disabled on arm64 and
->> x86_64 architectures. After this patch series is applied, all files
->> under /proc/sys/vm can be read or written normally.
->>
->> Changes in v3:
->>   - change patch1~10, patch14 title suggested by Joel Granados
->>   - change sysctl_stat_interval to static type in patch1
->>   - add acked-by from Paul Moore in patch7
->>   - change dirtytime_expire_interval to static type in patch9
->>   - add acked-by from Anna Schumaker in patch11
->>
->> Changes in v2:
->>   - fix sysctl_max_map_count undeclared issue in mm/nommu.c for patch6
->>   - update changelog for patch7/12, suggested by Kees/Paul
->>   - fix patch8, sorry for wrong changes and forget to built with NOMMU
->>   - add reviewed-by from Kees except patch8 since patch8 is wrong in v1
->>   - add reviewed-by from Jan Kara, Christian Brauner in patch12
->>
->> Kaixiong Yu (15):
->>    mm: vmstat: move sysctls to mm/vmstat.c
->>    mm: filemap: move sysctl to mm/filemap.c
->>    mm: swap: move sysctl to mm/swap.c
->>    mm: vmscan: move vmscan sysctls to mm/vmscan.c
->>    mm: util: move sysctls to mm/util.c
->>    mm: mmap: move sysctl to mm/mmap.c
->>    security: min_addr: move sysctl to security/min_addr.c
->>    mm: nommu: move sysctl to mm/nommu.c
->>    fs: fs-writeback: move sysctl to fs/fs-writeback.c
->>    fs: drop_caches: move sysctl to fs/drop_caches.c
->>    sunrpc: use vfs_pressure_ratio() helper
->>    fs: dcache: move the sysctl to fs/dcache.c
->>    x86: vdso: move the sysctl to arch/x86/entry/vdso/vdso32-setup.c
->>    sh: vdso: move the sysctl to arch/sh/kernel/vsyscall/vsyscall.c
->>    sysctl: remove unneeded include
->>
->>   arch/sh/kernel/vsyscall/vsyscall.c |  14 ++
->>   arch/x86/entry/vdso/vdso32-setup.c |  16 ++-
->>   fs/dcache.c                        |  21 ++-
->>   fs/drop_caches.c                   |  23 ++-
->>   fs/fs-writeback.c                  |  30 ++--
->>   include/linux/dcache.h             |   7 +-
->>   include/linux/mm.h                 |  23 ---
->>   include/linux/mman.h               |   2 -
->>   include/linux/swap.h               |   9 --
->>   include/linux/vmstat.h             |  11 --
->>   include/linux/writeback.h          |   4 -
->>   kernel/sysctl.c                    | 221 -----------------------------
->>   mm/filemap.c                       |  18 ++-
->>   mm/internal.h                      |  10 ++
->>   mm/mmap.c                          |  54 +++++++
->>   mm/nommu.c                         |  15 +-
->>   mm/swap.c                          |  16 ++-
->>   mm/swap.h                          |   1 +
->>   mm/util.c                          |  67 +++++++--
->>   mm/vmscan.c                        |  23 +++
->>   mm/vmstat.c                        |  44 +++++-
->>   net/sunrpc/auth.c                  |   2 +-
->>   security/min_addr.c                |  11 ++
->>   23 files changed, 330 insertions(+), 312 deletions(-)
->>
->> -- 
->> 2.34.1
->>
-> General comment for the patchset in general. I would consider making the
-> new sysctl tables const. There is an effort for doing this and it has
-> already lanted in linux-next. So if you base your patch from a recent
-> next release, then it should just work. If you *do* decide to add a
-> const qualifier, then note that you will create a dependency with the
-> sysctl patchset currently in next and that will have to go in before.
+On Mon, Oct 21, 2024 at 03:15:19PM -0700, Nathan Chancellor wrote:
+> Hi Mike,
+> 
+> On Wed, Oct 16, 2024 at 03:24:22PM +0300, Mike Rapoport wrote:
+> > From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
+> > 
+> > When module text memory will be allocated with ROX permissions, the
+> > memory at the actual address where the module will live will contain
+> > invalid instructions and there will be a writable copy that contains the
+> > actual module code.
+> > 
+> > Update relocations and alternatives patching to deal with it.
+> > 
+> > Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+> 
+> Sorry that you have to hear from me again :) It seems that module
+> loading is still broken with this version of the patch, which is
+> something that I missed in my earlier testing since I only test a
+> monolithic kernel with my regular virtual machine testing. If I build
+> and install the kernel and modules in the VM via a distribution package,
+> I get the following splat at boot:
 >
-> Best
->
+>   Starting systemd-udevd version 256.7-1-arch
+>   [    0.882312] SMP alternatives: Something went horribly wrong trying to rewrite the CFI implementation.
+>   [    0.883526] CFI failure at do_one_initcall+0x128/0x380 (target: init_module+0x0/0xff0 [crc32c_intel]; expected type: 0x0c7a3a22)
+>   [    0.884802] Oops: invalid opcode: 0000 [#1] PREEMPT SMP NOPTI
+>   [    0.885434] CPU: 3 UID: 0 PID: 157 Comm: modprobe Tainted: G        W          6.12.0-rc3-debug-next-20241021-06324-g63b3ff03d91a #1 291f0fd70f293827edec681d3c5304f5807a3c7b
+>   [    0.887084] Tainted: [W]=WARN
+>   [    0.887409] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS unknown 2/2/2022
+>   [    0.888241] RIP: 0010:do_one_initcall+0x128/0x380
+>   [    0.888720] Code: f3 0f 1e fa 41 be ff ff ff ff e9 0f 01 00 00 0f 1f 44 00 00 41 81 e7 ff ff ff 7f 49 89 db 41 ba de c5 85 f3 45 03 53 f1 74 02 <0f> 0b 41 ff d3 0f 1f 00 41 89 c6 0f 1f 44 00 00 c6 04 24 00 65 8b
+>   [    0.890598] RSP: 0018:ff3f93e5c052f970 EFLAGS: 00010217
+>   [    0.891129] RAX: ffffffffb4c105b8 RBX: ffffffffc0602010 RCX: 0000000000000000
+>   [    0.891850] RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffffffffc0602010
+>   [    0.892588] RBP: ff3f93e5c052fc88 R08: 0000000000000020 R09: 0000000000000000
+>   [    0.893305] R10: 000000002a378b84 R11: ffffffffc0602010 R12: 00000000000069c6
+>   [    0.894003] R13: ff1f0090c5596900 R14: ff1f0090c15a55c0 R15: 0000000000000000
+>   [    0.894693] FS:  00007ffb712c0740(0000) GS:ff1f00942fb80000(0000) knlGS:0000000000000000
+>   [    0.895453] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+>   [    0.896020] CR2: 00007ffffc4424c8 CR3: 0000000100af4002 CR4: 0000000000771ef0
+>   [    0.896698] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+>   [    0.897391] DR3: 0000000000000000 DR6: 00000000fffe0ff0 DR7: 0000000000000400
+>   [    0.898077] PKRU: 55555554
+>   [    0.898337] Call Trace:
+>   [    0.898577]  <TASK>
+>   [    0.898784]  ? __die_body+0x6a/0xb0
+>   [    0.899132]  ? die+0xa4/0xd0
+>   [    0.899413]  ? do_trap+0xa6/0x180
+>   [    0.899740]  ? do_one_initcall+0x128/0x380
+>   [    0.900130]  ? do_one_initcall+0x128/0x380
+>   [    0.900523]  ? handle_invalid_op+0x6a/0x90
+>   [    0.900917]  ? do_one_initcall+0x128/0x380
+>   [    0.901311]  ? exc_invalid_op+0x38/0x60
+>   [    0.901679]  ? asm_exc_invalid_op+0x1a/0x20
+>   [    0.902081]  ? __cfi_init_module+0x10/0x10 [crc32c_intel 5331566c5540f82df397056699bc4ddac8be1306]
+>   [    0.902933]  ? __cfi_init_module+0x10/0x10 [crc32c_intel 5331566c5540f82df397056699bc4ddac8be1306]
+>   [    0.903781]  ? __cfi_init_module+0x10/0x10 [crc32c_intel 5331566c5540f82df397056699bc4ddac8be1306]
+>   [    0.904634]  ? do_one_initcall+0x128/0x380
+>   [    0.905028]  ? idr_alloc_cyclic+0x139/0x1d0
+>   [    0.905437]  ? security_kernfs_init_security+0x54/0x190
+>   [    0.905958]  ? __kernfs_new_node+0x1ba/0x240
+>   [    0.906377]  ? sysfs_create_dir_ns+0x8f/0x140
+>   [    0.906795]  ? kernfs_link_sibling+0xf2/0x110
+>   [    0.907211]  ? kernfs_activate+0x2c/0x110
+>   [    0.907599]  ? kernfs_add_one+0x108/0x150
+>   [    0.907981]  ? __kernfs_create_file+0x75/0xa0
+>   [    0.908407]  ? sysfs_create_bin_file+0xc6/0x120
+>   [    0.908853]  ? __vunmap_range_noflush+0x347/0x420
+>   [    0.909313]  ? _raw_spin_unlock+0xe/0x30
+>   [    0.909692]  ? free_unref_page+0x22c/0x4c0
+>   [    0.910097]  ? __kmalloc_cache_noprof+0x1a8/0x360
+>   [    0.910546]  do_init_module+0x60/0x250
+>   [    0.910910]  __se_sys_finit_module+0x316/0x420
+>   [    0.911351]  do_syscall_64+0x88/0x170
+>   [    0.911699]  ? __x64_sys_lseek+0x68/0xb0
+>   [    0.912077]  ? syscall_exit_to_user_mode+0x97/0xc0
+>   [    0.912538]  ? do_syscall_64+0x94/0x170
+>   [    0.912902]  ? syscall_exit_to_user_mode+0x97/0xc0
+>   [    0.913353]  ? do_syscall_64+0x94/0x170
+>   [    0.913709]  ? clear_bhb_loop+0x45/0xa0
+>   [    0.914071]  ? clear_bhb_loop+0x45/0xa0
+>   [    0.914428]  ? clear_bhb_loop+0x45/0xa0
+>   [    0.914767]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
+>   [    0.915089] RIP: 0033:0x7ffb713dc1fd
+>   [    0.915316] Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 90 f3 0f 1e fa 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 8b 0d e3 fa 0c 00 f7 d8 64 89 01 48
+>   [    0.916491] RSP: 002b:00007ffffc4454a8 EFLAGS: 00000246 ORIG_RAX: 0000000000000139
+>   [    0.916964] RAX: ffffffffffffffda RBX: 000055f28c6a5420 RCX: 00007ffb713dc1fd
+>   [    0.917413] RDX: 0000000000000000 RSI: 000055f26c40cc03 RDI: 0000000000000003
+>   [    0.917858] RBP: 00007ffffc445560 R08: 0000000000000001 R09: 00007ffffc4454f0
+>   [    0.918302] R10: 0000000000000040 R11: 0000000000000246 R12: 000055f26c40cc03
+>   [    0.918748] R13: 0000000000060000 R14: 000055f28c6a4b50 R15: 000055f28c6ac5b0
+>   [    0.919211]  </TASK>
+>   [    0.919356] Modules linked in: crc32c_intel(+)
+>   [    0.919661] ---[ end trace 0000000000000000 ]---
+> 
+> I also see some other WARNs interleaved along the lines of
+> 
+>   [    0.982759] no CFI hash found at: 0xffffffffc0608000 ffffffffc0608000 cc cc cc cc cc
+>   [    0.982767] WARNING: CPU: 5 PID: 170 at arch/x86/kernel/alternative.c:1204 __apply_fineibt+0xa6d/0xab0
+> 
+> The console appears to be a bit of a mess after that initial message.
+> 
+> If there is any more information I can provide or patches I can test, I
+> am more than happy to do so.
+ 
+I've got similar report from kbuild bot a few days ago:
+https://lore.kernel.org/all/202410202257.b7edc376-lkp@intel.com
 
-Sorry,  I don't understand what is the meaning of "create a dependency 
-with the sysctl patchset".
+I fixed fineibt handling in v7:
+https://lore.kernel.org/linux-mm/20241023162711.2579610-1-rppt@kernel.org
 
-Do you just want me to change all "static struct ctl_table" type table 
-into "static const struct ctl_table" type in my patchset?
+> Cheers,
+> Nathan
+> 
 
+-- 
+Sincerely yours,
+Mike.
