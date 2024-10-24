@@ -1,199 +1,297 @@
-Received: from mailout1.w1.samsung.com (mailout1.w1.samsung.com [210.118.77.11])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E9A311C2301;
-	Thu, 24 Oct 2024 09:00:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=210.118.77.11
+Received: from foss.arm.com (foss.arm.com [217.140.110.172])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 74DCA1B85E2;
+	Thu, 24 Oct 2024 10:52:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.140.110.172
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1729760409; cv=none; b=LbXOmGK/XaDzaP5Wp1LjKetDNCtw/trsTIs4/pICLYXt9LuPMJ+D3Eioga1eUeT50n/2ity35S3VSosDauv7AdvGquyUqRGXi3mKUEXro8n7g5L0xQ4kiA7Z4j1ar3bOS/kBk3urXOf6GFbbuRhXJzmnhh5wj81ybnmYFSUmW5Y=
+	t=1729767175; cv=none; b=gOfo3Wfoca++OGmgNWwnFY9LOeolu56VpUWmGSQPuVxJUtBpqbC0z7rstA5O5Y4g4xNTG/EW9KbShKmCv1z6fm0WVTCv5BcjtTg16VI9WUkpWnFbEwHPNEDCKuYPk8eo0Xj1zK7U0lNb3CRkgI6s8tBhR+DzFCpGzcWAUOMmyXM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1729760409; c=relaxed/simple;
-	bh=5ohQDOoW3mIzHXRtqUK6vuWfWTSWfm/8yu4VqsKy41w=;
-	h=Date:From:To:CC:Subject:Message-ID:MIME-Version:Content-Type:
-	 Content-Disposition:In-Reply-To:References; b=HMrzvhzYQRXB8n06+feDYBrI8MNMS+xGcHyl9Z8O3ip896gkkabPD6f7p/EjrTI2IiM+ekjF0n6d34+WlBaxxkkpD7uUasHYkaRWB3vnJA2hUqIN8KV8V4NRgiDp847cXivlW55lXC7OHReukpaBBdMEsFcq8MH5fAnNZOjkBuI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=samsung.com; spf=pass smtp.mailfrom=samsung.com; dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b=PKWcctag; arc=none smtp.client-ip=210.118.77.11
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=samsung.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=samsung.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=samsung.com header.i=@samsung.com header.b="PKWcctag"
-Received: from eucas1p2.samsung.com (unknown [182.198.249.207])
-	by mailout1.w1.samsung.com (KnoxPortal) with ESMTP id 20241024090002euoutp018a0108ce9bcef735dfc2001bcd9eb563~BV_v9kCks2844428444euoutp01c;
-	Thu, 24 Oct 2024 09:00:02 +0000 (GMT)
-DKIM-Filter: OpenDKIM Filter v2.11.0 mailout1.w1.samsung.com 20241024090002euoutp018a0108ce9bcef735dfc2001bcd9eb563~BV_v9kCks2844428444euoutp01c
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=samsung.com;
-	s=mail20170921; t=1729760403;
-	bh=h4aMns0vuxoj2DGKLLnGNiIIfjWEYlc98f5DfBMf9BA=;
-	h=Date:From:To:CC:Subject:In-Reply-To:References:From;
-	b=PKWcctagUKqph0utZfFpZKN3KY/qjUavkEMXcM5jAgjkTBCJp4r2ARpnEC7BANlm7
-	 JkrukntINZ7KkZXYQxfxUDlegETw9QtlYjv92KU4Phx0kwXFVK8Cb6ddt5KslCN2Ql
-	 qnONcceyEgshb3vORqGH8/vgxFhRkUXBlqYCjLiE=
-Received: from eusmges3new.samsung.com (unknown [203.254.199.245]) by
-	eucas1p2.samsung.com (KnoxPortal) with ESMTP id
-	20241024090002eucas1p29b6425c21e9270f2caf6bc3f05b4341f~BV_vl5fpu2350923509eucas1p2R;
-	Thu, 24 Oct 2024 09:00:02 +0000 (GMT)
-Received: from eucas1p1.samsung.com ( [182.198.249.206]) by
-	eusmges3new.samsung.com (EUCPMTA) with SMTP id BA.A8.20397.29C0A176; Thu, 24
-	Oct 2024 10:00:02 +0100 (BST)
-Received: from eusmtrp2.samsung.com (unknown [182.198.249.139]) by
-	eucas1p1.samsung.com (KnoxPortal) with ESMTPA id
-	20241024090001eucas1p143fc38cbcaa9538710040c2d957e9f6f~BV_u8PgHB0678306783eucas1p1j;
-	Thu, 24 Oct 2024 09:00:01 +0000 (GMT)
-Received: from eusmgms2.samsung.com (unknown [182.198.249.180]) by
-	eusmtrp2.samsung.com (KnoxPortal) with ESMTP id
-	20241024090001eusmtrp2dcdd7d123acd3c24d819eddc1fef8d71~BV_u1ZF280636006360eusmtrp2P;
-	Thu, 24 Oct 2024 09:00:01 +0000 (GMT)
-X-AuditID: cbfec7f5-ed1d670000004fad-a5-671a0c92f203
-Received: from eusmtip1.samsung.com ( [203.254.199.221]) by
-	eusmgms2.samsung.com (EUCPMTA) with SMTP id D9.E9.19654.19C0A176; Thu, 24
-	Oct 2024 10:00:01 +0100 (BST)
-Received: from CAMSVWEXC02.scsc.local (unknown [106.1.227.72]) by
-	eusmtip1.samsung.com (KnoxPortal) with ESMTPA id
-	20241024090001eusmtip1faaa6f50c4bd058871f85094590722b6~BV_ujLojm1676816768eusmtip1x;
-	Thu, 24 Oct 2024 09:00:01 +0000 (GMT)
-Received: from localhost (106.110.32.107) by CAMSVWEXC02.scsc.local
-	(2002:6a01:e348::6a01:e348) with Microsoft SMTP Server (TLS) id 15.0.1497.2;
-	Thu, 24 Oct 2024 10:00:00 +0100
-Date: Thu, 24 Oct 2024 10:59:58 +0200
-From: Joel Granados <j.granados@samsung.com>
-To: yukaixiong <yukaixiong@huawei.com>
-CC: <akpm@linux-foundation.org>, <mcgrof@kernel.org>, <ysato@users.osdn.me>,
-	<dalias@libc.org>, <glaubitz@physik.fu-berlin.de>, <luto@kernel.org>,
-	<tglx@linutronix.de>, <mingo@redhat.com>, <bp@alien8.de>,
-	<dave.hansen@linux.intel.com>, <hpa@zytor.com>, <viro@zeniv.linux.org.uk>,
-	<brauner@kernel.org>, <jack@suse.cz>, <kees@kernel.org>,
-	<willy@infradead.org>, <Liam.Howlett@oracle.com>, <vbabka@suse.cz>,
-	<lorenzo.stoakes@oracle.com>, <trondmy@kernel.org>, <anna@kernel.org>,
-	<chuck.lever@oracle.com>, <jlayton@kernel.org>, <neilb@suse.de>,
-	<okorniev@redhat.com>, <Dai.Ngo@oracle.com>, <tom@talpey.com>,
-	<davem@davemloft.net>, <edumazet@google.com>, <kuba@kernel.org>,
-	<pabeni@redhat.com>, <paul@paul-moore.com>, <jmorris@namei.org>,
-	<linux-sh@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-	<linux-fsdevel@vger.kernel.org>, <linux-mm@kvack.org>,
-	<linux-nfs@vger.kernel.org>, <netdev@vger.kernel.org>,
-	<linux-security-module@vger.kernel.org>, <dhowells@redhat.com>,
-	<haifeng.xu@shopee.com>, <baolin.wang@linux.alibaba.com>,
-	<shikemeng@huaweicloud.com>, <dchinner@redhat.com>, <bfoster@redhat.com>,
-	<souravpanda@google.com>, <hannes@cmpxchg.org>, <rientjes@google.com>,
-	<pasha.tatashin@soleen.com>, <david@redhat.com>, <ryan.roberts@arm.com>,
-	<ying.huang@intel.com>, <yang@os.amperecomputing.com>,
-	<zev@bewilderbeest.net>, <serge@hallyn.com>, <vegard.nossum@oracle.com>,
-	<wangkefeng.wang@huawei.com>, <sunnanyong@huawei.com>,
-	<joel.granados@kernel.org>
-Subject: Re: [PATCH v3 -next 00/15] sysctl: move sysctls from vm_table into
- its own files
-Message-ID: <wk7dqsx42rxjt76dowrydumhinwwdltw7e5ptp7fh4rc4c4sji@jrtopui4fpwb>
+	s=arc-20240116; t=1729767175; c=relaxed/simple;
+	bh=gPlA1+J0NJzLZMqSBN3DdFrWVxb4cP6uwM/TMB44Xh0=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=Y2odxkdl13w70K1QbFujqkSUxRsrfHonhmrMTjh7bvNymP+5nA+36n+q0rdIY26Dq917WBfHbIcA5pbbzEgYHDGrFaMt0w+sXmFwcKXiLTWNaX1CZIUzeeoKHaGjDAeG+rPjC7KCWeTWfB7W41U8cTW/kJ2XUSeI5+q6Qh66y64=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com; spf=pass smtp.mailfrom=arm.com; arc=none smtp.client-ip=217.140.110.172
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arm.com
+Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
+	by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 8DEFD497;
+	Thu, 24 Oct 2024 03:53:21 -0700 (PDT)
+Received: from [10.1.30.45] (e122027.cambridge.arm.com [10.1.30.45])
+	by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 67C983F71E;
+	Thu, 24 Oct 2024 03:52:42 -0700 (PDT)
+Message-ID: <b11631ba-224f-41fb-b82e-59f1b258aea1@arm.com>
+Date: Thu, 24 Oct 2024 11:52:40 +0100
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Disposition: inline
-In-Reply-To: <79b33640-fc81-b4c1-4967-30189d9a4b23@huawei.com>
-X-ClientProxiedBy: CAMSVWEXC01.scsc.local (2002:6a01:e347::6a01:e347) To
-	CAMSVWEXC02.scsc.local (2002:6a01:e348::6a01:e348)
-X-Brightmail-Tracker: H4sIAAAAAAAAA02Te0xTVxzHd+69vfcCVsoj9ghL3GC6SRBksvlLnG4ak91tmmxZ9lC3jEZu
-	ihnUppWhBGfrA6bII1WE0SpVnDyKAoWhiAQFBgNGyxScgqBjdBusvFpBAYG1XN387/N7fM/5
-	fk9yWNLXygSwuxR7eJVCFhtEe1JVTVOWVbpFAfLVpW1SMJSW0HCkep6C+domBCPORHCWzdHw
-	T4MDwXzvXwTknaug4ezUtAj+LktBYLAepmCidJqE9qHTDIwcnKHA1tTPgH40GOyVRSSYzFvh
-	VLkU9NmHCJi6UMzApdJ8An7Jv0fBpWGrCDqq0kVwWfOAgWu1LRTcumqgoa9k3jW43iaCseP9
-	NBienCShJbeIAuvViyK4k2lDcPO6kYDaPA0FTcYloPvTwcBkmx1B61QS9OiyKUg+X07A8Zos
-	BNYOCwOj6dcI0JakknDXOkBDhTmLhNbpVgIcp+dEoNemI2g/WCIC62yzCLTO+whmHrucpJ1v
-	YVxXn3C9SN0jGkzzlSR02jqod9Zzj46kU1zJmRLEGXs+4BrsoyRXWXSX4IzmeO52zTbucOOw
-	iHtYnYG4isIQLv/aIMGZi4/SnNmhYziLfoziRiwWhvs5Z4b68OXtnm9F87G7vuFV4RuiPGNO
-	3rhAK9u995ZnnkMalOJ1DHmwWBKJG09YKDf7SgoRnjTsPIY8XfwQ4e4/xhmhcCLcXt9OP1Ok
-	duUTwqAAYXv5FeK/rdmseiQUlQg35Y8jt4SSLMfmjAzGzbQkFFvt90g3+0tW4CHbNO0WkJK7
-	Xtg2bFpw4ifZgW/dNiywWLIVz5T/RArsg1u+H1jok66DjDUOl5h1cSAumGPdbQ/JBmxq7BYJ
-	VoNwV2YvJfB+3FrZTQisW4R/PPqFwJtxW8ZZRmA/PNRc+ZRfxPPVeQvJsOQEwnVzY4xQmBC+
-	oJ14etI6fLhz4KliI249lIbchrBkMb4z7CP4XIx1Vdmk0Bbj75J9he0V2NRnpzJRcO5zyXKf
-	S5b7fzIjIouRlI9Xx8l59RoFnxCmlsWp4xXysJ2748zI9efa5ponrqDCofGwekSwqB5hlgzy
-	F/8as1TuK46W7UvkVbu/UsXH8up6FMhSQVLx8uhlvK9ELtvDf83zSl71bEqwHgEaQnVAHil7
-	7zPzFvXuvtWppM2RNbxW42jI0a9P6vG2+EzYGqiIqi/ftPxeRT0OaY7LexKQ2L93i3ZdgXpa
-	4ancuKwtMzrqwJJVCfTaG5P3V+aYZuv2J+nlQ46bBZeH76i9Ix1J4Yn2QK3nvqhc6Rsfn2Rb
-	lL2NsqVdFYnv1z3enBC1aQP/Svds/wy70kOsOSW/qA+u9gpXp/Rs32i1TTlDz5z71L/20J4H
-	fm+nvdTyw0dKHRu/bVzTgGp+G8x5obcsJHlz56D086vfdnzCOiLyGl8T3/RJGkhLKPNI1Y4o
-	X9+R/apJYVCo3l2+yeosapTK5aGp3JBVOeg847Fm4qh3O86UBlHqGFlECKlSy/4FvpOZEOIE
-	AAA=
-X-Brightmail-Tracker: H4sIAAAAAAAAA02Te1CUZRTGe7/bLgixAcUXgmPbCMLYcl04MIiOTuNHDTOVAw1a4YorkNzc
-	BUzUCUwyEQEJpLjEJsR1A3dBChdEYcUWgkVuBogJgdxBLqawwrawNfnf877Pc37nzJn3ZeOm
-	M5QlOzQiWiiKEIRxKUOide3u4DuXjSyDHSVqW8itlFKQWKslQFvfjGB2MQ4Wr61RMNW0gEA7
-	OIZB/tUqCn5cXiFh/Np5BLnqcwQ8rVzBoW0yjwWzZzUEjDYPsyBn7m2Yri7FoVzuC1dkFpCT
-	9RUGy0VlLKioLMDg94IHBFTMqEnoqEkh4Zf4Ryyoq1cR0HUjl4KHUq3OuNVKwpPkYQpyX2Tg
-	oMouJUB942cS/kgbRdB5S4JBfX48Ac2SNyD98QIL/m6dRtCyfBoG0rMI+LpQhkGyIhOBuqOd
-	BXMpdRgkSC/i0KceoaBKnolDy0oLBgt5ayTkJKQgaDsrJUG9epeEhMU/EWie6ya5VKhi6Vp/
-	q9tIwzMKyrXVOHSPdhC7dzLPElMIRvqDFDGSgfeZpuk5nKku7cMYiTyG6VUEMOeUMySzVJuK
-	mKoSe6agbgJj5GUXKEa+kM5i2nOeEMxsezuL+e07DfHBWwd4XqLImGjh1pBIcfRO7kEncOY5
-	eQDP2dWD5+Ti/qmnM5/r4O11RBgWGisUOXgf4oVk3C6iotpMvpClXUXx6PymJGTApjmu9MWe
-	AiwJGbJNOT8hurNmFNMbVrRsqYfUazP6RW8SpQ/NI1rTOETqD9WInijo30gRnG20PDWVta4p
-	zg5aPf0AX9fmHBt6cnRloxrn9G2iR2fKiXXDjHOQ7urN3dDGHF9aI7uD66nfYPRqUSWpN16j
-	Vd+PbIRwHVWiWNCR2Dq9mS5eY69fG3C86XJl/7+jcumetEFCr8/Qi6uPURoyy36JlP0SKft/
-	kgThZchcGCMODw4XO/PEgnBxTEQwLygyXI50776mebn6V1Q6Oc9rRBgbNSKajXPNje+FvBls
-	anxEcDJOKIoMFMWECcWNiK/bxWXc8vWgSN3HiYgOdHJz5Du5unk48j3cXLgWxlS3+qgpJ1gQ
-	LTwmFEYJRf/VYWwDy3jsw6a8iTxVY6Jdgq1Xi1duRWixjbtH0Hv2DSc+bvsrrhKL5Z+yGrqv
-	8LSS3tTu1UbJS1TMnJ2ryGqLC1dCLfJLAiKatjGG96/vKyCLB6NsZqwbmrp2qwWmJYeVg75j
-	pwzbfDL80QC5fUdC31rjkML2uMjv0P7rn3ymqUX3LJ8aLWmclzXbfeqPdRbZBlaY+NitjvQa
-	+B8/yW+dV/jJRB8VB5i479ozPPjo3TMWNbEPP9dmKlUXshRT+fF7OrdeqT8c/rwvJJm5bTR+
-	YK9G+cppyYmKffVThRVfWu23HtD2bPHJ7LZWOrzabHFns/Jmh7+LzC87ubWtv2fXoudRF5OB
-	sYZxLiEOETjZ4yKx4B/VplmkgAQAAA==
-X-CMS-MailID: 20241024090001eucas1p143fc38cbcaa9538710040c2d957e9f6f
-X-Msg-Generator: CA
-X-RootMTR: 20241010141133eucas1p1999f17c74198d3880cbd345276bcd3bd
-X-EPHeader: CA
-CMS-TYPE: 201P
-X-CMS-RootMailID: 20241010141133eucas1p1999f17c74198d3880cbd345276bcd3bd
-References: <CGME20241010141133eucas1p1999f17c74198d3880cbd345276bcd3bd@eucas1p1.samsung.com>
-	<20241010152215.3025842-1-yukaixiong@huawei.com>
-	<ngknhtecptqk56gtiikvb5mdujhtxdyngzndiaz7ifslzrki7q@4wcykosdnsna>
-	<79b33640-fc81-b4c1-4967-30189d9a4b23@huawei.com>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH RFC v2 0/4] mm: Introduce MAP_BELOW_HINT
+To: "Liam R. Howlett" <Liam.Howlett@oracle.com>,
+ "Kirill A. Shutemov" <kirill@shutemov.name>,
+ Charlie Jenkins <charlie@rivosinc.com>, Arnd Bergmann <arnd@arndb.de>,
+ Richard Henderson <richard.henderson@linaro.org>,
+ Ivan Kokshaysky <ink@jurassic.park.msu.ru>, Matt Turner
+ <mattst88@gmail.com>, Vineet Gupta <vgupta@kernel.org>,
+ Russell King <linux@armlinux.org.uk>, Guo Ren <guoren@kernel.org>,
+ Huacai Chen <chenhuacai@kernel.org>, WANG Xuerui <kernel@xen0n.name>,
+ Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+ "James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
+ Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>,
+ Nicholas Piggin <npiggin@gmail.com>,
+ Christophe Leroy <christophe.leroy@csgroup.eu>,
+ Naveen N Rao <naveen@kernel.org>, Alexander Gordeev
+ <agordeev@linux.ibm.com>, Gerald Schaefer <gerald.schaefer@linux.ibm.com>,
+ Heiko Carstens <hca@linux.ibm.com>, Vasily Gorbik <gor@linux.ibm.com>,
+ Christian Borntraeger <borntraeger@linux.ibm.com>,
+ Sven Schnelle <svens@linux.ibm.com>,
+ Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>,
+ John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+ "David S. Miller" <davem@davemloft.net>,
+ Andreas Larsson <andreas@gaisler.com>, Thomas Gleixner <tglx@linutronix.de>,
+ Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+ Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+ "H. Peter Anvin" <hpa@zytor.com>, Andy Lutomirski <luto@kernel.org>,
+ Peter Zijlstra <peterz@infradead.org>, Muchun Song <muchun.song@linux.dev>,
+ Andrew Morton <akpm@linux-foundation.org>, Vlastimil Babka <vbabka@suse.cz>,
+ Lorenzo Stoakes <lorenzo.stoakes@oracle.com>, Shuah Khan <shuah@kernel.org>,
+ linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org,
+ linux-alpha@vger.kernel.org, linux-snps-arc@lists.infradead.org,
+ linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
+ loongarch@lists.linux.dev, linux-mips@vger.kernel.org,
+ linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
+ linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
+ sparclinux@vger.kernel.org, linux-mm@kvack.org,
+ linux-kselftest@vger.kernel.org
+References: <20240829-patches-below_hint_mmap-v2-0-638a28d9eae0@rivosinc.com>
+ <yu7um2tcxg2apoz372rmzpkrfgbb42ndvabvrsp4usb2e3bkrf@huaucjsp5vlj>
+ <Ztnp3OAIRz/daj7s@ghost>
+ <pbotlphw77fkfacldtpxfjcs2w5nhb2uvxszv5rmlrhjm42akd@4pvcqb7ojq4v>
+ <b6ca55b7-4de2-4085-97bd-619f91d9fcb8@arm.com>
+ <5u7xntjdye5ejjmkgpp7m3ogpzblxcztrwngulejdft63fzuwf@xcxfcbaccqtw>
+ <07c5e292-5218-43ee-a167-da09d108a663@arm.com>
+ <gcyxymiqvxgkkhn76a6ksvevzcq36rridwakgyjsa24obcab3t@leqlqjcx3va3>
+From: Steven Price <steven.price@arm.com>
+Content-Language: en-GB
+In-Reply-To: <gcyxymiqvxgkkhn76a6ksvevzcq36rridwakgyjsa24obcab3t@leqlqjcx3va3>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Thu, Oct 24, 2024 at 04:07:10PM +0800, yukaixiong wrote:
-...
+On 23/10/2024 19:10, Liam R. Howlett wrote:
+> * Steven Price <steven.price@arm.com> [241023 05:31]:
+>>>>   * Box64 seems to have a custom allocator based on reading 
+>>>>     /proc/self/maps to allocate a block of VA space with a low enough 
+>>>>     address [1]
+>>>>
+>>>>   * PHP has code reading /proc/self/maps - I think this is to find a 
+>>>>     segment which is close enough to the text segment [2]
+>>>>
+>>>>   * FEX-Emu mmap()s the upper 128TB of VA on Arm to avoid full 48 bit
+>>>>     addresses [3][4]
+>>>
+>>> Can't the limited number of applications that need to restrict the upper
+>>> bound use an LD_PRELOAD compatible library to do this?
+>>
+>> I'm not entirely sure what point you are making here. Yes an LD_PRELOAD
+>> approach could be used instead of a personality type as a 'hack' to
+>> preallocate the upper address space. The obvious disadvantage is that
+>> you can't (easily) layer LD_PRELOAD so it won't work in the general case.
 > 
+> My point is that riscv could work around the limited number of
+> applications that requires this.  It's not really viable for you.
+
+Ah ok - thanks for the clarification.
+
+>>
+>>>>
+>>>>   * pmdk has some funky code to find the lowest address that meets 
+>>>>     certain requirements - this does look like an ALSR alternative and 
+>>>>     probably couldn't directly use MAP_BELOW_HINT, although maybe this 
+>>>>     suggests we need a mechanism to map without a VA-range? [5]
+>>>>
+>>>>   * MIT-Scheme parses /proc/self/maps to find the lowest mapping within 
+>>>>     a range [6]
+>>>>
+>>>>   * LuaJIT uses an approach to 'probe' to find a suitable low address 
+>>>>     for allocation [7]
+>>>>
+>>>
+>>> Although I did not take a deep dive into each example above, there are
+>>> some very odd things being done, we will never cover all the use cases
+>>> with an exact API match.  What we have today can be made to work for
+>>> these users as they have figured ways to do it.
+>>>
+>>> Are they pretty? no.  Are they common? no.  I'm not sure it's worth
+>>> plumbing in new MM code in for these users.
+>>
+>> My issue with the existing 'solutions' is that they all seem to be fragile:
+>>
+>>  * Using /proc/self/maps is inherently racy if there could be any other
+>> code running in the process at the same time.
 > 
-> >>   mm/swap.c                          |  16 ++-
-> >>   mm/swap.h                          |   1 +
-> >>   mm/util.c                          |  67 +++++++--
-> >>   mm/vmscan.c                        |  23 +++
-> >>   mm/vmstat.c                        |  44 +++++-
-> >>   net/sunrpc/auth.c                  |   2 +-
-> >>   security/min_addr.c                |  11 ++
-> >>   23 files changed, 330 insertions(+), 312 deletions(-)
-> >>
-> >> -- 
-> >> 2.34.1
-> >>
-> > General comment for the patchset in general. I would consider making the
-> > new sysctl tables const. There is an effort for doing this and it has
-> > already lanted in linux-next. So if you base your patch from a recent
-> > next release, then it should just work. If you *do* decide to add a
-> > const qualifier, then note that you will create a dependency with the
-> > sysctl patchset currently in next and that will have to go in before.
-> >
-> > Best
-> >
+> Yes, it is not thread safe.  Parsing text is also undesirable.
 > 
-> Sorry,  I don't understand what is the meaning of "create a dependency 
-> with the sysctl patchset".
-The patches in the sysctl subsys that allow you to qualify the ctl_table
-as const are not in mainline yet. They are in linux-next. This means
-that if these patches go into the next kernel release before the
-sysctl-next branch, it will have compilation errors. Therefore the
-sysctl-next branch needs to be pulled in to the new kernel release
-before this patchest. This also means that for this to build properly it
-has to be based on a linux-next release.
-
+>>
+>>  * Attempting to map the upper part of the address space only works if
+>> done early enough - once an allocation arrives there, there's very
+>> little you can robustly do (because the stray allocation might be freed).
+>>
+>>  * LuaJIT's probing mechanism is probably robust, but it's inefficient -
+>> LuaJIT has a fallback of linear probing, following by no hint (ASLR),
+>> followed by pseudo-random probing. I don't know the history of the code
+>> but it looks like it's probably been tweaked to try to avoid performance
+>> issues.
+>>
+>>>> The biggest benefit I see of MAP_BELOW_HINT is that it would allow a
+>>>> library to get low addresses without causing any problems for the rest
+>>>> of the application. The use case I'm looking at is in a library and 
+>>>> therefore a personality mode wouldn't be appropriate (because I don't 
+>>>> want to affect the rest of the application). Reading /proc/self/maps
+>>>> is also problematic because other threads could be allocating/freeing
+>>>> at the same time.
+>>>
+>>> As long as you don't exhaust the lower limit you are trying to allocate
+>>> within - which is exactly the issue riscv is hitting.
+>>
+>> Obviously if you actually exhaust the lower limit then any
+>> MAP_BELOW_HINT API would also fail - there's really not much that can be
+>> done in that case.
 > 
-> Do you just want me to change all "static struct ctl_table" type table 
-> into "static const struct ctl_table" type in my patchset?
-You should const qualify them if the maintainer that is pulling in these
-patches is ok with it. You should *not* const qualify them if the
-maintainer prefers otherwise.
+> Today we reverse the search, so you end up in the higher address
+> (bottom-up vs top-down) - although the direction is arch dependent.
+> 
+> If the allocation is too high/low then you could detect, free, and
+> handle the failure.
 
-Please get back to me if I did not address your questions.
+Agreed, that's fine.
 
-Best
+>>
+>>> I understand that you are providing examples to prove that this is
+>>> needed, but I feel like you are better demonstrating the flexibility
+>>> exists to implement solutions in different ways using todays API.
+>>
+>> My intention is to show that today's API doesn't provide a robust way of
+>> doing this. Although I'm quite happy if you can point me at a robust way
+>> with the current API. As I mentioned my goal is to be able to map memory
+>> in a (multithreaded) library with a (ideally configurable) number of VA
+>> bits. I don't particularly want to restrict the whole process, just
+>> specific allocations.
+> 
+> If you don't need to restrict everything, won't the hint work for your
+> usecase?  I must be missing something from your requirements.
 
--- 
+The hint only works if the hint address is actually free. Otherwise
+mmap() falls back to as if the hint address wasn't specified.
 
-Joel Granados
+E.g.
+
+> 	for(int i = 0; i < 2; i++) {
+> 		void *addr = mmap((void*)(1UL << 32), PAGE_SIZE, PROT_NONE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+> 		printf("%p\n", addr);
+> 	}
+
+Prints something like:
+
+0x100000000
+0x7f20d21e0000
+
+The hint is ignored for the second mmap() because there's already a VMA
+at the hint address.
+
+So the question is how to generate a hint value that is (or has a high
+likelihood of being) empty? This AFAICT is the LuaJIT approach, but
+their approach is to pick random values in the hope of getting a free
+address (and then working linearly up for subsequent allocations). Which
+doesn't meet my idea of "robust".
+
+>>
+>> I had typed up a series similar to this one as a MAP_BELOW flag would
+>> fit my use-case well.
+>>
+>>> I think it would be best to use the existing methods and work around the
+>>> issue that was created in riscv while future changes could mirror amd64
+>>> and arm64.
+>>
+>> The riscv issue is a different issue to the one I'm trying to solve. I
+>> agree MAP_BELOW_HINT isn't a great fix for that because we already have
+>> differences between amd64 and arm64 and obviously no software currently
+>> out there uses this new flag.
+>>
+>> However, if we had introduced this flag in the past (e.g. if MAP_32BIT
+>> had been implemented more generically, across architectures and with a
+>> hint value, like this new flag) then we probably wouldn't be in this
+>> situation. Applications that want to restrict the VA space would be able
+>> to opt-in and be portable across architectures.
+> 
+> I don't think that's true.  Some of the applications want all of the
+> allocations below a certain threshold and by the time they are adding
+> flags to allocations, it's too late.  What you are looking for is a
+> counterpart to mmap_min_addr, but for higher addresses?  This would have
+> to be set before any of the allocations occur for a specific binary (ie:
+> existing libraries need to be below that threshold too), I think?
+
+Well that's not what *I* am looking for. A mmap_max_addr might be useful
+for others for the purpose of restricting all allocations.
+
+I think there are roughly three classes of application:
+
+ 1. Applications which do nothing special with pointers. This is most
+applications and they could benefit from any future expansions to the VA
+size without any modification. E.g. if 64 bit VA addresses were somehow
+available they could deal with them today (without recompilation).
+
+ 2. Applications which need VA addresses to meet certain requirements.
+They might be emulating another architecture (e.g. FEX) and want
+pointers that can be exposed to the emulation. They might be aware of
+restrictions in JIT code (e.g. PHP). Or they might want to store
+pointers in 'weird' ways which involve fewer bits - AFAICT that's the
+LuaJIT situation. These applications are usually well aware that they
+are doing something "unusual" and would likely use a Linux API if it
+existed.
+
+ 3. Applications which abuse the top bits of a VA because they've read
+the architecture documentation and they "know" that the VA space is limited.
+
+Class 3 would benefit from mmap_max_addr - either because the
+architecture has been extended (although that's been worked around by
+requiring the hint value to allocate into the top address space) or
+because they get ported to another architecture (which I believe is the
+RiscV issue). There is some argument these applications are buggy but
+"we don't break userspace" so we deal with them in kernel until they get
+ported and then ideally the bugs are fixed.
+
+Class 1 is the applications we know and love, they don't need anything
+special.
+
+Class 2 is the case I care about. The application knows it wants special
+addresses, and in the cases I've detailed there has been significant
+code written to try to achieve this. But the kernel isn't currently
+providing a good mechanism to do this.
+
+>>
+>> Another potential option is a mmap3() which actually allows the caller
+>> to place constraints on the VA space (e.g. minimum, maximum and
+>> alignment). There's plenty of code out there that has to over-allocate
+>> and munmap() the unneeded part for alignment reasons. But I don't have a
+>> specific need for that, and I'm guessing you wouldn't be in favour.
+> 
+> You'd probably want control of the direction of the search too.
+
+Very true, and one of the reasons I don't want to do a mmap3() is that
+I'm pretty I'd miss something.
+
+> I think mmap3() would be difficult to have accepted as well.
+
+And that's the other major reason ;)
+
+Thanks,
+
+Steve
+
+> ...
+> 
+> Thanks,
+> Liam
+> 
+
