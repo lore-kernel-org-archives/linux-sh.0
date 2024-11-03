@@ -1,548 +1,692 @@
-Received: from foss.arm.com (foss.arm.com [217.140.110.172])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 838C51CCEC2;
-	Wed, 30 Oct 2024 08:45:49 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=217.140.110.172
+Received: from m16.mail.163.com (m16.mail.163.com [117.135.210.5])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id CB14D15443B;
+	Sun,  3 Nov 2024 08:09:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=117.135.210.5
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1730277953; cv=none; b=AKTwdfPRCc3Ijx8x2rkk9RB0wllNwHmSzh9JKIJIqOUduQkmdimqnCjcCUztVq5/wgMEmUgpN6XyZB9pSHG2KcFboXA7Qmw3vO0lROztb59MMqzx3nXruLtQUKpqs2Mwu410TEvF8ipp0UbaJDCzQVHrP84fiWUNTNqx6uO7fqY=
+	t=1730621360; cv=none; b=W5BTG1KXBlYJ5Xvy7L+16Dm7JpXtJRghljlKa+xo+tKQGrVDYQoiNz+zhE8nOdjaAQxV2m6zRUmYBfdat+G7aoFKHWWxsC8gsjmnGAG9blfcCIyb+DRbj0sQx96xK8ciN6CJwVquM2euuM+MrQU46x4Pb61mxRBeILeHwe/V+BY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1730277953; c=relaxed/simple;
-	bh=KiS8/A7H+BpbLA7WifTR9v99Xtw24pJxGu4EYpC8VOs=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=VkkN2wCWEpDid2noMvunb73GTAUzZvpcL3rqcEccg6pwOFsSehuijsGIbQ0D+Lo205cWiM9CCdiG+QlngyzU1ZcmBruEK62uqAhbDXp2faRE4iCZkiPHnJ0Fp9HxqxK1SSdQ6cPHo3VSLCj2NamW1Hy6FmfWWtvdwrqFSDvN9Qk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com; spf=pass smtp.mailfrom=arm.com; arc=none smtp.client-ip=217.140.110.172
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arm.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arm.com
-Received: from usa-sjc-imap-foss1.foss.arm.com (unknown [10.121.207.14])
-	by usa-sjc-mx-foss1.foss.arm.com (Postfix) with ESMTP id 1B5D1169E;
-	Wed, 30 Oct 2024 01:46:13 -0700 (PDT)
-Received: from [10.57.89.111] (unknown [10.57.89.111])
-	by usa-sjc-imap-foss1.foss.arm.com (Postfix) with ESMTPSA id 4B1993F73B;
-	Wed, 30 Oct 2024 01:45:34 -0700 (PDT)
-Message-ID: <e33a8ead-ca36-4570-92ac-b27708f50023@arm.com>
-Date: Wed, 30 Oct 2024 08:45:32 +0000
+	s=arc-20240116; t=1730621360; c=relaxed/simple;
+	bh=A3qFofE2FTeXXptlGj/GbRLYBog9Av63u4PPiTaJfXE=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=SXdHTUC7DgAiP1BX0TH6kwLWoF8R6NkvjwLLZtsQfCZPwQELQ0/EozXYbt2GD+YeaqYtAblYHqUSTuqJFmI2JsM/v0nDMnXSe7fowCbcxHG7/dlgwjmKZvb8S1La4l6Pd7JZMU/MXErNHNCQBNe1viH38LINndo4rVg4F7qJQNU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=Z8nMehOb; arc=none smtp.client-ip=117.135.210.5
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=163.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="Z8nMehOb"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
+	s=s110527; h=From:Subject:Date:Message-Id:MIME-Version; bh=fjAen
+	LhCq8Xk53K+KNMCvNlQm0rmeCRd+Naft/mV0f8=; b=Z8nMehObtHVNsBHL+JKMH
+	sE6tULkLao0vvKLdWkBz55udo400qH22K1LCSaBqU3T/vrXE60vW3CrzE/YAfXjb
+	uKBp3m7+dBz0Vp6YpPDBauA88jwBJEE2zNnTo7PDHF9ElNIeQpwNN+1rrZfuZmRC
+	0fxwNJSzSk3WrVfUGeNm90=
+Received: from localhost.localdomain (unknown [111.35.191.191])
+	by gzsmtp2 (Coremail) with SMTP id PSgvCgCnrQTjLidnai5hAQ--.30987S4;
+	Sun, 03 Nov 2024 16:06:12 +0800 (CST)
+From: David Wang <00107082@163.com>
+To: tglx@linutronix.de,
+	richard.henderson@linaro.org,
+	linux@armlinux.org.uk,
+	catalin.marinas@arm.com,
+	will@kernel.org,
+	guoren@kernel.org,
+	chenhuacai@kernel.org,
+	kernel@xen0n.name,
+	James.Bottomley@HansenPartnership.com,
+	deller@gmx.de,
+	mpe@ellerman.id.au,
+	paul.walmsley@sifive.com,
+	ysato@users.sourceforge.jp,
+	dalias@libc.org,
+	glaubitz@physik.fu-berlin.de,
+	davem@davemloft.net,
+	andreas@gaisler.com,
+	mingo@redhat.com,
+	bp@alien8.de,
+	dave.hansen@linux.intel.com,
+	x86@kernel.org,
+	chris@zankel.net,
+	jcmvbkbc@gmail.com
+Cc: linux-kernel@vger.kernel.org,
+	linux-alpha@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	linux-csky@vger.kernel.org,
+	loongarch@lists.linux.dev,
+	linux-parisc@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org,
+	linux-sh@vger.kernel.org,
+	sparclinux@vger.kernel.org,
+	David Wang <00107082@163.com>
+Subject: [PATCH] kernel/irq/proc: performance: replace seq_printf with seq_put_decimal_ull_width
+Date: Sun,  3 Nov 2024 16:05:52 +0800
+Message-Id: <20241103080552.4787-1-00107082@163.com>
+X-Mailer: git-send-email 2.39.2
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [RFC PATCH v1 01/57] mm: Add macros ahead of supporting boot-time
- page size selection
-Content-Language: en-GB
-To: "David S. Miller" <davem@davemloft.net>,
- "James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
- Andreas Larsson <andreas@gaisler.com>,
- Andrew Morton <akpm@linux-foundation.org>,
- Anshuman Khandual <anshuman.khandual@arm.com>,
- Anton Ivanov <anton.ivanov@cambridgegreys.com>,
- Ard Biesheuvel <ardb@kernel.org>, Arnd Bergmann <arnd@arndb.de>,
- Borislav Petkov <bp@alien8.de>, Catalin Marinas <catalin.marinas@arm.com>,
- Chris Zankel <chris@zankel.net>, Dave Hansen <dave.hansen@linux.intel.com>,
- David Hildenbrand <david@redhat.com>, Dinh Nguyen <dinguyen@kernel.org>,
- Geert Uytterhoeven <geert@linux-m68k.org>,
- Greg Marsden <greg.marsden@oracle.com>, Helge Deller <deller@gmx.de>,
- Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>,
- Ivan Ivanov <ivan.ivanov@suse.com>, Johannes Berg
- <johannes@sipsolutions.net>,
- John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
- Jonas Bonn <jonas@southpole.se>, Kalesh Singh <kaleshsingh@google.com>,
- Marc Zyngier <maz@kernel.org>, Mark Rutland <mark.rutland@arm.com>,
- Matthias Brugger <mbrugger@suse.com>, Max Filippov <jcmvbkbc@gmail.com>,
- Miroslav Benes <mbenes@suse.cz>, Rich Felker <dalias@libc.org>,
- Richard Weinberger <richard@nod.at>, Stafford Horne <shorne@gmail.com>,
- Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
- Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
- Thomas Gleixner <tglx@linutronix.de>, Will Deacon <will@kernel.org>,
- Yoshinori Sato <ysato@users.sourceforge.jp>, x86@kernel.org
-Cc: linux-alpha@vger.kernel.org, linux-arch@vger.kernel.org,
- linux-arm-kernel@lists.infradead.org, linux-csky@vger.kernel.org,
- linux-hexagon@vger.kernel.org, linux-kernel@vger.kernel.org,
- linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
- linux-mm@kvack.org, linux-openrisc@vger.kernel.org,
- linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
- linux-s390@vger.kernel.org, linux-sh@vger.kernel.org,
- linux-snps-arc@lists.infradead.org, linux-um@lists.infradead.org,
- linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
- sparclinux@vger.kernel.org
-References: <20241014105514.3206191-1-ryan.roberts@arm.com>
- <20241014105912.3207374-1-ryan.roberts@arm.com>
-From: Ryan Roberts <ryan.roberts@arm.com>
-In-Reply-To: <20241014105912.3207374-1-ryan.roberts@arm.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
+X-CM-TRANSID:PSgvCgCnrQTjLidnai5hAQ--.30987S4
+X-Coremail-Antispam: 1Uf129KBjvAXoWfuF4fJw1rWr4fXFykCw1rWFg_yoW5JrWkJo
+	WkuF4IyrykuFyUX34DZrnayFyqqw42q3W3X34q9w4rWFnFqrWkKry2va4xAry3Aw45C34k
+	WayaqrW5J390qFWkn29KB7ZKAUJUUUU8529EdanIXcx71UUUUU7v73VFW2AGmfu7bjvjm3
+	AaLaJ3UbIYCTnIWIevJa73UjIFyTuYvjfU8nmRUUUUU
+X-CM-SenderInfo: qqqrilqqysqiywtou0bp/xtbB0heMqmcnKG5ISwAAsm
 
-Hi all (especially mm people!),
+seq_printf is costy, when stress reading /proc/interrupts, profiling indicates
+seq_printf takes about ~47% of show_interrupts samples:
 
+    show_interrupts(94.495% 5166019/5466991)
+	seq_printf(47.429% 2450210/5166019)
+	    vsnprintf(89.232% 2186366/2450210)
+		format_decode(24.005% 524831/2186366)
+		number(19.488% 426084/2186366)
+		memcpy_orig(3.739% 81753/2186366)
+		...
+	_raw_spin_unlock_irqrestore(26.643% 1376379/5166019)
+	mtree_load(8.059% 416304/5166019)
 
-On 14/10/2024 11:58, Ryan Roberts wrote:
-> arm64 can support multiple base page sizes. Instead of selecting a page
-> size at compile time, as is done today, we will make it possible to
-> select the desired page size on the command line.
-> 
-> In this case PAGE_SHIFT and it's derivatives, PAGE_SIZE and PAGE_MASK
-> (as well as a number of other macros related to or derived from
-> PAGE_SHIFT, but I'm not worrying about those yet), are no longer
-> compile-time constants. So the code base needs to cope with that.
-> 
-> As a first step, introduce MIN and MAX variants of these macros, which
-> express the range of possible page sizes. These are always compile-time
-> constants and can be used in many places where PAGE_[SHIFT|SIZE|MASK]
-> were previously used where a compile-time constant is required.
-> (Subsequent patches will do that conversion work). When the arch/build
-> doesn't support boot-time page size selection, the MIN and MAX variants
-> are equal and everything resolves as it did previously.
-> 
-> Additionally, introduce DEFINE_GLOBAL_PAGE_SIZE_VAR[_CONST]() which wrap
-> global variable defintions so that for boot-time page size selection
-> builds, the variable being wrapped is initialized at boot-time, instead
-> of compile-time. This is done by defining a function to do the
-> assignment, which has the "constructor" attribute. Constructor is
-> preferred over initcall, because when compiling a module, the module is
-> limited to a single initcall but constructors are unlimited. For
-> built-in code, constructors are now called earlier to guarrantee that
-> the variables are initialized by the time they are used. Any arch that
-> wants to enable boot-time page size selection will need to select
-> CONFIG_CONSTRUCTORS.
-> 
-> These new macros need to be available anywhere PAGE_SHIFT and friends
-> are available. Those are defined via asm/page.h (although some arches
-> have a sub-include that defines them). Unfortunately there is no
-> reliable asm-generic header we can easily piggy-back on, so let's define
-> a new one, pgtable-geometry.h, which we include near where each arch
-> defines PAGE_SHIFT. Ugh.
+On a system with n CPUs and m interrupts, there will be n*m decimal
+values yielded via seq_printf(.."%10u "..) which is less efficient
+than seq_put_decimal_ull_width, stress reading /proc/interrupts
+indicates ~30% performance improvement with this patch, and profiling
+data shows:
 
-I haven't had any feedback on this particular patch yet. It would be great to
-get this one into v6.13, since once this is in place, the changes in other
-subsystems can go via their respective trees without any dependency issues.
-Although time is getting tight.
+	show_interrupts(92.221% 3609371/3913823)
+	    _raw_spin_unlock_irqrestore(39.123% 1412078/3609371)
+	    mtree_load(11.942% 431036/3609371)
+	    seq_put_decimal_ull_width(11.635% 419958/3609371)
+	    seq_printf(9.025% 325754/3609371)
+	    ...
 
-If anyone has any feedback for this patch it would be great to hear it now. Then
-I'll re-post on it's own in a couple of days time.
+The improvement has pratical significance, considering many monitoring
+tools would read /proc/interrupts periodically.
 
-Thanks,
-Ryan
+seq_put_decimal_ull_width(..," ", v, 10) is equivalent to
+seq_printf(.., " %10llu", v), not "%10llu "; Hence there is space
+adjustment along.
 
+Signed-off-by: David Wang <00107082@163.com>
+---
+ arch/alpha/kernel/irq.c     |   8 +--
+ arch/arm/kernel/smp.c       |   4 +-
+ arch/arm64/kernel/smp.c     |   3 +-
+ arch/csky/kernel/smp.c      |   4 +-
+ arch/loongarch/kernel/smp.c |   2 +-
+ arch/parisc/kernel/irq.c    |  34 ++++++------
+ arch/powerpc/kernel/irq.c   |  44 ++++++++--------
+ arch/riscv/kernel/smp.c     |   3 +-
+ arch/sh/kernel/irq.c        |   4 +-
+ arch/sparc/kernel/irq_32.c  |  12 ++---
+ arch/sparc/kernel/irq_64.c  |   4 +-
+ arch/x86/kernel/irq.c       | 100 ++++++++++++++++++------------------
+ arch/xtensa/kernel/irq.c    |   2 +-
+ arch/xtensa/kernel/smp.c    |   4 +-
+ kernel/irq/proc.c           |   6 ++-
+ 15 files changed, 120 insertions(+), 114 deletions(-)
 
-> 
-> -------
-> 
-> Most of the problems that need to be solved over the next few patches
-> fall into these broad categories, which are all solved with the help of
-> these new macros:
-> 
-> 1. Assignment of values derived from PAGE_SIZE in global variables
-> 
->   For boot-time page size builds, we must defer the initialization of
->   these variables until boot-time, when the page size is known. See
->   DEFINE_GLOBAL_PAGE_SIZE_VAR[_CONST]() as described above.
-> 
-> 2. Define static storage in units related to PAGE_SIZE
-> 
->   This static storage will be defined according to PAGE_SIZE_MAX.
-> 
-> 3. Define size of struct so that it is related to PAGE_SIZE
-> 
->   The struct often contains an array that is sized to fill the page. In
->   this case, use a flexible array with dynamic allocation. In other
->   cases, the struct fits exactly over a page, which is a header (e.g.
->   swap file header). In this case, remove the padding, and manually
->   determine the struct pointer within the page.
-> 
-> 4. BUILD_BUG_ON() with values derived from PAGE_SIZE
-> 
->   In most cases, we can change these to compare againt the appropriate
->   limit (either MIN or MAX). In other cases, we must change these to
->   run-time BUG_ON().
-> 
-> 5. Ensure page alignment of static data structures
-> 
->   Align instead to PAGE_SIZE_MAX.
-> 
-> 6. #ifdeffery based on PAGE_SIZE
-> 
->   Often these can be changed to c code constructs. e.g. a macro that
->   returns a different value depending on page size can be changed to use
->   the ternary operator and the compiler will dead code strip it for the
->   compile-time constant case and runtime evaluate it for the non-const
->   case. Or #if/#else/#endif within a function can be converted to c
->   if/else blocks, which are also dead code stripped for the const case.
->   Sometimes we can change the c-preprocessor logic to use the
->   appropriate MIN/MAX limit.
-> 
-> Signed-off-by: Ryan Roberts <ryan.roberts@arm.com>
-> ---
-> 
-> ***NOTE***
-> Any confused maintainers may want to read the cover note here for context:
-> https://lore.kernel.org/all/20241014105514.3206191-1-ryan.roberts@arm.com/
-> 
->  arch/alpha/include/asm/page.h          |  1 +
->  arch/arc/include/asm/page.h            |  1 +
->  arch/arm/include/asm/page.h            |  1 +
->  arch/arm64/include/asm/page-def.h      |  2 +
->  arch/csky/include/asm/page.h           |  3 ++
->  arch/hexagon/include/asm/page.h        |  2 +
->  arch/loongarch/include/asm/page.h      |  2 +
->  arch/m68k/include/asm/page.h           |  1 +
->  arch/microblaze/include/asm/page.h     |  1 +
->  arch/mips/include/asm/page.h           |  1 +
->  arch/nios2/include/asm/page.h          |  2 +
->  arch/openrisc/include/asm/page.h       |  1 +
->  arch/parisc/include/asm/page.h         |  1 +
->  arch/powerpc/include/asm/page.h        |  2 +
->  arch/riscv/include/asm/page.h          |  1 +
->  arch/s390/include/asm/page.h           |  1 +
->  arch/sh/include/asm/page.h             |  1 +
->  arch/sparc/include/asm/page.h          |  3 ++
->  arch/um/include/asm/page.h             |  2 +
->  arch/x86/include/asm/page_types.h      |  2 +
->  arch/xtensa/include/asm/page.h         |  1 +
->  include/asm-generic/pgtable-geometry.h | 71 ++++++++++++++++++++++++++
->  init/main.c                            |  5 +-
->  23 files changed, 107 insertions(+), 1 deletion(-)
->  create mode 100644 include/asm-generic/pgtable-geometry.h
-> 
-> diff --git a/arch/alpha/include/asm/page.h b/arch/alpha/include/asm/page.h
-> index 70419e6be1a35..d0096fb5521b8 100644
-> --- a/arch/alpha/include/asm/page.h
-> +++ b/arch/alpha/include/asm/page.h
-> @@ -88,5 +88,6 @@ typedef struct page *pgtable_t;
->  
->  #include <asm-generic/memory_model.h>
->  #include <asm-generic/getorder.h>
-> +#include <asm-generic/pgtable-geometry.h>
->  
->  #endif /* _ALPHA_PAGE_H */
-> diff --git a/arch/arc/include/asm/page.h b/arch/arc/include/asm/page.h
-> index def0dfb95b436..8d56549db7a33 100644
-> --- a/arch/arc/include/asm/page.h
-> +++ b/arch/arc/include/asm/page.h
-> @@ -6,6 +6,7 @@
->  #define __ASM_ARC_PAGE_H
->  
->  #include <uapi/asm/page.h>
-> +#include <asm-generic/pgtable-geometry.h>
->  
->  #ifdef CONFIG_ARC_HAS_PAE40
->  
-> diff --git a/arch/arm/include/asm/page.h b/arch/arm/include/asm/page.h
-> index 62af9f7f9e963..417aa8533c718 100644
-> --- a/arch/arm/include/asm/page.h
-> +++ b/arch/arm/include/asm/page.h
-> @@ -191,5 +191,6 @@ extern int pfn_valid(unsigned long);
->  
->  #include <asm-generic/getorder.h>
->  #include <asm-generic/memory_model.h>
-> +#include <asm-generic/pgtable-geometry.h>
->  
->  #endif
-> diff --git a/arch/arm64/include/asm/page-def.h b/arch/arm64/include/asm/page-def.h
-> index 792e9fe881dcf..d69971cf49cd2 100644
-> --- a/arch/arm64/include/asm/page-def.h
-> +++ b/arch/arm64/include/asm/page-def.h
-> @@ -15,4 +15,6 @@
->  #define PAGE_SIZE		(_AC(1, UL) << PAGE_SHIFT)
->  #define PAGE_MASK		(~(PAGE_SIZE-1))
->  
-> +#include <asm-generic/pgtable-geometry.h>
-> +
->  #endif /* __ASM_PAGE_DEF_H */
-> diff --git a/arch/csky/include/asm/page.h b/arch/csky/include/asm/page.h
-> index 0ca6c408c07f2..95173d57adc8b 100644
-> --- a/arch/csky/include/asm/page.h
-> +++ b/arch/csky/include/asm/page.h
-> @@ -92,4 +92,7 @@ static inline unsigned long virt_to_pfn(const void *kaddr)
->  #include <asm-generic/getorder.h>
->  
->  #endif /* !__ASSEMBLY__ */
-> +
-> +#include <asm-generic/pgtable-geometry.h>
-> +
->  #endif /* __ASM_CSKY_PAGE_H */
-> diff --git a/arch/hexagon/include/asm/page.h b/arch/hexagon/include/asm/page.h
-> index 8a6af57274c2d..ba7ad5231695f 100644
-> --- a/arch/hexagon/include/asm/page.h
-> +++ b/arch/hexagon/include/asm/page.h
-> @@ -139,4 +139,6 @@ static inline unsigned long virt_to_pfn(const void *kaddr)
->  #endif /* ifdef __ASSEMBLY__ */
->  #endif /* ifdef __KERNEL__ */
->  
-> +#include <asm-generic/pgtable-geometry.h>
-> +
->  #endif
-> diff --git a/arch/loongarch/include/asm/page.h b/arch/loongarch/include/asm/page.h
-> index e85df33f11c77..9862e8fb047a6 100644
-> --- a/arch/loongarch/include/asm/page.h
-> +++ b/arch/loongarch/include/asm/page.h
-> @@ -123,4 +123,6 @@ extern int __virt_addr_valid(volatile void *kaddr);
->  
->  #endif /* !__ASSEMBLY__ */
->  
-> +#include <asm-generic/pgtable-geometry.h>
-> +
->  #endif /* _ASM_PAGE_H */
-> diff --git a/arch/m68k/include/asm/page.h b/arch/m68k/include/asm/page.h
-> index 8cfb84b499751..4df4681b02194 100644
-> --- a/arch/m68k/include/asm/page.h
-> +++ b/arch/m68k/include/asm/page.h
-> @@ -60,5 +60,6 @@ extern unsigned long _ramend;
->  
->  #include <asm-generic/getorder.h>
->  #include <asm-generic/memory_model.h>
-> +#include <asm-generic/pgtable-geometry.h>
->  
->  #endif /* _M68K_PAGE_H */
-> diff --git a/arch/microblaze/include/asm/page.h b/arch/microblaze/include/asm/page.h
-> index 8810f4f1c3b02..abc23c3d743bd 100644
-> --- a/arch/microblaze/include/asm/page.h
-> +++ b/arch/microblaze/include/asm/page.h
-> @@ -142,5 +142,6 @@ static inline const void *pfn_to_virt(unsigned long pfn)
->  
->  #include <asm-generic/memory_model.h>
->  #include <asm-generic/getorder.h>
-> +#include <asm-generic/pgtable-geometry.h>
->  
->  #endif /* _ASM_MICROBLAZE_PAGE_H */
-> diff --git a/arch/mips/include/asm/page.h b/arch/mips/include/asm/page.h
-> index 4609cb0326cf3..3d91021538f02 100644
-> --- a/arch/mips/include/asm/page.h
-> +++ b/arch/mips/include/asm/page.h
-> @@ -227,5 +227,6 @@ static inline unsigned long kaslr_offset(void)
->  
->  #include <asm-generic/memory_model.h>
->  #include <asm-generic/getorder.h>
-> +#include <asm-generic/pgtable-geometry.h>
->  
->  #endif /* _ASM_PAGE_H */
-> diff --git a/arch/nios2/include/asm/page.h b/arch/nios2/include/asm/page.h
-> index 0722f88e63cc7..2e5f93beb42b7 100644
-> --- a/arch/nios2/include/asm/page.h
-> +++ b/arch/nios2/include/asm/page.h
-> @@ -97,4 +97,6 @@ extern struct page *mem_map;
->  
->  #endif /* !__ASSEMBLY__ */
->  
-> +#include <asm-generic/pgtable-geometry.h>
-> +
->  #endif /* _ASM_NIOS2_PAGE_H */
-> diff --git a/arch/openrisc/include/asm/page.h b/arch/openrisc/include/asm/page.h
-> index 1d5913f67c312..a0da2a9842241 100644
-> --- a/arch/openrisc/include/asm/page.h
-> +++ b/arch/openrisc/include/asm/page.h
-> @@ -88,5 +88,6 @@ static inline unsigned long virt_to_pfn(const void *kaddr)
->  
->  #include <asm-generic/memory_model.h>
->  #include <asm-generic/getorder.h>
-> +#include <asm-generic/pgtable-geometry.h>
->  
->  #endif /* __ASM_OPENRISC_PAGE_H */
-> diff --git a/arch/parisc/include/asm/page.h b/arch/parisc/include/asm/page.h
-> index 4bea2e95798f0..2a75496237c09 100644
-> --- a/arch/parisc/include/asm/page.h
-> +++ b/arch/parisc/include/asm/page.h
-> @@ -173,6 +173,7 @@ extern int npmem_ranges;
->  
->  #include <asm-generic/memory_model.h>
->  #include <asm-generic/getorder.h>
-> +#include <asm-generic/pgtable-geometry.h>
->  #include <asm/pdc.h>
->  
->  #define PAGE0   ((struct zeropage *)absolute_pointer(__PAGE_OFFSET))
-> diff --git a/arch/powerpc/include/asm/page.h b/arch/powerpc/include/asm/page.h
-> index 83d0a4fc5f755..4601c115b6485 100644
-> --- a/arch/powerpc/include/asm/page.h
-> +++ b/arch/powerpc/include/asm/page.h
-> @@ -300,4 +300,6 @@ static inline unsigned long kaslr_offset(void)
->  #include <asm-generic/memory_model.h>
->  #endif /* __ASSEMBLY__ */
->  
-> +#include <asm-generic/pgtable-geometry.h>
-> +
->  #endif /* _ASM_POWERPC_PAGE_H */
-> diff --git a/arch/riscv/include/asm/page.h b/arch/riscv/include/asm/page.h
-> index 7ede2111c5917..e5af7579e45bf 100644
-> --- a/arch/riscv/include/asm/page.h
-> +++ b/arch/riscv/include/asm/page.h
-> @@ -204,5 +204,6 @@ static __always_inline void *pfn_to_kaddr(unsigned long pfn)
->  
->  #include <asm-generic/memory_model.h>
->  #include <asm-generic/getorder.h>
-> +#include <asm-generic/pgtable-geometry.h>
->  
->  #endif /* _ASM_RISCV_PAGE_H */
-> diff --git a/arch/s390/include/asm/page.h b/arch/s390/include/asm/page.h
-> index 16e4caa931f1f..42157e7690a77 100644
-> --- a/arch/s390/include/asm/page.h
-> +++ b/arch/s390/include/asm/page.h
-> @@ -275,6 +275,7 @@ static inline unsigned long virt_to_pfn(const void *kaddr)
->  
->  #include <asm-generic/memory_model.h>
->  #include <asm-generic/getorder.h>
-> +#include <asm-generic/pgtable-geometry.h>
->  
->  #define AMODE31_SIZE		(3 * PAGE_SIZE)
->  
-> diff --git a/arch/sh/include/asm/page.h b/arch/sh/include/asm/page.h
-> index f780b467e75d7..09533d46ef033 100644
-> --- a/arch/sh/include/asm/page.h
-> +++ b/arch/sh/include/asm/page.h
-> @@ -162,5 +162,6 @@ typedef struct page *pgtable_t;
->  
->  #include <asm-generic/memory_model.h>
->  #include <asm-generic/getorder.h>
-> +#include <asm-generic/pgtable-geometry.h>
->  
->  #endif /* __ASM_SH_PAGE_H */
-> diff --git a/arch/sparc/include/asm/page.h b/arch/sparc/include/asm/page.h
-> index 5e44cdf2a8f2b..4327fe2bfa010 100644
-> --- a/arch/sparc/include/asm/page.h
-> +++ b/arch/sparc/include/asm/page.h
-> @@ -9,4 +9,7 @@
->  #else
->  #include <asm/page_32.h>
->  #endif
-> +
-> +#include <asm-generic/pgtable-geometry.h>
-> +
->  #endif
-> diff --git a/arch/um/include/asm/page.h b/arch/um/include/asm/page.h
-> index 9ef9a8aedfa66..f26011808f514 100644
-> --- a/arch/um/include/asm/page.h
-> +++ b/arch/um/include/asm/page.h
-> @@ -119,4 +119,6 @@ extern unsigned long uml_physmem;
->  #define __HAVE_ARCH_GATE_AREA 1
->  #endif
->  
-> +#include <asm-generic/pgtable-geometry.h>
-> +
->  #endif	/* __UM_PAGE_H */
-> diff --git a/arch/x86/include/asm/page_types.h b/arch/x86/include/asm/page_types.h
-> index 52f1b4ff0cc16..6d2381342047f 100644
-> --- a/arch/x86/include/asm/page_types.h
-> +++ b/arch/x86/include/asm/page_types.h
-> @@ -71,4 +71,6 @@ extern void initmem_init(void);
->  
->  #endif	/* !__ASSEMBLY__ */
->  
-> +#include <asm-generic/pgtable-geometry.h>
-> +
->  #endif	/* _ASM_X86_PAGE_DEFS_H */
-> diff --git a/arch/xtensa/include/asm/page.h b/arch/xtensa/include/asm/page.h
-> index 4db56ef052d22..86952cb32af23 100644
-> --- a/arch/xtensa/include/asm/page.h
-> +++ b/arch/xtensa/include/asm/page.h
-> @@ -200,4 +200,5 @@ static inline unsigned long ___pa(unsigned long va)
->  #endif /* __ASSEMBLY__ */
->  
->  #include <asm-generic/memory_model.h>
-> +#include <asm-generic/pgtable-geometry.h>
->  #endif /* _XTENSA_PAGE_H */
-> diff --git a/include/asm-generic/pgtable-geometry.h b/include/asm-generic/pgtable-geometry.h
-> new file mode 100644
-> index 0000000000000..358e729a6ac37
-> --- /dev/null
-> +++ b/include/asm-generic/pgtable-geometry.h
-> @@ -0,0 +1,71 @@
-> +/* SPDX-License-Identifier: GPL-2.0 */
-> +#ifndef ASM_GENERIC_PGTABLE_GEOMETRY_H
-> +#define ASM_GENERIC_PGTABLE_GEOMETRY_H
-> +
-> +#if   defined(PAGE_SHIFT_MAX) && defined(PAGE_SIZE_MAX) && defined(PAGE_MASK_MAX) && \
-> +      defined(PAGE_SHIFT_MIN) && defined(PAGE_SIZE_MIN) && defined(PAGE_MASK_MIN)
-> +/* Arch supports boot-time page size selection. */
-> +#elif defined(PAGE_SHIFT_MAX) || defined(PAGE_SIZE_MAX) || defined(PAGE_MASK_MAX) || \
-> +      defined(PAGE_SHIFT_MIN) || defined(PAGE_SIZE_MIN) || defined(PAGE_MASK_MIN)
-> +#error Arch must define all or none of the boot-time page size macros
-> +#else
-> +/* Arch does not support boot-time page size selection. */
-> +#define PAGE_SHIFT_MIN	PAGE_SHIFT
-> +#define PAGE_SIZE_MIN	PAGE_SIZE
-> +#define PAGE_MASK_MIN	PAGE_MASK
-> +#define PAGE_SHIFT_MAX	PAGE_SHIFT
-> +#define PAGE_SIZE_MAX	PAGE_SIZE
-> +#define PAGE_MASK_MAX	PAGE_MASK
-> +#endif
-> +
-> +/*
-> + * Define a global variable (scalar or struct), whose value is derived from
-> + * PAGE_SIZE and friends. When PAGE_SIZE is a compile-time constant, the global
-> + * variable is simply defined with the static value. When PAGE_SIZE is
-> + * determined at boot-time, a pure initcall is registered and run during boot to
-> + * initialize the variable.
-> + *
-> + * @type: Unqualified type. Do not include "const"; implied by macro variant.
-> + * @name: Variable name.
-> + * @...:  Initialization value. May be scalar or initializer.
-> + *
-> + * "static" is declared by placing "static" before the macro.
-> + *
-> + * Example:
-> + *
-> + * struct my_struct {
-> + *         int a;
-> + *         char b;
-> + * };
-> + *
-> + * static DEFINE_GLOBAL_PAGE_SIZE_VAR(struct my_struct, my_variable, {
-> + *         .a = 10,
-> + *         .b = 'e',
-> + * });
-> + */
-> +#if PAGE_SIZE_MIN != PAGE_SIZE_MAX
-> +#define __DEFINE_GLOBAL_PAGE_SIZE_VAR(type, name, attrib, ...)		\
-> +	type name attrib;						\
-> +	static int __init __attribute__((constructor)) __##name##_init(void)	\
-> +	{								\
-> +		name = (type)__VA_ARGS__;				\
-> +		return 0;						\
-> +	}
-> +
-> +#define DEFINE_GLOBAL_PAGE_SIZE_VAR(type, name, ...)			\
-> +	__DEFINE_GLOBAL_PAGE_SIZE_VAR(type, name, , __VA_ARGS__)
-> +
-> +#define DEFINE_GLOBAL_PAGE_SIZE_VAR_CONST(type, name, ...)		\
-> +	__DEFINE_GLOBAL_PAGE_SIZE_VAR(type, name, __ro_after_init, __VA_ARGS__)
-> +#else /* PAGE_SIZE_MIN == PAGE_SIZE_MAX */
-> +#define __DEFINE_GLOBAL_PAGE_SIZE_VAR(type, name, attrib, ...)		\
-> +	type name attrib = __VA_ARGS__;					\
-> +
-> +#define DEFINE_GLOBAL_PAGE_SIZE_VAR(type, name, ...)			\
-> +	__DEFINE_GLOBAL_PAGE_SIZE_VAR(type, name, , __VA_ARGS__)
-> +
-> +#define DEFINE_GLOBAL_PAGE_SIZE_VAR_CONST(type, name, ...)		\
-> +	__DEFINE_GLOBAL_PAGE_SIZE_VAR(const type, name, , __VA_ARGS__)
-> +#endif
-> +
-> +#endif /* ASM_GENERIC_PGTABLE_GEOMETRY_H */
-> diff --git a/init/main.c b/init/main.c
-> index 206acdde51f5a..ba1515eb20b9d 100644
-> --- a/init/main.c
-> +++ b/init/main.c
-> @@ -899,6 +899,8 @@ static void __init early_numa_node_init(void)
->  #endif
->  }
->  
-> +static __init void do_ctors(void);
-> +
->  asmlinkage __visible __init __no_sanitize_address __noreturn __no_stack_protector
->  void start_kernel(void)
->  {
-> @@ -910,6 +912,8 @@ void start_kernel(void)
->  	debug_objects_early_init();
->  	init_vmlinux_build_id();
->  
-> +	do_ctors();
-> +
->  	cgroup_init_early();
->  
->  	local_irq_disable();
-> @@ -1360,7 +1364,6 @@ static void __init do_basic_setup(void)
->  	cpuset_init_smp();
->  	driver_init();
->  	init_irq_proc();
-> -	do_ctors();
->  	do_initcalls();
->  }
->  
+diff --git a/arch/alpha/kernel/irq.c b/arch/alpha/kernel/irq.c
+index c67047c5d830..0dbb8d3ed647 100644
+--- a/arch/alpha/kernel/irq.c
++++ b/arch/alpha/kernel/irq.c
+@@ -72,14 +72,14 @@ int arch_show_interrupts(struct seq_file *p, int prec)
+ 	int j;
+ 
+ #ifdef CONFIG_SMP
+-	seq_puts(p, "IPI: ");
++	seq_puts(p, "IPI:");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10lu ", cpu_data[j].ipi_count);
++		seq_put_decimal_ull_width(p, " ", cpu_data[j].ipi_count, 10);
+ 	seq_putc(p, '\n');
+ #endif
+-	seq_puts(p, "PMI: ");
++	seq_puts(p, "PMI:");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10lu ", per_cpu(irq_pmi_count, j));
++		seq_put_decimal_ull_width(p, " ", per_cpu(irq_pmi_count, j), 10);
+ 	seq_puts(p, "          Performance Monitoring\n");
+ 	seq_printf(p, "ERR: %10lu\n", irq_err_count);
+ 	return 0;
+diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
+index 3431c0553f45..1b0680477ae1 100644
+--- a/arch/arm/kernel/smp.c
++++ b/arch/arm/kernel/smp.c
+@@ -551,10 +551,10 @@ void show_ipi_list(struct seq_file *p, int prec)
+ 		if (!ipi_desc[i])
+ 			continue;
+ 
+-		seq_printf(p, "%*s%u: ", prec - 1, "IPI", i);
++		seq_printf(p, "%*s%u:", prec - 1, "IPI", i);
+ 
+ 		for_each_online_cpu(cpu)
+-			seq_printf(p, "%10u ", irq_desc_kstat_cpu(ipi_desc[i], cpu));
++			seq_put_decimal_ull_width(p, " ", irq_desc_kstat_cpu(ipi_desc[i], cpu), 10);
+ 
+ 		seq_printf(p, " %s\n", ipi_types[i]);
+ 	}
+diff --git a/arch/arm64/kernel/smp.c b/arch/arm64/kernel/smp.c
+index 3b3f6b56e733..35734a30ed8d 100644
+--- a/arch/arm64/kernel/smp.c
++++ b/arch/arm64/kernel/smp.c
+@@ -844,7 +844,8 @@ int arch_show_interrupts(struct seq_file *p, int prec)
+ 		seq_printf(p, "%*s%u:%s", prec - 1, "IPI", i,
+ 			   prec >= 4 ? " " : "");
+ 		for_each_online_cpu(cpu)
+-			seq_printf(p, "%10u ", irq_desc_kstat_cpu(ipi_desc[i], cpu));
++			seq_put_decimal_ull_width(p, " ",
++						  irq_desc_kstat_cpu(ipi_desc[i], cpu), 10);
+ 		seq_printf(p, "      %s\n", ipi_types[i]);
+ 	}
+ 
+diff --git a/arch/csky/kernel/smp.c b/arch/csky/kernel/smp.c
+index 92dbbf3e0205..65f399afc3f0 100644
+--- a/arch/csky/kernel/smp.c
++++ b/arch/csky/kernel/smp.c
+@@ -112,8 +112,8 @@ int arch_show_interrupts(struct seq_file *p, int prec)
+ 		seq_printf(p, "%*s%u:%s", prec - 1, "IPI", i,
+ 			   prec >= 4 ? " " : "");
+ 		for_each_online_cpu(cpu)
+-			seq_printf(p, "%10lu ",
+-				per_cpu_ptr(&ipi_data, cpu)->stats[i]);
++			seq_put_decimal_ull_width(p, " ",
++						  per_cpu_ptr(&ipi_data, cpu)->stats[i], 10);
+ 		seq_printf(p, " %s\n", ipi_names[i]);
+ 	}
+ 
+diff --git a/arch/loongarch/kernel/smp.c b/arch/loongarch/kernel/smp.c
+index 9afc2d8b3414..86664adfb3cf 100644
+--- a/arch/loongarch/kernel/smp.c
++++ b/arch/loongarch/kernel/smp.c
+@@ -82,7 +82,7 @@ void show_ipi_list(struct seq_file *p, int prec)
+ 	for (i = 0; i < NR_IPI; i++) {
+ 		seq_printf(p, "%*s%u:%s", prec - 1, "IPI", i, prec >= 4 ? " " : "");
+ 		for_each_online_cpu(cpu)
+-			seq_printf(p, "%10u ", per_cpu(irq_stat, cpu).ipi_irqs[i]);
++			seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat, cpu).ipi_irqs[i], 10);
+ 		seq_printf(p, " LoongArch  %d  %s\n", i + 1, ipi_types[i]);
+ 	}
+ }
+diff --git a/arch/parisc/kernel/irq.c b/arch/parisc/kernel/irq.c
+index dff66be65d29..b060d7e6da46 100644
+--- a/arch/parisc/kernel/irq.c
++++ b/arch/parisc/kernel/irq.c
+@@ -133,40 +133,42 @@ int arch_show_interrupts(struct seq_file *p, int prec)
+ 	int j;
+ 
+ #ifdef CONFIG_DEBUG_STACKOVERFLOW
+-	seq_printf(p, "%*s: ", prec, "STK");
++	seq_printf(p, "%*s:", prec, "STK");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->kernel_stack_usage);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->kernel_stack_usage, 10);
+ 	seq_puts(p, "  Kernel stack usage\n");
+ # ifdef CONFIG_IRQSTACKS
+-	seq_printf(p, "%*s: ", prec, "IST");
++	seq_printf(p, "%*s:", prec, "IST");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->irq_stack_usage);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->irq_stack_usage, 10);
+ 	seq_puts(p, "  Interrupt stack usage\n");
+ # endif
+ #endif
+ #ifdef CONFIG_SMP
+ 	if (num_online_cpus() > 1) {
+-		seq_printf(p, "%*s: ", prec, "RES");
++		seq_printf(p, "%*s:", prec, "RES");
+ 		for_each_online_cpu(j)
+-			seq_printf(p, "%10u ", irq_stats(j)->irq_resched_count);
++			seq_put_decimal_ull_width(p, " ",
++						  irq_stats(j)->irq_resched_count, 10);
+ 		seq_puts(p, "  Rescheduling interrupts\n");
+-		seq_printf(p, "%*s: ", prec, "CAL");
++		seq_printf(p, "%*s:", prec, "CAL");
+ 		for_each_online_cpu(j)
+-			seq_printf(p, "%10u ", irq_stats(j)->irq_call_count);
++			seq_put_decimal_ull_width(p, " ",
++						  irq_stats(j)->irq_call_count, 10);
+ 		seq_puts(p, "  Function call interrupts\n");
+ 	}
+ #endif
+-	seq_printf(p, "%*s: ", prec, "UAH");
++	seq_printf(p, "%*s:", prec, "UAH");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->irq_unaligned_count);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->irq_unaligned_count, 10);
+ 	seq_puts(p, "  Unaligned access handler traps\n");
+-	seq_printf(p, "%*s: ", prec, "FPA");
++	seq_printf(p, "%*s:", prec, "FPA");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->irq_fpassist_count);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->irq_fpassist_count, 10);
+ 	seq_puts(p, "  Floating point assist traps\n");
+-	seq_printf(p, "%*s: ", prec, "TLB");
++	seq_printf(p, "%*s:", prec, "TLB");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->irq_tlb_count);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->irq_tlb_count, 10);
+ 	seq_puts(p, "  TLB shootdowns\n");
+ 	return 0;
+ }
+@@ -195,10 +197,10 @@ int show_interrupts(struct seq_file *p, void *v)
+ 		action = desc->action;
+ 		if (!action)
+ 			goto skip;
+-		seq_printf(p, "%3d: ", i);
++		seq_printf(p, "%3d:", i);
+ 
+ 		for_each_online_cpu(j)
+-			seq_printf(p, "%10u ", irq_desc_kstat_cpu(desc, j));
++			seq_put_decimal_ull_width(p, " ", irq_desc_kstat_cpu(desc, j), 10);
+ 
+ 		seq_printf(p, " %14s", irq_desc_get_chip(desc)->name);
+ #ifndef PARISC_IRQ_CR16_COUNTS
+diff --git a/arch/powerpc/kernel/irq.c b/arch/powerpc/kernel/irq.c
+index 2e1600a8bbbb..a0e8b998c9b5 100644
+--- a/arch/powerpc/kernel/irq.c
++++ b/arch/powerpc/kernel/irq.c
+@@ -89,69 +89,69 @@ int arch_show_interrupts(struct seq_file *p, int prec)
+ 
+ #if defined(CONFIG_PPC32) && defined(CONFIG_TAU_INT)
+ 	if (tau_initialized) {
+-		seq_printf(p, "%*s: ", prec, "TAU");
++		seq_printf(p, "%*s:", prec, "TAU");
+ 		for_each_online_cpu(j)
+-			seq_printf(p, "%10u ", tau_interrupts(j));
++			seq_put_decimal_ull_width(p, " ", tau_interrupts(j), 10);
+ 		seq_puts(p, "  PowerPC             Thermal Assist (cpu temp)\n");
+ 	}
+ #endif /* CONFIG_PPC32 && CONFIG_TAU_INT */
+ 
+-	seq_printf(p, "%*s: ", prec, "LOC");
++	seq_printf(p, "%*s:", prec, "LOC");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", per_cpu(irq_stat, j).timer_irqs_event);
++		seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat, j).timer_irqs_event, 10);
+         seq_printf(p, "  Local timer interrupts for timer event device\n");
+ 
+-	seq_printf(p, "%*s: ", prec, "BCT");
++	seq_printf(p, "%*s:", prec, "BCT");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", per_cpu(irq_stat, j).broadcast_irqs_event);
++		seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat, j).broadcast_irqs_event, 10);
+ 	seq_printf(p, "  Broadcast timer interrupts for timer event device\n");
+ 
+-	seq_printf(p, "%*s: ", prec, "LOC");
++	seq_printf(p, "%*s:", prec, "LOC");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", per_cpu(irq_stat, j).timer_irqs_others);
++		seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat, j).timer_irqs_others, 10);
+         seq_printf(p, "  Local timer interrupts for others\n");
+ 
+-	seq_printf(p, "%*s: ", prec, "SPU");
++	seq_printf(p, "%*s:", prec, "SPU");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", per_cpu(irq_stat, j).spurious_irqs);
++		seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat, j).spurious_irqs, 10);
+ 	seq_printf(p, "  Spurious interrupts\n");
+ 
+-	seq_printf(p, "%*s: ", prec, "PMI");
++	seq_printf(p, "%*s:", prec, "PMI");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", per_cpu(irq_stat, j).pmu_irqs);
++		seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat, j).pmu_irqs, 10);
+ 	seq_printf(p, "  Performance monitoring interrupts\n");
+ 
+-	seq_printf(p, "%*s: ", prec, "MCE");
++	seq_printf(p, "%*s:", prec, "MCE");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", per_cpu(irq_stat, j).mce_exceptions);
++		seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat, j).mce_exceptions, 10);
+ 	seq_printf(p, "  Machine check exceptions\n");
+ 
+ #ifdef CONFIG_PPC_BOOK3S_64
+ 	if (cpu_has_feature(CPU_FTR_HVMODE)) {
+-		seq_printf(p, "%*s: ", prec, "HMI");
++		seq_printf(p, "%*s:", prec, "HMI");
+ 		for_each_online_cpu(j)
+-			seq_printf(p, "%10u ", paca_ptrs[j]->hmi_irqs);
++			seq_put_decimal_ull_width(p, " ", paca_ptrs[j]->hmi_irqs, 10);
+ 		seq_printf(p, "  Hypervisor Maintenance Interrupts\n");
+ 	}
+ #endif
+ 
+-	seq_printf(p, "%*s: ", prec, "NMI");
++	seq_printf(p, "%*s:", prec, "NMI");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", per_cpu(irq_stat, j).sreset_irqs);
++		seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat, j).sreset_irqs, 10);
+ 	seq_printf(p, "  System Reset interrupts\n");
+ 
+ #ifdef CONFIG_PPC_WATCHDOG
+-	seq_printf(p, "%*s: ", prec, "WDG");
++	seq_printf(p, "%*s:", prec, "WDG");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", per_cpu(irq_stat, j).soft_nmi_irqs);
++		seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat, j).soft_nmi_irqs, 10);
+ 	seq_printf(p, "  Watchdog soft-NMI interrupts\n");
+ #endif
+ 
+ #ifdef CONFIG_PPC_DOORBELL
+ 	if (cpu_has_feature(CPU_FTR_DBELL)) {
+-		seq_printf(p, "%*s: ", prec, "DBL");
++		seq_printf(p, "%*s:", prec, "DBL");
+ 		for_each_online_cpu(j)
+-			seq_printf(p, "%10u ", per_cpu(irq_stat, j).doorbell_irqs);
++			seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat, j).doorbell_irqs, 10);
+ 		seq_printf(p, "  Doorbell interrupts\n");
+ 	}
+ #endif
+diff --git a/arch/riscv/kernel/smp.c b/arch/riscv/kernel/smp.c
+index c180a647a30e..f1e9c3db094c 100644
+--- a/arch/riscv/kernel/smp.c
++++ b/arch/riscv/kernel/smp.c
+@@ -226,7 +226,8 @@ void show_ipi_stats(struct seq_file *p, int prec)
+ 		seq_printf(p, "%*s%u:%s", prec - 1, "IPI", i,
+ 			   prec >= 4 ? " " : "");
+ 		for_each_online_cpu(cpu)
+-			seq_printf(p, "%10u ", irq_desc_kstat_cpu(ipi_desc[i], cpu));
++			seq_put_decimal_ull_width(p, " ",
++						  irq_desc_kstat_cpu(ipi_desc[i], cpu), 10);
+ 		seq_printf(p, " %s\n", ipi_names[i]);
+ 	}
+ }
+diff --git a/arch/sh/kernel/irq.c b/arch/sh/kernel/irq.c
+index 4e6835de54cf..9022d8af9d68 100644
+--- a/arch/sh/kernel/irq.c
++++ b/arch/sh/kernel/irq.c
+@@ -43,9 +43,9 @@ int arch_show_interrupts(struct seq_file *p, int prec)
+ {
+ 	int j;
+ 
+-	seq_printf(p, "%*s: ", prec, "NMI");
++	seq_printf(p, "%*s:", prec, "NMI");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", per_cpu(irq_stat.__nmi_count, j));
++		seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat.__nmi_count, j), 10);
+ 	seq_printf(p, "  Non-maskable interrupts\n");
+ 
+ 	seq_printf(p, "%*s: %10u\n", prec, "ERR", atomic_read(&irq_err_count));
+diff --git a/arch/sparc/kernel/irq_32.c b/arch/sparc/kernel/irq_32.c
+index 8605dd710f3c..5210991429d5 100644
+--- a/arch/sparc/kernel/irq_32.c
++++ b/arch/sparc/kernel/irq_32.c
+@@ -199,18 +199,18 @@ int arch_show_interrupts(struct seq_file *p, int prec)
+ 	int j;
+ 
+ #ifdef CONFIG_SMP
+-	seq_printf(p, "RES: ");
++	seq_printf(p, "RES:");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", cpu_data(j).irq_resched_count);
++		seq_put_decimal_ull_width(p, " ", cpu_data(j).irq_resched_count, 10);
+ 	seq_printf(p, "     IPI rescheduling interrupts\n");
+-	seq_printf(p, "CAL: ");
++	seq_printf(p, "CAL:");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", cpu_data(j).irq_call_count);
++		seq_put_decimal_ull_width(p, " ", cpu_data(j).irq_call_count, 10);
+ 	seq_printf(p, "     IPI function call interrupts\n");
+ #endif
+-	seq_printf(p, "NMI: ");
++	seq_printf(p, "NMI:");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", cpu_data(j).counter);
++		seq_put_decimal_ull_width(p, " ", cpu_data(j).counter, 10);
+ 	seq_printf(p, "     Non-maskable interrupts\n");
+ 	return 0;
+ }
+diff --git a/arch/sparc/kernel/irq_64.c b/arch/sparc/kernel/irq_64.c
+index 01ee800efde3..9ab6e79b617b 100644
+--- a/arch/sparc/kernel/irq_64.c
++++ b/arch/sparc/kernel/irq_64.c
+@@ -304,9 +304,9 @@ int arch_show_interrupts(struct seq_file *p, int prec)
+ {
+ 	int j;
+ 
+-	seq_printf(p, "NMI: ");
++	seq_printf(p, "NMI:");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", cpu_data(j).__nmi_count);
++		seq_put_decimal_ull_width(p, " ", cpu_data(j).__nmi_count, 10);
+ 	seq_printf(p, "     Non-maskable interrupts\n");
+ 	return 0;
+ }
+diff --git a/arch/x86/kernel/irq.c b/arch/x86/kernel/irq.c
+index 385e3a5fc304..66cc8f001bd0 100644
+--- a/arch/x86/kernel/irq.c
++++ b/arch/x86/kernel/irq.c
+@@ -62,103 +62,103 @@ int arch_show_interrupts(struct seq_file *p, int prec)
+ {
+ 	int j;
+ 
+-	seq_printf(p, "%*s: ", prec, "NMI");
++	seq_printf(p, "%*s:", prec, "NMI");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->__nmi_count);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->__nmi_count, 10);
+ 	seq_puts(p, "  Non-maskable interrupts\n");
+ #ifdef CONFIG_X86_LOCAL_APIC
+-	seq_printf(p, "%*s: ", prec, "LOC");
++	seq_printf(p, "%*s:", prec, "LOC");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->apic_timer_irqs);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->apic_timer_irqs, 10);
+ 	seq_puts(p, "  Local timer interrupts\n");
+ 
+-	seq_printf(p, "%*s: ", prec, "SPU");
++	seq_printf(p, "%*s:", prec, "SPU");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->irq_spurious_count);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->irq_spurious_count, 10);
+ 	seq_puts(p, "  Spurious interrupts\n");
+-	seq_printf(p, "%*s: ", prec, "PMI");
++	seq_printf(p, "%*s:", prec, "PMI");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->apic_perf_irqs);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->apic_perf_irqs, 10);
+ 	seq_puts(p, "  Performance monitoring interrupts\n");
+-	seq_printf(p, "%*s: ", prec, "IWI");
++	seq_printf(p, "%*s:", prec, "IWI");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->apic_irq_work_irqs);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->apic_irq_work_irqs, 10);
+ 	seq_puts(p, "  IRQ work interrupts\n");
+-	seq_printf(p, "%*s: ", prec, "RTR");
++	seq_printf(p, "%*s:", prec, "RTR");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->icr_read_retry_count);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->icr_read_retry_count, 10);
+ 	seq_puts(p, "  APIC ICR read retries\n");
+ 	if (x86_platform_ipi_callback) {
+-		seq_printf(p, "%*s: ", prec, "PLT");
++		seq_printf(p, "%*s:", prec, "PLT");
+ 		for_each_online_cpu(j)
+-			seq_printf(p, "%10u ", irq_stats(j)->x86_platform_ipis);
++			seq_put_decimal_ull_width(p, " ", irq_stats(j)->x86_platform_ipis, 10);
+ 		seq_puts(p, "  Platform interrupts\n");
+ 	}
+ #endif
+ #ifdef CONFIG_SMP
+-	seq_printf(p, "%*s: ", prec, "RES");
++	seq_printf(p, "%*s:", prec, "RES");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->irq_resched_count);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->irq_resched_count, 10);
+ 	seq_puts(p, "  Rescheduling interrupts\n");
+-	seq_printf(p, "%*s: ", prec, "CAL");
++	seq_printf(p, "%*s:", prec, "CAL");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->irq_call_count);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->irq_call_count, 10);
+ 	seq_puts(p, "  Function call interrupts\n");
+-	seq_printf(p, "%*s: ", prec, "TLB");
++	seq_printf(p, "%*s:", prec, "TLB");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->irq_tlb_count);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->irq_tlb_count, 10);
+ 	seq_puts(p, "  TLB shootdowns\n");
+ #endif
+ #ifdef CONFIG_X86_THERMAL_VECTOR
+-	seq_printf(p, "%*s: ", prec, "TRM");
++	seq_printf(p, "%*s:", prec, "TRM");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->irq_thermal_count);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->irq_thermal_count, 10);
+ 	seq_puts(p, "  Thermal event interrupts\n");
+ #endif
+ #ifdef CONFIG_X86_MCE_THRESHOLD
+-	seq_printf(p, "%*s: ", prec, "THR");
++	seq_printf(p, "%*s:", prec, "THR");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->irq_threshold_count);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->irq_threshold_count, 10);
+ 	seq_puts(p, "  Threshold APIC interrupts\n");
+ #endif
+ #ifdef CONFIG_X86_MCE_AMD
+-	seq_printf(p, "%*s: ", prec, "DFR");
++	seq_printf(p, "%*s:", prec, "DFR");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->irq_deferred_error_count);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->irq_deferred_error_count, 10);
+ 	seq_puts(p, "  Deferred Error APIC interrupts\n");
+ #endif
+ #ifdef CONFIG_X86_MCE
+-	seq_printf(p, "%*s: ", prec, "MCE");
++	seq_printf(p, "%*s:", prec, "MCE");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", per_cpu(mce_exception_count, j));
++		seq_put_decimal_ull_width(p, " ", per_cpu(mce_exception_count, j), 10);
+ 	seq_puts(p, "  Machine check exceptions\n");
+-	seq_printf(p, "%*s: ", prec, "MCP");
++	seq_printf(p, "%*s:", prec, "MCP");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", per_cpu(mce_poll_count, j));
++		seq_put_decimal_ull_width(p, " ", per_cpu(mce_poll_count, j), 10);
+ 	seq_puts(p, "  Machine check polls\n");
+ #endif
+ #ifdef CONFIG_X86_HV_CALLBACK_VECTOR
+ 	if (test_bit(HYPERVISOR_CALLBACK_VECTOR, system_vectors)) {
+-		seq_printf(p, "%*s: ", prec, "HYP");
++		seq_printf(p, "%*s:", prec, "HYP");
+ 		for_each_online_cpu(j)
+-			seq_printf(p, "%10u ",
+-				   irq_stats(j)->irq_hv_callback_count);
++			seq_put_decimal_ull_width(p, " ",
++						  irq_stats(j)->irq_hv_callback_count, 10);
+ 		seq_puts(p, "  Hypervisor callback interrupts\n");
+ 	}
+ #endif
+ #if IS_ENABLED(CONFIG_HYPERV)
+ 	if (test_bit(HYPERV_REENLIGHTENMENT_VECTOR, system_vectors)) {
+-		seq_printf(p, "%*s: ", prec, "HRE");
++		seq_printf(p, "%*s:", prec, "HRE");
+ 		for_each_online_cpu(j)
+-			seq_printf(p, "%10u ",
+-				   irq_stats(j)->irq_hv_reenlightenment_count);
++			seq_put_decimal_ull_width(p, " ",
++						  irq_stats(j)->irq_hv_reenlightenment_count, 10);
+ 		seq_puts(p, "  Hyper-V reenlightenment interrupts\n");
+ 	}
+ 	if (test_bit(HYPERV_STIMER0_VECTOR, system_vectors)) {
+-		seq_printf(p, "%*s: ", prec, "HVS");
++		seq_printf(p, "%*s:", prec, "HVS");
+ 		for_each_online_cpu(j)
+-			seq_printf(p, "%10u ",
+-				   irq_stats(j)->hyperv_stimer0_count);
++			seq_put_decimal_ull_width(p, " ",
++						  irq_stats(j)->hyperv_stimer0_count, 10);
+ 		seq_puts(p, "  Hyper-V stimer0 interrupts\n");
+ 	}
+ #endif
+@@ -167,28 +167,28 @@ int arch_show_interrupts(struct seq_file *p, int prec)
+ 	seq_printf(p, "%*s: %10u\n", prec, "MIS", atomic_read(&irq_mis_count));
+ #endif
+ #if IS_ENABLED(CONFIG_KVM)
+-	seq_printf(p, "%*s: ", prec, "PIN");
++	seq_printf(p, "%*s:", prec, "PIN");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", irq_stats(j)->kvm_posted_intr_ipis);
++		seq_put_decimal_ull_width(p, " ", irq_stats(j)->kvm_posted_intr_ipis, 10);
+ 	seq_puts(p, "  Posted-interrupt notification event\n");
+ 
+-	seq_printf(p, "%*s: ", prec, "NPI");
++	seq_printf(p, "%*s:", prec, "NPI");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ",
+-			   irq_stats(j)->kvm_posted_intr_nested_ipis);
++		seq_put_decimal_ull_width(p, " ",
++					  irq_stats(j)->kvm_posted_intr_nested_ipis, 10);
+ 	seq_puts(p, "  Nested posted-interrupt event\n");
+ 
+-	seq_printf(p, "%*s: ", prec, "PIW");
++	seq_printf(p, "%*s:", prec, "PIW");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ",
+-			   irq_stats(j)->kvm_posted_intr_wakeup_ipis);
++		seq_put_decimal_ull_width(p, " ",
++					  irq_stats(j)->kvm_posted_intr_wakeup_ipis, 10);
+ 	seq_puts(p, "  Posted-interrupt wakeup event\n");
+ #endif
+ #ifdef CONFIG_X86_POSTED_MSI
+-	seq_printf(p, "%*s: ", prec, "PMN");
++	seq_printf(p, "%*s:", prec, "PMN");
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ",
+-			   irq_stats(j)->posted_msi_notification_count);
++		seq_put_decimal_ull_width(p, " ",
++					  irq_stats(j)->posted_msi_notification_count, 10);
+ 	seq_puts(p, "  Posted MSI notification event\n");
+ #endif
+ 	return 0;
+diff --git a/arch/xtensa/kernel/irq.c b/arch/xtensa/kernel/irq.c
+index b1e410f6b5ab..c4f46989f9b7 100644
+--- a/arch/xtensa/kernel/irq.c
++++ b/arch/xtensa/kernel/irq.c
+@@ -58,7 +58,7 @@ int arch_show_interrupts(struct seq_file *p, int prec)
+ #if XTENSA_FAKE_NMI
+ 	seq_printf(p, "%*s:", prec, "NMI");
+ 	for_each_online_cpu(cpu)
+-		seq_printf(p, " %10lu", per_cpu(nmi_count, cpu));
++		seq_put_decimal_ull_width(p, " ", per_cpu(nmi_count, cpu), 10);
+ 	seq_puts(p, "   Non-maskable interrupts\n");
+ #endif
+ 	return 0;
+diff --git a/arch/xtensa/kernel/smp.c b/arch/xtensa/kernel/smp.c
+index 94a23f100726..71ec9eced8b9 100644
+--- a/arch/xtensa/kernel/smp.c
++++ b/arch/xtensa/kernel/smp.c
+@@ -453,8 +453,8 @@ void show_ipi_list(struct seq_file *p, int prec)
+ 	for (i = 0; i < IPI_MAX; ++i) {
+ 		seq_printf(p, "%*s:", prec, ipi_text[i].short_text);
+ 		for_each_online_cpu(cpu)
+-			seq_printf(p, " %10lu",
+-					per_cpu(ipi_data, cpu).ipi_count[i]);
++			seq_put_decimal_ull_width(p, " ",
++						  per_cpu(ipi_data, cpu).ipi_count[i], 10);
+ 		seq_printf(p, "   %s\n", ipi_text[i].long_text);
+ 	}
+ }
+diff --git a/kernel/irq/proc.c b/kernel/irq/proc.c
+index 9081ada81c3d..988ce781e813 100644
+--- a/kernel/irq/proc.c
++++ b/kernel/irq/proc.c
+@@ -494,9 +494,11 @@ int show_interrupts(struct seq_file *p, void *v)
+ 	if (!desc->action || irq_desc_is_chained(desc) || !desc->kstat_irqs)
+ 		goto outsparse;
+ 
+-	seq_printf(p, "%*d: ", prec, i);
++	seq_printf(p, "%*d:", prec, i);
+ 	for_each_online_cpu(j)
+-		seq_printf(p, "%10u ", desc->kstat_irqs ? per_cpu(desc->kstat_irqs->cnt, j) : 0);
++		seq_put_decimal_ull_width(p, " ",
++					  desc->kstat_irqs ? per_cpu(desc->kstat_irqs->cnt, j) : 0,
++					  10);
+ 
+ 	raw_spin_lock_irqsave(&desc->lock, flags);
+ 	if (desc->irq_data.chip) {
+-- 
+2.39.2
 
