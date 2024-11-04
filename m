@@ -1,57 +1,136 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from albert.telenet-ops.be (albert.telenet-ops.be [195.130.137.90])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 49E4718BC2C;
-	Mon,  4 Nov 2024 05:48:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 84B771D095E
+	for <linux-sh@vger.kernel.org>; Mon,  4 Nov 2024 11:05:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.130.137.90
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1730699321; cv=none; b=tTHwBw8BA7OHSvnLsw7nPzWrfSTraDsc41rSQ4kCvDYUDvxqWe3YpON1IQe2oCPBxvZf07i3Zu+nS17tveHuleN3oYG0KLnlNPUTaxo8gTVSkMzcFPNSFPchX+orPI+7YrokjPKOyCwsnH/mLHM22d+b0lNebV2reZy+m5y4JBs=
+	t=1730718331; cv=none; b=aNz/AAZJa1cMAV3DsyaW4XjM8PyEtkSPCZZ8H+nCVq36QFiJ+96MvRcMMabnacteoq8cLqyolKxfcyUcoZnEwh97RdX5uVydQ0Jm+O51Ujh07KgA7+UzvnnyBGVC3wVXMUfiy/PMERV3R5aYSDIjFUrO1VFWgoQtDcV/kHA508E=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1730699321; c=relaxed/simple;
-	bh=5fy6xKs7vhmUZBinU8ERiLTywxLCmF+rAnpbE/Um2aQ=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=aIqyFLaiZRRkIXtvBQCXGbdTQPoGoeUFkk39vA3uKe+zmAvoHrHx36RhhD5xi8hsvBGw1MA98cYjIJA5QOu+hO3Jc3k9EI0Hcp9l4tkgh8b234PdsJXj5C7eY3lSB33xFS9VxE7fowVENyZdqh7wV6HiBxRbhJr5yY79M4o6C7I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b=0l2PahRp; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linuxfoundation.org header.i=@linuxfoundation.org header.b="0l2PahRp"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 57BD5C4CECE;
-	Mon,  4 Nov 2024 05:48:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=linuxfoundation.org;
-	s=korg; t=1730699320;
-	bh=5fy6xKs7vhmUZBinU8ERiLTywxLCmF+rAnpbE/Um2aQ=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=0l2PahRptpiEAyN4wodVq4nyyBKrG2iT6AhSssgSZs12x9aXjOxFaAP3N0pwTcizi
-	 0hjt3vxUg4eg/t6fBn4ehlSbmIKddGTVTRJHCIzG8Xp/Y9VybmzsMblzQ7dGLO4WKI
-	 QD7fOU4iUdeofngSjTc8KUEXUZUkpAG2PYLruDZQ=
-Date: Mon, 4 Nov 2024 01:34:19 +0100
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-To: Geert Uytterhoeven <geert+renesas@glider.be>
-Cc: Claudiu Beznea <claudiu.beznea.uj@bp.renesas.com>,
+	s=arc-20240116; t=1730718331; c=relaxed/simple;
+	bh=hPLn67jJGh8npK+Nrh+oowlYDEbl4/LjLbYe7hgNHvE=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version:Content-Type; b=XYXlvVOpggVDI7rgxvLfvKhnKODfvFo8xOKvhaKtkT8+Pzfjchuzk/ozg2g0jYJjYcezSh6HgsWfjMPznG7VMuHeaovyeagMcW7BMYLTE2qrkRoaTE73oePALjWDroBOnvozjwuxA+t2ATXPMEV8rgy64g6xgIhFFFCluaBaC5Q=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be; spf=none smtp.mailfrom=linux-m68k.org; arc=none smtp.client-ip=195.130.137.90
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=glider.be
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=linux-m68k.org
+Received: from ramsan.of.borg ([IPv6:2a02:1810:ac12:ed80:cff2:a4e4:667a:351c])
+	by albert.telenet-ops.be with cmsmtp
+	id Yb5F2D0012b9NYg06b5FEf; Mon, 04 Nov 2024 12:05:22 +0100
+Received: from rox.of.borg ([192.168.97.57])
+	by ramsan.of.borg with esmtp (Exim 4.95)
+	(envelope-from <geert@linux-m68k.org>)
+	id 1t7utD-006FYY-3n;
+	Mon, 04 Nov 2024 12:05:14 +0100
+Received: from geert by rox.of.borg with local (Exim 4.95)
+	(envelope-from <geert@linux-m68k.org>)
+	id 1t7utW-00E1Vx-Pi;
+	Mon, 04 Nov 2024 12:05:14 +0100
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
 	Paul Barker <paul.barker.ct@bp.renesas.com>,
-	Niklas =?iso-8859-1?Q?S=F6derlund?= <niklas.soderlund+renesas@ragnatech.se>,
+	=?UTF-8?q?Niklas=20S=C3=B6derlund?= <niklas.soderlund+renesas@ragnatech.se>,
+	Claudiu Beznea <claudiu.beznea.uj@bp.renesas.com>,
 	Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>,
-	linux-renesas-soc@vger.kernel.org, netdev@vger.kernel.org,
-	linux-ide@vger.kernel.org, linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: Re: [PATCH/RFC] MAINTAINERS: Re-add cancelled Renesas driver sections
-Message-ID: <2024110457-enhance-arrive-b781@gregkh>
-References: <0a189e2c4090a1b308e18005d2552e335bac354f.1729511337.git.geert+renesas@glider.be>
+	James Bottomley <James.Bottomley@hansenpartnership.com>,
+	Arnd Bergmann <arnd@arndb.de>,
+	Sergei Shtylyov <sergei.shtylyov@gmail.com>
+Cc: linux-renesas-soc@vger.kernel.org,
+	netdev@vger.kernel.org,
+	linux-ide@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Geert Uytterhoeven <geert+renesas@glider.be>,
+	Simon Horman <horms@kernel.org>,
+	Niklas Cassel <cassel@kernel.org>
+Subject: [PATCH/RFC v2] MAINTAINERS: Re-add cancelled Renesas driver sections
+Date: Mon,  4 Nov 2024 12:05:07 +0100
+Message-Id: <90447fa332b6f73bffcb486ccfe2515c59546253.1730717649.git.geert+renesas@glider.be>
+X-Mailer: git-send-email 2.34.1
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <0a189e2c4090a1b308e18005d2552e335bac354f.1729511337.git.geert+renesas@glider.be>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-On Mon, Oct 21, 2024 at 01:56:51PM +0200, Geert Uytterhoeven wrote:
-> +RENESAS R-CAR SATA DRIVER
-> +L:	linux-ide@vger.kernel.org
-> +L:	linux-renesas-soc@vger.kernel.org
-> +S:	Supported
-> +F:	Documentation/devicetree/bindings/ata/renesas,rcar-sata.yaml
-> +F:	drivers/ata/sata_rcar.c
+Removing full driver sections also removed mailing list entries, causing
+submitters of future patches to forget CCing these mailing lists.
 
-You can't have a "Supported" entry with no person assigned to it :(
+Hence re-add the sections for the Renesas Ethernet AVB, R-Car SATA, and
+SuperH Ethernet drivers.  Add people who volunteered to maintain these
+drivers (thanks a lot!).
+
+Fixes: 6e90b675cf942e50 ("MAINTAINERS: Remove some entries due to various compliance requirements.")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Acked-by: Niklas Cassel <cassel@kernel.org>
+---
+To be applied to renesas-fixes for v6.12 after v6.12-rc7, unless a
+better solution is found.
+
+v2:
+  - Add Acked-by, Reviewed-by,
+  - Add M:-entries.
+---
+ MAINTAINERS | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 13f4c23281f89332..b04d678240e80ec9 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -19578,6 +19578,16 @@ S:	Supported
+ F:	Documentation/devicetree/bindings/i2c/renesas,iic-emev2.yaml
+ F:	drivers/i2c/busses/i2c-emev2.c
+ 
++RENESAS ETHERNET AVB DRIVER
++M:	Paul Barker <paul.barker.ct@bp.renesas.com>
++M:	Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
++L:	netdev@vger.kernel.org
++L:	linux-renesas-soc@vger.kernel.org
++F:	Documentation/devicetree/bindings/net/renesas,etheravb.yaml
++F:	drivers/net/ethernet/renesas/Kconfig
++F:	drivers/net/ethernet/renesas/Makefile
++F:	drivers/net/ethernet/renesas/ravb*
++
+ RENESAS ETHERNET SWITCH DRIVER
+ R:	Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+ L:	netdev@vger.kernel.org
+@@ -19627,6 +19637,14 @@ F:	Documentation/devicetree/bindings/i2c/renesas,rmobile-iic.yaml
+ F:	drivers/i2c/busses/i2c-rcar.c
+ F:	drivers/i2c/busses/i2c-sh_mobile.c
+ 
++RENESAS R-CAR SATA DRIVER
++M:	Geert Uytterhoeven <geert+renesas@glider.be>
++L:	linux-ide@vger.kernel.org
++L:	linux-renesas-soc@vger.kernel.org
++S:	Supported
++F:	Documentation/devicetree/bindings/ata/renesas,rcar-sata.yaml
++F:	drivers/ata/sata_rcar.c
++
+ RENESAS R-CAR THERMAL DRIVERS
+ M:	Niklas Söderlund <niklas.soderlund@ragnatech.se>
+ L:	linux-renesas-soc@vger.kernel.org
+@@ -19702,6 +19720,16 @@ S:	Supported
+ F:	Documentation/devicetree/bindings/i2c/renesas,rzv2m.yaml
+ F:	drivers/i2c/busses/i2c-rzv2m.c
+ 
++RENESAS SUPERH ETHERNET DRIVER
++M:	Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
++L:	netdev@vger.kernel.org
++L:	linux-renesas-soc@vger.kernel.org
++F:	Documentation/devicetree/bindings/net/renesas,ether.yaml
++F:	drivers/net/ethernet/renesas/Kconfig
++F:	drivers/net/ethernet/renesas/Makefile
++F:	drivers/net/ethernet/renesas/sh_eth*
++F:	include/linux/sh_eth.h
++
+ RENESAS USB PHY DRIVER
+ M:	Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+ L:	linux-renesas-soc@vger.kernel.org
+-- 
+2.34.1
+
