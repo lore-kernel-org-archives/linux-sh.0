@@ -1,117 +1,93 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
+Received: from dggsgout11.his.huawei.com (dggsgout11.his.huawei.com [45.249.212.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D775A1714B3;
-	Tue,  5 Nov 2024 19:04:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 82704156C6A
+	for <linux-sh@vger.kernel.org>; Thu,  7 Nov 2024 00:57:56 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1730833473; cv=none; b=u/Z/dDTm+O0vTv/fJJQYJBau0/Y1uBrdhZ5M6JgGqAIw2jn76xCCSdJuAIeZg8bIZXbPp60ARfEC8T87lEw1PYnL3gqfS36D9qGoFBA6Aave62nBJjeWtMl1Kip2kZr5Uz6JCVbFdmjLNAglkWtwSHA/2eUMCzX2UDKP8M1G+ls=
+	t=1730941079; cv=none; b=ArpJ80onFb5EYU7esTWNSHdN7TtQzYbDBa+50iK9ugcIbU2/1ful+2xbixZEXT2e+Hh/VyjYoyGvYVKPW7IiMNRTdWn4qhyZ3MrQY1AoQpZ6xFl6ZosSnWYlIUbT2MH+04/7yYMT92213cZuxbQa2g7vOqVDTCy+PPd/mZ6zOXw=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1730833473; c=relaxed/simple;
-	bh=uoF4ZbISUkj3LBJVbm7mjK2pNt272UgYSEG9wAikNJE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=qTVCpA/MsSM6wb7HDUNMjT5x8n3MYqO0MtF0nnI5zLkrRQVMyFYUbQNWjb0sv28srMgW5MwsGF/kODia9MQqFdyGoJnI5qwGKbFARum0JE6F6hzobyl/dq2boUlSIkSCtD7v2waf7gQ4ObMfEk63uJ70JTzmLAbYXqGs8mdnAmo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ndFUDxiZ; arc=none smtp.client-ip=10.30.226.201
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ndFUDxiZ"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 14183C4CECF;
-	Tue,  5 Nov 2024 19:04:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1730833472;
-	bh=uoF4ZbISUkj3LBJVbm7mjK2pNt272UgYSEG9wAikNJE=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
-	b=ndFUDxiZpHd3P71EA4Dtdpamj3S+pD0a2NSCYEIkT703any4R0lrK0H/JhQd4Hv2S
-	 hAfH0p9N7ObDyDDis1fM3KZKbcT6xDBcyV1iwhCKpgr5eJTjsn996Jr680vAO44Otj
-	 drCVf6YoRKOceIQN9knu/aAssyHKuocecyBZr/vNKZiP9PdCl8g8D3PbpLRYGfT7S3
-	 8Jxa1hlnrGJeQdCliPqKl36JEkEIgDaJdtPl3tXojvE85kFpWmMnDAcr4PjH7oX62l
-	 V8Za49Z9doiMVqhjlWd7GWzNdgnAXYy87njYhKhjV/rXdMfHzibVSbsFtDSY64+oSA
-	 zKXctAOfMY/4A==
-Date: Tue, 5 Nov 2024 12:04:27 -0700
-From: Nathan Chancellor <nathan@kernel.org>
-To: Mike Rapoport <rppt@kernel.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	Luis Chamberlain <mcgrof@kernel.org>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Andy Lutomirski <luto@kernel.org>, Ard Biesheuvel <ardb@kernel.org>,
-	Arnd Bergmann <arnd@arndb.de>, Borislav Petkov <bp@alien8.de>,
-	Brian Cain <bcain@quicinc.com>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Christoph Hellwig <hch@infradead.org>,
-	Christophe Leroy <christophe.leroy@csgroup.eu>,
-	Dave Hansen <dave.hansen@linux.intel.com>,
-	Dinh Nguyen <dinguyen@kernel.org>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Guo Ren <guoren@kernel.org>, Helge Deller <deller@gmx.de>,
-	Huacai Chen <chenhuacai@kernel.org>, Ingo Molnar <mingo@redhat.com>,
-	Johannes Berg <johannes@sipsolutions.net>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	Kent Overstreet <kent.overstreet@linux.dev>,
-	"Liam R. Howlett" <Liam.Howlett@oracle.com>,
-	Mark Rutland <mark.rutland@arm.com>,
-	Masami Hiramatsu <mhiramat@kernel.org>,
-	Matt Turner <mattst88@gmail.com>, Max Filippov <jcmvbkbc@gmail.com>,
-	Michael Ellerman <mpe@ellerman.id.au>,
-	Michal Simek <monstr@monstr.eu>, Oleg Nesterov <oleg@redhat.com>,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	Peter Zijlstra <peterz@infradead.org>,
-	Richard Weinberger <richard@nod.at>,
-	Russell King <linux@armlinux.org.uk>, Song Liu <song@kernel.org>,
-	Stafford Horne <shorne@gmail.com>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	Suren Baghdasaryan <surenb@google.com>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Uladzislau Rezki <urezki@gmail.com>,
-	Vineet Gupta <vgupta@kernel.org>, Will Deacon <will@kernel.org>,
-	bpf@vger.kernel.org, linux-alpha@vger.kernel.org,
-	linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
-	linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-m68k@lists.linux-m68k.org,
-	linux-mips@vger.kernel.org, linux-mm@kvack.org,
-	linux-modules@vger.kernel.org, linux-openrisc@vger.kernel.org,
-	linux-parisc@vger.kernel.org, linux-riscv@lists.infradead.org,
-	linux-sh@vger.kernel.org, linux-snps-arc@lists.infradead.org,
-	linux-trace-kernel@vger.kernel.org, linux-um@lists.infradead.org,
-	linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev,
-	sparclinux@vger.kernel.org, x86@kernel.org
-Subject: Re: [PATCH v7 6/8] x86/module: prepare module loading for ROX
- allocations of text
-Message-ID: <20241105190427.GA2903209@thelio-3990X>
-References: <20241023162711.2579610-1-rppt@kernel.org>
- <20241023162711.2579610-7-rppt@kernel.org>
- <20241104232741.GA3843610@thelio-3990X>
- <ZynDAhW0lKCfOqZl@kernel.org>
+	s=arc-20240116; t=1730941079; c=relaxed/simple;
+	bh=JzhgHtLW6ApgH1DOsM+RaXO5kapkp8Otma6bhp5QdBs=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=BqtBhy0ffYbrHsrFFZiMb+/rz4DUZIXkAeMknOTsZY+30WSvWiyrDgfh37+alV8i24jdMBeCg7g7ZcoaxHM+piUbZ1vYPtjbl9E3LEESoBqS33tqYKJSyHXtT6GJuLGljPZqU/XYEr00RrXkw0DBNt5pflrj2Yhb5urf1fK46jQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=huaweicloud.com; spf=pass smtp.mailfrom=huaweicloud.com; arc=none smtp.client-ip=45.249.212.51
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=huaweicloud.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huaweicloud.com
+Received: from mail.maildlp.com (unknown [172.19.163.235])
+	by dggsgout11.his.huawei.com (SkyGuard) with ESMTP id 4XkNw42sXzz4f3kJq
+	for <linux-sh@vger.kernel.org>; Thu,  7 Nov 2024 08:57:40 +0800 (CST)
+Received: from mail02.huawei.com (unknown [10.116.40.112])
+	by mail.maildlp.com (Postfix) with ESMTP id 4C6EC1A058E
+	for <linux-sh@vger.kernel.org>; Thu,  7 Nov 2024 08:57:53 +0800 (CST)
+Received: from [10.67.109.79] (unknown [10.67.109.79])
+	by APP1 (Coremail) with SMTP id cCh0CgBHPK6PECxn7twmBA--.15292S2;
+	Thu, 07 Nov 2024 08:57:53 +0800 (CST)
+Message-ID: <e1792bb5-6212-4452-9c1d-c372204c3348@huaweicloud.com>
+Date: Thu, 7 Nov 2024 08:57:51 +0800
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <ZynDAhW0lKCfOqZl@kernel.org>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] sh: intc: Fix possible UAF in register_intc_controller
+To: Chen Ridong <chenridong@huaweicloud.com>, ysato@users.sourceforge.jp,
+ dalias@libc.org, glaubitz@physik.fu-berlin.de, gregkh@linuxfoundation.org,
+ ricardo@marliere.net, damm@opensource.se, lethal@linux-sh.org
+Cc: linux-sh@vger.kernel.org, wangweiyang2@huawei.com
+References: <20241030060813.1307698-1-chenridong@huaweicloud.com>
+Content-Language: en-US
+From: Chen Ridong <chenridong@huaweicloud.com>
+In-Reply-To: <20241030060813.1307698-1-chenridong@huaweicloud.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+X-CM-TRANSID:cCh0CgBHPK6PECxn7twmBA--.15292S2
+X-Coremail-Antispam: 1UD129KBjvdXoWrtw1kuw1fZr1rXw4rur48WFg_yoW3urb_ua
+	9Yvryxur1rWrn7Ja4Y9a48uFyFkFyUZr4ft3Zavr15WFWUZrWkXr40qrW8Zw18trZxZFy7
+	AryfXFs0gw4xXjkaLaAFLSUrUUUUjb8apTn2vfkv8UJUUUU8Yxn0WfASr-VFAUDa7-sFnT
+	9fnUUIcSsGvfJTRUUUbVkFF20E14v26r4j6ryUM7CY07I20VC2zVCF04k26cxKx2IYs7xG
+	6rWj6s0DM7CIcVAFz4kK6r1j6r18M28lY4IEw2IIxxk0rwA2F7IY1VAKz4vEj48ve4kI8w
+	A2z4x0Y4vE2Ix0cI8IcVAFwI0_Ar0_tr1l84ACjcxK6xIIjxv20xvEc7CjxVAFwI0_Gr1j
+	6F4UJwA2z4x0Y4vEx4A2jsIE14v26rxl6s0DM28EF7xvwVC2z280aVCY1x0267AKxVW0oV
+	Cq3wAS0I0E0xvYzxvE52x082IY62kv0487Mc02F40EFcxC0VAKzVAqx4xG6I80ewAv7VC0
+	I7IYx2IY67AKxVWUJVWUGwAv7VC2z280aVAFwI0_Jr0_Gr1lOx8S6xCaFVCjc4AY6r1j6r
+	4UM4x0Y48IcVAKI48JM4x0x7Aq67IIx4CEVc8vx2IErcIFxwACI402YVCY1x02628vn2kI
+	c2xKxwCY1x0262kKe7AKxVWUtVW8ZwCF04k20xvY0x0EwIxGrwCFx2IqxVCFs4IE7xkEbV
+	WUJVW8JwC20s026c02F40E14v26r1j6r18MI8I3I0E7480Y4vE14v26r106r1rMI8E67AF
+	67kF1VAFwI0_Jw0_GFylIxkGc2Ij64vIr41lIxAIcVC0I7IYx2IY67AKxVWUJVWUCwCI42
+	IY6xIIjxv20xvEc7CjxVAFwI0_Jr0_Gr1lIxAIcVCF04k26cxKx2IYs7xG6r1j6r1xMIIF
+	0xvEx4A2jsIE14v26r1j6r4UMIIF0xvEx4A2jsIEc7CjxVAFwI0_Jr0_GrUvcSsGvfC2Kf
+	nxnUUI43ZEXa7VUbGQ6JUUUUU==
+X-CM-SenderInfo: hfkh02xlgr0w46kxt4xhlfz01xgou0bp/
 
-On Tue, Nov 05, 2024 at 09:02:26AM +0200, Mike Rapoport wrote:
-> There's a silly mistake in cfi_rewrite_endbr() in that commit, the patch
-> below should fix it. Can you please test?
 
-Yup, that was it! All my machines boot with this diff applied on top of
-next-20241105, so with that fixed, I think we are all good here.
 
-Tested-by: Nathan Chancellor <nathan@kernel.org>
-
-> diff --git a/arch/x86/kernel/alternative.c b/arch/x86/kernel/alternative.c
-> index 3407efc26528..243843e44e89 100644
-> --- a/arch/x86/kernel/alternative.c
-> +++ b/arch/x86/kernel/alternative.c
-> @@ -1241,7 +1241,7 @@ static void cfi_rewrite_endbr(s32 *start, s32 *end, struct module *mod)
->  		void *addr = (void *)s + *s;
->  		void *wr_addr = module_writable_address(mod, addr);
+On 2024/10/30 14:08, Chen Ridong wrote:
+> From: Chen Ridong <chenridong@huawei.com>
+> 
+> When it goes to error, the 'd' is freed, but 'd->list' was not deleted
+> from 'intc_list', which may lead to a UAF.
+> 
+> Fixes: 01e9651a21bc ("sh: add INTC out of memory error handling")
+> Signed-off-by: Chen Ridong <chenridong@huawei.com>
+> ---
+>  drivers/sh/intc/core.c | 1 +
+>  1 file changed, 1 insertion(+)
+> 
+> diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
+> index 74350b5871dc..a30d205e7a43 100644
+> --- a/drivers/sh/intc/core.c
+> +++ b/drivers/sh/intc/core.c
+> @@ -387,6 +387,7 @@ int __init register_intc_controller(struct intc_desc *desc)
 >  
-> -		poison_endbr(addr+16, wr_addr, false);
-> +		poison_endbr(addr + 16, wr_addr + 16, false);
->  	}
->  }
+>  	kfree(d->window);
+>  err1:
+> +	list_del(&d->list);
+>  	kfree(d);
+>  err0:
+>  	pr_err("unable to allocate INTC memory\n");
 
-Cheers,
-Nathan
+Friendly ping
+
