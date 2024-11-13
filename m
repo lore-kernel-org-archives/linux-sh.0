@@ -1,93 +1,87 @@
-Received: from mail-yb1-f171.google.com (mail-yb1-f171.google.com [209.85.219.171])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E416517BB1A
-	for <linux-sh@vger.kernel.org>; Wed, 13 Nov 2024 08:26:43 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.171
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 63E2A189BB2
+	for <linux-sh@vger.kernel.org>; Wed, 13 Nov 2024 08:35:46 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1731486406; cv=none; b=SQwWYWEVDUOXmqaWUi4NlqOsfrC+qh7CGGBd0tz9icd1iqRHFAygyfTMtiStXP5a0lRSW3l6v/wyX196QIIctUz3N0zZVad+gjUPQqAA4kR/9O5+yiW0Bwe1YpUij3nUt+NzycP54ixGC6pACw80Mb9xIpfTWD9x5YQKiXj7Noo=
+	t=1731486950; cv=none; b=URF/aYFRKrpinq5g+wvPvLxD+OlSHOrUH0svmqog9o2p3ydZ1/VkVsPmrwycswo3g/h3crAQL8D4AyZy/la8pXL8HqGP1nRJu/8yUV5xZXimvOKDHJTED4drmvlYr/wKShy9ADp15eXV1FvAw0e1pWTpIxmXgGIQoogwCWQZqlg=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1731486406; c=relaxed/simple;
-	bh=V4K0Fth2DvsLif9b1PAWj8dDoRZ+IYCH7LCn/BEA1as=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=sJPblCNRbXifngQXIyiEwD5FV9iQ0q7+Z0UHWcEWegOZ/Dxc180osWP1RLeth9bUSxwoj7/revObW07ivjqugtcgVE6U73xT74zvheGdr763wP8T1hY2vYPcfPsurikBQnmPzgyu3FnXXvLiqwFl/F8XDdygeZdqi5/AEpJt82k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.219.171
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-yb1-f171.google.com with SMTP id 3f1490d57ef6-e30d1d97d20so5900210276.2
-        for <linux-sh@vger.kernel.org>; Wed, 13 Nov 2024 00:26:43 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1731486402; x=1732091202;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=zuED7LnH1vnb2oUGl2oqrdDugLLMgkJLvV1LuEM5c80=;
-        b=G19LBTeNDdnyZu7BDDDtSqG2PSvvW/ArEYsfTz4DQ8gB8Emll+nPC0dwG3SqHPhpGW
-         AegRFaJ4ar27ExmBADfLxwAcGDWK0j16ztFUgizBPvZcmcVwBFsJjeqQ8niwYtz1KdTb
-         80fZqnn/nVOY1y9zi4n/7cQT288WvahXUTIJWQuwn+BCLyfOGEvpUszh+ZT9BXIwcp8h
-         0fnpgxWFSWCRPSbsXhTIJlQYS2hikq5KX6EGB42KpbddO+hwiuj5yaxzOWBgWRbHF8F8
-         8rbDpdWYGvY7EELs/GnQBZO+ypBKP4zYMUR4OHg6B7IJ/x4KQZSsXX/xQaWONJ3YrTQa
-         /d5g==
-X-Forwarded-Encrypted: i=1; AJvYcCWsR8415fdsgcdt640hJtLyH3+J9dHH0aOxEoxJ6hLY6CJGWIFEUrl8Nnh1TiRPTPWu3qRo3CAiNw==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyONeIBxZlHTm9O6tn5Z5hKHcoCAf5iXaJHAdZ79Us4DwjQiTQ0
-	jUHk20v0CWN2KPCxQf6D/6SZxZ5MywrSpLvDA4TTWrozltT5Rk9wRFjvYLYg
-X-Google-Smtp-Source: AGHT+IF2t9CE1K05fip0bhVgvlj90W2tZ8dfZH+tYcSTvUlmlN4KB2Urs8LYqzt5ezld8vylrh/jiQ==
-X-Received: by 2002:a05:6902:1684:b0:e33:1486:79e1 with SMTP id 3f1490d57ef6-e337f8fe504mr18929683276.43.1731486401911;
-        Wed, 13 Nov 2024 00:26:41 -0800 (PST)
-Received: from mail-yw1-f177.google.com (mail-yw1-f177.google.com. [209.85.128.177])
-        by smtp.gmail.com with ESMTPSA id 3f1490d57ef6-e336f1ba829sm3183087276.40.2024.11.13.00.26.40
-        for <linux-sh@vger.kernel.org>
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 13 Nov 2024 00:26:41 -0800 (PST)
-Received: by mail-yw1-f177.google.com with SMTP id 00721157ae682-6ea7c9227bfso66662697b3.2
-        for <linux-sh@vger.kernel.org>; Wed, 13 Nov 2024 00:26:40 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AJvYcCUYJ8fTGU9oUchaUZMqD1ygBSWxzSDX0iNBsaMKLVWkOHHCELthhBv3tpNRgoUNJkIZYd0EWcvf2Q==@vger.kernel.org
-X-Received: by 2002:a05:690c:6603:b0:652:5838:54ef with SMTP id
- 00721157ae682-6eaddfd41ccmr201580587b3.37.1731486400581; Wed, 13 Nov 2024
- 00:26:40 -0800 (PST)
+	s=arc-20240116; t=1731486950; c=relaxed/simple;
+	bh=qssUItXR4KeAG7Pj6TG4nxZsavri/8Hgsr+ricLqG/U=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=CmBc1v7iW35g674E8XRIAG0zrw8GNnmozei5CdeEumgc8I/RLPKg6wvxu3kBt4ULiCG8mEfuSsXf/URrKEs0HquIKSYTaPxAQRlWYoXQRkzxWvLAPLshYhssfKmOKI4RpXYjs/QgCWjyy0bdxymEklBvJn2/sq5rmPINWUZaKvY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=cIU2JTir; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="cIU2JTir"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
+	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=aq1aKmSJAsEPraUzGdk0YYk8e3bSxzlFeAMaSTEUZ/I=; t=1731486946; x=1732091746; 
+	b=cIU2JTirjivISWSJ0ddjUij4WEz0qVGM0EsYDpPCHgAIzDGeXG8F2OFq3z/h5s34ua8DdtL/Bdd
+	C8b3d1vQ71xytNlgZr/TwOL01NeHx3bAs05rOwHa+3vQSRpP51CfbosGGKLbRLyZfjOL7UWXpR6BH
+	4NgyGh/g8tC8nDYkOGufUT7dszyDSpGv4zc3IeOS+qaP73l3RH+diZAe5YHgstGJlBtU4s8ynoDZq
+	0fBM4YN+TATuJoDGd01aczAEndU5AIb3ApYI2p8v99MLg4X7RjM9h1rIfPVSZ016eOAiY0vE9tP5g
+	CibOtH65MOqNFIhxCn9LS+MZDdmv3fBbD5zg==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.98)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1tB8qW-00000001ApC-2S1Z; Wed, 13 Nov 2024 09:35:28 +0100
+Received: from p57bd904e.dip0.t-ipconnect.de ([87.189.144.78] helo=[192.168.178.61])
+          by inpost2.zedat.fu-berlin.de (Exim 4.98)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1tB8qW-00000003QsV-1Tln; Wed, 13 Nov 2024 09:35:28 +0100
+Message-ID: <cc97795980848b7002bf157d9e925cd6e516e9cb.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: intc: Fix possible UAF in register_intc_controller
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Chen Ridong <chenridong@huaweicloud.com>, ysato@users.sourceforge.jp, 
+	dalias@libc.org, gregkh@linuxfoundation.org, ricardo@marliere.net, 
+	damm@opensource.se, lethal@linux-sh.org
+Cc: linux-sh@vger.kernel.org, wangweiyang2@huawei.com
+Date: Wed, 13 Nov 2024 09:35:27 +0100
+In-Reply-To: <7ff2dc30-1b63-4314-b154-355880bba3a7@huaweicloud.com>
+References: <20241030060813.1307698-1-chenridong@huaweicloud.com>
+	 <e1792bb5-6212-4452-9c1d-c372204c3348@huaweicloud.com>
+	 <cf281c9e0d04483d7cafd89aeb25b55878e81385.camel@physik.fu-berlin.de>
+	 <7ff2dc30-1b63-4314-b154-355880bba3a7@huaweicloud.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.54.1 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20241030060813.1307698-1-chenridong@huaweicloud.com>
-In-Reply-To: <20241030060813.1307698-1-chenridong@huaweicloud.com>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 13 Nov 2024 09:26:28 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdXznLuo7QegG9giQo80HcRmV4MgKh67sWy2WJXd4Pry+Q@mail.gmail.com>
-Message-ID: <CAMuHMdXznLuo7QegG9giQo80HcRmV4MgKh67sWy2WJXd4Pry+Q@mail.gmail.com>
-Subject: Re: [PATCH] sh: intc: Fix possible UAF in register_intc_controller
-To: Chen Ridong <chenridong@huaweicloud.com>
-Cc: ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de, 
-	gregkh@linuxfoundation.org, ricardo@marliere.net, damm@opensource.se, 
-	lethal@linux-sh.org, linux-sh@vger.kernel.org, chenridong@huawei.com, 
-	wangweiyang2@huawei.com
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On Wed, Oct 30, 2024 at 7:17=E2=80=AFAM Chen Ridong <chenridong@huaweicloud=
-.com> wrote:
-> From: Chen Ridong <chenridong@huawei.com>
->
-> When it goes to error, the 'd' is freed, but 'd->list' was not deleted
-> from 'intc_list', which may lead to a UAF.
->
-> Fixes: 01e9651a21bc ("sh: add INTC out of memory error handling")
-> Signed-off-by: Chen Ridong <chenridong@huawei.com>
+Hi Ridong,
 
-Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+On Wed, 2024-11-13 at 14:21 +0800, Chen Ridong wrote:
+>=20
+> Hi, Adrian, have you reviewed this patch?
+> Looking forward your reply.
 
-Gr{oetje,eeting}s,
+It's still on my radar. Luckily, Geert has reviewed your patch in the meant=
+ime.
 
-                        Geert
+I currently have a busy week again, but I will have more time in the weeken=
+d.
+
+Adrian
 
 --=20
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
-
-In personal conversations with technical people, I call myself a hacker. Bu=
-t
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
