@@ -1,88 +1,107 @@
-Received: from dggsgout11.his.huawei.com (dggsgout11.his.huawei.com [45.249.212.51])
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9AD5E36D
-	for <linux-sh@vger.kernel.org>; Mon, 25 Nov 2024 01:21:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.51
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 264BE45003
+	for <linux-sh@vger.kernel.org>; Mon, 25 Nov 2024 07:14:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1732497679; cv=none; b=cTU+zguvKq3mGpxJWKwL+X7N4BHCdROJy3iewsJzEam0L4g2B9kS7qt821jGpKdoIR5VPiDOYSk8jwXsZ98I3HnfaK5nBrofaWO5Va4dytI0jneGGd+9paeJjQOJZLYTKr17irwd+DTz2wWrwYjvlLswc4Sev5F6veWG5gqG4xM=
+	t=1732518863; cv=none; b=oyFnMTuVOFtNBRrEdDHHjO32alSo2xE3jocpGMFHPo7r9dVmuYq+hW5zMC4YnD/Yz+4iLypLVgPtAaYuzQ/mDcv4Pw05Ok6JDY1qHBSyzJVBIbCu1qDNRWPLhJAD95Svxe/FFZm8NU0JTTDaIetXobRN4KngfuqJ2CxtfeAM8K8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1732497679; c=relaxed/simple;
-	bh=TTRtu9qZ288j3CXN37N462dzo069m7jCOikmaOC6hpg=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=cq0yyLzrskUtQjmmJJycfA3RzOnN5Xw+KTFFXowRHK28Pjf2QMNTfebUpTLz5VG/mGlRQZALiGgVXDegF1F+THQr7DAPMdi1sOzUN85ivBMJYE39ueGm2dYpEoAYXdAJJbLBYAL7PzFCMah5mUJaHGLT8B++yojURzUAN2x2Z1I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=huaweicloud.com; spf=pass smtp.mailfrom=huaweicloud.com; arc=none smtp.client-ip=45.249.212.51
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=huaweicloud.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huaweicloud.com
-Received: from mail.maildlp.com (unknown [172.19.163.235])
-	by dggsgout11.his.huawei.com (SkyGuard) with ESMTP id 4XxSZY5StVz4f3n5m
-	for <linux-sh@vger.kernel.org>; Mon, 25 Nov 2024 09:20:53 +0800 (CST)
-Received: from mail02.huawei.com (unknown [10.116.40.112])
-	by mail.maildlp.com (Postfix) with ESMTP id 6089E1A0568
-	for <linux-sh@vger.kernel.org>; Mon, 25 Nov 2024 09:21:13 +0800 (CST)
-Received: from [10.67.109.79] (unknown [10.67.109.79])
-	by APP1 (Coremail) with SMTP id cCh0CgAHsLEH0UNniDC_Cg--.38720S2;
-	Mon, 25 Nov 2024 09:21:13 +0800 (CST)
-Message-ID: <a3decec2-53f7-48bd-a2c8-2400cc7a1dad@huaweicloud.com>
-Date: Mon, 25 Nov 2024 09:21:11 +0800
+	s=arc-20240116; t=1732518863; c=relaxed/simple;
+	bh=ASrqRf9mu05t+iI4Vsa0vSOLm1AmEFoO1/lKtg7k2cQ=;
+	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
+	 Content-Type:MIME-Version; b=bq3uHqaA5xFzgXhs1B0YLyZWa1i6CUzEgDESXe6kjmEl3H3ie6L6p+v4jNXVcbpRX4aGpo1QVLenFIXWz9sPYWj0k4ip8kS4sKZnrCUJfQDQbYxU4P+3//1wKdRMB8EmA5e9n4/Taq+xgNI87dO3b7FEtqEJa6xHZpCsKJ+7ahI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=Natcm7qi; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="Natcm7qi"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
+	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
+	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=QUz84zWZnWktzf5Zr8MR1f8RYzXllQ3j/mOld51+N9E=; t=1732518858; x=1733123658; 
+	b=Natcm7qiWhOKw6rcGIWyEXQZqQhsqKpQXcBUe/sJmj5Q9pghevzjkjxOE6nxvHNL3FDW6ua6YWi
+	xXwI6L/VNv0fsQEFCVHDdg8PhQJ3/VaXN6BLuOn+zlxhzmcC6TNIe0ep2yzeK6FLPsi1cmOn3zxQ+
+	zIVVB9at+FfqU/sTGc8EFvSiiq7Xzy307IduZ8Y+OjwqXqL2Gi7XDs//Ab58Wd/zrXAvXOv0/vVx7
+	x5jbEriUjR/VNW7DemRlAhoVSai/jDmZhzI7PpW8HhQT39iznKScxprPzaxV/PmiPe1O5kp7FPS9T
+	IAxpjcnK9XOdpcrmpj4KPORRJUInwLyUH0MA==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.98)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1tFTID-00000001vg0-1Gse; Mon, 25 Nov 2024 08:13:57 +0100
+Received: from p57bd904e.dip0.t-ipconnect.de ([87.189.144.78] helo=[192.168.178.61])
+          by inpost2.zedat.fu-berlin.de (Exim 4.98)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1tFTID-00000003gY0-0Gra; Mon, 25 Nov 2024 08:13:57 +0100
+Message-ID: <b5acd30ef15d409689c06e76ef6e7fb9232a622b.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH] sh: intc: Fix possible UAF in register_intc_controller
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Chen Ridong <chenridong@huaweicloud.com>, Geert Uytterhoeven
+	 <geert@linux-m68k.org>
+Cc: ysato@users.sourceforge.jp, dalias@libc.org, gregkh@linuxfoundation.org,
+ 	ricardo@marliere.net, damm@opensource.se, lethal@linux-sh.org, 
+	linux-sh@vger.kernel.org, chenridong@huawei.com, wangweiyang2@huawei.com
+Date: Mon, 25 Nov 2024 08:13:56 +0100
+In-Reply-To: <a3decec2-53f7-48bd-a2c8-2400cc7a1dad@huaweicloud.com>
+References: <20241030060813.1307698-1-chenridong@huaweicloud.com>
+	 <CAMuHMdXznLuo7QegG9giQo80HcRmV4MgKh67sWy2WJXd4Pry+Q@mail.gmail.com>
+	 <a3decec2-53f7-48bd-a2c8-2400cc7a1dad@huaweicloud.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.54.1 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] sh: intc: Fix possible UAF in register_intc_controller
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: ysato@users.sourceforge.jp, dalias@libc.org,
- glaubitz@physik.fu-berlin.de, gregkh@linuxfoundation.org,
- ricardo@marliere.net, damm@opensource.se, lethal@linux-sh.org,
- linux-sh@vger.kernel.org, chenridong@huawei.com, wangweiyang2@huawei.com
-References: <20241030060813.1307698-1-chenridong@huaweicloud.com>
- <CAMuHMdXznLuo7QegG9giQo80HcRmV4MgKh67sWy2WJXd4Pry+Q@mail.gmail.com>
-Content-Language: en-US
-From: Chen Ridong <chenridong@huaweicloud.com>
-In-Reply-To: <CAMuHMdXznLuo7QegG9giQo80HcRmV4MgKh67sWy2WJXd4Pry+Q@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-X-CM-TRANSID:cCh0CgAHsLEH0UNniDC_Cg--.38720S2
-X-Coremail-Antispam: 1UD129KBjDUn29KB7ZKAUJUUUUU529EdanIXcx71UUUUU7v73
-	VFW2AGmfu7bjvjm3AaLaJ3UjIYCTnIWjp_UUUYV7kC6x804xWl14x267AKxVW8JVW5JwAF
-	c2x0x2IEx4CE42xK8VAvwI8IcIk0rVWrJVCq3wAFIxvE14AKwVWUJVWUGwA2ocxC64kIII
-	0Yj41l84x0c7CEw4AK67xGY2AK021l84ACjcxK6xIIjxv20xvE14v26w1j6s0DM28EF7xv
-	wVC0I7IYx2IY6xkF7I0E14v26r4UJVWxJr1l84ACjcxK6I8E87Iv67AKxVW0oVCq3wA2z4
-	x0Y4vEx4A2jsIEc7CjxVAFwI0_GcCE3s1le2I262IYc4CY6c8Ij28IcVAaY2xG8wAqx4xG
-	64xvF2IEw4CE5I8CrVC2j2WlYx0E2Ix0cI8IcVAFwI0_Jr0_Jr4lYx0Ex4A2jsIE14v26r
-	1j6r4UMcvjeVCFs4IE7xkEbVWUJVW8JwACjcxG0xvEwIxGrwACI402YVCY1x02628vn2kI
-	c2xKxwCF04k20xvY0x0EwIxGrwCF54CYxVCY1x0262kKe7AKxVWUtVW8ZwCFx2IqxVCFs4
-	IE7xkEbVWUJVW8JwC20s026c02F40E14v26r1j6r18MI8I3I0E7480Y4vE14v26r106r1r
-	MI8E67AF67kF1VAFwI0_Jw0_GFylIxkGc2Ij64vIr41lIxAIcVC0I7IYx2IY67AKxVWUJV
-	WUCwCI42IY6xIIjxv20xvEc7CjxVAFwI0_Gr0_Cr1lIxAIcVCF04k26cxKx2IYs7xG6r1j
-	6r1xMIIF0xvEx4A2jsIE14v26r1j6r4UMIIF0xvEx4A2jsIEc7CjxVAFwI0_Gr0_Gr1UYx
-	BIdaVFxhVjvjDU0xZFpf9x07UWE__UUUUU=
-X-CM-SenderInfo: hfkh02xlgr0w46kxt4xhlfz01xgou0bp/
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
+Hello Ridong,
 
+On Mon, 2024-11-25 at 09:21 +0800, Chen Ridong wrote:
+> On 2024/11/13 16:26, Geert Uytterhoeven wrote:
+> > On Wed, Oct 30, 2024 at 7:17=E2=80=AFAM Chen Ridong <chenridong@huaweic=
+loud.com> wrote:
+> > > From: Chen Ridong <chenridong@huawei.com>
+> > >=20
+> > > When it goes to error, the 'd' is freed, but 'd->list' was not delete=
+d
+> > > from 'intc_list', which may lead to a UAF.
+> > >=20
+> > > Fixes: 01e9651a21bc ("sh: add INTC out of memory error handling")
+> > > Signed-off-by: Chen Ridong <chenridong@huawei.com>
+> >=20
+> > Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> >=20
+> > Gr{oetje,eeting}s,
+> >=20
+> >                         Geert
+> >=20
+>=20
+> Hi, can this patch be applied?
 
-On 2024/11/13 16:26, Geert Uytterhoeven wrote:
-> On Wed, Oct 30, 2024 at 7:17 AM Chen Ridong <chenridong@huaweicloud.com> wrote:
->> From: Chen Ridong <chenridong@huawei.com>
->>
->> When it goes to error, the 'd' is freed, but 'd->list' was not deleted
->> from 'intc_list', which may lead to a UAF.
->>
->> Fixes: 01e9651a21bc ("sh: add INTC out of memory error handling")
->> Signed-off-by: Chen Ridong <chenridong@huawei.com>
-> 
-> Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> 
-> Gr{oetje,eeting}s,
-> 
->                         Geert
-> 
+The patch is on my list, don't worry.
 
-Hi, can this patch be applied?
+However, the same issue was actually already fixed by Dan Carpenter:
 
-Thanks,
-Ridong
+> https://patchwork.kernel.org/project/linux-sh/patch/45ff88d1-b687-43f4-a0=
+22-4e07930cd2d0@stanley.mountain/
 
+I need to figure out which of the two is the better approach.
+
+Adrian
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
