@@ -1,107 +1,179 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 264BE45003
-	for <linux-sh@vger.kernel.org>; Mon, 25 Nov 2024 07:14:17 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 164CA6A8D2;
+	Wed, 27 Nov 2024 19:32:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1732518863; cv=none; b=oyFnMTuVOFtNBRrEdDHHjO32alSo2xE3jocpGMFHPo7r9dVmuYq+hW5zMC4YnD/Yz+4iLypLVgPtAaYuzQ/mDcv4Pw05Ok6JDY1qHBSyzJVBIbCu1qDNRWPLhJAD95Svxe/FFZm8NU0JTTDaIetXobRN4KngfuqJ2CxtfeAM8K8=
+	t=1732735931; cv=none; b=t2gIUWEqmL7qf4ygF/FKPkEeNTyrx+ZLK9c5UtKb2iBmASreoq2lp/gLjUIT3nCU/ieC13j8RCidRw1mZRJGfvydtaXLM4bfpOH6cL8dtY3EB4oCdqxEma59EZz5WaeuXKcwqrhUJcwVYMAdk1U4YpANYyhZzd6B7i5UG3jqLck=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1732518863; c=relaxed/simple;
-	bh=ASrqRf9mu05t+iI4Vsa0vSOLm1AmEFoO1/lKtg7k2cQ=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=bq3uHqaA5xFzgXhs1B0YLyZWa1i6CUzEgDESXe6kjmEl3H3ie6L6p+v4jNXVcbpRX4aGpo1QVLenFIXWz9sPYWj0k4ip8kS4sKZnrCUJfQDQbYxU4P+3//1wKdRMB8EmA5e9n4/Taq+xgNI87dO3b7FEtqEJa6xHZpCsKJ+7ahI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=Natcm7qi; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1732735931; c=relaxed/simple;
+	bh=xrciW+EMhZ5UEofbJw9NwB4YNk6WJ7ZsUg3ugalAKtY=;
+	h=Date:Message-ID:From:To:Cc:Subject:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=JGydcpK62W4yA/BawQoJzSI8k5mru11GP6tVcjQiqEre9YwwCvgb4q05Lv7rmHOeb39M2OArWZoAzxTFIgP+FuOf18ToGWudbNlHuTxmBNsXSbDp0mdl1XFP4zvaEX+zKsRuSD+BB7Glk0+CbMg/qvVVr3g3FquYGbozBK3rp+s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=X2BtrIqN; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="Natcm7qi"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
-	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=QUz84zWZnWktzf5Zr8MR1f8RYzXllQ3j/mOld51+N9E=; t=1732518858; x=1733123658; 
-	b=Natcm7qiWhOKw6rcGIWyEXQZqQhsqKpQXcBUe/sJmj5Q9pghevzjkjxOE6nxvHNL3FDW6ua6YWi
-	xXwI6L/VNv0fsQEFCVHDdg8PhQJ3/VaXN6BLuOn+zlxhzmcC6TNIe0ep2yzeK6FLPsi1cmOn3zxQ+
-	zIVVB9at+FfqU/sTGc8EFvSiiq7Xzy307IduZ8Y+OjwqXqL2Gi7XDs//Ab58Wd/zrXAvXOv0/vVx7
-	x5jbEriUjR/VNW7DemRlAhoVSai/jDmZhzI7PpW8HhQT39iznKScxprPzaxV/PmiPe1O5kp7FPS9T
-	IAxpjcnK9XOdpcrmpj4KPORRJUInwLyUH0MA==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.98)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1tFTID-00000001vg0-1Gse; Mon, 25 Nov 2024 08:13:57 +0100
-Received: from p57bd904e.dip0.t-ipconnect.de ([87.189.144.78] helo=[192.168.178.61])
-          by inpost2.zedat.fu-berlin.de (Exim 4.98)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1tFTID-00000003gY0-0Gra; Mon, 25 Nov 2024 08:13:57 +0100
-Message-ID: <b5acd30ef15d409689c06e76ef6e7fb9232a622b.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: intc: Fix possible UAF in register_intc_controller
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Chen Ridong <chenridong@huaweicloud.com>, Geert Uytterhoeven
-	 <geert@linux-m68k.org>
-Cc: ysato@users.sourceforge.jp, dalias@libc.org, gregkh@linuxfoundation.org,
- 	ricardo@marliere.net, damm@opensource.se, lethal@linux-sh.org, 
-	linux-sh@vger.kernel.org, chenridong@huawei.com, wangweiyang2@huawei.com
-Date: Mon, 25 Nov 2024 08:13:56 +0100
-In-Reply-To: <a3decec2-53f7-48bd-a2c8-2400cc7a1dad@huaweicloud.com>
-References: <20241030060813.1307698-1-chenridong@huaweicloud.com>
-	 <CAMuHMdXznLuo7QegG9giQo80HcRmV4MgKh67sWy2WJXd4Pry+Q@mail.gmail.com>
-	 <a3decec2-53f7-48bd-a2c8-2400cc7a1dad@huaweicloud.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.54.1 
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="X2BtrIqN"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7BD69C4CED2;
+	Wed, 27 Nov 2024 19:32:10 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1732735930;
+	bh=xrciW+EMhZ5UEofbJw9NwB4YNk6WJ7ZsUg3ugalAKtY=;
+	h=Date:From:To:Cc:Subject:In-Reply-To:References:From;
+	b=X2BtrIqNGPOvV+49M5YnEnvMfq90m+ylhD7PzWNtlQWXRcWLiIC9o7ibIu7Z+6NCF
+	 kcXzlV4NXbHYexopnI8wyMqZtXl1aARG1Kv+1kHo2QdWtEH8r51A6kx0Z+b8YMEuGQ
+	 KkVWB5pfPFETZ3jygkOvTt1oTUJ7ox8ovqX6d1E+iA+5p2Dg3oRun7qGKNbz7lmsz9
+	 P2yGA8boYanYTYFxQR6QsePoSp98SjRizDnHD/Y6HoJ2E4HX1u+AiXq7pnGqhQjajY
+	 UFL0t9n5dlc0Yh9Rql7BGoHCScG0i7PhlQ+71XDRGrapyLXfaRB16QrJ7c3W0qJT2C
+	 zsuLVCEMA8n/A==
+Received: from sofa.misterjones.org ([185.219.108.64] helo=goblin-girl.misterjones.org)
+	by disco-boy.misterjones.org with esmtpsa  (TLS1.3) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.95)
+	(envelope-from <maz@kernel.org>)
+	id 1tGNlf-00GLsr-Kw;
+	Wed, 27 Nov 2024 19:32:07 +0000
+Date: Wed, 27 Nov 2024 19:32:06 +0000
+Message-ID: <867c8ov5ft.wl-maz@kernel.org>
+From: Marc Zyngier <maz@kernel.org>
+To: Mike Rapoport <rppt@kernel.org>
+Cc: linux-kernel@vger.kernel.org,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Arnd Bergmann <arnd@arndb.de>,
+	Borislav Petkov <bp@alien8.de>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	Dan Williams <dan.j.williams@intel.com>,
+	Dave Hansen <dave.hansen@linux.intel.com>,
+	David Hildenbrand <david@redhat.com>,
+	"David S. Miller" <davem@davemloft.net>,
+	Davidlohr Bueso <dave@stgolabs.net>,
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+	Heiko Carstens <hca@linux.ibm.com>,
+	Huacai Chen <chenhuacai@kernel.org>,
+	Ingo Molnar <mingo@redhat.com>,
+	Jiaxun Yang <jiaxun.yang@flygoat.com>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Jonathan Cameron <jonathan.cameron@huawei.com>,
+	Jonathan Corbet <corbet@lwn.net>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	"Rafael J. Wysocki" <rafael@kernel.org>,
+	Rob Herring <robh@kernel.org>,
+	Samuel Holland <samuel.holland@sifive.com>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Vasily Gorbik <gor@linux.ibm.com>,
+	Will Deacon <will@kernel.org>,
+	Zi Yan <ziy@nvidia.com>,
+	devicetree@vger.kernel.org,
+	linux-acpi@vger.kernel.org,
+	linux-arch@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	linux-cxl@vger.kernel.org,
+	linux-doc@vger.kernel.org,
+	linux-mips@vger.kernel.org,
+	linux-mm@kvack.org,
+	linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org,
+	loongarch@lists.linux.dev,
+	nvdimm@lists.linux.dev,
+	sparclinux@vger.kernel.org,
+	x86@kernel.org,
+	Jonathan Cameron <Jonathan.Cameron@huawei.com>
+Subject: Re: [PATCH v4 24/26] arch_numa: switch over to numa_memblks
+In-Reply-To: <20240807064110.1003856-25-rppt@kernel.org>
+References: <20240807064110.1003856-1-rppt@kernel.org>
+	<20240807064110.1003856-25-rppt@kernel.org>
+User-Agent: Wanderlust/2.15.9 (Almost Unreal) SEMI-EPG/1.14.7 (Harue)
+ FLIM-LB/1.14.9 (=?UTF-8?B?R29qxY0=?=) APEL-LB/10.8 EasyPG/1.0.0 Emacs/29.4
+ (aarch64-unknown-linux-gnu) MULE/6.0 (HANACHIRUSATO)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+MIME-Version: 1.0 (generated by SEMI-EPG 1.14.7 - "Harue")
+Content-Type: text/plain; charset=US-ASCII
+X-SA-Exim-Connect-IP: 185.219.108.64
+X-SA-Exim-Rcpt-To: rppt@kernel.org, linux-kernel@vger.kernel.org, agordeev@linux.ibm.com, andreas@gaisler.com, akpm@linux-foundation.org, arnd@arndb.de, bp@alien8.de, catalin.marinas@arm.com, christophe.leroy@csgroup.eu, dan.j.williams@intel.com, dave.hansen@linux.intel.com, david@redhat.com, davem@davemloft.net, dave@stgolabs.net, gregkh@linuxfoundation.org, hca@linux.ibm.com, chenhuacai@kernel.org, mingo@redhat.com, jiaxun.yang@flygoat.com, glaubitz@physik.fu-berlin.de, jonathan.cameron@huawei.com, corbet@lwn.net, mpe@ellerman.id.au, palmer@dabbelt.com, rafael@kernel.org, robh@kernel.org, samuel.holland@sifive.com, tsbogend@alpha.franken.de, tglx@linutronix.de, gor@linux.ibm.com, will@kernel.org, ziy@nvidia.com, devicetree@vger.kernel.org, linux-acpi@vger.kernel.org, linux-arch@vger.kernel.org, linux-arm-kernel@lists.infradead.org, linux-cxl@vger.kernel.org, linux-doc@vger.kernel.org, linux-mips@vger.kernel.org, linux-mm@kvack.org, linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, loongarch@lists.linux.dev, nvdimm@lists.linux.dev, sparclinux@vger.kernel.org, x86@kernel.org, Jonathan.Cameron@huawei.com
+X-SA-Exim-Mail-From: maz@kernel.org
+X-SA-Exim-Scanned: No (on disco-boy.misterjones.org); SAEximRunCond expanded to false
 
-Hello Ridong,
+Hi Mike,
 
-On Mon, 2024-11-25 at 09:21 +0800, Chen Ridong wrote:
-> On 2024/11/13 16:26, Geert Uytterhoeven wrote:
-> > On Wed, Oct 30, 2024 at 7:17=E2=80=AFAM Chen Ridong <chenridong@huaweic=
-loud.com> wrote:
-> > > From: Chen Ridong <chenridong@huawei.com>
-> > >=20
-> > > When it goes to error, the 'd' is freed, but 'd->list' was not delete=
-d
-> > > from 'intc_list', which may lead to a UAF.
-> > >=20
-> > > Fixes: 01e9651a21bc ("sh: add INTC out of memory error handling")
-> > > Signed-off-by: Chen Ridong <chenridong@huawei.com>
-> >=20
-> > Reviewed-by: Geert Uytterhoeven <geert+renesas@glider.be>
-> >=20
-> > Gr{oetje,eeting}s,
-> >=20
-> >                         Geert
-> >=20
->=20
-> Hi, can this patch be applied?
+Sorry for reviving a rather old thread.
 
-The patch is on my list, don't worry.
+On Wed, 07 Aug 2024 07:41:08 +0100,
+Mike Rapoport <rppt@kernel.org> wrote:
+> 
+> From: "Mike Rapoport (Microsoft)" <rppt@kernel.org>
+> 
+> Until now arch_numa was directly translating firmware NUMA information
+> to memblock.
+> 
+> Using numa_memblks as an intermediate step has a few advantages:
+> * alignment with more battle tested x86 implementation
+> * availability of NUMA emulation
+> * maintaining node information for not yet populated memory
+> 
+> Adjust a few places in numa_memblks to compile with 32-bit phys_addr_t
+> and replace current functionality related to numa_add_memblk() and
+> __node_distance() in arch_numa with the implementation based on
+> numa_memblks and add functions required by numa_emulation.
+> 
+> Signed-off-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+> Tested-by: Zi Yan <ziy@nvidia.com> # for x86_64 and arm64
+> Reviewed-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+> Tested-by: Jonathan Cameron <Jonathan.Cameron@huawei.com> [arm64 + CXL via QEMU]
+> Acked-by: Dan Williams <dan.j.williams@intel.com>
+> Acked-by: David Hildenbrand <david@redhat.com>
+> ---
+>  drivers/base/Kconfig       |   1 +
+>  drivers/base/arch_numa.c   | 201 +++++++++++--------------------------
+>  include/asm-generic/numa.h |   6 +-
+>  mm/numa_memblks.c          |  17 ++--
+>  4 files changed, 75 insertions(+), 150 deletions(-)
+>
 
-However, the same issue was actually already fixed by Dan Carpenter:
+[...]
 
-> https://patchwork.kernel.org/project/linux-sh/patch/45ff88d1-b687-43f4-a0=
-22-4e07930cd2d0@stanley.mountain/
+>  static int __init numa_register_nodes(void)
+>  {
+>  	int nid;
+> -	struct memblock_region *mblk;
+> -
+> -	/* Check that valid nid is set to memblks */
+> -	for_each_mem_region(mblk) {
+> -		int mblk_nid = memblock_get_region_node(mblk);
+> -		phys_addr_t start = mblk->base;
+> -		phys_addr_t end = mblk->base + mblk->size - 1;
+> -
+> -		if (mblk_nid == NUMA_NO_NODE || mblk_nid >= MAX_NUMNODES) {
+> -			pr_warn("Warning: invalid memblk node %d [mem %pap-%pap]\n",
+> -				mblk_nid, &start, &end);
+> -			return -EINVAL;
+> -		}
+> -	}
+>  
 
-I need to figure out which of the two is the better approach.
+This hunk has the unfortunate side effect of killing my ThunderX
+extremely early at boot time, as this sorry excuse for a machine
+really relies on the kernel recognising that whatever NUMA information
+the FW offers is BS.
 
-Adrian
+Reverting this hunk restores happiness (sort of).
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+FWIW, I've posted a patch with such revert at [1].
+
+Thanks,
+
+	M.
+
+[1] https://lore.kernel.org/r/20241127193000.3702637-1-maz@kernel.org
+
+-- 
+Without deviation from the norm, progress is not possible.
