@@ -1,58 +1,55 @@
 Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 88D4A13C3F2;
-	Sat, 30 Nov 2024 12:37:50 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 95A1313C3F2;
+	Sat, 30 Nov 2024 12:41:57 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1732970273; cv=none; b=syeGGmQIQVevUzRY+QUa/+YkHEgvUfnZlPRNATaWmI3JfNG7NVKmsQi569tW1NoIbTyED9znW/5D9k4n07fGcq98btkSQZhyJunRLtNQRUdx5G2CiUybDcRo0otz0r140sAJMlTQu7yRgK84hdQkyF1lE1gX/ba8KotCRzmdc50=
+	t=1732970519; cv=none; b=Grq6RUo7ww0tH2QPmGw5opA6ezb9G3CeXiMSWhBipTlxGJNEqERql4fY/WK/Px7mB1S3GKDrcyFTZYludjWQIBhREYlbXmzwje7XUQHjCplWp0qBjbwJvjYPOCAsXIIj1j64AKag8nrv8qZBSWG4f5dJCAdbnghfVJPFEsk+i5w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1732970273; c=relaxed/simple;
-	bh=cqmwpE05jcRxahXQsGJddxblblVsKmdf3yv5j1OMS5E=;
+	s=arc-20240116; t=1732970519; c=relaxed/simple;
+	bh=AmES6UYZnvyg79CV8OFghNDc2d2kSl1UyHfR5h7R6eU=;
 	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=jxH4LP7rwatSK/gzG7FUIFAaOTmXVf8z4pKEgp1a07mqFbWwfsHuHIGIlwMpY1x3IcWf1mEnH4Ps9491oTWagtHefs6RgHjuUs/2GLpPBWTV+4V0DJsoYtBsD2WxwGywjJeJ02mdJvk/wPJIdeMaJ0hUwBZJ/Ofm4ruvjK/Tq6o=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=WMzOClkf; arc=none smtp.client-ip=130.133.4.66
+	 Content-Type:MIME-Version; b=Ubx+ifFaw80m917cdIaKhKQ2VJcvjQYK8Z6JsCV5/NX3UOQOFJKj+NbJqK3S+BihFUkcbMLuQ2S+GouZ9vXJCJR9A2KjqXd3SqHhutztZZHpfMkndwnthQowgSwrZnE4znqZbKFVfrCs60T5ak0yd/7RK2SxtTY6yHFe2GuQKBk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=foaSAP5M; arc=none smtp.client-ip=130.133.4.66
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="WMzOClkf"
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="foaSAP5M"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
 	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
 	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
 	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
 	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
 	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=8ThFtq2aKx05po/IQguAUwmmTNf7jjwGpVPevN1GAa8=; t=1732970270; x=1733575070; 
-	b=WMzOClkfAlwO3dl1duymNhTUYW+dFeFDqOdwTGYwWnuc8kB+ybZsxIc8XcWaXzfgT+2IyH98cg4
-	ysqDLL3Nv0tdQ0HWlppa6Q4ltDiW5jD9ZwDwjHV3/RJr3C95ZcBw9rNgJFiyhKxkdeqoJmp/l+b6b
-	M5Ho3iW7LkLcntDH3Y5lzzU98Rw4Bbtj5aLIbipzQioV56aQ89S1SHHvaUEIIYAXTSOuIOT1Jm+5V
-	ecsmGv2s+GoRiHoabfnxlD4WKbzG+v+IjI2Ln/bcyQnhWqffQ673s5s6Gw9VILuuEZiJzlLyYCZ69
-	z47yP6J/4oO+Xgx6tIVkPfzV85lfex3G/1yg==;
+	bh=OaswsWBcu5Qc090/c6OA49kGrpKmWX/g0YV7f4mrWpw=; t=1732970517; x=1733575317; 
+	b=foaSAP5M8rEqOVooBjxTwP7ztwcz+OjfnsuNKXnUopBRXax2hTmMPZRkNjC+hMvvvBrKIrNDj5e
+	qYeLEStmPNCrJQP6IAX/pIrSi0/KiVpSBSTc9aAYguMfj6PTTU8Vk/6yEjNeSVZEKCpjKMkVUng3a
+	BbdLmv/kgsetXGY2ief4hB6+oKt+qhgBEYlgcP4ucwRxm3RT9xNKcRqAC1LTtAPFoQJ1lalNpwsj7
+	hvDW7JtUqHARBqpBgo1Jn0Qm78wT5SJaQ9z+vozxLTU5lJ8NMMKTocQMZpdIvt7zalUnobfMEoLYh
+	IuYxzcYq+CQxQpDlKnOyw8ngUxuBvz/YbgDg==;
 Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
           by outpost.zedat.fu-berlin.de (Exim 4.98)
           with esmtps (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1tHMjI-000000042Nj-3qVI; Sat, 30 Nov 2024 13:37:44 +0100
+          id 1tHMnL-0000000437a-1Ndl; Sat, 30 Nov 2024 13:41:55 +0100
 Received: from dynamic-078-054-081-111.78.54.pool.telefonica.de ([78.54.81.111] helo=[192.168.178.50])
           by inpost2.zedat.fu-berlin.de (Exim 4.98)
           with esmtpsa (TLS1.3)
           tls TLS_AES_256_GCM_SHA384
           (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1tHMjI-00000001S6a-2xWa; Sat, 30 Nov 2024 13:37:44 +0100
-Message-ID: <b24df2978b61101e34a6b7116c942a1b0d6bc434.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: intc: use after free in register_intc_controller()
+          id 1tHMnL-00000001SaI-0YMm; Sat, 30 Nov 2024 13:41:55 +0100
+Message-ID: <bc772ca68b843e89ec201db46e3dc94d55faebaf.camel@physik.fu-berlin.de>
+Subject: Re: [PATCH 13/13] sh/irq: use seq_put_decimal_ull_width() for
+ decimal values
 From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Dan Carpenter <dan.carpenter@linaro.org>, Magnus Damm
-	 <magnus.damm@gmail.com>
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, Rich Felker
- <dalias@libc.org>,  "Ricardo B. Marliere"	 <ricardo@marliere.net>, Greg
- Kroah-Hartman <gregkh@linuxfoundation.org>,  Paul Mundt
- <lethal@linux-sh.org>, linux-sh@vger.kernel.org,
- linux-kernel@vger.kernel.org, 	kernel-janitors@vger.kernel.org
-Date: Sat, 30 Nov 2024 13:37:44 +0100
-In-Reply-To: <45ff88d1-b687-43f4-a022-4e07930cd2d0@stanley.mountain>
-References: <45ff88d1-b687-43f4-a022-4e07930cd2d0@stanley.mountain>
+To: David Wang <00107082@163.com>, ysato@users.sourceforge.jp,
+ dalias@libc.org
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+Date: Sat, 30 Nov 2024 13:41:54 +0100
+In-Reply-To: <20241108162634.9945-1-00107082@163.com>
+References: <20241108162634.9945-1-00107082@163.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 User-Agent: Evolution 3.54.2 
@@ -65,48 +62,40 @@ MIME-Version: 1.0
 X-Original-Sender: glaubitz@physik.fu-berlin.de
 X-ZEDAT-Hint: PO
 
-On Wed, 2024-10-23 at 11:41 +0300, Dan Carpenter wrote:
-> In the error handling, for this function, we kfree(d) without ever
-> removing it from the &intc_list which would lead to a use after free.  To
-> fix this, lets only add it to the list after everything has succeeded.
+Hi David,
+
+On Sat, 2024-11-09 at 00:26 +0800, David Wang wrote:
+> Performance improvement for reading /proc/interrupts on arch sh
 >=20
-> Fixes: 2dcec7a988a1 ("sh: intc: set_irq_wake() support")
-> Signed-off-by: Dan Carpenter <dan.carpenter@linaro.org>
+> Signed-off-by: David Wang <00107082@163.com>
 > ---
-> This patch is highly speculative and I am not able to test it.  Please,
-> review with care.
+>  arch/sh/kernel/irq.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
 >=20
->  drivers/sh/intc/core.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->=20
-> diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
-> index 74350b5871dc..ea571eeb3078 100644
-> --- a/drivers/sh/intc/core.c
-> +++ b/drivers/sh/intc/core.c
-> @@ -209,7 +209,6 @@ int __init register_intc_controller(struct intc_desc =
-*desc)
->  		goto err0;
+> diff --git a/arch/sh/kernel/irq.c b/arch/sh/kernel/irq.c
+> index 4e6835de54cf..9022d8af9d68 100644
+> --- a/arch/sh/kernel/irq.c
+> +++ b/arch/sh/kernel/irq.c
+> @@ -43,9 +43,9 @@ int arch_show_interrupts(struct seq_file *p, int prec)
+>  {
+>  	int j;
 > =20
->  	INIT_LIST_HEAD(&d->list);
-> -	list_add_tail(&d->list, &intc_list);
+> -	seq_printf(p, "%*s: ", prec, "NMI");
+> +	seq_printf(p, "%*s:", prec, "NMI");
+>  	for_each_online_cpu(j)
+> -		seq_printf(p, "%10u ", per_cpu(irq_stat.__nmi_count, j));
+> +		seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat.__nmi_count, j), 10=
+);
+>  	seq_printf(p, "  Non-maskable interrupts\n");
 > =20
->  	raw_spin_lock_init(&d->lock);
->  	INIT_RADIX_TREE(&d->tree, GFP_ATOMIC);
-> @@ -369,6 +368,7 @@ int __init register_intc_controller(struct intc_desc =
-*desc)
-> =20
->  	d->skip_suspend =3D desc->skip_syscore_suspend;
-> =20
-> +	list_add_tail(&d->list, &intc_list);
->  	nr_intc_controllers++;
-> =20
->  	return 0;
+>  	seq_printf(p, "%*s: %10u\n", prec, "ERR", atomic_read(&irq_err_count));
 
-I think this approach is more sensible than the one suggested by Ridong Che=
-n
-and I'm therefor egoing to pick this one over the other solution.
+Sorry for the very late reply!
 
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+I don't quite understand why seq_put_decimal_ull_width() should be faster t=
+han seq_printf().
+
+Can you elaborate on this a bit more?
 
 Adrian
 
