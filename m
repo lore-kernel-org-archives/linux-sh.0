@@ -1,81 +1,124 @@
-Received: from m16.mail.163.com (m16.mail.163.com [117.135.210.5])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id B03FC17741;
-	Sat, 30 Nov 2024 13:50:03 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=117.135.210.5
+Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4A4092F2A
+	for <linux-sh@vger.kernel.org>; Sat, 30 Nov 2024 20:16:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1732974607; cv=none; b=nDO0UrBnL5YPqaJcOA5AysPTSG2iRQ9UVFbdTShYdlC1AXLomT8ke7zhJd8Mg9mN2S7hSk/erwFDDuR26vr7NMgd4O0pAKTGtC3kxsW8xWkGz3Wt750iN8gTrvquXmq96G/izdnSRpRV6AIC3ke95Tq92MD84ZnVexOxYcVtiTE=
+	t=1732997813; cv=none; b=ZEiwHTT7QtfFcJ7Qry/sz18GqdHdffarTInTH+6La1sgY464GSdP20nFy3VLXX7yJHumVaYlw81x/ypG6m3lja9nHd+W6ExfZbTMTyD2TafGm5q7xeCisK3BDkkq5quxMkltCgk2ZJ0LbDmzZu3DhGMEjb+jXmpYZSvUz80Sc1w=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1732974607; c=relaxed/simple;
-	bh=O9FGPATBs1MNaQiOc7hoyoQn6PO6aoeYkB/uBJbzwL0=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version; b=uUx84pfjKlYf4TDUO6KFSzENw4Cj5fPsYaZjceWEvikTMETpWECDESKocCDfJ+sv01kQjoQ6UcyknVgHhnNspdv1tOX5DLPgT53RlvUPM4l7WwMKoUqBOx4FHBfJLtBZWje9X66g/kFwYQTnRv+c52ibhniHVDDYKk+TnlmC7lQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=I9ZRNEu2; arc=none smtp.client-ip=117.135.210.5
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=163.com
+	s=arc-20240116; t=1732997813; c=relaxed/simple;
+	bh=8/tRPb+yCsKsSP7+KvOEhJq/Y1zVMi8NMPOHl8RrGKc=;
+	h=Message-ID:Subject:From:To:Cc:Date:Content-Type:MIME-Version; b=C15i5aqaGusZ8eswYq/jVvhWiOAiancbCX7RZyey7NSudZGds692dyhxnzklmq8hF70fL2xI3+GuvreRAM4Uh5rbkp31u8Vo/h7y6JIo/Hw9pvYunG2TmTrfbYy99lMQdwlfOl+dpOQKlNL6g2SU647yL4EfnudGn6tzaeqrPdY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=Pr5FW+s4; arc=none smtp.client-ip=130.133.4.66
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="I9ZRNEu2"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
-	s=s110527; h=From:Subject:Date:Message-Id:MIME-Version; bh=AMqdv
-	ClJp9o1qtGJYJ8pX46YUMWEjXmptpNhHIj2bHc=; b=I9ZRNEu2lHfDXlz3hacWd
-	7pgkX3mFF1/AdPTFbtagBG1cBh5luYO/W3fflyzxl6bFwTWhZM1CgxHvMyRtWqkE
-	Mz9Vu6JTDt6u/djfgIxADcuVN/ERMK2+ww12iJqxvF1mwm2Lz7QFmw8URovqUAxa
-	ef4hWOaWTY02hlEs6A2c6U=
-Received: from localhost.localdomain (unknown [111.35.188.140])
-	by gzga-smtp-mtada-g1-2 (Coremail) with SMTP id _____wDnrUbWF0tnL+ExKg--.33496S4;
-	Sat, 30 Nov 2024 21:49:26 +0800 (CST)
-From: David Wang <00107082@163.com>
-To: glaubitz@physik.fu-berlin.de
-Cc: dalias@libc.org,
-	linux-kernel@vger.kernel.org,
-	linux-sh@vger.kernel.org,
-	David Wang <00107082@163.com>
-Subject: [PATCH v2] sh/irq: use seq_put_decimal_ull_width() for decimal values
-Date: Sat, 30 Nov 2024 21:49:09 +0800
-Message-Id: <20241130134909.171183-1-00107082@163.com>
-X-Mailer: git-send-email 2.39.2
-In-Reply-To: <a9fe22747f20cae9fcc9b9d20109e7afbf8e6b93.camel@physik.fu-berlin.de>
-References: <a9fe22747f20cae9fcc9b9d20109e7afbf8e6b93.camel@physik.fu-berlin.de>
+	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="Pr5FW+s4"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
+	Content-Type:Date:Cc:To:From:Subject:Message-ID:Sender:Reply-To:Content-ID:
+	Content-Description:Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc
+	:Resent-Message-ID:In-Reply-To:References:List-Id:List-Help:List-Unsubscribe:
+	List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=in87gPfdMkmsyCbO9OvRdj4J7fgzaHhwQUn9uDpl5wA=; t=1732997810; x=1733602610; 
+	b=Pr5FW+s4kZcoYhQvie/4FkTQW2MPh1icleBmSYDuPP72hguvS7gSVwyly+EqfRkAFRSPSoGQ9dL
+	vnxsGcaW/R8U02qsFAQff8Hp+T3duf6ooxbkpeEfxZzGPusYMquqhh2aalZkYZKFoxm5K2Baap2SI
+	pP6nwqqH37slTgEsE4guNKmFTzDPgYfTB739mVqcu7PE++YMGxHSf/eqSaa2uBTopfS3pf4Eqx6bK
+	6RR/VRwzchmmnFuwpINSgpTXrsnh7VH0BHgJkLW/kbZVXM1cbYAj6BvjVG0oe8yipIgiyx0/wGsLv
+	NlD51AxMKCes9gs4wqhD/0fU50DM7Fk0Tw9Q==;
+Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
+          by outpost.zedat.fu-berlin.de (Exim 4.98)
+          with esmtps (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@zedat.fu-berlin.de>)
+          id 1tHTtV-00000001FQD-3PDS; Sat, 30 Nov 2024 21:16:45 +0100
+Received: from dynamic-002-242-065-087.2.242.pool.telefonica.de ([2.242.65.87] helo=[192.168.178.50])
+          by inpost2.zedat.fu-berlin.de (Exim 4.98)
+          with esmtpsa (TLS1.3)
+          tls TLS_AES_256_GCM_SHA384
+          (envelope-from <glaubitz@physik.fu-berlin.de>)
+          id 1tHTtV-00000002XAl-2ZfI; Sat, 30 Nov 2024 21:16:45 +0100
+Message-ID: <d1daf444a9699b2677f9ae9f8d7e675aaeb3d340.camel@physik.fu-berlin.de>
+Subject: [GIT PULL] sh updates for v6.13
+From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh <linux-sh@vger.kernel.org>, Yoshinori Sato
+	 <ysato@users.sourceforge.jp>, Rich Felker <dalias@libc.org>, Huacai Chen
+	 <chenhuacai@kernel.org>, Dan Carpenter <dan.carpenter@linaro.org>
+Date: Sat, 30 Nov 2024 21:16:44 +0100
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+User-Agent: Evolution 3.54.2 
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-CM-TRANSID:_____wDnrUbWF0tnL+ExKg--.33496S4
-X-Coremail-Antispam: 1Uf129KBjvdXoWrZw45Gw43uFy3ur47Aw4rAFb_yoWkJwbEgF
-	97Cw15KrW5J39IyFyjk3Wft34DA34qvr9Y934FgrWIy3sxJw45JasxGF15Jr1kWF1rCFWf
-	Z3s5Zrs0qr4SgjkaLaAFLSUrUUUUjb8apTn2vfkv8UJUUUU8Yxn0WfASr-VFAUDa7-sFnT
-	9fnUUvcSsGvfC2KfnxnUUI43ZEXa7sREsXoUUUUUU==
-X-CM-SenderInfo: qqqrilqqysqiywtou0bp/1tbiqRmnqmdLFmgcgAAAsz
+X-Original-Sender: glaubitz@physik.fu-berlin.de
+X-ZEDAT-Hint: PO
 
-On a system with n CPUs and m interrupts, there will be n*m decimal
-values yielded via seq_printf(.."%10u "..) which has significant costs
-parsing format string and is less efficient than
-seq_put_decimal_ull_width(). Stress reading /proc/interrupts
-indicates ~30% performance improvement with this patch.
+Hi Linus,
 
-Signed-off-by: David Wang <00107082@163.com>
----
- arch/sh/kernel/irq.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+here is my round of updates for v6.13. I'm super late this time as I have b=
+een
+busy with work the past weeks, but I nevertheless managed to review and app=
+ly
+two small fixes.
 
-diff --git a/arch/sh/kernel/irq.c b/arch/sh/kernel/irq.c
-index 4e6835de54cf..9022d8af9d68 100644
---- a/arch/sh/kernel/irq.c
-+++ b/arch/sh/kernel/irq.c
-@@ -43,9 +43,9 @@ int arch_show_interrupts(struct seq_file *p, int prec)
- {
- 	int j;
- 
--	seq_printf(p, "%*s: ", prec, "NMI");
-+	seq_printf(p, "%*s:", prec, "NMI");
- 	for_each_online_cpu(j)
--		seq_printf(p, "%10u ", per_cpu(irq_stat.__nmi_count, j));
-+		seq_put_decimal_ull_width(p, " ", per_cpu(irq_stat.__nmi_count, j), 10);
- 	seq_printf(p, "  Non-maskable interrupts\n");
- 
- 	seq_printf(p, "%*s: %10u\n", prec, "ERR", atomic_read(&irq_err_count));
--- 
-2.39.2
+The first one by Huacai Chen addresses a runtime warning when CONFIG_CPUMAS=
+K_OFFSTACK
+and CONFIG_DEBUG_PER_CPU_MAPS are selected which occurs because the cpuinfo=
+ code on
+sh incorrectly uses NR_CPUS when iterating CPUs instead of the runtime limi=
+t nr_cpu_ids.
 
+A second fix by Dan Carpenter fixes a use-after-free bug in register_intc_c=
+ontroller()
+which occurred as a result of improper error handling in the interrupt cont=
+roller driver
+code when registering an interrupt controller during plat_irq_setup() on sh=
+.
+
+The following changes since commit 9852d85ec9d492ebef56dc5f229416c925758edc=
+:
+
+  Linux 6.12-rc1 (2024-09-29 15:06:19 -0700)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/glaubitz/sh-linux.git tags/=
+sh-for-v6.13-tag1
+
+for you to fetch changes up to 63e72e551942642c48456a4134975136cdcb9b3c:
+
+  sh: intc: Fix use-after-free bug in register_intc_controller() (2024-11-3=
+0 13:55:11 +0100)
+
+Thanks for pulling!
+
+Adrian
+
+----------------------------------------------------------------
+sh updates for v6.13
+
+- sh: intc: Fix use-after-free bug in register_intc_controller()
+- sh: cpuinfo: Fix a warning for CONFIG_CPUMASK_OFFSTACK
+
+----------------------------------------------------------------
+Dan Carpenter (1):
+      sh: intc: Fix use-after-free bug in register_intc_controller()
+
+Huacai Chen (1):
+      sh: cpuinfo: Fix a warning for CONFIG_CPUMASK_OFFSTACK
+
+ arch/sh/kernel/cpu/proc.c | 2 +-
+ drivers/sh/intc/core.c    | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--=20
+ .''`.  John Paul Adrian Glaubitz
+: :' :  Debian Developer
+`. `'   Physicist
+  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
