@@ -1,135 +1,137 @@
-Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mo4-p00-ob.smtp.rzone.de (mo4-p00-ob.smtp.rzone.de [81.169.146.161])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 76FE4156F3C
-	for <linux-sh@vger.kernel.org>; Wed,  4 Dec 2024 16:12:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1733328774; cv=none; b=FWcpqDxLU/bnokQbOOCrkfsCFR8bY6eJ6cf0Q166qV854EzcF74s7fC4hVULgQchSVQarPu4MU4i5I9yLTSV2xvfyvpC3zbv8ShEeeMsSKlh5QJGQZlexBhnwZ9jYDJ7VniZHDML2DSh1nA0u3OrW54gFbYSSoch4mZUGSAVvo4=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1733328774; c=relaxed/simple;
-	bh=WMotf16BNP2hl+VFEpZRiKSDivn8XEcTtqQ7ghZ/DsY=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=KrifG7TgeesAh95sDunZI4k6mpo3t9jct2d+9JaDQQCXBVeurldui4XqNJGldghY24h/MFw+1AuOolmbUM++BapiPSiMnO9bOtSTqqPVHnp5EfoMaVuffv6oo06z/8xVIyOelDQve+br9bqzcR4ibRohBLJ2a8wQjRQLz6WD5PU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=tuxon.dev; spf=pass smtp.mailfrom=tuxon.dev; dkim=pass (2048-bit key) header.d=tuxon.dev header.i=@tuxon.dev header.b=WBedOOG/; arc=none smtp.client-ip=209.85.128.51
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=tuxon.dev
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=tuxon.dev
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DB85E20DD57;
+	Wed,  4 Dec 2024 16:41:03 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=81.169.146.161
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1733330469; cv=pass; b=tB+r+lVk7FkyWCRYMkvd7n9ZHIrg4eLAnQRsAQForbLP77C96nh7yH2fnCHwJ3fBEIt3oiR36awVw8uwSHzawcF6Sw3k5pTaktTDWutOq/2so/9QuNvf3DewmPcxz+npIRFfTq8f/NGAAa7e78cAKSS7WLpoa+KMIcmE3ledO+Q=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1733330469; c=relaxed/simple;
+	bh=eryuLDvmmbLftO01zifGIFMBK9atEa5hjuNe1vBCoUk=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version:Content-Type; b=blYefpB+bNRUUzv29hH3xndQceuyXVele0dNYEk+DclKxNFJnMWNcy0O3ZEZ8AgsGRu1NzXASAdKJOqtf663E2TEN7kg9QfROLtNQRp1QMt2TCF+6zKSYHPCTLgAlax54nkKRoRV4084R5EXgcNHS80Ooc9V90NITR+SPBVAkxI=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=outer-limits.org; spf=none smtp.mailfrom=outer-limits.org; dkim=pass (2048-bit key) header.d=outer-limits.org header.i=@outer-limits.org header.b=fGoqj4Be; dkim=permerror (0-bit key) header.d=outer-limits.org header.i=@outer-limits.org header.b=QIdAotBb; arc=pass smtp.client-ip=81.169.146.161
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=outer-limits.org
+Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=outer-limits.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=tuxon.dev header.i=@tuxon.dev header.b="WBedOOG/"
-Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-434a2f3bae4so64936805e9.3
-        for <linux-sh@vger.kernel.org>; Wed, 04 Dec 2024 08:12:52 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=tuxon.dev; s=google; t=1733328771; x=1733933571; darn=vger.kernel.org;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :from:to:cc:subject:date:message-id:reply-to;
-        bh=hQTQKeCKhE7MCIO8rjYyScRAwZVqxhfCtHNY0N/EVfU=;
-        b=WBedOOG/+cUqDyNvxcPeikjnyJG+pPqA8DckCC0q0CIKPZWjBx5842PCKtvmVNA9Di
-         d5CtgrbUrbJCWw6VBQodsnNaQxYilSxj/l5C+PGyQs+Meih5jpzZ7ZmqPXQU6MkwAkWm
-         Dr7lbIirLOZxq8XN4sFN3LpBvGL+afxcw51SYWc6hud4nrDpkgO2CJ5mtkojNoLH7C4z
-         nQqJEcquknH3baW1JWspGUPPFcCMSH8DCMWPGneTwfcMoq7ASaMlGVdimQcvrlEsIZS8
-         zGHX1/eGn2nRAgQw8zgQoV2bcgabENqChk9FKLWKqQfFpy4XctzjZtWQN3/9ejOSEuC0
-         BDoA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1733328771; x=1733933571;
-        h=content-transfer-encoding:in-reply-to:from:references:cc:to
-         :content-language:subject:user-agent:mime-version:date:message-id
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
-        bh=hQTQKeCKhE7MCIO8rjYyScRAwZVqxhfCtHNY0N/EVfU=;
-        b=ilbjmjaT6uNwQVnD/yEGcIh4MxGn6CVBddEQQEi/j9OTwYn4hqVK/tOojANOy8sqCy
-         Bh+5uPeqvTGPwflnLWi3thqglTjl6XCncGX5ed9jLhhrLhvwbdy4MrnYTAECkHVcWiGL
-         O7f5Z0fnA/A6Qrm0gL2Xyo48MqOGQs2p3ujmQxggBI6zSaGdJYWWDN/HiBt0Cn1VdKhh
-         U1ytSpoGfkU7xom78+0hUCjA6rGcASinO2CyImhusWC66FMhRwmuy8iwexJ1A3u3Knok
-         VbPTY1rILZV+Watl1JJIZMy+mpplhwWjf1/kVzWz2831Wv/JhAtpNbQ+ytAd1zXnvI9j
-         3ITA==
-X-Forwarded-Encrypted: i=1; AJvYcCUV2o9SMNcmlORP4PbTmFQwBu9GZD+PWbmcFOwpOkwC+WfUFF7K3luAPVlzgy/Oe26wKCxOdFLm9A==@vger.kernel.org
-X-Gm-Message-State: AOJu0YyaIuv3q7RZyPmN/11TBrC8Zl0RS8Zmugr8nJbdNHEeMHmC4ITT
-	IRhxgjRHICfq6ow/GlYFwEiI/fC1QpeeFZqKmFAhCKOUdpf2B+vLUnl9agEjyM9R4VDaAPLRned
-	/
-X-Gm-Gg: ASbGncuJV5G1mBNTS9gEqTApBUz1wTZBwbSaO1epka0g7iMKdLTJVBGRFA7RevCnBoN
-	wW0z3iRVHS3m0cn+u9AdT0xYr3C1rPIVT4IFrWH1AGGttPrPjCsIGQSPIu7tiv2JUNmfUy5zytI
-	je/zEYRJkL85UMPoFlcaXPMAfHPxR+VYfFqqX23OBvIVlUuCeZAkAX+oN+Z55x7TBK+fAYwShIq
-	0veabwLeWeW3X+GY2JR+8FjloQZPZqNiEuFppLoDmZ42NLh0Nv4FCogXEo=
-X-Google-Smtp-Source: AGHT+IHSduioKZEL8oXnhOPYaiOLYjsifTz/WCnsJQmND2DTXtSP9onkHLbSag5wfD9W0f7uppzcdg==
-X-Received: by 2002:a05:600c:3550:b0:434:a781:f5d5 with SMTP id 5b1f17b1804b1-434d0a15047mr70591065e9.30.1733328770818;
-        Wed, 04 Dec 2024 08:12:50 -0800 (PST)
-Received: from [192.168.50.4] ([82.78.167.161])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-385e3b99249sm13430700f8f.88.2024.12.04.08.12.49
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 04 Dec 2024 08:12:50 -0800 (PST)
-Message-ID: <ae80262c-82c6-466f-bbcf-90ba3551dabc@tuxon.dev>
-Date: Wed, 4 Dec 2024 18:12:49 +0200
+	dkim=pass (2048-bit key) header.d=outer-limits.org header.i=@outer-limits.org header.b="fGoqj4Be";
+	dkim=permerror (0-bit key) header.d=outer-limits.org header.i=@outer-limits.org header.b="QIdAotBb"
+ARC-Seal: i=1; a=rsa-sha256; t=1733330454; cv=none;
+    d=strato.com; s=strato-dkim-0002;
+    b=lc5XhTSqN5jHKATJGIZcAbB+BEyDUFJFsW5YcMyqG7QDohdchMPDCXqamltZXkatiw
+    9mVNBP6MACMrh5iD7UYDw7bJAmu8Ypz/ksTL8s/oQSuy5FLY8vfcwqd1lYIDQCgAoY5n
+    NFKpPS6zlzt4Dv8Ml4PZDjsvUqz2z9JRWApTKlvG50/p9SyZTRDtwoM0+zMN1ifEKE+M
+    K58mNYuxQeCPbrUaIBrzuHSkL+sGiLtmzS9IVwsI93g7X8Tti4Fx4XJzfbFk6dzNjVnf
+    itrXgphQd7uv4DSdigDDxnkVcygmxJ2eWeD7Ey9zvzTJfpGYOr0xBjxj5xc21qhGh5oO
+    VjoQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; t=1733330454;
+    s=strato-dkim-0002; d=strato.com;
+    h=Message-Id:Date:Subject:Cc:To:From:Cc:Date:From:Subject:Sender;
+    bh=4Xma7fhGxTfx7BBhKnsUPv1dB06IlM6G/DN6OKrivtI=;
+    b=jDLyADiCe8QVNA7wa4KH6Jq0avPrne1V8Ue5hzo9KP0BciBfrRwQCxc6Dhzo07wTBo
+    l+N6osZpMGYE+XANsbp4H26aoG6du/AmezQYcgkDcjVZZnI7e309Hle/p1tLm2H/WELO
+    bN0/oub7Dnczs8WsAkB8UIKMefdQYBagETXE7tEps/eCemj/x4TBSJaA9G/bsPf+0i+j
+    c2a2ozGTYMBMEVBU7mK5MSduOIBU5xQqK+0CXRZ/rWiHi0PDmlyS9ci8nEtuDuFq1k4f
+    h1m8UjcJLpmKexvQr0FRwXrhRUFj5p8tUl+d0XR1cS2k2GVRofjKUDwOMNDlTnudaGwb
+    Iaaw==
+ARC-Authentication-Results: i=1; strato.com;
+    arc=none;
+    dkim=none
+X-RZG-CLASS-ID: mo00
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; t=1733330454;
+    s=strato-dkim-0002; d=outer-limits.org;
+    h=Message-Id:Date:Subject:Cc:To:From:Cc:Date:From:Subject:Sender;
+    bh=4Xma7fhGxTfx7BBhKnsUPv1dB06IlM6G/DN6OKrivtI=;
+    b=fGoqj4Ben01CPmgIUwFuX802O7VY9wXZ1wchuc/Xe5irPVeX5H5tfi+K+kMFe4nn6I
+    V7sKJirFY0aBl2fJBMs7OQ5z+sKY/gJz0zH5LTa9cpfKS/CehVWckXPvpea7czPTHA7Z
+    cBRLZwIuOSmNCcXbzYizh/QsuyRFRZ0UATtmslUUINqlgb/bSh2VobA1KyGdK0NxWQvt
+    oUpRjJaaKL4PMoVzZkWsO+efBiWq1wwkqx+xcwQABL/O73q7HC/jzok9VhUMzyVhAkqg
+    nCjS0H+1NjGzONyWOz/EvyTz+blZbFqm8V5L5QgueQqjPNb7DFQj8C27mj3DUoxxdBO0
+    7xjw==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; t=1733330454;
+    s=strato-dkim-0003; d=outer-limits.org;
+    h=Message-Id:Date:Subject:Cc:To:From:Cc:Date:From:Subject:Sender;
+    bh=4Xma7fhGxTfx7BBhKnsUPv1dB06IlM6G/DN6OKrivtI=;
+    b=QIdAotBbUboSBf4KiW51l6tPrSYxhu0f2kqOaHFG2Wp4Pm3pdVe5ntNn8UGLOSjO3A
+    PL36l9cb72jq1poKWIAA==
+X-RZG-AUTH: ":JnkIfEGmW/AMJS6HttH4FbRVwc4dHlPLCp4e/IoHo8zEMMHAgwTfqBEHcVJSv9P5mRTGd2ImeA=="
+Received: from ws2104.lan.kalrayinc.com
+    by smtp.strato.de (RZmta 51.2.11 AUTH)
+    with ESMTPSA id Ja0a030B4GesXdc
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256 bits))
+	(Client did not present a certificate);
+    Wed, 4 Dec 2024 17:40:54 +0100 (CET)
+From: Julian Vetter <julian@outer-limits.org>
+To: Arnd Bergmann <arnd@arndb.de>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+Cc: linux-sh@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Julian Vetter <julian@outer-limits.org>
+Subject: [PATCH] sh: Remove memset_io from sh specific code
+Date: Wed,  4 Dec 2024 17:40:20 +0100
+Message-Id: <20241204164020.48361-1-julian@outer-limits.org>
+X-Mailer: git-send-email 2.34.1
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] serial: sh-sci: Use plain struct copy in
- early_console_setup()
-Content-Language: en-US
-To: Geert Uytterhoeven <geert+renesas@glider.be>,
- Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
- Jiri Slaby <jirislaby@kernel.org>,
- Wolfram Sang <wsa+renesas@sang-engineering.com>,
- Claudiu Beznea <claudiu.beznea.uj@bp.renesas.com>,
- Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
-Cc: linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
- linux-sh@vger.kernel.org
-References: <e097e5c11afe5bd4c01135779c9a40e707ef6374.1733243287.git.geert+renesas@glider.be>
-From: Claudiu Beznea <claudiu.beznea@tuxon.dev>
-In-Reply-To: <e097e5c11afe5bd4c01135779c9a40e707ef6374.1733243287.git.geert+renesas@glider.be>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
 
-Hi, Geert,
+Remove memset_io from sh specific code and fall back to the new
+implementation from lib/iomem_copy.c. It uses word accesses if the
+buffer is aligned and only falls back to byte accesses for potentially
+unaligned parts of a buffer (i.e., at the beginning and end).
 
-On 03.12.2024 18:30, Geert Uytterhoeven wrote:
-> Using memcpy() prevents the compiler from doing any checking on the
-> types of the passed pointer parameters.  Copy the structure using struct
-> assignment instead, to increase type-safety.
-> 
-> No change in generated code on all relevant architectures
-> (arm/arm64/riscv/sh).
-> 
-> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Julian Vetter <julian@outer-limits.org>
+---
+ arch/sh/include/asm/io.h |  2 --
+ arch/sh/kernel/io.c      | 14 --------------
+ 2 files changed, 16 deletions(-)
 
-I've tested this on RZ/G3S on top of series at [1] and device tree + clock
-patches from [2], with renesas_defconfig and with upstream config, in the
-following scenarios:
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index cf5eab840d57..3771bfa984af 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -269,12 +269,10 @@ __BUILD_IOPORT_STRING(q, u64)
+ #define IO_SPACE_LIMIT 0xffffffff
+ 
+ /* We really want to try and get these to memcpy etc */
+-#define memset_io memset_io
+ #define memcpy_fromio memcpy_fromio
+ #define memcpy_toio memcpy_toio
+ void memcpy_fromio(void *, const volatile void __iomem *, unsigned long);
+ void memcpy_toio(volatile void __iomem *, const void *, unsigned long);
+-void memset_io(volatile void __iomem *, int, unsigned long);
+ 
+ /* Quad-word real-mode I/O, don't ask.. */
+ unsigned long long peek_real_address_q(unsigned long long addr);
+diff --git a/arch/sh/kernel/io.c b/arch/sh/kernel/io.c
+index da22f3b32d30..16e963bab595 100644
+--- a/arch/sh/kernel/io.c
++++ b/arch/sh/kernel/io.c
+@@ -95,17 +95,3 @@ void memcpy_toio(volatile void __iomem *to, const void *from, unsigned long coun
+ 	mb();
+ }
+ EXPORT_SYMBOL(memcpy_toio);
+-
+-/*
+- * "memset" on IO memory space.
+- * This needs to be optimized.
+- */
+-void memset_io(volatile void __iomem *dst, int c, unsigned long count)
+-{
+-        while (count) {
+-                count--;
+-                writeb(c, dst);
+-                dst++;
+-        }
+-}
+-EXPORT_SYMBOL(memset_io);
+-- 
+2.34.1
 
-1/ "earlycon keep_bootcon" in bootargs
-2/ "earlycon" in bootargs
-3/ none of the "earlycon keep_bootcon", "earlycon" in bootargs
-
-All good!
-
-Tested-by: Claudiu Beznea <claudiu.beznea.uj@bp.renesas.com>
-Reviewed-by: Claudiu Beznea <claudiu.beznea.uj@bp.renesas.com>
-
-Thank you,
-Claudiu
-
-[1]
-https://lore.kernel.org/all/20241204155806.3781200-1-claudiu.beznea.uj@bp.renesas.com/
-[2]
-https://lore.kernel.org/all/20241115134401.3893008-1-claudiu.beznea.uj@bp.renesas.com/
-
-> ---
->  drivers/tty/serial/sh-sci.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-> index df523c7444230836..1ed13ce2c2952547 100644
-> --- a/drivers/tty/serial/sh-sci.c
-> +++ b/drivers/tty/serial/sh-sci.c
-> @@ -3542,7 +3542,7 @@ static int __init early_console_setup(struct earlycon_device *device,
->  		return -ENODEV;
->  
->  	device->port.type = type;
-> -	memcpy(&sci_ports[0].port, &device->port, sizeof(struct uart_port));
-> +	sci_ports[0].port = device->port;
->  	port_cfg.type = type;
->  	sci_ports[0].cfg = &port_cfg;
->  	sci_ports[0].params = sci_probe_regmap(&port_cfg);
