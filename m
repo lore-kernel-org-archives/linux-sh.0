@@ -1,68 +1,114 @@
-Received: from cmccmta2.chinamobile.com (cmccmta6.chinamobile.com [111.22.67.139])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id E233B1B4137;
-	Wed,  4 Dec 2024 11:07:16 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=111.22.67.139
+Received: from mail-vk1-f177.google.com (mail-vk1-f177.google.com [209.85.221.177])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 73AC51AC884;
+	Wed,  4 Dec 2024 11:29:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.221.177
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1733310443; cv=none; b=VLJRZvQ1f6+DL+7Fj2bl7T1PXksD4D3RTeHbSWCGg5Tm1hllXxMrVTX4eu2t71JcGZ4VtM2VL542jy1oSNHX92r6T1VWMaSt7ExNtIyMnYvOlC6HRuTM6RKZo+GtXJ99LZWF1Cn8hhqH2YSpDu67uJ5CPWYvm2X1DpWmnsGbHAw=
+	t=1733311753; cv=none; b=EFH+9tnq+/TC4it/IvxQXASr37SUfiCpz59a7yZpFt0WyLvGYKsEw3WqNfc6nlZvWXaWT3o84L5dF7z7ObVXllRiE/ouGBtKvPDxqly5Xw/O3qymZTRv2pD7meWDvRhJ6unIOq2Lhr6Gu8KI9cJ5JmR4hDj9tBgmEGdvVMhTTAk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1733310443; c=relaxed/simple;
-	bh=V7S8v7FRRaZPxqOkrfpHiv5Q1mhTOu53PrGd5PxYvBY=;
-	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=M4zsge3hbfE93gkaH5WuXup58tWAiO1UzLq/CH/34yB+U4ezImmYjAQLx673MW0DUtTIRNK8sGAZvF9Mfq5UqtzfzbdYf8YlMjcPafsuQ0fI+CYT+rbVzd17fCy4Et7eJdWv+JhZL/Ji2Xv2nAiDq9nIdCARsdm96ILXoQ7Lcz0=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=cmss.chinamobile.com; spf=pass smtp.mailfrom=cmss.chinamobile.com; arc=none smtp.client-ip=111.22.67.139
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=cmss.chinamobile.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=cmss.chinamobile.com
-X-RM-TagInfo: emlType=0                                       
-X-RM-SPAM-FLAG:00000000
-Received:from spf.mail.chinamobile.com (unknown[10.188.0.87])
-	by rmmx-syy-dmz-app05-12005 (RichMail) with SMTP id 2ee5675037da885-cc89c;
-	Wed, 04 Dec 2024 19:07:08 +0800 (CST)
-X-RM-TRANSID:2ee5675037da885-cc89c
-X-RM-TagInfo: emlType=0                                       
-X-RM-SPAM-FLAG:00000000
-Received:from 192.168.28.197 (unknown[10.55.1.72])
-	by rmsmtp-syy-appsvr03-12003 (RichMail) with SMTP id 2ee3675037da8d7-69a28;
-	Wed, 04 Dec 2024 19:07:08 +0800 (CST)
-X-RM-TRANSID:2ee3675037da8d7-69a28
-From: liujing <liujing@cmss.chinamobile.com>
-To: ysato@users.sourceforge.jp,
-	dalias@libc.org,
-	glaubitz@physik.fu-berlin.de
-Cc: linux-sh@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	liujing <liujing@cmss.chinamobile.com>
-Subject: [PATCH] sh: pci: Fix the wrong format specifier
-Date: Wed,  4 Dec 2024 19:07:06 +0800
-Message-Id: <20241204110706.6776-1-liujing@cmss.chinamobile.com>
-X-Mailer: git-send-email 2.27.0
+	s=arc-20240116; t=1733311753; c=relaxed/simple;
+	bh=PRPtD/jr5FDFTXKUKEQDeDZuaw4j04cDJnkroXR06Ng=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=JeR2QHkppgI/wnUo7TmO4dsWZAlGLpUJkBJRISqXisGq8W4vvQtU//bavs7VSbHhzq2uPg/PhhNd4ku16h0c6Xy1MzN09I0rxeUgmz/rqs1E66uB1XZFgonV1HMF6jgCwMyJoewVrRhsovA7L3r6zVwrz9QgQs1VH7//z3NWIHM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=WPTOt9fP; arc=none smtp.client-ip=209.85.221.177
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="WPTOt9fP"
+Received: by mail-vk1-f177.google.com with SMTP id 71dfb90a1353d-51530758f9eso1735896e0c.1;
+        Wed, 04 Dec 2024 03:29:12 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1733311751; x=1733916551; darn=vger.kernel.org;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=cfpBFjF/TwkhQK2gM5/A5l3l5wHKSXh+Nldfgg5r75A=;
+        b=WPTOt9fPNBAN3qzujSdZKz6xU0fAHUj74jlCkIhRhQnPlXRmOnfnF5FpBa9PSyipS9
+         p2/pSse4lhVc8M1xOtLplLbhqXtgLukOyzj7/ITk58qEM6eDP8x5I/KhHoGGwKY0zVwi
+         FiKMbM/Bq+f8pVO18B0mYh09+UuNGRMwT0YEJ/k0ZXUGo9n6F/tHP6Zp0n+Jnr++Do4x
+         ICNbuZd8ARcLJExKf2UTvm9IM9WoxHzHeXRoobR2RMFf3TKNgdobqbMhrIsOSwrZkqtP
+         E7t6YmHVdtg0bUyWH+WQPdnQuaU6BA3DpsQ/TjolG1b3pcsX+pjcwHTujI3+RZvP9vLy
+         Uc0w==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1733311751; x=1733916551;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=cfpBFjF/TwkhQK2gM5/A5l3l5wHKSXh+Nldfgg5r75A=;
+        b=ipmcc+0y4I/2TXzlBTxWEahpgCGs33KJ7VeZv9G0SV1oiS3FnOsrb13jT+mOEibhOZ
+         QHfi73w0JV1uSJl6VYMzXBQwbiDfQcrVcoDoijpnel0BLYGsS50pZi2SSgxt1IEDINPv
+         LP0/R1CapQyCPv6/M0Ce/ucUMef73OJAf4roOyOAVUwaNtEPUsTGgsYu8VGNvnLSZoNf
+         bWNR72g1rSotlvouTu6NhjqDahSKkdW8HwmvIuKCqwFE8RK0ym6R1aWD6F8JnZb3OYMf
+         Ouo4/8cberDPNiI4pO8DBkg9La7lAGyrf9P0ZYO6ycQOk8hEAF+60weGmzAEQvgwuT4D
+         ORGw==
+X-Forwarded-Encrypted: i=1; AJvYcCUV1n4XCe6XB2OtDupPfnjf90dYQVqQsPkcRoVja+1p3gWUw0U5yBTRDP0XaEw6Yw32zTaCwYVEwrga3aSe@vger.kernel.org, AJvYcCVG7ckAQH29lWtf2hLdsQXQaLUGHoBL5g/uiN+bJTMdTKgK4q1XlNcDrzdv69+9GqcUpvXk/bfCG3Fe22LFNwnBxQ==@vger.kernel.org, AJvYcCWoay/JoeqRNw2mJUqYNK5oD6+4pnmPgDYAMKRtsYZiKfhDi/tj79UrZDl4I/EboGK6rvFNl7pvikA=@vger.kernel.org
+X-Gm-Message-State: AOJu0YzjvwsWi0SUy8p8hgMkh6qzZ7pKZIUS+zAvwhW/cgDWHIsb5J43
+	DKfCggNr6T9YpqEMdKd+9ItUGl9hZfUIhjr3BUd02JHIlHDJtSdFZtJE82nIAMUpbg2/E4WoCAi
+	k3JDLB9yTsfFJtue/E97xVIqvgGn0rSbT
+X-Gm-Gg: ASbGncvSpPPRe+z+arG/sMmE/0IZ2SyIS2MNeibjwfbG3eQuA0rHEaUe0UW8A6yFLyT
+	GSVXimXWy+rO4DixRs5tu0/29SjeuyDVQ
+X-Google-Smtp-Source: AGHT+IHHaW5QaBAVEehM24UabIxuHEshiAhyE0iLkgfBFJ/yaB943uJTFiV5ga+bj9flpDgJXv64mGLM+ulQU3nQgZw=
+X-Received: by 2002:a05:6122:925:b0:50d:5a12:9436 with SMTP id
+ 71dfb90a1353d-515bf39dbc2mr8442373e0c.3.1733311751353; Wed, 04 Dec 2024
+ 03:29:11 -0800 (PST)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <e097e5c11afe5bd4c01135779c9a40e707ef6374.1733243287.git.geert+renesas@glider.be>
+In-Reply-To: <e097e5c11afe5bd4c01135779c9a40e707ef6374.1733243287.git.geert+renesas@glider.be>
+From: "Lad, Prabhakar" <prabhakar.csengg@gmail.com>
+Date: Wed, 4 Dec 2024 11:28:45 +0000
+Message-ID: <CA+V-a8vWbQ2RQ2WJ8E8JMoK-2ZhMimS7cYzdT-7LmAFWWNr4Xg@mail.gmail.com>
+Subject: Re: [PATCH] serial: sh-sci: Use plain struct copy in early_console_setup()
+To: Geert Uytterhoeven <geert+renesas@glider.be>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Jiri Slaby <jirislaby@kernel.org>, 
+	Wolfram Sang <wsa+renesas@sang-engineering.com>, 
+	Claudiu Beznea <claudiu.beznea.uj@bp.renesas.com>, 
+	Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>, linux-serial@vger.kernel.org, 
+	linux-renesas-soc@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Make a minor change to eliminate a static checker warning. The type
-of port->index is unsigned int, so the correct format specifier should be
-%u instead of %d.
+On Tue, Dec 3, 2024 at 4:30=E2=80=AFPM Geert Uytterhoeven
+<geert+renesas@glider.be> wrote:
+>
+> Using memcpy() prevents the compiler from doing any checking on the
+> types of the passed pointer parameters.  Copy the structure using struct
+> assignment instead, to increase type-safety.
+>
+> No change in generated code on all relevant architectures
+> (arm/arm64/riscv/sh).
+>
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+> ---
+>  drivers/tty/serial/sh-sci.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+>
+Reviewed-by: Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
 
-Signed-off-by: liujing <liujing@cmss.chinamobile.com>
+Cheers,
+Prabhakar
 
-diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
-index a78b9a935585..9ccc602d7f86 100644
---- a/arch/sh/drivers/pci/pcie-sh7786.c
-+++ b/arch/sh/drivers/pci/pcie-sh7786.c
-@@ -219,7 +219,7 @@ static int __init pcie_clk_init(struct sh7786_pcie_port *port)
- 	 * on. clock lookups don't help us much at this point, since no
- 	 * dev_id is available this early. Lame.
- 	 */
--	snprintf(fclk_name, sizeof(fclk_name), "pcie%d_fck", port->index);
-+	snprintf(fclk_name, sizeof(fclk_name), "pcie%u_fck", port->index);
- 
- 	port->fclk = clk_get(NULL, fclk_name);
- 	if (IS_ERR(port->fclk)) {
--- 
-2.27.0
-
-
-
+> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+> index df523c7444230836..1ed13ce2c2952547 100644
+> --- a/drivers/tty/serial/sh-sci.c
+> +++ b/drivers/tty/serial/sh-sci.c
+> @@ -3542,7 +3542,7 @@ static int __init early_console_setup(struct earlyc=
+on_device *device,
+>                 return -ENODEV;
+>
+>         device->port.type =3D type;
+> -       memcpy(&sci_ports[0].port, &device->port, sizeof(struct uart_port=
+));
+> +       sci_ports[0].port =3D device->port;
+>         port_cfg.type =3D type;
+>         sci_ports[0].cfg =3D &port_cfg;
+>         sci_ports[0].params =3D sci_probe_regmap(&port_cfg);
+> --
+> 2.34.1
+>
+>
