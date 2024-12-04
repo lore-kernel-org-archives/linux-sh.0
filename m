@@ -1,113 +1,135 @@
-Received: from mail-vs1-f53.google.com (mail-vs1-f53.google.com [209.85.217.53])
+Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D89BB1A9B5D;
-	Wed,  4 Dec 2024 12:35:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.217.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 76FE4156F3C
+	for <linux-sh@vger.kernel.org>; Wed,  4 Dec 2024 16:12:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1733315730; cv=none; b=EiZZJdGllhYd/wkGDTKxhp3eHx+Xecj88tvRHeLwU30mKDXnhPJkUKmuMwZ74Ne/xUMjJz0kMQ2SHK3IS+o81oJIcht7cuoC5mGatiBTY0WX49E4TwuxWvdvktBH+KjjOFN75H8xgGx7E6Nsq7xw7vZ8g0pTJm9D64PiF0iltWU=
+	t=1733328774; cv=none; b=FWcpqDxLU/bnokQbOOCrkfsCFR8bY6eJ6cf0Q166qV854EzcF74s7fC4hVULgQchSVQarPu4MU4i5I9yLTSV2xvfyvpC3zbv8ShEeeMsSKlh5QJGQZlexBhnwZ9jYDJ7VniZHDML2DSh1nA0u3OrW54gFbYSSoch4mZUGSAVvo4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1733315730; c=relaxed/simple;
-	bh=0AXmbb+C5Qu4or3pgi2jtdofjKlnjH5EdZhw1p9hFOI=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=MrVIcwftrTynk5tYI4JEDtOw8WR71889eVZuVI4aVuIXVrSZtksOwF5v5oTcmEHWWXCzFiPD1TtsPSjJAtCcv3SGYwZz6W7sg+vYZulqUxV19VfK3Npc2VCyiwIrUn3qOy1v5Dn51cBU+AVjMP+ufBpyps9hI81GcWZXiITlpn8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org; spf=pass smtp.mailfrom=gmail.com; arc=none smtp.client-ip=209.85.217.53
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=linux-m68k.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-vs1-f53.google.com with SMTP id ada2fe7eead31-4aef9cde3e8so1723988137.3;
-        Wed, 04 Dec 2024 04:35:27 -0800 (PST)
+	s=arc-20240116; t=1733328774; c=relaxed/simple;
+	bh=WMotf16BNP2hl+VFEpZRiKSDivn8XEcTtqQ7ghZ/DsY=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=KrifG7TgeesAh95sDunZI4k6mpo3t9jct2d+9JaDQQCXBVeurldui4XqNJGldghY24h/MFw+1AuOolmbUM++BapiPSiMnO9bOtSTqqPVHnp5EfoMaVuffv6oo06z/8xVIyOelDQve+br9bqzcR4ibRohBLJ2a8wQjRQLz6WD5PU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=tuxon.dev; spf=pass smtp.mailfrom=tuxon.dev; dkim=pass (2048-bit key) header.d=tuxon.dev header.i=@tuxon.dev header.b=WBedOOG/; arc=none smtp.client-ip=209.85.128.51
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=tuxon.dev
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=tuxon.dev
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=tuxon.dev header.i=@tuxon.dev header.b="WBedOOG/"
+Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-434a2f3bae4so64936805e9.3
+        for <linux-sh@vger.kernel.org>; Wed, 04 Dec 2024 08:12:52 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=tuxon.dev; s=google; t=1733328771; x=1733933571; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=hQTQKeCKhE7MCIO8rjYyScRAwZVqxhfCtHNY0N/EVfU=;
+        b=WBedOOG/+cUqDyNvxcPeikjnyJG+pPqA8DckCC0q0CIKPZWjBx5842PCKtvmVNA9Di
+         d5CtgrbUrbJCWw6VBQodsnNaQxYilSxj/l5C+PGyQs+Meih5jpzZ7ZmqPXQU6MkwAkWm
+         Dr7lbIirLOZxq8XN4sFN3LpBvGL+afxcw51SYWc6hud4nrDpkgO2CJ5mtkojNoLH7C4z
+         nQqJEcquknH3baW1JWspGUPPFcCMSH8DCMWPGneTwfcMoq7ASaMlGVdimQcvrlEsIZS8
+         zGHX1/eGn2nRAgQw8zgQoV2bcgabENqChk9FKLWKqQfFpy4XctzjZtWQN3/9ejOSEuC0
+         BDoA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20230601; t=1733315726; x=1733920526;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to;
-        bh=nBK7i+JvQyy/XcaBcSikFP5SFQdh5G2ypRJFZIxQYTw=;
-        b=IMcXsrGdyn9usPJcQRLIoXQcScxFl65mVBYdSrG7nrFHdVXLdTvtpnKyCAkvfKNrhf
-         sK1QZEuNl2aTiaLdpXJn/iqALIi/YQcSI688H8UuZ4AIeyCdHbHGqOYnA4KVXv7qZWCs
-         d88viy3DtFK8ng3ql49AaNprcKvCM0eb/fa0DCqG6dl4sPy/YsKAc9NE7nD+h8O9LofS
-         BArbTYHu6zqUa4EYCHKqW/HfFcqiAcQYibisPBe/8wu90jdNDqo1EeNxB6UVTprJWmF4
-         sPO7d7iZCtfYQT1X1y4xJ6z83G1bBQ9uZPCfUHAn325H6Z3r72pZ4S93Kly1Ud3PKsQ2
-         Nrag==
-X-Forwarded-Encrypted: i=1; AJvYcCXkCUM+490DR9luBPQOWFjeEYz5kcXgZm89WxB3ykcPpZwSV0fz5qaEvY2V2rXWNHD2GwBpTTO5ntU=@vger.kernel.org, AJvYcCXlJ8b9PIvbnPPpcViG9WENfNI17/HvcIrEMDAtnk4lEBIx++xikkOoCFZcHcQaetIahlnzdTxgOW8Dd/w=@vger.kernel.org
-X-Gm-Message-State: AOJu0YwgSGYG2zjhqqd25gJpsuxiuHpqDbeutP469R4+o797OfFhT1Cu
-	ElnZELBU2ZMEkxzmBoCAgvt219MOtQxmra5dTSBwnrZDF3Dz8xVY+uPp1plz
-X-Gm-Gg: ASbGncsrw2r7m1kTR8I1uYCrUv0TYISSFalAoZUmPYNLCOX7ps1p1JWoE3PvBRyZfsS
-	1Z8OZZlK35gsxOWfx8EWEmcgCS9fL0EVpx7rzy0vKmurE/sFPM4HSirw+4wp0RH3pea7wLqZ1hd
-	YljG+BcU9l67786NU9H+hA27BDum9SLChmxc1X74L+sPnwnTJZgcGkrQ4QDAz8b8Kf55QNRNWz5
-	+my4xYINiPVz13+Q/DXie0TBsu8yfLDiKfeF37qpg/yHqN1/23Gf0YIkhkZjZ19V0gQgXrJ2dso
-	cO5SUV1wIIMx
-X-Google-Smtp-Source: AGHT+IH4hSXPJeEYBgk3mU8IEOWGwjf8vwZSOdKfVOqxknXEff3e3w9nvojPdAPDlXznVvvrJbrV+A==
-X-Received: by 2002:a05:6102:3754:b0:4af:396f:6a07 with SMTP id ada2fe7eead31-4afa52f14f8mr4784837137.27.1733315725919;
-        Wed, 04 Dec 2024 04:35:25 -0800 (PST)
-Received: from mail-vs1-f43.google.com (mail-vs1-f43.google.com. [209.85.217.43])
-        by smtp.gmail.com with ESMTPSA id a1e0cc1a2514c-85b82ad76fdsm2352675241.13.2024.12.04.04.35.24
+        d=1e100.net; s=20230601; t=1733328771; x=1733933571;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=hQTQKeCKhE7MCIO8rjYyScRAwZVqxhfCtHNY0N/EVfU=;
+        b=ilbjmjaT6uNwQVnD/yEGcIh4MxGn6CVBddEQQEi/j9OTwYn4hqVK/tOojANOy8sqCy
+         Bh+5uPeqvTGPwflnLWi3thqglTjl6XCncGX5ed9jLhhrLhvwbdy4MrnYTAECkHVcWiGL
+         O7f5Z0fnA/A6Qrm0gL2Xyo48MqOGQs2p3ujmQxggBI6zSaGdJYWWDN/HiBt0Cn1VdKhh
+         U1ytSpoGfkU7xom78+0hUCjA6rGcASinO2CyImhusWC66FMhRwmuy8iwexJ1A3u3Knok
+         VbPTY1rILZV+Watl1JJIZMy+mpplhwWjf1/kVzWz2831Wv/JhAtpNbQ+ytAd1zXnvI9j
+         3ITA==
+X-Forwarded-Encrypted: i=1; AJvYcCUV2o9SMNcmlORP4PbTmFQwBu9GZD+PWbmcFOwpOkwC+WfUFF7K3luAPVlzgy/Oe26wKCxOdFLm9A==@vger.kernel.org
+X-Gm-Message-State: AOJu0YyaIuv3q7RZyPmN/11TBrC8Zl0RS8Zmugr8nJbdNHEeMHmC4ITT
+	IRhxgjRHICfq6ow/GlYFwEiI/fC1QpeeFZqKmFAhCKOUdpf2B+vLUnl9agEjyM9R4VDaAPLRned
+	/
+X-Gm-Gg: ASbGncuJV5G1mBNTS9gEqTApBUz1wTZBwbSaO1epka0g7iMKdLTJVBGRFA7RevCnBoN
+	wW0z3iRVHS3m0cn+u9AdT0xYr3C1rPIVT4IFrWH1AGGttPrPjCsIGQSPIu7tiv2JUNmfUy5zytI
+	je/zEYRJkL85UMPoFlcaXPMAfHPxR+VYfFqqX23OBvIVlUuCeZAkAX+oN+Z55x7TBK+fAYwShIq
+	0veabwLeWeW3X+GY2JR+8FjloQZPZqNiEuFppLoDmZ42NLh0Nv4FCogXEo=
+X-Google-Smtp-Source: AGHT+IHSduioKZEL8oXnhOPYaiOLYjsifTz/WCnsJQmND2DTXtSP9onkHLbSag5wfD9W0f7uppzcdg==
+X-Received: by 2002:a05:600c:3550:b0:434:a781:f5d5 with SMTP id 5b1f17b1804b1-434d0a15047mr70591065e9.30.1733328770818;
+        Wed, 04 Dec 2024 08:12:50 -0800 (PST)
+Received: from [192.168.50.4] ([82.78.167.161])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-385e3b99249sm13430700f8f.88.2024.12.04.08.12.49
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 04 Dec 2024 04:35:25 -0800 (PST)
-Received: by mail-vs1-f43.google.com with SMTP id ada2fe7eead31-4af32b09521so1695037137.2;
-        Wed, 04 Dec 2024 04:35:24 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AJvYcCUBCbe/UiW9J243SfqI6I+83cvtTTjys/KBaVjS8IE1AJeG6yT+A2bDDCC2zQPWqNoTzqXRdmZRBkA=@vger.kernel.org, AJvYcCXqLLB78qfc5ChUzSWPtdaElZCrmQFpvpRdAa2Ekqnanxzxefz8g9cTU2Vc2xw4PHPp7ZNv6DujK6Ok0jI=@vger.kernel.org
-X-Received: by 2002:a05:6102:304b:b0:4af:3de9:b91a with SMTP id
- ada2fe7eead31-4afa51e3417mr5989400137.16.1733315724365; Wed, 04 Dec 2024
- 04:35:24 -0800 (PST)
+        Wed, 04 Dec 2024 08:12:50 -0800 (PST)
+Message-ID: <ae80262c-82c6-466f-bbcf-90ba3551dabc@tuxon.dev>
+Date: Wed, 4 Dec 2024 18:12:49 +0200
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20241204110706.6776-1-liujing@cmss.chinamobile.com>
-In-Reply-To: <20241204110706.6776-1-liujing@cmss.chinamobile.com>
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 4 Dec 2024 13:35:12 +0100
-X-Gmail-Original-Message-ID: <CAMuHMdXu04CFhkc3E=cA9wi_eigc1q88azb8k5N4UeyMAgKOkw@mail.gmail.com>
-Message-ID: <CAMuHMdXu04CFhkc3E=cA9wi_eigc1q88azb8k5N4UeyMAgKOkw@mail.gmail.com>
-Subject: Re: [PATCH] sh: pci: Fix the wrong format specifier
-To: liujing <liujing@cmss.chinamobile.com>
-Cc: ysato@users.sourceforge.jp, dalias@libc.org, glaubitz@physik.fu-berlin.de, 
-	linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] serial: sh-sci: Use plain struct copy in
+ early_console_setup()
+Content-Language: en-US
+To: Geert Uytterhoeven <geert+renesas@glider.be>,
+ Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+ Jiri Slaby <jirislaby@kernel.org>,
+ Wolfram Sang <wsa+renesas@sang-engineering.com>,
+ Claudiu Beznea <claudiu.beznea.uj@bp.renesas.com>,
+ Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
+Cc: linux-serial@vger.kernel.org, linux-renesas-soc@vger.kernel.org,
+ linux-sh@vger.kernel.org
+References: <e097e5c11afe5bd4c01135779c9a40e707ef6374.1733243287.git.geert+renesas@glider.be>
+From: Claudiu Beznea <claudiu.beznea@tuxon.dev>
+In-Reply-To: <e097e5c11afe5bd4c01135779c9a40e707ef6374.1733243287.git.geert+renesas@glider.be>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-Hi Liujing,
+Hi, Geert,
 
-On Wed, Dec 4, 2024 at 12:10=E2=80=AFPM liujing <liujing@cmss.chinamobile.c=
-om> wrote:
-> Make a minor change to eliminate a static checker warning. The type
-> of port->index is unsigned int, so the correct format specifier should be
-> %u instead of %d.
->
-> Signed-off-by: liujing <liujing@cmss.chinamobile.com>
+On 03.12.2024 18:30, Geert Uytterhoeven wrote:
+> Using memcpy() prevents the compiler from doing any checking on the
+> types of the passed pointer parameters.  Copy the structure using struct
+> assignment instead, to increase type-safety.
+> 
+> No change in generated code on all relevant architectures
+> (arm/arm64/riscv/sh).
+> 
+> Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
 
-Thanks for your patch!
+I've tested this on RZ/G3S on top of series at [1] and device tree + clock
+patches from [2], with renesas_defconfig and with upstream config, in the
+following scenarios:
 
-> --- a/arch/sh/drivers/pci/pcie-sh7786.c
-> +++ b/arch/sh/drivers/pci/pcie-sh7786.c
-> @@ -219,7 +219,7 @@ static int __init pcie_clk_init(struct sh7786_pcie_po=
-rt *port)
->          * on. clock lookups don't help us much at this point, since no
->          * dev_id is available this early. Lame.
->          */
-> -       snprintf(fclk_name, sizeof(fclk_name), "pcie%d_fck", port->index)=
-;
-> +       snprintf(fclk_name, sizeof(fclk_name), "pcie%u_fck", port->index)=
-;
->
->         port->fclk =3D clk_get(NULL, fclk_name);
->         if (IS_ERR(port->fclk)) {
+1/ "earlycon keep_bootcon" in bootargs
+2/ "earlycon" in bootargs
+3/ none of the "earlycon keep_bootcon", "earlycon" in bootargs
 
-LGTM, but there are several more cases to fix in this file.
-Please fix all of them in a single patch.
+All good!
 
-Gr{oetje,eeting}s,
+Tested-by: Claudiu Beznea <claudiu.beznea.uj@bp.renesas.com>
+Reviewed-by: Claudiu Beznea <claudiu.beznea.uj@bp.renesas.com>
 
-                        Geert
+Thank you,
+Claudiu
 
---=20
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k=
-.org
+[1]
+https://lore.kernel.org/all/20241204155806.3781200-1-claudiu.beznea.uj@bp.renesas.com/
+[2]
+https://lore.kernel.org/all/20241115134401.3893008-1-claudiu.beznea.uj@bp.renesas.com/
 
-In personal conversations with technical people, I call myself a hacker. Bu=
-t
-when I'm talking to journalists I just say "programmer" or something like t=
-hat.
-                                -- Linus Torvalds
+> ---
+>  drivers/tty/serial/sh-sci.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+> index df523c7444230836..1ed13ce2c2952547 100644
+> --- a/drivers/tty/serial/sh-sci.c
+> +++ b/drivers/tty/serial/sh-sci.c
+> @@ -3542,7 +3542,7 @@ static int __init early_console_setup(struct earlycon_device *device,
+>  		return -ENODEV;
+>  
+>  	device->port.type = type;
+> -	memcpy(&sci_ports[0].port, &device->port, sizeof(struct uart_port));
+> +	sci_ports[0].port = device->port;
+>  	port_cfg.type = type;
+>  	sci_ports[0].cfg = &port_cfg;
+>  	sci_ports[0].params = sci_probe_regmap(&port_cfg);
