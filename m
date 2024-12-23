@@ -1,147 +1,147 @@
-Received: from outpost1.zedat.fu-berlin.de (outpost1.zedat.fu-berlin.de [130.133.4.66])
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B2DA718595F;
-	Sun, 22 Dec 2024 22:37:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=130.133.4.66
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C8E7DEEB5;
+	Mon, 23 Dec 2024 07:12:48 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=10.30.226.201
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1734907059; cv=none; b=Lys69K6t5LDPCn70ejSMoP0YipO6ruSihl3dy97CtbbojNdpk0iq7maFvjGO1p9AoXRLpUCmrcLJj/CuA7dHPOcxZDSqRkHG1LTMKeQH221AwZbPhyGQ6n+M+dUe875A8ExrDks2W84FOGpr9Wkq+pD5vYk8Q1rE/fo7nqilsMk=
+	t=1734937969; cv=none; b=snHG42aaUkWPFmaVRpb8BREmdwGNRZN76AzysjEndYLuyR7JIegUbv0vkCz2BEkLhMfKM6Q0KIRTxyvFGlJmNABCB3i/WTWjd8pR+YLNZUJktXdxKCB7RNoik8w4ffblMo6oUx5G5rWNxPJH3gBptWDwQ+VA+HT60FKQaL219jA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1734907059; c=relaxed/simple;
-	bh=Rh19iPPMPBJhGskWc6F9eD1LILQBPpAJ9LV7I1M+tNg=;
-	h=Message-ID:Subject:From:To:Cc:Date:In-Reply-To:References:
-	 Content-Type:MIME-Version; b=LB3e8PyciuIKRdho/EG9m+GbW3yPnzYzoAJqzXNsl2AfeXRKbMv2pP+OlX1JiFIaV0RcQb65EtoDhN6DA/8J+ch5P3AqCU4cZN7cMjt2VmqGg7AKgPLe44yELDbeSbzeA6ldE+xbmQCwx1s1TtzRkoLzVRc2bKZi1tMTKs6vaQY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de; spf=pass smtp.mailfrom=zedat.fu-berlin.de; dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b=Y2jiF90J; arc=none smtp.client-ip=130.133.4.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=physik.fu-berlin.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=zedat.fu-berlin.de
+	s=arc-20240116; t=1734937969; c=relaxed/simple;
+	bh=KiW6z79yHKtUcMEX/b8/Sp0F2L3XtvvNObnoy9wnwCI=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=AKqL7y/ouO2p1OPG7NNYsZ2XpAebYpYtcHhE61Vkq4MGIzc2w8mUtF/E72B59YoaCHwn9/ZJfm5+GcANGXuLplBdPTZPm7sEjbFURC+Vy5pSAWVu2Jw+dF1122NKFhGrfMfSegFw0FnRk5TUJejzqWAKVOXa4n19XQo88HKaRCw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=PadoaIur; arc=none smtp.client-ip=10.30.226.201
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fu-berlin.de header.i=@fu-berlin.de header.b="Y2jiF90J"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=fu-berlin.de; s=fub01; h=MIME-Version:Content-Transfer-Encoding:
-	Content-Type:References:In-Reply-To:Date:Cc:To:From:Subject:Message-ID:Sender
-	:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
-	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:List-Help:
-	List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
-	bh=so65VtRWU5T7qemOBw/z5lZFubTbWM0FfzA74/KrOzw=; t=1734907055; x=1735511855; 
-	b=Y2jiF90JONj7HNwPS/2C1uYElDKp9zOm091Uv5bxlHpqINNaqbN/2XnMEycs65UaDxrC1s/Oit7
-	599398O53RXyG/7HcXbjE+sZONfpNOnzSCybOIQwsWc1xJYCeRoVlK/m0NnVEKZPB4Tk4BtSRfvvd
-	oTQFWgv9lTWRH7gnX4J4YBvJ0BikmyPyoRBK/oEXNTZmB5rcl0PcUduHOe7yyTTqqHDEDmwFfr3nr
-	1Aku28dW/moi39LRlD402RIErQCngbWSlMlL5++QN+bYVneRnvkJBd4z66+EZkX9lNp47ZiPWo411
-	RwhpA+BtIbI7vpIk6zQ3O5O2l0hCygDOhxFQ==;
-Received: from inpost2.zedat.fu-berlin.de ([130.133.4.69])
-          by outpost.zedat.fu-berlin.de (Exim 4.98)
-          with esmtps (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@zedat.fu-berlin.de>)
-          id 1tPUWD-00000001lqc-0fcU; Sun, 22 Dec 2024 23:33:49 +0100
-Received: from dynamic-078-054-162-203.78.54.pool.telefonica.de ([78.54.162.203] helo=suse-laptop.fritz.box)
-          by inpost2.zedat.fu-berlin.de (Exim 4.98)
-          with esmtpsa (TLS1.3)
-          tls TLS_AES_256_GCM_SHA384
-          (envelope-from <glaubitz@physik.fu-berlin.de>)
-          id 1tPUWC-00000000W6W-3zbs; Sun, 22 Dec 2024 23:33:49 +0100
-Message-ID: <09c316ecff688e499bebee26aeb7364f1714c675.camel@physik.fu-berlin.de>
-Subject: Re: [PATCH] sh: exports for delay.h
-From: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
-To: Al Viro <viro@zeniv.linux.org.uk>, linux-sh@vger.kernel.org
-Cc: Yoshinori Sato <ysato@users.sourceforge.jp>, linux-arch@vger.kernel.org
-Date: Sun, 22 Dec 2024 23:33:48 +0100
-In-Reply-To: <20241222222259.GF1977892@ZenIV>
-References: <20241222222259.GF1977892@ZenIV>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-User-Agent: Evolution 3.54.2 
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="PadoaIur"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A2221C4CED4;
+	Mon, 23 Dec 2024 07:12:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1734937968;
+	bh=KiW6z79yHKtUcMEX/b8/Sp0F2L3XtvvNObnoy9wnwCI=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To:From;
+	b=PadoaIur+Bq/ska4dZ3htQaJQz4uazLSVowJVHucSNC53reVkWxd5YVJWY/8jYQei
+	 G/2ikWxztSp4IduffOwXB0a3mVJH23t9Ex7EGVUz/CnbNl3iJwZRxMrSqxsyp7jx0f
+	 g/t903ItkhiEVo2DrupFM7faoTX7/DPcXhBh/bkr20Ay+uNKYZumDkMyBSpawM5raK
+	 Ut+5vnDGc2C1sPQD75jm/n63pJiamwi58eI2wR3M3lVdk6xTR5vMn3Ur4QTOlkun8B
+	 BK41Buv9qow1NTThvM4tSiBT0cMpdhUu2SLkRibN1ROgpuegs2ZYg313l0II/8FbH3
+	 cxXTeCHYfJOYg==
+Date: Mon, 23 Dec 2024 09:12:14 +0200
+From: Mike Rapoport <rppt@kernel.org>
+To: Guo Weikang <guoweikang.kernel@gmail.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Geert Uytterhoeven <geert@linux-m68k.org>,
+	Dennis Zhou <dennis@kernel.org>, Tejun Heo <tj@kernel.org>,
+	Christoph Lameter <cl@linux.com>,
+	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
+	Sam Creasey <sammy@sammy.net>, Huacai Chen <chenhuacai@kernel.org>,
+	Will Deacon <will@kernel.org>,
+	Catalin Marinas <catalin.marinas@arm.com>,
+	Oreoluwa Babatunde <quic_obabatun@quicinc.com>,
+	rafael.j.wysocki@intel.com, Palmer Dabbelt <palmer@rivosinc.com>,
+	Hanjun Guo <guohanjun@huawei.com>,
+	Easwar Hariharan <eahariha@linux.microsoft.com>,
+	Johannes Berg <johannes.berg@intel.com>,
+	Ingo Molnar <mingo@kernel.org>, Dave Hansen <dave.hansen@intel.com>,
+	Christian Brauner <brauner@kernel.org>,
+	KP Singh <kpsingh@kernel.org>,
+	Richard Henderson <richard.henderson@linaro.org>,
+	Matt Turner <mattst88@gmail.com>,
+	Russell King <linux@armlinux.org.uk>,
+	WANG Xuerui <kernel@xen0n.name>,
+	Michael Ellerman <mpe@ellerman.id.au>,
+	Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
+	Stafford Horne <shorne@gmail.com>, Helge Deller <deller@gmx.de>,
+	Nicholas Piggin <npiggin@gmail.com>,
+	Christophe Leroy <christophe.leroy@csgroup.eu>,
+	Naveen N Rao <naveen@kernel.org>,
+	Madhavan Srinivasan <maddy@linux.ibm.com>,
+	Geoff Levand <geoff@infradead.org>,
+	Paul Walmsley <paul.walmsley@sifive.com>,
+	Palmer Dabbelt <palmer@dabbelt.com>,
+	Albert Ou <aou@eecs.berkeley.edu>,
+	Andrey Ryabinin <ryabinin.a.a@gmail.com>,
+	Alexander Potapenko <glider@google.com>,
+	Andrey Konovalov <andreyknvl@gmail.com>,
+	Dmitry Vyukov <dvyukov@google.com>,
+	Vincenzo Frascino <vincenzo.frascino@arm.com>,
+	Heiko Carstens <hca@linux.ibm.com>,
+	Vasily Gorbik <gor@linux.ibm.com>,
+	Alexander Gordeev <agordeev@linux.ibm.com>,
+	Christian Borntraeger <borntraeger@linux.ibm.com>,
+	Sven Schnelle <svens@linux.ibm.com>,
+	Yoshinori Sato <ysato@users.sourceforge.jp>,
+	Rich Felker <dalias@libc.org>,
+	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
+	Andreas Larsson <andreas@gaisler.com>,
+	Richard Weinberger <richard@nod.at>,
+	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
+	Johannes Berg <johannes@sipsolutions.net>,
+	Thomas Gleixner <tglx@linutronix.de>,
+	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
+	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
+	linux-alpha@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org, loongarch@lists.linux.dev,
+	linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+	linux-openrisc@vger.kernel.org, linux-parisc@vger.kernel.org,
+	linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+	kasan-dev@googlegroups.com, linux-s390@vger.kernel.org,
+	linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
+	linux-um@lists.infradead.org, linux-acpi@vger.kernel.org,
+	xen-devel@lists.xenproject.org, linux-omap@vger.kernel.org,
+	linux-clk@vger.kernel.org, devicetree@vger.kernel.org,
+	linux-mm@kvack.org, linux-pm@vger.kernel.org,
+	Xi Ruoyao <xry111@xry111.site>
+Subject: Re: [PATCH v7] mm/memblock: Add memblock_alloc_or_panic interface
+Message-ID: <Z2kNTjO8hXzN66bX@kernel.org>
+References: <20241222111537.2720303-1-guoweikang.kernel@gmail.com>
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-Original-Sender: glaubitz@physik.fu-berlin.de
-X-ZEDAT-Hint: PO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20241222111537.2720303-1-guoweikang.kernel@gmail.com>
 
-Hi Al,
+On Sun, Dec 22, 2024 at 07:15:37PM +0800, Guo Weikang wrote:
+> Before SLUB initialization, various subsystems used memblock_alloc to
+> allocate memory. In most cases, when memory allocation fails, an immediate
+> panic is required. To simplify this behavior and reduce repetitive checks,
+> introduce `memblock_alloc_or_panic`. This function ensures that memory
+> allocation failures result in a panic automatically, improving code
+> readability and consistency across subsystems that require this behavior.
+> 
+> Changelog:
+> ----------
+> v1: initial version
+> v2: add __memblock_alloc_or_panic support panic output caller
+> v3: panic output phys_addr_t use printk's %pap
+> v4: make __memblock_alloc_or_panic out-of-line, move to memblock.c
+> v6: Fix CI compile error
+> Links to CI: https://lore.kernel.org/oe-kbuild-all/202412221000.r1NzXJUO-lkp@intel.com/
+> v6: Fix CI compile warinigs
+> Links to CI: https://lore.kernel.org/oe-kbuild-all/202412221259.JuGNAUCq-lkp@intel.com/
+> v7: add chagelog and adjust function declaration alignment format
+> ----------
+> 
+> Signed-off-by: Guo Weikang <guoweikang.kernel@gmail.com>
+> Reviewed-by: Andrew Morton <akpm@linux-foundation.org>
+> Reviewed-by: Geert Uytterhoeven <geert@linux-m68k.org>
+> Reviewed-by: Mike Rapoport (Microsoft) <rppt@kernel.org>
+> Acked-by: Xi Ruoyao <xry111@xry111.site>
 
-On Sun, 2024-12-22 at 22:22 +0000, Al Viro wrote:
-> 	__delay() is either exported or exists as a static inline
-> on all architectures - except sh.
->=20
-> 	Add the missing export of __delay(), move the exports of
-> the rest of that bunch from sh_ksyms32.c to the place where all
-> of them are defined (i.e. arch/sh/lib/delay.c).
->=20
-> Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
-> ---
-> diff --git a/arch/sh/kernel/sh_ksyms_32.c b/arch/sh/kernel/sh_ksyms_32.c
-> index 5858936cb431..0b9b28144efe 100644
-> --- a/arch/sh/kernel/sh_ksyms_32.c
-> +++ b/arch/sh/kernel/sh_ksyms_32.c
-> @@ -2,7 +2,6 @@
->  #include <linux/module.h>
->  #include <linux/string.h>
->  #include <linux/uaccess.h>
-> -#include <linux/delay.h>
->  #include <linux/mm.h>
->  #include <asm/checksum.h>
->  #include <asm/sections.h>
-> @@ -12,9 +11,6 @@ EXPORT_SYMBOL(memcpy);
->  EXPORT_SYMBOL(memset);
->  EXPORT_SYMBOL(memmove);
->  EXPORT_SYMBOL(__copy_user);
-> -EXPORT_SYMBOL(__udelay);
-> -EXPORT_SYMBOL(__ndelay);
-> -EXPORT_SYMBOL(__const_udelay);
->  EXPORT_SYMBOL(strlen);
->  EXPORT_SYMBOL(csum_partial);
->  EXPORT_SYMBOL(csum_partial_copy_generic);
-> diff --git a/arch/sh/lib/delay.c b/arch/sh/lib/delay.c
-> index dad8e6a54906..63cd32550b0c 100644
-> --- a/arch/sh/lib/delay.c
-> +++ b/arch/sh/lib/delay.c
-> @@ -7,6 +7,7 @@
-> =20
->  #include <linux/sched.h>
->  #include <linux/delay.h>
-> +#include <linux/export.h>
-> =20
->  void __delay(unsigned long loops)
->  {
-> @@ -29,6 +30,7 @@ void __delay(unsigned long loops)
->  		: "0" (loops)
->  		: "t");
->  }
-> +EXPORT_SYMBOL(__delay);
-> =20
->  inline void __const_udelay(unsigned long xloops)
->  {
-> @@ -41,14 +43,16 @@ inline void __const_udelay(unsigned long xloops)
->  		: "macl", "mach");
->  	__delay(++xloops);
->  }
-> +EXPORT_SYMBOL(__const_udelay);
-> =20
->  void __udelay(unsigned long usecs)
->  {
->  	__const_udelay(usecs * 0x000010c6);  /* 2**32 / 1000000 */
->  }
-> +EXPORT_SYMBOL(__udelay);
-> =20
->  void __ndelay(unsigned long nsecs)
->  {
->  	__const_udelay(nsecs * 0x00000005);
->  }
-> -
-> +EXPORT_SYMBOL(__ndelay);
+If people commented on your patch it does not mean you should add
+Reviewed-by or Acked-by tags for them. Wait for explicit tags from the
+reviewers.
 
-Thanks, this looks good and I'll pick it up for sh-linux 6.14, although
-I'm probably going to make the subject a little more descriptive ;-).
+And don't respin that often, "Reviewers are busy people and may not get to
+your patch right away" [1].
 
-Reviewed-by: John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>
+[1] https://docs.kernel.org/process/submitting-patches.html
 
-Adrian
 
---=20
- .''`.  John Paul Adrian Glaubitz
-: :' :  Debian Developer
-`. `'   Physicist
-  `-    GPG: 62FF 8A75 84E0 2956 9546  0006 7426 3B37 F5B5 F913
+-- 
+Sincerely yours,
+Mike.
