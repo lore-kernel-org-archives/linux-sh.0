@@ -1,37 +1,64 @@
-Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pl1-f181.google.com (mail-pl1-f181.google.com [209.85.214.181])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3BB1F1F8AD8;
-	Fri, 27 Dec 2024 18:32:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=90.155.50.34
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D62144C7C
+	for <linux-sh@vger.kernel.org>; Sat, 28 Dec 2024 06:36:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.181
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1735324378; cv=none; b=pLjrfecbkF3TjkP42LfSk5nkd0o86mrxt1vmkaytrhpUh71BFfUxqo19UWde2JXBb4OrvEmadmd5xku1cTUTJZY8aITlbNa7aJsZPnafC6vpY2BXIo9mplgGrw9ORxBE9rTmPzjwBLMWfGmN89K2DMjd1f7SUkEZPwKa04LOv5I=
+	t=1735367795; cv=none; b=mLf9C8JxgFsGNL8vRPJHgRHkXEh5rUVxAzBtmVkJNsQxiXRelpNq4YSU+rVR6ZJ/3In5KREObnk//3GivfpAVvdFORYzu7vDmfZnHVwCXmpaW5+oU/kWpaiSsZq3Bg6gGqqbsU64mnjFYCIKsPjhSePANjAFZs3wEWRW+GeI+eE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1735324378; c=relaxed/simple;
-	bh=NSZIUSiglpCKRqhfQhFi3iBEqtu2z94/4sZiolz/UXc=;
+	s=arc-20240116; t=1735367795; c=relaxed/simple;
+	bh=AnI+fDx8ege81551sFiwVqsAGZfaOg5IleFmbT3lTrw=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=ow0IgibJEC6U+Ctk+D4enQjklCIf6KxMSsCGgB41kfn7gCjJfm3EuH356fKu27SS0ufIk+uANu2B7yE4dS9eTUWG7eIitRDCbwSddEt9p//bBa+NFtPeM/HI9KVrciZBzwkPOmC6rg9C/QSoncby2hUrDy86rTxYfNuIOC1eSag=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org; spf=none smtp.mailfrom=infradead.org; dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b=R7Vq1aTy; arc=none smtp.client-ip=90.155.50.34
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=infradead.org
+	 In-Reply-To:Content-Type; b=WGHXOfKd1fc3DF3I6U6QKvW06vmPgZ+yHAogigexWiYs9sEZ55yzqkbw2z9qvoPtT6oILXTOPZbrylv12HIq2mIL4k64ecyBupSfCQFRH17wZHfYcKB0w3pPfoN004zgMJo80iiFfN8q36n/ApYH60TRwPC+qfYLId0EiBBokjI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=bytedance.com; spf=pass smtp.mailfrom=bytedance.com; dkim=pass (2048-bit key) header.d=bytedance.com header.i=@bytedance.com header.b=c1VsAsQx; arc=none smtp.client-ip=209.85.214.181
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=bytedance.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bytedance.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.b="R7Vq1aTy"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=casper.20170209; h=Content-Transfer-Encoding:Content-Type:
-	In-Reply-To:From:References:Cc:To:Subject:MIME-Version:Date:Message-ID:Sender
-	:Reply-To:Content-ID:Content-Description;
-	bh=6LR+awtt9zeZB6QJo8zcf5x6gxrGRTrnc0cmu8uZ0+U=; b=R7Vq1aTy+ewUoHvs2KEL4J36J1
-	7bL/3PUwe6hE11McHHiU2sj3TE8HgVW7DJS5mWCFGEw4wPLLxYse1QL0FHNCpUgEfii96ESEv6mZz
-	zHuQELy4qLO5U8BklqEc7YXVCyELujpLfCG4nGcc3oYpy8zFV0J/7dlqV/iYQJHU6Pj2W76a9X2pZ
-	SHYHFKh0jYRS6VW72kHy3fRMAnim81c2PA2RogJpbPgxvJlSF/ODsQuAGD2sf2X/3NXMPv52OrHFa
-	rq+dZsMHoxKkdPW4wtIsx9myoVmCkLibGyKJMhtSxEF+zWoS4VNa90IUkvmfQQ/vMGx1a5tU6oYc0
-	clwReaPA==;
-Received: from [50.53.2.24] (helo=[192.168.254.17])
-	by casper.infradead.org with esmtpsa (Exim 4.98 #2 (Red Hat Linux))
-	id 1tRF7z-00000002Pfu-0PsW;
-	Fri, 27 Dec 2024 18:32:20 +0000
-Message-ID: <478f669f-5441-4bc5-93ad-ef6e5a4b1b9a@infradead.org>
-Date: Fri, 27 Dec 2024 10:31:57 -0800
+	dkim=pass (2048-bit key) header.d=bytedance.com header.i=@bytedance.com header.b="c1VsAsQx"
+Received: by mail-pl1-f181.google.com with SMTP id d9443c01a7336-21675fd60feso127783665ad.2
+        for <linux-sh@vger.kernel.org>; Fri, 27 Dec 2024 22:36:32 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=bytedance.com; s=google; t=1735367791; x=1735972591; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:content-language:from
+         :references:cc:to:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=xz9+aZKFL34BZ+QKJapn5mhTQ8zZC8UnFG8XP+zHLMo=;
+        b=c1VsAsQxxYafqX4QhvhVwPbFl+C/B/yYf9xtjlaS9oIZVrjGx1a1j/7KXH00dYveH9
+         kvNmW7VyvG9Vq3Wb5z7g/mZfsPR3363WfRVfJc69MDc9KSZw4kBp2SOTh9oTWszWY3Sr
+         q0EtyVlloi7rjiZpF86BnI0d3jhHHDNHOBFIM1mNY+7nLzkFWjuZnuTlMCT46aCfYHvW
+         8XeKY9H6k8pry6ZgrHqFiUDdX7hsgsrxxHU/hOWmYGo4/eFq67OrCGNFOho3nG/PrKDo
+         HFdLa0RMlfKxPeD/tena4kjS4MmTV086fr/X8pIoisjj5+bFGx33XvT1FUrUCg7U6jlg
+         Vv8A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1735367791; x=1735972591;
+        h=content-transfer-encoding:in-reply-to:content-language:from
+         :references:cc:to:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=xz9+aZKFL34BZ+QKJapn5mhTQ8zZC8UnFG8XP+zHLMo=;
+        b=TACRQPP6F8MiuyrWEjr5Mr2GEEnyLAlQiuZE1WqAPjxz3j0UdPFz287mQTQ439vWRq
+         YpKKKXXk2T8o02G+XVF7YQJGCpDhJJwaZZAe8ouhCLQNYZuWal/Q+Fug96FiSV5CMrOK
+         S4XocyRk7K3RmmkY4xSxXFRh3eIJtclzssguoYFmoNBwaJ8w0b4hdSiyI/mZfe1WQjcZ
+         vwzQAlpzWRb9OkPiSyvyL0c1rzSsf1mCmeGeTPHA18C6/jkiixpHOh5nns1I+T/1KpS7
+         E4clQryZivWX0uc7g6KTDxpL2Qc+7hhKCJlaIz/lMV7mmJtWMiYpWK+2pKEbQigd1Rmi
+         f3QQ==
+X-Forwarded-Encrypted: i=1; AJvYcCXQuiGXWBMvCpd9Z9Ow2c8EuF2sejm8Ag72PRwTEbrtlzJa0+ElXpBOjdLxs9XC8tD29vFBdSU8gQ==@vger.kernel.org
+X-Gm-Message-State: AOJu0YykxXyMm3yDxGzJwf89eif/cW6QCduC63U/3KlK4D7TjqL+C3WM
+	aHUWs3nCGDcwVzTxdeIDe4hSjbZDYFYjLw5/vrffoVzAGSI0GbCTWZ6NBnE3CUg=
+X-Gm-Gg: ASbGnctEEBoPfGUY7q/1ilZzi0Fx3ouR8m8HYdtkzrw/CvZUs+1UmoWPFHpdwMDm71j
+	sk6gMjOjQqpilW5b+8JuPEmyMwCrd/xR3HbSECbhzCSe3ZoRr7PfQnDPHrVyG4q+J3be979WDbM
+	K3UbdYZqq/MlqMebgJNKrbP+FHm9w37GYSepeWBNbsKBggHsbgpQK9kjeUfHndQffsyBsyRRO+9
+	Fh+93E2K4i4H6lt/Sn8j5T7krg+VhXQsZpyFNxcZo68MW0D4JBwYgwXH49k1v5iOffmVSDDyUSf
+	US3HV0jN/JsnEXOJ87cszP2oV96YyN8XdaKZ7h2pWDB3ycwW4VbDFvc=
+X-Google-Smtp-Source: AGHT+IHJr5/cBm7VE4sKmfeyqyU+nR3KXMBrwpgTBQUiz/94ds3IGaVh/bhouU9p0WQ7mj1Jxu9Qtg==
+X-Received: by 2002:a17:902:f682:b0:215:f1c2:fcc4 with SMTP id d9443c01a7336-219e6f1480cmr399252455ad.41.1735367791634;
+        Fri, 27 Dec 2024 22:36:31 -0800 (PST)
+Received: from ?IPV6:2409:8a28:f44:d7c4:e49d:ee0a:5f86:d7bd? ([2409:8a28:f44:d7c4:e49d:ee0a:5f86:d7bd])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-219dc97182dsm144536075ad.82.2024.12.27.22.36.10
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 27 Dec 2024 22:36:31 -0800 (PST)
+Message-ID: <2434dfdf-d4a0-4f81-9b65-51be86487fd2@bytedance.com>
+Date: Sat, 28 Dec 2024 14:36:06 +0800
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
@@ -39,54 +66,117 @@ List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] sh: exports for delay.h
-To: Geert Uytterhoeven <geert@linux-m68k.org>,
- Al Viro <viro@zeniv.linux.org.uk>
-Cc: linux-sh@vger.kernel.org, Yoshinori Sato <ysato@users.sourceforge.jp>,
- linux-arch@vger.kernel.org
-References: <20241222222259.GF1977892@ZenIV>
- <CAMuHMdVpTtcT9LVGNvFLm4cvrNF=fe1dVsi2zo73Yee3oYrJYQ@mail.gmail.com>
- <20241227162222.GX1977892@ZenIV>
- <CAMuHMdULCsM_ab-Wx8emtiW9_9zFmQ4KtGeNf0-QVWjjxX8SRA@mail.gmail.com>
+Subject: Re: [PATCH v3 02/17] riscv: mm: Skip pgtable level check in
+ {pud,p4d}_alloc_one
+To: Palmer Dabbelt <palmer@dabbelt.com>
+Cc: peterz@infradead.org, agordeev@linux.ibm.com, kevin.brodsky@arm.com,
+ tglx@linutronix.de, david@redhat.com, jannh@google.com, hughd@google.com,
+ yuzhao@google.com, willy@infradead.org, muchun.song@linux.dev,
+ vbabka@kernel.org, lorenzo.stoakes@oracle.com, akpm@linux-foundation.org,
+ rientjes@google.com, vishal.moola@gmail.com, Arnd Bergmann <arnd@arndb.de>,
+ Will Deacon <will@kernel.org>, aneesh.kumar@kernel.org, npiggin@gmail.com,
+ dave.hansen@linux.intel.com, rppt@kernel.org, ryan.roberts@arm.com,
+ linux-mm@kvack.org, linux-arm-kernel@lists.infradead.org,
+ linuxppc-dev@lists.ozlabs.org, linux-riscv@lists.infradead.org,
+ linux-s390@vger.kernel.org, sparclinux@vger.kernel.org,
+ linux-kernel@vger.kernel.org, x86@kernel.org, linux-arch@vger.kernel.org,
+ linux-csky@vger.kernel.org, linux-hexagon@vger.kernel.org,
+ loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
+ linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
+ linux-sh@vger.kernel.org, linux-um@lists.infradead.org
+References: <mhng-3d6d3e65-b264-4033-b985-fa7763cacf9e@palmer-ri-x1c9a>
+From: Qi Zheng <zhengqi.arch@bytedance.com>
 Content-Language: en-US
-From: Randy Dunlap <rdunlap@infradead.org>
-In-Reply-To: <CAMuHMdULCsM_ab-Wx8emtiW9_9zFmQ4KtGeNf0-QVWjjxX8SRA@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <mhng-3d6d3e65-b264-4033-b985-fa7763cacf9e@palmer-ri-x1c9a>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
+Hi Palmer,
 
-
-On 12/27/24 10:20 AM, Geert Uytterhoeven wrote:
-> Hi Al,
-> 
-> On Fri, Dec 27, 2024 at 5:22 PM Al Viro <viro@zeniv.linux.org.uk> wrote:
->> On Fri, Dec 27, 2024 at 04:58:58PM +0100, Geert Uytterhoeven wrote:
->>> Please do not export __delay, as it is an internal implementation detail.
->>> Drivers should not call __delay() directly, as it has non-standardized
->>> semantics, or may not even exist.
+On 2024/12/28 00:40, Palmer Dabbelt wrote:
+> On Mon, 23 Dec 2024 01:40:48 PST (-0800), zhengqi.arch@bytedance.com wrote:
+>> From: Kevin Brodsky <kevin.brodsky@arm.com>
 >>
->> As the matter of fact, it *does* exist and is either exported or a static
->> inline with everything used by it exported - on every architecture except sh.
+>> {pmd,pud,p4d}_alloc_one() is never called if the corresponding page
+>> table level is folded, as {pmd,pud,p4d}_alloc() already does the
+>> required check. We can therefore remove the runtime page table level
+>> checks in {pud,p4d}_alloc_one. The PUD helper becomes equivalent to
+>> the generic version, so we remove it altogether.
+>>
+>> This is consistent with the way arm64 and x86 handle this situation
+>> (runtime check in p4d_free() only).
+>>
+>> Signed-off-by: Kevin Brodsky <kevin.brodsky@arm.com>
+>> Acked-by: Dave Hansen <dave.hansen@linux.intel.com>
+>> Signed-off-by: Qi Zheng <zhengqi.arch@bytedance.com>
+>> ---
+>>  arch/riscv/include/asm/pgalloc.h | 22 ++++------------------
+>>  1 file changed, 4 insertions(+), 18 deletions(-)
+>>
+>> diff --git a/arch/riscv/include/asm/pgalloc.h 
+>> b/arch/riscv/include/asm/pgalloc.h
+>> index f52264304f772..8ad0bbe838a24 100644
+>> --- a/arch/riscv/include/asm/pgalloc.h
+>> +++ b/arch/riscv/include/asm/pgalloc.h
+>> @@ -12,7 +12,6 @@
+>>  #include <asm/tlb.h>
+>>
+>>  #ifdef CONFIG_MMU
+>> -#define __HAVE_ARCH_PUD_ALLOC_ONE
+>>  #define __HAVE_ARCH_PUD_FREE
+>>  #include <asm-generic/pgalloc.h>
+>>
+>> @@ -88,15 +87,6 @@ static inline void pgd_populate_safe(struct 
+>> mm_struct *mm, pgd_t *pgd,
+>>      }
+>>  }
+>>
+>> -#define pud_alloc_one pud_alloc_one
+>> -static inline pud_t *pud_alloc_one(struct mm_struct *mm, unsigned 
+>> long addr)
+>> -{
+>> -    if (pgtable_l4_enabled)
+>> -        return __pud_alloc_one(mm, addr);
+>> -
+>> -    return NULL;
+>> -}
+>> -
+>>  #define pud_free pud_free
+>>  static inline void pud_free(struct mm_struct *mm, pud_t *pud)
+>>  {
+>> @@ -118,15 +108,11 @@ static inline void __pud_free_tlb(struct 
+>> mmu_gather *tlb, pud_t *pud,
+>>  #define p4d_alloc_one p4d_alloc_one
+>>  static inline p4d_t *p4d_alloc_one(struct mm_struct *mm, unsigned 
+>> long addr)
+>>  {
+>> -    if (pgtable_l5_enabled) {
+>> -        gfp_t gfp = GFP_PGTABLE_USER;
+>> -
+>> -        if (mm == &init_mm)
+>> -            gfp = GFP_PGTABLE_KERNEL;
+>> -        return (p4d_t *)get_zeroed_page(gfp);
+>> -    }
+>> +    gfp_t gfp = GFP_PGTABLE_USER;
+>>
+>> -    return NULL;
+>> +    if (mm == &init_mm)
+>> +        gfp = GFP_PGTABLE_KERNEL;
+>> +    return (p4d_t *)get_zeroed_page(gfp);
+>>  }
+>>
+>>  static inline void __p4d_free(struct mm_struct *mm, p4d_t *p4d)
 > 
-> OK, it does exist, because init/calibrate.c needs it. But that should
-> be the sole user outside architecture-specific code.
+> Acked-by: Palmer Dabbelt <palmer@rivosinc.com>
+
+Thank you for reviewing the patch!
+
 > 
-> Unlike some other architectures, SH does not emit calls to __delay()
-> from various (static inline) *delay() functions.  Hence there is no
-> need to export it to modules. Heck, the only reason it cannot be made
-> static is because init/calibrate.c needs it.
-> 
-> Unfortunately there are still a few drivers that call __delay()
-> directly (usually with hardcoded constants, how portable, and
-> cpufreq-unfriendly), which causes people to try once in a while to
-> "fix the build" by re-adding the export on SH :-(
+> Are you trying to keep these together, or do you want me to try and pick 
+> up the RISC-V bits on their own?
 
-Yeah, I did that in 2021 because of:
+I prefer to keep them together because later patches depend on this one.
+And this patch series has been merged into mm-unstable branch.
 
-ERROR: modpost: "__delay" [drivers/net/mdio/mdio-cavium.ko] undefined!
-
-mdio-cavium still uses __delay() so I guess it still breaks an SH build.
-
--- 
-~Randy
+Thanks!
 
