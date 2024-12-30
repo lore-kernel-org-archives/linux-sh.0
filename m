@@ -1,157 +1,239 @@
-Received: from szxga08-in.huawei.com (szxga08-in.huawei.com [45.249.212.255])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pl1-f174.google.com (mail-pl1-f174.google.com [209.85.214.174])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 189CAD530;
-	Mon, 30 Dec 2024 06:43:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.255
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8318F1A239B
+	for <linux-sh@vger.kernel.org>; Mon, 30 Dec 2024 09:08:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.174
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1735541009; cv=none; b=QSrf1gzgEn5HxVpIjVrnr3JzcB+eSZJXFFYZyGD+6TZZqyWvVTda7CdzklCsJAAB7VWjkSkXwGnHEz7v6GdfkU/xRsuzL+KaobfqJkghnuaSKiYcfDCT0g+OSuQ3110vrU/mozizVwU3EAoZY6xtucKSLTuoa9QlVoKiGzp3rKI=
+	t=1735549723; cv=none; b=HSGQGgRLPTgoWikMhvtaUjTU5gKXyhhiM0MknjwO9IZAPF2sgghXiLHqdtWP2Y40rvkQeT2+a52qm0QTINHymFiALolNRto9WslaAv3LsEoEn8UbyTGblulX7UhlT4YYanQ5YMYcKLIVY2xSUGOpXtLWCOgn27vLfrMnk7SlKsY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1735541009; c=relaxed/simple;
-	bh=hgtYLPXFw9jFNSs9BsfEAhODWPHNf7RSkc7FIyqxQfQ=;
-	h=Subject:To:References:CC:From:Message-ID:Date:MIME-Version:
-	 In-Reply-To:Content-Type; b=QsnHQEWNB6gG5fo6VylF9HHJxj5hxbam521Vrnvi/3D/CHrRhHXXD9snLmWYkxV+S5NfYFIXFIsQwaAr0JPBo5HMH+Zj2gjA9cBBU5xiGF+YRfTtRwLMTB4slVi0iv36tre6I9rPGPTOO8XYOUsN82W8AlfNXXccdHmBBhck1jY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com; spf=pass smtp.mailfrom=huawei.com; arc=none smtp.client-ip=45.249.212.255
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
-Received: from mail.maildlp.com (unknown [172.19.88.105])
-	by szxga08-in.huawei.com (SkyGuard) with ESMTP id 4YM60M4PbVz1W3F6;
-	Mon, 30 Dec 2024 14:39:47 +0800 (CST)
-Received: from kwepemh100016.china.huawei.com (unknown [7.202.181.102])
-	by mail.maildlp.com (Postfix) with ESMTPS id 7F47D140382;
-	Mon, 30 Dec 2024 14:43:17 +0800 (CST)
-Received: from [10.174.179.93] (10.174.179.93) by
- kwepemh100016.china.huawei.com (7.202.181.102) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.1544.11; Mon, 30 Dec 2024 14:43:13 +0800
-Subject: Re: [PATCH v4 -next 13/15] x86: vdso: move the sysctl to
- arch/x86/entry/vdso/vdso32-setup.c
-To: Brian Gerst <brgerst@gmail.com>
-References: <20241228145746.2783627-1-yukaixiong@huawei.com>
- <20241228145746.2783627-14-yukaixiong@huawei.com>
- <CAMzpN2hf-CFpO6x58aDK_FX_6C2MBKh1g7PdV4Y=ypaeUNVfRw@mail.gmail.com>
-CC: <akpm@linux-foundation.org>, <mcgrof@kernel.org>,
-	<ysato@users.sourceforge.jp>, <dalias@libc.org>,
-	<glaubitz@physik.fu-berlin.de>, <luto@kernel.org>, <tglx@linutronix.de>,
-	<mingo@redhat.com>, <bp@alien8.de>, <dave.hansen@linux.intel.com>,
-	<hpa@zytor.com>, <viro@zeniv.linux.org.uk>, <brauner@kernel.org>,
-	<jack@suse.cz>, <kees@kernel.org>, <j.granados@samsung.com>,
-	<willy@infradead.org>, <Liam.Howlett@oracle.com>, <vbabka@suse.cz>,
-	<lorenzo.stoakes@oracle.com>, <trondmy@kernel.org>, <anna@kernel.org>,
-	<chuck.lever@oracle.com>, <jlayton@kernel.org>, <neilb@suse.de>,
-	<okorniev@redhat.com>, <Dai.Ngo@oracle.com>, <tom@talpey.com>,
-	<davem@davemloft.net>, <edumazet@google.com>, <kuba@kernel.org>,
-	<pabeni@redhat.com>, <paul@paul-moore.com>, <jmorris@namei.org>,
-	<linux-sh@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-	<linux-fsdevel@vger.kernel.org>, <linux-mm@kvack.org>,
-	<linux-nfs@vger.kernel.org>, <netdev@vger.kernel.org>,
-	<linux-security-module@vger.kernel.org>, <dhowells@redhat.com>,
-	<haifeng.xu@shopee.com>, <baolin.wang@linux.alibaba.com>,
-	<shikemeng@huaweicloud.com>, <dchinner@redhat.com>, <bfoster@redhat.com>,
-	<souravpanda@google.com>, <hannes@cmpxchg.org>, <rientjes@google.com>,
-	<pasha.tatashin@soleen.com>, <david@redhat.com>, <ryan.roberts@arm.com>,
-	<ying.huang@intel.com>, <yang@os.amperecomputing.com>,
-	<zev@bewilderbeest.net>, <serge@hallyn.com>, <vegard.nossum@oracle.com>,
-	<wangkefeng.wang@huawei.com>
-From: yukaixiong <yukaixiong@huawei.com>
-Message-ID: <3ed73b8d-1080-941b-ce6a-2d742b078193@huawei.com>
-Date: Mon, 30 Dec 2024 14:43:12 +0800
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:45.0) Gecko/20100101
- Thunderbird/45.7.1
+	s=arc-20240116; t=1735549723; c=relaxed/simple;
+	bh=obzuCkbthGjAmIl3Mi7AOVwJw8CRHlX3eo5rziGK7Aw=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version; b=o26+bi1/PSI973hxTV47hKtrJF47ZQkvsE2R5gbeI9E+aQsfYtOHsiFP94U71uXzqfOBW8+iLTJkjnYc7NJhpimU54wiMLiTBvmn/hwamA6oveQDhFSFcGw3bBeF7vBQg4gvtHai21XMEu+znOep4aDaWa5pKe5U7sWJmjcvXvI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=bytedance.com; spf=pass smtp.mailfrom=bytedance.com; dkim=pass (2048-bit key) header.d=bytedance.com header.i=@bytedance.com header.b=TsyjMRcE; arc=none smtp.client-ip=209.85.214.174
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=bytedance.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bytedance.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=bytedance.com header.i=@bytedance.com header.b="TsyjMRcE"
+Received: by mail-pl1-f174.google.com with SMTP id d9443c01a7336-2166f1e589cso140198845ad.3
+        for <linux-sh@vger.kernel.org>; Mon, 30 Dec 2024 01:08:40 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=bytedance.com; s=google; t=1735549720; x=1736154520; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to;
+        bh=KCS148NFM6neePcbo7P2q7bn6Gnf3WOST+giN1oaVZ4=;
+        b=TsyjMRcESMcOFb23epL+mnSLmxXybLJlbTkKYAFufRJtPvT2KdMra/oLmq2DhQh70p
+         g02f2EPzg5ciDx3zTDMLoqvqRGjMjCv6ABbcQVXSbvxcv3dWrHpAK2TN0TwSt+hbOXwr
+         XheDsYKNDC6Vx4av+V+8yYXHnS/GQ3Sx8vsYhBYeUIFCEbC/HqOU8leQWaOrEjmo61N0
+         9KePyTW9H5Y0zAftYpfpyvfXJLF1N6UwzwQZQG1IJP9RbJffCJJJpRrg4NKvRdbQUem0
+         cGRjBSaJSqdmVh4ocIHPhU9tgTWxWcacKtyh+MiLGOLs4pVR723gXgZcs8VIxj7tnvZn
+         QBdg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1735549720; x=1736154520;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=KCS148NFM6neePcbo7P2q7bn6Gnf3WOST+giN1oaVZ4=;
+        b=j2MiWRaB2CB/KZg5Go9Wsx/gcq9vUO9PlssnBwrPrPnoMZLsZzjxiktfbOKoZfskjX
+         5Dx3beicoaYyLfHLc7tR8KVyoEHkPQO1CqASw3IoaD9hA3MAhr1YVgyvCo8maoiz0Yy/
+         g6d+FTtyTz1jWctGbIwopuPQiXPMnyFDyLSx9auI0/N8CozY1howwbfvOLXkEi3up0kF
+         tVZZJYDqAJHQ6N6m4KgSoM3TXlMyJoTFbl26fVSjcQizxdEwFv3eAZ5wdKiUkVCVPKAe
+         Rx+Lf9f1uMUydpqrvoQ4RX4PN0SSjdxfdVla66X6jk5+NoceYTX7PH+VEkx5XzUmN+ZJ
+         YhoA==
+X-Forwarded-Encrypted: i=1; AJvYcCU/rR9TKmtBD1YysEuvm3mxxCtsftGSUisk2/yxitw9MHEqVBXCO7rzHVo93fDNnf27thxsZpHTcg==@vger.kernel.org
+X-Gm-Message-State: AOJu0YxjsC11uSAVB58gu9UDYckJi97aJQtzWbkOtyqpak8xYmejwN5n
+	4HcuqWJiH8QYShVz/XLRBpxlXqbaJiu+wlUNVdSZbwL4UU1jXMe90KtPfr2q3Cg=
+X-Gm-Gg: ASbGncsn3E1X9V4SvzNkatWTdQnd42Yu92BD4hXThfS9M2IiZmMG3M6eaqsVYVISNrw
+	VWwpZpaQ/mi1L8FSYSc1YrahUn83voXANrPtObiwRxMCOMVyTkbHxkmj5i3DUUnCumWp//+7ZJK
+	zhDooIwm0nr+v2FkSIszLAO7aYYySQ3ifH1DrCiCBXvq4Pyh4r3spQBG7EpjoTVhSRtWc6RwWGD
+	nNwh7ozvQAjqJ+QdVOP7iA+Jgx+dGGtqzfYwD8DBEK2z2QsWhl28wo8bSdyARuEP4PqXNedeYyM
+	r1Iavyqu3qAv5HiaYD0T0Q==
+X-Google-Smtp-Source: AGHT+IHgLmMaWHwHgL0oRHIhYJ2vWpvY6ebuDt6AqrGAyIjEWzK95W7/7i/VdRxGUDUWQcC+IVrQ/g==
+X-Received: by 2002:a05:6a00:e06:b0:725:9dc7:4f8b with SMTP id d2e1a72fcca58-72abde30cc7mr45836853b3a.15.1735549719834;
+        Mon, 30 Dec 2024 01:08:39 -0800 (PST)
+Received: from C02DW0BEMD6R.bytedance.net ([203.208.167.150])
+        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-842aba72f7csm17057841a12.4.2024.12.30.01.08.27
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 30 Dec 2024 01:08:39 -0800 (PST)
+From: Qi Zheng <zhengqi.arch@bytedance.com>
+To: peterz@infradead.org,
+	agordeev@linux.ibm.com,
+	kevin.brodsky@arm.com,
+	palmer@dabbelt.com,
+	tglx@linutronix.de,
+	david@redhat.com,
+	jannh@google.com,
+	hughd@google.com,
+	yuzhao@google.com,
+	willy@infradead.org,
+	muchun.song@linux.dev,
+	vbabka@kernel.org,
+	lorenzo.stoakes@oracle.com,
+	akpm@linux-foundation.org,
+	rientjes@google.com,
+	vishal.moola@gmail.com,
+	arnd@arndb.de,
+	will@kernel.org,
+	aneesh.kumar@kernel.org,
+	npiggin@gmail.com,
+	dave.hansen@linux.intel.com,
+	rppt@kernel.org,
+	ryan.roberts@arm.com
+Cc: linux-mm@kvack.org,
+	linux-arm-kernel@lists.infradead.org,
+	linuxppc-dev@lists.ozlabs.org,
+	linux-riscv@lists.infradead.org,
+	linux-s390@vger.kernel.org,
+	sparclinux@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	x86@kernel.org,
+	linux-arch@vger.kernel.org,
+	linux-csky@vger.kernel.org,
+	linux-hexagon@vger.kernel.org,
+	loongarch@lists.linux.dev,
+	linux-m68k@lists.linux-m68k.org,
+	linux-mips@vger.kernel.org,
+	linux-openrisc@vger.kernel.org,
+	linux-sh@vger.kernel.org,
+	linux-um@lists.infradead.org,
+	Qi Zheng <zhengqi.arch@bytedance.com>
+Subject: [PATCH v4 00/15] move pagetable_*_dtor() to __tlb_remove_table()
+Date: Mon, 30 Dec 2024 17:07:35 +0800
+Message-Id: <cover.1735549103.git.zhengqi.arch@bytedance.com>
+X-Mailer: git-send-email 2.24.3 (Apple Git-128)
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <CAMzpN2hf-CFpO6x58aDK_FX_6C2MBKh1g7PdV4Y=ypaeUNVfRw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Content-Transfer-Encoding: 8bit
-X-ClientProxiedBy: dggpeml100003.china.huawei.com (7.185.36.120) To
- kwepemh100016.china.huawei.com (7.202.181.102)
 
+Changes in v4:
+ - remove [PATCH v3 15/17] and [PATCH v3 16/17] (Mike Rapoport)
+   (the tlb_remove_page_ptdesc() and tlb_remove_ptdesc() are intermediate
+    products of the project: https://kernelnewbies.org/MatthewWilcox/Memdescs,
+    so keep them)
+ - collect Acked-by
 
+Changes in v3:
+ - take patch #5 and #6 from Kevin Brodsky's patch series below.
+   Link: https://lore.kernel.org/lkml/20241219164425.2277022-1-kevin.brodsky@arm.com/
+ - separate the statistics part from [PATCH v2 02/15] as [PATCH v3 04/17], and
+   replace the rest part with Kevin Brodsky's patch #6
+   (Alexander Gordeev and Kevin Brodsky)
+ - change the commit message of [PATCH v2 10/15] and [PATCH v2 11/15]
+   (Alexander Gordeev)
+ - fix the bug introduced by [PATCH v2 11/15]
+   (Peter Zijlstra)
+ - rebase onto the next-20241220
 
-On 2024/12/30 7:05, Brian Gerst wrote:
-> On Sat, Dec 28, 2024 at 10:17 AM Kaixiong Yu <yukaixiong@huawei.com> wrote:
->> When CONFIG_X86_32 is defined and CONFIG_UML is not defined,
->> vdso_enabled belongs to arch/x86/entry/vdso/vdso32-setup.c.
->> So, move it into its own file.
->>
->> Before this patch, vdso_enabled was allowed to be set to
->> a value exceeding 1 on x86_32 architecture. After this patch is
->> applied, vdso_enabled is not permitted to set the value more than 1.
->> It does not matter, because according to the function load_vdso32(),
->> only vdso_enabled is set to 1, VDSO would be enabled. Other values
->> all mean "disabled". The same limitation could be seen in the
->> function vdso32_setup().
->>
->> Signed-off-by: Kaixiong Yu <yukaixiong@huawei.com>
->> Reviewed-by: Kees Cook <kees@kernel.org>
->> ---
->> v4:
->>   - const qualify struct ctl_table vdso_table
->> ---
->> ---
->>   arch/x86/entry/vdso/vdso32-setup.c | 16 +++++++++++-----
->>   kernel/sysctl.c                    |  8 +-------
->>   2 files changed, 12 insertions(+), 12 deletions(-)
->>
->> diff --git a/arch/x86/entry/vdso/vdso32-setup.c b/arch/x86/entry/vdso/vdso32-setup.c
->> index 76e4e74f35b5..f71625f99bf9 100644
->> --- a/arch/x86/entry/vdso/vdso32-setup.c
->> +++ b/arch/x86/entry/vdso/vdso32-setup.c
->> @@ -51,15 +51,17 @@ __setup("vdso32=", vdso32_setup);
->>   __setup_param("vdso=", vdso_setup, vdso32_setup, 0);
->>   #endif
->>
->> -#ifdef CONFIG_X86_64
->>
->>   #ifdef CONFIG_SYSCTL
->> -/* Register vsyscall32 into the ABI table */
->>   #include <linux/sysctl.h>
->>
->> -static struct ctl_table abi_table2[] = {
->> +static const struct ctl_table vdso_table[] = {
->>          {
->> +#ifdef CONFIG_X86_64
->>                  .procname       = "vsyscall32",
->> +#elif (defined(CONFIG_X86_32) && !defined(CONFIG_UML))
-> vdso32-setup,.c is not used when building UML, so this can be reduced
-> to "#else".
->
->> +               .procname       = "vdso_enabled",
->> +#endif
->>                  .data           = &vdso32_enabled,
->>                  .maxlen         = sizeof(int),
->>                  .mode           = 0644,
->> @@ -71,10 +73,14 @@ static struct ctl_table abi_table2[] = {
->>
->>   static __init int ia32_binfmt_init(void)
->>   {
->> -       register_sysctl("abi", abi_table2);
->> +#ifdef CONFIG_X86_64
->> +       /* Register vsyscall32 into the ABI table */
->> +       register_sysctl("abi", vdso_table);
->> +#elif (defined(CONFIG_X86_32) && !defined(CONFIG_UML))
-> Same as above.
->
->
->
->> +       register_sysctl_init("vm", vdso_table);
->> +#endif
->>          return 0;
->>   }
->>   __initcall(ia32_binfmt_init);
->>   #endif /* CONFIG_SYSCTL */
->>
->> -#endif /* CONFIG_X86_64 */
->
-> Brian Gerst
-> .
-Hello all；
+Changes in v2:
+ - add [PATCH v2 13|14|15/15] (suggested by Peter Zijlstra)
+ - add Originally-bys and Suggested-bys
+ - rebase onto the next-20241218
 
-I want to confirm that I should send a new patch series, such as "PATCH 
-v5 -next"， or just modify this patch by
-"git send-email -in-reply-to xxxxx"，or the maintainer will fix this issue ?
+Hi all,
+
+As proposed [1] by Peter Zijlstra below, this patch series aims to move
+pagetable_*_dtor() into __tlb_remove_table(). This will cleanup pagetable_*_dtor()
+a bit and more gracefully fix the UAF issue [2] reported by syzbot.
+
+```
+Notably:
+
+ - s390 pud isn't calling the existing pagetable_pud_[cd]tor()
+ - none of the p4d things have pagetable_p4d_[cd]tor() (x86,arm64,s390,riscv)
+   and they have inconsistent accounting
+ - while much of the _ctor calls are in generic code, many of the _dtor
+   calls are in arch code for hysterial raisins, this could easily be
+   fixed
+ - if we fix ptlock_free() to handle NULL, then all the _dtor()
+   functions can use it, and we can observe they're all identical
+   and can be folded
+
+after all that cleanup, you can move the _dtor from *_free_tlb() into
+tlb_remove_table() -- which for the above case, would then have it
+called from __tlb_remove_table_free().
+```
+
+And hi Andrew, I developed the code based on the latest linux-next, so I reverted
+the "mm: pgtable: make ptlock be freed by RCU" first. Once the review of this
+patch series is completed, the "mm: pgtable: make ptlock be freed by RCU" can be
+dropped directly from mm tree, and this revert patch will not be needed.
+
+This series is based on next-20241220. And I tested this patch series on x86 and
+only cross-compiled it on arm, arm64, powerpc, riscv, s390 and sparc.
+
+Comments and suggestions are welcome!
+
+Thanks,
+Qi
+
+[1]. https://lore.kernel.org/all/20241211133433.GC12500@noisy.programming.kicks-ass.net/
+[2]. https://lore.kernel.org/all/67548279.050a0220.a30f1.015b.GAE@google.com/
+
+Kevin Brodsky (2):
+  riscv: mm: Skip pgtable level check in {pud,p4d}_alloc_one
+  asm-generic: pgalloc: Provide generic p4d_{alloc_one,free}
+
+Qi Zheng (13):
+  Revert "mm: pgtable: make ptlock be freed by RCU"
+  mm: pgtable: add statistics for P4D level page table
+  arm64: pgtable: use mmu gather to free p4d level page table
+  s390: pgtable: add statistics for PUD and P4D level page table
+  mm: pgtable: introduce pagetable_dtor()
+  arm: pgtable: move pagetable_dtor() to __tlb_remove_table()
+  arm64: pgtable: move pagetable_dtor() to __tlb_remove_table()
+  riscv: pgtable: move pagetable_dtor() to __tlb_remove_table()
+  x86: pgtable: move pagetable_dtor() to __tlb_remove_table()
+  s390: pgtable: also move pagetable_dtor() of PxD to
+    __tlb_remove_table()
+  mm: pgtable: introduce generic __tlb_remove_table()
+  mm: pgtable: move __tlb_remove_table_one() in x86 to generic file
+  mm: pgtable: introduce generic pagetable_dtor_free()
+
+ Documentation/mm/split_page_table_lock.rst |  4 +-
+ arch/arm/include/asm/tlb.h                 | 10 ----
+ arch/arm64/include/asm/pgalloc.h           | 18 ------
+ arch/arm64/include/asm/tlb.h               | 21 ++++---
+ arch/csky/include/asm/pgalloc.h            |  2 +-
+ arch/hexagon/include/asm/pgalloc.h         |  2 +-
+ arch/loongarch/include/asm/pgalloc.h       |  2 +-
+ arch/m68k/include/asm/mcf_pgalloc.h        |  4 +-
+ arch/m68k/include/asm/sun3_pgalloc.h       |  2 +-
+ arch/m68k/mm/motorola.c                    |  2 +-
+ arch/mips/include/asm/pgalloc.h            |  2 +-
+ arch/nios2/include/asm/pgalloc.h           |  2 +-
+ arch/openrisc/include/asm/pgalloc.h        |  2 +-
+ arch/powerpc/include/asm/tlb.h             |  1 +
+ arch/powerpc/mm/book3s64/mmu_context.c     |  2 +-
+ arch/powerpc/mm/book3s64/pgtable.c         |  2 +-
+ arch/powerpc/mm/pgtable-frag.c             |  4 +-
+ arch/riscv/include/asm/pgalloc.h           | 69 +++++-----------------
+ arch/riscv/include/asm/tlb.h               | 18 ------
+ arch/riscv/mm/init.c                       |  4 +-
+ arch/s390/include/asm/pgalloc.h            | 31 +++++++---
+ arch/s390/include/asm/tlb.h                | 43 +++++++-------
+ arch/s390/mm/pgalloc.c                     | 23 +-------
+ arch/sh/include/asm/pgalloc.h              |  2 +-
+ arch/sparc/include/asm/tlb_32.h            |  1 +
+ arch/sparc/include/asm/tlb_64.h            |  1 +
+ arch/sparc/mm/init_64.c                    |  2 +-
+ arch/sparc/mm/srmmu.c                      |  2 +-
+ arch/um/include/asm/pgalloc.h              |  6 +-
+ arch/x86/include/asm/pgalloc.h             | 18 ------
+ arch/x86/include/asm/tlb.h                 | 33 -----------
+ arch/x86/kernel/paravirt.c                 |  1 +
+ arch/x86/mm/pgtable.c                      | 13 ++--
+ include/asm-generic/pgalloc.h              | 55 +++++++++++++++--
+ include/asm-generic/tlb.h                  | 14 ++++-
+ include/linux/mm.h                         | 50 ++++++----------
+ include/linux/mm_types.h                   |  9 +--
+ mm/memory.c                                | 23 +++-----
+ mm/mmu_gather.c                            | 20 ++++++-
+ 39 files changed, 211 insertions(+), 309 deletions(-)
+
+-- 
+2.20.1
 
