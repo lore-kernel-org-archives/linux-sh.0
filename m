@@ -1,157 +1,131 @@
-Received: from szxga01-in.huawei.com (szxga01-in.huawei.com [45.249.212.187])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-pl1-f169.google.com (mail-pl1-f169.google.com [209.85.214.169])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5440740BF5;
-	Mon, 30 Dec 2024 03:02:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.187
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D8C5149C7D
+	for <linux-sh@vger.kernel.org>; Mon, 30 Dec 2024 03:12:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.214.169
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1735527775; cv=none; b=ImsRIlGbnT7B4VJmceOQiRYmvyZAXd1chymjTgY1sVB9UDPbTWFLvPiFtka+Tz6VaWFQ9kFxFjVu9bz+E4LjPD8fEU6ny7w+r+SCaQz1GW4I4YgKv6qN2JyA+h7rYrcymqlsf9PTWdpNMan8y1XQxoOKlDQUx5+oUTW3uZWQ5Tg=
+	t=1735528337; cv=none; b=QeIhY6Qz1ALuOaSktSAmgd0U8hvfRhR4p3PTZWlSqFEGeWEd0jpAIxf3ezZ2LKTDmW6Mjy26zG3RfBw8w7KOgHtds/3csa8naKh05t7BGifTO1Q0qbCeNuqEfgPz2SD8n2Lu6w3swk64FVB8DHiXnsa1yy4uWy5Jhsf6oMPvsKY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1735527775; c=relaxed/simple;
-	bh=QaXejW6rcRxfG31NAo512yz4AQGMHU0p3awoME3GMQI=;
-	h=Subject:To:References:CC:From:Message-ID:Date:MIME-Version:
-	 In-Reply-To:Content-Type; b=qBQRde+05o5RjnVP3i00IQ5zLnWw+Jnisc++wptWexzxgb7oolLidvvmTM+CjTGoV8f20BTB8uDlTPKcTJV4fiPrjbfBF6tZy8unI/2VXdLnIxKCqIt3Ei07/Gh1Cy7XNIo2pSk8Rj85Ld69+vkPY4jsqali1Bx2APhD/kRpL6k=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com; spf=pass smtp.mailfrom=huawei.com; arc=none smtp.client-ip=45.249.212.187
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
-Received: from mail.maildlp.com (unknown [172.19.163.174])
-	by szxga01-in.huawei.com (SkyGuard) with ESMTP id 4YM15r5LzBz11NZQ;
-	Mon, 30 Dec 2024 10:59:12 +0800 (CST)
-Received: from kwepemh100016.china.huawei.com (unknown [7.202.181.102])
-	by mail.maildlp.com (Postfix) with ESMTPS id BDF2714022E;
-	Mon, 30 Dec 2024 11:02:42 +0800 (CST)
-Received: from [10.174.179.93] (10.174.179.93) by
- kwepemh100016.china.huawei.com (7.202.181.102) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.1544.11; Mon, 30 Dec 2024 11:02:38 +0800
-Subject: Re: [PATCH v4 -next 13/15] x86: vdso: move the sysctl to
- arch/x86/entry/vdso/vdso32-setup.c
-To: Brian Gerst <brgerst@gmail.com>
-References: <20241228145746.2783627-1-yukaixiong@huawei.com>
- <20241228145746.2783627-14-yukaixiong@huawei.com>
- <CAMzpN2hf-CFpO6x58aDK_FX_6C2MBKh1g7PdV4Y=ypaeUNVfRw@mail.gmail.com>
-CC: <akpm@linux-foundation.org>, <mcgrof@kernel.org>,
-	<ysato@users.sourceforge.jp>, <dalias@libc.org>,
-	<glaubitz@physik.fu-berlin.de>, <luto@kernel.org>, <tglx@linutronix.de>,
-	<mingo@redhat.com>, <bp@alien8.de>, <dave.hansen@linux.intel.com>,
-	<hpa@zytor.com>, <viro@zeniv.linux.org.uk>, <brauner@kernel.org>,
-	<jack@suse.cz>, <kees@kernel.org>, <j.granados@samsung.com>,
-	<willy@infradead.org>, <Liam.Howlett@oracle.com>, <vbabka@suse.cz>,
-	<lorenzo.stoakes@oracle.com>, <trondmy@kernel.org>, <anna@kernel.org>,
-	<chuck.lever@oracle.com>, <jlayton@kernel.org>, <neilb@suse.de>,
-	<okorniev@redhat.com>, <Dai.Ngo@oracle.com>, <tom@talpey.com>,
-	<davem@davemloft.net>, <edumazet@google.com>, <kuba@kernel.org>,
-	<pabeni@redhat.com>, <paul@paul-moore.com>, <jmorris@namei.org>,
-	<linux-sh@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-	<linux-fsdevel@vger.kernel.org>, <linux-mm@kvack.org>,
-	<linux-nfs@vger.kernel.org>, <netdev@vger.kernel.org>,
-	<linux-security-module@vger.kernel.org>, <dhowells@redhat.com>,
-	<haifeng.xu@shopee.com>, <baolin.wang@linux.alibaba.com>,
-	<shikemeng@huaweicloud.com>, <dchinner@redhat.com>, <bfoster@redhat.com>,
-	<souravpanda@google.com>, <hannes@cmpxchg.org>, <rientjes@google.com>,
-	<pasha.tatashin@soleen.com>, <david@redhat.com>, <ryan.roberts@arm.com>,
-	<ying.huang@intel.com>, <yang@os.amperecomputing.com>,
-	<zev@bewilderbeest.net>, <serge@hallyn.com>, <vegard.nossum@oracle.com>,
-	<wangkefeng.wang@huawei.com>
-From: yukaixiong <yukaixiong@huawei.com>
-Message-ID: <5b7530d9-a593-4365-718f-afdd46bdcb31@huawei.com>
-Date: Mon, 30 Dec 2024 11:02:38 +0800
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:45.0) Gecko/20100101
- Thunderbird/45.7.1
+	s=arc-20240116; t=1735528337; c=relaxed/simple;
+	bh=RByHVD3bvwf9OBgmvjYl7zmyuddvG3+m7GzmELh8Ojk=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=BsCwKjsXLpGGkDYJ5gq8uLy4xJBoxzFTeN7NPwAioKmxD+QZUtzN1Y6s8GmMVlXV4JLQrUjJoABv8SgSbbTuFnTRKjAh8KtivgTKZwxNJYmRiY+Aw/MxB3iwmUhw7zsif05MLHyGrORRd4nrm9VaNyULb89Bfr9iVE6SMvePiZ4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=bytedance.com; spf=pass smtp.mailfrom=bytedance.com; dkim=pass (2048-bit key) header.d=bytedance.com header.i=@bytedance.com header.b=U4TKcd5D; arc=none smtp.client-ip=209.85.214.169
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=bytedance.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bytedance.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=bytedance.com header.i=@bytedance.com header.b="U4TKcd5D"
+Received: by mail-pl1-f169.google.com with SMTP id d9443c01a7336-21634338cfdso163101015ad.2
+        for <linux-sh@vger.kernel.org>; Sun, 29 Dec 2024 19:12:15 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=bytedance.com; s=google; t=1735528335; x=1736133135; darn=vger.kernel.org;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=00MV44O/wLuPQ/RpQp8S/rpHXiOskq9DnLB00pReqmw=;
+        b=U4TKcd5D4yLghx2l4BTUej/I4g4Z33Z5EuOg4tqgR1jpnnlPEVnqdX27VklOCdJMzj
+         VZOfTwRmpJpqPi2m4SQzuJdbXiHWuvKAigs0JOvPTR6wkY9L7u/t/zIoZO0s8AjE8VtS
+         2w7VNScCKvWQoQOa2cMwoDCdd6PpS3fw9sgx5WOBebldyJ9PZyFhF/9oGjf23X3wufGz
+         /8QxukHxfuamu8NP0HHvE/qQoFJfPM5DZGjRXAzmsJWZzDqGRubur3XHHzqmQrPPdktj
+         FPk97rpDrbb1LkLj+b2zZKuczfGTh5ngsdYU1MFuNTe13Mf/JBkMCsTv8QN52rmjXrVU
+         MyNQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1735528335; x=1736133135;
+        h=content-transfer-encoding:in-reply-to:from:references:cc:to
+         :content-language:subject:user-agent:mime-version:date:message-id
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=00MV44O/wLuPQ/RpQp8S/rpHXiOskq9DnLB00pReqmw=;
+        b=GB6ZooSEsy4Hwu5qPqgc3+frqOWVFx4wlPFgXR6hj+YonsPUr/OPCQWavWkswpdsuR
+         aO0gxIMEtX0xcU3DKjOyGpcC1xdIDsmATryzJGXQVrm0iSoAU3SELll6bKePx449tV3U
+         UjUZazxuFapH7xBrRRQZIVisl7kdEwQJx0BLvjozVg6Ry0i+wuCSmjW+xyIRt379r3X+
+         xHHPMvgzKXftICZtEC+ob79la/xn5E0qcbNRHAg1A4tUYtaJ9sQdriJSadLRvD7iyQuk
+         e4Z+xfEQkbWjY57W6OqYM4Xf/EwdCSp6rw8mh9ydTfFEbSods7MCgfrvmgPxCUjql/v/
+         gnQg==
+X-Forwarded-Encrypted: i=1; AJvYcCXc72L/CjeDsQ8lf3Fx1dWh8SifEyF/uBDvuDw1kviQbn2pWcdd//vSrp9mp688gfVEcqWozXDufA==@vger.kernel.org
+X-Gm-Message-State: AOJu0YwBhs3kzH7Fn5/ec9HJWl5aPsdyTYMKPq9Y3x84/uYdjdwK4/WF
+	nuOdCzNzz2gq9HGks2DhT3W1Lgst0+bA1Gk9oo+G3fALVPQCQlfjT2rr8eLcfEs=
+X-Gm-Gg: ASbGnctFMlw76rh8N2iA+eCERhkQf+BYqRuSTucs1vx9tacjeNgat1bddQgIDCpoMJ0
+	Y+iAhjE+IqthxOAaH4n52prOf4dsEPZRYS6nlfUqAV8vMisCcejuLhcbtWXkSlGT0OU2l5x3UsL
+	fcSnJbaDZKJqbJLaLPHjwf1YcUai6g+6mh0jy7iGDedbIJLrQiH3jBz0JfilhS8cInmS4Q6cURA
+	K6rvtVtl4Q4Az4Uuu+SAe5Ik7ehjSbPul9Ed0fFJMqKxp5KiJsfPWSUk+/iIMs9g1KwLUCqn3JF
+	z+8mVQ==
+X-Google-Smtp-Source: AGHT+IHVtuGTDJKnXgo1JS5AtVrvj0I/cg1dyieo6seko5BYBtWvsXqnYPIAVAFKhaTndzKmWg8VgQ==
+X-Received: by 2002:a05:6a20:9185:b0:1e5:7db5:d6e7 with SMTP id adf61e73a8af0-1e5e083f019mr66304616637.46.1735528334820;
+        Sun, 29 Dec 2024 19:12:14 -0800 (PST)
+Received: from [10.84.148.23] ([203.208.167.148])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-72aad84eb45sm18191842b3a.88.2024.12.29.19.12.03
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 29 Dec 2024 19:12:14 -0800 (PST)
+Message-ID: <9cac5690-c570-4d43-a6bc-2b59b85497ae@bytedance.com>
+Date: Mon, 30 Dec 2024 11:12:00 +0800
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <CAMzpN2hf-CFpO6x58aDK_FX_6C2MBKh1g7PdV4Y=ypaeUNVfRw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
-Content-Transfer-Encoding: 8bit
-X-ClientProxiedBy: dggpeml100007.china.huawei.com (7.185.36.28) To
- kwepemh100016.china.huawei.com (7.202.181.102)
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v3 15/17] mm: pgtable: remove tlb_remove_page_ptdesc()
+Content-Language: en-US
+To: Mike Rapoport <rppt@kernel.org>, akpm@linux-foundation.org,
+ kevin.brodsky@arm.com, peterz@infradead.org
+Cc: agordeev@linux.ibm.com, tglx@linutronix.de, david@redhat.com,
+ jannh@google.com, hughd@google.com, yuzhao@google.com, willy@infradead.org,
+ muchun.song@linux.dev, vbabka@kernel.org, lorenzo.stoakes@oracle.com,
+ rientjes@google.com, vishal.moola@gmail.com, arnd@arndb.de, will@kernel.org,
+ aneesh.kumar@kernel.org, npiggin@gmail.com, dave.hansen@linux.intel.com,
+ ryan.roberts@arm.com, linux-mm@kvack.org,
+ linux-arm-kernel@lists.infradead.org, linuxppc-dev@lists.ozlabs.org,
+ linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
+ sparclinux@vger.kernel.org, linux-kernel@vger.kernel.org, x86@kernel.org,
+ linux-arch@vger.kernel.org, linux-csky@vger.kernel.org,
+ linux-hexagon@vger.kernel.org, loongarch@lists.linux.dev,
+ linux-m68k@lists.linux-m68k.org, linux-mips@vger.kernel.org,
+ linux-openrisc@vger.kernel.org, linux-sh@vger.kernel.org,
+ linux-um@lists.infradead.org
+References: <cover.1734945104.git.zhengqi.arch@bytedance.com>
+ <b37435768345e0fcf7ea358f69b4a71767f0f530.1734945104.git.zhengqi.arch@bytedance.com>
+ <Z2_EPmOTUHhcBegW@kernel.org>
+From: Qi Zheng <zhengqi.arch@bytedance.com>
+In-Reply-To: <Z2_EPmOTUHhcBegW@kernel.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
+Hi Mike,
 
+On 2024/12/28 17:26, Mike Rapoport wrote:
+> On Mon, Dec 23, 2024 at 05:41:01PM +0800, Qi Zheng wrote:
+>> Here we are explicitly dealing with struct page, and the following logic
+>> semms strange:
+>>
+>> tlb_remove_page_ptdesc((tlb), (page_ptdesc(pte)));
+>>
+>> tlb_remove_page_ptdesc
+>> --> tlb_remove_page(tlb, ptdesc_page(pt));
+>>
+>> So remove tlb_remove_page_ptdesc() and make callers call tlb_remove_page()
+>> directly.
+> 
+> Please don't. The ptdesc wrappers are there as a part of reducing the size
+> of struct page project [1].
+> 
+> For now struct ptdesc overlaps struct page, but the goal is to have them
+> separate and always operate on struct ptdesc when working with page tables.
 
-On 2024/12/30 7:05, Brian Gerst wrote:
-> On Sat, Dec 28, 2024 at 10:17 AM Kaixiong Yu <yukaixiong@huawei.com> wrote:
->> When CONFIG_X86_32 is defined and CONFIG_UML is not defined,
->> vdso_enabled belongs to arch/x86/entry/vdso/vdso32-setup.c.
->> So, move it into its own file.
->>
->> Before this patch, vdso_enabled was allowed to be set to
->> a value exceeding 1 on x86_32 architecture. After this patch is
->> applied, vdso_enabled is not permitted to set the value more than 1.
->> It does not matter, because according to the function load_vdso32(),
->> only vdso_enabled is set to 1, VDSO would be enabled. Other values
->> all mean "disabled". The same limitation could be seen in the
->> function vdso32_setup().
->>
->> Signed-off-by: Kaixiong Yu <yukaixiong@huawei.com>
->> Reviewed-by: Kees Cook <kees@kernel.org>
->> ---
->> v4:
->>   - const qualify struct ctl_table vdso_table
->> ---
->> ---
->>   arch/x86/entry/vdso/vdso32-setup.c | 16 +++++++++++-----
->>   kernel/sysctl.c                    |  8 +-------
->>   2 files changed, 12 insertions(+), 12 deletions(-)
->>
->> diff --git a/arch/x86/entry/vdso/vdso32-setup.c b/arch/x86/entry/vdso/vdso32-setup.c
->> index 76e4e74f35b5..f71625f99bf9 100644
->> --- a/arch/x86/entry/vdso/vdso32-setup.c
->> +++ b/arch/x86/entry/vdso/vdso32-setup.c
->> @@ -51,15 +51,17 @@ __setup("vdso32=", vdso32_setup);
->>   __setup_param("vdso=", vdso_setup, vdso32_setup, 0);
->>   #endif
->>
->> -#ifdef CONFIG_X86_64
->>
->>   #ifdef CONFIG_SYSCTL
->> -/* Register vsyscall32 into the ABI table */
->>   #include <linux/sysctl.h>
->>
->> -static struct ctl_table abi_table2[] = {
->> +static const struct ctl_table vdso_table[] = {
->>          {
->> +#ifdef CONFIG_X86_64
->>                  .procname       = "vsyscall32",
->> +#elif (defined(CONFIG_X86_32) && !defined(CONFIG_UML))
-> vdso32-setup,.c is not used when building UML, so this can be reduced
-> to "#else".
-I will take your advice.
+OK, so tlb_remove_page_ptdesc() and tlb_remove_ptdesc() are somewhat
+intermediate products of the project.
 
-Thanks.
->> +               .procname       = "vdso_enabled",
->> +#endif
->>                  .data           = &vdso32_enabled,
->>                  .maxlen         = sizeof(int),
->>                  .mode           = 0644,
->> @@ -71,10 +73,14 @@ static struct ctl_table abi_table2[] = {
->>
->>   static __init int ia32_binfmt_init(void)
->>   {
->> -       register_sysctl("abi", abi_table2);
->> +#ifdef CONFIG_X86_64
->> +       /* Register vsyscall32 into the ABI table */
->> +       register_sysctl("abi", vdso_table);
->> +#elif (defined(CONFIG_X86_32) && !defined(CONFIG_UML))
-> Same as above.
->
->
-I will take your advice.
+Hi Andrew, can you help remove [PATCH v3 15/17], [PATCH v3 16/17] and
+[PATCH v3 17/17] from the mm-unstable branch?
 
-Thanks.
->> +       register_sysctl_init("vm", vdso_table);
->> +#endif
->>          return 0;
->>   }
->>   __initcall(ia32_binfmt_init);
->>   #endif /* CONFIG_SYSCTL */
->>
->> -#endif /* CONFIG_X86_64 */
->
-> Brian Gerst
-> .
->
+For [PATCH v3 17/17], I can send it separately later, or Kevin Brodsky
+can help do this in his patch series. ;)
+
+Thanks,
+Qi
+
+> 
+> [1] https://kernelnewbies.org/MatthewWilcox/Memdescs
+>   
 
