@@ -1,145 +1,176 @@
-Received: from vmicros1.altlinux.org (vmicros1.altlinux.org [194.107.17.57])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 196C94C83;
-	Sat, 11 Jan 2025 01:16:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=194.107.17.57
+Received: from szxga05-in.huawei.com (szxga05-in.huawei.com [45.249.212.191])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 07C771114;
+	Sat, 11 Jan 2025 07:12:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.249.212.191
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1736558201; cv=none; b=H4XhUnXAFdTPj9Azb1xOQHQ1+bvOUSXSmi3b9Isl5v53gxRo6tW9EgpfBQb+UToeAFv3Nd6muRRP70kiG7l5llciW0YGEDUPXWcgFxyjFuRS2sztCw/X4AU0Ak2QXAtAheg49FcDa0PQLfo+gORS06XGJ7AIfR3omnr5otksU9Y=
+	t=1736579550; cv=none; b=P8+67X7rd990/+PluaKd6XP17RhScs9BRBZhPvRnHQxKZskzQaTlBRij1l5vi7j8t4xQtxcHK7Ptd7yNT5Ucv51wPmGtbjK457V3SmLm/I5pXeYEXNf8JxxwfEVdI99UJTUEjJ9Hcv7Timlfauomtz+hvDVplBSceBUaFiCVa4I=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1736558201; c=relaxed/simple;
-	bh=sQ0hKscqgkFbQlYbywE8EkWkGZ06l86yKwob99Aviyk=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=SUR2hGFDLTEiNTvLBamVMhQScwC1jkMv6ZS/+BGzNawd6+eb1mK1L7TtZzVWcY6vSEyToM/Yz8zNpBIhC5JR9K4ZzBxg7iNABGmymxVx2MCOcggFDcr2K37NQZUbpCtIO5aPKoqoPnJJtR/kIGLEhOiapCddIRbptKuO41VJQls=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=strace.io; spf=pass smtp.mailfrom=altlinux.org; arc=none smtp.client-ip=194.107.17.57
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=strace.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=altlinux.org
-Received: from mua.local.altlinux.org (mua.local.altlinux.org [192.168.1.14])
-	by vmicros1.altlinux.org (Postfix) with ESMTP id 3DA2E72C97D;
-	Sat, 11 Jan 2025 04:16:32 +0300 (MSK)
-Received: by mua.local.altlinux.org (Postfix, from userid 508)
-	id 2736C7CCB3A; Sat, 11 Jan 2025 03:16:32 +0200 (IST)
-Date: Sat, 11 Jan 2025 03:16:32 +0200
-From: "Dmitry V. Levin" <ldv@strace.io>
-To: Sven Schnelle <svens@linux.ibm.com>
-Cc: Oleg Nesterov <oleg@redhat.com>,
-	Eugene Syromyatnikov <evgsyr@gmail.com>,
-	Mike Frysinger <vapier@gentoo.org>,
-	Renzo Davoli <renzo@cs.unibo.it>,
-	Davide Berardi <berardi.dav@gmail.com>,
-	strace-devel@lists.strace.io, Vineet Gupta <vgupta@kernel.org>,
-	Russell King <linux@armlinux.org.uk>,
-	Catalin Marinas <catalin.marinas@arm.com>,
-	Will Deacon <will@kernel.org>, Brian Cain <bcain@quicinc.com>,
-	Huacai Chen <chenhuacai@kernel.org>,
-	WANG Xuerui <kernel@xen0n.name>,
-	Geert Uytterhoeven <geert@linux-m68k.org>,
-	Michal Simek <monstr@monstr.eu>,
-	Thomas Bogendoerfer <tsbogend@alpha.franken.de>,
-	Dinh Nguyen <dinguyen@kernel.org>, Jonas Bonn <jonas@southpole.se>,
-	Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>,
-	Stafford Horne <shorne@gmail.com>,
-	"James E.J. Bottomley" <James.Bottomley@HansenPartnership.com>,
-	Helge Deller <deller@gmx.de>, Michael Ellerman <mpe@ellerman.id.au>,
-	Nicholas Piggin <npiggin@gmail.com>,
-	Christophe Leroy <christophe.leroy@csgroup.eu>,
-	Naveen N Rao <naveen@kernel.org>,
-	Madhavan Srinivasan <maddy@linux.ibm.com>,
-	Paul Walmsley <paul.walmsley@sifive.com>,
-	Palmer Dabbelt <palmer@dabbelt.com>,
-	Albert Ou <aou@eecs.berkeley.edu>,
-	Heiko Carstens <hca@linux.ibm.com>,
-	Vasily Gorbik <gor@linux.ibm.com>,
-	Alexander Gordeev <agordeev@linux.ibm.com>,
-	Christian Borntraeger <borntraeger@linux.ibm.com>,
-	Yoshinori Sato <ysato@users.sourceforge.jp>,
-	Rich Felker <dalias@libc.org>,
-	John Paul Adrian Glaubitz <glaubitz@physik.fu-berlin.de>,
-	"David S. Miller" <davem@davemloft.net>,
-	Andreas Larsson <andreas@gaisler.com>,
-	Richard Weinberger <richard@nod.at>,
-	Anton Ivanov <anton.ivanov@cambridgegreys.com>,
-	Johannes Berg <johannes@sipsolutions.net>,
-	Thomas Gleixner <tglx@linutronix.de>,
-	Ingo Molnar <mingo@redhat.com>, Borislav Petkov <bp@alien8.de>,
-	Dave Hansen <dave.hansen@linux.intel.com>, x86@kernel.org,
-	"H. Peter Anvin" <hpa@zytor.com>, Chris Zankel <chris@zankel.net>,
-	Max Filippov <jcmvbkbc@gmail.com>, Arnd Bergmann <arnd@arndb.de>,
-	linux-snps-arc@lists.infradead.org, linux-kernel@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org, linux-hexagon@vger.kernel.org,
-	loongarch@lists.linux.dev, linux-m68k@lists.linux-m68k.org,
-	linux-mips@vger.kernel.org, linux-openrisc@vger.kernel.org,
-	linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org,
-	linux-riscv@lists.infradead.org, linux-s390@vger.kernel.org,
-	linux-sh@vger.kernel.org, sparclinux@vger.kernel.org,
-	linux-um@lists.infradead.org, linux-arch@vger.kernel.org
-Subject: Re: [PATCH 3/6] syscall.h: introduce syscall_set_nr()
-Message-ID: <20250111011632.GA1724@strace.io>
-References: <20250107230438.GC30633@strace.io>
- <yt9dzfjz6rw5.fsf@linux.ibm.com>
+	s=arc-20240116; t=1736579550; c=relaxed/simple;
+	bh=H2xHhvGHh0LxUT0zK6bublb7RZ7C0uwj4Q2+LPcQSI4=;
+	h=From:To:CC:Subject:Date:Message-ID:MIME-Version:Content-Type; b=KY6rakJUB83GeCtoQUMlbcM87c+rHpP68ciGltQnDoSB9GRGql5ODimUzeuzuvSJyWa3LkZe0S8P/BFYwFE8Qtl9DTjTJwI0u/sL43MEe7FHJjPeTemVJjdFAN4mi0hFPftxL9wdkZukphRrKeWbRzH0FXNjBC0cVdURfwSxF3o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com; spf=pass smtp.mailfrom=huawei.com; arc=none smtp.client-ip=45.249.212.191
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
+Received: from mail.maildlp.com (unknown [172.19.88.214])
+	by szxga05-in.huawei.com (SkyGuard) with ESMTP id 4YVV4m2cHRz1ky3H;
+	Sat, 11 Jan 2025 15:09:12 +0800 (CST)
+Received: from kwepemh100016.china.huawei.com (unknown [7.202.181.102])
+	by mail.maildlp.com (Postfix) with ESMTPS id 331121A016C;
+	Sat, 11 Jan 2025 15:12:17 +0800 (CST)
+Received: from huawei.com (10.175.113.32) by kwepemh100016.china.huawei.com
+ (7.202.181.102) with Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.2.1544.11; Sat, 11 Jan
+ 2025 15:12:13 +0800
+From: Kaixiong Yu <yukaixiong@huawei.com>
+To: <akpm@linux-foundation.org>, <mcgrof@kernel.org>,
+	<joel.granados@kernel.org>
+CC: <ysato@users.sourceforge.jp>, <dalias@libc.org>,
+	<glaubitz@physik.fu-berlin.de>, <luto@kernel.org>, <tglx@linutronix.de>,
+	<mingo@redhat.com>, <bp@alien8.de>, <dave.hansen@linux.intel.com>,
+	<hpa@zytor.com>, <viro@zeniv.linux.org.uk>, <brauner@kernel.org>,
+	<jack@suse.cz>, <kees@kernel.org>, <j.granados@samsung.com>,
+	<willy@infradead.org>, <Liam.Howlett@oracle.com>, <vbabka@suse.cz>,
+	<lorenzo.stoakes@oracle.com>, <trondmy@kernel.org>, <anna@kernel.org>,
+	<chuck.lever@oracle.com>, <jlayton@kernel.org>, <neilb@suse.de>,
+	<okorniev@redhat.com>, <Dai.Ngo@oracle.com>, <tom@talpey.com>,
+	<davem@davemloft.net>, <edumazet@google.com>, <kuba@kernel.org>,
+	<pabeni@redhat.com>, <paul@paul-moore.com>, <jmorris@namei.org>,
+	<linux-sh@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
+	<linux-fsdevel@vger.kernel.org>, <linux-mm@kvack.org>,
+	<linux-nfs@vger.kernel.org>, <netdev@vger.kernel.org>,
+	<linux-security-module@vger.kernel.org>, <dhowells@redhat.com>,
+	<haifeng.xu@shopee.com>, <baolin.wang@linux.alibaba.com>,
+	<shikemeng@huaweicloud.com>, <dchinner@redhat.com>, <bfoster@redhat.com>,
+	<souravpanda@google.com>, <hannes@cmpxchg.org>, <rientjes@google.com>,
+	<pasha.tatashin@soleen.com>, <david@redhat.com>, <ryan.roberts@arm.com>,
+	<ying.huang@intel.com>, <yang@os.amperecomputing.com>,
+	<zev@bewilderbeest.net>, <serge@hallyn.com>, <vegard.nossum@oracle.com>,
+	<wangkefeng.wang@huawei.com>
+Subject: [PATCH v5 -next 00/16] sysctl: move sysctls from vm_table into its own files
+Date: Sat, 11 Jan 2025 15:07:35 +0800
+Message-ID: <20250111070751.2588654-1-yukaixiong@huawei.com>
+X-Mailer: git-send-email 2.34.1
 Precedence: bulk
 X-Mailing-List: linux-sh@vger.kernel.org
 List-Id: <linux-sh.vger.kernel.org>
 List-Subscribe: <mailto:linux-sh+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-sh+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <yt9dzfjz6rw5.fsf@linux.ibm.com>
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-ClientProxiedBy: dggems703-chm.china.huawei.com (10.3.19.180) To
+ kwepemh100016.china.huawei.com (7.202.181.102)
 
-On Fri, Jan 10, 2025 at 08:37:46AM +0100, Sven Schnelle wrote:
-> "Dmitry V. Levin" <ldv@strace.io> writes:
-> 
-> > Similar to syscall_set_arguments() that complements
-> > syscall_get_arguments(), introduce syscall_set_nr()
-> > that complements syscall_get_nr().
-> >
-> > syscall_set_nr() is going to be needed along with
-> > syscall_set_arguments() on all HAVE_ARCH_TRACEHOOK
-> > architectures to implement PTRACE_SET_SYSCALL_INFO API.
-[...]
-> > diff --git a/arch/s390/include/asm/syscall.h b/arch/s390/include/asm/syscall.h
-> > index b3dd883699e7..1c0e349fd5c9 100644
-> > --- a/arch/s390/include/asm/syscall.h
-> > +++ b/arch/s390/include/asm/syscall.h
-> > @@ -24,6 +24,13 @@ static inline long syscall_get_nr(struct task_struct *task,
-> >  		(regs->int_code & 0xffff) : -1;
-> >  }
-> >  
-> > +static inline void syscall_set_nr(struct task_struct *task,
-> > +				  struct pt_regs *regs,
-> > +				  int nr)
-> > +{
-> 
-> I think there should be a
-> 
-> 	if (!test_pt_regs_flags(regs, PIF_SYSCALL))
-> 		return;
-> 
-> before the modification so a user can't accidentally change int_code
-> when ptrace stopped in a non-syscall path.
+This patch series moves sysctls of vm_table in kernel/sysctl.c to
+places where they actually belong, and do some related code clean-ups.
+After this patch series, all sysctls in vm_table have been moved into its
+own files, meanwhile, delete vm_table.
 
-The reason why syscall_get_nr() has this check on s390 (and similar checks
-on arc, powerpc, and sparc) is that syscall_get_nr() can be called while
-the target task is not in syscall.
+All the modifications of this patch series base on
+linux-next(tags/next-20250110). To test this patch series, the code was
+compiled with both the CONFIG_SYSCTL enabled and disabled on arm64 and
+x86_64 architectures. After this patch series is applied, all files
+under /proc/sys/vm can be read or written normally.
 
-Unlike syscall_get_nr(), syscall_set_nr() can be called only when the
-target task is stopped for tracing on entering syscall: the description in
-include/asm-generic/syscall.h explicitly states that, and the follow-up
-patch that introduces PTRACE_SET_SYSCALL_INFO adds a syscall_set_nr() call
-when the tracee is stopped on entering syscall in either
-PTRACE_SYSCALL_INFO_ENTRY or PTRACE_SYSCALL_INFO_SECCOMP state.
+my test steps as below listed:
 
-I don't mind adding a check, but syscall_set_nr() invocation while the
-target task is not in syscall wouldn't be a result of user actions but
-a kernel programing error, and in that case WARN_ON_ONCE() would be more
-appropriate.
+Step 1: Set CONFIG_SYSCTL to 'n' and compile the Linux kernel on the
+arm64 architecture. The kernel compiles successfully without any errors
+or warnings.
 
-If calling syscall_set_nr() while the target task is not in syscall was
-legal, then syscall_set_nr() would have been designed to return a value
-indicating the status of operation.
+Step 2: Set CONFIG_SYSCTL to 'y' and compile the Linux kernel on the
+arm64 architecture. The kernel compiles successfully without any errors
+or warnings.
 
-Anyway, I'll add an explanatory comment to syscall_set_nr() on all
-architectures where syscall_get_nr() has a check.
+Step 3: Use QEMU to boot the kernel compiled in Step 2, then use the
+Linux command |ls -ll /proc/sys/vm/| to check the permissions of all
+sysctls under the |/proc/sys/vm| directory.
+When compared with the kernel version that did not apply this series of
+patches, there is no difference in the sysctl permissions under the
+|/proc/sys/vm| directory between the two kernel versions.
 
+Step 4: Repeat steps 1 to 3 on the x86_64 architecture.
+
+Changes in v5:
+ - add reviewed-by from Lorenzo Stoakes in patch6,8
+ - Accept Brian Gerst's suggestion to reduce the preprocessor
+   condition "#elif (defined(CONFIG_X86_32) && !defined(CONFIG_UML))"
+   in patch13
+ - fix the error discovered by Geert Uytterhoeven in patch14 in V4.
+   Move the call to register_sysctl_init() into its own fs_initcall()
+   as Geert Uytterhoeven's patch does.
+ - take the advice of Joel Granados, separating patch14 in V4 into
+   patch14 and patch15 in V5. patch14 in V5 just moves the vdso_enabled
+   table. patch15 in V5 removes the vm_table.
+ - modify the change log of patch14
+ - clarify test steps.
+
+Changes in v4:
+ - due to my mistake, the previous version sent 15 patches twice.
+   Please ignore that, as this version is the correct one.
+ - change all "static struct ctl_table" type into
+   "static const struct ctl_table" type in patch1~10,12,13,14
+ - simplify result of rpcauth_cache_shrink_count() in patch11
+
+Changes in v3:
+ - change patch1~10, patch14 title suggested by Joel Granados
+ - change sysctl_stat_interval to static type in patch1
+ - add acked-by from Paul Moore in patch7
+ - change dirtytime_expire_interval to static type in patch9
+ - add acked-by from Anna Schumaker in patch11
+
+Changes in v2:
+ - fix sysctl_max_map_count undeclared issue in mm/nommu.c for patch6
+ - update changelog for patch7/12, suggested by Kees/Paul
+ - fix patch8, sorry for wrong changes and forget to built with NOMMU
+ - add reviewed-by from Kees except patch8 since patch8 is wrong in v1
+ - add reviewed-by from Jan Kara, Christian Brauner in patch12
+
+Kaixiong Yu (16):
+  mm: vmstat: move sysctls to mm/vmstat.c
+  mm: filemap: move sysctl to mm/filemap.c
+  mm: swap: move sysctl to mm/swap.c
+  mm: vmscan: move vmscan sysctls to mm/vmscan.c
+  mm: util: move sysctls to mm/util.c
+  mm: mmap: move sysctl to mm/mmap.c
+  security: min_addr: move sysctl to security/min_addr.c
+  mm: nommu: move sysctl to mm/nommu.c
+  fs: fs-writeback: move sysctl to fs/fs-writeback.c
+  fs: drop_caches: move sysctl to fs/drop_caches.c
+  sunrpc: simplify rpcauth_cache_shrink_count()
+  fs: dcache: move the sysctl to fs/dcache.c
+  x86: vdso: move the sysctl to arch/x86/entry/vdso/vdso32-setup.c
+  sh: vdso: move the sysctl to arch/sh/kernel/vsyscall/vsyscall.c
+  sysctl: remove the vm_table
+  sysctl: remove unneeded include
+
+ arch/sh/kernel/vsyscall/vsyscall.c |  20 +++
+ arch/x86/entry/vdso/vdso32-setup.c |  16 ++-
+ fs/dcache.c                        |  21 ++-
+ fs/drop_caches.c                   |  23 ++-
+ fs/fs-writeback.c                  |  30 ++--
+ include/linux/dcache.h             |   7 +-
+ include/linux/mm.h                 |  23 ---
+ include/linux/mman.h               |   2 -
+ include/linux/swap.h               |   9 --
+ include/linux/vmstat.h             |  11 --
+ include/linux/writeback.h          |   4 -
+ kernel/sysctl.c                    | 221 -----------------------------
+ mm/filemap.c                       |  18 ++-
+ mm/internal.h                      |  10 ++
+ mm/mmap.c                          |  54 +++++++
+ mm/nommu.c                         |  15 +-
+ mm/swap.c                          |  16 ++-
+ mm/swap.h                          |   1 +
+ mm/util.c                          |  67 +++++++--
+ mm/vmscan.c                        |  23 +++
+ mm/vmstat.c                        |  44 +++++-
+ net/sunrpc/auth.c                  |   2 +-
+ security/min_addr.c                |  11 ++
+ 23 files changed, 336 insertions(+), 312 deletions(-)
 
 -- 
-ldv
+2.34.1
+
